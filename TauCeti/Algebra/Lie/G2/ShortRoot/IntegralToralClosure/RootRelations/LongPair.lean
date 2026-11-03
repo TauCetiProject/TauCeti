@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Lie.G2.ShortRoot.IntegralToralClosure.Basic
+public import TauCeti.Algebra.Lie.G2.ShortRoot.IntegralToralClosure.RankOneWord
 import TauCeti.Algebra.Ring.Commutator
 
 /-!
@@ -45,13 +45,8 @@ universe v
 
 noncomputable section
 
-private def weylPoint (i : Fin 2) (A : Type v) [CommRing A] : points A :=
-  rootSubgroupPoints (.inl i) A (Multiplicative.ofAdd 1) *
-    rootSubgroupPoints (.inr i) A (Multiplicative.ofAdd (-1)) *
-    rootSubgroupPoints (.inl i) A (Multiplicative.ofAdd 1)
-
 -- Constant signed permutation matrices of the two pinned words.
-private def W : Fin 2 → Matrix (Fin 7) (Fin 7) ℤ :=
+private abbrev W : Fin 2 → Matrix (Fin 7) (Fin 7) ℤ :=
   ![!![0, 1, 0, 0, 0, 0, 0;
        -1, 0, 0, 0, 0, 0, 0;
        0, 0, 0, 0, 1, 0, 0;
@@ -72,14 +67,6 @@ private def L : Fin 3 → Matrix (Fin 7) (Fin 7) ℤ :=
   ![raisingMatrix 1, Matrix.single 0 4 1 - Matrix.single 2 6 1,
     -Matrix.single 0 5 1 - Matrix.single 1 6 1]
 
-private theorem W_formula (i : Fin 2) :
-    (1 + rootMatrix (.inl i) + rootDividedSquareMatrix (.inl i)) *
-      (1 - rootMatrix (.inr i) + rootDividedSquareMatrix (.inr i)) *
-      (1 + rootMatrix (.inl i) + rootDividedSquareMatrix (.inl i)) = W i := by
-  fin_cases i <;>
-    simp only [rootMatrix_inl, rootMatrix_inr, rootDividedSquareMatrix_inl,
-      rootDividedSquareMatrix_inr] <;> decide +kernel
-
 private theorem W_orthogonal (i : Fin 2) : W i * (W i).transpose = 1 := by
   fin_cases i <;> decide +kernel
 
@@ -95,24 +82,6 @@ private theorem L_triple : L 0 * L 1 * L 0 = 0 ∧ L 1 * L 0 * L 1 = 0 := by
 
 private theorem L_bracket : L 0 * L 1 - L 1 * L 0 = L 2 := by decide +kernel
 
-private theorem coe_weylPoint (i : Fin 2) (A : Type v) [CommRing A] :
-    ((weylPoint i A : Matrix.GeneralLinearGroup (Fin 7) A) : Matrix (Fin 7) (Fin 7) A) =
-      (W i).map (Int.castRingHom A) := by
-  simp only [weylPoint, Subgroup.coe_mul, Units.val_mul, coe_rootSubgroupPoints,
-    toAdd_ofAdd, one_smul, neg_one_smul, neg_one_sq, one_pow]
-  have h := congrArg (fun m : Matrix (Fin 7) (Fin 7) ℤ => m.map (Int.castRingHom A))
-    (W_formula i)
-  simp only [Matrix.map_mul, Matrix.map_add _ (map_add _),
-    Matrix.map_sub _ (map_sub _), Matrix.map_one _ (map_zero _) (map_one _)] at h
-  simpa only [Int.coe_castRingHom, sub_eq_add_neg] using h
-
-private theorem coe_weylPoint_inv (i : Fin 2) (A : Type v) [CommRing A] :
-    (((weylPoint i A)⁻¹ : Matrix.GeneralLinearGroup (Fin 7) A) :
-      Matrix (Fin 7) (Fin 7) A) = (W i).transpose.map (Int.castRingHom A) := by
-  apply Units.inv_eq_of_mul_eq_one_right
-  rw [coe_weylPoint, ← Matrix.map_mul, W_orthogonal,
-    Matrix.map_one _ (map_zero _) (map_one _)]
-
 private theorem coe_long (A : Type v) [CommRing A] (a : A) :
     ((rootSubgroupPoints (.inl 1) A (Multiplicative.ofAdd a) :
       Matrix.GeneralLinearGroup (Fin 7) A) : Matrix (Fin 7) (Fin 7) A) =
@@ -120,50 +89,40 @@ private theorem coe_long (A : Type v) [CommRing A] (a : A) :
   simp [coe_rootSubgroupPoints, rootMatrix_inl, rootDividedSquareMatrix_inl, L]
 
 private theorem coe_conj_long (A : Type v) [CommRing A] (a : A) :
-    (((weylPoint 0 A * rootSubgroupPoints (.inl 1) A (Multiplicative.ofAdd a) *
-      (weylPoint 0 A)⁻¹ : points A) : Matrix.GeneralLinearGroup (Fin 7) A) :
+    (((rankOneWord 0 A * rootSubgroupPoints (.inl 1) A (Multiplicative.ofAdd a) *
+      (rankOneWord 0 A)⁻¹ : points A) : Matrix.GeneralLinearGroup (Fin 7) A) :
       Matrix (Fin 7) (Fin 7) A) = 1 + a • (L 1).map (Int.castRingHom A) := by
-  simp only [Subgroup.coe_mul, Subgroup.coe_inv, Units.val_mul, coe_weylPoint,
-    coe_weylPoint_inv, coe_long, Matrix.mul_add, Matrix.add_mul, Matrix.mul_one,
-    Matrix.mul_smul, Matrix.smul_mul, ← Matrix.map_mul, W_orthogonal,
+  simp only [Subgroup.coe_mul, Subgroup.coe_inv, Units.val_mul, coe_rankOneWord_inv,
+    coe_rankOneWord, ← Matrix.transpose_map, coe_long, Matrix.mul_add, Matrix.add_mul,
+    Matrix.mul_one, Matrix.mul_smul, Matrix.smul_mul, ← Matrix.map_mul, W_orthogonal,
     W_conj_L_zero, Matrix.map_one _ (map_zero _) (map_one _)]
 
 private theorem coe_conj_conj_long (A : Type v) [CommRing A] (a : A) :
-    (((weylPoint 1 A * (weylPoint 0 A *
-      rootSubgroupPoints (.inl 1) A (Multiplicative.ofAdd a) * (weylPoint 0 A)⁻¹) *
-      (weylPoint 1 A)⁻¹ : points A) : Matrix.GeneralLinearGroup (Fin 7) A) :
+    (((rankOneWord 1 A * (rankOneWord 0 A *
+      rootSubgroupPoints (.inl 1) A (Multiplicative.ofAdd a) * (rankOneWord 0 A)⁻¹) *
+      (rankOneWord 1 A)⁻¹ : points A) : Matrix.GeneralLinearGroup (Fin 7) A) :
       Matrix (Fin 7) (Fin 7) A) = 1 + a • (L 2).map (Int.castRingHom A) := by
-  simp only [Subgroup.coe_mul, Subgroup.coe_inv, Units.val_mul, coe_weylPoint,
-    coe_weylPoint_inv, coe_long, Matrix.mul_add, Matrix.add_mul, Matrix.mul_one,
-    Matrix.mul_smul, Matrix.smul_mul, ← Matrix.map_mul, W_orthogonal,
+  simp only [Subgroup.coe_mul, Subgroup.coe_inv, Units.val_mul, coe_rankOneWord_inv,
+    coe_rankOneWord, ← Matrix.transpose_map, coe_long, Matrix.mul_add, Matrix.add_mul,
+    Matrix.mul_one, Matrix.mul_smul, Matrix.smul_mul, ← Matrix.map_mul, W_orthogonal,
     W_conj_L_zero, W_conj_L_one, Matrix.map_one _ (map_zero _) (map_one _)]
 
 /-- The long-root A₂ Chevalley commutator, with the nonsimple root parameters normalized by
 pinned rank-one words. The first node is short and the second long (Bourbaki numbering). -/
-theorem commutatorElement_long_conj_long (A : Type v) [CommRing A] (a b : A) :
-    let n := fun i : Fin 2 =>
-      rootSubgroupPoints (.inl i) A (Multiplicative.ofAdd 1) *
-        rootSubgroupPoints (.inr i) A (Multiplicative.ofAdd (-1)) *
-        rootSubgroupPoints (.inl i) A (Multiplicative.ofAdd 1)
+theorem commutatorElement_rootSubgroupPoints_rankOneWord_conj_rootSubgroupPoints
+    (A : Type v) [CommRing A] (a b : A) :
     ⁅rootSubgroupPoints (.inl 1) A (Multiplicative.ofAdd a),
-      n 0 * rootSubgroupPoints (.inl 1) A (Multiplicative.ofAdd b) * (n 0)⁻¹⁆ =
-      (n 1 * n 0) * rootSubgroupPoints (.inl 1) A (Multiplicative.ofAdd (a * b)) *
-        (n 1 * n 0)⁻¹ := by
-  dsimp only
-  -- The private abbreviation is exactly the displayed rank-one word; using it here
-  -- lets the characteristic matrix lemmas recognize the conjugating factors.
-  change ⁅rootSubgroupPoints (.inl 1) A (Multiplicative.ofAdd a),
-      weylPoint 0 A * rootSubgroupPoints (.inl 1) A (Multiplicative.ofAdd b) *
-        (weylPoint 0 A)⁻¹⁆ =
-    (weylPoint 1 A * weylPoint 0 A) *
-      rootSubgroupPoints (.inl 1) A (Multiplicative.ofAdd (a * b)) *
-        (weylPoint 1 A * weylPoint 0 A)⁻¹
+      rankOneWord 0 A * rootSubgroupPoints (.inl 1) A (Multiplicative.ofAdd b) *
+        (rankOneWord 0 A)⁻¹⁆ =
+      (rankOneWord 1 A * rankOneWord 0 A) *
+        rootSubgroupPoints (.inl 1) A (Multiplicative.ofAdd (a * b)) *
+        (rankOneWord 1 A * rankOneWord 0 A)⁻¹ := by
   apply Subtype.ext
   apply Units.ext
   have hcomm := map_commutatorElement (points A).subtype
     (rootSubgroupPoints (.inl 1) A (Multiplicative.ofAdd a))
-    (weylPoint 0 A * rootSubgroupPoints (.inl 1) A (Multiplicative.ofAdd b) *
-      (weylPoint 0 A)⁻¹)
+    (rankOneWord 0 A * rootSubgroupPoints (.inl 1) A (Multiplicative.ofAdd b) *
+      (rankOneWord 0 A)⁻¹)
   simp only [Subgroup.subtype_apply] at hcomm
   rw [hcomm]
   rw [Units.val_commutatorElement_eq_one_add_lie _ _
