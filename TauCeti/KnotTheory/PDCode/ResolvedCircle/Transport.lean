@@ -384,25 +384,25 @@ theorem relabel_crossinglessEquiv (D : PDCode n) (half : Fin (4 * n) ≃ Fin (4 
   (rfl)
 
 /-- **Mirroring** exchanges the `A`- and `B`-smoothings, so it is a smoothing equivalence from `D`
-smoothed by the negated state to the mirror smoothed by `s`, which is the identity on
-half-edges. -/
-def mirror (D : PDCode n) (s : Fin n → Bool) :
-    D.SmoothingEquiv (fun i ↦ !s i) D.mirror s where
+smoothed by a state `t` to the mirror smoothed by the complementary state `s`, which is the
+identity on half-edges. -/
+def mirror (D : PDCode n) {s t : Fin n → Bool} (h : ∀ i, t i = !s i) :
+    D.SmoothingEquiv t D.mirror s where
   halfEdgeEquiv := Equiv.refl _
   crossinglessEquiv := finCongr D.mirror_crossinglessComponentCount.symm
   edgePair_apply x := by rw [mirror_edgePair, refl_apply, refl_apply]
-  statePerm_apply x := by rw [statePerm_mirror, refl_apply, refl_apply]
+  statePerm_apply x := by rw [statePerm_mirror, refl_apply, refl_apply, ← funext h]
 
 /-- The mirror smoothing equivalence is the identity on half-edges. -/
 @[simp]
-theorem mirror_halfEdgeEquiv (D : PDCode n) (s : Fin n → Bool) :
-    (mirror D s).halfEdgeEquiv = Equiv.refl _ :=
+theorem mirror_halfEdgeEquiv (D : PDCode n) {s t : Fin n → Bool} (h : ∀ i, t i = !s i) :
+    (mirror D h).halfEdgeEquiv = Equiv.refl _ :=
   (rfl)
 
 /-- The mirror smoothing equivalence keeps the labels of the crossing-free circles. -/
 @[simp]
-theorem mirror_crossinglessEquiv (D : PDCode n) (s : Fin n → Bool) :
-    (mirror D s).crossinglessEquiv = finCongr D.mirror_crossinglessComponentCount.symm :=
+theorem mirror_crossinglessEquiv (D : PDCode n) {s t : Fin n → Bool} (h : ∀ i, t i = !s i) :
+    (mirror D h).crossinglessEquiv = finCongr D.mirror_crossinglessComponentCount.symm :=
   (rfl)
 
 /-- **Reading a crossing from another slot** does not change the smoothed diagram: it is a
