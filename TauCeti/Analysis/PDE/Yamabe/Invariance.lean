@@ -57,9 +57,6 @@ spaces, Aubin–Talenti bubbles, and round spheres.
 * `TauCeti.Yamabe.yamabeQuotient_rescale` and
   `TauCeti.Yamabe.yamabeQuotient_rescale_of_compactSpace`: conformal invariance
   `Q_ĝ(v) = Q_g(u v)`.
-* `TauCeti.Yamabe.yamabeQuotient_one`, `TauCeti.Yamabe.yamabeQuotient_const`, and
-  `TauCeti.Yamabe.yamabeQuotient_const_of_scalarCurvature_eq_const`: value of `Q_g` on nonzero
-  constant functions on compact manifolds.
 * `TauCeti.Yamabe.integral_scalarCurvature_rescale_div_riemannianTotalVolume_rpow_eq_yamabeQuotient`
   — `(∫ Scal_ĝ dV_ĝ) / Vol(ĝ) ^ (2 / pₙ) = Q_g(u)` on a closed manifold (`n ≠ 2`).
 * `TauCeti.Yamabe.forall_hasDerivAt_yamabeQuotient_add_smul_iff_exists_scalarCurvature_rescale_eq`:
@@ -181,11 +178,15 @@ theorem yamabeQuotient_pullback
     {N : Type*} [TopologicalSpace N] [ChartedSpace H' N] [T2Space N] [SigmaCompactSpace N]
     [IsManifold J ∞ N]
     (g : ContMDiffRiemannianMetric J ∞ E (fun y : N ↦ TangentSpace J y))
-    (Φ : M ≃ₘ^∞⟮I, J⟯ N) (hf : ContMDiff I J (∞ + 1) Φ)
-    (hinj : ∀ x, Function.Injective (mfderiv I J Φ x)) (u : N → ℝ) :
+    (Φ : M ≃ₘ^∞⟮I, J⟯ N) (u : N → ℝ) :
     yamabeQuotient I
-        ((u ∘ Φ) ∘ (WithMetric.ofWithMetric : WithMetric (g.pullback Φ hf hinj) → M)) =
+        ((u ∘ Φ) ∘ (WithMetric.ofWithMetric :
+          WithMetric (g.pullback Φ Φ.contMDiff
+            fun _ ↦ (Φ.isInvertible_mfderiv (WithTop.coe_ne_zero.2 top_ne_zero)).injective) → M)) =
       yamabeQuotient J (u ∘ (WithMetric.ofWithMetric : WithMetric g → N)) := by
+  have hf : ContMDiff I J (∞ + 1) Φ := Φ.contMDiff
+  have hinj : ∀ x, Function.Injective (mfderiv I J Φ x) :=
+    fun _ ↦ (Φ.isInvertible_mfderiv (WithTop.coe_ne_zero.2 top_ne_zero)).injective
   let _ : MeasurableSpace M := borel M
   have _ : BorelSpace M := ⟨rfl⟩
   let _ : MeasurableSpace N := borel N
@@ -378,74 +379,6 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimension
   {M : Type*} [TopologicalSpace M] [ChartedSpace H M] [T2Space M] [CompactSpace M]
   [IsManifold I ∞ M]
 
-section InstalledMetric
-
-variable [MeasurableSpace M] [BorelSpace M]
-  [RiemannianBundle (fun x : M ↦ TangentSpace I x)]
-  [IsContMDiffRiemannianBundle I ∞ E (fun x : M ↦ TangentSpace I x)]
-  [IsContinuousRiemannianBundle E (fun x : M ↦ TangentSpace I x)]
-
-/-- On a compact Riemannian manifold, the Yamabe quotient of the constant function `1` is the
-volume-normalized total scalar curvature `(∫ Scal_g dV_g) / Vol(g) ^ (2 / pₙ)`. -/
-theorem yamabeQuotient_one :
-    yamabeQuotient I (fun _ : M ↦ (1 : ℝ)) =
-      (∫ x, (CovariantDerivative.leviCivitaConnection I M).scalarCurvature x
-          ∂riemannianVolume I M) /
-        riemannianTotalVolume I M ^ (2 / criticalExponent (finrank ℝ E)) := by
-  rw [yamabeQuotient_def]
-  simp only [mgradient_const, Pi.zero_apply, norm_zero, ne_eq, OfNat.ofNat_ne_zero,
-    not_false_eq_true, zero_pow, mul_zero, zero_add, one_pow, mul_one, abs_one, Real.one_rpow,
-    integral_const, smul_eq_mul, ← riemannianTotalVolume_def]
-
-/-- On a compact Riemannian manifold of dimension `n ∉ {0, 2}`, the Yamabe quotient of any nonzero
-constant function `c` equals the volume-normalized total scalar curvature
-`(∫ Scal_g dV_g) / Vol(g) ^ (2 / pₙ)`. (At `n = 0` or `n = 2`, `pₙ = 0`, so the denominator is `1`
-while the numerator scales by `c²`.) -/
-theorem yamabeQuotient_const (hn₀ : finrank ℝ E ≠ 0) (hn₂ : finrank ℝ E ≠ 2)
-    {c : ℝ} (hc : c ≠ 0) :
-    yamabeQuotient I (fun _ : M ↦ c) =
-      (∫ x, (CovariantDerivative.leviCivitaConnection I M).scalarCurvature x
-          ∂riemannianVolume I M) /
-        riemannianTotalVolume I M ^ (2 / criticalExponent (finrank ℝ E)) := by
-  have hp : criticalExponent (finrank ℝ E) ≠ 0 := by
-    rw [criticalExponent_def]
-    exact div_ne_zero (mul_ne_zero two_ne_zero (Nat.cast_ne_zero.2 hn₀))
-      (sub_ne_zero.2 (by exact_mod_cast hn₂))
-  have hc2 : (|c| ^ criticalExponent (finrank ℝ E)) ^ (2 / criticalExponent (finrank ℝ E)) =
-      c ^ 2 := by
-    rw [← Real.rpow_mul (abs_nonneg c), mul_div_cancel₀ _ hp, Real.rpow_two, sq_abs]
-  rw [yamabeQuotient_def]
-  simp only [mgradient_const, Pi.zero_apply, norm_zero, ne_eq, OfNat.ofNat_ne_zero,
-    not_false_eq_true, zero_pow, mul_zero, zero_add, ← mul_comm (c ^ 2), integral_const_mul,
-    integral_const, smul_eq_mul, ← riemannianTotalVolume_def]
-  rw [mul_comm (riemannianTotalVolume I M),
-    Real.mul_rpow (Real.rpow_nonneg (abs_nonneg c) _) riemannianTotalVolume_nonneg, hc2,
-    mul_div_mul_left _ _ (pow_ne_zero 2 hc)]
-
-/-- On a nonempty compact Riemannian manifold of dimension `n ∉ {0, 2}` with constant scalar
-curvature `S`, every nonzero constant function has Yamabe quotient `S · Vol(g) ^ (2 / n)`. -/
-theorem yamabeQuotient_const_of_scalarCurvature_eq_const [Nonempty M]
-    (hn₀ : finrank ℝ E ≠ 0) (hn₂ : finrank ℝ E ≠ 2) {S : ℝ}
-    (hS : ∀ x : M, (CovariantDerivative.leviCivitaConnection I M).scalarCurvature x = S)
-    {c : ℝ} (hc : c ≠ 0) :
-    yamabeQuotient I (fun _ : M ↦ c) =
-      S * riemannianTotalVolume I M ^ (2 / (finrank ℝ E : ℝ)) := by
-  have hvol : 0 < riemannianTotalVolume I M := riemannianTotalVolume_pos
-  have hN0 : (finrank ℝ E : ℝ) ≠ 0 := Nat.cast_ne_zero.2 hn₀
-  have hexp : 1 - 2 / criticalExponent (finrank ℝ E) = 2 / (finrank ℝ E : ℝ) := by
-    rw [two_div_criticalExponent]
-    field_simp
-    ring
-  have hdiv : riemannianTotalVolume I M /
-      riemannianTotalVolume I M ^ (2 / criticalExponent (finrank ℝ E)) =
-      riemannianTotalVolume I M ^ (2 / (finrank ℝ E : ℝ)) := by
-    rw [← hexp, Real.rpow_sub hvol, Real.rpow_one]
-  rw [yamabeQuotient_const hn₀ hn₂ hc]
-  simp_rw [hS]
-  rw [integral_const, smul_eq_mul, ← riemannianTotalVolume_def, mul_comm _ S, mul_div_assoc, hdiv]
-
-end InstalledMetric
-
 /-- **Volume-normalized total scalar curvature equals the Yamabe quotient.** On a closed manifold of
 dimension `n ≠ 2`, for a positive function `u` whose conformal metric `ĝ = u ^ (4 / (n - 2)) g` is
 smooth, `(∫ Scal_ĝ dV_ĝ) / Vol(ĝ) ^ (2 / pₙ) = Q_g(u)`. -/
@@ -462,8 +395,11 @@ theorem integral_scalarCurvature_rescale_div_riemannianTotalVolume_rpow_eq_yamab
       yamabeQuotient I (u ∘ (WithMetric.ofWithMetric : WithMetric g → M)) := by
   have h := yamabeQuotient_rescale_of_compactSpace (hf := hf) (hf_pos := hf_pos) g hn hu_pos
     (v := 1) contMDiff_const
-  rw [mul_one] at h
-  change yamabeQuotient I (fun _ ↦ (1 : ℝ)) = _ at h
+  have h1 : ((1 : M → ℝ) ∘ (WithMetric.ofWithMetric :
+      WithMetric (g.rescale _ hf hf_pos) → M)) = fun _ ↦ (1 : ℝ) := by
+    ext
+    simp
+  rw [mul_one, h1] at h
   rw [← h, yamabeQuotient_one]
   congr 2
   ext x
@@ -600,12 +536,14 @@ theorem yamabeQuotient_sphereRoundMetricOfRadius_const (hn : n ≠ 2) {r : ℝ} 
       sphereYamabeConstant n := by
   let _ : MeasurableSpace E := borel E
   have _ : BorelSpace E := ⟨rfl⟩
-  change yamabeQuotient (𝓡 n)
-      ((fun _ : sphere (0 : E) 1 ↦ c) ∘
-        (WithMetric.ofWithMetric :
-          WithMetric (sphereRoundMetricOfRadius (E := E) (n := n) r hr) → sphere (0 : E) 1)) =
-    sphereYamabeConstant n
-  rw [sphereRoundMetricOfRadius_def, yamabeQuotient_rescale_const _ (pow_pos hr 2),
+  have hcomp :
+      (fun _ : WithMetric (sphereRoundMetricOfRadius (E := E) (n := n) r hr) ↦ c) =
+        (fun _ : sphere (0 : E) 1 ↦ c) ∘
+          (WithMetric.ofWithMetric :
+            WithMetric (sphereRoundMetricOfRadius (E := E) (n := n) r hr) → sphere (0 : E) 1) := by
+    ext
+    simp
+  rw [hcomp, sphereRoundMetricOfRadius_def, yamabeQuotient_rescale_const _ (pow_pos hr 2),
     WithMetric.yamabeQuotient_comp_ofWithMetric_of_riemannianBundle_eq
       (ContMDiffRiemannianMetric.toRiemannianMetric_ofLE _ _).symm,
     yamabeQuotient_sphere_const hn hc]

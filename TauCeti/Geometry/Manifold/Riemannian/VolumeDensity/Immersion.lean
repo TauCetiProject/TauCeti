@@ -90,12 +90,12 @@ theorem chartVolumeDensity_of_inner_mfderiv_eq (α : M) {x : M} (hx : x ∈ (cha
   have hb : (fun i ↦ T (u i)) = b := funext fun i ↦ u.toBasis.constr_basis ℝ b i
   have hG : chartGramMatrix (I := I) α x = Matrix.gram ℝ (fun i ↦ (A ∘ₗ T) (u i)) := by
     ext i j
-    rw [chartGramMatrix_apply, ← hinner, TauCeti.Manifold.inner_tangentSpace_vectorSpace]
-    change inner ℝ (mvfderiv I ι x (chartLocalFrame (I := I) α i x))
-        (mvfderiv I ι x (chartLocalFrame (I := I) α j x)) = _
-    rw [mvfderiv_chartLocalFrame α hx hι i, mvfderiv_chartLocalFrame α hx hι j,
-      Matrix.gram_apply, LinearMap.comp_apply, LinearMap.comp_apply, congrFun hb i, congrFun hb j]
-    rfl
+    rw [chartGramMatrix_apply, ← hinner, TauCeti.Manifold.inner_tangentSpace_vectorSpace,
+      NormedSpace.fromTangentSpace_apply, NormedSpace.fromTangentSpace_apply,
+      ← mvfderiv_apply_eq_mfderiv_apply, ← mvfderiv_apply_eq_mfderiv_apply,
+      mvfderiv_chartLocalFrame α hx hι i, mvfderiv_chartLocalFrame α hx hι j,
+      Matrix.gram_apply, LinearMap.comp_apply, LinearMap.comp_apply, congrFun hb i, congrFun hb j,
+      ContinuousLinearMap.coe_coe]
   have hdet_b : (Matrix.gram ℝ b).det = T.normDet ^ 2 := by
     simpa only [RCLike.ofReal_real_eq_id, id_eq, hb] using (T.normDet_sq_eq_det_gram u).symm
   have hdet_AT : (Matrix.gram ℝ (fun i ↦ (A ∘ₗ T) (u i))).det = (A ∘ₗ T).normDet ^ 2 := by
