@@ -210,13 +210,18 @@ theorem smul_mk_eq_mk (M : Model K X) {g : k ≃ₐ[ℚ] k}
     (hg : ∀ c : K, g (algebraMap K k c) = algebraMap K k c) :
     g • IsoClass.mk X = IsoClass.mk X := by
   let σ : k ≃ₐ[K] k := AlgEquiv.ofRingEquiv (f := (g : k ≃+* k)) hg
+  -- `σ` is `g` viewed as a `K`-algebra automorphism, so undoing `g` and then applying `σ` is the
+  -- identity.
+  have hσ : (g : k ≃+* k).symm.trans (σ : k ≃+* k) = RingEquiv.refl k := by
+    ext c
+    rw [RingEquiv.trans_apply, AlgEquiv.coe_toRingEquiv, AlgEquiv.ofRingEquiv_apply,
+      RingEquiv.apply_symm_apply, RingEquiv.refl_apply]
   refine IsoClass.smul_mk_eq_mk_iff.mpr
     ⟨AlgEquiv.ofRingEquiv (f := (conjRingEquiv (g : k ≃+* k) X).symm.trans (M.baseChangeAut σ))
       fun r ↦ ?_⟩
   rw [RingEquiv.trans_apply, algebraMap_conj, RingEquiv.symm_apply_apply,
     baseChangeAut_algebraMap_ratFunc, ← RingEquiv.trans_apply, ← RatFunc.mapRingEquiv_trans,
-    show (g : k ≃+* k).symm.trans (σ : k ≃+* k) = RingEquiv.refl k from
-      RingEquiv.ext g.apply_symm_apply, RatFunc.mapRingEquiv_refl, RingEquiv.refl_apply]
+    hσ, RatFunc.mapRingEquiv_refl, RingEquiv.refl_apply]
 
 end Model
 
