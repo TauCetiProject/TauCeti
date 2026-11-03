@@ -58,14 +58,9 @@ theorem mass_le_iff_exists_extension {𝓕 : Type*} [FunLike 𝓕 𝓓^{n}(Ω, F
     let e := LinearEquiv.ofInjective j (TestFunction.injective_toBoundedContinuousFunctionCLM ℝ)
     let f : LinearMap.range j →ₗ[ℝ] ℝ := (LinearMap.ofClass T).comp e.symm.toLinearMap
     have hf (x : LinearMap.range j) : ‖f x‖ ≤ C * ‖x‖ := by
-      have h := (enorm_apply_le_mass_mul T (e.symm x)).trans
-        (mul_le_mul' hT le_rfl)
       have hx : (((e.symm x : 𝓓^{n}(Ω, F)) : E →ᵇ F)) = x :=
         congrArg Subtype.val (e.apply_symm_apply x)
-      rw [hx] at h
-      have h' : ‖T (e.symm x)‖₊ ≤ C * ‖(x : E →ᵇ F)‖₊ := by
-        simpa only [enorm, ← ENNReal.coe_mul, ENNReal.coe_le_coe] using h
-      exact_mod_cast h'
+      simpa [f, hx] using norm_apply_le_of_mass_le T hT (e.symm x)
     let f' : StrongDual ℝ (LinearMap.range j) := f.mkContinuous C hf
     obtain ⟨L, hL, hnorm⟩ := exists_extension_norm_eq (LinearMap.range j) f'
     refine ⟨L, hnorm.trans_le (f'.opNorm_le_bound C.2 hf), fun φ => ?_⟩
@@ -81,7 +76,7 @@ theorem mass_le_iff_exists_extension {𝓕 : Type*} [FunLike 𝓕 𝓓^{n}(Ω, F
     have hb : ‖(φ : E →ᵇ F)‖ ≤ 1 := (BoundedContinuousFunction.norm_le (by norm_num)).2 hφ
     have h := (L.le_opNorm (φ : E →ᵇ F)).trans
       ((mul_le_mul_of_nonneg_left hb (norm_nonneg L)).trans (by simpa using hL))
-    exact_mod_cast h
+    simpa only [ofReal_norm, ENNReal.ofReal_coe_nnreal] using ENNReal.ofReal_le_ofReal h
 
 /-- The evaluation functions of real continuous linear functionals with mass at most
 `C` form a compact subset of the product of copies of `ℝ` indexed by test functions.
@@ -99,13 +94,16 @@ theorem isCompact_image_coe_mass_le (C : ℝ≥0) :
     obtain ⟨L, hL, heq⟩ := (mass_le_iff_exists_extension T C).1 hT
     exact ⟨StrongDual.toWeakDual L, by simpa using hL, funext heq⟩
   · rintro ⟨L, hL, rfl⟩
+    -- Both equalities below are pointwise restriction: CLM composition evaluates by
+    -- composition, the test inclusion preserves values, and toStrongDual only changes topology.
     refine ⟨L.toStrongDual ∘L TestFunction.toBoundedContinuousFunctionCLM ℝ, ?_, rfl⟩
     exact (mass_le_iff_exists_extension _ C).2 ⟨L.toStrongDual, by simpa using hL, fun _ => rfl⟩
 
 variable [FiniteDimensional ℝ E]
 
-/-- A common closed support constraint is preserved by weak limits in a mass-bounded
-family. The closed set need not be compact. -/
+/-- The evaluation functions of real continuous linear functionals with mass at most
+`C` and distributional support in a closed set `K` form a compact set in the product
+topology. The closed set `K` need not be compact. -/
 theorem isCompact_image_coe_mass_le_dsupport_subset (C : ℝ≥0) {K : Set E}
     (hK : IsClosed K) :
     IsCompact ((fun T : 𝓓^{n}(Ω, F) →L[ℝ] ℝ => (T : 𝓓^{n}(Ω, F) → ℝ)) ''
@@ -136,16 +134,13 @@ theorem isCompact_image_coe_mass_le_comp_extDerivCLM_le_dsupport_subset
   have hd : Continuous (fun t : 𝓓(Ω, E [⋀^Fin (k + 1)]→L[ℝ] F) → ℝ =>
       t ∘ TestFunction.extDerivCLM (k := k)) :=
     continuous_pi fun φ => continuous_apply (TestFunction.extDerivCLM φ)
-  have hclosed : IsClosed {t : 𝓓(Ω, E [⋀^Fin (k + 1)]→L[ℝ] F) → ℝ |
-      mass (t ∘ TestFunction.extDerivCLM (k := k)) ≤ C'} :=
+  have hclosed : IsClosed ((fun t : 𝓓(Ω, E [⋀^Fin (k + 1)]→L[ℝ] F) → ℝ =>
+      t ∘ TestFunction.extDerivCLM (k := k)) ⁻¹' {t | mass t ≤ C'}) :=
     (lowerSemicontinuous_mass.isClosed_preimage (C' : ℝ≥0∞)).preimage hd
-  convert (isCompact_image_coe_mass_le_dsupport_subset
-    (Ω := Ω) (n := ⊤) (F := E [⋀^Fin (k + 1)]→L[ℝ] F) C hK).inter_right hclosed using 1
-  ext t
-  constructor
-  · rintro ⟨T, ⟨hT, hdT, hTK⟩, rfl⟩
-    exact ⟨⟨T, ⟨hT, hTK⟩, rfl⟩, hdT⟩
-  · rintro ⟨⟨T, ⟨hT, hTK⟩, rfl⟩, hdT⟩
-    exact ⟨T, ⟨hT, hdT, hTK⟩, rfl⟩
+  have hcompact := (isCompact_image_coe_mass_le_dsupport_subset
+    (Ω := Ω) (n := ⊤) (F := E [⋀^Fin (k + 1)]→L[ℝ] F) C hK).inter_right hclosed
+  rw [← Set.image_inter_preimage] at hcompact
+  simpa only [preimage_ofPred_eq, inter_ofPred_eq_sep, mem_ofPred_eq, coe_comp,
+    ← and_assoc, and_right_comm] using hcompact
 
 end Distribution

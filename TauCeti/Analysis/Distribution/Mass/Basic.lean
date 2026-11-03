@@ -62,7 +62,7 @@ public section
 noncomputable section
 
 open MeasureTheory TopologicalSpace Filter Set
-open scoped BoundedContinuousFunction ENNReal Distributions Topology
+open scoped BoundedContinuousFunction NNReal ENNReal Distributions Topology
 
 namespace Distribution
 
@@ -212,6 +212,12 @@ theorem localMass_comp_le_of_enorm_apply_le {G : Type*} [NormedAddCommGroup G] [
 theorem enorm_apply_le_mass_mul (T : 𝓕) (φ : 𝓓^{n}(Ω, F)) :
     ‖T φ‖ₑ ≤ mass T * ‖(φ : E →ᵇ F)‖ₑ := by
   simpa using enorm_apply_le_localMass_mul T (subset_univ (tsupport φ))
+
+/-- A finite mass bound controls each evaluation by the supremum norm of the test. -/
+theorem norm_apply_le_of_mass_le (T : 𝓕) {C : ℝ≥0} (hT : mass T ≤ C)
+    (φ : 𝓓^{n}(Ω, F)) : ‖T φ‖ ≤ C * ‖(φ : E →ᵇ F)‖ := by
+  have h := (enorm_apply_le_mass_mul T φ).trans (mul_le_mul' hT le_rfl)
+  simpa using ENNReal.toReal_mono (by finiteness) h
 
 /-- **Mass zero iff current zero.** -/
 theorem mass_eq_zero_iff (T : 𝓕) : mass T = 0 ↔ ⇑T = 0 := by
