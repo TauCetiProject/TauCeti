@@ -171,9 +171,10 @@ variable {𝕜 E : Type*} [RCLike 𝕜] [NormedAddCommGroup E] [NormedSpace 𝕜
   [FiniteDimensional 𝕜 E]
 
 /-- Over an `RCLike` field, the closed unit ball of a finite-dimensional normed space is in John's
-position: a linear map sending the unit ball into itself has operator norm at most `1`, hence
-determinant of norm at most `1`. -/
+position. -/
 theorem isJohnPosition_closedBall : IsJohnPosition 𝕜 (closedBall (0 : E) 1) := by
+  -- A linear map sending the unit ball into itself has operator norm at most `1`, hence
+  -- determinant of norm at most `1`.
   refine ⟨subset_rfl, fun S hS ↦ ?_⟩
   have h : ‖S‖ ≤ 1 := ContinuousLinearMap.opNorm_le_of_unit_norm zero_le_one fun x hx ↦
     mem_closedBall_zero_iff.1 <| hS <| mem_closedBall_zero_iff.2 hx.le

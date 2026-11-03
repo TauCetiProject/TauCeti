@@ -108,10 +108,11 @@ variable {𝕜 E F : Type*} [NontriviallyNormedField 𝕜] [CompleteSpace 𝕜]
   [NormedAddCommGroup F] [NormedSpace 𝕜 F]
 
 /-- Out of a finite-dimensional normed space over a complete field, the operators sending a
-neighbourhood `s` of `0` into a compact set `K` form a compact set: an operator is determined by
-its values on a basis contained in `s`, and these values lie in `K`. -/
+neighbourhood `s` of `0` into a compact set `K` form a compact set. -/
 theorem IsCompact.isCompact_setOfPred_mapsTo {K : Set F} (hK : IsCompact K) {s : Set E}
     (hs : s ∈ 𝓝 (0 : E)) : IsCompact {T : E →L[𝕜] F | MapsTo T s K} := by
+  -- An operator is determined by its values on a basis contained in `s`, and these values lie
+  -- in `K`.
   let v := Module.finBasis 𝕜 E
   -- Some nonzero multiple `a • v` of a basis lies in `s`.
   have hev : ∀ᶠ a in 𝓝[≠] (0 : 𝕜), ∀ i, a • v i ∈ s := eventually_all.2 fun i ↦

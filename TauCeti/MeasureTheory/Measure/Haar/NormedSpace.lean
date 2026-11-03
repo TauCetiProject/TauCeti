@@ -318,12 +318,12 @@ theorem _root_.ContinuousLinearMap.abs_det_le_opNorm_pow
     (ENNReal.mul_le_mul_iff_left (measure_ball_pos mu 0 one_pos).ne' measure_ball_lt_top.ne).1 h
 
 /-- **The determinant is bounded by the operator norm** over an `RCLike` field: `‖det f‖ ≤ ‖f‖ ^ n`
-for a linear endomorphism `f` of a normed space of finite dimension `n`. Restricting scalars to `ℝ`
-turns the determinant into its field norm, whose absolute value is `‖det f‖ ^ finrank ℝ 𝕜` by
-`TauCeti.RCLike.abs_algebraNorm_eq_norm_pow` and is bounded by `abs_det_le_opNorm_pow`. -/
+for a linear endomorphism `f` of a normed space of finite dimension `n`. -/
 theorem _root_.ContinuousLinearMap.norm_det_le_opNorm_pow {𝕜 E : Type*} [RCLike 𝕜]
     [NormedAddCommGroup E] [NormedSpace 𝕜 E] [FiniteDimensional 𝕜 E] (f : E →L[𝕜] E) :
     ‖f.det‖ ≤ ‖f‖ ^ finrank 𝕜 E := by
+  -- Restricting scalars to `ℝ` turns the determinant into its field norm, whose absolute value is
+  -- `‖det f‖ ^ finrank ℝ 𝕜` and is bounded by `abs_det_le_opNorm_pow`.
   let _ : NormedSpace ℝ E := NormedSpace.restrictScalars ℝ 𝕜 E
   have : IsScalarTower ℝ 𝕜 E := ⟨fun r c x ↦ by simp [Algebra.smul_def, mul_smul]⟩
   have : FiniteDimensional ℝ E := Module.Finite.trans 𝕜 E
