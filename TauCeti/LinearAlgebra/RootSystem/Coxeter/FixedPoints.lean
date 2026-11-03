@@ -68,7 +68,7 @@ theorem wordProd_smul_eq_list_prod_map_preReflection (l : List b.support) (y : M
   | nil => simp
   | cons i l ih =>
     rw [wordProd_cons, mul_smul, ih, weylGroup.ofIdx_smul, Equiv.reflection_smul,
-      reflection_apply, List.map_cons, List.prod_cons, Module.End.mul_apply,
+      reflection_apply, List.map_cons, List.prod_cons, mul_apply_eq_comp,
       Module.preReflection_apply]
 
 /-- **Fixed vectors of a product of distinct simple reflections.** A word in the simple

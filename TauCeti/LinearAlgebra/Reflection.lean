@@ -98,7 +98,7 @@ theorem list_prod_map_preReflection_apply_sub_mem_span (l : List ι) (y : M) :
   induction l with
   | nil => simp
   | cons i l ih =>
-    rw [List.map_cons, List.prod_cons, End.mul_apply, preReflection_apply, sub_right_comm]
+    rw [List.map_cons, List.prod_cons, mul_apply_eq_comp, preReflection_apply, sub_right_comm]
     refine sub_mem (Submodule.span_mono (Set.image_mono fun j hj ↦ ?_) ih)
       (Submodule.smul_mem _ _ (Submodule.subset_span ⟨i, by simp, rfl⟩))
     exact List.mem_cons_of_mem i hj
@@ -115,7 +115,7 @@ theorem list_prod_map_preReflection_apply_eq_self_iff (hv : LinearIndependent R 
   | nil => simp
   | cons i l ih =>
     rw [List.nodup_cons] at hl
-    rw [List.map_cons, List.prod_cons, End.mul_apply, preReflection_apply, List.forall_mem_cons,
+    rw [List.map_cons, List.prod_cons, mul_apply_eq_comp, preReflection_apply, List.forall_mem_cons,
       ← ih hl.2]
     set z := (l.map fun i ↦ preReflection (v i) (g i)).prod y
     -- The vectors `g i z • v i` and `z - y` lie in the spans of disjoint sets of the `v j`.
