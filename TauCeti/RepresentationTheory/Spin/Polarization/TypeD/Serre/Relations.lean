@@ -586,7 +586,7 @@ theorem ad_pow_lie_typeDSimpleRootBivector_typeDSimpleRootBivector
   by_cases hij : typeDAdjacent n i j
   · rw [ite_eq_left hij, pow_one, LieAlgebra.ad_apply]
     exact P.lie_typeDSimpleRootBivector_lie_typeDSimpleRootBivector b (by omega) i j
-  · rw [ite_eq_right hij, pow_zero, Module.End.one_apply]
+  · rw [ite_eq_right hij, pow_zero, one_apply_eq_self]
     exact P.lie_typeDSimpleRootBivector_of_not_adjacent b hn i j hij
 
 /-- The higher Serre relation for the negative type-`D` spin representatives. -/
@@ -604,7 +604,7 @@ theorem ad_pow_lie_typeDSimpleNegativeRootBivector_typeDSimpleNegativeRootBivect
   · rw [ite_eq_left hij, pow_one, LieAlgebra.ad_apply]
     exact P.lie_typeDSimpleNegativeRootBivector_lie_typeDSimpleNegativeRootBivector b
       (by omega) i j
-  · rw [ite_eq_right hij, pow_zero, Module.End.one_apply]
+  · rw [ite_eq_right hij, pow_zero, one_apply_eq_self]
     exact P.lie_typeDSimpleNegativeRootBivector_of_not_adjacent b hn i j hij
 
 /-- The Bourbaki-numbered coroot and root representatives of the type-`D` spin representation

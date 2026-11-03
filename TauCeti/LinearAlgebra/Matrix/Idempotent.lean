@@ -60,7 +60,7 @@ variable {A : Type*} [Semiring A] {ι κ : Type*} [Fintype ι] [Fintype κ]
 theorem IsIdempotentElem.vecMulLinear {e : Matrix ι ι A} (he : IsIdempotentElem e) :
     IsIdempotentElem e.vecMulLinear := by
   ext v : 1
-  simp [Module.End.mul_apply, Matrix.vecMul_vecMul, he.eq]
+  simp [mul_apply_eq_comp, Matrix.vecMul_vecMul, he.eq]
 
 /-- The range of right multiplication by an idempotent matrix `e` consists of the row vectors
 fixed by `e`. -/
