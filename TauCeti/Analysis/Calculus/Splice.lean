@@ -60,10 +60,12 @@ def spliceCutoff : ℝ → ℝ :=
   (⟨1, 2, one_pos, one_lt_two⟩ : ContDiffBump (0 : ℝ))
 
 /-- The cutoff is `1` on `[-1, 1]`. -/
+@[simp]
 theorem spliceCutoff_eq_one {x : ℝ} (hx : |x| ≤ 1) : spliceCutoff x = 1 :=
   ContDiffBump.one_of_mem_closedBall _ (by simpa [Real.dist_eq] using hx)
 
 /-- The cutoff vanishes off `(-2, 2)`. -/
+@[simp]
 theorem spliceCutoff_eq_zero {x : ℝ} (hx : 2 ≤ |x|) : spliceCutoff x = 0 :=
   ContDiffBump.zero_of_le_dist _ (by simpa [Real.dist_eq] using hx)
 
@@ -77,6 +79,7 @@ theorem spliceCutoff_le_one (x : ℝ) : spliceCutoff x ≤ 1 := ContDiffBump.le_
 theorem contDiff_spliceCutoff {n : ℕ∞} : ContDiff ℝ n spliceCutoff := ContDiffBump.contDiff _
 
 /-- The derivative of the cutoff vanishes off `[-2, 2]`. -/
+@[simp]
 theorem deriv_spliceCutoff_eq_zero {x : ℝ} (hx : 2 < |x|) : deriv spliceCutoff x = 0 := by
   have h : spliceCutoff =ᶠ[nhds x] fun _ => (0 : ℝ) := by
     filter_upwards [(isOpen_lt continuous_const continuous_abs).mem_nhds hx] with y hy
@@ -107,16 +110,19 @@ theorem spliceAlong_apply :
   rw [spliceAlong]
 
 /-- Where `2 δ ≤ |π x|`, the spliced map is `k`. -/
+@[simp]
 theorem spliceAlong_of_le_abs (hδ : 0 < δ) (hx : 2 * δ ≤ |π x|) : spliceAlong π k l δ x = k x := by
   rw [spliceAlong, spliceCutoff_eq_zero, zero_smul, add_zero]
   rwa [abs_mul, abs_inv, abs_of_pos hδ, le_inv_mul_iff₀ hδ, mul_comm]
 
 /-- Where `|π x| ≤ δ`, the spliced map is `l`. -/
+@[simp]
 theorem spliceAlong_of_abs_le (hδ : 0 < δ) (hx : |π x| ≤ δ) : spliceAlong π k l δ x = l x := by
   rw [spliceAlong, spliceCutoff_eq_one, one_smul, add_sub_cancel]
   rwa [abs_mul, abs_inv, abs_of_pos hδ, inv_mul_le_iff₀ hδ, mul_one]
 
 /-- Where `k` and `l` agree, the spliced map is their common value. -/
+@[simp]
 theorem spliceAlong_of_eq (hx : k x = l x) : spliceAlong π k l δ x = k x := by
   rw [spliceAlong, hx, sub_self, smul_zero, add_zero]
 
