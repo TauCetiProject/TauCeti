@@ -162,10 +162,7 @@ theorem typeDGraphLieEquiv_fixedSubmodule_eq_span (c : I) :
     ext X : 1
     exact typeDGraphLieEquiv_typeDGraphLieEquiv c R X
   have hfixed : f.fixedSubmodule = LinearMap.ker (1 - f) := by
-    ext X
-    simp only [LinearMap.mem_fixedSubmodule_iff, LinearMap.mem_ker,
-      LinearMap.sub_apply, one_apply_eq_self, sub_eq_zero]
-    exact eq_comm
+    rw [LinearMap.fixedSubmodule_eq_ker, ← LinearMap.ker_neg, neg_sub, Module.End.one_eq_id]
   have hspan : Submodule.span R (Set.range (fun p => b p + f (b p))) =
       LinearMap.range (1 + f) := by
     -- The symmetrized family is the image of the native basis under `1 + f`.
