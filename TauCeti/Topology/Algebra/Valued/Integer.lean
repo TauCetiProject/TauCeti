@@ -7,14 +7,19 @@ module
 
 public import Mathlib.RingTheory.Localization.Module
 public import Mathlib.Topology.Algebra.Valued.LocallyCompact
+public import Mathlib.Topology.Algebra.LinearTopology
 
 import Mathlib.Analysis.Normed.Operator.NNNorm
 
 /-!
-# The valuation ring of a nonarchimedean normed field
+# Integer rings of valued rings and nonarchimedean normed fields
 
 Let `K` be a nontrivially normed field with an ultrametric norm, with valuation ring `𝒪[K]` (the
 closed unit ball) and maximal ideal `𝓂[K]` (the open unit ball).
+
+For an arbitrary valued ring, its integer ring has a linear topology, and it is
+complete when the ring is complete. These instances support topological evaluation
+of power series with integral coefficients.
 
 Every `𝒪[K]`-linear map between finite products of copies of `K` is `K`-linear, since `K` is the
 fraction field of `𝒪[K]`; hence it is continuous and carries bounded sets to bounded sets. If the
@@ -23,6 +28,8 @@ norm of `K` is dense, for instance if its value group is all of `ℝ_{>0}`, the 
 
 ## Main results
 
+* `Valued.instIsLinearTopologyInteger`: the integer ring of a valued ring has a linear topology.
+* `Valued.instCompleteSpaceInteger`: the integer ring of a complete valued ring is complete.
 * `Valued.integer.mem_maximalIdeal_iff`: the maximal ideal of `𝒪[K]` is the open unit ball.
 * `Valued.integer.exists_mem_maximalIdeal_coe_ne_zero`: the maximal ideal of `𝒪[K]` contains a
   nonzero element.
@@ -46,6 +53,32 @@ public section
 
 open IsLocalRing Bornology
 open scoped NormedField
+
+namespace Valued
+
+variable {K Γ₀ : Type*} [Ring K] [LinearOrderedCommGroupWithZero Γ₀] [Valued K Γ₀]
+
+/-- The integer ring of a valued ring has a linear topology, with valuation balls as open ideals.
+This is the `Valued` form of Mathlib's corresponding `IsValuativeTopology` instance. -/
+instance instIsLinearTopologyInteger :
+    IsLinearTopology (Valued.v : Valuation K Γ₀).integer (Valued.v : Valuation K Γ₀).integer := by
+  let v := (Valued.v : Valuation K Γ₀)
+  refine IsLinearTopology.mk_of_hasBasis _
+    (p := fun _ : v.ValueGroup₀ˣ ↦ True)
+    (s := fun γ ↦ v.ltIdeal (Units.map
+      (MonoidWithZeroHom.ValueGroup₀.embedding (f := (v : K →*₀ Γ₀))) γ)) ?_
+  rw [nhds_subtype_eq_comap]
+  convert (Valued.hasBasis_nhds_zero K Γ₀).comap
+    (fun x : v.integer ↦ (x : K)) using 1
+  ext γ x
+  exact v.restrict_lt_iff_lt_embedding.symm
+
+/-- The integer ring of a complete valued ring is complete for its induced uniformity. -/
+instance instCompleteSpaceInteger [CompleteSpace K] :
+    CompleteSpace (Valued.v : Valuation K Γ₀).integer :=
+  (isClosed_integer K).completeSpace_coe
+
+end Valued
 
 section Integer
 
