@@ -177,7 +177,7 @@ theorem zero_le_iff_topRow {P : GTPattern n} : 0 ≤ P ↔ ∀ i, 0 ≤ P.topRow
 
 /-- The nonnegative patterns are those whose top weight is polynomial. -/
 theorem zero_le_iff_isPolynomial {P : GTPattern n} : 0 ≤ P ↔ P.topWeight.IsPolynomial := by
-  rw [DominantWeight.IsPolynomial, topWeight_coe]
+  rw [DominantWeight.isPolynomial_def, topWeight_coe]
   exact zero_le_iff_topRow
 
 end GTPattern
