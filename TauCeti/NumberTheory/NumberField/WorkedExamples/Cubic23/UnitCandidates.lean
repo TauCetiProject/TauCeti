@@ -128,9 +128,9 @@ theorem discr_cubicCandidate (t : ℤ × ℤ × ℤ) :
 
 theorem cubicCandidate_injective : Function.Injective cubicCandidate := by
   intro t s h
-  have h2 := congrArg (coeff · 2) h
-  have h1 := congrArg (coeff · 1) h
-  have h0 := congrArg (coeff · 0) h
+  have h2 := congrArg (fun p : ℤ[X] ↦ p.coeff 2) h
+  have h1 := congrArg (fun p : ℤ[X] ↦ p.coeff 1) h
+  have h0 := congrArg (fun p : ℤ[X] ↦ p.coeff 0) h
   simp only [coeff_two_cubicCandidate, coeff_one_cubicCandidate, coeff_zero_cubicCandidate]
     at h2 h1 h0
   exact Prod.ext h2 (Prod.ext h1 h0)
@@ -258,9 +258,9 @@ private theorem eq_of_aeval_eq_zero {t : ℤ × ℤ × ℤ} (ht : aeval B (cubic
     have hq2 : q.degree ≤ 2 := by rw [hq]; compute_degree
     rw [h3] at this
     exact absurd (this.trans hq2) (by decide)
-  have h2 := congrArg (coeff · 2) hq_zero
-  have h1 := congrArg (coeff · 1) hq_zero
-  have h0 := congrArg (coeff · 0) hq_zero
+  have h2 := congrArg (fun p : ℚ[X] ↦ p.coeff 2) hq_zero
+  have h1 := congrArg (fun p : ℚ[X] ↦ p.coeff 1) hq_zero
+  have h0 := congrArg (fun p : ℚ[X] ↦ p.coeff 0) hq_zero
   simp only [hq, coeff_add, coeff_C_mul, coeff_X_pow, coeff_X, coeff_C, coeff_zero] at h2 h1 h0
   norm_num at h2 h1 h0
   ext

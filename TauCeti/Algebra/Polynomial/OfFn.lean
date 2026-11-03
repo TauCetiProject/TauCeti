@@ -60,6 +60,6 @@ theorem _root_.Polynomial.X_sub_C_pow_dvd_ofFn_iff {R : Type*} [CommRing R] [Dec
       ∀ k < r, ∑ i : Fin n, f i * (t ^ ((i : ℕ) - k) * ((i : ℕ).choose k : R)) = 0 := by
   rw [ofFn_eq_sum_monomial, X_sub_C_pow_dvd_iff, X_pow_dvd_iff]
   refine forall₂_congr fun k _ ↦ ?_
-  simp [← C_mul_X_pow_eq_monomial, finsetSum_coeff, coeff_X_add_C_pow]
+  simp [← C_mul_X_pow_eq_monomial, coeff_X_add_C_pow]
 
 end TauCeti
