@@ -47,15 +47,10 @@ theorem map_baseChangeHopfIdeal_geckGeneratedDefiningIdeal_le :
     (CommHopfAlgCat.baseChangeHopfIdeal (K := K) (t.geckGeneratedDefiningIdeal ht k)).map
         (GeneralLinear.coordinateHopfAlgebraBaseChangeIso k K (t.geckDim ht)).hom.hom ≤
       t.geckGeneratedDefiningIdeal ht K := by
-  rw [geckGeneratedDefiningIdeal_def, geckGeneratedDefiningIdeal_def]
-  refine (HopfIdeal.map_mono _
-    (CommHopfAlgCat.baseChangeHopfIdeal_commonKernelHopfIdeal_le _)).trans_eq ?_
-  rw [CommHopfAlgCat.map_commonKernelHopfIdeal,
-    ← funext (t.geckGeneratorCoordinateMap_baseChange ht k K),
-    ← CommHopfAlgCat.commonKernelHopfIdeal_comp_of_injective _ _ fun j ↦
-      (ConcreteCategory.bijective_of_isIso
-        (t.geckGeneratorCoordinateAlgebraBaseChangeIso k K j).hom).1]
-  simp only [Category.assoc]
+  rw [t.geckGeneratedDefiningIdeal_def ht k]
+  exact (HopfIdeal.map_mono _
+    (CommHopfAlgCat.baseChangeHopfIdeal_commonKernelHopfIdeal_le _)).trans_eq
+      (t.map_commonKernelHopfIdeal_geckGeneratorCoordinateMap_baseChange ht k K)
 
 /-- The canonical coordinate surjection from the scalar extension of the generated Geck group
 to the group generated after extension. Contravariantly, it is a closed subgroup inclusion. -/
