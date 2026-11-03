@@ -63,10 +63,13 @@ noncomputable def cokernelFunctor : C ⥤ C where
   map f := cokernel.map (ι.app _) (ι.app _) f (G.map f) (ι.naturality f).symm
 
 /-- The cokernel projections `G X ⟶ coker (ι_X)`, as a natural transformation. -/
-@[expose, simps]
 noncomputable def toCokernelFunctor : G ⟶ ι.cokernelFunctor where
   app X := cokernel.π (ι.app X)
   naturality _ _ _ := (cokernel.π_desc _ _ _).symm
+
+@[simp]
+theorem toCokernelFunctor_app (X : C) : ι.toCokernelFunctor.app X = cokernel.π (ι.app X) := by
+  simp [toCokernelFunctor]
 
 /-- The `n`-th iterate `X ↦ Zⁿ X` of `cokernelFunctor ι`, with `Z⁰ X = X` and
 `Zⁿ⁺¹ X = coker (ι : Zⁿ X ⟶ G (Zⁿ X))`. -/
@@ -100,7 +103,6 @@ theorem syzygyFunctor_succ_map (n : ℕ) {X Y : C} (f : X ⟶ Y) :
 
 /-- The differential `G (Zⁿ X) ⟶ G (Zⁿ⁺¹ X)` of `resolution ι`, natural in `X`: the cokernel
 projection `G (Zⁿ X) ⟶ Zⁿ⁺¹ X` followed by `ι`. -/
-@[expose]
 noncomputable def resolutionD (n : ℕ) :
     ι.syzygyFunctor n ⋙ G ⟶ ι.syzygyFunctor (n + 1) ⋙ G :=
   Functor.whiskerLeft (ι.syzygyFunctor n)
@@ -110,8 +112,9 @@ noncomputable def resolutionD (n : ℕ) :
 theorem resolutionD_app (n : ℕ) (X : C) :
     (ι.resolutionD n).app X =
       cokernel.π (ι.app ((ι.syzygyFunctor n).obj X)) ≫
-        ι.app ((ι.syzygyFunctor (n + 1)).obj X) :=
-  (rfl)
+        ι.app ((ι.syzygyFunctor (n + 1)).obj X) := by
+  unfold resolutionD
+  rfl
 
 @[reassoc]
 theorem resolutionD_app_comp_resolutionD_app (n : ℕ) (X : C) :
@@ -158,12 +161,7 @@ degree `0`. -/
 noncomputable def toResolution : CochainComplex.single₀ C ⟶ ι.resolution where
   app X := (CochainComplex.fromSingle₀Equiv _ X).symm
     ⟨ι.app X, ι.app_comp_resolution_obj_d_zero_one X⟩
-  naturality X Y f := HomologicalComplex.from_single_hom_ext (by
-    rw [HomologicalComplex.comp_f, HomologicalComplex.comp_f,
-      CochainComplex.fromSingle₀Equiv_symm_apply_f_zero,
-      CochainComplex.fromSingle₀Equiv_symm_apply_f_zero, resolution_map_f, syzygyFunctor_zero_map,
-      CochainComplex.single₀_map_f_zero]
-    exact ι.naturality f)
+  naturality X Y f := HomologicalComplex.from_single_hom_ext (by simpa using ι.naturality f)
 
 @[simp]
 theorem toResolution_app_f_zero (X : C) : (ι.toResolution.app X).f 0 = ι.app X :=
