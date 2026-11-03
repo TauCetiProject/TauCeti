@@ -18,6 +18,8 @@ import Mathlib.Topology.Algebra.Polynomial
 -- two are the zeros of `ψ₂`.
 import TauCeti.AlgebraicGeometry.EllipticCurve.DivisionPolynomial.Discriminant
 import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.Point.TwoTorsion
+-- Proof-only: the derivative of a cubic with three roots at one of them.
+import TauCeti.Algebra.Polynomial.Derivative
 
 /-!
 # Real points of a Weierstrass curve
@@ -50,6 +52,8 @@ either `Ψ₂Sq < 0` below `e`, and every real point other than `O` has abscissa
   beyond which it is positive.
 * `WeierstrassCurve.Affine.exists_Ψ₂Sq_eq_prod_three_roots`: on an elliptic curve with a real point
   of abscissa below that root `e`, `Ψ₂Sq = 4 (X - e₁)(X - e₂)(X - e)` with `e₁ < e₂ < e`.
+* `WeierstrassCurve.pos_eval_Ψ₂Sq_iff_of_eq_prod_three_roots`: with three real roots
+  `e₁ < e₂ < e₃`, `Ψ₂Sq` is positive exactly on `(e₁, e₂) ∪ (e₃, ∞)`.
 * `WeierstrassCurve.Affine.Point.neg_ne_self_iff_ne_zero_and_pos_eval_Ψ₂Sq`: a point is not
   `2`-torsion exactly when it is affine and `Ψ₂Sq` is positive at its abscissa, over any ordered
   field; `Point.neg_some_ne_some_iff_pos_eval_Ψ₂Sq` is the affine case.
@@ -158,14 +162,6 @@ theorem exists_isRoot_Ψ₂Sq_and_forall_lt_pos_eval :
     (nhdsWithin_le_nhds (s := Set.Ioi (sSup S))))
     (eventually_nhdsWithin_of_forall fun x hx ↦ (hpos (Set.mem_Ioi.mp hx)).le)
 
-/-- The derivative of `C 4 * (X - C e₁) * (X - C e₂) * (X - C e₃)` at `e₁`. -/
-private theorem eval_derivative_C_mul_X_sub_C (e₁ e₂ e₃ : ℝ) :
-    (C 4 * (X - C e₁) * (X - C e₂) * (X - C e₃)).derivative.eval e₁ =
-      4 * (e₁ - e₂) * (e₁ - e₃) := by
-  simp only [derivative_mul, derivative_C, derivative_sub, derivative_X, eval_add, eval_mul,
-    eval_sub, eval_C, eval_X, eval_one, eval_zero]
-  ring
-
 /-- **Three real roots.** Let `e` be a root of `Ψ₂Sq` beyond which it is positive, on an elliptic
 curve over `ℝ`. If `Ψ₂Sq(x₀) ≥ 0` for some `x₀ < e`, that is, if some real point has abscissa below
 `e`, then `Ψ₂Sq = 4 (X - e₁)(X - e₂)(X - e)` with `e₁ < e₂ < e`. -/
@@ -201,9 +197,10 @@ theorem exists_Ψ₂Sq_eq_prod_three_roots [W.IsElliptic] {e : ℝ} (he : W.Ψ�
   -- the roots are simple, and `Ψ₂Sq > 0` beyond `e` puts them below `e`
   have hd₁ := W.eval_derivative_Ψ₂Sq_ne_zero two_ne_zero (x := e₁) (by simp [IsRoot, hfac])
   have hd := W.eval_derivative_Ψ₂Sq_ne_zero two_ne_zero he
-  rw [hpoly, eval_derivative_C_mul_X_sub_C] at hd₁
+  rw [hpoly, eval_derivative_C_mul_X_sub_C_mul_X_sub_C_mul_X_sub_C] at hd₁
   rw [hpoly, show C 4 * (X - C e₁) * (X - C e₂) * (X - C e) =
-    C 4 * (X - C e) * (X - C e₁) * (X - C e₂) by ring, eval_derivative_C_mul_X_sub_C] at hd
+    C 4 * (X - C e) * (X - C e₁) * (X - C e₂) by ring,
+    eval_derivative_C_mul_X_sub_C_mul_X_sub_C_mul_X_sub_C] at hd
   refine ⟨e₁, e₂, lt_of_le_of_ne h₁₂ fun h ↦ hd₁ (by rw [h]; ring), ?_, hpoly⟩
   refine lt_of_le_of_ne (le_of_not_gt fun h ↦ ?_) fun h ↦ hd (by rw [h]; ring)
   have := hpos (x := (e + e₂) / 2) (by linarith)
@@ -212,3 +209,31 @@ theorem exists_Ψ₂Sq_eq_prod_three_roots [W.IsElliptic] {e : ℝ} (he : W.Ψ�
     (by linarith : (0 : ℝ) < e₂ - (e + e₂) / 2)) (by linarith : (0 : ℝ) < (e + e₂) / 2 - e)]
 
 end WeierstrassCurve.Affine
+
+namespace WeierstrassCurve
+
+open Set
+
+variable (W : WeierstrassCurve ℝ)
+
+/-- **Where `Ψ₂Sq` is positive, with three real roots**: if `Ψ₂Sq = 4 (X - e₁)(X - e₂)(X - e₃)`
+with `e₁ < e₂ < e₃`, then `Ψ₂Sq(x) > 0` exactly on `(e₁, e₂) ∪ (e₃, ∞)`. -/
+theorem pos_eval_Ψ₂Sq_iff_of_eq_prod_three_roots {e₁ e₂ e₃ : ℝ} (h₁₂ : e₁ < e₂) (h₂₃ : e₂ < e₃)
+    (h : W.Ψ₂Sq = C 4 * (X - C e₁) * (X - C e₂) * (X - C e₃)) (x : ℝ) :
+    0 < W.Ψ₂Sq.eval x ↔ x ∈ Ioo e₁ e₂ ∪ Ioi e₃ := by
+  simp only [h, eval_mul, eval_sub, eval_C, eval_X, mem_union, mem_Ioo, mem_Ioi]
+  constructor
+  · intro hx
+    by_contra hn
+    simp only [not_or, not_and, not_lt] at hn
+    rcases le_or_gt x e₁ with h₁ | h₁
+    · nlinarith [mul_nonneg (mul_nonneg (sub_nonneg.2 h₁) (by linarith : (0:ℝ) ≤ e₂ - x))
+        (by linarith : (0:ℝ) ≤ e₃ - x)]
+    · nlinarith [mul_nonneg (mul_nonneg (by linarith : (0:ℝ) ≤ x - e₁) (by linarith [hn.1 h₁] :
+        (0:ℝ) ≤ x - e₂)) (by linarith : (0:ℝ) ≤ e₃ - x)]
+  · rintro (⟨h₁, h₂⟩ | h₃)
+    · nlinarith [mul_pos (mul_pos (sub_pos.2 h₁) (sub_pos.2 h₂)) (by linarith : (0:ℝ) < e₃ - x)]
+    · nlinarith [mul_pos (mul_pos (by linarith : (0:ℝ) < x - e₁) (by linarith : (0:ℝ) < x - e₂))
+        (sub_pos.2 h₃)]
+
+end WeierstrassCurve

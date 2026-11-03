@@ -53,18 +53,19 @@ share an abscissa, as `-P ≠ P`. So the fibre has `#ker φ(ℝ)` elements when 
 `|c| Ω(W₁) = #ker φ(ℝ) · Ω(W₂)` when `φ` is onto on real points.
 
 In general `|c| Ω(W₁) · [W₂(ℝ) : φ(W₁(ℝ))] = #ker φ(ℝ) · Ω(W₂)`, and the proof shows that the
-index is `1` or `2`. Let `e` be the largest real root of
-`Ψ₂Sq₂`. Every `x' ≥ e` is `r(x)` for some `x` off the poles with `Ψ₂Sq₁(x) ≥ 0`, by the
-intermediate value theorem. Beyond the larger `p` of the largest root of `Ψ₂Sq₁` and the largest
-pole, `r` is continuous and tends to `∞`, as `deg N > deg D`. At `p` it takes a value at most `e`.
-If `p` is a root of `Ψ₂Sq₁`, this holds because `Ψ₂Sq₂(r(p)) = 0`. If `p` is a pole, `r` tends to
-`∞` at `p` as well, and has a minimum on `(p, ∞)`, where `r' = 0`; there `w = 0`, so again
-`Ψ₂Sq₂(r) = 0`. So the image contains every real point over `[e, ∞)`. If `e` is the only real
-root, there are no other real points. Otherwise `Ψ₂Sq₂ = 4 (x - e₁)(x - e₂)(x - e)` with
-`e₁ < e₂ < e`, and the remaining real points lie over `[e₁, e₂]`. Translation by the point `T` of
-order two over `e₁` carries them over `[e, ∞)`, since `(x(P + T) - e₁)(x(P) - e₁) =
-(e₁ - e₂)(e₁ - e)`. So `φ` is onto if `T` is in the image. Otherwise the image has index two and
-its abscissas are `(e, ∞)`, which carry half of the period
+index is `1` or `2`. Let `e` be the largest real root of `Ψ₂Sq₂`. Every `x' ≥ e` is `r(x)` for
+some `x` off the poles with `Ψ₂Sq₁(x) ≥ 0`, by the intermediate value theorem. Beyond the larger
+`p` of the largest root of `Ψ₂Sq₁` and the largest pole, `r` is continuous and tends to `∞`, as
+`deg N > deg D`. Some `x₀ ≥ p` off the poles has `Ψ₂Sq₂(r(x₀)) = 0`, so `r(x₀) ≤ e`. If `p` is
+not a pole, it is a root of `Ψ₂Sq₁`, and `x₀ = p` works. If `p` is a pole, `r` tends to `∞` at
+`p` as well, so it attains a minimum at some `x₀` in `(p, ∞)`, where `r' = 0`; there `w = 0`, so
+again `Ψ₂Sq₂(r(x₀)) = 0`. So the image contains every real point over `[e, ∞)`. If `e` is the
+only real root, there are no other real points. Otherwise `Ψ₂Sq₂ = 4 (x - e₁)(x - e₂)(x - e)`
+with `e₁ < e₂ < e`, and the remaining real points lie over `[e₁, e₂]`. Translation by the point
+`T` of order two over `e₁` carries them over `[e, ∞)`, since
+`(x(P + T) - e₁)(x(P) - e₁) = (e₁ - e₂)(e₁ - e)`. So `φ` is onto if `T` is in the image.
+Otherwise the image has index two and its affine points lie exactly over `[e, ∞)`. Those with
+`Ψ₂Sq₂ > 0` lie over `(e, ∞)`, which carries half of the period
 (`WeierstrassCurve.realPeriodLIntegral_eq_two_mul_setLIntegral_Ioi`).
 
 ## Main results

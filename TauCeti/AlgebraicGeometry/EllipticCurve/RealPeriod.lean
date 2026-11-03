@@ -28,6 +28,8 @@ import TauCeti.Analysis.SpecialFunctions.Pow.NNReal
 import TauCeti.MeasureTheory.Integral.NormRpow
 -- Proof-only: the one-dimensional change of variables formula.
 import Mathlib.MeasureTheory.Function.JacobianOneDim
+-- Proof-only: where `Ψ₂Sq` is positive, with three real roots.
+import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.Point.Real
 -- Proof-only: the area formula with multiplicity, and the Jacobian of a map `ℝ → ℝ`.
 import TauCeti.Analysis.InnerProductSpace.NormDet
 import TauCeti.MeasureTheory.Function.AreaFormula.Multiplicity
@@ -101,8 +103,6 @@ of order two over `e₁`, carries `(e₃, ∞)` onto `(e₁, e₂)` and preserve
 * `WeierstrassCurve.ofReal_abs_mul_realPeriodLIntegral_eq_of_ae_encard_eq` and
   `WeierstrassCurve.abs_mul_realPeriod_eq_of_ae_encard_eq`: `|c| Ω(W) = n Ω(W')` when almost every
   fibre has `n` elements.
-* `WeierstrassCurve.pos_eval_Ψ₂Sq_iff_of_eq_prod_three_roots`: with three real roots
-  `e₁ < e₂ < e₃`, `Ψ₂Sq` is positive exactly on `(e₁, e₂) ∪ (e₃, ∞)`.
 * `WeierstrassCurve.setLIntegral_Ioo_eq_setLIntegral_Ioi` and
   `WeierstrassCurve.realPeriodLIntegral_eq_two_mul_setLIntegral_Ioi`: with three real roots
   `e₁ < e₂ < e₃`, the integrals over `(e₁, e₂)` and over `(e₃, ∞)` agree, so each is half of the
@@ -462,26 +462,6 @@ theorem abs_mul_realPeriod_eq_of_ae_encard_eq {W' : WeierstrassCurve ℝ}
   rw [realPeriod, realPeriod, mul_left_comm, h, mul_left_comm]
 
 /-! ### Curves with three real roots -/
-
-/-- **Where `Ψ₂Sq` is positive, with three real roots**: if `Ψ₂Sq = 4 (X - e₁)(X - e₂)(X - e₃)`
-with `e₁ < e₂ < e₃`, then `Ψ₂Sq(x) > 0` exactly on `(e₁, e₂) ∪ (e₃, ∞)`. -/
-theorem pos_eval_Ψ₂Sq_iff_of_eq_prod_three_roots {e₁ e₂ e₃ : ℝ} (h₁₂ : e₁ < e₂) (h₂₃ : e₂ < e₃)
-    (h : W.Ψ₂Sq = C 4 * (X - C e₁) * (X - C e₂) * (X - C e₃)) (x : ℝ) :
-    0 < W.Ψ₂Sq.eval x ↔ x ∈ Ioo e₁ e₂ ∪ Ioi e₃ := by
-  simp only [h, eval_mul, eval_sub, eval_C, eval_X, mem_union, mem_Ioo, mem_Ioi]
-  constructor
-  · intro hx
-    by_contra hn
-    simp only [not_or, not_and, not_lt] at hn
-    rcases le_or_gt x e₁ with h₁ | h₁
-    · nlinarith [mul_nonneg (mul_nonneg (sub_nonneg.2 h₁) (by linarith : (0:ℝ) ≤ e₂ - x))
-        (by linarith : (0:ℝ) ≤ e₃ - x)]
-    · nlinarith [mul_nonneg (mul_nonneg (by linarith : (0:ℝ) ≤ x - e₁) (by linarith [hn.1 h₁] :
-        (0:ℝ) ≤ x - e₂)) (by linarith : (0:ℝ) ≤ e₃ - x)]
-  · rintro (⟨h₁, h₂⟩ | h₃)
-    · nlinarith [mul_pos (mul_pos (sub_pos.2 h₁) (sub_pos.2 h₂)) (by linarith : (0:ℝ) < e₃ - x)]
-    · nlinarith [mul_pos (mul_pos (by linarith : (0:ℝ) < x - e₁) (by linarith : (0:ℝ) < x - e₂))
-        (sub_pos.2 h₃)]
 
 /-- **The two real components carry the same period.** If `Ψ₂Sq = 4 (X - e₁)(X - e₂)(X - e₃)`
 with `e₁ < e₂ < e₃`, then `∫_{e₁}^{e₂} dx / √Ψ₂Sq(x) = ∫_{e₃}^∞ dx / √Ψ₂Sq(x)`: the substitution
