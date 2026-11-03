@@ -114,6 +114,7 @@ theorem locallyConstantRingCatStalkIso_inv_apply (x : X) (r : R) :
 
 /-- Equality of germs of locally constant sections is detected by evaluation, even when the
 sections are defined on different open neighborhoods. -/
+@[simp]
 theorem germ_locallyConstant_eq_iff (x : X) {U V : Opens X} (hxU : x ∈ U) (hxV : x ∈ V)
     (f : LocallyConstant U R) (g : LocallyConstant V R) :
     (locallyConstantRingCatPresheaf X R).germ U x hxU f =
