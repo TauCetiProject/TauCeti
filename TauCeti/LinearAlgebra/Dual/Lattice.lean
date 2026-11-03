@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.LinearAlgebra.Dual.Basis
-public import Mathlib.LinearAlgebra.Basis.Submodule
 public import TauCeti.Algebra.Module.Lattice
 
 /-!
@@ -61,8 +60,7 @@ end Submodule
 
 namespace Module.Basis
 
-variable {R K V ι : Type*} [CommRing R] [IsDomain R] [CommRing K] [Nontrivial K]
-  [Algebra R K] [IsTorsionFree R K]
+variable {R K V ι : Type*} [CommRing R] [CommRing K] [Algebra R K]
   [AddCommGroup V] [Module K V] [Module R V] [IsScalarTower R K V]
   [Finite ι] [DecidableEq ι]
 
@@ -71,18 +69,31 @@ variable {R K V ι : Type*} [CommRing R] [IsDomain R] [CommRing K] [Nontrivial K
 theorem dualLattice_span (b : Basis ι K V) :
     (Submodule.span R (Set.range b)).dualLattice K =
       Submodule.span R (Set.range b.dualBasis) := by
-  ext φ
-  rw [b.dualBasis.mem_span_iff_repr_mem R]
-  simp only [Submodule.mem_dualLattice, dualBasis_repr]
-  refine ⟨fun h i => Submodule.mem_one.mp (h _ (Submodule.subset_span ⟨i, rfl⟩)), ?_⟩
-  intro h x hx
-  induction hx using Submodule.span_induction with
-  | mem x hx =>
-    obtain ⟨i, rfl⟩ := hx
-    exact Submodule.mem_one.mpr (h i)
-  | zero => simp
-  | add x y _ _ hx hy => simpa using (1 : Submodule R K).add_mem hx hy
-  | smul r x _ hx => simpa using (1 : Submodule R K).smul_mem r hx
+  classical
+  let := Fintype.ofFinite ι
+  apply le_antisymm
+  · intro φ hφ
+    rw [← b.dualBasis.sum_repr φ]
+    refine Submodule.sum_mem _ fun i _ => ?_
+    rw [dualBasis_repr]
+    obtain ⟨r, hr⟩ := Submodule.mem_one.mp
+      ((Submodule.mem_dualLattice _ _).mp hφ _ (Submodule.subset_span ⟨i, rfl⟩))
+    rw [← hr, algebraMap_smul]
+    exact Submodule.smul_mem _ r (Submodule.subset_span ⟨i, rfl⟩)
+  · refine Submodule.span_le.mpr ?_
+    rintro _ ⟨i, rfl⟩
+    refine (Submodule.mem_dualLattice _ _).mpr ?_
+    intro x hx
+    induction hx using Submodule.span_induction with
+    | mem x hx =>
+      obtain ⟨j, rfl⟩ := hx
+      simp only [dualBasis_apply_self]
+      split
+      · exact Submodule.mem_one.mpr ⟨1, map_one _⟩
+      · exact Submodule.zero_mem _
+    | zero => simp
+    | add x y _ _ hx hy => simpa using (1 : Submodule R K).add_mem hx hy
+    | smul r x _ hx => simpa using (1 : Submodule R K).smul_mem r hx
 
 end Module.Basis
 
