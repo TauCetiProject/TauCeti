@@ -183,18 +183,13 @@ theorem massRestrict_eq_zero (hA : MeasurableSet A) (hA0 : massMeasure T A = 0) 
 theorem massRestrict_union (hA : MeasurableSet A) (hB : MeasurableSet B) (hAB : Disjoint A B) :
     massRestrict T (hA.union hB) = massRestrict T hA + massRestrict T hB := by
   ext φ
-  simp only [add_apply, massRestrict_apply, ← map_add]
-  congr 1
-  simp only [TestFunction.indicatorToLp_apply]
-  rw [← MemLp.toLp_add]
-  exact MemLp.toLp_congr _ _ (.of_eq (indicator_union_of_disjoint hAB _))
+  simp only [add_apply, massRestrict_apply, TestFunction.indicatorToLp_union _ _ hA hB hAB,
+    LinearMap.add_apply, map_add]
 
 /-- The restriction of `T` to all of `Ω` is `T`. -/
+@[simp]
 theorem massRestrict_univ_apply (hT : HasLocallyFiniteMass T) (φ : 𝓓^{n}(Ω, F)) :
     massRestrict T MeasurableSet.univ φ = T φ := by
-  rw [massRestrict_apply, ← extendL1_toLp hT φ, TestFunction.toLp_apply,
-    TestFunction.indicatorToLp_apply]
-  congr 1
-  exact MemLp.toLp_congr _ _ (.of_eq (indicator_univ _))
+  rw [massRestrict_apply, TestFunction.indicatorToLp_univ, extendL1_toLp hT]
 
 end Distribution

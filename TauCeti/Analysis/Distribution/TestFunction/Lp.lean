@@ -30,6 +30,8 @@ evaluation on integrable forms (`Distribution.extendL1`).
 
 * `TestFunction.toLp`: the class in `Lᵖ(μ)` of the restriction of a test function to `Ω`.
 * `TestFunction.indicatorToLp`: the class in `Lᵖ(μ)` of `1_A φ`, for a measurable set `A ⊆ Ω`.
+  It is zero for `A = ∅`, is `toLp` for `A = Ω` and is additive on disjoint sets
+  (`TestFunction.indicatorToLp_empty`, `_univ`, `_union`).
 * `HasCompactSupport.exists_testFunction_eLpNorm_sub_le`: a continuous compactly supported
   function on `Ω` is an `Lᵖ(μ)` limit of test functions for `p < ∞`.
 * `TestFunction.denseRange_toLp`: test functions are dense in `Lᵖ(μ)` for `p < ∞`.
@@ -117,6 +119,26 @@ theorem indicatorToLp_apply [IsFiniteMeasureOnCompacts μ] (hA : MeasurableSet A
       ((memLp_subtype φ).indicator hA.nullMeasurableSet).toLp (A.indicator fun x : Ω => φ x) :=
   (rfl)
 
+variable (p μ) in
+/-- Cutting a test function off by the empty set gives zero. -/
+@[simp]
+theorem indicatorToLp_empty [IsFiniteMeasureOnCompacts μ] :
+    (indicatorToLp p μ MeasurableSet.empty : 𝓓^{n}(Ω, F) →ₗ[ℝ] Lp F p μ) = 0 :=
+  LinearMap.ext fun φ => by
+    simp only [indicatorToLp_apply, indicator_empty, LinearMap.zero_apply]
+    exact MemLp.toLp_zero _
+
+variable (p μ) in
+/-- `indicatorToLp` is additive on disjoint measurable sets. -/
+theorem indicatorToLp_union [IsFiniteMeasureOnCompacts μ] {B : Set Ω} (hA : MeasurableSet A)
+    (hB : MeasurableSet B) (hAB : Disjoint A B) :
+    (indicatorToLp p μ (hA.union hB) : 𝓓^{n}(Ω, F) →ₗ[ℝ] Lp F p μ) =
+      indicatorToLp p μ hA + indicatorToLp p μ hB :=
+  LinearMap.ext fun φ => by
+    rw [LinearMap.add_apply, indicatorToLp_apply, indicatorToLp_apply, indicatorToLp_apply,
+      ← MemLp.toLp_add]
+    exact MemLp.toLp_congr _ _ (.of_eq (indicator_union_of_disjoint hAB _))
+
 variable [Fact (1 ≤ p)]
 
 section FiniteOnCompacts
@@ -158,6 +180,14 @@ def toLp : 𝓓^{n}(Ω, F) →L[ℝ] Lp F p μ :=
 theorem toLp_apply (φ : 𝓓^{n}(Ω, F)) :
     toLp p μ φ = (memLp_subtype φ).toLp fun x : Ω => φ x :=
   (rfl)
+
+variable (p μ) in
+/-- Cutting a test function off by all of `Ω` gives its class in `Lᵖ(μ)`. -/
+@[simp]
+theorem indicatorToLp_univ (φ : 𝓓^{n}(Ω, F)) :
+    indicatorToLp p μ MeasurableSet.univ φ = toLp p μ φ := by
+  rw [indicatorToLp_apply, toLp_apply]
+  exact MemLp.toLp_congr _ _ (.of_eq (indicator_univ _))
 
 variable (p μ) in
 /-- The class of a test function in `Lᵖ(μ)` satisfies an order-zero bound on each compact subset
