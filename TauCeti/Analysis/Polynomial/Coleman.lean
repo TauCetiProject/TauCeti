@@ -8,6 +8,7 @@ module
 public import TauCeti.RingTheory.Polynomial.Resultant.Coleman
 public import TauCeti.RingTheory.PowerSeries.Entire.Majorant
 import TauCeti.Algebra.Order.BigOperators.ProdSubProd
+import TauCeti.GroupTheory.Perm.Basic
 import TauCeti.GroupTheory.Perm.GapCrossing
 import TauCeti.RingTheory.Polynomial.Resultant.Basic
 
@@ -307,7 +308,8 @@ theorem norm_coeff_colemanDBounded_sub_le {B' P' : R[X]} {L k : ℕ} {ρ β γ :
             single_le_sum (f := fun y : Fin (n + m) ↦ (y : ℕ) - σ y)
               (fun _ _ ↦ Nat.zero_le _) (mem_univ x)
         _ = ∑ y ∈ S, ((σ y : ℕ) - y) := by
-            rw [σ.sum_sub_apply_eq_sum_apply_sub, hS, sum_filter_of_ne fun y _ h ↦ by omega]
+            rw [σ.sum_tsub_comp_eq_sum_comp_tsub fun y ↦ (y : ℕ), hS,
+              sum_filter_of_ne fun y _ h ↦ by omega]
         _ ≤ #S * L := by
             simpa using sum_le_card_nsmul S _ L hlong
     rw [sub_eq_zero.2, norm_zero]

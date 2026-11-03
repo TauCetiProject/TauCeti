@@ -286,6 +286,30 @@ theorem submatrix_matrixCoeff_pow {w : C₀(J, R) →L[R] C₀(J, R)} {F : Finse
       tsum_eq_sum (s := F) fun l hl ↦ by simp [hw l hl], ← Finset.sum_coe_sort F]
     simp
 
+/-- For a finite set `S` of output coordinates and any polynomial `Q`, the block on `S` of the
+matrix of `Q(π_S ∘ u)` is `Q(A)`, where `A` is the block of `u` on `S`: the rows of `π_S ∘ u`
+outside `S` vanish, so the products of matrices only involve indices in `S`. -/
+theorem submatrix_matrixCoeff_aeval_indicatorCLM_comp (S : Finset J)
+    (u : C₀(J, R) →L[R] C₀(J, R)) (Q : Polynomial R) :
+    (Polynomial.aeval ((indicatorCLM R (S : Set J)).comp u) Q).matrixCoeff.submatrix
+        (Subtype.val : S → J) (Subtype.val : S → J) =
+      Polynomial.aeval (u.matrixCoeff.submatrix (Subtype.val : S → J) (Subtype.val : S → J)) Q := by
+  set w := (indicatorCLM R (S : Set J)).comp u
+  -- the rows of `w` outside `S` vanish, and its block on `S` is that of `u`
+  have hw : ∀ i ∉ S, ∀ j, w.matrixCoeff i j = 0 := fun i hi _ ↦ by simp [w, matrixCoeff_apply, hi]
+  have hblock : w.matrixCoeff.submatrix (Subtype.val : S → J) (Subtype.val : S → J) =
+      u.matrixCoeff.submatrix (Subtype.val : S → J) (Subtype.val : S → J) := by
+    ext i i'
+    simp [w, matrixCoeff_apply]
+  induction Q using Polynomial.induction_on' with
+  | add p q hp hq =>
+    rw [map_add, map_add, matrixCoeff_add, Matrix.submatrix_add, Pi.add_apply, Pi.add_apply, hp,
+      hq]
+  | monomial j a =>
+    rw [Polynomial.aeval_monomial, Polynomial.aeval_monomial, ← Algebra.smul_def,
+      ← Algebra.smul_def, matrixCoeff_smul, Matrix.submatrix_smul, Pi.smul_apply, Pi.smul_apply,
+      submatrix_matrixCoeff_pow hw, hblock]
+
 end NormedCommRing
 
 end ContinuousLinearMap

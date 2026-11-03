@@ -30,18 +30,16 @@ needed: on an infinite model space `B(u)` is row compact only if `B(0) = 0`
 
 The proof first treats an output truncation `π_S ∘ u` to a finite set `S` of coordinates. Since
 `B(0) = 0`, the rows of `B(π_S ∘ u)` outside `S` vanish, and its block on `S` is `B(A)` for the
-block `A` of `u` on `S`. So its determinant is `det (1 - T B(A))`, which is the finite transform
-of `det (1 - T A)` (`Matrix.colemanDBounded_charpolyRev`). The general case follows by letting
-`S` grow: `B(π_S ∘ u)` converges to `B(u)` in operator norm, each Fredholm coefficient is
+block `A` of `u` on `S` (`ContinuousLinearMap.submatrix_matrixCoeff_aeval_indicatorCLM_comp`).
+So its determinant is `det (1 - T B(A))`
+(`ContinuousLinearMap.charPowerSeries_matrixCoeff_aeval_indicatorCLM_comp`), which is the finite
+transform of `det (1 - T A)` (`Matrix.colemanDBounded_charpolyRev`). The general case follows by
+letting `S` grow: `B(π_S ∘ u)` converges to `B(u)` in operator norm, each Fredholm coefficient is
 continuous in operator norm on row-compact operators, and each coefficient of Coleman's transform
 is continuous for coefficientwise convergence (`Polynomial.continuous_coeff_colemanDSeries`).
 
 ## Main results
 
-* `ContinuousLinearMap.submatrix_matrixCoeff_aeval_indicatorCLM_comp`: the block on `S` of
-  `Q(π_S ∘ u)` is `Q(A)` for every polynomial `Q`.
-* `ContinuousLinearMap.charPowerSeries_matrixCoeff_aeval_indicatorCLM_comp`: for `B(0) = 0`,
-  the determinant of `B(π_S ∘ u)` is the polynomial `det (1 - T B(A))`.
 * `ContinuousLinearMap.IsRowCompact.charPowerSeries_matrixCoeff_aeval`: spectral mapping
   `det (1 - T B(u)) = D(B, det (1 - T u))`.
 
@@ -61,56 +59,6 @@ open scoped ZeroAtInfty
 variable {I R : Type*} [TopologicalSpace I] [DiscreteTopology I] [DecidableEq I]
 
 namespace ContinuousLinearMap
-
-section NormedCommRing
-
-variable [NormedCommRing R]
-
-/-- For a finite set `S` of output coordinates and any polynomial `Q`, the block on `S` of the
-matrix of `Q(π_S ∘ u)` is `Q(A)`, where `A` is the block of `u` on `S`: the rows of `π_S ∘ u`
-outside `S` vanish, so the products of matrices only involve indices in `S`. -/
-theorem submatrix_matrixCoeff_aeval_indicatorCLM_comp (S : Finset I)
-    (u : C₀(I, R) →L[R] C₀(I, R)) (Q : R[X]) :
-    (aeval ((indicatorCLM R (S : Set I)).comp u) Q).matrixCoeff.submatrix (Subtype.val : S → I)
-        (Subtype.val : S → I) =
-      aeval (u.matrixCoeff.submatrix (Subtype.val : S → I) (Subtype.val : S → I)) Q := by
-  set w := (indicatorCLM R (S : Set I)).comp u
-  -- the rows of `w` outside `S` vanish, and its block on `S` is that of `u`
-  have hw : ∀ i ∉ S, ∀ j, w.matrixCoeff i j = 0 := fun i hi _ ↦ by simp [w, hi]
-  have hblock : w.matrixCoeff.submatrix (Subtype.val : S → I) (Subtype.val : S → I) =
-      u.matrixCoeff.submatrix (Subtype.val : S → I) (Subtype.val : S → I) := by
-    ext i i'
-    simp [w]
-  induction Q using Polynomial.induction_on' with
-  | add p q hp hq =>
-    rw [map_add, map_add, matrixCoeff_add, Matrix.submatrix_add, Pi.add_apply, Pi.add_apply, hp,
-      hq]
-  | monomial j a =>
-    rw [aeval_monomial, aeval_monomial, ← Algebra.smul_def, ← Algebra.smul_def, matrixCoeff_smul,
-      Matrix.submatrix_smul, Pi.smul_apply, Pi.smul_apply, submatrix_matrixCoeff_pow hw, hblock]
-
-/-- **Spectral mapping for an output truncation.** If `B(0) = 0`, the Fredholm determinant of
-`B(π_S ∘ u)` is the polynomial `det (1 - T B(A))` for the block `A` of `u` on `S`, since the rows
-of `B(π_S ∘ u)` outside `S` vanish. -/
-theorem charPowerSeries_matrixCoeff_aeval_indicatorCLM_comp (S : Finset I)
-    (u : C₀(I, R) →L[R] C₀(I, R)) {B : R[X]} (hB0 : B.coeff 0 = 0) :
-    (aeval ((indicatorCLM R (S : Set I)).comp u) B).matrixCoeff.charPowerSeries =
-      ((aeval (u.matrixCoeff.submatrix (Subtype.val : S → I) (Subtype.val : S → I)) B).charpolyRev :
-        PowerSeries R) := by
-  set w := (indicatorCLM R (S : Set I)).comp u
-  obtain ⟨B', rfl⟩ := X_dvd_iff.2 hB0
-  -- `B(w) = π_S ∘ (u ∘ B'(w))` is an output truncation
-  have hw : aeval w (X * B') = (indicatorCLM R (S : Set I)).comp (u.comp (aeval w B')) := by
-    rw [map_mul, aeval_X, mul_def, comp_assoc]
-  have hblock :
-      (u.comp (aeval w B')).matrixCoeff.submatrix (Subtype.val : S → I) (Subtype.val : S → I) =
-      (aeval w (X * B')).matrixCoeff.submatrix (Subtype.val : S → I) (Subtype.val : S → I) := by
-    ext i i'
-    simp [hw]
-  rw [← submatrix_matrixCoeff_aeval_indicatorCLM_comp, ← hblock, hw,
-    charPowerSeries_matrixCoeff_indicatorCLM_comp]
-
-end NormedCommRing
 
 open scoped TauCeti.RingOpNorm
 
