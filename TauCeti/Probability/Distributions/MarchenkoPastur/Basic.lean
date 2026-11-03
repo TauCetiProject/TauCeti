@@ -105,7 +105,7 @@ instance isProbabilityMeasure_marchenkoPastur (y : ℝ≥0) :
   have hsq : √((1 + (y : ℝ)) ^ 2 - 4 * y) = |1 - (y : ℝ)| := by
     rw [show (1 + (y : ℝ)) ^ 2 - 4 * y = (1 - y) ^ 2 by ring, sqrt_sq_eq_abs]
   constructor
-  simp only [marchenkoPastur_def, Measure.coe_add, Measure.coe_smul, Pi.add_apply,
+  simp only [marchenkoPastur_def, FunLike.coe_add, FunLike.coe_smul, Pi.add_apply,
     Pi.smul_apply, measure_univ, smul_eq_mul, mul_one, withDensity_apply _ MeasurableSet.univ,
     Measure.restrict_univ]
   rw [← ofReal_integral_eq_lintegral_ofReal (integrable_inv_semicircleReal h2)
