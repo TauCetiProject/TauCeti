@@ -65,7 +65,7 @@ lemma smashPowReindex_comp_suspensionLevelIso_hom (K : PointedSSet.{0}) {n m : �
 
 /-- Under the level formula, the iterated structure map concatenates the sphere coordinates
 on the left and retains the pointed simplicial set coordinate. -/
-@[reassoc]
+@[simp↓, reassoc (attr := simp↓)]
 lemma suspensionLevelIso_hom_dayStructureMap (K : PointedSSet.{0}) (p q : ℕ) :
     PointedSSet.circle.smashPow (Fin p) ◁ (suspensionLevelIso K q).hom ≫
       ((free 0).obj K).dayStructureMap (FiniteBijection.mk p) (FiniteBijection.mk q) =
@@ -119,7 +119,7 @@ noncomputable def suspensionUnitIso : (free 0).obj (𝟙_ PointedSSet.{0}) ≅ �
     Mod.tensorLeftUnitIso (Mod.regular SymmetricSequence.sphere)
 
 /-- In sphere coordinates the comparison `Σ∞ S⁰ ≅ S` is the right unitor. -/
-@[reassoc]
+@[simp↓, reassoc (attr := simp↓)]
 lemma suspensionLevelIso_hom_comp_suspensionUnitIso_hom (n : ℕ) :
     (suspensionLevelIso (𝟙_ PointedSSet.{0}) n).hom ≫
       (evaluation n).map suspensionUnitIso.hom =
