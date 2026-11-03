@@ -7,7 +7,6 @@ module
 
 public import Mathlib.MeasureTheory.Measure.Lebesgue.Complex
 public import TauCeti.Analysis.Complex.PlaneSeparation.JordanCurve
-public import TauCeti.Analysis.Normed.Module.FilledHull
 -- Supplies the locally convex, hence locally connected, instance on the complex plane.
 import Mathlib.Analysis.LocallyConvex.WithSeminorms
 

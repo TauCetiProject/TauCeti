@@ -6,8 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Topology.JordanCurve.Basic
-public import Mathlib.Topology.Instances.AddCircle.Defs
-import Mathlib.Analysis.SpecialFunctions.Complex.Circle
 
 /-!
 # Jordan curves parametrized by compact intervals
