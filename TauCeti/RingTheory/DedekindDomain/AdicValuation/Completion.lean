@@ -35,6 +35,8 @@ Everything here concerns one completion. The comparison of two completions along
   of `R` maps to a unit of `𝒪_v` exactly when it does not belong to `v`.
 * `IsDedekindDomain.HeightOneSpectrum.natCard_quotient_span_algebraMap_adicCompletionIntegers`:
   consequently `𝒪_v` modulo such an element is trivial.
+* `exists_span_algebraMap_adicCompletionIntegers_eq_maximalIdeal_pow` (in the same namespace): a
+  nonzero element of `R` generates a power of the maximal ideal of `𝒪_v`.
 * `IsDedekindDomain.HeightOneSpectrum.map_asIdeal_adicCompletionIntegers`: `v` generates the
   maximal ideal of `𝒪_v`.
 * `IsDedekindDomain.HeightOneSpectrum.mem_maximalIdeal_pow_iff`: membership in `𝔪 ^ n` is the
@@ -169,6 +171,17 @@ theorem natCard_quotient_span_algebraMap_adicCompletionIntegers (v : HeightOneSp
   rw [Ideal.span_singleton_eq_top.mpr ((v.isUnit_algebraMap_adicCompletionIntegers_iff r).mpr hr),
     Nat.card_eq_one_iff_unique]
   exact ⟨Ideal.Quotient.subsingleton_iff.mpr rfl, inferInstance⟩
+
+/-- A nonzero element of `R` generates a power of the maximal ideal of the ring of integers of the
+completion at `v`, a discrete valuation ring. -/
+theorem exists_span_algebraMap_adicCompletionIntegers_eq_maximalIdeal_pow
+    (v : HeightOneSpectrum R) {r : R} (hr : r ≠ 0) :
+    ∃ e : ℕ, Ideal.span {algebraMap R (v.adicCompletionIntegers K) r} =
+      IsLocalRing.maximalIdeal (v.adicCompletionIntegers K) ^ e := by
+  refine exists_maximalIdeal_pow_eq_of_principal _ (IsPrincipalIdealRing.principal _) _ ?_
+  rw [Ne, Ideal.span_singleton_eq_bot,
+    map_eq_zero_iff _ (FaithfulSMul.algebraMap_injective R (v.adicCompletionIntegers K))]
+  exact hr
 
 section SingleCompletion
 

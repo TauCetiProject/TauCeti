@@ -139,15 +139,6 @@ private local instance isLinearTopology_adicCompletionIntegers_dividingN :
 private local instance fact_isAdic_maximalIdeal_dividingN : Fact (IsAdic m_u) :=
   ⟨u.isAdic_maximalIdeal_adicCompletionIntegers (K := F)⟩
 
-omit [Finite (A ⧸ u.asIdeal)] in
-/-- An integer `n` nonzero in `A` generates a power `𝔪_u ^ e` of the maximal ideal of `O_u`. -/
-private theorem exists_span_natCast_eq_maximalIdeal_pow {n : ℕ} (hn : (n : A) ≠ 0) :
-    ∃ e : ℕ, Ideal.span {(n : O_u)} = m_u ^ e := by
-  refine exists_maximalIdeal_pow_eq_of_principal O_u (IsPrincipalIdealRing.principal _) _ ?_
-  rw [Ne, Ideal.span_singleton_eq_bot, ← map_natCast (algebraMap A O_u),
-    map_eq_zero_iff _ (FaithfulSMul.algebraMap_injective A O_u)]
-  exact hn
-
 open scoped Classical in
 /-- On a minimal integral model `C`, the image of `Ê(𝔪_u ^ (e + 1))` in `E₁(F_u)`, where
 `(n) = 𝔪_u ^ e`, has finite index, has no nonzero `n`-torsion, and contains `n` times itself with
@@ -163,9 +154,6 @@ private theorem exists_finiteIndex_injective_nsmul_of_isMinimal
   let ι := C.formalPointHomAdicCompletion u
   have hι : Function.Injective ι := C.formalPointHomAdicCompletion_injective u
   let φ : V ≃+ V.map ι := V.equivMapOfInjective ι hι
-  have hφ : (fun P : V.map ι ↦ n • P) = φ ∘ (fun P : V ↦ n • P) ∘ φ.symm := by
-    ext P
-    simp
   refine ⟨V.map ι, ⟨?_⟩, ?_, ?_⟩
   · -- `[E(F_u) : V] = [Ê(𝔪_u) : Ê(𝔪_u ^ (e + 1))] · [E(F_u) : E₁(F_u)]`
     have h1 := TauCeti.IsDiscreteValuationRing.relIndex_maximalIdeal_pow_add (S := O_u) 1 e
@@ -173,10 +161,8 @@ private theorem exists_finiteIndex_injective_nsmul_of_isMinimal
     rw [AddSubgroup.index_map_of_injective V hι, range_formalPointHomAdicCompletion_eq_kerReduction,
       FormalGroupPoint.index_filtration (Nat.succ_ne_zero e), h1]
     exact mul_ne_zero (pow_ne_zero _ Nat.card_pos.ne') AddSubgroup.FiniteIndex.index_ne_zero
-  · rw [hφ]
-    exact φ.injective.comp
-      ((FormalGroupPoint.nsmul_filtration_injective hne (Nat.lt_succ_self e)).comp
-        φ.symm.injective)
+  · exact (φ.injective_nsmul_iff n).mp
+      (FormalGroupPoint.nsmul_filtration_injective hne (Nat.lt_succ_self e))
   · rw [← AddEquiv.index_range_nsmulAddMonoidHom φ,
       FormalGroupPoint.index_range_nsmul_filtration hne (Nat.lt_succ_self e), hne,
       TauCeti.IsDiscreteValuationRing.natCard_quotient_maximalIdeal_pow]
@@ -195,7 +181,8 @@ theorem exists_finiteIndex_injective_nsmul (hn : (n : A) ≠ 0) :
   -- The minimal-model results fix classical equality decisions; equality decisions are unique.
   cases Subsingleton.elim ‹DecidableEq F_u› (fun a b ↦ Classical.propDecidable (a = b))
   classical
-  obtain ⟨e, hne⟩ := exists_span_natCast_eq_maximalIdeal_pow u (F := F) hn
+  obtain ⟨e, hne⟩ := u.exists_span_algebraMap_adicCompletionIntegers_eq_maximalIdeal_pow (K := F) hn
+  rw [map_natCast] at hne
   -- on a minimal model `C.baseChange F_u`, take a level of the formal group
   have key : ∀ (W' : WeierstrassCurve F_u) [W'.IsElliptic] [IsMinimal O_u W'],
       ∃ U : AddSubgroup W'.toAffine.Point, U.FiniteIndex ∧
@@ -212,12 +199,7 @@ theorem exists_finiteIndex_injective_nsmul (hn : (n : A) ≠ 0) :
   let φ := e.addSubgroupMap U
   refine ⟨U.map (e : (V • W).toAffine.Point →+ W.toAffine.Point),
     ⟨by rw [AddSubgroup.index_map_equiv]; exact hU.index_ne_zero⟩, ?_, ?_⟩
-  · have hφ : (fun P : U.map (e : (V • W).toAffine.Point →+ W.toAffine.Point) ↦ n • P) =
-        φ ∘ (fun P : U ↦ n • P) ∘ φ.symm := by
-      ext P
-      simp
-    rw [hφ]
-    exact φ.injective.comp (hinj.comp φ.symm.injective)
+  · exact (φ.injective_nsmul_iff n).mp hinj
   · rw [← AddEquiv.index_range_nsmulAddMonoidHom φ, hidx]
 
 /-- **The local Kummer index**: for an elliptic curve over the completion at a height-one prime
@@ -248,7 +230,7 @@ theorem index_range_nsmul_eq_natCard_torsionBy_mul (hn : (n : A) ≠ 0) :
 theorem exists_finiteIndex_bijective_nsmul (hn : (n : A) ∉ u.asIdeal) :
     ∃ U : AddSubgroup W.toAffine.Point, U.FiniteIndex ∧ Function.Bijective (fun P : U ↦ n • P) := by
   obtain ⟨U, hU, hinj, hidx⟩ :=
-    W.exists_finiteIndex_injective_nsmul u (fun h ↦ hn (h ▸ u.asIdeal.zero_mem))
+    W.exists_finiteIndex_injective_nsmul u (ne_of_mem_of_not_mem u.asIdeal.zero_mem hn).symm
   rw [← map_natCast (algebraMap A O_u),
     u.natCard_quotient_span_algebraMap_adicCompletionIntegers hn, AddSubgroup.index_eq_one,
     AddMonoidHom.range_eq_top] at hidx
@@ -262,7 +244,9 @@ theorem finiteIndex_range_nsmul (hn : (n : A) ≠ 0) :
   obtain ⟨U, hU, -, hidx⟩ := W.exists_finiteIndex_injective_nsmul u hn
   -- `O_u ⧸ n O_u` is finite, as `n O_u` contains a power of the maximal ideal
   have hfin : Finite (O_u ⧸ Ideal.span {(n : O_u)}) := by
-    obtain ⟨e, hne⟩ := exists_span_natCast_eq_maximalIdeal_pow u (F := F) hn
+    obtain ⟨e, hne⟩ :=
+      u.exists_span_algebraMap_adicCompletionIntegers_eq_maximalIdeal_pow (K := F) hn
+    rw [map_natCast] at hne
     exact finite_quotient_iff.mpr ⟨e, hne.ge⟩
   have hnU : ((nsmulAddMonoidHom (α := U) n).range.map U.subtype).FiniteIndex := by
     refine ⟨?_⟩
@@ -282,7 +266,8 @@ Both sides are finite (`WeierstrassCurve.finiteIndex_range_nsmul`). -/
 theorem index_range_nsmul_eq_natCard_torsionBy (hn : (n : A) ∉ u.asIdeal) :
     (nsmulAddMonoidHom (α := W.toAffine.Point) n).range.index =
       Nat.card (Submodule.torsionBy ℤ W.toAffine.Point n) := by
-  rw [W.index_range_nsmul_eq_natCard_torsionBy_mul u (fun h ↦ hn (h ▸ u.asIdeal.zero_mem)),
+  rw [W.index_range_nsmul_eq_natCard_torsionBy_mul u
+      (ne_of_mem_of_not_mem u.asIdeal.zero_mem hn).symm,
     ← map_natCast (algebraMap A O_u),
     u.natCard_quotient_span_algebraMap_adicCompletionIntegers hn, mul_one]
 

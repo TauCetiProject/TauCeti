@@ -100,7 +100,7 @@ private noncomputable def gradedHom {k : ℕ} (hk : k ≠ 0) :
     filtration W I k →+ (I ^ k).toAddSubgroup ⧸
       (I ^ (k + 1)).toAddSubgroup.addSubgroupOf (I ^ k).toAddSubgroup where
   toFun P := QuotientAddGroup.mk ⟨((P : FormalGroupPoint W I) : O), P.2⟩
-  map_zero' := rfl
+  map_zero' := by simp [coe_zero, AddSubgroup.mem_addSubgroupOf]
   map_add' P Q := by
     rw [← QuotientAddGroup.mk_add, QuotientAddGroup.eq, AddSubgroup.mem_addSubgroupOf]
     have h := W.formalAddEval_sub_add_mem (Fact.out : IsAdic I) P.2 Q.2

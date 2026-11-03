@@ -90,7 +90,7 @@ variable {A : Type*} [CommRing A] [IsDedekindDomain A]
 theorem finiteIndex_range_pointMapHom_of_degree_notMem (hf : (f.degree : A) ∉ u.asIdeal) :
     f.pointMapHom.range.FiniteIndex := by
   have := WeierstrassCurve.finiteIndex_range_nsmul u W₂
-    (fun h ↦ hf (h ▸ u.asIdeal.zero_mem))
+    (ne_of_mem_of_not_mem u.asIdeal.zero_mem hf).symm
   refine AddSubgroup.finiteIndex_of_le (H := (nsmulAddMonoidHom f.degree).range) ?_
   rintro P ⟨Q, rfl⟩
   exact ⟨f.dual.pointMap Q, by simp [pointMap_dual_pointMap]⟩
@@ -111,7 +111,7 @@ theorem index_range_mul_index_range_dual_eq_card_ker_mul_card_ker_dual
         natCast_zsmul])
   have hne : (nsmulAddMonoidHom (α := W₁.toAffine.Point) f.degree).range.index ≠ 0 :=
     (WeierstrassCurve.finiteIndex_range_nsmul u W₁
-      (fun h ↦ hf (h ▸ u.asIdeal.zero_mem))).index_ne_zero
+      (ne_of_mem_of_not_mem u.asIdeal.zero_mem hf).symm).index_ne_zero
   -- `z(f̂) · z(f) = z([deg f])`, and the ratio for `[deg f]` is `1`
   have h := f.index_range_nsmul_mul_card_ker_mul_card_ker_dual
   rw [hker, ← hidx] at h
@@ -149,7 +149,7 @@ theorem index_range_div_card_ker_of_degree_notMem (hf : (f.degree : A) ∉ u.asI
     rintro rfl
     exact hf (by simp [degree_zero])
   have := f.finite_ker_pointMapHom hf0
-  have := W₁.finite_primaryComponent u fun h ↦ hf (h ▸ u.asIdeal.zero_mem)
+  have := W₁.finite_primaryComponent u (ne_of_mem_of_not_mem u.asIdeal.zero_mem hf).symm
   have hT : (Nat.card (AddCommGroup.primaryComponent W₁.toAffine.Point f.degree) : ℚ) ≠ 0 :=
     Nat.cast_ne_zero.mpr Nat.card_pos.ne'
   have hK : (Nat.card f.pointMapHom.ker : ℚ) ≠ 0 := Nat.cast_ne_zero.mpr Nat.card_pos.ne'
