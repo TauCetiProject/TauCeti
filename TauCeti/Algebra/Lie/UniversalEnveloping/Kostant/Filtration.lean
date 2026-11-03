@@ -50,8 +50,6 @@ ordinary power only in strictly smaller PBW degree. -/
 theorem factorial_smul_ringChoose_sub_pow_mem_pbwFiltrationPrevious {a : U}
     (ha : a ∈ pbwFiltration ℚ L 1) (n : ℕ) :
     (n.factorial : ℚ) • Ring.choose a n - a ^ n ∈ pbwFiltrationPrevious ℚ L n := by
-  have hpow (k : ℕ) : a ^ k ∈ pbwFiltration ℚ L k := by
-    simpa only [mul_one] using pow_mem_pbwFiltration ℚ L ha k
   have hpoch (k : ℕ) : (descPochhammer ℤ k).smeval a =
       (k.factorial : ℚ) • Ring.choose a k := by
     simpa only [Nat.cast_smul_eq_nsmul] using Ring.descPochhammer_eq_factorial_smul_choose a k
@@ -66,7 +64,7 @@ theorem factorial_smul_ringChoose_sub_pow_mem_pbwFiltrationPrevious {a : U}
     rw [pbwFiltrationPrevious_succ] at hdrop
     have htop : (descPochhammer ℤ n).smeval a ∈ pbwFiltration ℚ L n := by
       simpa only [sub_add_cancel] using (pbwFiltration ℚ L n).add_mem
-        (pbwFiltrationPrevious_le ℚ L n ih) (hpow n)
+        (pbwFiltrationPrevious_le ℚ L n ih) (pow_mem_pbwFiltration_of_mem_one ℚ L ha n)
     have hscalar := mul_mem_pbwFiltration ℚ L htop
       (algebraMap_mem_pbwFiltration ℚ L (n : ℚ) 0)
     simp only [add_zero, map_natCast] at hscalar
@@ -82,28 +80,6 @@ theorem factorial_smul_ringChoose_ι_sub_pow_mem_pbwFiltrationPrevious (x : L) (
     (n.factorial : ℚ) • Ring.choose (ι x) n - (ι x) ^ n ∈
       pbwFiltrationPrevious ℚ L n :=
   factorial_smul_ringChoose_sub_pow_mem_pbwFiltrationPrevious (ι_mem_pbwFiltration_one ℚ L x) n
-
-/-- A binomial in a degree-one element lies in the PBW step given by its lower index. -/
-theorem ringChoose_mem_pbwFiltration {a : U} (ha : a ∈ pbwFiltration ℚ L 1) (n : ℕ) :
-    Ring.choose a n ∈ pbwFiltration ℚ L n := by
-  have h := pbwFiltrationPrevious_le ℚ L n
-    (factorial_smul_ringChoose_sub_pow_mem_pbwFiltrationPrevious ha n)
-  have hs := (pbwFiltration ℚ L n).add_mem h
-    (by simpa only [mul_one] using pow_mem_pbwFiltration ℚ L ha n)
-  rw [sub_add_cancel] at hs
-  have hi := (pbwFiltration ℚ L n).smul_mem ((n.factorial : ℚ)⁻¹) hs
-  simpa [smul_smul, Nat.factorial_ne_zero] using hi
-
-/-- A Cartan binomial lies in the PBW filtration step given by its lower index. -/
-theorem ringChoose_ι_mem_pbwFiltration (x : L) (n : ℕ) :
-    Ring.choose (ι x) n ∈ pbwFiltration ℚ L n :=
-  ringChoose_mem_pbwFiltration (ι_mem_pbwFiltration_one ℚ L x) n
-
-/-- An ordered product of Cartan binomials has PBW degree at most the sum of its indices. -/
-theorem prod_map_ringChoose_ι_mem_pbwFiltration (l : List (L × ℕ)) :
-    (l.map (fun p ↦ Ring.choose (ι p.1) p.2)).prod ∈
-      pbwFiltration ℚ L (l.map Prod.snd).sum :=
-  prod_map_mem_pbwFiltration ℚ L l fun p _ ↦ ringChoose_ι_mem_pbwFiltration p.1 p.2
 
 /-- A binomial and a divided power of a degree-one element have the same leading PBW term. -/
 theorem ringChoose_sub_dividedPower_mem_pbwFiltrationPrevious {a : U}
@@ -123,8 +99,25 @@ theorem ringChoose_ι_sub_dividedPower_mem_pbwFiltrationPrevious (x : L) (n : �
 theorem dividedPower_mem_pbwFiltration {a : U} (ha : a ∈ pbwFiltration ℚ L 1) (n : ℕ) :
     Associative.dividedPower n a ∈ pbwFiltration ℚ L n := by
   rw [Associative.dividedPower_def]
-  exact Submodule.smul_mem _ _
-    (by simpa only [mul_one] using pow_mem_pbwFiltration ℚ L ha n)
+  exact Submodule.smul_mem _ _ (pow_mem_pbwFiltration_of_mem_one ℚ L ha n)
+
+/-- A binomial in a degree-one element lies in the PBW step given by its lower index. -/
+theorem ringChoose_mem_pbwFiltration {a : U} (ha : a ∈ pbwFiltration ℚ L 1) (n : ℕ) :
+    Ring.choose a n ∈ pbwFiltration ℚ L n := by
+  simpa only [sub_add_cancel] using (pbwFiltration ℚ L n).add_mem
+    (pbwFiltrationPrevious_le ℚ L n (ringChoose_sub_dividedPower_mem_pbwFiltrationPrevious ha n))
+    (dividedPower_mem_pbwFiltration ha n)
+
+/-- A Cartan binomial lies in the PBW filtration step given by its lower index. -/
+theorem ringChoose_ι_mem_pbwFiltration (x : L) (n : ℕ) :
+    Ring.choose (ι x) n ∈ pbwFiltration ℚ L n :=
+  ringChoose_mem_pbwFiltration (ι_mem_pbwFiltration_one ℚ L x) n
+
+/-- An ordered product of Cartan binomials has PBW degree at most the sum of its indices. -/
+theorem prod_map_ringChoose_ι_mem_pbwFiltration (l : List (L × ℕ)) :
+    (l.map (fun p ↦ Ring.choose (ι p.1) p.2)).prod ∈
+      pbwFiltration ℚ L (l.map Prod.snd).sum :=
+  prod_map_mem_pbwFiltration ℚ L l fun p _ ↦ ringChoose_ι_mem_pbwFiltration p.1 p.2
 
 /-- A divided power of a canonical Lie generator has PBW degree at most its exponent. -/
 theorem dividedPower_ι_mem_pbwFiltration (x : L) (n : ℕ) :

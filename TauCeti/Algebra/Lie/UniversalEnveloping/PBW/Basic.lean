@@ -160,10 +160,15 @@ theorem pow_mem_pbwFiltration {i : ℕ} {a : U} (ha : a ∈ pbwFiltration R L i)
   rw [pbwFiltration_def] at ha ⊢
   simpa only [smul_eq_mul] using SetLike.pow_mem_graded n ha
 
+/-- The `n`-th power of an element in PBW degree one has PBW degree at most `n`. -/
+theorem pow_mem_pbwFiltration_of_mem_one {a : U} (ha : a ∈ pbwFiltration R L 1) (n : ℕ) :
+    a ^ n ∈ pbwFiltration R L n := by
+  simpa only [mul_one] using pow_mem_pbwFiltration R L ha n
+
 /-- The `n`-th power of a canonical Lie generator has PBW degree at most `n`. -/
 theorem ι_pow_mem_pbwFiltration (x : L) (n : ℕ) :
-    (_root_.UniversalEnvelopingAlgebra.ι R x) ^ n ∈ pbwFiltration R L n := by
-  simpa only [mul_one] using pow_mem_pbwFiltration R L (ι_mem_pbwFiltration_one R L x) n
+    (_root_.UniversalEnvelopingAlgebra.ι R x) ^ n ∈ pbwFiltration R L n :=
+  pow_mem_pbwFiltration_of_mem_one R L (ι_mem_pbwFiltration_one R L x) n
 
 /-- The range of the canonical Lie map lies in the first PBW filtration step. -/
 theorem ι_range_le_pbwFiltration_one :
