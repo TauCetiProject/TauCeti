@@ -8,7 +8,6 @@ module
 public import TauCeti.Algebra.Lie.E7.Minuscule.Generated.StandardComodule
 public import TauCeti.Algebra.AlgebraicGroup.DiagonalizableGroup.Centralizer.Functorial
 public import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.Weight.Centralizer
-public import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.DiagonalTorus.Maximal
 
 /-!
 # The schematic weight-torus centralizer in the generated E₇ carrier
