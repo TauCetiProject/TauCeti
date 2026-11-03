@@ -5,10 +5,12 @@ Authors: Codex
 -/
 module
 
+public import TauCeti.MeasureTheory.Measure.Support
 public import TauCeti.MeasureTheory.Measure.WithDensity
 public import TauCeti.Probability.Distributions.Affine
 public import TauCeti.Probability.Distributions.CompoundPoisson.Support
-public import TauCeti.Probability.Distributions.Stable.Approximation
+public import TauCeti.Probability.Distributions.Stable.Approximation.Basic
+public import TauCeti.Topology.Instances.Real.AddSubmonoid
 
 /-!
 # Support of compensated compound-Poisson stable approximations
@@ -49,16 +51,6 @@ open scoped ENNReal NNReal Pointwise
 
 namespace TauCeti.Probability
 
-private theorem support_smul_measure {X : Type*} [TopologicalSpace X] [MeasurableSpace X]
-    (c : ℝ≥0∞) (μ : Measure X) (hc : c ≠ 0) :
-    (c • μ).support = μ.support := by
-  rw [Measure.support_eq_forall_isOpen, Measure.support_eq_forall_isOpen]
-  ext x
-  simp only [Set.mem_ofPred_eq, smul_apply, smul_eq_mul]
-  constructor <;> intro h U hxU hU
-  · exact (ENNReal.mul_pos_iff.mp (h U hxU hU)).2
-  · exact ENNReal.mul_pos_iff.mpr ⟨pos_iff_ne_zero.mpr hc, h U hxU hU⟩
-
 /-- At full positive skewness, the normalized jumps above a positive cutoff have support
 `[ε, ∞)`. -/
 @[simp]
@@ -67,15 +59,14 @@ theorem support_cond_stableLevyMeasure_one {α ε : ℝ} (hα : α ∈ Ioo 0 2) 
   let s : Set ℝ := {x | ε < |x|}
   have hs : MeasurableSet s := by measurability
   have htop : stableLevyMeasure α 1 s ≠ ∞ := stableLevyMeasure_abs_gt_ne_top hε
-  rw [ProbabilityTheory.cond, support_smul_measure _ _ (ENNReal.inv_ne_zero.mpr htop),
+  rw [ProbabilityTheory.cond, Measure.support_smul_measure _ _ (ENNReal.inv_ne_zero.mpr htop),
     stableLevyMeasure_def, restrict_withDensity hs, ← withDensity_indicator hs]
   calc
     (volume.withDensity (s.indicator fun x ↦ ENNReal.ofReal (stableLevyDensity α 1 x))).support =
         closure (Ioi ε) := by
       apply Measure.support_withDensity_eq_closure_of_subset
       · exact (measurable_stableLevyDensity.comp
-          (show Measurable (fun x : ℝ ↦ ((α, (1 : ℝ)), x)) by
-            fun_prop)).ennreal_ofReal.indicator hs
+          (by fun_prop : Measurable (fun x : ℝ ↦ ((α, (1 : ℝ)), x)))).ennreal_ofReal.indicator hs
       · exact isOpen_Ioi
       · intro x hx
         rw [Function.mem_support, Set.indicator_of_mem]
@@ -85,14 +76,14 @@ theorem support_cond_stableLevyMeasure_one {α ε : ℝ} (hα : α ∈ Ioo 0 2) 
           simp only [ite_eq_left hx0, abs_of_pos hx0, one_add_one_eq_two]
           exact mul_pos (mul_pos (stableLevyDensity_coefficient_pos hα) (by norm_num))
             (rpow_pos_of_pos (hε.trans hx) _)
-        · change ε < |x|
+        · simp only [s, mem_ofPred_eq]
           rw [abs_of_pos (hε.trans hx)]
           exact hx
       · intro x hx
         rw [Function.mem_support] at hx
         by_cases hxs : x ∈ s
         · simp only [Set.indicator_of_mem hxs] at hx
-          change ε < |x| at hxs
+          simp only [s, mem_ofPred_eq] at hxs
           have hxpos : ε < x := by
             rcases (lt_abs.mp hxs) with hpos | hneg
             · exact hpos
@@ -112,7 +103,7 @@ theorem support_cond_stableLevyMeasure_neg_one {α ε : ℝ} (hα : α ∈ Ioo 0
   let s : Set ℝ := {x | ε < |x|}
   have hs : MeasurableSet s := by measurability
   have htop : stableLevyMeasure α (-1) s ≠ ∞ := stableLevyMeasure_abs_gt_ne_top hε
-  rw [ProbabilityTheory.cond, support_smul_measure _ _ (ENNReal.inv_ne_zero.mpr htop),
+  rw [ProbabilityTheory.cond, Measure.support_smul_measure _ _ (ENNReal.inv_ne_zero.mpr htop),
     stableLevyMeasure_def, restrict_withDensity hs, ← withDensity_indicator hs]
   calc
     (volume.withDensity
@@ -120,11 +111,11 @@ theorem support_cond_stableLevyMeasure_neg_one {α ε : ℝ} (hα : α ∈ Ioo 0
       closure (Iio (-ε)) := by
       apply Measure.support_withDensity_eq_closure_of_subset
       · exact (measurable_stableLevyDensity.comp
-          (show Measurable (fun x : ℝ ↦ ((α, (-1 : ℝ)), x)) by
-            fun_prop)).ennreal_ofReal.indicator hs
+          (by fun_prop : Measurable
+            (fun x : ℝ ↦ ((α, (-1 : ℝ)), x)))).ennreal_ofReal.indicator hs
       · exact isOpen_Iio
       · intro x hx
-        change x < -ε at hx
+        simp only [mem_Iio] at hx
         rw [Function.mem_support, Set.indicator_of_mem]
         · rw [ENNReal.ofReal_ne_zero_iff]
           have hx0 : x < 0 := hx.trans (neg_neg_of_pos hε)
@@ -132,14 +123,14 @@ theorem support_cond_stableLevyMeasure_neg_one {α ε : ℝ} (hα : α ∈ Ioo 0
           simp only [ite_eq_right (not_lt.mpr hx0.le), sub_neg_eq_add, one_add_one_eq_two]
           exact mul_pos (mul_pos (stableLevyDensity_coefficient_pos hα) (by norm_num))
             (rpow_pos_of_pos (abs_pos.mpr hx0.ne) _)
-        · change ε < |x|
+        · simp only [s, mem_ofPred_eq]
           rw [abs_of_neg (hx.trans (neg_neg_of_pos hε))]
           simpa using (neg_lt_neg hx)
       · intro x hx
         rw [Function.mem_support] at hx
         by_cases hxs : x ∈ s
         · simp only [Set.indicator_of_mem hxs] at hx
-          change ε < |x| at hxs
+          simp only [s, mem_ofPred_eq] at hxs
           have hxneg : x < -ε := by
             rcases (lt_abs.mp hxs) with hpos | hneg
             · have hzero : stableLevyDensity α (-1) x = 0 := by
@@ -161,7 +152,7 @@ theorem support_cond_stableLevyMeasure_of_abs_lt_one {α β ε : ℝ} (hα : α 
   let s : Set ℝ := {x | ε < |x|}
   have hs : MeasurableSet s := by measurability
   have htop : stableLevyMeasure α β s ≠ ∞ := stableLevyMeasure_abs_gt_ne_top hε
-  rw [ProbabilityTheory.cond, support_smul_measure _ _ (ENNReal.inv_ne_zero.mpr htop),
+  rw [ProbabilityTheory.cond, Measure.support_smul_measure _ _ (ENNReal.inv_ne_zero.mpr htop),
     stableLevyMeasure_def, restrict_withDensity hs, ← withDensity_indicator hs]
   have hs_open : IsOpen s := by
     exact isOpen_lt continuous_const continuous_abs
@@ -175,7 +166,7 @@ theorem support_cond_stableLevyMeasure_of_abs_lt_one {α β ε : ℝ} (hα : α 
       simp [hxs] at hx
     · intro hxs
       rw [Function.mem_support, Set.indicator_of_mem hxs, ENNReal.ofReal_ne_zero_iff]
-      change ε < |x| at hxs
+      simp only [s, mem_ofPred_eq] at hxs
       have hx0 : x ≠ 0 := by
         intro hx
         subst x
@@ -194,76 +185,13 @@ theorem support_cond_stableLevyMeasure_of_abs_lt_one {α β ε : ℝ} (hα : α 
         (s.indicator fun x ↦ ENNReal.ofReal (stableLevyDensity α β x))).support =
       closure s := Measure.support_withDensity_eq_closure
           ((measurable_stableLevyDensity.comp
-            (show Measurable (fun x : ℝ ↦ ((α, β), x)) by
-              fun_prop)).ennreal_ofReal.indicator hs)
+            (by fun_prop : Measurable (fun x : ℝ ↦ ((α, β), x)))).ennreal_ofReal.indicator hs)
           hs_open hsupp
     _ = Iic (-ε) ∪ Ici ε := by
       have hs_eq : s = Iio (-ε) ∪ Ioi ε := by
         ext x
         simp only [s, mem_ofPred_eq, mem_union, mem_Iio, mem_Ioi, lt_abs, lt_neg, or_comm]
       rw [hs_eq, closure_union, closure_Iio, closure_Ioi]
-
-private theorem closure_addSubmonoidClosure_Ici {ε : ℝ} (hε : 0 < ε) :
-    closure (AddSubmonoid.closure (Ici ε) : Set ℝ) = {0} ∪ Ici ε := by
-  let M : AddSubmonoid ℝ := {
-    carrier := {0} ∪ Ici ε
-    zero_mem' := Or.inl rfl
-    add_mem' := by
-      rintro x y (rfl | hx) (rfl | hy)
-      · exact Or.inl (zero_add 0)
-      · exact Or.inr (by simpa using hy)
-      · exact Or.inr (by simpa using hx)
-      · exact Or.inr (by simp only [mem_Ici] at hx hy ⊢; linarith) }
-  have hM : AddSubmonoid.closure (Ici ε) = M := by
-    apply le_antisymm
-    · exact AddSubmonoid.closure_le.mpr fun x hx ↦ Or.inr hx
-    · intro x hx
-      rcases hx with (rfl | hx)
-      · exact (AddSubmonoid.closure (Ici ε)).zero_mem
-      · exact AddSubmonoid.subset_closure hx
-  rw [hM]
-  exact (isClosed_singleton.union isClosed_Ici).closure_eq
-
-private theorem closure_addSubmonoidClosure_Iic {ε : ℝ} (hε : 0 < ε) :
-    closure (AddSubmonoid.closure (Iic (-ε)) : Set ℝ) = {0} ∪ Iic (-ε) := by
-  let M : AddSubmonoid ℝ := {
-    carrier := {0} ∪ Iic (-ε)
-    zero_mem' := Or.inl rfl
-    add_mem' := by
-      rintro x y (rfl | hx) (rfl | hy)
-      · exact Or.inl (zero_add 0)
-      · exact Or.inr (by simpa using hy)
-      · exact Or.inr (by simpa using hx)
-      · exact Or.inr (by simp only [mem_Iic] at hx hy ⊢; linarith) }
-  have hM : AddSubmonoid.closure (Iic (-ε)) = M := by
-    apply le_antisymm
-    · exact AddSubmonoid.closure_le.mpr fun x hx ↦ Or.inr hx
-    · intro x hx
-      rcases hx with (rfl | hx)
-      · exact (AddSubmonoid.closure (Iic (-ε))).zero_mem
-      · exact AddSubmonoid.subset_closure hx
-  rw [hM]
-  exact (isClosed_singleton.union isClosed_Iic).closure_eq
-
-private theorem closure_addSubmonoidClosure_twoSided {ε : ℝ} :
-    closure (AddSubmonoid.closure (Iic (-ε) ∪ Ici ε) : Set ℝ) = univ := by
-  have htop : AddSubmonoid.closure (Iic (-ε) ∪ Ici ε) = ⊤ := by
-    exact eq_top_iff.mpr fun x ↦ by
-      let y := ε + |x| + 1
-      let z := x - y
-      have hy : y ∈ Iic (-ε) ∪ Ici ε := Or.inr (by
-        simp only [mem_Ici, y]
-        linarith [abs_nonneg x])
-      have hz : z ∈ Iic (-ε) ∪ Ici ε := Or.inl (by
-        simp only [mem_Iic, z, y]
-        have := le_abs_self x
-        linarith)
-      have hy' := AddSubmonoid.subset_closure hy
-      have hz' := AddSubmonoid.subset_closure hz
-      convert (AddSubmonoid.closure (Iic (-ε) ∪ Ici ε)).add_mem hy' hz' using 1
-      simp [z]
-  rw [htop]
-  exact closure_univ
 
 /-- At full positive skewness, the compensated approximation has the translated no-jump atom and
 then the translated right half-line of one-or-more-jump outcomes. -/
@@ -280,21 +208,17 @@ theorem support_stableCompensatedPoissonMeasure_one {α ε : ℝ} (hα : α ∈ 
     ⟨(stableLevyMeasure_abs_gt_pos hα (by norm_num) hε).ne',
       stableLevyMeasure_abs_gt_ne_top hε⟩
   rw [stableCompensatedPoissonMeasure_def]
+  -- The defining equation expands `ν`, `s`, and `c`; fold them back to the local names.
   change ((compoundPoissonMeasure (ν s).toNNReal (cond ν s)).map
     (fun x ↦ x - c)).support = {-c} ∪ Ici (ε - c)
   have hmap : (fun x : ℝ ↦ x - c) = fun x ↦ -c + 1 * x := by funext x; ring
   rw [hmap, support_map_affine (by norm_num), support_compoundPoissonMeasure hr,
     support_cond_stableLevyMeasure_one hα hε, closure_addSubmonoidClosure_Ici hε]
   rw [← hmap]
-  change (fun x ↦ x - c) '' ({0} ∪ Ici ε) = {-c} ∪ Ici (ε - c)
-  ext x
-  constructor
-  · rintro ⟨y, (rfl | hy), rfl⟩
-    · exact Or.inl (by simp)
-    · exact Or.inr (by simpa only [mem_Ici] using sub_le_sub_right hy c)
-  · rintro (rfl | hx)
-    · exact ⟨0, Or.inl rfl, by simp⟩
-    · exact ⟨x + c, Or.inr (by simp only [mem_Ici] at hx ⊢; linarith), by ring⟩
+  let e : ℝ ≃o ℝ := OrderIso.subRight c
+  have he : (fun x : ℝ ↦ x - c) = e := rfl
+  rw [he, image_union, image_singleton, e.image_Ici]
+  simp only [e, OrderIso.subRight_apply, zero_sub]
 
 /-- At full negative skewness, the compensated approximation has the translated no-jump atom and
 then the translated left half-line of one-or-more-jump outcomes. -/
@@ -311,20 +235,16 @@ theorem support_stableCompensatedPoissonMeasure_neg_one {α ε : ℝ} (hα : α 
     ⟨(stableLevyMeasure_abs_gt_pos hα (by norm_num) hε).ne',
       stableLevyMeasure_abs_gt_ne_top hε⟩
   rw [stableCompensatedPoissonMeasure_def]
+  -- The defining equation expands `ν`, `s`, and `c`; fold them back to the local names.
   change ((compoundPoissonMeasure (ν s).toNNReal (cond ν s)).map
     (fun x ↦ x - c)).support = {-c} ∪ Iic (-ε - c)
   have hmap : (fun x : ℝ ↦ x - c) = fun x ↦ -c + 1 * x := by funext x; ring
   rw [hmap, support_map_affine (by norm_num), support_compoundPoissonMeasure hr,
     support_cond_stableLevyMeasure_neg_one hα hε, closure_addSubmonoidClosure_Iic hε, ← hmap]
-  change (fun x ↦ x - c) '' ({0} ∪ Iic (-ε)) = {-c} ∪ Iic (-ε - c)
-  ext x
-  constructor
-  · rintro ⟨y, (rfl | hy), rfl⟩
-    · exact Or.inl (by simp)
-    · exact Or.inr (by simpa only [mem_Iic] using sub_le_sub_right hy c)
-  · rintro (rfl | hx)
-    · exact ⟨0, Or.inl rfl, by simp⟩
-    · exact ⟨x + c, Or.inr (by simp only [mem_Iic] at hx ⊢; linarith), by ring⟩
+  let e : ℝ ≃o ℝ := OrderIso.subRight c
+  have he : (fun x : ℝ ↦ x - c) = e := rfl
+  rw [he, image_union, image_singleton, e.image_Iic]
+  simp only [e, OrderIso.subRight_apply, zero_sub]
 
 /-- At strict interior skewness, every compensated compound-Poisson approximation has full
 topological support. -/
@@ -339,6 +259,7 @@ theorem support_stableCompensatedPoissonMeasure_of_abs_lt_one {α β ε : ℝ}
     ⟨(stableLevyMeasure_abs_gt_pos hα hβ.le hε).ne',
       stableLevyMeasure_abs_gt_ne_top hε⟩
   rw [stableCompensatedPoissonMeasure_def]
+  -- The defining equation expands `ν`, `s`, and `c`; fold them back to the local names.
   change ((compoundPoissonMeasure (ν s).toNNReal (cond ν s)).map
     (fun x ↦ x - c)).support = univ
   have hmap : (fun x : ℝ ↦ x - c) = fun x ↦ -c + 1 * x := by funext x; ring
