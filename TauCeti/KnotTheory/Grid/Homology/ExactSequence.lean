@@ -9,7 +9,7 @@ public import Mathlib.Algebra.Category.ModuleCat.ChangeOfRingsExact
 public import Mathlib.Algebra.Homology.HomologicalComplexAbelian
 public import Mathlib.Algebra.Homology.HomologySequence
 public import TauCeti.Algebra.Homology.Linear
-public import TauCeti.KnotTheory.Grid.Homology.SimplyBlocked
+public import TauCeti.KnotTheory.Grid.Homology.SimplyBlocked.Basic
 public import TauCeti.KnotTheory.Grid.Homology.Unblocked
 
 /-!
