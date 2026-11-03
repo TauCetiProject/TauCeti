@@ -26,6 +26,13 @@ class BatchYield(Deferred):
 
 
 class BatchClient(GitHub):
+    """Label client with a between-PR work target and request-level quota reserves.
+
+    Discovery responses count toward quota, but the work target starts after a
+    complete open-PR listing. Local BatchYield preserves normal saved progress;
+    actual quota exhaustion retains the shared client's outage/retry semantics.
+    """
+
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self.work_start = None
@@ -33,13 +40,20 @@ class BatchClient(GitHub):
 
     @property
     def responses(self):
+        """Count this client's recorded HTTP responses, including retry responses."""
         return sum(row["requests"] for row in self.stats.values())
 
     def pause(self, reason):
+        """Yield local work without marking the shared credential exhausted."""
         self.yielded = True
         raise BatchYield(reason)
 
     def request(self, method, path, data=None, *, read=None, **kwargs):
+        """Honor observed reserves before delegating transport and mutation policy.
+
+        Reserves apply during discovery and within a PR; only begin_pr applies
+        the batch work target, so this method cannot livelock a large PR there.
+        """
         is_read = method == "GET" if read is None else read
         credential, _ = self._credential(is_read)
         resource = "graphql" if path == "graphql" else "core"
@@ -64,21 +78,27 @@ class BatchClient(GitHub):
             raise Deferred(credential, until)
 
     def begin_pr(self):
+        """Defer the next PR once the response target is spent; finish a started PR."""
         if self.work_start is not None and self.responses - self.work_start >= WORK_RESPONSES:
             self.pause("changed-PR response allowance reached")
 
     def pages(self, path):
+        """Yield all pages, then start work accounting after open-PR discovery."""
         yield from super().pages(path)
         if "/pulls?" in path and "state=open" in path:
             self.work_start = self.responses  # Never impose a fixed PR-count discovery cap.
 
 
 class BatchState(labels.RecoveryState):
+    """Keep label input/retry state with fair attempt order and automatic retry dates."""
+
     def success(self, number, label, key):
+        """Remember a completed input and its scheduling timestamp."""
         super().success(number, label, key)
         self.records[number]["batch_attempted_at"] = time.time()
 
     def failure(self, number, error, key=None, **kwargs):
+        """Retain bounded attempts, with a six-hour retry after their exhaustion."""
         super().failure(number, error, key, **kwargs)
         record = self.records[number]
         record["batch_attempted_at"] = time.time()
@@ -89,6 +109,12 @@ class BatchState(labels.RecoveryState):
 
 
 def main(argv=None):
+    """Run the pinned reconciler, restoring module bindings on every exit.
+
+    Corrupt input checkpoints rebuild automatically. The reconciler saves its
+    progress before a local allowance yield becomes scheduling success (0).
+    Actual API errors retain a nonzero result and their ordinary retry state.
+    """
     argv = list(sys.argv[1:] if argv is None else argv)
     parser = argparse.ArgumentParser(add_help=False, allow_abbrev=False)
     parser.add_argument("--state-in")

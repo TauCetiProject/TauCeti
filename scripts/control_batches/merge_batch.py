@@ -23,6 +23,7 @@ def changed(pr, previous):
 
 
 def install():
+    """Install discovery/order/checkpoint hooks without changing merge decisions."""
     original_candidates = sweep.candidates
     original_remember = sweep.remember_sweep_attempt
     original_open_prs = sweep.open_prs
@@ -98,6 +99,7 @@ def install():
 
 
 def main():
+    """Run the pinned policy under its existing budget and report batch API use."""
     install()
     try:
         sweep.api_budget.configure(sweep.FOCUSED)
