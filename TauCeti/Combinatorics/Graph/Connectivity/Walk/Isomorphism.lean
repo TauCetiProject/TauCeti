@@ -8,6 +8,8 @@ module
 public import TauCeti.Combinatorics.Graph.Isomorphism
 public import TauCeti.Combinatorics.Graph.Connectivity.Walk.Bidirected
 
+import TauCeti.Data.List.Attach
+
 /-!
 # Transporting multigraph walks along isomorphisms
 
@@ -338,23 +340,14 @@ theorem support_mapWalk (f : Iso G H) {x y : G.vertexSet} (p : G.Walk x y) :
     (f.mapWalk p).support = ((p.toBidirected x.2).vertices.map f.vertexEquiv).unattach := by
   rw [mapWalk, ArrowWalk.support_toGraphWalk, vertices_mapPath]
 
-private theorem mem_unattach_iff {X : Type*} {P : X → Prop} (a : Subtype P)
-    (l : List (Subtype P)) : (a : X) ∈ l.unattach ↔ a ∈ l := by
-  rw [List.mem_unattach]
-  constructor
-  · rintro ⟨_, h⟩
-    simpa using h
-  · intro h
-    exact ⟨a.2, h⟩
-
 /-- A vertex occurs on a transported walk exactly when its inverse image occurs on the original
 walk. -/
 @[simp]
 theorem vertexEquiv_mem_support_mapWalk_iff (f : Iso G H) {x y : G.vertexSet}
     (p : G.Walk x y) (z : G.vertexSet) :
     (f.vertexEquiv z : α') ∈ (f.mapWalk p).support ↔ (z : α) ∈ p.support := by
-  rw [support_mapWalk, ← Walk.vertices_toBidirected p x.2, mem_unattach_iff,
-    mem_unattach_iff,
+  rw [support_mapWalk, ← Walk.vertices_toBidirected p x.2, List.val_mem_unattach_iff,
+    List.val_mem_unattach_iff,
     List.mem_map_of_injective f.vertexEquiv.injective]
 
 private theorem edges_mapWalk_aux (f : Iso G H) {x y : α} (p : G.Walk x y)
@@ -379,18 +372,17 @@ walk. -/
 theorem edgeEquiv_mem_edges_mapWalk_iff (f : Iso G H) {x y : G.vertexSet}
     (p : G.Walk x y) (e : G.edgeSet) :
     (f.edgeEquiv e : β') ∈ (f.mapWalk p).edges ↔ (e : β) ∈ p.edges := by
-  rw [edges_mapWalk, ← Walk.edgesAttach_unattach p, mem_unattach_iff, mem_unattach_iff,
+  rw [edges_mapWalk, ← Walk.edgesAttach_unattach p, List.val_mem_unattach_iff,
+    List.val_mem_unattach_iff,
     List.mem_map_of_injective f.edgeEquiv.injective]
 
 /-- Walk transport preserves and reflects trails. -/
 @[simp]
 theorem isTrail_mapWalk (f : Iso G H) {x y : G.vertexSet} (p : G.Walk x y) :
     (f.mapWalk p).IsTrail ↔ p.IsTrail := by
-  rw [Walk.isTrail_def, edges_mapWalk, Walk.isTrail_def, List.unattach,
-    List.nodup_map_iff Subtype.val_injective,
-    List.nodup_map_iff f.edgeEquiv.injective,
-    ← List.nodup_map_iff Subtype.val_injective]
-  exact Iff.of_eq (congrArg List.Nodup (Walk.edgesAttach_unattach p))
+  rw [Walk.isTrail_def, edges_mapWalk, List.nodup_unattach_iff,
+    List.nodup_map_iff f.edgeEquiv.injective, Walk.isTrail_def,
+    ← Walk.edgesAttach_unattach p, List.nodup_unattach_iff]
 
 /-- Walk transport preserves and reflects paths. -/
 @[simp]
