@@ -61,6 +61,8 @@ over `Set.Iic x` is then the limit of those interval integrals, using
   `TauCeti.Real.erfc`.
 * `TauCeti.Probability.measureReal_Ioi_gaussianReal_eq_cdf` — the upper tail, in terms of the
   standard Gaussian cdf.
+* `TauCeti.Probability.mul_gaussianPDFReal_add_le_measureReal_Ioi_gaussianReal` — a lower bound
+  for the upper tail to the right of the mean, by the density at a later point.
 * `TauCeti.Probability.measureReal_le_of_hasLaw_gaussianReal` — the random-variable corollary.
 -/
 
@@ -316,6 +318,27 @@ theorem integral_Ioi_gaussianPDFReal_eq_cdf (m : ℝ) {v : ℝ≥0} (hv : v ≠ 
   rw [← measureReal_Ioi_gaussianReal_eq_cdf m hv, measureReal_def,
     gaussianReal_apply_eq_integral m hv, ENNReal.toReal_ofReal
       (setIntegral_nonneg measurableSet_Ioi fun t _ => gaussianPDFReal_nonneg m v t)]
+
+/-- A lower bound for the upper tail of a Gaussian law: beyond a point `s` to the right of the
+mean, the interval `(s, s + t]` alone carries mass at least its length `t` times the density at
+its right end. -/
+theorem mul_gaussianPDFReal_add_le_measureReal_Ioi_gaussianReal {m s t : ℝ} (v : ℝ≥0) (hs : m ≤ s)
+    (ht : 0 ≤ t) : t * gaussianPDFReal m v (s + t) ≤ (gaussianReal m v).real (Ioi s) := by
+  rcases eq_or_ne v 0 with rfl | hv
+  · rw [gaussianPDFReal_zero_var, Pi.zero_apply, mul_zero]
+    exact measureReal_nonneg
+  have hst : s ≤ s + t := le_add_of_nonneg_right ht
+  calc t * gaussianPDFReal m v (s + t)
+      = gaussianPDFReal m v (s + t) * volume.real (Ioc s (s + t)) := by
+        rw [Real.volume_real_Ioc_of_le hst, add_sub_cancel_left, mul_comm]
+    _ ≤ ∫ x in Ioc s (s + t), gaussianPDFReal m v x :=
+        setIntegral_ge_of_const_le_real measurableSet_Ioc measure_Ioc_lt_top.ne
+          (fun x hx => antitoneOn_gaussianPDFReal m v (hs.trans hx.1.le) (hs.trans hst) hx.2)
+          (integrable_gaussianPDFReal m v).integrableOn
+    _ = (gaussianReal m v).real (Ioc s (s + t)) := by
+        rw [measureReal_def, gaussianReal_apply_eq_integral m hv, ENNReal.toReal_ofReal
+          (setIntegral_nonneg measurableSet_Ioc fun x _ => gaussianPDFReal_nonneg m v x)]
+    _ ≤ (gaussianReal m v).real (Ioi s) := measureReal_mono Ioc_subset_Ioi_self
 
 /-- A random variable with a Gaussian law of nonzero variance has the error-function cumulative
 distribution function. -/

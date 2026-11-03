@@ -81,7 +81,7 @@ variable {K : Type*} [Field K] [ValuativeRel K] [TopologicalSpace K]
 a subgroup of index two in `Kˣ` for every `a` that is not a square. -/
 theorem quadraticNormSubgroup_index_eq_two_of_not_isSquare (h2 : (2 : K) ≠ 0) {a : Kˣ}
     (ha : ¬IsSquare a) : (quadraticNormSubgroup (a : K)).index = 2 := by
-  have : Fact (¬IsSquare (a : K)) := ⟨isSquare_units_val_iff.not.mpr ha⟩
+  have : Fact (¬IsSquare (a : K)) := ⟨Units.isSquare_coe_iff.not.mpr ha⟩
   have h := two_mul_index_quadraticNormSubgroup_mul_card_squareClass a h2
   rw [card_squareClass_eq_four_mul_pow_finrank h2, QuadraticAlgebra.finrank_eq_two,
     card_squareClass h2] at h

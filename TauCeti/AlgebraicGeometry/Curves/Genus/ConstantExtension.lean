@@ -12,6 +12,7 @@ public import TauCeti.AlgebraicGeometry.Morphisms.Smooth.Regular
 public import TauCeti.AlgebraicGeometry.Morphisms.Smooth.RelativeDimension
 public import TauCeti.AlgebraicGeometry.WeilDivisor.Scheme.SerreDuality
 public import TauCeti.FieldTheory.FunctionField.RiemannRoch.Equiv
+import TauCeti.AlgebraicGeometry.Curves.Smooth
 
 /-!
 # The genus of a smooth curve under every constant field extension
@@ -81,12 +82,8 @@ theorem _root_.AlgebraicGeometry.Scheme.genus_eq_genus_functionField_of_smooth (
     haveI := finiteDimensional_cohomology_one_trivial_of_smooth k X
     X.genus k = genus k X.functionField := by
   have := SmoothOfRelativeDimension.smooth 1 (X ↘ Spec (.of k))
-  have : ∀ x : X, IsRegularLocalRing (X.presheaf.stalk x) :=
-    isRegularLocalRing_stalk_of_smooth (X ↘ Spec (.of k))
-  have : ∀ x : CodimensionOnePoint X, IsDiscreteValuationRing (X.presheaf.stalk (x : X)) :=
-    fun x ↦ inferInstance
-  have : X.IsCurveOver k :=
-    ⟨topologicalKrullDim_eq_of_smoothOfRelativeDimension (X ↘ Spec (.of k))⟩
+  have := isDiscreteValuationRing_stalk_of_smooth (X := X) k
+  have := Scheme.IsCurveOver.of_smooth k X
   have : IsNoetherian X := Scheme.IsCurveOver.isNoetherian k X
   have : X.IsSeparated := Scheme.IsSeparated.of_isSeparated (X ↘ Spec (.of k))
   exact SchemeWeilDivisor.genus_eq_genus_functionField

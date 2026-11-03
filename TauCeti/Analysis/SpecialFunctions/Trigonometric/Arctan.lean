@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.SpecialFunctions.Trigonometric.Arctan
+public import Mathlib.Basic.Real.Sign
 
 /-!
 # Complementary arctangents at the corners of a rectangle
@@ -17,15 +18,16 @@ separately is not stated there.
 ## Main results
 
 * `Real.arctan_div_add_arctan_div`: the quotient form of the complementary-angle law.
+* `Real.tendsto_arctan_div_nhdsGT_zero`: `arctan (c / η) → (π / 2) * sign c` as `η → 0⁺`.
 * `TauCeti.arctan_corner_sum_eq_two_mul_pi_mul_I`: the four corner angles of a rectangle straddling
   the imaginary axis sum to a full turn.
 -/
 
 public section
 
-open Complex
+open Complex Filter
 
-open scoped Real
+open scoped Real Topology
 
 namespace Real
 
@@ -35,6 +37,19 @@ theorem arctan_div_add_arctan_div {u v : ℝ} (h : 0 < u / v) :
     arctan (u / v) + arctan (v / u) = π / 2 := by
   rw [← inv_div u v, arctan_inv_of_pos h]
   ring
+
+/-- As `η → 0⁺`, `arctan (c / η)` tends to `π / 2` times the sign of `c`. -/
+theorem tendsto_arctan_div_nhdsGT_zero (c : ℝ) :
+    Tendsto (fun η : ℝ => arctan (c / η)) (𝓝[>] 0) (𝓝 (π / 2 * Real.sign c)) := by
+  rcases lt_trichotomy c 0 with hc | rfl | hc
+  · rw [Real.sign_of_neg hc, mul_neg_one]
+    refine (tendsto_arctan_atBot.mono_right nhdsWithin_le_nhds).comp ?_
+    exact (tendsto_inv_nhdsGT_zero.const_mul_atTop_of_neg hc).congr fun η =>
+      (div_eq_mul_inv c η).symm
+  · simp
+  · rw [Real.sign_of_pos hc, mul_one]
+    refine (tendsto_arctan_atTop.mono_right nhdsWithin_le_nhds).comp ?_
+    exact (tendsto_inv_nhdsGT_zero.const_mul_atTop hc).congr fun η => (div_eq_mul_inv c η).symm
 
 end Real
 

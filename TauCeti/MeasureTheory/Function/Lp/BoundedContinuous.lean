@@ -10,6 +10,7 @@ public import Mathlib.MeasureTheory.Function.LpSeminorm.LpNorm
 public import Mathlib.MeasureTheory.Function.LpSpace.ContinuousFunctions
 public import Mathlib.MeasureTheory.Measure.OpenPos
 public import TauCeti.MeasureTheory.Function.Lp.One
+import TauCeti.MeasureTheory.Function.Lp.Norm
 
 /-!
 # Bounded continuous functions in `L∞`
@@ -63,8 +64,7 @@ theorem mem_Lp_top (f : α →ᵇ E) : f.toContinuousMap.toAEEqFun μ ∈ Lp E �
 
 private theorem norm_toAEEqFun_le (f : α →ᵇ E) :
     ‖(⟨f.toContinuousMap.toAEEqFun μ, mem_Lp_top μ f⟩ : Lp E ∞ μ)‖ ≤ ‖f‖ := by
-  rw [Lp.norm_def, eLpNorm_exponent_top (Lp.aestronglyMeasurable _)]
-  refine ENNReal.toReal_le_of_le_ofReal (norm_nonneg f) (eLpNormEssSup_le_of_ae_bound ?_)
+  refine Lp.norm_top_le_of_ae_bound (norm_nonneg f) ?_
   filter_upwards [f.toContinuousMap.coeFn_toAEEqFun μ] with x hx
   exact hx ▸ f.norm_coe_le_norm x
 
@@ -102,8 +102,7 @@ function is its supremum norm. -/
 @[simp]
 theorem norm_toLpTop (f : α →ᵇ E) : ‖toLpTop μ 𝕜 f‖ = ‖f‖ := by
   refine (norm_toLpTop_le μ f).antisymm ((norm_le (norm_nonneg _)).2 fun x => ?_)
-  have h := ae_le_lpNorm_exponent_top (Lp.memLp (toLpTop μ 𝕜 f))
-  rw [← toReal_eLpNorm, ← Lp.norm_def] at h
+  have h := Lp.ae_norm_le_norm_top (toLpTop μ 𝕜 f)
   have hae : ∀ᵐ x ∂μ, ‖f x‖ ≤ ‖toLpTop μ 𝕜 f‖ := by
     filter_upwards [coeFn_toLpTop μ (𝕜 := 𝕜) f, h] with x hx h
     exact hx ▸ h
