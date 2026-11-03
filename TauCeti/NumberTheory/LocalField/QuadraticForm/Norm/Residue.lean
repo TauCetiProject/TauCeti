@@ -56,7 +56,7 @@ theorem exists_norm_eq_iff_exists_quotient_normForm_of_defectExponent_eq
     have ht : t ^ 2 = (a : K) := (algebraMap K L).injective (by
       simpa only [map_pow] using hs2)
     exact not_isSquare_of_defectExponent_eq hd
-      (isSquare_units_val_iff.mp ⟨t, by simpa only [sq] using ht.symm⟩)
+      (Units.isSquare_coe_iff.mp ⟨t, by simpa only [sq] using ht.symm⟩)
   have hnorm : normGroup K L = quadraticNormSubgroup (a : K) := by
     ext u
     rw [mem_normGroup_iff_exists_sq_sub_mul_sq L hs hs2,
