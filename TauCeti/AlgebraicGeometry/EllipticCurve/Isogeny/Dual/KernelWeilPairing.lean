@@ -24,6 +24,12 @@ of isogeny descent, unlike the restriction of `e_n` to `ker φ × ker φ`, which
 
 The construction uses the native point maps, the existing Weil pairing and its adjointness
 under dual isogenies. No choice of bases or cyclicity of either kernel is required.
+The maps `kerToTorsion` and `torsionToDualKer` are the native-point counterparts of
+`TauCeti.Isogeny.kerCoeffToTorsionCoeff` and `TauCeti.Isogeny.torsionCoeffToDualKerCoeff`;
+`TauCeti.Isogeny.torsionShortExact` in
+`TauCeti.AlgebraicGeometry.EllipticCurve.GaloisCohomology.Isogeny.Torsion` packages their
+sequence as discrete Galois modules. The pairing here is geometric, not yet a
+Galois-equivariant coefficient pairing.
 
 ## References
 
@@ -49,7 +55,7 @@ local instance : NeZero φ.degree := ⟨φ.degree_ne_zero⟩
 variable [IsSepClosed F] (hd : (φ.degree : F) ≠ 0)
 
 /-- The kernel of an isogeny is isotropic for the Weil pairing at its degree. -/
-theorem weilPairing_eq_zero_of_mem_ker
+theorem weilPairing_eq_zero_of_pointMap_eq_zero
     {P R : Submodule.torsionBy ℤ W₁.Point (φ.degree : ℤ)}
     (hP : (Hom.ofIsogeny φ).pointMap P = 0)
     (hR : (Hom.ofIsogeny φ).pointMap R = 0) :
@@ -66,34 +72,34 @@ theorem weilPairing_eq_zero_of_mem_ker
 `e_φ(P, φ R) = e_n(P, R)` on degree torsion, where `n = deg φ`. -/
 def kerWeilPairing : (Hom.ofIsogeny φ).pointMapHom.ker →+
     (Hom.ofIsogeny φ.dual).pointMapHom.ker →+ Additive (rootsOfUnity φ.degree F) := by
-  let pairing := (weilPairing W₁ φ.degree hd).comp φ.kerToDegreeTorsion
+  let pairing := (weilPairing W₁ φ.degree hd).comp φ.kerToTorsion
   let vanishing (P : (Hom.ofIsogeny φ).pointMapHom.ker) :
-      φ.degreeTorsionToDualKer.ker ≤ (pairing P).ker := fun R hR ↦
-    φ.weilPairing_eq_zero_of_mem_ker hd
-      (φ.pointMap_kerToDegreeTorsion P)
-      ((φ.degreeTorsionToDualKer_eq_zero_iff R).mp hR)
-  let lift := φ.degreeTorsionToDualKer.liftOfSurjective
-    (G₃ := Additive (rootsOfUnity φ.degree F)) (φ.degreeTorsionToDualKer_surjective hd)
+      φ.torsionToDualKer.ker ≤ (pairing P).ker := fun R hR ↦
+    φ.weilPairing_eq_zero_of_pointMap_eq_zero hd
+      (φ.pointMap_kerToTorsion P)
+      ((φ.torsionToDualKer_eq_zero_iff R).mp hR)
+  let lift := φ.torsionToDualKer.liftOfSurjective
+    (G₃ := Additive (rootsOfUnity φ.degree F)) (φ.torsionToDualKer_surjective hd)
   refine { toFun := fun P ↦ lift ⟨pairing P, vanishing P⟩
            map_zero' := ?_
            map_add' := ?_ }
   · ext Q
-    obtain ⟨R, rfl⟩ := φ.degreeTorsionToDualKer_surjective hd Q
+    obtain ⟨R, rfl⟩ := φ.torsionToDualKer_surjective hd Q
     simp only [lift, AddMonoidHom.liftOfSurjective, AddMonoidHom.liftOfRightInverse_comp_apply,
       map_zero, AddMonoidHom.zero_apply]
   · intro P P'
     ext Q
-    obtain ⟨R, rfl⟩ := φ.degreeTorsionToDualKer_surjective hd Q
+    obtain ⟨R, rfl⟩ := φ.torsionToDualKer_surjective hd Q
     simp only [lift, AddMonoidHom.liftOfSurjective, AddMonoidHom.liftOfRightInverse_comp_apply,
       map_add, AddMonoidHom.add_apply]
 
 /-- The characteristic formula for the kernel pairing, without choosing a lift. -/
 @[simp]
-theorem kerWeilPairing_degreeTorsionToDualKer
+theorem kerWeilPairing_torsionToDualKer
     (P : (Hom.ofIsogeny φ).pointMapHom.ker)
     (R : Submodule.torsionBy ℤ W₁.Point (φ.degree : ℤ)) :
-    φ.kerWeilPairing hd P (φ.degreeTorsionToDualKer R) =
-      weilPairing W₁ φ.degree hd (φ.kerToDegreeTorsion P) R := by
+    φ.kerWeilPairing hd P (φ.torsionToDualKer R) =
+      weilPairing W₁ φ.degree hd (φ.kerToTorsion P) R := by
   simp only [kerWeilPairing, AddMonoidHom.coe_mk, ZeroHom.coe_mk,
     AddMonoidHom.liftOfSurjective, AddMonoidHom.liftOfRightInverse_comp_apply,
     AddMonoidHom.comp_apply]
@@ -102,30 +108,30 @@ theorem kerWeilPairing_degreeTorsionToDualKer
 theorem kerWeilPairing_unique
     (e : (Hom.ofIsogeny φ).pointMapHom.ker →+
       (Hom.ofIsogeny φ.dual).pointMapHom.ker →+ Additive (rootsOfUnity φ.degree F))
-    (he : ∀ P R, e P (φ.degreeTorsionToDualKer R) =
-      weilPairing W₁ φ.degree hd (φ.kerToDegreeTorsion P) R) :
+    (he : ∀ P R, e P (φ.torsionToDualKer R) =
+      weilPairing W₁ φ.degree hd (φ.kerToTorsion P) R) :
     e = φ.kerWeilPairing hd := by
   apply AddMonoidHom.ext
   intro P
   apply AddMonoidHom.ext
   intro Q
-  obtain ⟨R, rfl⟩ := φ.degreeTorsionToDualKer_surjective hd Q
-  exact (he P R).trans (φ.kerWeilPairing_degreeTorsionToDualKer hd P R).symm
+  obtain ⟨R, rfl⟩ := φ.torsionToDualKer_surjective hd Q
+  exact (he P R).trans (φ.kerWeilPairing_torsionToDualKer hd P R).symm
 
 /-- The isogeny Weil pairing is nondegenerate in its first argument. -/
 theorem kerWeilPairing_nondegenerate_left
     {P : (Hom.ofIsogeny φ).pointMapHom.ker}
     (hP : ∀ Q, φ.kerWeilPairing hd P Q = 0) : P = 0 := by
   have h := weilPairing_nondegenerate W₁ φ.degree hd
-    (fun R ↦ (φ.kerWeilPairing_degreeTorsionToDualKer hd P R).symm.trans
-      (hP (φ.degreeTorsionToDualKer R)))
-  exact φ.kerToDegreeTorsion_injective (h.trans (map_zero φ.kerToDegreeTorsion).symm)
+    (fun R ↦ (φ.kerWeilPairing_torsionToDualKer hd P R).symm.trans
+      (hP (φ.torsionToDualKer R)))
+  exact φ.kerToTorsion_injective (h.trans (map_zero φ.kerToTorsion).symm)
 
 /-- The isogeny Weil pairing is nondegenerate in its second argument. -/
 theorem kerWeilPairing_nondegenerate_right
     {Q : (Hom.ofIsogeny φ.dual).pointMapHom.ker}
     (hQ : ∀ P, φ.kerWeilPairing hd P Q = 0) : Q = 0 := by
-  obtain ⟨R, rfl⟩ := φ.degreeTorsionToDualKer_surjective hd Q
+  obtain ⟨R, rfl⟩ := φ.torsionToDualKer_surjective hd Q
   let T := torsionByMap _ (Hom.ofIsogeny φ).pointMapHom.toIntLinearMap R
   have hT_coe : (T : W₂.Point) = (Hom.ofIsogeny φ).pointMap R := by
     rw [coe_torsionByMap_apply, AddMonoidHom.coe_toIntLinearMap, Hom.pointMapHom_apply]
@@ -134,15 +140,15 @@ theorem kerWeilPairing_nondegenerate_right
       ⟨(Hom.ofIsogeny φ.dual).pointMap S, φ.dual_pointMap_mem_ker_pointMapHom S⟩
     have h := φ.weilPairing_eq_weilPairing_dual φ.degree hd
       (S := R) (T := S) (S' := T)
-      (T' := φ.kerToDegreeTorsion P) hT_coe.symm (by
+      (T' := φ.kerToTorsion P) hT_coe.symm (by
         -- The underlying point of `P` is the dual image by its local definition.
-        rw [coe_kerToDegreeTorsion])
-    have hz : weilPairing W₁ φ.degree hd (φ.kerToDegreeTorsion P) R = 0 :=
-      (φ.kerWeilPairing_degreeTorsionToDualKer hd P R).symm.trans (hQ P)
+        rw [coe_kerToTorsion])
+    have hz : weilPairing W₁ φ.degree hd (φ.kerToTorsion P) R = 0 :=
+      (φ.kerWeilPairing_torsionToDualKer hd P R).symm.trans (hQ P)
     rw [← neg_weilPairing W₁, hz, neg_zero] at h
     exact h
   apply Subtype.ext
-  rw [coe_degreeTorsionToDualKer, ← hT_coe]
+  rw [coe_torsionToDualKer, ← hT_coe]
   exact congrArg Subtype.val hT
 
 end TauCeti.Isogeny
