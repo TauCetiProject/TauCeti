@@ -37,6 +37,7 @@ integrality input for commuting Cartan binomial coefficients past divided powers
 
 ## Main results
 
+* `Commute.ringChoose`: binomial coefficients in commuting arguments commute.
 * `TauCeti.ringChoose_mul_ringChoose`: the product of two binomial coefficients in `r`, expanded
   as a natural-number linear combination of binomial coefficients in `r`.
 * `TauCeti.ringChooseSpan`: the additive subgroup spanned by the binomial coefficients in one
@@ -69,6 +70,20 @@ integrality input for commuting Cartan binomial coefficients past divided powers
 -/
 
 public section
+
+/-- Binomial coefficients in commuting arguments commute, even in a noncommutative ring. -/
+theorem Commute.ringChoose {R : Type*} [Ring R] [BinomialRing R] {a b : R}
+    (h : Commute a b) (m n : ℕ) : Commute (Ring.choose a m) (Ring.choose b n) := by
+  let := BinomialRing.toHasUniqueDiv (R := R)
+  apply nsmul_right_injective m.factorial_ne_zero
+  dsimp only
+  rw [← smul_mul_assoc, ← mul_smul_comm,
+    ← Ring.descPochhammer_eq_factorial_smul_choose]
+  apply nsmul_right_injective n.factorial_ne_zero
+  dsimp only
+  rw [← mul_smul_comm, ← smul_mul_assoc,
+    ← Ring.descPochhammer_eq_factorial_smul_choose]
+  exact (Polynomial.smeval_commute ℤ (descPochhammer ℤ m) (descPochhammer ℤ n) h).eq
 
 namespace TauCeti
 
