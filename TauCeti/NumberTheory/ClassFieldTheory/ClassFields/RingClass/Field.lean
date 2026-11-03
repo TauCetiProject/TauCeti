@@ -46,8 +46,10 @@ ray-class reciprocity.
 * Ring class fields shrink as the order grows: `ringClassField O' ≤ ringClassField O` when
   `O ⊆ O'` (`ringClassField_le_ringClassField`), since the kernel of the ring-class quotient grows
   with the order. The ring class field of the maximal order is the Hilbert class field
-  (`ringClassField_maximal`), so the Hilbert class field lies in every ring class field
-  (`hilbertClassField_le_ringClassField`).
+  (`ringClassField_maximalNumberFieldOrder`, `ringClassField_maximal`), since its ring-class
+  kernel is the ray subgroup of the trivial modulus
+  (`ringClassNormSubgroup_maximalNumberFieldOrder`), so the Hilbert class field lies in every
+  ring class field (`hilbertClassField_le_ringClassField`).
 
 No hypothesis on the degree of `K` is needed: the congruence description
 `NumberFieldOrder.rayClassToPic` of `Pic O` as a quotient of `Cl_𝔣` holds for every order
@@ -84,7 +86,8 @@ one, cut out by ideals with a generator congruent to a rational integer modulo `
   exactly the principal ideals.
 * `TauCeti.ClassFieldTheory.ringClassField_le_ringClassField`: ring class fields shrink as the
   order grows.
-* `TauCeti.ClassFieldTheory.ringClassField_maximal`: the ring class field of the maximal order is
+* `TauCeti.ClassFieldTheory.ringClassField_maximalNumberFieldOrder`,
+  `TauCeti.ClassFieldTheory.ringClassField_maximal`: the ring class field of the maximal order is
   the Hilbert class field.
 
 ## References
@@ -113,6 +116,15 @@ def ringClassNormSubgroup : GlobalNormSubgroups K :=
 theorem ringClassNormSubgroup_toSubgroup :
     (ringClassNormSubgroup O).1.toSubgroup = (ringClassIdeleQuotient O).ker :=
   (rfl)
+
+variable {O} in
+/-- Inclusions of the bundled ring-class kernels are inclusions of the kernels of the ring-class
+quotients. -/
+@[simp]
+theorem ringClassNormSubgroup_le_ringClassNormSubgroup_iff {O' : NumberFieldOrder K} :
+    ringClassNormSubgroup O ≤ ringClassNormSubgroup O' ↔
+      (ringClassIdeleQuotient O).ker ≤ (ringClassIdeleQuotient O').ker :=
+  Subtype.coe_le_coe.symm.trans OpenSubgroup.toSubgroup_le.symm
 
 /-- **The ring class field of an order** `O` of a number field `K`: the class field in `Kˢ` of the
 kernel of the ring-class quotient `C_K → Pic O` under the global class-field correspondence, that
@@ -300,7 +312,7 @@ theorem ringClassField_le_ringClassField_iff {O' : NumberFieldOrder K} :
     ringClassField O ≤ ringClassField O' ↔
       (ringClassIdeleQuotient O').ker ≤ (ringClassIdeleQuotient O).ker :=
   (globalClassField_orderReversing (ringClassNormSubgroup O') (ringClassNormSubgroup O)).symm.trans
-    (Subtype.coe_le_coe.symm.trans OpenSubgroup.toSubgroup_le.symm)
+    ringClassNormSubgroup_le_ringClassNormSubgroup_iff
 
 /-- **Ring class fields shrink as the order grows**: if `O ⊆ O'`, the ring class field of `O'`
 lies in that of `O`. -/
@@ -308,22 +320,35 @@ theorem ringClassField_le_ringClassField {O' : NumberFieldOrder K}
     (h : O.toSubalgebra ≤ O'.toSubalgebra) : ringClassField O' ≤ ringClassField O :=
   ringClassField_le_ringClassField_iff.mpr (ker_ringClassIdeleQuotient_mono h)
 
-/-- **The ring class field of the maximal order is the Hilbert class field**: an order with trivial
-conductor is the maximal order, whose ring-class quotient has kernel the ray subgroup of the
-trivial modulus. -/
+variable (K) in
+/-- The bundled ring-class kernel of the maximal order is the bundled ray subgroup of the trivial
+modulus. -/
+theorem ringClassNormSubgroup_maximalNumberFieldOrder :
+    ringClassNormSubgroup (maximalNumberFieldOrder K) = rayNormSubgroup (Modulus.one K) :=
+  Subtype.ext <| OpenSubgroup.toSubgroup_injective <| by
+    rw [ringClassNormSubgroup_toSubgroup, rayNormSubgroup_toSubgroup,
+      ker_ringClassIdeleQuotient_maximalNumberFieldOrder]
+
+variable (K) in
+/-- **The ring class field of the maximal order is the Hilbert class field**: the ring-class
+quotient of the maximal order has kernel the ray subgroup of the trivial modulus. -/
+@[simp]
+theorem ringClassField_maximalNumberFieldOrder :
+    ringClassField (maximalNumberFieldOrder K) = hilbertClassField K := by
+  rw [ringClassField_def, ringClassNormSubgroup_maximalNumberFieldOrder, hilbertClassField,
+    rayClassField_def]
+
+/-- **The ring class field of an order with trivial conductor is the Hilbert class field**: such
+an order is the maximal order (`ringClassField_maximalNumberFieldOrder`). -/
 theorem ringClassField_maximal (hO : O.conductor = ⊤) : ringClassField O = hilbertClassField K := by
   rw [conductor_eq_top_iff] at hO
   subst hO
-  have hN : ringClassNormSubgroup (maximalNumberFieldOrder K) = rayNormSubgroup (Modulus.one K) :=
-    Subtype.ext <| OpenSubgroup.toSubgroup_injective <| by
-      rw [ringClassNormSubgroup_toSubgroup, rayNormSubgroup_toSubgroup,
-        ker_ringClassIdeleQuotient_maximalNumberFieldOrder]
-  rw [ringClassField_def, hN, hilbertClassField, rayClassField_def]
+  exact ringClassField_maximalNumberFieldOrder K
 
 variable (O) in
 /-- **The Hilbert class field lies in every ring class field.** -/
 theorem hilbertClassField_le_ringClassField : hilbertClassField K ≤ ringClassField O :=
-  (ringClassField_maximal conductor_maximal).symm.trans_le <| ringClassField_le_ringClassField <|
+  (ringClassField_maximalNumberFieldOrder K).symm.trans_le <| ringClassField_le_ringClassField <|
     O.le_ringOfIntegers.trans_eq (maximalNumberFieldOrder_toSubalgebra K).symm
 
 end TauCeti.ClassFieldTheory
