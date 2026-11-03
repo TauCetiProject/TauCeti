@@ -16,7 +16,9 @@ For a finite holomorphic map of connected Riemann surfaces, the branch values ar
 of the points of local multiplicity greater than one. With compact source this is a finite
 closed set, and the map is a covering over its complement. Every fibre of this covering has
 cardinality equal to the analytic degree of the map. Conversely, a branch value cannot admit
-an evenly covered neighbourhood: a local homeomorphism has local multiplicity one.
+an evenly covered neighbourhood: a local homeomorphism has local multiplicity one. Local
+multiplicities multiply along composites, so the branch values of `g ∘ f` are the images under `g`
+of the branch values of `f` together with the branch values of `g`.
 
 These results supply the unbranched covering obtained by removing neighbourhoods of branch
 values, used in the topological proof of the Riemann--Hurwitz formula. The restriction is
@@ -40,6 +42,8 @@ Riemann--Hurwitz application, rather than for these covering results.
   exactly when its value is not a branch value.
 * `FiniteHolomorphicMap.ncard_fiber_restrictPreimage_compl`: every fibre of this restricted
   covering has cardinality equal to the analytic degree.
+* `FiniteHolomorphicMap.branchValues_comp`: the branch values of a composite `g ∘ f` are the
+  images under `g` of the branch values of `f` together with the branch values of `g`.
 
 ## References
 
@@ -175,6 +179,34 @@ theorem ncard_fiber_restrictPreimage_compl (f : FiniteHolomorphicMap X Y) {S : S
     Set.image_val_preimage_restrictPreimage, Set.image_singleton,
     Set.ncard_eq_toFinset_card _ (f.finite_fiber y)]
   exact (f.card_fiber_eq_degree_iff y).2 fun hy ↦ y.property (hS hy)
+
+/-- **Branch values of a composite**: for finite holomorphic maps `f : X → Y` and `g : Y → Z`,
+with `X` compact and connected and `Y` connected, the branch values of `g ∘ f` are the images
+under `g` of the branch values of `f` together with the branch values of `g`. -/
+theorem branchValues_comp {Z : Type*} [TopologicalSpace Z] [ChartedSpace ℂ Z]
+    [IsManifold 𝓘(ℂ) 1 Z] (g : FiniteHolomorphicMap Y Z) (f : FiniteHolomorphicMap X Y) :
+    (g.comp f).branchValues = g '' f.branchValues ∪ g.branchValues := by
+  -- Local multiplicities multiply along the composite, and every point of `Y` lies in the image
+  -- of `f`.
+  ext z
+  rw [mem_union, mem_branchValues_iff, mem_branchValues_iff]
+  refine ⟨fun ⟨x, hxz, hx⟩ ↦ ?_, ?_⟩
+  · rw [localMultiplicity_comp] at hx
+    rw [coe_comp, Function.comp_apply] at hxz
+    by_cases h : 1 < localMultiplicity f x
+    · exact .inl ⟨f x, (mem_branchValues_iff f _).2 ⟨x, rfl, h⟩, hxz⟩
+    · have hx1 : localMultiplicity f x = 1 := by have := localMultiplicity_pos f x; omega
+      rw [hx1, mul_one] at hx
+      exact .inr ⟨f x, hxz, hx⟩
+  · rintro (⟨y, hy, rfl⟩ | ⟨y, rfl, hy⟩)
+    · obtain ⟨x, rfl, hx⟩ := (mem_branchValues_iff f y).1 hy
+      refine ⟨x, congrFun (coe_comp g f) x, ?_⟩
+      rw [localMultiplicity_comp]
+      nlinarith [localMultiplicity_pos g (f x)]
+    · obtain ⟨x, rfl⟩ := f.surjective y
+      refine ⟨x, congrFun (coe_comp g f) x, ?_⟩
+      rw [localMultiplicity_comp]
+      nlinarith [localMultiplicity_pos f x]
 
 end TauCeti.RiemannSurface.FiniteHolomorphicMap
 

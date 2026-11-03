@@ -55,7 +55,7 @@ theorem discreteLaplaceMeasure_real_Iic_of_le (m : ℤ) {q : ℝ} (hq0 : 0 ≤ q
       omega
     · intro n
       exact measurableSet_singleton _
-  have hsum := (ENNReal.summable.hasSum_iff.mpr hmass.symm).toReal (measure_ne_top _ _)
+  have hsum := (CompleteLattice.summable.hasSum_iff.mpr hmass.symm).toReal (measure_ne_top _ _)
   have hterm (n : ℕ) :
       (discreteLaplaceMeasure m q {k - (n : ℤ)}).toReal =
         ((1 - q) * q ^ (m - k).toNat / (1 + q)) * q ^ n := by

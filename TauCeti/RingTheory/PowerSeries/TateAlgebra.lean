@@ -47,6 +47,9 @@ radius the Krull dimension of the restricted series ring is at least `dim R + 1`
   `TauCeti.PowerSeries.gaussValuation`.
 * `TauCeti.PowerSeries.ringKrullDim_succ_le_ringKrullDim_isRestricted_subring`: adjoining a
   restricted variable, at any radius, raises the Krull dimension by at least one.
+* `PowerSeries.isRestricted_map_of_abs_lt_one` and `TauCeti.PowerSeries.isUnit_mk_map`: series
+  with coefficients mapped into the closed unit ball are restricted inside the unit disc, and
+  units of `O⟦X⟧` map to units of every ring of series restricted there.
 * Instances: `NormedRing`, `NormedCommRing`, `IsUltrametricDist`, `NormOneClass`,
   `NormMulClass` and `CompleteSpace` on `PowerSeries.IsRestricted.subring c`.
 
@@ -202,6 +205,32 @@ theorem continuous_restrictedRadiusHom [Fact (0 < r)] [Fact (0 < s)] :
     (r := fun _ : Unit ↦ r) (s := fun _ : Unit ↦ s) (fun _ ↦ hr) (fun _ ↦ hrs)
 
 end Radius
+
+section Map
+
+variable {O R : Type*} [Semiring O] [NormedRing R] {φ : O →+* R}
+
+/-- A series whose coefficients map into the closed unit ball of a normed ring is restricted at
+every radius of absolute value less than one. -/
+theorem _root_.PowerSeries.isRestricted_map_of_abs_lt_one (hφ : ∀ x, ‖φ x‖ ≤ 1)
+    (g : PowerSeries O) {r : ℝ} (hr : |r| < 1) :
+    (g.map φ).IsRestricted r :=
+  _root_.PowerSeries.HasGaussNorm.isRestricted_of_abs_lt
+    ⟨1, Set.forall_mem_range.mpr fun n ↦ by simpa using hφ (g.coeff n)⟩ hr
+
+/-- **A formal unit is a unit of every ring of series restricted inside the unit disc.** If `φ`
+maps into the closed unit ball, the image of a unit `u` of `O⟦X⟧` is a unit of the ring of series
+restricted at any radius of absolute value less than one, with inverse the image of `u⁻¹`. -/
+theorem isUnit_mk_map [IsUltrametricDist R] (hφ : ∀ x, ‖φ x‖ ≤ 1) {u : _root_.PowerSeries O}
+    (hu : IsUnit u) {r : ℝ} (hr : |r| < 1) :
+    IsUnit (⟨u.map φ, u.isRestricted_map_of_abs_lt_one hφ hr⟩ :
+      _root_.PowerSeries.IsRestricted.subring (R := R) r) := by
+  obtain ⟨u, rfl⟩ := hu
+  exact ⟨⟨⟨_, _root_.PowerSeries.isRestricted_map_of_abs_lt_one hφ _ hr⟩,
+    ⟨_, _root_.PowerSeries.isRestricted_map_of_abs_lt_one hφ (↑u⁻¹ : _root_.PowerSeries O) hr⟩,
+    Subtype.ext (by simp [← map_mul]), Subtype.ext (by simp [← map_mul])⟩, rfl⟩
+
+end Map
 
 section NormedCommRing
 

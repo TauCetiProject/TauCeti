@@ -86,8 +86,8 @@ theorem ext_of_quotient_eq (R S : Type*) [CommRing R] [CommRing S] [Algebra R S]
   have hpe := Algebra.TensorProduct.productMap_mem_of_comp_eq
     (RingHom.mem_ker.mp (hker ▸ Ideal.mem_span_singleton_self e)) J hfg
   have hu : IsUnit (1 - Algebra.TensorProduct.productMap f g e) := by
-    apply Ideal.isUnit_of_sub_one_mem_jacobson_bot
-    simpa only [sub_sub_cancel_left] using hJ (J.neg_mem hpe)
+    apply Ideal.isUnit_of_sub_one_mem_jacobson
+    simpa only [sub_sub_cancel_left, Ideal.jacobson_bot] using hJ (J.neg_mem hpe)
   simpa only [AlgHom.id_comp] using comp_eq_comp_of_isUnit_one_sub_productMap he hker.le f g
     (AlgHom.id R T) hu
 
