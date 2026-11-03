@@ -26,7 +26,9 @@ the disc function of `a`. For `s > 1/2` it converges on the closed disc and is c
 and when the negative coefficients of `a` vanish its values on the unit circle are the continuous
 function `CircleSobolev.toContinuousMap` attached to `a`. For every order `s`, an element of
 `H^s_{≥0}` is determined by its holomorphic extension to the open disc, whose Taylor coefficients
-at `0` are its nonnegative Fourier coefficients.
+at `0` are its nonnegative Fourier coefficients. Evaluation is jointly holomorphic in the
+boundary data and the disc coordinate (`CircleSobolev.analyticAt_diskFunction`), for arbitrary
+Sobolev order.
 
 ## Main definitions
 
@@ -379,20 +381,57 @@ theorem diskFunction_sub (a b : CircleSobolev s E) {w : ℂ} (hw : ‖w‖ < 1) 
   (hasSum_diskFunction (a - b) hw).unique <| by
     simpa [smul_sub] using (hasSum_diskFunction a hw).sub (hasSum_diskFunction b hw)
 
+/-- Evaluation of the disc series as a sum of coefficient operators. This auxiliary operator
+lets the disc variable and the boundary data vary simultaneously. -/
+private def diskFunctionCLM (w : ℂ) : CircleSobolev s E →L[ℂ] E :=
+  ∑' n : ℕ, w ^ n • coeffCLM n
+
+omit [CompleteSpace E] in
+private theorem summable_norm_diskFunctionCLM {w : ℂ} (hw : ‖w‖ < 1) :
+    Summable fun n : ℕ ↦ ‖w ^ n • (coeffCLM n : CircleSobolev s E →L[ℂ] E)‖ := by
+  refine (summable_pow_mul_weight (norm_nonneg w) hw s).of_nonneg_of_le
+    (fun _ ↦ norm_nonneg _) fun n ↦ ?_
+  rw [norm_smul, norm_pow]
+  exact mul_le_mul_of_nonneg_left (opNorm_coeffCLM_le n) (by positivity)
+
+private theorem diskFunctionCLM_apply {w : ℂ} (hw : ‖w‖ < 1) (a : CircleSobolev s E) :
+    diskFunctionCLM w a = diskFunction a w := by
+  have h := (summable_norm_diskFunctionCLM hw).of_norm.hasSum.mapL
+    (ContinuousLinearMap.apply ℂ E a)
+  exact h.unique (by simpa using hasSum_diskFunction a hw)
+
+private theorem analyticAt_diskFunctionCLM {w : ℂ} (hw : ‖w‖ < 1) :
+    AnalyticAt ℂ (diskFunctionCLM : ℂ → CircleSobolev s E →L[ℂ] E) w := by
+  obtain ⟨r, hwr, hr⟩ := exists_between hw
+  have h := Complex.differentiableOn_tsum_of_summable_norm (U := ball 0 r)
+    (summable_pow_mul_weight ((norm_nonneg w).trans hwr.le) hr s)
+    (fun n ↦ ((differentiable_id.pow n).smul_const
+      (coeffCLM n : CircleSobolev s E →L[ℂ] E)).differentiableOn) isOpen_ball
+    (fun n z hz ↦ by
+      simp only [Pi.pow_apply, id_eq, norm_smul, norm_pow]
+      exact mul_le_mul (pow_le_pow_left₀ (norm_nonneg _) (mem_ball_zero_iff.1 hz).le n)
+        (opNorm_coeffCLM_le n) (norm_nonneg _)
+        (pow_nonneg ((norm_nonneg w).trans hwr.le) n))
+  exact h.analyticOnNhd isOpen_ball w (mem_ball_zero_iff.2 hwr)
+
+/-- Disc evaluation is jointly holomorphic in the boundary data and the disc coordinate.
+The Sobolev order is arbitrary; only the coordinate must lie in the open unit disc. -/
+theorem analyticAt_diskFunction {X : Type*} [NormedAddCommGroup X] [NormedSpace ℂ X]
+    {f : X → CircleSobolev s E} {g : X → ℂ} {x : X}
+    (hf : AnalyticAt ℂ f x) (hg : AnalyticAt ℂ g x) (hx : ‖g x‖ < 1) :
+    AnalyticAt ℂ (fun z ↦ diskFunction (f z) (g z)) x := by
+  have he := ((ContinuousLinearMap.apply ℂ E).analyticAt_bilinear _).comp
+    (hf.prod ((analyticAt_diskFunctionCLM hx).comp hg))
+  apply he.congr
+  filter_upwards [hg.continuousAt.norm.eventually_lt continuousAt_const hx] with z hz
+  exact diskFunctionCLM_apply hz (f z)
+
 /-- The disc function is holomorphic on the open unit disc. -/
 theorem differentiableOn_diskFunction (a : CircleSobolev s E) :
     DifferentiableOn ℂ (diskFunction a) (ball 0 1) := by
   intro w hw
-  rw [mem_ball_zero_iff] at hw
-  obtain ⟨r, hwr, hr⟩ := exists_between hw
-  have h := Complex.differentiableOn_tsum_of_summable_norm (U := ball 0 r)
-    ((summable_pow_mul_weight ((norm_nonneg w).trans hwr.le) hr s).mul_right ‖a‖)
-    (fun n ↦ ((differentiable_id.pow n).smul_const (a.coeff n)).differentiableOn) isOpen_ball
-    fun n z hz ↦ (norm_pow_smul_coeff_le a z n).trans <| by
-      rw [mem_ball_zero_iff] at hz
-      have := weight_nonneg (-s) n
-      gcongr
-  exact (h.differentiableAt (isOpen_ball.mem_nhds (mem_ball_zero_iff.2 hwr))).differentiableWithinAt
+  exact (analyticAt_diskFunction (f := fun _ : ℂ ↦ a) analyticAt_const analyticAt_id
+    (mem_ball_zero_iff.1 hw)).differentiableAt.differentiableWithinAt
 
 /-- The disc function is analytic on the open unit disc. -/
 theorem analyticOnNhd_diskFunction (a : CircleSobolev s E) :

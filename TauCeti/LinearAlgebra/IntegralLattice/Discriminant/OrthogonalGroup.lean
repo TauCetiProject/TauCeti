@@ -129,12 +129,12 @@ theorem mem_discriminantKernel_iff {g : Isometry L L} :
   rw [discriminantKernel, MonoidHom.mem_ker]
   refine ⟨fun hg x hx ↦ ?_, fun hg ↦ LinearEquiv.ext fun a ↦ ?_⟩
   · have h := LinearEquiv.congr_fun hg (Submodule.Quotient.mk ⟨x, hx⟩)
-    rw [discriminantGroupHom_apply_mk, LinearEquiv.coe_one, id_eq,
+    rw [discriminantGroupHom_apply_mk, FunLike.coe_one_eq_id, id_eq,
       L.discriminantGroup_mk_eq_iff] at h
     simpa using h
   · induction a using Submodule.Quotient.induction_on with
     | _ x =>
-      rw [discriminantGroupHom_apply_mk, LinearEquiv.coe_one, id_eq,
+      rw [discriminantGroupHom_apply_mk, FunLike.coe_one_eq_id, id_eq,
         L.discriminantGroup_mk_eq_iff]
       simpa using hg x x.property
 
@@ -158,7 +158,7 @@ theorem congruenceSubgroup_le_discriminantKernel {d : ℤ}
     have h1 : g = 1 := carrierEquivHom_injective L <| LinearEquiv.ext fun x ↦ by
       obtain ⟨y, hy⟩ := mem_congruenceSubgroup_iff.mp hg x
       rw [zero_smul, sub_eq_zero] at hy
-      rw [carrierEquivHom_apply, hy, map_one, LinearEquiv.coe_one, id_eq]
+      rw [carrierEquivHom_apply, hy, map_one, FunLike.coe_one_eq_id, id_eq]
     rw [h1]
     exact one_mem _
   rw [mem_discriminantKernel_iff]
@@ -184,9 +184,9 @@ theorem neg_mem_discriminantKernel_iff :
   rw [discriminantKernel, MonoidHom.mem_ker, discriminantGroupHom_apply, discriminantGroupEquiv_neg]
   refine ⟨fun h a ↦ ?_, fun h ↦ LinearEquiv.ext fun a ↦ ?_⟩
   · have ha := LinearEquiv.congr_fun h a
-    rw [LinearEquiv.neg_apply, LinearEquiv.coe_one, id_eq, neg_eq_iff_add_eq_zero] at ha
+    rw [LinearEquiv.neg_apply, FunLike.coe_one_eq_id, id_eq, neg_eq_iff_add_eq_zero] at ha
     rw [two_zsmul, ha]
-  · rw [LinearEquiv.neg_apply, LinearEquiv.coe_one, id_eq, neg_eq_iff_add_eq_zero, ← two_zsmul]
+  · rw [LinearEquiv.neg_apply, FunLike.coe_one_eq_id, id_eq, neg_eq_iff_add_eq_zero, ← two_zsmul]
     exact h a
 
 /-! ### Conjugation -/

@@ -48,7 +48,7 @@ def hopfLeftDual (ρ : H →ₐ[R] Module.End R V)
     (by ext φ v; simp [Dual.transpose_apply])
     (fun a b => by
       ext φ v
-      simp [Dual.transpose_apply, inverseAntipode_mul, Module.End.mul_apply])
+      simp [Dual.transpose_apply, inverseAntipode_mul, mul_apply_eq_comp])
 
 /-- The left contragredient precomposes a functional with the inverse antipode action. -/
 @[simp]

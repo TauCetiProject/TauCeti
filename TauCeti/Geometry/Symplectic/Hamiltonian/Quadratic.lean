@@ -266,7 +266,7 @@ theorem hamiltonianEnd_quadraticPoissonBracket (Q R : QuadraticForm ℝ V) :
   have h₅ := ω.neg_eq (ω.hamiltonianEnd R v) (ω.hamiltonianEnd Q w)
   rw [quadraticPoissonBracket, LinearMap.BilinMap.polar_toQuadraticMap, Ring.lie_def]
   beta_reduce at h₁ h₂ h₃ h₄ h₅ ⊢
-  simp only [LinearMap.sub_apply, Module.End.mul_apply, map_sub, LinearMap.compl₁₂_apply]
+  simp only [LinearMap.sub_apply, mul_apply_eq_comp, map_sub, LinearMap.compl₁₂_apply]
   rw [h₁, h₃, ← h₅, h₂, h₄]
   ring
 

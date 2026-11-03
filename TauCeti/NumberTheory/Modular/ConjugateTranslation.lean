@@ -41,7 +41,7 @@ theorem _root_.Matrix.SpecialLinearGroup.coe_conj_T_zpow (γ : SL(2, ℤ)) (j : 
   ext i k
   fin_cases i <;> fin_cases k <;>
     simp [Matrix.SpecialLinearGroup.coe_mul, Matrix.SpecialLinearGroup.coe_inv,
-      ModularGroup.coe_T_zpow, adjugate_fin_two, mul_apply, Fin.sum_univ_two] <;>
+      ModularGroup.coe_T_zpow, adjugate_fin_two, Matrix.mul_apply, Fin.sum_univ_two] <;>
     ring_nf <;> nlinarith [hdet]
 
 /-- An element of `SL₂(ℤ)` with vanishing lower-left entry fixes the cusp `∞`, so it is a

@@ -39,6 +39,9 @@ the degree `0` Čech cohomology of `P` for a connected system is `P(T)`
   of the family `E j`.
 * `TauCeti.CategoryTheory.isColimitCechCohomologyCocone A E hE n`: the Čech cohomology for the
   system, with the structure maps, is a colimit of the diagram of functors of the presheaf.
+* `TauCeti.CategoryTheory.cechCohomologyDesc E hE n f hf`: the map out of the Čech cohomology of
+  a presheaf induced by a compatible family of maps out of the Čech cohomologies of the families
+  of the system.
 * `TauCeti.CategoryTheory.cechCohomologyZeroIso`: the identification of degree `0` Čech
   cohomology with `P(T)` when `P` satisfies the sheaf condition for every family of the system.
 
@@ -190,6 +193,36 @@ theorem isZero_cechCohomology_obj (hE₀ : ∀ j, IsEmpty (E j).I) (P : Cᵒᵖ 
   have : IsZero (((cechComplexFunctor (E j).obj).obj P).X n) :=
     (IsZero.iff_id_eq_zero _).2 <| Pi.hom_ext _ _ fun a ↦ (hE₀ j).elim (a 0)
   exact (ShortComplex.isZero_homology_of_isZero_X₂ _ this).eq_of_src _ _
+
+/-! ### Maps out of the colimit -/
+
+/-- The map out of the Čech cohomology of `P` for the system induced by a family of maps out of the
+Čech cohomologies `Hⁿ(Č(E j, P))` that is compatible with the maps induced by morphisms of families
+between comparable members of the system. -/
+def cechCohomologyDesc {P : Cᵒᵖ ⥤ A} {Y : A}
+    (f : ∀ j, ((cechComplexFunctor (E j).obj).obj P).homology n ⟶ Y)
+    (hf : ∀ ⦃i j : J⦄, i ≤ j → ∀ φ : E j ⟶ E i,
+      HomologicalComplex.homologyMap (cechComplexMap P φ) n ≫ f j = f i) :
+    (cechCohomology A E hE n).obj P ⟶ Y :=
+  colimit.desc ((cechCohomologyDiagram A E hE n).flip.obj P)
+    { pt := Y
+      ι :=
+        { app := f
+          naturality _ j h :=
+            -- the transition map at `P` is the map induced by any morphism of families
+            ((NatTrans.congr_app (cechCohomologyDiagram_map A E hE n h (hE (leOfHom h)).some)
+              P).trans (cechComplexHomologyMap_app ..) =≫ f j).trans
+                ((hf (leOfHom h) _).trans (Category.comp_id _).symm) } }
+
+/-- The map out of the Čech cohomology induced by a compatible family restricts to that family
+along each structure map. -/
+@[reassoc (attr := simp)]
+theorem cechCohomologyι_app_cechCohomologyDesc {P : Cᵒᵖ ⥤ A} {Y : A}
+    (f : ∀ j, ((cechComplexFunctor (E j).obj).obj P).homology n ⟶ Y)
+    (hf : ∀ ⦃i j : J⦄, i ≤ j → ∀ φ : E j ⟶ E i,
+      HomologicalComplex.homologyMap (cechComplexMap P φ) n ≫ f j = f i) (j : J) :
+    (cechCohomologyι E hE n j).app P ≫ cechCohomologyDesc E hE n f hf = f j :=
+  colimit.ι_desc _ j
 
 /-! ### Degree zero -/
 
