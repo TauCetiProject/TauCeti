@@ -29,19 +29,19 @@ This file makes the denominators explicit for the grids of the method.
   turns the denominator into a value `y (y - 1) ⋯ (y - n + 1)` of the descending Pochhammer
   polynomial on `ℤ_p`, which Mathlib bounds by `‖n!‖` (`PadicInt.norm_ascPochhammer_le`). Hence
   `‖∏_{j < n} (x - (a + j d))‖ ≤ ‖n!‖`, whatever the position of `x`.
-* For the integers `0 ≤ j < N` prime to an auxiliary integer `q` prime to `p`, the grid contains
-  the `q - 1` progressions `r + q m`, `1 ≤ r < q`, `m < ⌊N / q⌋`, each with unit step `q`.
-  Hence the denominator has norm at most `‖⌊N / q⌋!‖ ^ (q - 1)`.
+* For the integers `0 ≤ j < N` not divisible by an auxiliary integer `q` prime to `p`, the grid
+  contains the `q - 1` progressions `r + q m`, `1 ≤ r < q`, `m < ⌊N / q⌋`, each with unit step
+  `q`. Hence the denominator has norm at most `‖⌊N / q⌋!‖ ^ (q - 1)`.
 
 ## Main results
 
 * `PadicInt.norm_prod_range_sub_add_mul_le`: the factorial bound for a progression with unit step.
-* `PadicInt.norm_prod_filter_not_dvd_sub_le`: the bound for the integers prime to `q`.
+* `PadicInt.norm_prod_filter_not_dvd_sub_le`: the bound for the integers not divisible by `q`.
 * `PowerSeries.IsRestricted.norm_evalAt_le_gaussNorm_mul_norm_prod`: the Schwarz lemma on a grid
   of `p`-adic integers, with the interpolation denominator.
 * `PowerSeries.IsRestricted.norm_evalAt_le_gaussNorm_mul_norm_factorial`,
   `PowerSeries.IsRestricted.norm_evalAt_le_gaussNorm_mul_norm_factorial_pow`: its explicit
-  forms on a progression and on the integers prime to `q`.
+  forms on a progression and on the integers not divisible by `q`.
 
 ## References
 
@@ -76,9 +76,9 @@ theorem norm_prod_range_sub_add_mul_le (x a : ℤ_[p]) {d : ℤ_[p]} (hd : IsUni
     descPochhammer_eval_eq_ascPochhammer]
   exact norm_ascPochhammer_le n _
 
-/-- **Interpolation denominators on the integers prime to `q`.** Let `q` be prime to `p`. For a
-`p`-adic integer `x`, the product of the distances from `x` to the integers `0 ≤ j < N` not
-divisible by `q` has norm at most `‖⌊N / q⌋!‖ ^ (q - 1)`. -/
+/-- **Interpolation denominators on the integers not divisible by `q`.** Let `q` be prime to
+`p`. For a `p`-adic integer `x`, the product of the distances from `x` to the integers
+`0 ≤ j < N` not divisible by `q` has norm at most `‖⌊N / q⌋!‖ ^ (q - 1)`. -/
 theorem norm_prod_filter_not_dvd_sub_le (x : ℤ_[p]) {q : ℕ} (hq : p.Coprime q) (N : ℕ) :
     ‖∏ j ∈ (range N).filter (¬q ∣ ·), (x - j)‖ ≤ ‖((N / q).factorial : ℤ_[p])‖ ^ (q - 1) := by
   have hq0 : q ≠ 0 := by
@@ -178,7 +178,7 @@ theorem IsRestricted.norm_evalAt_le_gaussNorm_mul_norm_factorial (hf : f.IsRestr
   gcongr
   exact PadicInt.norm_prod_range_sub_add_mul_le x a hd n
 
-/-- **The Schwarz lemma on the integers prime to `q`.** Let `K` be a complete normed field
+/-- **The Schwarz lemma on the integers not divisible by `q`.** Let `K` be a complete normed field
 extension of `ℚ_p`, `f` a power series over `K` restricted at a radius `c ≥ 1`, and `q` an integer
 prime to `p`. If the Hasse derivatives `(D⁽ᵗ⁾ f)(j)` vanish for `t < T` at every integer
 `0 ≤ j < N` not divisible by `q`, a grid of `S` points, then at every `p`-adic integer `x`
