@@ -340,6 +340,11 @@ theorem isOpen_sectorSet [TopologicalSpace α] [LinearOrder α] [OrderClosedTopo
   · exact isOpen_lt ((hc i).comp continuous_fst) continuous_snd
   · exact isOpen_lt continuous_snd ((hc i).comp continuous_fst)
 
+/-- The section of a continuous function is closed in the cylinder. -/
+theorem isClosed_sectionSet [TopologicalSpace α] [T2Space α] {i : Fin k}
+    (hθ : Continuous (θ i)) : IsClosed (sectionSet θ i) :=
+  hθ.isClosed_graph
+
 /-- Over a preconnected base, the section of a continuous function is preconnected. -/
 theorem isPreconnected_sectionSet [TopologicalSpace α] [PreconnectedSpace X] {i : Fin k}
     (hθ : Continuous (θ i)) : IsPreconnected (sectionSet θ i) := by

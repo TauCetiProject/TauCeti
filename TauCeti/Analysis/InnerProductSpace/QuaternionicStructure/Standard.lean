@@ -105,8 +105,9 @@ theorem stdQuaternionicStructure_toEuclideanLin_of_mem_unitaryGroup {U : Matrix 
     (hU : U ∈ unitaryGroup (Fin 2) ℂ) (z : EuclideanSpace ℂ (Fin 2)) :
     stdQuaternionicStructure (U.toEuclideanLin z) =
       conj U.det • U.toEuclideanLin (stdQuaternionicStructure z) := by
-  rw [stdQuaternionicStructure_toEuclideanLin, adjugate_eq_det_smul_star_of_mem_unitaryGroup hU,
-    star_smul, star_star, map_smul, LinearMap.smul_apply, Complex.star_def]
+  rw [stdQuaternionicStructure_toEuclideanLin,
+    adjugate_eq_det_smul_of_mul_eq_one (mem_unitaryGroup_iff.mp hU), star_smul, star_star,
+    map_smul, LinearMap.smul_apply, Complex.star_def]
 
 /-- The standard quaternionic structure commutes with `SU(2)`. -/
 theorem stdQuaternionicStructure_toEuclideanLin_of_mem_specialUnitaryGroup

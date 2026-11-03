@@ -149,7 +149,7 @@ private theorem spinAction_positiveRoot_singleton
     (z : P.line) (hcoord : P.lineCoordinate z = 1) :
     spinAction Q P (bivector Q (b 0 : V) (z : V)) (b.ExteriorAlgebra {0}) = 0 := by
   rw [bivector_eq_ι_mul_ι_of_isOrtho Q (P.isOrtho_W_line (b 0) z), map_mul,
-    Module.End.mul_apply, spinAction_ι_lineOperator, hcoord, one_smul,
+    mul_apply_eq_comp, spinAction_ι_lineOperator, hcoord, one_smul,
     TauCeti.ExteriorAlgebra.basis_singleton, CliffordAlgebra.involute_ι,
     spinAction_ι_wedge]
   simp
@@ -160,7 +160,7 @@ private theorem spinAction_negativeRoot_empty
     spinAction Q P (bivector Q (z : V) (P.dualVector b 0 : V))
         (b.ExteriorAlgebra ∅) = 0 := by
   rw [bivector_eq_ι_mul_ι_of_isOrtho Q (P.isOrtho_line_W' z (P.dualVector b 0)), map_mul,
-    Module.End.mul_apply, spinAction_ι_contract]
+    mul_apply_eq_comp, spinAction_ι_contract]
   simp [ExteriorAlgebra.basis_apply]
 
 private noncomputable def vacuumIndex : Fin 2 := spinThreeIndexEquiv ∅

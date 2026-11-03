@@ -313,7 +313,7 @@ instance instNonUnitalNonAssocSemiring : NonUnitalNonAssocSemiring (OreExtension
 @[simp]
 private theorem monomial_mul_apply (a : R) (n : ℕ) (p : OreExtension σ δ) :
     monomial n a * p = a • (xOperator ^ n) p := by
-  rw [mul_def, regularRepresentation_monomial, Module.End.mul_apply, Algebra.lsmul_apply]
+  rw [mul_def, regularRepresentation_monomial, mul_apply_eq_comp, Algebra.lsmul_apply]
 
 /-- The constant Ore polynomial. -/
 def C : R →ₗ[k] OreExtension σ δ := monomial 0
@@ -334,7 +334,7 @@ private theorem xOperator_lsmul (a : R) :
   induction p using induction_on with
   | zero => simp
   | add n b p hn hb ih =>
-      simp only [map_add, Module.End.mul_apply, LinearMap.add_apply, Algebra.lsmul_apply] at ih ⊢
+      simp only [map_add, mul_apply_eq_comp, LinearMap.add_apply, Algebra.lsmul_apply] at ih ⊢
       rw [ih]
       congr 1
       simp only [smul_monomial, xOperator_monomial, smul_add, smul_eq_mul,
@@ -357,7 +357,7 @@ private theorem xOperator_pow_regularRepresentation (n : ℕ) (p : OreExtension 
   induction n with
   | zero => simp
   | succ n ih =>
-      rw [pow_succ', mul_assoc, ih, xOperator_regularRepresentation, Module.End.mul_apply]
+      rw [pow_succ', mul_assoc, ih, xOperator_regularRepresentation, mul_apply_eq_comp]
 
 private theorem regularRepresentation_smul (a : R) (p : OreExtension σ δ) :
     regularRepresentation (a • p) = Algebra.lsmul k k _ a * regularRepresentation p := by
@@ -380,9 +380,9 @@ private theorem regularRepresentation_mul (p q : OreExtension σ δ) :
 private theorem xOperator_pow_C_one (n : ℕ) :
     (xOperator (σ := σ) (δ := δ) ^ n) (C 1) = monomial n 1 := by
   induction n with
-  | zero => rw [pow_zero, Module.End.one_apply, monomial_zero_left]
+  | zero => rw [pow_zero, one_apply_eq_self, monomial_zero_left]
   | succ n ih =>
-      rw [pow_succ', Module.End.mul_apply, ih, xOperator_monomial]
+      rw [pow_succ', mul_apply_eq_comp, ih, xOperator_monomial]
       simp
 
 private theorem regularRepresentation_apply_C_one (p : OreExtension σ δ) :
@@ -391,7 +391,7 @@ private theorem regularRepresentation_apply_C_one (p : OreExtension σ δ) :
   | zero => simp
   | add n a p hn ha ih =>
       rw [map_add, LinearMap.add_apply, ih, regularRepresentation_monomial,
-        Module.End.mul_apply, xOperator_pow_C_one, Algebra.lsmul_apply, smul_monomial,
+        mul_apply_eq_comp, xOperator_pow_C_one, Algebra.lsmul_apply, smul_monomial,
         smul_eq_mul, mul_one]
 
 private theorem regularRepresentation_injective :
@@ -414,7 +414,7 @@ instance instNonUnitalSemiring : NonUnitalSemiring (OreExtension σ δ) where
 
 instance instNonAssocSemiring : NonAssocSemiring (OreExtension σ δ) where
   one_mul p := by
-    rw [one_def, monomial_mul_apply, pow_zero, Module.End.one_apply, one_smul]
+    rw [one_def, monomial_mul_apply, pow_zero, one_apply_eq_self, one_smul]
   mul_one p := by
     rw [mul_def]
     exact regularRepresentation_apply_C_one p
@@ -440,7 +440,7 @@ theorem algebraMap_apply (c : k) :
 @[simp]
 theorem C_mul_monomial (a b : R) (n : ℕ) :
     C (σ := σ) (δ := δ) a * monomial n b = monomial n (a * b) := by
-  rw [← monomial_zero_left, monomial_mul_apply, pow_zero, Module.End.one_apply, smul_monomial,
+  rw [← monomial_zero_left, monomial_mul_apply, pow_zero, one_apply_eq_self, smul_monomial,
     smul_eq_mul]
 
 @[simp]
@@ -448,7 +448,7 @@ theorem C_mul (a b : R) : C (σ := σ) (δ := δ) (a * b) = C a * C b := by
   rw [← monomial_zero_left b, C_mul_monomial, monomial_zero_left]
 
 theorem smul_eq_C_mul (a : R) (p : OreExtension σ δ) : a • p = C a * p := by
-  rw [← monomial_zero_left, monomial_mul_apply, pow_zero, Module.End.one_apply]
+  rw [← monomial_zero_left, monomial_mul_apply, pow_zero, one_apply_eq_self]
 
 @[simp]
 theorem coeff_C_mul (a : R) (p : OreExtension σ δ) (n : ℕ) :
@@ -590,7 +590,7 @@ private theorem eval₂_xOperator_pow (f : R →+* S) (x : S)
   induction n with
   | zero => simp
   | succ n ih =>
-      rw [pow_succ', Module.End.mul_apply, eval₂_xOperator f x h, ih, pow_succ', mul_assoc]
+      rw [pow_succ', mul_apply_eq_comp, eval₂_xOperator f x h, ih, pow_succ', mul_assoc]
 
 /-- Evaluation is multiplicative when the chosen image of `X` satisfies the Ore relation. -/
 theorem eval₂_mul (f : R →+* S) (x : S)

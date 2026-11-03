@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.AlgebraicGeometry.Morphisms.Smooth
+public import TauCeti.AlgebraicGeometry.Scheme.DiscreteValuationStalk
 public import TauCeti.AlgebraicGeometry.Scheme.Regular.LocalRing
 public import TauCeti.RingTheory.Smooth.Regular
 
@@ -16,12 +17,15 @@ If `f : X ⟶ Y` is a smooth morphism and `Y` is a locally Noetherian scheme all
 rings are regular, then every local ring of `X` is regular. On affine opens `U ⊆ f⁻¹ V` this is
 `TauCeti.IsRegularRing.of_smooth`, since the ring of sections of `Y` over an affine open is a
 regular ring exactly when the local rings at its points are regular. In particular every local
-ring of a scheme smooth over a field is regular.
+ring of a scheme smooth over a field is regular, and so its local rings at codimension-one points
+are discrete valuation rings.
 
 ## Main declarations
 
 * `TauCeti.AlgebraicGeometry.isRegularLocalRing_stalk_of_smooth`: a scheme smooth over a
   locally Noetherian scheme with regular local rings has regular local rings.
+* `TauCeti.AlgebraicGeometry.isDiscreteValuationRing_stalk_of_smooth`: the local rings of an
+  integral scheme smooth over a field at its codimension-one points are discrete valuation rings.
 -/
 
 public section
@@ -49,6 +53,14 @@ theorem isRegularLocalRing_stalk_of_smooth {X Y : Scheme.{u}} (f : X ⟶ Y) [Smo
     (HasRingHomProperty.appLE @Smooth f ‹_› ⟨V, hV⟩ ⟨U, hU⟩ hUV).toAlgebra
   have := IsRegularRing.of_smooth (R := Γ(Y, V)) (S := Γ(X, U))
   exact isRegularLocalRing_stalk_of_isRegularRing hU hxU
+
+/-- The local ring of an integral scheme smooth over `k` at a codimension-one point is a discrete
+valuation ring. -/
+theorem isDiscreteValuationRing_stalk_of_smooth (k : Type u) [Field k] {X : Scheme.{u}}
+    [X.Over (Spec (.of k))] [IsIntegral X] [Smooth (X ↘ Spec (.of k))]
+    (y : CodimensionOnePoint X) : IsDiscreteValuationRing (X.presheaf.stalk (y : X)) := by
+  have := isRegularLocalRing_stalk_of_smooth (X ↘ Spec (.of k)) (y : X)
+  infer_instance
 
 end AlgebraicGeometry
 

@@ -92,6 +92,12 @@ theorem criticalExponent_pos {n : ℕ} (hn : 2 < n) : 0 < criticalExponent n := 
   rw [criticalExponent_def]
   exact div_pos (by linarith) (by linarith)
 
+/-- The critical exponent exceeds `2` in every dimension `n > 2`. -/
+theorem two_lt_criticalExponent {n : ℕ} (hn : 2 < n) : 2 < criticalExponent n := by
+  have h : (2 : ℝ) < n := by exact_mod_cast hn
+  rw [criticalExponent_def, lt_div_iff₀ (by linarith)]
+  linarith
+
 /-- The exponent `2 / pₙ` of the critical norm is `(n - 2) / n`; at `n = 0` and `n = 2` both sides
 vanish by the convention for division by zero. -/
 theorem two_div_criticalExponent (n : ℕ) : 2 / criticalExponent n = ((n : ℝ) - 2) / n := by

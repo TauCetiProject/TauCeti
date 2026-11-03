@@ -62,7 +62,7 @@ variable {A : Type*} [Semiring A] {ι κ : Type*} [Fintype ι] [Fintype κ]
 theorem IsIdempotentElem.vecMulLinear {e : Matrix ι ι A} (he : IsIdempotentElem e) :
     IsIdempotentElem e.vecMulLinear := by
   ext v : 1
-  simp [Module.End.mul_apply, Matrix.vecMul_vecMul, he.eq]
+  simp [mul_apply_eq_comp, Matrix.vecMul_vecMul, he.eq]
 
 /-- The entrywise image of an idempotent matrix under a ring homomorphism is idempotent. -/
 theorem IsIdempotentElem.matrix_map {B : Type*} [Semiring B] {e : Matrix ι ι A}

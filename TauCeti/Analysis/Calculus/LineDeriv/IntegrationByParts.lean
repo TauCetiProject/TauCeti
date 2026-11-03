@@ -152,7 +152,7 @@ theorem integral_bilinForm_fderiv_apply_eq_zero_of_isAlt {b : LinearMap.BilinFor
     (hb : b.IsAlt) (hu : ContDiff ℝ 2 u) (hsupp : HasCompactSupport u) (v w : E) :
     ∫ x, b (fderiv ℝ u x v) (fderiv ℝ u x w) ∂μ = 0 := by
   have hneg : ∀ x : E, b (fderiv ℝ u x w) (fderiv ℝ u x v) =
-      -b (fderiv ℝ u x v) (fderiv ℝ u x w) := fun x ↦ (hb.neg _ _).symm
+      -b (fderiv ℝ u x v) (fderiv ℝ u x w) := fun x ↦ (hb.neg_eq _ _).symm
   have h := integral_bilinForm_fderiv_apply_comm (μ := μ) b hu hsupp v w
   simp only [hneg, integral_neg] at h
   linarith

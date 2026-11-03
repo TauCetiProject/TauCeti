@@ -27,7 +27,8 @@ which is possible because the scalar matrices fix every point
 
 It then equips `OnePoint K` with the action of the projective special linear group
 `PSL(2, K)`, transported from Mathlib's action of `PSL(2, K)` on `ℙ K (Fin 2 → K)` along
-`OnePoint.equivProjectivization`. The class of a matrix acts as the matrix does
+`OnePoint.equivProjectivization`, which is therefore equivariant
+(`OnePoint.equivProjectivization_psl_smul`). The class of a matrix acts as the matrix does
 (`OnePoint.pslMk_smul`); the action is faithful and transitive. For `K = ℝ` this is the action of
 `PSL(2, ℝ)` on the ideal boundary of the upper half-plane.
 
@@ -201,17 +202,23 @@ lemma pslMk_smul (g : SL(2, K)) (c : OnePoint K) :
     (g : PSL(2, K)) • c = (g : GL (Fin 2) K) • c :=
   (rfl)
 
+/-- The identification `OnePoint.equivProjectivization` intertwines the actions of `PSL(2, K)` on
+`OnePoint K` and on `ℙ K (Fin 2 → K)`. -/
+lemma equivProjectivization_psl_smul {g : PSL(2, K)} (x : OnePoint K) :
+    equivProjectivization K (g • x) = g • equivProjectivization K x := by
+  rw [Equiv.smul_def, Equiv.apply_symm_apply]
+
 /-- The action of `PSL(2, K)` on `OnePoint K` is faithful. -/
 instance : FaithfulSMul PSL(2, K) (OnePoint K) where
   eq_of_smul_eq_smul {g₁ g₂} h := eq_of_smul_eq_smul fun p : ℙ K (Fin 2 → K) ↦ by
-    simpa [Equiv.smul_def] using
+    simpa [equivProjectivization_psl_smul] using
       congrArg (equivProjectivization K) (h ((equivProjectivization K).symm p))
 
 /-- The action of `PSL(2, K)` on `OnePoint K` is transitive. -/
 instance : MulAction.IsPretransitive PSL(2, K) (OnePoint K) :=
   MulAction.IsPretransitive.of_surjective_map (M := PSL(2, K)) (α := ℙ K (Fin 2 → K))
-    (f := ⟨(equivProjectivization K).symm, fun g p ↦ by
-      rw [Equiv.smul_def (equivProjectivization K), Equiv.apply_symm_apply]⟩)
+    (f := ⟨(equivProjectivization K).symm, fun g p ↦ (equivProjectivization K).injective <| by
+      rw [equivProjectivization_psl_smul, Equiv.apply_symm_apply, Equiv.apply_symm_apply]⟩)
     (equivProjectivization K).symm.surjective inferInstance
 
 /-- **`GL(2, K)` acts 2-transitively on the projective line**: any two distinct points of
