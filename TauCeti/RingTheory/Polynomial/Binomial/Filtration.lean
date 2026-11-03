@@ -62,22 +62,10 @@ theorem degree_sum_ringChoose_X_le_iff (a : ℕ →₀ ℤ) (n : ℕ) :
       ∀ i ∈ a.support, i ≤ n := by
   classical
   have : CharZero K := algebraRat.charZero K
-  let b := binomialPolynomialBasis K
-  have hspan : span K (b '' Set.Iic n) = degreeLE K n := by
-    simpa only [b, binomialPolynomialBasis_apply, binomialPolynomialSequence_apply] using
-      (binomialPolynomialSequence K).span_degreeLE
-        (fun i _ => by simpa only [binomialPolynomialSequence_apply] using
-          isUnit_leadingCoeff_ringChoose_X K i)
-  have hrepr (i : ℕ) :
-      b.repr (a.sum (fun j z => z • Ring.choose (X : K[X]) j)) i = (a i : K) := by
-    have hb (j : ℕ) : b j = Ring.choose (X : K[X]) j := binomialPolynomialBasis_apply K j
-    simpa [Finsupp.linearCombination_apply, Finsupp.sum_mapRange_index, hb,
-      Int.cast_smul_eq_zsmul] using
-      congrArg (fun c : ℕ →₀ K => c i)
-        (b.repr_linearCombination (a.mapRange (Int.cast : ℤ → K) (Int.cast_zero)))
-  rw [← mem_degreeLE, ← hspan, b.mem_span_image]
+  rw [← mem_degreeLE, ← span_binomialPolynomialBasis_image_Iic_eq_degreeLE K n,
+    (binomialPolynomialBasis K).mem_span_image]
   simp only [Set.subset_def, Finset.mem_coe, Finsupp.mem_support_iff,
-    Set.mem_Iic, hrepr, Int.cast_ne_zero]
+    Set.mem_Iic, binomialPolynomialBasis_repr_sum_zsmul, Int.cast_ne_zero]
 
 /-- The finite integral span is exactly the full integral binomial span intersected
 with the polynomial degree bound. This also covers the zero polynomial. -/
