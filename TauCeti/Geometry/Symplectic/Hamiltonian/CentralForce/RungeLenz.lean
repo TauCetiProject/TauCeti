@@ -60,8 +60,7 @@ theorem isRegularPoint_centralForceEnergyMomentum_kepler_of_rungeLenz_ne_zero
     IsRegularPoint 𝓘(ℝ, V × V) 𝓘(ℝ, Fin 2 → ℝ)
       (centralForceEnergyMomentum b m (fun r ↦ -κ / r)) x := by
   have hr : ‖x.1‖ ≠ 0 := norm_ne_zero_iff.2 hq
-  have hU : HasDerivAt (fun r ↦ -κ / r) (κ / ‖x.1‖ ^ 2) ‖x.1‖ := by
-    simpa [div_eq_mul_inv] using (hasDerivAt_inv hr).const_mul (-κ)
+  have hU := hasDerivAt_kepler_potential κ hr
   refine (isRegularPoint_centralForceEnergyMomentum_iff b hm hU hq).2 fun ⟨hqp, hc⟩ ↦ hA ?_
   have hL := sq_angularMomentum b x
   rw [hqp, zero_pow two_ne_zero, sub_zero] at hL
@@ -93,9 +92,7 @@ theorem exists_linearIndependent_fderiv_kepler_of_rungeLenz_ne_zero
   let L := angularMomentum (b 0) (b 1)
   let G := fun y ↦ ⟪rungeLenz m κ y, e⟫_ℝ
   let R := (stdSymplecticForm (V := V)).hamiltonianVectorField L x
-  have hU : HasDerivAt (fun r ↦ -κ / r) (κ / ‖x.1‖ ^ 2) ‖x.1‖ := by
-    simpa [div_eq_mul_inv] using
-      (hasDerivAt_inv (norm_ne_zero_iff.2 hq)).const_mul (-κ)
+  have hU := hasDerivAt_kepler_potential κ (norm_ne_zero_iff.2 hq)
   have hH := hasFDerivAt_centralForceHamiltonian (m := m) hU hq
   have hL := hasFDerivAt_angularMomentum (b 0) (b 1) x
   -- Rotation kills the first two integrals and detects the component of `A` along its rotation.

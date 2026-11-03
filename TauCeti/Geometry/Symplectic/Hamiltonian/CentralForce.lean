@@ -97,6 +97,11 @@ theorem centralForceHamiltonian_apply (m : ℝ) (U : ℝ → ℝ) (q p : V) :
     centralForceHamiltonian m U (q, p) = ‖p‖ ^ 2 / (2 * m) + U ‖q‖ :=
   (rfl)
 
+/-- The derivative of the Kepler potential `-κ / r` at a nonzero radius is `κ / r²`. -/
+theorem hasDerivAt_kepler_potential (κ : ℝ) {r : ℝ} (hr : r ≠ 0) :
+    HasDerivAt (fun r ↦ -κ / r) (κ / r ^ 2) r := by
+  simpa [div_eq_mul_inv] using (hasDerivAt_inv hr).const_mul (-κ)
+
 variable [InnerProductSpace ℝ V]
 
 /-- The angular momentum `⟪q, u⟫⟪p, w⟫ - ⟪q, w⟫⟪p, u⟫` in the plane of `u` and `w`, the pairing
@@ -482,8 +487,7 @@ theorem stdSymplecticForm_poissonBracket_inner_rungeLenz {m : ℝ} (hm : m ≠ 0
     (stdSymplecticForm (V := V)).poissonBracket (fun y ↦ ⟪rungeLenz m κ y, e⟫_ℝ)
       (centralForceHamiltonian m fun r ↦ -κ / r) x = 0 := by
   have hr : ‖x.1‖ ≠ 0 := norm_ne_zero_iff.2 hq
-  have hU : HasDerivAt (fun r ↦ -κ / r) (κ / ‖x.1‖ ^ 2) ‖x.1‖ := by
-    simpa [div_eq_mul_inv] using (hasDerivAt_inv hr).const_mul (-κ)
+  have hU := hasDerivAt_kepler_potential κ hr
   rw [stdSymplecticForm_poissonBracket (hasFDerivAt_inner_rungeLenz m κ e hq)
     (hasFDerivAt_centralForceHamiltonian hU hq)]
   simp [inner_sub_left, inner_add_left, real_inner_smul_right, real_inner_comm]
