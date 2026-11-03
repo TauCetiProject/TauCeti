@@ -8,8 +8,7 @@ module
 public import TauCeti.Topology.Triangulable.Vertices
 public import TauCeti.AlgebraicTopology.SimplicialComplex.Realization.Complement
 public import TauCeti.Geometry.Diffeomorphism.Diffeotopy.Configuration
-import TauCeti.AlgebraicTopology.SimplicialComplex.Realization.Relabel.Basic
-import Mathlib.Data.Fintype.EquivFin
+import TauCeti.Topology.Triangulable.FiniteCWType
 import TauCeti.Geometry.Manifold.Connected
 
 /-!
@@ -86,25 +85,7 @@ vertices of the supplied triangulation. -/
 theorem finiteCWType_compl_of_isTriangulable {S : Set M} (hS : S.Finite)
     (hdim : 1 < Module.rank ℝ E) (htri : IsTriangulable.{w} M) : FiniteCWType ↥Sᶜ := by
   classical
-  obtain ⟨ι, K, ⟨e⟩⟩ := (isTriangulable_iff M).mp htri
-  have := e.symm.compactSpace
-  have : Finite ι := (K.compactSpace_realization_iff_finite).mp inferInstance
-  let := Fintype.ofFinite ι
-  -- Relabel into the space's universe before placing the marked vertices, so that the
-  -- complement's finite CW model lies in the universe required by `FiniteCWType`.
-  let f : ι ≃ ULift.{u} (Fin (Fintype.card ι)) :=
-    (Fintype.equivFin ι).trans Equiv.ulift.symm
-  let L : AbstractSimplicialComplex (ULift.{u} (Fin (Fintype.card ι))) :=
-    { K.toPreAbstractSimplicialComplex.map f with
-      singleton_mem := fun v => PreAbstractSimplicialComplex.mem_map_iff.mpr
-        ⟨{f.symm v}, K.singleton_mem _, by simp⟩ }
-  let r := K.toPreAbstractSimplicialComplex.realizationRelabelingHomeomorph
-    (L := L) f.toEmbedding rfl rfl le_rfl
-  have hr : {y : Realization L | y.1.support ∈ L.toPreAbstractSimplicialComplex} = Set.univ :=
-    Set.eq_univ_of_forall (AbstractSimplicialComplex.support_mem L)
-  have htri' : IsTriangulable.{u} M := (isTriangulable_iff M).mpr
-    ⟨_, L, ⟨(((r.trans (Homeomorph.setCongr hr)).trans
-      (Homeomorph.Set.univ _)).symm).trans e⟩⟩
+  have htri' : IsTriangulable.{u} M := htri.lift_of_compactSpace
   obtain ⟨ι, K, e, s, hι, hS⟩ := hS.exists_triangulation_vertex_image hdim htri'
   let := Fintype.ofFinite ι
   have heq : e ⁻¹' Sᶜ = (K.vertex '' s)ᶜ := by
