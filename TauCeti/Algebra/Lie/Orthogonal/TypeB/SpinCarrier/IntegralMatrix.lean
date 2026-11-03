@@ -66,12 +66,9 @@ theorem rootIntMatrix_mul_self (j : Fin (n + 1) ⊕ Fin (n + 1)) :
     (TauCeti.typeBSimpleRootGeneratorFamily (K := ℚ))
     (TauCeti.typeBSimpleCorootGenerator (K := ℚ)) (rep n) (lattice n).toAddSubgroup
     (rep_kostantForm_mem_lattice n) j
-  have hXX : X * X = 0 := by
-    ext v
-    have h := congrArg (fun f => f (v : ExteriorAlgebra ℚ (polarization n).W))
-      (pow_two_rep_rootGenerator_eq_zero n j)
-    simpa only [X, pow_two, mul_apply_eq_comp, LinearMap.zero_apply,
-      coe_kostantRootOperator_apply, ZeroMemClass.coe_zero] using h
+  have hXX : X * X = 0 :=
+    kostantRootOperator_mul_eq_zero _ _ _ _ _
+      (by simpa only [pow_two] using pow_two_rep_rootGenerator_eq_zero n j)
   have h := congrArg (LinearMap.toMatrixAlgEquiv (latticeBasis n)) hXX
   simpa only [X, map_mul, map_zero, LinearMap.toMatrixAlgEquiv, AlgEquiv.ofLinearEquiv_apply,
     ← rootIntMatrix_eq_toMatrix] using h
