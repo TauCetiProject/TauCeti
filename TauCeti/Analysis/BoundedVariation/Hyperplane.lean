@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.BoundedVariation.Perimeter
 public import Mathlib.Geometry.Euclidean.Volume.Measure
 import TauCeti.Analysis.Distribution.TestFunction.PartitionOfUnity
+import TauCeti.Geometry.Euclidean.Volume.Measure
 import TauCeti.MeasureTheory.Integral.DivergenceTheorem.InnerHalfSpace
 import Mathlib.MeasureTheory.Measure.Lebesgue.VolumeOfBalls
 

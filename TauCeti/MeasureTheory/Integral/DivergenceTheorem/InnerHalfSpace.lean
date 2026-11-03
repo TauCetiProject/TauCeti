@@ -9,6 +9,7 @@ public import Mathlib.Geometry.Euclidean.Volume.Measure
 public import Mathlib.Analysis.Calculus.ContDiff.Defs
 public import Mathlib.LinearAlgebra.Trace
 import TauCeti.Analysis.Sobolev.Trace.IntegrationByParts
+import TauCeti.Geometry.Euclidean.Volume.Measure
 import Mathlib.Analysis.InnerProductSpace.Trace
 
 /-!
@@ -25,14 +26,13 @@ For a compactly supported `C¹` vector field `φ`,
 The hyperplane is the image of the orthogonal complement `(ℝ ∙ ν)ᗮ` under the isometry
 `y ↦ c • ν + y`, so its Hausdorff measure is the image of the Lebesgue measure of that
 `(n - 1)`-dimensional inner product space
-(`TauCeti.euclideanHausdorffMeasure_restrict_setOf_inner_eq`). The divergence theorem is transported
+(`TauCeti.euclideanHausdorffMeasure_restrict_setOf_inner_eq`, in
+`TauCeti.Geometry.Euclidean.Volume.Measure`). The divergence theorem is transported
 by a linear isometry `F ≃ ℝ × (ℝ ∙ ν)ᗮ` from its form on the coordinate half-space of the `ℓ²`
 product, `TauCeti.setIntegral_normalHalfSpace_fderiv_apply`.
 
 ## Main results
 
-* `TauCeti.euclideanHausdorffMeasure_restrict_setOf_inner_eq`: the Hausdorff measure of the
-  hyperplane `{x | ⟪x, ν⟫ = c}` is the image of the Lebesgue measure of `(ℝ ∙ ν)ᗮ`.
 * `TauCeti.setIntegral_setOf_inner_lt_fderiv_apply`: for a compactly supported `C¹` function `g`
   and a direction `v`, `∫_H ∂_v g = ⟪v, ν⟫ ∫_{⟪x, ν⟫ = c} g dμHE[n - 1]`.
 * `TauCeti.setIntegral_setOf_inner_lt_trace_fderiv`: the divergence theorem on `H` for compactly
@@ -54,57 +54,7 @@ open scoped RealInnerProductSpace
 
 variable {F : Type*} [NormedAddCommGroup F] [InnerProductSpace ℝ F] {ν : F}
 
-/-- The parametrization `y ↦ c • ν + y` of the hyperplane `{x | ⟪x, ν⟫ = c}` by `(ℝ ∙ ν)ᗮ` is an
-isometry. -/
-private theorem isometry_smul_add_coe (c : ℝ) :
-    Isometry fun y : (ℝ ∙ ν)ᗮ => c • ν + (y : F) :=
-  (isometry_add_left (c • ν)).comp isometry_subtype_coe
-
 variable [FiniteDimensional ℝ F] [MeasurableSpace F] [BorelSpace F]
-
-/-- **Hausdorff measure on a hyperplane.** For a unit vector `ν`, the `(n - 1)`-dimensional
-Hausdorff measure of the hyperplane `{x | ⟪x, ν⟫ = c}` is the image of the Lebesgue measure of
-the orthogonal complement `(ℝ ∙ ν)ᗮ` under `y ↦ c • ν + y`. -/
-theorem euclideanHausdorffMeasure_restrict_setOf_inner_eq (hν : ‖ν‖ = 1) (c : ℝ) :
-    μHE[finrank ℝ F - 1].restrict {x | ⟪x, ν⟫ = c} =
-      (volume : Measure (ℝ ∙ ν)ᗮ).map fun y : (ℝ ∙ ν)ᗮ => c • ν + (y : F) := by
-  have hν0 : ν ≠ 0 := norm_ne_zero_iff.1 (hν ▸ one_ne_zero)
-  have : Nontrivial F := ⟨⟨ν, 0, hν0⟩⟩
-  have : Fact (finrank ℝ F = finrank ℝ F - 1 + 1) := ⟨(Nat.sub_add_cancel finrank_pos).symm⟩
-  have hrange : range (fun y : (ℝ ∙ ν)ᗮ => c • ν + (y : F)) = {x | ⟪x, ν⟫ = c} := by
-    ext x
-    refine ⟨?_, fun hx => ?_⟩
-    · rintro ⟨y, rfl⟩
-      have hy : ⟪(y : F), ν⟫ = 0 := Submodule.mem_orthogonal_singleton_iff_inner_left.1 y.2
-      simp [inner_add_left, real_inner_smul_left, hν, hy]
-    · have hy : x - c • ν ∈ (ℝ ∙ ν)ᗮ := by
-        rw [Submodule.mem_orthogonal_singleton_iff_inner_left, inner_sub_left,
-          real_inner_smul_left, real_inner_self_eq_norm_sq, hν, hx.out]
-        ring
-      exact ⟨⟨x - c • ν, hy⟩, by simp⟩
-  rw [← InnerProductSpace.euclideanHausdorffMeasure_eq_volume,
-    Submodule.finrank_orthogonal_span_singleton (n := finrank ℝ F - 1) hν0,
-    (isometry_smul_add_coe c).map_euclideanHausdorffMeasure]
-  exact congrArg _ hrange.symm
-
-/-- Integrals over the hyperplane `{x | ⟪x, ν⟫ = c}` against Hausdorff measure are integrals over
-`(ℝ ∙ ν)ᗮ` against Lebesgue measure. -/
-theorem setIntegral_setOf_inner_eq (hν : ‖ν‖ = 1) (c : ℝ) {G : Type*}
-    [NormedAddCommGroup G] [NormedSpace ℝ G] (g : F → G) :
-    ∫ x in {x | ⟪x, ν⟫ = c}, g x ∂μHE[finrank ℝ F - 1] = ∫ y : (ℝ ∙ ν)ᗮ, g (c • ν + y) := by
-  rw [euclideanHausdorffMeasure_restrict_setOf_inner_eq hν,
-    (isometry_smul_add_coe c).isClosedEmbedding.measurableEmbedding.integral_map]
-
-/-- A continuous compactly supported function is integrable on the hyperplane
-`{x | ⟪x, ν⟫ = c}` against Hausdorff measure. -/
-theorem integrableOn_setOf_inner_eq (hν : ‖ν‖ = 1) (c : ℝ) {G : Type*}
-    [NormedAddCommGroup G] {g : F → G}
-    (hg : Continuous g) (hgc : HasCompactSupport g) :
-    IntegrableOn g {x | ⟪x, ν⟫ = c} μHE[finrank ℝ F - 1] := by
-  have he := (isometry_smul_add_coe (ν := ν) c).isClosedEmbedding
-  rw [IntegrableOn, euclideanHausdorffMeasure_restrict_setOf_inner_eq hν,
-    he.measurableEmbedding.integrable_map_iff]
-  exact (hg.comp he.continuous).integrable_of_hasCompactSupport (hgc.comp_isClosedEmbedding he)
 
 /-- **The divergence theorem on a half-space, directional form.** For a unit vector `ν`, a
 compactly supported `C¹` function `g` and a direction `v`, the integral of `∂_v g` over the
