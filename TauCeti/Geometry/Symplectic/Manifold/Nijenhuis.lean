@@ -54,6 +54,8 @@ on a vector of type `(1,0)` and one of type `(0,1)`; on parts of real tangent ve
   `SmoothAlmostComplexStructure.baseChange_nijenhuis_eq_zero_of_mem_eigenspace_I_of_mem_neg_I`
   and their companions: the type identities of the complex-bilinear extension on the eigenspaces
   `T^(1,0)_x M` and `T^(0,1)_x M` of the complexified `J`.
+* `TauCeti.SmoothAlmostComplexStructure.nijenhuis_eq_fderiv`: on a vector space, compute the
+  tensor from a local formula for `J` using real derivatives and Mathlib's bracket sign.
 * `TauCeti.SmoothAlmostComplexStructure.nijenhuis_const`: a constant almost complex structure on
   a vector space has vanishing Nijenhuis tensor.
 

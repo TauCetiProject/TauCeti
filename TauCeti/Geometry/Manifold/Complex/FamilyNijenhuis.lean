@@ -12,18 +12,25 @@ import Mathlib.Analysis.Calculus.FDeriv.Prod
 /-!
 # Nijenhuis equations in a product trivialization
 
-In a smooth product trivialization a complex-structure family has block form
-`J(a,v) = (i a, α a + j v)`. The mixed and horizontal components of its Nijenhuis tensor
-are computed here on the native smooth almost-complex-structure carrier. In particular,
-integrability requires both a mixed equation and a horizontal curvature equation; no
-sufficiency assertion discards the latter.
+In a smooth product trivialization with constant base complex structure `i`, as in linear
+holomorphic base coordinates, a complex-structure family has block form
+`J(a,v) = (i a, α a + j v)`. Only `α` and `j` vary with the point. Its mixed, horizontal and
+vertical Nijenhuis components are computed here on the native smooth almost-complex-structure
+carrier. Total vanishing is equivalent to the mixed, horizontal and fibrewise equations.
 
 The formulas `mixedTerm` and `horizontalTerm` follow Robbin–Salamon's corrected family
 integrability calculation. Their vector-field bracket is the negative of Mathlib's bracket.
 Consequently the native Nijenhuis values are `(0, -j M)` and `(0, -ζ)`, respectively.
 All derivatives below are real derivatives on the total product, so the formulas include
-both base and fibre variation. They are local calculations, independent of compactness,
-genus, Hamiltonian representations, or a choice of Sobolev completion.
+both base and fibre variation.
+
+## Main declarations
+
+* `nijenhuis_horizontal_vertical` and `nijenhuis_horizontal_horizontal`: the mixed and horizontal
+  component formulas.
+* `nijenhuis_vertical_vertical`: the fibrewise component formula.
+* `lieBracket_fiber_eq`: the native fibre bracket and its sign comparison with the source bracket.
+* `nijenhuis_eq_zero_iff`: the full vanishing criterion.
 
 ## References
 
@@ -40,7 +47,8 @@ namespace TauCeti.ComplexStructureFamily
 variable {B V : Type*} [NormedAddCommGroup B] [NormedSpace ℝ B]
   [NormedAddCommGroup V] [NormedSpace ℝ V]
 
-/-- The block endomorphism `J(a,v) = (i a, α a + j v)` on a product. -/
+/-- The block endomorphism `J(a,v) = (i a, α a + j v)` on a product, with constant base block `i`;
+only `α` and `j` vary with the point. -/
 def blockEndomorphism (i : B →L[ℝ] B) (α : B × V → B →L[ℝ] V)
     (j : B × V → V →L[ℝ] V) (p : B × V) : (B × V) →L[ℝ] B × V :=
   (i.comp (ContinuousLinearMap.fst ℝ B V)).prod
@@ -88,7 +96,7 @@ theorem horizontalTerm_def (i : B →L[ℝ] B) (α : B × V → B →L[ℝ] V)
 
 /-- The native bracket of two fibre vector fields from `α`, in total-space derivatives.
 The source bracket in `horizontalTerm` is its negative. -/
-theorem lieBracket_fibre_eq (α : B × V → B →L[ℝ] V) {p : B × V}
+theorem lieBracket_fiber_eq (α : B × V → B →L[ℝ] V) {p : B × V}
     (hα : DifferentiableAt ℝ α p) (a b : B) :
     VectorField.lieBracket ℝ (fun v ↦ α (p.1, v) a) (fun v ↦ α (p.1, v) b) p.2 =
       fderiv ℝ α p (0, α p a) b - fderiv ℝ α p (0, α p b) a := by
@@ -146,7 +154,7 @@ theorem nijenhuis_horizontal_vertical (a : B) (v : V) :
   rw [hsplit, map_add]
   simp only [add_apply, map_add, map_sub, map_neg,
     Prod.mk_sub_mk, Prod.mk_add_mk,
-    sub_zero, mixedTerm, j_apply_apply J i α j hJ]
+    sub_zero, mixedTerm_def, j_apply_apply J i α j hJ]
   congr 1 <;> abel
 
 /-- The horizontal Nijenhuis component is the negative of the corrected horizontal equation.
@@ -159,7 +167,7 @@ theorem nijenhuis_horizontal_horizontal (a b : B) :
   simp only [blockEndomorphism_apply, map_zero, add_zero]
   rw [hsplit a, hsplit b, map_add, map_add]
   simp only [add_apply, Prod.mk_sub_mk, Prod.mk_add_mk,
-    sub_zero, zero_add, horizontalTerm]
+    sub_zero, zero_add, horizontalTerm_def]
   congr 1
   abel
 
@@ -173,16 +181,23 @@ theorem nijenhuis_vertical_vertical (v w : V) :
   simp_rw [fderiv_apply i α j hα hj]
   simp only [blockEndomorphism_apply, map_zero, zero_add,
     Prod.mk_sub_mk, Prod.mk_add_mk, sub_zero]
+  -- TangentSpace of the product model is B × V; its operations are the model-space operations.
   rfl
+
+omit hJ hα hj in
+private theorem snd_eq_zero_of_nijenhuis_eq_zero {u w : B × V} {x : V}
+    (hN : J.nijenhuis p = 0) (h : J.nijenhuis p u w = (0, x)) : x = 0 := by
+  rw [hN] at h
+  -- Use model-space instances: the tangent-space zero map is otherwise opaque to simp.
+  change (0 : (B × V) →L[ℝ] (B × V) →L[ℝ] B × V) u w = (0, x) at h
+  simpa using (congrArg Prod.snd h).symm
 
 /-- Vanishing of the native Nijenhuis tensor forces the corrected mixed equation. -/
 theorem mixedTerm_eq_zero_of_nijenhuis_eq_zero
     (hN : J.nijenhuis p = 0) (a : B) (v : V) : mixedTerm i α j p a v = 0 := by
   have h := nijenhuis_horizontal_vertical J i α j hJ hα hj a v
-  have hzero : (0, -j p (mixedTerm i α j p a v)) = (0 : B × V) :=
-    h.symm.trans (by rw [hN]; rfl)
   have hz : j p (mixedTerm i α j p a v) = 0 := by
-    simpa using congrArg Prod.snd hzero
+    simpa using snd_eq_zero_of_nijenhuis_eq_zero J hN h
   have := congrArg (j p) hz
   simpa only [j_apply_apply J i α j hJ, map_zero, neg_eq_zero] using this
 
@@ -190,9 +205,7 @@ theorem mixedTerm_eq_zero_of_nijenhuis_eq_zero
 theorem horizontalTerm_eq_zero_of_nijenhuis_eq_zero
     (hN : J.nijenhuis p = 0) (a b : B) : horizontalTerm i α j p a b = 0 := by
   have h := nijenhuis_horizontal_horizontal J i α j hJ hα hj a b
-  have hzero : (0, -horizontalTerm i α j p a b) = (0 : B × V) :=
-    h.symm.trans (by rw [hN]; rfl)
-  simpa using congrArg Prod.snd hzero
+  simpa using snd_eq_zero_of_nijenhuis_eq_zero J hN h
 
 /-- The full product criterion: the mixed and horizontal equations, together with fibrewise
 vanishing, are equivalent to vanishing of the total Nijenhuis tensor. In particular, when the
@@ -208,9 +221,14 @@ theorem nijenhuis_eq_zero_iff :
       horizontalTerm_eq_zero_of_nijenhuis_eq_zero J i α j hJ hα hj hN, ?_⟩
     intro v w
     rw [hN]
-    rfl
+    -- Use model-space instances to expose zero-map evaluation to simp.
+    change (0 : (B × V) →L[ℝ] (B × V) →L[ℝ] B × V) (0, v) (0, w) = 0
+    simp
   · rintro ⟨hM, hH, hV⟩
+    -- Fix the model-space instances: TangentSpace of this vector space is B × V.
     let N : (B × V) →L[ℝ] (B × V) →L[ℝ] B × V := J.nijenhuis p
+    -- Express fibrewise vanishing with these same instances so that simp can match it.
+    change ∀ v w : V, N (0, v) (0, w) = 0 at hV
     have hmix (a : B) (v : V) : N (a, 0) (0, v) = 0 := by
       calc
         N (a, 0) (0, v) = (0, -j p (mixedTerm i α j p a v)) :=
@@ -231,8 +249,7 @@ theorem nijenhuis_eq_zero_iff :
     apply ContinuousLinearMap.ext
     intro w
     have hsplit (z : B × V) : z = (z.1, 0) + (0, z.2) := by simp
-    have hvert (v w : V) : N (0, v) (0, w) = 0 := hV v w
     rw [hsplit u, hsplit w]
-    simp only [map_add, add_apply, hhor, hmix, hrev, hvert, zero_apply, add_zero]
+    simp only [map_add, add_apply, hhor, hmix, hrev, hV, zero_apply, add_zero]
 
 end TauCeti.ComplexStructureFamily
