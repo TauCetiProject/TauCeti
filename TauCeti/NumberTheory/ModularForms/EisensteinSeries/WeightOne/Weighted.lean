@@ -8,13 +8,16 @@ module
 public import TauCeti.Analysis.Complex.UpperHalfPlane.PeriodPair
 public import TauCeti.NumberTheory.ModularForms.EisensteinSeries.Weighted
 public import Mathlib.Algebra.Group.EvenFunction
+public import Mathlib.Analysis.SpecialFunctions.Complex.CircleAddChar
 public import Mathlib.NumberTheory.ModularForms.QExpansion
 import TauCeti.Analysis.Complex.UpperHalfPlane.Manifold
 import TauCeti.Analysis.SpecialFunctions.Exp.Summable
 import TauCeti.Analysis.SpecialFunctions.Trigonometric.Cotangent
 import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.Basic
 import TauCeti.NumberTheory.ModularForms.Basic
+import TauCeti.NumberTheory.TsumDivisorsAntidiagonal
 import Mathlib.Analysis.Normed.Group.Tannery
+import Mathlib.Analysis.Normed.Ring.Finite
 
 /-!
 # Weight-one Eisenstein series weighted by a function of residues
@@ -76,6 +79,21 @@ constant `π cot (π a₁ / N)` if `a₀ = 0`. So `E₁^W` tends to `N⁻¹ ∑_
 (`TauCeti.EisensteinSeries.tendsto_weightedE1_atImInfty`). With the slash action this gives the
 value at `i∞` of every `SL(2, ℤ)`-translate, that is, the constant terms of `E₁^W` at all cusps.
 
+For the `q`-expansion each cotangent at a point `w` of the upper half-plane is expanded as
+`π cot (π w) = -π i - 2π i ∑_{k ≥ 1} e(k w)`, with `e(w) = e^(2π i w)`
+(`TauCeti.hasSum_pi_mul_cot_pi_mul_add_pi_mul_I`). In the row `m` at `x = (a₀ z + a₁) / N`, write
+`x - m z = (n z + a₁) / N` with `n = a₀ - m N`: as `m` runs over `ℤ`, `n` runs over the residue
+class of `a₀`, the classes `n = c ≥ 1` and `n = -c ≤ -1` expand in powers of `e(z / N)`, and the
+cotangents `π cot (π m z)` cancel in pairs
+(`TauCeti.hasSum_pi_mul_cot_pi_mul_intCast_mul_add_sign`,
+`TauCeti.hasSum_pi_mul_cot_pi_mul_div_sub_intCast_mul_add_pi_mul_cot`). Hence `F_a` minus its
+constant term `c_a` is
+`-2π i ∑_{c, k ≥ 1} D_a(c, k) e(z / N)^(c k)`, where `D_a(c, k)` is `e(k a₁ / N)` if `c ≡ a₀`
+minus `e(-k a₁ / N)` if `c ≡ -a₀`; the rows at the division points `z / 2` and `1 / 2` of the
+quasi-periods have no nonconstant terms. Summing over `a`, `E₁^W` minus its value at `i∞` is
+`-2π i / N ∑_{c, k ≥ 1} (∑_j (W(c, j) - W(-c, -j)) e(k j / N)) e(z / N)^(c k)`
+(`TauCeti.EisensteinSeries.hasSum_weightedE1_sub_valueAtInfty`); only the odd part of `W` enters.
+
 ## Main definitions
 
 * `TauCeti.EisensteinSeries.weightedE1`: the weight-one series weighted by `W`.
@@ -96,6 +114,8 @@ value at `i∞` of every `SL(2, ℤ)`-translate, that is, the constant terms of 
   `TauCeti.EisensteinSeries.valueAtInfty_weightedE1`: the limit at `i∞`.
 * `TauCeti.EisensteinSeries.valueAtInfty_weightedE1_slash`: the value at `i∞` of every
   `SL(2, ℤ)`-translate.
+* `TauCeti.EisensteinSeries.hasSum_weightedE1_sub_valueAtInfty`: the `q`-expansion in
+  `e(z / N)`, as an absolutely convergent double series.
 
 ## References
 
@@ -739,6 +759,135 @@ theorem valueAtInfty_weightedE1_slash (W : (Fin 2 → ZMod N) → ℂ) (γ : SL(
         if (a 0).val = 0 then π * cot (π * ((a 1).val / N))
         else π * Complex.I * (2 * (a 0).val / N - 1) := by
   rw [weightedE1_slash_apply, valueAtInfty_weightedE1]
+
+/-! ### The `q`-expansion -/
+
+/-- The coefficient of `e^(2π i c k z / M)` in the cotangent rows at the division point
+`(b₀ z + b₁) / M`: `e(k b₁ / M)` if `c ≡ b₀` minus `e(-k b₁ / M)` if `c ≡ -b₀` modulo `M`. -/
+private def divCoeff (M b₀ b₁ c k : ℕ) [NeZero M] : ℂ :=
+  (if (c : ZMod M) = b₀ then ZMod.stdAddChar ((k : ZMod M) * (b₁ : ZMod M)) else 0) -
+    if (c : ZMod M) = -(b₀ : ZMod M) then ZMod.stdAddChar (-((k : ZMod M) * (b₁ : ZMod M))) else 0
+
+private lemma norm_divCoeff_le (M b₀ b₁ c k : ℕ) [NeZero M] : ‖divCoeff M b₀ b₁ c k‖ ≤ 2 := by
+  refine (norm_sub_le _ _).trans ?_
+  have h₁ : ‖(if (c : ZMod M) = b₀ then ZMod.stdAddChar ((k : ZMod M) * (b₁ : ZMod M))
+      else 0 : ℂ)‖ ≤ 1 := by
+    split_ifs <;> simp
+  have h₂ : ‖(if (c : ZMod M) = -(b₀ : ZMod M) then
+      ZMod.stdAddChar (-((k : ZMod M) * (b₁ : ZMod M))) else 0 : ℂ)‖ ≤ 1 := by
+    split_ifs <;> simp
+  linarith
+
+omit [NeZero N] in
+/-- The rows at the division points `z / 2` and `1 / 2` of the quasi-periods have no
+nonconstant terms, as `1 ≡ -1` modulo `2`. -/
+private lemma divCoeff_two_one_zero (c k : ℕ) : divCoeff 2 1 0 c k = 0 := by
+  simp [divCoeff, ZMod.neg_eq_self_mod_two]
+
+omit [NeZero N] in
+private lemma divCoeff_two_zero_one (c k : ℕ) : divCoeff 2 0 1 c k = 0 := by
+  simp [divCoeff, ZMod.neg_eq_self_mod_two]
+
+/-- **The `q`-expansion of a corrected division value**: `F_a - c_a` is
+`-2π i ∑_{c, k ≥ 1} D_a(c, k) e(z / N)^(c k)`, where `c_a` is the constant term
+`zetaValueLimit a`. The rows at `z / 2` and `1 / 2` of the quasi-periods contribute only their
+constants `-π i` and `0`. -/
+private lemma hasSum_zetaValue_lift_sub (a : Fin 2 → ZMod N) (z : ℍ) :
+    HasSum (fun p : ℕ+ × ℕ+ ↦ -2 * π * Complex.I * divCoeff N (a 0).val (a 1).val p.1 p.2 *
+        cexp (2 * π * Complex.I * z / N) ^ ((p.1 : ℕ) * p.2))
+      (zetaValue N (lift a) z - zetaValueLimit a) := by
+  have hs : Summable fun p : ℕ+ × ℕ+ ↦ -2 * π * Complex.I *
+      divCoeff N (a 0).val (a 1).val p.1 p.2 *
+        cexp (2 * π * Complex.I * z / N) ^ ((p.1 : ℕ) * p.2) :=
+    summable_mul_pow_mul (by simpa [Function.Periodic.qParam] using
+      UpperHalfPlane.norm_qParam_lt_one N z) (C := ‖-2 * π * Complex.I‖ * 2) fun p ↦ by
+      rw [norm_mul]
+      gcongr
+      exact norm_divCoeff_le ..
+  convert hs.hasSum using 1
+  by_cases ha : a = 0
+  · subst ha
+    simp [lift_zero, zetaValue_zero, zetaValueLimit, divCoeff]
+  have hcot : cot (π * (1 / 2)) = 0 := by
+    rw [Complex.cot_eq_cos_div_sin, ← div_eq_mul_one_div, Complex.cos_pi_div_two, zero_div]
+  have hcot' : cot (π * 2⁻¹) = 0 := by
+    rw [← one_div, hcot]
+  -- the cotangent rows at the division point `(b₀ z + b₁) / M`
+  have hdiv {M b₀ : ℕ} [NeZero M] (hb : b₀ < M) (b₁ : ℕ) :
+      HasSum (fun m ↦ cotRow ((b₀ * (z : ℂ) + b₁) / M) m z)
+        ((if b₀ = 0 then π * cot (π * (b₁ / M)) else -(π * Complex.I)) +
+          ∑' p : ℕ+ × ℕ+, -2 * π * Complex.I * divCoeff M b₀ b₁ p.1 p.2 *
+            cexp (2 * π * Complex.I * z / M) ^ ((p.1 : ℕ) * p.2)) := by
+    simpa [cotRow, divCoeff] using
+      hasSum_pi_mul_cot_pi_mul_div_sub_intCast_mul_add_pi_mul_cot hb (b₁ : ℤ) z.im_pos
+  have h₁ := hdiv (ZMod.val_lt (a 0)) (a 1).val
+  have h₂ := hdiv (M := 2) (b₀ := 1) (by norm_num) 0
+  have h₃ := hdiv (M := 2) (b₀ := 0) (by norm_num) 1
+  rw [← (div_two_eq z).1] at h₂
+  rw [← (div_two_eq z).2] at h₃
+  have h₂' : HasSum (fun m ↦ cotRow (z / 2) m z) (-(π * Complex.I)) := by
+    simpa [divCoeff_two_one_zero] using h₂
+  have h₃' : HasSum (fun m ↦ cotRow (1 / 2) m z) 0 := by
+    simpa [divCoeff_two_zero_one, hcot'] using h₃
+  have hrow : HasSum (fun m ↦ zetaRow a m z) _ :=
+    (h₁.sub (h₂'.mul_left (2 * (a 0).val / N : ℂ))).sub (h₃'.mul_left (2 * (a 1).val / N : ℂ))
+  rw [(hasSum_zetaValue_lift ha z).unique hrow, zetaValueLimit]
+  split_ifs with h0
+  · simp only [h0, Nat.cast_zero]
+    ring
+  · ring
+
+/-- The weighted sum of the coefficients `D_a(c, k)` of the corrected division values. -/
+private lemma sum_mul_divCoeff (W : (Fin 2 → ZMod N) → ℂ) (c k : ℕ) :
+    ∑ a, W a * divCoeff N (a 0).val (a 1).val c k =
+      ∑ j, (W ![(c : ZMod N), j] - W ![-(c : ZMod N), -j]) *
+        ZMod.stdAddChar ((k : ZMod N) * j) := by
+  -- a sum over residue pairs whose summand vanishes off the first coordinate `d`
+  have hpair (d : ZMod N) (g : ZMod N → ℂ) :
+      ∑ a, W a * (if d = a 0 then g (a 1) else 0) = ∑ j, W ![d, j] * g j := by
+    rw [← (finTwoArrowEquiv (ZMod N)).symm.sum_comp, Fintype.sum_prod_type]
+    simp [mul_ite, Finset.sum_ite_irrel]
+  have hneg (x : ZMod N) : ((c : ZMod N) = -x) ↔ (-(c : ZMod N) = x) :=
+    neg_eq_iff_eq_neg.symm
+  calc ∑ a, W a * divCoeff N (a 0).val (a 1).val c k
+      = ∑ a, W a * (if (c : ZMod N) = a 0 then ZMod.stdAddChar ((k : ZMod N) * a 1) else 0) -
+          ∑ a, W a * (if -(c : ZMod N) = a 0 then
+            ZMod.stdAddChar (-((k : ZMod N) * a 1)) else 0) := by
+        rw [← Finset.sum_sub_distrib]
+        refine Finset.sum_congr rfl fun a _ ↦ ?_
+        simp only [divCoeff, ZMod.natCast_zmod_val, hneg]
+        ring
+    _ = ∑ j, W ![(c : ZMod N), j] * ZMod.stdAddChar ((k : ZMod N) * j) -
+          ∑ j, W ![-(c : ZMod N), -j] * ZMod.stdAddChar ((k : ZMod N) * j) := by
+        rw [hpair _ fun j ↦ ZMod.stdAddChar ((k : ZMod N) * j),
+          hpair _ fun j ↦ ZMod.stdAddChar (-((k : ZMod N) * j)),
+          ← Equiv.sum_comp (Equiv.neg (ZMod N))
+          (fun j ↦ W ![-(c : ZMod N), j] * ZMod.stdAddChar (-((k : ZMod N) * j)))]
+        simp
+    _ = _ := by
+        rw [← Finset.sum_sub_distrib]
+        simp only [sub_mul]
+
+/-- **The `q`-expansion of the weighted weight-one series at level `Γ(N)`.** With
+`e(z / N) = e^(2π i z / N)`, the series minus its value at `i∞` is the double series
+`-2π i / N ∑_{c, k ≥ 1} (∑_j (W(c, j) - W(-c, -j)) e(k j / N)) e(z / N)^(c k)`, which converges
+absolutely; grouping by `n = c k` gives the `q`-expansion in `e(z / N)`. -/
+theorem hasSum_weightedE1_sub_valueAtInfty (W : (Fin 2 → ZMod N) → ℂ) (z : ℍ) :
+    HasSum (fun p : ℕ+ × ℕ+ ↦ -2 * π * Complex.I / N *
+        (∑ j, (W ![((p.1 : ℕ) : ZMod N), j] - W ![-((p.1 : ℕ) : ZMod N), -j]) *
+          ZMod.stdAddChar (((p.2 : ℕ) : ZMod N) * j)) *
+        cexp (2 * π * Complex.I * z / N) ^ ((p.1 : ℕ) * p.2))
+      (weightedE1 W z - valueAtInfty (weightedE1 W)) := by
+  have h := (hasSum_sum (s := Finset.univ) fun a _ ↦
+    (hasSum_zetaValue_lift_sub a z).mul_left (W a)).mul_left (N : ℂ)⁻¹
+  convert h using 1
+  · ext p
+    rw [← sum_mul_divCoeff, Finset.mul_sum, Finset.sum_mul, Finset.mul_sum]
+    refine Finset.sum_congr rfl fun a _ ↦ ?_
+    ring
+  · rw [valueAtInfty_weightedE1, weightedE1_eq_sum_zetaValue, ← mul_sub,
+      ← Finset.sum_sub_distrib]
+    simp [zetaValueLimit, mul_sub]
 
 /-! ### The modular form -/
 

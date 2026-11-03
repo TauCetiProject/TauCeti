@@ -13,7 +13,6 @@ public import Mathlib.RingTheory.Polynomial.Basic
 public import Mathlib.RingTheory.TensorProduct.Pi
 public import TauCeti.RingTheory.NormTrace.BaseChange
 public import TauCeti.RingTheory.NormTrace.Pi
-public import TauCeti.RingTheory.NormTrace.Prod
 public import TauCeti.RingTheory.TensorProduct.Maps
 
 /-!
@@ -51,7 +50,8 @@ full set of sections of a finite locally free subgroup scheme.
   isomorphisms of `B`.
 * `TauCeti.IsFullSetOfSections.of_localizationSpan`: being a full set of sections is Zariski-local
   on `Spec A`: it can be checked after localizing at a family of elements generating the unit
-  ideal.
+  ideal. `TauCeti.IsFullSetOfSections.of_localization_maximal` permits checking at all maximal
+  ideals instead.
 * `TauCeti.isFullSetOfSections_iff_charpoly`: for finite `B`, the characteristic-polynomial
   formulation (Katz–Mazur 1.8.2), tested on free base changes in the universe of `A`.
 
@@ -66,6 +66,9 @@ sections be checked locally on `Spec A` and transported along changes of base.
 * `TauCeti.IsFullSetOfSections.baseChange`, `TauCeti.IsFullSetOfSections.of_baseChange` and
   `TauCeti.isFullSetOfSections_baseChange_iff`: full sets of sections are stable under arbitrary
   base change and descend along injective ring maps, in particular along faithfully flat ones.
+* `TauCeti.isFullSetOfSections_pi_iff` in `TauCeti/RingTheory/Norm/FullSetOfSections/Pi.lean`:
+  fullness on a finite disjoint union is equivalent to fullness on each component
+  (Katz–Mazur 1.8.4).
 
 In the remaining results, `B` is free of finite rank over `A`.
 
@@ -77,12 +80,11 @@ In the remaining results, `B` is free of finite rank over `A`.
   (Katz–Mazur, proof of 1.9.1). For a basis `b` of `B` indexed by `κ`, `s` is a full set of
   sections if and only if the norm form factors into linear forms,
   `Norm (∑ j, Xⱼ ⊗ bⱼ) = ∏ i, ∑ j, sᵢ(bⱼ) • Xⱼ` in `MvPolynomial κ A`.
+* `TauCeti.IsFullSetOfSections.trace_eq_sum`: the trace is the sum of the values at the sections.
 * `TauCeti.IsFullSetOfSections.card_eq_finrank`: over a nontrivial ring, a full set of sections
   has exactly `rank B` members.
 * `TauCeti.isFullSetOfSections_evalAlgHom`: the coordinate projections of `ι → A`, the sections
   of the constant scheme `⨆_{i ∈ ι} Spec A`, form a full set of sections.
-* `TauCeti.IsFullSetOfSections.prod`: full sets of sections of `B₁` and `B₂` together form one of
-  `B₁ × B₂` (Katz–Mazur 1.8.4).
 * `TauCeti.IsFullSetOfSections.tensorProduct`: full sets of sections `s₁` of `B₁` and `s₂` of
   `B₂` give the full set of sections `x ⊗ y ↦ s₁ᵢ(x) s₂ⱼ(y)` of `B₁ ⊗[A] B₂`, the coordinate ring
   of the fibre product `Spec B₁ ×_{Spec A} Spec B₂`.
@@ -267,6 +269,20 @@ private theorem algebraMap_norm_eq_algebraMap_prod [Module.Finite A B] {A' T T' 
     ((forall_norm_eq_prod_cancelBaseChange_iff (A' := A')).1 H), map_prod]
   simp
 
+-- When `T'` is in the universe of `A'`, fullness supplies the norm identity after transporting
+-- freeness through the two base changes.
+private theorem IsFullSetOfSections.algebraMap_norm_eq_prod [Module.Finite A B]
+    {A' T' : Type u} [CommRing A'] [Algebra A A'] {T : Type*} [CommRing T] [Algebra A T]
+    [Module.Free T (T ⊗[A] B)] [CommRing T'] [Algebra T T'] [Algebra A' T'] [Algebra A T']
+    [IsScalarTower A A' T'] [IsScalarTower A T T']
+    (h : IsFullSetOfSections fun i ↦ (s i).sectionBaseChange A') (f : T ⊗[A] B) :
+    algebraMap T T' (Algebra.norm T f) = algebraMap T T' (∏ i, (s i).sectionBaseChange T f) := by
+  have : Module.Free T' (T' ⊗[A] B) :=
+    .of_equiv (Algebra.TensorProduct.cancelBaseChange A T T' T' B).toLinearEquiv
+  have : Module.Free T' (T' ⊗[A'] (A' ⊗[A] B)) :=
+    .of_equiv (Algebra.TensorProduct.cancelBaseChange A A' T' T' B).symm.toLinearEquiv
+  exact algebraMap_norm_eq_algebraMap_prod f (h T')
+
 /-- **Zariski locality.** If `t` generates the unit ideal of `A` and the base changes of `s` to the
 localizations `A[1/r]`, `r ∈ t`, are full sets of sections, then `s` is a full set of sections. -/
 theorem IsFullSetOfSections.of_localizationSpan [Module.Finite A B] (t : Set A)
@@ -278,12 +294,21 @@ theorem IsFullSetOfSections.of_localizationSpan [Module.Finite A B] (t : Set A)
   refine Module.eq_of_isLocalized_span t ht (Mₚ := T')
     (f := fun r ↦ (IsScalarTower.toAlgHom A T (T' r)).toLinearMap) _ _ fun r ↦ ?_
   rw [AlgHom.toLinearMap_apply, AlgHom.toLinearMap_apply, IsScalarTower.coe_toAlgHom']
-  have : Module.Free (T' r) (T' r ⊗[A] B) :=
-    .of_equiv (Algebra.TensorProduct.cancelBaseChange A T (T' r) (T' r) B).toLinearEquiv
-  have : Module.Free (T' r) (T' r ⊗[Localization.Away r.1] (Localization.Away r.1 ⊗[A] B)) :=
-    .of_equiv (Algebra.TensorProduct.cancelBaseChange A (Localization.Away r.1) (T' r) (T' r)
-      B).symm.toLinearEquiv
-  exact algebraMap_norm_eq_algebraMap_prod f (h r (T' r))
+  exact (h r).algebraMap_norm_eq_prod f
+
+/-- A family of sections of a finite algebra is full if it is full after localization at
+every maximal ideal of the base. -/
+theorem IsFullSetOfSections.of_localization_maximal [Module.Finite A B]
+    (h : ∀ (P : Ideal A) [P.IsMaximal],
+      IsFullSetOfSections fun i ↦ (s i).sectionBaseChange (Localization.AtPrime P)) :
+    IsFullSetOfSections s := by
+  intro T _ _ _ f
+  let T' (P : Ideal A) [P.IsMaximal] :=
+    Localization (Algebra.algebraMapSubmonoid T P.primeCompl)
+  refine Module.eq_of_localization_maximal T'
+    (fun P ↦ (IsScalarTower.toAlgHom A T (T' P)).toLinearMap) _ _ fun P _ ↦ ?_
+  rw [AlgHom.toLinearMap_apply, AlgHom.toLinearMap_apply, IsScalarTower.coe_toAlgHom']
+  exact (h P).algebraMap_norm_eq_prod f
 
 /-- **Characteristic-polynomial formulation** (Katz–Mazur 1.8.2). A family of sections `s` is a
 full set of sections of a finite algebra if and only if, after every base change `A → T`
@@ -346,12 +371,7 @@ map `A → T`, in particular along a faithfully flat one. -/
 theorem IsFullSetOfSections.of_baseChange {T : Type w} [CommRing T] [Algebra A T]
     (hT : Function.Injective (algebraMap A T))
     (h : IsFullSetOfSections fun i ↦ (s i).sectionBaseChange T) : IsFullSetOfSections s := by
-  intro T₀ _ _ _ f
-  let T₀' (P : Ideal A) [P.IsMaximal] := Localization (Algebra.algebraMapSubmonoid T₀ P.primeCompl)
-  refine Module.eq_of_localization_maximal T₀'
-    (fun P ↦ (IsScalarTower.toAlgHom A T₀ (T₀' P)).toLinearMap) _ _ fun P _ ↦ ?_
-  rw [AlgHom.toLinearMap_apply, AlgHom.toLinearMap_apply, IsScalarTower.coe_toAlgHom']
-  refine algebraMap_norm_eq_algebraMap_prod (A' := Localization.AtPrime P) f ?_
+  refine of_localization_maximal fun P _ ↦ ?_
   -- Over the local ring `A_P` the algebra `B` is free, and `A_P → T_P` is injective, so it is
   -- enough that the base change of `s` to `T_P` through `A_P` is a full set of sections. Through
   -- `T` instead, it is the base change of the full set of sections `h`.
@@ -365,7 +385,7 @@ theorem IsFullSetOfSections.of_baseChange {T : Type w} [CommRing T] [Algebra A T
     convert (isFullSetOfSections_comp_algEquiv_iff e).2 (h.baseChange T') using 2 with i
     ext x
     simp [e, ← IsScalarTower.algebraMap_apply]
-  exact (hP.of_baseChange_of_free (localizationAlgebra_injective _ _ hT)).norm_eq_of_free _
+  exact hP.of_baseChange_of_free (localizationAlgebra_injective _ _ hT)
 
 /-- Over a base change which is injective, being a full set of sections of a finite flat
 algebra can be checked after the base change. -/
@@ -385,6 +405,18 @@ set of sections. -/
 theorem IsFullSetOfSections.norm_eq_prod (h : IsFullSetOfSections s) (b : B) :
     Algebra.norm A b = ∏ i, s i b := by
   rw [← Algebra.norm_eq_of_algEquiv (Algebra.TensorProduct.lid A B).symm, h.norm_eq]
+  simp
+
+/-- The trace of a function is the sum of its values at a full set of sections. -/
+theorem IsFullSetOfSections.trace_eq_sum (h : IsFullSetOfSections s) (b : B) :
+    Algebra.trace A B b = ∑ i, s i b := by
+  classical
+  let e := Module.Free.chooseBasis A B
+  rw [Algebra.trace_eq_matrix_trace e, Matrix.trace_eq_neg_charpoly_nextCoeff]
+  have hc : (Algebra.leftMulMatrix e b).charpoly = (Algebra.lmul A B b).charpoly :=
+    LinearMap.charpoly_toMatrix _ e
+  rw [hc, h.charpoly_eq_prod, Polynomial.Monic.nextCoeff_prod _ _
+    (fun i _ ↦ Polynomial.monic_X_sub_C _)]
   simp
 
 /-- Over a nontrivial ring, a full set of sections has as many members as the rank of `B`. -/
@@ -410,22 +442,16 @@ theorem isFullSetOfSections_evalAlgHom :
   | tmul t y => simp [Algebra.smul_def, mul_comm]
   | add x y hx hy => simp only [map_add, Pi.add_apply, hx, hy]
 
-/-- **Disjoint unions** (Katz–Mazur 1.8.4). If `s₁` and `s₂` are full sets of sections of `B₁`
-and `B₂`, then their composites with the two projections together form a full set of sections of
-`B₁ × B₂`. -/
-theorem IsFullSetOfSections.prod {B₁ B₂ : Type*} [CommRing B₁] [Algebra A B₁] [CommRing B₂]
-    [Algebra A B₂] [Module.Free A B₁] [Module.Finite A B₁] [Module.Free A B₂]
-    [Module.Finite A B₂] {ι₁ ι₂ : Type*} [Fintype ι₁] [Fintype ι₂] {s₁ : ι₁ → B₁ →ₐ[A] A}
-    {s₂ : ι₂ → B₂ →ₐ[A] A} (h₁ : IsFullSetOfSections s₁) (h₂ : IsFullSetOfSections s₂) :
-    IsFullSetOfSections (Sum.elim (fun i ↦ (s₁ i).comp (AlgHom.fst A B₁ B₂))
-      fun i ↦ (s₂ i).comp (AlgHom.snd A B₁ B₂)) := by
-  intro T _ _ _ f
-  rw [← Algebra.norm_eq_of_algEquiv (Algebra.TensorProduct.prodRight A T T B₁ B₂),
-    Algebra.norm_prod, h₁.norm_eq, h₂.norm_eq, Fintype.prod_sum_type]
-  congr 1 <;> refine Finset.prod_congr rfl fun i _ ↦ ?_ <;>
-  induction f using TensorProduct.inductionOn with
-  | tmul t y => simp
-  | add x y hx hy => simp only [map_add, Prod.fst_add, Prod.snd_add, hx, hy]
+/-- An evaluation isomorphism makes its coordinate sections a full set. This direction
+requires no finiteness or étaleness hypothesis on the algebra. -/
+theorem isFullSetOfSections_of_bijective_pi (h : Function.Bijective (AlgHom.pi s)) :
+    IsFullSetOfSections s := by
+  let e := AlgEquiv.ofBijective (AlgHom.pi s) h
+  have he (i : ι) : (Pi.evalAlgHom A (fun _ : ι ↦ A) i).comp e.toAlgHom = s i := by
+    ext b
+    rfl
+  simpa only [he] using (isFullSetOfSections_comp_algEquiv_iff e).mpr
+    (isFullSetOfSections_evalAlgHom (A := A) (ι := ι))
 
 section TensorProduct
 

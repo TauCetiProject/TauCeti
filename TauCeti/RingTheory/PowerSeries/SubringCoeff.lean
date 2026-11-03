@@ -19,8 +19,14 @@ the coefficients of `F` are solved for recursively from those of `F * D`.
 This is how integrality of `q`-expansions passes through division by a modular form such as the
 discriminant `Δ = q + ⋯`, whose `q`-expansion has integer coefficients.
 
+A power series lies in the image of `PowerSeries.map f` exactly when each of its coefficients
+lies in the range of `f` (`PowerSeries.mem_map_range`), so the same division statement applies
+to images of power series over another ring.
+
 ## Main results
 
+* `PowerSeries.mem_map_range`: the range of `PowerSeries.map f` consists of the power series whose
+  coefficients all lie in the range of `f`.
 * `PowerSeries.coeff_mem_of_coeff_mul_mem`: if `F * D` and `D = Xᵐ u`, `u(0) = 1`, have
   coefficients in `R`, then so does `F`.
 -/
@@ -30,6 +36,14 @@ public section
 namespace PowerSeries
 
 variable {S : Type*} [Ring S] {R : Subring S}
+
+/-- The range of `PowerSeries.map f` consists of the power series whose coefficients all lie in
+the range of `f`. -/
+theorem mem_map_range {T : Type*} [Ring T] (f : T →+* S) {p : S⟦X⟧} :
+    p ∈ (map f).range ↔ ∀ n, coeff n p ∈ f.range := by
+  refine ⟨fun ⟨q, hq⟩ n ↦ ⟨coeff n q, by rw [← hq, coeff_map]⟩, fun h ↦ ?_⟩
+  choose g hg using h
+  exact ⟨mk g, by ext n; simp [hg]⟩
 
 /-- **Division by `Xᵐ u` with `u(0) = 1` preserves coefficients in a subring.** If `D` has
 coefficients in `R`, vanishes below degree `m` and has coefficient `1` in degree `m`, and `F * D`

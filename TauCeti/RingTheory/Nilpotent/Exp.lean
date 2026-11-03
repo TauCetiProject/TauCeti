@@ -42,6 +42,7 @@ the exponentials above preserve an integral lattice. The application to the Kost
 * `TauCeti.pow_sum_smul_pow_succ_eq_zero`: a power killing `x` kills every linear combination of
   positive powers of `x`.
 * `IsNilpotent.pow_exp_sub_one_eq_zero`: if `x ^ n = 0`, then `(exp x - 1) ^ n = 0`.
+* `IsNilpotent.exists_commute_mul_eq_exp_sub_one`: `exp x - 1` is `x` times a commuting unit.
 * `TauCeti.exp_smul_eq_sum_smul_dividedPower`: the rescaled expansion `exp (r • x) = ∑ rⁱ • x⁽ⁱ⁾`.
 * `TauCeti.exp_zsmul_eq_sum_zsmul_dividedPower`: the same expansion with integer coefficients.
 * `TauCeti.exp_zsmul_mem`: `exp (t • x)` lies in an additive subgroup holding the divided powers
@@ -137,6 +138,26 @@ variable {A : Type*} [Ring A] [Module ℚ A] [IsScalarTower ℚ A A] [SMulCommCl
 theorem pow_exp_sub_one_eq_zero {a : A} {n : ℕ} (ha : a ^ n = 0) : (exp a - 1) ^ n = 0 := by
   rw [exp_eq_sum (pow_eq_zero_of_le n.le_succ ha), sum_range_succ']
   simpa using TauCeti.pow_sum_smul_pow_succ_eq_zero ha (range n) fun i => ((i + 1).factorial : ℚ)⁻¹
+
+/-- For nilpotent `a`, the difference `exp a - 1` is `a` times a commuting unit.
+Thus the exponential preserves not just vanishing powers but the kernels and images of powers
+when applied to endomorphisms. -/
+theorem exists_commute_mul_eq_exp_sub_one {a : A} (ha : IsNilpotent a) :
+    ∃ u : Aˣ, Commute a (u : A) ∧ a * u = exp a - 1 := by
+  obtain ⟨n, hn⟩ := ha
+  let q : A := ∑ i ∈ range (n + 1), ((i + 1).factorial : ℚ)⁻¹ • a ^ i
+  have hq : Commute a q :=
+    Commute.sum_right _ _ _ fun i _ => ((Commute.refl a).pow_right i).smul_right _
+  have hnil : IsNilpotent (q - 1) := by
+    have heq : q - 1 = ∑ i ∈ range n, ((i + 2).factorial : ℚ)⁻¹ • a ^ (i + 1) := by
+      simp [q, sum_range_succ']
+    rw [heq]
+    exact ⟨n, TauCeti.pow_sum_smul_pow_succ_eq_zero hn _ _⟩
+  obtain ⟨u, hu⟩ := hnil.isUnit_add_one
+  have huq : (u : A) = q := by simpa using hu
+  refine ⟨u, huq.symm ▸ hq, ?_⟩
+  rw [huq, exp_eq_sum (pow_eq_zero_of_le (by omega : n ≤ n + 2) hn), sum_range_succ']
+  simp [q, mul_sum, mul_smul_comm, ← pow_succ']
 
 end IsNilpotent
 

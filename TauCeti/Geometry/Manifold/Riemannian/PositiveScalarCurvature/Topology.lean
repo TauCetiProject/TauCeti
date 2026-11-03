@@ -38,6 +38,9 @@ chart C² topology, so the same three statements hold for it.
 * `IsCompact.exists_pos_forall_le_scalarCurvature_chartC2`: on a compact manifold, the metrics in a
   C²-compact set of metrics of positive scalar curvature have scalar curvature bounded below by a
   common positive constant.
+* `IsCompact.exists_pos_eventually_forall_le_scalarCurvature_chartC2`: on any manifold, if a metric
+  has positive scalar curvature on a compact set of points, so do all C²-nearby metrics, with a
+  common positive lower bound.
 * `Bundle.ContMDiffRiemannianMetric.continuous_scalarCurvature_chartCInfty`,
   `Bundle.ContMDiffRiemannianMetric.isOpen_setOf_hasPositiveScalarCurvature_chartCInfty` and
   `IsCompact.exists_pos_forall_le_scalarCurvature_chartCInfty`: the same statements for the chart
@@ -191,6 +194,24 @@ theorem IsCompact.exists_pos_forall_le_scalarCurvature_chartC2 [CompactSpace M]
     ContMDiffRiemannianMetric.continuous_scalarCurvature_chartC2.continuousOn
     fun q hq ↦ (ContMDiffRiemannianMetric.hasPositiveScalarCurvature_iff _).1 (hpos q.1 hq.1) q.2
   exact ⟨ε, hε, fun g hg x ↦ hle (g, x) ⟨hg, mem_univ x⟩⟩
+
+open scoped TauCeti.MetricC2 in
+/-- **A uniform scalar gap near a metric, on a compact set of points.** If `g₀` has positive scalar
+curvature at every point of a compact set `L`, then all metrics close enough to `g₀` in the chart C²
+topology have scalar curvature on `L` bounded below by a common positive constant. The manifold
+need not be compact. -/
+theorem IsCompact.exists_pos_eventually_forall_le_scalarCurvature_chartC2 {L : Set M}
+    (hL : IsCompact L) {g₀ : ContMDiffRiemannianMetric I ∞ E (fun x : M ↦ TangentSpace I x)}
+    (hpos : ∀ x ∈ L, 0 < g₀.scalarCurvature x) :
+    ∃ ε : ℝ, 0 < ε ∧ ∀ᶠ g in 𝓝 g₀, ∀ x ∈ L, ε ≤ g.scalarCurvature x := by
+  obtain ⟨δ, hδ, hle⟩ := hL.exists_forall_le' g₀.continuous_scalarCurvature.continuousOn hpos
+  refine ⟨δ / 2, half_pos hδ, ?_⟩
+  filter_upwards [hL.eventually_forall_of_forall_eventually
+    (P := fun g x ↦ δ / 2 < g.scalarCurvature x) fun x hx ↦
+    continuousAt_const.eventually_lt
+      ContMDiffRiemannianMetric.continuous_scalarCurvature_chartC2.continuousAt
+      ((half_lt_self hδ).trans_le (hle x hx))] with g hg x hx
+  exact (hg x hx).le
 
 open scoped TauCeti.MetricCInfty in
 /-- **A uniform scalar gap on C∞-compact sets of metrics.** On a compact manifold without

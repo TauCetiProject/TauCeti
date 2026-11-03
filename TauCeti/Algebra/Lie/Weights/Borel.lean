@@ -631,7 +631,7 @@ private theorem rootSpace_le_span_negRootVector (i : H.root) :
   have hone : finrank K (rootSpace H (-((i : Weight K H L) : H → K))) = 1 :=
     IsKilling.finrank_rootSpace_eq_one (-(i : Weight K H L))
       (Weight.IsNonZero.neg (Finset.mem_filter.mp i.2).2)
-  obtain ⟨c, hc⟩ := (finrank_eq_one_iff_of_nonzero'
+  obtain ⟨c, hc⟩ := (finrank_eq_one_iff_of_ne_zero'
     (⟨negRootVector i, negRootVector_mem_rootSpace i⟩ :
       rootSpace H (-((i : Weight K H L) : H → K)))
     (by simpa using negRootVector_ne_zero i)).mp hone ⟨x, hx⟩

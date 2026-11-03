@@ -5,99 +5,96 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.RingTheory.Affinoid.Subdomain.Rational
+public import TauCeti.RingTheory.Affinoid.Subdomain.Basic
 public import TauCeti.RingTheory.RingHom.FaithfullyFlat
 
-import TauCeti.RingTheory.Affinoid.TopologicallyFiniteType
-import TauCeti.RingTheory.Huber.LocalizationTopology.Laurent.Flat
+import TauCeti.RingTheory.Affinoid.FiniteQuotient
+import TauCeti.RingTheory.Flat.QuotientPow
 
 /-!
-# Flatness of classical rational covers
+# Flatness of affinoid subdomains
 
-The structure map `A → A⟨f/g⟩` of a rational domain of an affinoid algebra is flat.
-For a finite family of rational domains covering the classical maximal spectrum, the map
-from `A` into the product of their coordinate algebras is faithfully flat. Neither reducedness
-nor a cover of the adic spectrum is assumed. The family may be empty, in which case its
-covering hypothesis forces `A` to be the zero ring.
+The restriction map `A → B` of an affinoid subdomain of an affinoid algebra is flat
+(`TauCeti.IsAffinoidSubdomainMap.flat`). For a finite family of affinoid subdomains covering the
+classical maximal spectrum, the map from `A` into the product of their coordinate algebras is
+faithfully flat. Neither reducedness of `A` nor a rational presentation of the subdomains is
+assumed, and nilpotents are allowed. The family may be empty, in which case its covering
+hypothesis forces `A` to be the zero ring. Rational domains `A → A⟨f/g⟩` are the special case
+obtained by applying these results to `TauCeti.RationalFraction.isAffinoidSubdomainMap`.
 
-Flatness is transported through `RationalFraction.completionLocEquiv` from the shared
-flatness theorem for Huber rational localisations. Faithfulness uses the classical point
-lifting theorem: every maximal ideal of `A` remains proper in some member of the cover.
-These are the algebraic descent inputs for rational-cover Čech complexes; no identification
-of completed and algebraic tensor products is used.
+Flatness uses only the universal property. For every classical point `x ∈ U` and every `n`, it
+gives isomorphisms `A ⧸ 𝔪ₓⁿ ≃ B ⧸ 𝔪ₓⁿ B`
+(`TauCeti.IsAffinoidSubdomainMap.quotientPowAlgEquiv`), and every maximal ideal of `B` lies over
+such a point. Since `A` and `B` are noetherian, the criterion
+`RingHom.Flat.of_bijective_quotientMap_pow` turns these isomorphisms into flatness; it combines
+the Artin–Rees lemma in `A` with the separation of finite `B`-modules by powers of maximal ideals.
+No completion, Gerritzen–Grauert decomposition or adic comparison is used. Faithfulness uses the
+classical point lifting theorem: every maximal ideal of `A` remains proper in some member of the
+cover.
+
+These are the algebraic descent inputs for affinoid-cover Čech complexes; no identification of
+completed and algebraic tensor products is used.
+
+## Main results
+
+* `TauCeti.IsAffinoidSubdomainMap.flat`: the restriction map of an affinoid subdomain is flat.
+* `TauCeti.IsAffinoidSubdomainMap.faithfullyFlat_pi`: a finite affinoid cover gives a faithfully
+  flat map into the product of the coordinate algebras.
 
 ## References
 
-* [Bosch, Güntzer, Remmert, *Non-Archimedean Analysis*][bosch-guntzer-remmert], §§7.3 and 8.2.
-* [T. Wedhorn, *Adic Spaces*][wedhorn_adic], Proposition 8.30 and Corollary 8.32.
+* [Bosch, Güntzer, Remmert, *Non-Archimedean Analysis*][bosch-guntzer-remmert], §§7.3.2 and 8.2.
 -/
 
 public section
 
-namespace TauCeti.RationalFraction
+namespace TauCeti
 
-open Huber Huber.PairOfDefinition
+universe u
 
-variable {K : Type*} [NontriviallyNormedField K] [IsUltrametricDist K] [CompleteSpace K]
-  {A : Type*} [NormedCommRing A] [IsUltrametricDist A] [NormedAlgebra K A] [CompleteSpace A]
-  (hA : IsAffinoidAlgebra K A)
+namespace IsAffinoidSubdomainMap
 
-include hA in
-/-- The structure map of a classical rational domain is flat. Nilpotents are allowed in `A`. -/
-theorem flat_algebraMap {m : ℕ} {g : A} {f : Fin m → A}
-    (h : Ideal.span (insert g (Set.range f)) = ⊤) :
-    (algebraMap A (RationalFraction g f)).Flat := by
-  classical
-  have := IsTateRing.of_normedAlgebra K A
-  have := hA.isStronglyNoetherian
-  obtain ⟨P⟩ := IsHuberRing.nonempty_pairOfDefinition (A := A)
-  let S := Localization.Away g
-  have hden := hasDenominatorPower_of_isOpen_span P (insert g (Set.range f)) g S
-    (by simp [h])
-  let _ := locUniformSpace P (insert g (Set.range f)) g S hden
-  have _ := isUniformAddGroup_locUniformSpace P (insert g (Set.range f)) g S hden
-  have _ := isTopologicalRing_locUniformSpace P (insert g (Set.range f)) g S hden
-  let e := completionLocEquiv hA P S hden h
-  have he : e.symm.toRingHom.comp (toCompletionLoc P (insert g (Set.range f)) g S hden) =
-      algebraMap A (RationalFraction g f) := by
-    ext a
-    exact completionLocEquiv_symm_toCompletionLoc hA P S hden h a
-  let T : Finset A := insert g (Finset.univ.image f)
-  have hT : (T : Set A) = insert g (Set.range f) := by simp [T]
-  have hdenT : P.HasDenominatorPower T g S := by rwa [hT]
-  -- Generalise the numerator set before substituting: the completion's uniformity depends on it.
-  have hf (U : Set A) (hd : P.HasDenominatorPower U g S) (hU : U = (T : Set A)) :
-      letI := locUniformSpace P U g S hd
-      letI := isUniformAddGroup_locUniformSpace P U g S hd
-      letI := isTopologicalRing_locUniformSpace P U g S hd
-      (toCompletionLoc P U g S hd).Flat := by
-    subst U
-    exact flat_toCompletionLoc P T g S hdenT
-  have hflat := hf _ hden hT.symm
-  exact he ▸ hflat.comp (.of_bijective e.symm.bijective)
+variable {K : Type*} [NormedField K] [IsUltrametricDist K] [CompleteSpace K]
+  {A : Type u} [CommRing A] [Algebra K A]
 
-include hA in
-/-- A finite cover of the classical spectrum by rational domains gives a faithfully flat map
-into the product of its rational fraction algebras. The number of numerators may vary with the
-member of the cover. -/
-theorem faithfullyFlat_pi_algebraMap {ι : Type*} [Finite ι] {m : ι → ℕ}
-    (g : ι → A) (f : (i : ι) → Fin (m i) → A)
-    (h : ∀ i, Ideal.span (insert (g i) (Set.range (f i))) = ⊤)
-    (hcover : ∀ x : MaximalSpectrum A, ∃ i, x ∈ rationalDomain K (g i) (f i)) :
-    (RingHom.pi fun i ↦ algebraMap A (RationalFraction (g i) (f i))).FaithfullyFlat := by
-  refine RingHom.FaithfullyFlat.pi_of_exists_map_ne_top (fun i ↦ flat_algebraMap hA (h i))
-    fun M hM ↦ ?_
-  obtain ⟨i, hi⟩ := hcover ⟨M, hM⟩
-  rw [← range_maximalSpectrumComap hA (h i)] at hi
-  obtain ⟨y, hy⟩ := hi
-  have hcomap : y.asIdeal.comap (algebraMap A _) = M := by
-    have hy' := congrArg MaximalSpectrum.asIdeal hy
-    rw [IsAffinoidAlgebra.maximalSpectrumComap_asIdeal, ← Ideal.comap_coe,
-      IsScalarTower.coe_toAlgHom] at hy'
-    exact hy'
-  refine ⟨i, fun htop ↦ y.isMaximal.ne_top ?_⟩
-  apply top_le_iff.mp
-  rw [← htop, ← hcomap]
-  exact Ideal.map_comap_le
+/-- **Restriction maps of affinoid subdomains are flat.** If `φ : A → B` represents an affinoid
+subdomain of `Sp A`, then `B` is flat over `A`. Nilpotents are allowed in `A`. -/
+theorem flat {B : Type u} [CommRing B] [Algebra K B] {φ : A →ₐ[K] B}
+    {U : Set (MaximalSpectrum A)} (h : IsAffinoidSubdomainMap φ U) (hA : IsAffinoidAlgebra K A) :
+    φ.toRingHom.Flat := by
+  have := hA.isNoetherianRing
+  have := h.isAffinoidAlgebra.isNoetherianRing
+  refine RingHom.Flat.of_bijective_quotientMap_pow fun n hn k ↦ ?_
+  -- The point of `U` below a maximal ideal `𝔫` of `B` has maximal ideal `φ⁻¹ 𝔫`; `hn` is needed
+  -- as an instance by `IsAffinoidAlgebra.comap_isMaximal`.
+  have := hn
+  let x : MaximalSpectrum A := ⟨n.comap φ, h.isAffinoidAlgebra.comap_isMaximal φ n⟩
+  have hx : x ∈ U := by
+    convert h.range_maximalSpectrumComap_subset ⟨⟨n, hn⟩, rfl⟩
+    exact MaximalSpectrum.ext
+      (IsAffinoidAlgebra.maximalSpectrumComap_asIdeal h.isAffinoidAlgebra φ ⟨n, hn⟩).symm
+  have he : ⇑(h.quotientPowAlgEquiv hA hx k) =
+      Ideal.quotientMap ((n.comap φ ^ k).map φ) φ.toRingHom Ideal.le_comap_map := by
+    ext q
+    obtain ⟨a, rfl⟩ := Ideal.Quotient.mk_surjective q
+    rw [quotientPowAlgEquiv_mk]
+    -- The two sides differ only by `Ideal.map φ = Ideal.map φ.toRingHom`, which holds by `rfl`
+    -- (`Ideal.map_coe`).
+    exact (Ideal.quotientMap_mk ..).symm
+  exact he ▸ (h.quotientPowAlgEquiv hA hx k).bijective
 
-end TauCeti.RationalFraction
+/-- **Finite affinoid covers are faithfully flat.** A finite family of affinoid subdomains
+covering the classical spectrum gives a faithfully flat map into the product of their
+representing algebras. -/
+theorem faithfullyFlat_pi {ι : Type*} [Finite ι] {B : ι → Type u} [∀ i, CommRing (B i)]
+    [∀ i, Algebra K (B i)] {φ : ∀ i, A →ₐ[K] B i} {U : ι → Set (MaximalSpectrum A)}
+    (h : ∀ i, IsAffinoidSubdomainMap (φ i) (U i)) (hA : IsAffinoidAlgebra K A)
+    (hcover : ∀ x : MaximalSpectrum A, ∃ i, x ∈ U i) :
+    (RingHom.pi fun i ↦ (φ i).toRingHom).FaithfullyFlat :=
+  RingHom.FaithfullyFlat.pi_of_exists_map_ne_top (fun i ↦ (h i).flat hA) fun M hM ↦
+    let ⟨i, hi⟩ := hcover ⟨M, hM⟩
+    ⟨i, ((h i).isMaximal_map hA hi).ne_top⟩
+
+end IsAffinoidSubdomainMap
+
+end TauCeti

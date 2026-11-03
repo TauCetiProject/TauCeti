@@ -29,6 +29,9 @@ tensor-product Hopf algebra antipode formula, and `AlgHom.liftEquiv`.
   groups, so this is automatically an isomorphism of groups.
 * `TauCeti.AlgHom.pointsBaseChange`: base change of base-valued points,
   `WithConv (A →ₐ[k] k) →* WithConv (K ⊗[k] A →ₐ[K] K)`, as a convolution monoid homomorphism.
+* `TauCeti.AlgHom.pointsLTensor`: base change of arbitrary points,
+  `WithConv (A →ₐ[k] T) →* WithConv (K ⊗[k] A →ₐ[K] K ⊗[k] T)`, `f ↦ K ⊗[k] f`, as a convolution
+  monoid homomorphism.
 * `TauCeti.AlgHom.baseChangePointsMulEquiv_inv_apply_tmul` and
   `TauCeti.AlgHom.baseChangePointsMulEquiv_symm_inv_apply`: pointwise formulas for
   convolution inverses of base-changed points.
@@ -172,6 +175,23 @@ lemma ofConv_pointsBaseChange (f : WithConv (A →ₐ[k] k)) :
     (pointsBaseChange K f).ofConv = f.ofConv.sectionBaseChange K := by
   ext a
   simp
+
+variable {T : Type*} [CommSemiring T] [Algebra k T]
+
+/-- Base change of points along `k → K`: a point `f : A →ₐ[k] T` of a bialgebra gives the point
+`K ⊗[k] f : K ⊗[k] A →ₐ[K] K ⊗[k] T`, `s ⊗ a ↦ s ⊗ f a`, of the base change. It is a monoid
+homomorphism for convolution, the composite of `AlgHom.mapValue` along `T → K ⊗[k] T` with
+`AlgHom.baseChangePointsMulEquiv`. -/
+noncomputable def pointsLTensor : WithConv (A →ₐ[k] T) →* WithConv (K ⊗[k] A →ₐ[K] K ⊗[k] T) :=
+  (baseChangePointsMulEquiv (k := k) (K := K) (A := A) (R := K ⊗[k] T)).toMonoidHom.comp
+    (AlgHom.mapValue Algebra.TensorProduct.includeRight)
+
+/-- The base change of a point `f` is the algebra map `K ⊗[k] f`. -/
+@[simp]
+lemma ofConv_pointsLTensor (f : WithConv (A →ₐ[k] T)) :
+    (pointsLTensor K f).ofConv = Algebra.TensorProduct.lTensor K f.ofConv := by
+  ext a
+  simp [pointsLTensor]
 
 end AlgHom
 

@@ -32,7 +32,8 @@ far side on the other; the winding-number two-sidedness theorem
 (`Contour.mem_filledHull_or_mem_filledHull_of_isPreconnected_sdiff_singleton`) puts one end in the
 filled hull. No Jordan curve theorem is used.
 
-This is the planar-separation step of the `ConformalMapping` roadmap (L5).
+This is the planar-separation step of Carathéodory's boundary correspondence: it decides which of
+the two pieces cut off by a short image crosscut is enclosed.
 
 ## Main results
 
