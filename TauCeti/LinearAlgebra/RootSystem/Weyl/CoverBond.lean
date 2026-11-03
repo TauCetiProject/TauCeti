@@ -126,8 +126,8 @@ theorem existsUnique_isPos_reflection_smul_eq_of_minimalCosetRepCovBy
     · exact ⟨_, hj, hmem⟩
     · -- The reflection in `-j` is the reflection in `j`.
       refine ⟨_, hj, ?_⟩
-      rw [← hmem, indexNeg_neg, reflection_reflectionPerm, LinearEquiv.mul_apply,
-        LinearEquiv.mul_apply, reflection_same]
+      rw [← hmem, indexNeg_neg, reflection_reflectionPerm, mul_apply_eq_comp,
+        mul_apply_eq_comp, reflection_same]
   exact ⟨β, ⟨hβ, hβx⟩, fun γ ⟨hγ, hγx⟩ ↦
     (eq_of_isPos_of_reflection_eq hβ hγ (hβx.trans hγx.symm) (by rwa [hβx])).symm⟩
 
@@ -235,7 +235,7 @@ theorem reflectionBond_simple_mul_smul_simple_mul_smul (hlam : lam ∈ dominantC
   -- `(sᵢ y) λ` is the reflection of `(sᵢ x) λ` in the positive root `sᵢ β`.
   have hγ : P.reflection (P.reflectionPerm i β) (P.reflection i (x • lam)) =
       P.reflection i (y • lam) := by
-    rw [reflection_reflectionPerm, LinearEquiv.mul_apply, LinearEquiv.mul_apply,
+    rw [reflection_reflectionPerm, mul_apply_eq_comp, mul_apply_eq_comp,
       reflection_same, hβx]
   have hne' : P.reflection i (y • lam) ≠ P.reflection i (x • lam) :=
     fun h' ↦ hxy ((P.reflection i).injective h')

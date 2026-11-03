@@ -162,7 +162,7 @@ private theorem asAlgebraHom_youngSymmetrizer_mem_range_youngSymmetrizerEval (μ
   set c := ρ.asAlgebraHom (μ.youngSymmetrizer k)
   refine ⟨DirectSum.lof k d.Partition _ μ
     (spanSingletonGenerator (μ.youngSymmetrizer k) ⊗ₜ ⟨κ⁻¹ • c m, κ⁻¹ • m, map_smul c _ _⟩), ?_⟩
-  rw [youngSymmetrizerEval_lof_tmul, coe_spanSingletonGenerator, map_smul, ← Module.End.mul_apply,
+  rw [youngSymmetrizerEval_lof_tmul, coe_spanSingletonGenerator, map_smul, ← mul_apply_eq_comp,
     ← map_mul, μ.youngSymmetrizer_mul_self k, map_smul, LinearMap.smul_apply, smul_smul,
     inv_mul_cancel₀ hκ, one_smul]
 

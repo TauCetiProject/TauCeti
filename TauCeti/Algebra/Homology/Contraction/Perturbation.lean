@@ -142,14 +142,14 @@ theorem perturbationSeries_apply_eq_sum_of_pow_apply_eq_zero {z : M} {k : ℕ}
   have hgeom : (1 + u) * ∑ j ∈ Finset.range k, (-u) ^ j = 1 - (-u) ^ k := by
     simpa only [sub_neg_eq_add] using mul_neg_geom_sum (-u) k
   have hk : ((-u) ^ k) (δ z) = 0 := by
-    rw [neg_pow, Module.End.mul_apply, hz, map_zero]
+    rw [neg_pow, mul_apply_eq_comp, hz, map_zero]
   have h1 : (1 + u) ((∑ j ∈ Finset.range k, (-u) ^ j) (δ z)) = δ z := by
-    rw [← Module.End.mul_apply, hgeom, LinearMap.sub_apply, Module.End.one_apply, hk, sub_zero]
+    rw [← mul_apply_eq_comp, hgeom, LinearMap.sub_apply, one_apply_eq_self, hk, sub_zero]
   calc c.perturbationSeries δ z
       = Ring.inverse (1 + u) ((1 + u) ((∑ j ∈ Finset.range k, (-u) ^ j) (δ z))) := by
-        rw [h1, perturbationSeries_def, Module.End.mul_apply]
+        rw [h1, perturbationSeries_def, mul_apply_eq_comp]
     _ = (∑ j ∈ Finset.range k, (-u) ^ j) (δ z) := by
-        rw [← Module.End.mul_apply, Ring.inverse_mul_cancel _ hU, Module.End.one_apply]
+        rw [← mul_apply_eq_comp, Ring.inverse_mul_cancel _ hU, one_apply_eq_self]
     _ = ∑ j ∈ Finset.range k, ((-u) ^ j) (δ z) := LinearMap.sum_apply _ _ _
 
 /-- **The perturbation operator preserves invariant subgroups.**  If `δ` and `h` preserve an
@@ -164,7 +164,7 @@ theorem perturbationSeries_mem {S : AddSubgroup M} (hδ : ∀ z ∈ S, δ z ∈ 
     induction j with
     | zero => simpa using hδ z hz
     | succ j ih =>
-      rw [pow_succ', Module.End.mul_apply, LinearMap.neg_apply, Module.End.mul_apply]
+      rw [pow_succ', mul_apply_eq_comp, LinearMap.neg_apply, mul_apply_eq_comp]
       exact S.neg_mem (hδ _ (hh _ ih))
   exact sum_mem fun j _ ↦ key j
 
