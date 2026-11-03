@@ -49,21 +49,6 @@ noncomputable section
 
 variable (R : Type u) [CommRing R]
 
-private theorem pointsMulEquiv_mapDomain_mem_points (A : CommAlgCat.{v} R)
-    (g : HopfAlgebra.points (R := R) (H := generatedCoordinateHopfAlgebra R) A) :
-    GeneralLinear.pointsMulEquiv 24
-      (BialgHom.mapDomain (generatedCoordinateMap R).hom g) ∈ points A := by
-  apply (GeneralLinear.mem_quotientPointsSubgroup_iff_mem_of_pointsMulEquiv 24
-    (baseChangeDefiningIdeal R) A (points A) (baseChangePointsMulEquiv R A)
-    (coe_baseChangePointsMulEquiv_apply R A) _).mp
-  rw [CommHopfAlgCat.mem_quotientPointsSubgroup_iff]
-  intro x hx
-  have hx' : x ∈ RingHom.ker (generatedCoordinateMap R).hom := by
-    rw [generatedCoordinateMap_ker]
-    exact baseChangeDefiningIdeal_le_generatedDefiningIdeal R hx
-  have hxzero : (generatedCoordinateMap R).hom x = 0 := RingHom.mem_ker.mp hx'
-  rw [BialgHom.mapDomain_apply_apply, hxzero, map_zero]
-
 /-- Over every value algebra, a generated-carrier point lies in the closed weight torus
 exactly when its matrix is diagonal. This includes nonreduced value algebras. -/
 @[simp↓]
@@ -83,13 +68,16 @@ theorem mem_quotientPointsSubgroup_weightTorusDefiningIdeal_iff_isDiag
         (generatedCoordinateMap R) (generatedCoordinateMap_surjective R) A)
   have hfg : f g = GeneralLinear.pointsMulEquiv 24
       (BialgHom.mapDomain (generatedCoordinateMap R).hom g) := by
-    -- Both point maps precompose with the same coordinate map; one uses the category wrapper.
-    rfl
+    dsimp only [f]
+    -- The categorical source and the explicit convolution-point type use different wrappers.
+    erw [BialgHom.mapDomain_apply, MonoidHom.comp_apply, MulEquiv.coe_toMonoidHom,
+      CommHopfAlgCat.Hom.mapPointsFunctor_app_apply]
   have hmem := Subgroup.mem_map_iff_mem hf
     (K := CommHopfAlgCat.quotientPointsSubgroup (generatedCoordinateHopfAlgebra R)
       (weightTorusDefiningIdeal R) A) (x := g)
   rw [map_quotientPointsSubgroup_weightTorusDefiningIdeal R A] at hmem
-  let p : points A := ⟨f g, hfg ▸ pointsMulEquiv_mapDomain_mem_points R A g⟩
+  let p : points A :=
+    ⟨f g, coe_carrierPointsHom R A g ▸ (carrierPointsHom R A g).property⟩
   refine hmem.symm.trans ?_
   have hp : f g ∈ ((weightTorusPoints A).range).map (points A).subtype ↔
       p ∈ (weightTorusPoints A).range :=
@@ -108,18 +96,13 @@ theorem centralizerHopfIdeal_generatedWeightTorusCoordinateMap :
   apply HopfIdeal.eq_of_forall_quotientPointsSubgroup_eq
   intro A
   ext g
-  have hcomp : (generatedWeightTorusCoordinateMap R).hom.comp
-      (generatedCoordinateMap R).hom =
-        GeneralLinear.weightTorusCoordinateBialgHom (S := R) d4TripledWeight := by
-    rw [← _root_.CommHopfAlgCat.hom_comp,
-      generatedCoordinateMap_comp_generatedWeightTorusCoordinateMap,
-      GeneralLinear.hom_weightTorusBaseChangeCoordinateMap]
   rw [CommHopfAlgCat.mem_quotientPointsSubgroup_iff,
     mem_quotientPointsSubgroup_weightTorusDefiningIdeal_iff_isDiag]
   -- Vanishing on the Hopf ideal is containment of its underlying ideal in the point's kernel.
   simp only [← HopfIdeal.mem_toIdeal, ← RingHom.mem_ker, ← IsConcreteLE.le_iff]
   rw [← BialgHom.centralizerHopfIdeal_comp_le_ker_iff
-    (generatedCoordinateMap R).hom (generatedCoordinateMap_surjective R), hcomp]
+    (generatedCoordinateMap R).hom (generatedCoordinateMap_surjective R),
+    hom_generatedWeightTorusCoordinateMap_comp_generatedCoordinateMap]
   exact GeneralLinear.centralizerHopfIdeal_weightTorus_le_ker_iff_isDiag
     d4TripledWeight d4TripledWeight_injective _
 

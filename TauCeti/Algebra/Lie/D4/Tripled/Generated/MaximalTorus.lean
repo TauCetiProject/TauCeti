@@ -47,45 +47,8 @@ noncomputable section
 
 variable (k : Type u) [Field k]
 
--- The generated subgroup lies in the specialized integral carrier. This particular
--- inclusion is used only to apply the latter's centralizer calculation.
-private def carrierRestriction : coordinateHopfAlgebra k ⟶ generatedCoordinateHopfAlgebra k :=
-  CommHopfAlgCat.liftQuotient (baseChangeDefiningIdeal k) (generatedCoordinateMap k) (by
-    intro x hx
-    have hmem : x ∈ (generatedDefiningIdeal k).toIdeal :=
-      baseChangeDefiningIdeal_le_generatedDefiningIdeal k hx
-    rw [← generatedCoordinateMap_ker] at hmem
-    exact hmem)
-
-private theorem coordinateMap_comp_carrierRestriction :
-    CommHopfAlgCat.mkQuotient (GeneralLinear.coordinateHopfAlgebra k 24)
-        (baseChangeDefiningIdeal k) ≫ carrierRestriction k = generatedCoordinateMap k := by
-  unfold carrierRestriction
-  exact CommHopfAlgCat.mkQuotient_comp_liftQuotient _ _ _
-
-private def carrierPointsHom :
-    HopfAlgebra.points (R := k) (H := generatedCoordinateHopfAlgebra k) (CommAlgCat.of k k) →*
-      points k :=
-  (baseChangePointsMulEquiv k (CommAlgCat.of k k)).toMonoidHom.comp
-    ((CommHopfAlgCat.Hom.mapPointsFunctor (carrierRestriction k)).app (CommAlgCat.of k k)).hom
-
-private theorem coe_carrierPointsHom
-    (g : HopfAlgebra.points (R := k) (H := generatedCoordinateHopfAlgebra k)
-      (CommAlgCat.of k k)) :
-    (carrierPointsHom k g : Matrix.GeneralLinearGroup (Fin 24) k) =
-      GeneralLinear.pointsMulEquiv 24
-        ((CommHopfAlgCat.Hom.mapPointsFunctor (generatedCoordinateMap k)).app
-          (CommAlgCat.of k k) g) := by
-  -- The point functor uses its categorical object wrappers, whereas the equivalence
-  -- uses the explicit convolution-point type; `erw` reconciles these wrappers.
-  erw [carrierPointsHom, MonoidHom.comp_apply, MulEquiv.coe_toMonoidHom,
-    coe_baseChangePointsMulEquiv_apply]
-  exact congrArg (GeneralLinear.pointsMulEquiv 24)
-    (CommHopfAlgCat.mapPointsFunctor_eq_quotientPointsHom_of_mkQuotient_comp
-      (baseChangeDefiningIdeal k) (carrierRestriction k) (generatedCoordinateMap k)
-      (coordinateMap_comp_carrierRestriction k) (CommAlgCat.of k k) g).symm
-
-private theorem carrierPointsHom_injective : Function.Injective (carrierPointsHom k) := by
+private theorem carrierPointsHom_injective :
+    Function.Injective (carrierPointsHom k (CommAlgCat.of k k)) := by
   intro g h heq
   apply CommHopfAlgCat.Hom.mapPointsFunctor_app_injective_of_surjective
     (generatedCoordinateMap k) (generatedCoordinateMap_surjective k) (CommAlgCat.of k k)
@@ -94,13 +57,14 @@ private theorem carrierPointsHom_injective : Function.Injective (carrierPointsHo
 
 private theorem map_torus_carrierPointsHom :
     (CommHopfAlgCat.quotientPointsSubgroup (generatedCoordinateHopfAlgebra k)
-        (weightTorusDefiningIdeal k) (CommAlgCat.of k k)).map (carrierPointsHom k) =
+        (weightTorusDefiningIdeal k) (CommAlgCat.of k k)).map
+        (carrierPointsHom k (CommAlgCat.of k k)) =
       (weightTorusPoints k).range := by
   apply Subgroup.map_injective (points k).subtype_injective
-  have hcomp : (points k).subtype.comp (carrierPointsHom k) =
+  have hcomp : (points k).subtype.comp (carrierPointsHom k (CommAlgCat.of k k)) =
       (GeneralLinear.pointsMulEquiv 24).toMonoidHom.comp
         ((CommHopfAlgCat.Hom.mapPointsFunctor (generatedCoordinateMap k)).app
-          (CommAlgCat.of k k)).hom := MonoidHom.ext (coe_carrierPointsHom k)
+          (CommAlgCat.of k k)).hom := MonoidHom.ext (coe_carrierPointsHom k (CommAlgCat.of k k))
   rw [Subgroup.map_map, hcomp]
   -- The underlying algebra of `CommAlgCat.of k k` is `k`, so their matrix subgroups agree.
   exact map_quotientPointsSubgroup_weightTorusDefiningIdeal k (CommAlgCat.of k k)
@@ -118,10 +82,10 @@ theorem eq_weightTorusDefiningIdeal_of_le_of_isCocomm [IsAlgClosed k]
   let GT := CommHopfAlgCat.quotientPointsSubgroup H (weightTorusDefiningIdeal k) A
   let _ : IsMulCommutative GI :=
     CommHopfAlgCat.instIsMulCommutativeQuotientPointsSubgroup H I A
-  let _ : IsMulCommutative (GI.map (carrierPointsHom k)) :=
-    Subgroup.map_isMulCommutative GI (carrierPointsHom k)
+  let _ : IsMulCommutative (GI.map (carrierPointsHom k A)) :=
+    Subgroup.map_isMulCommutative GI (carrierPointsHom k A)
   have hTG : GT ≤ GI := CommHopfAlgCat.quotientPointsSubgroup_le_of_le H hI A
-  have hmap : GI.map (carrierPointsHom k) = GT.map (carrierPointsHom k) := by
+  have hmap : GI.map (carrierPointsHom k A) = GT.map (carrierPointsHom k A) := by
     rw [map_torus_carrierPointsHom]
     apply eq_range_weightTorusPoints_of_le_of_isMulCommutative
     rw [← map_torus_carrierPointsHom k]
