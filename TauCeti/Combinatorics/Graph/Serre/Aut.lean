@@ -140,23 +140,20 @@ theorem toHom_mapE_injective (φ : Γ.Aut) : Function.Injective φ.toHom.mapE :=
 /-! ### Fixed points in acyclic graphs -/
 
 /-- In an acyclic graph, an automorphism fixing two vertices fixes every dart of a reduced path
-joining them: the image of that path is another reduced path with the same endpoints. -/
+joining them. -/
 theorem smul_eq_of_mem_darts (h : Γ.IsAcyclic) (φ : Γ.Aut) {a b : Γ.V} (ha : φ • a = a)
     (hb : φ • b = b) {p : Γ.Path a b} (hp : Path.IsReduced Γ p) {e : Γ.E}
     (he : e ∈ Path.darts Γ p) : φ • e = e := by
-  -- Transport the image path to the original endpoints.
-  have hcast : ∀ {a' b' : Γ.V} (ha' : a' = a) (hb' : b' = b) (q : Γ.Path a' b'),
-      Path.darts Γ (q.cast ha' hb') = Path.darts Γ q ∧
-        (Path.IsReduced Γ (q.cast ha' hb') ↔ Path.IsReduced Γ q) := by
-    rintro a' b' rfl rfl q
-    exact ⟨rfl, Iff.rfl⟩
+  -- The image path, transported to the original endpoints, is another reduced path.
   have hq : Path.IsReduced Γ ((φ.toHom.toPrefunctor.mapPath p).cast ha hb) :=
-    (hcast ha hb _).2.mpr ((Hom.isReduced_mapPath_iff Γ φ.toHom φ.toHom_mapE_injective p).mpr hp)
+    (Path.isReduced_cast Γ ha hb _).mpr
+      ((Hom.isReduced_mapPath_iff Γ φ.toHom φ.toHom_mapE_injective p).mpr hp)
   have hdarts : (Path.darts Γ p).map (φ • ·) = (Path.darts Γ p).map id := by
     rw [List.map_id]
     calc (Path.darts Γ p).map (φ • ·) = Path.darts Γ (φ.toHom.toPrefunctor.mapPath p) :=
           (Hom.darts_mapPath Γ φ.toHom p).symm
-      _ = Path.darts Γ ((φ.toHom.toPrefunctor.mapPath p).cast ha hb) := (hcast ha hb _).1.symm
+      _ = Path.darts Γ ((φ.toHom.toPrefunctor.mapPath p).cast ha hb) :=
+          (Path.darts_cast Γ ha hb _).symm
       _ = Path.darts Γ p := congrArg (Path.darts Γ) (h.eq_of_isReduced hq hp)
   exact List.map_inj_left.mp hdarts e he
 

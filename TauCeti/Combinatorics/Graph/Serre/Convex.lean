@@ -66,7 +66,7 @@ theorem IsConvex.inter {S T : Set Γ.V} (hS : Γ.IsConvex S) (hT : Γ.IsConvex T
     Γ.IsConvex (S ∩ T) := fun a ha b hb p hp e he =>
   ⟨hS a ha.1 b hb.1 p hp e he, hT a ha.2 b hb.2 p hp e he⟩
 
-/-- In an acyclic graph every singleton is convex, since the only reduced closed path is empty. -/
+/-- In an acyclic graph every singleton is convex. -/
 theorem IsAcyclic.isConvex_singleton (h : Γ.IsAcyclic) (v : Γ.V) : Γ.IsConvex {v} := by
   rintro a rfl b rfl p hp e he
   rw [(isAcyclic_iff Γ).mp h b p hp, Path.darts_nil] at he

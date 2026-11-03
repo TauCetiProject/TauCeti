@@ -95,39 +95,13 @@ theorem Hom.dist_le {Δ : SerreGraph} (f : Γ.Hom Δ) {a b : Γ.V} (h : Nonempty
 
 /-! ### Distances in acyclic graphs -/
 
-/-- Free reduction never lengthens a path. -/
-theorem Path.length_reduce_le {a b : Γ.V} (p : Γ.Path a b) :
-    (Path.reduce Γ p).length ≤ p.length := by
-  induction p with
-  | nil => simp
-  | @cons b c p e ih =>
-    by_cases h : Path.IsReduced Γ ((Path.reduce Γ p).cons e)
-    · rw [Path.reduce_cons_of_isReduced Γ p e h, Quiver.Path.length_cons,
-        Quiver.Path.length_cons]
-      omega
-    · -- The appended dart backtracks against the last dart of the reduced prefix.
-      generalize hq : Path.reduce Γ p = q at h ih
-      cases q with
-      | nil => exact absurd (Path.isReduced_toPath Γ e) h
-      | @cons d _ q f =>
-        have hfe : e.1 = Γ.rev f.1 := by
-          by_contra hne
-          exact h ((Path.isReduced_cons_cons Γ q f e).mpr
-            ⟨hq ▸ Path.isReduced_reduce Γ p, hne⟩)
-        obtain rfl : c = d := by rw [← e.2.2, hfe, tgt_rev, f.2.1]
-        obtain rfl : e = Quiver.reverse f := Subtype.ext (by simpa using hfe)
-        rw [Path.reduce_cons_of_reduce_eq_cons_reverse Γ p q _ (by
-          rw [hq, Quiver.reverse_reverse]), Quiver.Path.length_cons]
-        rw [Quiver.Path.length_cons] at ih
-        omega
-
 /-- In an acyclic graph, a reduced path realizes the distance between its endpoints. -/
 theorem IsAcyclic.dist_eq_length (h : Γ.IsAcyclic) {a b : Γ.V} {p : Γ.Path a b}
     (hp : Path.IsReduced Γ p) : Γ.dist a b = p.length := by
   refine (dist_le_length p).antisymm ?_
   obtain ⟨q, hq⟩ := exists_length_eq_dist ⟨p⟩
   rw [← hq, h.eq_of_isReduced hp (Path.isReduced_reduce Γ q)]
-  exact Path.length_reduce_le q
+  exact Path.length_reduce_le Γ q
 
 end SerreGraph
 end TauCeti

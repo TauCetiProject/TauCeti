@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Combinatorics.Graph.Serre.Line
+public import TauCeti.GroupTheory.GroupAction.Hom
 public import Mathlib.GroupTheory.GroupAction.Basic
 public import Mathlib.GroupTheory.GroupAction.Hom
 public import Mathlib.Algebra.Group.Subgroup.Actions
@@ -64,7 +65,7 @@ universe u v u' v' u'' v'' w
 
 namespace TauCeti
 
-open SerreGraph MulAction
+open SerreGraph _root_.MulAction
 
 /-- A `G`-tree: a Serre tree with an action of `G` by graph automorphisms without inversions. -/
 structure GTree (G : Type w) [Group G] extends SerreGraph.{u, v} where
@@ -112,8 +113,7 @@ theorem nonempty_path (a b : T.V) : Nonempty (T.Path a b) :=
 
 instance : Nonempty T.V := ((connected_iff _).mp (IsTree.connected _ T.isTree)).1
 
-/-- No element exchanges the endpoints of a dart. Such an element would map the dart to a dart
-from its target to its source, and in a tree the only such dart is the reverse. -/
+/-- No element exchanges the endpoints of a dart. -/
 theorem smul_tgt_ne_src_of_smul_src_eq_tgt {g : G} {e : T.E} (h : g • T.src e = T.tgt e) :
     g • T.tgt e ≠ T.src e := by
   intro h'
@@ -309,8 +309,7 @@ theorem isMinimal_iff : T.IsMinimal ↔
 theorem isMinimal_of_subsingleton [Subsingleton T.V] : T.IsMinimal :=
   fun _ hS _ _ => hS.eq_univ
 
-/-- A minimal `G`-tree on which `G` fixes a vertex is a single vertex: the fixed vertex is a
-nonempty convex invariant set. -/
+/-- A minimal `G`-tree on which `G` fixes a vertex is a single vertex. -/
 theorem IsMinimal.subsingleton (hT : T.IsMinimal) (h : T.IsEllipticSubgroup ⊤) :
     Subsingleton T.V := by
   obtain ⟨v, hv⟩ := isEllipticSubgroup_iff_forall.mp h
@@ -375,31 +374,9 @@ theorem Dominates.isElliptic (h : T.Dominates T') {g : G} (hg : T.IsElliptic g) 
     T'.IsElliptic g :=
   isEllipticSubgroup_zpowers_iff.mp (h.isEllipticSubgroup (isEllipticSubgroup_zpowers_iff.mpr hg))
 
-/-- `T` dominates `T'` exactly when every vertex stabilizer of `T` is elliptic in `T'`. An
-equivariant map is built by sending a representative of each orbit to a vertex fixed by its
-stabilizer. -/
-theorem dominates_iff : T.Dominates T' ↔ ∀ v : T.V, T'.IsEllipticSubgroup (stabilizer G v) := by
-  refine ⟨fun h v => h.isEllipticSubgroup (T.isEllipticSubgroup_stabilizer v), fun h => ?_⟩
-  choose w hw using h
-  -- `r v` is the chosen representative of the orbit of `v`, and `c v • r v = v`.
-  let r : T.V → T.V := fun v => (Quotient.mk (orbitRel G T.V) v).out
-  have hr (v : T.V) : ∃ g : G, g • r v = v := by
-    obtain ⟨g, hg⟩ := mem_orbit_iff.mp (orbitRel_apply.mp (Quotient.mk_out (s := orbitRel G T.V) v))
-    exact ⟨g⁻¹, inv_smul_eq_iff.mpr hg.symm⟩
-  choose c hc using hr
-  have hr_smul (g : G) (v : T.V) : r (g • v) = r v :=
-    congrArg Quotient.out (Quotient.sound (orbitRel_apply.mpr (mem_orbit v g)))
-  refine ⟨{ toFun := fun v => c v • w (r v), map_smul' := fun g v => ?_ }⟩
-  -- The two choices of a group element carrying `r v` to `g • v` differ by a stabilizer element.
-  have h1 : c (g • v) • r v = g • v := by simpa only [hr_smul] using hc (g • v)
-  have key : (g * c v)⁻¹ * c (g • v) ∈ stabilizer G (r v) := by
-    rw [mem_stabilizer_iff, mul_smul, h1, mul_inv_rev, mul_smul, inv_smul_smul, inv_smul_eq_iff,
-      hc]
-  have hfix := mem_stabilizer_iff.mp (hw (r v) key)
-  rw [mul_smul, inv_smul_eq_iff] at hfix
-  -- `MulActionHom` states equivariance for the identity of `G`, written `id g`.
-  change c (g • v) • w (r (g • v)) = g • c v • w (r v)
-  rw [hr_smul, hfix, mul_smul]
+/-- `T` dominates `T'` exactly when every vertex stabilizer of `T` is elliptic in `T'`. -/
+theorem dominates_iff : T.Dominates T' ↔ ∀ v : T.V, T'.IsEllipticSubgroup (stabilizer G v) :=
+  MulAction.nonempty_mulActionHom_iff
 
 variable (T T') in
 /-- Two `G`-trees lie in the same deformation space when each dominates the other. -/
@@ -452,8 +429,7 @@ theorem point_isMinimal : (point.{u, v} G).IsMinimal :=
   isMinimal_of_subsingleton
 
 variable (G) in
-/-- The one-vertex tree is relative to all families: it has no darts, and every subgroup is
-elliptic. -/
+/-- The one-vertex tree is relative to all families of subgroups. -/
 theorem point_isRelative (𝒜 ℋ : Set (Subgroup G)) : (point.{u, v} G).IsRelative 𝒜 ℋ :=
   ⟨fun e => e.elim, fun H _ => point_isEllipticSubgroup H⟩
 
@@ -480,18 +456,28 @@ infinite cyclic group, the free group of rank one. -/
   action := lineShift
   action_smul_ne_rev k e h := by
     -- Translation keeps the orientation of a dart, while reversal changes it.
-    have := congrArg (Prod.snd : ℤ × Bool → Bool)
-      ((Aut.smul_dart_def _ _).symm.trans (lineShift_smul_dart k e) |>.symm.trans
-        (h.trans (line_rev e)))
-    exact (Bool.eq_not_self _).mp this
+    rw [← Aut.smul_dart_def, lineShift_smul_dart] at h
+    exact (Bool.eq_not_self _).mp (congrArg Prod.snd (h.trans (line_rev e)))
+
+/-- The source of a dart of the line, as an integer. -/
+@[simp] theorem lineVertexEquiv_line_src (e : ℤ × Bool) :
+    lineVertexEquiv (GTree.line.src e) = if e.2 then e.1 else e.1 + 1 :=
+  SerreGraph.lineVertexEquiv_src e
+
+/-- The target of a dart of the line, as an integer. -/
+@[simp] theorem lineVertexEquiv_line_tgt (e : ℤ × Bool) :
+    lineVertexEquiv (GTree.line.tgt e) = if e.2 then e.1 + 1 else e.1 :=
+  (SerreGraph.lineVertexEquiv_tgt e).trans <| by
+    rw [SerreGraph.lineVertexEquiv_src e]
+    split_ifs <;> omega
 
 /-- Translation adds to the coordinate of a vertex of the line. -/
-theorem lineVertexEquiv_line_smul (k : Multiplicative ℤ) (v : line.V) :
+@[simp] theorem lineVertexEquiv_line_smul (k : Multiplicative ℤ) (v : line.V) :
     lineVertexEquiv (k • v) = k.toAdd + lineVertexEquiv v :=
   lineVertexEquiv_lineShift_smul k v
 
 /-- Translation moves a dart of the line without changing its orientation. -/
-theorem line_smul_dart (k : Multiplicative ℤ) (e : line.E) :
+@[simp] theorem line_smul_dart (k : Multiplicative ℤ) (e : line.E) :
     k • e = Prod.mk (k.toAdd + Prod.fst e) (Prod.snd e) :=
   lineShift_smul_dart k e
 
@@ -511,18 +497,14 @@ theorem line_translationLength_ofAdd_one :
   have hv : Multiplicative.ofAdd (1 : ℤ) • line.src ((0 : ℤ), true) =
       line.tgt ((0 : ℤ), true) := by
     apply lineVertexEquiv.injective
-    rw [lineVertexEquiv_line_smul, toAdd_ofAdd]
-    -- The underlying graph of `GTree.line` is `SerreGraph.line`, whose coordinate lemmas apply.
-    change 1 + lineVertexEquiv (SerreGraph.line.src ((0 : ℤ), true)) =
-      lineVertexEquiv (SerreGraph.line.tgt ((0 : ℤ), true))
-    rw [lineVertexEquiv_tgt, add_comm, ite_eq_left rfl]
+    simp
   calc line.translationLength (Multiplicative.ofAdd 1)
       ≤ line.dist (line.src ((0 : ℤ), true)) (Multiplicative.ofAdd 1 • line.src ((0 : ℤ), true)) :=
         translationLength_le _ _
     _ = line.dist (line.src ((0 : ℤ), true)) (line.tgt ((0 : ℤ), true)) := by rw [hv]
     _ ≤ 1 := dist_src_tgt_le_one _
 
-/-- The line is a minimal tree: the translations move any vertex to any other. -/
+/-- The line is a minimal tree. -/
 theorem line_isMinimal : line.IsMinimal := by
   refine isMinimal_iff.mpr fun S ⟨v, hv⟩ _ hS => Set.eq_univ_of_forall fun w => ?_
   have hw : Multiplicative.ofAdd (lineVertexEquiv w - lineVertexEquiv v) • v = w := by
@@ -537,7 +519,7 @@ theorem line_stabilizer_dart (e : line.E) : stabilizer (Multiplicative ℤ) e = 
   have h₁ : k.toAdd + Prod.fst e = Prod.fst e := congrArg Prod.fst h
   omega
 
-/-- The line is relative to the trivial edge family: its dart stabilizers are trivial. -/
+/-- The line is relative to the trivial edge family and the trivial elliptic family. -/
 theorem line_isRelative : line.IsRelative {⊥} {⊥} :=
   ⟨fun e => line_stabilizer_dart e, fun _ hH => hH ▸ isEllipticSubgroup_bot line⟩
 

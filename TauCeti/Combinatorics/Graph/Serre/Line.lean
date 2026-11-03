@@ -43,7 +43,7 @@ its reverse `(n, false)` runs back. -/
 
 theorem line_src (e : ℤ × Bool) : line.src e = if e.2 then e.1 else e.1 + 1 := (rfl)
 
-theorem line_rev (e : ℤ × Bool) : line.rev e = (e.1, !e.2) := (rfl)
+@[simp] theorem line_rev (e : ℤ × Bool) : line.rev e = (e.1, !e.2) := (rfl)
 
 theorem line_tgt (e : ℤ × Bool) : line.tgt e = if e.2 then e.1 + 1 else e.1 := by
   obtain ⟨n, d⟩ := e
@@ -53,11 +53,11 @@ theorem line_tgt (e : ℤ × Bool) : line.tgt e = if e.2 then e.1 + 1 else e.1 :
 def lineVertexEquiv : line.V ≃ ℤ :=
   Equiv.refl ℤ
 
-theorem lineVertexEquiv_src (e : ℤ × Bool) :
+@[simp] theorem lineVertexEquiv_src (e : ℤ × Bool) :
     lineVertexEquiv (line.src e) = if e.2 then e.1 else e.1 + 1 := (rfl)
 
 /-- A dart of the line moves one step up or down according to its orientation. -/
-theorem lineVertexEquiv_tgt (e : ℤ × Bool) :
+@[simp] theorem lineVertexEquiv_tgt (e : ℤ × Bool) :
     lineVertexEquiv (line.tgt e) = lineVertexEquiv (line.src e) + if e.2 then 1 else -1 := by
   obtain ⟨n, d⟩ := e
   rw [lineVertexEquiv_src]
@@ -75,8 +75,7 @@ theorem line_snd_eq_of_ne_rev {e f : ℤ × Bool} (h : line.src e = line.tgt f)
   have h' : (if d then m else m + 1 : ℤ) = if d' then n + 1 else n :=
     (line_src (m, d)).symm.trans (h.trans (line_tgt (n, d')))
   have hne' : ¬(m = n ∧ d = !d') := fun ⟨h₁, h₂⟩ => hne (by rw [line_rev, h₁, h₂])
-  cases d <;> cases d' <;> simp only [Bool.false_eq_true, ite_false, ite_true, Bool.not_false,
-    Bool.not_true, and_true, and_false, not_false_eq_true] at h' hne' ⊢ <;> omega
+  cases d <;> cases d' <;> simp at h' hne' ⊢ <;> omega
 
 /-- A reduced path in the line moves monotonically, in the direction of each of its darts. -/
 theorem lineVertexEquiv_eq_add_of_isReduced {a b : line.V} (p : line.Path a b)
@@ -105,16 +104,11 @@ theorem lineVertexEquiv_eq_add_of_isReduced {a b : line.V} (p : line.Path a b)
       rcases hx with hx | rfl
       · have hx' := ih x hx
         simp only [Quiver.Path.length_cons] at hf hx' ⊢
-        revert hf hx' hc hfe
-        cases Prod.snd x <;> cases Prod.snd f.1 <;> cases Prod.snd e.1 <;>
-          simp only [↓reduceIte, Bool.false_eq_true, Bool.true_eq_false, false_implies,
-            implies_true] <;> intros <;> omega
+        grind
       · simp only [Quiver.Path.length_cons] at hf ⊢
-        revert hf hc
-        rw [hfe]
-        cases Prod.snd f.1 <;> simp only [↓reduceIte, Bool.false_eq_true] <;> intros <;> omega
+        grind
 
-/-- The line is acyclic: a nonempty reduced path moves monotonically, so it is not closed. -/
+/-- The line is acyclic. -/
 theorem line_isAcyclic : line.IsAcyclic := by
   refine (isAcyclic_iff line).mpr fun a p hp => ?_
   cases p with
@@ -162,23 +156,27 @@ def lineShift : Multiplicative ℤ →* line.Aut where
   toFun k :=
     { equivV := (Equiv.addLeft k.toAdd : ℤ ≃ ℤ)
       equivE := ((Equiv.addLeft k.toAdd).prodCongr (Equiv.refl Bool) : ℤ × Bool ≃ ℤ × Bool)
-      map_src e := by
-        obtain ⟨n, d⟩ := e
-        -- Both sides compute to integers, by the definitions of the line and the translation.
-        cases d
-        · exact add_assoc k.toAdd n 1
-        · rfl
+      map_src := fun ⟨n, d⟩ => show lineVertexEquiv (line.src (k.toAdd + n, d)) =
+          k.toAdd + lineVertexEquiv (line.src (n, d)) by
+        simp only [lineVertexEquiv_src]
+        split_ifs <;> omega
       map_rev _ := rfl }
-  map_one' := Aut.ext (fun v => zero_add (M := ℤ) v) (fun e => Prod.ext (zero_add (M := ℤ) _) rfl)
-  map_mul' _ _ := Aut.ext (fun v => add_assoc (G := ℤ) _ _ v)
-    (fun e => Prod.ext (add_assoc (G := ℤ) _ _ _) rfl)
+  map_one' := Aut.ext
+    (fun (v : ℤ) => show (1 : Multiplicative ℤ).toAdd + v = v by rw [toAdd_one, zero_add])
+    (fun (e : ℤ × Bool) => Prod.ext
+      (show (1 : Multiplicative ℤ).toAdd + e.1 = e.1 by rw [toAdd_one, zero_add]) rfl)
+  map_mul' x y := Aut.ext
+    (fun (v : ℤ) => show (x * y).toAdd + v = x.toAdd + (y.toAdd + v) by
+      rw [toAdd_mul, add_assoc])
+    (fun (e : ℤ × Bool) => Prod.ext
+      (show (x * y).toAdd + e.1 = x.toAdd + (y.toAdd + e.1) by rw [toAdd_mul, add_assoc]) rfl)
 
 /-- Translation adds to the coordinate of a vertex. -/
-theorem lineVertexEquiv_lineShift_smul (k : Multiplicative ℤ) (v : line.V) :
+@[simp] theorem lineVertexEquiv_lineShift_smul (k : Multiplicative ℤ) (v : line.V) :
     lineVertexEquiv (lineShift k • v) = k.toAdd + lineVertexEquiv v := (rfl)
 
 /-- Translation moves a dart without changing its orientation. -/
-theorem lineShift_smul_dart (k : Multiplicative ℤ) (e : line.E) :
+@[simp] theorem lineShift_smul_dart (k : Multiplicative ℤ) (e : line.E) :
     lineShift k • e = Prod.mk (k.toAdd + Prod.fst e) (Prod.snd e) := (rfl)
 
 end SerreGraph
