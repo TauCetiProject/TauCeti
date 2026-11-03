@@ -28,7 +28,8 @@ By the criterion `TauCeti.IsLocalRing.extends_iff_sections_finiteEtale` (Stacks 
 homomorphisms), both conditions say that the ring of global sections is finite étale. Flat base
 change for sections of the structure sheaf identifies the global sections of the base change of `V`
 with `A' ⊗[A] Γ(V, 𝒪_V)`, and finite étale algebras are stable under base change and descend along
-the faithfully flat map `A → A'` (`Algebra.IsPushout.finite_and_etale_iff_of_faithfullyFlat`).
+the faithfully flat map `A → A'`
+(`CommRingCat.finite_and_etale_iff_of_isPushout_of_faithfullyFlat`).
 
 ## Main results
 
@@ -150,19 +151,11 @@ theorem extends_iff_extends_pullback_of_flat [IsNoetherianRing A']
     rw [depth_eq_add_of_flat (R := A)]
     exact hdepth.trans le_self_add
   rw [extends_iff_sections_finiteEtale A hdepth, extends_iff_sections_finiteEtale A' hdepth']
-  -- Finite étale ring maps are stable under base change and descend along `A → A'`, stated here
-  -- for a pushout square in `CommRingCat`.
-  have key {R S R' S' : CommRingCat.{u}} {f : R ⟶ S} {g : R ⟶ R'} {inl : S ⟶ S'}
-      {inr : R' ⟶ S'} (hsq : IsPushout f g inl inr) (hg : g.hom.FaithfullyFlat) :
-      (f.hom.Finite ∧ f.hom.Etale) ↔ (inr.hom.Finite ∧ inr.hom.Etale) := by
-    algebraize [f.hom, g.hom, inl.hom, inr.hom, inr.hom.comp g.hom]
-    have : IsScalarTower R S S' := .of_algebraMap_eq fun x ↦ congr($(hsq.w).hom x).symm
-    have : Algebra.IsPushout R S R' S' := CommRingCat.isPushout_iff_isPushout.mp hsq
-    exact Algebra.IsPushout.finite_and_etale_iff_of_faithfullyFlat
   -- The criterion uses the algebra structures given by the ring maps of
   -- `isPushout_appTop_pullback_of_flat`, and `RingHom.Finite` and `RingHom.Etale` unfold to
   -- `Module.Finite` and `Algebra.Etale` for those structures.
-  exact key (isPushout_appTop_pullback_of_flat h V)
+  exact CommRingCat.finite_and_etale_iff_of_isPushout_of_faithfullyFlat
+    (isPushout_appTop_pullback_of_flat h V)
     (RingHom.faithfullyFlat_algebraMap_iff.mpr inferInstance)
 
 omit [CommRing A'] [IsLocalRing A'] [Algebra A A'] [Module.Flat A A'] in

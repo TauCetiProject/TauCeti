@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Category.Ring.Constructions
 public import Mathlib.RingTheory.Etale.Descent
 public import Mathlib.RingTheory.RingHom.Finite
 
@@ -24,6 +25,8 @@ ring.
 * `Algebra.IsPushout.finite_and_etale_iff_of_faithfullyFlat`: across a pushout square whose base
   extension is faithfully flat, finite étaleness holds on one side if and only if it holds on the
   other.
+* `CommRingCat.finite_and_etale_iff_of_isPushout_of_faithfullyFlat`: the same statement for a
+  pushout square in `CommRingCat`, phrased with `RingHom.Finite` and `RingHom.Etale`.
 -/
 
 public section
@@ -48,3 +51,20 @@ theorem finite_and_etale_iff_of_faithfullyFlat [Module.FaithfullyFlat R R'] :
       RingHom.Etale.codescendsAlong_faithfullyFlat hR' h.2⟩⟩
 
 end Algebra.IsPushout
+
+namespace CommRingCat
+
+open CategoryTheory
+
+/-- For a pushout square of commutative rings whose base extension `g : R ⟶ R'` is faithfully flat,
+the ring map `f : R ⟶ S` is finite étale if and only if its base change `inr : R' ⟶ S'` is. -/
+theorem finite_and_etale_iff_of_isPushout_of_faithfullyFlat {R S R' S' : CommRingCat.{u}}
+    {f : R ⟶ S} {g : R ⟶ R'} {inl : S ⟶ S'} {inr : R' ⟶ S'} (hsq : IsPushout f g inl inr)
+    (hg : g.hom.FaithfullyFlat) :
+    (f.hom.Finite ∧ f.hom.Etale) ↔ (inr.hom.Finite ∧ inr.hom.Etale) := by
+  algebraize [f.hom, g.hom, inl.hom, inr.hom, inr.hom.comp g.hom]
+  have : IsScalarTower R S S' := .of_algebraMap_eq fun x ↦ congr($(hsq.w).hom x).symm
+  have : Algebra.IsPushout R S R' S' := CommRingCat.isPushout_iff_isPushout.mp hsq
+  exact Algebra.IsPushout.finite_and_etale_iff_of_faithfullyFlat
+
+end CommRingCat
