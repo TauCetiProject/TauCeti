@@ -198,6 +198,8 @@ structure EarDecomposition (G H : Graph α β) : Type (max u v) where
   /-- The last stage is the indexed final graph. -/
   graphAfter_last : graphAfter (Fin.last length) = H
 
+attribute [simp] EarDecomposition.graphAfter_last
+
 namespace EarDecomposition
 
 variable {G H : Graph α β}
@@ -400,12 +402,6 @@ theorem earAt_prefix (d : G.EarDecomposition H) (i : Fin (d.length + 1))
       d.earAt (Fin.castLE (Nat.le_of_lt_succ i.isLt) j) := by
   change d.earAt _ = d.earAt _
   congr 1
-
-/-- The final prefix graph is the final graph of the decomposition. -/
-@[simp]
-theorem graphAfter_final (d : G.EarDecomposition H) :
-    d.graphAfter (Fin.last d.length) = H :=
-  d.graphAfter_last
 
 end EarDecomposition
 
