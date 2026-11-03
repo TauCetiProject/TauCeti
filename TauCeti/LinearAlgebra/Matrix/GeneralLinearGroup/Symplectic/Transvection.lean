@@ -9,7 +9,7 @@ public import Mathlib.LinearAlgebra.Matrix.BilinearForm
 public import Mathlib.LinearAlgebra.Transvection.Basic
 public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Symplectic.TorusGeneration
 public import TauCeti.LinearAlgebra.Matrix.OneSubVecMulVec
-public import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.Isometry.Transvection
+public import TauCeti.LinearAlgebra.Matrix.UnitaryTransvection
 import TauCeti.Data.Matrix.Basis
 
 /-!

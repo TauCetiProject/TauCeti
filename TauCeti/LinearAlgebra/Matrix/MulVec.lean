@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Data.Matrix.Basic
 public import Mathlib.LinearAlgebra.Matrix.DotProduct
+import TauCeti.Algebra.Ring.Hom
 
 /-!
 # Matrix-vector multiplication
@@ -27,8 +28,10 @@ Subtracting a matrix from a constant diagonal matrix turns its eigenvector equat
 homogeneous linear system, with no multiplicative identity needed. An eigenvector of a matrix is an
 eigenvector of each of its powers.
 
-A ring homomorphism applied entrywise to `M *ᵥ x` gives the row vector `(f ∘ x) ᵥ* (M ^ f)ᵀ`. The
-product of two rank-one matrices `u vᵀ` and `w xᵀ` vanishes when the inner pairing `v ⬝ᵥ w` does.
+A ring homomorphism applied entrywise to `M *ᵥ x` gives the row vector `(f ∘ x) ᵥ* (M ^ f)ᵀ`, and
+the `σ`-sesquilinear form `(σ ∘ x) ⬝ᵥ (Q *ᵥ y)` of a matrix `Q` scales by `σ c * c` along a
+line. The product of two rank-one matrices `u vᵀ` and `w xᵀ` vanishes when the inner pairing
+`v ⬝ᵥ w` does.
 
 ## Main results
 
@@ -44,6 +47,7 @@ product of two rank-one matrices `u vᵀ` and `w xᵀ` vanishes when the inner p
 * `Matrix.mulVec_pos`: a strictly positive matrix sends a nonzero nonnegative vector to a strictly
   positive one.
 * `Matrix.comp_mulVec_eq_vecMul_transpose_map`: `f ∘ (M *ᵥ x) = (f ∘ x) ᵥ* (M ^ f)ᵀ`.
+* `Matrix.comp_smul_dotProduct_mulVec_smul`: `h(c v, c v) = σ c * c * h(v, v)`.
 * `Matrix.vecMulVec_mul_vecMulVec_eq_zero`: `(u vᵀ) (w xᵀ) = 0` when `v ⬝ᵥ w = 0`.
 -/
 
@@ -128,6 +132,14 @@ theorem comp_mulVec_eq_vecMul_transpose_map {R S : Type*} [CommSemiring R] [Comm
     (f : R →+* S) (M : Matrix m n R) (x : n → R) : f ∘ (M *ᵥ x) = (f ∘ x) ᵥ* (M.map f)ᵀ := by
   ext i
   rw [Function.comp_apply, RingHom.map_mulVec, vecMul_transpose]
+
+/-- Along a line the `σ`-sesquilinear form `h(x, y) = (σ ∘ x) ⬝ᵥ (Q *ᵥ y)` scales by `σ c * c`:
+`h(c v, c v) = σ c * c * h(v, v)`. -/
+theorem comp_smul_dotProduct_mulVec_smul {R : Type*} [CommSemiring R] (Q : Matrix n n R)
+    (σ : R →+* R) (c : R) (v : n → R) :
+    (σ ∘ (c • v)) ⬝ᵥ (Q *ᵥ (c • v)) = σ c * c * ((σ ∘ v) ⬝ᵥ (Q *ᵥ v)) := by
+  rw [RingHom.comp_smul, mulVec_smul, smul_dotProduct, dotProduct_smul, smul_eq_mul, smul_eq_mul,
+    mul_assoc]
 
 section OrderedSemiring
 

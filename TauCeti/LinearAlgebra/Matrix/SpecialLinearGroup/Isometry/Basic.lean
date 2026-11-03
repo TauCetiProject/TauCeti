@@ -7,7 +7,6 @@ module
 
 public import Mathlib.LinearAlgebra.Matrix.SpecialLinearGroup
 public import Mathlib.LinearAlgebra.Projectivization.Action
-import TauCeti.Algebra.Ring.Hom
 import TauCeti.LinearAlgebra.Matrix.Congruence
 import TauCeti.LinearAlgebra.Matrix.MulVec
 
@@ -103,15 +102,6 @@ theorem comp_mulVec_dotProduct_mulVec_mulVec {g : SpecialLinearGroup n K}
       (σ ∘ x) ⬝ᵥ (Q *ᵥ y) := by
   rw [comp_mulVec_eq_vecMul_transpose_map, ← dotProduct_mulVec, mulVec_mulVec, mulVec_mulVec,
     (mem_specialIsometryGroup_iff).mp hg]
-
-variable (Q σ)
-
-omit [DecidableEq n] in
-/-- Along a line the form scales by `σ c * c`: `h(c v, c v) = σ c * c * h(v, v)`. -/
-theorem comp_smul_dotProduct_mulVec_smul (c : K) (v : n → K) :
-    (σ ∘ (c • v)) ⬝ᵥ (Q *ᵥ (c • v)) = σ c * c * ((σ ∘ v) ⬝ᵥ (Q *ᵥ v)) := by
-  rw [RingHom.comp_smul, mulVec_smul, smul_dotProduct, dotProduct_smul, smul_eq_mul, smul_eq_mul,
-    mul_assoc]
 
 end CommRing
 
