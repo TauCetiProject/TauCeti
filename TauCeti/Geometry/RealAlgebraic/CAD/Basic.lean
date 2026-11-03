@@ -12,6 +12,7 @@ public import TauCeti.Geometry.RealAlgebraic.Semialgebraic.Basic
 public import TauCeti.Geometry.RealAlgebraic.SignInvariant
 public import TauCeti.Geometry.RealAlgebraic.Stack.Basic
 import Mathlib.Topology.Algebra.Module.Equiv.Pi
+import Mathlib.Topology.Separation.Connected
 
 /-!
 # Cylindrical algebraic decompositions
@@ -303,11 +304,9 @@ theorem injOn_tail_of_finite {𝒞 : Set (Set (Fin (n + 1) → ℝ))}
       exact ordConnected_setOf_cons_mem_of_mem_stackCells hEC x
   have hsub (x : Fin n → ℝ) : {t : ℝ | Fin.cons t x ∈ E}.Subsingleton := by
     intro a ha b hb
-    apply le_antisymm <;> by_contra hab
-    · exact (hfin x).not_infinite ((Ioo_infinite (a := b) (b := a) (lt_of_not_ge hab)).mono
-        (fun t (ht : t ∈ Ioo b a) ↦ (hconn x).out hb ha ⟨ht.1.le, ht.2.le⟩))
-    · exact (hfin x).not_infinite ((Ioo_infinite (a := a) (b := b) (lt_of_not_ge hab)).mono
-        (fun t (ht : t ∈ Ioo a b) ↦ (hconn x).out ha hb ⟨ht.1.le, ht.2.le⟩))
+    by_contra hab
+    exact (hfin x).not_infinite
+      ((hconn x).isPreconnected.infinite_of_nontrivial ⟨a, ha, b, hb, hab⟩)
   intro x hx y hy hxy
   have hzero : x 0 = y 0 := hsub (Fin.tail x)
     (by simpa using hx) (by simpa [hxy] using hy)
