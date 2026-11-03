@@ -69,6 +69,8 @@ determinants of polynomials in compact operators.
 * `Polynomial.colemanDBounded_X_left`, `Polynomial.colemanDBounded_zero_left`,
   `Polynomial.colemanDBounded_one_right`: the values `D(T, P) = P`, `D(0, P) = 1` and
   `D(B, 1) = (1 - B(0) T) ^ n`.
+* `Polynomial.coeff_prod_sylvester_colemanDBounded`: the terms of the Leibniz expansion of the
+  Sylvester matrix defining the transform when `B(0) = 0`.
 * `Polynomial.coeff_colemanDBounded_congr`: locality of the coefficients in `P` when `B(0) = 0`.
 * `Polynomial.colemanDSeries`: Coleman's transform of a power series along a polynomial `B`, with
   `Polynomial.coeff_colemanDSeries_eq_coeff_colemanDBounded`, `Polynomial.coeff_colemanDSeries`,
@@ -298,6 +300,47 @@ theorem sylvester_map_reflect_one_sub_apply (hB0 : B.coeff 0 = 0) {i x : Fin (n 
     have := h₂ hn
     omega
 
+open Finset in
+/-- The coefficients of the terms of the Leibniz expansion of the Sylvester matrix defining
+Coleman's transform `D_(n,m)(B, P)` with `B(0) = 0`. The term of `σ` vanishes unless `σ` moves
+each of the first `n` columns `x` to a row in `[x, x + m]` and each of the last `m` columns to a
+row in `[x - n, x]`. It is then a monomial of degree the number of forward moves, whose entries
+are `1` or `-b_(σ x - x) T` in the first `n` columns, according as `σ x = x` or not, and
+`a_(x - σ x)` in the last `m` columns. -/
+theorem coeff_prod_sylvester_colemanDBounded (hB0 : B.coeff 0 = 0)
+    (σ : Equiv.Perm (Fin (n + m))) (k : ℕ) :
+    (∏ x, sylvester ((P.reflect n).map C) (1 - C X * B.map C) n m (σ x) x).coeff k =
+      if (∀ x : Fin (n + m), ((x : ℕ) < n → (x : ℕ) ≤ σ x ∧ (σ x : ℕ) ≤ x + m) ∧
+          (n ≤ (x : ℕ) → (x : ℕ) ≤ σ x + n ∧ (σ x : ℕ) ≤ x)) ∧
+          k = #{x : Fin (n + m) | (x : ℕ) < σ x} then
+        ∏ x : Fin (n + m), if (x : ℕ) < σ x then -B.coeff (σ x - x)
+          else if (x : ℕ) < n then 1 else P.coeff (x - σ x)
+      else 0 := by
+  set M := sylvester ((P.reflect n).map C) (1 - C X * B.map C) n m with hM_def
+  by_cases hband : ∀ x : Fin (n + m), ((x : ℕ) < n → (x : ℕ) ≤ σ x ∧ (σ x : ℕ) ≤ x + m) ∧
+      (n ≤ (x : ℕ) → (x : ℕ) ≤ σ x + n ∧ (σ x : ℕ) ≤ x)
+  swap
+  · -- some column is moved outside the band, where the Sylvester matrix vanishes
+    obtain ⟨x, hx⟩ := not_forall.1 hband
+    have hzero : M (σ x) x = 0 := by
+      rcases lt_or_ge (x : ℕ) n with h | h
+      · rw [hM_def, sylvester_apply_of_lt _ _ _ _ h]
+        exact ite_eq_right_iff.2 fun hc ↦ absurd ⟨fun _ ↦ hc, fun h' ↦ absurd h' (not_le.2 h)⟩ hx
+      · rw [hM_def, sylvester_apply_of_le _ _ _ _ h]
+        exact ite_eq_right_iff.2 fun hc ↦ absurd ⟨fun h' ↦ absurd h' (not_lt.2 h), fun _ ↦ hc⟩ hx
+    rw [prod_eq_zero (f := fun y ↦ M (σ y) y) (mem_univ x) hzero, coeff_zero]
+    exact (ite_eq_right_iff.2 fun h ↦ absurd h.1 hband).symm
+  set c : Fin (n + m) → R := fun x ↦
+    if (x : ℕ) < σ x then -B.coeff (σ x - x) else if (x : ℕ) < n then 1 else P.coeff (x - σ x)
+  set e : Fin (n + m) → ℕ := fun x ↦ if (x : ℕ) < σ x then 1 else 0
+  have hM (x : Fin (n + m)) : M (σ x) x = C (c x) * X ^ e x :=
+    sylvester_map_reflect_one_sub_apply hB0 (hband x).1 (hband x).2
+  have hsum : ∑ x, e x = #{x : Fin (n + m) | (x : ℕ) < σ x} := by
+    simp [e, sum_boole]
+  simp_rw [hM]
+  rw [prod_mul_distrib, ← map_prod, prod_pow_eq_pow_sum, coeff_C_mul_X_pow, hsum]
+  exact if_congr (and_iff_right hband).symm rfl rfl
+
 /-- **Locality of Coleman's transform.** When `B(0) = 0`, the `k`-th coefficient of
 `D_(n,m)(B, P)` depends only on the coefficients of `P` of index at most `k m`. -/
 theorem coeff_colemanDBounded_congr (hB0 : B.coeff 0 = 0) {P' : R[X]} {k : ℕ}
@@ -306,31 +349,14 @@ theorem coeff_colemanDBounded_congr (hB0 : B.coeff 0 = 0) {P' : R[X]} {k : ℕ}
   rw [colemanDBounded_def, colemanDBounded_def, resultant, resultant, Matrix.det_apply,
     Matrix.det_apply, finsetSum_coeff, finsetSum_coeff]
   refine Finset.sum_congr rfl fun σ _ ↦ ?_
-  rw [coeff_smul, coeff_smul]
+  rw [coeff_smul, coeff_smul, coeff_prod_sylvester_colemanDBounded hB0,
+    coeff_prod_sylvester_colemanDBounded hB0]
   congr 1
-  -- A term vanishes unless each of the first `n` columns `x` moves to a row in `[x, x + m]` and
-  -- each of the last `m` columns to a row in `[x - n, x]`, whatever the polynomial `P`.
-  by_cases hband : ∀ x : Fin (n + m), ((x : ℕ) < n → (x : ℕ) ≤ σ x ∧ (σ x : ℕ) ≤ x + m) ∧
-      (n ≤ (x : ℕ) → (x : ℕ) ≤ σ x + n ∧ (σ x : ℕ) ≤ x)
-  swap
-  · obtain ⟨x, hx⟩ := not_forall.1 hband
-    have hzero (Q : R[X]) :
-        ∏ i, sylvester ((Q.reflect n).map C) (1 - C X * B.map C) n m (σ i) i = 0 := by
-      refine Finset.prod_eq_zero (Finset.mem_univ x) ?_
-      rcases lt_or_ge (x : ℕ) n with hn | hn
-      · rw [sylvester_apply_of_lt _ _ _ _ hn, ite_eq_right_iff]
-        exact fun h' ↦ absurd ⟨fun _ ↦ h', fun h'' ↦ absurd h'' (not_le.2 hn)⟩ hx
-      · rw [sylvester_apply_of_le _ _ _ _ hn, ite_eq_right_iff]
-        exact fun h' ↦ absurd ⟨fun h'' ↦ absurd hn (not_le.2 h''), fun _ ↦ h'⟩ hx
-    rw [hzero P, hzero P']
-  -- Inside the band the term is `C (∏ x, c x) * T ^ e`, where `e` counts the columns moved down
-  -- and only the factors of `c` in the last `m` columns involve `P`.
-  simp_rw [sylvester_map_reflect_one_sub_apply hB0 (hband _).1 (hband _).2]
-  rw [Finset.prod_mul_distrib, Finset.prod_mul_distrib, ← map_prod, ← map_prod,
-    Finset.prod_pow_eq_pow_sum, coeff_C_mul_X_pow, coeff_C_mul_X_pow]
   split_ifs with hk
   swap
   · rfl
+  obtain ⟨hband, hk⟩ := hk
+  -- Only the factors in the last `m` columns of a nonzero term involve `P`.
   refine Finset.prod_congr rfl fun x _ ↦ ?_
   split_ifs with h₁ h₂
   · rfl
@@ -353,7 +379,7 @@ theorem coeff_colemanDBounded_congr (hB0 : B.coeff 0 = 0) {P' : R[X]} {k : ℕ}
             have := (hband y).1 hyn
             omega
           · omega
-    _ = k * m := by rw [← Finset.sum_mul, hk]
+    _ = k * m := by rw [← Finset.sum_mul, hk, Finset.sum_boole, Nat.cast_id]
 
 section Series
 
