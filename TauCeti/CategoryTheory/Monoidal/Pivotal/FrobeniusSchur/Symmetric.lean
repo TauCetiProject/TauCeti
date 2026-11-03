@@ -36,9 +36,11 @@ identity underlying `ν_n(V) = |G|⁻¹ ∑_{g ∈ G} χ_V(g^n)` in `FDRep k G`.
 
 * `TauCeti.pivotalRotate_eq_braiding`: in a symmetric rigid category,
   `pivotalRotate f = f ≫ (β_ X Y).hom`;
-* `TauCeti.frobeniusSchurRotate_eq_comp_tensorPowShiftIso_hom` and
-  `TauCeti.frobeniusSchurEnd_eq_rightComp`: `E_V^{(n+1)}` is postcomposition with the cyclic shift
-  `tensorPowShiftIso V n`;
+* `TauCeti.frobeniusSchurRotate_eq_comp_tensorPowShiftIso_hom`,
+  `TauCeti.frobeniusSchurEnd_eq_rightComp`, and
+  `TauCeti.frobeniusSchurIndicator_eq_trace_rightComp`: `E_V^{(n+1)}` is postcomposition with the
+  cyclic shift `tensorPowShiftIso V n`, so `ν_n(V)` is the trace of postcomposition with
+  `tensorPowShiftIso V n.natPred`;
 * `TauCeti.trace_tensorHom_tensorPowMap_comp_tensorPowShiftIso_hom` and
   `TauCeti.trace_tensorPowMap_comp_tensorPowShiftIso_hom`: the categorical trace of
   `tensorPowMap f (n + 1) ≫ (tensorPowShiftIso X n).hom` is `trace (End.of f ^ (n + 1)).asHom`.
@@ -101,6 +103,16 @@ theorem frobeniusSchurIndicator_succPNat_eq_trace_rightComp [CommRing k] [Linear
       LinearMap.trace k (𝟙_ C ⟶ tensorPow V (n + 1))
         (Linear.rightComp k (𝟙_ C) (tensorPowShiftIso V n).hom) := by
   rw [frobeniusSchurIndicator_succPNat, frobeniusSchurEnd_eq_rightComp]
+
+/-- In a `k`-linear symmetric rigid category, `ν_n(V)` is the trace of postcomposition with
+`(tensorPowShiftIso V n.natPred).hom` on `𝟙_ C ⟶ tensorPow V (n.natPred + 1)`. -/
+theorem frobeniusSchurIndicator_eq_trace_rightComp [CommRing k] [Linear k C]
+    [MonoidalLinear k C] (V : C) (n : ℕ+) :
+    frobeniusSchurIndicator k V n =
+      LinearMap.trace k (𝟙_ C ⟶ tensorPow V (n.natPred + 1))
+        (Linear.rightComp k (𝟙_ C) (tensorPowShiftIso V n.natPred).hom) := by
+  conv_lhs => rw [← PNat.succPNat_natPred n]
+  exact frobeniusSchurIndicator_succPNat_eq_trace_rightComp k V n.natPred
 
 end Linear
 

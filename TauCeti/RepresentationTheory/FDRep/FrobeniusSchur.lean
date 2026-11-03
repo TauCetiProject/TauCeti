@@ -6,12 +6,12 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.CategoryTheory.Action.Limits
-public import Mathlib.LinearAlgebra.PID
-public import Mathlib.RepresentationTheory.Invariants
 public import TauCeti.CategoryTheory.Monoidal.Pivotal.FrobeniusSchur.Simple
 public import TauCeti.RepresentationTheory.CharacterTable.FrobeniusSchur.Basic
 public import TauCeti.RepresentationTheory.FDRep.Basic
 public import TauCeti.RepresentationTheory.FDRep.Pivotal
+import Mathlib.LinearAlgebra.PID
+import TauCeti.RepresentationTheory.Invariants
 
 /-!
 # Frobenius–Schur indicators in `FDRep k G`
@@ -35,11 +35,6 @@ with the character average: for `G = C₂` and `k = 𝔽₂`, the trivial `1`-di
 has `dim_k Hom(𝟙_, V ⊗ V) = 1` and identity rotation, so its categorical indicator is `1`, whereas
 `(Nat.card G : k)⁻¹` vanishes in `𝔽₂`.
 
-## Main definitions
-
-* `FDRep.tensorUnitHomEquivInvariants`: `R`-linear equivalence `(𝟙_ (FDRep R G) ⟶ W) ≃ₗ[R]
-  Representation.invariants W.ρ` given by evaluation at `1 : R`.
-
 ## Main results
 
 * `FDRep.trace_rightComp_tensorUnit`: when `|G|` is invertible in `k`, the trace of postcomposition
@@ -48,7 +43,7 @@ has `dim_k Hom(𝟙_, V ⊗ V) = 1` and identity rotation, so its categorical in
   V.character (g ^ (n : ℕ))` for `[Invertible (Nat.card G : k)]` (and
   `TauCeti.frobeniusSchurIndicator_fdRep_of_charZero` without an explicit invertibility hypothesis
   in characteristic zero).
-* `TauCeti.frobeniusSchurIndicator_fdRep_two`, `TauCeti.frobeniusSchurIndicator_fdRep_of_two`, and
+* `TauCeti.frobeniusSchurIndicator_fdRep_two`, `TauCeti.frobeniusSchurIndicator_fdRepOf_two`, and
   `TauCeti.frobeniusSchurIndicator_fdRep_ofShrink_two`: agreement of the categorical `n = 2`
   indicator with `FDRep.frobeniusSchurIndicator` and
   `TauCeti.Representation.frobeniusSchurIndicator`.
@@ -72,70 +67,6 @@ universe u v w
 
 namespace FDRep
 
-section CommRing
-
-variable {R : Type u} {G : Type v} [CommRing R] [Group G]
-
-/-- An equivariant morphism carries `G`-invariant vectors to `G`-invariant vectors. -/
-theorem map_mem_invariants {W W' : FDRep R G} (φ : W ⟶ W') {v : W}
-    (hv : v ∈ Representation.invariants W.ρ) :
-    φ.hom.hom.hom v ∈ Representation.invariants W'.ρ := fun g ↦ by
-  have h := LinearMap.congr_fun (hom_hom_hom_comm φ g) v
-  simpa [hv g] using h.symm
-
-/-- Morphisms out of the trivial representation `𝟙_ (FDRep R G)` identify `R`-linearly with the
-submodule `Representation.invariants W.ρ` of `G`-invariant vectors by evaluation at `1 : R`. -/
-def tensorUnitHomEquivInvariants (W : FDRep R G) :
-    (𝟙_ (FDRep R G) ⟶ W) ≃ₗ[R] Representation.invariants W.ρ where
-  toFun f :=
-    ⟨FGModuleCat.tensorUnitHomLinearEquiv W.V f.hom, fun g ↦ by
-      have h := LinearMap.congr_fun (hom_hom_hom_comm f g) (1 : R)
-      rw [tensorUnit_ρ] at h
-      simpa using h.symm⟩
-  invFun v :=
-    { hom := (FGModuleCat.tensorUnitHomLinearEquiv W.V).symm v.1
-      comm := fun g ↦ by
-        ext : 1
-        refine LinearMap.ext_ring ?_
-        simp only [FGModuleCat.hom_hom_comp, hom_hom_action_ρ, LinearMap.comp_apply,
-          FGModuleCat.tensorUnitHomLinearEquiv_symm_apply_hom_hom]
-        change (LinearMap.toSpanSingleton R W v.1) (((𝟙_ (FDRep R G)).ρ g) (1 : R)) =
-          W.ρ g ((LinearMap.toSpanSingleton R W v.1) (1 : R))
-        rw [tensorUnit_ρ, LinearMap.id_apply, LinearMap.toSpanSingleton_apply_one]
-        exact (v.2 g).symm }
-  left_inv f := by
-    ext : 1
-    exact (FGModuleCat.tensorUnitHomLinearEquiv W.V).symm_apply_apply f.hom
-  right_inv v := Subtype.ext ((FGModuleCat.tensorUnitHomLinearEquiv W.V).apply_symm_apply v.1)
-  map_add' _ _ := Subtype.ext (by simp)
-  map_smul' _ _ := Subtype.ext (by simp)
-
-@[simp]
-theorem tensorUnitHomEquivInvariants_coe_apply (W : FDRep R G) (f : 𝟙_ (FDRep R G) ⟶ W) :
-    (tensorUnitHomEquivInvariants W f : W) = f.hom.hom.hom (1 : R) := by
-  simp [tensorUnitHomEquivInvariants]
-
-@[simp]
-theorem tensorUnitHomEquivInvariants_symm_apply_hom (W : FDRep R G)
-    (v : Representation.invariants W.ρ) :
-    ((tensorUnitHomEquivInvariants W).symm v).hom =
-      (FGModuleCat.tensorUnitHomLinearEquiv W.V).symm v.1 :=
-  (rfl)
-
-/-- Under `tensorUnitHomEquivInvariants`, postcomposition with an equivariant endomorphism `φ`
-corresponds to the restriction of `φ` to `Representation.invariants W.ρ`. -/
-theorem conj_tensorUnitHomEquivInvariants_rightComp {W : FDRep R G} (φ : W ⟶ W) :
-    (tensorUnitHomEquivInvariants W).conj (Linear.rightComp R (𝟙_ (FDRep R G)) φ) =
-      φ.hom.hom.hom.restrict (fun _ hv ↦ map_mem_invariants φ hv) := by
-  ext ⟨v, hv⟩
-  simp only [LinearEquiv.conj_apply, LinearMap.comp_apply, Linear.rightComp_apply,
-    LinearMap.restrict_apply, LinearEquiv.coe_coe, tensorUnitHomEquivInvariants_coe_apply,
-    Action.comp_hom, FGModuleCat.hom_hom_comp, tensorUnitHomEquivInvariants_symm_apply_hom,
-    FGModuleCat.tensorUnitHomLinearEquiv_symm_apply_hom_hom]
-  exact congrArg φ.hom.hom.hom (LinearMap.toSpanSingleton_apply_one R W v)
-
-end CommRing
-
 section Trace
 
 variable {k : Type u} {G : Type v} [Field k] [Group G] [Fintype G] [Invertible (Nat.card G : k)]
@@ -147,23 +78,53 @@ theorem trace_rightComp_tensorUnit {W : FDRep k G} (φ : W ⟶ W) :
       (Nat.card G : k)⁻¹ * ∑ g : G, LinearMap.trace k W (φ.hom.hom.hom ∘ₗ W.ρ g) := by
   have : Invertible (Fintype.card G : k) :=
     invertibleOfNonzero (Fintype.card_eq_nat_card (α := G) ▸ Invertible.ne_zero (Nat.card G : k))
+  let W' : Rep k G := (forget₂ (FDRep k G) (Rep k G)).obj W
+  let U' : Rep k G := (forget₂ (FDRep k G) (Rep k G)).obj (𝟙_ (FDRep k G))
+  let φ' : W' ⟶ W' := (forget₂ (FDRep k G) (Rep k G)).map φ
+  let e₁ : (𝟙_ (FDRep k G) ⟶ W) ≃ₗ[k] (U' ⟶ W') :=
+    (FDRep.forget₂HomLinearEquiv (𝟙_ (FDRep k G)) W).symm
+  have he₁ : e₁.conj (Linear.rightComp k (𝟙_ (FDRep k G)) φ) = Linear.rightComp k U' φ' := by
+    ext f : 1
+    simp only [e₁, φ', LinearEquiv.conj_apply_apply, LinearEquiv.symm_symm,
+      Linear.rightComp_apply]
+    rw [FDRep.forget₂HomLinearEquiv_symm_apply, Functor.map_comp,
+      FDRep.forget₂_map_forget₂HomLinearEquiv]
+  -- `forget₂ (FDRep k G) (Rep k G)` sends `𝟙_ (FDRep k G)` definitionally to `Rep.trivial k G k`.
+  have htr₁ : LinearMap.trace k (U' ⟶ W') (Linear.rightComp k U' φ') =
+      LinearMap.trace k (Rep.trivial k G k ⟶ W') (Linear.rightComp k (Rep.trivial k G k) φ') :=
+    rfl
+  let e₂ : (Rep.trivial k G k ⟶ W') ≃ₗ[k] W'.ρ.invariants := Rep.trivialHomEquivInvariants W'
+  have hφ' : ∀ v ∈ W'.ρ.invariants, φ'.hom.toLinearMap v ∈ W'.ρ.invariants :=
+    fun v hv ↦ (((Rep.invariantsFunctor k G).map φ').hom ⟨v, hv⟩).2
+  have he₂ : e₂.conj (Linear.rightComp k (Rep.trivial k G k) φ') =
+      φ'.hom.toLinearMap.restrict hφ' := by
+    ext ⟨v, hv⟩
+    simp only [e₂, LinearMap.restrict_apply, LinearEquiv.conj_apply_apply, Linear.rightComp_apply,
+      Rep.coe_trivialHomEquivInvariants_apply, Rep.hom_comp,
+      Representation.IntertwiningMap.comp_apply]
+    rw [Rep.trivialHomEquivInvariants_symm_apply_hom, one_smul]
+    rfl
+  have hφ : ∀ v ∈ Representation.invariants W.ρ,
+      φ.hom.hom.hom v ∈ Representation.invariants W.ρ := hφ'
+  -- `forget₂ (FDRep k G) (Rep k G)` acts as the identity on underlying representations and maps.
+  have htr₂ : LinearMap.trace k W'.ρ.invariants (φ'.hom.toLinearMap.restrict hφ') =
+      LinearMap.trace k (Representation.invariants W.ρ) (φ.hom.hom.hom.restrict hφ) :=
+    rfl
   have hmem : ∀ w : W,
       (φ.hom.hom.hom ∘ₗ Representation.averageMap W.ρ) w ∈ Representation.invariants W.ρ :=
-    fun w ↦ map_mem_invariants φ (Representation.averageMap_invariant W.ρ w)
-  have hres : φ.hom.hom.hom.restrict (fun _ hv ↦ map_mem_invariants φ hv) =
+    fun w ↦ hφ _ (Representation.averageMap_invariant W.ρ w)
+  have hres : φ.hom.hom.hom.restrict hφ =
       (φ.hom.hom.hom ∘ₗ Representation.averageMap W.ρ).restrict (fun w _ ↦ hmem w) := by
     ext ⟨v, hv⟩
     simp only [LinearMap.restrict_apply, LinearMap.comp_apply,
       Representation.averageMap_id W.ρ v hv]
   have havg : φ.hom.hom.hom ∘ₗ Representation.averageMap W.ρ =
       (Nat.card G : k)⁻¹ • ∑ g : G, (φ.hom.hom.hom ∘ₗ W.ρ g) := by
+    rw [Representation.averageMap_eq_invOf_card_smul_norm, Representation.norm,
+      LinearMap.comp_smul, invOf_eq_inv, Fintype.card_eq_nat_card]
     ext w
-    rw [Representation.averageMap, GroupAlgebra.average, map_smul, map_sum,
-      invOf_eq_inv, Fintype.card_eq_nat_card]
-    simp only [Representation.asAlgebraHom_of, LinearMap.comp_apply, LinearMap.smul_apply,
-      LinearMap.sum_apply, map_smul, map_sum]
-  rw [← LinearMap.trace_conj' _ (tensorUnitHomEquivInvariants W),
-    conj_tensorUnitHomEquivInvariants_rightComp, hres,
+    simp [LinearMap.sum_apply]
+  rw [← LinearMap.trace_conj' _ e₁, he₁, htr₁, ← LinearMap.trace_conj' _ e₂, he₂, htr₂, hres,
     LinearMap.trace_restrict_eq_of_forall_mem (Representation.invariants W.ρ) _ hmem, havg,
     map_smul, map_sum, smul_eq_mul]
 
@@ -182,13 +143,12 @@ variable {k : Type u} {G : Type v} [Field k] [Group G] [Fintype G]
 in `k`. -/
 theorem frobeniusSchurIndicator_fdRep [Invertible (Nat.card G : k)] (V : FDRep k G) (n : ℕ+) :
     frobeniusSchurIndicator k V n = (Nat.card G : k)⁻¹ * ∑ g : G, V.character (g ^ (n : ℕ)) := by
-  have hn : n.natPred.succPNat = n := Subtype.ext (Nat.succ_pred_eq_of_pos n.2)
-  rw [← hn, frobeniusSchurIndicator_succPNat_eq_trace_rightComp, FDRep.trace_rightComp_tensorUnit]
+  rw [frobeniusSchurIndicator_eq_trace_rightComp, FDRep.trace_rightComp_tensorUnit]
   refine congrArg ((Nat.card G : k)⁻¹ * ·) (Finset.sum_congr rfl fun g _ ↦ ?_)
   have htr := congrArg (fun ψ : 𝟙_ (FGModuleCat k) ⟶ 𝟙_ (FGModuleCat k) ↦ ψ.hom.hom 1)
     (Action.trace_ρ_comp_tensorPowShiftIso_hom V g n.natPred)
-  simp only [FGModuleCat.trace_hom_hom_one, FGModuleCat.hom_hom_comp, FDRep.hom_hom_action_ρ]
-    at htr
+  simp only [FGModuleCat.trace_hom_hom_one, FGModuleCat.hom_hom_comp, FDRep.hom_hom_action_ρ,
+    PNat.natPred_add_one] at htr
   exact htr
 
 /-- In characteristic zero, `|G|` is automatically invertible in `k`, so the `n`-th categorical
@@ -215,7 +175,7 @@ theorem frobeniusSchurIndicator_fdRep_two (V : FDRep k G) :
 
 /-- The categorical second Frobenius–Schur indicator of `FDRep.of ρ` agrees with
 `TauCeti.Representation.frobeniusSchurIndicator ρ`. -/
-theorem frobeniusSchurIndicator_fdRep_of_two {W : Type} [AddCommGroup W] [Module k W]
+theorem frobeniusSchurIndicator_fdRepOf_two {W : Type} [AddCommGroup W] [Module k W]
     [FiniteDimensional k W] (ρ : Representation k G W) :
     frobeniusSchurIndicator k (FDRep.of ρ) 2 = Representation.frobeniusSchurIndicator ρ := by
   rw [frobeniusSchurIndicator_fdRep_two, FDRep.frobeniusSchurIndicator_def, FDRep.of_ρ']

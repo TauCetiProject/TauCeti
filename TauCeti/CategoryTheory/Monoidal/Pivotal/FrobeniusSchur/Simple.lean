@@ -34,8 +34,9 @@ valid in arbitrary characteristic.
 
 ## Main declarations
 
-* `TauCeti.homTensorPowTwoLinearEquiv`: the `k`-linear Frobenius reciprocity equivalence
-  `(𝟙_ C ⟶ tensorPow V 2) ≃ₗ[k] (Vᘁ ⟶ V)`;
+* `TauCeti.homTensorPowTwoLinearEquiv` (with `TauCeti.homTensorPowTwoLinearEquiv_apply` and
+  `TauCeti.homTensorPowTwoLinearEquiv_symm_apply`): the `k`-linear Frobenius reciprocity
+  equivalence `(𝟙_ C ⟶ tensorPow V 2) ≃ₗ[k] (Vᘁ ⟶ V)`;
 * `TauCeti.frobeniusSchurIndicator_two_eq_zero_of_isEmpty_iso` and
   `TauCeti.frobeniusSchurIndicator_two_eq_one_or_eq_neg_one_of_nonempty_iso`: the non-self-dual
   and self-dual cases for `ν₂(V)`;
@@ -72,6 +73,29 @@ noncomputable def homTensorPowTwoLinearEquiv (V : C) [HasRightDual V] :
     ((tensorLeftHomLinearEquiv k (𝟙_ C) V Vᘁ V).symm.trans
       (Linear.homCongr k (ρ_ Vᘁ) (Iso.refl V)))
 
+-- Not `@[simp]`: `tensorPow` is `@[reducible]`, so `DiscrTree.getMatch` reduces `tensorPow V 2`
+-- inside `DFunLike.coe` while `SimpTheorems` indexes it unreduced (`noIndexAtArgs := true`),
+-- causing `simpNF` to reject `@[simp]`.
+/-- Evaluating `homTensorPowTwoLinearEquiv` closes up the first factor of `tensorPow V 2` against
+`Vᘁ` with `ε_ V Vᘁ`. -/
+theorem homTensorPowTwoLinearEquiv_apply (V : C) [HasRightDual V] (f : 𝟙_ C ⟶ tensorPow V 2) :
+    homTensorPowTwoLinearEquiv k V f =
+      (ρ_ Vᘁ).inv ≫ Vᘁ ◁ (f ≫ V ◁ (ρ_ V).hom) ≫ (α_ Vᘁ V V).inv ≫ ε_ V Vᘁ ▷ V ≫ (λ_ V).hom := by
+  simp only [homTensorPowTwoLinearEquiv, LinearEquiv.trans_apply, Linear.homCongr_apply,
+    Iso.refl_inv, Iso.refl_hom, whiskerLeftIso_hom, Category.id_comp, Category.comp_id,
+    tensorLeftHomLinearEquiv_symm_apply, tensorLeftHomEquiv, Equiv.coe_fn_symm_mk]
+
+-- Not `@[simp]` for the same `simpNF` reason as `homTensorPowTwoLinearEquiv_apply`.
+/-- The inverse of `homTensorPowTwoLinearEquiv` sends `g : Vᘁ ⟶ V` to `η_ V Vᘁ` composed with `g`
+on the second factor, up to the right unitor of `V`. -/
+theorem homTensorPowTwoLinearEquiv_symm_apply (V : C) [HasRightDual V] (g : Vᘁ ⟶ V) :
+    (homTensorPowTwoLinearEquiv k V).symm g = η_ V Vᘁ ≫ V ◁ (g ≫ (ρ_ V).inv) := by
+  simp only [homTensorPowTwoLinearEquiv, LinearEquiv.trans_symm, LinearEquiv.trans_apply,
+    Linear.homCongr_symm_apply, Iso.refl_inv, Iso.refl_hom, whiskerLeftIso_inv,
+    Category.id_comp, Category.comp_id, LinearEquiv.symm_symm,
+    tensorLeftHomLinearEquiv_apply, tensorLeftHomEquiv, Equiv.coe_fn_mk]
+  monoidal
+
 end Semiring
 
 section Pivotal
@@ -89,9 +113,7 @@ theorem frobeniusSchurIndicator_two_eq_zero_of_isEmpty_iso (k : Type w) [CommRin
       exact h.false (asIso f).symm
   have : Subsingleton (𝟙_ C ⟶ tensorPow V 2) :=
     (homTensorPowTwoLinearEquiv k V).subsingleton
-  -- `(2 : ℕ+)` is `Nat.succPNat 1`; on a subsingleton module every endomorphism is `0`.
-  rw [show (2 : ℕ+) = Nat.succPNat 1 from rfl, frobeniusSchurIndicator_succPNat,
-    Subsingleton.elim (frobeniusSchurEnd k V 1) 0, map_zero]
+  rw [frobeniusSchurIndicator_two, Subsingleton.elim (frobeniusSchurEnd k V 1) 0, map_zero]
 
 section IsAlgClosed
 
@@ -119,9 +141,7 @@ theorem frobeniusSchurIndicator_two_eq_one_or_eq_neg_one_of_nonempty_iso
     rw [← hc, map_smul, ← hc, smul_smul, ← sq] at hT2
     exact smul_left_injective k (CategoryTheory.id_ne_zero V) (by simpa using hT2)
   have htr : frobeniusSchurIndicator k V 2 = c := by
-    -- `(2 : ℕ+)` is `Nat.succPNat 1`; trace is invariant under conjugation by `L`.
-    rw [show (2 : ℕ+) = Nat.succPNat 1 from rfl, frobeniusSchurIndicator_succPNat,
-      ← LinearMap.trace_conj' (frobeniusSchurEnd k V 1) L]
+    rw [frobeniusSchurIndicator_two, ← LinearMap.trace_conj' (frobeniusSchurEnd k V 1) L]
     -- `T` is definitionally `L.conj (frobeniusSchurEnd k V 1)`.
     change LinearMap.trace k (V ⟶ V) T = c
     rw [hT, map_smul, LinearMap.trace_one, finrank_endomorphism_simple_eq_one k V,

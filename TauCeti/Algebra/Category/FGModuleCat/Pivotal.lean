@@ -27,8 +27,6 @@ classical one:
 
 ## Main results
 
-* `FGModuleCat.tensorUnitHomLinearEquiv`: morphisms `𝟙_ (FGModuleCat R) ⟶ W` identify `R`-linearly
-  with `W` by evaluation at `1`;
 * `FGModuleCat.drinfeldIso_hom_hom_hom`: the pivotal isomorphism, which is the Drinfeld isomorphism,
   is the double-dual evaluation map;
 * `FGModuleCat.trace_eq_smul` and `FGModuleCat.trace_hom_hom_one`: the categorical trace is the
@@ -50,44 +48,6 @@ open CategoryTheory MonoidalCategory Module TauCeti
 namespace FGModuleCat
 
 universe u
-
-section CommRing
-
-variable {R : Type u} [CommRing R]
-
-/-- Morphisms out of the monoidal unit `𝟙_ (FGModuleCat R)` identify `R`-linearly with the elements
-of the target module by evaluation at `1 : R`. -/
-def tensorUnitHomLinearEquiv (W : FGModuleCat.{u} R) :
-    (𝟙_ (FGModuleCat.{u} R) ⟶ W) ≃ₗ[R] W where
-  toFun f := f.hom.hom (1 : R)
-  invFun w := ofHom (LinearMap.toSpanSingleton R W w)
-  left_inv f := by
-    ext : 1
-    exact LinearMap.ext_ring (LinearMap.toSpanSingleton_apply_one R W _)
-  right_inv w := LinearMap.toSpanSingleton_apply_one R W w
-  map_add' _ _ := rfl
-  map_smul' _ _ := rfl
-
-@[simp]
-theorem tensorUnitHomLinearEquiv_apply (W : FGModuleCat.{u} R) (f : 𝟙_ (FGModuleCat.{u} R) ⟶ W) :
-    tensorUnitHomLinearEquiv W f = f.hom.hom (1 : R) :=
-  (rfl)
-
-@[simp]
-theorem tensorUnitHomLinearEquiv_symm_apply_hom_hom (W : FGModuleCat.{u} R) (w : W) :
-    ((tensorUnitHomLinearEquiv W).symm w).hom.hom = LinearMap.toSpanSingleton R W w :=
-  (rfl)
-
-/-- Postcomposition on `𝟙_ (FGModuleCat R) ⟶ W` corresponds under `tensorUnitHomLinearEquiv` to the
-underlying linear map. -/
-theorem conj_tensorUnitHomLinearEquiv_rightComp {W : FGModuleCat.{u} R} (f : W ⟶ W) :
-    (tensorUnitHomLinearEquiv W).conj (Linear.rightComp R (𝟙_ (FGModuleCat.{u} R)) f) =
-      f.hom.hom := by
-  ext w
-  simp only [LinearEquiv.conj_apply, LinearMap.comp_apply, Linear.rightComp_apply]
-  exact congrArg f.hom.hom (LinearMap.toSpanSingleton_apply_one R W w)
-
-end CommRing
 
 variable {K : Type u} [Field K]
 
@@ -149,14 +109,12 @@ theorem quantumDim_hom_hom_one (V : FGModuleCat.{u} K) :
   rw [← trace_id, trace_hom_hom_one, hom_hom_id, LinearMap.trace_id]
 
 /-- Every Frobenius–Schur indicator `ν_n(V)` of a finite-dimensional vector space in `FGModuleCat K`
-equals `(finrank K V : K)`: under `tensorUnitHomLinearEquiv`, postcomposition with the cyclic shift
-on `tensorPow V n` is the shift itself, whose trace is `quantumDim V` by
-`trace_tensorPowShiftIso_hom`. -/
+equals `(finrank K V : K)`. -/
 @[simp]
 theorem frobeniusSchurIndicator_eq_finrank (V : FGModuleCat.{u} K) (n : ℕ+) :
     frobeniusSchurIndicator K V n = (finrank K V : K) := by
-  have hn : n.natPred.succPNat = n := Subtype.ext (Nat.succ_pred_eq_of_pos n.2)
-  rw [← hn, frobeniusSchurIndicator_succPNat_eq_trace_rightComp,
+  -- Under `tensorUnitHomLinearEquiv`, postcomposition with the cyclic shift is the shift itself.
+  rw [frobeniusSchurIndicator_eq_trace_rightComp,
     ← LinearMap.trace_conj' _ (tensorUnitHomLinearEquiv (tensorPow V (n.natPred + 1))),
     conj_tensorUnitHomLinearEquiv_rightComp, ← trace_hom_hom_one, trace_tensorPowShiftIso_hom,
     quantumDim_hom_hom_one]

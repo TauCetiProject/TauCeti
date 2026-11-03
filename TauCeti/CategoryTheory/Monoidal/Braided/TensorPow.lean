@@ -17,8 +17,9 @@ This gives the cyclic shift automorphism `TauCeti.tensorPowShiftIso X n` of `ten
 
 For `n = 0` the shift is the identity (`TauCeti.tensorPowShiftIso_zero`), and for `n + 1` it
 factors into a single braiding of the first two factors followed by the shift on the remaining
-`n + 1` factors (`TauCeti.tensorPowShiftIso_succ_hom`). In a symmetric pivotal category, composing
-with `tensorPowShiftIso X n` computes the Ng–Schauenburg Frobenius–Schur rotation operator.
+`n + 1` factors (`TauCeti.tensorPowShiftIso_succ_hom`). In a symmetric rigid category with its
+canonical pivotal structure (`TauCeti.symmetricPivotalCategory`), composing with
+`tensorPowShiftIso X n` computes the Ng–Schauenburg Frobenius–Schur rotation operator.
 
 ## Main declarations
 

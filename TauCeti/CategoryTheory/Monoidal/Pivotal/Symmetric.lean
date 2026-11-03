@@ -31,8 +31,7 @@ structure is spherical, registered as the instance `TauCeti.symmetricSphericalCa
   loops, and `TauCeti.leftTrace_eq_rightTrace_of_symmetric`: the two traces agree;
 * `TauCeti.symmetricSphericalCategory`: the canonical pivotal structure is spherical, and
   `TauCeti.trace_eq_braiding`: its trace as a braided loop;
-* `TauCeti.trace_tensorHom_comp_braiding` and
-  `TauCeti.trace_associator_inv_braiding_whiskerRight_associator_hom_comp_whiskerLeft`: contracting
+* `TauCeti.trace_associator_inv_braiding_whiskerRight_associator_hom_comp_whiskerLeft`: contracting
   a symmetric braiding in a categorical trace.
 
 ## References
@@ -147,30 +146,6 @@ theorem trace_associator_inv_braiding_whiskerRight_associator_hom_comp_whiskerLe
             Category.id_comp]
   rw [trace_eq_leftTrace, trace_eq_leftTrace, leftTrace_tensorObj,
     pivotalExactPairing_coevaluation_eq_braiding, key]
-
-/-- Tracing `(β_ X X).hom ≫ X ◁ f` contracts one loop and gives `trace f`. -/
-theorem trace_braiding_comp_whiskerLeft {X : C} (f : X ⟶ X) :
-    trace ((β_ X X).hom ≫ X ◁ f) = trace f := by
-  have key : (λ_ X).inv ≫ (η_ X Xᘁ ≫ (β_ X Xᘁ).hom) ▷ X ≫ (α_ Xᘁ X X).hom ≫
-      Xᘁ ◁ ((β_ X X).hom ≫ X ◁ f) ≫ (α_ Xᘁ X X).inv ≫ ε_ X Xᘁ ▷ X ≫ (λ_ X).hom = f := by
-    calc _ = (λ_ X).inv ≫ (η_ X Xᘁ ≫ (β_ X Xᘁ).hom) ▷ X ≫ (α_ Xᘁ X X).hom ≫
-          Xᘁ ◁ (β_ X X).hom ≫ (α_ Xᘁ X X).inv ≫ ((Xᘁ ⊗ X) ◁ f ≫ ε_ X Xᘁ ▷ X) ≫ (λ_ X).hom := by
-          monoidal
-      _ = ((λ_ X).inv ≫ (η_ X Xᘁ ≫ (β_ X Xᘁ).hom) ▷ X ≫ (α_ Xᘁ X X).hom ≫
-          Xᘁ ◁ (β_ X X).hom ≫ (α_ Xᘁ X X).inv ≫ ε_ X Xᘁ ▷ X ≫ (λ_ X).hom) ≫ f := by
-          rw [whisker_exchange]
-          monoidal
-      _ = f := by
-          rw [coevaluation_braiding_comp_braiding_comp_evaluation, Category.id_comp]
-  rw [trace_eq_leftTrace, trace_eq_leftTrace, leftTrace_tensorObj,
-    pivotalExactPairing_coevaluation_eq_braiding, key]
-
-/-- In a symmetric rigid category, the categorical trace of `(f ⊗ₘ g) ≫ (β_ X X).hom` is
-`trace (g ≫ f)`. -/
-theorem trace_tensorHom_comp_braiding {X : C} (f g : X ⟶ X) :
-    trace ((f ⊗ₘ g) ≫ (β_ X X).hom) = trace (g ≫ f) := by
-  rw [tensorHom_def, Category.assoc, braiding_naturality_right, trace_comm, Category.assoc,
-    ← comp_whiskerRight, ← braiding_naturality_right, trace_comm, trace_braiding_comp_whiskerLeft]
 
 end Pivotal
 
