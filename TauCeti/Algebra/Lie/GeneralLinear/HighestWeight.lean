@@ -8,6 +8,7 @@ module
 public import TauCeti.Algebra.Lie.GeneralLinear.Borel
 public import Mathlib.Algebra.Lie.Semisimple.Defs
 public import Mathlib.Algebra.Ring.CharZero
+public import Mathlib.Combinatorics.Young.YoungDiagram
 public import Mathlib.Data.Rat.Cast.Defs
 import TauCeti.Algebra.Lie.GeneralLinear.Basic
 import TauCeti.Algebra.Lie.Weights.Central
@@ -58,6 +59,7 @@ and the whole of `𝔫⁺` annihilates (`TauCeti.isGlHighestWeightVector_iff_for
   `TauCeti.isGlDominantIntegral_iff_forall_le` records the two forms as equivalent.
 * `TauCeti.isGlDominantIntegral_intCast`: an antitone integer tuple is dominant — the weights of
   the group level sit inside the dominant ones.
+* `TauCeti.isGlDominantIntegral_rowLen`: the row-length vector of a Young diagram is dominant.
 * `TauCeti.IsGlDominantIntegral.add_const`: dominance is invariant under the central direction, and
   `TauCeti.IsGlDominantIntegral.exists_antitone_natCast_add_const` is the converse decomposition:
   every dominant weight is an antitone tuple of natural numbers translated along that direction.
@@ -226,6 +228,12 @@ theorem isGlDominantIntegral_intCast {a : Fin n → ℤ} (ha : Antitone a) :
   have h0 : (0 : ℤ) ≤ a i - a j := sub_nonneg.mpr (ha hle)
   refine ⟨(a i - a j).toNat, ?_⟩
   rw [← Int.cast_natCast (R := R), Int.toNat_of_nonneg h0, Int.cast_sub]
+
+/-- The row-length vector of a Young diagram is a dominant integral weight. -/
+theorem isGlDominantIntegral_rowLen (μ : YoungDiagram) :
+    IsGlDominantIntegral (fun i : Fin n => (μ.rowLen i : R)) :=
+  isGlDominantIntegral_iff.mpr fun i j hij =>
+    ⟨μ.rowLen i - μ.rowLen j, by rw [Nat.cast_sub (μ.rowLen_anti _ _ (by omega))]⟩
 
 /-- **A dominant weight is a tuple of natural numbers translated along the central direction**, the
 converse of `TauCeti.isGlDominantIntegral_intCast` and `TauCeti.IsGlDominantIntegral.add_const`
