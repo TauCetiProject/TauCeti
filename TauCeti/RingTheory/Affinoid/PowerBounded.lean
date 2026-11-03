@@ -36,7 +36,8 @@ unit ball `{f | |f|sup ≤ 1}` as soon as `B ⧸ ϖB` is reduced for some topolo
 element `ϖ ∈ B` regular in `A`, by the general criterion
 `TauCeti.Huber.isPowerBounded_iff_mem_of_isReduced_quotient`.
 
-Integrality is detected modulo every prime `𝔭` (`TauCeti.isIntegral_of_forall_isPrime`). A
+Integrality is detected modulo every minimal prime `𝔭`
+(`TauCeti.isIntegral_of_forall_isMinimalPrime`), so it is enough to argue modulo primes. A
 Noether normalisation of the affinoid domain `A ⧸ 𝔭` adapted to the presentation sends the Gauss
 unit ball into the image of `A₀`. The minimal polynomial of the residue of `f` over this Tate
 algebra has coefficients of Gauss norm at most one, because the supremum seminorm is the spectral
@@ -145,7 +146,8 @@ theorem isIntegral_map_unitClosedBall_iff_supSeminorm_le_one (π : Tate σ →�
     exact (TauCeti.isAffinoidAlgebra_tate.supSeminorm_map_le hA π y).trans
       ((TauCeti.isAffinoidAlgebra_tate.supSeminorm_le_norm y).trans
         (Subring.mem_unitClosedBall.mp hy))
-  · refine TauCeti.isIntegral_of_forall_isPrime fun 𝔭 _ ↦ ?_
+  · refine TauCeti.isIntegral_of_forall_isMinimalPrime fun 𝔭 h𝔭 ↦ ?_
+    have := h𝔭.isPrime
     exact TauCeti.isIntegral_quotient_of_supSeminorm_le_one hπ 𝔭
       ((hA.supSeminorm_map_le (hA.quotient 𝔭) (Ideal.Quotient.mkₐ K 𝔭) f).trans hf)
 

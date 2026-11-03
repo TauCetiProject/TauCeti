@@ -44,7 +44,7 @@ theorem _root_.Matrix.star_dotProduct_one_kronecker_mulVec [NonAssocSemiring R] 
     [Fintype m] [DecidableEq m] [Fintype n] (A : Matrix n n R) (x : m × n → R) :
     star x ⬝ᵥ (((1 : Matrix m m R) ⊗ₖ A) *ᵥ x) =
       ∑ i, star (fun j => x (i, j)) ⬝ᵥ (A *ᵥ fun j => x (i, j)) := by
-  simp [dotProduct, mulVec, Fintype.sum_prod_type, one_apply, ite_mul, Finset.sum_ite_eq]
+  simp [dotProduct, mulVec, Fintype.sum_prod_type, Matrix.one_apply, ite_mul, Finset.sum_ite_eq]
 
 /-- The finitely supported quadratic expression for `1 ⊗ₖ A` is the sum of those for `A`
 on the blocks. -/
@@ -57,7 +57,7 @@ theorem _root_.Matrix.finsupp_sum_one_kronecker [NonAssocSemiring R] [Star R] [D
   simp only [Finsupp.sum_uncurry_index, Finsupp.curry_uncurry]
   refine Finsupp.sum_congr fun i hi => ?_
   refine Finsupp.sum_congr fun a ha => ?_
-  simp [one_apply, mul_ite, ite_mul, Finsupp.sum, Finset.sum_ite_irrel,
+  simp [Matrix.one_apply, mul_ite, ite_mul, Finsupp.sum, Finset.sum_ite_irrel,
     -Finsupp.support_curry, Finsupp.mem_support_iff.mp hi]
 
 /-- If `A` is positive definite, then so is the block-diagonal matrix `1 ⊗ₖ A`. -/

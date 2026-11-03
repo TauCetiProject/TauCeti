@@ -123,13 +123,13 @@ theorem signedCheckedR_mul_self (s : R) (j k : Fin n) :
   rcases eq_or_ne j k with rfl | hjk
   · -- On a single strand the operator is diagonal, with diagonal entries `Q` or `-1`.
     by_cases hw : pos (w j) <;>
-      simp only [LinearMap.coe_comp, comp_apply, lsingle_apply, Module.End.mul_apply,
-        LinearMap.add_apply, LinearMap.smul_apply, Module.End.one_apply,
+      simp only [LinearMap.coe_comp, comp_apply, lsingle_apply, mul_apply_eq_comp,
+        LinearMap.add_apply, LinearMap.smul_apply, one_apply_eq_self,
         signedCheckedR_single_one, hw, map_smul, ↓reduceIte] <;> module
   have hR := signedCheckedR_single_update_update pos s hjk w
   have hW : update (update w j (w j)) k (w k) = w := by simp
-  simp only [LinearMap.coe_comp, comp_apply, lsingle_apply, Module.End.mul_apply,
-    LinearMap.add_apply, LinearMap.smul_apply, Module.End.one_apply]
+  simp only [LinearMap.coe_comp, comp_apply, lsingle_apply, mul_apply_eq_comp,
+    LinearMap.add_apply, LinearMap.smul_apply, one_apply_eq_self]
   rw [← hW]
   clear hW
   generalize w j = x, w k = y
@@ -160,7 +160,7 @@ theorem signedCheckedR_mul_comm (s : R) {j k l m : Fin n} (h : [j, k, l, m].Nodu
       else -(s • single (W x y v u) 1) :=
     signedCheckedR_single_update_update pos s hlm _ u v
   have hW : W (w j) (w k) (w l) (w m) = w := by simp [W]
-  simp only [LinearMap.coe_comp, comp_apply, lsingle_apply, Module.End.mul_apply]
+  simp only [LinearMap.coe_comp, comp_apply, lsingle_apply, mul_apply_eq_comp]
   rw [← hW]
   clear hW
   generalize w j = x, w k = y, w l = u, w m = v
@@ -189,7 +189,7 @@ theorem signedCheckedR_braid (s : R) {j k l : Fin n} (hjk : j ≠ k) (hkl : k �
       else -(s • single (W x z y) 1) :=
     signedCheckedR_single_update_update pos s hkl _ y z
   have hW : W (w j) (w k) (w l) = w := by simp [W]
-  simp only [LinearMap.coe_comp, comp_apply, lsingle_apply, Module.End.mul_apply]
+  simp only [LinearMap.coe_comp, comp_apply, lsingle_apply, mul_apply_eq_comp]
   rw [← hW]
   clear hW
   generalize w j = x, w k = y, w l = z

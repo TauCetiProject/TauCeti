@@ -203,7 +203,7 @@ theorem parity_mul_parity :
 /-- The parity action `P(X, Y) ↦ P(-X, Y)` is an involution. -/
 theorem binaryFormRep_parity_involutive :
     Function.Involutive (binaryFormRep R w (op !![-1, 0; 0, 1])) := fun P ↦ by
-  rw [← binaryFormRep_op_mul_apply, parity_mul_parity, op_one, map_one, Module.End.one_apply]
+  rw [← binaryFormRep_op_mul_apply, parity_mul_parity, op_one, map_one, one_apply_eq_self]
 
 /-- For even `w`, the parity involution `P(X, Y) ↦ P(-X, Y)` preserves the period
 polynomials. -/
@@ -266,7 +266,7 @@ private lemma binaryFormRep_S_sq_of_odd (hw : Odd w) (P : homogeneousSubmodule (
     binaryFormRep R w (op (S : Matrix (Fin 2) (Fin 2) ℤ))
       (binaryFormRep R w (op (S : Matrix (Fin 2) (Fin 2) ℤ)) P) = -P := by
   rw [← binaryFormRep_op_mul_apply, S_mul_S_eq, binaryFormRep_op_neg, hw.neg_one_pow, op_one,
-    map_one, LinearMap.smul_apply, Module.End.one_apply, neg_one_smul]
+    map_one, LinearMap.smul_apply, one_apply_eq_self, neg_one_smul]
 
 /-- For odd `w` there are no nonzero period polynomials when multiplication by `2` is injective:
 the central element `S² = -1` acts by `-1` but fixes every `P` with `P ∣ S = -P`. -/
@@ -379,7 +379,7 @@ private lemma sub_binaryFormRep_T_mem_sup (hw : Even w) (P : homogeneousSubmodul
       (1 - binaryFormRep R w (op (S : Matrix (Fin 2) (Fin 2) ℤ)))
           (binaryFormRep R w (op ((T * S : SL(2, ℤ)) : Matrix (Fin 2) (Fin 2) ℤ)) P) +
         (1 - binaryFormRep R w (op ((T * S : SL(2, ℤ)) : Matrix (Fin 2) (Fin 2) ℤ))) P := by
-    rw [LinearMap.sub_apply, LinearMap.sub_apply, Module.End.one_apply, Module.End.one_apply, hT]
+    rw [LinearMap.sub_apply, LinearMap.sub_apply, one_apply_eq_self, one_apply_eq_self, hT]
     abel
   rw [h]
   exact Submodule.add_mem_sup
@@ -485,7 +485,7 @@ theorem codisjoint_ker_one_add_S_ker_one_add_U_add_U_sq [CharZero K] (hw : Even 
   codisjoint_iff.2 <| eq_top_of_sub_binaryFormRep_mem hw₀ (sub_binaryFormRep_T_mem_sup hw)
     fun P ↦ Submodule.mem_sup_left <| by
       -- `P - P ∣ S = (1 - S) P`, and `1 + S` kills the range of `1 - S` as `S² = 1`
-      simpa only [LinearMap.sub_apply, Module.End.one_apply] using
+      simpa only [LinearMap.sub_apply, one_apply_eq_self] using
         End.range_one_sub_le_ker_one_add (binaryFormRep_S_sq_of_even hw)
           (LinearMap.mem_range_self _ P)
 

@@ -147,7 +147,7 @@ private def tangentBaseChangeLinearEquiv :
     | add x y hx hy => simp only [map_add, hx, hy]
     | tmul a h =>
       apply (Bialgebra.CounitAlgebra.algEquivSelf K (K ⊗[R] H) K).injective
-      simp only [Derivation.add_apply, map_add, extendTangent_tmul, mul_add]
+      simp only [_root_.add_apply, map_add, extendTangent_tmul, mul_add]
   map_smul' a d := by
     ext x
     apply (Bialgebra.CounitAlgebra.algEquivSelf K (K ⊗[R] H) K).injective

@@ -217,7 +217,7 @@ theorem upperBlockGL_mem_elementarySubgroup (X : Matrix m k A) :
   | h_std_basis a b c =>
     convert transvectionUnit_mem_elementarySubgroup (Sum.inl_ne_inr (a := a) (b := b)) c
     ext (p | p) (q | q) <;>
-      simp [coe_transvectionUnit_eq_one_add_single, single_apply, one_apply]
+      simp [coe_transvectionUnit_eq_one_add_single, single_apply, Matrix.one_apply]
 
 /-- Lower block unipotent matrices are elementary: they are products of the commuting elementary
 matrices `1 + Y b a E_(inr b, inl a)`. -/
@@ -229,7 +229,7 @@ theorem lowerBlockGL_mem_elementarySubgroup (Y : Matrix k m A) :
   | h_std_basis b a c =>
     convert transvectionUnit_mem_elementarySubgroup (Sum.inr_ne_inl (a := a) (b := b)) c
     ext (p | p) (q | q) <;>
-      simp [coe_transvectionUnit_eq_one_add_single, single_apply, one_apply]
+      simp [coe_transvectionUnit_eq_one_add_single, single_apply, Matrix.one_apply]
 
 end Matrix
 
@@ -247,7 +247,7 @@ theorem map_elementarySubgroup_le_elementarySubgroup :
   rw [Subgroup.mem_comap]
   convert transvectionUnit_mem_elementarySubgroup (Sum.inl_injective.ne hij) a
   ext (p | p) (q | q) <;>
-    simp [coe_transvectionUnit_eq_one_add_single, single_apply, one_apply]
+    simp [coe_transvectionUnit_eq_one_add_single, single_apply, Matrix.one_apply]
 
 /-- **Whitehead's lemma.** For an invertible matrix `u`, the block diagonal matrix `u ⊕ u⁻¹` is
 elementary: it is the product of six block unipotent matrices,

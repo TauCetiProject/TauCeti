@@ -70,7 +70,7 @@ private theorem bowTieCurve_avoids (y : ℝ) (hy : y = 3 / 4 ∨ y = 1 / 4) :
       have hr := congrArg Complex.re heq
       have hi := congrArg Complex.im heq
       norm_num at *
-      all_goals linarith
+  all_goals linarith
 
 private theorem bowTieFan_avoids (y : ℝ) (hy : y = 3 / 4 ∨ y = 1 / 4) (i : Fin 4) :
     (⟨1 / 2, y⟩ : ℂ) ∉
@@ -90,7 +90,7 @@ private theorem bowTieFan_avoids (y : ℝ) (hy : y = 3 / 4 ∨ y = 1 / 4) (i : F
         have hi := congrArg Complex.im heq
         norm_num [Complex.smul_re, Complex.smul_im, Complex.mul_re, Complex.mul_im]
           at *
-        all_goals linarith
+  all_goals linarith
 
 private theorem bowTie_index_eq_two_triangles {z : ℂ}
     (hz : z ∉ bowTieCurve '' uIcc 0 4)

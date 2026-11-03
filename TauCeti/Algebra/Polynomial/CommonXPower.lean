@@ -51,7 +51,7 @@ theorem exists_common_X_pow_factor {ι : Type*} (s : Set ι) (p : ι → k[X])
   classical
   have hex : ∃ d, ∃ i ∈ s, (p i).coeff d ≠ 0 := by
     obtain ⟨i, hi, hpi⟩ := hne
-    exact ⟨_, i, hi, mem_support_iff.mp (natTrailingDegree_mem_support_of_nonzero hpi)⟩
+    exact ⟨_, i, hi, mem_support_iff.mp (natTrailingDegree_mem_support_of_ne_zero hpi)⟩
   -- Below the least such index every member has zero coefficient, so `X ^ Nat.find hex`
   -- divides every member; the implication form lets `choose` produce a total family.
   have hdvd (i : ι) : ∃ c, i ∈ s → p i = X ^ Nat.find hex * c := by

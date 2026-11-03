@@ -58,7 +58,7 @@ theorem etvDist_eq_posPart_univ_add_negPart_univ :
     etvDist μ ν = (μ.toSignedMeasure - ν.toSignedMeasure).toJordanDecomposition.posPart univ +
       (μ.toSignedMeasure - ν.toSignedMeasure).toJordanDecomposition.negPart univ := by
   rw [etvDist_eq_etvDist_toSignedMeasure, VectorMeasure.etvDist,
-    ← SignedMeasure.totalVariation_eq_variation, SignedMeasure.totalVariation, Measure.add_apply]
+    ← SignedMeasure.totalVariation_eq_variation, SignedMeasure.totalVariation, _root_.add_apply]
 
 /-- The total variation distance between finite measures is the largest excess `μ A - ν A` over
 measurable events plus the largest excess `ν A - μ A`. -/

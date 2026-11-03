@@ -43,7 +43,8 @@ any finiteness or simplicity statement.
 * `TauCeti.E7Minuscule.frobenius`: the `p ^ k`-power Frobenius on the carrier's points.
 * `TauCeti.E7Minuscule.coe_frobenius` and `coe_frobenius_apply`: its matrix and entrywise actions.
 * `TauCeti.E7Minuscule.frobenius_rootSubgroupPoints`: its action on every numbered simple-root
-  subgroup.
+  subgroup, and `TauCeti.E7Minuscule.rootSubgroupPoints_mem_fixedSubgroup_frobenius`: the
+  simple-root points with Frobenius-fixed parameter are fixed.
 * `TauCeti.E7Minuscule.frobenius_weightTorusPoints`: its action on the split weight torus.
 * `TauCeti.E7Minuscule.frobenius_zero`, `frobenius_add` and `frobenius_pow`: its iteration laws.
 * `TauCeti.E7Minuscule.frobenius_eq_self_iff` and
@@ -108,6 +109,14 @@ theorem frobenius_rootSubgroupPoints (i : Fin 7 ⊕ Fin 7) (u : Multiplicative A
         (Multiplicative.ofAdd (Multiplicative.toAdd u ^ p ^ k)) := by
   rw [frobenius, map_rootSubgroupPoints]
   exact Subtype.ext (by rw [iterateFrobenius_def])
+
+/-- A numbered simple-root point whose parameter lies in the Frobenius-fixed subring is fixed by
+Frobenius. -/
+theorem rootSubgroupPoints_mem_fixedSubgroup_frobenius (i : Fin 7 ⊕ Fin 7) (u : A)
+    (hu : u ∈ frobeniusFixedSubring A p k) :
+    rootSubgroupPoints i A (Multiplicative.ofAdd u) ∈ fixedSubgroup (frobenius p k A) := by
+  rw [mem_fixedSubgroup, frobenius_rootSubgroupPoints, toAdd_ofAdd,
+    mem_frobeniusFixedSubring.mp hu]
 
 /-- **Frobenius raises every coordinate of the pinned split weight torus to its `p ^ k`-th
 power.** -/
