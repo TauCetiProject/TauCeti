@@ -90,14 +90,15 @@ variable {α : Type u} {β : Type v} {G : Graph α β} {s t : α}
 /-- **Weak duality for edge-disjoint set-to-set walks.** A family of walks, each from a vertex of
 `A` to a vertex of `B`, of which no two traverse a common edge has at most as many members as any
 set of edges whose deletion leaves no vertex of `B` reachable from a vertex of `A`. No finiteness
-assumption is needed, but `A` must consist of actual vertices. -/
+assumption is needed, but every walk must start at an actual vertex. -/
 theorem card_le_encard_of_forall_not_reachable_deleteEdges {A B : Set α} {ι : Type*}
     {a b : ι → α} {P : ∀ i, G.Walk (a i) (b i)} (ha : ∀ i, a i ∈ A) (hb : ∀ i, b i ∈ B)
-    (hA : A ⊆ V(G)) (hP : Pairwise fun i j ↦ (P i).edges.Disjoint (P j).edges) {F : Set β}
+    (hstart : ∀ i, a i ∈ V(G))
+    (hP : Pairwise fun i j ↦ (P i).edges.Disjoint (P j).edges) {F : Set β}
     (hF : ∀ a ∈ A, ∀ b ∈ B, ¬(G.deleteEdges F).Reachable a b) : ENat.card ι ≤ F.encard := by
   have h (i : ι) : ∃ e ∈ (P i).edges, e ∈ F := by
     by_contra! h
-    exact hF _ (ha i) _ (hb i) (reachable_deleteEdges_iff_exists_walk.2 ⟨hA (ha i), P i, h⟩)
+    exact hF _ (ha i) _ (hb i) (reachable_deleteEdges_iff_exists_walk.2 ⟨hstart i, P i, h⟩)
   choose g hg hgF using h
   have hinj : Function.Injective g := fun i j hij ↦ by
     by_contra hne
@@ -200,7 +201,7 @@ theorem card_le_encard_of_not_reachable_deleteEdges {ι : Type*} {P : ι → G.W
     (hP : Pairwise fun i j ↦ (P i).edges.Disjoint (P j).edges) (hs : s ∈ V(G)) {F : Set β}
     (hF : ¬(G.deleteEdges F).Reachable s t) : ENat.card ι ≤ F.encard :=
   card_le_encard_of_forall_not_reachable_deleteEdges (G := G) (A := {s}) (B := {t})
-    (a := fun _ ↦ s) (b := fun _ ↦ t) (P := P) (by simp) (by simp) (by simpa) hP (by simpa)
+    (a := fun _ ↦ s) (b := fun _ ↦ t) (P := P) (by simp) (by simp) (fun _ ↦ hs) hP (by simpa)
 
 /-- **Menger's theorem for edge-disjoint paths in a multigraph.** For distinct points `s` and `t`
 of a multigraph with finitely many actual vertices and edges, some family of `s`–`t` paths, no two
@@ -239,12 +240,11 @@ theorem isEdgeReachable_iff_exists_paths [Finite V(G)] [Finite E(G)] (hs : s ∈
     exact hF.not_ge (by simpa using card_le_encard_of_not_reachable_deleteEdges hP hs h)
 
 /-- **Menger's theorem for edge-disjoint paths between vertex sets in a multigraph, predicate
-form.** For disjoint finite sets `A` and `B` in a finite multigraph, with `A` consisting of actual
-vertices, deleting fewer than `k` edges always leaves some vertex of `B` reachable from some vertex
-of `A` exactly when there are `k` pairwise edge-disjoint `A`–`B` paths with no internal terminal
-vertex. -/
+form.** For disjoint finite sets `A` and `B` in a finite multigraph, deleting fewer than `k` edges
+always leaves some vertex of `B` reachable from some vertex of `A` exactly when there are `k`
+pairwise edge-disjoint `A`–`B` paths with no internal terminal vertex. -/
 theorem forall_exists_reachable_deleteEdges_iff_exists_paths [Finite V(G)] [Finite E(G)]
-    {A B : Finset α} (hA : (A : Set α) ⊆ V(G)) (hAB : Disjoint A B) (k : ℕ) :
+    {A B : Finset α} (hAB : Disjoint A B) (k : ℕ) :
     (∀ F : Finset β, #F < k → ∃ a ∈ A, ∃ b ∈ B, (G.deleteEdges F).Reachable a b) ↔
       ∃ (a b : Fin k → α) (P : ∀ i, G.Walk (a i) (b i)), (∀ i, a i ∈ A) ∧
         (∀ i, b i ∈ B) ∧ (∀ i, (P i).IsPath) ∧
@@ -261,8 +261,13 @@ theorem forall_exists_reachable_deleteEdges_iff_exists_paths [Finite V(G)] [Fini
       fun i ↦ hint _, hdisj.comp_of_injective (Fin.castLE_injective hkm)⟩
   · by_contra h
     push Not at h
+    have hstart (i : Fin k) : a i ∈ V(G) := by
+      have hab : a i ≠ b i := fun hab ↦ disjoint_left.1 hAB (ha i) (hab ▸ hb i)
+      have hpos : 0 < (P i).length := Nat.pos_of_ne_zero fun hzero ↦
+        hab ((P i).eq_of_length_eq_zero hzero)
+      exact (P i).support_subset_vertexSet_of_pos hpos _ (P i).start_mem_support
     have hle := card_le_encard_of_forall_not_reachable_deleteEdges (G := G)
-      (A := (A : Set α)) (B := (B : Set α)) ha hb hA hP (F := (F : Set β)) h
+      (A := (A : Set α)) (B := (B : Set α)) ha hb hstart hP (F := (F : Set β)) h
     exact hF.not_ge (by simpa using hle)
 
 end Graph
@@ -318,7 +323,7 @@ theorem card_le_encard_of_forall_not_reachable_deleteEdges {A B : Set α} {ι : 
     (hP : Pairwise fun i j ↦ (P i).edges.Disjoint (P j).edges) {F : Set (Sym2 α)}
     (hF : ∀ a ∈ A, ∀ b ∈ B, ¬(G.deleteEdges F).Reachable a b) : ENat.card ι ≤ F.encard :=
   Graph.card_le_encard_of_forall_not_reachable_deleteEdges (G := Graph.ofSimpleGraph G)
-    (P := fun i ↦ (P i).toGraph) ha hb (fun _ _ ↦ Set.mem_univ _) (by simpa using hP)
+    (P := fun i ↦ (P i).toGraph) ha hb (fun _ ↦ Set.mem_univ _) (by simpa using hP)
     (by simpa only [Graph.ofSimpleGraph_deleteEdges, reachable_ofSimpleGraph_iff] using hF)
 
 /-- **Weak duality for edge-disjoint walks in a simple graph.** A family of `s`–`t` walks of which
@@ -365,14 +370,9 @@ theorem forall_exists_reachable_deleteEdges_iff_exists_paths [Finite α] {A B : 
   have : Finite (Graph.ofSimpleGraph G).vertexSet := Subtype.finite
   have : Finite (Graph.ofSimpleGraph G).edgeSet := Subtype.finite
   have hgraph := Graph.forall_exists_reachable_deleteEdges_iff_exists_paths
-    (G := Graph.ofSimpleGraph G) (fun _ _ ↦ Set.mem_univ _) hAB k
-  rw [show (∀ F : Finset (Sym2 α), #F < k →
-      ∃ a ∈ A, ∃ b ∈ B, (G.deleteEdges F).Reachable a b) ↔
-      ∃ (a b : Fin k → α) (P : ∀ i, (Graph.ofSimpleGraph G).Walk (a i) (b i)),
-        (∀ i, a i ∈ A) ∧ (∀ i, b i ∈ B) ∧ (∀ i, (P i).IsPath) ∧
-        (∀ i, ∀ v ∈ (P i).support, v ≠ a i → v ≠ b i → v ∉ A ∧ v ∉ B) ∧
-        Pairwise fun i j ↦ (P i).edges.Disjoint (P j).edges by
-    simpa only [Graph.ofSimpleGraph_deleteEdges, reachable_ofSimpleGraph_iff] using hgraph]
+    (G := Graph.ofSimpleGraph G) hAB k
+  simp only [Graph.ofSimpleGraph_deleteEdges, reachable_ofSimpleGraph_iff] at hgraph
+  rw [hgraph]
   refine ⟨fun ⟨a, b, P, ha, hb, hP, hint, hdisj⟩ ↦
     ⟨a, b, fun i ↦ (P i).toSimpleGraph, ha, hb, fun i ↦ ?_, ?_, ?_⟩,
     fun ⟨a, b, P, ha, hb, hP, hint, hdisj⟩ ↦
