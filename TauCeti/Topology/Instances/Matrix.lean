@@ -11,6 +11,7 @@ public import Mathlib.Topology.Algebra.GroupWithZero
 public import Mathlib.Topology.Instances.Matrix
 public import Mathlib.Topology.MetricSpace.Pseudo.Defs
 public import Mathlib.Topology.Metrizable.Basic
+public import TauCeti.LinearAlgebra.Matrix.TensorProduct
 public import TauCeti.Topology.Algebra.IsOpenUnits
 
 /-!
@@ -45,6 +46,7 @@ hypothesis on `R` cannot be dropped: over the adeles, inversion is not continuou
 for the subspace topology, already for `n = 1`.
 
 The Kronecker product of two continuously varying matrices is continuous in the product topology.
+In particular the ⋆-algebra homomorphisms `A ↦ A ⊗ₖ 1` and `B ↦ 1 ⊗ₖ B` are continuous.
 
 ## References
 
@@ -155,3 +157,22 @@ theorem Continuous.matrix_kronecker {X R l m n p : Type*} [TopologicalSpace X]
   intro i j
   simp only [Matrix.kroneckerMap_apply]
   exact (hA.matrix_elem i.1 j.1).mul (hB.matrix_elem i.2 j.2)
+
+namespace Matrix
+
+variable {R m n : Type*} [CommSemiring R] [StarRing R] [Fintype m] [DecidableEq m] [Fintype n]
+  [DecidableEq n] [TopologicalSpace R] [ContinuousMul R]
+
+@[continuity, fun_prop]
+theorem continuous_kroneckerOneStarAlgHom :
+    Continuous (kroneckerOneStarAlgHom R (m := m) n) :=
+  (continuous_id.matrix_kronecker continuous_const).congr fun A ↦
+    (kroneckerOneStarAlgHom_apply A).symm
+
+@[continuity, fun_prop]
+theorem continuous_oneKroneckerStarAlgHom :
+    Continuous (oneKroneckerStarAlgHom R (m := m) n) :=
+  (continuous_const.matrix_kronecker continuous_id).congr fun B ↦
+    (oneKroneckerStarAlgHom_apply B).symm
+
+end Matrix

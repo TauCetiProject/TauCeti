@@ -333,7 +333,7 @@ theorem orthogonalCupCapAt_mul_self {i j : Fin d} (hij : i ≠ j) :
     exact Finset.sum_congr rfl fun e _ => congrArg _ (by
       rw [Function.update_comm hij.symm, Function.update_idem, Function.update_idem])
   rw [LinearMap.compMultilinearMap_apply, LinearMap.compMultilinearMap_apply,
-    Module.End.mul_apply, LinearMap.smul_apply, orthogonalCupCapAt_tprod hij, map_smul, map_sum,
+    mul_apply_eq_comp, LinearMap.smul_apply, orthogonalCupCapAt_tprod hij, map_smul, map_sum,
     Finset.sum_congr rfl fun c _ => hone c, Finset.sum_const, Finset.card_univ, Fintype.card_fin,
     ← Nat.cast_smul_eq_nsmul k, smul_comm]
 
@@ -364,7 +364,7 @@ theorem permTensorAction_swap_mul_orthogonalCupCapAt (i j : Fin d) :
         simp [hij]
       · rw [Equiv.swap_apply_of_ne_of_ne hi hj]
   rw [LinearMap.compMultilinearMap_apply, LinearMap.compMultilinearMap_apply,
-    Module.End.mul_apply, orthogonalCupCapAt_tprod hij, map_smul, map_sum]
+    mul_apply_eq_comp, orthogonalCupCapAt_tprod hij, map_smul, map_sum]
   refine congrArg _ (Finset.sum_congr rfl fun c _ => ?_)
   rw [permTensorAction_apply, LinearEquiv.coe_coe, PiTensorProduct.reindex_tprod, hfix c]
 
@@ -380,7 +380,7 @@ theorem orthogonalCupCapAt_mul_permTensorAction_swap (i j : Fin d) :
   refine PiTensorProduct.ext ?_
   ext v
   rw [LinearMap.compMultilinearMap_apply, LinearMap.compMultilinearMap_apply,
-    Module.End.mul_apply, permTensorAction_apply, LinearEquiv.coe_coe,
+    mul_apply_eq_comp, permTensorAction_apply, LinearEquiv.coe_coe,
     PiTensorProduct.reindex_tprod, orthogonalCupCapAt_tprod hij, orthogonalCupCapAt_tprod hij]
   rw [Equiv.symm_swap, Equiv.swap_apply_left, Equiv.swap_apply_right,
     dotProduct_comm (v j) (v i)]
@@ -414,7 +414,7 @@ theorem permTensorAction_mul_orthogonalCupCapAt (σ : Equiv.Perm (Fin d)) (i j :
       orthogonalCupCapAt k n d (σ i) (σ j) * permTensorAction k n d σ := by
   refine PiTensorProduct.ext ?_
   ext v
-  simp only [LinearMap.compMultilinearMap_apply, Module.End.mul_apply, orthogonalCupCapAt,
+  simp only [LinearMap.compMultilinearMap_apply, mul_apply_eq_comp, orthogonalCupCapAt,
     LinearMap.sum_apply, map_sum, permTensorAction_apply, LinearEquiv.coe_coe,
     PiTensorProduct.reindex_tprod, PiTensorProduct.map_tprod]
   refine Finset.sum_congr rfl fun a _ => Finset.sum_congr rfl fun c _ => congrArg _ (funext ?_)
@@ -550,7 +550,7 @@ theorem orthogonalCupCapAt_mul_mul_self {i j l : Fin d} (hij : i ≠ j) (hjl : j
     simp only [Finset.mem_univ, reduceIte]
     rw [Finset.smul_sum]
   rw [LinearMap.compMultilinearMap_apply, LinearMap.compMultilinearMap_apply,
-    Module.End.mul_apply, Module.End.mul_apply, orthogonalCupCapAt_tprod hij]
+    mul_apply_eq_comp, mul_apply_eq_comp, orthogonalCupCapAt_tprod hij]
   simp only [map_smul, map_sum]
   refine congrArg _ ?_
   rw [Finset.sum_congr rfl fun c _ => hfull c, Finset.sum_comm]
@@ -572,7 +572,7 @@ theorem commute_orthogonalCupCapAt_piTensorProductMap {A : Matrix (Fin n) (Fin n
   have hcap : (A *ᵥ v i) ⬝ᵥ (A *ᵥ v j) = v i ⬝ᵥ v j := by
     rw [Matrix.dotProduct_mulVec, Matrix.vecMul_mulVec, hA, Matrix.vecMul_one]
   rw [LinearMap.compMultilinearMap_apply, LinearMap.compMultilinearMap_apply,
-    Module.End.mul_apply, Module.End.mul_apply, PiTensorProduct.map_tprod,
+    mul_apply_eq_comp, mul_apply_eq_comp, PiTensorProduct.map_tprod,
     orthogonalCupCapAt_tprod hij, orthogonalCupCapAt_tprod hij, map_smul, map_sum]
   simp only [Matrix.mulVecLin_apply]
   rw [hcap]

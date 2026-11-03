@@ -238,7 +238,7 @@ theorem simple_of_simple_obj_of_isZero_obj {M : QuiverRep k Q} {j : Q} (hj : Sim
   · rw [NatTrans.isIso_iff_isIso_app]
     intro a
     rcases eq_or_ne a j with rfl | ha
-    · exact isIso_of_mono_of_nonzero fun hz ↦ h (happ f hz)
+    · exact CategoryTheory.isIso_of_mono_of_ne_zero fun hz ↦ h (happ f hz)
     · have ht := hzero a ha
       have hs : IsZero (N.obj a) := IsZero.of_mono (f.app a) ht
       rw [hs.eq_of_src (f.app a) (hs.iso ht).hom]
@@ -396,7 +396,7 @@ theorem exists_iso_simpleRep_of_simple (hQ : Quiver.IsAcyclic Q) (M : QuiverRep 
     ∃ i : Q, Nonempty (M ≅ simpleRep k Q i) := by
   obtain ⟨i, hi⟩ : ∃ i : Q, ¬IsZero (M.obj i) := by
     by_contra h
-    exact Simple.not_isZero M (Functor.isZero _ fun a ↦ not_not.1 fun ha ↦ h ⟨a, ha⟩)
+    exact Simple.not_isZero M (CategoryTheory.Functor.isZero _ fun a ↦ not_not.1 fun ha ↦ h ⟨a, ha⟩)
   obtain ⟨x, hx⟩ : ∃ x : M.obj ((Paths.of Q).obj i), x ≠ 0 := by
     have : Nontrivial (M.obj ((Paths.of Q).obj i)) := by
       rw [← not_subsingleton_iff_nontrivial]
@@ -471,7 +471,7 @@ theorem exists_mono_simpleRep_of_not_isZero {k : Type u} {Q : Type v}
   let s : Set Q := {i | ¬ IsZero (M.obj i)}
   have hs : s.Nonempty := by
     by_contra h
-    exact hM (Functor.isZero M fun i ↦ not_not.mp fun hi ↦ h ⟨i, hi⟩)
+    exact hM (CategoryTheory.Functor.isZero M fun i ↦ not_not.mp fun hi ↦ h ⟨i, hi⟩)
   -- Choose a maximal vertex in the nonzero support for the reachability relation.
   let : LE Q := ⟨fun i j ↦ Nonempty (Quiver.Path i j)⟩
   have : IsTrans Q (· ≤ · : Q → Q → Prop) := ⟨fun _ _ _ hij hjl ↦ by
@@ -496,7 +496,7 @@ theorem exists_mono_simpleRep_of_not_isZero {k : Type u} {Q : Type v}
       exact False.elim (hp (hQ.length_eq_zero p))
     · have : Subsingleton (M.obj j) := ModuleCat.subsingleton_of_isZero (hzero hji p)
       exact Subsingleton.elim _ _
-  refine ⟨i, simpleRepHom x hxp, mono_of_nonzero_from_simple ?_⟩
+  refine ⟨i, simpleRepHom x hxp, CategoryTheory.mono_of_ne_zero_from_simple ?_⟩
   intro hf
   apply hx
   simpa [hf] using

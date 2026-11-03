@@ -79,7 +79,7 @@ private theorem taylorExpAt_eq_exp_restrict (r : R) {n : ℕ}
   apply sum_congr rfl
   intro i _
   rw [Module.End.pow_restrict, LinearMap.restrict_apply]
-  simp only [Module.End.pow_apply, AddMonoidHom.coe_toRatLinearMap,
+  simp only [_root_.pow_apply_eq_iterate, AddMonoidHom.coe_toRatLinearMap,
     LinearMap.toAddMonoidHom_coe, coeFn_coe, iterate_smul_apply]
 
 /-- Flowing for `s` and then for `r` is flowing for `r + s`. -/
@@ -92,14 +92,14 @@ theorem taylorExpAt_add (r s : R) :
   let f := D.toLinearMap.toAddMonoidHom.toRatLinearMap
   let K := LinearMap.ker (f ^ n)
   have hmem (x : A) : x ∈ K ↔ D^[n] x = 0 := by
-    simp only [K, LinearMap.mem_ker, Module.End.pow_apply, f,
+    simp only [K, LinearMap.mem_ker, _root_.pow_apply_eq_iterate, f,
       AddMonoidHom.coe_toRatLinearMap, LinearMap.toAddMonoidHom_coe, coeFn_coe]
   have hstable (t : R) : ∀ x ∈ K, (t • D) x ∈ K := by
     intro x hx
     rw [hmem] at hx ⊢
     calc
       D^[n] ((t • D) x) = t • D^[n] (D x) := by
-        simpa only [Module.End.pow_apply, coeFn_coe, smul_apply] using
+        simpa only [_root_.pow_apply_eq_iterate, coeFn_coe, _root_.smul_apply] using
           (D.toLinearMap ^ n).map_smul t (D x)
       _ = 0 := by
         rw [← Function.iterate_succ_apply, Function.iterate_succ_apply', hx,
@@ -111,7 +111,7 @@ theorem taylorExpAt_add (r s : R) :
   have hg_apply (t : R) :
       Function.Semiconj (fun y : K => (y : A)) (g t) (t • D) := fun _ => rfl
   have hpow (t : R) (i : ℕ) (y : K) : ((g t ^ i) y : A) = (t • D)^[i] y := by
-    simpa only [Module.End.pow_apply, coe_smul] using (hg_apply t).iterate_right i y
+    simpa only [_root_.pow_apply_eq_iterate, FunLike.coe_smul] using (hg_apply t).iterate_right i y
   have hnil (t : R) : g t ^ n = 0 := by
     ext x
     simp only [hpow, iterate_smul_apply, (hmem x).mp x.property, smul_zero,
@@ -122,14 +122,14 @@ theorem taylorExpAt_add (r s : R) :
     taylorExpAt_eq_exp_restrict D hD t K (hstable t) (hnil t) y ((hmem y).mp y.property)
   have hc : Commute (g r) (g s) := by
     ext y
-    simp [Module.End.mul_apply, g, smul_smul, mul_comm]
+    simp [_root_.mul_apply_eq_comp, g, smul_smul, mul_comm]
   have hg : g (r + s) = g r + g s := by
     ext y
     simp [g, add_smul]
   have h := IsNilpotent.exp_add_of_commute (A := Module.End ℚ K) hc ⟨n, hnil r⟩ ⟨n, hnil s⟩
   rw [← hg] at h
   have hv := congrArg (fun k : Module.End ℚ K => (k x : A)) h
-  simpa only [Module.End.mul_apply, ← heq, AlgHom.comp_apply] using hv
+  simpa only [_root_.mul_apply_eq_comp, ← heq, AlgHom.comp_apply] using hv
 
 /-- Evaluating the polynomial flow at `r` is the Taylor exponential of `r • D`. -/
 theorem taylorExpAt_eq_taylorExp_smul (r : R) :

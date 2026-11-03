@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Geometry.Manifold.VectorBundle.Hom
 public import TauCeti.Geometry.Symplectic.Cayley.Smooth
-public import TauCeti.Geometry.Symplectic.Manifold.TwoForm
+public import TauCeti.Geometry.Symplectic.Manifold.AlmostComplex.Pullback
 
 /-!
 # Smooth Cayley paths of compatible almost complex structures
@@ -35,7 +35,9 @@ smooth at invertible operators. No compactness of `M` and no closedness of `σ` 
 
 Such collar-constant families are the input for extending prescribed almost complex structures
 across collars, for instance for building a structure on a mapping torus out of `J₀` and its
-pullback by the monodromy.
+pullback by the monodromy. Since the path is a rational expression in `J₀` and `J₁`, it depends
+only on the two endpoints and is natural: pulling it back along a diffeomorphism gives the path
+between the pulled-back structures, for the pulled-back form.
 
 ## Main definitions
 
@@ -52,6 +54,8 @@ pullback by the monodromy.
   for `1 ≤ t`.
 * `TauCeti.SmoothTwoForm.Compatible.contMDiff_cayleyPath`: the family is jointly smooth in
   `(t, x)`.
+* `TauCeti.SmoothTwoForm.Compatible.cayleyPath_congr`: the path depends only on its endpoints.
+* `TauCeti.SmoothTwoForm.Compatible.pullback_cayleyPath`: naturality under diffeomorphisms.
 
 ## References
 
@@ -253,6 +257,38 @@ theorem contMDiff_cayleyPath :
         (E := fun x : M ↦ TangentSpace I x →L[ℝ] TangentSpace I x)
         p.2 ((h₀.cayleyPath h₁ p.1).toEndomorphism p.2)) :=
   contMDiff_cayleyPathEnd h₀ h₁
+
+/-- The endomorphism of `T_x M` underlying the path is the Cayley path expression in the fibre
+values of `J₀` and `J₁`. -/
+private theorem cayleyPath_toEndomorphism (t : ℝ) (x : M) :
+    (h₀.cayleyPath h₁ t).toEndomorphism x =
+      cayleyPathFormula (smoothTransition t) (J₀.toEndomorphism x) (J₁.toEndomorphism x) :=
+  cayleyPathEnd_eq h₀ h₁ t x
+
+/-- The Cayley path depends only on its endpoints, not on the form they are compatible with. -/
+theorem cayleyPath_congr {σ' : SmoothTwoForm I M} {J₀' J₁' : SmoothAlmostComplexStructure I M}
+    (h₀' : σ'.Compatible J₀') (h₁' : σ'.Compatible J₁') (hJ₀ : J₀ = J₀') (hJ₁ : J₁ = J₁')
+    (t : ℝ) : h₀.cayleyPath h₁ t = h₀'.cayleyPath h₁' t := by
+  subst hJ₀ hJ₁
+  apply SmoothAlmostComplexStructure.toEndomorphism_injective
+  ext x : 1
+  rw [cayleyPath_toEndomorphism, cayleyPath_toEndomorphism]
+
+/-- Pulling the Cayley path back along a diffeomorphism gives the Cayley path between the
+pulled-back structures, for the pulled-back form. -/
+theorem pullback_cayleyPath {E' H' M' : Type*} [NormedAddCommGroup E'] [NormedSpace ℝ E']
+    [FiniteDimensional ℝ E'] [TopologicalSpace H'] {I' : ModelWithCorners ℝ E' H'}
+    [TopologicalSpace M'] [ChartedSpace H' M'] [IsManifold I' ∞ M'] {σ' : SmoothTwoForm I' M'}
+    {J₀' J₁' : SmoothAlmostComplexStructure I' M'} (h₀' : σ'.Compatible J₀')
+    (h₁' : σ'.Compatible J₁') (h : M ≃ₘ⟮I, I'⟯ M') (t : ℝ) :
+    (h₀'.cayleyPath h₁' t).pullback h = (h₀'.pullback h).cayleyPath (h₁'.pullback h) t := by
+  apply SmoothAlmostComplexStructure.toEndomorphism_injective
+  ext x : 1
+  -- Both sides are the Cayley path expression, and pulling back is a conjugation.
+  rw [SmoothAlmostComplexStructure.pullback_toEndomorphism, cayleyPath_toEndomorphism,
+    cayleyPath_toEndomorphism, map_cayleyPathFormula,
+    SmoothAlmostComplexStructure.pullback_toEndomorphism,
+    SmoothAlmostComplexStructure.pullback_toEndomorphism]
 
 end SmoothTwoForm.Compatible
 

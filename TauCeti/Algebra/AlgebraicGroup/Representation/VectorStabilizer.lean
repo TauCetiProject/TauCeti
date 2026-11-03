@@ -310,8 +310,8 @@ theorem stabilizerHopfIdeal_basePointsRepresentation (v : M)
     rw [hconj] at hp
     have hp' := endOfPoint_one_tmul_basePointsRepresentation_of_conj
       (V := M) p.ofConv g⁻¹ (y := 1) (by simpa only [inv_inv] using hp)
-    simpa only [← Module.End.mul_apply, ← map_mul, inv_mul_cancel, map_one,
-      Module.End.one_apply] using hp'
+    simpa only [← mul_apply_eq_comp, ← map_mul, inv_mul_cancel, map_one,
+      one_apply_eq_self] using hp'
   · intro hp
     apply endOfPoint_one_tmul_basePointsRepresentation_of_conj
       (V := M) _ g (y := 1)
