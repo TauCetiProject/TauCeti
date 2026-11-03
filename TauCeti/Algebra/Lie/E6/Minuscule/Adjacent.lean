@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Lie.E6.Minuscule.GroupScheme
+public import TauCeti.LinearAlgebra.Matrix.Cartan.Basic
 import TauCeti.LinearAlgebra.Matrix.UnipotentCommutator
 
 /-!
@@ -38,24 +39,15 @@ open scoped commutatorElement
 
 attribute [local instance 100] LieRing.ofAssociativeRing
 
-private theorem adjacent_ne {i j : Fin 6} (hij : CartanMatrix.E 6 i j = -1) : i ≠ j := by
-  rintro rfl
-  have hdiag : CartanMatrix.E 6 i i = 2 := CartanMatrix.E_diag 6 i
-  omega
-
-private theorem adjacent_reverse {i j : Fin 6} (hij : CartanMatrix.E 6 i j = -1) :
-    CartanMatrix.E 6 j i = -1 := by
-  rw [(CartanMatrix.E_isSymm 6).apply, hij]
-
 private theorem raising_lie_lie_eq_zero {i j : Fin 6} (hij : CartanMatrix.E 6 i j = -1) :
     ⁅raisingMatrix i, ⁅raisingMatrix i, raisingMatrix j⁆⁆ = 0 := by
-  simpa only [Matrix.transpose_apply, adjacent_reverse hij, neg_neg, Int.toNat_one,
-    pow_one, LieAlgebra.ad_apply] using isSerreSystem.ad_pow_lie_E_E i j
+  simpa only [Matrix.transpose_apply, (CartanMatrix.E_isSymm 6).apply i j, hij, neg_neg,
+    Int.toNat_one, pow_one, LieAlgebra.ad_apply] using isSerreSystem.ad_pow_lie_E_E i j
 
 private theorem lowering_lie_lie_eq_zero {i j : Fin 6} (hij : CartanMatrix.E 6 i j = -1) :
     ⁅loweringMatrix i, ⁅loweringMatrix i, loweringMatrix j⁆⁆ = 0 := by
-  simpa only [Matrix.transpose_apply, adjacent_reverse hij, neg_neg, Int.toNat_one,
-    pow_one, LieAlgebra.ad_apply] using isSerreSystem.ad_pow_lie_F_F i j
+  simpa only [Matrix.transpose_apply, (CartanMatrix.E_isSymm 6).apply i j, hij, neg_neg,
+    Int.toNat_one, pow_one, LieAlgebra.ad_apply] using isSerreSystem.ad_pow_lie_F_F i j
 
 /-- At adjacent nodes, the commutator of positive root points, followed by a commutator
 with the opposite of the second root, recovers the first positive root parameter. -/
@@ -65,10 +57,11 @@ theorem commutatorElement_commutatorElement_rootSubgroupPoints_inl {i j : Fin 6}
         rootSubgroupPoints (.inl j) A (Multiplicative.ofAdd s)⁆,
       rootSubgroupPoints (.inr j) A (Multiplicative.ofAdd r)⁆ =
         rootSubgroupPoints (.inl i) A (Multiplicative.ofAdd (t * s * r)) := by
-  have hAC := isSerreSystem.lie_E_F_of_ne i j (adjacent_ne hij)
+  have hji := ((CartanMatrix.E_isSymm 6).apply i j).trans hij
+  have hAC := isSerreSystem.lie_E_F_of_ne i j (CartanMatrix.E_ne_of_eq_neg_one hij)
   have hABC : ⁅⁅raisingMatrix i, raisingMatrix j⁆, loweringMatrix j⁆ = raisingMatrix i := by
     simpa only [Matrix.transpose_apply, hij, neg_one_zsmul, neg_neg] using
-      isSerreSystem.lie_lie_E_E_F_of_ne (adjacent_ne hij)
+      isSerreSystem.lie_lie_E_E_F_of_ne (CartanMatrix.E_ne_of_eq_neg_one hij)
   apply (points A).subtype_injective
   simp only [map_commutatorElement, Subgroup.subtype_apply]
   apply Units.ext
@@ -78,7 +71,7 @@ theorem commutatorElement_commutatorElement_rootSubgroupPoints_inl {i j : Fin 6}
     (by simpa only [pow_two] using raisingMatrix_pow_two i)
     (by simpa only [pow_two] using raisingMatrix_pow_two j)
     (by simpa only [pow_two] using loweringMatrix_pow_two j)
-    hAC hABC (raising_lie_lie_eq_zero hij) (raising_lie_lie_eq_zero (adjacent_reverse hij))
+    hAC hABC (raising_lie_lie_eq_zero hij) (raising_lie_lie_eq_zero hji)
     t s r _ _ _
     (by rw [coe_rootSubgroupPoints_inl, toAdd_ofAdd, weightTable_raisingMatrix])
     (by rw [coe_rootSubgroupPoints_inl, toAdd_ofAdd, weightTable_raisingMatrix])
@@ -92,11 +85,13 @@ theorem commutatorElement_commutatorElement_rootSubgroupPoints_inr {i j : Fin 6}
         rootSubgroupPoints (.inr j) A (Multiplicative.ofAdd s)⁆,
       rootSubgroupPoints (.inl j) A (Multiplicative.ofAdd r)⁆ =
         rootSubgroupPoints (.inr i) A (Multiplicative.ofAdd (t * s * r)) := by
+  have hji := ((CartanMatrix.E_isSymm 6).apply i j).trans hij
   have hAC : ⁅loweringMatrix i, raisingMatrix j⁆ = 0 := by
-    rw [← lie_skew, isSerreSystem.lie_E_F_of_ne j i (adjacent_ne hij).symm, neg_zero]
+    rw [← lie_skew, isSerreSystem.lie_E_F_of_ne j i (CartanMatrix.E_ne_of_eq_neg_one hij).symm,
+      neg_zero]
   have hABC : ⁅⁅loweringMatrix i, loweringMatrix j⁆, raisingMatrix j⁆ = loweringMatrix i := by
     simpa only [Matrix.transpose_apply, hij, neg_one_zsmul, neg_neg] using
-      isSerreSystem.lie_lie_F_F_E_of_ne (adjacent_ne hij)
+      isSerreSystem.lie_lie_F_F_E_of_ne (CartanMatrix.E_ne_of_eq_neg_one hij)
   apply (points A).subtype_injective
   simp only [map_commutatorElement, Subgroup.subtype_apply]
   apply Units.ext
@@ -106,7 +101,7 @@ theorem commutatorElement_commutatorElement_rootSubgroupPoints_inr {i j : Fin 6}
     (by simpa only [pow_two] using loweringMatrix_pow_two i)
     (by simpa only [pow_two] using loweringMatrix_pow_two j)
     (by simpa only [pow_two] using raisingMatrix_pow_two j)
-    hAC hABC (lowering_lie_lie_eq_zero hij) (lowering_lie_lie_eq_zero (adjacent_reverse hij))
+    hAC hABC (lowering_lie_lie_eq_zero hij) (lowering_lie_lie_eq_zero hji)
     t s r _ _ _
     (by rw [coe_rootSubgroupPoints_inr, toAdd_ofAdd, weightTable_loweringMatrix])
     (by rw [coe_rootSubgroupPoints_inr, toAdd_ofAdd, weightTable_loweringMatrix])
