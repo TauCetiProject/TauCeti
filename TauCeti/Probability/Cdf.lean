@@ -41,6 +41,9 @@ nonnegative point `x` it is the mass `μ` gives to the initial segment below the
   has full topological support;
 * `MeasureTheory.Measure.strictMonoOn_cdf_of_subset_support` proves strict increase on any
   interval contained in the support;
+* `MeasureTheory.Measure.cdf_pos_of_mem_support_of_lt` and
+  `MeasureTheory.Measure.cdf_lt_one_of_mem_support_of_lt` derive strict cdf bounds from a
+  support point on the appropriate side of the cutoff;
 * `MeasureTheory.Measure.cdf_lt_one_of_strictMonoOn_Ici` gives a strict upper bound for cdfs
   that increase strictly on a right half-line;
 * `MeasureTheory.Measure.cdf_sublevel_measure` evaluates the measure of a CDF sublevel set for
@@ -333,6 +336,27 @@ theorem strictMonoOn_cdf_of_subset_support (ν : Measure ℝ) [IsProbabilityMeas
   obtain ⟨c, hac, hcb⟩ := exists_between hab
   exact ((mem_support_iff_forall _).mp (hν (hs.out ha hb ⟨hac.le, hcb.le⟩)) (Ioo a b)
     (Ioo_mem_nhds hac hcb)).trans_le (measure_mono Ioo_subset_Ioc_self)
+
+/-- A support point strictly below a cutoff forces the cdf at the cutoff to be positive. -/
+theorem cdf_pos_of_mem_support_of_lt (μ : Measure ℝ) [IsProbabilityMeasure μ]
+    {x y : ℝ} (hy : y ∈ μ.support) (hyx : y < x) : 0 < cdf μ x := by
+  rw [cdf_eq_real, measureReal_def]
+  apply ENNReal.toReal_pos
+  · exact ((mem_support_iff_forall y).mp hy (Iic x)
+      (mem_of_superset (Iio_mem_nhds hyx) Iio_subset_Iic_self)).ne'
+  · finiteness
+
+/-- A support point strictly above a cutoff forces the cdf at the cutoff to be less than one. -/
+theorem cdf_lt_one_of_mem_support_of_lt (μ : Measure ℝ) [IsProbabilityMeasure μ]
+    {x y : ℝ} (hy : y ∈ μ.support) (hxy : x < y) : cdf μ x < 1 := by
+  have htail : 0 < μ.real (Ioi x) := by
+    rw [measureReal_def]
+    apply ENNReal.toReal_pos
+    · exact ((mem_support_iff_forall y).mp hy (Ioi x) (Ioi_mem_nhds hxy)).ne'
+    · finiteness
+  rw [← compl_Iic, probReal_compl_eq_one_sub measurableSet_Iic] at htail
+  rw [cdf_eq_real]
+  linarith
 
 /-- A law carried by an open interval with full closed-interval support has positive cdf
 exactly above the lower endpoint. -/
