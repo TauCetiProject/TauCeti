@@ -237,7 +237,7 @@ theorem pbwBasis_eq_prod_pow_fin {n : ℕ} (b : Basis (Fin n) R L) (c : Fin n �
             List.map_cons, List.prod_cons, Finsupp.notMem_support_iff.mp hi, pow_zero,
             one_mul, ih]
   rw [pbwBasis_eq_prod_pow, ← hsort, hprod]
-  rfl
+  simp only [d, Finsupp.coe_equivFunOnFinite_symm]
 
 @[simp]
 theorem pbwBasis_single (i : ι) (k : ℕ) :

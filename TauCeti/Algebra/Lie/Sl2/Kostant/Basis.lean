@@ -117,8 +117,8 @@ Its indices are `((a, b), c)`, the lowering, Cartan and raising exponents, respe
 The rational basis does not require the `sl₂` bracket relations. -/
 def orderedKostantBasis (b : Basis (Fin 3) ℚ L) :
     Basis ((ℕ × ℕ) × ℕ) ℚ (_root_.UniversalEnvelopingAlgebra ℚ L) :=
-  (((dividedPowerBasis.tensorProduct (binomialPolynomialBasis ℚ)).tensorProduct
-    dividedPowerBasis).map
+  (((dividedPowerPolynomialBasis.tensorProduct (binomialPolynomialBasis ℚ)).tensorProduct
+    dividedPowerPolynomialBasis).map
       (LinearEquiv.ofBijective _ (polynomialMul_bijective b)))
 
 /-- The ordered rational basis vector is `f⁽ᵃ⁾ (h choose b) e⁽ᶜ⁾`. -/
