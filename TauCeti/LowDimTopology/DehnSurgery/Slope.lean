@@ -96,11 +96,11 @@ through the public defining equations (`Slope.congr_mk`, `Slope.value_mk`, `slop
 ordinary propositional lemmas instead of implicitly `@[defeq]` ones; an exported `@[defeq]` theorem
 would have to expose every definition it unfolds. -/
 
-variable {M N : Type*} [AddCommGroup M] [AddCommGroup N]
+variable {M N : Type*} [AddCommGroup M] [AddCommGroup N] [Module ℤ M] [Module ℤ N]
 
 /-- Two primitive classes represent the same slope when they agree up to sign. This is an
 equivalence relation on primitive classes. -/
-private def slopeSetoid (M : Type*) [AddCommGroup M] :
+private def slopeSetoid (M : Type*) [AddCommGroup M] [Module ℤ M] :
     Setoid {v : M // IsPrimitive v} where
   r a b := a.1 = b.1 ∨ a.1 = -b.1
   iseqv :=
@@ -122,7 +122,7 @@ private theorem slopeSetoid_rel_iff {a b : {v : M // IsPrimitive v}} :
 /-- A **slope** on a boundary torus with homology `M`: a primitive homology class taken modulo the
 sign action, i.e. an unoriented essential simple closed curve up to isotopy. This is basis-free — it
 refers only to the abstract module `M`, not to any choice of meridian-longitude basis. -/
-def Slope (M : Type*) [AddCommGroup M] : Type _ :=
+def Slope (M : Type*) [AddCommGroup M] [Module ℤ M] : Type _ :=
   Quotient (slopeSetoid M)
 
 namespace Slope
@@ -146,10 +146,6 @@ theorem mk_eq_mk_iff {v w : M} (hv : IsPrimitive v) (hw : IsPrimitive w) :
 theorem induction_on {C : Slope M → Prop} (s : Slope M)
     (h : ∀ (v : M) (hv : IsPrimitive v), C (mk v hv)) : C s :=
   Quotient.inductionOn s fun v => h v.1 v.2
-
-section congr
-
-variable [Module ℤ M] [Module ℤ N]
 
 /-- A `ℤ`-linear equivalence `M ≃ₗ[ℤ] N` transports slopes bijectively; a framing's coordinate
 isomorphism uses this to carry a slope to the standard lattice. -/
@@ -182,8 +178,6 @@ theorem congr_symm (φ : M ≃ₗ[ℤ] N) : (congr φ).symm = congr φ.symm := b
   | h w hw =>
     rw [Equiv.symm_apply_eq, congr_mk, congr_mk]
     exact mk_eq_mk _ _ (Or.inl (φ.apply_symm_apply w).symm)
-
-end congr
 
 end Slope
 
