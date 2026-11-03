@@ -16,6 +16,10 @@ import TauCeti.RingTheory.Ideal.Operations
 This file produces regular sequences on a module `M` from local information.
 
 If `a, b` is a weakly `M`-regular sequence, then `bʲ` is regular on `M ⧸ aⁿ M` for all `n` and `j`.
+For `M = R`, an element of the total ring of fractions of `R` which lies in `R` after multiplication
+by a power of `a`, and also after multiplication by a power of `b`, already lies in `R`. When `a`
+and `b` are non-zero-divisors, this says that `R_a` and `R_b` intersect in `R` inside the total
+ring of fractions.
 
 If `f₁, …, f_r` is weakly `M`-regular, every relation `∑ fᵢ mᵢ = 0` with `mᵢ ∈ M` has all its
 coefficients in `(f₁, …, f_r) M`. Dividing the last element out first,
@@ -42,6 +46,9 @@ extend sections of `M~` across `V(I)` (Stacks, Lemma 31.5.11 (0E9I)).
   forces `m ∈ a M`.
 * `RingTheory.Sequence.IsWeaklyRegular.isSMulRegular_quotSMulTop_pow`: for a weakly `M`-regular
   sequence `a, b`, the power `bʲ` is regular on `M ⧸ aⁿ M`.
+* `RingTheory.Sequence.IsWeaklyRegular.mem_range_algebraMap_of_pow_mul_mem`: for a weakly
+  `R`-regular sequence `a, b`, a fraction which lies in `R` after multiplication by a power of `a`,
+  and also after multiplication by a power of `b`, already lies in `R`.
 * `RingTheory.Sequence.IsWeaklyRegular.mem_ofList_smul_top_of_sum_eq_zero`: the coefficients of a
   relation `∑ fᵢ mᵢ = 0` among a weakly `M`-regular sequence lie in `(f₁, …, f_r) M`.
 * `Ideal.exists_mem_isSMulRegular_iff`: `I` contains an `M`-regular element if and only if it lies
@@ -126,6 +133,35 @@ theorem RingTheory.Sequence.IsWeaklyRegular.isSMulRegular_quotSMulTop_pow {a b :
     exact Submodule.smul_mem_pointwise_smul _ _ ⊤ trivial
 
 end Pow
+
+section FractionRing
+
+variable {R : Type u} [CommRing R] {K : Type v} [CommRing K] [Algebra R K] [IsFractionRing R K]
+
+/-- If `a, b` is a weakly `R`-regular sequence, an element of the total ring of fractions of `R`
+which lies in `R` after multiplication by a power of `a`, and also after multiplication by a power
+of `b`, already lies in `R`. When `b` is also a non-zero-divisor, this says that the localizations
+`R_a` and `R_b` intersect in `R` inside the total ring of fractions. -/
+theorem RingTheory.Sequence.IsWeaklyRegular.mem_range_algebraMap_of_pow_mul_mem {a b : R}
+    (h : IsWeaklyRegular R [a, b]) {z : K} {n j : ℕ}
+    (ha : algebraMap R K (a ^ n) * z ∈ (algebraMap R K).range)
+    (hb : algebraMap R K (b ^ j) * z ∈ (algebraMap R K).range) :
+    z ∈ (algebraMap R K).range := by
+  obtain ⟨u, hu⟩ := ha
+  obtain ⟨v, hv⟩ := hb
+  have han : IsSMulRegular R (a ^ n) := ((isWeaklyRegular_cons_iff R a [b]).1 h).1.pow n
+  -- Cross-multiplying, `bʲ u = aⁿ v`, so `u ∈ aⁿ R` as `bʲ` is regular on `R ⧸ aⁿ R`.
+  have huv : a ^ n • v = b ^ j • u := IsFractionRing.injective R K <| by
+    simp only [smul_eq_mul, map_mul, hu, hv]
+    ring
+  obtain ⟨c, -, rfl⟩ := (Submodule.mem_smul_pointwise_iff_exists _ _ _).1
+    (TauCeti.isSMulRegular_quotSMulTop_iff.1 (h.isSMulRegular_quotSMulTop_pow n j) u v huv)
+  -- Then `aⁿ z = aⁿ c`, and `aⁿ` is a unit of `K`.
+  refine ⟨c, (IsLocalization.map_units K (⟨a ^ n, ?_⟩ : nonZeroDivisors R)).mul_left_cancel ?_⟩
+  · exact ((Commute.isRegular_iff fun _ ↦ Commute.all _ _).2 han).mem_nonZeroDivisors
+  · simpa [smul_eq_mul] using hu
+
+end FractionRing
 
 section Relations
 

@@ -37,6 +37,9 @@ Mathlib's `IsLocalization.integralClosure` states this for the literal subalgebr
   `isScalarTower_integralClosureMapAlgebra_left` and
   `isScalarTower_integralClosureMapAlgebra_right`; this is the structure Mathlib's
   `IsLocalization.integralClosure` asks its caller to supply.
+* `TauCeti.exists_isIntegral_pow_smul_of_isLocalization`: if `x` is regular on an `A`-algebra `R`
+  and `R_x` is integral over `A_x`, every element of `R` becomes integral over `A` after
+  multiplication by a power of `x`.
 * `TauCeti.IsLocalization.isIntegrallyClosedIn`: if `R` is integrally closed in `S`, then `M⁻¹R` is
   integrally closed in `M⁻¹S`. Ported from T. Dupuy, T. Tucker and Z. Wang,
   [pcfawd-formalization](https://github.com/tdupu/pcfawd-formalization) at commit
@@ -257,6 +260,29 @@ theorem IsLocalization.isIntegrallyClosedIn (M : Submonoid R) [IsLocalization M 
     exact e'.symm
 
 end IsIntegrallyClosedIn
+
+section PowSMul
+
+variable {A R : Type*} [CommRing A] [CommRing R] [Algebra A R] {x : A}
+  (Ax Rx : Type*) [CommRing Ax] [CommRing Rx] [Algebra A Ax] [Algebra Ax Rx]
+  [Algebra A Rx] [Algebra R Rx] [IsScalarTower A Ax Rx] [IsScalarTower A R Rx]
+  [IsLocalization.Away x Ax] [IsLocalization.Away (algebraMap A R x) Rx]
+
+/-- If `x` is regular on `R` and the localization `R_x` is integral over `A_x`, every element of
+`R` becomes integral over `A` after multiplication by a power of `x`. -/
+theorem exists_isIntegral_pow_smul_of_isLocalization [Algebra.IsIntegral Ax Rx]
+    (hx : IsSMulRegular R x) (r : R) : ∃ n : ℕ, IsIntegral A (x ^ n • r) := by
+  obtain ⟨⟨_, n, rfl⟩, hn⟩ := IsIntegral.exists_multiple_integral_of_isLocalization
+    (.powers x) (Rₘ := Ax) (algebraMap R Rx r) (Algebra.IsIntegral.isIntegral _)
+  refine ⟨n, (isIntegral_algHom_iff (IsScalarTower.toAlgHom A R Rx) ?_).1 ?_⟩
+  · -- `R → R_x` is injective as `x` is regular on `R`.
+    refine IsLocalization.injective Rx (M := .powers (algebraMap A R x)) (Submonoid.powers_le.2 ?_)
+    rw [mem_nonZeroDivisors_iff_right]
+    intro r hr
+    exact hx (by simpa [Algebra.smul_def, mul_comm] using hr)
+  · simpa [Submonoid.smul_def, Algebra.smul_def, IsScalarTower.algebraMap_apply A R Rx] using hn
+
+end PowSMul
 
 end TauCeti
 
