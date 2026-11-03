@@ -71,6 +71,7 @@ theorem finite_compl_fixedBy_iff_eventually_eq_self {α : Type*} [LinearOrder α
 
 /-- Mathlib's finite-support predicate `(MulAction.fixedBy α ·)ᶜ.Finite` is invariant under
 conjugation; in particular this applies to conjugation of permutations. -/
+@[simp]
 theorem finite_compl_fixedBy_conj {G α : Type*} [Group G] [MulAction G α] {g h : G} :
     (MulAction.fixedBy α (g⁻¹ * h * g))ᶜ.Finite ↔ (MulAction.fixedBy α h)ᶜ.Finite := by
   simpa [Set.smul_set_compl, MulAction.smul_fixedBy] using
