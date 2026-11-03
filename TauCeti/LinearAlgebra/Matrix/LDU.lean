@@ -5,8 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.LinearAlgebra.Matrix.Block
 public import Mathlib.LinearAlgebra.Matrix.NonsingularInverse
+public import TauCeti.LinearAlgebra.Matrix.Block
 
 /-!
 # Block `LDU` factorization
@@ -37,8 +37,8 @@ unique. Ring homomorphisms preserve all three shapes (`Matrix.BlockUnitriangular
 coefficient ring. The leading blocks of a product `L * g * U` with `L` block lower triangular and
 `U` block upper triangular are the products of the leading blocks of the three factors
 (`Matrix.BlockTriangular.toSquareBlockProp_mul_of_toDual` and
-`Matrix.BlockTriangular.toSquareBlockProp_mul`), which is how membership in the big cell is read
-off a Bruhat normal form.
+`Matrix.BlockTriangular.toSquareBlockProp_mul`, in `TauCeti.LinearAlgebra.Matrix.Block`), which is
+how membership in the big cell is read off a Bruhat normal form.
 
 ## Main definitions
 
@@ -50,10 +50,6 @@ off a Bruhat normal form.
 * `Matrix.BlockUnitriangular.det_eq_one`, `Matrix.BlockUnitriangular.mul` and
   `Matrix.BlockUnitriangular.inv`: block unitriangular matrices have determinant one and are
   closed under products and inverses.
-* `Matrix.BlockTriangular.toSquareBlockProp_mul_of_toDual` and
-  `Matrix.BlockTriangular.toSquareBlockProp_mul`: on a down-closed set of indices, the square block
-  of a product with a block lower triangular left factor, or a block upper triangular right factor,
-  is the product of the square blocks.
 * `Matrix.mul_eq_of_blockUnitriangular_toDual`: a block diagonal matrix multiplied on the left by
   a block lower unitriangular matrix is unchanged once the product is block upper triangular.
 * `Matrix.det_toSquareBlockProp_blockLDU`: the leading block minors of `L * D * U` are those of
@@ -62,8 +58,6 @@ off a Bruhat normal form.
 * `Matrix.exists_blockLDU`: a block `LDU` factorization exists when the leading blocks on the
   strict initial segments have unit determinants.
 * `Matrix.eq_of_blockLDU_eq`: uniqueness of the factorization with invertible middle factor.
-* `Matrix.isUnit_det_toSquareBlockProp_lt`: unit leading block minors give unit determinants of
-  the leading blocks on the strict initial segments.
 * `Matrix.exists_blockLDU_iff`: a block `LDU` factorization with invertible middle factor exists
   exactly when all leading block minors are units.
 
@@ -109,6 +103,7 @@ theorem BlockUnitriangular.apply_of_eq (h : M.BlockUnitriangular b) {i j : m} (h
     M i j = (1 : Matrix m m R) i j :=
   h.2 hij
 
+@[simp]
 theorem blockUnitriangular_one {α : Type*} [Preorder α] {b : m → α} :
     (1 : Matrix m m R).BlockUnitriangular b :=
   ⟨blockTriangular_one, fun _ _ _ => rfl⟩
@@ -187,42 +182,6 @@ theorem mul_eq_of_blockUnitriangular_toDual {Z D : Matrix m m R}
   · rw [hZD hij, hD hij]
 
 end Mul
-
-/-! ### Leading blocks of products -/
-
-section LeadingBlocks
-
-variable [Fintype m] [NonUnitalNonAssocSemiring R] [LinearOrder α] {b : m → α}
-
-omit [DecidableEq m] in
-/-- **Leading blocks of a product with a block lower triangular left factor.** If `A` is block
-lower triangular for `b` and `p` picks out a set of indices that is down-closed for `b`, then the
-square block of `A * B` on `p` is the product of the square blocks of `A` and `B` on `p`. -/
-theorem BlockTriangular.toSquareBlockProp_mul_of_toDual {A : Matrix m m R}
-    (hA : A.BlockTriangular (toDual ∘ b)) {p : m → Prop} [DecidablePred p]
-    (hp : ∀ ⦃i j⦄, b j ≤ b i → p i → p j) (B : Matrix m m R) :
-    (A * B).toSquareBlockProp p = A.toSquareBlockProp p * B.toSquareBlockProp p := by
-  ext i j
-  simp only [toSquareBlockProp_def, of_apply, Matrix.mul_apply]
-  refine (Fintype.sum_subtype_add_sum_subtype p fun k => A i k * B k j).symm.trans ?_
-  rw [Fintype.sum_eq_zero (fun k : {k // ¬p k} => A i k * B k j) fun k => ?_, add_zero]
-  have hik : b i < b k := lt_of_not_ge fun h => k.2 (hp h i.2)
-  rw [hA (toDual_lt_toDual.mpr hik), zero_mul]
-
-omit [DecidableEq m] in
-/-- **Leading blocks of a product with a block upper triangular right factor.** If `A` is block
-upper triangular for `b` and `p` picks out a set of indices that is down-closed for `b`, then the
-square block of `B * A` on `p` is the product of the square blocks of `B` and `A` on `p`. -/
-theorem BlockTriangular.toSquareBlockProp_mul {A : Matrix m m R} (hA : A.BlockTriangular b)
-    {p : m → Prop} [DecidablePred p] (hp : ∀ ⦃i j⦄, b j ≤ b i → p i → p j) (B : Matrix m m R) :
-    (B * A).toSquareBlockProp p = B.toSquareBlockProp p * A.toSquareBlockProp p := by
-  ext i j
-  simp only [toSquareBlockProp_def, of_apply, Matrix.mul_apply]
-  refine (Fintype.sum_subtype_add_sum_subtype p fun k => B i k * A k j).symm.trans ?_
-  rw [Fintype.sum_eq_zero (fun k : {k // ¬p k} => B i k * A k j) fun k => ?_, add_zero]
-  rw [hA (lt_of_not_ge fun h => k.2 (hp h j.2)), mul_zero]
-
-end LeadingBlocks
 
 section CommRing
 
@@ -388,22 +347,6 @@ theorem det_toSquareBlockProp_blockLDU {L D U : Matrix m m R}
     ((L * D * U).toSquareBlockProp p).det = (D.toSquareBlockProp p).det := by
   rw [hU.1.toSquareBlockProp_mul hp, hL.1.toSquareBlockProp_mul_of_toDual hp, det_mul, det_mul,
     (hL.toSquareBlockProp p).det_eq_one, (hU.toSquareBlockProp p).det_eq_one, one_mul, mul_one]
-
-/-- If every leading block of `M` has a unit determinant, so does every leading block on a strict
-initial segment `{j | b j < b i}`: that segment is either empty or a leading segment itself. -/
-theorem isUnit_det_toSquareBlockProp_lt (M : Matrix m m R)
-    (hM : ∀ i, IsUnit (M.toSquareBlockProp fun j => b j ≤ b i).det) (i : m) :
-    IsUnit (M.toSquareBlockProp fun j => b j < b i).det := by
-  by_cases hne : (Finset.univ.filter fun j => b j < b i).Nonempty
-  · obtain ⟨k, hk, hmax⟩ := Finset.exists_max_image _ b hne
-    rw [Finset.mem_filter] at hk
-    rw [equiv_block_det M fun j => ⟨fun hj => lt_of_le_of_lt hj hk.2,
-      fun hj => hmax j (Finset.mem_filter.mpr ⟨Finset.mem_univ j, hj⟩)⟩]
-    exact hM k
-  · have : IsEmpty {j // b j < b i} :=
-      ⟨fun j => hne ⟨j, Finset.mem_filter.mpr ⟨Finset.mem_univ _, j.2⟩⟩⟩
-    rw [det_isEmpty]
-    exact isUnit_one
 
 /-- **Block `LDU` factorization and leading block minors.** A square matrix has a block `LDU`
 factorization with invertible middle factor if and only if each of its leading block minors, the
