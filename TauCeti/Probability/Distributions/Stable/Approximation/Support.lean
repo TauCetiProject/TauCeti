@@ -213,7 +213,7 @@ theorem support_stableCompensatedPoissonMeasure_one {α ε : ℝ} (hα : α ∈ 
     (fun x ↦ x - c)).support = {-c} ∪ Ici (ε - c)
   have hmap : (fun x : ℝ ↦ x - c) = fun x ↦ -c + 1 * x := by funext x; ring
   rw [hmap, support_map_affine (by norm_num), support_compoundPoissonMeasure hr,
-    support_cond_stableLevyMeasure_one hα hε, closure_addSubmonoidClosure_Ici hε]
+    support_cond_stableLevyMeasure_one hα hε, closure_addSubmonoidClosure_Ici hε.le]
   rw [← hmap]
   let e : ℝ ≃o ℝ := OrderIso.subRight c
   have he : (fun x : ℝ ↦ x - c) = e := rfl
@@ -240,7 +240,7 @@ theorem support_stableCompensatedPoissonMeasure_neg_one {α ε : ℝ} (hα : α 
     (fun x ↦ x - c)).support = {-c} ∪ Iic (-ε - c)
   have hmap : (fun x : ℝ ↦ x - c) = fun x ↦ -c + 1 * x := by funext x; ring
   rw [hmap, support_map_affine (by norm_num), support_compoundPoissonMeasure hr,
-    support_cond_stableLevyMeasure_neg_one hα hε, closure_addSubmonoidClosure_Iic hε, ← hmap]
+    support_cond_stableLevyMeasure_neg_one hα hε, closure_addSubmonoidClosure_Iic hε.le, ← hmap]
   let e : ℝ ≃o ℝ := OrderIso.subRight c
   have he : (fun x : ℝ ↦ x - c) = e := rfl
   rw [he, image_union, image_singleton, e.image_Iic]
