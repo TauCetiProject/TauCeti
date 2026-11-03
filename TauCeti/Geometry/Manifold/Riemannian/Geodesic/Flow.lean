@@ -34,6 +34,8 @@ This is the smooth-dependence input for smoothness of the exponential map on its
   smooth on its domain.
 * `TauCeti.Manifold.contMDiffOn_maximalGeodesic`: maximal geodesics depend smoothly on their
   initial data and on time.
+* `TauCeti.Manifold.contMDiffAt_maximalGeodesic_comp`: a curve of initial states gives a
+  jointly Cⁿ geodesic variation at each point of the central maximal interval.
 * `TauCeti.Manifold.exists_contMDiffOn_maximalGeodesic_of_isCompact`: nearby initial states
   share a smooth flow domain around any compact subset of a maximal geodesic interval.
 * `TauCeti.Manifold.exists_contMDiffOn_maximalGeodesic_comp_of_isCompact`: a curve of initial
@@ -124,6 +126,21 @@ theorem contMDiffOn_maximalGeodesic :
       {q | q.2 ∈ geodesicInterval I M q.1.proj q.1.2} :=
   ((Bundle.contMDiff_proj (fun x : M ↦ TangentSpace I x) (n := ∞)).comp_contMDiffOn
     contMDiffOn_maximalIntegralCurve_geodesicSpray).congr fun _ _ ↦ maximalGeodesic_def _ _ _
+
+/-- A Cⁿ curve of initial states gives a jointly Cⁿ geodesic variation at each point
+of the central maximal geodesic interval, for every finite order `n`. -/
+theorem contMDiffAt_maximalGeodesic_comp
+    {σ : ℝ → TangentBundle I M} {n : ℕ} (hσ : ContMDiffAt 𝓘(ℝ, ℝ) I.tangent n σ 0) {t : ℝ}
+    (ht : t ∈ geodesicInterval I M (σ 0).proj (σ 0).2) :
+    ContMDiffAt 𝓘(ℝ, ℝ × ℝ) I n
+      (fun z : ℝ × ℝ ↦ maximalGeodesic I M (σ z.1).proj (σ z.1).2 z.2) (0, t) := by
+  have hfst : ContMDiffAt 𝓘(ℝ, ℝ × ℝ) 𝓘(ℝ, ℝ) n Prod.fst ((0 : ℝ), t) :=
+    (contMDiff_iff_contDiff.mpr contDiff_fst).contMDiffAt
+  have hsnd : ContMDiffAt 𝓘(ℝ, ℝ × ℝ) 𝓘(ℝ, ℝ) n Prod.snd ((0 : ℝ), t) :=
+    (contMDiff_iff_contDiff.mpr contDiff_snd).contMDiffAt
+  exact ((contMDiffOn_maximalGeodesic (I := I) (M := M)).contMDiffAt
+    (isOpen_setOfPred_mem_geodesicInterval.mem_nhds ht)).of_le (by simp)
+      |>.comp (0, t) ((hσ.comp (0, t) hfst).prodMk hsnd)
 
 /-- Around a compact subset of a maximal geodesic interval there is one open time domain
 valid for every nearby initial state, on which the geodesic flow is jointly smooth.

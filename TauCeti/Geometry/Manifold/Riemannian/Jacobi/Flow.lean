@@ -52,21 +52,6 @@ variable
   [IsContMDiffRiemannianBundle I ∞ E (fun x : M ↦ TangentSpace I x)]
   {σ : ℝ → TangentBundle I M}
 
-/-- A smooth curve of initial states gives a jointly smooth geodesic variation at each point
-of the central maximal geodesic interval. -/
-private theorem contMDiffAt_maximalGeodesic_comp
-    {n : ℕ} (hσ : ContMDiffAt 𝓘(ℝ, ℝ) I.tangent n σ 0) {t : ℝ}
-    (ht : t ∈ geodesicInterval I M (σ 0).proj (σ 0).2) :
-    ContMDiffAt 𝓘(ℝ, ℝ × ℝ) I n
-      (fun z : ℝ × ℝ ↦ maximalGeodesic I M (σ z.1).proj (σ z.1).2 z.2) (0, t) := by
-  have hfst : ContMDiffAt 𝓘(ℝ, ℝ × ℝ) 𝓘(ℝ, ℝ) n Prod.fst ((0 : ℝ), t) :=
-    (contMDiff_iff_contDiff.mpr contDiff_fst).contMDiffAt
-  have hsnd : ContMDiffAt 𝓘(ℝ, ℝ × ℝ) 𝓘(ℝ, ℝ) n Prod.snd ((0 : ℝ), t) :=
-    (contMDiff_iff_contDiff.mpr contDiff_snd).contMDiffAt
-  exact ((contMDiffOn_maximalGeodesic (I := I) (M := M)).contMDiffAt
-    (isOpen_setOfPred_mem_geodesicInterval.mem_nhds ht)).of_le (by simp)
-      |>.comp (0, t) ((hσ.comp (0, t) hfst).prodMk hsnd)
-
 /-- Varying initial positions and velocities by a smooth tangent-bundle curve gives a Jacobi
 field on the entire maximal interval of the central geodesic. -/
 theorem isJacobiFieldOn_variationField_maximalGeodesic
