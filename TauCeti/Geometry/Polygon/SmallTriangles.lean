@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Analysis.Normed.Affine.AddTorsor
 public import TauCeti.Analysis.Convex.Combination
-public import TauCeti.Analysis.Normed.Affine.AddTorsor
+public import TauCeti.Analysis.Normed.Affine.AddTorsor.Basic
 public import TauCeti.Analysis.Normed.Affine.Simplex
 public import TauCeti.Geometry.Polygon.DeltaMove
 public import TauCeti.Geometry.Polygon.Subdivision
