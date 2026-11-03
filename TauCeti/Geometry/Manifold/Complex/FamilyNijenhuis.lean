@@ -181,16 +181,14 @@ theorem nijenhuis_vertical_vertical (v w : V) :
   simp_rw [fderiv_apply i α j hα hj]
   simp only [blockEndomorphism_apply, map_zero, zero_add,
     Prod.mk_sub_mk, Prod.mk_add_mk, sub_zero]
-  -- TangentSpace of the product model is B × V; its operations are the model-space operations.
-  rfl
+  -- Compare the two model-space components, rather than tangent-space operation instances.
+  apply Prod.ext <;> abel
 
 omit hJ hα hj in
 private theorem snd_eq_zero_of_nijenhuis_eq_zero {u w : B × V} {x : V}
     (hN : J.nijenhuis p = 0) (h : J.nijenhuis p u w = (0, x)) : x = 0 := by
-  rw [hN] at h
-  -- Use model-space instances: the tangent-space zero map is otherwise opaque to simp.
-  change (0 : (B × V) →L[ℝ] (B × V) →L[ℝ] B × V) u w = (0, x) at h
-  simpa using (congrArg Prod.snd h).symm
+  have hz := (J.nijenhuis_model_eq_zero_iff p).mp hN u w
+  simpa using congrArg Prod.snd (h.symm.trans hz)
 
 /-- Vanishing of the native Nijenhuis tensor forces the corrected mixed equation. -/
 theorem mixedTerm_eq_zero_of_nijenhuis_eq_zero
@@ -219,16 +217,10 @@ theorem nijenhuis_eq_zero_iff :
   · intro hN
     refine ⟨mixedTerm_eq_zero_of_nijenhuis_eq_zero J i α j hJ hα hj hN,
       horizontalTerm_eq_zero_of_nijenhuis_eq_zero J i α j hJ hα hj hN, ?_⟩
-    intro v w
-    rw [hN]
-    -- Use model-space instances to expose zero-map evaluation to simp.
-    change (0 : (B × V) →L[ℝ] (B × V) →L[ℝ] B × V) (0, v) (0, w) = 0
-    simp
+    exact fun v w ↦ (J.nijenhuis_model_eq_zero_iff p).mp hN (0, v) (0, w)
   · rintro ⟨hM, hH, hV⟩
-    -- Fix the model-space instances: TangentSpace of this vector space is B × V.
+    -- Use model-space bilinearity; the final tensor equality is handled by the shared bridge.
     let N : (B × V) →L[ℝ] (B × V) →L[ℝ] B × V := J.nijenhuis p
-    -- Express fibrewise vanishing with these same instances so that simp can match it.
-    change ∀ v w : V, N (0, v) (0, w) = 0 at hV
     have hmix (a : B) (v : V) : N (a, 0) (0, v) = 0 := by
       calc
         N (a, 0) (0, v) = (0, -j p (mixedTerm i α j p a v)) :=
@@ -243,13 +235,11 @@ theorem nijenhuis_eq_zero_iff :
       calc
         N (0, v) (a, 0) = -N (a, 0) (0, v) := J.nijenhuis_antisymm _ _
         _ = 0 := by rw [hmix, neg_zero]
-    suffices N = 0 from this
-    apply ContinuousLinearMap.ext
-    intro u
-    apply ContinuousLinearMap.ext
-    intro w
-    have hsplit (z : B × V) : z = (z.1, 0) + (0, z.2) := by simp
-    rw [hsplit u, hsplit w]
-    simp only [map_add, add_apply, hhor, hmix, hrev, hV, zero_apply, add_zero]
+    have htotal (u w : B × V) : N u w = 0 := by
+      have hsplit (z : B × V) : z = (z.1, 0) + (0, z.2) := by simp
+      rw [hsplit u, hsplit w]
+      simp only [map_add, add_apply, hhor, hmix, hrev, zero_add]
+      exact hV u.2 w.2
+    exact (J.nijenhuis_model_eq_zero_iff p).mpr htotal
 
 end TauCeti.ComplexStructureFamily
