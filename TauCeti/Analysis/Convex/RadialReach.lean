@@ -17,7 +17,7 @@ in its affine span meets `C` in a closed segment. The endpoint parameter
 attained, and continuous in `u`, and equals the inverse of the gauge of the translated set
 in the affine direction. In particular, it is a finite real number, not an extended length.
 
-The existing `convexClosedBallHomeomorph` sends `t • u` to
+The homeomorphism `TauCeti.convexClosedBallHomeomorph` sends `t • u` to
 `c + (t * compactConvexRadialReach C c u) • u`. It takes the unit sphere precisely to the
 intrinsic frontier, including when the affine span has dimension zero: both boundaries are
 then empty. These comparisons specify the geometry of the disk model used to transport the
@@ -60,12 +60,18 @@ variable {C c} (hconv : Convex ℝ C) (hcl : IsClosed C) (hb : IsBounded C)
 
 include hconv hcl hb hc
 
+omit hconv hcl in
+private lemma gauge_pos_of_mem_sphere
+    (u : sphere (0 : (affineSpan ℝ C).direction) 1) :
+    0 < gauge {v : (affineSpan ℝ C).direction | c + (v : E) ∈ C} u.1 :=
+  (gauge_setOf_add_mem_pos_iff hb hc u.1).2
+    (ne_of_mem_sphere u.property one_ne_zero)
+
 private lemma ray_parameters_eq_Icc_inv_gauge
     (u : sphere (0 : (affineSpan ℝ C).direction) 1) :
     {t : ℝ | 0 ≤ t ∧ c + t • (u.1 : E) ∈ C} =
       Icc 0 (gauge {v : (affineSpan ℝ C).direction | c + (v : E) ∈ C} u.1)⁻¹ := by
-  have hpos := (gauge_setOf_add_mem_pos_iff hb hc u.1).2
-    (ne_of_mem_sphere u.property one_ne_zero)
+  have hpos := gauge_pos_of_mem_sphere hb hc u
   ext t
   by_cases ht : 0 ≤ t
   · have hmem := gauge_le_one_iff_mem_closure (convex_setOf_add_mem hconv)
@@ -90,8 +96,7 @@ theorem compactConvexRadialReach_pos
     (u : sphere (0 : (affineSpan ℝ C).direction) 1) :
     0 < compactConvexRadialReach C c u := by
   rw [compactConvexRadialReach_eq_inv_gauge hconv hcl hb hc]
-  exact inv_pos.mpr ((gauge_setOf_add_mem_pos_iff hb hc u.1).2
-    (ne_of_mem_sphere u.property one_ne_zero))
+  exact inv_pos.mpr (gauge_pos_of_mem_sphere hb hc u)
 
 /-- The nonnegative parameters for which a ray stays in the set form exactly the closed
 interval from zero to its radial reach. This also gives a finite bound on all such parameters. -/
@@ -101,13 +106,20 @@ theorem setOf_ray_mem_eq_Icc_compactConvexRadialReach
   rw [compactConvexRadialReach_eq_inv_gauge hconv hcl hb hc]
   exact ray_parameters_eq_Icc_inv_gauge hconv hcl hb hc u
 
+/-- A nonnegative ray parameter stays in the set exactly when it is at most the radial reach. -/
+theorem add_smul_mem_iff_le_compactConvexRadialReach
+    (u : sphere (0 : (affineSpan ℝ C).direction) 1) {t : ℝ} (ht : 0 ≤ t) :
+    c + t • (u.1 : E) ∈ C ↔ t ≤ compactConvexRadialReach C c u := by
+  have h := congrArg (fun s : Set ℝ ↦ t ∈ s)
+    (setOf_ray_mem_eq_Icc_compactConvexRadialReach hconv hcl hb hc u)
+  simpa only [mem_ofPred_eq, mem_Icc, ht, true_and] using h.to_iff
+
 /-- The last point on a ray belongs to the set. -/
 theorem add_compactConvexRadialReach_smul_mem
     (u : sphere (0 : (affineSpan ℝ C).direction) 1) :
     c + compactConvexRadialReach C c u • (u.1 : E) ∈ C := by
-  have h := congrArg (fun s : Set ℝ ↦ compactConvexRadialReach C c u ∈ s)
-    (setOf_ray_mem_eq_Icc_compactConvexRadialReach hconv hcl hb hc u)
-  exact (h.mpr ⟨(compactConvexRadialReach_pos hconv hcl hb hc u).le, le_rfl⟩).2
+  exact (add_smul_mem_iff_le_compactConvexRadialReach hconv hcl hb hc u
+    (compactConvexRadialReach_pos hconv hcl hb hc u).le).2 le_rfl
 
 /-- Radial reach varies continuously on the unit sphere of the affine direction, even if
 `C` has empty ambient interior. -/
@@ -119,8 +131,7 @@ theorem continuous_compactConvexRadialReach :
   rw [heq]
   exact ((continuous_gauge (convex_setOf_add_mem hconv)
     (setOf_add_mem_mem_nhds_of_mem_intrinsicInterior hc)).comp continuous_subtype_val).inv₀
-      (fun u ↦ ((gauge_setOf_add_mem_pos_iff hb hc u.1).2
-        (ne_of_mem_sphere u.property one_ne_zero)).ne')
+      (fun u ↦ (gauge_pos_of_mem_sphere hb hc u).ne')
 
 /-- The convex-ball homeomorphism has the positive radial-reach formula on every segment
 from the center to a unit direction. -/
@@ -131,43 +142,13 @@ theorem coe_convexClosedBallHomeomorph_smul
         mem_sphere_zero_iff_norm.mp u.property] using ht.2⟩ : E) =
       c + (t * compactConvexRadialReach C c u) • (u.1 : E) := by
   rw [coe_convexClosedBallHomeomorph_apply]
-  have hg : gauge ((-c) +ᵥ C) (u.1 : E) =
-      gauge {v : (affineSpan ℝ C).direction | c + (v : E) ∈ C} u.1 := by
-    rw [setOf_add_mem_eq_preimage]
-    exact (LinearMap.gauge_preimage (affineSpan ℝ C).direction.subtype _ _).symm
   simp only [Submodule.coe_smul, norm_smul, Real.norm_eq_abs, abs_of_nonneg ht.1,
     Submodule.norm_coe, mem_sphere_zero_iff_norm.mp u.property, mul_one,
-    gauge_smul_of_nonneg ht.1, smul_eq_mul, hg,
+    gauge_smul_of_nonneg ht.1, smul_eq_mul, ← gauge_setOf_add_mem,
     compactConvexRadialReach_eq_inv_gauge hconv hcl hb hc]
   by_cases ht0 : t = 0
   · simp [ht0]
   · simp [div_mul_eq_div_mul_one_div, ht0, smul_smul, mul_comm]
-
-/-- The unit sphere corresponds exactly to the intrinsic frontier under the convex-ball
-homeomorphism. No full-dimensionality assumption is needed. Use this as an explicit rewrite;
-the native simp normal form expands membership in the intrinsic frontier. -/
-theorem coe_convexClosedBallHomeomorph_mem_intrinsicFrontier_iff
-    (v : closedBall (0 : (affineSpan ℝ C).direction) 1) :
-    (convexClosedBallHomeomorph hconv hcl hb hc v : E) ∈ intrinsicFrontier ℝ C ↔
-      ‖v.1‖ = 1 := by
-  let S : Set (affineSpan ℝ C).direction := {w | c + (w : E) ∈ C}
-  have hg (w : (affineSpan ℝ C).direction) :
-      gauge S w = gauge ((-c) +ᵥ C) (w : E) := by
-    dsimp only [S]
-    rw [setOf_add_mem_eq_preimage]
-    exact LinearMap.gauge_preimage (affineSpan ℝ C).direction.subtype _ _
-  have hf : (convexClosedBallHomeomorph hconv hcl hb hc v : E) =
-      c + (((‖v.1‖ / gauge S v.1) • v.1 : (affineSpan ℝ C).direction) : E) := by
-    simpa only [Submodule.coe_smul, Submodule.norm_coe, hg] using
-      coe_convexClosedBallHomeomorph_apply hconv hcl hb hc v
-  rw [hf, add_mem_intrinsicFrontier_iff (subset_affineSpan ℝ C (intrinsicInterior_subset hc)),
-    ← gauge_eq_one_iff_mem_frontier (convex_setOf_add_mem hconv)
-      (setOf_add_mem_mem_nhds_of_mem_intrinsicInterior hc),
-    gauge_smul_of_nonneg (div_nonneg (norm_nonneg _) (gauge_nonneg _)), smul_eq_mul]
-  by_cases hv : v.1 = 0
-  · simp [hv]
-  · have hpos := (gauge_setOf_add_mem_pos_iff hb hc v.1).2 hv
-    rw [div_mul_cancel₀ _ hpos.ne']
 
 /-- The endpoint realizing the radial reach lies in the intrinsic frontier. -/
 theorem add_compactConvexRadialReach_smul_mem_intrinsicFrontier

@@ -234,8 +234,16 @@ lemma setOf_add_mem_eq_preimage :
   ext v
   simp [mem_vadd_set_iff_neg_vadd_mem]
 
-/-- Translating a convex set to a point of its affine span and restricting to its direction
-preserves convexity. -/
+/-- The gauge of the displacement set agrees with the gauge of the translated set in the
+ambient space. -/
+lemma gauge_setOf_add_mem (v : (affineSpan ℝ C).direction) :
+    gauge {w : (affineSpan ℝ C).direction | c + (w : E) ∈ C} v =
+      gauge ((-c) +ᵥ C) (v : E) := by
+  rw [setOf_add_mem_eq_preimage]
+  exact LinearMap.gauge_preimage _ _ _
+
+/-- For convex `C` and any `c`, the displacements `v` in the direction of `affineSpan ℝ C`
+with `c + v ∈ C` form a convex set. -/
 lemma convex_setOf_add_mem (hconv : Convex ℝ C) :
     Convex ℝ {v : (affineSpan ℝ C).direction | c + (v : E) ∈ C} := by
   rw [setOf_add_mem_eq_preimage]
@@ -257,8 +265,8 @@ lemma isVonNBounded_setOf_add_mem (hb : IsBounded C) :
   rw [mem_closedBall, dist_self_add_left] at hv'
   rwa [mem_closedBall_zero_iff, ← Submodule.norm_coe]
 
-/-- Translation from the direction of the affine span identifies its frontier with the
-intrinsic frontier of the original set. -/
+/-- For `c` in the affine span of `C`, `c + v` lies in the intrinsic frontier of `C` iff `v`
+lies in the frontier, within the direction, of the displacement set `{w | c + w ∈ C}`. -/
 lemma add_mem_intrinsicFrontier_iff (hc : c ∈ affineSpan ℝ C)
     (v : (affineSpan ℝ C).direction) :
     c + (v : E) ∈ intrinsicFrontier ℝ C ↔
@@ -343,15 +351,11 @@ theorem coe_convexClosedBallHomeomorph_apply (hconv : Convex ℝ C) (hcl : IsClo
     (v : closedBall (0 : (affineSpan ℝ C).direction) 1) :
     (convexClosedBallHomeomorph hconv hcl hb hc v : E) =
       c + (‖(v : E)‖ / gauge ((-c) +ᵥ C) (v : E)) • (v : E) := by
-  have hS : gauge {w : (affineSpan ℝ C).direction | c + (w : E) ∈ C} v =
-      gauge ((-c) +ᵥ C) (v : E) := by
-    rw [setOf_add_mem_eq_preimage]
-    exact LinearMap.gauge_preimage _ _ _
   -- By definition the homeomorphism is the gauge rescaling followed by translation by `c`.
   change c + ((gaugeRescale (closedBall 0 1) {w : (affineSpan ℝ C).direction | c + (w : E) ∈ C}
     v : (affineSpan ℝ C).direction) : E) = _
-  rw [gaugeRescale_def, gauge_closedBall zero_le_one, hS, div_one, Submodule.coe_smul,
-    ← Submodule.norm_coe]
+  rw [gaugeRescale_def, gauge_closedBall zero_le_one, gauge_setOf_add_mem, div_one,
+    Submodule.coe_smul, ← Submodule.norm_coe]
 
 /-- `TauCeti.convexClosedBallHomeomorph` sends the centre of the ball to `c`. -/
 @[simp]
@@ -369,14 +373,29 @@ theorem coe_convexClosedBallHomeomorph_symm_apply (hconv : Convex ℝ C) (hcl : 
   set w : (affineSpan ℝ C).direction := ⟨(x : E) - c, by
     simpa using AffineSubspace.vsub_mem_direction (subset_affineSpan ℝ C x.2)
       (subset_affineSpan ℝ C (intrinsicInterior_subset hc))⟩
-  have hS : gauge {w : (affineSpan ℝ C).direction | c + (w : E) ∈ C} w =
-      gauge ((-c) +ᵥ C) ((x : E) - c) := by
-    rw [setOf_add_mem_eq_preimage]
-    exact LinearMap.gauge_preimage _ _ _
   -- By definition the inverse is translation by `-c` followed by the inverse gauge rescaling.
   change ((gaugeRescale {w : (affineSpan ℝ C).direction | c + (w : E) ∈ C} (closedBall 0 1)
     w : (affineSpan ℝ C).direction) : E) = _
-  rw [gaugeRescale_def, gauge_closedBall zero_le_one, hS, div_one, Submodule.coe_smul,
-    ← Submodule.norm_coe]
+  rw [gaugeRescale_def, gauge_closedBall zero_le_one, gauge_setOf_add_mem, div_one,
+    Submodule.coe_smul, ← Submodule.norm_coe]
+
+/-- The unit sphere corresponds exactly to the intrinsic frontier under the convex-ball
+homeomorphism. No full-dimensionality assumption is needed. Use this as an explicit rewrite;
+the native simp normal form expands membership in the intrinsic frontier. -/
+theorem coe_convexClosedBallHomeomorph_mem_intrinsicFrontier_iff (hconv : Convex ℝ C)
+    (hcl : IsClosed C) (hb : IsBounded C) (hc : c ∈ intrinsicInterior ℝ C)
+    (v : closedBall (0 : (affineSpan ℝ C).direction) 1) :
+    (convexClosedBallHomeomorph hconv hcl hb hc v : E) ∈ intrinsicFrontier ℝ C ↔
+      ‖v.1‖ = 1 := by
+  -- Unfold the homeomorphism's translation so the native gauge-rescaling identity applies.
+  change c + ((gaugeRescale (closedBall 0 1)
+    {w : (affineSpan ℝ C).direction | c + (w : E) ∈ C} v :
+      (affineSpan ℝ C).direction) : E) ∈ intrinsicFrontier ℝ C ↔ _
+  rw [add_mem_intrinsicFrontier_iff (subset_affineSpan ℝ C (intrinsicInterior_subset hc)),
+    ← gauge_eq_one_iff_mem_frontier (convex_setOf_add_mem hconv)
+      (setOf_add_mem_mem_nhds_of_mem_intrinsicInterior hc),
+    gauge_gaugeRescale _
+      (absorbent_nhds_zero (setOf_add_mem_mem_nhds_of_mem_intrinsicInterior hc))
+      (isVonNBounded_setOf_add_mem hb), gauge_closedBall zero_le_one, div_one]
 
 end TauCeti
