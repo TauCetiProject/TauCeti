@@ -10,27 +10,28 @@ public import Mathlib.MeasureTheory.MeasurableSpace.Constructions
 /-!
 # Products of discrete σ-algebras
 
-The product of the discrete σ-algebras on two countable types is again discrete. Countability is
-what makes this work: the measurable rectangles already exhaust the singletons of the product, and
-countably many of them suffice to build any subset.
+The product of the discrete σ-algebras on two types is again discrete as soon as the first type is
+countable. Countability is what makes this work: every subset `s` of the product is the countable
+union of the measurable rectangles `{a} ×ˢ (Prod.mk a ⁻¹' s)` over the points `a` of the first
+factor. No hypothesis on the second factor is needed.
 
 ## Main results
 
 * `TauCeti.MeasureTheory.prod_top_eq_top_of_countable`: the product of the discrete σ-algebras on
-  two countable types is discrete.
+  a countable type and an arbitrary type is discrete.
 -/
 
 public section
 
 namespace TauCeti.MeasureTheory
 
-/-- The product of the discrete σ-algebras on two countable types is discrete. -/
-theorem prod_top_eq_top_of_countable (α β : Type*) [Countable α] [Countable β] :
+/-- The product of the discrete σ-algebras on a countable type `α` and an arbitrary type `β` is
+discrete. -/
+theorem prod_top_eq_top_of_countable (α β : Type*) [Countable α] :
     (⊤ : MeasurableSpace α).prod (⊤ : MeasurableSpace β) = ⊤ := by
-  apply top_unique
   let _ : MeasurableSpace α := ⊤
   let _ : MeasurableSpace β := ⊤
-  intro s _
-  exact MeasurableSet.of_discrete
+  refine top_unique fun s _ => measurableSet_setOfPred.2 ?_
+  exact measurable_from_prod_countable_right fun _ => measurable_from_top
 
 end TauCeti.MeasureTheory

@@ -34,7 +34,12 @@ On `NC(n)`, the noncrossing partitions of `Fin n`, the bars after the positions 
 positions of a rotated interlaced sequence `ā₁ < a₂ < ā₂ < ⋯ < āₙ < a₁`, and noncrossing is
 invariant under rotation. Applying the complement twice therefore moves every part one step back
 around the circle: `K(K(π))` is the inverse rotation of `π`. Hence `K` is a bijection of `NC(n)`,
-indeed an order anti-automorphism, with inverse `σ ↦ rotate n (K(σ))`.
+indeed an order anti-automorphism, with inverse `σ ↦ rotate n (K(σ))`. It turns joins into
+meets, so `π ⊔ σ = 1` for `σ ≤ K(π)` amounts to `K(π) ⊓ K(σ) = 0`. Writing `σ = K(ρ)` with
+`π ≤ ρ`, the meet `K(π) ⊓ K(K(ρ))` is `0` exactly when `ρ = π`: no part of `K(π)` and of the inverse
+rotation of `π` share two positions, while for `π < ρ` the bars before the first position of a
+part `B` of `π` inside a part `C` of `ρ` and before the next position of `C` after `B` lie in a
+common part of both. Hence `K(π)` is the only partition below `K(π)` that joins with `π` to `1`.
 
 The Kreweras complement indexes the formulas for the free cumulants and the moments of products
 of two free families in terms of the cumulants and moments of the two families.
@@ -71,6 +76,11 @@ of two free families in terms of the cumulants and moments of the two families.
 * `TauCeti.NoncrossingPartition.kreweras_bijective`,
   `TauCeti.NoncrossingPartition.kreweras_le_kreweras_iff` — on `NC(n)` the complement is a
   bijection and reverses refinement in both directions.
+* `TauCeti.NoncrossingPartition.kreweras_sup`, `TauCeti.NoncrossingPartition.kreweras_inf` — on
+  `NC(n)` the complement exchanges joins and meets.
+* `TauCeti.NoncrossingPartition.sup_eq_top_iff_eq_kreweras`,
+  `TauCeti.NoncrossingPartition.sup_kreweras_eq_top` — a noncrossing partition `σ ≤ K(π)` of
+  `Fin n` joins with `π` to `1` exactly when `σ = K(π)`.
 
 ## References
 
@@ -595,6 +605,165 @@ theorem krewerasOrderIso_symm_apply
     (σ : (NoncrossingPartition (univ : Finset (Fin n)))ᵒᵈ) :
     (krewerasOrderIso n).symm σ = rotate n (kreweras (OrderDual.ofDual σ)) :=
   (rfl)
+
+/-- The Kreweras complement on `NC(n)` turns joins into meets. -/
+@[simp]
+theorem kreweras_sup (π σ : NoncrossingPartition (univ : Finset (Fin n))) :
+    kreweras (π ⊔ σ) = kreweras π ⊓ kreweras σ :=
+  congrArg OrderDual.ofDual ((krewerasOrderIso n).map_sup π σ)
+
+/-- The Kreweras complement on `NC(n)` turns meets into joins. -/
+@[simp]
+theorem kreweras_inf (π σ : NoncrossingPartition (univ : Finset (Fin n))) :
+    kreweras (π ⊓ σ) = kreweras π ⊔ kreweras σ :=
+  congrArg OrderDual.ofDual ((krewerasOrderIso n).map_inf π σ)
+
+/-- No two distinct positions lie in a common part both of `K(π)` and of the inverse rotation of
+`π`: if the bars after `x < y` lie in a common part of `K(π)`, then the part of `π` through the
+position after `x` stays in `(x, y]`, so it does not contain the position after `y`. -/
+private theorem eq_of_mem_part_kreweras_of_mem_part_rotate_symm
+    (π : NoncrossingPartition (univ : Finset (Fin n))) {x y : Fin n}
+    (hK : y ∈ π.1.kreweras.part x) (hR : y ∈ ((rotate n).symm π).1.part x) : y = x := by
+  cases n with
+  | zero => exact x.elim0
+  | succ n =>
+  have hval (i : Fin (n + 1)) :
+      (finRotate (n + 1) i : ℕ) = if (i : ℕ) = n then 0 else (i : ℕ) + 1 := by
+    rw [coe_finRotate]
+    simp only [Fin.ext_iff, Fin.val_last]
+  -- By symmetry of both relations, it suffices to rule out `x < y`.
+  have key {x y : Fin (n + 1)} (hxy : x < y) (hK : y ∈ π.1.kreweras.part x)
+      (hR : y ∈ ((rotate (n + 1)).symm π).1.part x) : False := by
+    rw [mem_part_rotate_symm] at hR
+    have hy := y.is_lt
+    rw [Fin.lt_def] at hxy
+    have h := (Finpartition.mem_part_kreweras_iff.1 hK).2.2 _ _ hR (by
+      rw [Set.uIoc_of_le (Fin.le_def.2 hxy.le), Set.mem_Ioc, Fin.lt_def, Fin.le_def, hval]
+      split_ifs <;> omega)
+    rw [Set.uIoc_of_le (Fin.le_def.2 hxy.le), Set.mem_Ioc, Fin.lt_def, Fin.le_def, hval] at h
+    split_ifs at h <;> omega
+  rcases lt_trichotomy x y with hxy | rfl | hxy
+  · exact (key hxy hK hR).elim
+  · rfl
+  · exact (key hxy (Finpartition.mem_part_comm.1 hK) (Finpartition.mem_part_comm.1 hR)).elim
+
+/-- The Kreweras complement of `π` and the inverse rotation of `π` have no common part with two
+positions. -/
+private theorem kreweras_inf_rotate_symm_eq_bot
+    (π : NoncrossingPartition (univ : Finset (Fin n))) :
+    kreweras π ⊓ (rotate n).symm π = ⊥ := by
+  refine Subtype.ext ?_
+  rw [coe_inf, coe_kreweras, coe_bot]
+  refine le_bot_iff.1 (Finpartition.le_iff_forall_part_subset.2 fun x y hy => ?_)
+  rw [Finpartition.part_bot (mem_univ x), mem_singleton]
+  exact eq_of_mem_part_kreweras_of_mem_part_rotate_symm π
+    (Finpartition.part_mono inf_le_left x hy) (Finpartition.part_mono inf_le_right x hy)
+
+/-- Let `m < t` be positions in a common part of `ρ` such that `[m, t)` is a union of parts of `π`.
+Then the positions `x ≠ y` before `m` and before `t` lie in a common part both of `K(π)` and of the
+inverse rotation of `ρ`: the positions strictly between the bars after `x` and after `y` are those
+of `[m, t)`, or of its complement if `m = 0`. -/
+private theorem exists_ne_mem_part_kreweras_mem_part_rotate_symm_of_forall
+    {π ρ : NoncrossingPartition (univ : Finset (Fin n))} {m t : Fin n} (hmt : m < t)
+    (hρ : t ∈ ρ.1.part m) (hint : ∀ a b, b ∈ π.1.part a → m ≤ a → a < t → m ≤ b ∧ b < t) :
+    ∃ x y, x ≠ y ∧ y ∈ π.1.kreweras.part x ∧ y ∈ ((rotate n).symm ρ).1.part x := by
+  cases n with
+  | zero => exact m.elim0
+  | succ n =>
+  have hval (i : Fin (n + 1)) :
+      (finRotate (n + 1) i : ℕ) = if (i : ℕ) = n then 0 else (i : ℕ) + 1 := by
+    rw [coe_finRotate]
+    simp only [Fin.ext_iff, Fin.val_last]
+  set x := (finRotate (n + 1)).symm m
+  set y := (finRotate (n + 1)).symm t
+  have hxm : finRotate (n + 1) x = m := Equiv.apply_symm_apply _ _
+  have hyt : finRotate (n + 1) y = t := Equiv.apply_symm_apply _ _
+  have hm := hval x
+  have ht := hval y
+  rw [hxm] at hm
+  rw [hyt] at ht
+  rw [Fin.lt_def] at hmt
+  have hI (a : Fin (n + 1)) :
+      a ∈ Set.uIoc x y ↔ if (m : ℕ) = 0 then t ≤ a else m ≤ a ∧ a < t := by
+    have := x.is_lt
+    have := y.is_lt
+    simp only [Set.mem_uIoc, Fin.lt_def, Fin.le_def]
+    split_ifs at hm ht ⊢ <;> omega
+  refine ⟨x, y, fun h => hmt.ne (by rw [← hxm, ← hyt, h]),
+    Finpartition.mem_part_kreweras_iff.2 ⟨mem_univ x, mem_univ y, fun a b hb ha => ?_⟩, ?_⟩
+  · rw [hI] at ha ⊢
+    split_ifs at ha ⊢ with h0
+    · exact le_of_not_gt fun hbt =>
+        ha.not_gt (hint b a (Finpartition.mem_part_comm.1 hb) (Fin.le_def.2 (by omega)) hbt).2
+    · exact hint a b hb ha.1 ha.2
+  · rwa [mem_part_rotate_symm, hxm, hyt]
+
+/-- If `π < ρ` in `NC(n)`, then two distinct positions lie in a common part both of `K(π)` and of
+the inverse rotation of `ρ`. Let `B` be a part of `π` inside a part `C` of `ρ` that misses the
+last position of `C`, let `m` and `M` be the first and the last position of `B`, and let `t` be
+the first position of `C` after `M`. Then `[m, t)` is a union of parts of `π`, and `m`, `t` lie in
+`C`. -/
+private theorem exists_ne_mem_part_kreweras_mem_part_rotate_symm
+    {π ρ : NoncrossingPartition (univ : Finset (Fin n))} (hπρ : π ≤ ρ) (hne : π ≠ ρ) :
+    ∃ x y, x ≠ y ∧ y ∈ π.1.kreweras.part x ∧ y ∈ ((rotate n).symm ρ).1.part x := by
+  have hπ (a b : Fin n) : b ∈ π.1.part a ↔ π.1.part b = π.1.part a :=
+    π.1.mem_part_iff_part_eq_part (mem_univ b) (mem_univ a)
+  have hρ (a b : Fin n) : b ∈ ρ.1.part a ↔ ρ.1.part b = ρ.1.part a :=
+    ρ.1.mem_part_iff_part_eq_part (mem_univ b) (mem_univ a)
+  -- The part `C` of `ρ` through `c` contains a part of `π` missing the last position of `C`.
+  obtain ⟨c, d, hdc, hdπ⟩ : ∃ c d, d ∈ ρ.1.part c ∧ d ∉ π.1.part c := by
+    by_contra! h
+    exact hne (le_antisymm hπρ (Subtype.coe_le_coe.1
+      (Finpartition.le_iff_forall_part_subset.2 fun c d hd => h c d hd)))
+  have hCne : (ρ.1.part c).Nonempty := ⟨c, ρ.1.mem_part_self.2 (mem_univ c)⟩
+  obtain ⟨e, heC, heM⟩ : ∃ e ∈ ρ.1.part c, (ρ.1.part c).max' hCne ∉ π.1.part e := by
+    by_cases hcM : (ρ.1.part c).max' hCne ∈ π.1.part c
+    · refine ⟨d, hdc, fun hdM => hdπ ?_⟩
+      rw [hπ] at hcM hdM ⊢
+      exact hdM.symm.trans hcM
+    · exact ⟨c, ρ.1.mem_part_self.2 (mem_univ c), hcM⟩
+  -- `m` and `M` are the first and the last position of the part of `π` through `e`.
+  have hBne : (π.1.part e).Nonempty := ⟨e, π.1.mem_part_self.2 (mem_univ e)⟩
+  set m := (π.1.part e).min' hBne
+  set M := (π.1.part e).max' hBne
+  have hme : π.1.part m = π.1.part e := (hπ e m).1 (min'_mem _ _)
+  have hmc : ρ.1.part m = ρ.1.part c :=
+    ((hρ e m).1 (Finpartition.part_mono hπρ e (min'_mem _ _))).trans ((hρ c e).1 heC)
+  have hMC : M ∈ ρ.1.part c := by
+    rw [← (hρ c e).1 heC]
+    exact Finpartition.part_mono hπρ e (max'_mem _ _)
+  have hMlt : M < (ρ.1.part c).max' hCne :=
+    lt_of_le_of_ne (le_max' _ _ hMC) fun h => heM (h ▸ max'_mem _ _)
+  -- `t` is the first position of `C` after `M`.
+  have htne : ((ρ.1.part c).filter (M < ·)).Nonempty :=
+    ⟨_, mem_filter.2 ⟨max'_mem _ _, hMlt⟩⟩
+  obtain ⟨htC, hMt⟩ := mem_filter.1 (min'_mem _ htne)
+  refine exists_ne_mem_part_kreweras_mem_part_rotate_symm_of_forall
+    ((min'_le _ _ (max'_mem _ _)).trans_lt hMt) (by rw [hρ, hmc, (hρ c _).1 htC]) fun a b hb =>
+      π.2.le_and_lt_of_mem_part ρ.2 hπρ (mem_univ m) (by rw [hme]; exact max'_mem _ _)
+        (fun z hz => min'_le _ _ (hme ▸ hz)) (fun z hz => le_max' _ _ (hme ▸ hz))
+        (by rw [hmc]; exact htC) hMt (fun z hz h => min'_le _ _ (mem_filter.2 ⟨hmc ▸ hz, h⟩)) hb
+
+/-- A noncrossing partition `σ` finer than the Kreweras complement `K(π)` joins with `π` to the
+partition into one part exactly when it is `K(π)` itself. -/
+theorem sup_eq_top_iff_eq_kreweras {π σ : NoncrossingPartition (univ : Finset (Fin n))}
+    (hσ : σ ≤ kreweras π) : π ⊔ σ = ⊤ ↔ σ = kreweras π := by
+  obtain ⟨ρ, rfl⟩ := kreweras_bijective.2 σ
+  rw [kreweras_le_kreweras_iff] at hσ
+  rw [kreweras_inj]
+  conv_lhs => rw [← kreweras_inj, kreweras_sup, kreweras_kreweras, kreweras_top]
+  refine ⟨fun h => by_contra fun hne => ?_, by rintro rfl; exact kreweras_inf_rotate_symm_eq_bot _⟩
+  obtain ⟨x, y, hxy, hK, hR⟩ := exists_ne_mem_part_kreweras_mem_part_rotate_symm hσ (Ne.symm hne)
+  have hle := le_inf (Finpartition.pairPartition_le (hij := subset_univ _) hK)
+    (Finpartition.pairPartition_le (hij := subset_univ _) hR)
+  rw [← coe_kreweras, ← coe_inf, h, coe_bot, le_bot_iff] at hle
+  exact Finpartition.pairPartition_ne_bot hxy hle
+
+/-- A noncrossing partition joins with its Kreweras complement to the partition into one part. -/
+@[simp]
+theorem sup_kreweras_eq_top (π : NoncrossingPartition (univ : Finset (Fin n))) :
+    π ⊔ kreweras π = ⊤ :=
+  (sup_eq_top_iff_eq_kreweras le_rfl).2 rfl
 
 end Fin
 
