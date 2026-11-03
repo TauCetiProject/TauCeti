@@ -26,13 +26,6 @@ namespace Matrix
 
 variable {m R : Type*} [Fintype m] [LinearOrder m]
 
-/-- Every natural power of an upper-unitriangular matrix is upper unitriangular. -/
-theorem IsUpperUnitriangular.pow [Semiring R] {M : Matrix m m R}
-    (hM : M.IsUpperUnitriangular) (k : ℕ) : (M ^ k).IsUpperUnitriangular := by
-  induction k with
-  | zero => exact isUpperUnitriangular_one
-  | succ k ih => rw [pow_succ]; exact ih.mul hM
-
 /-- An upper-unitriangular `m × m` matrix over a ring of prime characteristic `p` has order
 dividing `p ^ Fintype.card m`. -/
 theorem IsUpperUnitriangular.pow_eq_one [Ring R] {p : ℕ} [hp : Fact p.Prime] [CharP R p]
