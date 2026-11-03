@@ -11,14 +11,19 @@ import Mathlib.Probability.Distributions.Gaussian.CharFun
 import Mathlib.Probability.Distributions.Gaussian.Fernique
 
 /-!
-# Affine images of multivariate Gaussian measures
+# Affine images of Gaussian measures
 
-This file proves that a multivariate Gaussian measure is carried by a rectangular affine map to
+An affine map on the real line transforms a Gaussian's mean and variance by `m ↦ a + b * m`
+and `v ↦ b ^ 2 * v`, including zero slopes and zero variances.
+
+This file also proves that a multivariate Gaussian measure is carried by a rectangular affine map to
 the multivariate Gaussian with the transformed mean and covariance.  Rectangular matrices are
 allowed, so the result applies both to embeddings and to possibly singular projections.
 
 ## Main results
 
+* `TauCeti.Probability.gaussianReal_map_const_add_const_mul`: the affine pushforward formula for
+  a real Gaussian measure.
 * `TauCeti.Probability.map_affine_multivariateGaussian`: the affine pushforward formula for a
   multivariate
   Gaussian measure.
@@ -41,9 +46,21 @@ public section
 noncomputable section
 
 open MeasureTheory ProbabilityTheory
-open scoped MatrixOrder RealInnerProductSpace
+open scoped MatrixOrder RealInnerProductSpace NNReal
 
 namespace TauCeti.Probability
+
+/-- The affine image of a real Gaussian has mean `a + b * m` and variance `b ^ 2 * v`.
+This includes zero slopes and zero variances. -/
+@[simp]
+theorem gaussianReal_map_const_add_const_mul (m : ℝ) (v : ℝ≥0) (a b : ℝ) :
+    (gaussianReal m v).map (fun x ↦ a + b * x) =
+      gaussianReal (a + b * m) (NNReal.mk (b ^ 2) (sq_nonneg b) * v) := by
+  calc
+    _ = ((gaussianReal m v).map (fun x ↦ b * x)).map (fun x ↦ a + x) :=
+      (Measure.map_map (by fun_prop) (by fun_prop)).symm
+    _ = _ := by
+      rw [gaussianReal_map_const_mul, gaussianReal_map_const_add, add_comm (b * m) a]
 
 variable {ι κ : Type*} [Fintype ι] [Fintype κ] [DecidableEq ι] [DecidableEq κ]
 
