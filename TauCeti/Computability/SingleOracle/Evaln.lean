@@ -320,6 +320,11 @@ stage use does not record whether the run succeeded. -/
 def stageUse (σ : ℕ → Option ℕ) (k : ℕ) (c : Code) (n : ℕ) : ℕ :=
   ((evaln σ k c n).map Halt.use).getD 0
 
+/-- Equal stage runs have equal stage uses, including when both runs fail. -/
+theorem stageUse_congr {τ : ℕ → Option ℕ} {k' : ℕ} {c : Code}
+    (h : evaln σ k c n = evaln τ k' c n) : stageUse σ k c n = stageUse τ k' c n := by
+  simp only [stageUse, h]
+
 /-- The stage use of a successful run is its use. -/
 theorem stageUse_eq_of_evaln_eq_some {c : Code} (h : evaln σ k c n = some d) :
     stageUse σ k c n = d.use := by
