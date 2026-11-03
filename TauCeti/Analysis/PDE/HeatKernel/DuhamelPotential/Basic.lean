@@ -114,6 +114,20 @@ theorem heatDuhamelPotential_zero (f : ℝ → E → F) : heatDuhamelPotential f
   funext x
   simp [heatDuhamelPotential_def]
 
+/-- Constant forcing produces linear growth in time. -/
+@[simp]
+theorem heatDuhamelPotential_const [CompleteSpace F] (c : F) {t : ℝ} (ht : 0 ≤ t) (x : E) :
+    heatDuhamelPotential (fun _ _ => c) t x = t • c := by
+  rw [heatDuhamelPotential_def]
+  calc (∫ s in 0..t, (heatKernel (t - s) ⋆ fun _ : E => c) x) = ∫ _ in 0..t, c := by
+        apply intervalIntegral.integral_congr_ae_restrict
+        rw [uIoc_of_le ht, ← restrict_Ioo_eq_restrict_Ioc]
+        filter_upwards [ae_restrict_mem measurableSet_Ioo] with s hs
+        rw [convolution_def]
+        simp only [ContinuousLinearMap.lsmul_apply]
+        rw [integral_smul_const, integral_heatKernel (sub_pos.2 hs.2), one_smul]
+    _ = t • c := by simp
+
 /-- The Duhamel potential at time `t` as a function of space. -/
 private theorem heatDuhamelPotential_eq_fun (f : ℝ → E → F) (t : ℝ) :
     heatDuhamelPotential f t = fun x => ∫ s in 0..t, (heatKernel (t - s) ⋆ f s) x :=
