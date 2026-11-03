@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Geometry.Manifold.Diffeomorph
 public import Mathlib.Geometry.Manifold.VectorBundle.Basic
+public import TauCeti.Geometry.Manifold.LocalDiffeomorph.Composition
 
 /-!
 # Regularity and functoriality of pullback bundles
@@ -21,6 +22,12 @@ commuting square.
 
 The criterion applies to fibre bundles with a normed model fibre; the fibres themselves need
 only be nonempty topological spaces, without an additive or vector-space structure.
+
+Along a local diffeomorphism `f`, regularity of sections can be read upstairs: a section `σ` of
+`E` is `C^m` at `f x` exactly when its pullback `y ↦ σ (f y)`, a section of `f *ᵖ E`, is `C^m` at
+`x` (`IsLocalDiffeomorphAt.contMDiffAt_section_iff_pullback`), and for a surjective local
+diffeomorphism, such as the orbit projection of a free properly discontinuous action, a section
+is `C^m` exactly when its pullback is (`IsLocalDiffeomorph.contMDiff_section_iff_pullback`).
 
 The file also records the functoriality of Mathlib's pullback `f *ᵖ E` in `C^n` maps `f`, on its
 own carrier. The canonical map `Pullback.lift f` to the total space of `E` is `C^n`
@@ -63,7 +70,7 @@ variable {𝕜 F EM EM' EX H H' HX B B' X K : Type*} [NontriviallyNormedField �
   [TopologicalSpace X] [ChartedSpace HX X]
   {E : B → Type*} [∀ x, Nonempty (E x)]
   [∀ x, TopologicalSpace (E x)] [TopologicalSpace (TotalSpace F E)]
-  [FiberBundle F E] [FunLike K B' B] [ContinuousMapClass K B' B] {n : WithTop ℕ∞}
+  [FiberBundle F E] [FunLike K B' B] [ContinuousMapClass K B' B] {m n : WithTop ℕ∞}
 
 /-- A map into a pullback bundle is `C^n` at a point exactly when its base projection and its
 lift to the original total space are `C^n` there. -/
@@ -121,7 +128,7 @@ variable (E) in
 /-- The pullback of a bundle along the identity is the bundle itself: the canonical map
 `Pullback.lift` is a `C^n` diffeomorphism of total spaces, the identity on every fibre. Over a
 complex model at `n = ∞` this is a biholomorphism of total spaces. -/
-def idDiffeomorph {m : WithTop ℕ∞} :
+def idDiffeomorph :
     TotalSpace F ((ContMDiffMap.id : C^m⟮I, B; I, B⟯) *ᵖ E) ≃ₘ^n⟮I.prod 𝓘(𝕜, F), I.prod 𝓘(𝕜, F)⟯
       TotalSpace F E where
   toFun := Pullback.lift ContMDiffMap.id
@@ -132,19 +139,19 @@ def idDiffeomorph {m : WithTop ℕ∞} :
   contMDiff_invFun := (contMDiff_iff _ contMDiff_id).2 ⟨contMDiff_proj E, contMDiff_id⟩
 
 @[simp]
-theorem idDiffeomorph_apply {m : WithTop ℕ∞}
+theorem idDiffeomorph_apply
     (p : TotalSpace F ((ContMDiffMap.id : C^m⟮I, B; I, B⟯) *ᵖ E)) :
     idDiffeomorph (I := I) (n := n) E p = ⟨p.proj, p.2⟩ :=
   (rfl)
 
 @[simp]
-theorem idDiffeomorph_symm_apply {m : WithTop ℕ∞} (p : TotalSpace F E) :
+theorem idDiffeomorph_symm_apply (p : TotalSpace F E) :
     (idDiffeomorph (I := I) (m := m) (n := n) E).symm p = ⟨p.proj, p.2⟩ :=
   (rfl)
 
 variable {EM'' H'' B'' : Type*} [NormedAddCommGroup EM''] [NormedSpace 𝕜 EM'']
   [TopologicalSpace H''] {I'' : ModelWithCorners 𝕜 EM'' H''}
-  [TopologicalSpace B''] [ChartedSpace H'' B''] {m : WithTop ℕ∞}
+  [TopologicalSpace B''] [ChartedSpace H'' B'']
 
 variable (E) in
 /-- Pulling back along a composite is pulling back in two steps: for `C^m` maps
@@ -182,5 +189,29 @@ theorem lift_comp_compDiffeomorph (g : C^m⟮I', B'; I, B⟯) (f : C^m⟮I'', B'
     Pullback.lift (F := F) (E := E) g ∘ Pullback.lift f ∘ compDiffeomorph (n := n) E g f =
       Pullback.lift (g.comp f) :=
   (rfl)
+
+/-- If `f` is a `C^n` local diffeomorphism at `x` and `m ≤ n`, a section `σ` of `E` is `C^m` at
+`f x` exactly when its pullback `y ↦ σ (f y)`, a section of `f *ᵖ E`, is `C^m` at `x`. -/
+theorem _root_.IsLocalDiffeomorphAt.contMDiffAt_section_iff_pullback {f : K} {x : B'}
+    (hf : IsLocalDiffeomorphAt I' I n f x) (hm : m ≤ n) {σ : ∀ b, E b} :
+    ContMDiffAt I (I.prod 𝓘(𝕜, F)) m (fun b => TotalSpace.mk' F b (σ b)) (f x) ↔
+      ContMDiffAt I' (I'.prod 𝓘(𝕜, F)) m
+        (fun y => (TotalSpace.mk' F y (σ (f y)) : TotalSpace F ((f : B' → B) *ᵖ E))) x := by
+  rw [Pullback.contMDiffAt_iff f (hf.contMDiffAt.of_le hm), ← hf.contMDiffAt_comp_iff hm]
+  -- `Pullback.lift f` sends `⟨y, σ (f y)⟩` to `⟨f y, σ (f y)⟩` by definition; the dependent pair
+  -- cannot be rewritten.
+  exact (and_iff_right contMDiffAt_id).symm
+
+/-- If `f` is a surjective `C^n` local diffeomorphism and `m ≤ n`, a section `σ` of `E` is `C^m`
+exactly when its pullback `y ↦ σ (f y)`, a section of `f *ᵖ E`, is `C^m`. -/
+theorem _root_.IsLocalDiffeomorph.contMDiff_section_iff_pullback {f : K}
+    (hf : IsLocalDiffeomorph I' I n f) (hsurj : Function.Surjective f) (hm : m ≤ n)
+    {σ : ∀ b, E b} :
+    ContMDiff I (I.prod 𝓘(𝕜, F)) m (fun b => TotalSpace.mk' F b (σ b)) ↔
+      ContMDiff I' (I'.prod 𝓘(𝕜, F)) m
+        (fun y => (TotalSpace.mk' F y (σ (f y)) : TotalSpace F ((f : B' → B) *ᵖ E))) := by
+  refine ⟨fun h y => ((hf y).contMDiffAt_section_iff_pullback hm).1 (h (f y)), fun h b => ?_⟩
+  obtain ⟨x, rfl⟩ := hsurj b
+  exact ((hf x).contMDiffAt_section_iff_pullback hm).2 (h x)
 
 end Bundle.Pullback

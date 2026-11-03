@@ -178,7 +178,8 @@ theorem IsLeviCivitaConnection.christoffelMap_apply_eq_christoffelSecondKind
   have ht : cov.IsTorsionFree :=
     (CovariantDerivative.isTorsionFree_iff_torsion_eq_zero cov).2 h.torsion
   have hA := eq_christoffelSecondKind_of_fderiv_apply_eq (g := g.chartMetric x₀)
-    (x := extChartAt I x₀ y) (g.isSymm_chartMetric ((extChartAt I x₀).map_source hy))
+    (x := extChartAt I x₀ y) (LinearMap.BilinForm.isSymm_iff.mpr
+      (g.isSymm_chartMetric ((extChartAt I x₀).map_source hy)))
     (g.nondegenerate_chartMetric ((extChartAt I x₀).map_source hy))
     (A := (christoffelMap b (cov.isCovariantDerivativeOn
       (s := (trivializationAt E (TangentSpace I) x₀).baseSet)) y).flip)
@@ -208,7 +209,8 @@ theorem IsLeviCivitaConnection.christoffelSymbol_eq_fderivWithin [DecidableEq ι
   let G := g.chartMetric x₀ (extChartAt I x₀ y)
   let D := fderivWithin ℝ (g.chartMetric x₀) (extChartAt I x₀).target (extChartAt I x₀ y)
   have hg (v w : E) : G v w = G w v :=
-    (g.isSymm_chartMetric ((extChartAt I x₀).map_source hy)).eq v w
+    (LinearMap.BilinForm.isSymm_iff.mpr
+      (g.isSymm_chartMetric ((extChartAt I x₀).map_source hy))).eq v w
   have : IsManifold I (minSmoothness ℝ 2) M := by
     rw [minSmoothness_of_isRCLikeNormedField]; infer_instance
   have ht : cov.IsTorsionFree :=

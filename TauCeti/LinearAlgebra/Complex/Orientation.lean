@@ -8,6 +8,8 @@ module
 public import Mathlib.LinearAlgebra.Complex.Orientation
 public import Mathlib.RingTheory.AlgebraTower
 public import TauCeti.LinearAlgebra.Complex.Determinant
+public import TauCeti.LinearAlgebra.Complex.Finrank
+public import TauCeti.LinearAlgebra.Orientation.Prod
 
 /-!
 # The canonical real orientation of a complex vector space
@@ -20,6 +22,13 @@ orientation. A finite-dimensional complex vector space therefore carries a canon
 orientation `TauCeti.complexOrientation E`, which involves no choice of basis. Complex-linear
 equivalences transport it, so complex-linear automorphisms preserve it. On `ℂ` itself it is
 Mathlib's standard orientation `Complex.orientation`.
+
+The canonical orientation of a product `E × F` is the ordered product `Orientation.prod` of the
+canonical orientations of the factors, the first factor's directions before the second's: the
+real basis underlying the complex product basis `(b, c)` is the real basis of `b` followed by that
+of `c`. Exchanging two factors of real dimensions `m` and `n` multiplies a product orientation by
+`(-1) ^ (m * n)`; for complex factors both real dimensions are even, so the exchange carries the
+product of the canonical orientations of `E` and `F` to that of `F` and `E`.
 
 This is the linear model for the canonical orientation of a complex manifold, whose chart
 transitions have complex-linear derivatives.
@@ -43,6 +52,10 @@ The real module structure of `E` is an ambient one compatible with the complex s
   orientations.
 * `TauCeti.reindex_complexOrientation_complex`: on `ℂ`, the canonical orientation is
   `Complex.orientation`.
+* `TauCeti.prod_complexOrientation`: the product of the canonical orientations of `E` and `F` is
+  the canonical orientation of `E × F`.
+* `TauCeti.map_prodComm_prod_complexOrientation`: exchanging the factors carries the product of
+  canonical orientations of `E` and `F` to that of `F` and `E`, with sign `1`.
 
 ## References
 
@@ -208,5 +221,64 @@ theorem reindex_complexOrientation_complex :
   rw [Equiv.trans_apply, Basis.reindex_apply, Equiv.symm_apply_apply, Basis.reindex_apply,
     Equiv.symm_apply_apply, hk]
   simp [b]
+
+/-! ### Products -/
+
+section Prod
+
+-- `Module.Finite ℝ E` follows from the scalar tower, but `Orientation.prod` takes it as an
+-- instance argument.
+variable {E F : Type*} [AddCommGroup E] [Module ℂ E] [Module ℝ E] [IsScalarTower ℝ ℂ E]
+  [FiniteDimensional ℂ E] [Module.Finite ℝ E] [AddCommGroup F] [Module ℂ F] [Module ℝ F]
+  [IsScalarTower ℝ ℂ F] [FiniteDimensional ℂ F] [Module.Finite ℝ F]
+
+/-- The ordered product of the canonical orientations of `E` and `F` is the canonical orientation
+of `E × F`, after identifying the index types through `finrank ℂ (E × F) = finrank ℂ E +
+finrank ℂ F`. -/
+theorem prod_complexOrientation :
+    (complexOrientation E).prod (complexOrientation F) finrank_real_eq_two_mul_finrank_complex
+        finrank_real_eq_two_mul_finrank_complex =
+      Orientation.reindex ℝ (E × F) (finCongr (by rw [finrank_prod]; ring))
+        (complexOrientation (E × F)) := by
+  set b := finBasis ℂ E
+  set c := finBasis ℂ F
+  set d : Basis (Fin (finrank ℂ (E × F))) ℂ (E × F) :=
+    (b.prod c).reindex (finSumFinEquiv.trans (finCongr finrank_prod.symm))
+  rw [b.complexOrientation_eq, c.complexOrientation_eq, d.complexOrientation_eq,
+    ← Basis.orientation_reindex, ← Basis.orientation_reindex, ← Basis.orientation_reindex,
+    ← Basis.orientation_reindex, Orientation.prod_basis_orientation]
+  congr 1
+  -- Both real bases list `(b₀, 0), (I • b₀, 0), …` and then `(0, c₀), (0, I • c₀), …`.
+  refine Basis.eq_of_apply_eq fun j ↦ ?_
+  obtain ⟨j | j, rfl⟩ := finSumFinEquiv.surjective j
+  · obtain ⟨⟨i, k⟩, rfl⟩ := (complexRealIndexEquiv _).surjective j
+    simp only [Basis.reindex_apply, Basis.prod_apply, finCongr_symm, finCongr_apply]
+    rw [show (complexRealIndexEquiv _).symm _ = (Fin.cast finrank_prod.symm (Fin.castAdd _ i), k)
+      from (Equiv.symm_apply_eq _).2 (Fin.ext (by simp))]
+    simp [d]
+  · obtain ⟨⟨i, k⟩, rfl⟩ := (complexRealIndexEquiv _).surjective j
+    simp only [Basis.reindex_apply, Basis.prod_apply, finCongr_symm, finCongr_apply]
+    rw [show (complexRealIndexEquiv _).symm _ = (Fin.cast finrank_prod.symm (Fin.natAdd _ i), k)
+      from (Equiv.symm_apply_eq _).2 (Fin.ext (by simp; ring))]
+    simp [d]
+
+/-- Exchanging the factors carries the product of the canonical orientations of `E` and `F` to the
+product of those of `F` and `E`, with no sign, since both real dimensions are even. -/
+theorem map_prodComm_prod_complexOrientation :
+    Orientation.map _ (LinearEquiv.prodComm ℝ E F)
+        ((complexOrientation E).prod (complexOrientation F) finrank_real_eq_two_mul_finrank_complex
+          finrank_real_eq_two_mul_finrank_complex) =
+      Orientation.reindex ℝ (F × E) (finCongr (add_comm _ _))
+        ((complexOrientation F).prod (complexOrientation E) finrank_real_eq_two_mul_finrank_complex
+          finrank_real_eq_two_mul_finrank_complex) := by
+  -- The exchange is complex linear, so it carries the canonical orientation of `E × F` to that of
+  -- `F × E`; what remains is that `map` and the index casts commute.
+  rw [prod_complexOrientation, prod_complexOrientation,
+    (Equiv.eq_symm_apply _).2 (LinearEquiv.prodComm ℂ E F).map_complexOrientation.symm]
+  induction complexOrientation (E × F) using Module.Ray.ind with | h v hv => ?_
+  simp only [Orientation.map_apply, Orientation.reindex_apply, Orientation.reindex_symm]
+  congr 1
+
+end Prod
 
 end TauCeti

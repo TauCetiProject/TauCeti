@@ -147,6 +147,16 @@ theorem equation_apply_two (x : ℂ → EuclideanSpace ℝ (Fin 4)) (z : ℂ) :
       x z 0 * x z 2 - x z 1 * x z 3 := by
   rfl
 
+/-- At a solution of the vortex equation the curvature coefficient `∂₁ b₂ - ∂₂ b₁` of
+`F_a = i (∂₁ b₂ - ∂₂ b₁) ds ∧ dt` is `-(1 - |α|²) / 8`. -/
+theorem curvature_eq_of_equation_eq_zero {x : ℂ → EuclideanSpace ℝ (Fin 4)} {z : ℂ}
+    (hsol : equation x z = 0) :
+    fderiv ℝ (fun w ↦ x w 1) z 1 - fderiv ℝ (fun w ↦ x w 0) z I =
+      -((1 - 4 * (x z 2 ^ 2 + x z 3 ^ 2)) / 8) := by
+  have h := congrArg (· 0) hsol
+  simp only [equation_apply_zero, PiLp.zero_apply] at h
+  linarith
+
 /-- The curvature component of the linearized equation. -/
 @[simp]
 theorem linearizedEquation_apply_zero (x y : ℂ → EuclideanSpace ℝ (Fin 4)) (z : ℂ) :

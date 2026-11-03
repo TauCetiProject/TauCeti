@@ -407,7 +407,7 @@ polynomial runs from its order of vanishing at zero to its degree. Over a divisi
 hypothesis on `v` is `AddValuation.top_iff`. -/
 theorem newtonPolygon_ne_top_iff (hv : ∀ x, v x = ⊤ → x = 0) {f : R[X]} (hf : f ≠ 0) {n : ℕ} :
     f.newtonPolygon v n ≠ ⊤ ↔ f.natTrailingDegree ≤ n ∧ n ≤ f.natDegree :=
-  newtonPolygon_ne_top_iff_of_ne_top v (mt (hv _) (trailingCoeff_nonzero_iff_nonzero.mpr hf))
+  newtonPolygon_ne_top_iff_of_ne_top v (mt (hv _) (Polynomial.trailingCoeff_ne_zero.mpr hf))
     (mt (hv _) (leadingCoeff_ne_zero.mpr hf))
 
 variable {f v} in
@@ -440,7 +440,7 @@ theorem finiteEdges_newtonPolygon (hv : ∀ x, v x = ⊤ → x = 0) :
   · ext n
     simp
   exact finiteEdges_newtonPolygon_of_ne_top f v
-    (mt (hv _) (trailingCoeff_nonzero_iff_nonzero.mpr hf)) (mt (hv _) (leadingCoeff_ne_zero.mpr hf))
+    (mt (hv _) (Polynomial.trailingCoeff_ne_zero.mpr hf)) (mt (hv _) (leadingCoeff_ne_zero.mpr hf))
 
 /-- If only zero has infinite valuation, a polynomial of degree `d` and order of vanishing `a`
 at zero has exactly `d - a` finite unit edges. -/

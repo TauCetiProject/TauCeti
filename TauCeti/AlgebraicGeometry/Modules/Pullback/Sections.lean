@@ -75,6 +75,13 @@ lemma pullbackSectionsLE_apply (s : Γ(M, U)) :
     pullbackSectionsLE g M U V hV s =
       ((pullback g).obj M).presheaf.map (homOfLE hV).op (g.pullbackSections M U s) :=
   (rfl)
+/-- Pullback to a smaller open commutes with restriction of the section in the target. -/
+lemma pullbackSectionsLE_map {U' : X.Opens} (i : U' ⟶ U) (hV' : V ≤ g ⁻¹ᵁ U') (s : Γ(M, U)) :
+    pullbackSectionsLE g M U' V hV' (M.presheaf.map i.op s) = pullbackSectionsLE g M U V hV s := by
+  rw [pullbackSectionsLE_apply, pullbackSectionsLE_apply, ← pullbackSections_restrict,
+    ← ConcreteCategory.comp_apply, ← Functor.map_comp]
+  -- Both sides restrict along a morphism `V ⟶ g⁻¹ U`, and `congr` uses that there is only one.
+  congr 2
 /-- Pullback to the full inverse image agrees with the canonical section pullback. -/
 @[simp] lemma pullbackSectionsLE_self (s : Γ(M, U)) :
     pullbackSectionsLE g M U (g ⁻¹ᵁ U) le_rfl s = Scheme.Hom.pullbackSections g M U s := by
