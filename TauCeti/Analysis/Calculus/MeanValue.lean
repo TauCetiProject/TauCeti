@@ -30,21 +30,26 @@ namespace Convex
 
 /-- The mean value inequality with a bound only in the direction of the chord. The bound
 is needed only on the segment joining the endpoints. In particular, neither an operator norm
-bound nor a full-dimensional domain is required. -/
+bound nor a full-dimensional domain is required. Derivatives may be taken over a real or
+complex scalar field. -/
 theorem norm_image_sub_le_of_norm_hasFDerivWithin_apply_le
-    {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
-    [NormedAddCommGroup F] [NormedSpace ℝ F] {s : Set E} {f : E → F}
-    {f' : E → E →L[ℝ] F} {x y : E} {C : ℝ} (hs : Convex ℝ s)
+    {𝕜 E F : Type*} [NontriviallyNormedField 𝕜] [IsRCLikeNormedField 𝕜]
+    [NormedAddCommGroup E] [NormedSpace ℝ E] [NormedSpace 𝕜 E]
+    [NormedAddCommGroup F] [NormedSpace 𝕜 F] {s : Set E} {f : E → F}
+    {f' : E → E →L[𝕜] F} {x y : E} {C : ℝ} (hs : Convex ℝ s)
     (hf : ∀ z ∈ s, HasFDerivWithinAt f (f' z) s z)
     (hbound : ∀ z ∈ segment ℝ x y, ‖f' z (y - x)‖ ≤ C)
     (hx : x ∈ s) (hy : y ∈ s) : ‖f y - f x‖ ≤ C := by
+  let : RCLike 𝕜 := IsRCLikeNormedField.rclike 𝕜
+  let : NormedSpace ℝ F := .restrictScalars ℝ 𝕜 F
   let γ : ℝ → E := AffineMap.lineMap x y
   have hγ : MapsTo γ (Icc 0 1) s := hs.mapsTo_lineMap hx hy
   have hd : ∀ t ∈ Icc (0 : ℝ) 1,
       HasDerivWithinAt (f ∘ γ) (f' (γ t) (y - x)) (Icc 0 1) t := by
     intro t ht
-    exact (hf _ (hγ ht)).comp_hasDerivWithinAt t
-      AffineMap.hasDerivWithinAt_lineMap hγ
+    simpa only [ContinuousLinearMap.coe_restrictScalars'] using
+      ((hf _ (hγ ht)).restrictScalars ℝ).comp_hasDerivWithinAt t
+        AffineMap.hasDerivWithinAt_lineMap hγ
   have hb : ∀ t ∈ Ico (0 : ℝ) 1, ‖f' (γ t) (y - x)‖ ≤ C := by
     intro t ht
     exact hbound _ (lineMap_mem_segment ℝ _ _ (Ico_subset_Icc_self ht))
