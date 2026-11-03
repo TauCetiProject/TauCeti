@@ -47,6 +47,30 @@ variable {Γ : Type u₁} [Category.{v₁} Γ] {H : Type u₂} [Monoid H]
 
 namespace Hom
 
+/-- A fiber naturality square remains commutative after replacing its index by an equal
+one and inserting the corresponding `eqToIso` corrections. This isolates the equality
+transport caused by the indexing functor's `map_id` from the composite pseudofunctors. -/
+private lemma fiber_naturality_of_eq {I : Type v₁} {A B C : Cat.{v, w}}
+    (x y : I) (hxy : x = y)
+    (F : I → (A ⟶ A)) (G : I → (B ⟶ B)) (T : C ⟶ C)
+    (s : A ⟶ B) (e : A ⟶ C) (e' : B ⟶ C)
+    (m : s ≫ e' ⟶ e) (n : ∀ i, F i ≫ s ≅ s ≫ G i)
+    (c : F y ≫ e ⟶ e ≫ T) (c' : G y ≫ e' ⟶ e' ≫ T)
+    (hm : F y ◁ m ≫ c =
+      ((α_ _ _ _).inv ≫ (n y).hom ▷ e' ≫ (α_ _ _ _).hom ≫
+        s ◁ c' ≫ (α_ _ _ _).inv) ≫ m ▷ T)
+    (eF : F x ≫ 𝟙 A = 𝟙 A ≫ F y) (eG : G x ≫ 𝟙 B = 𝟙 B ≫ G y) :
+    F x ◁ m ≫ ((α_ (F x) (𝟙 A) e).inv ≫ (eqToIso eF).hom ▷ e ≫
+      (α_ (𝟙 A) (F y) e).hom ≫ 𝟙 A ◁ c ≫ (α_ (𝟙 A) e T).inv) =
+    ((α_ (F x) s (𝟙 B ≫ e')).inv ≫ (n x).hom ▷ (𝟙 B ≫ e') ≫
+      (α_ s (G x) (𝟙 B ≫ e')).hom ≫ s ◁
+        ((α_ (G x) (𝟙 B) e').inv ≫ (eqToIso eG).hom ▷ e' ≫
+          (α_ (𝟙 B) (G y) e').hom ≫ 𝟙 B ◁ c' ≫ (α_ (𝟙 B) e' T).inv) ≫
+      (α_ s (𝟙 B ≫ e') T).inv) ≫ m ▷ T := by
+  subst hxy
+  ext X
+  simpa using congrArg (fun t ↦ t.toNatTrans.app X) hm
+
 /-- Pull back a morphism of equivariant lifts, retaining its prescribed-fiber comparison. -/
 -- Exposed so that the joint transformation and the endpoints of its fiber modification
 -- reduce to the native whiskering when stating component formulas.
@@ -60,39 +84,19 @@ namespace Hom
       obtain ⟨⟨⟩⟩ := b
       obtain ⟨f⟩ := f
       simp only [isoApp_hom]
-      -- State the correction by `map_id` with abstract categories and an abstract index.
-      -- This keeps the equality transport independent of the composite pseudofunctors.
-      have h {I : Type v₁} {A B C : Cat.{v, w}} (x y : I) (hxy : x = y)
-          (F : I → (A ⟶ A)) (G : I → (B ⟶ B)) (T : C ⟶ C)
-          (s : A ⟶ B) (e : A ⟶ C) (e' : B ⟶ C)
-          (m : s ≫ e' ⟶ e) (n : ∀ i, F i ≫ s ≅ s ≫ G i)
-          (c : F y ≫ e ⟶ e ≫ T) (c' : G y ≫ e' ⟶ e' ≫ T)
-          (hm : F y ◁ m ≫ c =
-            ((α_ _ _ _).inv ≫ (n y).hom ▷ e' ≫ (α_ _ _ _).hom ≫
-              s ◁ c' ≫ (α_ _ _ _).inv) ≫ m ▷ T)
-          (eF : F x ≫ 𝟙 A = 𝟙 A ≫ F y) (eG : G x ≫ 𝟙 B = 𝟙 B ≫ G y) :
-          F x ◁ m ≫ ((α_ (F x) (𝟙 A) e).inv ≫ (eqToIso eF).hom ▷ e ≫
-            (α_ (𝟙 A) (F y) e).hom ≫ 𝟙 A ◁ c ≫ (α_ (𝟙 A) e T).inv) =
-          ((α_ (F x) s (𝟙 B ≫ e')).inv ≫ (n x).hom ▷ (𝟙 B ≫ e') ≫
-            (α_ s (G x) (𝟙 B ≫ e')).hom ≫ s ◁
-              ((α_ (G x) (𝟙 B) e').inv ≫ (eqToIso eG).hom ▷ e' ≫
-                (α_ (𝟙 B) (G y) e').hom ≫ 𝟙 B ◁ c' ≫ (α_ (𝟙 B) e' T).inv) ≫
-            (α_ s (𝟙 B ≫ e') T).inv) ≫ m ▷ T := by
-        subst hxy
-        ext X
-        simpa using congrArg (fun t ↦ t.toNatTrans.app X) hm
-      exact h (I := ψ.obj l ⟶ ψ.obj l) (ψ.map (𝟙 l)) (𝟙 (ψ.obj l)) (ψ.map_id l)
-        (fun x ↦ L.joint.map (x ×ₘ f).toLoc)
-        (fun x ↦ L'.joint.map (x ×ₘ f).toLoc)
-        ((actions (ψ.obj l)).map f.toLoc)
-        (φ.joint.app ⟨(ψ.obj l, SingleObj.star H)⟩)
-        ((L.comparison (ψ.obj l)).app ⟨SingleObj.star H⟩)
-        ((L'.comparison (ψ.obj l)).app ⟨SingleObj.star H⟩)
-        ((φ.fiberIso (ψ.obj l)).hom.as.app ⟨SingleObj.star H⟩)
-        (fun x ↦ φ.joint.naturality (x ×ₘ f).toLoc)
-        ((L.comparison (ψ.obj l)).naturality f.toLoc).hom
-        ((L'.comparison (ψ.obj l)).naturality f.toLoc).hom
-        ((φ.fiberIso (ψ.obj l)).hom.as.naturality f.toLoc) _ _)
+      exact fiber_naturality_of_eq
+        (x := ψ.map (𝟙 l)) (y := 𝟙 (ψ.obj l)) (hxy := ψ.map_id l)
+        (F := fun x ↦ L.joint.map (x ×ₘ f).toLoc)
+        (G := fun x ↦ L'.joint.map (x ×ₘ f).toLoc)
+        (T := (actions (ψ.obj l)).map f.toLoc)
+        (s := φ.joint.app ⟨(ψ.obj l, SingleObj.star H)⟩)
+        (e := (L.comparison (ψ.obj l)).app ⟨SingleObj.star H⟩)
+        (e' := (L'.comparison (ψ.obj l)).app ⟨SingleObj.star H⟩)
+        (m := (φ.fiberIso (ψ.obj l)).hom.as.app ⟨SingleObj.star H⟩)
+        (n := fun x ↦ φ.joint.naturality (x ×ₘ f).toLoc)
+        (c := ((L.comparison (ψ.obj l)).naturality f.toLoc).hom)
+        (c' := ((L'.comparison (ψ.obj l)).naturality f.toLoc).hom)
+        (hm := (φ.fiberIso (ψ.obj l)).hom.as.naturality f.toLoc) (eF := _) (eG := _))
 
 @[simp]
 lemma pullback_joint (φ : L.Hom L') (ψ : Λ ⥤ Γ) :
