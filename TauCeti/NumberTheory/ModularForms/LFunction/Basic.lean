@@ -33,6 +33,8 @@ API and Mathlib's `LSeries` of the `q`-expansion coefficients:
 * `CuspForm.abscissaOfAbsConv_qExpansion_coeff_le`: for a cusp form, at most `(k+1)/2`
   (from Mathlib's mean-square coefficient bound and Cauchy–Schwarz). In weight one this
   gives the bound `1`, which the pointwise estimate `aₙ = O(n^{k/2})` does not give.
+  `CuspForm.LSeriesSummable_qExpansion_coeff` is the resulting absolute convergence on
+  `Re s > (k+1)/2`.
 * `ModularForm.LSeries_qExpansion_coeff_eq`, `CuspForm.LSeries_qExpansion_coeff_eq`:
   on the respective half-planes, `LSeries` of the coefficients is
   `(Γ.strictWidthInfty : ℂ) ^ (-s) * L hk f s` for Mathlib's `ModularForm.L`.
@@ -138,6 +140,14 @@ theorem abscissaOfAbsConv_qExpansion_coeff_le [CuspFormClass F Γ k] (f : F) :
     refine LSeries.abscissaOfAbsConv_le_of_forall_lt_LSeriesSummable fun y _ ↦ ?_
     rw [hf, qExpansion_zero]
     simpa only [map_zero, Pi.zero_def] using (LSeriesSummable_zero (s := (y : ℂ)))
+
+/-- The Dirichlet series of the `q`-expansion coefficients of a cusp form converges absolutely
+on the half-plane `Re s > (k+1)/2`. -/
+theorem LSeriesSummable_qExpansion_coeff [CuspFormClass F Γ k] (f : F)
+    (hs : ((k : ℝ) + 1) / 2 < s.re) :
+    LSeriesSummable (fun n ↦ (qExpansion Γ.strictWidthInfty f).coeff n) s :=
+  LSeriesSummable_of_abscissaOfAbsConv_lt_re
+    ((abscissaOfAbsConv_qExpansion_coeff_le f).trans_lt (mod_cast hs))
 
 /-- On the half-plane `Re s > k/2 + 1`, the Dirichlet series of the `q`-expansion
 coefficients of a cusp form is Mathlib's `ModularForm.L`, up to the width factor.
