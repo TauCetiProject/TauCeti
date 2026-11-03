@@ -111,15 +111,8 @@ theorem order_coordinate_zpow (a : 𝕜) (n : ℤ) : order (coordinate a ^ n) = 
     ((MeromorphicAt.id a).sub (.const a a)).zpow n
   have heq : coordinate a ^ n = mk (fun z : 𝕜 ↦ (z - a) ^ n) hm := by
     apply Subtype.ext
-    cases n with
-    | ofNat n =>
-      simpa only [Int.ofNat_eq_natCast, zpow_natCast, SubmonoidClass.coe_pow,
-        coe_coordinate, coe_mk, Pi.pow_def] using
-        (Germ.coe_pow (fun z : 𝕜 ↦ z - a) n).symm
-    | negSucc n =>
-      simp only [zpow_negSucc, coe_inv, SubmonoidClass.coe_pow, coe_coordinate, coe_mk]
-      exact ((Germ.coe_inv ((fun z : 𝕜 ↦ z - a) ^ (n + 1))).trans
-        (congrArg Inv.inv (Germ.coe_pow (fun z : 𝕜 ↦ z - a) (n + 1)))).symm
+    rw [coe_zpow, coe_coordinate, coe_mk]
+    exact (Germ.coe_pow (fun z : 𝕜 ↦ z - a) n).symm
   rw [heq, order_mk]
   exact meromorphicOrderAt_zpow_id_sub_const
 
