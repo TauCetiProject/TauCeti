@@ -693,6 +693,20 @@ theorem pointsMulEquiv_mapValue {A : Type v} {B : Type w} [CommRing A] [CommRing
   rw [h, AlgHom.mapValue_apply, Matrix.map_apply]
   rw [WithConv.ofConv_toConv, _root_.AlgHom.comp_apply, _root_.AlgHom.coe_toRingHom]
 
+/-- Extending a prime-field coordinate point agrees with coefficient change on matrix-valued
+carrier points. -/
+@[simp]
+theorem pointsMulEquiv_extendPoint (A : Type v) [CommRing A] [Algebra (ZMod 3) A]
+    (q : HopfAlgebra.points (R := ZMod 3) (H := carrierAlgebra)
+      (CommAlgCat.of (ZMod 3) (ZMod 3))) :
+    pointsMulEquiv (CommAlgCat.of (ZMod 3) A)
+        (HopfAlgebra.extendPoint carrierAlgebra (CommAlgCat.of (ZMod 3) A) q) =
+      pointsMap (Algebra.ofId (ZMod 3) A)
+        (pointsMulEquiv (CommAlgCat.of (ZMod 3) (ZMod 3)) q) := by
+  rw [← HopfAlgebra.mapValue_extendPoint _ (A := CommAlgCat.of (ZMod 3) (ZMod 3))
+      (Algebra.ofId (ZMod 3) A),
+    HopfAlgebra.extendPoint_self, pointsMulEquiv_mapValue]
+
 /-- The identity algebra homomorphism induces the identity on carrier points. -/
 @[simp]
 theorem pointsMap_id {A : Type v} [CommRing A] [Algebra (ZMod 3) A] :

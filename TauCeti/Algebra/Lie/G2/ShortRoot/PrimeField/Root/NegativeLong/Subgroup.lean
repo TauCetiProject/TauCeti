@@ -148,8 +148,8 @@ theorem pointsMulEquiv_negativeLongRootSubgroupCoordinateMap (i : Fin 2)
     CommHopfAlgCat.mapPointsFunctor_innerConjugationIso_hom]
   -- The composed functors use definitionally equal presentations of the point group.
   erw [HopfAlgebra.innerConjugationPointNatIso_hom_app_apply, map_mul, map_mul, map_inv]
-  erw [HopfAlgebra.extendPoint_apply, ← AlgHom.mapValue_apply, pointsMulEquiv_mapValue,
-    MulEquiv.apply_symm_apply, pointsMulEquiv_commonKernelLift_root,
+  rw [pointsMulEquiv_extendPoint, MulEquiv.apply_symm_apply,
+    pointsMulEquiv_commonKernelLift_root,
     negativeLongRootSubgroupPoints_apply]
 
 /-- The closed additive subgroup scheme at either negative nonsimple long root. -/
