@@ -13,7 +13,6 @@ import Mathlib.Analysis.Calculus.Deriv.Inv
 import Mathlib.Analysis.InnerProductSpace.Calculus
 import Mathlib.Analysis.SpecialFunctions.ExpDeriv
 import Mathlib.Analysis.SpecialFunctions.Sqrt
-import TauCeti.Analysis.Normed.Module.Ball.LinearIsometry
 public import TauCeti.LowDimTopology.SolidTorusNeighborhood.Sphere
 public import TauCeti.LowDimTopology.SolidTorusNeighborhood.Unknot
 
@@ -72,7 +71,6 @@ vanish on it. If it is negative, precomposing with the reflection `(u, w) ↦ (c
 
 * `TauCeti.IsOrientationPreservingAtCore Φ o`: the solid torus `Φ` preserves orientation at the
   point `(0, 1)` of its core, for the boundary orientation of `S³` induced by `o`.
-* `TauCeti.SolidTorus.conjDisc`: the reflection `(u, w) ↦ (conj u, w)` of the solid torus.
 
 ## Main results
 
@@ -83,10 +81,8 @@ vanish on it. If it is negative, precomposing with the reflection `(u, w) ↦ (c
 * `TauCeti.IsOrientationPreservingAtCore.not_neg`: `Φ` does not preserve both orientations.
 * `TauCeti.isOrientationPreservingAtCore_unknotSolidTorus`: the standard solid torus
   neighbourhood of the unknot preserves the standard orientation.
-* `TauCeti.IsSolidTorusNeighborhood.comp_conjDisc`,
-  `TauCeti.isOrientationPreservingAtCore_comp_conjDisc_iff`: reflecting the disc of a solid torus
-  neighbourhood gives a solid torus neighbourhood of the same loop with the opposite orientation at
-  its core point.
+* `TauCeti.isOrientationPreservingAtCore_comp_conjDisc_iff`: reflecting the disc of a solid torus
+  (`TauCeti.SolidTorus.conjDisc`) gives the opposite orientation at its core point.
 * `TauCeti.exists_isSolidTorusNeighborhood_isOrientationPreservingAtCore`: every `C²` embedded
   circle in `S³` has solid torus neighbourhoods preserving either orientation at their core point,
   inside any neighbourhood of its image.
@@ -222,62 +218,6 @@ theorem isOrientationPreservingAtCore_unknotSolidTorus :
   exact one_pos
 
 /-! ### Reflecting the disc -/
-
-/-- The reflection `(u, w) ↦ (conj u, w)` of the solid torus. Precomposing a solid torus with it
-reverses its orientation at the core point
-(`TauCeti.isOrientationPreservingAtCore_comp_conjDisc_iff`). -/
-def SolidTorus.conjDisc : SolidTorus ≃ₜ SolidTorus where
-  toFun p := (Complex.conjLIE.toLinearIsometry.unitClosedBallMap p.1, p.2)
-  invFun p := (Complex.conjLIE.toLinearIsometry.unitClosedBallMap p.1, p.2)
-  left_inv p := Prod.ext (Subtype.ext (by simp)) rfl
-  right_inv p := Prod.ext (Subtype.ext (by simp)) rfl
-  continuous_toFun :=
-    ((LinearIsometry.continuous_unitClosedBallMap _).comp continuous_fst).prodMk continuous_snd
-  continuous_invFun :=
-    ((LinearIsometry.continuous_unitClosedBallMap _).comp continuous_fst).prodMk continuous_snd
-
-namespace SolidTorus
-
-/-- The reflection conjugates the disc coordinate. -/
-@[simp]
-theorem coe_conjDisc_fst (p : SolidTorus) : ((conjDisc p).1 : ℂ) = conj (p.1 : ℂ) := by
-  simp [conjDisc]
-
-/-- The reflection keeps the circle coordinate. -/
-@[simp]
-theorem conjDisc_snd (p : SolidTorus) : (conjDisc p).2 = p.2 :=
-  (rfl)
-
-/-- The reflection is an involution. -/
-@[simp]
-theorem conjDisc_conjDisc (p : SolidTorus) : conjDisc (conjDisc p) = p :=
-  conjDisc.symm_apply_apply p
-
-/-- The reflection fixes the core circle. -/
-@[simp]
-theorem conjDisc_zero (z : Circle) : conjDisc (0, z) = (0, z) :=
-  Prod.ext (Subtype.ext (by simp)) (by simp)
-
-end SolidTorus
-
-/-- Precomposing a solid torus neighbourhood with the reflection `(u, w) ↦ (conj u, w)` gives a
-solid torus neighbourhood of the same loop. -/
-theorem IsSolidTorusNeighborhood.comp_conjDisc {X : Type*} [TopologicalSpace X]
-    {f : Circle → X} {Φ : SolidTorus → X} (h : IsSolidTorusNeighborhood f Φ) :
-    IsSolidTorusNeighborhood f (Φ ∘ SolidTorus.conjDisc) where
-  isEmbedding := h.isEmbedding.comp SolidTorus.conjDisc.isEmbedding
-  apply_zero z := by
-    rw [Function.comp_apply, SolidTorus.conjDisc_zero, h.apply_zero]
-  isOpen_image := by
-    have himage : SolidTorus.conjDisc '' {p : SolidTorus | ‖(p.1 : ℂ)‖ < 1} =
-        {p : SolidTorus | ‖(p.1 : ℂ)‖ < 1} := by
-      ext p
-      refine ⟨?_, fun hp ↦ ⟨SolidTorus.conjDisc p, by simpa using hp,
-        SolidTorus.conjDisc_conjDisc p⟩⟩
-      rintro ⟨q, hq, rfl⟩
-      simpa using hq
-    rw [Set.image_comp, himage]
-    exact h.isOpen_image
 
 /-- The reflection `(u, t) ↦ (conj u, t)` of `ℂ × ℝ`. -/
 private def conjProd : ℂ × ℝ →L[ℝ] ℂ × ℝ :=

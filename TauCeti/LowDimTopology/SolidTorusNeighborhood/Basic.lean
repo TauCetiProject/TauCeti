@@ -16,6 +16,7 @@ import Mathlib.Analysis.Calculus.Deriv.Shift
 import Mathlib.Topology.MetricSpace.HausdorffDimension
 import TauCeti.Geometry.Euclidean.Angle.Unoriented.CrossProduct
 import TauCeti.Geometry.Manifold.Instances.Sphere
+import TauCeti.Analysis.Normed.Module.Ball.LinearIsometry
 import TauCeti.Geometry.Manifold.TubularNeighborhood.Euclidean
 import TauCeti.Topology.Homeomorph.SetCongr
 
@@ -55,6 +56,7 @@ lets the orientation of a solid torus neighbourhood be read off its derivative a
   solid torus.
 * `TauCeti.SolidTorus.coreReading Φ`: a map `Φ` from the solid torus read near the core point
   `(0, 1)` as `(u, t) ↦ Φ (u, exp (t i))` on `ℂ × ℝ`.
+* `TauCeti.SolidTorus.conjDisc`: the reflection `(u, w) ↦ (conj u, w)` of the solid torus.
 
 ## Main results
 
@@ -73,6 +75,8 @@ lets the orientation of a solid torus neighbourhood be read off its derivative a
   misses the knot.
 * `TauCeti.IsSolidTorusNeighborhood.exteriorFrontierHomeomorph`: the framing identifies the torus
   with the frontier of the exterior.
+* `TauCeti.IsSolidTorusNeighborhood.comp_conjDisc`: reflecting the disc of a solid torus
+  neighbourhood gives a solid torus neighbourhood of the same loop.
 * `TauCeti.exists_isSolidTorusNeighborhood`: a `C²` embedded circle in `ℝ³` has a solid torus
   neighbourhood inside any neighbourhood of its image.
 * `TauCeti.exists_isSolidTorusNeighborhood_hasFDerivAt_coreReading`: such a neighbourhood can be
@@ -323,6 +327,69 @@ theorem coe_exteriorFrontierHomeomorph_apply [T2Space X]
     Homeomorph.setCongr_apply, IsEmbedding.toHomeomorph_apply_coe, Function.comp_apply]
 
 end IsSolidTorusNeighborhood
+
+/-! ### Reflecting the disc -/
+
+section ConjDisc
+
+open scoped ComplexConjugate
+
+/-- The reflection `(u, w) ↦ (conj u, w)` of the solid torus. Precomposing a solid torus with it
+reverses its orientation at the core point, see `SolidTorusNeighborhood/Orientation.lean`. -/
+noncomputable def SolidTorus.conjDisc : SolidTorus ≃ₜ SolidTorus where
+  toFun p := (Complex.conjLIE.toLinearIsometry.unitClosedBallMap p.1, p.2)
+  invFun p := (Complex.conjLIE.toLinearIsometry.unitClosedBallMap p.1, p.2)
+  left_inv p := Prod.ext (Subtype.ext (by simp)) rfl
+  right_inv p := Prod.ext (Subtype.ext (by simp)) rfl
+  continuous_toFun :=
+    ((LinearIsometry.continuous_unitClosedBallMap _).comp continuous_fst).prodMk continuous_snd
+  continuous_invFun :=
+    ((LinearIsometry.continuous_unitClosedBallMap _).comp continuous_fst).prodMk continuous_snd
+
+namespace SolidTorus
+
+/-- The reflection conjugates the disc coordinate. -/
+@[simp]
+theorem coe_conjDisc_fst (p : SolidTorus) : ((conjDisc p).1 : ℂ) = conj (p.1 : ℂ) := by
+  simp [conjDisc]
+
+/-- The reflection keeps the circle coordinate. -/
+@[simp]
+theorem conjDisc_snd (p : SolidTorus) : (conjDisc p).2 = p.2 :=
+  (rfl)
+
+/-- The reflection is an involution. -/
+@[simp]
+theorem conjDisc_conjDisc (p : SolidTorus) : conjDisc (conjDisc p) = p :=
+  conjDisc.symm_apply_apply p
+
+/-- The reflection fixes the core circle. -/
+@[simp]
+theorem conjDisc_zero (z : Circle) : conjDisc (0, z) = (0, z) :=
+  Prod.ext (Subtype.ext (by simp)) (by simp)
+
+end SolidTorus
+
+/-- Precomposing a solid torus neighbourhood with the reflection `(u, w) ↦ (conj u, w)` gives a
+solid torus neighbourhood of the same loop. -/
+theorem IsSolidTorusNeighborhood.comp_conjDisc {X : Type*} [TopologicalSpace X]
+    {f : Circle → X} {Φ : SolidTorus → X} (h : IsSolidTorusNeighborhood f Φ) :
+    IsSolidTorusNeighborhood f (Φ ∘ SolidTorus.conjDisc) where
+  isEmbedding := h.isEmbedding.comp SolidTorus.conjDisc.isEmbedding
+  apply_zero z := by
+    rw [Function.comp_apply, SolidTorus.conjDisc_zero, h.apply_zero]
+  isOpen_image := by
+    have himage : SolidTorus.conjDisc '' {p : SolidTorus | ‖(p.1 : ℂ)‖ < 1} =
+        {p : SolidTorus | ‖(p.1 : ℂ)‖ < 1} := by
+      ext p
+      refine ⟨?_, fun hp ↦ ⟨SolidTorus.conjDisc p, by simpa using hp,
+        SolidTorus.conjDisc_conjDisc p⟩⟩
+      rintro ⟨q, hq, rfl⟩
+      simpa using hq
+    rw [Set.image_comp, himage]
+    exact h.isOpen_image
+
+end ConjDisc
 
 end General
 
