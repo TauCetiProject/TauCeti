@@ -41,7 +41,8 @@ The equation degenerates at `s = 0` and its coefficients grow with `s`. In the l
 `u / (1 + e^y)` bounded. Dividing by the weight `1 + e^y`, whose logarithmic derivative is the
 sigmoid `p = e^y / (1 + e^y)`, the function `w = u / (1 + e^y)` solves
 
-`w_t + a w_yy + (r + a (2 p - 1)) w_y - r (1 - p) w = 0`,
+`w_t + a w_yy + (r + a (2 p - 1)) w_y - r (1 - p) w = 0`
+(`TauCeti.Finance.pde_comp_exp_div_one_add_exp`),
 
 an equation on the whole line with bounded coefficients. Reversing time turns this terminal-value
 problem into an initial-value problem, to which the comparison principle for bounded solutions on
@@ -70,58 +71,6 @@ open Real Filter Topology Set
 namespace TauCeti.Finance
 
 variable {σ : ℝ → ℝ → ℝ} {r : ℝ → ℝ} {C₁ C₂ : ℝ → ℝ → ℝ} {T Λ R A : ℝ}
-
-/-- The pricing operator in weighted log-spot coordinates and reversed time. For
-`v(τ, y) = C(e^y, T - τ) / (1 + e^y)`, the forward operator
-`v_τ - (a v_yy + (r + a (e^y - 1) / (e^y + 1)) v_y - r / (1 + e^y) v)` with `a = σ² / 2` is minus
-the pricing operator `C_t + σ² s² / 2 C_ss + r (s C_s - C)` at `(e^y, T - τ)`, divided by the
-weight `1 + e^y`. -/
-private theorem pde_weighted (T σ r : ℝ) {C : ℝ → ℝ → ℝ} {τ y : ℝ}
-    (hC : ContDiffAt ℝ 2 (fun x ↦ C x (T - τ)) (exp y)) :
-    deriv (fun τ' ↦ C (exp y) (T - τ') / (1 + exp y)) τ -
-        (σ ^ 2 / 2 * deriv (deriv fun y ↦ C (exp y) (T - τ) / (1 + exp y)) y +
-          (r + σ ^ 2 / 2 * ((exp y - 1) / (exp y + 1))) *
-            deriv (fun y ↦ C (exp y) (T - τ) / (1 + exp y)) y +
-          -r / (1 + exp y) * (C (exp y) (T - τ) / (1 + exp y))) =
-      -(deriv (fun t ↦ C (exp y) t) (T - τ) +
-          σ ^ 2 * exp y ^ 2 / 2 * deriv (deriv fun x ↦ C x (T - τ)) (exp y) +
-          r * (exp y * deriv (fun x ↦ C x (T - τ)) (exp y) - C (exp y) (T - τ))) /
-        (1 + exp y) := by
-  set t := T - τ
-  set w : ℝ → ℝ := fun y ↦ C (exp y) t / (1 + exp y)
-  have hψ (z : ℝ) : 1 + exp z ≠ 0 := (add_pos one_pos (exp_pos z)).ne'
-  have hw : ContDiffAt ℝ 2 w y :=
-    (hC.comp y contDiff_exp.contDiffAt).div (contDiffAt_const.add contDiff_exp.contDiffAt) (hψ y)
-  have hwd : ∀ᶠ z in 𝓝 y, DifferentiableAt ℝ w z :=
-    (hw.eventually (by simp)).mono fun z hz ↦ hz.differentiableAt (by norm_num)
-  have hwd' : DifferentiableAt ℝ (deriv w) y :=
-    (hw.derivWithin (m := 1) (by norm_num)).differentiableAt (by norm_num)
-  -- The log-spot price `g(y) = C(e^y, t)` is the weight times `w`; differentiate the product.
-  have hgw : (fun y ↦ C (exp y) t) = fun z ↦ (1 + exp z) * w z := by
-    ext z
-    simp only [w]
-    field_simp [hψ z]
-  have hg' : deriv (fun y ↦ C (exp y) t) =ᶠ[𝓝 y]
-      fun z ↦ exp z * w z + (1 + exp z) * deriv w z := by
-    filter_upwards [hwd] with z hz
-    rw [hgw]
-    exact (((hasDerivAt_exp z).const_add 1).mul hz.hasDerivAt).deriv
-  have hg'' : deriv (deriv fun y ↦ C (exp y) t) y =
-      exp y * w y + exp y * deriv w y + (exp y * deriv w y + (1 + exp y) * deriv (deriv w) y) := by
-    rw [hg'.deriv_eq]
-    exact (((hasDerivAt_exp y).mul hwd.self_of_nhds.hasDerivAt).add
-      (((hasDerivAt_exp y).const_add 1).mul hwd'.hasDerivAt)).deriv
-  have hCd : ∀ᶠ x in 𝓝 (exp y), DifferentiableAt ℝ (fun x ↦ C x t) x :=
-    (hC.eventually (by simp)).mono fun z hz ↦ hz.differentiableAt (by norm_num)
-  have hCd' : DifferentiableAt ℝ (deriv fun x ↦ C x t) (exp y) :=
-    (hC.derivWithin (m := 1) (by norm_num)).differentiableAt (by norm_num)
-  rw [← pde_comp_exp σ r hCd hCd', hg'', hg'.self_of_nhds, deriv_div_const,
-    deriv_comp_const_sub (f := fun t ↦ C (exp y) t)]
-  have hwy : C (exp y) t = (1 + exp y) * w y := congrFun hgw y
-  rw [hwy]
-  have h1 : exp y + 1 ≠ 0 := by rw [add_comm]; exact hψ y
-  field_simp [hψ y, h1]
-  ring
 
 /-- **The comparison principle for the pricing equation.** Let the volatility `σ(s, t)` and the
 rate `r(t)` be bounded for `0 < t < T`, by `σ² ≤ Λ` and `|r| ≤ R`. Let `C₁` and `C₂` be continuous
@@ -170,7 +119,7 @@ theorem le_of_pde_le_of_terminal_le
   -- Apply the comparison principle on the whole line to `v₁` and `v₂`. The coefficients
   -- `a = σ² / 2`, `b = r + a (e^y - 1) / (e^y + 1)` and `c = -r / (1 + e^y)` are bounded by
   -- `|Λ| / 2`, `|R| + |Λ| / 2` and `|R|`; `v₁ - v₂ ≤ A` by the growth bound; and the operators
-  -- compare by `pde_weighted`.
+  -- compare by `pde_comp_exp_div_one_add_exp`.
   have h := PDE.le_of_deriv_sub_mul_deriv_deriv_add_mul_deriv_add_mul_le_of_le_initial
     (a := fun τ y ↦ σ (exp y) (T - τ) ^ 2 / 2)
     (b := fun τ y ↦ r (T - τ) + σ (exp y) (T - τ) ^ 2 / 2 * ((exp y - 1) / (exp y + 1)))
@@ -212,9 +161,14 @@ theorem le_of_pde_le_of_terminal_le
     (fun τ hτ y ↦ hcd hcd₁ hτ y) (fun τ hτ y ↦ hcd hcd₂ hτ y)
     (fun τ hτ y ↦ hdiff hdiff₁ hτ y) (fun τ hτ y ↦ hdiff hdiff₂ hτ y)
     (fun τ hτ y ↦ by
-      rw [pde_weighted T _ _ (hcd₁ (exp_pos y) (hrev hτ)),
-        pde_weighted T _ _ (hcd₂ (exp_pos y) (hrev hτ)), neg_div, neg_div, neg_le_neg_iff]
-      exact div_le_div_of_nonneg_right (hpde (exp_pos y) (hrev hτ)) (hψ y).le)
+      rw [deriv_comp_const_sub (f := fun t ↦ C₁ (exp y) t / (1 + exp y)),
+        deriv_comp_const_sub (f := fun t ↦ C₂ (exp y) t / (1 + exp y))]
+      have h₁ := pde_comp_exp_div_one_add_exp (σ (exp y) (T - τ)) (r (T - τ))
+        (hcd₁ (exp_pos y) (hrev hτ))
+      have h₂ := pde_comp_exp_div_one_add_exp (σ (exp y) (T - τ)) (r (T - τ))
+        (hcd₂ (exp_pos y) (hrev hτ))
+      have h := div_le_div_of_nonneg_right (hpde (exp_pos y) (hrev hτ)) (hψ y).le
+      linear_combination h + h₂ - h₁)
     (fun y ↦ by
       simp only [sub_zero]
       exact div_le_div_of_nonneg_right (hterminal (exp_pos y)) (hψ y).le)

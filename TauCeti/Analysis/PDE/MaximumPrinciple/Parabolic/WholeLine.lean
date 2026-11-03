@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.PDE.MaximumPrinciple.Parabolic.WholeSpace
+import TauCeti.Analysis.Calculus.IteratedFDeriv.CompContinuousLinearEquiv
 import TauCeti.LinearAlgebra.Matrix.ToQuadraticForm
 
 /-!
@@ -71,16 +72,8 @@ private theorem sum_mul_fderiv_fderiv_add_fderiv_comp_coord (f : ℝ → ℝ) (A
           (EuclideanSpace.single j 1) +
       fderiv ℝ (f ∘ coord) z (EuclideanSpace.single 0 B) =
       A * deriv (deriv f) (coord z) + B * deriv f (coord z) := by
-  have h2 (v w : EuclideanSpace ℝ (Fin 1)) :
-      fderiv ℝ (fderiv ℝ (f ∘ coord)) z v w = coord v * coord w * deriv (deriv f) (coord z) := by
-    have h := iteratedFDeriv_two_apply (𝕜 := ℝ) (f ∘ coord) z ![v, w]
-    simp only [Matrix.cons_val_zero, Matrix.cons_val_one] at h
-    rw [← h, ← iteratedFDerivWithin_univ, ← preimage_univ (f := coord),
-      coord.iteratedFDerivWithin_comp_right f uniqueDiffOn_univ (mem_univ _),
-      iteratedFDerivWithin_univ]
-    simp [iteratedFDeriv_apply_eq_iteratedDeriv_mul_prod, iteratedDeriv_succ, Fin.prod_univ_two]
   rw [coord.comp_right_fderiv]
-  simp [h2]
+  simp [coord.fderiv_fderiv_comp_right_apply]
 
 /-- **The comparison principle for parabolic equations on the whole line.** Let
 `P u = ∂ₜu - a ∂ₓ²u - b ∂ₓu - c u`, where for `0 < t < T` the coefficients satisfy
