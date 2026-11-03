@@ -312,7 +312,7 @@ private theorem bijective_comp_coneDesc_of_shortExact (P : CurvedDGRightModuleCa
         (dgClosedToHomotopy R).obj (ForgetEnrichment.of (CochainComplex (ModuleCat R) ℤ)
           (cone S.f)) ↦
       φ ≫ (dgClosedToHomotopy R).map (coneDesc S.f S.g S.zero) :=
-  have hS' := shortExact_map_forgetDifferential hS
+  have hS' := hS.map_of_exact (forgetDifferential (h := h))
   bijective_comp_coneDesc S.zero ((GradedModuleCat.mono_iff_injective _).1 hS'.mono_f)
     ((GradedModuleCat.epi_iff_surjective _).1 hS'.epi_g) (GradedModuleCat.exact_iff.1 hS'.exact)
 
