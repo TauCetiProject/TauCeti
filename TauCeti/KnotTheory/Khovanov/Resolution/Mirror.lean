@@ -59,13 +59,6 @@ universe u
 
 variable {n : ℕ} (D : PDCode n) (hD : D.IsPlanar) (R : Type u) [CommRing R] (j : ℤ)
 
-/-- The quantum degree of the vertex `Sᶜ` of the degree-`(n - j)` cube is opposite to that of
-the vertex `S` of the degree-`j` cube. -/
-private theorem sub_sub_card_compl (S : Finset (Fin n)) : (n : ℤ) - j - #Sᶜ = -(j - #S) := by
-  have h := card_compl_add_card S
-  rw [Fintype.card_fin] at h
-  omega
-
 /-- The vertex `S` of the degree-`j` mirror cube, carried to the degree `j - |S|` piece of the
 circle tensor of the resolution of `D` at `Sᶜ`. -/
 private def mirrorVertexEquiv (S : Finset (Fin n)) :
@@ -83,7 +76,13 @@ private def complVertexEquiv (S : Finset (Fin n)) :
     (D.resolutionCube hD R (n - j)).obj Sᶜ ≃ₗ[R]
       (Khovanov.circleQuantumGrading R (D.ResolvedCircle (cubeState Sᶜ))).piece (-(j - #S)) :=
   (LinearEquiv.ofInjective _ (D.resolutionCubeι_injective hD R _ Sᶜ)).trans <|
-    LinearEquiv.ofEq _ _ (by rw [range_resolutionCubeι, sub_sub_card_compl])
+    LinearEquiv.ofEq _ _ (by
+      -- The quantum degree `(n - j) - |Sᶜ|` of the vertex `Sᶜ` is opposite to `j - |S|`.
+      rw [range_resolutionCubeι]
+      congr 1
+      have h := card_compl_add_card S
+      rw [Fintype.card_fin] at h
+      omega)
 
 /-- The vertex isomorphism of `mirrorResolutionCubeIso`: the Frobenius pairing of the vertex `S`
 of the mirror cube with the complementary vertex `Sᶜ` of the cube of `D`. -/
@@ -163,6 +162,7 @@ def mirrorResolutionCubeIso :
 /-- The isomorphism from the mirror cube to the dual cube pairs an element `x` of the vertex `S`
 of the mirror cube with an element `y` of the vertex `Sᶜ` of the cube of `D` by the Frobenius
 pairing of circle tensors, after identifying the circles of the two resolutions. -/
+@[simp]
 theorem mirrorResolutionCubeIso_hom_app_apply (S : Finset (Fin n))
     (x : (D.mirror.resolutionCube ((isPlanar_mirror D).2 hD) R j).obj S)
     (y : (D.resolutionCube hD R (n - j)).obj Sᶜ) :
