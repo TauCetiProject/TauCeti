@@ -46,13 +46,11 @@ theorem exists_isHomogeneous_comp_eq_of_mono (I : GradedModuleCat.{v} 𝒜) [Inj
     (hu : LinearMap.IsHomogeneous u K.grading.piece I.grading.piece p) :
     ∃ v : L →ₗ[A] I, LinearMap.IsHomogeneous v L.grading.piece I.grading.piece p ∧
       v ∘ₗ f.hom = u := by
-  have hdeg {M : GradedModuleCat.{v} 𝒜} (a : M →ₗ[A] I) :
-      LinearMap.IsHomogeneous a M.grading.piece I.grading.piece p ↔
-        LinearMap.IsHomogeneous a M.grading.piece (I.shiftObj (-p)).grading.piece 0 := by
-    simp only [LinearMap.isHomogeneous_def, InternalGrading.shift_piece, neg_neg, add_zero]
-  let u' : K ⟶ I.shiftObj (-p) := ofHom u ((hdeg u).1 hu)
+  let u' : K ⟶ I.shiftObj (-p) :=
+    ofHom u ((_root_.LinearMap.isHomogeneous_shiftObj_neg_iff u p).2 hu)
   refine ⟨(Injective.factorThru u' f).hom,
-    (hdeg _).2 (Injective.factorThru u' f).isHomogeneous, ?_⟩
+    (_root_.LinearMap.isHomogeneous_shiftObj_neg_iff (M := L) (N := I) _ p).1
+      (Injective.factorThru u' f).isHomogeneous, ?_⟩
   exact congrArg Hom.hom (Injective.comp_factorThru u' f)
 
 end TauCeti.GradedModuleCat

@@ -141,3 +141,20 @@ theorem shiftPowCompToModuleCatIso_inv_app_hom (j : ℤ) (M : GradedModuleCat.{v
   rfl
 
 end TauCeti.GradedModuleCat
+
+namespace LinearMap
+
+universe v v' uk uA
+
+/-- A degree-zero map into the internal shift by `-p` is a degree-`p` homogeneous map
+into the unshifted target. -/
+theorem isHomogeneous_shiftObj_neg_iff
+    {k : Type uk} [CommRing k] {A : Type uA} [Ring A] [Algebra k A]
+    {𝒜 : ℤ → Submodule k A} {M : TauCeti.GradedModuleCat.{v} 𝒜}
+    {N : TauCeti.GradedModuleCat.{v'} 𝒜} (f : M →ₗ[A] N) (p : ℤ) :
+    TauCeti.LinearMap.IsHomogeneous f M.grading.piece (N.shiftObj (-p)).grading.piece 0 ↔
+      TauCeti.LinearMap.IsHomogeneous f M.grading.piece N.grading.piece p := by
+  simp only [TauCeti.LinearMap.isHomogeneous_def, TauCeti.InternalGrading.shift_piece,
+    neg_neg, add_zero]
+
+end LinearMap

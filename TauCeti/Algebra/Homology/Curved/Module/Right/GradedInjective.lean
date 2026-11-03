@@ -95,7 +95,8 @@ private theorem cochain_mem_iff_isHomogeneous_shift {p : ℤ} (a : K →ₗ[Aᵐ
       LinearMap.IsHomogeneous a (toGradedModuleCat K).grading.piece
         ((toGradedModuleCat I).shiftObj (-p)).grading.piece 0 := by
   rw [cochain_mem_iff_isHomogeneous]
-  simp only [LinearMap.isHomogeneous_def, InternalGrading.shift_piece, neg_neg, add_zero]
+  exact (_root_.LinearMap.isHomogeneous_shiftObj_neg_iff
+    (M := toGradedModuleCat K) (N := toGradedModuleCat I) a p).symm
 
 /-- The differential on the three components of a totalization. -/
 private theorem totalization_differential (x : K) (y : L) (z : M) :
