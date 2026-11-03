@@ -12,6 +12,7 @@ import TauCeti.MeasureTheory.Measure.ResolventTransform.Expansion
 import TauCeti.MeasureTheory.Measure.ResolventTransform.Inversion
 import Mathlib.MeasureTheory.Measure.Prokhorov
 import Mathlib.MeasureTheory.Measure.TightNormed
+import Mathlib.Topology.MetricSpace.Equicontinuity
 import Mathlib.Topology.Metrizable.Basic
 import Mathlib.Tactic.FieldSimp
 import Mathlib.Tactic.Positivity
@@ -163,39 +164,22 @@ theorem tendsto_resolventTransform_of_subset_closure {μ : ι → Measure ℝ}
     (h : ∀ w ∈ D, Tendsto (fun i ↦ resolventTransform (μ i) w) l (𝓝 (resolventTransform ν w)))
     {z : ℂ} (hz : 0 < z.im) :
     Tendsto (fun i ↦ resolventTransform (μ i) z) l (𝓝 (resolventTransform ν z)) := by
-  rw [Metric.tendsto_nhds]
-  intro ε hε
-  obtain ⟨w, hwD, hzw⟩ :=
-    Metric.mem_closure_iff.1 (hD hz) (min (z.im / 2) (ε * z.im ^ 2 / 8)) (by positivity)
-  have hzw' : ‖z - w‖ < min (z.im / 2) (ε * z.im ^ 2 / 8) := by rwa [← dist_eq_norm]
-  have hwim : z.im / 2 < w.im := by
-    have := (abs_im_le_norm (z - w)).trans_lt (hzw'.trans_le (min_le_left _ _))
-    rw [sub_im, abs_lt] at this
-    linarith
-  -- Every probability measure has `‖m(z) - m(w)‖ < ε / 4`.
-  have hlip (ρ : Measure ℝ) [IsProbabilityMeasure ρ] :
-      dist (resolventTransform ρ z) (resolventTransform ρ w) < ε / 4 := by
-    rw [dist_eq_norm]
-    calc _ ≤ ‖z - w‖ / (|z.im| * |w.im|) * ρ.real univ :=
-          norm_resolventTransform_sub_le hz.ne' (by linarith)
-      _ = ‖z - w‖ / (z.im * w.im) := by
-          rw [abs_of_pos hz, abs_of_pos (by linarith), probReal_univ, mul_one]
-      _ ≤ ‖z - w‖ / (z.im * (z.im / 2)) := by gcongr
-      _ < ε * z.im ^ 2 / 8 / (z.im * (z.im / 2)) := by
-          gcongr
-          exact hzw'.trans_le (min_le_right _ _)
-      _ = ε / 4 := by field_simp; ring
-  filter_upwards [Metric.tendsto_nhds.1 (h w hwD) (ε / 2) (by positivity)] with i hi
-  calc dist (resolventTransform (μ i) z) (resolventTransform ν z)
-      ≤ dist (resolventTransform (μ i) z) (resolventTransform (μ i) w) +
-          dist (resolventTransform (μ i) w) (resolventTransform ν w) +
-          dist (resolventTransform ν w) (resolventTransform ν z) := dist_triangle4 _ _ _ _
-    _ < ε / 4 + ε / 2 + ε / 4 := by
-        gcongr
-        · exact hlip _
-        · rw [dist_comm]
-          exact hlip _
-    _ = ε := by ring
+  -- The transforms of all probability measures are equicontinuous at `z`.
+  have hF : EquicontinuousAt
+      (fun ρ : ProbabilityMeasure ℝ ↦ resolventTransform (ρ : Measure ℝ)) z := by
+    refine Metric.equicontinuousAt_of_continuity_modulus
+      (fun w ↦ ‖z - w‖ / (|z.im| * |w.im|)) ?_ _ ?_
+    · have : Tendsto (fun w : ℂ ↦ ‖z - w‖ / (|z.im| * |w.im|)) (𝓝 z)
+          (𝓝 (‖z - z‖ / (|z.im| * |z.im|))) :=
+        ((tendsto_const_nhds.sub tendsto_id).norm.div
+          (tendsto_const_nhds.mul (continuous_im.tendsto z).abs)
+          (mul_ne_zero (abs_ne_zero.2 hz.ne') (abs_ne_zero.2 hz.ne')))
+      simpa using this
+    · filter_upwards [(continuous_im.tendsto z).eventually (lt_mem_nhds hz)] with w hw ρ
+      simpa [dist_eq_norm] using
+        norm_resolventTransform_sub_le (μ := (ρ : Measure ℝ)) hz.ne' hw.ne'
+  exact (hF.comp fun i ↦ ⟨μ i, inferInstance⟩).tendsto_of_mem_closure
+    ((hF.continuousAt ⟨ν, inferInstance⟩).mono_left nhdsWithin_le_nhds) h (hD hz)
 
 namespace ProbabilityMeasure
 
