@@ -8,11 +8,11 @@ module
 public import TauCeti.Data.Nat.BitField
 public import TauCeti.GroupTheory.Presentation.GroupPresentation
 public import Mathlib.Algebra.BigOperators.Group.List.Lemmas
-public import Mathlib.Algebra.Group.Subgroup.Pointwise
 public import Mathlib.Data.Int.GCD
 public import Mathlib.Data.ZMod.QuotientGroup
 public import Mathlib.GroupTheory.Index
 public import Mathlib.GroupTheory.OrderOfElement
+import Mathlib.Algebra.Pointwise.Stabilizer
 
 /-!
 # Replaying coset enumeration over a cyclic subgroup
@@ -397,6 +397,8 @@ def run (n : ℕ) (rels : List (List ℕ)) (s : List ℕ) (parents steps : List 
 
 section Soundness
 
+open scoped Pointwise
+
 variable {G : Type*} [Group G] {n : ℕ} (x : Fin n → G) (h : G) (parents : List ℕ)
 
 /-- The element `w_p` of the point `p`, defined from its parent code. -/
@@ -701,29 +703,23 @@ private theorem Valid.exists_mem_roots {st : State} (hv : Valid x h parents st)
       refine ⟨(st.root st.n q).1, by simp [State.roots, this.1, this.2], ?_⟩
       rw [MulAction.Quotient.smul_mk, smul_eq_mul, hv.edge t r q e hq,
         hv.mul_zpow_root q e, QuotientGroup.mk_mul_of_mem _ (Subgroup.zpow_mem_zpowers h _)]
-  have key : ∀ y ∈ Submonoid.closure (Set.range x ∪ (Set.range x)⁻¹), ∀ r ∈ st.roots,
-      ∃ r' ∈ st.roots, y • (QuotientGroup.mk (pt x parents r) : G ⧸ Subgroup.zpowers h) =
-        QuotientGroup.mk (pt x parents r') := by
-    intro y hy
-    induction hy using Submonoid.closure_induction with
-    | mem y hy =>
-      rcases hy with ⟨i, rfl⟩ | ⟨i, hi⟩
-      · rw [← letter_two_mul x i]
-        exact hletter _ (by omega)
-      · rw [← inv_inv y, ← hi, ← letter_two_mul_add_one x i]
-        exact hletter _ (by omega)
-    | one => exact fun r hr ↦ ⟨r, hr, one_smul _ _⟩
-    | mul a b _ _ ha hb =>
-      intro r hr
-      obtain ⟨r₁, hr₁, h₁⟩ := hb r hr
-      obtain ⟨r₂, hr₂, h₂⟩ := ha r₁ hr₁
-      exact ⟨r₂, hr₂, by rw [mul_smul, h₁, h₂]⟩
-  have hy : y ∈ Submonoid.closure (Set.range x ∪ (Set.range x)⁻¹) := by
-    rw [← Subgroup.closure_toSubmonoid, hx]
-    trivial
-  obtain ⟨r, hr, hyr⟩ := key y hy 0 h0r
+  -- So the finite set of their cosets is stabilised by every generator, hence by all of `G`.
+  set S : Set (G ⧸ Subgroup.zpowers h) :=
+    (fun r ↦ QuotientGroup.mk (pt x parents r)) '' {r | r ∈ st.roots}
+  have hfin : S.Finite := st.roots.finite_toSet.image _
+  have hstab : Subgroup.closure (Set.range x) ≤ MulAction.stabilizer G S := by
+    rw [Subgroup.closure_le]
+    rintro _ ⟨i, rfl⟩
+    rw [SetLike.mem_coe, MulAction.mem_stabilizer_set' hfin]
+    rintro _ ⟨r, hr, rfl⟩
+    obtain ⟨r', hr', h'⟩ := hletter (2 * i) (by omega) r hr
+    rw [letter_two_mul] at h'
+    exact ⟨r', hr', h'.symm⟩
+  obtain ⟨r, hr, hyr⟩ :=
+    (MulAction.mem_stabilizer_set' hfin).1 (hstab (hx ▸ Subgroup.mem_top y)) ⟨0, h0r, rfl⟩
   refine ⟨r, hr, ?_⟩
-  rw [← hyr, pt_zero x parents, MulAction.Quotient.smul_mk, smul_eq_mul, mul_one]
+  dsimp only at hyr
+  rw [hyr, pt_zero x parents, MulAction.Quotient.smul_mk, smul_eq_mul, mul_one]
 
 end Soundness
 
