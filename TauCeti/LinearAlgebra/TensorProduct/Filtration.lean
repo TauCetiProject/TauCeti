@@ -21,7 +21,7 @@ public section
 
 open scoped TensorProduct
 
-namespace TauCeti.TensorProduct
+namespace TensorProduct
 
 variable {R M N : Type*} [CommSemiring R]
 variable [AddCommMonoid M] [Module R M] [AddCommMonoid N] [Module R N]
@@ -132,4 +132,4 @@ theorem filtration_mul_le [SetLike.GradedMul F] [SetLike.GradedMul G] (m n : ℕ
 
 end Algebra
 
-end TauCeti.TensorProduct
+end TensorProduct

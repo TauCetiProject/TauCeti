@@ -19,7 +19,7 @@ integral enveloping forms and their Hopf operations with the rational PBW filtra
 
 `pbwTensorFiltration` is the sum of the images of
 `F_i U(L) ⊗ F_j U(L)` for `i + j ≤ n`. It specializes
-`TauCeti.TensorProduct.filtration`, which works for arbitrary pairs of submodule filtrations.
+`TensorProduct.filtration`, which works for arbitrary pairs of submodule filtrations.
 No injectivity of the tensor maps is presumed. It is increasing, exhaustive, multiplicative,
 and has the scalars in degree zero.
 `comul_mem_pbwTensorFiltration` proves the coproduct bound using the primitive-generator
