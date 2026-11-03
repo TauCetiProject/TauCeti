@@ -26,10 +26,6 @@ Both real endpoints and extended-real endpoints are covered. The latter are expr
   — joint measurability in the Gaussian parameters and real endpoints;
 * `TauCeti.Probability.measurable_truncatedNormalMeasure_preimage_Ioc` and its other endpoint
   conventions — the corresponding result for extended-real endpoints.
-
-## References
-
-* `TauCetiRoadmap/StandardDistributions/README.md`, §7.3 and §10.9.
 -/
 
 public section
@@ -49,7 +45,7 @@ theorem measurable_truncatedNormalMeasure {s : Set ℝ} (hs : MeasurableSet s) :
   have hμ : Measurable fun p : ℝ × ℝ≥0 ↦ gaussianReal p.1 p.2 :=
     ProbabilityTheory.measurable_gaussianReal
   simpa only [truncatedNormalMeasure_def] using
-    hμ.cond_const (fun _ ↦ inferInstance) hs
+    hμ.cond_const hs
 
 /-! ### Real endpoints -/
 

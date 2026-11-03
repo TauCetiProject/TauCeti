@@ -90,13 +90,13 @@ theorem _root_.Measurable.cond {α : Type*} [MeasurableSpace α] {μ : α → Me
   rw [Measure.measurable_measure]
   intro t ht
   have hmass : Measurable fun a ↦ μ a (Prod.mk a ⁻¹' s) := by
-    have h := Kernel.measurable_kernel_prodMk_left_of_finite (κ := κ) hs hfinite'
-    change Measurable fun a ↦ μ a (Prod.mk a ⁻¹' s) at h
-    exact h
+    simpa only [κ, Kernel.coe_mk] using
+      Kernel.measurable_kernel_prodMk_left_of_finite (κ := κ) hs hfinite'
   have hinter : Measurable fun a ↦ μ a ((Prod.mk a ⁻¹' s) ∩ t) := by
     have hst : MeasurableSet (s ∩ (Set.univ ×ˢ t)) := hs.inter (MeasurableSet.univ.prod ht)
-    have h := Kernel.measurable_kernel_prodMk_left_of_finite (κ := κ) hst hfinite'
-    change Measurable fun a ↦ μ a (Prod.mk a ⁻¹' (s ∩ (Set.univ ×ˢ t))) at h
+    have h : Measurable fun a ↦ μ a (Prod.mk a ⁻¹' (s ∩ (Set.univ ×ˢ t))) := by
+      simpa only [κ, Kernel.coe_mk] using
+        Kernel.measurable_kernel_prodMk_left_of_finite (κ := κ) hst hfinite'
     convert h using 1
     funext a
     congr 1
@@ -105,16 +105,14 @@ theorem _root_.Measurable.cond {α : Type*} [MeasurableSpace α] {μ : α → Me
   simp_rw [ProbabilityTheory.cond_apply (hsection _)]
   convert hmass.inv.mul hinter using 1
 
-/-- Conditioning a measurable family of finite measures on a fixed measurable event is
-measurable. -/
+/-- Conditioning a measurable family of measures on a fixed measurable event is measurable. -/
 theorem _root_.Measurable.cond_const {α : Type*} [MeasurableSpace α] {μ : α → Measure Ω}
-    (hμ : Measurable μ) (hfinite : ∀ a, IsFiniteMeasure (μ a))
-    {s : Set Ω} (hs : MeasurableSet s) :
+    (hμ : Measurable μ) {s : Set Ω} (hs : MeasurableSet s) :
     Measurable fun a ↦ ProbabilityTheory.cond (μ a) s := by
-  have hprod : MeasurableSet (Set.univ ×ˢ s : Set (α × Ω)) := MeasurableSet.univ.prod hs
-  convert hμ.cond hfinite hprod using 1
-  ext a t
-  simp
+  refine Measure.measurable_measure.2 fun t ht ↦ ?_
+  simp_rw [ProbabilityTheory.cond_apply hs]
+  exact ((Measure.measurable_coe hs).comp hμ).inv.mul
+    ((Measure.measurable_coe (hs.inter ht)).comp hμ)
 
 section MovingIntervals
 
