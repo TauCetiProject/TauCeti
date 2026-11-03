@@ -26,6 +26,8 @@ square-zero `A` can be divided by two, so the conclusion also holds in character
 
 * `Matrix.mul_mul_eq_zero_of_mul_self_eq_zero_of_lie_lie_eq_zero`: for integral matrices,
   `A * A = 0` and `⁅A, ⁅A, B⁆⁆ = 0` give `A * B * A = 0`.
+* `Matrix.coe_commutatorElement_eq_one_add_smul_lie_add_smul_mul_mul`: the one-sided
+  relation `↑⁅x, y⁆ = 1 + st [A,B] + st² BAB`, retaining the double-bond correction.
 * `Matrix.coe_commutatorElement_commutatorElement_eq_one_add_smul`: the nested commutator
   identity `↑⁅⁅x, y⁆, z⁆ = 1 + (u * v * w) • A` for the unipotent units above.
 -/
@@ -52,6 +54,44 @@ theorem mul_mul_eq_zero_of_mul_self_eq_zero_of_lie_lie_eq_zero (A B : Matrix ι 
   have hentry := congrFun (congrFun hAB a) b
   simp only [Matrix.add_apply, Matrix.zero_apply] at hentry ⊢
   omega
+
+/-- **Commutator with a possible quadratic root parameter.** For square-zero integral matrices
+`A`, `B` with `⁅A, ⁅A, B⁆⁆ = 0`, the commutator of `1 + s A` and `1 + t B` is
+`1 + st [A,B] + st² BAB` over every commutative ring. Only the integral calculation cancels two;
+no assumption on the characteristic of the value ring is needed. -/
+theorem coe_commutatorElement_eq_one_add_smul_lie_add_smul_mul_mul
+    (A B : Matrix ι ι ℤ) (hA : A * A = 0) (hB : B * B = 0)
+    (hAAB : ⁅A, ⁅A, B⁆⁆ = 0) {R : Type*} [CommRing R] (s t : R)
+    (x y : (Matrix ι ι R)ˣ)
+    (hx : (x : Matrix ι ι R) = 1 + s • A.map (Int.cast : ℤ → R))
+    (hy : (y : Matrix ι ι R) = 1 + t • B.map (Int.cast : ℤ → R)) :
+    (↑⁅x, y⁆ : Matrix ι ι R) =
+      1 + (s * t) • (⁅A, B⁆).map (Int.cast : ℤ → R) +
+        (s * t ^ 2) • (B * A * B).map (Int.cast : ℤ → R) := by
+  let f : Matrix ι ι ℤ →+* Matrix ι ι R := (Int.castRingHom R).mapMatrix
+  have hf (X : Matrix ι ι ℤ) : f X = X.map (Int.cast : ℤ → R) := by
+    ext a b
+    simp only [f, RingHom.mapMatrix_apply, Matrix.map_apply, eq_intCast]
+  have hAA : f A * f A = 0 := by rw [← map_mul, hA, map_zero]
+  have hBB : f B * f B = 0 := by rw [← map_mul, hB, map_zero]
+  have hABA : f A * f B * f A = 0 := by
+    rw [← map_mul, ← map_mul,
+      mul_mul_eq_zero_of_mul_self_eq_zero_of_lie_lie_eq_zero A B hA hAAB, map_zero]
+  simp only [← hf] at hx hy ⊢
+  rw [Units.val_commutatorElement_eq_one_add_lie_add_mul_mul x y
+    (s • f A) (t • f B) hx hy]
+  · have hlie : ⁅s • f A, t • f B⁆ = (s * t) • f ⁅A, B⁆ := by
+      simp only [Ring.lie_def, map_sub, map_mul, smul_mul_assoc, mul_smul_comm,
+        smul_smul, smul_sub]
+      rw [mul_comm t s]
+    have hscalar : t * (s * t) = s * t ^ 2 := by ring
+    have htriple : (t • f B) * (s • f A) * (t • f B) =
+        (s * t ^ 2) • f (B * A * B) := by
+      simp only [smul_mul_assoc, mul_smul_comm, smul_smul, map_mul, hscalar]
+    rw [hlie, htriple]
+  · simp only [smul_mul_assoc, mul_smul_comm, hAA, smul_zero]
+  · simp only [smul_mul_assoc, mul_smul_comm, hBB, smul_zero]
+  · simp only [smul_mul_assoc, mul_smul_comm, hABA, smul_zero]
 
 /-- The products of `A`, `B`, `C` and `⁅A, B⁆` that vanish under the adjacent-root relations. -/
 private theorem mul_eq_zero_relations_of_lie_lie_eq_zero (A B C : Matrix ι ι ℤ)
