@@ -58,24 +58,6 @@ namespace TauCeti
 
 variable {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
 
-/-- For a one-form on the plane differentiable at `z`, the curl of its coefficient functions
-`ω(∂_t)` and `-ω(∂_s)` at `z` is its exterior derivative on the standard pair. This is the
-conversion used to deduce Stokes' formula on a rectangle from the divergence theorem. -/
-private theorem fderiv_apply_add_fderiv_apply_eq_extDeriv
-    {ω : (ℝ × ℝ) → (ℝ × ℝ) [⋀^Fin 1]→L[ℝ] F} {z : ℝ × ℝ} (hω : DifferentiableAt ℝ ω z) :
-    fderiv ℝ (fun z ↦ ω z (fun _ ↦ (0, 1))) z (1, 0) +
-        fderiv ℝ (fun z ↦ -ω z (fun _ ↦ (1, 0))) z (0, 1) =
-      extDeriv ω z ![(1, 0), (0, 1)] := by
-  simp [extDeriv_apply_pair, sub_eq_add_neg, fderiv_continuousAlternatingMap_apply_const_apply hω]
-
-/-- The exterior derivative of a one-form on the plane that is C¹ at `z`, evaluated on the
-standard pair, is continuous at `z`. -/
-private theorem continuousAt_extDeriv_apply
-    {ω : (ℝ × ℝ) → (ℝ × ℝ) [⋀^Fin 1]→L[ℝ] F} {z : ℝ × ℝ} (hω : ContDiffAt ℝ 1 ω z) :
-    ContinuousAt (fun z ↦ extDeriv ω z ![(1, 0), (0, 1)]) z :=
-  (ContinuousAlternatingMap.apply ℝ (ℝ × ℝ) F ![(1, 0), (0, 1)]).continuous.continuousAt.comp
-    (contDiffAt_extDeriv hω (r := 0) (by norm_num)).continuousAt
-
 /-- Stokes' formula on a rectangle for a one-form that is C¹ near the closed rectangle.
 The right and bottom edges have positive signs; the left and top edges have negative signs. -/
 theorem integral_extDeriv_prod_Icc
@@ -94,10 +76,11 @@ theorem integral_extDeriv_prod_Icc
     |>.continuousAlternatingMap_apply_const (fun _ ↦ (1, 0))).neg
   have hcurl z (hz : z ∈ Icc a b) :
       fderiv ℝ f z (1, 0) + fderiv ℝ g z (0, 1) =
-        extDeriv ω z ![(1, 0), (0, 1)] :=
-    fderiv_apply_add_fderiv_apply_eq_extDeriv ((hω z hz).differentiableAt one_ne_zero)
+        extDeriv ω z ![(1, 0), (0, 1)] := by
+    simp [f, g, extDeriv_apply_pair_of_differentiableAt
+      ((hω z hz).differentiableAt one_ne_zero), sub_eq_add_neg]
   have hcont : ContinuousOn (fun z ↦ extDeriv ω z ![(1, 0), (0, 1)]) (Icc a b) :=
-    fun z hz ↦ (continuousAt_extDeriv_apply (hω z hz)).continuousWithinAt
+    fun z hz ↦ (continuousAt_extDeriv_apply (hω z hz) _).continuousWithinAt
   have hsub : Ioo a.1 b.1 ×ˢ Ioo a.2 b.2 ⊆ Icc a b := by
     rw [Icc_prod_eq]
     exact prod_mono Ioo_subset_Icc_self Ioo_subset_Icc_self
@@ -132,11 +115,12 @@ theorem integral2_extDeriv
     |>.continuousAlternatingMap_apply_const (fun _ ↦ (1, 0))).neg
   have hcurl z (hz : z ∈ uIcc a₁ b₁ ×ˢ uIcc a₂ b₂) :
       fderiv ℝ f z (1, 0) + fderiv ℝ g z (0, 1) =
-        extDeriv ω z ![(1, 0), (0, 1)] :=
-    fderiv_apply_add_fderiv_apply_eq_extDeriv ((hω z hz).differentiableAt one_ne_zero)
+        extDeriv ω z ![(1, 0), (0, 1)] := by
+    simp [f, g, extDeriv_apply_pair_of_differentiableAt
+      ((hω z hz).differentiableAt one_ne_zero), sub_eq_add_neg]
   have hcont : ContinuousOn (fun z ↦ extDeriv ω z ![(1, 0), (0, 1)])
       (uIcc a₁ b₁ ×ˢ uIcc a₂ b₂) :=
-    fun z hz ↦ (continuousAt_extDeriv_apply (hω z hz)).continuousWithinAt
+    fun z hz ↦ (continuousAt_extDeriv_apply (hω z hz) _).continuousWithinAt
   have hsub : Ioo (min a₁ b₁) (max a₁ b₁) ×ˢ Ioo (min a₂ b₂) (max a₂ b₂) \ ∅ ⊆
       uIcc a₁ b₁ ×ˢ uIcc a₂ b₂ := by
     rw [sdiff_empty]
