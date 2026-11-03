@@ -33,9 +33,11 @@ subring closure identifies with `TauCeti.UniversalEnvelopingAlgebra.kostantForm 
 
 ## Main definitions and results
 
-* `TauCeti.Sl2.orderedKostantMonomial` is `F⁽ᵃ⁾ (H choose b) E⁽ᶜ⁾`.
+* `TauCeti.Sl2.orderedKostantMonomial`, imported from the multiplication module, is
+  `F⁽ᵃ⁾ (H choose b) E⁽ᶜ⁾`.
 * `TauCeti.Sl2.orderedKostantSpan` is their additive `ℤ`-span.
-* `TauCeti.Sl2.mul_mem_orderedKostantSpan` proves that span is closed under multiplication.
+* `TauCeti.Sl2.mul_mem_orderedKostantSpan` proves that span is closed under multiplication,
+  using the imported table `TauCeti.Sl2.orderedKostantMonomial_mul`.
 * `TauCeti.Sl2.kostantGenerators` is the set of rank-one divided-power and Cartan-binomial
   generators in an abstract associative `ℚ`-algebra.
 * `TauCeti.Sl2.toAddSubgroup_subringClosure_kostantGenerators` identifies the additive group of the

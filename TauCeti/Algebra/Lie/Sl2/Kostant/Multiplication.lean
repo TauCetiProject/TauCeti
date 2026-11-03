@@ -13,9 +13,10 @@ import Mathlib.Tactic.NoncommRing
 /-!
 # Integral multiplication of rank-one Kostant monomials
 
-For an associative rational algebra with an `sl₂` triple `(H,E,F)`, this file computes the
-product of two ordered monomials `F⁽ᵃ⁾ (H choose b) E⁽ᶜ⁾` as a finite integer linear combination
-of ordered monomials. No independence or faithfulness of the triple is required.
+For an associative rational algebra with an `sl₂` triple `(H,E,F)`, this file defines
+`orderedKostantMonomial H E F a b c` as `F⁽ᵃ⁾ (H choose b) E⁽ᶜ⁾` and computes the product
+of two such monomials as a finite integer linear combination of ordered monomials.
+No independence or faithfulness of the triple is required.
 
 `orderedKostantMonomial_mul` gives the multiplication table explicitly. Its outer index is the
 rank-one straightening index. Three antidiagonals expand the translated Cartan factors, and
@@ -24,8 +25,9 @@ coefficients need not be positive. Although divided powers are evaluated in a ra
 the table has only integer coefficients and can therefore be specialized on an integral form
 without performing factorial division in the target ring.
 
-The collection argument follows the existing ordered-span calculation in
-`TauCeti.Algebra.Lie.Sl2.Kostant.Span`; it is used there to prove multiplicative closure.
+The collection argument, relocated from `TauCeti.Algebra.Lie.Sl2.Kostant.Span`, straightens
+`E⁽ᶜ⁾ F⁽ᵈ⁾`, moves the Cartan binomials to the middle, and expands their translates using
+`Ring.add_choose_eq`. The span module uses the resulting table to prove multiplicative closure.
 
 ## References
 
@@ -89,6 +91,7 @@ private theorem collect {H E F : A}
   have hhe' : H * E = E * (H + (2 : A)) := by
     simpa using add_intCast_mul_eq_mul_add_intCast (x := H) (y := E) (c := 2)
       (by simpa using hhe) 0
+  -- Isolate the middle raising/lowering product and apply rank-one straightening.
   have hfactor :
       orderedKostantMonomial H E F a b c * orderedKostantMonomial H E F d e f =
         dividedPower a F * Ring.choose H b *
@@ -97,6 +100,7 @@ private theorem collect {H E F : A}
   rw [hfactor, dividedPower_e_mul_dividedPower_f hef hhe hhf,
     mul_sum, sum_mul, sum_mul]
   refine sum_congr rfl fun k _ => ?_
+  -- Move the two outer Cartan factors past the divided powers to collect them in the middle.
   have hmoveF := ringChoose_mul_dividedPower b hhf'
     ((Nat.cast_commute 2 F).neg_left) (d - k)
   have hmoveE := dividedPower_mul_ringChoose e hhe' (Nat.cast_commute 2 E) (c - k)
@@ -116,6 +120,7 @@ private theorem collect {H E F : A}
           (dividedPower (c - k) E * Ring.choose H e) * dividedPower f E := by
         simp only [mul_assoc]
       _ = _ := by rw [hmoveF, hmoveE]; simp only [mul_assoc]
+  -- Put all three shifts in integer-cast form for the later Ring.add_choose_eq expansions.
   have h₁ : H + (d - k) • (-2 : A) = H + ((-2 * (d - k : ℕ) : ℤ) : A) := by
     push_cast
     simp only [nsmul_eq_mul]
@@ -128,9 +133,11 @@ private theorem collect {H E F : A}
     push_cast
     simp only [nsmul_eq_mul]
     noncomm_ring
+  -- Merge the lowering and raising divided powers, then collect their scalar coefficients.
   rw [hnormal, mul_dividedPower, mul_dividedPower, h₁, h₂, h₃]
   simp only [smul_mul_assoc, mul_smul_comm, smul_smul]
-  rw [Nat.mul_comm]
+  congr 1
+  ring
 
 /-- The explicit integral multiplication table for ordered rank-one Kostant monomials.
 All five inner indices run over finite antidiagonals. The coefficient of each displayed
@@ -154,13 +161,16 @@ theorem orderedKostantMonomial_mul {H E F : A}
                 ((c - k) + f) := by
   rw [collect hef hhe hhf]
   refine sum_congr rfl fun k _ => ?_
+  -- Expand the translated b-th Cartan binomial along p ∈ antidiagonal b.
   rw [Ring.add_choose_eq b (Int.cast_commute (-2 * (d - k : ℕ)) H).symm]
   simp only [sum_mul, mul_sum, Finset.smul_sum]
   refine sum_congr rfl fun p _ => ?_
+  -- Expand the translated k-th Cartan binomial along q ∈ antidiagonal k.
   rw [Ring.add_choose_eq k
     (Int.cast_commute (((2 * k : ℕ) : ℤ) - (c + d : ℕ)) H).symm]
   simp only [sum_mul, mul_sum, Finset.smul_sum]
   refine sum_congr rfl fun q _ => ?_
+  -- Expand the translated e-th Cartan binomial along r ∈ antidiagonal e.
   rw [Ring.add_choose_eq e (Int.cast_commute (-2 * (c - k : ℕ)) H).symm]
   simp only [sum_mul, mul_sum, Finset.smul_sum]
   refine sum_congr rfl fun r _ => ?_
@@ -176,9 +186,11 @@ theorem orderedKostantMonomial_mul {H E F : A}
           (Ring.choose H p.1 * Ring.choose H q.1 * Ring.choose H r.1) := by
     simp only [← zsmul_eq_mul', smul_mul_assoc, mul_smul_comm, smul_smul]
     congr 1; ring
+  -- Linearize the p.1/q.1 Cartan product along u ∈ antidiagonal q.1.
   rw [hreorder, ringChoose_mul_ringChoose, sum_mul]
   simp only [smul_mul_assoc, Finset.smul_sum, mul_sum, sum_mul]
   refine sum_congr rfl fun u _ => ?_
+  -- Linearize the remaining Cartan product along v ∈ antidiagonal r.1.
   rw [ringChoose_mul_ringChoose]
   simp only [Finset.smul_sum, mul_sum, sum_mul, smul_mul_assoc, mul_smul_comm,
     smul_smul, orderedKostantMonomial, Nat.cast_mul]
