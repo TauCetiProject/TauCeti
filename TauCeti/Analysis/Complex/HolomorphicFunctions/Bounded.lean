@@ -16,6 +16,7 @@ import Mathlib.Analysis.Complex.Schwarz
 import Mathlib.Topology.ContinuousMap.Bounded.ArzelaAscoli
 import TauCeti.Analysis.Complex.CauchyIntegralPolydisc
 import TauCeti.Analysis.Complex.UniformLimit
+import TauCeti.Analysis.Normed.Group.Basic
 
 /-!
 # Bounded holomorphic maps on an open set

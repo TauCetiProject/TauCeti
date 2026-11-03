@@ -10,6 +10,7 @@ public import Mathlib.Analysis.Calculus.FDeriv.Basic
 public import Mathlib.Topology.UniformSpace.UniformConvergence
 import Mathlib.Analysis.Calculus.UniformLimitsDeriv
 import Mathlib.Analysis.Complex.Schwarz
+import TauCeti.Analysis.Normed.Group.Basic
 
 /-!
 # Uniform limits of holomorphic maps on a complex normed space
@@ -23,8 +24,6 @@ functions form a closed subspace of the bounded continuous functions.
 
 ## Main results
 
-* `TauCeti.mapsTo_closedBall_of_forall_norm_le`: a map bounded by `M` on `s` sends `s` into the
-  closed ball of radius `2 * M` around any of its values on `s`.
 * `TauCeti.norm_fderiv_le_of_forall_mem_ball_norm_le`: if `‖f‖ ≤ M` on `ball c r`, then
   `‖fderiv ℂ f c‖ ≤ 2 * M / r`.
 * `TendstoUniformlyOn.differentiableOn`: a uniform limit of holomorphic maps on an open set is
@@ -44,14 +43,6 @@ variable {V E ι : Type*} [NormedAddCommGroup V] [NormedSpace ℂ V] [NormedAddC
   [NormedSpace ℂ E]
 
 namespace TauCeti
-
-/-- A map bounded by `M` on a set `s` sends `s` into the closed ball of radius `2 * M` around its
-value at any point `c ∈ s`. -/
-theorem mapsTo_closedBall_of_forall_norm_le {α F : Type*} [SeminormedAddCommGroup F] {f : α → F}
-    {s : Set α} {c : α} {M : ℝ} (hM : ∀ y ∈ s, ‖f y‖ ≤ M) (hc : c ∈ s) :
-    MapsTo f s (closedBall (f c) (2 * M)) := fun y hy => by
-  rw [mem_closedBall]
-  linarith [dist_le_norm_add_norm (f y) (f c), hM y hy, hM c hc]
 
 /-- **Cauchy's estimate on a ball in a complex normed space.** If `f` is holomorphic on
 `ball c r` and bounded there by `M`, then `‖fderiv ℂ f c‖ ≤ 2 * M / r`. -/
