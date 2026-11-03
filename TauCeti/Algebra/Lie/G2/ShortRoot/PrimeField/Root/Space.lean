@@ -184,7 +184,7 @@ theorem conjugateTangent_one : conjugateTangent 1 = LinearMap.id := by
 theorem conjugateTangent_mul (g h : points (ZMod 3)) :
     conjugateTangent (g * h) = (conjugateTangent g).comp (conjugateTangent h) := by
   ext x
-  simp [conjugateTangent, map_mul, Module.End.mul_apply]
+  simp [conjugateTangent, map_mul]
 
 /-- Conjugation by a product acts by the two successive tangent conjugations. -/
 @[simp]
