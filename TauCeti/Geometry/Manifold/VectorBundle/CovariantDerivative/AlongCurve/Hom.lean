@@ -44,14 +44,6 @@ variable {𝕜 : Type*} [NontriviallyNormedField 𝕜] [CompleteSpace 𝕜]
   (cov : CovariantDerivative I E (fun x : M ↦ TangentSpace I x))
   (γ : 𝕜 → M) (V : ∀ t, TangentSpace I (γ t))
 
-/-- At a zero of a field, its covariant derivative is its ordinary coordinate derivative
-in the canonical tangent trivialization at that point. -/
-theorem alongCurveWithin_eq_derivWithin_sectionCoord_of_eq_zero {s : Set 𝕜} {t : 𝕜}
-    (hV : V t = 0) :
-    alongCurveWithin cov γ V s t = derivWithin (sectionCoord (F := E) γ V (γ t)) s t := by
-  simp [alongCurveWithin_apply, alongCurveInChartWithin_apply, sectionCoord_apply, hV, map_zero]
-  rfl
-
 /-- If `V` vanishes at a parameter, differentiating `A V` covariantly there gives `A (D V)`.
 The endomorphism family and the field need only be differentiable within the parameter set. -/
 theorem alongCurveWithin_clm_apply_of_eq_zero
