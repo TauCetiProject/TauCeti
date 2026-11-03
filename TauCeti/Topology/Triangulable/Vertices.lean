@@ -7,11 +7,15 @@ module
 
 public import TauCeti.Topology.Triangulable.Basic
 public import TauCeti.AlgebraicTopology.SimplicialComplex.Realization.Compact
+public import TauCeti.AlgebraicTopology.SimplicialComplex.Realization.Relabel.Basic
 public import TauCeti.AlgebraicTopology.SimplicialComplex.Subdivision.Homeomorph
 import Mathlib.Data.Fintype.Card
 
 /-!
-# Triangulations with many vertices
+# Vertex sets of compact triangulations
+
+A compact triangulable space admits a triangulation with vertices in any universe by
+relabelling its finite vertex set.
 
 A compact infinite triangulable space admits finite triangulations with arbitrarily many
 vertices. Barycentric subdivision adds vertices because a finite complex with infinite
@@ -30,7 +34,30 @@ open AbstractSimplicialComplex TauCeti.SetLike
 
 namespace TauCeti
 
-universe u v
+universe u v w
+
+/-- A compact triangulable space admits a triangulation with vertices in any universe,
+by relabelling its finite vertex set. -/
+theorem IsTriangulable.lift_of_compactSpace {X : Type u} [TopologicalSpace X] [CompactSpace X]
+    (h : IsTriangulable.{v} X) : IsTriangulable.{w} X := by
+  classical
+  obtain ⟨ι, K, ⟨e⟩⟩ := (isTriangulable_iff X).mp h
+  have := e.symm.compactSpace
+  have : Finite ι := (K.compactSpace_realization_iff_finite).mp inferInstance
+  let := Fintype.ofFinite ι
+  let f : ι ≃ ULift.{w} (Fin (Fintype.card ι)) :=
+    (Fintype.equivFin ι).trans Equiv.ulift.symm
+  let L : AbstractSimplicialComplex (ULift.{w} (Fin (Fintype.card ι))) :=
+    { K.toPreAbstractSimplicialComplex.map f with
+      singleton_mem := fun v => PreAbstractSimplicialComplex.mem_map_iff.mpr
+        ⟨{f.symm v}, K.singleton_mem _, by simp⟩ }
+  let r := K.toPreAbstractSimplicialComplex.realizationRelabelingHomeomorph
+    (L := L) f.toEmbedding rfl rfl le_rfl
+  have hr : {y : AbstractSimplicialComplex.Realization L |
+      y.1.support ∈ L.toPreAbstractSimplicialComplex} = Set.univ :=
+    Set.eq_univ_of_forall (AbstractSimplicialComplex.support_mem L)
+  exact (isTriangulable_iff X).mpr ⟨_, L, ⟨(r.trans
+    ((Homeomorph.setCongr hr).trans (Homeomorph.Set.univ _))).symm.trans e⟩⟩
 
 /-- A compact infinite triangulable space has a finite triangulation with at least any
 prescribed number of vertices. No local finiteness of the original triangulation is assumed. -/
