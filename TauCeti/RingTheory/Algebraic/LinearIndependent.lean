@@ -30,7 +30,9 @@ linearly independent over `R`.
 
 Conversely, the powers of an element algebraic over a domain admit only boundedly many linearly
 independent members, so every sufficiently large finite family of its powers satisfies a
-nontrivial linear relation over the base ring.
+nontrivial linear relation over the base ring. In an algebra without zero divisors, a nontrivial
+linear relation among the powers `f ^ q ^ j`, `j ≤ m`, of a nonzero `f` with `2 ≤ q` makes `f` a
+root of a nonzero polynomial of degree at most `q ^ m - 1`.
 
 ## Main results
 
@@ -43,6 +45,9 @@ nontrivial linear relation over the base ring.
   over `R`.
 * `IsAlgebraic.exists_card_le_of_linearIndependent_pow`: a linearly independent family of powers
   of an element algebraic over a domain has boundedly many members.
+* `TauCeti.exists_natDegree_le_aeval_eq_zero_of_sum_smul_pow_pow_eq_zero`: a nontrivial linear
+  relation among the powers `f ^ q ^ j`, `j ≤ m`, makes `f ≠ 0` a root of a nonzero polynomial of
+  degree at most `q ^ m - 1`.
 -/
 
 public section
@@ -107,5 +112,32 @@ theorem _root_.IsAlgebraic.exists_card_le_of_linearIndependent_pow [IsDomain R] 
   have hreg : IsRightRegular (c ^ N) := (isRegular_iff_ne_zero.mpr (pow_ne_zero _ hc)).right
   exact ((he.smul_of_isRightRegular (w := fun _ ↦ c ^ N) fun _ ↦ hreg).codRestrict M
     hmem).fintype_card_le_finrank
+
+/-- A nontrivial relation `∑_{j ≤ m} cⱼ f ^ q ^ j = 0` with `2 ≤ q` and `f ≠ 0` makes `f` a root of
+the nonzero polynomial `∑_{j ≤ m} cⱼ T ^ (q ^ j - 1)`, of degree at most `q ^ m - 1`. -/
+theorem exists_natDegree_le_aeval_eq_zero_of_sum_smul_pow_pow_eq_zero [NoZeroDivisors A]
+    {q m : ℕ} (hq : 2 ≤ q) {c : Fin (m + 1) → R} {i : Fin (m + 1)}
+    (hi : c i ≠ 0) {f : A} (hf : f ≠ 0) (hc : ∑ j, c j • f ^ q ^ (j : ℕ) = 0) :
+    ∃ Q : Polynomial R, Q ≠ 0 ∧ Q.natDegree ≤ q ^ m - 1 ∧ Polynomial.aeval f Q = 0 := by
+  classical
+  have hqj (j : ℕ) : 0 < q ^ j := Nat.pow_pos (by omega)
+  -- The exponents `q ^ j - 1` are distinct, so `Q` has coefficient `c i ≠ 0` at `q ^ i - 1`.
+  have hinj : Function.Injective fun j : Fin (m + 1) ↦ q ^ (j : ℕ) - 1 := fun a b hab ↦
+    Fin.ext <| Nat.pow_right_injective hq <| Nat.sub_one_cancel (hqj a) (hqj b) hab
+  set Q : Polynomial R := ∑ j : Fin (m + 1), Polynomial.monomial (q ^ (j : ℕ) - 1) (c j)
+  have hQ : Q ≠ 0 := by
+    intro hQ
+    apply hi
+    have := congrArg (Polynomial.coeff · (q ^ (i : ℕ) - 1)) hQ
+    simpa [Q, Polynomial.finsetSum_coeff, Polynomial.coeff_monomial, hinj.eq_iff] using this
+  have hQdeg : Q.natDegree ≤ q ^ m - 1 :=
+    Polynomial.natDegree_sum_le_of_forall_le _ _ fun j _ ↦
+      (Polynomial.natDegree_monomial_le _).trans <|
+        Nat.sub_le_sub_right (Nat.pow_le_pow_right (by omega : 0 < q) (Nat.lt_succ_iff.mp j.isLt)) 1
+  -- Multiplying `Q(f)` by `f` turns each `cⱼ f ^ (q ^ j - 1)` into `cⱼ f ^ q ^ j`.
+  refine ⟨Q, hQ, hQdeg, (mul_eq_zero.mp ?_).resolve_right hf⟩
+  rw [← hc, map_sum, Finset.sum_mul]
+  refine Finset.sum_congr rfl fun j _ ↦ ?_
+  simp [Polynomial.aeval_monomial, ← Algebra.smul_def, ← pow_succ, Nat.sub_add_cancel (hqj j)]
 
 end TauCeti

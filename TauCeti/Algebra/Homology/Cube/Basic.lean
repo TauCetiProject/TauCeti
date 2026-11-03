@@ -52,6 +52,7 @@ degree is the height `#S` itself, and the terms are finite biproducts.
 
 * `Functor.isZero_cubeComplex_X_of_neg`, `Functor.isZero_cubeComplex_X_of_card_lt`: the terms
   vanish outside the degrees `0, …, #ι`.
+* `Functor.cubeComplex_total`: each term is the direct sum of its vertices.
 * `Functor.cubeComplexXZeroIso`: the degree `0` term is the initial vertex `F(∅)`.
 
 ## References
@@ -254,6 +255,13 @@ lemma cubeComplexLift_π {r : ℤ} {A : C}
     (f : ∀ S : {S : Finset ι // (#S : ℤ) = r}, A ⟶ F.obj S.1) (S : {S : Finset ι // (#S : ℤ) = r}) :
     F.cubeComplexLift f ≫ F.cubeComplexπ S = f S :=
   biproduct.lift_π f S
+
+/-- The projections onto the vertices of height `r`, followed by their inclusions, sum to the
+identity of the degree `r` term of the cube complex. -/
+@[simp]
+lemma cubeComplex_total (r : ℤ) :
+    ∑ S : {S : Finset ι // (#S : ℤ) = r}, F.cubeComplexπ S ≫ F.cubeComplexι S = 𝟙 _ :=
+  biproduct.total
 
 /-- Morphisms out of a term of the cube complex agree when they agree on every vertex. -/
 @[ext]

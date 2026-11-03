@@ -205,7 +205,7 @@ theorem extend_le_tsum (a : ℕ → ℝ≥0∞) : Φ.extend a ≤ ∑' n, a n :=
   calc (Φ b : ℝ≥0∞) ≤ ∑ n ∈ b.support, (b n : ℝ≥0∞) := by
         exact_mod_cast Φ.apply_le_sum b
     _ ≤ ∑ n ∈ b.support, a n := Finset.sum_le_sum fun n _ => hb n
-    _ ≤ ∑' n, a n := ENNReal.sum_le_tsum _
+    _ ≤ ∑' n, a n := sum_le_tsum _
 
 @[simp]
 theorem extend_zero : Φ.extend 0 = 0 :=

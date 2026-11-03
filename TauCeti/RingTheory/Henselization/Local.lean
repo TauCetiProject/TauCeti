@@ -66,7 +66,7 @@ instance henselianLocalRing [I.IsMaximal] : HenselianLocalRing (algebra I) :=
 `I` generates a proper ideal is a local homomorphism. -/
 theorem isLocalHom_lift [I.IsMaximal] {S : Type v} [CommRing S] [HenselianLocalRing S]
     [Algebra R S] (hI : I.map (algebraMap R S) ≤ maximalIdeal S) : IsLocalHom (lift hI) := by
-  have : IsLocalHom (lift hI : algebra I →+* S) := ((local_hom_TFAE _).out 1 3).mpr <| by
+  have : IsLocalHom (lift hI : algebra I →+* S) := ((local_hom_tfae _).out 1 3).mpr <| by
     rwa [maximalIdeal_eq_extended, Ideal.map_coe, map_extended]
   exact ⟨this.map_nonunit⟩
 
@@ -77,7 +77,7 @@ variable (R) [IsLocalRing R]
 /-- The structure map from a local ring to its henselization along the maximal ideal is a local
 homomorphism. -/
 instance isLocalHom_algebraMap : IsLocalHom (algebraMap R (algebra (maximalIdeal R))) :=
-  ((local_hom_TFAE _).out 1 5).mpr <| by
+  ((local_hom_tfae _).out 1 5).mpr <| by
     rw [maximalIdeal_eq_extended, comap_extended]
 
 /-- The structure map from a local ring to its henselization along the maximal ideal induces an

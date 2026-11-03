@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.Complex.ThricePuncturedSphere.CylindricalEnds
 public import Mathlib.Analysis.SpecialFunctions.Complex.Log
 public import Mathlib.Geometry.Manifold.ContMDiff.NormedSpace
+import TauCeti.Analysis.SpecialFunctions.Log.DivLeIff
 import Mathlib.Analysis.InnerProductSpace.Calculus
 import Mathlib.Analysis.SpecialFunctions.Complex.LogDeriv
 import Mathlib.Analysis.SpecialFunctions.Log.Deriv
@@ -34,7 +35,12 @@ parameterized by `s < 0`; `Puncture.endSign` records the sign. Points with posit
 longitudinal coordinate lie in the standard punctured neighborhood of the puncture
 (`Puncture.exists_mem_neighborhood_cylindricalEndLift`), hence in the thrice-punctured sphere
 (`Puncture.cylindricalEndLift_ne_zero_and_ne_one`), and the three ends have disjoint images
-(`Puncture.cylindricalEndLift_ne_cylindricalEndLift`).
+(`Puncture.cylindricalEndLift_ne_cylindricalEndLift`), so a point has positive signed longitudinal
+coordinate on at most one end (`Puncture.endSign_mul_re_endCoord_nonpos`). Bounding all three signed
+longitudinal coordinates by `R` cuts out the truncation `S_R` of the thrice-punctured sphere
+(`TauCeti.ThricePuncturedSphere.truncation`), a compact set
+(`TauCeti.ThricePuncturedSphere.isCompact_truncation`) over which integrals of data on `S` are
+taken.
 
 These coordinates are what is needed to install data prescribed on the ends, such as the
 Hamiltonian terms `H(t) dt` of Floer perturbation data, as smooth data on the punctured sphere.
@@ -65,6 +71,10 @@ def endSign : Puncture → ℝ
 @[simp] theorem abs_endSign (q : Puncture) : |q.endSign| = 1 := by
   cases q <;> simp
 
+/-- The sign of an end is `1` or `-1`. -/
+theorem endSign_eq_one_or_eq_neg_one (q : Puncture) : q.endSign = 1 ∨ q.endSign = -1 := by
+  cases q <;> simp
+
 /-- The center of an end lift: `cylindricalEndLift q z - q.endCenter` is a multiple of
 `exp (-2πz)`. It is `0` at the ends at `0` and `∞`, and `1` at the end at `1`. -/
 def endCenter : Puncture → ℂ
@@ -93,6 +103,10 @@ def endScale : Puncture → ℂ
 /-- The end lifts are nonconstant exponentials. -/
 theorem endScale_ne_zero (q : Puncture) : q.endScale ≠ 0 := by
   cases q <;> norm_num
+
+/-- The ends other than the one at `∞` are positive. -/
+theorem endSign_eq_one {q : Puncture} (hq : q ≠ inf) : q.endSign = 1 := by
+  cases q <;> simp_all
 
 /-- The end centers are the two finite punctures, so they lie outside the punctured sphere. -/
 theorem endCenter_eq_zero_or_eq_one (q : Puncture) : q.endCenter = 0 ∨ q.endCenter = 1 := by
@@ -127,11 +141,34 @@ imaginary part an angular coordinate, determined by the point only modulo `1`. -
 def endCoord (q : Puncture) (w : ℂ) : ℂ :=
   -Complex.log ((w - q.endCenter) / q.endScale) / (2 * π)
 
+theorem endCoord_def (q : Puncture) (w : ℂ) :
+    q.endCoord w = -Complex.log ((w - q.endCenter) / q.endScale) / (2 * π) :=
+  (rfl)
+
 /-- The longitudinal coordinate of a point of an end. -/
 theorem re_endCoord (q : Puncture) (w : ℂ) :
     (q.endCoord w).re = -Real.log ‖(w - q.endCenter) / q.endScale‖ / (2 * π) := by
   rw [endCoord, ← Complex.ofReal_ofNat, ← Complex.ofReal_mul, Complex.div_ofReal_re,
     Complex.neg_re, Complex.log_re]
+
+/-- The center of an end has longitudinal coordinate `0`, the junk value of the logarithm of
+`0`. -/
+@[simp]
+theorem re_endCoord_endCenter (q : Puncture) : (q.endCoord q.endCenter).re = 0 := by
+  simp [re_endCoord]
+
+/-- On the end at `∞` the point `1` has longitudinal coordinate `log 2 / (2π) > 0`. -/
+theorem re_endCoord_inf_one_pos : 0 < (inf.endCoord 1).re := by
+  rw [re_endCoord, endCenter_inf, endScale_inf, sub_zero]
+  have : ‖(1 : ℂ) / 2‖ = 2⁻¹ := by norm_num
+  rw [this, Real.log_inv, neg_neg]
+  exact div_pos (Real.log_pos one_lt_two) (by positivity)
+
+/-- A point with nonzero longitudinal coordinate is not the center of the end. -/
+theorem ne_endCenter_of_re_endCoord_ne_zero (q : Puncture) {w : ℂ}
+    (h : (q.endCoord w).re ≠ 0) : w ≠ q.endCenter := by
+  rintro rfl
+  exact h q.re_endCoord_endCenter
 
 /-- The angular coordinate of a point of an end. -/
 theorem im_endCoord (q : Puncture) (w : ℂ) :
@@ -301,6 +338,14 @@ theorem cylindricalEndLift_ne_zero_and_ne_one (q : Puncture) {z : ℂ}
   rw [← hp]
   exact p.2
 
+/-- A point with positive signed longitudinal coordinate on an end lies in the thrice-punctured
+sphere: it is neither `0` nor `1`. -/
+theorem ne_zero_and_ne_one_of_endSign_mul_re_endCoord_pos (q : Puncture) {w : ℂ}
+    (h : 0 < q.endSign * (q.endCoord w).re) : w ≠ 0 ∧ w ≠ 1 := by
+  have hw : w ≠ q.endCenter := q.ne_endCenter_of_re_endCoord_ne_zero fun h' => by simp [h'] at h
+  rw [← q.cylindricalEndLift_endCoord hw]
+  exact q.cylindricalEndLift_ne_zero_and_ne_one h
+
 /-- Distinct ends have disjoint images on their parts with positive signed longitudinal
 coordinate. -/
 theorem cylindricalEndLift_ne_cylindricalEndLift {q r : Puncture} (hqr : q ≠ r) {z z' : ℂ}
@@ -312,4 +357,84 @@ theorem cylindricalEndLift_ne_cylindricalEndLift {q r : Puncture} (hqr : q ≠ r
   obtain rfl : p = p' := Subtype.ext (hpz.trans (h.trans hpz'.symm))
   exact Set.disjoint_left.1 (pairwise_disjoint_neighborhood hqr) hp hp'
 
+/-- A point with positive signed longitudinal coordinate on one end has nonpositive signed
+longitudinal coordinate on every other end. -/
+theorem endSign_mul_re_endCoord_nonpos {q r : Puncture} (hqr : q ≠ r) {w : ℂ}
+    (h : 0 < q.endSign * (q.endCoord w).re) : r.endSign * (r.endCoord w).re ≤ 0 := by
+  by_contra! h'
+  have hq : w ≠ q.endCenter := q.ne_endCenter_of_re_endCoord_ne_zero fun h₀ => by simp [h₀] at h
+  have hr : w ≠ r.endCenter := r.ne_endCenter_of_re_endCoord_ne_zero fun h₀ => by simp [h₀] at h'
+  exact cylindricalEndLift_ne_cylindricalEndLift hqr h h'
+    ((q.cylindricalEndLift_endCoord hq).trans (r.cylindricalEndLift_endCoord hr).symm)
+
 end TauCeti.ThricePuncturedSphere.Puncture
+
+namespace TauCeti.ThricePuncturedSphere
+
+open Puncture
+
+/-- The truncation `S_R` of the thrice-punctured sphere `S = ℂ ∖ {0, 1}`: the points of `S` at
+which the signed longitudinal coordinate `±s` of every end is at most `R`. It is `S` with the
+parts `±s > R` of its three cylindrical ends removed, and it is compact
+(`TauCeti.ThricePuncturedSphere.isCompact_truncation`). -/
+def truncation (R : ℝ) : Set ℂ :=
+  {w | w ≠ 0 ∧ w ≠ 1 ∧ ∀ q : Puncture, q.endSign * (q.endCoord w).re ≤ R}
+
+@[simp]
+theorem mem_truncation {R : ℝ} {w : ℂ} :
+    w ∈ truncation R ↔ w ≠ 0 ∧ w ≠ 1 ∧ ∀ q : Puncture, q.endSign * (q.endCoord w).re ≤ R :=
+  Iff.rfl
+
+/-- The truncation is cut out by norm inequalities: it is the closed annulus
+`exp (-2πR) / 2 ≤ ‖w‖ ≤ 2 exp (2πR)` with the open disc of radius `exp (-2πR) / 2` about `1`
+removed. -/
+theorem truncation_eq (R : ℝ) :
+    truncation R = {w | Real.exp (-(2 * π * R)) / 2 ≤ ‖w‖} ∩
+      {w | Real.exp (-(2 * π * R)) / 2 ≤ ‖w - 1‖} ∩
+        Metric.closedBall 0 (2 * Real.exp (2 * π * R)) := by
+  have he : 0 < Real.exp (-(2 * π * R)) / 2 := by positivity
+  ext w
+  simp only [mem_truncation, Set.mem_inter_iff, Set.mem_ofPred_eq, Metric.mem_closedBall,
+    dist_zero_right]
+  -- The longitudinal coordinates of the three ends, in terms of norms.
+  have h₀ (hw : w ≠ 0) : zero.endSign * (zero.endCoord w).re ≤ R ↔
+      Real.exp (-(2 * π * R)) / 2 ≤ ‖w‖ := by
+    rw [endSign_zero, one_mul, re_endCoord, endCenter_zero, endScale_zero, sub_zero,
+      Real.neg_log_div_le_iff (by simpa using hw) (by positivity), div_le_iff₀ two_pos]
+    simp [mul_comm]
+  have h₁ (hw : w ≠ 1) : one.endSign * (one.endCoord w).re ≤ R ↔
+      Real.exp (-(2 * π * R)) / 2 ≤ ‖w - 1‖ := by
+    rw [endSign_one, one_mul, re_endCoord, endCenter_one, endScale_one,
+      Real.neg_log_div_le_iff (by simpa [sub_eq_zero] using hw) (by positivity),
+      div_le_iff₀ two_pos]
+    simp [mul_comm]
+  have h₂ (hw : w ≠ 0) : inf.endSign * (inf.endCoord w).re ≤ R ↔
+      ‖w‖ ≤ 2 * Real.exp (2 * π * R) := by
+    rw [endSign_inf, neg_one_mul, re_endCoord, endCenter_inf, endScale_inf, sub_zero,
+      neg_div, neg_neg, Real.log_div_le_iff (by simpa using hw) (by positivity)]
+    simp only [norm_div, Complex.norm_ofNat]
+    rw [div_le_iff₀ two_pos, mul_comm]
+  constructor
+  · rintro ⟨hw₀, hw₁, h⟩
+    exact ⟨⟨(h₀ hw₀).1 (h zero), (h₁ hw₁).1 (h one)⟩, (h₂ hw₀).1 (h inf)⟩
+  · rintro ⟨⟨ha, hb⟩, hc⟩
+    have hw₀ : w ≠ 0 := by
+      rintro rfl
+      simp only [norm_zero] at ha
+      linarith
+    have hw₁ : w ≠ 1 := by
+      rintro rfl
+      simp only [sub_self, norm_zero] at hb
+      linarith
+    refine ⟨hw₀, hw₁, fun q => ?_⟩
+    cases q
+    exacts [(h₀ hw₀).2 ha, (h₁ hw₁).2 hb, (h₂ hw₀).2 hc]
+
+/-- The truncation of the thrice-punctured sphere is compact. -/
+theorem isCompact_truncation (R : ℝ) : IsCompact (truncation R) := by
+  rw [truncation_eq]
+  exact (isCompact_closedBall _ _).inter_left
+    ((isClosed_le continuous_const continuous_norm).inter
+      (isClosed_le continuous_const (continuous_norm.comp (continuous_id.sub continuous_const))))
+
+end TauCeti.ThricePuncturedSphere
