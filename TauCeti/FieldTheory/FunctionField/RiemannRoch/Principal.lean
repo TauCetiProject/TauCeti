@@ -7,6 +7,7 @@ module
 
 public import TauCeti.FieldTheory.FunctionField.Divisor.Principal
 public import TauCeti.FieldTheory.FunctionField.RiemannRoch.Basic
+import TauCeti.RingTheory.Algebraic.LinearIndependent
 
 /-!
 # Riemann–Roch spaces and principal divisors
@@ -260,6 +261,26 @@ theorem pow_mem_riemannRochSpace_zsmul_poles_of_le (hF : IsFunctionField k F) (z
     {m : ℤ} (h : (i : ℤ) ≤ m) : (z : F) ^ i ∈ riemannRochSpace (m • Divisor.poles hF z) :=
   riemannRochSpace_mono ((Divisor.isEffective_poles hF z).zsmul_le_zsmul h)
     (pow_mem_riemannRochSpace_zsmul_poles hF z i)
+
+/-- The first `n` powers of a nonzero function span a subspace of `L(m · (z)_∞)` whenever
+`n ≤ m + 1`. -/
+theorem span_range_pow_le_riemannRochSpace_zsmul_poles (hF : IsFunctionField k F) (z : Fˣ)
+    {n : ℕ} {m : ℤ} (h : (n : ℤ) ≤ m + 1) :
+    Submodule.span k (Set.range fun i : Fin n ↦ (z : F) ^ (i : ℕ)) ≤
+      riemannRochSpace (m • Divisor.poles hF z) := by
+  refine Submodule.span_le.mpr ?_
+  rintro _ ⟨i, rfl⟩
+  have := i.isLt
+  exact pow_mem_riemannRochSpace_zsmul_poles_of_le hF z (by omega)
+
+/-- For a transcendental function, the first `n` powers are linearly independent, so
+`L(m · (z)_∞)` has dimension at least `n` whenever `n ≤ m + 1`. -/
+theorem le_dim_zsmul_poles (hF : IsFunctionField k F) (z : Fˣ)
+    (hz : Transcendental k (z : F)) {n : ℕ} {m : ℤ} (h : (n : ℤ) ≤ m + 1) :
+    n ≤ Divisor.dim (m • Divisor.poles hF z) := by
+  have := finiteDimensional_riemannRochSpace hF (m • Divisor.poles hF z)
+  rw [Divisor.dim_def, ← hz.finrank_span_range_pow n]
+  exact Submodule.finrank_mono (span_range_pow_le_riemannRochSpace_zsmul_poles hF z h)
 
 /-- **The monomials of degree at most `n` in `x` and `y` lie in `L(n ((x)_∞ ⊔ (y)_∞))`**: for
 nonzero `x` and `y`, the span of the products `x ^ i y ^ j` with `i + j ≤ n` is contained in

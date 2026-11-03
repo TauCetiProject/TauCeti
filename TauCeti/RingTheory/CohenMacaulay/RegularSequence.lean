@@ -338,7 +338,7 @@ theorem isRegular_map_algebraMap_localization {𝔮 : Ideal B} [𝔮.IsMaximal]
       (algebraMap A (Localization.AtPrime 𝔮)) = maximalIdeal A := by
     rw [← under_def, ← under_under (B := B), Localization.AtPrime.under_maximalIdeal, hunder]
   have : IsLocalHom (algebraMap A (Localization.AtPrime 𝔮)) :=
-    ((local_hom_TFAE (algebraMap A (Localization.AtPrime 𝔮))).out 1 5).mpr hmax
+    ((IsLocalRing.local_hom_tfae (algebraMap A (Localization.AtPrime 𝔮))).out 1 5).mpr hmax
   refine h.isRegular_map_algebraMap hrs ?_
   rw [ringKrullDim_localization_atPrime_quotient_map_eq_zero (maximalIdeal A) 𝔮, zero_add, hlen,
     ringKrullDim_localization_atPrime_eq_height_under A, hunder,

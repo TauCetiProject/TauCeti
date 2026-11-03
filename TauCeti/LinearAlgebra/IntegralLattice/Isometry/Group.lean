@@ -42,6 +42,8 @@ and in rank one `O(L) = {±1}`.
 * `TauCeti.IntegralLattice.Isometry.det`: the determinant `O(L) →* ℤˣ`.
 * `TauCeti.IntegralLattice.specialOrthogonalGroup`: the subgroup `SO(L)` of determinant one.
 * `TauCeti.IntegralLattice.Isometry.neg`: negation, the element `-1` of `O(L)`.
+* `TauCeti.IntegralLattice.Isometry.unitsSMul`: multiplication by a unit `u` of `ℤ`, so the
+  identity for `u = 1` and negation for `u = -1`.
 * `TauCeti.IntegralLattice.specialOrthogonalGroup.toSpecialLinearGroup`: restriction to the
   carrier as a group homomorphism from `SO(L)` to the special linear group of the carrier.
 * `TauCeti.IntegralLattice.specialOrthogonalGroup.toMatrix`: the matrix of a proper isometry in a
@@ -204,6 +206,54 @@ theorem det_neg (L : IntegralLattice V) : det L (neg L) = (-1) ^ Module.finrank 
     ext x
     simp
   rw [h, LinearMap.det_smul, LinearMap.det_id, mul_one]
+
+/-- Multiplication by a unit `u` of `ℤ`, that is by `±1`, is a self-isometry of every integral
+lattice. -/
+def unitsSMul (u : ℤˣ) (L : IntegralLattice V) : Isometry L L where
+  toIsometryEquiv :=
+    { toFun x := (u : ℤ) • x
+      invFun x := (u : ℤ) • x
+      map_add' := smul_add _
+      map_smul' c x := smul_comm _ c x
+      left_inv x := by simp [smul_smul]
+      right_inv x := by simp [smul_smul]
+      map_app' x y := by
+        simp only [map_zsmul, LinearMap.smul_apply, smul_smul, ← Units.val_mul,
+          Int.units_mul_self, Units.val_one, one_smul] }
+  map_carrier := by
+    ext x
+    simp only [Submodule.mem_map]
+    refine ⟨?_, fun hx ↦ ⟨(u : ℤ) • x, zsmul_mem hx _, by simp [smul_smul]⟩⟩
+    rintro ⟨y, hy, rfl⟩
+    exact zsmul_mem hy _
+
+@[simp]
+theorem unitsSMul_apply (u : ℤˣ) (L : IntegralLattice V) (x : V) :
+    unitsSMul u L x = (u : ℤ) • x := (rfl)
+
+/-- Multiplication by the unit `1` is the identity of `O(L)`. -/
+@[simp]
+theorem unitsSMul_one (L : IntegralLattice V) : unitsSMul 1 L = 1 := by
+  ext x
+  simp
+
+/-- Multiplication by the unit `-1` is negation. -/
+@[simp]
+theorem unitsSMul_neg_one (L : IntegralLattice V) : unitsSMul (-1) L = neg L := by
+  ext x
+  simp
+
+/-- Multiplication by a product of units is the product in `O(L)` of the multiplications. -/
+theorem unitsSMul_mul (u v : ℤˣ) (L : IntegralLattice V) :
+    unitsSMul (u * v) L = unitsSMul u L * unitsSMul v L := by
+  ext x
+  simp [mul_smul]
+
+/-- Multiplication by a unit of `ℤ` is an involution, since `u * u = 1`. -/
+@[simp]
+theorem symm_unitsSMul (u : ℤˣ) (L : IntegralLattice V) :
+    (unitsSMul u L).symm = unitsSMul u L := by
+  rw [← inv_def, inv_eq_iff_mul_eq_one, ← unitsSMul_mul, Int.units_mul_self, unitsSMul_one]
 
 end Isometry
 
@@ -426,12 +476,12 @@ theorem mem_congruenceSubgroup_iff {d : ℤ} {g : Isometry L L} :
   rw [congruenceSubgroup, MonoidHom.mem_ker]
   refine ⟨fun hg x ↦ ?_, fun hg ↦ Submodule.linearMap_qext _ (LinearMap.ext fun x ↦ ?_)⟩
   · have h := LinearMap.congr_fun hg (Submodule.Quotient.mk x)
-    rw [Module.End.one_apply, reductionHom_apply_mk, Submodule.Quotient.eq,
+    rw [one_apply_eq_self, reductionHom_apply_mk, Submodule.Quotient.eq,
       Submodule.mem_smul_pointwise_iff_exists] at h
     obtain ⟨y, -, hy⟩ := h
     exact ⟨y, hy.symm⟩
   · obtain ⟨y, hy⟩ := hg x
-    rw [LinearMap.comp_apply, LinearMap.comp_apply, Submodule.mkQ_apply, Module.End.one_apply,
+    rw [LinearMap.comp_apply, LinearMap.comp_apply, Submodule.mkQ_apply, one_apply_eq_self,
       reductionHom_apply_mk, Submodule.Quotient.eq, Submodule.mem_smul_pointwise_iff_exists]
     exact ⟨y, Submodule.mem_top, hy.symm⟩
 

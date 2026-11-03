@@ -66,6 +66,9 @@ pointwise form of the Reeb vector field of a contact form and of its rescaling l
   count.
 * `Module.Dual.isContact_comp_compl₁₂`: the covector `B z` restricted to a hyperplane transverse to
   `z` is contact for the restriction of a nondegenerate alternating `B`.
+* `Module.Dual.isContact_comp_linearEquiv_compl₁₂_iff`,
+  `Module.Dual.IsContact.reebVector_comp_linearEquiv_compl₁₂`: contactness and the Reeb vector
+  are transported by linear equivalences.
 * `Module.Dual.symplectizationForm`,
   `Module.Dual.isContact_iff_nondegenerate_symplectizationForm`: the symplectization form, which
   is nondegenerate exactly for contact covectors.
@@ -144,11 +147,7 @@ theorem isContact_smul_iff {c : K} (hc : c ≠ 0) : (c • a).IsContact B ↔ a.
 @[simp]
 theorem isContact_smul_bilinForm_iff {c : K} (hc : c ≠ 0) :
     a.IsContact (c • B) ↔ a.IsContact B := by
-  have hrestrict : (c • B).restrict (LinearMap.ker a) = c • B.restrict (LinearMap.ker a) := by
-    ext v w
-    simp only [LinearMap.BilinForm.restrict_apply, LinearMap.domRestrict_apply,
-      LinearMap.smul_apply]
-  rw [isContact_def, isContact_def, hrestrict,
+  rw [isContact_def, isContact_def, LinearMap.BilinForm.restrict_smul,
     TauCeti.BilinForm.nondegenerate_smul_iff (IsRegular.of_ne_zero hc)]
 
 /-- For an alternating `B`, the kernel of a contact covector has even dimension. -/
@@ -218,6 +217,30 @@ theorem isContact_comp_compl₁₂ {U : Type*} [AddCommGroup U] [Module K U] (hB
     rw [map_smul, sub_eq_zero.1 hc, smul_smul, inv_mul_cancel₀ hc0, one_smul]
   rw [hc0, zero_smul, sub_zero] at hc
   exact hL (hc.trans (map_zero L).symm)
+
+/-! ### Transport along linear equivalences -/
+
+/-- **Contactness is invariant under linear equivalences.** For a linear equivalence
+`e : V ≃ V'`, the pullback `a' ∘ e` is contact for the pullback `B' ∘ (e × e)` exactly when `a'`
+is contact for `B'`. -/
+@[simp]
+theorem isContact_comp_linearEquiv_compl₁₂_iff {V' : Type*} [AddCommGroup V'] [Module K V']
+    (e : V ≃ₗ[K] V') {a' : Module.Dual K V'} {B' : LinearMap.BilinForm K V'} :
+    IsContact (a' ∘ₗ (e : V →ₗ[K] V')) (B'.compl₁₂ (e : V →ₗ[K] V') e) ↔ a'.IsContact B' := by
+  have hker : (LinearMap.ker (a' ∘ₗ (e : V →ₗ[K] V'))).map (e : V →ₗ[K] V') =
+      LinearMap.ker a' := by
+    rw [LinearMap.ker_comp, Submodule.map_comap_eq_of_surjective e.surjective]
+  -- The kernels correspond under `e`, and so do the restricted forms.
+  set e₀ := e.ofSubmodules _ _ hker
+  have hrestrict : LinearMap.BilinForm.restrict (B'.compl₁₂ (e : V →ₗ[K] V') e)
+      (LinearMap.ker (a' ∘ₗ (e : V →ₗ[K] V'))) =
+      LinearMap.BilinForm.congr e₀.symm (B'.restrict (LinearMap.ker a')) := by
+    ext v w
+    simp [e₀, LinearMap.BilinForm.congr_apply]
+  rw [isContact_def, isContact_def, hrestrict, LinearMap.BilinForm.nondegenerate_congr_iff]
+  refine and_congr_left fun _ ↦ not_congr ⟨fun h ↦ ?_, fun h ↦ by rw [h, LinearMap.zero_comp]⟩
+  ext v
+  simpa using LinearMap.congr_fun h (e.symm v)
 
 /-! ### The symplectization form -/
 
@@ -464,6 +487,20 @@ theorem IsContact.reebVector_smul (h : a.IsContact B) {c : K} (hc : c ≠ 0) :
       mul_inv_cancel₀ hc]
   · rw [LinearMap.smul_apply, smul_eq_mul, mul_eq_zero, or_iff_right hc] at hw
     rw [map_smul, LinearMap.smul_apply, h.apply_reebVector_of_apply_eq_zero hw, smul_zero]
+
+/-- **The Reeb vector is transported by linear equivalences.** If `a'` is contact for `B'`,
+then the Reeb vector of the pullback `a' ∘ e` for `B' ∘ (e × e)` is `e⁻¹` of the Reeb vector of
+`a'` for `B'`. -/
+theorem IsContact.reebVector_comp_linearEquiv_compl₁₂ {V' : Type*} [AddCommGroup V']
+    [Module K V'] {a' : Module.Dual K V'} {B' : LinearMap.BilinForm K V'} (h : a'.IsContact B')
+    (e : V ≃ₗ[K] V') :
+    reebVector (a' ∘ₗ (e : V →ₗ[K] V')) (B'.compl₁₂ (e : V →ₗ[K] V') e) =
+      e.symm (a'.reebVector B') := by
+  have : FiniteDimensional K V' := e.finiteDimensional
+  refine (((isContact_comp_linearEquiv_compl₁₂_iff e).2 h).eq_reebVector_iff.2
+    ⟨?_, fun w hw ↦ ?_⟩).symm
+  · simp [h.apply_reebVector]
+  · simpa using h.apply_reebVector_of_apply_eq_zero (by simpa using hw)
 
 /-- **Rescaling law for the Reeb vector**, pointwise. Let `a` be contact for `B`, let `c ≠ 0`,
 and let `B'` be a bilinear form with `B' v w = c B v w - l w a v` for `w ∈ ker a`. This is the

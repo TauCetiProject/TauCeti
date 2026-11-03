@@ -16,9 +16,11 @@ public import Mathlib.Algebra.Ring.Subring.Basic
 analytic at `a`. Equality is ordinary equality of germs, so restriction to smaller neighborhoods
 requires no additional identifications. Analytic maps induce ring homomorphisms by pullback.
 These rings allow operations on local analytic functions to be compared independently of the
-representatives and neighborhoods used to construct them. The subring construction follows
-`TauCeti.meromorphicGerms`, using ordinary neighborhoods and `AnalyticAt` in place of punctured
-neighborhoods and `MeromorphicAt`.
+representatives and neighborhoods used to construct them. Locally inverse analytic maps give
+ring equivalences (`TauCeti.analyticGerms.equivOfInverse`), without choosing representatives.
+The subring construction follows `TauCeti.meromorphicGerms`, using ordinary neighborhoods and
+`AnalyticAt` in place of punctured neighborhoods and `MeromorphicAt`. The local-inverse
+construction is analogous to `OpenPartialHomeomorph.meromorphicGermsEquiv`.
 -/
 
 public section
@@ -186,6 +188,42 @@ theorem pullback_pullback {G : Type*} [NormedAddCommGroup G] [NormedSpace 𝕜 G
   obtain ⟨f, hf, rfl⟩ := exists_ofAnalyticAt φ
   rw [pullback_ofAnalyticAt, pullback_ofAnalyticAt, pullback_ofAnalyticAt]
   rfl
+
+/-- Locally inverse analytic maps identify the scalar analytic germ rings at corresponding
+points, contravariantly. Only inverse identities near the two base points are required. -/
+def equivOfInverse (g : E → F) (h : F → E)
+    (hg : AnalyticAt 𝕜 g a) (hh : AnalyticAt 𝕜 h b) (hga : g a = b)
+    (hleft : h ∘ g =ᶠ[𝓝 a] id) (hright : g ∘ h =ᶠ[𝓝 b] id) :
+    analyticGerms 𝕜 b ≃+* analyticGerms 𝕜 a where
+  toFun := pullback g hg hga
+  invFun := pullback h hh (hga ▸ hleft.self_of_nhds)
+  map_mul' := map_mul (pullback g hg hga)
+  map_add' := map_add (pullback g hg hga)
+  left_inv φ := by
+    obtain ⟨f, hf, rfl⟩ := exists_ofAnalyticAt φ
+    rw [pullback_ofAnalyticAt, pullback_ofAnalyticAt]
+    exact ofAnalyticAt_congr (hright.fun_comp f)
+  right_inv φ := by
+    obtain ⟨f, hf, rfl⟩ := exists_ofAnalyticAt φ
+    rw [pullback_ofAnalyticAt, pullback_ofAnalyticAt]
+    exact ofAnalyticAt_congr (hleft.fun_comp f)
+
+/-- Transport by locally inverse analytic maps is analytic pullback. -/
+@[simp]
+theorem equivOfInverse_apply (g : E → F) (h : F → E)
+    (hg : AnalyticAt 𝕜 g a) (hh : AnalyticAt 𝕜 h b) (hga : g a = b)
+    (hleft : h ∘ g =ᶠ[𝓝 a] id) (hright : g ∘ h =ᶠ[𝓝 b] id)
+    (φ : analyticGerms 𝕜 b) :
+    equivOfInverse g h hg hh hga hleft hright φ = pullback g hg hga φ := (rfl)
+
+/-- Inverse transport is pullback by the local inverse. -/
+@[simp]
+theorem equivOfInverse_symm_apply (g : E → F) (h : F → E)
+    (hg : AnalyticAt 𝕜 g a) (hh : AnalyticAt 𝕜 h b) (hga : g a = b)
+    (hleft : h ∘ g =ᶠ[𝓝 a] id) (hright : g ∘ h =ᶠ[𝓝 b] id)
+    (φ : analyticGerms 𝕜 a) :
+    (equivOfInverse g h hg hh hga hleft hright).symm φ =
+      pullback h hh (hga ▸ hleft.self_of_nhds) φ := (rfl)
 
 end analyticGerms
 

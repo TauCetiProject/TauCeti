@@ -333,7 +333,6 @@ theorem MemLp.comp_mul_right_of_regular {f : G → E} (hf : MemLp f p μ) (g : G
 
 omit [NormedSpace ℝ E] in
 /-- A function is in `Lᵖ` exactly when its unweighted right translate is. -/
-@[simp]
 theorem memLp_comp_mul_right_iff_of_regular {f : G → E} (g : G) :
     MemLp (fun x => f (x * g)) p μ ↔ MemLp f p μ :=
   ⟨fun h => by simpa [mul_assoc] using h.comp_mul_right_of_regular g⁻¹,
