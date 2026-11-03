@@ -545,8 +545,11 @@ theorem prodEquivOfIsBilimit_cyclicConnectingEquiv (hm : Function.Bijective fun 
         (cyclicConnectingEquiv hS₂ (hm.prodMap hm') x) =
       Prod.map (cyclicConnectingEquiv hS hm) (cyclicConnectingEquiv hS' hm')
         (groupCohomology.prodEquivOfIsBilimit (AddEquiv.cyclicRepBinaryBiconeIsBilimit hT hT') 1
-          x) :=
-  prodEquivOfIsBilimit_δ_cyclicRepShortComplex_prodMap hS hS' hS₂ 1 2 rfl x
+          x) := by
+  rw [cyclicConnectingEquiv_apply,
+    prodEquivOfIsBilimit_δ_cyclicRepShortComplex_prodMap hS hS' hS₂ 1 2 rfl x]
+  exact Prod.ext (cyclicConnectingEquiv_apply hS hm _).symm
+    (cyclicConnectingEquiv_apply hS' hm' _).symm
 
 end ProdShortComplex
 
