@@ -40,7 +40,8 @@ theorem isLocalHom_of_surjective_of_isNilpotent_ker (f : R →+* S)
 theorem ker_le_jacobson_bot (f : R →+* S) [IsLocalHom f] :
     ker f ≤ Ideal.jacobson (⊥ : Ideal R) := by
   intro x hx
-  refine Ideal.mem_jacobson_bot.mpr fun y ↦ isUnit_of_map_unit f _ ?_
+  rw [Ideal.jacobson_bot]
+  refine Ring.mem_jacobson_iff.mpr fun y ↦ isUnit_of_map_unit f _ ?_
   simp only [mem_ker] at hx
   simp [hx]
 

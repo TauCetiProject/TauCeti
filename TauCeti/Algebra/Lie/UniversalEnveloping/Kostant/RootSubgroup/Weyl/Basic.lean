@@ -242,7 +242,7 @@ theorem kostantWeylPoints_toLinearMap_eq :
     ← LinearMap.baseChange_mul, ← LinearMap.baseChange_mul]
   congr 1
   refine LinearMap.ext fun v => Subtype.ext ?_
-  rw [Module.End.mul_apply, Module.End.mul_apply]
+  rw [mul_apply_eq_comp, mul_apply_eq_comp]
   simp only [LinearEquiv.coe_coe, coe_kostantWeylRestrict_apply, coe_integralExpZSMul_apply,
     coe_weylUnit, one_zsmul, neg_one_zsmul, mul_smul]
 
@@ -349,7 +349,7 @@ theorem weylUnit_apply_eigenvector {v : V} {m : ℚ}
       simpa only [coe_weylUnit, coe_inv_weylUnit] using weylUnit_conj_h hT hi hj
     rw [← hconj, mul_assoc, mul_assoc, Units.inv_mul, mul_one]
   have happ := congrArg (fun f : Module.End ℚ V => f v) hw
-  simp only [Module.End.mul_apply, LinearMap.neg_apply] at happ
+  simp only [mul_apply_eq_comp, LinearMap.neg_apply] at happ
   have key : ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (h c))
       (((weylUnit hi hj : (Module.End ℚ V)ˣ) : Module.End ℚ V) v) =
         -(((weylUnit hi hj : (Module.End ℚ V)ˣ) : Module.End ℚ V)

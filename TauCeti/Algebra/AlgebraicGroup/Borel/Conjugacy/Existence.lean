@@ -99,7 +99,7 @@ private theorem exists_conjugate_eq_of_smooth_connected (n : ℕ) :
         IsBorelOverAlgClosed k H I → IsBorelOverAlgClosed k H J →
         ∃ g : WithConv (H →ₐ[k] k), I.conjugate g = J := by
   induction n using Nat.strong_induction_on with
-  | h n ih =>
+  | ind n ih =>
     intro H hsm hconn hdim I J hI hJ
     let _ : Algebra.Smooth k H := hsm
     let _ : IsReduced H := isReduced_of_smooth k H
