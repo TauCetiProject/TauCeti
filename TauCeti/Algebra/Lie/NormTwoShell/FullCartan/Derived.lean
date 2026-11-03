@@ -59,39 +59,34 @@ theorem lie_mem_range_toFull (x y : FullShellLieAlgebra D) :
 
 section ScalarExtension
 
-variable [Fact B.PosDef] [Fact (∀ i, Even (B i i))]
-
-/-- The full-Cartan Lie ring under the positive-definiteness and even-diagonal hypotheses. -/
-noncomputable local instance : LieRing (FullShellLieAlgebra D) :=
-  lieRing D Fact.out Fact.out
+variable (hB : B.PosDef) (heven : ∀ i, Even (B i i))
 
 variable (R : Type*) [CommRing R]
 
 /-- After any scalar extension, the derived algebra is contained in the image of the
 coroot-lattice shell algebra. No flatness or invertibility assumption is needed. -/
 theorem derivedSeries_one_le_range_toFull_baseChange :
+    letI := lieRing D hB heven
     (LieAlgebra.derivedSeries R (R ⊗[ℤ] FullShellLieAlgebra D) 1).toSubmodule ≤
       LinearMap.range ((toFull D).baseChange R) := by
-  rw [← LieIdeal.toLieSubalgebra_toSubmodule, LieAlgebra.coe_derivedSeries_one_eq]
+  let := lieRing D hB heven
+  have h : (LieAlgebra.derivedSeries ℤ (FullShellLieAlgebra D) 1).toSubmodule ≤
+      LinearMap.range (toFull D) := by
+    rw [← LieIdeal.toLieSubalgebra_toSubmodule, LieAlgebra.coe_derivedSeries_one_eq]
+    exact Submodule.span_le.mpr fun _ ⟨x, y, hxy⟩ ↦ hxy ▸ lie_mem_range_toFull D x y
+  rw [LieAlgebra.derivedSeries_baseChange, LieSubmodule.coe_baseChange]
+  refine (Submodule.baseChange_mono R h).trans ?_
+  rw [Submodule.baseChange_eq_span]
   refine Submodule.span_le.mpr ?_
-  rintro _ ⟨x, y, rfl⟩
-  induction x using TensorProduct.inductionOn with
-  | add x x' hx hx' =>
-    rw [add_lie]
-    exact ((toFull D).baseChange R).range.add_mem hx hx'
-  | tmul r x =>
-    induction y using TensorProduct.inductionOn with
-    | add y y' hy hy' =>
-      rw [lie_add]
-      exact ((toFull D).baseChange R).range.add_mem hy hy'
-    | tmul s y =>
-      obtain ⟨z, hz⟩ := lie_mem_range_toFull D x y
-      exact ⟨(r * s) ⊗ₜ z, by simp [hz]⟩
+  rintro _ ⟨_, ⟨z, rfl⟩, rfl⟩
+  exact ⟨(1 : R) ⊗ₜ[ℤ] z, by simp⟩
 
 /-- Every root vector belongs to the derived algebra after extension to a ring in which two
 is invertible: its bracket with its own coroot is twice itself. -/
 theorem tmul_root_mem_derivedSeries_one [Invertible (2 : R)] (a : B.normTwoShell) :
+    letI := lieRing D hB heven
     (1 : R) ⊗ₜ[ℤ] root D a ∈ LieAlgebra.derivedSeries R (R ⊗[ℤ] FullShellLieAlgebra D) 1 := by
+  let := lieRing D hB heven
   have h := LieSubmodule.lie_mem_lie
     (I := (⊤ : LieIdeal R (R ⊗[ℤ] FullShellLieAlgebra D)))
     (N := (⊤ : LieIdeal R (R ⊗[ℤ] FullShellLieAlgebra D)))
@@ -107,11 +102,13 @@ theorem tmul_root_mem_derivedSeries_one [Invertible (2 : R)] (a : B.normTwoShell
   rw [heq] at h
   exact h
 
-/-- Every root coroot belongs to the derived algebra after scalar extension. The sign of the
-opposite-root section is retained; it is a unit and hence does not change membership. -/
+/-- For every root `a`, the coroot `1 ⊗ cartan (coroot a)` lies in the derived algebra after
+any scalar extension; neither two invertible nor `B i i = 2` is needed. -/
 theorem tmul_cartan_coroot_mem_derivedSeries_one (a : B.normTwoShell) :
+    letI := lieRing D hB heven
     (1 : R) ⊗ₜ[ℤ] cartan D (D.coroot a) ∈
       LieAlgebra.derivedSeries R (R ⊗[ℤ] FullShellLieAlgebra D) 1 := by
+  let := lieRing D hB heven
   let b : B.normTwoShell := ⟨-(a : I → ℤ), neg_mem_normTwoShell.mpr a.property⟩
   let u := (B.orderedSignForm a b).negOnePow
   have h := LieSubmodule.lie_mem_lie
@@ -132,9 +129,11 @@ invertible is exactly the image of the coroot-lattice shell algebra. No integral
 the full Cartan lattice is assumed. -/
 theorem derivedSeries_one_eq_range_toFull_baseChange [Invertible (2 : R)]
     (hdiag : ∀ i, B i i = 2) :
+    letI := lieRing D hB heven
     (LieAlgebra.derivedSeries R (R ⊗[ℤ] FullShellLieAlgebra D) 1).toSubmodule =
       LinearMap.range ((toFull D).baseChange R) := by
-  apply le_antisymm (derivedSeries_one_le_range_toFull_baseChange D R)
+  let := lieRing D hB heven
+  apply le_antisymm (derivedSeries_one_le_range_toFull_baseChange D hB heven R)
   let P := (LieAlgebra.derivedSeries R (R ⊗[ℤ] FullShellLieAlgebra D) 1).toSubmodule
   -- The coroot-lattice basis consists of simple coroots and all root vectors.
   have h (x : ShellLieAlgebra B) : (1 : R) ⊗ₜ[ℤ] toFull D x ∈ P := by
@@ -146,10 +145,10 @@ theorem derivedSeries_one_eq_range_toFull_baseChange [Invertible (2 : R)]
     · rintro _ ⟨i, rfl⟩
       rcases i with i | a
       · rw [ShellLieAlgebra.basis_inl, toFull_cartan]
-        exact tmul_cartan_coroot_mem_derivedSeries_one D R
+        exact tmul_cartan_coroot_mem_derivedSeries_one D hB heven R
           ⟨_, single_mem_normTwoShell (hdiag i)⟩
       · rw [ShellLieAlgebra.basis_inr, toFull_root]
-        exact tmul_root_mem_derivedSeries_one D R a
+        exact tmul_root_mem_derivedSeries_one D hB heven R a
     · simp
     · intro x y _ _ hx hy
       simpa only [map_add, TensorProduct.tmul_add] using P.add_mem hx hy
