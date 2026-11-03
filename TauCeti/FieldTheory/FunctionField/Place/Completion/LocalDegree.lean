@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.FieldTheory.FunctionField.Place.Completion.Extension
-import Mathlib.RingTheory.AdicCompletion.Functoriality
 import TauCeti.RingTheory.AdicCompletion.Pi
 
 /-!
@@ -38,12 +37,9 @@ products span `F̂'_{P'}` over `F̂_P`.
 
 The algebra structures are explicit, since different places over `P` give different completed
 extensions: install `TauCeti.Place.completionExtensionAlgebra` and
-`TauCeti.Place.completionIntegersExtensionAlgebra` locally.
-
-## Main definitions
-
-* `TauCeti.Place.completionIntegersExtension`: the map `𝒪̂_P → 𝒪̂_{P'}` of completed valuation
-  rings, and `TauCeti.Place.completionIntegersExtensionAlgebra` the corresponding algebra.
+`TauCeti.Place.completionIntegersExtensionAlgebra` locally. The latter is the algebra of the map
+`TauCeti.Place.completionIntegersExtension` of completed valuation rings, defined beside the
+completed extension.
 
 ## Main results
 
@@ -75,108 +71,6 @@ variable {k k' F F' : Type*} [Field k] [Field k'] [Field F] [Field F']
   [Algebra.IsIntegral F F'] (P : Place k F) (P' : Place k' F')
   (hP : P'.restrict k F = P)
 
-section Integers
-
-/-- The completed extension carries the completed valuation ring of `P` into that of `P'`. -/
-theorem completionExtension_mem_integers {x : P.Completion}
-    (hx : x ∈ P.completionPlace.integers) :
-    P.completionExtension P' hP x ∈ P'.completionPlace.integers := by
-  rw [mem_integers_iff, completionPlace_valuation, valuation_completionExtension]
-  exact pow_le_one' (by simpa using P.completionPlace.mem_integers_iff.mp hx) _
-
-/-- The map of completed valuation rings induced by the completed extension. -/
-noncomputable def completionIntegersExtension :
-    P.completionPlace.integers →+* P'.completionPlace.integers :=
-  (P.completionExtension P' hP).restrict _ _ fun _ hx ↦
-    P.completionExtension_mem_integers P' hP hx
-
-@[simp]
-theorem coe_completionIntegersExtension (x : P.completionPlace.integers) :
-    (P.completionIntegersExtension P' hP x : P'.Completion) = P.completionExtension P' hP x :=
-  (rfl)
-
-/-- The map of completed valuation rings is local. -/
-instance isLocalHom_completionIntegersExtension :
-    IsLocalHom (P.completionIntegersExtension P' hP) where
-  map_nonunit x hx := by
-    rw [P.completionPlace.isUnit_iff_valuation_eq_one, completionPlace_valuation]
-    rw [P'.completionPlace.isUnit_iff_valuation_eq_one, coe_completionIntegersExtension,
-      completionPlace_valuation, valuation_completionExtension] at hx
-    exact (pow_eq_one_iff_left (ramificationIdx_pos F P').ne').mp hx
-
-/-- The completed valuation ring of `P'` is an algebra over the completed valuation ring of `P`.
-Like `TauCeti.Place.completionExtensionAlgebra`, this structure depends on the chosen place over
-`P` and is installed locally. -/
-@[instance_reducible]
-noncomputable def completionIntegersExtensionAlgebra :
-    Algebra P.completionPlace.integers P'.completionPlace.integers :=
-  (P.completionIntegersExtension P' hP).toAlgebra
-
-/-- The chosen algebra map of completed valuation rings is the completed extension. -/
-theorem coe_algebraMap_completionIntegersExtensionAlgebra (x : P.completionPlace.integers) :
-    letI := P.completionIntegersExtensionAlgebra P' hP
-    (algebraMap P.completionPlace.integers P'.completionPlace.integers x : P'.Completion) =
-      P.completionExtension P' hP x :=
-  (rfl)
-
-end Integers
-
-section Expansion
-
-variable {ι : Type*} [Fintype ι]
-
-/-- **Expansion to finite order.** If the residues of `u i ∈ 𝒪_{P'}` span the residue field of
-`P'` over that of the place below, and `t` is a uniformizer at `P'`, then every function regular
-at `P'` agrees to order `n` with a combination `∑_{m < n} ∑_i c_{m,i} u_i t ^ m` whose coefficients
-are regular at the place below. -/
-private theorem exists_sub_sum_mem_filtration (u : ι → P'.integers)
-    (hu : Submodule.span (P'.restrict k F).ResidueField
-      (Set.range fun i ↦ residue P'.integers (u i)) = ⊤)
-    {t : F'} (ht : P'.ord t = 1) (n : ℕ) {y : F'} (hy : y ∈ P'.integers) :
-    ∃ c : ℕ → ι → (P'.restrict k F).integers,
-      y - ∑ m ∈ Finset.range n, ∑ i, algebraMap F F' (c m i : F) * (u i : F') * t ^ m ∈
-        P'.filtration n := by
-  classical
-  have ht0 : t ≠ 0 := by rintro rfl; simp at ht
-  induction n with
-  | zero => exact ⟨0, by simpa [P'.mem_filtration_zero_iff] using hy⟩
-  | succ n ih =>
-    obtain ⟨c, hc⟩ := ih
-    set z := y - ∑ m ∈ Finset.range n, ∑ i, algebraMap F F' (c m i : F) * (u i : F') * t ^ m
-    have hw : z / t ^ n ∈ P'.integers := by
-      rcases eq_or_ne z 0 with h | h
-      · simp [h]
-      · rw [P'.mem_integers_iff_ord_nonneg, P'.ord_div h (pow_ne_zero _ ht0), P'.ord_pow, ht]
-        have := (P'.mem_filtration_iff_le_ord h).mp hc
-        linarith
-    obtain ⟨r, hr⟩ := (Submodule.mem_span_range_iff_exists_fun _).mp
-      (hu ▸ Submodule.mem_top : residue P'.integers ⟨_, hw⟩ ∈ Submodule.span _ _)
-    choose d hd using fun i ↦ residue_surjective (r i)
-    -- The residue of `z / t ^ n` is the residue of `∑ d_i u_i`.
-    set W : P'.integers := ∑ i, algebraMap _ P'.integers (d i) * u i with hW
-    have hWres : residue P'.integers ⟨_, hw⟩ = residue P'.integers W := by
-      rw [← hr, hW, map_sum]
-      refine Finset.sum_congr rfl fun i _ ↦ ?_
-      rw [map_mul, Algebra.smul_def, ← hd, IsLocalRing.ResidueField.algebraMap_residue]
-    have hWcoe : (W : F') = ∑ i, algebraMap F F' (d i : F) * (u i : F') := by
-      rw [hW]
-      push_cast
-      simp
-    have h1 : (z / t ^ n - (W : F')) * t ^ n ∈ P'.filtration (1 + n) := by
-      have := P'.mul_mem_filtration ((P'.residue_eq_iff_sub_mem_filtration_one).mp hWres)
-        (P'.mem_filtration_ord (t ^ n))
-      rwa [P'.ord_pow, ht, mul_one] at this
-    refine ⟨Function.update c n d, ?_⟩
-    rw [Finset.sum_range_succ, Function.update_self,
-      Finset.sum_congr rfl fun m hm ↦ by rw [Function.update_of_ne (Finset.mem_range.mp hm).ne]]
-    convert h1 using 2
-    · push_cast
-      ring
-    · rw [sub_mul, div_mul_cancel₀ _ (pow_ne_zero _ ht0), hWcoe, Finset.sum_mul]
-      simp only [z]
-      ring
-
-end Expansion
 
 section Completion
 
@@ -231,8 +125,9 @@ theorem span_completionIntegers_eq_top [Finite ι] (u : ι → P'.integers)
   subst hP
   let _ := (P'.restrict k F).completionIntegersExtensionAlgebra P' rfl
   have : IsLocalHom (algebraMap (P'.restrict k F).completionPlace.integers
-      P'.completionPlace.integers) :=
-    isLocalHom_completionIntegersExtension (P'.restrict k F) P' rfl
+      P'.completionPlace.integers) := by
+    rw [algebraMap_completionIntegersExtensionAlgebra]
+    infer_instance
   have : IsHausdorff (maximalIdeal (P'.restrict k F).completionPlace.integers)
       P'.completionPlace.integers :=
     .of_map (map_maximalIdeal_le (algebraMap _ P'.completionPlace.integers))
@@ -243,7 +138,7 @@ theorem span_completionIntegers_eq_top [Finite ι] (u : ι → P'.integers)
   obtain ⟨y₀, hy₀⟩ := P'.exists_filtration_sub_completionEmbedding_mem
     (a := 0) (b := ramificationIdx F P') (by positivity)
     ⟨y, P'.completionPlace.mem_filtration_zero_iff.mpr y.2⟩
-  obtain ⟨c, hc⟩ := exists_sub_sum_mem_filtration P' u hu (y := y₀) (by simpa using ht)
+  obtain ⟨c, hc⟩ := exists_sub_sum_mem_filtration k F P' u hu (y := y₀) (by simpa using ht)
     (ramificationIdx F P') (P'.mem_filtration_zero_iff.mp y₀.2)
   refine ⟨fun p ↦ (P'.restrict k F).completionIntegersEmbedding (c p.2 p.1), ?_⟩
   rw [LinearMap.comp_apply, Submodule.mkQ_apply, Submodule.mkQ_apply, Submodule.Quotient.eq]
@@ -349,10 +244,11 @@ private theorem exists_ord_sum_completion_eq_mul [Fintype ι] (u : ι → P'.int
     rw [h, map_zero] at hvS
     exact zero_ne_one hvS
   have hE0 : (P'.restrict k F).completionExtension P' rfl (c i₀) ≠ 0 := (map_ne_zero _).mpr hc₀
+  have hordS : P'.completionPlace.ord S = 0 :=
+    (P'.completionPlace.ord_eq_iff_valuation_eq_exp_neg hS0).mpr <| by
+      rw [completionPlace_valuation, hvS, neg_zero, WithZero.exp_zero]
   refine ⟨hsum ▸ mul_ne_zero hE0 hS0, (P'.restrict k F).completionPlace.ord (c i₀), ?_⟩
-  rw [hsum, P'.completionPlace.ord_mul hE0 hS0, ord_completionExtension,
-    show P'.completionPlace.ord S = 0 by
-      rw [ord_def, completionPlace_valuation, hvS, WithZero.log_one, neg_zero], add_zero]
+  rw [hsum, P'.completionPlace.ord_mul hE0 hS0, ord_completionExtension, hordS, add_zero]
 
 /-- The finite case of `TauCeti.Place.linearIndependent_completionEmbedding_mul_pow`. -/
 private theorem linearIndependent_completionEmbedding_mul_pow_of_finite [Finite ι]
@@ -575,6 +471,5 @@ theorem finrank_completion :
     (by simp [mul_comm])
 
 end Degree
-
 
 end TauCeti.Place
