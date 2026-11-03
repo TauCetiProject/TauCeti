@@ -210,13 +210,16 @@ theorem integral_finiteMixtureMeasure (hf : Integrable f (finiteMixtureMeasure p
   simp only [integral_smul_measure, ENNReal.coe_toReal]
 
 omit [NormedSpace ℝ E] in
-/-- A finite mixture has an `Lᵖ` observable when every component does. -/
-theorem memLp_finiteMixtureMeasure {q : ℝ≥0∞} (hf : ∀ i, MemLp f q (K i)) :
+/-- A finite mixture has an `Lᵖ` observable when every positive-weight component does. -/
+theorem memLp_finiteMixtureMeasure {q : ℝ≥0∞}
+    (hf : ∀ i, 0 < p.weights i → MemLp f q (K i)) :
     MemLp f q (finiteMixtureMeasure p K) := by
   rw [finiteMixtureMeasure_def]
   exact Finset.sum_induction _ (fun mu : Measure B ↦ MemLp f q mu)
-    (fun _ _ ↦ MemLp.add_measure) memLp_measure_zero fun i _ ↦
-      (hf i).smul_measure ENNReal.coe_ne_top
+    (fun _ _ ↦ MemLp.add_measure) memLp_measure_zero fun i _ ↦ by
+      by_cases hi : p.weights i = 0
+      · simp [hi]
+      · exact (hf i (pos_iff_ne_zero.mpr hi)).smul_measure ENNReal.coe_ne_top
 
 end Finite
 

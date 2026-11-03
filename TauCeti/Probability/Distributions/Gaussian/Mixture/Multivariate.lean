@@ -404,7 +404,7 @@ theorem charFun_multivariateGaussianMixtureMeasure
 theorem memLp_id_multivariateGaussianMixtureMeasure (p : StdSimplex ℝ≥0 κ)
     (m : κ → EuclideanSpace ℝ ι) (S : κ → Matrix ι ι ℝ) {q : ℝ≥0∞} (hq : q ≠ ∞) :
     MemLp id q (multivariateGaussianMixtureMeasure p m S) := by
-  exact memLp_finiteMixtureMeasure fun k ↦
+  exact memLp_finiteMixtureMeasure fun k _ ↦
     IsGaussian.memLp_id (multivariateGaussian (m k) (S k)) q hq
 
 /-- The mean of a multivariate Gaussian mixture is the weighted mean of the component means. -/
