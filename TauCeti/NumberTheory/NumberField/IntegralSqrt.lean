@@ -7,7 +7,7 @@ module
 
 public import Mathlib.NumberTheory.NumberField.Basic
 import Mathlib.FieldTheory.KummerPolynomial
-import TauCeti.RingTheory.AdjoinRoot
+import TauCeti.RingTheory.AdjoinRoot.Basic
 
 /-!
 # Square roots of integers as algebraic integers
@@ -77,7 +77,7 @@ noncomputable def integralSqrt (hx : x ^ 2 = algebraMap ℤ K d) : 𝓞 K :=
 /-- **The minimal polynomial of a square root of a nonsquare integer.** If `x ^ 2 = d` for an
 integer `d` that is not a square in `ℚ`, then `X ^ 2 - d` is the minimal polynomial over `ℤ` of
 `NumberField.integralSqrt hx`. Over `ℚ` this is Kummer irreducibility
-(`X_pow_sub_C_irreducible_of_prime`); the descent to `ℤ` is
+(`irreducible_X_pow_sub_C_of_prime`); the descent to `ℤ` is
 `minpoly.isIntegrallyClosed_eq_field_fractions`. -/
 theorem minpoly_integralSqrt [NumberField K] (hx : x ^ 2 = algebraMap ℤ K d)
     (hnsq : ¬ IsSquare ((d : ℤ) : ℚ)) : minpoly ℤ (integralSqrt hx) = X ^ 2 - C d := by
@@ -85,7 +85,7 @@ theorem minpoly_integralSqrt [NumberField K] (hx : x ^ 2 = algebraMap ℤ K d)
     rw [hx, IsScalarTower.algebraMap_apply ℤ ℚ K]
     norm_num
   have hirr : Irreducible (X ^ 2 - C ((d : ℤ) : ℚ)) :=
-    X_pow_sub_C_irreducible_of_prime (by decide) fun y hy =>
+    _root_.irreducible_X_pow_sub_C_of_prime (by decide) fun y hy =>
       hnsq ⟨y, by simpa [pow_two] using hy.symm⟩
   have haeval : aeval x (X ^ 2 - C ((d : ℤ) : ℚ)) = 0 := by
     simp only [map_sub, map_pow, aeval_X, aeval_C, hxQ, sub_self]
@@ -142,10 +142,11 @@ theorem exists_minpoly_eq_X_sq_sub_C_and_adjoin_eq_top_adjoinRoot (d : ℤ) (q :
   let K := AdjoinRoot (X ^ 2 - C q)
   let x : K := AdjoinRoot.root (X ^ 2 - C q)
   have hx : x ^ 2 = algebraMap ℤ K d := by
-    rw [TauCeti.AdjoinRoot.root_sq, IsScalarTower.algebraMap_apply ℤ ℚ]
+    rw [AdjoinRoot.root_X_pow_sub_C_pow, ← AdjoinRoot.algebraMap_eq,
+      IsScalarTower.algebraMap_apply ℤ ℚ]
     simp [hq]
   have hnoRoot : ∀ b, b ^ 2 ≠ q :=
-    (X_pow_sub_C_irreducible_iff_of_prime Nat.prime_two).mp (Fact.out)
+    (_root_.irreducible_X_pow_sub_C_iff_of_prime Nat.prime_two).mp (Fact.out)
   have hnsq : ¬ IsSquare ((d : ℤ) : ℚ) := by
     rintro ⟨s, hs⟩
     exact hnoRoot s (by rw [pow_two, ← hq, hs])

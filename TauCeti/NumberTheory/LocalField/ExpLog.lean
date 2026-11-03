@@ -96,7 +96,8 @@ private theorem powValuation_coeff_exp_sub_one_mul_pow_le [CharZero K] {π : �
           valuation K (π : K) ^
             ((p - 1) * (absoluteRamificationIndex K p * padicValNat p m.factorial)) :=
         pow_mul_pow_le_of_le (Valuation.integer.v_irreducible_lt_one hπ).le hx hi.le
-          (sub_one_mul_padicValNat_factorial_lt_of_ne_zero p hm)
+          (by simpa only [Nat.padicValNat_def] using
+            sub_one_mul_multiplicity_factorial_lt_of_ne_zero p hm)
     _ = valuation K x ^ (p - 1) *
           (valuation K (π : K) ^ ((p - 1) * i - absoluteRamificationIndex K p)) ^ m *
           valuation K (m.factorial : K) ^ (p - 1) := by
@@ -123,7 +124,8 @@ private theorem powValuation_coeff_log_mul_pow_le [CharZero K] {π : 𝒪[K]}
   have hv : valuation K (n : K) ≠ 0 := by simpa using hnK
   -- `(p - 1) * v_p(n) < n`, since `p ^ v_p(n)` divides `n`.
   have hq : (p - 1) * padicValNat p n < n := by
-    have h : p * padicValNat p n ≤ n := mul_padicValNat_le
+    have h : p * padicValNat p n ≤ n := by
+      simpa only [Nat.padicValNat_def] using (mul_multiplicity_le (p := p) (n := n))
     rw [Nat.sub_one_mul]
     rcases Nat.eq_zero_or_pos (padicValNat p n) with h0 | h0
     · simp [h0, Nat.pos_of_ne_zero hn]

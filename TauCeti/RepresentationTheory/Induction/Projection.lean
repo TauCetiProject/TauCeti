@@ -181,7 +181,7 @@ noncomputable def indProjectionEquiv :
       rw [LinearEquiv.coe_coe, indProjectionLEquiv_apply, indProjectionLEquiv_apply,
         Representation.tprod_apply, Representation.ind_mk, indProjectionHom_apply_mk,
         indProjectionHom_apply_mk, TensorProduct.map_tmul, Representation.ind_mk, mul_inv_rev,
-        inv_inv, map_mul, Module.End.mul_apply]
+        inv_inv, map_mul, mul_apply_eq_comp]
 
 end Linear
 
@@ -290,7 +290,7 @@ theorem coinvariantsTensorIndHom_map_indProjection_mk (X : Rep k G) (Y : Rep k H
   simp only [Functor.postcompose₂_obj_obj_obj_obj, curriedTensor_obj_obj,
     Rep.coinvariantsFunctor_obj_carrier, Rep.tensor_V, Rep.tensor_ρ, Rep.res_obj_ρ,
     LinearMap.coe_comp, Function.comp_apply, mk_apply, LinearMap.compr₂_apply, map_one,
-    Module.End.one_apply] at key
+    one_apply_eq_self] at key
   refine Eq.trans ?_ key
   refine congrArg (Rep.coinvariantsTensorIndHom φ X Y).hom ?_
   refine Eq.trans (congrArg (Coinvariants.mk _) (indProjection_hom_hom_apply φ X Y h x y)) ?_

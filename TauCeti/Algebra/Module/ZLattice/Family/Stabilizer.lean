@@ -41,7 +41,9 @@ the base is not required: over a fixed point of the base, a translation part out
 element `γ y` of finite order `m`, the criterion becomes the cyclic one: for every `0 < k < m` the
 partial norm `N_{A,k}(t)` of the translation part of `γ y` does not lie in the image of `1 - A^k`
 (`TauCeti.isCancelSMul_torusFamilyAffineMulAction_iff_of_stabilizer_le_zpowers`). For composite
-`m` every such `k` must be checked.
+`m` every such `k` must be checked. If the base action is free away from a single point `y₀`, as
+for a rotation of a disc about its centre, only the fibre over `y₀` needs to be tested
+(`TauCeti.isCancelSMul_torusFamilyAffineMulAction_iff_of_stabilizer_le_zpowers_of_eq_bot_of_ne`).
 
 ## Main definitions
 
@@ -59,10 +61,15 @@ partial norm `N_{A,k}(t)` of the translation part of `γ y` does not lie in the 
 * `TauCeti.affineEquiv_torusFamilyFiber_iterate_eq_id_of_pow_eq_one`: if `g ^ m = 1`, the affine
   automorphism of `T_y` has `m`-th iterate the identity, so its linear part has period dividing
   `m` and its `m`-th partial norm vanishes.
+* `TauCeti.nsmul_torusFamilyFiberTranslationPart_eq_zero`: if moreover the linear part is the
+  identity, the translation part is an `m`-torsion point of the fibre.
 * `TauCeti.isCancelSMul_torusFamilyAffineMulAction_iff`: the affine action on the total space is
   free exactly when no nonidentity element of a base stabilizer has a fixed point on the fibre.
 * `TauCeti.isCancelSMul_torusFamilyAffineMulAction_iff_of_stabilizer_le_zpowers`: the same
   criterion for cyclic stabilizers of finite order, checked on every nonidentity power.
+* `TauCeti.isCancelSMul_torusFamilyAffineMulAction_iff_of_stabilizer_le_zpowers_of_eq_bot_of_ne`:
+  for a base action free away from one point with cyclic stabilizer, the criterion on the fibre
+  over that point.
 
 ## References
 
@@ -135,6 +142,15 @@ theorem torusFamilyFiberLinearPart_symm_mk {g : Γ} {y : Y} (hy : g • y = y) (
     (torusFamilyFiberLinearPart R hone hmul P ρ hP hy).symm (Quotient.mk _ v) =
       Quotient.mk _ (R g⁻¹ y v) :=
   (LinearMap.range (P y)).orbitRelQuotientMap_mk _ _ _ v
+
+/-- If `R g y` is the identity at a fixed point `y` of `g`, the linear part on the fibre over `y`
+is the identity, so that `g` acts on that fibre by a translation. -/
+theorem torusFamilyFiberLinearPart_eq_refl {g : Γ} {y : Y} (hy : g • y = y)
+    (hR : ∀ v, R g y v = v) :
+    torusFamilyFiberLinearPart R hone hmul P ρ hP hy = AddEquiv.refl _ := by
+  ext x
+  induction x using Quotient.inductionOn with
+  | h v => simp [hR]
 
 variable (b : Γ → Y → letI := periodAddAction P; AddAction.orbitRel.Quotient Λ (Y × E))
   (hb : ∀ (g : Γ) (y : Y), torusFamilyProjection P (b g y) = g • y)
@@ -250,6 +266,19 @@ theorem affineEquiv_torusFamilyFiber_iterate_eq_id_of_pow_eq_one {g : Γ} {y : Y
   apply torusFamilyFiberMap_injective P y
   rw [← pow_smul_torusFamilyFiberMap R hone hmul P ρ hP b hb hbone hbmul hy, hm, one_smul, id]
 
+include hone hmul hbone hbmul in
+/-- **Translation parts of finite order are torsion.** If `g • y = y`, `g ^ m = 1` and `R g y` is
+the identity, so that `g` acts on the fibre over `y` by the translation by `t`, then `t` is an
+`m`-torsion point of the torus `E / LinearMap.range (P y)`: `m • t = 0`. -/
+theorem nsmul_torusFamilyFiberTranslationPart_eq_zero {g : Γ} {y : Y} (hy : g • y = y)
+    (hR : ∀ v, R g y v = v) {m : ℕ} (hm : g ^ m = 1) :
+    m • torusFamilyFiberTranslationPart P b hb hy = 0 := by
+  have h := ((AddEquiv.affineEquiv_iterate_eq_id_iff _ _ m).1
+    (affineEquiv_torusFamilyFiber_iterate_eq_id_of_pow_eq_one R hone hmul P ρ hP b hb hbone hbmul
+      hy hm)).2
+  rwa [torusFamilyFiberLinearPart_eq_refl R hone hmul P ρ hP hy hR,
+    AddEquiv.partialNorm_refl] at h
+
 /-! ### Freeness of the affine action -/
 
 /-- The affine action is free exactly when every element fixing a point `y` of the base and a
@@ -322,5 +351,65 @@ theorem isCancelSMul_torusFamilyAffineMulAction_iff_of_stabilizer_le_zpowers (γ
   · exact pow_zero _
   · exact absurd ((pow_smul_torusFamilyFiberMap_eq_self_iff R hone hmul P ρ hP b hb hbone hbmul
       (hγ y) k c).1 hc) (h k hk (Finset.mem_range.1 hkm) c)
+
+/-- The cyclic fixed-point condition at a fixed point `y` of `g` only depends on `g`, not on the
+proof that `g` fixes `y`; this transports it along an equality `g = g'`. -/
+private theorem cyclicFixedPointCondition_congr {y : Y} {g g' : Γ} (e : g = g')
+    (hg : g • y = y) (hg' : g' • y = y) :
+    (∀ k : ℕ, 0 < k → k < orderOf g →
+      ∀ c, c - (⇑(torusFamilyFiberLinearPart R hone hmul P ρ hP hg))^[k] c ≠
+        AddEquiv.partialNorm (torusFamilyFiberLinearPart R hone hmul P ρ hP hg) k
+          (torusFamilyFiberTranslationPart P b hb hg)) ↔
+      ∀ k : ℕ, 0 < k → k < orderOf g' →
+        ∀ c, c - (⇑(torusFamilyFiberLinearPart R hone hmul P ρ hP hg'))^[k] c ≠
+          AddEquiv.partialNorm (torusFamilyFiberLinearPart R hone hmul P ρ hP hg') k
+            (torusFamilyFiberTranslationPart P b hb hg') := by
+  subst e
+  rfl
+
+/-- **Freeness over a single fixed point of the base.** Suppose the action on the base is free
+away from one point `y₀`, whose stabilizer is generated by an element `γ` of finite order. Then
+the affine action on the total space of the family of tori is free exactly when, for every
+`0 < k < orderOf γ`, the `k`-th partial norm `N_{A,k}(t)` of the translation part `t` of `γ` on
+the fibre over `y₀` does not lie in the image of `1 - A^k`, where `A` is the linear part. Only
+the fibre over `y₀` is tested, but every nonidentity power of `γ` is. -/
+theorem isCancelSMul_torusFamilyAffineMulAction_iff_of_stabilizer_le_zpowers_of_eq_bot_of_ne
+    {y₀ : Y} {γ : Γ}
+    (hγ : γ • y₀ = y₀) (hstab : MulAction.stabilizer Γ y₀ ≤ Subgroup.zpowers γ)
+    (hfin : IsOfFinOrder γ) (hfree : ∀ y ≠ y₀, MulAction.stabilizer Γ y = ⊥) :
+    letI := periodAddAction P
+    letI := torusFamilyAffineMulAction R hone hmul P ρ hP b hb hbone hbmul
+    IsCancelSMul Γ (AddAction.orbitRel.Quotient Λ (Y × E)) ↔
+      ∀ k : ℕ, 0 < k → k < orderOf γ →
+        ∀ c, c - (⇑(torusFamilyFiberLinearPart R hone hmul P ρ hP hγ))^[k] c ≠
+          AddEquiv.partialNorm (torusFamilyFiberLinearPart R hone hmul P ρ hP hγ) k
+            (torusFamilyFiberTranslationPart P b hb hγ) := by
+  classical
+  -- Apply the cyclic criterion to the generator `γ` at `y₀` and `1` elsewhere.
+  let γ' : Y → Γ := fun y ↦ if y = y₀ then γ else 1
+  have hγ' (y : Y) : γ' y • y = y := by
+    by_cases hy : y = y₀
+    · subst hy; simpa [γ'] using hγ
+    · simp [γ', hy]
+  have hstab' (y : Y) : MulAction.stabilizer Γ y ≤ Subgroup.zpowers (γ' y) := by
+    by_cases hy : y = y₀
+    · subst hy; simpa [γ'] using hstab
+    · simp [hfree y hy]
+  have hfin' (y : Y) : IsOfFinOrder (γ' y) := by
+    by_cases hy : y = y₀
+    · simpa [γ', hy] using hfin
+    · simp [γ', hy]
+  have hγ₀ : γ' y₀ = γ := by simp [γ']
+  rw [isCancelSMul_torusFamilyAffineMulAction_iff_of_stabilizer_le_zpowers R hone hmul P ρ hP b hb
+    hbone hbmul γ' hγ' hstab' hfin']
+  refine ⟨fun h ↦ (cyclicFixedPointCondition_congr R hone hmul P ρ hP b hb hγ₀ (hγ' y₀) hγ).1
+    (h y₀), fun h y ↦ ?_⟩
+  by_cases hy : y = y₀
+  · subst hy
+    exact (cyclicFixedPointCondition_congr R hone hmul P ρ hP b hb hγ₀ (hγ' y) hγ).2 h
+  · -- Away from `y₀` the element `γ' y = 1` has order one, so there is nothing to check.
+    intro k hk hkm
+    simp only [γ', hy, ite_false, orderOf_one] at hkm
+    omega
 
 end TauCeti

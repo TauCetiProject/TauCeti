@@ -7,7 +7,9 @@ module
 
 public import TauCeti.FieldTheory.FunctionField.ConstantExtension.IntermediateField
 public import Mathlib.FieldTheory.PurelyInseparable.Tower
+public import Mathlib.FieldTheory.RatFunc.Basic
 import TauCeti.FieldTheory.IntermediateField.Adjoin.Basic
+import TauCeti.FieldTheory.RatFunc.Transcendental
 
 /-!
 # Degrees over subfields after extending constants
@@ -28,6 +30,12 @@ This uses Mathlib's linear disjointness of separable and purely inseparable exte
   `[F' : k'(x)] = [F : k(x)]` for every `x ∈ F`.
 * `TauCeti.finrank_over_adjoin_simple_le_of_constantCompositum_eq_top`:
   `[F' : k'(x)] ≤ [F : k(x)]` for any constant extension, when `F / k(x)` is finite.
+* `TauCeti.finiteDimensional_adjoin_simple_of_constantCompositum_eq_top`: `F' / k'(x)` is finite
+  when `F / k(x)` is, for any constant extension.
+* `TauCeti.finiteDimensional_ratFunc_of_constantCompositum_eq_top` and
+  `TauCeti.finrank_ratFunc_eq_of_constantCompositum_eq_top`: the same statements for `F` and `F'`
+  given as algebras over `k(t)` and `k'(t)`, with `t` acting compatibly: `F'` is finite over
+  `k'(t)` when `F` is finite over `k(t)`, and then `[F' : k'(t)] = [F : k(t)]`.
 * `TauCeti.finrank_over_constantCompositum_eq_finrank_of_constantCompositum_eq_top`:
   `[F' : E · k'] = [F : E]` for every subfield `E` of `F` containing `k`.
 * `TauCeti.finrank_over_constantCompositum_eq_finrank_of_isPurelyInseparable`:
@@ -114,6 +122,17 @@ theorem finrank_over_adjoin_simple_le_of_constantCompositum_eq_top
   rwa [Set.finrank, span_range_basis_of_finite_constantCompositum h k⟮x⟯ b, finrank_top,
     Fintype.card_fin, IntermediateField.range_algebraMap_adjoin_simple,
     IntermediateField.adjoin_adjoin_right] at hle
+
+/-- **Extending constants keeps a degree over `k(x)` finite**: if `F' = F · k'` and `F / k(x)` is
+finite, then so is `F' / k'(x)`. The extension `k' / k` may be transcendental; neither
+separability nor exactness of the constant field is assumed. -/
+theorem finiteDimensional_adjoin_simple_of_constantCompositum_eq_top
+    (h : constantCompositum F k' F' = ⊤) (x : F) [FiniteDimensional k⟮x⟯ F] :
+    FiniteDimensional k'⟮algebraMap F F' x⟯ F' := by
+  have hspan := span_range_basis_of_finite_constantCompositum h k⟮x⟯ (Module.finBasis k⟮x⟯ F)
+  rw [IntermediateField.range_algebraMap_adjoin_simple,
+    IntermediateField.adjoin_adjoin_right] at hspan
+  exact ⟨⟨(Set.finite_range _).toFinset, by rwa [Set.Finite.coe_toFinset]⟩⟩
 
 /-- **A separable algebraic extension of an exact constant field preserves the degree over any
 subfield** (Stichtenoth, Proposition 3.6.1(c), for an arbitrary intermediate field): if `E` is a
@@ -232,5 +251,42 @@ theorem minpoly_algebraMap_eq_map_of_constantCompositum_eq_top [Algebra k E] [Is
     adjoin_simple_eq_top_of_constantCompositum_eq_top h hy, IntermediateField.finrank_top']
 
 end Subfield
+
+section RatFunc
+
+variable [Algebra (RatFunc k) F] [IsScalarTower k (RatFunc k) F]
+  [Algebra (RatFunc k') F'] [IsScalarTower k' (RatFunc k') F']
+
+/-- **Extending constants keeps a function field finite over the rational function field**: if
+`F' = F · k'`, the variable of `k'(t)` acts on `F'` as the variable of `k(t)` acts on `F`, and `F`
+is finite over `k(t)`, then `F'` is finite over `k'(t)`. Neither separability nor exactness of the
+constant field is assumed. -/
+theorem finiteDimensional_ratFunc_of_constantCompositum_eq_top [FiniteDimensional (RatFunc k) F]
+    (h : constantCompositum F k' F' = ⊤)
+    (hX : algebraMap F F' (algebraMap (RatFunc k) F RatFunc.X) =
+      algebraMap (RatFunc k') F' RatFunc.X) :
+    FiniteDimensional (RatFunc k') F' := by
+  have : FiniteDimensional k⟮algebraMap (RatFunc k) F RatFunc.X⟯ F := Module.finite_of_finrank_pos
+    (finrank_adjoin_algebraMap_X (k := k) (F := F) ▸ Module.finrank_pos)
+  have := finiteDimensional_adjoin_simple_of_constantCompositum_eq_top (k := k) h
+    (algebraMap (RatFunc k) F RatFunc.X)
+  rw [hX] at this
+  exact Module.finite_of_finrank_pos
+    (finrank_adjoin_algebraMap_X (k := k') (F := F') ▸ Module.finrank_pos)
+
+/-- **A separable algebraic extension of an exact constant field preserves the degree over the
+rational function field**: if `F' = F · k'` and the variable of `k'(t)` acts on `F'` as the
+variable of `k(t)` acts on `F`, then `[F' : k'(t)] = [F : k(t)]`. For a Belyi map this says that
+base change preserves its degree. -/
+theorem finrank_ratFunc_eq_of_constantCompositum_eq_top [Algebra.IsSeparable k k']
+    (hex : IsIntegrallyClosedIn k F) (h : constantCompositum F k' F' = ⊤)
+    (hX : algebraMap F F' (algebraMap (RatFunc k) F RatFunc.X) =
+      algebraMap (RatFunc k') F' RatFunc.X) :
+    Module.finrank (RatFunc k') F' = Module.finrank (RatFunc k) F := by
+  rw [← finrank_adjoin_algebraMap_X (k := k') (F := F'), ← hX,
+    finrank_over_adjoin_simple_eq_of_constantCompositum_eq_top hex h,
+    finrank_adjoin_algebraMap_X]
+
+end RatFunc
 
 end TauCeti

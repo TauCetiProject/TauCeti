@@ -5,10 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.MonoidAlgebra.MapDomain
 public import TauCeti.LinearAlgebra.RootSystem.Weyl.Alternating
--- Non-public: the reindexing of `ℤ[M]` by a Weyl-group element is an implementation device of the
--- proofs below, never part of the type of an exported declaration.
-import Mathlib.Algebra.MonoidAlgebra.MapDomain
 
 /-!
 # Weyl-invariant elements of the group algebra of a weight space
@@ -35,9 +33,15 @@ the multiplication statement work. Writing `σ_w` for the reindexing of `ℤ[M]`
 invariant element is a fixed point of every `σ_w`, whereas an alternating element satisfies
 `e^{wρ - ρ} · σ_w g = sgn(w) · g`. Since `σ_w` is a ring homomorphism, the twisted operator
 `h ↦ e^{wρ - ρ} · σ_w h` is linear over the invariants, and multiplying the first identity into
-the second is the whole proof.
+the second is the whole proof. The twisted operator `h ↦ e^c · σ_w h` is
+`TauCeti.twistedWeylReindex`, with the translation `c` a parameter so that it also serves root
+data in which `ρ` is not a weight.
 
 ## Main definitions
+
+* `TauCeti.weylReindex`: the reindexing `σ_w` of `ℤ[M]` along the linear action of `w`, as a ring
+  isomorphism.
+* `TauCeti.twistedWeylReindex`: the twisted reindexing `f ↦ e^c · σ_w f`, as a `ℤ`-linear map.
 
 * `TauCeti.IsWeylInvariant`: the coefficients of `f` are constant on the orbits of the linear Weyl
   action. `TauCeti.isWeylInvariant_iff` is the preferred way to introduce it and
@@ -47,6 +51,14 @@ the second is the whole proof.
 
 ## Main results
 
+* `TauCeti.isWeylInvariant_of_forall_coeff_reflection`: invariance under the simple reflections of
+  a base is Weyl invariance.
+* `TauCeti.weylReindex_ofIdx`: along a simple reflection `sᵢ`, `σ_{sᵢ}` is the domain reindexing
+  along `P.reflection i`, the form used by the Demazure operators.
+* `TauCeti.isWeylInvariant_iff_weylReindex_eq`: the invariants are the common fixed points of the
+  reindexings `σ_w`.
+* `TauCeti.IsWeylInvariant.twistedWeylReindex_mul`: the twisted reindexing is linear over the
+  invariants.
 * `TauCeti.IsWeylInvariant.mul_isDotAlternating`: **an invariant element times an alternating
   element is alternating.**
 * `TauCeti.isWeylInvariant_zero`, `TauCeti.isWeylInvariant_one`, `TauCeti.IsWeylInvariant.add`,
@@ -78,16 +90,46 @@ variable {ι : Type u} {R : Type v} {M : Type w} {N : Type x}
 
 /-! ### Reindexing the group algebra along the linear Weyl action -/
 
-/-- The reindexing of `ℤ[M]` along the linear action of a Weyl-group element, as a ring
-isomorphism. Private: it is only a device for relating the linear and the dot action inside the
-proofs of this file, and every exported statement is phrased on coefficients instead. -/
-private noncomputable def weylReindex (w : P.weylGroup) :
+/-- The reindexing `σ_w` of `ℤ[M]` along the linear action of a Weyl-group element, as a ring
+isomorphism: `σ_w(e^x) = e^{w x}`. -/
+noncomputable def weylReindex (w : P.weylGroup) :
     AddMonoidAlgebra ℤ M ≃+* AddMonoidAlgebra ℤ M :=
   AddMonoidAlgebra.mapDomainRingEquiv ℤ (DistribMulAction.toAddEquiv M w)
 
-private lemma coeff_weylReindex (w : P.weylGroup) (f : AddMonoidAlgebra ℤ M) (x : M) :
+/-- The coefficient of `σ_w f` at `x` is the coefficient of `f` at `w⁻¹ x`. -/
+@[simp]
+lemma coeff_weylReindex (w : P.weylGroup) (f : AddMonoidAlgebra ℤ M) (x : M) :
     (weylReindex P w f).coeff x = f.coeff (w⁻¹ • x) := by
   simp [weylReindex]
+
+/-- `σ_w` is `AddMonoidAlgebra.mapDomain` along the action of `w`. -/
+lemma weylReindex_apply (w : P.weylGroup) (f : AddMonoidAlgebra ℤ M) :
+    weylReindex P w f = AddMonoidAlgebra.mapDomain (w • ·) f := by
+  induction f using AddMonoidAlgebra.induction_linear with
+  | zero => simp
+  | add f g hf hg => rw [map_add, hf, hg, AddMonoidAlgebra.mapDomain_add]
+  | single x c => simp [weylReindex]
+
+/-- `σ_w(e^x) = e^{w x}`. -/
+@[simp]
+lemma weylReindex_single (w : P.weylGroup) (x : M) (c : ℤ) :
+    weylReindex P w (AddMonoidAlgebra.single x c) = AddMonoidAlgebra.single (w • x) c := by
+  rw [weylReindex_apply, AddMonoidAlgebra.mapDomain_single]
+
+/-- The reindexing along a simple reflection `sᵢ`, in the form used by the Demazure operators:
+the domain reindexing along the reflection `P.reflection i`. -/
+lemma weylReindex_ofIdx (i : ι) (f : AddMonoidAlgebra ℤ M) :
+    weylReindex P (RootPairing.weylGroup.ofIdx P i) f =
+      AddMonoidAlgebra.mapDomainRingEquiv ℤ (P.reflection i).toAddEquiv f := by
+  induction f using AddMonoidAlgebra.induction_linear with
+  | zero => simp
+  | add f g hf hg => simp only [map_add, hf, hg]
+  | single x c => simp
+
+/-- The reindexings compose like the group: `σ_{v w} = σ_v σ_w`. -/
+lemma weylReindex_mul (v w : P.weylGroup) (f : AddMonoidAlgebra ℤ M) :
+    weylReindex P (v * w) f = weylReindex P v (weylReindex P w f) :=
+  AddMonoidAlgebra.ext (Finsupp.ext fun x ↦ by simp [mul_inv_rev, mul_smul])
 
 /-! ### Weyl invariance -/
 
@@ -127,7 +169,7 @@ theorem isWeylInvariant_one : IsWeylInvariant P (1 : AddMonoidAlgebra ℤ M) := 
 
 /-- Invariance is fixedness under every reindexing `TauCeti.weylReindex`; this is the form the
 closure under multiplication is read off from. -/
-private lemma isWeylInvariant_iff_weylReindex_eq {f : AddMonoidAlgebra ℤ M} :
+lemma isWeylInvariant_iff_weylReindex_eq {f : AddMonoidAlgebra ℤ M} :
     IsWeylInvariant P f ↔ ∀ w : P.weylGroup, weylReindex P w f = f := by
   refine ⟨fun hf w ↦ AddMonoidAlgebra.ext (Finsupp.ext fun x ↦ ?_), fun hf w x ↦ ?_⟩
   · rw [coeff_weylReindex, ← hf w⁻¹ x]
@@ -142,6 +184,10 @@ namespace IsWeylInvariant
 /-- The defining identity of an invariant element, as an elimination rule. -/
 theorem coeff_smul (hf : IsWeylInvariant P f) (w : P.weylGroup) (x : M) :
     f.coeff (w • x) = f.coeff x := hf w x
+
+/-- An invariant element is fixed by every reindexing `σ_w`. -/
+theorem weylReindex_eq (hf : IsWeylInvariant P f) (w : P.weylGroup) : weylReindex P w f = f :=
+  (isWeylInvariant_iff_weylReindex_eq P).mp hf w
 
 /-- A sum of invariant elements is invariant. -/
 theorem add (hf : IsWeylInvariant P f) (hg : IsWeylInvariant P g) : IsWeylInvariant P (f + g) := by
@@ -166,8 +212,7 @@ theorem zsmul (hf : IsWeylInvariant P f) (c : ℤ) : IsWeylInvariant P (c • f)
 /-- A product of invariant elements is invariant. -/
 theorem mul (hf : IsWeylInvariant P f) (hg : IsWeylInvariant P g) : IsWeylInvariant P (f * g) :=
   (isWeylInvariant_iff_weylReindex_eq P).mpr fun w ↦ by
-    rw [map_mul, (isWeylInvariant_iff_weylReindex_eq P).mp hf w,
-      (isWeylInvariant_iff_weylReindex_eq P).mp hg w]
+    rw [map_mul, hf.weylReindex_eq w, hg.weylReindex_eq w]
 
 end IsWeylInvariant
 
@@ -195,6 +240,60 @@ lemma mem_weylInvariantSubring : f ∈ weylInvariantSubring P ↔ IsWeylInvarian
 
 end Closure
 
+/-! ### The twisted reindexing -/
+
+/-- The reindexing `σ_w` twisted by the translation `e^c`, `f ↦ e^c · σ_w f`. With `c = wρ - ρ` it
+is the reindexing of `ℤ[M]` along the dot action `w ⬝ x = w(x + ρ) - ρ`, under which the
+alternating elements transform by the sign. The translation is a parameter so that the same map
+serves a root datum, where `ρ` need not be a weight but `ρ - wρ` is. -/
+noncomputable def twistedWeylReindex (c : M) (w : P.weylGroup) :
+    AddMonoidAlgebra ℤ M →ₗ[ℤ] AddMonoidAlgebra ℤ M :=
+  LinearMap.mulLeft ℤ (AddMonoidAlgebra.single c 1) ∘ₗ
+    (weylReindex P w).toAddMonoidHom.toIntLinearMap
+
+/-- The defining formula of `TauCeti.twistedWeylReindex`. -/
+lemma twistedWeylReindex_apply (c : M) (w : P.weylGroup) (f : AddMonoidAlgebra ℤ M) :
+    twistedWeylReindex P c w f = AddMonoidAlgebra.single c 1 * weylReindex P w f := by
+  simp [twistedWeylReindex]
+
+/-- The coefficient of `e^c · σ_w f` at `y` is the coefficient of `f` at `w⁻¹ (y - c)`. -/
+lemma coeff_twistedWeylReindex (c : M) (w : P.weylGroup) (f : AddMonoidAlgebra ℤ M) (y : M) :
+    (twistedWeylReindex P c w f).coeff y = f.coeff (w⁻¹ • (y - c)) := by
+  rw [twistedWeylReindex_apply, ← add_sub_cancel c y, AddMonoidAlgebra.coeff_single_mul_add,
+    one_mul, coeff_weylReindex, add_sub_cancel_left]
+
+variable {P} in
+/-- **The twisted reindexing is linear over the Weyl-invariant elements**:
+`e^c · σ_w(g f) = g · e^c · σ_w f` for invariant `g`. -/
+theorem IsWeylInvariant.twistedWeylReindex_mul {g : AddMonoidAlgebra ℤ M}
+    (hg : IsWeylInvariant P g) (c : M) (w : P.weylGroup) (f : AddMonoidAlgebra ℤ M) :
+    twistedWeylReindex P c w (g * f) = g * twistedWeylReindex P c w f := by
+  rw [twistedWeylReindex_apply, twistedWeylReindex_apply, map_mul, hg.weylReindex_eq,
+    mul_left_comm]
+
+/-! ### Invariance under the simple reflections -/
+
+section Reflections
+
+variable [Finite ι] [CharZero R] [IsDomain R] [P.IsCrystallographic] [P.IsReduced] (b : P.Base)
+
+/-- **Invariance under the simple reflections is Weyl invariance**: the simple reflections of a
+base generate the Weyl group, so coefficients constant along each simple reflection are constant
+along every Weyl orbit. -/
+theorem isWeylInvariant_of_forall_coeff_reflection {f : AddMonoidAlgebra ℤ M}
+    (hf : ∀ i ∈ b.support, ∀ x, f.coeff (P.reflection i x) = f.coeff x) :
+    IsWeylInvariant P f := by
+  refine (isWeylInvariant_iff P f).mpr fun w ↦ ?_
+  obtain ⟨l, rfl⟩ := exists_wordProd_eq P b w
+  induction l with
+  | nil => simp
+  | cons i l ih =>
+    intro x
+    rw [wordProd_cons, mul_smul, RootPairing.weylGroup.ofIdx_smul,
+      RootPairing.Equiv.reflection_smul, hf i i.2, ih]
+
+end Reflections
+
 /-! ### Invariant multiples of alternating elements -/
 
 section Alternating
@@ -202,22 +301,22 @@ section Alternating
 variable [Finite ι] [CharZero R] [IsDomain R] [Invertible (2 : R)] [P.IsCrystallographic]
   [P.IsReduced] (b : P.Base)
 
-/-- The reindexing of `ℤ[M]` along the dot action of a Weyl-group element: the linear reindexing
-`TauCeti.weylReindex` corrected by the translation `e^{wρ - ρ}` that turns the linear action into
-the dot action. Private, like `TauCeti.weylReindex`. -/
+/-- The reindexing of `ℤ[M]` along the dot action of a Weyl-group element: the twisted reindexing
+`TauCeti.twistedWeylReindex` by the translation `e^{wρ - ρ}` that turns the linear action into
+the dot action. -/
 private noncomputable def dotReindex (f : AddMonoidAlgebra ℤ M) (w : P.weylGroup) :
     AddMonoidAlgebra ℤ M :=
-  AddMonoidAlgebra.single (w • weylVector P b - weylVector P b) 1 * weylReindex P w f
+  twistedWeylReindex P (w • weylVector P b - weylVector P b) w f
 
 omit [IsDomain R] [P.IsCrystallographic] [P.IsReduced] in
 /-- The defining property of `TauCeti.dotReindex`: its coefficient at `x` is the coefficient of
 `f` at `w⁻¹ ⬝ x`. -/
 private lemma coeff_dotReindex (f : AddMonoidAlgebra ℤ M) (w : P.weylGroup) (y : M) :
     (dotReindex P b f w).coeff y = f.coeff (dotAction P b w⁻¹ y) := by
-  have hy : w⁻¹ • (-(w • weylVector P b - weylVector P b) + y) = dotAction P b w⁻¹ y := by
-    simp only [dotAction_def, neg_sub, smul_add, smul_sub, inv_smul_smul]
+  have hy : w⁻¹ • (y - (w • weylVector P b - weylVector P b)) = dotAction P b w⁻¹ y := by
+    simp only [dotAction_def, smul_add, smul_sub, inv_smul_smul]
     abel
-  rw [dotReindex, AddMonoidAlgebra.coeff_single_mul_apply, coeff_weylReindex, one_mul, hy]
+  rw [dotReindex, coeff_twistedWeylReindex, hy]
 
 variable {P b} {f g : AddMonoidAlgebra ℤ M}
 
@@ -237,9 +336,8 @@ hypothesis `TauCeti.IsDotAlternating.eq_weylNumerator` consumes. -/
 theorem IsWeylInvariant.mul_isDotAlternating (hf : IsWeylInvariant P f)
     (hg : IsDotAlternating P b g) : IsDotAlternating P b (f * g) := by
   have hmul : ∀ w : P.weylGroup,
-      dotReindex P b (f * g) w = f * dotReindex P b g w := fun w ↦ by
-    rw [dotReindex, dotReindex, map_mul, (isWeylInvariant_iff_weylReindex_eq P).mp hf w]
-    ring
+      dotReindex P b (f * g) w = f * dotReindex P b g w := fun w ↦
+    hf.twistedWeylReindex_mul _ _ g
   refine (isDotAlternating_iff P b _).mpr fun w x ↦ ?_
   calc (f * g).coeff (dotAction P b w x)
       = (dotReindex P b (f * g) w⁻¹).coeff x := by rw [coeff_dotReindex, inv_inv]
