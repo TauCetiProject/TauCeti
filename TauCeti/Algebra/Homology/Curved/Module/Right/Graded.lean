@@ -6,7 +6,7 @@ Authors: Wentao Li
 module
 
 public import TauCeti.Algebra.Homology.Curved.Module.Right.Shift
-public import TauCeti.Algebra.Category.GradedModuleCat.Basic
+public import TauCeti.Algebra.Category.GradedModuleCat.Shift
 
 /-!
 # Forgetting the differential of curved right modules
@@ -33,7 +33,7 @@ open CategoryTheory
 
 namespace TauCeti.CurvedDGRightModuleCat
 
-universe uR uA uM u
+universe uR uA uM uN u
 
 section Objects
 
@@ -55,6 +55,29 @@ noncomputable def toGradedModuleCat (M : CurvedDGRightModuleCat.{uR, uA, uM} h) 
 theorem toGradedModuleCat_piece (M : CurvedDGRightModuleCat.{uR, uA, uM} h) (p : ℤ) :
     (toGradedModuleCat M).grading.piece p = M.grading p :=
   congrFun (InternalGrading.ofDecomposition_piece M.grading) p
+
+/-- Cochains are homogeneous maps between the underlying graded right modules. -/
+theorem cochain_mem_iff_isHomogeneous
+    {M : CurvedDGRightModuleCat.{uR, uA, uM} h}
+    {N : CurvedDGRightModuleCat.{uR, uA, uN} h} {p : ℤ} (a : M →ₗ[Aᵐᵒᵖ] N) :
+    a ∈ dgRightModuleCochains (R := R) (A := A) (ℳ := M.grading) (ℳN := N.grading) p ↔
+      LinearMap.IsHomogeneous a (toGradedModuleCat M).grading.piece
+        (toGradedModuleCat N).grading.piece p := by
+  rw [dgRightModuleCochains.mem_iff]
+  simp only [LinearMap.isHomogeneous_def, toGradedModuleCat_piece,
+    LinearMap.restrictScalars_apply]
+
+/-- A degree-`p` cochain is a degree-zero map into the grading shift by `-p`. -/
+theorem cochain_mem_iff_isHomogeneous_shift
+    {M : CurvedDGRightModuleCat.{uR, uA, uM} h}
+    {N : CurvedDGRightModuleCat.{uR, uA, uN} h} {p : ℤ} (a : M →ₗ[Aᵐᵒᵖ] N) :
+    a ∈ dgRightModuleCochains (R := R) (A := A) (ℳ := M.grading) (ℳN := N.grading) p ↔
+      LinearMap.IsHomogeneous a (toGradedModuleCat M).grading.piece
+        ((toGradedModuleCat N).shiftObj (-p)).grading.piece 0 := by
+  rw [cochain_mem_iff_isHomogeneous]
+  simpa only [zero_sub, neg_neg] using
+    (_root_.LinearMap.isHomogeneous_shiftObj_iff
+      (M := toGradedModuleCat M) (N := toGradedModuleCat N) a (-p) 0).symm
 
 end Objects
 

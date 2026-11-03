@@ -80,24 +80,6 @@ variable {K L M I : CurvedDGRightModuleCat.{u, u, u} h}
     ForgetEnrichment.of (CochainComplex (ModuleCat R) ℤ) M)
   (hfg : f ≫ g = 0)
 
-/-- Cochains are homogeneous maps between the underlying graded right modules. -/
-private theorem cochain_mem_iff_isHomogeneous {p : ℤ} (a : K →ₗ[Aᵐᵒᵖ] I) :
-    a ∈ dgRightModuleCochains (R := R) (A := A) (ℳ := K.grading) (ℳN := I.grading) p ↔
-      LinearMap.IsHomogeneous a (toGradedModuleCat K).grading.piece
-        (toGradedModuleCat I).grading.piece p := by
-  rw [dgRightModuleCochains.mem_iff]
-  simp only [LinearMap.isHomogeneous_def, toGradedModuleCat_piece,
-    LinearMap.restrictScalars_apply]
-
-/-- A degree-p cochain is a degree-zero map into the grading shift by -p. -/
-private theorem cochain_mem_iff_isHomogeneous_shift {p : ℤ} (a : K →ₗ[Aᵐᵒᵖ] I) :
-    a ∈ dgRightModuleCochains (R := R) (A := A) (ℳ := K.grading) (ℳN := I.grading) p ↔
-      LinearMap.IsHomogeneous a (toGradedModuleCat K).grading.piece
-        ((toGradedModuleCat I).shiftObj (-p)).grading.piece 0 := by
-  rw [cochain_mem_iff_isHomogeneous]
-  exact (_root_.LinearMap.isHomogeneous_shiftObj_neg_iff
-    (M := toGradedModuleCat K) (N := toGradedModuleCat I) a p).symm
-
 /-- The differential on the three components of a totalization. -/
 private theorem totalization_differential (x : K) (y : L) (z : M) :
     (cone (coneDesc f g hfg)).differential ((x, y), z) =
