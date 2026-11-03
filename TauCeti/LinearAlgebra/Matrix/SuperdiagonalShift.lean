@@ -89,7 +89,7 @@ theorem isUpperUnitriangular_one_sub_smul_superdiagonalShift (n : ℕ) (s : A) :
   refine (isUpperUnitriangular_def _).2 ⟨fun i j hij ↦ ?_, fun i ↦ ?_⟩
   · have hne : i ≠ j := fun h ↦ (lt_irrefl _ (h ▸ hij))
     have hij' : (j : ℕ) < i := hij
-    simp [superdiagonalShift_apply, one_apply, hne, show (j : ℕ) ≠ i + 1 by omega]
+    simp [superdiagonalShift_apply, hne, show (j : ℕ) ≠ i + 1 by omega]
   · simp [superdiagonalShift_apply]
 
 /-- Subtracting a multiple of the superdiagonal shift from the identity gives a unit. -/

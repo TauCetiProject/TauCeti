@@ -125,7 +125,7 @@ private theorem hasStrictFDerivAt_legendreDerivEquiv (hS : ContDiffAt ℝ 2 S x�
   have he := (isInvertible_fderiv_cotangentLegendreProjection
     ((hS.fderiv_right (m := 1) le_rfl).differentiableAt one_ne_zero) hM).choose_spec
   rw [legendreDerivEquiv, he]
-  exact (contDiffAt_cotangentLegendreProjection (n := 1) hS).hasStrictFDerivAt one_ne_zero
+  exact (contDiffAt_cotangentLegendreProjection (n := 1) hS).hasStrictFDerivAt_fderiv one_ne_zero
 
 /-- The local change of variables `(q, Q) ↦ (q, P)` near a point with invertible
 negative `Q,Q` Hessian. Its source and target specify the domains of this chart. -/

@@ -37,6 +37,8 @@ noncomputable section
 
 open scoped TensorProduct LaurentSeries
 open LieAlgebra TauCeti.UniversalEnvelopingAlgebra
+open LieAlgebra.ofTwoCocycle (centralElement envelopingι envelopingι_mul_sub_mul
+  adjoin_range_envelopingι)
 
 -- Match the coefficientwise algebra structure used by formal currents.
 attribute [local instance 1100] HahnSeries.instAlgebra
@@ -47,7 +49,8 @@ variable {R L : Type*} [CommRing R] [LieRing L] [LieAlgebra R L]
   (Φ : LinearMap.BilinForm R L) (hΦ : Φ.lieInvariant L) (hΦs : Φ.IsSymm) (a : R)
 
 local notation "C" => currentAlgebra R L
-local notation "U" => CentralQuotient R (centralElement Φ hΦ hΦs) a
+local notation "c" => twoCocycleOfBilinear R L Φ hΦ hΦs
+local notation "U" => CentralQuotient R (centralElement c) a
 
 /-- The linear map induced by the current generators on currents modulo the prescribed order
 submodule. Over a field and at nonnegative order, it identifies the source with the current
@@ -56,21 +59,21 @@ def orderQuotientCurrent (N : ℤ) :
     C ⧸ orderSubmodule R L N →ₗ[R] U ⧸ orderLeftIdeal Φ hΦ hΦs a N :=
   (orderSubmodule R L N).liftQ
     (((orderLeftIdeal Φ hΦ hΦs a N).mkQ.restrictScalars R).comp
-      (envelopingι Φ hΦ hΦs a)) fun u hu ↦ by
+      (envelopingι c a)) fun u hu ↦ by
     simpa using envelopingι_mem_orderLeftIdeal (Φ := Φ) (hΦ := hΦ) (hΦs := hΦs) (a := a) hu
 
 /-- A current class maps to the class of its enveloping generator. -/
 @[simp]
 theorem orderQuotientCurrent_mk (N : ℤ) (u : C) :
     orderQuotientCurrent Φ hΦ hΦs a N (Submodule.Quotient.mk u) =
-      Submodule.Quotient.mk (envelopingι Φ hΦ hΦs a u) :=
+      Submodule.Quotient.mk (envelopingι c a u) :=
   (rfl)
 
 /-- For an abelian coefficient Lie algebra with vanishing central term, every congruence
 ideal is two-sided. No restriction on the order or the characteristic is needed. -/
 theorem isTwoSided_orderLeftIdeal (hL : IsLieAbelian L) (hform : a • Φ = 0) (N : ℤ) :
     Ideal.IsTwoSided (orderLeftIdeal Φ hΦ hΦs a N) := by
-  have hmem (u : U) : u ∈ Algebra.adjoin R (Set.range (envelopingι Φ hΦ hΦs a)) := by
+  have hmem (u : U) : u ∈ Algebra.adjoin R (Set.range (envelopingι c a)) := by
     rw [adjoin_range_envelopingι]
     trivial
   have hcomm (u v : U) : Commute u v := by
@@ -90,6 +93,7 @@ variable {K : Type*} [Field K] [LieAlgebra K L]
   (Ψ : LinearMap.BilinForm K L) (hΨ : Ψ.lieInvariant L) (hΨs : Ψ.IsSymm) (b : K)
 
 local notation "CK" => currentAlgebra K L
+local notation "cK" => twoCocycleOfBilinear K L Ψ hΨ hΨs
 /-- No currents below the cutoff are lost in the congruence quotient. This holds at every
 central value and without any finiteness assumption on the coefficient Lie algebra. -/
 theorem orderQuotientCurrent_injective {N : ℤ} (hN : 0 ≤ N) :
@@ -106,9 +110,10 @@ private theorem commutator_relations_of_isTwoSided {N : ℤ} (hN : 0 ≤ N)
     ⁅u, v⁆ ∈ orderSubmodule K L N ∧ b * residuePairing K L Ψ u v = 0 := by
   have hi := envelopingι_mem_orderLeftIdeal (Φ := Ψ) (hΦ := hΨ) (hΦs := hΨs) (a := b) hu
   have hc := (orderLeftIdeal Ψ hΨ hΨs b N).sub_mem
-    (hI.mul_mem_of_left (envelopingι Ψ hΨ hΨs b v) hi)
-    (Ideal.mul_mem_left _ (envelopingι Ψ hΨ hΨs b v) hi)
-  rw [envelopingι_mul_sub_mul] at hc
+    (hI.mul_mem_of_left (envelopingι cK b v) hi)
+    (Ideal.mul_mem_left _ (envelopingι cK b v) hi)
+  rw [envelopingι_mul_sub_mul, twoCocycleOfBilinear_coe,
+    twoCochainOfBilinear_apply_apply, LinearEquiv.apply_symm_apply] at hc
   have h := (envelopingι_sub_algebraMap_mem_orderLeftIdeal_iff Ψ hΨ hΨs b hN
     ⁅u, v⁆ (-(b * residuePairing K L Ψ u v))).mp (by simpa using hc)
   exact ⟨h.1, neg_eq_zero.mp h.2⟩

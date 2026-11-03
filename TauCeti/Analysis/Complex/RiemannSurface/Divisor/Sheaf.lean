@@ -225,6 +225,15 @@ theorem isDivisorSectionAt_extend {U : Opens X} {f : U → ℂ} (hf : f ∈ divi
   filter_upwards [e] with y hy
   rw [Subtype.val_injective.extend_apply, hy, Function.comp_apply]
 
+/-- A global divisor section, read as a function on the surface, is a local divisor section
+at every point. -/
+theorem divisorSections.isDivisorSectionAt (f : divisorSections D ⊤) (x : X) :
+    IsDivisorSectionAt D (fun y ↦ f.1 ⟨y, trivial⟩) x := by
+  have h := isDivisorSectionAt_extend f.property (⟨x, trivial⟩ : (⊤ : Opens X))
+  exact h.congr (.of_forall fun y ↦ by
+    simpa using (Subtype.val_injective.extend_apply f.1 0
+      (⟨y, trivial⟩ : (⊤ : Opens X))))
+
 /-- Sections of `𝒪_D` restrict to smaller open sets. -/
 theorem comp_inclusion_mem_divisorSections {U V : Opens X} (h : V ≤ U) {f : U → ℂ}
     (hf : f ∈ divisorSections D U) : f ∘ Opens.inclusion h ∈ divisorSections D V := by

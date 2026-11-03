@@ -93,7 +93,7 @@ theorem span_range_eq_top_of_span_range_mk_eq_top {ι : Type*} (b : ι → Symme
   have key : ∀ n, ∀ p ∈ homogeneousSubmodule R M n, p ∈ U := by
     intro n
     induction n using Nat.strong_induction_on with
-    | h n ih =>
+    | ind n ih =>
     -- The degree-`n` component of an element of `A₊ · Sym M` is an `A`-combination of
     -- components of lower degree.
     have hI : ∀ q ∈ ρ.symmetricAlgebraHilbertIdeal, π n q ∈ U := by

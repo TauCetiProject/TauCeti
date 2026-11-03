@@ -16,6 +16,7 @@ import TauCeti.Analysis.Calculus.Deriv.LocallyFinite
 import TauCeti.Analysis.Complex.GaussianTransform
 import TauCeti.Analysis.PDE.HeatKernel.ApproximateIdentity
 import TauCeti.Geometry.Manifold.PartitionOfUnity.Real
+import TauCeti.Topology.LocallyFinite.Basic
 
 /-!
 # `C¹` approximation by real analytic functions on the line
@@ -43,6 +44,13 @@ The proof has three steps.
   `k`. Then `h = k exp (-ψ)` is within `ε` of `f`, since the weight `exp (-ψ)` and its derivative
   are bounded by a multiple of `Ψ`.
 
+The approximation theorem preserves strict inequalities on values and derivatives. So, given
+pairwise disjoint compact sets `K i` forming a locally finite family, there is an analytic function
+lying above any locally bounded function `L`, above prescribed constants `M i` on `K i`, and
+with derivative of absolute value less than prescribed `ε i > 0` on `K i`
+(`TauCeti.exists_analyticOnNhd_lt_and_abs_deriv_lt`). It approximates a smooth function above
+`L + 1` which is constant near each `K i` (`Continuous.exists_contDiff_lt_eventuallyEq_const`).
+
 The Gaussian transforms of the first step and their bounds are in
 `TauCeti.Analysis.Complex.GaussianTransform`; the partition of unity of the second step and the
 function `Ψ` of the third are in `TauCeti.Geometry.Manifold.PartitionOfUnity.Real`.
@@ -50,6 +58,8 @@ function `Ψ` of the third are in `TauCeti.Geometry.Manifold.PartitionOfUnity.Re
 ## Main declarations
 
 * `ContDiff.exists_analyticOnNhd_abs_sub_lt`: the analytic `C¹` approximation theorem.
+* `TauCeti.exists_analyticOnNhd_lt_and_abs_deriv_lt`: an analytic function with prescribed strict
+  lower bounds, and derivatives prescribed small on a locally finite disjoint compact family.
 
 ## References
 
@@ -322,3 +332,43 @@ theorem ContDiff.exists_analyticOnNhd_abs_sub_lt {f : ℝ → ℝ} (hf : ContDif
           nlinarith [(hk x).1, (hk x).2]
       _ = e x * (1 + |deriv ψ x|) := by ring
       _ < ε x := by linarith [hsmall x, hε0 x]
+
+namespace TauCeti
+
+open Function
+
+/-- **Analytic functions with prescribed strict bounds.** Let `K i` be pairwise disjoint compact
+subsets of `ℝ` forming a locally finite family, and let `L : ℝ → ℝ` be locally bounded above.
+For any constants `M i` and `ε i > 0` there is a real analytic `h` with `L < h` everywhere and,
+on each `K i`, `M i < h` and `|h'| < ε i`. -/
+theorem exists_analyticOnNhd_lt_and_abs_deriv_lt {ι : Type*} {K : ι → Set ℝ}
+    (hK : ∀ i, IsCompact (K i)) (hdisj : Pairwise (Disjoint on K)) (hlf : LocallyFinite K)
+    {L : ℝ → ℝ} (hL : ∀ x, ∃ C, ∀ᶠ y in 𝓝 x, L y ≤ C) (M : ι → ℝ) {ε : ι → ℝ}
+    (hε : ∀ i, 0 < ε i) :
+    ∃ h : ℝ → ℝ, AnalyticOnNhd ℝ h univ ∧ (∀ x, L x < h x) ∧
+      ∀ i, ∀ x ∈ K i, M i < h x ∧ |deriv h x| < ε i := by
+  -- A smooth target `F > L + 1`, constant above `M i + 1` near each `K i`.
+  obtain ⟨G, hG⟩ := exists_continuous_forall_mem_convex_of_local_const
+    (t := fun x ↦ Ioi (L x + 1)) (fun _ ↦ convex_Ioi _) fun x ↦ by
+      obtain ⟨C, hC⟩ := hL x
+      exact ⟨C + 2, hC.mono fun y hy ↦ by simp only [mem_Ioi]; linarith⟩
+  obtain ⟨F, hFd, hGF, hFc⟩ :=
+    G.continuous.exists_contDiff_lt_eventuallyEq_const hK hdisj hlf fun i ↦ M i + 1
+  choose c hMc hFc using hFc
+  -- A tolerance at most `1`, and below `ε i` on `K i`, preserves these strict bounds.
+  obtain ⟨e, he0, he⟩ := hlf.exists_continuous_pos_lt (fun i ↦ (hK i).isClosed)
+    (ε := fun i _ ↦ ε i) (fun _ ↦ continuousOn_const) fun i _ _ ↦ hε i
+  obtain ⟨h, hha, hh⟩ := (hFd.of_le (by norm_cast)).exists_analyticOnNhd_abs_sub_lt
+    (ε := fun x ↦ min (e x) 1) (e.continuous.min continuous_const)
+    fun x ↦ lt_min (he0 x) one_pos
+  refine ⟨h, hha, fun x ↦ ?_, fun i x hx ↦ ?_⟩
+  · linarith [abs_lt.1 (hh x).1, mem_Ioi.1 (hG x), hGF x, min_le_right (e x) 1]
+  · have hFx : F =ᶠ[𝓝 x] fun _ ↦ c i := (hFc i).filter_mono (nhds_le_nhdsSet hx)
+    have h1 := abs_lt.1 (hh x).1
+    have h2 := (hh x).2
+    rw [hFx.deriv_eq, deriv_const, sub_zero] at h2
+    rw [hFx.eq_of_nhds] at h1
+    exact ⟨by linarith [min_le_right (e x) 1, hMc i],
+      h2.trans_le ((min_le_left _ _).trans (he i x hx).le)⟩
+
+end TauCeti
