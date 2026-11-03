@@ -29,8 +29,8 @@ No identification with an independently constructed pinned group scheme is asser
 
 * `TauCeti.G2ShortRoot.PrimeField.mem_adjointWeightSpace_one_iff_isDiag`: the zero-weight
   condition is diagonality of the tangent matrix.
-* `TauCeti.G2ShortRoot.PrimeField.map_adjointWeightSpace_one_tangentMatrix`: its matrix image
-  is precisely the span of the two Cartan matrices.
+* `TauCeti.G2ShortRoot.PrimeField.map_tangentMatrix_adjointWeightSpace_one_eq_span`: its matrix
+  image is precisely the span of the two Cartan matrices.
 * `TauCeti.G2ShortRoot.PrimeField.finrank_adjointWeightSpace_one`: its dimension is two.
 
 ## References
@@ -101,7 +101,7 @@ private theorem tangentMatrix_eq_sum_cartanMatrix_of_isDiag
       cartanMatrix_apply, mul_comm] using hc a
   · simp [Matrix.sum_apply, Matrix.smul_apply, cartanMatrix_apply, hab]
 
-private theorem cartanMatrix_mem_map_adjointWeightSpace_one (i : Fin 2) :
+private theorem cartanMatrix_mem_map_tangentMatrix_adjointWeightSpace_one (i : Fin 2) :
     (cartanMatrix i).map (Int.cast : ℤ → ZMod 3) ∈
       (Derivation.adjointWeightSpace weightTorusCoordinateMap.hom 1).map tangentMatrix := by
   let e := Derivation.cotangentLinearEquiv (R := ZMod 3) (A := carrierAlgebra) (B := ZMod 3)
@@ -121,7 +121,7 @@ private theorem cartanMatrix_mem_map_adjointWeightSpace_one (i : Fin 2) :
 
 /-- Under the faithful tangent-matrix map, the trivial adjoint-weight space is exactly
 spanned by the two numbered Cartan matrices. -/
-theorem map_adjointWeightSpace_one_tangentMatrix :
+theorem map_tangentMatrix_adjointWeightSpace_one_eq_span :
     (Derivation.adjointWeightSpace weightTorusCoordinateMap.hom 1).map tangentMatrix =
       Submodule.span (ZMod 3)
         (Set.range fun i : Fin 2 => (cartanMatrix i).map (Int.cast : ℤ → ZMod 3)) := by
@@ -134,7 +134,7 @@ theorem map_adjointWeightSpace_one_tangentMatrix :
       (Submodule.subset_span ⟨i, rfl⟩)
   · rw [Submodule.span_le]
     rintro _ ⟨i, rfl⟩
-    exact cartanMatrix_mem_map_adjointWeightSpace_one i
+    exact cartanMatrix_mem_map_tangentMatrix_adjointWeightSpace_one i
 
 /-- The zero adjoint-weight space of the short-root G₂ carrier over `𝔽₃` has dimension two. -/
 -- Match before simplification changes the bundled carrier presentation.
@@ -154,7 +154,7 @@ theorem finrank_adjointWeightSpace_one :
     · simpa [Fin.sum_univ_two, cartanMatrix_apply, weight_apply, hz] using h1
   rw [(Submodule.equivMapOfInjective tangentMatrix tangentMatrix_injective
     (Derivation.adjointWeightSpace weightTorusCoordinateMap.hom 1)).finrank_eq,
-    map_adjointWeightSpace_one_tangentMatrix, finrank_span_eq_card hli]
+    map_tangentMatrix_adjointWeightSpace_one_eq_span, finrank_span_eq_card hli]
   rfl
 
 end
