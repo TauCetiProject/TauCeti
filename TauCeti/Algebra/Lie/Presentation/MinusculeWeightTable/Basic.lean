@@ -63,6 +63,8 @@ coroots, so the reflection equation reads `wt (s_i a) j = wt a j - wt a i * CM j
   `(1 + eᵢ) (1 - fᵢ) (1 + eᵢ)` acts by a signed simple reflection over any coefficient ring.
 * `TauCeti.MinusculeWeightTable.weylWord_map_commute_of_cartanMatrix_eq_zero`: these words
   commute at orthogonal nodes.
+* `TauCeti.MinusculeWeightTable.weylWord_map_braid_of_cartanMatrix_eq_neg_one`: these words
+  satisfy the length-three braid relation when both Cartan entries are `-1`.
 * `TauCeti.MinusculeWeightTable.raisingMatrix_pow_two` and `loweringMatrix_pow_two`: the raising
   and lowering matrices square to zero.
 * `TauCeti.MinusculeWeightTable.isSl2Triple`: the three matrices at a node are an `sl₂` triple when
@@ -598,6 +600,48 @@ theorem weylWord_map_commute_of_cartanMatrix_eq_zero [Fintype ι] {R : Type*} [R
     T.reflection_comm_of_cartanMatrix_eq_zero i j a hij]
   by_cases hi : T.weight a i = -1 <;> by_cases hj : T.weight a j = -1 <;>
     simp [hi, hj]
+
+/-- Weyl words of a minuscule weight table satisfy the length-three braid relation when both
+Cartan entries are `-1`, over any coefficient ring. -/
+theorem weylWord_map_braid_of_cartanMatrix_eq_neg_one [Fintype ι] {R : Type*} [Ring R]
+    (i j : B) (hij : T.cartanMatrix i j = -1) (hji : T.cartanMatrix j i = -1) :
+    ((1 + (T.raisingMatrix i).map (Int.cast : ℤ → R)) *
+        (1 - (T.loweringMatrix i).map (Int.cast : ℤ → R)) *
+        (1 + (T.raisingMatrix i).map (Int.cast : ℤ → R))) *
+      ((1 + (T.raisingMatrix j).map (Int.cast : ℤ → R)) *
+        (1 - (T.loweringMatrix j).map (Int.cast : ℤ → R)) *
+        (1 + (T.raisingMatrix j).map (Int.cast : ℤ → R))) *
+      ((1 + (T.raisingMatrix i).map (Int.cast : ℤ → R)) *
+        (1 - (T.loweringMatrix i).map (Int.cast : ℤ → R)) *
+        (1 + (T.raisingMatrix i).map (Int.cast : ℤ → R))) =
+      ((1 + (T.raisingMatrix j).map (Int.cast : ℤ → R)) *
+        (1 - (T.loweringMatrix j).map (Int.cast : ℤ → R)) *
+        (1 + (T.raisingMatrix j).map (Int.cast : ℤ → R))) *
+      ((1 + (T.raisingMatrix i).map (Int.cast : ℤ → R)) *
+        (1 - (T.loweringMatrix i).map (Int.cast : ℤ → R)) *
+        (1 + (T.raisingMatrix i).map (Int.cast : ℤ → R))) *
+      ((1 + (T.raisingMatrix j).map (Int.cast : ℤ → R)) *
+        (1 - (T.loweringMatrix j).map (Int.cast : ℤ → R)) *
+        (1 + (T.raisingMatrix j).map (Int.cast : ℤ → R))) := by
+  have href (a : ι) :
+      T.reflection i (T.reflection j (T.reflection i a)) =
+        T.reflection j (T.reflection i (T.reflection j a)) := by
+    apply T.weight_injective
+    funext k
+    simp only [T.weight_reflection, T.cartanMatrix_diag, hij, hji]
+    ring
+  apply Matrix.ext_iff_mulVec.mpr
+  intro v
+  funext a
+  have hsum := T.weight_eq_neg_one_or_eq_zero_or_eq_one (T.reflection i a) j
+  simp only [T.weight_reflection, hji, mul_neg_one, sub_neg_eq_add] at hsum
+  conv_lhs => rw [← Matrix.mulVec_mulVec, ← Matrix.mulVec_mulVec]
+  conv_rhs => rw [← Matrix.mulVec_mulVec, ← Matrix.mulVec_mulVec]
+  simp only [T.weylWord_map_mulVec, href,
+    T.weight_reflection, T.cartanMatrix_diag, hij, hji]
+  rcases T.weight_eq_neg_one_or_eq_zero_or_eq_one a i with hi | hi | hi <;>
+    rcases T.weight_eq_neg_one_or_eq_zero_or_eq_one a j with hj | hj | hj <;>
+    norm_num [hi, hj] at *
 
 /-- The entry formula for a simple Cartan generator matrix. -/
 @[simp]

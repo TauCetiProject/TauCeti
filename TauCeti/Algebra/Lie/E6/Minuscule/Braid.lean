@@ -19,8 +19,7 @@ an independently pinned group scheme or independence of arbitrary root presentat
 
 The calculation uses the minuscule weight basis: a root word acts by the simple reflection,
 with a minus sign precisely on weights pairing to one with the simple coroot. The signed action
-and orthogonal-node commutation come from the generic `TauCeti.MinusculeWeightTable` API;
-only the length-three relation uses an E₆ permutation-and-sign certificate.
+and both braid relations come from the generic `TauCeti.MinusculeWeightTable` API.
 
 ## References
 
@@ -40,32 +39,8 @@ namespace TauCeti.E6Minuscule
 
 open DynkinType
 
-private def reflectionSign (i : Fin 6) (a : Fin 27) : ℤ :=
-  if e6MinusculeWeight a i = -1 then -1 else 1
-
 private def weylMatrix (i : Fin 6) : Matrix (Fin 27) (Fin 27) ℤ :=
   (1 + raisingMatrix i) * (1 - loweringMatrix i) * (1 + raisingMatrix i)
-
-private theorem weylMatrix_mulVec (i : Fin 6) (v : Fin 27 → ℤ) (a : Fin 27) :
-    (weylMatrix i *ᵥ v) a =
-      reflectionSign i a * v (e6MinusculeReflection i a) := by
-  have hcast : (Int.cast : ℤ → ℤ) = id := funext fun _ => Int.cast_id
-  simpa only [weylMatrix, reflectionSign, weightTable_raisingMatrix, weightTable_loweringMatrix,
-    weightTable_weight, weightTable_reflection, hcast, Matrix.map_id] using
-    weightTable.weylWord_map_mulVec i v a
-
--- This certificate involves only permutations and signs, not dense matrix multiplication.
-
-private theorem braid_certificate (i j : Fin 6) (h : CartanMatrix.E 6 i j = -1)
-    (a : Fin 27) :
-    e6MinusculeReflection i (e6MinusculeReflection j (e6MinusculeReflection i a)) =
-        e6MinusculeReflection j (e6MinusculeReflection i (e6MinusculeReflection j a)) ∧
-      reflectionSign i a * reflectionSign j (e6MinusculeReflection i a) *
-          reflectionSign i (e6MinusculeReflection j (e6MinusculeReflection i a)) =
-        reflectionSign j a * reflectionSign i (e6MinusculeReflection j a) *
-          reflectionSign j (e6MinusculeReflection i (e6MinusculeReflection j a)) := by
-  fin_cases i <;> fin_cases j <;> norm_num [CartanMatrix.E_six_eq] at h
-  all_goals decide +kernel +revert
 
 private theorem weylMatrix_commute (i j : Fin 6) (h : CartanMatrix.E 6 i j = 0) :
     weylMatrix i * weylMatrix j = weylMatrix j * weylMatrix i := by
@@ -79,11 +54,14 @@ private theorem weylMatrix_commute (i j : Fin 6) (h : CartanMatrix.E 6 i j = 0) 
 private theorem weylMatrix_braid (i j : Fin 6) (h : CartanMatrix.E 6 i j = -1) :
     weylMatrix i * weylMatrix j * weylMatrix i =
       weylMatrix j * weylMatrix i * weylMatrix j := by
-  apply Matrix.ext_iff_mulVec.mpr
-  intro v
-  funext a
-  simp only [← Matrix.mulVec_mulVec, weylMatrix_mulVec, ← mul_assoc]
-  rw [(braid_certificate i j h a).1, (braid_certificate i j h a).2]
+  have hij : weightTable.cartanMatrix i j = -1 := by
+    simpa only [weightTable_cartanMatrix, CartanMatrix.E_transpose] using h
+  have hji : weightTable.cartanMatrix j i = -1 := by
+    simpa only [weightTable_cartanMatrix, Matrix.transpose_apply] using h
+  have hcast : (Int.cast : ℤ → ℤ) = id := funext fun _ => Int.cast_id
+  simpa only [weylMatrix, weightTable_raisingMatrix, weightTable_loweringMatrix,
+    hcast, Matrix.map_id] using
+    weightTable.weylWord_map_braid_of_cartanMatrix_eq_neg_one (R := ℤ) i j hij hji
 
 private theorem coe_root_word (i : Fin 6) (A : Type*) [CommRing A] :
     (((rootSubgroupPoints (.inl i) A (Multiplicative.ofAdd 1) *
