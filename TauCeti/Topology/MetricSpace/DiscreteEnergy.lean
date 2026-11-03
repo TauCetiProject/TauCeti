@@ -38,7 +38,8 @@ namespace TauCeti
 
 variable {M : Type*} [PseudoMetricSpace M] {n : ℕ}
 
-/-- The distance to any vertex of a finite chain is at most its total edge length. -/
+/-- The distance from the first vertex to any vertex of a finite chain is at most
+its total edge length. -/
 theorem dist_le_sum_adjacent_dist (x : Fin (n + 1) → M) (j : Fin (n + 1)) :
     dist (x 0) (x j) ≤ ∑ i : Fin n, dist (x i.castSucc) (x i.succ) := by
   induction n with
@@ -59,7 +60,7 @@ theorem dist_le_sum_adjacent_dist (x : Fin (n + 1) → M) (j : Fin (n + 1)) :
           simp only [Fin.sum_univ_succ, Fin.castSucc_zero, Fin.castSucc_succ]
 
 /-- Half the sum of squared edge lengths divided by the corresponding time steps.
-Estimates using this energy require strictly increasing times. -/
+Edge-length estimates using this energy require strictly increasing times. -/
 noncomputable def discreteEnergy (t : Fin (n + 1) → ℝ) (x : Fin (n + 1) → M) : ℝ :=
   (1 / 2) * ∑ i : Fin n, dist (x i.castSucc) (x i.succ) ^ 2 /
     (t i.succ - t i.castSucc)
@@ -81,11 +82,22 @@ theorem discreteEnergy_const (t : Fin (n + 1) → ℝ) (p : M) :
     discreteEnergy t (fun _ => p) = 0 := by
   simp [discreteEnergy]
 
-/-- Discrete energy is nonnegative for increasing times. -/
-theorem discreteEnergy_nonneg {t : Fin (n + 1) → ℝ} (ht : StrictMono t)
+/-- Every time step in the discrete energy is positive for strictly increasing times. -/
+theorem discreteEnergy_step_pos {t : Fin (n + 1) → ℝ} (ht : StrictMono t)
+    (i : Fin n) : 0 < t i.succ - t i.castSucc :=
+  sub_pos.mpr (ht i.castSucc_lt_succ)
+
+/-- Each discrete-energy summand is nonnegative for nondecreasing times. -/
+theorem discreteEnergy_summand_nonneg {t : Fin (n + 1) → ℝ} (ht : Monotone t)
+    (x : Fin (n + 1) → M) (i : Fin n) :
+    0 ≤ dist (x i.castSucc) (x i.succ) ^ 2 / (t i.succ - t i.castSucc) :=
+  div_nonneg (sq_nonneg _) (sub_nonneg.mpr (ht i.castSucc_le_succ))
+
+/-- Discrete energy is nonnegative for nondecreasing times. -/
+theorem discreteEnergy_nonneg {t : Fin (n + 1) → ℝ} (ht : Monotone t)
     (x : Fin (n + 1) → M) : 0 ≤ discreteEnergy t x := by
   exact mul_nonneg (by norm_num) (Finset.sum_nonneg fun i _ =>
-    div_nonneg (sq_nonneg _) (sub_pos.mpr (ht i.castSucc_lt_succ)).le)
+    discreteEnergy_summand_nonneg ht x i)
 
 /-- The discrete Cauchy–Schwarz inequality, in squared form. This includes an
 empty chain, whose total time and energy are both zero. -/
@@ -97,10 +109,9 @@ theorem sq_sum_dist_le_discreteEnergy {t : Fin (n + 1) → ℝ} (ht : StrictMono
     (f := fun i : Fin n => dist (x i.castSucc) (x i.succ) ^ 2 /
       (t i.succ - t i.castSucc))
     (g := fun i : Fin n => t i.succ - t i.castSucc)
-    (fun i _ => div_nonneg (sq_nonneg _) (sub_pos.mpr (ht i.castSucc_lt_succ)).le)
-    (fun i _ => (sub_pos.mpr (ht i.castSucc_lt_succ)).le)
-    (fun i _ => le_of_eq (div_mul_cancel₀ _ (ne_of_gt
-      (sub_pos.mpr (ht i.castSucc_lt_succ)))).symm)
+    (fun i _ => discreteEnergy_summand_nonneg ht.monotone x i)
+    (fun i _ => (discreteEnergy_step_pos ht i).le)
+    (fun i _ => le_of_eq (div_mul_cancel₀ _ (discreteEnergy_step_pos ht i).ne').symm)
   have htime : (∑ i : Fin n, (t i.succ - t i.castSucc)) = t (Fin.last n) - t 0 := by
     rw [Finset.sum_sub_distrib]
     have hfirst := Fin.sum_univ_succ t
@@ -147,9 +158,9 @@ theorem dist_sq_le_discreteEnergy_mul_step {t : Fin (n + 1) → ℝ} (ht : Stric
   have hi := Finset.single_le_sum
     (s := Finset.univ) (f := fun j : Fin n => dist (x j.castSucc) (x j.succ) ^ 2 /
       (t j.succ - t j.castSucc))
-    (fun j _ => div_nonneg (sq_nonneg _) (sub_pos.mpr (ht j.castSucc_lt_succ)).le)
+    (fun j _ => discreteEnergy_summand_nonneg ht.monotone x j)
     (Finset.mem_univ i)
-  have hstep := sub_pos.mpr (ht i.castSucc_lt_succ)
+  have hstep := discreteEnergy_step_pos ht i
   have := (div_le_iff₀ hstep).mp hi
   unfold discreteEnergy
   nlinarith
@@ -161,9 +172,9 @@ theorem dist_lt_of_discreteEnergy_lt {t : Fin (n + 1) → ℝ} (ht : StrictMono 
     (hx : discreteEnergy t x < c)
     (hmesh : ∀ i : Fin n, t i.succ - t i.castSucc < ρ ^ 2 / (2 * c))
     (i : Fin n) : dist (x i.castSucc) (x i.succ) < ρ := by
-  have hc : 0 < c := (discreteEnergy_nonneg ht x).trans_lt hx
+  have hc : 0 < c := (discreteEnergy_nonneg ht.monotone x).trans_lt hx
   have hi := dist_sq_le_discreteEnergy_mul_step ht x i
-  have hstep := sub_pos.mpr (ht i.castSucc_lt_succ)
+  have hstep := discreteEnergy_step_pos ht i
   have hmesh' := (lt_div_iff₀ (by positivity : 0 < 2 * c)).mp (hmesh i)
   have hmul := mul_lt_mul_of_pos_right hx hstep
   have hd : 0 ≤ dist (x i.castSucc) (x i.succ) := dist_nonneg
@@ -187,8 +198,8 @@ theorem dist_le_sqrt_discreteEnergy_cons_snoc {t : Fin (n + 2) → ℝ}
   simpa only [Fin.cons_zero, Fin.cons_succ, Fin.snoc_castSucc] using
     dist_le_sqrt_discreteEnergy ht (Fin.cons p (Fin.snoc x q)) j.castSucc.succ
 
-/-- The open energy carrier with `n` interior vertices and fixed endpoints `p,q`.
-The full vertex tuple is formed using the native `Fin.cons` and `Fin.snoc`. -/
+/-- The set of interior vertex tuples `x` with fixed endpoints `p,q` whose energy
+`discreteEnergy t (Fin.cons p (Fin.snoc x q))` is strictly less than `c`. -/
 def discreteEnergySublevel (t : Fin (n + 2) → ℝ) (p q : M) (c : ℝ) :
     Set (Fin n → M) :=
   {x | discreteEnergy t (Fin.cons p (Fin.snoc x q)) < c}
@@ -218,8 +229,19 @@ theorem dist_lt_sqrt_of_mem_discreteEnergySublevel {t : Fin (n + 2) → ℝ}
     dist p (x j) < √(2 * (t (Fin.last (n + 1)) - t 0) * c) := by
   have hT : 0 < t (Fin.last (n + 1)) - t 0 := sub_pos.mpr (ht Fin.last_pos')
   exact (dist_le_sqrt_discreteEnergy_cons_snoc ht p q x j).trans_lt (Real.sqrt_lt_sqrt
-    (mul_nonneg (by positivity) (discreteEnergy_nonneg ht _))
+    (mul_nonneg (by positivity) (discreteEnergy_nonneg ht.monotone _))
     (mul_lt_mul_of_pos_left hx (by positivity)))
+
+/-- An upper bound on fixed-endpoint energy bounds each interior vertex's distance
+from the initial endpoint by the corresponding closed-ball radius. -/
+theorem dist_le_sqrt_of_discreteEnergy_le {t : Fin (n + 2) → ℝ}
+    (ht : StrictMono t) {p q : M} {a : ℝ} {x : Fin n → M}
+    (hx : discreteEnergy t (Fin.cons p (Fin.snoc x q)) ≤ a) (j : Fin n) :
+    dist p (x j) ≤ √(2 * (t (Fin.last (n + 1)) - t 0) * a) := by
+  have hT : 0 ≤ t (Fin.last (n + 1)) - t 0 :=
+    sub_nonneg.mpr (ht.monotone (Fin.zero_le _))
+  refine (dist_le_sqrt_discreteEnergy_cons_snoc ht p q x j).trans ?_
+  gcongr
 
 /-- Closed fixed-endpoint energy sublevels are compact in a proper metric space.
 No geodesic interpolation or small-mesh assumption is needed. -/
@@ -231,12 +253,10 @@ theorem isCompact_discreteEnergy_le [ProperSpace M] {t : Fin (n + 2) → ℝ}
       (isClosed_le (continuous_discreteEnergy_cons_snoc t p q) continuous_const) ?_
   intro x hx j _
   exact Metric.mem_closedBall.mpr ((dist_comm _ _).trans_le
-    ((dist_le_sqrt_discreteEnergy_cons_snoc ht p q x j).trans
-    (Real.sqrt_le_sqrt (mul_le_mul_of_nonneg_left hx
-      (mul_nonneg (by norm_num) (sub_nonneg.mpr (ht.monotone (Fin.zero_le _))))))))
+    (dist_le_sqrt_of_discreteEnergy_le ht hx j))
 
-/-- A lower closed energy sublevel is compact inside the open energy carrier.
-In particular these strict carriers have compact energy bands below their cutoff. -/
+/-- For `a < c`, the closed energy sublevel `{E ≤ a}` is compact as a subset of
+the subtype `discreteEnergySublevel t p q c`. -/
 theorem isCompact_discreteEnergySublevel_le [ProperSpace M] {t : Fin (n + 2) → ℝ}
     (ht : StrictMono t) (p q : M) {a c : ℝ} (hac : a < c) :
     IsCompact {x : discreteEnergySublevel t p q c |
