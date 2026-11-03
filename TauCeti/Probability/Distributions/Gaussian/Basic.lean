@@ -153,8 +153,7 @@ theorem hasDerivAt_gaussianPDFRealEReal (v : ℝ≥0) (e : EReal) (μ : ℝ) :
   | bot => simpa using hasDerivAt_const μ (0 : ℝ)
   | top => simpa using hasDerivAt_const μ (0 : ℝ)
   | coe x =>
-    change HasDerivAt (fun μ' => gaussianPDFReal μ' v x)
-      ((x - μ) * gaussianPDFReal μ v x / v) μ
+    simp only [gaussianPDFRealEReal_coe, EReal.toReal_coe]
     have hshift (m : ℝ) : gaussianPDFReal m v x = gaussianPDFReal 0 v (x - m) := by
       simpa only [zero_add] using (gaussianPDFReal_sub (μ := 0) (v := v) x m).symm
     rw [hshift μ, funext hshift]
