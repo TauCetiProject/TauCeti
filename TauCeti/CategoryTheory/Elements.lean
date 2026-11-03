@@ -14,13 +14,14 @@ public import Mathlib.Data.Set.Prod
 
 A functor `F : C ⥤ Type*` is an action of `C` on the family of fibers `F.obj x` over the objects
 of `C`, with total space `F.Elements` and anchor `Functor.Elements.obj : F.Elements → C`. Its
-category of elements `F.Elements` is the action groupoid `C ⋉ F.Elements`. An arrow of
+category of elements `F.Elements` is the action category `C ⋉ F.Elements`, an action groupoid
+when `C` is a groupoid. An arrow of
 `F.Elements` from `z` is determined by its underlying arrow `g` of `C`, whose source is the
 object under `z`, and by `z`: its target is the translate `g • z = F.map g z`
 (`CategoryTheory.Functor.Elements.act`). So the total arrows of `F.Elements` are the fiber product
 of the total arrows of `C` and the total space, along the source and the anchor
 (`CategoryTheory.Functor.Elements.totalEquiv`). This is the algebraic description behind the
-topology of action groupoids of families in `TauCeti.Topology.CategoryTheory.Elements`.
+topology of action categories of families in `TauCeti.Topology.CategoryTheory.Elements`.
 
 ## References
 

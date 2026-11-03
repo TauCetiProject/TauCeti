@@ -17,7 +17,8 @@ topological groupoid `Γ`. An action of `C` on a family over its objects is a fu
 `F : C ⥤ Type*`: the fiber over `x` is `F.obj x`, and an arrow `g : x ⟶ y` acts by
 `F.map g : F.obj x → F.obj y`. The total space of the family is the type `F.Elements` of pairs of
 an object and a point of its fiber, with the anchor map `Functor.Elements.obj : F.Elements → C`,
-and Mathlib's category of elements `F.Elements` is the action groupoid `Γ ⋉ Z`. For a group `G`
+and Mathlib's category of elements `F.Elements` is the action category `Γ ⋉ Z`, an action
+groupoid when `Γ` is a groupoid. For a group `G`
 acting on `X`, Mathlib's `ActionCategory G X` is by definition the category of elements of
 `actionAsFunctor G X`, so this generalizes the action groupoids of
 `TauCeti.Topology.CategoryTheory.ActionGroupoid.Basic` to actions of groupoids.
@@ -30,18 +31,20 @@ target the translate `g • z` (`CategoryTheory.Functor.Elements.act`). The acti
 precisely when the target map of `Γ ⋉ Z` is
 (`CategoryTheory.Functor.Elements.continuous_target_iff`).
 
-The hypotheses of a Hausdorff proper étale presentation pass from `Γ` to `Γ ⋉ Z`:
+The hypotheses of a Hausdorff proper étale presentation pass from `Γ` to `Γ ⋉ Z`, given the
+stated continuity of the anchor and the action:
 
 * the total arrows remain Hausdorff and second countable when `Z` is;
-* the source and the units are continuous, and so are composition and inversion when they are
-  in `Γ` and the action is continuous;
-* source and target are local homeomorphisms when they are in `Γ`
-  (`CategoryTheory.Functor.Elements.isLocalHomeomorph_source`,
-  `CategoryTheory.Functor.Elements.isLocalHomeomorph_target`), since the source of `Γ ⋉ Z` is the
-  base change of the source of `Γ` along the anchor
-  (`IsLocalHomeomorph.pullback_snd`);
-* the source-target map is proper when that of `Γ` is and `Z` is Hausdorff
-  (`CategoryTheory.Functor.Elements.isProperMap_source_target`).
+* the source is continuous; the units are continuous when they are in `Γ` and the anchor is
+  continuous; composition is continuous when it is in `Γ`; and, for a groupoid `Γ`, inversion is
+  continuous when it is in `Γ` and the action is continuous;
+* the source is a local homeomorphism when it is in `Γ` and the anchor is continuous
+  (`CategoryTheory.Functor.Elements.isLocalHomeomorph_source`), since the source of `Γ ⋉ Z` is
+  the base change of the source of `Γ` along the anchor (`IsLocalHomeomorph.pullback_snd`); for a
+  groupoid `Γ` with continuous inversion, so is the target when moreover the action is continuous
+  (`CategoryTheory.Functor.Elements.isLocalHomeomorph_target`);
+* the source-target map is proper when that of `Γ` is, the anchor and the action are continuous,
+  and `Z` is Hausdorff (`CategoryTheory.Functor.Elements.isProperMap_source_target`).
 
 Natural transformations between such functors are the equivariant maps of families; when they
 are continuous on total spaces they are continuous on arrows
@@ -265,7 +268,7 @@ variable [TopologicalSpace (Quiver.Total C)] {F F' : C ⥤ Type w} [TopologicalS
   [TopologicalSpace F'.Elements]
 
 /-- An equivariant map of families over the objects of `C` that is continuous on total spaces is
-continuous on the total arrows of the action groupoids. -/
+continuous on the total arrows of the action categories. -/
 theorem continuous_total_mapElements (φ : F ⟶ F') (hφ : Continuous (φ.mapElements).obj) :
     Continuous fun a : Quiver.Total F.Elements ↦
       (⟨φ.mapElements.obj a.left, φ.mapElements.obj a.right, φ.mapElements.map a.hom⟩ :
