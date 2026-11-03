@@ -49,6 +49,9 @@ to primitive idempotents over a semisimple degree-zero piece.
 ## Main results
 
 * `TauCeti.gradedPositiveMulQuotientMk_eq_zero_iff`: the kernel of `Ae ⟶ Ae / A₊e` is `A₊e`.
+* `TauCeti.gradedPositiveMulQuotientπ`: the quotient map bundled as a graded morphism.
+* `TauCeti.bijective_smulPieceMap_gradedPositiveMulQuotientπ_zero`: this quotient map is an
+  isomorphism on degree-zero coordinates, over any commutative coefficient ring.
 * `TauCeti.mem_gradedPositiveMulQuotient_piece_iff`: the degree-`p` piece of `Ae / A₊e` consists
   of the classes of the degree-`p` elements of `Ae`.
 * `TauCeti.gradedPositiveMulQuotient_piece_eq_bot`,
@@ -202,6 +205,16 @@ theorem mem_gradedPositiveMulQuotient_piece_iff (he₀ : e ∈ 𝒜 0) {p : ℤ}
   exact GradedModuleCat.mem_ofIdeal_piece_iff
     (Ideal.isHomogeneous_span_singleton 𝒜 ⟨0, he₀⟩)
 
+/-- The quotient map `Ae ⟶ Ae / A₊e`, bundled as a morphism of graded modules. -/
+def gradedPositiveMulQuotientπ (he₀ : e ∈ 𝒜 0) :
+    GradedModuleCat.ofIdeal 𝒜 (Ideal.span {e})
+      (Ideal.isHomogeneous_span_singleton 𝒜 ⟨0, he₀⟩) ⟶ gradedPositiveMulQuotient 𝒜 he₀ :=
+  GradedModuleCat.cokernelπ (positiveMulIdealInclusion 𝒜 he₀)
+
+@[simp]
+lemma gradedPositiveMulQuotientπ_hom (he₀ : e ∈ 𝒜 0) :
+    (gradedPositiveMulQuotientπ he₀).hom = gradedPositiveMulQuotientMk he₀ := (rfl)
+
 /-- **The map `Ae / A₊e ⟶ M` sending the class of `x` to `x m`**, for an element `m` of an
 `A`-module `M` killed by `A₊e`. -/
 def gradedPositiveMulQuotientLift (he₀ : e ∈ 𝒜 0) {M : Type*} [AddCommGroup M] [Module A M] (m : M)
@@ -262,6 +275,59 @@ theorem gradedPositiveMulQuotient_piece_zero_eq_top (hneg : ∀ p < 0, 𝒜 p = 
     (gradedPositiveMulQuotient 𝒜 he₀).grading.piece 0 = ⊤ :=
   GradedModuleCat.piece_eq_top_of_concentrated fun _ hp =>
     gradedPositiveMulQuotient_piece_eq_bot hneg he he₀ hp
+
+variable (hneg : ∀ p < 0, 𝒜 p = ⊥)
+include hneg
+
+/-- In a nonnegatively graded algebra, every element of `A₊e` has vanishing components in all
+degrees `q ≤ 0`. -/
+theorem decompose_eq_zero_of_mem_gradedPositiveMulIdeal {f : A} (hf₀ : f ∈ 𝒜 0) {y : A}
+    (hy : y ∈ gradedPositiveMulIdeal 𝒜 f) {q : ℤ} (hq : q ≤ 0) : (decompose 𝒜 y q : A) = 0 := by
+  induction hy using Submodule.span_induction generalizing q with
+  | mem y hy =>
+    obtain ⟨p, hp, x, hx, rfl⟩ := hy
+    exact decompose_of_mem_ne 𝒜 (add_zero p ▸ SetLike.GradedMul.mul_mem hx hf₀) (by omega)
+  | zero => simp
+  | add y z _ _ hy hz => simp [hy hq, hz hq]
+  | smul a y _ hy =>
+    rw [smul_eq_mul]
+    induction a using DirectSum.Decomposition.inductionOn 𝒜 with
+    | zero => simp
+    | add a b ha hb =>
+      rw [add_mul, decompose_add, DirectSum.add_apply, Submodule.coe_add, ha, hb, add_zero]
+    | @homogeneous r a =>
+      obtain ⟨a, ha⟩ := a
+      rcases lt_or_ge r 0 with hr | hr
+      · rw [hneg r hr] at ha
+        simp [(Submodule.mem_bot k).1 ha]
+      · have h := coe_decompose_mul_add_of_left_mem 𝒜 (j := q - r) (b := y) ha
+        rw [add_sub_cancel] at h
+        rw [h, hy (by omega), mul_zero]
+
+/-- The head quotient is an isomorphism on each degree-zero coordinate `e • M₀`.
+No semisimplicity or splitting hypothesis is needed: the kernel `A₊e` has no degree-zero part. -/
+theorem bijective_smulPieceMap_gradedPositiveMulQuotientπ_zero {f : A}
+    (hf₀ : f ∈ 𝒜 0) (e : A) (he₀ : e ∈ 𝒜 0) :
+    Function.Bijective (GradedModuleCat.smulPieceMap e (gradedPositiveMulQuotientπ hf₀) 0) := by
+  refine ⟨(LinearMap.ker_eq_bot).1 ?_,
+    GradedModuleCat.smulPieceMap_surjective
+      (by simpa using gradedPositiveMulQuotientMk_surjective hf₀) 0⟩
+  refine (Submodule.eq_bot_iff _).2 fun x hx => ?_
+  have hx₀ : ((x : (Ideal.span {f} : Ideal A)) : A) ∈ 𝒜 0 := by
+    obtain ⟨y, hy, hxy⟩ := Submodule.mem_smul_pointwise_iff_exists _ _ _ |>.1 x.2
+    have hy₀ := (GradedModuleCat.mem_ofIdeal_piece_iff _).1 hy
+    rw [← hxy]
+    simpa using SetLike.GradedMul.mul_mem he₀ hy₀
+  have hxker : gradedPositiveMulQuotientMk hf₀ x = 0 := by
+    have hx' : GradedModuleCat.smulPieceMap e (gradedPositiveMulQuotientπ hf₀) 0 x = 0 := hx
+    have hval := congrArg Subtype.val hx'
+    rw [GradedModuleCat.coe_smulPieceMap_apply, gradedPositiveMulQuotientπ_hom] at hval
+    exact hval
+  have hdecomp := decompose_eq_zero_of_mem_gradedPositiveMulIdeal hneg hf₀
+    ((gradedPositiveMulQuotientMk_eq_zero_iff hf₀ _).1 hxker) le_rfl
+  have hxval : ((x : (Ideal.span {f} : Ideal A)) : A) = 0 := by
+    simpa only [decompose_of_mem_same 𝒜 hx₀] using hdecomp
+  exact Subtype.ext (Subtype.ext hxval)
 
 end CommRing
 
@@ -402,31 +468,6 @@ theorem isExhaustiveGradedSimpleFamily_gradedPositiveMulQuotient [Fintype I] [Mo
 
 variable (hneg : ∀ p < 0, 𝒜 p = ⊥)
 include hneg
-
-/-- In a nonnegatively graded algebra, every element of `A₊e` has vanishing components in all
-degrees `q ≤ 0`. -/
-theorem decompose_eq_zero_of_mem_gradedPositiveMulIdeal {f : A} (hf₀ : f ∈ 𝒜 0) {y : A}
-    (hy : y ∈ gradedPositiveMulIdeal 𝒜 f) {q : ℤ} (hq : q ≤ 0) : (decompose 𝒜 y q : A) = 0 := by
-  induction hy using Submodule.span_induction generalizing q with
-  | mem y hy =>
-    obtain ⟨p, hp, x, hx, rfl⟩ := hy
-    exact decompose_of_mem_ne 𝒜 (add_zero p ▸ SetLike.GradedMul.mul_mem hx hf₀) (by omega)
-  | zero => simp
-  | add y z _ _ hy hz => simp [hy hq, hz hq]
-  | smul a y _ hy =>
-    rw [smul_eq_mul]
-    induction a using DirectSum.Decomposition.inductionOn 𝒜 with
-    | zero => simp
-    | add a b ha hb =>
-      rw [add_mul, decompose_add, DirectSum.add_apply, Submodule.coe_add, ha, hb, add_zero]
-    | @homogeneous r a =>
-      obtain ⟨a, ha⟩ := a
-      rcases lt_or_ge r 0 with hr | hr
-      · rw [hneg r hr] at ha
-        simp [(Submodule.mem_bot k).1 ha]
-      · have h := coe_decompose_mul_add_of_left_mem 𝒜 (j := q - r) (b := y) ha
-        rw [add_sub_cancel] at h
-        rw [h, hy (by omega), mul_zero]
 
 /-- In a nonnegatively graded algebra, an element of `Ae` whose degree-zero component vanishes lies
 in `A₊e`. -/
