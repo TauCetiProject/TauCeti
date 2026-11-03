@@ -10,7 +10,9 @@ public import Mathlib.Algebra.Polynomial.AlgebraMap
 public import Mathlib.Algebra.Polynomial.Degree.Defs
 public import Mathlib.Algebra.Polynomial.Reverse
 public import Mathlib.Algebra.Polynomial.Laurent
+import Mathlib.LinearAlgebra.Matrix.ToLin
 import Mathlib.Tactic.ComputeDegree
+import TauCeti.Algebra.Polynomial.AlgebraMap
 import TauCeti.Algebra.Polynomial.BigOperators
 import TauCeti.Algebra.Polynomial.Reverse
 
@@ -82,15 +84,15 @@ matrices `A` and `B`, that is `A * V = V * B`, then it intertwines every polynom
 theorem aeval_mul_eq_mul_aeval {m : Type*} [Fintype m] [DecidableEq m] [CommSemiring R]
     {A : Matrix n n R} {B : Matrix m m R} {V : Matrix n m R} (h : A * V = V * B) (q : R[X]) :
     aeval A q * V = V * aeval B q := by
-  induction q using Polynomial.induction_on' with
-  | add p q hp hq => rw [map_add, map_add, Matrix.add_mul, Matrix.mul_add, hp, hq]
-  | monomial k a =>
-    have hpow : A ^ k * V = V * B ^ k := by
-      induction k with
-      | zero => simp
-      | succ k ih =>
-        rw [pow_succ, Matrix.mul_assoc, h, ← Matrix.mul_assoc, ih, Matrix.mul_assoc, ← pow_succ]
-    simp [aeval_monomial, Algebra.algebraMap_eq_smul_one, Matrix.smul_mul, Matrix.mul_smul, hpow]
+  have hA (C : Matrix n n R) : toLin' C = toLinAlgEquiv' C :=
+    LinearMap.ext fun v ↦ by rw [toLin'_apply, toLinAlgEquiv'_apply]
+  have hB (C : Matrix m m R) : toLin' C = toLinAlgEquiv' C :=
+    LinearMap.ext fun v ↦ by rw [toLin'_apply, toLinAlgEquiv'_apply]
+  have hAV := congr(toLin' $h)
+  rw [toLin'_mul, toLin'_mul, hA, hB] at hAV
+  apply toLin'.injective
+  rw [toLin'_mul, toLin'_mul, hA, hB, ← aeval_algHom_apply, ← aeval_algHom_apply]
+  exact aeval_comp_eq_comp_aeval hAV q
 
 variable [CommRing R]
 
