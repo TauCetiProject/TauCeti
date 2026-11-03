@@ -19,7 +19,8 @@ form an integral basis of the character lattice; their values determine every ot
 value. The two zero-weight diagonal entries are forced to be one by their brackets with
 root vectors.
 
-`mem_range_weightTorusPoints_iff_isDiag` gives the pointwise characterization, and
+`exists_weightTorusPoints_eq_iff_isDiag` gives the pointwise characterization, and
+`range_weightTorusPoints_eq_comap_diagonalTorus` gives the subgroup equality.
 `exists_torusCharacter_eq_of_preservesBracket_diagonal` applies even to diagonal bracket
 automorphisms not initially assumed to lie in the carrier.
 
@@ -177,9 +178,9 @@ theorem exists_torusCharacter_eq_of_preservesBracket_diagonal (d : Fin 26 → A�
 
 /-- A point of the characteristic-two short-root F₄ carrier belongs to the weight torus
 exactly when its matrix is diagonal. No field or reducedness assumption is needed. -/
-@[simp↓]
-theorem mem_range_weightTorusPoints_iff_isDiag (g : points A) :
-    g ∈ Set.range (weightTorusPoints A) ↔
+@[simp]
+theorem exists_weightTorusPoints_eq_iff_isDiag (g : points A) :
+    (∃ s, weightTorusPoints A s = g) ↔
       ((g : Matrix.GeneralLinearGroup (Fin 26) A) : Matrix (Fin 26) (Fin 26) A).IsDiag := by
   constructor
   · rintro ⟨s, rfl⟩
@@ -195,5 +196,13 @@ theorem mem_range_weightTorusPoints_iff_isDiag (g : points A) :
     simp only [coe_weightTorusPoints, F4ShortRoot.coe_weightTorusPoints,
       UniversalEnvelopingAlgebra.kostantTorusMatrix_apply, ← hd, diagGL_coe]
     exact congrArg Matrix.diagonal (funext fun a ↦ congrArg Units.val (hs a).symm)
+
+/-- Over every commutative 𝔽₂-algebra, the weight torus consists of all diagonal
+points of the short-root F₄ carrier. -/
+theorem range_weightTorusPoints_eq_comap_diagonalTorus :
+    (weightTorusPoints A).range = (diagonalTorus A 26).comap (points A).subtype := by
+  ext g
+  rw [MonoidHom.mem_range, exists_weightTorusPoints_eq_iff_isDiag, Subgroup.mem_comap,
+    Subgroup.subtype_apply, mem_diagonalTorus_iff]
 
 end TauCeti.F4ShortRoot.PrimeField
