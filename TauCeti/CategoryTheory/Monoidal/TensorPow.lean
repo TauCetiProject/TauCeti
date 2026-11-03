@@ -258,10 +258,14 @@ theorem tensorPowAddIso_hom_naturality {X Y : C} (f : X ⟶ Y) (m n : ℕ) :
     -- `n + (m + 1)` is definitionally `n + m + 1`, so `tensorPowMap_succ` applies up to `rfl`;
     -- rewriting the exponent instead would change the type of `tensorPowMap f`.
     rw [tensorPowAddIso_succ_hom, tensorPowAddIso_succ_hom, tensorPowMap_succ,
-      show tensorPowMap f (n + (m + 1)) = f ⊗ₘ tensorPowMap f (n + m) from rfl,
-      associator_naturality_assoc, tensorHom_def f, tensorHom_def f, Category.assoc,
-      ← MonoidalCategory.whiskerLeft_comp, ih, MonoidalCategory.whiskerLeft_comp, Category.assoc,
-      whisker_exchange_assoc]
+      show tensorPowMap f (n + (m + 1)) = f ⊗ₘ tensorPowMap f (n + m) from rfl]
+    calc _ = (α_ X (tensorPow X m) (tensorPow X n)).hom ≫
+          (f ⊗ₘ ((tensorPowMap f m ⊗ₘ tensorPowMap f n) ≫ (tensorPowAddIso Y m n).hom)) := by
+          monoidal
+      _ = _ := by
+          -- After the induction step, split `f ⊗ₘ -` into whiskerings so `monoidal` sees them.
+          rw [ih, tensorHom_def', tensorHom_def' f]
+          monoidal
 
 /-- Transporting along an equality of exponents commutes with the tensor powers of a morphism. -/
 @[reassoc]
@@ -277,9 +281,8 @@ theorem tensorPowSuccIso_hom_naturality {X Y : C} (f : X ⟶ Y) (n : ℕ) :
       (tensorPowSuccIso X n).hom ≫ tensorPowMap f (n + 1) := by
   have h : (tensorPowMap f n ⊗ₘ f) ≫ tensorPow Y n ◁ (ρ_ Y).inv =
       tensorPow X n ◁ (ρ_ X).inv ≫ (tensorPowMap f n ⊗ₘ tensorPowMap f 1) := by
-    rw [tensorPowMap_succ, tensorPowMap_zero, tensorHom_id, ← id_tensorHom, ← id_tensorHom,
-      tensorHom_comp_tensorHom, tensorHom_comp_tensorHom, rightUnitor_inv_naturality,
-      Category.id_comp, Category.comp_id]
+    rw [tensorPowMap_succ, tensorPowMap_zero]
+    monoidal
   rw [tensorPowSuccIso_hom, tensorPowSuccIso_hom, reassoc_of% h,
     tensorPowAddIso_hom_naturality_assoc, tensorPowMap_eqToHom f (Nat.add_comm 1 n),
     Category.assoc, Category.assoc]
