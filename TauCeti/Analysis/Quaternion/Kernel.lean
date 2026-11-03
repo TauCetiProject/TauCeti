@@ -74,7 +74,7 @@ theorem norm_cauchyFueterKernel (q q₀ : ℍ) :
 
 /-- The kernel times the displacement is the inverse squared distance, `G(r) * r = ‖r‖⁻²`,
 including at the pole, where both sides are `0`. -/
-theorem cauchyFueterKernel_mul_sub (q q₀ : ℍ) :
+theorem _root_.Quaternion.cauchyFueterKernel_mul_sub (q q₀ : ℍ) :
     cauchyFueterKernel q q₀ * (q - q₀) = ((‖q - q₀‖ ^ 2)⁻¹ : ℝ) := by
   rw [cauchyFueterKernel_eq, smul_mul_assoc, Quaternion.star_mul_self, normSq_eq_norm_mul_self,
     ← Quaternion.coe_smul, smul_eq_mul]

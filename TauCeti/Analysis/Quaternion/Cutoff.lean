@@ -21,12 +21,12 @@ To prove the Cauchy–Fueter formula with the divergence theorem, the pole of th
 The divergence of the cut-off field is then `G(q - q₀) * (∑ᵢ eᵢ ∂ᵢψ) * f q` plus `ψ` times the
 divergence of the original field. This file computes the first factor and its total mass.
 
-* `TauCeti.hasFDerivAt_cauchyFueterCutoff_norm_sub_div`: `q ↦ ψ(‖q - q₀‖ / ε)` is differentiable
+* `Quaternion.hasFDerivAt_cauchyFueterCutoff_norm_sub_div`: `q ↦ ψ(‖q - q₀‖ / ε)` is differentiable
   everywhere, with gradient `ε⁻¹ ψ'(‖q - q₀‖ / ε) (q - q₀) / ‖q - q₀‖`.
-* `TauCeti.cauchyFueterKernel_mul_sum_fderiv_cauchyFueterCutoff`: hence
+* `Quaternion.cauchyFueterKernel_mul_sum_fderiv_cauchyFueterCutoff`: hence
   `G(q - q₀) * ∑ᵢ (∂ᵢψ) eᵢ = ε⁻¹ ψ'(‖q - q₀‖ / ε) ‖q - q₀‖⁻³`, a real density supported on the
   annulus `ε / 2 ≤ ‖q - q₀‖ ≤ ε`.
-* `TauCeti.integral_cauchyFueterCutoff_density`: the density above has total mass `2π²` for
+* `Quaternion.integral_cauchyFueterCutoff_density`: the density above has total mass `2π²` for
   every `ε > 0` and `q₀`, the reciprocal of the normalization `1 / (2π²)` of the
   Cauchy–Fueter formula. It is computed with the polar formula
   `TauCeti.Quaternion.integral_fun_norm_dq_sub`, `∫ x, f ‖dq x - q₀‖ = 2π² ∫₀^∞ y³ f y`.
@@ -124,7 +124,7 @@ theorem integral_Ioi_deriv_cauchyFueterCutoff :
 /-- The cutoff `q ↦ ψ(‖q - q₀‖ / ε)` is differentiable at every `q`, with gradient
 `ε⁻¹ ψ'(‖q - q₀‖ / ε) (q - q₀) / ‖q - q₀‖`. At the pole both sides vanish, since the cutoff is
 identically `0` near `q₀` (on the ball of radius `ε / 2` when `ε > 0`, everywhere otherwise). -/
-theorem hasFDerivAt_cauchyFueterCutoff_norm_sub_div (q q₀ : ℍ) (ε : ℝ) :
+theorem _root_.Quaternion.hasFDerivAt_cauchyFueterCutoff_norm_sub_div (q q₀ : ℍ) (ε : ℝ) :
     HasFDerivAt (fun p ↦ cauchyFueterCutoff (‖p - q₀‖ / ε))
       ((ε⁻¹ * deriv cauchyFueterCutoff (‖q - q₀‖ / ε) / ‖q - q₀‖) • innerSL ℝ (q - q₀)) q := by
   rcases eq_or_ne q q₀ with rfl | hq
@@ -156,15 +156,15 @@ theorem hasFDerivAt_cauchyFueterCutoff_norm_sub_div (q q₀ : ℍ) (ε : ℝ) :
 and the identity uses `∑ᵢ (∂ᵢψ) eᵢ = ε⁻¹ ψ'(‖r‖ / ε) r / ‖r‖` and `G(r) * r = ‖r‖⁻²` for
 `r = q - q₀`. This is the factor in the divergence of the cut-off kernel-weighted field
 `G(q - q₀) * eᵢ * f q * ψ(‖q - q₀‖ / ε)` that does not involve the derivative of `f`. -/
-theorem cauchyFueterKernel_mul_sum_fderiv_cauchyFueterCutoff (q q₀ : ℍ) (ε : ℝ) :
+theorem _root_.Quaternion.cauchyFueterKernel_mul_sum_fderiv_cauchyFueterCutoff (q q₀ : ℍ) (ε : ℝ) :
     cauchyFueterKernel q q₀ * ∑ i : Fin 4,
         fderiv ℝ (fun p ↦ cauchyFueterCutoff (‖p - q₀‖ / ε)) q (dq (Pi.single i 1)) •
           dq (Pi.single i 1) =
       ((ε⁻¹ * deriv cauchyFueterCutoff (‖q - q₀‖ / ε) * (‖q - q₀‖ ^ 3)⁻¹ : ℝ) : ℍ) := by
-  simp only [(hasFDerivAt_cauchyFueterCutoff_norm_sub_div q q₀ ε).fderiv,
+  simp only [(_root_.Quaternion.hasFDerivAt_cauchyFueterCutoff_norm_sub_div q q₀ ε).fderiv,
     FunLike.coe_smul, Pi.smul_apply, innerSL_apply_apply, smul_eq_mul, mul_smul,
     ← Finset.smul_sum, _root_.Quaternion.sum_inner_dq_single_smul, mul_smul_comm,
-    cauchyFueterKernel_mul_sub, ← _root_.Quaternion.coe_smul]
+    _root_.Quaternion.cauchyFueterKernel_mul_sub, ← _root_.Quaternion.coe_smul]
   congr 1
   ring
 
@@ -174,7 +174,7 @@ theorem cauchyFueterKernel_mul_sum_fderiv_cauchyFueterCutoff (q q₀ : ℍ) (ε 
 `ε⁻¹ ψ'(‖dq x - q₀‖ / ε) ‖dq x - q₀‖⁻³` over the coordinate space is `2π²`, where
 `ψ = cauchyFueterCutoff`. This is the reciprocal of the normalization of the Cauchy–Fueter
 formula. -/
-theorem integral_cauchyFueterCutoff_density (q₀ : ℍ) {ε : ℝ} (hε : 0 < ε) :
+theorem _root_.Quaternion.integral_cauchyFueterCutoff_density (q₀ : ℍ) {ε : ℝ} (hε : 0 < ε) :
     ∫ x : Fin 4 → ℝ,
         ε⁻¹ * deriv cauchyFueterCutoff (‖dq x - q₀‖ / ε) * (‖dq x - q₀‖ ^ 3)⁻¹ =
       2 * π ^ 2 := by
