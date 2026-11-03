@@ -140,7 +140,7 @@ theorem isCartanWeightVector_loweringMonomial
       rw [b.lie_h_f, Pi.neg_apply, Int.cast_smul_eq_zsmul]
     have h := IsCartanWeightVector.integralDividedPower b.f hα ih (p.2 + 1)
     rw [Module.End.smul_def, ← TauCeti.Associative.map_dividedPower] at h
-    rw [loweringMonomial_cons, map_mul, Module.End.mul_apply]
+    rw [loweringMonomial_cons, map_mul, mul_apply_eq_comp]
     convert h using 2
     rw [List.map_cons, List.sum_cons, smul_neg]
     abel
@@ -183,7 +183,7 @@ private theorem dividedPower_ι_f_apply_mem_span (i : ι) (n : ℕ) {x : V}
   | zero => simpa using Submodule.subset_span (mem_range_self l)
   | succ n =>
     refine Submodule.subset_span ⟨(i, n) :: l, ?_⟩
-    simp [map_mul, Module.End.mul_apply]
+    simp [map_mul, mul_apply_eq_comp]
 
 /-- A binomial coefficient of an element acting on every lowering monomial by an integer
 preserves the span of the lowering monomials. -/
@@ -203,7 +203,7 @@ private theorem exists_ι_h_add_intCast_apply_loweringMonomial
   refine ⟨(wt - (l.map fun p => (p.2 + 1) • b.A p.1).sum) j + c, ?_⟩
   rw [map_add, map_intCast, LinearMap.add_apply,
     (isCartanWeightVector_iff b.h ρ).1 (b.isCartanWeightVector_loweringMonomial hv l) j,
-    Module.End.intCast_apply, ← Int.cast_smul_eq_zsmul ℚ, ← add_smul]
+    intCast_apply_eq_smul, ← Int.cast_smul_eq_zsmul ℚ, ← add_smul]
   push_cast
   rfl
 
@@ -224,21 +224,21 @@ private theorem dividedPower_ι_e_apply_loweringMonomial_mem
     | succ m =>
       have h0 := (TauCeti.Associative.dividedPower_apply_eq_zero_iff
         (ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (b.e i))) (m + 1) v).2
-          (by rw [pow_succ, Module.End.mul_apply, hve i, map_zero])
+          (by rw [pow_succ, mul_apply_eq_comp, hve i, map_zero])
       rw [Module.End.smul_def] at h0
-      rw [loweringMonomial_nil, map_one, Module.End.one_apply, TauCeti.Associative.map_dividedPower,
+      rw [loweringMonomial_nil, map_one, one_apply_eq_self, TauCeti.Associative.map_dividedPower,
         h0]
       exact Submodule.zero_mem _
   | cons p l ih =>
     obtain ⟨j, k⟩ := p
-    rw [loweringMonomial_cons, map_mul, Module.End.mul_apply, ← Module.End.mul_apply, ← map_mul]
+    rw [loweringMonomial_cons, map_mul, mul_apply_eq_comp, ← mul_apply_eq_comp, ← map_mul]
     by_cases hij : j = i
     · subst hij
       have hsl2 := b.sl2 j
       rw [TauCeti.Sl2.dividedPower_ι_e_mul_dividedPower_ι_f hsl2.lie_e_f hsl2.lie_h_e_nsmul
         hsl2.lie_h_f_nsmul, map_sum, LinearMap.sum_apply]
       refine Submodule.sum_mem _ fun r _ => ?_
-      rw [map_mul, map_mul, Module.End.mul_apply, Module.End.mul_apply]
+      rw [map_mul, map_mul, mul_apply_eq_comp, mul_apply_eq_comp]
       refine dividedPower_ι_f_apply_mem_span j _ (ringChoose_apply_mem_span (fun l' => ?_) r
         (ih (m - r)))
       obtain ⟨z, hz⟩ := exists_ι_h_add_intCast_apply_loweringMonomial hv j
@@ -248,7 +248,7 @@ private theorem dividedPower_ι_e_apply_loweringMonomial_mem
           (_root_.UniversalEnvelopingAlgebra.ι ℚ (b.f j)) := by
         rw [commute_iff_lie_eq, ← LieHom.map_lie, b.lie_e_f_ne i j (Ne.symm hij), map_zero]
       rw [(TauCeti.Associative.commute_dividedPower_dividedPower hcomm m (k + 1)).eq, map_mul,
-        Module.End.mul_apply]
+        mul_apply_eq_comp]
       exact dividedPower_ι_f_apply_mem_span j (k + 1) (ih m)
 
 /-- **The span of the lowering monomials is stable under the Kostant form.** -/

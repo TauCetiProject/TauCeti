@@ -54,7 +54,7 @@ theorem BilinMap.rTensor_baseChange_apply (C : BilinMap R M P) {S T : Type*} [Co
     φ.toLinearMap.rTensor P (BilinMap.baseChange S C x y) =
       BilinMap.baseChange T C (φ.toLinearMap.rTensor M x) (φ.toLinearMap.rTensor M y) := by
   induction x using TensorProduct.inductionOn with
-  | add x x' hx hx' => simp only [map_add, add_apply, hx, hx']
+  | add x x' hx hx' => simp only [map_add, LinearMap.add_apply, hx, hx']
   | tmul s m =>
     induction y using TensorProduct.inductionOn with
     | add y y' hy hy' => simp only [map_add, hy, hy']
@@ -68,7 +68,7 @@ theorem BilinMap.baseChange_compl₁₂ (C : BilinMap R M P) (f g : M' →ₗ[R]
       (BilinMap.baseChange S C).compl₁₂ (f.baseChange S) (g.baseChange S) := by
   refine LinearMap.ext fun x ↦ LinearMap.ext fun y ↦ ?_
   induction x using TensorProduct.inductionOn with
-  | add x x' hx hx' => simp only [map_add, add_apply, hx, hx']
+  | add x x' hx hx' => simp only [map_add, LinearMap.add_apply, hx, hx']
   | tmul s m =>
     induction y using TensorProduct.inductionOn with
     | add y y' hy hy' => simp only [map_add, hy, hy']
@@ -81,7 +81,7 @@ theorem BilinMap.baseChange_compr₂ (C : BilinMap R M P) (h : P →ₗ[R] P') (
     BilinMap.baseChange S (C.compr₂ h) = (BilinMap.baseChange S C).compr₂ (h.baseChange S) := by
   refine LinearMap.ext fun x ↦ LinearMap.ext fun y ↦ ?_
   induction x using TensorProduct.inductionOn with
-  | add x x' hx hx' => simp only [map_add, add_apply, hx, hx']
+  | add x x' hx hx' => simp only [map_add, LinearMap.add_apply, hx, hx']
   | tmul s m =>
     induction y using TensorProduct.inductionOn with
     | add y y' hy hy' => simp only [map_add, hy, hy']
@@ -102,7 +102,7 @@ theorem BilinMap.baseChange_tmul_one (C : BilinMap R M P) (S : Type*) [CommSemir
     [Algebra R S] (y : M) (z : S ⊗[R] M) :
     BilinMap.baseChange S C z (1 ⊗ₜ y) = (C.flip y).baseChange S z := by
   induction z using TensorProduct.inductionOn with
-  | add x x' hx hx' => simp only [map_add, add_apply, hx, hx']
+  | add x x' hx hx' => simp only [map_add, LinearMap.add_apply, hx, hx']
   | tmul s m => simp
 
 /-- The base change of the multiplication of an `R`-algebra `B` is the multiplication of
@@ -112,7 +112,7 @@ theorem BilinMap.baseChange_mul {B : Type*} [Semiring B] [Algebra R B] (S : Type
     [CommSemiring S] [Algebra R S] (x y : S ⊗[R] B) :
     BilinMap.baseChange S (LinearMap.mul R B) x y = x * y := by
   induction x using TensorProduct.inductionOn with
-  | add x x' hx hx' => simp only [map_add, add_apply, hx, hx', add_mul]
+  | add x x' hx hx' => simp only [LinearMap.add_apply, hx, hx', map_add, add_mul]
   | tmul s b =>
     induction y using TensorProduct.inductionOn with
     | add y y' hy hy' => simp only [map_add, hy, hy', mul_add]
