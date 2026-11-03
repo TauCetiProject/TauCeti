@@ -39,9 +39,6 @@ group nor any restriction on the characteristic is needed.
 
 * `TauCeti.norm_tateUniformizationX_sub_le`, `TauCeti.norm_tateUniformizationY_sub_le`: the
   Tate coordinates are the nodal parametrisation up to `max (‖q‖ ‖u‖) (‖q‖ / ‖u‖)`.
-* `TauCeti.norm_tsum_sub_tsum_add_tsum_sub_tsum_le`: a series at `u` and a series at `u⁻¹` of
-  `1`-Lipschitz terms, as in the expansions of `X` and `Y`, together depend on `u` in a
-  `‖q‖`-Lipschitz way on the unit circle.
 * `TauCeti.norm_tateUniformizationX_sub_sub_le`, `TauCeti.norm_tateUniformizationY_sub_sub_le`:
   on the unit circle the differences between the Tate coordinates and the nodal parametrisation
   are Lipschitz with constant `‖q‖`.
@@ -157,35 +154,6 @@ theorem norm_tateUniformizationY_sub_le_of_norm_eq_one (q u : Kˣ) (hq : ‖(q :
     rw [hu]
     exact (one_lt_inv₀ (norm_pos_iff.mpr q.ne_zero)).mpr hq
   simpa [hu] using norm_tateUniformizationY_sub_le q u (by rwa [hu]) huq
-
-omit [CompleteSpace K] [IsUltrametricDist K] in
-/-- A one-sided series `∑_{n ≥ 1} f(qⁿ u)` at `u` and one `∑_{n ≥ 1} g(qⁿ u⁻¹)` at `u⁻¹`, with
-values in an ultrametric group, together depend on `u` in a `‖q‖`-Lipschitz way on the unit
-circle when their terms are `1`-Lipschitz on the open unit ball and `‖q‖ < 1`. This is the shape
-of the expansions `tateUniformizationX_eq_tsum_nat` and `tateUniformizationY_eq_tsum_nat`. Only
-the values need to be ultrametric. -/
-theorem norm_tsum_sub_tsum_add_tsum_sub_tsum_le {E : Type*} [NormedAddCommGroup E]
-    [IsUltrametricDist E] {q u u' : K} (hq : ‖q‖ < 1) (hu : ‖u‖ = 1) (hu' : ‖u'‖ = 1)
-    (f g : K → E) (hf : ∀ t t' : K, ‖t‖ < 1 → ‖t'‖ < 1 → ‖f t - f t'‖ ≤ ‖t - t'‖)
-    (hg : ∀ t t' : K, ‖t‖ < 1 → ‖t'‖ < 1 → ‖g t - g t'‖ ≤ ‖t - t'‖)
-    (hfs : Summable fun n : ℕ ↦ f (q ^ (n + 1) * u))
-    (hfs' : Summable fun n : ℕ ↦ f (q ^ (n + 1) * u'))
-    (hgs : Summable fun n : ℕ ↦ g (q ^ (n + 1) * u⁻¹))
-    (hgs' : Summable fun n : ℕ ↦ g (q ^ (n + 1) * u'⁻¹)) :
-    ‖(∑' n : ℕ, f (q ^ (n + 1) * u) - ∑' n : ℕ, f (q ^ (n + 1) * u')) +
-        (∑' n : ℕ, g (q ^ (n + 1) * u⁻¹) - ∑' n : ℕ, g (q ^ (n + 1) * u'⁻¹))‖ ≤
-      ‖q‖ * ‖u - u'‖ := by
-  have hqw (w : K) (hw : ‖w‖ = 1) : ‖q * w‖ < 1 := by rwa [norm_mul, hw, mul_one]
-  have hinv : ‖q * (u⁻¹ - u'⁻¹)‖ = ‖q‖ * ‖u - u'‖ := by
-    have h₀ : u ≠ 0 := norm_ne_zero_iff.mp (by rw [hu]; exact one_ne_zero)
-    have h₀' : u' ≠ 0 := norm_ne_zero_iff.mp (by rw [hu']; exact one_ne_zero)
-    rw [norm_mul, ← dist_eq_norm, dist_inv_inv₀ h₀ h₀', hu, hu', mul_one, div_one, dist_eq_norm]
-  refine (IsUltrametricDist.norm_add_le_max _ _).trans (max_le ?_ ?_)
-  · rw [← norm_mul]
-    exact norm_tsum_sub_tsum_le_norm_mul f hf hq.le (hqw _ hu) (hqw _ hu') hfs hfs'
-  · rw [← hinv]
-    exact norm_tsum_sub_tsum_le_norm_mul g hg hq.le (hqw _ (by rw [norm_inv, hu, inv_one]))
-      (hqw _ (by rw [norm_inv, hu', inv_one])) hgs hgs'
 
 /-- **The first Tate coordinate is the nodal parametrisation up to a `‖q‖`-Lipschitz error.** On
 the unit circle, `u ↦ X(u) - u / (1 - u)²` is Lipschitz with constant `‖q‖`. -/
