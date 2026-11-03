@@ -58,24 +58,7 @@ theorem fixedSubmoduleBaseChange_surjective_iff :
     (Sum.elim (1 : I → ℤˣ) (fun a ↦ inversionSign B σ a))
     (reindex σ hσ).toLinearMap (reindex_basis σ hσ)
     (Sum.map Quotient.out Quotient.out) (existsUnique_sameCycle_basis σ hσ) A]
-  suffices hcycles :
-      IsEmpty {j : Quotient (Equiv.Perm.SameCycle.setoid σ) ⊕
-          Quotient (Equiv.Perm.SameCycle.setoid (normTwoShellCongr hσ)) //
-        (Equiv.Perm.sumCongr σ (normTwoShellCongr hσ)).monodromy
-          (Sum.elim (1 : I → ℤˣ) (fun a ↦ inversionSign B σ a))
-          (Sum.map Quotient.out Quotient.out j) = -1} ↔
-      IsEmpty {C : Quotient (Equiv.Perm.SameCycle.setoid (normTwoShellCongr hσ)) //
-        monodromy σ hσ C = -1} by
-    exact or_congr_left hcycles
-  constructor
-  · intro h
-    refine ⟨fun C ↦ h.false ⟨.inr C.val, ?_⟩⟩
-    exact (monodromy_basis_inr σ hσ C.val).trans C.property
-  · intro h
-    refine ⟨?_⟩
-    rintro ⟨O | C, hC⟩
-    · simp at hC
-    · exact h.false ⟨C, (monodromy_basis_inr σ hσ C).symm.trans hC⟩
+  exact or_congr_left (negativeCycleEquiv σ hσ).isEmpty_congr
 
 /-- If there are no negative root cycles or the coefficient ring has no `2`-torsion, the
 actual scalar-extension comparison for the integral fixed lattice is an equivalence. -/
