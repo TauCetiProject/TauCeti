@@ -82,7 +82,7 @@ private theorem subsingleton_h1_abelianizationProP_of_isPGroup_aux (p m : ℕ)
         IsOpen (V : Set G) → IsPGroup p (G ⧸ V) →
           Subsingleton (H1 (G ⧸ V) (Additive (abelianizationProP p G V))) := by
   induction m using Nat.strong_induction_on with
-  | h m ih =>
+  | ind m ih =>
       intro G _ _ _ _ _ V _ hm hG hV hpV
       have : Finite (G ⧸ V) := V.quotient_finite_of_isOpen hV
       rcases subsingleton_or_nontrivial (G ⧸ V) with htrivial | hnontrivial

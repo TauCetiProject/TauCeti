@@ -618,7 +618,7 @@ theorem commute_demazureOperator_of_isOrthogonal (h : P.IsOrthogonal i j) :
     Commute (P.demazureOperator i) (P.demazureOperator j) := by
   obtain ⟨hij, hji⟩ := h
   refine LinearMap.ext fun f ↦ P.isLeftRegular_A1A1 (i := i) (j := j) rfl rfl ?_
-  simp only [Module.End.mul_apply]
+  simp only [mul_apply_eq_comp]
   rw [P.mul_demazureOperator_ij_A1A1 hji rfl rfl rfl rfl,
     P.mul_demazureOperator_ji_A1A1 hij rfl rfl rfl rfl,
     P.map_braid_A1A1 hij hji rfl rfl]
@@ -629,7 +629,7 @@ theorem demazureOperator_braid_three (hij : P.pairing i j = -1) (hji : P.pairing
     P.demazureOperator i * P.demazureOperator j * P.demazureOperator i =
       P.demazureOperator j * P.demazureOperator i * P.demazureOperator j := by
   refine LinearMap.ext fun f ↦ P.isLeftRegular_A2 hji rfl rfl ?_
-  simp only [Module.End.mul_apply]
+  simp only [mul_apply_eq_comp]
   rw [P.mul_demazureOperator_ij_A2 hij hji rfl rfl rfl rfl,
     P.mul_demazureOperator_ji_A2 hij hji rfl rfl rfl rfl,
     P.map_braid_A2 hij hji rfl rfl]
@@ -642,7 +642,7 @@ theorem demazureOperator_braid_four (hij : P.pairing i j = -1) (hji : P.pairing 
       P.demazureOperator j * P.demazureOperator i * P.demazureOperator j *
         P.demazureOperator i := by
   refine LinearMap.ext fun f ↦ P.isLeftRegular_B2 hij hji rfl rfl ?_
-  simp only [Module.End.mul_apply]
+  simp only [mul_apply_eq_comp]
   rw [P.mul_demazureOperator_ij_B2 hij hji rfl rfl rfl rfl,
     P.mul_demazureOperator_ji_B2 hij hji rfl rfl rfl rfl,
     P.map_braid_B2 hij hji rfl rfl]
@@ -656,7 +656,7 @@ theorem demazureOperator_braid_six (hij : P.pairing i j = -1) (hji : P.pairing j
       P.demazureOperator j * P.demazureOperator i * P.demazureOperator j * P.demazureOperator i *
         P.demazureOperator j * P.demazureOperator i := by
   refine LinearMap.ext fun f ↦ P.isLeftRegular_G2 hij hji rfl rfl ?_
-  simp only [Module.End.mul_apply]
+  simp only [mul_apply_eq_comp]
   rw [P.mul_demazureOperator_ij_G2 hij hji rfl rfl rfl rfl,
     P.mul_demazureOperator_ji_G2 hij hji rfl rfl rfl rfl,
     P.map_braid_G2 hij hji rfl rfl]

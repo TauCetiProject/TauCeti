@@ -13,6 +13,8 @@ public import TauCeti.RingTheory.Henselian.Basic
 If `(R, I)` is henselian and `φ : R →+* S` is surjective, then `(S, I.map φ)` is
 henselian. In particular, one can quotient by any ideal, not only an ideal contained
 in `I`. This permanence result is used when changing the ambient ring of a henselian pair.
+The local form `RingHom.henselianLocalRing_of_surjective` passes from a henselian local ring
+to any nontrivial quotient.
 
 ## References
 
@@ -31,9 +33,12 @@ variable {R S : Type*} [CommRing R] [CommRing S]
 condition on its kernel relative to the henselian ideal. -/
 theorem henselianRing_of_surjective (φ : R →+* S) (hφ : Function.Surjective φ)
     (I : Ideal R) [HenselianRing R I] : HenselianRing S (I.map φ) := by
-  have hJac : I.map φ ≤ Ideal.jacobson ⊥ := by
-    rw [Ideal.map_le_iff_le_comap, Ideal.comap_jacobson_of_surjective hφ]
-    exact HenselianRing.jac.trans (Ideal.jacobson_mono bot_le)
+  have hJac : I.map φ ≤ Ring.jacobson S := by
+    rw [← Ideal.jacobson_bot, Ideal.map_le_iff_le_comap,
+      Ideal.comap_jacobson_of_surjective hφ]
+    have hI : I ≤ Ideal.jacobson ⊥ := by
+      simpa only [Ideal.jacobson_bot] using (HenselianRing.jac (R := R) (I := I))
+    exact hI.trans (Ideal.jacobson_mono bot_le)
   refine ⟨hJac, fun f _ a₀ ha₀ hd => ?_⟩
   /- A polynomial over S lifts to a polynomial g over R, but its approximate root and
   invertible derivative need not lift with the same properties. Multiplying g by a
@@ -41,7 +46,7 @@ theorem henselianRing_of_surjective (φ : R →+* S) (hφ : Function.Surjective 
   ker φ gives a polynomial with value in I and derivative exactly one. Apply
   Polynomial.exists_isRoot_sub_mem, the nonmonic form of Hensel's lemma, to this
   corrected polynomial. -/
-  have := isLocalHom_of_le_jacobson_bot (I.map φ) hJac
+  have := _root_.isLocalHom_of_le_jacobson hJac
   obtain ⟨u, hu⟩ := isUnit_of_map_unit (Ideal.Quotient.mk (I.map φ)) _ hd
   obtain ⟨b, hb⟩ := hφ (↑u⁻¹ : S)
   obtain ⟨a, rfl⟩ := hφ a₀
@@ -70,6 +75,17 @@ theorem henselianRing_of_surjective (φ : R →+* S) (hφ : Function.Surjective 
   · rw [IsRoot.def]
     exact (IsUnit.of_mul_eq_one _ hder).mul_right_eq_zero.mp hroot
   · simpa only [map_sub] using Ideal.mem_map_of_mem φ hxa
+
+/-- A surjective ring map from a henselian local ring to a nontrivial ring has a henselian
+local target. In particular, the quotient of a henselian local ring by a proper ideal is
+henselian local. -/
+theorem henselianLocalRing_of_surjective [HenselianLocalRing R] [Nontrivial S] (φ : R →+* S)
+    (hφ : Function.Surjective φ) : HenselianLocalRing S := by
+  have := IsLocalRing.of_surjective' φ hφ
+  have : HenselianRing S (IsLocalRing.maximalIdeal S) :=
+    IsLocalRing.map_maximalIdeal_of_surjective φ hφ ▸
+      φ.henselianRing_of_surjective hφ (IsLocalRing.maximalIdeal R)
+  exact TauCeti.HenselianRing.henselianLocalRing S
 
 end RingHom
 

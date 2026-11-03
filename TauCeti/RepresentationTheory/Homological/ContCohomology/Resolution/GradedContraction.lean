@@ -63,7 +63,8 @@ a homogeneous cocycle is its class in continuous cohomology
   class of a cocycle is the invariant vector given by its retraction.
 * `TopRep.ResolutionContraction.gradedCohomologyClass_eq_of_ι_eq`: over a locally compact group,
   the class depends on the contraction only through its augmentation.
-* `TopRep.ResolutionContraction.coeffMap_gradedCohomologyClass_degreeCast`: equal cocycles read
+* `TopRep.ResolutionContraction.gradedCohomologyClass_degreeCast` and
+  `TopRep.ResolutionContraction.coeffMap_gradedCohomologyClass_degreeCast`: equal cocycles read
   in equal degrees have classes related by `degreeCast`.
 * `TopRep.gradedCohomologyClass_gradedResolutionContraction`: on the total coinduced resolution,
   the class of a homogeneous cocycle is its class in continuous cohomology.
@@ -299,6 +300,17 @@ theorem coeffMap_gradedCohomologyClass_degreeCast {Y : TopRep.{max v w} k G} (b 
     TauCeti.ContinuousCohomology.coeffMap b n' (c.gradedCohomologyClass z' hz' hinv' hdz') =
       (TauCeti.ContinuousCohomology.degreeCast Y h).hom
         (TauCeti.ContinuousCohomology.coeffMap b n (c.gradedCohomologyClass z hz hinv hdz)) := by
+  subst h hzz
+  simp
+
+/-- **Transport along an equality of degrees.** Equal homogeneous cocycles `z' = z`, read in equal
+degrees `n = n'`, have classes that agree after transporting the degree with `degreeCast`. -/
+theorem gradedCohomologyClass_degreeCast {n n' : ℕ} (h : n = n') {z z' : M.V} (hzz : z' = z)
+    (hz : z ∈ ℳ n) (hz' : z' ∈ ℳ n') (hinv : ∀ g, M.ρ g z = z) (hinv' : ∀ g, M.ρ g z' = z')
+    (hdz : d.hom z = 0) (hdz' : d.hom z' = 0) :
+    c.gradedCohomologyClass z' hz' hinv' hdz' =
+      (TauCeti.ContinuousCohomology.degreeCast X h).hom
+        (c.gradedCohomologyClass z hz hinv hdz) := by
   subst h hzz
   simp
 

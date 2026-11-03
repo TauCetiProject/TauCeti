@@ -74,8 +74,8 @@ polynomial. -/
 theorem _root_.Polynomial.exists_iterate_smul_derivative'_apply_eq_zero [CommSemiring R] (r : R)
     (p : R[X]) : ∃ n, (r • derivative' : Derivation R R[X] R[X])^[n] p = 0 := by
   refine ⟨p.natDegree + 1, ?_⟩
-  rw [← Derivation.coeFn_coe, ← Module.End.coe_pow, Derivation.coe_smul_linearMap, smul_pow,
-    LinearMap.smul_apply, Module.End.pow_apply, Derivation.coeFn_coe, coe_derivative',
+  rw [← Derivation.coeFn_coe, ← FunLike.coe_pow_eq_iterate, Derivation.coe_smul_linearMap, smul_pow,
+    LinearMap.smul_apply, _root_.pow_apply_eq_iterate, Derivation.coeFn_coe, coe_derivative',
     iterate_derivative_eq_zero (Nat.lt_succ_self _), smul_zero]
 
 /-- The `k`-th derivative of `p (a X + b)` is `a ^ k p⁽ᵏ⁾ (a X + b)`. -/

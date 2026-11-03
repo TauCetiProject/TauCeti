@@ -8,6 +8,7 @@ module
 public import Mathlib.RingTheory.DedekindDomain.Ideal.Lemmas
 public import Mathlib.RingTheory.DiscreteValuationRing.Basic
 public import Mathlib.RingTheory.LocalRing.Quotient
+import Mathlib.RingTheory.Ideal.IsPrincipalPowQuotient
 import Mathlib.RingTheory.Ideal.Norm.AbsNorm
 
 /-!
@@ -31,6 +32,8 @@ distinct, a discrete valuation ring is also infinite.
   elements of additive valuation `1`.
 * `TauCeti.IsDiscreteValuationRing.natCard_quotient_maximalIdeal_pow`: the quotient by `𝔪 ^ n`
   has cardinality `Nat.card (ResidueField S) ^ n`.
+* `TauCeti.IsDiscreteValuationRing.natCard_map_maximalIdeal_pow`: the graded piece
+  `𝔪 ^ n / 𝔪 ^ (n + 1)` has as many elements as the residue field.
 * `TauCeti.IsDiscreteValuationRing.quotient_mk_eq_iff_le_addVal`: equality modulo `𝔪 ^ n` is
   equivalent to `n ≤ addVal (x - y)`.
 * `Irreducible.residue_eq_zero_iff_dvd`: for a uniformizer `ϖ`, the residue of `x` vanishes
@@ -79,6 +82,15 @@ theorem natCard_quotient_maximalIdeal_pow (n : ℕ) :
     (_root_.IsDiscreteValuationRing.not_a_field S), Submodule.cardQuot_apply]
   -- The residue field is defined as the quotient by the maximal ideal.
   rfl
+
+/-- The graded piece `𝔪 ^ n / 𝔪 ^ (n + 1)` of a discrete valuation ring, viewed as an ideal of
+`S ⧸ 𝔪 ^ (n + 1)`, has as many elements as the residue field. -/
+theorem natCard_map_maximalIdeal_pow (n : ℕ) :
+    Nat.card ((maximalIdeal S ^ n).map (Ideal.Quotient.mk (maximalIdeal S ^ (n + 1)))) =
+      Nat.card (ResidueField S) :=
+  (Nat.card_congr (((maximalIdeal S).quotEquivPowQuotPowSuccEquiv
+    (IsPrincipalIdealRing.principal _) _root_.IsDiscreteValuationRing.not_a_field' n).trans
+      ((maximalIdeal S).powQuotPowSuccEquivMapMkPowSuccPow n))).symm
 
 /-- The additive valuation of a nonzero element of a discrete valuation ring is the multiplicity
 of the maximal ideal in the principal ideal it generates. -/

@@ -7,6 +7,7 @@ module
 
 public import Mathlib.LinearAlgebra.Quotient.Bilinear
 public import TauCeti.Algebra.Homology.AInfinity.Algebra.DG
+public import TauCeti.Algebra.Homology.SquareZero
 public import TauCeti.Algebra.Module.GradedModule.Quotient
 
 /-!
@@ -45,6 +46,8 @@ strict morphisms of these `A∞` algebras.
 * `TauCeti.AInfinityAlgebra.cohomologyClass`: the class represented by a cycle.
 * `TauCeti.AInfinityAlgebra.cohomologyEquivOfCyclesEqTop`: the class-map equivalence when all
   elements are cycles.
+* `TauCeti.AInfinityAlgebra.cohomologyEquivHomology`: the cohomology is the homology
+  `ker m₁ ⧸ im m₁` of the unary operation as a square-zero endomorphism.
 * `TauCeti.AInfinityAlgebra.cohomologyMul`: the product on cohomology induced by the binary
   operation.
 * `TauCeti.AInfinityAlgebra.instNonUnitalRingCohomology`, together with the scalar tower and
@@ -271,6 +274,39 @@ theorem cohomologyClass_eq_zero_iff (𝒜 : AInfinityAlgebra R A) {x : A}
 theorem cohomologyClass_m_one_eq_zero (𝒜 : AInfinityAlgebra R A) (x : A) :
     𝒜.cohomologyClass (𝒜.mem_cycles.mpr (𝒜.stasheff_arity_one x)) = 0 :=
   (𝒜.cohomologyClass_eq_zero_iff _).mpr (𝒜.mem_boundaries.mpr ⟨x, rfl⟩)
+
+/-! ### Comparison with the homology of the unary operation -/
+
+/-- The cohomology of an `A∞` algebra is the homology `ker m₁ ⧸ im m₁` of its unary operation,
+viewed as a square-zero linear endomorphism (`LinearMap.homology`). -/
+def cohomologyEquivHomology (𝒜 : AInfinityAlgebra R A) :
+    𝒜.Cohomology ≃ₗ[R] 𝒜.differential.homology 𝒜.differential_comp_self_eq_zero :=
+  Submodule.Quotient.equiv _ _ (LinearEquiv.ofEq _ _ 𝒜.cycles_def) <| by
+    ext z
+    simp only [Submodule.mem_map, LinearMap.mem_boundariesInKer, mem_boundariesInCycles,
+      boundaries_def]
+    refine ⟨fun ⟨w, hw, hwz⟩ ↦ ?_, fun hz ↦ ⟨⟨z, by rw [cycles_def]; exact z.2⟩, hz, ?_⟩⟩
+    · rw [← hwz]
+      simpa only [LinearEquiv.coe_coe, LinearEquiv.coe_ofEq_apply] using hw
+    · exact Subtype.ext (LinearEquiv.coe_ofEq_apply _ _)
+
+/-- The comparison sends the cohomology class of a cycle to its homology class. -/
+@[simp]
+theorem cohomologyEquivHomology_cohomologyClass (𝒜 : AInfinityAlgebra R A) {x : A}
+    (hx : x ∈ 𝒜.cycles) :
+    𝒜.cohomologyEquivHomology (𝒜.cohomologyClass hx) =
+      𝒜.differential.homologyπ 𝒜.differential_comp_self_eq_zero ⟨x, by rwa [← cycles_def]⟩ := by
+  simp only [cohomologyEquivHomology, cohomologyClass_eq_mk, Submodule.Quotient.equiv_apply,
+    Submodule.mapQ_apply, LinearMap.homologyπ_apply]
+  exact congrArg _ (Subtype.ext (LinearEquiv.coe_ofEq_apply _ _))
+
+/-- The inverse comparison sends the homology class of a cycle of `m₁` to its cohomology class. -/
+theorem cohomologyEquivHomology_symm_homologyπ (𝒜 : AInfinityAlgebra R A)
+    (z : LinearMap.ker 𝒜.differential) :
+    𝒜.cohomologyEquivHomology.symm
+        (𝒜.differential.homologyπ 𝒜.differential_comp_self_eq_zero z) =
+      𝒜.cohomologyClass (show (z : A) ∈ 𝒜.cycles by rw [cycles_def]; exact z.2) := by
+  rw [LinearEquiv.symm_apply_eq, cohomologyEquivHomology_cohomologyClass]
 
 /-- The binary operation, restricted to a bilinear map on cycles. -/
 def cyclesMul (𝒜 : AInfinityAlgebra R A) : 𝒜.cycles →ₗ[R] 𝒜.cycles →ₗ[R] 𝒜.cycles :=
