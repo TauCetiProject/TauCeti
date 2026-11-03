@@ -118,6 +118,9 @@ def totalSpaceMap (a : CoordinateHom Z W) (p : Z.TotalSpace) : W.TotalSpace :=
 @[simp] theorem totalSpaceMap_mk (a : CoordinateHom Z W) (x : B) (v : Z.Fiber x) :
     a.totalSpaceMap ⟨x, v⟩ = ⟨x, a.fiberMap x v⟩ := (rfl)
 
+theorem totalSpaceMap_def (a : CoordinateHom Z W) :
+    a.totalSpaceMap = fun p ↦ TotalSpace.mk' G p.proj (a.fiberMap p.proj p.2) := (rfl)
+
 /-- In local trivializations the descended map is precisely the given chart operator. -/
 theorem localTriv_fiberMap (a : CoordinateHom Z W) (i : ι) (j : κ) (p : Z.TotalSpace)
     (hi : p.proj ∈ Z.baseSet i) (hj : p.proj ∈ W.baseSet j) :

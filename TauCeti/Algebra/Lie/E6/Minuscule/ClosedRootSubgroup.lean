@@ -103,7 +103,7 @@ private theorem rep_serreRootGenerator_pow_two_apply_latticeBasis (k : Fin 6 ⊕
     (fun f : Module.End ℚ (Fin 27 → ℚ) =>
       f ((𝓑 (rootSource k) : Λ) : Fin 27 → ℚ))
     (weightTable.rep_serreRootGenerator_pow_two k)
-  simpa only [pow_two, Module.End.mul_apply, LinearMap.zero_apply] using h
+  simpa only [pow_two, mul_apply_eq_comp, LinearMap.zero_apply] using h
 
 /-! ## Closed root-subgroup morphisms -/
 

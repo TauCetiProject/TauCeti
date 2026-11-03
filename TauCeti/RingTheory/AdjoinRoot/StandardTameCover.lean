@@ -21,6 +21,7 @@ import TauCeti.RingTheory.LocalRing.Localization
 import TauCeti.RingTheory.RegularLocalRing.Normal
 import TauCeti.RingTheory.RegularLocalRing.OfQuotient
 import TauCeti.RingTheory.RegularLocalRing.ProjectiveDimension
+import TauCeti.RingTheory.Unramified.RootExtraction
 
 /-!
 # Standard tamely ramified covers
@@ -73,6 +74,10 @@ henselian regular local ring and `f` a local equation of the divisor.
   standard étale algebra by `Polynomial.Monic.isStandardEtale_adjoinRoot`.
 * `TauCeti.standardTameCover_etale_away`: if `e` is invertible in `A_f`, the cover is étale over
   `A_f` after inverting `f`.
+* `TauCeti.standardTameCover_etale_away_iff`: for `e ≥ 1`, étaleness away from `f` is equivalent
+  to invertibility of `e` in `A_f`. The converse uses the exponent criterion
+  `TauCeti.isUnit_natCast_of_formallyUnramified_adjoinRoot_X_pow_sub_C` from
+  `TauCeti.RingTheory.Unramified.RootExtraction`.
 * `TauCeti.standardTameCover_isIntegralClosure`: if `f` is a nonzerodivisor and `A/(f)` is
   reduced, the cover for `e ≥ 1` is the integral closure of `A` in its localization away from `f`.
 * `TauCeti.standardTameCover_isRegularLocalRing_localization`: if `A` is Noetherian, `f` is a
@@ -273,6 +278,18 @@ particular when `e` is invertible in `A`, as in Stacks. -/
 theorem standardTameCover_etale_away (he : IsUnit (e : Af)) : Algebra.Etale Af Cf :=
   have := standardTameCover_etale (IsLocalization.Away.algebraMap_isUnit (S := Af) f) he
   Algebra.Etale.of_equiv (standardTameCoverAwayAlgEquiv f e Af Cf)
+
+variable {e} in
+include f in
+/-- A positive-degree root cover is étale off the divisor exactly when its exponent is
+invertible off the divisor. This applies to arbitrary models of the two localizations. -/
+theorem standardTameCover_etale_away_iff (he : e ≠ 0) :
+    Algebra.Etale Af Cf ↔ IsUnit (e : Af) := by
+  constructor
+  · intro h
+    have := Algebra.Etale.of_equiv (standardTameCoverAwayAlgEquiv f e Af Cf).symm
+    exact isUnit_natCast_of_formallyUnramified_adjoinRoot_X_pow_sub_C (algebraMap A Af f) he
+  · exact standardTameCover_etale_away f Af Cf
 
 end Away
 
