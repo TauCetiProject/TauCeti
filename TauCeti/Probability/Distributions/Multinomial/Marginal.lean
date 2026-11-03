@@ -47,6 +47,18 @@ def multinomialCellProbability (p : StdSimplex NNReal ι) (i : ι) : unitInterva
 theorem coe_multinomialCellProbability (p : StdSimplex NNReal ι) (i : ι) :
     (p.multinomialCellProbability i : ℝ) = p.weights i := (rfl)
 
+/-- A multinomial cell probability vanishes exactly when the cell has weight zero. -/
+@[simp]
+theorem multinomialCellProbability_eq_zero_iff {p : StdSimplex NNReal ι} {i : ι} :
+    p.multinomialCellProbability i = 0 ↔ p.weights i = 0 := by
+  rw [← Subtype.coe_inj, coe_multinomialCellProbability, Set.Icc.coe_zero, NNReal.coe_eq_zero]
+
+/-- A multinomial cell probability is one exactly when the cell has weight one. -/
+@[simp]
+theorem multinomialCellProbability_eq_one_iff {p : StdSimplex NNReal ι} {i : ι} :
+    p.multinomialCellProbability i = 1 ↔ p.weights i = 1 := by
+  rw [← Subtype.coe_inj, coe_multinomialCellProbability, Set.Icc.coe_one, NNReal.coe_eq_one]
+
 end Convexity.StdSimplex
 
 namespace TauCeti.Probability
