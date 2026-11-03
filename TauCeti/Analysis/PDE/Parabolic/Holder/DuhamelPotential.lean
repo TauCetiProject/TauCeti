@@ -46,9 +46,12 @@ private theorem holderWith_potential (hα : 0 < α) (hα₂ : α ≤ 2)
       (fun p : slab (E := E) 0 T =>
         heatDuhamelPotential (fun s x => timeExtension T.coe_nonneg f x s)
           (p : ParabolicSpaceTime E).time (p : ParabolicSpaceTime E).space) :=
-  holderWith_heatDuhamelPotential (continuous_timeExtension T.coe_nonneg f).stronglyMeasurable
+  holderWith_heatDuhamelPotential
+    (continuous_timeExtension T.coe_nonneg f.continuous).stronglyMeasurable
     (fun s _ x => norm_timeExtension_le T.coe_nonneg f s x)
-    (fun s _ => holderWith_timeExtension T.coe_nonneg f s) hα hα₂
+    (fun s _ => holderWith_timeExtension T.coe_nonneg (f := f) (by
+      simpa only [HolderSpace.coe_toBoundedContinuousFunction] using
+        f.memHolder.holderWith.mono f.nnHolderNorm_le) s) hα hα₂
 
 private theorem norm_forcing_potential_le (f : HolderSpace α (slab (E := E) 0 T) F)
     (p : slab (E := E) 0 T) :
@@ -112,20 +115,22 @@ def heatDuhamelPotentialHolderL (hα : 0 < α) (hα₂ : α ≤ 2) :
   LinearMap.mkContinuous
     { toFun := potential hα hα₂
       map_add' f g := by
+        have hfg : ⇑(f + g) = ⇑f + ⇑g := funext (HolderSpace.add_apply f g)
         ext p
-        simp only [HolderSpace.add_apply, coe_potential, timeExtension_add, Pi.add_apply]
+        simp only [HolderSpace.add_apply, coe_potential, hfg, timeExtension_add, Pi.add_apply]
         simpa only [Pi.add_def, coe_slabTime] using
           heatDuhamelPotential_add
             (f := fun s x => timeExtension T.coe_nonneg f x s)
             (g := fun s x => timeExtension T.coe_nonneg g x s)
-            (continuous_timeExtension T.coe_nonneg f).stronglyMeasurable
+            (continuous_timeExtension T.coe_nonneg f.continuous).stronglyMeasurable
             (ae_of_all _ fun s => ae_of_all _ fun x => norm_timeExtension_le T.coe_nonneg f s x)
-            (continuous_timeExtension T.coe_nonneg g).stronglyMeasurable
+            (continuous_timeExtension T.coe_nonneg g.continuous).stronglyMeasurable
             (ae_of_all _ fun s => ae_of_all _ fun x => norm_timeExtension_le T.coe_nonneg g s x)
             (slabTime p).2.1 (p : ParabolicSpaceTime E).space
       map_smul' c f := by
+        have hcf : ⇑(c • f) = c • ⇑f := funext (HolderSpace.smul_apply c f)
         ext p
-        simp only [HolderSpace.smul_apply, coe_potential, RingHom.id_apply,
+        simp only [HolderSpace.smul_apply, coe_potential, RingHom.id_apply, hcf,
           timeExtension_smul, Pi.smul_apply]
         exact heatDuhamelPotential_smul c (fun s x => timeExtension T.coe_nonneg f x s)
             (p : ParabolicSpaceTime E).time (p : ParabolicSpaceTime E).space }
