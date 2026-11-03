@@ -17,8 +17,8 @@ carries its own form and the two factors are orthogonal to each other. It is the
 counterpart of `QuadraticMap.prod`, and it is the form an orthogonal direct sum of bilinear
 modules carries.
 
-Symmetry and nondegeneracy are componentwise, flipping is componentwise, and a product of
-perfect pairings is a perfect pairing.
+Symmetry, separation and nondegeneracy are componentwise, flipping is componentwise, and a
+product of perfect pairings is a perfect pairing.
 
 ## Main declarations
 
@@ -26,6 +26,8 @@ perfect pairings is a perfect pairing.
 * `LinearMap.BilinForm.isSymm_prod_iff`: the product form is symmetric exactly when both factors
   are.
 * `LinearMap.BilinForm.flip_prod`: flipping the product form flips both factors.
+* `LinearMap.BilinForm.separatingLeft_prod_iff`, `LinearMap.BilinForm.separatingRight_prod_iff`:
+  the product form is left (right) separating exactly when both factors are.
 * `LinearMap.BilinForm.nondegenerate_prod_iff`: the product form is nondegenerate exactly when
   both factors are.
 * `LinearMap.BilinForm.instIsPerfPairProd`: a product of perfect pairings is a perfect pairing.
@@ -73,19 +75,24 @@ theorem flip_prod (B : LinearMap.BilinForm R M) (C : LinearMap.BilinForm R N) :
   ext <;> simp
 
 /-- A product of bilinear forms is left-separating exactly when both factors are. -/
-private theorem separatingLeft_prod_iff {B : LinearMap.BilinForm R M}
-    {C : LinearMap.BilinForm R N} :
+@[simp]
+theorem separatingLeft_prod_iff {B : LinearMap.BilinForm R M} {C : LinearMap.BilinForm R N} :
     (B.prod C).SeparatingLeft ↔ B.SeparatingLeft ∧ C.SeparatingLeft := by
   simp [separatingLeft_iff_ker_eq_bot, prod_eq_dualProdDualEquivDual_comp_prodMap,
     LinearMap.ker_prodMap, Submodule.prod_eq_bot_iff]
+
+/-- A product of bilinear forms is right-separating exactly when both factors are. -/
+@[simp]
+theorem separatingRight_prod_iff {B : LinearMap.BilinForm R M} {C : LinearMap.BilinForm R N} :
+    (B.prod C).SeparatingRight ↔ B.SeparatingRight ∧ C.SeparatingRight := by
+  simp only [← flip_separatingLeft, flip_prod, separatingLeft_prod_iff]
 
 /-- A product of bilinear forms is nondegenerate exactly when both factors are. -/
 @[simp]
 theorem nondegenerate_prod_iff {B : LinearMap.BilinForm R M} {C : LinearMap.BilinForm R N} :
     (B.prod C).Nondegenerate ↔ B.Nondegenerate ∧ C.Nondegenerate := by
-  rw [Nondegenerate, LinearMap.Nondegenerate, ← flip_separatingLeft, flip_prod]
-  simp only [separatingLeft_prod_iff, flip_separatingLeft, LinearMap.Nondegenerate,
-    and_and_and_comm]
+  simp only [Nondegenerate, LinearMap.Nondegenerate, separatingLeft_prod_iff,
+    separatingRight_prod_iff, and_and_and_comm]
 
 /-- The product form identifies the product module with its dual when both factors identify their
 modules with their duals. -/
