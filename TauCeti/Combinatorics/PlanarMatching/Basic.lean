@@ -81,6 +81,12 @@ theorem isEmpty_of_not_even (hk : ¬ Even k) : IsEmpty (PlanarMatching k) :=
   have := isEmpty_perfectMatching_of_not_even (α := Fin k) (by simpa using hk)
   inferInstance
 
+/-- **Arcs are nested.** If the point `b` lies strictly inside the arc `{a, x a}`, with `a < x a`,
+then so does its partner `x b`: an arc starting inside another arc ends inside it. -/
+theorem val_apply_mem_Ioo (x : PlanarMatching k) {a b : Fin k} (hab : a < b)
+    (hb : b < x.1.val a) : x.1.val b ∈ Set.Ioo a (x.1.val a) :=
+  x.2.apply_mem_Ioo x.1.2.involutive hab hb
+
 /-- **The innermost cup lemma.** A planar matching of at least one point joins some point `a` to
 the next point `a + 1`. Equivalently, its diagram has an arc enclosing no other boundary point. -/
 theorem exists_val_apply_eq_val_add_one (x : PlanarMatching k) (hk : k ≠ 0) :

@@ -6,11 +6,12 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Probability.StrongLaw
--- Public: the statement is about `Measure.infinitePi`; the proof uses `iIndepFun_infinitePi`.
+-- Public: the statement is about `Measure.infinitePi`.
 public import Mathlib.Probability.Independence.InfinitePi
 public import Mathlib.MeasureTheory.Measure.ProbabilityMeasure
 import Mathlib.Probability.Kernel.MeasurableIntegral
 import Mathlib.MeasureTheory.Constructions.Polish.Basic
+import TauCeti.Probability.Independence.InfinitePi
 
 /-!
 # Strong laws of large numbers
@@ -98,13 +99,11 @@ theorem strong_law_ae_infinitePi (Q : Measure α) [IsProbabilityMeasure Q] {f : 
     ((heval i).integrable_comp hint.1).2 hint
   have hident : ∀ i : ℕ,
       IdentDistrib (fun x : ℕ → α => f (x i)) (fun x : ℕ → α => f (x 0)) P P := fun i =>
-    IdentDistrib.comp ⟨(measurable_pi_apply i).aemeasurable, (measurable_pi_apply 0).aemeasurable,
-      by rw [(heval i).map_eq, (heval 0).map_eq]⟩ hf
+    (Q.identDistrib_eval_infinitePi i 0).comp hf
   have hindep : ∀ i j : ℕ, i ≠ j →
       IndepFun (fun x : ℕ → α => f (x i)) (fun x : ℕ → α => f (x j)) P :=
     fun _ _ hij =>
-      ((iIndepFun_infinitePi (P := fun _ : ℕ => Q) (X := fun _ x => x)
-        fun _ => measurable_id).comp (fun _ => f) fun _ => hf).indepFun hij
+      ((iIndepFun_eval_infinitePi _).comp (fun _ => f) fun _ => hf).indepFun hij
   have hlimit : ∫ x, f (x 0) ∂P = ∫ y, f y ∂Q := by
     rw [← (heval 0).map_eq, integral_map (measurable_pi_apply 0).aemeasurable
       (by rw [(heval 0).map_eq]; exact hint.1)]

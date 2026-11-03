@@ -180,7 +180,7 @@ theorem IsPrimitive.frobenius [TopologicalSpace S] {ξ : 𝕎 S} (h : ξ.IsPrimi
 section Jacobson
 
 variable [TopologicalSpace S] [IsLinearTopology S S]
-  (hS : topologicalNilradical S ≤ (⊥ : Ideal S).jacobson)
+  (hS : topologicalNilradical S ≤ Ring.jacobson S)
 include hS
 
 /-- **Elements of the form `p + [ϖ] α` are primitive.** Let `S` have characteristic `p` and a linear
@@ -204,7 +204,8 @@ theorem isPrimitive_p_add_teichmuller_mul {ϖ : S} (hϖ : IsTopologicallyNilpote
   · rw [isDistinguished_iff, teichmuller_add_verschiebung_coeff_succ, add_coeff_zero,
       one_coeff_zero, hw₀, mul_coeff_one_charP, teichmuller_coeff_pos p ϖ 1 one_pos, mul_zero,
       add_zero]
-    exact ((hϖ.pow hp.out.ne_zero).mul_right _).isUnit_add_left hS isUnit_one
+    exact ((hϖ.pow hp.out.ne_zero).mul_right _).isUnit_add_left
+      (by simpa only [Ideal.jacobson_bot] using hS) isUnit_one
 
 /-- **Primitivity is invariant under multiplication by units.** This holds when `S` has
 characteristic `p` and a linear topology, and its topological nilradical lies in the Jacobson
@@ -217,7 +218,8 @@ theorem isPrimitive_units_mul (u : (𝕎 S)ˣ) {ξ : 𝕎 S} :
   intro u ξ h
   refine ⟨by rw [mul_coeff_zero]; exact h.1.mul_left _, ?_⟩
   rw [isDistinguished_iff, mul_coeff_one_charP]
-  exact ((h.1.pow hp.out.ne_zero).mul_right _).isUnit_add_left hS
+  exact ((h.1.pow hp.out.ne_zero).mul_right _).isUnit_add_left
+      (by simpa only [Ideal.jacobson_bot] using hS)
     (((isUnit_iff_isUnit_coeff_zero.mp u.isUnit).pow p).mul h.2)
 
 /-- **The unit criterion.** Let `S` have characteristic `p` and a linear topology, and suppose its
@@ -227,7 +229,8 @@ is a unit (Kedlaya, *Sheaves, stacks, and shtukas*, Remark 2.3.5). -/
 theorem IsPrimitive.isUnit_of_eq_mul {ξ ξ' y : 𝕎 S} (hξ : ξ.IsPrimitive)
     (hξ' : ξ'.IsDistinguished) (h : ξ' = y * ξ) : IsUnit y := by
   rw [isDistinguished_iff, h, mul_coeff_one_charP] at hξ'
-  have hy := ((hξ.1.pow hp.out.ne_zero).mul_right (-y.coeff 1)).isUnit_add_left hS hξ'
+  have hy := ((hξ.1.pow hp.out.ne_zero).mul_right (-y.coeff 1)).isUnit_add_left
+      (by simpa only [Ideal.jacobson_bot] using hS) hξ'
   rw [mul_neg, add_neg_cancel_right] at hy
   exact isUnit_iff_isUnit_coeff_zero.mpr <|
     (isUnit_pow_iff hp.out.ne_zero).mp (isUnit_of_mul_isUnit_left hy)
@@ -279,7 +282,7 @@ theorem IsPrimitive.exists_eq_unit_mul [TopologicalSpace S] {ξ : 𝕎 S} (h : �
 /-- **The primitive elements are the unit multiples of `p + [ϖ] α`**, for `ϖ` topologically
 nilpotent and `α` arbitrary (Kedlaya, *Sheaves, stacks, and shtukas*, Exercise 2.3.6). -/
 theorem isPrimitive_iff_exists_eq_unit_mul [TopologicalSpace S] [IsLinearTopology S S]
-    (hS : topologicalNilradical S ≤ (⊥ : Ideal S).jacobson) {ξ : 𝕎 S} :
+    (hS : topologicalNilradical S ≤ Ring.jacobson S) {ξ : 𝕎 S} :
     ξ.IsPrimitive ↔ ∃ (u : (𝕎 S)ˣ) (ϖ : S) (α : 𝕎 S),
       IsTopologicallyNilpotent ϖ ∧ ξ = u * ((p : 𝕎 S) + teichmuller p ϖ * α) :=
   ⟨IsPrimitive.exists_eq_unit_mul, fun ⟨u, _, α, hϖ, h⟩ ↦

@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Topology.Algebra.GroupAction.Macbeath.Basic
-public import TauCeti.Topology.LocallyFinite
+public import TauCeti.Topology.LocallyFinite.Basic
 public import Mathlib.Topology.MetricSpace.IsometricSMul
 public import Mathlib.Topology.Connected.LocallyPathConnected
 

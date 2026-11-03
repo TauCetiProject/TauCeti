@@ -97,7 +97,7 @@ def abelMap : (relativeEffectiveCartierSubfunctor f).toFunctor ⋙ uliftFunctor.
 lemma abelMap_app_apply {T : (Over S)ᵒᵖ}
     (D : (relativeEffectiveCartierSubfunctor f).toFunctor.obj T) :
     ConcreteCategory.hom (C := Type (u + 1))
-      (X := uliftFunctor.{u + 1}.obj ((relativeEffectiveCartierSubfunctor f).obj T))
+      (X := ULift.{u + 1} ((relativeEffectiveCartierSubfunctor f).obj T))
       (Y := ToType ((relativePicardPresheaf f).obj T)) ((abelMap f).app T) (ULift.up D) =
       (QuotientGroup.mk (LineBundleClass.mk ((mem_relativeEffectiveCartierSubfunctor_obj_iff f).mp
         D.2).isEffectiveCartier.toInvertibleSheaf)⁻¹ : (relativePicardPresheaf f).obj T) :=

@@ -99,7 +99,7 @@ theorem sum_meas_smul_cond_fiber_of_countable [Countable β] [MeasurableSingleto
   have hfib : ∀ b, MeasurableSet (f ⁻¹' {b}) := fun b => hf (measurableSet_singleton b)
   calc (Measure.sum fun b => μ (f ⁻¹' {b}) • μ[|f ⁻¹' {b}]) E
       = ∑' b, μ (f ⁻¹' {b} ∩ E) := by
-        simp only [Measure.sum_apply _ hE, Measure.smul_apply, smul_eq_mul]
+        simp only [MeasureTheory.Measure.sum_apply _ hE, _root_.smul_apply, smul_eq_mul]
         simp_rw [mul_comm (μ _), cond_mul_eq_inter (hfib _)]
     _ = μ E := by
         rw [← measure_iUnion (fun b c hbc =>
@@ -217,7 +217,7 @@ theorem tvDist_cond_self {Ω : Type*} [MeasurableSpace Ω] (μ : Measure Ω)
         inter_self]
       apply Measure.le_iff.mpr
       intro B hB
-      rw [Measure.smul_apply, smul_eq_mul]
+      rw [_root_.smul_apply, smul_eq_mul]
       have hi : 1 ≤ (μ A)⁻¹ := by
         simpa using ENNReal.inv_le_inv.mpr (prob_le_one (μ := μ) (s := A))
       simpa only [one_mul] using mul_le_mul_of_nonneg_right hi
