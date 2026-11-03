@@ -65,7 +65,7 @@ theorem ext {U V : AffinoidSubdomain K A} (h : ∀ x, x ∈ U ↔ x ∈ V) : U =
 instance : PartialOrder (AffinoidSubdomain K A) := .ofSetLike _
 
 /-- Regard a represented subset as an affinoid subdomain. -/
-@[expose] def ofMap {B : Type u} [CommRing B] [Algebra K B] {φ : A →ₐ[K] B}
+def ofMap {B : Type u} [CommRing B] [Algebra K B] {φ : A →ₐ[K] B}
     {U : Set (MaximalSpectrum A)} (h : IsAffinoidSubdomainMap φ U) : AffinoidSubdomain K A :=
   ⟨U, ⟨CommAlgCat.of K B, φ, h⟩⟩
 
@@ -181,7 +181,7 @@ theorem sectionsAlgEquiv_restrict {U V : AffinoidSubdomain K A} (hUV : U ≤ V)
   simpa using (AlgHom.congr_fun hψ a).symm
 
 /-- The whole classical spectrum as an affinoid subdomain. -/
-@[expose] def univ (hA : IsAffinoidAlgebra K A) : AffinoidSubdomain K A :=
+def univ (hA : IsAffinoidAlgebra K A) : AffinoidSubdomain K A :=
   ofMap (IsAffinoidSubdomainMap.id hA)
 
 @[simp]
@@ -215,7 +215,7 @@ theorem globalSectionsAlgEquiv_symm_apply (hA : IsAffinoidAlgebra K A) (a : A) :
   simp
 
 /-- The empty affinoid subdomain, represented by the zero quotient of the ambient algebra. -/
-@[expose] def empty (hA : IsAffinoidAlgebra K A) : AffinoidSubdomain K A :=
+def empty (hA : IsAffinoidAlgebra K A) : AffinoidSubdomain K A :=
   ofMap (IsAffinoidSubdomainMap.empty hA)
 
 @[simp]
