@@ -138,6 +138,7 @@ theorem detShift_shift (l : DominantWeight (n + 1)) (m : ℤ) :
 /-- A dominant weight is **polynomial** when all its entries are nonnegative.  These are the
 weights of the representations occurring in tensor powers of the standard representation, as
 opposed to the general rational ones, which need a negative power of the determinant. -/
+@[expose]
 def IsPolynomial (l : DominantWeight n) : Prop := ∀ i, 0 ≤ l.1 i
 
 /-- Since a dominant weight decreases, only its last entry has to be tested for polynomiality.
