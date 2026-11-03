@@ -109,7 +109,14 @@ lemma suspensionLevelIso_hom_dayStructureMap (K : PointedSSet.{0}) (p q : ℕ) :
 /-- The suspension spectrum of the pointed zero-sphere is the sphere spectrum. -/
 noncomputable def suspensionUnitIso : (free 0).obj (𝟙_ PointedSSet.{0}) ≅ 𝟙_ SymmetricSpectrum :=
   (freeMod SymmetricSequence.sphere).mapIso SymmetricSequence.freeZeroUnitIso ≪≫
-    freeModUnitIso SymmetricSequence.sphere
+    -- The two opaque action instances agree by their public characteristic equations.
+    eqToIso (by
+      dsimp only [freeMod, Mod.tensorLeft, Mod.regular_X]
+      congr 1
+      apply ModObj.ext
+      exact (freeMod_smul SymmetricSequence.sphere _).trans
+        (Mod.tensorLeft_smul (Mod.regular SymmetricSequence.sphere) _).symm) ≪≫
+    Mod.tensorLeftUnitIso (Mod.regular SymmetricSequence.sphere)
 
 /-- In sphere coordinates the comparison `Σ∞ S⁰ ≅ S` is the right unitor. -/
 @[reassoc]
@@ -117,8 +124,12 @@ lemma suspensionLevelIso_hom_comp_suspensionUnitIso_hom (n : ℕ) :
     (suspensionLevelIso (𝟙_ PointedSSet.{0}) n).hom ≫
       (evaluation n).map suspensionUnitIso.hom =
         (ρ_ (PointedSSet.circle.smashPow (Fin n))).hom := by
+  have h (M N : SymmetricSpectrum) (e : M = N) :
+      (eqToIso e).hom.hom = eqToHom (congrArg (fun X : SymmetricSpectrum => X.X) e) :=
+    eqToHom_map (Mod.forget SymmetricSequence.sphere) e
   simp only [suspensionUnitIso, Iso.trans_hom, Functor.mapIso_hom,
-    Mod.comp_hom', freeModUnitIso_hom_hom, suspensionLevelIso_hom]
+    Mod.comp_hom', Mod.tensorLeftUnitIso_hom_hom, suspensionLevelIso_hom, h,
+    Mod.Hom.mk'_hom]
   exact SymmetricSequence.tensorFreeZeroι_comp_whiskerLeft_freeZeroUnitIso_hom
     SymmetricSequence.sphere n
 

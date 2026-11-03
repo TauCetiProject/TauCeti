@@ -63,31 +63,6 @@ abbrev freeMod : C ⥤ Mod C A where
 lemma freeMod_smul (X : C) :
     ((freeMod A).obj X).mod.smul = (α_ A A X).inv ≫ μ[A] ▷ X := (rfl)
 
-/-- The free module on the monoidal unit is the regular module, by the right unitor. -/
-def freeModUnitIso : (freeMod A).obj (𝟙_ C) ≅ Mod.regular A where
-  hom := Mod.Hom.mk' (ρ_ A).hom (by
-    dsimp only [ModObj.smul, freeModObj, Mod.regular, ModObj.regular]
-    simp only [selfLeftAction_actionHomRight]
-    simp)
-  inv := Mod.Hom.mk' (ρ_ A).inv (by
-    dsimp only [ModObj.smul, freeModObj, Mod.regular, ModObj.regular]
-    simp only [selfLeftAction_actionHomRight]
-    simp)
-  hom_inv_id := by
-    apply Mod.hom_ext
-    exact (ρ_ A).hom_inv_id
-  inv_hom_id := by
-    apply Mod.hom_ext
-    exact (ρ_ A).inv_hom_id
-
-/-- The free-module comparison with the regular module is the right unitor. -/
-@[simp]
-lemma freeModUnitIso_hom_hom : (freeModUnitIso A).hom.hom = (ρ_ A).hom := (rfl)
-
-/-- The inverse free-module comparison inserts the monoidal unit on the right. -/
-@[simp]
-lemma freeModUnitIso_inv_hom : (freeModUnitIso A).inv.hom = (ρ_ A).inv := (rfl)
-
 /-- The generators of a free module are obtained by inserting the monoid unit. -/
 def freeModι (X : C) : X ⟶ ((freeMod A).obj X).X :=
   (λ_ X).inv ≫ η[A] ▷ X
