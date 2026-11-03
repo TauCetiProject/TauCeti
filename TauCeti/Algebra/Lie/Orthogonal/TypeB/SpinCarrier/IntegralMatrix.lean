@@ -63,7 +63,7 @@ theorem rootIntMatrix_eq_toMatrix (j : Fin (n + 1) ⊕ Fin (n + 1)) :
     (rep_kostantForm_mem_lattice n) j (latticeBasis n)
 
 /-- The integral matrix of every numbered simple root generator squares to zero. -/
-theorem rootIntMatrix_square_zero (k : Fin (n + 1) ⊕ Fin (n + 1)) :
+theorem rootIntMatrix_mul_self_eq_zero (k : Fin (n + 1) ⊕ Fin (n + 1)) :
     rootIntMatrix n k * rootIntMatrix n k = 0 := by
   let op := kostantRootOperator (TauCeti.typeBSimpleRootGeneratorFamily (K := ℚ))
     (TauCeti.typeBSimpleCorootGenerator (K := ℚ)) (rep n) (lattice n).toAddSubgroup

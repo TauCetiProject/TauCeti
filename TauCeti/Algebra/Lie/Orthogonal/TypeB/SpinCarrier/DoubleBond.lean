@@ -60,8 +60,8 @@ theorem coe_commutatorElement_rootSubgroupPoints_of_lie_lie_eq_zero
         (s * t ^ 2) • (rootIntMatrix n j * rootIntMatrix n i * rootIntMatrix n j).map
           (Int.cast : ℤ → A) := by
   have h := Matrix.coe_commutatorElement_eq_one_add_smul_lie_add_smul_mul_mul
-    (rootIntMatrix n i) (rootIntMatrix n j) (rootIntMatrix_square_zero n i)
-    (rootIntMatrix_square_zero n j) (rootIntMatrix_lie_lie_eq_zero hij) s t
+    (rootIntMatrix n i) (rootIntMatrix n j) (rootIntMatrix_mul_self_eq_zero n i)
+    (rootIntMatrix_mul_self_eq_zero n j) (rootIntMatrix_lie_lie_eq_zero hij) s t
     (rootSubgroupPoints n i A (Multiplicative.ofAdd s))
     (rootSubgroupPoints n j A (Multiplicative.ofAdd t))
     (by rw [coe_rootSubgroupPoints_eq_one_add_smul, toAdd_ofAdd])
