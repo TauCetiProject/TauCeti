@@ -105,6 +105,18 @@ def geckSimpleWeylPoint (i : Fin t.rank) (A : Type v) [CommRing A] : t.geckPoint
       (t.isNilpotent_geckRepresentation_rootGenerator ht)
       (t.geckCoordinateBasisFin ht) (t.geckWeightFin ht) (.inl i) (.inr i) A)
 
+/-- The simple Weyl representative is the pinned word in its raising and lowering subgroups. -/
+theorem geckSimpleWeylPoint_def (i : Fin t.rank) (A : Type v) [CommRing A] :
+    t.geckSimpleWeylPoint ht i A =
+      t.geckRootSubgroupPoints ht (.inl i) A (Multiplicative.ofAdd 1) *
+        t.geckRootSubgroupPoints ht (.inr i) A (Multiplicative.ofAdd (-1)) *
+        t.geckRootSubgroupPoints ht (.inl i) A (Multiplicative.ofAdd 1) := by
+  apply Subtype.ext
+  simp only [geckSimpleWeylPoint,
+    UniversalEnvelopingAlgebra.kostantToralWeylPoint_def,
+    MulEquiv.subgroupCongr_apply, Subgroup.coe_mul, coe_geckRootSubgroupPoints,
+    UniversalEnvelopingAlgebra.coe_kostantToralRootSubgroupPoints]
+
 /-- In the Geck coordinate basis, the simple Weyl representative is the integral Weyl
 automorphism supplied by the corresponding numbered `sl₂` pair. -/
 @[simp]
