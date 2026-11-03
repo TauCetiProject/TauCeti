@@ -158,7 +158,7 @@ theorem commute_gaugeDerivation (ℓ ℓ' : ℤ × ℤ →+ ℂ) :
       (gaugeDerivation θ ℓ' : Module.End ℂ (SmoothNoncommutativeTorus θ)) := by
   refine LinearMap.ext fun a ↦ ?_
   ext x
-  simp only [Module.End.mul_apply, coeff_gaugeDerivation]
+  simp only [mul_apply_eq_comp, coeff_gaugeDerivation]
   ring
 
 /-- The Lie bracket of any two derivations `δ_ℓ` and `δ_ℓ'` vanishes: `⁅δ_ℓ, δ_ℓ'⁆ = 0`. -/
