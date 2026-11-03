@@ -141,14 +141,6 @@ private theorem negativeShort_character (k : Fin 2) :
     Finsupp.smul_apply, simpleRootCharacter_eq_liftCharacter, liftCharacter_apply]
   fin_cases k <;> fin_cases l <;> decide
 
-private theorem mem_negativeShort_weightSpace_iff (k : Fin 2)
-    (x : Module.Dual (ZMod 3) (Bialgebra.CotangentSpace (ZMod 3) carrierAlgebra)) :
-    x ∈ Derivation.adjointWeightSpace splitMaximalTorus.coordinateMap.hom
-        (Multiplicative.ofAdd (negativeNonsimpleShortRootCharacter k)) ↔
-      ∀ i j, weight i - weight j ≠ (![![1, -1], ![-1, 0]] : Fin 2 → Fin 2 → ℤ) k →
-        tangentMatrix x i j = 0 := by
-  rw [negativeShort_character, mem_adjointWeightSpace_liftCharacter_iff]
-
 /- Each weight supports four entries. Three entries of the differentiated cross-product
 identity determine them from one coefficient; the other tensor equations are not needed. -/
 local macro "negative_cross_entry" : tactic =>
@@ -157,12 +149,12 @@ local macro "negative_cross_entry" : tactic =>
       reduce_mod_char))
 
 private theorem exists_tangentMatrix_eq_smul_zero
-    (x : Module.Dual (ZMod 3) (Bialgebra.CotangentSpace (ZMod 3) carrierAlgebra))
-    (hsupp : ∀ i j, weight i - weight j ≠ ![1, -1] → tangentMatrix x i j = 0) :
-    ∃ t : ZMod 3, tangentMatrix x = t • tangentMatrix (negativeNonsimpleShortRootVector 0) := by
-  have hX := tangentMatrix_mul_crossOperatorPrime x
-  -- Freeze the matrix so entry normalization does not repeatedly elaborate the tangent inclusion.
-  generalize tangentMatrix x = X at hsupp hX ⊢
+    (X : Matrix (Fin 7) (Fin 7) (ZMod 3))
+    (hX : ∀ c, X * crossOperatorPrime c =
+      ConstantMultiplication.imageStructureMatrix (ZMod 3) 7 crossOperatorPrime X c +
+        crossOperatorPrime c * X)
+    (hsupp : ∀ i j, weight i - weight j ≠ ![1, -1] → X i j = 0) :
+    ∃ t : ZMod 3, X = t • tangentMatrix (negativeNonsimpleShortRootVector 0) := by
   have hXe : X =
       !![0, 0, 0, 0, 0, 0, 0;
          0, 0, 0, 0, 0, 0, 0;
@@ -186,12 +178,12 @@ private theorem exists_tangentMatrix_eq_smul_zero
   fin_cases i <;> fin_cases j <;> simp [h20, h53, h64, mul_comm]
 
 private theorem exists_tangentMatrix_eq_smul_one
-    (x : Module.Dual (ZMod 3) (Bialgebra.CotangentSpace (ZMod 3) carrierAlgebra))
-    (hsupp : ∀ i j, weight i - weight j ≠ ![-1, 0] → tangentMatrix x i j = 0) :
-    ∃ t : ZMod 3, tangentMatrix x = t • tangentMatrix (negativeNonsimpleShortRootVector 1) := by
-  have hX := tangentMatrix_mul_crossOperatorPrime x
-  -- As above, keep matrix normalization independent of the tangent inclusion's presentation.
-  generalize tangentMatrix x = X at hsupp hX ⊢
+    (X : Matrix (Fin 7) (Fin 7) (ZMod 3))
+    (hX : ∀ c, X * crossOperatorPrime c =
+      ConstantMultiplication.imageStructureMatrix (ZMod 3) 7 crossOperatorPrime X c +
+        crossOperatorPrime c * X)
+    (hsupp : ∀ i j, weight i - weight j ≠ ![-1, 0] → X i j = 0) :
+    ∃ t : ZMod 3, X = t • tangentMatrix (negativeNonsimpleShortRootVector 1) := by
   have hXe : X =
       !![0, 0, 0, 0, 0, 0, 0;
          0, 0, 0, 0, 0, 0, 0;
@@ -220,21 +212,15 @@ theorem adjointWeightSpace_negativeNonsimpleShortRoot_eq_span (k : Fin 2) :
     Derivation.adjointWeightSpace splitMaximalTorus.coordinateMap.hom
         (Multiplicative.ofAdd (negativeNonsimpleShortRootCharacter k)) =
       (ZMod 3) ∙ negativeNonsimpleShortRootVector k := by
-  apply le_antisymm
-  · intro x hx
-    have hsupp := (mem_negativeShort_weightSpace_iff k x).mp hx
-    obtain ⟨t, ht⟩ : ∃ t : ZMod 3,
-        tangentMatrix x = t • tangentMatrix (negativeNonsimpleShortRootVector k) := by
-      fin_cases k
-      · exact exists_tangentMatrix_eq_smul_zero x hsupp
-      · exact exists_tangentMatrix_eq_smul_one x hsupp
-    refine Submodule.mem_span_singleton.mpr ⟨t, tangentMatrix_injective ?_⟩
-    rw [map_smul]
-    exact ht.symm
-  · rw [Submodule.span_singleton_le_iff_mem, mem_negativeShort_weightSpace_iff,
-      tangentMatrix_negativeNonsimpleShortRootVector]
+  rw [negativeShort_character, adjointWeightSpace_liftCharacter_eq_weightTorus]
+  apply adjointWeightSpace_weightCharacter_eq_span_of
+  · rw [tangentMatrix_negativeNonsimpleShortRootVector]
     intro i j
     fin_cases k <;> fin_cases i <;> fin_cases j <;> decide
+  · intro X hX hsupp
+    fin_cases k
+    · exact exists_tangentMatrix_eq_smul_zero X hX hsupp
+    · exact exists_tangentMatrix_eq_smul_one X hX hsupp
 
 /-- Both nonsimple negative short-root characters are intrinsic nontrivial adjoint weights of
 the chosen split maximal torus. -/
