@@ -122,9 +122,8 @@ theorem exists_contDiffOn_two_ae_eq_and_neg_laplacian_eq_of_locally_holderOnWith
     have hpoint := divMatrixGradient_eq_neg_of_forall_energyFormH1_eq (A := 1) hg hfc hug
       fun φ => by
         refine (hu ⟨_, W1p.ofTestFunctionₗ_mem_w1p0Submodule φ⟩).trans ?_
-        refine integral_congr_ae ?_
-        filter_upwards [testFunctionLp_apply_ae (mu := volume) 2 φ] with x hx
-        rw [W1p.value_ofTestFunctionₗ, hx]
+        exact integral_congr_ae ((W1p.value_ofTestFunctionₗ_ae (p := 2) φ).mono fun x hx =>
+          congrArg (f x * ·) hx)
     refine ⟨g, hg, hug, fun x hx => ?_⟩
     have hΔ : Δ g x = divMatrixGradient (fun _ => 1) g x := by
       rw [divMatrixGradient_eq_sum_fderiv_fderiv_apply hg hx,

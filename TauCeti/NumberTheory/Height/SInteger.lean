@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.NumberTheory.Height.NumberField
-public import TauCeti.NumberTheory.NumberField.FinitePlace
+public import TauCeti.NumberTheory.NumberField.FinitePlace.Basic
 public import TauCeti.RingTheory.DedekindDomain.SInteger.Basic
 public import TauCeti.RingTheory.DedekindDomain.SInteger.Unit
 

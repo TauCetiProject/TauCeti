@@ -8,13 +8,17 @@ module
 public import TauCeti.Combinatorics.Hypergraph.Colored.Basic
 public import Mathlib.Data.Fintype.CardEmbedding
 
+import TauCeti.Order.Hom.PowersetCard
+
 /-!
 # Induced labeled copies of colored three-uniform patterns
 
 A `FiniteColored3Pattern` is a total coloring on `Fin k`. Its induced copies in a host
 are injective vertex maps matching every triple color, including any designated nonedge
 color. `Colored3Graph.inducedCopyCount` counts these labeled maps without dividing by
-automorphisms. It is bounded by the falling factorial of the host size.
+automorphisms. It is bounded by the falling factorial of the host size. An injection is an
+induced copy exactly when it matches the pattern color of every increasing triple `i < j < l`
+(`Colored3Graph.isInducedCopy_iff_forall_lt`).
 
 Patterns with fewer than three vertices impose no color conditions. Constant patterns in
 constant hosts of the same color attain the falling-factorial bound, whereas a conflicting
@@ -74,6 +78,26 @@ theorem isInducedCopy_iff (H : Colored3Graph κ V) (F : FiniteColored3Pattern κ
     H.IsInducedCopy F f ↔ ∀ s : Set.powersetCard (Fin F.k) 3,
       H.color (Set.powersetCard.map 3 f s) = F.graph.color s := by
   simp only [IsInducedCopy, Colored3Graph.ext_iff, funext_iff, color_comap]
+
+/-- An injection is an induced copy exactly when, for every increasing triple `i < j < l` of
+pattern vertices, the image triple `{f i, f j, f l}` has the pattern color
+`F.tripleColor i j l`. -/
+theorem isInducedCopy_iff_forall_lt [DecidableEq V] (H : Colored3Graph κ V)
+    (F : FiniteColored3Pattern κ) (f : Fin F.k ↪ V) :
+    H.IsInducedCopy F f ↔ ∀ (i j l : Fin F.k) (hij : i < j) (hjl : j < l),
+      H.color (Set.powersetCard.ofCard (s := {f i, f j, f l}) (Finset.card_eq_three.2
+        ⟨f i, f j, f l, f.injective.ne hij.ne, f.injective.ne (hij.trans hjl).ne,
+          f.injective.ne hjl.ne, rfl⟩)) = F.tripleColor i j l hij hjl := by
+  rw [isInducedCopy_iff]
+  refine ⟨fun h i j l hij hjl ↦ ?_, fun h s ↦ ?_⟩
+  · rw [FiniteColored3Pattern.tripleColor_def, ← h]
+    congr 1
+    exact Subtype.ext (by simp)
+  · obtain ⟨i, j, l, hij, hjl, hs⟩ := Set.powersetCard.exists_lt_lt_val_eq s
+    convert h i j l hij hjl using 2
+    · exact Subtype.ext (by simp [hs])
+    · rw [FiniteColored3Pattern.tripleColor_def]
+      exact congrArg F.graph.color (Subtype.ext hs)
 
 /-- A pattern with fewer than three vertices has no triple constraints. -/
 theorem isInducedCopy_of_lt_three (H : Colored3Graph κ V) (F : FiniteColored3Pattern κ)

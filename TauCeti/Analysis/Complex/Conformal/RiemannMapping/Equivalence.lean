@@ -119,9 +119,7 @@ theorem exists_bijOn_differentiableOn_invFunOn_of_isSimplyConnected
 holomorphic and conformal in both directions. It is the Riemann map of `Ω` followed by the inverse
 of the Riemann map of `Ω'`, both taken from `TauCeti.riemannMapping_openPartialHomeomorph`.
 
-This is the packaged-equivalence companion the generality bar of
-`TauCetiRoadmap/ConformalMapping/README.md` asks for, in the same form as
-`TauCeti.riemannMapping_openPartialHomeomorph` for the disc. -/
+It has the same form as `TauCeti.riemannMapping_openPartialHomeomorph` for the disc. -/
 theorem exists_openPartialHomeomorph_of_isSimplyConnected
     (hΩo : IsOpen Ω) (hΩc : IsSimplyConnected Ω) (hΩ : Ω ≠ univ)
     (hΩ'o : IsOpen Ω') (hΩ'c : IsSimplyConnected Ω') (hΩ' : Ω' ≠ univ) :

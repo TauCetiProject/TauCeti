@@ -28,6 +28,8 @@ roots relate to each other, the fact that `R` is reduced when `p` is prime, and 
 * `TauCeti.mul_eq_zero_of_mul_pow_expChar_eq_zero`: `a * b ^ p = 0` implies `a * b = 0`.
 * `TauCeti.mul_iterateFrobeniusEquiv_symm_succ_eq_zero`: an element killing the `p ^ n`-th root
   of `x` also kills its `p ^ (n + 1)`-th root.
+* `TauCeti.frobeniusEquiv_symm_smul`: over a perfect ring of scalars, `p`-th roots are semilinear
+  along the `p`-th root of the scalars.
 * `TauCeti.isRadical_iff_frobeniusEquiv_symm_mem`: an ideal is radical exactly when it contains
   the `p`-th roots of its elements.
 * `Ideal.IsRadical.sup`, `Ideal.IsRadical.map`, `Ideal.IsRadical.map_inf`: sums of radical ideals
@@ -95,6 +97,14 @@ theorem mul_iterateFrobeniusEquiv_symm_succ_pow_eq_zero {x c : R} {n k : ℕ} (h
     c * (iterateFrobeniusEquiv R p (n + 1)).symm x ^ k = 0 := by
   obtain ⟨k, rfl⟩ := Nat.exists_eq_succ_of_ne_zero hk
   rw [pow_succ', ← mul_assoc, mul_iterateFrobeniusEquiv_symm_succ_eq_zero h, zero_mul]
+
+/-- Over a perfect ring of scalars `A`, the `p`-th root of `R` is semilinear along the `p`-th root
+of `A`: `(a • x) ^ (1 / p) = a ^ (1 / p) • x ^ (1 / p)`. -/
+theorem frobeniusEquiv_symm_smul {A : Type*} [CommSemiring A] [ExpChar A p] [PerfectRing A p]
+    [Algebra A R] (a : A) (x : R) :
+    (frobeniusEquiv R p).symm (a • x) =
+      (frobeniusEquiv A p).symm a • (frobeniusEquiv R p).symm x := by
+  rw [Algebra.smul_def, Algebra.smul_def, map_mul, RingHom.map_frobeniusEquiv_symm]
 
 variable (p) [Fact p.Prime]
 

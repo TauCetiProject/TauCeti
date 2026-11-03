@@ -66,7 +66,7 @@ noncomputable def tensorNormCocycleClass {n : ℕ}
     (Fintype.card (G ⧸ U.toSubgroup) * n)
     (smoothTensorInducedDiagonalClass.{0, u, u} U.toSubgroup U.isOpen' t
       ⟨trivialF2 U.toSubgroup, isSmoothDiscrete_trivialF2 U.toSubgroup⟩
-      (fun a ↦ by simpa only [two_nsmul] using trivialF2_two_nsmul_eq_zero U.toSubgroup a)
+      (trivialF2_add_self U.toSubgroup)
       ((trivialF2 U.toSubgroup).cochainToGradedResolution n z)
       ((trivialF2 U.toSubgroup).cochainToGradedResolution_mem n z)
       ((trivialF2 U.toSubgroup).cochainToGradedResolution_invariant n z)
@@ -83,7 +83,7 @@ theorem tensorNormCocycleClass_def {n : ℕ}
         (Fintype.card (G ⧸ U.toSubgroup) * n)
         (smoothTensorInducedDiagonalClass.{0, u, u} U.toSubgroup U.isOpen' t
           ⟨trivialF2 U.toSubgroup, isSmoothDiscrete_trivialF2 U.toSubgroup⟩
-          (fun a ↦ by simpa only [two_nsmul] using trivialF2_two_nsmul_eq_zero U.toSubgroup a)
+          (trivialF2_add_self U.toSubgroup)
           ((trivialF2 U.toSubgroup).cochainToGradedResolution n z)
           ((trivialF2 U.toSubgroup).cochainToGradedResolution_mem n z)
           ((trivialF2 U.toSubgroup).cochainToGradedResolution_invariant n z)
@@ -125,7 +125,7 @@ theorem tensorNormCocycleClass_eq_of_cochainClass_eq {n : ℕ}
     apply smoothTensorInducedDiagonalClass_eq_of_sub_eq_d
       U.toSubgroup U.isOpen' t
       ⟨trivialF2 U.toSubgroup, isSmoothDiscrete_trivialF2 U.toSubgroup⟩
-      (fun a ↦ by simpa only [two_nsmul] using trivialF2_two_nsmul_eq_zero U.toSubgroup a)
+      (trivialF2_add_self U.toSubgroup)
       _ _ _ _ _ _
       ((trivialF2 U.toSubgroup).cochainToGradedResolution_mem n y)
       ((trivialF2 U.toSubgroup).cochainToGradedResolution_invariant n y)
@@ -144,7 +144,7 @@ theorem tensorNormCocycleClass_zero (n : ℕ) :
   rw [tensorNormCocycleClass_def, smoothTensorInducedDiagonalClass_eq]
   let c := smoothTensorInducedGradedResolutionContraction U.toSubgroup U.isOpen' t
     ⟨trivialF2 U.toSubgroup, isSmoothDiscrete_trivialF2 U.toSubgroup⟩
-    (fun a ↦ by simpa only [two_nsmul] using trivialF2_two_nsmul_eq_zero U.toSubgroup a)
+    (trivialF2_add_self U.toSubgroup)
   have hzero := TopRep.ResolutionContraction.gradedCohomologyClass_zero.{0, u, u}
     c (n := Fintype.card (G ⧸ U.toSubgroup) * n)
   apply Eq.trans (congrArg

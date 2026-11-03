@@ -33,6 +33,8 @@ diagonal is fixed by the Laurent involution.
 
 ## Main results
 
+* `TauCeti.gradedCartanMatrix_transpose_mul_gradedExtEulerMatrix_map_invert_eq_diagonal`:
+  `Cᵀ · Ē = diagonal (fun i ↦ gdim(eᵢ • Sᵢ))` for the inverted q-Euler matrix `Ē`.
 * `TauCeti.gradedCartanMatrix_transpose_mul_diagonalExtPoincareMatrix_map_eq_diagonal`:
   `Cᵀ · P(-q) = diagonal (fun i ↦ gdim(eᵢ • Sᵢ))`.
 * `TauCeti.gradedCartanMatrix_transpose_mul_diagonalExtPoincareMatrix_map_eq_diagonal_finrank_end`:
@@ -83,6 +85,35 @@ variable {k : Type uk} [Field k] {A : Type uA} [Ring A] [Algebra k A]
   (hbM : ∀ i, bM i = LaurentK0.of.{uA} (gradedFiniteModulesExactStructure 𝒜) (S i))
 
 include he₀ hne hbP hbM in
+/-- **The graded Cartan matrix against the inverted q-Euler matrix.** If every `Sᵢ` is
+concentrated in internal degree zero, then `Cᵀ · Ē = diagonal (fun i ↦ gdim(eᵢ • Sᵢ))`, where `Ē`
+is the q-Euler matrix of the `Sᵢ` with `q ↦ q⁻¹` applied to every entry. Concentration makes the
+diagonal entries constant, hence fixed by the involution. -/
+theorem gradedCartanMatrix_transpose_mul_gradedExtEulerMatrix_map_invert_eq_diagonal
+    (h : IsGradedEulerAdmissibleOn.{uA} (k := k) (e := GradedModuleCat.shift 𝒜)
+      (gradedFiniteModules 𝒜) (gradedFiniteModules 𝒜))
+    (hconc : ∀ i p, p ≠ 0 → (S i).obj.grading.piece p = ⊥) :
+    (gradedCartanMatrix 𝒜 bP bM)ᵀ *
+        (gradedExtEulerMatrix (GradedModuleCat.shift 𝒜) (gradedFiniteModules 𝒜)
+          (gradedFiniteModules 𝒜) isExtensionClosed_gradedFiniteModules_gradedAbelian
+          isExtensionClosed_gradedFiniteModules_gradedAbelian
+          gradedFiniteModules_gradedAbelian_shift gradedFiniteModules_gradedAbelian_shift h bM
+          bM).map (LaurentPolynomial.invert (R := ℤ)) =
+      Matrix.diagonal fun i ↦ (S i).obj.smulGradedDimension (e i) := by
+  have key := congrArg (Matrix.map · (LaurentPolynomial.invert (R := ℤ)))
+    (gradedCartanMatrix_map_invert_transpose_mul_gradedExtEulerMatrix_eq_diagonal
+      S he he₀ hI hne bP hbP bM hbM h)
+  have hdiag : (Matrix.diagonal fun i ↦ (S i).obj.smulGradedDimension (e i)).map
+      (LaurentPolynomial.invert (R := ℤ)) =
+        Matrix.diagonal fun i ↦ (S i).obj.smulGradedDimension (e i) := by
+    rw [Matrix.diagonal_map (map_zero _)]
+    congr 1
+    funext i
+    rw [GradedModuleCat.smulGradedDimension_eq_C_of_concentrated _ _ (hconc i), invert_C]
+  rwa [Matrix.map_mul, Matrix.transpose_map, Matrix.map_map, involutive_invert.comp_self,
+    Matrix.map_id, hdiag] at key
+
+include he₀ hne hbP hbM in
 /-- **The general-field Cartan--Poincaré identity.** Let `C` be the
 graded Cartan matrix in a projective basis of classes `[A eᵢ]` and the module basis
 `[Sⱼ]`, with `gdim(eᵢ • Sⱼ) = 0` for `i ≠ j`. Suppose every pair of finite graded modules is
@@ -102,18 +133,8 @@ theorem gradedCartanMatrix_transpose_mul_diagonalExtPoincareMatrix_map_eq_diagon
         (diagonalExtPoincareMatrix.{uA} k (fun i ↦ (S i).obj) b).map
           (Polynomial.eval₂RingHom C (-T 1)) =
       Matrix.diagonal fun i ↦ (S i).obj.smulGradedDimension (e i) := by
-  have key := congrArg (Matrix.map · (LaurentPolynomial.invert (R := ℤ)))
-    (gradedCartanMatrix_map_invert_transpose_mul_gradedExtEulerMatrix_eq_diagonal
-      S he he₀ hI hne bP hbP bM hbM h)
-  have hdiag : (Matrix.diagonal fun i ↦ (S i).obj.smulGradedDimension (e i)).map
-      (LaurentPolynomial.invert (R := ℤ)) =
-        Matrix.diagonal fun i ↦ (S i).obj.smulGradedDimension (e i) := by
-    rw [Matrix.diagonal_map (map_zero _)]
-    congr 1
-    funext i
-    rw [GradedModuleCat.smulGradedDimension_eq_C_of_concentrated _ _ (hconc i), invert_C]
-  rw [Matrix.map_mul, Matrix.transpose_map, Matrix.map_map, involutive_invert.comp_self,
-    Matrix.map_id, hdiag] at key
+  have key := gradedCartanMatrix_transpose_mul_gradedExtEulerMatrix_map_invert_eq_diagonal
+    S he he₀ hI hne bP hbP bM hbM h hconc
   convert key using 2
   refine Matrix.ext fun i j ↦ ?_
   obtain ⟨r, hr⟩ := hlin i

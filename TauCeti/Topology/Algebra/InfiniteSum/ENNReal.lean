@@ -26,7 +26,7 @@ open scoped ENNReal
 theorem HasSum.toReal {ι : Type*} {f : ι → ℝ≥0∞} {s : ℝ≥0∞}
     (h : HasSum f s) (hs : s ≠ ∞) : HasSum (fun i ↦ (f i).toReal) s.toReal := by
   have hfin : ∑' i, f i ≠ ∞ := by rwa [h.tsum_eq]
-  simpa only [← ENNReal.tsum_toReal_eq (ENNReal.ne_top_of_tsum_ne_top hfin), h.tsum_eq]
+  simpa only [← ENNReal.tsum_toReal_eq (_root_.ne_top_of_tsum_ne_top hfin), h.tsum_eq]
     using ENNReal.hasSum_toReal hfin
 
 /-- Summing the indicator of a set with value one counts its elements. -/
