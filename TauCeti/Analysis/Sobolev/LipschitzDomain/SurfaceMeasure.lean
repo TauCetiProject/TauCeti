@@ -166,7 +166,7 @@ theorem map_snd_euclideanHausdorffMeasure_frontier_inter_le
       ((L + 1 : ℝ≥0) : ℝ≥0∞) ^ finrank ℝ E • volume := by
   refine Measure.le_iff.2 fun S hS ↦ ?_
   have hm := e.measurable_snd_apply
-  rw [Measure.map_apply hm hS, Measure.restrict_apply (hm hS), Measure.smul_apply, smul_eq_mul]
+  rw [Measure.map_apply hm hS, Measure.restrict_apply (hm hS), _root_.smul_apply, smul_eq_mul]
   calc
     _ ≤ μHE[finrank ℝ E] ((fun y ↦ e.symm (TauCeti.normalGraphEmbedding phi y)) '' S) := by
       refine measure_mono ?_

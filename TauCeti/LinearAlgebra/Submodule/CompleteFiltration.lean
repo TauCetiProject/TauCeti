@@ -64,7 +64,7 @@ theorem pow_apply_mem_of_map_le (hT : ∀ n, (F n).map T ≤ F (n + 1)) {m : ℕ
   induction k with
   | zero => simpa using hy
   | succ k ih =>
-    rw [pow_succ', Module.End.mul_apply, ← add_assoc]
+    rw [pow_succ', mul_apply_eq_comp, ← add_assoc]
     exact hT _ ⟨_, ih, rfl⟩
 
 end Module.End
@@ -112,9 +112,9 @@ theorem ringInverse_one_add_apply_sub_sum_mem (hanti : Antitone F) (hF0 : F 0 = 
     (n : ℕ) : Ring.inverse (1 + T) y - ∑ k ∈ Finset.range n, ((-T) ^ k) y ∈ F (m + n) := by
   refine mem_of_one_add_apply_mem hanti hF0 hT ?_
   have hinv : (1 + T) (Ring.inverse (1 + T) y) = y := by
-    rw [← Module.End.mul_apply, Ring.mul_inverse_cancel _ hu, Module.End.one_apply]
+    rw [← mul_apply_eq_comp, Ring.mul_inverse_cancel _ hu, one_apply_eq_self]
   have hgeom := LinearMap.congr_fun (mul_neg_geom_sum (-T) n) y
-  rw [sub_neg_eq_add, Module.End.mul_apply, LinearMap.sub_apply, Module.End.one_apply,
+  rw [sub_neg_eq_add, mul_apply_eq_comp, LinearMap.sub_apply, one_apply_eq_self,
     LinearMap.sum_apply] at hgeom
   rw [map_sub, hinv, hgeom, sub_sub_cancel]
   exact pow_apply_mem_of_map_le (by simpa using hT) hy n
@@ -149,13 +149,13 @@ theorem isUnit_one_add : IsUnit (1 + T) := by
       simpa [Finset.sum_range_succ] using hpow n
     refine ⟨L, sub_eq_zero.mp (hF.eq_zero_of_forall_mem _ fun n ↦ ?_)⟩
     have hgeom := LinearMap.congr_fun (mul_neg_geom_sum (-T) n) y
-    rw [sub_neg_eq_add, Module.End.mul_apply, LinearMap.sub_apply, Module.End.one_apply] at hgeom
+    rw [sub_neg_eq_add, mul_apply_eq_comp, LinearMap.sub_apply, one_apply_eq_self] at hgeom
     have h : (1 + T) L - y =
         (1 + T) (L - (∑ k ∈ Finset.range n, (-T) ^ k) y) - ((-T) ^ n) y := by
       rw [map_sub, hgeom, sub_sub, sub_add_cancel]
     rw [h]
     refine sub_mem ?_ (by simpa using hpow n)
-    rw [LinearMap.add_apply, Module.End.one_apply]
+    rw [LinearMap.add_apply, one_apply_eq_self]
     exact add_mem (hL n) (hF.antitone (Nat.le_succ n) (hT n ⟨_, hL n, rfl⟩))
 
 end TauCeti.IsCompleteFiltration

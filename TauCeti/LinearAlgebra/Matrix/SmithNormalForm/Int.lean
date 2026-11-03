@@ -258,11 +258,11 @@ private lemma gcd_2x2_mul (a b : ℤ) :
   have h1 : !![s, t; -q, p] * (!![a, (0 : ℤ); 0, b] : Matrix (Fin 2) (Fin 2) ℤ) =
       !![s * a, t * b; -(q * a), p * b] := by
     ext i j; fin_cases i <;> fin_cases j <;>
-      simp only [Fin.zero_eta, Fin.isValue, Fin.mk_one, mul_apply, of_apply, cons_val',
+      simp only [Fin.zero_eta, Fin.isValue, Fin.mk_one, Matrix.mul_apply, of_apply, cons_val',
         cons_val_fin_one, cons_val_zero, cons_val_one, Fin.sum_univ_two, mul_zero, add_zero,
         zero_add, neg_mul]
   rw [h1]; ext i j; fin_cases i <;> fin_cases j <;>
-    simp only [Fin.zero_eta, Fin.isValue, Fin.mk_one, mul_apply, of_apply, cons_val',
+    simp only [Fin.zero_eta, Fin.isValue, Fin.mk_one, Matrix.mul_apply, of_apply, cons_val',
       cons_val_fin_one, cons_val_zero, cons_val_one, Fin.sum_univ_two, mul_one, mul_neg,
       neg_mul, neg_neg]
   · linarith
