@@ -205,10 +205,7 @@ theorem MulAction.card_orbitRelQuotient_anti {H K : Subgroup G} (hHK : H ≤ K)
     Nat.card (MulAction.orbitRel.Quotient K X) ≤
       Nat.card (MulAction.orbitRel.Quotient H X) := by
   let f := Setoid.map_of_le (MulAction.orbitRel_le_of_subgroup_le (G := G) (X := X) hHK)
-  apply Nat.card_le_card_of_surjective f
-  intro q
-  induction q using Quotient.inductionOn'
-  exact ⟨Quotient.mk'' _, rfl⟩
+  exact Nat.card_le_card_of_surjective f (Setoid.map_of_le_surjective _)
 
 /-- The map from the bottom-subgroup quotient to the `H`-quotient is the `H`-orbit class map
 under the bottom quotient equivalence. -/
