@@ -100,10 +100,16 @@ theorem toLinearMap_baseChangeEquiv_tmul (a : A) (f : M →ₗ⁅R,L⁆ N) :
   simp only [baseChangeEquiv, LinearEquiv.trans_apply, LinearEquiv.baseChange_tmul,
     toLinearMap_maxTrivLinearMapEquivLieModuleHom, LieModuleEquiv.coe_toLinearEquiv]
   rw [coe_maxTrivEquiv_apply]
-  -- The transport identifies a Lie submodule with its underlying ordinary submodule;
-  -- `erw` matches their definitionally equal subtype coercions.
-  erw [LinearEquiv.coe_ofEq_apply, Submodule.toBaseChange.toLinearEquiv_apply,
-    Submodule.coe_toBaseChange_tmul, toLinearMap_maxTrivLinearMapEquivLieModuleHom_symm]
+  apply congrArg (linearMapBaseChangeEquiv (L := L) A)
+  -- State the transport in the ambient tensor product so its subtype coercion is explicit.
+  calc
+    _ = (Submodule.toBaseChange.toLinearEquiv A
+        (maxTrivSubmodule R L (M →ₗ[R] N) : Submodule R (M →ₗ[R] N))
+        (a ⊗ₜ[R] maxTrivLinearMapEquivLieModuleHom.symm f) : A ⊗[R] (M →ₗ[R] N)) :=
+      LinearEquiv.coe_ofEq_apply _ _
+    _ = _ := by
+      rw [Submodule.toBaseChange.toLinearEquiv_apply, Submodule.coe_toBaseChange_tmul,
+        toLinearMap_maxTrivLinearMapEquivLieModuleHom_symm]
 
 /-- The Hom-space comparison sends a pure tensor to the corresponding scalar multiple of
 the extended Lie-module map. -/
