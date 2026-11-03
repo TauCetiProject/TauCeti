@@ -27,7 +27,8 @@ The transform is multiplicative in the functional input, `D(B, F G) = D(B, F) D(
 truncations of `F` and `G` at order `N + 1` is the transform of the product of those truncations,
 which agrees with the truncation of `F G` below degree `N + 1`. A Newton majorant common to all
 these polynomials makes Coleman's perturbation bound applicable, so the two finite transforms
-differ by `O(2 ^ (-N))` in each coefficient.
+differ by `O(2 ^ (-N))` in each coefficient
+(`PowerSeries.dist_coeff_colemanDBounded_trunc_mul_trunc_le`).
 
 ## References
 
@@ -59,60 +60,6 @@ theorem coeff_colemanDEntire (B F : R⟦X⟧) (k : ℕ) :
   coeff_mk _ _
 
 variable {B F G : R⟦X⟧}
-
-section Product
-
-variable [NormOneClass R] [IsUltrametricDist R]
-
-/-- Let `ρ` be a nonnegative antitone sequence dominating the convolution of the coefficient norms
-of `F` and `G`, let `c ≥ 1`, and let `B` be restricted at every radius `c ρ i` with `B(0) = 0`.
-Replacing the product of the truncations of `F` and `G` at order `b` by the truncation of `F * G`
-moves the `k`-th coefficient of every bounded Coleman transform by at most
-`c ^ (-b) ∏ i < k, β_B(c ρ i)`: the two polynomials agree below degree `b`. -/
-private theorem dist_coeff_colemanDBounded_trunc_mul_trunc_le {ρ : ℕ → ℝ} (hρ₀ : ∀ i, 0 ≤ ρ i)
-    (hρ : Antitone ρ)
-    (hFG : ∀ j, ∑ x ∈ antidiagonal j, ‖coeff x.1 F‖ * ‖coeff x.2 G‖ ≤ ∏ i ∈ range j, ρ i)
-    {c : ℝ} (hc : 1 ≤ c) (hB : ∀ i, B.IsRestricted (c * ρ i)) (hB₀ : coeff 0 B = 0)
-    (a b n m k : ℕ) :
-    dist ((Polynomial.colemanDBounded (trunc a B) (trunc b (F * G)) n m).coeff k)
-        ((Polynomial.colemanDBounded (trunc a B) (trunc b F * trunc b G) n m).coeff k) * c ^ b ≤
-      ∏ i ∈ range k, colemanMajorant B (c * ρ i) := by
-  have hc₀ : 0 ≤ c := zero_le_one.trans hc
-  have hcρ (i : ℕ) : 0 ≤ c * ρ i := mul_nonneg hc₀ (hρ₀ i)
-  have hprod (j : ℕ) : ∏ i ∈ range j, c * ρ i = c ^ j * ∏ i ∈ range j, ρ i := by
-    rw [prod_mul_distrib, prod_const, card_range]
-  have hprod₀ (j : ℕ) : 0 ≤ ∏ i ∈ range j, c * ρ i := prod_nonneg fun i _ ↦ hcρ i
-  -- the coefficients of the product of truncations are dominated by the convolution of norms
-  have hP (j : ℕ) : ‖(trunc b F * trunc b G).coeff j‖ ≤ ∏ i ∈ range j, ρ i := by
-    have htrunc (H : R⟦X⟧) (l : ℕ) : ‖(trunc b H).coeff l‖ ≤ ‖coeff l H‖ := by
-      rw [coeff_trunc]
-      split_ifs <;> simp
-    rw [Polynomial.coeff_mul]
-    refine (norm_sum_le _ _).trans ((sum_le_sum fun x _ ↦ ?_).trans (hFG j))
-    exact (norm_mul_le _ _).trans
-      (mul_le_mul (htrunc F x.1) (htrunc G x.2) (norm_nonneg _) (norm_nonneg _))
-  -- below degree `b`, it agrees with the truncation of the product
-  have hagree {j : ℕ} (hj : j < b) :
-      (trunc b F * trunc b G).coeff j = (trunc b (F * G)).coeff j := by
-    have h := congrArg (fun H : R[X] ↦ H.coeff j) (trunc_trunc_mul_trunc (n := b) F G)
-    simpa only [coeff_trunc, ite_eq_left hj, ← Polynomial.coe_mul, Polynomial.coeff_coe] using h
-  refine Polynomial.dist_coeff_colemanDBounded_mul_le (ρ := fun i ↦ c * ρ i)
-    (by simp [coeff_trunc, hB₀]) (by simp [coeff_trunc, hB₀]) hcρ
-    (fun i j hij ↦ mul_le_mul_of_nonneg_left (hρ hij) hc₀) (one_le_pow₀ hc)
-    (fun j _ ↦ ?_) (fun j _ ↦ ?_)
-    (fun t j ↦ norm_coeff_trunc_succ_mul_pow_le_colemanMajorant (hB t) (hcρ t) a j)
-    (fun t j ↦ by simpa using colemanMajorant_nonneg B (hcρ t)) k
-  · rw [hprod]
-    exact (hP j).trans (le_mul_of_one_le_left (prod_nonneg fun i _ ↦ hρ₀ i) (one_le_pow₀ hc))
-  · rw [Polynomial.coeff_sub]
-    by_cases hj : j < b
-    · rw [hagree hj, sub_self, norm_zero, zero_mul]
-      exact hprod₀ j
-    · rw [coeff_trunc, ite_eq_right hj, zero_sub, norm_neg, hprod, mul_comm]
-      exact mul_le_mul (pow_le_pow_right₀ hc (not_lt.1 hj)) (hP j) (norm_nonneg _)
-        (pow_nonneg hc₀ j)
-
-end Product
 
 section Entire
 
