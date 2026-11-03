@@ -9,6 +9,7 @@ public import Mathlib.Analysis.Convolution
 
 import Mathlib.Analysis.Convex.Continuous
 import Mathlib.Analysis.Convex.Integral
+import TauCeti.MeasureTheory.Integral.Bochner.Basic
 
 /-!
 # Jensen's inequality for convolution with a probability kernel
@@ -41,13 +42,6 @@ public section
 
 open MeasureTheory Set ContinuousLinearMap
 open scoped Convolution ENNReal
-
-/-- A probability kernel `ρ` has total extended mass one: `∫⁻ ofReal (ρ t) dμ = 1`. -/
-private lemma lintegral_ofReal_eq_one {α : Type*} [MeasurableSpace α] {μ : Measure α}
-    {ρ : α → ℝ} (hρ0 : 0 ≤ᵐ[μ] ρ) (hρ1 : ∫ t, ρ t ∂μ = 1) :
-    ∫⁻ t, ENNReal.ofReal (ρ t) ∂μ = 1 := by
-  rw [← ofReal_integral_eq_lintegral_ofReal (integrable_of_integral_eq_one hρ1) hρ0, hρ1,
-    ENNReal.ofReal_one]
 
 variable {G F : Type*} [MeasurableSpace G] [AddGroup G] [MeasurableAdd₂ G] [MeasurableNeg G]
   {μ : Measure G} [SFinite μ] [μ.IsAddRightInvariant]
@@ -101,7 +95,7 @@ theorem ofReal_map_norm_convolution_le_lintegral (hΦ : ConvexOn ℝ (Ici 0) Φ)
   set ν := μ.withDensity fun t => ENNReal.ofReal (ρ t)
   have : IsProbabilityMeasure ν := ⟨by
     rw [withDensity_apply _ MeasurableSet.univ, Measure.restrict_univ,
-      lintegral_ofReal_eq_one hρ0 hρ1]⟩
+      TauCeti.MeasureTheory.lintegral_ofReal_eq_one hρ0 hρ1]⟩
   set h : G → F := fun t => g (x - t)
   have hh : AEStronglyMeasurable h μ :=
     hg.comp_quasiMeasurePreserving (quasiMeasurePreserving_sub_left_of_right_invariant μ x)
@@ -168,6 +162,7 @@ theorem lintegral_ofReal_map_norm_convolution_le (hΦ : ConvexOn ℝ (Ici 0) Φ)
         rw [lintegral_const_mul' _ _ ENNReal.ofReal_ne_top,
           lintegral_sub_right_eq_self (fun x => ENNReal.ofReal (Φ ‖g x‖)) t]
     _ = ∫⁻ x, ENNReal.ofReal (Φ ‖g x‖) ∂μ := by
-        rw [lintegral_mul_const'' _ hρm, lintegral_ofReal_eq_one hρ0 hρ1, one_mul]
+        rw [lintegral_mul_const'' _ hρm, TauCeti.MeasureTheory.lintegral_ofReal_eq_one hρ0 hρ1,
+          one_mul]
 
 end ConvexOn
