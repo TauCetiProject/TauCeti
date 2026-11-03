@@ -219,9 +219,7 @@ theorem encard_setOf_eval_div_eq_xCoord_of_mem_range (φ : Isogeny W₁ W₂) {P
   rw [← xCoord_image_preimage_pointMap φ hP, (injOn_xCoord_preimage_pointMap φ hP).encard_image]
   obtain ⟨Q, rfl⟩ := hφ
   have := (Hom.ofIsogeny φ).finite_ker_pointMapHom (Hom.ofIsogeny_ne_zero φ)
-  rw [encard, ← ENat.card_eq_coe_natCard,
-    show (Hom.ofIsogeny φ).pointMap = (Hom.ofIsogeny φ).pointMapHom from
-      funext fun Q ↦ (Hom.pointMapHom_apply _ Q).symm]
+  rw [encard, ← ENat.card_eq_coe_natCard, ← Hom.coe_pointMapHom]
   exact ENat.card_congr ((Hom.ofIsogeny φ).pointMapHom.fiberEquivKer Q)
 
 /-- **Off the image of `φ`, the fibre of `x ↦ N(x) / D(x)` is empty.** For a real point `P` of

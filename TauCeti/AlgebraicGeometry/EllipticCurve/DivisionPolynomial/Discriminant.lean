@@ -102,7 +102,7 @@ theorem _root_.WeierstrassCurve.evalEval_ψ₂_sq_eq_iff [NoZeroDivisors R] (h2 
   have hsq := congrArg (Polynomial.evalEval x y) W.ψ₂_sq
   rw [evalEval_pow, h, evalEval_add, evalEval_C, evalEval_mul, left_eq_add] at hsq
   refine (mul_eq_zero.mp hsq).resolve_left ?_
-  rw [show (4 : R[X][Y]) = (4 : ℕ) by norm_num, evalEval_natCast]
+  rw [← Nat.cast_ofNat, evalEval_natCast]
   exact_mod_cast mul_ne_zero h2 h2
 
 /-- The Bézout combination exhibiting `4Δ` from `Ψ₂Sq(x)` and `Ψ₃(x)`.
