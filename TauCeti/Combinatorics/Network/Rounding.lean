@@ -108,7 +108,7 @@ theorem exists_integerRounding_isCirculation (f : Assignment Q R) (hf : IsCircul
 
 /-- A flow between integer capacities and of prescribed integer value has an integer-valued flow
 of the same value. -/
-theorem Flow.exists_integerRounding {cap : Assignment Q ℤ} {s t : V} (hst : s ≠ t)
+theorem Flow.exists_integerRounding {cap : Assignment Q ℤ} {s t : V}
     (f : Flow (cap.map (Int.castAddHom R)) s t) (q : ℤ) (hq : f.val = (q : R)) :
     ∃ g : Flow cap s t, g.val = q := by
   classical
@@ -122,7 +122,7 @@ theorem Flow.exists_integerRounding {cap : Assignment Q ℤ} {s t : V} (hst : s 
     · by_cases hxt : x = t
       · subst x
         rw [← BoundedFlow.val_def, hq]
-        simp [b, Ne.symm hst]
+        simp [b, hxs]
       · rw [f.conserve x hxs hxt]
         simp [b, hxs, hxt]
   obtain ⟨g, hgmem, hgex⟩ := exists_integerRounding_mem_Icc 0 cap f.toFun b
@@ -133,12 +133,19 @@ theorem Flow.exists_integerRounding {cap : Assignment Q ℤ} {s t : V} (hst : s 
       exact f.excessAt_sink_nonneg
     rw [hq] at hnonneg
     exact_mod_cast hnonneg
+  have hqzero (hst : s = t) : q = 0 := by
+    apply Int.cast_injective (α := R)
+    rw [Int.cast_zero, ← hq, f.val_eq_zero_of_eq hst]
+  have hbt : b t = q := by
+    by_cases hts : t = s
+    · simp [b, hts, hqzero hts.symm]
+    · simp [b, hts]
   let F : Flow cap s t :=
     { toFun := g
       mem_Icc := hgmem
       conserve := fun x hxs hxt ↦ by simp [hgex x, b, hxs, hxt]
-      excessAt_sink_nonneg := by rw [hgex t]; simpa [b, Ne.symm hst] using hqnonneg }
-  exact ⟨F, by simp [BoundedFlow.val_def, F, hgex t, b, Ne.symm hst]⟩
+      excessAt_sink_nonneg := by rw [hgex t, hbt]; exact hqnonneg }
+  exact ⟨F, by simp [BoundedFlow.val_def, F, hgex t, hbt]⟩
 
 /-- Rational assignments with integer excess admit integer roundings. -/
 theorem exists_integerRounding_rat (f : Assignment Q ℚ) (b : V → ℤ)
