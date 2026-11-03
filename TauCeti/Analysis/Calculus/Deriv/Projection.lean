@@ -7,6 +7,8 @@ module
 
 public import TauCeti.Analysis.Calculus.Deriv.CountableLevels
 public import Mathlib.Analysis.Calculus.Deriv.Comp
+import Mathlib.Analysis.Calculus.Deriv.Add
+import Mathlib.Analysis.Calculus.Deriv.Mul
 import Mathlib.Analysis.Calculus.FDeriv.Linear
 public import Mathlib.MeasureTheory.Measure.Lebesgue.Basic
 
@@ -15,6 +17,8 @@ public import Mathlib.MeasureTheory.Measure.Lebesgue.Basic
 
 A constant projection has zero projected derivative without regularity assumptions.
 Prescribed projected derivatives also hold almost everywhere across exceptional levels.
+The velocity of a curve moved by a linear projection along a fixed direction is computed in
+`HasDerivAt.sub_smul`.
 -/
 
 public section
@@ -64,3 +68,10 @@ theorem ContinuousLinearMap.apply_deriv_ae_eq {E : Type*} [NormedAddCommGroup E]
       by_contra h
       exact hγ (hdγ t ht' h)
     exact Or.inr (hlevel hmem)
+
+/-- The velocity of the curve `s ↦ γ s - ψ (γ s - p) • d`, moved along `d` by the linear form
+`ψ`. -/
+theorem HasDerivAt.sub_smul {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
+    {γ : ℝ → F} {γ' : F} {s : ℝ} (hγ : HasDerivAt γ γ' s) (p d : F) (ψ : F →L[ℝ] ℝ) :
+    HasDerivAt (fun s => γ s - ψ (γ s - p) • d) (γ' - ψ γ' • d) s :=
+  hγ.sub ((ψ.hasFDerivAt.comp_hasDerivAt s (hγ.sub_const p)).smul_const d)

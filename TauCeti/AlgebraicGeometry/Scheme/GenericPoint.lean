@@ -8,6 +8,7 @@ module
 public import Mathlib.AlgebraicGeometry.FunctionField
 public import Mathlib.AlgebraicGeometry.Morphisms.QuasiCompact
 public import Mathlib.AlgebraicGeometry.Stalk
+public import TauCeti.Topology.NoetherianSpace.ClosedPoints
 
 import TauCeti.Topology.KrullDimension.Basic
 
@@ -41,6 +42,10 @@ in its function field is computed on affine opens.
 * `TauCeti.AlgebraicGeometry.Scheme.coheight_eq_one_iff_ne_genericPoint`: on an irreducible
   scheme of dimension at most one, the points of codimension one are exactly the points other
   than the generic point.
+* `TauCeti.AlgebraicGeometry.Scheme.isClosed_of_isLocallyClosed_of_genericPoint_notMem`: on a
+  Noetherian irreducible scheme of dimension at most one, a locally closed set missing the generic
+  point is closed, since all its points are closed. For instance, the zero locus of a function on
+  an open subset which does not vanish at the generic point is closed in the whole scheme.
 * `TauCeti.AlgebraicGeometry.Scheme.eq_bot_of_genericPoint_notMem`: on an irreducible scheme, an
   open missing the generic point is empty.
 * `TauCeti.AlgebraicGeometry.Scheme.subsingleton_of_genericPoint_notMem` and
@@ -108,6 +113,18 @@ theorem coheight_eq_one_iff_ne_genericPoint
     exact_mod_cast (TauCeti.coheight_le_topologicalKrullDim y).trans hX
   rw [← hle.ge_iff_eq, Order.one_le_iff_pos, Order.coheight_pos, not_iff_not,
     isMax_iff_eq_genericPoint]
+
+/-- On a Noetherian irreducible scheme of dimension at most one, a locally closed set which does
+not contain the generic point is closed: all of its points have codimension one, so they are
+closed points. -/
+theorem isClosed_of_isLocallyClosed_of_genericPoint_notMem [TopologicalSpace.NoetherianSpace X]
+    (hX : topologicalKrullDim X ≤ 1) {s : Set X} (hs : IsLocallyClosed s)
+    (hgs : genericPoint X ∉ s) : IsClosed s := by
+  refine hs.isClosed_of_subset_closedPoints fun z hz ↦ ?_
+  have hdim (y : X) : Order.coheight y ≤ 1 := by
+    exact_mod_cast (TauCeti.coheight_le_topologicalKrullDim y).trans hX
+  exact TauCeti.isClosed_singleton_of_forall_coheight_le_one_of_coheight_eq_one hdim
+    ((coheight_eq_one_iff_ne_genericPoint hX).mpr fun h ↦ hgs (h ▸ hz))
 
 /-- On an irreducible scheme, an open which does not contain the generic point is empty: the
 generic point generizes every point, so it lies in every nonempty open. -/

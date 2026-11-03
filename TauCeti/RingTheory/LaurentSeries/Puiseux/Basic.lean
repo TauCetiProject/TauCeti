@@ -133,6 +133,11 @@ theorem single_pow (q : ℚ) (a : K) (n : ℕ) : single K q a ^ n = single K (n 
   apply Subtype.ext
   simp [HahnSeries.single_pow, nsmul_eq_mul]
 
+/-- The inverse of a monomial `a t ^ q` is the monomial `a⁻¹ t ^ (-q)`. -/
+@[simp]
+theorem inv_single (q : ℚ) (a : K) : (single K q a)⁻¹ = single K (-q) a⁻¹ :=
+  Subtype.ext <| by rw [IntermediateField.coe_inv, coe_single, coe_single, HahnSeries.inv_single]
+
 /-- Multiplying a monomial by a constant multiplies its coefficient. -/
 @[simp]
 theorem algebraMap_mul_single (c : K) (q : ℚ) (a : K) :
