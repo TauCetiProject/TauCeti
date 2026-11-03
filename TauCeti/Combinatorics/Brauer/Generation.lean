@@ -65,37 +65,6 @@ section Reconnect
 variable (hcap : D.val (Sum.inl a) = Sum.inl b) (hcup : D.val (Sum.inr c) = Sum.inr d)
 include hcap hcup
 
-omit hcap hcup in
-/-- The reconnected diagram joins the bottom point `a` to the top point `c`. -/
-private theorem reconnect_val_inl_left :
-    (D.reconnect (Sum.inr c) (Sum.inl a)).val (Sum.inl a) = Sum.inr c :=
-  PerfectMatching.reconnect_val_right Sum.inl_ne_inr
-
-/-- The reconnected diagram joins the bottom point `b` to the top point `d`. -/
-private theorem reconnect_val_inl_right :
-    (D.reconnect (Sum.inr c) (Sum.inl a)).val (Sum.inl b) = Sum.inr d := by
-  rw [← hcap, ← hcup]
-  exact PerfectMatching.reconnect_val_val_right Sum.inl_ne_inr
-
-omit hcap hcup in
-/-- The reconnected diagram joins the top point `c` to the bottom point `a`. -/
-private theorem reconnect_val_inr_left :
-    (D.reconnect (Sum.inr c) (Sum.inl a)).val (Sum.inr c) = Sum.inl a :=
-  PerfectMatching.reconnect_val_self Sum.inl_ne_inr
-
-/-- The reconnected diagram joins the top point `d` to the bottom point `b`. -/
-private theorem reconnect_val_inr_right :
-    (D.reconnect (Sum.inr c) (Sum.inl a)).val (Sum.inr d) = Sum.inl b := by
-  rw [← hcap, ← hcup]
-  exact PerfectMatching.reconnect_val_val_self Sum.inl_ne_inr
-
-/-- The reconnected diagram keeps every arc of `D` that does not end at one of the four points
-`a`, `b` (at the bottom) and `c`, `d` (at the top). -/
-private theorem reconnect_val_of_ne {x : Fin k ⊕ Fin k} (hxa : x ≠ Sum.inl a)
-    (hxb : x ≠ Sum.inl b) (hxc : x ≠ Sum.inr c) (hxd : x ≠ Sum.inr d) :
-    (D.reconnect (Sum.inr c) (Sum.inl a)).val x = D.val x :=
-  PerfectMatching.reconnect_val_of_ne hxc hxa (hcup ▸ hxd) (hcap ▸ hxb)
-
 /-- An arc of `D` with one end off the four points `a`, `b`, `c`, `d` has its other end off them
 too: the four points are joined among themselves by the cap `a`–`b` and the cup `c`–`d`. -/
 private theorem val_ne_of_ne {x : Fin k ⊕ Fin k} (hxa : x ≠ Sum.inl a)
@@ -117,13 +86,12 @@ theorem bottomCap_reconnect :
   simp only [mem_bottomCap, Finset.mem_erase, isCap_def, Sum.isLeft_inl, true_and]
   by_cases hia : i = a
   · subst i
-    rw [reconnect_val_inl_left]
-    simp
+    simp [PerfectMatching.reconnect_val_right Sum.inl_ne_inr]
   by_cases hib : i = b
   · subst i
-    simp [reconnect_val_inl_right hcap hcup]
-  rw [reconnect_val_of_ne hcap hcup (by simpa using hia) (by simpa using hib) Sum.inl_ne_inr
-    Sum.inl_ne_inr]
+    simp [hcap ▸ hcup ▸ PerfectMatching.reconnect_val_val_right (D := D) Sum.inl_ne_inr]
+  rw [PerfectMatching.reconnect_val_of_ne Sum.inl_ne_inr (by simpa using hia)
+    (hcup ▸ Sum.inl_ne_inr) (hcap ▸ by simpa using hib)]
   simp [hia, hib]
 
 /-- The reconnected diagram has two capped bottom points fewer than `D`. -/
@@ -161,18 +129,24 @@ theorem composeDiagram_capCup_reconnect :
   have hcd : c ≠ d := fun h => D.apply_ne (Sum.inr c) (by rw [hcup, h])
   have hba : D.val (Sum.inl b) = Sum.inl a := D.apply_eq_of_apply_eq hcap
   have hdc : D.val (Sum.inr d) = Sum.inr c := D.apply_eq_of_apply_eq hcup
+  have hXa : X.val (Sum.inl a) = Sum.inr c := PerfectMatching.reconnect_val_right Sum.inl_ne_inr
+  have hXb : X.val (Sum.inl b) = Sum.inr d :=
+    hcap ▸ hcup ▸ PerfectMatching.reconnect_val_val_right Sum.inl_ne_inr
+  have hXc : X.val (Sum.inr c) = Sum.inl a := PerfectMatching.reconnect_val_self Sum.inl_ne_inr
+  have hXd : X.val (Sum.inr d) = Sum.inl b :=
+    hcap ▸ hcup ▸ PerfectMatching.reconnect_val_val_self Sum.inl_ne_inr
   refine Subtype.ext (Equiv.ext fun x => ?_)
   -- The four points `a`, `b`, `c`, `d` are treated by hand; every other point keeps its arc.
   by_cases hxa : x = Sum.inl a
   · subst x
     rw [hcap]
-    exact composeDiagram_val_inl_eq_inl_of_cap_upper _ _ (reconnect_val_inl_left)
-      (capCup_val_inl_left hcd) (reconnect_val_inr_right hcap hcup)
+    exact composeDiagram_val_inl_eq_inl_of_cap_upper _ _ hXa
+      (capCup_val_inl_left hcd) hXd
   by_cases hxb : x = Sum.inl b
   · subst x
     rw [hba]
-    exact composeDiagram_val_inl_eq_inl_of_cap_upper _ _ (reconnect_val_inl_right hcap hcup)
-      (capCup_val_inl_right hcd) (reconnect_val_inr_left)
+    exact composeDiagram_val_inl_eq_inl_of_cap_upper _ _ hXb
+      (capCup_val_inl_right hcd) hXc
   by_cases hxc : x = Sum.inr c
   · subst x
     rw [hcup]
@@ -181,7 +155,8 @@ theorem composeDiagram_capCup_reconnect :
   · subst x
     rw [hdc]
     exact composeDiagram_val_inr_eq_inr_of_cup_upper _ _ (capCup_val_inr_right hcd)
-  have hX : X.val x = D.val x := reconnect_val_of_ne hcap hcup hxa hxb hxc hxd
+  have hX : X.val x = D.val x :=
+    PerfectMatching.reconnect_val_of_ne hxc hxa (hcup ▸ hxd) (hcap ▸ hxb)
   obtain ⟨hya, hyb, hyc, hyd⟩ := val_ne_of_ne hcap hcup hxa hxb hxc hxd
   rcases x with i | j <;> rcases hy : D.val _ with i' | j'
   · exact composeDiagram_val_inl_eq_inl_of_cap_lower _ _ (hX.trans hy)
@@ -208,7 +183,8 @@ theorem middleLoopCount_capCup_reconnect :
   by_cases hmd : m = d
   · subst m
     exact not_onMiddleLoop_of_isThrough_right <| by
-      simp [isThrough_def, reconnect_val_inr_right hcap hcup]
+      simp [isThrough_def,
+        hcap ▸ hcup ▸ PerfectMatching.reconnect_val_val_self (D := D) Sum.inl_ne_inr]
   exact not_onMiddleLoop_of_isThrough_left <| by
     simp [isThrough_def, capCup_val_inl_of_ne hmc hmd]
 
