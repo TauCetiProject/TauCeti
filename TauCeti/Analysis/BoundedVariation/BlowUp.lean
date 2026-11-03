@@ -118,10 +118,14 @@ private theorem integrable_and_integral_divergenceCLM_mul_indicator_preimage
     by_cases hy : x + r • y ∈ s
     · simp [hy, hr.ne']
     · simp [hy]
+  have hGG : ∫ w, k w ∂μ =
+      ∫ y, ⟪ψ y, outerNormal μ Ω s y⟫ ∂variationMeasure μ Ω (s.indicator 1) := by
+    simpa only [k, divergenceCLM_apply] using
+      integral_trace_fderiv_mul_indicator_eq_integral_inner_outerNormal hu hfin
+        (ψ.contDiff.of_le (by simp)) ψ.hasCompactSupport ψ.tsupport_subset
   simp_rw [hpt]
   refine ⟨((hk.comp_add_left x).comp_smul hr.ne').const_mul r, ?_⟩
-  rw [integral_const_mul, μ.integral_comp_smul (fun z => k (x + z)), integral_add_left_eq_self,
-    integral_divergenceCLM_mul_indicator_eq_integral_inner_outerNormal hu hfin ψ,
+  rw [integral_const_mul, μ.integral_comp_smul (fun z => k (x + z)), integral_add_left_eq_self, hGG,
     abs_of_pos (by positivity), smul_eq_mul, ← mul_assoc, div_eq_mul_inv]
 
 /-- **The blow-ups at a point of the reduced boundary have normal `ν`, asymptotically.** Against an

@@ -5,13 +5,13 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.KnotTheory.Grid.Homology.Tau
+public import TauCeti.KnotTheory.Grid.Homology.KnotAlexander
 public import TauCeti.KnotTheory.Grid.Stabilization.Comparison
 public import TauCeti.KnotTheory.Grid.Stabilization.Components
 public import TauCeti.KnotTheory.Grid.Stabilization.Map.Grading
 
 /-!
-# Stabilization invariance of `GH⁻` and of `τ`
+# Stabilization invariance of `GH⁻`
 
 Let `G` be a grid diagram of size `n`, let `s` be a column, and let
 `G' = G.stabilizeX s.castSucc (G.X s).castSucc s` be the stabilization splitting the `X`-marking
@@ -30,8 +30,8 @@ diagram with an odd number of components, preserves the Alexander grading.
 
 For a knot grid `G`, the diagram `G'` is again a knot grid, and `U` acts on both homologies as
 any one variable. Since `σ` commutes with the evaluation `V_j ↦ U`, the map on homology is an
-isomorphism of graded `R[U]`-modules of Alexander degree zero, and therefore the invariants `τ` of
-`G'` and `G` agree (`GridDiagram.IsKnot.tau_stabilizeX`). Only this one stabilization type is
+isomorphism of graded `R[U]`-modules of Alexander degree zero
+(`GridDiagram.IsKnot.unblockedHomologyIsomorphic_stabilizeX`). Only this one stabilization type is
 treated here; the other stabilization types and commutation moves are not.
 
 ## Main definitions
@@ -52,14 +52,15 @@ treated here; the other stabilization types and commutation moves are not.
   the map on homology is bijective.
 * `OddComponentGridDiagram.stabilizeXHomologyMap_mem_alexanderUnblockedHomologyGrading_piece`:
   it preserves the Alexander grading.
-* `TauCeti.GridDiagram.IsKnot.tau_stabilizeX`: `τ(G') = τ(G)`.
+* `TauCeti.GridDiagram.IsKnot.unblockedHomologyIsomorphic_stabilizeX`: for a knot grid, `GH⁻(G)`
+  and `GH⁻(G')` are isomorphic as Alexander-graded `R[U]`-modules.
 
 ## References
 
-This is stabilization invariance of `GH⁻` for this stabilization type, and its consequence for
-`τ`, in Ozsváth--Stipsicz--Szabó, *Grid Homology for Knots and Links*, Section 5.2 and
-Chapter 6; see also Manolescu--Ozsváth--Szabó--Thurston, *On combinatorial link Floer
-homology*, Geom. Topol. 11 (2007), Section 3.2.
+This is stabilization invariance of `GH⁻` for this stabilization type in
+Ozsváth--Stipsicz--Szabó, *Grid Homology for Knots and Links*, Section 5.2; see also
+Manolescu--Ozsváth--Szabó--Thurston, *On combinatorial link Floer homology*, Geom. Topol. 11
+(2007), Section 3.2.
 -/
 
 public section
@@ -288,13 +289,15 @@ namespace GridDiagram.IsKnot
 variable {n : ℕ} {G : GridDiagram n} (hG : G.IsKnot) (s : Fin n)
   (K : Type*) [CommRing K] [CharP K 2]
 
-/-- **`τ` is invariant under `X`-stabilization.** The stabilization of a knot grid `G` splitting
-the `X`-marking of column `s` is a knot grid with the same invariant `τ`. -/
-theorem tau_stabilizeX :
-    ((G.isKnot_stabilizeX s.castSucc (G.X s).castSucc s).mpr hG).tau K = hG.tau K := by
-  refine ((G.isKnot_stabilizeX s.castSucc (G.X s).castSucc s).mpr hG).tau_eq_of_semilinearMap K hG
+/-- **`GH⁻` is invariant under `X`-stabilization.** The stabilization of a knot grid `G` splitting
+the `X`-marking of column `s` is a knot grid whose `GH⁻` is isomorphic to `GH⁻(G)` as an
+Alexander-graded `K[U]`-module. -/
+theorem unblockedHomologyIsomorphic_stabilizeX :
+    hG.UnblockedHomologyIsomorphic
+      ((G.isKnot_stabilizeX s.castSucc (G.X s).castSucc s).mpr hG) K := by
+  refine (UnblockedHomologyIsomorphic.of_semilinearMap
     (fun p ↦ by rw [AlgHom.coe_toRingHom, aeval_rename, Function.comp_def])
-    (G.stabilizeXHomologyMap s K) (G.stabilizeXHomologyMap_bijective s K) fun a y hy ↦ ?_
+    (G.stabilizeXHomologyMap s K) (G.stabilizeXHomologyMap_bijective s K) fun a y hy ↦ ?_).symm
   rw [mem_alexanderUnblockedHomologyGrading_piece_iff,
     ← OddComponentGridDiagram.mem_alexanderUnblockedHomologyGrading_piece_iff]
   rw [mem_alexanderUnblockedHomologyGrading_piece_iff,

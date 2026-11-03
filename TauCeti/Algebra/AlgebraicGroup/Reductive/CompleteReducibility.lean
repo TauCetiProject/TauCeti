@@ -24,7 +24,8 @@ representation. Connectedness identifies Lie-stable subspaces with subrepresenta
 complements are rational subrepresentations. Linear reductivity descends from the algebraic
 closure to the original field. Together with the converse for smooth geometrically connected
 groups, this gives the equivalence between reductivity and linear reductivity in characteristic
-zero.
+zero. Every rational representation, including an infinite-dimensional one, is therefore
+completely reducible.
 
 The Lie-algebra inputs are `reductiveCommHopfAlgProperty.hasCentralRadical_lieAlgebra` and
 `reductiveCommHopfAlgProperty.isSemisimple_differential_of_mem_center`. The passage back to
@@ -102,11 +103,11 @@ theorem reductiveCommHopfAlgProperty.linearlyReductive
   let _ : AddCommGroup M := Module.addCommMonoidToAddCommGroup (AlgebraicClosure k)
   exact Comodule.isCompletelyReducible_of_reductive_of_isAlgClosed hH.algebraicClosureBaseChange
 
-/-- Every finite-dimensional rational representation of a reductive affine group in
-characteristic zero is completely reducible, over the original field. -/
+/-- Every rational representation of a reductive affine group in characteristic zero is
+completely reducible over the original field, without a finite-dimensionality assumption. -/
 theorem Comodule.isCompletelyReducible_of_reductive
     (hH : reductiveCommHopfAlgProperty k H)
-    {M : Type w} [AddCommGroup M] [Module k M] [Comodule k H M] [FiniteDimensional k M] :
+    {M : Type w} [AddCommGroup M] [Module k M] [Comodule k H M] :
     Comodule.IsCompletelyReducible k H M :=
   ((linearlyReductiveCommHopfAlgProperty_iff k H.obj).mp hH.linearlyReductive).isCompletelyReducible
 

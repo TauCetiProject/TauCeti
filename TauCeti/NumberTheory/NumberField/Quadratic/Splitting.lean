@@ -167,7 +167,7 @@ private theorem card_monicFactorsMod_quadratic_iff {θ : 𝓞 K} {d : ℤ}
   · intro hcard
     by_contra hns
     have hirr : Irreducible (X ^ 2 - C (d : ZMod p)) :=
-      (X_pow_sub_C_irreducible_iff_of_prime Nat.prime_two).mpr
+      (irreducible_X_pow_sub_C_iff_of_prime Nat.prime_two).mpr
         (fun b hb => hns ⟨b, by rw [← hb]; ring⟩)
     rw [normalizedFactors_irreducible hirr] at hcard
     simp at hcard

@@ -480,7 +480,7 @@ theorem eq_pathOfSuccessors (h₀ : y 0 = a₀)
     y = pathOfSuccessors a₀ s := by
   funext n
   induction n using Nat.strong_induction_on with
-  | h n ih =>
+  | ind n ih =>
     match n with
     | 0 => simpa using h₀
     | n + 1 =>
