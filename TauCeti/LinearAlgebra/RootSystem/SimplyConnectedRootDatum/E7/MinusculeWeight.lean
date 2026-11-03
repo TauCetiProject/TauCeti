@@ -30,6 +30,8 @@ only the index-two root lattice of the adjoint representation.
 * `TauCeti.DynkinType.e7MinusculeWeight`: the fifty-six weights in fundamental coordinates.
 * `TauCeti.DynkinType.e7MinusculeReflection`: the permutation induced by a simple reflection.
 * `TauCeti.DynkinType.e7MinusculeWeight_reflection`: the simple-reflection equation.
+* `TauCeti.DynkinType.exists_e7MinusculeWeight_apply_eq_neg_one_iff_ne_zero`: the highest weight
+  `ϖ₇`, at index `0`, is the only weight with no simple-coroot coordinate equal to `-1`.
 * `TauCeti.DynkinType.exists_e7MinusculeReflections_eq`: every table index is reached from
   the highest weight by simple reflections.
 * `TauCeti.DynkinType.range_e7MinusculeWeight`: the table is exactly the Weyl orbit of `ϖ₇`.
@@ -103,6 +105,12 @@ theorem e7MinusculeWeight_apply_eq_neg_one_or_eq_zero_or_eq_one (a : Fin 56) (i 
     e7MinusculeWeight a i = -1 ∨ e7MinusculeWeight a i = 0 ∨
       e7MinusculeWeight a i = 1 := by
   fin_cases a <;> fin_cases i <;> decide
+
+/-- The highest weight `ϖ₇`, at index `0`, is the only weight of the table with no simple-coroot
+coordinate equal to `-1`. -/
+theorem exists_e7MinusculeWeight_apply_eq_neg_one_iff_ne_zero (a : Fin 56) :
+    (∃ i, e7MinusculeWeight a i = -1) ↔ a ≠ 0 := by
+  decide +kernel +revert
 
 /-! ## Simple reflections -/
 

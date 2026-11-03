@@ -163,7 +163,7 @@ variable {f g : ℍ → ℂ}
 /-- Off `q = 0`, the cusp function is evaluated at the logarithm of `q`. -/
 theorem UpperHalfPlane.cuspFunction_of_ne_zero {q : ℂ} (hq : q ≠ 0) (f : ℍ → ℂ) :
     cuspFunction h f q = f (ofComplex (Function.Periodic.invQParam h q)) := by
-  simp [cuspFunction, Function.Periodic.cuspFunction_eq_of_nonzero _ _ hq]
+  simp [cuspFunction, Function.Periodic.cuspFunction_eq_of_ne_zero _ _ hq]
 
 /-- Off `q = 0`, cusp functions commute with pointwise binary operations. -/
 theorem UpperHalfPlane.cuspFunction_map₂_eventuallyEq (op : ℂ → ℂ → ℂ) (f g : ℍ → ℂ) :

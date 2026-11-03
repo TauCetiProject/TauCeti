@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Data.Setoid.Basic
 public import TauCeti.Data.Setoid.Countable
 public import TauCeti.ModelTheory.Counting.Stratification
 
@@ -106,8 +107,7 @@ theorem BFScattered.of_countable_isoClasses
   intro α _
   have hle : (isoSetoid L ℕ).comap (Subtype.val : K → _) ≤
       (bfEquivSetoid L ℕ α).comap Subtype.val := fun x y h => isoSetoid_le_bfEquivSetoid α h
-  exact Function.Surjective.countable (f := Setoid.map_of_le hle) fun q =>
-    Quotient.inductionOn q fun c => ⟨Quotient.mk _ c, rfl⟩
+  exact (Setoid.map_of_le_surjective hle).countable
 
 /-- **Scatteredness from observations.** Suppose that at each countable level `α` an observation
 `obs α` on the members of `K` takes countably many values, and members with equal observations

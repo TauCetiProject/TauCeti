@@ -268,14 +268,14 @@ variable (Γ) in
 theorem one_completedSMul (m : M) : hM.completedSMul (1 : completedGroupAlgebra R Γ) m = m :=
   hM.eq_of_forall_invariant_mkQ_eq Γ fun V hVo hV ↦ by
     obtain ⟨U, hU⟩ := hM.exists_le_ker_quotientToModuleEnd hV hVo
-    rw [hM.mkQ_completedSMul hV hVo U hU, map_one, Module.End.one_apply]
+    rw [hM.mkQ_completedSMul hV hVo U hU, map_one, one_apply_eq_self]
 
 /-- Multiplication in `R[[Γ]]` acts by successive scalar actions. -/
 theorem mul_completedSMul (x y : completedGroupAlgebra R Γ) (m : M) :
     hM.completedSMul (x * y) m = hM.completedSMul x (hM.completedSMul y m) :=
   hM.eq_of_forall_invariant_mkQ_eq Γ fun V hVo hV ↦ by
     obtain ⟨U, hU⟩ := hM.exists_le_ker_quotientToModuleEnd hV hVo
-    simp only [hM.mkQ_completedSMul hV hVo U hU, map_mul, Module.End.mul_apply]
+    simp only [hM.mkQ_completedSMul hV hVo U hU, map_mul, mul_apply_eq_comp]
 
 /-- Every element of `R[[Γ]]` sends the zero element of `M` to zero. -/
 @[simp]

@@ -232,7 +232,7 @@ conclusion, which is an equality of bilinear maps. -/
 theorem IsAlt.compl₁₂_self_eq_det_smul (b : Basis (Fin 2) R M) {ω : M →ₗ[R] M →ₗ[R] N}
     (halt : ω.IsAlt) (φ : M →ₗ[R] M) : ω.compl₁₂ φ φ = LinearMap.det φ • ω := by
   ext x y
-  simpa only [compl₁₂_apply, smul_apply, AlternatingMap.compLinearMap_apply,
+  simpa only [compl₁₂_apply, LinearMap.smul_apply, AlternatingMap.compLinearMap_apply,
     IsAlt.toAlternatingMap_apply, Fin.isValue, Matrix.cons_val_zero, Matrix.cons_val_one,
     Matrix.cons_val_fin_one, _root_.smul_apply] using
     congr($(AlternatingMap.compLinearMap_eq_det_smul b halt.toAlternatingMap φ) ![x, y])

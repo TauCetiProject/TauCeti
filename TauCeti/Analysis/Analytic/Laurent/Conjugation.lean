@@ -19,7 +19,7 @@ parameter map need only be continuous at the central parameter.
 
 This comparison makes the Laurent forms of nonmonic polynomial roots compatible
 with the conjugation action on root labels. It uses Mathlib's uniqueness theorem
-`AnalyticAt.unique_eventuallyEq_zpow_smul_nonzero` on a real slice, where
+`AnalyticAt.unique_eventuallyEq_zpow_smul_ne_zero` on a real slice, where
 conjugation is a real linear map.
 
 ## References
@@ -67,7 +67,7 @@ theorem laurent_eq_of_conj {u v : E × ℂ → ℂ} {x₀ : E} {m n : ℤ} {τ :
       simpa using (continuous_const.prodMk Complex.continuous_ofReal).tendsto (0 : ℝ)
     filter_upwards [ht.eventually heq] with t h tne
     simpa [f, map_mul, map_zpow₀, Complex.real_smul] using h (by exact_mod_cast tne)
-  have hmn : m = n := unique_eventuallyEq_zpow_smul_nonzero
+  have hmn : m = n := AnalyticAt.unique_eventuallyEq_zpow_smul_ne_zero
     (f := f) (z₀ := (0 : ℝ))
     ⟨_, huR, by simpa using hu0, by
       filter_upwards with t
