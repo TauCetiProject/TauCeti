@@ -18,7 +18,7 @@ The weight torus determines the simple-coroot matrices in the minuscule represen
 For any represented bialgebra through which this torus factors, its coordinate cocharacters
 have those same differentials. An injective tangent realization therefore identifies them
 with any vectors having the prescribed Cartan matrices. The integral and generated E₇
-carriers both use these calculations, extracted from `Generated.Coroot` and `Generated.Serre`.
+carriers both use these calculations.
 
 ## References
 
