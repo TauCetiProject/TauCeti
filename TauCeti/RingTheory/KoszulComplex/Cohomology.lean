@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.RingTheory.KoszulComplex.Basic
+public import TauCeti.RingTheory.KoszulComplex.Presentation
 public import TauCeti.Algebra.Homology.Kronecker
 
 /-!
@@ -114,19 +114,8 @@ theorem comp_koszulDifferential_one_eq_zero_iff {N : Type*} [AddCommGroup N] [Mo
     (g : M →ₗ[R] N) {φ : Module.Dual R M} :
     g.comp ((exteriorPower.oneEquiv R M).toLinearMap.comp (koszulDifferential φ 1)) = 0 ↔
       ∀ m n, φ m • g n = φ n • g m := by
-  constructor
-  · intro h m n
-    have he := congrArg (fun f : ⋀[R]^2 M →ₗ[R] N ↦
-      f (exteriorPower.ιMulti R 2 ![m, n])) h
-    simpa [koszulDifferential_ιMulti, Fin.sum_univ_two, Fin.removeNth,
-      Fin.one_succAbove_zero, sub_eq_zero, ← sub_eq_add_neg] using he
-  · intro h
-    apply exteriorPower.linearMap_ext
-    apply AlternatingMap.ext
-    intro v
-    simpa [koszulDifferential_ιMulti, Fin.sum_univ_two, Fin.removeNth,
-      Fin.one_succAbove_zero, Fin.tail, ← sub_eq_add_neg] using
-      sub_eq_zero.mpr (h (v 0) (v 1))
+  simpa only [koszulRelations_def, LinearMap.range_le_ker_iff] using
+    (koszulRelations_le_ker_iff φ g)
 
 variable {N : ModuleCat.{max u v} R}
 
