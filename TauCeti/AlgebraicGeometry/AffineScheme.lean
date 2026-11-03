@@ -7,7 +7,6 @@ module
 
 public import Mathlib.AlgebraicGeometry.AffineScheme
 public import Mathlib.AlgebraicGeometry.Properties
-import Mathlib.RingTheory.LocalProperties.Basic
 import TauCeti.RingTheory.Localization.Tower
 
 /-!
@@ -53,8 +52,6 @@ be injective. This is the local reason why an affine blowup changes nothing away
   isomorphism over `D(a)`.
 * `AlgebraicGeometry.IsAffineOpen.mem_basicOpen_iff_notMem_primeIdealOf`: on an affine open, a
   point lies in the basic open of a section iff the section is not in the point's prime ideal.
-* `AlgebraicGeometry.IsAffineOpen.ideal_eq_of_forall_map_germ_eq`: two ideals of the sections over
-  an affine open are equal once they generate the same ideal of every local ring of the open.
 * `TauCeti.AlgebraicGeometry.overPullback_map_bijective_of_isIso_appTop`: over an affine base,
   base change along `j : T ⟶ S` is a bijection on morphisms `Y ⟶ Y'` into an affine `Y'` when
   `Γ(Y, 𝒪) → Γ(Y ×_S T, 𝒪)` is an isomorphism.
@@ -174,35 +171,6 @@ theorem IsAffineOpen.mem_basicOpen_iff_notMem_primeIdealOf {X : Scheme.{u}} {x :
   have := hV.isLocalization_stalk ⟨x, hx⟩
   exact (X.mem_basicOpen r x hx).trans
     (IsLocalization.AtPrime.isUnit_to_map_iff (X.presheaf.stalk x) _ r)
-
-/-- **Ideals of an affine open are determined by their stalks.** Two ideals of the sections over
-an affine open `U` are equal if they generate the same ideal of the local ring `𝒪_{X,x}` at every
-point `x` of `U`. These local rings are the localizations of `Γ(X, U)` at its primes. -/
-theorem IsAffineOpen.ideal_eq_of_forall_map_germ_eq {X : Scheme.{u}} {U : X.Opens}
-    (hU : IsAffineOpen U) {I J : Ideal Γ(X, U)}
-    (h : ∀ (x : X) (hxU : x ∈ U),
-      I.map (X.presheaf.germ U x hxU).hom = J.map (X.presheaf.germ U x hxU).hom) :
-    I = J := by
-  refine Ideal.eq_of_localization_maximal fun P hP ↦ ?_
-  let p : Spec Γ(X, U) := ⟨P, hP.isPrime⟩
-  have hxU : hU.fromSpec p ∈ U := by
-    have := Set.mem_range_self (f := hU.fromSpec) p
-    rwa [hU.range_fromSpec] at this
-  let := X.presheaf.algebra_section_stalk ⟨_, hxU⟩
-  have hP' : hU.primeIdealOf ⟨_, hxU⟩ = p :=
-    hU.fromSpec.isOpenEmbedding.injective (hU.fromSpec_primeIdealOf ⟨_, hxU⟩)
-  have : IsLocalization.AtPrime (X.presheaf.stalk (hU.fromSpec p)) P := by
-    have := hU.isLocalization_stalk ⟨_, hxU⟩
-    rwa [hP'] at this
-  -- The local ring at `fromSpec p` and `Localization.AtPrime P` are both localizations at `P`.
-  let e := IsLocalization.algEquiv P.primeCompl
-    (X.presheaf.stalk (hU.fromSpec p)) (Localization.AtPrime P)
-  have he : (e : _ →+* Localization.AtPrime P).comp
-      (algebraMap Γ(X, U) (X.presheaf.stalk (hU.fromSpec p))) =
-      algebraMap Γ(X, U) (Localization.AtPrime P) :=
-    e.toAlgHom.comp_algebraMap
-  rw [← he, ← Ideal.map_map, ← Ideal.map_map]
-  exact congrArg _ (h _ hxU)
 
 end AlgebraicGeometry
 

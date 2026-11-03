@@ -339,7 +339,7 @@ theorem ofIdealTop_span_singleton_eq_prod_vanishingIdeal
   have hprod : ∀ (I : TauCeti.AlgebraicGeometry.CodimensionOnePoint X → X.IdealSheafData),
       (∏ η ∈ s, I η).ideal U = ∏ η ∈ s, (I η).ideal U := fun I ↦ map_prod φ I s
   rw [ofIdealTop_ideal, hprod]
-  refine U.2.ideal_eq_of_forall_map_germ_eq fun x hxU ↦ ?_
+  refine U.2.ideal_ext_iff.mpr fun x hxU ↦ ?_
   rw [Ideal.map_map, Ideal.map_span, Set.image_singleton, ← CommRingCat.hom_comp,
     TopCat.Presheaf.germ_res, ← Ideal.mapHom_apply, map_prod]
   simp only [Ideal.mapHom_apply, ideal_pow, Pi.pow_apply, Ideal.map_pow,
