@@ -11,6 +11,7 @@ public import Mathlib.RingTheory.TensorProduct.Basic
 public import TauCeti.LinearAlgebra.CliffordAlgebra.BaseChange
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Star
 public import TauCeti.LinearAlgebra.Complex.Conjugation
+import TauCeti.LinearAlgebra.CliffordAlgebra.Vectors
 
 /-!
 # Complex conjugation on a complexified real Clifford algebra
@@ -41,6 +42,10 @@ structure `CliffordAlgebra.starModule_of_trivialStar`, enabled locally.
 * `CliffordAlgebra.complexConj_unique`: `complexConj` is the unique conjugate-linear ring
   endomorphism fixing the real vectors.
 * `CliffordAlgebra.complexConj_complexConj`: `complexConj` is involutive.
+* `CliffordAlgebra.complexConj_eq_self_iff`: the elements fixed by `complexConj` are exactly the
+  real Clifford elements, the image of `CliffordAlgebra.ofBaseChangeAux`.
+* `CliffordAlgebra.ofBaseChangeAux_mem_range_ι_iff`: a real Clifford element is a vector exactly
+  when it is a vector of the complexification.
 * `CliffordAlgebra.conjStar_mul` and `CliffordAlgebra.conjStar_conjStar`: `conjStar` is an
   involutive anti-automorphism.
 * `CliffordAlgebra.toBaseChange_conjStar`: on the tensor carrier `conjStar` is the tensor-product
@@ -144,6 +149,47 @@ theorem complexConj_reverse (x : CliffordAlgebra (Q.baseChange ℂ)) :
 theorem complexConj_star (x : CliffordAlgebra (Q.baseChange ℂ)) :
     complexConj Q (star x) = star (complexConj Q x) := by
   rw [complexConj_apply, complexConj_apply, baseChangeCongr_star]
+
+/-- `CliffordAlgebra.complexConj` acts on the generators through the conjugation
+`TauCeti.tmulConj V` of `ℂ ⊗[ℝ] V`. -/
+theorem complexConj_ι (w : ℂ ⊗[ℝ] V) :
+    complexConj Q (ι (Q.baseChange ℂ) w) = ι (Q.baseChange ℂ) (TauCeti.tmulConj V w) := by
+  induction w using TensorProduct.inductionOn with
+  | tmul z v => rw [complexConj_ι_tmul, TauCeti.tmulConj_tmul]
+  | add w w' hw hw' => rw [map_add, map_add, hw, hw', map_add, map_add]
+
+/-! ### The real elements -/
+
+/-- **The real elements of the complexified Clifford algebra.** An element is fixed by complex
+conjugation of the coefficients exactly when it lies in the image of the real Clifford algebra. -/
+@[simp]
+theorem complexConj_eq_self_iff {x : CliffordAlgebra (Q.baseChange ℂ)} :
+    complexConj Q x = x ↔ ∃ y : CliffordAlgebra Q, ofBaseChangeAux ℂ Q y = x := by
+  have hinj : Function.Injective (toBaseChange ℂ Q) :=
+    Function.LeftInverse.injective (ofBaseChange_toBaseChange ℂ Q)
+  -- On the tensor carrier `complexConj` is `conj ⊗ id`, whose fixed points are the `1 ⊗ₜ y`.
+  have htmul (u : ℂ ⊗[ℝ] CliffordAlgebra Q) :
+      Algebra.TensorProduct.congr Complex.conjAe AlgEquiv.refl u =
+        TauCeti.tmulConj (CliffordAlgebra Q) u := by
+    induction u with
+    | tmul z y => simp
+    | add u u' hu hu' => rw [map_add, map_add, hu, hu']
+  rw [← hinj.eq_iff, toBaseChange_complexConj, htmul, TauCeti.tmulConj_eq_self_iff]
+  refine exists_congr fun y => ?_
+  rw [← toBaseChange_ofBaseChangeAux, eq_comm, hinj.eq_iff]
+
+variable {Q} in
+/-- A real Clifford element is a vector exactly when its image in the complexified Clifford
+algebra is a vector. -/
+theorem ofBaseChangeAux_mem_range_ι_iff {x : CliffordAlgebra Q} :
+    ofBaseChangeAux ℂ Q x ∈ LinearMap.range (ι (Q.baseChange ℂ)) ↔
+      x ∈ LinearMap.range (ι Q) := by
+  refine ⟨fun ⟨w, hw⟩ => ?_, fun ⟨v, hv⟩ => ⟨1 ⊗ₜ v, by rw [← hv, ofBaseChangeAux_ι]⟩⟩
+  -- The vector `w` is fixed by conjugation, hence real.
+  have hfix : TauCeti.tmulConj V w = w := ι_injective (Q.baseChange ℂ) <| by
+    rw [← complexConj_ι, hw, complexConj_ofBaseChangeAux]
+  obtain ⟨v, rfl⟩ := (TauCeti.tmulConj_eq_self_iff V w).1 hfix
+  exact ⟨v, ofBaseChangeAux_injective (A := ℂ) Q (by rw [ofBaseChangeAux_ι, hw])⟩
 
 /-! ### The conjugate-linear Clifford involution -/
 
