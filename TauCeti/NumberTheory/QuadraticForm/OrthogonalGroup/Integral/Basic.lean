@@ -99,20 +99,13 @@ theorem mem_integralOrthogonalSubgroup_iff_mem_span (g : orthogonalGroup Q) :
       ∀ x ∈ Submodule.span (PadicInt.subring p) (Set.range b),
         ((g⁻¹ : orthogonalGroup Q) : V ≃ₗ[ℚ_[p]] V) x ∈
           Submodule.span (PadicInt.subring p) (Set.range b) := by
-  have hspan (x : V) : x ∈ Submodule.span (PadicInt.subring p) (Set.range b) ↔
-      ∀ i, b.repr x i ∈ PadicInt.subring p := by
-    rw [Basis.mem_span_iff_repr_mem (PadicInt.subring p) b x]
-    exact forall_congr' fun i ↦ ⟨fun ⟨a, ha⟩ ↦ ha ▸ a.2, fun h ↦ ⟨⟨_, h⟩, rfl⟩⟩
   -- An endomorphism preserves the span exactly when its matrix is integral.
   have hmaps (f : V →ₗ[ℚ_[p]] V) :
-      (∀ x ∈ Submodule.span (PadicInt.subring p) (Set.range b),
-        f x ∈ Submodule.span (PadicInt.subring p) (Set.range b)) ↔
+      Set.MapsTo f (Submodule.span (PadicInt.subring p) (Set.range b))
+        (Submodule.span (PadicInt.subring p) (Set.range b)) ↔
       ∀ i j, LinearMap.toMatrix b b f i j ∈ PadicInt.subring p := by
-    refine ⟨fun h i j ↦ ?_, fun h x hx ↦ (hspan _).mpr fun i ↦ ?_⟩
-    · rw [LinearMap.toMatrix_apply]
-      exact (hspan _).mp (h _ (Submodule.subset_span ⟨j, rfl⟩)) i
-    · rw [← LinearMap.toMatrix_mulVec_repr b b f x, Matrix.mulVec, dotProduct]
-      exact sum_mem fun j _ ↦ mul_mem (h i j) ((hspan x).mp hx j)
+    rw [b.mapsTo_span_range_iff_forall_toMatrix_mem]
+    exact forall₂_congr fun _ _ ↦ ⟨fun ⟨a, ha⟩ ↦ ha ▸ a.2, fun h ↦ ⟨⟨_, h⟩, rfl⟩⟩
   rw [mem_integralOrthogonalSubgroup_iff]
   exact and_congr (hmaps _).symm (hmaps _).symm
 

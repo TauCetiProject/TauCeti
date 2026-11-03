@@ -185,7 +185,7 @@ theorem geometricReflection_apply_of_eq_zero {i : B} {v : B →₀ ℝ}
 theorem geometricReflection_mul_self (i : B) :
     M.geometricReflection i * M.geometricReflection i = 1 := by
   refine LinearMap.ext fun v ↦ ?_
-  simp only [Module.End.mul_apply, Module.End.one_apply, geometricReflection_apply, map_sub,
+  simp only [mul_apply_eq_comp, one_apply_eq_self, geometricReflection_apply, map_sub,
     map_smul, geometricForm_single_self]
   module
 
@@ -216,7 +216,7 @@ private theorem geometricReflection_mul_apply (x y : ℝ) :
       ((4 * cos (π / M i i') ^ 2 - 1) * x - 2 * cos (π / M i i') * y) •
           Finsupp.single i (1 : ℝ) +
         (2 * cos (π / M i i') * x - y) • Finsupp.single i' (1 : ℝ) := by
-  simp only [Module.End.mul_apply, geometricReflection_apply, map_add, map_sub, map_smul,
+  simp only [mul_apply_eq_comp, geometricReflection_apply, map_add, map_sub, map_smul,
     geometricForm_single_single, CoxeterMatrix.diagonal, Nat.cast_one, div_one, Real.cos_pi,
     M.symmetric i' i]
   module
@@ -236,7 +236,7 @@ private theorem pow_apply_eq_self {v : B →₀ ℝ}
   induction k with
   | zero => simp
   | succ k ih =>
-    rw [pow_succ', Module.End.mul_apply, ih, Module.End.mul_apply,
+    rw [pow_succ', mul_apply_eq_comp, ih, mul_apply_eq_comp,
       M.geometricReflection_apply_of_eq_zero h', M.geometricReflection_apply_of_eq_zero h]
 
 /-- The `cos` half of the induction step of `pow_geometricReflection_mul_apply_single`, as an
@@ -273,7 +273,7 @@ private theorem pow_geometricReflection_mul_apply_single
   | succ k ih =>
     have hangle : 2 * ((k : ℝ) + 1) * (π / M i i') =
         2 * k * (π / M i i') + 2 * (π / M i i') := by ring
-    rw [pow_succ', Module.End.mul_apply, ih, M.geometricReflection_mul_apply i i']
+    rw [pow_succ', mul_apply_eq_comp, ih, M.geometricReflection_mul_apply i i']
     push_cast
     rw [hangle, Real.cos_add, Real.sin_add, Real.cos_two_mul, Real.sin_two_mul,
       cos_rotation_step hs hsc, sin_rotation_step hs]
@@ -308,7 +308,7 @@ private theorem pow_geometricReflection_mul_apply_single_right
           (((M.geometricReflection i' * M.geometricReflection i) ^ M i i') (Finsupp.single i' 1)) :=
         by rw [hswap]
     _ = Finsupp.single i' (1 : ℝ) := by
-        rw [← Module.End.mul_apply, hinv, Module.End.one_apply]
+        rw [← mul_apply_eq_comp, hinv, one_apply_eq_self]
 
 /-- **The braid relation in the geometric representation**, for a finite Coxeter-matrix entry at
 least two: the rotation through `2 π / M i i'` has order dividing `M i i'`. The plane spanned by
@@ -332,7 +332,7 @@ private theorem geometricReflection_mul_pow_eq_one (hm : 2 ≤ M i i') :
     apply this
     linarith
   refine LinearMap.ext fun v ↦ ?_
-  rw [Module.End.one_apply]
+  rw [one_apply_eq_self]
   obtain ⟨x, y, hx, hy⟩ :
       ∃ x y : ℝ,
         M.geometricForm (Finsupp.single i 1)
@@ -380,7 +380,7 @@ private theorem pow_geometricReflection_mul_apply_single_of_eq_zero (h : M i i' 
   induction k with
   | zero => simp
   | succ k ih =>
-    rw [pow_succ', Module.End.mul_apply, ih, M.geometricReflection_mul_apply i i']
+    rw [pow_succ', mul_apply_eq_comp, ih, M.geometricReflection_mul_apply i i']
     simp only [h, Nat.cast_zero, div_zero, Real.cos_zero]
     push_cast
     module
@@ -403,7 +403,7 @@ private theorem pow_geometricReflection_mul_eq_one_iff (n : ℕ) :
         have := M.off_diagonal i i' hne
         omega
       have key := M.pow_geometricReflection_mul_apply_single_of_eq_zero i i' hzero n
-      rw [hR, Module.End.one_apply] at key
+      rw [hR, one_apply_eq_self] at key
       obtain ⟨-, h2⟩ := hpair (2 * n) (2 * n) (by linear_combination (norm := module) -key)
       have : (n : ℝ) = 0 := by linarith
       have : n = 0 := by exact_mod_cast this
@@ -418,7 +418,7 @@ private theorem pow_geometricReflection_mul_eq_one_iff (n : ℕ) :
         linarith
       have hs : sin (π / M i i') ≠ 0 := ne_of_gt (Real.sin_pos_of_pos_of_lt_pi hpos hlt')
       have key := M.pow_geometricReflection_mul_apply_single i i' hs n
-      rw [hR, Module.End.one_apply] at key
+      rw [hR, one_apply_eq_self] at key
       obtain ⟨hc, hsi⟩ := hpair
         (cos (2 * (n : ℝ) * (π / M i i')) +
             cos (π / M i i') * (sin (2 * (n : ℝ) * (π / M i i')) / sin (π / M i i')) - 1)
@@ -501,7 +501,7 @@ theorem geometricForm_geometricRepresentation (w : W) (u v : B →₀ ℝ) :
   | one => intro u v; simp
   | mul w w' hw hw' =>
     intro u v
-    rw [map_mul, Module.End.mul_apply, Module.End.mul_apply, hw, hw']
+    rw [map_mul, mul_apply_eq_comp, mul_apply_eq_comp, hw, hw']
 
 /-- **The exact relation satisfied by two simple reflections**: the product of two simple
 reflections is killed by an exponent exactly when that exponent is a multiple of the
@@ -542,7 +542,7 @@ theorem simple_ne_one (i : B) : cs.simple i ≠ 1 := by
   have hrep : M.geometricReflection i = 1 := by
     rw [← cs.geometricRepresentation_simple i, h, map_one]
   have hneg := M.geometricReflection_apply_single_self i
-  rw [hrep, Module.End.one_apply] at hneg
+  rw [hrep, one_apply_eq_self] at hneg
   have : (Finsupp.single i (1 : ℝ)) i = 0 := by
     have := congrArg (fun f : B →₀ ℝ ↦ f i) hneg
     simp only [Finsupp.neg_apply, Finsupp.single_eq_same] at this

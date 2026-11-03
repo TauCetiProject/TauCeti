@@ -99,6 +99,21 @@ theorem charFunDensity_def (μ : Measure ℝ) (x : ℝ) :
     charFunDensity μ x = (2 * π)⁻¹ * (∫ t : ℝ, cexp (-(t * x * I)) * charFun μ t).re := by
   rw [charFunDensity]
 
+/-- A family's inversion density is measurable at a measurable sample point whenever its
+characteristic function is jointly measurable in the parameter and frequency. No finiteness
+or integrability assumption is needed for the totalized inversion integral. -/
+@[fun_prop]
+theorem measurable_charFunDensity {α : Type*} [MeasurableSpace α] {μ : α → Measure ℝ}
+    {x : α → ℝ} (hμ : Measurable fun p : α × ℝ ↦ charFun (μ p.1) p.2)
+    (hx : Measurable x) : Measurable fun a ↦ (μ a).charFunDensity (x a) := by
+  have hi : Measurable fun p : α × ℝ ↦
+      cexp (-(p.2 * x p.1 * I)) * charFun (μ p.1) p.2 := by
+    fun_prop
+  simpa only [charFunDensity_def, Function.comp_apply] using
+    (Complex.measurable_re.comp
+      (hi.stronglyMeasurable.integral_prod_right' (ν := (volume : Measure ℝ))).measurable).const_mul
+        (2 * π)⁻¹
+
 variable {μ : Measure ℝ}
 
 /-- The Fourier phase `exp (-i t x)` does not change the modulus of the characteristic function. -/

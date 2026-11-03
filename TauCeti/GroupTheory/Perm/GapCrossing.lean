@@ -18,11 +18,13 @@ For a permutation `σ` of `Fin L`, a point `x` with `σ x < x` crosses the gaps 
 On every set of forward-moved points closed under passing to larger images, the ranks enumerate
 an initial segment (`Equiv.Perm.image_upRank`).
 
-At each gap as many points cross forward as backward. If `σ` moves the points below `N` forward
-and the others backward, then below every threshold there are at most as many backward depths
-as forward ranks at each gap (`Equiv.Perm.card_cross_backward_le`). Charging a backward move
-across `j` gaps by `ρ₀, …, ρⱼ₋₁` and every gap crossed by a forward move by `ρ` at its rank, the
-backward charges are therefore dominated by the forward ones for a nonnegative antitone `ρ`
+The backward moves have the same total length as the forward ones
+(`Equiv.Perm.sum_sub_apply_eq_sum_apply_sub`). At each gap as many points cross forward as
+backward. If `σ` moves the points below `N` forward and the others backward, then below every
+threshold there are at most as many backward depths as forward ranks at each gap
+(`Equiv.Perm.card_cross_backward_le`). Charging a backward move across `j` gaps by
+`ρ₀, …, ρⱼ₋₁` and every gap crossed by a forward move by `ρ` at its rank, the backward charges
+are therefore dominated by the forward ones for a nonnegative antitone `ρ`
 (`Equiv.Perm.prod_prod_range_le_prod_pow_upRank`). This is the combinatorial core of Coleman's
 coefficient bound, read off the Leibniz expansion of a Sylvester matrix.
 
@@ -101,6 +103,13 @@ theorem card_filter_upRank_lt {S : Finset (Fin L)} (hS : ∀ x ∈ S, (x : ℕ) 
   rw [← card_image_of_injOn ((upRank_injOn σ).mono fun x hx ↦ hS x (mem_filter.1 hx).1), hfi,
     card_range]
 
+/-- The rank of a forward-moved point is less than the number of forward-moved points. -/
+theorem upRank_lt_card {x : Fin L} (hx : (x : ℕ) < σ x) :
+    upRank σ x < #{y : Fin L | (y : ℕ) < σ y} := by
+  rw [← mem_range, ← image_upRank σ (fun y hy ↦ (mem_filter.1 hy).2)
+    fun _ _ y hy _ ↦ by simpa using hy]
+  exact mem_image_of_mem _ (by simpa using hx)
+
 /-- The products of a sequence along the ranks of the forward-moved points are its products over
 an initial segment. -/
 theorem prod_upRank {M : Type*} [CommMonoid M] (β : ℕ → M) :
@@ -108,6 +117,15 @@ theorem prod_upRank {M : Type*} [CommMonoid M] (β : ℕ → M) :
       ∏ t ∈ range #{x : Fin L | (x : ℕ) < σ x}, β t := by
   rw [← image_upRank σ (fun x hx ↦ (mem_filter.1 hx).2) fun x _ y hy _ ↦ by simpa using hy,
     prod_image fun x hx y hy ↦ upRank_injOn σ (by simpa using hx) (by simpa using hy)]
+
+/-- The backward moves of `σ` have the same total length as its forward moves. -/
+theorem sum_sub_apply_eq_sum_apply_sub :
+    ∑ x : Fin L, ((x : ℕ) - σ x) = ∑ x : Fin L, ((σ x : ℕ) - x) := by
+  have h := Equiv.sum_comp σ fun x : Fin L ↦ ((x : ℕ) : ℤ)
+  have hx (x : Fin L) : (((x : ℕ) - σ x : ℕ) : ℤ) =
+      (((σ x : ℕ) - x : ℕ) : ℤ) + ((x : ℕ) : ℤ) - ((σ x : ℕ) : ℤ) := by omega
+  rw [← Nat.cast_inj (R := ℤ), Nat.cast_sum, Nat.cast_sum, sum_congr rfl fun x _ ↦ hx x,
+    sum_sub_distrib, sum_add_distrib, h, add_sub_cancel_right]
 
 /-- **Charges at one gap.** If `σ` moves the points below `N` forward and the others backward,
 then for every `t`, at most as many backward moves cross the gap `c` at depth below `t` as
