@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.Calculus.Deriv.MeanValue
 public import TauCeti.Analysis.Calculus.Splice
+public import TauCeti.Analysis.Calculus.MeanValue
 public import Mathlib.Analysis.Normed.Module.HahnBanach
 public import TauCeti.Geometry.Manifold.Immersion.Differential
 public import TauCeti.Geometry.Manifold.Instances.Sphere

@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.Calculus.ApproximatesLinearOn
 public import TauCeti.Analysis.Calculus.FDeriv.Strip
+public import TauCeti.Analysis.Calculus.MeanValue
 public import TauCeti.Analysis.Calculus.Splice
 public import TauCeti.Analysis.Convex.Prod
 public import TauCeti.Geometry.Manifold.ContMDiff.Atlas
