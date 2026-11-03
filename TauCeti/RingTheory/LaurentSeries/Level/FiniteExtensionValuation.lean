@@ -36,38 +36,6 @@ open scoped LaurentSeries WithZero
 
 namespace TauCeti.LaurentSeries.Level
 
-section Level
-
-variable {K : Type*} [Field K] {e : ℕ+}
-
-/-- Every automorphism of a ramified Laurent level preserves its normalized valuation.
-This is not a simp lemma: `valuation_apply` already rewrites level valuations to Laurent
-valuations. -/
-theorem valuation_algEquiv_apply (σ : Level K e ≃ₐ[K⸨X⸩] Level K e) (x : Level K e) :
-    valuation K e (σ x) = valuation K e x := by
-  obtain ⟨η, rfl⟩ := kummer_surjective σ
-  simp
-
-/-- The normalized valuation computed through a level isomorphism does not depend on that
-isomorphism. -/
-theorem valuation_apply_eq_of_algEquiv {L : Type*} [Semiring L] [Algebra K⸨X⸩ L]
-    (φ ψ : L ≃ₐ[K⸨X⸩] Level K e) (x : L) :
-    valuation K e (φ x) = valuation K e (ψ x) := by
-  rw [← valuation_algEquiv_apply (φ.symm.trans ψ), AlgEquiv.trans_apply,
-    AlgEquiv.symm_apply_apply]
-
-/-- The constant coefficient of a level expansion is independent of the level isomorphism. -/
-theorem coeff_zero_apply_eq_of_algEquiv {L : Type*} [Semiring L] [Algebra K⸨X⸩ L]
-    (φ ψ : L ≃ₐ[K⸨X⸩] Level K e) (x : L) :
-    (ringEquivLaurentSeries K e (φ x)).coeff 0 =
-      (ringEquivLaurentSeries K e (ψ x)).coeff 0 := by
-  obtain ⟨η, hη⟩ := kummer_surjective (φ.symm.trans ψ)
-  have hx : ψ x = kummer K e η (φ x) := by
-    rw [hη, AlgEquiv.trans_apply, AlgEquiv.symm_apply_apply]
-  simp [hx]
-
-end Level
-
 section FiniteExtension
 
 variable {K : Type*} [Field K] [IsAlgClosed K] [CharZero K]
@@ -173,10 +141,7 @@ theorem residueFieldEquivOfFinrankEq_residue (h : finrank K⸨X⸩ L = e)
     (x : (valuationOfFinrankEq h).valuationSubring) :
     residueFieldEquivOfFinrankEq h (residue _ x) =
       (ringEquivLaurentSeries K e (algEquivOfFinrankEq h x)).coeff 0 := by
-  rw [residueFieldEquivOfFinrankEq, RingEquiv.trans_apply, ResidueField.mapEquiv_apply,
-    ResidueField.map_residue, residueFieldEquiv_residue,
-    RingEquiv.coe_toRingHom, AlgEquiv.coe_toRingEquiv,
-    coe_valuationSubringEquivOfFinrankEq]
+  simp [residueFieldEquivOfFinrankEq]
 
 /-- In any level expansion, the residue of an integer is its constant coefficient. -/
 theorem residueFieldEquivOfFinrankEq_residue_eq_coeff (h : finrank K⸨X⸩ L = e)
