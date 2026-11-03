@@ -24,8 +24,10 @@ sublevels are compact, including as subsets of any larger strict sublevel.
 For finite-dimensional manifolds these are the finite-dimensional carriers used
 for broken minimizing paths.
 
-The normalization and finite-path construction follow J. Milnor, *Morse Theory*,
-§16. The estimates use Mathlib's finite Cauchy–Schwarz inequality.
+The broken-geodesic finite-dimensional approximation is described in J. Milnor,
+*Morse Theory*, §16. Here energy is defined on arbitrary vertex tuples before
+interpolation, with a factor of `½`: it is half Milnor's energy on broken
+minimizing geodesics. The estimates use Mathlib's finite Cauchy–Schwarz inequality.
 -/
 
 public section
@@ -47,14 +49,14 @@ theorem dist_le_sum_adjacent_dist (x : Fin (n + 1) → M) (j : Fin (n + 1)) :
     refine Fin.cases ?_ (fun j => ?_) j
     · exact le_trans (by simp) (Finset.sum_nonneg fun _ _ => dist_nonneg)
     · calc
-        dist (x 0) (x j.succ) ≤ dist (x 0) (x 1) + dist (x 1) (x j.succ) :=
+        dist (x 0) (x j.succ) ≤
+            dist (x 0) (x (Fin.succ 0)) + dist (x (Fin.succ 0)) (x j.succ) :=
           dist_triangle _ _ _
-        _ ≤ dist (x 0) (x 1) +
+        _ ≤ dist (x 0) (x (Fin.succ 0)) +
             ∑ i : Fin n, dist (x i.castSucc.succ) (x i.succ.succ) :=
           add_le_add_right (ih (fun i => x i.succ) j) _
         _ = ∑ i : Fin (n + 1), dist (x i.castSucc) (x i.succ) := by
-          rw [Fin.sum_univ_succ]
-          rfl
+          simp only [Fin.sum_univ_succ, Fin.castSucc_zero, Fin.castSucc_succ]
 
 /-- Half the sum of squared edge lengths divided by the corresponding time steps.
 Estimates using this energy require strictly increasing times. -/
@@ -152,19 +154,38 @@ theorem dist_sq_le_discreteEnergy_mul_step {t : Fin (n + 1) → ℝ} (ht : Stric
   unfold discreteEnergy
   nlinarith
 
-/-- A positive cutoff and a fine mesh force every edge in its strict energy
-sublevel to have length less than the chosen positive radius. -/
+/-- A fine mesh forces every edge in a strict energy sublevel to have length
+less than the chosen positive radius. -/
 theorem dist_lt_of_discreteEnergy_lt {t : Fin (n + 1) → ℝ} (ht : StrictMono t)
-    (x : Fin (n + 1) → M) {c ρ : ℝ} (hc : 0 < c) (hρ : 0 < ρ)
+    (x : Fin (n + 1) → M) {c ρ : ℝ} (hρ : 0 < ρ)
     (hx : discreteEnergy t x < c)
     (hmesh : ∀ i : Fin n, t i.succ - t i.castSucc < ρ ^ 2 / (2 * c))
     (i : Fin n) : dist (x i.castSucc) (x i.succ) < ρ := by
+  have hc : 0 < c := (discreteEnergy_nonneg ht x).trans_lt hx
   have hi := dist_sq_le_discreteEnergy_mul_step ht x i
   have hstep := sub_pos.mpr (ht i.castSucc_lt_succ)
   have hmesh' := (lt_div_iff₀ (by positivity : 0 < 2 * c)).mp (hmesh i)
   have hmul := mul_lt_mul_of_pos_right hx hstep
   have hd : 0 ≤ dist (x i.castSucc) (x i.succ) := dist_nonneg
   nlinarith
+
+/-- Fixed-endpoint discrete energy is continuous in the interior vertices. -/
+@[fun_prop]
+theorem continuous_discreteEnergy_cons_snoc (t : Fin (n + 2) → ℝ) (p q : M) :
+    Continuous (fun x : Fin n → M => discreteEnergy t (Fin.cons p (Fin.snoc x q))) := by
+  exact (continuous_discreteEnergy t).comp
+    (Continuous.finCons (A := fun _ : Fin (n + 2) => M) continuous_const
+      (Continuous.finSnoc (A := fun _ : Fin (n + 1) => M)
+        continuous_id continuous_const))
+
+/-- Every interior vertex stays in the energy-controlled closed ball about the
+fixed initial endpoint. -/
+theorem dist_le_sqrt_discreteEnergy_cons_snoc {t : Fin (n + 2) → ℝ}
+    (ht : StrictMono t) (p q : M) (x : Fin n → M) (j : Fin n) :
+    dist p (x j) ≤ √(2 * (t (Fin.last (n + 1)) - t 0) *
+      discreteEnergy t (Fin.cons p (Fin.snoc x q))) := by
+  simpa only [Fin.cons_zero, Fin.cons_succ, Fin.snoc_castSucc] using
+    dist_le_sqrt_discreteEnergy ht (Fin.cons p (Fin.snoc x q)) j.castSucc.succ
 
 /-- The open energy carrier with `n` interior vertices and fixed endpoints `p,q`.
 The full vertex tuple is formed using the native `Fin.cons` and `Fin.snoc`. -/
@@ -181,10 +202,7 @@ theorem mem_discreteEnergySublevel {t : Fin (n + 2) → ℝ} {p q : M} {c : ℝ}
 /-- Strict energy sublevels are open in the full interior-vertex product. -/
 theorem isOpen_discreteEnergySublevel (t : Fin (n + 2) → ℝ) (p q : M) (c : ℝ) :
     IsOpen (discreteEnergySublevel t p q c) := by
-  exact isOpen_lt ((continuous_discreteEnergy t).comp
-    (Continuous.finCons (A := fun _ : Fin (n + 2) => M) continuous_const
-      (Continuous.finSnoc (A := fun _ : Fin (n + 1) => M)
-        continuous_id continuous_const))) continuous_const
+  exact isOpen_lt (continuous_discreteEnergy_cons_snoc t p q) continuous_const
 
 /-- Decreasing the cutoff gives the canonical inclusion of energy carriers. -/
 theorem discreteEnergySublevel_mono (t : Fin (n + 2) → ℝ) (p q : M)
@@ -199,9 +217,7 @@ theorem dist_lt_sqrt_of_mem_discreteEnergySublevel {t : Fin (n + 2) → ℝ}
     (hx : x ∈ discreteEnergySublevel t p q c) (j : Fin n) :
     dist p (x j) < √(2 * (t (Fin.last (n + 1)) - t 0) * c) := by
   have hT : 0 < t (Fin.last (n + 1)) - t 0 := sub_pos.mpr (ht Fin.last_pos')
-  have hbound := dist_le_sqrt_discreteEnergy ht (Fin.cons p (Fin.snoc x q)) j.castSucc.succ
-  simp only [Fin.cons_zero, Fin.cons_succ, Fin.snoc_castSucc] at hbound
-  exact hbound.trans_lt (Real.sqrt_lt_sqrt
+  exact (dist_le_sqrt_discreteEnergy_cons_snoc ht p q x j).trans_lt (Real.sqrt_lt_sqrt
     (mul_nonneg (by positivity) (discreteEnergy_nonneg ht _))
     (mul_lt_mul_of_pos_left hx (by positivity)))
 
@@ -210,19 +226,12 @@ No geodesic interpolation or small-mesh assumption is needed. -/
 theorem isCompact_discreteEnergy_le [ProperSpace M] {t : Fin (n + 2) → ℝ}
     (ht : StrictMono t) (p q : M) (a : ℝ) :
     IsCompact {x : Fin n → M | discreteEnergy t (Fin.cons p (Fin.snoc x q)) ≤ a} := by
-  have hcont : Continuous (fun x : Fin n → M =>
-      discreteEnergy t (Fin.cons p (Fin.snoc x q))) :=
-    (continuous_discreteEnergy t).comp
-      (Continuous.finCons (A := fun _ : Fin (n + 2) => M) continuous_const
-        (Continuous.finSnoc (A := fun _ : Fin (n + 1) => M)
-          continuous_id continuous_const))
   refine (isCompact_univ_pi fun _ : Fin n =>
     isCompact_closedBall p (√(2 * (t (Fin.last (n + 1)) - t 0) * a))).of_isClosed_subset
-      (isClosed_le hcont continuous_const) ?_
+      (isClosed_le (continuous_discreteEnergy_cons_snoc t p q) continuous_const) ?_
   intro x hx j _
-  have hbound := dist_le_sqrt_discreteEnergy ht (Fin.cons p (Fin.snoc x q)) j.castSucc.succ
-  simp only [Fin.cons_zero, Fin.cons_succ, Fin.snoc_castSucc] at hbound
-  exact Metric.mem_closedBall.mpr ((dist_comm _ _).trans_le (hbound.trans
+  exact Metric.mem_closedBall.mpr ((dist_comm _ _).trans_le
+    ((dist_le_sqrt_discreteEnergy_cons_snoc ht p q x j).trans
     (Real.sqrt_le_sqrt (mul_le_mul_of_nonneg_left hx
       (mul_nonneg (by norm_num) (sub_nonneg.mpr (ht.monotone (Fin.zero_le _))))))))
 
