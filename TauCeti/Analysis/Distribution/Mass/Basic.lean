@@ -46,6 +46,8 @@ an order-zero bound on the tests supported in each compact subset of `Ω`.
 * `Distribution.HasLocallyFiniteMass` and
   `Distribution.hasLocallyFiniteMass_iff_localMass_ne_top`: local finiteness of mass by order-zero
   bounds and its variational characterization.
+* `Distribution.HasLocallyFiniteMass.continuous`: a linear map of locally finite mass is
+  continuous.
 * `Distribution.mass_apply_apply`: the point evaluation `φ ↦ ℓ (φ x)` has mass `‖ℓ‖`; in particular
   the degree-zero point current has mass one (`Distribution.mass_apply_finZero`).
 * `Distribution.mass_integral_apply`: integration against a locally integrable field `G` has mass
@@ -427,6 +429,23 @@ theorem hasLocallyFiniteMass_of_mass_ne_top (T : 𝓕) (hT : mass T ≠ ⊤) :
     HasLocallyFiniteMass T :=
   (hasLocallyFiniteMass_iff_localMass_ne_top T).2 fun _ _ _ =>
     ne_top_of_le_ne_top hT localMass_le_mass
+
+/-- **Locally finite mass implies continuity.** A linear map on test functions with locally finite
+mass is continuous: on the tests supported in a compact `K ⊆ Ω` it is bounded by a multiple of the
+sup norm, which is a continuous seminorm there. -/
+theorem HasLocallyFiniteMass.continuous {T : 𝓕} (hT : HasLocallyFiniteMass T) : Continuous T := by
+  change Continuous (LinearMap.ofClass T : 𝓓^{n}(Ω, F) →ₗ[ℝ] V)
+  refine (TestFunction.continuous_iff_continuous_comp _).2 fun K hK => ?_
+  obtain ⟨C, hC, hTC⟩ := hT K K.isCompact hK
+  refine WithSeminorms.continuous_normedSpace_rng V (ContDiffMapSupportedIn.withSeminorms ℝ E F n K)
+    ((LinearMap.ofClass T).comp (TestFunction.ofSupportedInCLM ℝ hK).toLinearMap)
+    ⟨{0}, C.toNNReal, Seminorm.le_def.2 fun φ => ?_⟩
+  have hφ : ((TestFunction.ofSupportedIn hK φ : 𝓓^{n}(Ω, F)) : E →ᵇ F) = (φ : E →ᵇ F) := by
+    ext x
+    simp
+  have h := hTC (TestFunction.ofSupportedIn hK φ) φ.tsupport_subset
+  rw [hφ, ContDiffMapSupportedIn.norm_toBoundedContinuousFunction ℝ] at h
+  simpa [NNReal.smul_def, Real.coe_toNNReal _ hC] using h
 
 end LocallyFinite
 

@@ -44,6 +44,9 @@ them by open sets of almost the same measure.
 * `Distribution.massMeasure_preimage_coe`, `Distribution.massMeasure_univ`: its values on open
   sets and its total mass.
 * `Distribution.enorm_apply_le_lintegral_massMeasure`: the domination `|T φ| ≤ ∫ ‖φ‖ d‖T‖`.
+* `Distribution.localMass_le_of_enorm_apply_le`,
+  `Distribution.hasLocallyFiniteMass_of_enorm_apply_le`: a measure dominating evaluation bounds
+  the local mass, so if it is finite on compact sets the mass is locally finite.
 * `Distribution.massMeasure_le_of_enorm_apply_le`: minimality among outer regular measures.
 
 ## References
@@ -321,6 +324,33 @@ theorem enorm_apply_le_lintegral_massMeasure (hT : HasLocallyFiniteMass T) (φ :
   exact ge_of_tendsto hlim <| eventually_nhdsWithin_of_forall fun ε hε =>
     enorm_apply_le_lintegral_add_mul hT φ hW hφW hM hε
 
+omit [FiniteDimensional ℝ E] [LinearMapClass 𝓕 ℝ 𝓓^{n}(Ω, F) ℝ] in
+/-- **Local mass of a dominated functional.** If a measure `ν` on `Ω` dominates evaluation,
+`‖T φ‖ ≤ ∫ ‖φ‖ dν` for every test `φ`, then the local mass of `T` on any set `U` of `E` is at
+most `ν (Ω ∩ U)`. -/
+theorem localMass_le_of_enorm_apply_le (ν : Measure Ω)
+    (h : ∀ φ : 𝓓^{n}(Ω, F), ‖T φ‖ₑ ≤ ∫⁻ x, ‖φ x‖ₑ ∂ν) (U : Set E) :
+    localMass T U ≤ ν ((↑) ⁻¹' U) := by
+  refine localMass_le_iff.2 fun φ hφU hφ => (h φ).trans ?_
+  -- The test is bounded by the indicator of its support, which is closed in `Ω`.
+  have hS : MeasurableSet (((↑) : Ω → E) ⁻¹' tsupport φ) :=
+    ((isClosed_tsupport φ).preimage continuous_subtype_val).measurableSet
+  refine (lintegral_mono fun x => ?_).trans <|
+    (lintegral_indicator_one hS).trans_le (measure_mono (preimage_mono hφU))
+  by_cases hx : (x : E) ∈ tsupport φ
+  · simpa [hx, ← ofReal_norm] using hφ x
+  · simp [hx, image_eq_zero_of_notMem_tsupport hx]
+
+omit [FiniteDimensional ℝ E] in
+/-- **Domination gives locally finite mass.** A linear map on test functions whose evaluation is
+dominated by a measure on `Ω` that is finite on compact sets has locally finite mass. -/
+theorem hasLocallyFiniteMass_of_enorm_apply_le (ν : Measure Ω) [IsFiniteMeasureOnCompacts ν]
+    (h : ∀ φ : 𝓓^{n}(Ω, F), ‖T φ‖ₑ ≤ ∫⁻ x, ‖φ x‖ₑ ∂ν) : HasLocallyFiniteMass T :=
+  (hasLocallyFiniteMass_iff_localMass_ne_top T).2 fun K hK hKΩ =>
+    ((localMass_le_of_enorm_apply_le ν h K).trans_lt
+      (Ω.isOpen.isOpenEmbedding_subtypeVal.isInducing.isCompact_preimage' hK
+        (by simpa using hKΩ)).measure_lt_top).ne
+
 /-- **Minimality of the mass measure.** Every outer regular measure `ν` on `Ω` dominating
 evaluation, `‖T φ‖ ≤ ∫ ‖φ‖ dν` for every test `φ`, is at least the mass measure. -/
 theorem massMeasure_le_of_enorm_apply_le (ν : Measure Ω) [ν.OuterRegular]
@@ -333,12 +363,7 @@ theorem massMeasure_le_of_enorm_apply_le (ν : Measure Ω) [ν.OuterRegular]
   have hopen (U : Set Ω) (hU : IsOpen U) : massMeasure T U ≤ ν U := by
     obtain ⟨U', hU', rfl⟩ := isOpen_induced_iff.1 hU
     rw [massMeasure_preimage_coe hT hU']
-    refine localMass_le_iff.2 fun φ hφU hφ => (h φ).trans ?_
-    rw [← lintegral_indicator_one hU.measurableSet]
-    refine lintegral_mono fun x => ?_
-    by_cases hx : (x : E) ∈ U'
-    · simpa [hx, ← ofReal_norm] using hφ x
-    · simp [hx, image_eq_zero_of_notMem_tsupport fun h => hx (hφU h)]
+    exact localMass_le_of_enorm_apply_le ν h U'
   refine Measure.le_iff'.2 fun s => ?_
   rw [s.measure_eq_iInf_isOpen (massMeasure T), s.measure_eq_iInf_isOpen ν]
   exact iInf₂_mono fun U _ => iInf_mono fun hU => hopen U hU
