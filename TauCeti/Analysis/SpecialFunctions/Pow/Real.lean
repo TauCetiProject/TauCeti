@@ -16,6 +16,8 @@ Mathlib's `Real.sqrt_eq_rpow`, this holds for every real `x`. For `x < 0` both s
 square root is `0`, and `x ^ y = exp (log x * y) * cos (y * π)` has the factor `cos (-π / 2) = 0`.
 This is the form in which a kernel `1 / √d` is compared with the singular powers `|x - c| ^ (-1/2)`.
 For `0 ≤ t`, its natural powers are `(√t)⁻¹ ^ n = t ^ (-n/2)`, the factor of a parabolic scaling.
+Splitting `1 - x² = (1 - x) (1 + x)` gives `(1 - x) (1 - x²)^(-1/2) = √(1 - x) / √(1 + x)`,
+again for every real `x`.
 
 Eventually along a filter on which `x` is positive, the power `x ^ q` is `exp (q * log x)`. This is
 the form in which power weights `x ^ q` are compared with exponential tilting weights.
@@ -55,6 +57,8 @@ nome is turned into bounds on the fractional powers `|q| ^ c` in a product estim
 
 * `Real.inv_sqrt_eq_rpow`: `(√x)⁻¹ = x ^ (-2⁻¹)` for every real `x`.
 * `Real.inv_sqrt_pow_eq_rpow`: `(√t)⁻¹ ^ n = t ^ (-n/2)` for `0 ≤ t`.
+* `Real.one_sub_mul_one_sub_sq_rpow_neg_one_div_two`:
+  `(1 - x) (1 - x²)^(-1/2) = √(1 - x) / √(1 + x)` for every real `x`.
 * `Real.rpow_eventuallyEq_exp_mul_log`: `x ^ q = exp (q * log x)` eventually along a filter on
   which `x` is eventually positive.
 * `Real.sqrt_pow_eq_rpow`: `√(x ^ n) = x ^ (n / 2)` for `0 ≤ x`.
@@ -91,6 +95,20 @@ theorem inv_sqrt_eq_rpow (x : ℝ) : (√x)⁻¹ = x ^ (-2⁻¹ : ℝ) := by
 `0 ≤ t`. This is the factor of a parabolic scaling `x ↦ (√t)⁻¹ • x` in dimension `n`. -/
 theorem inv_sqrt_pow_eq_rpow {t : ℝ} (ht : 0 ≤ t) (n : ℕ) : (√t)⁻¹ ^ n = t ^ (-(n : ℝ) / 2) := by
   rw [rpow_div_two_eq_sqrt _ ht, rpow_neg (sqrt_nonneg t), rpow_natCast, inv_pow]
+
+/-- For every real `x`, `(1 - x) (1 - x²)^(-1/2) = √(1 - x) / √(1 + x)`. For `|x| > 1` both
+sides vanish, and at `x = -1` both are `0` by the conventions `0 ^ y = 0` for `y ≠ 0` and
+`a / 0 = 0`. This is the form in which the integrand `(1 - k sin θ) (1 - k² sin² θ)^(-1/2)` of a
+complete elliptic integral is bounded. -/
+theorem one_sub_mul_one_sub_sq_rpow_neg_one_div_two (x : ℝ) :
+    (1 - x) * (1 - x ^ 2) ^ (-1 / 2 : ℝ) = √(1 - x) / √(1 + x) := by
+  rw [show (-1 / 2 : ℝ) = -2⁻¹ by norm_num, ← inv_sqrt_eq_rpow,
+    show 1 - x ^ 2 = (1 - x) * (1 + x) by ring]
+  rcases le_or_gt 0 (1 - x) with h | h
+  · have hs := mul_self_mul_inv √(1 - x)
+    rw [mul_self_sqrt h] at hs
+    rw [sqrt_mul h, mul_inv, ← mul_assoc, hs, div_eq_mul_inv]
+  · rw [sqrt_eq_zero'.2 h.le, zero_div, sqrt_eq_zero'.2 (by nlinarith), inv_zero, mul_zero]
 
 /-- Along a filter on which `x` is eventually positive, `x ^ q` is eventually `exp (q * log x)`. -/
 theorem rpow_eventuallyEq_exp_mul_log {l : Filter ℝ} (hpos : ∀ᶠ x in l, 0 < x) (q : ℝ) :

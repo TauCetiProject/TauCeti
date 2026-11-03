@@ -10,6 +10,7 @@ import Mathlib.Analysis.SpecialFunctions.Log.Deriv
 import Mathlib.Analysis.SpecialFunctions.Sqrt
 import Mathlib.Analysis.SpecialFunctions.Trigonometric.Deriv
 import Mathlib.MeasureTheory.Integral.DominatedConvergence
+import TauCeti.Analysis.SpecialFunctions.Pow.Real
 import TauCeti.Analysis.SpecialFunctions.Trigonometric.Bounds
 
 /-!
@@ -78,19 +79,6 @@ private theorem integral_mul_sin_mul_legendreF_integrand {k : ℝ} (hk : k ^ 2 <
   rw [integral_eq_sub_of_hasDerivAt (fun θ _ ↦ hderiv θ) (hcont.intervalIntegrable _ _)]
   simp [add_comm, sub_eq_add_neg]
 
-/-- With `s = sin θ`, the integrand `(1 - k s) (1 - k² s²)^(-1/2)` of
-`K(k) - ∫₀^{π/2} k sin θ (1 - k² sin² θ)^(-1/2) dθ` is `√(1 - k s) / √(1 + k s)` whenever
-`|k s| < 1`. -/
-private theorem one_sub_mul_mul_rpow_eq {k s : ℝ} (h₁ : 0 < 1 - k * s) (h₂ : 0 < 1 + k * s) :
-    (1 - k * s) * (1 - k ^ 2 * s ^ 2) ^ (-1 / 2 : ℝ) = √(1 - k * s) / √(1 + k * s) := by
-  have hmul : 1 - k ^ 2 * s ^ 2 = (1 - k * s) * (1 + k * s) := by ring
-  rw [hmul, show (-1 / 2 : ℝ) = -(1 / 2) by norm_num, rpow_neg (by positivity), ← sqrt_eq_rpow,
-    sqrt_mul h₁.le]
-  have := sq_sqrt h₁.le
-  have := sqrt_pos.2 h₂
-  field_simp
-  nlinarith
-
 /-- The difference `K(k) - ∫₀^{π/2} k sin θ (1 - k² sin² θ)^(-1/2) dθ` tends to `log 2` as
 `k → 1⁻`, by dominated convergence. -/
 private theorem tendsto_integral_one_sub_mul_sin_mul_legendreF_integrand :
@@ -126,10 +114,9 @@ private theorem tendsto_integral_one_sub_mul_sin_mul_legendreF_integrand :
       (continuous_legendreF_integrand hk2)).aestronglyMeasurable
   · filter_upwards [hmem] with k hk
     refine ae_of_all _ fun θ hθ ↦ ?_
-    obtain ⟨hs0, hs1, -⟩ := hsin θ hθ
-    have hks : k * sin θ < 1 := by nlinarith [hk.1, hk.2]
+    obtain ⟨hs0, -, -⟩ := hsin θ hθ
     have hks0 : 0 ≤ k * sin θ := mul_nonneg hk.1.le hs0
-    rw [one_sub_mul_mul_rpow_eq (by linarith) (by linarith), norm_of_nonneg (by positivity),
+    rw [← mul_pow, one_sub_mul_one_sub_sq_rpow_neg_one_div_two, norm_of_nonneg (by positivity),
       div_le_one (sqrt_pos.2 (by linarith))]
     exact sqrt_le_sqrt (by linarith)
   · refine ae_of_all _ fun θ hθ ↦ ?_
@@ -149,10 +136,8 @@ private theorem tendsto_integral_one_sub_mul_sin_mul_legendreF_integrand :
     have h := hcont.tendsto.mono_left (nhdsWithin_le_nhds (s := Iio 1))
     simp only [one_mul, hlim] at h
     refine h.congr' ?_
-    filter_upwards [hmem] with k hk
-    have hks : k * sin θ < 1 := by nlinarith [hk.1, hk.2]
-    have hks0 : 0 ≤ k * sin θ := mul_nonneg hk.1.le hs0
-    rw [one_sub_mul_mul_rpow_eq (by linarith) (by linarith)]
+    filter_upwards with k
+    rw [← mul_pow, one_sub_mul_one_sub_sq_rpow_neg_one_div_two]
 
 /-- **The logarithmic singularity of `K` at modulus one** (DLMF 19.12.1): as `k → 1⁻`,
 `K(k) - log (4 / √(1 - k²)) → 0`. -/
