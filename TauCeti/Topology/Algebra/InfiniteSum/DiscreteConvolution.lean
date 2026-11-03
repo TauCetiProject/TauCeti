@@ -45,7 +45,7 @@ groupings agree.
   `DiscreteConvolution.addRingConvolution_eq_tsum_neg_add`: on an additive group,
   `(f ⋆₊[L] g) x = ∑' y, L (f y) (g (-y + x))`.
 * `DiscreteConvolution.hasSum_tsum_mul_sub`: on an additive group, the convolution
-  `x ↦ ∑' y, f y * g (x - y)` of two nonnegative summable real families sums to `(∑ f) (∑ g)`.
+  `x ↦ ∑' y, f y * g (x - y)` of two summable real families sums to `(∑ f) (∑ g)`.
 -/
 
 public section
@@ -202,10 +202,9 @@ theorem addRingConvolution_eq_tsum_neg_add [NonUnitalNonAssocSemiring R] [Topolo
     (f ⋆ᵣ₊ g) x = ∑' y, f y * g (-y + x) :=
   addConvolution_eq_tsum_neg_add _ f g x
 
-/-- On an additive group, the convolution `x ↦ ∑' y, f y * g (x - y)` of two nonnegative summable
-real families sums to `(∑ f) (∑ g)`. -/
-theorem hasSum_tsum_mul_sub {f g : M → ℝ} (hf : Summable f) (hg : Summable g) (hf0 : 0 ≤ f)
-    (hg0 : 0 ≤ g) :
+/-- On an additive group, the convolution `x ↦ ∑' y, f y * g (x - y)` of two summable real
+families sums to `(∑ f) (∑ g)`. -/
+theorem hasSum_tsum_mul_sub {f g : M → ℝ} (hf : Summable f) (hg : Summable g) :
     HasSum (fun x ↦ ∑' y, f y * g (x - y)) ((∑' y, f y) * ∑' z, g z) := by
   -- reindex the product `∑ (y, z), f y g z` by `(x, y) = (z + y, y)`
   let e : M × M ≃ M × M :=
@@ -215,7 +214,11 @@ theorem hasSum_tsum_mul_sub {f g : M → ℝ} (hf : Summable f) (hg : Summable g
       right_inv q := by simp }
   have hF : HasSum (fun p : M × M ↦ f p.2 * g (p.1 - p.2)) ((∑' y, f y) * ∑' z, g z) := by
     rw [← e.hasSum_iff]
-    convert hf.hasSum.mul hg.hasSum (hf.mul_of_nonneg hg hf0 hg0) using 1
+    -- summable real families are absolutely summable
+    have hfg : Summable fun p : M × M ↦ f p.1 * g p.2 :=
+      summable_mul_of_summable_norm (hf.abs.congr fun _ ↦ (Real.norm_eq_abs _).symm)
+        (hg.abs.congr fun _ ↦ (Real.norm_eq_abs _).symm)
+    convert hf.hasSum.mul hg.hasSum hfg using 1
     ext p
     simp [e]
   exact hF.prod_fiberwise fun x ↦ (hF.summable.prod_factor x).hasSum

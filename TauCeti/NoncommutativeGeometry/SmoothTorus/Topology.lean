@@ -162,8 +162,7 @@ theorem seminorm_mul_le (k : ℕ) (a b : SmoothNoncommutativeTorus θ) :
   rw [seminorm_apply, seminorm_apply]
   exact hasSum_le (norm_coeff_mul_mul_weight_pow_le k a b) (hasSum_seminorm k (a * b))
     (DiscreteConvolution.hasSum_tsum_mul_sub (a.isRapidDecay_coeff.summable_norm_mul_weight_pow k)
-      (b.isRapidDecay_coeff.summable_norm_mul_weight_pow k)
-      (fun y ↦ norm_mul_weight_pow_nonneg _ y k) fun z ↦ norm_mul_weight_pow_nonneg _ z k)
+      (b.isRapidDecay_coeff.summable_norm_mul_weight_pow k))
 
 /-! ### The topology -/
 
