@@ -8,7 +8,6 @@ module
 public import Mathlib.Topology.MetricSpace.ProperSpace
 public import Mathlib.Topology.Order.MonotoneConvergence
 public import Mathlib.Topology.MetricSpace.Cauchy
-public import Mathlib.Topology.MetricSpace.Defs
 public import Mathlib.Topology.MetricSpace.Ultra.Basic
 
 /-!
