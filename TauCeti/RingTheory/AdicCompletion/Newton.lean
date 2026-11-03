@@ -37,7 +37,7 @@ non-zero-divisor, `J` is a linearisation of `A` on the class `t + π ^ (k + 1) R
 `k + 1` powers of `π` (`A x' ≡ A x + J (x' - x) mod π^(n + k + 1)` when `x' ≡ x mod π^n`,
 `n ≥ k + 1`), and some integral matrix `M` satisfies `M * J = π ^ k • 1`. If
 `A t ≡ 0 mod π ^ (2k + 1)`, then `A` has exactly one zero `u ≡ t mod π ^ (k + 1)`, and
-`A t ≡ 0 mod π ^ e` with `e ≥ 2k + 1` forces `u ≡ t mod π ^ (e - k)`. For a polynomial in one
+`A t ≡ 0 mod π ^ e` forces `u ≡ t mod π ^ (e - k)`. For a polynomial in one
 variable this is the classical form `|f(t)| < |f'(t)|²` of Hensel's lemma. Unlike the case
 `k = 0`, the quantitative form needs `π` to be a non-zero-divisor: over `ℤ/8ℤ`, with `π = 2`,
 the map `x ↦ 2x` has `J = 2`, `M = 1`, `k = 1` and the two zeros `0` and `4` congruent modulo
@@ -195,17 +195,21 @@ private theorem pow_succ_dvd_sub_of_pow_dvd (hπ : IsLeftRegular π) {A : (ι �
 
 /-- **Error bound for the quantitative Newton method.** Let `π` be a non-zero-divisor, let `J`
 linearise `A` on the class `t + π ^ (k + 1) R^ι`, gaining `k + 1` powers of `π`, and let
-`M * J = π ^ k • 1`. If `A t ≡ 0 mod π ^ e` with `e ≥ 2k + 1`, then every zero `u` of `A` in the
-class satisfies `u ≡ t mod π ^ (e - k)`. No completeness is needed. -/
+`M * J = π ^ k • 1`. If `A t ≡ 0 mod π ^ e`, then every zero `u` of `A` in the class satisfies
+`u ≡ t mod π ^ (e - k)`. This is only new information when `e ≥ 2k + 2`. No completeness is
+needed. -/
 theorem pow_dvd_sub_of_eq_zero_of_mul_eq_pow_smul (hπ : IsLeftRegular π)
     (A : (ι → R) → (ι → R)) {J M : Matrix ι ι R} {k : ℕ}
     (hMJ : M * J = π ^ k • (1 : Matrix ι ι R)) (t : ι → R)
     (hA : ∀ x x' : ι → R, (∀ i, π ^ (k + 1) ∣ x i - t i) → (∀ i, π ^ (k + 1) ∣ x' i - t i) →
       ∀ n : ℕ, k + 1 ≤ n → (∀ i, π ^ n ∣ x' i - x i) →
         ∀ i, π ^ (n + k + 1) ∣ A x' i - A x i - (J *ᵥ (x' - x)) i)
-    {e : ℕ} (he : 2 * k + 1 ≤ e) (ht : ∀ i, π ^ e ∣ A t i) {u : ι → R}
+    {e : ℕ} (ht : ∀ i, π ^ e ∣ A t i) {u : ι → R}
     (hu : ∀ i, π ^ (k + 1) ∣ u i - t i) (hAu : A u = 0) (i : ι) : π ^ (e - k) ∣ u i - t i := by
-  suffices ∀ n, k + 1 ≤ n → n ≤ e - k → ∀ i, π ^ n ∣ u i - t i from this _ (by omega) le_rfl i
+  suffices ∀ n, k + 1 ≤ n → n ≤ e - k → ∀ i, π ^ n ∣ u i - t i by
+    rcases le_total (e - k) (k + 1) with he | he
+    · exact (pow_dvd_pow π he).trans (hu i)
+    · exact this _ he le_rfl i
   intro n hn
   induction n, hn using Nat.le_induction with
   | base => exact fun _ ↦ hu
@@ -318,15 +322,15 @@ private theorem of_mul_of_eq_pow_smul {m : R} (hm : π ^ k = f.derivative.eval t
   simp [Matrix.mul_apply, hm, mul_comm]
 
 /-- **Error bound in Hensel's lemma.** Let `π` be a non-zero-divisor and `f'(t) ∣ π ^ k`. If
-`f(t) ≡ 0 mod π ^ e` with `e ≥ 2k + 1`, then every root `u` of `f` with `u ≡ t mod π ^ (k + 1)`
-satisfies `u ≡ t mod π ^ (e - k)`. -/
+`f(t) ≡ 0 mod π ^ e`, then every root `u` of `f` with `u ≡ t mod π ^ (k + 1)` satisfies
+`u ≡ t mod π ^ (e - k)`. -/
 theorem pow_dvd_sub_of_eval_eq_zero_of_dvd_pow (hπ : IsLeftRegular π)
-    (hd : f.derivative.eval t ∣ π ^ k) {e : ℕ} (he : 2 * k + 1 ≤ e) (ht : π ^ e ∣ f.eval t)
+    (hd : f.derivative.eval t ∣ π ^ k) {e : ℕ} (ht : π ^ e ∣ f.eval t)
     {u : R} (hu : π ^ (k + 1) ∣ u - t) (hfu : f.eval u = 0) : π ^ (e - k) ∣ u - t := by
   obtain ⟨m, hm⟩ := hd
   exact pow_dvd_sub_of_eq_zero_of_mul_eq_pow_smul hπ (fun x i ↦ f.eval (x i))
     (of_mul_of_eq_pow_smul hm) (fun _ ↦ t)
-    (fun x x' hx _ n hn hxx' ↦ pow_dvd_evalUnit_sub x x' hx n hn hxx') he (fun _ ↦ ht)
+    (fun x x' hx _ n hn hxx' ↦ pow_dvd_evalUnit_sub x x' hx n hn hxx') (fun _ ↦ ht)
     (u := fun _ ↦ u) (fun _ ↦ hu) (funext fun _ ↦ hfu) ()
 
 /-- **Hensel's lemma with a derivative dividing `π ^ k`.** Let `R` be `π`-adically complete with

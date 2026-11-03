@@ -33,13 +33,13 @@ example (a : ℤ_[2]) (ha : 8 ∣ a - 1) : ∃! u : ℤ_[2], 4 ∣ u - 1 ∧ u ^
   simpa [h4, sub_eq_zero, eq_comm] using IsAdicComplete.existsUnique_eval_eq_zero_of_dvd_pow
     (IsRegular.of_ne_zero two_ne_zero).left hd ha'
 
--- The error bound: if `a ≡ 1 mod 2 ^ e` with `e ≥ 3`, that root is `≡ 1 mod 2 ^ (e - 1)`.
-example (a : ℤ_[2]) {e : ℕ} (he : 3 ≤ e) (ha : 2 ^ e ∣ a - 1) {u : ℤ_[2]} (hu : 4 ∣ u - 1)
+-- The error bound: if `a ≡ 1 mod 2 ^ e`, that root is `≡ 1 mod 2 ^ (e - 1)`.
+example (a : ℤ_[2]) {e : ℕ} (ha : 2 ^ e ∣ a - 1) {u : ℤ_[2]} (hu : 4 ∣ u - 1)
     (hua : u ^ 2 = a) : 2 ^ (e - 1) ∣ u - 1 := by
   have hd : (X ^ 2 - C a).derivative.eval 1 ∣ (2 : ℤ_[2]) ^ 1 := by norm_num
   have ha' : 2 ^ e ∣ (X ^ 2 - C a).eval 1 := by simpa [dvd_sub_comm] using ha
   have hu' : (2 : ℤ_[2]) ^ (1 + 1) ∣ u - 1 := by norm_num [hu]
-  exact pow_dvd_sub_of_eval_eq_zero_of_dvd_pow (IsRegular.of_ne_zero two_ne_zero).left hd he ha'
+  exact pow_dvd_sub_of_eval_eq_zero_of_dvd_pow (IsRegular.of_ne_zero two_ne_zero).left hd ha'
     hu' (by simp [hua])
 
 end TauCeti.Examples
