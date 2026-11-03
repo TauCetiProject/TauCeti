@@ -8,8 +8,6 @@ module
 -- `TauCeti.GLSymplecticFin.signedCoordinateEquiv`, labelling the coordinates of the standard
 -- representation by their weights.
 public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Symplectic.Diagonal.WeylGroup
--- The long-root Weyl representatives and their action on the diagonal torus.
-public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Symplectic.Weyl
 -- The rationality of the entries of the Levi embedding.
 public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.PolynomialFunctions.SymplecticLevi
 -- The weight-space decomposition of a rational representation of `GL m ℂ`.
@@ -425,22 +423,6 @@ variable {k : Type u} [CommRing k]
 
 variable {W : Type v} [AddCommGroup W] [Module k W] (ρ : Representation k (GLSymplecticFin m k) W)
 
-/-- The action of a group element is injective, being invertible. -/
-private theorem injective_apply (g : GLSymplecticFin m k) : Function.Injective (ρ g) :=
-  Function.LeftInverse.injective (ρ.inv_self_apply g)
-
-/-- Moving a submodule by a group element preserves its dimension. -/
-private theorem finrank_map_apply (g : GLSymplecticFin m k) (p : Submodule k W) :
-    Module.finrank k (p.map (ρ g)) = Module.finrank k p :=
-  (Submodule.equivMapOfInjective _ (injective_apply ρ g) p).finrank_eq.symm
-
-/-- Moving a submodule by a group element preserves its vanishing. -/
-private theorem map_apply_eq_bot_iff (g : GLSymplecticFin m k) (p : Submodule k W) :
-    p.map (ρ g) = ⊥ ↔ p = ⊥ := by
-  refine ⟨fun h ↦ Submodule.map_injective_of_injective (injective_apply ρ g) ?_, fun h ↦ ?_⟩
-  · rw [h, Submodule.map_bot]
-  · rw [h, Submodule.map_bot]
-
 /-- An element conjugating the torus by the sign change of the `i`-th coordinate carries weight
 vectors of `l` to weight vectors of `l` with its `i`-th coordinate negated. -/
 private theorem apply_mem_symplecticWeightSpace_update_neg {g : GLSymplecticFin m k} {i : Fin m}
@@ -477,7 +459,9 @@ theorem symplecticWeightSpace_map_positiveLongRootWeylElement (i : Fin m) (l : F
 theorem finrank_symplecticWeightSpace_update_neg (i : Fin m) (l : Fin m → ℤ) :
     Module.finrank k (symplecticWeightSpace ρ (Function.update l i (-l i))) =
       Module.finrank k (symplecticWeightSpace ρ l) := by
-  rw [← symplecticWeightSpace_map_positiveLongRootWeylElement, finrank_map_apply]
+  rw [← symplecticWeightSpace_map_positiveLongRootWeylElement]
+  exact (LinearMap.GeneralLinearGroup.toLinearEquiv
+    (ρ.asGroupHom (GLSymplecticFin.positiveLongRootWeylElement i))).finrank_map_eq _
 
 /-- **The permutation matrix of `σ` in the Levi subgroup carries the weight space of `l` onto the
 weight space of `l ∘ σ⁻¹`.** -/
@@ -545,7 +529,8 @@ theorem finrank_symplecticWeightSpace_dominantWeightOf_abs (l : Fin m → ℤ) :
         (symplecticWeightSpace ρ (dominantWeightOf fun i ↦ |l i| : Fin m → ℤ)) =
       Module.finrank k (symplecticWeightSpace ρ l) := by
   obtain ⟨g, hg⟩ := exists_symplecticWeightSpace_map_eq_dominantWeightOf_abs ρ l
-  rw [← hg, finrank_map_apply]
+  rw [← hg]
+  exact (LinearMap.GeneralLinearGroup.toLinearEquiv (ρ.asGroupHom g)).finrank_map_eq _
 
 /-- **A weight occurs exactly when its dominant representative does**, so the weights of a
 representation of `Sp₂ₘ` are determined by the dominant ones. -/
@@ -553,7 +538,9 @@ theorem symplecticWeightSpace_eq_bot_dominantWeightOf_abs_iff (l : Fin m → ℤ
     symplecticWeightSpace ρ (dominantWeightOf fun i ↦ |l i| : Fin m → ℤ) = ⊥ ↔
       symplecticWeightSpace ρ l = ⊥ := by
   obtain ⟨g, hg⟩ := exists_symplecticWeightSpace_map_eq_dominantWeightOf_abs ρ l
-  rw [← hg, map_apply_eq_bot_iff]
+  rw [← hg]
+  exact Submodule.map_eq_bot_iff
+    (e := LinearMap.GeneralLinearGroup.toLinearEquiv (ρ.asGroupHom g))
 
 end Weyl
 

@@ -496,11 +496,13 @@ theorem coe_mulEquivGLSymplectic (M : GLSymplecticFin m R) :
   simp [mulEquivGLSymplectic]
 
 variable {m R} in
-/-- **A `Fin`-indexed symplectic matrix has determinant one**: reindexing along `finSumFinEquiv`
-preserves the determinant, and Mathlib's `SymplecticGroup.det_eq_one` applies in sum
-coordinates. -/
+/-- **A `Fin`-indexed symplectic matrix has determinant one.** So the determinant denominators
+of rational functions on `GL (m + m)` disappear when they are restricted to the symplectic
+group. -/
 theorem det_eq_one (M : GLSymplecticFin m R) :
     ((M : GL (Fin (m + m)) R) : Matrix (Fin (m + m)) (Fin (m + m)) R).det = 1 := by
+  -- Reindex along `finSumFinEquiv`, which preserves the determinant, and apply Mathlib's
+  -- `SymplecticGroup.det_eq_one` in sum coordinates.
   have h := GLSymplectic.mem_iff_mem_symplecticGroup.mp (mulEquivGLSymplectic m R M).2
   rw [coe_mulEquivGLSymplectic, Equiv.coe_reindexGL, Equiv.symm_symm] at h
   rw [← SymplecticGroup.det_eq_one h, Matrix.det_submatrix_equiv_self]
