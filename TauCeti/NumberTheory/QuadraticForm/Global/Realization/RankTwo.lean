@@ -91,10 +91,19 @@ private theorem exists_hilbertSymbol_eq_of_rank_eq_two (hI : I.IsAdmissible)
     simpa using neg_neg_of_pos hdpos) heven
   exact ⟨a, fun v => (ha v).trans (hs v).symm, fun w => (har w).trans (ht w).symm⟩
 
+end TauCeti.NumberField.QuadraticForm.GlobalFormInvariants
+
+namespace QuadraticForm
+
+open TauCeti TauCeti.NumberField.QuadraticForm
+  TauCeti.NumberField.QuadraticForm.GlobalFormInvariants
+
+variable {K : Type} [Field K] [NumberField K] {I : GlobalFormInvariants K}
+
 /-- The discriminant and real Hasse sign determine the positive index of a regular binary form
 at a real place. -/
-private theorem realPositiveIndex_eq_of_rank_eq_two (hI : I.IsAdmissible) (hn : I.rank = 2)
-    (Q : _root_.QuadraticForm K (Fin 2 → K)) (hQ : Q.Nondegenerate)
+private theorem realPositiveIndex_eq_of_rank_eq_two (Q : QuadraticForm K (Fin 2 → K))
+    (hI : I.IsAdmissible) (hn : I.rank = 2) (hQ : Q.Nondegenerate)
     (hd : RegularFormClass.discr (formClass Q hQ) = I.discr)
     (w : {w : InfinitePlace K // w.IsReal})
     (hh : (Q.globalInvariants hQ).realHasse w = I.realHasse w) :
@@ -123,6 +132,12 @@ private theorem realPositiveIndex_eq_of_rank_eq_two (hI : I.IsAdmissible) (hn : 
   · omega
   · exact (hne (by simpa [← squareClass_pow] using hdreal)).elim
   · norm_num at hh
+
+end QuadraticForm
+
+namespace TauCeti.NumberField.QuadraticForm.GlobalFormInvariants
+
+variable {K : Type} [Field K] [NumberField K] {I : GlobalFormInvariants K}
 
 /-- Every admissible rank-two system over a number field is the invariant system of a regular
 binary form. -/
@@ -169,7 +184,7 @@ theorem IsAdmissible.exists_globalForm_of_rank_eq_two (hI : I.IsAdmissible) (hn 
     (by simpa using funext hfinite) ?_⟩
   funext w
   rw [_root_.QuadraticForm.globalInvariants_realPositiveIndex]
-  exact realPositiveIndex_eq_of_rank_eq_two hI hn Q hQ hd w (hreal w)
+  exact _root_.QuadraticForm.realPositiveIndex_eq_of_rank_eq_two Q hI hn hQ hd w (hreal w)
 
 /-- For a rank-two system, admissibility is equivalent to realization by a regular global
 binary form, including all real positive indices and finite Hasse signs. -/
