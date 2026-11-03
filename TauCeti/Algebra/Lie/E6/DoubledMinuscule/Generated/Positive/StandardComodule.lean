@@ -69,6 +69,16 @@ def standardComodule : Comodule R (coordinateHopfAlgebra R) (Fin 54 → R) :=
 
 attribute [local instance] standardComodule
 
+/-- The coefficient matrix is the ambient generic matrix modulo the positive subgroup's ideal. -/
+theorem coefficientMatrix_basisFun :
+    Comodule.coefficientMatrix (C := coordinateHopfAlgebra R) (Pi.basisFun R (Fin 54)) =
+      (GeneralLinear.genericMatrix R 54).map
+        (CommHopfAlgCat.mkQuotient _ (definingIdeal R)).hom := by
+  let _ := GeneralLinear.standardComodule R 54
+  rw [Comodule.coefficientMatrix_corestrict, GeneralLinear.coefficientMatrix_basisFun]
+  ext a b
+  simp only [Matrix.map_apply, BialgHom.toCoalgHom_apply]
+
 /-- Restriction to the weight torus splits the representation into its fifty-four weight lines. -/
 theorem torusCorestrict_eq_ofWeights :
     Comodule.Corestrict (CommHopfAlgCat.commonKernelLift (generator R) (.inr ())).hom.toCoalgHom =
