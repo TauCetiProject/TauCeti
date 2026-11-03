@@ -223,7 +223,7 @@ theorem le_of_mongeAmpereMeasure_le_of_le_frontier (hΩo : IsOpen Ω)
       ENNReal.ofReal ((1 + ε) ^ finrank ℝ E) • MAv := by
     have hshift := mongeAmpereMeasure_ite_add_linearMap μ (U := Ω)
       (fun y => (1 + ε) * v y) 0 (-(a / 2))
-    rw [mongeAmpereMeasure_ite_mul_of_pos μ hΩo hv hεpos] at hshift
+    rw [mongeAmpereMeasure_ite_mul_of_pos μ hεpos] at hshift
     simpa only [hw, LinearMap.zero_apply, add_zero, sub_eq_add_neg, MAv] using hshift
   have h₁ : ENNReal.ofReal ((1 + ε) ^ finrank ℝ E) * MAv G ≤ μ Su := by
     rw [← smul_eq_mul, ← _root_.smul_apply, ← hwMA, hSw]
@@ -278,7 +278,7 @@ theorem abs_sub_le_of_smul_le_mongeAmpereMeasure_le_smul
   have hscaled (c : ℝ) (hc : 0 < c) :
       mongeAmpereMeasure μ (fun x => if x ∈ Ω then ((c * v x : ℝ) : EReal) else ⊤) =
         ENNReal.ofReal (c ^ finrank ℝ E) • ν := by
-    rw [mongeAmpereMeasure_ite_mul_of_pos μ hΩ hv hc, href]
+    rw [mongeAmpereMeasure_ite_mul_of_pos μ hc, href]
   have hconv (c : ℝ) (hc : 0 ≤ c) : ConvexOn ℝ Ω (fun x => c * v x) := by
     simpa only [Pi.smul_apply, smul_eq_mul] using hv.smul hc
   have hfront (c : ℝ) (x : E) (hx : x ∈ frontier Ω) : c * v x = u x := by
