@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.NumberTheory.FundamentalDiscriminant
+public import Mathlib.Data.Nat.Squarefree
 import TauCeti.Algebra.Squarefree
 import Mathlib.Algebra.GCDMonoid.Nat
 
@@ -17,6 +18,8 @@ prime-discriminant theory.
 
 ## Main results
 
+* `Int.decidablePredIsFundamentalDiscr`: being a fundamental discriminant is decidable, through
+  congruences mod `4` and squarefreeness of natural numbers, so the kernel can check it.
 * `Int.IsFundamentalDiscr.mul`: coprime fundamental discriminants have fundamental product.
 * `Int.IsFundamentalDiscr.not_isSquare_rat`: a fundamental discriminant other than `1` is not a
   rational square, so `ℚ(√D)` is a genuine quadratic field.
@@ -25,6 +28,13 @@ prime-discriminant theory.
 public section
 
 namespace Int
+
+/-- Being a fundamental discriminant is decidable: by `Int.isFundamentalDiscr_iff_squarefree` it
+comes down to congruences mod `4` and the squarefreeness of natural numbers. -/
+instance decidablePredIsFundamentalDiscr : DecidablePred IsFundamentalDiscr := fun D =>
+  decidable_of_iff ((D % 4 = 1 ∧ Squarefree D.natAbs) ∨
+      (D % 4 = 0 ∧ Squarefree (D / 4).natAbs ∧ (D / 4 % 4 = 2 ∨ D / 4 % 4 = 3))) <| by
+    rw [isFundamentalDiscr_iff_squarefree, squarefree_natAbs, squarefree_natAbs]
 
 /-- The absolute value of a fundamental discriminant is a nonzero Dirichlet-character level. -/
 theorem IsFundamentalDiscr.neZero_natAbs {D : ℤ} (hD : IsFundamentalDiscr D) :

@@ -56,7 +56,7 @@ theorem _root_.Representation.isNilpotent_quotient_sub_one (rho : Representation
     (p : Submodule R V) (hp : ∀ g, p ≤ p.comap (rho g)) {g : G}
     (hg : IsNilpotent (rho g - 1)) : IsNilpotent (rho.quotient p hp g - 1) := by
   have hsub : p ≤ p.comap (rho g - 1) := fun x hx ↦ by
-    rw [Submodule.mem_comap, LinearMap.sub_apply, Module.End.one_apply]
+    rw [Submodule.mem_comap, LinearMap.sub_apply, one_apply_eq_self]
     exact p.sub_mem (Submodule.mem_comap.mp (hp g hx)) hx
   have heq : rho.quotient p hp g - 1 = p.mapQ p (rho g - 1) hsub := by
     ext x
@@ -90,7 +90,7 @@ theorem _root_.Representation.exists_basis_isUpperUnitriangular_of_isUnipotent
       ∀ g, (LinearMap.toMatrixAlgEquiv b (rho g)).IsUpperUnitriangular := by
   generalize hdim : finrank K V = d
   induction d using Nat.strong_induction_on generalizing V with
-  | h d ih =>
+  | ind d ih =>
       rcases subsingleton_or_nontrivial V with _ | _
       · exact ⟨0, finBasisOfFinrankEq K V finrank_zero_of_subsingleton, fun _ ↦
           (Matrix.isUpperUnitriangular_def _).mpr ⟨fun i ↦ i.elim0, fun i ↦ i.elim0⟩⟩

@@ -37,6 +37,7 @@ public section
 noncomputable section
 
 open LieAlgebra
+open LieAlgebra.ofTwoCocycle (centralElement ofProd_symm_centralElement)
 
 attribute [local instance 100] LieRing.ofAssociativeRing
 
@@ -170,7 +171,7 @@ theorem orderCharacter_apply (a : R) (n : ℕ)
 
 /-- The distinguished central generator belongs to every central preimage. -/
 theorem centralElement_mem_orderExtensionLieSubalgebra (n : ℕ) :
-    centralElement Φ hΦ hΦs ∈ orderExtensionLieSubalgebra Φ hΦ hΦs n := by
+    centralElement c ∈ orderExtensionLieSubalgebra Φ hΦ hΦs n := by
   rw [mem_orderExtensionLieSubalgebra, ofTwoCocycle.proj_apply,
     ofProd_symm_centralElement]
   exact zero_mem _
@@ -178,14 +179,14 @@ theorem centralElement_mem_orderExtensionLieSubalgebra (n : ℕ) :
 /-- The global central-coordinate form takes the value `a` on the central generator. -/
 @[simp]
 theorem centralCoordinateForm_centralElement (a : R) :
-    centralCoordinateForm Φ hΦ hΦs a (centralElement Φ hΦ hΦs) = a := by
+    centralCoordinateForm Φ hΦ hΦs a (centralElement c) = a := by
   simp [centralCoordinateForm_apply, ofProd_symm_centralElement]
 
 /-- The inducing character takes the prescribed value on the central generator. -/
 @[simp]
 theorem orderCharacter_centralElement (a : R) (n : ℕ) :
     orderCharacter Φ hΦ hΦs a n
-      ⟨centralElement Φ hΦ hΦs, centralElement_mem_orderExtensionLieSubalgebra Φ hΦ hΦs n⟩ =
+      ⟨centralElement c, centralElement_mem_orderExtensionLieSubalgebra Φ hΦ hΦs n⟩ =
         a := by
   simp [orderCharacter]
 
