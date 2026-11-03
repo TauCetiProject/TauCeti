@@ -40,16 +40,6 @@ namespace TauCeti
 
 variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V]
 
-/-- The momentum pairing of the Runge–Lenz vector is
-`⟨A, p⟩ = -(m κ / ‖q‖) ⟨q, p⟩`. -/
-theorem inner_rungeLenz_snd (m κ : ℝ) (x : V × V) :
-    ⟪rungeLenz m κ x, x.2⟫_ℝ = -(m * κ / ‖x.1‖) * ⟪x.1, x.2⟫_ℝ := by
-  obtain ⟨q, p⟩ := x
-  have hcancel : ‖p‖ ^ 2 * ⟪q, p⟫_ℝ - ⟪q, p⟫_ℝ * ‖p‖ ^ 2 = 0 :=
-    sub_eq_zero.2 (mul_comm _ _)
-  simp only [rungeLenz_apply, inner_sub_left, real_inner_smul_left,
-    real_inner_self_eq_norm_sq, hcancel, zero_sub, neg_mul]
-
 /-- For nonzero mass and coupling, the Runge–Lenz vector is nonzero on a dense subset
 of the punctured phase space. -/
 theorem dense_setOf_rungeLenz_ne_zero {m κ : ℝ} (hm : m ≠ 0) (hκ : κ ≠ 0) :
@@ -59,18 +49,6 @@ theorem dense_setOf_rungeLenz_ne_zero {m κ : ℝ} (hm : m ≠ 0) (hκ : κ ≠ 
   rw [hA, inner_zero_left] at h
   exact (mul_ne_zero (neg_ne_zero.2 (div_ne_zero (mul_ne_zero hm hκ)
     (norm_ne_zero_iff.2 (mem_puncturedPhaseSpace.1 x.2)))) hx) h.symm
-
-/-- The Runge–Lenz vector is smooth away from collisions, for arbitrary mass and coupling. -/
-theorem contDiffAt_rungeLenz (m κ : ℝ) {n : WithTop ℕ∞} {x : V × V} (hq : x.1 ≠ 0) :
-    ContDiffAt ℝ n (rungeLenz m κ) x := by
-  have hdef : rungeLenz m κ = fun y : V × V ↦
-      ‖y.2‖ ^ 2 • y.1 - ⟪y.1, y.2⟫_ℝ • y.2 - (m * κ / ‖y.1‖) • y.1 :=
-    funext fun y ↦ rungeLenz_apply m κ y.1 y.2
-  rw [hdef]
-  exact (((contDiff_norm_sq ℝ).comp contDiff_snd).contDiffAt.smul contDiffAt_fst).sub
-    ((contDiffAt_fst.inner ℝ contDiffAt_snd).smul contDiffAt_snd) |>.sub
-      ((contDiffAt_const.div ((contDiffAt_norm ℝ hq).comp x contDiffAt_fst)
-        (norm_ne_zero_iff.2 hq)).smul contDiffAt_fst)
 
 variable (b : OrthonormalBasis (Fin 2) ℝ V)
 
@@ -97,37 +75,6 @@ theorem isRegularPoint_centralForceEnergyMomentum_kepler_of_rungeLenz_ne_zero
     exact sub_eq_zero.1 ((mul_eq_zero.1 hcancel).resolve_left (pow_ne_zero 3 hr))
   obtain ⟨q, p⟩ := x
   rw [rungeLenz_apply, hqp, zero_smul, sub_zero, hp, sub_self]
-
-section
-
-variable [FiniteDimensional ℝ V]
-
-/-- Angular momentum rotates the Runge–Lenz vector. In any dimension, for the plane
-specified by `u, w`, the bracket is the component of the infinitesimal rotation of `A`.
-The vectors `u, w` need not be orthonormal. -/
-theorem stdSymplecticForm_poissonBracket_inner_rungeLenz_angularMomentum
-    (m κ : ℝ) (u w e : V) {x : V × V} (hq : x.1 ≠ 0) :
-    (stdSymplecticForm (V := V)).poissonBracket (fun y ↦ ⟪rungeLenz m κ y, e⟫_ℝ)
-      (angularMomentum u w) x =
-        ⟪rungeLenz m κ x, u⟫_ℝ * ⟪w, e⟫_ℝ -
-          ⟪rungeLenz m κ x, w⟫_ℝ * ⟪u, e⟫_ℝ := by
-  -- The terms differentiating the invariant scalars `‖p‖²`, `⟨q,p⟩`, and `‖q‖` cancel.
-  have halg (P qp qe pe qu pu qw pw ue we c d : ℝ) :
-      P * (qu * we) - pe * (qu * pw) - c * (qu * we) + d * (qu * qw) -
-          (P * (qw * ue) - pe * (qw * pu) - c * (qw * ue) + d * (qw * qu)) -
-        (2 * qe * (pw * pu) - pe * (pw * qu) - qp * (pw * ue) -
-          (2 * qe * (pu * pw) - pe * (pu * qw) - qp * (pu * we))) =
-      (P * qu - qp * pu - c * qu) * we - (P * qw - qp * pw - c * qw) * ue := by ring
-  rw [stdSymplecticForm_poissonBracket (hasFDerivAt_inner_rungeLenz m κ e hq)
-    (hasFDerivAt_angularMomentum u w x)]
-  obtain ⟨q, p⟩ := x
-  simpa only [rungeLenz_apply, inner_sub_left, inner_sub_right, inner_add_left,
-    real_inner_smul_left, real_inner_smul_right, real_inner_comm] using
-    halg (‖p‖ ^ 2) ⟪q, p⟫_ℝ ⟪q, e⟫_ℝ ⟪p, e⟫_ℝ ⟪q, u⟫_ℝ ⟪p, u⟫_ℝ
-      ⟪q, w⟫_ℝ ⟪p, w⟫_ℝ ⟪u, e⟫_ℝ ⟪w, e⟫_ℝ (m * κ / ‖q‖)
-      (m * κ * ⟪q, e⟫_ℝ / ‖q‖ ^ 3)
-
-end
 
 /-- At every noncollision point with nonzero Runge–Lenz vector, one component of that
 vector is independent of the Kepler energy and planar angular momentum. Each of these
