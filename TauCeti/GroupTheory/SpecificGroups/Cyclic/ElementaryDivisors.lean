@@ -8,6 +8,7 @@ module
 public import Mathlib.GroupTheory.SpecificGroups.Cyclic
 
 import Mathlib.Logic.Equiv.Fintype
+import TauCeti.Algebra.Order.BigOperators.Sum.Min
 
 /-!
 # Uniqueness of elementary divisors with a fixed base
@@ -70,13 +71,6 @@ private theorem sum_min_eq_of_pi_pow_addEquiv {b : ℕ} (hb : 1 < b)
   simp only [AddMonoidHom.mem_ker, nsmulAddMonoidHom_apply, AddEquiv.toEquiv_eq_coe,
     EquivLike.coe_coe, ← map_nsmul f, map_eq_zero_iff f f.injective]
 
-private theorem sum_min_add_card_eq {ι : Type*} [Fintype ι] (e : ι → ℕ) (k : ℕ) :
-    (∑ i, min (k + 2) (e i)) + (∑ i, min k (e i)) + Fintype.card {i // e i = k + 1} =
-      (∑ i, min (k + 1) (e i)) + (∑ i, min (k + 1) (e i)) := by
-  classical
-  rw [Fintype.card_subtype, card_filter, ← sum_add_distrib, ← sum_add_distrib, ← sum_add_distrib]
-  exact sum_congr rfl fun i _ ↦ by split_ifs <;> omega
-
 /-- Finite products of nontrivial cyclic groups with orders powers of the same base `b > 1`
 have uniquely determined exponents up to reindexing. Primality of the base is not needed, and the
 second index type is finite as soon as the first one is. -/
@@ -103,11 +97,14 @@ theorem exists_equiv_exponents_of_pi_pow_addEquiv {b : ℕ} (hb : 1 < b)
       simp
     | succ k =>
       -- The multiplicity of the exponent `k + 1` is a second difference of `k ↦ ∑ i, min k (e i)`.
-      have := sum_min_add_card_eq e k
-      have := sum_min_add_card_eq e' k
+      have hk (n : ℕ) : k < n ∧ n < k + 1 + 1 ↔ n = k + 1 := by omega
+      have h := sum_min_add_sum_min_eq univ e (by omega : k < k + 1 + 1)
+      have h' := sum_min_add_sum_min_eq univ e' (by omega : k < k + 1 + 1)
+      simp only [hk, Nat.add_sub_cancel] at h h'
+      rw [Fintype.card_subtype, Fintype.card_subtype]
       have := hsum k
       have := hsum (k + 1)
-      have := hsum (k + 2)
+      have := hsum (k + 1 + 1)
       omega
   exact ⟨.ofFiberEquiv fun k ↦ Fintype.equivOfCardEq (hcard k),
     fun i ↦ (Equiv.ofFiberEquiv_map _ i).symm⟩
