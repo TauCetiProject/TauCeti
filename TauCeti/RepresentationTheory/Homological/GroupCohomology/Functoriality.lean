@@ -28,7 +28,7 @@ induced by its inclusions give the inverse.
 * `TauCeti.groupCohomology.mapCocycles₂_apply`: the value of a pulled-back `2`-cocycle.
 * `TauCeti.groupCohomology.map_id_add`: the map induced on cohomology is additive in the
   morphism of representations.
-* `TauCeti.groupCohomology.prodEquivOfIsBilimit`: the cohomology of a biproduct is the product of
+* `groupCohomology.prodEquivOfIsBilimit`: the cohomology of a biproduct is the product of
   the cohomologies.
 -/
 
@@ -76,6 +76,14 @@ theorem map_id_add {A B : Rep k G} (φ ψ : A ⟶ B) (n : ℕ) :
 @[simp]
 theorem map_id_zero (A B : Rep k G) (n : ℕ) : map (MonoidHom.id G) (0 : A ⟶ B) n = 0 :=
   (functor k G n).map_zero A B
+
+end TauCeti.groupCohomology
+
+namespace groupCohomology
+
+open TauCeti.groupCohomology
+
+variable {k G : Type u} [CommRing k] [Group G]
 
 section Biproduct
 
@@ -134,4 +142,4 @@ theorem prodEquivOfIsBilimit_symm_apply (hc : c.IsBilimit) (n : ℕ)
 
 end Biproduct
 
-end TauCeti.groupCohomology
+end groupCohomology

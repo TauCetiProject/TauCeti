@@ -69,7 +69,7 @@ the maps of the sequences commute with `δ` (`TauCeti.map_δ_cyclicRepShortCompl
 The construction is compatible with products. The cyclic representation of the product
 automorphism `A × B` of `T × M` is the biproduct of those of `A` and `B`
 (`AddEquiv.cyclicRepBinaryBiconeIsBilimit`), so the projections identify its cohomology with the
-product of the two cohomologies (`TauCeti.groupCohomology.prodEquivOfIsBilimit`); in degrees one
+product of the two cohomologies (`groupCohomology.prodEquivOfIsBilimit`); in degrees one
 and two this sends the class of `(t, u)` to the pair of classes of `t` and `u`
 (`TauCeti.prodEquivOfIsBilimit_groupCohomologyπOdd_one`,
 `TauCeti.prodEquivOfIsBilimit_groupCohomologyπEven_two`). The product of two equivariant exact
