@@ -181,14 +181,14 @@ theorem typeAOrthogonalDiagonal_transpose_mul_reindex_typeAGraphConjugator_inv_m
       have hs := typeAOrthogonal_sign_product k A i
       simp only [typeAOrthogonalIndex_inr_inr_val] at hs
       linear_combination 2 * hs
-    · simp [LieAlgebra.Orthogonal.JB, LieAlgebra.Orthogonal.JD, one_apply, h]
+    · simp [LieAlgebra.Orthogonal.JB, LieAlgebra.Orthogonal.JD, h]
   · by_cases h : i = j
     · subst j
       simp [LieAlgebra.Orthogonal.JB, LieAlgebra.Orthogonal.JD]
       have hs := typeAOrthogonal_sign_product_inl k A i
       simp only [typeAOrthogonalIndex_inr_inl_val] at hs
       linear_combination 2 * hs
-    · simp [LieAlgebra.Orthogonal.JB, LieAlgebra.Orthogonal.JD, one_apply, h]
+    · simp [LieAlgebra.Orthogonal.JB, LieAlgebra.Orthogonal.JD, h]
 
 variable [Invertible (2 : A)]
 
