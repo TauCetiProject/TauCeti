@@ -35,8 +35,8 @@ The only property of `sInf` used is that it returns a greatest lower bound whene
 (`OrderInfSet`), so this covers every complete meet-semilattice, in particular every complete
 lattice.
 
-Nonemptiness of the index is needed: over an empty index the infimum is a greatest element
-and no member attains it. -/
+Nonemptiness of the index is needed: over an empty index there is no member to attain the
+infimum. (In a complete meet-semilattice that empty infimum is the top element.) -/
 theorem Directed.exists_eq_iInf {α : Type*} [PartialOrder α] [OrderInfSet α] [WellFoundedLT α]
     {ι : Sort*} [Nonempty ι] {f : ι → α} (hf : Directed (· ≥ ·) f) : ∃ i, f i = ⨅ j, f j := by
   obtain ⟨a, hmin⟩ := exists_minimal_of_wellFoundedLT (· ∈ Set.range f) (Set.range_nonempty f)
