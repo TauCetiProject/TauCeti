@@ -586,12 +586,7 @@ theorem nonempty_linearEquiv_of_finrank_linearMap_eq
       let _ : IsSimpleModule A S := hS
       let _ : Module.Finite k S :=
         Module.Finite.of_injective (S.subtype.restrictScalars k) Subtype.val_injective
-      let _ : Module.Finite k (Module.End A S) :=
-        .of_injective (LinearMap.restrictScalarsₗ k A S S k) (LinearMap.restrictScalars_injective k)
-      have hendpos : 0 < Module.finrank k (Module.End A S) := by
-        let _ : Nontrivial S := IsSimpleModule.nontrivial A S
-        let _ : Nontrivial (Module.End A S) := inferInstance
-        exact Module.finrank_pos
+      have hendpos := finrank_end_pos (k := k) (A := A) (S := S)
       have hpredM (i : Fin n) : simpleModuleClass A (SM i) =
           SimpleSubmoduleClasses.mk S ↔ Nonempty (S ≃ₗ[A] SM i) := by
         rw [simpleModuleClass_eq_mk_iff]
