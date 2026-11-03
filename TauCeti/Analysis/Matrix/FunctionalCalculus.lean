@@ -15,6 +15,7 @@ import Mathlib.LinearAlgebra.Lagrange
 import Mathlib.Topology.MetricSpace.ThickenedIndicator
 import TauCeti.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.Continuity
 import TauCeti.Analysis.Matrix.L2OpNorm
+import TauCeti.LinearAlgebra.Matrix.Polynomial
 import TauCeti.Topology.Instances.Matrix
 
 /-!
@@ -33,6 +34,11 @@ eigenvector of `A` with eigenvalue `μ` by `f μ`, so it is the functional calcu
 `Module.End.pointSpectralSubspace A.toEuclideanLin Ω` of the eigenspaces of `A` at eigenvalues in
 `Ω`. For `Ω = [c, ∞)` this is the fixed-threshold spectral projector `P_[c,∞)(A)`, the cluster
 object used for spectral subspaces in the presence of eigenvalue multiplicity.
+
+*Intertwiners.* A rectangular matrix `V` with `A * V = V * B` for Hermitian `A` and `B` also
+satisfies `cfc f A * V = V * cfc f B`, since both functional calculi agree with one polynomial on
+the two finite spectra. Compressing `cfc f A` to an `A`-invariant subspace thus gives the
+functional calculus of the compression of `A`.
 
 *Traces.* The trace of `cfc f A` is `∑ᵢ f(aᵢ)` over the eigenvalues `aᵢ` of `A`. For a second
 Hermitian matrix `B` with eigenvalues `bⱼ`, the trace of `cfc f A * cfc g B` is
@@ -55,6 +61,7 @@ with a measurable random matrix `ω ↦ A ω` gives measurability of `ω ↦ cfc
 
 ## Main results
 
+* `Matrix.IsHermitian.cfc_mul_eq_mul_cfc` — `A * V = V * B` implies `cfc f A * V = V * cfc f B`;
 * `Matrix.IsHermitian.toEuclideanLin_cfc_apply_of_apply_eq_smul` — `cfc f A` acts by `f μ` on an
   eigenvector of `A` with eigenvalue `μ`;
 * `Matrix.IsHermitian.toEuclideanLin_cfc` — the Euclidean operator of `cfc f A` is the symmetric
@@ -104,6 +111,26 @@ theorem IsHermitian.cfc_mul (hA : A.IsHermitian) (f : ℝ → ℝ) :
     cfc f A * A = cfc (fun x ↦ f x * x) A := by
   rw [_root_.cfc_mul _ _ _ (A.finite_real_spectrum.continuousOn _)
     (A.finite_real_spectrum.continuousOn _), cfc_id' ℝ A hA.isSelfAdjoint]
+
+/-- **The functional calculus preserves intertwiners.** If a rectangular matrix `V` intertwines
+the Hermitian matrices `A` and `B`, that is `A * V = V * B`, then `cfc f A * V = V * cfc f B` for
+every real function `f`. -/
+theorem IsHermitian.cfc_mul_eq_mul_cfc {m : Type*} [Fintype m] [DecidableEq m]
+    {B : Matrix m m 𝕜} {V : Matrix n m 𝕜} (hA : A.IsHermitian) (hB : B.IsHermitian)
+    (h : A * V = V * B) (f : ℝ → ℝ) : cfc f A * V = V * cfc f B := by
+  -- Replace `f` by a polynomial `q` agreeing with it on the spectra of `A` and `B`.
+  classical
+  set s : Finset ℝ := A.finite_real_spectrum.toFinset ∪ B.finite_real_spectrum.toFinset
+  set q : ℝ[X] := Lagrange.interpolate s id f
+  have hq : ∀ t ∈ s, q.eval t = f t := fun t ht ↦
+    Lagrange.eval_interpolate_at_node f (Set.injOn_id _) ht
+  have hA' : cfc f A = aeval A (q.map (algebraMap ℝ 𝕜)) := by
+    rw [aeval_map_algebraMap, ← cfc_polynomial q A hA.isSelfAdjoint]
+    exact cfc_congr fun t ht ↦ (hq t (by simp [s, ht])).symm
+  have hB' : cfc f B = aeval B (q.map (algebraMap ℝ 𝕜)) := by
+    rw [aeval_map_algebraMap, ← cfc_polynomial q B hB.isSelfAdjoint]
+    exact cfc_congr fun t ht ↦ (hq t (by simp [s, ht])).symm
+  rw [hA', hB', aeval_mul_eq_mul_aeval h]
 
 /-- For symmetric `C` and positive `ε`, `(C² + ε I)⁻¹ C` is the functional calculus of
 `x ↦ x / (x² + ε)` at `C`, including when `C` is singular. -/

@@ -30,8 +30,10 @@ when all entries have degree at most one, `det (X • Bᵀ + B)` is its own refl
 dimension, being the determinant of the transpose (`Matrix.reflect_det_X_smul_transpose_add`).
 
 Evaluating a polynomial in a matrix commutes with applying a ring homomorphism to the coefficients
-and to the entries (`Matrix.aeval_map`). Natural matrix identities valid at unit parameters
-extend to all parameters by polynomial specialization (`Matrix.identity_of_units`).
+and to the entries (`Matrix.aeval_map`), and a rectangular matrix intertwining two square matrices
+intertwines every polynomial in them (`Matrix.aeval_mul_eq_mul_aeval`). Natural matrix identities
+valid at unit parameters extend to all parameters by polynomial specialization
+(`Matrix.identity_of_units`).
 -/
 
 public section
@@ -74,6 +76,21 @@ theorem aeval_map {R S : Type*} [CommSemiring R] [CommSemiring S] (A : Matrix n 
     (ψ := φ.mapMatrix) (RingHom.ext fun r ↦ ?_) f A).symm
   ext i j
   by_cases h : i = j <;> simp [algebraMap_matrix_apply, h]
+
+/-- **Polynomials preserve intertwiners.** If a rectangular matrix `V` intertwines the square
+matrices `A` and `B`, that is `A * V = V * B`, then it intertwines every polynomial in them. -/
+theorem aeval_mul_eq_mul_aeval {m : Type*} [Fintype m] [DecidableEq m] [CommSemiring R]
+    {A : Matrix n n R} {B : Matrix m m R} {V : Matrix n m R} (h : A * V = V * B) (q : R[X]) :
+    aeval A q * V = V * aeval B q := by
+  induction q using Polynomial.induction_on' with
+  | add p q hp hq => rw [map_add, map_add, Matrix.add_mul, Matrix.mul_add, hp, hq]
+  | monomial k a =>
+    have hpow : A ^ k * V = V * B ^ k := by
+      induction k with
+      | zero => simp
+      | succ k ih =>
+        rw [pow_succ, Matrix.mul_assoc, h, ← Matrix.mul_assoc, ih, Matrix.mul_assoc, ← pow_succ]
+    simp [aeval_monomial, Algebra.algebraMap_eq_smul_one, Matrix.smul_mul, Matrix.mul_smul, hpow]
 
 variable [CommRing R]
 
