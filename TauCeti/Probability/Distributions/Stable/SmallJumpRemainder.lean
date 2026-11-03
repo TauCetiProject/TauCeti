@@ -5,11 +5,9 @@ Authors: Codex
 -/
 module
 
-public import TauCeti.Probability.Distributions.Stable.Cutoff
 public import TauCeti.Probability.Distributions.Stable.SmallJumps
 public import TauCeti.Probability.Distributions.CompoundPoisson.Moments
 import Mathlib.Analysis.SpecialFunctions.Trigonometric.Bounds
-import TauCeti.Probability.ConditionalProbability
 import TauCeti.Probability.Distributions.Affine
 
 /-!
@@ -42,7 +40,7 @@ namespace TauCeti.Probability
 
 /-- The compensated compound-Poisson law of stable jumps in the band `ε < |x| ≤ r`.
 
-Its useful parameter range is `0 < α < 2`, `|β| ≤ 1`, and `0 < ε < r`. -/
+Its useful parameter range is `0 < α < 2`, `|β| ≤ 1`, and `0 < ε ≤ r`. -/
 def stableSmallJumpRemainderMeasure (α β ε r : ℝ) : Measure ℝ :=
   let ν := stableLevyMeasure α β
   let band := {x : ℝ | ε < |x| ∧ |x| ≤ r}
@@ -58,83 +56,45 @@ theorem stableSmallJumpRemainderMeasure_def (α β ε r : ℝ) :
         (fun x ↦ x - ∫ y in {y : ℝ | ε < |y| ∧ |y| ≤ r}, sin y
           ∂stableLevyMeasure α β) := (rfl)
 
-/-- A nonempty stable jump band has positive Lévy mass. -/
-theorem stableLevyMeasure_smallJumpBand_pos {α β ε r : ℝ} (hα : α ∈ Ioo 0 2)
-    (hβ : |β| ≤ 1) (hε : 0 < ε) (hεr : ε < r) :
-    0 < stableLevyMeasure α β {x : ℝ | ε < |x| ∧ |x| ≤ r} := by
-  let ν := stableLevyMeasure α β
-  let large : Set ℝ := {x | r < |x|}
-  let retained : Set ℝ := {x | ε < |x|}
-  let band : Set ℝ := {x | ε < |x| ∧ |x| ≤ r}
-  have hsplit : retained = band ∪ large := by
-    ext x
-    simp only [mem_union, mem_ofPred_eq, retained, band, large]
-    grind
-  have hdisj : Disjoint band large := by
-    rw [Set.disjoint_left]
-    exact fun _ hx hy ↦ hx.2.not_gt hy
-  have hlarge : MeasurableSet large := by measurability
-  have hmass : ν large < ν retained := by
-    rw [stableLevyMeasure_abs_gt hα hβ (hε.trans hεr),
-      stableLevyMeasure_abs_gt hα hβ hε]
-    have hc : 0 < 2 * Gamma (1 + α) * sin (π * α / 2) / (π * α) := by
-      have hcoef := stableLevyDensity_coefficient_pos hα
-      have heq : 2 * Gamma (1 + α) * sin (π * α / 2) / (π * α) =
-          2 * (Gamma (1 + α) * sin (π * α / 2) / π) / α := by ring
-      rw [heq]
-      exact div_pos (mul_pos zero_lt_two hcoef) hα.1
-    have hp : ε ^ α < r ^ α := Real.rpow_lt_rpow hε.le hεr hα.1
-    have he : 0 < ε ^ α := rpow_pos_of_pos hε _
-    have hr : 0 < r ^ α := rpow_pos_of_pos (hε.trans hεr) _
-    have hrhs : 0 < 2 * Gamma (1 + α) * sin (π * α / 2) / (π * α * ε ^ α) := by
-      have heq : 2 * Gamma (1 + α) * sin (π * α / 2) / (π * α * ε ^ α) =
-          (2 * Gamma (1 + α) * sin (π * α / 2) / (π * α)) / ε ^ α := by ring
-      rw [heq]
-      exact div_pos hc he
-    rw [ENNReal.ofReal_lt_ofReal_iff hrhs]
-    calc
-        2 * Gamma (1 + α) * sin (π * α / 2) / (π * α * r ^ α) =
-            (2 * Gamma (1 + α) * sin (π * α / 2) / (π * α)) / r ^ α := by ring
-        _ < (2 * Gamma (1 + α) * sin (π * α / 2) / (π * α)) / ε ^ α :=
-          (div_lt_div_iff₀ hr he).2 (mul_lt_mul_of_pos_left hp hc)
-        _ = 2 * Gamma (1 + α) * sin (π * α / 2) / (π * α * ε ^ α) := by ring
-  rw [hsplit, measure_union hdisj hlarge] at hmass
-  exact pos_iff_ne_zero.mpr fun hzero ↦ by
-    rw [hzero, zero_add] at hmass
-    exact hmass.false
+private lemma smallJumpBand_self (r : ℝ) :
+    {x : ℝ | r < |x| ∧ |x| ≤ r} = ∅ := by
+  rw [Set.ext_iff]
+  intro x
+  rw [Set.mem_ofPred_eq, Set.mem_empty_iff_false, iff_false]
+  exact fun hx ↦ (not_lt_of_ge hx.2) hx.1
 
-/-- For valid parameters, every nonempty stable jump band gives a probability jump law. -/
-theorem isProbabilityMeasure_cond_stableLevyMeasure_smallJumpBand {α β ε r : ℝ}
-    (hα : α ∈ Ioo 0 2) (hβ : |β| ≤ 1) (hε : 0 < ε) (hεr : ε < r) :
-    IsProbabilityMeasure
-      (cond (stableLevyMeasure α β) {x : ℝ | ε < |x| ∧ |x| ≤ r}) := by
-  apply cond_isProbabilityMeasure_of_finite
-  · exact (stableLevyMeasure_smallJumpBand_pos hα hβ hε hεr).ne'
-  · exact ne_top_of_le_ne_top (stableLevyMeasure_abs_gt_ne_top hε)
-      (measure_mono fun _ hx ↦ hx.1)
+/-- With coincident cutoffs, the stable small-jump remainder is the point mass at zero. -/
+@[simp]
+theorem stableSmallJumpRemainderMeasure_self (α β r : ℝ) :
+    stableSmallJumpRemainderMeasure α β r r = Measure.dirac 0 := by
+  rw [stableSmallJumpRemainderMeasure_def, smallJumpBand_self]
+  simp
+
+private lemma toNNReal_mul_integral_cond_eq_setIntegral {Ω : Type*} [MeasurableSpace Ω]
+    (μ : Measure Ω) (s : Set Ω) (f : Ω → ℝ) (h : μ s ≠ ∞) :
+    (μ s).toNNReal * ∫ x, f x ∂cond μ s = ∫ x in s, f x ∂μ := by
+  have haverage := measure_smul_setAverage f h
+  rw [setAverage_eq', ← ProbabilityTheory.cond, Measure.real,
+    ← ENNReal.coe_toNNReal_eq_toReal, smul_eq_mul] at haverage
+  exact haverage
 
 /-- A valid compensated small-jump remainder is a probability measure. -/
 theorem isProbabilityMeasure_stableSmallJumpRemainderMeasure {α β ε r : ℝ}
-    (hα : α ∈ Ioo 0 2) (hβ : |β| ≤ 1) (hε : 0 < ε) (hεr : ε < r) :
+    (hα : α ∈ Ioo 0 2) (hβ : |β| ≤ 1) (hε : 0 < ε) (hεr : ε ≤ r) :
     IsProbabilityMeasure (stableSmallJumpRemainderMeasure α β ε r) := by
+  rcases hεr.eq_or_lt with rfl | hεr
+  · rw [stableSmallJumpRemainderMeasure_self]
+    infer_instance
   let _ := isProbabilityMeasure_cond_stableLevyMeasure_smallJumpBand hα hβ hε hεr
   rw [stableSmallJumpRemainderMeasure_def]
   infer_instance
 
-/-- The conditional law of jumps in a valid band has a finite second moment. -/
-theorem memLp_two_id_cond_stableLevyMeasure_smallJumpBand {α β ε r : ℝ}
-    (hα : α ∈ Ioo 0 2) (hβ : |β| ≤ 1) (hε : 0 < ε) (hεr : ε < r) :
-    MemLp id 2 (cond (stableLevyMeasure α β) {x : ℝ | ε < |x| ∧ |x| ≤ r}) := by
-  let _ := isProbabilityMeasure_cond_stableLevyMeasure_smallJumpBand hα hβ hε hεr
-  refine MemLp.of_bound aestronglyMeasurable_id r ?_
-  filter_upwards [ae_cond_mem (by measurability :
-      MeasurableSet {x : ℝ | ε < |x| ∧ |x| ≤ r})] with x hx
-  simpa only [id_eq, Real.norm_eq_abs] using hx.2
-
 /-- The identity has a finite second moment under a valid compensated small-jump remainder. -/
 theorem memLp_two_id_stableSmallJumpRemainderMeasure {α β ε r : ℝ}
-    (hα : α ∈ Ioo 0 2) (hβ : |β| ≤ 1) (hε : 0 < ε) (hεr : ε < r) :
+    (hα : α ∈ Ioo 0 2) (hβ : |β| ≤ 1) (hε : 0 < ε) (hεr : ε ≤ r) :
     MemLp id 2 (stableSmallJumpRemainderMeasure α β ε r) := by
+  rcases hεr.eq_or_lt with rfl | hεr
+  · simp
   let ν := stableLevyMeasure α β
   let band : Set ℝ := {x | ε < |x| ∧ |x| ≤ r}
   let _ := isProbabilityMeasure_cond_stableLevyMeasure_smallJumpBand hα hβ hε hεr
@@ -148,16 +108,18 @@ theorem memLp_two_id_stableSmallJumpRemainderMeasure {α β ε r : ℝ}
 
 /-- The mean of the compensated small-jump remainder is the band integral of `x - sin x`. -/
 theorem integral_id_stableSmallJumpRemainderMeasure {α β ε r : ℝ}
-    (hα : α ∈ Ioo 0 2) (hβ : |β| ≤ 1) (hε : 0 < ε) (hεr : ε < r) :
+    (hα : α ∈ Ioo 0 2) (hβ : |β| ≤ 1) (hε : 0 < ε) (hεr : ε ≤ r) :
     ∫ x, x ∂stableSmallJumpRemainderMeasure α β ε r =
       ∫ x in {x : ℝ | ε < |x| ∧ |x| ≤ r}, x - sin x ∂stableLevyMeasure α β := by
+  rcases hεr.eq_or_lt with rfl | hεr
+  · simp [smallJumpBand_self]
   let ν := stableLevyMeasure α β
   let band : Set ℝ := {x | ε < |x| ∧ |x| ≤ r}
   have hband : MeasurableSet band := by measurability
   have htop : ν band ≠ ∞ := ne_top_of_le_ne_top (stableLevyMeasure_abs_gt_ne_top hε)
     (measure_mono fun _ hx ↦ hx.1)
   let _ := isProbabilityMeasure_cond_stableLevyMeasure_smallJumpBand hα hβ hε hεr
-  let _ := isProbabilityMeasure_stableSmallJumpRemainderMeasure hα hβ hε hεr
+  let _ := isProbabilityMeasure_stableSmallJumpRemainderMeasure hα hβ hε hεr.le
   have hjump : MemLp id 2 (cond ν band) :=
     memLp_two_id_cond_stableLevyMeasure_smallJumpBand hα hβ hε hεr
   have hjump_one : Integrable id (cond ν band) := hjump.integrable (by norm_num)
@@ -172,9 +134,7 @@ theorem integral_id_stableSmallJumpRemainderMeasure {α β ε r : ℝ}
     rw [stableSmallJumpRemainderMeasure_def]
     simpa only [ν, band, sub_eq_add_neg] using hmean
   rw [hmean_exact, integral_id_compoundPoissonMeasure hjump_one]
-  have hid := measure_smul_setAverage id htop
-  rw [setAverage_eq', ← ProbabilityTheory.cond, Measure.real,
-    ← ENNReal.coe_toNNReal_eq_toReal, smul_eq_mul] at hid
+  have hid := toNNReal_mul_integral_cond_eq_setIntegral ν band id htop
   simp only [id_eq] at hid
   simp only [smul_eq_mul]
   rw [hid]
@@ -198,9 +158,11 @@ theorem integral_id_stableSmallJumpRemainderMeasure {α β ε r : ℝ}
 /-- The variance of the compensated small-jump remainder is the band second moment of the
 stable Lévy measure. -/
 theorem variance_id_stableSmallJumpRemainderMeasure {α β ε r : ℝ}
-    (hα : α ∈ Ioo 0 2) (hβ : |β| ≤ 1) (hε : 0 < ε) (hεr : ε < r) :
+    (hα : α ∈ Ioo 0 2) (hβ : |β| ≤ 1) (hε : 0 < ε) (hεr : ε ≤ r) :
     Var[id; stableSmallJumpRemainderMeasure α β ε r] =
       ∫ x in {x : ℝ | ε < |x| ∧ |x| ≤ r}, x ^ 2 ∂stableLevyMeasure α β := by
+  rcases hεr.eq_or_lt with rfl | hεr
+  · simp [smallJumpBand_self]
   let ν := stableLevyMeasure α β
   let band : Set ℝ := {x | ε < |x| ∧ |x| ≤ r}
   have htop : ν band ≠ ∞ := ne_top_of_le_ne_top (stableLevyMeasure_abs_gt_ne_top hε)
@@ -218,15 +180,14 @@ theorem variance_id_stableSmallJumpRemainderMeasure {α β ε r : ℝ}
     rw [stableSmallJumpRemainderMeasure_def]
     simpa only [ν, band, sub_eq_add_neg, add_comm] using hvariance
   rw [hvariance_exact, variance_id_compoundPoissonMeasure hjump]
-  have hsecond := measure_smul_setAverage (fun x : ℝ ↦ x ^ 2) htop
-  rw [setAverage_eq', ← ProbabilityTheory.cond, Measure.real,
-    ← ENNReal.coe_toNNReal_eq_toReal, smul_eq_mul] at hsecond
+  have hsecond :=
+    toNNReal_mul_integral_cond_eq_setIntegral ν band (fun x : ℝ ↦ x ^ 2) htop
   simpa only [ν, band] using hsecond
 
 /-- The variance of a valid band remainder is bounded by the full stable second moment below
 its outer cutoff. -/
 theorem variance_id_stableSmallJumpRemainderMeasure_le {α β ε r : ℝ}
-    (hα : α ∈ Ioo 0 2) (hβ : |β| ≤ 1) (hε : 0 < ε) (hεr : ε < r) :
+    (hα : α ∈ Ioo 0 2) (hβ : |β| ≤ 1) (hε : 0 < ε) (hεr : ε ≤ r) :
     Var[id; stableSmallJumpRemainderMeasure α β ε r] ≤
       ∫ x in Metric.ball (0 : ℝ) r, x ^ 2 ∂stableLevyMeasure α β := by
   let ν := stableLevyMeasure α β
@@ -252,7 +213,7 @@ theorem variance_id_stableSmallJumpRemainderMeasure_le {α β ε r : ℝ}
 /-- Sine compensation makes the mean third order: it is at most `r / 6` times the
 variance. -/
 theorem abs_integral_id_stableSmallJumpRemainderMeasure_le {α β ε r : ℝ}
-    (hα : α ∈ Ioo 0 2) (hβ : |β| ≤ 1) (hε : 0 < ε) (hεr : ε < r) :
+    (hα : α ∈ Ioo 0 2) (hβ : |β| ≤ 1) (hε : 0 < ε) (hεr : ε ≤ r) :
     |∫ x, x ∂stableSmallJumpRemainderMeasure α β ε r| ≤
       r / 6 * Var[id; stableSmallJumpRemainderMeasure α β ε r] := by
   let ν := stableLevyMeasure α β
@@ -266,7 +227,7 @@ theorem abs_integral_id_stableSmallJumpRemainderMeasure_le {α β ε r : ℝ}
     Integrable.of_bound (by fun_prop) (r ^ 2)
       ((ae_restrict_mem hband).mono fun x hx ↦ by
         simpa only [Real.norm_eq_abs, abs_sq, sq_abs] using
-          (sq_le_sq₀ (abs_nonneg x) (hε.trans hεr).le).2 hx.2)
+          (sq_le_sq₀ (abs_nonneg x) (hε.trans_le hεr).le).2 hx.2)
   have hdom : ∀ᵐ x ∂ν.restrict band, ‖x - sin x‖ ≤ r / 6 * x ^ 2 := by
     filter_upwards [ae_restrict_mem hband] with x hx
     calc
@@ -285,7 +246,7 @@ theorem abs_integral_id_stableSmallJumpRemainderMeasure_le {α β ε r : ℝ}
 /-- The raw second moment of a valid band remainder is its variance plus the square of its
 mean. -/
 theorem integral_sq_stableSmallJumpRemainderMeasure {α β ε r : ℝ}
-    (hα : α ∈ Ioo 0 2) (hβ : |β| ≤ 1) (hε : 0 < ε) (hεr : ε < r) :
+    (hα : α ∈ Ioo 0 2) (hβ : |β| ≤ 1) (hε : 0 < ε) (hεr : ε ≤ r) :
     ∫ x, x ^ 2 ∂stableSmallJumpRemainderMeasure α β ε r =
       Var[id; stableSmallJumpRemainderMeasure α β ε r] +
         (∫ x, x ∂stableSmallJumpRemainderMeasure α β ε r) ^ 2 := by
@@ -299,7 +260,7 @@ theorem integral_sq_stableSmallJumpRemainderMeasure {α β ε r : ℝ}
 remainder tends to zero with its outer cutoff. -/
 theorem tendsto_variance_stableSmallJumpRemainderMeasure_zero {α β : ℝ}
     (hα : α ∈ Ioo 0 2) (hβ : |β| ≤ 1) {ε : ℝ → ℝ}
-    (hε : ∀ᶠ r in 𝓝[>] (0 : ℝ), 0 < ε r ∧ ε r < r) :
+    (hε : ∀ᶠ r in 𝓝[>] (0 : ℝ), 0 < ε r ∧ ε r ≤ r) :
     Tendsto (fun r ↦ Var[id; stableSmallJumpRemainderMeasure α β (ε r) r])
       (𝓝[>] (0 : ℝ)) (𝓝 0) := by
   have houter := (tendsto_integral_sq_stableLevyMeasure_ball_zero hα hβ).mono_left
@@ -314,7 +275,7 @@ theorem tendsto_variance_stableSmallJumpRemainderMeasure_zero {α β : ℝ}
 tends to zero with its outer cutoff. -/
 theorem tendsto_integral_id_stableSmallJumpRemainderMeasure_zero {α β : ℝ}
     (hα : α ∈ Ioo 0 2) (hβ : |β| ≤ 1) {ε : ℝ → ℝ}
-    (hε : ∀ᶠ r in 𝓝[>] (0 : ℝ), 0 < ε r ∧ ε r < r) :
+    (hε : ∀ᶠ r in 𝓝[>] (0 : ℝ), 0 < ε r ∧ ε r ≤ r) :
     Tendsto (fun r ↦ ∫ x, x ∂stableSmallJumpRemainderMeasure α β (ε r) r)
       (𝓝[>] (0 : ℝ)) (𝓝 0) := by
   rw [tendsto_zero_iff_norm_tendsto_zero]
@@ -330,7 +291,7 @@ theorem tendsto_integral_id_stableSmallJumpRemainderMeasure_zero {α β : ℝ}
   apply squeeze_zero' (Eventually.of_forall fun r ↦ norm_nonneg
     (∫ x, x ∂stableSmallJumpRemainderMeasure α β (ε r) r))
   · filter_upwards [hε] with r hcut
-    have hr_nonneg : 0 ≤ r / 6 := div_nonneg (hcut.1.trans hcut.2).le (by norm_num)
+    have hr_nonneg : 0 ≤ r / 6 := div_nonneg (hcut.1.trans_le hcut.2).le (by norm_num)
     simpa only [Real.norm_eq_abs] using
       (abs_integral_id_stableSmallJumpRemainderMeasure_le hα hβ hcut.1 hcut.2).trans
         (mul_le_mul_of_nonneg_left
@@ -341,7 +302,7 @@ theorem tendsto_integral_id_stableSmallJumpRemainderMeasure_zero {α β : ℝ}
 in second moment. -/
 theorem tendsto_integral_sq_stableSmallJumpRemainderMeasure_zero {α β : ℝ}
     (hα : α ∈ Ioo 0 2) (hβ : |β| ≤ 1) {ε : ℝ → ℝ}
-    (hε : ∀ᶠ r in 𝓝[>] (0 : ℝ), 0 < ε r ∧ ε r < r) :
+    (hε : ∀ᶠ r in 𝓝[>] (0 : ℝ), 0 < ε r ∧ ε r ≤ r) :
     Tendsto (fun r ↦ ∫ x, x ^ 2 ∂stableSmallJumpRemainderMeasure α β (ε r) r)
       (𝓝[>] (0 : ℝ)) (𝓝 0) := by
   have hvariance := tendsto_variance_stableSmallJumpRemainderMeasure_zero hα hβ hε
