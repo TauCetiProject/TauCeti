@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Lie.G2.ShortRoot.IntegralToralClosure.Basic
+public import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.Scheme.ToralClosure.Weyl
 
 /-!
 # Pinned rank-one words in the integral short-root G₂ carrier
@@ -43,6 +44,19 @@ theorem simpleWeylPoint_def (i : Fin 2) (A : Type v) [CommRing A] :
         rootSubgroupPoints (.inr i) A (Multiplicative.ofAdd (-1)) *
         rootSubgroupPoints (.inl i) A (Multiplicative.ofAdd 1) := (rfl)
 
+/-- The pinned word agrees with the generic Kostant Weyl representative as a general-linear
+point, so the generic conjugation and normalizer results apply through this comparison. -/
+theorem coe_simpleWeylPoint_eq_kostantToralWeylPoint (i : Fin 2) (A : Type v) [CommRing A] :
+    (simpleWeylPoint i A : Matrix.GeneralLinearGroup (Fin 7) A) =
+      (TauCeti.UniversalEnvelopingAlgebra.kostantToralWeylPoint
+        (TauCeti.serreRootGenerator CartanMatrix.G₂) (TauCeti.serreH ℚ CartanMatrix.G₂)
+        rep lattice.toAddSubgroup rep_kostantForm_mem_lattice isNilpotent_rep_serreRootGenerator
+        latticeBasis weight (.inl i) (.inr i) A : Matrix.GeneralLinearGroup (Fin 7) A) := by
+  simp only [simpleWeylPoint_def,
+    TauCeti.UniversalEnvelopingAlgebra.kostantToralWeylPoint_def, Subgroup.coe_mul,
+    coe_rootSubgroupPoints_eq_kostantRootSubgroupMatrix,
+    TauCeti.UniversalEnvelopingAlgebra.coe_kostantToralRootSubgroupPoints]
+
 /-- The integral signed permutation matrix of the pinned rank-one word at each node. -/
 def simpleWeylPointMatrix : Fin 2 → Matrix (Fin 7) (Fin 7) ℤ :=
   ![!![0, 1, 0, 0, 0, 0, 0;
@@ -61,7 +75,6 @@ def simpleWeylPointMatrix : Fin 2 → Matrix (Fin 7) (Fin 7) ℤ :=
        0, 0, 0, 0, 0, 0, 1]]
 
 /-- The integral matrix of the short-node rank-one word. -/
-@[simp]
 theorem simpleWeylPointMatrix_zero :
     simpleWeylPointMatrix 0 =
       !![0, 1, 0, 0, 0, 0, 0;
@@ -73,7 +86,6 @@ theorem simpleWeylPointMatrix_zero :
          0, 0, 0, 0, 0, -1, 0] := (rfl)
 
 /-- The integral matrix of the long-node rank-one word. -/
-@[simp]
 theorem simpleWeylPointMatrix_one :
     simpleWeylPointMatrix 1 =
       !![1, 0, 0, 0, 0, 0, 0;
@@ -94,6 +106,7 @@ private theorem simpleWeylPointMatrix_formula (i : Fin 2) :
       rootDividedSquareMatrix_inr] <;> decide +kernel
 
 /-- Each integral rank-one-word matrix has its transpose as a right inverse. -/
+@[simp]
 theorem simpleWeylPointMatrix_mul_transpose (i : Fin 2) :
     simpleWeylPointMatrix i * (simpleWeylPointMatrix i).transpose = 1 := by
   fin_cases i <;> decide +kernel

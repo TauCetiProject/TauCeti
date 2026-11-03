@@ -74,26 +74,33 @@ private theorem coe_long (A : Type v) [CommRing A] (a : A) :
       1 + a • (L 0).map (Int.castRingHom A) := by
   simp [coe_rootSubgroupPoints, rootMatrix_inl, rootDividedSquareMatrix_inl, L]
 
+private theorem coe_simpleWeylPoint_conj (A : Type v) [CommRing A] (i : Fin 2)
+    (g : points A) (a : A) (M M' : Matrix (Fin 7) (Fin 7) ℤ)
+    (hg : ((g : Matrix.GeneralLinearGroup (Fin 7) A) : Matrix (Fin 7) (Fin 7) A) =
+      1 + a • M.map (Int.castRingHom A))
+    (hM : simpleWeylPointMatrix i * M * (simpleWeylPointMatrix i).transpose = M') :
+    (((simpleWeylPoint i A * g * (simpleWeylPoint i A)⁻¹ : points A) :
+      Matrix.GeneralLinearGroup (Fin 7) A) : Matrix (Fin 7) (Fin 7) A) =
+      1 + a • M'.map (Int.castRingHom A) := by
+  simp only [Subgroup.coe_mul, Subgroup.coe_inv, Units.val_mul, coe_simpleWeylPoint_inv,
+    coe_simpleWeylPoint, ← Matrix.transpose_map, hg, Matrix.mul_add, Matrix.add_mul,
+    Matrix.mul_one, Matrix.mul_smul, Matrix.smul_mul, ← Matrix.map_mul,
+    simpleWeylPointMatrix_mul_transpose, hM, Matrix.map_one _ (map_zero _) (map_one _)]
+
 private theorem coe_conj_long (A : Type v) [CommRing A] (a : A) :
     (((simpleWeylPoint 0 A * rootSubgroupPoints (.inl 1) A (Multiplicative.ofAdd a) *
       (simpleWeylPoint 0 A)⁻¹ : points A) : Matrix.GeneralLinearGroup (Fin 7) A) :
       Matrix (Fin 7) (Fin 7) A) = 1 + a • (L 1).map (Int.castRingHom A) := by
-  simp only [Subgroup.coe_mul, Subgroup.coe_inv, Units.val_mul, coe_simpleWeylPoint_inv,
-    coe_simpleWeylPoint, ← Matrix.transpose_map, coe_long, Matrix.mul_add, Matrix.add_mul,
-    Matrix.mul_one, Matrix.mul_smul, Matrix.smul_mul, ← Matrix.map_mul,
-    simpleWeylPointMatrix_mul_transpose, simpleWeylPointMatrix_conj_L_zero,
-    Matrix.map_one _ (map_zero _) (map_one _)]
+  exact coe_simpleWeylPoint_conj A 0 _ a (L 0) (L 1) (coe_long A a)
+    simpleWeylPointMatrix_conj_L_zero
 
 private theorem coe_conj_conj_long (A : Type v) [CommRing A] (a : A) :
     (((simpleWeylPoint 1 A * (simpleWeylPoint 0 A *
       rootSubgroupPoints (.inl 1) A (Multiplicative.ofAdd a) * (simpleWeylPoint 0 A)⁻¹) *
       (simpleWeylPoint 1 A)⁻¹ : points A) : Matrix.GeneralLinearGroup (Fin 7) A) :
       Matrix (Fin 7) (Fin 7) A) = 1 + a • (L 2).map (Int.castRingHom A) := by
-  simp only [Subgroup.coe_mul, Subgroup.coe_inv, Units.val_mul, coe_simpleWeylPoint_inv,
-    coe_simpleWeylPoint, ← Matrix.transpose_map, coe_long, Matrix.mul_add, Matrix.add_mul,
-    Matrix.mul_one, Matrix.mul_smul, Matrix.smul_mul, ← Matrix.map_mul,
-    simpleWeylPointMatrix_mul_transpose, simpleWeylPointMatrix_conj_L_zero,
-    simpleWeylPointMatrix_conj_L_one, Matrix.map_one _ (map_zero _) (map_one _)]
+  exact coe_simpleWeylPoint_conj A 1 _ a (L 1) (L 2) (coe_conj_long A a)
+    simpleWeylPointMatrix_conj_L_one
 
 /-- The long-root A₂ Chevalley commutator, with the nonsimple root parameters normalized by
 pinned rank-one words. The first node is short and the second long (Bourbaki numbering). -/
@@ -124,14 +131,9 @@ theorem commutatorElement_rootSubgroupPoints_simpleWeylPoint_conj_rootSubgroupPo
     simp only [Ring.lie_def, Matrix.smul_mul, Matrix.mul_smul, smul_smul,
       mul_comm b a, ← smul_sub, ← Matrix.map_mul,
       ← Matrix.map_sub _ (map_sub _), L_bracket]
-  · simp only [Matrix.smul_mul, Matrix.mul_smul, ← Matrix.map_mul,
-      L_square, Matrix.map_zero _ (map_zero _), smul_zero]
-  · simp only [Matrix.smul_mul, Matrix.mul_smul, ← Matrix.map_mul,
-      L_square, Matrix.map_zero _ (map_zero _), smul_zero]
-  · simp only [Matrix.smul_mul, Matrix.mul_smul, smul_smul, ← Matrix.map_mul,
-      L_triple.1, Matrix.map_zero _ (map_zero _), smul_zero]
-  · simp only [Matrix.smul_mul, Matrix.mul_smul, smul_smul, ← Matrix.map_mul,
-      L_triple.2, Matrix.map_zero _ (map_zero _), smul_zero]
+  all_goals
+    simp only [Matrix.smul_mul, Matrix.mul_smul, smul_smul, ← Matrix.map_mul,
+      L_square, L_triple.1, L_triple.2, Matrix.map_zero _ (map_zero _), smul_zero]
 
 end
 
