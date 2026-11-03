@@ -253,6 +253,12 @@ omit [ContinuousAdd F] in
 theorem parameterToCoker_apply (l : Λ) : parameterToCoker D₁ D₂ l = D₁.range.mkQ (D₂ l) :=
   (rfl)
 
+omit [ContinuousAdd F] in
+/-- The parameter directions remove exactly their image in the original cokernel. -/
+theorem range_parameterToCoker :
+    LinearMap.range (parameterToCoker D₁ D₂) = D₂.range.map D₁.range.mkQ := by
+  rw [parameterToCoker, LinearMap.range_comp]
+
 /-- The kernel of the map induced by `D₂` is the range of the parameter projection: this is
 `ContinuousLinearMap.range_parameterProj` read in the quotient. -/
 @[simp]
