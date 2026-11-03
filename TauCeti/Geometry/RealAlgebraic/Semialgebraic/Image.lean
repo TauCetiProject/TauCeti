@@ -44,6 +44,8 @@ All results assume projection closure, `[TauCeti.HasSemialgebraicProjections R]`
 
 * `TauCeti.IsSemialgebraic.image_comp_inr`, `TauCeti.IsSemialgebraic.image_comp_inl`: projections
   of semialgebraic sets that forget finitely many coordinates are semialgebraic.
+* `TauCeti.IsSemialgebraic.setOf_exists_sumElim`,
+  `TauCeti.IsSemialgebraic.setOf_forall_sumElim`: quantification over finitely many coordinates.
 * `TauCeti.IsSemialgebraicOn.isSemialgebraic_image`,
   `TauCeti.IsSemialgebraicMap.isSemialgebraic_image`: images under semialgebraic functions with
   finitely many input coordinates; `TauCeti.IsSemialgebraic.image_eval`: images under polynomial
@@ -147,6 +149,25 @@ theorem IsSemialgebraic.image_comp_inl [Finite τ] {s : Set (σ ⊕ τ → R)}
     ext (a | b) <;> rfl
   · rintro ⟨z, hz, rfl⟩
     exact ⟨_, hz, rfl⟩
+
+/-- Existential quantification over finitely many coordinates preserves semialgebraicity. -/
+theorem IsSemialgebraic.setOf_exists_sumElim [Finite τ] {s : Set (σ ⊕ τ → R)}
+    (hs : IsSemialgebraic s) :
+    IsSemialgebraic {x : σ → R | ∃ y : τ → R, Sum.elim x y ∈ s} := by
+  convert hs.image_comp_inl using 1
+  ext x
+  constructor
+  · rintro ⟨y, hy⟩
+    exact ⟨Sum.elim x y, hy, rfl⟩
+  · rintro ⟨z, hz, rfl⟩
+    exact ⟨z ∘ Sum.inr, by simpa using hz⟩
+
+/-- Universal quantification over finitely many coordinates preserves semialgebraicity. -/
+theorem IsSemialgebraic.setOf_forall_sumElim [Finite τ] {s : Set (σ ⊕ τ → R)}
+    (hs : IsSemialgebraic s) :
+    IsSemialgebraic {x : σ → R | ∀ y : τ → R, Sum.elim x y ∈ s} := by
+  simpa only [compl_ofPred, mem_compl_iff, not_exists, not_not] using
+    hs.compl.setOf_exists_sumElim.compl
 
 /-- Given projection closure, the image of the domain of a semialgebraic function with finitely
 many input coordinates is semialgebraic. -/
