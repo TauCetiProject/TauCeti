@@ -109,16 +109,9 @@ theorem withConstantsStructure_reduct_eq (M : Type*) [S : L[[γ]].Structure M] :
     @withConstantsStructure L M ((L.lhomWithConstants γ).reduct M) γ
       (constantsOn.structure fun c => (L.con c : M)) = S := by
   refine Structure.ext (funext fun k => funext fun f => funext fun xs => ?_)
-    (funext fun k => funext fun R => funext fun xs => propext ?_)
-  · rcases f with f | c
-    · rfl
-    · cases k with
-      | zero =>
-        rw [Unique.eq_default xs]
-        rfl
-      | succ k => exact c.elim
-  · rcases R with R | R
-    · rfl
-    · exact R.elim
+    (funext fun _ => funext fun | .inl _ => funext fun _ => rfl | .inr R => R.elim)
+  rcases f with f | c
+  · rfl
+  · cases k with | zero => rw [Unique.eq_default xs]; rfl | succ _ => exact c.elim
 
 end FirstOrder.Language

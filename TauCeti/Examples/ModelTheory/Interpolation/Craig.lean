@@ -171,20 +171,16 @@ private abbrev invRel : InvLang.Relations 2 := .inr Language.adj
 private def invAtom {n : ℕ} (i j : Fin n) : InvLang.BoundedFormulaω Empty n :=
   BoundedFormulaInf.rel invRel ![bvar i, bvar j]
 
-@[simp]
-private theorem snoc1_zero {α : Type w} (f : Fin 0 → α) (x : α) :
+@[simp] private theorem snoc1_zero {α : Type w} (f : Fin 0 → α) (x : α) :
     (Fin.snoc f x : Fin 1 → α) 0 = x := (rfl)
 
-@[simp]
-private theorem snoc2_one {α : Type w} (f : Fin 0 → α) (x y : α) :
+@[simp] private theorem snoc2_one {α : Type w} (f : Fin 0 → α) (x y : α) :
     (Fin.snoc (Fin.snoc f x) y : Fin 2 → α) 1 = y := (rfl)
 
-@[simp]
-private theorem snoc3_one {α : Type w} (f : Fin 0 → α) (x y z : α) :
+@[simp] private theorem snoc3_one {α : Type w} (f : Fin 0 → α) (x y z : α) :
     (Fin.snoc (Fin.snoc (Fin.snoc f x) y) z : Fin 3 → α) 1 = y := (rfl)
 
-@[simp]
-private theorem snoc3_two {α : Type w} (f : Fin 0 → α) (x y z : α) :
+@[simp] private theorem snoc3_two {α : Type w} (f : Fin 0 → α) (x y z : α) :
     (Fin.snoc (Fin.snoc (Fin.snoc f x) y) z : Fin 3 → α) 2 = z := (rfl)
 
 @[simp]
@@ -194,8 +190,7 @@ private theorem realize_invAtom {M : Type w} [InvLang.Structure M] {n : ℕ}
       Structure.RelMap (L := InvLang) invRel ![xs i, xs j] := by
   rw [invAtom, BoundedFormulaInf.realize_rel]
   refine of_eq (congrArg (Structure.RelMap (L := InvLang) invRel) ?_)
-  ext k
-  fin_cases k <;> simp [bvar]
+  ext k; fin_cases k <;> simp [bvar]
 
 /-- Axioms saying that the binary relation of `Language.graph` is the graph of an involution:
 totality (`∀ x, ∃ y, R(x, y)`), functionality (`∀ x y z, R(x, y) → R(x, z) → y = z`), and
@@ -247,12 +242,9 @@ private theorem exists_perm_of_involutionGraphSentence {M : Type w} [InvLang.Str
   have hf : ∀ x, Structure.RelMap (L := InvLang) invRel ![x, f x] := fun x => (htot x).choose_spec
   have hinvf : Function.Involutive f := fun x =>
     hfun (f x) (f (f x)) x (hf (f x)) (hsym x (f x) (hf x))
-  refine ⟨hinvf.toPerm, ?_, fun x y => ⟨fun hxy => ?_, fun hxy => ?_⟩⟩
-  · ext x
-    simp [sq, hinvf x]
-  · simpa using hfun x (f x) y (hf x) hxy
-  · rw [← hxy]
-    simpa using hf x
+  exact ⟨hinvf.toPerm, by ext x; simp [sq, hinvf x],
+    fun x y => ⟨fun hxy => by simpa using hfun x (f x) y (hf x) hxy,
+      fun hxy => by rw [← hxy]; simpa using hf x⟩⟩
 
 @[instance_reducible]
 private def structureOfInvolutive {M : Type w} [Language.empty.Structure M] (f : M → M) :
@@ -266,6 +258,15 @@ private theorem relMap_structureOfInvolutive {M : Type w} [Language.empty.Struct
     @Structure.RelMap InvLang M (structureOfInvolutive f) 2 invRel xs ↔ f (xs 0) = xs 1 :=
   Iff.rfl
 
+private theorem realize_structureOfInvolutive_involution {M : Type w}
+    [Language.empty.Structure M] {f : M → M} (hf : Function.Involutive f) :
+    @SentenceInf.Realize _ ℕ involutionGraphSentence M (structureOfInvolutive f) := by
+  let : InvLang.Structure M := structureOfInvolutive f
+  rw [involutionGraphSentence_realize_iff]
+  simp only [relMap_structureOfInvolutive, Matrix.cons_val_zero, Matrix.cons_val_one]
+  exact ⟨fun x => ⟨f x, rfl⟩, fun _ _ _ hxy hxz => hxy.symm.trans hxz,
+    fun x _ hxy => by rw [← hxy, hf x]⟩
+
 /-- Over `Language.empty`, the projective class of `evenFiniteSentence` consists of the finite
 structures whose carrier has even cardinality. -/
 theorem pcMem_evenFiniteSentence_iff {M : Type w} [Language.empty.Structure M] :
@@ -274,48 +275,35 @@ theorem pcMem_evenFiniteSentence_iff {M : Type w} [Language.empty.Structure M] :
   constructor
   · rintro ⟨S, -, hS⟩
     let : InvLang.Structure M := S
-    have h₁ := SentenceInf.realize_inf.1 hS
-    have h₂ := SentenceInf.realize_inf.1 h₁.1
-    have hnotinf : ¬ Infinite M := by
-      have h := h₂.1
-      rwa [SentenceInf.realize_not, realize_infiniteSentence_iff] at h
-    have hfin : Finite M := not_infinite_iff_finite.1 hnotinf
+    obtain ⟨h₁, hlast⟩ := SentenceInf.realize_inf.1 hS
+    obtain ⟨hfin0, hinv⟩ := SentenceInf.realize_inf.1 h₁
+    have hfin : Finite M := not_infinite_iff_finite.1
+      (by rwa [SentenceInf.realize_not, realize_infiniteSentence_iff] at hfin0)
     let : Fintype M := Fintype.ofFinite M
-    obtain ⟨σ, hσ, hgraph⟩ := exists_perm_of_involutionGraphSentence h₂.2
+    obtain ⟨σ, hσ, hgraph⟩ := exists_perm_of_involutionGraphSentence hinv
     have hnofix : ∀ x : M, σ x ≠ x := by
-      have h := h₁.2
-      simpa [SentenceInf.realize_def, FormulaInf.realize_def, hgraph] using h
-    have hdvd : 2 ∣ Fintype.card M := by
-      by_contra hndvd
-      obtain ⟨x, hx⟩ := Equiv.Perm.exists_fixed_point_of_prime (p := 2) (n := 1) hndvd hσ
-      exact hnofix x hx
+      simpa [SentenceInf.realize_def, FormulaInf.realize_def, hgraph] using hlast
     refine ⟨hfin, ?_⟩
-    rw [Nat.card_eq_fintype_card]
-    exact even_iff_two_dvd.2 hdvd
+    rw [Nat.card_eq_fintype_card, even_iff_two_dvd]
+    by_contra hndvd
+    obtain ⟨x, hx⟩ := Equiv.Perm.exists_fixed_point_of_prime (p := 2) (n := 1) hndvd hσ
+    exact hnofix x hx
   · rintro ⟨hfin, k, hk⟩
     let : Fintype M := Fintype.ofFinite M
-    have hcard : Fintype.card M = Fintype.card (Fin k ⊕ Fin k) := by
+    let e : M ≃ Fin k ⊕ Fin k := Fintype.equivOfCardEq <| by
       rw [← Nat.card_eq_fintype_card, hk, Fintype.card_sum, Fintype.card_fin]
-    let e : M ≃ Fin k ⊕ Fin k := Fintype.equivOfCardEq hcard
     let f : M → M := fun x => e.symm ((Equiv.sumComm (Fin k) (Fin k)) (e x))
-    have hinvf : Function.Involutive f := fun x => by simp [f]
-    have hnofix : ∀ x, f x ≠ x := by
-      intro x hx
-      have hx' : (Equiv.sumComm (Fin k) (Fin k)) (e x) = e x :=
-        e.symm.injective (by simpa [f] using hx)
+    have hnofix : ∀ x, f x ≠ x := fun x hx => by
+      have hx' : (e x).swap = e x := by simpa [f] using congrArg e hx
       rcases h : e x with i | i <;> simp [h] at hx'
     let S : InvLang.Structure M := structureOfInvolutive f
     let : InvLang.Structure M := S
-    have hexp : @LHom.IsExpansionOn _ _ LHom.sumInl M _ S :=
-      ⟨fun f => isEmptyElim f, fun R => isEmptyElim R⟩
-    refine ⟨S, hexp, ?_⟩
+    refine ⟨S, ⟨fun f => isEmptyElim f, fun R => isEmptyElim R⟩, ?_⟩
     rw [evenFiniteSentence, SentenceInf.realize_inf, SentenceInf.realize_inf,
-      SentenceInf.realize_not, realize_infiniteSentence_iff, involutionGraphSentence_realize_iff]
-    refine ⟨⟨not_infinite_iff_finite.2 hfin, ?_⟩, ?_⟩
-    · simp only [S, relMap_structureOfInvolutive, Matrix.cons_val_zero, Matrix.cons_val_one]
-      exact ⟨fun x => ⟨f x, rfl⟩, fun x y z hxy hxz => hxy.symm.trans hxz,
-        fun x y hxy => by rw [← hxy, hinvf x]⟩
-    · simp [S, SentenceInf.realize_def, FormulaInf.realize_def, hnofix]
+      SentenceInf.realize_not, realize_infiniteSentence_iff]
+    exact ⟨⟨not_infinite_iff_finite.2 hfin,
+      realize_structureOfInvolutive_involution fun x => by simp [f]⟩,
+      by simp [S, SentenceInf.realize_def, FormulaInf.realize_def, hnofix]⟩
 
 /-- Over `Language.empty`, the projective class of `oddFiniteSentence` consists of the finite
 structures whose carrier has odd cardinality. -/
@@ -325,61 +313,43 @@ theorem pcMem_oddFiniteSentence_iff {M : Type w} [Language.empty.Structure M] :
   constructor
   · rintro ⟨S, -, hS⟩
     let : InvLang.Structure M := S
-    have h₁ := SentenceInf.realize_inf.1 hS
-    have h₂ := SentenceInf.realize_inf.1 h₁.1
-    have h₃ := SentenceInf.realize_inf.1 h₂.1
-    have hnotinf : ¬ Infinite M := by
-      have h := h₃.1
-      rwa [SentenceInf.realize_not, realize_infiniteSentence_iff] at h
-    have hfin : Finite M := not_infinite_iff_finite.1 hnotinf
+    obtain ⟨h₁, huniq0⟩ := SentenceInf.realize_inf.1 hS
+    obtain ⟨h₂, hex0⟩ := SentenceInf.realize_inf.1 h₁
+    obtain ⟨hfin0, hinv⟩ := SentenceInf.realize_inf.1 h₂
+    have hfin : Finite M := not_infinite_iff_finite.1
+      (by rwa [SentenceInf.realize_not, realize_infiniteSentence_iff] at hfin0)
     let : Fintype M := Fintype.ofFinite M
-    obtain ⟨σ, hσ, hgraph⟩ := exists_perm_of_involutionGraphSentence h₃.2
+    obtain ⟨σ, hσ, hgraph⟩ := exists_perm_of_involutionGraphSentence hinv
     obtain ⟨x₀, hx₀⟩ : ∃ x : M, σ x = x := by
-      have h := h₂.2
-      simpa [SentenceInf.realize_def, FormulaInf.realize_def, hgraph] using h
+      simpa [SentenceInf.realize_def, FormulaInf.realize_def, hgraph] using hex0
     have huniqfix : ∀ x y : M, σ x = x → σ y = y → x = y := by
-      have h := h₁.2
-      simpa [SentenceInf.realize_def, FormulaInf.realize_def, bvar, hgraph] using h
-    have hndvd : ¬ 2 ∣ Fintype.card M := fun hdvd => by
-      obtain ⟨y, hy, hne⟩ :=
-        Equiv.Perm.exists_fixed_point_of_prime' (p := 2) (n := 1) hdvd hσ hx₀
-      exact hne (huniqfix y x₀ hy hx₀)
-    refine ⟨hfin, ?_⟩
-    rw [Nat.card_eq_fintype_card]
-    exact Nat.not_even_iff_odd.1 (even_iff_two_dvd.not.2 hndvd)
+      simpa [SentenceInf.realize_def, FormulaInf.realize_def, bvar, hgraph] using huniq0
+    refine ⟨hfin, Nat.card_eq_fintype_card (α := M) ▸ Nat.not_even_iff_odd.1
+      (even_iff_two_dvd.not.2 fun hdvd => ?_)⟩
+    obtain ⟨y, hy, hne⟩ := Equiv.Perm.exists_fixed_point_of_prime' (p := 2) (n := 1) hdvd hσ hx₀
+    exact hne (huniqfix y x₀ hy hx₀)
   · rintro ⟨hfin, k, hk⟩
     let : Fintype M := Fintype.ofFinite M
-    have hcard : Fintype.card M = Fintype.card ((Fin k ⊕ Fin k) ⊕ Unit) := by
+    let e : M ≃ (Fin k ⊕ Fin k) ⊕ Unit := Fintype.equivOfCardEq <| by
       rw [← Nat.card_eq_fintype_card, hk, Fintype.card_sum, Fintype.card_sum, Fintype.card_fin,
         Fintype.card_unique, two_mul]
-    let e : M ≃ (Fin k ⊕ Fin k) ⊕ Unit := Fintype.equivOfCardEq hcard
-    let swapOdd : (Fin k ⊕ Fin k) ⊕ Unit ≃ (Fin k ⊕ Fin k) ⊕ Unit :=
-      Equiv.sumCongr (Equiv.sumComm (Fin k) (Fin k)) (Equiv.refl Unit)
+    let swapOdd := Equiv.sumCongr (Equiv.sumComm (Fin k) (Fin k)) (Equiv.refl Unit)
     let f : M → M := fun x => e.symm (swapOdd (e x))
-    have hinvf : Function.Involutive f := fun x => by simp [f, swapOdd]
-    have hfix_iff : ∀ x, f x = x ↔ x = e.symm (.inr ()) := by
-      intro x
-      constructor
-      · intro hx
-        have hx' : swapOdd (e x) = e x := e.symm.injective (by simpa [f] using hx)
+    have hfix_iff : ∀ x, f x = x ↔ x = e.symm (.inr ()) := fun x =>
+      ⟨fun hx => by
+        have hx' : swapOdd (e x) = e x := by simpa [f] using congrArg e hx
         rcases h : e x with (i | i) | ⟨⟩
         · simp [swapOdd, h] at hx'
         · simp [swapOdd, h] at hx'
-        · exact e.injective (by simpa using h)
-      · rintro rfl
-        simp [f, swapOdd]
+        · exact e.injective (by simpa using h),
+       by rintro rfl; simp [f, swapOdd]⟩
     let S : InvLang.Structure M := structureOfInvolutive f
     let : InvLang.Structure M := S
-    have hexp : @LHom.IsExpansionOn _ _ LHom.sumInl M _ S :=
-      ⟨fun f => isEmptyElim f, fun R => isEmptyElim R⟩
-    refine ⟨S, hexp, ?_⟩
+    refine ⟨S, ⟨fun f => isEmptyElim f, fun R => isEmptyElim R⟩, ?_⟩
     rw [oddFiniteSentence, SentenceInf.realize_inf, SentenceInf.realize_inf,
-      SentenceInf.realize_inf, SentenceInf.realize_not, realize_infiniteSentence_iff,
-      involutionGraphSentence_realize_iff]
-    refine ⟨⟨⟨not_infinite_iff_finite.2 hfin, ?_⟩, ?_⟩, ?_⟩
-    · simp only [S, relMap_structureOfInvolutive, Matrix.cons_val_zero, Matrix.cons_val_one]
-      exact ⟨fun x => ⟨f x, rfl⟩, fun x y z hxy hxz => hxy.symm.trans hxz,
-        fun x y hxy => by rw [← hxy, hinvf x]⟩
+      SentenceInf.realize_inf, SentenceInf.realize_not, realize_infiniteSentence_iff]
+    refine ⟨⟨⟨not_infinite_iff_finite.2 hfin,
+      realize_structureOfInvolutive_involution fun x => by simp [f, swapOdd]⟩, ?_⟩, ?_⟩
     · simp only [S, SentenceInf.realize_def, FormulaInf.realize_def, BoundedFormulaInf.realize_ex,
         realize_invAtom, relMap_structureOfInvolutive, Matrix.cons_val_zero, Matrix.cons_val_one,
         snoc1_zero]
@@ -388,8 +358,7 @@ theorem pcMem_oddFiniteSentence_iff {M : Type w} [Language.empty.Structure M] :
         BoundedFormulaInf.realize_imp, BoundedFormulaInf.realize_equal, realize_invAtom, bvar,
         Term.realize_var, Sum.elim_inr, relMap_structureOfInvolutive, Matrix.cons_val_zero,
         Matrix.cons_val_one, Fin.snoc_apply_zero, snoc1_zero, snoc2_one]
-      intro x y hx hy
-      exact ((hfix_iff x).1 hx).trans ((hfix_iff y).1 hy).symm
+      exact fun x y hx hy => ((hfix_iff x).1 hx).trans ((hfix_iff y).1 hy).symm
 
 /-- `evenCardSentence` holds in `M` exactly when `M` is finite of even cardinality. -/
 theorem realize_evenCardSentence_iff (M : Type w) [Language.empty.Structure M] :
