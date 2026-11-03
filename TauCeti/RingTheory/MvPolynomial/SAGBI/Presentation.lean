@@ -85,14 +85,12 @@ theorem weightedHomogeneousComponent_monomial_sub_monomial_sub {u v : ι →₀ 
     (hQ : ∀ w ∈ Q.support, Finsupp.linearCombination ℕ a w ≺[m] Finsupp.linearCombination ℕ a u) :
     weightedHomogeneousComponent a (Finsupp.linearCombination ℕ a u)
         (monomial u 1 - monomial v 1 - Q) = monomial u 1 - monomial v 1 := by
-  classical
   rw [map_sub,
     (isWeightedHomogeneous_monomial_sub_monomial huv).weightedHomogeneousComponent_same,
-    sub_eq_self, weightedHomogeneousComponent_apply]
-  refine Finset.sum_eq_zero fun w hw ↦ ?_
-  obtain ⟨hw, hwd⟩ := Finset.mem_filter.1 hw
+    sub_eq_self]
+  refine weightedHomogeneousComponent_eq_zero' _ Q fun w hw hwd ↦ ?_
   rw [Finsupp.weight_eq_linearCombination] at hwd
-  exact absurd (congrArg m.toSyn hwd) (hQ w hw).ne
+  exact (hQ w hw).ne (congrArg m.toSyn hwd)
 
 /-- Write `A w = ∑ i, w i • a i`. If every exponent of `Q` has `A`-degree at most the common
 `A`-degree of `u` and `v`, then so does every exponent of `Y^u - Y^v - Q`. -/
