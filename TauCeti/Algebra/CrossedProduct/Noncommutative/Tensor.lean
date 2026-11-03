@@ -17,9 +17,10 @@ module for each left coset. The equivalence `subgroupTensorEquiv` uses the actua
 subgroup algebra inclusion and the right basis `rightSubgroupBasis`. Its inverse
 sends the coefficient at a coset to the tensor with the chosen representative.
 
-For finite subgroup index this proves finite generation over the ground ring, and
-over a field the dimension is the index times the original dimension. The index
-group and the coefficient algebra may be infinite and noncommutative, respectively.
+For finite subgroup index this proves finite generation over the ground ring.
+The natural-number rank is the index times the original natural-number rank,
+with infinite ranks and indices represented by zero. The index group and the
+coefficient algebra may be infinite and noncommutative, respectively.
 These are the underlying vector-space coordinates for induction of crossed-product
 modules; no comparison with induction of group representations is asserted here.
 
@@ -85,17 +86,16 @@ instance moduleFinite_subgroupTensor [H.FiniteIndex] [Module.Finite k N] :
       (BalancedTensorProduct k (Algebra (c.comap H.subtype)) (Algebra c) N) :=
   Module.Finite.equiv (subgroupTensorEquiv c H N).symm
 
-/-- At finite subgroup index, the ground-ring rank is multiplied by the index.
-Over a field every module is free, so this is the usual dimension formula. -/
-theorem finrank_subgroupTensor [H.FiniteIndex] [StrongRankCondition k] [Module.Free k N] :
+/-- The ground-ring natural-number rank is multiplied by the subgroup index.
+Infinite ranks and indices are represented by zero. Over a field every module is free,
+so at finite index and finite dimension this is the usual dimension formula. -/
+theorem finrank_subgroupTensor [StrongRankCondition k] [Module.Free k N] :
     Module.finrank k
         (BalancedTensorProduct k (Algebra (c.comap H.subtype)) (Algebra c) N) =
       H.index * Module.finrank k N := by
-  classical
-  let _ := Fintype.ofFinite (G ⧸ H)
   -- The rank formula permits the coset and module carriers to live in different universes.
   simpa only [Module.finrank, rank_finsupp, Cardinal.toNat_mul, Cardinal.toNat_lift,
-    Cardinal.mk_toNat_eq_card, Subgroup.index, Nat.card_eq_fintype_card] using
+    Cardinal.toNat_mk, Subgroup.index] using
     (subgroupTensorEquiv c H N).finrank_eq
 
 end TauCeti.CrossedSystem.Algebra
