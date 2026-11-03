@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Lie.G2.ShortRoot.PrimeField.PointsFunctor
-public import TauCeti.Algebra.Lie.G2.ShortRoot.IntegralToralClosure.RootRelations.NegativeCollection
+public import TauCeti.Algebra.Lie.G2.ShortRoot.IntegralToralClosure.Root.NegativeCollection
 
 /-!
 # Negative-root Chevalley collection over the prime field of characteristic three

@@ -225,8 +225,8 @@ private def collectionEntry (a b : A) (r s : Fin 7) : Prop :=
 local macro "collect_row " s:ident : tactic =>
   `(tactic| (unfold collectionEntry; fin_cases $(s):ident <;>
     norm_num [simpleMatrix, collectedMatrix, collectedLinear, collectedSquare,
-      rootMatrix_inr, rootDividedSquareMatrix_inr, loweringMatrix, Matrix.single,
-      Matrix.mul_apply, Matrix.vecMul, dotProduct, Fin.sum_univ_succ,
+      rootMatrix_inr, rootDividedSquareMatrix_inr, loweringMatrix_apply, Matrix.single_apply,
+      Matrix.mul_apply, Fin.sum_univ_succ,
       Matrix.add_apply, Matrix.smul_apply, Matrix.map_apply, Matrix.of_apply,
       Matrix.one_apply] <;> ring))
 
