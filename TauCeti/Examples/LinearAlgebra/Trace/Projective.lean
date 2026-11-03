@@ -65,7 +65,7 @@ theorem projectiveTrace_nonfree :
     -- Mathlib's trace is defined to be `0` on modules without a finite basis, and it has no
     -- lemma for that branch, so we unfold it.
     classical
-    rw [LinearMap.trace, dite_eq_right fun ⟨s, ⟨b⟩⟩ ↦ hnf (.of_basis b), zero_apply]
+    rw [LinearMap.trace, dite_eq_right fun ⟨s, ⟨b⟩⟩ ↦ hnf (.of_basis b), LinearMap.zero_apply]
 
 /-- On `R²`, the trace of the endomorphism with matrix `!![a, b; c, d]` is `a + d`. -/
 example {R : Type*} [CommRing R] (a b c d : R) :

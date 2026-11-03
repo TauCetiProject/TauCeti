@@ -185,8 +185,8 @@ theorem isNilpotent_projectiveTrace_of_isNilpotent {f : M →ₗ[R] M} (hf : IsN
     induction j with
     | zero => simp
     | succ j ih =>
-      rw [pow_succ' (s ∘ₗ f ∘ₗ p), Module.End.mul_apply, ih, pow_succ' f (j + 1),
-        Module.End.mul_apply]
+      rw [pow_succ' (s ∘ₗ f ∘ₗ p), mul_apply_eq_comp, ih, pow_succ' f (j + 1),
+        mul_apply_eq_comp]
       simp only [comp_apply, hps]
   obtain ⟨k, hk⟩ := hf
   have hf' : IsNilpotent (s ∘ₗ f ∘ₗ p) :=
