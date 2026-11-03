@@ -70,7 +70,7 @@ theorem two_pow_mul_volume_rayFundamentalDomain_inter_normLeOne (𝔪 : Modulus 
   -- divides its volume by `2 ^ s`; the translates are disjoint, each with the volume of
   -- `normLeOne K`
   rw [rayFundamentalDomain_inter_normLeOne_eq, Set.inter_comm, posRegion_def,
-    ← volume_eq_two_pow_mul_volume_inter_pos _ (by simp) (.iUnion hm),
+    ← volume_eq_two_pow_mul_volume_inter_pos _ (by simp),
     measure_iUnion (pairwise_disjoint_rayUnitRepresentative_smul_normLeOne 𝔪) hm]
   simp [ENat.card_eq_coe_natCard, Subgroup.index]
 
