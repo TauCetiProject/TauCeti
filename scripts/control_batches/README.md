@@ -20,7 +20,10 @@ hourly label timer resumes work even after events cease.
 `merge_batch.py` invokes the exact policy checked out by the shared pinned action.
 The policy supplies all review, head, base, hold, backend, withdrawal and quota
 checks. The wrapper only orders candidates and records discovery versions.
-Changed `updated_at` or head metadata goes ahead of unchanged queue rechecks,
+Changed PR/head metadata or a changed comment-version snapshot goes ahead of
+unchanged queue rechecks. A paginated GraphQL query reads each open PR's comment
+count and most recently updated comment ID/timestamp, without bodies, so edits
+and deletions are detected even when the PR's own `updated_at` does not change,
 including changed PRs without readiness labels. Thus coalescing individual event
 runs does not discard their changed inputs. Progress records the metadata version
 listed before processing, so an edit during the attempt remains fresh next time.

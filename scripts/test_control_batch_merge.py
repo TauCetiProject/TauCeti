@@ -30,16 +30,67 @@ class MergeBatch(unittest.TestCase):
     def setUp(self):
         self.original_candidates = sweep.candidates
         self.original_remember = sweep.remember_sweep_attempt
+        self.original_open_prs = sweep.open_prs
+        self.addCleanup(setattr, sweep, "open_prs", self.original_open_prs)
         self.addCleanup(setattr, sweep, "candidates", self.original_candidates)
         self.addCleanup(setattr, sweep, "remember_sweep_attempt", self.original_remember)
         self.addCleanup(setattr, sweep, "_sweep_progress", {})
         self.env = patch.dict(os.environ, FOCUSED="1")
         self.env.start()
         self.addCleanup(self.env.stop)
+        self.repository = patch.object(sweep, "REPO", "TauCetiProject/TauCeti")
+        self.repository.start()
+        self.addCleanup(self.repository.stop)
         self.focused = patch.object(sweep, "FOCUSED", True)
         self.focused.start()
         self.addCleanup(self.focused.stop)
         batch.install()
+
+    def test_comment_edits_and_deletions_are_fresh_even_without_pr_timestamp_change(self):
+        p = pr(1)
+        p["batch_comments"] = dict(count=3, latest=[dict(id="comment-3", updatedAt="2026-11-03T02:00:00Z")])
+        previous = observed(p) | dict(batch_observed_comments=p["batch_comments"])
+        self.assertFalse(batch.changed(p, previous))
+        edited = dict(p, batch_comments=dict(count=3, latest=[dict(id="older-scoreboard", updatedAt="2026-11-03T03:00:00Z")]))
+        self.assertTrue(batch.changed(edited, previous))
+        deleted = dict(p, batch_comments=dict(count=2, latest=p["batch_comments"]["latest"]))
+        self.assertTrue(batch.changed(deleted, previous))
+
+    def test_comment_deletion_priority_does_not_depend_on_remaining_comment_timestamp(self):
+        changed = pr(1, "2026-11-01T01:00:00Z")
+        changed["batch_comments"] = dict(count=1, latest=[dict(id="old", updatedAt="2026-11-01T00:00:00Z")])
+        prior = observed(changed) | dict(batch_observed_comments=dict(count=2, latest=changed["batch_comments"]["latest"]))
+        new = pr(2, "2026-11-03T03:00:00Z")
+        with patch.object(sweep, "read_sweep_progress", return_value={"1": prior}):
+            selected = sweep.candidates([new, changed], set(), set())
+        self.assertEqual([p["number"] for p in selected], [1, 2])
+
+    def test_discovery_reads_comment_versions_in_pages_not_one_request_per_pr(self):
+        # Reinstall against a fake REST listing so the wrapper uses it without network.
+        sweep.open_prs = lambda: [pr(1), pr(2)]
+        batch.install()
+        def page(number, more):
+            return dict(data=dict(rateLimit=dict(cost=1), repository=dict(pullRequests=dict(
+                nodes=[dict(number=number, headRefOid=str(number)*40, comments=dict(totalCount=1, nodes=[dict(id=str(number), updatedAt="2026-11-03T02:00:00Z")]))],
+                pageInfo=dict(hasNextPage=more, endCursor=str(number))))))
+        with patch.object(sweep, "gh_json", return_value=[page(1, True), page(2, False)]) as api:
+            result = sweep.open_prs()
+        self.assertEqual(api.call_count, 1)
+        self.assertEqual(result[1]["batch_comments"]["count"], 1)
+        query = api.call_args_list[0].args[0]
+        self.assertIn("--paginate", query)
+        self.assertIn("--slurp", query)
+        self.assertIn("$endCursor", " ".join(query))
+        self.assertIn("orderBy:{field:UPDATED_AT,direction:DESC}", " ".join(query))
+        self.assertNotIn("body", " ".join(query))
+
+    def test_incomplete_comment_discovery_fails_before_any_policy_decision(self):
+        sweep.open_prs = lambda: [pr(1)]
+        batch.install()
+        page = dict(data=dict(repository=dict(pullRequests=dict(nodes=[], pageInfo=dict(hasNextPage=True)))))
+        with patch.object(sweep, "gh_json", return_value=[page]):
+            with self.assertRaisesRegex(RuntimeError, "before the final page"):
+                sweep.open_prs()
 
     def test_coalesced_revocation_on_recently_checked_pr_precedes_unchanged_queue(self):
         queued = [pr(n) for n in range(1, 31)]
