@@ -8,13 +8,14 @@ module
 public import Mathlib.Order.Hom.Basic
 
 /-!
-# Injectivity and range of lifted order homomorphisms
+# Range of lifted order homomorphisms
 
 Mathlib's `OrderHom.uliftMap` lifts an order homomorphism `f : α →o β` to
-`ULift α →o ULift β`. This file records that the lift is injective when `f` is, and that its range
-consists of the lifts of the elements of the range of `f`. For instance, the coface maps
-`(SimplexCategory.δ j).toOrderHom.uliftMap` between the `ULift (Fin _)` index types of simplicial
-thickenings inherit injectivity and their range from `Fin.succAbove`.
+`ULift α →o ULift β`. This file records that its range consists of the lifts of the elements of the
+range of `f`. For instance, the coface maps `(SimplexCategory.δ j).toOrderHom.uliftMap` between the
+`ULift (Fin _)` index types of simplicial thickenings inherit their range from `Fin.succAbove`.
+(Injectivity of the lift is Mathlib's `ULift.map_injective`, since the underlying function of
+`f.uliftMap` is `ULift.map f`.)
 -/
 
 public section
@@ -22,10 +23,6 @@ public section
 namespace OrderHom
 
 variable {α β : Type*} [Preorder α] [Preorder β] {f : α →o β}
-
-/-- The lift of an injective order homomorphism to `ULift` is injective. -/
-theorem uliftMap_injective (hf : Function.Injective f) : Function.Injective f.uliftMap :=
-  fun _ _ h ↦ ULift.ext (hf (congrArg ULift.down h))
 
 /-- An element of `ULift β` is in the range of `f.uliftMap` if and only if its underlying element
 is in the range of `f`. -/

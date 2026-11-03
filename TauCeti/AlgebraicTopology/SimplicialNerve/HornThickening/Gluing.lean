@@ -416,7 +416,7 @@ private abbrev δF (j : Fin (n + 2)) :
 private lemma exists_arrMap_δF_eq (j : Fin (n + 2))
     (u : Arr (SimplicialThickening (ULift.{v} (Fin (n + 2)))) q)
     (hu : ∀ t, ⟨j⟩ ∉ paths u t) : ∃ w, arrMap (δF j) w = u :=
-  exists_arrMap_functor_eq _ (OrderHom.uliftMap_injective Fin.succAbove_right_injective) u
+  exists_arrMap_functor_eq _ (ULift.map_injective.2 Fin.succAbove_right_injective) u
     fun t _ hx ↦ OrderHom.mem_range_uliftMap_iff.2 (Fin.exists_succAbove_eq fun h ↦ hu t (h ▸ hx))
 
 private lemma notMem_paths_arrMap_δF (j : Fin (n + 2))
@@ -437,7 +437,7 @@ private lemma exists_eq_arrMap_δF_of_lt {j k : Fin (n + 3)} (hjk : j < k)
     rw [← h, paths_arrMap_functor] at this
     exact this ⟨_, hk, ULift.ext (Fin.succAbove_pred_of_lt _ _ hjk)⟩
   refine ⟨z, rfl, arrMap_functor_injective _
-    (OrderHom.uliftMap_injective Fin.succAbove_right_injective) (h.symm.trans ?_)⟩
+    (ULift.map_injective.2 Fin.succAbove_right_injective) (h.symm.trans ?_)⟩
   rw [← arrMap_comp_functor, ← arrMap_comp_functor, ← SimplicialThickening.functor_comp,
     ← SimplicialThickening.functor_comp]
   -- This is the simplicial identity `δ (k - 1) ≫ δ j = δ j ≫ δ k` (Mathlib's `δ_comp_δ`).
@@ -500,7 +500,7 @@ private lemma exists_arrMap_δF_comp {j : Fin (n + 3)}
   have h₁₂ : w₁.2.1 = w₂.1 := congrArg SimplicialThickening.mk
     (ULift.ext (Fin.succAbove_right_injective (congrArg (·.as.down) huv)))
   exact ⟨w₁, w₂, h₁₂, rfl, rfl, arrMap_functor_injective _
-    (OrderHom.uliftMap_injective Fin.succAbove_right_injective)
+    (ULift.map_injective.2 Fin.succAbove_right_injective)
     ((arrMap_comp _ h₁₂).trans h.symm)⟩
 
 include hσ in
@@ -511,7 +511,7 @@ private lemma arrMap_σ_eq {j k : Fin (n + 3)} (hj : j ≠ i) (hk : k ≠ i)
   · obtain ⟨z, rfl, rfl⟩ := exists_eq_arrMap_δF_of_lt hjk h
     have := hσ j k hj hk hjk
     exact congrArg (fun F ↦ arrMap F z) this
-  · rw [arrMap_functor_injective _ (OrderHom.uliftMap_injective Fin.succAbove_right_injective) h]
+  · rw [arrMap_functor_injective _ (ULift.map_injective.2 Fin.succAbove_right_injective) h]
   · obtain ⟨z, rfl, rfl⟩ := exists_eq_arrMap_δF_of_lt hjk h.symm
     have := hσ k j hk hj hjk
     exact (congrArg (fun F ↦ arrMap F z) this).symm
