@@ -16,10 +16,10 @@ module sheaves. No Noetherian or finiteness hypothesis on the morphism is requir
 resolutions may be unbounded: the argument preserves exactness in every positive degree,
 not just a finite presentation.
 
-Flat pullback is only used on quasi-coherent modules. The resolving terms are finite free,
-and the augmented module is quasi-coherent because it has a finite free resolution.
-Right exactness handles the augmentation, while flatness preserves the positive-degree
-exact sequences. Restriction of pullback to an inverse-image open then gives the local result.
+Flatness is used only on the short complexes of finite free resolving terms, which are
+quasi-coherent, to preserve exactness in positive degrees. Degree zero uses only right
+exactness of pullback to preserve the cokernel presentation of the augmentation. Restriction
+of pullback to an inverse-image open then gives the local result.
 
 ## References
 
