@@ -6,10 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.InnerProductSpace.Basic
-public import Mathlib.Analysis.Normed.Module.RCLike.Real
 public import Mathlib.Analysis.Normed.Module.RCLike.Basic
-public import Mathlib.Analysis.Normed.Operator.Basic
-public import Mathlib.Topology.MetricSpace.Cover
 public import TauCeti.Analysis.Normed.Group.Cover
 
 /-!
@@ -80,11 +77,13 @@ theorem opNorm_le_of_isCover_sphere {E F : Type*} [NormedAddCommGroup E]
     · rw [hTx]
       have : 0 ≤ M + 2 * (η : ℝ) * ‖T‖ := by positivity
       simpa using this
-    · set y : F := ‖T x‖⁻¹ • T x with hy
+    · let y : F := ‖T x‖⁻¹ • T x
       have hynorm : ‖y‖ = 1 := by
-        simpa only [hy, RCLike.ofReal_real_eq_id, id_eq] using norm_smul_inv_norm (𝕜 := ℝ) hTx
+        simpa only [y, RCLike.ofReal_real_eq_id, id_eq] using
+          norm_smul_inv_norm (𝕜 := ℝ) hTx
       have hinner : Inner.inner ℝ y (T x) = ‖T x‖ := by
-        rw [hy, real_inner_smul_self_left]
+        change Inner.inner ℝ (‖T x‖⁻¹ • T x) (T x) = ‖T x‖
+        rw [real_inner_smul_self_left]
         have hnormpos : 0 < ‖T x‖ := norm_pos_iff.mpr hTx
         field_simp
       obtain ⟨v, hv, hyv⟩ := hcoverₚ.exists_norm_sub_le (mem_sphere_zero_iff_norm.mpr hynorm)
