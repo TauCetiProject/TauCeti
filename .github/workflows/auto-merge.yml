@@ -38,7 +38,10 @@ concurrency:
 
 jobs:
   resolve:
-    runs-on: ubuntu-latest
+    # Keep short control work off the congested GitHub-hosted queue.
+    runs-on:
+      - nscloud-ubuntu-24.04-amd64-2x4-with-features;job.priority=0
+      - namespace-features:github.run-id=${{ github.run_id }}
     # Pushes and comments already identify their PR. Only a completed build whose event omits
     # the association needs a separate API lookup; ordinary events start just the policy job.
     if: >

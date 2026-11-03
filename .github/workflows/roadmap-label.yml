@@ -36,7 +36,10 @@ jobs:
   label:
     # Title-only edits do not affect attribution or the structure nudge.
     if: github.event.action != 'edited' || github.event.changes.body != null || github.event.changes.base != null
-    runs-on: ubuntu-latest
+    # Keep short control work off the congested GitHub-hosted queue.
+    runs-on:
+      - nscloud-ubuntu-24.04-amd64-2x4-with-features;job.priority=0
+      - namespace-features:github.run-id=${{ github.run_id }}
     timeout-minutes: 10
     steps:
       # Let rapid pushes/body edits collapse before minting a token or fetching API data.
