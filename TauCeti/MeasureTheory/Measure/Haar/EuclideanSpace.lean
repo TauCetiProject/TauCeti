@@ -59,7 +59,7 @@ theorem exists_map_toLp_symm_eq_smul (μ : Measure (EuclideanSpace ℝ ι)) [μ.
 theorem measure_preimage_ofLp {μ : Measure (EuclideanSpace ℝ ι)} {a : ℝ≥0∞}
     (he : μ.map (MeasurableEquiv.toLp 2 (ι → ℝ)).symm = a • volume) (S : Set (ι → ℝ)) :
     μ (ofLp ⁻¹' S) = a * volume S := by
-  rw [← MeasurableEquiv.coe_toLp_symm, ← MeasurableEquiv.map_apply, he, Measure.smul_apply,
+  rw [← MeasurableEquiv.coe_toLp_symm, ← MeasurableEquiv.map_apply, he, _root_.smul_apply,
     smul_eq_mul]
 
 /-- If `ofLp` carries `μ` to `a • volume`, then `μ` gives the cube of half-side `r ≥ 0` the

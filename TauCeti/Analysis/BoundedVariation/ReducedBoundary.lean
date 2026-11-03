@@ -33,9 +33,13 @@ proves their basic properties.
   at `|Dχ_s|`-almost every point (`TauCeti.ae_mem_reducedBoundary`,
   `TauCeti.ae_outerNormal_eq`). This is Lebesgue's differentiation theorem for `σ` against the
   Radon measure `|Dχ_s|` on `Ω`, which is available because `Ω` inherits the Besicovitch
-  covering property (`Besicovitch.ae_tendsto_average_closedBall`). Consequently
-  `∫_s div φ = ∫ ⟪φ, ν_s⟫ d|Dχ_s|` for every test vector field `φ` on `Ω`
-  (`TauCeti.integral_divergenceCLM_mul_indicator_eq_integral_inner_outerNormal`).
+  covering property (`Besicovitch.ae_tendsto_average_closedBall`). Consequently the
+  **Gauss–Green formula** `∫_s div φ = ∫ ⟪φ, ν_s⟫ d|Dχ_s|` holds for every `C¹` vector field `φ`
+  with compact support in `Ω`, where `div φ = tr (Dφ)`
+  (`TauCeti.integral_trace_fderiv_mul_indicator_eq_integral_inner_outerNormal`). It is the case
+  `u = χ_s` of integration by parts against `C¹` vector fields,
+  `∫ u div φ dμ = -∫ ⟪φ, σ_u⟫ d|Du|`
+  (`TauCeti.integral_trace_fderiv_mul_eq_neg_integral_inner_polarDensity`).
 * A point of the reduced boundary forces `s` to have locally finite perimeter in `Ω`
   (`TauCeti.locallyIntegrableOn_and_totalVariationOn_ne_top_of_mem_reducedBoundary`), and in
   particular to be null-measurable on `Ω`
@@ -66,6 +70,10 @@ perimeter in `Ω`, the perimeter measure is zero by convention and the reduced b
   and Proposition 15.5) and Chapter 15 (blow-ups at points of the reduced boundary).
 * L. C. Evans, R. F. Gariepy, *Measure Theory and Fine Properties of Functions*, revised edition,
   §5.7.
+* L. Ambrosio, N. Fusco, D. Pallara, *Functions of Bounded Variation and Free Discontinuity
+  Problems*, §3.1.
+* F. Maggi, *Sets of Finite Perimeter and Geometric Variational Problems*, §12.1 (the
+  Gauss–Green measure of a set of locally finite perimeter).
 -/
 
 public section
@@ -74,8 +82,8 @@ noncomputable section
 
 namespace TauCeti
 
-open MeasureTheory TopologicalSpace Set Filter Metric TestFunction
-open scoped ENNReal Topology RealInnerProductSpace Distributions
+open MeasureTheory TopologicalSpace Set Filter Metric
+open scoped ENNReal Topology RealInnerProductSpace
 
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
   [MeasurableSpace E] [BorelSpace E] {μ : Measure E} {Ω : Opens E} {s t : Set E} {x : E}
@@ -93,7 +101,7 @@ def reducedBoundary (μ : Measure E) (Ω : Opens E) (s : Set E) : Set E :=
 of the averages of the polar density of `Dχ_s` over `closedBall x r` against `|Dχ_s|`. At points
 of the reduced boundary it is a unit vector (`TauCeti.norm_outerNormal`), and
 `Dχ_s = -ν_s |Dχ_s|`
-(`TauCeti.integral_divergenceCLM_mul_indicator_eq_integral_inner_outerNormal`). Elsewhere its
+(`TauCeti.integral_trace_fderiv_mul_indicator_eq_integral_inner_outerNormal`). Elsewhere its
 value carries no meaning. -/
 def outerNormal (μ : Measure E) (Ω : Opens E) (s : Set E) (x : E) : E :=
   -limUnder (𝓝[>] (0 : ℝ)) fun r => ⨍ y in ((↑) : Ω → E) ⁻¹' closedBall x r,
@@ -256,17 +264,19 @@ theorem ae_outerNormal_eq :
   filter_upwards [ae_tendsto_setAverage_polarDensity] with y hy
   exact outerNormal_eq_of_tendsto hy.2
 
-/-- **`Dχ_s = -ν_s |Dχ_s|`.** For a set of locally finite perimeter in `Ω`, the outer normal
-represents the distributional derivative of the indicator against the perimeter measure:
-`∫_s div φ dμ = ∫ ⟪φ, ν_s⟫ d|Dχ_s|` for every test vector field `φ` on `Ω`. -/
-theorem integral_divergenceCLM_mul_indicator_eq_integral_inner_outerNormal
+/-- **The Gauss–Green formula, `Dχ_s = -ν_s |Dχ_s|`.** For a set `s` of locally finite perimeter
+in `Ω`, the outer normal `ν_s` represents the distributional derivative of the indicator against
+the perimeter measure: `∫_s div φ dμ = ∫ ⟪φ, ν_s⟫ d|Dχ_s|` for every `C¹` vector field `φ` with
+compact support in `Ω`, where `div φ = tr (Dφ)`. -/
+theorem integral_trace_fderiv_mul_indicator_eq_integral_inner_outerNormal
     (hu : LocallyIntegrableOn (s.indicator (1 : E → ℝ)) Ω μ)
     (hfin : ∀ K, IsCompact K → K ⊆ Ω →
       ∃ U : Opens E, K ⊆ (U : Set E) ∧ totalVariationOn μ U (s.indicator 1) ≠ ∞)
-    (φ : 𝓓(Ω, E)) :
-    ∫ x, divergenceCLM φ x * s.indicator 1 x ∂μ =
+    {φ : E → E} (hφ : ContDiff ℝ 1 φ) (hc : HasCompactSupport φ) (hs : tsupport φ ⊆ Ω) :
+    ∫ x, LinearMap.trace ℝ E (fderiv ℝ φ x : E →ₗ[ℝ] E) * s.indicator 1 x ∂μ =
       ∫ y, ⟪φ y, outerNormal μ Ω s y⟫ ∂variationMeasure μ Ω (s.indicator 1) := by
-  rw [integral_divergenceCLM_mul_eq_neg_integral_inner_polarDensity hu hfin, ← integral_neg]
+  rw [integral_trace_fderiv_mul_eq_neg_integral_inner_polarDensity hu hfin hφ hc hs,
+    ← integral_neg]
   refine integral_congr_ae ?_
   filter_upwards [ae_outerNormal_eq] with y hy
   rw [hy, inner_neg_right]

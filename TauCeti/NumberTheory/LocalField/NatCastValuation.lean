@@ -297,7 +297,8 @@ theorem natCastValuation_eq_padicValNat_mul {n : ℕ} (hn : (n : K) ≠ 0)
   have hmK : (m : K) ≠ 0 := right_ne_zero_of_mul (by simpa only [Nat.cast_mul] using hn)
   rw [natCastValuation_mul K hpk hmK, natCastValuation_pow K k hp,
     (natCastValuation_eq_zero_iff_not_dvd K m hmK).mpr hm]
-  simp [padicValNat.mul (pow_ne_zero _ hp'.ne_zero) hm0, padicValNat.eq_zero_of_not_dvd hm]
+  simp [Nat.padicValNat_def, Nat.multiplicity_mul (pow_ne_zero _ hp'.ne_zero) hm0,
+    multiplicity_eq_zero_of_not_dvd hm]
 
 /-- Writing `p` for the residue characteristic, the normalized valuation of a natural number `n`
 is at most `v_K(p) / log p * log n`, because `v_K(n) = v_p(n) v_K(p)` and `p ^ v_p(n) ≤ n`. -/
