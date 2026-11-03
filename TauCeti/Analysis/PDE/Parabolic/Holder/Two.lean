@@ -411,6 +411,13 @@ theorem norm_timeDerivL_le (f : ParabolicC2HolderSpace α E F hab) :
   linarith [norm_nonneg (valueL f), norm_nonneg (spatialFDerivL f),
     norm_nonneg (spatialSecondFDerivL f)]
 
+/-- The Hölder norms of the Hessian and time-derivative fields together are bounded by the reduced
+parabolic norm. -/
+theorem norm_spatialSecondFDerivL_add_norm_timeDerivL_le (f : ParabolicC2HolderSpace α E F hab) :
+    ‖spatialSecondFDerivL f‖ + ‖timeDerivL f‖ ≤ ‖f‖ := by
+  rw [norm_eq]
+  linarith [norm_nonneg (valueL f), norm_nonneg (spatialFDerivL f)]
+
 /-- The time-derivative projection has operator norm at most one. -/
 theorem norm_timeDerivL_le_one :
     ‖timeDerivL (α := α) (E := E) (F := F) (hab := hab)‖ ≤ 1 :=
