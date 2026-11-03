@@ -7,6 +7,7 @@ module
 
 public import Mathlib.MeasureTheory.Constructions.BorelSpace.Basic
 public import TauCeti.Geometry.Manifold.PullbackGroupoid
+public import TauCeti.Geometry.Manifold.Riemannian.Isometry.Basic
 public import TauCeti.Geometry.Manifold.Riemannian.Pullback.Basic
 public import TauCeti.Geometry.Manifold.VectorBundle.Riemannian.ChartGram
 
@@ -36,6 +37,9 @@ copies of `M` are related by the identity diffeomorphism
   `M` carrying two metrics.
 * `TauCeti.WithMetric.metric`: the metric of the copy, the pullback of `g` along `ofWithMetric`,
   installed as its `RiemannianBundle` instance.
+* `TauCeti.WithMetric.riemannianIsometry` and
+  `TauCeti.WithMetric.riemannianIsometryOfRiemannianBundleEq`: `ofWithMetric` packaged as a smooth
+  `TauCeti.RiemannianIsometry` onto `M`.
 
 ## Main results
 
@@ -139,6 +143,14 @@ theorem coe_homeomorph_symm : ⇑(homeomorph g).symm = toWithMetric g :=
 /-- The copy of a compact manifold is compact. -/
 instance [CompactSpace M] : CompactSpace (WithMetric g) :=
   (homeomorph g).symm.compactSpace
+
+/-- The copy of a `T₂` manifold is `T₂`. -/
+instance [T2Space M] : T2Space (WithMetric g) :=
+  (homeomorph g).symm.t2Space
+
+/-- The copy of a `σ`-compact manifold is `σ`-compact. -/
+instance [SigmaCompactSpace M] : SigmaCompactSpace (WithMetric g) :=
+  (homeomorph g).isClosedEmbedding.sigmaCompactSpace
 
 /-- The copy of a Lindelöf manifold is Lindelöf. -/
 instance [LindelofSpace M] : LindelofSpace (WithMetric g) :=
@@ -427,6 +439,85 @@ theorem mfderiv_ofWithMetric_chartLocalFrame (α x : WithMetric g)
         (by simpa only [TangentBundle.trivializationAt_baseSet] using
           (mem_chartAt_source_iff α x).not.1 hx),
       map_zero]
+
+variable (g) in
+/-- The tautological map `ofWithMetric : WithMetric g → M` packaged as a smooth Riemannian isometry
+onto `M` carrying `g` as its fibre metric. -/
+def riemannianIsometry :
+    letI : RiemannianBundle (fun x : M ↦ TangentSpace I x) := ⟨g.toRiemannianMetric⟩
+    RiemannianIsometry I I (WithMetric g) M :=
+  letI : RiemannianBundle (fun x : M ↦ TangentSpace I x) := ⟨g.toRiemannianMetric⟩
+  { toDiffeomorph := diffeomorph g ∞
+    inner_mfderiv' := fun x v w ↦ by
+      rw [coe_diffeomorph]
+      exact (inner_def x v w).symm }
+
+/-- The underlying diffeomorphism of `riemannianIsometry g` is `diffeomorph g ∞`. -/
+@[simp]
+theorem toDiffeomorph_riemannianIsometry (g : ContMDiffRiemannianMetric I n E
+    (fun x : M ↦ TangentSpace I x)) :
+    letI : RiemannianBundle (fun x : M ↦ TangentSpace I x) := ⟨g.toRiemannianMetric⟩
+    (riemannianIsometry g).toDiffeomorph = diffeomorph g ∞ :=
+  (rfl)
+
+/-- As a function, `riemannianIsometry g` is `ofWithMetric`. -/
+@[simp]
+theorem coe_riemannianIsometry (g : ContMDiffRiemannianMetric I n E
+    (fun x : M ↦ TangentSpace I x)) :
+    letI : RiemannianBundle (fun x : M ↦ TangentSpace I x) := ⟨g.toRiemannianMetric⟩
+    ⇑(riemannianIsometry g) = ofWithMetric :=
+  coe_diffeomorph ∞
+
+/-- As a function, `(riemannianIsometry g).symm` is `toWithMetric g`. -/
+@[simp]
+theorem coe_riemannianIsometry_symm (g : ContMDiffRiemannianMetric I n E
+    (fun x : M ↦ TangentSpace I x)) :
+    letI : RiemannianBundle (fun x : M ↦ TangentSpace I x) := ⟨g.toRiemannianMetric⟩
+    ⇑(riemannianIsometry g).symm = toWithMetric g :=
+  letI : RiemannianBundle (fun x : M ↦ TangentSpace I x) := ⟨g.toRiemannianMetric⟩
+  (riemannianIsometry g).coe_symm.trans (coe_diffeomorph_symm ∞)
+
+/-- When `g` agrees with an already-installed `RiemannianBundle` instance on `M`, `ofWithMetric`
+packages as a smooth Riemannian isometry `WithMetric g → M` for that instance. -/
+def riemannianIsometryOfRiemannianBundleEq
+    [inst : RiemannianBundle (fun x : M ↦ TangentSpace I x)]
+    {g : ContMDiffRiemannianMetric I n E (fun x : M ↦ TangentSpace I x)}
+    (hg : RiemannianBundle.g = g.toRiemannianMetric) :
+    RiemannianIsometry I I (WithMetric g) M where
+  toDiffeomorph := diffeomorph g ∞
+  inner_mfderiv' x v w := by
+    obtain ⟨_⟩ := inst
+    subst hg
+    rw [coe_diffeomorph]
+    exact (inner_def x v w).symm
+
+/-- The underlying diffeomorphism of `riemannianIsometryOfRiemannianBundleEq hg` is
+`diffeomorph g ∞`. -/
+@[simp]
+theorem toDiffeomorph_riemannianIsometryOfRiemannianBundleEq
+    [RiemannianBundle (fun x : M ↦ TangentSpace I x)]
+    {g : ContMDiffRiemannianMetric I n E (fun x : M ↦ TangentSpace I x)}
+    (hg : RiemannianBundle.g = g.toRiemannianMetric) :
+    (riemannianIsometryOfRiemannianBundleEq hg).toDiffeomorph = diffeomorph g ∞ :=
+  (rfl)
+
+/-- As a function, `riemannianIsometryOfRiemannianBundleEq hg` is `ofWithMetric`. -/
+@[simp]
+theorem coe_riemannianIsometryOfRiemannianBundleEq
+    [RiemannianBundle (fun x : M ↦ TangentSpace I x)]
+    {g : ContMDiffRiemannianMetric I n E (fun x : M ↦ TangentSpace I x)}
+    (hg : RiemannianBundle.g = g.toRiemannianMetric) :
+    ⇑(riemannianIsometryOfRiemannianBundleEq hg) = ofWithMetric :=
+  coe_diffeomorph ∞
+
+/-- As a function, `(riemannianIsometryOfRiemannianBundleEq hg).symm` is `toWithMetric g`. -/
+@[simp]
+theorem coe_riemannianIsometryOfRiemannianBundleEq_symm
+    [RiemannianBundle (fun x : M ↦ TangentSpace I x)]
+    {g : ContMDiffRiemannianMetric I n E (fun x : M ↦ TangentSpace I x)}
+    (hg : RiemannianBundle.g = g.toRiemannianMetric) :
+    ⇑(riemannianIsometryOfRiemannianBundleEq hg).symm = toWithMetric g :=
+  (riemannianIsometryOfRiemannianBundleEq hg).coe_symm.trans (coe_diffeomorph_symm ∞)
 
 end Metric
 
