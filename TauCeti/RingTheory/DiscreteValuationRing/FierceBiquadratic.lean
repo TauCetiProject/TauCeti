@@ -97,11 +97,13 @@ distinct roots differ by `t`, by `TauCeti.eq_or_eq_add_of_sq_add_mul_eq_of_charT
 noncomputable def quadratic (t s : R) : R[X] := X ^ 2 + C t * X - C s
 
 /-- `X ^ 2 + t X - s` is monic. -/
+@[simp]
 theorem monic_quadratic (t s : R) : (quadratic t s).Monic := by
   unfold quadratic
   monicity!
 
 /-- `X ^ 2 + t X - s` has degree `2`. -/
+@[simp]
 theorem natDegree_quadratic [Nontrivial R] (t s : R) : (quadratic t s).natDegree = 2 := by
   unfold quadratic
   compute_degree!
