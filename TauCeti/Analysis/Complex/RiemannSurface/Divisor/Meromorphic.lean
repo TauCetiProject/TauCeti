@@ -137,15 +137,15 @@ theorem mem_range_toMeromorphic_iff (f : MeromorphicFunction X) :
 
 /-- A section space of dimension greater than one contains a section whose meromorphic
 image is not constant. No effectiveness assumption on the divisor is needed. -/
-theorem exists_toMeromorphic_notMem_constants (D : WeilDivisor X)
+theorem exists_toMeromorphic_notMem_range_algebraMap (D : WeilDivisor X)
     (hD : 1 < Module.finrank ℂ (divisorSections D ⊤)) :
     ∃ f : divisorSections D ⊤,
-      toMeromorphic D f ∉ (Algebra.linearMap ℂ (MeromorphicFunction X)).range := by
+      toMeromorphic D f ∉ Set.range (algebraMap ℂ (MeromorphicFunction X)) := by
   by_contra! h
   have hle : (toMeromorphic D).range ≤
       (Algebra.linearMap ℂ (MeromorphicFunction X)).range := by
     rintro _ ⟨f, rfl⟩
-    exact h f
+    simpa only [LinearMap.mem_range, Algebra.linearMap_apply, Set.mem_range] using h f
   have hdim := Submodule.finrank_mono hle
   rw [LinearMap.finrank_range_of_inj (toMeromorphic_injective D),
     LinearMap.finrank_range_of_inj (FaithfulSMul.algebraMap_injective ℂ (MeromorphicFunction X)),
@@ -162,7 +162,7 @@ theorem exists_finiteHolomorphicMap_of_one_lt_finrank_divisorSections [CompactSp
     ∃ F : FiniteHolomorphicMap X (OnePoint ℂ),
       ∀ x, ((-D x : ℤ) : WithTop ℤ) ≤
         meromorphicOrderAt (fun y ↦ OnePoint.affineChart (F y)) x := by
-  obtain ⟨s, hs⟩ := divisorSections.exists_toMeromorphic_notMem_constants D hD
+  obtain ⟨s, hs⟩ := divisorSections.exists_toMeromorphic_notMem_range_algebraMap D hD
   let f := divisorSections.toMeromorphic D s
   have hne := f.exists_apply_ne_of_notMem_range_algebraMap hs
   refine ⟨FiniteHolomorphicMap.ofMDifferentiable f.mdifferentiable hne, ?_⟩
