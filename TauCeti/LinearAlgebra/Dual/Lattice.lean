@@ -30,6 +30,7 @@ variable {R K V W : Type*} [CommRing R] [CommRing K] [Algebra R K]
   [AddCommGroup V] [Module K V] [Module R V]
   [AddCommGroup W] [Module K W] [Module R W]
 
+variable (K) in
 /-- The linear functionals taking values in the image of `R` on `N`.
 No bilinear form or full-lattice hypothesis is required. -/
 def dualLattice (N : Submodule R V) : Submodule R (Module.Dual K V) :=
@@ -40,19 +41,20 @@ def dualLattice (N : Submodule R V) : Submodule R (Module.Dual K V) :=
 submodule. -/
 @[simp]
 theorem mem_dualLattice (N : Submodule R V) (φ : Module.Dual K V) :
-    φ ∈ N.dualLattice ↔ ∀ x ∈ N, φ x ∈ (1 : Submodule R K) := by
+    φ ∈ N.dualLattice K ↔ ∀ x ∈ N, φ x ∈ (1 : Submodule R K) := by
   simp [dualLattice]
 
+variable (K) in
 /-- Taking the integral dual reverses inclusions. -/
-theorem dualLattice_antitone : Antitone (dualLattice (R := R) (K := K) (V := V)) := by
+theorem dualLattice_antitone : Antitone (dualLattice (R := R) (V := V) K) := by
   intro M N h φ hφ
   exact (mem_dualLattice M φ).mpr fun x hx => (mem_dualLattice N φ).mp hφ x (h hx)
 
 /-- Precomposition with a lattice-preserving map preserves the corresponding integral duals. -/
 theorem dualMap_mem_dualLattice (M : Submodule R V) (N : Submodule R W)
     (f : V →ₗ[K] W) (hf : ∀ x ∈ M, f x ∈ N)
-    {φ : Module.Dual K W} (hφ : φ ∈ N.dualLattice) :
-    f.dualMap φ ∈ M.dualLattice := by
+    {φ : Module.Dual K W} (hφ : φ ∈ N.dualLattice K) :
+    f.dualMap φ ∈ M.dualLattice K := by
   exact (mem_dualLattice M _).mpr fun x hx => (mem_dualLattice N φ).mp hφ _ (hf x hx)
 
 end Submodule
@@ -67,7 +69,7 @@ variable {R K V ι : Type*} [CommRing R] [IsDomain R] [CommRing K] [Nontrivial K
 /-- The integral dual of a basis lattice is the lattice spanned by the dual basis. -/
 @[simp]
 theorem dualLattice_span (b : Basis ι K V) :
-    (Submodule.span R (Set.range b)).dualLattice =
+    (Submodule.span R (Set.range b)).dualLattice K =
       Submodule.span R (Set.range b.dualBasis) := by
   ext φ
   rw [b.dualBasis.mem_span_iff_repr_mem R]
@@ -91,7 +93,7 @@ variable {R K V : Type*} [CommRing R] [IsDomain R] [Field K] [Algebra R K]
 
 /-- The integral dual of a free full lattice is again a full lattice. -/
 instance isLattice_dualLattice (N : Submodule R V) [N.IsLattice K] [Module.Free R N] :
-    (N.dualLattice (K := K)).IsLattice K := by
+    (N.dualLattice K).IsLattice K := by
   classical
   let b := Module.Free.chooseBasis R N
   rw [← b.span_range_extendOfIsLattice (K := K), (b.extendOfIsLattice K).dualLattice_span]

@@ -51,8 +51,8 @@ theorem hopfDual_kostantForm_apply_mem_dualLattice
       ∀ v ∈ N, ρ u v ∈ N)
     (u : _root_.UniversalEnvelopingAlgebra ℚ L)
     (hu : u ∈ TauCeti.UniversalEnvelopingAlgebra.kostantForm e h)
-    {φ : Module.Dual ℚ V} (hφ : φ ∈ N.dualLattice) :
-    ρ.hopfDual u φ ∈ N.dualLattice := by
+    {φ : Module.Dual ℚ V} (hφ : φ ∈ N.dualLattice ℚ) :
+    ρ.hopfDual u φ ∈ N.dualLattice ℚ := by
   rw [Submodule.mem_dualLattice]
   intro v hv
   rw [hopfDual_apply]
@@ -61,9 +61,7 @@ theorem hopfDual_kostantForm_apply_mem_dualLattice
 
 end AlgHom
 
-namespace UniversalEnvelopingAlgebra
-
-open TauCeti.UniversalEnvelopingAlgebra
+namespace TauCeti.UniversalEnvelopingAlgebra
 
 variable {L V ι κ : Type*} [LieRing L] [LieAlgebra ℚ L]
   [AddCommGroup V] [Module ℚ V] [LieRingModule L V] [LieModule ℚ L V]
@@ -74,9 +72,9 @@ theorem representation_dual_apply_mem_dualLattice (e : ι → L) (h : κ → L)
     (N : Submodule ℤ V)
     (hN : ∀ u ∈ kostantForm e h, ∀ v ∈ N, representation ℚ L V u v ∈ N)
     (u : _root_.UniversalEnvelopingAlgebra ℚ L) (hu : u ∈ kostantForm e h)
-    {φ : Module.Dual ℚ V} (hφ : φ ∈ N.dualLattice) :
-    representation ℚ L (Module.Dual ℚ V) u φ ∈ N.dualLattice := by
+    {φ : Module.Dual ℚ V} (hφ : φ ∈ N.dualLattice ℚ) :
+    representation ℚ L (Module.Dual ℚ V) u φ ∈ N.dualLattice ℚ := by
   rw [representation_dual]
   exact (representation ℚ L V).hopfDual_kostantForm_apply_mem_dualLattice e h N hN u hu hφ
 
-end UniversalEnvelopingAlgebra
+end TauCeti.UniversalEnvelopingAlgebra
