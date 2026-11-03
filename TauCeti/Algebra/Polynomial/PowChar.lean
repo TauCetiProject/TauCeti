@@ -33,6 +33,7 @@ variable {R : Type*} [CommSemiring R] {p : ℕ} [ExpChar R p]
 
 /-- In exponential characteristic `p`, the coefficient of `X ^ (p n)` in `f ^ p` is the `p`-th
 power of the coefficient of `X ^ n` in `f`. -/
+@[simp]
 theorem coeff_pow_char_mul (f : R[X]) (n : ℕ) : (f ^ p).coeff (p * n) = f.coeff n ^ p := by
   rw [← map_frobenius_expand, coeff_map, coeff_expand_mul' (expChar_pos R p), frobenius_def]
 
