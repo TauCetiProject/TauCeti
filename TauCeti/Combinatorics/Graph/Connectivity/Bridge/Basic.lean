@@ -341,6 +341,21 @@ theorem IsForest.eq_of_isLink (hG : G.IsForest) (he : G.IsLink e x y) (hf : G.Is
   by_contra hfe
   exact he.not_isBridge_of_isLink_of_ne hf hfe (hG.isBridge he.edge_mem)
 
+/-- A trail in a forest cannot revisit a vertex, so it is a path. -/
+theorem IsForest.isPath_of_isTrail (hG : G.IsForest) {x y : α} {p : G.Walk x y}
+    (hp : p.IsTrail) : p.IsPath := by
+  classical
+  induction p with
+  | nil => simp
+  | @cons x z y e h p ih =>
+    obtain ⟨hpt, hep⟩ := (Walk.isTrail_cons e h p).mp hp
+    have hpp := ih hpt
+    refine (Walk.isPath_cons e h p).mpr ⟨hpp, fun hx ↦ ?_⟩
+    have hc : (Walk.cons e h (p.takeUntil x hx)).IsCycle :=
+      (Walk.cons_isCycle_iff e h _).mpr
+        ⟨hpp.takeUntil hx, fun he ↦ hep (p.edges_takeUntil_subset_edges hx he)⟩
+    exact hG _ hc
+
 /-- A graph with no edges is a forest. -/
 @[simp]
 theorem isForest_noEdge (X : Set α) : (noEdge X β).IsForest :=

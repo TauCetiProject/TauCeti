@@ -259,6 +259,27 @@ theorem not_nil_cons {e : β} {h : G.IsLink e x y} {p : G.Walk y z} :
 theorem length_eq_zero_iff {p : G.Walk x y} : p.length = 0 ↔ p.Nil := by
   cases p <;> simp
 
+/-- An edge-labelled walk is determined by its starting vertex and its edge sequence. -/
+@[ext]
+theorem ext_edges {p q : G.Walk x y} (h : p.edges = q.edges) : p = q := by
+  induction p with
+  | nil =>
+    cases q <;> simp_all
+  | @cons x z y e he p ih =>
+    cases q with
+    | nil => simp at h
+    | @cons _ w _ f hf q =>
+      obtain ⟨rfl, htail⟩ := List.cons.inj h
+      obtain rfl := he.right_unique hf
+      exact congrArg (cons e he) (ih htail)
+
+/-- Changing the proof-indexed starting vertex does not change the traversed edges. -/
+@[simp]
+theorem edges_cast_left {x' : α} (p : G.Walk x y) (h : x = x') :
+    (h ▸ p).edges = p.edges := by
+  subst x'
+  rfl
+
 @[simp]
 theorem edges_eq_nil {p : G.Walk x y} : p.edges = [] ↔ p.Nil := by
   cases p <;> simp
