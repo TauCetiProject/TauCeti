@@ -118,7 +118,8 @@ noncomputable def kerMapEquivOfMulMulEqDiagonal (M : Matrix ι ι R) (f : R →+
       simpa only [Matrix.map_mul, diagonal_map f.map_zero, Function.comp_def] using
         congrArg (fun N ↦ N.map f) h
     ext x
-    simp only [Submodule.mem_comap, LinearMap.mem_ker, mulVecLin_apply, e]
+    simp only [Submodule.mem_comap, LinearMap.mem_ker, LinearEquiv.coe_toLinearMap, e,
+      toLinearEquiv_basisFun_apply, mulVecLin_apply]
     rw [← hd, ← mulVec_mulVec, ← mulVec_mulVec]
     exact (mulVec_injective_of_isUnit
       ((U.map f).isUnit_iff_isUnit_det.mpr (by
