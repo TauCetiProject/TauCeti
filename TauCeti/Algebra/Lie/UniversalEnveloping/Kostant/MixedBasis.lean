@@ -8,7 +8,7 @@ module
 public import TauCeti.Algebra.Lie.UniversalEnveloping.PBW.Polynomial.Basis
 public import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.Form
 public import TauCeti.RingTheory.Polynomial.BinomialBasis
-public import Mathlib.LinearAlgebra.Basis.SMul
+public import TauCeti.RingTheory.DividedPowers.Basis
 public import Mathlib.LinearAlgebra.Basis.Submodule
 
 /-!
@@ -49,10 +49,7 @@ local notation "U" => _root_.UniversalEnvelopingAlgebra ℚ L
 
 private noncomputable def mixedPolynomialBasis (c : Finset (Fin n)) (i : Fin n) :
     Basis ℕ ℚ ℚ[X] :=
-  if i ∈ c then binomialPolynomialBasis ℚ else
-    (Polynomial.basisMonomials ℚ).unitsSMul
-      (fun k => Units.mk0 (k.factorial : ℚ)⁻¹
-        (inv_ne_zero (Nat.cast_ne_zero.mpr (Nat.factorial_ne_zero k))))
+  if i ∈ c then binomialPolynomialBasis ℚ else dividedPowerPolynomialBasis
 
 private theorem aeval_mixedPolynomialBasis (c : Finset (Fin n)) (i : Fin n) (k : ℕ) (x : U) :
     aeval x (mixedPolynomialBasis c i k) =
@@ -60,8 +57,8 @@ private theorem aeval_mixedPolynomialBasis (c : Finset (Fin n)) (i : Fin n) (k :
   by_cases hi : i ∈ c
   · simp only [mixedPolynomialBasis, hi, ↓reduceIte, binomialPolynomialBasis_apply]
     simpa only [aeval_X] using Ring.map_choose (aeval x) (X : ℚ[X]) k
-  · simp [mixedPolynomialBasis, hi, Basis.unitsSMul_apply, Polynomial.coe_basisMonomials,
-      Polynomial.monomial_one_right_eq_X_pow, Units.smul_def, dividedPower_def]
+  · simp only [mixedPolynomialBasis, hi, ↓reduceIte, dividedPowerPolynomialBasis_apply,
+      map_dividedPower, aeval_X]
 
 /-- The ordered mixed PBW basis, using Cartan binomials at the coordinates in `c` and root
 divided powers at the remaining coordinates. It is a rational basis without any Chevalley
