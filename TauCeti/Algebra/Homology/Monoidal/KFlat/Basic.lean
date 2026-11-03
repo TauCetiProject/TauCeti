@@ -362,15 +362,16 @@ theorem isKFlat_of_boundedAbove_flat [HasColimitsOfShape ℕ C] [HasExactColimit
     [∀ X : C, PreservesColimitsOfShape ℕ (tensorRight X)] (K : CochainComplex C ℤ) (b : ℤ)
     [K.IsStrictlyLE b] [∀ i, PreservesFiniteLimits (tensorLeft (K.X i))] : K.IsKFlat := by
   have (m : ℕ) : (K.stupidTruncGESequence.obj m).IsKFlat := by
-    let T := kernel (K.πStupidTruncLE (-(m : ℤ) - 1))
-    have : T.IsStrictlyGE (-(m : ℤ)) :=
-      (T.isStrictlyGE_iff _).2 fun _ hi ↦ K.isZero_kernel_πStupidTruncLE_X _ (by omega)
+    let T : CochainComplex C ℤ :=
+      kernel (K.πStupidTrunc (ComplexShape.embeddingUpIntLE (-(m : ℤ) - 1)))
+    have : T.IsStrictlyGE (-(m : ℤ)) := (T.isStrictlyGE_iff _).2 fun _ hi ↦
+      K.isZero_kernel_πStupidTrunc_embeddingUpIntLE_X _ (by omega)
     have : T.IsStrictlyLE (-(m : ℤ) + (b + m).natAbs) := T.isStrictlyLE_of_le b _ (by omega)
     -- in degrees `≥ -m` the terms of `T` are those of `K`
     refine isKFlat_of_bounded_flat_aux (-(m : ℤ)) (b + m).natAbs T fun i hi _ ↦ ?_
-    have := K.isIso_kernel_ι_πStupidTruncLE_f (-(m : ℤ) - 1) (i := i) (by omega)
+    have := K.isIso_kernel_ι_πStupidTrunc_embeddingUpIntLE_f (-(m : ℤ) - 1) (i := i) (by omega)
     exact preservesFiniteLimits_of_natIso
-      ((curriedTensor C).mapIso (asIso ((kernel.ι (K.πStupidTruncLE _)).f i)).symm)
+      ((curriedTensor C).mapIso (asIso ((kernel.ι (K.πStupidTrunc _)).f i)).symm)
   exact isKFlat_of_isColimit K.isColimitStupidTruncGESequenceCocone
 
 end Bounded
