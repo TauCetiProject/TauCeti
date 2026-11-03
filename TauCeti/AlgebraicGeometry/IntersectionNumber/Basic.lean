@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.AlgebraicGeometry.CartierDivisor.Effective.Degree
 public import TauCeti.AlgebraicGeometry.EffectiveCartierDivisor.Degree.EulerCharacteristic
 public import TauCeti.AlgebraicGeometry.EffectiveCartierDivisor.Pullback
 public import TauCeti.AlgebraicGeometry.LineBundle.LocalRing
@@ -43,9 +44,11 @@ On such a curve, singular, reducible or nonreduced as it may be, twisting by `D`
 whose restriction to `C` has finite-dimensional `H⁰` and `H¹`, and
 `(D · C) = dim_k Γ(D ∩ C, 𝒪_{D ∩ C}) ≥ 0`. On a regular model, this computes the intersection
 numbers of a component `C` of the special fibre with the other components, which are effective
-Cartier divisors meeting `C` properly. Full additivity of `L ↦ (L · C)` holds on a proper integral
-curve whose codimension-one local rings are discrete valuation rings; for curves with singular
-points, additivity on all of `Pic X` is not proved here.
+Cartier divisors meeting `C` properly. Full additivity of `L ↦ (L · C)` on `Pic X` holds on every
+proper integral curve `C` over `k` with finite-dimensional `H⁰` and `H¹` of `𝒪_C`, possibly
+singular, such as an irreducible component of the special fibre with its reduced structure; on a
+proper integral curve whose codimension-one local rings are discrete valuation rings the
+finiteness of `H¹(C, 𝒪_C)` suffices.
 
 Two effective Cartier divisors `D` and `E` on `X` which are proper curves over `k`, and which meet
 properly in the sense that each cuts out an effective Cartier divisor on the other, have
@@ -73,6 +76,9 @@ off-diagonal entries of the intersection matrix.
 * `LineBundleClass.intersectionNumber_mk_mul_mk_toInvertibleSheaf` and
   `LineBundleClass.intersectionNumber_mk_mul_inv_mk_toInvertibleSheaf`: additivity of twisting a
   line bundle by an effective Cartier divisor meeting a proper curve properly;
+* `LineBundleClass.intersectionNumber_mul_of_isIntegral` and
+  `LineBundleClass.intersectionNumber_inv_of_isIntegral`: additivity on a proper integral curve,
+  possibly singular;
 * `LineBundleClass.intersectionNumber_mul` and `LineBundleClass.intersectionNumber_inv`:
   additivity on a regular proper integral curve, bundled as
   `LineBundleClass.intersectionNumberHom k ι : Pic X →+ ℤ`;
@@ -209,6 +215,31 @@ theorem intersectionNumber_mk_mul_inv_mk_toInvertibleSheaf (hI : I.IsEffectiveCa
     intersectionNumber_inv_mk_toInvertibleSheaf k ι hI hI' default, sub_neg_eq_add]
 
 end Effective
+
+section Integral
+
+variable [IsIntegral C] [IsProper (C ↘ Spec (.of k))] [RelativeDimensionLE 1 (C ↘ Spec (.of k))]
+  [FiniteDimensional k (Cohomology (InvertibleSheaf.trivial C).obj 0)]
+  [FiniteDimensional k (Cohomology (InvertibleSheaf.trivial C).obj 1)]
+
+/-- **Additivity of the intersection number** with a proper integral curve `C` over `k` with
+finite-dimensional `H⁰(C, 𝒪_C)` and `H¹(C, 𝒪_C)`. The curve may be singular; this covers an
+irreducible component, with its reduced structure, of the special fibre of a regular model. -/
+@[simp]
+theorem intersectionNumber_mul_of_isIntegral (a b : LineBundleClass X) :
+    intersectionNumber k ι (a * b) = intersectionNumber k ι a + intersectionNumber k ι b := by
+  simp only [intersectionNumber_def, pullback_mul]
+  exact eulerDegree_mul_of_isIntegral k _ _
+
+/-- The inverse class has the opposite intersection number with a proper integral curve over `k`
+with finite-dimensional `H⁰(C, 𝒪_C)` and `H¹(C, 𝒪_C)`. -/
+@[simp]
+theorem intersectionNumber_inv_of_isIntegral (a : LineBundleClass X) :
+    intersectionNumber k ι a⁻¹ = -intersectionNumber k ι a := by
+  rw [intersectionNumber_def, intersectionNumber_def, pullback_inv]
+  exact eulerDegree_inv_of_isIntegral k _
+
+end Integral
 
 section Regular
 
