@@ -60,7 +60,7 @@ theorem exists_weight_eq_add_of_kostantRootOperator_ne_zero
   obtain ⟨y, hy⟩ := hy
   refine ⟨x, y, hy, ?_⟩
   by_contra hneWeight
-  exact hy (repr_eq_zero_of_isCartanWeightVector e h ρ M hM b wt hwt
+  exact hy (repr_eq_zero_of_isCartanWeightVector h ρ M b wt hwt
     (isCartanWeightVector_coe_kostantRootOperator e h ρ M hM i hα (hwt x)) hneWeight)
 
 include hM in

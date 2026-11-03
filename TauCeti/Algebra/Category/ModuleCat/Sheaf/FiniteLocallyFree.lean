@@ -199,7 +199,7 @@ theorem _root_.SheafOfModules.isFiniteLocallyFree_iff_exists_isLocallyFreeData_i
     isFiniteLocallyFree (ringCatSheaf R) M ↔
       ∃ q : M.LocalGeneratorsData.{u}, q.IsLocallyFreeData ∧ q.IsFiniteType :=
   ⟨fun ⟨_, _⟩ ↦ IsLocallyFree.exists_isLocallyFreeData_isFiniteType M,
-    fun ⟨q, hq, hq'⟩ ↦ ⟨q.isLocallyFree, hq.isFinitePresentation hq'⟩⟩
+    fun ⟨q, _, _⟩ ↦ ⟨q.isLocallyFree, q.isFinitePresentation⟩⟩
 
 end LocallyFree
 
