@@ -53,7 +53,7 @@ universe w w' u v t t'
 
 namespace TauCeti
 
-open TrivSqZeroExt
+open CategoryTheory TrivSqZeroExt
 
 namespace SquareZeroExtension
 
@@ -80,9 +80,6 @@ attribute [local instance] moduleRing moduleRingOp
 private theorem ring_smul_def (x : E.Ring) (n : N) : x • n = E.π x • n :=
   rfl
 
-private theorem op_ring_smul_def (x : E.Ring) (n : N) : MulOpposite.op x • n = E.π x • n :=
-  rfl
-
 private abbrev isCentralScalarRing : IsCentralScalar E.Ring N :=
   ⟨fun _ _ ↦ rfl⟩
 
@@ -105,28 +102,6 @@ private def pushoutIdeal : Ideal (TrivSqZeroExt E.Ring N) where
 private theorem mem_pushoutIdeal {z : TrivSqZeroExt E.Ring N} :
     z ∈ pushoutIdeal E f ↔ ∃ m, inl (E.ι m) - inr (f m) = z :=
   Iff.rfl
-
-/-- The ring hom `(x, n) ↦ g x + ι n` from `TrivSqZeroExt E.Ring N` to a ring `F`, for a ring
-hom `g` and an additive map `ι` with square-zero image on which `x` acts through `π x`. -/
-private def liftRingHom {F : Type*} [CommRing F] (g : E.Ring →+* F) (ι : N →+ F)
-    (hι : ∀ x n, ι (E.π x • n) = g x * ι n) (hι₂ : ∀ m n, ι m * ι n = 0) :
-    TrivSqZeroExt E.Ring N →+* F where
-  toFun z := g z.fst + ι z.snd
-  map_one' := by simp
-  map_mul' z w := by
-    simp only [fst_mul, snd_mul, map_mul, map_add, ring_smul_def, op_ring_smul_def, hι,
-      add_mul, mul_add, hι₂]
-    ring
-  map_zero' := by simp
-  map_add' z w := by
-    simp only [fst_add, snd_add, map_add]
-    abel
-
-private theorem liftRingHom_apply {F : Type*} [CommRing F] (g : E.Ring →+* F) (ι : N →+ F)
-    (hι : ∀ x n, ι (E.π x • n) = g x * ι n) (hι₂ : ∀ m n, ι m * ι n = 0)
-    (z : TrivSqZeroExt E.Ring N) :
-    liftRingHom E g ι hι hι₂ z = g z.fst + ι z.snd :=
-  rfl
 
 /-- The ring of the pushout `f_* E`. -/
 private abbrev PushoutRing : Type _ :=
@@ -245,25 +220,29 @@ theorem pushout_hom_ext {F : SquareZeroExtension.{max w t'} A B N} {φ ψ : E.pu
 action of `π x`: the compatibility making `(x, n) ↦ g x + ι n` multiplicative. -/
 private theorem ι_smul_eq_mul {F : SquareZeroExtension.{w'} A B N} {g : E.Ring →ₐ[A] F.Ring}
     (hπ : ∀ x, F.π (g x) = E.π x) (x : E.Ring) (n : N) :
-    F.ι (E.π x • n) = g.toRingHom x * F.ι n := by
-  simp [hπ]
+    F.ι.toIntLinearMap (x • n) = g.toRingHom.toIntAlgHom x * F.ι.toIntLinearMap n := by
+  simp [ring_smul_def, hπ]
 
-/-- The `A`-algebra map `f_* E → F` sending the class of `(x, n)` to `g x + ι n`. -/
+/-- The `A`-algebra map `f_* E → F` sending the class of `(x, n)` to `g x + ι n`, induced by
+Mathlib's universal property `TrivSqZeroExt.lift` of `E ⊕ N`. -/
 private def descAlgHom (F : SquareZeroExtension.{w'} A B N) (g : E.Ring →ₐ[A] F.Ring)
     (hπ : ∀ x, F.π (g x) = E.π x) (hι : ∀ m, g (E.ι m) = F.ι (f m)) :
     (E.pushout f).Ring →ₐ[A] F.Ring where
   toRingHom := Ideal.Quotient.lift (pushoutIdeal E f)
-    (liftRingHom E g.toRingHom F.ι (ι_smul_eq_mul hπ) F.ι_mul_ι) <| by
+    (TrivSqZeroExt.lift g.toRingHom.toIntAlgHom F.ι.toIntLinearMap (fun _ _ ↦ by simp)
+      (ι_smul_eq_mul hπ) fun x n ↦ by rw [mul_comm]; exact ι_smul_eq_mul hπ x n).toRingHom <| by
       rintro _ ⟨m, rfl⟩
-      simp [liftRingHom_apply, hι]
-  commutes' a := (liftRingHom_apply E g.toRingHom F.ι (ι_smul_eq_mul hπ) F.ι_mul_ι
-    (inl (algebraMap A E.Ring a))).trans (by simp)
+      simp [lift_def, hι]
+  commutes' a := by
+    change Ideal.Quotient.lift _ _ _ (Ideal.Quotient.mk _ (inl (algebraMap A E.Ring a))) = _
+    simp [lift_def]
 
 private theorem descAlgHom_mkPushout (F : SquareZeroExtension.{w'} A B N)
     (g : E.Ring →ₐ[A] F.Ring) (hπ : ∀ x, F.π (g x) = E.π x) (hι : ∀ m, g (E.ι m) = F.ι (f m))
     (z : TrivSqZeroExt E.Ring N) :
-    descAlgHom F g hπ hι (mkPushout E f z) = g z.fst + F.ι z.snd :=
-  rfl
+    descAlgHom F g hπ hι (mkPushout E f z) = g z.fst + F.ι z.snd := by
+  change Ideal.Quotient.lift _ _ _ (Ideal.Quotient.mk _ z) = _
+  simp [lift_def]
 
 /-- The universal property of the pushout: an `A`-algebra map `g : E → F` to an extension `F`
 of `B` by `N`, compatible with the projections and restricting to `f` on the kernels, induces
@@ -293,6 +272,15 @@ noncomputable def pushoutMap {E' : SquareZeroExtension.{w} A B M} (h : E ⟶ E')
 theorem pushoutMap_toPushout {E' : SquareZeroExtension.{w} A B M} (h : E ⟶ E') (x : E.Ring) :
     (pushoutMap f h).toAlgHom (E.toPushout f x) = E'.toPushout f (h.toAlgHom x) := by
   simp [pushoutMap]
+
+@[simp]
+theorem pushoutMap_id : pushoutMap f (𝟙 E) = 𝟙 (E.pushout f) :=
+  pushout_hom_ext fun _ ↦ by simp
+
+@[simp]
+theorem pushoutMap_comp {E' E'' : SquareZeroExtension.{w} A B M} (h : E ⟶ E') (h' : E' ⟶ E'') :
+    pushoutMap f (h ≫ h') = pushoutMap f h ≫ pushoutMap f h' :=
+  pushout_hom_ext fun _ ↦ by simp
 
 variable (f) in
 /-- The pushout of a splitting of `E` along `f` is a splitting of `f_* E`. -/
