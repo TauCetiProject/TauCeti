@@ -160,13 +160,13 @@ theorem apply_eq_self_of_mem_inertia {x : K} {c : ℤ} (hx : x ^ 2 = algebraMap 
   rcases (‹Q.IsPrime›).mem_or_mem h2R with h2 | hRQ
   · -- `2 ∈ Q` would force the odd prime `p` to divide `2`.
     have h2' : algebraMap ℤ (𝓞 K) 2 ∈ Q := by simpa using h2
-    have hdvd : (p : ℤ) ∣ 2 := (Ideal.algebraMap_int_mem_iff_dvd_of_liesOver Q _).mp h2'
+    have hdvd : (p : ℤ) ∣ 2 := (Ideal.algebraMap_mem_iff_dvd_of_liesOver Q _).mp h2'
     exact hodd ((Nat.prime_dvd_prime_iff_eq Fact.out Nat.prime_two).mp (by exact_mod_cast hdvd))
   · -- `R ∈ Q` would put `c = R ^ 2` in `Q`, so `p ∣ c`.
     have hc' : algebraMap ℤ (𝓞 K) c ∈ Q := by
       rw [← integralSqrt_sq hx, pow_two]
       exact Q.mul_mem_left _ hRQ
-    exact hc ((Ideal.algebraMap_int_mem_iff_dvd_of_liesOver Q _).mp hc')
+    exact hc ((Ideal.algebraMap_mem_iff_dvd_of_liesOver Q _).mp hc')
 
 /-- **An odd prime dividing no radicand has trivial inertia.** Let `K` be generated over `ℚ` by
 square roots `r i` of integers `d i`, and let `Q` be a prime of `𝓞 K` above an odd prime `p` with
@@ -304,7 +304,7 @@ theorem apply_eq_self_of_mem_inertia_of_mod_four_eq_one {x : K} {c : ℤ}
   -- `τ` acts trivially modulo `Q`, so `c = (τ • w - w) ^ 2` lies in `Q`, and `2 ∣ c`.
   have hmem : algebraMap ℤ (𝓞 K) c ∈ Q :=
     hwsq ▸ Q.pow_mem_of_mem ((Ideal.mem_inertia.mp hτ) w) 2 two_pos
-  have h2 : (2 : ℤ) ∣ c := (Ideal.algebraMap_int_mem_iff_dvd_of_liesOver Q _).mp hmem
+  have h2 : (2 : ℤ) ∣ c := (Ideal.algebraMap_mem_iff_dvd_of_liesOver Q _).mp hmem
   omega
 
 /-- **`2` has trivial inertia when every radicand is `1` modulo `4`.** Let `K` be generated over

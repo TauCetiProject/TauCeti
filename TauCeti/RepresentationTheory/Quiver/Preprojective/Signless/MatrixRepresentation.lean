@@ -104,7 +104,7 @@ private theorem completeOrthogonalIdempotents_matrixVertex :
   · ext ⟨a, i⟩ ⟨b, j⟩
     rw [← (vertexEquiv G).sum_comp]
     simp only [matrixVertex, Equiv.symm_apply_apply, Matrix.sum_apply, kroneckerMap_apply,
-      single_apply, one_apply]
+      single_apply, Matrix.one_apply]
     by_cases hab : a = b
     · subst hab
       simp

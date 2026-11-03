@@ -34,13 +34,15 @@ noncomputable section
 open Topology Filter
 open scoped LaurentSeries
 open TauCeti.UniversalEnvelopingAlgebra
+open LieAlgebra.ofTwoCocycle (centralElement envelopingι)
 
 namespace TauCeti.CurrentAlgebra
 
 variable {R L : Type*} [CommRing R] [LieRing L] [LieAlgebra R L]
   (Φ : LinearMap.BilinForm R L) (hΦ : Φ.lieInvariant L) (hΦs : Φ.IsSymm) (a : R)
 
-local notation "U" => CentralQuotient R (centralElement Φ hΦ hΦs) a
+local notation "c" => twoCocycleOfBilinear R L Φ hΦ hΦs
+local notation "U" => CentralQuotient R (centralElement c) a
 local notation "Û" => CompletedEnveloping Φ hΦ hΦs a
 local notation "i" => toCompletedEnveloping Φ hΦ hΦs a
 
@@ -124,8 +126,8 @@ theorem eq_vectorFieldCompletedEnvelopingDerivation (h : R⸨X⸩) {f : Û → �
 theorem vectorFieldCompletedEnvelopingDerivation_single_one_envelopingι_single_tmul
     (n : ℤ) (r : R) (x : L) :
     (vectorFieldCompletedEnvelopingDerivation Φ hΦ hΦs a (HahnSeries.single 1 1) : Module.End R Û)
-        (i (envelopingι Φ hΦ hΦs a (HahnSeries.single n r ⊗ₜ[R] x))) =
-      n • i (envelopingι Φ hΦ hΦs a (HahnSeries.single n r ⊗ₜ[R] x)) := by
+        (i (envelopingι c a (HahnSeries.single n r ⊗ₜ[R] x))) =
+      n • i (envelopingι c a (HahnSeries.single n r ⊗ₜ[R] x)) := by
   simp only [coe_toCompletedEnveloping, vectorFieldCompletedEnvelopingDerivation_toLimQuotients,
     vectorFieldEnvelopingDerivation_single_one_envelopingι_single_tmul, map_zsmul]
 

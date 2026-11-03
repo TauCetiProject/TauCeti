@@ -7,6 +7,7 @@ module
 
 public import Mathlib.MeasureTheory.Integral.IntervalIntegral.FundThmCalculus
 public import Mathlib.Analysis.SpecialFunctions.ExpDeriv
+public import TauCeti.Probability.Finance.SimpleStrategy
 import Mathlib.Analysis.Calculus.MeanValue
 import Mathlib.Analysis.Calculus.Deriv.Inv
 import TauCeti.Topology.Order.ProjIcc
@@ -33,6 +34,11 @@ with initial value `β₀`. Uniqueness needs only a right derivative before `T` 
 positivity assumption on the solution. None of the horizon statements needs the rate outside
 `[0, T]`.
 
+Since `dβ = r β dt`, trading the bond is pathwise integration against a function of finite
+variation: for a simple bond holding `b` starting at a nonnegative date, the elementary integral
+`∫₀ᵗ b dβ` of `TauCeti.Finance.simpleGains` is the time integral `∫₀ᵗ b_u r_u β_u du`. This is the
+bond part `∫₀ᵗ b_u dβ_u` of the self-financing equation `V_t = V₀ + ∫₀ᵗ a_u dS_u + ∫₀ᵗ b_u dβ_u`.
+
 ## Main declarations
 
 * `TauCeti.Finance.bondPrice`: the money-market account `β₀ exp (∫₀ᵗ r)`.
@@ -43,11 +49,14 @@ positivity assumption on the solution. None of the horizon statements needs the 
 * `TauCeti.Finance.integral_mul_bondPrice`: the integral form `∫ₐᵇ r β = β_b - β_a`.
 * `TauCeti.Finance.eqOn_bondPrice_of_hasDerivWithinAt`: uniqueness of the account as the
   solution of `β' = r β` on a finite horizon.
+* `TauCeti.Finance.simpleGains_bondPrice`: the gains `∫₀ᵗ b dβ` of a simple bond holding are
+  `∫₀ᵗ b_u r_u β_u du`.
 
 ## References
 
 * S. E. Shreve, *Stochastic Calculus for Finance II: Continuous-Time Models*, Springer, 2004,
   §5.2.
+* I. Karatzas, S. E. Shreve, *Methods of Mathematical Finance*, Springer, 1998, §1.1.
 -/
 
 public section
@@ -209,5 +218,19 @@ theorem eqOn_bondPrice_of_hasDerivWithinAt {B : ℝ → ℝ} (hr : ContinuousOn 
   have heq := constant_of_has_deriv_right_zero hc hz t ht
   rw [bondPrice_zero, div_one, hB₀, div_eq_iff (hne t), bondPrice_eq_of_eqOn hρ ht] at heq
   rw [heq, ← bondPrice_mul_left, mul_one]
+
+/-! ### Trading the bond -/
+
+/-- Trading the bond with a simple holding `b` whose first date is nonnegative gains the time
+integral of the holding against the interest rate: the elementary integral `∫₀ᵗ b dβ` is
+`∫₀ᵗ b_u r_u β_u du` whenever the short rate is continuous on `[0, t]`. -/
+theorem simpleGains_bondPrice {Ω : Type*} {τ : ℕ → ℝ} {n : ℕ} (hr : ContinuousOn r (Icc 0 t))
+    (β₀ : ℝ) (hτ : MonotoneOn τ (Iic n)) (hτ₀ : 0 ≤ τ 0) (b : ℕ → Ω → ℝ) (ω : Ω) :
+    simpleGains τ n b (fun s _ ↦ bondPrice r β₀ s) t ω =
+      ∫ u in 0..t, simpleHolding τ n b u ω * (r u * bondPrice r β₀ u) := by
+  refine simpleGains_eq_integral (X' := fun u _ ↦ r u * bondPrice r β₀ u) hτ hτ₀ ω
+    (hr.mul (continuousOn_bondPrice hr β₀)).integrableOn_Icc (fun x hx ↦ ?_) b
+  rw [integral_mul_bondPrice hr β₀ ⟨le_rfl, hx.1.trans hx.2⟩ hx, bondPrice_zero]
+  ring
 
 end TauCeti.Finance

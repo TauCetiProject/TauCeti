@@ -73,9 +73,9 @@ theorem volume_rightHalfPlane (g : PSL(2, ℝ)) : volume (rightHalfPlane g) = �
   rw [rightHalfPlane_def, measure_smul]
   refine ENNReal.eq_top_of_forall_nnreal_le fun r ↦ ?_
   -- the half-plane `{Re z > 0}` contains regions above height `1` of every width
-  calc (r : ENNReal) = ENNReal.ofReal (((r : ℝ) + 1 - 1) / 1) := by simp
+  calc (r : ENNReal) = volume (Set.Ico 1 ((r : ℝ) + 1)) * ENNReal.ofReal 1⁻¹ := by simp
     _ = volume {z : ℍ | z.re ∈ Set.Ico 1 ((r : ℝ) + 1) ∧ 1 < z.im} :=
-      (volume_setOf_re_mem_Ico_and_lt_im 1 ((r : ℝ) + 1) one_pos).symm
+      (volume_setOf_re_mem_and_lt_im _ one_pos).symm
     _ ≤ volume {z : ℍ | 0 < z.re} := measure_mono fun z hz ↦ one_pos.trans_le hz.1.1
 
 /-- The open left half-plane of a geodesic line has infinite area. -/

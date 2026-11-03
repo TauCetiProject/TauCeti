@@ -167,10 +167,10 @@ theorem profiniteOrder_eq_bot_iff [IsTopologicalGroup G] [TotallyDisconnectedSpa
     rw [Subgroup.eq_one_of_mem_iInf_openNormalSubgroup (hmem x),
       Subgroup.eq_one_of_mem_iInf_openNormalSubgroup (hmem y)]
   · ext q
-    rw [profiniteOrder_apply, Supernatural.one_apply]
+    rw [profiniteOrder_apply, TauCeti.Supernatural.one_apply]
     refine le_antisymm (iSup_le fun U ↦ ?_) bot_le
     rw [Nat.card_eq_one_iff_unique.mpr ⟨QuotientGroup.mk_surjective.subsingleton, inferInstance⟩,
-      padicValNat_one_right, Nat.cast_zero]
+      Nat.padicValNat_def, multiplicity_one_right, Nat.cast_zero]
 
 /-- The exponent of a prime `p` in `profiniteOrder G` is infinite exactly when every power of `p`
 divides the order of some finite continuous quotient. -/
@@ -181,7 +181,7 @@ theorem profiniteOrder_apply_eq_top_iff (p : Nat.Primes) :
   have hdvd (n : ℕ) (U : OpenNormalSubgroup G) :
       (p : ℕ) ^ n ∣ Nat.card (G ⧸ U.toSubgroup) ↔
         n ≤ padicValNat p (Nat.card (G ⧸ U.toSubgroup)) :=
-    padicValNat_dvd_iff_le Nat.card_pos.ne'
+    by simpa only [Nat.padicValNat_def] using multiplicity_dvd_iff_le Nat.card_pos.ne'
   simp only [hdvd, profiniteOrder_apply, ENat.iSup_natCast_eq_top, not_bddAbove_iff,
     Set.mem_range, exists_exists_eq_and]
   exact ⟨fun h n ↦ (h n).imp fun _ ↦ le_of_lt, fun h n ↦ (h (n + 1)).imp fun _ ↦ id⟩

@@ -6,7 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.FieldTheory.FunctionField.Consequences.WeierstrassGaps
-public import TauCeti.FieldTheory.FunctionField.Place.Expansion.Laurent.Basic
+public import TauCeti.FieldTheory.FunctionField.Place.Expansion.Laurent.Equiv
+import TauCeti.FieldTheory.FunctionField.RiemannRoch.Equiv
 
 /-!
 # Functions whose pole order is the first pole number
@@ -26,8 +27,9 @@ The affine freedom `z ↦ a z + b` is removed by a normalization of the Laurent 
 uniformizer `t` at `P`: there is exactly one `z ∈ L(m P)` whose coefficient of `t ^ (-m)` is `1`
 and whose constant coefficient is `0`. The normalized function depends only on `P` and `t`.
 This rigidification is what makes the function canonical in Köck's proof that a Belyi pair over
-`ℂ` descends to a number field: automorphisms preserving `P` and `t` must fix it, and hence fix
-its minimal polynomial.
+`ℂ` descends to a number field: a field automorphism carrying the constants along an automorphism
+`σ` of `k` and fixing `P` and `t` acts on Laurent coefficients by `σ`, which fixes `0` and `1`, so
+it fixes the normalized function.
 
 ## Main results
 
@@ -39,6 +41,8 @@ its minimal polynomial.
 * `TauCeti.Place.existsUnique_laurentCoeff_eq_one_and_laurentCoeff_zero_eq_zero`: there is a
   unique function in `L(m P)` whose Laurent expansion in `t` has coefficient `1` at `t ^ (-m)`
   and constant coefficient `0`.
+* `TauCeti.Place.apply_eq_self_of_laurentCoeff_eq_one_of_laurentCoeff_zero_eq_zero`: a semilinear
+  field automorphism fixing `P` and `t` fixes that function.
 
 ## References
 
@@ -147,6 +151,32 @@ theorem existsUnique_laurentCoeff_eq_one_and_laurentCoeff_zero_eq_zero
     have hb : b = c⁻¹ := eq_inv_of_mul_eq_one_left h1
     have ha : a = -(c⁻¹ * d) := by rw [← hb]; linear_combination h0
     rw [ha, hb]
+
+/-- **Semilinear automorphisms fixing `P` and `t` fix the normalized function.** Let `P` be a
+rational place of a function field with exact constant field, `t` a uniformizer at `P`, `m` the
+least positive pole number at `P`, and `z` the function of
+`TauCeti.Place.existsUnique_laurentCoeff_eq_one_and_laurentCoeff_zero_eq_zero`. Every field
+automorphism `τ` of `F` that carries the constants along an automorphism `σ` of `k`, maps `P` to
+itself, and fixes `t`, fixes `z`. -/
+theorem apply_eq_self_of_laurentCoeff_eq_one_of_laurentCoeff_zero_eq_zero
+    (hF : IsFunctionField k F) (hex : IsIntegrallyClosedIn k F) {P : Place k F}
+    (hP : P.degree = 1) {t : F} (ht : P.ord t = 1) {m : ℕ} (hm : 0 < m)
+    (hpole : P.IsPoleNumber m) (hgap : ∀ n, 0 < n → n < m → P.IsGap n) (σ : k ≃+* k)
+    (τ : F ≃+* F) (h : ∀ c, τ (algebraMap k F c) = algebraMap k F (σ c))
+    (hτP : equivOfRingEquiv σ τ h P = P) (hτt : τ t = t) {z : F}
+    (hz : z ∈ riemannRochSpace ((m : ℤ) • WeilDivisor.ofPoint P))
+    (h₁ : P.laurentCoeff hP ht (-m) z = 1) (h₀ : P.laurentCoeff hP ht 0 z = 0) : τ z = z := by
+  have hcoeff (n : ℤ) : P.laurentCoeff hP ht n (τ z) = σ (P.laurentCoeff hP ht n z) :=
+    laurentCoeff_equivOfRingEquiv σ τ h hP ht hτP hP hτt ht n z
+  refine (existsUnique_laurentCoeff_eq_one_and_laurentCoeff_zero_eq_zero hF hex hP ht hm hpole
+    hgap).unique ⟨?_, ?_, ?_⟩ ⟨hz, h₁, h₀⟩
+  · -- `τ` maps `L(m P)` onto `L(m τ(P)) = L(m P)`.
+    have hD : Finsupp.domCongr (equivOfRingEquiv σ τ h) ((m : ℤ) • WeilDivisor.ofPoint P) =
+        (m : ℤ) • WeilDivisor.ofPoint P := by
+      rw [map_zsmul, WeilDivisor.domCongr_ofPoint, hτP]
+    rwa [← hD, mem_riemannRochSpace_domCongr_equivOfRingEquiv_iff]
+  · rw [hcoeff, h₁, map_one]
+  · rw [hcoeff, h₀, map_zero]
 
 end Place
 

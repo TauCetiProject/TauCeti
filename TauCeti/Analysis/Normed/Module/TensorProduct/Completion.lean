@@ -118,6 +118,11 @@ theorem mapL_coe (f : E →L[𝕜] E') (g : F →L[𝕜] F') (u : ProjectiveTens
     mapL f g u = ProjectiveTensor.mapL f g u :=
   ContinuousLinearMap.completion_apply_coe _ u
 
+/-- The induced operator is the extension of `ProjectiveTensor.mapL f g` to the completions. -/
+theorem mapL_eq_completion (f : E →L[𝕜] E') (g : F →L[𝕜] F') :
+    mapL f g = (ProjectiveTensor.mapL f g).completion :=
+  (rfl)
+
 /-- The operator induced by `f` and `g` on completed projective tensor products has norm at most
 `‖f‖ * ‖g‖`. -/
 theorem norm_mapL_le (f : E →L[𝕜] E') (g : F →L[𝕜] F') : ‖mapL f g‖ ≤ ‖f‖ * ‖g‖ :=
@@ -134,6 +139,30 @@ theorem mapL_id :
 theorem mapL_comp (f₂ : E' →L[𝕜] E'') (f₁ : E →L[𝕜] E') (g₂ : F' →L[𝕜] F'') (g₁ : F →L[𝕜] F') :
     mapL (f₂ ∘L f₁) (g₂ ∘L g₁) = mapL f₂ g₂ ∘L mapL f₁ g₁ :=
   continuousLinearMap_ext fun _ _ ↦ by simp
+
+/-- The induced operator is additive in the left operator. -/
+theorem mapL_add_left (f₁ f₂ : E →L[𝕜] E') (g : F →L[𝕜] F') :
+    mapL (f₁ + f₂) g = mapL f₁ g + mapL f₂ g :=
+  continuousLinearMap_ext fun _ _ ↦ by
+    simp [TensorProduct.add_tmul, ProjectiveTensor.mk_add, Completion.coe_add]
+
+/-- The induced operator is additive in the right operator. -/
+theorem mapL_add_right (f : E →L[𝕜] E') (g₁ g₂ : F →L[𝕜] F') :
+    mapL f (g₁ + g₂) = mapL f g₁ + mapL f g₂ :=
+  continuousLinearMap_ext fun _ _ ↦ by
+    simp [TensorProduct.tmul_add, ProjectiveTensor.mk_add, Completion.coe_add]
+
+/-- The induced operator is homogeneous in the left operator. -/
+theorem mapL_smul_left (a : 𝕜) (f : E →L[𝕜] E') (g : F →L[𝕜] F') :
+    mapL (a • f) g = a • mapL f g :=
+  continuousLinearMap_ext fun _ _ ↦ by
+    simp [← TensorProduct.smul_tmul', ProjectiveTensor.mk_smul, Completion.coe_smul]
+
+/-- The induced operator is homogeneous in the right operator. -/
+theorem mapL_smul_right (a : 𝕜) (f : E →L[𝕜] E') (g : F →L[𝕜] F') :
+    mapL f (a • g) = a • mapL f g :=
+  continuousLinearMap_ext fun _ _ ↦ by
+    simp [TensorProduct.tmul_smul, ProjectiveTensor.mk_smul, Completion.coe_smul]
 
 variable (𝕜 E F) in
 /-- The contraction from the completed projective to the completed injective tensor product: the
@@ -224,6 +253,11 @@ noncomputable def mapL (f : E →L[𝕜] E') (g : F →L[𝕜] F') :
 theorem mapL_coe (f : E →L[𝕜] E') (g : F →L[𝕜] F') (u : InjectiveTensor 𝕜 E F) :
     mapL f g u = InjectiveTensor.mapL f g u :=
   ContinuousLinearMap.completion_apply_coe _ u
+
+/-- The induced operator is the extension of `InjectiveTensor.mapL f g` to the completions. -/
+theorem mapL_eq_completion (f : E →L[𝕜] E') (g : F →L[𝕜] F') :
+    mapL f g = (InjectiveTensor.mapL f g).completion :=
+  (rfl)
 
 /-- The operator induced by `f` and `g` on completed injective tensor products has norm at most
 `‖f‖ * ‖g‖`. -/
