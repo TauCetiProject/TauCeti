@@ -15,7 +15,8 @@ public import TauCeti.LinearAlgebra.Complex.Determinant
 The real linear coordinate interchange is an involution with determinant `-1`, recording
 the reversal of orientation. Any `v` has real coordinates in the real basis `u`, `r * u * I`,
 `u ≠ 0`, `r ≠ 0`, of radial and angular directions at the point `r * u`
-(`Complex.eq_re_mul_add_im_div_mul`).
+(`Complex.eq_re_mul_add_im_div_mul`). The real frame `(1, 0)`, `(i, 0)`, `(0, 1)` of `ℂ × ℝ` is
+linearly independent.
 -/
 
 public section
@@ -60,5 +61,15 @@ theorem eq_re_mul_add_im_div_mul {u : ℂ} (hu : u ≠ 0) {r : ℝ} (hr : r ≠ 
   conv_lhs => rw [← div_mul_cancel₀ v hu, ← re_add_im (v / u)]
   push_cast
   field_simp
+
+/-- The real frame `(1, 0)`, `(i, 0)`, `(0, 1)` of `ℂ × ℝ` is linearly independent. -/
+theorem linearIndependent_one_zero_I_zero_zero_one :
+    LinearIndependent ℝ ![((1 : ℂ), (0 : ℝ)), (I, 0), (0, 1)] := by
+  refine Fintype.linearIndependent_iff.2 fun g hg i ↦ ?_
+  rw [Fin.sum_univ_three] at hg
+  fin_cases i
+  · simpa using congrArg (fun x : ℂ × ℝ ↦ x.1.re) hg
+  · simpa using congrArg (fun x : ℂ × ℝ ↦ x.1.im) hg
+  · simpa using congrArg Prod.snd hg
 
 end Complex

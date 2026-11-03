@@ -218,10 +218,10 @@ private theorem mapDomainLinearMap_parityConj_mem_range {y : R[TraceFormulaMatri
   have hTT : ofMulAction R SL(2, ℤ) (TraceFormulaMatrixModule n) T
       (ofMulAction R SL(2, ℤ) _ T⁻¹ (mapDomainLinearMap R R parityConj z)) =
         mapDomainLinearMap R R parityConj z := by
-    rw [← Module.End.mul_apply, ← map_mul, mul_inv_cancel, map_one, Module.End.one_apply]
+    rw [← mul_apply_eq_comp, ← map_mul, mul_inv_cancel, map_one, one_apply_eq_self]
   rw [LinearMap.comp_apply, LinearMap.comp_apply] at hT
   refine ⟨-ofMulAction R SL(2, ℤ) _ T⁻¹ (mapDomainLinearMap R R parityConj z), ?_⟩
-  simp only [LinearMap.sub_apply, Module.End.one_apply, map_sub, map_neg, hT, hTT]
+  simp only [LinearMap.sub_apply, one_apply_eq_self, map_sub, map_neg, hT, hTT]
   abel
 
 /-- Right multiplication preserves `(1 - T)·ℛₙ`, since it commutes with left multiplication. -/
@@ -249,7 +249,7 @@ theorem PeriodRelation.mapDomainLinearMap_parityConj {ξ : R[TraceFormulaMatrixM
     (_root_.sub_mem hU (ofMulAction_op_mem_range (S : PSL(2, ℤ)) hU))
   rw [periodRelation_iff]
   convert key using 1
-  simp only [LinearMap.sub_apply, Module.End.one_apply, map_sub, hS, hS']
+  simp only [LinearMap.sub_apply, one_apply_eq_self, map_sub, hS, hS']
   abel
 
 /-! ### The action on binary forms -/
@@ -271,7 +271,7 @@ theorem periodAction_mapDomainLinearMap_parityConj (hw : Even w)
     ext P : 1
     rw [mapDomainLinearMap_single, periodAction_single, periodAction_single, parityConj_mk,
       binaryFormAction_mk, binaryFormAction_mk, TraceFormulaMatrix.val_parityConj]
-    simp only [LinearMap.smul_apply, Module.End.mul_apply, binaryFormRep_op_mul_apply,
+    simp only [LinearMap.smul_apply, mul_apply_eq_comp, binaryFormRep_op_mul_apply,
       _root_.map_smul]
 
 /-! ### Hecke equivariance of the even and odd period polynomials -/
@@ -286,8 +286,8 @@ theorem PeriodRelation.periodAction_binaryFormRep_parity_periodPolynomial {k : �
     periodAction hw ξ (binaryFormRep ℂ w (op !![-1, 0; 0, 1]) (periodPolynomial hk f)) =
       binaryFormRep ℂ w (op !![-1, 0; 0, 1]) (periodPolynomial hk (heckeTCuspLevelOne k n f)) := by
   have h' := h.mapDomainLinearMap_parityConj.periodAction_periodPolynomial hk hw n f
-  rw [periodAction_mapDomainLinearMap_parityConj, Module.End.mul_apply,
-    Module.End.mul_apply] at h'
+  rw [periodAction_mapDomainLinearMap_parityConj, mul_apply_eq_comp,
+    mul_apply_eq_comp] at h'
   rw [← h', binaryFormRep_parity_involutive]
 
 /-- **Hecke equivariance of the even period polynomial.** Let `n ≥ 1` and let `ξ` be a solution of

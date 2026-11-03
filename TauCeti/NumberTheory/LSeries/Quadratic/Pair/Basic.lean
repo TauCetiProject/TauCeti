@@ -67,7 +67,7 @@ theorem zetaMulPairCoeffs_prime_pow (χ : DirichletCharacter ℂ M)
     (ψ : DirichletCharacter ℂ N) {p : ℕ} (hp : p.Prime) (k : ℕ) :
     χ.zetaMulPairCoeffs ψ (p ^ k) = ∑ i ∈ Finset.range (k + 1),
       χ.zetaMul (p ^ i) * (toArithmeticFunction (ψ ·)).pmul χ.zetaMul (p ^ (k - i)) := by
-  rw [zetaMulPairCoeffs_eq_zetaMul_mul_pmul, mul_apply,
+  rw [zetaMulPairCoeffs_eq_zetaMul_mul_pmul, ArithmeticFunction.mul_apply,
     Nat.sum_divisorsAntidiagonal (fun a b ↦
       χ.zetaMul a * (toArithmeticFunction (ψ ·)).pmul χ.zetaMul b),
     Nat.sum_divisors_prime_pow hp]

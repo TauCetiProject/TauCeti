@@ -49,7 +49,7 @@ theorem injective_one_sub_of_pow_eq_smul_one {A M : Type*} [CommRing A] [IsDomai
   intro v hv
   -- `1 - φ ^ n = (∑ i < n, φ ^ i) * (1 - φ)` kills `v`, and it is multiplication by `1 - m`.
   have hn : (1 - φ ^ n) v = 0 := by
-    rw [← geom_sum_mul_neg, Module.End.mul_apply, hv, map_zero]
+    rw [← geom_sum_mul_neg, _root_.mul_apply_eq_comp, hv, map_zero]
   have hmv : (1 - m) • v = 0 := by
     rw [sub_smul, one_smul]
     simpa [h] using hn
@@ -67,7 +67,7 @@ theorem list_prod_apply_eq_pow_smul {R M : Type*} [Semiring R] [AddCommMonoid M]
   induction l with
   | nil => simp
   | cons a l ih =>
-    rw [List.prod_cons, Module.End.mul_apply, ih fun a ha ↦ h a (List.mem_cons_of_mem _ ha),
+    rw [List.prod_cons, _root_.mul_apply_eq_comp, ih fun a ha ↦ h a (List.mem_cons_of_mem _ ha),
       map_smul, h a List.mem_cons_self, smul_smul, List.length_cons, pow_succ]
 
 /-- `μ • g` squares to `1` for an involution `g` and `μ * μ = 1`. -/

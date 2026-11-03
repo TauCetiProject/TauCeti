@@ -114,7 +114,7 @@ theorem char_trivial {k : Type u} {G : Type v} {V : Type w} [Field k] [Monoid G]
     [Module k V] [FiniteDimensional k V] (g : G) :
     (trivial k G V).character g = Module.finrank k V := by
   have hone : trivial k G V g = 1 :=
-    LinearMap.ext fun v => by rw [trivial_apply, Module.End.one_apply]
+    LinearMap.ext fun v => by rw [trivial_apply, _root_.one_apply_eq_self]
   rw [character, hone, LinearMap.trace_one]
 
 /-- **The character is additive on products of representations.** This is the unbundled counterpart
@@ -256,7 +256,7 @@ instance forget₂_additive {R : Type u} {G : Type v} [Ring R] [Monoid G] :
 
 /-- Forgetting finite generation preserves scalar multiplication of intertwiners. -/
 instance forget₂_linear {R : Type u} {G : Type v} [CommRing R] [Monoid G] :
-    Functor.Linear R (forget₂ (FDRep R G) (Rep R G)) where
+    CategoryTheory.Functor.Linear R (forget₂ (FDRep R G) (Rep R G)) where
   -- As for additivity, the forgetful functor keeps the underlying linear map.
   map_smul := by intros; rfl
 
