@@ -17,12 +17,14 @@ Let `w` be even and `n ≠ 0`. Every solution `ξ` of Popa–Zagier's period rel
 `(X^w - Y^w) ∣ ξ = σ_{w+1}(|n|) (X^w - Y^w)`
 
 (`TauCeti.TraceFormulaMatrixModule.PeriodRelation.periodAction_eisensteinPeriodPolynomial`). For
-`n > 0` this is the eigenvalue of the Hecke operator `Tₙ` on the Eisenstein series `E_{w+2}`, whose
-extended even period polynomial is a multiple of `X^w - Y^w`: the solutions of (A) act on
-period polynomials as `Tₙ` on the Eisenstein part, as they do on the period polynomials of cusp
-forms (`TauCeti.TraceFormulaMatrixModule.PeriodRelation.periodAction_periodPolynomial`). This is
-the Eisenstein contribution `σ_{k-1}(n)` to the trace of `Tₙ` on the period-polynomial space,
-in weight `k = w + 2`.
+`n > 0` and positive even `w`, this is the eigenvalue of the Hecke operator `Tₙ` on the Eisenstein
+series `E_{w+2}`, whose extended even period polynomial is a multiple of `X^w - Y^w`: the
+solutions of (A) act on period polynomials as `Tₙ` on the Eisenstein part, as they do on the
+period polynomials of cusp forms
+(`TauCeti.TraceFormulaMatrixModule.PeriodRelation.periodAction_periodPolynomial`). This is the
+Eisenstein contribution `σ_{k-1}(n)` to the trace of `Tₙ` on the period-polynomial space, in
+weight `k = w + 2 ≥ 4`. At `w = 0` the polynomial `X^0 - Y^0` is zero and `E₂` is not a level-one
+modular form, so the identity holds trivially and has no such interpretation.
 
 The proof is algebraic. The binary form attached to the functional `P ↦ P(1, 0) - P(0, 1)` is
 `Y^w - X^w`, and this functional is the evaluation of the modular symbols `{∞, 0} ⊗ P` at the
