@@ -37,6 +37,7 @@ variable {V : Type*} [Quiver V]
 
 /-- A total arrow, read as a morphism between objects equal to its endpoints, is again the
 same total arrow. -/
+@[simp]
 theorem mk_homOfEq (a : Quiver.Total V) {y z : V} (hy : a.left = y) (hz : a.right = z) :
     (⟨y, z, Quiver.homOfEq a.hom hy hz⟩ : Quiver.Total V) = a := by
   subst hy hz
