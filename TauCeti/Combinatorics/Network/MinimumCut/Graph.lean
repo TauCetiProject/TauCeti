@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Combinatorics.Graph.Connectivity.Menger.CutValue
 public import TauCeti.Combinatorics.Network.MinimumCut.GomoryHu
+import TauCeti.Combinatorics.SimpleGraph.Finite
 
 /-!
 # Cut trees for weighted multigraphs
@@ -128,7 +129,11 @@ minimum weight of an edge in any unit-capacity cut tree. -/
 theorem exists_edge_edgeConnectivity_eq_weight [Nontrivial V(G)]
     (hT : IsCutTree (G.edgeCutCapacity fun _ ↦ (1 : ℕ)) T w) :
     ∃ u v, T.Adj u v ∧ G.edgeConnectivity = (w s(u, v) : ℕ∞) := by
-  obtain ⟨u, v, huv, hmin⟩ := hT.isTree.exists_minimum_weight_edge w
+  have hTne : T ≠ ⊥ := by
+    intro h
+    rw [h] at hT
+    exact SimpleGraph.not_preconnected_bot hT.isTree.connected.preconnected
+  obtain ⟨u, v, huv, hmin⟩ := T.exists_minimum_weight_edge hTne w
   refine ⟨u, v, huv, le_antisymm ?_ ?_⟩
   · calc
       G.edgeConnectivity ≤ G.edgeReachability u v :=

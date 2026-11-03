@@ -8,6 +8,7 @@ module
 public import TauCeti.Combinatorics.Network.MinimumCut.Basic
 public import TauCeti.Combinatorics.SimpleGraph.Connectivity.EdgeSide
 import Mathlib.Combinatorics.SimpleGraph.Star
+import TauCeti.Combinatorics.SimpleGraph.Finite
 
 /-!
 # Flow-equivalent trees and cut trees
@@ -54,26 +55,6 @@ variable {V K : Type*}
 section FlowEquivalent
 
 variable [Finite V] [Zero K] [LinearOrder K]
-
-omit [Zero K] in
-/-- A weighted tree on a nontrivial finite vertex type has an edge of minimum weight. -/
-theorem _root_.SimpleGraph.IsTree.exists_minimum_weight_edge
-    {T : SimpleGraph V} (hT : T.IsTree) (w : Sym2 V → K)
-    [Nontrivial V] : ∃ u v, T.Adj u v ∧ ∀ e ∈ T.edgeSet, w s(u, v) ≤ w e := by
-  classical
-  let _ := Fintype.ofFinite V
-  have hedge : T.edgeFinset.Nonempty := by
-    rw [SimpleGraph.edgeFinset_nonempty]
-    intro h
-    rw [h] at hT
-    exact SimpleGraph.not_preconnected_bot hT.connected.preconnected
-  obtain ⟨e, he, hmin⟩ := Finset.exists_min_image T.edgeFinset w hedge
-  induction e using Sym2.inductionOn with
-  | _ u v =>
-      refine ⟨u, v, ?_, fun e he' ↦ hmin e ?_⟩
-      · rw [← SimpleGraph.mem_edgeSet]
-        simpa only [SimpleGraph.mem_edgeFinset] using he
-      · simpa only [SimpleGraph.mem_edgeFinset] using he'
 
 /-- A tree `T` on the vertex type with edge weights `w` is flow-equivalent for `f` when the minimum
 cut value between any two distinct vertices is the minimum weight on the tree path between them.
@@ -235,7 +216,11 @@ nonempty proper vertex sets. -/
 theorem exists_edgeSide_apply_le (hT : IsCutTree f T w) [Nontrivial V] :
     ∃ u v, T.Adj u v ∧ ∀ S : Finset V, S.Nonempty → S ≠ univ →
       f (T.edgeSide u v) ≤ f S := by
-  obtain ⟨u, v, huv, hmin⟩ := hT.isTree.exists_minimum_weight_edge w
+  have hTne : T ≠ ⊥ := by
+    intro h
+    rw [h] at hT
+    exact SimpleGraph.not_preconnected_bot hT.isTree.connected.preconnected
+  obtain ⟨u, v, huv, hmin⟩ := T.exists_minimum_weight_edge hTne w
   refine ⟨u, v, huv, fun S hS hSuniv ↦ ?_⟩
   obtain ⟨s, hs⟩ := hS
   obtain ⟨t, ht⟩ : ∃ t, t ∉ S := by

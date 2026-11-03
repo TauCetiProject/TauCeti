@@ -10,7 +10,9 @@ public import Mathlib.Combinatorics.SimpleGraph.Finite
 public import Mathlib.Data.Finset.Interval
 
 /-!
-# Sums over intervals of graphs on a finite vertex set
+# Finite simple graphs
+
+A nonempty graph with finitely many edges has an edge minimizing any linearly ordered weight.
 
 On a finite vertex set, `G ↦ G.edgeFinset` maps the graphs between `F` and `H` bijectively onto
 the finsets of pairs between `F.edgeFinset` and `H.edgeFinset`. Consequently a sum over an interval
@@ -19,6 +21,7 @@ interval of the Boolean lattice `Finset (Sym2 V)`, where the finset interval API
 
 ## Main results
 
+* `SimpleGraph.exists_minimum_weight_edge` — a finite nonempty edge set has a minimum-weight edge.
 * `SimpleGraph.sum_filter_le_le_eq_sum_Icc_edgeFinset` — a sum over the graphs between `F` and `H`
   of a function of their edge finsets is the sum of that function over
   `Finset.Icc F.edgeFinset H.edgeFinset`.
@@ -29,6 +32,23 @@ public section
 open Finset
 
 namespace SimpleGraph
+
+variable {V K : Type*}
+
+/-- A graph with a finite nonempty edge set has an edge of minimum weight. -/
+theorem exists_minimum_weight_edge (G : SimpleGraph V) [Finite G.edgeSet] (hG : G ≠ ⊥)
+    [LinearOrder K] (w : Sym2 V → K) :
+    ∃ u v, G.Adj u v ∧ ∀ e ∈ G.edgeSet, w s(u, v) ≤ w e := by
+  classical
+  let _ := Fintype.ofFinite G.edgeSet
+  obtain ⟨e, he, hmin⟩ := Finset.exists_min_image G.edgeFinset w
+    (SimpleGraph.edgeFinset_nonempty.mpr hG)
+  induction e using Sym2.inductionOn with
+  | _ u v =>
+      refine ⟨u, v, ?_, fun e he' ↦ hmin e ?_⟩
+      · rw [← SimpleGraph.mem_edgeSet]
+        simpa only [SimpleGraph.mem_edgeFinset] using he
+      · simpa only [SimpleGraph.mem_edgeFinset] using he'
 
 variable {V M : Type*} [Fintype V] [DecidableEq V] [AddCommMonoid M]
 
