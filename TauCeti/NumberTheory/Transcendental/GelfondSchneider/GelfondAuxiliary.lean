@@ -21,23 +21,25 @@ the Gelfond–Schneider theorem the auxiliary function is the exponential sum
 `R(z) = ∑_{a, b = 1}^{q} η_{ab} exp ((a + b σ β) λ z)`
 
 with coefficients `η_{ab} ∈ K` (written `σ η_{ab}` once embedded in `ℂ`). Its derivatives at the
-natural numbers are algebraic up to a power of `λ`: since `exp ((a + b σ β) λ t)` is
+natural numbers lie in `σ(K)` after factoring out a power of `λ`: since `exp ((a + b σ β) λ t)` is
 `σ (α ^ (a t) γ ^ (b t))`,
 
 `R⁽ᵏ⁾(t) = λ ^ k σ (y_k(t))`, where `y_k(t) = ∑_{a, b} η_{ab} (a + b β) ^ k α ^ (a t) γ ^ (b t)`.
 
-The coefficients `η` are chosen by Siegel's lemma so that `R` vanishes to a high order `n` at the
-points `t = 1, …, m`. Gelfond's argument then uses the first derivative order `r` at which `R`
-fails to vanish at one of these points, say at `t₀`: the number `ρ = y_r(t₀) ∈ K` is nonzero, so
-it satisfies Liouville's lower bound, while the vanishing of all lower derivatives gives an
-analytic upper bound for `|R⁽ʳ⁾(t₀)| = |λ| ^ r |σ ρ|`.
+In the application, `K` is a number field containing the algebraic numbers `α, β, γ`, and the
+coefficients `η` are algebraic integers chosen by Siegel's lemma so that `R` vanishes to a high
+order `n` at the points `t = 1, …, m`. Gelfond's argument then uses the first derivative order `r`
+at which `R` fails to vanish at one of these points, say at `t₀`: the number `ρ = y_r(t₀) ∈ K` is
+nonzero, so in that number-field setting (after clearing the denominators of `α, β, γ`) it
+satisfies Liouville's lower bound, while the vanishing of all lower derivatives gives an analytic
+upper bound for `|R⁽ʳ⁾(t₀)| = |λ| ^ r |σ ρ|`.
 
-This file proves that such `r` and `t₀` exist, with `n ≤ r < q ^ 2`, as soon as `λ ≠ 0` and
-`η ≠ 0`. For each fixed `t`, the values `y_k(t)` are the power sums `∑ w_{ab} θ_{ab} ^ k` with
-weights `w_{ab} = η_{ab} α ^ (a t) γ ^ (b t)` and nodes `θ_{ab} = a + b β`. The nodes are pairwise
-distinct because `β` is irrational, so the Vandermonde matrix of the nodes is invertible and one of
-the first `q ^ 2` power sums is nonzero. In Lean the indices `a, b` run over `Fin q`, and the
-frequencies are written `(a + 1) + (b + 1) β`.
+This file makes no arithmetic assumption on `K`: it proves that such `r` and `t₀` exist, with
+`n ≤ r < q ^ 2`, as soon as `λ ≠ 0` and `η ≠ 0`. For each fixed `t`, the values `y_k(t)` are the
+power sums `∑ w_{ab} θ_{ab} ^ k` with weights `w_{ab} = η_{ab} α ^ (a t) γ ^ (b t)` and nodes
+`θ_{ab} = a + b β`. The nodes are pairwise distinct because `β` is irrational, so the Vandermonde
+matrix of the nodes is invertible and one of the first `q ^ 2` power sums is nonzero. In Lean the
+indices `a, b` run over `Fin q`, and the frequencies are written `(a + 1) + (b + 1) β`.
 
 ## Main results
 
