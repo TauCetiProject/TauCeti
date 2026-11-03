@@ -212,8 +212,8 @@ private theorem nested_matrix_identity
   rw [coe_rootSubgroupPoints_eq_one_add_smul, toAdd_ofAdd]
   exact Matrix.coe_commutatorElement_commutatorElement_eq_one_add_smul
     (rootIntMatrix n a) (rootIntMatrix n b) (rootIntMatrix n c)
-    (rootIntMatrix_mul_self n a) (rootIntMatrix_mul_self n b)
-    (rootIntMatrix_mul_self n c) hAC' hABC' hAAB' hBBA' t s r _ _ _
+    (rootIntMatrix_mul_self_eq_zero n a) (rootIntMatrix_mul_self_eq_zero n b)
+    (rootIntMatrix_mul_self_eq_zero n c) hAC' hABC' hAAB' hBBA' t s r _ _ _
     (by rw [coe_rootSubgroupPoints_eq_one_add_smul, toAdd_ofAdd])
     (by rw [coe_rootSubgroupPoints_eq_one_add_smul, toAdd_ofAdd])
     (by rw [coe_rootSubgroupPoints_eq_one_add_smul, toAdd_ofAdd])

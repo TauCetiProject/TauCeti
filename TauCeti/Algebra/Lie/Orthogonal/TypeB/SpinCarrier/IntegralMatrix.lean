@@ -12,7 +12,7 @@ public import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.Schem
 # Integral matrices of type-B spin generators
 
 The invariant spin lattice gives an integral matrix for each numbered simple root generator.
-Each generator squares to zero (`rootIntMatrix_mul_self`), so its root subgroup points are
+Each generator squares to zero (`rootIntMatrix_mul_self_eq_zero`), so its root subgroup points are
 `1 + u X` over any commutative ring. Each matrix is supported on the pairs of basis vectors whose
 integral spin weights differ by the signed simple root of its generator. The bracket of opposite
 integral root matrices is the diagonal matrix of the basis spin weights' simple-coroot coordinates.
@@ -63,7 +63,7 @@ theorem rootIntMatrix_eq_toMatrix (j : Fin (n + 1) ⊕ Fin (n + 1)) :
 
 /-- Each integral spin root matrix squares to zero, before changing the coefficient ring. -/
 @[simp]
-theorem rootIntMatrix_mul_self (j : Fin (n + 1) ⊕ Fin (n + 1)) :
+theorem rootIntMatrix_mul_self_eq_zero (j : Fin (n + 1) ⊕ Fin (n + 1)) :
     rootIntMatrix n j * rootIntMatrix n j = 0 := by
   let X := kostantRootOperator
     (TauCeti.typeBSimpleRootGeneratorFamily (K := ℚ))
