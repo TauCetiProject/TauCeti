@@ -168,15 +168,6 @@ section Permutation
 variable (k : Type u) [Field k] {G : Type u} [Group G] [Fintype G]
 variable {ι : Type u} [Finite ι] [MulAction G ι]
 
-omit [Finite ι] in
-private theorem span_single_eq_span_single_iff {i j : ι} :
-    k ∙ MonoidAlgebra.single i (1 : k) = k ∙ MonoidAlgebra.single j (1 : k) ↔ i = j := by
-  refine ⟨fun h ↦ ?_, fun h ↦ h ▸ rfl⟩
-  obtain ⟨c, hc⟩ := Submodule.mem_span_singleton.mp
-    (h.le (Submodule.mem_span_singleton_self (MonoidAlgebra.single i (1 : k))))
-  rw [MonoidAlgebra.smul_single, smul_eq_mul, mul_one, MonoidAlgebra.single_inj] at hc
-  exact (hc.resolve_right fun h ↦ one_ne_zero h.2).1.symm
-
 /-- Under the permutation representation of `G` on `k[ι]`, the image of the rational point `g`
 under the orbit morphism of the basis line `[e_i]` is the basis line `[e_{g • i}]`. -/
 theorem projectiveOrbitMap_single_kernelPoint_eval (g : G) (i : ι) :
@@ -200,7 +191,7 @@ theorem projectiveOrbitMap_single_kernelPoint_one_injective :
         (AlgHom.kernelPoint (Bialgebra.counitAlgHom k (coordinateRing k G))) := by
   intro i j hij
   simp only [← eval_one_eq_counitAlgHom k G] at hij
-  simpa [span_single_eq_span_single_iff] using
+  simpa [MonoidAlgebra.span_single_one_eq_span_single_one_iff] using
     (projectiveOrbitMap_kernelPoint_eval_eq_iff_span_eq (Representation.ofMulAction k G ι)
       _ _ _ _ 1 1).mp hij
 
@@ -230,7 +221,7 @@ theorem isPreconnected_range_projectiveOrbitMap_single_iff (i : ι) :
         (MonoidAlgebra.single i (1 : k)) (MonoidAlgebra.isUnimodular_single i))) ↔
       ∀ g : G, g • i = i := by
   rw [isPreconnected_range_projectiveOrbitMap_iff]
-  simp [span_single_eq_span_single_iff]
+  simp [MonoidAlgebra.span_single_one_eq_span_single_one_iff]
 
 end Permutation
 
