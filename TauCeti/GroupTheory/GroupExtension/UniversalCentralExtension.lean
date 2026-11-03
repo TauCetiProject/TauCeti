@@ -10,6 +10,7 @@ public import Mathlib.GroupTheory.FreeGroup.Basic
 public import Mathlib.GroupTheory.IsPerfect
 public import Mathlib.GroupTheory.QuotientGroup.Basic
 import TauCeti.GroupTheory.Commutator
+import TauCeti.GroupTheory.FreeGroup.Basis
 
 /-!
 # Universal central extensions of perfect groups
@@ -60,8 +61,6 @@ universal covering group of a Lie group.
 
 ## Main results
 
-* `MonoidHom.eq_of_comp_eq_of_ker_le_center`: two homomorphisms from a perfect group which agree
-  modulo a central subgroup are equal.
 * `MonoidHom.CentralCover.range_projection_of_surjective`,
   `MonoidHom.CentralCover.ker_projection` and `MonoidHom.CentralCover.ker_projection_le_center`:
   the image, the kernel and the centrality of the kernel of the projection.
@@ -91,21 +90,6 @@ universe w u v
 namespace MonoidHom
 
 variable {E : Type*} [Group E] {F : Type*} [Group F] {G : Type*} [Group G]
-
-/-- **Two homomorphisms from a perfect group which agree modulo a central subgroup are equal.**
-Their pointwise quotient takes central values, so it is a homomorphism to an abelian group, and it
-is trivial on commutators. -/
-theorem eq_of_comp_eq_of_ker_le_center {H : Type*} [Group H] [Group.IsPerfect H]
-    {f₁ f₂ : H →* E} {p : E →* G} (hp : p.ker ≤ center E) (h : p.comp f₁ = p.comp f₂) :
-    f₁ = f₂ := by
-  have hz (c : H) : (f₂ c)⁻¹ * f₁ c ∈ center E := hp <| by
-    rw [mem_ker, map_mul, map_inv, ← comp_apply, ← comp_apply, h, inv_mul_cancel]
-  refine eq_of_eqOn_dense (s := commutatorSet H) ?_ ?_
-  · rw [← commutator_eq_closure, Group.IsPerfect.commutator_eq_top]
-  · rintro _ ⟨a, b, rfl⟩
-    rw [map_commutatorElement, map_commutatorElement,
-      ← TauCeti.commutatorElement_mul_mul_of_mem_center (a := f₂ a) (c := f₂ b) (hz a) (hz b),
-      mul_inv_cancel_left, mul_inv_cancel_left]
 
 /-- `p : E →* G` is a **central extension** of `G`: it is surjective and its kernel is central.
 -/
@@ -191,19 +175,15 @@ theorem projection_mk (x : commutator F) : projection π (mk π x) = π x :=
 
 /-- The image of the central cover is the image of the commutator subgroup of `F`. -/
 theorem range_projection : (projection π).range = (commutator F).map π := by
-  ext g
-  constructor
-  · rintro ⟨u, rfl⟩
-    obtain ⟨x, rfl⟩ := mk_surjective π u
-    exact ⟨x, x.2, (projection_mk π x).symm⟩
-  · rintro ⟨x, hx, rfl⟩
-    exact ⟨mk π ⟨x, hx⟩, projection_mk π _⟩
+  have h : (projection π).comp (mk π) = π.domRestrict (commutator F) :=
+    QuotientGroup.lift_comp_mk' _ _ _
+  rw [← domRestrict_range, ← h, range_comp, range_eq_top_of_surjective _ (mk_surjective π),
+    Subgroup.map_top]
 
 /-- For a surjective `π`, the image of the central cover is the commutator subgroup of `G`. -/
 theorem range_projection_of_surjective (hπ : Function.Surjective π) :
     (projection π).range = commutator G := by
-  rw [range_projection, _root_.commutator_def, _root_.commutator_def, map_commutator,
-    map_top_of_surjective π hπ]
+  rw [range_projection, map_commutator_of_surjective hπ]
 
 /-- For a surjective `π` onto a perfect group, the projection of the central cover is onto. -/
 theorem projection_surjective (hπ : Function.Surjective π) [Group.IsPerfect G] :
@@ -327,37 +307,25 @@ section Free
 
 variable {X : Type*} (π : FreeGroup X →* G) {p : E →* G}
 
-/-- A homomorphism from the free group to `E` lifting `π` through the surjection `p`, chosen on
-the free generators. -/
-private noncomputable def generatorLift (hp : Function.Surjective p) : FreeGroup X →* E :=
-  FreeGroup.lift fun x ↦ (hp (π (FreeGroup.of x))).choose
-
-private theorem comp_generatorLift (hp : Function.Surjective p) :
-    p.comp (generatorLift π hp) = π :=
-  FreeGroup.ext_hom _ _ fun x ↦ by
-    simpa [generatorLift] using (hp (π (FreeGroup.of x))).choose_spec
-
 /-- For a free presentation `π : FreeGroup X →* G`, the homomorphism from the central cover to a
-central extension `p : E →* G`, obtained by lifting each free generator to `E` and restricting to
-the commutator subgroup, which kills `[F, R]` since the lifts of relations are central. For a
-perfect `G` it is the unique homomorphism over `G`
-(`MonoidHom.CentralCover.isUniversalCentralExtension_projection`). -/
+central extension `p : E →* G`, obtained by lifting `π` through `p` on the free generators
+(`FreeGroupBasis.exists_comp_eq_of_surjective`) and restricting to the commutator subgroup, which
+kills `[F, R]` since the lifts of relations are central. For a perfect `G` it is the unique
+homomorphism over `G` (`MonoidHom.CentralCover.isUniversalCentralExtension_projection`). -/
 noncomputable def lift (hp : p.IsCentralExtension) : π.CentralCover →* E :=
-  QuotientGroup.lift _ ((generatorLift π hp.surjective).domRestrict (commutator _)) <| by
-    have h := commutator_top_ker_comp_le_ker hp.ker_le_center (generatorLift π hp.surjective)
-    rw [comp_generatorLift] at h
+  have hψ := (FreeGroupBasis.ofFreeGroup X).exists_comp_eq_of_surjective hp.surjective π
+  QuotientGroup.lift _ (hψ.choose.domRestrict (commutator _)) <| by
+    have h := commutator_top_ker_comp_le_ker hp.ker_le_center hψ.choose
+    rw [hψ.choose_spec] at h
     rw [ker_domRestrict]
     exact subgroupOf_mono _ h
-
-private theorem lift_mk (hp : p.IsCentralExtension) (x : commutator (FreeGroup X)) :
-    lift π hp (mk π x) = generatorLift π hp.surjective x :=
-  (rfl)
 
 @[simp]
 theorem comp_lift (hp : p.IsCentralExtension) : p.comp (lift π hp) = projection π := by
   refine MonoidHom.ext fun u ↦ ?_
   obtain ⟨x, rfl⟩ := mk_surjective π u
-  rw [comp_apply, lift_mk, projection_mk, ← comp_apply, comp_generatorLift]
+  exact DFunLike.congr_fun
+    ((FreeGroupBasis.ofFreeGroup X).exists_comp_eq_of_surjective hp.surjective π).choose_spec x.1
 
 /-- **The central cover of a free presentation of a perfect group is a universal central
 extension**, for central extensions with total group in any universe. -/

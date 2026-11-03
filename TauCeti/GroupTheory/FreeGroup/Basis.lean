@@ -11,7 +11,7 @@ import Mathlib.GroupTheory.FreeGroup.Reduce
 /-!
 # Basic facts about free bases
 
-Two elementary consequences of the universal property of a free basis `b : FreeGroupBasis ι H`.
+Three elementary consequences of the universal property of a free basis `b : FreeGroupBasis ι H`.
 
 ## Main results
 
@@ -20,6 +20,8 @@ Two elementary consequences of the universal property of a free basis `b : FreeG
   of `α`.
 * `FreeGroupBasis.nontrivial_of_not_commute`: a free basis of a group containing two
   noncommuting elements has at least two elements.
+* `FreeGroupBasis.exists_comp_eq_of_surjective`: a homomorphism out of a group with a free basis
+  lifts through every surjective homomorphism.
 -/
 
 public section
@@ -48,5 +50,12 @@ theorem nontrivial_of_not_commute (b : FreeGroupBasis ι H) {x y : H} (h : ¬Com
     FreeGroup.isMulCommutative_iff_subsingleton.mpr (not_nontrivial_iff_subsingleton.mp hι)
   have : IsMulCommutative H := b.repr.symm.surjective.isMulCommutative
   exact h (this.is_comm.comm x y)
+
+/-- **Free groups are projective**: a homomorphism `π` out of a group with a free basis lifts
+through every surjective homomorphism `p`, by lifting the image of each basis element. -/
+theorem exists_comp_eq_of_surjective (b : FreeGroupBasis ι H) {E G : Type*} [Group E] [Group G]
+    {p : E →* G} (hp : Function.Surjective p) (π : H →* G) : ∃ ψ : H →* E, p.comp ψ = π :=
+  ⟨b.lift fun i ↦ (hp (π (b i))).choose, b.ext_hom _ _ fun i ↦ by
+    simpa using (hp (π (b i))).choose_spec⟩
 
 end FreeGroupBasis
