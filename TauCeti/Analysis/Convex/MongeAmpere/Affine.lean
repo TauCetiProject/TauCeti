@@ -30,6 +30,8 @@ transfers to an arbitrary one.
 
 ## Main statements
 
+* `TauCeti.mongeAmpereMeasure_ite_mul_of_pos` gives the homogeneity of the
+  Monge–Ampère measure under positive scaling of a finite convex potential.
 * `TauCeti.mongeAmpereMeasure_add_affine` proves invariance of the Aleksandrov Monge–Ampère
   measure under addition of an affine function, and `TauCeti.mongeAmpereMeasure_ite_add_linearMap`
   is its form for a finite convex function on a set and an affine function given by a linear
@@ -52,7 +54,9 @@ noncomputable section
 
 namespace TauCeti
 
-open MeasureTheory Measure Set
+open MeasureTheory Measure Set Module
+
+open scoped ENNReal Pointwise
 
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
 
@@ -132,6 +136,38 @@ theorem mongeAmpereMeasure_ite_add_linearMap {U : Set E} [DecidablePred (· ∈ 
   congr 1
   funext y
   split_ifs <;> simp [hq, add_assoc]
+
+/-- Multiplying a finite convex potential on an open set by a positive scalar `c` multiplies
+its Monge–Ampère measure by `c ^ finrank ℝ E`. Both potentials are extended by `⊤` off the set. -/
+theorem mongeAmpereMeasure_ite_mul_of_pos {Ω : Set E} [DecidablePred (· ∈ Ω)] {u : E → ℝ}
+    (hΩ : IsOpen Ω) (hu : ConvexOn ℝ Ω u)
+    {c : ℝ} (hc : 0 < c) :
+    mongeAmpereMeasure μ (fun x => if x ∈ Ω then ((c * u x : ℝ) : EReal) else ⊤) =
+      ENNReal.ofReal (c ^ finrank ℝ E) •
+        mongeAmpereMeasure μ (fun x => if x ∈ Ω then (u x : EReal) else ⊤) := by
+  have hcu : ConvexOn ℝ Ω (fun x => c * u x) := by
+    simpa only [Pi.smul_apply, smul_eq_mul] using hu.smul hc.le
+  refine Measure.ext fun s hs => ?_
+  rw [_root_.smul_apply, smul_eq_mul,
+    mongeAmpereMeasure_ite_apply μ hΩ hcu AbsolutelyContinuous.rfl hs,
+    mongeAmpereMeasure_ite_apply μ hΩ hu AbsolutelyContinuous.rfl hs]
+  -- A supporting slope of the scaled potential is precisely a scaled supporting slope of u.
+  have hscale :
+      (⋃ x ∈ s ∩ Ω, {p : E | ∀ y ∈ Ω, c * u x + inner ℝ (y - x) p ≤ c * u y}) =
+      c • (⋃ x ∈ s ∩ Ω, {p : E | ∀ y ∈ Ω, u x + inner ℝ (y - x) p ≤ u y}) := by
+    ext p
+    simp only [mem_iUnion, mem_ofPred_eq, mem_smul_set, exists_prop]
+    constructor
+    · rintro ⟨x, hx, hp⟩
+      refine ⟨c⁻¹ • p, ⟨x, hx, fun y hy => ?_⟩,
+        by rw [smul_smul, mul_inv_cancel₀ hc.ne', one_smul]⟩
+      have h := mul_le_mul_of_nonneg_left (hp y hy) (inv_nonneg.mpr hc.le)
+      simpa only [mul_add, inv_mul_cancel_left₀ hc.ne', real_inner_smul_right] using h
+    · rintro ⟨q, ⟨x, hx, hq⟩, rfl⟩
+      exact ⟨x, hx, fun y hy => by
+        simpa only [mul_add, real_inner_smul_right] using
+          mul_le_mul_of_nonneg_left (hq y hy) hc.le⟩
+  rw [hscale, addHaar_smul, abs_of_pos (pow_pos hc _)]
 
 /-- **Change of variables for the Aleksandrov Monge–Ampère measure.** For an affine equivalence
 `A` of `E` with linear part `L` and a measurable set `s`,

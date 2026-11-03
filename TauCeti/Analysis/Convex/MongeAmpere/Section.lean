@@ -60,8 +60,8 @@ point for the geometry of sections used in the regularity theory of the Monge–
   `TauCeti.exists_mul_measure_convexSection_sq_le_mul_ofReal_pow` — the corresponding lower and
   upper volume estimates `hⁿ ≤ C μ(S) MA_u(S)` and `λ μ(S)² ≤ C hⁿ` for sections.
 
-* `TauCeti.abs_sub_le_on_convexSection_of_mongeAmpereMeasure_close` — a density perturbation bound
-  on a section with a given unit-density reference.
+* `TauCeti.abs_sub_le_on_convexSection_of_smul_le_mongeAmpereMeasure_le_smul` — a quantitative
+  comparison on a section with a given zero-boundary reference.
 
 ## References
 
@@ -142,10 +142,10 @@ variable [Nontrivial E]
 
 /-- **Quantitative comparison on a section.** Subtract the defining plane and height of a
 bounded section whose closure is in the original open domain. If the Monge–Ampère measure
-restricted to that section has density bounds `(1 ± ε)^n`, the resulting zero-boundary
-potential differs from a given zero-boundary unit-density solution `v` by at most `ε |v|`
-on the section. -/
-theorem abs_sub_le_on_convexSection_of_mongeAmpereMeasure_close {Ω : Set E}
+restricted to that section lies between `(1 - ε)^n • ν` and `(1 + ε)^n • ν`, the resulting
+zero-boundary potential differs from a zero-boundary reference `v` with measure `ν` by at
+most `ε |v|` on the section. -/
+theorem abs_sub_le_on_convexSection_of_smul_le_mongeAmpereMeasure_le_smul {Ω : Set E}
     [DecidablePred (· ∈ Ω)] {u v : E → ℝ} {x : E} {ℓ : E →ₗ[ℝ] ℝ} {h : ℝ}
     [DecidablePred (· ∈ convexSection Ω u x ℓ h)] (hΩ : IsOpen Ω) (hu : ConvexOn ℝ Ω u)
     (hSb : Bornology.IsBounded (convexSection Ω u x ℓ h))
@@ -153,16 +153,15 @@ theorem abs_sub_le_on_convexSection_of_mongeAmpereMeasure_close {Ω : Set E}
     (hv : ConvexOn ℝ (convexSection Ω u x ℓ h) v)
     (hvc : ContinuousOn v (closure (convexSection Ω u x ℓ h)))
     (hv0 : ∀ y ∈ frontier (convexSection Ω u x ℓ h), v y = 0)
-    (href : mongeAmpereMeasure μ
-      (fun y => if y ∈ convexSection Ω u x ℓ h then (v y : EReal) else ⊤) =
-        μ.restrict (convexSection Ω u x ℓ h))
+    {ν : Measure E} (href : mongeAmpereMeasure μ
+      (fun y => if y ∈ convexSection Ω u x ℓ h then (v y : EReal) else ⊤) = ν)
     {ε : ℝ} (hε : 0 ≤ ε) (hε1 : ε < 1)
-    (hlo : ENNReal.ofReal ((1 - ε) ^ finrank ℝ E) • μ.restrict (convexSection Ω u x ℓ h) ≤
+    (hlo : ENNReal.ofReal ((1 - ε) ^ finrank ℝ E) • ν ≤
       (mongeAmpereMeasure μ (fun y => if y ∈ Ω then (u y : EReal) else ⊤)).restrict
         (convexSection Ω u x ℓ h))
     (hhi : (mongeAmpereMeasure μ (fun y => if y ∈ Ω then (u y : EReal) else ⊤)).restrict
       (convexSection Ω u x ℓ h) ≤
-        ENNReal.ofReal ((1 + ε) ^ finrank ℝ E) • μ.restrict (convexSection Ω u x ℓ h)) :
+        ENNReal.ofReal ((1 + ε) ^ finrank ℝ E) • ν) :
     ∀ y ∈ convexSection Ω u x ℓ h, |u y - (u x + ℓ (y - x) + h) - v y| ≤ ε * |v y| := by
   let S := convexSection Ω u x ℓ h
   let c := ℓ x - u x - h
@@ -175,7 +174,7 @@ theorem abs_sub_le_on_convexSection_of_mongeAmpereMeasure_close {Ω : Set E}
     linarith
   have hMA := mongeAmpereMeasure_ite_convexSection_add_linearMap
     μ (x := x) (ℓ := ℓ) (h := h) hΩ hu (-ℓ) c
-  have hclose := abs_sub_le_of_mongeAmpereMeasure_close μ hSo hSb
+  have hcomparison := abs_sub_le_of_smul_le_mongeAmpereMeasure_le_smul μ hSo hSb
     (convexOn_convexSection_add_linearMap hu (-ℓ) c) hv
     (continuousOn_closure_convexSection_add_linearMap
       huc (-ℓ).continuous_of_finiteDimensional hSΩ c)
@@ -186,7 +185,7 @@ theorem abs_sub_le_on_convexSection_of_mongeAmpereMeasure_close {Ω : Set E}
     simp only [LinearMap.neg_apply, map_sub, c]
     ring
   rw [heq]
-  exact hclose y hy
+  exact hcomparison y hy
 
 /-- **The depth of a convex function is controlled by its distance to the boundary, volume and
 Monge–Ampère mass.** There is a constant `C`, depending only on `E` and `μ`, with the following
