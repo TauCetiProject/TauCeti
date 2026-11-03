@@ -43,7 +43,8 @@ theorem rankOneWord_def (i : Fin 2) (A : Type v) [CommRing A] :
         rootSubgroupPoints (.inr i) A (Multiplicative.ofAdd (-1)) *
         rootSubgroupPoints (.inl i) A (Multiplicative.ofAdd 1) := (rfl)
 
-private def W : Fin 2 → Matrix (Fin 7) (Fin 7) ℤ :=
+/-- The integral signed permutation matrix of the pinned rank-one word at each node. -/
+def rankOneWordMatrix : Fin 2 → Matrix (Fin 7) (Fin 7) ℤ :=
   ![!![0, 1, 0, 0, 0, 0, 0;
        -1, 0, 0, 0, 0, 0, 0;
        0, 0, 0, 0, 1, 0, 0;
@@ -59,42 +60,53 @@ private def W : Fin 2 → Matrix (Fin 7) (Fin 7) ℤ :=
        0, 0, 0, 0, -1, 0, 0;
        0, 0, 0, 0, 0, 0, 1]]
 
-private theorem W_formula (i : Fin 2) :
+/-- The integral matrix of the short-node rank-one word. -/
+@[simp]
+theorem rankOneWordMatrix_zero :
+    rankOneWordMatrix 0 =
+      !![0, 1, 0, 0, 0, 0, 0;
+         -1, 0, 0, 0, 0, 0, 0;
+         0, 0, 0, 0, 1, 0, 0;
+         0, 0, 0, -1, 0, 0, 0;
+         0, 0, 1, 0, 0, 0, 0;
+         0, 0, 0, 0, 0, 0, 1;
+         0, 0, 0, 0, 0, -1, 0] := (rfl)
+
+/-- The integral matrix of the long-node rank-one word. -/
+@[simp]
+theorem rankOneWordMatrix_one :
+    rankOneWordMatrix 1 =
+      !![1, 0, 0, 0, 0, 0, 0;
+         0, 0, 1, 0, 0, 0, 0;
+         0, -1, 0, 0, 0, 0, 0;
+         0, 0, 0, 1, 0, 0, 0;
+         0, 0, 0, 0, 0, 1, 0;
+         0, 0, 0, 0, -1, 0, 0;
+         0, 0, 0, 0, 0, 0, 1] := (rfl)
+
+private theorem rankOneWordMatrix_formula (i : Fin 2) :
     (1 + rootMatrix (.inl i) + rootDividedSquareMatrix (.inl i)) *
       (1 - rootMatrix (.inr i) + rootDividedSquareMatrix (.inr i)) *
-      (1 + rootMatrix (.inl i) + rootDividedSquareMatrix (.inl i)) = W i := by
+      (1 + rootMatrix (.inl i) + rootDividedSquareMatrix (.inl i)) =
+        rankOneWordMatrix i := by
   fin_cases i <;>
     simp only [rootMatrix_inl, rootMatrix_inr, rootDividedSquareMatrix_inl,
       rootDividedSquareMatrix_inr] <;> decide +kernel
 
-private theorem W_orthogonal (i : Fin 2) : W i * (W i).transpose = 1 := by
+/-- Each integral rank-one-word matrix has its transpose as a right inverse. -/
+theorem rankOneWordMatrix_mul_transpose (i : Fin 2) :
+    rankOneWordMatrix i * (rankOneWordMatrix i).transpose = 1 := by
   fin_cases i <;> decide +kernel
 
 /-- The numbered rank-one words are the following constant signed permutation matrices. -/
 @[simp]
 theorem coe_rankOneWord (i : Fin 2) (A : Type v) [CommRing A] :
     ((rankOneWord i A : Matrix.GeneralLinearGroup (Fin 7) A) : Matrix (Fin 7) (Fin 7) A) =
-      (![!![0, 1, 0, 0, 0, 0, 0;
-            -1, 0, 0, 0, 0, 0, 0;
-            0, 0, 0, 0, 1, 0, 0;
-            0, 0, 0, -1, 0, 0, 0;
-            0, 0, 1, 0, 0, 0, 0;
-            0, 0, 0, 0, 0, 0, 1;
-            0, 0, 0, 0, 0, -1, 0],
-         !![1, 0, 0, 0, 0, 0, 0;
-            0, 0, 1, 0, 0, 0, 0;
-            0, -1, 0, 0, 0, 0, 0;
-            0, 0, 0, 1, 0, 0, 0;
-            0, 0, 0, 0, 0, 1, 0;
-            0, 0, 0, 0, -1, 0, 0;
-            0, 0, 0, 0, 0, 0, 1]] i : Matrix (Fin 7) (Fin 7) ℤ).map
-        (Int.castRingHom A) := by
-  -- Fold only the displayed integer matrix so the finite certificate can be mapped to A.
-  change _ = (W i).map (Int.castRingHom A)
+      (rankOneWordMatrix i).map (Int.castRingHom A) := by
   simp only [rankOneWord_def, Subgroup.coe_mul, Units.val_mul, coe_rootSubgroupPoints,
     toAdd_ofAdd, one_smul, neg_one_smul, neg_one_sq, one_pow]
   have h := congrArg (fun m : Matrix (Fin 7) (Fin 7) ℤ => m.map (Int.castRingHom A))
-    (W_formula i)
+    (rankOneWordMatrix_formula i)
   simp only [Matrix.map_mul, Matrix.map_add _ (map_add _),
     Matrix.map_sub _ (map_sub _), Matrix.map_one _ (map_zero _) (map_one _)] at h
   simpa only [Int.coe_castRingHom, sub_eq_add_neg] using h
@@ -104,13 +116,10 @@ theorem coe_rankOneWord (i : Fin 2) (A : Type v) [CommRing A] :
 theorem coe_rankOneWord_inv (i : Fin 2) (A : Type v) [CommRing A] :
     (((rankOneWord i A)⁻¹ : Matrix.GeneralLinearGroup (Fin 7) A) :
       Matrix (Fin 7) (Fin 7) A) =
-      (((rankOneWord i A : Matrix.GeneralLinearGroup (Fin 7) A) :
-        Matrix (Fin 7) (Fin 7) A)).transpose := by
+      ((rankOneWordMatrix i).map (Int.castRingHom A)).transpose := by
   apply Units.inv_eq_of_mul_eq_one_right
-  rw [coe_rankOneWord]
-  -- Name the literal signed permutation in the coercion formula to use its integer certificate.
-  change (W i).map (Int.castRingHom A) * ((W i).map (Int.castRingHom A)).transpose = 1
-  rw [← Matrix.transpose_map, ← Matrix.map_mul, W_orthogonal,
+  rw [coe_rankOneWord, ← Matrix.transpose_map, ← Matrix.map_mul,
+    rankOneWordMatrix_mul_transpose,
     Matrix.map_one _ (map_zero _) (map_one _)]
 
 end

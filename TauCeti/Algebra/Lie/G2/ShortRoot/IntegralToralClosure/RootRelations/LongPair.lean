@@ -45,34 +45,20 @@ universe v
 
 noncomputable section
 
--- Constant signed permutation matrices of the two pinned words.
-private abbrev W : Fin 2 → Matrix (Fin 7) (Fin 7) ℤ :=
-  ![!![0, 1, 0, 0, 0, 0, 0;
-       -1, 0, 0, 0, 0, 0, 0;
-       0, 0, 0, 0, 1, 0, 0;
-       0, 0, 0, -1, 0, 0, 0;
-       0, 0, 1, 0, 0, 0, 0;
-       0, 0, 0, 0, 0, 0, 1;
-       0, 0, 0, 0, 0, -1, 0],
-    !![1, 0, 0, 0, 0, 0, 0;
-       0, 0, 1, 0, 0, 0, 0;
-       0, -1, 0, 0, 0, 0, 0;
-       0, 0, 0, 1, 0, 0, 0;
-       0, 0, 0, 0, 0, 1, 0;
-       0, 0, 0, 0, -1, 0, 0;
-       0, 0, 0, 0, 0, 0, 1]]
-
 -- The three positive long-root vectors, with the Weyl-word signs.
 private def L : Fin 3 → Matrix (Fin 7) (Fin 7) ℤ :=
   ![raisingMatrix 1, Matrix.single 0 4 1 - Matrix.single 2 6 1,
     -Matrix.single 0 5 1 - Matrix.single 1 6 1]
 
-private theorem W_orthogonal (i : Fin 2) : W i * (W i).transpose = 1 := by
-  fin_cases i <;> decide +kernel
+private theorem rankOneWordMatrix_conj_L_zero :
+    rankOneWordMatrix 0 * L 0 * (rankOneWordMatrix 0).transpose = L 1 := by
+  simp only [rankOneWordMatrix_zero]
+  decide +kernel
 
-private theorem W_conj_L_zero : W 0 * L 0 * (W 0).transpose = L 1 := by decide +kernel
-
-private theorem W_conj_L_one : W 1 * L 1 * (W 1).transpose = L 2 := by decide +kernel
+private theorem rankOneWordMatrix_conj_L_one :
+    rankOneWordMatrix 1 * L 1 * (rankOneWordMatrix 1).transpose = L 2 := by
+  simp only [rankOneWordMatrix_one]
+  decide +kernel
 
 private theorem L_square (i : Fin 3) : L i * L i = 0 := by
   fin_cases i <;> decide +kernel
@@ -94,8 +80,9 @@ private theorem coe_conj_long (A : Type v) [CommRing A] (a : A) :
       Matrix (Fin 7) (Fin 7) A) = 1 + a • (L 1).map (Int.castRingHom A) := by
   simp only [Subgroup.coe_mul, Subgroup.coe_inv, Units.val_mul, coe_rankOneWord_inv,
     coe_rankOneWord, ← Matrix.transpose_map, coe_long, Matrix.mul_add, Matrix.add_mul,
-    Matrix.mul_one, Matrix.mul_smul, Matrix.smul_mul, ← Matrix.map_mul, W_orthogonal,
-    W_conj_L_zero, Matrix.map_one _ (map_zero _) (map_one _)]
+    Matrix.mul_one, Matrix.mul_smul, Matrix.smul_mul, ← Matrix.map_mul,
+    rankOneWordMatrix_mul_transpose, rankOneWordMatrix_conj_L_zero,
+    Matrix.map_one _ (map_zero _) (map_one _)]
 
 private theorem coe_conj_conj_long (A : Type v) [CommRing A] (a : A) :
     (((rankOneWord 1 A * (rankOneWord 0 A *
@@ -104,8 +91,9 @@ private theorem coe_conj_conj_long (A : Type v) [CommRing A] (a : A) :
       Matrix (Fin 7) (Fin 7) A) = 1 + a • (L 2).map (Int.castRingHom A) := by
   simp only [Subgroup.coe_mul, Subgroup.coe_inv, Units.val_mul, coe_rankOneWord_inv,
     coe_rankOneWord, ← Matrix.transpose_map, coe_long, Matrix.mul_add, Matrix.add_mul,
-    Matrix.mul_one, Matrix.mul_smul, Matrix.smul_mul, ← Matrix.map_mul, W_orthogonal,
-    W_conj_L_zero, W_conj_L_one, Matrix.map_one _ (map_zero _) (map_one _)]
+    Matrix.mul_one, Matrix.mul_smul, Matrix.smul_mul, ← Matrix.map_mul,
+    rankOneWordMatrix_mul_transpose, rankOneWordMatrix_conj_L_zero,
+    rankOneWordMatrix_conj_L_one, Matrix.map_one _ (map_zero _) (map_one _)]
 
 /-- The long-root A₂ Chevalley commutator, with the nonsimple root parameters normalized by
 pinned rank-one words. The first node is short and the second long (Bourbaki numbering). -/
