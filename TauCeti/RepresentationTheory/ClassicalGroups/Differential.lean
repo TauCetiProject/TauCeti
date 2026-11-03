@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.Lie.DirectSum
 public import Mathlib.Algebra.Lie.UniversalEnveloping
 public import Mathlib.Analysis.Complex.Polynomial.Basic
 public import Mathlib.RepresentationTheory.Submodule
@@ -18,6 +17,7 @@ public import TauCeti.Algebra.AlgebraicGroup.Representation.LieStable
 public import TauCeti.Algebra.AlgebraicGroup.Representation.PointsAction.Basic
 public import TauCeti.Algebra.AlgebraicGroup.Representation.TensorProduct
 public import TauCeti.Algebra.Coalgebra.Comodule.MatrixCoefficient.FromMatrix
+public import TauCeti.Algebra.Lie.DirectSum
 import TauCeti.Algebra.Coalgebra.Subcomodule.PointSeparation
 import TauCeti.Algebra.Lie.UniversalEnveloping.Basic
 import TauCeti.RingTheory.FiniteType.Tensor.PointSeparation
@@ -568,22 +568,23 @@ noncomputable def directSumLieModuleEquiv (h : ∀ i, IsRationalRep (σ i))
       V i ≃ₗ⁅ℂ,Matrix (Fin n) (Fin n) ℂ⁆ M i) :
     letI := LieRingModule.compLieHom (⨁ i, V i) (IsRationalRep.directSum h).differential
     (⨁ i, V i) ≃ₗ⁅ℂ,Matrix (Fin n) (Fin n) ℂ⁆ ⨁ i, M i :=
-  -- As in `TauCeti.IsRationalRep.tprodLieModuleEquiv`, the linear equivalences underlying the
-  -- `e i` are extracted with the `𝔤𝔩ₙ`-module structures of the summands in scope only locally.
-  let f (i : ι) : V i ≃ₗ[ℂ] M i :=
-    letI := LieRingModule.compLieHom (V i) (h i).differential; (e i).toLinearEquiv
-  have hf (i : ι) (X : Matrix (Fin n) (Fin n) ℂ) (v : V i) :
-      f i ((h i).differential X v) = ⁅X, f i v⁆ :=
-    letI := LieRingModule.compLieHom (V i) (h i).differential
-    (e i).map_lie X v
+  -- As in `TauCeti.IsRationalRep.tprodLieModuleEquiv`, the underlying linear equivalence is
+  -- extracted with the `𝔤𝔩ₙ`-module structures of the summands in scope only locally.
+  let f : (⨁ i, V i) ≃ₗ[ℂ] ⨁ i, M i :=
+    letI (i : ι) := LieRingModule.compLieHom (V i) (h i).differential
+    (DirectSum.lieModuleEquivCongrRight e).toLinearEquiv
+  -- On `⨁ i, V i` with the Lie direct sum structure of the summands, the bracket is
+  -- `⨁ i, dσᵢ X`, which `DirectSum.lieModuleEquivCongrRight` respects.
+  have hf (X : Matrix (Fin n) (Fin n) ℂ) (t : ⨁ i, V i) :
+      f (DirectSum.lmap (fun i ↦ (h i).differential X) t) = ⁅X, f t⁆ :=
+    letI (i : ι) := LieRingModule.compLieHom (V i) (h i).differential
+    (DirectSum.lieModuleEquivCongrRight e).map_lie X t
   letI := LieRingModule.compLieHom (⨁ i, V i) (IsRationalRep.directSum h).differential
-  { DFinsupp.mapRange.linearEquiv f with
+  { f with
     map_lie' := fun {X t} ↦ by
-      ext i
       simp only [LieRingModule.compLieHom_apply, Module.End.lie_apply, AddHom.toFun_eq_coe,
-        LinearMap.coe_toAddHom, LinearEquiv.coe_coe, differential_directSum h,
-        DirectSum.lie_module_bracket_apply, DFinsupp.mapRange.linearEquiv_apply]
-      exact hf i X (t i) }
+        LinearMap.coe_toAddHom, LinearEquiv.coe_coe]
+      rw [differential_directSum h, hf] }
 
 /-- `TauCeti.IsRationalRep.directSumLieModuleEquiv` acts componentwise. -/
 @[simp]
@@ -591,7 +592,8 @@ theorem directSumLieModuleEquiv_apply (h : ∀ i, IsRationalRep (σ i))
     (e : ∀ i, letI := LieRingModule.compLieHom (V i) (h i).differential
       V i ≃ₗ⁅ℂ,Matrix (Fin n) (Fin n) ℂ⁆ M i) (t : ⨁ i, V i) (i : ι) :
     directSumLieModuleEquiv h e t i = e i (t i) :=
-  (rfl)
+  letI (i : ι) := LieRingModule.compLieHom (V i) (h i).differential
+  DirectSum.lieModuleEquivCongrRight_apply e t i
 
 end DirectSum
 
