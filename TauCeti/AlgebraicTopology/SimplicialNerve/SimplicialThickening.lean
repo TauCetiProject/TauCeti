@@ -23,6 +23,10 @@ posets of paths and about chains of paths, the simplices of the mapping simplici
 * `SimplicialThickening.chainMk`: the chain of paths given by a monotone family of paths.
 * `SimplicialThickening.monotone_chain`: the paths of a chain increase.
 * `SimplicialThickening.isIso_eId`: the identity `𝟙_ SSet ⟶ N(Path x x)` is an isomorphism.
+* `SimplicialThickening.pathVertex`: the vertex of a mapping simplicial set given by `Path.Icc`,
+  with `pathVertex_refl` and `pathVertex_comp` relating it to identities and composition.
+* `SimplicialThickening.hom_ext_of_subsingleton`: maps into a mapping simplicial set with at most
+  one path between its endpoints are equal.
 -/
 
 public section
@@ -75,6 +79,32 @@ instance isIso_eId (x : SimplicialThickening J) : IsIso (eId SSet x) := by
   obtain ⟨⟨d⟩⟩ := n
   exact ComposableArrows.ext (C := Path x.as x.as) (fun _ ↦ Subsingleton.elim _ _)
     (by subsingleton)
+
+/-- The vertex of the mapping simplicial set from `i` to `j` given by the path through every
+element in between. -/
+def pathVertex {i j : SimplicialThickening J} (h : i.as ≤ j.as) : 𝟙_ SSet.{u} ⟶ (i ⟶[SSet] j) :=
+  (SSet.unitHomEquiv _).symm (ComposableArrows.mk₀ (Path.Icc h))
+
+/-- Maps into a mapping simplicial set of the simplicial thickening are equal when there is at
+most one path between its endpoints. -/
+lemma hom_ext_of_subsingleton {X : SSet.{u}} {i j : SimplicialThickening J}
+    [Subsingleton (Path i.as j.as)] (f g : X ⟶ (i ⟶[SSet] j)) : f = g := by
+  ext n : 2
+  ext x
+  exact nerve.ext_of_isThin (C := Path i.as j.as) (funext fun _ ↦ Subsingleton.elim _ _)
+
+/-- The path vertex from an object to itself is the identity. -/
+lemma pathVertex_refl (i : SimplicialThickening J) : pathVertex (le_refl i.as) = eId SSet i :=
+  hom_ext_of_subsingleton _ _
+
+/-- Composing the path vertices from `i` to `j` and from `j` to `k` gives the path vertex from
+`i` to `k`, since `[i, j] ∪ [j, k] = [i, k]`. -/
+lemma pathVertex_comp {i j k : SimplicialThickening J} (hij : i.as ≤ j.as) (hjk : j.as ≤ k.as) :
+    (λ_ _).inv ≫ (pathVertex hij ⊗ₘ pathVertex hjk) ≫ eComp SSet i j k =
+      pathVertex (hij.trans hjk) := by
+  apply (SSet.unitHomEquiv _).injective
+  exact nerve.ext_of_isThin (C := Path i.as k.as)
+    (funext fun _ ↦ Path.ext (Set.Icc_union_Icc_eq_Icc hij hjk))
 
 /-- The chain of paths given by a monotone family of paths. -/
 def chainMk {d : ℕ} (p : Fin (d + 1) → Path i j) (hp : Monotone fun t ↦ (p t).I) :
