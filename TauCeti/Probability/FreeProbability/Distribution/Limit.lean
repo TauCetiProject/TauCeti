@@ -40,12 +40,16 @@ variable {R T ι : Type*} {A : T → Type*} {B : Type*}
   {φ : (t : T) → A t →ₗ[R] R} {a : (t : T) → ι → A t}
   {l : Filter T} [l.NeBot] {ψ : B →ₗ[R] R} {b : ι → B}
 
+omit [IsTopologicalSemiring R] [∀ t, StarModule R (A t)] in
 /-- Normalization passes to a star-moment limit. It suffices that the approximating
 functionals are eventually normalized. -/
 theorem TendstoInStarMoments.starDistribution_one (h : TendstoInStarMoments φ a l ψ b)
     (hφ : ∀ᶠ t in l, φ t 1 = 1) : starDistribution ψ b 1 = 1 := by
-  apply tendsto_nhds_unique (h.tendsto_starDistribution 1)
-  exact tendsto_const_nhds.congr' (hφ.mono fun t ht => by simpa using ht.symm)
+  have hlim : Tendsto (fun t => φ t 1) l (𝓝 (ψ 1)) := by
+    simpa only [List.map_nil, List.prod_nil] using
+      (tendstoInMoments_iff.1 (tendstoInStarMoments_iff.1 h)) []
+  simp only [starDistribution_apply, map_one]
+  exact tendsto_nhds_unique hlim (tendsto_const_nhds.congr' (hφ.mono fun t ht => ht.symm))
 
 /-- Traciality passes to the limiting polynomial functional. It is enough to have traces
 eventually; no topology on the approximating algebras is used. -/
