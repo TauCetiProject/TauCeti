@@ -346,13 +346,8 @@ theorem abhyankarModelRoot_mem_nonZeroDivisors (hϖ : ϖ ∈ nonZeroDivisors B)
     mem_nonZeroDivisors_iff_right.mpr fun z hz ↦
       Module.Flat.isSMulRegular_of_nonZeroDivisors hb
         (by rw [smul_zero, Algebra.smul_def, mul_comm, hz] : b • z = b • 0)
-  -- `y` divides `y ^ e = u`.
-  have hy : AdjoinRoot.root (X ^ e - C u) ∈ nonZeroDivisors (standardTameCover B u e) := by
-    have h := hreg hu
-    rw [AdjoinRoot.algebraMap_eq, ← AdjoinRoot.root_X_pow_sub_C_pow,
-      ← mul_pow_sub_one he (AdjoinRoot.root (X ^ e - C u))] at h
-    exact (mul_mem_nonZeroDivisors.mp h).1
-  exact (standardTameCover_root_mem_nonZeroDivisors_iff hd).mpr (mul_mem (hreg hϖ) hy)
+  exact (standardTameCover_root_mem_nonZeroDivisors_iff hd).mpr
+    (mul_mem (hreg hϖ) ((standardTameCover_root_mem_nonZeroDivisors_iff he).mpr hu))
 
 /-- The quotient of the Abhyankar model by `x` is formally unramified over `B`: it is a quotient of
 the étale algebra `B[y]/(y ^ e − u)`. -/
