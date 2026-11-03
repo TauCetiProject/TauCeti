@@ -12,7 +12,7 @@ import TauCeti.Analysis.Calculus.Gradient
 import TauCeti.Geometry.Manifold.ContMDiff.Log
 import TauCeti.Geometry.Manifold.Riemannian.Gradient.ChainRule
 import TauCeti.Geometry.Manifold.Riemannian.Hessian.Conformal
-import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvature.Conformal
+import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvature.Conformal.Basic
 
 /-!
 # The conformal Laplacian
