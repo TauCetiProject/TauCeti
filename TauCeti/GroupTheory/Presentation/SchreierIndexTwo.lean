@@ -10,6 +10,7 @@ public import Mathlib.GroupTheory.Abelianization.Defs
 public import Mathlib.GroupTheory.SemidirectProduct
 public import TauCeti.GroupTheory.Presentation.GroupPresentation
 public import TauCeti.GroupTheory.PresentedGroup
+import TauCeti.GroupTheory.FreeGroup.Basic
 
 /-!
 # Index-two Reidemeister--Schreier rewriting for presentations by involutions
@@ -227,7 +228,7 @@ def schreierInvHom :
     PresentedGroup (schreierRelators a e W) →* PresentedGroup (schreierRelators a e W) :=
   PresentedGroup.toGroup (f := fun y => (PresentedGroup.of y)⁻¹) (by
     rintro r ⟨positive, w, hw, rfl⟩
-    rw [PresentedGroup.lift_inv_of_mk, ← schreierWord_not]
+    rw [FreeGroup.lift_inv_mk, FreeGroup.lift_mk, ← PresentedGroup.mk_mk, ← schreierWord_not]
     exact PresentedGroup.one_of_mem (mk_schreierWord_mem_schreierRelators a e (!positive) hw))
 
 @[simp]
@@ -528,8 +529,8 @@ private theorem lift_semidirectLetter_mk (L : PresentationWord α) :
             (fun y => (PresentedGroup.of y : PresentedGroup (schreierRelators a e W))⁻¹)
             (FreeGroup.mk (schreierWord a e false L)) := rfl
         _ = _ := by
-          simpa only [← schreierWord_not, Bool.not_false] using
-            PresentedGroup.lift_inv_of_mk (schreierRelators a e W) (schreierWord a e false L)
+          rw [FreeGroup.lift_inv_mk, FreeGroup.lift_mk, ← PresentedGroup.mk_mk, ← schreierWord_not,
+            Bool.not_false]
     · simp only [semidirectLetter, SemidirectProduct.mul_right, List.length_cons, Nat.cast_succ,
         ofAdd_add]
       exact mul_comm _ _
