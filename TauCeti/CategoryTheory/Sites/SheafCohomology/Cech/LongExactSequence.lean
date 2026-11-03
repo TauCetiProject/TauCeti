@@ -12,11 +12,14 @@ public import Mathlib.CategoryTheory.Abelian.GrothendieckAxioms.Colim
 /-!
 # The long exact coefficient sequence of Čech cohomology
 
-An objectwise short exact sequence of presheaves gives a long exact sequence of Čech
-cohomology for any system of families with exact colimits and exact products of the required
-sizes. In particular this applies to the point-neighborhood cover system and module
-coefficients on any topological space. Exactness here is in presheaves, not just after
-sheafification: a short exact sequence of sheaves need not be exact on sections.
+A sequence of presheaves whose Čech complexes are short exact on every chosen family gives
+a long exact sequence of Čech cohomology for any system of families with exact colimits.
+With exact products of the required sizes, `shortExact_map_cechComplexFunctor` supplies this
+hypothesis from short exactness on family intersections; no exactness at other objects is needed.
+For an objectwise short exact sequence `hS : S.ShortExact`, use
+`fun j ↦ hS.map_of_exact (cechComplexFunctor (E j).obj)` throughout the API below.
+In particular this applies to the point-neighborhood cover system and module coefficients on any
+topological space. A short exact sequence of sheaves need not be exact on sections.
 
 The connecting map `cechCohomologyδ` is induced by the native connecting maps of the
 fixed-family complexes. `cechCohomologyι_app_δ` identifies it on every structure map, and
@@ -44,8 +47,8 @@ variable {C : Type u} [Category.{v} C] [HasFiniteProducts C]
   {A : Type u'} [Category.{v'} A] [Abelian A] [HasProducts.{w} A]
   {J : Type t} [Preorder J] (E : J → FormalCoproduct.{w} C)
   (hE : ∀ ⦃i j : J⦄, i ≤ j → Nonempty (E j ⟶ E i))
-  [∀ (j : J) (n : ℕ), HasExactLimitsOfShape (Discrete (Fin (n + 1) → (E j).I)) A]
-  {S : ShortComplex (Cᵒᵖ ⥤ A)} (hS : S.ShortExact)
+  {S : ShortComplex (Cᵒᵖ ⥤ A)}
+  (hS : ∀ j, (S.map (cechComplexFunctor (E j).obj)).ShortExact)
 
 private def cechRefinementShortComplexHom {i j : J} (φ : E j ⟶ E i) :
     S.map (cechComplexFunctor (E i).obj) ⟶ S.map (cechComplexFunctor (E j).obj) where
@@ -59,7 +62,7 @@ private def cechRefinementShortComplexHom {i j : J} (φ : E j ⟶ E i) :
 private def cechCohomologyδDiagram (n : ℕ) :
     (cechCohomologyDiagram A E hE n).flip.obj S.X₃ ⟶
       (cechCohomologyDiagram A E hE (n + 1)).flip.obj S.X₁ where
-  app j := (hS.map_of_exact (cechComplexFunctor (E j).obj)).δ n (n + 1) rfl
+  app j := (hS j).δ n (n + 1) rfl
   naturality {i j} f := by
     dsimp only [Functor.flip_obj_map]
     rw [cechCohomologyDiagram_map A E hE n f (hE (leOfHom f)).some,
@@ -67,13 +70,12 @@ private def cechCohomologyδDiagram (n : ℕ) :
       cechComplexHomologyMap_app, cechComplexHomologyMap_app]
     exact (HomologicalComplex.HomologySequence.δ_naturality
       (cechRefinementShortComplexHom E (hE (leOfHom f)).some)
-      (hS.map_of_exact _) (hS.map_of_exact _) n (n + 1) rfl).symm
+      (hS i) (hS j) n (n + 1) rfl).symm
 
 variable [HasColimitsOfShape J A]
 
-/-- The connecting map in the Čech cohomology sequence of an objectwise short exact
-coefficient sequence. On each family it is induced by the native connecting map of complexes.
--/
+/-- The connecting map for a coefficient sequence whose Čech complexes on the chosen families
+are short exact. On each family it is induced by the native connecting map of complexes. -/
 def cechCohomologyδ (n : ℕ) :
     (cechCohomology A E hE n).obj S.X₃ ⟶ (cechCohomology A E hE (n + 1)).obj S.X₁ :=
   colim.map (cechCohomologyδDiagram E hE hS n)
@@ -83,15 +85,16 @@ def cechCohomologyδ (n : ℕ) :
 @[reassoc (attr := simp)]
 theorem cechCohomologyι_app_δ (n : ℕ) (j : J) :
     (cechCohomologyι E hE n j).app S.X₃ ≫ cechCohomologyδ E hE hS n =
-      (hS.map_of_exact (cechComplexFunctor (E j).obj)).δ n (n + 1) rfl ≫
+      (hS j).δ n (n + 1) rfl ≫
         (cechCohomologyι E hE (n + 1) j).app S.X₁ := by
   rw [cechCohomologyι_app, cechCohomologyι_app, cechCohomologyδ]
   exact colimit.ι_map (cechCohomologyδDiagram E hE hS n) j
 
-/-- Connecting maps are natural in morphisms of objectwise short exact coefficient sequences.
--/
+/-- Connecting maps are natural in coefficient sequences whose Čech complexes on the chosen
+families are short exact. -/
 @[reassoc]
-theorem cechCohomologyδ_naturality {T : ShortComplex (Cᵒᵖ ⥤ A)} (hT : T.ShortExact)
+theorem cechCohomologyδ_naturality {T : ShortComplex (Cᵒᵖ ⥤ A)}
+    (hT : ∀ j, (T.map (cechComplexFunctor (E j).obj)).ShortExact)
     (φ : S ⟶ T) (n : ℕ) :
     cechCohomologyδ E hE hS n ≫ (cechCohomology A E hE (n + 1)).map φ.τ₁ =
       (cechCohomology A E hE n).map φ.τ₃ ≫ cechCohomologyδ E hE hT n := by
@@ -102,7 +105,7 @@ theorem cechCohomologyδ_naturality {T : ShortComplex (Cᵒᵖ ⥤ A)} (hT : T.S
     ext j
     exact HomologicalComplex.HomologySequence.δ_naturality
       ((cechComplexFunctor (E j).obj).mapShortComplex.map φ)
-      (hS.map_of_exact _) (hT.map_of_exact _) n (n + 1) rfl
+      (hS j) (hT j) n (n + 1) rfl
   simpa only [cechCohomologyδ, cechCohomology, Functor.comp_map, Functor.map_comp]
     using congrArg colim.map h
 
@@ -113,7 +116,7 @@ theorem cechCohomology_comp_δ (n : ℕ) :
   have h : (cechCohomologyDiagram A E hE n).flip.map S.g ≫
       cechCohomologyδDiagram E hE hS n = 0 := by
     ext j
-    exact (hS.map_of_exact (cechComplexFunctor (E j).obj)).comp_δ n (n + 1) rfl
+    exact (hS j).comp_δ n (n + 1) rfl
   exact (colim.map_comp _ _).symm.trans ((congrArg colim.map h).trans (colim.map_zero _ _))
 
 /-- Two successive arrows at the target of the connecting map compose to zero. -/
@@ -123,7 +126,7 @@ theorem cechCohomologyδ_comp (n : ℕ) :
   have h : cechCohomologyδDiagram E hE hS n ≫
       (cechCohomologyDiagram A E hE (n + 1)).flip.map S.f = 0 := by
     ext j
-    exact (hS.map_of_exact (cechComplexFunctor (E j).obj)).δ_comp n (n + 1) rfl
+    exact (hS j).δ_comp n (n + 1) rfl
   exact (colim.map_comp _ _).symm.trans ((congrArg colim.map h).trans (colim.map_zero _ _))
 
 variable [HasExactColimitsOfShape J A]
@@ -134,7 +137,7 @@ theorem cechCohomology_exact₂ (n : ℕ) : (S.map (cechCohomology A E hE n)).Ex
   have h : (S.map (cechCohomologyDiagram A E hE n).flip).Exact := by
     apply ShortComplex.exact_of_forall_evaluation
     intro j
-    exact (hS.map_of_exact (cechComplexFunctor (E j).obj)).homology_exact₂ n
+    exact (hS j).homology_exact₂ n
   exact h.map colim
 
 /-- Exactness at the right coefficient, immediately before the connecting map. -/
@@ -145,11 +148,11 @@ theorem cechCohomology_exact₃ (n : ℕ) :
     ((cechCohomologyDiagram A E hE n).flip.map S.g)
     (cechCohomologyδDiagram E hE hS n) (by
       ext j
-      exact (hS.map_of_exact (cechComplexFunctor (E j).obj)).comp_δ n (n + 1) rfl)
+      exact (hS j).comp_δ n (n + 1) rfl)
   have hD : D.Exact := by
     apply ShortComplex.exact_of_forall_evaluation
     intro j
-    exact (hS.map_of_exact (cechComplexFunctor (E j).obj)).homology_exact₃ n (n + 1) rfl
+    exact (hS j).homology_exact₃ n (n + 1) rfl
   exact hD.map colim
 
 /-- Exactness at the left coefficient in positive degree, immediately after the connecting map.
@@ -161,11 +164,11 @@ theorem cechCohomology_exact₁ (n : ℕ) :
     (cechCohomologyδDiagram E hE hS n)
     ((cechCohomologyDiagram A E hE (n + 1)).flip.map S.f) (by
       ext j
-      exact (hS.map_of_exact (cechComplexFunctor (E j).obj)).δ_comp n (n + 1) rfl)
+      exact (hS j).δ_comp n (n + 1) rfl)
   have hD : D.Exact := by
     apply ShortComplex.exact_of_forall_evaluation
     intro j
-    exact (hS.map_of_exact (cechComplexFunctor (E j).obj)).homology_exact₁ n (n + 1) rfl
+    exact (hS j).homology_exact₁ n (n + 1) rfl
   exact hD.map colim
 
 include hS in
@@ -173,7 +176,7 @@ include hS in
 theorem mono_cechCohomology_map_zero : Mono ((cechCohomology A E hE 0).map S.f) := by
   have (j : J) : Mono (((cechCohomologyDiagram A E hE 0).flip.map S.f).app j) := by
     have : Mono ((cechComplexFunctor (E j).obj).map S.f) :=
-      (hS.map_of_exact (cechComplexFunctor (E j).obj)).mono_f
+      (hS j).mono_f
     exact HomologicalComplex.mono_homologyMap_of_mono_of_not_rel _ 0 (by simp)
   have := NatTrans.mono_of_mono_app ((cechCohomologyDiagram A E hE 0).flip.map S.f)
   exact Functor.map_mono colim _
