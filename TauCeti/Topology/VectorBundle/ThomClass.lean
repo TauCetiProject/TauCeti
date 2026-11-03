@@ -39,7 +39,7 @@ trivialization pulls back to a global trivialization of the restriction of `E` t
 these restrictions have Thom classes (`Bundle.Trivialization.exists_isThomClass_pullback_baseSet`):
 these are the local Thom classes over trivializing open sets that the Mayer–Vietoris argument of
 Milnor and Stasheff (§10) glues to a Thom class of a general oriented bundle. The gluing over
-finite trivializing covers is in `TauCeti.Topology.VectorBundle.MayerVietoris`.
+finite trivializing covers is in `TauCeti.Topology.VectorBundle.MayerVietoris.Basic`.
 
 The gluing works with the Thom pair `(E|_W, E₀|_W)` of the restriction of `E` to a subset `W` of
 the base (`TauCeti.thomPairOver`). When `W` lies in the base set of a linear trivialization `e`,

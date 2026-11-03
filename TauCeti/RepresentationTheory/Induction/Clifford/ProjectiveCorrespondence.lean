@@ -95,7 +95,7 @@ theorem tensorRep_inclusion_tmul (n : N) (x : A) (y : X) :
   have hn : ((Subgroup.inclusion (le_inertia A) n : inertia A) :
       inertia A ⧸ N.subgroupOf (inertia A)) = 1 :=
     (QuotientGroup.eq_one_iff _).2 (Subgroup.mem_subgroupOf.2 n.2)
-  rw [tensorRep_tmul, h.apply_inclusion, hn, hU.map_one, LinearEquiv.coe_one, id_eq]
+  rw [tensorRep_tmul, h.apply_inclusion, hn, hU.map_one, FunLike.coe_one_eq_id, id_eq]
 
 /-- **Vectors of `X` as `N`-intertwiners into `A ⊗ X`**: `y` gives `x ↦ x ⊗ y`, an intertwiner
 from `A` to the restriction of `ρ ⊗ U` to `N`. For an irreducible `A` over an algebraically closed

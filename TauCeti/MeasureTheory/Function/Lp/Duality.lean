@@ -8,10 +8,12 @@ module
 public import Mathlib.MeasureTheory.Function.SimpleFuncDenseLp
 public import Mathlib.MeasureTheory.Function.StronglyMeasurable.Inner
 public import Mathlib.MeasureTheory.Integral.Bochner.Basic
+public import Mathlib.MeasureTheory.Integral.IntegrableOn
 import Mathlib.MeasureTheory.Function.LpSeminorm.CompareExp
 import Mathlib.MeasureTheory.Function.LpSpace.Complete
 import Mathlib.MeasureTheory.Integral.Bochner.ContinuousLinearMap
 import TauCeti.Analysis.SpecialFunctions.Pow.NNReal
+import TauCeti.MeasureTheory.Function.Holder
 
 /-!
 # Norming `Lᵖ` functions by test functions
@@ -29,7 +31,9 @@ where `‖h‖` is close to its essential supremum.
 
 Testing against simple functions only, rather than against all of `L^{q'}`, is what makes the
 statement usable when the pairings can only be computed on simple functions, as in the
-Riesz–Thorin theorem.
+Riesz–Thorin theorem. Together with Hölder's inequality, the duality bound shows that the
+integral pairing `g ↦ (f ↦ ∫ g f dμ)` is a linear isometry from `L^q(μ)` to the continuous dual
+of `L^q'(μ)` on a σ-finite measure space.
 
 For functions with values in an inner product space, paired by `∫ ⟪h, g⟫`, the file also proves
 a version for `q < ∞` that does not assume `h ∈ L^q` in advance: the test functions are bounded
@@ -47,10 +51,16 @@ is `∞` outside the almost everywhere strongly measurable functions.
 * `TauCeti.enorm_integral_mul_le`: Hölder's inequality `‖∫ u v‖ ≤ ‖u‖_p ‖v‖_q` for an integral.
 * `MeasureTheory.MemLp.eLpNorm_le_of_forall_enorm_integral_mul_le_of_ne_top`: the duality bound
   for `q < ∞`.
-* `MeasureTheory.MemLp.eLpNorm_top_le_of_forall_enorm_integral_mul_le`: the duality bound for
-  `q = ∞` on a σ-finite measure space.
+* `MeasureTheory.AEStronglyMeasurable.eLpNorm_top_le_of_forall_enorm_integral_mul_le` and
+  `MeasureTheory.MemLp.eLpNorm_top_le_of_forall_enorm_integral_mul_le`: the duality bound for
+  `q = ∞` on a σ-finite measure space, the first without assuming `h ∈ L^∞` in advance.
 * `MeasureTheory.MemLp.eLpNorm_le_of_forall_enorm_integral_mul_le`: the duality bound for every
   `1 ≤ q ≤ ∞` on a σ-finite measure space.
+* `MeasureTheory.Lp.enorm_integral_mul_le_of_apply_eq`: a continuous linear functional on
+  `L^q'` that is integration against `h` satisfies the hypothesis of these duality bounds.
+* `MeasureTheory.Lp.toDual`: on a σ-finite measure space, the integral pairing is a linear
+  isometry `L^q(μ) → L^q'(μ)*`.
+* `MeasureTheory.Lp.toDual_indicatorConstLp`: the value of the pairing at an indicator function.
 * `TauCeti.enorm_integral_inner_le`: Hölder's inequality `‖∫ ⟪u, v⟫‖ ≤ ‖u‖_p ‖v‖_q`.
 * `MeasureTheory.AEStronglyMeasurable.eLpNorm_le_of_forall_enorm_integral_inner_le`: the duality
   bound for `q < ∞` for inner product space valued functions, against bounded test functions of
@@ -198,15 +208,17 @@ theorem MemLp.eLpNorm_le_of_forall_enorm_integral_mul_le_of_ne_top {q q' : ℝ�
     _ ≤ ε / 2 + (C + ε / 2) := by gcongr
     _ = C + ε := by rw [add_comm, add_assoc, ENNReal.add_halves]
 
-/-- **Norming by simple functions, `q = ∞`.** On a σ-finite measure space, if `h ∈ L^∞`
-satisfies `‖∫ h g‖ ≤ C ‖g‖₁` for every simple function `g ∈ L¹`, then `‖h‖_∞ ≤ C`. -/
-theorem MemLp.eLpNorm_top_le_of_forall_enorm_integral_mul_le [SigmaFinite μ] {h : α → 𝕜}
-    (hh : MemLp h ∞ μ) {C : ℝ≥0∞}
+/-- **Norming by simple functions, `q = ∞`.** On a σ-finite measure space, let `h` be almost
+everywhere strongly measurable and integrable on every set of finite measure. If `h` satisfies
+`‖∫ h g‖ ≤ C ‖g‖₁` for every simple function `g ∈ L¹`, then `‖h‖_∞ ≤ C`. In particular `h ∈ L^∞`
+as soon as `C < ∞`. -/
+theorem AEStronglyMeasurable.eLpNorm_top_le_of_forall_enorm_integral_mul_le [SigmaFinite μ]
+    {h : α → 𝕜} (hmeas : AEStronglyMeasurable h μ)
+    (hint : ∀ s, MeasurableSet s → μ s < ∞ → IntegrableOn h s μ) {C : ℝ≥0∞}
     (hC : ∀ g : SimpleFunc α 𝕜, MemLp g 1 μ → ‖∫ x, h x * g x ∂μ‖ₑ ≤ C * eLpNorm g 1 μ) :
     eLpNorm h ∞ μ ≤ C := by
   by_contra! hlt
   obtain ⟨t, hCt, htN⟩ := exists_between hlt
-  have hmeas := hh.aestronglyMeasurable
   set h' := hmeas.mk h
   have hhh' : h =ᵐ[μ] h' := hmeas.ae_eq_mk
   -- The set `{t < ‖h‖}` has positive measure, so by σ-finiteness it contains a set `F` of
@@ -221,11 +233,10 @@ theorem MemLp.eLpNorm_top_le_of_forall_enorm_integral_mul_le [SigmaFinite μ] {h
     rw [hx]
     simpa using hx'
   obtain ⟨F, hFm, hFE, hFpos, hFtop⟩ := Measure.exists_subset_measure_lt_top hE hEpos
-  have : IsFiniteMeasure (μ.restrict F) := isFiniteMeasure_restrict.2 hFtop.ne
   -- The case `q = 1`, applied to `1_F h`, bounds `∫_F ‖h‖` by `C μ(F)`.
   have hk : MemLp (F.indicator h) 1 μ := by
-    rw [memLp_indicator_iff_restrict hFm.nullMeasurableSet]
-    exact (hh.restrict F).mono_exponent le_top
+    rw [memLp_indicator_iff_restrict hFm.nullMeasurableSet, memLp_one_iff_integrable]
+    exact hint F hFm hFtop
   have hkC : eLpNorm (F.indicator h) 1 μ ≤ C * μ F := by
     refine hk.eLpNorm_le_of_forall_enorm_integral_mul_le_of_ne_top (q' := ∞) ENNReal.one_ne_top
       fun g _ => ?_
@@ -261,6 +272,15 @@ theorem MemLp.eLpNorm_top_le_of_forall_enorm_integral_mul_le [SigmaFinite μ] {h
     exact (hFE hxF).le
   exact ((ENNReal.mul_le_mul_iff_left hFpos.ne' hFtop.ne).1 (hlow.trans hkC)).not_gt hCt
 
+/-- **Norming by simple functions, `q = ∞`.** On a σ-finite measure space, if `h ∈ L^∞`
+satisfies `‖∫ h g‖ ≤ C ‖g‖₁` for every simple function `g ∈ L¹`, then `‖h‖_∞ ≤ C`. -/
+theorem MemLp.eLpNorm_top_le_of_forall_enorm_integral_mul_le [SigmaFinite μ] {h : α → 𝕜}
+    (hh : MemLp h ∞ μ) {C : ℝ≥0∞}
+    (hC : ∀ g : SimpleFunc α 𝕜, MemLp g 1 μ → ‖∫ x, h x * g x ∂μ‖ₑ ≤ C * eLpNorm g 1 μ) :
+    eLpNorm h ∞ μ ≤ C :=
+  hh.aestronglyMeasurable.eLpNorm_top_le_of_forall_enorm_integral_mul_le
+    (fun s _ hs => have : Fact (μ s < ∞) := ⟨hs⟩; (hh.restrict s).integrable le_top) hC
+
 /-- **Norming by simple functions.** On a σ-finite measure space, let `q` and `q'` be Hölder
 conjugate. If `h ∈ L^q` satisfies `‖∫ h g‖ ≤ C ‖g‖_{q'}` for every simple function
 `g ∈ L^{q'}`, then `‖h‖_q ≤ C`. -/
@@ -272,6 +292,19 @@ theorem MemLp.eLpNorm_le_of_forall_enorm_integral_mul_le [SigmaFinite μ] {q q' 
   · obtain rfl : q' = 1 := (ENNReal.HolderConjugate.eq_top_iff_eq_one ∞ q').1 rfl
     exact hh.eLpNorm_top_le_of_forall_enorm_integral_mul_le hC
   · exact hh.eLpNorm_le_of_forall_enorm_integral_mul_le_of_ne_top hq hC
+
+/-- If a continuous linear functional `Λ` on `L^q'(μ)` is integration against `h` at the class of
+`σ`, then `‖∫ h σ‖ ≤ ‖Λ‖ ‖σ‖_q'`. This is the hypothesis of the norming lemmas above. -/
+theorem Lp.enorm_integral_mul_le_of_apply_eq {q' : ℝ≥0∞} [Fact (1 ≤ q')]
+    (Λ : StrongDual 𝕜 (Lp 𝕜 q' μ)) {h σ : α → 𝕜} (hσ : MemLp σ q' μ)
+    (hΛ : Λ (hσ.toLp σ) = ∫ x, h x * hσ.toLp σ x ∂μ) :
+    ‖∫ x, h x * σ x ∂μ‖ₑ ≤ ‖Λ‖ₑ * eLpNorm σ q' μ :=
+  calc ‖∫ x, h x * σ x ∂μ‖ₑ = ‖Λ (hσ.toLp σ)‖ₑ := by
+        rw [hΛ]
+        congr 1
+        exact integral_congr_ae (by filter_upwards [hσ.coeFn_toLp] with x hx; rw [hx])
+    _ ≤ ‖Λ‖ₑ * ‖hσ.toLp σ‖ₑ := Λ.le_opENorm _
+    _ = ‖Λ‖ₑ * eLpNorm σ q' μ := by rw [Lp.enorm_def, eLpNorm_congr_ae hσ.coeFn_toLp]
 
 /-- **Norming by bounded functions of finite-measure support.** On a σ-finite measure space, let
 `q < ∞` and `q'` be Hölder conjugate. If an almost everywhere strongly measurable `h` with values
@@ -382,3 +415,54 @@ theorem AEStronglyMeasurable.eLpNorm_le_of_forall_enorm_integral_inner_le {H : T
     _ ≤ C * X ^ (r - 1) := by gcongr
 
 end MeasureTheory
+
+namespace MeasureTheory.Lp
+
+variable {α 𝕜 : Type*} [RCLike 𝕜] {mα : MeasurableSpace α} {μ : Measure α}
+
+section toDual
+
+variable {q q' : ℝ≥0∞} [Fact (1 ≤ q)] [Fact (1 ≤ q')] [q.HolderConjugate q']
+
+variable (𝕜 μ q q') in
+/-- On a σ-finite measure space, for Hölder conjugate exponents `q` and `q'`, the integral pairing
+`g ↦ (f ↦ ∫ g f dμ)` is a linear isometry from `L^q(μ)` to the continuous dual of `L^q'(μ)`:
+integration against `g` is a continuous linear functional on `L^q'(μ)` of norm `‖g‖_q`. -/
+noncomputable def toDual [SigmaFinite μ] : Lp 𝕜 q μ →ₗᵢ[𝕜] StrongDual 𝕜 (Lp 𝕜 q' μ) where
+  toLinearMap := ((ContinuousLinearMap.mul 𝕜 𝕜).lpPairing μ q q' :
+    Lp 𝕜 q μ →ₗ[𝕜] StrongDual 𝕜 (Lp 𝕜 q' μ))
+  norm_map' g := by
+    set Λ := (ContinuousLinearMap.mul 𝕜 𝕜).lpPairing μ q q' g
+    -- Both norms are the real parts of the extended norms, so it suffices to compare those.
+    rw [ContinuousLinearMap.coe_coe, ← toReal_enorm, ← toReal_enorm]
+    congr 1
+    -- Hölder's inequality gives `‖Λ‖ ≤ ‖g‖_q`; testing `Λ` on simple functions gives the converse.
+    refine le_antisymm (Λ.opENorm_le_bound fun f => ?_) ?_
+    · rw [ContinuousLinearMap.lpPairing_mul_eq_integral, Lp.enorm_def, Lp.enorm_def]
+      exact TauCeti.enorm_integral_mul_le
+    · rw [Lp.enorm_def]
+      exact (Lp.memLp g).eLpNorm_le_of_forall_enorm_integral_mul_le fun σ hσ =>
+        enorm_integral_mul_le_of_apply_eq Λ hσ
+          (ContinuousLinearMap.lpPairing_mul_eq_integral g _)
+
+@[simp]
+theorem toDual_apply [SigmaFinite μ] (g : Lp 𝕜 q μ) (f : Lp 𝕜 q' μ) :
+    toDual 𝕜 μ q q' g f = ∫ x, g x * f x ∂μ := by
+  rw [toDual, LinearIsometry.coe_mk, ContinuousLinearMap.coe_coe,
+    ContinuousLinearMap.lpPairing_mul_eq_integral]
+
+/-- Pairing `g ∈ L^q(μ)` with the indicator function of a set `s` of finite measure, scaled by
+`c`, gives `c` times the integral of `g` over `s`. -/
+-- High priority, so that `simp` uses this lemma before unfolding the pairing by `toDual_apply`.
+@[simp high]
+theorem toDual_indicatorConstLp [SigmaFinite μ] (g : Lp 𝕜 q μ) {s : Set α}
+    (hs : MeasurableSet s) (hμs : μ s ≠ ∞) (c : 𝕜) :
+    toDual 𝕜 μ q q' g (indicatorConstLp q' hs hμs c) = (∫ x in s, g x ∂μ) * c := by
+  rw [toDual_apply, ← integral_mul_const, ← integral_indicator hs]
+  refine integral_congr_ae ?_
+  filter_upwards [indicatorConstLp_coeFn (p := q') (hs := hs) (hμs := hμs) (c := c)] with x hx
+  by_cases hxs : x ∈ s <;> simp [hx, hxs]
+
+end toDual
+
+end MeasureTheory.Lp

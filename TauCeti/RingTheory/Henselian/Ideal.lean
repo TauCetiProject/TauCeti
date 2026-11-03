@@ -41,13 +41,13 @@ variable {R : Type*} [CommRing R] {I J : Ideal R}
 theorem henselianRing_of_le (hJI : J ≤ I) [HenselianRing R I] : HenselianRing R J where
   jac := hJI.trans HenselianRing.jac
   is_henselian f hf a₀ ha hu := by
-    have := isLocalHom_of_le_jacobson_bot J (hJI.trans HenselianRing.jac)
+    have := isLocalHom_of_le_jacobson (hJI.trans HenselianRing.jac)
     have hder : IsUnit (f.derivative.eval a₀) := isUnit_of_map_unit _ _ hu
     obtain ⟨a, hfa, haa⟩ := HenselianRing.is_henselian f hf a₀ (hJI ha)
       (hder.map (Quotient.mk I))
     obtain ⟨c, hc⟩ := f.exists_mul_sq_add_linear_part_eq_eval_add a₀ (a - a₀)
     have hunit : IsUnit (c * (a - a₀) + f.derivative.eval a₀) := by
-      have := isLocalHom_of_le_jacobson_bot I HenselianRing.jac
+      have := isLocalHom_of_le_jacobson (HenselianRing.jac (I := I))
       apply isUnit_of_map_unit (Quotient.mk I)
       simpa [map_add, map_mul, Quotient.eq_zero_iff_mem.2 haa] using
         hder.map (Quotient.mk I)
@@ -63,13 +63,15 @@ theorem henselianRing_of_le (hJI : J ≤ I) [HenselianRing R I] : HenselianRing 
 along `J` and along `I/J` implies henselianity along `I`. -/
 theorem henselianRing_of_quotient (hJI : J ≤ I) [HenselianRing R J]
     [HenselianRing (R ⧸ J) (I.map (Quotient.mk J))] : HenselianRing R I := by
-  have hjac : I ≤ jacobson ⊥ := by
+  have hjac : I ≤ Ring.jacobson R := by
+    rw [← Ideal.jacobson_bot]
     have h : I ≤ (I.map (Quotient.mk J)).comap (Quotient.mk J) := le_comap_map
     refine h.trans ((comap_mono HenselianRing.jac).trans ?_)
-    rw [comap_jacobson_of_surjective Quotient.mk_surjective,
+    rw [← Ideal.jacobson_bot, comap_jacobson_of_surjective Quotient.mk_surjective,
       ← RingHom.ker_eq_comap_bot, mk_ker]
-    exact (jacobson_mono HenselianRing.jac).trans_eq jacobson_idem
-  have := isLocalHom_of_le_jacobson_bot I hjac
+    exact (jacobson_mono (show J ≤ jacobson ⊥ by simpa only [Ideal.jacobson_bot] using
+      (HenselianRing.jac (I := J)))).trans_eq jacobson_idem
+  have := isLocalHom_of_le_jacobson hjac
   refine ⟨hjac, fun f hf a₀ ha hu ↦ ?_⟩
   have hunit : IsUnit (f.derivative.eval a₀) := isUnit_of_map_unit _ _ hu
   obtain ⟨b, hb, hba⟩ := HenselianRing.is_henselian

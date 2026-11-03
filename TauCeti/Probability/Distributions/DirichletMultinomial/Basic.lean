@@ -178,7 +178,7 @@ theorem dirichletMultinomialMeasure_eq_sum_dirac {a : ι → ℝ}
   classical
   apply Measure.ext_of_singleton
   intro k
-  simp [dirichletMultinomialMeasure_singleton ha, Measure.finsetSum_apply,
+  simp [dirichletMultinomialMeasure_singleton ha, _root_.sum_apply,
     Pi.single_apply, mul_ite, Finset.mem_piAntidiag]
 
 /-- With no trials, a valid Dirichlet-multinomial law is concentrated at the zero count vector. -/

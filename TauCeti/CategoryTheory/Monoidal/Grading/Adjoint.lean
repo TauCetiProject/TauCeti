@@ -107,7 +107,7 @@ private theorem Occurs.of_iso_right {U Y Y' : C} (e : Y ≅ Y') (h : Occurs U Y)
   exact ⟨f ≫ e.hom, fun h ↦ hf (by simpa using h =≫ e.inv)⟩
 
 /-- A simple object is a constituent of itself. -/
-private theorem occurs_self (U : C) [Simple U] : Occurs U U := ⟨𝟙 U, id_nonzero U⟩
+private theorem occurs_self (U : C) [Simple U] : Occurs U U := ⟨𝟙 U, id_ne_zero U⟩
 
 variable [IsFiniteSemisimpleCategory C]
 
