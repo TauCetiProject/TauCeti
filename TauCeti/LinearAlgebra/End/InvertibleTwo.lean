@@ -100,7 +100,7 @@ theorem invOf_two_moduleEnd_apply (S : Type*) [Semiring S] [Module S N] [Inverti
     [Invertible (2 : Module.End R N)] (x : N) :
     ⅟(2 : Module.End R N) x = ⅟(2 : S) • x := by
   have h := congr($(mul_invOf_self (2 : Module.End R N)) x)
-  rw [Module.End.mul_apply, Module.End.ofNat_apply, two_nsmul, Module.End.one_apply] at h
+  rw [mul_apply_eq_comp, Module.End.ofNat_apply, two_nsmul, one_apply_eq_self] at h
   conv_rhs => rw [← h, smul_add, invOf_two_smul_add_invOf_two_smul]
 
 /-- The inverse of doubling acts as the real scalar `(2 : ℝ)⁻¹`, for whichever

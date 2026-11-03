@@ -48,7 +48,7 @@ theorem mul_apply_of_apply_eq_ite_weight_left [Fintype n] [DecidableEq n] {X : M
     {σ : n → n} {ε : n → α} (hσ : Function.Involutive σ)
     (hX : ∀ a b, X a b = if p b ∧ a = σ b then ε b else 0) (N : Matrix n o α) (a : n) (b : o) :
     (X * N) a b = if p (σ a) then ε (σ a) * N (σ a) b else 0 := by
-  rw [mul_apply, Finset.sum_eq_single (σ a)]
+  rw [Matrix.mul_apply, Finset.sum_eq_single (σ a)]
   · simp [hX, hσ a]
   · intro k _ hk
     rw [hX]
@@ -70,7 +70,7 @@ theorem mul_apply_of_apply_eq_ite_weight_right [Fintype m] [DecidableEq m] {X : 
     {σ : n → m} {ε : n → α} (hX : ∀ a b, X a b = if p b ∧ a = σ b then ε b else 0)
     (N : Matrix l m α) (a : l) (b : n) :
     (N * X) a b = if p b then N a (σ b) * ε b else 0 := by
-  rw [mul_apply, Finset.sum_eq_single (σ b)]
+  rw [Matrix.mul_apply, Finset.sum_eq_single (σ b)]
   · simp [hX]
   · intro k _ hk
     rw [hX]
@@ -96,7 +96,7 @@ theorem sum_smul_apply_of_apply_eq_ite_weight [Fintype m] [DecidableEq m] {X : M
   rw [Matrix.sum_apply, Finset.sum_eq_single (σ c)]
   · simp [hX]
   · intro d _ hd
-    rw [smul_apply, hX]
+    rw [Matrix.smul_apply, hX]
     split_ifs with h
     · exact absurd h.2 hd
     · exact zero_smul _ _

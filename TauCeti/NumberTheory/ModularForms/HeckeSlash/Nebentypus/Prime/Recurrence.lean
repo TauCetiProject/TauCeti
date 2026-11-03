@@ -53,8 +53,8 @@ theorem heckeRingHomCharSpace_heckeTGeneratorRecGamma0_succ_succ (hp : 0 < p)
   refine LinearMap.ext fun F ↦ ?_
   rw [heckeTGeneratorRecGamma0_succ_succ, map_sub, map_mul, map_mul, map_zsmul,
     heckeRingHomCharSpace_heckeTScalarGamma0 k χ p hp hpN]
-  simp only [LinearMap.sub_apply, Module.End.mul_apply, LinearMap.smul_apply,
-    Module.End.one_apply, ← Int.cast_smul_eq_zsmul ℂ, smul_smul]
+  simp only [LinearMap.sub_apply, mul_apply_eq_comp, LinearMap.smul_apply,
+    one_apply_eq_self, ← Int.cast_smul_eq_zsmul ℂ, smul_smul]
   congr 2
   have hp0 : (p : ℂ) ≠ 0 := Nat.cast_ne_zero.mpr hp.ne'
   have hk : k - 1 = k - 2 + 1 := by ring
@@ -88,7 +88,7 @@ theorem heckeRingHomCuspCharSpace_heckeTGeneratorRecGamma0_succ_succ (hp : 0 < p
           heckeRingHomCuspCharSpace k χ (heckeTGeneratorRecGamma0 N p r) := by
   refine LinearMap.ext fun F ↦ ?_
   refine cuspToModFormCharSpace_injective k χ ?_
-  simpa only [LinearMap.sub_apply, Module.End.mul_apply, LinearMap.smul_apply, map_sub, map_smul,
+  simpa only [LinearMap.sub_apply, mul_apply_eq_comp, LinearMap.smul_apply, map_sub, map_smul,
     heckeRingHomCuspCharSpace_apply, heckeRingHomCharSpace_apply,
     cuspToModFormCharSpace_twistedHeckeSlashCuspFormCharLinearMap]
     using heckeRingHomCharSpace_heckeTGeneratorRecGamma0_succ_succ_apply k χ hp hpN _ r
