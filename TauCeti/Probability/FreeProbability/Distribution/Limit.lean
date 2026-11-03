@@ -18,9 +18,7 @@ Normalization, positivity on squares and traciality pass to this functional. In 
 expected star-moment limits of random matrices have an algebraic positive tracial realization,
 even when no bounded C*-realization is available.
 
-The existence theorem uses Mathlib's `Module.Basis.constr` on the word basis of the free
-algebra. Polynomial convergence then follows from the polynomial test criterion for
-`TendstoInStarMoments`. No topology or boundedness on the ambient algebras is required.
+No topology or boundedness on the ambient algebras is required.
 
 ## References
 
@@ -90,6 +88,9 @@ theorem existsUnique_tendstoInStarMoments
       Tendsto (fun t => φ t (w.map (StarPolynomial.withStar (a t))).prod) l (𝓝 z)) :
     ∃! χ : StarPolynomial R ι →ₗ[R] R,
       TendstoInStarMoments φ a l χ (StarPolynomial.X (R := R)) := by
+  -- Use Mathlib's Module.Basis.constr on the word basis of the free algebra.
+  -- Polynomial convergence then follows from the polynomial test criterion for
+  -- TendstoInStarMoments.
   classical
   choose m hm using hm
   let F := (FreeAlgebra.basisFreeMonoid R (ι × Bool)).constr R
