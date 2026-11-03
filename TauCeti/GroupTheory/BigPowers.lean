@@ -30,6 +30,8 @@ retractions `t ↦ u ^ k`.
 
 ## Main results
 
+* `Group.isBP_iff_zpow`, `Group.IsBP.exists_list_prod_zpow_ne_one`: the big powers property
+  with integer exponents of large absolute value, for tuples and for lists.
 * `Group.IsBP.of_forall_finset_exists_monoidHom`: the big powers property passes along
   homomorphisms that keep any given finite family of nonidentity elements nontrivial.
 * `Group.IsBP.of_injective`, `Group.IsBP.of_isDiscriminatedBy`: subgroups of BP groups, and groups
@@ -68,6 +70,33 @@ theorem isBP_iff : IsBP G ↔
       ∃ N : ℕ, ∀ e : Fin (k + 1) → ℕ, (∀ i, N ≤ e i) →
         (List.ofFn fun i => u i ^ e i).prod ≠ 1 :=
   Iff.rfl
+
+/-- The big powers property with integer exponents: the product `u 0 ^ e 0 * ⋯ * u k ^ e k` is
+nontrivial whenever every exponent `e i` has absolute value at least `N`. Negative exponents are
+positive exponents of the inverted entries, and there are only finitely many sign patterns. -/
+theorem isBP_iff_zpow : IsBP G ↔
+    ∀ ⦃k : ℕ⦄ (u : Fin (k + 1) → G), (∀ i, u i ≠ 1) →
+      (∀ i : Fin k, ¬Commute (u i.castSucc) (u i.succ)) →
+      ∃ N : ℕ, ∀ e : Fin (k + 1) → ℤ, (∀ i, N ≤ |e i|) →
+        (List.ofFn fun i => u i ^ e i).prod ≠ 1 := by
+  refine ⟨fun hG k u hu hcomm => ?_, fun h k u hu hcomm => ?_⟩
+  · -- Apply the property to `u` with the entries outside a sign pattern `σ` inverted.
+    have hσ (σ : Fin (k + 1) → Bool) : ∃ N : ℕ, ∀ e : Fin (k + 1) → ℕ, (∀ i, N ≤ e i) →
+        (List.ofFn fun i => (if σ i then u i else (u i)⁻¹) ^ e i).prod ≠ 1 :=
+      hG _ (fun i => by split_ifs <;> simp [hu i]) fun i => by
+        split_ifs <;> simpa [Commute.inv_left_iff, Commute.inv_right_iff] using hcomm i
+    choose N hN using hσ
+    refine ⟨Finset.univ.sup N, fun e he => ?_⟩
+    convert hN (fun i => decide (0 ≤ e i)) (fun i => (e i).natAbs) (fun i => by
+      have h₁ := he i
+      have h₂ := Finset.le_sup (f := N) (Finset.mem_univ fun i => decide (0 ≤ e i))
+      rw [← Int.natCast_natAbs] at h₁
+      omega) using 4 with i
+    rcases le_or_gt 0 (e i) with hi | hi
+    · simp [hi, ← zpow_natCast, Int.natAbs_of_nonneg hi]
+    · simp [hi.not_ge, ← zpow_natCast, Int.ofNat_natAbs_of_nonpos hi.le]
+  · obtain ⟨N, hN⟩ := h u hu hcomm
+    exact ⟨N, fun e he => by simpa using hN (fun i => e i) fun i => by simpa using he i⟩
 
 variable {G}
 
@@ -110,6 +139,24 @@ theorem of_isDiscriminatedBy {C K H : Type*} [Group C] [Group K] [Group H] (hH :
   hH.of_forall_finset_exists_monoidHom fun s hs =>
     let ⟨φ, hφ⟩ := (TauCeti.GroupAlgGeom.isDiscriminatedBy_def ιK ιH).1 h s hs
     ⟨φ, hφ⟩
+
+/-- The big powers property for a nonempty list `vs` of nonidentity elements with noncommuting
+neighbours, with integer exponents attached to its entries: the product of the powers is
+nontrivial whenever every exponent has absolute value at least `N`. -/
+theorem exists_list_prod_zpow_ne_one (hG : IsBP G) {vs : List G} (hne : vs ≠ [])
+    (h1 : ∀ v ∈ vs, v ≠ 1) (hc : vs.IsChain fun a b => ¬Commute a b) :
+    ∃ N : ℕ, ∀ l : List (G × ℤ), l.map Prod.fst = vs → (∀ x ∈ l, (N : ℤ) ≤ |x.2|) →
+      (l.map fun x => x.1 ^ x.2).prod ≠ 1 := by
+  obtain ⟨k, hk⟩ : ∃ k, vs.length = k + 1 :=
+    ⟨vs.length - 1, by have := List.length_pos_iff.2 hne; omega⟩
+  obtain ⟨N, hN⟩ := (isBP_iff_zpow G).1 hG (fun i : Fin (k + 1) => vs[i.1]'(by omega))
+    (fun i => h1 _ (List.getElem_mem _)) fun i => List.isChain_iff_getElem.1 hc i (by omega)
+  refine ⟨N, fun l hl hle => ?_⟩
+  subst hl
+  have hlen : l.length = k + 1 := by simpa using hk
+  convert hN (fun i => (l[i.1]'(by omega)).2) (fun i => hle _ (List.getElem_mem _)) using 2
+  refine List.ext_getElem (by simp [hlen]) fun i h₁ h₂ => ?_
+  simp only [List.getElem_map, List.getElem_ofFn]
 
 /-- A BP group is torsion-free: the condition for a singleton tuple `(g)` says that the powers
 `g ^ e` are nontrivial for all large `e`. -/

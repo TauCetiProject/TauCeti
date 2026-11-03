@@ -24,11 +24,12 @@ of `ℤⁿ`, which commute with each other and with every element of `C_G(u)`; a
 extension `⟨G, t | [c, t] = 1, c ∈ C_G(u)⟩`.
 
 Iterated extensions of centralizers are the basic examples of fully residually free groups: over a
-nonabelian CSA group `G` with the big powers property and `u` not a proper power, the retractions
-`t ↦ u ^ k` of `G(u, ℤ)` onto `G` discriminate it by `G` (see Kharlampovich–Myasnikov,
-*Implicit function theorem over free groups*, §2.5). This file sets up the construction for
-arbitrary `u` and `n`, its universal property and these retractions, and compares it with `G` for
-`n = 0`, with `G × ℤⁿ` for central `u`, and with Mathlib's HNN extension for `n = 1`. The
+CSA group `G` with the big powers property and `u ≠ 1`, the retractions `t ↦ u ^ k` of `G(u, ℤ)`
+onto `G` discriminate it by `G` (`TauCeti.LimitGroup.CentralizerExt.isDiscriminatedBy`, following
+Kharlampovich–Myasnikov, *Implicit function theorem over free groups*, §2.5). This file sets up
+the construction for arbitrary `u` and `n`, its universal property and these retractions, and
+compares it with `G` for `n = 0`, with `G × ℤⁿ` for central `u`, and with Mathlib's HNN extension
+for `n = 1`. The
 construction always uses the full centralizer and imposes no condition on `u` or `n`;
 `IsAdmissibleCentralizerStep u n` records the conditions imposed on a step of an iterated extension
 of centralizers. The extension depends only on the centralizer: if `C_G(u) = C_G(v)` then
@@ -123,6 +124,10 @@ open Monoid.PushoutI
 /-- The inclusion of `G` in `G(u, ℤⁿ)`. -/
 def of : G →* CentralizerExt u n :=
   Monoid.PushoutI.of (φ := centralizerExtMap u n) false
+
+/-- `of` is the inclusion of the factor `G` of the amalgam. -/
+@[simp] theorem pushoutI_of_false (g : G) :
+    Monoid.PushoutI.of (φ := centralizerExtMap u n) false g = of g := (rfl)
 
 /-- The new letter `tᵢ` of `G(u, ℤⁿ)`, the `i`-th standard generator of `ℤⁿ`. -/
 def t (i : Fin n) : CentralizerExt u n :=
@@ -310,6 +315,18 @@ private def ofPi : (Fin n → Multiplicative ℤ) →* CentralizerExt u n :=
 
 private theorem ofPi_mulSingle (i : Fin n) :
     (ofPi (Pi.mulSingle i (.ofAdd 1)) : CentralizerExt u n) = t i := (rfl)
+
+/-- In `G(u, ℤ)`, the element `(c, τ)` of the factor `C_G(u) × ℤ` is `c * t₀ ^ τ`. -/
+theorem pushoutI_of_true (c : centralizer {u}) (τ : Fin 1 → Multiplicative ℤ) :
+    Monoid.PushoutI.of (φ := centralizerExtMap u 1) true (c, τ) =
+      of (c : G) * t 0 ^ (τ 0).toAdd := by
+  have hcτ : ((c, τ) : centralizer {u} × (Fin 1 → Multiplicative ℤ)) = (c, 1) * (1, τ) := by
+    simp
+  have hτ : τ = Pi.mulSingle 0 (.ofAdd 1) ^ (τ 0).toAdd := by
+    ext i
+    simp [Subsingleton.elim i 0, ← ofAdd_zsmul]
+  rw [hcτ, map_mul, of_true_inl, ← ofPi_mulSingle, ← map_zpow, ← hτ]
+  rfl
 
 private theorem commute_of_ofPi (hu : u ∈ center G) (g : G) (v : Fin n → Multiplicative ℤ) :
     Commute (of g) (ofPi v : CentralizerExt u n) := by

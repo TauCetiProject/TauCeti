@@ -55,6 +55,8 @@ consecutive entries nontrivial.
   discrimination by `FreeGroup (Fin 2)` with trivial coefficients.
 * `TauCeti.LimitGroup.IsFullyResiduallyFree.of_injective`: subgroups of fully residually free
   groups are fully residually free.
+* `TauCeti.LimitGroup.IsFullyResiduallyFree.of_isDiscriminatedBy`: groups discriminated by a fully
+  residually free group are fully residually free.
 * `TauCeti.LimitGroup.IsResiduallyFree.hasUniqueRoots`: residually free groups have unique roots.
 * `TauCeti.LimitGroup.IsResiduallyFree.isMulTorsionFree`: residually free groups are
   torsion-free.
@@ -187,6 +189,17 @@ theorem IsFullyResiduallyFree.of_injective (h : IsFullyResiduallyFree G) {f : H 
     (hf : Function.Injective f) : IsFullyResiduallyFree H :=
   isFullyResiduallyFree_iff_isDiscriminatedBy.2 <|
     (isFullyResiduallyFree_iff_isDiscriminatedBy.1 h).of_injective ⟨f, fun _ => by simp⟩ hf
+
+/-- A group discriminated by a fully residually free group, relative to any coefficient group, is
+fully residually free: compose a discriminating homomorphism with a homomorphism to a free group. -/
+theorem IsFullyResiduallyFree.of_isDiscriminatedBy {C : Type*} [Group C] {ιH : C →* H}
+    {ιG : C →* G} (hG : IsFullyResiduallyFree G) (h : IsDiscriminatedBy ιH ιG) :
+    IsFullyResiduallyFree H := by
+  classical
+  refine isFullyResiduallyFree_iff_fin_two.2 fun s hs => ?_
+  obtain ⟨φ, hφ⟩ := (isDiscriminatedBy_def ιH ιG).1 h s hs
+  obtain ⟨ψ, hψ⟩ := isFullyResiduallyFree_iff_fin_two.1 hG (s.image φ) (by simpa using hφ)
+  exact ⟨ψ.comp (φ : H →* G), fun g hg => hψ (φ g) (Finset.mem_image_of_mem φ hg)⟩
 
 /-- A free group is fully residually free. -/
 theorem isFullyResiduallyFree_of_isFreeGroup [IsFreeGroup G] : IsFullyResiduallyFree G :=
