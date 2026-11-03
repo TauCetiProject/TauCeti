@@ -368,23 +368,6 @@ def snoc (d : G.EarDecomposition H) (ear : G.Ear H) : G.EarDecomposition ear.add
 theorem length_snoc (d : G.EarDecomposition H) (ear : G.Ear H) :
     (d.snoc ear).length = d.length + 1 := (rfl)
 
-private theorem cast_length_snoc_castSucc (d : G.EarDecomposition H) (ear : G.Ear H)
-    (i : Fin (d.length + 1)) :
-    (Fin.cast (length_snoc d ear).symm i).castSucc = i.castSucc := by
-  ext
-  rfl
-
-private theorem cast_length_snoc_ear (d : G.EarDecomposition H) (ear : G.Ear H)
-    (i : Fin d.length) :
-    Fin.cast (length_snoc d ear).symm i.castSucc = i.castSucc := by
-  ext
-  rfl
-
-private theorem cast_length_snoc_last (d : G.EarDecomposition H) (ear : G.Ear H) :
-    Fin.cast (length_snoc d ear).symm (Fin.last d.length) = Fin.last d.length := by
-  ext
-  rfl
-
 @[simp]
 theorem graphAfter_snoc_castSucc (d : G.EarDecomposition H) (ear : G.Ear H)
     (i : Fin (d.length + 1)) :
@@ -392,8 +375,8 @@ theorem graphAfter_snoc_castSucc (d : G.EarDecomposition H) (ear : G.Ear H)
       (Fin.cast (length_snoc d ear).symm i).castSucc = d.graphAfter i :=
   by
     -- Projection reduction exposes `Fin.lastCases`; rewriting cannot unfold the opaque `snoc` body.
-    change Fin.lastCases ear.add d.graphAfter _ = d.graphAfter i
-    rw [cast_length_snoc_castSucc, Fin.lastCases_castSucc]
+    change Fin.lastCases ear.add d.graphAfter (Fin.cast rfl i).castSucc = d.graphAfter i
+    rw [Fin.cast_eq_self, Fin.lastCases_castSucc]
 
 @[simp]
 theorem earAt_snoc_castSucc (d : G.EarDecomposition H) (ear : G.Ear H)
@@ -401,8 +384,8 @@ theorem earAt_snoc_castSucc (d : G.EarDecomposition H) (ear : G.Ear H)
     (d.snoc ear).earAt (Fin.cast (length_snoc d ear).symm i.castSucc) = d.earAt i :=
   by
     -- Projection reduction exposes `Fin.lastCases`; rewriting cannot unfold the opaque `snoc` body.
-    change Fin.lastCases ⟨H, ear⟩ d.earAt _ = d.earAt i
-    rw [cast_length_snoc_ear, Fin.lastCases_castSucc]
+    change Fin.lastCases ⟨H, ear⟩ d.earAt (Fin.cast rfl i.castSucc) = d.earAt i
+    rw [Fin.cast_eq_self, Fin.lastCases_castSucc]
 
 @[simp]
 theorem earAt_snoc_last (d : G.EarDecomposition H) (ear : G.Ear H) :
@@ -410,9 +393,10 @@ theorem earAt_snoc_last (d : G.EarDecomposition H) (ear : G.Ear H) :
       ⟨H, ear⟩ :=
   by
     -- Projection reduction exposes `Fin.lastCases`; rewriting cannot unfold the opaque `snoc` body.
-    change Fin.lastCases (⟨H, ear⟩ : Σ K, G.Ear K) d.earAt _ =
+    change Fin.lastCases (⟨H, ear⟩ : Σ K, G.Ear K) d.earAt
+      (Fin.cast rfl (Fin.last d.length)) =
       (⟨H, ear⟩ : Σ K, G.Ear K)
-    rw [cast_length_snoc_last, Fin.lastCases_last]
+    rw [Fin.cast_eq_self, Fin.lastCases_last]
 
 private theorem start_isCycle_snoc (d : G.EarDecomposition H) (ear : G.Ear H) :
     (d.snoc ear).start.IsCycle ↔ d.start.IsCycle := by
@@ -469,22 +453,10 @@ theorem graphAfter_castSucc_le_succ (d : G.EarDecomposition H) (i : Fin d.length
   rw [← d.earAt_fst i]
   exact (d.earAt i).2.base_le_add
 
-private theorem prefix_castLE_zero (d : G.EarDecomposition H) (i : Fin (d.length + 1)) :
-    Fin.castLE (Nat.succ_le_iff.mpr i.isLt) 0 = (0 : Fin (d.length + 1)) := by
-  ext
-  rfl
-
 private theorem prefix_castLE_castSucc (d : G.EarDecomposition H)
     (i : Fin (d.length + 1)) (j : Fin i.val) :
     (Fin.castLE (Nat.le_of_lt_succ i.isLt) j).castSucc =
       Fin.castLE (Nat.succ_le_iff.mpr i.isLt) j.castSucc := by
-  ext
-  rfl
-
-private theorem prefix_castLE_succ (d : G.EarDecomposition H) (i : Fin (d.length + 1))
-    (j : Fin i.val) :
-    Fin.castLE (Nat.succ_le_iff.mpr i.isLt) j.succ =
-      (Fin.castLE (Nat.le_of_lt_succ i.isLt) j).succ := by
   ext
   rfl
 
@@ -498,12 +470,12 @@ def «prefix» (d : G.EarDecomposition H) (i : Fin (d.length + 1)) :
     G.EarDecomposition (d.graphAfter i) where
   length := i.val
   graphAfter j := d.graphAfter (Fin.castLE (Nat.succ_le_iff.mpr i.isLt) j)
-  start := (congrArg d.graphAfter (prefix_castLE_zero d i)).symm ▸ d.start
+  start := (congrArg d.graphAfter (Fin.castLE_zero _)).symm ▸ d.start
   earAt j := d.earAt (Fin.castLE (Nat.le_of_lt_succ i.isLt) j)
   earAt_fst j := by
     rw [d.earAt_fst, prefix_castLE_castSucc]
   graphAfter_succ j := by
-    rw [prefix_castLE_succ]
+    rw [Fin.castLE_succ]
     exact d.graphAfter_succ (Fin.castLE (Nat.le_of_lt_succ i.isLt) j)
   graphAfter_last := by
     rw [prefix_castLE_last]
@@ -512,7 +484,7 @@ private theorem start_isCycle_prefix (d : G.EarDecomposition H)
     (i : Fin (d.length + 1)) :
     (d.prefix i).start.IsCycle ↔ d.start.IsCycle := by
   exact EarStart.isCycle_transport
-    (congrArg d.graphAfter (prefix_castLE_zero d i)).symm d.start
+    (congrArg d.graphAfter (Fin.castLE_zero _)).symm d.start
 
 /-- Induction over prefix decompositions in construction order. The zero prefix carries the
 initial vertex or cycle, and the successor case adds the next displayed ear. -/
