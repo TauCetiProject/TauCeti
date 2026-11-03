@@ -5,9 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.LinearAlgebra.Matrix.Hermitian
 public import Mathlib.Probability.Distributions.Gaussian.Real
 public import TauCeti.Probability.RandomMatrix.Wigner
+public import TauCeti.Analysis.Complex.NormSq
 
 /-!
 # Gaussian orthogonal and unitary ensembles
@@ -51,20 +51,34 @@ namespace TauCeti
 
 namespace Probability
 
+/-- The array `g`, extended to `ℕ × ℕ` by `1` outside its `n × n` corner. -/
+private def extendArray {Ω : Type*} (n : ℕ) (g : Fin n × Fin n → Ω → ℝ) (p : ℕ × ℕ)
+    (ω : Ω) : ℝ :=
+  if h : p.1 < n ∧ p.2 < n then g (⟨p.1, h.1⟩, ⟨p.2, h.2⟩) ω else 1
+
+private theorem extendArray_apply {Ω : Type*} {n : ℕ} (g : Fin n × Fin n → Ω → ℝ) (i j : Fin n)
+    (ω : Ω) : extendArray n g (i.val, j.val) ω = g (i, j) ω := by
+  simp [extendArray, i.2, j.2]
+
+/-- The above-diagonal entries of the Wigner matrix equal to `gaussianEnsemble β n`. -/
+private def ensembleUpper {Ω : Type*} (β n : ℕ) (g : Fin n × Fin n → Ω → ℝ) :
+    StrictUpper → Ω → ℂ := fun ij ω ↦
+  if β = 1 then (extendArray n g ij.1 ω : ℂ)
+  else ((extendArray n g ij.1 ω : ℂ) + Complex.I * extendArray n g (ij.1.2, ij.1.1) ω) /
+    (Real.sqrt 2 : ℝ)
+
+/-- The diagonal entries of the Wigner matrix equal to `gaussianEnsemble β n`. -/
+private def ensembleDiag {Ω : Type*} (β n : ℕ) (g : Fin n × Fin n → Ω → ℝ) : ℕ → Ω → ℝ :=
+  fun i ω ↦ if β = 1 then Real.sqrt 2 * extendArray n g (i, i) ω else extendArray n g (i, i) ω
+
 /-- The Gaussian ensemble built from the array `g`: for `β = 1` the real symmetric matrix with
 entries `g (i, j)` for `i < j` and `√2 * g (i, i)` on the diagonal, and otherwise the Hermitian
 matrix with entries `(g (i, j) + I * g (j, i)) / √2` for `i < j` and `g (i, i)` on the diagonal,
 all divided by `√n`. With independent standard Gaussian entries this is the GOE (`β = 1`) or the
 GUE (`β = 2`). -/
 def gaussianEnsemble (β n : ℕ) (g : Fin n × Fin n → ℝ) : Matrix (Fin n) (Fin n) ℂ :=
-  Matrix.of fun i j ↦ ((Real.sqrt n)⁻¹ : ℂ) *
-    if β = 1 then
-      if i = j then ((Real.sqrt 2 * g (i, i) : ℝ) : ℂ)
-      else if i < j then (g (i, j) : ℂ) else (g (j, i) : ℂ)
-    else
-      if i = j then (g (i, i) : ℂ)
-      else if i < j then ((g (i, j) : ℂ) + Complex.I * g (j, i)) / (Real.sqrt 2 : ℝ)
-      else ((g (j, i) : ℂ) - Complex.I * g (i, j)) / (Real.sqrt 2 : ℝ)
+  wignerMatrix (ensembleUpper β n (fun p _ ↦ g p))
+    (ensembleDiag β n (fun p _ ↦ g p)) n ()
 
 section Entries
 
@@ -79,7 +93,18 @@ theorem gaussianEnsemble_apply (i j : Fin n) :
         if i = j then (g (i, i) : ℂ)
         else if i < j then ((g (i, j) : ℂ) + Complex.I * g (j, i)) / (Real.sqrt 2 : ℝ)
         else ((g (j, i) : ℂ) - Complex.I * g (i, j)) /         (Real.sqrt 2 : ℝ) := by
-          rw [gaussianEnsemble, of_apply]
+  rw [gaussianEnsemble]
+  rcases lt_trichotomy i j with h | h | h
+  · rw [wignerMatrix_apply_of_lt _ _ _ h]
+    by_cases hβ : β = 1 <;>
+      simp [ensembleUpper, extendArray_apply, h, h.ne, hβ]
+  · subst j
+    rw [wignerMatrix_apply_self]
+    by_cases hβ : β = 1 <;> simp [ensembleDiag, extendArray_apply, hβ]
+  · rw [wignerMatrix_apply_of_gt _ _ _ h]
+    by_cases hβ : β = 1 <;>
+      simp [ensembleUpper, extendArray_apply, h.not_gt, h.ne', sub_eq_add_neg, hβ,
+        Complex.conj_ofReal]
 
 /-- The diagonal entries of the `β = 1` ensemble are `√2 * g (i, i) / √n`. -/
 @[simp]
@@ -121,38 +146,17 @@ theorem gaussianEnsemble_apply_of_gt_of_ne_one (hβ : β ≠ 1) {i j : Fin n} (h
 
 end Entries
 
-/-- The array `g`, extended to `ℕ × ℕ` by `1` outside its `n × n` corner. -/
-private def extendArray {Ω : Type*} (n : ℕ) (g : Fin n × Fin n → Ω → ℝ) (p : ℕ × ℕ) (ω : Ω) : ℝ :=
-  if h : p.1 < n ∧ p.2 < n then g (⟨p.1, h.1⟩, ⟨p.2, h.2⟩) ω else 1
-
-private theorem extendArray_apply {Ω : Type*} {n : ℕ} (g : Fin n × Fin n → Ω → ℝ) (i j : Fin n)
-    (ω : Ω) : extendArray n g (i.val, j.val) ω = g (i, j) ω := by
-  simp [extendArray, i.2, j.2]
-
-/-- The above-diagonal entries of the Wigner matrix equal to `gaussianEnsemble β n`. -/
-private def ensembleUpper {Ω : Type*} (β n : ℕ) (g : Fin n × Fin n → Ω → ℝ) :
-    StrictUpper → Ω → ℂ := fun ij ω ↦
-  if β = 1 then (extendArray n g ij.1 ω : ℂ)
-  else ((extendArray n g ij.1 ω : ℂ) + Complex.I * extendArray n g (ij.1.2, ij.1.1) ω) /
-    (Real.sqrt 2 : ℝ)
-
-/-- The diagonal entries of the Wigner matrix equal to `gaussianEnsemble β n`. -/
-private def ensembleDiag {Ω : Type*} (β n : ℕ) (g : Fin n × Fin n → Ω → ℝ) : ℕ → Ω → ℝ :=
-  fun i ω ↦ if β = 1 then Real.sqrt 2 * extendArray n g (i, i) ω else extendArray n g (i, i) ω
-
+/-- A sampled Gaussian ensemble is the corresponding Wigner matrix with its entry functions. -/
 private theorem gaussianEnsemble_eq_wignerMatrix {Ω : Type*} (β n : ℕ)
     (g : Fin n × Fin n → Ω → ℝ) (ω : Ω) :
     gaussianEnsemble β n (fun p ↦ g p ω) =
       wignerMatrix (ensembleUpper β n g) (ensembleDiag β n g) n ω := by
-  ext i j
-  rcases lt_trichotomy i j with h | h | h
-  · rw [wignerMatrix_apply_of_lt _ _ _ h]
-    by_cases hβ : β = 1 <;> simp [ensembleUpper, hβ, h, extendArray_apply]
-  · subst h
-    by_cases hβ : β = 1 <;> simp [ensembleDiag, hβ, extendArray_apply]
-  · rw [wignerMatrix_apply_of_gt _ _ _ h]
-    by_cases hβ : β = 1 <;>
-      simp [ensembleUpper, hβ, h, extendArray_apply, sub_eq_add_neg, Complex.conj_ofReal]
+  rw [gaussianEnsemble]
+  apply wignerMatrix_congr
+  · intro ij hij
+    simp [ensembleUpper, extendArray, hij]
+  · intro i hi
+    simp [ensembleDiag, extendArray, hi]
 
 /-- The Gaussian ensemble is Hermitian for every array. -/
 theorem isHermitian_gaussianEnsemble (β n : ℕ) (g : Fin n × Fin n → ℝ) :
@@ -170,7 +174,7 @@ theorem gaussianEnsemble_one_zero_zero_hasLaw {Ω : Type*} {mΩ : MeasurableSpac
   have e : (fun ω ↦ (gaussianEnsemble 1 1 (fun p ↦ g p ω) 0 0).re) =
       fun ω ↦ Real.sqrt 2 * g (0, 0) ω := by
     funext ω
-    simp [gaussianEnsemble]
+    simp [Real.sqrt_one]
   have h : HasLaw (fun ω ↦ Real.sqrt 2 * g (0, 0) ω) (gaussianReal (Real.sqrt 2 * 0)
       (NNReal.mk (Real.sqrt 2 ^ 2) (sq_nonneg _) * 1)) μ := gaussianReal_const_mul hg (Real.sqrt 2)
   rw [e]
@@ -187,7 +191,7 @@ theorem gaussianEnsemble_two_zero_zero_hasLaw {Ω : Type*} {mΩ : MeasurableSpac
       (gaussianReal 0 1) μ := by
   have e : (fun ω ↦ (gaussianEnsemble 2 1 (fun p ↦ g p ω) 0 0).re) = g (0, 0) := by
     funext ω
-    simp [gaussianEnsemble]
+    simp [Real.sqrt_one]
   rwa [e]
 
 private theorem integral_re_trace_gaussianEnsemble_sq_div_of_wigner {Ω : Type*}
@@ -214,11 +218,6 @@ private theorem extendArray_sq_moments {Ω : Type*} {mΩ : MeasurableSpace Ω} {
   · simp only [extendArray, h, and_self, ↓reduceDIte]
     exact ⟨hint _ (hp h), hvar _ (hp h)⟩
   · simp [extendArray, h]
-
-private theorem norm_sq_add_I_mul_div_sqrt_two (x y : ℝ) :
-    ‖((x : ℂ) + Complex.I * y) / (Real.sqrt 2 : ℝ)‖ ^ 2 = (x ^ 2 + y ^ 2) / 2 := by
-  rw [Complex.sq_norm, map_div₀, Complex.normSq_ofReal, mul_comm Complex.I,
-    Complex.normSq_add_mul_I, Real.mul_self_sqrt (by norm_num)]
 
 /-- The GOE has `E trₙ H² = 1 + 1 / n`, where `trₙ = n⁻¹ tr`: it suffices that the entries
 `g (i, j)` with `i ≤ j` have second moment `1`. The diagonal entries of the ensemble have second
@@ -258,7 +257,7 @@ theorem integral_re_trace_gaussianEnsemble_two_sq_div {Ω : Type*} {mΩ : Measur
   have hξ (ij : StrictUpper) : ∀ ω, ‖ensembleUpper 2 n g ij ω‖ ^ 2 =
       (extendArray n g ij.1 ω ^ 2 + extendArray n g (ij.1.2, ij.1.1) ω ^ 2) / 2 := by
     intro ω
-    simpa [ensembleUpper] using norm_sq_add_I_mul_div_sqrt_two _ _
+    simpa [ensembleUpper] using Complex.norm_sq_add_I_mul_div_sqrt_two _ _
   have hη (i : ℕ) : ∀ ω, ensembleDiag 2 n g i ω ^ 2 = extendArray n g (i, i) ω ^ 2 := by
     intro ω
     simp [ensembleDiag]
