@@ -161,6 +161,16 @@ noncomputable def conjugateEquivalence : FiniteRankBundleCore ℂ B ≌ FiniteRa
 @[simp] theorem conjugateEquivalence_inverse : (conjugateEquivalence B).inverse = conjugate B :=
   (rfl)
 
+@[simp] theorem conjugateEquivalence_unitIso :
+    (conjugateEquivalence B).unitIso = (by
+      rw [conjugateEquivalence_functor, conjugateEquivalence_inverse]
+      exact (doubleConjugateNatIso B).symm) := (rfl)
+
+@[simp] theorem conjugateEquivalence_counitIso :
+    (conjugateEquivalence B).counitIso = (by
+      rw [conjugateEquivalence_functor, conjugateEquivalence_inverse]
+      exact doubleConjugateNatIso B) := (rfl)
+
 /-- Conjugation is an equivalence, with inverse conjugation. -/
 instance : (conjugate B).IsEquivalence := (conjugateEquivalence B).isEquivalence_functor
 
@@ -169,9 +179,15 @@ variable {X : Type v} [TopologicalSpace X]
 /-- Conjugation commutes with pullback, by the identity in every coordinate fibre. -/
 noncomputable def conjugatePullbackIso (A : FiniteRankBundleCore ℂ B) (f : C(X, B)) :
     (conjugate X).obj (A.pullback f) ≅ ((conjugate B).obj A).pullback f :=
-  constIso (fun _ => rfl) (ContinuousLinearEquiv.refl ℂ _) fun _ _ _ _ _ => by
-    ext v k
-    rfl
+  constIso (fun _ => rfl) (ContinuousLinearEquiv.refl ℂ _) fun i j x _ _ => by
+    simp only [coordChange_conjugate_obj, coordChange_pullback]
+    -- State the identity on standard coordinates to fix the inherited fibre instances.
+    have h : (ContinuousLinearMap.id ℂ (Fin A.rank → ℂ)).comp
+        (star (toConv (A.core.coordChange (f i) (f j) (f x)))).ofConv =
+        (star (toConv (A.core.coordChange (f i) (f j) (f x)))).ofConv.comp
+          (ContinuousLinearMap.id ℂ (Fin A.rank → ℂ)) := by
+      simp
+    exact h
 
 @[simp] theorem fiberMap_conjugatePullbackIso_hom (A : FiniteRankBundleCore ℂ B)
     (f : C(X, B)) (x : X) :
