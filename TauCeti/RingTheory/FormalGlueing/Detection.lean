@@ -7,7 +7,9 @@ module
 
 public import TauCeti.RingTheory.FormalGlueing.Torsion
 public import Mathlib.Algebra.Module.LocalizedModule.Exact
+public import Mathlib.Algebra.Module.LocalizedModule.Submodule
 public import TauCeti.Algebra.Module.Torsion.PrimaryComponent
+public import TauCeti.LinearAlgebra.TensorProduct.Quotient
 
 /-!
 # Joint detection in formal glueing
@@ -115,25 +117,13 @@ theorem surjective_iff_baseChange_and_localized (f : M →ₗ[R] N)
   refine ⟨fun hf ↦ ⟨f.lTensor_surjective S hf,
     fun g _ ↦ LocalizedModule.map_surjective _ f hf⟩, ?_⟩
   rintro ⟨hS, hloc⟩
-  have hex := LinearMap.exact_map_mkQ_range f
-  have : Subsingleton (S ⊗[R] (N ⧸ f.range)) := by
-    refine (subsingleton_iff_forall_eq 0).mpr fun q ↦ ?_
-    have he := lTensor_exact S hex (Submodule.mkQ_surjective f.range)
-    obtain ⟨n, rfl⟩ := f.range.mkQ.lTensor_surjective S (Submodule.mkQ_surjective f.range) q
-    rw [LinearMap.baseChange_eq_lTensor] at hS
-    obtain ⟨x, rfl⟩ := hS n
-    exact he.apply_apply_eq_zero x
+  have : Subsingleton (S ⊗[R] (N ⧸ f.range)) :=
+    (Submodule.baseChange_eq_top_iff_subsingleton S f.range).mp (by
+      rw [LinearMap.baseChange_range]
+      exact LinearMap.range_eq_top.mpr hS)
   have : Subsingleton (N ⧸ f.range) :=
-    TauCeti.subsingleton_of_baseChange_and_localized hG fun g hg ↦ by
-      refine (subsingleton_iff_forall_eq 0).mpr fun q ↦ ?_
-      have he := LocalizedModule.map_exact (.powers g) f f.range.mkQ hex
-      obtain ⟨y, rfl⟩ := LocalizedModule.map_surjective (.powers g) f.range.mkQ
-        (Submodule.mkQ_surjective f.range) q
-      have hs := (IsLocalizedModule.map_surjective_iff_localizedModuleMap_surjective
-        (LocalizedModule.mkLinearMap (.powers g) M)
-        (LocalizedModule.mkLinearMap (.powers g) N)).mpr (hloc g hg)
-      obtain ⟨x, rfl⟩ := hs y
-      exact he.apply_apply_eq_zero x
+    TauCeti.subsingleton_of_baseChange_and_localized hG fun g hg ↦
+      (f.localizedMap_surjective_iff_subsingleton_localized_coker (.powers g)).mp (hloc g hg)
   intro n
   simpa using (Subsingleton.elim (f.range.mkQ n) 0)
 
