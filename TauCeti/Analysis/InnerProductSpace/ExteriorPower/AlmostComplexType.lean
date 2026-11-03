@@ -60,10 +60,7 @@ theorem sesqComplexification_eq_zero_of_mem_typeSubmodule
       ((r : ℂ) - s) * Complex.I ≠ 0 := by
     intro h
     have hi := congrArg Complex.im h
-    simp only [map_mul, map_sub, map_natCast, Complex.conj_I, Complex.add_im,
-      Complex.mul_im, Complex.sub_re, Complex.natCast_re, Complex.sub_im,
-      Complex.natCast_im, Complex.neg_im, Complex.I_im, Complex.neg_re, Complex.I_re,
-      Complex.zero_im] at hi
+    simp at hi
     have hsums : (p : ℝ) + q = r + s := by exact_mod_cast hpq.trans hrs.symm
     have hp : (p : ℝ) = r := by linarith
     have hq : (q : ℝ) = s := by linarith
