@@ -460,13 +460,9 @@ theorem adjointWeightSpace_rootGeneratorWeight_eq_span (k : Fin 2 ⊕ Fin 2) :
   · intro x hx
     have hsupp : ∀ i j, weight i - weight j ≠ G2.rootGeneratorWeight valid_G2 k →
         tangentMatrix x i j = 0 := by
-      have hinj : ∀ μ ν : Fin 2 → ℤ,
-          SplitTorus.weightCharacter μ = SplitTorus.weightCharacter ν → μ = ν :=
-        fun μ ν hμν => funext fun l => by
-          simpa only [SplitTorus.toAdd_weightCharacter] using
-            congrArg (fun χ : Multiplicative (Fin 2 →₀ ℤ) => Multiplicative.toAdd χ l) hμν
       intro i j h
-      exact (mem_adjointWeightSpace_iff _ x).mp hx i j fun hw => h (hinj _ _ hw)
+      exact (mem_adjointWeightSpace_iff _ x).mp hx i j fun hw =>
+        h (SplitTorus.weightCharacter_injective hw)
     obtain ⟨t, ht⟩ := exists_eq_smul_rootMatrix k (tangentMatrix x)
       (tangentMatrix_mul_crossOperatorPrime x) hsupp
     refine Submodule.mem_span_singleton.mpr ⟨t, tangentMatrix_injective ?_⟩
@@ -487,6 +483,63 @@ theorem simpleRootCharacter_apply (i : Fin 2) (j : ULift.{0} (Fin 2)) :
     simpleRootCharacter i j =
       (G2.simplyConnectedRootDatum valid_G2).root (G2.simpleIndex valid_G2 i) j.down := by
   simp [simpleRootCharacter]
+
+/-- The character of the chosen split maximal torus with fundamental-weight coordinates `μ`. -/
+def liftCharacter (μ : Fin 2 → ℤ) : ULift.{0} (Fin 2) →₀ ℤ :=
+  Finsupp.equivFunOnFinite.symm fun l => μ l.down
+
+/-- A lifted character evaluates at the underlying fundamental-weight coordinate. -/
+@[simp]
+theorem liftCharacter_apply (μ : Fin 2 → ℤ) (l : ULift.{0} (Fin 2)) :
+    liftCharacter μ l = μ l.down := by
+  simp [liftCharacter]
+
+/-- Lifting fundamental-weight coordinates preserves addition of characters. -/
+theorem liftCharacter_add (μ ν : Fin 2 → ℤ) :
+    liftCharacter (μ + ν) = liftCharacter μ + liftCharacter ν := by
+  ext l
+  simp [liftCharacter]
+
+/-- Fundamental-weight coordinates determine the lifted character. -/
+theorem liftCharacter_injective : Function.Injective liftCharacter := by
+  intro μ ν h
+  funext l
+  simpa only [liftCharacter_apply] using DFunLike.congr_fun h (ULift.up l)
+
+/-- The multiplicative character of lifted coordinates is their split-torus weight character. -/
+theorem ofAdd_liftCharacter (μ : Fin 2 → ℤ) :
+    Multiplicative.ofAdd (liftCharacter μ) =
+      SplitTorus.weightCharacter (fun l : ULift.{0} (Fin 2) => μ l.down) := by
+  rw [← SplitTorus.weightCharacter_coe]
+  simp [liftCharacter]
+
+/-- The numbered raising roots are the rows of the Cartan matrix `!![2, -1; -3, 2]`. -/
+theorem simpleRootCharacter_eq_liftCharacter (i : Fin 2) :
+    simpleRootCharacter i =
+      liftCharacter (fun j => (!![2, -1; -3, 2] : Matrix (Fin 2) (Fin 2) ℤ) i j) := by
+  have hrow : (G2.simplyConnectedRootDatum valid_G2).root (G2.simpleIndex valid_G2 i) =
+      fun j : Fin 2 => (!![2, -1; -3, 2] : Matrix (Fin 2) (Fin 2) ℤ) i j := by
+    simpa only [rank_G2, cartanMatrix_G2_eq] using root_simpleIndex G2 valid_G2 i
+  ext l
+  rw [simpleRootCharacter_apply, hrow, liftCharacter_apply]
+
+/-- **The weight-space criterion in fundamental-weight coordinates.** A tangent vector of the
+carrier lies in the root space of the chosen torus at the character with coordinates `μ` exactly
+when the entries of its matrix vanish off the weight differences equal to `μ`. -/
+theorem mem_adjointWeightSpace_liftCharacter_iff (μ : Fin 2 → ℤ)
+    (x : Module.Dual (ZMod 3) (Bialgebra.CotangentSpace (ZMod 3) carrierAlgebra)) :
+    x ∈ Derivation.adjointWeightSpace splitMaximalTorus.coordinateMap.hom
+        (Multiplicative.ofAdd (liftCharacter μ)) ↔
+      ∀ i j, weight i - weight j ≠ μ → tangentMatrix x i j = 0 := by
+  have hspace : Derivation.adjointWeightSpace splitMaximalTorus.coordinateMap.hom
+      (Multiplicative.ofAdd (liftCharacter μ)) =
+        Derivation.adjointWeightSpace weightTorusCoordinateMap.hom
+          (SplitTorus.weightCharacter μ) :=
+    (congrArg (Derivation.adjointWeightSpace splitMaximalTorus.coordinateMap.hom)
+      (ofAdd_liftCharacter μ)).trans
+        (adjointWeightSpace_splitMaximalTorus_weightCharacter_eq_weightTorus μ)
+  rw [hspace, mem_adjointWeightSpace_iff]
+  simp only [ne_eq, SplitTorus.weightCharacter_inj]
 
 /-- The numbered root character agrees with the weight character of its raising generator. -/
 theorem ofAdd_simpleRootCharacter (i : Fin 2) :

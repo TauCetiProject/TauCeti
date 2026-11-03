@@ -55,6 +55,23 @@ noncomputable section
 
 attribute [local instance 100] LieRing.ofAssociativeRing
 
+/-- The two nonsimple negative short-root characters, in Bourbaki order. -/
+def negativeNonsimpleShortRootCharacter (k : Fin 2) : ULift.{0} (Fin 2) →₀ ℤ :=
+  -((k.val + 1) • simpleRootCharacter 0 + simpleRootCharacter 1)
+
+/-- The first nonsimple negative short root is `-(α₁ + α₂)`. -/
+@[simp]
+theorem negativeNonsimpleShortRootCharacter_zero :
+    negativeNonsimpleShortRootCharacter 0 = -(simpleRootCharacter 0 + simpleRootCharacter 1) := by
+  simp [negativeNonsimpleShortRootCharacter]
+
+/-- The second nonsimple negative short root is `-(2α₁ + α₂)`. -/
+@[simp]
+theorem negativeNonsimpleShortRootCharacter_one :
+    negativeNonsimpleShortRootCharacter 1 =
+      -(2 • simpleRootCharacter 0 + simpleRootCharacter 1) := by
+  simp [negativeNonsimpleShortRootCharacter]
+
 /-- The bracket vectors at the two nonsimple negative short roots: index `0` gives
 `[F₁, F₂]`, and index `1` gives `[F₁, [F₁, F₂]]`. -/
 def negativeNonsimpleShortRootVector (k : Fin 2) :
@@ -95,16 +112,15 @@ theorem tangentMatrix_negativeNonsimpleShortRootVector (k : Fin 2) :
   rw [negativeNonsimpleShortRootVector]
   split_ifs with h
   · subst k
-    rw [tangentMatrix_symm_lie, LinearEquiv.symm_apply_apply, LinearEquiv.symm_apply_apply,
-      tangentMatrix_rootVector, tangentMatrix_rootVector, rootMatrix_inr, rootMatrix_inr,
-      Ring.lie_def]
+    simp only [↓tangentMatrix_symm_lie, LinearEquiv.symm_apply_apply,
+      tangentMatrix_rootVector (.inr 0), tangentMatrix_rootVector (.inr 1),
+      rootMatrix_inr, Ring.lie_def]
     decide
   · have hk : k = 1 := by omega
     subst k
-    rw [tangentMatrix_symm_lie, LinearEquiv.symm_apply_apply, tangentMatrix_symm_lie,
-      LinearEquiv.symm_apply_apply, LinearEquiv.symm_apply_apply,
-      tangentMatrix_rootVector, tangentMatrix_rootVector, rootMatrix_inr, rootMatrix_inr,
-      Ring.lie_def, Ring.lie_def]
+    simp only [↓tangentMatrix_symm_lie, LinearEquiv.symm_apply_apply,
+      tangentMatrix_rootVector (.inr 0), tangentMatrix_rootVector (.inr 1),
+      rootMatrix_inr, Ring.lie_def]
     decide
 
 /-- Neither of the two lowering-root brackets vanishes in characteristic three. -/
@@ -118,42 +134,20 @@ theorem negativeNonsimpleShortRootVector_ne_zero (k : Fin 2) :
   · exact absurd (congrFun (congrFun hm 3) 0) (by decide)
 
 private theorem negativeShort_character (k : Fin 2) :
-    Multiplicative.ofAdd (-((k.val + 1) • simpleRootCharacter 0 + simpleRootCharacter 1)) =
-      SplitTorus.weightCharacter (fun l : ULift.{0} (Fin 2) =>
-        (![![1, -1], ![-1, 0]] : Fin 2 → Fin 2 → ℤ) k l.down) := by
-  have hrow (i : Fin 2) :
-      (G2.simplyConnectedRootDatum valid_G2).root (G2.simpleIndex valid_G2 i) =
-        fun j : Fin 2 => (!![2, -1; -3, 2] : Matrix (Fin 2) (Fin 2) ℤ) i j := by
-    simpa only [rank_G2, cartanMatrix_G2_eq] using root_simpleIndex G2 valid_G2 i
-  apply Multiplicative.toAdd.injective
-  ext l
-  obtain ⟨l⟩ := l
-  simp only [toAdd_ofAdd, Finsupp.neg_apply, Finsupp.add_apply, Finsupp.smul_apply,
-    simpleRootCharacter_apply, hrow, SplitTorus.toAdd_weightCharacter]
+    negativeNonsimpleShortRootCharacter k =
+      liftCharacter ((![![1, -1], ![-1, 0]] : Fin 2 → Fin 2 → ℤ) k) := by
+  ext ⟨l⟩
+  simp only [negativeNonsimpleShortRootCharacter, Finsupp.neg_apply, Finsupp.add_apply,
+    Finsupp.smul_apply, simpleRootCharacter_eq_liftCharacter, liftCharacter_apply]
   fin_cases k <;> fin_cases l <;> decide
 
 private theorem mem_negativeShort_weightSpace_iff (k : Fin 2)
     (x : Module.Dual (ZMod 3) (Bialgebra.CotangentSpace (ZMod 3) carrierAlgebra)) :
     x ∈ Derivation.adjointWeightSpace splitMaximalTorus.coordinateMap.hom
-        (Multiplicative.ofAdd (-((k.val + 1) • simpleRootCharacter 0 + simpleRootCharacter 1))) ↔
+        (Multiplicative.ofAdd (negativeNonsimpleShortRootCharacter k)) ↔
       ∀ i j, weight i - weight j ≠ (![![1, -1], ![-1, 0]] : Fin 2 → Fin 2 → ℤ) k →
         tangentMatrix x i j = 0 := by
-  have heq := (congrArg
-    (Derivation.adjointWeightSpace splitMaximalTorus.coordinateMap.hom)
-      (negativeShort_character k)).trans
-        (adjointWeightSpace_splitMaximalTorus_weightCharacter_eq_weightTorus _)
-  refine heq.symm ▸ ?_
-  rw [mem_adjointWeightSpace_iff]
-  have hinj (μ ν : Fin 2 → ℤ) :
-      SplitTorus.weightCharacter μ = SplitTorus.weightCharacter ν ↔ μ = ν := by
-    constructor
-    · intro h
-      funext l
-      simpa only [SplitTorus.toAdd_weightCharacter] using
-        congrArg (fun χ : Multiplicative (Fin 2 →₀ ℤ) => Multiplicative.toAdd χ l) h
-    · rintro rfl
-      rfl
-  simp only [ne_eq, hinj]
+  rw [negativeShort_character, mem_adjointWeightSpace_liftCharacter_iff]
 
 /- Each weight supports four entries. Three entries of the differentiated cross-product
 identity determine them from one coefficient; the other tensor equations are not needed. -/
@@ -222,11 +216,9 @@ private theorem exists_tangentMatrix_eq_smul_one
 
 /-- The weight space at `-(α₁ + α₂)` (index `0`) or `-(2α₁ + α₂)` (index `1`) is exactly
 the line generated by the corresponding lowering-root bracket. -/
--- Match the character before simplification normalizes its natural-number coefficient.
-@[simp↓]
 theorem adjointWeightSpace_negativeNonsimpleShortRoot_eq_span (k : Fin 2) :
     Derivation.adjointWeightSpace splitMaximalTorus.coordinateMap.hom
-        (Multiplicative.ofAdd (-((k.val + 1) • simpleRootCharacter 0 + simpleRootCharacter 1))) =
+        (Multiplicative.ofAdd (negativeNonsimpleShortRootCharacter k)) =
       (ZMod 3) ∙ negativeNonsimpleShortRootVector k := by
   apply le_antisymm
   · intro x hx
@@ -241,18 +233,17 @@ theorem adjointWeightSpace_negativeNonsimpleShortRoot_eq_span (k : Fin 2) :
     exact ht.symm
   · rw [Submodule.span_singleton_le_iff_mem, mem_negativeShort_weightSpace_iff,
       tangentMatrix_negativeNonsimpleShortRootVector]
-    intro i j h
-    revert h
+    intro i j
     fin_cases k <;> fin_cases i <;> fin_cases j <;> decide
 
 /-- Both nonsimple negative short-root characters are intrinsic nontrivial adjoint weights of
 the chosen split maximal torus. -/
 theorem negativeNonsimpleShortRoot_mem_nontrivialAdjointWeights (k : Fin 2) :
-    Multiplicative.ofAdd (-((k.val + 1) • simpleRootCharacter 0 + simpleRootCharacter 1)) ∈
+    Multiplicative.ofAdd (negativeNonsimpleShortRootCharacter k) ∈
       Derivation.nontrivialAdjointWeights splitMaximalTorus.coordinateMap.hom := by
   apply Derivation.mem_nontrivialAdjointWeights.mpr
   refine ⟨?_, ?_⟩
-  · rw [negativeShort_character k]
+  · rw [negativeShort_character k, ofAdd_liftCharacter]
     intro h
     have he := congrArg (fun χ : Multiplicative (ULift.{0} (Fin 2) →₀ ℤ) =>
       Multiplicative.toAdd χ (ULift.up 0)) h

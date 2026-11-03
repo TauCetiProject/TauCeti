@@ -71,6 +71,19 @@ theorem toAdd_weightCharacter (μ : σ → ℤ) (j : σ) :
     Multiplicative.toAdd (weightCharacter μ) j = μ j := by
   simp [weightCharacter]
 
+/-- An integral exponent vector is determined by its split-torus character. -/
+theorem weightCharacter_injective : Function.Injective (weightCharacter (σ := σ)) := by
+  intro μ ν h
+  funext j
+  simpa only [toAdd_weightCharacter] using
+    congrArg (fun χ : Multiplicative (σ →₀ ℤ) => Multiplicative.toAdd χ j) h
+
+/-- Two split-torus weight characters agree exactly when their exponent vectors agree. -/
+@[simp]
+theorem weightCharacter_inj {μ ν : σ → ℤ} :
+    weightCharacter μ = weightCharacter ν ↔ μ = ν :=
+  weightCharacter_injective.eq_iff
+
 /-- Relabelling the exponent coordinates along `e` relabels the weight character. -/
 theorem toMultiplicative_domCongr_weightCharacter {τ : Type*} [Fintype τ] (e : σ ≃ τ)
     (μ : σ → ℤ) :

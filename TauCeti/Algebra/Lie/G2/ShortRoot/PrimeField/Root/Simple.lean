@@ -67,40 +67,6 @@ attribute [local instance 100] LieRing.ofAssociativeRing
 
 /-! ## Characters in the lifted torus coordinates -/
 
-/-- The character of the chosen split maximal torus with fundamental-weight coordinates `μ`. -/
-private def liftCharacter (μ : Fin 2 → ℤ) : ULift.{0} (Fin 2) →₀ ℤ :=
-  Finsupp.equivFunOnFinite.symm fun l => μ l.down
-
-private theorem liftCharacter_apply (μ : Fin 2 → ℤ) (l : ULift.{0} (Fin 2)) :
-    liftCharacter μ l = μ l.down := by
-  simp [liftCharacter]
-
-private theorem liftCharacter_add (μ ν : Fin 2 → ℤ) :
-    liftCharacter (μ + ν) = liftCharacter μ + liftCharacter ν := by
-  ext l
-  simp [liftCharacter]
-
-private theorem liftCharacter_injective : Function.Injective liftCharacter := by
-  intro μ ν h
-  funext l
-  simpa [liftCharacter_apply] using DFunLike.congr_fun h (ULift.up l)
-
-private theorem ofAdd_liftCharacter (μ : Fin 2 → ℤ) :
-    Multiplicative.ofAdd (liftCharacter μ) =
-      SplitTorus.weightCharacter (fun l : ULift.{0} (Fin 2) => μ l.down) := by
-  rw [← SplitTorus.weightCharacter_coe]
-  simp [liftCharacter]
-
-/-- The numbered raising roots are the rows of the Cartan matrix `!![2, -1; -3, 2]`. -/
-private theorem simpleRootCharacter_eq_liftCharacter (i : Fin 2) :
-    simpleRootCharacter i =
-      liftCharacter (fun j => (!![2, -1; -3, 2] : Matrix (Fin 2) (Fin 2) ℤ) i j) := by
-  have hrow : (G2.simplyConnectedRootDatum valid_G2).root (G2.simpleIndex valid_G2 i) =
-      fun j : Fin 2 => (!![2, -1; -3, 2] : Matrix (Fin 2) (Fin 2) ℤ) i j := by
-    simpa only [rank_G2, cartanMatrix_G2_eq] using root_simpleIndex G2 valid_G2 i
-  ext l
-  rw [simpleRootCharacter_apply, hrow, liftCharacter_apply]
-
 private theorem simpleRootCharacter_zero : simpleRootCharacter 0 = liftCharacter ![2, -1] := by
   rw [simpleRootCharacter_eq_liftCharacter]
   exact congrArg liftCharacter (funext fun j => by fin_cases j <;> rfl)
@@ -117,30 +83,6 @@ theorem simpleRootCharacter_injective : Function.Injective simpleRootCharacter :
     liftCharacter_apply, liftCharacter_apply] at h0
   revert h0
   fin_cases i <;> fin_cases j <;> decide
-
-/-- **The weight-space criterion in fundamental-weight coordinates.** A tangent vector of the
-carrier lies in the root space of the chosen torus at the character with coordinates `μ` exactly
-when the entries of its matrix vanish off the weight differences equal to `μ`. -/
-private theorem mem_adjointWeightSpace_liftCharacter_iff (μ : Fin 2 → ℤ)
-    (x : Module.Dual (ZMod 3) (Bialgebra.CotangentSpace (ZMod 3) carrierAlgebra)) :
-    x ∈ Derivation.adjointWeightSpace splitMaximalTorus.coordinateMap.hom
-        (Multiplicative.ofAdd (liftCharacter μ)) ↔
-      ∀ i j, weight i - weight j ≠ μ → tangentMatrix x i j = 0 := by
-  have hspace : Derivation.adjointWeightSpace splitMaximalTorus.coordinateMap.hom
-      (Multiplicative.ofAdd (liftCharacter μ)) =
-        Derivation.adjointWeightSpace weightTorusCoordinateMap.hom
-          (SplitTorus.weightCharacter μ) :=
-    (congrArg (Derivation.adjointWeightSpace splitMaximalTorus.coordinateMap.hom)
-      (ofAdd_liftCharacter μ)).trans
-        (adjointWeightSpace_splitMaximalTorus_weightCharacter_eq_weightTorus μ)
-  rw [hspace, mem_adjointWeightSpace_iff]
-  have hinj : ∀ ν : Fin 2 → ℤ,
-      SplitTorus.weightCharacter ν = SplitTorus.weightCharacter μ ↔ ν = μ := fun ν =>
-    ⟨fun h => funext fun l => by
-      simpa only [SplitTorus.toAdd_weightCharacter] using
-        congrArg (fun χ : Multiplicative (Fin 2 →₀ ℤ) => Multiplicative.toAdd χ l) h,
-      fun h => h ▸ rfl⟩
-  simp only [ne_eq, hinj]
 
 /-! ## Cross-product derivations of a positive weight -/
 
@@ -337,7 +279,7 @@ private theorem isPositiveRoot_liftCharacter (μ : Fin 2 → ℤ) (hμ : μ ≠ 
     fun x hx => ?_⟩
   · rw [Multiplicative.ofAdd.injective h]
     ext l
-    simp [liftCharacter]
+    simp only [liftCharacter_apply, Pi.zero_apply, Finsupp.zero_apply]
   · rw [hspan] at hx
     obtain ⟨c, rfl⟩ := Submodule.mem_span_singleton.mp hx
     rw [map_smul]
