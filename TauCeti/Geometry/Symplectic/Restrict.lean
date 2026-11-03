@@ -18,6 +18,9 @@ complementary to its symplectic complement `L^ω` is automatically of that kind,
 then `ω` is the product of the two restrictions under the linear equivalence supplied by the
 splitting. A pair of vectors with nonzero symplectic pairing spans such a subspace.
 
+An almost complex structure restricts to every subspace it preserves, and a compatible pair
+`(ω, J)` restricts to a compatible pair on such a subspace.
+
 ## Main declarations
 
 * `TauCeti.SymplecticForm.restrict`: the restriction of `ω` to a subspace on which it stays
@@ -29,15 +32,34 @@ splitting. A pair of vectors with nonzero symplectic pairing spans such a subspa
   spans a subspace disjoint from its symplectic complement.
 * `TauCeti.SymplecticForm.isSymplectomorphism_prodEquivOfIsCompl`: the equivalence associated to
   `V = L ⊕ L^ω` is a symplectomorphism from the product of the restricted forms to `ω`.
+* `TauCeti.AlmostComplexStructure.restrict`: the restriction of `J` to a `J`-invariant subspace.
+* `TauCeti.SymplecticForm.Compatible.restrict`: compatibility passes to these restrictions.
 -/
 
 public section
 
 namespace TauCeti
 
-namespace SymplecticForm
-
 variable {V : Type*} [AddCommGroup V] [Module ℝ V]
+
+namespace AlmostComplexStructure
+
+/-- The restriction of an almost complex structure to a subspace it preserves. -/
+def restrict (J : AlmostComplexStructure V) (L : Submodule ℝ V) (hL : ∀ x ∈ L, J x ∈ L) :
+    AlmostComplexStructure L where
+  toLinearMap := J.toLinearMap.restrict hL
+  square_neg := by
+    ext x
+    simp [J.apply_apply]
+
+@[simp]
+lemma coe_restrict_apply (J : AlmostComplexStructure V) (L : Submodule ℝ V)
+    (hL : ∀ x ∈ L, J x ∈ L) (x : L) : (J.restrict L hL x : V) = J x :=
+  (rfl)
+
+end AlmostComplexStructure
+
+namespace SymplecticForm
 
 /-- The restriction of a symplectic form to a subspace on which it remains nondegenerate.
 
@@ -106,6 +128,14 @@ lemma disjoint_span_pair_orthogonal (ω : SymplecticForm V) {x y : V} (h : ω x 
   have ha : a = 0 := by simpa [h] using mem_orthogonal_iff'.1 hv' y hymem
   have hb : b = 0 := by simpa [h] using mem_orthogonal_iff.1 hv' x hxmem
   simp [ha, hb]
+
+/-- A compatible pair `(ω, J)` restricts to a compatible pair on a `J`-invariant subspace on which
+`ω` stays nondegenerate. -/
+lemma Compatible.restrict {ω : SymplecticForm V} {J : AlmostComplexStructure V}
+    (hJ : ω.Compatible J) (L : Submodule ℝ V) (h : (ω.toBilinForm.restrict L).Nondegenerate)
+    (hL : ∀ x ∈ L, J x ∈ L) : (ω.restrict L h).Compatible (J.restrict L hL) :=
+  Compatible.of_tames ((invariant_iff _ _).2 fun x y ↦ by simp [hJ.invariant_apply])
+    fun x hx ↦ by simpa using hJ.tames x (by simpa using hx)
 
 end SymplecticForm
 
