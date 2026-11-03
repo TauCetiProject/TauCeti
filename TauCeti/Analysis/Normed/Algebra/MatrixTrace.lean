@@ -48,6 +48,22 @@ theorem norm_trace_conjTranspose_mul_le (A B : Matrix m n 𝕜) :
 
 variable {m : Type*} [Fintype m] [DecidableEq m]
 
+/-- The trace is bounded in Frobenius norm by the square root of the matrix dimension. -/
+theorem norm_trace_le_sqrt_card_mul_norm (A : Matrix m m 𝕜) :
+    ‖A.trace‖ ≤ Real.sqrt (Fintype.card m) * ‖A‖ := by
+  have h := norm_trace_conjTranspose_mul_le (1 : Matrix m m 𝕜) A
+  have hnorm : ‖(1 : Matrix m m 𝕜)‖ = Real.sqrt (Fintype.card m) := by
+    have hterm (i j : m) :
+        ‖(1 : Matrix m m 𝕜) i j‖ ^ (2 : ℝ) = if i = j then 1 else 0 := by
+      by_cases hij : i = j <;> simp [Matrix.one_apply, hij]
+    have hsum : ∑ i : m, ∑ j : m,
+        ‖(1 : Matrix m m 𝕜) i j‖ ^ (2 : ℝ) = Fintype.card m := by
+      simp_rw [hterm]
+      simp
+    rw [frobenius_norm_def]
+    rw [hsum, Real.sqrt_eq_rpow]
+  simpa [hnorm] using h
+
 /-- The trace of a matrix square is bounded by the squared Frobenius norm. -/
 theorem norm_trace_mul_self_le (A : Matrix m m 𝕜) :
     ‖(A * A).trace‖ ≤ ‖A‖ ^ 2 := by
