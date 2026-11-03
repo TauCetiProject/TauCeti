@@ -12,6 +12,7 @@ import TauCeti.Geometry.Manifold.ContMDiff.Defs
 import TauCeti.Geometry.Manifold.Diffeomorph.NormedSpace
 import TauCeti.Geometry.Manifold.Immersion.Basic
 import TauCeti.Geometry.Manifold.Immersion.LocalDiffeomorph
+import TauCeti.Geometry.Manifold.LocalDiffeomorph.Basic
 import TauCeti.Geometry.Manifold.LocalDiffeomorph.Composition
 import TauCeti.Geometry.Manifold.LocalDiffeomorph.OpenSubset
 import TauCeti.Geometry.Manifold.LocalDiffeomorph.Sum
@@ -679,21 +680,15 @@ private theorem contMDiff_transition :
 
 private theorem isInvertible_mfderiv_transition (w : overlap S₁ S₂) :
     (mfderiv ((𝓡 1).prod 𝓘(ℝ)) ((𝓡 1).prod 𝓘(ℝ)) (transition S₁ S₂) w).IsInvertible := by
-  have h₂ := isLocalDiffeomorph_proj_inr S₁ S₂ (transition S₁ S₂ w)
-  have h₁ := isLocalDiffeomorph_proj_inl S₁ S₂ (w : lowerPiece S₁ S₂)
-  have hv := isLocalDiffeomorph_subtype_val (I := (𝓡 1).prod 𝓘(ℝ)) (n := ∞) w
-  -- The derivative of `proj ∘ inr ∘ transition` is that of `proj ∘ inl ∘ val`, a composite of
-  -- derivatives of local diffeomorphisms.
-  have heq := (Filter.EventuallyEq.of_eq (proj_inr_comp_transition S₁ S₂)
-    (l := 𝓝 w)).mfderiv_eq (I := (𝓡 1).prod 𝓘(ℝ)) (I' := (𝓡 1).prod 𝓘(ℝ))
-  rw [mfderiv_comp w (h₂.mdifferentiableAt (NeZero.ne ∞))
-      ((contMDiff_transition S₁ S₂ w).mdifferentiableAt (NeZero.ne ∞)),
-    mfderiv_comp w (h₁.mdifferentiableAt (NeZero.ne ∞)) (hv.mdifferentiableAt (NeZero.ne ∞)),
-    ← h₂.mfderivToContinuousLinearEquiv_coe (NeZero.ne ∞)] at heq
-  rw [← ContinuousLinearMap.isInvertible_equiv_comp
-      (e := h₂.mfderivToContinuousLinearEquiv (NeZero.ne ∞)),
-    heq, ContinuousLinearMap.isInvertible_equiv_comp]
-  exact (h₁.isInvertible_mfderiv (NeZero.ne ∞)).comp (hv.isInvertible_mfderiv (NeZero.ne ∞))
+  -- `proj ∘ inr ∘ transition = proj ∘ inl ∘ val` is a local diffeomorphism, and cancelling the
+  -- local diffeomorphism `proj ∘ inr` makes `transition` one.
+  have hcomp : IsLocalDiffeomorphAt ((𝓡 1).prod 𝓘(ℝ)) ((𝓡 1).prod 𝓘(ℝ)) ∞
+      ((proj S₁ S₂ ∘ Sum.inr) ∘ transition S₁ S₂) w := by
+    rw [proj_inr_comp_transition]
+    exact (isLocalDiffeomorph_subtype_val w).comp
+      (hg := isLocalDiffeomorph_proj_inl S₁ S₂ (w : lowerPiece S₁ S₂))
+  exact (hcomp.of_comp_left (isLocalDiffeomorph_proj_inr S₁ S₂ (transition S₁ S₂ w))
+    (contMDiff_transition S₁ S₂).continuous.continuousAt).isInvertible_mfderiv (NeZero.ne ∞)
 
 /-- The index type of orientations of surfaces modelled on `ℝ¹ × ℝ`. -/
 private abbrev OrientationIndex : Type :=

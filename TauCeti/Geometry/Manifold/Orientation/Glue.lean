@@ -14,7 +14,7 @@ Let `f : M → X` and `g : N → X` be injective `C^n` local diffeomorphisms, `n
 cover `X`, and let `o₁` and `o₂` be orientations of `M` and `N`. If, at every pair of points
 `x : M` and `y : N` with `f x = g y`, the derivatives of `f` and `g` carry the tangent orientations
 of `o₁` and `o₂` to the same orientation of the tangent space of `X`, then `X` carries an
-orientation from which `f` and `g` preserve orientation everywhere
+orientation such that `f` and `g` preserve orientation everywhere, from `o₁` and `o₂` to it
 (`TauCeti.Manifold.Orientation.glue`).
 
 Its tangent orientation at a point of `X` is carried from `o₁` or `o₂` through a preimage under
@@ -33,7 +33,7 @@ cobordisms, are oriented.
 
 * `TauCeti.Manifold.Orientation.isOrientationPreservingAt_glue_left`,
   `TauCeti.Manifold.Orientation.isOrientationPreservingAt_glue_right`: the two local
-  diffeomorphisms preserve orientation from the glued orientation.
+  diffeomorphisms preserve orientation from `o₁` and `o₂` to the glued orientation.
 * `TauCeti.Manifold.Orientation.eq_glue_iff`: this property characterizes the glued orientation.
 * `TauCeti.Manifold.Orientation.map_orientationAt_eq_of_comp_eventuallyEq`: the hypothesis of
   `glue` at a point of the overlap, when both pieces are read off a common oriented source by
