@@ -86,6 +86,7 @@ theorem demazureProd_nil : cs.demazureProd [] = 1 :=
   (rfl)
 
 /-- A letter `i` is absorbed when `sᵢ` is a left descent of the Demazure product of the rest. -/
+@[simp]
 theorem demazureProd_cons_of_isLeftDescent {i : B} {ω : List B}
     (h : cs.IsLeftDescent (cs.demazureProd ω) i) :
     cs.demazureProd (i :: ω) = cs.demazureProd ω := by
@@ -95,6 +96,7 @@ theorem demazureProd_cons_of_isLeftDescent {i : B} {ω : List B}
 
 /-- A letter `i` multiplies on the left when `sᵢ` is not a left descent of the Demazure product of
 the rest. -/
+@[simp]
 theorem demazureProd_cons_of_not_isLeftDescent {i : B} {ω : List B}
     (h : ¬cs.IsLeftDescent (cs.demazureProd ω) i) :
     cs.demazureProd (i :: ω) = cs.simple i * cs.demazureProd ω := by
@@ -227,25 +229,31 @@ theorem demazureProd_reverse (ω : List B) :
       exact ⟨σ.reverse, hσ.reverse, by simp [hσprod]⟩
   exact ((key _).mp (cs.bruhatLE_refl _)).antisymm ((key _).mpr (cs.bruhatLE_refl _))
 
+/-- Appending a letter is prepending it to the reversed word, up to inversion. -/
+private theorem demazureProd_append_singleton_eq_inv (ω : List B) (i : B) :
+    cs.demazureProd (ω ++ [i]) = (cs.demazureProd (i :: ω.reverse))⁻¹ := by
+  rw [← demazureProd_reverse]
+  simp
+
 /-- A last letter `i` is absorbed when `sᵢ` is a right descent of the Demazure product of the
 rest. -/
+@[simp]
 theorem demazureProd_append_singleton_of_isRightDescent {i : B} {ω : List B}
     (h : cs.IsRightDescent (cs.demazureProd ω) i) :
     cs.demazureProd (ω ++ [i]) = cs.demazureProd ω := by
   rw [← cs.isLeftDescent_inv_iff, ← demazureProd_reverse] at h
-  rw [← inv_inv (cs.demazureProd (ω ++ [i])), ← demazureProd_reverse, List.reverse_append,
-    List.reverse_singleton, List.singleton_append, cs.demazureProd_cons_of_isLeftDescent h,
-    demazureProd_reverse, inv_inv]
+  rw [demazureProd_append_singleton_eq_inv, cs.demazureProd_cons_of_isLeftDescent h]
+  simp
 
 /-- A last letter `i` multiplies on the right when `sᵢ` is not a right descent of the Demazure
 product of the rest. -/
+@[simp]
 theorem demazureProd_append_singleton_of_not_isRightDescent {i : B} {ω : List B}
     (h : ¬cs.IsRightDescent (cs.demazureProd ω) i) :
     cs.demazureProd (ω ++ [i]) = cs.demazureProd ω * cs.simple i := by
   rw [← cs.isLeftDescent_inv_iff, ← demazureProd_reverse] at h
-  rw [← inv_inv (cs.demazureProd (ω ++ [i])), ← demazureProd_reverse, List.reverse_append,
-    List.reverse_singleton, List.singleton_append, cs.demazureProd_cons_of_not_isLeftDescent h,
-    demazureProd_reverse, mul_inv_rev, inv_inv, cs.inv_simple]
+  rw [demazureProd_append_singleton_eq_inv, cs.demazureProd_cons_of_not_isLeftDescent h]
+  simp
 
 /-! ### The universal property of the 0-Hecke monoid -/
 
