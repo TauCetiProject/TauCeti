@@ -357,7 +357,7 @@ private theorem localEulerCharacteristic_fdGalRepOfQuotient_eq_localCardNorm {�
       have : CharZero L := FinitePadicExtension.charZero L p
       refine (natCastValuation_eq_zero_iff L ℓ (Nat.cast_ne_zero.2 (NeZero.ne ℓ))).1 ?_
       rw [natCastValuation_eq_absoluteRamificationIndex_mul_padicValNat L p ℓ (NeZero.ne ℓ),
-        padicValNat_primes (Ne.symm hℓp), mul_zero]
+        Nat.padicValNat_def, multiplicity_primes (Ne.symm hℓp), mul_zero]
     have hk := finrank_invariants_h1ConjRepresentation_tprod_of_forall σ hσ hℓ e 0 (fun A' ↦
       by simpa using finrank_invariants_kummerH1FiniteRepresentation_tprod_of_isUnit σ _ hℓL A') A
     refine localEulerCharacteristic_eq_localCardNorm_of_finrank p _ 0

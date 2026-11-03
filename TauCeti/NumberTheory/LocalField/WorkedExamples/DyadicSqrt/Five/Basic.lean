@@ -77,7 +77,7 @@ namespace DyadicSqrtFive
 
 /-- `X² − 5` is irreducible over `ℚ_2`, because `5` is not a square in `ℚ_2`. -/
 local instance : Fact (Irreducible (X ^ 2 - C 5 : ℚ_[2][X])) :=
-  ⟨X_pow_sub_C_irreducible_of_prime Nat.prime_two fun b hb ↦
+  ⟨irreducible_X_pow_sub_C_of_prime Nat.prime_two fun b hb ↦
     Padic.not_isSquare_five ⟨b, by rw [← hb, sq]⟩⟩
 
 instance : Field DyadicSqrtFive := inferInstanceAs (Field (AdjoinRoot (X ^ 2 - C 5 : ℚ_[2][X])))
@@ -171,8 +171,8 @@ instance : IsUnramified ℚ_[2] DyadicSqrtFive := by
       exact (map_ofNat 𝒪[DyadicSqrtFive].subtype 5).symm
     have h5K : IsUnit (5 : 𝒪[ℚ_[2]]) := by
       simpa using (natCastValuation_eq_zero_iff (K := ℚ_[2]) 5 (by norm_num)).1 (by
-        rw [Padic.natCastValuation_eq_padicValNat]
-        exact padicValNat.eq_zero_of_not_dvd (by norm_num))
+        rw [Padic.natCastValuation_eq_padicValNat, Nat.padicValNat_def]
+        exact multiplicity_eq_zero_of_not_dvd (by norm_num))
     have h5L : IsUnit (5 : 𝒪[DyadicSqrtFive]) := by
       rw [← map_ofNat (algebraMap 𝒪[ℚ_[2]] 𝒪[DyadicSqrtFive]) 5]
       exact h5K.map _
@@ -260,13 +260,13 @@ theorem exists_sq_sub_five_mul_sq_eq_iff {x : ℚ_[2]} :
 solution in `ℚ_2`, because `3` has even valuation `0`. -/
 theorem exists_sq_sub_five_mul_sq_eq_three : ∃ a b : ℚ_[2], a ^ 2 - 5 * b ^ 2 = 3 := by
   rw [exists_sq_sub_five_mul_sq_eq_iff, Padic.valuation_ofNat,
-    padicValNat.eq_zero_of_not_dvd (by norm_num)]
+    multiplicity_eq_zero_of_not_dvd (by norm_num)]
   simp
 
 /-- **An unsolvable norm equation.** `2` is not a norm from `ℚ_2(√5)`: the equation
 `a² − 5b² = 2` has no solution in `ℚ_2`, because `2` has odd valuation. -/
 theorem not_exists_sq_sub_five_mul_sq_eq_two : ¬∃ a b : ℚ_[2], a ^ 2 - 5 * b ^ 2 = 2 := by
-  rw [exists_sq_sub_five_mul_sq_eq_iff, Padic.valuation_ofNat, padicValNat_self]
+  rw [exists_sq_sub_five_mul_sq_eq_iff, Padic.valuation_ofNat, Nat.Prime.multiplicity_self]
   exact Int.not_even_one
 
 end DyadicSqrtFive
