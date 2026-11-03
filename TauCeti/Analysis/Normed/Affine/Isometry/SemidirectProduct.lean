@@ -12,7 +12,7 @@ public import TauCeti.Analysis.Normed.Operator.LinearIsometryEquiv.Group
 /-!
 # The semidirect product of translations and linear isometries
 
-The affine isometry group of a normed space is the semidirect product of its additive
+The affine isometry group of a seminormed space is the semidirect product of its additive
 translation group and its linear isometry group. The action is the usual evaluation action,
 and the multiplication convention is `(v, L) (w, K) = (v + L w, L K)`. The pair `(v, L)`
 acts on a point `x` as `v + L x`.
@@ -33,7 +33,7 @@ second rigid-motion group.
 
 public section
 
-variable {𝕜 E : Type*} [NormedField 𝕜] [NormedAddCommGroup E] [NormedSpace 𝕜 E]
+variable {𝕜 E : Type*} [NormedField 𝕜] [SeminormedAddCommGroup E] [NormedSpace 𝕜 E]
 
 namespace AffineIsometryEquiv
 
