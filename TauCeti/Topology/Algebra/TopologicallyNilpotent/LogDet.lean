@@ -69,6 +69,6 @@ theorem hasSum_log_aeval_charpolyRev_of_splits {K : Type*} [CommRing K] [IsDomai
     simp
   have htr (k : ℕ) : (A ^ k).trace = (A.charpoly.roots.map (· ^ k)).sum := by
     simpa using Matrix.trace_aeval_eq_sum_roots_charpoly_of_splits hA (X ^ k)
-  simpa only [hu, htr] using (ha.hasSum_log_prod_one_sub _).2
+  simpa only [hu, htr] using ha.hasSum_log_prod_one_sub A.charpoly.roots
 
 end IsTopologicallyNilpotent

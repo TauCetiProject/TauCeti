@@ -7,7 +7,7 @@ module
 
 public import TauCeti.RingTheory.NovikovSeries.ExpLog
 public import TauCeti.Topology.Algebra.TopologicallyNilpotent.LogDet
-import Mathlib.FieldTheory.IsAlgClosed.AlgebraicClosure
+import TauCeti.FieldTheory.IsAlgClosed.AlgebraicClosure
 import TauCeti.LinearAlgebra.Matrix.Charpoly.Reverse
 
 /-!
@@ -81,53 +81,30 @@ theorem hasSum_log_aeval_charpolyRev {a : nonnegSubring K N} (ha : a ∈ posIdea
   have ha' := isTopologicallyNilpotent_of_mem_posIdeal' ha
   set f : ℕ → nonnegSubring K N := fun k ↦ -(((k + 1 : ℕ) : ℚ)⁻¹ •
     ((A ^ (k + 1)).trace • a ^ (k + 1)))
-  -- The terms tend to zero, so the series converges.
+  -- Each term is a multiple of `a ^ (k + 1)`, so the series converges.
   have hsum : Summable f := by
-    have := IsLinearTopology.nonarchimedeanAddGroup (nonnegSubring K N) (M := nonnegSubring K N)
-    refine NonarchimedeanAddGroup.summable_of_tendsto_cofinite_zero ?_
-    rw [Nat.cofinite_eq_atTop]
-    -- Each term is a multiple of `a ^ (k + 1)`, and `a ^ (k + 1)` tends to zero.
-    have h := (IsLinearTopology.tendsto_smul_zero (nonnegSubring K N)
-      (fun k : ℕ ↦ algebraMap ℚ (nonnegSubring K N) ((k + 1 : ℕ) : ℚ)⁻¹ *
-        algebraMap K (nonnegSubring K N) (A ^ (k + 1)).trace) _
-      ((tendsto_add_atTop_iff_nat 1).2 ha')).neg
-    rw [neg_zero] at h
-    refine h.congr fun k ↦ ?_
-    simp [f, Algebra.smul_def, mul_assoc]
+    simpa [f, Algebra.smul_def, mul_assoc] using ((summable_nat_add_iff 1).2
+      (ha'.summable_mul_pow fun k ↦ algebraMap ℚ (nonnegSubring K N) (k : ℚ)⁻¹ *
+        algebraMap K (nonnegSubring K N) (A ^ k).trace)).neg
   -- Extend the coefficients to an algebraic closure `L` of the field of fractions of `K`.
   let L := AlgebraicClosure (FractionRing K)
   let ι : K →+* L := algebraMap K L
-  have hι : Function.Injective ι := by
-    simp only [ι]
-    rw [IsScalarTower.algebraMap_eq K (FractionRing K) L, RingHom.coe_comp]
-    exact (algebraMap (FractionRing K) L).injective.comp (IsFractionRing.injective K _)
   let ψ := mapNonnegSubring (N := N) (N' := N) ι (AddMonoidHom.id H) exists_period_rescale_id
-  have hψc : Continuous ψ := continuous_induced_rng.2 <| by
-    simpa [Function.comp_def, ψ] using
-      (continuous_mapRingHom ι (AddMonoidHom.id H) exists_period_rescale_id).comp
-        continuous_subtype_val
-  have hψi : Function.Injective ψ := fun x y hxy ↦ Subtype.ext <| NovikovSeries.ext fun h ↦ hι <| by
-    simpa [ψ] using congrArg (fun z : nonnegSubring L N ↦ (z : NovikovSeries L H N).coeff h) hxy
-  have hψalg : ψ.comp (algebraMap K (nonnegSubring K N)) =
-      (algebraMap L (nonnegSubring L N)).comp ι := by
-    ext x
-    simp [ψ, algebraMap_apply, map_single]
-  -- `ψ` is semilinear over `ι`.
-  have hψsmul (c : K) (x : nonnegSubring K N) : ψ (c • x) = ι c • ψ x := by
-    rw [Algebra.smul_def, Algebra.smul_def, _root_.map_mul, ← RingHom.comp_apply ψ, hψalg,
-      RingHom.comp_apply]
+  have hψc : Continuous ψ := continuous_mapNonnegSubring ..
   have hu := isTopologicallyNilpotent_of_mem_posIdeal' (aeval_charpolyRev_sub_one_mem_posIdeal ha A)
   have hmap : ψ (aeval a A.charpolyRev) = aeval (ψ a) (A.map ι).charpolyRev := by
-    rw [map_aeval_eq_aeval_map hψalg.symm, Matrix.charpolyRev_map]
+    rw [map_aeval_eq_aeval_map (mapNonnegSubring_comp_algebraMap ..).symm,
+      Matrix.charpolyRev_map]
   -- Over `L` the identity holds, and `ψ` maps both sides of the identity over `K` to it.
   have hL := IsTopologicallyNilpotent.hasSum_log_aeval_charpolyRev_of_splits (A := A.map ι)
     (IsTopologicallyNilpotent.map hψc ha') (IsAlgClosed.splits _)
   have key : ψ (∑' k, f k) = ψ (NormedSpace.log (aeval a A.charpolyRev)) := by
     rw [hu.map_log ψ hψc, hmap]
     refine (hsum.hasSum.map ψ hψc).unique (hL.congr_fun fun k ↦ ?_)
-    simp only [f, Function.comp_apply, _root_.map_neg, map_rat_smul, hψsmul, _root_.map_pow,
-      AddMonoidHom.map_trace, Matrix.map_pow]
-  rw [← hψi key]
+    simp only [f, ψ, Function.comp_apply, _root_.map_neg, map_rat_smul, mapNonnegSubring_smul,
+      _root_.map_pow, AddMonoidHom.map_trace, Matrix.map_pow]
+  rw [← mapNonnegSubring_injective _ _ _ (FaithfulSMul.algebraMap_injective K L)
+    Function.injective_id key]
   exact hsum.hasSum
 
 /-- **The trace/determinant identity.** For a square matrix `A` over a `ℚ`-algebra `K` without
@@ -138,14 +115,6 @@ theorem exp_tsum_trace_mul_aeval_charpolyRev {a : nonnegSubring K N} (ha : a ∈
     NormedSpace.exp (∑' k : ℕ, ((k + 1 : ℕ) : ℚ)⁻¹ •
         ((A ^ (k + 1)).trace • (a : NovikovSeries K H N) ^ (k + 1))) *
       aeval (a : NovikovSeries K H N) A.charpolyRev = 1 := by
-  have hcoe : ((aeval a A.charpolyRev : nonnegSubring K N) : NovikovSeries K H N) =
-      aeval (a : NovikovSeries K H N) A.charpolyRev := by
-    have h : (nonnegSubring K N).subtype.comp (algebraMap K (nonnegSubring K N)) =
-        algebraMap K (NovikovSeries K H N) := by
-      ext x
-      simp
-    rw [aeval_def, aeval_def, ← h]
-    exact hom_eval₂ (p := A.charpolyRev) (f := algebraMap K _) (g := (nonnegSubring K N).subtype) a
   set u := aeval a A.charpolyRev
   have hu1 := aeval_charpolyRev_sub_one_mem_posIdeal ha A
   have hu := isTopologicallyNilpotent_of_mem_posIdeal' hu1
@@ -166,7 +135,7 @@ theorem exp_tsum_trace_mul_aeval_charpolyRev {a : nonnegSubring K N} (ha : a ∈
         = NormedSpace.exp (-NormedSpace.log u) * NormedSpace.exp (NormedSpace.log u) := by
           rw [hu.exp_log]
       _ = 1 := by rw [← hlog'.exp_add hu.log, neg_add_cancel, NormedSpace.exp_zero]
-  rw [hsum.tsum_eq, ← coe_exp_of_mem_posIdeal hlog, ← hcoe, ← Subring.coe_mul, hinv,
-    Subring.coe_one]
+  rw [hsum.tsum_eq, ← coe_exp_of_mem_posIdeal hlog, ← coe_aeval_nonnegSubring, ← Subring.coe_mul,
+    hinv, Subring.coe_one]
 
 end TauCeti.NovikovSeries

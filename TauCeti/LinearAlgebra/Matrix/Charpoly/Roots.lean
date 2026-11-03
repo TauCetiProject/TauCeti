@@ -8,10 +8,10 @@ module
 public import Mathlib.Data.Multiset.Fintype
 public import Mathlib.FieldTheory.IsAlgClosed.Basic
 public import Mathlib.LinearAlgebra.Matrix.Charpoly.Coeff
-import Mathlib.FieldTheory.IsAlgClosed.AlgebraicClosure
 import Mathlib.FieldTheory.IsAlgClosed.Spectrum
 import Mathlib.LinearAlgebra.Matrix.Charpoly.Eigs
 import TauCeti.Algebra.Polynomial.Reverse
+import TauCeti.FieldTheory.IsAlgClosed.AlgebraicClosure
 import TauCeti.LinearAlgebra.Matrix.Polynomial
 
 /-!
@@ -148,20 +148,13 @@ section Splits
 
 variable {n K : Type*} [Fintype n] [DecidableEq n] [CommRing K] [IsDomain K] {A : Matrix n n K}
 
-variable (K) in
-/-- The scalars of `K` embed into an algebraic closure of the field of fractions of `K`. -/
-private theorem algebraMap_algebraicClosure_injective :
-    Function.Injective (algebraMap K (AlgebraicClosure (FractionRing K))) := by
-  rw [IsScalarTower.algebraMap_eq K (FractionRing K)]
-  exact (algebraMap (FractionRing K) _).injective.comp (IsFractionRing.injective K _)
-
 /-- When the characteristic polynomial of `A` splits, extending the scalars to an algebraic
 closure of the field of fractions maps the characteristic roots of `A` to those of the extended
 matrix. -/
 private theorem roots_charpoly_map_algebraicClosure (hA : A.charpoly.Splits) :
     (A.map (algebraMap K (AlgebraicClosure (FractionRing K)))).charpoly.roots =
       A.charpoly.roots.map (algebraMap K _) := by
-  rw [charpoly_map, hA.roots_map_of_injective (algebraMap_algebraicClosure_injective K)]
+  rw [charpoly_map, hA.roots_map_of_injective (FaithfulSMul.algebraMap_injective K _)]
 
 /-- **Spectral mapping for determinants.** If the characteristic polynomial of `A` splits, the
 determinant of `p(A)` is the product of `p(λ)` over the characteristic roots `λ` of `A`, counted
@@ -169,7 +162,7 @@ with algebraic multiplicity. -/
 theorem det_aeval_eq_prod_roots_charpoly_of_splits (hA : A.charpoly.Splits) (p : K[X]) :
     (aeval A p).det = (A.charpoly.roots.map p.eval).prod := by
   -- Pass to an algebraic closure, where `det_aeval_eq_prod_roots_charpoly` applies.
-  refine algebraMap_algebraicClosure_injective K ?_
+  refine FaithfulSMul.algebraMap_injective K (AlgebraicClosure (FractionRing K)) ?_
   rw [RingHom.map_det, RingHom.mapMatrix_apply, ← aeval_map, det_aeval_eq_prod_roots_charpoly,
     roots_charpoly_map_algebraicClosure hA]
   simp [map_multiset_prod, eval_map, eval₂_at_apply]
@@ -181,7 +174,8 @@ theorem charpoly_aeval_eq_prod_roots_charpoly_of_splits (hA : A.charpoly.Splits)
     (aeval A p).charpoly = (A.charpoly.roots.map fun μ ↦ X - C (p.eval μ)).prod := by
   -- Compare both sides after extending the scalars to an algebraic closure, which is infinite:
   -- at each `x`, both are `det ((x - p)(A)) = ∏ (x - p(λ))`.
-  refine Polynomial.map_injective _ (algebraMap_algebraicClosure_injective K)
+  refine Polynomial.map_injective _
+    (FaithfulSMul.algebraMap_injective K (AlgebraicClosure (FractionRing K)))
     (Polynomial.funext fun x ↦ ?_)
   have h : scalar n x - (aeval A p).map (algebraMap K _) =
       aeval (A.map (algebraMap K _)) (C x - p.map (algebraMap K _)) := by

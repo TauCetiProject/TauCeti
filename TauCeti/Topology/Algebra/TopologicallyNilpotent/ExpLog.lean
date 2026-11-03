@@ -54,6 +54,8 @@ logarithm series termwise, and the geometric series for `u⁻¹` gives `u * D (l
 
 ## Main results
 
+* `IsTopologicallyNilpotent.summable_mul_pow`: the power series `∑ cₙ aⁿ` converges for all
+  coefficients `cₙ`.
 * `IsTopologicallyNilpotent.hasSum_exp`, `IsTopologicallyNilpotent.hasSum_log`: convergence of
   the two series.
 * `IsTopologicallyNilpotent.exp_sub_one`, `IsTopologicallyNilpotent.log`: `exp a - 1` and
@@ -65,8 +67,10 @@ logarithm series termwise, and the geometric series for `u⁻¹` gives `u * D (l
 * `IsTopologicallyNilpotent.exp_add`, `IsTopologicallyNilpotent.log_mul`: the functional
   equations.
 * `IsTopologicallyNilpotent.hasSum_log_one_sub`: `log (1 - a) = -∑ aⁿ⁺¹ / (n + 1)`.
-* `IsTopologicallyNilpotent.hasSum_log_prod_one_sub`: the logarithm of a finite product
-  `∏_μ (1 - μ a)` is `-∑ₖ (∑_μ μᵏ⁺¹) aᵏ⁺¹ / (k + 1)`.
+* `IsTopologicallyNilpotent.prod_one_sub_sub_one`,
+  `IsTopologicallyNilpotent.hasSum_log_prod_one_sub`: for a finite product `∏_μ (1 - μ a)`, its
+  difference with `1` is topologically nilpotent and its logarithm is
+  `-∑ₖ (∑_μ μᵏ⁺¹) aᵏ⁺¹ / (k + 1)`.
 * `HasSum.exp_of_mem_ideal`: inside an ideal of topologically nilpotent elements, the exponential
   turns convergent sums into convergent products.
 * `IsTopologicallyNilpotent.mul_derivation_log`: a continuous derivation `D` satisfies
@@ -86,6 +90,15 @@ variable {S : Type*} [CommRing S] [UniformSpace S] [IsUniformAddGroup S]
 namespace IsTopologicallyNilpotent
 
 variable {a b u v : S}
+
+omit [T2Space S] in
+/-- For a topologically nilpotent `a`, the series `∑ cₙ aⁿ` converges for every family of
+coefficients `cₙ`, since the topology is linear. -/
+theorem summable_mul_pow (ha : IsTopologicallyNilpotent a) (c : ℕ → S) :
+    Summable fun n ↦ c n * a ^ n := by
+  have := IsLinearTopology.nonarchimedeanAddGroup S (M := S)
+  rw [NonarchimedeanAddGroup.summable_iff_tendsto_cofinite_zero, Nat.cofinite_eq_atTop]
+  exact IsLinearTopology.tendsto_mul_zero_of_right c _ ha
 
 section Evaluation
 
@@ -227,34 +240,39 @@ theorem hasSum_log_one_sub (ha : IsTopologicallyNilpotent a) :
     simp only [smul_smul, hsign, neg_smul]
   · simp
 
-/-- For a multiset `s` of scalars, `∏_{μ ∈ s} (1 - μ a) - 1` is topologically nilpotent, and the
-logarithm of `∏_{μ ∈ s} (1 - μ a)` is `-∑ₖ (∑_{μ ∈ s} μᵏ⁺¹) aᵏ⁺¹ / (k + 1)`. -/
+omit [IsUniformAddGroup S] [T2Space S] [CompleteSpace S] [Algebra ℚ S] in
+/-- For a multiset `s` of scalars and a topologically nilpotent `a`, `∏_{μ ∈ s} (1 - μ a) - 1` is
+topologically nilpotent. -/
+theorem prod_one_sub_sub_one {K : Type*} [CommRing K] [Algebra K S]
+    (ha : IsTopologicallyNilpotent a) (s : Multiset K) :
+    IsTopologicallyNilpotent ((s.map fun μ ↦ 1 - algebraMap K S μ * a).prod - 1) := by
+  induction s using Multiset.induction_on with
+  | empty => simpa using IsTopologicallyNilpotent.zero
+  | cons μ s ih =>
+    -- Writing `(1 - μ a) P - 1 = (P - 1) - μ a P` exhibits it as the sum of `P - 1`,
+    -- topologically nilpotent by induction, and a multiple of the topologically nilpotent `μ a`.
+    rw [Multiset.map_cons, Multiset.prod_cons,
+      show (1 - algebraMap K S μ * a) * (s.map fun μ ↦ 1 - algebraMap K S μ * a).prod - 1 =
+        ((s.map fun μ ↦ 1 - algebraMap K S μ * a).prod - 1) +
+          -(algebraMap K S μ * a * (s.map fun μ ↦ 1 - algebraMap K S μ * a).prod) by ring]
+    exact ih.add ((ha.mul_left _).mul_right _).neg
+
+/-- For a multiset `s` of scalars, the logarithm of `∏_{μ ∈ s} (1 - μ a)` is
+`-∑ₖ (∑_{μ ∈ s} μᵏ⁺¹) aᵏ⁺¹ / (k + 1)`. -/
 theorem hasSum_log_prod_one_sub {K : Type*} [CommRing K] [Algebra K S]
     (ha : IsTopologicallyNilpotent a) (s : Multiset K) :
-    IsTopologicallyNilpotent ((s.map fun μ ↦ 1 - algebraMap K S μ * a).prod - 1) ∧
-      HasSum (fun k : ℕ ↦ -(((k + 1 : ℕ) : ℚ)⁻¹ •
-          ((s.map (· ^ (k + 1))).sum • a ^ (k + 1))))
-        (NormedSpace.log (s.map fun μ ↦ 1 - algebraMap K S μ * a).prod) := by
+    HasSum (fun k : ℕ ↦ -(((k + 1 : ℕ) : ℚ)⁻¹ • ((s.map (· ^ (k + 1))).sum • a ^ (k + 1))))
+      (NormedSpace.log (s.map fun μ ↦ 1 - algebraMap K S μ * a).prod) := by
   induction s using Multiset.induction_on with
-  | empty =>
-    simpa [NormedSpace.log_one] using
-      And.intro IsTopologicallyNilpotent.zero (hasSum_zero : HasSum (fun _ : ℕ ↦ (0 : S)) 0)
+  | empty => simp [NormedSpace.log_one]
   | cons μ s ih =>
     have hμ : IsTopologicallyNilpotent (algebraMap K S μ * a) := ha.mul_left _
     have h1 : IsTopologicallyNilpotent ((1 - algebraMap K S μ * a) - 1) := by simpa using hμ.neg
-    rw [Multiset.map_cons, Multiset.prod_cons]
-    refine ⟨?_, ?_⟩
-    · -- Writing `(1 - μ a) P - 1 = (P - 1) - μ a P` exhibits it as the sum of `P - 1`,
-      -- topologically nilpotent by induction, and a multiple of the topologically nilpotent `μ a`.
-      rw [show (1 - algebraMap K S μ * a) * (s.map fun μ ↦ 1 - algebraMap K S μ * a).prod - 1 =
-          ((s.map fun μ ↦ 1 - algebraMap K S μ * a).prod - 1) +
-            -(algebraMap K S μ * a * (s.map fun μ ↦ 1 - algebraMap K S μ * a).prod) by ring]
-      exact ih.1.add (hμ.mul_right _).neg
-    · rw [h1.log_mul ih.1]
-      convert hμ.hasSum_log_one_sub.add ih.2 using 1
-      funext k
-      simp only [Multiset.map_cons, Multiset.sum_cons, ← Algebra.smul_def, smul_pow,
-        add_smul, smul_add, neg_add]
+    rw [Multiset.map_cons, Multiset.prod_cons, h1.log_mul (ha.prod_one_sub_sub_one s)]
+    convert hμ.hasSum_log_one_sub.add ih using 1
+    funext k
+    simp only [Multiset.map_cons, Multiset.sum_cons, ← Algebra.smul_def, smul_pow,
+      add_smul, smul_add, neg_add]
 
 /-- A continuous derivation `D` differentiates the logarithm as `D (log u) = u⁻¹ * D u`, in the
 form `u * D (log u) = D u`, when `u - 1` is topologically nilpotent. -/
