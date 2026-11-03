@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.CategoryTheory.Monoidal.Mod.Symmetric
+public import TauCeti.CategoryTheory.Monoidal.Mon
 
 /-!
 # Commutative monoids under a commutative monoid as monoids of modules
@@ -72,13 +73,6 @@ variable {C : Type u} [Category.{v} C] [MonoidalCategory C] [SymmetricCategory C
   [∀ X : C, PreservesColimitsOfSize.{0, 0} (tensorRight X)]
   {A : C} [MonObj A] [IsCommMonObj A] {B : C} [MonObj B] [IsCommMonObj B]
   (f : A ⟶ B) [IsMonHom f]
-
-omit [MonObj A] [HasCoequalizers C] [∀ X : C, PreservesColimitsOfSize.{0, 0} (tensorLeft X)]
-  [∀ X : C, PreservesColimitsOfSize.{0, 0} (tensorRight X)] [IsCommMonObj A] [IsMonHom f] in
-/- Since `B` is commutative, a scalar may act on either side. -/
-private lemma braiding_inv_whiskerRight_mul :
-    (β_ A B).inv ≫ f ▷ B ≫ μ = B ◁ f ≫ μ := by
-  rw [← braiding_inv_naturality_right_assoc, IsCommMonObj.mul_comm']
 
 omit [HasCoequalizers C] [∀ X : C, PreservesColimitsOfSize.{0, 0} (tensorLeft X)]
   [∀ X : C, PreservesColimitsOfSize.{0, 0} (tensorRight X)] [IsCommMonObj A] in
