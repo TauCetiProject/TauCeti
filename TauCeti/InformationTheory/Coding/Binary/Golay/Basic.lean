@@ -672,6 +672,6 @@ theorem hammingMinDist_code : Set.hammingMinDist (code : Set (Fin 24 → ZMod 2)
 /-- Every nonzero codeword of the extended binary Golay code has weight at least eight. -/
 theorem eight_le_hammingNorm {x : Fin 24 → ZMod 2} (hx : x ∈ code) (hx0 : x ≠ 0) :
     8 ≤ hammingNorm x := by
-  simpa using Set.hammingMinDist_le_hammingNorm (E := code.toAddSubgroup) hx hx0
+  simpa using Set.hammingMinDist_le_hammingNorm code.zero_mem hx hx0
 
 end TauCeti.BinaryGolay

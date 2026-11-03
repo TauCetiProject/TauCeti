@@ -69,8 +69,8 @@ instance simple_rightDual (X : C) [Simple X] : Simple Xᘁ where
       have h : (𝟙 X)ᘁ = (0 : X ⟶ X)ᘁ := by
         rw [rightAdjointMate_id, rightAdjointMate_zero, ← IsIso.inv_hom_id f]
         simp only [h0, comp_zero]
-      exact id_nonzero X (rightAdjointMate_injective h)
-    · have : IsIso g := isIso_of_epi_of_nonzero (mt hg0.1 h0)
+      exact CategoryTheory.id_ne_zero X (rightAdjointMate_injective h)
+    · have : IsIso g := CategoryTheory.isIso_of_epi_of_ne_zero (mt hg0.1 h0)
       -- The mate of `inv g` inverts `gᘁ = f`; the identity of `(ᘁY)ᘁ` is that of `Y`, since
       -- `(ᘁY)ᘁ = Y` holds by definition (`CategoryTheory.rightDual_leftDual`).
       rw [← hg]
@@ -86,9 +86,10 @@ theorem not_isZero_tensorObj [Preadditive C] [HasKernels C] [MonoidalPreadditive
     [RightRigidCategory C] [Simple (𝟙_ C)] {X Y : C} (hX : ¬IsZero X) (hY : ¬IsZero Y) :
     ¬IsZero (X ⊗ Y) := by
   intro h
-  have : Mono (η_ Y Yᘁ) := mono_of_nonzero_from_simple (coevaluation_ne_zero hY)
+  have : Mono (η_ Y Yᘁ) := CategoryTheory.mono_of_ne_zero_from_simple (coevaluation_ne_zero hY)
   have : Mono (X ◁ η_ Y Yᘁ) :=
-    (Functor.preservesMonomorphisms_of_adjunction (tensorLeftAdjunction X Xᘁ)).preserves (η_ Y Yᘁ)
+    (CategoryTheory.Functor.preservesMonomorphisms_of_adjunction
+      (tensorLeftAdjunction X Xᘁ)).preserves (η_ Y Yᘁ)
   have h' : IsZero (X ⊗ Y ⊗ Yᘁ) := ((tensorRight Yᘁ).map_isZero h).of_iso (α_ X Y Yᘁ).symm
   refine hX (IsZero.of_iso ?_ (ρ_ X).symm)
   rw [IsZero.iff_id_eq_zero, ← cancel_mono (X ◁ η_ Y Yᘁ)]

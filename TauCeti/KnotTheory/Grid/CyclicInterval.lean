@@ -60,7 +60,7 @@ directions before taking products.
   no fixed point.
 * `TauCeti.Grid.cIoo_finRotate_eq_empty`, `TauCeti.Grid.cIco_eq_singleton_iff`: the arcs from a
   point to its cyclic successor are empty and a single point, and these are the only one-point
-  half-open arcs.
+  half-open arcs; `TauCeti.Grid.cIoo_castSucc_succ` is the case of `r.castSucc` and `r.succ`.
 * `TauCeti.Grid.mem_cIco`: membership in the clockwise half-open arc.
 * `TauCeti.Grid.card_cIco`: the length of a half-open arc in standard representatives.
 * `TauCeti.Grid.cIco_union_swap`: opposite nondegenerate half-open arcs partition the grid.
@@ -931,6 +931,11 @@ theorem cIoo_finRotate_eq_empty (a : Fin n) : cIoo a (finRotate n a) = ∅ := by
     have := a.isLt; have := x.isLt
     rw [coe_finRotate]
     split_ifs with h₁ h₂ <;> simp only [Fin.ext_iff, Fin.val_last] at h₁ <;> omega
+
+/-- The open cyclic interval between consecutive rows `r.castSucc` and `r.succ` of a grid with one
+more row is empty. -/
+theorem cIoo_castSucc_succ (r : Fin n) : cIoo r.castSucc r.succ = ∅ := by
+  rw [← Fin.finRotate_castSucc, cIoo_finRotate_eq_empty]
 
 /-- Moving from a point `x` to its cyclic successor does not cross the endpoints of an open
 cyclic interval that starts away from `x` and ends away from its successor. -/

@@ -44,15 +44,15 @@ theorem dividedPower_apply_lie (D : LieDerivation ℚ L L) (n : ℕ) (x y : L) :
       ∑ ij ∈ antidiagonal n,
         ⁅TauCeti.Associative.dividedPower ij.1 D.toLinearMap x,
           TauCeti.Associative.dividedPower ij.2 D.toLinearMap y⁆ := by
-  -- `Module.End.pow_apply` presents iteration through the underlying linear-map function,
+  -- `pow_apply_eq_iterate` presents iteration through the underlying linear-map function,
   -- whereas `LieDerivation.iterate_apply_lie` uses the derivation's function coercion.
-  rw [TauCeti.Associative.dividedPower_def, LinearMap.smul_apply, Module.End.pow_apply,
+  rw [TauCeti.Associative.dividedPower_def, LinearMap.smul_apply, pow_apply_eq_iterate,
     show (⇑D.toLinearMap)^[n] ⁅x, y⁆ = D^[n] ⁅x, y⁆ from rfl,
     LieDerivation.iterate_apply_lie]
   rw [Finset.smul_sum]
   refine Finset.sum_congr rfl fun ij hij => ?_
   rw [← Nat.cast_smul_eq_nsmul ℚ, smul_smul]
-  simp only [TauCeti.Associative.dividedPower_def, LinearMap.smul_apply, Module.End.pow_apply,
+  simp only [TauCeti.Associative.dividedPower_def, LinearMap.smul_apply, pow_apply_eq_iterate,
     lie_smul, smul_lie, smul_smul]
   rw [mem_antidiagonal] at hij
   subst n
@@ -215,7 +215,7 @@ theorem baseChangeExpLieEquiv_trans (D : LieDerivation ℚ L L) (M : LieSubalgeb
       baseChangeExpLieEquiv D M hM hD (t + u) := by
   ext x
   simp only [LieEquiv.trans_apply, baseChangeExpLieEquiv_apply]
-  rw [← Module.End.mul_apply, ← baseChangeExp_add D.toLinearMap M hM hD u t, add_comm]
+  rw [← mul_apply_eq_comp, ← baseChangeExp_add D.toLinearMap M hM hD u t, add_comm]
 
 /-- The inverse of a Lie exponential is the exponential at the negative parameter. -/
 @[simp]
