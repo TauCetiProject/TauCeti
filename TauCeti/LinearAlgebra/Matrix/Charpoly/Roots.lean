@@ -11,8 +11,7 @@ public import Mathlib.LinearAlgebra.Matrix.Charpoly.Coeff
 import Mathlib.FieldTheory.IsAlgClosed.Spectrum
 import Mathlib.LinearAlgebra.Matrix.Charpoly.Eigs
 import TauCeti.Algebra.Polynomial.Reverse
-import TauCeti.FieldTheory.IsAlgClosed.AlgebraicClosure
-import TauCeti.LinearAlgebra.Matrix.Polynomial
+import TauCeti.LinearAlgebra.Matrix.Charpoly.Resultant
 
 /-!
 # Characteristic roots of matrices
@@ -33,7 +32,8 @@ characteristic roots of `p(A)` are the values `p(λ)` at the characteristic root
 counted with algebraic multiplicity. So the determinant of `p(A)` is the product of the `p(λ)`
 and its trace is their sum; Mathlib's `Matrix.det_eq_prod_roots_charpoly_of_splits` and
 `Matrix.trace_eq_sum_roots_charpoly_of_splits` are the case `p = X`. These are proved by
-extending the scalars to an algebraic closure of the field of fractions. In particular
+evaluating the resultant formulas `Matrix.det_aeval_eq_resultant` and
+`Matrix.charpoly_aeval_eq_resultant` over the split characteristic polynomial. In particular
 `det (1 - X A)`, the reverse of `χ_A = ∏ (X - λ)`, factors as `∏ (1 - λ X)`.
 
 ## Main results
@@ -148,42 +148,28 @@ section Splits
 
 variable {n K : Type*} [Fintype n] [DecidableEq n] [CommRing K] [IsDomain K] {A : Matrix n n K}
 
-/-- When the characteristic polynomial of `A` splits, extending the scalars to an algebraic
-closure of the field of fractions maps the characteristic roots of `A` to those of the extended
-matrix. -/
-private theorem roots_charpoly_map_algebraicClosure (hA : A.charpoly.Splits) :
-    (A.map (algebraMap K (AlgebraicClosure (FractionRing K)))).charpoly.roots =
-      A.charpoly.roots.map (algebraMap K _) := by
-  rw [charpoly_map, hA.roots_map_of_injective (FaithfulSMul.algebraMap_injective K _)]
-
 /-- **Spectral mapping for determinants.** If the characteristic polynomial of `A` splits, the
 determinant of `p(A)` is the product of `p(λ)` over the characteristic roots `λ` of `A`, counted
 with algebraic multiplicity. -/
 theorem det_aeval_eq_prod_roots_charpoly_of_splits (hA : A.charpoly.Splits) (p : K[X]) :
     (aeval A p).det = (A.charpoly.roots.map p.eval).prod := by
-  -- Pass to an algebraic closure, where `det_aeval_eq_prod_roots_charpoly` applies.
-  refine FaithfulSMul.algebraMap_injective K (AlgebraicClosure (FractionRing K)) ?_
-  rw [RingHom.map_det, RingHom.mapMatrix_apply, ← aeval_map, det_aeval_eq_prod_roots_charpoly,
-    roots_charpoly_map_algebraicClosure hA]
-  simp [map_multiset_prod, eval_map, eval₂_at_apply]
+  -- `det p(A) = Res(χ_A, p)`, which is `∏ p(λ)` as `χ_A` is monic and splits.
+  rw [det_aeval_eq_resultant A p le_rfl, ← charpoly_natDegree_eq_dim A,
+    resultant_eq_prod_eval _ _ _ le_rfl hA, (charpoly_monic A).leadingCoeff, one_pow, one_mul]
 
 /-- **Spectral mapping for characteristic polynomials.** If the characteristic polynomial of `A`
 splits, the characteristic polynomial of `p(A)` is `∏ (X - p(λ))` over the characteristic roots
 `λ` of `A`, counted with algebraic multiplicity. -/
 theorem charpoly_aeval_eq_prod_roots_charpoly_of_splits (hA : A.charpoly.Splits) (p : K[X]) :
     (aeval A p).charpoly = (A.charpoly.roots.map fun μ ↦ X - C (p.eval μ)).prod := by
-  -- Compare both sides after extending the scalars to an algebraic closure, which is infinite:
-  -- at each `x`, both are `det ((x - p)(A)) = ∏ (x - p(λ))`.
-  refine Polynomial.map_injective _
-    (FaithfulSMul.algebraMap_injective K (AlgebraicClosure (FractionRing K)))
-    (Polynomial.funext fun x ↦ ?_)
-  have h : scalar n x - (aeval A p).map (algebraMap K _) =
-      aeval (A.map (algebraMap K _)) (C x - p.map (algebraMap K _)) := by
-    rw [← aeval_map]
-    simp [Algebra.algebraMap_eq_smul_one, smul_one_eq_diagonal]
-  rw [← charpoly_map, eval_charpoly, h, det_aeval_eq_prod_roots_charpoly,
-    roots_charpoly_map_algebraicClosure hA]
-  simp [Polynomial.map_multiset_prod, eval_multiset_prod, eval_map, eval₂_at_apply]
+  -- `χ_{p(A)}(T) = Res_X(χ_A(X), T - p(X))`, which is `∏ (T - p(λ))` as `χ_A` splits.
+  have hm := (charpoly_monic A).map (C : K →+* K[X])
+  have hdeg : (C X - p.map C).natDegree ≤ p.natDegree :=
+    (natDegree_sub_le _ _).trans (max_le (by simp) natDegree_map_le)
+  rw [charpoly_aeval_eq_resultant A p le_rfl, ← charpoly_natDegree_eq_dim A,
+    ← (charpoly_monic A).natDegree_map C, resultant_eq_prod_eval _ _ _ hdeg (hA.map C),
+    hm.leadingCoeff, one_pow, one_mul, hA.roots_map_of_injective C_injective]
+  simp [Multiset.map_map, eval_map]
 
 /-- **Spectral mapping for traces.** If the characteristic polynomial of `A` splits, the trace of
 `p(A)` is the sum of `p(λ)` over the characteristic roots `λ` of `A`, counted with algebraic
