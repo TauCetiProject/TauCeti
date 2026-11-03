@@ -20,9 +20,8 @@ They require neither completeness nor a curvature bound. When the manifold carri
 intrinsic Riemannian distance, the exponential map on such a ball also has Lipschitz constant
 arbitrarily close to one.
 
-The proof uses the identity differential at the origin, joint continuity of the differential's
-Riemannian norm, and compactness of the unit sphere in the fixed tangent space. The logarithm
-estimate uses the existing inverse-differential identities on normal domains.
+The logarithm bounds are differential estimates on the image of the normal ball under the
+exponential map.
 
 ## References
 
@@ -152,7 +151,7 @@ theorem exists_isNormalDomain_ball_lipschitzOnWith_riemannianExp (p : M) {c : �
     ∃ r > 0, IsNormalDomain I M p (Metric.ball 0 r) ∧
       LipschitzOnWith c (riemannianExp I M p) (Metric.ball 0 r) := by
   obtain ⟨r, hr, hn, hb, -⟩ := exists_isNormalDomain_ball_norm_mfderiv_bounds (I := I) p
-    (show (1 : ℝ) < c from hc)
+    (by exact_mod_cast hc)
   refine ⟨r, hr, hn, ?_⟩
   intro a ha b hb'
   have hseg := (convex_ball (0 : TangentSpace I p) r).segment_subset ha hb'
