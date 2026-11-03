@@ -55,12 +55,14 @@ theorem map_one_apply {R S R' R'' F G : Type*} [CommMonoid R] [CommMonoid S]
   · rw [map_nonunit _ ha, map_nonunit _ (by rwa [isUnit_map_iff]), map_zero]
 
 /-- A multiplicative character takes a value at `-1` whose square is `1`. -/
+@[simp]
 theorem apply_neg_one_mul_self {R R' : Type*} [CommMonoid R] [HasDistribNeg R]
     [CommMonoidWithZero R'] (χ : MulChar R R') : χ (-1) * χ (-1) = 1 := by
   rw [← map_mul, neg_one_mul, neg_neg, map_one]
 
 /-- Pushing a multiplicative character along an injective ring homomorphism of the coefficients
 preserves its order. -/
+@[simp]
 theorem orderOf_ringHomComp {R R' R'' : Type*} [CommMonoid R] [CommRing R'] [CommRing R'']
     {f : R' →+* R''} (hf : Function.Injective f) (χ : MulChar R R') :
     orderOf (χ.ringHomComp f) = orderOf χ := by
