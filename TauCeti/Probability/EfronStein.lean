@@ -7,7 +7,6 @@ module
 
 public import Mathlib.MeasureTheory.Constructions.Pi
 public import TauCeti.Probability.Moments.Variance
-import Mathlib.MeasureTheory.Integral.Prod
 
 /-!
 # The Efron–Stein inequality
@@ -19,14 +18,13 @@ independent coordinates, stated on `Measure.pi` over an arbitrary finite index t
 with all other coordinates frozen.
 
 The proof is by induction on the number of coordinates, for the index type `Fin n`, followed by
-transport along an equivalence `Fin n ≃ ι`. The two-factor step is the law of total variance,
-`evariance_prod_eq`, combined with Jensen's inequality for the variance of an average,
-`evariance_integral_prod_le`; together they give the two-variable inequality
-`evariance_prod_le`.
+transport along an equivalence `Fin n ≃ ι`. The two-factor bound `evariance_prod_le`, proved in
+`TauCeti.Probability.Moments.Variance`, combines the law of total variance
+`evariance_prod_eq` with Jensen's inequality for the variance of an average
+`evariance_integral_prod_le`.
 
 ## Main results
 
-* `TauCeti.Probability.evariance_prod_le`: the two-factor Efron–Stein inequality;
 * `TauCeti.Probability.efronStein`: the Efron–Stein inequality on `Measure.pi` over a finite index
   type, with arbitrary (dependent) coordinate spaces.
 
@@ -46,16 +44,6 @@ open MeasureTheory ProbabilityTheory
 open scoped ENNReal
 
 namespace TauCeti.Probability
-
-/-- The two-factor Efron–Stein inequality. -/
-theorem evariance_prod_le {α β : Type*} [MeasurableSpace α] [MeasurableSpace β]
-    {ν : Measure α} {π : Measure β} [IsProbabilityMeasure ν] [IsProbabilityMeasure π]
-    {F : α × β → ℝ} (hF : Measurable F) (hL : MemLp F 2 (ν.prod π)) :
-    evariance F (ν.prod π) ≤ ∫⁻ a, evariance (fun w => F (a, w)) π ∂ν +
-      ∫⁻ w, evariance (fun a => F (a, w)) ν ∂π := by
-  rw [evariance_prod_eq hL]
-  gcongr
-  exact evariance_integral_prod_le hF hL
 
 universe u
 
@@ -156,14 +144,8 @@ theorem efronStein {ι : Type*} [Fintype ι] [DecidableEq ι] {α : ι → Type 
   have hupd : ∀ (k : Fin (Fintype.card ι)) (y : ∀ k, α (e k)) (v : α (e k)),
       Φ (Function.update y k v) = Function.update (Φ y) (e k) v := by
     intro k y v
-    funext i
-    obtain ⟨a, rfl⟩ := e.surjective i
-    by_cases h : a = k
-    · subst h
-      simp [Φ, MeasurableEquiv.coe_piCongrLeft, Equiv.piCongrLeft_apply_apply]
-    · rw [Function.update_of_ne (e.injective.ne h)]
-      simp [Φ, MeasurableEquiv.coe_piCongrLeft, Equiv.piCongrLeft_apply_apply,
-        Function.update_of_ne h]
+    simpa [Φ, MeasurableEquiv.piCongrLeft, Equiv.piCongrLeft] using
+      Function.piCongrLeft'_symm_update α e.symm y k v
   have hEv : evariance (fun x => f (Φ x)) (Measure.pi fun k => μ (e k)) =
       evariance f (Measure.pi μ) := evariance_comp_measurePreserving mp Φ.measurableEmbedding f
   have hterm : ∀ k : Fin (Fintype.card ι),

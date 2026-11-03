@@ -44,6 +44,7 @@ its second moment, which is the nonnegativity of its variance.
   measure-preserving measurable embedding.
 * `TauCeti.Probability.evariance_prod_eq`: the law of total variance on a product of two
   probability spaces.
+* `TauCeti.Probability.evariance_prod_le`: the two-factor Efron--Stein inequality.
 * `TauCeti.Probability.evariance_integral_prod_le`: Jensen's inequality for the variance of an
   average over one factor of a product.
 * `TauCeti.Probability.measurable_evariance_update`: measurability of the variance in one
@@ -181,10 +182,9 @@ theorem evariance_prod_eq (hL : MemLp F 2 (ν.prod π)) :
 /-- Jensen's inequality for the variance of an average: the variance of the average over the
 second coordinate is at most the average over the second coordinate of the variances in the first
 coordinate. -/
-theorem evariance_integral_prod_le (hF : Measurable F) (hL : MemLp F 2 (ν.prod π)) :
+theorem evariance_integral_prod_le (hF : Measurable F) (hint : Integrable F (ν.prod π)) :
     evariance (fun a => ∫ w, F (a, w) ∂π) ν ≤
       ∫⁻ w, evariance (fun a => F (a, w)) ν ∂π := by
-  have hint : Integrable F (ν.prod π) := hL.integrable one_le_two
   have hmm : StronglyMeasurable (fun w => ∫ a, F (a, w) ∂ν) :=
     (hF.comp measurable_swap).stronglyMeasurable.integral_prod_right'
   have hmint : Integrable (fun w => ∫ a, F (a, w) ∂ν) π := hint.integral_prod_right
@@ -213,12 +213,20 @@ theorem evariance_integral_prod_le (hF : Measurable F) (hL : MemLp F 2 (ν.prod 
           ((hF.sub (hmm.measurable.comp measurable_snd)).enorm.pow_const 2).aemeasurable
     _ = ∫⁻ w, evariance (fun a => F (a, w)) ν ∂π := rfl
 
+/-- The two-factor Efron--Stein inequality. -/
+theorem evariance_prod_le (hF : Measurable F) (hL : MemLp F 2 (ν.prod π)) :
+    evariance F (ν.prod π) ≤ ∫⁻ a, evariance (fun w => F (a, w)) π ∂ν +
+      ∫⁻ w, evariance (fun a => F (a, w)) ν ∂π := by
+  rw [evariance_prod_eq hL]
+  gcongr
+  exact evariance_integral_prod_le hF (hL.integrable one_le_two)
+
 end Prod
 
 /-- The variance of `f` in coordinate `i`, with the other coordinates frozen at `x`, is a
 measurable function of `x`. -/
 theorem measurable_evariance_update {ι : Type*} [DecidableEq ι] {α : ι → Type*}
-    [∀ i, MeasurableSpace (α i)] (μ : ∀ i, Measure (α i)) [∀ i, SFinite (μ i)] (i : ι)
+    [∀ i, MeasurableSpace (α i)] (μ : ∀ i, Measure (α i)) (i : ι) [SFinite (μ i)]
     {f : (∀ i, α i) → ℝ} (hf : Measurable f) :
     Measurable fun x => evariance (fun y => f (Function.update x i y)) (μ i) := by
   have hu : Measurable fun p : (∀ i, α i) × α i => f (Function.update p.1 i p.2) :=
