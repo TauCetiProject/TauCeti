@@ -20,9 +20,10 @@ compares these expansions with the `q`-expansions of the analytic modular forms 
 The invariants of the Tate curve are the `q`-expansions of `E₄`, `-E₆` and `Δ`. The sign of `c₆`
 is part of the comparison: the constant term of `c₆` on the Tate curve is `-1`, while `E₆` is
 normalised to have constant term `1`. Since the Tate expansion and the analytic `q`-expansion are
-both multiplicative, every weight-`k` integral modular form lying in `ℤ[c₄, c₆, Δ]` has the Tate
-expansion of a unique level-one modular form of weight `k` (unique since the `q`-expansion is
-injective on forms of a fixed weight).
+both multiplicative, and every integral modular form lies in `ℤ[c₄, c₆, Δ]`
+(`WeierstrassCurve.IsIntegralModularForm.mem_adjoin`), every weight-`k` integral modular form has
+the Tate expansion of a unique level-one modular form of weight `k` (unique since the
+`q`-expansion is injective on forms of a fixed weight).
 
 Conversely, the image is the full integral lattice: every level-one modular form of weight `k`
 with integer `q`-expansion coefficients arises in this way. The proof is by induction on the
@@ -39,8 +40,8 @@ times a unit of `ℤ⟦q⟧`.
   `TauCeti.map_tateCurve_Δ_eq_qExpansion_discriminant`: the invariants `c₄`, `c₆` and `Δ` of the
   Tate curve are the `q`-expansions of `E₄`, `-E₆` and `Δ`.
 * `WeierstrassCurve.IsIntegralModularForm.exists_qExpansion_eq_map_specialize_tateCurve`: an
-  integral modular form of weight `k` in `ℤ[c₄, c₆, Δ]` has the Tate expansion of a level-one
-  modular form of weight `k`.
+  integral modular form of weight `k` has the Tate expansion of a level-one modular form of
+  weight `k`.
 * `ModularForm.exists_isIntegralModularForm_specialize_tateCurve_eq`: a level-one modular form of
   weight `k` with integer `q`-expansion is the Tate expansion of an integral modular form of
   weight `k` in `ℤ[c₄, c₆, Δ]`.
@@ -123,13 +124,13 @@ private theorem Δ_mem_tateGraded : Universal.curve.Δ ∈ tateGraded 12 :=
       ModularFormClass.coe_modularForm, CuspForm.coe_discriminant]⟩
 
 /-- **Integral modular forms have analytic Tate expansions.** An integral modular form `f` of
-weight `k` lying in `ℤ[c₄, c₆, Δ]` has as Tate expansion the `q`-expansion of a level-one modular
-form of weight `k`; it is unique by `ModularForm.qExpansion_injective`. -/
+weight `k` has as Tate expansion the `q`-expansion of a level-one modular form of weight `k`; it is
+unique by `ModularForm.qExpansion_injective`. -/
 theorem _root_.WeierstrassCurve.IsIntegralModularForm.exists_qExpansion_eq_map_specialize_tateCurve
-    {k : ℕ} {f : MvPolynomial Coeff ℤ} (hf : IsIntegralModularForm k f)
-    (hmem : f ∈ Algebra.adjoin ℤ {Universal.curve.c₄, Universal.curve.c₆, Universal.curve.Δ}) :
+    {k : ℕ} {f : MvPolynomial Coeff ℤ} (hf : IsIntegralModularForm k f) :
     ∃ F : ModularForm 𝒮ℒ k, qExpansion 1 F = (tateCurve.specialize f).map (Int.castRingHom ℂ) := by
   -- Write `f = P(c₄, c₆, Δ)`. As `f` has weight `k`, so has `P` for the weights `4, 6, 12`.
+  have hmem := hf.mem_adjoin
   set v := ![Universal.curve.c₄, Universal.curve.c₆, Universal.curve.Δ]
   set w : Fin 3 → ℕ := ![4, 6, 12]
   have hv (i : Fin 3) : (v i).IsWeightedHomogeneous coefficientWeight (w i) := by
@@ -207,7 +208,7 @@ theorem _root_.ModularForm.exists_isIntegralModularForm_specialize_tateCurve_eq 
   -- Otherwise subtracting `a₀ g`, with `g = 1 + ⋯`, from `F` leaves a cusp form `F'`.
   obtain ⟨g, hgA, hg, hg₀⟩ :=
     exists_isIntegralModularForm_constantCoeff_specialize_eq_one hzero.1 hzero.2
-  obtain ⟨G, hG⟩ := hg.exists_qExpansion_eq_map_specialize_tateCurve hgA
+  obtain ⟨G, hG⟩ := hg.exists_qExpansion_eq_map_specialize_tateCurve
   set a₀ := constantCoeff P
   set F' := F - a₀ • G
   have hF' : qExpansion 1 F' = (P - a₀ • tateCurve.specialize g).map (Int.castRingHom ℂ) := by
