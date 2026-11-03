@@ -9,6 +9,7 @@ public import Mathlib.Analysis.Calculus.Deriv.Star
 public import Mathlib.Analysis.SpecialFunctions.Integrals.Basic
 public import Mathlib.Algebra.Star.Unitary
 public import TauCeti.Analysis.ODE.Caratheodory
+import Mathlib.Analysis.Calculus.ContDiff.Deriv
 import Mathlib.Analysis.Calculus.SmoothSeries
 import Mathlib.Analysis.SpecificLimits.Normed
 
@@ -30,6 +31,10 @@ field must be globally Lipschitz, nor from the Carathéodory solutions of
 the series also supplies the explicit expansion. Uniqueness is
 `Continuous.eq_of_hasDerivAt_clm_apply`.
 
+Applied in the opposite algebra, the same series solves the left equation `Γ' t = p t * Γ t`.
+For a path of bounded operators `M` on a Banach space this left series is the propagator of the
+time-dependent linear equation `w' t = M t (w t)`: every solution is `w t = Γ t (w 0)`.
+
 If `p` takes skew-adjoint values in a star algebra, then `Γ t` is unitary. This is the
 mechanism producing the unitary cocycles which implement bounded perturbations of
 one-parameter automorphism groups of C⋆-algebras.
@@ -42,6 +47,12 @@ one-parameter automorphism groups of C⋆-algebras.
 * `TauCeti.hasDerivAt_dysonSeries`: the series solves `Γ' t = Γ t * p t`.
 * `TauCeti.eq_mul_dysonSeries`: every solution of this equation is `f 0 * Γ t`.
 * `TauCeti.dysonSeries_mem_unitary`: for skew-adjoint `p` the series is unitary.
+* `TauCeti.dysonSeriesLeft`: the Dyson series in the opposite algebra, solving
+  `Γ' t = p t * Γ t` (`TauCeti.hasDerivAt_dysonSeriesLeft`), and factoring as
+  `Γ (t + d) = Γ t * Γ d` for a path of period `d` (`TauCeti.dysonSeriesLeft_add_of_periodic`).
+* `TauCeti.eq_dysonSeriesLeft_apply`: for a path of bounded operators, every solution of the
+  time-dependent linear equation `w' t = M t (w t)` is `w t = dysonSeriesLeft M t (w 0)`.
+* `TauCeti.contDiff_dysonSeriesLeft`: the left series of a `Cⁿ` path is `Cⁿ⁺¹`.
 
 ## References
 
@@ -148,6 +159,22 @@ theorem dysonSeries_zero (p : ℝ → B) : dysonSeries p 0 = 1 := by
   · obtain ⟨n, rfl⟩ := Nat.exists_eq_succ_of_ne_zero hn
     exact dysonTerm_succ_zero p n
 
+/-- The Dyson series of `p` for the left equation `Γ' t = p t * Γ t`: the Dyson series of `p` in
+the opposite algebra. For a path of bounded operators it is the propagator of the time-dependent
+linear equation `w' t = p t (w t)` (`eq_dysonSeriesLeft_apply`). -/
+def dysonSeriesLeft (p : ℝ → B) (t : ℝ) : B :=
+  MulOpposite.unop (dysonSeries (fun s => MulOpposite.op (p s)) t)
+
+/-- The left Dyson series of `p` is the Dyson series of `p` in the opposite algebra. This
+transfers the facts about `dysonSeries` to `dysonSeriesLeft`. -/
+theorem op_dysonSeriesLeft (p : ℝ → B) (t : ℝ) :
+    MulOpposite.op (dysonSeriesLeft p t) = dysonSeries (fun s => MulOpposite.op (p s)) t := by
+  rw [dysonSeriesLeft, MulOpposite.op_unop]
+
+@[simp]
+theorem dysonSeriesLeft_zero (p : ℝ → B) : dysonSeriesLeft p 0 = 1 := by
+  simp [dysonSeriesLeft]
+
 variable [CompleteSpace B]
 
 /-- Each iterated integral is the primitive of the previous one multiplied by `p`. -/
@@ -245,5 +272,71 @@ theorem dysonSeries_mem_unitary (hp : Continuous p) (hskew : ∀ t, star (p t) =
   exact Unitary.mem_iff.2 ⟨congrFun hleft t, hright t⟩
 
 end Star
+
+/-! ### The left equation and the propagator of a linear equation -/
+
+section Left
+
+/-- The left Dyson series solves the linear equation `Γ' t = p t * Γ t`. -/
+theorem hasDerivAt_dysonSeriesLeft (hp : Continuous p) (t : ℝ) :
+    HasDerivAt (dysonSeriesLeft p) (p t * dysonSeriesLeft p t) t := by
+  have h := hasDerivAt_dysonSeries (MulOpposite.continuous_op.comp hp) t
+  exact (MulOpposite.opContinuousLinearEquiv ℝ).symm.hasFDerivAt.comp_hasDerivAt t h
+
+/-- The left Dyson series of a continuous path is continuous. -/
+theorem continuous_dysonSeriesLeft (hp : Continuous p) : Continuous (dysonSeriesLeft p) :=
+  continuous_iff_continuousAt.2 fun t => (hasDerivAt_dysonSeriesLeft hp t).continuousAt
+
+/-- Every solution of `f' t = p t * f t` is `dysonSeriesLeft p t * f 0`. -/
+theorem eq_dysonSeriesLeft_mul (hp : Continuous p) {f : ℝ → B}
+    (hf : ∀ t, HasDerivAt f (p t * f t) t) (t : ℝ) : f t = dysonSeriesLeft p t * f 0 := by
+  refine congrFun (((ContinuousLinearMap.mul ℝ B).continuous.comp hp).eq_of_hasDerivAt_clm_apply
+    (w := fun t => dysonSeriesLeft p t * f 0) (fun t => by simpa using hf t) (fun t => ?_)
+    (t₀ := 0) (by simp)) t
+  simpa [mul_assoc] using (hasDerivAt_dysonSeriesLeft hp t).mul_const (f 0)
+
+/-- For a periodic path, the left Dyson series over a translated period factors through the
+left Dyson series over one period: `Γ (t + d) = Γ t * Γ d`. -/
+theorem dysonSeriesLeft_add_of_periodic (hp : Continuous p) {d : ℝ}
+    (hper : Function.Periodic p d) (t : ℝ) :
+    dysonSeriesLeft p (t + d) = dysonSeriesLeft p t * dysonSeriesLeft p d := by
+  simpa using eq_dysonSeriesLeft_mul hp (f := fun t => dysonSeriesLeft p (t + d))
+    (fun t => by simpa [hper t] using (hasDerivAt_dysonSeriesLeft hp (t + d)).comp_add_const t d) t
+
+/-- The left Dyson series of a `Cⁿ` path is `Cⁿ⁺¹`. -/
+theorem contDiff_dysonSeriesLeft {n : ℕ} (hp : ContDiff ℝ n p) :
+    ContDiff ℝ (n + 1) (dysonSeriesLeft p) := by
+  have hderiv : deriv (dysonSeriesLeft p) = fun t => p t * dysonSeriesLeft p t :=
+    funext fun t => (hasDerivAt_dysonSeriesLeft hp.continuous t).deriv
+  induction n with
+  | zero =>
+    refine contDiff_succ_iff_deriv.2
+      ⟨fun t => (hasDerivAt_dysonSeriesLeft hp.continuous t).differentiableAt, by simp, ?_⟩
+    rw [hderiv]
+    exact contDiff_zero.2 (hp.continuous.mul (continuous_dysonSeriesLeft hp.continuous))
+  | succ n ih =>
+    have hU := ih (hp.of_le (by exact_mod_cast Nat.le_succ n))
+    refine contDiff_succ_iff_deriv.2
+      ⟨fun t => (hasDerivAt_dysonSeriesLeft hp.continuous t).differentiableAt, by simp, ?_⟩
+    rw [hderiv]
+    exact_mod_cast hp.mul hU
+
+variable {X : Type*} [NormedAddCommGroup X] [NormedSpace ℝ X] [CompleteSpace X]
+
+/-- **The propagator of a time-dependent linear equation.** Every solution of `w' t = M t (w t)`
+for a continuous path `M` of bounded operators is `w t = dysonSeriesLeft M t (w 0)`. -/
+theorem eq_dysonSeriesLeft_apply {M : ℝ → X →L[ℝ] X} (hM : Continuous M) {w : ℝ → X}
+    (hw : ∀ t, HasDerivAt w (M t (w t)) t) (t : ℝ) : w t = dysonSeriesLeft M t (w 0) := by
+  refine congrFun (hM.eq_of_hasDerivAt_clm_apply hw (w := fun t => dysonSeriesLeft M t (w 0))
+    (fun t => ?_) (t₀ := 0) (by simp)) t
+  simpa using (hasDerivAt_dysonSeriesLeft hM t).clm_apply (hasDerivAt_const t (w 0))
+
+/-- The propagator applied to a fixed vector solves `w' t = M t (w t)`. -/
+theorem hasDerivAt_dysonSeriesLeft_apply {M : ℝ → X →L[ℝ] X} (hM : Continuous M) (x : X)
+    (t : ℝ) :
+    HasDerivAt (fun t => dysonSeriesLeft M t x) (M t (dysonSeriesLeft M t x)) t := by
+  simpa using (hasDerivAt_dysonSeriesLeft hM t).clm_apply (hasDerivAt_const t x)
+
+end Left
 
 end TauCeti

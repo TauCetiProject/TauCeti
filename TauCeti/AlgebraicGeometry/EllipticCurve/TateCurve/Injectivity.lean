@@ -61,25 +61,6 @@ variable {K : Type*} [NormedField K] [CompleteSpace K] [IsUltrametricDist K]
 
 section TwoTorsion
 
-/-- Two nonidentity parameters with the same first Tate coordinate are equal or mutually
-inverse. -/
-private theorem eq_or_eq_inv_of_tateQuotientCoordinates_fst_eq (q : Kˣ) (hq : ‖(q : K)‖ < 1)
-    {x z : Kˣ ⧸ Subgroup.zpowers q} (hx : x ≠ 1) (hz : z ≠ 1)
-    (h : (tateQuotientCoordinates q x).1 = (tateQuotientCoordinates q z).1) :
-    x = z ∨ x = z⁻¹ := by
-  induction x using QuotientGroup.induction_on with | H u => ?_
-  induction z using QuotientGroup.induction_on with | H v => ?_
-  have hu : u ∉ Subgroup.zpowers q := fun h ↦ hx ((QuotientGroup.eq_one_iff u).mpr h)
-  have hv : v ∉ Subgroup.zpowers q := fun h ↦ hz ((QuotientGroup.eq_one_iff v).mpr h)
-  rcases (tateUniformizationX_eq_tateUniformizationX_iff q hq hu hv).mp (by simpa using h) with
-    h' | h'
-  · right
-    rw [← QuotientGroup.mk_inv, eq_comm, QuotientGroup.eq, inv_inv]
-    exact h'
-  · left
-    rw [eq_comm, QuotientGroup.eq]
-    exact h'
-
 /-- The first Tate coordinate of a nonidentity parameter whose image has order two is a root of
 the `2`-torsion polynomial. -/
 private theorem isRoot_twoTorsionPolynomial_of_neg_eq (q : Kˣ) (hq : ‖(q : K)‖ < 1)
@@ -95,7 +76,7 @@ class `c` is `c`. -/
 private theorem eq_of_tateQuotientCoordinates_fst_eq (q : Kˣ) (hq : ‖(q : K)‖ < 1)
     {c z : Kˣ ⧸ Subgroup.zpowers q} (hc : c ≠ 1) (hcc : c⁻¹ = c) (hz : z ≠ 1)
     (h : (tateQuotientCoordinates q z).1 = (tateQuotientCoordinates q c).1) : z = c := by
-  rcases eq_or_eq_inv_of_tateQuotientCoordinates_fst_eq q hq hz hc h with h | h
+  rcases (tateQuotientCoordinates_fst_eq_iff q hq hz hc).mp h with h | h
   · exact h
   · rw [h, hcc]
 

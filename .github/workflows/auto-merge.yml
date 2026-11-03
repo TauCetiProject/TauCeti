@@ -1,94 +1,115 @@
 name: Auto-merge
 
-# Merge a PR automatically once it is genuinely ready, WITHOUT generating any reviews here (that is
-# expensive — it spends API budget — and is gated off in review.yml). Reviews are produced by people
-# running tauceti-review / tauceti locally and posting a head-pinned scoreboard comment. This workflow
-# reconciles the queue from the newest completed current-head scoreboard. Temporary review
-# coordination comments are ignored. TauCetiData is a separate analytics archive.
-#
-# It calls the lightweight TauCetiReview merge-only workflow, which mints no provider keys, runs no
-# reviewer, and merges only when the engine's own rule says so: build green on HEAD, every blocking
-# rubric green on HEAD, every changed path under TauCeti/ (plus the allowed root files), and bump-guard
-# green for any Lake-pin change. The scoreboard supplies the review verdict with no author-association
-# gate; trusted CI supplies the build, scope, axiom, path, and bump-guard boundaries.
-# queue-release.yml reconsiders waiting PRs when a Lake-pin reservation ends; that event does not
-# change the waiting PRs' heads, builds, or comments and therefore cannot wake this workflow.
-
+# Events wake one batch, rather than resolving and merging one PR per event.
+# GitHub retains one running and one pending job. Changed PR metadata makes
+# coalesced approvals/revocations fresh work before unchanged queue rechecks.
+# Each bounded pass resumes from saved observations; it need not cover the full queue.
+# The environment wait timer coalesces five minutes without occupying a runner.
+# The pinned sweep preserves head/base fences, review revocations, holds, quotas,
+# original repair allowances and the selected merge backend; it runs no reviewer.
 on:
-  # A pushed head is immediately unsafe until it has current-head reviews.
-  # The ready-to-merge label wakes the gate after readiness reconciliation, including
-  # reconciliation after dispatched maintenance builds.
   pull_request_target:
+    branches: [main]
     types: [synchronize, labeled]
-  # Head is freshly green: re-check whether this PR is now mergeable.
   workflow_run:
     workflows: ["pr-build"]
     types: [completed]
-  # A completed scoreboard changed.
   issue_comment:
     types: [created, edited, deleted]
+  workflow_dispatch:
 
 permissions:
   contents: read
-  pull-requests: read
-
-concurrency:
-  group: auto-merge-${{ github.event.issue.number || github.event.pull_request.number || github.event.workflow_run.head_sha }}
-  cancel-in-progress: false
 
 jobs:
-  resolve:
-    runs-on: ubuntu-latest
-    # Pushes and comments already identify their PR. Only a completed build whose event omits
-    # the association needs a separate API lookup; ordinary events start just the policy job.
-    if: >
-      github.event_name == 'workflow_run'
-        && github.event.workflow_run.conclusion == 'success'
-        && github.event.workflow_run.event == 'pull_request_target'
-        && !github.event.workflow_run.pull_requests[0].number
-    outputs:
-      pr: ${{ steps.r.outputs.pr }}
-    steps:
-      - id: r
-        env:
-          GH_TOKEN: ${{ github.token }}
-          REPO: ${{ github.repository }}
-        run: |
-          set -euo pipefail
-          pr=$(gh api "repos/$REPO/commits/${{ github.event.workflow_run.head_sha }}/pulls" --jq '.[0].number // empty')
-          echo "pr=$pr" >> "$GITHUB_OUTPUT"
-
-  merge:
-    needs: resolve
-    # A skipped lookup must not skip a PR already identified by the event. Keep the original
-    # event filters here, including edits/deletions that remove a scoreboard marker: review
-    # revocations must reach the same pinned policy as approvals.
+  sweep:
+    # Filter before entering the global group: unrelated labels/comments must
+    # not replace the one pending batch that carries useful work.
     if: >-
-      ${{ !cancelled() && (
-        (github.event_name == 'pull_request_target'
+      github.repository == 'TauCetiProject/TauCeti' && (
+        (github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main')
+        || (github.event_name == 'pull_request_target'
           && (github.event.action != 'labeled' || github.event.label.name == 'ready-to-merge'))
         || (github.event_name == 'workflow_run'
           && github.event.workflow_run.conclusion == 'success'
-          && github.event.workflow_run.event == 'pull_request_target'
-          && (github.event.workflow_run.pull_requests[0].number
-            || (needs.resolve.result == 'success' && needs.resolve.outputs.pr != '')))
+          && github.event.workflow_run.event == 'pull_request_target')
         || (github.event_name == 'issue_comment'
           && github.event.issue.pull_request != null
           && (contains(github.event.comment.body, 'tauceti-scoreboard')
-            || contains(github.event.changes.body.from, 'tauceti-scoreboard')))) }}
-    # Pinned to a TauCetiReview commit; bump deliberately. The reusable workflow receives the App
-    # secrets, so a floating @main would be a supply-chain risk.
-    # Re-pin together with the other two callers and .github/actions/checkout-merge-policy
-    # (scripts/test_workflow_pins.py checks they agree). The called workflow checks out its own
-    # commit, supplied explicitly as review_ref.
-    uses: TauCetiProject/TauCetiReview/.github/workflows/merge-only.yml@2b4a9560bfc197a6e7b24c19d6da62b88addf4d3
-    with:
-      review_ref: 2b4a9560bfc197a6e7b24c19d6da62b88addf4d3
-      tools_repository: TauCetiProject/TauCetiTools
-      tools_ref: a8b16c3dd0c0730a1963052cb520808e161222ef
-      pr: ${{ format('{0}', github.event.issue.number || github.event.pull_request.number || github.event.workflow_run.pull_requests[0].number || needs.resolve.outputs.pr) }}
-      merge_backend: ${{ vars.MERGE_BACKEND || 'queue' }}
-    # Pass only the App credentials merge-only needs, not all of TauCeti's secrets.
-    secrets:
-      APP_ID: ${{ secrets.APP_ID }}
-      APP_PRIVATE_KEY: ${{ secrets.APP_PRIVATE_KEY }}
+            || contains(github.event.changes.body.from, 'tauceti-scoreboard'))))
+    runs-on:
+      - nscloud-ubuntu-24.04-amd64-2x4-with-features;job.priority=0
+      - namespace-features:github.run-id=${{ github.run_id }}
+    timeout-minutes: 30
+    concurrency:
+      group: auto-merge-batch
+      cancel-in-progress: false
+    # Configured with a five-minute wait timer and no secrets/reviewers.
+    environment:
+      name: control-batch-debounce
+      deployment: false
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+          # Cone mode includes root files such as the trusted tauceti.toml.
+          sparse-checkout: |
+            .github/actions/checkout-merge-policy
+            scripts/control_batches
+      - name: Checkout the pinned merge policy (read-only)
+        uses: ./.github/actions/checkout-merge-policy
+
+      # Match the existing reusable merge-sweep's project binding and token.
+      - name: Checkout pinned common configuration tools
+        uses: actions/checkout@v4
+        with:
+          repository: TauCetiProject/TauCetiTools
+          ref: a8b16c3dd0c0730a1963052cb520808e161222ef
+          path: .tauceti-tools
+          persist-credentials: false
+      - name: Bind the trusted project configuration
+        env:
+          PYTHONPATH: ${{ github.workspace }}/.tauceti-tools
+        run: |
+          python3 -m tauceti_tools config environment --conf tauceti.toml --github-env "$GITHUB_ENV"
+          echo "PYTHONPATH=$PYTHONPATH" >> "$GITHUB_ENV"
+      - name: Mint merge-sweep token
+        id: merge-token
+        uses: actions/create-github-app-token@29824e69f54612133e76f7eaac726eef6c875baf
+        with:
+          app-id: ${{ secrets.APP_ID }}
+          private-key: ${{ secrets.APP_PRIVATE_KEY }}
+          owner: TauCetiProject
+          repositories: TauCeti
+          permission-contents: write
+          permission-pull-requests: write
+          permission-checks: write
+          permission-issues: write
+          permission-workflows: write
+        env:
+          INPUT_PERMISSION-ACTIONS-VARIABLES: read
+
+      # Progress only orders observations. It never supplies merge authority.
+      - name: Restore batch progress
+        uses: actions/cache/restore@v4
+        continue-on-error: true
+        timeout-minutes: 1
+        with:
+          path: ${{ runner.temp }}/auto-merge-batch-progress.json
+          key: auto-merge-batch-v1-${{ github.repository_id }}-${{ github.run_id }}-${{ github.run_attempt }}
+          restore-keys: auto-merge-batch-v1-${{ github.repository_id }}-
+      - name: Reconcile current merge candidates
+        env:
+          GH_TOKEN: ${{ steps.merge-token.outputs.token }}
+          REPO: ${{ github.repository }}
+          FOCUSED: "1"
+          SWEEP_PROGRESS_FILE: ${{ runner.temp }}/auto-merge-batch-progress.json
+        run: python3 scripts/control_batches/merge_batch.py
+      - name: Save batch progress
+        if: always()
+        uses: actions/cache/save@v4
+        continue-on-error: true
+        timeout-minutes: 1
+        with:
+          path: ${{ runner.temp }}/auto-merge-batch-progress.json
+          key: auto-merge-batch-v1-${{ github.repository_id }}-${{ github.run_id }}-${{ github.run_attempt }}

@@ -32,11 +32,13 @@ noncomputable section
 namespace TauCeti.CurrentAlgebra
 
 open TauCeti.UniversalEnvelopingAlgebra
+open LieAlgebra.ofTwoCocycle (centralElement)
 
 variable {R L : Type*} [CommRing R] [LieRing L] [LieAlgebra R L]
   (Φ : LinearMap.BilinForm R L) (hΦ : Φ.lieInvariant L) (hΦs : Φ.IsSymm) (a : R)
 
-local notation "U" => CentralQuotient R (centralElement Φ hΦ hΦs) a
+local notation "c" => twoCocycleOfBilinear R L Φ hΦ hΦs
+local notation "U" => CentralQuotient R (centralElement c) a
 
 /-- Every finitely generated smooth level module is a quotient of finitely many copies of
 `U / I_N` at one positive order `N`. This includes central value zero and the zero module. -/
