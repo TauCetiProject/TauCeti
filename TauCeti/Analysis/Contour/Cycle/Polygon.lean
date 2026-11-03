@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Geometry.Polygon.Basic
 public import TauCeti.Analysis.Contour.Cycle.Basic
-public import TauCeti.MeasureTheory.Function.CurveAction.Polygonal
+public import TauCeti.Geometry.Polygon.Simple
 public import TauCeti.Analysis.Calculus.ContDiff.PiecewiseC1On.Polygonal
 import TauCeti.Analysis.Green.Polygonal.Fan
 import TauCeti.GroupTheory.Perm.Cycle.Enumeration
@@ -32,7 +32,8 @@ become a contour cycle.
 
 ## Main definitions
 
-* `Polygon.contourCurve poly`: the closed polygonal curve of `poly` on `[0, n]`.
+* `Polygon.contourCurve poly`: the closed polygonal curve of `poly` on `[0, n]`, given by the
+  boundary parametrization `Polygon.boundaryParam`.
 * `Polygon.contourCycle poly`: the corresponding one-generator contour cycle.
 
 ## Main results
@@ -66,76 +67,45 @@ namespace TauCeti.Contour
 
 variable {n : ℕ} [NeZero n] (poly : Polygon ℂ n)
 
-/-- The vertex sequence `k ↦ poly k` of a polygon, indexed by `ℕ` and hence `n`-periodic. -/
-private def vertexSeq : ℕ → ℂ :=
-  fun k ↦ poly (k : Fin n)
+/-- On each cell `[i, i + 1]` the boundary parametrization is the affine interpolation of its
+values at the end points, in the form used by polygonal curves. -/
+private theorem boundaryParam_eq_of_mem_cell (i : Fin n) (t : ℝ)
+    (ht : t ∈ Icc (((i.castSucc : Fin (n + 1)) : ℕ) : ℝ) ((i.succ : Fin (n + 1)) : ℕ)) :
+    poly.boundaryParam t = poly.boundaryParam (i.castSucc : Fin (n + 1)) +
+      ((t - (i.castSucc : Fin (n + 1))) /
+        ((i.succ : Fin (n + 1)) - (i.castSucc : Fin (n + 1)))) •
+        (poly.boundaryParam (i.succ : Fin (n + 1)) -
+          poly.boundaryParam (i.castSucc : Fin (n + 1))) := by
+  simp only [Fin.val_castSucc, Fin.val_succ, Nat.cast_succ] at ht ⊢
+  have h₀ := poly.boundaryParam_natCast_add i (s := 0) ⟨le_rfl, zero_le_one⟩
+  have h₁ := poly.boundaryParam_natCast_add i (s := 1) ⟨zero_le_one, le_rfl⟩
+  rw [add_zero] at h₀
+  rw [← add_sub_cancel ((i : ℕ) : ℝ) t,
+    poly.boundaryParam_natCast_add i ⟨by linarith [ht.1], by linarith [ht.2]⟩, h₀, h₁]
+  simp [Polygon.edgePath, AffineMap.lineMap_apply_module', add_comm]
 
-/-- The raw closed polygonal curve of a polygon: the polygonal interpolation of its vertex
-sequence on the integer grid of `[0, n]`. -/
-private def polygonFun : ℝ → ℂ :=
-  polygonalInterpolation 0 1 n (vertexSeq poly)
+/-- The boundary parametrization is polygonal on `[0, n]`, with the integers as vertices. -/
+private theorem isPolygonalOnInterval_boundaryParam :
+    IsPolygonalOnInterval poly.boundaryParam 0 n :=
+  ⟨n, Nat.pos_of_ne_zero (NeZero.ne n), fun j ↦ ((j : ℕ) : ℝ), fun _ _ hjk ↦ Nat.cast_lt.2 hjk,
+    by simp, by simp, boundaryParam_eq_of_mem_cell poly⟩
 
-/-- On `[i, i + 1]` the polygonal curve runs along edge `i`. -/
-private theorem polygonFun_natCast_add (i : Fin n) {s : ℝ} (hs : s ∈ Icc (0 : ℝ) 1) :
-    polygonFun poly ((i : ℕ) + s) = poly.edgePath ℝ i s := by
-  have ht : ((i : ℕ) : ℝ) + s ∈ Icc (0 + ((i : ℕ) : ℝ) * 1) (0 + ((i : ℕ) + 1) * 1) := by
-    simp only [zero_add, mul_one, mem_Icc]
-    exact ⟨by linarith [hs.1], by linarith [hs.2]⟩
-  rw [polygonFun, polygonalInterpolation_eq_of_mem_Icc _ one_pos i.isLt ht]
-  simp [Polygon.edgePath, AffineMap.lineMap_apply_module', vertexSeq, add_comm]
-
-/-- The polygonal curve starts at vertex `0`. -/
-private theorem polygonFun_zero : polygonFun poly 0 = poly 0 := by
-  have h := polygonalInterpolation_apply_grid (a := 0) (N := n) (vertexSeq poly) one_pos
-    (Nat.zero_le n)
-  simpa [polygonFun, vertexSeq] using h
-
-/-- The polygonal curve ends at vertex `0`. -/
-private theorem polygonFun_natCast : polygonFun poly n = poly 0 := by
-  have h := polygonalInterpolation_apply_grid (a := 0) (N := n) (vertexSeq poly) one_pos le_rfl
-  simpa [polygonFun, vertexSeq] using h
-
-/-- The polygonal curve is affine on each cell `[i, i + 1]`. -/
-private theorem isPolygonalOnInterval_polygonFun :
-    IsPolygonalOnInterval (polygonFun poly) 0 n := by
-  simpa using isPolygonalOnInterval_of_eqOn_polygonalInterpolation (f := polygonFun poly)
-    (NeZero.ne n) one_pos fun _ _ ↦ rfl
-
-/-- The image of the parameter interval under the polygonal curve is the boundary of the
+/-- The image of the parameter interval under the boundary parametrization is the boundary of the
 polygon. -/
-private theorem image_polygonFun : polygonFun poly '' uIcc 0 n = poly.boundary ℝ := by
+private theorem image_boundaryParam : poly.boundaryParam '' uIcc 0 n = poly.boundary ℝ := by
+  refine ((image_subset_range _ _).trans poly.range_boundaryParam.subset).antisymm fun z hz ↦ ?_
+  obtain ⟨t, ht, rfl⟩ := poly.exists_mem_Ico_boundaryParam_eq hz
   rw [uIcc_of_le (Nat.cast_nonneg n)]
-  ext z
-  simp only [mem_image, Polygon.boundary, mem_iUnion, Polygon.edgeSet_eq_image_edgePath]
-  constructor
-  · rintro ⟨t, ⟨ht₀, htn⟩, rfl⟩
-    -- The parameter `t` lies in the cell `[k, k + 1]` with `k = min ⌊t⌋₊ (n - 1)`.
-    have hn : 0 < n := Nat.pos_of_ne_zero (NeZero.ne n)
-    set k := min ⌊t⌋₊ (n - 1) with hk
-    have hkn : k < n := lt_of_le_of_lt (min_le_right _ _) (Nat.sub_lt hn one_pos)
-    have hkt : (k : ℝ) ≤ t := (Nat.cast_le.2 (min_le_left _ _)).trans (Nat.floor_le ht₀)
-    have htk : t ≤ k + 1 := by
-      rcases le_total ⌊t⌋₊ (n - 1) with h | h
-      · rw [hk, min_eq_left h]
-        exact (Nat.lt_floor_add_one t).le
-      · rw [hk, min_eq_right h, Nat.cast_sub (Nat.one_le_iff_ne_zero.2 (NeZero.ne n)),
-          Nat.cast_one, sub_add_cancel]
-        exact htn
-    refine ⟨⟨k, hkn⟩, t - k, ⟨by linarith, by linarith⟩, ?_⟩
-    rw [← polygonFun_natCast_add poly ⟨k, hkn⟩ ⟨by linarith, by linarith⟩]
-    simp
-  · rintro ⟨i, s, hs, rfl⟩
-    have hi : ((i : ℕ) : ℝ) + 1 ≤ n := by exact_mod_cast i.isLt
-    exact ⟨(i : ℕ) + s, ⟨by linarith [hs.1, (Nat.cast_nonneg (i : ℕ) : (0 : ℝ) ≤ _)],
-      by linarith [hs.2]⟩, polygonFun_natCast_add poly i hs⟩
+  exact mem_image_of_mem _ (Ico_subset_Icc_self ht)
 
 /-- The closed polygonal curve of a polygon `poly` with `n ≠ 0` vertices, on the parameter
 interval `[0, n]`: on `[k, k + 1]` it runs along the edge from vertex `k` to vertex `k + 1`, and
-the last edge returns to vertex `0`. -/
+the last edge returns to vertex `0`. It is the boundary parametrization `poly.boundaryParam`
+restricted to `[0, n]`. -/
 def _root_.Polygon.contourCurve : PiecewiseC1ClosedCurve :=
-  PiecewiseC1ClosedCurve.of (polygonFun poly)
-    (isPolygonalOnInterval_polygonFun poly).isPiecewiseC1On
-    ((polygonFun_zero poly).trans (polygonFun_natCast poly).symm)
+  PiecewiseC1ClosedCurve.of poly.boundaryParam
+    (isPolygonalOnInterval_boundaryParam poly).isPiecewiseC1On
+    (by simpa using (poly.periodic_boundaryParam 0).symm)
 
 /-- The polygonal curve starts at the parameter `0`. -/
 @[simp]
@@ -147,14 +117,11 @@ theorem _root_.Polygon.contourCurve_a : poly.contourCurve.a = 0 := by
 theorem _root_.Polygon.contourCurve_b : poly.contourCurve.b = n := by
   rw [Polygon.contourCurve, PiecewiseC1ClosedCurve.of_b]
 
-/-- On `[i, i + 1]` the polygonal curve runs along edge `i` of the polygon. -/
-theorem _root_.Polygon.contourCurve_natCast_add (i : Fin n) {s : ℝ} (hs : s ∈ Icc (0 : ℝ) 1) :
-    poly.contourCurve ((i : ℕ) + s) = poly.edgePath ℝ i s := by
-  have hi : ((i : ℕ) : ℝ) + 1 ≤ n := by exact_mod_cast i.isLt
+/-- On `[0, n]` the polygonal curve is the boundary parametrization of the polygon. -/
+theorem _root_.Polygon.contourCurve_apply {t : ℝ} (ht : t ∈ Icc (0 : ℝ) n) :
+    poly.contourCurve t = poly.boundaryParam t := by
   rw [Polygon.contourCurve, PiecewiseC1ClosedCurve.of_apply _ _ _
-    (by rw [uIcc_of_le (Nat.cast_nonneg n)]
-        exact ⟨by linarith [hs.1, (Nat.cast_nonneg (i : ℕ) : (0 : ℝ) ≤ _)], by linarith [hs.2]⟩),
-    polygonFun_natCast_add poly i hs]
+    (by rwa [uIcc_of_le (Nat.cast_nonneg n)])]
 
 /-- The closed polygonal curve of a polygon `poly` with `n ≠ 0` vertices, as a one-generator
 contour cycle. -/
@@ -168,7 +135,7 @@ theorem _root_.Polygon.contourCycle_def :
 /-- The trace of the cycle of a polygon is the boundary of the polygon. -/
 @[simp]
 theorem _root_.Polygon.trace_contourCycle : Cycle.trace poly.contourCycle = poly.boundary ℝ := by
-  rw [Polygon.contourCycle, Polygon.contourCurve, Cycle.trace_of_raw, image_polygonFun]
+  rw [Polygon.contourCycle, Polygon.contourCurve, Cycle.trace_of_raw, image_boundaryParam]
 
 /-- **The integral over a polygon** of a function continuous on its boundary is the sum over the
 edges `[v, w]` of `(w - v) • ∫ t in 0..1, f (v + t (w - v))`. -/
@@ -176,13 +143,13 @@ theorem _root_.Polygon.integral_contourCycle {E : Type*} [NormedAddCommGroup E] 
     {f : ℂ → E} (hf : ContinuousOn f (poly.boundary ℝ)) :
     Cycle.integral f poly.contourCycle =
       ∑ i, (poly (finRotate n i) - poly i) • ∫ t in (0 : ℝ)..1, f (poly.edgePath ℝ i t) := by
-  have hγ := (isPolygonalOnInterval_polygonFun poly).isPiecewiseC1On
+  have hγ := (isPolygonalOnInterval_boundaryParam poly).isPiecewiseC1On
   have hint := hγ.intervalIntegrable_deriv_smul_comp_of_mapsTo hf
-    (mapsTo_iff_image_subset.2 (image_polygonFun poly).subset)
+    (mapsTo_iff_image_subset.2 (image_boundaryParam poly).subset)
   rw [Polygon.contourCycle, Polygon.contourCurve, Cycle.integral_of_raw]
   -- Split the integral over `[0, n]` into the integrals over the cells `[i, i + 1]`.
   have hsplit := intervalIntegral.sum_integral_adjacent_intervals (a := fun k : ℕ ↦ (k : ℝ))
-    (n := n) (μ := volume) (f := fun t ↦ deriv (polygonFun poly) t • f (polygonFun poly t))
+    (n := n) (μ := volume) (f := fun t ↦ deriv poly.boundaryParam t • f (poly.boundaryParam t))
     fun k hk ↦ hint.mono_set (uIcc_subset_uIcc
       (by rw [uIcc_of_le (Nat.cast_nonneg n)]; exact ⟨Nat.cast_nonneg k, by exact_mod_cast hk.le⟩)
       (by rw [uIcc_of_le (Nat.cast_nonneg n)]
@@ -192,8 +159,8 @@ theorem _root_.Polygon.integral_contourCycle {E : Type*} [NormedAddCommGroup E] 
   refine Finset.sum_congr rfl fun i _ ↦ ?_
   -- On the open cell, the curve is the affine edge `i`, with constant derivative.
   have hcell : ∀ t ∈ Icc ((i : ℕ) : ℝ) ((i : ℕ) + 1),
-      polygonFun poly t = poly.edgePath ℝ i (t - (i : ℕ)) := fun t ht ↦ by
-    rw [← polygonFun_natCast_add poly i ⟨by linarith [ht.1], by linarith [ht.2]⟩,
+      poly.boundaryParam t = poly.edgePath ℝ i (t - (i : ℕ)) := fun t ht ↦ by
+    rw [← poly.boundaryParam_natCast_add i ⟨by linarith [ht.1], by linarith [ht.2]⟩,
       add_sub_cancel]
   rw [Nat.cast_succ, intervalIntegral.integral_congr_uIoo (g := fun t ↦
     (poly (finRotate n i) - poly i) • f (poly.edgePath ℝ i (t - (i : ℕ)))) fun t ht ↦ ?_,
@@ -201,7 +168,7 @@ theorem _root_.Polygon.integral_contourCycle {E : Type*} [NormedAddCommGroup E] 
     intervalIntegral.integral_comp_sub_right (fun t ↦ f (poly.edgePath ℝ i t)), sub_self,
     add_sub_cancel_left]
   rw [uIoo_of_le (by linarith)] at ht
-  have hnhds : polygonFun poly =ᶠ[nhds t]
+  have hnhds : poly.boundaryParam =ᶠ[nhds t]
       fun u ↦ (u - (i : ℕ)) • (poly (finRotate n i) - poly i) + poly i := by
     filter_upwards [Icc_mem_nhds ht.1 ht.2] with u hu
     rw [hcell u hu, Polygon.edgePath, AffineMap.lineMap_apply_module']
@@ -217,28 +184,12 @@ numbers of its edges. -/
 theorem _root_.Polygon.windingNumber_contourCycle {z : ℂ} (hz : z ∉ poly.boundary ℝ) :
     Cycle.windingNumber z poly.contourCycle = ∑ i, windingNumber (poly.edgePath ℝ i) 0 1 z := by
   rw [Polygon.contourCycle, Polygon.contourCurve, Cycle.windingNumber_of_raw]
-  have hseg (i : Fin n) (t : ℝ)
-      (ht : t ∈ Icc (((i.castSucc : Fin (n + 1)) : ℕ) : ℝ) ((i.succ : Fin (n + 1)) : ℕ)) :
-      polygonFun poly t = polygonFun poly (i.castSucc : Fin (n + 1)) +
-        ((t - (i.castSucc : Fin (n + 1))) /
-          ((i.succ : Fin (n + 1)) - (i.castSucc : Fin (n + 1)))) •
-          (polygonFun poly (i.succ : Fin (n + 1)) -
-            polygonFun poly (i.castSucc : Fin (n + 1))) := by
-    simp only [Fin.val_castSucc, Fin.val_succ, Nat.cast_succ] at ht ⊢
-    rw [polygonFun, polygonalInterpolation_eq_of_mem_Icc _ one_pos i.isLt (by simpa using ht)]
-    have h₀ := polygonalInterpolation_apply_grid (a := 0) (N := n) (vertexSeq poly) one_pos
-      i.isLt.le
-    have h₁ := polygonalInterpolation_apply_grid (a := 0) (N := n) (vertexSeq poly) one_pos
-      i.isLt
-    simp only [zero_add, mul_one, Nat.cast_succ] at h₀ h₁
-    rw [h₀, h₁]
-    simp
   rw [TauCeti.Green.windingNumber_eq_sum_polygon_segments
     (s := fun j : Fin (n + 1) ↦ ((j : ℕ) : ℝ)) (fun _ _ hjk ↦ Nat.cast_lt.2 hjk)
-    (by simp) (by simp) hseg (by rwa [image_polygonFun])]
+    (by simp) (by simp) (boundaryParam_eq_of_mem_cell poly) (by rwa [image_boundaryParam])]
   refine Finset.sum_congr rfl fun i _ ↦ ?_
-  have h₀ := polygonFun_natCast_add poly i (s := 0) ⟨le_rfl, zero_le_one⟩
-  have h₁ := polygonFun_natCast_add poly i (s := 1) ⟨zero_le_one, le_rfl⟩
+  have h₀ := poly.boundaryParam_natCast_add i (s := 0) ⟨le_rfl, zero_le_one⟩
+  have h₁ := poly.boundaryParam_natCast_add i (s := 1) ⟨zero_le_one, le_rfl⟩
   rw [add_zero] at h₀
   simp only [Fin.val_castSucc, Fin.val_succ, Nat.cast_succ]
   rw [h₀, h₁]
@@ -268,13 +219,7 @@ theorem exists_windingNumber_integral_eq_sum_segments {E : Finset (ℂ × ℂ)}
   obtain ⟨σ, hσ⟩ : ∃ σ : Equiv.Perm E, ∀ e, (σ e : ℂ × ℂ).1 = (e : ℂ × ℂ).2 := by
     have hcard (p : ℂ × ℂ → Prop) [DecidablePred p] :
         Fintype.card {e : E // p e} = #{e ∈ E | p e} := by
-      rw [Fintype.card_subtype, ← Finset.card_map (Embedding.subtype _)]
-      congr 1
-      ext e
-      simp only [Finset.mem_map, Finset.mem_filter, Finset.mem_univ, true_and,
-        Embedding.subtype_apply, Subtype.exists, exists_and_left, exists_prop,
-        exists_eq_right_right]
-      exact and_comm
+      simp [Fintype.card_subtype, Finset.filter_attach]
     have hfib (x : ℂ) : {e : E // (e : ℂ × ℂ).2 = x} ≃ {e : E // (e : ℂ × ℂ).1 = x} :=
       Fintype.equivOfCardEq (by rw [hcard (fun e ↦ e.2 = x), hcard (fun e ↦ e.1 = x), hE x])
     exact ⟨Equiv.ofFiberEquiv hfib, fun e ↦ Equiv.ofFiberEquiv_map hfib e⟩
