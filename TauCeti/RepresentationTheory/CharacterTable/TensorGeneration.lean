@@ -217,7 +217,7 @@ theorem exists_mono_tensorPower (V X : FDRep ℂ G) [Simple X]
   obtain ⟨n, hn, hm⟩ := exists_pos_finrank_hom_tensorPower V X hV
     ((simple_iff_isIrreducible X).mp inferInstance).finrank_pos
   obtain ⟨f, hf⟩ := Module.finrank_pos_iff_exists_ne_zero.mp hm
-  exact ⟨n, hn, f, mono_of_nonzero_from_simple hf⟩
+  exact ⟨n, hn, f, mono_of_ne_zero_from_simple hf⟩
 
 end Complex
 
