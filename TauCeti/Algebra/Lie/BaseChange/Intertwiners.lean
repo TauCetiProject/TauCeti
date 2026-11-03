@@ -93,15 +93,25 @@ noncomputable def baseChangeEquiv :
       (linearMapBaseChangeEquiv (R := R) (L := L) (M := M) (N := N) A)).toLinearEquiv ≪≫ₗ
     maxTrivLinearMapEquivLieModuleHom
 
+/-- Forgetting equivariance on a pure tensor recovers the linear-map comparison. -/
+theorem toLinearMap_baseChangeEquiv_tmul (a : A) (f : M →ₗ⁅R,L⁆ N) :
+    (baseChangeEquiv A (a ⊗ₜ[R] f)).toLinearMap =
+      linearMapBaseChangeEquiv (L := L) A (a ⊗ₜ[R] f.toLinearMap) := by
+  simp only [baseChangeEquiv, LinearEquiv.trans_apply, LinearEquiv.baseChange_tmul,
+    toLinearMap_maxTrivLinearMapEquivLieModuleHom, LieModuleEquiv.coe_toLinearEquiv]
+  rw [coe_maxTrivEquiv_apply]
+  -- The transport identifies a Lie submodule with its underlying ordinary submodule;
+  -- `erw` matches their definitionally equal subtype coercions.
+  erw [LinearEquiv.coe_ofEq_apply, Submodule.toBaseChange.toLinearEquiv_apply,
+    Submodule.coe_toBaseChange_tmul, toLinearMap_maxTrivLinearMapEquivLieModuleHom_symm]
+
 /-- The Hom-space comparison sends a pure tensor to the corresponding scalar multiple of
 the extended Lie-module map. -/
 @[simp] theorem baseChangeEquiv_tmul (a : A) (f : M →ₗ⁅R,L⁆ N) :
     baseChangeEquiv A (a ⊗ₜ[R] f) = a • f.baseChange A := by
   ext b
-  simp only [baseChangeEquiv, LinearEquiv.trans_apply, LinearEquiv.baseChange_tmul]
-  convert! congrArg (fun g : A ⊗[R] M →ₗ[A] A ⊗[R] N => g b)
-    (linearMapBaseChangeEquiv_tmul (L := L) A a f.toLinearMap) using 1
-  simp only [smul_apply, ← LieModuleHom.coe_toLinearMap, baseChange_toLinearMap,
+  simp only [← LieModuleHom.coe_toLinearMap, toLinearMap_baseChangeEquiv_tmul,
+    linearMapBaseChangeEquiv_tmul, baseChange_toLinearMap, smul_apply,
     LinearMap.smul_apply]
 
 end LieModuleHom
