@@ -329,7 +329,7 @@ private theorem coe_fderivEquiv (z : ℂ) :
 private theorem hasStrictFDerivAt_circleLiftMap (z : ℂ) :
     HasStrictFDerivAt (circleLiftMap F) (fderivEquiv hper hF hpos z : ℂ →L[ℝ] ℂ) z := by
   rw [coe_fderivEquiv]
-  exact (contDiff_circleLiftMap hper hF).contDiffAt.hasStrictFDerivAt (by simp)
+  exact (contDiff_circleLiftMap hper hF).contDiffAt.hasStrictFDerivAt_fderiv (by simp)
 
 /-- The plane map as a homeomorphism of `ℂ`: a continuous bijection, open by the inverse function
 theorem. -/
