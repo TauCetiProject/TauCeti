@@ -24,6 +24,10 @@ needed only on the one compact sublevel, not on the entire space. Similarly, if 
 `{w ≥ -δ}` of a continuous `w` is compact, a closed set avoiding the zero level of `w` avoids a
 whole band `{|w| ≤ η}` around it (`TauCeti.exists_forall_abs_le_notMem`).
 
+Conversely, restricting a function to a set `S` which is not closed can destroy compactness of
+sublevels: if `S` accumulates at a point `p ∉ S` with `f p < r`, then `{x ∈ S | f x ≤ r}` is not
+compact (`TauCeti.not_isCompact_inter_preimage_Iic`).
+
 If a continuous motion of the space lowers `f` at unit speed through the band `a ≤ f ≤ b`, then
 following it until the level `a` is reached retracts the sublevel `{f ≤ b}` onto `{f ≤ a}`, by a
 homotopy fixing `{f ≤ a}` pointwise (`TauCeti.exists_sublevelDeformation_of_apply_eq_sub`); here
@@ -93,6 +97,20 @@ theorem exists_forall_abs_le_notMem {X : Type*} [TopologicalSpace X] {w : X → 
   refine ⟨min δ (|w x₀| / 2), lt_min hδ (half_pos hm), min_le_left _ _, fun x hx hxC => ?_⟩
   have := isMinOn_iff.1 hmin x ⟨neg_le_of_abs_le (hx.trans (min_le_left _ _)), hxC⟩
   linarith [min_le_right δ (|w x₀| / 2)]
+
+/-- A sublevel of a function restricted to a set `S` of a Hausdorff space is not compact if `S`
+accumulates at a point `p ∉ S` where the function is continuous and strictly below the level.
+Then the sublevel accumulates at `p` as well, so it is not closed. -/
+theorem not_isCompact_inter_preimage_Iic {X β : Type*} [TopologicalSpace X] [T2Space X]
+    [TopologicalSpace β] [LinearOrder β] [ClosedIciTopology β] {f : X → β} {S : Set X} {p : X}
+    {r : β} (hpS : p ∈ closure S) (hp : p ∉ S) (hf : ContinuousAt f p) (hr : f p < r) :
+    ¬IsCompact (S ∩ f ⁻¹' Iic r) := by
+  intro hK
+  have hmem : p ∈ closure (S ∩ f ⁻¹' Iic r) := by
+    rw [mem_closure_iff_frequently] at hpS ⊢
+    exact (hpS.and_eventually (hf.eventually (eventually_lt_nhds hr))).mono
+      fun x hx ↦ ⟨hx.1, hx.2.le⟩
+  exact hp (hK.isClosed.closure_eq ▸ hmem).1
 
 /-- The sublevels `{f ≤ a}` of `f` increase with `a`. -/
 theorem sublevel_mono {X β : Type*} [Preorder β] (f : X → β) :

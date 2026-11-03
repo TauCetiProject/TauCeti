@@ -965,7 +965,7 @@ evaluations and needs no equation on `(x, y)`. -/
 @[simp] lemma smulEval_neg (n : ℤ) :
     smulEval W x y (-n) = (-1 : R) • Jacobian.neg W (smulEval W x y n) := by
   funext i
-  fin_cases i <;> (simp [smulEval, smul_fin3, Jacobian.neg, Jacobian.negY]; try ring)
+  fin_cases i <;> simp [smulEval, smul_fin3, Jacobian.neg, Jacobian.negY]; ring
 
 include eqn in
 /-- **The doubling formula for a concrete curve**: `dblXYZ_smulRing` specialized along the point

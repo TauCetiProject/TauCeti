@@ -194,7 +194,7 @@ private theorem addHaar_image_criticalPoints_eq_zero_aux (n : ℕ) :
     have hmapC : ContDiffAt ℝ (k : ℕ∞ω) hmap a :=
       (φ.contDiff.comp_contDiffAt a (hf a haU)).prodMk π.contDiff.contDiffAt
     have hstrict : HasStrictFDerivAt hmap (eE : E →L[ℝ] ℝ × ↥Ek) a :=
-      hmapC.hasStrictFDerivAt' hmapd hkne
+      hmapC.hasStrictFDerivAt hmapd hkne
     obtain ⟨Θ, hΘC, hΘleft, hΘright⟩ :
         ∃ Θ : ℝ × ↥Ek → E, ContDiffAt ℝ (k : ℕ∞ω) Θ (hmap a) ∧
           (∀ᶠ x in 𝓝 a, Θ (hmap x) = x) ∧ (∀ᶠ p in 𝓝 (hmap a), hmap (Θ p) = p) :=

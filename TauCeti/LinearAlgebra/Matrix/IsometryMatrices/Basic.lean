@@ -299,10 +299,10 @@ theorem exists_map_eq_of_mem_isometryMatrices_map (hf : Function.Surjective f)
       Matrix.mul_assoc]
   set Z : Matrix n n R := c • (A⁻¹ * E) with hZ_def
   have hZ : ∀ i j, Z i j ∈ RingHom.ker f := fun i j => by
-    rw [hZ_def, smul_apply, smul_eq_mul]
+    rw [hZ_def, Matrix.smul_apply, smul_eq_mul]
     exact Ideal.mul_mem_left _ _ (((RingHom.ker f).matrix n).mul_mem_left A⁻¹ hE i j)
   have hcE : ∀ i j, (c • E) i j ∈ RingHom.ker f := fun i j => by
-    rw [smul_apply, smul_eq_mul]
+    rw [Matrix.smul_apply, smul_eq_mul]
     exact Ideal.mul_mem_left _ _ (hE i j)
   have hAZ : A * Z = c • E := by
     rw [hZ_def, Matrix.mul_smul, ← Matrix.mul_assoc, mul_nonsing_inv A hdet, Matrix.one_mul]
@@ -351,7 +351,7 @@ noncomputable def isometryMatricesFiberEquiv {I : Ideal R} (hI : I ^ 2 = ⊥) {A
     invFun := fun K => ⟨⟨X₀ + (X₀ᵀ * A)⁻¹ * K.1, by
       rw [mem_isometryMatrices, add_transpose_mul_mul_add_of_sq_eq_bot hI hA hX₀ (hinv _ K.2.1),
         ← Matrix.mul_assoc, mul_nonsing_inv _ hB, Matrix.one_mul, K.2.2, add_neg_cancel_right]⟩,
-      fun i j => by simpa only [add_apply, add_sub_cancel_left] using hinv _ K.2.1 i j⟩
+      fun i j => by simpa only [Matrix.add_apply, add_sub_cancel_left] using hinv _ K.2.1 i j⟩
     left_inv := fun X => by
       ext : 2
       dsimp only
