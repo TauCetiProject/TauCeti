@@ -118,6 +118,16 @@ protected theorem _root_.HasCompactSupport.mgradient (hf : HasCompactSupport f) 
   hf.mono' fun _ hx ↦ by_contra fun h ↦ hx <| mgradient_eq_zero_iff.2 <|
     (notMem_tsupport_iff_eventuallyEq.1 h).mvfderiv_eq.trans mvfderiv_zero
 
+/-- Pairing the gradient of a compactly supported function with any vector field gives a
+compactly supported scalar function. No differentiability assumption is needed. -/
+protected theorem _root_.HasCompactSupport.inner_mgradient (hf : HasCompactSupport f)
+    (X : Π x : M, TangentSpace I x) :
+    HasCompactSupport (fun x ↦ inner ℝ (mgradient I f x) (X x)) := by
+  refine hf.mono' fun x hx ↦ by_contra fun h ↦ hx ?_
+  have hgrad : mgradient I f x = 0 := mgradient_eq_zero_iff.2
+    ((notMem_tsupport_iff_eventuallyEq.1 h).mvfderiv_eq.trans mvfderiv_zero)
+  simp only [hgrad, inner_zero_left]
+
 /-- The gradient has the same length as the differential it represents: the Riesz equivalence is
 an isometry. -/
 theorem norm_mgradient_eq_norm_mvfderiv (f : M → ℝ) (x : M) :
