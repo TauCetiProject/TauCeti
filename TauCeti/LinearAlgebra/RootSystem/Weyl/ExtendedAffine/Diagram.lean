@@ -144,20 +144,13 @@ private theorem exists_affineSimpleRoot'_apply_eq {f : N ≃ᵃ[R] N}
     have h1 : ((∑ l', n l l' : ℕ) : ℤ) = 1 :=
       mul_left_cancel₀ (b.affineMarks_pos l).ne' (this.symm.trans (mul_one _).symm)
     exact_mod_cast h1
-  -- A row with sum `1` has a single nonzero entry, equal to `1`.
-  obtain ⟨l, -, hl⟩ := Finset.exists_ne_zero_of_sum_ne_zero
-    (show ∑ l', n k l' ≠ 0 by rw [hrow k]; exact one_ne_zero)
-  have hl1 : n k l = 1 := by
-    have := Finset.single_le_sum (f := n k) (fun _ _ ↦ Nat.zero_le _) (Finset.mem_univ l)
-    rw [hrow k] at this
-    omega
-  have hrest (l' : Option b.support) (hl' : l' ≠ l) : n k l' = 0 := by
-    have := Finset.add_sum_erase Finset.univ (n k) (Finset.mem_univ l)
-    rw [hrow k, hl1, add_eq_left, Finset.sum_eq_zero_iff] at this
-    exact this l' (Finset.mem_erase.mpr ⟨hl', Finset.mem_univ _⟩)
+  -- A row with sum `1` is the indicator of a single node.
+  obtain ⟨l, hl⟩ := (Finsupp.sum_eq_one_iff (Finsupp.equivFunOnFinite.symm (n k))).mp <| by
+    rw [Finsupp.sum_fintype _ _ fun _ ↦ rfl]
+    exact hrow k
   refine ⟨l, fun x ↦ ?_⟩
-  rw [hn k x, Finset.sum_eq_single l (fun l' _ hl' ↦ by simp [hrest l' hl']) (by simp), hl1,
-    Nat.cast_one, one_mul]
+  rw [hn k x, show n k = ⇑(Finsupp.single l 1) from congrArg DFunLike.coe hl]
+  simp [Finsupp.single_apply]
 
 /-- For `ω ∈ Ω` and a node `k`, there is a unique node `l` whose wall `ω` carries the wall of `k`
 onto: `αₗ ∘ ω = αₖ`. -/
