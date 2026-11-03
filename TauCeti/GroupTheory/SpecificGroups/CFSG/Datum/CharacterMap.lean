@@ -29,10 +29,12 @@ of the prime field, acting on its weight torus `TauCeti.ValidLieTypeIndex.geckWe
 
 The Geck module is the adjoint module, so its weights span the root lattice, which is the full
 character lattice only for `E₈`, `F₄` and `G₂`, the branches this carrier serves. For the other
-diagrams the torus parametrization is not injective, so uniqueness of character maps
-(`TauCeti.IsCharacterMap.unique`) does not apply to it. Nothing here identifies the Geck carrier
-with the pinned simply connected group, or with the ambient group of a graph-twisted branch, so no
-statement is made about the Steinberg endomorphisms of those branches.
+diagrams the torus parametrization is not injective in general: its kernel is the group of
+characters of the weight lattice modulo the root lattice, which is trivial only when that quotient
+is a `p`-group for the characteristic `p`. So uniqueness of character maps
+(`TauCeti.IsCharacterMap.unique`) needs additional hypotheses there. Nothing here identifies the
+Geck carrier with the pinned simply connected group, or with the ambient group of a graph-twisted
+branch, so no statement is made about the Steinberg endomorphisms of those branches.
 
 ## Main results
 
