@@ -34,18 +34,18 @@ is outward-first exactly when the determinant is positive.
 * I. Frenkel and M. Libine, *Quaternionic analysis, representation theory and physics*,
   Adv. Math. 218 (2008), arXiv:0711.2699v5, §2.2, equation (18), for the ordered surface
   element and outward-first convention.
-* The cofactor comparison uses `TauCeti.Quaternion.Dq_map_succAbove`, derived from the
+* The cofactor comparison uses `ContinuousLinearEquiv.Dq_map_succAbove`, derived from the
   determinant interpretation of `Dq`.
 -/
 
 public section
 
-open MeasureTheory Set
+open MeasureTheory Set TauCeti.Quaternion
 open scoped Quaternion
 
-namespace TauCeti.Quaternion
-
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+
+namespace ContinuousLinearMap
 
 /-- The oriented quaternionic surface coefficient on the front parameter face `u j = 1`
 of `u ↦ p + L u`. The back face has its negative. This includes the face scale exactly once. -/
@@ -110,25 +110,48 @@ theorem integrableOn_affineFace (L : (Fin 4 → ℝ) →L[ℝ] (Fin 4 → ℝ)) 
   intro u hu
   exact mem_image_of_mem _ (Fin.insertNth_mem_Icc.mpr ⟨hc, hu⟩)
 
-/-- The boundary functional is additive for coefficients continuous on the closed affine cube. -/
+/-- The boundary functional is additive when both coefficients have integrable face integrands. -/
 theorem rawAffineBoundary_add (L : (Fin 4 → ℝ) →L[ℝ] (Fin 4 → ℝ)) (p : Fin 4 → ℝ)
+    {B C : (Fin 4 → ℝ) → ℍ →L[ℝ] E}
+    (hB₁ : ∀ j : Fin 4, IntegrableOn
+      (fun u ↦ B (p + L (j.insertNth 1 u)) (affineFaceNormal L j)) (Icc (0 : Fin 3 → ℝ) 1))
+    (hB₀ : ∀ j : Fin 4, IntegrableOn
+      (fun u ↦ B (p + L (j.insertNth 0 u)) (affineFaceNormal L j)) (Icc (0 : Fin 3 → ℝ) 1))
+    (hC₁ : ∀ j : Fin 4, IntegrableOn
+      (fun u ↦ C (p + L (j.insertNth 1 u)) (affineFaceNormal L j)) (Icc (0 : Fin 3 → ℝ) 1))
+    (hC₀ : ∀ j : Fin 4, IntegrableOn
+      (fun u ↦ C (p + L (j.insertNth 0 u)) (affineFaceNormal L j)) (Icc (0 : Fin 3 → ℝ) 1)) :
+    rawAffineBoundary L p (fun x ↦ B x + C x) =
+      rawAffineBoundary L p B + rawAffineBoundary L p C := by
+  simp only [rawAffineBoundary_eq, add_apply]
+  simp_rw [integral_add (hB₁ _) (hC₁ _), integral_add (hB₀ _) (hC₀ _),
+    add_sub_add_comm, Finset.sum_add_distrib]
+
+/-- Coefficients continuous on the closed affine cube satisfy boundary additivity. -/
+theorem rawAffineBoundary_add_of_continuousOn
+    (L : (Fin 4 → ℝ) →L[ℝ] (Fin 4 → ℝ)) (p : Fin 4 → ℝ)
     {B C : (Fin 4 → ℝ) → ℍ →L[ℝ] E}
     (hB : ContinuousOn B ((fun u ↦ p + L u) '' Icc 0 1))
     (hC : ContinuousOn C ((fun u ↦ p + L u) '' Icc 0 1)) :
     rawAffineBoundary L p (fun x ↦ B x + C x) =
-      rawAffineBoundary L p B + rawAffineBoundary L p C := by
-  simp only [rawAffineBoundary_eq, add_apply]
-  simp_rw [integral_add (integrableOn_affineFace L p hB _ (by simp : (1 : ℝ) ∈ Icc 0 1))
-    (integrableOn_affineFace L p hC _ (by simp : (1 : ℝ) ∈ Icc 0 1)),
-    integral_add (integrableOn_affineFace L p hB _ (by simp : (0 : ℝ) ∈ Icc 0 1))
-      (integrableOn_affineFace L p hC _ (by simp : (0 : ℝ) ∈ Icc 0 1)),
-    add_sub_add_comm, Finset.sum_add_distrib]
+      rawAffineBoundary L p B + rawAffineBoundary L p C :=
+  rawAffineBoundary_add L p
+    (fun j ↦ integrableOn_affineFace L p hB j (by simp : (1 : ℝ) ∈ Icc 0 1))
+    (fun j ↦ integrableOn_affineFace L p hB j (by simp : (0 : ℝ) ∈ Icc 0 1))
+    (fun j ↦ integrableOn_affineFace L p hC j (by simp : (1 : ℝ) ∈ Icc 0 1))
+    (fun j ↦ integrableOn_affineFace L p hC j (by simp : (0 : ℝ) ∈ Icc 0 1))
 
 /-- Real scalars commute with the raw boundary integral, without regularity hypotheses. -/
 theorem rawAffineBoundary_smul (L : (Fin 4 → ℝ) →L[ℝ] (Fin 4 → ℝ)) (p : Fin 4 → ℝ)
     (B : (Fin 4 → ℝ) → ℍ →L[ℝ] E) (r : ℝ) :
     rawAffineBoundary L p (fun x ↦ r • B x) = r • rawAffineBoundary L p B := by
   simp [rawAffineBoundary_eq, integral_smul, smul_sub, Finset.smul_sum]
+
+end ContinuousLinearMap
+
+open ContinuousLinearMap
+
+namespace ContinuousLinearEquiv
 
 /-- Evaluation of a weighted surface coefficient on an affine face is precisely the
 cofactor pullback of its four coordinate fluxes. No continuity of the coefficient is needed. -/
@@ -137,10 +160,10 @@ theorem affineFaceNormal_cofactor (L : (Fin 4 → ℝ) ≃L[ℝ] (Fin 4 → ℝ)
     B (p + L u) (affineFaceNormal L.toContinuousLinearMap j) =
       L.affineFluxPullback p (fun i x ↦ B x (dq (Pi.single i 1))) j u := by
   simp only [affineFaceNormal_eq, ContinuousLinearEquiv.coe_coe]
-  rw [Dq_map_succAbove L j, map_smul, ContinuousLinearEquiv.affineFluxPullback_apply]
+  rw [Dq_map_succAbove L j, _root_.map_smul, affineFluxPullback_apply]
   congr 1
   rw [pi_eq_sum_univ' (fun i ↦ L.symm (Pi.single i 1) j)]
-  simp only [map_sum, map_smul]
+  simp only [_root_.map_sum, _root_.map_smul]
 
 /-- The actual affine face integral of the ordered surface form equals the cofactor
 boundary sum used by the affine divergence theorem, for either sign of the determinant. -/
@@ -155,4 +178,4 @@ theorem rawAffineBoundary_eq_cofactor (L : (Fin 4 → ℝ) ≃L[ℝ] (Fin 4 → 
   simp only [rawAffineBoundary_eq, ContinuousLinearEquiv.coe_coe]
   simp_rw [affineFaceNormal_cofactor L p B]
 
-end TauCeti.Quaternion
+end ContinuousLinearEquiv

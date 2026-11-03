@@ -47,8 +47,8 @@ conjugation of the tangent vectors pulls `Dq` back to `-star Dq`.
   `i`-th direction is `(-1) ^ i` times the `i`-th unit.
 * `TauCeti.Quaternion.inner_dq_Dq`: `⟪dq w, Dq v⟫_ℝ = det (w, v 0, v 1, v 2)`.
 * `TauCeti.Quaternion.Dq_star`: the pullback of `Dq` under quaternion conjugation is `-star Dq`.
-* `TauCeti.Quaternion.Dq_map_succAbove`: the oriented affine face coefficient is the corresponding
-  row of the cofactor transform, with the signed determinant.
+* `ContinuousLinearEquiv.Dq_map_succAbove`: the oriented affine face coefficient is the
+  corresponding row of the cofactor transform, with the signed determinant.
 
 ## References
 
@@ -187,6 +187,12 @@ theorem Dq_star {v w : Fin 3 → Fin 4 → ℝ} (h : ∀ r, dq (w r) = star (dq 
   ext <;> simp [minorForm_apply, Matrix.det_fin_three, Fin.succAbove, h0, h1, h2, h3]
   ring
 
+end TauCeti.Quaternion
+
+open TauCeti.Quaternion
+
+namespace ContinuousLinearEquiv
+
 /-- Under an invertible real linear change of tangent coordinates, the interior-product
 identity for `Dq` transforms by the signed determinant and the inverse change on the test vector. -/
 theorem inner_dq_Dq_map (L : (Fin 4 → ℝ) ≃L[ℝ] (Fin 4 → ℝ))
@@ -234,4 +240,4 @@ theorem Dq_map_succAbove (L : (Fin 4 → ℝ) ≃L[ℝ] (Fin 4 → ℝ)) (j : Fi
   · simpa [Quaternion.inner_def, dq_apply] using h' 2
   · simpa [Quaternion.inner_def, dq_apply] using h' 3
 
-end TauCeti.Quaternion
+end ContinuousLinearEquiv
