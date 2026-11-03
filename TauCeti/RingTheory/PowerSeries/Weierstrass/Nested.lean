@@ -7,6 +7,7 @@ module
 
 public import TauCeti.RingTheory.PowerSeries.Weierstrass.Quotient
 public import TauCeti.RingTheory.PowerSeries.EvalAt
+public import TauCeti.RingTheory.PowerSeries.RootBound
 public import TauCeti.RingTheory.PowerSeries.MulDistinguished
 public import TauCeti.Algebra.Polynomial.Degree.IsMonicOfDegree
 public import Mathlib.Analysis.Normed.Algebra.Ultra
