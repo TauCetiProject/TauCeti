@@ -13,7 +13,8 @@ public import Mathlib.RingTheory.AdicCompletion.Basic
 For ideals `J ≤ I` of a commutative ring `R`, the `J`-adic filtration `J ^ m • ⊤` of an `R`-module
 `M` is finer than the `I`-adic one, so an `I`-adically Hausdorff module is `J`-adically Hausdorff.
 If moreover `I ^ k ≤ J` for some `k`, the two filtrations are cofinal in each other, and `I`-adic
-precompleteness and completeness transfer to `J` as well. The powers `J = I ^ n` with `n ≠ 0` are
+precompleteness and completeness transfer to `J` as well; conversely, `J`-adic Hausdorffness,
+precompleteness and completeness transfer back to `I`. The powers `J = I ^ n` with `n ≠ 0` are
 the main instance of this, and precompleteness holds for `n = 0` too, since every module is
 `⊤`-adically precomplete.
 
@@ -26,6 +27,9 @@ to a root congruent to it modulo `I ^ n`, and not merely modulo `I`.
 * `IsHausdorff.of_le`: adic Hausdorffness for `I` implies the same for every `J ≤ I`.
 * `IsPrecomplete.of_le_of_pow_le`, `IsAdicComplete.of_le_of_pow_le`: adic precompleteness and
   completeness for `I` imply the same for every `J` with `I ^ k ≤ J ≤ I`.
+* `IsHausdorff.of_pow_le`, `IsPrecomplete.of_pow_le_of_le`, `IsAdicComplete.of_pow_le_of_le`:
+  conversely, adic Hausdorffness, precompleteness and completeness for `I` imply the same for
+  every `J` with `J ^ k ≤ I ≤ J`, so they depend only on the adic topology.
 * `IsHausdorff.pow`, `IsAdicComplete.pow`: adic Hausdorffness and completeness for `I` imply the
   same for `I ^ n` when `n ≠ 0`.
 * `IsPrecomplete.pow`: adic precompleteness for `I` implies precompleteness for every `I ^ n`.
@@ -64,6 +68,34 @@ theorem IsAdicComplete.of_le_of_pow_le [IsAdicComplete I M] (hJI : J ≤ I) {k :
     (hIJ : I ^ k ≤ J) : IsAdicComplete J M where
   toIsHausdorff := IsHausdorff.of_le hJI
   toIsPrecomplete := IsPrecomplete.of_le_of_pow_le hJI hIJ
+
+/-- An `I`-adically Hausdorff module is `J`-adically Hausdorff for every `J` with `J ^ k ≤ I` for
+some `k`. -/
+theorem IsHausdorff.of_pow_le [IsHausdorff I M] {k : ℕ} (hJI : J ^ k ≤ I) : IsHausdorff J M where
+  haus' x hx := IsHausdorff.haus' (I := I) x fun m ↦
+    (hx (k * m)).mono (Submodule.smul_mono_left ((pow_mul J k m).le.trans
+      (Ideal.pow_right_mono hJI m)))
+
+/-- An `I`-adically precomplete module is `J`-adically precomplete for every `J` with
+`J ^ k ≤ I ≤ J` for some `k`. -/
+theorem IsPrecomplete.of_pow_le_of_le [IsPrecomplete I M] {k : ℕ} (hJI : J ^ k ≤ I)
+    (hIJ : I ≤ J) : IsPrecomplete J M := by
+  refine ⟨fun f hf ↦ ?_⟩
+  -- The subsequence `f ((k + 1) m)` is `I`-adically Cauchy, since `J ^ ((k + 1) m) ≤ I ^ m`; its
+  -- `I`-adic limit `L` is a `J`-adic limit of `f`, since `I ^ m ≤ J ^ m`.
+  have hle (m : ℕ) : J ^ ((k + 1) * m) ≤ I ^ m := (pow_mul J (k + 1) m).le.trans
+    (Ideal.pow_right_mono ((Ideal.pow_le_pow_right k.le_succ).trans hJI) m)
+  obtain ⟨L, hL⟩ := IsPrecomplete.prec' (I := I) (fun m ↦ f ((k + 1) * m)) fun {m n} hmn ↦
+    (hf (Nat.mul_le_mul_left _ hmn)).mono (Submodule.smul_mono_left (hle m))
+  exact ⟨L, fun m ↦ (hf (Nat.le_mul_of_pos_left m k.succ_pos)).trans
+    ((hL m).mono (Submodule.smul_mono_left (Ideal.pow_right_mono hIJ m)))⟩
+
+/-- An `I`-adically complete module is `J`-adically complete for every `J` with `J ^ k ≤ I ≤ J`
+for some `k`. -/
+theorem IsAdicComplete.of_pow_le_of_le [IsAdicComplete I M] {k : ℕ} (hJI : J ^ k ≤ I)
+    (hIJ : I ≤ J) : IsAdicComplete J M where
+  toIsHausdorff := IsHausdorff.of_pow_le hJI
+  toIsPrecomplete := IsPrecomplete.of_pow_le_of_le hJI hIJ
 
 /-- An `I`-adically Hausdorff module is `I ^ n`-adically Hausdorff for `n ≠ 0`. -/
 theorem IsHausdorff.pow [IsHausdorff I M] {n : ℕ} (hn : n ≠ 0) : IsHausdorff (I ^ n) M :=
