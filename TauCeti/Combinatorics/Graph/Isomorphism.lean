@@ -320,39 +320,13 @@ theorem mapEdgeSet_mono (f : Iso G H) {F F' : Set β} (hFF' : F ⊆ F') :
 @[simp]
 theorem symm_mapVertexSet_mapVertexSet (f : Iso G H) {S : Set α} (hS : S ⊆ V(G)) :
     f.symm.mapVertexSet (f.mapVertexSet S) = S := by
-  ext x
-  by_cases hx : x ∈ V(G)
-  · let x' : G.vertexSet := ⟨x, hx⟩
-    have heq : f.symm.vertexEquiv.symm x' = f.vertexEquiv x' := by
-      apply f.symm.vertexEquiv.injective
-      simp
-    have hx' : (x' : α) = x := rfl
-    rw [← hx', f.symm.mem_mapVertexSet_iff, heq, f.mem_mapVertexSet_iff]
-    simp
-  · have hxS : x ∉ S := fun h ↦ hx (hS h)
-    constructor
-    · rintro ⟨h, -⟩
-      exact (hx h).elim
-    · exact fun h ↦ (hxS h).elim
+  rw [← mapVertexSet_trans, self_trans_symm, mapVertexSet_refl, inter_eq_left.mpr hS]
 
 /-- Transport along an isomorphism and its inverse recovers a set of actual edges. -/
 @[simp]
 theorem symm_mapEdgeSet_mapEdgeSet (f : Iso G H) {F : Set β} (hF : F ⊆ E(G)) :
     f.symm.mapEdgeSet (f.mapEdgeSet F) = F := by
-  ext e
-  by_cases he : e ∈ E(G)
-  · let e' : G.edgeSet := ⟨e, he⟩
-    have heq : f.symm.edgeEquiv.symm e' = f.edgeEquiv e' := by
-      apply f.symm.edgeEquiv.injective
-      simp
-    have he' : (e' : β) = e := rfl
-    rw [← he', f.symm.mem_mapEdgeSet_iff, heq, f.mem_mapEdgeSet_iff]
-    simp
-  · have heF : e ∉ F := fun h ↦ he (hF h)
-    constructor
-    · rintro ⟨h, -⟩
-      exact (he h).elim
-    · exact fun h ↦ (heF h).elim
+  rw [← mapEdgeSet_trans, self_trans_symm, mapEdgeSet_refl, inter_eq_left.mpr hF]
 
 /-- Transport preserves and reflects nonemptiness for sets of actual edges. -/
 theorem mapEdgeSet_nonempty_iff (f : Iso G H) {F : Set β} (hF : F ⊆ E(G)) :
