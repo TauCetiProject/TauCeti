@@ -48,7 +48,6 @@ theorem IsTriangulable.exists_finite_triangulation_card_ge
       Nat.zero_le _⟩
   | succ n ih =>
     obtain ⟨ι, K, hι, ⟨e⟩, hn⟩ := ih
-    have := hι
     let := Fintype.ofFinite ι
     let := Fintype.ofFinite (Face K)
     let f : ι → Face K := fun i => ⟨{i}, K.singleton_mem i⟩
@@ -57,15 +56,7 @@ theorem IsTriangulable.exists_finite_triangulation_card_ge
       exact Finset.singleton_injective (congrArg Subtype.val hij)
     have hns : ¬ Function.Surjective f := by
       intro hs
-      have hK : K = ⊥ := by
-        ext σ
-        constructor
-        · intro hσ
-          obtain ⟨i, hi⟩ := hs ⟨σ, hσ⟩
-          exact TauCeti.AbstractSimplicialComplex.mem_bot.mpr
-            ⟨i, (congrArg Subtype.val hi).symm⟩
-        · intro hσ
-          exact (bot_le : (⊥ : AbstractSimplicialComplex ι) ≤ K) hσ
+      have hK : K = ⊥ := K.eq_bot_of_surjective_singleton hs
       subst K
       have hsurj : Function.Surjective (e ∘ vertex (⊥ : AbstractSimplicialComplex ι)) :=
         e.surjective.comp vertex_bot_surjective

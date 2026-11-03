@@ -8,6 +8,7 @@ module
 public import TauCeti.Topology.Triangulable.Vertices
 public import TauCeti.AlgebraicTopology.SimplicialComplex.Realization.Complement
 public import TauCeti.Geometry.Diffeomorphism.Diffeotopy.Configuration
+import TauCeti.AlgebraicTopology.SimplicialComplex.Realization.Relabel.Basic
 import Mathlib.Data.Fintype.EquivFin
 import TauCeti.Geometry.Manifold.Connected
 
@@ -38,7 +39,7 @@ open scoped Manifold ContDiff
 
 namespace Set.Finite
 
-universe u v
+universe u v w
 
 variable {E : Type v} [NormedAddCommGroup E] [NormedSpace ℝ E]
   [FiniteDimensional ℝ E] {M : Type u} [TopologicalSpace M] [ChartedSpace E M]
@@ -48,21 +49,14 @@ variable {E : Type v} [NormedAddCommGroup E] [NormedSpace ℝ E]
 greater than one is the image of a set of vertices in some finite topological triangulation.
 The triangulation need not be smooth. -/
 theorem exists_triangulation_vertex_image {S : Set M} (hS : S.Finite)
-    (hdim : 1 < Module.rank ℝ E) (htri : IsTriangulable.{u} M) :
-    ∃ (ι : Type u) (K : AbstractSimplicialComplex ι) (e : Realization K ≃ₜ M) (s : Set ι),
+    (hdim : 1 < Module.rank ℝ E) (htri : IsTriangulable.{w} M) :
+    ∃ (ι : Type w) (K : AbstractSimplicialComplex ι) (e : Realization K ≃ₜ M) (s : Set ι),
       Finite ι ∧ e '' (K.vertex '' s) = S := by
   classical
-  have : Infinite M := by
-    apply not_finite_iff_infinite.mp
-    intro hfin
-    have := hfin
-    have hempty := (isConnected_compl_of_finite_of_one_lt_rank (E := E) hdim
-      (Set.toFinite (Set.univ : Set M))).nonempty
-    simp at hempty
+  have : Infinite M := infinite_of_one_lt_rank (E := E) hdim
   have := hS.to_subtype
   obtain ⟨ι, K, hι, ⟨e⟩, hcard⟩ :=
     htri.exists_finite_triangulation_card_ge (Nat.card S)
-  have := hι
   let := Fintype.ofFinite S
   let := Fintype.ofFinite ι
   obtain ⟨j⟩ : Nonempty (S ↪ ι) := Function.Embedding.nonempty_of_card_le (by
@@ -90,9 +84,28 @@ theorem exists_triangulation_vertex_image {S : Set M} (hS : S.Finite)
 dimension greater than one leaves a space of finite CW type. The removed points need not be
 vertices of the supplied triangulation. -/
 theorem finiteCWType_compl_of_isTriangulable {S : Set M} (hS : S.Finite)
-    (hdim : 1 < Module.rank ℝ E) (htri : IsTriangulable.{u} M) : FiniteCWType ↥Sᶜ := by
-  obtain ⟨ι, K, e, s, hι, hS⟩ := hS.exists_triangulation_vertex_image hdim htri
-  have := hι
+    (hdim : 1 < Module.rank ℝ E) (htri : IsTriangulable.{w} M) : FiniteCWType ↥Sᶜ := by
+  classical
+  obtain ⟨ι, K, ⟨e⟩⟩ := (isTriangulable_iff M).mp htri
+  have := e.symm.compactSpace
+  have : Finite ι := (K.compactSpace_realization_iff_finite).mp inferInstance
+  let := Fintype.ofFinite ι
+  -- Relabel into the space's universe before placing the marked vertices, so that the
+  -- complement's finite CW model lies in the universe required by `FiniteCWType`.
+  let f : ι ≃ ULift.{u} (Fin (Fintype.card ι)) :=
+    (Fintype.equivFin ι).trans Equiv.ulift.symm
+  let L : AbstractSimplicialComplex (ULift.{u} (Fin (Fintype.card ι))) :=
+    { K.toPreAbstractSimplicialComplex.map f with
+      singleton_mem := fun v => PreAbstractSimplicialComplex.mem_map_iff.mpr
+        ⟨{f.symm v}, K.singleton_mem _, by simp⟩ }
+  let r := K.toPreAbstractSimplicialComplex.realizationRelabelingHomeomorph
+    (L := L) f.toEmbedding rfl rfl le_rfl
+  have hr : {y : Realization L | y.1.support ∈ L.toPreAbstractSimplicialComplex} = Set.univ :=
+    Set.eq_univ_of_forall (AbstractSimplicialComplex.support_mem L)
+  have htri' : IsTriangulable.{u} M := (isTriangulable_iff M).mpr
+    ⟨_, L, ⟨(((r.trans (Homeomorph.setCongr hr)).trans
+      (Homeomorph.Set.univ _)).symm).trans e⟩⟩
+  obtain ⟨ι, K, e, s, hι, hS⟩ := hS.exists_triangulation_vertex_image hdim htri'
   let := Fintype.ofFinite ι
   have heq : e ⁻¹' Sᶜ = (K.vertex '' s)ᶜ := by
     rw [← hS, preimage_compl, e.injective.preimage_image]

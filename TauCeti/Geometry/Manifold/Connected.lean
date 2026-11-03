@@ -111,4 +111,14 @@ theorem isConnected_compl_of_finite_of_one_lt_rank [ConnectedSpace X] (h : 1 < M
   have := ChartedSpace.t1Space E X
   isConnected_compl_of_isDiscrete_of_one_lt_rank h hs.isClosed hs.isDiscrete
 
+/-- A connected manifold modelled on a real normed space of dimension greater than one
+has infinitely many points. -/
+theorem infinite_of_one_lt_rank [ConnectedSpace X] (h : 1 < Module.rank ℝ E) :
+    Infinite X := by
+  apply not_finite_iff_infinite.mp
+  intro hfin
+  have hempty := (isConnected_compl_of_finite_of_one_lt_rank (E := E) h
+    (Set.toFinite (Set.univ : Set X))).nonempty
+  simp at hempty
+
 end TauCeti

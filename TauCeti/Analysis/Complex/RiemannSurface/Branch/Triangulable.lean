@@ -32,7 +32,7 @@ public section
 
 open scoped Manifold
 
-universe u
+universe u v w
 
 namespace TauCeti.RiemannSurface.FiniteHolomorphicMap
 
@@ -46,7 +46,7 @@ surfaces: `χ(X) = degree(f) * χ(Y) - ramificationDegree(f)`. Finite CW type of
 surfaces and of the punctured target is derived from their triangulations. Compactness of the
 target follows from surjectivity of the finite holomorphic map. -/
 theorem eulerChar_eq_degree_mul_eulerChar_sub_ramificationDegree_of_isTriangulable
-    (f : FiniteHolomorphicMap X Y) (hX : IsTriangulable.{u} X) (hY : IsTriangulable.{u} Y) :
+    (f : FiniteHolomorphicMap X Y) (hX : IsTriangulable.{v} X) (hY : IsTriangulable.{w} Y) :
     haveI : CompactSpace Y := f.surjective.compactSpace f.holomorphic.continuous
     haveI := hX.finiteCWType
     haveI := hY.finiteCWType
