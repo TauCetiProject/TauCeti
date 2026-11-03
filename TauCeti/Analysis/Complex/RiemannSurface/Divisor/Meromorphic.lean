@@ -27,8 +27,8 @@ lower bound on the dimension of a divisor's section space into an actual finite 
 
 ## References
 
-* Otto Forster, *Lectures on Riemann Surfaces*, §§16 and 19, for divisor sections and the
-  construction of meromorphic functions from a dimension bound.
+* Otto Forster, *Lectures on Riemann Surfaces*, Graduate Texts in Mathematics 81, Springer, 1981,
+  §16, for divisor sections and the construction of meromorphic functions from a dimension bound.
 -/
 
 public noncomputable section
