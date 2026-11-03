@@ -49,7 +49,8 @@ All in the namespace `TauCeti.PDCode`:
 
 * `resolutionCube_obj`, `range_resolutionCubeι`: the vertex `S` in quantum degree `j` is the
   degree `j - |S|` piece of the circle tensor of the resolution of `S`, included by
-  `resolutionCubeι`.
+  `resolutionCubeι`; `resolutionCubeVertexEquiv` is this identification as a linear
+  equivalence.
 * `resolutionCube_map_homOfLE_insert_comp_resolutionCubeι`: along the edge from `S` to
   `S ∪ {a}` the cube acts by the saddle map at the crossing `a`.
 
@@ -308,6 +309,22 @@ theorem range_resolutionCubeι (S : Finset (Fin n)) :
 
 instance (S : Finset (Fin n)) : Mono (D.resolutionCubeι hD R j S) :=
   (ModuleCat.mono_iff_injective _).mpr (D.resolutionCubeι_injective hD R j S)
+
+/-- The vertex `S` of the degree-`j` cube of resolutions as a linear equivalence with the piece
+of degree `j - |S|` of the circle tensor of the resolution of `S`. This is the identification
+`resolutionCube_obj`, available where the definition of the cube is not unfolded. -/
+def resolutionCubeVertexEquiv (S : Finset (Fin n)) :
+    (D.resolutionCube hD R j).obj S ≃ₗ[R]
+      (Khovanov.circleQuantumGrading R (D.ResolvedCircle (cubeState S))).piece (j - #S) :=
+  LinearEquiv.refl R _
+
+/-- Under `resolutionCubeVertexEquiv`, an element of a vertex lies over its image under the
+inclusion `resolutionCubeι`. -/
+@[simp]
+theorem coe_resolutionCubeVertexEquiv (S : Finset (Fin n)) (x : (D.resolutionCube hD R j).obj S) :
+    (D.resolutionCubeVertexEquiv hD R j S x : Khovanov.CircleTensor R _) =
+      D.resolutionCubeι hD R j S x :=
+  (rfl)
 
 /-- Reindexing the circle tensors along a bijection `e` of resolved circles, as a linear
 equivalence from the vertex `S` of the degree-`j` cube of resolutions of `D` to the vertex `S'`
