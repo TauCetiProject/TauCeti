@@ -13,8 +13,7 @@ import Mathlib.Algebra.Polynomial.Div
 
 Let `ζ` be a primitive `e`-th root of unity in a domain. A polynomial transforming by
 `ζ ^ a` under `X ↦ ζ X`, with `a < e`, has a unique expression `X ^ a * q(X ^ e)`.
-Its coefficients are supported in the residue class `a` modulo `e`, and the coefficients
-of `q` are obtained by selecting precisely that residue class.
+Its coefficients are supported in the residue class `a` modulo `e`.
 
 For the inverse character this gives the factor `X ^ (e - 1)`. Applied with coefficients
 in the coordinates along a reflecting hyperplane, this is the local divisibility statement
@@ -97,8 +96,7 @@ theorem comp_C_mul_X_eq_C_pow_mul_iff_existsUnique (p : R[X]) (ha : a < e)
     simp only [mul_comp, pow_comp, X_comp, mul_pow, hq, C_pow, mul_assoc]
 
 /-- A polynomial transforming by the inverse normal character is uniquely
-`X ^ (e - 1)` times a polynomial in `X ^ e`. In particular the reflecting hyperplane
-occurs with multiplicity at least `e - 1`. -/
+`X ^ (e - 1)` times a polynomial in `X ^ e`. In particular `X ^ (e - 1)` divides `p`. -/
 theorem C_mul_comp_C_mul_X_eq_self_iff_existsUnique (p : R[X]) (he : 0 < e)
     (hζ : IsPrimitiveRoot ζ e) :
     C ζ * p.comp (C ζ * X) = p ↔
