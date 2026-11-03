@@ -226,7 +226,7 @@ theorem cartanGeneratorMatrix_apply (i : Fin 6) (a b : Fin 27 ⊕ Fin 27) :
   cases a <;> cases b <;>
     simp [cartanGeneratorMatrix, Matrix.fromBlocks,
       TauCeti.E6Minuscule.cartanGeneratorMatrix_apply]
-  all_goals split_ifs <;> simp_all
+  split_ifs <;> simp_all
 
 /-- Entry formula for a simple raising matrix on the doubled minuscule basis. -/
 @[simp]
@@ -236,7 +236,7 @@ theorem raisingMatrix_apply (i : Fin 6) (a b : Fin 27 ⊕ Fin 27) :
   cases a <;> cases b <;>
     simp [raisingMatrix, reflection, summandSign, Matrix.fromBlocks,
       TauCeti.E6Minuscule.raisingMatrix_apply, TauCeti.E6Minuscule.loweringMatrix_apply]
-  all_goals split_ifs <;> simp_all
+  split_ifs <;> simp_all
 
 /-- Entry formula for a simple lowering matrix on the doubled minuscule basis. -/
 @[simp]
@@ -246,6 +246,6 @@ theorem loweringMatrix_apply (i : Fin 6) (a b : Fin 27 ⊕ Fin 27) :
   cases a <;> cases b <;>
     simp [loweringMatrix, reflection, summandSign, Matrix.fromBlocks,
       TauCeti.E6Minuscule.raisingMatrix_apply, TauCeti.E6Minuscule.loweringMatrix_apply]
-  all_goals split_ifs <;> omega
+  split_ifs <;> omega
 
 end TauCeti.E6DoubledMinuscule

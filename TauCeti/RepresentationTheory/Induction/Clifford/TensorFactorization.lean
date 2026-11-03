@@ -141,8 +141,8 @@ private theorem comp_symm_isIntertwining (t : inertia A)
   have hmul : t * Subgroup.inclusion (le_inertia A) n' =
       Subgroup.inclusion (le_inertia A) n * t :=
     Subtype.ext (by simp [hn', mul_assoc])
-  rw [hsymm, φ.isIntertwining, MonoidHom.comp_apply, ← Module.End.mul_apply, ← map_mul, hmul,
-    map_mul, Module.End.mul_apply]
+  rw [hsymm, φ.isIntertwining, MonoidHom.comp_apply, ← _root_.mul_apply_eq_comp, ← map_mul, hmul,
+    map_mul, _root_.mul_apply_eq_comp]
 
 /-- The inverse conjugation of an `N`-intertwiner is an `N`-intertwiner. -/
 private theorem comp_isIntertwining (t : inertia A)
@@ -153,8 +153,8 @@ private theorem comp_isIntertwining (t : inertia A)
   have hmul : t⁻¹ * Subgroup.inclusion (le_inertia A) (MulAut.conjNormal (t : G) n) =
       Subgroup.inclusion (le_inertia A) n * t⁻¹ :=
     Subtype.ext (by simp [mul_assoc])
-  rw [h.apply_apply_conjNormal, ψ.isIntertwining, MonoidHom.comp_apply, ← Module.End.mul_apply,
-    ← map_mul, hmul, map_mul, Module.End.mul_apply]
+  rw [h.apply_apply_conjNormal, ψ.isIntertwining, MonoidHom.comp_apply, ← _root_.mul_apply_eq_comp,
+    ← map_mul, hmul, map_mul, _root_.mul_apply_eq_comp]
 
 /-- The action of an element `t` of the inertia group on `Hom_N(A, W)` by conjugation,
 `φ ↦ σ t ∘ φ ∘ (ρ t)⁻¹`, before descending to the inertia quotient. -/
@@ -169,10 +169,16 @@ private noncomputable def homActionAux (t : inertia A) :
   map_smul' c φ := by ext; simp
   left_inv φ := by
     ext x
-    simp [← Module.End.mul_apply, ← map_mul]
+    simp only [LinearMap.intertwiningMap_of_isIntertwiningMap,
+      LinearMap.comp_apply]
+    rw [← _root_.mul_apply_eq_comp, ← map_mul]
+    simp
   right_inv ψ := by
     ext x
-    simp [← Module.End.mul_apply, ← map_mul]
+    simp only [LinearMap.intertwiningMap_of_isIntertwiningMap,
+      LinearMap.comp_apply]
+    rw [← _root_.mul_apply_eq_comp, ← map_mul]
+    simp
 
 private theorem homActionAux_apply (t : inertia A)
     (φ : Representation.IntertwiningMap A.ρ (σ.comp (Subgroup.inclusion (le_inertia A))))
@@ -188,9 +194,9 @@ private theorem homActionAux_mul_inclusion (t : inertia A) (n : N) :
   simp only [IntertwiningMap.toLinearMap_apply]
   have hsymm : (ρ (t * Subgroup.inclusion (le_inertia A) n)).symm x =
       A.ρ n⁻¹ ((ρ t).symm x) := by
-    rw [LinearEquiv.symm_apply_eq, h.apply_mul_inclusion, ← Module.End.mul_apply, ← map_mul,
-      mul_inv_cancel, map_one, Module.End.one_apply, LinearEquiv.apply_symm_apply]
-  rw [homActionAux_apply, hsymm, φ.isIntertwining, MonoidHom.comp_apply, ← Module.End.mul_apply,
+    rw [LinearEquiv.symm_apply_eq, h.apply_mul_inclusion, ← _root_.mul_apply_eq_comp, ← map_mul,
+      mul_inv_cancel, map_one, _root_.one_apply_eq_self, LinearEquiv.apply_symm_apply]
+  rw [homActionAux_apply, hsymm, φ.isIntertwining, MonoidHom.comp_apply, ← _root_.mul_apply_eq_comp,
     ← map_mul, mul_assoc, ← map_mul, mul_inv_cancel, map_one, mul_one, homActionAux_apply]
 
 /-- The conjugation action of the inertia group on `Hom_N(A, W)` is projective with the inverse of
@@ -206,7 +212,13 @@ private theorem isProjectiveRep_homActionAux :
     have hsymm : (ρ (s * t)).symm x = (β s t : k) • (ρ t).symm ((ρ s).symm x) := by
       rw [LinearEquiv.symm_apply_eq, map_smul, ← h.isProjectiveRep.mul_apply]
       simp
-    simp [homActionAux_apply, hsymm, smul_smul, ← Module.End.mul_apply, ← map_mul]
+    -- Hom-action multiplication is composition of these linear maps by definition.
+    -- Expose their evaluations before using the projective inverse formula `hsymm`;
+    -- simplifying generic application lemmas here would expand composition repeatedly.
+    change σ s (σ t (φ ((ρ t).symm ((ρ s).symm x)))) =
+      (↑((β s t)⁻¹) : k) • σ (s * t) (φ ((ρ (s * t)).symm x))
+    simp [hsymm, smul_smul, ← _root_.mul_apply_eq_comp, ← map_mul,
+      -FunLike.coe_mul_eq_comp]
 
 /-- **The projective action of the inertia quotient on `Hom_N(A, W)`**: the coset of `t` acts by
 `φ ↦ σ t ∘ φ ∘ (ρ t)⁻¹`. Elements of `N` act trivially, so this is well defined on

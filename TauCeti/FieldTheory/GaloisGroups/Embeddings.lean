@@ -48,8 +48,7 @@ noncomputable def quotientStabilizerEquivAlgHomSimpleField (x : E)
       (F⟮x⟯ →ₐ[F] normalClosure F F⟮x⟯ E) :=
   (rootSetEquivQuotientStabilizer
       (minpoly.irreducible (Algebra.IsIntegral.isIntegral x)) y.2).symm.trans
-    (rootSetEquivAlgHomAdjoin F (normalClosure F F⟮x⟯ E) x
-      (Algebra.IsIntegral.isIntegral x))
+    (rootSetEquivAlgHomAdjoin F (normalClosure F F⟮x⟯ E) (Algebra.IsIntegral.isIntegral x))
 
 /-- The embedding indexed by the coset of `σ` sends the generator to `σ • y`. -/
 @[simp]

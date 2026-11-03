@@ -336,7 +336,7 @@ theorem frobeniusPerronDim_le_of_epi {X Y : C} (f : X ⟶ Y) [Epi f] :
 /-- A nonzero object has Frobenius–Perron dimension at least one. -/
 theorem one_le_frobeniusPerronDim {X : C} (hX : ¬IsZero X) : 1 ≤ frobeniusPerronDim k X := by
   -- The coevaluation is a nonzero morphism out of the simple unit, hence a monomorphism.
-  have : Mono (η_ X Xᘁ) := mono_of_nonzero_from_simple (coevaluation_ne_zero hX)
+  have : Mono (η_ X Xᘁ) := CategoryTheory.mono_of_ne_zero_from_simple (coevaluation_ne_zero hX)
   have h := frobeniusPerronDim_le_of_mono k (η_ X Xᘁ)
   rw [frobeniusPerronDim_tensorUnit, frobeniusPerronDim_tensorObj,
     frobeniusPerronDim_rightDual] at h

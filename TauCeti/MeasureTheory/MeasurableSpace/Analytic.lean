@@ -166,7 +166,7 @@ private lemma exists_le_add_of_le_iSup {g : ℕ → ℝ≥0∞} {a δ : ℝ≥0�
 private lemma sum_div_two_pow_succ_le_self (ε : ℝ≥0∞) (n : ℕ) :
     ∑ k ∈ Finset.range n, ε / 2 ^ (k + 1) ≤ ε := by
   have hle_tsum : ∑ k ∈ Finset.range n, ε / 2 ^ (k + 1) ≤
-      ∑' k : ℕ, ε / 2 ^ (k + 1) := ENNReal.sum_le_tsum _
+      ∑' k : ℕ, ε / 2 ^ (k + 1) := _root_.sum_le_tsum _
   refine hle_tsum.trans ?_
   simp_rw [div_eq_mul_inv, ENNReal.inv_pow]
   rw [ENNReal.tsum_mul_left, ENNReal.tsum_geometric_add_one, ENNReal.one_sub_inv_two, inv_inv,
@@ -315,12 +315,15 @@ theorem AnalyticSet.nullMeasurableSet
   have hG : ∀ n : ℕ, ∃ G : Set X, MeasurableSet G ∧ G ⊆ S ∧
       sfiniteSeq μ n (S \ G) = 0 := by
     intro n
-    rw [AnalyticSet] at hS
-    rcases hS with rfl | ⟨f, hf_cont, rfl⟩
-    · exact ⟨∅, MeasurableSet.empty, Subset.rfl, by simp⟩
-    · let := TopologicalSpace.metrizableSpaceMetric X
+    obtain ⟨Z, _, _, f, hf_cont, rfl⟩ := analyticSet_iff_exists_polishSpace_range.mp hS
+    rcases isEmpty_or_nonempty Z with _ | _
+    · rw [range_eq_empty]
+      exact ⟨∅, MeasurableSet.empty, Subset.rfl, by simp⟩
+    · obtain ⟨g, hg, hsurj⟩ := PolishSpace.exists_nat_nat_continuous_surjective Z
+      rw [← hsurj.range_comp f]
+      let := TopologicalSpace.metrizableSpaceMetric X
       exact exists_measurableSet_subset_measure_sdiff_eq_zero_of_forall_exists_isCompact
-        (fun ε hε => exists_isCompact_subset_range_measure_le hf_cont hε)
+        (fun ε hε => exists_isCompact_subset_range_measure_le (hf_cont.comp hg) hε)
   choose G hG_meas hG_sub hG_null using hG
   set B : Set X := ⋃ n, G n
   have hB_meas : MeasurableSet B := MeasurableSet.iUnion hG_meas

@@ -89,7 +89,7 @@ theorem IsProjectiveRep.characterTransgression_eq_iff_exists_linearization
       mul_apply g h v := by
         have heq := congrArg π (γ.canonicalSection_mul g h)
         simp only [map_mul, hker] at heq
-        simpa only [LinearEquiv.mul_apply, LinearEquiv.smulOfUnit_apply,
+        simpa only [mul_apply_eq_comp, LinearEquiv.smulOfUnit_apply,
           Function.curry, FactorSet.map_apply] using DFunLike.congr_fun heq v }
   have hclass := hρ.cohomologyClass_eq_of_eq_smul hsection c (fun g ↦ by
     simpa using hπ (γ.canonicalSection g))
