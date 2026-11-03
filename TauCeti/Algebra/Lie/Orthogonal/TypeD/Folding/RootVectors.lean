@@ -8,6 +8,7 @@ module
 public import Mathlib.LinearAlgebra.FixedSubmodule
 public import TauCeti.Algebra.Lie.Orthogonal.TypeD.GraphAutomorphism
 public import TauCeti.Algebra.Lie.Orthogonal.TypeD.Root.Coordinates
+import TauCeti.LinearAlgebra.Basis.RangeSpan
 import TauCeti.LinearAlgebra.End.OrderTwoThree
 
 /-!
@@ -165,12 +166,9 @@ theorem typeDGraphLieEquiv_fixedSubmodule_eq_span (c : I) :
     rw [LinearMap.fixedSubmodule_eq_ker, ← LinearMap.ker_neg, neg_sub, Module.End.one_eq_id]
   have hspan : Submodule.span R (Set.range (fun p => b p + f (b p))) =
       LinearMap.range (1 + f) := by
-    -- The symmetrized family is the image of the native basis under `1 + f`.
-    have himage : Set.range (fun p => b p + f (b p)) =
-        ((1 + f : Module.End R _) : _ → _) '' Set.range b := by
-      rw [← Set.range_comp]
-      rfl
-    rw [himage, ← Submodule.map_span, b.span_eq, Submodule.map_top]
+    rw [← Submodule.span_eq (LinearMap.range _), LinearMap.coe_range,
+      Module.Basis.span_range_eq_span_range_basis b]
+    rfl
   exact hfixed.trans ((End.range_one_add_eq_ker_one_sub hf).symm.trans hspan.symm)
 
 end Spanning
