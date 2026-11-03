@@ -107,6 +107,46 @@ theorem typeAOrthogonalDiagonal_def :
         (Sum.elim (fun _ : Fin k ↦ 1) (fun i : Fin k ↦ 2 * (-1 : A) ^ (k + (i : ℕ))))) :=
   (rfl)
 
+/-- The middle coordinate is scaled by two. -/
+@[simp]
+theorem typeAOrthogonalDiagonal_apply_inl_inl (u : Unit) :
+    typeAOrthogonalDiagonal k A (Sum.inl u) (Sum.inl u) = 2 := by
+  simp [typeAOrthogonalDiagonal_def]
+
+/-- The first isotropic copy is unchanged by the diagonal scaling. -/
+@[simp]
+theorem typeAOrthogonalDiagonal_apply_inr_inl_inr_inl (i : Fin k) :
+    typeAOrthogonalDiagonal k A (Sum.inr (Sum.inl i)) (Sum.inr (Sum.inl i)) = 1 := by
+  simp [typeAOrthogonalDiagonal_def]
+
+/-- The second isotropic copy is scaled by signed twos. -/
+@[simp]
+theorem typeAOrthogonalDiagonal_apply_inr_inr_inr_inr (i : Fin k) :
+    typeAOrthogonalDiagonal k A (Sum.inr (Sum.inr i)) (Sum.inr (Sum.inr i)) =
+      2 * (-1 : A) ^ (k + (i : ℕ)) := by
+  simp [typeAOrthogonalDiagonal_def]
+
+/-- Entries away from the diagonal vanish. -/
+@[simp]
+theorem typeAOrthogonalDiagonal_apply_ne {i j : Unit ⊕ (Fin k ⊕ Fin k)} (h : i ≠ j) :
+    typeAOrthogonalDiagonal k A i j = 0 := by
+  simp [typeAOrthogonalDiagonal_def, h]
+
+/-- The diagonal coordinate change is symmetric. -/
+@[simp]
+theorem typeAOrthogonalDiagonal_transpose :
+    (typeAOrthogonalDiagonal k A)ᵀ = typeAOrthogonalDiagonal k A := by
+  simp [typeAOrthogonalDiagonal_def]
+
+private theorem typeAOrthogonal_sign_product_inl (i : Fin k) :
+    (-1 : A) ^ (typeAOrthogonalIndex k (Sum.inr (Sum.inl i)) : ℕ) *
+        (-1 : A) ^ (k + (i : ℕ)) = (-1 : A) ^ k := by
+  rw [typeAOrthogonalIndex_inr_inl_val, pow_add]
+  calc
+    (-1 : A) ^ (i : ℕ) * ((-1 : A) ^ k * (-1 : A) ^ (i : ℕ)) =
+        (-1 : A) ^ k * ((-1 : A) ^ (i : ℕ) * (-1 : A) ^ (i : ℕ)) := by ring
+    _ = (-1 : A) ^ k := by simp [← pow_add, ← two_mul, pow_mul]
+
 private theorem typeAOrthogonal_sign_product (i : Fin k) :
     (-1 : A) ^ (typeAOrthogonalIndex k (Sum.inr (Sum.inr i)) : ℕ) *
         (-1 : A) ^ (k + (i : ℕ)) = (-1 : A) ^ k := by
@@ -126,39 +166,29 @@ theorem typeAOrthogonalDiagonal_transpose_mul_reindex_typeAGraphConjugator_inv_m
             Matrix (Fin (2 * k + 1)) (Fin (2 * k + 1)) A)⁻¹ *
         typeAOrthogonalDiagonal k A =
       (2 * (-1 : A) ^ k) • LieAlgebra.Orthogonal.JB (Fin k) A := by
-  rw [typeAGraphConjugator_inv_eq_transpose]
+  rw [typeAGraphConjugator_inv_eq_transpose, typeAOrthogonalDiagonal_transpose]
   ext a b
-  simp only [typeAOrthogonalDiagonal_def, diagonal_transpose, diagonal_mul, mul_diagonal,
+  simp only [typeAOrthogonalDiagonal_def, diagonal_mul, mul_diagonal,
     reindex_apply, submatrix_apply, Equiv.symm_symm, transpose_apply, typeAGraphConjugator_apply]
   rcases a with u | (i | i) <;> rcases b with v | (j | j)
   all_goals simp only [Sum.elim_inl, Sum.elim_inr]
+  -- Only the two blocks pairing the first and second isotropic copies remain.
   all_goals try (solve | simp [LieAlgebra.Orthogonal.JB, LieAlgebra.Orthogonal.JD,
     mul_assoc, mul_left_comm, mul_comm])
-  · suffices h :
-        (if i = j then (-1 : A) ^ (k + (j : ℕ)) * (2 * (-1 : A) ^ (2 * k - j)) else 0) =
-          (-1 : A) ^ k * (2 * (1 : Matrix (Fin k) (Fin k) A) i j) by
-      simpa [LieAlgebra.Orthogonal.JB, LieAlgebra.Orthogonal.JD,
-        mul_assoc, mul_left_comm, mul_comm, Nat.mul_comm 2 k] using h
-    by_cases h : i = j
+  · by_cases h : i = j
     · subst j
-      simp only [ite_true, one_apply_eq, mul_one]
+      simp [LieAlgebra.Orthogonal.JB, LieAlgebra.Orthogonal.JD]
       have hs := typeAOrthogonal_sign_product k A i
       simp only [typeAOrthogonalIndex_inr_inr_val] at hs
       linear_combination 2 * hs
-    · simp [h]
-  · suffices h :
-        (if i = j then (-1 : A) ^ (j : ℕ) * ((-1 : A) ^ (k + (i : ℕ)) * 2) else 0) =
-          (-1 : A) ^ k * (2 * (1 : Matrix (Fin k) (Fin k) A) i j) by
-      simpa [LieAlgebra.Orthogonal.JB, LieAlgebra.Orthogonal.JD,
-        mul_assoc, mul_left_comm, mul_comm] using h
-    by_cases h : i = j
+    · simp [LieAlgebra.Orthogonal.JB, LieAlgebra.Orthogonal.JD, one_apply, h]
+  · by_cases h : i = j
     · subst j
-      simp only [ite_true, one_apply_eq, mul_one]
-      rw [← mul_assoc, ← pow_add]
-      have hsum : (i : ℕ) + (k + i) = 2 * i + k := by omega
-      rw [hsum, pow_add, pow_mul]
-      simp
-    · simp [h]
+      simp [LieAlgebra.Orthogonal.JB, LieAlgebra.Orthogonal.JD]
+      have hs := typeAOrthogonal_sign_product_inl k A i
+      simp only [typeAOrthogonalIndex_inr_inl_val] at hs
+      linear_combination 2 * hs
+    · simp [LieAlgebra.Orthogonal.JB, LieAlgebra.Orthogonal.JD, one_apply, h]
 
 variable [Invertible (2 : A)]
 
@@ -170,6 +200,24 @@ theorem isUnit_typeAOrthogonalDiagonal : IsUnit (typeAOrthogonalDiagonal k A) :=
   · exact isUnit_of_invertible (2 : A)
   · exact isUnit_one
   · exact (isUnit_of_invertible (2 : A)).mul (isUnit_neg_one.pow _)
+
+/-- Invert the diagonal scaling by signed halves on the second isotropic copy. -/
+@[simp]
+theorem typeAOrthogonalDiagonal_inv :
+    (typeAOrthogonalDiagonal k A)⁻¹ =
+      diagonal (Sum.elim (fun _ : Unit ↦ ⅟(2 : A))
+        (Sum.elim (fun _ : Fin k ↦ 1)
+          (fun i : Fin k ↦ ⅟(2 : A) * (-1 : A) ^ (k + (i : ℕ))))) := by
+  apply Matrix.inv_eq_left_inv
+  rw [typeAOrthogonalDiagonal_def, diagonal_mul_diagonal, ← diagonal_one]
+  congr 1
+  funext a
+  rcases a with u | (i | i)
+  · simp
+  · simp
+  · simp only [Sum.elim_inr]
+    rw [mul_mul_mul_comm, ← mul_pow]
+    simp
 
 /-- Reindexing, diagonal conjugation and scalar similarity identify the inverse
 native type-`A_(2k)` reversal form with the split type-B Lie algebra. -/
@@ -228,8 +276,8 @@ theorem typeAGraphSkewAdjointOrthogonalEquiv_symm_apply_val
   rw [LieEquiv.apply_symm_apply] at h
   rw [h]
   have hP := (Matrix.isUnit_iff_isUnit_det _).mp (isUnit_typeAOrthogonalDiagonal k A)
-  simp [mul_assoc, ← mul_assoc (typeAOrthogonalDiagonal k A),
-    Matrix.mul_nonsing_inv _ hP]
+  simp [-typeAOrthogonalDiagonal_inv, mul_assoc,
+    ← mul_assoc (typeAOrthogonalDiagonal k A), Matrix.mul_nonsing_inv _ hP]
 
 /-- The fixed algebra of the pinned type-`A_(2k)` graph automorphism is the
 split orthogonal Lie algebra in dimension `2 * k + 1`. -/
