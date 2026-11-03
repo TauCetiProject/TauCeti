@@ -236,7 +236,7 @@ theorem _root_.Convex.extDeriv_fiberwisePoincareHomotopy {s : Set (E × N)} (hs 
     congr 1 <;> funext i <;>
     simp only [Function.comp_def, fderiv_fiberScaling_apply,
       ContinuousLinearMap.inl_apply, one_smul, zero_smul, add_zero]
-  all_goals rfl
+  rfl
 
 /-- If the tangential restriction to the zero section vanishes, fiber scaling gives a
 primitive whose exterior derivative is the original closed form. No ambient vanishing

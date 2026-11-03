@@ -61,19 +61,19 @@ theorem pow_apply_mul_eq_zero_of_leibniz {f : Module.End R A}
     (f ^ (n + m)) (x * y) = 0 := by
   induction n generalizing x y m with
   | zero =>
-    simp only [pow_zero, Module.End.one_apply] at hx
+    simp only [pow_zero, _root_.one_apply_eq_self] at hx
     simp [hx]
   | succ n ih =>
     induction m generalizing y with
     | zero =>
-      simp only [pow_zero, Module.End.one_apply] at hy
+      simp only [pow_zero, _root_.one_apply_eq_self] at hy
       simp [hy]
     | succ m ihm =>
       have hx' : (f ^ n) (f x) = 0 := by
-        simpa only [pow_succ, Module.End.mul_apply] using hx
+        simpa only [pow_succ, _root_.mul_apply_eq_comp] using hx
       have hy' : (f ^ m) (f y) = 0 := by
-        simpa only [pow_succ, Module.End.mul_apply] using hy
-      rw [Nat.succ_add, pow_succ, Module.End.mul_apply, hf, map_add]
+        simpa only [pow_succ, _root_.mul_apply_eq_comp] using hy
+      rw [Nat.succ_add, pow_succ, _root_.mul_apply_eq_comp, hf, map_add]
       rw [ih hx' hy, Nat.add_succ, ← Nat.succ_add, ihm hy', add_zero]
 
 end NonUnitalNonAssoc
@@ -114,7 +114,7 @@ variable {R A : Type*} [CommSemiring R] [CommSemiring A] [Algebra R A] (D : Deri
 
 private theorem exists_pow_toLinearMap_iff {a : A} :
     (∃ n, ((D : Module.End R A) ^ n) a = 0) ↔ ∃ n, D^[n] a = 0 := by
-  simp [Module.End.pow_apply]
+  simp [_root_.pow_apply_eq_iterate]
 
 private theorem leibniz_toLinearMap (x y : A) :
     (D : Module.End R A) (x * y) = (D : Module.End R A) x * y + x * (D : Module.End R A) y := by
