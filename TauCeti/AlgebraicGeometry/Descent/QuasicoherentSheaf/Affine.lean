@@ -8,7 +8,6 @@ module
 public import Mathlib.Algebra.Category.ModuleCat.Descent
 public import TauCeti.AlgebraicGeometry.Modules.Quasicoherent.Affine
 public import TauCeti.AlgebraicGeometry.Modules.Quasicoherent.Pushforward.Basic
-public import TauCeti.AlgebraicGeometry.Modules.Tilde.Basic
 
 /-!
 # Faithfully flat descent of quasi-coherent modules on affine schemes
@@ -35,8 +34,6 @@ comonadicity theorem applies.
 
 ## Main declarations
 
-* `TauCeti.AlgebraicGeometry.QuasicoherentSheaf.tildeEquivFunctorCompPullbackIso`: pullback
-  along `Spec φ` of the quasi-coherent module `M~` is `(S ⊗[R] M)~`, naturally in `M`.
 * `TauCeti.AlgebraicGeometry.QuasicoherentSheaf.comonadicPullbackSpecMap`: for faithfully flat
   `φ`, pullback of quasi-coherent modules along `Spec φ` is comonadic;
   `isEquivalence_comparison_pullbackPushforwardSpecMapAdjunction` states this for the
@@ -61,56 +58,6 @@ universe u
 noncomputable section
 
 variable {R S : CommRingCat.{u}} (φ : R ⟶ S)
-
-/-- Under Mathlib's equivalence `tildeEquiv` between modules and quasi-coherent modules on the
-spectrum, pullback along `Spec φ` is extension of scalars along `φ`: the pullback of `M~` is
-`(S ⊗[R] M)~`, naturally in the `R`-module `M`. This is
-`TauCeti.AlgebraicGeometry.tildeFunctorCompPullbackIso` for quasi-coherent modules. -/
-def tildeEquivFunctorCompPullbackIso :
-    (tildeEquiv (R := R)).functor ⋙ pullback (Spec.map φ) ≅
-      ModuleCat.extendScalars φ.hom ⋙ (tildeEquiv (R := S)).functor :=
-  ((_root_.SheafOfModules.isQuasicoherent (Spec S).ringCatSheaf).fullyFaithfulι.whiskeringRight
-    _).preimageIso
-      (Functor.associator _ _ _ ≪≫
-      Functor.isoWhiskerLeft (tildeEquiv (R := R)).functor (pullbackCompιIso (Spec.map φ)) ≪≫
-        TauCeti.AlgebraicGeometry.tildeFunctorCompPullbackIso φ)
-
-/-- The underlying morphism of `tildeEquivFunctorCompPullbackIso` is
-`TauCeti.AlgebraicGeometry.tildeFunctorCompPullbackIso`. -/
-@[simp]
-theorem tildeEquivFunctorCompPullbackIso_hom_app_hom (M : ModuleCat.{u} R) :
-    ((tildeEquivFunctorCompPullbackIso φ).hom.app M).hom =
-      eqToHom (pullback_obj_obj (Spec.map φ) ((tildeEquiv (R := R)).functor.obj M)) ≫
-        (TauCeti.AlgebraicGeometry.tildeFunctorCompPullbackIso φ).hom.app M := by
-  have h := NatTrans.congr_app (Functor.FullyFaithful.map_preimage
-    ((_root_.SheafOfModules.isQuasicoherent (Spec S).ringCatSheaf).fullyFaithfulι.whiskeringRight
-      (ModuleCat.{u} R)) (X := (tildeEquiv (R := R)).functor ⋙ pullback (Spec.map φ))
-    (Y := ModuleCat.extendScalars φ.hom ⋙ (tildeEquiv (R := S)).functor)
-    (Functor.associator _ _ _ ≪≫
-      Functor.isoWhiskerLeft (tildeEquiv (R := R)).functor (pullbackCompιIso (Spec.map φ)) ≪≫
-      TauCeti.AlgebraicGeometry.tildeFunctorCompPullbackIso φ).hom) M
-  refine h.trans ?_
-  -- The associator is an identity, and the composite mixes the categories `SheafOfModules` and
-  -- `Scheme.Modules`, so neither `simp` nor `rw` applies; the first factor is the identity and
-  -- the second is `pullbackCompιIso` by definition of the composite natural transformation.
-  exact (Category.id_comp _).trans (congrArg (· ≫ _)
-    (pullbackCompιIso_hom_app (Spec.map φ) ((tildeEquiv (R := R)).functor.obj M)))
-
-@[simp]
-theorem tildeEquivFunctorCompPullbackIso_inv_app_hom (M : ModuleCat.{u} R) :
-    ((tildeEquivFunctorCompPullbackIso φ).inv.app M).hom =
-      (TauCeti.AlgebraicGeometry.tildeFunctorCompPullbackIso φ).inv.app M ≫
-        eqToHom (pullback_obj_obj (Spec.map φ) ((tildeEquiv (R := R)).functor.obj M)).symm := by
-  have h := NatTrans.congr_app (Functor.FullyFaithful.map_preimage
-    ((_root_.SheafOfModules.isQuasicoherent (Spec S).ringCatSheaf).fullyFaithfulι.whiskeringRight
-      (ModuleCat.{u} R)) (X := ModuleCat.extendScalars φ.hom ⋙ (tildeEquiv (R := S)).functor)
-    (Y := (tildeEquiv (R := R)).functor ⋙ pullback (Spec.map φ))
-    (Functor.associator _ _ _ ≪≫
-      Functor.isoWhiskerLeft (tildeEquiv (R := R)).functor (pullbackCompιIso (Spec.map φ)) ≪≫
-      TauCeti.AlgebraicGeometry.tildeFunctorCompPullbackIso φ).inv) M
-  refine h.trans ?_
-  exact (congrArg (_ ≫ ·) ((Category.comp_id _).trans
-    (pullbackCompιIso_inv_app (Spec.map φ) ((tildeEquiv (R := R)).functor.obj M))))
 
 /-- **Faithfully flat descent for quasi-coherent modules on affine schemes.** For a faithfully
 flat ring map `φ : R ⟶ S`, pullback of quasi-coherent modules along `Spec φ` is comonadic, with
