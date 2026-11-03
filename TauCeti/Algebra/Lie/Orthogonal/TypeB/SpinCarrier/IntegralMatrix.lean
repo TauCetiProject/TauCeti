@@ -58,6 +58,24 @@ theorem rootIntMatrix_eq_toMatrix (j : Fin (n + 1) ⊕ Fin (n + 1)) :
     (TauCeti.typeBSimpleCorootGenerator (K := ℚ)) (rep n) (lattice n).toAddSubgroup
     (rep_kostantForm_mem_lattice n) j (latticeBasis n)
 
+/-- The integral matrix of every numbered simple root generator squares to zero. -/
+theorem rootIntMatrix_square_zero (k : Fin (n + 1) ⊕ Fin (n + 1)) :
+    rootIntMatrix n k * rootIntMatrix n k = 0 := by
+  let op := kostantRootOperator (TauCeti.typeBSimpleRootGeneratorFamily (K := ℚ))
+    (TauCeti.typeBSimpleCorootGenerator (K := ℚ)) (rep n) (lattice n).toAddSubgroup
+    (rep_kostantForm_mem_lattice n) k
+  have hop : op * op = 0 := by
+    apply LinearMap.ext
+    intro v
+    apply Subtype.ext
+    simpa only [op, pow_two, mul_apply_eq_comp, coe_kostantRootOperator_apply,
+      LinearMap.zero_apply, ZeroMemClass.coe_zero] using
+      congrArg (fun f ↦ f (v : ExteriorAlgebra ℚ (polarization n).W))
+        (pow_two_rep_rootGenerator_eq_zero n k)
+  have hmap := congrArg (LinearMap.toMatrix (latticeBasis n) (latticeBasis n)) hop
+  simpa only [op, LinearMap.toMatrix_mul, map_zero,
+    ← rootIntMatrix_eq_toMatrix] using hmap
+
 /-- A represented root generator acts on a lattice basis vector by its integral matrix column. -/
 theorem rep_rootGenerator_latticeBasis_eq_sum (j : Fin (n + 1) ⊕ Fin (n + 1))
     (s : Fin (dimension n)) :

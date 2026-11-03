@@ -52,23 +52,6 @@ private noncomputable abbrev rootOperator (n : ℕ) (k : Fin (n + 1) ⊕ Fin (n 
 
 local notation "ratOp" k => rep n (_root_.UniversalEnvelopingAlgebra.ι ℚ (rootGen k))
 
-private theorem rootOperator_mul_self (k : Fin (n + 1) ⊕ Fin (n + 1)) :
-    rootOperator n k * rootOperator n k = 0 := by
-  apply LinearMap.ext
-  intro v
-  apply Subtype.ext
-  simpa only [pow_two, mul_apply_eq_comp, coe_kostantRootOperator_apply,
-    LinearMap.zero_apply, ZeroMemClass.coe_zero] using
-    congrArg (fun f ↦ f (v : ExteriorAlgebra ℚ (polarization n).W))
-      (pow_two_rep_rootGenerator_eq_zero n k)
-
-private theorem rootIntMatrix_square_zero (k : Fin (n + 1) ⊕ Fin (n + 1)) :
-    rootIntMatrix n k * rootIntMatrix n k = 0 := by
-  have hmap := congrArg (LinearMap.toMatrix (latticeBasis n) (latticeBasis n))
-    (rootOperator_mul_self (n := n) k)
-  simpa only [rootOperator, LinearMap.toMatrix_mul, map_zero,
-    ← rootIntMatrix_eq_toMatrix] using hmap
-
 private theorem rootOperator_lie_lie_eq_zero {i j : Fin (n + 1) ⊕ Fin (n + 1)}
     (hij : ⁅rootGen i, ⁅rootGen i, rootGen j⁆⁆ = 0) :
     ⁅rootOperator n i, ⁅rootOperator n i, rootOperator n j⁆⁆ = 0 := by
@@ -107,8 +90,8 @@ private theorem coe_commutator_rootSubgroupPoints_of_lie_lie_eq_zero
         (s * t ^ 2) • (rootIntMatrix n j * rootIntMatrix n i * rootIntMatrix n j).map
           (Int.cast : ℤ → A) := by
   have h := Matrix.coe_commutatorElement_eq_one_add_smul_lie_add_smul_mul_mul
-    (rootIntMatrix n i) (rootIntMatrix n j) (rootIntMatrix_square_zero i)
-    (rootIntMatrix_square_zero j) (rootIntMatrix_lie_lie_eq_zero hij) s t
+    (rootIntMatrix n i) (rootIntMatrix n j) (rootIntMatrix_square_zero n i)
+    (rootIntMatrix_square_zero n j) (rootIntMatrix_lie_lie_eq_zero hij) s t
     (rootSubgroupPoints n i A (Multiplicative.ofAdd s))
     (rootSubgroupPoints n j A (Multiplicative.ofAdd t))
     (by rw [coe_rootSubgroupPoints_eq_one_add_smul, toAdd_ofAdd])
