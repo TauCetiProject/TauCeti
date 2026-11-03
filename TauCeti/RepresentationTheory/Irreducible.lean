@@ -208,7 +208,7 @@ theorem isIrreducible_of_finrank_intertwiningMap_self_eq_one {ρ : Representatio
   -- an idempotent endomorphism is a scalar `c` with `c * c = c`, hence `0` or `1`
   refine (isIndecomposableModule_of_forall_isIdempotentElem fun f hf => ?_).isSimpleModule
   let e := IntertwiningMap.equivAlgEnd (ρ := ρ)
-  obtain ⟨c, hc⟩ := (finrank_eq_one_iff_of_nonzero' _ hid).mp h (e.symm f)
+  obtain ⟨c, hc⟩ := (finrank_eq_one_iff_of_ne_zero' _ hid).mp h (e.symm f)
   have hf' : f = algebraMap k _ c := by
     rw [← e.apply_symm_apply f, ← hc, ← AlgEquiv.commutes e, IntertwiningMap.algebraMap_apply]
   have hcc : IsIdempotentElem c := by

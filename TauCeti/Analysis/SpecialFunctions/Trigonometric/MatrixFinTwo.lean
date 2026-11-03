@@ -153,7 +153,7 @@ theorem rotation_zero : rotation 0 = 1 :=
 theorem rotation_add (θ φ : ℝ) : rotation (θ + φ) = rotation θ * rotation φ :=
   SpecialLinearGroup.ext _ _ fun i j => by
     fin_cases i <;> fin_cases j <;>
-      simp [cos_add, sin_add, mul_apply, Fin.sum_univ_two] <;> ring
+      simp [cos_add, sin_add, Matrix.mul_apply] <;> ring
 
 /-- The inverse of `rotation θ` is `rotation (-θ)`. -/
 @[simp]

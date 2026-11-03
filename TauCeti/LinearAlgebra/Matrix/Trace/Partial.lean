@@ -47,7 +47,7 @@ def partialTraceRight (Y : Matrix (m × n) (m × n) R) : Matrix m m R :=
 @[simp]
 theorem partialTraceRight_apply (Y : Matrix (m × n) (m × n) R) (i j : m) :
     partialTraceRight Y i j = ∑ k, Y (i, k) (j, k) := by
-  simp [partialTraceRight, sum_apply, blockDiag_apply]
+  simp [partialTraceRight, Matrix.sum_apply, blockDiag_apply]
 
 @[simp]
 theorem partialTraceRight_zero : partialTraceRight (0 : Matrix (m × n) (m × n) R) = 0 := by
@@ -105,18 +105,18 @@ variable [Semiring R] [Fintype m] [DecidableEq n]
 theorem partialTraceRight_kronecker_one_mul (A : Matrix m m R) (Y : Matrix (m × n) (m × n) R) :
     partialTraceRight ((A ⊗ₖ (1 : Matrix n n R)) * Y) = A * partialTraceRight Y := by
   ext i j
-  simp only [partialTraceRight_apply, mul_apply, Fintype.sum_prod_type]
+  simp only [partialTraceRight_apply, Matrix.mul_apply, Fintype.sum_prod_type]
   rw [Finset.sum_comm]
-  simp [one_apply, Finset.mul_sum]
+  simp [Matrix.one_apply, Finset.mul_sum]
 
 /-- The partial trace is right linear over the first factor:
 `Tr₂ (Y * (B ⊗ₖ 1)) = Tr₂ Y * B`. -/
 theorem partialTraceRight_mul_kronecker_one (Y : Matrix (m × n) (m × n) R) (B : Matrix m m R) :
     partialTraceRight (Y * (B ⊗ₖ (1 : Matrix n n R))) = partialTraceRight Y * B := by
   ext i j
-  simp only [partialTraceRight_apply, mul_apply, Fintype.sum_prod_type]
+  simp only [partialTraceRight_apply, Matrix.mul_apply, Fintype.sum_prod_type]
   rw [Finset.sum_comm]
-  simp [one_apply, Finset.sum_mul]
+  simp [Matrix.one_apply, Finset.sum_mul]
 
 end Semiring
 

@@ -45,7 +45,8 @@ circles satisfies (`TauCeti.WedgeSum.instSemilocallySimplyConnectedSpaceCircle`)
 * `TauCeti.WedgeSum.isEilenbergMacLaneSpaceOne_circle`: a wedge of circles is a `K(F, 1)` for the
   free group on its circles.
 * `TauCeti.WedgeSum.isZero_singularHomology_circle`: the singular homology of a wedge of circles
-  vanishes in every degree at least `2`.
+  vanishes in every degree at least `2`, with coefficients in any abelian category with exact
+  coproducts.
 
 ## References
 
@@ -57,6 +58,8 @@ circles satisfies (`TauCeti.WedgeSum.instSemilocallySimplyConnectedSpaceCircle`)
 public section
 
 open CategoryTheory Limits Set Topology Topology.RelCWComplex
+
+universe u v w
 
 namespace TauCeti
 
@@ -106,12 +109,15 @@ theorem isEilenbergMacLaneSpaceOne_circle (S : Type) :
     ⟨circleFundamentalGroupMulEquiv S⟩
 
 /-- The singular homology of a wedge of circles vanishes in every degree at least `2`, with
-coefficients in any ring: its CW structure has no cells there. -/
-theorem isZero_singularHomology_circle (S : Type) (k : Type) [Ring k] {n : ℕ} (hn : 2 ≤ n) :
-    IsZero (((singularChains k).obj (TopCat.of (WedgeSum fun _ : S ↦ (1 : Circle)))).homology n) :=
+coefficients in any abelian category with exact coproducts: its CW structure has no cells
+there. -/
+theorem isZero_singularHomology_circle (S : Type u) {A : Type w} [Category.{v} A]
+    [HasCoproducts.{u} A] [Abelian A] [AB4OfSize.{u} A] (R : A) {n : ℕ} (hn : 2 ≤ n) :
+    IsZero (((AlgebraicTopology.singularHomologyFunctor.{u} A n).obj R).obj
+      (TopCat.of (WedgeSum fun _ : S ↦ (1 : Circle)))) :=
   have := isEmpty_cell_circleCWComplex (S := S) hn
   (isZero_singularHomology_of_isEmpty_cell (univ : Set (WedgeSum fun _ : S ↦ (1 : Circle)))
-    (ModuleCat.of k k) n).of_iso
+    R n).of_iso
       (((AlgebraicTopology.singularHomologyFunctor _ n).obj _).mapIso
         (TopCat.isoOfHomeo (Homeomorph.Set.univ _))).symm
 

@@ -355,7 +355,7 @@ theorem ad_pow_apply_eq_ad_pow_apply {L : Type*} [LieRing L] (R S : Type*) [Comm
   induction k generalizing y with
   | zero => simp
   | succ k ih =>
-      simp only [pow_succ, Module.End.mul_apply, LieAlgebra.ad_apply]
+      simp only [pow_succ, _root_.mul_apply_eq_comp, LieAlgebra.ad_apply]
       exact ih ⁅x, y⁆
 
 section Adjoint
@@ -366,7 +366,7 @@ variable {R L L' : Type*} [CommRing R] [LieRing L] [LieAlgebra R L]
 /-- An additional adjoint action can be applied to the argument before the preceding powers. -/
 theorem ad_pow_succ_apply (x y : L) (n : ℕ) :
     (LieAlgebra.ad R L x ^ (n + 1)) y = (LieAlgebra.ad R L x ^ n) ⁅x, y⁆ := by
-  rw [pow_succ, Module.End.mul_apply, LieAlgebra.ad_apply]
+  rw [pow_succ, _root_.mul_apply_eq_comp, LieAlgebra.ad_apply]
 
 /-- If the `n`-fold adjoint action of `x` annihilates `y`, then so does that of `-x`. -/
 theorem ad_neg_pow_apply_eq_zero {x y : L} {n : ℕ} (h : (LieAlgebra.ad R L x ^ n) y = 0) :
@@ -394,7 +394,7 @@ theorem _root_.LieHom.map_ad_pow (f : L →ₗ⁅R⁆ L') (x : L) (n : ℕ) (y :
   induction n generalizing y with
   | zero => simp
   | succ n ih =>
-    simp only [pow_succ, Module.End.mul_apply, LieAlgebra.ad_apply] at ih ⊢
+    simp only [pow_succ, _root_.mul_apply_eq_comp, LieAlgebra.ad_apply] at ih ⊢
     rw [ih, f.map_lie]
 
 /-- **A Lie algebra isomorphism carries Engel subalgebras to Engel subalgebras.** The image

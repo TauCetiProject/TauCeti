@@ -113,8 +113,8 @@ theorem id_mem_range_norm_linHom_of_baseChange [Module.Projective k V] (ρ : Rep
   conv_rhs => rw [hx x]
   congr 1
   have hg (g : G) : ρ g (ψ (ρ g⁻¹ x)) = ψ x := by
-    rw [← hψ, ← Module.End.mul_apply (ρ g), ← map_mul, mul_inv_cancel, map_one,
-      Module.End.one_apply]
+    rw [← hψ, ← mul_apply_eq_comp (ρ g), ← map_mul, mul_inv_cancel, map_one,
+      one_apply_eq_self]
   rw [Finset.sum_congr rfl fun g _ ↦ hg g, Finset.sum_const, Finset.card_univ, hcard,
     ← Nat.cast_smul_eq_nsmul k, Nat.cast_pow]
 

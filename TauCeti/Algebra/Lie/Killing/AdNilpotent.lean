@@ -120,9 +120,9 @@ theorem killingForm_ad_pow_apply (x y z : L) (n : ℕ) :
   | zero => simp
   | succ n ih =>
     have h₁ : (ad R L x ^ (n + 1)) y = (ad R L x ^ n) ⁅x, y⁆ := by
-      rw [pow_succ, Module.End.mul_apply, ad_apply]
+      rw [pow_succ, mul_apply_eq_comp, ad_apply]
     have h₂ : (ad R L x ^ (n + 1)) z = ⁅x, (ad R L x ^ n) z⁆ := by
-      rw [pow_succ', Module.End.mul_apply, ad_apply]
+      rw [pow_succ', mul_apply_eq_comp, ad_apply]
     rw [h₁, h₂, ih, traceForm_apply_lie_apply', pow_succ]
     ring
 
@@ -237,7 +237,7 @@ theorem mem_range_ad_sq_self_of_isNilpotent_ad {x : L} (hx : IsNilpotent (ad K L
     x ∈ LinearMap.range (ad K L x ^ 2) := by
   rw [range_ad_pow_eq_orthogonal_ker_ad_pow]
   intro z hz
-  rw [LinearMap.mem_ker, sq, Module.End.mul_apply, ad_apply, ad_apply] at hz
+  rw [LinearMap.mem_ker, sq, mul_apply_eq_comp, ad_apply, ad_apply] at hz
   rw [LieModule.traceForm_comm]
   exact killingForm_eq_zero_of_isNilpotent_ad_of_lie_lie_eq_zero hx hz
 
@@ -251,7 +251,7 @@ theorem exists_mem_range_ad_lie_eq_two_nsmul_of_isNilpotent_ad {e : L}
     (he : IsNilpotent (ad K L e)) :
     ∃ h ∈ LinearMap.range (ad K L e), ⁅h, e⁆ = 2 • e := by
   obtain ⟨y, hy⟩ := mem_range_ad_sq_self_of_isNilpotent_ad he
-  rw [sq, Module.End.mul_apply, ad_apply, ad_apply] at hy
+  rw [sq, mul_apply_eq_comp, ad_apply, ad_apply] at hy
   refine ⟨2 • ⁅y, e⁆, ⟨-(2 • y), ?_⟩, ?_⟩
   · rw [ad_apply, lie_neg, lie_nsmul, ← smul_neg, lie_skew]
   · rw [nsmul_lie, ← lie_skew y e, neg_lie, ← lie_skew, neg_neg, hy]
