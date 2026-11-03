@@ -80,7 +80,7 @@ theorem norm_coeff_colemanDEntire_le {ρ : ℕ → ℝ} (hρ₀ : ∀ i, 0 ≤ �
 
 /-- Coleman's transform of normalized entire input along a zero-constant entire function is
 entire over a complete ultrametric norm-one coefficient ring. -/
-theorem colemanDEntire_isEntire (hB : B.IsEntire) (hF : F.IsEntire)
+theorem isEntire_colemanDEntire (hB : B.IsEntire) (hF : F.IsEntire)
     (hB₀ : coeff 0 B = 0) (hF₀ : coeff 0 F = 1) : (colemanDEntire B F).IsEntire := by
   obtain ⟨ρ, hρ₀, hρ, hlim, hbound⟩ := hF.exists_newtonMajorant (by simp [hF₀])
   exact isEntire_of_norm_coeff_le_prod
@@ -89,8 +89,9 @@ theorem colemanDEntire_isEntire (hB : B.IsEntire) (hF : F.IsEntire)
 
 /-- The finite transforms converge in every positive-radius Gauss norm, with the two
 truncation orders tending to infinity independently. -/
-theorem tendsto_gaussNorm_colemanDBounded (hB : B.IsEntire) (hF : F.IsEntire)
-    (hB₀ : coeff 0 B = 0) (hF₀ : coeff 0 F = 1) {r : ℝ} (hr : 0 < r) :
+theorem tendsto_gaussNorm_colemanDBounded_trunc_sub_colemanDEntire
+    (hB : B.IsEntire) (hF : F.IsEntire) (hB₀ : coeff 0 B = 0) (hF₀ : coeff 0 F = 1)
+    {r : ℝ} (hr : 0 < r) :
     Tendsto (fun p : ℕ × ℕ ↦
       ((Polynomial.colemanDBounded (trunc (p.2 + 1) B) (trunc (p.1 + 1) F) p.1 p.2 : R⟦X⟧) -
         colemanDEntire B F).gaussNorm norm r) atTop (𝓝 0) := by
