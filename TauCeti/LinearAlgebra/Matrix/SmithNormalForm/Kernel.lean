@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Module.Torsion.Basic
-public import Mathlib.LinearAlgebra.Matrix.ToLinearEquiv
+public import TauCeti.LinearAlgebra.Matrix.ToLinearEquiv
 public import Mathlib.Algebra.Module.Submodule.Equiv
 
 /-!
@@ -141,8 +141,8 @@ theorem kerMapEquivOfMulMulEqDiagonal_symm_apply (M : Matrix ι ι R) (f : R →
   classical
   simp only [kerMapEquivOfMulMulEqDiagonal, LinearEquiv.symm_trans_apply,
     LinearEquiv.symm_symm, LinearEquiv.trans_apply, LinearEquiv.ofSubmodule'_apply,
-    LinearEquiv.coe_ofEq_apply]
-  rfl
+    LinearEquiv.coe_ofEq_apply, toLinearEquiv_basisFun_apply]
+  rw [funext (f.diagonalKerEquiv_symm_apply d x)]
 
 /-- The free coordinates are read after applying the inverse right diagonalizing matrix. -/
 @[simp]
@@ -154,8 +154,8 @@ theorem kerMapEquivOfMulMulEqDiagonal_fst (M : Matrix ι ι R) (f : R →+* A)
       ((V.map f)⁻¹ *ᵥ x.val) i := by
   simp only [kerMapEquivOfMulMulEqDiagonal, LinearEquiv.trans_apply,
     LinearEquiv.symm_trans_apply, RingHom.diagonalKerEquiv_fst, LinearEquiv.ofEq_symm,
-    LinearEquiv.coe_ofEq_apply, LinearEquiv.ofSubmodule'_symm_apply]
-  rfl
+    LinearEquiv.coe_ofEq_apply, LinearEquiv.ofSubmodule'_symm_apply,
+    toLinearEquiv_basisFun_symm_apply]
 
 /-- The annihilator coordinates are read after applying the same inverse coordinate change. -/
 @[simp]
@@ -167,7 +167,7 @@ theorem kerMapEquivOfMulMulEqDiagonal_snd (M : Matrix ι ι R) (f : R →+* A)
       ((V.map f)⁻¹ *ᵥ x.val) i := by
   simp only [kerMapEquivOfMulMulEqDiagonal, LinearEquiv.trans_apply,
     LinearEquiv.symm_trans_apply, RingHom.diagonalKerEquiv_snd, LinearEquiv.ofEq_symm,
-    LinearEquiv.coe_ofEq_apply, LinearEquiv.ofSubmodule'_symm_apply]
-  rfl
+    LinearEquiv.coe_ofEq_apply, LinearEquiv.ofSubmodule'_symm_apply,
+    toLinearEquiv_basisFun_symm_apply]
 
 end Matrix
