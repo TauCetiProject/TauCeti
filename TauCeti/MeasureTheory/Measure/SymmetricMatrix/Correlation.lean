@@ -307,7 +307,7 @@ theorem measurableSet_posDefCorrelationRegion : MeasurableSet (posDefCorrelation
 
 variable (p) in
 theorem convex_posDefCorrelationRegion : Convex ℝ (posDefCorrelationRegion p) :=
-  (convex_setOf_posDef.affine_preimage
+  (convex_setOfPred_posDef.affine_preimage
     ((selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ)).subtype.toAffineMap)).affine_preimage
     (correlationMatrix p).toAffineMap
 
