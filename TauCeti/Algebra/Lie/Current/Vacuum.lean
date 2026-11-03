@@ -85,6 +85,7 @@ noncomputable section
 
 open scoped LaurentSeries VertexOperator
 open PowerSeries LieAlgebra TauCeti.UniversalEnvelopingAlgebra
+open LieAlgebra.ofTwoCocycle (centralElement envelopingι)
 
 attribute [local instance 1100] HahnSeries.instAlgebra
 

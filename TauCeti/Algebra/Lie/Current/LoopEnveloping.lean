@@ -18,7 +18,7 @@ form `Φ`, and `ĝ = L((t)) ⊕ R K` that of the formal currents. For a central 
 (`TauCeti.UniversalEnvelopingAlgebra.CentralQuotient`). The polynomial embedding
 `TauCeti.CurrentAlgebra.ofLoopExtension` induces an algebra morphism `U_pol → U`
 (`TauCeti.CurrentAlgebra.loopEnvelopingHom`), sending the polynomial current generator
-`TauCeti.CurrentAlgebra.envelopingι cP a p` of `p`, for Mathlib's residue cocycle `cP`, to the
+`LieAlgebra.ofTwoCocycle.envelopingι cP a p` of `p`, for Mathlib's residue cocycle `cP`, to the
 current generator of `p` viewed as a formal current
 (`TauCeti.CurrentAlgebra.loopEnvelopingHom_envelopingι`).
 
@@ -76,6 +76,8 @@ noncomputable section
 
 open scoped LaurentSeries
 open LieAlgebra LieModule.Cohomology TauCeti.UniversalEnvelopingAlgebra
+open LieAlgebra.ofTwoCocycle (centralElement envelopingι envelopingι_apply envelopingι_mul_sub_mul
+  adjoin_range_envelopingι)
 
 attribute [local instance 1100] HahnSeries.instAlgebra
 attribute [local instance 100] LieRing.ofAssociativeRing

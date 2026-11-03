@@ -32,6 +32,7 @@ noncomputable section
 
 open scoped TensorProduct
 open TauCeti.UniversalEnvelopingAlgebra
+open LieAlgebra.ofTwoCocycle (centralElement envelopingι)
 
 namespace TauCeti.CurrentAlgebra
 

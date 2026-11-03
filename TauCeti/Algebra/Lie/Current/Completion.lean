@@ -110,6 +110,7 @@ public section
 noncomputable section
 
 open TauCeti.UniversalEnvelopingAlgebra Topology
+open LieAlgebra.ofTwoCocycle (centralElement envelopingι)
 
 namespace TauCeti.CurrentAlgebra
 

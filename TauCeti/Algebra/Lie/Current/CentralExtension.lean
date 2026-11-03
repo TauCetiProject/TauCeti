@@ -15,13 +15,12 @@ For an invariant symmetric bilinear form `Φ` on a Lie algebra `L` over a commut
 residue central extension of the formal current algebra `L((t)) = R⸨X⸩ ⊗[R] L` is Mathlib's
 `LieAlgebra.ofTwoCocycle` of the residue cocycle `TauCeti.CurrentAlgebra.twoCocycleOfBilinear`. As
 an `R`-module it is `L((t)) × R`; write `K` for the central element `(0, 1)`
-(`TauCeti.CurrentAlgebra.centralElement`), which is central and nonzero over a nontrivial ring,
+(`LieAlgebra.ofTwoCocycle.centralElement`, defined for the extension of any Lie algebra by a
+2-cocycle with trivial coefficients in `R`), which is central and nonzero over a nontrivial ring,
 and every element is a current plus a multiple of `K`
-(`TauCeti.CurrentAlgebra.ofProd_eq_add_smul_centralElement`). These facts hold for the
-extension of any Lie algebra by a 2-cocycle with trivial coefficients in `R`, and are stated in
-that generality, so they apply to the formal and the polynomial residue extensions alike. This
-file constructs the two basic maps between such extensions, both instances of the morphisms of
-central extensions `LieAlgebra.ofTwoCocycle.map`.
+(`LieAlgebra.ofTwoCocycle.ofProd_eq_add_smul_centralElement`). This file constructs the two
+basic maps between such extensions, both instances of the morphisms of central extensions
+`LieAlgebra.ofTwoCocycle.map`.
 
 * **Level rescaling.** If `Ψ = r • Φ`, then the map which is the identity on currents and sends
   `K` to `r • K` is a Lie algebra morphism from the extension of `Φ` to that of `Ψ`
@@ -54,6 +53,7 @@ noncomputable section
 
 open scoped LaurentSeries
 open LieAlgebra LieModule.Cohomology
+open LieAlgebra.ofTwoCocycle (centralElement)
 
 attribute [local instance 1100] HahnSeries.instAlgebra
 
@@ -63,47 +63,6 @@ variable {R L : Type*} [CommRing R] [LieRing L] [LieAlgebra R L]
 
 local notation "C" => currentAlgebra R L
 local notation "Z" => TrivialLieModule R C R
-
-section Central
-
-variable {L' : Type*} [LieRing L'] [LieAlgebra R L']
-  (c : twoCocycle R L' (TrivialLieModule R L' R))
-
-/-- The central element `K = (0, 1)` of the central extension of a Lie algebra by `R` defined by a
-2-cocycle `c` with trivial coefficients, such as the residue cocycle of formal or of polynomial
-currents. -/
-def centralElement : ofTwoCocycle c :=
-  ofProd c (0, (TrivialLieModule.equiv R L' R).symm 1)
-
-/-- The coordinates of `K` are `(0, 1)`. -/
-@[simp]
-theorem ofProd_symm_centralElement :
-    (ofProd c).symm (centralElement c) = (0, (TrivialLieModule.equiv R L' R).symm 1) := by
-  rw [centralElement, Equiv.symm_apply_apply]
-
-/-- The element `K` is central. -/
-theorem centralElement_mem_center : centralElement c ∈ center R (ofTwoCocycle c) :=
-  (LieModule.mem_maxTrivSubmodule R _ _ _).2 fun v ↦ by
-    simp only [centralElement, bracket_ofTwoCocycle, Equiv.symm_apply_apply, lie_zero,
-      trivial_lie_zero, map_zero, sub_zero, add_zero]
-    exact of_zero c
-
-/-- The element `K` is nonzero over a nontrivial ring. -/
-theorem centralElement_ne_zero [Nontrivial R] : centralElement c ≠ 0 := by
-  intro h
-  have h' := congrArg (fun v ↦ TrivialLieModule.equiv R L' R ((ofProd c).symm v).2) h
-  simp [centralElement] at h'
-
-/-- Every element of the extension is an element of `L'` plus a multiple of `K`. -/
-theorem ofProd_eq_add_smul_centralElement (u : L') (z : TrivialLieModule R L' R) :
-    ofProd c (u, z) = ofProd c (u, 0) + TrivialLieModule.equiv R L' R z • centralElement c := by
-  apply (ofProd c).symm.injective
-  simp only [centralElement, of_symm_add, of_symm_smul, Equiv.symm_apply_apply, Prod.smul_mk,
-    smul_zero, Prod.mk_add_mk, add_zero, zero_add, Prod.mk.injEq, true_and]
-  apply (TrivialLieModule.equiv R L' R).injective
-  simp
-
-end Central
 
 section Level
 
@@ -221,7 +180,8 @@ central element `K` of the formal one. -/
 @[simp]
 theorem ofLoopExtension_centralElement :
     ofLoopExtension Φ hΦ hΦs (centralElement cP) = centralElement c := by
-  simp [centralElement]
+  apply (ofProd c).symm.injective
+  simp
 
 /-- The residue central extension of polynomial currents embeds in that of formal currents. -/
 theorem ofLoopExtension_injective : Function.Injective (ofLoopExtension Φ hΦ hΦs) :=

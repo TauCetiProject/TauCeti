@@ -72,6 +72,7 @@ noncomputable section
 
 open scoped LaurentSeries
 open PowerSeries LieAlgebra TauCeti.UniversalEnvelopingAlgebra
+open LieAlgebra.ofTwoCocycle (centralElement envelopingι envelopingι_apply algHom_ext_envelopingι)
 
 namespace TauCeti.CurrentAlgebra
 

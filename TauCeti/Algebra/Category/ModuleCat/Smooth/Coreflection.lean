@@ -7,7 +7,6 @@ module
 
 public import Mathlib.CategoryTheory.Adjunction.Reflective
 public import Mathlib.CategoryTheory.Monad.Limits
-public import Mathlib.RingTheory.Adjoin.Basic
 public import TauCeti.Algebra.Category.ModuleCat.Smooth.Basic
 
 /-!
@@ -25,8 +24,7 @@ A vector `m` lies in the smooth part exactly when its cyclic submodule `A ∙ m`
 family is stable under right multiplication (for each `b` and `i` some `J j` satisfies
 `J j * b ⊆ J i`), this is simply the condition that `m` is killed by some `J i`. For the left ideals
 of a topological ring with continuous right multiplications forming a basis of neighborhoods of
-`0`, this stability holds automatically. For an algebra, it suffices to check it on a generating
-set: the elements `b` for which it holds form a subalgebra.
+`0`, this stability holds automatically.
 
 ## Main definitions
 
@@ -41,8 +39,6 @@ set: the elements `b` for which it holds form a subalgebra.
 * `TauCeti.mem_smoothPart_iff`: `m` lies in the smooth part when `A ∙ m` is smooth.
 * `TauCeti.mem_smoothPart_iff_of_mul_mem`, `TauCeti.mem_smoothPart_iff_of_hasBasis`: under right
   multiplication stability, `m` lies in the smooth part when some `J i` kills it.
-* `TauCeti.exists_forall_mul_mem_of_adjoin_eq_top`: right multiplication stability on a generating
-  set of an algebra implies it everywhere.
 * `TauCeti.smoothPart_eq_top_iff`: a module is smooth when it is its own smooth part.
 * `TauCeti.hasLimitsOfSize_smoothModules`: the smooth modules have all limits.
 
@@ -144,38 +140,6 @@ theorem smoothModules_smoothPart (hJ : Directed (· ≥ ·) J) :
   exact ⟨i, fun a ha => Subtype.ext (hi a ha)⟩
 
 end SmoothPart
-
-/-! ### Right multiplication stability from generators -/
-
-section Generators
-
-variable {J}
-
-/-- If the directed family `J` of left ideals of an `R`-algebra `A` is stable under right
-multiplication by every element of a generating set `s` (for each `x ∈ s` and `i` some `J j`
-satisfies `J j * x ⊆ J i`), then it is stable under right multiplication by every element of `A`. -/
-theorem exists_forall_mul_mem_of_adjoin_eq_top {R : Type*} [CommSemiring R] [Algebra R A]
-    (hJ : Directed (· ≥ ·) J) {s : Set A} (hs : Algebra.adjoin R s = ⊤)
-    (h : ∀ x ∈ s, ∀ i, ∃ j, ∀ a ∈ J j, a * x ∈ J i) (b : A) (i : ι) :
-    ∃ j, ∀ a ∈ J j, a * b ∈ J i := by
-  have hb : b ∈ Algebra.adjoin R s := hs ▸ Algebra.mem_top
-  induction hb using Algebra.adjoin_induction generalizing i with
-  | mem x hx => exact h x hx i
-  | algebraMap r =>
-    refine ⟨i, fun a ha ↦ ?_⟩
-    rw [← Algebra.commutes, ← Algebra.smul_def]
-    exact (J i).smul_of_tower_mem r ha
-  | add x y _ _ hx hy =>
-    obtain ⟨j₁, h₁⟩ := hx i
-    obtain ⟨j₂, h₂⟩ := hy i
-    obtain ⟨j, hj₁, hj₂⟩ := hJ j₁ j₂
-    exact ⟨j, fun a ha ↦ mul_add a x y ▸ add_mem (h₁ a (hj₁ ha)) (h₂ a (hj₂ ha))⟩
-  | mul x y _ _ hx hy =>
-    obtain ⟨j₁, h₁⟩ := hy i
-    obtain ⟨j, hj⟩ := hx j₁
-    exact ⟨j, fun a ha ↦ mul_assoc a x y ▸ h₁ _ (hj a ha)⟩
-
-end Generators
 
 /-! ### Left ideals of a topological ring -/
 

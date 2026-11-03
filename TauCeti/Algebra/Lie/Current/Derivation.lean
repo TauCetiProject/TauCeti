@@ -26,7 +26,7 @@ central extension `ĝ = L((t)) ⊕ R K` acting by `h d/dt` on currents and killi
 enveloping algebra `U(ĝ) / (ι K - a)` acting by `h d/dt` on the current generators
 (`TauCeti.CurrentAlgebra.vectorFieldEnvelopingDerivation`), at every central value `a`, including
 `a = 0`. This lift is unique, since a derivation of `U(ĝ) / (ι K - a)` is determined by its values
-on the current generators (`TauCeti.CurrentAlgebra.derivation_ext_envelopingι`).
+on the current generators (`LieAlgebra.ofTwoCocycle.derivation_ext_envelopingι`).
 
 If `h` has order at least `P`, the vector field `h d/dt` sends currents of order at least `N` to
 currents of order at least `P + N - 1`. So when `h` has positive order it preserves each order
@@ -84,6 +84,8 @@ noncomputable section
 
 open scoped TensorProduct LaurentSeries
 open HahnSeries LieAlgebra LieModule.Cohomology TauCeti.UniversalEnvelopingAlgebra
+open LieAlgebra.ofTwoCocycle (centralElement envelopingι ι_ofProd envelopingι_mul_sub_mul
+  algHom_ext_envelopingι derivation_ext_envelopingι)
 
 -- The coefficientwise algebra structure matches the module used by the tensor product.
 attribute [local instance 1100] HahnSeries.instAlgebra
@@ -299,7 +301,7 @@ private theorem fst_dualAlgHom (h : R⸨X⸩) (x : UK) : (dualAlgHom Φ hΦ hΦs
 /-- **The vector field `h d/dt` on the level enveloping algebra**: the derivation of
 `U(ĝ) / (ι K - a)` acting by `ι u ↦ ι(h u')` on the current generators, for every central value
 `a`, including `a = 0`. It is the unique such derivation by
-`TauCeti.CurrentAlgebra.derivation_ext_envelopingι`. -/
+`LieAlgebra.ofTwoCocycle.derivation_ext_envelopingι`. -/
 def vectorFieldEnvelopingDerivation (h : R⸨X⸩) : derivationLieAlgebra R UK :=
   ⟨{ toFun x := (dualAlgHom Φ hΦ hΦs a h x).snd
      map_add' x y := by rw [map_add, TrivSqZeroExt.snd_add]

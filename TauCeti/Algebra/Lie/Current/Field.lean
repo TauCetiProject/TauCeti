@@ -81,6 +81,7 @@ noncomputable section
 
 open scoped TensorProduct LaurentSeries VertexOperator
 open Finset
+open LieAlgebra.ofTwoCocycle (centralElement)
 
 attribute [local instance 1100] HahnSeries.instAlgebra
 
