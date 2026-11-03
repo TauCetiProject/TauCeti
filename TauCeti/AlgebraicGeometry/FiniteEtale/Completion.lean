@@ -11,10 +11,7 @@ public import TauCeti.RingTheory.Depth.Flat
 public import Mathlib.RingTheory.AdicCompletion.AsTensorProduct
 public import Mathlib.RingTheory.AdicCompletion.LocalRing
 public import TauCeti.RingTheory.AdicCompletion.Noetherian
-import Mathlib.RingTheory.Etale.Descent
-import Mathlib.RingTheory.Finiteness.Descent
-import Mathlib.RingTheory.RingHom.Etale
-import Mathlib.RingTheory.RingHom.Finite
+import TauCeti.RingTheory.Etale.FiniteDescent
 
 /-!
 # Extending finite étale covers after a flat local base change
@@ -31,7 +28,7 @@ By the criterion `TauCeti.IsLocalRing.extends_iff_sections_finiteEtale` (Stacks 
 homomorphisms), both conditions say that the ring of global sections is finite étale. Flat base
 change for sections of the structure sheaf identifies the global sections of the base change of `V`
 with `A' ⊗[A] Γ(V, 𝒪_V)`, and finite étale algebras are stable under base change and descend along
-the faithfully flat map `A → A'`.
+the faithfully flat map `A → A'` (`Algebra.IsPushout.finite_and_etale_iff_of_faithfullyFlat`).
 
 ## Main results
 
@@ -153,17 +150,15 @@ theorem extends_iff_extends_pullback_of_flat [IsNoetherianRing A']
     rw [depth_eq_add_of_flat (R := A)]
     exact hdepth.trans le_self_add
   rw [extends_iff_sections_finiteEtale A hdepth, extends_iff_sections_finiteEtale A' hdepth']
-  -- Finite étale ring maps are stable under base change and descend along `A → A'`.
+  -- Finite étale ring maps are stable under base change and descend along `A → A'`, stated here
+  -- for a pushout square in `CommRingCat`.
   have key {R S R' S' : CommRingCat.{u}} {f : R ⟶ S} {g : R ⟶ R'} {inl : S ⟶ S'}
       {inr : R' ⟶ S'} (hsq : IsPushout f g inl inr) (hg : g.hom.FaithfullyFlat) :
       (f.hom.Finite ∧ f.hom.Etale) ↔ (inr.hom.Finite ∧ inr.hom.Etale) := by
     algebraize [f.hom, g.hom, inl.hom, inr.hom, inr.hom.comp g.hom]
     have : IsScalarTower R S S' := .of_algebraMap_eq fun x ↦ congr($(hsq.w).hom x).symm
     have : Algebra.IsPushout R S R' S' := CommRingCat.isPushout_iff_isPushout.mp hsq
-    exact ⟨fun hf ↦ ⟨RingHom.finite_isStableUnderBaseChange R S R' S' hf.1,
-      RingHom.Etale.isStableUnderBaseChange R S R' S' hf.2⟩,
-      fun hf ↦ ⟨RingHom.Finite.codescendsAlong_faithfullyFlat hg hf.1,
-        RingHom.Etale.codescendsAlong_faithfullyFlat hg hf.2⟩⟩
+    exact Algebra.IsPushout.finite_and_etale_iff_of_faithfullyFlat
   -- The criterion uses the algebra structures given by the ring maps of
   -- `isPushout_appTop_pullback_of_flat`, and `RingHom.Finite` and `RingHom.Etale` unfold to
   -- `Module.Finite` and `Algebra.Etale` for those structures.
