@@ -87,7 +87,7 @@ theorem Module.End.bijective_of_sub_mem_filtration {p : ℕ → Submodule R M} (
       rw [hx, map_zero]
     | succ n ih =>
       intro x hx
-      rw [pow_succ, Module.End.mul_apply, LinearMap.sub_apply, Module.End.one_apply]
+      rw [pow_succ, mul_apply_eq_comp, LinearMap.sub_apply, one_apply_eq_self]
       exact ih _ (hf n x hx)
   have h := (f - 1).isUnit_one_add_of_forall_exists_pow_apply_eq_zero fun x ↦
     (hp x).imp fun n ↦ hnil n x
