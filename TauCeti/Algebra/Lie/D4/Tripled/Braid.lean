@@ -64,9 +64,9 @@ private theorem weylInt_mulVec_single (i : Fin 4) (a : Fin 24) :
     simpa only [weightTable_weight, weightTable_reflection] using
       weightTable.weight_reflection_self i a
   have hzero (h : d4TripledWeight a i = 0) : d4TripledReflection i a = a := by
-    apply d4TripledWeight_injective
-    ext j
-    rw [d4TripledWeight_reflection_apply, h, zero_mul, sub_zero]
+    simpa only [weightTable_reflection] using
+      (weightTable.reflection_eq_self_iff i a).2
+        (by simpa only [weightTable_weight] using h)
   rcases d4TripledWeight_apply_eq_neg_one_or_eq_zero_or_eq_one a i with h | h | h
   · simp [weylInt, ← Matrix.mulVec_mulVec, Matrix.add_mulVec, Matrix.sub_mulVec,
       Matrix.mulVec_add, Matrix.mulVec_sub, raising_mulVec_single, lowering_mulVec_single,
@@ -87,8 +87,16 @@ private theorem commuting_certificate (i j : Fin 4) (a : Fin 24)
         d4TripledReflection j (d4TripledReflection i a) ∧
       stepSign j a * stepSign i (d4TripledReflection j a) =
         stepSign i a * stepSign j (d4TripledReflection i a) := by
-  fin_cases i <;> fin_cases j <;> norm_num [CartanMatrix.D_four] at hij
-  all_goals revert a; decide +kernel
+  have hij' : weightTable.cartanMatrix i j = 0 := by
+    simpa only [weightTable_cartanMatrix] using hij
+  have hji := (weightTable.cartanMatrix_zero_comm i j).mp hij'
+  constructor
+  · simpa only [weightTable_reflection] using
+      weightTable.reflection_comm_of_cartanMatrix_eq_zero i j a hij'
+  · simp only [stepSign, ← weightTable_weight, ← weightTable_reflection,
+      weightTable.weight_reflection_of_cartanMatrix_eq_zero j i a hji,
+      weightTable.weight_reflection_of_cartanMatrix_eq_zero i j a hij']
+    exact mul_comm _ _
 
 private theorem braid_certificate (i j : Fin 4) (a : Fin 24)
     (hij : CartanMatrix.D 4 i j = -1) :
