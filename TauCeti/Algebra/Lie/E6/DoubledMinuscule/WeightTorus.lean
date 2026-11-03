@@ -28,9 +28,8 @@ allow nonreduced value algebras and small characteristics.
 the specialization of the integral torus ideal, without flatness assumptions.
 
 This concerns the specialization of the integral toral closure, not the potentially smaller
-subgroup generated after specialization. The carrier has not been identified with the pinned
-simply connected group scheme of type `E₆`; transfer to that pinned group requires such an
-identification. Neither schematic torus maximality nor reductivity is asserted here.
+subgroup generated after specialization. Neither schematic torus maximality nor reductivity
+is asserted here.
 
 ## References
 
@@ -134,6 +133,9 @@ theorem splitTorusCommHopfAlgProperty_quotient_weightTorusDefiningIdeal :
       (_root_.CommHopfAlgCat.isoMk (MonoidAlgebra.domCongrBialgEquiv R R e))
   exact ⟨6, ⟨(weightTorusCoordinateIso R ≪≫ i).symm⟩⟩
 
+grind_pattern splitTorusCommHopfAlgProperty_quotient_weightTorusDefiningIdeal =>
+  weightTorusDefiningIdeal R
+
 /-- The torus inclusion, followed by the carrier inclusion into `GL₅₄`, evaluates to the named
 weight-torus matrix over every commutative value algebra. -/
 @[simp↓]
@@ -221,6 +223,8 @@ theorem mem_quotientPointsSubgroup_weightTorusDefiningIdeal_iff_isDiag
     map_quotientPointsSubgroup_weightTorusDefiningIdeal]
   constructor
   · rintro ⟨_, ⟨s, rfl⟩, he⟩
+    -- `erw` unfolds the local `f` and its categorical point-map wrapper so that
+    -- the equation `he` matches the explicit ambient matrix in the goal.
     erw [← he]
     rw [Subgroup.subtype_apply, coe_weightTorusPoints,
       UniversalEnvelopingAlgebra.kostantTorusMatrix_apply, diagGL_coe]
