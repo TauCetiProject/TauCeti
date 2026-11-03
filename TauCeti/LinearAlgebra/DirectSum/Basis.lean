@@ -24,8 +24,8 @@ variable {k V ι : Type*} [DivisionRing k] [AddCommGroup V] [Module k V] [Decida
   (H : Submodule k V) (ℳ : ι → Submodule k V) [DirectSum.Decomposition ℳ]
 
 /-- A homogeneous subspace has a basis of homogeneous vectors, indexed by a subset of itself. -/
-theorem exists_basis_mem_of_isHomogeneous (hH : H.IsHomogeneous ℳ) :
-    ∃ (t : Set H) (b : Module.Basis t k H), ∀ i, ∃ d, (b i : V) ∈ ℳ d := by
+theorem exists_basis_isHomogeneousElem_of_isHomogeneous (hH : H.IsHomogeneous ℳ) :
+    ∃ (t : Set H) (b : Module.Basis t k H), ∀ i, SetLike.IsHomogeneousElem ℳ (b i : V) := by
   classical
   let s : Set H := {x | ∃ d, (x : V) ∈ ℳ d}
   obtain ⟨t, hts, htspan, htli⟩ := exists_linearIndependent k s
@@ -41,6 +41,7 @@ theorem exists_basis_mem_of_isHomogeneous (hH : H.IsHomogeneous ℳ) :
   let b : Module.Basis t k H := .mk htli (by rw [Subtype.range_coe, ht])
   refine ⟨t, b, fun i ↦ ?_⟩
   -- `Basis.mk` uses the chosen independent vectors themselves as basis vectors.
-  simpa only [b, Module.Basis.mk_apply, s, Set.mem_ofPred_eq] using hts i.property
+  simpa only [b, Module.Basis.mk_apply, s, Set.mem_ofPred_eq, SetLike.IsHomogeneousElem]
+    using hts i.property
 
 end Submodule
