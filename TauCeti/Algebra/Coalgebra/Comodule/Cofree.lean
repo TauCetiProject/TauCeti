@@ -277,13 +277,9 @@ theorem cofreeLift_lTensor_apply {D : Type*} [AddCommMonoid D] [Module R D] (g :
     (t : M ⊗[R] C) :
     cofreeLift (C := C) (g.lTensor M) t =
       (TensorProduct.assoc R M D C).symm ((g.rTensor C ∘ₗ Coalgebra.comul).lTensor M t) := by
-  induction t using TensorProduct.inductionOn with
-  | add s t hs ht => simp only [map_add, hs, ht]
-  | tmul m c =>
-    rw [cofreeLift_apply, cofree_coact_tmul, lTensor_tmul, LinearMap.comp_apply]
-    induction Coalgebra.comul (R := R) (A := C) c using TensorProduct.inductionOn with
-    | add s t hs ht => simp only [tmul_add, map_add, hs, ht]
-    | tmul a b => simp
+  rw [cofreeLift_apply, cofree_coact_eq_cofreeCoact, cofreeCoact_def, LinearMap.lTensor_comp]
+  exact LinearMap.congr_fun (congrArg (· ∘ₗ Coalgebra.comul.lTensor M)
+    (LinearMap.rTensor_lTensor_comp_assoc_symm C g)) t
 
 /-- Following the cofree lift of `g` by `cofreeMap a` gives the cofree lift of `a ∘ g`. -/
 theorem cofreeMap_comp_cofreeLift [Comodule R C P] (a : M →ₗ[R] N) (g : P →ₗ[R] M) :
