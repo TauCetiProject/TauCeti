@@ -46,7 +46,7 @@ nondegenerate at `x₀`, is the standard symplectic form in centered coordinates
 doubled Euclidean space of the same dimension. The diffeomorphism parametrizes the
 original space, sends zero to `x₀`, and is symplectic on a neighbourhood of zero.
 Only nondegeneracy at `x₀` is assumed; the original open set may be disconnected. -/
-theorem exists_standardDarbouxParametrization
+theorem exists_diffeomorph_eventually_fderiv_eq_stdSymplecticForm
     {ω : V → V [⋀^Fin 2]→L[ℝ] ℝ} {W : Set V} {x₀ : V} {r : ℕ∞} {n : ℕ}
     (hdim : Module.finrank ℝ V = 2 * n) (hr : 1 ≤ r) (hW : IsOpen W)
     (hx₀ : x₀ ∈ W) (hω : ContDiffOn ℝ r ω W)
@@ -82,7 +82,7 @@ theorem exists_standardDarbouxParametrization
     exact e.hasFDerivAt.add_const x₀
   let φ := a.trans ψ
   -- Composition of the two diffeomorphisms is evaluation in the affine coordinates.
-  have hφa (z) : φ z = ψ (a z) := (rfl)
+  have hφa (z) : φ z = ψ (a z) := congrFun (Diffeomorph.coe_trans a ψ) z
   have hφ (z) : φ z = ψ (e z + x₀) := by rw [hφa, ha]
   have hφ₀ : φ 0 = x₀ := by simp [hφ, hψ₀]
   have hφcont : Continuous φ := φ.contMDiff.continuous
@@ -96,8 +96,7 @@ theorem exists_standardDarbouxParametrization
   filter_upwards [hnear.eventually hψω, hmem] with z hz hzW
   refine ⟨hzW, fun u v ↦ ?_⟩
   have hψdiff : DifferentiableAt ℝ ψ (a z) :=
-    (contMDiff_iff_contDiff.mp ψ.contMDiff).differentiable
-      (by exact_mod_cast (lt_of_lt_of_le zero_lt_one hr).ne') |>.differentiableAt
+    (ψ.differentiable (by exact_mod_cast (lt_of_lt_of_le zero_lt_one hr).ne')) (a z)
   -- Pullback by the composite is the pullback by its linear coordinate map.
   have hderiv : fderiv ℝ φ z = (fderiv ℝ ψ (a z)).comp e.toContinuousLinearMap :=
     (hψdiff.hasFDerivAt.comp z (ha' z)).fderiv
@@ -120,8 +119,8 @@ theorem exists_standardDarbouxParametrization
 is the pullback of the standard symplectic form by a chart sending `x₀` to zero.
 The chart extends to a diffeomorphism of the model spaces; the pullback identity
 is local near `x₀`. This is the chart-direction counterpart of
-`exists_standardDarbouxParametrization`. -/
-theorem exists_standardDarbouxChart
+`exists_diffeomorph_eventually_fderiv_eq_stdSymplecticForm`. -/
+theorem exists_diffeomorph_eventually_stdSymplecticForm_fderiv_eq
     {ω : V → V [⋀^Fin 2]→L[ℝ] ℝ} {W : Set V} {x₀ : V} {r : ℕ∞} {n : ℕ}
     (hdim : Module.finrank ℝ V = 2 * n) (hr : 1 ≤ r) (hW : IsOpen W)
     (hx₀ : x₀ ∈ W) (hω : ContDiffOn ℝ r ω W)
@@ -133,30 +132,16 @@ theorem exists_standardDarbouxChart
       φ x₀ = 0 ∧ ∀ᶠ x in 𝓝 x₀, x ∈ W ∧ ∀ u v,
         stdSymplecticForm (fderiv ℝ φ x u) (fderiv ℝ φ x v) = ω x ![u, v] := by
   obtain ⟨ψ, hψ₀, hψω⟩ :=
-    exists_standardDarbouxParametrization hdim hr hW hx₀ hω hdω hnd
+    exists_diffeomorph_eventually_fderiv_eq_stdSymplecticForm hdim hr hW hx₀ hω hdω hnd
   have hψinv : ψ.symm x₀ = 0 := ψ.symm_apply_eq.mpr hψ₀.symm
   have hr0 : (r : WithTop ℕ∞) ≠ 0 := by
-    have : (1 : WithTop ℕ∞) ≤ r := by exact_mod_cast hr
-    exact (lt_of_lt_of_le zero_lt_one this).ne'
-  have hψdiff : Differentiable ℝ ψ :=
-    (contMDiff_iff_contDiff.mp ψ.contMDiff).differentiable hr0
-  have hinvdiff : Differentiable ℝ ψ.symm :=
-    (contMDiff_iff_contDiff.mp ψ.symm.contMDiff).differentiable hr0
-  have hderiv (x : V) (v : V) :
-      fderiv ℝ ψ (ψ.symm x) (fderiv ℝ ψ.symm x v) = v := by
-    -- Differentiate the inverse identity as a map of normed spaces.
-    have hid : (ψ : _ → V) ∘ ψ.symm = id := funext ψ.apply_symm_apply
-    have hcomp := (hψdiff (ψ.symm x)).hasFDerivAt.comp x (hinvdiff x).hasFDerivAt
-    rw [hid] at hcomp
-    have heq := hcomp.fderiv
-    rw [fderiv_id] at heq
-    exact (DFunLike.congr_fun heq v).symm
+    exact_mod_cast (lt_of_lt_of_le zero_lt_one hr).ne'
   refine ⟨ψ.symm, hψinv, ?_⟩
   have ht : Tendsto ψ.symm (𝓝 x₀) (𝓝 0) :=
     hψinv ▸ ψ.symm.contMDiff.continuous.tendsto x₀
   filter_upwards [ht.eventually hψω] with x hx
   refine ⟨by simpa only [ψ.apply_symm_apply] using hx.1, fun u v ↦ ?_⟩
   have hpull := hx.2 (fderiv ℝ ψ.symm x u) (fderiv ℝ ψ.symm x v)
-  simpa only [ψ.apply_symm_apply, hderiv] using hpull.symm
+  simpa only [ψ.apply_symm_apply, ψ.fderiv_apply_fderiv_symm_apply hr0] using hpull.symm
 
 end TauCeti

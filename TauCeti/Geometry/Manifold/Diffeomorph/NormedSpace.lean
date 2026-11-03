@@ -31,6 +31,24 @@ namespace Diffeomorph
 
 variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
   {E : Type*} [NormedAddCommGroup E] [NormedSpace 𝕜 E] {n : ℕ∞ω}
+  {F : Type*} [NormedAddCommGroup F] [NormedSpace 𝕜 F]
+
+/-- A diffeomorphism between normed spaces of nonzero smoothness is differentiable. -/
+protected theorem differentiable (h : E ≃ₘ^n⟮𝓘(𝕜, E), 𝓘(𝕜, F)⟯ F) (hn : n ≠ 0) :
+    Differentiable 𝕜 h :=
+  (h.mdifferentiable hn).differentiable
+
+/-- The derivatives of a normed-space diffeomorphism and its inverse compose to the identity. -/
+@[simp]
+theorem fderiv_apply_fderiv_symm_apply (h : E ≃ₘ^n⟮𝓘(𝕜, E), 𝓘(𝕜, F)⟯ F) (hn : n ≠ 0)
+    (x v : F) : fderiv 𝕜 h (h.symm x) (fderiv 𝕜 h.symm x v) = v := by
+  have hid : (h : E → F) ∘ h.symm = id := funext h.apply_symm_apply
+  have hcomp := ((h.differentiable hn) (h.symm x)).hasFDerivAt.comp x
+    ((h.symm.differentiable hn) x).hasFDerivAt
+  rw [hid] at hcomp
+  have heq := hcomp.fderiv
+  rw [fderiv_id] at heq
+  exact (DFunLike.congr_fun heq v).symm
 
 variable (𝕜 n) in
 /-- The map `x ↦ a - x` of a normed space, as a diffeomorphism. It is its own inverse
