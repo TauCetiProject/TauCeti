@@ -44,6 +44,10 @@ variable {α β : ℝ}
 def stableTailConstant (α : ℝ) : ℝ :=
   Gamma α * sin (π * α / 2) / π
 
+/-- The stable tail constant in terms of the Gamma and sine functions. -/
+theorem stableTailConstant_def (α : ℝ) :
+    stableTailConstant α = Gamma α * sin (π * α / 2) / π := (rfl)
+
 /-- The stable tail constant is positive throughout the non-Gaussian shape range. -/
 theorem stableTailConstant_pos (hα : α ∈ Ioo 0 2) : 0 < stableTailConstant α := by
   rw [stableTailConstant]
