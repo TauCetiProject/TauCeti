@@ -73,14 +73,17 @@ theorem conjTranspose_mul_cfc_mul_le_cfc_conjTranspose_mul_mul {f : ℝ → ℝ}
     rw [hU_def, conjTranspose_sub, conjTranspose_nsmul, conjTranspose_mul,
       conjTranspose_conjTranspose, conjTranspose_one]
   have hUV : U * V = V := by
-    rw [hU_def, Matrix.sub_mul, Matrix.smul_mul, Matrix.mul_assoc, hV, Matrix.mul_one,
-      Matrix.one_mul, two_nsmul, add_sub_cancel_right]
+    simp only [hU_def, Matrix.sub_mul, Matrix.smul_mul, Matrix.mul_assoc, hV, Matrix.mul_one,
+      Matrix.one_mul]
+    module
   have hVU : Vᴴ * U = Vᴴ := by simpa [hUh] using congrArg conjTranspose hUV
+  -- `P = V Vᴴ` is idempotent
+  have hP : V * Vᴴ * (V * Vᴴ) = V * Vᴴ := by
+    rw [Matrix.mul_assoc, ← Matrix.mul_assoc Vᴴ, hV, Matrix.one_mul]
   have hUU : U * U = 1 := by
-    rw [hU_def, Matrix.sub_mul, Matrix.mul_sub, Matrix.mul_sub, Matrix.smul_mul, Matrix.mul_smul,
-      Matrix.mul_assoc, ← Matrix.mul_assoc Vᴴ, hV, Matrix.one_mul, Matrix.mul_one,
+    simp only [hU_def, Matrix.sub_mul, Matrix.mul_sub, Matrix.smul_mul, Matrix.mul_smul, hP,
       Matrix.one_mul, Matrix.mul_one]
-    abel
+    module
   -- the reflected matrix `B = U A U` and the pinching `C = (A + B) / 2`
   set B := U * A * U with hB_def
   have hBS : B ∈ S := by
@@ -109,10 +112,9 @@ theorem conjTranspose_mul_cfc_mul_le_cfc_conjTranspose_mul_mul {f : ℝ → ℝ}
   have hconc : (1 / 2 : ℝ) • cfc f A + (1 / 2 : ℝ) • cfc f B ≤ cfc f C :=
     hf.2 hAS hBS (by norm_num) (by norm_num) (by norm_num)
   have hcomp := (le_iff.mp hconc).conjTranspose_mul_mul_same V
-  rw [Matrix.mul_sub, Matrix.sub_mul, Matrix.mul_add, Matrix.add_mul, Matrix.mul_smul,
-    Matrix.mul_smul, Matrix.smul_mul, Matrix.smul_mul, hBcomp, ← add_smul, hCcomp] at hcomp
-  norm_num at hcomp
-  exact le_iff.mpr hcomp
+  simp only [Matrix.mul_sub, Matrix.sub_mul, Matrix.mul_add, Matrix.add_mul, Matrix.mul_smul,
+    Matrix.smul_mul, hBcomp, hCcomp] at hcomp
+  exact le_iff.mpr (by convert hcomp using 2; module)
 
 -- the C⋆-algebra structure of `Matrix m m ℂ`, needed for `CFC.concaveOn_log`, is scoped
 open scoped Matrix.Norms.L2Operator in
