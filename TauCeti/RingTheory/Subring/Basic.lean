@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.BigOperators.Group.Finset.Basic
-public import Mathlib.Algebra.Field.Defs
 public import Mathlib.Algebra.Ring.Subring.Basic
 
 /-!
