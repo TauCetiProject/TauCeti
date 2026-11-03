@@ -8,14 +8,14 @@ module
 public import Mathlib.Data.Finset.Card
 public import Mathlib.Data.Fintype.Card
 public import Mathlib.Dynamics.FixedPoints.Basic
-import Mathlib.Order.Monotone.Basic
 
 /-!
 # Iterates of inflationary maps on the finsets of a finite type
 
 A map `f` on the finsets of a finite type `α` that enlarges every finset, `s ⊆ f s`, can grow a
-finset only `Fintype.card α` times before it stops. This file records the resulting bound: the
-`Fintype.card α`-th iterate of `f` at any starting finset is a fixed point of `f`. It is the
+finset `s` strictly only `Fintype.card α - #s` times before it stops. This file records the
+resulting bound: once `Fintype.card α ≤ #s + n`, the `n`-th iterate of `f` at `s` is a fixed point
+of `f`; in particular the `Fintype.card α`-th iterate is, whatever the starting finset. It is the
 termination argument behind every closure computed by "repeat until nothing changes" on a finite
 carrier, stated once so that such computations can iterate a fixed number of times and remain
 executable.
@@ -26,34 +26,38 @@ increasing and the map acts on finsets.
 
 ## Main results
 
-* `Finset.isFixedPt_iterate_card`: for `f` with `s ⊆ f s` for all `s`, the finset
-  `f^[Fintype.card α] s` is a fixed point of `f`.
+* `Finset.isFixedPt_iterate_of_card_le_card_add`: for `f` with `s ⊆ f s` for all `s`, the finset
+  `f^[n] s` is a fixed point of `f` as soon as `Fintype.card α ≤ #s + n`.
 -/
 
 public section
 
 namespace TauCeti
 
+open Finset Function
+
 variable {α : Type*} [Fintype α]
 
-/-- An inflationary self-map of the finsets of a finite type reaches a fixed point after
-`Fintype.card α` iterations, whatever the starting finset: the iterates form an increasing chain
-of finsets, and such a chain can grow strictly at most `Fintype.card α` times. -/
-theorem _root_.Finset.isFixedPt_iterate_card {f : Finset α → Finset α} (hf : ∀ s, s ⊆ f s)
-    (s : Finset α) : Function.IsFixedPt f (f^[Fintype.card α] s) := by
-  have hsub : ∀ k, f^[k] s ⊆ f^[k + 1] s := fun k => by
-    rw [Function.iterate_succ_apply']; exact hf _
-  -- The sizes of the iterates form a monotone sequence bounded by `Fintype.card α`, and once two
-  -- consecutive iterates have the same size they coincide, so the sequence is constant from there.
-  have hmono : Monotone fun k => (f^[k] s).card :=
-    monotone_nat_of_le_succ fun k => Finset.card_le_card (hsub k)
-  have hstab : ∀ k, (f^[k] s).card = (f^[k + 1] s).card →
-      (f^[k + 1] s).card = (f^[k + 2] s).card := fun k hk => by
-    have heq : f^[k] s = f^[k + 1] s := Finset.eq_of_subset_of_card_le (hsub k) hk.ge
-    rw [Function.iterate_succ_apply' f (k + 1), ← heq, ← Function.iterate_succ_apply' f k s, ← heq]
-  have hcard := Nat.stabilises_of_monotone hmono (fun k => Finset.card_le_univ (f^[k] s)) hstab
-    (Nat.le_succ (Fintype.card α))
-  exact (Finset.eq_of_subset_of_card_le (hf _)
-    (by rw [← Function.iterate_succ_apply' f (Fintype.card α) s]; exact hcard.le)).symm
+/-- An inflationary self-map of the finsets of a finite type reaches a fixed point from `s` after
+`Fintype.card α - #s` iterations: the iterates form an increasing chain of finsets starting at
+`s`, and such a chain can grow strictly at most `Fintype.card α - #s` times. Taking
+`n = Fintype.card α` gives a bound independent of the starting finset. -/
+theorem _root_.Finset.isFixedPt_iterate_of_card_le_card_add {f : Finset α → Finset α}
+    (hf : ∀ s, s ⊆ f s) {s : Finset α} {n : ℕ} (hn : Fintype.card α ≤ #s + n) :
+    IsFixedPt f (f^[n] s) := by
+  -- Until the iterates reach a fixed point, each one is strictly larger than the previous one.
+  have key (k : ℕ) : IsFixedPt f (f^[k] s) ∨ #s + k ≤ #(f^[k] s) := by
+    induction k with
+    | zero => simp
+    | succ k ih =>
+      rw [iterate_succ_apply']
+      by_cases hk : IsFixedPt f (f^[k] s)
+      · exact .inl hk.apply
+      · exact .inr ((ih.resolve_left hk).trans_lt
+          (card_lt_card ((hf _).ssubset_of_ne (Ne.symm hk))))
+  -- Otherwise the `n`-th iterate has `Fintype.card α` elements, so it is `univ`.
+  refine (key n).elim id fun h => ?_
+  rw [(card_eq_iff_eq_univ _).1 ((card_le_univ _).antisymm (hn.trans h))]
+  exact univ_subset_iff.1 (hf _)
 
 end TauCeti
