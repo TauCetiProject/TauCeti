@@ -15,7 +15,7 @@ spanned by `x ⊗ y` with `x ∈ F i`, `y ∈ G j`, and `i + j ≤ n`. No flatne
 we use the images of the tensor factors, not an asserted embedding of their tensor product.
 Multiplicative families give a multiplicative total filtration. This allows coproduct degree
 bounds to be stated with the sum of the two degrees, rather than separate bounds on each leg.
-Increasing exhaustive factor filtrations give an exhaustive tensor filtration. If the
+Exhaustive factor families give an exhaustive tensor filtration. If the
 algebra filtrations start at the scalars, their total tensor filtration does too.
 -/
 
@@ -70,30 +70,23 @@ theorem tensorFiltration_zero (F : ℕ → Submodule R M) (G : ℕ → Submodule
     exact Submodule.apply_mem_map₂ _ hx hy
   · exact Submodule.map₂_le.mpr fun x hx y hy ↦ tmul_mem_tensorFiltration (by omega) hx hy
 
-/-- Increasing exhaustive factor filtrations give an exhaustive total tensor filtration. -/
+/-- Exhaustive factor families give an exhaustive total tensor filtration. -/
 theorem iSup_tensorFiltration_eq_top (F : ℕ → Submodule R M) (G : ℕ → Submodule R N)
-    (hF : Monotone F) (hG : Monotone G)
     (hFtop : ⨆ i, F i = ⊤) (hGtop : ⨆ j, G j = ⊤) :
     ⨆ n, tensorFiltration F G n = ⊤ := by
   apply top_unique
-  intro z hz
-  clear hz
-  induction z using TensorProduct.inductionOn with
-  | tmul x y =>
-    have hx : x ∈ ⨆ i, F i := by rw [hFtop]; exact Submodule.mem_top
-    have hy : y ∈ ⨆ j, G j := by rw [hGtop]; exact Submodule.mem_top
-    obtain ⟨i, hi⟩ := (Submodule.mem_iSup_of_directed _ hF.directed_le).1 hx
-    obtain ⟨j, hj⟩ := (Submodule.mem_iSup_of_directed _ hG.directed_le).1 hy
-    exact Submodule.mem_iSup_of_mem (i + j) (tmul_mem_tensorFiltration le_rfl hi hj)
-  | add x y hx hy => exact Submodule.add_mem _ hx hy
+  rw [← TensorProduct.map₂_mk_top_top_eq_top, ← hFtop, ← hGtop]
+  simp only [Submodule.map₂_iSup_left, Submodule.map₂_iSup_right, iSup_le_iff]
+  intro j i
+  exact Submodule.map₂_le.mpr fun x hx y hy ↦
+    Submodule.mem_iSup_of_mem (i + j) (tmul_mem_tensorFiltration le_rfl hx hy)
 
-/-- Every tensor has finite total degree for increasing exhaustive factor filtrations. -/
+/-- Every tensor has finite total degree for exhaustive factor families. -/
 theorem exists_mem_tensorFiltration (F : ℕ → Submodule R M) (G : ℕ → Submodule R N)
-    (hF : Monotone F) (hG : Monotone G)
     (hFtop : ⨆ i, F i = ⊤) (hGtop : ⨆ j, G j = ⊤) (z : M ⊗[R] N) :
     ∃ n, z ∈ tensorFiltration F G n := by
   rw [← Submodule.mem_iSup_of_directed _ (tensorFiltration_mono F G).directed_le,
-    iSup_tensorFiltration_eq_top F G hF hG hFtop hGtop]
+    iSup_tensorFiltration_eq_top F G hFtop hGtop]
   exact Submodule.mem_top
 
 section Algebra

@@ -24,8 +24,6 @@ in a word contributes degree one to exactly one tensor leg.
 * `TauCeti.UniversalEnvelopingAlgebra.comul_pbwFiltration_le`: the coproduct image of a PBW
   filtration step lies in the corresponding total tensor filtration step.
 * `TauCeti.UniversalEnvelopingAlgebra.comul_mem_tensorFiltration`: the elementwise bound.
-* `TauCeti.UniversalEnvelopingAlgebra.iSup_tensorFiltration_eq_top`: exhaustivity of
-  total tensor PBW degree; degree zero consists of scalars.
 
 ## References
 
@@ -44,25 +42,6 @@ variable (R L : Type*) [CommRing R] [LieRing L] [LieAlgebra R L]
 local notation "U" => _root_.UniversalEnvelopingAlgebra R L
 local notation "P" => pbwFiltration R L
 local notation "T" => tensorFiltration P P
-
-/-- Degree zero in the total tensor PBW filtration consists precisely of scalars. -/
-theorem tensorFiltration_pbwFiltration_zero : T 0 = 1 :=
-  tensorFiltration_zero_eq_one (pbwFiltration_zero R L) (pbwFiltration_zero R L)
-
-/-- The tensor unit belongs to every total tensor PBW step. -/
-theorem one_mem_tensorFiltration (n : ℕ) : (1 : U ⊗[R] U) ∈ T n :=
-  TauCeti.one_mem_tensorFiltration
-    (one_mem_pbwFiltration R L 0) (one_mem_pbwFiltration R L 0) n
-
-/-- The total tensor PBW filtration exhausts the tensor square. -/
-theorem iSup_tensorFiltration_eq_top : ⨆ n, T n = ⊤ :=
-  TauCeti.iSup_tensorFiltration_eq_top P P (pbwFiltration_mono R L)
-    (pbwFiltration_mono R L) (iSup_pbwFiltration_eq_top R L) (iSup_pbwFiltration_eq_top R L)
-
-/-- Every tensor in the enveloping-algebra square has finite total PBW degree. -/
-theorem exists_mem_tensorFiltration (z : U ⊗[R] U) : ∃ n, z ∈ T n :=
-  TauCeti.exists_mem_tensorFiltration P P (pbwFiltration_mono R L)
-    (pbwFiltration_mono R L) (iSup_pbwFiltration_eq_top R L) (iSup_pbwFiltration_eq_top R L) z
 
 private theorem comul_prod_map_ι_mem_tensorFiltration (l : List L) :
     Coalgebra.comul (R := R) (l.map ⇑(_root_.UniversalEnvelopingAlgebra.ι R)).prod ∈
