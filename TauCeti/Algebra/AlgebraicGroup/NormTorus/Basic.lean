@@ -19,9 +19,9 @@ the Weil restriction `Res_{k'/k} 𝔾ₘ` over a commutative `k`-algebra `R` are
 `R`-algebra `R ⊗[k] k'` of rank `d` gives a homomorphism `Nm : (k' ⊗[k] R)ˣ →* Rˣ`, natural in `R`:
 this is the norm morphism `Res_{k'/k} 𝔾ₘ → 𝔾ₘ` on points. Its kernel is the group of points of
 the norm kernel `R_{k'/k}^1 𝔾ₘ`; when `k'/k` is a finite separable field extension (more generally,
-`k'` is finite étale over `k`) this is the norm-one torus, but in general it need not be a torus:
-for `k' = k[ε]/(ε²)` over a field `k` of characteristic zero it contains a copy `a ↦ 1 + aε` of
-the additive group `𝔾ₐ`. For `ℂ/ℝ` on real points the norm is `z ↦ z * conj z`.
+`k'` is finite étale and free over `k`) this is the norm-one torus, but in general it need not be
+a torus: for `k' = k[ε]/(ε²)` over a field `k` of characteristic zero it contains a copy
+`a ↦ 1 + aε` of the additive group `𝔾ₐ`. For `ℂ/ℝ` on real points the norm is `z ↦ z * conj z`.
 
 This file defines the norm on points and its kernel, computes the norm on the diagonal
 `Rˣ → (k' ⊗[k] R)ˣ` and on the units of `k'`, and proves its naturality in `R`. By the Yoneda
@@ -34,8 +34,8 @@ along the diagonal, whose quotient is the abstract group `μ_n(k' ⊗[k] R) / μ
 
 * `TauCeti.NormTorus.norm k k' R`: the norm `(k' ⊗[k] R)ˣ →* Rˣ`, the algebra norm of
   `R ⊗[k] k'` over `R` after commuting the tensor factors.
-* `TauCeti.NormTorus.normOne k k' R`: its kernel, the points over `R` of the norm kernel, which is
-  the norm-one torus when `k'/k` is finite separable.
+* `TauCeti.NormTorus.normOne k k' R`: its kernel; for `k'` free of finite rank over `k`, the points
+  over `R` of the norm kernel, which is the norm-one torus when `k'/k` is finite separable.
 * `TauCeti.NormTorus.normHom k k'`: the norm morphism `Res_{k'/k} 𝔾ₘ → 𝔾ₘ`, as a `k`-algebra map
   of coordinate algebras.
 * `TauCeti.NormTorus.diagonalRootsOfUnity k k' R n`: the image of `μ_n(R)` in `μ_n(k' ⊗[k] R)`.
@@ -160,10 +160,10 @@ section NormOne
 
 variable (k k' R)
 
-/-- **The points of the norm kernel.** The kernel of the norm `(k' ⊗[k] R)ˣ →* Rˣ`: the group of
-points over `R` of the kernel `R_{k'/k}^1 𝔾ₘ` of the norm morphism. When `k'/k` is a finite
-separable field extension (or `k'` is finite étale over `k`) this is the norm-one torus; in general
-it need not be a torus. -/
+/-- **The points of the norm kernel.** The kernel of the norm `(k' ⊗[k] R)ˣ →* Rˣ`. When `k'` is
+free of finite rank over `k`, this is the group of points over `R` of the kernel `R_{k'/k}^1 𝔾ₘ` of
+the norm morphism; if moreover `k'/k` is a finite separable field extension (or `k'` is finite
+étale over `k`) this is the norm-one torus, but in general it need not be a torus. -/
 noncomputable def normOne : Subgroup (k' ⊗[k] R)ˣ :=
   (norm k k' R).ker
 
