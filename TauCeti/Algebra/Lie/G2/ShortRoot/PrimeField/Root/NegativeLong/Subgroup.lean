@@ -73,17 +73,9 @@ theorem coe_negativeLongRootSubgroupPoints (i : Fin 2) (A : Type v) [CommRing A]
         Matrix (Fin 7) (Fin 7) A) =
       1 + u.toAdd • (tangentMatrix (negativeLongRootVector i)).map
         (algebraMap (ZMod 3) A) := by
-  have hmap (g : points (ZMod 3)) :
-      ((pointsMap (Algebra.ofId (ZMod 3) A) g : Matrix.GeneralLinearGroup (Fin 7) A) :
-          Matrix (Fin 7) (Fin 7) A) =
-        ((g : Matrix.GeneralLinearGroup (Fin 7) (ZMod 3)) :
-          Matrix (Fin 7) (Fin 7) (ZMod 3)).map (algebraMap (ZMod 3) A) := by
-    rw [coe_pointsMap]
-    ext a b
-    rfl
   rw [negativeLongRootSubgroupPoints_apply,
     ← map_inv (pointsMap (Algebra.ofId (ZMod 3) A))]
-  simp only [Subgroup.coe_mul, Units.val_mul, hmap]
+  simp only [Subgroup.coe_mul, Units.val_mul, coe_pointsMap_ofId]
   rw [coe_negativeSimpleLong, negativeLongRootVector_def, tangentMatrix_conjugateTangent]
   simp [mul_add, add_mul, ← Matrix.map_mul]
 
