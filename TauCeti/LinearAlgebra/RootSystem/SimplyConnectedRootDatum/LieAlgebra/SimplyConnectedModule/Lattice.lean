@@ -14,6 +14,7 @@ public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.LieAlgeb
 import TauCeti.Algebra.Lie.DirectSum
 import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.Weight.DirectSum
 import TauCeti.Algebra.Lie.UniversalEnveloping.Module
+import TauCeti.RepresentationTheory.Lie.AdNilpotent
 
 /-!
 # The admissible lattice of the full-weight module
@@ -48,8 +49,7 @@ weight basis is a closed subgroup scheme of `GLₙ`
 * `TauCeti.DynkinType.representation_mem_scLattice`: its stability under the Kostant form.
 * `TauCeti.DynkinType.instIsLatticeScLattice`: it is a full lattice in `V_sc(t)`.
 * `TauCeti.DynkinType.mem_iSup_jointWeightSpace_of_mem_scLattice`: it lies in the span of the
-  integral weight spaces, which is therefore all of `V_sc(t)`
-  (`TauCeti.DynkinType.iSup_jointWeightSpace_scModule_eq_top`).
+  integral weight spaces.
 * `TauCeti.DynkinType.isNilpotent_representation_scModule_rootGenerator`: the numbered raising and
   lowering generators act nilpotently on `V_sc(t)`.
 * `TauCeti.DynkinType.scWeightBasis` and `TauCeti.DynkinType.scWeight`: its numbered weight basis
@@ -144,28 +144,30 @@ theorem mem_iSup_jointWeightSpace_of_mem_scLattice {x : t.scModule ht}
   exact lof_mem_iSup_jointWeightSpace _
     (t.mem_iSup_jointWeightSpace_of_mem_fundamentalLattice ht (mem_scLattice_iff.mp hx i))
 
-/-- **`V_sc(t)` is the sum of its integral weight spaces** for the Cartan generators: the
-full-weight lattice lies in that sum and spans `V_sc(t)` over `ℚ`. -/
-theorem iSup_jointWeightSpace_scModule_eq_top :
-    ⨆ μ : Fin t.rank → ℤ, jointWeightSpace (t.lieBasis ht).h
-      (representation ℚ (t.lieAlgebra ht) (t.scModule ht)) μ = ⊤ := by
-  rw [eq_top_iff, ← Submodule.IsLattice.span_eq_top (A := ℚ) (M := t.scLattice ht),
-    Submodule.span_le]
-  exact fun _ hx => t.mem_iSup_jointWeightSpace_of_mem_scLattice ht hx
+section
+
+-- Associative algebras carry the commutator Lie bracket locally.
+attribute [local instance 100] LieRing.ofAssociativeRing
 
 /-- **The numbered raising and lowering generators act nilpotently on `V_sc(t)`**: each has a
-nonzero weight, a row of the Cartan matrix or its negative, and `V_sc(t)` is a finite-dimensional
-sum of integral weight spaces. This is the nilpotency hypothesis of the divided-power root
-subgroups of the full-weight lattice. -/
+nonzero eigenvalue `±2` under the adjoint action of its own Cartan generator, and `V_sc(t)` is
+finite dimensional. This is the nilpotency hypothesis of the divided-power root subgroups of the
+full-weight lattice. -/
 theorem isNilpotent_representation_scModule_rootGenerator (i : Fin t.rank ⊕ Fin t.rank) :
     IsNilpotent (representation ℚ (t.lieAlgebra ht) (t.scModule ht)
       (_root_.UniversalEnvelopingAlgebra.ι ℚ ((t.lieBasis ht).rootGenerator i))) := by
-  refine isNilpotent_of_iSup_jointWeightSpace_eq_top _ _ _
-    (t.iSup_jointWeightSpace_scModule_eq_top ht)
-    (fun j => (t.lieBasis ht).lie_h_rootGenerator i j) fun h0 => ?_
-  cases i with
-  | inl k => simpa using congr_fun h0 k
-  | inr k => simpa using congr_fun h0 k
+  have hk : ∃ k, (t.lieBasis ht).rootGeneratorWeight i k ≠ 0 := by
+    cases i with
+    | inl k => exact ⟨k, by
+        rw [LieAlgebra.Basis.rootGeneratorWeight_inl, lieBasis_A_eq]; simp⟩
+    | inr k => exact ⟨k, by
+        rw [LieAlgebra.Basis.rootGeneratorWeight_inr, lieBasis_A_eq]; simp⟩
+  exact hk.elim fun k hk => isNilpotent_apply_of_lie_eq_smul
+    (ρ := ((representation ℚ (t.lieAlgebra ht) (t.scModule ht)).toLieHom).comp
+      (_root_.UniversalEnvelopingAlgebra.ι ℚ))
+    (Int.cast_ne_zero.mpr hk) ((t.lieBasis ht).lie_h_rootGenerator i k)
+
+end
 
 /-! ### The weight basis -/
 
