@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RepresentationTheory.Continuous.Coinduced
-public import TauCeti.RepresentationTheory.Homological.ContCohomology.Resolution.GradedContraction
+public import TauCeti.RepresentationTheory.Homological.ContCohomology.Resolution.Graded.Contraction
 import Mathlib.Algebra.Module.Torsion.Basic
 import Mathlib.LinearAlgebra.Dual.Lemmas
 import Mathlib.RingTheory.Ideal.Int

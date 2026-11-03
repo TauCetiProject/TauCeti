@@ -567,7 +567,7 @@ protected lemma smul {f : ℝ → ℝ} {μ : Measure ℝ≥0} (c : ℝ≥0)
   have := hf.isFiniteMeasure
   have : IsFiniteMeasure ((c : ℝ≥0∞) • μ) := by
     refine ⟨?_⟩
-    rw [Measure.smul_apply, smul_eq_mul]
+    rw [_root_.smul_apply, smul_eq_mul]
     exact ENNReal.mul_lt_top ENNReal.coe_lt_top (measure_lt_top μ univ)
   refine ⟨inferInstance, fun t ht => ?_⟩
   rw [laplaceTransform_smul_measure, ENNReal.coe_toReal, ← hf.eq_laplaceTransform ht]

@@ -7,14 +7,16 @@ module
 
 public import TauCeti.Analysis.Convex.SimplicialComplex.Subdivision
 import TauCeti.Analysis.Convex.Intrinsic
+import TauCeti.Analysis.Convex.OpenSimplex
+import TauCeti.Analysis.Convex.SimplicialComplex.Carrier
 
 /-!
 # Subdividing a simplicial complex from the centroids of its simplices
 
 The *open simplex* of a simplex `s` of a geometric simplicial complex `K` is the intrinsic
-interior of its convex hull. Distinct simplices of `K` have disjoint open simplices
-(`Geometry.SimplicialComplex.disjoint_intrinsicInterior_convexHull`), so every point of `|K|` lies
-in at most one of them.
+interior of its convex hull. It contains the centroid of `s`
+(`AffineIndependent.centroid_mem_intrinsicInterior_convexHull`), and distinct simplices of `K`
+have disjoint open simplices (`Geometry.SimplicialComplex.eq_of_mem_intrinsicInterior`).
 
 Coning every simplex of a locally finite complex `K` from its centroid, in order of increasing
 dimension, subdivides `K` (`Geometry.SimplicialComplex.exists_subdivision_centroid_mem`), as in the
@@ -31,8 +33,6 @@ vertex.
 
 ## Main results
 
-* `Geometry.SimplicialComplex.disjoint_intrinsicInterior_convexHull`: distinct simplices of a
-  simplicial complex have disjoint open simplices.
 * `Geometry.SimplicialComplex.exists_subdivision_centroid_mem`: a locally finite simplicial complex
   has a locally finite subdivision each of whose simplices has as a vertex the centroid of a simplex
   of the original complex whose open simplex contains its own.
@@ -52,28 +52,6 @@ open Set
 namespace Geometry.SimplicialComplex
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
-  {K : SimplicialComplex ℝ E} {s t : Finset E}
-
-/-- Distinct simplices of a simplicial complex have disjoint open simplices: the intrinsic
-interiors of their convex hulls are disjoint. -/
-theorem disjoint_intrinsicInterior_convexHull (hs : s ∈ K.faces) (ht : t ∈ K.faces)
-    (hst : s ≠ t) :
-    Disjoint (intrinsicInterior ℝ (convexHull ℝ (s : Set E)))
-      (intrinsicInterior ℝ (convexHull ℝ (t : Set E))) := by
-  classical
-  refine Set.disjoint_left.2 fun x hxs hxt => ?_
-  -- `x` lies in the common face spanned by `s ∩ t`, a proper face of `s` or of `t`
-  have hx : x ∈ convexHull ℝ ((s ∩ t : Finset E) : Set E) := by
-    rw [Finset.coe_inter, ← K.convexHull_inter_convexHull hs ht]
-    exact ⟨intrinsicInterior_subset hxs, intrinsicInterior_subset hxt⟩
-  by_cases h : s ∩ t = s
-  · have hlt : s ∩ t ⊂ t := Finset.ssubset_iff_subset_ne.2
-      ⟨Finset.inter_subset_right, fun h' => hst (h.symm.trans h')⟩
-    exact Set.disjoint_left.1 ((K.indep ht).disjoint_convexHull_intrinsicInterior_convexHull hlt)
-      hx hxt
-  · have hlt : s ∩ t ⊂ s := Finset.ssubset_iff_subset_ne.2 ⟨Finset.inter_subset_left, h⟩
-    exact Set.disjoint_left.1 ((K.indep hs).disjoint_convexHull_intrinsicInterior_convexHull hlt)
-      hx hxs
 
 /-- **Subdivision from the centroids.** A locally finite simplicial complex `K` has a locally
 finite subdivision `L`, obtained as in the barycentric subdivision by coning every simplex of `K`
@@ -90,27 +68,31 @@ theorem exists_subdivision_centroid_mem (K : SimplicialComplex ℝ E)
           intrinsicInterior ℝ (convexHull ℝ (s : Set E))) ∧
       LocallyFinite fun t : L.faces => convexHull ℝ (t : Set E) := by
   classical
-  have hc : ∀ s : K.faces, s.1.centroid ℝ id ∈ intrinsicInterior ℝ (convexHull ℝ (s : Set E)) :=
-    fun s => (K.indep s.2).centroid_mem_intrinsicInterior_convexHull (K.nonempty_of_mem_faces s.2)
-  -- the frontier of a simplex is covered by its facets, which are simplices of `K`
+  have hc : ∀ s : K.faces, s.1.centroid ℝ id ∈ intrinsicInterior ℝ (convexHull ℝ (s : Set E)) := by
+    intro s
+    have : Nonempty s.1 := (K.nonempty_of_mem_faces s.2).coe_sort
+    -- the centroid of `s` is that of the affinely independent inclusion `s → E`
+    have he : s.1.centroid ℝ id = Finset.univ.centroid ℝ ((↑) : s.1 → E) := by
+      conv_lhs => rw [← Finset.attach_map_val (s := s.1)]
+      rw [Finset.centroid_map, Finset.univ_eq_attach]
+      rfl
+    rw [he, ← Finset.setOfPred_mem, ← Subtype.range_coe_subtype]
+    exact (K.indep s.2).centroid_mem_intrinsicInterior_convexHull
+  -- a point of the frontier of a simplex lies in the open simplex of a proper face
   have hfr : ∀ s : K.faces, intrinsicFrontier ℝ (convexHull ℝ (s : Set E)) ⊆
       ⋃ (t : K.faces) (_ : t ≠ s ∧ convexHull ℝ (t : Set E) ⊆ convexHull ℝ (s : Set E)),
         convexHull ℝ (t : Set E) := by
     intro s x hx
-    rw [(K.indep s.2).intrinsicFrontier_convexHull] at hx
-    obtain ⟨v, hv, hxv⟩ := mem_iUnion₂.1 hx
-    have hne : (s.1.erase v).Nonempty := by
-      by_contra h
-      rw [Finset.not_nonempty_iff_eq_empty.1 h, Finset.coe_empty, convexHull_empty] at hxv
-      exact hxv
-    refine mem_iUnion₂.2 ⟨⟨_, K.down_closed s.2 (Finset.erase_subset v s.1) hne⟩,
-      ⟨fun h => Finset.notMem_erase v s.1 ?_, convexHull_mono (by simp)⟩, hxv⟩
-    rw [show s.1.erase v = s.1 from congrArg Subtype.val h]
-    exact hv
+    have hcl : IsClosed (convexHull ℝ (s : Set E)) := s.1.finite_toSet.isClosed_convexHull ℝ
+    rw [← hcl.sdiff_intrinsicInterior] at hx
+    obtain ⟨t, ht, hts, hxt⟩ := exists_mem_faces_subset_mem_intrinsicInterior s.2 hx.1
+    exact mem_iUnion₂.2 ⟨⟨t, ht⟩, ⟨fun h => hx.2 (congrArg Subtype.val h ▸ hxt),
+      convexHull_mono (Finset.coe_subset.2 hts)⟩, intrinsicInterior_subset hxt⟩
   have hri : Pairwise fun s t : K.faces =>
       Disjoint (intrinsicInterior ℝ (convexHull ℝ (s : Set E)))
         (intrinsicInterior ℝ (convexHull ℝ (t : Set E))) := fun s t hst =>
-    disjoint_intrinsicInterior_convexHull s.2 t.2 fun h => hst (Subtype.ext h)
+    Set.disjoint_left.2 fun _ hxs hxt =>
+      hst (Subtype.ext (eq_of_mem_intrinsicInterior s.2 t.2 hxs hxt))
   obtain ⟨L, hLs, hLP, hLf, hLlf⟩ :=
     exists_subdivision (fun s : K.faces => convexHull ℝ (s : Set E))
     (fun s => s.1.finite_toSet.isCompact_convexHull ℝ) (fun _ => convex_convexHull ℝ _)
@@ -121,7 +103,8 @@ theorem exists_subdivision_centroid_mem (K : SimplicialComplex ℝ E)
     rw [mem_space_iff, mem_iUnion]
     exact ⟨fun ⟨s, hx⟩ => ⟨s.1, s.2, hx⟩, fun ⟨s, hs, hx⟩ => ⟨⟨s, hs⟩, hx⟩⟩
   · obtain ⟨s, hst, hts⟩ := hLf t ht
-    exact ⟨s, s.2, hst, (convex_convexHull ℝ _).intrinsicInterior_subset_intrinsicInterior
-      (convexHull_min hts (convex_convexHull ℝ _)) (subset_convexHull ℝ _ hst) (hc s)⟩
+    exact ⟨s, s.2, hst, TauCeti.intrinsicInterior_mono_of_inter_intrinsicInterior_nonempty
+      (convex_convexHull ℝ _) (convexHull_min hts (convex_convexHull ℝ _))
+      ⟨_, subset_convexHull ℝ _ hst, hc s⟩⟩
 
 end Geometry.SimplicialComplex

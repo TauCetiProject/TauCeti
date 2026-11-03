@@ -139,7 +139,7 @@ private theorem comulBase_determinant_isUnit :
           (Matrix.det (Matrix.mvPolynomialX (Fin n) (Fin n) R)))) :=
     h.map includeRight
   convert hl.mul hr using 1
-  all_goals simp
+  simp
 
 /-- The matrix-multiplication comultiplication extended across the determinant localization. -/
 noncomputable def comul :

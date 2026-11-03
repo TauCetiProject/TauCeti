@@ -110,9 +110,9 @@ theorem isIrreducible_comp_toGL_iff (ρ : Representation K (Matrix.GeneralLinear
         obtain ⟨s, z, rfl⟩ := g.exists_toGL_mul_scalar_eq
         obtain ⟨a, ha⟩ := IsIrreducible.exists_forall_apply_eq_smul
           (ρ (Matrix.GeneralLinearGroup.scalar ι z)) fun g v => by
-            simpa only [map_mul, Module.End.mul_apply] using
+            simpa only [map_mul, mul_apply_eq_comp] using
               congrArg (fun g => ρ g v) (Matrix.GeneralLinearGroup.scalar_commute z g)
-        rw [map_mul, Module.End.mul_apply, ha, map_smul]
+        rw [map_mul, mul_apply_eq_comp, ha, map_smul]
         exact S.toSubmodule.smul_mem a (S.apply_mem_toSubmodule s hv) }
   refine (eq_bot_or_eq_top T).imp (fun h => ?_) fun h => ?_
   · apply Subrepresentation.toSubmodule_injective
@@ -194,7 +194,7 @@ theorem isIntertwiningMap_charTwist_det_zpow_of_comp_toGL [IsAlgClosed K] {a t :
   obtain ⟨s, z, rfl⟩ := g.exists_toGL_mul_scalar_eq
   have hs := hf.isIntertwining s v
   simp only [MonoidHom.coe_comp, Function.comp_apply] at hs
-  simp only [charTwist_apply_apply, MonoidHom.zpow_apply, map_mul, Module.End.mul_apply, ha, hb,
+  simp only [charTwist_apply_apply, MonoidHom.zpow_apply, map_mul, mul_apply_eq_comp, ha, hb,
     map_smul, hs, SpecialLinearGroup.coeToGL_det, GeneralLinearGroup.det_scalar, smul_smul]
   rw [← Units.val_mul, ← zpow_natCast, ← zpow_mul, ← zpow_add, add_comm, one_zpow, Units.val_one,
     mul_one]
@@ -253,7 +253,7 @@ private theorem zpow_smul_eq_of_toGL_mul_scalar_eq {ρ : Representation K (Speci
   have hs : s = s' * (s'⁻¹ * s) := by group
   ext v
   conv_lhs => rw [hs, map_mul]
-  simp only [LinearMap.smul_apply, Module.End.mul_apply, ha _ _ hu, map_smul, smul_smul]
+  simp only [LinearMap.smul_apply, mul_apply_eq_comp, ha _ _ hu, map_smul, smul_smul]
   rw [← Units.val_mul, ← mul_zpow, mul_comm z, inv_mul_cancel_right]
 
 variable [IsAlgClosed K] (ρ : Representation K (SpecialLinearGroup ι K) V) (a : ℤ)
@@ -340,7 +340,7 @@ theorem existsUnique_comp_toGL_eq_and_apply_scalar :
   refine ⟨extendToGL ρ a ha, ⟨extendToGL_comp_toGL ρ a ha, extendToGL_scalar ρ a ha⟩,
     fun σ ⟨hσ, hσz⟩ => MonoidHom.ext fun g => LinearMap.ext fun v => ?_⟩
   obtain ⟨s, z, rfl⟩ := g.exists_toGL_mul_scalar_eq
-  rw [map_mul, Module.End.mul_apply, hσz, map_smul, ← MonoidHom.comp_apply, hσ,
+  rw [map_mul, mul_apply_eq_comp, hσz, map_smul, ← MonoidHom.comp_apply, hσ,
     extendToGL_toGL_mul_scalar, LinearMap.smul_apply]
 
 end Extension
@@ -398,18 +398,18 @@ theorem IsIrreducible.exists_forall_apply_eq_zpow_smul [FiniteDimensional K V]
   obtain ⟨c, hc⟩ := IsIrreducible.exists_forall_apply_eq_smul (ρ s₀) fun g v => by
     have hcomm : s₀ * g = g * s₀ := SpecialLinearGroup.toGL_injective <| by
       rw [map_mul, map_mul, hs₀, GeneralLinearGroup.scalar_commute]
-    rw [← Module.End.mul_apply, ← map_mul, hcomm, map_mul, Module.End.mul_apply]
+    rw [← mul_apply_eq_comp, ← map_mul, hcomm, map_mul, mul_apply_eq_comp]
   have hpow : ∀ (j : ℕ) (v : V), ρ (s₀ ^ j) v = c ^ j • v := fun j => by
     induction j with
     | zero => simp
-    | succ j ih => intro v; rw [pow_succ, map_mul, Module.End.mul_apply, hc, map_smul, ih,
+    | succ j ih => intro v; rw [pow_succ, map_mul, mul_apply_eq_comp, hc, map_smul, ih,
         smul_smul, pow_succ, mul_comm]
   have hcN : c ^ Fintype.card ι = 1 := by
     obtain ⟨v, hv⟩ := exists_ne (0 : V)
     have h1 : s₀ ^ Fintype.card ι = 1 := SpecialLinearGroup.toGL_injective <| by
       rw [map_pow, hs₀, ← map_pow, hu.pow_eq_one, map_one, map_one]
     have h := hpow (Fintype.card ι) v
-    rw [h1, map_one, Module.End.one_apply] at h
+    rw [h1, map_one, one_apply_eq_self] at h
     exact (smul_left_injective K hv (h.symm.trans (one_smul K v).symm) :)
   obtain ⟨a, -, ha⟩ := hζ.eq_pow_of_pow_eq_one hcN
   refine ⟨a, fun s z hs v => ?_⟩

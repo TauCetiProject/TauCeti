@@ -6,9 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Polynomial.BigOperators
+public import Mathlib.Algebra.Polynomial.Monic
 
 /-!
-# Finite products of polynomials
+# Finite sums and products of polynomials
 
 If each factor `f i` of a finite product has degree at most `n i`, then the product has degree at
 most `∑ i, n i`, and its coefficient in that degree is the product of the coefficients of the
@@ -18,7 +19,9 @@ factors in the degrees `n i`. Mathlib proves this for a uniform bound `n`
 what is needed to read off the top coefficient of a determinant whose columns have different
 degree bounds.
 
-This file also groups products of linear factors according to their constant terms.
+This file also groups products of linear factors according to their constant terms, records
+that a sum `∑ j ∈ range N, C (c j) * X ^ (N - j)` has no constant term, and computes the degree
+of geometric sums of mixed powers of equal-degree monic polynomials.
 -/
 
 public section
@@ -26,6 +29,21 @@ public section
 namespace Polynomial
 
 open Finset
+
+section Semiring
+
+variable {R : Type*} [Semiring R]
+
+/-- The polynomial `∑ j ∈ range N, C (c j) * X ^ (N - j)` has no constant term. -/
+theorem coeff_zero_sum_C_mul_X_pow_sub (c : ℕ → R) (N : ℕ) :
+    (∑ j ∈ range N, C (c j) * X ^ (N - j)).coeff 0 = 0 := by
+  rw [finsetSum_coeff]
+  refine sum_eq_zero fun j hj ↦ ?_
+  rw [coeff_C_mul_X_pow, ite_eq_right_iff]
+  have := mem_range.1 hj
+  omega
+
+end Semiring
 
 variable {ι R : Type*} [CommSemiring R]
 
@@ -64,5 +82,32 @@ theorem prod_X_add_C_eq_pow_card_filter_mul_prod_filter_ne (f : ι → R) (a : R
   rw [pow_card_filter_eq_prod_X_add_C, prod_filter_mul_prod_filter_not]
 
 end ProductGrouping
+
+/-- The geometric sum of mixed powers of two monic polynomials of equal degree has the
+expected degree in characteristic zero. -/
+theorem natDegree_geom_sum₂ {S : Type*} [CommSemiring S] [CharZero S]
+    {p q : S[X]} (hp : p.Monic) (hq : q.Monic)
+    (hdeg : p.natDegree = q.natDegree) {n : ℕ} (hn : 0 < n) :
+    (∑ i ∈ range n, p ^ i * q ^ (n - 1 - i)).natDegree = (n - 1) * p.natDegree := by
+  have hd (i : ℕ) (hi : i ∈ range n) :
+      (p ^ i * q ^ (n - 1 - i)).natDegree = (n - 1) * p.natDegree := by
+    rw [(hp.pow i).natDegree_mul (hq.pow _), hp.natDegree_pow,
+      hq.natDegree_pow, ← hdeg, ← add_mul]
+    congr 1
+    have := mem_range.mp hi
+    omega
+  apply natDegree_eq_of_le_of_coeff_ne_zero
+  · exact natDegree_sum_le_of_forall_le _ _ fun i hi ↦ (hd i hi).le
+  · have hc : (∑ i ∈ range n, p ^ i * q ^ (n - 1 - i)).coeff
+        ((n - 1) * p.natDegree) = (n : S) := by
+      rw [finsetSum_coeff]
+      trans ∑ i ∈ range n, (1 : S)
+      · apply sum_congr rfl
+        intro i hi
+        rw [← hd i hi]
+        exact ((hp.pow i).mul (hq.pow _)).coeff_natDegree
+      · simp
+    rw [hc]
+    exact_mod_cast hn.ne'
 
 end Polynomial
