@@ -87,7 +87,9 @@ theorem hasProjectiveDimensionLT_succ_of_iSup_eq_top {R : Type u} [CommRing R]
     HasProjectiveDimensionLT M (n + 1) := by
   have htop' (r : R) : ∃ k, r ∈ S k :=
     (Subring.mem_iSup_of_directed hS.directed_le).1 (htop ▸ Subring.mem_top r)
-  exact hasProjectiveDimensionLT_succ_of_isColimit (tensorSubringFunctor M hS)
-    (isColimitTensorSubringCocone htop') n fun k ↦ hasProjectiveDimensionLT_tensorProduct R M (h k)
+  have := hasProjectiveDimensionLT_succ_of_isColimit (tensorSubringFunctor M hS)
+    (isColimitTensorSubringCocone htop') n fun k ↦
+      tensorSubringFunctor_obj M hS k ▸ hasProjectiveDimensionLT_tensorProduct R M (h k)
+  rwa [tensorSubringCocone_pt] at this
 
 end ModuleCat

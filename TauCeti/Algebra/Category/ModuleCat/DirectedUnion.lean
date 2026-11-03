@@ -201,7 +201,7 @@ variable {S : ℕ → Subring R} (hS : Monotone S)
 
 /-- The sequence `n ↦ R ⊗[S n] M` of base changes of `M` along an increasing sequence of
 subrings, with transition maps `tensorSubringMap`. -/
-noncomputable abbrev tensorSubringFunctor : ℕ ⥤ ModuleCat.{u} R where
+noncomputable def tensorSubringFunctor : ℕ ⥤ ModuleCat.{u} R where
   obj n := ModuleCat.of R (R ⊗[S n] M)
   map f := ModuleCat.ofHom (tensorSubringMap M (hS f.le))
   map_id n := by
@@ -211,18 +211,56 @@ noncomputable abbrev tensorSubringFunctor : ℕ ⥤ ModuleCat.{u} R where
     ext : 1
     exact AlgebraTensorModule.ext fun r m ↦ by simp
 
+/-- The object at stage `n` of `tensorSubringFunctor M hS` is the base change `R ⊗[S n] M`. -/
+@[simp]
+theorem tensorSubringFunctor_obj (n : ℕ) :
+    (tensorSubringFunctor M hS).obj n = ModuleCat.of R (R ⊗[S n] M) :=
+  by rw [tensorSubringFunctor]
+
+/-- A transition map of `tensorSubringFunctor M hS` is `tensorSubringMap`. -/
+@[simp]
+theorem tensorSubringFunctor_map {i j : ℕ} (f : i ⟶ j) :
+    eqToHom (tensorSubringFunctor_obj M hS i).symm ≫
+        (tensorSubringFunctor M hS).map f ≫
+      eqToHom (tensorSubringFunctor_obj M hS j) =
+      ModuleCat.ofHom (tensorSubringMap M (hS f.le)) :=
+  by
+    unfold tensorSubringFunctor
+    simp
+
 /-- The cocone over `tensorSubringFunctor M hS` with point `M` and legs `r ⊗ m ↦ r • m`. -/
-noncomputable abbrev tensorSubringCocone : Cocone (tensorSubringFunctor M hS) where
+noncomputable def tensorSubringCocone : Cocone (tensorSubringFunctor M hS) where
   pt := ModuleCat.of R M
   ι :=
     { app n := ModuleCat.ofHom (LinearMap.liftBaseChange R (LinearMap.id : M →ₗ[S n] M))
       naturality i j f := by
         ext : 1
-        exact AlgebraTensorModule.ext fun r m ↦ by simp }
+        refine AlgebraTensorModule.ext fun r m ↦ ?_
+        change LinearMap.liftBaseChange R (LinearMap.id : M →ₗ[S j] M) (r ⊗ₜ m) =
+          LinearMap.liftBaseChange R (LinearMap.id : M →ₗ[S i] M) (r ⊗ₜ m)
+        simp }
+
+/-- The point of `tensorSubringCocone M hS` is `M`. -/
+@[simp]
+theorem tensorSubringCocone_pt : (tensorSubringCocone M hS).pt = ModuleCat.of R M :=
+  by rw [tensorSubringCocone]
+
+/-- The leg at stage `n` of `tensorSubringCocone M hS` is `LinearMap.liftBaseChange` of the
+identity of `M`. -/
+@[simp]
+theorem tensorSubringCocone_ι_app (n : ℕ) :
+    eqToHom (tensorSubringFunctor_obj M hS n).symm ≫
+        (tensorSubringCocone M hS).ι.app n ≫
+      eqToHom (tensorSubringCocone_pt M hS) =
+      ModuleCat.ofHom (LinearMap.liftBaseChange R (LinearMap.id : M →ₗ[S n] M)) :=
+  by
+    unfold tensorSubringCocone tensorSubringFunctor
+    simp
 
 /-- The legs of `tensorSubringCocone M hS` send `r ⊗ m` to `r • m`. -/
-theorem tensorSubringCocone_ι_app_tmul (n : ℕ) (r : R) (m : M) :
-    ((tensorSubringCocone M hS).ι.app n).hom (r ⊗ₜ m) = r • m := by
+private theorem tensorSubringCocone_ι_app_tmul (n : ℕ) (r : R) (m : M) :
+    ((tensorSubringCocone M hS).ι.app n).hom (r ⊗ₜ[S n] m : R ⊗[S n] M) = (r • m : M) := by
+  change LinearMap.liftBaseChange R (LinearMap.id : M →ₗ[S n] M) (r ⊗ₜ m) = r • m
   simp
 
 variable {M hS}
@@ -235,9 +273,8 @@ private noncomputable abbrev tensorSubringLeg (s : Cocone (tensorSubringFunctor 
 
 /-- The legs of a cocone over `tensorSubringFunctor M hS` agree on `1 ⊗ m` at every stage. -/
 private theorem tensorSubringLeg_one_tmul (s : Cocone (tensorSubringFunctor M hS)) (n : ℕ)
-    (m : M) : tensorSubringLeg s n ((1 : R) ⊗ₜ m) = tensorSubringLeg s 0 ((1 : R) ⊗ₜ m) := by
-  simp only [tensorSubringLeg, ← s.w (homOfLE (Nat.zero_le n))]
-  simp
+    (m : M) : tensorSubringLeg s n ((1 : R) ⊗ₜ m) = tensorSubringLeg s 0 ((1 : R) ⊗ₜ m) :=
+  congr($(s.w (homOfLE (Nat.zero_le n))).hom ((1 : R) ⊗ₜ[S 0] m : R ⊗[S 0] M))
 
 /-- `m ↦ tensorSubringLeg s 0 (1 ⊗ m)` is `R`-linear when the `S n` exhaust `R`: for `r ∈ S k`,
 the element `1 ⊗ r • m` is `r • (1 ⊗ m)` at stage `k`. -/
@@ -261,16 +298,25 @@ noncomputable def isColimitTensorSubringCocone (htop : ∀ r, ∃ n, r ∈ S n) 
     refine AlgebraTensorModule.ext fun r m ↦ ?_
     have h : tensorSubringLeg s n (r ⊗ₜ m) = r • tensorSubringLeg s 0 ((1 : R) ⊗ₜ m) := by
       rw [← tensorSubringLeg_one_tmul s n, tmul_eq_smul_one_tmul, map_smul]
-    simpa [← tensorSubringLeg_one_tmul_smul htop s r m] using h.symm
+    change tensorSubringLeg s 0 ((1 : R) ⊗ₜ ((tensorSubringCocone M hS).ι.app n).hom (r ⊗ₜ m)) =
+      tensorSubringLeg s n (r ⊗ₜ m)
+    rw [tensorSubringCocone_ι_app_tmul, tensorSubringLeg_one_tmul_smul htop s r m, h]
   uniq s g hg := by
-    ext m
-    simpa using congr($(hg 0).hom ((1 : R) ⊗ₜ m))
+    ext : 1
+    refine LinearMap.ext fun (m : M) ↦ ?_
+    calc g.hom m = g.hom (((tensorSubringCocone M hS).ι.app 0).hom
+          ((1 : R) ⊗ₜ[S 0] m : R ⊗[S 0] M)) := by
+          rw [tensorSubringCocone_ι_app_tmul, one_smul]
+      _ = (s.ι.app 0).hom ((1 : R) ⊗ₜ[S 0] m : R ⊗[S 0] M) :=
+          congr($(hg 0).hom ((1 : R) ⊗ₜ[S 0] m : R ⊗[S 0] M))
 
 /-- The map out of `M` induced by a cocone `s` over `tensorSubringFunctor M hS` sends `m` to the
 image of `1 ⊗ m` under any leg of `s`. -/
 theorem isColimitTensorSubringCocone_desc_apply (htop : ∀ r, ∃ n, r ∈ S n)
     (s : Cocone (tensorSubringFunctor M hS)) (n : ℕ) (m : M) :
-    ((isColimitTensorSubringCocone htop).desc s).hom m = (s.ι.app n).hom ((1 : R) ⊗ₜ m) :=
+    (eqToHom (tensorSubringCocone_pt M hS).symm ≫ (isColimitTensorSubringCocone htop).desc s).hom
+        m =
+      (eqToHom (tensorSubringFunctor_obj M hS n).symm ≫ s.ι.app n).hom ((1 : R) ⊗ₜ m) :=
   (tensorSubringLeg_one_tmul s n m).symm
 
 end Subring
