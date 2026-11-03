@@ -37,9 +37,9 @@ public section
 noncomputable section
 
 open scoped TensorProduct ComplexOrder
-open InnerProductSpace TauCeti
+open InnerProductSpace CliffordAlgebra
 
-namespace CliffordAlgebra
+namespace TauCeti
 
 variable {V S E : Type*} [AddCommGroup V] [Module ℝ V] {Q : QuadraticForm ℝ V}
   [NormedAddCommGroup S] [InnerProductSpace ℂ S] [Nontrivial S]
@@ -89,6 +89,29 @@ theorem _root_.LinearMap.cliffordMultiplicityMetric_comp {F : Type*}
     multiplicityMetric (g.comp T) (g.comp U) = multiplicityMetric T U := by
   simpa only [multiplicityMetric_apply, LinearMap.comp_apply] using
     hg (T (unitSpinor (S := S))) (U (unitSpinor (S := S)))
+
+/-- The multiplicity metric is positive definite when the spinor action is full, including
+when `E` is zero. Neither metric compatibility nor finite-dimensionality is required. -/
+@[simp]
+theorem multiplicityMetric_self_eq_zero_iff
+    [IsScalarTower ℂ (CliffordAlgebra (Q.baseChange ℂ)) S]
+    (hsurj : Function.Surjective
+      (Algebra.lsmul ℂ ℂ S : CliffordAlgebra (Q.baseChange ℂ) →ₐ[ℂ] Module.End ℂ S))
+    (T : S →ₗ[CliffordAlgebra (Q.baseChange ℂ)] E) :
+    multiplicityMetric T T = 0 ↔ T = 0 := by
+  constructor
+  · intro hT
+    have hu : T (unitSpinor (S := S)) = 0 :=
+      inner_self_eq_zero.mp ((multiplicityMetric_apply T T).symm.trans hT)
+    ext s
+    obtain ⟨a, ha⟩ := hsurj ((innerₛₗ ℂ (unitSpinor (S := S))).smulRight s)
+    have has : a • unitSpinor (S := S) = s := by
+      simpa only [Algebra.lsmul_coe, LinearMap.smulRight_apply, innerₛₗ_apply_apply,
+        inner_self_eq_one_of_norm_eq_one norm_unitSpinor, one_smul] using
+        congrArg (fun f : Module.End ℂ S => f (unitSpinor (S := S))) ha
+    rw [← has, T.map_smul, hu, smul_zero, LinearMap.zero_apply]
+  · rintro rfl
+    simp
 
 section Compatible
 
@@ -141,20 +164,6 @@ theorem multiplicityMetric_apply_of_norm_eq_one
   rw [inner_map_map_eq_multiplicityMetric hsurj hS hE,
     inner_self_eq_one_of_norm_eq_one hu, one_mul]
 
-/-- The multiplicity metric is positive definite, including when `E` is zero. -/
-@[simp]
-theorem multiplicityMetric_self_eq_zero_iff
-    (T : S →ₗ[CliffordAlgebra (Q.baseChange ℂ)] E) :
-    multiplicityMetric T T = 0 ↔ T = 0 := by
-  constructor
-  · intro hT
-    ext s
-    have hzero : inner ℂ (T s) (T s) = 0 := by
-      rw [inner_map_map_eq_multiplicityMetric hsurj hS hE, hT, mul_zero]
-    exact inner_self_eq_zero.mp hzero
-  · rintro rfl
-    simp
-
 /-- The product-metric equation uniquely determines the multiplicity metric. -/
 theorem multiplicityMetric_eq_iff
     (H : (S →ₗ[CliffordAlgebra (Q.baseChange ℂ)] E) →ₗ⋆[ℂ]
@@ -195,4 +204,4 @@ theorem inner_isotypicTensorEquivOfBijective_eq
 
 end Compatible
 
-end CliffordAlgebra
+end TauCeti
