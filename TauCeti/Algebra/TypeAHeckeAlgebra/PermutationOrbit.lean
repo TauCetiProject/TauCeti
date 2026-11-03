@@ -59,7 +59,7 @@ theorem permutationOrbit_one : permutationOrbit (n := n) q 1 = single id 1 := by
 /-- The orbit map intertwines left multiplication and the Jimbo action. -/
 theorem permutationOrbit_mul (x y : TypeAHeckeAlgebra R q n) :
     permutationOrbit q (x * y) = jimbo (Fin n) q x (permutationOrbit q y) := by
-  simp [permutationOrbit_apply, Module.End.mul_apply]
+  simp [permutationOrbit_apply, mul_apply_eq_comp]
 
 private theorem jimbo_T_single_perm (i : Fin (n - 1)) (σ : Equiv.Perm (Fin n)) :
     jimbo (Fin n) q (T q i) (single (σ : Fin n → Fin n) 1) =
@@ -133,7 +133,7 @@ theorem range_permutationOrbit :
       simpa using P.add_mem (ihx v hv) (ihy v hv)
     | mul x y hx hy ihx ihy =>
       intro v hv
-      simpa only [map_mul, Module.End.mul_apply] using ihx _ (ihy v hv)
+      simpa only [map_mul, mul_apply_eq_comp] using ihx _ (ihy v hv)
   refine le_antisymm ?_ (Submodule.span_le.mpr ?_)
   · rintro v ⟨x, rfl⟩
     exact hstable x _ (Submodule.subset_span ⟨1, rfl⟩)

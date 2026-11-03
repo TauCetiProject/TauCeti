@@ -224,10 +224,10 @@ theorem representation_casimirElement_mem_genWeightSpace {mu : H → K} {m : M}
         (UniversalEnvelopingAlgebra.representation K L M (casimirElement K L) m)
       = (((toEnd K H M x - mu x • (1 : Module.End K M)) ^ k) *
           UniversalEnvelopingAlgebra.representation K L M (casimirElement K L)) m :=
-        (Module.End.mul_apply _ _ _).symm
+        (mul_apply_eq_comp _ _ _).symm
     _ = (UniversalEnvelopingAlgebra.representation K L M (casimirElement K L) *
           ((toEnd K H M x - mu x • (1 : Module.End K M)) ^ k)) m := by rw [(hcomm x).pow_left k]
-    _ = 0 := by rw [Module.End.mul_apply, hk, map_zero]
+    _ = 0 := by rw [mul_apply_eq_comp, hk, map_zero]
 
 variable (M) in
 /-- **The Casimir operator of a weight space**: the operator by which the Casimir element acts on
@@ -265,7 +265,7 @@ theorem casimirGenWeightSpaceEnd_eq_sum {ι : Type*} [DecidableEq ι] [Fintype �
   have hval := DFunLike.congr_fun (representation_casimirElement_eq_sum_weight (M := M) H bs)
     (m : M)
   rw [hswap] at hval
-  simp only [LinearMap.sum_apply, Module.End.mul_apply, toEnd_apply_apply] at hval
+  simp only [LinearMap.sum_apply, mul_apply_eq_comp, toEnd_apply_apply] at hval
   simpa only [coe_casimirGenWeightSpaceEnd_apply, LinearMap.sum_apply,
     AddSubmonoidClass.coe_finsetSum, coe_raiseLowerEnd_apply] using hval
 

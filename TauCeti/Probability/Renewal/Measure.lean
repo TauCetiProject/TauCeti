@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Probability.Renewal.Count
 public import TauCeti.Probability.Renewal.Moments
+import TauCeti.Probability.Independence.InfinitePi
 
 /-!
 # The renewal measure and the renewal function
@@ -86,7 +87,7 @@ theorem renewalMeasure_def (μ : Measure α) :
 
 theorem renewalMeasure_apply (μ : Measure α) {s : Set α} (hs : MeasurableSet s) :
     μ.renewalMeasure s = ∑' n, μ.convolutionPower n s := by
-  rw [renewalMeasure_def, sum_apply _ hs]
+  rw [renewalMeasure_def, MeasureTheory.Measure.sum_apply _ hs]
 
 /-- Each convolution power is dominated by the renewal measure. -/
 theorem convolutionPower_le_renewalMeasure (μ : Measure α) (n : ℕ) :
@@ -125,8 +126,9 @@ theorem conv_renewalMeasure [MeasurableAdd₂ α] (μ : Measure α) [SFinite μ]
 theorem renewalMeasure_eq_dirac_add_conv [MeasurableAdd₂ α] (μ : Measure α) [SFinite μ] :
     μ.renewalMeasure = dirac 0 + μ ∗ μ.renewalMeasure := by
   ext s hs
-  rw [conv_renewalMeasure, add_apply, sum_apply _ hs, renewalMeasure_apply _ hs,
-    tsum_eq_zero_add' ENNReal.summable, convolutionPower_zero]
+  rw [conv_renewalMeasure, _root_.add_apply, MeasureTheory.Measure.sum_apply _ hs,
+    renewalMeasure_apply _ hs,
+    tsum_eq_zero_add' CompleteLattice.summable, convolutionPower_zero]
 
 end RenewalMeasure
 
@@ -150,13 +152,14 @@ theorem renewalFunction_def (t : ℝ≥0) :
 powers. -/
 theorem renewalFunction_eq_tsum [SFinite μ] (t : ℝ≥0) :
     μ.renewalFunction t = ∑' n, μ.convolutionPower (n + 1) (Iic t) := by
-  rw [renewalFunction_def, conv_renewalMeasure, sum_apply _ measurableSet_Iic]
+  rw [renewalFunction_def, conv_renewalMeasure, MeasureTheory.Measure.sum_apply _ measurableSet_Iic]
 
 /-- The renewal measure of `[0, t]` is one more than the renewal function at `t`: the extra unit
 is the point mass `μ^{∗0} = δ₀`. -/
 theorem renewalMeasure_Iic [SFinite μ] (t : ℝ≥0) :
     μ.renewalMeasure (Iic t) = 1 + μ.renewalFunction t := by
-  rw [renewalMeasure_eq_dirac_add_conv, add_apply, dirac_apply_of_mem (by simp : (0 : ℝ≥0) ∈ Iic t),
+  rw [renewalMeasure_eq_dirac_add_conv, _root_.add_apply,
+    dirac_apply_of_mem (by simp : (0 : ℝ≥0) ∈ Iic t),
     renewalFunction_def]
 
 /-- The renewal function is nondecreasing in time. -/
@@ -220,11 +223,9 @@ theorem renewalFunction_lt_top (hμ : μ {0} < 1) (t : ℝ≥0) : μ.renewalFunc
   -- Realize i.i.d. increments with law `μ` as the coordinates of the product measure.
   set P := Measure.infinitePi fun _ : ℕ ↦ μ
   have hT : ∀ n, Measurable fun w : ℕ → ℝ≥0 ↦ w n := measurable_pi_apply
-  have hindep : iIndepFun (fun n (w : ℕ → ℝ≥0) ↦ w n) P :=
-    iIndepFun_infinitePi (P := fun _ : ℕ ↦ μ) (X := fun _ x ↦ x) fun _ ↦ measurable_id
+  have hindep : iIndepFun _ P := TauCeti.Probability.iIndepFun_eval_infinitePi _
+  have hid (n : ℕ) : IdentDistrib _ _ P P := μ.identDistrib_eval_infinitePi n 0
   have hmap : ∀ n, P.map (fun w ↦ w n) = μ := fun n ↦ infinitePi_map_eval _ n
-  have hid : ∀ n, IdentDistrib (fun w : ℕ → ℝ≥0 ↦ w n) (fun w ↦ w 0) P P := fun n ↦
-    ⟨(hT n).aemeasurable, (hT 0).aemeasurable, by rw [hmap, hmap]⟩
   have hzero : P {w | w 0 = 0} < 1 := by
     rwa [← hmap 0, map_apply (hT 0) (measurableSet_singleton 0)] at hμ
   rw [← hmap 0, ← TauCeti.Probability.lintegral_renewalCount hindep hid t]

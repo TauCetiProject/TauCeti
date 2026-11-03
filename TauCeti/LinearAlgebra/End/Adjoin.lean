@@ -65,7 +65,7 @@ theorem exists_smul_eq_of_mem_adjoin {R K V : Type*} [CommSemiring R] [CommSemir
   | mul T S _ _ hT hS =>
       obtain ⟨c, hc⟩ := hT
       obtain ⟨d, hd⟩ := hS
-      exact ⟨c * d, by rw [Module.End.mul_apply, hd, map_smul, hc, smul_smul, mul_comm]⟩
+      exact ⟨c * d, by rw [mul_apply_eq_comp, hd, map_smul, hc, smul_smul, mul_comm]⟩
 
 /-- **A submodule invariant under a generating set of the endomorphism algebra is trivial.** Over
 a field, if `s` generates `Module.End K M` as an algebra, then the only submodules invariant under
