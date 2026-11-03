@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.RCLike.Basic
-public import TauCeti.RepresentationTheory.ClassicalGroups.TensorPower
+public import TauCeti.RepresentationTheory.ClassicalGroups.TensorPower.Basic
 
 /-!
 # The standard Hermitian form on a tensor power

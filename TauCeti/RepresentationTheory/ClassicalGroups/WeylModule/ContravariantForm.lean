@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.RepresentationTheory.ClassicalGroups.TensorPowerForm
+public import TauCeti.RepresentationTheory.ClassicalGroups.TensorPower.Form
 public import TauCeti.RepresentationTheory.ClassicalGroups.WeylModule.Rational
 
 /-!

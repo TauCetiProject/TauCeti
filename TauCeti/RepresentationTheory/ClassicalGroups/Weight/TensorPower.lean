@@ -7,7 +7,7 @@ module
 
 -- The tensor-power representation of `GL n k`, the symmetric-group action on the same space, and
 -- the commutation of the two.
-public import TauCeti.RepresentationTheory.ClassicalGroups.TensorPower
+public import TauCeti.RepresentationTheory.ClassicalGroups.TensorPower.Basic
 -- The weight spaces of a representation with a basis of weight vectors.
 public import TauCeti.RepresentationTheory.ClassicalGroups.Weight.Basis
 -- The multiplicity vector `TauCeti.weightOfMultiset` of a multiset, and its torus character.
