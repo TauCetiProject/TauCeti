@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Exact.Basic
+public import TauCeti.Algebra.Category.ModuleCat.Tower.Basic
 public import TauCeti.RingTheory.AdicCompletion.Principal
 import Mathlib.Algebra.FiveLemma
 import Mathlib.RingTheory.Finiteness.Ideal
@@ -18,13 +19,13 @@ import TauCeti.RingTheory.AdicCompletion.Nilpotent
 # Derived completeness of modules
 
 Let `I` be an ideal of a commutative ring `R`. For `f ∈ R`, the *telescope* map
-`(xₙ) ↦ (xₙ - f • xₙ₊₁)` on sequences `ℕ → M` is the shift map of the tower `M ←f M ←f ⋯`
-(`TauCeti.ModuleTower.shift`, written here on sequences so that `M` need not be bundled), so its
-kernel and cokernel are the `lim` and `lim¹` of this tower. A module `M` is *derived
-`I`-complete* when the telescope map is bijective for every `f ∈ I`, that is, when `lim` and
-`lim¹` of every tower `M ←f M ←f ⋯` with `f ∈ I` vanish. Since the derived limit of this tower is
-`RHom_R(R[1/f], M)`, this is the condition `RHom_R(R[1/f], M) = 0` for all `f ∈ I` (Stacks,
-Tag 091P), stated without derived categories.
+`(xₙ) ↦ (xₙ - f • xₙ₊₁)` on sequences `ℕ → M` is the shift map `TauCeti.ModuleTower.shift` of the
+tower `M ←f M ←f ⋯` (`TauCeti.ModuleTower.shift_smulTower`), so its kernel and cokernel are the
+`lim` and `lim¹` of this tower. A module `M` is *derived `I`-complete* when the telescope map is
+bijective for every `f ∈ I`, that is, when `lim` and `lim¹` of every tower `M ←f M ←f ⋯` with
+`f ∈ I` vanish (`TauCeti.isDerivedComplete_iff_lim_eq_bot_and_subsingleton_limOne`). Since the
+derived limit of this tower is `RHom_R(R[1/f], M)`, this is the condition `RHom_R(R[1/f], M) = 0`
+for all `f ∈ I` (Stacks, Tag 091P), stated without derived categories.
 
 Derived completeness is a homological replacement for classical completeness that behaves well
 in exact sequences. Derived complete modules are closed under kernels, cokernels, extensions and
@@ -39,10 +40,15 @@ not a unit, the free module `⊕_ℕ R` is not derived `f`-complete, although `R
 ## Main definitions
 
 * `TauCeti.telescope M f`: the map `(xₙ) ↦ (xₙ - f • xₙ₊₁)` on `ℕ → M`.
+* `TauCeti.ModuleTower.smulTower M f`: the tower `M ←f M ←f ⋯`, whose shift map is
+  `TauCeti.telescope M f`.
 * `TauCeti.IsDerivedComplete I M`: `M` is derived `I`-complete.
 
 ## Main results
 
+* `TauCeti.isDerivedComplete_iff_lim_eq_bot_and_subsingleton_limOne`: `M` is derived
+  `I`-complete if and only if every tower `M ←f M ←f ⋯` with `f ∈ I` has vanishing `lim` and
+  `lim¹`.
 * `TauCeti.IsDerivedComplete.ker`, `TauCeti.IsDerivedComplete.quotient_range`,
   `TauCeti.IsDerivedComplete.of_exact`: kernels, cokernels and extensions of derived complete
   modules are derived complete.
@@ -78,7 +84,8 @@ section Telescope
 
 variable (M) in
 /-- The telescope map `(xₙ) ↦ (xₙ - f • xₙ₊₁)` on sequences in `M`. It is the shift map of the
-tower `M ←f M ←f ⋯`, so its kernel and cokernel are the `lim` and `lim¹` of this tower. -/
+tower `M ←f M ←f ⋯` (`TauCeti.ModuleTower.shift_smulTower`), so its kernel and cokernel are the
+`lim` and `lim¹` of this tower. -/
 def telescope (f : R) : (ℕ → M) →ₗ[R] (ℕ → M) :=
   LinearMap.id - f • LinearMap.funLeft R M Nat.succ
 
@@ -112,6 +119,28 @@ theorem eq_sum_range_add_pow_smul_of_telescope_eq {f : R} {z c : ℕ → M}
       rw [← h, telescope_apply, sub_add_cancel]
     rw [ih, hn, smul_add, smul_smul, ← pow_succ, sum_range_succ, add_assoc, add_assoc]
 
+variable (M) in
+/-- The tower `M ←f M ←f ⋯` whose transition maps are multiplication by `f`. -/
+@[expose] def ModuleTower.smulTower (f : R) : ModuleTower R :=
+  CategoryTheory.Functor.ofOpSequence (X := fun _ ↦ ModuleCat.of R M) fun _ ↦
+    ModuleCat.ofHom (f • LinearMap.id)
+
+/-- The transition maps of `M ←f M ←f ⋯` are multiplication by `f`. -/
+@[simp]
+theorem ModuleTower.smulTower_transition (f : R) (n : ℕ) :
+    (ModuleTower.smulTower M f).transition n = (f • LinearMap.id : M →ₗ[R] M) := by
+  simp only [ModuleTower.smulTower, ModuleTower.transition_def,
+    CategoryTheory.Functor.ofOpSequence_map_homOfLE_succ]
+  -- `ModuleCat.hom_ofHom`, stated for the carrier `M` rather than `ModuleCat.of R M`
+  rfl
+
+/-- The telescope map of `f` is the shift map of the tower `M ←f M ←f ⋯`. -/
+theorem ModuleTower.shift_smulTower (f : R) :
+    (ModuleTower.smulTower M f).shift = telescope M f := by
+  ext x n
+  rw [ModuleTower.shift_apply, ModuleTower.smulTower_transition]
+  rfl
+
 end Telescope
 
 variable (I M) in
@@ -126,6 +155,16 @@ def IsDerivedComplete : Prop :=
 theorem isDerivedComplete_iff :
     IsDerivedComplete I M ↔ ∀ f ∈ I, Bijective (telescope M f) :=
   Iff.rfl
+
+/-- A module `M` is derived `I`-complete exactly when for every `f ∈ I` the tower
+`M ←f M ←f ⋯` has vanishing `lim` and `lim¹`. -/
+theorem isDerivedComplete_iff_lim_eq_bot_and_subsingleton_limOne :
+    IsDerivedComplete I M ↔ ∀ f ∈ I, (ModuleTower.smulTower M f).lim = ⊥ ∧
+      Subsingleton (ModuleTower.smulTower M f).limOne := by
+  refine forall₂_congr fun f _ ↦ ?_
+  rw [ModuleTower.lim_eq_ker, LinearMap.ker_eq_bot, ModuleTower.subsingleton_limOne_iff,
+    ModuleTower.shift_smulTower]
+  rfl
 
 namespace IsDerivedComplete
 
@@ -184,15 +223,12 @@ theorem of_exact {M₁ M₂ : Type*} [AddCommGroup M₁] [Module R M₁] [AddCom
   intro f hf
   -- The five lemma, for the rows `0 → (ℕ → M₁) → (ℕ → M) → (ℕ → M₂) → 0`.
   have hex : Exact (g.compLeft ℕ) (g'.compLeft ℕ) := Exact.piMap fun _ ↦ hgg'
-  have hex₀ : Exact (0 : Unit →ₗ[R] ℕ → M₁) (g.compLeft ℕ) := fun y ↦
-    ⟨fun hy ↦ ⟨(), (hg.comp_left (hy.trans (map_zero (g.compLeft ℕ)).symm)).symm⟩,
-      fun ⟨_, hy⟩ ↦ hy ▸ map_zero _⟩
-  have hex₁ : Exact (g'.compLeft ℕ) (0 : (ℕ → M₂) →ₗ[R] Unit) := fun y ↦
-    ⟨fun _ ↦ hg'.comp_left y, fun _ ↦ rfl⟩
+  have hex₀ := (LinearMap.exact_zero_iff_injective Unit (g.compLeft ℕ)).mpr hg.comp_left
+  have hex₁ := (LinearMap.exact_zero_iff_surjective Unit (g'.compLeft ℕ)).mpr hg'.comp_left
   exact ⟨LinearMap.injective_of_surjective_of_injective_of_injective _ (g.compLeft ℕ)
       (g'.compLeft ℕ) _ (g.compLeft ℕ) (g'.compLeft ℕ) 0 (telescope M₁ f) (telescope M f)
       (telescope M₂ f) (by ext; simp) (compLeft_comp_telescope f g) (compLeft_comp_telescope f g')
-      hex₀ hex hex₀ (fun _ ↦ ⟨(), rfl⟩) (h₁.bijective hf).1 (h₂.bijective hf).1,
+      hex₀ hex hex₀ (surjective_to_subsingleton _) (h₁.bijective hf).1 (h₂.bijective hf).1,
     LinearMap.surjective_of_surjective_of_surjective_of_injective (g.compLeft ℕ)
       (g'.compLeft ℕ) _ (g.compLeft ℕ) (g'.compLeft ℕ) _ (telescope M₁ f) (telescope M f)
       (telescope M₂ f) 0 (compLeft_comp_telescope f g) (compLeft_comp_telescope f g')
