@@ -36,6 +36,7 @@ The result is a homomorphism from `K₁(A)` to the additive group of functionals
   stabilization `GL (Fin m) A → GL (Fin n) A`.
 * `TauCeti.AlgebraicK1.oddPairing_mk`: on the class of an invertible matrix, the pairing on `K₁`
   is the odd pairing of the matrix.
+* `TauCeti.AlgebraicK1.oddPairing_map`: the pairing is natural for algebra homomorphisms.
 
 ## References
 
@@ -91,6 +92,20 @@ theorem oddPairing_mk (m n : ℕ) (u : GL (Fin n) A) :
     oddPairing A M m (mk A n u) =
       .ofAdd (cyclicCohomology.oddPairing u m ∘ₗ matrixExtension M (Fin n) (2 * m + 1)) :=
   lift_mk ..
+
+/-- **Naturality of the odd pairing on algebraic `K₁`**: for an algebra homomorphism
+`f : A →ₐ[ℂ] B`, the image of a class `x` under `K₁(A) → K₁(B)` pairs with a class of `B` as `x`
+pairs with the pullback of the class along `f`. -/
+theorem oddPairing_map {B : Type _} [Ring B] [Algebra ℂ B] (f : A →ₐ[ℂ] B) (m : ℕ)
+    (x : AlgebraicK1 A) :
+    (oddPairing B M m (map (f : A →+* B) x)).toAdd =
+      (oddPairing A M m x).toAdd ∘ₗ (cyclicCohomology.map M (f : A →ₙₐ[ℂ] B) (2 * m + 1)).hom := by
+  obtain ⟨n, u, rfl⟩ := exists_mk x
+  refine LinearMap.ext fun c ↦ ?_
+  simp only [map_mk, oddPairing_mk, toAdd_ofAdd, LinearMap.comp_apply]
+  rw [matrixExtension_map, ← cyclicCohomology.oddPairing_map]
+  refine congrArg (fun v ↦ cyclicCohomology.oddPairing v m _) (Units.ext ?_)
+  simp
 
 end AlgebraicK1
 
