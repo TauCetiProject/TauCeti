@@ -184,10 +184,7 @@ private lemma atkinLehnerAntiInvolutionGamma1_bar_mem_doubleCoset_of_primitive
       push_cast
       rw [hB00, hσ00, ZMod.natCast_self]
       ring
-    · obtain ⟨_, ⟨g₁, hg₁, rfl⟩, _, ⟨g₂, hg₂, rfl⟩, rfl⟩ := mem_doubleCoset.mp hy
-      exact mem_doubleCoset.mpr ⟨mapGL ℚ ((σ : SL(2, ℤ)) * g₁),
-        Subgroup.mem_map_of_mem _ (mul_mem σ.2 hg₁), mapGL ℚ g₂, Subgroup.mem_map_of_mem _ hg₂,
-        by rw [map_mul, mul_assoc, mul_assoc, mul_assoc]⟩
+    · exact (DoubleCoset.mul_mem_doubleCoset_iff hσ₀).mpr hy
   have hσx := hdescend hA rfl ⟨c, hc⟩ hx₀
   have hσbar := hdescend (atkinLehnerAntiInvolution_bar_val N hx A hA c hc) (by simp)
     ⟨A 0 1, by simp⟩ hbar₀
