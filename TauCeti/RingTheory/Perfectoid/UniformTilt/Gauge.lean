@@ -64,14 +64,10 @@ variable [NonarchimedeanRing (uniformTilt p B)]
 An ambient Tate-ring instance can be supplied by `uniformTilt.isTateRing_of_sharp`. -/
 noncomputable def tiltRoots (ϖ : PseudoUniformizerRoots p B) :
     PseudoUniformizerRoots p (uniformTilt p B) where
-  roots := ⟨fun n ↦ uniformTilt.mk (fun m ↦ ϖ.root (n + m)) (fun m ↦ by
-      simpa [Nat.add_assoc] using ϖ.root_succ_pow (n + m)), fun n ↦ by
-    apply uniformTilt.ext
-    intro m
-    simp only [map_pow, uniformTilt.coeff_mk]
-    simpa [Nat.add_assoc, Nat.add_comm, Nat.add_left_comm] using ϖ.root_succ_pow (n + m)⟩
+  roots := Perfection.liftMonoidHom p (uniformTilt p B) (uniformTilt p B)
+    (MonoidHom.id _) ϖ.toTilt
   isPseudoUniformizer := by
-    simpa only [Perfection.coeffMonoidHom_mk, Nat.zero_add, toTilt] using
+    simpa only [Perfection.coeffMonoidHom_zero_liftMonoidHom, MonoidHom.id_apply] using
       ϖ.isPseudoUniformizer_toTilt
   pow_dvd := by
     have hz : (p : uniformTilt p B) = 0 := by
@@ -87,8 +83,12 @@ root of the original parameter. -/
 @[simp]
 theorem coeff_tiltRoots_root (ϖ : PseudoUniformizerRoots p B) (n m : ℕ) :
     uniformTilt.coeff p B m (ϖ.tiltRoots.root n) = ϖ.root (n + m) := by
-  rw [← coeffMonoidHom_roots, tiltRoots, Perfection.coeffMonoidHom_mk,
-    uniformTilt.coeff_mk]
+  have hpow : ϖ.tiltRoots.root n ^ p ^ n = ϖ.toTilt := by
+    rw [← coeffMonoidHom_roots, Perfection.coeffMonoidHom_pow_p_pow_self,
+      tiltRoots, Perfection.coeffMonoidHom_zero_liftMonoidHom, MonoidHom.id_apply]
+  have hcoeff := congrArg (uniformTilt.coeff p B (m + n)) hpow
+  rw [map_pow, uniformTilt.coeff_pow_p_pow, coeff_toTilt] at hcoeff
+  simpa only [Nat.add_comm] using hcoeff
 
 /-- The tilted root system starts at the original compatible sequence. -/
 @[simp]
