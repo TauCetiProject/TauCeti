@@ -60,35 +60,18 @@ variable {𝕜 E F G : Type*} [Field 𝕜] [LinearOrder 𝕜] [IsStrictOrderedRi
   [Module 𝕜 E] [AddCommGroup F] [Module 𝕜 F] [AddCommGroup G] [Module 𝕜 G]
   {K : SimplicialComplex 𝕜 E} {f : E → F} {s : Finset E} {t : Finset F}
 
+open scoped Classical in
 /-- The image of a geometric simplicial complex `K` under a map `f` which is injective on the
 underlying space of `K` and agrees with an affine map on the convex hull of each face of `K`: its
-faces are the images of the faces of `K`. -/
-def map (K : SimplicialComplex 𝕜 E) (f : E → F) (hf : InjOn f K.space)
+faces are the images of the faces of `K`, as in the image `PreAbstractSimplicialComplex.map` of the
+underlying abstract complex. -/
+noncomputable def map (K : SimplicialComplex 𝕜 E) (f : E → F) (hf : InjOn f K.space)
     (haff : ∀ s ∈ K.faces, ∃ g : E →ᵃ[𝕜] F, EqOn f g (convexHull 𝕜 (s : Set E))) :
     SimplicialComplex 𝕜 F where
-  faces := {t | ∃ s ∈ K.faces, f '' (s : Set E) = t}
-  isRelLowerSet_faces := by
-    rintro t ⟨s, hs, hst⟩
-    have hmem {y : F} (hy : y ∈ t) : ∃ x ∈ s, f x = y := by
-      rw [← mem_coe, ← hst] at hy
-      exact hy
-    refine ⟨?_, fun u hut hu => ?_⟩
-    · obtain ⟨x, hx⟩ := K.nonempty_of_mem_faces hs
-      exact ⟨f x, by rw [← mem_coe, ← hst]; exact mem_image_of_mem f hx⟩
-    classical
-    refine ⟨{x ∈ s | f x ∈ u}, K.down_closed hs (filter_subset _ _) ?_, ?_⟩
-    · obtain ⟨y, hy⟩ := hu
-      obtain ⟨x, hx, rfl⟩ := hmem (hut hy)
-      exact ⟨x, mem_filter.2 ⟨hx, hy⟩⟩
-    · ext y
-      simp only [coe_filter, mem_image, mem_ofPred_eq, mem_coe]
-      refine ⟨?_, fun hy => ?_⟩
-      · rintro ⟨x, ⟨-, hx⟩, rfl⟩
-        exact hx
-      · obtain ⟨x, hx, rfl⟩ := hmem (hut hy)
-        exact ⟨x, ⟨hx, hy⟩, rfl⟩
+  toPreAbstractSimplicialComplex := K.toPreAbstractSimplicialComplex.map f
   indep := by
     rintro t ⟨s, hs, hst⟩
+    replace hst : f '' (s : Set E) = t := by rw [← hst, coe_image]
     obtain ⟨g, hg⟩ := haff s hs
     have hinj : InjOn g (convexHull 𝕜 (range ((↑) : s → E))) := by
       rw [Subtype.range_coe]
@@ -99,6 +82,8 @@ def map (K : SimplicialComplex 𝕜 E) (f : E → F) (hf : InjOn f K.space)
     exact ((K.indep hs).map_of_injOn_convexHull g hinj).range.mono hrange.ge
   inter_subset_convexHull := by
     rintro t₁ t₂ ⟨s₁, hs₁, h₁⟩ ⟨s₂, hs₂, h₂⟩
+    replace h₁ : f '' (s₁ : Set E) = t₁ := by rw [← h₁, coe_image]
+    replace h₂ : f '' (s₂ : Set E) = t₂ := by rw [← h₂, coe_image]
     obtain ⟨g₁, hg₁⟩ := haff s₁ hs₁
     obtain ⟨g₂, hg₂⟩ := haff s₂ hs₂
     rw [← h₁, ← h₂, ← hg₁.image_convexHull, ← hg₂.image_convexHull,
@@ -113,12 +98,12 @@ variable {hf : InjOn f K.space}
 /-- The faces of the image of `K` are the images of the faces of `K`. -/
 @[simp]
 theorem mem_map_faces : t ∈ (K.map f hf haff).faces ↔ ∃ s ∈ K.faces, f '' (s : Set E) = t :=
-  Iff.rfl
+  exists_congr fun _ => and_congr_right fun _ => by classical rw [← coe_inj, coe_image]
 
 /-- The image of a face of `K` is a face of the image of `K`. -/
 theorem image_mem_map_faces [DecidableEq F] (hs : s ∈ K.faces) :
     s.image f ∈ (K.map f hf haff).faces :=
-  ⟨s, hs, (coe_image).symm⟩
+  mem_map_faces.2 ⟨s, hs, coe_image.symm⟩
 
 /-- The image of `K` triangulates the image of the underlying space of `K`. -/
 @[simp]
@@ -153,11 +138,8 @@ theorem vertices_map : (K.map f hf haff).vertices = f '' K.vertices := by
   exact ⟨x, hsx ▸ hs, hmem hx⟩
 
 /-- The image of a complex with finitely many faces has finitely many faces. -/
-theorem finite_faces_map (h : K.faces.Finite) : (K.map f hf haff).faces.Finite := by
-  classical
-  refine (h.image (Finset.image f)).subset ?_
-  rintro t ⟨s, hs, hst⟩
-  exact ⟨s, hs, coe_injective (by rw [coe_image, hst])⟩
+theorem finite_faces_map (h : K.faces.Finite) : (K.map f hf haff).faces.Finite :=
+  h.image _
 
 /-- Two maps which agree on the underlying space of `K` have the same image complex. -/
 theorem map_congr {f' : E → F} (h : EqOn f f' K.space) {hf' : InjOn f' K.space}

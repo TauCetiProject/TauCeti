@@ -35,7 +35,7 @@ on the ray from `p` remains in the convex hull (`Finset.exists_lineMap_centroid_
 
 This is what makes a point outside a "visible" set lie off the affine span of every simplex in it,
 as used for cones of geometric simplicial complexes. It also shows that an affine map injective on
-the convex hull of a finite set is injective on its affine span
+the convex hull of a set is injective on its affine span
 (`AffineMap.injOn_affineSpan_iff_injOn_convexHull`), so it carries an affinely independent family
 to an affinely independent one as soon as it is injective on the convex hull of the family
 (`AffineIndependent.map_of_injOn_convexHull`). A map which agrees with an affine map on the convex
@@ -200,36 +200,50 @@ namespace AffineMap
 
 variable {F : Type*} [AddCommGroup F] [Module 𝕜 F]
 
-/-- An affine map whose linear part kills a direction `v` of the affine span of a finite set `s` is
-not injective on the convex hull of `s`, unless `v = 0`. -/
-theorem eq_zero_of_injOn_convexHull (f : E →ᵃ[𝕜] F) {s : Finset E}
-    (hf : Set.InjOn f (convexHull 𝕜 (s : Set E))) {v : E} (hv : v ∈ vectorSpan 𝕜 (s : Set E))
+/-- An affine map whose linear part kills a direction `v` of the affine span of a set `s` is not
+injective on the convex hull of `s`, unless `v = 0`. -/
+theorem eq_zero_of_injOn_convexHull (f : E →ᵃ[𝕜] F) {s : Set E}
+    (hf : Set.InjOn f (convexHull 𝕜 s)) {v : E} (hv : v ∈ vectorSpan 𝕜 s)
     (hfv : f.linear v = 0) : v = 0 := by
-  rcases s.eq_empty_or_nonempty with rfl | hs
-  · simpa using hv
-  set c : E := s.centroid 𝕜 _root_.id
-  have hc : c ∈ affineSpan 𝕜 (s : Set E) :=
-    convexHull_subset_affineSpan _ (s.centroid_mem_convexHull hs)
-  have hcv : c - v ∈ affineSpan 𝕜 (s : Set E) := by
+  classical
+  -- `v` already lies in the vector span of a finite subset `t` of `s`
+  obtain ⟨t, hts, hv⟩ : ∃ t : Finset E, (t : Set E) ⊆ s ∧ v ∈ vectorSpan 𝕜 (t : Set E) := by
+    rcases s.eq_empty_or_nonempty with rfl | ⟨p, hp⟩
+    · exact ⟨∅, by simp, by simpa using hv⟩
+    rw [vectorSpan_eq_span_vsub_set_right (k := 𝕜) hp] at hv
+    obtain ⟨u, hu, hvu⟩ := Submodule.mem_span_finite_of_mem_span hv
+    obtain ⟨t, hts, rfl⟩ := Finset.subset_set_image_iff.1 hu
+    refine ⟨insert p t, by simpa [Set.insert_subset_iff] using ⟨hp, hts⟩, ?_⟩
+    rw [vectorSpan_eq_span_vsub_set_right (k := 𝕜) (mem_coe.2 (mem_insert_self p t))]
+    refine Submodule.span_mono ?_ hvu
+    rw [coe_image, coe_insert]
+    exact Set.image_mono (Set.subset_insert _ _)
+  replace hf := hf.mono (convexHull_mono hts)
+  rcases t.eq_empty_or_nonempty with ht | ht
+  · simpa [ht] using hv
+  set c : E := t.centroid 𝕜 _root_.id
+  have hc : c ∈ affineSpan 𝕜 (t : Set E) :=
+    convexHull_subset_affineSpan _ (t.centroid_mem_convexHull ht)
+  have hcv : c - v ∈ affineSpan 𝕜 (t : Set E) := by
     rw [sub_eq_neg_add]
     exact AffineSubspace.vadd_mem_of_mem_direction
       (by rw [direction_affineSpan]; exact neg_mem hv) hc
-  obtain ⟨ε, hε, hmem⟩ := s.exists_lineMap_centroid_mem_convexHull hs hcv
+  obtain ⟨ε, hε, hmem⟩ := t.exists_lineMap_centroid_mem_convexHull ht hcv
   -- the point `c + ε • v` beyond the centroid lies in the hull and has the image of `c`
   have hpt : lineMap (c - v) c (1 + ε) = ε • v + c := by
     rw [lineMap_apply_module']
     module
   rw [hpt] at hmem
-  have heq : ε • v + c = c := hf hmem (s.centroid_mem_convexHull hs) <| by
+  have heq : ε • v + c = c := hf hmem (t.centroid_mem_convexHull ht) <| by
     rw [← vadd_eq_add, map_vadd, map_smul, hfv, smul_zero, zero_vadd]
   simpa [hε.ne'] using heq
 
-/-- An affine map is injective on the affine span of a finite set as soon as it is injective on
-its convex hull. -/
-theorem injOn_affineSpan_iff_injOn_convexHull (f : E →ᵃ[𝕜] F) (s : Finset E) :
-    Set.InjOn f (affineSpan 𝕜 (s : Set E)) ↔ Set.InjOn f (convexHull 𝕜 (s : Set E)) := by
+/-- An affine map is injective on the affine span of a set as soon as it is injective on its convex
+hull. -/
+theorem injOn_affineSpan_iff_injOn_convexHull (f : E →ᵃ[𝕜] F) (s : Set E) :
+    Set.InjOn f (affineSpan 𝕜 s) ↔ Set.InjOn f (convexHull 𝕜 s) := by
   refine ⟨fun h => h.mono (convexHull_subset_affineSpan _), fun h x hx y hy hxy => ?_⟩
-  have hv : x -ᵥ y ∈ vectorSpan 𝕜 (s : Set E) := by
+  have hv : x -ᵥ y ∈ vectorSpan 𝕜 s := by
     rw [← direction_affineSpan]
     exact AffineSubspace.vsub_mem_direction hx hy
   have := f.eq_zero_of_injOn_convexHull h hv (by rw [linear_apply_vsub, hxy, vsub_self])
@@ -242,26 +256,24 @@ soon as the map is injective on the convex hull of the family. -/
 theorem AffineIndependent.map_of_injOn_convexHull {F : Type*} [AddCommGroup F] [Module 𝕜 F]
     {p : ι → E} (hp : AffineIndependent 𝕜 p) (f : E →ᵃ[𝕜] F)
     (hf : Set.InjOn f (convexHull 𝕜 (Set.range p))) : AffineIndependent 𝕜 (f ∘ p) := by
-  classical
   rw [affineIndependent_iff] at hp ⊢
   intro s w hw hfw
   refine hp s w hw ?_
   rcases s.eq_empty_or_nonempty with rfl | ⟨i₀, hi₀⟩
   · simp
-  -- the combination `∑ w i • p i` is a direction of the affine span of the points `p i`, `i ∈ s`
+  -- the combination `∑ w i • p i` is a direction of the affine span of the points `p i`
   have hsum : ∑ i ∈ s, w i • p i = ∑ i ∈ s, w i • (p i -ᵥ p i₀) := by
     simp [vsub_eq_sub, smul_sub, Finset.sum_sub_distrib, ← Finset.sum_smul, hw]
-  have hv : ∑ i ∈ s, w i • p i ∈ vectorSpan 𝕜 ((s.image p : Finset E) : Set E) := by
+  have hv : ∑ i ∈ s, w i • p i ∈ vectorSpan 𝕜 (Set.range p) := by
     rw [hsum]
-    exact Submodule.sum_mem _ fun i hi => Submodule.smul_mem _ _ <|
-      vsub_mem_vectorSpan 𝕜 (by simpa using ⟨i, hi, rfl⟩) (by simpa using ⟨i₀, hi₀, rfl⟩)
-  refine f.eq_zero_of_injOn_convexHull (hf.mono (convexHull_mono ?_)) hv ?_
-  · simp
-  · have hlin : ∀ i, f.linear (p i) = f (p i) - f 0 := fun i => by
-      rw [← vsub_eq_sub, ← f.linear_apply_vsub, vsub_eq_sub, sub_zero]
-    simp only [map_sum, map_smul, hlin, smul_sub, Finset.sum_sub_distrib, ← Finset.sum_smul, hw,
-      zero_smul, sub_zero]
-    simpa using hfw
+    exact Submodule.sum_mem _ fun i _ => Submodule.smul_mem _ _ <|
+      vsub_mem_vectorSpan 𝕜 (Set.mem_range_self i) (Set.mem_range_self i₀)
+  refine f.eq_zero_of_injOn_convexHull hf hv ?_
+  have hlin : ∀ i, f.linear (p i) = f (p i) - f 0 := fun i => by
+    rw [← vsub_eq_sub, ← f.linear_apply_vsub, vsub_eq_sub, sub_zero]
+  simp only [map_sum, map_smul, hlin, smul_sub, Finset.sum_sub_distrib, ← Finset.sum_smul, hw,
+    zero_smul, sub_zero]
+  simpa using hfw
 
 namespace Affine.Simplex
 
