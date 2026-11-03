@@ -105,7 +105,7 @@ theorem disjoint_schwarzChristoffelBoundary_outer_images_of_sum_eq_neg_one
   rw [disjoint_left]
   rintro z ⟨x, hx, rfl⟩ ⟨y, hy, hxy⟩
   have hxsum : -1 < ∑ i with a i = x, e i :=
-    Finset.lt_sum_filter_of_lt_zero_of_forall_ne_zero_le (γ := OrderDual ℝ)
+    Finset.lt_sum_filter_of_lt_zero_of_forall_ne_zero_le (α := OrderDual ℝ)
       Finset.univ (by norm_num) hp (fun i _ hi => hleft i hi) hx
   have hysum : -1 < ∑ i with a i = y, e i :=
     Finset.lt_sum_filter_of_lt_zero_of_forall_ne_zero_le
