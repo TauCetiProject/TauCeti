@@ -17,8 +17,10 @@ parameter, not just the identity plus a tangent vector. The formulas and paramet
 hold over every commutative `𝔽₃`-algebra, including nonreduced algebras, by specialization
 of the corresponding results for the integral toral closure over arbitrary commutative rings.
 
-These are subgroups of the carrier generated over `𝔽₃`. No identification with the pinned
-simply connected group scheme, or with the reduction of the integral toral closure, is asserted.
+These are subgroups of the carrier generated over `𝔽₃`. Their points are identified, as
+matrices, with their integral-toral-closure counterparts. No group-level identification of the
+carrier with the reduction of the integral toral closure, or with the pinned simply connected
+group scheme, is asserted.
 
 ## References
 
@@ -68,8 +70,12 @@ theorem coe_negativeShortRootSubgroupPoints_eq_integral (i : Fin 2) (A : Type v)
   rw [negativeShortRootSubgroupPoints_apply,
     IntegralToralClosure.negativeShortRootSubgroupPoints_apply]
   split_ifs <;>
-    simp only [rankOneWordPoints_def, IntegralToralClosure.rankOneWordPoints_def,
-      Subgroup.coe_mul, Subgroup.coe_inv, coe_rootSubgroupPoints]
+    simp only [rankOneWordPoints_def, Subgroup.coe_mul, Subgroup.coe_inv,
+      IntegralToralClosure.coe_rankOneWordPoints,
+      UniversalEnvelopingAlgebra.kostantToralWeylPoint_def,
+      UniversalEnvelopingAlgebra.coe_kostantToralRootSubgroupPoints,
+      ← IntegralToralClosure.coe_rootSubgroupPoints_eq_kostantRootSubgroupMatrix,
+      coe_rootSubgroupPoints]
 
 /-- The exact quadratic root formula over every commutative coefficient algebra. -/
 @[simp↓]

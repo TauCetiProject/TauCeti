@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Lie.G2.ShortRoot.IntegralToralClosure.Basic
+public import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.Scheme.ToralClosure.Weyl
 
 /-!
 # Negative nonsimple short-root subgroups of the integral G₂ toral closure
@@ -82,13 +83,17 @@ def rankOneWordPoints (j : Fin 2) (A : Type v) [CommRing A] : points A :=
     rootSubgroupPoints (.inl j) A (Multiplicative.ofAdd (-1)) *
       rootSubgroupPoints (.inr j) A (Multiplicative.ofAdd 1)
 
-/-- The rank-one word is the indicated product of three numbered simple-root points. -/
-theorem rankOneWordPoints_def (j : Fin 2) (A : Type v) [CommRing A] :
-    rankOneWordPoints j A =
-      rootSubgroupPoints (.inr j) A (Multiplicative.ofAdd 1) *
-        rootSubgroupPoints (.inl j) A (Multiplicative.ofAdd (-1)) *
-          rootSubgroupPoints (.inr j) A (Multiplicative.ofAdd 1) :=
-  (rfl)
+/-- The rank-one word is the generic Kostant toral Weyl representative in the weight basis. -/
+theorem coe_rankOneWordPoints (j : Fin 2) (A : Type v) [CommRing A] :
+    (rankOneWordPoints j A : Matrix.GeneralLinearGroup (Fin 7) A) =
+      (UniversalEnvelopingAlgebra.kostantToralWeylPoint
+        (serreRootGenerator CartanMatrix.G₂)
+        (serreH ℚ CartanMatrix.G₂) rep lattice.toAddSubgroup
+        rep_kostantForm_mem_lattice isNilpotent_rep_serreRootGenerator latticeBasis weight
+        (.inr j) (.inl j) A : Matrix.GeneralLinearGroup (Fin 7) A) := by
+  simp only [rankOneWordPoints, UniversalEnvelopingAlgebra.kostantToralWeylPoint_def,
+    Subgroup.coe_mul, coe_rootSubgroupPoints_eq_kostantRootSubgroupMatrix,
+    UniversalEnvelopingAlgebra.coe_kostantToralRootSubgroupPoints]
 
 private def shortConjugator (i : Fin 2) (A : Type v) [CommRing A] : points A :=
   if i = 0 then rankOneWordPoints 1 A else rankOneWordPoints 0 A * rankOneWordPoints 1 A
@@ -132,10 +137,13 @@ private theorem shortConjugatorMatrix_coefficients (i : Fin 2) :
     negativeShortRootDividedSquareMatrix]
   fin_cases i <;> decide +kernel
 
-private theorem coe_rankOneWordPoints (j : Fin 2) (A : Type v) [CommRing A] :
+private theorem coe_rankOneWordPoints_matrix (j : Fin 2) (A : Type v) [CommRing A] :
     ((rankOneWordPoints j A : Matrix.GeneralLinearGroup (Fin 7) A) :
       Matrix (Fin 7) (Fin 7) A) = (shortWordMatrix j).map (Int.castRingHom A) := by
-  simp only [rankOneWordPoints, Subgroup.coe_mul, Units.val_mul, coe_rootSubgroupPoints,
+  rw [coe_rankOneWordPoints, UniversalEnvelopingAlgebra.kostantToralWeylPoint_def]
+  simp only [Subgroup.coe_mul,
+    UniversalEnvelopingAlgebra.coe_kostantToralRootSubgroupPoints,
+    ← coe_rootSubgroupPoints_eq_kostantRootSubgroupMatrix, Units.val_mul, coe_rootSubgroupPoints,
     toAdd_ofAdd, neg_one_sq, one_pow, one_smul, neg_smul, shortWordMatrix,
     Matrix.map_mul, Matrix.map_add _ (map_add _), Matrix.map_sub _ (map_sub _),
     Matrix.map_one _ (map_zero _) (map_one _)]
@@ -145,7 +153,8 @@ private theorem coe_shortConjugator (i : Fin 2) (A : Type v) [CommRing A] :
     ((shortConjugator i A : Matrix.GeneralLinearGroup (Fin 7) A) : Matrix (Fin 7) (Fin 7) A) =
       (shortConjugatorMatrix i).map (Int.castRingHom A) := by
   unfold shortConjugator shortConjugatorMatrix
-  split_ifs <;> simp only [Subgroup.coe_mul, Units.val_mul, coe_rankOneWordPoints, Matrix.map_mul]
+  split_ifs <;>
+    simp only [Subgroup.coe_mul, Units.val_mul, coe_rankOneWordPoints_matrix, Matrix.map_mul]
 
 private theorem coe_shortConjugator_inv (i : Fin 2) (A : Type v) [CommRing A] :
     (((shortConjugator i A)⁻¹ : Matrix.GeneralLinearGroup (Fin 7) A) :
@@ -154,6 +163,15 @@ private theorem coe_shortConjugator_inv (i : Fin 2) (A : Type v) [CommRing A] :
   apply Units.inv_eq_of_mul_eq_one_right
   rw [coe_shortConjugator, ← Matrix.map_mul, shortConjugatorMatrix_orthogonal,
     Matrix.map_one _ (map_zero _) (map_one _)]
+
+private theorem coe_conj_apply (i : Fin 2) (A : Type v) [CommRing A] (g : points A) :
+    (((shortConjugator i A * g * (shortConjugator i A)⁻¹ : points A) :
+        Matrix.GeneralLinearGroup (Fin 7) A) : Matrix (Fin 7) (Fin 7) A) =
+      (shortConjugatorMatrix i).map (Int.castRingHom A) *
+        (g : Matrix.GeneralLinearGroup (Fin 7) A).val *
+          (shortConjugatorMatrix i).transpose.map (Int.castRingHom A) := by
+  simp only [Subgroup.coe_mul, Subgroup.coe_inv, Units.val_mul,
+    coe_shortConjugator_inv, coe_shortConjugator]
 
 /-- The exact quadratic root formula over every commutative coefficient ring. -/
 @[simp↓]
@@ -170,10 +188,8 @@ theorem coe_negativeShortRootSubgroupPoints (i : Fin 2) (A : Type v) [CommRing A
   have hI := congrArg (fun M : Matrix (Fin 7) (Fin 7) ℤ => M.map (Int.castRingHom A))
     (shortConjugatorMatrix_orthogonal i)
   simp only [Matrix.map_mul, Matrix.map_one _ (map_zero _) (map_one _)] at hX hY hI
-  rw [negativeShortRootSubgroupPoints, MonoidHom.comp_apply, MulEquiv.coe_toMonoidHom,
-    MulAut.conj_apply, Subgroup.coe_mul, Subgroup.coe_mul, Subgroup.coe_inv,
-    Units.val_mul, Units.val_mul,
-    coe_shortConjugator, coe_shortConjugator_inv, coe_rootSubgroupPoints]
+  simp only [negativeShortRootSubgroupPoints, MonoidHom.comp_apply,
+    MulEquiv.coe_toMonoidHom, MulAut.conj_apply, coe_conj_apply, coe_rootSubgroupPoints]
   simp only [Int.coe_castRingHom] at hX hY hI ⊢
   simp only [mul_add, add_mul, mul_one, mul_smul_comm, smul_mul_assoc, hX, hY, hI]
 
@@ -224,19 +240,21 @@ private theorem shortCoefficient_support (i n : Fin 2) :
     simp only [shortCoefficient, negativeShortRootMatrix, negativeShortRootDividedSquareMatrix] <;>
     decide +kernel
 
-private theorem diagonal_mul_shortCoefficient (i n : Fin 2) (A : Type v) [CommRing A]
-    (s : Fin 2 → Aˣ) :
+private theorem diagonal_mul_of_shortRoot_support (i : Fin 2)
+    (X : Matrix (Fin 7) (Fin 7) ℤ) (n : ℕ)
+    (hX : ∀ a b, X a b ≠ 0 → weight a - weight b = n • weight (if i = 0 then 5 else 6))
+    (A : Type v) [CommRing A] (s : Fin 2 → Aˣ) :
     Matrix.diagonal (fun a => (torusCharacter s (weight a) : A)) *
-        (shortCoefficient i n).map (Int.castRingHom A) =
-      (torusCharacter s (weight (if i = 0 then 5 else 6)) : A) ^ (n.val + 1) •
-        (shortCoefficient i n).map (Int.castRingHom A) *
+        X.map (Int.castRingHom A) =
+      (torusCharacter s (weight (if i = 0 then 5 else 6)) : A) ^ n •
+        X.map (Int.castRingHom A) *
           Matrix.diagonal (fun a => (torusCharacter s (weight a) : A)) := by
   ext a b
-  by_cases h : shortCoefficient i n a b = 0
+  by_cases h : X a b = 0
   · simp [Matrix.diagonal_mul, Matrix.mul_diagonal, h]
-  · have hw := eq_add_of_sub_eq (shortCoefficient_support i n a b h)
+  · have hw := eq_add_of_sub_eq (hX a b h)
     have hc : torusCharacter s (weight a) =
-        torusCharacter s (weight (if i = 0 then 5 else 6)) ^ (n.val + 1) *
+        torusCharacter s (weight (if i = 0 then 5 else 6)) ^ n *
           torusCharacter s (weight b) := by
       rw [hw, torusCharacter_add, torusCharacter_nsmul]
     simp only [Matrix.diagonal_mul, Matrix.mul_diagonal, Matrix.smul_apply,
@@ -254,10 +272,11 @@ theorem weightTorusPoints_conj_negativeShortRootSubgroupPoints (i : Fin 2) (A : 
   rw [mul_inv_eq_iff_eq_mul]
   apply Subtype.ext
   apply Units.ext
-  have hX := diagonal_mul_shortCoefficient i 0 A s
-  have hY := diagonal_mul_shortCoefficient i 1 A s
-  simp only [shortCoefficient, Fin.isValue, Fin.one_eq_zero_iff, Nat.reduceEqDiff, ↓reduceIte,
-    Fin.val_zero, Fin.val_one, zero_add, pow_one, Nat.reduceAdd] at hX hY
+  have hX := diagonal_mul_of_shortRoot_support i (negativeShortRootMatrix i) 1
+    (shortCoefficient_support i 0) A s
+  have hY := diagonal_mul_of_shortRoot_support i (negativeShortRootDividedSquareMatrix i) 2
+    (shortCoefficient_support i 1) A s
+  simp only [pow_one] at hX
   simp only [Subgroup.coe_mul, Units.val_mul, coe_negativeShortRootSubgroupPoints,
     coe_weightTorusPoints_eq_diagonal, toAdd_ofAdd, mul_add, add_mul, mul_one, one_mul,
     mul_smul_comm, smul_mul_assoc, hX, hY, smul_smul, mul_pow,
