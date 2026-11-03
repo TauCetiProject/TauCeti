@@ -68,7 +68,7 @@ theorem six_mul_apply_eq_of_cyclic_eq_zero
         T z (y + w) (y + w) z - T (x + w) y y (x + w) + T (x + z) y y (x + z) -
         T (x + w) z z (x + w) + T (x + z) w w (x + z) + T w y y w - T z y y z +
         T x z z x - T x w w x := by
-  simp only [map_add, add_apply]
+  simp only [map_add, LinearMap.add_apply]
   linear_combination 3 * h₂ x y z w + 2 * h₃ x y z w - 2 * h₃ x y w z - 2 * h₁ x z y w +
     h₂ x z y w - h₃ x z w y + 2 * h₁ x w y z - h₂ x w y z + h₁ x w z y - 2 * h₂ y z x w +
     2 * h₁ y z w x + 2 * h₂ y w x z - h₁ y w z x - h₃ y w z x + h₁ z w z w +
@@ -103,13 +103,15 @@ theorem apply_apply_apply_apply_eq_zero_of_not_linearIndependent [NoZeroDivisors
     simpa [LinearIndependent.pair_iff] using hxy
   have hx : s * s * T x y y x = 0 := by
     have := congrArg (fun v ↦ T v y y (s • x)) hst
-    simp only [map_add, map_smul, add_apply, smul_apply, smul_eq_mul, hd, map_zero,
-      zero_apply] at this
+    simp only [LinearMap.add_apply, LinearMap.smul_apply, hd, LinearMap.zero_apply, map_add,
+      map_smul, smul_eq_mul,
+      map_zero] at this
     linear_combination this
   have hy : t * t * T x y y x = 0 := by
     have := congrArg (fun v ↦ T x v (t • y) x) hst
-    simp only [map_add, map_smul, add_apply, smul_apply, smul_eq_mul, hd, map_zero,
-      zero_apply] at this
+    simp only [LinearMap.add_apply, LinearMap.smul_apply, smul_eq_mul, hd, LinearMap.zero_apply,
+      map_add,
+      map_smul, map_zero] at this
     linear_combination this
   by_cases hs : s = 0
   · exact (mul_eq_zero.1 hy).resolve_left (mul_ne_zero (fun ht ↦ hne ⟨hs, ht⟩)

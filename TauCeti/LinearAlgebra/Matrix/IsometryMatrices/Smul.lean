@@ -43,9 +43,9 @@ theorem isometryMatrices_smul_eq_comap (f : R →+* S) {c : R} (hc : ∀ z, c * 
   have key (a b : R) : c * a = c * b ↔ f a = f b := by
     rw [← sub_eq_zero, ← mul_sub, hc, map_sub, sub_eq_zero]
   ext X
-  simp only [Submonoid.mem_comap, mem_isometryMatrices, RingHom.mapMatrix_apply, ← transpose_map,
-    ← Matrix.map_mul, Matrix.mul_smul, Matrix.smul_mul, ← Matrix.ext_iff, smul_apply, smul_eq_mul,
-    map_apply, key]
+  simp only [Matrix.smul_apply, smul_eq_mul, Submonoid.mem_comap, mem_isometryMatrices,
+    RingHom.mapMatrix_apply, ← transpose_map, ← Matrix.map_mul, Matrix.mul_smul,
+    Matrix.smul_mul, ← Matrix.ext_iff, map_apply, key]
 
 /-- **Counting matrices preserving a scaled Gram matrix.** Let `f` be surjective and let `c` have
 annihilator `ker f`. Then the `Nat.card` of the matrices preserving `c • A` is

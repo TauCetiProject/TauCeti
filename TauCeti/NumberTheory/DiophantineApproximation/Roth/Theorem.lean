@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.NumberTheory.DiophantineApproximation.Exponent
+public import TauCeti.NumberTheory.DiophantineApproximation.HeightApproximation
 public import TauCeti.NumberTheory.DiophantineApproximation.Roth.Auxiliary
 public import TauCeti.NumberTheory.DiophantineApproximation.Roth.IndexEstimate
 public import TauCeti.NumberTheory.DiophantineApproximation.Roth.KeyInequality
@@ -281,42 +281,10 @@ Liouville number with any exponent `p > 2`. -/
 theorem _root_.IsAlgebraic.not_liouvilleWith {α : ℝ} (hα : IsAlgebraic ℚ α) {p : ℝ}
     (hp : 2 < p) : ¬LiouvilleWith p α := by
   intro hL
-  -- Approximations `r` with `|α - r| < den(r) ^ (-q)` for `κ < q < p` have height
-  -- `H(r) ≤ A den(r)`, so all but finitely many of them satisfy `|r - α| ≤ H(r) ^ (-κ)`.
-  obtain ⟨q, hq, hqp⟩ := exists_between hp
-  obtain ⟨κ, hκ, hκq⟩ := exists_between hq
-  set A := |α| + 1
-  have hA : 1 ≤ A := by linarith [abs_nonneg α]
-  obtain ⟨N, hN⟩ := exists_nat_ge (A ^ (κ / (q - κ)))
-  refine hL.infinite_setOf_abs_sub_lt_rpow_neg hqp <|
-    ((hα.finite_setOfPred_abs_sub_le_mulHeight₁_rpow_neg hκ).union
-      (Northcott.finite_le (h := mulHeight₁ (K := ℚ)) (A * N))).subset fun r hr ↦ ?_
-  have hr : |α - r| < (r.den : ℝ) ^ (-q) := hr
-  have hd : (1 : ℝ) ≤ r.den := by exact_mod_cast r.pos
-  have hr1 : |α - r| < 1 := hr.trans_le (rpow_le_one_of_one_le_of_nonpos hd (by linarith))
-  have hrA : |(r : ℝ)| ≤ A := by
-    have := abs_sub_abs_le_abs_sub (r : ℝ) α
-    rw [abs_sub_comm] at this
-    linarith
-  have hH : mulHeight₁ r ≤ A * r.den := (Rat.mulHeight₁_le_max_one_abs_mul_den r).trans
-    (mul_le_mul_of_nonneg_right (max_le hA hrA) (by positivity))
-  rcases lt_or_ge (r.den : ℝ) N with hdN | hdN
-  · exact Or.inr (hH.trans (by gcongr))
-  refine Or.inl ((abs_sub_comm (r : ℝ) α).trans_le (hr.le.trans ?_))
-  have hAd : A ^ κ ≤ (r.den : ℝ) ^ (q - κ) :=
-    calc A ^ κ = (A ^ (κ / (q - κ))) ^ (q - κ) := by
-          rw [← rpow_mul (by linarith), div_mul_cancel₀ _ (by linarith)]
-      _ ≤ (N : ℝ) ^ (q - κ) := rpow_le_rpow (by positivity) hN (by linarith)
-      _ ≤ (r.den : ℝ) ^ (q - κ) := rpow_le_rpow (by positivity) hdN (by linarith)
-  calc (r.den : ℝ) ^ (-q) = (r.den : ℝ) ^ (-κ) / (r.den : ℝ) ^ (q - κ) := by
-        rw [← rpow_sub (by positivity)]
-        ring_nf
-    _ ≤ (r.den : ℝ) ^ (-κ) / A ^ κ :=
-        div_le_div_of_nonneg_left (by positivity) (by positivity) hAd
-    _ = (A * r.den) ^ (-κ) := by
-        rw [mul_rpow (by positivity) (by positivity), rpow_neg (by positivity : (0 : ℝ) ≤ A) κ]
-        ring
-    _ ≤ mulHeight₁ r ^ (-κ) := rpow_le_rpow_of_nonpos (mulHeight₁_pos r) hH (by linarith)
+  obtain ⟨κ, hκ, hκp⟩ := exists_between hp
+  exact hL.infinite_setOf_abs_sub_lt_mulHeight₁_rpow_neg hκp <|
+    (hα.finite_setOfPred_abs_sub_le_mulHeight₁_rpow_neg hκ).subset fun r hr ↦
+      (abs_sub_comm (r : ℝ) α).trans_le hr.le
 
 /-- The irrationality exponent of a real algebraic number is at most two. -/
 theorem _root_.IsAlgebraic.irrationalityExponent_le_two {α : ℝ} (hα : IsAlgebraic ℚ α) :

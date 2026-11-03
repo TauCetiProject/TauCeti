@@ -373,7 +373,7 @@ theorem exists_nonempty_equiv_rationalWeylSLRep (hρ : IsRationalSLRep ρ) [ρ.I
         ∀ v, ρ s v = ((z ^ a : ℂˣ) : ℂ) • v := by
     rcases Nat.eq_zero_or_pos n with rfl | hn
     · refine ⟨0, fun s z _ v => ?_⟩
-      rw [Subsingleton.elim s 1, map_one, zpow_zero, Units.val_one, one_smul, Module.End.one_apply]
+      rw [Subsingleton.elim s 1, map_one, zpow_zero, Units.val_one, one_smul, one_apply_eq_self]
     · have : NeZero (Fintype.card (Fin n) : ℂ) := ⟨by simpa using hn.ne'⟩
       exact Representation.IsIrreducible.exists_forall_apply_eq_zpow_smul ρ
   have : (ρ.extendToGL a ha).IsIrreducible :=
