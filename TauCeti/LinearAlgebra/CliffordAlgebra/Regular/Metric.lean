@@ -8,6 +8,8 @@ module
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Regular.Basic
 public import TauCeti.LinearAlgebra.CliffordAlgebra.ScalarTrace.Positivity
 public import Mathlib.Analysis.InnerProductSpace.Defs
+-- Private: naturality of the Clifford/exterior equivalence is used only in the map proof.
+import TauCeti.LinearAlgebra.CliffordAlgebra.Contraction
 
 /-!
 # The positive metric on real regular Clifford spinors
@@ -109,6 +111,31 @@ theorem regularBilinForm_spin_mul (g : spinGroup Q) (x y : CliffordAlgebra Q) :
       regularBilinForm Q x y :=
   regularBilinForm_unitary_mul Q (spinGroup.coe_star_mul_self g) x y
 
+section Isometry
+
+variable {N : Type*} [AddCommGroup N] [Module R N] {Q' : QuadraticForm R N}
+
+/-- Every quadratic isometry preserves the regular scalar-part form, without a
+finiteness or definiteness assumption. -/
+theorem regularBilinForm_map (f : Q →qᵢ Q') (x y : CliffordAlgebra Q) :
+    regularBilinForm Q' (map f x) (map f y) = regularBilinForm Q x y := by
+  simp only [regularBilinForm_apply, ← map_star, ← map_mul, scalarTrace_apply,
+    equivExterior_map]
+  have h : ExteriorAlgebra.algebraMapInv.comp (ExteriorAlgebra.map f.toLinearMap) =
+      ExteriorAlgebra.algebraMapInv :=
+    ExteriorAlgebra.hom_ext <| LinearMap.ext fun m ↦ by
+      simp [ExteriorAlgebra.algebraMapInv]
+  exact AlgHom.congr_fun h _
+
+/-- Quadratic isometry equivalences preserve the regular scalar-part form. -/
+theorem regularBilinForm_equivOfIsometry (f : Q.IsometryEquiv Q')
+    (x y : CliffordAlgebra Q) :
+    regularBilinForm Q' (equivOfIsometry f x) (equivOfIsometry f y) =
+      regularBilinForm Q x y :=
+  regularBilinForm_map Q f.toIsometry x y
+
+end Isometry
+
 section Basis
 
 variable {I : Type*} [LinearOrder I] {b : Module.Basis I R M}
@@ -183,23 +210,5 @@ theorem regularInnerProductCore_inner (hQ : (-Q).PosDef) (x y : CliffordAlgebra 
     (regularInnerProductCore Q hQ).inner x y = regularBilinForm Q x y := (rfl)
 
 end Real
-
-section Field
-
-variable {K V W : Type*} [Field K] [Invertible (2 : K)]
-  [AddCommGroup V] [Module K V] [FiniteDimensional K V]
-  [AddCommGroup W] [Module K W] [FiniteDimensional K W]
-  (Q : QuadraticForm K V) {Q' : QuadraticForm K W}
-
-/-- Quadratic isometries preserve the regular scalar-part form, over any field in which
-`2` is invertible. No definiteness is required. -/
-theorem regularBilinForm_equivOfIsometry (f : Q.IsometryEquiv Q')
-    (x y : CliffordAlgebra Q) :
-    regularBilinForm Q' (equivOfIsometry f x) (equivOfIsometry f y) =
-      regularBilinForm Q x y := by
-  simp only [regularBilinForm_apply, equivOfIsometry_apply, ← map_star, ← map_mul]
-  exact scalarTrace_eq_of_algEquiv (equivOfIsometry f) _
-
-end Field
 
 end CliffordAlgebra
