@@ -51,7 +51,7 @@ noncomputable def generatorCoordinateAlgebraBaseChangeIso :
 
 /-- Each root or torus generator over `K` is the scalar extension of the corresponding generator
 over `k`, under the coordinate identifications of `GL₂₄` and the generator's domain. -/
-private theorem generatorCoordinateMap_baseChange (j : Sum (Fin 4 ⊕ Fin 4) Unit) :
+theorem generatorCoordinateMap_baseChange (j : Sum (Fin 4 ⊕ Fin 4) Unit) :
     ((GeneralLinear.coordinateHopfAlgebraBaseChangeIso k K 24).inv ≫
         CommHopfAlgCat.baseChangeMap (generatorCoordinateMap k j)) ≫
         (generatorCoordinateAlgebraBaseChangeIso k K j).hom =
