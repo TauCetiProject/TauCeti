@@ -11,6 +11,8 @@ public import Mathlib.LinearAlgebra.Matrix.ToLinearEquiv
 public import Mathlib.Algebra.Group.Subgroup.Pointwise
 public import Mathlib.LinearAlgebra.Matrix.Dual
 public import Mathlib.LinearAlgebra.Transvection.Basic
+import TauCeti.Algebra.Ring.Hom
+import TauCeti.LinearAlgebra.Matrix.MulVec
 
 /-!
 # Unitary transvections
@@ -139,21 +141,16 @@ theorem unitaryTransvection_smul (c : K) (v : n → K) (a : K) :
   rw [unitaryTransvection, unitaryTransvection, RingHom.comp_smul, smul_vecMul, vecMulVec_smul,
     smul_vecMulVec, smul_smul, smul_smul, mul_right_comm a (σ c) c]
 
-omit [DecidableEq n] in
-/-- The rank-one part `v (vᵀ ^ σ Q)` of a transvection along an isotropic vector squares to zero. -/
-private theorem vecMulVec_mul_vecMulVec_eq_zero {v : n → K}
-    (hv : (σ ∘ v) ⬝ᵥ (Q *ᵥ v) = 0) (x : n → K) :
-    vecMulVec x ((σ ∘ v) ᵥ* Q) * vecMulVec v ((σ ∘ v) ᵥ* Q) = 0 := by
-  rw [vecMulVec_mul_vecMulVec, ← dotProduct_mulVec, hv, zero_smul, vecMulVec_zero]
-
 /-- **Unitary transvections along an isotropic vector are additive in the parameter**:
 `τ_{v,a} τ_{v,b} = τ_{v,a+b}`. -/
 theorem unitaryTransvection_mul_unitaryTransvection {v : n → K}
     (hv : (σ ∘ v) ⬝ᵥ (Q *ᵥ v) = 0) (a b : K) :
     Q.unitaryTransvection σ v a * Q.unitaryTransvection σ v b =
       Q.unitaryTransvection σ v (a + b) := by
+  -- The rank-one part `v (vᵀ ^ σ Q)` squares to zero, as its row pairs to zero with `v`.
+  have hv' : (σ ∘ v) ᵥ* Q ⬝ᵥ v = 0 := (dotProduct_mulVec _ _ _).symm.trans hv
   simp only [unitaryTransvection, Matrix.add_mul, Matrix.mul_add, Matrix.one_mul, Matrix.mul_one,
-    smul_mul_smul_comm, vecMulVec_mul_vecMulVec_eq_zero hv, smul_zero, add_zero, add_smul]
+    smul_mul_smul_comm, vecMulVec_mul_vecMulVec_eq_zero hv', smul_zero, add_zero, add_smul]
   abel
 
 /-- **A transvection along an isotropic vector has determinant one.** -/
@@ -213,9 +210,10 @@ theorem transpose_map_unitaryTransvection_mul_mul (hσ : Function.Involutive σ)
     vecMulVec_mul _ _ _
   have h₂ : Q * vecMulVec v ((σ ∘ v) ᵥ* Q) = vecMulVec (Q *ᵥ v) ((σ ∘ v) ᵥ* Q) :=
     mul_vecMulVec _ _ _
+  have hv' : (σ ∘ v) ᵥ* Q ⬝ᵥ v = 0 := (dotProduct_mulVec _ _ _).symm.trans hv
   rw [hT, unitaryTransvection]
   simp only [Matrix.add_mul, Matrix.mul_add, Matrix.one_mul, Matrix.mul_one, Matrix.smul_mul,
-    Matrix.mul_smul, h₁, h₂, vecMulVec_mul_vecMulVec_eq_zero hv, smul_zero, add_zero]
+    Matrix.mul_smul, h₁, h₂, vecMulVec_mul_vecMulVec_eq_zero hv', smul_zero, add_zero]
   module
 
 /-- **Admissible unitary transvections are isometries.** If `σ` is an involution, `Q` is

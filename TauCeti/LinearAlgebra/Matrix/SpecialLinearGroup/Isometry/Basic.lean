@@ -7,6 +7,9 @@ module
 
 public import Mathlib.LinearAlgebra.Matrix.SpecialLinearGroup
 public import Mathlib.LinearAlgebra.Projectivization.Action
+import TauCeti.Algebra.Ring.Hom
+import TauCeti.LinearAlgebra.Matrix.Congruence
+import TauCeti.LinearAlgebra.Matrix.MulVec
 
 /-!
 # The special isometry group of a sesquilinear Gram matrix
@@ -43,8 +46,6 @@ sub-`MulAction` `Matrix.isotropicPoints Q σ`, the natural permutation domain of
 
 * `Matrix.mem_specialIsometryGroup_iff`: the defining matrix equation.
 * `Matrix.comp_mulVec_dotProduct_mulVec_mulVec`: an element of the group preserves the form.
-* `RingHom.comp_smul`, `Matrix.comp_mulVec_eq_vecMul_transpose_map`: applying `σ` entrywise to
-  `c • v` and to `M *ᵥ x`.
 * `Matrix.mem_isotropicPoints_iff`: a point is isotropic when its chosen representative is.
 * `Matrix.mk_mem_isotropicPoints_iff`: the point of a nonzero vector is isotropic exactly when the
   vector is.
@@ -58,16 +59,6 @@ public section
 
 open scoped LinearAlgebra.Projectivization
 
-namespace RingHom
-
-variable {R S ι : Type*} [NonAssocSemiring R] [NonAssocSemiring S]
-
-/-- A ring homomorphism applied entrywise to `c • v` gives `f c • (f ∘ v)`. -/
-theorem comp_smul (f : R →+* S) (c : R) (v : ι → R) : f ∘ (c • v) = f c • (f ∘ v) :=
-  funext fun _ ↦ map_mul f _ _
-
-end RingHom
-
 namespace Matrix
 
 variable {n K : Type*} [Fintype n] [DecidableEq n]
@@ -76,21 +67,7 @@ section CommRing
 
 variable [CommRing K]
 
-omit [DecidableEq n] in
-/-- Applying `σ` to the entries of `M *ᵥ x` gives the row vector `(σ ∘ x) ᵥ* (M ^ σ)ᵀ`. -/
-theorem comp_mulVec_eq_vecMul_transpose_map (M : Matrix n n K) (σ : K →+* K) (x : n → K) :
-    σ ∘ (M *ᵥ x) = (σ ∘ x) ᵥ* (M.map σ)ᵀ := by
-  ext i
-  rw [Function.comp_apply, RingHom.map_mulVec, vecMul_transpose]
-
 variable (Q : Matrix n n K) (σ : K →+* K)
-
-omit [DecidableEq n] in
-/-- The isometry equation of a product: `((M N) ^ σ)ᵀ Q (M N) = (N ^ σ)ᵀ ((M ^ σ)ᵀ Q M) N`. -/
-private theorem transpose_map_mul_mul_mul (M N : Matrix n n K) :
-    ((M * N).map σ)ᵀ * Q * (M * N) = (N.map σ)ᵀ * ((M.map σ)ᵀ * Q * M) * N := by
-  rw [Matrix.map_mul, transpose_mul]
-  simp only [Matrix.mul_assoc]
 
 /-- **The special isometry group of a sesquilinear Gram matrix**: the matrices `g` of determinant
 one with `(g ^ σ)ᵀ * Q * g = Q`, that is, the special linear transformations preserving the
@@ -105,7 +82,7 @@ def specialIsometryGroup : Subgroup (SpecialLinearGroup n K) where
     rw [transpose_map_mul_mul_mul, hg, hg']
   inv_mem' {g} hg := by
     simp only [Set.mem_ofPred_eq] at hg ⊢
-    have h := transpose_map_mul_mul_mul Q σ (g : Matrix n n K)
+    have h := transpose_map_mul_mul_mul σ Q (g : Matrix n n K)
       ((g⁻¹ : SpecialLinearGroup n K) : Matrix n n K)
     rw [hg, ← SpecialLinearGroup.coe_mul, mul_inv_cancel, SpecialLinearGroup.coe_one,
       Matrix.map_one σ σ.map_zero σ.map_one, transpose_one, Matrix.one_mul, Matrix.mul_one] at h

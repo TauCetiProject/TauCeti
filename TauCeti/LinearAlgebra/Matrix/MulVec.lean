@@ -27,6 +27,9 @@ Subtracting a matrix from a constant diagonal matrix turns its eigenvector equat
 homogeneous linear system, with no multiplicative identity needed. An eigenvector of a matrix is an
 eigenvector of each of its powers.
 
+A ring homomorphism applied entrywise to `M *ᵥ x` gives the row vector `(f ∘ x) ᵥ* (M ^ f)ᵀ`. The
+product of two rank-one matrices `u vᵀ` and `w xᵀ` vanishes when the inner pairing `v ⬝ᵥ w` does.
+
 ## Main results
 
 * `TauCeti.mulVec_mulVec_eq_zero_of_pow_two_eq_zero`: a square-zero matrix annihilates every
@@ -40,6 +43,8 @@ eigenvector of each of its powers.
   matrix is monotone and preserves nonnegativity.
 * `Matrix.mulVec_pos`: a strictly positive matrix sends a nonzero nonnegative vector to a strictly
   positive one.
+* `Matrix.comp_mulVec_eq_vecMul_transpose_map`: `f ∘ (M *ᵥ x) = (f ∘ x) ᵥ* (M ^ f)ᵀ`.
+* `Matrix.vecMulVec_mul_vecMulVec_eq_zero`: `(u vᵀ) (w xᵀ) = 0` when `v ⬝ᵥ w = 0`.
 -/
 
 public section
@@ -103,6 +108,26 @@ theorem pow_mulVec_eq_pow_smul {A : Matrix n n R} {v : n → R} {μ : R} (h : A 
   | succ k ih => rw [pow_succ, ← mulVec_mulVec, h, mulVec_smul, ih, smul_smul, ← pow_succ']
 
 end CommSemiring
+
+section NonUnitalSemiring
+
+variable {l o R : Type*} [NonUnitalSemiring R]
+
+/-- The product of two rank-one matrices vanishes when the inner pairing does:
+`(u vᵀ) (w xᵀ) = 0` if `v ⬝ᵥ w = 0`. -/
+theorem vecMulVec_mul_vecMulVec_eq_zero {u : l → R} {v w : n → R} (h : v ⬝ᵥ w = 0) (x : o → R) :
+    vecMulVec u v * vecMulVec w x = 0 := by
+  rw [vecMulVec_mul_vecMulVec, h, zero_smul]
+  exact ext fun _ _ ↦ mul_zero _
+
+end NonUnitalSemiring
+
+/-- Applying a ring homomorphism `f` to the entries of `M *ᵥ x` gives the row vector
+`(f ∘ x) ᵥ* (M ^ f)ᵀ`, where `M ^ f` applies `f` to every entry. -/
+theorem comp_mulVec_eq_vecMul_transpose_map {R S : Type*} [CommSemiring R] [CommSemiring S]
+    (f : R →+* S) (M : Matrix m n R) (x : n → R) : f ∘ (M *ᵥ x) = (f ∘ x) ᵥ* (M.map f)ᵀ := by
+  ext i
+  rw [Function.comp_apply, RingHom.map_mulVec, vecMul_transpose]
 
 section OrderedSemiring
 
