@@ -60,8 +60,8 @@ theorem killingForm_slFinTwoBasis (i j : Fin 3) :
     killingForm R (SpecialLinear.sl (Fin 2) R) (slFinTwoBasis R i) (slFinTwoBasis R j) =
       ![![0, 4, 0], ![4, 0, 0], ![0, 0, 8]] i j := by
   rw [killingForm_slFinTwo_apply, slFinTwoBasis_apply, slFinTwoBasis_apply]
-  fin_cases i <;> fin_cases j <;> simp [Matrix.trace_fin_two, Matrix.mul_apply, Fin.sum_univ_two]
-  norm_num
+  fin_cases i <;> fin_cases j <;>
+    norm_num [Matrix.trace_fin_two, Matrix.mul_apply, Fin.sum_univ_two]
 
 end CommRing
 
@@ -79,7 +79,8 @@ theorem killingDualBasis_slFinTwoBasis :
   have h₀ := key 1
   have h₁ := key 0
   have h₂ := key 2
-  simp at h₀ h₁ h₂
+  simp only [Matrix.cons_val', Matrix.cons_val_one, Matrix.cons_val_zero, Matrix.cons_val_fin_one,
+    Matrix.cons_val, zero_smul, zero_add, add_zero] at h₀ h₁ h₂
   funext i
   fin_cases i
   · simpa using (eq_inv_smul_iff₀ (OfNat.ofNat_ne_zero (R := K) 4)).mpr h₀

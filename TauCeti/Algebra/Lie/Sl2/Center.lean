@@ -165,13 +165,9 @@ theorem cartanProjection_slTwoOmega :
   have hι : ι (slFinTwoBasis K 2) = ι ((slTwoCartanGenerator K : slTwoDiagonalCartan K) :
       SpecialLinear.sl (Fin 2) K) := by
     rw [slFinTwoBasis_two, coe_slTwoCartanGenerator]
-  have hone : cartanProjection (slTwoPositiveBase K) (ι (slFinTwoBasis K 2)) =
-      ι (slTwoCartanGenerator K) := by
-    rw [← mul_one (ι (slFinTwoBasis K 2)), hι, cartanProjection_ι_coe_mul, cartanProjection_one,
-      mul_one]
   rw [slTwoOmega, map_add, map_add, map_smul, map_smul,
     cartanProjection_ι_mul_of_mem_negativeNilradical _ slFinTwoBasis_one_mem_negativeNilradical,
-    hone, hι, cartanProjection_ι_coe_mul, ← hι, hone, smul_zero, add_zero]
+    hι, cartanProjection_ι_coe_mul, cartanProjection_ι_coe, smul_zero, add_zero]
 
 /-- **The Harish-Chandra projection of `Ω`** is `h² + 2h`. -/
 @[simp]
