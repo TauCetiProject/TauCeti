@@ -71,7 +71,7 @@ theorem continuousOn_dslope_prod {U : Set 𝕜} (hU : IsOpen U) (hf : ContDiffOn
   · -- On the diagonal, `dslope f c c = deriv f c` is controlled by continuity of `deriv f`, and
     -- the off-diagonal difference quotients by strict differentiability of `f` at `w₀`.
     have hstrict := (hasDerivAtFilter_iff_isLittleO.mp ((hf.contDiffAt
-      (hU.mem_nhds hw₀)).hasStrictDerivAt one_ne_zero)).comp_tendsto
+      (hU.mem_nhds hw₀)).hasStrictDerivAt_deriv one_ne_zero)).comp_tendsto
         (continuous_swap.tendsto (w₀, w₀))
     have hderiv : Tendsto (fun p : 𝕜 × 𝕜 ↦ deriv f p.1) (𝓝 (w₀, w₀)) (𝓝 (deriv f w₀)) :=
       ((hf.continuousOn_deriv_of_isOpen hU le_rfl).continuousAt
