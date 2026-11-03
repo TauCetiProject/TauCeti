@@ -95,7 +95,7 @@ theorem generatedTangentMatrixLieHom_derivationComp_generatedCorootCocharacter
       GeneralLinear.hom_weightTorusBaseChangeCoordinateMap]
   rw [generatedTangentMatrixLieHom_apply, generatedCorootCocharacter_def,
     ← GeneralLinear.tangentMatrixLieHom_apply]
-  exact tangentMatrixLieHom_derivationComp_coordinateCoroot _ _ hπ ht i
+  exact generalLinearTangentMatrixLieHom_derivationComp_cocharacter_applyAddHom _ _ hπ ht i
 
 /-- The bracket of the opposite normalized root vectors is the differential of the
 corresponding actual coroot cocharacter, with no characteristic assumption. -/

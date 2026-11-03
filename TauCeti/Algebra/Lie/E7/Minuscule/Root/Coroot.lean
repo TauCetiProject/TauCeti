@@ -67,7 +67,7 @@ include hτ
 
 /-- In any carrier of the minuscule weight torus, the coordinate-coroot differential has
  the diagonal matrix of the named simple-coroot pairings. -/
-theorem tangentMatrixLieHom_derivationComp_coordinateCoroot
+theorem generalLinearTangentMatrixLieHom_derivationComp_cocharacter_applyAddHom
     (ht : DynkinType.E7.Valid) (i : Fin 7) :
     GeneralLinear.tangentMatrixLieHom q
         (derivationComp (τ.cocharacter (Finsupp.applyAddHom i).toMultiplicative)

@@ -129,7 +129,7 @@ theorem tangentMatrixLieHom_derivationComp_corootCocharacter
     rw [← _root_.CommHopfAlgCat.hom_comp,
       coordinateMap_comp_weightTorusToBaseChangeCoordinateMap,
       GeneralLinear.hom_weightTorusBaseChangeCoordinateMap]
-  exact tangentMatrixLieHom_derivationComp_coordinateCoroot _ _ hπ ht i
+  exact generalLinearTangentMatrixLieHom_derivationComp_cocharacter_applyAddHom _ _ hπ ht i
 
 /-- The bracket of normalized opposite simple-root vectors is the actual coroot differential,
 without any restriction on characteristic. -/
