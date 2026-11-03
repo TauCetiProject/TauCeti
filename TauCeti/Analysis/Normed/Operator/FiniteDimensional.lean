@@ -126,11 +126,9 @@ theorem IsCompact.isCompact_setOfPred_mapsTo {K : Set F} (hK : IsCompact K) {s :
     (hK.isClosed.setOfPred_mapsTo fun x _ ↦ continuous_eval_const x) fun T hT ↦ ?_
   simp only [mem_preimage, mem_univ_pi]
   intro i
-  -- `piRing` evaluates at `Pi.single i 1`, the coordinate vector of `w i`.
-  have hwi : w.equivFunL.symm (Pi.single i 1) = w i := by
-    rw [ContinuousLinearEquiv.symm_apply_eq]
-    ext j
-    simp [Pi.single_apply, Finsupp.single_apply, eq_comm]
+  -- `piRing` evaluates at `Pi.single i 1`, the coordinate vector of `w i`; the inverse of
+  -- `equivFunL` is that of `equivFun` by definition.
+  have hwi : w.equivFunL.symm (Pi.single i 1) = w i := Basis.equivFun_symm_single w i
   have hw : w i = a • v i := by simp [w]
   change T (w.equivFunL.symm (Pi.single i 1)) ∈ K
   exact hwi ▸ hw ▸ hT (hav i)

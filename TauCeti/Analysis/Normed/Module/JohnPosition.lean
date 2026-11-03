@@ -21,9 +21,11 @@ exists and is invertible, and that the linear change of variables by its inverse
 **John's position**: the unit ball itself is then an inscribed ellipsoid of maximal volume among the
 ellipsoids centred at `0`. Over `ℝ`, for a symmetric convex body `K` this is the John ellipsoid of
 `K`, and this is the position in which John's theorem describes the contact points of `K` with the
-unit sphere. Over `ℂ` only complex ellipsoids, the `ℂ`-linear images `T(B)`, are compared; their
-real volume factor is `‖det T‖ ^ 2`, so `B` is the complex ellipsoid of maximal volume in `K`. It is
-the John ellipsoid of a symmetric convex body `K` when `K` is moreover circled.
+unit sphere. In a finite-dimensional complex inner product space only complex ellipsoids, the
+`ℂ`-linear images `T(B)`, are compared; their real volume factor is `‖det T‖ ^ 2`, so `B` is the
+complex ellipsoid of maximal volume in `K`. It is the John ellipsoid of a symmetric convex body `K`
+when `K` is moreover circled. In a general finite-dimensional real or complex normed space, `B` has
+maximal volume among the linear images of the unit ball contained in `K`.
 
 Existence of the maximizer uses no inner product, so it is stated for linear images of the unit
 ball of any finite-dimensional normed space over a complete field: the linear maps sending the unit
@@ -75,8 +77,10 @@ variable (𝕜 : Type*) {E : Type*} [NontriviallyNormedField 𝕜] [NormedAddCom
 linear map sending `B` into `K` has determinant of norm at most `1`, the determinant of the
 identity. In a real inner product space this says that `B` has maximal volume among the ellipsoids
 centred at `0` contained in `K`; for a symmetric convex body `K` this makes `B` the John ellipsoid
-of `K`. Over `ℂ` it says that `B` has maximal volume among the complex ellipsoids, the `ℂ`-linear
-images of `B`, contained in `K`; this is the John ellipsoid when `K` is moreover circled. -/
+of `K`. In a complex inner product space it says that `B` has maximal volume among the complex
+ellipsoids, the `ℂ`-linear images of `B`, contained in `K`; this is the John ellipsoid when `K` is
+moreover circled. In a general real or complex normed space it says that `B` has maximal volume
+among the linear images of `B` contained in `K`. -/
 structure IsJohnPosition (K : Set E) : Prop where
   /-- The closed unit ball is contained in `K`. -/
   closedBall_subset : closedBall (0 : E) 1 ⊆ K
