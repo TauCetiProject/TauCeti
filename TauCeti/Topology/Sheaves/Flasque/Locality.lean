@@ -219,7 +219,7 @@ end TopCat
 namespace CategoryTheory.Sheaf
 
 /-- Flasque sheaves on `X` with values in `A`, as a class of objects. -/
-@[expose] def isFlasque (X : TopCat.{u}) (A : Type*) [Category* A] :
+def isFlasque (X : TopCat.{u}) (A : Type*) [Category* A] :
     ObjectProperty (Sheaf (Opens.grothendieckTopology X) A) :=
   fun G ↦ TopCat.Presheaf.IsFlasque G.obj
 
