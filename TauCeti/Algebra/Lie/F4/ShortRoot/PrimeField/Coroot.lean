@@ -124,16 +124,13 @@ theorem tangentMatrixLieHom_comp_tangentSerreLift :
     (tangentMatrixLieHom B).comp (tangentSerreLift B) = serreRepresentationBaseChange B := by
   apply serre_hom_ext
   · intro i
-    change tangentMatrixLieHom B (tangentSerreLift B (serreH B CartanMatrix.F₄ᵀ i)) = _
-    rw [tangentSerreLift_serreH, tangentMatrixLieHom_cartanDerivation,
+    rw [LieHom.comp_apply, tangentSerreLift_serreH, tangentMatrixLieHom_cartanDerivation,
       serreRepresentationBaseChange_serreH]
   · intro i
-    change tangentMatrixLieHom B (tangentSerreLift B (serreE B CartanMatrix.F₄ᵀ i)) = _
-    rw [tangentSerreLift_serreE, tangentMatrixLieHom_rootDerivation,
+    rw [LieHom.comp_apply, tangentSerreLift_serreE, tangentMatrixLieHom_rootDerivation,
       serreRepresentationBaseChange_serreE, rootMatrix_inl, raisingMatrixBaseChange_eq_map]
   · intro i
-    change tangentMatrixLieHom B (tangentSerreLift B (serreF B CartanMatrix.F₄ᵀ i)) = _
-    rw [tangentSerreLift_serreF, tangentMatrixLieHom_rootDerivation,
+    rw [LieHom.comp_apply, tangentSerreLift_serreF, tangentMatrixLieHom_rootDerivation,
       serreRepresentationBaseChange_serreF, rootMatrix_inr, loweringMatrixBaseChange_eq_map]
 
 /-- The simple-coroot cocharacter defined by evaluation in fundamental-weight coordinates. -/
