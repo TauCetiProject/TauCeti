@@ -12,11 +12,15 @@ public import TauCeti.Geometry.Manifold.Morse.Hessian
 /-!
 # Critical points under local diffeomorphisms
 
-Let `π : M → M'` be a `C^n` local diffeomorphism between boundaryless manifolds with the same
-model, and let `f : M' → ℝ`. Near `x`, a chart of `M'` at `π x` composed with `π` is a chart of
-the maximal atlas of `M`, and in it the coordinate expression of `f ∘ π` is the coordinate
-expression of `f`. Since criticality, nondegeneracy and the Morse index of a `C²` function can be
-read in any chart of the maximal atlas, all three are unchanged under composition with `π`.
+Let `π : M → M'` be a `C^n` local diffeomorphism and let `f : M' → ℝ`. Since the differential
+of `π` is invertible, the chain rule shows that `x` is a critical point of `f ∘ π` exactly when
+`π x` is a critical point of `f`; this holds for any models, with or without boundary.
+
+For nondegeneracy and the Morse index, let `M` and `M'` be boundaryless with the same model. Near
+`x`, a chart of `M'` at `π x` composed with `π` is a chart of the maximal atlas of `M`, and in it
+the coordinate expression of `f ∘ π` is the coordinate expression of `f`. Since nondegeneracy and
+the Morse index of a `C²` function can be read in any chart of the maximal atlas, both are
+unchanged under composition with `π`.
 
 This is how Morse data is lifted to a covering space: the critical points of `f ∘ π` are the
 preimages of those of `f`, with the same nondegeneracy and indices.
@@ -42,36 +46,43 @@ open scoped ContDiff Manifold
 
 namespace TauCeti
 
-variable {E H M M' : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSpace H]
-  {I : ModelWithCorners ℝ E H} [I.Boundaryless] [TopologicalSpace M] [ChartedSpace H M]
-  [TopologicalSpace M'] [ChartedSpace H M'] {n : WithTop ℕ∞} [IsManifold I n M]
-  [IsManifold I n M'] {π : M → M'} {x : M}
+section Criticality
+
+variable {E F H G M M' : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [NormedAddCommGroup F]
+  [NormedSpace ℝ F] [TopologicalSpace H] [TopologicalSpace G] {I : ModelWithCorners ℝ E H}
+  {J : ModelWithCorners ℝ F G} [TopologicalSpace M] [ChartedSpace H M] [TopologicalSpace M']
+  [ChartedSpace G M'] {n : WithTop ℕ∞} {π : M → M'} {x : M}
 
 /-- **Criticality under a local diffeomorphism.** If `π` is a `C^n` local diffeomorphism at `x`
 with `1 ≤ n`, then `x` is a critical point of `f ∘ π` exactly when `π x` is a critical point of
 `f`. -/
 theorem _root_.IsLocalDiffeomorphAt.mem_criticalPoints_comp_iff
-    (hπ : IsLocalDiffeomorphAt I I n π x) (hn : 1 ≤ n) {f : M' → ℝ} :
-    x ∈ criticalPoints I (f ∘ π) ↔ π x ∈ criticalPoints I f := by
+    (hπ : IsLocalDiffeomorphAt I J n π x) (hn : 1 ≤ n) {f : M' → ℝ} :
+    x ∈ criticalPoints I (f ∘ π) ↔ π x ∈ criticalPoints J f := by
   have hn0 : n ≠ 0 := (zero_lt_one.trans_le hn).ne'
-  by_cases hf : MDifferentiableAt I 𝓘(ℝ) f (π x)
-  · obtain ⟨e, he, hx, hpt, hcomp⟩ := hπ.exists_mem_maximalAtlas_extend_eventuallyEq
-      (IsManifold.chart_mem_maximalAtlas (π x)) (mem_chart_source H (π x))
-    rw [mem_criticalPoints, mem_criticalPoints,
-      mvfderiv_eq_zero_iff_fderiv_comp_extend_symm_eq_zero
-        (IsManifold.maximalAtlas_subset_of_le hn he) hx (hf.comp x (hπ.mdifferentiableAt hn0)),
-      mvfderiv_eq_zero_iff_fderiv_comp_extend_symm_eq_zero
-        (IsManifold.maximalAtlas_subset_of_le hn (IsManifold.chart_mem_maximalAtlas (π x)))
-        (mem_chart_source H (π x)) hf,
-      (hcomp f).fderiv_eq, hpt]
+  simp only [mem_criticalPoints_iff_mfderiv_eq_zero]
+  by_cases hf : MDifferentiableAt J 𝓘(ℝ) f (π x)
+  · -- The differential of `π` at `x` is invertible, so it can be cancelled in the chain rule.
+    rw [mfderiv_comp x hf (hπ.mdifferentiableAt hn0)]
+    refine ⟨fun h ↦ ContinuousLinearMap.ext fun v ↦ ?_,
+      fun h ↦ by rw [h, ContinuousLinearMap.zero_comp]⟩
+    have := congr($h ((hπ.mfderivToContinuousLinearEquiv hn0).symm v))
+    rwa [ContinuousLinearMap.comp_apply, ← hπ.mfderivToContinuousLinearEquiv_coe hn0,
+      ContinuousLinearEquiv.coe_coe, ContinuousLinearEquiv.apply_symm_apply] at this
   -- Near `π x`, `f` is `f ∘ π` after a local inverse of `π`, so `f ∘ π` is not differentiable at
   -- `x` either, and both derivatives vanish by convention.
   have hfπ : ¬MDifferentiableAt I 𝓘(ℝ) (f ∘ π) x := fun h ↦ hf <|
     (h.comp_of_eq (π x) (hπ.mdifferentiableAt_localInverse hn0)
       (hπ.localInverse_left_inv hπ.localInverse_mem_target)).congr_of_eventuallyEq
       (hπ.localInverse_eventuallyEq_right.fun_comp f).symm
-  simp only [mem_criticalPoints_iff_mfderiv_eq_zero, mfderiv_zero_of_not_mdifferentiableAt hf,
-    mfderiv_zero_of_not_mdifferentiableAt hfπ]
+  simp only [mfderiv_zero_of_not_mdifferentiableAt hf, mfderiv_zero_of_not_mdifferentiableAt hfπ]
+
+end Criticality
+
+variable {E H M M' : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSpace H]
+  {I : ModelWithCorners ℝ E H} [I.Boundaryless] [TopologicalSpace M] [ChartedSpace H M]
+  [TopologicalSpace M'] [ChartedSpace H M'] {n : WithTop ℕ∞} [IsManifold I n M]
+  [IsManifold I n M'] {π : M → M'} {x : M}
 
 /-- **Nondegeneracy under a local diffeomorphism.** If `π` is a `C^n` local diffeomorphism at `x`
 with `2 ≤ n`, then `x` is a nondegenerate critical point of `f ∘ π` exactly when `π x` is a
