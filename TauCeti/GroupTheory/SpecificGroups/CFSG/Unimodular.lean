@@ -7,7 +7,7 @@ module
 
 public import TauCeti.GroupTheory.FixedPointCandidate
 public import TauCeti.GroupTheory.SpecificGroups.CFSG.GeckCarrier
-public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.GeckLattice.Torus
+public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.GeckLattice.Torus.Basic
 
 /-!
 # The Lie-type indices whose Dynkin diagram is unimodular
