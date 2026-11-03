@@ -241,6 +241,8 @@ into the good connective truncation of a cochain complex. -/
 def simplexChainModule : SimplicialObject (ModuleCat.{v} R) where
   obj Δ := ModuleCat.of R (K.SimplexChainMap Δ.unop.len)
   map f := ModuleCat.ofHom (SimplexChainMap.mapLinearMap f.unop.toOrderHom)
+  -- Applying `ModuleCat.ofHom (mapLinearMap _)` is definitionally pullback by `map`;
+  -- the order homs of the identity and composite are `OrderHom.id` and `OrderHom.comp`.
   map_id Δ := by ext g J d; exact congrArg (fun g ↦ g.val J d) g.map_id
   map_comp f g := by ext x J d; exact congrArg (fun x ↦ x.val J d) (x.map_map _ _).symm
 
