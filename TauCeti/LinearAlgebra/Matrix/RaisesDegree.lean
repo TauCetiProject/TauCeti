@@ -47,11 +47,11 @@ public section
 
 namespace Matrix
 
-variable {η A : Type*}
+variable {η A : Type*} {deg : η → ℤ} {d d' : ℤ}
 
-section Ring
+section Zero
 
-variable [Ring A] {deg : η → ℤ} {d d' : ℤ} {X Y : Matrix η η A}
+variable [Zero A] {X : Matrix η η A}
 
 /-- A square matrix **raises the degree `deg` by at least `d`** when each of its nonzero entries
 `X r s` satisfies `deg s + d ≤ deg r`. -/
@@ -74,7 +74,8 @@ variable (deg d) in
 
 variable (deg) in
 /-- The identity matrix raises the degree by any nonpositive amount. -/
-theorem raisesDegree_one [DecidableEq η] (hd : d ≤ 0) : RaisesDegree deg d (1 : Matrix η η A) := by
+theorem raisesDegree_one [One A] [DecidableEq η] (hd : d ≤ 0) :
+    RaisesDegree deg d (1 : Matrix η η A) := by
   intro r s h
   obtain rfl : r = s := by_contra fun hrs ↦ h (one_apply_ne hrs)
   omega
@@ -82,42 +83,6 @@ theorem raisesDegree_one [DecidableEq η] (hd : d ≤ 0) : RaisesDegree deg d (1
 /-- Raising the degree by at least `d` implies raising it by at least any `d' ≤ d`. -/
 theorem RaisesDegree.mono (hX : RaisesDegree deg d X) (hd : d' ≤ d) : RaisesDegree deg d' X :=
   fun r s h ↦ (add_le_add_right hd _).trans (hX r s h)
-
-/-- Matrices raising the degree by at least `d` are closed under addition. -/
-theorem RaisesDegree.add (hX : RaisesDegree deg d X) (hY : RaisesDegree deg d Y) :
-    RaisesDegree deg d (X + Y) := by
-  intro r s h
-  by_cases hXrs : X r s = 0
-  · exact hY r s fun hY0 ↦ h (by simp [hXrs, hY0])
-  · exact hX r s hXrs
-
-/-- Matrices raising the degree by at least `d` are closed under negation. -/
-theorem RaisesDegree.neg (hX : RaisesDegree deg d X) : RaisesDegree deg d (-X) :=
-  fun r s h ↦ hX r s fun h0 ↦ h (by simp [h0])
-
-/-- Matrices raising the degree by at least `d` are closed under subtraction. -/
-theorem RaisesDegree.sub (hX : RaisesDegree deg d X) (hY : RaisesDegree deg d Y) :
-    RaisesDegree deg d (X - Y) := by
-  rw [sub_eq_add_neg]
-  exact hX.add hY.neg
-
-/-- A matrix differing from the identity by a matrix that raises the degree by at least `0`
-raises the degree by at least `0` itself. -/
-theorem RaisesDegree.of_sub_one [DecidableEq η] (hY : RaisesDegree deg 0 (Y - 1)) :
-    RaisesDegree deg 0 Y := by
-  simpa using hY.add (raisesDegree_one deg le_rfl)
-
-/-- Matrices raising the degree by at least `d` are closed under left scalar multiplication. -/
-theorem RaisesDegree.smul (hX : RaisesDegree deg d X) (c : A) : RaisesDegree deg d (c • X) :=
-  fun r s h ↦ hX r s fun h0 ↦ h (by simp [h0])
-
-/-- Matrices raising the degree by at least `d` are closed under finite sums. -/
-theorem RaisesDegree.sum {ι : Type*} {s : Finset ι} {X : ι → Matrix η η A}
-    (hX : ∀ i ∈ s, RaisesDegree deg d (X i)) : RaisesDegree deg d (∑ i ∈ s, X i) := by
-  intro r t h
-  rw [Matrix.sum_apply] at h
-  obtain ⟨i, hi, hne⟩ := Finset.exists_ne_zero_of_sum_ne_zero h
-  exact hX i hi r t hne
 
 /-- A matrix shifting weights `wt : η → G` by exactly `a` raises the degree `degree ∘ wt` by
 `degree a`. -/
@@ -127,8 +92,51 @@ theorem RaisesDegree.of_shift {G : Type*} [AddCommGroup G] {wt : η → G} (degr
   intro r s h
   simp [hX r s h]
 
+end Zero
+
+/-- Matrices raising the degree by at least `d` are closed under addition. -/
+theorem RaisesDegree.add [AddZeroClass A] {X Y : Matrix η η A} (hX : RaisesDegree deg d X)
+    (hY : RaisesDegree deg d Y) : RaisesDegree deg d (X + Y) := by
+  intro r s h
+  by_cases hXrs : X r s = 0
+  · exact hY r s fun hY0 ↦ h (by simp [hXrs, hY0])
+  · exact hX r s hXrs
+
+/-- Matrices raising the degree by at least `d` are closed under negation. -/
+theorem RaisesDegree.neg [NegZeroClass A] {X : Matrix η η A} (hX : RaisesDegree deg d X) :
+    RaisesDegree deg d (-X) :=
+  fun r s h ↦ hX r s fun h0 ↦ h (by simp [h0])
+
+/-- Matrices raising the degree by at least `d` are closed under subtraction. -/
+theorem RaisesDegree.sub [SubNegZeroMonoid A] {X Y : Matrix η η A} (hX : RaisesDegree deg d X)
+    (hY : RaisesDegree deg d Y) : RaisesDegree deg d (X - Y) := by
+  intro r s h
+  by_cases hXrs : X r s = 0
+  · exact hY r s fun hY0 ↦ h (by simp [hXrs, hY0])
+  · exact hX r s hXrs
+
+/-- A matrix differing from the identity by a matrix that raises the degree by at least `0`
+raises the degree by at least `0` itself. -/
+theorem RaisesDegree.of_sub_one [AddGroupWithOne A] [DecidableEq η] {Y : Matrix η η A}
+    (hY : RaisesDegree deg 0 (Y - 1)) : RaisesDegree deg 0 Y := by
+  simpa using hY.add (raisesDegree_one deg le_rfl)
+
+/-- Matrices raising the degree by at least `d` are closed under left scalar multiplication. -/
+theorem RaisesDegree.smul [MulZeroClass A] {X : Matrix η η A} (hX : RaisesDegree deg d X) (c : A) :
+    RaisesDegree deg d (c • X) :=
+  fun r s h ↦ hX r s fun h0 ↦ h (by simp [h0])
+
+/-- Matrices raising the degree by at least `d` are closed under finite sums. -/
+theorem RaisesDegree.sum [AddCommMonoid A] {ι : Type*} {s : Finset ι} {X : ι → Matrix η η A}
+    (hX : ∀ i ∈ s, RaisesDegree deg d (X i)) : RaisesDegree deg d (∑ i ∈ s, X i) := by
+  intro r t h
+  rw [Matrix.sum_apply] at h
+  obtain ⟨i, hi, hne⟩ := Finset.exists_ne_zero_of_sum_ne_zero h
+  exact hX i hi r t hne
+
 /-- **Degrees add under multiplication.** -/
-theorem RaisesDegree.mul [Fintype η] (hX : RaisesDegree deg d X) (hY : RaisesDegree deg d' Y) :
+theorem RaisesDegree.mul [NonUnitalNonAssocSemiring A] [Fintype η] {X Y : Matrix η η A}
+    (hX : RaisesDegree deg d X) (hY : RaisesDegree deg d' Y) :
     RaisesDegree deg (d + d') (X * Y) := by
   intro r s h
   rw [Matrix.mul_apply] at h
@@ -136,8 +144,6 @@ theorem RaisesDegree.mul [Fintype η] (hX : RaisesDegree deg d X) (hY : RaisesDe
   have hr := hX r t (left_ne_zero_of_mul hne)
   have hs := hY t s (right_ne_zero_of_mul hne)
   omega
-
-end Ring
 
 /-! ## Uniqueness of ordered products -/
 
