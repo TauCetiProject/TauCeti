@@ -177,6 +177,11 @@ theorem val_smul (r : R) (b : he.Corner) : (r • b).1 = r • b.1 := (rfl)
 
 end Corner
 
+@[simp]
+theorem compress_smul {R : Type v} [SMul R A] [SMulCommClass R A A] [IsScalarTower R A A]
+    (r : R) (x : A) : he.compress (r • x) = r • he.compress x :=
+  Subtype.ext <| by simp [mul_smul_comm, smul_mul_assoc]
+
 end Semigroup
 
 namespace Corner
@@ -239,6 +244,20 @@ theorem val_algebraMap (r : R) : (algebraMap R he.Corner r).1 = r • e := (rfl)
 end Algebra
 
 end Corner
+
+section NonUnitalSemiring
+
+variable {A : Type u} [NonUnitalSemiring A] {e : A} (he : IsIdempotentElem e)
+
+@[simp]
+theorem compress_zero : he.compress 0 = 0 :=
+  Subtype.ext <| by simp
+
+@[simp]
+theorem compress_add (x y : A) : he.compress (x + y) = he.compress x + he.compress y :=
+  Subtype.ext <| by simp [mul_add, add_mul]
+
+end NonUnitalSemiring
 
 section Semiring
 
