@@ -49,7 +49,7 @@ only where the statement forces it.
 
 The split-morphism cancellation lemmas include `TauCeti.isSplitMono_of_isSplitMono_comp` and
 `TauCeti.isSplitEpi_of_isSplitEpi_comp`, and their isomorphism-invariance forms
-`TauCeti.isSplitEpi_comp_iso_iff` and `TauCeti.isSplitMono_iso_comp_iff`.
+`TauCeti.isSplitEpi_comp_iff_of_isIso` and `TauCeti.isSplitMono_comp_iff_of_isIso`.
 
 ## Implementation notes
 
@@ -102,7 +102,7 @@ theorem isSplitEpi_of_isSplitEpi_comp {X Y Z : C} (f : X ⟶ Y) (g : Y ⟶ Z)
 /-- Postcomposing with an isomorphism does not change whether a morphism is a split
 epimorphism. -/
 @[simp]
-theorem isSplitEpi_comp_iso_iff {X Y Z : C} (f : X ⟶ Y) (g : Y ⟶ Z) [IsIso g] :
+theorem isSplitEpi_comp_iff_of_isIso {X Y Z : C} (f : X ⟶ Y) (g : Y ⟶ Z) [IsIso g] :
     IsSplitEpi (f ≫ g) ↔ IsSplitEpi f := by
   refine ⟨fun _ ↦ ?_, fun _ ↦ inferInstance⟩
   simpa using (inferInstance : IsSplitEpi ((f ≫ g) ≫ inv g))
@@ -110,10 +110,10 @@ theorem isSplitEpi_comp_iso_iff {X Y Z : C} (f : X ⟶ Y) (g : Y ⟶ Z) [IsIso g
 /-- Precomposing with an isomorphism does not change whether a morphism is a split
 monomorphism. -/
 @[simp]
-theorem isSplitMono_iso_comp_iff {X Y Z : C} (f : X ⟶ Y) [IsIso f] (g : Y ⟶ Z) :
-    IsSplitMono (f ≫ g) ↔ IsSplitMono g := by
+theorem isSplitMono_comp_iff_of_isIso {X Y Z : C} (g : X ⟶ Y) [IsIso g] (f : Y ⟶ Z) :
+    IsSplitMono (g ≫ f) ↔ IsSplitMono f := by
   refine ⟨fun _ ↦ ?_, fun _ ↦ inferInstance⟩
-  simpa using (inferInstance : IsSplitMono (inv f ≫ f ≫ g))
+  simpa using (inferInstance : IsSplitMono (inv g ≫ g ≫ f))
 
 /-! ### Irreducible morphisms -/
 
