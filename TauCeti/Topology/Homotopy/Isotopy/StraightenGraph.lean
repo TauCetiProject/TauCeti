@@ -5,8 +5,14 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.Convex.Segment
 public import TauCeti.Topology.Homotopy.Isotopy.Push
+import Mathlib.Topology.Algebra.Module.Equiv.Basic
+import Mathlib.Topology.Homeomorph.Lemmas
 import Mathlib.Topology.Maps.Proper.Basic
+import Mathlib.Topology.Order.IntermediateValue
+import Mathlib.Topology.Order.ProjIcc
+import TauCeti.Topology.Homotopy.AmbientIsotopyConj
 
 /-!
 # Straightening a graph onto the zero section
@@ -32,6 +38,12 @@ chord and nearly parallel to it is the graph of a continuous `g : ℝ → W` van
 chord, with `‖g x‖` small compared to the distance from `x` to the ends of the chord. The
 straightening moves the arc onto the chord, inside a thin region around the arc which pinches to
 the two ends of the chord.
+
+For an arc `γ '' [a, b]` along which a continuous linear functional `φ` is strictly increasing,
+the coordinates `x ↦ (φ (x - γ a), …)` along the chord, with second coordinate in the kernel of
+`φ`, make the arc the graph of a map vanishing outside the chord. So some ambient isotopy carries
+the arc onto its chord `[γ a, γ b]`, moving only points `x` with `φ x` strictly between `φ (γ a)`
+and `φ (γ b)` and close to `γ a` (`TauCeti.AmbientIsotopy.exists_final_image_eq_segment`).
 
 ## Implementation notes
 
@@ -62,6 +74,9 @@ separation assumption on `X`.
   `(x, (1 - t) • g x)`.
 * `TauCeti.AmbientIsotopy.straightenGraph_final_image_range`: its final homeomorphism carries the
   graph of `g` onto the zero section.
+* `TauCeti.AmbientIsotopy.exists_final_image_eq_segment`: an arc along which some continuous linear
+  functional is strictly increasing is carried onto its chord by an ambient isotopy supported near
+  the arc.
 
 ## References
 
@@ -296,6 +311,172 @@ theorem straightenGraph_final_image_range :
   congr 1
   funext x
   simp
+
+end AmbientIsotopy
+
+/-! ### Straightening an arc onto its chord -/
+
+namespace AmbientIsotopy
+
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+
+/-- **Straightening an arc onto its chord.** Let `γ` be continuous on `[a, b]`, `a < b`, let `φ` be
+a continuous linear functional with `φ ∘ γ` strictly increasing on `[a, b]`, and let `D` bound
+`‖γ s - γ a‖` for `s ∈ [a, b]`. Then some ambient isotopy of `E` carries the arc `γ '' [a, b]` onto
+the chord `[γ a, γ b]`, and at every time it moves only points `x` with `φ (γ a) < φ x < φ (γ b)`
+and `‖x - γ a‖ < 7 * D`. -/
+theorem exists_final_image_eq_segment {γ : ℝ → E} {a b : ℝ} (hab : a < b)
+    (hγ : ContinuousOn γ (Icc a b)) {φ : StrongDual ℝ E}
+    (hφ : StrictMonoOn (fun t ↦ φ (γ t)) (Icc a b)) {D : ℝ}
+    (hD : ∀ s ∈ Icc a b, ‖γ s - γ a‖ ≤ D) :
+    ∃ Φ : AmbientIsotopy E, Φ.final '' (γ '' Icc a b) = segment ℝ (γ a) (γ b) ∧
+      ∀ t x, Φ.toContinuousMap (t, x) ≠ x →
+        φ (γ a) < φ x ∧ φ x < φ (γ b) ∧ ‖x - γ a‖ < 7 * D := by
+  have ha : a ∈ Icc a b := left_mem_Icc.2 hab.le
+  have hb : b ∈ Icc a b := right_mem_Icc.2 hab.le
+  set p := γ a with hp
+  set u := γ b - γ a with hu
+  set L := φ u with hL_def
+  have hL : 0 < L := by simpa [hL_def, hu, sub_pos] using hφ ha hb hab
+  have hφb : φ (γ b) = φ p + L := by rw [hL_def, hu, map_sub, hp]; ring
+  have huD : ‖u‖ ≤ D := hD b hb
+  -- The coordinate `φ (γ s) - φ p` is a homeomorphism from `[a, b]` onto `[0, L]`.
+  let f : Icc a b → Icc (0 : ℝ) L := fun s ↦ ⟨φ (γ s) - φ p,
+    sub_nonneg.2 (hφ.monotoneOn ha s.2 s.2.1), by
+      rw [sub_le_iff_le_add', ← hφb]; exact hφ.monotoneOn s.2 hb s.2.2⟩
+  have hf_cont : Continuous f := by
+    have : ContinuousOn (fun t ↦ φ (γ t)) (Icc a b) := φ.continuous.comp_continuousOn hγ
+    exact Continuous.subtype_mk
+      ((continuousOn_iff_continuous_domRestrict.1 this).sub continuous_const) _
+  have hf_bij : Function.Bijective f := by
+    refine ⟨fun s s' h ↦ Subtype.ext (hφ.injOn s.2 s'.2 ?_), fun r ↦ ?_⟩
+    · simpa [f] using congrArg Subtype.val h
+    · have hr : φ p + r ∈ Icc (φ (γ a)) (φ (γ b)) := ⟨by linarith [r.2.1], by linarith [r.2.2]⟩
+      obtain ⟨s, hs, hsr⟩ := intermediate_value_Icc hab.le
+        (φ.continuous.comp_continuousOn hγ) hr
+      exact ⟨⟨s, hs⟩, Subtype.ext (by simp only [Function.comp_apply] at hsr; simp [f, hsr])⟩
+  let F : Icc a b ≃ₜ Icc (0 : ℝ) L :=
+    hf_cont.homeoOfEquivCompactToT2 (f := Equiv.ofBijective f hf_bij)
+  -- `homeoOfEquivCompactToT2` only adds continuity data to the equivalence `Equiv.ofBijective f`,
+  -- and Mathlib states no lemma for its coercion.
+  have hF (s : Icc a b) : (F s : ℝ) = φ (γ s) - φ p := (rfl)
+  -- Its inverse, extended to be constant outside `[0, L]`.
+  let τ : ℝ → ℝ := fun r ↦ F.symm (projIcc 0 L hL.le r)
+  have hτ_mem (r : ℝ) : τ r ∈ Icc a b := (F.symm _).2
+  have hτ (r : ℝ) : φ (γ (τ r)) - φ p = projIcc 0 L hL.le r := by
+    rw [← hF, Homeomorph.apply_symm_apply]
+  have hτ_self {s : ℝ} (hs : s ∈ Icc a b) : τ (φ (γ s) - φ p) = s := by
+    have : projIcc 0 L hL.le (φ (γ s) - φ p) = F ⟨s, hs⟩ := Subtype.ext (by
+      rw [hF, projIcc_of_mem]; exact (F ⟨s, hs⟩).2)
+    simp only [τ, this, Homeomorph.symm_apply_apply]
+  have hτ_cont : Continuous τ :=
+    continuous_subtype_val.comp (F.symm.continuous.comp continuous_projIcc)
+  -- The arc is the graph of `g` over the chord, in the coordinates `e` below.
+  let g : C(ℝ, LinearMap.ker (φ : E →ₗ[ℝ] ℝ)) :=
+    ⟨fun r ↦ ⟨γ (τ r) - p - ((projIcc 0 L hL.le r : ℝ) / L) • u, by
+      simp [LinearMap.mem_ker, ← hτ, ← hL_def, div_mul_cancel₀ _ hL.ne']⟩, by
+      refine Continuous.subtype_mk (((hγ.comp_continuous hτ_cont hτ_mem).sub
+        continuous_const).sub ?_) _
+      fun_prop⟩
+  have hg (r : ℝ) : (g r : E) = γ (τ r) - p - ((projIcc 0 L hL.le r : ℝ) / L) • u := rfl
+  -- Coordinates on `E` along the chord: `x ↦ (φ (x - p), (x - p) - (φ (x - p) / L) • u)`.
+  let ψ : ℝ →L[ℝ] E := ContinuousLinearMap.toSpanSingleton ℝ (L⁻¹ • u)
+  have hψ (r : ℝ) : ψ r = (r / L) • u := by
+    rw [ContinuousLinearMap.toSpanSingleton_apply, smul_smul, div_eq_mul_inv]
+  have hψφ : Function.RightInverse ψ φ := fun r ↦ by
+    rw [hψ, map_smul, ← hL_def, smul_eq_mul, div_mul_cancel₀ _ hL.ne']
+  let e : E ≃ₜ ℝ × LinearMap.ker (φ : E →ₗ[ℝ] ℝ) :=
+    (Homeomorph.subRight p).trans (ContinuousLinearEquiv.equivOfRightInverse φ ψ hψφ).toHomeomorph
+  have he₁ (x : E) : (e x).1 = φ (x - p) := by
+    simp only [e, Homeomorph.trans_apply, ContinuousLinearEquiv.coe_toHomeomorph,
+      ContinuousLinearEquiv.fst_equivOfRightInverse, Homeomorph.coe_subRight]
+  have he₂ (x : E) : ((e x).2 : E) = (x - p) - (φ (x - p) / L) • u := by
+    simp only [e, Homeomorph.trans_apply, ContinuousLinearEquiv.coe_toHomeomorph,
+      ContinuousLinearEquiv.snd_equivOfRightInverse, Homeomorph.coe_subRight, hψ]
+  have he_symm (y : ℝ × LinearMap.ker (φ : E →ₗ[ℝ] ℝ)) : e.symm y = p + (y.1 / L) • u + y.2 := by
+    simp only [e, Homeomorph.symm_trans_apply, ContinuousLinearEquiv.coe_symm_toHomeomorph,
+      ContinuousLinearEquiv.equivOfRightInverse_symm_apply, hψ, Homeomorph.subRight_symm_apply]
+    abel
+  have he_graph {r : ℝ} (hr : r ∈ Icc 0 L) : e (γ (τ r)) = (r, g r) := by
+    have h1 : φ (γ (τ r) - p) = r := by rw [map_sub, hτ, projIcc_of_mem _ hr]
+    ext
+    · rw [he₁, h1]
+    · rw [he₂, hg, h1, projIcc_of_mem _ hr]
+  -- Outside `(0, L)` the profile `g` vanishes, and it is bounded by `2 * D`.
+  have hg_zero {r : ℝ} (hr : r ≤ 0 ∨ L ≤ r) : (g r : E) = 0 := by
+    rcases hr with hr | hr
+    · have h1 := hτ r
+      rw [projIcc_of_le_left _ hr, sub_eq_zero] at h1
+      rw [hg, projIcc_of_le_left _ hr, hφ.injOn (hτ_mem r) ha h1]
+      simp [hp]
+    · have h1 := hτ r
+      rw [projIcc_of_right_le _ hr, sub_eq_iff_eq_add', ← hφb] at h1
+      rw [hg, projIcc_of_right_le _ hr, hφ.injOn (hτ_mem r) hb h1]
+      simp [div_self hL.ne', hu, hp]
+  have hg_le (r : ℝ) : ‖(g r : E)‖ ≤ 2 * D := by
+    have hc := (projIcc 0 L hL.le r).2
+    have hc0 : 0 ≤ (projIcc 0 L hL.le r : ℝ) / L := div_nonneg hc.1 hL.le
+    have hc1 : (projIcc 0 L hL.le r : ℝ) / L ≤ 1 := (div_le_one hL).2 hc.2
+    calc ‖(g r : E)‖ ≤ ‖γ (τ r) - p‖ + ‖((projIcc 0 L hL.le r : ℝ) / L) • u‖ := by
+          rw [hg]; exact norm_sub_le _ _
+      _ ≤ D + 1 * D := by
+          rw [norm_smul, Real.norm_of_nonneg hc0]
+          gcongr
+          exact hD _ (hτ_mem r)
+      _ = 2 * D := by ring
+  have h3 : (2 : ℝ) < 3 := by norm_num
+  refine ⟨(straightenGraph g 3 h3).transport e.symm, ?_, fun t x hx ↦ ?_⟩
+  · -- The final map carries `γ (τ r)` to the point of the chord over `r`.
+    have hfin {r : ℝ} (hr : r ∈ Icc 0 L) :
+        ((straightenGraph g 3 h3).transport e.symm).final (γ (τ r)) = p + (r / L) • u := by
+      rw [final_transport, Homeomorph.symm_symm, he_graph hr, final_apply,
+        straightenGraph_apply_graph, he_symm]
+      simp
+    have hseg : segment ℝ (γ a) (γ b) = (fun θ : ℝ ↦ p + θ • u) '' Icc 0 1 :=
+      segment_eq_image' ℝ _ _
+    rw [hseg]
+    ext z
+    constructor
+    · rintro ⟨_, ⟨s, hs, rfl⟩, rfl⟩
+      have hr : φ (γ s) - φ p ∈ Icc 0 L := (f ⟨s, hs⟩).2
+      refine ⟨(φ (γ s) - φ p) / L, ⟨div_nonneg hr.1 hL.le, (div_le_one hL).2 hr.2⟩, ?_⟩
+      dsimp only
+      rw [← hfin hr, hτ_self hs]
+    · rintro ⟨θ, hθ, rfl⟩
+      have hr : θ * L ∈ Icc 0 L := ⟨mul_nonneg hθ.1 hL.le, mul_le_of_le_one_left hL.le hθ.2⟩
+      refine ⟨γ (τ (θ * L)), mem_image_of_mem γ (hτ_mem _), ?_⟩
+      rw [hfin hr, mul_div_cancel_right₀ _ hL.ne']
+  · -- A moved point lies within `3 * ‖g‖` of the chord, over the open chord.
+    set y := e x with hy
+    have hxy : x = p + (y.1 / L) • u + y.2 := by rw [← he_symm, hy, Homeomorph.symm_apply_apply]
+    have hy1 : φ x = φ p + y.1 := by
+      rw [hy, he₁, map_sub]
+      ring
+    have hmove : ‖(y.2 : E)‖ < 3 * ‖(g y.1 : E)‖ := by
+      by_contra! h
+      apply hx
+      rw [transport_apply, Homeomorph.symm_symm, ← hy,
+        straightenGraph_apply_of_mul_norm_le g h3 (by simpa only [Submodule.norm_coe] using h),
+        hy, Homeomorph.symm_apply_apply]
+    have hIoo : 0 < y.1 ∧ y.1 < L := by
+      by_contra! h
+      have : y.1 ≤ 0 ∨ L ≤ y.1 := by
+        rcases le_or_gt y.1 0 with h0 | h0
+        · exact Or.inl h0
+        · exact Or.inr (h h0)
+      rw [hg_zero this, norm_zero, mul_zero] at hmove
+      exact (norm_nonneg _).not_gt hmove
+    refine ⟨by rw [hy1]; linarith [hIoo.1], by rw [hy1, hφb]; linarith [hIoo.2], ?_⟩
+    have hc0 : 0 ≤ y.1 / L := div_nonneg hIoo.1.le hL.le
+    have hc1 : y.1 / L ≤ 1 := (div_le_one hL).2 hIoo.2.le
+    have h2 : ‖(y.2 : E)‖ < 3 * (2 * D) := hmove.trans_le (by gcongr; exact hg_le _)
+    calc ‖x - γ a‖ ≤ ‖(y.1 / L) • u‖ + ‖(y.2 : E)‖ := by
+          rw [← hp, hxy, add_assoc, add_sub_cancel_left]
+          exact norm_add_le _ _
+      _ < 1 * D + 3 * (2 * D) := by
+          rw [norm_smul, Real.norm_of_nonneg hc0]
+          exact add_lt_add_of_le_of_lt (mul_le_mul hc1 huD (norm_nonneg _) zero_le_one) h2
+      _ = 7 * D := by ring
 
 end AmbientIsotopy
 

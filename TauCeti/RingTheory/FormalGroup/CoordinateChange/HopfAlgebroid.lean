@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Algebra.MvPolynomial.Monad
 public import TauCeti.RingTheory.FormalGroup.CoordinateChange.Lazard
+public import TauCeti.RingTheory.FormalGroup.Height.Ideal
 
 /-!
 # The Hopf algebroid `(L, L[b₁, b₂, …])` of strict coordinate changes
@@ -57,6 +58,8 @@ groupoid law in the group of strict coordinates. In the tensor model, the compos
 * `TauCeti.LazardRing.tensorLift_conjugation_id_comp_coproduct`,
   `TauCeti.LazardRing.tensorLift_id_conjugation_comp_coproduct`: the antipode equations
   `μ (c ⊗ id) Δ = η_R ε` and `μ (id ⊗ c) Δ = η_L ε`.
+* `TauCeti.LazardRing.map_rightUnit_heightIdeal`: the height ideals `I_n` of the Lazard ring
+  (`FormalGroup.heightIdeal`) are invariant ideals: `η_R(I_n) Γ = η_L(I_n) Γ`.
 
 ## References
 
@@ -378,6 +381,17 @@ theorem tensorLift_id_conjugation_comp_coproduct :
       tensorLift_comp_C, map_conjugation_universalStrictCoordinate, FormalCoordinate.map_comp,
       map_counit_universalStrictCoordinate, map_one]
     simp
+
+/-! ### Invariant ideals -/
+
+/-- **The height ideals of the Lazard ring are invariant.** Their extensions to the ring
+`L[b₁, b₂, …]` of strict coordinate changes along the left unit `η_L = C` and the right unit
+`η_R` agree. -/
+theorem map_rightUnit_heightIdeal (p n : ℕ) :
+    (formalGroup.heightIdeal p n).map rightUnit =
+      (formalGroup.heightIdeal p n).map MvPolynomial.C := by
+  rw [FormalGroup.map_heightIdeal, FormalGroup.map_heightIdeal, map_rightUnit,
+    FormalGroup.heightIdeal_smul]
 
 end LazardRing
 
