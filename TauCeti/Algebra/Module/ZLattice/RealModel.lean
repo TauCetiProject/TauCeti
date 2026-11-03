@@ -56,10 +56,15 @@ isometry classes of rational lattices, such as non-isometry, transfer to the rea
   `TauCeti.IntegralLattice.isUnimodular_realModel_iff`: the real model is even, resp. unimodular,
   exactly when `M` is.
 * `TauCeti.IntegralLattice.RealModelSpace.finrank_eq`: the real model space has the rank of `M`.
+* `TauCeti.IntegralLattice.det_realModel` and
+  `TauCeti.IntegralLattice.natCard_discriminantGroup_realModel`: the real model has the
+  determinant of `M`, and its discriminant group has the order of that of `M`.
 * `ZLattice.map_realModel_realModelRatModelIsometry`: the isometry carries the real model of the
   rational model onto `L`.
 * `TauCeti.IntegralLattice.Isometry.realModelMap_ofRealModel_apply`: the induced isometry agrees
   with the real isometry on the rational vectors.
+* `TauCeti.IntegralLattice.map_realModel_ne_realModel`: if two positive definite rational lattices
+  are not isometric, no real linear isometry carries the real model of one onto that of the other.
 
 ## References
 
@@ -267,6 +272,22 @@ theorem isUnimodular_realModel_iff : ZLattice.IsUnimodular (M.realModel hM) ↔ 
     isUnimodular_iff_natCard_discriminantGroup_eq_one,
     Nat.card_congr (M.ratModelRealModelIsometry hM).discriminantGroupEquiv.toEquiv]
 
+/-- The discriminant group of the real model of `M` has the order of the discriminant group of
+`M`. -/
+@[simp]
+theorem natCard_discriminantGroup_realModel :
+    Nat.card (ZLattice.DiscriminantGroup (M.realModel hM)) = Nat.card M.DiscriminantGroup :=
+  Nat.card_congr <|
+    (ZLattice.ratModelDiscriminantGroupEquiv (M.isIntegral_realModel hM)).toEquiv.trans
+      (M.ratModelRealModelIsometry hM).discriminantGroupEquiv.symm.toEquiv
+
+/-- The determinant of the real model of `M`, its squared covolume, is the determinant of `M`. -/
+@[simp]
+theorem det_realModel [MeasurableSpace (M.RealModelSpace hM)] [BorelSpace (M.RealModelSpace hM)] :
+    ZLattice.det (M.realModel hM) = M.determinant := by
+  rw [← ZLattice.determinant_ratModel (M.isIntegral_realModel hM),
+    (M.ratModelRealModelIsometry hM).determinant_eq]
+
 namespace Isometry
 
 variable {W : Type*} [AddCommGroup W] [Module ℚ W] {M} {hM} {M' : IntegralLattice W}
@@ -316,6 +337,21 @@ theorem realModelMap_ofRealModel_apply (f : M.RealModelSpace hM ≃ₗᵢ[ℝ] M
   exact LinearMap.congr_fun h x
 
 end Isometry
+
+section
+
+variable {W : Type*} [AddCommGroup W] [Module ℚ W] {M} {hM} {N : IntegralLattice W}
+  {hN : N.IsPosDef}
+
+/-- **Non-isometric lattices have non-isometric real models**: if the positive definite rational
+lattices `M` and `N` are not isometric, no real linear isometry of the ambient spaces carries the
+real model of `M` onto that of `N`. -/
+theorem map_realModel_ne_realModel (hMN : IsEmpty (M.Isometry N))
+    (f : M.RealModelSpace hM ≃ₗᵢ[ℝ] N.RealModelSpace hN) :
+    (M.realModel hM).map (f.toLinearEquiv.restrictScalars ℤ).toLinearMap ≠ N.realModel hN :=
+  fun hf ↦ hMN.false (Isometry.ofRealModel f hf)
+
+end
 
 end TauCeti.IntegralLattice
 

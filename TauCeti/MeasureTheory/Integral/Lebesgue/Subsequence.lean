@@ -44,7 +44,7 @@ theorem exists_strictMono_ae_tendsto_zero_of_tendsto_lintegral {F : ℕ → α �
   refine ⟨φ, hφ, ?_⟩
   have hsum : ∫⁻ a, ∑' j, F (φ j) a ∂μ ≠ ∞ := by
     rw [lintegral_tsum fun j ↦ hF (φ j)]
-    exact ((ENNReal.tsum_le_tsum fun j ↦ (hlt j).le).trans_lt (by simp)).ne
+    exact ((_root_.tsum_le_tsum fun j ↦ (hlt j).le).trans_lt (by simp)).ne
   -- So the sum is finite almost everywhere, and its terms tend to `0` there.
   filter_upwards [ae_lt_top' (AEMeasurable.tsum fun j ↦ hF (φ j)) hsum] with a ha
   exact ENNReal.tendsto_atTop_zero_of_tsum_ne_top ha.ne

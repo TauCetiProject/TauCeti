@@ -34,8 +34,11 @@ also holds with the opposite phase (`ZLattice.IsIntegral.sum_discriminantPairing
 
 * `ZLattice.thetaCoset_S_smul`: the inversion law at a general translate.
 * `ZLattice.thetaSeries_S_smul`, `ZLattice.thetaSeries_slash_S`: the scalar inversion law.
+* `ZLattice.thetaSeries_slash_S_slash_S`: the scalar inversion law applied twice gives
+  `(Θ_L ∣[k] S) ∣[k] S = (-1)^k Θ_L`, the action of `S² = -1` in weight `k`.
 * `ZLattice.IsUnimodular.thetaSeries_slash_S`: the scalar inversion law of a unimodular lattice.
-* `ZLattice.IsIntegral.thetaCoset_S_smul`: the vector-valued inversion law.
+* `ZLattice.IsIntegral.thetaCoset_S_smul`, `ZLattice.IsIntegral.thetaCoset_slash_S`: the
+  vector-valued inversion law, pointwise and in slash form.
 
 ## References
 
@@ -116,6 +119,25 @@ theorem thetaSeries_slash_S (hk : finrank ℝ E = 2 * k) :
   field_simp
 
 omit [MeasurableSpace E] [BorelSpace E] in
+/-- **The inversion law applied twice**: if `dim E = 2k`, then in weight `k`,
+`(Θ_L ∣[k] S) ∣[k] S = (-1)^k Θ_L`. This agrees with the action of `S² = -1`, which acts on
+weight `k` by `(-1)^k`; in odd weight it is not trivial, as for the lattice `ℤ²` in weight
+one. -/
+theorem thetaSeries_slash_S_slash_S (hk : finrank ℝ E = 2 * k) :
+    (thetaSeries L ∣[(k : ℤ)] ModularGroup.S) ∣[(k : ℤ)] ModularGroup.S =
+      (-1 : ℂ) ^ k • thetaSeries L := by
+  -- The statement involves no measure; the inversion law uses the Borel volume.
+  borelize E
+  have hc : (covolume L : ℂ) ≠ 0 := ofReal_ne_zero.mpr (covolume_ne_zero L MeasureTheory.volume)
+  have hI : (-I) ^ k * (-I) ^ k = (-1 : ℂ) ^ k := by rw [← mul_pow, neg_mul_neg, I_mul_I]
+  rw [thetaSeries_slash_S L hk, ModularForm.SL_smul_slash, thetaSeries_slash_S (dual L) hk,
+    dual_dual, covolume_dual, smul_smul]
+  congr 1
+  push_cast
+  rw [← hI]
+  field_simp
+
+omit [MeasurableSpace E] [BorelSpace E] in
 variable {L} in
 /-- **The inversion law of a unimodular lattice**: if `L = L^∨` and `dim E = 2k`, then in weight
 `k`, `Θ_L ∣[k] S = (-i)^k Θ_L`. -/
@@ -140,6 +162,21 @@ theorem thetaCoset_S_smul (hL : IsIntegral L) [Fintype (DiscriminantGroup L)]
       ∑ δ : DiscriminantGroup L,
         hL.discriminantPairingChar (Submodule.Quotient.mk γ) δ * thetaCosetClass L δ τ := by
   rw [ZLattice.thetaCoset_S_smul L hk, ← hL.tsum_exp_inner_mul_thetaTerm γ τ]
+
+/-- In weight `k`, inversion sends a coset theta series to a finite linear combination of
+coset theta series, with coefficients given by the discriminant pairing characters. -/
+theorem thetaCoset_slash_S (hL : IsIntegral L) [Fintype (DiscriminantGroup L)]
+    (hk : finrank ℝ E = 2 * k) (γ : dual L) :
+    thetaCoset L γ ∣[(k : ℤ)] ModularGroup.S =
+      ((-I) ^ k * (covolume L : ℂ)⁻¹) •
+        ∑ δ : DiscriminantGroup L,
+          hL.discriminantPairingChar (Submodule.Quotient.mk γ) δ • thetaCosetClass L δ := by
+  ext τ
+  have hτ : (τ : ℂ) ≠ 0 := τ.ne_zero
+  rw [ModularForm.SL_slash_apply, hL.thetaCoset_S_smul hk, ModularGroup.denom_S,
+    zpow_neg, zpow_natCast]
+  simp only [Pi.smul_apply, Finset.sum_apply, smul_eq_mul]
+  field_simp
 
 end IsIntegral
 

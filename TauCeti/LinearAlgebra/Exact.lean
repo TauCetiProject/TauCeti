@@ -33,6 +33,10 @@ by a homology theory,
 `Module.sum_neg_one_pow_finrank_eq_zero_of_exact` treats a finite exact sequence indexed by
 `Fin (n + 2)` with a single family of spaces; the long exact sequences of homology theories are
 instead indexed by `ℕ` with three families of spaces, which is the form taken here.
+
+For an exact augmented sequence with one family of spaces,
+`TauCeti.sum_range_neg_one_pow_finrank_eq_add_of_exact` records the finite alternating sum
+with its final image correction. It applies even when the full resolution is unbounded.
 -/
 
 public section
@@ -231,7 +235,7 @@ theorem _root_.Function.Exact.bijective_mapQ_range_of_prod_coprod
   · induction y using Submodule.Quotient.induction_on with | H c => ?_
     obtain ⟨⟨c₀, k⟩, hck⟩ := hsurj c
     refine ⟨Submodule.Quotient.mk (-k), (Submodule.Quotient.eq _).2 ⟨-c₀, ?_⟩⟩
-    simp only [coprod_apply, neg_apply] at hck
+    simp only [coprod_apply] at hck
     simp [← hck]
 
 end TwoTermComplex
@@ -259,6 +263,42 @@ theorem _root_.LinearMap.finrank_map_mkQ_ker_add_finrank [FiniteDimensional k V�
   omega
 
 end Homology
+
+section AugmentedExact
+
+open Module
+
+variable {k : Type*} [DivisionRing k] {X : ℕ → Type*} {M : Type*}
+  [∀ i, AddCommGroup (X i)] [∀ i, Module k (X i)] [AddCommGroup M] [Module k M]
+
+/-- The alternating dimension sum of an exact augmented sequence through degree `n` equals
+`dim M` plus the signed dimension of the image of the next differential. Only the terms through
+`n` need be finite-dimensional; neither the whole sequence nor its augmentation need be bounded. -/
+theorem sum_range_neg_one_pow_finrank_eq_add_of_exact
+    (d : ∀ i, X (i + 1) →ₗ[k] X i) (π : X 0 →ₗ[k] M)
+    (hπ : Function.Surjective π) (h₀ : Function.Exact (d 0) π)
+    (hd : ∀ i, Function.Exact (d (i + 1)) (d i)) (n : ℕ)
+    (hfinite : ∀ i ≤ n, Module.Finite k (X i)) :
+    ∑ i ∈ Finset.range (n + 1), (-1 : ℤ) ^ i * finrank k (X i) =
+      finrank k M + (-1 : ℤ) ^ n * finrank k (LinearMap.range (d n)) := by
+  induction n with
+  | zero =>
+    let _ := hfinite 0 le_rfl
+    have hdim : finrank k (X 0) = finrank k M + finrank k (LinearMap.range (d 0)) := by
+      rw [← π.finrank_range_add_finrank_ker, LinearMap.range_eq_top.mpr hπ, finrank_top,
+        h₀.linearMap_ker_eq]
+    simpa only [zero_add, Finset.sum_range_one, pow_zero, one_mul, Nat.cast_add] using
+      congrArg (Nat.cast : ℕ → ℤ) hdim
+  | succ n ih =>
+    let _ := hfinite (n + 1) le_rfl
+    have hdim : finrank k (X (n + 1)) =
+        finrank k (LinearMap.range (d n)) + finrank k (LinearMap.range (d (n + 1))) := by
+      rw [← (d n).finrank_range_add_finrank_ker, (hd n).linearMap_ker_eq]
+    rw [Finset.sum_range_succ, ih (fun i hi ↦ hfinite i (hi.trans n.le_succ)),
+      hdim, Nat.cast_add, pow_succ]
+    ring
+
+end AugmentedExact
 
 section LongExact
 

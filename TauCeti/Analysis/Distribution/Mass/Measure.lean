@@ -115,8 +115,12 @@ end LocalMass
 
 section Content
 
-/-- A compact subset of `Ω` has an open neighbourhood of finite local mass. -/
-private theorem exists_localMass_ne_top {T : 𝓕} (hT : HasLocallyFiniteMass T) {K : Set E}
+/-- A compact subset of `Ω` has an open neighbourhood of finite local mass. The target may
+be any real normed space, not just the scalars. -/
+theorem HasLocallyFiniteMass.exists_open_localMass_ne_top
+    {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V]
+    {𝓖 : Type*} [FunLike 𝓖 𝓓^{n}(Ω, F) V] [LinearMapClass 𝓖 ℝ 𝓓^{n}(Ω, F) V]
+    {T : 𝓖} (hT : HasLocallyFiniteMass T) {K : Set E}
     (hK : IsCompact K) (hKΩ : K ⊆ Ω) : ∃ U : Opens E, K ⊆ (U : Set E) ∧ localMass T U ≠ ⊤ := by
   obtain ⟨U, hU, hKU, hclΩ, hcl⟩ := exists_open_between_and_isCompact_closure hK Ω.isOpen hKΩ
   exact ⟨⟨U, hU⟩, hKU, ne_top_of_le_ne_top
@@ -128,7 +132,7 @@ private def massContent {T : 𝓕} (hT : HasLocallyFiniteMass T) : Content Ω :=
   contentOfOpens (m := fun U => localMass T U) (fun _ _ h => localMass_mono h)
     (fun U V _ _ => localMass_union_le T U.isOpen V.isOpen)
     (fun _ _ _ _ h => localMass_add_localMass_le T (Opens.coe_disjoint.2 h))
-    fun _ hK hKΩ => exists_localMass_ne_top hT hK hKΩ
+    fun _ hK hKΩ => hT.exists_open_localMass_ne_top hK hKΩ
 
 end Content
 

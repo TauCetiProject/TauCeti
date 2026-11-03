@@ -288,8 +288,8 @@ def linear : InfinitesimalAction (Module.End ℝ V) 𝓘(ℝ, V) V where
     -- Evaluate the bundled map `A ↦ (x ↦ A x)` being defined; `LinearMap.coe_mk` cannot do this
     -- because its values are typed as tangent vectors rather than elements of `V`.
     change ⁅A, B⁆ x = -mlieBracket 𝓘(ℝ, V) (fun y ↦ A y) (fun y ↦ B y) x
-    rw [h, LieRing.of_associative_ring_bracket, LinearMap.sub_apply, Module.End.mul_apply,
-      Module.End.mul_apply]
+    rw [h, LieRing.of_associative_ring_bracket, LinearMap.sub_apply, mul_apply_eq_comp,
+      mul_apply_eq_comp]
     exact (neg_sub _ _).symm
 
 @[simp]

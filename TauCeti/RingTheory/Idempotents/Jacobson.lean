@@ -97,7 +97,8 @@ theorem IsIdempotentElem.exists_smul_eq_mul_of_mul_sub_smul_mem {S T : Type*} [C
     rw [LinearMap.range_eq_map]
     exact Module.Finite.fg_top.map f
   have hle : LinearMap.range f ≤ S ∙ e := by
-    refine Submodule.le_of_le_smul_of_le_jacobson_bot hfg hJ ?_
+    refine Submodule.le_of_le_smul_of_le_jacobson hfg
+      (by simpa only [Ideal.jacobson_bot] using hJ) ?_
     rintro _ ⟨y, rfl⟩
     obtain ⟨s, hs⟩ := h y
     have hmem : e * (e * y - s • e) ∈ J • LinearMap.range f := by
