@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.Cohomology.HigherDirectImage.Basic
-public import TauCeti.AlgebraicGeometry.Modules.Pushforward
+public import TauCeti.AlgebraicGeometry.Modules.Pushforward.Basic
 public import TauCeti.AlgebraicGeometry.Modules.Restriction.Basic
 
 /-!
