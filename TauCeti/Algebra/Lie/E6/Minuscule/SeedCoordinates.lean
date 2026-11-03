@@ -35,6 +35,36 @@ def torusParameterOfSeedValues {G : Type*} [CommGroup G] (t : Fin 27 → G) : Fi
   ![t 0, t 2 * t 5 * t 11, t 0 * t 1, t 0 * t 1 * t 2,
     t 2 * t 4 * t 5 * t 11, t 4 * t 5]
 
+/-- The six fundamental-weight coordinates in terms of the seed values. -/
+theorem torusParameterOfSeedValues_def {G : Type*} [CommGroup G] (t : Fin 27 → G) :
+    torusParameterOfSeedValues t =
+      ![t 0, t 2 * t 5 * t 11, t 0 * t 1, t 0 * t 1 * t 2,
+        t 2 * t 4 * t 5 * t 11, t 4 * t 5] := (rfl)
+
+/-- The zeroth coordinate is the value at seed `0`. -/
+@[simp] theorem torusParameterOfSeedValues_apply_zero {G : Type*} [CommGroup G]
+    (t : Fin 27 → G) : torusParameterOfSeedValues t 0 = t 0 := (rfl)
+
+/-- The first coordinate is the product of the values at seeds `2`, `5`, `11`. -/
+@[simp] theorem torusParameterOfSeedValues_apply_one {G : Type*} [CommGroup G]
+    (t : Fin 27 → G) : torusParameterOfSeedValues t 1 = t 2 * t 5 * t 11 := (rfl)
+
+/-- The second coordinate is the product of the values at seeds `0`, `1`. -/
+@[simp] theorem torusParameterOfSeedValues_apply_two {G : Type*} [CommGroup G]
+    (t : Fin 27 → G) : torusParameterOfSeedValues t 2 = t 0 * t 1 := (rfl)
+
+/-- The third coordinate is the product of the values at seeds `0`, `1`, `2`. -/
+@[simp] theorem torusParameterOfSeedValues_apply_three {G : Type*} [CommGroup G]
+    (t : Fin 27 → G) : torusParameterOfSeedValues t 3 = t 0 * t 1 * t 2 := (rfl)
+
+/-- The fourth coordinate is the product of the values at seeds `2`, `4`, `5`, `11`. -/
+@[simp] theorem torusParameterOfSeedValues_apply_four {G : Type*} [CommGroup G]
+    (t : Fin 27 → G) : torusParameterOfSeedValues t 4 = t 2 * t 4 * t 5 * t 11 := (rfl)
+
+/-- The fifth coordinate is the product of the values at seeds `4`, `5`. -/
+@[simp] theorem torusParameterOfSeedValues_apply_five {G : Type*} [CommGroup G]
+    (t : Fin 27 → G) : torusParameterOfSeedValues t 5 = t 4 * t 5 := (rfl)
+
 /-- Evaluating the torus parameter recovered from seed values returns those values on each
 of the six seed minuscule weights. -/
 theorem torusCharacter_torusParameterOfSeedValues {A : Type*} [CommRing A]
