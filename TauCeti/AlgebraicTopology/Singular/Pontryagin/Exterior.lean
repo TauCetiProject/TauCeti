@@ -180,8 +180,13 @@ private lemma pontryaginChainMap_self [IsCommMonObj G]
       simp only [map_add, LinearMap.add_apply, hf, hg, zero_add, add_zero]
       rw [add_comm, h]
     | single σ a =>
-      rw [show e.symm (Finsupp.single σ a) = TauCeti.simplexChain σ a from
-          SSet.chainsLinearEquivFinsupp_symm_single _ σ a, TauCeti.simplexChain_eq_smul,
+      -- `SSet.chainsLinearEquivFinsupp_symm_single` holds as stated here only up to unfolding the
+      -- local abbreviation `e` and the `abbrev` `TauCeti.simplexChain σ a`, which is
+      -- `(toSSet.obj G).ιChainComplex σ a` with coefficients `ModuleCat.of k k`; stating it in the
+      -- abbreviated form lets the rewrites below see `simplexChain` and `B`
+      have hsingle : e.symm (Finsupp.single σ a) = TauCeti.simplexChain σ a :=
+        SSet.chainsLinearEquivFinsupp_symm_single _ σ a
+      rw [hsingle, TauCeti.simplexChain_eq_smul,
         map_smul, map_smul, LinearMap.smul_apply, hB, simplexMul_comm ((toSSet.obj G).σ 1 σ),
         sub_self, smul_zero, smul_zero]
   exact hdiag c
