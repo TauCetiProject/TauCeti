@@ -173,7 +173,7 @@ theorem one_sub_ofMulAction_op_upperTriangularSum_mem [CommRing k] (g : PSL(2, �
   rcases eq_or_ne n 0 with rfl | hn
   · simp
   -- `Tₙ^∞` and `Tₙ^∞ · g` have the same orbit sums, all equal to `1`
-  simp only [coinvariantsKer_ofMulAction_eq_ker, LinearMap.sub_apply, Module.End.one_apply,
+  simp only [coinvariantsKer_ofMulAction_eq_ker, LinearMap.sub_apply, one_apply_eq_self,
     LinearMap.sub_mem_ker_iff]
   ext q
   simp [hn]

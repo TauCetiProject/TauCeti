@@ -8,7 +8,7 @@ module
 public import Mathlib.RingTheory.AdicCompletion.Basic
 public import Mathlib.RingTheory.LocalRing.ResidueField.Defs
 public import Mathlib.RingTheory.PowerSeries.Expand
-public import TauCeti.RingTheory.FormalGroup.Height
+public import TauCeti.RingTheory.FormalGroup.Height.Basic
 -- Proof-only: the residue field, base change of formal group laws and of `[n]`, the Frobenius
 -- factorization of `[p]`, substitution modulo an ideal, square-zero reductions, injectivity of
 -- expansion, the first-order Taylor formula and the derivative of a base change.

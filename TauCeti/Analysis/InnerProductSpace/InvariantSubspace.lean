@@ -77,7 +77,7 @@ theorem _root_.LinearMap.IsSymmetric.starProjection_apply_comm {A : Module.End �
     (hU : U ∈ A.invtSubmodule) (x : E) : U.starProjection (A x) = A (U.starProjection x) := by
   have h := (U.isReducing_iff_commute_starProjection A).mp
     ((hA.isReducing_iff_mem_invtSubmodule U).mpr hU)
-  simpa only [Module.End.mul_apply, ContinuousLinearMap.coe_coe] using congr($(h.eq) x)
+  simpa only [_root_.mul_apply_eq_comp, ContinuousLinearMap.coe_coe] using congr($(h.eq) x)
 
 
 variable {U V : Submodule 𝕜 E} {A : End 𝕜 E}

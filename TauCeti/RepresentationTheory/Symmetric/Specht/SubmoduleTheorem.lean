@@ -108,7 +108,7 @@ private theorem exists_asAlgebraHom_columnAntisymmetrizer_single_eq_sign_smul
     rw [Representation.ofMulAction_single, tabloid_relabel, hσ, mul_smul,
       smul_tabloid_eq_self_iff.mpr (inv_mem (SetLike.mem_coe.mp hp))]
   rw [htab, ← Representation.asAlgebraHom_single_one (permutationModule (shapePartition μ)).ρ,
-    ← Module.End.mul_apply, ← map_mul,
+    ← mul_apply_eq_comp, ← map_mul,
     mul_columnAntisymmetrizer_right t ⟨q⁻¹, inv_mem (SetLike.mem_coe.mp hq)⟩,
     Equiv.Perm.sign_inv, map_smul, LinearMap.smul_apply, ← polytabloid_def]
 

@@ -335,7 +335,7 @@ private theorem tangentHom_mapMatrix_mulCastHom {m l k : ℕ} (h : m * k = l)
   have hBZ : B * (ZMod.mulCastHom k h).mapMatrix Z =
       (ZMod.mulCastHom k h).mapMatrix (B.map (ZMod.castHom (Dvd.intro k h) (ZMod m)) * Z) := by
     ext i j
-    simp only [mul_apply, AddMonoidHom.mapMatrix_apply, map_apply, map_sum,
+    simp only [Matrix.mul_apply, AddMonoidHom.mapMatrix_apply, map_apply, map_sum,
       ZMod.mulCastHom_castHom_mul]
   rw [tangentHom_apply, tangentHom_apply, hBZ, map_add]
   simp only [AddMonoidHom.mapMatrix_apply, transpose_map]
