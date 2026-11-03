@@ -110,10 +110,22 @@ section Biproducts
 variable {C : Type u} [Category.{v} C] [HasZeroMorphisms C]
 
 /-- A zero object is the biproduct of the empty family of simple objects. -/
-theorem exists_biproduct_simples_of_isZero [HasFiniteBiproducts C] {X : C} (hX : IsZero X) :
+theorem exists_biproduct_simples_of_isZero {X : C} (hX : IsZero X) :
     ∃ (ι : Type) (_ : Fintype ι) (f : ι → C) (_ : ∀ i, Simple (f i)) (_ : HasBiproduct f),
       Nonempty (X ≅ ⨁ f) := by
-  refine ⟨Empty, inferInstance, Empty.elim, fun i ↦ i.elim, inferInstance, ⟨hX.iso ?_⟩⟩
+  -- The zero object `X` itself is a biproduct of the empty family.
+  have : HasBiproduct (Empty.elim : Empty → C) := HasBiproduct.mk
+    { bicone := { pt := X, π := fun i ↦ i.elim, ι := fun i ↦ i.elim, ι_π := fun i ↦ i.elim }
+      isBilimit :=
+        { isLimit :=
+            { lift := fun s ↦ hX.from_ s.pt
+              fac := fun _ j ↦ j.as.elim
+              uniq := fun _ _ _ ↦ hX.eq_of_tgt _ _ }
+          isColimit :=
+            { desc := fun s ↦ hX.to_ s.pt
+              fac := fun _ j ↦ j.as.elim
+              uniq := fun _ _ _ ↦ hX.eq_of_src _ _ } } }
+  refine ⟨Empty, inferInstance, Empty.elim, fun i ↦ i.elim, this, ⟨hX.iso ?_⟩⟩
   exact (IsZero.iff_id_eq_zero _).2 (biproduct.hom_ext _ _ fun i ↦ i.elim)
 
 /-- A simple object is the biproduct of the family consisting of itself. -/

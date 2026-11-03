@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Data.Finsupp.Weight
-public import TauCeti.CategoryTheory.Limits.Preserves.Shapes.Zero
+public import TauCeti.CategoryTheory.Limits.Shapes.ZeroMorphisms
 public import TauCeti.CategoryTheory.Semisimple.Multiplicity
 
 /-!
