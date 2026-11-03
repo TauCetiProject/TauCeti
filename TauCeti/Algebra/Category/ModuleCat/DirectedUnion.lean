@@ -7,7 +7,9 @@ module
 
 public import Mathlib.Algebra.Category.ModuleCat.Basic
 public import Mathlib.CategoryTheory.Category.Preorder
+public import Mathlib.LinearAlgebra.TensorProduct.Lift
 public import TauCeti.LinearAlgebra.Submodule.DirectedUnion
+public import TauCeti.LinearAlgebra.TensorProduct.Tower
 
 /-!
 # Directed unions as colimits of modules
@@ -19,18 +21,28 @@ into `T` exhibit `ModuleCat.of R T` as the colimit of this diagram.
 The universal map is the linear map `Submodule.iSupLift` glued from the legs of an
 arbitrary cocone.
 
+Dually, let a commutative ring `R` be the union of an increasing sequence of subrings
+`S₀ ⊆ S₁ ⊆ ⋯`. Every `R`-module `M` is the colimit of its base changes `R ⊗[Sₙ] M`, with
+transition maps `r ⊗ m ↦ r ⊗ m` and legs `r ⊗ m ↦ r • m`: each element of `R` already lies in
+some `Sₙ`, where it can be moved across the tensor sign.
+
 ## Main declarations
 
 * `TauCeti.ModuleCat.submoduleFunctor`: the diagram associated to a monotone family of submodules.
 * `TauCeti.ModuleCat.submoduleCocone`: the inclusion cocone into the supremum submodule.
 * `TauCeti.ModuleCat.submoduleCoconeIsColimit`: the inclusion cocone is a colimit.
+* `TauCeti.ModuleCat.tensorSubringFunctor`: the sequence `n ↦ R ⊗[S n] M` of base changes of an
+  `R`-module along an increasing sequence of subrings.
+* `TauCeti.ModuleCat.tensorSubringCocone`: the cocone over it with point `M`.
+* `TauCeti.ModuleCat.isColimitTensorSubringCocone`: this cocone is a colimit when the subrings
+  exhaust `R`.
 -/
 
 public section
 
 namespace TauCeti
 
-open CategoryTheory CategoryTheory.Limits
+open CategoryTheory CategoryTheory.Limits TensorProduct
 
 universe u v x
 
@@ -164,6 +176,104 @@ noncomputable def submoduleCoconeIsColimit [IsDirectedOrder ι]
       (hf := submoduleFunctor_ι_app_eq_comp_inclusion K hK s)
     intro i m _
     exact LinearMap.congr_fun (congrArg ModuleCat.Hom.hom (hg i)) m
+
+end ModuleCat
+
+namespace ModuleCat
+
+section Subring
+
+variable {R : Type u} [CommRing R] (M : Type u) [AddCommGroup M] [Module R M]
+
+/-- For subrings `A ≤ B` of `R`, the map `R ⊗[A] M → R ⊗[B] M`, `r ⊗ m ↦ r ⊗ m`. -/
+noncomputable def tensorSubringMap {A B : Subring R} (h : A ≤ B) :
+    R ⊗[A] M →ₗ[R] R ⊗[B] M :=
+  have : CompatibleSMul B A R M := ⟨fun a r m ↦ by
+    simpa [Subring.smul_def] using smul_tmul (⟨a, h a.2⟩ : B) r m⟩
+  mapOfCompatibleSMul B A R R M
+
+@[simp]
+theorem tensorSubringMap_tmul {A B : Subring R} (h : A ≤ B) (r : R) (m : M) :
+    tensorSubringMap M h (r ⊗ₜ m) = r ⊗ₜ m :=
+  (rfl)
+
+variable {S : ℕ → Subring R} (hS : Monotone S)
+
+/-- The sequence `n ↦ R ⊗[S n] M` of base changes of `M` along an increasing sequence of
+subrings, with transition maps `tensorSubringMap`. -/
+noncomputable abbrev tensorSubringFunctor : ℕ ⥤ ModuleCat.{u} R where
+  obj n := ModuleCat.of R (R ⊗[S n] M)
+  map f := ModuleCat.ofHom (tensorSubringMap M (hS f.le))
+  map_id n := by
+    ext : 1
+    exact AlgebraTensorModule.ext fun r m ↦ by simp
+  map_comp f g := by
+    ext : 1
+    exact AlgebraTensorModule.ext fun r m ↦ by simp
+
+/-- The cocone over `tensorSubringFunctor M hS` with point `M` and legs `r ⊗ m ↦ r • m`. -/
+noncomputable abbrev tensorSubringCocone : Cocone (tensorSubringFunctor M hS) where
+  pt := ModuleCat.of R M
+  ι :=
+    { app n := ModuleCat.ofHom (LinearMap.liftBaseChange R (LinearMap.id : M →ₗ[S n] M))
+      naturality i j f := by
+        ext : 1
+        exact AlgebraTensorModule.ext fun r m ↦ by simp }
+
+/-- The legs of `tensorSubringCocone M hS` send `r ⊗ m` to `r • m`. -/
+theorem tensorSubringCocone_ι_app_tmul (n : ℕ) (r : R) (m : M) :
+    ((tensorSubringCocone M hS).ι.app n).hom (r ⊗ₜ m) = r • m := by
+  simp
+
+variable {M hS}
+
+/-- The leg at stage `n` of a cocone over `tensorSubringFunctor M hS`, as an `R`-linear map out of
+`R ⊗[S n] M`. -/
+private noncomputable abbrev tensorSubringLeg (s : Cocone (tensorSubringFunctor M hS)) (n : ℕ) :
+    R ⊗[S n] M →ₗ[R] s.pt :=
+  (s.ι.app n).hom
+
+/-- The legs of a cocone over `tensorSubringFunctor M hS` agree on `1 ⊗ m` at every stage. -/
+private theorem tensorSubringLeg_one_tmul (s : Cocone (tensorSubringFunctor M hS)) (n : ℕ)
+    (m : M) : tensorSubringLeg s n ((1 : R) ⊗ₜ m) = tensorSubringLeg s 0 ((1 : R) ⊗ₜ m) := by
+  simp only [tensorSubringLeg, ← s.w (homOfLE (Nat.zero_le n))]
+  simp
+
+/-- `m ↦ tensorSubringLeg s 0 (1 ⊗ m)` is `R`-linear when the `S n` exhaust `R`: for `r ∈ S k`,
+the element `1 ⊗ r • m` is `r • (1 ⊗ m)` at stage `k`. -/
+private theorem tensorSubringLeg_one_tmul_smul (htop : ∀ r, ∃ n, r ∈ S n)
+    (s : Cocone (tensorSubringFunctor M hS)) (r : R) (m : M) :
+    tensorSubringLeg s 0 ((1 : R) ⊗ₜ (r • m)) = r • tensorSubringLeg s 0 ((1 : R) ⊗ₜ m) := by
+  obtain ⟨k, hk⟩ := htop r
+  rw [← tensorSubringLeg_one_tmul s k, ← tensorSubringLeg_one_tmul s k,
+    ← tmul_eq_one_tmul_smul_of_mem hk, tmul_eq_smul_one_tmul, map_smul]
+
+/-- When the subrings `S n` exhaust `R`, the module `M` is the colimit of the base changes
+`R ⊗[S n] M`. -/
+noncomputable def isColimitTensorSubringCocone (htop : ∀ r, ∃ n, r ∈ S n) :
+    IsColimit (tensorSubringCocone M hS) where
+  desc s := ModuleCat.ofHom
+    { toFun m := tensorSubringLeg s 0 ((1 : R) ⊗ₜ m)
+      map_add' m m' := by simp [tmul_add]
+      map_smul' := tensorSubringLeg_one_tmul_smul htop s }
+  fac s n := by
+    ext : 1
+    refine AlgebraTensorModule.ext fun r m ↦ ?_
+    have h : tensorSubringLeg s n (r ⊗ₜ m) = r • tensorSubringLeg s 0 ((1 : R) ⊗ₜ m) := by
+      rw [← tensorSubringLeg_one_tmul s n, tmul_eq_smul_one_tmul, map_smul]
+    simpa [← tensorSubringLeg_one_tmul_smul htop s r m] using h.symm
+  uniq s g hg := by
+    ext m
+    simpa using congr($(hg 0).hom ((1 : R) ⊗ₜ m))
+
+/-- The map out of `M` induced by a cocone `s` over `tensorSubringFunctor M hS` sends `m` to the
+image of `1 ⊗ m` under any leg of `s`. -/
+theorem isColimitTensorSubringCocone_desc_apply (htop : ∀ r, ∃ n, r ∈ S n)
+    (s : Cocone (tensorSubringFunctor M hS)) (n : ℕ) (m : M) :
+    ((isColimitTensorSubringCocone htop).desc s).hom m = (s.ι.app n).hom ((1 : R) ⊗ₜ m) :=
+  (tensorSubringLeg_one_tmul s n m).symm
+
+end Subring
 
 end ModuleCat
 

@@ -9,8 +9,8 @@ public import Mathlib.Algebra.Category.ModuleCat.Products
 public import Mathlib.Algebra.Category.ModuleCat.Projective
 public import TauCeti.Algebra.Category.ModuleCat.AB
 public import TauCeti.Algebra.Category.ModuleCat.Colimits
+public import TauCeti.Algebra.Category.ModuleCat.DirectedUnion
 public import TauCeti.CategoryTheory.Abelian.Projective.Dimension
-public import TauCeti.LinearAlgebra.TensorProduct.Tower
 public import TauCeti.RingTheory.Flat.ProjectiveDimension
 
 /-!
@@ -28,9 +28,9 @@ The bound is sharp: `ℚ` is the colimit of `ℤ →2 ℤ →3 ℤ →4 ⋯` (mu
 This is how a bound on the projective dimension of modules over the stages of a sequential
 colimit of rings leads to a bound over the colimit. Let `R` be the union of an increasing
 sequence of subrings `S₀ ⊆ S₁ ⊆ ⋯` and flat over each of them. Every `R`-module `M` is the colimit
-of the base changes `R ⊗[Sₙ] M`, since each element of `R` already lies in some `Sₙ`, and flat
-base change does not increase projective dimension. So if all modules over all `Sₙ` have
-projective dimension at most `d`, then all `R`-modules have projective dimension at most `d + 1`.
+of the base changes `R ⊗[Sₙ] M` (`TauCeti.ModuleCat.isColimitTensorSubringCocone`), and flat
+base change does not increase projective dimension. So if `M` has projective dimension at most
+`d` over every `Sₙ`, then it has projective dimension at most `d + 1` over `R`.
 The perfection of a regular ring of characteristic `p` is the main example.
 
 ## Main declarations
@@ -38,8 +38,8 @@ The perfection of a regular ring of characteristic `p` is the main example.
 * `ModuleCat.hasProjectiveDimensionLT_succ_of_isColimit`: the colimit of a sequence of modules of
   projective dimension `< n` has projective dimension `< n + 1`.
 * `ModuleCat.hasProjectiveDimensionLT_succ_of_iSup_eq_top`: if `R` is the union of an increasing
-  sequence of subrings over each of which it is flat, and all modules over these subrings have
-  projective dimension `< n`, then all `R`-modules have projective dimension `< n + 1`.
+  sequence of subrings over each of which it is flat, and an `R`-module has projective dimension
+  `< n` over each of these subrings, then it has projective dimension `< n + 1` over `R`.
 
 ## References
 
@@ -49,7 +49,7 @@ The perfection of a regular ring of characteristic `p` is the main example.
 
 public section
 
-open CategoryTheory Limits DirectSum TensorProduct
+open CategoryTheory Limits DirectSum
 
 universe v u
 
@@ -76,106 +76,18 @@ end ModuleCat
 
 namespace ModuleCat
 
-section Subring
-
-variable {R : Type u} [CommRing R]
-
-section
-
-variable (M : Type u) [AddCommGroup M] [Module R M]
-
-/-- For subrings `A ≤ B` of `R`, the map `R ⊗[A] M → R ⊗[B] M`, `r ⊗ m ↦ r ⊗ m`. -/
-private noncomputable def tensorSubringMap {A B : Subring R} (h : A ≤ B) :
-    R ⊗[A] M →ₗ[R] R ⊗[B] M :=
-  have : CompatibleSMul B A R M := ⟨fun a r m ↦ by
-    simpa [Subring.smul_def] using smul_tmul (⟨a, h a.2⟩ : B) r m⟩
-  mapOfCompatibleSMul B A R R M
-
-@[simp]
-private theorem tensorSubringMap_tmul {A B : Subring R} (h : A ≤ B) (r : R) (m : M) :
-    tensorSubringMap M h (r ⊗ₜ m) = r ⊗ₜ m :=
-  rfl
-
-variable {S : ℕ → Subring R} (hS : Monotone S)
-
-/-- The sequence `n ↦ R ⊗[S n] M` of base changes of `M` along an increasing sequence of
-subrings. -/
-private noncomputable abbrev tensorSubringFunctor : ℕ ⥤ ModuleCat.{u} R where
-  obj n := of R (R ⊗[S n] M)
-  map f := ofHom (tensorSubringMap M (hS f.le))
-  map_id n := by
-    ext : 1
-    exact AlgebraTensorModule.ext fun r m ↦ by simp
-  map_comp f g := by
-    ext : 1
-    exact AlgebraTensorModule.ext fun r m ↦ by simp
-
-/-- The cocone over `tensorSubringFunctor M hS` with point `M` and legs `r ⊗ m ↦ r • m`. -/
-private noncomputable abbrev tensorSubringCocone : Cocone (tensorSubringFunctor M hS) where
-  pt := of R M
-  ι :=
-    { app n := ofHom (LinearMap.liftBaseChange R (LinearMap.id : M →ₗ[S n] M))
-      naturality i j f := by
-        ext : 1
-        exact AlgebraTensorModule.ext fun r m ↦ by simp }
-
-variable {M hS}
-
-/-- The leg at stage `n` of a cocone over `tensorSubringFunctor M hS`, as an `R`-linear map out of
-`R ⊗[S n] M`. -/
-private noncomputable abbrev leg (s : Cocone (tensorSubringFunctor M hS)) (n : ℕ) :
-    R ⊗[S n] M →ₗ[R] s.pt :=
-  (s.ι.app n).hom
-
-/-- The legs of a cocone over `tensorSubringFunctor M hS` agree on `1 ⊗ m` at every stage. -/
-private theorem leg_one_tmul (s : Cocone (tensorSubringFunctor M hS)) (n : ℕ) (m : M) :
-    leg s n ((1 : R) ⊗ₜ m) = leg s 0 ((1 : R) ⊗ₜ m) := by
-  simp only [leg, ← s.w (homOfLE (Nat.zero_le n))]
-  simp
-
-/-- `m ↦ leg s 0 (1 ⊗ m)` is `R`-linear when the `S n` exhaust `R`: for `r ∈ S k`, the element
-`1 ⊗ r • m` is `r • (1 ⊗ m)` at stage `k`. -/
-private theorem leg_one_tmul_smul (htop : ∀ r, ∃ n, r ∈ S n)
-    (s : Cocone (tensorSubringFunctor M hS)) (r : R) (m : M) :
-    leg s 0 ((1 : R) ⊗ₜ (r • m)) = r • leg s 0 ((1 : R) ⊗ₜ m) := by
-  obtain ⟨k, hk⟩ := htop r
-  rw [← leg_one_tmul s k, ← leg_one_tmul s k, ← tmul_eq_one_tmul_smul_of_mem hk,
-    tmul_eq_smul_one_tmul, map_smul]
-
-/-- When the subrings `S n` exhaust `R`, the module `M` is the colimit of the base changes
-`R ⊗[S n] M`. -/
-private noncomputable def isColimitTensorSubringCocone (htop : ∀ r, ∃ n, r ∈ S n) :
-    IsColimit (tensorSubringCocone M hS) where
-  desc s := ofHom
-    { toFun m := leg s 0 ((1 : R) ⊗ₜ m)
-      map_add' m m' := by simp [tmul_add]
-      map_smul' := leg_one_tmul_smul htop s }
-  fac s n := by
-    ext : 1
-    refine AlgebraTensorModule.ext fun r m ↦ ?_
-    have h : leg s n (r ⊗ₜ m) = r • leg s 0 ((1 : R) ⊗ₜ m) := by
-      rw [← leg_one_tmul s n, tmul_eq_smul_one_tmul, map_smul]
-    simpa [← leg_one_tmul_smul htop s r m] using h.symm
-  uniq s g hg := by
-    ext m
-    simpa using congr($(hg 0).hom ((1 : R) ⊗ₜ m))
-
-end
-
+open TauCeti.ModuleCat in
 /-- If `R` is the union of an increasing sequence of subrings `S k` over each of which it is flat,
-and every module over every `S k` has projective dimension `< n`, then every `R`-module has
-projective dimension `< n + 1`. In terms of `HasProjectiveDimensionLE`, global dimension at most
+and an `R`-module `M` has projective dimension `< n` over every `S k`, then it has projective
+dimension `< n + 1` over `R`. In terms of `HasProjectiveDimensionLE`, global dimension at most
 `d` for all the `S k` gives global dimension at most `d + 1` for `R`. -/
-theorem hasProjectiveDimensionLT_succ_of_iSup_eq_top {S : ℕ → Subring R} (hS : Monotone S)
-    (htop : ⨆ k, S k = ⊤) [∀ k, Module.Flat (S k) R] {n : ℕ}
-    (h : ∀ k (N : ModuleCat.{u} (S k)), HasProjectiveDimensionLT N n) (M : ModuleCat.{u} R) :
+theorem hasProjectiveDimensionLT_succ_of_iSup_eq_top {R : Type u} [CommRing R]
+    {S : ℕ → Subring R} (hS : Monotone S) (htop : ⨆ k, S k = ⊤) [∀ k, Module.Flat (S k) R]
+    {n : ℕ} (M : ModuleCat.{u} R) (h : ∀ k, HasProjectiveDimensionLT (of (S k) M) n) :
     HasProjectiveDimensionLT M (n + 1) := by
   have htop' (r : R) : ∃ k, r ∈ S k :=
     (Subring.mem_iSup_of_directed hS.directed_le).1 (htop ▸ Subring.mem_top r)
   exact hasProjectiveDimensionLT_succ_of_isColimit (tensorSubringFunctor M hS)
-    (isColimitTensorSubringCocone htop') n fun k ↦
-      hasProjectiveDimensionLT_tensorProduct R M (h k (of (S k) M))
-
-end Subring
+    (isColimitTensorSubringCocone htop') n fun k ↦ hasProjectiveDimensionLT_tensorProduct R M (h k)
 
 end ModuleCat

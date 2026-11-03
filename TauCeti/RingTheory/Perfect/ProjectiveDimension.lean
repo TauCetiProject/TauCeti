@@ -11,7 +11,7 @@ public import TauCeti.RingTheory.RegularLocalRing.ProjectiveDimension
 import Mathlib.Algebra.Category.ModuleCat.ChangeOfRings
 import Mathlib.Algebra.Category.ModuleCat.ProjectiveDimension
 import TauCeti.Algebra.Category.ModuleCat.Projective.SequentialColimit
-import TauCeti.Algebra.CharP.Frobenius.Flat
+import TauCeti.Algebra.Category.ModuleCat.RestrictScalars
 import TauCeti.RingTheory.Perfect.PerfectClosure
 import TauCeti.RingTheory.RegularLocalRing.Frobenius
 
@@ -95,15 +95,8 @@ variable [ExpChar K p]
 /-- The stages are injective when Frobenius is flat: the kernel of `i` is the `p`-nilradical,
 which vanishes because flat Frobenius is injective. -/
 private theorem stage_injective (hF : (frobenius K p).Flat) (n : ℕ) :
-    Function.Injective (stage i p n) := by
-  have hinj : Function.Injective (frobenius K p) := by
-    rcases expChar_is_prime_or_one K p with hp | rfl
-    · have := TauCeti.isReduced_of_flat_frobenius p hp.one_lt hF
-      exact frobenius_inj K p
-    · exact fun x y h ↦ by simpa [frobenius_def] using h
-  refine (iterateFrobeniusEquiv L p n).symm.injective.comp
-    ((RingHom.injective_iff_ker_eq_bot _).2 ?_)
-  rw [ker_eq i p, pNilradical_eq_bot_of_frobenius_inj K p hinj]
+    Function.Injective (stage i p n) :=
+  (iterateFrobeniusEquiv L p n).symm.injective.comp (injective_of_flat_frobenius i p hF)
 
 /-- When Frobenius is flat, the `n`-th stage identifies `K` with its image. -/
 private noncomputable def stageEquiv (hF : (frobenius K p).Flat) (n : ℕ) :
@@ -129,17 +122,20 @@ theorem hasProjectiveDimensionLE_succ (hF : (frobenius K p).Flat) {d : ℕ}
     HasProjectiveDimensionLE M (d + 1) := by
   have := flat_range_stage i p hF
   refine ModuleCat.hasProjectiveDimensionLT_succ_of_iSup_eq_top (monotone_range_stage i p)
-    (iSup_range_stage i p) (fun n N ↦ ?_) M
+    (iSup_range_stage i p) M fun n ↦ ?_
   -- A module over the `n`-th stage is a `K`-module along `stageEquiv`, with the same projective
   -- dimension.
   let e := stageEquiv i p hF n
   have := RingHomInvPair.of_ringEquiv e
   have := RingHomInvPair.symm (e : K →+* (stage i p n).range) e.symm
+  let N := ModuleCat.of (stage i p n).range M
   have := h ((ModuleCat.restrictScalars (e : K →+* (stage i p n).range)).obj N)
   let e' : (ModuleCat.restrictScalars (e : K →+* (stage i p n).range)).obj N
       ≃ₛₗ[(e : K →+* (stage i p n).range)] N :=
-    { toFun x := (x : N), invFun x := (x : N), map_add' _ _ := rfl, map_smul' _ _ := rfl,
-      left_inv _ := rfl, right_inv _ := rfl }
+    { (e : K →+* (stage i p n).range).restrictScalarsSemilinearMap N with
+      invFun := fun m ↦ m
+      left_inv := RingHom.restrictScalarsSemilinearMap_apply _ N
+      right_inv := RingHom.restrictScalarsSemilinearMap_apply _ N }
   exact ModuleCat.hasProjectiveDimensionLE_of_semiLinearEquiv e e' d
 
 include i p in

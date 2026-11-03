@@ -9,6 +9,7 @@ public import Mathlib.FieldTheory.IsPerfectClosure
 public import Mathlib.RingTheory.Flat.EquationalCriterion
 public import Mathlib.RingTheory.MvPolynomial.Basic
 public import Mathlib.RingTheory.RingHom.Flat
+import TauCeti.Algebra.CharP.Frobenius.Flat
 import TauCeti.RingTheory.Perfect.Basic
 import TauCeti.RingTheory.RingHom.Flat
 
@@ -36,6 +37,8 @@ the perfection of a regular ring of characteristic `p` is flat over it, by Kunz'
   `p ^ n`-th powers in the base for a common exponent `n`.
 * `Module.Flat.of_isPerfectClosure`: a perfect closure of a flat algebra over a perfect ring is
   flat.
+* `IsPerfectClosure.injective_of_flat_frobenius`: a perfect closure of a ring with flat
+  Frobenius is injective.
 * `RingHom.Flat.of_isPerfectClosure`: a perfect closure of a ring with flat Frobenius is flat
   over it.
 * `RingHom.Flat.perfectClosureOf_comp`: the colimit perfection of a flat algebra over a perfect
@@ -129,6 +132,14 @@ section FlatFrobenius
 variable {K L : Type*} [CommRing K] [CommRing L] (i : K →+* L) (p : ℕ) [ExpChar K p]
   [ExpChar L p] [PerfectRing L p] [IsPerfectClosure i p]
 
+/-- A perfect closure of a ring with flat Frobenius is injective: its kernel is the
+`p`-nilradical, which vanishes because flat Frobenius is injective. -/
+theorem IsPerfectClosure.injective_of_flat_frobenius (hF : (frobenius K p).Flat) :
+    Function.Injective i :=
+  (RingHom.injective_iff_ker_eq_bot _).2 <| by
+    rw [IsPerfectClosure.ker_eq i p,
+      pNilradical_eq_bot_of_frobenius_inj K p (TauCeti.injective_frobenius_of_flat p hF)]
+
 /-- A perfect closure of a ring with flat Frobenius is flat: if `K` has exponential characteristic
 `p` and its Frobenius endomorphism is flat, then every perfect closure `i : K →+* L` is flat. -/
 theorem RingHom.Flat.of_isPerfectClosure (hF : (frobenius K p).Flat) : i.Flat := by
@@ -152,11 +163,8 @@ theorem RingHom.Flat.of_isPerfectClosure (hF : (frobenius K p).Flat) : i.Flat :=
   have hrel : ∑ j, iterateFrobenius K p (n + k) (f j) * y j ^ p ^ k = 0 := by
     rw [← hk, sum_pow_char_pow]
     simp_rw [iterateFrobenius_def, mul_pow, ← pow_mul, ← pow_add]
-  have hFN : (iterateFrobenius K p (n + k)).Flat := by
-    induction n + k with
-    | zero => simpa using RingHom.Flat.id K
-    | succ N ih => simpa [iterateFrobenius_add, iterateFrobenius_one] using hF.comp ih
-  obtain ⟨m, a, w, hyw, ha⟩ := hFN.exists_eq_sum_mul_of_sum_mul_eq_zero hrel
+  obtain ⟨m, a, w, hyw, ha⟩ :=
+    (TauCeti.flat_iterateFrobenius p hF (n + k)).exists_eq_sum_mul_of_sum_mul_eq_zero hrel
   have hL (x : L) : (iterateFrobeniusEquiv L p (n + k)).symm x ^ p ^ (n + k) = x := by
     rw [← iterateFrobeniusEquiv_def, RingEquiv.apply_symm_apply]
   refine ⟨m, a, fun i' ↦ (iterateFrobeniusEquiv L p (n + k)).symm (i (w i')), fun j ↦ ?_, ha⟩
