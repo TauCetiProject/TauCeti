@@ -42,7 +42,7 @@ row `σ a`, provided `σ a` lies in the domain. -/
 theorem mul_apply_of_apply_eq_ite_left [Fintype n] [DecidableEq n] {X : Matrix n n α}
     {σ : n → n} (hσ : Function.Involutive σ) (hX : ∀ a b, X a b = if p b ∧ a = σ b then 1 else 0)
     (N : Matrix n o α) (a : n) (b : o) : (X * N) a b = if p (σ a) then N (σ a) b else 0 := by
-  rw [mul_apply, Finset.sum_eq_single (σ a)]
+  rw [Matrix.mul_apply, Finset.sum_eq_single (σ a)]
   · simp [hX, hσ a]
   · intro k _ hk
     rw [hX]
@@ -56,7 +56,7 @@ provided `b` lies in the domain. -/
 theorem mul_apply_of_apply_eq_ite_right [Fintype m] [DecidableEq m] {X : Matrix m n α} {σ : n → m}
     (hX : ∀ a b, X a b = if p b ∧ a = σ b then 1 else 0) (N : Matrix l m α) (a : l) (b : n) :
     (N * X) a b = if p b then N a (σ b) else 0 := by
-  rw [mul_apply, Finset.sum_eq_single (σ b)]
+  rw [Matrix.mul_apply, Finset.sum_eq_single (σ b)]
   · simp [hX]
   · intro k _ hk
     rw [hX]
@@ -73,7 +73,7 @@ theorem sum_smul_apply_of_apply_eq_ite [Fintype m] [DecidableEq m] {X : Matrix m
   rw [Matrix.sum_apply, Finset.sum_eq_single (σ c)]
   · simp [hX]
   · intro d _ hd
-    rw [smul_apply, hX]
+    rw [Matrix.smul_apply, hX]
     split_ifs with h
     · exact absurd h.2 hd
     · exact zero_smul _ _

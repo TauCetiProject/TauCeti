@@ -9,6 +9,7 @@ public import TauCeti.Analysis.Matrix.LeftMulMatrixRpow
 public import TauCeti.LinearAlgebra.CliffordAlgebra.ScalarTrace.Adjoint
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.Complexification
 import TauCeti.LinearAlgebra.CliffordAlgebra.Lipschitz.CliffordGroup
+import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.Basic
 import TauCeti.LinearAlgebra.QuadraticForm.OrthogonalBasis
 
 /-!
@@ -113,10 +114,8 @@ theorem leftMulMatrixRpow_complexConj_reverse_mul_self_mem_spinGroup {V I : Type
         (complexConj Q (reverse (g : CliffordAlgebra (Q.baseChange ℂ))) * g) t ∈
       spinGroup (Q.baseChange ℂ) := by
   have : FiniteDimensional ℝ V := b.finiteDimensional_of_finite
-  have hg : IsUnit (g : CliffordAlgebra (Q.baseChange ℂ)) :=
-    Unitary.isUnit_coe (U := (⟨g, pinGroup.mem_unitary (spinGroup.mem_pin g.2)⟩ :
-      unitary (CliffordAlgebra (Q.baseChange ℂ))))
-  have hM := (posDef_toMatrix_mulLeft_complexConj_reverse_mul_self hb hQ hg).posSemidef.nonneg
+  have hM := (posDef_toMatrix_mulLeft_complexConj_reverse_mul_self hb hQ
+    (spinGroup.isUnit_coe g)).posSemidef.nonneg
   rw [Algebra.toMatrix_lmul_eq] at hM
   exact leftMulMatrixRpow_mem_spinGroup
     (QuadraticForm.Nondegenerate.baseChange (QuadraticMap.nondegenerate_of_isOrthoᵢ hb
