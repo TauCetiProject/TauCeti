@@ -13,6 +13,7 @@ import Mathlib.MeasureTheory.Measure.Decomposition.RadonNikodym
 import TauCeti.MeasureTheory.Measure.Decomposition.CommonDensity
 import TauCeti.Analysis.Distribution.AELeOfIntegral
 import TauCeti.Analysis.Distribution.OrderZero
+import TauCeti.Analysis.Distribution.TestFunction.Basic
 import TauCeti.Analysis.Distribution.TestFunction.Integral
 import TauCeti.MeasureTheory.Function.AEEqOfLIntegral
 
@@ -119,8 +120,7 @@ private theorem exists_le_one (hT : HasLocallyFiniteMass T) :
     -- The coordinates of `φ` in the basis `b`.
     set ψ : _ → 𝓓(Ω, ℝ) := fun i => postcompCLM (c i) φ
     have hφ : φ = ∑ i, postcompCLM (ContinuousLinearMap.toSpanSingleton ℝ (b i)) (ψ i) := by
-      ext x
-      simp [ψ, c, b.sum_repr]
+      simpa only [ψ, c] using (sum_postcompCLM_toSpanSingleton_coord b φ).symm
     calc T φ = ∑ i, S i (ψ i) := by
           conv_lhs => rw [hφ]
           simp [S]
