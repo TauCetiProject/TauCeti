@@ -8,6 +8,7 @@ module
 public import Mathlib.AlgebraicTopology.SimplicialSet.Nerve
 public import TauCeti.AlgebraicTopology.SimplicialNerve.SimplicialThickening
 public import TauCeti.CategoryTheory.Enriched.EnrichedCat
+public import TauCeti.CategoryTheory.Enriched.Ordinary.Basic
 
 /-!
 # The simplicial nerve as a functor, and its low-dimensional simplices
@@ -105,16 +106,6 @@ lemma simplicialNerveFunctor_map {C D : EnrichedCat.{v, v + 1, u} SSet.{v}} (F :
 end Functoriality
 
 variable {C : Type u} [Category.{v} C] [SimplicialCategory C]
-
-/-- Tensoring two maps which are constant at morphisms `f` and `g` and then composing gives the
-map which is constant at `f ≫ g`. -/
-private lemma toUnit_eHomEquiv_tensorHom_comp_eComp {X Y : SSet.{v}} {a b c : C} (f : a ⟶ b)
-    (g : b ⟶ c) :
-    ((toUnit X ≫ eHomEquiv SSet f) ⊗ₘ (toUnit Y ≫ eHomEquiv SSet g)) ≫ eComp SSet a b c =
-      toUnit _ ≫ eHomEquiv SSet (f ≫ g) := by
-  have : toUnit X ⊗ₘ toUnit Y = toUnit _ ≫ (λ_ (𝟙_ SSet)).inv :=
-    CartesianMonoidalCategory.hom_ext _ _ (toUnit_unique _ _) (toUnit_unique _ _)
-  rw [← tensorHom_comp_tensorHom_assoc, this, eHomEquiv_comp, Category.assoc]
 
 namespace SimplicialThickening
 
@@ -267,10 +258,19 @@ theorem bijective_fromNerve_app {n : SimplexCategoryᵒᵖ} (hn : n.unop.len ≤
   let U := Monotone.functor (f := (ULift.down : ULift.{v} (Fin (n.unop.len + 1)) → _))
     fun _ _ h ↦ h
   let U' := Monotone.functor (f := (ULift.up : Fin (n.unop.len + 1) → ULift.{v} _)) fun _ _ h ↦ h
+  -- `ULift.up` and `ULift.down` are inverse order isomorphisms, so `U` and `U'` cancel.
+  have hU'U : U' ⋙ U = 𝟭 _ := Functor.ext (fun _ ↦ rfl) fun _ _ _ ↦ Subsingleton.elim _ _
+  have hUU' : U ⋙ U' = 𝟭 _ := Functor.ext (fun _ ↦ rfl) fun _ _ _ ↦ Subsingleton.elim _ _
   refine Function.bijective_iff_has_inverse.2
-    ⟨fun F ↦ U' ⋙ SimplicialThickening.toFunctor F, fun G ↦ ?_, fun F ↦ ?_⟩
-  · exact congrArg (U' ⋙ ·) (SimplicialThickening.functorEquiv.left_inv (U ⋙ G))
-  · exact SimplicialThickening.functorEquiv.right_inv F
+    ⟨fun F ↦ U' ⋙ SimplicialThickening.toFunctor F, fun (G : Fin (n.unop.len + 1) ⥤ C) ↦ ?_,
+      fun (F : EnrichedFunctor SSet (SimplicialThickening (ULift.{v} (Fin (n.unop.len + 1)))) C) ↦
+        ?_⟩
+  · change U' ⋙ SimplicialThickening.functorEquiv.symm
+      (SimplicialThickening.functorEquiv (U ⋙ G)) = G
+    rw [Equiv.symm_apply_apply, ← Functor.assoc, hU'U, Functor.id_comp]
+  · change SimplicialThickening.functorEquiv
+      (U ⋙ U' ⋙ SimplicialThickening.functorEquiv.symm F) = F
+    rw [← Functor.assoc, hUU', Functor.id_comp, Equiv.apply_symm_apply]
 
 /-- The vertices of the simplicial nerve of `C` are the objects of `C`. -/
 def vertexEquiv : SimplicialNerve C _⦋0⦌ ≃ C where
