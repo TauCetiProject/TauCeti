@@ -212,7 +212,7 @@ prime factor of `d`, with `Q p` the prime of `𝓞 K` above `p ∈ s`. Then the 
 
 The classes are involutions, so the subgroup they generate is the set of sub-products, of which
 there are at most `2 ^ #s`; the relation `prod_classGroupMk0_eq_one` over the prime factors of `d`
-removes one generator (`TauCeti.natCard_closure_image_le_two_pow_card_sub_one`). The hypothesis
+removes one generator (`Finset.natCard_closure_image_le_two_pow_card_sub_one`). The hypothesis
 `1 < |d|` excludes `d = -1`, the one radicand with no prime factor and hence no relation.
 
 This is only an upper bound in the ordinary class group; no matching lower bound is asserted. -/
@@ -224,7 +224,7 @@ theorem natCard_closure_image_classGroupMk0_le (hmin : minpoly ℤ θ = X ^ 2 - 
     (hs : d.natAbs.primeFactors ⊆ s) (hd : 1 < d.natAbs) :
     Nat.card (Subgroup.closure ((fun p ↦ ClassGroup.mk0 (Q p)) '' (↑s : Set ℕ))) ≤
       2 ^ (s.card - 1) :=
-  natCard_closure_image_le_two_pow_card_sub_one s _
+  s.natCard_closure_image_le_two_pow_card_sub_one _
     (fun p hp ↦ by
       let _ := hprime p hp
       let _ := hover p hp

@@ -240,7 +240,7 @@ theorem genusCharGroup_eq_closure :
       Subgroup.closure (Set.range (primeDiscriminantCharAtLevel s hs)) := by
   apply SetLike.coe_injective
   rw [← Set.image_univ, ← Finset.coe_univ,
-    TauCeti.closure_image_eq_image_powerset (Finset.univ : Finset s)
+    Finset.closure_image_eq_image_powerset (Finset.univ : Finset s)
       (primeDiscriminantCharAtLevel s hs) (fun P _ ↦ primeDiscriminantCharAtLevel_sq s hs P)]
   ext chi
   simp only [SetLike.mem_coe, mem_genusCharGroup_iff, Set.mem_image,
