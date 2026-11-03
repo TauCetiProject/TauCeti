@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Lie.UniversalEnveloping.PBW.PolynomialBasis
+public import TauCeti.Algebra.Lie.UniversalEnveloping.PBW.Polynomial.Basis
 public import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.Form
 public import TauCeti.RingTheory.Polynomial.BinomialBasis
 public import Mathlib.LinearAlgebra.Basis.SMul
