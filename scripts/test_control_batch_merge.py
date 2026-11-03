@@ -1,0 +1,114 @@
+"""Lost wake-ups and concurrent edits must remain fresh ahead of bounded queue rechecks."""
+
+import importlib.util
+import json
+import os
+from pathlib import Path
+import sys
+import tempfile
+import unittest
+from unittest.mock import patch
+
+ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(ROOT / ".tauceti-review/runner"))
+spec = importlib.util.spec_from_file_location("merge_batch", ROOT / "scripts/control_batches/merge_batch.py")
+batch = importlib.util.module_from_spec(spec)
+spec.loader.exec_module(batch)
+sweep = batch.sweep
+
+
+def pr(number, updated="2026-11-03T02:00:00Z", labels=()):
+    return dict(number=number, updated_at=updated, head=dict(sha=str(number) * 40),
+                labels=[dict(name=label) for label in labels], isDraft=False)
+
+
+def observed(p, at=100):
+    return dict(head=p["head"]["sha"], at=at, batch_observed_updated_at=p["updated_at"])
+
+
+class MergeBatch(unittest.TestCase):
+    def setUp(self):
+        self.original_candidates = sweep.candidates
+        self.original_remember = sweep.remember_sweep_attempt
+        self.addCleanup(setattr, sweep, "candidates", self.original_candidates)
+        self.addCleanup(setattr, sweep, "remember_sweep_attempt", self.original_remember)
+        self.addCleanup(setattr, sweep, "_sweep_progress", {})
+        self.env = patch.dict(os.environ, FOCUSED="1")
+        self.env.start()
+        self.addCleanup(self.env.stop)
+        self.focused = patch.object(sweep, "FOCUSED", True)
+        self.focused.start()
+        self.addCleanup(self.focused.stop)
+        batch.install()
+
+    def test_coalesced_revocation_on_recently_checked_pr_precedes_unchanged_queue(self):
+        queued = [pr(n) for n in range(1, 31)]
+        progress = {str(p["number"]): observed(p, p["number"]) for p in queued}
+        # Two revocation events collapse into another event's pending run. Both
+        # changed inputs must be considered without trusting a trigger PR number.
+        queued[-1] = pr(30, "2026-11-03T03:00:00Z")
+        queued[-2] = pr(29, "2026-11-03T02:59:00Z")
+        with patch.object(sweep, "read_sweep_progress", return_value=progress):
+            selected = sweep.candidates(queued, set(range(1, 31)), set())
+        self.assertEqual([p["number"] for p in selected[:2]], [30, 29])
+        self.assertEqual(len({p["number"] for p in selected}), 30)
+
+    def test_revocation_reaches_withdrawal_before_bounded_policy_pass_exhausts(self):
+        queued = [pr(n) for n in range(1, 31)]
+        progress = {str(p["number"]): observed(p) for p in queued}
+        queued[-1] = pr(30, "2026-11-03T03:00:00Z")
+        with patch.object(sweep, "read_sweep_progress", return_value=progress):
+            selected = sweep.candidates(queued, set(range(1, 31)), set())
+        begun = []
+        def begin():
+            if len(begun) >= 15:
+                raise sweep.api_budget.Exhausted("bounded fixture pass")
+            begun.append(1)
+        def view(args):
+            number = int(args[2])
+            return dict(headRefOid=str(number)*40, baseRefName="main", id=str(number), labels=[], statusCheckRollup=[])
+        def decision(comments, head, *args, **kwargs):
+            return dict(review_safe=head != str(30)*40, merge=False)
+        with patch.object(sweep.api_budget, "begin_pr", side_effect=begin), \
+             patch.object(sweep, "gh_json", side_effect=view), \
+             patch.object(sweep, "gh_jsonl", return_value=[]), \
+             patch.object(sweep, "merge_base_now", return_value="base"), \
+             patch.object(sweep, "current_head", side_effect=lambda n: str(n)*40), \
+             patch.object(sweep, "pr_diff", return_value=["TauCeti/Foo.lean"]), \
+             patch.object(sweep, "status_states", return_value=("success", "success", "success")), \
+             patch.object(sweep, "decide_from_comments", side_effect=decision), \
+             patch.object(sweep, "withdraw_both", return_value=True) as withdraw, \
+             patch.object(sweep, "reconcile_rebase_request", return_value="ready"), \
+             patch.object(sweep.backend, "publish_eligibility"), \
+             patch.object(sweep, "remember_sweep_attempt"):
+            with self.assertRaises(sweep.api_budget.Exhausted):
+                sweep.sweep_bors(selected)
+        withdraw.assert_called_once_with(30, "30", str(30)*40)
+        self.assertEqual(len(begun), 15)
+
+    def test_new_approval_does_not_require_pr_status_readiness_label(self):
+        p = pr(1)
+        with patch.object(sweep, "read_sweep_progress", return_value={}):
+            self.assertEqual(sweep.candidates([p], set(), set()), [p])
+
+    def test_concurrent_edit_after_discovery_remains_fresh_after_attempt_finishes(self):
+        p = pr(1)
+        with tempfile.TemporaryDirectory() as directory, \
+             patch.dict(os.environ, SWEEP_PROGRESS_FILE=str(Path(directory) / "progress.json")), \
+             patch.object(sweep, "DRY_RUN", False):
+            sweep._sweep_progress = {}
+            sweep.remember_sweep_attempt(p)
+            checkpoint = json.loads(Path(os.environ["SWEEP_PROGRESS_FILE"]).read_text())["1"]
+            self.assertFalse(batch.changed(p, checkpoint))
+            self.assertTrue(batch.changed(pr(1, "2026-11-03T02:00:01Z"), checkpoint))
+
+    def test_missing_legacy_or_bad_checkpoint_rechecks_without_granting_authority(self):
+        p = pr(1)
+        for previous in (None, {}, "bad", dict(head=p["head"]["sha"], at=99999999999)):
+            with self.subTest(previous=previous):
+                self.assertTrue(batch.changed(p, previous))
+        self.assertTrue(batch.changed(pr(2), observed(p)))
+
+
+if __name__ == "__main__":
+    unittest.main()

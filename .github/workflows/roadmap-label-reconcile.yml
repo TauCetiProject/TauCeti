@@ -5,6 +5,7 @@ name: Roadmap label
 # The hourly backstop retries unfinished work after the final event of a burst.
 on:
   pull_request_target:
+    branches: [main]
     types: [opened, edited, synchronize, reopened]
   schedule:
     - cron: "17 * * * *"
@@ -75,10 +76,16 @@ jobs:
             --jq '.artifacts | sort_by(.created_at) | reverse | .[] | select(.expired == false) | .workflow_run.id')
           mkdir -p "$RUNNER_TEMP/roadmap-state-in"
           for id in $ids; do
-            trusted=$(gh api "repos/$REPO/actions/runs/$id" --jq "$trusted_run")
+            if ! trusted=$(gh api "repos/$REPO/actions/runs/$id" --jq "$trusted_run"); then
+              echo "::warning::Could not verify one checkpoint producer; trying older progress"
+              continue
+            fi
             if [[ "$trusted" == true ]]; then
-              gh run download "$id" -R "$REPO" -n roadmap-label-state -D "$RUNNER_TEMP/roadmap-state-in"
-              break
+              if gh run download "$id" -R "$REPO" -n roadmap-label-state -D "$RUNNER_TEMP/roadmap-state-in"; then
+                break
+              fi
+              rm -f "$RUNNER_TEMP/roadmap-state-in/state.json"
+              echo "::warning::Could not download one checkpoint; trying older progress"
             fi
           done
 
@@ -119,7 +126,7 @@ jobs:
           [[ "$count" =~ ^[0-9]+$ ]]
           limit=$((2 * count + 1))
           python3 scripts/control_batches/roadmap_batch.py \
-            --repo "$REPO" --roadmap-dir roadmap --reconcile-open --limit "$limit" --max-wait 0 \
+            --repo "$REPO" --roadmap-dir roadmap --reconcile-open --limit "$limit" --max-wait 15 \
             --apply --structure-nudge \
             --state-in "$RUNNER_TEMP/roadmap-state-in/state.json" \
             --state-out "$RUNNER_TEMP/roadmap-state-out/state.json" "${extra[@]}"

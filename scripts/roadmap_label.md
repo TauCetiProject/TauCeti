@@ -14,15 +14,22 @@ hashes and bounded retries survive in the state artifact. The listing guard grow
 with the repository's open-PR count instead of fixing a project-size ceiling.
 Only trusted default-branch code runs; PR bodies and file paths remain API data.
 
-The batch wrapper yields after 40 responses of changed-PR work, in addition to
-metadata discovery, preserving every completed input in the normal state file.
-Retries count toward the allowance; one in-flight request may add two responses.
+The batch wrapper yields between PRs once changed-PR work has used 40 responses,
+in addition to metadata discovery, preserving completed inputs in the state file.
+The current PR can finish beyond that target, avoiding a permanent cutoff for
+large diffs; retries count toward the allowance. Quota reserves still apply to
+requests within a PR.
 Observed quota reserves stop further reads with 250 workflow-token requests/points
 remaining and App writes with 1,000 REST requests (100 GraphQL points) remaining.
 A local allowance yield is normal scheduling, not a shared quota-outage signal.
-Actual rate limits stop immediately (`--max-wait 0`) and retain normal retry state.
+Transport failures retain up to 15 seconds of bounded retry waits. Actual quota
+exhaustion stops immediately and retains normal retry state.
 These reserves are advisory between concurrent callers; other jobs can consume
-quota after it is observed.
+quota after it is observed. A malformed progress checkpoint is rebuilt from current
+PR inputs automatically; it cannot strand every future batch awaiting a manual reset.
+Failed checkpoint downloads try older trusted progress. Pending failures are processed
+least-recently-attempted first, and exhausted failures get an automatic six-hour retry
+deadline even when permissions or API validation change without a contributor edit.
 
 ## Credentials and API usage
 

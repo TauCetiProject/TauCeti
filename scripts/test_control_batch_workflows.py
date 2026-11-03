@@ -42,7 +42,7 @@ class ControlBatches(unittest.TestCase):
         self.assertIn("github.event.changes.body.from", job["if"], "scoreboard deletion must wake revocation")
         self.assertIn("github.event.label.name == 'ready-to-merge'", job["if"])
         self.assertTrue(any(s.get("uses") == "./.github/actions/checkout-merge-policy" for s in job["steps"]))
-        policy = next(s for s in job["steps"] if s.get("run") == "python3 .tauceti-review/runner/sweep.py")
+        policy = next(s for s in job["steps"] if s.get("run") == "python3 scripts/control_batches/merge_batch.py")
         self.assertEqual(policy["env"]["FOCUSED"], "1")
         self.assertIn("SWEEP_PROGRESS_FILE", policy["env"])
         self.assertNotIn("PR", policy["env"], "the triggering PR must not limit the candidate set")
@@ -56,7 +56,7 @@ class ControlBatches(unittest.TestCase):
         self.assertFalse((ROOT / ".github/workflows/roadmap-label.yml").exists())
         doc = workflow(LABELS)
         triggers = doc.get("on", doc.get(True))
-        self.assertIn("pull_request_target", triggers)
+        self.assertEqual(triggers["pull_request_target"]["branches"], ["main"])
         self.assertIn("schedule", triggers, "unfinished work must retry after the final event")
         job = doc["jobs"]["reconcile"]
         self.assertIn("github.event.changes.body != null", job["if"])
@@ -64,7 +64,7 @@ class ControlBatches(unittest.TestCase):
         self.assertEqual(root_checkout["with"]["ref"], "main")
         reconcile = next(s for s in job["steps"] if "--reconcile-open" in s.get("run", ""))
         self.assertIn("scripts/control_batches/roadmap_batch.py", reconcile["run"])
-        self.assertIn("--max-wait 0", reconcile["run"])
+        self.assertIn("--max-wait 15", reconcile["run"])
         self.assertIn("--state-in", reconcile["run"])
         self.assertIn("--state-out", reconcile["run"])
         self.assertNotIn("--pr ", reconcile["run"])
@@ -78,6 +78,34 @@ class ControlBatches(unittest.TestCase):
         self.assertIn("actions/artifacts?name=roadmap-label-state", restore)
         self.assertNotIn("status=completed", restore)
         self.assertLess(restore.index('if [[ "$trusted" == true ]]'), restore.index("gh run download"))
+
+    def test_checkpoint_restore_recovers_from_producer_or_download_failure(self):
+        import os
+        import tempfile
+        job = workflow(LABELS)["jobs"]["reconcile"]
+        script = next(s["run"] for s in job["steps"] if s.get("name") == "Restore label progress")
+        for failure in ("producer", "download"):
+            with self.subTest(failure=failure), tempfile.TemporaryDirectory() as directory:
+                root = pathlib.Path(directory)
+                binary = root / "gh"
+                binary.write_text("#!/usr/bin/env python3\n" +
+                    "import sys,os,pathlib\n" +
+                    "a=sys.argv[1:]; r=pathlib.Path(os.environ['RUNNER_TEMP'])/'roadmap-state-in'\n" +
+                    "if a[0]=='api' and 'actions/artifacts?' in a[1]: print('2\\n1')\n" +
+                    "elif a[0]=='api':\n" +
+                    " if '/runs/2' in a[1] and os.environ['FAILURE']=='producer': sys.exit(1)\n" +
+                    " print('true')\n" +
+                    "elif a[:2]==['run','download']:\n" +
+                    " r.mkdir(parents=True,exist_ok=True)\n" +
+                    " if a[2]=='2':\n" +
+                    "  (r/'state.json').write_text('partial download');sys.exit(1)\n" +
+                    " (r/'state.json').write_text('older valid progress')\n")
+                binary.chmod(0o755)
+                env = dict(os.environ, PATH=str(root) + os.pathsep + os.environ["PATH"],
+                           RUNNER_TEMP=str(root), FAILURE=failure, REPO=REPO, GH_TOKEN="test-not-a-credential")
+                result = subprocess.run(["bash", "-c", script], cwd=ROOT, env=env, text=True, capture_output=True)
+                self.assertEqual(result.returncode, 0, result.stderr)
+                self.assertEqual((root / "roadmap-state-in/state.json").read_text(), "older valid progress")
 
     def trusted(self, value):
         predicate = (ROOT / "scripts/control_batches/trusted-label-run.jq").read_text()

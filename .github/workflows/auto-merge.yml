@@ -1,8 +1,9 @@
 name: Auto-merge
 
 # Events wake one batch, rather than resolving and merging one PR per event.
-# GitHub retains one running and one pending job; every pass covers all current
-# approvals and ready/recovery hints, so replacing a pending event loses no PR.
+# GitHub retains one running and one pending job. Changed PR metadata makes
+# coalesced approvals/revocations fresh work before unchanged queue rechecks.
+# Each bounded pass resumes from saved observations; it need not cover the full queue.
 # The environment wait timer coalesces five minutes without occupying a runner.
 # The pinned sweep preserves head/base fences, review revocations, holds, quotas,
 # original repair allowances and the selected merge backend; it runs no reviewer.
@@ -52,7 +53,9 @@ jobs:
         with:
           persist-credentials: false
           # Cone mode includes root files such as the trusted tauceti.toml.
-          sparse-checkout: .github/actions/checkout-merge-policy
+          sparse-checkout: |
+            .github/actions/checkout-merge-policy
+            scripts/control_batches
       - name: Checkout the pinned merge policy (read-only)
         uses: ./.github/actions/checkout-merge-policy
 
@@ -101,7 +104,7 @@ jobs:
           REPO: ${{ github.repository }}
           FOCUSED: "1"
           SWEEP_PROGRESS_FILE: ${{ runner.temp }}/auto-merge-batch-progress.json
-        run: python3 .tauceti-review/runner/sweep.py
+        run: python3 scripts/control_batches/merge_batch.py
       - name: Save batch progress
         if: always()
         uses: actions/cache/save@v4
