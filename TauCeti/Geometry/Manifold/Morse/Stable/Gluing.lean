@@ -10,14 +10,17 @@ public import TauCeti.Geometry.Manifold.Morse.Stable.Transversality
 public import TauCeti.Geometry.Manifold.TransverseDisc
 
 /-!
-# Gluing broken trajectories of an adapted pseudo-gradient in a Morse box
+# Model-flow gluing of broken pseudo-gradient trajectories in a Morse box
 
 Let `f` be a Morse function on a compact boundaryless manifold `M`, `X` a pseudo-gradient field
 adapted to `f` satisfying the Morse–Smale condition, and `p`, `x`, `r` critical points with
-`ind p = ind x + 1 = ind r + 2`. In a Morse chart `φ` at `x` the field `X` is linear, and its flow
-in the split coordinates `(u, v)` of `φ` (contracting and expanding) is the split hyperbolic flow
-`(u, v) ↦ (e^{-t} u, e^t v)`. A broken trajectory from `p` to `r` through `x` enters the box
-`‖u‖ ≤ ε, ‖v‖ ≤ ε` along the stable manifold of `x` and leaves it along the unstable manifold.
+`ind p = ind x + 1 = ind r + 2`. In the split coordinates `(u, v)` (contracting and expanding) of a
+Morse chart `φ` at `x`, the model flow is the split hyperbolic flow `(u, v) ↦ (e^{-t} u, e^t v)`.
+It is the flow of `X` only in a Morse chart in which `X` is the linear field `z ↦ (-wᵢ zᵢ)ᵢ`, such
+as the chart given by the definition of an adapted pseudo-gradient; the results here hold for an
+arbitrary Morse chart and are stated for the model flow. A broken trajectory from `p` to `r` through
+`x` enters the box `‖u‖ ≤ ε, ‖v‖ ≤ ε` along the stable manifold of `x` and leaves it along the
+unstable manifold.
 
 The gluing theorem in the split model,
 `TauCeti.exists_homeomorph_closure_splitGluingPairs_of_hasStrictFDerivAt`, takes as input a disc
@@ -30,11 +33,11 @@ the exit point whose contracting component has invertible derivative. This file 
 * dually, the level cut `W^s(r) ∩ {f = c}` through the exit point is a disc of the second kind.
 
 These are instances of `TauCeti.exists_param_inter_preimage_of_span_mtangentConeAt_sup_eq_top`.
-Feeding both discs to the model gluing theorem shows that, in the split coordinates, the orbits from
-`W^u(p)` to `W^s(r)` near the broken one form a half-open arc whose closure adds exactly the broken
-trajectory and is homeomorphic to a closed interval. Such arcs are the local models at the broken
-trajectories of the compactified space of index-two trajectories; assembling that space into a
-compact one-manifold, whose boundary points then come in pairs, is not done here.
+Feeding both discs to the model gluing theorem shows that, in the split coordinates, the model-flow
+orbits from `W^u(p)` to `W^s(r)` near the broken one form a half-open arc whose closure adds exactly
+the broken trajectory and is homeomorphic to a closed interval. Such arcs are the local models at
+the broken trajectories of the compactified space of index-two trajectories; assembling that space
+into a compact one-manifold, whose boundary points then come in pairs, is not done here.
 
 ## Main results
 
@@ -42,8 +45,9 @@ In the namespace `TauCeti.IsAdaptedPseudoGradient`:
 
 * `IsMorseSmale.exists_unstableSet_level_param`: the entrance disc in `W^u(p)`.
 * `IsMorseSmale.exists_stableSet_level_param`: the exit disc in `W^s(r)`.
-* `IsMorseSmale.exists_homeomorph_closure_splitGluingPairs`: the closed interval chart of glued
-  trajectories near a broken trajectory, in the split coordinates of a Morse chart.
+* `IsMorseSmale.exists_homeomorph_closure_splitGluingPairs`: the closed interval chart of
+  model-flow glued trajectories near a broken trajectory, in the split coordinates of a Morse
+  chart.
 
 ## References
 
@@ -61,46 +65,7 @@ namespace TauCeti
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   {M : Type*} [TopologicalSpace M] [ChartedSpace E M] {f : M → ℝ} {x y : M}
-
-namespace MorseChart
-
-variable (φ : MorseChart E f x)
-
-/-- The expanding factor of the split coordinates of a Morse chart has dimension the Morse index. -/
-private theorem finrank_snd_splitCoord :
-    Module.finrank ℝ ({i // ¬φ.weight i = 1} → ℝ) = manifoldMorseIndex 𝓘(ℝ, E) f x := by
-  rw [Module.finrank_fintype_fun_eq_card, ← φ.ncard_weight_neg, ← Nat.card_eq_fintype_card,
-    ← Nat.card_coe_set_eq]
-  refine Nat.card_congr (Equiv.subtypeEquivRight fun i ↦ ?_)
-  rcases φ.weight_eq_neg_one_or_eq_one i with hi | hi <;> norm_num [hi]
-
-/-- The contracting and expanding factors of the split coordinates of a Morse chart have
-complementary dimensions. -/
-private theorem finrank_fst_splitCoord_add_manifoldMorseIndex :
-    Module.finrank ℝ ({i // φ.weight i = 1} → ℝ) + manifoldMorseIndex 𝓘(ℝ, E) f x =
-      Module.finrank ℝ E := by
-  rw [← φ.finrank_snd_splitCoord, Module.finrank_fintype_fun_eq_card,
-    Module.finrank_fintype_fun_eq_card, Fintype.card_subtype_compl, Fintype.card_fin]
-  have := Fintype.card_subtype_le fun i ↦ φ.weight i = 1
-  rw [Fintype.card_fin] at this
-  omega
-
-variable [FiniteDimensional ℝ E]
-
-/-- The split coordinates of a Morse chart, as a continuous linear map on the model space. -/
-private noncomputable def splitCoordL :
-    E →L[ℝ] WithLp 2 (({i // φ.weight i = 1} → ℝ) × ({i // ¬φ.weight i = 1} → ℝ)) :=
-  ((φ.coord.trans φ.splitCoord).toContinuousLinearEquiv :
-    E →L[ℝ] WithLp 2 (({i // φ.weight i = 1} → ℝ) × ({i // ¬φ.weight i = 1} → ℝ)))
-
-private theorem splitCoordL_apply (v : E) : φ.splitCoordL v = φ.splitCoord (φ.coord v) := rfl
-
-private theorem surjective_splitCoordL : Function.Surjective φ.splitCoordL :=
-  (φ.coord.trans φ.splitCoord).toContinuousLinearEquiv.surjective
-
-end MorseChart
-
-variable [FiniteDimensional ℝ E] [IsManifold 𝓘(ℝ, E) ∞ M] [CompactSpace M] [T2Space M]
+  [FiniteDimensional ℝ E] [IsManifold 𝓘(ℝ, E) ∞ M] [CompactSpace M] [T2Space M]
   {X : (x : M) → TangentSpace 𝓘(ℝ, E) x}
 
 namespace IsAdaptedPseudoGradient
@@ -222,8 +187,9 @@ of the expanding entrance coordinate divided by `ε`. Every point of the arc com
 two level cuts in prescribed neighbourhoods `U` of `y₁` and `V` of `y₂`, and conversely every such
 pair of points near `(y₁, y₂)` whose model orbits are joined by the passage map lies on the arc.
 
-While the model orbits stay in a box inside the chart, they are the orbits of the pseudo-gradient
-(`TauCeti.IsAdaptedPseudoGradient.flow_splitExitTime`). -/
+The chart `φ` is arbitrary, so this is a statement about the model flow. When `X` is the linear
+field `z ↦ (-wᵢ zᵢ)ᵢ` in `φ`, model orbits that stay in a box inside the chart are the orbits of the
+pseudo-gradient (`TauCeti.IsAdaptedPseudoGradient.flow_splitExitTime`). -/
 theorem IsMorseSmale.exists_homeomorph_closure_splitGluingPairs {hX : IsAdaptedPseudoGradient f X}
     (h : hX.IsMorseSmale) (hf : IsMorse 𝓘(ℝ, E) f) {p r y₁ y₂ : M}
     (hp : mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f p = 0) (hx : mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f x = 0)
