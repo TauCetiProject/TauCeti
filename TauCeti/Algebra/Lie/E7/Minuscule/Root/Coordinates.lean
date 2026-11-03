@@ -50,11 +50,8 @@ theorem coroot_simpleIndex (ht : E7.Valid) (i : Fin 7) :
 theorem cocharEquiv_symm_coroot_simpleIndex (ht : E7.Valid) (i : Fin 7) :
     SplitTorus.cocharEquiv.symm ((E7.simplyConnectedRootDatum ht).coroot
       (E7.simpleIndex ht i)) = (Finsupp.applyAddHom i).toMultiplicative := by
-  have heval : SplitTorus.cocharEquiv (Finsupp.applyAddHom i).toMultiplicative =
-      (Pi.single i 1 : Fin 7 → ℤ) := by
-    ext j
-    simp [SplitTorus.cocharEquiv_apply, Finsupp.single_apply, Pi.single_apply, eq_comm]
-  exact SplitTorus.cocharEquiv.symm_apply_eq.mpr ((coroot_simpleIndex ht i).trans heval.symm)
+  exact SplitTorus.cocharEquiv.symm_apply_eq.mpr
+    ((coroot_simpleIndex ht i).trans (SplitTorus.cocharEquiv_applyAddHom i).symm)
 
 /-- A named simple coroot evaluates a weight at its numbered coordinate. -/
 theorem coroot'_simpleIndex_apply (ht : E7.Valid) (i : Fin 7) (mu : Fin 7 → ℤ) :

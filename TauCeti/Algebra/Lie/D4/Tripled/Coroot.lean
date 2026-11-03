@@ -79,11 +79,7 @@ theorem corootCocharacter_eq_cocharacter_coroot_simpleIndex
   rw [corootCocharacter_def]
   congr 1
   apply SplitTorus.cocharEquiv.eq_symm_apply.mpr
-  have heval : SplitTorus.cocharEquiv (Finsupp.applyAddHom i).toMultiplicative =
-      (Pi.single i 1 : Fin 4 → ℤ) := by
-    ext j
-    simp [SplitTorus.cocharEquiv_apply, Finsupp.single_apply, Pi.single_apply, eq_comm]
-  exact heval.trans ((D 4).coroot_simpleIndex ht i).symm
+  exact (SplitTorus.cocharEquiv_applyAddHom i).trans ((D 4).coroot_simpleIndex ht i).symm
 
 variable {B : Type*} [CommRing B]
 
@@ -131,14 +127,9 @@ theorem tangentMatrix_derivationComp_corootCocharacter (i : Fin 4) :
           (derivationComp (corootCocharacter i)
             ((MultiplicativeGroup.tangentLinearEquiv (B := B)).symm 1))) =
       (cartanGeneratorMatrix i).map (Int.cast : ℤ → B) := by
-  have hπ : weightTorusIntegralCoordinateMap.hom.comp
-      (Bialgebra.Quotient.mkBialgHom definingIdeal.toIdeal) =
-      GeneralLinear.weightTorusCoordinateBialgHom (S := ℤ) d4TripledWeight := by
-    rw [← CommHopfAlgCat.hom_mkQuotient, ← CommHopfAlgCat.hom_comp,
-      mkQuotient_comp_weightTorusIntegralCoordinateMap,
-      GeneralLinear.hom_weightTorusCoordinateMap]
   rw [HopfIdeal.quotientLieHom_apply, corootCocharacter_def,
-    GeneralLinear.tangentMatrix_derivationComp_cocharacter_of_weightTorus _ _ _ hπ]
+    GeneralLinear.tangentMatrix_derivationComp_cocharacter_of_weightTorus _ _ _
+      weightTorusIntegralCoordinateMap_comp_quotient]
   ext a b
   by_cases hab : a = b
   · subst b
