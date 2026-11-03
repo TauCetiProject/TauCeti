@@ -69,6 +69,8 @@ Herbrand shift instead.
   group contains every element whose valuation is divisible by the residue degree.
 * `TauCeti.valuation_norm_eq_one_iff`: an element of `L` has valuation zero exactly when its
   norm does.
+* `TauCeti.isUnit_norm_integerRing_iff`: an integer of `L` has unit norm exactly when it is a
+  unit.
 * `TauCeti.normUnits_mem_unitFiltration_of_mem` and
   `TauCeti.map_normUnits_unitFiltration_le`: the norm carries `U(L, e(L/K) i)` into `U(K,i)`.
 * `TauCeti.not_map_normUnits_unitFiltration_le_succ`: when `[L : K]` is prime to the residue
@@ -318,6 +320,15 @@ theorem exists_integerRing_eq_and_isUnit_norm {z : L}
   refine ⟨w, rfl, (Valuation.Integers.isUnit_iff_valuation_eq_one
     (Valuation.integer.integers (valuation K))).mpr ?_⟩
   simpa only [Algebra.algebraMap_ofSubsemiring_apply, coe_norm_integerRing] using hz
+
+/-- An integer of `L` has unit norm in `𝒪[K]` exactly when it is a unit of `𝒪[L]`. -/
+@[simp]
+theorem isUnit_norm_integerRing_iff {w : 𝒪[L]} :
+    IsUnit (Algebra.norm 𝒪[K] w) ↔ IsUnit w := by
+  rw [(Valuation.integer.integers (valuation K)).isUnit_iff_valuation_eq_one,
+    (Valuation.integer.integers (valuation L)).isUnit_iff_valuation_eq_one]
+  simpa only [Algebra.algebraMap_ofSubsemiring_apply, coe_norm_integerRing] using
+    valuation_norm_eq_one_iff
 
 variable (L) in
 /-- **The norm carries `U(L, e(L/K) i)` into `U(K, i)`.** A unit of `𝒪[L]` congruent to `1` modulo

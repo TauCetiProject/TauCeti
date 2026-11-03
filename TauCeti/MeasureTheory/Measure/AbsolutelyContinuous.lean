@@ -92,7 +92,7 @@ theorem exists_pos_measure_lt_of_measure_lt [IsFiniteMeasure ν] (h : ν ≪ μ)
   set t := fun n ↦ toMeasurable μ (s n)
   have hsum : ∑' n, μ (t n) ≠ ∞ := by
     refine ne_top_of_le_ne_top (b := ∑' n : ℕ, (2⁻¹ : ℝ≥0∞) ^ n) (by simp)
-      (ENNReal.tsum_le_tsum fun n ↦ ?_)
+      (_root_.tsum_le_tsum fun n ↦ ?_)
     simpa [t, measure_toMeasurable] using (hμs n).le
   -- By Borel–Cantelli their `limsup` is `μ`-null, hence `ν`-null.
   have hzero : ν (limsup t atTop) = 0 := h (measure_limsup_atTop_eq_zero hsum)

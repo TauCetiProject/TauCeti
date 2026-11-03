@@ -24,7 +24,7 @@ For an NDR pair, the bottom-and-sides subspace `J = {0} × X ∪ I × A` of the 
 cylinder lands in `J`, including the corner case `u x = t = 1`. Consequently `A` has the homotopy
 extension property, and the pair `(I × X, J)` satisfies the hypotheses of the fixed-data relative
 lifting theorem for Hurewicz fibrations
-(`TauCeti.IsHurewiczFibration.zeroSetSDR_liftingInclusion`).
+(`TauCeti.HasHomotopyLiftingProperty.zeroSetSDR_liftingInclusion`).
 
 Continuity of the deformation along the zero set, where the formula divides by zero, rests on
 the compactness argument `ContinuousMap.continuous_apply_prodMk_of_fixed`.
