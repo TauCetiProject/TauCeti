@@ -35,6 +35,8 @@ This is the algebraic normalisation used to study residue fields and morphisms o
   `K⟨X⟩†` has residue fields at its maximal ideals finite-dimensional over `K`.
 * `TauCeti.Dagger.washnitzerAlgebra.finite_quotient_of_isMaximal_radical`: its quotients by ideals
   with maximal radical are finite-dimensional over `K`.
+* `TauCeti.Dagger.washnitzerAlgebra.finite_quotient_pow`: in particular, the quotients of
+  `K⟨X⟩†` by the powers of a maximal ideal are finite-dimensional over `K`.
 * `TauCeti.Dagger.IsDaggerAlgebra.finite_quotient_of_isMaximal` and
   `TauCeti.Dagger.IsDaggerAlgebra.finite_quotient_of_isMaximal_radical`: the same finiteness for
   dagger algebras, which are finite over a Monsky–Washnitzer algebra through a presentation.
@@ -176,6 +178,20 @@ theorem washnitzerAlgebra.finite_quotient_of_isMaximal_radical {σ : Type*} [Fin
   have : IsNoetherianRing A := IsNoetherianRing.of_finite (W σ) A
   have : Module.Finite K (A ⧸ q.radical) := finite_quotient_of_isMaximal hπ q.radical
   exact q.moduleFinite_quotient_of_radical (IsNoetherian.noetherian _)
+
+/-- The quotients of a finite-variable Monsky–Washnitzer algebra by all powers of a maximal ideal
+are finite-dimensional over the coefficient field, including the zero quotient for exponent
+zero. -/
+theorem washnitzerAlgebra.finite_quotient_pow {σ : Type*} [Finite σ] (m : Ideal (W σ))
+    [m.IsMaximal] (k : ℕ) : Module.Finite K (W σ ⧸ m ^ k) := by
+  rcases eq_or_ne k 0 with rfl | hk
+  · have : Subsingleton (W σ ⧸ m ^ 0) := by
+      rw [pow_zero, Ideal.one_eq_top]
+      exact Ideal.Quotient.subsingleton_iff.mpr rfl
+    exact Module.Finite.of_finite
+  · have : (m ^ k).radical.IsMaximal := by
+      rwa [Ideal.radical_pow m hk, ‹m.IsMaximal›.isPrime.radical]
+    exact finite_quotient_of_isMaximal_radical (AlgHom.Finite.id K (W σ)) (m ^ k)
 
 namespace IsDaggerAlgebra
 
