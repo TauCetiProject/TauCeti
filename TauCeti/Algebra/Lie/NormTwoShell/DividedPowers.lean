@@ -95,7 +95,7 @@ theorem dividedPower_normalizedRoot_mul_of_add_mem (hB : B.PosDef)
 /-- Normalized root divided powers commute when the sum of the roots is neither a root nor
 zero. Together with `dividedPower_normalizedRoot_mul_of_add_mem`, this covers every
 non-opposite root pair. -/
-theorem dividedPower_normalizedRoot_mul_of_add_notMem_of_add_ne_zero (hB : B.PosDef)
+theorem dividedPower_normalizedRoot_mul_comm_of_add_notMem_of_add_ne_zero (hB : B.PosDef)
     (hev : ∀ i, Even (B i i)) {a b : B.normTwoShell}
     (hab : (a : I → ℤ) + b ∉ B.normTwoShell) (hne : (a : I → ℤ) + b ≠ 0) :
     letI := lieRing hB hev
