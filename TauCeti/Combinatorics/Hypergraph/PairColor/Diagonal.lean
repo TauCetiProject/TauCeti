@@ -162,7 +162,8 @@ theorem pairColorDensity_fillDiagonal_self {A s t : Finset V} (hA : A ∈ P.part
 /-- A filled diagonal block is regular when every tested subset must have at least two
 vertices. The condition `1 < ε * #A` rules out the zero-density singleton tests. -/
 theorem isRegularPair_fillDiagonal_self {ε : ℝ} {A : Finset V} (hA : A ∈ P.parts)
-    (hε : 0 < ε) (hsize : 1 < ε * #A) : (S.fillDiagonal P).IsRegularPair ε A A := by
+    (hsize : 1 < ε * #A) : (S.fillDiagonal P).IsRegularPair ε A A := by
+  have hε : 0 < ε := pos_of_mul_pos_left (one_pos.trans hsize) (Nat.cast_nonneg _)
   by_cases hlarge : 1 ≤ ε
   · exact isRegularPair_of_one_le hlarge
   have hAcard : 1 < #A := by
@@ -184,23 +185,24 @@ theorem isRegularPair_fillDiagonal_self {ε : ℝ} {A : Finset V} (hA : A ∈ P.
 
 /-- Cleanup converts regularity of all off-diagonal cell pairs into regularity of the entire
 lower skeleton, provided the cells are large enough to exclude singleton tests. -/
-theorem isPairColorRegular_fillDiagonal {ε : ℝ} (hε : 0 < ε)
+theorem isPairColorRegular_fillDiagonal {ε : ℝ}
     (hsize : ∀ A ∈ P.parts, 1 < ε * #A)
     (hreg : ∀ A ∈ P.parts, ∀ B ∈ P.parts, A ≠ B → S.IsRegularPair ε A B) :
     (⟨P, S.fillDiagonal P⟩ : PairSkeleton3 (Option κ) V).IsPairColorRegular ε := by
   apply PairSkeleton3.isPairColorRegular_iff.2
   intro c A hA B hB s hs t ht hs' ht'
+  have hε : 0 < ε := pos_of_mul_pos_left (one_pos.trans (hsize A hA)) (Nat.cast_nonneg _)
   have hpair : (S.fillDiagonal P).IsRegularPair ε A B := by
     by_cases hAB : A = B
     · subst B
-      exact S.isRegularPair_fillDiagonal_self P hA hε (hsize A hA)
+      exact S.isRegularPair_fillDiagonal_self P hA (hsize A hA)
     · exact (hreg A hA B hB hAB).fillDiagonal hA hB hAB hε.le
   exact isRegularPair_iff.1 hpair c s hs t ht hs' ht'
 
 open Classical in
 /-- The exact number of edited ordered pairs is the sum of the within-cell distinct-pair
 counts. There is no factor of two or contribution from equal vertices. -/
-theorem card_edits_fillDiagonal :
+theorem card_fillDiagonal_colorOfPair_ne :
     #{p : V × V | (S.fillDiagonal P).colorOfPair p.1 p.2 ≠
       (S.colorOfPair p.1 p.2).map some} = ∑ A ∈ P.parts, #A * (#A - 1) := by
   classical
@@ -223,21 +225,21 @@ theorem card_edits_fillDiagonal :
 
 open Classical in
 /-- The edit count is bounded by the sum of the squares of cell sizes. -/
-theorem card_edits_fillDiagonal_le :
+theorem card_fillDiagonal_colorOfPair_ne_le :
     #{p : V × V | (S.fillDiagonal P).colorOfPair p.1 p.2 ≠
       (S.colorOfPair p.1 p.2).map some} ≤ ∑ A ∈ P.parts, #A ^ 2 := by
   classical
-  rw [S.card_edits_fillDiagonal P]
+  rw [S.card_fillDiagonal_colorOfPair_ne P]
   exact sum_le_sum fun A _ ↦ by
     rw [sq]
     exact Nat.mul_le_mul_left _ (Nat.sub_le _ _)
 
 open Classical in
 /-- If all cells have size at most `m`, diagonal cleanup edits at most `m * |V|` ordered pairs. -/
-theorem card_edits_fillDiagonal_le_of_card_le {m : ℕ} (hm : ∀ A ∈ P.parts, #A ≤ m) :
+theorem card_fillDiagonal_colorOfPair_ne_le_of_card_le {m : ℕ} (hm : ∀ A ∈ P.parts, #A ≤ m) :
     #{p : V × V | (S.fillDiagonal P).colorOfPair p.1 p.2 ≠
       (S.colorOfPair p.1 p.2).map some} ≤ m * Fintype.card V := by
   classical
-  exact (S.card_edits_fillDiagonal_le P).trans (by simpa using P.sum_sq_card_parts_le hm)
+  exact (S.card_fillDiagonal_colorOfPair_ne_le P).trans (by simpa using P.sum_sq_card_parts_le hm)
 
 end TauCeti.PairColorSystem
