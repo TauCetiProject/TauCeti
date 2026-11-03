@@ -75,6 +75,7 @@ variable {i : A ⟶ B} {π : B ⟶ Q} (hE : IsGroupExtension i π)
 
 include hE in
 /-- The composite `A → B → Q` is trivial on sections. -/
+@[simp]
 lemma app_app_eq_one {U : Cᵒᵖ} (a : A.obj.obj U) : π.hom.app U (i.hom.app U a) = 1 :=
   (hE.range_eq_ker U).le ⟨a, rfl⟩
 
@@ -98,6 +99,21 @@ variable (π) in
 `b` of `B` over `U` with `π b = q|_U`. -/
 def liftsPresheaf (q : (Q.obj ⋙ forget GrpCat).sections) : Cᵒᵖ ⥤ Type w :=
   (liftsSubfunctor π q).toFunctor
+
+variable (π) in
+/-- The sections over `U` of the presheaf of lifts of `q` are the sections of `B` over `U` lifting
+`q`. -/
+def liftsPresheafObjEquiv (q : (Q.obj ⋙ forget GrpCat).sections) (U : Cᵒᵖ) :
+    (liftsPresheaf π q).obj U ≃ {b : B.obj.obj U // π.hom.app U b = q.1 U} :=
+  Equiv.refl _
+
+variable (π) in
+@[simp]
+lemma liftsPresheafObjEquiv_map (q : (Q.obj ⋙ forget GrpCat).sections) {U V : Cᵒᵖ} (f : U ⟶ V)
+    (b : (liftsPresheaf π q).obj U) :
+    (liftsPresheafObjEquiv π q V ((liftsPresheaf π q).map f b)).1 =
+      B.obj.map f (liftsPresheafObjEquiv π q U b).1 :=
+  (rfl)
 
 variable (π) in
 /-- The presheaf of lifts is a sheaf: a section of `B` is a lift of `q` as soon as it is one
@@ -153,7 +169,7 @@ lemma lifts_sheaf_obj : (hE.lifts q).sheaf.obj = liftsPresheaf π q :=
 `q`. -/
 def liftsObjEquiv (U : Cᵒᵖ) :
     (hE.lifts q).sheaf.obj.obj U ≃ {b : B.obj.obj U // π.hom.app U b = q.1 U} :=
-  Equiv.refl _
+  liftsPresheafObjEquiv π q U
 
 @[simp]
 lemma liftsObjEquiv_smul {U : Cᵒᵖ} (a : A.obj.obj U) (b : (hE.lifts q).sheaf.obj.obj U) :
