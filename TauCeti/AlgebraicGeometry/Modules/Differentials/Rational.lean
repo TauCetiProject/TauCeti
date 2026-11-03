@@ -10,6 +10,7 @@ public import TauCeti.AlgebraicGeometry.LineBundle.Germ
 public import TauCeti.AlgebraicGeometry.LineBundle.Stalk
 public import TauCeti.AlgebraicGeometry.Scheme.GenericPoint
 public import TauCeti.AlgebraicGeometry.Scheme.CodimensionOnePoint
+public import TauCeti.FieldTheory.FunctionField.Differential.Kaehler
 import all TauCeti.AlgebraicGeometry.Scheme.BaseAlgebra
 
 /-!
@@ -28,6 +29,10 @@ results apply to schemes smooth of relative dimension one, over an arbitrary com
 ring. This realizes the differential line
 bundle as local lattices in its rational differential space, the input to comparing it with a
 divisor sheaf and with the canonical bundle defined using Weil differentials.
+
+Over a field `k`, the generic stalk of an invertible differential sheaf makes `Ω[k(X)⁄k]`
+one-dimensional, so a function field `k(X)` has a separating element
+(`exists_transcendental_and_isSeparable_adjoin_of_isInvertible`).
 
 ## References
 
@@ -255,5 +260,21 @@ theorem mem_range_rationalDifferential_iff_codimensionOne (U : X.Opens) [Nonempt
 end Invertible
 
 end
+
+open scoped IntermediateField in
+/-- **A separating element of the function field.** If the differential sheaf of an integral
+scheme `X` over a field `k` is invertible, as for a curve smooth over `k`, and `k(X)` is an
+algebraic function field over `k`, then some `t ∈ k(X)` transcendental over `k` makes `k(X)`
+separable over `k(t)`. -/
+theorem exists_transcendental_and_isSeparable_adjoin_of_isInvertible {k : Type u} [Field k]
+    {X : Scheme.{u}} [X.Over (Spec (.of k))] [IsIntegral X]
+    [SheafOfModules.isInvertible X (X.relativeDifferentials k)]
+    (hF : IsFunctionField k X.functionField) :
+    ∃ t : X.functionField, Transcendental k t ∧ Algebra.IsSeparable k⟮t⟯ X.functionField := by
+  have := hF.essFiniteType
+  have : Algebra.Transcendental k X.functionField :=
+    Algebra.transcendental_def.mpr hF.exists_transcendental
+  exact finrank_kaehlerDifferential_eq_one_iff.mp
+    (finrank_kaehlerDifferential_functionField_of_isInvertible k)
 
 end TauCeti.AlgebraicGeometry
