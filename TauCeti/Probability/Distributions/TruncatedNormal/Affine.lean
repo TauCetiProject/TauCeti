@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Probability.Distributions.TruncatedNormal.Basic
-import TauCeti.Probability.ConditionalProbability
+public import TauCeti.Probability.Distributions.Gaussian.Affine
 
 /-!
 # Affine transport of truncated Gaussian laws
@@ -36,16 +36,10 @@ theorem map_affine_truncatedNormalMeasure_preimage (m : ℝ) (v : ℝ≥0) (a b 
     (truncatedNormalMeasure m v ((fun x ↦ a + b * x) ⁻¹' s)).map (fun x ↦ a + b * x) =
       truncatedNormalMeasure (a + b * m) (NNReal.mk (b ^ 2) (sq_nonneg b) * v) s := by
   have hf : Measurable (fun x : ℝ ↦ a + b * x) := by fun_prop
-  have hmap : (gaussianReal m v).map (fun x ↦ a + b * x) =
-      gaussianReal (a + b * m) (NNReal.mk (b ^ 2) (sq_nonneg b) * v) := by
-    calc
-      _ = ((gaussianReal m v).map (fun x ↦ b * x)).map (fun x ↦ a + x) :=
-        (Measure.map_map (by fun_prop) (by fun_prop)).symm
-      _ = _ := by
-        rw [gaussianReal_map_const_mul, gaussianReal_map_const_add, add_comm (b * m) a]
   rw [truncatedNormalMeasure_def, truncatedNormalMeasure_def]
   exact map_cond_preimage hf one_ne_zero ENNReal.one_ne_top
-    (fun A hA ↦ by rw [← Measure.map_apply hf hA, hmap, one_mul]) hs
+    (fun A hA ↦ by
+      rw [← Measure.map_apply hf hA, gaussianReal_map_const_add_const_mul, one_mul]) hs
 
 /-- An invertible affine image of a truncated Gaussian transforms the underlying Gaussian's
 location and variance parameters and the truncation event, including zero-mass cases. -/
