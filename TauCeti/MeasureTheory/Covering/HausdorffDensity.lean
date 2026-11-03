@@ -43,6 +43,9 @@ place of `(2 r) ^ k`, are in `TauCeti.Geometry.Euclidean.Volume.Measure`.
 * `MeasureTheory.Measure.mul_hausdorffMeasure_le_measure_of_isOpen` and
   `MeasureTheory.Measure.mul_hausdorffMeasure_le_measure`: a measure whose upper density is at
   least `c` on `A` dominates `c • μH[d]` on `A`.
+* `MeasureTheory.Measure.measure_closedBall_le_of_frequently_le`: a bound
+  `μ (closedBall x r) ≤ f r` for radii `r` arbitrarily close to `ρ` from the right holds at `ρ`
+  when `f` is right-continuous at `ρ`.
 * `MeasureTheory.Measure.measure_le_mul_hausdorffMeasure`: a measure with
   `μ (closedBall x r) ≤ c (2 r) ^ d` for all small `r` at every point `x` of `A`, where
   `c ≠ 0, ∞`, is at most `2 ^ d c • μH[d]` on `A`.
@@ -127,22 +130,6 @@ private lemma tsum_ofReal_two_mul_ite_le {ι : Type*} [DecidableEq ι] (F : Fins
         rw [tsum_add, ← tsum_subtype, ENNReal.tsum_mul_left]
         -- `↥{i | i ∉ F}` is notation for the subtype `{i // i ∉ F}`.
         rfl
-
-omit [BorelSpace X] in
-/-- If `μ (closedBall x r) ≤ c (2 r) ^ d` for every radius `r ∈ (0, ε)`, where `c ≠ ∞`, then the
-same bound holds for every radius `ρ ∈ [0, ε)`, by monotonicity of `μ` and continuity of the
-bound. -/
-private lemma measure_closedBall_le_of_forall_mem_Ioo (μ : Measure X) {d : ℝ} {c : ℝ≥0∞}
-    (hc : c ≠ ∞) {x : X} {ε : ℝ}
-    (h : ∀ r ∈ Ioo (0 : ℝ) ε, μ (closedBall x r) ≤ c * ENNReal.ofReal (2 * r) ^ d) {ρ : ℝ}
-    (hρ : 0 ≤ ρ) (hρε : ρ < ε) : μ (closedBall x ρ) ≤ c * ENNReal.ofReal (2 * ρ) ^ d := by
-  have hlim : Tendsto (fun r : ℝ => c * ENNReal.ofReal (2 * r) ^ d) (𝓝[>] ρ)
-      (𝓝 (c * ENNReal.ofReal (2 * ρ) ^ d)) :=
-    ENNReal.Tendsto.const_mul (((ENNReal.continuous_rpow_const.comp
-      (ENNReal.continuous_ofReal.comp (continuous_const.mul continuous_id))).tendsto ρ).mono_left
-        nhdsWithin_le_nhds) (Or.inr hc)
-  refine ge_of_tendsto hlim (mem_of_superset (Ioo_mem_nhdsGT hρε) fun r hr => ?_)
-  exact (measure_mono (closedBall_subset_closedBall hr.1.le)).trans (h r ⟨hρ.trans_lt hr.1, hr.2⟩)
 
 /-- If `μ (closedBall x ρ) ≤ c (2 ρ) ^ d` for every `x ∈ B` and every radius `ρ ∈ [0, ε)`, where
 `c ≠ 0, ∞`, then `μ B ≤ 2 ^ d * c * μH[d] B`: a set of diameter `ρ` meeting `B` at `x` lies in
@@ -257,6 +244,16 @@ theorem mul_hausdorffMeasure_le_measure (μ : Measure X) [μ.OuterRegular] {d : 
   obtain ⟨U, hAU, hU, hUb⟩ := A.exists_isOpen_lt_of_lt b hb
   exact (mul_hausdorffMeasure_le_measure_of_isOpen μ hd hU hAU h).trans_lt hUb
 
+omit [BorelSpace X] in
+/-- A bound `μ (closedBall x r) ≤ f r` holding for radii `r` arbitrarily close to `ρ` from the
+right extends to the radius `ρ` itself when the gauge `f` is right-continuous at `ρ`, since
+`closedBall x ρ ⊆ closedBall x r` for `ρ ≤ r`. -/
+theorem measure_closedBall_le_of_frequently_le (μ : Measure X) {f : ℝ → ℝ≥0∞} {x : X} {ρ : ℝ}
+    (hf : ContinuousWithinAt f (Ioi ρ) ρ) (h : ∃ᶠ r in 𝓝[>] ρ, μ (closedBall x r) ≤ f r) :
+    μ (closedBall x ρ) ≤ f ρ :=
+  isClosed_Ici.mem_of_frequently_of_tendsto (h.mp (eventually_nhdsWithin_of_forall
+    fun r (hr : ρ < r) hle => (measure_mono (closedBall_subset_closedBall hr.le)).trans hle)) hf
+
 /-- **Upper density comparison for Hausdorff measure.** If at every point `x` of `A` all small
 closed balls satisfy `μ (closedBall x r) ≤ c (2 r) ^ d`, where `c ≠ 0, ∞`, then
 `μ A ≤ 2 ^ d * c * μH[d] A`. -/
@@ -274,9 +271,15 @@ theorem measure_le_mul_hausdorffMeasure (μ : Measure X) {d : ℝ} {c : ℝ≥0�
     obtain ⟨j, hj⟩ := exists_nat_one_div_lt hε
     exact mem_iUnion.2 ⟨j, hx, fun r hr => hεA ⟨hr.1, hr.2.trans hj⟩⟩
   refine (measure_mono hAB).trans ((hBmono.measure_iUnion (μ := μ)).trans_le (iSup_le fun j => ?_))
+  -- The bound extends from radii in `(0, 1 / (j + 1))` to radii in `[0, 1 / (j + 1))`.
+  have hcont : Continuous fun r : ℝ => c * ENNReal.ofReal (2 * r) ^ d :=
+    (ENNReal.continuous_const_mul hc).comp (ENNReal.continuous_rpow_const.comp
+      (ENNReal.continuous_ofReal.comp (continuous_const.mul continuous_id)))
   refine (TauCeti.measure_le_mul_hausdorffMeasure_of_forall_closedBall_le μ hc0 hc
     (B := B j) (ε := 1 / (j + 1)) (by positivity) fun x hx ρ hρ hρε =>
-      TauCeti.measure_closedBall_le_of_forall_mem_Ioo μ hc hx.2 hρ hρε).trans ?_
+      measure_closedBall_le_of_frequently_le μ hcont.continuousWithinAt
+        (eventually_of_mem (Ioo_mem_nhdsGT hρε) fun r hr =>
+          hx.2 r ⟨hρ.trans_lt hr.1, hr.2⟩).frequently).trans ?_
   gcongr
   exact fun x hx => hx.1
 
