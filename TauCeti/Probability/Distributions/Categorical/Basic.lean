@@ -8,7 +8,7 @@ module
 public import TauCeti.Probability.Distributions.Multinomial.Measurability
 public import TauCeti.MeasureTheory.Constructions.BorelSpace.StdSimplex
 public import Mathlib.MeasureTheory.Measure.ProbabilityMeasure
-public import Mathlib.Probability.CDF
+public import TauCeti.Probability.Cdf
 import TauCeti.Geometry.Convex.ConvexSpace.Defs
 import TauCeti.Probability.Distributions.Multinomial.Transforms
 import TauCeti.MeasureTheory.Measure.Dirac
@@ -34,7 +34,8 @@ connect them to the existing multinomial API.
 For labels in a measurable space, measurable-set masses sum the weights over the corresponding
 fibres, including repeated labels. With measurable singletons, the positive-weight labels form a
 finite carrying set, each of whose points has nonzero mass. For real labels, the cdf gives the
-corresponding cumulative sum.
+corresponding cumulative sum. Quantile formulas and endpoint limits are in
+`TauCeti.Probability.Distributions.Categorical.Quantile`.
 
 ## Main results
 
@@ -46,7 +47,9 @@ corresponding cumulative sum.
   including zero weights;
 * `TauCeti.Probability.map_categoricalMeasure` aggregates categories;
 * `TauCeti.Probability.map_piSingle_categoricalMeasure` identifies one-hot encoding with a
-  one-trial multinomial law.
+  one-trial multinomial law;
+* `Convexity.StdSimplex.cdf_map_categoricalMeasure` gives cumulative label weights;
+* `Convexity.StdSimplex.ae_mem_image_support_map_categoricalMeasure` gives a finite carrying set.
 
 ## References
 
@@ -209,11 +212,13 @@ theorem map_piSingle_categoricalMeasure (p : StdSimplex NNReal I) :
 
 end Multinomial
 
-section Labels
+end TauCeti.Probability
 
-open Set
+namespace Convexity.StdSimplex
 
-variable [Fintype I] [MeasurableSpace I] [MeasurableSingletonClass I]
+open Set TauCeti.Probability
+
+variable {I : Type*} [Fintype I] [MeasurableSpace I] [MeasurableSingletonClass I]
   {β : Type*} [MeasurableSpace β]
 
 open Classical in
@@ -225,13 +230,6 @@ theorem measureReal_map_categoricalMeasure_apply (p : StdSimplex ℝ≥0 I) (f :
   rw [← integral_indicator_one hs, integral_map (measurable_of_finite f).aemeasurable (by fun_prop),
     integral_categoricalMeasure]
   simp [Finset.sum_filter, Set.indicator]
-
-open Classical in
-/-- The cdf of a labeled categorical law sums weights of all labels at most the argument. -/
-theorem cdf_map_categoricalMeasure (p : StdSimplex ℝ≥0 I) (f : I → ℝ) (x : ℝ) :
-    cdf ((categoricalMeasure p).map f) x = ∑ i with f i ≤ x, (p.weights i : ℝ) := by
-  rw [cdf_eq_real, measureReal_map_categoricalMeasure_apply p f measurableSet_Iic]
-  simp only [mem_Iic]
 
 open Classical in
 /-- A labeled categorical law is carried by the image of its positive-weight categories. -/
@@ -263,6 +261,31 @@ theorem map_categoricalMeasure_singleton_ne_zero [MeasurableSingletonClass β]
         (pos_iff_ne_zero.mpr (Finsupp.mem_support_iff.mp hi))
     _ ≤ categoricalMeasure p (f ⁻¹' {f i}) := measure_mono (by simp)
 
-end Labels
+/-- The real mass below a cutoff after assigning real labels to categorical outcomes is the sum
+of the weights of all categories whose labels lie below that cutoff. Equal labels are therefore
+aggregated automatically. -/
+theorem map_categoricalMeasure_real_Iio (p : StdSimplex NNReal I) (label : I → ℝ) (x : ℝ) :
+    ((categoricalMeasure p).map label).real (Iio x) =
+      ∑ i with label i < x, (p.weights i : ℝ) := by
+  classical
+  rw [map_measureReal_apply (measurable_of_finite label) measurableSet_Iio]
+  have hpreimage : label ⁻¹' Iio x = (Finset.univ.filter fun i ↦ label i < x : Finset I) := by
+    ext i
+    simp
+  rw [hpreimage, ← sum_measureReal_singleton]
+  simp only [categoricalMeasure_real_singleton]
 
-end TauCeti.Probability
+/-- The cdf after assigning real labels to categorical outcomes is the sum of the weights of all
+categories whose labels are at most the cutoff. Equal labels are aggregated automatically. -/
+theorem cdf_map_categoricalMeasure (p : StdSimplex NNReal I) (label : I → ℝ) (x : ℝ) :
+    cdf ((categoricalMeasure p).map label) x =
+      ∑ i with label i ≤ x, (p.weights i : ℝ) := by
+  classical
+  rw [Measure.cdf_map _ label (measurable_of_finite label)]
+  have hpreimage : label ⁻¹' Iic x = (Finset.univ.filter fun i ↦ label i ≤ x : Finset I) := by
+    ext i
+    simp
+  rw [hpreimage, ← sum_measureReal_singleton]
+  simp only [categoricalMeasure_real_singleton]
+
+end Convexity.StdSimplex

@@ -39,8 +39,6 @@ subspaces (`isPreAdic.isSheafy_iff`), the mechanism of Wedhorn's Remark 8.27.
 
 ## Main results
 
-* `TauCeti.PreAdicSpace.mem_affinoidOpens_restrict_iff`: an open of `X|_U` is an open affinoid
-  subspace exactly when its image in `X` is.
 * `TauCeti.PreAdicSpace.isBasis_affinoidOpens`: the open affinoid subspaces of a locally affinoid
   object form a basis of its topology.
 * `TauCeti.PreAdicSpace.isLocallyAffinoid_restrict`, `TauCeti.PreAdicSpace.isSheafy_restrict`,
@@ -81,20 +79,6 @@ universe u
 
 namespace PreAdicSpace
 
-/-! ### Open affinoid subspaces of a restriction -/
-
-section Restrict
-
-variable {U : TopCat.{u}} (X : PreAdicSpace.{u}) {f : U ⟶ X.toTopCat} (h : IsOpenEmbedding f)
-
-/-- An open `V` of the restriction of `X` along an open embedding is an open affinoid subspace of
-the restriction exactly when its image in `X` is an open affinoid subspace of `X`. -/
-theorem mem_affinoidOpens_restrict_iff (V : Opens (X.restrict h)) :
-    V ∈ (X.restrict h).affinoidOpens ↔ h.isOpenMap.functor.obj V ∈ X.affinoidOpens :=
-  ObjectProperty.prop_iff_of_iso isAffinoid (restrictRestrictIso X h V)
-
-end Restrict
-
 /-! ### Open subspaces of locally affinoid and sheafy objects -/
 
 /-- **The open affinoid subspaces of a locally affinoid object form a basis of its topology.**
@@ -102,45 +86,19 @@ Every point lies in an open affinoid subspace `U`, which is isomorphic to some `
 the open affinoid subspaces of `Spa(A, A⁺)` form a basis of its topology; they are carried to open
 affinoid subspaces of `X` contained in `U`. -/
 theorem isBasis_affinoidOpens {X : PreAdicSpace.{u}} (hX : isLocallyAffinoid X) :
-    Opens.IsBasis X.affinoidOpens := by
-  refine Opens.isBasis_iff_nbhd.mpr fun {W x} hxW ↦ ?_
-  obtain ⟨U, hU, hxU⟩ := hX x
-  obtain ⟨A, _, _, _, _, S, P, hP, ⟨e⟩⟩ := (isAffinoid_iff _).mp hU
-  -- `x` lies in `W ∩ U`, read as an open of `X|_U`, which is the preimage under `e` of its
-  -- preimage under `e⁻¹`; `e` is `forgetToTop.mapIso e` on the underlying spaces
-  have hxW₀ : (⟨x, hxU⟩ : X.restrict U.isOpenEmbedding) ∈
-      (Opens.map (X.ofRestrict U.isOpenEmbedding).base).obj W := hxW
-  have hW₀ := Opens.map_hom_obj_map_inv_obj (forgetToTop.mapIso e)
-    ((Opens.map (X.ofRestrict U.isOpenEmbedding).base).obj W)
-  rw [← hW₀] at hxW₀
-  -- an open affinoid subspace `V'` of `Spa(A, A⁺)` between `e x` and the image of `W ∩ U`
-  obtain ⟨V', hV', hxV', hV'W⟩ := Opens.isBasis_iff_nbhd.mp
-    (ValuationSpectrum.isBasis_affinoidOpens_presentationLimitPreAdicSpace P S.plus _ hP)
-    (U := (Opens.map e.inv.base).obj ((Opens.map (X.ofRestrict U.isOpenEmbedding).base).obj W))
-    (x := e.hom.base ⟨x, hxU⟩) hxW₀
-  -- the preimage of `V'` under `e` is an open affinoid subspace of `X|_U` contained in `W ∩ U`
-  have hV'W' : (Opens.map e.hom.base).obj V' ≤
-      (Opens.map (X.ofRestrict U.isOpenEmbedding).base).obj W :=
-    ((Opens.map e.hom.base).monotone hV'W).trans (le_of_eq hW₀)
-  refine ⟨U.isOpenEmbedding.isOpenMap.functor.obj ((Opens.map e.hom.base).obj V'), ?_, ?_, ?_⟩
-  · exact (mem_affinoidOpens_restrict_iff X U.isOpenEmbedding _).mp
-      ((map_hom_base_mem_affinoidOpens_iff e).mpr hV')
-  · exact ⟨⟨x, hxU⟩, hxV', rfl⟩
-  · rintro _ ⟨z, hz, rfl⟩
-    exact hV'W' hz
+    Opens.IsBasis X.affinoidOpens :=
+  isBasis_propOpens isAffinoid (fun _ hY ↦
+    let ⟨_, _, _, _, _, S, P, hP, ⟨e⟩⟩ := (isAffinoid_iff _).mp hY
+    isBasis_propOpens_of_iso isAffinoid e
+      (ValuationSpectrum.isBasis_affinoidOpens_presentationLimitPreAdicSpace P S.plus _ hP)) hX
 
 variable {U : TopCat.{u}} {X : PreAdicSpace.{u}} {f : U ⟶ X.toTopCat} (h : IsOpenEmbedding f)
 
 /-- The restriction of a locally affinoid object of `𝒱^pre` to an open is locally affinoid: the
 open affinoid subspaces of `X` contained in the image of the open cover it. -/
 theorem isLocallyAffinoid_restrict (hX : isLocallyAffinoid X) :
-    isLocallyAffinoid (X.restrict h) := by
-  intro x
-  obtain ⟨V, hV, hxV, hVf⟩ := Opens.isBasis_iff_nbhd.mp (isBasis_affinoidOpens hX)
-    (U := h.isOpenMap.functor.obj ⊤) (x := f x) ⟨x, trivial, rfl⟩
-  refine ⟨(Opens.map f).obj V, (mem_affinoidOpens_restrict_iff X h _).mpr ?_, hxV⟩
-  rw [Opens.functor_obj_map_obj, inf_eq_right.mpr hVf]
-  exact hV
+    isLocallyAffinoid (X.restrict h) :=
+  exists_mem_propOpens_restrict h isAffinoid (isBasis_affinoidOpens hX)
 
 /-- The restriction of a sheafy object of `𝒱^pre` to an open is sheafy, since the restriction of a
 sheaf to an open subspace is a sheaf. -/
@@ -174,7 +132,7 @@ the restricted structure presheaf is adapted (`TopCat.Presheaf.IsAdapted.restric
 theorem isPreAdic_restrict (hX : isPreAdic X) : isPreAdic (X.restrict h) := by
   refine ⟨isLocallyAffinoid_restrict h hX.isLocallyAffinoid, ?_⟩
   rw [show (X.restrict h).affinoidOpens = h.functor.obj ⁻¹' X.affinoidOpens from
-    Set.ext (mem_affinoidOpens_restrict_iff X h)]
+    Set.ext (mem_propOpens_restrict_iff X h isAffinoid)]
   -- the structure presheaf of `X.restrict h` is `h.functor.op ⋙ X.presheaf` by definition
   -- (`PresheafedSpace.restrict_presheaf`); rewriting with it is blocked by the dependence of the
   -- family of opens on the carrier
@@ -196,7 +154,7 @@ theorem isLocallyAffinoid_of_jointly_surjective {ι : Type*} {U : ι → PreAdic
   obtain ⟨i, y, rfl⟩ := hf x
   obtain ⟨V, hV, hyV⟩ := ObjectProperty.prop_of_iso isLocallyAffinoid
     (IsOpenImmersion.isoRestrict (f i)) (hU i) y
-  exact ⟨_, (mem_affinoidOpens_restrict_iff X (f i).isOpenEmbedding V).mp hV, y, hyV, rfl⟩
+  exact ⟨_, (mem_propOpens_restrict_iff X (f i).isOpenEmbedding isAffinoid V).mp hV, y, hyV, rfl⟩
 
 /-- The source of an open immersion into a sheafy object is sheafy. -/
 theorem isSheafy_of_isOpenImmersion {Y : PreAdicSpace.{u}} (hX : isSheafy X) (f : Y ⟶ X)
@@ -237,7 +195,7 @@ theorem isPreAdic.isSheafy_of_directed {ι : Type*} [Nonempty ι] (hX : isPreAdi
     {U : ι → Opens X} (hU : Directed (· ≤ ·) U) (hcov : iSup U = ⊤)
     (h : ∀ i, isSheafy (X.restrict (U i).isOpenEmbedding)) : isSheafy X := by
   refine hX.isSheafy_of_forall_exists_le fun V hV ↦ ?_
-  have := (spectralSpace_of_isAffinoid hV).toCompactSpace
+  have := (spectralSpace_of_isAffinoid ((mem_propOpens_iff _).mp hV)).toCompactSpace
   obtain ⟨i, hi⟩ := (isCompact_iff_compactSpace.mpr this).elim_directed_cover
     (fun i ↦ (U i : Set X)) (fun i ↦ (U i).isOpen)
     (by rw [← Opens.coe_iSup, hcov]; exact Set.subset_univ _)
