@@ -20,17 +20,19 @@ at every point (`TauCeti.SmoothTwoForm.isNondegenerate_iff_forall_ker_bilinFormA
 (`TauCeti.SmoothTwoForm.isSymplectic_iff_of_mpullback_eq`).
 
 Combined with the descent of basic forms along submersions
-(`TauCeti.SmoothForm.descendBasic`), this gives the **descent of symplectic forms**: if `σ` is a
-closed basic two-form whose null space at every point is exactly `ker dp`, there is a unique
-two-form `η` on `Q` with `p^* η = σ`, and it is symplectic
+(`TauCeti.SmoothForm.descendBasic`), this gives the **descent of symplectic forms**: if the model
+of `Z` has no boundary and `σ` is a closed basic two-form whose null space at every point is
+exactly `ker dp`, there is a unique two-form `η` on `Q` with `p^* η = σ`, and it is symplectic
 (`TauCeti.SmoothTwoForm.existsUnique_isSymplectic_mpullback_eq`). Here basic means that the
 values of `σ` at two points of a fibre agree on pairs of tangent vectors with the same images
 under `dp` (`TauCeti.RoughForm.IsBasic`).
 
-This is the last step of symplectic reduction: for a moment map `μ` with regular value `c`, the
-restriction of the symplectic form to the level `μ⁻¹(c)` is closed, it is basic for the quotient
-map onto the reduced space `μ⁻¹(c) / G_c`, and its null space is the tangent space to the
-`G_c`-orbits, which is the kernel of the derivative of the quotient map.
+This is the last step of symplectic reduction: for a moment map `μ` with regular value `c` such
+that the stabilizer `G_c` acts freely and properly on the level `μ⁻¹(c)`, the reduced space
+`μ⁻¹(c) / G_c` is a manifold and the quotient map onto it is a surjective smooth submersion. The
+restriction of the symplectic form to `μ⁻¹(c)` is closed, it is basic for the quotient map, and
+its null space is the tangent space to the `G_c`-orbits, which is the kernel of the derivative of
+the quotient map.
 
 ## Main results
 
@@ -41,10 +43,11 @@ map onto the reduced space `μ⁻¹(c) / G_c`, and its null space is the tangent
   the kernels of the derivative.
 * `TauCeti.SmoothTwoForm.isSymplectic_iff_of_mpullback_eq`: the same characterization of
   symplectic forms.
-* `TauCeti.SmoothTwoForm.isSymplectic_descendBasic`: the descent of a closed basic two-form whose
-  null spaces are the kernels of the derivative is symplectic.
+* `TauCeti.SmoothTwoForm.isSymplectic_descendBasic`: along a surjective submersion out of a
+  manifold whose model has no boundary, the descent of a closed basic two-form whose null spaces
+  are the kernels of the derivative is symplectic.
 * `TauCeti.SmoothTwoForm.existsUnique_isSymplectic_mpullback_eq`: existence and uniqueness of the
-  descended symplectic form.
+  descended symplectic form, under the same boundaryless hypothesis.
 
 ## References
 
