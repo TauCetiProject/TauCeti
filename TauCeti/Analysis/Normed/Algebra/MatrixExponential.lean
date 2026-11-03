@@ -208,6 +208,29 @@ theorem exp_posDef (hK : K.IsHermitian) : (NormedSpace.exp K).PosDef := by
   rw [(hK.smul (IsSelfAdjoint.all (1 / 2 : ℝ))).exp.eq, ← exp_eq_mul_exp_half K] at h
   exact h
 
+/-- Squaring a product of exponential weights is bounded by doubling both exponents. -/
+theorem trace_exp_smul_mul_exp_smul_sq_le (t : ℝ)
+    (hK : K.IsHermitian) {L : Matrix m m 𝕜} (hL : L.IsHermitian) :
+    ((NormedSpace.exp (t • K) * NormedSpace.exp (t • L)) ^ 2).trace ≤
+      (NormedSpace.exp ((2 * t) • K) * NormedSpace.exp ((2 * t) • L)).trace := by
+  let X := NormedSpace.exp (t • K)
+  let Y := NormedSpace.exp (t • L)
+  have hX : X.PosSemidef := (hK.smul (IsSelfAdjoint.all t)).exp_posDef.posSemidef
+  have hY : Y.PosSemidef := (hL.smul (IsSelfAdjoint.all t)).exp_posDef.posSemidef
+  have hXsq : X ^ 2 = NormedSpace.exp ((2 * t) • K) := by
+    rw [pow_two, ← Matrix.exp_add_of_commute (t • K) (t • K) (Commute.refl _)]
+    congr 1
+    rw [← add_smul]
+    congr 1
+    ring
+  have hYsq : Y ^ 2 = NormedSpace.exp ((2 * t) • L) := by
+    rw [pow_two, ← Matrix.exp_add_of_commute (t • L) (t • L) (Commute.refl _)]
+    congr 1
+    rw [← add_smul]
+    congr 1
+    ring
+  simpa only [X, Y, hXsq, hYsq] using Matrix.trace_mul_mul_sq_le X Y hX hY
+
 variable [Nonempty m]
 
 /-- For a Hermitian matrix `K` the exponential `exp K` has positive trace. -/
@@ -222,15 +245,8 @@ theorem trace_exp_half_mul_exp_half_sq_le
     ((NormedSpace.exp ((1 / 2 : ℝ) • K) *
       NormedSpace.exp ((1 / 2 : ℝ) • L)) ^ 2).trace ≤
       (NormedSpace.exp K * NormedSpace.exp L).trace := by
-  let X := NormedSpace.exp ((1 / 2 : ℝ) • K)
-  let Y := NormedSpace.exp ((1 / 2 : ℝ) • L)
-  have hX : X.PosSemidef := (hK.smul (IsSelfAdjoint.all (1 / 2 : ℝ))).exp_posDef.posSemidef
-  have hY : Y.PosSemidef := (hL.smul (IsSelfAdjoint.all (1 / 2 : ℝ))).exp_posDef.posSemidef
-  have hXsq : X ^ 2 = NormedSpace.exp K := by
-    simpa [X, pow_two] using (exp_eq_mul_exp_half K).symm
-  have hYsq : Y ^ 2 = NormedSpace.exp L := by
-    simpa [Y, pow_two] using (exp_eq_mul_exp_half L).symm
-  simpa only [X, Y, hXsq, hYsq] using Matrix.trace_mul_mul_sq_le X Y hX hY
+  simpa [show (2 : ℝ) * (1 / 2) = 1 by norm_num] using
+    trace_exp_smul_mul_exp_smul_sq_le (1 / 2 : ℝ) hK hL
 
 end IsHermitian
 
