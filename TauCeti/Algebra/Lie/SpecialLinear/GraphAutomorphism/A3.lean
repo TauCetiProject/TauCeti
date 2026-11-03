@@ -136,7 +136,7 @@ noncomputable def basis : Module.Basis (Fin 10) R (Fixed R) :=
 @[simp]
 theorem basis_repr (X : Fixed R) (i : Fin 10) :
     (basis R).repr X i = coordinates R X i :=
-  (rfl)
+  Module.Basis.ofEquivFun_repr_apply (coordinates R) X i
 
 /-- Each basis matrix is obtained by setting its corresponding independent coordinate to one. -/
 theorem basis_apply_val (i : Fin 10) :
@@ -217,125 +217,97 @@ theorem basis_nine_val : (basis R 9).val.val = Matrix.single 3 0 1 := by
   ext i j
   fin_cases i <;> fin_cases j <;> simp [basis_apply_val]
 
+-- All bracket identities reduce to the same sixteen entry calculations in sl₄.
+local macro "fixed_matrix_bracket" : tactic =>
+  `(tactic| (apply Fixed.ext _
+             intro i j
+             fin_cases i <;> fin_cases j <;>
+               simp [LieSubalgebra.coe_bracket, Ring.lie_def, basis_apply_val] <;> ring))
+
 /-- The bracket of the paired simple positive root and the middle root. -/
 @[simp]
 theorem lie_basis_two_three : ⁅basis R 2, basis R 3⁆ = basis R 4 := by
-  apply Fixed.ext R
-  intro i j
-  fin_cases i <;> fin_cases j <;>
-    simp [LieSubalgebra.coe_bracket, Ring.lie_def, basis_apply_val]
+  fixed_matrix_bracket
 
 /-- The highest root vector occurs with the integral root-string coefficient `-2`. -/
 @[simp]
 theorem lie_basis_two_four : ⁅basis R 2, basis R 4⁆ = (-2 : R) • basis R 5 := by
-  apply Fixed.ext R
-  intro i j
-  fin_cases i <;> fin_cases j <;>
-    simp [LieSubalgebra.coe_bracket, Ring.lie_def, basis_apply_val]
-  ring
+  fixed_matrix_bracket
 
 /-- The bracket of the paired simple negative root and the middle negative root. -/
 @[simp]
 theorem lie_basis_six_seven : ⁅basis R 6, basis R 7⁆ = basis R 8 := by
-  apply Fixed.ext R
-  intro i j
-  fin_cases i <;> fin_cases j <;>
-    simp [LieSubalgebra.coe_bracket, Ring.lie_def, basis_apply_val]
+  fixed_matrix_bracket
 
 /-- The lowest root vector has the same integral root-string coefficient `-2`. -/
 @[simp]
 theorem lie_basis_six_eight : ⁅basis R 6, basis R 8⁆ = (-2 : R) • basis R 9 := by
-  apply Fixed.ext R
-  intro i j
-  fin_cases i <;> fin_cases j <;>
-    simp [LieSubalgebra.coe_bracket, Ring.lie_def, basis_apply_val]
-  ring
+  fixed_matrix_bracket
 
 /-- The paired positive and negative simple roots produce the outer Cartan orbit sum. -/
 @[simp]
 theorem lie_basis_two_six : ⁅basis R 2, basis R 6⁆ = basis R 0 := by
-  apply Fixed.ext R
-  intro i j
-  fin_cases i <;> fin_cases j <;>
-    simp [LieSubalgebra.coe_bracket, Ring.lie_def, basis_apply_val]
+  fixed_matrix_bracket
 
 /-- The middle positive and negative simple roots produce the middle coroot. -/
 @[simp]
 theorem lie_basis_three_seven : ⁅basis R 3, basis R 7⁆ = basis R 1 := by
-  apply Fixed.ext R
-  intro i j
-  fin_cases i <;> fin_cases j <;>
-    simp [LieSubalgebra.coe_bracket, Ring.lie_def, basis_apply_val]
+  fixed_matrix_bracket
+
+/-- Simple positive and negative root vectors from different orbits commute. -/
+@[simp]
+theorem lie_basis_two_seven : ⁅basis R 2, basis R 7⁆ = 0 := by
+  fixed_matrix_bracket
+
+/-- The middle positive root commutes with the paired simple negative root. -/
+@[simp]
+theorem lie_basis_three_six : ⁅basis R 3, basis R 6⁆ = 0 := by
+  fixed_matrix_bracket
+
+/-- The two simple-coroot orbit sums commute. -/
+@[simp]
+theorem lie_basis_zero_one : ⁅basis R 0, basis R 1⁆ = 0 := by
+  fixed_matrix_bracket
 
 /-- The outer coroot orbit sum acts on its simple positive root with weight two. -/
 @[simp]
 theorem lie_basis_zero_two : ⁅basis R 0, basis R 2⁆ = (2 : R) • basis R 2 := by
-  apply Fixed.ext R
-  intro i j
-  fin_cases i <;> fin_cases j <;>
-    simp [LieSubalgebra.coe_bracket, Ring.lie_def, basis_apply_val]
-  all_goals ring
+  fixed_matrix_bracket
 
 /-- The outer coroot orbit sum acts on the middle positive root with weight minus two. -/
 @[simp]
 theorem lie_basis_zero_three : ⁅basis R 0, basis R 3⁆ = (-2 : R) • basis R 3 := by
-  apply Fixed.ext R
-  intro i j
-  fin_cases i <;> fin_cases j <;>
-    simp [LieSubalgebra.coe_bracket, Ring.lie_def, basis_apply_val]
-  ring
+  fixed_matrix_bracket
 
 /-- The outer coroot orbit sum acts on its simple negative root with weight minus two. -/
 @[simp]
 theorem lie_basis_zero_six : ⁅basis R 0, basis R 6⁆ = (-2 : R) • basis R 6 := by
-  apply Fixed.ext R
-  intro i j
-  fin_cases i <;> fin_cases j <;>
-    simp [LieSubalgebra.coe_bracket, Ring.lie_def, basis_apply_val]
-  all_goals ring
+  fixed_matrix_bracket
 
 /-- The outer coroot orbit sum acts on the middle negative root with weight two. -/
 @[simp]
 theorem lie_basis_zero_seven : ⁅basis R 0, basis R 7⁆ = (2 : R) • basis R 7 := by
-  apply Fixed.ext R
-  intro i j
-  fin_cases i <;> fin_cases j <;>
-    simp [LieSubalgebra.coe_bracket, Ring.lie_def, basis_apply_val]
-  ring
+  fixed_matrix_bracket
 
 /-- The middle coroot acts on the paired simple positive root with weight minus one. -/
 @[simp]
 theorem lie_basis_one_two : ⁅basis R 1, basis R 2⁆ = -basis R 2 := by
-  apply Fixed.ext R
-  intro i j
-  fin_cases i <;> fin_cases j <;>
-    simp [LieSubalgebra.coe_bracket, Ring.lie_def, basis_apply_val]
+  fixed_matrix_bracket
 
 /-- The middle coroot acts on its simple positive root with weight two. -/
 @[simp]
 theorem lie_basis_one_three : ⁅basis R 1, basis R 3⁆ = (2 : R) • basis R 3 := by
-  apply Fixed.ext R
-  intro i j
-  fin_cases i <;> fin_cases j <;>
-    simp [LieSubalgebra.coe_bracket, Ring.lie_def, basis_apply_val]
-  ring
+  fixed_matrix_bracket
 
 /-- The middle coroot acts on the paired simple negative root with weight one. -/
 @[simp]
 theorem lie_basis_one_six : ⁅basis R 1, basis R 6⁆ = basis R 6 := by
-  apply Fixed.ext R
-  intro i j
-  fin_cases i <;> fin_cases j <;>
-    simp [LieSubalgebra.coe_bracket, Ring.lie_def, basis_apply_val]
+  fixed_matrix_bracket
 
 /-- The middle coroot acts on its simple negative root with weight minus two. -/
 @[simp]
 theorem lie_basis_one_seven : ⁅basis R 1, basis R 7⁆ = (-2 : R) • basis R 7 := by
-  apply Fixed.ext R
-  intro i j
-  fin_cases i <;> fin_cases j <;>
-    simp [LieSubalgebra.coe_bracket, Ring.lie_def, basis_apply_val]
-  ring
+  fixed_matrix_bracket
 
 /-- When two is invertible, the folded positive and negative simple root vectors
 `E₀₁ + E₂₃`, `E₁₂`, `E₁₀ + E₃₂`, `E₂₁` generate the actual fixed Lie algebra. -/
