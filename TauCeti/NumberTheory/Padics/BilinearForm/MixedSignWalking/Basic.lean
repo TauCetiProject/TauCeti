@@ -90,6 +90,32 @@ theorem equivalent_toBilin'_binary_two_three_mul {a : ℤ_[2]} (ha : IsUnit a) :
   simp only [map_mul, map_neg, map_ofNat, pow_two, h]
   decide
 
+/-- Replacing the binary plane `a • !![2, 3; 3, 2]` by `V` preserves isometry after
+any common binary scaling `s` and adjoining an unchanged orthogonal unary coefficient `c`.
+This transports the binary block in both scale orderings of mixed-type sign walking. -/
+theorem equivalent_toBilin'_unary_smul_binary_two_three_mul (c s : ℤ_[2])
+    {a : ℤ_[2]} (ha : IsUnit a) :
+    (toBilin' !![c, 0, 0; 0, s * (2 * a), s * (3 * a); 0, s * (3 * a), s * (2 * a)]).Equivalent
+      (toBilin' !![c, 0, 0; 0, s * 2, s; 0, s, s * 2]) := by
+  obtain ⟨e⟩ := equivalent_toBilin'_binary_two_three_mul ha
+  -- Split off the unchanged unary coordinate and transport the scaled binary block.
+  let split : (Fin 3 → ℤ_[2]) ≃ₗ[ℤ_[2]] ℤ_[2] × (Fin 2 → ℤ_[2]) :=
+    (LinearEquiv.piCongrLeft ℤ_[2] (fun _ ↦ ℤ_[2]) (finSuccEquiv 2)) ≪≫ₗ
+      LinearEquiv.piOptionEquivProd ℤ_[2]
+  let f := split ≪≫ₗ (LinearEquiv.refl ℤ_[2] ℤ_[2]).prodCongr e.toLinearEquiv ≪≫ₗ split.symm
+  have hf (x : Fin 3 → ℤ_[2]) : f x = Matrix.vecCons (x 0) (e (Fin.tail x)) := by
+    funext i
+    refine Fin.cases ?_ (fun i ↦ ?_) i <;>
+      simp [f, split, LinearEquiv.piCongrLeft, LinearEquiv.piCongrLeft',
+        LinearEquiv.piOptionEquivProd, Equiv.piCongrLeft', Equiv.piOptionEquivProd]
+    rfl
+  refine ⟨⟨f, fun x y ↦ ?_⟩⟩
+  have he := e.map_app (Fin.tail y) (Fin.tail x)
+  simp only [LinearMap.coe_toAddHom, AddHom.toFun_eq_coe, LinearEquiv.coe_coe, hf]
+  simp [toBilin'_apply', dotProduct, mulVec, Fin.sum_univ_two, Fin.sum_univ_three,
+    Fin.tail, -LinearMap.BilinForm.IsometryEquiv.map_app] at he ⊢
+  linear_combination s * he
+
 private theorem mixed_sign_walking_hyperbolic {a : ℤ_[2]} (ha : IsUnit a) :
     (toBilin' !![a, 0, 0; 0, 0, 2; 0, 2, 0]).Equivalent
       (toBilin' !![5 * a, 0, 0; 0, 4, 2; 0, 2, 4]) := by
@@ -108,24 +134,9 @@ private theorem mixed_sign_walking_hyperbolic {a : ℤ_[2]} (ha : IsUnit a) :
     rw [← hmatrix, ← toBilin'_comp,
       ← toLinearEquiv'_apply P (P.invertibleOfIsUnitDet hP)]
     exact ⟨(toBilin' _).isometryEquivOfCompLinearEquiv _⟩
-  obtain ⟨e⟩ := equivalent_toBilin'_binary_two_three_mul ha
-  -- Split off the first coordinate and apply the binary isometry to the remaining two.
-  let split : (Fin 3 → ℤ_[2]) ≃ₗ[ℤ_[2]] ℤ_[2] × (Fin 2 → ℤ_[2]) :=
-    (LinearEquiv.piCongrLeft ℤ_[2] (fun _ ↦ ℤ_[2]) (finSuccEquiv 2)) ≪≫ₗ
-      LinearEquiv.piOptionEquivProd ℤ_[2]
-  let f := split ≪≫ₗ (LinearEquiv.refl ℤ_[2] ℤ_[2]).prodCongr e.toLinearEquiv ≪≫ₗ split.symm
-  have hf (x : Fin 3 → ℤ_[2]) : f x = Matrix.vecCons (x 0) (e (Fin.tail x)) := by
-    funext i
-    refine Fin.cases ?_ (fun i ↦ ?_) i <;>
-      simp [f, split, LinearEquiv.piCongrLeft, LinearEquiv.piCongrLeft',
-        LinearEquiv.piOptionEquivProd, Equiv.piCongrLeft', Equiv.piOptionEquivProd]
-    rfl
-  refine hfirst.trans ⟨⟨f, fun x y ↦ ?_⟩⟩
-  have he := e.map_app (Fin.tail y) (Fin.tail x)
-  simp only [LinearMap.coe_toAddHom, AddHom.toFun_eq_coe, LinearEquiv.coe_coe, hf]
-  simp [toBilin'_apply', dotProduct, mulVec, Fin.sum_univ_two, Fin.sum_univ_three,
-    Fin.tail, -LinearMap.BilinForm.IsometryEquiv.map_app] at he ⊢
-  linear_combination 2 * he
+  have hblock := equivalent_toBilin'_unary_smul_binary_two_three_mul (5 * a) 2 ha
+  norm_num [← mul_assoc] at hblock
+  exact hfirst.trans hblock
 
 private theorem mixed_sign_walking_anisotropic {a : ℤ_[2]} (ha : IsUnit a) :
     (toBilin' !![a, 0, 0; 0, 4, 2; 0, 2, 4]).Equivalent

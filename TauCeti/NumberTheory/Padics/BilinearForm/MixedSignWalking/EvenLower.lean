@@ -61,24 +61,8 @@ private theorem even_lower_sign_walking_hyperbolic {a : ℤ_[2]} (ha : IsUnit a)
     rw [← hmatrix, ← toBilin'_comp,
       ← toLinearEquiv'_apply P (P.invertibleOfIsUnitDet hP)]
     exact ⟨(toBilin' _).isometryEquivOfCompLinearEquiv _⟩
-  obtain ⟨e⟩ := equivalent_toBilin'_binary_two_three_mul ha
-  -- Keep the unary coordinate and transport the binary orthogonal block to `V`.
-  let split : (Fin 3 → ℤ_[2]) ≃ₗ[ℤ_[2]] ℤ_[2] × (Fin 2 → ℤ_[2]) :=
-    (LinearEquiv.piCongrLeft ℤ_[2] (fun _ ↦ ℤ_[2]) (finSuccEquiv 2)) ≪≫ₗ
-      LinearEquiv.piOptionEquivProd ℤ_[2]
-  let f := split ≪≫ₗ (LinearEquiv.refl ℤ_[2] ℤ_[2]).prodCongr e.toLinearEquiv ≪≫ₗ split.symm
-  have hf (x : Fin 3 → ℤ_[2]) : f x = Matrix.vecCons (x 0) (e (Fin.tail x)) := by
-    funext i
-    refine Fin.cases ?_ (fun i ↦ ?_) i <;>
-      simp [f, split, LinearEquiv.piCongrLeft, LinearEquiv.piCongrLeft',
-        LinearEquiv.piOptionEquivProd, Equiv.piCongrLeft', Equiv.piOptionEquivProd]
-    rfl
-  refine hfirst.trans ⟨⟨f, fun x y ↦ ?_⟩⟩
-  have he := e.map_app (Fin.tail y) (Fin.tail x)
-  simp only [LinearMap.coe_toAddHom, AddHom.toFun_eq_coe, LinearEquiv.coe_coe, hf]
-  simp [toBilin'_apply', dotProduct, mulVec, Fin.sum_univ_two, Fin.sum_univ_three,
-    Fin.tail, -LinearMap.BilinForm.IsometryEquiv.map_app] at he ⊢
-  linear_combination he
+  apply hfirst.trans
+  simpa using equivalent_toBilin'_unary_smul_binary_two_three_mul (10 * a) 1 ha
 
 private theorem even_lower_sign_walking_anisotropic {a : ℤ_[2]} (ha : IsUnit a) :
     (toBilin' !![2 * a, 0, 0; 0, 2, 1; 0, 1, 2]).Equivalent
