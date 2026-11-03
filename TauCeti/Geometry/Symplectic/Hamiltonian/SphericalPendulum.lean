@@ -21,8 +21,8 @@ cotangent bundle of the sphere, realized inside `ℝ³ × ℝ³` as
 `F = (H, J)` (`TauCeti.sphericalPendulumEnergyMomentum`). Lean indexes the coordinates of
 `EuclideanSpace ℝ (Fin 3)` by `0, 1, 2`, so `q₃` is `q 2`.
 
-The basic identity is that on `T*S²` the vertical momentum is determined by the height and the
-values of `F`:
+The basic identity is that on `T*S²` the square of the vertical momentum is determined by the
+height and the values of `F`:
 `p₃² = 2 (H - q₃) (1 - q₃²) - J²`.
 Away from the poles this says `H = V_J(q₃) + p₃² / (2 (1 - q₃²))`, where
 `V_j(z) = j² / (2 (1 - z²)) + z` is the effective potential of the reduced one-degree-of-freedom
@@ -165,8 +165,9 @@ private theorem coords_of_mem {x : EuclideanSpace ℝ (Fin 3) × EuclideanSpace 
   simp only [PiLp.inner_apply, Fin.sum_univ_three, RCLike.inner_apply, conj_trivial] at hqp
   exact ⟨hq2.symm, by linear_combination hqp⟩
 
-/-- **The reduced energy identity.** On the phase space of the spherical pendulum the vertical
-momentum is determined by the height and the values `(h, j)` of the energy–momentum map:
+/-- **The reduced energy identity.** On the phase space of the spherical pendulum the square of
+the vertical momentum is determined by the height and the values `(h, j)` of the energy–momentum
+map:
 `p₃² = 2 (h - q₃) (1 - q₃²) - j²`. -/
 theorem sq_snd_two_eq_of_mem_sphericalPendulumPhaseSpace
     {x : EuclideanSpace ℝ (Fin 3) × EuclideanSpace ℝ (Fin 3)}
