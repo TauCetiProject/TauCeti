@@ -344,6 +344,28 @@ theorem Tames.toContinuousLinearMap_cayley (h₀ : ω.Tames J₀) (h₁ : ω.Tam
     ContinuousLinearMap.toLinearMap_mul, hinv]
   simp [hA, hB]
 
+/-- In operator-norm coordinates, the tame structure whose Cayley coordinate at `J₀` is `b` times
+that of a tame `J₁`, for `0 ≤ b ≤ 1`, is `J₀ (1 + b C)(1 - b C)⁻¹`, where `C` is the Cayley
+coordinate of `J₁`. -/
+theorem Compatible.toContinuousLinearMap_cayleyEquiv_symm_smul_cayley (h₀ : ω.Compatible J₀)
+    (h₁ : ω.Tames J₁) {b : ℝ} (hb : b ∈ Icc 0 1) (hA : A.toLinearMap = J₀.toLinearMap)
+    (hB : B.toLinearMap = J₁.toLinearMap) :
+    LinearMap.toContinuousLinearMap
+        (h₀.cayleyEquiv.symm
+          ⟨b • J₀.cayley J₁, h₀.smul_cayley_mem_cayleyBall h₁ hb⟩).val.toLinearMap =
+      cayleyPathFormula b A B := by
+  set C : V →L[ℝ] V := b • LinearMap.toContinuousLinearMap (J₀.cayley J₁) with hCdef
+  have hC : C.toLinearMap ∈ ω.cayleyBall J₀ := by
+    simpa only [C, ContinuousLinearMap.toLinearMap_smul, LinearMap.coe_toContinuousLinearMap]
+      using h₀.smul_cayley_mem_cayleyBall h₁ hb
+  have hsymm : h₀.cayleyEquiv.symm ⟨b • J₀.cayley J₁, h₀.smul_cayley_mem_cayleyBall h₁ hb⟩ =
+      h₀.cayleyEquiv.symm ⟨C.toLinearMap, hC⟩ := by
+    simp only [C, ContinuousLinearMap.toLinearMap_smul, LinearMap.coe_toContinuousLinearMap]
+  have hA' : LinearMap.toContinuousLinearMap J₀.toLinearMap = A :=
+    ContinuousLinearMap.coe_injective (by rw [LinearMap.coe_toContinuousLinearMap, hA])
+  rw [hsymm, h₀.cayleyEquiv_symm_apply_toContinuousLinearMap _ hC, cayleyPathFormula_def, hCdef,
+    h₀.tames.toContinuousLinearMap_cayley h₁ hA hB, hA']
+
 /-- In operator-norm coordinates, the compatible Cayley path from `J₀` to `J₁` at time `t` is
 `J₀ (1 + β C)(1 - β C)⁻¹`, where `C` is the Cayley coordinate of `J₁` and
 `β = smoothTransition t`. -/
@@ -352,24 +374,22 @@ theorem Compatible.toContinuousLinearMap_cayleyPath (h₀ : ω.Compatible J₀)
     (hB : B.toLinearMap = J₁.toLinearMap) :
     LinearMap.toContinuousLinearMap (h₀.cayleyPath h₁ t).toLinearMap =
       cayleyPathFormula (smoothTransition t) A B := by
-  have hC := h₀.smoothTransition_smul_cayley_mem_compatibleCayleyBall h₁ t
-  have hpath : h₀.cayleyPath h₁ t = (h₀.compatibleCayleyEquiv.symm ⟨_, hC⟩).val := by
-    rw [h₀.cayleyPath_eq_compatibleCayleyEquiv_symm h₁ t]
-    simp only [ContinuousLinearMap.toLinearMap_smul, LinearMap.coe_toContinuousLinearMap]
-  have hA' : LinearMap.toContinuousLinearMap J₀.toLinearMap = A :=
-    ContinuousLinearMap.coe_injective (by rw [LinearMap.coe_toContinuousLinearMap, hA])
-  rw [hpath, h₀.compatibleCayleyEquiv_symm_apply_toContinuousLinearMap _ hC, cayleyPathFormula,
-    ← h₀.tames.toContinuousLinearMap_cayley h₁.tames hA hB, hA']
+  rw [← h₀.toContinuousLinearMap_cayleyEquiv_symm_smul_cayley h₁.tames
+    ⟨smoothTransition.nonneg t, smoothTransition.le_one t⟩ hA hB,
+    h₀.cayleyPath_eq_compatibleCayleyEquiv_symm,
+    Compatible.compatibleCayleyEquiv_symm_apply_toLinearMap,
+    Compatible.cayleyEquiv_symm_apply_toLinearMap]
 
-/-- At every time, the denominator `1 - β C` of the compatible Cayley path is invertible. -/
+/-- For `0 ≤ b ≤ 1` and a tame `J₁`, the denominator `1 - b C` of the Cayley path expression is
+invertible, where `C` is the Cayley coordinate of `J₁`. -/
 theorem Compatible.isUnit_one_sub_smul_cayleyFormula (h₀ : ω.Compatible J₀)
-    (h₁ : ω.Compatible J₁) (t : ℝ) (hA : A.toLinearMap = J₀.toLinearMap)
+    (h₁ : ω.Tames J₁) {b : ℝ} (hb : b ∈ Icc 0 1) (hA : A.toLinearMap = J₀.toLinearMap)
     (hB : B.toLinearMap = J₁.toLinearMap) :
-    IsUnit (1 - smoothTransition t • cayleyFormula A B) := by
-  rw [← h₀.tames.toContinuousLinearMap_cayley h₁.tames hA hB]
-  exact isUnit_one_sub_of_toLinearMap_mem_cayleyBall (ω := ω) (J₀ := J₀)
-    (compatibleCayleyBall_subset_cayleyBall
-      (h₀.smoothTransition_smul_cayley_mem_compatibleCayleyBall h₁ t))
+    IsUnit (1 - b • cayleyFormula A B) := by
+  rw [← h₀.tames.toContinuousLinearMap_cayley h₁ hA hB]
+  refine isUnit_one_sub_of_toLinearMap_mem_cayleyBall (ω := ω) (J₀ := J₀) ?_
+  simpa only [ContinuousLinearMap.toLinearMap_smul, LinearMap.coe_toContinuousLinearMap]
+    using h₀.smul_cayley_mem_cayleyBall h₁ hb
 
 end Coordinates
 
