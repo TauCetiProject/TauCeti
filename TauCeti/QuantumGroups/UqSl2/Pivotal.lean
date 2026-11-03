@@ -36,7 +36,6 @@ so they are definitions installed locally in each statement, not global instance
 
 ## Main results
 
-* `TauCeti.UqSl2.isGroupLikeElem_kInv`: `K⁻¹` is group-like.
 * `TauCeti.UqSl2.dualEquiv_pivotalIsoApp_hom_apply`: the pivot sends `v` to `φ ↦ φ(K⁻¹ v)`.
 * `TauCeti.UqSl2.rightTrace_eq_smul`, `TauCeti.UqSl2.leftTrace_eq_smul`: the pivotal traces are
   `tr_V(K⁻¹ f)` and `tr_V(K f)`.
@@ -59,10 +58,6 @@ open CategoryTheory MonoidalCategory
 namespace TauCeti.UqSl2
 
 variable (q : ℂ) [Fact (q ≠ 0)]
-
-/-- The generator `K⁻¹` is group-like. -/
-theorem isGroupLikeElem_kInv : IsGroupLikeElem ℂ (kInv q) :=
-  ⟨counit_kInv q, comul_kInv q⟩
 
 /-- The rigid structure on finite-dimensional `UqSl2 q`-modules: the right dual of a module is its
 contragredient through the antipode, and its left dual is its contragredient through the inverse
@@ -164,7 +159,7 @@ theorem leftDim_ladderModule (hq : q - q⁻¹ ≠ 0) (m : ℕ) (ε : ℤˣ) :
     (LadderModule.trace_rep_k hq))
 
 /-- The quantum dimension of the signed ladder module `L_m^ε` is `ε [m + 1]_q`. -/
-theorem quantumDim_ladderModule (hq : q - q⁻¹ ≠ 0) (m : ℕ) (ε : ℤˣ) :
+@[simp] theorem quantumDim_ladderModule (hq : q - q⁻¹ ≠ 0) (m : ℕ) (ε : ℤˣ) :
     letI := rigidCategory q
     letI := pivotalCategory q
     haveI := sphericalCategory q hq
