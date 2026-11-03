@@ -59,6 +59,50 @@ Chevalley basis. -/
   exact (congrFun (congrFun (f4ShortRootBracketMatrix_def a) i) j).trans
     (f4ShortRootAdjointMatrix_apply _ i j)
 
+private theorem bracketMatrix_col_eq_single_of_opposite_simple
+    (k : Fin 4) (a b c : Fin 26)
+    (hlen : f4Length (Fin.castAdd 44 k) = 1)
+    (ha : f4ShortRootWeight a = f4Root (Fin.castAdd 44 k))
+    (hb : f4ShortRootWeight b = f4Root (f4OppositeRootIndex (Fin.castAdd 44 k)))
+    (hc : (f4ShortRootLieIdealBasis c : f4ModularChevalleyLieAlgebra) =
+      f4ModularSimpleCoroot (Fin.cast rank_F4.symm k)) :
+    (f4ShortRootBracketMatrix a).col b = Pi.single c 1 := by
+  classical
+  have hpos := coe_f4ShortRootLieIdealBasis_of_weight_eq_root a (Fin.castAdd 44 k) hlen ha
+  have hneg := coe_f4ShortRootLieIdealBasis_of_weight_eq_root b
+    (f4OppositeRootIndex (Fin.castAdd 44 k)) (by
+      simpa only [f4Length_opposite] using hlen) hb
+  have hbr : ⁅(f4ShortRootLieIdealBasis a : f4ModularChevalleyLieAlgebra),
+      (f4ShortRootLieIdealBasis b : f4ModularChevalleyLieAlgebra)⁆ =
+        (f4ShortRootLieIdealBasis c : f4ModularChevalleyLieAlgebra) := by
+    simp only [hpos, hneg, hc]
+    exact (f4Modular_lie_rootVector_opposite (Fin.castAdd 44 k)).trans
+      (f4ModularCoroot_castAdd k)
+  ext i
+  simp only [Matrix.col_apply, f4ShortRootBracketMatrix_apply, hbr]
+  simp only [coe_f4ShortRootLieIdealBasis, Module.Basis.repr_self, Finsupp.single_apply,
+    Pi.single_apply, f4ShortRootBasisCoordinate_injective.eq_iff, eq_comm]
+
+/-- The bracket of the short simple-root vectors at coordinates `11` and `14` is the
+simple coroot at coordinate `12`. This records the unit normalization of that bracket. -/
+theorem f4ShortRootBracketMatrix_col_fourteen_eleven :
+    (f4ShortRootBracketMatrix 11).col 14 = Pi.single 12 1 := by
+  apply bracketMatrix_col_eq_single_of_opposite_simple 2
+  · rw [f4Length_def]; decide +kernel
+  · decide +kernel
+  · rw [f4OppositeRootIndex_castAdd]; decide +kernel
+  · rw [coe_f4ShortRootLieIdealBasis, ← coe_f4ShortRootBasis, coe_f4ShortRootBasis_twelve]
+
+/-- The bracket of the short simple-root vectors at coordinates `10` and `15` is the
+simple coroot at coordinate `13`. This records the second zero-weight basis vector as a bracket. -/
+theorem f4ShortRootBracketMatrix_col_fifteen_ten :
+    (f4ShortRootBracketMatrix 10).col 15 = Pi.single 13 1 := by
+  apply bracketMatrix_col_eq_single_of_opposite_simple 3
+  · rw [f4Length_def]; decide +kernel
+  · decide +kernel
+  · rw [f4OppositeRootIndex_castAdd]; decide +kernel
+  · rw [coe_f4ShortRootLieIdealBasis, ← coe_f4ShortRootBasis, coe_f4ShortRootBasis_thirteen]
+
 attribute [local instance high] Algebra.toModule
 
 /-- A nonzero bracket coefficient adds the integral weights of its inputs. -/
