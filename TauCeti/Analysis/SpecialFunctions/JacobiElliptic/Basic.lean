@@ -29,7 +29,8 @@ value `id`; theorems that need `k ^ 2 < 1` say so.
 We prove the basic theory:
 
 * the amplitude inverts `F`, is odd, continuous and strictly increasing, satisfies
-  `am(u + 2 n K) = am(u) + n π` and `am(K) = π / 2`, and has derivative `dn`;
+  `am(u + 2 n K) = am(u) + n π` and `am(K) = π / 2`, has derivative `dn`, and is
+  nonexpansive in its argument;
 * the identities `sn² + cn² = 1` and `dn² + k² sn² = 1`, positivity of `dn`, and the parities of
   `sn`, `cn` and `dn` in the argument and in the modulus;
 * the derivatives `sn′ = cn dn`, `cn′ = -sn dn`, `dn′ = -k² sn cn`, and the first-order
@@ -279,6 +280,19 @@ theorem hasDerivAt_jacobiAm {k : ℝ} (hk : k ^ 2 < 1) (u : ℝ) :
   have h := hF.of_local_left_inverse (continuous_jacobiAm k).continuousAt
     (inv_ne_zero (jacobiDn_pos hk u).ne') (Eventually.of_forall (legendreF_jacobiAm hk))
   rwa [inv_inv] at h
+
+/-- The Jacobi amplitude is nonexpansive in its real argument. -/
+theorem lipschitzWith_jacobiAm (k : ℝ) : LipschitzWith 1 (jacobiAm k) := by
+  by_cases hk : k ^ 2 < 1
+  · refine lipschitzWith_of_nnnorm_deriv_le
+      (fun u ↦ (hasDerivAt_jacobiAm hk u).differentiableAt) fun u ↦ ?_
+    rw [(hasDerivAt_jacobiAm hk u).deriv]
+    have hnorm : ‖jacobiDn k u‖ ≤ 1 := by
+      rw [Real.norm_eq_abs, abs_of_nonneg (jacobiDn_nonneg k u)]
+      exact jacobiDn_le_one k u
+    exact_mod_cast hnorm
+  · rw [jacobiAm_of_one_le_sq (le_of_not_gt hk)]
+    exact LipschitzWith.id
 
 /-- `sn′ = cn · dn` (DLMF §22.13(i)). -/
 theorem hasDerivAt_jacobiSn {k : ℝ} (hk : k ^ 2 < 1) (u : ℝ) :
