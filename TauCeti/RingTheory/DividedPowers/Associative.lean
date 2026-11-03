@@ -141,7 +141,7 @@ theorem pow_succ_apply_eq_zero_of_dividedPower_apply_eq_zero
     (f : Module.End ℚ V) (n : ℕ) (v : V)
     (h : dividedPower n f • v = 0) : (f ^ (n + 1)) v = 0 := by
   have hz := (dividedPower_apply_eq_zero_iff f n v).mp h
-  rw [pow_succ', Module.End.mul_apply, hz, map_zero]
+  rw [pow_succ', _root_.mul_apply_eq_comp, hz, map_zero]
 
 /-- Divided powers of a nilpotent endomorphism preserve a set containing zero if all terms below
 the nilpotency bound preserve it. -/
