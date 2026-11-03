@@ -292,6 +292,14 @@ theorem lie_innerDerivation (D : derivationLieAlgebra R A) (z : A) :
     coe_innerDerivation, LieAlgebra.ad_apply, map_sub, derivationLieAlgebra.leibniz]
   abel
 
+variable {R} in
+/-- **A derivation kills the scalars**: it vanishes on the image of `algebraMap`. This is the
+analogue of Mathlib's `Derivation.map_algebraMap`. -/
+@[simp]
+theorem derivationLieAlgebra.map_algebraMap (D : derivationLieAlgebra R A) (r : R) :
+    (D : Module.End R A) (algebraMap R A r) = 0 := by
+  rw [Algebra.algebraMap_eq_smul_one, map_smul, derivationLieAlgebra.apply_one_eq_zero, smul_zero]
+
 end Associative
 
 section Congr
