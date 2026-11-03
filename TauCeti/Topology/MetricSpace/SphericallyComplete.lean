@@ -22,9 +22,9 @@ Bhatt and Scholze use it to show that bounded lattices saturated with respect to
 ideal are finite free.
 
 Every proper space, for instance every locally compact nonarchimedean field such as `ℚ_p`, is
-spherically complete. So is every complete ultrametric space whose nonzero distances are powers
-of a fixed real number greater than one, even without local compactness. The field `ℂ_p` is
-complete but not spherically complete.
+spherically complete. So is every complete ultrapseudometric space whose nonzero distances are
+powers of a fixed real number greater than one, even without local compactness. The field `ℂ_p`
+is complete but not spherically complete.
 
 ## Main definitions
 
@@ -97,11 +97,11 @@ theorem SphericallyCompleteSpace.exists_forall_mem_of_dist_le {X ι : Type*} [Ps
   choose t ht using hball'
   exact ⟨t, fun n ↦ hball n (c n) (hcA n) t fun i ↦ Set.mem_iInter.1 (ht i) n⟩
 
-/-- A complete ultrametric space whose nonzero distances are integer powers of a fixed
+/-- A complete ultrapseudometric space whose nonzero distances are integer powers of a fixed
 real number greater than one is spherically complete. No local compactness is required. -/
-theorem sphericallyCompleteSpace_of_dist_eq_zpow {X : Type*} [MetricSpace X]
+theorem sphericallyCompleteSpace_of_dist_eq_zpow {X : Type*} [PseudoMetricSpace X]
     [IsUltrametricDist X] [CompleteSpace X] {b : ℝ} (hb : 1 < b)
-    (hdiscrete : ∀ x y : X, x ≠ y → ∃ k : ℤ, dist x y = b ^ k) :
+    (hdiscrete : ∀ x y : X, dist x y ≠ 0 → ∃ k : ℤ, dist x y = b ^ k) :
     SphericallyCompleteSpace X := by
   refine ⟨fun {c r} hr hballs ↦ ?_⟩
   -- Replace the radii by their running minima without changing the intersection.
@@ -134,8 +134,8 @@ theorem sphericallyCompleteSpace_of_dist_eq_zpow {X : Type*} [MetricSpace X]
     refine ⟨c N, Set.mem_iInter.2 fun n ↦ ?_⟩
     rcases le_total n N with hn | hn
     · exact hballs hn (mem_closedBall_self (hr N))
-    · by_cases hcn : c N = c n
-      · simpa [hcn] using hr n
+    · by_cases hcn : dist (c N) (c n) = 0
+      · simpa only [mem_closedBall, hcn] using hr n
       obtain ⟨j, hj⟩ := hdiscrete (c N) (c n) hcn
       have hjlt : b ^ j < b ^ (k + 1) := by
         rw [← hj, dist_comm]

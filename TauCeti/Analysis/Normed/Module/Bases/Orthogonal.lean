@@ -8,7 +8,6 @@ module
 public import TauCeti.Analysis.Normed.Module.Bases.TOrthogonal
 public import TauCeti.Topology.MetricSpace.SphericallyComplete
 public import Mathlib.Topology.Order.IsLUB
-public import Mathlib.LinearAlgebra.Dimension.Finite
 
 /-!
 # Best approximation and orthogonal bases
@@ -160,7 +159,9 @@ theorem exists_basis_isTOrthogonalFamily_one_of_norm_eq_zpow [CompleteSpace K]
     (hdiscrete : ∀ a : K, a ≠ 0 → ∃ k : ℤ, ‖a‖ = b ^ k) :
     ∃ e : Module.Basis (Fin (Module.finrank K E)) K E, IsTOrthogonalFamily K 1 e := by
   have : SphericallyCompleteSpace K := sphericallyCompleteSpace_of_dist_eq_zpow hb
-    fun x y hxy ↦ by simpa only [dist_eq_norm] using hdiscrete (x - y) (sub_ne_zero.2 hxy)
+    fun x y hxy ↦ by
+      simpa only [dist_eq_norm] using
+        hdiscrete (x - y) (by simpa only [dist_eq_norm, ne_eq, norm_eq_zero] using hxy)
   exact exists_basis_isTOrthogonalFamily_one_of_sphericallyComplete
 
 end TauCeti
