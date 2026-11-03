@@ -136,27 +136,19 @@ theorem coe_commutatorElement_commutatorElement_eq_one_add_smul (A B C : Matrix 
     simp only [f, RingHom.mapMatrix_apply, Matrix.map_apply, eq_intCast]
   have hlie (X Y : Matrix ι ι ℤ) : f ⁅X, Y⁆ = ⁅f X, f Y⁆ := by
     simp only [Ring.lie_def, map_sub, map_mul]
-  obtain ⟨hABA, hBAB, hD, hDCD, hCDC⟩ :=
+  obtain ⟨_, hBAB, hD, hDCD, hCDC⟩ :=
     mul_eq_zero_relations_of_lie_lie_eq_zero A B C hA hB hC hAC hABC hAAB hBBA
-  rw [← hf] at hx hy hz
-  have hAA : f A * f A = 0 := by rw [← map_mul, hA, map_zero]
-  have hBB : f B * f B = 0 := by rw [← map_mul, hB, map_zero]
+  have hcomm : (↑⁅x, y⁆ : Matrix ι ι R) = 1 + (u * v) • f ⁅A, B⁆ := by
+    simpa only [hf, hBAB, Matrix.map_zero _ Int.cast_zero, smul_zero, add_zero] using
+      coe_commutatorElement_eq_one_add_smul_lie_add_smul_mul_mul A B hA hB hAAB u v x y hx hy
+  rw [← hf] at hz
   have hCC : f C * f C = 0 := by rw [← map_mul, hC, map_zero]
-  have hABA' : f A * f B * f A = 0 := by rw [← map_mul, ← map_mul, hABA, map_zero]
-  have hBAB' : f B * f A * f B = 0 := by rw [← map_mul, ← map_mul, hBAB, map_zero]
   have hDD : f ⁅A, B⁆ * f ⁅A, B⁆ = 0 := by rw [← map_mul, hD, map_zero]
   have hDCD' : f ⁅A, B⁆ * f C * f ⁅A, B⁆ = 0 := by
     rw [← map_mul, ← map_mul, hDCD, map_zero]
   have hCDC' : f C * f ⁅A, B⁆ * f C = 0 := by
     rw [← map_mul, ← map_mul, hCDC, map_zero]
   have hDC : ⁅f ⁅A, B⁆, f C⁆ = f A := by rw [← hlie, hABC]
-  have hcomm : (↑⁅x, y⁆ : Matrix ι ι R) = 1 + (u * v) • f ⁅A, B⁆ := by
-    rw [Units.val_commutatorElement_eq_one_add_lie x y (u • f A) (v • f B) hx hy]
-    · rw [smul_lie, lie_smul, smul_smul, ← hlie]
-    · simp only [smul_mul_assoc, mul_smul_comm, hAA, smul_zero]
-    · simp only [smul_mul_assoc, mul_smul_comm, hBB, smul_zero]
-    · simp only [smul_mul_assoc, mul_smul_comm, hABA', smul_zero]
-    · simp only [smul_mul_assoc, mul_smul_comm, hBAB', smul_zero]
   rw [Units.val_commutatorElement_eq_one_add_lie ⁅x, y⁆ z
     ((u * v) • f ⁅A, B⁆) (w • f C) hcomm hz]
   · rw [smul_lie, lie_smul, smul_smul, hDC, hf]
