@@ -580,20 +580,6 @@ lemma locallyFiniteBoundaryFun_locallyFiniteSumFun {y : ι → (twistedChainComp
     obtain ⟨σ, hσ⟩ := not_forall.1 (mt finsum_eq_zero_of_forall_eq_zero hj)
     exact hJ σ j hσ
 
-/-- The twisted boundary of a chain supported in a set `s` is supported in `s`. -/
-lemma range_simplexMap_subset_of_twistedChainComplexCoeff_d_ne_zero
-    {z : (twistedChainComplex L).X (k + 1)} {s : Set X}
-    (hz : ∀ σ, (twistedChainComplexCoeff L σ).hom z ≠ 0 → Set.range (TopCat.simplexMap σ) ⊆ s)
-    {ρ : (TopCat.toSSet.obj X) _⦋k⦌}
-    (hρ : (twistedChainComplexCoeff L ρ).hom (((twistedChainComplex L).d (k + 1) k).hom z) ≠ 0) :
-    Set.range (TopCat.simplexMap ρ) ⊆ s := by
-  rw [← finsum_matrixCoeff] at hρ
-  obtain ⟨σ, hσ⟩ := not_forall.1 (mt finsum_eq_zero_of_forall_eq_zero hρ)
-  have hσ' : (twistedChainComplexCoeff L σ).hom z ≠ 0 := fun h ↦ hσ (by simp [h])
-  refine (movesAlong_d k ρ σ _ hσ).trans ?_
-  rw [TopCat.hom_id, ContinuousMap.coe_id, Set.image_id]
-  exact hz σ hσ'
-
 /-- The sum of a family of twisted chains supported in the members of a locally finite family of
 sets, as a locally finite chain. -/
 def locallyFiniteSum (hA : LocallyFinite A)
@@ -619,7 +605,7 @@ lemma locallyFiniteBoundary_locallyFiniteSum {y : ι → (twistedChainComplex L)
       Set.range (TopCat.simplexMap σ) ⊆ A j) :
     locallyFiniteBoundary L k (locallyFiniteSum hA hy) =
       locallyFiniteSum hA fun j _ ↦
-        range_simplexMap_subset_of_twistedChainComplexCoeff_d_ne_zero (hy j) :=
+        range_simplexMap_subset_of_twistedChainComplexCoeff_d_ne_zero L (hy j) :=
   Subtype.ext (locallyFiniteBoundaryFun_locallyFiniteSumFun hA hy)
 
 end LocallyFiniteSum
