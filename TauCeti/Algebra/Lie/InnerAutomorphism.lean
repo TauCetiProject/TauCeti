@@ -9,7 +9,7 @@ public import Mathlib.Algebra.Algebra.Rat
 public import Mathlib.Algebra.Lie.AdjointAction.Basic
 public import Mathlib.Algebra.Lie.AdjointAction.Derivation
 public import TauCeti.Algebra.Lie.Basic
-public import TauCeti.Algebra.Lie.Derivation.Exp
+public import TauCeti.Algebra.Lie.Derivation.TaylorExp
 import Mathlib.Algebra.Ring.Action.ConjAct
 import TauCeti.RingTheory.Nilpotent.Exp
 
@@ -43,7 +43,7 @@ This is the central-commutator case of the Chevalley commutator formula. It is t
 Mathlib exponentiates a nilpotent *derivation* (`LieDerivation.exp`) and knows that a root vector
 is `ad`-nilpotent (`LieAlgebra.isNilpotent_ad_of_mem_rootSpace`); a nilpotent `ad x` is in
 particular locally nilpotent (`IsNilpotent.exists_pow_apply_eq_zero`). This file specialises the
-exponential of a locally nilpotent derivation, `LieDerivation.locallyNilpotentExp`, to the inner
+exponential of a locally nilpotent derivation, `LieDerivation.taylorExp`, to the inner
 derivations `LieAlgebra.ad K L x`. Local nilpotence is what is available for the Chevalley
 generators of a Lie algebra presented by Serre's relations, which is not known in advance to be
 finite-dimensional. The file records the truncations of the exponential series that a hand
@@ -114,18 +114,21 @@ noncomputable def ratLieAlgebra (K L : Type*) [CommRing K] [Algebra ℚ K] [LieR
 variable {K L : Type*} [CommRing K] [LieRing L] [LieAlgebra K L] [LieAlgebra ℚ L]
 
 /-- The inner automorphism `exp (ad x)` attached to an element `x` with locally nilpotent adjoint
-action. It is `LieDerivation.locallyNilpotentExp` applied to the inner derivation `ad x`. -/
+action. It is `LieDerivation.taylorExp` applied to the inner derivation `ad x`. -/
 noncomputable def expAd (x : L) (hx : ∀ y, ∃ k, ((ad K L x) ^ k) y = 0) : L ≃ₗ⁅K⁆ L :=
-  (LieDerivation.ad K L x).locallyNilpotentExp <| by
-    rwa [LieDerivation.coe_ad_apply_eq_ad_apply]
+  (LieDerivation.ad K L x).taylorExp <| by
+    have hc : ⇑(LieDerivation.ad K L x) = ⇑(ad K L x) := funext fun y ↦ by simp
+    simpa only [hc, ← pow_apply_eq_iterate] using hx
 
 /-- The exponential series for `exp (ad x)`, truncated at any length `k` for which `(ad x) ^ k`
 already annihilates the vector `y`. -/
 lemma expAd_apply_eq_sum {x : L} (hx : ∀ y, ∃ k, ((ad K L x) ^ k) y = 0) {k : ℕ} {y : L}
     (hy : ((ad K L x) ^ k) y = 0) :
     expAd x hx y = ∑ i ∈ range k, ((i.factorial : ℚ)⁻¹) • ((ad K L x) ^ i) y := by
-  rw [expAd, LieDerivation.locallyNilpotentExp_apply_eq_sum _ _
-    (by rwa [LieDerivation.coe_ad_apply_eq_ad_apply]), LieDerivation.coe_ad_apply_eq_ad_apply]
+  have hc : ⇑(LieDerivation.ad K L x) = ⇑(ad K L x) := funext fun z ↦ by simp
+  rw [expAd, LieDerivation.taylorExp_apply_eq_sum _ _ (n := k)
+    (by rwa [hc, ← pow_apply_eq_iterate])]
+  simp only [hc, pow_apply_eq_iterate]
 
 /-- For an element with nilpotent adjoint action, `TauCeti.expAd` is the exponential of
 `LieAlgebra.ad x`. -/
@@ -153,7 +156,7 @@ theorem expAd_symm (x : L) (hx : ∀ y, ∃ k, ((ad K L x) ^ k) y = 0) :
     (expAd x hx).symm =
       expAd (-x) fun y ↦ (hx y).imp fun _ ↦ ad_neg_pow_apply_eq_zero := by
   ext y
-  simp only [expAd, LieDerivation.locallyNilpotentExp_symm, map_neg]
+  simp only [expAd, LieDerivation.taylorExp_symm, map_neg]
 
 /-- **`exp (ad x)` is natural in Lie homomorphisms**: a Lie homomorphism `f` carries
 `exp (ad x) y` to `exp (ad (f x)) (f y)`. The local nilpotence of `ad (f x)` is a hypothesis, since
@@ -163,7 +166,7 @@ theorem _root_.LieHom.map_expAd {L' : Type*} [LieRing L'] [LieAlgebra K L'] [Lie
     (f : L →ₗ⁅K⁆ L') {x : L} (hx : ∀ y, ∃ k, ((ad K L x) ^ k) y = 0)
     (hfx : ∀ y, ∃ k, ((ad K L' (f x)) ^ k) y = 0) (y : L) :
     f (expAd x hx y) = expAd (f x) hfx (f y) := by
-  simp only [expAd, LieDerivation.locallyNilpotentExp_apply]
+  simp only [expAd, LieDerivation.taylorExp_apply_eq_locallyNilpotentExp]
   exact Module.End.map_locallyNilpotentExp _ _ _ f (fun z ↦ by
     simp only [LieDerivation.coe_ad_apply_eq_ad_apply, LieAlgebra.ad_apply, LieHom.map_lie]) y
 

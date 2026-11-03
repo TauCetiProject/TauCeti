@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Algebra.Lie.Derivation.Basic
 public import Mathlib.Algebra.Module.Rat
+public import TauCeti.LinearAlgebra.End.Exp
 import TauCeti.Algebra.BigOperators.Finset.Range
 import TauCeti.Data.Nat.Choose.Cast
 import TauCeti.Algebra.Lie.Rat
@@ -53,6 +54,8 @@ algebras.
 * `LieDerivation.inv_factorial_smul_iterate_apply_lie`: the divided Leibniz rule.
 * `LieDerivation.taylorExp_apply_eq_sum`: any iterate killing `x` gives a finite expansion of
   `taylorExp D x`.
+* `LieDerivation.taylorExp_apply_eq_locallyNilpotentExp`: comparison with the exponential of
+  the underlying endomorphism.
 * `LieDerivation.taylorExp_symm`: the inverse of `taylorExp D` is `taylorExp (-D)`.
 * `LieDerivation.taylorExp_apply_of_apply_eq_zero`,
   `LieDerivation.taylorExp_apply_of_apply_apply_eq_zero` and
@@ -232,6 +235,17 @@ exponential of `x` is the sum of its first `n` Taylor terms. -/
 theorem taylorExp_apply_eq_sum {x : L} {n : ℕ} (hn : D^[n] x = 0) :
     taylorExp D hD x = ∑ i ∈ range n, (i ! : ℚ)⁻¹ • D^[i] x :=
   taylorSum_eq D hD hn
+
+/-- The Taylor exponential is the exponential of the underlying locally nilpotent
+endomorphism. -/
+theorem taylorExp_apply_eq_locallyNilpotentExp (x : L) :
+    taylorExp D hD x = Module.End.locallyNilpotentExp D.toLinearMap
+      (by simpa only [pow_apply_eq_iterate, coeFn_coe] using hD) x := by
+  obtain ⟨n, hn⟩ := hD x
+  rw [taylorExp_apply_eq_sum D hD hn,
+    Module.End.locallyNilpotentExp_apply_eq_sum _ _
+      (by simpa only [pow_apply_eq_iterate, coeFn_coe] using hn)]
+  simp only [pow_apply_eq_iterate, coeFn_coe]
 
 /-- The inverse of the Taylor exponential of `D` is the Taylor exponential of `-D`. -/
 @[simp]
