@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.InnerProductSpace.PiL2
 public import Mathlib.Analysis.Matrix.Normed
+public import Mathlib.Analysis.Matrix.Order
 public import Mathlib.LinearAlgebra.Matrix.Trace
 public import TauCeti.Analysis.Matrix.Frobenius
 
@@ -19,7 +20,7 @@ for proving inequalities involving traces of products of matrices.
 
 public section
 
-open scoped Matrix Matrix.Norms.Frobenius
+open scoped ComplexOrder Matrix Matrix.Norms.Frobenius MatrixOrder
 
 namespace Matrix
 
@@ -72,20 +73,25 @@ theorem norm_trace_mul_self_le (A : Matrix m m 𝕜) :
     pow_two] using
     (norm_trace_conjTranspose_mul_le (A := Aᴴ) (B := A))
 
+/-- Rewrite the trace of `A² B²` as the squared Frobenius norm of `A * B`. -/
+theorem trace_pow_two_mul_eq_trace_conjTranspose_mul (A B : Matrix m m 𝕜)
+    (hA : A.IsHermitian) (hB : B.IsHermitian) :
+    (A ^ 2 * B ^ 2).trace = ((A * B)ᴴ * (A * B)).trace := by
+  rw [Matrix.conjTranspose_mul, hA.eq, hB.eq]
+  simp only [pow_two]
+  change ((A * A) * (B * B)).trace = ((B * A) * (A * B)).trace
+  calc
+    (A * A * (B * B)).trace = ((B * B) * (A * A)).trace :=
+      Matrix.trace_mul_comm _ _
+    _ = (B * (B * (A * A))).trace := by rw [Matrix.mul_assoc]
+    _ = ((B * (A * A)) * B).trace := Matrix.trace_mul_comm _ _
+    _ = ((B * A) * (A * B)).trace := by congr 1; noncomm_ring
+
 /-- The first nontrivial dyadic trace-power inequality for Hermitian matrices. -/
 theorem norm_trace_mul_mul_sq_le (A B : Matrix m m 𝕜)
     (hA : A.IsHermitian) (hB : B.IsHermitian) :
     ‖((A * B) ^ 2).trace‖ ≤ ‖(A ^ 2 * B ^ 2).trace‖ := by
-  have htrace : (A ^ 2 * B ^ 2).trace = ((A * B)ᴴ * (A * B)).trace := by
-    rw [Matrix.conjTranspose_mul, hA.eq, hB.eq]
-    simp only [pow_two]
-    change ((A * A) * (B * B)).trace = ((B * A) * (A * B)).trace
-    calc
-      (A * A * (B * B)).trace = ((B * B) * (A * A)).trace :=
-        Matrix.trace_mul_comm _ _
-      _ = (B * (B * (A * A))).trace := by rw [Matrix.mul_assoc]
-      _ = ((B * (A * A)) * B).trace := Matrix.trace_mul_comm _ _
-      _ = ((B * A) * (A * B)).trace := by congr 1; noncomm_ring
+  have htrace := trace_pow_two_mul_eq_trace_conjTranspose_mul A B hA hB
   have hnorm : ‖(A * B)‖ ^ 2 = ‖(A ^ 2 * B ^ 2).trace‖ := by
     rw [htrace, ← Matrix.frobenius_inner_eq_trace_conjTranspose_mul]
     rw [inner_self_eq_norm_sq_to_K]
@@ -94,5 +100,52 @@ theorem norm_trace_mul_mul_sq_le (A B : Matrix m m 𝕜)
     ‖((A * B) ^ 2).trace‖ ≤ ‖A * B‖ ^ 2 := by
       simpa only [pow_two] using norm_trace_mul_self_le (A * B)
     _ = ‖(A ^ 2 * B ^ 2).trace‖ := hnorm
+
+/-- The trace of `(A * B) ^ 2` is nonnegative when both factors are positive semidefinite. -/
+theorem trace_mul_mul_sq_nonneg (A B : Matrix m m 𝕜)
+    (hA : A.PosSemidef) (hB : B.PosSemidef) :
+    0 ≤ ((A * B) ^ 2).trace := by
+  obtain ⟨C, -, rfl⟩ := CStarAlgebra.nonneg_iff_eq_star_mul_self.mp hA.nonneg
+  let T := C * B * Cᴴ
+  have hT : T.IsHermitian := by
+    change (C * B * Cᴴ)ᴴ = C * B * Cᴴ
+    simp only [Matrix.conjTranspose_mul, Matrix.conjTranspose_conjTranspose,
+      hB.isHermitian.eq]
+    noncomm_ring
+  have hT2 : (T * T).PosSemidef := by
+    simpa [hT.eq] using (posSemidef_conjTranspose_mul_self T)
+  have htrace : ((star C * C * B) ^ 2).trace = (T * T).trace := by
+    simp only [pow_two]
+    calc
+      ((Cᴴ * C * B) * (Cᴴ * C * B)).trace =
+          (Cᴴ * (C * B * Cᴴ * C * B)).trace := by congr 1; noncomm_ring
+      _ = ((C * B * Cᴴ * C * B) * Cᴴ).trace := Matrix.trace_mul_comm _ _
+      _ = (T * T).trace := by
+        change (C * B * Cᴴ * C * B * Cᴴ).trace =
+          ((C * B * Cᴴ) * (C * B * Cᴴ)).trace
+        congr 1
+        noncomm_ring
+  have htrace' : ((Cᴴ * C * B) ^ 2).trace = (T * T).trace := by
+    simpa only [Matrix.star_eq_conjTranspose] using htrace
+  change 0 ≤ ((Cᴴ * C * B) ^ 2).trace
+  rw [htrace']
+  exact hT2.trace_nonneg
+
+/-- The first dyadic trace-power inequality for positive semidefinite matrices. -/
+theorem trace_mul_mul_sq_le (A B : Matrix m m 𝕜)
+    (hA : A.PosSemidef) (hB : B.PosSemidef) :
+    ((A * B) ^ 2).trace ≤ (A ^ 2 * B ^ 2).trace := by
+  have hleft := trace_mul_mul_sq_nonneg A B hA hB
+  have hright : 0 ≤ (A ^ 2 * B ^ 2).trace := by
+    rw [trace_pow_two_mul_eq_trace_conjTranspose_mul A B hA.isHermitian hB.isHermitian]
+    exact (posSemidef_conjTranspose_mul_self (A * B)).trace_nonneg
+  have hnorm := norm_trace_mul_mul_sq_le A B hA.isHermitian hB.isHermitian
+  obtain ⟨x, hx, hx_eq⟩ := RCLike.nonneg_iff_exists_ofReal.mp hleft
+  obtain ⟨y, hy, hy_eq⟩ := RCLike.nonneg_iff_exists_ofReal.mp hright
+  rw [← hx_eq, ← hy_eq] at hnorm
+  have hnormReal : x ≤ y := by
+    simpa only [RCLike.norm_of_nonneg hx, RCLike.norm_of_nonneg hy] using hnorm
+  rw [← hx_eq, ← hy_eq]
+  exact_mod_cast hnormReal
 
 end Matrix
