@@ -134,7 +134,7 @@ theorem exists_mem_symplecticGroup_mul_map_eq_map_mul_diagonal
       rcases x with x | x
       · exact Sum.elim_inl _ _ x
       · exact (Sum.elim_inr _ _ x).trans (hpair x).symm
-    rw [mul_diagonal, hsx, mul_apply, mul_comm]
+    rw [mul_diagonal, hsx, Matrix.mul_apply, mul_comm]
     simpa [mulVec, dotProduct, Module.Basis.toMatrix_apply] using hx
 
 end Matrix

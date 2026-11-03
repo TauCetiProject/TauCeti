@@ -9,24 +9,32 @@ public import TauCeti.Probability.Distributions.TruncatedNormal.Basic
 import Mathlib.Probability.Kernel.MeasurableLIntegral
 
 /-!
-# Parameter measurability of truncated normal laws
+# Parameter measurability of truncated normal distributions
 
-Truncated Gaussian laws are jointly measurable in their Gaussian parameters and their truncation
-events whenever the events have a measurable incidence set. This allows random truncation bounds
-and Gaussian parameters to define measure-valued kernels. The interval specializations use extended
-real bounds and retain all four endpoint conventions, including at zero variance. Empty intervals
-and events of zero Gaussian mass give the zero measure without additional hypotheses.
+The truncated normal law depends measurably on its mean and variance for every fixed measurable
+truncation set. It also depends measurably on moving interval endpoints. All statements use the
+totalized definition of `truncatedNormalMeasure`: an interval of zero Gaussian mass gives the zero
+measure, including at zero variance and for reversed or coincident endpoints.
 
-The named real and extended densities are jointly measurable as well. At zero variance they
-vanish, as in their definitions; they do not represent a surviving Dirac mass.
+Both real endpoints and extended-real endpoints are covered. The latter are expressed through
+`Real.toEReal` so that infinite one-sided truncations belong to the same measurable family.
+
+Truncation events may also vary through any measurable incidence set. The named real and
+extended densities are jointly measurable in these events, the Gaussian parameters and the
+evaluation point. At zero variance the densities vanish, as in their definitions; they do not
+represent a surviving Dirac mass.
 
 ## Main results
 
-* `TauCeti.Probability.measurable_truncatedNormalMeasure` — arbitrary measurable incidence sets;
-* `TauCeti.Probability.measurable_truncatedNormalMeasure_Ioc` and its `Icc`, `Ioo`, `Ico`
-  counterparts — joint measurability in location, variance and extended interval bounds;
+* `Measurable.truncatedNormalMeasure` — arbitrary measurable incidence sets;
 * `TauCeti.Probability.measurable_uncurry_truncatedNormalPDFReal`,
-  `TauCeti.Probability.measurable_uncurry_truncatedNormalPDF` — joint density measurability.
+  `TauCeti.Probability.measurable_uncurry_truncatedNormalPDF` — joint density measurability;
+* `TauCeti.Probability.measurable_truncatedNormalMeasure` — measurability in the Gaussian
+  parameters for a fixed measurable truncation set;
+* `TauCeti.Probability.measurable_truncatedNormalMeasure_Ioc` and its other endpoint conventions
+  — joint measurability in the Gaussian parameters and real endpoints;
+* `TauCeti.Probability.measurable_truncatedNormalMeasure_preimage_Ioc` and its other endpoint
+  conventions — the corresponding result for extended-real endpoints.
 
 ## References
 
@@ -36,10 +44,14 @@ vanish, as in their definitions; they do not represent a surviving Dirac mass.
 
 public section
 
+noncomputable section
+
 open MeasureTheory ProbabilityTheory Set
 open scoped NNReal
 
 namespace TauCeti.Probability
+
+section VaryingEvents
 
 variable {α : Type*} [MeasurableSpace α] {m : α → ℝ} {v : α → ℝ≥0} {s : α → Set ℝ}
 
@@ -47,12 +59,16 @@ variable {α : Type*} [MeasurableSpace α] {m : α → ℝ} {v : α → ℝ≥0}
 event, provided the event has a measurable incidence set. This includes zero variance and
 conditioning events of zero mass. -/
 @[fun_prop]
-theorem measurable_truncatedNormalMeasure (hm : Measurable m) (hv : Measurable v)
+theorem _root_.Measurable.truncatedNormalMeasure (hm : Measurable m) (hv : Measurable v)
     (hs : MeasurableSet {p : α × ℝ | p.2 ∈ s p.1}) :
     Measurable fun a => truncatedNormalMeasure (m a) (v a) (s a) := by
-  simp only [truncatedNormalMeasure_def]
-  exact (measurable_gaussianReal.comp (hm.prodMk hv)).cond_of_finite
-    (fun a => inferInstanceAs (IsFiniteMeasure (gaussianReal (m a) (v a)))) hs
+  have hμ : Measurable fun a : α => gaussianReal (m a) (v a) :=
+    measurable_gaussianReal.comp (hm.prodMk hv)
+  have hsection (a : α) : Prod.mk a ⁻¹' {p : α × ℝ | p.2 ∈ s p.1} = s a := by
+    ext x
+    rfl
+  simpa only [truncatedNormalMeasure_def, hsection] using
+    hμ.cond (fun _ => inferInstance) hs
 
 /-- The real truncated normal density is jointly measurable in its Gaussian parameters, its
 truncation event and its evaluation point, for a measurable incidence set. -/
@@ -80,40 +96,108 @@ theorem measurable_uncurry_truncatedNormalPDF (hm : Measurable m) (hv : Measurab
   simpa only [truncatedNormalPDF_eq_ofReal] using
     (measurable_uncurry_truncatedNormalPDFReal hm hv hs).ennreal_ofReal
 
-/-- Gaussian truncation to `(l, r]` is jointly measurable in location, variance and extended
-endpoints, including empty or reversed intervals. -/
+end VaryingEvents
+
+/-- For a fixed measurable truncation set, the truncated normal law is measurable in its mean and
+variance, including the zero-variance boundary and zero-mass truncations. -/
+@[fun_prop]
+theorem measurable_truncatedNormalMeasure {s : Set ℝ} (hs : MeasurableSet s) :
+    Measurable fun p : ℝ × ℝ≥0 ↦ truncatedNormalMeasure p.1 p.2 s := by
+  have hμ : Measurable fun p : ℝ × ℝ≥0 ↦ gaussianReal p.1 p.2 :=
+    ProbabilityTheory.measurable_gaussianReal
+  simpa only [truncatedNormalMeasure_def] using
+    hμ.cond_const hs
+
+/-! ### Real endpoints -/
+
+/-- Truncation to `(l, r]` is jointly measurable in the Gaussian parameters and real endpoints. -/
 @[fun_prop]
 theorem measurable_truncatedNormalMeasure_Ioc :
-    Measurable fun p : ℝ × ℝ≥0 × EReal × EReal =>
-      truncatedNormalMeasure p.1 p.2.1 (Real.toEReal ⁻¹' Ioc p.2.2.1 p.2.2.2) := by
-  apply measurable_truncatedNormalMeasure (by fun_prop) (by fun_prop)
-  measurability
+    Measurable fun p : (ℝ × ℝ≥0) × (ℝ × ℝ) ↦
+      truncatedNormalMeasure p.1.1 p.1.2 (Ioc p.2.1 p.2.2) := by
+  have hμ : Measurable fun p : (ℝ × ℝ≥0) × (ℝ × ℝ) ↦
+      gaussianReal p.1.1 p.1.2 := ProbabilityTheory.measurable_gaussianReal.comp (by fun_prop)
+  simpa only [truncatedNormalMeasure_def, Set.preimage_id] using
+    hμ.cond_preimage_Ioc (fun _ ↦ inferInstance) measurable_id (by fun_prop) (by fun_prop)
 
-/-- Gaussian truncation to `[l, r]` is jointly measurable in location, variance and extended
-endpoints. At zero variance, a retained endpoint atom is included. -/
+/-- Truncation to `[l, r]` is jointly measurable in the Gaussian parameters and real endpoints. -/
 @[fun_prop]
 theorem measurable_truncatedNormalMeasure_Icc :
-    Measurable fun p : ℝ × ℝ≥0 × EReal × EReal =>
-      truncatedNormalMeasure p.1 p.2.1 (Real.toEReal ⁻¹' Icc p.2.2.1 p.2.2.2) := by
-  apply measurable_truncatedNormalMeasure (by fun_prop) (by fun_prop)
-  measurability
+    Measurable fun p : (ℝ × ℝ≥0) × (ℝ × ℝ) ↦
+      truncatedNormalMeasure p.1.1 p.1.2 (Icc p.2.1 p.2.2) := by
+  have hμ : Measurable fun p : (ℝ × ℝ≥0) × (ℝ × ℝ) ↦
+      gaussianReal p.1.1 p.1.2 := ProbabilityTheory.measurable_gaussianReal.comp (by fun_prop)
+  simpa only [truncatedNormalMeasure_def, Set.preimage_id] using
+    hμ.cond_preimage_Icc (fun _ ↦ inferInstance) measurable_id (by fun_prop) (by fun_prop)
 
-/-- Gaussian truncation to `(l, r)` is jointly measurable in location, variance and extended
-endpoints, retaining the exclusion of both endpoint atoms. -/
+/-- Truncation to `(l, r)` is jointly measurable in the Gaussian parameters and real endpoints. -/
 @[fun_prop]
 theorem measurable_truncatedNormalMeasure_Ioo :
-    Measurable fun p : ℝ × ℝ≥0 × EReal × EReal =>
-      truncatedNormalMeasure p.1 p.2.1 (Real.toEReal ⁻¹' Ioo p.2.2.1 p.2.2.2) := by
-  apply measurable_truncatedNormalMeasure (by fun_prop) (by fun_prop)
-  measurability
+    Measurable fun p : (ℝ × ℝ≥0) × (ℝ × ℝ) ↦
+      truncatedNormalMeasure p.1.1 p.1.2 (Ioo p.2.1 p.2.2) := by
+  have hμ : Measurable fun p : (ℝ × ℝ≥0) × (ℝ × ℝ) ↦
+      gaussianReal p.1.1 p.1.2 := ProbabilityTheory.measurable_gaussianReal.comp (by fun_prop)
+  simpa only [truncatedNormalMeasure_def, Set.preimage_id] using
+    hμ.cond_preimage_Ioo (fun _ ↦ inferInstance) measurable_id (by fun_prop) (by fun_prop)
 
-/-- Gaussian truncation to `[l, r)` is jointly measurable in location, variance and extended
-endpoints, retaining the inclusion of the lower atom and exclusion of the upper atom. -/
+/-- Truncation to `[l, r)` is jointly measurable in the Gaussian parameters and real endpoints. -/
 @[fun_prop]
 theorem measurable_truncatedNormalMeasure_Ico :
-    Measurable fun p : ℝ × ℝ≥0 × EReal × EReal =>
-      truncatedNormalMeasure p.1 p.2.1 (Real.toEReal ⁻¹' Ico p.2.2.1 p.2.2.2) := by
-  apply measurable_truncatedNormalMeasure (by fun_prop) (by fun_prop)
-  measurability
+    Measurable fun p : (ℝ × ℝ≥0) × (ℝ × ℝ) ↦
+      truncatedNormalMeasure p.1.1 p.1.2 (Ico p.2.1 p.2.2) := by
+  have hμ : Measurable fun p : (ℝ × ℝ≥0) × (ℝ × ℝ) ↦
+      gaussianReal p.1.1 p.1.2 := ProbabilityTheory.measurable_gaussianReal.comp (by fun_prop)
+  simpa only [truncatedNormalMeasure_def, Set.preimage_id] using
+    hμ.cond_preimage_Ico (fun _ ↦ inferInstance) measurable_id (by fun_prop) (by fun_prop)
+
+/-! ### Extended-real endpoints -/
+
+/-- Truncation to the real preimage of an extended interval `(l, r]` is jointly measurable in the
+Gaussian parameters and endpoints. Infinite endpoints give one-sided or untruncated laws. -/
+@[fun_prop]
+theorem measurable_truncatedNormalMeasure_preimage_Ioc :
+    Measurable fun p : (ℝ × ℝ≥0) × (EReal × EReal) ↦
+      truncatedNormalMeasure p.1.1 p.1.2 (Real.toEReal ⁻¹' Ioc p.2.1 p.2.2) := by
+  have hμ : Measurable fun p : (ℝ × ℝ≥0) × (EReal × EReal) ↦
+      gaussianReal p.1.1 p.1.2 := ProbabilityTheory.measurable_gaussianReal.comp (by fun_prop)
+  simpa only [truncatedNormalMeasure_def] using
+    hμ.cond_preimage_Ioc (fun _ ↦ inferInstance) EReal.measurableEmbedding_coe.measurable
+      (by fun_prop) (by fun_prop)
+
+/-- Truncation to the real preimage of an extended interval `[l, r]` is jointly measurable in the
+Gaussian parameters and endpoints. Infinite endpoints give one-sided or untruncated laws. -/
+@[fun_prop]
+theorem measurable_truncatedNormalMeasure_preimage_Icc :
+    Measurable fun p : (ℝ × ℝ≥0) × (EReal × EReal) ↦
+      truncatedNormalMeasure p.1.1 p.1.2 (Real.toEReal ⁻¹' Icc p.2.1 p.2.2) := by
+  have hμ : Measurable fun p : (ℝ × ℝ≥0) × (EReal × EReal) ↦
+      gaussianReal p.1.1 p.1.2 := ProbabilityTheory.measurable_gaussianReal.comp (by fun_prop)
+  simpa only [truncatedNormalMeasure_def] using
+    hμ.cond_preimage_Icc (fun _ ↦ inferInstance) EReal.measurableEmbedding_coe.measurable
+      (by fun_prop) (by fun_prop)
+
+/-- Truncation to the real preimage of an extended interval `(l, r)` is jointly measurable in the
+Gaussian parameters and endpoints. Infinite endpoints give one-sided or untruncated laws. -/
+@[fun_prop]
+theorem measurable_truncatedNormalMeasure_preimage_Ioo :
+    Measurable fun p : (ℝ × ℝ≥0) × (EReal × EReal) ↦
+      truncatedNormalMeasure p.1.1 p.1.2 (Real.toEReal ⁻¹' Ioo p.2.1 p.2.2) := by
+  have hμ : Measurable fun p : (ℝ × ℝ≥0) × (EReal × EReal) ↦
+      gaussianReal p.1.1 p.1.2 := ProbabilityTheory.measurable_gaussianReal.comp (by fun_prop)
+  simpa only [truncatedNormalMeasure_def] using
+    hμ.cond_preimage_Ioo (fun _ ↦ inferInstance) EReal.measurableEmbedding_coe.measurable
+      (by fun_prop) (by fun_prop)
+
+/-- Truncation to the real preimage of an extended interval `[l, r)` is jointly measurable in the
+Gaussian parameters and endpoints. Infinite endpoints give one-sided or untruncated laws. -/
+@[fun_prop]
+theorem measurable_truncatedNormalMeasure_preimage_Ico :
+    Measurable fun p : (ℝ × ℝ≥0) × (EReal × EReal) ↦
+      truncatedNormalMeasure p.1.1 p.1.2 (Real.toEReal ⁻¹' Ico p.2.1 p.2.2) := by
+  have hμ : Measurable fun p : (ℝ × ℝ≥0) × (EReal × EReal) ↦
+      gaussianReal p.1.1 p.1.2 := ProbabilityTheory.measurable_gaussianReal.comp (by fun_prop)
+  simpa only [truncatedNormalMeasure_def] using
+    hμ.cond_preimage_Ico (fun _ ↦ inferInstance) EReal.measurableEmbedding_coe.measurable
+      (by fun_prop) (by fun_prop)
 
 end TauCeti.Probability

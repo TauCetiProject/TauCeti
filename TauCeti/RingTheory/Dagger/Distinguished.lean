@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.RingTheory.Dagger.GaussNorm
 public import TauCeti.RingTheory.Dagger.Subst
 public import TauCeti.RingTheory.MvPowerSeries.TateAlgebra.Distinguished
 
@@ -47,6 +48,8 @@ strictly greater than one, over any ultrametric normed commutative ring.
 
 * `TauCeti.Dagger.washnitzerAlgebra.toTate_triangularEquiv`: compatibility with the triangular
   automorphism of the Tate algebra.
+* `TauCeti.Dagger.washnitzerAlgebra.norm_triangularEquiv`: the triangular automorphism preserves
+  the Gauss norm.
 * `TauCeti.Dagger.washnitzerAlgebra.exists_triangularEquiv_isDistinguished_isUnit`: over a
   complete nonarchimedean field, a triangular automorphism makes every nonzero overconvergent
   series distinguished in `Y`, with a unit coefficient in the distinguished degree.
@@ -124,6 +127,13 @@ theorem toTate_triangularEquiv (α : σ → ℕ) (hα : ∀ i, α i ≠ 0)
     toTate (Option σ) R (triangularEquiv α hα f) =
       restrictedTriangularEquiv α hα (toTate (Option σ) R f) :=
   Subtype.ext (by simp [triangularEquiv])
+
+/-- The triangular automorphism preserves the Gauss norm. -/
+@[simp]
+theorem norm_triangularEquiv (α : σ → ℕ) (hα : ∀ i, α i ≠ 0)
+    (f : washnitzerAlgebra (Option σ) R) : ‖triangularEquiv α hα f‖ = ‖f‖ := by
+  rw [← norm_toTate, toTate_triangularEquiv, MvPowerSeries.norm_restrictedTriangularEquiv,
+    norm_toTate]
 
 end Triangular
 

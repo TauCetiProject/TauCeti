@@ -154,7 +154,7 @@ theorem hilbertSymbol_neg_one_neg_one_padicTwo : hilbertSymbol (-1 : ℚ_[2]ˣ) 
 instance : Fact (¬ IsSquare (-1 : ℚ_[2])) := by
   refine ⟨?_⟩
   intro h
-  have hunit : IsSquare (-1 : ℚ_[2]ˣ) := isSquare_units_val_iff.mp (by simpa using h)
+  have hunit : IsSquare (-1 : ℚ_[2]ˣ) := Units.isSquare_coe_iff.mp (by simpa using h)
   have := hilbertSymbol_eq_one_of_isSquare_left hunit (-1)
   rw [hilbertSymbol_neg_one_neg_one_padicTwo] at this
   norm_num at this
@@ -164,7 +164,7 @@ theorem hilbertSymbol_two_five_padicTwo :
     hilbertSymbol (Units.mk0 (2 : ℚ_[2]) two_ne_zero) (Units.mk0 5 (by norm_num)) = -1 := by
   -- `5` is a nonsquare, and `(5, -1) = (5, 5) = +1`, so `(5, 2)` must be `−1`.
   have hc : ¬IsSquare unitFive := by
-    rw [← isSquare_units_val_iff]
+    rw [← Units.isSquare_coe_iff]
     exact Padic.not_isSquare_five
   rw [hilbertSymbol_comm]
   exact (Int.units_eq_one_or _).resolve_left fun h ↦ not_hilbertSymbol_generators_eq_one hc h

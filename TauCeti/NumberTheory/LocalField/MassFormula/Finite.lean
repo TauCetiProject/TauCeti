@@ -124,7 +124,7 @@ theorem tsum_one_div_natCard_residueField_pow_wildExponent_ne_top_iff_finite {n 
       (IntermediateField.wildExponent_le_mul_natCastValuation L.2 hnK)) 1
   · -- Every weight is at most `1`.
     refine ne_top_of_le_ne_top (b := ∑' _ : totallyRamifiedOfDegree K n, (1 : ℝ≥0∞)) ?_
-      (ENNReal.tsum_le_tsum fun L ↦ ?_)
+      (tsum_le_tsum fun L ↦ ?_)
     · rw [ENNReal.tsum_set_one, Ne, ENat.toENNReal_eq_top]
       exact h.encard_lt_top.ne
     · rw [one_div]

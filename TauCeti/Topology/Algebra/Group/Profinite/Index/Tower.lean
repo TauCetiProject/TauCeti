@@ -102,10 +102,11 @@ theorem _root_.Subgroup.profiniteIndex_subgroupOf_apply_eq_iSup_relIndex
           (K.map (QuotientGroup.mk' N.toSubgroup))) : ℕ∞)) N)
     have hVne : ((H.subgroupOf K) ⊔ V.toSubgroup).index ≠ 0 := by
       exact (Subgroup.finiteIndex_of_le le_sup_right).index_ne_zero
+    simp only [Nat.padicValNat_def]
     rw [Subgroup.index_map_mk'_eq_index_sup,
       relIndex_map_quotient_eq_index_sup_comap H K hHK N,
-      padicValNat_eq_emultiplicity hVne,
-      padicValNat_eq_emultiplicity (index_subgroupOf_sup_comap_ne_zero H K N)]
+      multiplicity_eq_emultiplicity hVne,
+      multiplicity_eq_emultiplicity (index_subgroupOf_sup_comap_ne_zero H K N)]
     apply emultiplicity_le_emultiplicity_of_dvd_right
     exact Subgroup.index_dvd_of_le (sup_le_sup_left hNV (H.subgroupOf K))
   · refine iSup_le fun N ↦ ?_
@@ -142,15 +143,17 @@ theorem _root_.Subgroup.profiniteIndex_subgroupOf_add_profiniteIndex
       intro N M
       let P : OpenNormalSubgroup G := N ⊓ M
       refine ⟨P, add_le_add ?_ ?_⟩
-      · rw [relIndex_map_quotient_eq_index_sup_comap H K hHK N,
+      · simp only [Nat.padicValNat_def]
+        rw [relIndex_map_quotient_eq_index_sup_comap H K hHK N,
           relIndex_map_quotient_eq_index_sup_comap H K hHK P,
-          padicValNat_eq_emultiplicity (index_subgroupOf_sup_comap_ne_zero H K N),
-          padicValNat_eq_emultiplicity (index_subgroupOf_sup_comap_ne_zero H K P)]
+          multiplicity_eq_emultiplicity (index_subgroupOf_sup_comap_ne_zero H K N),
+          multiplicity_eq_emultiplicity (index_subgroupOf_sup_comap_ne_zero H K P)]
         apply emultiplicity_le_emultiplicity_of_dvd_right
         apply Subgroup.index_dvd_of_le
         exact sup_le_sup_left (Subgroup.comap_mono inf_le_left) (H.subgroupOf K)
-      · rw [padicValNat_eq_emultiplicity Subgroup.index_ne_zero_of_finite,
-          padicValNat_eq_emultiplicity Subgroup.index_ne_zero_of_finite]
+      simp only [Nat.padicValNat_def]
+      · rw [multiplicity_eq_emultiplicity Subgroup.index_ne_zero_of_finite,
+          multiplicity_eq_emultiplicity Subgroup.index_ne_zero_of_finite]
         apply emultiplicity_le_emultiplicity_of_dvd_right
         rw [K.index_map_mk'_eq_index_sup M.toSubgroup,
           K.index_map_mk'_eq_index_sup P.toSubgroup]
@@ -168,9 +171,10 @@ theorem _root_.Subgroup.profiniteIndex_subgroupOf_add_profiniteIndex
             (K.map (QuotientGroup.mk' N.toSubgroup)) :=
           Subgroup.isFiniteRelIndex_of_finiteIndex
         exact Subgroup.relIndex_ne_zero
+      simp only [Nat.padicValNat_def]
       rw [← (H.map (QuotientGroup.mk' N.toSubgroup)).relIndex_mul_index
           (Subgroup.map_mono hHK),
-        padicValNat.mul hrelne
+        Nat.multiplicity_mul hrelne
           Subgroup.index_ne_zero_of_finite,
         Nat.cast_add]
 
