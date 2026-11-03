@@ -151,6 +151,11 @@ lemma shiftFunctor_map_f' {K L : HomologicalComplex C (ComplexShape.up (ZMod n))
 lemma shiftFunctor_obj_d' (K : HomologicalComplex C (ComplexShape.up (ZMod n))) (k : ℤ)
     (i j : ZMod n) : (K⟦k⟧).d i j = k.negOnePow • K.d (i + k) (j + k) := rfl
 
+/-- A shift of a periodic complex with zero differentials has zero differentials. -/
+lemma shiftFunctor_obj_d_eq_zero {K : HomologicalComplex C (ComplexShape.up (ZMod n))}
+    (hd : ∀ i j, K.d i j = 0) (k : ℤ) (i j : ZMod n) : (K⟦k⟧).d i j = 0 := by
+  rw [shiftFunctor_obj_d', hd, smul_zero]
+
 @[simp]
 lemma shiftFunctorAdd_hom_app_f (K : HomologicalComplex C (ComplexShape.up (ZMod n)))
     (k₁ k₂ : ℤ) (i : ZMod n) :

@@ -182,11 +182,6 @@ private lemma tensorObj_d_eq_zero (hK : ∀ i j, K.d i j = 0) (hL : ∀ i j, L.d
     · simp [mapBifunctor.d₁_eq_zero _ _ _ _ _ _ _ h₁, mapBifunctor.d₂_eq' _ _ _ _ _ h₂, hL]
     · simp [mapBifunctor.d₁_eq_zero _ _ _ _ _ _ _ h₁, mapBifunctor.d₂_eq_zero _ _ _ _ _ _ _ h₂]
 
-/-- For a complex with zero differentials, the isomorphism `K.X i ≅ K.homology i`. -/
-private def xIsoHomology (K : HomologicalComplex C c) (hK : ∀ i j, K.d i j = 0) (i : I)
-    [K.HasHomology i] : K.X i ≅ K.homology i :=
-  (K.iCyclesIso i _ rfl (hK _ _)).symm ≪≫ K.isoHomologyπ _ i rfl (hK _ _)
-
 variable (n : I)
   [∀ p, K.HasHomology p] [∀ q, L.HasHomology q] [(tensorObj K L).HasHomology n]
   [∀ p, PreservesColimitsOfShape WalkingParallelPair (tensorLeft (K.homology p))]
@@ -199,29 +194,34 @@ omit [GradedObject.HasTensor (fun p ↦ K.homology p) (fun q ↦ L.homology q)] 
 class of their tensor product. -/
 private lemma xIsoHomology_tensorHom_homologyCross (hK : ∀ i j, K.d i j = 0)
     (hL : ∀ i j, L.d i j = 0) (p q : I) (h : p + q = n) :
-    ((xIsoHomology K hK p).hom ⊗ₘ (xIsoHomology L hL q).hom) ≫ homologyCross K L p q n h =
+    ((K.iCyclesIso p _ rfl (hK _ _)).inv ≫ K.homologyπ p ⊗ₘ
+      (L.iCyclesIso q _ rfl (hL _ _)).inv ≫ L.homologyπ q) ≫ homologyCross K L p q n h =
       ιTensorObj K L p q n h ≫
-        (xIsoHomology (tensorObj K L) (tensorObj_d_eq_zero hK hL) n).hom := by
+        ((tensorObj K L).iCyclesIso n _ rfl (tensorObj_d_eq_zero hK hL _ _)).inv ≫
+          (tensorObj K L).homologyπ n := by
   have hcross : ((K.iCyclesIso p _ rfl (hK _ _)).inv ⊗ₘ (L.iCyclesIso q _ rfl (hL _ _)).inv) ≫
       cyclesCross K L p q n h =
         ιTensorObj K L p q n h ≫
           ((tensorObj K L).iCyclesIso n _ rfl (tensorObj_d_eq_zero hK hL _ _)).inv := by
     simp [← cancel_mono ((tensorObj K L).iCycles n), tensorHom_comp_tensorHom_assoc]
-  simp [xIsoHomology, ← tensorHom_comp_tensorHom_assoc, reassoc_of% hcross]
+  simp [← tensorHom_comp_tensorHom_assoc, reassoc_of% hcross]
 
 /-- **The Künneth map is an isomorphism for complexes with zero differentials**: then
 `Hₙ(K ⊗ L) = (K ⊗ L)ₙ` is the direct sum of the `K.X p ⊗ L.X q = Hₚ(K) ⊗ H_q(L)` with
 `p + q = n`. -/
 theorem isIso_homologyKunneth_of_d_eq_zero (hK : ∀ i j, K.d i j = 0)
     (hL : ∀ i j, L.d i j = 0) : IsIso (homologyKunneth K L n) := by
-  let e := xIsoHomology (tensorObj K L) (tensorObj_d_eq_zero hK hL) n
+  let e := (tensorObj K L).XIsoHomologyOfDEqZero n (tensorObj_d_eq_zero hK hL _ _)
+    (tensorObj_d_eq_zero hK hL _ _)
   refine ⟨e.inv ≫ mapBifunctorDesc fun p q h ↦
-    ((xIsoHomology K hK p).hom ⊗ₘ (xIsoHomology L hL q).hom) ≫
+    ((K.XIsoHomologyOfDEqZero p (hK _ _) (hK _ _)).hom ⊗ₘ
+      (L.XIsoHomologyOfDEqZero q (hL _ _) (hL _ _)).hom) ≫
       GradedObject.Monoidal.ιTensorObj (fun p ↦ K.homology p) (fun q ↦ L.homology q) p q n h,
     ?_, ?_⟩
   · refine GradedObject.Monoidal.tensorObj_ext _ _ fun p q h ↦ ?_
-    rw [← cancel_epi ((xIsoHomology K hK p).hom ⊗ₘ (xIsoHomology L hL q).hom)]
-    simp [reassoc_of% xIsoHomology_tensorHom_homologyCross n hK hL p q h]
+    rw [← cancel_epi ((K.XIsoHomologyOfDEqZero p (hK _ _) (hK _ _)).hom ⊗ₘ
+      (L.XIsoHomologyOfDEqZero q (hL _ _) (hL _ _)).hom)]
+    simp [reassoc_of% xIsoHomology_tensorHom_homologyCross n hK hL p q h, e]
   · rw [← cancel_epi e.hom, Category.assoc, e.hom_inv_id_assoc, Category.comp_id]
     ext p q h
     simp [xIsoHomology_tensorHom_homologyCross n hK hL p q h, e]
@@ -395,8 +395,7 @@ private lemma mono_δ (m : ℕ) :
     Mono ((shortExact_tensorLeft_cyclesComplexShortComplex K L).δ
       (m + 1) m (by simp)) := by
   have (p : ℕ) : Module.Flat R (K.homology p) :=
-    .of_linearEquiv ((K.iCyclesIso p _ rfl (hK _ _)).symm ≪≫
-      K.isoHomologyπ _ p rfl (hK _ _)).symm.toLinearEquiv
+    .of_linearEquiv (K.XIsoHomologyOfDEqZero p (hK _ _) (hK _ _)).symm.toLinearEquiv
   -- each summand is `±` the flat module `Hₚ(K)` tensored with a monomorphism
   have (p q : ℕ) : Mono (homologySign K p ⊗ₘ
       L.cyclesComplexShortComplex_shortExact.δ (q + 1) q (by simp)) := by
