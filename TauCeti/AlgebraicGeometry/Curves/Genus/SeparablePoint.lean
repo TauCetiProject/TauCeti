@@ -29,10 +29,10 @@ semistable reduction: a rational point over a small separable extension is what 
 bundles on the curve be described by the points of its Jacobian.
 
 The function field `F = k(X)` has `k` as exact constant field and a separating element, because
-`X` is geometrically integral and smooth. Let `k̄` be the algebraic closure of `k` inside an
-algebraic closure of `F`, and `F' = F · k̄`. Geometric integrality makes `F ⊗[k] k̄` a domain, hence
-a field, so `F` and `k̄` are linearly disjoint in `F'`; `k̄` is exact in `F'`, being algebraically
-closed; and `F' / k̄` keeps the genus `g` because `X` is smooth
+`X` is geometrically integral and smooth. Let `k'` be the algebraic closure of `k` inside an
+algebraic closure of `F`, and `F' = F · k'`. Geometric integrality makes `F ⊗[k] k'` a domain, hence
+a field, so `F` and `k'` are linearly disjoint in `F'`; `k'` is exact in `F'`, being algebraically
+closed; and `F' / k'` keeps the genus `g` because `X` is smooth
 (`TauCeti.AlgebraicGeometry.genus_eq_genus_functionField_of_constantCompositum_eq_top`). These are
 the hypotheses under which an effective canonical divisor `W` of `F` contains a separating element
 `t ∈ L(W)`, so that `[F : k(t)] ≤ deg W = 2g - 2`
@@ -102,7 +102,7 @@ theorem exists_finrank_residueField_le_and_isSeparable_of_two_le_genus
   -- sheaf `Ω_{X/k}`, so `k(X)` has a separating element.
   have := isInvertible_relativeDifferentials (X := X) k
   have hsep := exists_transcendental_and_isSeparable_adjoin_of_isInvertible hF
-  -- The constant field extension `F' = k(X) · k̄`, with `k̄` the algebraic closure of `k` inside an
+  -- The constant field extension `F' = k(X) · k'`, with `k'` the algebraic closure of `k` inside an
   -- algebraic closure `Ω` of `k(X)`.
   let Ω := AlgebraicClosure X.functionField
   let k' := algebraicClosure k Ω
@@ -113,7 +113,7 @@ theorem exists_finrank_residueField_le_and_isSeparable_of_two_le_genus
   have h : constantCompositum X.functionField k' F' = ⊤ :=
     (constantCompositum_eq_top_iff X.functionField k' Ω F').2 rfl
   have : IsAlgClosed k' := IsAlgClosure.isAlgClosed k
-  -- `k(X) ⊗[k] k̄` is a domain by geometric integrality, hence a field, so `k(X)` and `k̄` are
+  -- `k(X) ⊗[k] k'` is a domain by geometric integrality, hence a field, so `k(X)` and `k'` are
   -- linearly disjoint in `F'`.
   have hfield := Algebra.TensorProduct.isField_of_isAlgebraic k X.functionField k'
     (.inr inferInstance)
