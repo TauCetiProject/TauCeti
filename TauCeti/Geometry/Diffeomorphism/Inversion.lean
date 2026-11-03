@@ -103,7 +103,7 @@ theorem tendsto_iteratedFDerivWithin_diffeomorph_symm_extChartAt
       (𝓝 (iteratedFDerivWithin 𝕜 m (extChartAt I x ∘ f₀.symm ∘ (extChartAt J y).symm)
         (extChartAt J y).target w₀)) := by
   induction m using Nat.strong_induction_on with
-  | h m ih =>
+  | ind m ih =>
     set φ := extChartAt I x with hφdef
     set ψ := extChartAt J y with hψdef
     -- Track the inverse image in a fixed source chart; this also settles order zero.

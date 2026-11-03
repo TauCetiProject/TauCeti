@@ -130,7 +130,7 @@ identity is `1`. -/
 lemma _root_.MonoidHom.eigenvalue_one_of_jointEigenvector (ρ : G →* Module.End K V) (χ : G → K)
     (v : V) (hv : v ≠ 0) (hv_mem : ∀ g, v ∈ (ρ g).eigenspace (χ g)) : χ 1 = 1 := by
   have h1 := hv_mem 1
-  rw [Module.End.mem_eigenspace_iff, map_one, Module.End.one_apply] at h1
+  rw [Module.End.mem_eigenspace_iff, map_one, one_apply_eq_self] at h1
   exact (smul_left_inj hv).mp (by rw [← h1, one_smul])
 
 /-- If `v ≠ 0` is a joint eigenvector of a monoid-hom representation
@@ -142,7 +142,7 @@ lemma _root_.MonoidHom.eigenvalue_mul_of_jointEigenvector (ρ : G →* Module.En
   have h := hv_mem (g₁ * g₂)
   rw [Module.End.mem_eigenspace_iff, map_mul] at h
   refine (smul_left_inj hv).mp ?_
-  rw [← h, Module.End.mul_apply, Module.End.mem_eigenspace_iff.mp (hv_mem g₂), map_smul,
+  rw [← h, mul_apply_eq_comp, Module.End.mem_eigenspace_iff.mp (hv_mem g₂), map_smul,
     Module.End.mem_eigenspace_iff.mp (hv_mem g₁), smul_smul, mul_comm (χ g₂) (χ g₁)]
 
 end MulOne
@@ -352,7 +352,7 @@ variable (ρ) in
 private lemma fourierComponent_mem (χ₀ : G →* Kˣ) (v : V) (g : G) :
     fourierComponent (ρ := ρ) χ₀ v ∈ (ρ g).eigenspace (χ₀ g) := by
   rw [Module.End.mem_eigenspace_iff, fourierComponent]
-  simpa only [map_mul, MonoidAlgebra.lift_single, one_smul, map_smul, Module.End.mul_apply,
+  simpa only [map_mul, MonoidAlgebra.lift_single, one_smul, map_smul, mul_apply_eq_comp,
     LinearMap.smul_apply] using
     congr(MonoidAlgebra.lift K (Module.End K V) G ρ $(single_mul_charIdempotent χ₀ g) v)
 
@@ -369,7 +369,7 @@ variable {ρ : G →* Module.End K V} [HasEnoughRootsOfUnity K (Monoid.exponent 
 private lemma sum_fourierComponent (hunit : IsUnit (Nat.card G : K)) (v : V) :
     ∑ χ₀ : G →* Kˣ, fourierComponent (ρ := ρ) χ₀ v = v := by
   simp_rw [fourierComponent, ← LinearMap.sum_apply, ← map_sum, sum_charIdempotent hunit, map_one,
-    Module.End.one_apply]
+    one_apply_eq_self]
 
 /-- **Unconditional decomposition of an invariant submodule**: the character projectors
 preserve every `ρ`-invariant submodule, so it is the supremum of its intersections with

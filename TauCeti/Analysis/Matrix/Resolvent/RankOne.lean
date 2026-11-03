@@ -85,7 +85,7 @@ theorem inv_add_smul_vecMulVec_sub_smul_one_apply (c : ℝ) (u : n → 𝕜) {z 
       ((c : 𝕜) / (1 + (c : 𝕜) * (star u ⬝ᵥ ((A - z • 1)⁻¹ *ᵥ u)))) *
         (((A - z • 1)⁻¹ *ᵥ u) i * (star u ᵥ* (A - z • 1)⁻¹) j) := by
   rw [hA.inv_add_smul_vecMulVec_sub_smul_one c u hz]
-  simp only [sub_apply, smul_apply, smul_eq_mul, vecMulVec_apply]
+  simp only [Matrix.sub_apply, Matrix.smul_apply, smul_eq_mul, vecMulVec_apply]
 
 /-- Trace form of the real rank-one resolvent update. The numerator of the correction is the
 quadratic form of the square of the original resolvent, not its squared modulus. -/

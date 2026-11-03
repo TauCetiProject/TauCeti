@@ -234,7 +234,7 @@ private theorem volume_lt_enorm_sub_setAverage_le_inv_two_pow [CompleteSpace E]
       exists_volume_lt_enorm_sub_setAverage_le_tsum hM0 hf (hM q₀ le_rfl) N
     calc _ ≤ _ := hcover
       _ ≤ ∑' q : C, 2⁻¹ ^ N * volume (dyadicCube q.1.1 q.1.2) :=
-        ENNReal.tsum_le_tsum fun q =>
+        _root_.tsum_le_tsum fun q =>
           ih (hf.mono_set (hsub q q.2)) fun q' hq' => hM q' (hq'.trans (hsub q q.2))
       _ = 2⁻¹ ^ N * ∑' q : C, volume (dyadicCube q.1.1 q.1.2) := ENNReal.tsum_mul_left
       _ ≤ 2⁻¹ ^ N * (2⁻¹ * volume (dyadicCube q₀.1 q₀.2)) := by gcongr
@@ -332,7 +332,7 @@ private theorem ofReal_exp_mul_norm_le_one_add_tsum (σ : ℝ) (n : ℕ) (M : �
     rw [← hN1, Nat.cast_add_one] at this
     have h' : (N : ℝ) < ‖v‖ / a := by linarith
     exact (lt_div_iff₀ ha).1 h'
-  refine le_add_left (le_trans ?_ (ENNReal.le_tsum N))
+  refine le_add_left (le_trans ?_ (_root_.le_tsum _ N))
   simp only [hN, ↓reduceIte]
   rw [← ENNReal.ofReal_pow (Real.exp_pos _).le, ← Real.exp_nat_mul]
   refine ENNReal.ofReal_le_ofReal (Real.exp_le_exp.2 ?_)
@@ -434,7 +434,7 @@ theorem measure_lt_enorm_sub_setAverage_le_inv_two_pow [CompleteSpace E]
       2⁻¹ ^ N * μ (dyadicCube q₀.1 q₀.2) := by
   obtain ⟨a, hμ, havg, hfv, hMv⟩ := exists_eq_smul_volume_and_setLAverage_le
     (fun q : ℤ × (ι → ℤ) => dyadicCube q.1 q.2) hf hM
-  rw [havg, hμ, Measure.smul_apply, Measure.smul_apply, smul_eq_mul, smul_eq_mul,
+  rw [havg, hμ, _root_.smul_apply, _root_.smul_apply, smul_eq_mul, smul_eq_mul,
     mul_left_comm]
   exact mul_le_mul_right (volume_lt_enorm_sub_setAverage_le_inv_two_pow hfv hMv N) a
 
@@ -452,7 +452,7 @@ theorem measure_lt_norm_sub_setAverage_le [CompleteSpace E]
         μ (dyadicCube q₀.1 q₀.2) := by
   obtain ⟨a, hμ, havg, hfv, hMv⟩ := exists_eq_smul_volume_and_setLAverage_le
     (fun q : ℤ × (ι → ℤ) => dyadicCube q.1 q.2) hf hM
-  rw [havg, hμ, Measure.smul_apply, Measure.smul_apply, smul_eq_mul, smul_eq_mul,
+  rw [havg, hμ, _root_.smul_apply, _root_.smul_apply, smul_eq_mul, smul_eq_mul,
     mul_left_comm]
   exact mul_le_mul_right (volume_lt_norm_sub_setAverage_le hfv hMv s) a
 
@@ -471,7 +471,7 @@ theorem setLIntegral_exp_mul_norm_sub_setAverage_le [CompleteSpace E]
         (2 - Real.exp (σ * (2 ^ (Fintype.card ι + 1) * M)))) * μ (dyadicCube q₀.1 q₀.2) := by
   obtain ⟨a, hμ, havg, hfv, hMv⟩ := exists_eq_smul_volume_and_setLAverage_le
     (fun q : ℤ × (ι → ℤ) => dyadicCube q.1 q.2) hf hM
-  rw [havg, hμ, Measure.restrict_smul, lintegral_smul_measure, Measure.smul_apply,
+  rw [havg, hμ, Measure.restrict_smul, lintegral_smul_measure, _root_.smul_apply,
     smul_eq_mul, smul_eq_mul, mul_left_comm]
   exact mul_le_mul_right (setLIntegral_exp_mul_norm_sub_setAverage_volume_le hfv hMv hρ) a
 
@@ -526,10 +526,10 @@ private theorem preimage_cubeEquiv_closedBall_self (hr : 0 < r) :
   have hz : cubeEquiv c hr (fun i => (((0 : ι → ℤ) i : ℝ) + 2⁻¹) * 2 ^ (0 : ℤ)) = c := by
     ext i
     simp only [cubeEquiv_apply, Pi.add_apply, Pi.smul_apply, Pi.sub_apply, Pi.zero_apply,
-      Int.cast_zero, zero_add, zpow_zero, mul_one, smul_eq_mul]
+      Int.cast_zero, zero_add, _root_.zpow_zero, mul_one, smul_eq_mul]
     ring
   have hρ : 2 * r * ((2 : ℝ) ^ (0 : ℤ) / 2) = r := by
-    rw [zpow_zero]
+    rw [_root_.zpow_zero]
     ring
   have h := preimage_cubeEquiv_closedBall (c := c) hr
     (fun i => (((0 : ι → ℤ) i : ℝ) + 2⁻¹) * 2 ^ (0 : ℤ)) (2 ^ (0 : ℤ) / 2)
@@ -614,7 +614,7 @@ private theorem volume_lt_norm_sub_setAverage_closedBall_le [CompleteSpace E]
   have ha := ofReal_inv_two_mul_pow_ne_zero (ι := ι) hr
   have hvol (S : Set (ι → ℝ)) :
       volume (e ⁻¹' S) = ENNReal.ofReal ((2 * r) ^ Fintype.card ι)⁻¹ * volume S := by
-    rw [← e.map_apply, hmap, Measure.smul_apply, smul_eq_mul]
+    rw [← e.map_apply, hmap, _root_.smul_apply, smul_eq_mul]
   have hB : e ⁻¹' B =ᵐ[volume] dyadicCube 0 0 := by
     rw [preimage_cubeEquiv_closedBall_self hr, closure_dyadicCube]
     exact (dyadicCube_ae_eq_closedBall 0 0).symm
@@ -674,7 +674,7 @@ private theorem setLIntegral_exp_mul_norm_sub_setAverage_closedBall_volume_le [C
   have hint := setLIntegral_comp_preimage_of_map_eq_smul hmap
     (fun x => ENNReal.ofReal (Real.exp (σ * ‖f x - ⨍ y in B, f y ∂volume‖))) B
   have hvol : volume (e ⁻¹' B) = ENNReal.ofReal ((2 * r) ^ Fintype.card ι)⁻¹ * volume B := by
-    rw [← e.map_apply, hmap, Measure.smul_apply, smul_eq_mul]
+    rw [← e.map_apply, hmap, _root_.smul_apply, smul_eq_mul]
   rw [← ENNReal.mul_le_mul_iff_right ha ENNReal.ofReal_ne_top, ← hint, mul_left_comm, ← hvol]
   calc ∫⁻ x in e ⁻¹' B, ENNReal.ofReal (Real.exp (σ * ‖f (e x) - ⨍ y in B, f y ∂volume‖))
       = ∫⁻ x in dyadicCube 0 0,
@@ -700,7 +700,7 @@ theorem measure_lt_norm_sub_setAverage_closedBall_le [CompleteSpace E]
         μ (closedBall c r) := by
   obtain ⟨a, hμ, havg, hfv, hMv⟩ := exists_eq_smul_volume_and_setLAverage_le
     (fun p : (ι → ℝ) × ℝ => closedBall p.1 p.2) hf (fun p => hM p.1 p.2)
-  rw [havg, hμ, Measure.smul_apply, Measure.smul_apply, smul_eq_mul, smul_eq_mul,
+  rw [havg, hμ, _root_.smul_apply, _root_.smul_apply, smul_eq_mul, smul_eq_mul,
     mul_left_comm]
   exact mul_le_mul_right
     (volume_lt_norm_sub_setAverage_closedBall_le hfv (fun y ρ => hMv (y, ρ)) s) a
@@ -724,7 +724,7 @@ theorem setLIntegral_exp_mul_norm_sub_setAverage_closedBall_le [CompleteSpace E]
         (2 - Real.exp (σ * (2 ^ (Fintype.card ι + 1) * M)))) * μ (closedBall c r) := by
   obtain ⟨a, hμ, havg, hfv, hMv⟩ := exists_eq_smul_volume_and_setLAverage_le
     (fun p : (ι → ℝ) × ℝ => closedBall p.1 p.2) hf (fun p => hM p.1 p.2)
-  rw [havg, hμ, Measure.restrict_smul, lintegral_smul_measure, Measure.smul_apply,
+  rw [havg, hμ, Measure.restrict_smul, lintegral_smul_measure, _root_.smul_apply,
     smul_eq_mul, smul_eq_mul, mul_left_comm]
   exact mul_le_mul_right
     (setLIntegral_exp_mul_norm_sub_setAverage_closedBall_volume_le

@@ -101,7 +101,7 @@ theorem hasSum_integral_rootCount (hn : 0 < n)
       (aemeasurable_rootCount_restrict_eisensteinSet μ L.2)
       (Filter.Eventually.of_forall fun a ↦ ENNReal.natCast_lt_top (L.1.rootCount a))
   have hs := ENNReal.hasSum_toReal htotal
-  rw [← ENNReal.tsum_toReal_eq (ENNReal.ne_top_of_tsum_ne_top htotal),
+  rw [← ENNReal.tsum_toReal_eq (ne_top_of_tsum_ne_top htotal),
     tsum_lintegral_rootCount_eq hn μ, ENNReal.toReal_mul, ENNReal.toReal_natCast] at hs
   simpa only [← hreal] using hs
 
