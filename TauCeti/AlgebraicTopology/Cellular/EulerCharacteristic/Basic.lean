@@ -5,10 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.Category.ModuleCat.AB
 public import Mathlib.Algebra.Category.ModuleCat.Products
+public import Mathlib.Algebra.Module.Projective
 public import Mathlib.LinearAlgebra.DirectSum.Basis
 public import Mathlib.LinearAlgebra.DirectSum.Finite
+public import TauCeti.Algebra.Category.ModuleCat.AB
 public import TauCeti.Algebra.Homology.EulerCharacteristic.ChainComplex
 public import TauCeti.AlgebraicTopology.Cellular.Coproduct
 
@@ -21,8 +22,8 @@ chain group `Hₙ(Xⁿ, Xⁿ⁻¹; M)` is the direct sum of one copy of `M` for 
 
 * The Euler characteristic of a relative CW complex is the alternating count of its cells
   (`TauCeti.cwEulerChar`).
-* The cellular chain group is free when `M` is, finitely generated when `M` is and there are
-  finitely many `n`-cells, and then has rank `#(n-cells) · rank M`
+* The cellular chain group is free when `M` is, projective when `M` is, finitely generated when `M`
+  is and there are finitely many `n`-cells, and then has rank `#(n-cells) · rank M`
   (`TauCeti.finrank_cellularChainGroup`).
 * Over a noetherian ring, the cellular homology in degree `n` of a complex with finitely many
   `n`-cells is finitely generated when `M` is (`TauCeti.finite_cellularHomology`).
@@ -36,9 +37,10 @@ chain group `Hₙ(Xⁿ, Xⁿ⁻¹; M)` is the direct sum of one copy of `M` for 
   (`TauCeti.homologyEulerChar_cellularChainComplex`).
 
 The statements concern the cellular chain complex itself; its identification with singular
-homology is what turns them into statements about the space.  The coefficient ring lives in the
-universe of the space, where Mathlib provides the exactness of coproducts of modules that
-`TauCeti.cellularChainGroupIso` needs.
+homology is what turns them into statements about the space.  For the ring-level statements
+(`free_cellularChainGroup`, `moduleProjective_cellularChainGroup`, `finite_cellularChainGroup`,
+`finrank_cellularChainGroup`, `finite_cellularHomology`), the coefficient ring may live in an
+arbitrary universe via `TauCeti.moduleCat_ab4OfSize`.
 
 ## References
 
@@ -52,7 +54,7 @@ noncomputable section
 
 open CategoryTheory Limits Module Topology Topology.RelCWComplex DirectSum
 
-universe w
+universe w u
 
 namespace TauCeti
 
@@ -80,7 +82,7 @@ variable [T2Space X]
 
 section Ring
 
-variable {k : Type w} [Ring k] (M : ModuleCat.{w} k)
+variable {k : Type u} [Ring k] (M : ModuleCat.{w} k)
 
 open scoped Classical in
 /-- The cellular chain group in degree `n`, as a `k`-module, is the direct sum of one copy of `M`
@@ -92,6 +94,11 @@ private def cellularChainGroupLinearEquiv (n : ℕ) :
 /-- With free coefficients, the cellular chain groups are free. -/
 instance free_cellularChainGroup [Module.Free k M] (n : ℕ) :
     Module.Free k (cellularChainGroup C M n : ModuleCat k) :=
+  .of_equiv (cellularChainGroupLinearEquiv C M n).symm
+
+/-- With projective coefficients, the cellular chain groups are projective as `k`-modules. -/
+instance moduleProjective_cellularChainGroup [Module.Projective k M] (n : ℕ) :
+    Module.Projective k (cellularChainGroup C M n : ModuleCat k) :=
   .of_equiv (cellularChainGroupLinearEquiv C M n).symm
 
 /-- With finitely generated coefficients, the cellular chain group in a degree with finitely many

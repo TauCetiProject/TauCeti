@@ -1,0 +1,446 @@
+/-
+Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: The Tau Ceti contributors
+-/
+module
+
+public import TauCeti.AlgebraicTopology.Cellular.Dimension
+public import TauCeti.AlgebraicTopology.Singular.Empty
+public import TauCeti.AlgebraicTopology.Singular.Triple.Free
+public import TauCeti.Geometry.Manifold.Morse.Cell.Homology
+public import TauCeti.Geometry.Manifold.Morse.Deformation.Homology
+
+/-!
+# Morse index bounds, free top homology, and cohomology vanishing
+
+Let `f` be a Morse function on a boundaryless finite-dimensional manifold `M`, write
+`M_b = {f ≤ b}`, and suppose every critical point in a compact band `f⁻¹[a, b]` between regular
+values `a ≤ b` has Morse index at most `d`. Cutting the band at its critical values into elementary
+cobordisms, each homotopy-equivalent as a pair to a finite relative CW complex with cells only in
+dimensions at most `d`
+(`TauCeti.IsMorse.exists_relCWComplex_isIso_singularHomologyMap_sublevelPair`),
+and gluing along the long exact sequence of each sublevel triple `M_a ⊆ M_m ⊆ M_b` yields:
+
+* **Homology vanishing above `d`**
+  (`TauCeti.IsMorse.isZero_singularHomology_sublevelPair_of_manifoldMorseIndex_le`):
+  `Hₙ(M_b, M_a; R) = 0` for every `n > d` and every coefficient object `R` in an abelian category
+  with coproducts.
+* **Projectivity and freeness of top homology in degree `d`**
+  (`TauCeti.IsMorse.projective_singularHomology_sublevelPair_of_manifoldMorseIndex_le`,
+  `TauCeti.IsMorse.free_singularHomology_sublevelPair_of_manifoldMorseIndex_le`):
+  `H_d(M_b, M_a; R)` is projective over any hereditary abelian category with coproducts, and
+  `H_d(M_b, M_a; P)` is a free `k`-module over any principal ideal ring `k` without zero divisors
+  (in any universe, including `ℤ`) for any projective `k`-module `P`.
+* **Cohomology vanishing above `d`**
+  (`TauCeti.IsMorse.isZero_singularCohomology_sublevelPair_of_manifoldMorseIndex_le`):
+  `Hⁿ(M_b, M_a; R, N) = 0` for every `n > d` over any hereditary commutative ring `k` (in any
+  universe, including `ℤ`), for any projective `R` and any `k`-module `N`, by the universal
+  coefficient theorem. Degree-`d` integral cohomology `H^d(M_b, M_a; ℤ)` need not be torsion-free,
+  as `Ext¹_ℤ(H_{d-1}(M_b, M_a; ℤ), ℤ)` can contribute torsion.
+
+Specializing `M_a = ∅` below the minimum of `f` on `M_b` gives the corresponding absolute theorems
+for any **compact regular sublevel set** `M_b` (requiring no compactness of the ambient manifold
+`M`, as for pseudoconvex or Morse exhaustions on noncompact manifolds), and specializing further to
+`b > sup f` gives the theorems for a **compact manifold** `M`.
+
+## References
+
+* J. Milnor, *Morse Theory*, Annals of Mathematics Studies 51, Princeton University Press, 1963,
+  Sections 3 and 5.
+* A. Hatcher, [*Algebraic Topology*](https://pi.math.cornell.edu/~hatcher/AT/AT.pdf),
+  Section 2.2 (Theorem 2.35) and Section 3.1 (Theorem 3.2).
+-/
+
+public section
+
+noncomputable section
+
+open CategoryTheory Limits Module Set Topology Topology.RelCWComplex
+open scoped ContDiff Manifold
+
+universe u v w
+
+namespace TauCeti
+
+variable {E H : Type*} {M : Type u} [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSpace H]
+  {I : ModelWithCorners ℝ E H} [TopologicalSpace M] [ChartedSpace H M] [FiniteDimensional ℝ E]
+  [I.Boundaryless] [IsManifold I ∞ M] [T2Space M] {f : M → ℝ}
+
+section Band
+
+omit [FiniteDimensional ℝ E] [T2Space M] in
+/-- Band-cutting induction between regular values `a ≤ b` with compact band `f⁻¹[a, b]`: any
+property `P` of sublevel pairs that holds on critical-point-free compact bands, holds on a small
+collar around any single critical level whose critical points satisfy `Q`, and composes across
+`a ≤ m ≤ b` holds across the whole band whenever all critical points in `f⁻¹(a, b]` satisfy `Q`. -/
+private theorem IsMorse.sublevelPair_induction (hf : IsMorse I f) {Q : M → Prop}
+    {P : ∀ {a b : ℝ}, a ≤ b → Prop}
+    (hreg : ∀ {a b : ℝ} (hab : a ≤ b), IsCompact (f ⁻¹' Icc a b) →
+      (∀ x ∈ criticalPoints I f, f x ∉ Icc a b) → P hab)
+    (hlevel : ∀ {c δ : ℝ}, 0 < δ → IsCompact (f ⁻¹' Icc (c - δ) (c + δ)) →
+      (∀ x ∈ criticalPoints I f ∩ f ⁻¹' {c}, Q x) →
+      ∃ ε, ∃ _ : 0 < ε, ε ≤ δ ∧
+        criticalPoints I f ∩ f ⁻¹' Icc (c - ε) (c + ε) ⊆ f ⁻¹' {c} ∧
+        P (a := c - ε) (b := c + ε) (by linarith))
+    (htrans : ∀ {a m b : ℝ} (ham : a ≤ m) (hmb : m ≤ b), P ham → P hmb → P (ham.trans hmb))
+    {a b : ℝ} (hab : a ≤ b) (hcompact : IsCompact (f ⁻¹' Icc a b))
+    (ha : IsRegularValue I 𝓘(ℝ) f a) (hb : IsRegularValue I 𝓘(ℝ) f b)
+    (hQ : ∀ x ∈ criticalPoints I f, f x ∈ Ioc a b → Q x) : P hab := by
+  have hfc : Continuous f := hf.contMDiff.continuous
+  rw [isRegularValue_iff_notMem_image_criticalPoints] at ha hb
+  suffices ∀ N : ℕ, ∀ a, ∀ hab : a ≤ b, (criticalPoints I f ∩ f ⁻¹' Icc a b).ncard = N →
+      IsCompact (f ⁻¹' Icc a b) → a ∉ f '' criticalPoints I f →
+      (∀ x ∈ criticalPoints I f, f x ∈ Ioc a b → Q x) → P hab
+    from this _ a hab rfl hcompact ha hQ
+  intro N
+  induction N using Nat.strong_induction_on with
+  | _ N ih =>
+  intro a hab hN hcompact ha hQ
+  have hS := hf.finite_criticalPoints_inter hcompact
+  rcases (criticalPoints I f ∩ f ⁻¹' Icc a b).eq_empty_or_nonempty with hS₀ | hSne
+  · exact hreg hab hcompact fun x hx hxab ↦ hS₀.subset ⟨hx, hxab⟩
+  -- Cut the band around the lowest critical value `c = f p` in `[a, b]`.
+  obtain ⟨p, ⟨hp, hpab⟩, hpmin⟩ := hS.isCompact.exists_isMinOn hSne hfc.continuousOn
+  have hac : a < f p := hpab.1.lt_of_ne fun h ↦ ha ⟨p, hp, h.symm⟩
+  have hcb : f p < b := hpab.2.lt_of_ne fun h ↦ hb ⟨p, hp, h⟩
+  obtain ⟨δ, hδ, hδa, hδb⟩ : ∃ δ, 0 < δ ∧ a < f p - δ ∧ f p + δ < b :=
+    ⟨min (f p - a) (b - f p) / 2, half_pos (lt_min (sub_pos.2 hac) (sub_pos.2 hcb)),
+      by linarith [min_le_left (f p - a) (b - f p)],
+      by linarith [min_le_right (f p - a) (b - f p)]⟩
+  have hcompact' {s t : ℝ} (hs : a ≤ s) (ht : t ≤ b) : IsCompact (f ⁻¹' Icc s t) :=
+    hcompact.of_isClosed_subset (isClosed_Icc.preimage hfc)
+      (preimage_mono (Icc_subset_Icc hs ht))
+  have hQp : ∀ x ∈ criticalPoints I f ∩ f ⁻¹' {f p}, Q x := fun x ⟨hx, hxp⟩ ↦
+    hQ x hx ⟨by rw [mem_preimage.1 hxp]; exact hac, by rw [mem_preimage.1 hxp]; exact hcb.le⟩
+  obtain ⟨ε, hε, hεδ, hsub, hmid⟩ := hlevel hδ (hcompact' hδa.le hδb.le) hQp
+  have hlow : P (a := a) (b := f p - ε) (by linarith) :=
+    hreg _ (hcompact' le_rfl (by linarith)) fun x hx hxI ↦ by
+      have : f p ≤ f x := hpmin ⟨hx, hxI.1, by linarith [hxI.2]⟩
+      linarith [hxI.2]
+  have hlt : (criticalPoints I f ∩ f ⁻¹' Icc (f p + ε) b).ncard < N := by
+    rw [← hN]
+    refine ncard_lt_ncard ⟨fun x hx ↦ ⟨hx.1, by linarith [hx.2.1], hx.2.2⟩, fun h ↦ ?_⟩ hS
+    have := (h ⟨hp, hpab⟩).2.1
+    linarith
+  have hup : P (a := f p + ε) (b := b) (by linarith) :=
+    ih _ hlt _ _ rfl (hcompact' (by linarith) le_rfl)
+      (fun ⟨x, hx, hxc⟩ ↦ by
+        have := hsub ⟨hx, by rw [hxc]; linarith, hxc.le⟩
+        rw [mem_preimage, mem_singleton_iff, hxc] at this
+        linarith)
+      (fun x hx hxI ↦ hQ x hx ⟨by linarith [hxI.1], hxI.2⟩)
+  exact htrans (by linarith) (by linarith) (htrans (by linarith) (by linarith) hlow hmid) hup
+
+/-- Across a single critical level `c` whose critical points all have index at most `d`, there is a
+collar `[c - ε, c + ε]` containing no other critical values and a finite relative CW complex over
+`{f ≤ c - ε}` with no cells above dimension `d` whose inclusion into `({f ≤ c + ε}, {f ≤ c - ε})`
+induces isomorphisms on relative singular homology. -/
+private theorem IsMorse.exists_level_relCWComplex_of_manifoldMorseIndex_le (hf : IsMorse I f)
+    {c δ : ℝ} {d : ℕ} (hδ : 0 < δ) (hcompact : IsCompact (f ⁻¹' Icc (c - δ) (c + δ)))
+    (hd : ∀ x ∈ criticalPoints I f ∩ f ⁻¹' {c}, manifoldMorseIndex I f x ≤ d) :
+    ∃ ε, ∃ _ : 0 < ε, ε ≤ δ ∧
+      criticalPoints I f ∩ f ⁻¹' Icc (c - ε) (c + ε) ⊆ f ⁻¹' {c} ∧
+      ∃ (C : Set M) (_ : RelCWComplex C {x | f x ≤ c - ε}) (_ : RelCWComplex.Finite C),
+        (∀ m, d < m → IsEmpty (cell C m)) ∧
+        ∀ {A : Type v} [Category.{w} A] [HasCoproducts.{u} A] [Preadditive A]
+          [CategoryWithHomology A] (R : A) (n : ℕ),
+          Nonempty ((complexBasePair C).singularHomology R n ≅
+            (sublevelPair f (a := c - ε) (b := c + ε) (by linarith)).singularHomology R n) := by
+  obtain ⟨δ', hδ', hδ'δ, hsub⟩ := hf.exists_criticalPoints_inter_preimage_Icc_subset hδ hcompact
+  have hcompact' : IsCompact (f ⁻¹' Icc (c - δ') (c + δ')) :=
+    hcompact.of_isClosed_subset (isClosed_Icc.preimage hf.contMDiff.continuous)
+      (preimage_mono (Icc_subset_Icc (by linarith) (by linarith)))
+  obtain ⟨ε, hε, hεδ', C, _, _, hC, hcell, hiso⟩ :=
+    hf.exists_relCWComplex_isIso_singularHomologyMap_sublevelPair.{u, v, w} hδ' hcompact'
+  refine ⟨ε, hε, hεδ'.trans hδ'δ,
+    fun x hx ↦ hsub ⟨hx.1, Icc_subset_Icc (by linarith) (by linarith) hx.2⟩,
+    C, inferInstance, inferInstance, fun m hm ↦ ?_, fun R n ↦ ?_⟩
+  · exact (hcell m).some.isEmpty_congr.2 ⟨fun ⟨q, hq⟩ ↦ by have := hd q q.2; omega⟩
+  · rw [complexBasePair_eq_ofInclusion]
+    exact ⟨@asIso _ _ _ _ _ (hiso R n)⟩
+
+/-- **Vanishing of relative homology above a Morse index bound.** Let `f` be a Morse function and
+`a ≤ b` regular values with compact band `f⁻¹[a, b]`. If every critical point in `f⁻¹(a, b]` has
+Morse index at most `d`, then `Hₙ({f ≤ b}, {f ≤ a}; R) = 0` for every `n > d` and every coefficient
+object `R` in an abelian category with coproducts. -/
+theorem IsMorse.isZero_singularHomology_sublevelPair_of_manifoldMorseIndex_le
+    (hf : IsMorse I f) {A : Type v} [Category.{w} A] [Abelian A] [HasCoproducts.{u} A] (R : A)
+    {a b : ℝ} (hab : a ≤ b) (hcompact : IsCompact (f ⁻¹' Icc a b))
+    (ha : IsRegularValue I 𝓘(ℝ) f a) (hb : IsRegularValue I 𝓘(ℝ) f b) {d n : ℕ}
+    (hd : ∀ x ∈ criticalPoints I f, f x ∈ Ioc a b → manifoldMorseIndex I f x ≤ d) (hn : d < n) :
+    IsZero ((sublevelPair f hab).singularHomology R n) := by
+  refine hf.sublevelPair_induction (Q := fun x ↦ manifoldMorseIndex I f x ≤ d)
+    (P := fun hab ↦ IsZero ((sublevelPair f hab).singularHomology R n))
+    (fun hab' hc hcrit ↦ isZero_singularHomology_sublevelPair_of_mfderiv_ne_zero hf.contMDiff
+      hab' hc (fun x hax hxb hx ↦
+        hcrit x (mem_criticalPoints_iff_mfderiv_eq_zero.2 hx) ⟨hax, hxb⟩) R n)
+    (fun hδ hc hd' ↦ ?_)
+    (fun ham hmb h₁ h₂ ↦
+      (TopTriple.ofInclusions (X := TopCat.of M)
+        (sublevel_mono f ham) (sublevel_mono f hmb)).isZero_singularHomology_totalPair R n h₁ h₂)
+    hab hcompact ha hb hd
+  obtain ⟨ε, hε, hεδ, hsub, C, _, _, hempty, hiso⟩ :=
+    hf.exists_level_relCWComplex_of_manifoldMorseIndex_le.{u, v, w} hδ hc hd'
+  have : ∀ m, HasExactColimitsOfShape (Discrete (cell C m)) A := fun m ↦
+    have : _root_.Finite (cell C m) := FiniteType.finite_cell m
+    @hasExactColimitsOfShape_discrete_finite A _ _ Abelian.hasFiniteBiproducts _ _
+  exact ⟨ε, hε, hεδ, hsub,
+    (isZero_singularHomology_complexBasePair_of_isEmpty_cell_gt C R hempty hn).of_iso
+      (hiso R n).some.symm⟩
+
+/-- **Projectivity of top relative homology at a Morse index bound** over a hereditary abelian
+category: if `a ≤ b` are regular values with compact band `f⁻¹[a, b]` and every critical point in
+`f⁻¹(a, b]` has Morse index at most `d`, then `H_d({f ≤ b}, {f ≤ a}; R)` is projective whenever `R`
+is projective. -/
+theorem IsMorse.projective_singularHomology_sublevelPair_of_manifoldMorseIndex_le
+    (hf : IsMorse I f) {A : Type v} [Category.{w} A] [Abelian A] [HasCoproducts.{u} A]
+    [∀ V : A, HasProjectiveDimensionLE V 1] (R : A) [Projective R]
+    {a b : ℝ} (hab : a ≤ b) (hcompact : IsCompact (f ⁻¹' Icc a b))
+    (ha : IsRegularValue I 𝓘(ℝ) f a) (hb : IsRegularValue I 𝓘(ℝ) f b) {d : ℕ}
+    (hd : ∀ x ∈ criticalPoints I f, f x ∈ Ioc a b → manifoldMorseIndex I f x ≤ d) :
+    Projective ((sublevelPair f hab).singularHomology R d) := by
+  refine (hf.sublevelPair_induction (Q := fun x ↦ manifoldMorseIndex I f x ≤ d)
+    (P := fun hab ↦ Projective ((sublevelPair f hab).singularHomology R d) ∧
+      IsZero ((sublevelPair f hab).singularHomology R (d + 1)))
+    (fun hab' hc hcrit ↦ ?_) (fun hδ hc hd' ↦ ?_) (fun ham hmb h₁ h₂ ↦ ?_)
+    hab hcompact ha hb hd).1
+  · have hzero (k : ℕ) := isZero_singularHomology_sublevelPair_of_mfderiv_ne_zero hf.contMDiff
+      hab' hc (fun x hax hxb hx ↦
+        hcrit x (mem_criticalPoints_iff_mfderiv_eq_zero.2 hx) ⟨hax, hxb⟩) R k
+    exact ⟨(hzero d).projective, hzero (d + 1)⟩
+  · obtain ⟨ε, hε, hεδ, hsub, C, _, _, hempty, hiso⟩ :=
+      hf.exists_level_relCWComplex_of_manifoldMorseIndex_le.{u, v, w} hδ hc hd'
+    have : ∀ m, HasExactColimitsOfShape (Discrete (cell C m)) A := fun m ↦
+      have : _root_.Finite (cell C m) := FiniteType.finite_cell m
+      @hasExactColimitsOfShape_discrete_finite A _ _ Abelian.hasFiniteBiproducts _ _
+    have : IsEmpty (cell C (d + 1)) := hempty (d + 1) (Nat.lt_succ_self d)
+    refine ⟨ε, hε, hεδ, hsub,
+      Projective.of_iso (hiso R d).some
+        (projective_singularHomology_complexBasePair_of_isEmpty_cell_succ C R d),
+      (isZero_singularHomology_complexBasePair_of_isEmpty_cell C R (d + 1)).of_iso
+        (hiso R (d + 1)).some.symm⟩
+  · let T := TopTriple.ofInclusions (X := TopCat.of M) (sublevel_mono f ham) (sublevel_mono f hmb)
+    have : Projective ((TopTriple.innerPair.obj T).singularHomology R d) := h₁.1
+    have : Projective ((TopTriple.outerPair.obj T).singularHomology R d) := h₂.1
+    exact ⟨T.projective_singularHomology_totalPair R d h₂.2,
+      T.isZero_singularHomology_totalPair R (d + 1) h₁.2 h₂.2⟩
+
+/-- **Freeness of top relative homology at a Morse index bound** over a principal ideal ring
+without zero divisors (in any universe, including `ℤ`): if `a ≤ b` are regular values with compact
+band `f⁻¹[a, b]` and every critical point in `f⁻¹(a, b]` has Morse index at most `d`, then
+`H_d({f ≤ b}, {f ≤ a}; P)` is a free `k`-module for any projective `k`-module `P`. -/
+theorem IsMorse.free_singularHomology_sublevelPair_of_manifoldMorseIndex_le
+    (hf : IsMorse I f) {k : Type v} [CommRing k] [NoZeroDivisors k] [IsPrincipalIdealRing k]
+    (P : ModuleCat.{u} k) [Module.Projective k P]
+    {a b : ℝ} (hab : a ≤ b) (hcompact : IsCompact (f ⁻¹' Icc a b))
+    (ha : IsRegularValue I 𝓘(ℝ) f a) (hb : IsRegularValue I 𝓘(ℝ) f b) {d : ℕ}
+    (hd : ∀ x ∈ criticalPoints I f, f x ∈ Ioc a b → manifoldMorseIndex I f x ≤ d) :
+    Module.Free k ((sublevelPair f hab).singularHomology P d : ModuleCat k) := by
+  refine (hf.sublevelPair_induction (Q := fun x ↦ manifoldMorseIndex I f x ≤ d)
+    (P := fun hab ↦ Module.Free k ((sublevelPair f hab).singularHomology P d : ModuleCat k) ∧
+      IsZero ((sublevelPair f hab).singularHomology P (d + 1)))
+    (fun hab' hc hcrit ↦ ?_) (fun hδ hc hd' ↦ ?_) (fun ham hmb h₁ h₂ ↦ ?_)
+    hab hcompact ha hb hd).1
+  · have hzero (j : ℕ) := isZero_singularHomology_sublevelPair_of_mfderiv_ne_zero hf.contMDiff
+      hab' hc (fun x hax hxb hx ↦
+        hcrit x (mem_criticalPoints_iff_mfderiv_eq_zero.2 hx) ⟨hax, hxb⟩) P j
+    have : Subsingleton ((sublevelPair f hab').singularHomology P d : ModuleCat k) :=
+      ModuleCat.isZero_iff_subsingleton.1 (hzero d)
+    exact ⟨Module.Free.of_subsingleton k _, hzero (d + 1)⟩
+  · obtain ⟨ε, hε, hεδ, hsub, C, _, _, hempty, hiso⟩ :=
+      hf.exists_level_relCWComplex_of_manifoldMorseIndex_le.{u, max v (u + 1), u} hδ hc hd'
+    have : IsEmpty (cell C (d + 1)) := hempty (d + 1) (Nat.lt_succ_self d)
+    have hfree := free_singularHomology_complexBasePair_of_isEmpty_cell_succ C P d
+    refine ⟨ε, hε, hεδ, hsub,
+      Module.Free.of_equiv' hfree (hiso P d).some.toLinearEquiv,
+      (isZero_singularHomology_complexBasePair_of_isEmpty_cell C P (d + 1)).of_iso
+        (hiso P (d + 1)).some.symm⟩
+  · let T := TopTriple.ofInclusions (X := TopCat.of M) (sublevel_mono f ham) (sublevel_mono f hmb)
+    have : Module.Free k ((TopTriple.innerPair.obj T).singularHomology P d : ModuleCat k) := h₁.1
+    have : Module.Free k ((TopTriple.outerPair.obj T).singularHomology P d : ModuleCat k) := h₂.1
+    exact ⟨T.free_singularHomology_totalPair P d h₂.2,
+      T.isZero_singularHomology_totalPair P (d + 1) h₁.2 h₂.2⟩
+
+/-- **Vanishing of relative singular cohomology above a Morse index bound** over any hereditary
+commutative ring `k` (in any universe, including `ℤ`): if `a ≤ b` are regular values with compact
+band `f⁻¹[a, b]` and every critical point in `f⁻¹(a, b]` has Morse index at most `d`, then
+`Hⁿ({f ≤ b}, {f ≤ a}; R, N) = 0` for every `n > d`, every projective `R`, and every `k`-module
+`N`. -/
+theorem IsMorse.isZero_singularCohomology_sublevelPair_of_manifoldMorseIndex_le
+    (hf : IsMorse I f) {k : Type v} [CommRing k]
+    [∀ V : ModuleCat.{u} k, HasProjectiveDimensionLE V 1] (R N : ModuleCat.{u} k)
+    [Module.Projective k R] {a b : ℝ} (hab : a ≤ b) (hcompact : IsCompact (f ⁻¹' Icc a b))
+    (ha : IsRegularValue I 𝓘(ℝ) f a) (hb : IsRegularValue I 𝓘(ℝ) f b) {d n : ℕ}
+    (hd : ∀ x ∈ criticalPoints I f, f x ∈ Ioc a b → manifoldMorseIndex I f x ≤ d) (hn : d < n) :
+    IsZero ((sublevelPair f hab).singularCohomology R k N n) := by
+  obtain ⟨m, rfl⟩ : ∃ m, n = m + 1 :=
+    ⟨n - 1, (Nat.succ_pred_eq_of_pos (Nat.zero_le d |>.trans_lt hn)).symm⟩
+  have hdm : d ≤ m := Nat.le_of_lt_succ hn
+  have : Projective ((sublevelPair f hab).singularHomology R m) :=
+    hf.projective_singularHomology_sublevelPair_of_manifoldMorseIndex_le R hab hcompact ha hb
+      fun x hx hxI ↦ (hd x hx hxI).trans hdm
+  exact (sublevelPair f hab).isZero_singularCohomology_succ_of_projective_homology R N m
+    (hf.isZero_singularHomology_sublevelPair_of_manifoldMorseIndex_le R hab hcompact ha hb hd hn)
+
+end Band
+
+section Sublevel
+
+omit [FiniteDimensional ℝ E] [I.Boundaryless] [IsManifold I ∞ M] [T2Space M] in
+/-- If a sublevel `{f ≤ b}` is compact, choosing `a` strictly below `b` and strictly below the
+minimum of `f` on `{f ≤ b}` realizes `({f ≤ b}, ∅)` as a compact band `f⁻¹[a, b]` with regular lower
+endpoint `a`. -/
+private theorem IsMorse.exists_sublevelPair_empty_of_isCompact_sublevel
+    (hf : IsMorse I f) {b : ℝ} (hcompact : IsCompact {x : M | f x ≤ b}) :
+    ∃ a : ℝ, ∃ hab : a ≤ b, IsEmpty (sublevelPair f hab).snd ∧
+      IsCompact (f ⁻¹' Icc a b) ∧ IsRegularValue I 𝓘(ℝ) f a ∧
+      ∀ x, f x ≤ b → f x ∈ Ioc a b := by
+  have hfc : Continuous f := hf.contMDiff.continuous
+  obtain ⟨l, hl⟩ := (hcompact.image hfc).bddBelow
+  let a := min (l - 1) (b - 1)
+  have hab : a ≤ b := (min_le_right _ _).trans (by linarith)
+  have hgt {x : M} (hx : f x ≤ b) : a < f x :=
+    lt_of_le_of_lt (min_le_left _ _) (by linarith [hl ⟨x, hx, rfl⟩])
+  have hempty : ∀ x : M, ¬ f x ≤ a := fun x hxa ↦ (hgt (hxa.trans hab)).not_ge hxa
+  have heq : f ⁻¹' Icc a b = {x : M | f x ≤ b} :=
+    Set.ext fun x ↦ ⟨fun hx ↦ hx.2, fun hx ↦ ⟨(hgt hx).le, hx⟩⟩
+  refine ⟨a, hab, ⟨fun x ↦ hempty x.1 x.2⟩, heq ▸ hcompact,
+    isRegularValue_iff_notMem_image_criticalPoints.2 fun ⟨x, _, hxa⟩ ↦ hempty x hxa.le,
+    fun x hx ↦ ⟨hgt hx, hx⟩⟩
+
+/-- **Singular homology of a compact regular sublevel set vanishes above a Morse index bound**,
+without assuming `M` itself is compact. -/
+theorem IsMorse.isZero_singularHomology_sublevel_of_manifoldMorseIndex_le
+    (hf : IsMorse I f) {A : Type v} [Category.{w} A] [Abelian A] [HasCoproducts.{u} A] (R : A)
+    {b : ℝ} (hcompact : IsCompact {x : M | f x ≤ b}) (hb : IsRegularValue I 𝓘(ℝ) f b) {d n : ℕ}
+    (hd : ∀ x ∈ criticalPoints I f, f x ≤ b → manifoldMorseIndex I f x ≤ d) (hn : d < n) :
+    IsZero (((AlgebraicTopology.singularHomologyFunctor.{u} A n).obj R).obj
+      (TopCat.of {x : M | f x ≤ b})) := by
+  obtain ⟨a, hab, _, hc, ha, hIoc⟩ := hf.exists_sublevelPair_empty_of_isCompact_sublevel hcompact
+  exact (asIso ((sublevelPair f hab).singularHomologyπ R n)).isZero_iff.mpr
+    (hf.isZero_singularHomology_sublevelPair_of_manifoldMorseIndex_le R hab hc ha hb
+      (fun x hx hxab ↦ hd x hx hxab.2) hn)
+
+/-- **Top singular homology of a compact regular sublevel set is projective** over a hereditary
+abelian category when all critical points in `{f ≤ b}` have index at most `d`. -/
+theorem IsMorse.projective_singularHomology_sublevel_of_manifoldMorseIndex_le
+    (hf : IsMorse I f) {A : Type v} [Category.{w} A] [Abelian A] [HasCoproducts.{u} A]
+    [∀ V : A, HasProjectiveDimensionLE V 1] (R : A) [Projective R]
+    {b : ℝ} (hcompact : IsCompact {x : M | f x ≤ b}) (hb : IsRegularValue I 𝓘(ℝ) f b) {d : ℕ}
+    (hd : ∀ x ∈ criticalPoints I f, f x ≤ b → manifoldMorseIndex I f x ≤ d) :
+    Projective (((AlgebraicTopology.singularHomologyFunctor.{u} A d).obj R).obj
+      (TopCat.of {x : M | f x ≤ b})) := by
+  obtain ⟨a, hab, _, hc, ha, _⟩ := hf.exists_sublevelPair_empty_of_isCompact_sublevel hcompact
+  exact Projective.of_iso (asIso ((sublevelPair f hab).singularHomologyπ R d)).symm
+    (hf.projective_singularHomology_sublevelPair_of_manifoldMorseIndex_le R hab hc ha hb
+      fun x hx hxab ↦ hd x hx hxab.2)
+
+/-- **Top singular homology of a compact regular sublevel set is free over a PID.** Over any
+principal ideal ring `k` without zero divisors (in any universe, including `ℤ`), if `{f ≤ b}` is
+compact with regular value `b` and every critical point in `{f ≤ b}` has Morse index at most `d`,
+then `H_d({f ≤ b}; P)` is a free `k`-module for any projective `k`-module `P`, with no compactness
+assumption on `M`. -/
+theorem IsMorse.free_singularHomology_sublevel_of_manifoldMorseIndex_le
+    (hf : IsMorse I f) {k : Type v} [CommRing k] [NoZeroDivisors k] [IsPrincipalIdealRing k]
+    (P : ModuleCat.{u} k) [Module.Projective k P]
+    {b : ℝ} (hcompact : IsCompact {x : M | f x ≤ b}) (hb : IsRegularValue I 𝓘(ℝ) f b) {d : ℕ}
+    (hd : ∀ x ∈ criticalPoints I f, f x ≤ b → manifoldMorseIndex I f x ≤ d) :
+    Module.Free k (((AlgebraicTopology.singularHomologyFunctor.{u} (ModuleCat.{u} k) d).obj P).obj
+      (TopCat.of {x : M | f x ≤ b})) := by
+  obtain ⟨a, hab, _, hc, ha, _⟩ := hf.exists_sublevelPair_empty_of_isCompact_sublevel hcompact
+  have hfree := hf.free_singularHomology_sublevelPair_of_manifoldMorseIndex_le P hab hc ha hb
+    fun x hx hxab ↦ hd x hx hxab.2
+  exact Module.Free.of_equiv' hfree
+    (asIso ((sublevelPair f hab).singularHomologyπ (C := ModuleCat.{u} k) P d)).symm.toLinearEquiv
+
+/-- **Singular cohomology of a compact regular sublevel set vanishes above a Morse index bound**
+over any hereditary commutative ring `k` (in any universe, including `ℤ`), without assuming `M` is
+compact. -/
+theorem IsMorse.isZero_singularCohomology_sublevel_of_manifoldMorseIndex_le
+    (hf : IsMorse I f) {k : Type v} [CommRing k]
+    [∀ V : ModuleCat.{u} k, HasProjectiveDimensionLE V 1] (R N : ModuleCat.{u} k)
+    [Module.Projective k R] {b : ℝ} (hcompact : IsCompact {x : M | f x ≤ b})
+    (hb : IsRegularValue I 𝓘(ℝ) f b) {d n : ℕ}
+    (hd : ∀ x ∈ criticalPoints I f, f x ≤ b → manifoldMorseIndex I f x ≤ d) (hn : d < n) :
+    IsZero ((TopCat.of {x : M | f x ≤ b}).singularCohomology R k N n) := by
+  obtain ⟨m, rfl⟩ : ∃ m, n = m + 1 :=
+    ⟨n - 1, (Nat.succ_pred_eq_of_pos (Nat.zero_le d |>.trans_lt hn)).symm⟩
+  have hdm : d ≤ m := Nat.le_of_lt_succ hn
+  have : Projective (((AlgebraicTopology.singularHomologyFunctor.{u} (ModuleCat.{u} k) m).obj R).obj
+      (TopCat.of {x : M | f x ≤ b})) :=
+    hf.projective_singularHomology_sublevel_of_manifoldMorseIndex_le R hcompact hb
+      fun x hx hxb ↦ (hd x hx hxb).trans hdm
+  exact (TopCat.of {x : M | f x ≤ b}).isZero_singularCohomology_succ_of_projective_homology R N m
+    (hf.isZero_singularHomology_sublevel_of_manifoldMorseIndex_le R hcompact hb hd hn)
+
+end Sublevel
+
+section Compact
+
+variable [CompactSpace M]
+
+omit [FiniteDimensional ℝ E] [I.Boundaryless] [IsManifold I ∞ M] [T2Space M] in
+/-- On a compact manifold `M`, choosing `b` strictly above `range f` identifies `{f ≤ b}` with `M`
+by a homeomorphism, with `b` a regular value and `{f ≤ b}` compact. -/
+private theorem IsMorse.exists_sublevel_homeomorph_of_compactSpace (hf : IsMorse I f) :
+    ∃ b : ℝ, IsCompact {x : M | f x ≤ b} ∧ IsRegularValue I 𝓘(ℝ) f b ∧
+      Nonempty ({x : M | f x ≤ b} ≃ₜ M) := by
+  obtain ⟨t, ht⟩ := (isCompact_range hf.contMDiff.continuous).bddAbove
+  have hb (x : M) : f x < t + 1 := by linarith [ht (mem_range_self x)]
+  have heq : {x : M | f x ≤ t + 1} = univ := eq_univ_of_forall fun x ↦ (hb x).le
+  exact ⟨t + 1, heq ▸ isCompact_univ,
+    isRegularValue_iff_notMem_image_criticalPoints.2 fun ⟨x, _, hxb⟩ ↦ (hb x).ne hxb,
+    ⟨(Homeomorph.setCongr heq).trans (Homeomorph.Set.univ M)⟩⟩
+
+/-- **Singular homology of a compact manifold vanishes above a Morse index bound**, for any
+coefficient object `R` in an abelian category with coproducts. -/
+theorem IsMorse.isZero_singularHomology_of_manifoldMorseIndex_le
+    (hf : IsMorse I f) {A : Type v} [Category.{w} A] [Abelian A] [HasCoproducts.{u} A] (R : A)
+    {d n : ℕ} (hd : ∀ x ∈ criticalPoints I f, manifoldMorseIndex I f x ≤ d) (hn : d < n) :
+    IsZero (((AlgebraicTopology.singularHomologyFunctor.{u} A n).obj R).obj (TopCat.of M)) := by
+  obtain ⟨b, hc, hb, ⟨e⟩⟩ := hf.exists_sublevel_homeomorph_of_compactSpace
+  exact (hf.isZero_singularHomology_sublevel_of_manifoldMorseIndex_le R hc hb
+    (fun x hx _ ↦ hd x hx) hn).of_iso (e.toHomotopyEquiv.singularHomologyIso R n).symm
+
+/-- **Top singular homology of a compact manifold is projective** over a hereditary abelian
+category when every critical point of `f` has Morse index at most `d`. -/
+theorem IsMorse.projective_singularHomology_of_manifoldMorseIndex_le
+    (hf : IsMorse I f) {A : Type v} [Category.{w} A] [Abelian A] [HasCoproducts.{u} A]
+    [∀ V : A, HasProjectiveDimensionLE V 1] (R : A) [Projective R]
+    {d : ℕ} (hd : ∀ x ∈ criticalPoints I f, manifoldMorseIndex I f x ≤ d) :
+    Projective (((AlgebraicTopology.singularHomologyFunctor.{u} A d).obj R).obj (TopCat.of M)) := by
+  obtain ⟨b, hc, hb, ⟨e⟩⟩ := hf.exists_sublevel_homeomorph_of_compactSpace
+  exact Projective.of_iso (e.toHomotopyEquiv.singularHomologyIso R d)
+    (hf.projective_singularHomology_sublevel_of_manifoldMorseIndex_le R hc hb fun x hx _ ↦ hd x hx)
+
+/-- **Top singular homology of a compact manifold is free over a PID.** Over any principal ideal
+ring `k` without zero divisors (in any universe, including `ℤ`), if `M` is compact and every
+critical point of `f` has Morse index at most `d`, then `H_d(M; P)` is a free `k`-module for any
+projective `k`-module `P`. -/
+theorem IsMorse.free_singularHomology_of_manifoldMorseIndex_le
+    (hf : IsMorse I f) {k : Type v} [CommRing k] [NoZeroDivisors k] [IsPrincipalIdealRing k]
+    (P : ModuleCat.{u} k) [Module.Projective k P]
+    {d : ℕ} (hd : ∀ x ∈ criticalPoints I f, manifoldMorseIndex I f x ≤ d) :
+    Module.Free k (((AlgebraicTopology.singularHomologyFunctor.{u} (ModuleCat.{u} k) d).obj P).obj
+      (TopCat.of M)) := by
+  obtain ⟨b, hc, hb, ⟨e⟩⟩ := hf.exists_sublevel_homeomorph_of_compactSpace
+  have hfree :=
+    hf.free_singularHomology_sublevel_of_manifoldMorseIndex_le P hc hb fun x hx _ ↦ hd x hx
+  exact Module.Free.of_equiv' hfree (e.toHomotopyEquiv.singularHomologyIso P d).toLinearEquiv
+
+/-- **Singular cohomology of a compact manifold vanishes above a Morse index bound** over any
+hereditary commutative ring `k` (in any universe, including `ℤ`). -/
+theorem IsMorse.isZero_singularCohomology_of_manifoldMorseIndex_le
+    (hf : IsMorse I f) {k : Type v} [CommRing k]
+    [∀ V : ModuleCat.{u} k, HasProjectiveDimensionLE V 1] (R N : ModuleCat.{u} k)
+    [Module.Projective k R] {d n : ℕ}
+    (hd : ∀ x ∈ criticalPoints I f, manifoldMorseIndex I f x ≤ d) (hn : d < n) :
+    IsZero ((TopCat.of M).singularCohomology R k N n) := by
+  obtain ⟨b, hc, hb, ⟨e⟩⟩ := hf.exists_sublevel_homeomorph_of_compactSpace
+  exact (hf.isZero_singularCohomology_sublevel_of_manifoldMorseIndex_le R N hc hb
+    (fun x hx _ ↦ hd x hx) hn).of_iso (e.toHomotopyEquiv.singularCohomologyIso R k N n)
+
+end Compact
+
+end TauCeti
