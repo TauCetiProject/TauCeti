@@ -103,8 +103,8 @@ geometric mean of a strictly positive and of a strictly positive element is stri
 theorem PosDef.posDef_geometricMean_ringInverse (hS : S.PosDef) (hT : T.PosDef) :
     (geometricMean S⁻¹ʳ T).PosDef := by
   refine Matrix.isStrictlyPositive_iff_posDef.mp ?_
-  exact isStrictlyPositive_geometricMean (a := Ring.inverse S) (b := T)
-    hS.isStrictlyPositive.ringInverse hT.isStrictlyPositive
+  exact (isStrictlyPositive_geometricMean_iff hS.isStrictlyPositive.ringInverse).mpr
+    hT.isStrictlyPositive
 
 /-- **The congruence form.** The solution `A` of `A * S * A = T` for positive-definite `S` and
 positive-semidefinite `T` is Hermitian by `isHermitian_geometricMean`, so it solves the
