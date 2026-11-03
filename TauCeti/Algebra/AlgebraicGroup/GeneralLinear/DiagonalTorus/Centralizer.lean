@@ -5,9 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.AlgebraicGroup.DiagonalizableGroup.Centralizer.Basic
+public import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.Weight.Centralizer
 public import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.DiagonalTorus.Maximal
-import TauCeti.LinearAlgebra.Matrix.MonoidAlgebra
 
 /-!
 # The centralizer of the diagonal torus in the general linear group
@@ -57,48 +56,12 @@ private theorem isDiag_pointsMulEquiv_of_centralizerHopfIdeal_le_ker
         (diagonalTorusCoordinateMap (R := R) (N := n)).hom).toIdeal ≤ RingHom.ker g.ofConv) :
     ((pointsMulEquiv n g : Matrix.GeneralLinearGroup (Fin n) A) :
       Matrix (Fin n) (Fin n) A).IsDiag := by
-  -- Such a point commutes with the universal point of the diagonal torus over the extension
-  -- `A ⊗[R] R[ℤⁿ]` of its value algebra. The diagonal entries of that universal point are
-  -- distinct basis elements of the Laurent coordinate ring, so comparing coefficients at the
-  -- coordinate characters forces every off-diagonal entry to vanish.
-  intro i j hij
-  let X := Multiplicative (ULift.{u} (Fin n) →₀ ℤ)
-  let B := A ⊗[R] MonoidAlgebra R X
-  let e : Fin n → X := fun a ↦ Multiplicative.ofAdd (Finsupp.single (ULift.up a) 1)
-  let u : WithConv (MonoidAlgebra R X →ₐ[R] B) := toConv Algebra.TensorProduct.includeRight
-  have hcomm := (BialgHom.centralizerHopfIdeal_le_ker_iff_commute_of_injective
-    (diagonalTorusCoordinateMap (R := R) (N := n)).hom g (AlgHom.id R B)
-    Function.injective_id).mp hg
-  rw [AlgHom.id_comp, AlgHom.id_comp] at hcomm
-  -- The universal diagonal-torus point is the diagonal matrix of the coordinate characters.
-  have hD : ((pointsMulEquiv n (BialgHom.mapDomain
-        (diagonalTorusCoordinateMap (R := R) (N := n)).hom u) :
-        Matrix.GeneralLinearGroup (Fin n) B) : Matrix (Fin n) (Fin n) B) =
-      Matrix.diagonal fun a ↦ (1 : A) ⊗ₜ[R] MonoidAlgebra.single (e a) (1 : R) := by
-    ext a b
-    rw [pointsMulEquiv_apply, pointToGeneralLinear_apply, BialgHom.mapDomain_apply,
-      ofConv_toConv, AlgHom.comp_apply, BialgHom.coe_toAlgHom, diagonalTorusCoordinateMap_X,
-      Matrix.diagonal_apply]
-    split_ifs
-    · exact Algebra.TensorProduct.includeRight_apply _
-    · simp
-  -- The point itself, viewed over `B`, has entries `m ⊗ 1`.
-  have hM : ((pointsMulEquiv n (AlgHom.mapValue
-        (Algebra.TensorProduct.includeLeft : A →ₐ[R] B) g) :
-        Matrix.GeneralLinearGroup (Fin n) B) : Matrix (Fin n) (Fin n) B) =
-      (pointsMulEquiv n g : Matrix (Fin n) (Fin n) A).map
-        (Algebra.TensorProduct.includeLeft : A →ₐ[R] B) := by
-    rw [pointsMulEquiv_mapValue]
-    ext a b
-    simp only [Matrix.GeneralLinearGroup.map_apply, AlgHom.coe_toRingHom, Matrix.map_apply]
-  have hm := congrArg (fun h ↦ ((pointsMulEquiv n h : Matrix.GeneralLinearGroup (Fin n) B) :
-    Matrix (Fin n) (Fin n) B)) hcomm.eq
-  simp only [map_mul, Units.val_mul] at hm
-  rw [hM, hD] at hm
-  have he : e j ≠ e i := fun h ↦ hij
-    (ULift.up_injective (Finsupp.single_left_injective one_ne_zero
-      (Multiplicative.ofAdd.injective h))).symm
-  exact Matrix.apply_eq_zero_of_commute_diagonal_monomial _ e hm he
+  exact (BialgHom.centralizerHopfIdeal_le_ker_iff_isDiag_of_coordinates
+    (diagonalTorusCoordinateMap (R := R) (N := n)).hom
+    (fun i ↦ Multiplicative.ofAdd (Finsupp.single (ULift.up i) 1))
+    (fun _ _ h ↦ ULift.up_injective
+      (Finsupp.single_left_injective one_ne_zero (Multiplicative.ofAdd.injective h)))
+    (diagonalTorusCoordinateMap_X (R := R)) g).mp hg
 
 /-- **The centralizer of the diagonal torus of `GL_n` is the diagonal torus**, as closed subgroup
 schemes over an arbitrary commutative ring. In coordinates, the centralizer ideal of the

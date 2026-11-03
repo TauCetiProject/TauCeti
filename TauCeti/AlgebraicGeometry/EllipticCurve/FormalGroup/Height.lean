@@ -7,7 +7,7 @@ module
 
 public import TauCeti.AlgebraicGeometry.EllipticCurve.FormalGroup.InvariantDifferential
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Supersingular
-public import TauCeti.RingTheory.FormalGroup.Height
+public import TauCeti.RingTheory.FormalGroup.Height.Basic
 import TauCeti.AlgebraicGeometry.EllipticCurve.Universal
 import TauCeti.RingTheory.FormalGroup.NSMul.BaseChange
 
