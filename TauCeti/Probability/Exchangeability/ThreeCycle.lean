@@ -91,7 +91,7 @@ invariance used in the shift-stationarity proof. -/
 instance : threeCycleMeasure.IsAddRightInvariant := by
   have h : (uniformOn (Set.univ : Set (ZMod 3))) = (3 : ℝ≥0∞)⁻¹ • Measure.count := by
     ext s
-    rw [uniformOn_univ, Measure.smul_apply, smul_eq_mul]
+    rw [uniformOn_univ, _root_.smul_apply, smul_eq_mul]
     rw [ENNReal.div_eq_inv_mul]
     simp [ZMod.card]
   unfold threeCycleMeasure

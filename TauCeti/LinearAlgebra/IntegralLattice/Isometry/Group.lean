@@ -426,12 +426,12 @@ theorem mem_congruenceSubgroup_iff {d : ℤ} {g : Isometry L L} :
   rw [congruenceSubgroup, MonoidHom.mem_ker]
   refine ⟨fun hg x ↦ ?_, fun hg ↦ Submodule.linearMap_qext _ (LinearMap.ext fun x ↦ ?_)⟩
   · have h := LinearMap.congr_fun hg (Submodule.Quotient.mk x)
-    rw [Module.End.one_apply, reductionHom_apply_mk, Submodule.Quotient.eq,
+    rw [one_apply_eq_self, reductionHom_apply_mk, Submodule.Quotient.eq,
       Submodule.mem_smul_pointwise_iff_exists] at h
     obtain ⟨y, -, hy⟩ := h
     exact ⟨y, hy.symm⟩
   · obtain ⟨y, hy⟩ := hg x
-    rw [LinearMap.comp_apply, LinearMap.comp_apply, Submodule.mkQ_apply, Module.End.one_apply,
+    rw [LinearMap.comp_apply, LinearMap.comp_apply, Submodule.mkQ_apply, one_apply_eq_self,
       reductionHom_apply_mk, Submodule.Quotient.eq, Submodule.mem_smul_pointwise_iff_exists]
     exact ⟨y, Submodule.mem_top, hy.symm⟩
 

@@ -94,7 +94,7 @@ private lemma _root_.RootPairing.weylGroup.pow_ofIdx_mul_ofIdx_smul_eq (n : ℕ)
   induction n with
   | zero => simp
   | succ n ih =>
-    rw [pow_succ', mul_smul, ih, pow_succ', LinearEquiv.mul_apply, mul_smul]
+    rw [pow_succ', mul_smul, ih, pow_succ', _root_.mul_apply_eq_comp, mul_smul]
     simp [_root_.RootPairing.reflection_apply]
 
 /-- **The iterates of a product of two reflections.** This is Mathlib's
@@ -214,7 +214,7 @@ theorem _root_.RootPairing.weylGroup.orderOf_ofIdx_mul_ofIdx_eq_three
     refine RootPairing.weylGroup.pow_ne_one_of_coroot'_left_ne P i j 1 ?_
     rw [RootPairing.weylGroup.coroot'_left_pow_smul_root P i j 1 (-1) (by rw [h]; ring), h]
     norm_num [S_zero, S_one]
-  refine orderOf_eq_of_pow_and_pow_div_prime (by norm_num)
+  refine orderOf_eq_of_pow_and_pow_div_prime
     (RootPairing.weylGroup.pow_three_ofIdx_mul_ofIdx_eq_one P i j h) fun p hp hpd ↦ ?_
   have hp' : p = 3 := (Nat.prime_dvd_prime_iff_eq hp Nat.prime_three).mp hpd
   subst hp'
@@ -231,7 +231,7 @@ theorem _root_.RootPairing.weylGroup.orderOf_ofIdx_mul_ofIdx_eq_four
     refine RootPairing.weylGroup.pow_ne_one_of_coroot'_left_ne P i j 2 ?_
     rw [RootPairing.weylGroup.coroot'_left_pow_smul_root P i j 2 0 (by rw [h]; ring), h]
     norm_num [S_one, S_two]
-  refine orderOf_eq_of_pow_and_pow_div_prime (by norm_num)
+  refine orderOf_eq_of_pow_and_pow_div_prime
     (RootPairing.weylGroup.pow_four_ofIdx_mul_ofIdx_eq_one P i j h) fun p hp hpd ↦ ?_
   have hp' : p = 2 := by
     have hpd' : p ∣ 2 ^ 2 := by simpa using hpd
@@ -258,7 +258,7 @@ theorem _root_.RootPairing.weylGroup.orderOf_ofIdx_mul_ofIdx_eq_six
       have h₃' : S R (3 : ℤ) = Polynomial.X * S R 2 - S R 1 := by simpa using S_add_two R (1 : ℤ)
       simp [h₃', S_one, S_two]
     norm_num [h₃, S_two]
-  refine orderOf_eq_of_pow_and_pow_div_prime (by norm_num)
+  refine orderOf_eq_of_pow_and_pow_div_prime
     (RootPairing.weylGroup.pow_six_ofIdx_mul_ofIdx_eq_one P i j h) fun p hp hpd ↦ ?_
   have hp' : p = 2 ∨ p = 3 := by
     have hpd' : p ∣ 2 * 3 := by simpa using hpd
