@@ -47,7 +47,9 @@ At `p = 2` the modulus `q = 4` cannot be lowered to `2`: `-1` has order two, so
 * `TauCeti.padicUnitsDepth p`: the exponent `k` with `q = p ^ k`.
 * `TauCeti.unitsPrincipalLogEquiv p`: the logarithm `1 + qℤ_p ≃ₜ* ℤ_p`, `u ↦ log u / q`.
 * `TauCeti.padicUnitsGenerator p`: the unit `γ = exp q`, with
-  `TauCeti.topologicalClosure_zpowers_padicUnitsGenerator`.
+  `TauCeti.topologicalClosure_zpowers_padicUnitsGenerator` and
+  `TauCeti.coe_padicUnitsGenerator_zpow`, `γ ^ k = exp (q k)`, and
+  `TauCeti.not_isOfFinOrder_padicUnitsGenerator`.
 * `TauCeti.padicUnitsSection p`: the section `ω`, with `TauCeti.eq_padicUnitsSection` and
   `TauCeti.padicUnitsSection_pow_totient`.
 * `TauCeti.padicIntUnitsEquivZModUnitsProd p`: the decomposition `ℤ_pˣ ≃ₜ* (ℤ/qℤ)ˣ × ℤ_p`, with
@@ -87,7 +89,7 @@ theorem padicUnitsDepth_pos : 0 < padicUnitsDepth p := by
 
 /-- For `p = 2` the depth is at least `2`, the range in which the principal units of `ℤ_2` are
 procyclic and torsion-free. -/
-private theorem two_le_padicUnitsDepth {p : ℕ} (h : p = 2) : 2 ≤ padicUnitsDepth p := by
+theorem two_le_padicUnitsDepth {p : ℕ} (h : p = 2) : 2 ≤ padicUnitsDepth p := by
   subst h
   simp
 
@@ -258,6 +260,13 @@ theorem unitsPrincipalLogEquiv_padicUnitsGenerator :
       .ofAdd 1 :=
   (unitsPrincipalLogEquiv p).apply_symm_apply _
 
+/-- The powers of `γ = exp q` are `γ ^ k = exp (q k)`, for `k ∈ ℤ`. -/
+theorem coe_padicUnitsGenerator_zpow (k : ℤ) :
+    (((padicUnitsGenerator p ^ k : ℤ_[p]ˣ) : ℤ_[p]) : ℚ_[p]) =
+      exp ((p : ℚ_[p]) ^ padicUnitsDepth p * k) := by
+  rw [padicUnitsGenerator, ← Subgroup.coe_zpow, ← map_zpow, ← ofAdd_zsmul,
+    coe_unitsPrincipalLogEquiv_symm_apply, toAdd_ofAdd, zsmul_one, PadicInt.coe_intCast]
+
 /-- `γ = exp q` has exact level `padicUnitsDepth p`: it is not congruent to `1` modulo `p q`. -/
 theorem padicUnitsGenerator_notMem_unitsPrincipal_succ :
     padicUnitsGenerator p ∉ unitsPrincipal p (padicUnitsDepth p + 1) := by
@@ -271,6 +280,12 @@ theorem padicUnitsGenerator_notMem_unitsPrincipal_succ :
   have := hlog.trans_le hu
   rw [zpow_le_zpow_iff_right₀ (by exact_mod_cast hp.out.one_lt)] at this
   omega
+
+/-- `γ = exp q` has infinite order. -/
+theorem not_isOfFinOrder_padicUnitsGenerator : ¬IsOfFinOrder (padicUnitsGenerator p) :=
+  not_isOfFinOrder_of_mem_unitsPrincipal (padicUnitsDepth_pos p) two_le_padicUnitsDepth
+    padicUnitsGenerator_mem_unitsPrincipal fun h ↦
+      padicUnitsGenerator_notMem_unitsPrincipal_succ (h ▸ Subgroup.one_mem _)
 
 /-- **`γ = exp q` topologically generates `1 + qℤ_p`.** -/
 theorem topologicalClosure_zpowers_padicUnitsGenerator :
