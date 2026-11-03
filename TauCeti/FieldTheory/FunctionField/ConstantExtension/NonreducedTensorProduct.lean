@@ -182,7 +182,7 @@ private theorem pow_ne_algebraMap_add_mul_X_pow
 /-- `X ^ p - (a + b X ^ p)` is irreducible over `k(X)`. -/
 theorem irreducible_X_pow_sub_C_add_mul_X_pow :
     Irreducible (X ^ p - C (algebraMap k[X] (RatFunc k) (C a + C b * X ^ p))) :=
-  X_pow_sub_C_irreducible_of_prime hp.out (pow_ne_algebraMap_add_mul_X_pow hab)
+  irreducible_X_pow_sub_C_of_prime hp.out (pow_ne_algebraMap_add_mul_X_pow hab)
 
 end PIndependent
 
