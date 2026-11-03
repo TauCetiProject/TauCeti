@@ -427,44 +427,28 @@ noncomputable def hamiltonianFlowQuotientHomeomorph
     (hdim : 2 * Fintype.card ι = finrank ℝ E) :
     (ι → ℝ) ⧸ hσ.hamiltonianFlowStabilizer hF hcomm hc x ≃ₜ
       connectedComponentIn (F ⁻¹' {F x}) x :=
-  let hrange := hσ.range_hamiltonianFlowAction_eq_connectedComponentIn hF hcomm hc hreg hdim
-  let f : (ι → ℝ) → connectedComponentIn (F ⁻¹' {F x}) x := fun v ↦
-    ⟨(hσ.hamiltonianFlowAction hF hcomm hc v).toMul x, hrange ▸ mem_range_self v⟩
-  have hf : ∀ a b, QuotientAddGroup.leftRel (hσ.hamiltonianFlowStabilizer hF hcomm hc x) a b →
-      f a = f b := fun a b hab ↦ Subtype.ext <|
-    ((hσ.hamiltonianFlowAction_apply_eq_apply_iff hF hcomm hc).2 (by
-      rw [sub_eq_neg_add]
-      exact QuotientAddGroup.leftRel_apply.1 hab)).symm
-  have hfc : Continuous f := Continuous.subtype_mk
-    ((hσ.contMDiff_hamiltonianFlowAction_uncurry hF hcomm hc).continuous.comp
-      (continuous_id.prodMk continuous_const)) _
-  let g : (ι → ℝ) ⧸ hσ.hamiltonianFlowStabilizer hF hcomm hc x →
+  -- The orbit-stabilizer bijection for the action `v +ᵥ y = φ_v(y)`, whose orbit through `x` is
+  -- the component.
+  letI : AddAction (ι → ℝ) M :=
+    { vadd v y := (hσ.hamiltonianFlowAction hF hcomm hc v).toMul y
+      zero_vadd y := by
+        change (hσ.hamiltonianFlowAction hF hcomm hc 0).toMul y = y
+        simp
+      add_vadd := hσ.hamiltonianFlowAction_add_apply hF hcomm hc }
+  let e : (ι → ℝ) ⧸ hσ.hamiltonianFlowStabilizer hF hcomm hc x ≃
       connectedComponentIn (F ⁻¹' {F x}) x :=
-    Quotient.lift (s := QuotientAddGroup.leftRel _) f hf
-  have hbij : Bijective g := by
-    refine ⟨fun a b hab ↦ ?_, fun y ↦ ?_⟩
-    · induction a using QuotientAddGroup.induction_on with | H v => ?_
-      induction b using QuotientAddGroup.induction_on with | H w => ?_
-      refine QuotientAddGroup.eq.2 ?_
-      rw [← neg_mem_iff, neg_add_rev, neg_neg, ← sub_eq_neg_add]
-      exact (hσ.hamiltonianFlowAction_apply_eq_apply_iff hF hcomm hc).1
-        (congrArg Subtype.val hab)
-    · obtain ⟨v, hv⟩ := hrange.ge y.2
-      exact ⟨QuotientAddGroup.mk v, Subtype.ext hv⟩
-  (Equiv.ofBijective g hbij).toHomeomorphOfContinuousOpen
-    (hfc.quotient_lift (s := QuotientAddGroup.leftRel _) hf) <| by
+    (AddAction.orbitEquivQuotientStabilizer (ι → ℝ) x).symm.trans
+      (Set.equivOfEq
+        (hσ.range_hamiltonianFlowAction_eq_connectedComponentIn hF hcomm hc hreg hdim))
+  have hcont : Continuous fun v ↦ (hσ.hamiltonianFlowAction hF hcomm hc v).toMul x :=
+    (hσ.contMDiff_hamiltonianFlowAction_uncurry hF hcomm hc).continuous.comp
+      (continuous_id.prodMk continuous_const)
+  e.toHomeomorphOfContinuousOpen
+    ((QuotientAddGroup.isQuotientMap_mk _).continuous_iff.2 (hcont.subtype_mk _)) <| by
     -- The orbit map is open into the level, hence into the component.
     have hxC : x ∈ connectedComponentIn (F ⁻¹' {F x}) x := mem_connectedComponentIn (by simp)
     intro U hU
-    have himage : Equiv.ofBijective g hbij '' U = f '' (QuotientAddGroup.mk ⁻¹' U) := by
-      ext y
-      constructor
-      · rintro ⟨a, ha, rfl⟩
-        obtain ⟨v, rfl⟩ := QuotientAddGroup.mk_surjective a
-        exact ⟨v, ha, rfl⟩
-      · rintro ⟨v, hv, rfl⟩
-        exact ⟨QuotientAddGroup.mk v, hv, rfl⟩
-    rw [himage, isOpen_iff_mem_nhds]
+    rw [← image_preimage_eq U QuotientAddGroup.mk_surjective, image_image, isOpen_iff_mem_nhds]
     rintro _ ⟨v, hv, rfl⟩
     rw [mem_nhds_subtype_iff_nhdsWithin, image_image]
     exact nhdsWithin_mono _ (connectedComponentIn_subset _ _)
