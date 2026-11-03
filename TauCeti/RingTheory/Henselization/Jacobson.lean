@@ -55,9 +55,9 @@ theorem isUnit_stage_of_isUnit_quotient (I : Ideal R) (B : Neighbourhood.{u, u} 
 radical, with no assumption on the original ideal. -/
 theorem extended_le_jacobson (I : Ideal R) :
     extended I ≤ Ideal.jacobson (⊥ : Ideal (algebra I)) := by
-  rw [extended, Ideal.map_le_iff_le_comap]
+  rw [Ideal.jacobson_bot, extended, Ideal.map_le_iff_le_comap]
   intro r hr
-  apply Ideal.mem_jacobson_bot.mpr
+  apply Ring.mem_jacobson_iff.mpr
   intro y
   obtain ⟨B, b, rfl⟩ := exists_stage_eq I y
   have hr' : Ideal.Quotient.mk (I.map (algebraMap R B.obj)) (algebraMap R B.obj r) = 0 :=

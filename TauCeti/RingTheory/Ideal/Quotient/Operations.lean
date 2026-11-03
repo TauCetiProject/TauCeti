@@ -32,6 +32,11 @@ the component of `R` cut out by `e`.
 
 If `R / I → B / IB` is surjective, algebra maps from `B` to an algebra annihilated by `I`
 are unique. This quotient extensionality lemma is used to construct compatible residue maps.
+More generally, if `R ⧸ I → S ⧸ J` is surjective, every element of `S` is congruent modulo `J` to
+the image of an element of `R` (`Ideal.exists_sub_mem_of_surjective_quotientMap`).
+
+If every class modulo a maximal ideal `m` comes from `f`, then `m.comap f` is maximal
+(`Ideal.isMaximal_comap_of_surjective_quotient_mk_comp`).
 -/
 
 public section
@@ -80,6 +85,16 @@ theorem algHom_ext_of_surjective_algebraMap_quotient (I : Ideal R)
     simp [f', g']
   exact AlgHom.ext fun b ↦ congrArg (fun a ↦ a (Ideal.Quotient.mk _ b)) he
 
+/-- If `R ⧸ I → S ⧸ J` is surjective, every element of `S` is congruent modulo `J` to the image
+of an element of `R`. -/
+theorem exists_sub_mem_of_surjective_quotientMap {S : Type*} [CommRing S] {I : Ideal R}
+    {J : Ideal S} {f : R →+* S} {hIJ : I ≤ J.comap f}
+    (hf : Function.Surjective (quotientMap J f hIJ)) (s : S) : ∃ r, s - f r ∈ J := by
+  obtain ⟨x, hx⟩ := hf (Ideal.Quotient.mk _ s)
+  obtain ⟨r, rfl⟩ := Ideal.Quotient.mk_surjective x
+  rw [quotientMap_mk] at hx
+  exact ⟨r, Ideal.Quotient.eq.mp hx.symm⟩
+
 /-- If `I ≤ J` are ideals with `I` finitely generated, then `J.spanFinrank` is at most the sum
 of the `spanFinrank`s of its image in `R ⧸ I` and `I`. For finitely generated `J`, this bounds
 its number of generators; for non-finitely-generated `J`, `J.spanFinrank` is defined to be `0`.
@@ -95,6 +110,17 @@ theorem spanFinrank_le_spanFinrank_map_add_spanFinrank {I J : Ideal R} (hIJ : I 
     exact Submodule.spanFinrank_restrictScalars_eq Ideal.Quotient.mk_surjective _
   simpa [hrank] using
     Submodule.spanFinrank_le_spanFinrank_map_mkQ_add_spanFinrank hIJ hI
+
+/-- If every class modulo a maximal ideal `m` is the image of an element under `f`, then
+`m.comap f` is maximal: it is the kernel of the surjection from the source onto the field
+`S ⧸ m`. Compare `Ideal.comap_isMaximal_of_surjective`, which asks `f` itself to be
+surjective. -/
+theorem isMaximal_comap_of_surjective_quotient_mk_comp {A S F : Type*} [Ring A] [CommRing S]
+    [FunLike F A S] [RingHomClass F A S] (f : F) {m : Ideal S} [m.IsMaximal]
+    (hf : Function.Surjective (Ideal.Quotient.mk m ∘ f)) : (m.comap f).IsMaximal := by
+  let := Ideal.Quotient.field m
+  have := RingHom.ker_isMaximal_of_surjective ((Ideal.Quotient.mk m).comp (f : A →+* S)) hf
+  rwa [← RingHom.comap_ker, Ideal.mk_ker, Ideal.comap_coe] at this
 
 end Ideal
 
