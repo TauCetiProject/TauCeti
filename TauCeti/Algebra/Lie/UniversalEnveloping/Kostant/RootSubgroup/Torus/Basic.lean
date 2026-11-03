@@ -308,6 +308,28 @@ noncomputable def kostantRootOperator : Module.End ℤ M :=
       ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e i)) (v : V) := by
   rw [kostantRootOperator, coe_integralDividedPower_one_apply, Module.End.smul_def]
 
+/-- A vanishing product of ambient root operators also vanishes on the stable subgroup. -/
+theorem kostantRootOperator_mul_eq_zero {k l : ι}
+    (hkl : ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e k)) *
+      ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e l)) = 0) :
+    kostantRootOperator e h ρ M hM k * kostantRootOperator e h ρ M hM l = 0 := by
+  refine LinearMap.ext fun v => Subtype.ext ?_
+  simpa only [mul_apply_eq_comp, coe_kostantRootOperator_apply,
+    LinearMap.zero_apply, ZeroMemClass.coe_zero] using congrArg (fun f ↦ f (v : V)) hkl
+
+/-- A vanishing double bracket of ambient root operators also vanishes on the stable subgroup. -/
+theorem kostantRootOperator_lie_lie_eq_zero {k l : ι}
+    (hkl : ⁅ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e k)),
+      ⁅ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e k)),
+        ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e l))⁆⁆ = 0) :
+    ⁅kostantRootOperator e h ρ M hM k,
+      ⁅kostantRootOperator e h ρ M hM k, kostantRootOperator e h ρ M hM l⁆⁆ = 0 := by
+  refine LinearMap.ext fun v => Subtype.ext ?_
+  -- Expand the brackets to compare restrictions on each lattice vector.
+  simpa only [Ring.lie_def, LinearMap.sub_apply, mul_apply_eq_comp,
+    AddSubgroup.coe_sub, coe_kostantRootOperator_apply,
+    LinearMap.zero_apply, ZeroMemClass.coe_zero] using congrArg (fun f ↦ f (v : V)) hkl
+
 include e hM in
 /-- The integral root operator raises weights by the root: it is the first divided power of a
 root vector of weight `α`. -/

@@ -62,22 +62,20 @@ theorem rootIntMatrix_eq_toMatrix (j : Fin (n + 1) ⊕ Fin (n + 1)) :
     (TauCeti.typeBSimpleCorootGenerator (K := ℚ)) (rep n) (lattice n).toAddSubgroup
     (rep_kostantForm_mem_lattice n) j (latticeBasis n)
 
+private noncomputable abbrev rootOperator (n : ℕ) (k : Fin (n + 1) ⊕ Fin (n + 1)) :
+    Module.End ℤ (lattice n).toAddSubgroup :=
+  kostantRootOperator (TauCeti.typeBSimpleRootGeneratorFamily (K := ℚ))
+    (TauCeti.typeBSimpleCorootGenerator (K := ℚ)) (rep n) (lattice n).toAddSubgroup
+    (rep_kostantForm_mem_lattice n) k
+
 /-- The integral matrix of every numbered simple root generator squares to zero. -/
 theorem rootIntMatrix_mul_self_eq_zero (k : Fin (n + 1) ⊕ Fin (n + 1)) :
     rootIntMatrix n k * rootIntMatrix n k = 0 := by
-  let op := kostantRootOperator (TauCeti.typeBSimpleRootGeneratorFamily (K := ℚ))
-    (TauCeti.typeBSimpleCorootGenerator (K := ℚ)) (rep n) (lattice n).toAddSubgroup
-    (rep_kostantForm_mem_lattice n) k
-  have hop : op * op = 0 := by
-    apply LinearMap.ext
-    intro v
-    apply Subtype.ext
-    simpa only [op, pow_two, mul_apply_eq_comp, coe_kostantRootOperator_apply,
-      LinearMap.zero_apply, ZeroMemClass.coe_zero] using
-      congrArg (fun f ↦ f (v : ExteriorAlgebra ℚ (polarization n).W))
-        (pow_two_rep_rootGenerator_eq_zero n k)
+  have hop : rootOperator n k * rootOperator n k = 0 :=
+    kostantRootOperator_mul_eq_zero _ _ _ _ _
+      (by simpa only [pow_two] using pow_two_rep_rootGenerator_eq_zero n k)
   have hmap := congrArg (LinearMap.toMatrix (latticeBasis n) (latticeBasis n)) hop
-  simpa only [op, LinearMap.toMatrix_mul, map_zero,
+  simpa only [rootOperator, LinearMap.toMatrix_mul, map_zero,
     ← rootIntMatrix_eq_toMatrix] using hmap
 
 section SerreTransport
@@ -87,11 +85,6 @@ variable {n : ℕ}
 attribute [local instance 100] LieRing.ofAssociativeRing
 
 local notation "rootGen" k => TauCeti.typeBSimpleRootGeneratorFamily (K := ℚ) k
-private noncomputable abbrev rootOperator (n : ℕ) (k : Fin (n + 1) ⊕ Fin (n + 1)) :
-    Module.End ℤ (lattice n).toAddSubgroup :=
-  kostantRootOperator (TauCeti.typeBSimpleRootGeneratorFamily (K := ℚ))
-    (TauCeti.typeBSimpleCorootGenerator (K := ℚ)) (rep n) (lattice n).toAddSubgroup
-    (rep_kostantForm_mem_lattice n) k
 
 local notation "ratOp" k => rep n (_root_.UniversalEnvelopingAlgebra.ι ℚ (rootGen k))
 
@@ -102,15 +95,7 @@ private theorem rootOperator_lie_lie_eq_zero {i j : Fin (n + 1) ⊕ Fin (n + 1)}
     have hmap := congrArg ((rep n).toLieHom.comp
       (_root_.UniversalEnvelopingAlgebra.ι ℚ)) hij
     simpa only [LieHom.map_lie, map_zero, LieHom.comp_apply, AlgHom.toLieHom_apply] using hmap
-  apply LinearMap.ext
-  intro v
-  apply Subtype.ext
-  -- The integral operators are restrictions of the rational represented generators.
-  -- Expanding the brackets makes this restriction explicit on each lattice vector.
-  simpa only [Ring.lie_def, LinearMap.sub_apply, mul_apply_eq_comp,
-    AddSubgroup.coe_sub, coe_kostantRootOperator_apply,
-    LinearMap.zero_apply, ZeroMemClass.coe_zero] using
-    congrArg (fun f ↦ f (v : ExteriorAlgebra ℚ (polarization n).W)) hrat
+  exact kostantRootOperator_lie_lie_eq_zero _ _ _ _ _ hrat
 
 /-- A double-bracket Serre relation between numbered rational generators also holds between
 their integral root matrices. -/
