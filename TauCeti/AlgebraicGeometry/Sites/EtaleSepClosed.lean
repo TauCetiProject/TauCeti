@@ -73,6 +73,21 @@ noncomputable def pointSmallEtaleFiberCorepresentableBy :
   homEquiv := (Etale.forgetFullyFaithful S).homEquiv
   homEquiv_comp _ _ := (Etale.forget S).map_comp _ _
 
+/-- The bijection of `pointSmallEtaleFiberCorepresentableBy` sends a morphism of the small étale
+site to the underlying morphism of `S`-schemes. -/
+@[simp]
+lemma pointSmallEtaleFiberCorepresentableBy_homEquiv_apply {X : S.Etale} (f : Etale.mk s ⟶ X) :
+    (pointSmallEtaleFiberCorepresentableBy s).homEquiv f = (Etale.forget S).map f := by
+  rfl
+
+/-- The inverse bijection of `pointSmallEtaleFiberCorepresentableBy` sends a lift of `s` to `X`
+to the morphism of the small étale site whose underlying morphism of `S`-schemes is that lift. -/
+@[simp]
+lemma forget_map_pointSmallEtaleFiberCorepresentableBy_homEquiv_symm {X : S.Etale}
+    (x : (pointSmallEtale s).fiber.obj X) :
+    (Etale.forget S).map ((pointSmallEtaleFiberCorepresentableBy s).homEquiv.symm x) = x :=
+  (pointSmallEtaleFiberCorepresentableBy s).homEquiv.apply_symm_apply x
+
 /-- Every covering sieve of an object `X` of the small étale site contains every morphism to `X`
 from an étale geometric point. -/
 theorem mem_of_mem_smallEtaleTopology {X : S.Etale} {R : Sieve X}
@@ -112,11 +127,42 @@ noncomputable def pointSmallEtalePresheafFiberNatIso :
       (CategoryTheory.evaluation _ A).obj (op (Etale.mk s)) :=
   NatIso.ofComponents (pointSmallEtalePresheafFiberIso s) fun f ↦ by ext; simp
 
+@[simp]
+lemma pointSmallEtalePresheafFiberNatIso_hom_app (P : S.Etaleᵒᵖ ⥤ A) :
+    (pointSmallEtalePresheafFiberNatIso s).hom.app P =
+      (pointSmallEtalePresheafFiberIso s P).hom := by
+  rfl
+
+@[simp]
+lemma pointSmallEtalePresheafFiberNatIso_inv_app (P : S.Etaleᵒᵖ ⥤ A) :
+    (pointSmallEtalePresheafFiberNatIso s).inv.app P =
+      (pointSmallEtalePresheafFiberIso s P).inv := by
+  rfl
+
 /-- **The stalk of a sheaf at an étale geometric point is its sections there.** -/
 noncomputable def pointSmallEtaleSheafFiberIso :
     (pointSmallEtale s).sheafFiber (A := A) ≅
       (sheafSections (smallEtaleTopology S) A).obj (op (Etale.mk s)) :=
   Functor.isoWhiskerLeft (sheafToPresheaf _ A) (pointSmallEtalePresheafFiberNatIso s)
+
+@[simp]
+lemma pointSmallEtaleSheafFiberIso_hom_app (F : Sheaf (smallEtaleTopology S) A) :
+    (pointSmallEtaleSheafFiberIso s).hom.app F = (pointSmallEtalePresheafFiberIso s F.obj).hom := by
+  rfl
+
+@[simp]
+lemma pointSmallEtaleSheafFiberIso_inv_app (F : Sheaf (smallEtaleTopology S) A) :
+    (pointSmallEtaleSheafFiberIso s).inv.app F = (pointSmallEtalePresheafFiberIso s F.obj).inv := by
+  rfl
+
+/-- Under `pointSmallEtaleSheafFiberIso`, the germ at the geometric point `s` of a section over
+`X`, through a lift `x` of `s` to `X`, is its restriction along that lift. -/
+@[reassoc]
+theorem toPresheafFiber_pointSmallEtaleSheafFiberIso_hom_app (F : Sheaf (smallEtaleTopology S) A)
+    (X : S.Etale) (x : (pointSmallEtale s).fiber.obj X) :
+    (pointSmallEtale s).toPresheafFiber X x F.obj ≫ (pointSmallEtaleSheafFiberIso s).hom.app F =
+      F.obj.map ((pointSmallEtaleFiberCorepresentableBy s).homEquiv.symm x).op := by
+  simp
 
 end EtalePoint
 
@@ -155,6 +201,33 @@ noncomputable def pointSmallEtaleIdSheafFiberIso :
       Sheaf.Γ (smallEtaleTopology (Spec (.of Ω))) A :=
   pointSmallEtaleSheafFiberIso (𝟙 _) ≪≫
     (Sheaf.ΓNatIsoSheafSections _ A (Etale.mkIdTerminal _)).symm
+
+@[simp]
+lemma pointSmallEtaleIdSheafFiberIso_hom_app (F : Sheaf (smallEtaleTopology (Spec (.of Ω))) A) :
+    (pointSmallEtaleIdSheafFiberIso Ω).hom.app F =
+      (pointSmallEtalePresheafFiberIso (𝟙 _) F.obj).hom ≫
+        (Sheaf.ΓNatIsoSheafSections _ A (Etale.mkIdTerminal _)).inv.app F := by
+  rfl
+
+@[simp]
+lemma pointSmallEtaleIdSheafFiberIso_inv_app (F : Sheaf (smallEtaleTopology (Spec (.of Ω))) A) :
+    (pointSmallEtaleIdSheafFiberIso Ω).inv.app F =
+      (Sheaf.ΓNatIsoSheafSections _ A (Etale.mkIdTerminal _)).hom.app F ≫
+        (pointSmallEtalePresheafFiberIso (𝟙 _) F.obj).inv := by
+  rfl
+
+/-- Under `pointSmallEtaleIdSheafFiberIso`, the germ at the geometric point of `Spec Ω` of a
+section over `X`, through a point `x` of `X` over it, is the global section given by restricting
+along `x`. -/
+@[reassoc]
+theorem toPresheafFiber_pointSmallEtaleIdSheafFiberIso_hom_app
+    (F : Sheaf (smallEtaleTopology (Spec (.of Ω))) A) (X : (Spec (.of Ω)).Etale)
+    (x : (pointSmallEtale (𝟙 (Spec (.of Ω)))).fiber.obj X) :
+    (pointSmallEtale (𝟙 _)).toPresheafFiber X x F.obj ≫
+        (pointSmallEtaleIdSheafFiberIso Ω).hom.app F =
+      F.obj.map ((pointSmallEtaleFiberCorepresentableBy (𝟙 _)).homEquiv.symm x).op ≫
+        (Sheaf.ΓNatIsoSheafSections _ A (Etale.mkIdTerminal _)).inv.app F := by
+  simp
 
 variable {FC : A → A → Type*} {CC : A → Type u} [∀ X Y, FunLike (FC X Y) (CC X) (CC Y)]
   [ConcreteCategory.{u} A FC] [(CategoryTheory.forget A).ReflectsIsomorphisms]
