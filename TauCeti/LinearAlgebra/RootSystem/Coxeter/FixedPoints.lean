@@ -7,7 +7,7 @@ module
 
 public import Mathlib.LinearAlgebra.Eigenspace.Basic
 import TauCeti.LinearAlgebra.Reflection
-import TauCeti.LinearAlgebra.RootSystem.FundamentalDomain
+import TauCeti.LinearAlgebra.RootSystem.Positive
 public import TauCeti.LinearAlgebra.RootSystem.SimpleReflections
 
 /-!
