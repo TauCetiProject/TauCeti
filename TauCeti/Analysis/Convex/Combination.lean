@@ -41,8 +41,11 @@ The closed interior of a simplex is the convex hull of its vertices
 of a vector space under an injective affine map `f`, the closed interior is the image under `f` of
 the convex hull of the `x i` (`Affine.Simplex.closedInterior_eq_image_convexHull`, and
 `Affine.Triangle.closedInterior_eq_image_convexHull` for triangles), so questions about a simplex
-can be settled in coordinates. In coordinates, a bound `f x ≤ w` by a linear map `f` that holds
-at the vertices holds on the whole convex hull (`IsLinearMap.le_of_mem_convexHull`).
+can be settled in coordinates. For instance, the closed interior of a simplex in an affine
+space contains the segment between any two of its points
+(`Affine.Simplex.lineMap_mem_closedInterior`). In coordinates, a bound `f x ≤ w` by a linear map
+`f` that holds at the vertices holds on the whole convex hull
+(`IsLinearMap.le_of_mem_convexHull`).
 
 ## References
 
@@ -187,6 +190,20 @@ theorem closedInterior_eq_image_convexHull {V P : Type*} [AddCommGroup V] [Modul
   have hind : AffineIndependent 𝕜 x := AffineIndependent.of_comp f (hx ▸ s.independent)
   have hmap : s = (⟨x, hind⟩ : Simplex 𝕜 E n).map f hf := Simplex.ext fun j => congrFun hx j
   rw [hmap, closedInterior_map, ← convexHull_eq_closedInterior]
+
+/-- The closed interior of a simplex in an affine space contains the segment between any two of its
+points. -/
+theorem lineMap_mem_closedInterior {V P : Type*} [AddCommGroup V] [Module 𝕜 V] [AddTorsor V P]
+    {n : ℕ} (s : Simplex 𝕜 P n) {x y : P} (hx : x ∈ s.closedInterior)
+    (hy : y ∈ s.closedInterior) {t : 𝕜} (ht : t ∈ Set.Icc (0 : 𝕜) 1) :
+    AffineMap.lineMap x y t ∈ s.closedInterior := by
+  -- Read the simplex in the vector space `V`, through the translation by its first vertex.
+  set e := AffineEquiv.vaddConst 𝕜 (s.points 0)
+  rw [s.closedInterior_eq_image_convexHull (f := e.toAffineMap) e.injective
+    (x := fun k => s.points k -ᵥ s.points 0) (funext fun k => (vsub_vadd _ _).symm)] at hx hy ⊢
+  obtain ⟨u, hu, rfl⟩ := hx
+  obtain ⟨v, hv, rfl⟩ := hy
+  exact ⟨_, (convex_convexHull 𝕜 _).lineMap_mem hu hv ht, e.toAffineMap.apply_lineMap u v t⟩
 
 end Affine.Simplex
 
