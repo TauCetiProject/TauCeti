@@ -62,28 +62,36 @@ private def bubbleCutoff : ContDiffBump (0 : E) := ⟨1, 2, one_pos, one_lt_two�
 private def cutoffBubble (t : ℝ) (b : E) (n : ℕ) (x : E) : ℝ :=
   bubbleCutoff (E := E) (((n : ℝ) + 1)⁻¹ • (x - b)) * bubble t b x
 
+private theorem cutoffBubble_eq (t : ℝ) (b : E) (n : ℕ) :
+    cutoffBubble t b n = fun x ↦
+      bubbleCutoff (E := E) (((n : ℝ) + 1)⁻¹ • (x - b)) * bubble t b x := rfl
+
 private theorem cutoffBubble_apply (t : ℝ) (b : E) (n : ℕ) (x : E) :
     cutoffBubble t b n x =
       bubbleCutoff (E := E) (((n : ℝ) + 1)⁻¹ • (x - b)) * bubble t b x := rfl
 
 variable [FiniteDimensional ℝ E]
 
+private theorem rescaled_bubbleCutoff_eventuallyEq_one (r : ℝ) (b x : E)
+    (hx : r⁻¹ • (x - b) ∈ Metric.ball (0 : E) 1) :
+    (fun y ↦ bubbleCutoff (E := E) (r⁻¹ • (y - b))) =ᶠ[𝓝 x] 1 := by
+  exact ((continuous_const_smul r⁻¹).comp
+    (continuous_id.sub continuous_const)).continuousAt.eventually
+      ((bubbleCutoff (E := E)).eventuallyEq_one_of_mem_ball hx)
+
 private theorem cutoffBubble_eventuallyEq (t : ℝ) (b x : E) :
     ∀ᶠ n : ℕ in atTop, cutoffBubble t b n =ᶠ[𝓝 x] bubble t b := by
-  let χ : ContDiffBump (0 : E) := bubbleCutoff
   have hlim : Tendsto (fun n : ℕ ↦ ((n : ℝ) + 1)⁻¹ • (x - b)) atTop (𝓝 0) := by
     simpa only [one_div, zero_smul] using
       (tendsto_one_div_add_atTop_nhds_zero_nat (𝕜 := ℝ)).smul_const (x - b)
-  filter_upwards [hlim.eventually (eventually_eventually_nhds.2 χ.eventuallyEq_one)] with n hn
-  have hnear := ((continuous_const_smul ((n : ℝ) + 1)⁻¹).comp
-    (continuous_id.sub continuous_const)).continuousAt.eventually hn
-  filter_upwards [hnear] with y hy
-  have hy' : χ (((n : ℝ) + 1)⁻¹ • (y - b)) = 1 := by simpa using hy
-  simpa only [cutoffBubble_apply] using
-    (congrArg (· * bubble t b y) hy').trans (one_mul _)
+  filter_upwards [hlim.eventually (Metric.ball_mem_nhds (0 : E) one_pos)] with n hn
+  filter_upwards [rescaled_bubbleCutoff_eventuallyEq_one ((n : ℝ) + 1) b x hn] with y hy
+  simp only [cutoffBubble_apply, Pi.one_apply] at *
+  rw [hy, one_mul]
 
 private theorem cutoffBubble_smooth_compact {t : ℝ} (ht : 0 < t) (b : E) (n : ℕ) :
     ContDiff ℝ ∞ (cutoffBubble t b n) ∧ HasCompactSupport (cutoffBubble t b n) := by
+  rw [cutoffBubble_eq]
   let χ : ContDiffBump (0 : E) := bubbleCutoff
   exact ⟨(χ.contDiff.comp ((contDiff_id.sub contDiff_const).const_smul _)).mul
       (contDiff_bubble ht.ne' b),
@@ -100,6 +108,43 @@ private theorem fderiv_rescaled_bubbleCutoff (r : ℝ) (b x : E) :
     fderiv_sub_const, fderiv_id] at hc
   simpa only [Function.comp_def, Pi.smul_apply, id_eq,
     ContinuousLinearMap.comp_smul, ContinuousLinearMap.comp_id] using hc
+
+/-- The differentiated cutoff term is controlled by the bubble's radial derivative. -/
+private theorem norm_fderiv_rescaled_bubbleCutoff_mul_bubble_le
+    (hn : 2 < finrank ℝ E) {t : ℝ} (ht : 0 < t) (b : E) {C : ℝ}
+    (hC : ∀ y : E, ‖y‖ * ‖fderiv ℝ (bubbleCutoff (E := E) : E → ℝ) y‖ ≤ C)
+    {r : ℝ} (hr : 1 ≤ r) (x : E) :
+    ‖fderiv ℝ (fun y ↦ bubbleCutoff (E := E) (r⁻¹ • (y - b))) x‖ * bubble t b x ≤
+      C * ((t ^ 2 + 1) / ((finrank ℝ E : ℝ) - 2)) * ‖fderiv ℝ (bubble t b) x‖ := by
+  have hr0 : 0 < r := lt_of_lt_of_le one_pos hr
+  let A : ℝ := (t ^ 2 + 1) / ((finrank ℝ E : ℝ) - 2)
+  have hA : 0 ≤ A := by
+    have hd : (2 : ℝ) < finrank ℝ E := by exact_mod_cast hn
+    dsimp [A]
+    positivity
+  by_cases hx : 1 ≤ ‖x - b‖
+  · have hs : ‖fderiv ℝ (fun y ↦ bubbleCutoff (E := E) (r⁻¹ • (y - b))) x‖ *
+        ‖x - b‖ ≤ C := by
+      rw [fderiv_rescaled_bubbleCutoff, norm_smul,
+        Real.norm_of_nonneg (inv_nonneg.mpr hr0.le)]
+      simpa only [norm_smul, Real.norm_of_nonneg (inv_nonneg.mpr hr0.le),
+        mul_assoc, mul_comm ‖x - b‖] using hC (r⁻¹ • (x - b))
+    calc
+      _ ≤ ‖fderiv ℝ (fun y ↦ bubbleCutoff (E := E) (r⁻¹ • (y - b))) x‖ *
+          (A * ‖x - b‖ * ‖fderiv ℝ (bubble t b) x‖) :=
+        mul_le_mul_of_nonneg_left (bubble_le_norm_mul_norm_fderiv hn ht b hx) (norm_nonneg _)
+      _ = (‖fderiv ℝ (fun y ↦ bubbleCutoff (E := E) (r⁻¹ • (y - b))) x‖ * ‖x - b‖) *
+          A * ‖fderiv ℝ (bubble t b) x‖ := by ring
+      _ ≤ _ := mul_le_mul_of_nonneg_right (mul_le_mul_of_nonneg_right hs hA) (norm_nonneg _)
+  · have hball : r⁻¹ • (x - b) ∈ Metric.ball (0 : E) 1 := by
+      simp only [Metric.mem_ball, dist_zero_right, norm_smul,
+        Real.norm_of_nonneg (inv_nonneg.mpr hr0.le)]
+      exact (inv_mul_lt_one₀ hr0).mpr ((lt_of_not_ge hx).trans_le hr)
+    have hz : fderiv ℝ (fun y ↦ bubbleCutoff (E := E) (r⁻¹ • (y - b))) x = 0 := by
+      simpa using (rescaled_bubbleCutoff_eventuallyEq_one r b x hball).fderiv_eq (𝕜 := ℝ)
+    rw [hz, norm_zero, zero_mul]
+    have hC0 : 0 ≤ C := by simpa using hC 0
+    exact mul_nonneg (mul_nonneg hC0 hA) (norm_nonneg _)
 
 private theorem exists_bound_fderiv_cutoffBubble (hn : 2 < finrank ℝ E) {t : ℝ}
     (ht : 0 < t) (b : E) :
@@ -124,44 +169,20 @@ private theorem exists_bound_fderiv_cutoffBubble (hn : 2 < finrank ℝ E) {t : �
         (C * A + 2) * ‖fderiv ℝ (bubble t b) x‖ := by
     let r : ℝ := (n : ℝ) + 1
     have hr : 1 ≤ r := by dsimp [r]; linarith [Nat.cast_nonneg (α := ℝ) n]
-    have hr0 : 0 < r := lt_of_lt_of_le one_pos hr
     let ψ : E → ℝ := fun y ↦ χ (r⁻¹ • (y - b))
     have hψ : ContDiff ℝ ∞ ψ :=
       χ.contDiff.comp ((contDiff_id.sub contDiff_const).const_smul _)
-    have hψd : fderiv ℝ ψ x = r⁻¹ • fderiv ℝ χ (r⁻¹ • (x - b)) :=
-      fderiv_rescaled_bubbleCutoff r b x
-    -- Away from the centre use the bubble's radial derivative; near it the cutoff is one.
     have hψbound : ‖fderiv ℝ ψ x‖ * bubble t b x ≤
-        C * A * ‖fderiv ℝ (bubble t b) x‖ := by
-      by_cases hx : 1 ≤ ‖x - b‖
-      · have hs : ‖fderiv ℝ ψ x‖ * ‖x - b‖ ≤ C := by
-          rw [hψd, norm_smul, Real.norm_of_nonneg (inv_nonneg.mpr hr0.le)]
-          have hc := hC (r⁻¹ • (x - b))
-          have hc' := (Real.le_norm_self _).trans hc
-          simpa only [norm_smul, Real.norm_of_nonneg (inv_nonneg.mpr hr0.le),
-            mul_assoc, mul_comm ‖x - b‖] using hc'
-        calc
-          _ ≤ ‖fderiv ℝ ψ x‖ * (A * ‖x - b‖ * ‖fderiv ℝ (bubble t b) x‖) :=
-            mul_le_mul_of_nonneg_left (bubble_le_norm_mul_norm_fderiv hn ht b hx) (norm_nonneg _)
-          _ = (‖fderiv ℝ ψ x‖ * ‖x - b‖) * A * ‖fderiv ℝ (bubble t b) x‖ := by ring
-          _ ≤ _ := mul_le_mul_of_nonneg_right (mul_le_mul_of_nonneg_right hs hA) (norm_nonneg _)
-      · have heq : ψ =ᶠ[𝓝 x] 1 := by
-          have hball : r⁻¹ • (x - b) ∈ Metric.ball (0 : E) χ.rIn := by
-            simp only [Metric.mem_ball, dist_zero_right, norm_smul,
-              Real.norm_of_nonneg (inv_nonneg.mpr hr0.le)]
-            exact (inv_mul_lt_one₀ hr0).mpr ((lt_of_not_ge hx).trans_le hr)
-          exact ((continuous_const_smul r⁻¹).comp
-            (continuous_id.sub continuous_const)).continuousAt.eventually
-              (χ.eventuallyEq_one_of_mem_ball hball)
-        have hz : fderiv ℝ ψ x = 0 := by simpa using heq.fderiv_eq
-        rw [hz, norm_zero, zero_mul]
-        positivity
+        C * A * ‖fderiv ℝ (bubble t b) x‖ :=
+      norm_fderiv_rescaled_bubbleCutoff_mul_bubble_le hn ht b
+        (fun y ↦ (Real.le_norm_self _).trans (hC y)) hr x
     -- The product rule now dominates the full derivative error by the bubble's derivative.
     have hψval : |ψ x| ≤ 1 := by
       exact abs_le.mpr ⟨by linarith [χ.nonneg (x := r⁻¹ • (x - b))], χ.le_one⟩
     have hdprod : fderiv ℝ (cutoffBubble t b n) x =
-        ψ x • fderiv ℝ (bubble t b) x + bubble t b x • fderiv ℝ ψ x :=
-      fderiv_mul (hψ.differentiable (by simp) x)
+        ψ x • fderiv ℝ (bubble t b) x + bubble t b x • fderiv ℝ ψ x := by
+      rw [cutoffBubble_eq]
+      exact fderiv_mul (hψ.differentiable (by simp) x)
         ((contDiff_bubble ht.ne' b : ContDiff ℝ ∞ _).differentiable (by simp) x)
     rw [hdprod]
     calc
@@ -262,45 +283,6 @@ theorem exists_testFunction_approximation_bubble (hn : 2 < finrank ℝ E) {t : �
   · simpa only [φ, TestFunction.coe_mk] using tendsto_cutoffBubble μ hn ht b
   · simpa only [φ, TestFunction.coe_mk] using tendsto_fderiv_cutoffBubble μ hn ht b
 
-omit [FiniteDimensional ℝ E] in
-private theorem tendsto_testFunctionLp_bubble {p : ℝ≥0∞} [Fact (1 ≤ p)]
-    {t : ℝ} {b : E} (hmem : MemLp (bubble t b) p (μ.restrict (⊤ : Opens E)))
-    (φ : ℕ → 𝓓((⊤ : Opens E), ℝ))
-    (hlim : Tendsto (fun n ↦ eLpNorm ((φ n : E → ℝ) - bubble t b) p μ) atTop (𝓝 0)) :
-    Tendsto (fun n ↦ testFunctionLp (mu := μ) p (φ n))
-      atTop (𝓝 (hmem.toLp (bubble t b))) := by
-  apply (Lp.tendsto_Lp_iff_tendsto_eLpNorm _ _ hmem).mpr
-  convert hlim using 1
-  funext n
-  rw [eLpNorm_congr_ae (by
-    filter_upwards [testFunctionLp_apply_ae (mu := μ) p (φ n)] with x hx
-    exact congrArg (· - bubble t b x) hx)]
-  simp only [Opens.coe_top, Measure.restrict_univ, Pi.sub_def]
-
-private theorem tendsto_gradientTestFunctionLp_bubble {t : ℝ} (ht : 0 < t) (b : E)
-    (hmem : MemLp (∇ (bubble t b)) 2 (μ.restrict (⊤ : Opens E)))
-    (φ : ℕ → 𝓓((⊤ : Opens E), ℝ))
-    (hlim : Tendsto (fun n ↦ eLpNorm (fderiv ℝ (φ n : E → ℝ) -
-      fderiv ℝ (bubble t b)) 2 μ) atTop (𝓝 0)) :
-    Tendsto (fun n ↦ gradientTestFunctionLp (mu := μ) 2 (φ n))
-      atTop (𝓝 (hmem.toLp (∇ (bubble t b)))) := by
-  apply (Lp.tendsto_Lp_iff_tendsto_eLpNorm _ _ hmem).mpr
-  convert hlim using 1
-  funext n
-  rw [eLpNorm_congr_ae (by
-    filter_upwards [gradientTestFunctionLp_apply_ae (mu := μ) 2 (φ n)] with x hx
-    exact congrArg (· - ∇ (bubble t b) x) hx)]
-  simp only [Opens.coe_top, Measure.restrict_univ]
-  apply eLpNorm_congr_norm_ae
-    (((continuous_gradient_testFunction (φ n)).sub
-      ((contDiff_bubble ht.ne' b : ContDiff ℝ ∞ _).gradient_right
-        (m := 0) (by simp)).continuous).aestronglyMeasurable)
-    (((φ n).contDiff.continuous_fderiv (by simp)).sub
-      ((contDiff_bubble ht.ne' b : ContDiff ℝ ∞ _).continuous_fderiv (by simp))
-        |>.aestronglyMeasurable)
-  exact Eventually.of_forall fun x ↦ by
-    simp only [gradient, ← map_sub, LinearIsometryEquiv.norm_map, Pi.sub_apply]
-
 /-- Every bubble is represented by an element of the native homogeneous Sobolev space, and
 the recorded gradient is its classical gradient, for every additive Haar measure. In particular
 this includes dimensions three and four, without any `L²` hypothesis on the bubble. -/
@@ -317,39 +299,25 @@ theorem exists_sobolevEmbeddingL_ae_eq_bubble (hn : 2 < finrank ℝ E) {t : ℝ}
     refine (memLp_fderiv_bubble μ hn ht b).norm.mono'
       hcontGrad.aestronglyMeasurable ?_
     exact Eventually.of_forall fun x ↦ (norm_gradient_eq_norm_fderiv (bubble t b) x).le
-  have hgrad' : MemLp (∇ (bubble t b)) 2 (μ.restrict (⊤ : Opens E)) := by
-    simpa only [Opens.coe_top, Measure.restrict_univ] using hgrad
-  let G := hgrad'.toLp (∇ (bubble t b))
-  -- Riesz isometry converts convergence of differentials to convergence of gradients.
-  have hseq : Tendsto (fun n ↦ gradientTestFunctionLp (mu := μ) 2 (φ n))
-      atTop (𝓝 G) :=
-    tendsto_gradientTestFunctionLp_bubble μ ht b hgrad' φ hderiv
-  -- The limiting gradient lies in the closed space generated by test-function gradients.
-  have hG : G ∈ (d1p0Submodule μ (⊤ : Opens E) 2 : Set _) := by
-    rw [coe_d1p0Submodule]
-    exact isClosed_closure.mem_of_tendsto hseq
-      (Eventually.of_forall fun n ↦ subset_closure ⟨φ n, rfl⟩)
-  let u : D1p0 μ (⊤ : Opens E) 2 := ⟨G, hG⟩
-  refine ⟨u, ?_, by simpa only [Opens.coe_top, Measure.restrict_univ] using hgrad'.coeFn_toLp⟩
-  -- Continuity of the Sobolev embedding identifies its image with the critical-Lp limit.
-  have huseq : Tendsto (fun n ↦ D1p0.ofTestFunctionₗ μ (⊤ : Opens E) 2 (φ n))
-      atTop (𝓝 u) := by
-    apply tendsto_subtype_rng.mpr
-    simpa only [D1p0.coe_ofTestFunctionₗ] using hseq
-  let p := ENNReal.ofReal (criticalExponent (finrank ℝ E))
-  let _ : Fact (1 ≤ p) :=
-    ⟨one_le_of_inv_add_eq_inv (inv_ofReal_criticalExponent_add_inv_eq_inv hn)⟩
-  have hmem : MemLp (bubble t b) p (μ.restrict (⊤ : Opens E)) := by
-    simpa only [Opens.coe_top, Measure.restrict_univ] using memLp_bubble μ hn ht b
-  have hfseq : Tendsto (fun n ↦ testFunctionLp (mu := μ) p (φ n))
-      atTop (𝓝 (hmem.toLp (bubble t b))) :=
-    tendsto_testFunctionLp_bubble μ hmem φ hfun
-  have hemb := ((D1p0.sobolevEmbeddingL (mu := μ) (Omega := (⊤ : Opens E))
-    (inv_ofReal_criticalExponent_add_inv_eq_inv hn)).continuous.tendsto u).comp huseq
-  simp only [Function.comp_def,
-    D1p0.sobolevEmbeddingL_ofTestFunctionₗ ENNReal.ofReal_ne_top] at hemb
-  have heq := tendsto_nhds_unique hemb hfseq
-  rw [heq]
-  simpa only [Opens.coe_top, Measure.restrict_univ] using hmem.coeFn_toLp
+  have hgradient : Tendsto (fun n ↦ eLpNorm (∇ (φ n : E → ℝ) - ∇ (bubble t b)) 2 μ)
+      atTop (𝓝 0) := by
+    -- The Riesz isometry preserves the norm of the difference, not just individual norms.
+    convert hderiv using 1
+    funext n
+    apply eLpNorm_congr_norm_ae
+      (((continuous_gradient_testFunction (φ n)).sub hcontGrad).aestronglyMeasurable)
+      (((φ n).contDiff.continuous_fderiv (by simp)).sub
+        ((contDiff_bubble ht.ne' b : ContDiff ℝ ∞ _).continuous_fderiv (by simp))
+          |>.aestronglyMeasurable)
+    exact Eventually.of_forall fun x ↦ by
+      simp only [gradient, ← map_sub, LinearIsometryEquiv.norm_map, Pi.sub_apply]
+  have hmem := memLp_bubble μ hn ht b
+  simpa only [Opens.coe_top, Measure.restrict_univ] using
+    (D1p0.exists_sobolevEmbeddingL_ae_eq_of_tendsto (mu := μ) (Omega := (⊤ : Opens E))
+      ENNReal.ofReal_ne_top (inv_ofReal_criticalExponent_add_inv_eq_inv hn)
+      (by simpa only [Opens.coe_top, Measure.restrict_univ] using hmem)
+      (by simpa only [Opens.coe_top, Measure.restrict_univ] using hgrad) φ
+      (by simpa only [Opens.coe_top, Measure.restrict_univ] using hfun)
+      (by simpa only [Opens.coe_top, Measure.restrict_univ] using hgradient))
 
 end TauCeti.Yamabe
