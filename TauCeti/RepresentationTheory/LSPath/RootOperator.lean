@@ -132,6 +132,14 @@ theorem listMinHeight_map {W : Type*} [AddCommMonoid W] [Module 𝕜 W]
 theorem listMinHeight_nonpos (l : List V) : listMinHeight f l ≤ 0 := by
   cases l <;> simp
 
+/-- A path whose segments all have nonnegative height never goes below its starting height. -/
+theorem listMinHeight_eq_zero_of_forall_nonneg (h : ∀ v ∈ l, 0 ≤ f v) : listMinHeight f l = 0 := by
+  induction l with
+  | nil => rfl
+  | cons v l ih =>
+    rw [listMinHeight_cons, ih fun w hw ↦ h w (List.mem_cons_of_mem v hw), add_zero,
+      min_eq_left (h v List.mem_cons_self)]
+
 /-- The minimal height is the height of some vertex. -/
 theorem exists_listMinHeight_eq (l : List V) : ∃ n, listMinHeight f l = f (l.take n).sum := by
   induction l with
