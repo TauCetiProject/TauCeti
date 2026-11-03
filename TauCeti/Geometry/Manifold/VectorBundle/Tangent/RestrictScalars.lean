@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.MFDeriv.RestrictScalars
-public import TauCeti.Geometry.Manifold.IsManifold.RestrictScalars
 
 /-!
 # Restriction of scalars of tangent bundles
