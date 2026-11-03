@@ -108,21 +108,21 @@ namespace Mean
 
 /-- The restriction `f ↦ M [f]` of a positive linear functional `M` on `L∞(G, μ)` with
 `M 1 = 1` to a mean on `UCB G`, where `[f]` is the almost-everywhere class of `f`. -/
-def ofLpTop (M : Lp ℝ ∞ μ →ₚ[ℝ] ℝ) (hM : M linftyOne = 1) : Mean G :=
+def ofLpTop (M : Lp ℝ ∞ μ →ₚ[ℝ] ℝ) (hM : M 1 = 1) : Mean G :=
   mk₀ (M.toLinearMap ∘ₗ (toLpTop μ ℝ).toLinearMap ∘ₗ (ucb G).val.toLinearMap)
     (fun f hf => M.map_nonneg (by simpa using toLpTop_mono μ (f := 0) hf))
     (by simpa using hM)
 
 /-- The restricted mean evaluates `M` on the class of `f` in `L∞`. -/
 @[simp]
-theorem ofLpTop_apply (M : Lp ℝ ∞ μ →ₚ[ℝ] ℝ) (hM : M linftyOne = 1) (f : UCB G) :
+theorem ofLpTop_apply (M : Lp ℝ ∞ μ →ₚ[ℝ] ℝ) (hM : M 1 = 1) (f : UCB G) :
     ofLpTop M hM f = M (toLpTop μ ℝ (f : G →ᵇ ℝ)) :=
   mk₀_apply ..
 
 /-- If a normalized positive functional on `L∞(G, μ)` is invariant under left translation, so is
 its restriction to `UCB G`. -/
 theorem isLeftInvariant_ofLpTop [μ.IsMulLeftInvariant] {M : Lp ℝ ∞ μ →ₚ[ℝ] ℝ}
-    (hM : M linftyOne = 1) (h : ∀ g φ, M (Lp.leftTranslation μ ∞ ℝ g φ) = M φ) :
+    (hM : M 1 = 1) (h : ∀ g φ, M (Lp.leftTranslation μ ∞ ℝ g φ) = M φ) :
     (Mean.ofLpTop M hM).IsLeftInvariant := by
   refine isLeftInvariant_iff.2 fun g f => ?_
   rw [ofLpTop_apply, ofLpTop_apply, UCB.coe_leftTranslation, ← Lp.leftTranslation_toLpTop, h]
@@ -156,7 +156,7 @@ end Mean
 /-- A topological group is amenable if, for some left-invariant measure `μ` on its Borel sets,
 `L∞(G, μ)` carries a positive linear functional `M` with `M 1 = 1` which is invariant under left
 translation. -/
-theorem Amenable.of_lpTop [μ.IsMulLeftInvariant] (M : Lp ℝ ∞ μ →ₚ[ℝ] ℝ) (hM : M linftyOne = 1)
+theorem Amenable.of_lpTop [μ.IsMulLeftInvariant] (M : Lp ℝ ∞ μ →ₚ[ℝ] ℝ) (hM : M 1 = 1)
     (h : ∀ g φ, M (Lp.leftTranslation μ ∞ ℝ g φ) = M φ) : Amenable G :=
   (amenable_iff G).2 ⟨Mean.ofLpTop M hM, Mean.isLeftInvariant_ofLpTop hM h⟩
 
@@ -256,9 +256,9 @@ variable {G : Type*} [Group G] [MeasurableSpace G] [MeasurableMul G] {μ ν : Me
 positive linear functional `M` with `M 1 = 1`, then so does `L∞(G, ν)`: send a `ν`-class to its
 `μ`-class and apply `M`. -/
 theorem exists_lpTop_invariant_of_absolutelyContinuous (h : μ ≪ ν)
-    (hμ : ∃ M : Lp ℝ ∞ μ →ₚ[ℝ] ℝ, M linftyOne = 1 ∧
+    (hμ : ∃ M : Lp ℝ ∞ μ →ₚ[ℝ] ℝ, M 1 = 1 ∧
       ∀ g φ, M (Lp.leftTranslation μ ∞ ℝ g φ) = M φ) :
-    ∃ M : Lp ℝ ∞ ν →ₚ[ℝ] ℝ, M linftyOne = 1 ∧ ∀ g φ, M (Lp.leftTranslation ν ∞ ℝ g φ) = M φ := by
+    ∃ M : Lp ℝ ∞ ν →ₚ[ℝ] ℝ, M 1 = 1 ∧ ∀ g φ, M (Lp.leftTranslation ν ∞ ℝ g φ) = M φ := by
   obtain ⟨M, hM₁, hM⟩ := hμ
   let T : Lp ℝ ∞ ν →L[ℝ] Lp ℝ ∞ μ := Lp.linftyOfAbsolutelyContinuous ℝ h
   let M' : Lp ℝ ∞ ν →ₚ[ℝ] ℝ :=
@@ -267,15 +267,15 @@ theorem exists_lpTop_invariant_of_absolutelyContinuous (h : μ ≪ ν)
   -- `M'` is built as a structure, so its evaluation is `M ∘ T` by definition.
   have hM' (φ : Lp ℝ ∞ ν) : M' φ = M (T φ) := rfl
   refine ⟨M', ?_, fun g φ => ?_⟩
-  · rw [hM', Lp.linftyOfAbsolutelyContinuous_linftyOne, hM₁]
+  · rw [hM', Lp.linftyOfAbsolutelyContinuous_one, hM₁]
   · rw [hM', hM', ← Lp.leftTranslation_linftyOfAbsolutelyContinuous, hM]
 
 /-- For left-invariant measures `μ` and `ν` on a group with the same null sets, `L∞(G, μ)` carries
 a left-invariant positive linear functional taking the value `1` at `1` if and only if
 `L∞(G, ν)` does. -/
 theorem exists_lpTop_invariant_congr (hμν : μ ≪ ν) (hνμ : ν ≪ μ) :
-    (∃ M : Lp ℝ ∞ μ →ₚ[ℝ] ℝ, M linftyOne = 1 ∧ ∀ g φ, M (Lp.leftTranslation μ ∞ ℝ g φ) = M φ) ↔
-      ∃ M : Lp ℝ ∞ ν →ₚ[ℝ] ℝ, M linftyOne = 1 ∧
+    (∃ M : Lp ℝ ∞ μ →ₚ[ℝ] ℝ, M 1 = 1 ∧ ∀ g φ, M (Lp.leftTranslation μ ∞ ℝ g φ) = M φ) ↔
+      ∃ M : Lp ℝ ∞ ν →ₚ[ℝ] ℝ, M 1 = 1 ∧
         ∀ g φ, M (Lp.leftTranslation ν ∞ ℝ g φ) = M φ :=
   ⟨exists_lpTop_invariant_of_absolutelyContinuous hμν,
     exists_lpTop_invariant_of_absolutelyContinuous hνμ⟩
@@ -283,9 +283,9 @@ theorem exists_lpTop_invariant_congr (hμν : μ ≪ ν) (hνμ : ν ≪ μ) :
 /-- The existence of a left-invariant positive linear functional on `L∞(G, μ)` taking the value
 `1` at `1` is unchanged when `μ` is multiplied by a nonzero constant. -/
 theorem exists_lpTop_invariant_smul_iff {c : ℝ≥0∞} (hc : c ≠ 0) :
-    (∃ M : Lp ℝ ∞ (c • μ) →ₚ[ℝ] ℝ, M linftyOne = 1 ∧
+    (∃ M : Lp ℝ ∞ (c • μ) →ₚ[ℝ] ℝ, M 1 = 1 ∧
       ∀ g φ, M (Lp.leftTranslation (c • μ) ∞ ℝ g φ) = M φ) ↔
-      ∃ M : Lp ℝ ∞ μ →ₚ[ℝ] ℝ, M linftyOne = 1 ∧
+      ∃ M : Lp ℝ ∞ μ →ₚ[ℝ] ℝ, M 1 = 1 ∧
         ∀ g φ, M (Lp.leftTranslation μ ∞ ℝ g φ) = M φ :=
   exists_lpTop_invariant_congr Measure.smul_absolutelyContinuous
     (Measure.absolutelyContinuous_smul hc)
@@ -297,8 +297,8 @@ Haar `L∞` taking the value `1` at `1` does not depend on the choice of regular
 theorem exists_lpTop_invariant_iff_of_regular {G : Type*} [Group G] [TopologicalSpace G]
     [IsTopologicalGroup G] [LocallyCompactSpace G] [MeasurableSpace G] [BorelSpace G]
     (μ ν : Measure G) [μ.IsHaarMeasure] [ν.IsHaarMeasure] [μ.Regular] [ν.Regular] :
-    (∃ M : Lp ℝ ∞ μ →ₚ[ℝ] ℝ, M linftyOne = 1 ∧ ∀ g φ, M (Lp.leftTranslation μ ∞ ℝ g φ) = M φ) ↔
-      ∃ M : Lp ℝ ∞ ν →ₚ[ℝ] ℝ, M linftyOne = 1 ∧
+    (∃ M : Lp ℝ ∞ μ →ₚ[ℝ] ℝ, M 1 = 1 ∧ ∀ g φ, M (Lp.leftTranslation μ ∞ ℝ g φ) = M φ) ↔
+      ∃ M : Lp ℝ ∞ ν →ₚ[ℝ] ℝ, M 1 = 1 ∧
         ∀ g φ, M (Lp.leftTranslation ν ∞ ℝ g φ) = M φ := by
   refine exists_lpTop_invariant_congr ?_ ?_
   · rw [Measure.isMulLeftInvariant_eq_smul_of_regular μ ν]

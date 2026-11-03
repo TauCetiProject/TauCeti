@@ -23,7 +23,7 @@ is the corresponding continuous linear map `(α →ᵇ E) →L[𝕜] Lp E ∞ μ
 When `μ` is positive on nonempty open sets, the essential supremum of a continuous function is
 its supremum, so `toLpTop` preserves norms and is injective. For real-valued functions it is
 monotone, an order embedding when `μ` is positive on open sets, and sends the constant
-function one to the constant class `TauCeti.linftyOne`. This is the comparison between
+function one to the constant class `1`. This is the comparison between
 supremum and essential-supremum norms used, for instance, to compare means on bounded
 uniformly continuous functions on a locally compact group with means on Haar `L∞`.
 
@@ -211,8 +211,8 @@ theorem toLpTopLinearIsometryEquiv_symm_le_symm_iff [DiscreteTopology α] [μ.Is
 
 /-- The constant function one goes to the constant class one in `L∞`. -/
 @[simp]
-theorem toLpTop_one : toLpTop μ ℝ (1 : α →ᵇ ℝ) = TauCeti.linftyOne :=
-  Lp.ext ((coeFn_toLpTop μ 1).trans TauCeti.coeFn_linftyOne.symm)
+theorem toLpTop_one : toLpTop μ ℝ (1 : α →ᵇ ℝ) = 1 :=
+  Lp.ext ((coeFn_toLpTop μ 1).trans Lp.coeFn_one.symm)
 
 /-- On a discrete space, if `μ` charges every point, the constant class one in `L∞` is
 represented by the constant function one. -/
