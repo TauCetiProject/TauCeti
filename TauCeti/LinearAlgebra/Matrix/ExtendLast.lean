@@ -48,6 +48,6 @@ theorem extendLast_apply (X : Matrix (Fin m → ι) (Fin m → ι) R)
     (s t : Fin (m + 1) → ι) :
     extendLast X s t = if s (Fin.last m) = t (Fin.last m) then X (Fin.init s) (Fin.init t)
       else 0 := by
-  simp [extendLast_eq, one_apply]
+  simp [extendLast_eq, Matrix.one_apply]
 
 end Matrix

@@ -241,7 +241,7 @@ theorem tateCohomologyIsoEven_ofNat_succ (hg : ∀ x, x ∈ Subgroup.zpowers g) 
     let _ : CommGroup G := IsCyclic.commGroup
     tateCohomologyIsoEven M g hg ((k : ℤ) + 1) hk =
       (TateCohomology.isoGroupCohomology (k + 1)).app M ≪≫
-        groupCohomologyIsoEven M g hg (k + 1) ((Int.even_coe_nat (k + 1)).1 hk) := by
+        groupCohomologyIsoEven M g hg (k + 1) ((Int.even_natCast (k + 1)).1 hk) := by
   rfl
 
 /-- In a degree at most `-2`, the all-degree even comparison is the composite through ordinary
@@ -268,7 +268,7 @@ theorem tateCohomologyIsoOdd_ofNat (hg : ∀ x, x ∈ Subgroup.zpowers g) (k : �
       ⟨g, (Subgroup.zpowers g).eq_top_iff'.mpr hg⟩
     let _ : CommGroup G := IsCyclic.commGroup
     tateCohomologyIsoOdd M g hg (k : ℤ) hk =
-      (let hk' : Odd k := (Int.odd_coe_nat k).1 hk
+      (let hk' : Odd k := (Int.odd_natCast k).1 hk
        let _ : NeZero k := ⟨hk'.pos.ne'⟩
        (TateCohomology.isoGroupCohomology k).app M ≪≫
          groupCohomologyIsoOdd M g hg k hk') := by
@@ -390,8 +390,9 @@ noncomputable def periodicFunctorObjIso (M : Rep R G) :
     (periodicFunctor R g).obj M ≅ moduleCatChainComplex M g :=
   HomologicalComplex.Hom.isoOfComponents (fun _ ↦ Iso.refl _) (by
     rintro _ j ⟨rfl⟩
-    simp only [periodicFunctor, Functor.comp_obj, Functor.mapHomologicalComplex_obj_X,
-      Functor.mapHomologicalComplex_obj_d, Iso.refl_hom]
+    simp only [periodicFunctor, CategoryTheory.Functor.comp_obj,
+      CategoryTheory.Functor.mapHomologicalComplex_obj_X,
+      CategoryTheory.Functor.mapHomologicalComplex_obj_d, Iso.refl_hom]
     by_cases hj : Even (j + 1) <;>
       simp only [chainComplexFunctor, forget₂_moduleCat_obj, moduleCatChainComplex,
         HomologicalComplex.alternatingConst_d, ComplexShape.down_Rel, ↓reduceIte, hj] <;>

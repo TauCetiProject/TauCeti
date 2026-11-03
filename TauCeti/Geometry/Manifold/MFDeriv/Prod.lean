@@ -29,6 +29,7 @@ fields on a product manifold.
   vector-valued functions, applied to a tangent vector.
 * `TauCeti.mvfderiv_comp_fst_mul_comp_snd_apply`: the product rule for a function of the first
   factor times a function of the second factor.
+* `TauCeti.mvfderiv_curry_right`: the derivative of a slice with fixed first coordinate.
 * `HasDerivAt.mvfderiv_comp_fst_apply`: the derivative of a function of the scalar coordinate of
   `𝕜 × N`.
 * `MDifferentiableAt.hasLeftInverse_mfderiv_fst_prod_iff`: the differential of a
@@ -122,6 +123,22 @@ theorem mvfderiv_comp_fst_mul_comp_snd_apply {g : M → 𝕜} {h : N → 𝕜} {
     mvfderiv_comp_fst_apply, mvfderiv_comp_snd_apply, Function.comp_apply] at hv
   -- The product `(g ∘ Prod.fst) * (h ∘ Prod.snd)` is the function `(x, y) ↦ g x * h y`.
   exact hv.trans (by ring)
+
+/-- The derivative of a slice with fixed first coordinate is the product derivative composed
+with the inclusion of the second tangent factor. -/
+theorem mvfderiv_curry_right {f : M × N → F} (p : M) (x : N)
+    (hf : MDifferentiableAt (I.prod J) 𝓘(𝕜, F) f (p, x)) :
+    mvfderiv J (Function.curry f p) x =
+      (mvfderiv (I.prod J) f (p, x)).comp
+        (ContinuousLinearMap.inr 𝕜 (TangentSpace I p) (TangentSpace J x)) := by
+  have hd := mvfderiv_comp_of_eq hf
+    (mdifferentiableAt_const.prodMk mdifferentiableAt_id) (rfl : (p, x) = (p, x))
+  -- Remove the identity in the fixed-parameter inclusion `y ↦ (p, id y)`.
+  dsimp only [id_eq] at hd
+  rw [mfderiv_prod_right] at hd
+  -- The product tangent synonym and the product of tangent synonyms have the same vectors;
+  -- their `inr` maps agree pointwise. Composing with `y ↦ (p, y)` is currying at `p`.
+  exact hd.trans (by ext v; rfl)
 
 /-- The derivative of a function of the scalar coordinate of `𝕜 × N`, with derivative `g'` at
 `p.1`, sends a tangent vector `(s, v)` at `p` to `s • g'`. -/
