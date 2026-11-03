@@ -41,16 +41,16 @@ factors, one for each part of the entry.
 
 When the rows have `|t| ≤ T₁` and the columns have `|sⱼ| ≤ Sⱼ`, the exponents `Nⱼ = T₁ Sⱼ`
 serve for all entries at once, so a single element of `A` clears the denominators of every entry
-of the matrix (`TauCeti.mul_waldschmidtInterpolationMatrix_mem`).
+of the matrix (`Subring.mul_waldschmidtInterpolationMatrix_mem`).
 
 ## Main results
 
-* `TauCeti.mul_waldschmidtOperatorEntry_mem`: `c d ^ T e γ_P ∈ A`, for denominators `c` of the
+* `Subring.mul_waldschmidtOperatorEntry_mem`: `c d ^ T e γ_P ∈ A`, for denominators `c` of the
   operator, `d` of the coefficients `βᵢ` and `e` of the exponential factor.
-* `TauCeti.mul_waldschmidtEntry_mem`: for the iterated derivatives, `d ^ T e γ ∈ A`.
-* `TauCeti.pow_mul_waldschmidtOperatorEntry_multichoose_mem`: for the operators `Δ(∂/∂z₀; k) ^ l`
+* `Subring.mul_waldschmidtEntry_mem`: for the iterated derivatives, `d ^ T e γ ∈ A`.
+* `Subring.pow_mul_waldschmidtOperatorEntry_multichoose_mem`: for the operators `Δ(∂/∂z₀; k) ^ l`
   built from Baker's binomial polynomial, `L ^ T d ^ T e γ ∈ A`.
-* `TauCeti.mul_waldschmidtInterpolationMatrix_mem`: a common denominator of all the entries of
+* `Subring.mul_waldschmidtInterpolationMatrix_mem`: a common denominator of all the entries of
   the interpolation matrix.
 
 ## References
@@ -63,16 +63,16 @@ of the matrix (`TauCeti.mul_waldschmidtInterpolationMatrix_mem`).
 
 public section
 
-open Finset MvPolynomial
+open Finset MvPolynomial TauCeti
 
-namespace TauCeti
+namespace Subring
 
-variable {n : ℕ} {K : Type*} [Field K] (A : Subring K)
+variable {n : ℕ}
 
 /-- A common denominator `d` of the coefficients `β₀, …, β_{m-1}` is a common denominator of the
 coordinates `sₘ β₀` and `sⱼ + sₘ βⱼ` of every grid point `s · y`. -/
-theorem mul_waldschmidtPoint_mem {b : Fin (n + 1) → K} {d : K} (hd : d ∈ A)
-    (hb : ∀ i, d * b i ∈ A) (s : Fin (n + 1) → ℤ) (i : Fin (n + 1)) :
+theorem mul_waldschmidtPoint_mem {R : Type*} [CommRing R] (A : Subring R) {b : Fin (n + 1) → R}
+    {d : R} (hd : d ∈ A) (hb : ∀ i, d * b i ∈ A) (s : Fin (n + 1) → ℤ) (i : Fin (n + 1)) :
     d * waldschmidtPoint b s i ∈ A := by
   cases i using Fin.cases with
   | zero =>
@@ -81,6 +81,8 @@ theorem mul_waldschmidtPoint_mem {b : Fin (n + 1) → K} {d : K} (hd : d ∈ A)
   | succ k =>
     rw [waldschmidtPoint_apply_succ, mul_add, mul_comm d, mul_left_comm]
     exact add_mem (mul_mem (intCast_mem A _) hd) (mul_mem (intCast_mem A _) (hb k.succ))
+
+variable {K : Type*} [Field K] (A : Subring K)
 
 /-- **Denominators of the operator entries.** Let `F` have coefficients in the subring `A` and
 total degree at most `T`, let `d ∈ A` with `d βᵢ ∈ A` for all `i`, let `c` clear the
@@ -107,7 +109,7 @@ theorem mul_waldschmidtOperatorEntry_mem {α b : Fin (n + 1) → K} {t : ℤ} {s
 
 /-- **Denominators of the derivative entries.** For the iterated derivatives `∂^σ/∂z₀^σ`, the
 Hasse derivatives `(σ choose k) t^(σ - k)` of `X^σ` at `t` are integers, so `d ^ T e γ ∈ A`
-under the hypotheses of `TauCeti.mul_waldschmidtOperatorEntry_mem` on `F`, `d` and `e`. -/
+under the hypotheses of `Subring.mul_waldschmidtOperatorEntry_mem` on `F`, `d` and `e`. -/
 theorem mul_waldschmidtEntry_mem {α b : Fin (n + 1) → K} {t : ℤ} {s : Fin (n + 1) → ℤ}
     {F : MvPolynomial (Fin (n + 1)) K} {T : ℕ} {d e : K} (hF : ∀ m, F.coeff m ∈ A)
     (hFT : F.totalDegree ≤ T) (hd : d ∈ A) (hb : ∀ i, d * b i ∈ A)
@@ -123,7 +125,7 @@ theorem mul_waldschmidtEntry_mem {α b : Fin (n + 1) → K} {t : ℤ} {s : Fin (
 /-- **Denominators of Baker's operator entries.** Let `L` be an integer divisible by each of
 `1, …, k`. For the operator `Δ(∂/∂z₀; k) ^ l`, the `l`-th power of Baker's binomial polynomial
 `Δ(X; k) = (X + 1) ⋯ (X + k) / k!`, the number `L ^ T` clears the denominators of the operator,
-so `L ^ T d ^ T e γ ∈ A` under the hypotheses of `TauCeti.mul_waldschmidtOperatorEntry_mem` on
+so `L ^ T d ^ T e γ ∈ A` under the hypotheses of `Subring.mul_waldschmidtOperatorEntry_mem` on
 `F`, `d` and `e`. -/
 theorem pow_mul_waldschmidtOperatorEntry_multichoose_mem [CharZero K] {α b : Fin (n + 1) → K}
     {t : ℤ} {s : Fin (n + 1) → ℤ} {F : MvPolynomial (Fin (n + 1)) K} {T : ℕ} {d e : K}
@@ -164,4 +166,4 @@ theorem mul_waldschmidtInterpolationMatrix_mem {ι κ : Type*} {α a b : Fin (n 
   rw [Int.natAbs_mul]
   exact Nat.mul_le_mul (ht r) (hs c j)
 
-end TauCeti
+end Subring
