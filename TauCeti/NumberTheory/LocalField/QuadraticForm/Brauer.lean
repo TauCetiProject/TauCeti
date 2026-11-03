@@ -13,12 +13,15 @@ public import TauCeti.NumberTheory.LocalField.Quaternion.Subgroup
 Applying the canonical sign isomorphism on the quaternion subgroup of the Brauer group to the
 Brauer-valued Hasse invariant gives the local Hasse invariant, since both invariants are products
 over pairs of diagonal coefficients. This comparison uses the local classification of quaternion
-algebras and requires no cohomological invariant map.
+algebras and requires no cohomological invariant map. In particular, it computes the local Hasse
+sign of a pure quaternion norm form from its quaternion symbol.
 
 ## Main results
 
 * `TauCeti.RegularFormClass.quaternionSubgroupSignEquiv_apply_hasseInvariant`: the comparison of
   Brauer-valued and sign-valued Hasse invariants.
+* `TauCeti.RegularFormClass.localHasse_mk_neg_neg_mul`: the sign-valued Hasse invariant of
+  `⟨-a, -b, ab⟩`.
 
 ## References
 
@@ -55,6 +58,23 @@ theorem quaternionSubgroupSignEquiv_apply_hasseInvariant (q : RegularFormClass K
       simp [f]
     rw [hprod, map_prod, localHasse_mk]
     simp only [map_prod, f, BrauerGroup.quaternionSubgroupSignEquiv_apply_quaternionClass]
+
+/-- The pure quaternion norm form `⟨-a, -b, ab⟩` has local Hasse sign
+`(a,b) · (-1,-1)`. -/
+@[simp 1100]
+theorem localHasse_mk_neg_neg_mul (a b : Kˣ) :
+    localHasse (Quotient.mk (regularFormSetoid K) ⟨3, ![-a, -b, a * b]⟩) =
+      hilbertSymbol a b * hilbertSymbol (-1 : Kˣ) (-1) := by
+  have h : (⟨hasseInvariant (Quotient.mk (regularFormSetoid K) ⟨3, ![-a, -b, a * b]⟩),
+      hasseInvariant_mem_quaternionSubgroup _⟩ : BrauerGroup.quaternionSubgroup K) =
+      ⟨BrauerGroup.quaternionClass a b, BrauerGroup.quaternionClass_mem_quaternionSubgroup K a b⟩ *
+      ⟨BrauerGroup.quaternionClass (-1) (-1),
+        BrauerGroup.quaternionClass_mem_quaternionSubgroup K (-1) (-1)⟩ := by
+    apply Subtype.ext
+    exact hasseInvariant_mk_neg_neg_mul a b
+  simpa only [map_mul, quaternionSubgroupSignEquiv_apply_hasseInvariant,
+    BrauerGroup.quaternionSubgroupSignEquiv_apply_quaternionClass] using
+    congrArg BrauerGroup.quaternionSubgroupSignEquiv h
 
 end RegularFormClass
 
