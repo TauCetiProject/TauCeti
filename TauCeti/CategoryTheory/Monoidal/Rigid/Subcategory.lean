@@ -25,25 +25,17 @@ satisfy a monoidal property remain dual to one another after imposing that prope
 
 public section
 
-open CategoryTheory MonoidalCategory
-
-namespace TauCeti
-
-universe v u
-
 noncomputable section
 
-namespace ObjectProperty
+namespace CategoryTheory.ObjectProperty
 
-open _root_.CategoryTheory.ObjectProperty
+open MonoidalCategory
 
-variable {C : Type u} [Category.{v} C] [MonoidalCategory C]
-variable {P : ObjectProperty C} [P.IsMonoidal]
+variable {C : Type*} [Category* C] [MonoidalCategory C] {P : ObjectProperty C} [P.IsMonoidal]
 
 /-- An exact pairing between the underlying objects of a full monoidal subcategory is an exact
 pairing in that subcategory, obtained by pulling back along the inclusion `P.ι`. -/
-instance _root_.CategoryTheory.ObjectProperty.exactPairingFullSubcategory
-    (X Y : P.FullSubcategory) [ExactPairing X.obj Y.obj] :
+instance exactPairingFullSubcategory (X Y : P.FullSubcategory) [ExactPairing X.obj Y.obj] :
     ExactPairing X Y :=
   letI : ExactPairing (P.ι.obj X) (P.ι.obj Y) := inferInstanceAs (ExactPairing X.obj Y.obj)
   .ofFullyFaithful P.ι X Y
@@ -51,35 +43,18 @@ instance _root_.CategoryTheory.ObjectProperty.exactPairingFullSubcategory
 /-- The coevaluation of an ambient exact pairing, restricted to a full monoidal subcategory, is
 the ambient coevaluation on underlying objects. -/
 @[simp]
-theorem _root_.CategoryTheory.ObjectProperty.exactPairingFullSubcategory_coevaluation_hom
-    (X Y : P.FullSubcategory) [ExactPairing X.obj Y.obj] :
-    (@ExactPairing.coevaluation P.FullSubcategory _ _ X Y
-      (exactPairingFullSubcategory X Y)).hom = η_ X.obj Y.obj := by
-  -- `ofFullyFaithful` defines this pairing by taking the preimage of the ambient coevaluation.
-  -- After exposing that definition, `map_preimage` cancels the fully faithful lift. The pinned
-  -- subcategory API has no correctly typed simp lemma for the oplax unit `η P.ι`, so its
-  -- identity constraint must be discharged by its stable definitional equality.
-  change P.ι.map (P.ι.preimage (Functor.OplaxMonoidal.η P.ι ≫ η_ X.obj Y.obj ≫
-    Functor.LaxMonoidal.μ P.ι X Y)) = _
-  rw [Functor.map_preimage]
-  simp [show Functor.OplaxMonoidal.η P.ι = 𝟙 _ from rfl]
+theorem exactPairingFullSubcategory_coevaluation_hom (X Y : P.FullSubcategory)
+    [ExactPairing X.obj Y.obj] : (η_ X Y).hom = η_ X.obj Y.obj :=
+  -- By definition of `ExactPairing.ofFullyFaithful`, the coevaluation is the preimage under `P.ι`
+  -- of the ambient one composed with the (identity) monoidal constraints of `P.ι`.
+  (P.ι.map_preimage _).trans (by simp [← Functor.Monoidal.inv_ε])
 
 /-- The evaluation of an ambient exact pairing, restricted to a full monoidal subcategory, is
 the ambient evaluation on underlying objects. -/
 @[simp]
-theorem _root_.CategoryTheory.ObjectProperty.exactPairingFullSubcategory_evaluation_hom
-    (X Y : P.FullSubcategory) [ExactPairing X.obj Y.obj] :
-    (@ExactPairing.evaluation P.FullSubcategory _ _ X Y
-      (exactPairingFullSubcategory X Y)).hom = ε_ X.obj Y.obj := by
-  -- As above, unfolding `ofFullyFaithful` exposes the preimage construction; `map_preimage`
-  -- and the inclusion functor's public constraint simp lemmas then recover the ambient map.
-  change P.ι.map (P.ι.preimage (Functor.OplaxMonoidal.δ P.ι Y X ≫ ε_ X.obj Y.obj ≫
-    Functor.LaxMonoidal.ε P.ι)) = _
-  rw [Functor.map_preimage]
-  simp
+theorem exactPairingFullSubcategory_evaluation_hom (X Y : P.FullSubcategory)
+    [ExactPairing X.obj Y.obj] : (ε_ X Y).hom = ε_ X.obj Y.obj :=
+  -- As above, the evaluation is by definition a preimage under `P.ι`.
+  (P.ι.map_preimage _).trans (by simp)
 
-end ObjectProperty
-
-end
-
-end TauCeti
+end CategoryTheory.ObjectProperty
