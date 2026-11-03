@@ -108,6 +108,38 @@ theorem coeff_khovanovEulerPolynomial_eq_sum (j : ℤ) :
         (-(D.negativeCrossingCount : ℤ)) D.positiveCrossingCount)]
   rfl
 
+/-- The empty diagram has Euler polynomial `1` over every nontrivial commutative ring. -/
+@[simp]
+theorem khovanovEulerPolynomial_empty (h : (empty : OrientedPDCode 0).toPDCode.IsPlanar) :
+    empty.khovanovEulerPolynomial h R = 1 := by
+  classical
+  have hn : empty.negativeCrossingCount = 0 := by
+    have := empty.positiveCrossingCount_add_negativeCrossingCount
+    omega
+  have hp : empty.positiveCrossingCount = 0 := by
+    have := empty.positiveCrossingCount_add_negativeCrossingCount
+    omega
+  ext j
+  rw [coeff_khovanovEulerPolynomial_eq_sum]
+  simp only [hn, hp, Nat.cast_zero, neg_zero, Finset.Icc_self, Finset.sum_singleton,
+    Int.negOnePow_zero, Units.val_one, one_mul]
+  let K := empty.khovanovComplex h R j
+  have e : K.homology 0 ≅ K.X 0 :=
+    K.homologyIsoSc' (-1) 0 1 (by simp) (by simp) ≪≫
+    (ShortComplex.LeftHomologyData.ofZeros (K.sc' (-1) 0 1)
+      ((K.isZero_of_isStrictlyGE (-(empty.negativeCrossingCount : ℤ)) (-1)
+        (by simp [hn])).eq_of_src _ _)
+      ((K.isZero_of_isStrictlyLE empty.positiveCrossingCount 1
+        (by simp [hp])).eq_of_tgt _ _)).homologyIso
+  rw [e.toLinearEquiv.finrank_eq, khovanovComplex_X, Functor.finrank_cubeComplex_X]
+  rw [hn, hp]
+  simp only [Nat.cast_zero, zero_add]
+  rw [Finset.sum_filter, Fintype.sum_subsingleton _ (∅ : Finset (Fin 0))]
+  simp only [Finset.card_empty, Nat.cast_zero, ↓reduceIte]
+  rw [PDCode.resolutionCube_obj, ← Khovanov.coeff_pow_eq_finrank_circleQuantumGrading_piece R,
+    PDCode.card_resolvedCircle]
+  simp [← card_crossinglessComponents, crossinglessComponents_empty]
+
 end Nontrivial
 
 variable [IsNoetherianRing R] [HasRankNullity.{u} R]
@@ -130,11 +162,5 @@ theorem khovanovEulerPolynomial_eq_mul_eval₂_jonesPolynomial
       (T 1 + T (-1)) * eval₂ (Int.castRingHom ℤ[T;T⁻¹]) (-genericUnit ℤ) D.jonesPolynomial := by
   rw [khovanovEulerPolynomial_eq_enhancedStateSum]
   exact D.enhancedStateSum_eq_mul_eval₂_jonesPolynomial h
-
-/-- The empty diagram has Euler polynomial `1`, without using the nonempty Jones formula. -/
-@[simp]
-theorem khovanovEulerPolynomial_empty (h : (empty : OrientedPDCode 0).toPDCode.IsPlanar) :
-    empty.khovanovEulerPolynomial h R = 1 := by
-  rw [khovanovEulerPolynomial_eq_enhancedStateSum, enhancedStateSum_empty]
 
 end TauCeti.OrientedPDCode
