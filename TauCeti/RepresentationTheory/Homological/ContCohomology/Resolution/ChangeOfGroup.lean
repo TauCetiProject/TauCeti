@@ -7,7 +7,7 @@ module
 
 public import TauCeti.RepresentationTheory.Continuous.Restriction
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.Functoriality
-public import TauCeti.RepresentationTheory.Homological.ContCohomology.Resolution.GradedContraction
+public import TauCeti.RepresentationTheory.Homological.ContCohomology.Resolution.Graded.Contraction
 
 /-!
 # Classes of contracted complexes under change of group
