@@ -41,9 +41,10 @@ sufficient for smoothness, not necessary: the equations `x` and `x²` have the s
 
 The atlas is built from ambient slice charts. On the standard affine open `U_i`, where the `i`-th
 homogeneous coordinate is nonzero, `X` is cut out by the chart equations
-`g_i z = (eval z (dehomogenize i (p k)))_k`, whose derivative is surjective at the points of `X`
-because it is the cone Jacobian with one column deleted
-(`TauCeti.surjective_fderiv_eval_dehomogenize_affineChart_iff`). Near such a point `L`, the
+`g_i z = (eval z (dehomogenize i (p k)))_k`. At a point of `X ∩ U_i` the derivative of `g_i` is
+surjective exactly when the cone Jacobian is, because it is the cone Jacobian with one column
+deleted (`TauCeti.surjective_fderiv_eval_dehomogenize_affineChart_iff`), so it is surjective at
+the points of `s ∩ U_i`. Near such a point `L`, the
 complemented-kernel implicit function theorem gives the coordinates `z ↦ (g_i z, P (z - z_L))` of
 `Fin n → ℂ`, where `P` projects onto the kernel `K` of the derivative of `g_i` at `z_L`, the
 chart coordinates of `L`; restricted to the neighbourhood where their derivative stays invertible
