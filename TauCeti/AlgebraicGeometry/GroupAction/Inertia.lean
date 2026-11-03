@@ -5,8 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.AlgebraicGeometry.ResidueField
 public import TauCeti.AlgebraicGeometry.Quotient.Affine
+public import TauCeti.AlgebraicGeometry.ResidueField
 
 /-!
 # Decomposition and inertia groups of a group acting on a scheme
@@ -38,6 +38,8 @@ Galois extensions of rings available for affine Galois covers.
 
 ## Main definitions
 
+* `pointMulAction σ`, `homMulAction σ X`: the actions of `G` on the points of `Y` and, by
+  post-composition, on morphisms `X ⟶ Y`.
 * `decomposition σ y`: the decomposition group of `y`.
 * `inertia σ y`: the inertia group of `y`.
 * `residueAction σ y`: the action of the decomposition group on `κ(y)`.
@@ -59,17 +61,38 @@ universe u v
 
 variable {Y : Scheme.{u}} {G : Type v} [Group G] (σ : G →* Aut Y)
 
-/-- The **decomposition group** of a point `y` of a scheme with an action of `G`: the subgroup
-of elements fixing `y`. -/
-def decomposition (y : Y) : Subgroup G where
-  carrier := {g | (σ g).asIso.hom y = y}
-  mul_mem' {a b} ha hb := by
-    simp_all
-  one_mem' := by simp
-  inv_mem' {a} ha := by
-    simp only [Set.mem_ofPred_eq, map_inv, Aut.inv_asIso, Iso.symm_hom] at ha ⊢
-    conv_lhs => rw [← ha]
-    exact Scheme.hom_inv_apply (σ a).asIso y
+/-- The action of `G` on the points of `Y` through `σ`. It is not an instance, since `σ` is
+data; install it locally to select this action. -/
+@[instance_reducible]
+def pointMulAction : MulAction G Y where
+  smul g y := (σ g).asIso.hom y
+  one_smul y := show (σ 1).asIso.hom y = y by simp
+  mul_smul a b y := show (σ (a * b)).asIso.hom y = (σ a).asIso.hom ((σ b).asIso.hom y) by simp
+
+/-- An element acts on the points of `Y` through its automorphism. -/
+theorem pointMulAction_smul (g : G) (y : Y) :
+    letI := pointMulAction σ
+    g • y = (σ g).asIso.hom y :=
+  (rfl)
+
+/-- The action of `G` on morphisms `X ⟶ Y` by post-composition with `σ`, induced from Mathlib's
+action of `End Y`. It is not an instance, since `σ` is data; install it locally to select this
+action. -/
+@[instance_reducible]
+def homMulAction (X : Scheme.{u}) : MulAction G (X ⟶ Y) :=
+  MulAction.compHom _ (Aut.toEnd.comp σ)
+
+/-- An element acts on morphisms into `Y` by post-composition with its automorphism. -/
+theorem homMulAction_smul {X : Scheme.{u}} (g : G) (f : X ⟶ Y) :
+    letI := homMulAction σ X
+    g • f = f ≫ (σ g).asIso.hom :=
+  (rfl)
+
+/-- The **decomposition group** of a point `y` of a scheme with an action of `G`: the stabilizer
+of `y`. -/
+def decomposition (y : Y) : Subgroup G :=
+  letI := pointMulAction σ
+  MulAction.stabilizer G y
 
 /-- An element lies in the decomposition group of `y` exactly when it fixes `y`. -/
 @[simp]
@@ -80,15 +103,9 @@ theorem mem_decomposition {y : Y} {g : G} :
 /-- The **inertia group** of a point `y` of a scheme with an action of `G`: the subgroup of
 elements fixing the canonical morphism `Spec κ(y) ⟶ Y`, that is, fixing `y` and acting trivially
 on its residue field (`mem_inertia_iff_residueFieldMap`). -/
-def inertia (y : Y) : Subgroup G where
-  carrier := {g | Y.fromSpecResidueField y ≫ (σ g).asIso.hom = Y.fromSpecResidueField y}
-  mul_mem' {a b} ha hb := by
-    simp only [Set.mem_ofPred_eq, map_mul, Aut.mul_asIso, Iso.trans_hom] at ha hb ⊢
-    rw [reassoc_of% hb, ha]
-  one_mem' := by simp
-  inv_mem' {a} ha := by
-    simp only [Set.mem_ofPred_eq, map_inv, Aut.inv_asIso, Iso.symm_hom] at ha ⊢
-    rw [Iso.comp_inv_eq, ha]
+noncomputable def inertia (y : Y) : Subgroup G :=
+  letI := homMulAction σ (Spec (Y.residueField y))
+  MulAction.stabilizer G (Y.fromSpecResidueField y)
 
 /-- An element lies in the inertia group of `y` exactly when it fixes the canonical morphism
 `Spec κ(y) ⟶ Y`. -/
@@ -143,17 +160,9 @@ theorem comp_eq_self_iff_mem_inertia {K : Type u} [Field K] (f : Spec (.of K) �
 
 /-- Moving a point by `g` conjugates its decomposition group by `g`. -/
 theorem decomposition_apply_eq_map_conj (g : G) (y : Y) :
-    decomposition σ ((σ g).asIso.hom y) = (decomposition σ y).map (MulAut.conj g).toMonoidHom := by
-  ext h
-  rw [Subgroup.mem_map_equiv, MulAut.conj_symm_apply, mem_decomposition, mem_decomposition]
-  simp only [map_mul, map_inv, Aut.mul_asIso, Aut.inv_asIso, Iso.trans_hom, Iso.symm_hom,
-    Scheme.Hom.comp_apply]
-  constructor
-  · intro h'
-    rw [h', Scheme.hom_inv_apply]
-  · intro h'
-    conv_rhs => rw [← h']
-    rw [Scheme.inv_hom_apply]
+    decomposition σ ((σ g).asIso.hom y) = (decomposition σ y).map (MulAut.conj g).toMonoidHom :=
+  letI := pointMulAction σ
+  MulAction.stabilizer_smul_eq_stabilizer_map_conj g y
 
 /-- Moving a point by `g` conjugates its inertia group by `g`. -/
 theorem inertia_apply_eq_map_conj (g : G) (y : Y) :
@@ -164,14 +173,6 @@ theorem inertia_apply_eq_map_conj (g : G) (y : Y) :
     Iso.symm_hom, ← Category.assoc, ← Category.assoc, Iso.comp_inv_eq,
     ← Scheme.Hom.SpecMap_residueFieldMap_fromSpecResidueField (σ g).asIso.hom y, Category.assoc,
     cancel_epi]
-
-/-- Two endomorphisms of `κ(y)` agree once their spectra agree after composition with the
-canonical morphism `Spec κ(y) ⟶ Y`. -/
-private lemma eq_of_SpecMap_comp_fromSpecResidueField {y : Y}
-    {a b : Y.residueField y ⟶ Y.residueField y}
-    (h : Spec.map a ≫ Y.fromSpecResidueField y = Spec.map b ≫ Y.fromSpecResidueField y) :
-    a = b :=
-  Spec.map_injective ((cancel_mono _).mp h)
 
 /-- The residue field automorphism underlying `residueAction`. -/
 private noncomputable def residueIso {y : Y} {g : G} (hg : g ∈ decomposition σ y) :
@@ -195,11 +196,11 @@ noncomputable def residueAction (y : Y) : decomposition σ y →* Aut (Y.residue
   toFun g := .of (residueIso σ g.2)
   map_one' := by
     ext1
-    refine Iso.ext (eq_of_SpecMap_comp_fromSpecResidueField ?_)
+    refine Iso.ext (Scheme.eq_of_SpecMap_comp_fromSpecResidueField ?_)
     simp [SpecMap_residueIso_fromSpecResidueField]
   map_mul' g h := by
     ext1
-    refine Iso.ext (eq_of_SpecMap_comp_fromSpecResidueField ?_)
+    refine Iso.ext (Scheme.eq_of_SpecMap_comp_fromSpecResidueField ?_)
     simp [SpecMap_residueIso_fromSpecResidueField]
 
 /-- The automorphism of `κ(y)` induced by `g` is the residue field map of `g⁻¹`: on spectra, it
@@ -218,8 +219,8 @@ theorem ker_residueAction (y : Y) :
   rw [MonoidHom.mem_ker, Subgroup.mem_subgroupOf, ← inv_mem_iff, mem_inertia,
     ← SpecMap_residueAction_fromSpecResidueField, Aut.ext_iff, Aut.one_asIso]
   refine ⟨fun h ↦ by rw [h, Iso.refl_hom, Spec.map_id, Category.id_comp], fun h ↦ ?_⟩
-  exact Iso.ext (eq_of_SpecMap_comp_fromSpecResidueField (by rw [h, Iso.refl_hom, Spec.map_id,
-    Category.id_comp]))
+  exact Iso.ext (Scheme.eq_of_SpecMap_comp_fromSpecResidueField
+    (by rw [h, Iso.refl_hom, Spec.map_id, Category.id_comp]))
 
 /-- The inertia group is normal in the decomposition group. -/
 instance normal_inertia_subgroupOf (y : Y) :

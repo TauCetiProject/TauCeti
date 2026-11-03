@@ -29,6 +29,8 @@ conditions are checked after base change to an algebraically closed field.
   field at `f x`, then it is invertible in the residue field at `x`, for any morphism `f`.
 * `AlgebraicGeometry.Spec.natCast_residueField_ne_zero`: if `N` is invertible in a field `K`, then
   it is invertible in the residue field of `Spec K`.
+* `AlgebraicGeometry.Scheme.eq_of_SpecMap_comp_fromSpecResidueField`: maps out of `κ(x)` are
+  determined by their spectra composed with `Spec κ(x) ⟶ X`, since this morphism is a monomorphism.
 * `RingHom.isIso_SpecMap_residueFieldMap_iff`: for a ring map `φ : R →+* S` and a prime
   `x` of `S`, the residue field map of `Spec S ⟶ Spec R` at `x` is an isomorphism iff the map of
   residue fields `κ(φ⁻¹ x) → κ(x)` is bijective. This translates conditions on residue fields
@@ -85,6 +87,14 @@ theorem Scheme.fromSpecAlgebraicClosure_apply (X : Scheme.{u}) (x : X)
 theorem Scheme.range_fromSpecAlgebraicClosure (X : Scheme.{u}) (x : X) :
     Set.range (X.fromSpecAlgebraicClosure x) = {x} :=
   Set.range_eq_singleton (X.fromSpecAlgebraicClosure_apply x)
+
+/-- Two ring maps out of the residue field `κ(x)` agree once their spectra agree after
+composition with the canonical morphism `Spec κ(x) ⟶ X`. -/
+theorem Scheme.eq_of_SpecMap_comp_fromSpecResidueField {X : Scheme.{u}} {x : X}
+    {R : CommRingCat.{u}} {a b : X.residueField x ⟶ R}
+    (h : Spec.map a ≫ X.fromSpecResidueField x = Spec.map b ≫ X.fromSpecResidueField x) :
+    a = b :=
+  Spec.map_injective ((cancel_mono _).mp h)
 
 end AlgebraicGeometry
 
