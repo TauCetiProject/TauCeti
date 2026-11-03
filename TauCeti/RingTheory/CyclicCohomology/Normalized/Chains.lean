@@ -267,10 +267,7 @@ theorem b_tensor_cons_one {e : A} (he : IsIdempotentElem e) (k : ℕ) :
         tensor R A (2 * k + 1) (Fin.cons 1 (fun _ ↦ e)) := by
   have hfirst : hochschildFace (0 : Fin (2 * k + 3)) (Fin.cons 1 (fun _ ↦ e)) =
       fun _ ↦ e := by
-    rw [← Fin.castSucc_zero, hochschildFace_castSucc, Fin.castSucc_zero,
-      Fin.contractNth_zero_cons]
-    ext i
-    refine Fin.cases ?_ (fun j ↦ ?_) i <;> simp [Fin.tail]
+    exact hochschildFace_zero_cons_one _
   have hlast : hochschildFace (Fin.last (2 * k + 2)) (Fin.cons 1 (fun _ ↦ e)) =
       fun _ ↦ e := by
     rw [hochschildFace_last]
@@ -279,10 +276,7 @@ theorem b_tensor_cons_one {e : A} (he : IsIdempotentElem e) (k : ℕ) :
   have hmiddle (i : Fin (2 * k + 1)) :
       hochschildFace i.succ.castSucc (Fin.cons 1 (fun _ ↦ e)) =
         Fin.cons 1 (fun _ ↦ e) := by
-    rw [hochschildFace_castSucc, Fin.castSucc_succ, Fin.contractNth_succ_cons]
-    congr 1
-    funext j
-    simp [Fin.contractNth, he.eq]
+    rw [hochschildFace_succ_castSucc_cons, hochschildFace_const_of_isIdempotentElem he]
   rw [b_tensor, Fin.sum_univ_castSucc, Fin.sum_univ_succ]
   simp only [Fin.val_castSucc, Fin.val_succ, Fin.castSucc_zero, hmiddle, hfirst, hlast,
     Fin.val_zero, pow_zero, one_smul, Fin.val_last]
