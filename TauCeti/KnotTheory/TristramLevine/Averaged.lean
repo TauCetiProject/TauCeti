@@ -139,7 +139,7 @@ theorem averagedTristramLevineSignature_eq_of_eventually {V : Matrix ι ι ℝ} 
     leftLim_eq_of_tendsto (tendsto_const_nhds.congr' (ha.mono fun _ h => h.symm)),
     rightLim_eq_of_tendsto (tendsto_const_nhds.congr' (hb.mono fun _ h => h.symm))]
 
-/-- The zero matrix, the Seifert matrix of a disc, has averaged signature zero. -/
+/-- The zero matrix has averaged signature zero at every parameter. -/
 @[simp]
 theorem averagedTristramLevineSignature_zero_matrix (ω : Circle) :
     averagedTristramLevineSignature (0 : Matrix ι ι ℝ) ω = 0 := by
@@ -250,6 +250,7 @@ theorem averagedTristramLevineSignature_eq_of_alexander_ne_zero (hω : ω ≠ 1)
 omit [DecidableEq ι] in
 /-- **Conjugate parameters give the same averaged signature**: passing from `ω` to
 `ω⁻¹ = conj ω` exchanges the two one-sided limits. This holds at every parameter. -/
+@[simp]
 theorem averagedTristramLevineSignature_inv (V : Matrix ι ι ℝ) (ω : Circle) :
     averagedTristramLevineSignature V ω⁻¹ = averagedTristramLevineSignature V ω := by
   have hconj : (fun t : ℝ => tristramLevineSignature V ↑(ω⁻¹ * Circle.exp t)) =
@@ -270,6 +271,7 @@ theorem averagedTristramLevineSignature_inv (V : Matrix ι ι ℝ) (ω : Circle)
 omit [DecidableEq ι] in
 /-- **Negating a Seifert matrix negates its averaged signature** at every parameter. The reverse
 mirror image of a knot, its inverse in the concordance group, has Seifert matrix `-V`. -/
+@[simp]
 theorem averagedTristramLevineSignature_neg (V : Matrix ι ι ℝ) (ω : Circle) :
     averagedTristramLevineSignature (-V) ω = -averagedTristramLevineSignature V ω := by
   have hL : leftLim (fun t : ℝ => -tristramLevineSignature V ↑(ω * Circle.exp t)) 0 =

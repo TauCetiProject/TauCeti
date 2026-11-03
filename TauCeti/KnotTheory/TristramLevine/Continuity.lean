@@ -17,8 +17,8 @@ from the singular parameters of its Hermitian form. On the unit circle away from
 `1`, singularity is equivalent to being an Alexander root. Consequently the signature
 is constant on every preconnected subset avoiding `1` and the Alexander roots, in
 particular on each arc between successive exceptional parameters.
-More generally, along a continuous path of complex parameters the signature is constant on
-every preconnected set of times at which the form stays nonsingular
+More generally, along any family of complex parameters the signature is constant on every
+preconnected set on which the family is continuous and the form stays nonsingular
 (`TauCeti.KnotTheory.tristramLevineSignature_comp_eq_of_isPreconnected`).
 
 The results concern a chosen real Seifert matrix. They do not require its
@@ -62,17 +62,18 @@ theorem eventually_tristramLevineSignature_eq (V : Matrix ι ι ℝ) {ω : ℂ}
       (isHermitian_tristramLevineForm V) (continuous_tristramLevineForm V).continuousAt
       (isUnit_iff_ne_zero.mpr hdet)
 
-/-- The signature is constant along a preconnected set of real parameters on which the form,
-evaluated along a continuous path `γ : ℝ → ℂ`, is nonsingular. -/
-theorem tristramLevineSignature_comp_eq_of_isPreconnected (V : Matrix ι ι ℝ)
-    {γ : ℝ → ℂ} (hγ : Continuous γ) {s : Set ℝ} (hs : IsPreconnected s)
-    (hdet : ∀ t ∈ s, (tristramLevineForm V (γ t)).det ≠ 0) {t₀ t : ℝ} (ht₀ : t₀ ∈ s)
+/-- The signature is constant along a preconnected set `s` of parameters in a topological
+space `X` on which the form, evaluated along a family `γ : X → ℂ` continuous on `s`, is
+nonsingular. -/
+theorem tristramLevineSignature_comp_eq_of_isPreconnected {X : Type*} [TopologicalSpace X]
+    (V : Matrix ι ι ℝ) {γ : X → ℂ} {s : Set X} (hγ : ContinuousOn γ s) (hs : IsPreconnected s)
+    (hdet : ∀ t ∈ s, (tristramLevineForm V (γ t)).det ≠ 0) {t₀ t : X} (ht₀ : t₀ ∈ s)
     (ht : t ∈ s) :
     tristramLevineSignature V (γ t) = tristramLevineSignature V (γ t₀) := by
   have hloc : IsLocallyConstant fun x : s => tristramLevineSignature V (γ x) := by
     rw [IsLocallyConstant.iff_eventually_eq]
     intro x
-    exact (hγ.comp continuous_subtype_val).continuousAt.eventually
+    exact hγ.domRestrict.continuousAt.eventually
       (eventually_tristramLevineSignature_eq V (hdet x x.2))
   have : PreconnectedSpace s := isPreconnected_iff_preconnectedSpace.mp hs
   exact hloc.apply_eq_of_preconnectedSpace ⟨t, ht⟩ ⟨t₀, ht₀⟩
