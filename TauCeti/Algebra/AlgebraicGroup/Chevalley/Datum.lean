@@ -8,6 +8,7 @@ module
 public import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.Scheme.ToralClosure.Points
 public import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.Scheme.ToralClosure.Torus
 public import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.Weight.Basis
+public import TauCeti.LinearAlgebra.Basis.RangeSpan
 public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.KostantForm
 
 /-!
@@ -177,14 +178,10 @@ theorem span_range_coordinateWeight_eq_top :
 /-- **The lattice spans the representation space through its weight basis.** -/
 theorem span_range_basis_eq_top :
     Submodule.span ℚ (Set.range fun j => (D.basis j : D.carrier)) = ⊤ := by
-  refine eq_top_iff.2 (D.span_lattice_eq_top ▸ Submodule.span_le.2 fun m hm => ?_)
-  have h : ∑ j, ((D.basis.repr ⟨m, hm⟩ j • D.basis j : D.lattice) : D.carrier) = m := by
-    rw [← AddSubmonoidClass.coe_finsetSum, D.basis.sum_repr]
-  rw [SetLike.mem_coe, ← h]
-  exact Submodule.sum_mem _ fun j _ => by
-    rw [AddSubgroup.coe_zsmul]
-    exact zsmul_mem (Submodule.subset_span
-      (Set.mem_range_self (f := fun j => (D.basis j : D.carrier)) j)) _
+  have h := D.basis.span_range_eq_span_range_basis (S := ℚ) D.lattice.subtype.toIntLinearMap
+  rw [AddMonoidHom.coe_toIntLinearMap, AddSubgroup.coe_subtype, Subtype.range_coe,
+    D.span_lattice_eq_top] at h
+  exact h.symm
 
 /-- **The numbered root generators act nilpotently.** Each of them raises weights by a nonzero
 root, and the representation is spanned by finitely many weight vectors. -/
