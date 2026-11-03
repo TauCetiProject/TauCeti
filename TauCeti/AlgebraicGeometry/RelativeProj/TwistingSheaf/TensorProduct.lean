@@ -484,14 +484,12 @@ theorem _root_.CategoryTheory.CommMon.relativeProjTwistingSheafTensorProductIso_
   let F := PresheafOfModules.sheafification (R := A.relativeProj.ringCatSheaf)
     (𝟙 A.relativeProj.ringCatSheaf.obj)
   let adj := PresheafOfModules.sheafificationAdjunction (𝟙 A.relativeProj.ringCatSheaf.obj)
-  let G := _root_.SheafOfModules.forget A.relativeProj.ringCatSheaf ⋙
-    PresheafOfModules.restrictScalars (𝟙 A.relativeProj.ringCatSheaf.obj)
-  have hunit : adj.unit.app P ≫ G.map (F.map (A.relativeProjTwistingSheafTensorPresheafHom m n) ≫
-      (TauCeti.SheafOfModules.sheafificationIso A.relativeProj.ringCatSheaf _).hom) =
-      A.relativeProjTwistingSheafTensorPresheafHom m n := by
-    apply (adj.unit_comp_map_eq_iff _ _).2
-    exact congrArg (fun g ↦ F.map (A.relativeProjTwistingSheafTensorPresheafHom m n) ≫ g)
-      (TauCeti.SheafOfModules.sheafificationIso_hom A.relativeProj.ringCatSheaf _)
+  have hunit : adj.unit.app P ≫ (F.map (A.relativeProjTwistingSheafTensorPresheafHom m n) ≫
+      (TauCeti.SheafOfModules.sheafificationIso A.relativeProj.ringCatSheaf _).hom).val =
+      A.relativeProjTwistingSheafTensorPresheafHom m n :=
+    TauCeti.SheafOfModules.unit_comp_val_sheafification_map_comp_sheafificationIso_hom
+      (R := A.relativeProj.ringCatSheaf) (P := P) (M := A.relativeProjTwistingSheaf (m + n))
+      (A.relativeProjTwistingSheafTensorPresheafHom m n)
   have hmap :
       (TauCeti.SheafOfModules.tensorProductIso A.relativeProj.sheaf _ _).inv ≫
         (A.relativeProjTwistingSheafTensorProductIso m n h).hom =
@@ -501,7 +499,7 @@ theorem _root_.CategoryTheory.CommMon.relativeProjTwistingSheafTensorProductIso_
       (fun g ↦ (TauCeti.SheafOfModules.tensorProductIso A.relativeProj.sheaf _ _).inv ≫ g)
       (relativeProjTwistingSheafTensorProductIso_hom A m n h)).trans (Iso.inv_hom_id_assoc _ _)
   have hU := congrArg (fun g ↦ g.app (op W) (s ⊗ₜ t))
-    ((congrArg (fun g ↦ adj.unit.app P ≫ G.map g) hmap).trans hunit)
+    ((congrArg (fun g ↦ adj.unit.app P ≫ g.val) hmap).trans hunit)
   -- Unfold the forgetful functor and the sheafification unit in `hU`, to express their action
   -- as `Hom.app` on the sectionwise pure tensor.
   change Scheme.Modules.Hom.app
