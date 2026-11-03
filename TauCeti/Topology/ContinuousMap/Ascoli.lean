@@ -177,7 +177,9 @@ theorem IsCompact.equicontinuous [CompactSpace X] [UniformSpace Y] {K : Set C(X,
   obtain ⟨t, ht, hcover⟩ := hK.totallyBounded _
     (ContinuousMap.hasBasis_compactConvergenceUniformity_of_compact.mem_of_mem hV)
   have hnear : ∀ᶠ x' in 𝓝 x, ∀ g ∈ t, (g x, g x') ∈ V :=
-    ht.eventually_all.mpr fun g _ ↦ g.continuous.tendsto x (UniformSpace.ball_mem_nhds _ hV)
+    ht.eventually_all.mpr fun g _ ↦ by
+      have hg := (g.continuous.tendsto x).eventually (SetRel.ball_mem_nhds _ hV)
+      exact hg.mono fun x' hx' ↦ hVsymm.symm _ _ hx'
   filter_upwards [hnear] with x' hx'
   rintro ⟨f, hf⟩
   obtain ⟨g, hg, hfg⟩ := mem_iUnion₂.mp (hcover hf)

@@ -6,7 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Basic.Complex.BigOperators
-public import TauCeti.Geometry.RealAlgebraic.Semialgebraic.Basic
+public import TauCeti.Analysis.Complex.Euclidean.Space
+public import TauCeti.Geometry.RealAlgebraic.Semialgebraic.Function
 
 /-!
 # Complex polynomial equations in real coordinates
@@ -27,6 +28,8 @@ The real coordinates of `z : κ → ℂ` are indexed by `κ ⊕ κ`: `Sum.inl k`
   equation form a semialgebraic set.
 * `TauCeti.isSemialgebraic_setOf_eval_sumElim_star_eq_zero`: the zero set of a polynomial in
   complex coordinates and their conjugates is semialgebraic in the real coordinates.
+* `TauCeti.isSemialgebraicOn_complexToRealPi_of_forall_eq_iff`: a map between complex coordinate
+  spaces whose graph is cut out by such equations is semialgebraic in the real coordinates.
 -/
 
 public section
@@ -89,5 +92,31 @@ theorem isSemialgebraic_setOf_eval_sumElim_star_eq_zero (q : MvPolynomial (κ �
     exact (aeval_bind₁ _ L q).symm
   simp only [h]
   exact isSemialgebraic_setOf_eval_ofReal_eq_zero _
+
+/-- A map `g` between complex coordinate spaces, read in the real coordinates given by
+`TauCeti.complexToRealPi`, is semialgebraic on a semialgebraic domain `s` when its graph over `s`
+is cut out by finitely many polynomial equations in the input and output coordinates and their
+conjugates: for `z ∈ s`, `g z = w` exactly when every `R k` vanishes at `(z, w)`. -/
+theorem isSemialgebraicOn_complexToRealPi_of_forall_eq_iff {σ τ ι : Type*} [Fintype σ]
+    [Fintype τ] [Finite ι] {g : (σ → ℂ) → (τ → ℂ)} {s : Set (σ → ℂ)}
+    (hs : IsSemialgebraic ((complexToRealPi σ).symm ⁻¹' s))
+    (R : ι → MvPolynomial ((σ ⊕ τ) ⊕ (σ ⊕ τ)) ℂ)
+    (hR : ∀ z ∈ s, ∀ w, g z = w ↔
+      ∀ k, eval (Sum.elim (Sum.elim z w) fun t ↦ star (Sum.elim z w t)) (R k) = 0) :
+    IsSemialgebraicOn (fun a ↦ complexToRealPi τ (g ((complexToRealPi σ).symm a)))
+      ((complexToRealPi σ).symm ⁻¹' s) := by
+  refine isSemialgebraicOn_def.2 ⟨hs, ?_⟩
+  -- Regroup the real coordinates of the graph, input then output, into real then imaginary parts.
+  let f : (σ ⊕ τ) ⊕ (σ ⊕ τ) → (σ ⊕ σ) ⊕ (τ ⊕ τ) := Sum.elim (Sum.map .inl .inl) (Sum.map .inr .inr)
+  convert (hs.preimage_comp Sum.inl).inter (IsSemialgebraic.iInter fun k ↦
+    (isSemialgebraic_setOf_eval_sumElim_star_eq_zero (R k)).preimage_comp f) using 1
+  ext v
+  rw [mem_preimage_sumArrowEquivProdArrow_graphOn]
+  simp only [Set.mem_inter_iff, Set.mem_iInter, Set.mem_preimage, Set.mem_ofPred_eq]
+  refine and_congr_right fun hv ↦ ?_
+  rw [← ContinuousLinearEquiv.eq_symm_apply, hR _ hv]
+  refine forall_congr' fun k ↦ Eq.congr_left (congr_arg (eval · (R k)) ?_)
+  funext t
+  rcases t with (t | t) | (t | t) <;> simp [f]
 
 end TauCeti

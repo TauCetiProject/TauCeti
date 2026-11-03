@@ -113,7 +113,7 @@ theorem isAdjointPair_heckeTCuspNat (hn : n.Coprime N) :
         heckeTCuspNat (N := N) k n) := by
   intro f g
   simp only [LinearMap.flip_apply, TauCeti.CuspForm.peterssonInnerCosetsₛₗ_apply_apply,
-    Module.End.mul_apply]
+    mul_apply_eq_comp]
   exact peterssonInnerCosets_heckeTCuspNat_right k hn g f
 
 /-! ### Normality -/

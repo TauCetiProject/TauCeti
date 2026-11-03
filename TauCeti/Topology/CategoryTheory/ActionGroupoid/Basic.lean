@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.CategoryTheory.Category.QuiverTotal
 public import TauCeti.CategoryTheory.Groupoid.ActionCategory.Map
 public import Mathlib.Topology.Algebra.ProperAction.Basic
 public import Mathlib.Topology.IsLocalHomeomorph
@@ -153,11 +154,11 @@ first arrow is followed by the second, so the second label multiplies on the lef
 theorem continuous_comp [ContinuousMul G] :
     Continuous (fun p : {p : Quiver.Total (ActionCategory G X) ×
         Quiver.Total (ActionCategory G X) // p.1.right = p.2.left} =>
-      (⟨p.1.1.left, p.1.2.right,
-        p.1.1.hom ≫ eqToHom p.2 ≫ p.1.2.hom⟩ : Quiver.Total (ActionCategory G X))) := by
+      p.1.1.comp p.1.2 p.2) := by
   apply (arrowHomeomorph G X).isInducing.continuous_iff.mpr
-  simpa only [Function.comp_def, arrowHomeomorph_apply, ActionCategory.comp_hom, eqToHom_hom,
-    one_mul, mul_one, Pi.mul_apply, objectHomeomorph_apply] using
+  simpa only [Function.comp_def, Quiver.Total.comp_def, arrowHomeomorph_apply,
+    ActionCategory.comp_hom, eqToHom_hom, one_mul, mul_one, Pi.mul_apply,
+    objectHomeomorph_apply] using
     (((continuous_label G X).comp (continuous_snd.comp continuous_subtype_val)).mul
       ((continuous_label G X).comp (continuous_fst.comp continuous_subtype_val))).prodMk
         ((objectHomeomorph G X).continuous.comp

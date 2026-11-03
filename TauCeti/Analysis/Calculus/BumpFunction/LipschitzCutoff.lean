@@ -12,6 +12,7 @@ import Mathlib.Analysis.Calculus.BumpFunction.InnerProduct
 import Mathlib.Analysis.Calculus.BumpFunction.Normed
 import Mathlib.Analysis.Calculus.ContDiff.Deriv
 import Mathlib.Analysis.Calculus.Deriv.MeanValue
+import Mathlib.Analysis.Calculus.LocalExtr.Basic
 import Mathlib.Analysis.Calculus.MeanValue
 import Mathlib.Analysis.InnerProductSpace.Calculus
 import Mathlib.MeasureTheory.Integral.IntervalIntegral.FundThmCalculus
@@ -23,7 +24,9 @@ When `E` is nontrivial, a function equal to one on `closedBall x₀ r` and vanis
 `ball x₀ R` has Lipschitz constant at least `1 / (R - r)`, and the piecewise affine radial profile
 attains this bound but is not smooth. This file shows that every larger constant is attained by a
 smooth cutoff (`TauCeti.exists_contDiff_cutoff_closedBall_lipschitzWith`), so for nontrivial `E`
-the bound `1 / (R - r)` is the infimum of the Lipschitz constants of smooth cutoffs.
+the bound `1 / (R - r)` is the infimum of the Lipschitz constants of smooth cutoffs. For shells
+of width `h` this gives cutoffs with constant `t / h` for every `t > 1`
+(`TauCeti.exists_contDiff_cutoff_closedBall_lipschitzWith_mul_inv`).
 
 Cutoffs with a universal but non-optimal constant `c / (R - r)` suffice for iteration arguments.
 Limits in which the width `R - r` of the transition shell shrinks to zero need the sharp constant
@@ -35,12 +38,18 @@ The radial profile is a primitive of a normalized bump function on `ℝ` support
 smaller interval than `(r, R)`. Its slope is bounded by the reciprocal of the length of the
 interval on which the bump equals one (`ContDiffBump.normed_le_div_measure_closedBall_rIn`), and
 that length can be taken as close to `R - r` as desired.
+
+The derivative of any cutoff with values in `[0, 1]`, equal to one on `closedBall x₀ r` and
+vanishing off `ball x₀ R`, is supported in the shell `ball x₀ R \ ball x₀ r`
+(`TauCeti.support_fderiv_subset_ball_sdiff_ball`), so its gradient terms only see that shell: if
+the cutoff is `K`-Lipschitz, then `‖Dψ‖ 1_s ≤ K 1_{s ∩ shell}` pointwise
+(`TauCeti.enorm_fderiv_mul_indicator_le_indicator`).
 -/
 
 public section
 
 open Function Metric Set
-open scoped ContDiff NNReal
+open scoped ContDiff NNReal ENNReal
 
 namespace TauCeti
 
@@ -128,5 +137,56 @@ theorem exists_contDiff_cutoff_closedBall_lipschitzWith (x₀ : E) {r R : ℝ} (
     refine LipschitzWith.of_dist_le_mul fun x y => ?_
     rw [dist_sub_left]
     simpa only [comp_apply, dist_eq_norm] using h.dist_le_mul x y
+
+/-- **Smooth cutoffs on thin shells.** For a radius `r ≥ 0`, a width `h > 0` and a factor
+`t > 1`, there is a smooth `ψ` with values in `[0, 1]`, equal to one on `closedBall x₀ r`,
+vanishing off `ball x₀ (r + h)`, and `t / h`-Lipschitz. This is the form of
+`TauCeti.exists_contDiff_cutoff_closedBall_lipschitzWith` used when the width `h` tends to zero. -/
+theorem exists_contDiff_cutoff_closedBall_lipschitzWith_mul_inv (x₀ : E) {r h : ℝ} (hr : 0 ≤ r)
+    (hh : 0 < h) {t : ℝ≥0} (ht : 1 < t) :
+    ∃ ψ : E → ℝ, ContDiff ℝ ∞ ψ ∧ range ψ ⊆ Icc 0 1 ∧ EqOn ψ 1 (closedBall x₀ r) ∧
+      support ψ ⊆ ball x₀ (r + h) ∧ LipschitzWith (t * h.toNNReal⁻¹) ψ := by
+  refine exists_contDiff_cutoff_closedBall_lipschitzWith x₀ hr (by linarith) ?_
+  rw [add_sub_cancel_left, NNReal.coe_mul, NNReal.coe_inv, Real.coe_toNNReal _ hh.le]
+  exact (lt_mul_iff_one_lt_left (inv_pos.2 hh)).2 (by exact_mod_cast ht)
+
+/-- The derivative of a function with values in `[0, 1]`, equal to one on `closedBall x₀ r` and
+vanishing off `ball x₀ R`, is supported in the shell `ball x₀ R \ ball x₀ r`: elsewhere the
+function attains its maximum or its minimum. -/
+theorem support_fderiv_subset_ball_sdiff_ball {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
+    {ψ : F → ℝ} {x₀ : F} {r R : ℝ} (hψ01 : range ψ ⊆ Icc 0 1) (hψ1 : EqOn ψ 1 (closedBall x₀ r))
+    (hψR : support ψ ⊆ ball x₀ R) :
+    support (fderiv ℝ ψ) ⊆ ball x₀ R \ ball x₀ r := by
+  intro x hx
+  by_contra hxA
+  refine hx ?_
+  rw [Set.mem_sdiff, not_and_or, not_not] at hxA
+  rcases hxA with hxA | hxA
+  · refine IsLocalMin.fderiv_eq_zero (Filter.Eventually.of_forall fun y => ?_)
+    rw [notMem_support.1 fun h => hxA (hψR h)]
+    exact (hψ01 (mem_range_self y)).1
+  · refine IsLocalMax.fderiv_eq_zero (Filter.Eventually.of_forall fun y => ?_)
+    rw [hψ1 (ball_subset_closedBall hxA), Pi.one_apply]
+    exact (hψ01 (mem_range_self y)).2
+
+/-- The derivative of a `K`-Lipschitz function with values in `[0, 1]`, equal to one on
+`closedBall x₀ r` and vanishing off `ball x₀ R`, times the indicator of `s`, is at most `K` times
+the indicator of `s` in the shell `ball x₀ R \ ball x₀ r`. -/
+theorem enorm_fderiv_mul_indicator_le_indicator {F : Type*} [NormedAddCommGroup F]
+    [NormedSpace ℝ F] {ψ : F → ℝ} {x₀ : F} {r R : ℝ} (hψ01 : range ψ ⊆ Icc 0 1)
+    (hψ1 : EqOn ψ 1 (closedBall x₀ r)) (hψR : support ψ ⊆ ball x₀ R) {K : ℝ≥0}
+    (hψK : LipschitzWith K ψ) (s : Set F) (y : F) :
+    ‖fderiv ℝ ψ y‖ₑ * ‖s.indicator (1 : F → ℝ) y‖ₑ ≤
+      (s ∩ (ball x₀ R \ ball x₀ r)).indicator (fun _ => (K : ℝ≥0∞)) y := by
+  by_cases hys : y ∈ s
+  swap
+  · simp [hys]
+  by_cases hyA : y ∈ ball x₀ R \ ball x₀ r
+  · rw [indicator_of_mem (mem_inter hys hyA), indicator_of_mem hys, Pi.one_apply, enorm_one,
+      mul_one, ← ofReal_norm]
+    exact (ENNReal.ofReal_le_ofReal (norm_fderiv_le_of_lipschitz ℝ hψK)).trans_eq
+      ENNReal.ofReal_coe_nnreal
+  simp [notMem_support.1 fun h => hyA (support_fderiv_subset_ball_sdiff_ball hψ01 hψ1 hψR h),
+    enorm_eq_nnnorm]
 
 end TauCeti

@@ -62,6 +62,18 @@ variable
   [IsContMDiffRiemannianBundle I ∞ E (fun x : M ↦ TangentSpace I x)]
   {γ : ℝ → M} {V W : ∀ t, TangentSpace I (γ t)} {s u : Set ℝ} {t₀ t : ℝ}
 
+/-- The derivative of the squared norm of a Jacobi field is twice its metric pairing with
+its covariant derivative. -/
+theorem IsJacobiFieldOn.hasDerivWithinAt_norm_sq (h : IsJacobiFieldOn I γ V s)
+    (ht : t ∈ s) :
+    HasDerivWithinAt (fun r ↦ ‖V r‖ ^ 2)
+      (2 * inner ℝ (alongCurveWithin (leviCivitaConnection I M) γ V s t) (V t)) s t := by
+  have hm := isMetricCompatible_leviCivitaConnection (I := I) (M := M)
+  have hd := hm.hasDerivWithinAt_inner_alongCurveWithin (h.uniqueDiffOn t ht)
+    (h.isGeodesicCurveOn.mdifferentiableOn t ht)
+    (h.differentiableWithinAt_sectionCoord ht) (h.differentiableWithinAt_sectionCoord ht)
+  simpa only [real_inner_self_eq_norm_sq, real_inner_comm (V t), two_mul] using hd
+
 /-- **The energy identity for Jacobi fields.** The energy `‖J‖² + ‖DJ‖²` of a Jacobi field has
 derivative `2⟨DJ, J⟩ - 2⟨R(J, γ')γ', DJ⟩`. -/
 theorem IsJacobiFieldOn.hasDerivWithinAt_norm_sq_add_norm_sq (h : IsJacobiFieldOn I γ V s)
@@ -75,15 +87,14 @@ theorem IsJacobiFieldOn.hasDerivWithinAt_norm_sq_add_norm_sq (h : IsJacobiFieldO
   set D := alongCurveWithin (leviCivitaConnection I M) γ V s
   have hm := isMetricCompatible_leviCivitaConnection (I := I) (M := M)
   have hγ := h.isGeodesicCurveOn.mdifferentiableOn t ht
-  have hV := hm.hasDerivWithinAt_inner_alongCurveWithin (h.uniqueDiffOn t ht) hγ
-    (h.differentiableWithinAt_sectionCoord ht) (h.differentiableWithinAt_sectionCoord ht)
+  have hV := h.hasDerivWithinAt_norm_sq ht
   have hD := hm.hasDerivWithinAt_inner_alongCurveWithin (h.uniqueDiffOn t ht) hγ
     (h.differentiableWithinAt_sectionCoord_alongCurveWithin ht)
     (h.differentiableWithinAt_sectionCoord_alongCurveWithin ht)
-  simp only [← real_inner_self_eq_norm_sq]
+  simp only [real_inner_self_eq_norm_sq] at hD
   refine (hV.add hD).congr_deriv ?_
   rw [h.alongCurveWithin_alongCurveWithin_eq ht, inner_neg_left, inner_neg_right,
-    real_inner_comm (D t) (V t), real_inner_comm (D t)]
+    real_inner_comm (D t)]
   ring
 
 /-- A Jacobi field whose value and covariant derivative vanish at one parameter of a preconnected

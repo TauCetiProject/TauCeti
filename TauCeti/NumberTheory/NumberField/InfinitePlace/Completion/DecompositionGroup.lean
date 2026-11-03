@@ -5,6 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+-- Construct the extension on the underlying uniform completions.
+import all Mathlib.Analysis.Normed.Field.WithAbs
+
 public import TauCeti.NumberTheory.NumberField.InfinitePlace.Completion.Extension
 
 /-!
@@ -110,21 +113,26 @@ private theorem isometry_withAbsCongr (σ : L ≃ₐ[K] L) {w w' : InfinitePlace
 /-- The ring isomorphism `L_w ≃ L_{w'}` extending the isometry `σ`. -/
 private def completionRingEquiv (σ : L ≃ₐ[K] L) {w w' : InfinitePlace L} (h : w' = σ • w) :
     w.Completion ≃+* w'.Completion :=
-  (Completion.equiv w).trans ((UniformSpace.Completion.mapRingEquiv _
+  ((Completion.equiv w).trans (AbsoluteValue.Completion.equiv w.1)).trans
+    ((UniformSpace.Completion.mapRingEquiv _
     (isometry_withAbsCongr σ h).continuous
     ((isometry_withAbsCongr σ h).right_inv
       (WithAbs.congr w.1 w'.1 σ.toRingEquiv).right_inv).continuous).trans
-    (Completion.equiv w').symm)
+    ((Completion.equiv w').trans (AbsoluteValue.Completion.equiv w'.1)).symm)
 
 private theorem continuous_completionRingEquiv (σ : L ≃ₐ[K] L) {w w' : InfinitePlace L}
     (h : w' = σ • w) : Continuous (completionRingEquiv σ h) :=
   (Completion.continuous_ofCompletion w').comp <|
-    UniformSpace.Completion.continuous_map.comp (Completion.continuous_toCompletion w)
+    (AbsoluteValue.Completion.continuous_ofCompletion w'.1).comp <|
+      UniformSpace.Completion.continuous_map.comp <|
+        (AbsoluteValue.Completion.continuous_toCompletion w.1).comp
+          (Completion.continuous_toCompletion w)
 
 private theorem completionRingEquiv_coe (σ : L ≃ₐ[K] L) {w w' : InfinitePlace L}
     (h : w' = σ • w) (x : WithAbs w.1) :
     completionRingEquiv σ h x = (WithAbs.congr w.1 w'.1 σ.toRingEquiv x : WithAbs w'.1) :=
-  Completion.ext <| UniformSpace.Completion.mapRingHom_coe (isometry_withAbsCongr σ h).continuous x
+  Completion.ext <| AbsoluteValue.Completion.toCompletion_injective w'.1 <|
+    UniformSpace.Completion.mapRingHom_coe (isometry_withAbsCongr σ h).continuous x
 
 variable (v : InfinitePlace K)
 

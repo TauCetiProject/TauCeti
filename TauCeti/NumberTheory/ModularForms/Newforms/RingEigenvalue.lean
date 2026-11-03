@@ -98,7 +98,7 @@ theorem eigenvalue_congr {m n : ℕ+} (hmn : m = n) {hm : Nat.Coprime m N} {hn :
 theorem eigenvalue_one : f.eigenvalue 1 (Nat.coprime_one_left N) = 1 := by
   refine f.eq_of_smul_eq ?_
   rw [← f.isEigen 1 (Nat.coprime_one_left N), PNat.one_coe, heckeTCompositeGamma0_one, map_one,
-    Module.End.one_apply, one_smul]
+    one_apply_eq_self, one_smul]
 
 /-- **At a good prime the classical `Tₚ` acts by the eigenvalue**: the ring generator at `p` acts
 on the character space as `heckeTCuspNat k p`, so `Tₚ f = λₚ f` on `S_k(Γ₁(N))`. -/
@@ -134,7 +134,7 @@ theorem eigenvalue_mul {m n : ℕ+} (hmn : Nat.Coprime m n) (hm : Nat.Coprime m 
       f.eigenvalue m hm * f.eigenvalue n hn := by
   refine f.eq_of_smul_eq ?_
   rw [← f.isEigen (m * n) (PNat.mul_coe m n ▸ Nat.coprime_mul_iff_left.mpr ⟨hm, hn⟩),
-    PNat.mul_coe, heckeTCompositeGamma0_mul_of_coprime N hmn, map_mul, Module.End.mul_apply,
+    PNat.mul_coe, heckeTCompositeGamma0_mul_of_coprime N hmn, map_mul, mul_apply_eq_comp,
     f.isEigen n hn, map_smul, f.isEigen m hm, smul_smul, mul_comm]
 
 /-- The recurrence block `heckeTGeneratorRecGamma0 N p v` acts by `λ_{p^v}` at a good prime. -/

@@ -89,8 +89,7 @@ theorem integrable_charFun_stableMeasure (α β : ℝ) (hs : 0 < s) (m : ℝ) :
       exact h0.comp_mul_left' (NNReal.coe_pos.2 hs).ne'
     exact hint.mono' continuous_charFun.aestronglyMeasurable
       (ae_of_all _ fun t ↦ (norm_charFun_stableMeasure h.1 h.2 s m t).le)
-  · rw [stableMeasure_of_invalid (by
-      simpa only [mem_Ioc, not_and_or, not_lt, not_le, or_assoc] using h)]
+  · rw [stableMeasure_of_not_valid h]
     exact (integrable_zero ℝ ℂ volume).congr (ae_of_all _ fun _ ↦ charFun_zero_measure.symm)
 
 /-! ### The density -/

@@ -158,8 +158,6 @@ private def ofData : Data L → Request L
 that a surjective schedule `ℕ → Request L` exists. -/
 instance [Countable (Σ l, L.Functions l)] [Countable (Σ l, L.Relations l)] :
     Countable (Request L) := by
-  have : Countable (Σ l, L[[ℕ]].Relations l) := (Sum.inr_injective (α := Σ l,
-    L[[ℕ]].Functions l)).countable
   exact (Function.LeftInverse.injective (f := toData) (g := ofData) fun r => by
     cases r <;> rfl).countable
 

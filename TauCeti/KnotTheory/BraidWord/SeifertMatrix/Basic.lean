@@ -99,7 +99,8 @@ Those comparisons are not made here.
   keeps the Alexander polynomial and the Tristram–Levine signatures of the Seifert matrix.
 * `TauCeti.BraidWord.alexander_seifertMatrix_trefoil` and
   `TauCeti.BraidWord.signature_seifertMatrix_trefoil`: the right-handed trefoil.
-* `TauCeti.BraidWord.signature_seifertMatrix_mirrorTrefoil`: the left-handed trefoil.
+* `TauCeti.BraidWord.alexander_seifertMatrix_mirrorTrefoil` and
+  `TauCeti.BraidWord.signature_seifertMatrix_mirrorTrefoil`: the left-handed trefoil.
 * `TauCeti.BraidWord.alexander_seifertMatrix_figureEight` and
   `TauCeti.BraidWord.signature_seifertMatrix_figureEight`: the figure-eight knot.
 
@@ -141,6 +142,21 @@ theorem isSeifertLoop_iff {p : ℕ × ℕ} :
       ∀ k < p.2, p.1 < k → w.levelAt k ≠ w.levelAt p.1 :=
   Iff.rfl
 
+/-- The two bands of a loop are in order. -/
+theorem IsSeifertLoop.fst_lt_snd {w : BraidWord n} {p : ℕ × ℕ} (h : w.IsSeifertLoop p) :
+    p.1 < p.2 :=
+  (w.isSeifertLoop_iff.1 h).1
+
+/-- The second band of a loop is a letter of the word. -/
+theorem IsSeifertLoop.snd_lt_length {w : BraidWord n} {p : ℕ × ℕ} (h : w.IsSeifertLoop p) :
+    p.2 < w.length :=
+  (w.isSeifertLoop_iff.1 h).2.1
+
+/-- The first band of a loop is a letter of the word. -/
+theorem IsSeifertLoop.fst_lt_length {w : BraidWord n} {p : ℕ × ℕ} (h : w.IsSeifertLoop p) :
+    p.1 < w.length :=
+  h.fst_lt_snd.trans h.snd_lt_length
+
 /-- A loop is determined by its first band. -/
 theorem IsSeifertLoop.eq_of_fst_eq {w : BraidWord n} {p q : ℕ × ℕ} (hp : w.IsSeifertLoop p)
     (hq : w.IsSeifertLoop q) (h : p.1 = q.1) : p = q := by
@@ -164,6 +180,11 @@ theorem mem_seifertLoops {p : ℕ × ℕ} : p ∈ w.seifertLoops ↔ w.IsSeifert
   simp only [seifertLoops, Finset.mem_filter, Finset.mem_product, Finset.mem_range,
     and_iff_right_iff_imp]
   exact fun h ↦ ⟨h.1.trans h.2.1, h.2.1⟩
+
+/-- The empty braid word has no basis loops, regardless of its strand count. -/
+instance isEmpty_seifertLoops_nil : IsEmpty (seifertLoops (n := n) []) := by
+  refine ⟨fun x ↦ ?_⟩
+  simpa [seifertLoops] using x.2
 
 /-- A loop of `w ++ [y]` not running through the appended letter is a loop of `w`. -/
 theorem isSeifertLoop_append_singleton_iff (y : Fin (n - 1) × ℤˣ) {p : ℕ × ℕ}
@@ -674,7 +695,7 @@ private theorem lt_length_of_levelAt_cons {m : ℕ}
 /-- A loop of `v ++ [x]` not ending at the moved letter lies in `v`. -/
 private theorem snd_lt_length_of_ne {a : ℕ × ℕ} (ha : (v ++ [x]).IsSeifertLoop a)
     (h : a.2 ≠ v.length) : a.2 < v.length := by
-  have := ha.2.1
+  have := ha.snd_lt_length
   simp only [List.length_append, List.length_singleton] at this
   omega
 
@@ -1191,6 +1212,14 @@ theorem signature_seifertMatrix_mirrorTrefoil :
   obtain ⟨e, he⟩ := seifertMatrix_mirrorTrefoil
   rw [← Matrix.signature_submatrix_equiv_self e.symm, e.symm_symm, Matrix.submatrix_map, he,
     Matrix.map_neg _ Int.cast_neg, Matrix.signature_neg, signature_trefoilSeifertMatrix, neg_neg]
+
+/-- The Seifert matrix of the braid `σ₁⁻³` has the Alexander polynomial `t - 1 + t⁻¹` of the
+left-handed trefoil, the same as for the right-handed one. -/
+theorem alexander_seifertMatrix_mirrorTrefoil :
+    alexander (seifertMatrix (n := 2) [(0, -1), (0, -1), (0, -1)]) = T 1 - 1 + T (-1) := by
+  obtain ⟨e, he⟩ := seifertMatrix_mirrorTrefoil
+  rw [← Matrix.alexander_submatrix_equiv_self _ e, he,
+    alexander_neg (g := 1) _ (Fintype.card_fin 2), alexander_trefoilSeifertMatrix]
 
 /-- The closure of `σ₁ σ₂⁻¹ σ₁ σ₂⁻¹` is the figure-eight knot. Its canonical Seifert surface has
 the loop `(1, 3)` on the upper level and `(0, 2)` on the lower one, and in that basis its Seifert

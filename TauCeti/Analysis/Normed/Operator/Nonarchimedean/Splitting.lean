@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Normed.Operator.Nonarchimedean.Idempotent
-public import TauCeti.Analysis.Normed.Operator.Nonarchimedean.PrModule
+public import TauCeti.Analysis.Normed.Operator.Nonarchimedean.PrModule.Basic
 
 /-!
 # Fredholm series on split Banach modules
