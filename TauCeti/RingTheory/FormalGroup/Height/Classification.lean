@@ -81,20 +81,6 @@ private theorem pSeriesError_zero : pSeriesError F G p 0 = 0 := by
   rw [pSeriesError, PowerSeries.subst_zero, PowerSeries.subst_zero_of_constantCoeff_zero
     (G.constantCoeff_nsmulSeries p), sub_zero]
 
-/-- Over a field of characteristic `p`, `[p]_G(f) = ψ(f^(p^h))` where `ψ` is the isomorphism
-from the `h`-fold Frobenius twist of `G` back to `G`, `h` being the height of `G`. -/
-private theorem subst_nsmulSeries_eq_subst_pow (hG : G.height p = h) {f : PowerSeries K}
-    (hf : PowerSeries.constantCoeff f = 0) :
-    PowerSeries.subst f (G.nsmulSeries p) =
-      PowerSeries.subst (f ^ p ^ h) (G.heightFrobeniusIso hG).toHom.toPowerSeries := by
-  have h₁ := congrArg TauCeti.FormalGroupHom.toPowerSeries
-    (G.heightFrobeniusIso_comp_iterateFrobeniusHom hG)
-  rw [TauCeti.FormalGroupHom.comp_toPowerSeries, iterateFrobeniusHom_toPowerSeries,
-    nsmulHom_toPowerSeries] at h₁
-  have hf' := PowerSeries.HasSubst.of_constantCoeff_zero' hf
-  rw [← h₁, PowerSeries.subst_comp_subst_apply (PowerSeries.HasSubst.of_constantCoeff_zero'
-    (by simp [hp.out.ne_zero])) hf', PowerSeries.subst_pow hf', PowerSeries.subst_X hf']
-
 /-- The coefficients of `f([p]_F(X)) - [p]_G(f(X))` in degrees below `(M + 1) p ^ h` only depend
 on the coefficients of `f` in degrees at most `M`. -/
 private theorem le_order_pSeriesError_sub (hF : F.height p = h) (hG : G.height p = h)
@@ -135,8 +121,8 @@ private theorem le_order_pSeriesError_sub (hF : F.height p = h) (hG : G.height p
   have hsplit : pSeriesError F G p f - pSeriesError F G p g =
       PowerSeries.subst (F.nsmulSeries p) (f - g) -
         (PowerSeries.subst (f ^ p ^ h) ψ - PowerSeries.subst (g ^ p ^ h) ψ) := by
-    rw [pSeriesError, pSeriesError, subst_nsmulSeries_eq_subst_pow hG hf,
-      subst_nsmulSeries_eq_subst_pow hG hg,
+    rw [pSeriesError, pSeriesError, G.subst_nsmulSeries_eq_subst_pow_heightFrobeniusIso hG hf,
+      G.subst_nsmulSeries_eq_subst_pow_heightFrobeniusIso hG hg,
       PowerSeries.subst_sub (PowerSeries.HasSubst.of_constantCoeff_zero'
         (F.constantCoeff_nsmulSeries p))]
     ring
@@ -201,8 +187,8 @@ private theorem coeff_pSeriesError_add (hF : F.height p = h) (hG : G.height p = 
   have hsplit : pSeriesError F G p (f + c • PowerSeries.X ^ M) - pSeriesError F G p f =
       PowerSeries.subst (F.nsmulSeries p) (c • PowerSeries.X ^ M : PowerSeries K) -
         (PowerSeries.subst ((f + c • PowerSeries.X ^ M) ^ q) ψ - PowerSeries.subst (f ^ q) ψ) := by
-    rw [pSeriesError, pSeriesError, subst_nsmulSeries_eq_subst_pow hG hf,
-      subst_nsmulSeries_eq_subst_pow hG hfc, PowerSeries.subst_add hFp']
+    rw [pSeriesError, pSeriesError, G.subst_nsmulSeries_eq_subst_pow_heightFrobeniusIso hG hf,
+      G.subst_nsmulSeries_eq_subst_pow_heightFrobeniusIso hG hfc, PowerSeries.subst_add hFp']
     ring
   have h := congrArg (PowerSeries.coeff (M * q)) hsplit
   rw [map_sub, map_sub, hF₁, hG₁', hv] at h

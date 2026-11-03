@@ -175,6 +175,21 @@ theorem heightFrobeniusIso_comp_iterateFrobeniusHom {h : ℕ} (hh : F.height p =
   simp only [heightFrobeniusIso,
     TauCeti.FormalGroupHom.iterateFrobeniusIso_comp_iterateFrobeniusHom]
 
+/-- For a formal group of finite height `h`, `[p]_F(f) = ψ(f^(p^h))` for every series `f` with
+zero constant coefficient, where `ψ` is the height factor `FormalGroup.heightFrobeniusIso`. -/
+theorem subst_nsmulSeries_eq_subst_pow_heightFrobeniusIso {h : ℕ} (hh : F.height p = h)
+    {f : PowerSeries K} (hf : PowerSeries.constantCoeff f = 0) :
+    PowerSeries.subst f (F.nsmulSeries p) =
+      PowerSeries.subst (f ^ p ^ h) (F.heightFrobeniusIso hh).toHom.toPowerSeries := by
+  have h₁ := congrArg TauCeti.FormalGroupHom.toPowerSeries
+    (F.heightFrobeniusIso_comp_iterateFrobeniusHom hh)
+  rw [TauCeti.FormalGroupHom.comp_toPowerSeries, iterateFrobeniusHom_toPowerSeries,
+    nsmulHom_toPowerSeries] at h₁
+  have hf' := PowerSeries.HasSubst.of_constantCoeff_zero' hf
+  rw [← h₁, PowerSeries.subst_comp_subst_apply (PowerSeries.HasSubst.of_constantCoeff_zero'
+    (by simp [(Fact.out : p.Prime).ne_zero])) hf', PowerSeries.subst_pow hf',
+    PowerSeries.subst_X hf']
+
 /-- For a formal group of finite height `h`, multiplication by `p` is the `h`-fold relative
 Frobenius followed by a unique isomorphism from the Frobenius twist back to the group. -/
 theorem existsUnique_iso_comp_iterateFrobeniusHom_eq_nsmulHom_of_height_eq {h : ℕ}

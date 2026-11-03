@@ -25,9 +25,8 @@ The homomorphism defect `f(F(X, Y)) - G(f(X), f(Y))` (`FormalGroup.homDefect`) o
 (`TauCeti.FormalGroupHom.homDefect_toPowerSeries`, `TauCeti.FormalGroupHom.ofHomDefectEqZero`).
 The defect of `X` is the difference `F - G` (`FormalGroup.homDefect_X`).
 Towards the additive formal group law the defect is additive in `f`
-(`FormalGroup.homDefect_𝔾ₐ_sub`), vanishes to the order of `f`
-(`FormalGroup.le_order_homDefect_𝔾ₐ`), and for `f = c Xⁿ` has leading term
-`c ((X + Y)ⁿ - Xⁿ - Yⁿ)` (`FormalGroup.homogeneousComponent_homDefect_𝔾ₐ_smul_X_pow`).
+(`FormalGroup.homDefect_𝔾ₐ_sub`) and vanishes to the order of `f`
+(`FormalGroup.le_order_homDefect_𝔾ₐ`).
 Towards an arbitrary formal group law, the defects of two series with zero constant term that
 agree below degree `n` agree below degree `n` (`FormalGroup.le_order_homDefect_sub`), and
 replacing `f` by `f + c Xⁿ` changes the defect in degree `n` by `c ((X + Y)ⁿ - Xⁿ - Yⁿ)`
@@ -108,26 +107,6 @@ theorem le_order_homDefect_𝔾ₐ {g : PowerSeries R} (hg₀ : PowerSeries.cons
   rw [F.homDefect_𝔾ₐ hg₀]
   exact le_order_sub (le_order_sub (h F.zero_constantCoeff) (h (constantCoeff_X 0)))
     (h (constantCoeff_X 1))
-
-/-- The lowest-degree part of the homomorphism defect of `c Xⁿ`, `n ≠ 0`, towards the additive
-formal group law is `c ((X + Y)ⁿ - Xⁿ - Yⁿ)`. -/
-theorem homogeneousComponent_homDefect_𝔾ₐ_smul_X_pow (c : R) {n : ℕ} (hn : n ≠ 0) :
-    homogeneousComponent n (F.homDefect 𝔾ₐ (c • PowerSeries.X ^ n)) =
-      ((c • ((MvPolynomial.X 0 + MvPolynomial.X 1) ^ n - MvPolynomial.X 0 ^ n -
-        MvPolynomial.X 1 ^ n) : MvPolynomial (Fin 2) R) : MvPowerSeries (Fin 2) R) := by
-  have hF := PowerSeries.HasSubst.of_constantCoeff_zero F.zero_constantCoeff
-  have hX (i : Fin 2) := PowerSeries.HasSubst.X (S := R) i
-  rw [F.homDefect_𝔾ₐ (by simp [hn])]
-  simp only [PowerSeries.subst_smul hF, PowerSeries.subst_smul (hX _),
-    PowerSeries.subst_pow hF, PowerSeries.subst_pow (hX _), PowerSeries.subst_X hF,
-    PowerSeries.subst_X (hX _), map_sub, _root_.map_smul,
-    homogeneousComponent_pow_of_constantCoeff_eq_zero F.zero_constantCoeff,
-    homogeneousComponent_pow_of_constantCoeff_eq_zero (constantCoeff_X _),
-    homogeneousComponent_one_X,
-    homogeneousComponent_one_eq_X_add_X F.lin_coeff_X F.lin_coeff_Y]
-  rw [MvPolynomial.smul_eq_C_mul, ← MvPolynomial.coeToMvPowerSeries.ringHom_apply]
-  simp only [map_mul, map_sub, map_pow, map_add, MvPolynomial.coeToMvPowerSeries.ringHom_apply,
-    MvPolynomial.coe_X, MvPolynomial.coe_C, MvPowerSeries.smul_eq_C_mul, mul_sub]
 
 section HomDefect
 

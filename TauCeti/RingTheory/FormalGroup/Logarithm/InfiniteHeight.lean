@@ -125,8 +125,10 @@ private theorem exists_le_order_homDefect_𝔾ₐ_sub_smul_X_pow [F.IsComm] {p :
       rw [F.homDefect_𝔾ₐ_sub hg hXn₀]
       exact le_order_sub hn (F.le_order_homDefect_𝔾ₐ hXn₀ hXn)
     refine succ_le_order_of_homogeneousComponent_eq_zero hn' ?_
-    rw [F.homDefect_𝔾ₐ_sub hg hXn₀, map_sub,
-      F.homogeneousComponent_homDefect_𝔾ₐ_smul_X_pow c (by omega), hc, sub_self]
+    have hcX := homogeneousComponent_homDefect_add_sub (F := F) (G := 𝔾ₐ) (map_zero _)
+      (show n ≠ 0 by omega) c
+    rw [_root_.zero_add, homDefect_zero, sub_zero] at hcX
+    rw [F.homDefect_𝔾ₐ_sub hg hXn₀, map_sub, hcX, hc, sub_self]
 
 end PSeries
 
