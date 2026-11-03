@@ -22,25 +22,6 @@ open Filter Topology Pointwise TauCeti.Huber
 
 namespace Subring
 
-section Bounded
-
-variable {R : Type*} [Ring R] [TopologicalSpace R]
-
-/-- The inverse image of a bounded set under a subring inclusion is bounded for the subspace
-topology. -/
-theorem isBounded_preimage_subtype (S : Subring R) {s : Set R} (hs : IsBounded s) :
-    IsBounded (Subtype.val ⁻¹' s : Set S) := by
-  rw [isBounded_iff] at hs ⊢
-  intro U hU
-  rw [nhds_induced] at hU
-  obtain ⟨W, hW, hWU⟩ := Filter.mem_comap.mp hU
-  obtain ⟨V, hV, hVW⟩ := hs W hW
-  refine ⟨Subtype.val ⁻¹' V, continuous_subtype_val.continuousAt.preimage_mem_nhds hV, ?_⟩
-  rintro _ ⟨x, hx, y, hy, rfl⟩
-  exact hWU (hVW (Set.mul_mem_mul hx hy))
-
-end Bounded
-
 variable {R : Type*} [CommRing R] [TopologicalSpace R] [IsTopologicalRing R] [IsTateRing R]
 
 /-- A subring containing a pseudouniformiser as a unit is a Tate ring in its subspace topology.

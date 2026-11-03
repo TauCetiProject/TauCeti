@@ -62,8 +62,6 @@ theorem isPerfectoidTateRing_topologicalClosure_range (f : A →+* uniformTilt p
   let : CompleteSpace S := f.range.isClosed_topologicalClosure.completeSpace_coe
   rcases subsingleton_or_nontrivial B with hB | hB
   · let := hB
-    let : Subsingleton (uniformTilt p B) :=
-      ⟨fun _ _ ↦ uniformTilt.ext fun _ ↦ Subsingleton.elim _ _⟩
     exact isPerfectoidTateRing_of_subsingleton p S
   · let := hB
     let := f.perfectRing_topologicalClosure_range p

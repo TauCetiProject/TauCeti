@@ -142,8 +142,7 @@ theorem IsUniform.of_perfectRing (p : ℕ) [Fact p.Prime] [CharP R p] [PerfectRi
 end TauCeti.Huber
 
 /-- The closure of the image of a perfect ring in a perfect complete Hausdorff Tate ring is
-perfect. The source requires no topology: inverse Frobenius preserves its image algebraically,
-and then preserves the closure by continuity. -/
+perfect. The source requires no topology, and the homomorphism need not be continuous. -/
 theorem RingHom.perfectRing_topologicalClosure_range {A R : Type*} [CommRing A] [CommRing R]
     [UniformSpace R] [IsUniformAddGroup R] [IsTopologicalRing R]
     [TauCeti.Huber.IsTateRing R] [CompleteSpace R] [T2Space R]
