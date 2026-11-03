@@ -44,11 +44,9 @@ classify pairs of a homomorphism out of `B` and a change of variables (`ChangeRi
 `B = ℤ[a₁, ⋯, a₆]` it is `Γ`, and for `B = Γ` it is `Γ ⊗_A Γ`, and the triple tensor product
 `Γ ⊗_A Γ ⊗_A Γ` is the case `B = Γ ⊗_A Γ`.
 
-Every equation is proved by comparing classified data: a ring homomorphism out of
-`B[u, u⁻¹, r, s, t]` is determined by its restriction to `B` and by the change of variables it
-classifies (`ChangeRing.ringHom_ext`), and each equation then becomes a groupoid law in the group
-`WeierstrassCurve.VariableChange R` acting on Weierstrass curves. The statements and this proof
-strategy follow those for the Hopf algebroid `(L, L[b₁, b₂, …])` of strict coordinate changes of
+A ring homomorphism out of `B[u, u⁻¹, r, s, t]` is determined by its restriction to `B` and by
+the change of variables it classifies (`ChangeRing.ringHom_ext`). The structure maps and their
+equations follow those of the Hopf algebroid `(L, L[b₁, b₂, …])` of strict coordinate changes of
 formal group laws in `TauCeti/RingTheory/FormalGroup/CoordinateChange/HopfAlgebroid.lean`.
 
 ## Main definitions
@@ -92,6 +90,10 @@ namespace TauCeti.WeierstrassHopfAlgebroid
 open MvPolynomial WeierstrassCurve TauCeti.WeierstrassChange TauCeti.WeierstrassChange.ChangeRing
 
 variable {R : Type*} [CommRing R]
+
+/- Each Hopf algebroid equation below is proved by `ChangeRing.ringHom_ext`, which reduces it to
+a groupoid law in the group `VariableChange R` acting on Weierstrass curves. This follows the proof
+strategy of the formal-group Hopf algebroid file cited in the module docstring. -/
 
 /-! ### The arrows of the Weierstrass Hopf algebroid -/
 
