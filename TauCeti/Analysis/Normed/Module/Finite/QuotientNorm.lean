@@ -94,16 +94,14 @@ theorem finiteQuotientNorm_apply_le (x : ι → R) :
 This also characterises the norm when the infimum is not attained. -/
 theorem finiteQuotientNorm_lt_iff (m : M) (r : ℝ) :
     f.finiteQuotientNorm hf m < r ↔ ∃ x : ι → R, f x = m ∧ ‖x‖ < r := by
-  constructor
-  · intro h
-    rw [finiteQuotientNorm_apply] at h
-    obtain ⟨x, hx, hxr⟩ := Submodule.Quotient.norm_mk_lt
-      ((f.quotKerEquivOfSurjective hf).symm m) (sub_pos.mpr h)
-    refine ⟨x, ?_, by linarith⟩
-    simpa only [quotKerEquivOfSurjective_apply_mk, LinearEquiv.apply_symm_apply] using
-      congrArg (f.quotKerEquivOfSurjective hf) hx
-  · rintro ⟨x, rfl, hx⟩
-    exact (f.finiteQuotientNorm_apply_le hf x).trans_lt hx
+  rw [finiteQuotientNorm_apply]
+  refine (QuotientAddGroup.norm_lt_iff (S := f.ker.toAddSubgroup)
+    (x := (f.quotKerEquivOfSurjective hf).symm m)).trans ?_
+  refine exists_congr fun x ↦ ?_
+  -- Express the additive-subgroup quotient equality in the submodule quotient so that the
+  -- linear equivalence rewrite can match its carrier and representative map.
+  change (Submodule.Quotient.mk x = (f.quotKerEquivOfSurjective hf).symm m ∧ ‖x‖ < r) ↔ _
+  rw [LinearEquiv.eq_symm_apply, quotKerEquivOfSurjective_apply_mk]
 
 /-- Quotient norms on finite modules are ultrametric. -/
 theorem isUltrametricDist_finiteQuotientNorm [IsUltrametricDist R] :
