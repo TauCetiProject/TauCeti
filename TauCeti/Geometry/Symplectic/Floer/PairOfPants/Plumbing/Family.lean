@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Symplectic.Floer.PairOfPants.Plumbing.Basic
+public import TauCeti.Geometry.Symplectic.Floer.PairOfPants.Plumbing.Defs
 
 /-!
 # Smooth Hamiltonian data along a plumbing family
