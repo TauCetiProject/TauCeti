@@ -241,7 +241,7 @@ theorem exists_param_inter_preimage_of_span_mtangentConeAt_sup_eq_top [FiniteDim
   have hyτ : q' y ∈ τ.source := by simp [τ, q'.map_source hyq', q'.left_inv hyq', hye]
   set D := fderiv 𝕜 τ (q' y)
   have hτ : HasStrictFDerivAt τ D (q' y) :=
-    (contDiffAt_symm_trans_of_mem_maximalAtlas hq' he hyτ).hasStrictFDerivAt hn
+    (contDiffAt_symm_trans_of_mem_maximalAtlas hq' he hyτ).hasStrictFDerivAt_fderiv hn
   have hDA : D ∘L (A' : E →L[𝕜] E) = Ae := fderiv_symm_trans_comp_eq hn hq' he hyq' hye hA' hAe
   have hDF (z : E) : D z = Ae (A'.symm z) := by
     simpa using congrArg (fun B : E →L[𝕜] E ↦ B (A'.symm z)) hDA
