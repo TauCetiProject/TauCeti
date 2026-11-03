@@ -410,7 +410,7 @@ theorem orthogonalGroupMeasure_univ_succ (n : ℕ) :
   have h := congrArg (fun μ : Measure (sphere (0 : EuclideanSpace ℝ (Fin (n + 1))) 1) ↦ μ univ)
     (map_orthogonalGroupLastColumn_orthogonalGroupMeasure n)
   simp only [Measure.map_apply (continuous_orthogonalGroupLastColumn n).measurable
-    MeasurableSet.univ, preimage_univ, Measure.smul_apply, smul_eq_mul] at h
+    MeasurableSet.univ, preimage_univ, _root_.smul_apply, smul_eq_mul] at h
   rw [h, mul_comm]
 
 /-! ### The volumes of `O(n)` and `SO(n)` -/
