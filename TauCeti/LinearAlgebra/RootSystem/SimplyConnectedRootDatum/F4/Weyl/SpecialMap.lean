@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.F4.SpecialMap
-public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.GeckLattice.Weyl.RootSubgroup
+public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.F4.Weyl.Basic
 
 /-!
 # Weyl transport and the special F₄ root permutation
@@ -26,22 +26,8 @@ public section
 
 namespace TauCeti.DynkinType
 
--- Specialize the generic rank-indexed word API once to the concrete F₄ root table.
 -- Equality transport below avoids asking `rw` to match across the semireducible
 -- `Fin F4.rank` / `Fin 4` boundary.
-private theorem geckWeylRootIndex_F4_nil (i : Fin 4) :
-    F4.geckWeylRootIndex valid_F4 [] i = Fin.castAdd 44 i := by
-  exact (F4.geckWeylRootIndex_nil valid_F4 i).trans (simpleIndex_F4 valid_F4 i)
-
-private theorem geckWeylRootIndex_F4_cons (j : Fin 4) (l : List (Fin 4)) (i : Fin 4) :
-    F4.geckWeylRootIndex valid_F4 (j :: l) i =
-      f4ReflectionIndex (Fin.castAdd 44 j) (F4.geckWeylRootIndex valid_F4 l i) := by
-  calc
-    _ = (F4.simplyConnectedRootDatum valid_F4).reflectionPerm (F4.simpleIndex valid_F4 j)
-        (F4.geckWeylRootIndex valid_F4 l i) := F4.geckWeylRootIndex_cons valid_F4 j l i
-    _ = _ := by
-      rw [simplyConnectedRootDatum_F4, simpleIndex_F4 valid_F4 j]
-      exact f4SimplyConnectedRootDatum_reflectionPerm _ _
 
 /-- Weyl transport preserves the length of the starting simple root. -/
 @[simp] theorem f4Length_geckWeylRootIndex (l : List (Fin 4)) (i : Fin 4) :

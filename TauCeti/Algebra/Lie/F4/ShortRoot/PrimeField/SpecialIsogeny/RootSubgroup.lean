@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Algebra.Lie.F4.ShortRoot.PrimeField.QuotientSpecialIsogeny
 public import TauCeti.Algebra.Lie.F4.ShortRoot.PrimeField.Root.Subgroup
-public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.F4.WeylSpecialMap
+public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.F4.Weyl.SpecialMap
 
 /-!
 # The exceptional F₄ isogeny on Weyl-transported root subgroups

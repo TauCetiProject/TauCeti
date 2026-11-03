@@ -152,7 +152,7 @@ of the diagram**, namely reversal of the four-node chain. -/
 
 /-- The special root permutation intertwines reflection in any root with reflection in its
 image. This is a length-exchanging compatibility, not a Cartan automorphism. -/
-theorem f4SpecialIsogenyIndex_f4ReflectionIndex (j k : Fin 48) :
+@[simp] theorem f4SpecialIsogenyIndex_f4ReflectionIndex (j k : Fin 48) :
     f4SpecialIsogenyIndex (f4ReflectionIndex j k) =
       f4ReflectionIndex (f4SpecialIsogenyIndex j) (f4SpecialIsogenyIndex k) := by
   decide +revert
