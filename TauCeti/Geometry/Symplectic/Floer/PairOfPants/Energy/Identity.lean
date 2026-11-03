@@ -102,18 +102,6 @@ puncture. -/
 private noncomputable def signedCoord (q : Puncture) (z : ℝ × ℝ) : ℝ :=
   q.endSign * (q.endCoord (Complex.equivRealProdCLM.symm z)).re
 
-private theorem ne_endCenter_of_signedCoord_ne_zero {q : Puncture} {z : ℝ × ℝ}
-    (h : signedCoord q z ≠ 0) : Complex.equivRealProdCLM.symm z ≠ q.endCenter :=
-  q.ne_endCenter_of_re_endCoord_ne_zero fun h' => h (by simp [signedCoord, h'])
-
-/-- The parts `±s > 0` of distinct ends are disjoint. -/
-private theorem signedCoord_nonpos {q r : Puncture} (hqr : q ≠ r) {z : ℝ × ℝ}
-    (hq : 0 < signedCoord q z) : signedCoord r z ≤ 0 := by
-  by_contra! hr
-  exact cylindricalEndLift_ne_cylindricalEndLift hqr hq hr
-    ((q.cylindricalEndLift_endCoord (ne_endCenter_of_signedCoord_ne_zero hq.ne')).trans
-      (r.cylindricalEndLift_endCoord (ne_endCenter_of_signedCoord_ne_zero hr.ne')).symm)
-
 private theorem mem_pantsDomain_of_signedCoord_pos {q : Puncture} {z : ℝ × ℝ}
     (h : 0 < signedCoord q z) : z ∈ pantsDomain :=
   mem_pantsDomain_iff.2 (q.ne_zero_and_ne_one_of_endSign_mul_re_endCoord_pos h)
@@ -187,7 +175,8 @@ private theorem cutoff_of_signedCoord_pos {T : ℝ} (hT : 0 ≤ T) {q : Puncture
     (hq : 0 < signedCoord q z) : cutoff T z = 1 - smoothTransition (signedCoord q z - T) := by
   rw [cutoff_of_mem (mem_pantsDomain_of_signedCoord_pos hq), Finset.sum_eq_single q]
   · intro r _ hr
-    exact smoothTransition.zero_of_nonpos (by linarith [signedCoord_nonpos (Ne.symm hr) hq])
+    have hr' : signedCoord r z ≤ 0 := endSign_mul_re_endCoord_nonpos (Ne.symm hr) hq
+    exact smoothTransition.zero_of_nonpos (by linarith)
   · simp
 
 private theorem cutoff_eq_one {T : ℝ} {z : ℝ × ℝ} (hz : z ∈ pantsDomain)
