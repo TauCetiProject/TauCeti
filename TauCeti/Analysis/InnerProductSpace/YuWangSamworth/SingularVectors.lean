@@ -85,7 +85,7 @@ theorem sq_mul_sum_sum_norm_inner_rightSingularBasis_sq_le_four_mul_card_mul_sq
       Â A hÂ hA hE x)
 
 /-- **Yu–Wang–Samworth bound for left singular vectors.** A population gap in the
-squared singular values of the target Gram operator gives the same cross-block
+eigenvalues of the target Gram operator gives the same cross-block
 bound as for right singular vectors. The eigenbases of `A A†` and `Â Â†` include
 complete bases of the kernels, so no positive-rank assumption is needed.
 
@@ -117,23 +117,7 @@ theorem sq_mul_sum_sum_norm_inner_self_comp_adjoint_eigenvectorBasis_sq_le_four_
       A.adjoint.isSymmetric_adjoint_comp_self
       Â.adjoint.isSymmetric_adjoint_comp_self rfl hΓ hgap
     intro x
-    obtain ⟨y, hy⟩ := exists_ne (0 : E)
-    have hypos := norm_pos_iff.mpr hy
-    have ha := nonneg_of_mul_nonneg_left ((norm_nonneg (A y)).trans (hA y)) hypos
-    have hâ := nonneg_of_mul_nonneg_left ((norm_nonneg (Â y)).trans (hÂ y)) hypos
-    have hε := nonneg_of_mul_nonneg_left ((norm_nonneg ((Â - A) y)).trans (hE y)) hypos
-    let : CompleteSpace E := FiniteDimensional.complete 𝕜 E
-    let : CompleteSpace F := FiniteDimensional.complete 𝕜 F
-    have hAop := A.toContinuousLinearMap.opNorm_le_bound ha hA
-    have hÂop := Â.toContinuousLinearMap.opNorm_le_bound hâ hÂ
-    have hEop := (Â.toContinuousLinearMap - A.toContinuousLinearMap).opNorm_le_bound hε hE
-    have hGram := (ContinuousLinearMap.norm_self_comp_adjoint_sub_self_comp_adjoint_le
-      Â.toContinuousLinearMap A.toContinuousLinearMap).trans
-        (mul_le_mul (add_le_add hÂop hAop) hEop
-          (norm_nonneg _) (add_nonneg hâ ha))
-    simpa only [LinearMap.adjoint_adjoint, LinearMap.sub_apply, LinearMap.comp_apply,
-      _root_.sub_apply, ContinuousLinearMap.comp_apply,
-      ← adjoint_toContinuousLinearMap, coe_toContinuousLinearMap', add_comm â a] using
-      (ContinuousLinearMap.le_of_opNorm_le _ hGram x)
+    simpa only [LinearMap.adjoint_adjoint, add_comm â a] using
+      (LinearMap.norm_self_comp_adjoint_sub_self_comp_adjoint_apply_le Â A hÂ hA hE x)
 
 end LinearMap
