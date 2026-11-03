@@ -61,6 +61,17 @@ variable {α : Type*} [MeasurableSpace α]
 /-- The unit of the monoid of kernels `Kernel α α` is the identity kernel. -/
 theorem one_def : (1 : Kernel α α) = Kernel.id := (rfl)
 
+/-- A kernel intertwining two one-step kernels also intertwines all their powers. -/
+theorem comp_pow_eq_pow_comp_of_comp_eq {β : Type*} [MeasurableSpace β]
+    {e : Kernel β α} {η : Kernel β β} {κ : Kernel α α}
+    (h : e ∘ₖ η = κ ∘ₖ e) (n : ℕ) : e ∘ₖ (η ^ n) = (κ ^ n) ∘ₖ e := by
+  induction n with
+  | zero => simp [one_def]
+  | succ n ih =>
+    -- Use the composition form of powers; the monoid instance does not expose multiplication.
+    simp only [Nat.add_comm n 1, pow_add, pow_one]
+    rw [← comp_assoc, h, comp_assoc, ih, comp_assoc]
+
 /-- The `n`-th power of the deterministic kernel of `f` is the deterministic kernel of the
 `n`-th iterate of `f`. -/
 @[simp]

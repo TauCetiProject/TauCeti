@@ -108,7 +108,7 @@ private theorem regularRep_eq (hfD : f.discrim = D)
       f.a * z.im, z.re + z.im * (D - (D - f.b) / 2)] := by
   rw [regularRep_apply, generatorMatrix_eq]
   ext i j
-  fin_cases i <;> fin_cases j <;> simp [intCast_apply] <;> ring
+  fin_cases i <;> fin_cases j <;> simp [Matrix.intCast_apply] <;> ring
 
 /-- The determinant of the regular representation is the norm. -/
 private theorem det_regularRep (hfD : f.discrim = D)
@@ -191,7 +191,7 @@ private theorem unitaryToStabilizer_surjective (hfD : f.discrim = D) (hf : f.IsP
   have h₀₀ := congrFun₂ hcomm 0 0
   have h₀₁ := congrFun₂ hcomm 0 1
   have h₁₀ := congrFun₂ hcomm 1 0
-  simp only [mul_apply, Fin.sum_univ_two, of_apply, cons_val', cons_val_zero, cons_val_one,
+  simp only [Matrix.mul_apply, Fin.sum_univ_two, of_apply, cons_val', cons_val_zero, cons_val_one,
     empty_val', cons_val_fin_one] at h₀₀ h₀₁ h₁₀
   set p := γ 0 0
   set q := γ 0 1

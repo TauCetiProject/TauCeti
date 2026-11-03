@@ -218,7 +218,7 @@ theorem ker_le_range_of_mapRange_constantCoeff
     | succ k ih =>
       obtain ⟨y, hya, hyk⟩ := ih
       have hcycle : d (z - d y) = 0 := by
-        rw [map_sub, mem_ker.mp hz, ← comp_apply d d, hd, zero_apply, sub_zero]
+        rw [map_sub, mem_ker.mp hz, ← comp_apply d d, hd, LinearMap.zero_apply, sub_zero]
       obtain ⟨y', hy'a, hy'k⟩ :=
         exists_sub_apply_mem_pow_idealOfVars (d := d) hhom hexact hcycle hya hyk
       refine ⟨y + y', ?_, ?_⟩

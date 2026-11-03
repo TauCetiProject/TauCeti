@@ -322,22 +322,62 @@ theorem continuous_gaugeAdjoint (hx : Continuous x) (hy : ContDiff ℝ 1 y) :
   rw [funext (gaugeAdjoint_def x y)]
   fun_prop
 
+/-- The formal adjoint is `Cⁿ` when the background is `Cⁿ` and the argument is `Cⁿ⁺¹`. -/
+theorem contDiff_gaugeFixedAdjoint {n : WithTop ℕ∞}
+    (hx : ContDiff ℝ n x) (hy : ContDiff ℝ (n + 1) y) :
+    ContDiff ℝ n (gaugeFixedAdjoint x y) := by
+  have hxi (i : Fin 4) : ContDiff ℝ n (fun z ↦ x z i) := contDiff_euclidean.mp hx i
+  have hyi (i : Fin 4) : ContDiff ℝ (n + 1) (fun z ↦ y z i) := contDiff_euclidean.mp hy i
+  have hd (i : Fin 4) (v : ℂ) : ContDiff ℝ n
+      (fun z ↦ fderiv ℝ (fun w ↦ y w i) z v) :=
+    ((hyi i).fderiv_right le_rfl).clm_apply contDiff_const
+  have hv (i : Fin 4) : ContDiff ℝ n (fun z ↦ y z i) := (hyi i).of_le le_self_add
+  have h₀ : ContDiff ℝ n (fun z ↦ gaugeFixedAdjoint x y z 0) := by
+    simp only [gaugeFixedAdjoint_apply_zero]; fun_prop
+  have h₁ : ContDiff ℝ n (fun z ↦ gaugeFixedAdjoint x y z 1) := by
+    simp only [gaugeFixedAdjoint_apply_one]; fun_prop
+  have h₂ : ContDiff ℝ n (fun z ↦ gaugeFixedAdjoint x y z 2) := by
+    simp only [gaugeFixedAdjoint_apply_two]; fun_prop
+  have h₃ : ContDiff ℝ n (fun z ↦ gaugeFixedAdjoint x y z 3) := by
+    simp only [gaugeFixedAdjoint_apply_three]; fun_prop
+  refine contDiff_euclidean.mpr fun i ↦ ?_
+  fin_cases i
+  exacts [h₀, h₁, h₂, h₃]
+
 /-- `L_x* y` is continuous for a continuous field and a `C¹` argument. -/
 theorem continuous_gaugeFixedAdjoint (hx : Continuous x) (hy : ContDiff ℝ 1 y) :
-    Continuous (gaugeFixedAdjoint x y) := by
-  have (i : Fin 4) (v : ℂ) : Continuous fun z ↦ fderiv ℝ (fun w ↦ y w i) z v :=
+    Continuous (gaugeFixedAdjoint x y) :=
+  (contDiff_gaugeFixedAdjoint (n := 0) (contDiff_zero.mpr hx) (by simpa using hy)).continuous
+
+/-- The formal adjoint preserves compact support, with no regularity assumption on the field. -/
+theorem hasCompactSupport_gaugeFixedAdjoint (hy : HasCompactSupport y) :
+    HasCompactSupport (gaugeFixedAdjoint x y) := by
+  apply hy.mono'
+  intro z hz
+  by_contra hn
+  have hd (i : Fin 4) : fderiv ℝ (fun w ↦ y w i) z = 0 :=
+    fderiv_of_notMem_tsupport ℝ fun h ↦
+      hn (tsupport_comp_subset (g := fun v : EuclideanSpace ℝ (Fin 4) ↦ v i) (by simp) y h)
+  apply hz
+  ext i
+  fin_cases i <;> simp [hd, image_eq_zero_of_notMem_tsupport hn]
+
+/-- `L_x y` is continuous for a continuous field and a `C¹` argument. -/
+theorem continuous_gaugeFixedOperator (hx : Continuous x) (hy : ContDiff ℝ 1 y) :
+    Continuous (gaugeFixedOperator x y) := by
+  have hd (i : Fin 4) (v : ℂ) : Continuous fun z ↦ fderiv ℝ (fun w ↦ y w i) z v :=
     (((EuclideanSpace.proj (𝕜 := ℝ) i).contDiff.comp hy :).continuous_fderiv
       one_ne_zero).clm_apply continuous_const
   have hxi (i : Fin 4) : Continuous fun z ↦ x z i := by fun_prop
   have hyi (i : Fin 4) : Continuous fun z ↦ y z i := by fun_prop
-  have h₀ : Continuous fun z ↦ gaugeFixedAdjoint x y z 0 := by
-    simp only [gaugeFixedAdjoint_apply_zero]; fun_prop
-  have h₁ : Continuous fun z ↦ gaugeFixedAdjoint x y z 1 := by
-    simp only [gaugeFixedAdjoint_apply_one]; fun_prop
-  have h₂ : Continuous fun z ↦ gaugeFixedAdjoint x y z 2 := by
-    simp only [gaugeFixedAdjoint_apply_two]; fun_prop
-  have h₃ : Continuous fun z ↦ gaugeFixedAdjoint x y z 3 := by
-    simp only [gaugeFixedAdjoint_apply_three]; fun_prop
+  have h₀ : Continuous fun z ↦ gaugeFixedOperator x y z 0 := by
+    simp only [gaugeFixedOperator_apply_zero, gaugeAdjoint_def]; fun_prop
+  have h₁ : Continuous fun z ↦ gaugeFixedOperator x y z 1 := by
+    simp only [gaugeFixedOperator_apply_one, linearizedEquation_apply_zero]; fun_prop
+  have h₂ : Continuous fun z ↦ gaugeFixedOperator x y z 2 := by
+    simp only [gaugeFixedOperator_apply_two, linearizedEquation_apply_one]; fun_prop
+  have h₃ : Continuous fun z ↦ gaugeFixedOperator x y z 3 := by
+    simp only [gaugeFixedOperator_apply_three, linearizedEquation_apply_two]; fun_prop
   refine (PiLp.continuous_toLp 2 _).comp (continuous_pi fun i ↦ ?_)
   fin_cases i
   exacts [h₀, h₁, h₂, h₃]

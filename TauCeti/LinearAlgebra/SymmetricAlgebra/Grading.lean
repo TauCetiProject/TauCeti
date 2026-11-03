@@ -41,6 +41,8 @@ a maximal ideal over a field.
 * `isRadical_toIdeal_irrelevant`: over a reduced base, the irrelevant ideal is radical.
 * `isPrime_toIdeal_irrelevant` and `isMaximal_toIdeal_irrelevant`: over a domain, respectively a
   field, the irrelevant ideal is prime, respectively maximal.
+* `sub_decompose_mem_wordFiltrationPrevious`: an element of degree at most `n` in the degree
+  filtration agrees with its homogeneous component of degree `n` up to lower degree.
 -/
 
 public section
@@ -135,5 +137,40 @@ instance isMaximal_toIdeal_irrelevant (K : Type*) [Field K] [Module K M] :
     (HomogeneousIdeal.irrelevant (homogeneousSubmodule K M)).toIdeal.IsMaximal := by
   rw [toIdeal_irrelevant_eq_ker_algebraMapInv]
   exact RingHom.ker_isMaximal_of_surjective _ (SymmetricAlgebra.algebraMap_leftInverse M).surjective
+
+end TauCeti.SymmetricAlgebra
+
+/-! ### Homogeneous components and the degree filtration -/
+
+namespace TauCeti.SymmetricAlgebra
+
+open TauCeti.Algebra
+
+variable {R : Type*} {M : Type*} [CommRing R] [AddCommMonoid M] [Module R M]
+
+/-- **An element of degree at most `n` agrees with its degree-`n` component up to lower degree**:
+if `p` lies in the `n`-th step of the degree filtration, the word filtration of the generators,
+then `p` minus its homogeneous component of degree `n` has degree strictly less than `n`. In
+degree zero this says that an element of degree zero is its own constant term. -/
+theorem sub_decompose_mem_wordFiltrationPrevious {n : ℕ} {p : SymmetricAlgebra R M}
+    (hp : p ∈ wordFiltration (SymmetricAlgebra.ι R M) n) :
+    p - (DirectSum.decompose (homogeneousSubmodule R M) p n : SymmetricAlgebra R M) ∈
+      wordFiltrationPrevious (SymmetricAlgebra.ι R M) n := by
+  rw [wordFiltration_eq_iSup_pow] at hp
+  refine Submodule.iSup_induction _ (motive := fun p ↦
+    p - (DirectSum.decompose (homogeneousSubmodule R M) p n : SymmetricAlgebra R M) ∈
+      wordFiltrationPrevious (SymmetricAlgebra.ι R M) n) hp ?_ (by simp) ?_
+  · rintro ⟨i, hi⟩ x hx
+    rcases hi.eq_or_lt with rfl | hlt
+    · rw [DirectSum.decompose_of_mem_same _ hx, sub_self]
+      exact zero_mem _
+    · -- a component of degree `i < n` is already of degree at most `n - 1`
+      rw [DirectSum.decompose_of_mem_ne _ hx hlt.ne, sub_zero]
+      obtain ⟨m, rfl⟩ := Nat.exists_eq_add_of_lt hlt
+      rw [wordFiltrationPrevious_succ]
+      exact wordFiltration_mono _ (Nat.le_add_right i m) (range_pow_le_wordFiltration _ i hx)
+  · intro x y hx hy
+    rw [DirectSum.decompose_add, DirectSum.add_apply, Submodule.coe_add, add_sub_add_comm]
+    exact add_mem hx hy
 
 end TauCeti.SymmetricAlgebra

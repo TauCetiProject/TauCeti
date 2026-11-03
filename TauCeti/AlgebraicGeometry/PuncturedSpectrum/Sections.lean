@@ -6,7 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.Modules.Tilde.Hartogs
+public import TauCeti.AlgebraicGeometry.PuncturedSpectrum
+public import Mathlib.AlgebraicGeometry.Morphisms.Affine
 public import Mathlib.RingTheory.IntegralClosure.IntegrallyClosed
+import Mathlib.AlgebraicGeometry.QuasiAffine
 import Mathlib.RingTheory.Regular.Flat
 import TauCeti.RingTheory.CohenMacaulay.Normal
 import TauCeti.RingTheory.Depth.WeaklyRegular
@@ -40,9 +43,16 @@ form of 0BM9: Stacks omits the hypothesis that `B` is torsion-free over `A`, wit
 false (for `B = A × A/𝔪` the sections over the preimage of the punctured spectrum are just `A`),
 so the theorem assumes `Module.IsTorsionFree A B`.
 
+For an affine scheme over the punctured spectrum of a Noetherian local ring of depth at least
+two, the morphism on spectra of global sections restricts to the original scheme. This uses
+Mathlib's `AlgebraicGeometry.Scheme.isPullback_toSpecΓ_toSpecΓ` after identifying the global
+sections of the punctured base with the local ring.
+
 ## Main results
 
 * `TauCeti.AlgebraicGeometry.Spec.presheaf_map_leTop_bijective_of_flat`: the flat case.
+* `TauCeti.IsLocalRing.isPullback_puncturedSpectrum_toSpecΓ`: reconstruction of an affine
+  scheme over the puncture by restricting the spectrum of its sections.
 * `TauCeti.AlgebraicGeometry.Spec.presheaf_map_leTop_bijective_of_isIntegral`: the integral case,
   an affine form of Stacks, Lemma 58.20.1 (0BM8).
 * `TauCeti.AlgebraicGeometry.Spec.presheaf_map_leTop_bijective_of_isIntegrallyClosed`: the finite
@@ -129,3 +139,42 @@ theorem presheaf_map_leTop_bijective_of_isIntegrallyClosed [IsLocalRing A] [IsNo
   exact hdim
 
 end TauCeti.AlgebraicGeometry.Spec
+
+namespace TauCeti.IsLocalRing
+
+open CategoryTheory.Limits
+
+variable (A : Type u) [CommRing A] [IsLocalRing A] [IsNoetherianRing A]
+
+/-- An affine scheme over the punctured spectrum of a local ring of depth at least two
+is the restriction of the spectrum of its global sections. The bottom map is induced by
+the canonical `A`-algebra structure on those sections. -/
+theorem isPullback_puncturedSpectrum_toSpecΓ
+    (hdepth : 2 ≤ depth (ModuleCat.of A A)) {V : Scheme.{u}}
+    (f : V ⟶ (puncturedSpectrum A).toScheme) [IsAffineHom f] :
+    IsPullback f V.toSpecΓ (puncturedSpectrum A).ι
+      (Spec.map ((Scheme.ΓSpecIso (.of A)).inv ≫
+        (f ≫ (puncturedSpectrum A).ι).appTop)) := by
+  let U := puncturedSpectrum A
+  have : CompactSpace U.toScheme := isCompact_iff_compactSpace.mp
+    (isCompact_puncturedSpectrum_of_fg_maximalIdeal A (IsNoetherian.noetherian _))
+  have : U.toScheme.IsQuasiAffine := Scheme.IsQuasiAffine.of_isImmersion U.ι
+  have hΓ := TauCeti.AlgebraicGeometry.Spec.presheaf_map_leTop_bijective_of_flat
+    (A := A) (B := A) hdepth (U.ι ''ᵁ ⊤) fun p hp ↦ by
+      rw [Scheme.Opens.ι_image_top]
+      apply (mem_puncturedSpectrum_iff A p).mpr
+      intro he
+      apply hp
+      simpa [Ideal.under_def, IsLocalRing.closedPoint] using congrArg PrimeSpectrum.asIdeal he
+  have : IsIso U.ι.appTop := by
+    rw [Scheme.Opens.ι_appTop]
+    exact (ConcreteCategory.isIso_iff_bijective _).mpr hΓ
+  let e := asIso (Spec.map ((Scheme.ΓSpecIso (.of A)).inv ≫ U.ι.appTop))
+  refine (Scheme.isPullback_toSpecΓ_toSpecΓ f).of_iso
+    (.refl _) (.refl _) (.refl _) e (by simp) (by simp) ?_ ?_
+  · simp only [e, asIso_hom, Spec.map_comp, ← Scheme.toSpecΓ_naturality_assoc]
+    simp [U]
+  · simp only [e, asIso_hom, Spec.map_comp, Scheme.Hom.comp_appTop,
+      Iso.refl_hom, Category.id_comp, Category.assoc, U]
+
+end TauCeti.IsLocalRing

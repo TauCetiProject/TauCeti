@@ -122,7 +122,7 @@ theorem canonicalTrace_Tw_mul_Tw (v w : W) :
     canonicalTrace cs (Tw q cs v * Tw q cs w) = if v * w = 1 then (1 : R) else 0 := by
   classical
   induction hlen : cs.length v using Nat.strong_induction_on generalizing v w with
-  | h k ih =>
+  | ind k ih =>
     by_cases hv : v = 1
     · simp [hv, Tw_one]
     obtain ⟨i, hi⟩ := cs.exists_leftDescent_of_ne_one hv

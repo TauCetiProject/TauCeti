@@ -137,6 +137,12 @@ theorem mahlerEquiv_symm_single (n : ℕ) (a : E) :
     simp [single_apply, hk, mahlerTerm]]
   simp
 
+/-- The Mahler coordinates of a single Mahler term form the coordinate vector `single n a`. -/
+@[simp]
+theorem mahlerEquiv_mahlerTerm (n : ℕ) (a : E) :
+    mahlerEquiv (p := p) E (mahlerTerm a n) = single n a := by
+  rw [← mahlerEquiv_symm_single, LinearIsometryEquiv.apply_symm_apply]
+
 end Module
 
 /-- For a normed ring `R` with a `ℤ_[p]`-action commuting with left multiplication, the Mahler term
