@@ -33,6 +33,8 @@ noncomputable section
 namespace TauCeti.LazardRing
 
 open MvPolynomial
+open FormalCoordinate (universalStrictCoordinate coeff_succ_universalStrictCoordinate
+  map_universalStrictCoordinate)
 
 /-- The pushout map of two composable graded classifying maps preserves degrees. -/
 theorem tensorLift_mem {A σ ι : Type*} [CommRing A] [SetLike σ A]

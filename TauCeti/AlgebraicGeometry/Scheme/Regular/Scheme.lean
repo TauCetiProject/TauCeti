@@ -9,6 +9,7 @@ public import TauCeti.AlgebraicGeometry.Scheme.Normal
 public import TauCeti.RingTheory.RegularLocalRing.Normal
 public import TauCeti.AlgebraicGeometry.Morphisms.Smooth.Regular
 
+import TauCeti.RingTheory.RegularLocalRing.UniqueFactorization
 import TauCeti.Topology.KrullDimension.Basic
 
 /-!
@@ -40,6 +41,8 @@ rings.
 * `TauCeti.AlgebraicGeometry.IsRegular.isNormal`: regular schemes are normal.
 * `TauCeti.AlgebraicGeometry.IsRegular.of_isNormalScheme_of_topologicalKrullDim_le_one`: a locally
   Noetherian normal scheme of dimension at most one is regular.
+* `TauCeti.AlgebraicGeometry.IsRegular.uniqueFactorizationMonoid_stalk`: the local ring of a regular
+  scheme at a point of codimension at most two is factorial.
 
 ## References
 
@@ -190,5 +193,14 @@ theorem IsRegular.of_isNormalScheme_of_topologicalKrullDim_le_one [IsLocallyNoet
     · exact hx.isPrincipalIdealRing
     · exact (IsDiscreteValuationRing.of_krullDimLE_one hx).toIsPrincipalIdealRing
   infer_instance
+
+/-- **Regular schemes are factorial in codimension at most two.** The local ring of a regular
+scheme at a point of codimension at most two, such as any point of a regular model of a curve
+over a discrete valuation ring, is a unique factorization domain. -/
+theorem IsRegular.uniqueFactorizationMonoid_stalk [IsRegular X] (x : X)
+    (hx : Order.coheight x ≤ 2) : UniqueFactorizationMonoid (X.presheaf.stalk x) :=
+  TauCeti.IsRegularLocalRing.uniqueFactorizationMonoid <| by
+    rw [ringKrullDim_stalk_eq_coheight]
+    exact WithBot.coe_le_coe.mpr hx
 
 end TauCeti.AlgebraicGeometry
