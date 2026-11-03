@@ -14,7 +14,6 @@ public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.LieAlgeb
 import TauCeti.Algebra.Lie.DirectSum
 import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.Weight.DirectSum
 import TauCeti.Algebra.Lie.UniversalEnveloping.Module
-import TauCeti.RepresentationTheory.Lie.AdNilpotent
 
 /-!
 # The admissible lattice of the full-weight module
@@ -50,8 +49,6 @@ weight basis is a closed subgroup scheme of `GLₙ`
 * `TauCeti.DynkinType.instIsLatticeScLattice`: it is a full lattice in `V_sc(t)`.
 * `TauCeti.DynkinType.mem_iSup_jointWeightSpace_of_mem_scLattice`: it lies in the span of the
   integral weight spaces.
-* `TauCeti.DynkinType.isNilpotent_representation_scModule_rootGenerator`: the numbered raising and
-  lowering generators act nilpotently on `V_sc(t)`.
 * `TauCeti.DynkinType.scWeightBasis` and `TauCeti.DynkinType.scWeight`: its numbered weight basis
   and the weights of the basis vectors.
 * `TauCeti.DynkinType.span_range_scWeight_eq_top`: those weights span `Fin t.rank → ℤ`.
@@ -143,31 +140,6 @@ theorem mem_iSup_jointWeightSpace_of_mem_scLattice {x : t.scModule ht}
   rw [← lof_eq_of ℚ]
   exact lof_mem_iSup_jointWeightSpace _
     (t.mem_iSup_jointWeightSpace_of_mem_fundamentalLattice ht (mem_scLattice_iff.mp hx i))
-
-section
-
--- Associative algebras carry the commutator Lie bracket locally.
-attribute [local instance 100] LieRing.ofAssociativeRing
-
-/-- **The numbered raising and lowering generators act nilpotently on `V_sc(t)`**: each has a
-nonzero eigenvalue `±2` under the adjoint action of its own Cartan generator, and `V_sc(t)` is
-finite dimensional. This is the nilpotency hypothesis of the divided-power root subgroups of the
-full-weight lattice. -/
-theorem isNilpotent_representation_scModule_rootGenerator (i : Fin t.rank ⊕ Fin t.rank) :
-    IsNilpotent (representation ℚ (t.lieAlgebra ht) (t.scModule ht)
-      (_root_.UniversalEnvelopingAlgebra.ι ℚ ((t.lieBasis ht).rootGenerator i))) := by
-  have hk : ∃ k, (t.lieBasis ht).rootGeneratorWeight i k ≠ 0 := by
-    cases i with
-    | inl k => exact ⟨k, by
-        rw [LieAlgebra.Basis.rootGeneratorWeight_inl, lieBasis_A_eq]; simp⟩
-    | inr k => exact ⟨k, by
-        rw [LieAlgebra.Basis.rootGeneratorWeight_inr, lieBasis_A_eq]; simp⟩
-  exact hk.elim fun k hk => isNilpotent_apply_of_lie_eq_smul
-    (ρ := ((representation ℚ (t.lieAlgebra ht) (t.scModule ht)).toLieHom).comp
-      (_root_.UniversalEnvelopingAlgebra.ι ℚ))
-    (Int.cast_ne_zero.mpr hk) ((t.lieBasis ht).lie_h_rootGenerator i k)
-
-end
 
 /-! ### The weight basis -/
 
