@@ -137,11 +137,11 @@ theorem isUnramifiedAt_of_constantCompositum_eq_top
   exact (differentExponent_eq_zero_iff k F P').mp
     (differentExponent_eq_zero_of_constantCompositum_eq_top hcomp P')
 
-/-- **A place is unramified over a finite part of an algebraic constant extension**: if
-`F' = F · k'` with `k' / k` algebraic, then every place `P'` of `F'` has ramification index one
-over `F · L` for some finite subextension `L / k` of `k' / k`, since a uniformizer of `P'` already
-lies in such an `F · L`. This reduces ramification statements for infinite constant extensions to
-finite ones. -/
+/-- **A place has ramification index one over a finite part of an algebraic constant
+extension**: if `F' = F · k'` with `k' / k` algebraic, then every place `P'` of `F'` has
+ramification index one over `F · L` for some finite subextension `L / k` of `k' / k`, since a
+uniformizer of `P'` already lies in such an `F · L`. This reduces ramification-index statements
+for infinite constant extensions to finite ones. -/
 theorem exists_finiteDimensional_ramificationIdx_constantCompositum_eq_one
     [Algebra.IsAlgebraic k k'] (hcomp : constantCompositum F k' F' = ⊤) (P' : Place k' F') :
     ∃ L : IntermediateField k k', FiniteDimensional k L ∧

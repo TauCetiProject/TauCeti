@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.FieldTheory.FunctionField.ConstantExtension.Unramified
-public import TauCeti.FieldTheory.FunctionField.Place.Extension.Fibre
 
 import TauCeti.FieldTheory.FunctionField.ConstantExtension.Algebraic
 import TauCeti.FieldTheory.FunctionField.ConstantExtension.Basis
@@ -101,8 +100,7 @@ private theorem ramificationIdx_mul_relativeDegree_le_and
   have hF' := hF.of_constantCompositum_eq_top h
   let := P'.finiteDimensional_residueField hF'
   refine ⟨?_, finrank_le_finrank_of_constantCompositum_eq_top (k := k) h, ?_⟩
-  · simpa using sum_ramificationIdx_mul_relativeDegree_le_finrank k F (P'.restrict k F) {P'}
-      (by simp)
+  · exact ramificationIdx_mul_relativeDegree_le_finrank k F P'
   · have hdeg := finrank_mul_degree_eq_relativeDegree_mul_degree_restrict k F P'
     have hle := degree_restrict_le_degree_of_isPurelyInseparable k F P'
     have hpos := (P'.restrict k F).one_le_degree_of_isFunctionField hF
