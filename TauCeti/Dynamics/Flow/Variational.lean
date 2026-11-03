@@ -173,6 +173,13 @@ theorem fderiv_comp_neg (hs : DifferentiableAt ℝ (ϕ (-t)) (ϕ t x))
   rw [add_neg_cancel, Flow.map_zero, fderiv_id, hx] at this
   exact this.symm
 
+/-- The derivative of a differentiable time map is invertible when the reverse time map is
+differentiable at the image point. No completeness of the model space is needed. -/
+theorem isInvertible_fderiv (ϕ : Flow ℝ E)
+    (hs : DifferentiableAt ℝ (ϕ (-t)) (ϕ t x)) (ht : DifferentiableAt ℝ (ϕ t) x) :
+    (fderiv ℝ (ϕ t) x).IsInvertible :=
+  ContinuousLinearMap.IsInvertible.of_inverse (ϕ.fderiv_comp_neg hs ht) (ϕ.fderiv_neg_comp hs ht)
+
 /-- **The derivative of a flow as a unit.** When the time-`t` map is differentiable at `x` and the
 time-`(-t)` map at `ϕ t x`, the derivative `Dϕ_t(x)` is invertible, with inverse
 `Dϕ_{-t}(ϕ_t x)`. -/
