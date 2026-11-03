@@ -310,9 +310,9 @@ theorem cottonTensor_add_weylTensor_eq_zero_of_eventually_hessian_eq {φ : M →
     letI cov := CovariantDerivative.leviCivitaConnection I M
     cov.cottonTensor x u v w + cov.weylTensor x w v u (mgradient I φ x) = 0 := by
   set cov := CovariantDerivative.leviCivitaConnection I M
-  obtain ⟨X, hX, rfl⟩ := FiberBundle.exists_contMDiff_section_eq I E u
-  obtain ⟨Y, hY, rfl⟩ := FiberBundle.exists_contMDiff_section_eq I E v
-  obtain ⟨Z, hZ, rfl⟩ := FiberBundle.exists_contMDiff_section_eq I E w
+  obtain ⟨X, hX, rfl⟩ := FiberBundle.exists_contMDiff_section_eq I E ∞ u
+  obtain ⟨Y, hY, rfl⟩ := FiberBundle.exists_contMDiff_section_eq I E ∞ v
+  obtain ⟨Z, hZ, rfl⟩ := FiberBundle.exists_contMDiff_section_eq I E ∞ w
   have hXx : MDiffAt (T% X) x := hX.mdifferentiableAt (by simp)
   have hYx : MDiffAt (T% Y) x := hY.mdifferentiableAt (by simp)
   have hZx : MDiffAt (T% Z) x := hZ.mdifferentiableAt (by simp)

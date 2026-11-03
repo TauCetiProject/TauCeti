@@ -25,6 +25,8 @@ some variables is multiplied by a Wronskian in another variable.
   exponents supported on the variables of `P` and of `Q`.
 * `MvPolynomial.coeff_add_mul_of_disjoint_vars`: `(P * Q).coeff (a + b) = P.coeff a * Q.coeff b`
   for such exponents.
+* `MvPolynomial.vars_rename_subset_Ioi`: if `f` sends every variable of `a` above `i`, then
+  every variable of `rename f a` lies above `i`.
 * `Polynomial.vars_toMvPolynomial_subset`: a one-variable polynomial placed in the coordinate `i`
   involves at most the variable `i`.
 -/
@@ -71,6 +73,15 @@ theorem coeff_add_mul_of_disjoint_vars (h : Disjoint P.vars Q.vars) {a b : σ �
   refine hne (injOn_add_of_disjoint_vars h ?_ ⟨ha, hb⟩ (mem_antidiagonal.1 hp))
   exact ⟨support_subset_vars_of_mem_support (mem_support_iff.2 (left_ne_zero_of_mul hc)),
     support_subset_vars_of_mem_support (mem_support_iff.2 (right_ne_zero_of_mul hc))⟩
+
+/-- If `f` sends every variable of `a` above `i`, then every variable of `rename f a` lies
+above `i`. -/
+theorem vars_rename_subset_Ioi {τ : Type*} [Preorder τ] [LocallyFiniteOrderTop τ]
+    (f : σ → τ) {a : MvPolynomial σ R} {i : τ} (h : ∀ j ∈ a.vars, i < f j) :
+    (rename f a).vars ⊆ Ioi i := fun k hk ↦ by
+  classical
+  obtain ⟨j, hj, rfl⟩ := mem_image.1 (vars_rename f a hk)
+  exact mem_Ioi.2 (h j hj)
 
 end MvPolynomial
 
