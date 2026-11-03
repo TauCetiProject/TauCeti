@@ -191,7 +191,7 @@ theorem projectiveOrbitMap_single_kernelPoint_one_injective :
         (AlgHom.kernelPoint (Bialgebra.counitAlgHom k (coordinateRing k G))) := by
   intro i j hij
   simp only [← eval_one_eq_counitAlgHom k G] at hij
-  simpa [MonoidAlgebra.span_single_one_eq_span_single_one_iff] using
+  simpa using
     (projectiveOrbitMap_kernelPoint_eval_eq_iff_span_eq (Representation.ofMulAction k G ι)
       _ _ _ _ 1 1).mp hij
 
@@ -221,7 +221,7 @@ theorem isPreconnected_range_projectiveOrbitMap_single_iff (i : ι) :
         (MonoidAlgebra.single i (1 : k)) (MonoidAlgebra.isUnimodular_single i))) ↔
       ∀ g : G, g • i = i := by
   rw [isPreconnected_range_projectiveOrbitMap_iff]
-  simp [MonoidAlgebra.span_single_one_eq_span_single_one_iff]
+  simp
 
 end Permutation
 

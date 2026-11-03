@@ -101,6 +101,7 @@ theorem MonoidAlgebra.isUnimodular_single {ι : Type*} (i : ι) :
 
 /-- Over a nontrivial semiring, the basis vectors `single i 1` and `single j 1` of a monoid
 algebra span the same line exactly when `i = j`. -/
+@[simp]
 theorem MonoidAlgebra.span_single_one_eq_span_single_one_iff [Nontrivial R] {ι : Type*}
     {i j : ι} :
     R ∙ MonoidAlgebra.single i (1 : R) = R ∙ MonoidAlgebra.single j (1 : R) ↔ i = j := by
