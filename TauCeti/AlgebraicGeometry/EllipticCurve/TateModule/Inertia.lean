@@ -221,7 +221,7 @@ theorem tateModuleGaloisRepresentation_eq_one_of_mem_inertiaSubgroup {ℓ : ℕ}
     (hℓ : (ℓ : 𝓀[K]) ≠ 0) {σ : Gal(AlgebraicClosure K/K)} (hσ : σ ∈ inertiaSubgroup K) :
     W.tateModuleGaloisRepresentation ℓ σ = 1 := by
   refine LinearMap.ext fun x ↦ TateModule.ext fun n ↦ Subtype.ext ?_
-  rw [coe_proj_tateModuleGaloisRepresentation, Module.End.one_apply]
+  rw [coe_proj_tateModuleGaloisRepresentation, one_apply_eq_self]
   refine Affine.Point.map_eq_self_of_mem_inertiaSubgroup_algebraicClosure (n := ℓ ^ n) ?_ hσ ?_
   · rw [Nat.cast_pow]
     exact pow_ne_zero n hℓ

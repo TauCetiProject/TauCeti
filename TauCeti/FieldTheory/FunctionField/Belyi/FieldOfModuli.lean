@@ -8,6 +8,7 @@ module
 public import Mathlib.FieldTheory.Galois.Infinite
 public import TauCeti.FieldTheory.FunctionField.Belyi.GaloisAction
 public import TauCeti.FieldTheory.Galois.FixedField
+import TauCeti.Algebra.Algebra.Equiv
 
 /-!
 # Fields of moduli of algebraic Belyi pairs
@@ -143,17 +144,14 @@ compatibility with the Belyi map required. It depends only on `F` as a `k`-algeb
 def curveStabilizer : Subgroup (k ≃ₐ[ℚ] k) where
   carrier := {g | Nonempty (X.conj (g : k ≃+* k) ≃ₐ[k] X)}
   one_mem' := by
-    have h : ((1 : k ≃ₐ[ℚ] k) : k ≃+* k) = RingEquiv.refl k := RingEquiv.ext fun _ ↦ by simp
-    rw [Set.mem_ofPred_eq, h]
+    rw [Set.mem_ofPred_eq, AlgEquiv.toRingEquiv_one]
     exact ⟨(conjRefl X).restrictScalars k⟩
   mul_mem' {g h} := fun ⟨eg⟩ ⟨eh⟩ ↦ by
-    have hgh : ((g * h : k ≃ₐ[ℚ] k) : k ≃+* k) = (h : k ≃+* k).trans (g : k ≃+* k) :=
-      RingEquiv.ext fun _ ↦ by simp
-    rw [Set.mem_ofPred_eq, hgh]
+    rw [Set.mem_ofPred_eq, AlgEquiv.toRingEquiv_mul]
     exact ⟨((conjTrans _ X _).symm.restrictScalars k).trans ((conjCurveAlgEquiv _ eh).trans eg)⟩
   inv_mem' {g} := fun ⟨e⟩ ↦ by
     have hg : RingEquiv.refl k = (g : k ≃+* k).trans ((g⁻¹ : k ≃ₐ[ℚ] k) : k ≃+* k) :=
-      RingEquiv.ext fun _ ↦ by simp [AlgEquiv.aut_inv]
+      by rw [AlgEquiv.aut_inv, AlgEquiv.symm_toRingEquiv, RingEquiv.self_trans_symm]
     have e' : X ≃ₐ[k] X.conj (RingEquiv.refl k) := ((conjRefl X).restrictScalars k).symm
     rw [hg] at e'
     exact ⟨(e'.trans (((conjTrans _ X _).symm.restrictScalars k).trans

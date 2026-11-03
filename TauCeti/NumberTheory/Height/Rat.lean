@@ -151,6 +151,7 @@ theorem abs_padicValRat_mul_log_le_logHeight₁ (p : ℕ) (q : ℚ) :
     (TauCeti.padicValNat_mul_log_le_log p _).trans (log_den_le_logHeight₁ q)
   have hp := Real.log_natCast_nonneg p
   rw [padicValRat_def, padicValInt, Int.cast_sub, Int.cast_natCast, Int.cast_natCast]
+  simp only [← Nat.padicValNat_def]
   calc |(u : ℝ) - v| * Real.log p ≤ max (u : ℝ) v * Real.log p := by
         gcongr
         exact abs_sub_le_of_nonneg_of_le (by positivity) (le_max_left _ _) (by positivity)
@@ -167,7 +168,7 @@ theorem abs_padicValRat_le_logHeight₁_div_log_two (p : ℕ) (q : ℚ) :
   rcases lt_or_ge p 2 with hp | hp
   · -- For `p ≤ 1` the valuation vanishes identically.
     obtain rfl | rfl : p = 0 ∨ p = 1 := by omega
-    all_goals simp [padicValRat_def, padicValInt, padicValNat_zero_left, padicValNat_one_left,
+    all_goals simp [padicValRat_def, padicValInt, multiplicity_zero_left,
       div_nonneg (zero_le_logHeight₁ q) hlog2.le]
   rw [le_div_iff₀ hlog2]
   refine le_trans ?_ (abs_padicValRat_mul_log_le_logHeight₁ p q)

@@ -240,7 +240,7 @@ public theorem normalizedFrickeOperatorEquiv_symm_apply (k : ℤ)
   apply (normalizedFrickeOperatorEquiv (N := N) k).injective
   rw [LinearEquiv.apply_symm_apply, normalizedFrickeOperatorEquiv_apply, map_smul,
     normalizedFrickeOperator_normalizedFrickeOperator_apply, smul_smul,
-    ← zpow_add₀ (by norm_num : (-1 : ℂ) ≠ 0), ← two_mul, zpow_mul]
+    ← zpow_add₀ (by norm_num : (-1 : ℂ) ≠ 0), ← two_mul, _root_.zpow_mul]
   norm_num
 
 /-- **`𝒲_N` as a linear automorphism of `S_k(Γ₁(N))`**, with inverse `(-1) ^ k • 𝒲_N`. -/
@@ -269,7 +269,7 @@ public theorem normalizedFrickeOperatorCuspEquiv_symm_apply (k : ℤ)
   apply (normalizedFrickeOperatorCuspEquiv (N := N) k).injective
   rw [LinearEquiv.apply_symm_apply, normalizedFrickeOperatorCuspEquiv_apply, map_smul,
     normalizedFrickeOperatorCusp_normalizedFrickeOperatorCusp_apply, smul_smul,
-    ← zpow_add₀ (by norm_num : (-1 : ℂ) ≠ 0), ← two_mul, zpow_mul]
+    ← zpow_add₀ (by norm_num : (-1 : ℂ) ≠ 0), ← two_mul, _root_.zpow_mul]
   norm_num
 
 /-! ### The nebentypus -/
@@ -370,7 +370,7 @@ public theorem coe_normalizedFrickeCharEquiv_symm_apply (k : ℤ) (χ : (ZMod N)
           ModularForm ((Gamma1 N).map (mapGL ℝ)) k) := by
     rw [← coe_normalizedFrickeCharEquiv_apply, LinearEquiv.apply_symm_apply]
   rw [hg, normalizedFrickeOperator_normalizedFrickeOperator_apply, smul_smul,
-    ← zpow_add₀ (by norm_num : (-1 : ℂ) ≠ 0), ← two_mul, zpow_mul]
+    ← zpow_add₀ (by norm_num : (-1 : ℂ) ≠ 0), ← two_mul, _root_.zpow_mul]
   norm_num
 
 /-- **The normalized Fricke automorphism carries the `χ`-space of cusp forms onto the
@@ -422,7 +422,7 @@ public theorem coe_normalizedFrickeCharCuspEquiv_symm_apply (k : ℤ) (χ : (ZMo
           CuspForm ((Gamma1 N).map (mapGL ℝ)) k) := by
     rw [← coe_normalizedFrickeCharCuspEquiv_apply, LinearEquiv.apply_symm_apply]
   rw [hg, normalizedFrickeOperatorCusp_normalizedFrickeOperatorCusp_apply, smul_smul,
-    ← zpow_add₀ (by norm_num : (-1 : ℂ) ≠ 0), ← two_mul, zpow_mul]
+    ← zpow_add₀ (by norm_num : (-1 : ℂ) ≠ 0), ← two_mul, _root_.zpow_mul]
   norm_num
 
 /-! ### The eigenspace splitting in even weight -/
