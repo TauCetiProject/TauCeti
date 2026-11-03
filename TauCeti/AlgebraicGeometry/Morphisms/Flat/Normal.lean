@@ -67,10 +67,8 @@ theorem flat_stalkMap_of_isCohenMacaulay_of_quasiFiniteAt {x : X}
         (maximalIdeal R)).symm.restrictScalars _)
   have : IsArtinianRing (S ⧸ (maximalIdeal R).map (algebraMap R S)) :=
     e.toRingEquiv.isArtinianRing
-  have hle : (maximalIdeal R).map (algebraMap R S) ≤ maximalIdeal S :=
-    Ideal.map_le_iff_le_comap.mpr (maximalIdeal_comap (algebraMap R S)).ge
   have : Nontrivial (S ⧸ (maximalIdeal R).map (algebraMap R S)) :=
-    Ideal.Quotient.nontrivial_iff.mpr (ne_top_of_le_ne_top Ideal.IsPrime.ne_top' hle)
+    Ideal.Quotient.nontrivial_iff.mpr (map_maximalIdeal_lt_top (algebraMap R S)).ne
   have hfibre : ringKrullDim (S ⧸ (maximalIdeal R).map (algebraMap R S)) = 0 :=
     ringKrullDimZero_iff_ringKrullDim_eq_zero.mp inferInstance
   exact TauCeti.Algebra.flat_of_isCohenMacaulay hcm (by rw [hfibre, add_zero]; exact hdim)
@@ -87,8 +85,9 @@ theorem flat_stalkMap_of_isIntegrallyClosed_of_quasiFiniteAt_of_ringKrullDim_le_
   exact f.flat_stalkMap_of_isCohenMacaulay_of_quasiFiniteAt hx
     Module.isCohenMacaulay_self_of_isIntegrallyClosed_of_krullDimLE_two hdim
 
-/-- At a quasi-finite point of a dominant morphism of integral schemes, a Noetherian normal
-source local ring is flat over a regular target local ring of dimension at most two. -/
+/-- At a quasi-finite point of a dominant morphism of integral schemes, locally of finite type,
+a Noetherian normal source local ring is flat over a regular target local ring of dimension
+at most two. -/
 theorem flat_stalkMap_of_isDominant_of_quasiFiniteAt_of_ringKrullDim_le_two
     [IsIntegral X] [IsIntegral Y]
     [IsDominant f] [LocallyOfFiniteType f] {x : X} [IsNoetherianRing (X.presheaf.stalk x)]
