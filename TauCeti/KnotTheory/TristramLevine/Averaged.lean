@@ -230,11 +230,10 @@ theorem eventually_tristramLevineSignature_mul_exp_eq_leftLim
 theorem averagedTristramLevineSignature_eq_of_det_ne_zero
     (hdet : (tristramLevineForm V ω).det ≠ 0) :
     averagedTristramLevineSignature V ω = tristramLevineSignature V ω := by
+  have hcont : Continuous fun t : ℝ => ((ω * Circle.exp t : Circle) : ℂ) := by fun_prop
   have hev : ∀ᶠ t in 𝓝 (0 : ℝ),
       tristramLevineSignature V ↑(ω * Circle.exp t) = tristramLevineSignature V ω :=
-    ((show Continuous fun t : ℝ => ((ω * Circle.exp t : Circle) : ℂ) by fun_prop).tendsto' 0 ω
-      (by simp)).eventually
-      (eventually_tristramLevineSignature_eq V hdet)
+    (hcont.tendsto' 0 ω (by simp)).eventually (eventually_tristramLevineSignature_eq V hdet)
   rw [averagedTristramLevineSignature_eq_of_eventually (hev.filter_mono nhdsWithin_le_nhds)
     (hev.filter_mono nhdsWithin_le_nhds)]
   ring
