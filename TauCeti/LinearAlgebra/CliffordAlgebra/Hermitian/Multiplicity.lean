@@ -140,10 +140,8 @@ theorem existsUnique_posDef_sesqForm_of_multiplicity
     TauCeti.existsUnique_posDef_sesqForm_of_bijective_lsmul hbij K hpos hdef
   let b := stdOrthonormalBasis ℂ S
   let c := fun i ↦ TauCeti.homOfDual hbij (b.toBasis.coord i) (M := E)
-  have hdecomp (x : E) : ∑ i, c i x (b i) = x := by
-    have h := (TauCeti.isotypicTensorEquivOfBijective hbij (M := E)).apply_symm_apply x
-    rw [TauCeti.isotypicTensorEquivOfBijective_symm_apply_basis hbij b.toBasis] at h
-    simpa [c] using h
+  have hdecomp (x : E) : ∑ i, c i x (b i) = x :=
+    TauCeti.sum_homOfDual_coord_apply hbij b.toBasis x
   refine ⟨H, ⟨hfactor, hHpos, hHdef, fun v x y ↦ ?_⟩,
     fun L hL ↦ huniq L ⟨hL.1, hL.2.1, hL.2.2.1⟩⟩
   let a := ι (Q.baseChange ℂ) (1 ⊗ₜ v)

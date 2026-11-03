@@ -54,10 +54,8 @@ theorem existsUnique_sesqForm_of_bijective_lsmul
     rw [homOfDual_apply_map]
     simp [Module.Basis.coord_apply, OrthonormalBasis.coe_toBasis_repr_apply,
       OrthonormalBasis.repr_apply_apply]
-  have hdecomp (x : E) : ∑ i, c i x (b i) = x := by
-    have h := (isotypicTensorEquivOfBijective hbij (M := E)).apply_symm_apply x
-    rw [isotypicTensorEquivOfBijective_symm_apply_basis hbij b.toBasis] at h
-    simpa [c] using h
+  have hdecomp (x : E) : ∑ i, c i x (b i) = x :=
+    sum_homOfDual_coord_apply hbij b.toBasis x
   let H : E →ₗ⋆[𝕜] E →ₗ[𝕜] 𝕜 := ∑ i, (K.comp (c i)).compl₂ (c i)
   have hfactor (T U : S →ₗ[A] E) (s t : S) :
       H (T s) (U t) = inner 𝕜 s t * K T U := by
@@ -84,10 +82,8 @@ theorem existsUnique_posDef_sesqForm_of_bijective_lsmul
   obtain ⟨H, hfactor, huniq⟩ := existsUnique_sesqForm_of_bijective_lsmul hbij K
   let b := stdOrthonormalBasis 𝕜 S
   let c := fun i ↦ homOfDual hbij (b.toBasis.coord i) (M := E)
-  have hdecomp (x : E) : ∑ i, c i x (b i) = x := by
-    have h := (isotypicTensorEquivOfBijective hbij (M := E)).apply_symm_apply x
-    rw [isotypicTensorEquivOfBijective_symm_apply_basis hbij b.toBasis] at h
-    simpa [c] using h
+  have hdecomp (x : E) : ∑ i, c i x (b i) = x :=
+    sum_homOfDual_coord_apply hbij b.toBasis x
   have hsum (x y : E) : H x y = ∑ i, K (c i x) (c i y) := by
     conv_lhs => rw [← hdecomp x, ← hdecomp y]
     simp [hfactor, b.inner_eq_ite]
