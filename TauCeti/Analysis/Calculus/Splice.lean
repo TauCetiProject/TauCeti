@@ -18,13 +18,14 @@ which is `1` on `[-1, 1]`, vanishes off `(-2, 2)` and takes values in `[0, 1]`. 
 `|π x| ≤ δ` and `k` where `2 δ ≤ |π x|`, it stays in every convex set containing the values of `k`
 and `l`, and it is as smooth as `k` and `l`.
 
-The derivative of the splice is controlled uniformly in the scale. If the derivatives of `k` and
-`l` at `x` are within `ε` of a linear map `A`, and `‖l x - k x‖ ≤ 2 ε |π x|`, then the splice has
-derivative within `(3 + 4 B) ε` of `A` at `x`, where `B` bounds the derivative of the cutoff
-(`TauCeti.exists_hasFDerivAt_spliceAlong_sub_le`). The hypothesis on `l x - k x` holds by the mean
-value inequality when the two maps agree at a point `y` with `‖x - y‖ = |π x|`
-(`Convex.norm_sub_le_of_norm_hasFDerivWithin_sub_le`); the derivative `δ⁻¹ χ' (δ⁻¹ π x)` of the
-cutoff is of size `δ⁻¹` but only meets `l x - k x` where `|π x| ≤ 2 δ`.
+The derivative of the splice is controlled uniformly in the scale. Suppose `‖π‖ ≤ 1`. If the
+derivatives of `k` and `l` at `x` are within `ε` of a linear map `A`, and
+`‖l x - k x‖ ≤ 2 ε |π x|`, then the splice has derivative within `(3 + 4 B) ε` of `A` at `x`, where
+`B` bounds the derivative of the cutoff (`TauCeti.exists_hasFDerivAt_spliceAlong_sub_le`). The
+hypothesis on `l x - k x` holds by the mean value inequality when the two maps agree at a point `y`
+with `‖x - y‖ = |π x|` (`Convex.norm_sub_le_of_norm_hasFDerivWithin_sub_le`); the derivative
+`δ⁻¹ χ' (δ⁻¹ π x) • π` of the cutoff has norm at most `δ⁻¹ B ‖π‖ ≤ δ⁻¹ B`, but only meets
+`l x - k x` where `|π x| ≤ 2 δ`.
 
 This is the device used to straighten an embedding near a point or a line: there the two maps are
 the embedding and a model agreeing with it to first order, read in a chart.
@@ -149,8 +150,8 @@ theorem hasFDerivAt_spliceAlong {k' l' : X →L[ℝ] Y} (hk : HasFDerivAt k k' x
 /-- **The derivative of a spliced map.** If the derivatives of `k` and `l` at `x` are within `ε` of
 a linear map `A`, `‖l x - k x‖ ≤ 2 ε |π x|` and `B` bounds the derivative of the cutoff, then at
 every scale `δ > 0` the spliced map has derivative within `(3 + 4 B) ε` of `A` at `x`, for a
-functional `π` of norm at most `1`. The derivative `δ⁻¹ χ' (δ⁻¹ π x)` of the cutoff only meets
-`l x - k x` where `|π x| ≤ 2 δ`. -/
+functional `π` of norm at most `1`. The derivative `δ⁻¹ χ' (δ⁻¹ π x) • π` of the cutoff only
+meets `l x - k x` where `|π x| ≤ 2 δ`. -/
 theorem exists_hasFDerivAt_spliceAlong_sub_le {k' l' A : X →L[ℝ] Y} {ε B : ℝ} (hδ : 0 < δ)
     (hπ : ‖π‖ ≤ 1) (hB : ∀ x, |deriv spliceCutoff x| ≤ B) (hk : HasFDerivAt k k' x)
     (hl : HasFDerivAt l l' x) (hk' : ‖k' - A‖ ≤ ε) (hl' : ‖l' - A‖ ≤ ε)
