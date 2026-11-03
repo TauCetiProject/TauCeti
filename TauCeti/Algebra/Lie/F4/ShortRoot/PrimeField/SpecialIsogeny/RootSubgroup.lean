@@ -65,8 +65,9 @@ variable (A : Type) [CommRing A] [Algebra (ZMod 2) A]
   | nil => simp
   | cons j l ih => simp [ih]
 
-/-- On every Weyl-transported root subgroup, the special isogeny reverses the Weyl word and
-its starting node, with the exponent prescribed at the starting simple root. -/
+/-- On every Weyl-transported root subgroup, the special isogeny replaces each node of the
+Weyl word, and its starting node, by `lengthPermF4`, preserving word order and using the
+exponent prescribed at the starting simple root. -/
 @[simp↓] theorem specialIsogeny_weylRootSubgroupPoints (l : List (Fin 4)) (i : Fin 4)
     (u : Multiplicative A) :
     specialIsogeny A (weylRootSubgroupPoints l i A u) =
@@ -76,7 +77,8 @@ its starting node, with the exponent prescribed at the starting simple root. -/
     specialIsogeny_weylWordPoint, specialIsogeny_rootSubgroupPoints,
     isogenyReverse, Sum.map_inl, lengthPermF4_apply, Fin.revPerm_apply]
 
-/-- The reversed Weyl presentation of a selected root parametrizes its length-exchanged root. -/
+/-- The Weyl presentation with each node mapped by `lengthPermF4` parametrizes the
+length-exchanged root of a selected root. -/
 theorem geckWeylRootIndex_map_rootSubgroupPresentation (k : Fin F4.numRoots) :
     F4.geckWeylRootIndex valid_F4 ((F4ShortRoot.rootSubgroupPresentation k).1.map lengthPermF4)
         (lengthPermF4 (F4ShortRoot.rootSubgroupPresentation k).2) =
@@ -86,25 +88,29 @@ theorem geckWeylRootIndex_map_rootSubgroupPresentation (k : Fin F4.numRoots) :
 
 /-- The exponent on a Weyl-transported root is the length of its length-exchanged root:
 one for a long source root and two for a short source root. -/
-theorem isogenyExponent_eq_f4Length_specialIsogenyIndex_geckWeylRootIndex
+private theorem isogenyExponent_eq_f4Length_f4SpecialIsogenyIndex_geckWeylRootIndex
     (l : List (Fin 4)) (i : Fin 4) :
     isogenyExponent (.inl i) =
       (f4Length (f4SpecialIsogenyIndex (F4.geckWeylRootIndex valid_F4 l i))).toNat := by
-  rw [f4SpecialIsogenyIndex_geckWeylRootIndex]
-  -- The generic root index is typed over `Fin F4.rank`, as in the Weyl transport lemmas.
-  erw [f4Length_geckWeylRootIndex]
-  fin_cases i <;> simp [isogenyExponent, rootLength_F4, lengthPermF4_apply]
+  calc
+    _ = (F4.rootLength (lengthPermF4 i)).toNat := by
+      fin_cases i <;> simp [isogenyExponent, rootLength_F4, lengthPermF4_apply]
+    _ = (f4Length
+        (F4.geckWeylRootIndex valid_F4 (l.map lengthPermF4) (lengthPermF4 i))).toNat :=
+      congrArg Int.toNat (f4Length_geckWeylRootIndex (l.map lengthPermF4) (lengthPermF4 i)).symm
+    _ = _ := congrArg (fun k => (f4Length k).toNat)
+      (f4SpecialIsogenyIndex_geckWeylRootIndex l i).symm
 
 /-- The special isogeny on each of the forty-eight selected root maps. The image is given
-by its explicit reversed Weyl presentation, at `f4SpecialIsogenyIndex k`; the parameter
-exponent is one on long source roots and two on short source roots. -/
+by its Weyl presentation with each node mapped by `lengthPermF4`, at `f4SpecialIsogenyIndex k`;
+the parameter exponent is one on long source roots and two on short source roots. -/
 @[simp↓] theorem specialIsogeny_rootSubgroupPointsAt (k : Fin F4.numRoots) (u : Multiplicative A) :
     specialIsogeny A (rootSubgroupPointsAt k A u) =
       weylRootSubgroupPoints ((F4ShortRoot.rootSubgroupPresentation k).1.map lengthPermF4)
         (lengthPermF4 (F4ShortRoot.rootSubgroupPresentation k).2) A
         (Multiplicative.ofAdd (u.toAdd ^ (f4Length (f4SpecialIsogenyIndex k)).toNat)) := by
   rw [rootSubgroupPointsAt_def, specialIsogeny_weylRootSubgroupPoints,
-    isogenyExponent_eq_f4Length_specialIsogenyIndex_geckWeylRootIndex
+    isogenyExponent_eq_f4Length_f4SpecialIsogenyIndex_geckWeylRootIndex
       (F4ShortRoot.rootSubgroupPresentation k).1 (F4ShortRoot.rootSubgroupPresentation k).2,
     F4ShortRoot.weylRootIndex_rootSubgroupPresentation]
 

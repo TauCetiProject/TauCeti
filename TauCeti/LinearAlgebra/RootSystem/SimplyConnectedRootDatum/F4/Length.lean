@@ -92,9 +92,9 @@ Bourbaki nodes of `F₄` are long and the last two are short. -/
 theorem f4Length_eq_one_or_eq_two (i : Fin 48) : f4Length i = 1 ∨ f4Length i = 2 := by
   decide +revert
 
-/-- Reflection in a simple root preserves the tabulated squared length. -/
-@[simp] theorem f4Length_reflectionIndex_simple (i : Fin 4) (k : Fin 48) :
-    f4Length (f4ReflectionIndex (Fin.castAdd 44 i) k) = f4Length k := by
+/-- Reflection in any root preserves the tabulated squared length. -/
+@[simp] theorem f4Length_f4ReflectionIndex (j k : Fin 48) :
+    f4Length (f4ReflectionIndex j k) = f4Length k := by
   decide +revert
 
 /-- Every root of the pinned `F₄` datum has positive squared length. -/

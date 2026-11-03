@@ -26,33 +26,45 @@ public section
 
 namespace TauCeti.DynkinType
 
+-- Specialize the generic rank-indexed word API once to the concrete F₄ root table.
+-- Equality transport below avoids asking `rw` to match across the semireducible
+-- `Fin F4.rank` / `Fin 4` boundary.
+private theorem geckWeylRootIndex_F4_nil (i : Fin 4) :
+    F4.geckWeylRootIndex valid_F4 [] i = Fin.castAdd 44 i := by
+  exact (F4.geckWeylRootIndex_nil valid_F4 i).trans (simpleIndex_F4 valid_F4 i)
+
+private theorem geckWeylRootIndex_F4_cons (j : Fin 4) (l : List (Fin 4)) (i : Fin 4) :
+    F4.geckWeylRootIndex valid_F4 (j :: l) i =
+      f4ReflectionIndex (Fin.castAdd 44 j) (F4.geckWeylRootIndex valid_F4 l i) := by
+  calc
+    _ = (F4.simplyConnectedRootDatum valid_F4).reflectionPerm (F4.simpleIndex valid_F4 j)
+        (F4.geckWeylRootIndex valid_F4 l i) := F4.geckWeylRootIndex_cons valid_F4 j l i
+    _ = _ := by
+      rw [simplyConnectedRootDatum_F4, simpleIndex_F4 valid_F4 j]
+      exact f4SimplyConnectedRootDatum_reflectionPerm _ _
+
 /-- Weyl transport preserves the length of the starting simple root. -/
 @[simp] theorem f4Length_geckWeylRootIndex (l : List (Fin 4)) (i : Fin 4) :
     f4Length (F4.geckWeylRootIndex valid_F4 l i) = F4.rootLength i := by
-  -- The generic word API uses `Fin F4.rank`, while this concrete table uses `Fin 4`.
-  -- `erw` reduces that semireducible rank at the API boundary.
   induction l with
-  | nil => erw [F4.geckWeylRootIndex_nil valid_F4 i, simpleIndex_F4, f4Length_castAdd]
+  | nil => exact (congrArg f4Length (geckWeylRootIndex_F4_nil i)).trans (f4Length_castAdd i)
   | cons j l ih =>
-    erw [F4.geckWeylRootIndex_cons valid_F4 j l i, simplyConnectedRootDatum_F4,
-      simpleIndex_F4, f4SimplyConnectedRootDatum_reflectionPerm,
-      f4Length_reflectionIndex_simple, ih]
+    exact (congrArg f4Length (geckWeylRootIndex_F4_cons j l i)).trans
+      ((f4Length_f4ReflectionIndex _ _).trans ih)
 
 /-- The special root permutation reverses every node in a Weyl presentation. -/
-theorem f4SpecialIsogenyIndex_geckWeylRootIndex (l : List (Fin 4)) (i : Fin 4) :
+@[simp] theorem f4SpecialIsogenyIndex_geckWeylRootIndex (l : List (Fin 4)) (i : Fin 4) :
     f4SpecialIsogenyIndex (F4.geckWeylRootIndex valid_F4 l i) =
       F4.geckWeylRootIndex valid_F4 (l.map lengthPermF4) (lengthPermF4 i) := by
-  -- As above, the concrete and generic word APIs use definitionally equal rank indices.
   induction l with
   | nil =>
-    erw [List.map_nil, F4.geckWeylRootIndex_nil valid_F4 i,
-      F4.geckWeylRootIndex_nil valid_F4 (lengthPermF4 i), simpleIndex_F4,
-      simpleIndex_F4, f4SpecialIsogenyIndex_castAdd]
+    exact (congrArg f4SpecialIsogenyIndex (geckWeylRootIndex_F4_nil i)).trans
+      ((f4SpecialIsogenyIndex_castAdd i).trans (geckWeylRootIndex_F4_nil (lengthPermF4 i)).symm)
   | cons j l ih =>
-    erw [List.map_cons, F4.geckWeylRootIndex_cons valid_F4 j l i,
-      F4.geckWeylRootIndex_cons valid_F4 (lengthPermF4 j) (l.map lengthPermF4)
-        (lengthPermF4 i), simplyConnectedRootDatum_F4, simpleIndex_F4,
-      simpleIndex_F4, f4SimplyConnectedRootDatum_reflectionPerm,
-      f4SimplyConnectedRootDatum_reflectionPerm, f4SpecialIsogenyIndex_reflectionIndex, ih]
+    have h := congrArg₂ f4ReflectionIndex (f4SpecialIsogenyIndex_castAdd j) ih
+    exact (congrArg f4SpecialIsogenyIndex (geckWeylRootIndex_F4_cons j l i)).trans
+      ((f4SpecialIsogenyIndex_f4ReflectionIndex _ _).trans
+        (h.trans
+          (geckWeylRootIndex_F4_cons (lengthPermF4 j) (l.map lengthPermF4) (lengthPermF4 i)).symm))
 
 end TauCeti.DynkinType
