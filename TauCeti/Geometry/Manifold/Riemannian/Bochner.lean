@@ -113,8 +113,8 @@ private theorem inner_secondCovariantDerivative_mgradient_eq (hf : ContMDiff I �
     letI cov := CovariantDerivative.leviCivitaConnection I M
     ⟪cov.secondCovariantDerivative cov (mgradient I f) x u v, w⟫_ℝ =
       cov.derivBilinearTensor (hessianForm f) x v w u := by
-  obtain ⟨V, hV, rfl⟩ := FiberBundle.exists_contMDiff_section_eq I E v
-  obtain ⟨W, hW, rfl⟩ := FiberBundle.exists_contMDiff_section_eq I E w
+  obtain ⟨V, hV, rfl⟩ := FiberBundle.exists_contMDiff_section_eq I E ∞ v
+  obtain ⟨W, hW, rfl⟩ := FiberBundle.exists_contMDiff_section_eq I E ∞ w
   have hWd : MDiffAt (T% W) x := hW.mdifferentiable (by simp) x
   rw [inner_secondCovariantDerivative_mgradient_eq_mvfderiv_hessian hf hV hWd,
     (CovariantDerivative.leviCivitaConnection I M).derivBilinearTensor_apply
