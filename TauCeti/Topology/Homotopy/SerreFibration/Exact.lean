@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Topology.Category.TopCat.Fiber
+public import TauCeti.Topology.ContinuousMap.GlueHalves
 public import TauCeti.Topology.Homotopy.Cube.Basic
 public import TauCeti.Topology.Homotopy.GenLoop.Homotopic
 public import TauCeti.Topology.Homotopy.HomotopyGroup.Map
@@ -61,7 +62,7 @@ concatenated loops, in the order of Mathlib's `HomotopyGroup.mul_spec`.
 * At `π_{n+1}(B, b)`: a cube in `E` is a boundary lift of its projection, with constant end; and
   if the end of a boundary lift is null-homotopic in the fibre, then the lift followed by that
   null-homotopy is a cube in `E` whose projection is homotopic to the original cube
-  (`TauCeti.TopCat.mem_range_homotopyGroupMap_iff`).
+  (`TauCeti.TopCat.mem_range_homotopyGroupMap_iff_fibrationBoundary_eq`).
 
 ## References
 
@@ -82,26 +83,15 @@ namespace TauCeti.TopCat
 
 variable {E B : TopCat.{u}} {p : E ⟶ B} {b : B} {e : p.fiber b} {N : Type*}
 
-/-! ### Cubes split along their distinguished direction -/
+/-! ### Generalized loops in the fibre -/
 
-/-- A map `I × I^N → X` taking the value `x` on the boundary of `I × I^N`, read as a generalized
-loop on `I^(Option N)` through `piOptionEquivProdHomeomorph`. -/
-private def genLoopOfProd {X : Type*} [TopologicalSpace X] {x : X} (c : C(I × I^N, X))
-    (hc : ∀ y ∈ Cube.prodBoundary N, c y = x) : Ω^ (Option N) X x :=
-  ⟨c.comp (piOptionEquivProdHomeomorph fun _ : Option N => I), fun _ hz =>
-    hc _ (piOptionEquivProdHomeomorph_mem_prodBoundary_iff.2 hz)⟩
-
-private theorem genLoopOfProd_apply {X : Type*} [TopologicalSpace X] {x : X} (c : C(I × I^N, X))
-    (hc : ∀ y ∈ Cube.prodBoundary N, c y = x) (z : I^(Option N)) :
-    genLoopOfProd c hc z = c (piOptionEquivProdHomeomorph (fun _ => I) z) :=
-  rfl
-
-/-- A generalized loop on `I^(Option N)` takes its basepoint at every point `(s, t)` with `s = 0`,
-`s = 1` or `t` on the boundary of `I^N`. -/
-private theorem apply_symm_of_mem_prodBoundary {X : Type*} [TopologicalSpace X] {x : X}
-    (γ : Ω^ (Option N) X x) {y : I × I^N} (hy : y ∈ Cube.prodBoundary N) :
-    γ ((piOptionEquivProdHomeomorph fun _ => I).symm y) = x :=
-  GenLoop.boundary γ _ (piOptionEquivProdHomeomorph_symm_mem_boundary hy)
+-- Not `simp`: `GenLoop.map_apply` rewrites the left-hand side first, and the result is closed by
+-- `TopCat.Hom.fiberι_apply`. Use it as an explicit rewrite.
+/-- A generalized loop in the fibre, pushed into `E` along the fibre inclusion, takes the values
+of the loop. -/
+theorem _root_.GenLoop.map_fiberι_apply {x : E} (hx : p.fiberι b e = x)
+    (β : Ω^ N (p.fiber b) e) (t : I^N) : GenLoop.map (p.fiberι b).hom hx β t = (β t).1 :=
+  (GenLoop.map_apply _ _ β t).trans (TopCat.Hom.fiberι_apply p b _)
 
 /-! ### Boundary lifts -/
 
@@ -124,7 +114,8 @@ variable {γ : Ω^ (Option N) B b} {G : C(I × I^N, E)}
 
 /-- The end of a boundary lift lies in the fibre over `b`. -/
 theorem proj_apply_one (hG : IsBoundaryLift p e γ G) (t : I^N) : p (G (1, t)) = b :=
-  (hG.proj_apply _).trans (apply_symm_of_mem_prodBoundary γ (Cube.mk_mem_prodBoundary (.inl rfl)))
+  (hG.proj_apply _).trans
+    (GenLoop.apply_symm_of_mem_prodBoundary γ (Cube.mk_mem_prodBoundary (.inl rfl)))
 
 /-- The end `G(1, ·)` of a boundary lift, a generalized loop at `e` in the fibre of `p` over
 `b`. -/
@@ -142,7 +133,7 @@ theorem homotopic_map_endLoop_const (hG : IsBoundaryLift p e γ G) :
     GenLoop.Homotopic (GenLoop.map (p.fiberι b).hom (TopCat.Hom.fiberι_apply p b e) hG.endLoop)
       GenLoop.const :=
   GenLoop.homotopic_of_continuousMap (G.comp ⟨fun y => (σ y.1, y.2), by fun_prop⟩)
-    (fun t => by rw [GenLoop.map_apply, TopCat.Hom.fiberι_apply, endLoop_apply_coe]; simp)
+    (fun t => by rw [GenLoop.map_fiberι_apply, endLoop_apply_coe]; simp)
     (fun t => by simp [hG.apply_zero])
     fun s t ht => by simp [hG.apply_of_mem_boundary _ ht]
 
@@ -157,7 +148,7 @@ theorem exists_isBoundaryLift (hp : serreFibrations p) [Finite N] (e : p.fiber b
       ((piOptionEquivProdHomeomorph fun _ : Option N => I).symm : C(I × I^N, I^(Option N))))
     fun y => by
       rw [ContinuousMap.comp_apply, ContinuousMap.coe_ofClass]
-      refine e.2.trans (apply_symm_of_mem_prodBoundary γ ?_).symm
+      refine e.2.trans (GenLoop.apply_symm_of_mem_prodBoundary γ ?_).symm
       rcases mem_cylinderExtensionDomain_iff.1 y.2 with h | h
       · exact Cube.mem_prodBoundary_iff.2 (Or.inl (Or.inl h))
       · exact Cube.mem_prodBoundary_iff.2 (Or.inr h)
@@ -189,25 +180,29 @@ theorem IsBoundaryLift.homotopic_endLoop (hp : serreFibrations p) [Finite N]
           (Cube.mem_prodBoundary_iff.2 (.inr hx)))
   -- The prescribed lift: `G` for homotopy parameter at most `1/2` and `G'` above. On the
   -- prescribed set both are `e` where the homotopy parameter is `1/2`.
+  let q' : C(cylinderExtensionDomain (Cube.boundary (Option N)), I × I^N) :=
+    ⟨fun x => q x.1, by fun_prop⟩
   let f : C(cylinderExtensionDomain (Cube.boundary (Option N)), E) :=
-    ⟨fun x => if (x.1.2 none : ℝ) ≤ 1 / 2 then G (q x.1) else G' (q x.1), by
-      refine Continuous.if_le (by fun_prop) (by fun_prop) (by fun_prop) continuous_const
-        fun x hx => ?_
-      rcases mem_cylinderExtensionDomain_iff.1 x.2 with h0 | hb
-      · have hqx : q x.1 = (0, fun i => x.1.2 (some i)) := Prod.ext h0 rfl
-        rw [hqx, hG.apply_zero, hG'.apply_zero]
-      · rcases Cube.boundary_option_iff.1 hb with hu | ht
-        · rcases hu with hu | hu <;> norm_num [hu] at hx
-        · rw [hG.apply_of_mem_boundary _ ht, hG'.apply_of_mem_boundary _ ht]⟩
+    ContinuousMap.glueHalves ⟨fun x => x.1.2 none, by fun_prop⟩ (G.comp q') (G'.comp q')
+      fun x hx => by
+        simp only [ContinuousMap.coe_mk] at hx
+        simp only [ContinuousMap.comp_apply, ContinuousMap.coe_mk, q', q]
+        rcases mem_cylinderExtensionDomain_iff.1 x.2 with h0 | hb
+        · rw [h0, hG.apply_zero, hG'.apply_zero]
+        · rcases Cube.boundary_option_iff.1 hb with hu | ht
+          · rcases hu with hu | hu <;> norm_num [hu] at hx
+          · rw [hG.apply_of_mem_boundary _ ht, hG'.apply_of_mem_boundary _ ht]
   have hf (x : cylinderExtensionDomain (Cube.boundary (Option N))) : p (f x) = H x := by
-    simp only [f, H, ContinuousMap.coe_mk]
-    split_ifs with hu
-    · rw [hG.proj_apply]
+    by_cases hu : (x.1.2 none : ℝ) ≤ 2⁻¹
+    · rw [ContinuousMap.glueHalves_of_le _ _ _ _ hu, ContinuousMap.comp_apply, hG.proj_apply]
+      simp only [H, q', ContinuousMap.coe_mk]
       rcases hK x.2 with (h0 | h1) | hz
       · rw [h0, K.apply_zero, GenLoop.coe_coe]
       · norm_num [h1] at hu
       · exact (K.eq_fst _ hz).symm
-    · rw [hG'.proj_apply]
+    · rw [ContinuousMap.glueHalves_of_not_le _ _ _ _ hu, ContinuousMap.comp_apply,
+        hG'.proj_apply]
+      simp only [H, q', ContinuousMap.coe_mk]
       rcases hK x.2 with (h0 | h1) | hz
       · norm_num [h0] at hu
       · rw [h1, K.apply_one, GenLoop.coe_coe]
@@ -218,14 +213,14 @@ theorem IsBoundaryLift.homotopic_endLoop (hp : serreFibrations p) [Finite N]
       ((1 : I), φ.symm (u, t)) ∈ cylinderExtensionDomain (Cube.boundary (Option N)) :=
     mem_cylinderExtensionDomain_iff.2 (.inr (Cube.boundary_option_iff.2 (by simpa [φ] using h)))
   have hLf' {u : I} {t : I^N} (h : (u = 0 ∨ u = 1) ∨ t ∈ Cube.boundary N) :
-      L (1, φ.symm (u, t)) = if (u : ℝ) ≤ 1 / 2 then G (1, t) else G' (1, t) := by
+      L (1, φ.symm (u, t)) = if (u : ℝ) ≤ 2⁻¹ then G (1, t) else G' (1, t) := by
     rw [hLf ⟨_, hmem h⟩]
-    simp [f, q, φ]
+    split_ifs with hu <;> simp [f, q', q, φ, hu]
   have hLb (u : I) (t : I^N) : p (L (1, φ.symm (u, t))) = b := by
     rw [← Function.comp_apply (f := p), hL]
     exact (K.eq_fst _ (piOptionEquivProdHomeomorph_symm_mem_boundary
       (Cube.mem_prodBoundary_iff.2 (.inl (.inr rfl))))).trans
-        (apply_symm_of_mem_prodBoundary γ (Cube.mem_prodBoundary_iff.2 (.inl (.inr rfl))))
+        (GenLoop.apply_symm_of_mem_prodBoundary γ (Cube.mem_prodBoundary_iff.2 (.inl (.inr rfl))))
   refine GenLoop.homotopic_of_continuousMap
     ⟨fun y => ⟨L (1, φ.symm y), hLb y.1 y.2⟩, by fun_prop⟩ (fun t => ?_) (fun t => ?_)
     fun u t ht => ?_ <;> apply Subtype.ext <;> dsimp only [ContinuousMap.coe_mk]
@@ -297,30 +292,6 @@ section Group
 
 variable [DecidableEq N]
 
-/-- Changing the coordinate `j` of `I^N` commutes with splitting off the distinguished direction
-of `I^(Option N)`. -/
-private theorem update_symm_some (s : I) (t : I^N) (j : N) (v : I) :
-    Function.update ((piOptionEquivProdHomeomorph fun _ : Option N => I).symm (s, t)) (some j) v =
-      (piOptionEquivProdHomeomorph fun _ : Option N => I).symm (s, Function.update t j v) := by
-  funext k
-  cases k with
-  | none => simp [piOptionEquivProdHomeomorph_symm_apply_none]
-  | some k =>
-    by_cases hk : k = j
-    · subst hk
-      simp [piOptionEquivProdHomeomorph_symm_apply_some]
-    · simp [hk, piOptionEquivProdHomeomorph_symm_apply_some]
-
-/-- Changing the coordinate `j` of a point on the boundary of `I^N` keeps it on the boundary,
-provided an endpoint value of that coordinate is changed to an endpoint value. -/
-private theorem update_mem_boundary {t : I^N} (ht : t ∈ Cube.boundary N) {j : N} {v : I}
-    (hv : t j = 0 ∨ t j = 1 → v = 0 ∨ v = 1) : Function.update t j v ∈ Cube.boundary N := by
-  obtain ⟨k, hk⟩ := ht
-  by_cases hkj : k = j
-  · subst hkj
-    exact ⟨k, by simpa using hv hk⟩
-  · exact ⟨k, by simpa [Function.update_of_ne hkj] using hk⟩
-
 /-- **The boundary map is multiplicative.** For `n ≥ 1`, the boundary of a product in
 `π_{n+1}(B, b)` is the product of the boundaries in `π_n(F, e)`. -/
 theorem fibrationBoundary_mul (hp : serreFibrations p) [Finite N] [Nonempty N]
@@ -332,42 +303,48 @@ theorem fibrationBoundary_mul (hp : serreFibrations p) [Finite N] [Nonempty N]
   obtain ⟨G', hG'⟩ := exists_isBoundaryLift hp e γ'
   let j := Classical.arbitrary N
   -- The lifts concatenated along the direction `j`, in the order of `HomotopyGroup.mul_spec`.
-  let Gc : C(I × I^N, E) :=
-    ⟨fun y => if (y.2 j : ℝ) ≤ 1 / 2
-        then G' (y.1, Function.update y.2 j (projIcc 0 1 zero_le_one (2 * y.2 j)))
-        else G (y.1, Function.update y.2 j (projIcc 0 1 zero_le_one (2 * y.2 j - 1))), by
-      refine Continuous.if_le (by fun_prop) (by fun_prop) (by fun_prop) continuous_const
-        fun y hy => ?_
-      rw [hy, show (2 : ℝ) * (1 / 2) = 1 by norm_num, sub_self, projIcc_eq_one.2 le_rfl,
-        projIcc_eq_zero.2 le_rfl, hG'.apply_of_mem_boundary _ ⟨j, by simp⟩,
-        hG.apply_of_mem_boundary _ ⟨j, by simp⟩]⟩
+  let Gc : C(I × I^N, E) := ContinuousMap.glueHalves ⟨fun y => y.2 j, by fun_prop⟩
+    (G'.comp ⟨fun y => (y.1, Function.update y.2 j (projIcc 0 1 zero_le_one (2 * y.2 j))),
+      by fun_prop⟩)
+    (G.comp ⟨fun y => (y.1, Function.update y.2 j (projIcc 0 1 zero_le_one (2 * y.2 j - 1))),
+      by fun_prop⟩)
+    fun y hy => by
+      simp only [ContinuousMap.coe_mk] at hy
+      simp only [ContinuousMap.comp_apply, ContinuousMap.coe_mk]
+      rw [hG'.apply_of_mem_boundary _ ⟨j, by norm_num [hy]⟩,
+        hG.apply_of_mem_boundary _ ⟨j, by norm_num [hy]⟩]
+  have hGc_apply (y : I × I^N) : Gc y = if (y.2 j : ℝ) ≤ 1 / 2
+      then G' (y.1, Function.update y.2 j (projIcc 0 1 zero_le_one (2 * y.2 j)))
+      else G (y.1, Function.update y.2 j (projIcc 0 1 zero_le_one (2 * y.2 j - 1))) := by
+    rw [one_div]
+    split_ifs with hj <;> simp [Gc, hj]
   have hGc : IsBoundaryLift p e (GenLoop.transAt (some j) γ' γ) Gc :=
     { proj_apply := fun ⟨s, t⟩ => by
-        simp only [Gc, ContinuousMap.coe_mk, GenLoop.transAt, GenLoop.coe_copy,
-          piOptionEquivProdHomeomorph_symm_apply_some, update_symm_some]
+        simp only [hGc_apply, GenLoop.transAt, GenLoop.coe_copy,
+          piOptionEquivProdHomeomorph_symm_apply_some, update_piOptionEquivProdHomeomorph_symm_some]
         split_ifs
         · exact hG'.proj_apply _
         · exact hG.proj_apply _
       apply_zero t := by
-        simp only [Gc, ContinuousMap.coe_mk]
+        rw [hGc_apply]
         split_ifs
         · exact hG'.apply_zero _
         · exact hG.apply_zero _
       apply_of_mem_boundary s t ht := by
-        simp only [Gc, ContinuousMap.coe_mk]
+        rw [hGc_apply]
         split_ifs with hj
-        · refine hG'.apply_of_mem_boundary _ (update_mem_boundary ht ?_)
+        · refine hG'.apply_of_mem_boundary _ (Cube.update_mem_boundary ht ?_)
           rintro (h0 | h1)
           · exact .inl (projIcc_eq_zero.2 (by simp [h0]))
           · norm_num [h1] at hj
-        · refine hG.apply_of_mem_boundary _ (update_mem_boundary ht ?_)
+        · refine hG.apply_of_mem_boundary _ (Cube.update_mem_boundary ht ?_)
           rintro (h0 | h1)
           · norm_num [h0] at hj
           · exact .inr (projIcc_eq_one.2 (by norm_num [h1])) }
   have hend : hGc.endLoop = GenLoop.transAt j hG'.endLoop hG.endLoop := by
     refine GenLoop.ext _ _ fun t => Subtype.ext ?_
     rw [hGc.endLoop_apply_coe]
-    simp only [Gc, ContinuousMap.coe_mk, GenLoop.transAt, GenLoop.coe_copy]
+    simp only [hGc_apply, GenLoop.transAt, GenLoop.coe_copy]
     split_ifs
     exacts [(hG'.endLoop_apply_coe _).symm, (hG.endLoop_apply_coe _).symm]
   rw [fibrationBoundary_mk hp hG, fibrationBoundary_mk hp hG']
@@ -411,11 +388,10 @@ theorem mem_range_fibrationBoundary_iff (hp : serreFibrations p) [Finite N]
     have hG0 (t : I^N) : G (0, t) = e.1 := by simp [G]
     have hG1 (t : I^N) : G (1, t) = (β t).1 := by
       simp only [G, ContinuousMap.coe_mk, symm_one, K.apply_zero]
-      exact (GenLoop.map_apply _ _ β t).trans (TopCat.Hom.fiberι_apply p b _)
+      exact GenLoop.map_fiberι_apply _ β t
     have hGb (s : I) {t : I^N} (ht : t ∈ Cube.boundary N) : G (s, t) = e.1 := by
       simp only [G, ContinuousMap.coe_mk, K.eq_fst _ ht]
-      exact ((GenLoop.map_apply _ _ β t).trans (TopCat.Hom.fiberι_apply p b _)).trans
-        (congrArg Subtype.val (GenLoop.boundary β t ht))
+      exact (GenLoop.map_fiberι_apply _ β t).trans (congrArg Subtype.val (GenLoop.boundary β t ht))
     have hpG : ∀ y ∈ Cube.prodBoundary N, p.hom.comp G y = b := by
       rintro ⟨s, t⟩ hy
       rw [ContinuousMap.comp_apply]
@@ -423,11 +399,11 @@ theorem mem_range_fibrationBoundary_iff (hp : serreFibrations p) [Finite N]
       · rw [hG0]; exact e.2
       · rw [hG1]; exact (β t).2
       · rw [hGb s ht]; exact e.2
-    have hG : IsBoundaryLift p e (genLoopOfProd _ hpG) G :=
-      { proj_apply y := by simp [genLoopOfProd_apply]
+    have hG : IsBoundaryLift p e (GenLoop.ofProd _ hpG) G :=
+      { proj_apply y := by simp [GenLoop.ofProd_apply]
         apply_zero := hG0
         apply_of_mem_boundary := hGb }
-    refine ⟨⟦genLoopOfProd _ hpG⟧, ?_⟩
+    refine ⟨⟦GenLoop.ofProd _ hpG⟧, ?_⟩
     rw [fibrationBoundary_mk hp hG]
     congr 1
     exact GenLoop.ext _ _ fun t => Subtype.ext (hG1 t)
@@ -445,7 +421,7 @@ theorem mem_range_homotopyGroupMap_fiberι_iff (hp : serreFibrations p) [Finite 
     rw [HomotopyGroup.map_mk, HomotopyGroup.map_mk]
     congr 1
     refine GenLoop.ext _ _ fun t => ?_
-    rw [GenLoop.map_apply, GenLoop.map_apply, TopCat.Hom.fiberι_apply, GenLoop.const_apply]
+    rw [GenLoop.map_apply, GenLoop.map_fiberι_apply, GenLoop.const_apply]
     exact (β t).2
   · intro h
     induction a using Quotient.inductionOn with | h α => ?_
@@ -468,12 +444,12 @@ theorem mem_range_homotopyGroupMap_fiberι_iff (hp : serreFibrations p) [Finite 
       ⟨⟨fun t => ⟨L (1, t), hL1 t⟩, by fun_prop⟩, fun t ht => Subtype.ext (hLb 1 ht)⟩
     refine ⟨⟦β⟧, (Quotient.sound ?_).symm⟩
     exact GenLoop.homotopic_of_continuousMap L hL0
-      (fun t => ((GenLoop.map_apply _ _ β t).trans (TopCat.Hom.fiberι_apply p b _)).symm)
+      (fun t => (GenLoop.map_fiberι_apply _ β t).symm)
       fun s t ht => hLb s ht
 
 /-- **Exactness at `π_{n+1}(B, b)`.** A class of the base comes from the total space exactly when
 its boundary is trivial. -/
-theorem mem_range_homotopyGroupMap_iff (hp : serreFibrations p) [Finite N]
+theorem mem_range_homotopyGroupMap_iff_fibrationBoundary_eq (hp : serreFibrations p) [Finite N]
     {a : HomotopyGroup (Option N) B b} :
     a ∈ range (HomotopyGroup.map p.hom (Set.mem_singleton_iff.1 e.2)) ↔
       fibrationBoundary hp e a = (⟦GenLoop.const⟧ : HomotopyGroup N (p.fiber b) e) := by
@@ -485,13 +461,13 @@ theorem mem_range_homotopyGroupMap_iff (hp : serreFibrations p) [Finite N]
     have hG : IsBoundaryLift p e (GenLoop.map p.hom (Set.mem_singleton_iff.1 e.2) δ)
         ((δ : C(I^(Option N), E)).comp (φ.symm : C(I × I^N, I^(Option N)))) :=
       { proj_apply y := by simp [φ]
-        apply_zero t := apply_symm_of_mem_prodBoundary δ (Cube.mk_zero_mem_prodBoundary t)
+        apply_zero t := GenLoop.apply_symm_of_mem_prodBoundary δ (Cube.mk_zero_mem_prodBoundary t)
         apply_of_mem_boundary s t ht :=
-          apply_symm_of_mem_prodBoundary δ (Cube.mem_prodBoundary_iff.2 (.inr ht)) }
+          GenLoop.apply_symm_of_mem_prodBoundary δ (Cube.mem_prodBoundary_iff.2 (.inr ht)) }
     rw [HomotopyGroup.map_mk, fibrationBoundary_mk hp hG]
     congr 1
     exact GenLoop.ext _ _ fun t => Subtype.ext
-      (apply_symm_of_mem_prodBoundary δ (Cube.mk_mem_prodBoundary (.inl rfl)))
+      (GenLoop.apply_symm_of_mem_prodBoundary δ (Cube.mk_mem_prodBoundary (.inl rfl)))
   · intro h
     induction a using Quotient.inductionOn with | h γ => ?_
     obtain ⟨G, hG⟩ := exists_isBoundaryLift hp e γ
@@ -499,17 +475,21 @@ theorem mem_range_homotopyGroupMap_iff (hp : serreFibrations p) [Finite N]
     obtain ⟨K⟩ := Quotient.exact h
     -- Follow the boundary lift `G` by the null-homotopy `K` of its end loop in the fibre: this is a
     -- generalized loop in `E` whose projection is `γ` run at double speed and then stopped.
-    let D : C(I × I^N, E) :=
-      ⟨fun y => if (y.1 : ℝ) ≤ 1 / 2 then G (projIcc 0 1 zero_le_one (2 * y.1), y.2)
-        else (K (projIcc 0 1 zero_le_one (2 * y.1 - 1), y.2)).1, by
-        refine Continuous.if_le (by fun_prop) (by fun_prop) (by fun_prop) continuous_const
-          fun y hy => ?_
-        rw [hy, show (2 : ℝ) * (1 / 2) = 1 by norm_num, sub_self, projIcc_eq_one.2 le_rfl,
-          projIcc_eq_zero.2 le_rfl, K.apply_zero]
-        exact (hG.endLoop_apply_coe _).symm⟩
+    let D : C(I × I^N, E) := ContinuousMap.glueHalves ContinuousMap.fst
+      (G.comp ⟨fun y => (projIcc 0 1 zero_le_one (2 * y.1), y.2), by fun_prop⟩)
+      (⟨fun y => (K (projIcc 0 1 zero_le_one (2 * y.1 - 1), y.2)).1, by fun_prop⟩)
+      fun y hy => by
+        simp only [ContinuousMap.fst_apply] at hy
+        simp only [ContinuousMap.comp_apply, ContinuousMap.coe_mk]
+        norm_num [hy, K.apply_zero]
+    have hD_apply (y : I × I^N) : D y = if (y.1 : ℝ) ≤ 1 / 2
+        then G (projIcc 0 1 zero_le_one (2 * y.1), y.2)
+        else (K (projIcc 0 1 zero_le_one (2 * y.1 - 1), y.2)).1 := by
+      rw [one_div]
+      split_ifs with hy <;> simp [D, hy]
     have hD : ∀ y ∈ Cube.prodBoundary N, D y = e.1 := by
       rintro ⟨s, t⟩ hy
-      simp only [D, ContinuousMap.coe_mk]
+      rw [hD_apply]
       rcases Cube.mem_prodBoundary_iff.1 hy with (rfl | rfl) | ht
       · norm_num [hG.apply_zero]
       · norm_num [K.apply_one]
@@ -517,24 +497,24 @@ theorem mem_range_homotopyGroupMap_iff (hp : serreFibrations p) [Finite N]
         · exact hG.apply_of_mem_boundary _ ht
         · rw [K.eq_fst _ ht]
           exact congrArg Subtype.val (GenLoop.boundary hG.endLoop t ht)
-    refine ⟨⟦genLoopOfProd D hD⟧, Quotient.sound <| GenLoop.homotopic_of_continuousMap
+    refine ⟨⟦GenLoop.ofProd D hD⟧, Quotient.sound <| GenLoop.homotopic_of_continuousMap
       ⟨fun x => γ (φ.symm (projIcc 0 1 zero_le_one ((2 - x.1) * x.2 none),
         fun i => x.2 (some i))), by fun_prop⟩ (fun z => ?_) (fun z => ?_) fun u z hz => ?_⟩
     · -- At the start, the homotopy is the projection of the concatenated loop.
       simp only [ContinuousMap.coe_mk, Icc.coe_zero, sub_zero, GenLoop.map_apply,
-        genLoopOfProd_apply, piOptionEquivProdHomeomorph_apply, D]
+        GenLoop.ofProd_apply, piOptionEquivProdHomeomorph_apply, hD_apply]
       split_ifs with hz
       · exact (hG.proj_apply _).symm
       · rw [projIcc_eq_one.2 (by linarith)]
-        exact (apply_symm_of_mem_prodBoundary γ (Cube.mk_mem_prodBoundary (.inl rfl))).trans
-          (K _).2.symm
+        exact (GenLoop.apply_symm_of_mem_prodBoundary γ
+          (Cube.mk_mem_prodBoundary (.inl rfl))).trans (K _).2.symm
     · -- At the end, the homotopy is `γ`.
       simp only [ContinuousMap.coe_mk, Icc.coe_one]
       rw [show (2 - 1) * (z none : ℝ) = z none by ring, projIcc_val,
         ← piOptionEquivProdHomeomorph_apply, Homeomorph.symm_apply_apply]
     · -- Over the boundary of `I^(Option N)`, the homotopy is stationary at `b`.
       simp only [ContinuousMap.coe_mk]
-      refine apply_symm_of_mem_prodBoundary γ (Cube.mem_prodBoundary_iff.2 ?_)
+      refine GenLoop.apply_symm_of_mem_prodBoundary γ (Cube.mem_prodBoundary_iff.2 ?_)
       rcases Cube.boundary_option_iff.1 hz with (h0 | h1) | ht
       · exact .inl (.inl (projIcc_eq_zero.2 (by simp [h0])))
       · exact .inl (.inr (projIcc_eq_one.2 (by simp only [h1, Icc.coe_one]; linarith [u.2.2])))
