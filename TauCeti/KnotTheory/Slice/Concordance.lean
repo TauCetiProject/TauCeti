@@ -14,6 +14,7 @@ public import TauCeti.Geometry.Manifold.LocallyFlat.Smooth
 public import TauCeti.Geometry.Manifold.SmoothEmbedding.Concordance
 public import TauCeti.KnotTheory.Slice.Basic
 
+import Mathlib.Analysis.Normed.Group.CocompactMap
 import Mathlib.Geometry.Manifold.ImmersionDiff
 import Mathlib.Topology.Maps.Proper.CompactlyGenerated
 import TauCeti.Geometry.Manifold.LocalDiffeomorph.Composition
@@ -476,16 +477,11 @@ private theorem isClosedEmbedding_capMap
     (hΦ : IsCollaredTrack (SmoothCircleEmbedding.greatCircle (n := n) ι) K Φ)
     (hinj : Function.Injective Φ) (hcont : Continuous (capMap Φ)) :
     IsClosedEmbedding (capMap Φ) := by
-  have hprop : IsProperMap (capMap Φ) := by
-    refine isProperMap_iff_isCompact_preimage.2 ⟨hcont, fun L hL => ?_⟩
-    obtain ⟨R, hR⟩ := hL.isBounded.subset_closedBall 0
-    refine (isCompact_closedBall (0 : ℂ) (max R 1)).of_isClosed_subset
-      (hL.isClosed.preimage hcont) fun z hz => ?_
-    have hzR : ‖capMap Φ z‖ ≤ R := mem_closedBall_zero_iff.1 (hR hz)
-    rw [mem_closedBall_zero_iff]
-    rcases le_total ‖z‖ 1 with h | h
-    · exact h.trans (le_max_right _ _)
-    · exact (norm_capMap_of_one_le hΦ h ▸ hzR).trans (le_max_left _ _)
+  have hprop : IsProperMap (capMap Φ) :=
+    isProperMap_iff_tendsto_cocompact.2 ⟨hcont, Filter.tendsto_cocompact_cocompact_of_norm
+      fun R => ⟨max R 1, fun z hz => by
+        rw [norm_capMap_of_one_le hΦ ((le_max_right _ _).trans hz.le)]
+        exact (le_max_left _ _).trans_lt hz⟩⟩
   exact .of_continuous_injective_isClosedMap hcont (capMap_injective hinj) hprop.isClosedMap
 
 variable (F : SmoothEmbedding.Concordance (SmoothCircleEmbedding.greatCircle (n := n) ι) K)
