@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.Order.Hom.GroupNorm
 public import Mathlib.Data.ZMod.Defs
 public import Mathlib.GroupTheory.DivisibleHull
+import TauCeti.Algebra.Order.Group.MinMax
 
 /-!
 # Lyndon length functions
@@ -374,23 +375,12 @@ def absLength : LyndonLength (Multiplicative Λ) Λ where
 theorem absLength_apply (a : Multiplicative Λ) : absLength Λ a = |a.toAdd| :=
   (rfl)
 
-/-- For `a b : Λ`, the common initial segment of `a` and `b` for the absolute value: `min a b` if
-both are nonnegative, `max a b` if both are nonpositive, and `0` otherwise. -/
-private theorem abs_commonSegment (a b : Λ) {u : Λ} (hu : u = max 0 (min a b) + min 0 (max a b)) :
-    |a| = |u| + |-u + a| ∧ |b| = |u| + |-u + b| ∧ 2 • |u| = |a| + |b| - |-a + b| := by
-  subst hu
-  rw [two_nsmul]
-  rcases le_total a b with hab | hab <;> rcases le_total 0 a with ha | ha <;>
-    rcases le_total 0 b with hb | hb <;>
-    simp only [min_eq_left, min_eq_right, max_eq_left, max_eq_right, hab, ha, hb] <;>
-    grind [abs_of_nonneg, abs_of_nonpos]
-
 /-- The absolute value of a linearly ordered abelian group is a free Lyndon length function. -/
 theorem isFree_absLength : (absLength Λ).IsFree where
   exists_coe_eq_gromovProduct a b := by
     refine ⟨|max 0 (min a.toAdd b.toAdd) + min 0 (max a.toAdd b.toAdd)|, ?_⟩
     rw [coe_eq_gromovProduct_iff]
-    simpa using (abs_commonSegment a.toAdd b.toAdd rfl).2.2
+    simpa [neg_add_eq_sub] using two_nsmul_abs_max_zero_min_add_min_zero_max a.toAdd b.toAdd
   lt_map_sq a ha := by
     have ha' : a.toAdd ≠ 0 := by simpa using ha
     simp only [absLength_apply, toAdd_pow, two_nsmul]
@@ -405,15 +395,18 @@ theorem isFree_absLength : (absLength Λ).IsFree where
 are nonpositive, and `0` otherwise. -/
 theorem isRegular_absLength : (absLength Λ).IsRegular := by
   intro a b
-  obtain ⟨ha, hb, hu⟩ := abs_commonSegment a.toAdd b.toAdd rfl
+  have ha := abs_max_zero_min_add_min_zero_max_add_abs_sub a.toAdd b.toAdd
+  have hb := abs_max_zero_min_add_min_zero_max_add_abs_sub b.toAdd a.toAdd
+  have hu := two_nsmul_abs_max_zero_min_add_min_zero_max a.toAdd b.toAdd
+  rw [min_comm b.toAdd, max_comm b.toAdd] at hb
   set u := max 0 (min a.toAdd b.toAdd) + min 0 (max a.toAdd b.toAdd)
   refine ⟨.ofAdd u, .ofAdd (-u + a.toAdd), .ofAdd (-u + b.toAdd), ?_, ?_, ?_, ?_, ?_⟩
   · simp [← ofAdd_add]
   · simp [← ofAdd_add]
-  · simpa using ha
-  · simpa using hb
+  · simpa [neg_add_eq_sub] using ha.symm
+  · simpa [neg_add_eq_sub] using hb.symm
   · rw [coe_eq_gromovProduct_iff]
-    simpa using hu
+    simpa [neg_add_eq_sub] using hu
 
 end LyndonLength
 
