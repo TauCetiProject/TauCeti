@@ -128,12 +128,12 @@ theorem exists_seq_dual_triangular_of_not_surjective_inclusionInDoubleDual [Comp
   · intro i j hji
     simp [map_smul, (hn i).2.2.2.2.1 ⟨j, hji⟩]
 
-/-- A triangular array with uniformly bounded functionals and a fixed positive diagonal
+/-- A triangular array with uniformly bounded functionals and a fixed nonzero diagonal
 entry has no weakly convergent subsequence. The vectors need not be norm bounded. -/
 theorem not_tendsto_subseq_toWeakSpace_of_dual_triangular
-    {θ : ℝ} (hθ : 0 < θ) {x : ℕ → E} {f : ℕ → StrongDual 𝕜 E}
+    {θ : 𝕜} (hθ : θ ≠ 0) {x : ℕ → E} {f : ℕ → StrongDual 𝕜 E}
     (hf : ∃ C, ∀ n, ‖f n‖ ≤ C)
-    (hdiag : ∀ i j, i ≤ j → f i (x j) = (θ : 𝕜))
+    (hdiag : ∀ i j, i ≤ j → f i (x j) = θ)
     (hzero : ∀ i j, j < i → f i (x j) = 0)
     {σ : ℕ → ℕ} (hσ : StrictMono σ) (y : E) :
     ¬ Tendsto (fun n ↦ toWeakSpace 𝕜 E (x (σ n))) atTop (𝓝 (toWeakSpace 𝕜 E y)) := by
@@ -146,7 +146,7 @@ theorem not_tendsto_subseq_toWeakSpace_of_dual_triangular
       add_mem' := fun ha hb ↦ by simpa using ha.add hb
       smul_mem' := fun c _ hz ↦ by simpa using hz.const_smul c }
   have hequi : Equicontinuous (fun n z ↦ f n z) :=
-    ((NormedSpace.equicontinuous_TFAE f).out 6 2).mp hf
+    ((NormedSpace.equicontinuous_tfae f).out 6 2).mp hf
   have hclosed : IsClosed (M : Set E) := hequi.isClosed_setOfPred_tendsto continuous_const
   let : NormedSpace ℝ E := .restrictScalars ℝ 𝕜 E
   let : IsScalarTower ℝ 𝕜 E := .of_algebraMap_smul fun _ _ ↦ rfl
@@ -162,15 +162,13 @@ theorem not_tendsto_subseq_toWeakSpace_of_dual_triangular
     obtain ⟨z, hz, hzy⟩ := hweak.mem_of_tendsto hlim
       (Eventually.of_forall fun n ↦ mem_image_of_mem _ (hx (σ n)))
     exact (toWeakSpace 𝕜 E).injective hzy ▸ hz
-  have hfy (i : ℕ) : f i y = (θ : 𝕜) := by
+  have hfy (i : ℕ) : f i y = θ := by
     have hi := (tendsto_toWeakSpace_iff_forall_eval_tendsto.1 hlim) (f i)
-    have he : ∀ᶠ n in atTop, f i (x (σ n)) = (θ : 𝕜) :=
+    have he : ∀ᶠ n in atTop, f i (x (σ n)) = θ :=
       (hσ.tendsto_atTop.eventually (eventually_ge_atTop i)).mono fun n hn ↦ hdiag i (σ n) hn
     exact tendsto_nhds_unique hi (tendsto_const_nhds.congr' (he.mono fun _ hn ↦ hn.symm))
   have hy0 : Tendsto (fun n ↦ f n y) atTop (𝓝 0) := hy
-  have hθzero : (θ : 𝕜) = 0 :=
-    tendsto_nhds_unique tendsto_const_nhds (by simpa only [hfy] using hy0)
-  exact hθ.ne' (by exact_mod_cast hθzero)
+  exact hθ (tendsto_nhds_unique tendsto_const_nhds (by simpa only [hfy] using hy0))
 
 end Seminormed
 
@@ -192,7 +190,8 @@ theorem not_surjective_inclusionInDoubleDual_iff_exists_seq_dual_triangular [Com
   obtain ⟨_, ⟨y, -, rfl⟩, σ, hσ, hlim⟩ :=
     isSeqCompact_toWeakSpace_of_isCompact (isCompact_toWeakSpace_closedBall hE 0 1)
       (fun n ↦ mem_image_of_mem _ (mem_closedBall_zero_iff.2 (hx n)))
-  exact not_tendsto_subseq_toWeakSpace_of_dual_triangular hθ ⟨1, hf⟩ hdiag hzero hσ y hlim
+  exact not_tendsto_subseq_toWeakSpace_of_dual_triangular
+    (by exact_mod_cast hθ.ne' : (θ : 𝕜) ≠ 0) ⟨1, hf⟩ hdiag hzero hσ y hlim
 
 /-- **Separable reduction of nonreflexivity.** Every nonreflexive Banach space contains
 a closed separable subspace which is itself nonreflexive. -/
