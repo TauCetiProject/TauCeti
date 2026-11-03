@@ -76,7 +76,7 @@ mass zero. -/
 theorem rademacherMeasure_singleton (x : ℝ) :
     rademacherMeasure {x} = if x = -1 ∨ x = 1 then (1 / 2 : ℝ≥0∞) else 0 := by
   rw [rademacherMeasure_eq]
-  simp only [Measure.add_apply, Measure.smul_apply, MeasurableSet.singleton, Measure.dirac_apply']
+  simp only [_root_.add_apply, _root_.smul_apply, MeasurableSet.singleton, Measure.dirac_apply']
   by_cases hxneg : x = -1
   · subst x
     norm_num

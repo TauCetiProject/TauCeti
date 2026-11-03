@@ -190,7 +190,7 @@ private theorem one_sub_ofMulAction_T_flipSum [CommRing k] (hn : 0 < n) :
   induction x using TraceFormulaMatrixModule.induction with | h A => ?_
   have hdet : A.1 0 0 * A.1 1 1 - A.1 0 1 * A.1 1 0 = n := by
     simpa [Matrix.det_fin_two] using A.2
-  simp only [LinearMap.sub_apply, Module.End.one_apply, coeff_sub, Finsupp.coe_sub, Pi.sub_apply,
+  simp only [LinearMap.sub_apply, one_apply_eq_self, coeff_sub, Finsupp.coe_sub, Pi.sub_apply,
     coeff_ofMulAction, coeff_flipSum, coeff_upperTriangularSum, smul_mk, flip_mk,
     ← MulOpposite.op_inv, ← QuotientGroup.mk_inv, op_smul_mk, inv_inv]
   simp only [Set.indicator_apply, Pi.one_apply,
@@ -217,14 +217,14 @@ variable [CommRing k]
 /-- Right multiplication by `1 + S` sends coset sums to twice themselves. -/
 private theorem mapDomain_coeff_one_add_op_S (v : k[ℳ n]) :
     ((1 + ρR (.op ↑S)) v).coeff.mapDomain qR = 2 • v.coeff.mapDomain qR := by
-  rw [LinearMap.add_apply, Module.End.one_apply, coeff_add, Finsupp.mapDomain_add,
+  rw [LinearMap.add_apply, one_apply_eq_self, coeff_add, Finsupp.mapDomain_add,
     mapDomain_orbitRel_mk_coeff_ofMulAction, two_smul]
 
 /-- Right multiplication by `1 + U + U²` sends coset sums to three times themselves. -/
 private theorem mapDomain_coeff_one_add_op_U_add_op_U_sq (v : k[ℳ n]) :
     ((1 + ρR (.op ((T : PSL(2, ℤ)) * S)) + ρR (.op ((T : PSL(2, ℤ)) * S)) ^ 2 :
       Module.End k k[ℳ n]) v).coeff.mapDomain qR = 3 • v.coeff.mapDomain qR := by
-  rw [← map_pow, LinearMap.add_apply, LinearMap.add_apply, Module.End.one_apply, coeff_add,
+  rw [← map_pow, LinearMap.add_apply, LinearMap.add_apply, one_apply_eq_self, coeff_add,
     coeff_add, Finsupp.mapDomain_add, Finsupp.mapDomain_add,
     mapDomain_orbitRel_mk_coeff_ofMulAction, mapDomain_orbitRel_mk_coeff_ofMulAction]
   module
@@ -241,12 +241,12 @@ private theorem one_add_op_S_apply_periodDefect {ξ y : k[ℳ n]}
       ofMulAction_neg]
   -- right multiplication by `1 + S` commutes with left multiplication by `1 - S`
   have h₁ : (1 + ρR (.op ↑S)) ((1 - ρL S) ξ) = (1 - ρL S) ((1 + ρR (.op ↑S)) ξ) := by
-    rw [← Module.End.mul_apply, ← Module.End.mul_apply,
+    rw [← mul_apply_eq_comp, ← mul_apply_eq_comp,
       ((Commute.one_left _).sub_left (commute_ofMulAction_one_add S S)).symm.eq]
-  rw [map_sub, h₁, ← Module.End.mul_apply (1 + _), one_add_mul_one_sub_of_sq_eq_one
-    ofMulAction_op_S_sq, LinearMap.zero_apply, sub_zero, ← hy, ← Module.End.mul_apply,
+  rw [map_sub, h₁, ← mul_apply_eq_comp (1 + _), one_add_mul_one_sub_of_sq_eq_one
+    ofMulAction_op_S_sq, LinearMap.zero_apply, sub_zero, ← hy, ← mul_apply_eq_comp,
     one_sub_mul_one_add_add_sq ofMulAction_S_sq (by simp), hUS]
-  simp only [Module.End.mul_apply, LinearMap.neg_apply]
+  simp only [mul_apply_eq_comp, LinearMap.neg_apply]
 
 /-- If `(1 - S) ξ (1 + U + U²) = 0`, then right multiplication by `1 + U + U²` sends the period
 defect `X = (1 - S) ξ - Tₙ^∞ (1 - S)` to `(1 - T) b` with `b = ν S (1 + U + U²)`. -/
@@ -266,15 +266,15 @@ private theorem one_add_op_U_add_op_U_sq_apply_periodDefect (hn : 0 < n) {ξ z :
     commute_ofMulAction_one_add_add_sq g _
   have h₁ : (1 + υ' + υ' ^ 2 : Module.End k k[ℳ n]) ((1 - ρL S) ξ) =
       (1 - ρL S) ((1 + υ' + υ' ^ 2 : Module.End k k[ℳ n]) ξ) := by
-    rw [← Module.End.mul_apply, ← Module.End.mul_apply,
+    rw [← mul_apply_eq_comp, ← mul_apply_eq_comp,
       ((Commute.one_left _).sub_left (hc S)).symm.eq]
-  rw [map_sub, h₁, ← hz, ← Module.End.mul_apply (1 - _), one_sub_mul_one_add_of_sq_eq_one
-    ofMulAction_S_sq, ← Module.End.mul_apply (1 + υ' + υ' ^ 2), one_add_add_sq_mul_one_sub
+  rw [map_sub, h₁, ← hz, ← mul_apply_eq_comp (1 - _), one_sub_mul_one_add_of_sq_eq_one
+    ofMulAction_S_sq, ← mul_apply_eq_comp (1 + υ' + υ' ^ 2), one_add_add_sq_mul_one_sub
     ofMulAction_op_S_sq (by simp [υ']), hSU, LinearMap.zero_apply, zero_sub]
-  simp only [LinearMap.neg_apply, neg_neg, Module.End.mul_apply]
+  simp only [LinearMap.neg_apply, neg_neg, mul_apply_eq_comp]
   rw [← one_sub_ofMulAction_T_flipSum hn]
-  rw [← Module.End.mul_apply, ← Module.End.mul_apply, ← Module.End.mul_apply,
-    ← Module.End.mul_apply, mul_assoc (1 - ρL T),
+  rw [← mul_apply_eq_comp, ← mul_apply_eq_comp, ← mul_apply_eq_comp,
+    ← mul_apply_eq_comp, mul_assoc (1 - ρL T),
     ((Commute.one_left _).sub_left ((hc T).mul_right (commute_ofMulAction _ _))).eq]
 
 /-- If `a S = a`, `b U = b` and `-a / 2 + b / 3` has vanishing right coset sums, then some `m` has
@@ -293,18 +293,18 @@ private theorem exists_one_add_op_S_apply_eq_neg_and_one_add_op_U_add_op_U_sq_ap
   set υ' : Module.End k k[ℳ n] := ρR (.op ((T : PSL(2, ℤ)) * S))
   rw [← Module.End.one_eq_id, ← neg_sub, ← neg_sub 1 υ', LinearMap.neg_apply,
     LinearMap.neg_apply] at huv
-  have hb2 : (υ' ^ 2) b = b := by rw [sq, Module.End.mul_apply, hb, hb]
+  have hb2 : (υ' ^ 2) b = b := by rw [sq, mul_apply_eq_comp, hb, hb]
   refine ⟨(⅟2 : k) • (-a) + (1 - σ') u, ?_, ?_⟩
-  · rw [map_add, ← Module.End.mul_apply _ (1 - σ'), one_add_mul_one_sub_of_sq_eq_one
+  · rw [map_add, ← mul_apply_eq_comp _ (1 - σ'), one_add_mul_one_sub_of_sq_eq_one
       ofMulAction_op_S_sq, LinearMap.zero_apply, add_zero]
-    simp only [map_smul, map_neg, LinearMap.add_apply, Module.End.one_apply, ha]
+    simp only [map_smul, map_neg, LinearMap.add_apply, one_apply_eq_self, ha]
     linear_combination (norm := module) -(invOf_mul_self (2 : k) • a)
   · rw [show (⅟2 : k) • (-a) + (1 - σ') u = (⅟3 : k) • (-b) - (1 - υ') v by
         linear_combination (norm := module) -huv,
-      map_sub, ← Module.End.mul_apply _ (1 - υ'),
+      map_sub, ← mul_apply_eq_comp _ (1 - υ'),
       one_add_add_sq_mul_one_sub_of_pow_three_eq_one (by simp [υ']), LinearMap.zero_apply,
       sub_zero]
-    simp only [map_smul, map_neg, LinearMap.add_apply, Module.End.one_apply, hb, hb2]
+    simp only [map_smul, map_neg, LinearMap.add_apply, one_apply_eq_self, hb, hb2]
     linear_combination (norm := module) -(invOf_mul_self (3 : k) • b)
 
 /-! ### Popa–Zagier's Theorem 2(b) -/
@@ -357,9 +357,9 @@ theorem ExchangeRelations.periodRelation_iff_mapDomain_orbitRel_mk_coeff_eq_neg_
     intro h
     obtain ⟨m, hm⟩ := TraceFormulaMatrixModule.periodRelation_iff.1 h
     have hma : (1 + σ') m = a := sub_eq_zero.1 <| hinj _ <| by
-      rw [map_sub, ← Module.End.mul_apply, hcσ'.eq, Module.End.mul_apply, hm, hXa, sub_self]
+      rw [map_sub, ← mul_apply_eq_comp, hcσ'.eq, mul_apply_eq_comp, hm, hXa, sub_self]
     have hmb : (1 + υ' + υ' ^ 2 : Module.End k k[ℳ n]) m = b := sub_eq_zero.1 <| hinj _ <| by
-      rw [map_sub, ← Module.End.mul_apply, hcυ'.eq, Module.End.mul_apply, hm, hXb, sub_self]
+      rw [map_sub, ← mul_apply_eq_comp, hcυ'.eq, mul_apply_eq_comp, hm, hXb, sub_self]
     intro x
     have e₁ := congr($(mapDomain_coeff_one_add_op_S (k := k) m) ⟦S • x⟧)
     have e₂ := congr($(mapDomain_coeff_one_add_op_U_add_op_U_sq (k := k) m) ⟦S • x⟧)
@@ -376,12 +376,12 @@ theorem ExchangeRelations.periodRelation_iff_mapDomain_orbitRel_mk_coeff_eq_neg_
     -- acyclicity
     intro hc
     have hσ'a : σ' a = a := sub_eq_zero.1 <| hinj _ <| by
-      rw [map_sub, ← Module.End.mul_apply, (hτ σ' (commute_ofMulAction _ _)).eq,
-        Module.End.mul_apply, ← hXa, ← Module.End.mul_apply,
+      rw [map_sub, ← mul_apply_eq_comp, (hτ σ' (commute_ofMulAction _ _)).eq,
+        mul_apply_eq_comp, ← hXa, ← mul_apply_eq_comp,
         show σ' * (1 + σ') = 1 + σ' from by linear_combination (norm := noncomm_ring) hσ',
         sub_self]
     have hυ'b : υ' b = b := by
-      rw [hb, ← Module.End.mul_apply,
+      rw [hb, ← mul_apply_eq_comp,
         show υ' * (1 + υ' + υ' ^ 2) = 1 + υ' + υ' ^ 2 from by
           linear_combination (norm := noncomm_ring) hυ']
     -- `-a / 2 + b / 3` has vanishing coset sums, so it lies in `ℛₙ (S - 1) + ℛₙ (U - 1)`

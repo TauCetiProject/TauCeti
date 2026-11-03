@@ -242,7 +242,7 @@ theorem card_symmDiff_add_two_mul_card_inter {α : Type*} [DecidableEq α] (s t 
     (s ∆ t).card + 2 * (s ∩ t).card = s.card + t.card := by
   have hsub : s ∩ t ⊆ s ∪ t := inter_subset_left.trans subset_union_left
   have hcard : (s ∆ t).card = (s ∪ t).card - (s ∩ t).card := by
-    rw [symmDiff_eq_sup_sdiff_inf, sup_eq_union, inf_eq_inter, card_sdiff,
+    rw [symmDiff_eq_sup_sdiff_inf, card_sdiff,
       inter_eq_left.2 hsub]
   have hunion := card_union_add_card_inter s t
   have hle : (s ∩ t).card ≤ (s ∪ t).card := card_le_card hsub

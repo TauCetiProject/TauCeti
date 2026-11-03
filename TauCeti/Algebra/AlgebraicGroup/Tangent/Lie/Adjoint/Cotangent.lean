@@ -98,7 +98,7 @@ theorem adjointLieEquiv_mul
         (adjointLieEquiv (R := R) (H := H) A g) := by
   ext x
   simp only [adjointLieEquiv_apply, LieEquiv.trans_apply]
-  rw [map_mul (adjointAction A).hom, Units.val_mul, Module.End.mul_apply]
+  rw [map_mul (adjointAction A).hom, Units.val_mul, mul_apply_eq_comp]
 
 /-- The inverse adjoint Lie automorphism is the automorphism of the inverse point. -/
 @[simp]

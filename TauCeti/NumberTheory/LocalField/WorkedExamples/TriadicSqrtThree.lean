@@ -10,7 +10,7 @@ public import TauCeti.NumberTheory.LocalField.Discriminant.Basic
 public import TauCeti.NumberTheory.LocalField.Eisenstein.TotallyRamified
 public import TauCeti.NumberTheory.LocalField.Norm.Herbrand
 public import TauCeti.NumberTheory.LocalField.Padic
-public import TauCeti.RingTheory.AdjoinRoot
+public import TauCeti.RingTheory.AdjoinRoot.Basic
 import TauCeti.FieldTheory.Galois.SquareRoot
 import TauCeti.FieldTheory.Kummer.Extension
 
@@ -115,7 +115,7 @@ def sqrtThree : TriadicSqrtThree := AdjoinRoot.root (X ^ 2 - C 3 : ℚ_[3][X])
 /-- The defining equation of the generator `√3`. -/
 @[simp]
 theorem sqrtThree_sq : sqrtThree ^ 2 = 3 :=
-  (TauCeti.AdjoinRoot.root_sq (3 : ℚ_[3])).trans (map_ofNat _ 3)
+  (AdjoinRoot.root_X_pow_sub_C_pow 2 (3 : ℚ_[3])).trans (map_ofNat _ 3)
 
 /-- The minimal polynomial of `√3` over `ℚ₃` is `X² - 3`. -/
 @[simp]
