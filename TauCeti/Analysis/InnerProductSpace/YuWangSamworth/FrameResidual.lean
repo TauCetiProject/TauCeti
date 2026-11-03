@@ -14,7 +14,9 @@ public import TauCeti.Analysis.InnerProductSpace.Spectral.Eigenframe
 The perturbed frame may be chosen freely inside repeated eigenspaces.
 The squared residuals using population eigenvalues are bounded by four times
 both the squared Frobenius perturbation and the dimension-scaled squared
-operator perturbation. No gap in the perturbed spectrum is required.
+operator perturbation. Frames may use any finite index type; the pointwise
+residual identity needs no finiteness assumption on the indices.
+No gap in the perturbed spectrum is required.
 
 Adapted from `YuWangSamworth2015/YuWangSamworth2015/Core/Residual.lean` in
 [AIQ-Kitware DKPS](https://github.com/AIQ-Kitware/aiq-dkps-formalization)
@@ -34,14 +36,14 @@ open scoped InnerProductSpace
 namespace LinearMap.IsSymmetric
 
 variable {𝕜 E : Type*} [RCLike 𝕜] [NormedAddCommGroup E] [InnerProductSpace 𝕜 E]
-  [FiniteDimensional 𝕜 E] {n d : ℕ} {T S : E →ₗ[𝕜] E}
+  [FiniteDimensional 𝕜 E] {n : ℕ} {ι : Type*} {T S : E →ₗ[𝕜] E}
 
 /-- **The frame residual as a perturbation column.**
 `λ_{e i}(T) wᵢ − T wᵢ = (S − T) wᵢ − (λ_{e i}(S) − λ_{e i}(T)) wᵢ`, using only the
 eigenvalue equation of the frame. -/
 theorem frameResidual_eq (hT : T.IsSymmetric) (hS : S.IsSymmetric)
-    (hn : finrank 𝕜 E = n) {e : Fin d ↪ Fin n} {w : Fin d → E}
-    (hw : IsOrderedEigenframe hS hn e w) (i : Fin d) :
+    (hn : finrank 𝕜 E = n) {e : ι ↪ Fin n} {w : ι → E}
+    (hw : IsOrderedEigenframe hS hn e w) (i : ι) :
     (hT.eigenvalues hn (e i) : 𝕜) • w i - T (w i)
       = (S - T) (w i)
         - ((hS.eigenvalues hn (e i) - hT.eigenvalues hn (e i) : ℝ) : 𝕜) • w i := by
@@ -53,8 +55,8 @@ theorem frameResidual_eq (hT : T.IsSymmetric) (hS : S.IsSymmetric)
 arbitrary ordered eigenframe `w` of `S`: the perturbation columns are bounded by
 orthonormal compression and the eigenvalue displacement by Hoffman--Wielandt,
 each by `‖S − T‖²_F`. -/
-theorem sum_sq_norm_frameResidual_le (hT : T.IsSymmetric) (hS : S.IsSymmetric)
-    (hn : finrank 𝕜 E = n) {e : Fin d ↪ Fin n} {w : Fin d → E}
+theorem sum_sq_norm_frameResidual_le [Fintype ι] (hT : T.IsSymmetric) (hS : S.IsSymmetric)
+    (hn : finrank 𝕜 E = n) {e : ι ↪ Fin n} {w : ι → E}
     (hw : IsOrderedEigenframe hS hn e w) :
     ∑ i, ‖(hT.eigenvalues hn (e i) : 𝕜) • w i - T (w i)‖ ^ 2
       ≤ 4 * ∑ k, ‖(S - T) (hT.eigenvectorBasis hn k)‖ ^ 2 := by
@@ -106,14 +108,14 @@ theorem sum_sq_norm_frameResidual_le (hT : T.IsSymmetric) (hS : S.IsSymmetric)
         rw [Finset.sum_add_distrib, Finset.mul_sum, Finset.mul_sum]
     _ ≤ 4 * frob := by linarith
 
-/-- **Frame residual, operator-norm branch.**  `∑ᵢ ‖Rᵢ‖² ≤ 4 d ε²` when `S − T`
+/-- **Frame residual, operator-norm branch.**  `∑ᵢ ‖Rᵢ‖² ≤ 4 |ι| ε²` when `S − T`
 is `ε`-operator-close: each column splits as `‖(S − T) wᵢ‖ ≤ ε` and, by Weyl at
 the *index* `e i`, `|λ_{e i}(S) − λ_{e i}(T)| ≤ ε`. -/
-theorem sum_sq_norm_frameResidual_le_of_opNorm (hT : T.IsSymmetric) (hS : S.IsSymmetric)
-    (hn : finrank 𝕜 E = n) {e : Fin d ↪ Fin n} {w : Fin d → E}
+theorem sum_sq_norm_frameResidual_le_of_opNorm [Fintype ι] (hT : T.IsSymmetric) (hS : S.IsSymmetric)
+    (hn : finrank 𝕜 E = n) {e : ι ↪ Fin n} {w : ι → E}
     (hw : IsOrderedEigenframe hS hn e w) {ε : ℝ}
     (hε : ∀ x : E, ‖(S - T) x‖ ≤ ε * ‖x‖) :
-    ∑ i, ‖(hT.eigenvalues hn (e i) : 𝕜) • w i - T (w i)‖ ^ 2 ≤ 4 * d * ε ^ 2 := by
+    ∑ i, ‖(hT.eigenvalues hn (e i) : 𝕜) • w i - T (w i)‖ ^ 2 ≤ 4 * Fintype.card ι * ε ^ 2 := by
   have hcol : ∀ i, ‖(hT.eigenvalues hn (e i) : 𝕜) • w i - T (w i)‖ ^ 2 ≤ 4 * ε ^ 2 := by
     intro i
     have hEwi : ‖(S - T) (w i)‖ ≤ ε := by
@@ -131,9 +133,9 @@ theorem sum_sq_norm_frameResidual_le_of_opNorm (hT : T.IsSymmetric) (hS : S.IsSy
           pow_le_pow_left₀ (norm_nonneg _) htri 2
       _ = 4 * ε ^ 2 := by ring
   calc ∑ i, ‖(hT.eigenvalues hn (e i) : 𝕜) • w i - T (w i)‖ ^ 2
-      ≤ ∑ _i : Fin d, 4 * ε ^ 2 := Finset.sum_le_sum fun i _ => hcol i
-    _ = 4 * d * ε ^ 2 := by
-        rw [Finset.sum_const, Finset.card_univ, Fintype.card_fin, nsmul_eq_mul]; ring
+      ≤ ∑ _i : ι, 4 * ε ^ 2 := Finset.sum_le_sum fun i _ => hcol i
+    _ = 4 * Fintype.card ι * ε ^ 2 := by
+        rw [Finset.sum_const, Finset.card_univ, nsmul_eq_mul]; ring
 
 
 end LinearMap.IsSymmetric

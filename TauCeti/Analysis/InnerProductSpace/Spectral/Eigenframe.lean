@@ -318,13 +318,14 @@ all indices for any selected eigenvalue to remain within the selected block.
 
 Adapted from `ForTauCeti/Analysis/InnerProductSpace/Spectral/EigenFrame.lean`
 in the Kitware DKPS formalization (Jon Crall, Claude Opus 5, GPT-6; Apache-2.0). -/
-theorem IsOrderedEigenframe.span_eq_spanIndices {d : ℕ} {hT : T.IsSymmetric}
-    {hn : finrank 𝕜 E = n} {e : Fin d ↪ Fin n} {w : Fin d → E}
+theorem IsOrderedEigenframe.span_eq_spanIndices {hT : T.IsSymmetric}
+    {hn : finrank 𝕜 E = n} {e : ι ↪ Fin n} {w : ι → E}
     (hw : IsOrderedEigenframe hT hn e w) {Δ : ℝ} (hΔ : 0 < Δ)
-    (hgap : ∀ (i : Fin d) (k : Fin n), k ∉ Set.range e →
+    (hgap : ∀ (i : ι) (k : Fin n), k ∉ Set.range e →
       Δ ≤ |hT.eigenvalues hn (e i) - hT.eigenvalues hn k|) :
     Submodule.span 𝕜 (Set.range w) = (hT.eigenvectorBasis hn).spanIndices (Set.range e) := by
   classical
+  let : Fintype ι := Fintype.ofInjective e e.injective
   have hf := isOrderedEigenframe_iff.mp hw
   have hle : Submodule.span 𝕜 (Set.range w) ≤
       (hT.eigenvectorBasis hn).spanIndices (Set.range e) := by
@@ -343,7 +344,7 @@ theorem IsOrderedEigenframe.span_eq_spanIndices {d : ℕ} {hT : T.IsSymmetric}
       ⟨hT.eigenvectorBasis hn k, (hT.hasEigenvector_eigenvectorBasis hn k).1⟩
       ⟨w i, hf.mem_eigenspace i⟩
   apply Submodule.eq_of_le_of_finrank_eq hle
-  rw [hw.finrank_span, Fintype.card_fin]
+  rw [hw.finrank_span]
   have hrange : Set.range e = ↑(Finset.univ.map e) := by ext k; simp
   rw [hrange, OrthonormalBasis.finrank_spanIndices]
   simp

@@ -58,14 +58,14 @@ Adapted from `yuWangSamworth_sinTheta_frame_le` in
 (Jon Crall and GPT 5.6 High; Apache-2.0). -/
 theorem sinThetaFrobenius_orderedEigenframe_le
     {hA : A.IsSymmetric} {hB : B.IsSymmetric} {hn : finrank 𝕜 E = n}
-    {d : ℕ} {e : Fin d ↪ Fin n} {u v : Fin d → E}
+    {ι : Type*} [Fintype ι] {e : ι ↪ Fin n} {u v : ι → E}
     (hu : IsOrderedEigenframe hA hn e u) (hv : IsOrderedEigenframe hB hn e v)
     {δ : ℝ} (hd : 0 < δ)
-    (hgap : ∀ (i : Fin d) (k : Fin n), k ∉ Set.range e →
+    (hgap : ∀ (i : ι) (k : Fin n), k ∉ Set.range e →
       δ ≤ |hA.eigenvalues hn (e i) - hA.eigenvalues hn k|) :
     (Submodule.span 𝕜 (Set.range u)).sinThetaFrobenius
         (Submodule.span 𝕜 (Set.range v)) ≤
-      2 * min (Real.sqrt d * ‖(B - A).toContinuousLinearMap‖)
+      2 * min (Real.sqrt (Fintype.card ι) * ‖(B - A).toContinuousLinearMap‖)
         (TauCeti.UnitarilyInvariantSeminorm.frobenius 𝕜 E E (B - A)) / δ := by
   classical
   let U := Submodule.span 𝕜 (Set.range u)
@@ -102,11 +102,12 @@ theorem sinThetaFrobenius_orderedEigenframe_le
     (fun x ↦ (B - A).toContinuousLinearMap.le_opNorm x)
   have hF := key _ (apply_nonneg (TauCeti.UnitarilyInvariantSeminorm.frobenius 𝕜 E E) _)
     (hkey.trans hfrob)
-  have hO := key (Real.sqrt d * ‖(B - A).toContinuousLinearMap‖) (by positivity)
-    (hkey.trans (by simpa [mul_pow, Real.sq_sqrt (Nat.cast_nonneg d), mul_assoc] using hop))
+  have hO := key (Real.sqrt (Fintype.card ι) * ‖(B - A).toContinuousLinearMap‖) (by positivity)
+    (hkey.trans (by
+      simpa [mul_pow, Real.sq_sqrt (Nat.cast_nonneg (Fintype.card ι)), mul_assoc] using hop))
   rw [U.sinThetaFrobenius_comm V hdim]
   calc V.sinThetaFrobenius U ≤
-      min (2 * (Real.sqrt d * ‖(B - A).toContinuousLinearMap‖) / δ)
+      min (2 * (Real.sqrt (Fintype.card ι) * ‖(B - A).toContinuousLinearMap‖) / δ)
         (2 * TauCeti.UnitarilyInvariantSeminorm.frobenius 𝕜 E E (B - A) / δ) := le_min hO hF
     _ = _ := by rw [min_div_div_right hd.le, ← mul_min_of_nonneg _ _ (by norm_num : (0 : ℝ) ≤ 2)]
 
@@ -130,19 +131,13 @@ theorem sinThetaFrobenius_eigenvectorSpan_le (hA : A.IsSymmetric) (hB : B.IsSymm
       2 * min (Real.sqrt s.card * ‖(B - A).toContinuousLinearMap‖)
         (TauCeti.UnitarilyInvariantSeminorm.frobenius 𝕜 E E (B - A)) / delta := by
   classical
-  let e : Fin s.card ↪ Fin n :=
-    s.equivFin.symm.toEmbedding.trans (Function.Embedding.subtype (· ∈ s))
-  have hrange : Set.range e = (↑s : Set (Fin n)) := by
-    ext k
-    constructor
-    · rintro ⟨i, rfl⟩
-      exact (s.equivFin.symm i).property
-    · intro hk
-      exact ⟨s.equivFin ⟨k, hk⟩, by simp [e]⟩
+  let e : s ↪ Fin n := Function.Embedding.subtype (· ∈ s)
+  have hrange : Set.range e = (↑s : Set (Fin n)) := by ext k; simp [e]
   have h := sinThetaFrobenius_orderedEigenframe_le
     (isOrderedEigenframe_eigenvectorBasis hA hn e)
     (isOrderedEigenframe_eigenvectorBasis hB hn e) hd (fun i k hk ↦
-      hgap (e i) ((s.equivFin.symm i).property) k (by simpa [hrange] using hk))
-  simpa only [span_range_eigenvectorBasis_apply_eq_eigenvectorSpan, hrange] using h
+      hgap (e i) i.property k (by simpa [hrange] using hk))
+  simpa only [span_range_eigenvectorBasis_apply_eq_eigenvectorSpan, hrange,
+    Fintype.card_coe] using h
 
 end LinearMap.IsSymmetric
