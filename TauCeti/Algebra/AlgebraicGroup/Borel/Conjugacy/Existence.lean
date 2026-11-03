@@ -53,7 +53,7 @@ variable {k : Type u} [Field k] [IsAlgClosed k]
 /-- The proper subgroup in the closed-orbit argument can be chosen smooth and connected,
 while retaining containment of conjugates of all Borel subgroups. -/
 private theorem exists_proper_smooth_connected_of_not_isSolvable
-    (H : FiniteTypeCommHopfAlgCat.{u, u} k) [IrreducibleSpace (PrimeSpectrum H)]
+    (H : FiniteTypeCommHopfAlgCat.{u, u} k)
     (hH : ¬ Group.IsSolvable (WithConv (H →ₐ[k] k))) :
     ∃ P : HopfIdeal k H, P ≠ ⊥ ∧
       Algebra.Smooth k (FiniteTypeCommHopfAlgCat.quotient H P) ∧
@@ -99,7 +99,7 @@ private theorem exists_conjugate_eq_of_smooth_connected (n : ℕ) :
         IsBorelOverAlgClosed k H I → IsBorelOverAlgClosed k H J →
         ∃ g : WithConv (H →ₐ[k] k), I.conjugate g = J := by
   induction n using Nat.strong_induction_on with
-  | h n ih =>
+  | ind n ih =>
     intro H hsm hconn hdim I J hI hJ
     let _ : Algebra.Smooth k H := hsm
     let _ : IsReduced H := isReduced_of_smooth k H

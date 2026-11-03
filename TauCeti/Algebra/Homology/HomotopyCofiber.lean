@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+import Mathlib.CategoryTheory.Abelian.Refinements
 public import Mathlib.Algebra.Homology.HomotopyCofiber
 public import TauCeti.Algebra.Homology.HomologySequenceLemmas
 public import TauCeti.Algebra.Homology.Homotopy
@@ -47,6 +48,11 @@ complex. Both cones sit in the degreewise split short exact sequences
 last term is `F` shifted by one degree with negated differential; the same sequence computes the
 torsion of a mapping cone of based complexes.
 
+In an abelian category, the splitting hypothesis of the first paragraph can be dropped up to
+quasi-isomorphism: for every short exact sequence `0 ⟶ X₁ ⟶ X₂ ⟶ X₃ ⟶ 0` of complexes, the map
+`homotopyCofiber.desc f g` from the mapping cone of `f` to `X₃` is a quasi-isomorphism. Its kernel
+is the contractible mapping cone of `𝟙 X₁`.
+
 ## Main definitions
 
 * `CategoryTheory.ShortComplex.Splitting.homotopyCofiberHomotopyEquiv`: the homotopy equivalence
@@ -63,6 +69,8 @@ torsion of a mapping cone of based complexes.
 
 * `HomologicalComplex.homotopyCofiber.fstX_inlX_add_sndX_inrX`: the projections and inclusions of
   the summands of a term of a mapping cone decompose its identity.
+* `HomologicalComplex.homotopyCofiber.desc_ofEq_f`: the map out of a mapping cone induced by a
+  morphism with zero composite is that morphism on the second summand and zero on the first.
 * `HomologicalComplex.homotopyCofiber.XIsoBiprod_hom_snd`: under `XIsoBiprod`, the projection
   `sndX` is the second biproduct projection.
 * `HomologicalComplex.homotopyCofiber.fstX_inlX_zero`: the term of the mapping cone of `F ⟶ 0` is
@@ -71,9 +79,18 @@ torsion of a mapping cone of based complexes.
   `G ⟶ homotopyCofiber φ ⟶ homotopyCofiber (F ⟶ 0)` is short exact.
 * `CategoryTheory.ShortComplex.Splitting.quasiIso_homotopyCofiberDesc`: the map from the mapping
   cone of `S.f` to `S.X₃` induced by `S.g` is a quasi-isomorphism.
+* `CategoryTheory.ShortComplex.ShortExact.shortExact_mapArrowHom_desc`: for a short exact sequence
+  `0 ⟶ X₁ ⟶ X₂ ⟶ X₃ ⟶ 0` of complexes, the mapping cones of `𝟙 X₁` and `X₁ ⟶ X₂` and `X₃` form a
+  short exact sequence.
+* `CategoryTheory.ShortComplex.ShortExact.quasiIso_homotopyCofiberDesc`: the same holds for every
+  short exact sequence of complexes in an abelian category, split or not.
 * `HomologicalComplex.homotopyCofiber.inr_mapArrowHom`,
   `HomologicalComplex.homotopyCofiber.inrX_mapArrowHom_f`,
-  `HomologicalComplex.homotopyCofiber.inlX_mapArrowHom_f`: the components of a map of cones.
+  `HomologicalComplex.homotopyCofiber.inlX_mapArrowHom_f`,
+  `HomologicalComplex.homotopyCofiber.mapArrowHom_f_sndX`,
+  `HomologicalComplex.homotopyCofiber.mapArrowHom_f_fstX`: the components of a map of cones.
+* `HomologicalComplex.homotopyCofiber.mono_mapArrowHom_f`: a map of cones induced by degreewise
+  monomorphisms is a degreewise monomorphism.
 * `HomologicalComplex.homotopyCofiber.quasiIso_mapArrowHom`: a map of mapping cones induced by
   quasi-isomorphisms is a quasi-isomorphism.
 * `HomologicalComplex.homotopyCofiber.quasiIso_mapArrowHom_id`: any morphism induces a
@@ -173,13 +190,13 @@ The sign in `hs` is that of Mathlib's `homotopyCofiber`, whose differential is `
 noncomputable def isoOfSplitting : homotopyCofiber φ ≅ M :=
   Hom.isoOfComponents
     (fun _ =>
-      { hom := fstX φ () () (ComplexShape.refl_rel ()) ≫ σ.s + sndX φ () ≫ inr
-        inv := fst ≫ inlX φ () () (ComplexShape.refl_rel ()) + σ.r ≫ inrX φ ()
+      { hom := fstX φ () () (ComplexShape.refl_rel_self ()) ≫ σ.s + sndX φ () ≫ inr
+        inv := fst ≫ inlX φ () () (ComplexShape.refl_rel_self ()) + σ.r ≫ inrX φ ()
         hom_inv_id := by
           have hsg : σ.s ≫ fst = 𝟙 _ := σ.s_g
           have hsr : σ.s ≫ σ.r = 0 := σ.s_r
           have hfr : inr ≫ σ.r = 𝟙 _ := σ.f_r
-          apply ext_from_X φ () () (ComplexShape.refl_rel ()) <;>
+          apply ext_from_X φ () () (ComplexShape.refl_rel_self ()) <;>
             simp [reassoc_of% hsg, reassoc_of% hsr, reassoc_of% hfr, reassoc_of% w]
         inv_hom_id := by
           simpa [add_comm] using σ.id })
@@ -189,19 +206,20 @@ noncomputable def isoOfSplitting : homotopyCofiber φ ≅ M :=
       let α : L ⟶ M := { f _ := inr, comm' := fun _ _ _ => hr }
       let h : Homotopy (φ ≫ α) 0 :=
         { hom _ _ := σ.s
-          zero _ _ hij := absurd (ComplexShape.refl_rel ()) hij
+          zero _ _ hij := absurd (ComplexShape.refl_rel_self ()) hij
           comm _ := by
-            rw [dNext_eq _ (ComplexShape.refl_rel ()), prevD_eq _ (ComplexShape.refl_rel ()), hs]
+            rw [dNext_eq _ (ComplexShape.refl_rel_self ()),
+              prevD_eq _ (ComplexShape.refl_rel_self ()), hs]
             simp [α] }
       dsimp only
-      rw [← desc_f φ α h () () (ComplexShape.refl_rel ())]
+      rw [← desc_f φ α h () () (ComplexShape.refl_rel_self ())]
       exact (desc φ α h).comm () ())
 
 /-- On the cone, `isoOfSplitting` is `σ.s` on the `K`-summand and `inr` on the `L`-summand. -/
 @[simp]
 theorem isoOfSplitting_hom_f :
     (isoOfSplitting φ σ hs hr).hom.f () =
-      fstX φ () () (ComplexShape.refl_rel ()) ≫ σ.s + sndX φ () ≫ inr :=
+      fstX φ () () (ComplexShape.refl_rel_self ()) ≫ σ.s + sndX φ () ≫ inr :=
   (rfl)
 
 /-- The inverse of `isoOfSplitting` sends `M` into the cone through `fst` and the retraction
@@ -209,7 +227,7 @@ theorem isoOfSplitting_hom_f :
 @[simp]
 theorem isoOfSplitting_inv_f :
     (isoOfSplitting φ σ hs hr).inv.f () =
-      fst ≫ inlX φ () () (ComplexShape.refl_rel ()) + σ.r ≫ inrX φ () :=
+      fst ≫ inlX φ () () (ComplexShape.refl_rel_self ()) + σ.r ≫ inrX φ () :=
   (rfl)
 
 end HomologicalComplex.homotopyCofiber
@@ -229,6 +247,15 @@ its identity. -/
 lemma fstX_inlX_add_sndX_inrX (i j : ι) (hij : c.Rel i j) :
     fstX φ i j hij ≫ inlX φ j i hij + sndX φ i ≫ inrX φ i = 𝟙 _ :=
   ext_from_X φ j i hij (by simp) (by simp)
+
+/-- The map out of the mapping cone of `φ` induced by `ψ` with `φ ≫ ψ = 0`, using the homotopy
+given by this equality, vanishes on the summand `F` and is `ψ` on the summand `G`. -/
+@[simp, reassoc]
+lemma desc_ofEq_f {K : HomologicalComplex C c} (ψ : G ⟶ K) (h : φ ≫ ψ = 0) (i : ι) :
+    (desc φ ψ (Homotopy.ofEq h)).f i = sndX φ i ≫ ψ.f i := by
+  by_cases hi : c.Rel i (c.next i)
+  · simp [desc_f _ _ _ _ _ hi]
+  · exact desc_f' _ _ _ _ hi
 
 /-- In a degree `i` with `c.Rel i j`, the second projection `sndX` is the second biproduct
 projection under the identification `XIsoBiprod` of the term of the mapping cone with
@@ -319,6 +346,37 @@ is `α.left`. -/
 lemma inlX_mapArrowHom_f (i j : ι) (hij : c.Rel j i) :
     inlX φ i j hij ≫ (mapArrowHom φ φ' hc α).f j = α.left.f i ≫ inlX φ' i j hij := by
   simp [mapArrowHom, inrCompHomotopy_hom _ _ _ _ hij]
+
+/-- The projection of the map of cones induced by `α` onto the summand `G'` is `α.right` after
+the projection onto `G`. -/
+@[reassoc (attr := simp)]
+lemma mapArrowHom_f_sndX (i : ι) :
+    (mapArrowHom φ φ' hc α).f i ≫ sndX φ' i = sndX φ i ≫ α.right.f i := by
+  by_cases hi : c.Rel i (c.next i)
+  · exact ext_from_X φ _ i hi (by simp) (by simp)
+  · exact ext_from_X' φ i hi (by simp)
+
+/-- The projection of the map of cones induced by `α` onto the summand `F'` is `α.left` after
+the projection onto `F`. -/
+@[reassoc (attr := simp)]
+lemma mapArrowHom_f_fstX (i j : ι) (hij : c.Rel i j) :
+    (mapArrowHom φ φ' hc α).f i ≫ fstX φ' i j hij = fstX φ i j hij ≫ α.left.f j :=
+  ext_from_X φ j i hij (by simp) (by simp)
+
+/-- The map of cones induced by `α` is a monomorphism in degree `i` when `α.left` is one in the
+next degree and `α.right` is one in degree `i`. -/
+lemma mono_mapArrowHom_f (i : ι) [Mono (α.left.f (c.next i))] [Mono (α.right.f i)] :
+    Mono ((mapArrowHom φ φ' hc α).f i) := by
+  rw [Preadditive.mono_iff_cancel_zero]
+  intro A x hx
+  have h₂ : x ≫ sndX φ i = 0 := by
+    rw [← cancel_mono (α.right.f i)]
+    simpa using hx =≫ sndX φ' i
+  by_cases hi : c.Rel i (c.next i)
+  · refine ext_to_X φ i _ hi ?_ (by simpa using h₂)
+    rw [← cancel_mono (α.left.f (c.next i))]
+    simpa using hx =≫ fstX φ' i _ hi
+  · exact ext_to_X' φ i hi (by simpa using h₂)
 
 end MapArrowHom
 
@@ -411,3 +469,57 @@ lemma quasiIso_mapArrowHom (α : Arrow.mk φ ⟶ Arrow.mk φ') [QuasiIso α.left
 end QuasiIso
 
 end HomologicalComplex.homotopyCofiber
+
+/-! ### The mapping cone of the first map of a short exact sequence -/
+
+namespace CategoryTheory.ShortComplex.ShortExact
+
+open HomologicalComplex HomologicalComplex.homotopyCofiber
+
+variable {C ι : Type*} [Category* C] [Abelian C] {c : ComplexShape ι} [DecidableRel c.Rel]
+  {S : ShortComplex (HomologicalComplex C c)} (hS : S.ShortExact) (hc : ∀ j, ∃ i, c.Rel i j)
+
+include hS in
+/-- For a short exact sequence `0 ⟶ X₁ ⟶ X₂ ⟶ X₃ ⟶ 0` of complexes, the map from the mapping cone
+of `𝟙 X₁` to the mapping cone of `X₁ ⟶ X₂` induced by `X₁ ⟶ X₂`, followed by the map from the
+latter to `X₃` induced by `X₂ ⟶ X₃`, is a short exact sequence. -/
+theorem shortExact_mapArrowHom_desc :
+    (ShortComplex.mk (mapArrowHom (𝟙 S.X₁) S.f hc (Arrow.homMk (𝟙 S.X₁) S.f (by simp)))
+      (desc S.f S.g (_root_.Homotopy.ofEq S.zero))
+      (by ext i; simpa using sndX (𝟙 S.X₁) i ≫= (S.map (eval C c i)).zero)).ShortExact := by
+  refine shortExact_of_degreewise_shortExact _ fun i ↦ ?_
+  have hSi := (shortExact_iff_degreewise_shortExact S).1 hS i
+  let α : Arrow.mk (𝟙 S.X₁) ⟶ Arrow.mk S.f := Arrow.homMk (𝟙 S.X₁) S.f (by simp)
+  have : Mono (α.left.f (c.next i)) := by dsimp [α]; infer_instance
+  have : Mono (α.right.f i) := by dsimp [α]; exact hSi.mono_f
+  have : Epi (S.g.f i) := hSi.epi_g
+  refine ShortComplex.ShortExact.mk' ?_ (mono_mapArrowHom_f _ _ hc α i)
+    (epi_of_epi_fac (inrX_desc_f _ _ _ i))
+  rw [ShortComplex.exact_iff_exact_up_to_refinements]
+  intro A x₂ hx₂
+  obtain ⟨A', π, _, y, hy⟩ := hSi.exact.exact_up_to_refinements (x₂ ≫ sndX S.f i)
+    (by simpa using hx₂)
+  by_cases hi : c.Rel i (c.next i)
+  · refine ⟨A', π, inferInstance,
+      π ≫ x₂ ≫ fstX S.f i _ hi ≫ inlX (𝟙 S.X₁) _ i hi + y ≫ inrX (𝟙 S.X₁) i, ?_⟩
+    apply ext_to_X S.f i _ hi
+    · simp
+    · simpa using hy
+  · refine ⟨A', π, inferInstance, y ≫ inrX (𝟙 S.X₁) i, ?_⟩
+    apply ext_to_X' S.f i hi
+    simpa using hy
+
+include hS hc in
+/-- **The mapping cone of a monomorphism computes its cokernel.** For a short exact sequence
+`0 ⟶ X₁ ⟶ X₂ ⟶ X₃ ⟶ 0` of complexes, the map from the mapping cone of `X₁ ⟶ X₂` to `X₃`
+induced by `X₂ ⟶ X₃` is a quasi-isomorphism. This is the analogue for `homotopyCofiber`, and any
+complex shape in which every index is the target of a relation, of Mathlib's
+`CochainComplex.mappingCone.quasiIso_descShortComplex`.
+
+The map is the cokernel of the degreewise monomorphism from the contractible mapping cone of
+`𝟙 X₁` induced by `X₁ ⟶ X₂`, so its kernel is acyclic. -/
+theorem quasiIso_homotopyCofiberDesc :
+    _root_.QuasiIso (desc S.f S.g (_root_.Homotopy.ofEq S.zero)) :=
+  (hS.shortExact_mapArrowHom_desc hc).quasiIso_g_iff.2 (acyclic_id S.X₁ hc)
+
+end CategoryTheory.ShortComplex.ShortExact

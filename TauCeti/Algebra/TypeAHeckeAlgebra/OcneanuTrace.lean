@@ -491,6 +491,11 @@ theorem ocneanuTrace_one (z : R) : ocneanuTrace R q z 1 = 1 :=
 theorem ocneanuTrace_T (z : R) (i : ℕ) : ocneanuTrace R q z (T q i) = z := by
   simpa using (isMarkovTrace_ocneanuTrace z).map_mul_T (one_mem (stage R q (i + 1)))
 
+/-- The inverse of every generator has trace `z - (q - q⁻¹)`. -/
+theorem ocneanuTrace_val_inv_unitT (z : R) (i : ℕ) :
+    ocneanuTrace R q z ↑(unitT q i)⁻¹ = z - ((q : R) - ↑q⁻¹) := by
+  simpa using (isMarkovTrace_ocneanuTrace z).map_mul_val_inv_unitT (one_mem (stage R q (i + 1)))
+
 /-- At `z = q` the Ocneanu trace is the index character `T i ↦ q`. -/
 theorem ocneanuTrace_eq_indexCharacter :
     ocneanuTrace R q q = (indexCharacter R q).toLinearMap :=

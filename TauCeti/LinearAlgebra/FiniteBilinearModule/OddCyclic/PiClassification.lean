@@ -93,7 +93,7 @@ private theorem prod_legendreSym_eq_of_isometry_pi_oddCyclic (hp : Odd p) (k : �
       (pi fun i ↦ oddCyclic (p ^ k i) hp.pow (η i))) {m : ℕ} (hm : 0 < m) :
     ∏ i with k i = m, legendreSym p (θ i) = ∏ i with k i = m, legendreSym p (η i) := by
   have hsq (t : ℤ) (ht : IsCoprime (p : ℤ) t) : legendreSym p t ^ 2 = 1 :=
-    legendreSym.sq_one p ((ZMod.coe_int_isUnit_iff_isCoprime t p).2 ht).ne_zero
+    legendreSym.sq_one p ((ZMod.isUnit_intCast_iff_isCoprime t p).2 ht).ne_zero
   -- The scaled Gauss sums of the two sums agree, which gives the identities at every `j`.
   have hj (j : ℕ) : ∏ i, (legendreSym p (θ i) * legendreSym p (η i)) ^ (k i - j) = 1 := by
     have h := f.scaledGaussSum_eq (p ^ j)
@@ -157,7 +157,7 @@ private theorem exists_isometry_oddCyclic_prod_pi (hp : Odd p) {n : ℕ} (k : Fi
         refine ⟨θ 0 * a * b, hθ₀, nonempty_isometry_oddCyclic_prod hp (k 0) ha (hθ 0) hb hθ₀ ?_⟩
         rw [legendreSym.mul, legendreSym.mul]
         linear_combination -(legendreSym p a * legendreSym p (θ 0)) *
-          legendreSym.sq_one p ((ZMod.coe_int_isUnit_iff_isCoprime b p).2 hb).ne_zero
+          legendreSym.sq_one p ((ZMod.isUnit_intCast_iff_isCoprime b p).2 hb).ne_zero
       refine ⟨Fin.cons c fun i ↦ θ i.succ, by
         intro i; cases i using Fin.cases <;> simp [hc, hθ], ?_⟩
       obtain ⟨u⟩ := nonempty_isometry_prod_pi_oddCyclic_cons hp k c fun i ↦ θ i.succ
@@ -204,7 +204,7 @@ private theorem nonempty_isometry_pi_oddCyclic_of_prod_legendreSym_eq_fin (hp : 
         · exact nonempty_isometry_oddCyclic_of_legendreSym_eq hp (k 0) (hθ' 0) (hη 0) h0
       obtain ⟨g'⟩ := ih (fun i ↦ k i.succ) (fun i ↦ hθ' i.succ) (fun i ↦ hη i.succ)
         fun m hm ↦ Fin.prod_filter_succ_eq_of_prod_filter_eq (k · = m) (h' m hm)
-          (fun _ h ↦ ((ZMod.coe_int_isUnit_iff_isCoprime _ p).2 (hθ' 0)).ne_zero
+          (fun _ h ↦ ((ZMod.isUnit_intCast_iff_isCoprime _ p).2 (hθ' 0)).ne_zero
             ((legendreSym.eq_zero_iff p _).1 h))
           fun hk ↦ h0.resolve_left (by omega)
       exact ⟨(QuadraticMap.IsometryEquiv.consPi fun i ↦

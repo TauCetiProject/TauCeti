@@ -137,14 +137,14 @@ private theorem cotangentLinearEquiv_decompose_adjointWeightSpace_apply
       rw [DirectSum.decompose_of_mem_same W hy]
       exact ite_eq_left rfl
     · rw [DirectSum.decompose_of_mem_ne W hy hα]
-      simp only [map_zero, Derivation.zero_apply, ite_eq_right_iff]
+      simp only [map_zero, _root_.zero_apply, ite_eq_right_iff]
       intro hn
       exact (hα (congrArg Multiplicative.ofAdd hn.symm)).elim
   | zero =>
     simp only [map_zero, DirectSum.decompose_zero, DirectSum.zero_apply,
-      Submodule.coe_zero, Derivation.zero_apply]
+      Submodule.coe_zero, _root_.zero_apply]
   | add y z _ _ hy hz =>
-    simpa only [map_add, Derivation.add_apply, DirectSum.decompose_add,
+    simpa only [map_add, _root_.add_apply, DirectSum.decompose_add,
       DirectSum.add_apply, Submodule.coe_add] using congrArg₂ (· + ·) hy hz
 
 /-- The sum of a set of adjoint weight spaces is characterized by vanishing of the
@@ -177,10 +177,10 @@ theorem mem_iSup_adjointWeightSpace_iff_coeff_conjugationAlgHom
         exact (hn hm).elim
       | zero => simp
       | add y z _ _ hy hz =>
-          simpa only [map_add, Derivation.add_apply, add_zero] using congrArg₂ (· + ·) hy hz
+          simpa only [map_add, _root_.add_apply, add_zero] using congrArg₂ (· + ·) hy hz
     | zero => simp
     | add y z _ _ hy hz =>
-        simpa only [map_add, Derivation.add_apply, add_zero] using congrArg₂ (· + ·) hy hz
+        simpa only [map_add, _root_.add_apply, add_zero] using congrArg₂ (· + ·) hy hz
   · intro hx
     have hzero (n : ℤ) (hn : n ∉ s) :
         (DirectSum.decompose W x (Multiplicative.ofAdd n) :
@@ -188,7 +188,7 @@ theorem mem_iSup_adjointWeightSpace_iff_coeff_conjugationAlgHom
       apply (Derivation.cotangentLinearEquiv (B := R)).injective
       ext h
       rw [← cotangentLinearEquiv_decompose_adjointWeightSpace_apply l,
-        hx h n hn, map_zero, Derivation.zero_apply]
+        hx h n hn, map_zero, _root_.zero_apply]
     rw [← DirectSum.sum_support_decompose W x]
     apply Submodule.sum_mem
     intro α _

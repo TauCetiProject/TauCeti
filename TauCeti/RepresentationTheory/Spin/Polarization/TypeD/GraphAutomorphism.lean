@@ -531,7 +531,7 @@ theorem typeDGraphOperator_basis_of_mem (hn : 2 ≤ n) {s : Finset (Fin n)}
 @[simp]
 theorem typeDGraphOperator_apply_apply (hn : 2 ≤ n) (x : ExteriorAlgebra K P.W) :
     P.typeDGraphOperator b hn (P.typeDGraphOperator b hn x) = -x := by
-  rw [typeDGraphOperator_apply, typeDGraphOperator_apply, ← Module.End.mul_apply, ← map_mul]
+  rw [typeDGraphOperator_apply, typeDGraphOperator_apply, ← mul_apply_eq_comp, ← map_mul]
   simp
 
 /-- The inverse of the graph operator is its negative. -/
@@ -548,8 +548,8 @@ theorem typeDGraphOperator_spinAction_typeDSimpleRootBivector (hn : 2 ≤ n) (i 
     P.typeDGraphOperator b hn (spinAction Q P (P.typeDSimpleRootBivector b hn i) x) =
       spinAction Q P (P.typeDSimpleRootBivector b hn (graphPermD n hn i))
         (P.typeDGraphOperator b hn x) := by
-  rw [typeDGraphOperator_apply, typeDGraphOperator_apply, ← Module.End.mul_apply,
-    ← Module.End.mul_apply, ← map_mul, ← map_mul,
+  rw [typeDGraphOperator_apply, typeDGraphOperator_apply, ← mul_apply_eq_comp,
+    ← mul_apply_eq_comp, ← map_mul, ← map_mul,
     P.ι_typeDGraphVector_mul_typeDSimpleRootBivector b hn i]
 
 /-- **The graph operator intertwines the numbered lowering operators along `TauCeti.graphPermD`.**
@@ -559,8 +559,8 @@ theorem typeDGraphOperator_spinAction_typeDSimpleNegativeRootBivector (hn : 2 �
     P.typeDGraphOperator b hn (spinAction Q P (P.typeDSimpleNegativeRootBivector b hn i) x) =
       spinAction Q P (P.typeDSimpleNegativeRootBivector b hn (graphPermD n hn i))
         (P.typeDGraphOperator b hn x) := by
-  rw [typeDGraphOperator_apply, typeDGraphOperator_apply, ← Module.End.mul_apply,
-    ← Module.End.mul_apply, ← map_mul, ← map_mul,
+  rw [typeDGraphOperator_apply, typeDGraphOperator_apply, ← mul_apply_eq_comp,
+    ← mul_apply_eq_comp, ← map_mul, ← map_mul,
     P.ι_typeDGraphVector_mul_typeDSimpleNegativeRootBivector b hn i]
 
 /-- **The graph operator intertwines the numbered coroots along `TauCeti.graphPermD`.** -/
@@ -569,8 +569,8 @@ theorem typeDGraphOperator_spinAction_typeDSimpleCorootBivector (hn : 2 ≤ n) (
     P.typeDGraphOperator b hn (spinAction Q P (P.typeDSimpleCorootBivector b hn i) x) =
       spinAction Q P (P.typeDSimpleCorootBivector b hn (graphPermD n hn i))
         (P.typeDGraphOperator b hn x) := by
-  rw [typeDGraphOperator_apply, typeDGraphOperator_apply, ← Module.End.mul_apply,
-    ← Module.End.mul_apply, ← map_mul, ← map_mul,
+  rw [typeDGraphOperator_apply, typeDGraphOperator_apply, ← mul_apply_eq_comp,
+    ← mul_apply_eq_comp, ← map_mul, ← map_mul,
     P.ι_typeDGraphVector_mul_typeDSimpleCorootBivector b hn i]
 
 /-! ### The graph operator exchanges the two half-spin summands -/
@@ -805,7 +805,7 @@ theorem ι_typeDGraphVector_mul_typeDQuadraticEquiv (hn : 2 ≤ n) (hline : P.li
   refine congrArg Subtype.val (quadraticLieSubalgebra_ext Q (P.nondegenerate_of_line_eq_bot hline)
     (a := ⟨_, map_mem_quadraticLieSubalgebra _ hq⟩) fun x => ?_)
   rw [P.typeDQuadraticEquiv_lie_ι b hline, typeDGraphLieEquiv_apply_val, map_mul, map_mul,
-    P.toLinAlgEquiv_typeDGraphMatrix b hn hline, Module.End.mul_apply, Module.End.mul_apply,
+    P.toLinAlgEquiv_typeDGraphMatrix b hn hline, mul_apply_eq_comp, mul_apply_eq_comp,
     QuadraticMap.Isometry.coe_toLinearMap]
   conv_lhs => rw [← P.typeDGraphIsometry_apply_apply b hn x, ← map_apply_ι]
   rw [Subtype.coe_mk, Ring.lie_def, ← map_mul, ← map_mul, ← map_sub, ← Ring.lie_def,
@@ -821,7 +821,7 @@ theorem typeDGraphOperator_typeDSpinLieRep (hn : 2 ≤ n) (hline : P.line = ⊥)
       P.typeDSpinLieRep b hline (typeDGraphLieEquiv (⟨n - 1, by omega⟩ : Fin n) K A)
         (P.typeDGraphOperator b hn s) := by
   rw [typeDGraphOperator_apply, typeDGraphOperator_apply, typeDSpinLieRep_apply,
-    typeDSpinLieRep_apply, ← Module.End.mul_apply, ← Module.End.mul_apply, ← map_mul, ← map_mul,
+    typeDSpinLieRep_apply, ← mul_apply_eq_comp, ← mul_apply_eq_comp, ← map_mul, ← map_mul,
     P.ι_typeDGraphVector_mul_typeDQuadraticEquiv b hn hline]
 
 /-- **The fork exchange intertwines the two half-spin representations.** The graph operator

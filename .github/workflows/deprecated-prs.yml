@@ -1,0 +1,106 @@
+name: Reconcile PRs after Mathlib bumps
+
+# Advisory PR repair only: independent of content builds and merge validation.
+on:
+  push:
+    branches: [main]
+    paths: [lake-manifest.json]
+  workflow_dispatch:
+    inputs:
+      before:
+        description: Full main commit SHA before the Mathlib bump (for backfill/retry)
+        required: true
+        type: string
+      dry-run:
+        description: Report matches without labelling PRs
+        type: boolean
+        default: true
+
+permissions:
+  contents: read
+  pull-requests: read
+
+concurrency:
+  # Distinct bumps must all finish: collapsing a pending intermediate bump
+  # would otherwise miss names deprecated only by that update.
+  group: mathlib-deprecation-sweep-${{ github.sha }}
+  cancel-in-progress: false
+
+jobs:
+  reconcile:
+    if: github.repository == 'TauCetiProject/TauCeti' && github.ref == 'refs/heads/main'
+    runs-on: ${{ fromJSON(format('["nscloud-ubuntu-24.04-amd64-2x4-with-features;job.priority=0","namespace-features:github.run-id={0}"]', github.run_id)) }}
+    timeout-minutes: 30
+    steps:
+      - name: Checkout immutable trusted tooling
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          ref: ${{ github.workflow_sha }}
+          fetch-depth: 1
+          filter: blob:none
+          sparse-checkout: |
+            scripts
+            .github
+          persist-credentials: false
+      - name: Prepare pinned shared tools
+        uses: TauCetiProject/TauCetiTools/.github/actions/setup@f158c060cecb4689509f5d0eaba994204ffa3512
+        with:
+          tools-repository: TauCetiProject/TauCetiTools
+          tools-ref: f158c060cecb4689509f5d0eaba994204ffa3512
+          project-directory: .
+      - name: Resolve immutable bump pins
+        id: pins
+        env:
+          BEFORE: ${{ github.event.before || inputs.before }}
+          AFTER: ${{ github.sha }}
+        run: |
+          python3 - <<'PY'
+          import os, sys
+          from pathlib import Path
+          sys.path.insert(0, 'scripts')
+          from deprecated_prs import SHA, git, pin
+          before, after = os.environ['BEFORE'], os.environ['AFTER']
+          if not all(SHA.fullmatch(s) and s != '0' * 40 for s in [before, after]):
+              raise SystemExit('Expected immutable nonzero before/after SHAs')
+          git(Path('.'), 'fetch', '--no-tags', '--depth=1', 'origin', before, after)
+          old, new = [pin(git(Path('.'), 'show', f'{s}:lake-manifest.json')) for s in [before, after]]
+          with open(os.environ['GITHUB_OUTPUT'], 'a') as out:
+              out.write(f'old={old}\nnew={new}\nchanged={str(old != new).lower()}\n')
+          PY
+      - name: Restore immutable Mathlib source objects
+        if: steps.pins.outputs.changed == 'true'
+        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830
+        with:
+          path: .deprecation-mathlib.git
+          key: deprecation-source-v1-${{ steps.pins.outputs.old }}-${{ steps.pins.outputs.new }}
+      - name: Mint existing repair automation identity
+        if: steps.pins.outputs.changed == 'true' && !inputs.dry-run
+        id: app
+        uses: actions/create-github-app-token@29824e69f54612133e76f7eaac726eef6c875baf
+        with:
+          app-id: ${{ secrets.APP_ID }}
+          private-key: ${{ secrets.APP_PRIVATE_KEY }}
+          owner: TauCetiProject
+          repositories: TauCeti
+          permission-issues: write
+          permission-pull-requests: write
+      - name: Label PRs referring to newly deprecated declarations
+        if: steps.pins.outputs.changed == 'true'
+        env:
+          GH_READ_TOKEN: ${{ github.token }}
+          GH_TOKEN: ${{ steps.app.outputs.token || github.token }}
+          GH_REPO: ${{ github.repository }}
+          BEFORE: ${{ github.event.before || inputs.before }}
+          AFTER: ${{ github.sha }}
+          DRY_RUN: ${{ inputs.dry-run && '--dry-run' || '' }}
+        run: >-
+          python3 scripts/deprecated_prs.py --before "$BEFORE" --after "$AFTER"
+          --mathlib .deprecation-mathlib.git --report deprecation-sweep.json $DRY_RUN
+      - name: Retain scan coverage and findings
+        if: always() && steps.pins.outputs.changed == 'true'
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: deprecation-sweep-${{ github.run_id }}-${{ github.run_attempt }}
+          path: deprecation-sweep.json
+          if-no-files-found: warn
+          retention-days: 7

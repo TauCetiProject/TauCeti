@@ -17,12 +17,14 @@ A smooth embedding of the circle into a real normed space, read through `Circle.
 inscribed polygons (`TauCeti.SmoothEmbedding.eventually_isSimple_inscribed`), and any two of them
 with enough vertices are combinatorially equivalent
 (`TauCeti.SmoothEmbedding.exists_combinatoriallyEquivalent_inscribed`). So a smooth knot determines
-a polygonal knot (`TauCeti.SimplePolygon`) up to combinatorial equivalence. This polygonal knot
-only depends on the smooth knot up to smooth isotopy through embeddings
+a polygonal knot (`TauCeti.SimplePolygon`) up to combinatorial equivalence. The fine inscribed
+polygons are moreover ambient isotopic to the smooth knot, as in Crowell and Fox, Appendix I
+(`TauCeti.SmoothEmbedding.eventually_exists_ambientIsotopy_image_inscribed`): a smooth knot is tame.
+The polygonal knot only depends on the smooth knot up to smooth isotopy through embeddings
 (`TauCeti.SmoothEmbedding.exists_combinatoriallyEquivalent_inscribed_of_smoothIsotopic`): the
 isotopy, read through a smooth step in time, is a `C¹` isotopy of loops in the sense of
-`Polygon.exists_combinatoriallyEquivalent_inscribed_of_isotopy`. That the inscribed polygons are
-ambient isotopic to the smooth knot, as in Crowell and Fox, Appendix I, is not proved here.
+`Polygon.exists_combinatoriallyEquivalent_inscribed_of_isotopy`. That it only depends on the smooth
+knot up to ambient isotopy is not proved here.
 
 ## Main results
 
@@ -32,6 +34,8 @@ ambient isotopic to the smooth knot, as in Crowell and Fox, Appendix I, is not p
   vertices are combinatorially equivalent.
 * `TauCeti.SmoothEmbedding.exists_combinatoriallyEquivalent_inscribed_of_smoothIsotopic`: so are
   fine inscribed polygons of two smoothly isotopic smooth knots.
+* `TauCeti.SmoothEmbedding.eventually_exists_ambientIsotopy_image_inscribed`: an ambient isotopy of
+  the ambient space carries a smooth knot onto each of its inscribed polygons with enough vertices.
 
 ## References
 
@@ -130,5 +134,17 @@ theorem exists_combinatoriallyEquivalent_inscribed_of_smoothIsotopic
     simp [hΓ_def, hσ₁, F.apply_one]
   rw [hΓ₀, hΓ₁] at hN
   exact ⟨N, hN⟩
+
+/-- **A smooth knot is ambient isotopic to its fine inscribed polygons.** For a `C^n` embedding
+`K : S¹ → E`, `n ≥ 1`, of the circle into a real normed space, read through `Circle.exp` as a loop
+of period `2π`, for all large `m` some ambient isotopy of `E` carries the image of `K` onto the
+polygon with vertices `K (exp (2πk / m))`. -/
+theorem eventually_exists_ambientIsotopy_image_inscribed
+    (K : SmoothEmbedding (𝓡 1) 𝓘(ℝ, E) n Circle E) (hn : 1 ≤ n) :
+    ∀ᶠ m in atTop, ∃ Φ : AmbientIsotopy E,
+      Φ.final '' Set.range K = (Polygon.inscribed (K ∘ Circle.exp) (2 * Real.pi) m).boundary ℝ := by
+  have ⟨hγ, hper, hinj, hderiv⟩ := comp_circleExp K hn
+  rw [← Circle.exp_surjective.range_comp]
+  exact Polygon.eventually_exists_ambientIsotopy_image_inscribed Real.two_pi_pos hγ hper hinj hderiv
 
 end TauCeti.SmoothEmbedding
