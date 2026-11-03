@@ -167,7 +167,7 @@ theorem IsSymm.exists_eq_smul_add_transpose {n R : Type*} [CommRing R] {E : Matr
   choose f hf using h₂
   refine ⟨Matrix.of fun i i' ↦ if i < i' then e i i' else if i = i' then f i else 0, ?_⟩
   ext i i'
-  simp only [smul_apply, add_apply, transpose_apply, of_apply, smul_eq_mul]
+  simp only [Matrix.smul_apply, Matrix.add_apply, transpose_apply, of_apply, smul_eq_mul]
   rcases lt_trichotomy i i' with h | rfl | h
   · simp [h, h.ne', not_lt_of_gt h, he]
   · simp [hf, mul_comm 2 c, mul_assoc, two_mul]
@@ -186,7 +186,7 @@ theorem IsSymm.two_dvd_inv_apply_self {n R : Type*} [Fintype n] [DecidableEq n] 
   have : U⁻¹ = U⁻¹ * K * U⁻¹ + (U⁻¹ * K * U⁻¹)ᵀ := by
     rw [transpose_mul, transpose_mul, hinv, Matrix.mul_assoc, ← Matrix.mul_add,
       ← Matrix.add_mul, ← hK, mul_nonsing_inv _ hdet, Matrix.mul_one]
-  rw [this, add_apply, transpose_apply, ← two_mul]
+  rw [this, Matrix.add_apply, transpose_apply, ← two_mul]
   exact dvd_mul_right _ _
 
 /-- **The number of symmetric matrices**: a symmetric `n × n` matrix over `R` is a function on the

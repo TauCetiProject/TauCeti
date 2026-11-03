@@ -39,7 +39,8 @@ criterion also gives exactness of the homotopy sequence of a pair at `π_{n+1}(X
 ## Main declarations
 
 * `TauCeti.RelGenLoop.mapsTo_prodBoundary`: a relative cube is a map of pairs
-  `(I × I^N, ∂(I × I^N)) → (X, A)`.
+  `(I × I^N, ∂(I × I^N)) → (X, A)`, and `TauCeti.RelGenLoop.Homotopic.homotopicWith`: a homotopy
+  through relative cubes is a homotopy through maps of pairs.
 * `TauCeti.RelGenLoop.Homotopic.of_homotopicRel`: relative cubes homotopic relative to the
   boundary of the cube are homotopic through relative cubes.
 * `TauCeti.RelGenLoop.exists_homotopicRel_of_homotopic_const`: a relative cube homotopic through
@@ -78,6 +79,14 @@ theorem mapsTo_prodBoundary {p : C(I × (I^N), X.pair.fst)} (hp : p ∈ RelGenLo
     exact (mem_iff.1 hp).1 t
   · exact ⟨_, ((mem_iff.1 hp).2 s t (.inl hs)).symm⟩
   · exact ⟨_, ((mem_iff.1 hp).2 s t (.inr ht)).symm⟩
+
+/-- A homotopy through relative cubes is a homotopy through maps of pairs
+`(I × I^N, ∂(I × I^N)) → (X, A)`. -/
+theorem Homotopic.homotopicWith {p q : RelGenLoop N X} (h : Homotopic p q) :
+    (p : C(I × (I^N), X.pair.fst)).HomotopicWith q
+      fun f ↦ MapsTo f (Cube.prodBoundary N) (range X.pair.map) := by
+  obtain ⟨F⟩ := homotopic_iff.1 h
+  exact ⟨{ toHomotopy := F.toHomotopy, prop' := fun t ↦ mapsTo_prodBoundary (F.prop t) }⟩
 
 /-- Relative cubes that are homotopic relative to the boundary of the cube `I × I^N` are
 homotopic through relative cubes. -/

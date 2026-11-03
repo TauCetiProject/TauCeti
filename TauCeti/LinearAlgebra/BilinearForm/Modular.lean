@@ -102,7 +102,7 @@ theorem exists_smul_eq_of_forall_dvd (ha : a ∈ nonZeroDivisors R) (h : ∀ x y
   refine ⟨LinearMap.mk₂ R c (fun x₁ x₂ y ↦ hcan _ _ ?_) (fun r x y ↦ hcan _ _ ?_)
     (fun x y₁ y₂ ↦ hcan _ _ ?_) (fun r x y ↦ hcan _ _ ?_), ?_⟩
   · rw [← hc, mul_add, ← hc, ← hc, map_add, LinearMap.add_apply]
-  · rw [← hc, smul_eq_mul, mul_left_comm, ← hc, map_smul, smul_apply, smul_eq_mul]
+  · rw [← hc, smul_eq_mul, mul_left_comm, ← hc, map_smul, LinearMap.smul_apply, smul_eq_mul]
   · rw [← hc, mul_add, ← hc, ← hc, map_add]
   · rw [← hc, smul_eq_mul, mul_left_comm, ← hc, map_smul, smul_eq_mul]
   · ext x y
@@ -136,6 +136,11 @@ theorem isModular_one_iff : B.IsModular 1 ↔ B.IsPerfPair :=
 theorem IsModular.dvd (h : B.IsModular a) (x y : M) : a ∣ B x y := by
   obtain ⟨C, rfl, -⟩ := h
   exact ⟨C x y, by simp⟩
+
+/-- Multiplying an `a`-modular form by `r` multiplies its modularity factor by `r`. -/
+theorem IsModular.smul (h : B.IsModular a) (r : R) : (r • B).IsModular (r * a) := by
+  obtain ⟨C, rfl, hC⟩ := h
+  exact ⟨C, (smul_smul r a C).symm, hC⟩
 
 /-- Modularity only depends on `a` up to a unit. -/
 theorem IsModular.of_associated (h : B.IsModular a) {b : R} (hab : Associated a b) :
@@ -259,7 +264,7 @@ theorem isModular_iff (hB : B.IsSymm) (ha : a ∈ nonZeroDivisors R) :
     refine ⟨h.dvd, (h.nondegenerate ha).1, fun f ↦ ?_⟩
     obtain ⟨C, rfl, hC⟩ := h
     obtain ⟨x, hx⟩ := hC.bijective_left.2 f
-    exact ⟨x, fun y ↦ by rw [smul_apply, smul_apply, smul_eq_mul, hx]⟩
+    exact ⟨x, fun y ↦ by rw [LinearMap.smul_apply, LinearMap.smul_apply, smul_eq_mul, hx]⟩
   · rintro ⟨hdvd, hsep, hrep⟩
     obtain ⟨C, rfl⟩ := exists_smul_eq_of_forall_dvd ha hdvd
     have hbij : Function.Bijective C := by
@@ -333,7 +338,7 @@ theorem IsModular.isCompl_orthogonal (hB : B.IsSymm) (ha : a ∈ nonZeroDivisors
   have hB' : (B'.restrict S).IsSymm := ⟨fun x y ↦ hcan _ _ (by simpa using hB.eq x y)⟩
   have horth : (a • B').orthogonal S = B'.orthogonal S := by
     ext m
-    simp only [mem_orthogonal_iff, smul_apply, smul_eq_mul]
+    simp only [mem_orthogonal_iff, LinearMap.smul_apply, smul_eq_mul]
     exact forall₂_congr fun n _ ↦ by
       rw [mul_comm, mul_right_mem_nonZeroDivisors_eq_zero_iff ha]
   rw [horth]

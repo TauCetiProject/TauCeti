@@ -566,6 +566,24 @@ section Boundary
 
 variable {T : ℝ} [Fact (0 < T)] [CompleteSpace E]
 
+/-- Boundary values in the neck graph are differences of the two branch disc functions.
+This formula also makes sense at `a = 0` and uses no Laurent evaluation at a zero coordinate. -/
+theorem toContinuousMap_eq_diskFunction_sub_of_mem_neckGraph (hs : 1 / 2 < s)
+    (ha : ‖a‖ ≤ 1) {p : CircleSobolev s E × CircleSobolev s E}
+    (hp : p ∈ neckGraph s E a) (x : AddCircle T) :
+    toContinuousMap T hs p.1 x = diskFunction p.1 (fourier 1 x) -
+      diskFunction p.2 (a / fourier 1 x) + p.2.coeff 0 := by
+  have he := congrArg Prod.fst (eq_of_mem_neckGraph ha hp)
+  calc
+    toContinuousMap T hs p.1 x =
+        toContinuousMap T hs (indicator (Set.Ici 0) p.1 - neckTransfer a p.2) x :=
+      congrArg (fun u ↦ toContinuousMap T hs u x) he
+    _ = _ := by
+      rw [map_sub, ContinuousMap.sub_apply,
+        toContinuousMap_apply_eq_diskFunction T hs (indicator_mem_supported _ _),
+        diskFunction_indicator_Ici, toContinuousMap_neckTransfer hs ha]
+      abel
+
 /-- **The linearized node equation.** For `s > 1/2`, `a ≠ 0` and `(F, G)` in the neck graph,
 the Laurent series `G(a / x) = ∑ₙ (a / x)ⁿ Gₙ` converges at every point `x = fourier 1 x` of the
 unit circle, and `F(x) + G(a / x) = F₀ + G₀`, where `F(x)` is the continuous function attached

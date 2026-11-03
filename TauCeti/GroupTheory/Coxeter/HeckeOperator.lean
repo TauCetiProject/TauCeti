@@ -121,8 +121,8 @@ variable (cs c)
 theorem heckeLeftMul_mul_self (i : B) :
     cs.heckeLeftMul c i * cs.heckeLeftMul c i = c • cs.heckeLeftMul c i + 1 := by
   refine Finsupp.lhom_ext fun w r ↦ ?_
-  simp only [Module.End.mul_apply, LinearMap.add_apply, LinearMap.smul_apply,
-    Module.End.one_apply]
+  simp only [mul_apply_eq_comp, LinearMap.add_apply, LinearMap.smul_apply,
+    one_apply_eq_self]
   by_cases h : cs.IsLeftDescent w i
   · have h' : ¬cs.IsLeftDescent (s i * w) i := cs.isLeftDescent_iff_not_isLeftDescent_mul.mp h
     simp only [heckeLeftMul_single_of_isLeftDescent h, heckeLeftMul_single_of_not_isLeftDescent h',
@@ -140,7 +140,7 @@ theorem commute_heckeLeftMul_heckeRightMul (i j : B) :
   -- and `s i * w * s j`; in the two cases where lengths cannot tell `s i * w` and `w * s j`
   -- apart, they are equal by `CoxeterSystem.simple_mul_eq_mul_simple_of_length_eq`.
   refine Finsupp.lhom_ext fun w r ↦ ?_
-  simp only [Module.End.mul_apply]
+  simp only [mul_apply_eq_comp]
   have hl := cs.length_simple_mul w i
   have hr := cs.length_mul_simple w j
   have hlr := cs.length_simple_mul (w * s j) i
@@ -178,8 +178,8 @@ theorem ext_of_commute_heckeRightMul {f g : Module.End R (W →₀ R)}
     have hsingle : single w (1 : R) = cs.heckeRightMul c j (single (w * s j) 1) := by
       rw [heckeRightMul_single_of_not_isRightDescent hj', cs.simple_mul_simple_cancel_right]
     have hlt : ℓ (w * s j) < n := hn ▸ hj
-    rw [hsingle, ← Module.End.mul_apply, (hf j).eq, Module.End.mul_apply, ih _ hlt _ rfl,
-      ← Module.End.mul_apply, ← (hg j).eq, Module.End.mul_apply]
+    rw [hsingle, ← mul_apply_eq_comp, (hf j).eq, mul_apply_eq_comp, ih _ hlt _ rfl,
+      ← mul_apply_eq_comp, ← (hg j).eq, mul_apply_eq_comp]
 
 /-- Left operators along a reduced word `ω` send `e 1` to the basis vector of the element `ω`
 spells. -/
@@ -191,7 +191,7 @@ theorem prod_map_heckeLeftMul_apply_single_one {ω : List B} (hω : cs.IsReduced
     have hω' : cs.IsReduced ω := by simpa using hω.drop 1
     have hi : ¬cs.IsLeftDescent (π ω) i := by
       rw [cs.not_isLeftDescent_iff, ← cs.wordProd_cons, hω.eq, hω'.eq, List.length_cons]
-    rw [List.map_cons, List.prod_cons, Module.End.mul_apply, ih hω',
+    rw [List.map_cons, List.prod_cons, mul_apply_eq_comp, ih hω',
       heckeLeftMul_single_of_not_isLeftDescent hi, cs.wordProd_cons]
 
 /-- **The braid relations** for the left operators: the two braid words at `(i, i')` give the

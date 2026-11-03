@@ -357,7 +357,7 @@ private theorem glHalfStaircase_weightSpace_le_commonFixed
       ∀ j : Fin N, i < j → carOccupationElement (K := K) i j * x = x := by
     intro m
     induction m using Nat.strong_induction_on with
-    | h m ih =>
+    | ind m ih =>
         intro _ i him j hij
         have hlower {k : Fin N} (hki : k < i) :
             carOccupationElement (K := K) k i * x = x := by
