@@ -166,6 +166,42 @@ theorem rectangleIntegral_smul {𝕜 : Type*} [NontriviallyNormedField 𝕜] [No
     rectangleIntegral (c • φ) u a b = c • rectangleIntegral φ u a b := by
   simp [rectangleIntegral_eq, intervalIntegral.integral_smul]
 
+/-- The integral of a sum of forms is the sum of the integrals, as soon as, for both forms, the
+inner integrands are interval integrable for every `s` between `a.1` and `b.1` and the inner
+integrals are interval integrable in `s`. -/
+theorem rectangleIntegral_add {φ ψ : RoughForm I M F 2} {u : ℝ × ℝ → M} {a b : ℝ × ℝ}
+    (hφ : ∀ s ∈ [[a.1, b.1]], IntervalIntegrable
+      (fun t ↦ mpullback 𝓘(ℝ, ℝ × ℝ) I u φ (s, t) ![(1, 0), (0, 1)]) volume a.2 b.2)
+    (hψ : ∀ s ∈ [[a.1, b.1]], IntervalIntegrable
+      (fun t ↦ mpullback 𝓘(ℝ, ℝ × ℝ) I u ψ (s, t) ![(1, 0), (0, 1)]) volume a.2 b.2)
+    (hφ' : IntervalIntegrable (fun s ↦ ∫ t in a.2..b.2,
+      mpullback 𝓘(ℝ, ℝ × ℝ) I u φ (s, t) ![(1, 0), (0, 1)]) volume a.1 b.1)
+    (hψ' : IntervalIntegrable (fun s ↦ ∫ t in a.2..b.2,
+      mpullback 𝓘(ℝ, ℝ × ℝ) I u ψ (s, t) ![(1, 0), (0, 1)]) volume a.1 b.1) :
+    rectangleIntegral (φ + ψ) u a b = rectangleIntegral φ u a b + rectangleIntegral ψ u a b := by
+  simp only [rectangleIntegral_def, mpullback_add, Pi.add_apply,
+    ContinuousAlternatingMap.add_apply]
+  rw [← intervalIntegral.integral_add hφ' hψ']
+  exact intervalIntegral.integral_congr fun s hs ↦ intervalIntegral.integral_add (hφ s hs) (hψ s hs)
+
+/-- The integral of a difference of forms is the difference of the integrals, as soon as, for both
+forms, the inner integrands are interval integrable for every `s` between `a.1` and `b.1` and the
+inner integrals are interval integrable in `s`. -/
+theorem rectangleIntegral_sub {φ ψ : RoughForm I M F 2} {u : ℝ × ℝ → M} {a b : ℝ × ℝ}
+    (hφ : ∀ s ∈ [[a.1, b.1]], IntervalIntegrable
+      (fun t ↦ mpullback 𝓘(ℝ, ℝ × ℝ) I u φ (s, t) ![(1, 0), (0, 1)]) volume a.2 b.2)
+    (hψ : ∀ s ∈ [[a.1, b.1]], IntervalIntegrable
+      (fun t ↦ mpullback 𝓘(ℝ, ℝ × ℝ) I u ψ (s, t) ![(1, 0), (0, 1)]) volume a.2 b.2)
+    (hφ' : IntervalIntegrable (fun s ↦ ∫ t in a.2..b.2,
+      mpullback 𝓘(ℝ, ℝ × ℝ) I u φ (s, t) ![(1, 0), (0, 1)]) volume a.1 b.1)
+    (hψ' : IntervalIntegrable (fun s ↦ ∫ t in a.2..b.2,
+      mpullback 𝓘(ℝ, ℝ × ℝ) I u ψ (s, t) ![(1, 0), (0, 1)]) volume a.1 b.1) :
+    rectangleIntegral (φ - ψ) u a b = rectangleIntegral φ u a b - rectangleIntegral ψ u a b := by
+  rw [sub_eq_add_neg φ, sub_eq_add_neg, ← rectangleIntegral_neg]
+  refine rectangleIntegral_add hφ (fun s hs ↦ ?_) hφ' ?_
+  · simpa [Pi.neg_def] using (hψ s hs).neg
+  · simpa [Pi.neg_def, intervalIntegral.integral_neg] using hψ'.neg
+
 /-- The integral over a rectangle of zero width vanishes. -/
 @[simp]
 theorem rectangleIntegral_of_fst_eq (φ : RoughForm I M F 2) (u : ℝ × ℝ → M) {a b : ℝ × ℝ}
