@@ -197,6 +197,8 @@ theorem range_edgewiseSubdivisionRealizationMap_faceInclusion
       L (Finsupp.single a 1) = (edgewisePoint a.1 : ι → ℝ) := by simp [L]
   simp only [Finset.coe_image, Set.image_image]
   simp only [hsingle, image_eq_range]
+  -- The subtype of the coerced set `(ρ.1 : Set _)` and the finset subtype `ρ.1` are
+  -- definitionally equal (as in `Finset.coe_sort_coe`), with the same value projection.
   rfl
 
 /-- The edgewise realization map is continuous for the weak topologies on both realizations. -/
