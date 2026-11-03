@@ -195,6 +195,29 @@ theorem conormal_const [Nonempty Q] (y : M) :
 
 /-! ### Reparametrization and transport -/
 
+/-- Precomposing `i : Q → M` with a differentiable surjection `g : P → Q` whose differentials are
+surjective does not change its conormal set. -/
+theorem conormal_comp_of_surjective {g : P → Q} {i : Q → M}
+    (hg : MDifferentiable K J g) (hi : MDifferentiable J I i)
+    (hsurj : Function.Surjective g)
+    (hdg : ∀ p, Function.Surjective (mfderiv K J g p)) :
+    conormal K I (i ∘ g) = conormal J I i := by
+  ext ⟨x, α⟩
+  simp only [mem_conormal_iff]
+  constructor
+  · rintro ⟨p, rfl, hann⟩
+    refine ⟨g p, rfl, ?_⟩
+    ext u
+    obtain ⟨v, rfl⟩ := hdg p u
+    rw [ContinuousLinearMap.comp_apply, ← mfderiv_comp_apply p (hi (g p)) (hg p) v]
+    exact DFunLike.congr_fun hann v
+  · rintro ⟨q, rfl, hann⟩
+    obtain ⟨p, rfl⟩ := hsurj q
+    refine ⟨p, rfl, ?_⟩
+    ext v
+    rw [ContinuousLinearMap.comp_apply, mfderiv_comp_apply p (hi (g p)) (hg p) v]
+    exact DFunLike.congr_fun hann (mfderiv K J g p v)
+
 /-- **The conormal set does not depend on the parametrization.** Precomposing a differentiable
 map with a diffeomorphism of its source does not change its conormal set. -/
 theorem conormal_comp_diffeomorph [IsManifold J 2 Q] [IsManifold K 2 P] (φ : P ≃ₘ⟮K, J⟯ Q)
