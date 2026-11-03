@@ -123,13 +123,17 @@ variable {G : Type*} [Group G] (K : Subgroup G) [K.Normal]
 
 /-- The power `g ^ d` of `g` lying in `K`, where `d` is the order of `g` in `G ⧸ K`. When the
 image of `g` in `G ⧸ K` has finite order, this is the least positive power of `g` lying in `K`,
-and for an orbit of class `g` it is the class of each of its primitive lifts to the covering with
-deck group `G ⧸ K`. When the image has infinite order, `d = 0` and this is `1`. -/
+and, when `G` is commutative, for an orbit of class `g` it is the class of each of its primitive
+lifts to the covering with deck group `G ⧸ K`. For noncommutative `G`, those lifts can instead have
+classes conjugate to it by elements of `G`. When the image has infinite order, `d = 0` and this is
+`1`. -/
 @[to_additive
 /-- The multiple `d • g` of `g` lying in `K`, where `d` is the additive order of `g` in `G ⧸ K`.
 When the image of `g` in `G ⧸ K` has finite order, this is the least positive multiple of `g`
-lying in `K`, and for an orbit of class `g` it is the class of each of its primitive lifts to the
-covering with deck group `G ⧸ K`. When the image has infinite order, `d = 0` and this is `0`. -/]
+lying in `K`, and, when `G` is commutative, for an orbit of class `g` it is the class of each of
+its primitive lifts to the covering with deck group `G ⧸ K`. For noncommutative `G`, those lifts can
+instead have classes conjugate to it by elements of `G`. When the image has infinite order, `d = 0`
+and this is `0`. -/]
 noncomputable def liftClass (g : G) : K :=
   ⟨g ^ orderOf (g : G ⧸ K), (QuotientGroup.orderOf_mk_dvd_iff_pow_mem K _ _).1 dvd_rfl⟩
 
