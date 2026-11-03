@@ -33,6 +33,11 @@ identification of `MO` with the unoriented bordism ring `MO_*`, the ring `MO[bâ‚
 corresponds to the cooperations `MO_*MO`, with `báµ¢` in degree `i`; the grading is not treated
 here.
 
+The construction follows the one for the Lazard ring in
+`TauCeti.RingTheory.FormalGroup.CoordinateChange.Lazard` (`TauCeti.LazardRing.coordinateChangeLift`,
+`TauCeti.LazardRing.rightUnit`, `TauCeti.LazardRing.counit` and their lemmas), with `LazardRing`
+replaced by `ExponentTwoLazardRing` and the condition `[2]_F = 0` carried along.
+
 ## Main definitions
 
 * `TauCeti.ExponentTwoLazardRing.coordinateChangeLift`: the bijection between pairs of a
