@@ -141,7 +141,9 @@ theorem generatedCoordinateHopfAlgebraBaseChangeMap_comp_generatedCoordinateLift
 
 /-- For a free extension the specialization comparison is the existing base-change isomorphism.
 -/
-theorem generatedCoordinateHopfAlgebraBaseChangeMap_eq_hom [Module.Free k K] :
+theorem
+    generatedCoordinateHopfAlgebraBaseChangeMap_eq_generatedCoordinateHopfAlgebraBaseChangeIso_hom
+    [Module.Free k K] :
     generatedCoordinateHopfAlgebraBaseChangeMap n hn k K =
       (generatedCoordinateHopfAlgebraBaseChangeIso n hn k K).hom := by
   symm
