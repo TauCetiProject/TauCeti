@@ -63,9 +63,7 @@ noncomputable section
 universe u
 namespace AlgebraicGeometry.Scheme.Modules
 variable {X : Scheme.{u}} (M : X.Modules) {U : X.Opens} (hU : IsAffineOpen U)
-/-- On an affine chart `Spec Γ(X, U) ⟶ X`, the comparison between restriction and pullback sends
-the restriction of a section over `U` to its pullback. -/
-lemma restrictFunctorIsoPullback_hom_app_app_fromSpecSectionsEquiv (s : Γ(M, U)) :
+private lemma chartPullback_unit (s : Γ(M, U)) :
     ((restrictFunctorIsoPullback hU.fromSpec).hom.app M).app ⊤
       (M.fromSpecSectionsEquiv hU s) =
     Scheme.Hom.pullbackSectionsLE hU.fromSpec M U ⊤ (hU.fromSpec_preimage_self.ge) s := by
@@ -112,7 +110,7 @@ private lemma chartPullback_unit_inv (s : Γ(M, U)) :
     ((restrictFunctorIsoPullback hU.fromSpec).inv.app M).app ⊤
       (Scheme.Hom.pullbackSectionsLE hU.fromSpec M U ⊤ (hU.fromSpec_preimage_self.ge) s) =
       M.fromSpecSectionsEquiv hU s := by
-  rw [← restrictFunctorIsoPullback_hom_app_app_fromSpecSectionsEquiv M hU]
+  rw [← chartPullback_unit M hU]
   exact congrArg (fun a ↦ a.app ⊤ (M.fromSpecSectionsEquiv hU s))
     ((restrictFunctorIsoPullback hU.fromSpec).app M).hom_inv_id
 end AlgebraicGeometry.Scheme.Modules
@@ -137,7 +135,7 @@ private lemma chartPullbackIso_unit (s : Γ(M, U)) :
         ⊤ ⊤ (by simp) (M.fromSpecSectionsEquiv hU s) := by
   simp only [chartPullbackIso, Iso.trans_hom, Iso.symm_hom, Hom.comp_app,
     ConcreteCategory.comp_apply, Functor.mapIso_hom, Iso.app_hom, Iso.app_inv]
-  rw [restrictFunctorIsoPullback_hom_app_app_fromSpecSectionsEquiv]
+  rw [chartPullback_unit]
   rw [← Scheme.Hom.pullbackSectionsLE_self g M U s]
   rw [Scheme.Hom.pullbackSectionsLE_comp_hom]
   rw [Scheme.Hom.pullbackSectionsLE_congr]

@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicGeometry.Modules.Pullback.Sections
 public import TauCeti.AlgebraicGeometry.Modules.Tilde.Basic
 
 /-!
@@ -159,20 +158,6 @@ def moduleSpecΓPullbackIso (M : (Spec R).Modules) [M.IsQuasicoherent] :
 lemma moduleSpecΓPullbackIso_hom (M : (Spec R).Modules) [M.IsQuasicoherent] :
     (moduleSpecΓPullbackIso φ M).hom = (moduleSpecΓPullback φ).app M :=
   (rfl)
-
-/-- The affine section isomorphism sends `1 ⊗ m` to the pullback of the global section `m`. -/
-lemma moduleSpecΓPullbackIso_hom_one_tmul (M : (Spec R).Modules) [M.IsQuasicoherent]
-    (m : Γ(M, ⊤)) :
-    (moduleSpecΓPullbackIso φ M).hom ((1 : S) ⊗ₜ[R, φ.hom] m) =
-      Scheme.Hom.pullbackSectionsLE (Spec.map φ) M ⊤ ⊤ (Scheme.Hom.preimage_top _).ge m := by
-  rw [moduleSpecΓPullbackIso_hom]
-  -- The base-change map is stated on the scalar-extension carrier, which `rw` cannot match.
-  erw [moduleSpecΓPullback_app_one_tmul]
-  -- Global sections over `Spec` evaluate morphisms on `⊤`, and `⊤` is the preimage of `⊤`; the
-  -- carriers agree only after unfolding `moduleSpecΓFunctor`.
-  change ((pullbackPushforwardAdjunction (Spec.map φ)).unit.app M).app ⊤ m = _
-  rw [← Scheme.Hom.pullbackSections_apply]
-  exact (Scheme.Hom.pullbackSectionsLE_self _ _ _ _).symm
 
 end
 

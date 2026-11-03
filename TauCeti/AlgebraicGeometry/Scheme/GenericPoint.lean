@@ -7,8 +7,8 @@ module
 
 public import Mathlib.AlgebraicGeometry.FunctionField
 public import Mathlib.AlgebraicGeometry.Morphisms.QuasiCompact
-public import Mathlib.AlgebraicGeometry.ResidueField
 public import Mathlib.AlgebraicGeometry.Stalk
+public import TauCeti.Topology.NoetherianSpace.ClosedPoints
 
 import TauCeti.Topology.KrullDimension.Basic
 
@@ -42,14 +42,17 @@ in its function field is computed on affine opens.
 * `TauCeti.AlgebraicGeometry.Scheme.coheight_eq_one_iff_ne_genericPoint`: on an irreducible
   scheme of dimension at most one, the points of codimension one are exactly the points other
   than the generic point.
+* `TauCeti.AlgebraicGeometry.Scheme.isClosed_of_isLocallyClosed_of_genericPoint_notMem`: on a
+  Noetherian irreducible scheme of dimension at most one, a locally closed set missing the generic
+  point is closed, since all its points are closed. For instance, the zero locus of a function on
+  an open subset which does not vanish at the generic point is closed in the whole scheme.
 * `TauCeti.AlgebraicGeometry.Scheme.eq_bot_of_genericPoint_notMem`: on an irreducible scheme, an
   open missing the generic point is empty.
 * `TauCeti.AlgebraicGeometry.Scheme.subsingleton_of_genericPoint_notMem` and
   `TauCeti.AlgebraicGeometry.Scheme.subsingleton_preimage_of_genericPoint_notMem`: the sections
   over such an open, or over its preimage under any morphism, form the zero ring.
-* `TauCeti.AlgebraicGeometry.Scheme.fromSpecStalk_preimage_eq_top` and
-  `TauCeti.AlgebraicGeometry.Scheme.fromSpecResidueField_preimage_eq_top`: the preimage under
-  `Spec 𝒪_{X,x} ⟶ X` or `Spec κ(x) ⟶ X` of an open containing `x` is everything.
+* `TauCeti.AlgebraicGeometry.Scheme.fromSpecStalk_preimage_eq_top`: the preimage under
+  `Spec 𝒪_{X,x} ⟶ X` of an open containing `x` is everything.
 * `TauCeti.AlgebraicGeometry.Scheme.quasiCompact_fromSpecStalk_genericPoint`: the generic point
   `Spec k(X) ⟶ X` of an integral scheme is quasi-compact.
 * `TauCeti.AlgebraicGeometry.Scheme.isFractionRing_app_fromSpecStalk_genericPoint`: on an integral
@@ -111,6 +114,18 @@ theorem coheight_eq_one_iff_ne_genericPoint
   rw [← hle.ge_iff_eq, Order.one_le_iff_pos, Order.coheight_pos, not_iff_not,
     isMax_iff_eq_genericPoint]
 
+/-- On a Noetherian irreducible scheme of dimension at most one, a locally closed set which does
+not contain the generic point is closed: all of its points have codimension one, so they are
+closed points. -/
+theorem isClosed_of_isLocallyClosed_of_genericPoint_notMem [TopologicalSpace.NoetherianSpace X]
+    (hX : topologicalKrullDim X ≤ 1) {s : Set X} (hs : IsLocallyClosed s)
+    (hgs : genericPoint X ∉ s) : IsClosed s := by
+  refine hs.isClosed_of_subset_closedPoints fun z hz ↦ ?_
+  have hdim (y : X) : Order.coheight y ≤ 1 := by
+    exact_mod_cast (TauCeti.coheight_le_topologicalKrullDim y).trans hX
+  exact TauCeti.isClosed_singleton_of_forall_coheight_le_one_of_coheight_eq_one hdim
+    ((coheight_eq_one_iff_ne_genericPoint hX).mpr fun h ↦ hgs (h ▸ hz))
+
 /-- On an irreducible scheme, an open which does not contain the generic point is empty: the
 generic point generizes every point, so it lies in every nonempty open. -/
 theorem eq_bot_of_genericPoint_notMem {U : X.Opens} (h : genericPoint X ∉ U) : U = ⊥ := by
@@ -139,12 +154,6 @@ theorem fromSpecStalk_preimage_eq_top {X : Scheme.{u}} {x : X} {U : X.Opens} (hx
   top_le_iff.mp fun y _ ↦ (IsLocalRing.specializes_closedPoint y).mem_open
     (X.fromSpecStalk x ⁻¹ᵁ U).isOpen
     ((Scheme.Hom.mem_preimage _).mpr (by rwa [Scheme.fromSpecStalk_closedPoint]))
-
-/-- The preimage under `Spec κ(x) ⟶ X` of an open containing `x` is all of `Spec κ(x)`. -/
-theorem fromSpecResidueField_preimage_eq_top {X : Scheme.{u}} {x : X} {U : X.Opens}
-    (hx : x ∈ U) : X.fromSpecResidueField x ⁻¹ᵁ U = ⊤ := by
-  rw [Scheme.fromSpecResidueField, Scheme.Hom.comp_preimage, fromSpecStalk_preimage_eq_top hx,
-    Scheme.Hom.preimage_top]
 
 open CategoryTheory in
 /-- For an open `U` containing `x`, the restriction from the global sections of `Spec 𝒪_{X,x}` to
