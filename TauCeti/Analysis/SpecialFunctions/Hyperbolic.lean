@@ -78,6 +78,14 @@ theorem _root_.Real.tanh_add (a b : ℝ) :
   rw [eq_div_iff hne, hnum, hden, Real.tanh_eq_sinh_div_cosh (a + b)]
   field_simp
 
+/-- The positive square root of `1 - tanh x ^ 2` is the hyperbolic secant. -/
+@[simp]
+theorem _root_.Real.sqrt_one_sub_tanh_sq (x : ℝ) :
+    √(1 - Real.tanh x ^ 2) = 1 / Real.cosh x := by
+  simpa only [Real.artanh_tanh, one_div, inv_inv] using
+    (congrArg (fun y : ℝ ↦ y⁻¹)
+      (Real.cosh_artanh ⟨Real.neg_one_lt_tanh x, Real.tanh_lt_one x⟩)).symm
+
 /-- **The hyperbolic tangent is strictly monotone.** It is inverted on its range `(-1, 1)` by
 the strictly monotone `Real.artanh`, so it cannot reverse a strict inequality. -/
 theorem _root_.Real.tanh_strictMono : StrictMono Real.tanh := by

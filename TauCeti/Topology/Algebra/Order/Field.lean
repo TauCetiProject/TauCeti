@@ -71,6 +71,13 @@ theorem tendsto_div_nhds_one_of_le_add_const_of_sub_const_le {𝕜 α : Type*} [
   exact (add_zero (1 : 𝕜) ▸ h0.const_add 1).congr' <|
     (hg.eventually_gt_atTop 0).mono fun s h ↦ by grind
 
+/-- The square is strictly less than one sufficiently close to one from below. -/
+theorem eventually_sq_lt_one_nhdsLT_one {𝕜 : Type*} [Field 𝕜] [LinearOrder 𝕜]
+    [IsStrictOrderedRing 𝕜] [TopologicalSpace 𝕜] [OrderTopology 𝕜] :
+    ∀ᶠ x : 𝕜 in 𝓝[<] 1, x ^ 2 < 1 := by
+  filter_upwards [Ioo_mem_nhdsLT (by simp : (-1 : 𝕜) < 1)] with x hx
+  nlinarith [hx.1, hx.2]
+
 section InvPow
 
 variable {𝕜 : Type*} [Field 𝕜] [LinearOrder 𝕜] [IsStrictOrderedRing 𝕜] [TopologicalSpace 𝕜]

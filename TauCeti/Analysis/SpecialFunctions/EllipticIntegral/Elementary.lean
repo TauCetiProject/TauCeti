@@ -14,6 +14,7 @@ import Mathlib.Analysis.SpecialFunctions.Trigonometric.ArctanDeriv
 import Mathlib.Analysis.SpecialFunctions.Trigonometric.Bounds
 import TauCeti.Analysis.SpecialFunctions.Artanh
 import TauCeti.Analysis.SpecialFunctions.Trigonometric.Bounds
+import TauCeti.Topology.Algebra.Order.Field
 
 /-!
 # Elementary evaluations of Legendre's elliptic integrals
@@ -94,9 +95,7 @@ theorem tendsto_legendreF_nhdsLT_one {φ : ℝ} (hφ : |φ| < π / 2) :
     exact pow_pos (cos_pos_of_mem_Ioo (hsub hθ)) 2
   have hcont : ContinuousOn (fun θ ↦ (1 - sin θ ^ 2) ^ (-1 / 2 : ℝ)) (uIcc 0 φ) :=
     ContinuousOn.rpow_const (by fun_prop) fun θ hθ ↦ Or.inl (hpos θ hθ).ne'
-  have hmem : ∀ᶠ k : ℝ in 𝓝[<] 1, k ^ 2 < 1 := by
-    filter_upwards [Ioo_mem_nhdsLT (by norm_num : (-1 : ℝ) < 1)] with k hk
-    nlinarith [hk.1, hk.2]
+  have hmem : ∀ᶠ k : ℝ in 𝓝[<] 1, k ^ 2 < 1 := eventually_sq_lt_one_nhdsLT_one
   have hlim : Tendsto (fun k : ℝ ↦ ∫ θ in 0..φ,
       (1 - k ^ 2 * sin θ ^ 2) ^ (-1 / 2 : ℝ)) (𝓝[<] 1)
       (𝓝 (∫ θ in 0..φ, (1 - 1 ^ 2 * sin θ ^ 2) ^ (-1 / 2 : ℝ))) := by

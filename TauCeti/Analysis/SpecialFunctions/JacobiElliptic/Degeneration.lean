@@ -7,6 +7,8 @@ module
 
 public import TauCeti.Analysis.SpecialFunctions.JacobiElliptic.Basic
 import TauCeti.Analysis.SpecialFunctions.EllipticIntegral.Elementary
+import TauCeti.Analysis.SpecialFunctions.Hyperbolic
+import TauCeti.Topology.Algebra.Order.Field
 
 /-!
 # Hyperbolic limits of the real Jacobi elliptic functions
@@ -50,9 +52,8 @@ theorem tendsto_jacobiAm_nhdsLT_one (u : ℝ) :
     simpa using (tendsto_const_nhds (x := u)).dist hF
   refine tendsto_iff_dist_tendsto_zero.2 (squeeze_zero' ?_ ?_ herr)
   · exact Eventually.of_forall fun _ ↦ dist_nonneg
-  · filter_upwards [Ioo_mem_nhdsLT (by norm_num : (-1 : ℝ) < 1)] with k hk
-    have hk' : k ^ 2 < 1 := by nlinarith [hk.1, hk.2]
-    simpa only [NNReal.coe_one, one_mul, jacobiAm_legendreF hk'] using
+  · filter_upwards [eventually_sq_lt_one_nhdsLT_one] with k hk
+    simpa only [NNReal.coe_one, one_mul, jacobiAm_legendreF hk] using
       (lipschitzWith_jacobiAm k).dist_le_mul u (legendreF (arcsin (tanh u)) k)
 
 /-- `sn(u, k)` tends to `tanh u` as the modulus tends to one from below. -/
@@ -65,22 +66,16 @@ theorem tendsto_jacobiSn_nhdsLT_one (u : ℝ) :
 /-- `cn(u, k)` tends to `1 / cosh u` as the modulus tends to one from below. -/
 theorem tendsto_jacobiCn_nhdsLT_one (u : ℝ) :
     Tendsto (fun k ↦ jacobiCn k u) (𝓝[<] 1) (𝓝 (1 / cosh u)) := by
-  have h := congrArg (fun x : ℝ ↦ x⁻¹)
-    (cosh_artanh ⟨neg_one_lt_tanh u, tanh_lt_one u⟩)
-  simp only [artanh_tanh, one_div, inv_inv] at h
   simp_rw [jacobiCn_def]
-  simpa only [Function.comp_def, cos_arcsin, ← h, one_div]
+  simpa only [Function.comp_def, cos_arcsin, sqrt_one_sub_tanh_sq]
     using continuous_cos.continuousAt.tendsto.comp (tendsto_jacobiAm_nhdsLT_one u)
 
 /-- `dn(u, k)` tends to `1 / cosh u` as the modulus tends to one from below. -/
 theorem tendsto_jacobiDn_nhdsLT_one (u : ℝ) :
     Tendsto (fun k ↦ jacobiDn k u) (𝓝[<] 1) (𝓝 (1 / cosh u)) := by
-  have h := congrArg (fun x : ℝ ↦ x⁻¹)
-    (cosh_artanh ⟨neg_one_lt_tanh u, tanh_lt_one u⟩)
-  simp only [artanh_tanh, one_div, inv_inv] at h
   have hk : Tendsto (fun k : ℝ ↦ k) (𝓝[<] 1) (𝓝 (1 : ℝ)) :=
     tendsto_id.mono_left nhdsWithin_le_nhds
-  simpa only [← jacobiDn_def, one_pow, one_mul, ← h, one_div] using
+  simpa only [← jacobiDn_def, one_pow, one_mul, sqrt_one_sub_tanh_sq] using
     ((tendsto_const_nhds (x := (1 : ℝ))).sub
       ((hk.pow 2).mul ((tendsto_jacobiSn_nhdsLT_one u).pow 2))).sqrt
 
