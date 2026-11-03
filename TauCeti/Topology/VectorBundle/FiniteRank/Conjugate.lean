@@ -136,6 +136,8 @@ noncomputable def doubleConjugateNatIso : conjugate B ⋙ conjugate B ≅ 𝟭 _
 
 variable (B) in
 /-- Conjugation is an equivalence of the bundle-core category with itself. -/
+-- The functor projections must reduce to type the dependent unit and counit comparisons.
+@[expose]
 noncomputable def conjugateEquivalence : FiniteRankBundleCore ℂ B ≌ FiniteRankBundleCore ℂ B where
   functor := conjugate B
   inverse := conjugate B
@@ -162,14 +164,10 @@ noncomputable def conjugateEquivalence : FiniteRankBundleCore ℂ B ≌ FiniteRa
   (rfl)
 
 @[simp] theorem conjugateEquivalence_unitIso :
-    (conjugateEquivalence B).unitIso = (by
-      rw [conjugateEquivalence_functor, conjugateEquivalence_inverse]
-      exact (doubleConjugateNatIso B).symm) := (rfl)
+    (conjugateEquivalence B).unitIso = (doubleConjugateNatIso B).symm := (rfl)
 
 @[simp] theorem conjugateEquivalence_counitIso :
-    (conjugateEquivalence B).counitIso = (by
-      rw [conjugateEquivalence_functor, conjugateEquivalence_inverse]
-      exact doubleConjugateNatIso B) := (rfl)
+    (conjugateEquivalence B).counitIso = doubleConjugateNatIso B := (rfl)
 
 /-- Conjugation is an equivalence, with inverse conjugation. -/
 instance : (conjugate B).IsEquivalence := (conjugateEquivalence B).isEquivalence_functor
