@@ -77,15 +77,9 @@ private theorem adjoint_generator_mul_monomial_mem
       dividedPower_e_mul_dividedPower_f hef hhe hhf, sum_mul, sum_mul]
     refine sum_mem fun k _ => ?_
     -- The coroot binomial is an integral combination of binomials in the full toral generator.
-    have hcoroot : ringChooseSpan (2 • T) ≤ ringChooseSpan T := by
-      rw [ringChooseSpan_le_iff]
-      intro j
-      rw [two_nsmul, Ring.add_choose_eq j (Commute.refl T)]
-      exact sum_mem fun ij _ => mul_mem_ringChooseSpan T
-        (ringChoose_mem_ringChooseSpan T ij.1) (ringChoose_mem_ringChooseSpan T ij.2)
     have hmid : Ring.choose ((2 • T) - (n + a : ℕ) + (2 * k : ℕ)) k ∈
         ringChooseSpan T := by
-      have h := hcoroot (ringChoose_add_intCast_mem_ringChooseSpan (2 • T)
+      have h := ringChooseSpan_nsmul_le 2 T (ringChoose_add_intCast_mem_ringChooseSpan (2 • T)
         (((2 * k : ℕ) : ℤ) - ((n + a : ℕ) : ℤ)) k)
       simpa only [Int.cast_sub, Int.cast_natCast, add_sub_assoc, sub_add_eq_add_sub] using h
     have hshift : Ring.choose (T - (n - k) • (1 : A)) b ∈ ringChooseSpan T := by
@@ -118,28 +112,14 @@ private theorem toAddSubgroup_subringClosure_kostantGenerators_adjoint
     | neg s _ hs => simpa only [mul_neg] using neg_mem hs
   apply le_antisymm
   · intro r hr
-    have hmul : ∀ s ∈ orderedKostantSpan T E F, r * s ∈ orderedKostantSpan T E F := by
-      induction hr using Subring.closure_induction with
-      | mem r hr => exact fun s hs => hstable hr hs
-      | zero => simp
-      | one => simpa only [one_mul] using fun s hs => hs
-      | add r t _ _ hr ht =>
-          intro s hs
-          simpa only [add_mul] using add_mem (hr s hs) (ht s hs)
-      | neg r _ hr =>
-          intro s hs
-          simpa only [neg_mul] using neg_mem (hr s hs)
-      | mul r t _ _ hr ht =>
-          intro s hs
-          simpa only [mul_assoc] using hr (t * s) (ht s hs)
-    simpa only [mul_one] using hmul 1 (one_mem_orderedKostantSpan T E F)
-  · rw [orderedKostantSpan_le_iff]
-    intro a b c
-    rw [orderedKostantMonomial_def]
-    exact Subring.mul_mem _ (Subring.mul_mem _
-      (Subring.subset_closure (mem_kostantGenerators_iff.mpr (Or.inl ⟨a, rfl⟩)))
-      (Subring.subset_closure (mem_kostantGenerators_iff.mpr (Or.inr (Or.inl ⟨b, rfl⟩)))))
-      (Subring.subset_closure (mem_kostantGenerators_iff.mpr (Or.inr (Or.inr ⟨c, rfl⟩))))
+    have hle : Subring.closure (kostantGenerators T E F) ≤
+        (orderedKostantSpan T E F).multiplierRing :=
+      Subring.closure_le.2 fun _ hr => AddSubgroup.mem_multiplierRing.2 fun _ hs => hstable hr hs
+    simpa only [mul_one] using
+      AddSubgroup.mem_multiplierRing.mp (hle hr) 1 (one_mem_orderedKostantSpan T E F)
+  · rw [subringClosure_kostantGenerators_eq_subringClosure_orderedKostantMonomials,
+      orderedKostantSpan_def]
+    exact (AddSubgroup.closure_le _).2 fun _ hx => Subring.subset_closure hx
 
 /-- **Integral ordered spanning with a rank-one toral lattice.** For coroot `dT` and
 integral root weight `w` with `dw = 2`, the generated integral form has ordered span
@@ -163,6 +143,15 @@ theorem toAddSubgroup_subringClosure_kostantGenerators_of_toral_lattice {d : ℕ
     subst w
     exact toAddSubgroup_subringClosure_kostantGenerators_adjoint hef
       (by simpa using hte) (by simpa using htf)
+
+/-- Membership in the integral form with a rank-one toral lattice is membership in the ordered
+span with the full toral generator. -/
+theorem mem_subringClosure_kostantGenerators_iff_of_toral_lattice {d : ℕ} {w : ℤ}
+    (hdw : (d : ℤ) * w = 2) (hef : E * F - F * E = d • T)
+    (hte : T * E - E * T = w • E) (htf : T * F - F * T = -(w • F)) {x : A} :
+    x ∈ Subring.closure (kostantGenerators T E F) ↔ x ∈ orderedKostantSpan T E F := by
+  rw [← Subring.mem_toAddSubgroup,
+    toAddSubgroup_subringClosure_kostantGenerators_of_toral_lattice hdw hef hte htf]
 
 section UniversalEnveloping
 
@@ -188,6 +177,16 @@ theorem toAddSubgroup_kostantForm_of_toral_lattice {d : ℕ} {w : ℤ}
       ((ι ℚ).map_lie t e).symm
   · simpa only [LieRing.of_associative_ring_bracket, htf, map_neg, map_zsmul] using
       ((ι ℚ).map_lie t f).symm
+
+/-- Membership in the rank-one enveloping form with a full toral lattice is membership in the
+ordered lowering, toral-binomial and raising span. -/
+theorem mem_kostantForm_iff_of_toral_lattice {d : ℕ} {w : ℤ}
+    (hdw : (d : ℤ) * w = 2) (hef : ⁅e, f⁆ = d • t)
+    (hte : ⁅t, e⁆ = w • e) (htf : ⁅t, f⁆ = -(w • f))
+    {x : _root_.UniversalEnvelopingAlgebra ℚ L} :
+    x ∈ TauCeti.UniversalEnvelopingAlgebra.kostantForm ![e, f] ![t] ↔
+      x ∈ orderedKostantSpan (ι ℚ t) (ι ℚ e) (ι ℚ f) := by
+  rw [← Subring.mem_toAddSubgroup, toAddSubgroup_kostantForm_of_toral_lattice hdw hef hte htf]
 
 end UniversalEnveloping
 
