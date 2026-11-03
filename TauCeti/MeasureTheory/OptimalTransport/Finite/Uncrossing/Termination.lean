@@ -145,7 +145,7 @@ private theorem exists_settled (A : TransportMatrix μ ν) (q : ι × κ) :
   classical
   generalize hn : (arms A q).card = n
   induction n using Nat.strong_induction_on generalizing A with
-  | h n ih =>
+  | ind n ih =>
     by_cases h : Settled A q
     · exact ⟨A, .refl, h, fun _ _ hp ↦ hp⟩
     · obtain ⟨B, hstep, hcard, hpres⟩ := exists_pivot_step A q h
@@ -162,7 +162,7 @@ private theorem exists_uncrossSteps_settled (A : TransportMatrix μ ν) :
   classical
   generalize hn : (unsettledPrefix A).card = n
   induction n using Nat.strong_induction_on generalizing A with
-  | h n ih =>
+  | ind n ih =>
     by_cases h : ∀ q, Settled A q
     · exact ⟨A, .refl, h⟩
     · let s : Finset (ι ×ₗ κ) := Finset.univ.filter fun p ↦ ¬ Settled A (ofLex p)

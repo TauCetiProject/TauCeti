@@ -33,8 +33,9 @@ Its sublevel sets are images of `W` under the flow: for `T ≥ 0`, `r(x) ≤ e^T
 `ψ_{-T}(x) ∈ W` (`TauCeti.IsLiouvilleCompletion.liouvilleRadialCoordinate_le_exp_iff`), and for
 `T > 0`, `r(x) < e^T` exactly when `ψ_{-T}(x)` lies in the interior of `W`. Hence `r` is
 continuous and its sublevel sets `{r ≤ c}` are compact, so that "outside a compact set" and
-"where `r` is large" mean the same thing. Smoothness of `r` on the cylindrical end is not
-treated here.
+"where `r` is large" mean the same thing. For `c ≥ 1` these truncations `{r ≤ c}` of the
+completion are again Liouville domains, containing `W` in their interior when `c > 1`.
+Smoothness of `r` on the cylindrical end is not treated here.
 
 A function `F : M → ℝ` is linear at infinity with slope `a` (`TauCeti.IsLinearAtInfinity`) when
 `F = a r + b` outside a compact set; on a completion this holds exactly when `F = a r + b` on some
@@ -58,6 +59,8 @@ determined by `F` as soon as `W ≠ M` (`TauCeti.IsLinearAtInfinity.unique`).
 * `TauCeti.IsLiouvilleCompletion.continuous_liouvilleRadialCoordinate`,
   `TauCeti.IsLiouvilleCompletion.isCompact_setOf_liouvilleRadialCoordinate_le`: `r` is continuous
   with compact sublevel sets.
+* `TauCeti.IsLiouvilleCompletion.isLiouvilleDomain_setOf_liouvilleRadialCoordinate_le`: the
+  truncations `{r ≤ c}`, `c ≥ 1`, of a completion are Liouville domains.
 * `TauCeti.IsLiouvilleCompletion.isLinearAtInfinity_iff`: linearity at infinity in terms of the
   region where `r` is large.
 * `TauCeti.IsLinearAtInfinity.unique`: the slope at infinity is unique.
@@ -305,18 +308,34 @@ theorem continuous_liouvilleRadialCoordinate (h : IsLiouvilleCompletion ω α W)
           Real.exp_log (one_pos.trans hc)]
       exact this ▸ isOpen_interior.preimage (hcont _)
 
+/-- **The truncations of a completion are Liouville domains.** For `c ≥ 1`, the sublevel set
+`{r ≤ c}` of the radial coordinate of a completion of the Liouville domain `W`, which is the image
+of `W` under the Liouville flow for time `log c`, is a Liouville domain for the same form and
+primitive. -/
+theorem isLiouvilleDomain_setOf_liouvilleRadialCoordinate_le (h : IsLiouvilleCompletion ω α W)
+    (hZ : RoughForm.interior Z ω.1 = α.1) {c : ℝ} (hc : 1 ≤ c) :
+    IsLiouvilleDomain ω α {x | liouvilleRadialCoordinate Z W x ≤ c} := by
+  rw [h.setOf_liouvilleRadialCoordinate_le_eq hZ hc]
+  exact h.preimage_flowOf hZ (h.isCompleteVectorField hZ) _
+
 /-- The sublevel sets `{r ≤ c}` of the radial coordinate of a completion are compact. -/
 theorem isCompact_setOf_liouvilleRadialCoordinate_le (h : IsLiouvilleCompletion ω α W)
     (hZ : RoughForm.interior Z ω.1 = α.1) (c : ℝ) :
     IsCompact {x | liouvilleRadialCoordinate Z W x ≤ c} := by
-  obtain ⟨ψ, hψ⟩ := h.exists_flow_eq hZ
   rcases lt_or_ge c 1 with hc | hc
   · have : {x | liouvilleRadialCoordinate Z W x ≤ c} = ∅ := eq_empty_of_forall_notMem
       fun x hx ↦ (hc.trans_le (one_le_liouvilleRadialCoordinate Z W x)).not_ge hx
     exact this ▸ isCompact_empty
-  · -- The preimage of `W` under `ψ_{-log c}` is its image under the inverse map `ψ_{log c}`.
-    rw [h.setOf_liouvilleRadialCoordinate_le_eq hZ hc, funext (hψ _), ← ψ.image_eq_preimage_symm]
-    exact h.isCompact.image (ψ.continuous continuous_const continuous_id)
+  · exact (h.isLiouvilleDomain_setOf_liouvilleRadialCoordinate_le hZ hc).isCompact
+
+/-- For `c > 1`, a Liouville domain lies in the interior of the truncation `{r ≤ c}` of its
+completion. -/
+theorem subset_interior_setOf_liouvilleRadialCoordinate_le (h : IsLiouvilleCompletion ω α W)
+    (hZ : RoughForm.interior Z ω.1 = α.1) {c : ℝ} (hc : 1 < c) :
+    W ⊆ interior {x | liouvilleRadialCoordinate Z W x ≤ c} := fun x hx ↦
+  interior_maximal (fun _ hy ↦ le_of_lt hy)
+    (isOpen_lt (h.continuous_liouvilleRadialCoordinate hZ) continuous_const)
+    (by rw [mem_ofPred_eq, (h.liouvilleRadialCoordinate_eq_one_iff hZ).2 hx]; exact hc)
 
 /-- **Linearity at infinity on a completion.** A function is linear at infinity with slope `a`
 exactly when it equals `a r + b` on the region `{r ≥ R}` where the radial coordinate is large. -/

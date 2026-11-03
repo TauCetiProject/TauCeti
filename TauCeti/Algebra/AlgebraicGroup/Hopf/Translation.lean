@@ -193,7 +193,7 @@ theorem rightTranslationAlgEquiv_mul (g h : WithConv (H →ₐ[k] k)) :
     _ = (rightTranslationLinearEquiv g * rightTranslationLinearEquiv h) x :=
       LinearEquiv.congr_fun (rightTranslationLinearEquiv_mul g h) x
     _ = rightTranslationLinearEquiv g (rightTranslationLinearEquiv h x) :=
-      LinearEquiv.mul_apply _ _ x
+      mul_apply_eq_comp _ _ x
     _ = rightTranslationLinearEquiv g (rightTranslationAlgEquiv h x) :=
       congrArg (rightTranslationLinearEquiv g)
         (LinearEquiv.congr_fun (rightTranslationAlgEquiv_toLinearEquiv h) x).symm

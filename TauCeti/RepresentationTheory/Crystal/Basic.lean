@@ -365,6 +365,15 @@ theorem fIter_eq_some_iff : c.fIter i n x = some y ↔ c.eIter i n y = some x :=
     simp only [fIter_succ, eIter_succ', Option.bind_eq_some_iff, ih, c.f_eq_some_iff]
     exact ⟨fun ⟨z, hz, hy⟩ => ⟨z, hy, hz⟩, fun ⟨z, hy, hz⟩ => ⟨z, hz, hy⟩⟩
 
+/-- Lowering `n` times lengthens the raising string by `n`. -/
+theorem ε_of_fIter_eq_some (h : c.fIter i n x = some y) : c.ε i y = c.ε i x + n :=
+  (c.ε_of_eIter_eq_some (c.fIter_eq_some_iff.mp h)).symm
+
+/-- Raising `n` times lengthens the lowering string by `n`. -/
+theorem φ_of_eIter_eq_some (h : c.eIter i n x = some y) : c.φ i y = c.φ i x + n := by
+  have := c.dual.ε_of_fIter_eq_some (by simpa using h)
+  simpa using this
+
 end Strings
 
 /-! ### Strict morphisms -/

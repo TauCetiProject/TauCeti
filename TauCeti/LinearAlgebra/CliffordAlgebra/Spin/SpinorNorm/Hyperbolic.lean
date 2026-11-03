@@ -63,7 +63,7 @@ theorem spinorNorm_hyperbolicTorus (t : Kˣ) :
     refine Subtype.ext (LinearEquiv.ext fun x ↦ ?_)
     ext i
     simp only [coe_specialOrthogonalToOrthogonal, Subgroup.coe_mul, coe_reflectionOrthogonal,
-      LinearEquiv.mul_apply, hyperbolicTorus_apply, reflection_apply, invOf_eq_inv, hw, he,
+      mul_apply_eq_comp, hyperbolicTorus_apply, reflection_apply, invOf_eq_inv, hw, he,
       polar_hyperbolicPlane]
     fin_cases i <;> simp [hw_def, he_def, Matrix.vecHead, Matrix.vecTail] <;> field_simp <;> ring
   rw [spinorNorm_apply, hg, map_mul, orthogonalSpinorNorm_reflectionOrthogonal,

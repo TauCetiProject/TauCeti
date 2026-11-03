@@ -14,6 +14,9 @@ Pointwise evaluation pairs dual-valued and vector-valued functions with Hölder 
 exponents to give an integrable scalar function. This supplies the integrability needed to
 split integrals in weak integration-by-parts formulas. The result specializes Mathlib's
 bilinear Hölder estimate `ContinuousLinearMap.memLp_of_bilin` to the dual pairing.
+
+The Hölder pairing `ContinuousLinearMap.lpPairing` of the multiplication of a normed algebra is
+the integral of the product (`ContinuousLinearMap.lpPairing_mul_eq_integral`).
 -/
 
 public section
@@ -34,3 +37,20 @@ theorem integrable_apply (hf : MemLp f p μ) (hg : MemLp g q μ) :
     ((ContinuousLinearMap.id 𝕜 (StrongDual 𝕜 V)).memLp_of_bilin 1 hf hg)
 
 end MeasureTheory.MemLp
+
+namespace ContinuousLinearMap
+
+open MeasureTheory
+
+variable {α 𝕜 R : Type*} [NontriviallyNormedField 𝕜] [NonUnitalNormedRing R] [NormedSpace 𝕜 R]
+  [IsScalarTower 𝕜 R R] [SMulCommClass 𝕜 R R] [NormedSpace ℝ R] [SMulCommClass ℝ 𝕜 R]
+  [CompleteSpace R] {mα : MeasurableSpace α} {μ : Measure α} {q q' : ℝ≥0∞} [Fact (1 ≤ q)]
+  [Fact (1 ≤ q')] [q.HolderConjugate q']
+
+/-- The Hölder pairing of the multiplication `ContinuousLinearMap.mul 𝕜 R` is the integral of the
+product. -/
+theorem lpPairing_mul_eq_integral (g : Lp R q μ) (f : Lp R q' μ) :
+    (mul 𝕜 R).lpPairing μ q q' g f = ∫ x, g x * f x ∂μ := by
+  simp [lpPairing_eq_integral]
+
+end ContinuousLinearMap

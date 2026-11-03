@@ -184,7 +184,7 @@ of interest, by `TauCeti.YoungTableau.colSubgroup_eq_bot_of_rowSubgroup_eq_top`.
 theorem polytabloid_eq_single_of_colSubgroup_eq_bot (t : YoungTableau μ)
     (h : colSubgroup t = ⊥) :
     polytabloid t = MonoidAlgebra.single (tabloid t) (1 : ℚ) := by
-  rw [polytabloid_def, columnAntisymmetrizer_eq_one t h, map_one, Module.End.one_apply]
+  rw [polytabloid_def, columnAntisymmetrizer_eq_one t h, map_one, one_apply_eq_self]
 
 /-- The polytabloid is the signed sum of the tabloids obtained from `{t}` by the column group. -/
 theorem polytabloid_eq_sum (t : YoungTableau μ) :
@@ -203,7 +203,7 @@ theorem polytabloid_relabel (σ : Equiv.Perm (Fin μ.card)) (t : YoungTableau μ
   rw [polytabloid, polytabloid, columnAntisymmetrizer_relabel, map_mul, map_mul,
     Representation.asAlgebraHom_single_one, Representation.asAlgebraHom_single_one,
     tabloid_relabel]
-  simp only [Module.End.mul_apply, Representation.ofMulAction_single, smul_smul,
+  simp only [mul_apply_eq_comp, Representation.ofMulAction_single, smul_smul,
     inv_mul_cancel, one_smul]
 
 /-- **Relabeling by a column permutation of `t` scales the polytabloid by its sign**:
@@ -219,7 +219,7 @@ theorem polytabloid_relabel_of_mem_colSubgroup {t : YoungTableau μ}
       ((Equiv.Perm.sign q : ℤ) : ℚ) • columnAntisymmetrizer t :=
     mul_columnAntisymmetrizer_left t ⟨q, hq⟩
   rw [polytabloid_relabel, polytabloid_def, ← Representation.asAlgebraHom_single_one,
-    ← Module.End.mul_apply, ← map_mul, hmul, map_smul, LinearMap.smul_apply]
+    ← mul_apply_eq_comp, ← map_mul, hmul, map_smul, LinearMap.smul_apply]
 
 /-- The coefficient, in the polytabloid `e_t`, of the tabloid obtained from `{t}` by a column
 permutation `q` of `t` is the sign of `q`. -/
