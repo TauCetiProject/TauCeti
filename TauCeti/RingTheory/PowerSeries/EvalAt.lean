@@ -12,6 +12,7 @@ public import Mathlib.RingTheory.PowerSeries.GaussNorm
 public import Mathlib.RingTheory.PowerSeries.Restricted
 public import Mathlib.Topology.Algebra.InfiniteSum.Nonarchimedean
 public import TauCeti.RingTheory.PowerSeries.HasseDeriv.Basic
+import Mathlib.Topology.Algebra.InfiniteSum.Module
 import TauCeti.Algebra.Polynomial.Taylor
 
 /-!
@@ -69,7 +70,9 @@ coefficient rings here may have nilpotents.
   point are absolutely summable.
 * `PowerSeries.IsRestricted.hasSum_evalAt`, `PowerSeries.IsRestricted.evalAt_add` and
   `PowerSeries.IsRestricted.evalAt_mul`: a series restricted at `c` converges at every `b` with
-  `‖b‖ ≤ c` in a complete ultrametric algebra, additively and multiplicatively in the series.
+  `‖b‖ ≤ c` in a complete ultrametric algebra, additively and multiplicatively in the series;
+  `PowerSeries.IsRestricted.evalAt_smul` and `PowerSeries.IsRestricted.evalAt_sum` record the
+  compatibility with scalars and finite sums.
 * `PowerSeries.IsRestricted.evalAtHom`: evaluation at such `b` as a ring homomorphism on the
   restricted series.
 * `PowerSeries.evalScalar_monomial`, `PowerSeries.evalScalar_at_zero`,
@@ -441,6 +444,22 @@ theorem IsRestricted.evalAt_add (hf : f.IsRestricted c) (hg : g.IsRestricted c) 
   rw [evalAt_def]
   exact HasSum.tsum_eq
     (by simpa [add_smul] using (hf.hasSum_evalAt hb).add (hg.hasSum_evalAt hb))
+
+/-- Evaluation at a point of norm at most `c` commutes with scalar multiplication of a series
+restricted at `c`. -/
+theorem IsRestricted.evalAt_smul (hf : f.IsRestricted c) (a : R) (hb : ‖b‖ ≤ c) :
+    (a • f).evalAt b = a • f.evalAt b := by
+  rw [evalAt_def]
+  exact HasSum.tsum_eq (by simpa [mul_smul] using HasSum.const_smul a (hf.hasSum_evalAt hb))
+
+/-- Evaluation at a point of norm at most `c` commutes with finite sums of series restricted
+at `c`. -/
+theorem IsRestricted.evalAt_sum {ι : Type*} (s : Finset ι) {f : ι → R⟦X⟧}
+    (hf : ∀ i ∈ s, (f i).IsRestricted c) (hb : ‖b‖ ≤ c) :
+    (∑ i ∈ s, f i).evalAt b = ∑ i ∈ s, (f i).evalAt b := by
+  have h := hasSum_sum fun i hi ↦ (hf i hi).hasSum_evalAt hb
+  rw [evalAt_def]
+  exact HasSum.tsum_eq (by simpa [Finset.sum_smul] using h)
 
 /-- Evaluation at a point of norm at most `c` is multiplicative on series restricted at `c`: this
 is the Cauchy product formula, which holds in a complete ultrametric ring as soon as the terms of

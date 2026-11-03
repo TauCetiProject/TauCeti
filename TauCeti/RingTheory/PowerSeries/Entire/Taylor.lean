@@ -44,7 +44,9 @@ nonvanishing Hasse derivative at every point, so each of its zeros has a finite 
 * `PowerSeries.IsEntire.taylor_add`, `PowerSeries.IsEntire.taylor_smul`: translation is linear on
   entire series.
 * `taylor_one`, `PowerSeries.IsEntire.taylor_mul`: translation is multiplicative on entire series.
-* `PowerSeries.IsEntire.evalAt_taylor`: the Taylor identity `(taylor a f)(b) = f(b + a)`.
+* `evalAt_taylor_of_summable`: the Taylor identity `(taylor a f)(b) = f(b + a)` for any series
+  whose double series at `(a, b)` is summable with rows converging to `(Δⁿ f)(a)`.
+* `PowerSeries.IsEntire.evalAt_taylor`: the Taylor identity for entire series.
 * `PowerSeries.IsEntire.hasSum_taylor`: the Taylor expansion `f(b + a) = ∑ₖ (Δᵏ f)(a) bᵏ`
   converges.
 * `PowerSeries.IsEntire.hasseDeriv_taylor`: Hasse derivatives commute with translation.
@@ -140,6 +142,32 @@ private theorem norm_coeff_hasseDeriv_mul_pow_le_max (f : R⟦X⟧) (a : R) (n m
           (norm_nonneg _) (by positivity))
     _ = _ := by ring
 
+/-- **The Taylor identity from the double series.** If the double series
+`∑ₙ,ₘ coeff m (Δⁿ f) aᵐ bⁿ` is summable and each of its rows `∑ₘ coeff m (Δⁿ f) aᵐ` converges to
+`(Δⁿ f)(a)`, then the Taylor translate at `a` evaluated at `b` is `f(b + a)`. Grouping the terms
+by `n` gives the translate at `b`, and grouping them by `n + m` gives `f` at `b + a`, by the
+binomial theorem. -/
+theorem evalAt_taylor_of_summable {a b : R}
+    (hF : Summable fun p : ℕ × ℕ ↦ coeff p.2 (hasseDeriv p.1 f) * a ^ p.2 * b ^ p.1)
+    (hrow : ∀ n, HasSum (fun m ↦ coeff m (hasseDeriv n f) • a ^ m) ((hasseDeriv n f).evalAt a)) :
+    (taylor a f).evalAt b = f.evalAt (b + a) := by
+  set F : ℕ × ℕ → R := fun p ↦ coeff p.2 (hasseDeriv p.1 f) * a ^ p.2 * b ^ p.1
+  have h₁ : HasSum (fun n ↦ coeff n (taylor a f) • b ^ n) (∑' p, F p) :=
+    hF.hasSum.prod_fiberwise fun n ↦ by
+      simpa only [coeff_taylor, smul_eq_mul] using (hrow n).mul_right (b ^ n)
+  have h₂ : HasSum (fun k ↦ coeff k f • (b + a) ^ k) (∑' p, F p) := by
+    have h := (HasAntidiagonal.sigmaAntidiagonalEquivProd.hasSum_iff.2 hF.hasSum).sigma
+      fun k ↦ hasSum_fintype _
+    simp only [Function.comp_apply, HasAntidiagonal.sigmaAntidiagonalEquivProd_apply,
+      sum_coe_sort (antidiagonal _) F] at h
+    convert h using 2 with k
+    rw [(Commute.all _ _).add_pow', smul_eq_mul, mul_sum]
+    refine sum_congr rfl fun p hp ↦ ?_
+    rw [mem_antidiagonal] at hp
+    simp only [F, coeff_hasseDeriv, add_comm p.2 p.1, hp, nsmul_eq_mul]
+    ring
+  rw [evalAt_def, evalAt_def, h₁.tsum_eq, h₂.tsum_eq]
+
 section Complete
 
 variable [CompleteSpace R]
@@ -172,35 +200,17 @@ theorem IsEntire.taylor_mul {g : R⟦X⟧} (hf : f.IsEntire) (hg : g.IsEntire) (
 `b` is `f(b + a)`. -/
 theorem IsEntire.evalAt_taylor (hf : f.IsEntire) (a b : R) :
     (taylor a f).evalAt b = f.evalAt (b + a) := by
-  set F : ℕ × ℕ → R := fun p ↦ coeff p.2 (PowerSeries.hasseDeriv p.1 f) * a ^ p.2 * b ^ p.1
-  have hF : Summable F := by
-    refine Summable.of_norm <| ((summable_taylorMajorant hf a (norm_nonneg b)).mul_left
-      (max ‖(1 : R)‖ 1 * max ‖(1 : R)‖ 1)).of_nonneg_of_le (fun _ ↦ norm_nonneg _) fun p ↦ ?_
-    calc ‖F p‖ ≤ ‖coeff p.2 (PowerSeries.hasseDeriv p.1 f) * a ^ p.2‖ * ‖b ^ p.1‖ :=
+  refine evalAt_taylor_of_summable (Summable.of_norm <| ((summable_taylorMajorant hf a
+    (norm_nonneg b)).mul_left (max ‖(1 : R)‖ 1 * max ‖(1 : R)‖ 1)).of_nonneg_of_le
+      (fun _ ↦ norm_nonneg _) fun p ↦ ?_) fun n ↦ (hf.hasseDeriv n).hasSum_evalAt a
+  calc ‖coeff p.2 (PowerSeries.hasseDeriv p.1 f) * a ^ p.2 * b ^ p.1‖
+      ≤ ‖coeff p.2 (PowerSeries.hasseDeriv p.1 f) * a ^ p.2‖ * ‖b ^ p.1‖ :=
         norm_mul_le _ _
-      _ ≤ max ‖(1 : R)‖ 1 * ((p.1 + p.2).choose p.1 * ‖coeff (p.1 + p.2) f‖ * ‖a‖ ^ p.2) *
-          (max ‖(1 : R)‖ 1 * ‖b‖ ^ p.1) :=
-        mul_le_mul (norm_coeff_hasseDeriv_mul_pow_le_max f a p.1 p.2)
-          (TauCeti.norm_pow_le_max_mul b p.1) (norm_nonneg _) (by positivity)
-      _ = _ := by ring
-  -- Grouping the terms by the order `n` of the Hasse derivative gives the translate at `b`.
-  have h₁ : HasSum (fun n ↦ coeff n (taylor a f) • b ^ n) (∑' p, F p) :=
-    hF.hasSum.prod_fiberwise fun n ↦ by
-      simpa only [coeff_taylor, smul_eq_mul] using
-        ((hf.hasseDeriv n).hasSum_evalAt a).mul_right (b ^ n)
-  -- Grouping them by the total degree `n + m` gives `f` at `b + a`, by the binomial theorem.
-  have h₂ : HasSum (fun k ↦ coeff k f • (b + a) ^ k) (∑' p, F p) := by
-    have h := (HasAntidiagonal.sigmaAntidiagonalEquivProd.hasSum_iff.2 hF.hasSum).sigma
-      fun k ↦ hasSum_fintype _
-    simp only [Function.comp_apply, HasAntidiagonal.sigmaAntidiagonalEquivProd_apply,
-      sum_coe_sort (antidiagonal _) F] at h
-    convert h using 2 with k
-    rw [(Commute.all _ _).add_pow', smul_eq_mul, mul_sum]
-    refine sum_congr rfl fun p hp ↦ ?_
-    rw [mem_antidiagonal] at hp
-    simp only [F, coeff_hasseDeriv, add_comm p.2 p.1, hp, nsmul_eq_mul]
-    ring
-  rw [evalAt_def, h₁.tsum_eq, (hf.hasSum_evalAt (b + a)).unique h₂]
+    _ ≤ max ‖(1 : R)‖ 1 * ((p.1 + p.2).choose p.1 * ‖coeff (p.1 + p.2) f‖ * ‖a‖ ^ p.2) *
+        (max ‖(1 : R)‖ 1 * ‖b‖ ^ p.1) :=
+      mul_le_mul (norm_coeff_hasseDeriv_mul_pow_le_max f a p.1 p.2)
+        (TauCeti.norm_pow_le_max_mul b p.1) (norm_nonneg _) (by positivity)
+    _ = _ := by ring
 
 /-- **Hasse derivatives commute with Taylor translation** of entire series. -/
 theorem IsEntire.hasseDeriv_taylor (hf : f.IsEntire) (a : R) (k : ℕ) :
