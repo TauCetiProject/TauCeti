@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.Module.Torsion.Basic
 public import Mathlib.RingTheory.DiscreteValuationRing.Basic
 public import TauCeti.RingTheory.PowerSeries.Weierstrass.Charpoly
 
@@ -13,7 +12,7 @@ import TauCeti.NumberTheory.Padics.RingHoms
 import TauCeti.RingTheory.DiscreteValuationRing.Basic
 import TauCeti.RingTheory.Polynomial.Distinguished
 import TauCeti.RingTheory.PowerSeries.Ideal
-import TauCeti.RingTheory.QuotSMulTop
+import TauCeti.RingTheory.PowerSeries.OneAddXPow
 
 /-!
 # The vertical blocks of an elementary Iwasawa module
@@ -35,15 +34,16 @@ contribution `q ^ (μ p ^ n)` to the orders of the quotients `M ⧸ ω_n M` of a
 torsion `Λ`-module, in the Euler quotient at finite level and in Iwasawa's growth formula, where
 `μ` is the sum of the vertical exponents `m`.
 
+The torsion statements hold over any local domain and are in the power-series library:
+`PowerSeries.torsionBy_quotient_span_C_pow_eq_bot` and its case `g = (1 + X) ^ N - 1`,
+`PowerSeries.torsionBy_quotient_span_C_pow_one_add_X_pow_sub_one_eq_bot`.
+
 ## Main results
 
-* `TauCeti.Iwasawa.torsionBy_quotient_span_C_pow_eq_bot`: a series with nonzero reduction
-  modulo the maximal ideal has no nonzero torsion on `Λ ⧸ (ϖ ^ m)`.
 * `TauCeti.Iwasawa.natCard_quotSMulTop_quotient_span_C_pow`: for a Weierstrass factorization
   `g = f * h`, the quotient `Λ ⧸ (ϖ ^ m, g)` has `q ^ (m deg f)` elements.
-* `TauCeti.Iwasawa.torsionBy_quotient_span_C_pow_one_add_X_pow_sub_one_eq_bot` and
-  `TauCeti.Iwasawa.natCard_quotSMulTop_quotient_span_C_pow_one_add_X_pow_sub_one`: the case
-  `g = ω_n`, with `(Λ ⧸ (ϖ ^ m))[ω_n] = 0` and `#(Λ ⧸ (ϖ ^ m, ω_n)) = q ^ (m p ^ n)`.
+* `TauCeti.Iwasawa.natCard_quotSMulTop_quotient_span_C_pow_one_add_X_pow_sub_one`: the case
+  `g = ω_n`, with `#(Λ ⧸ (ϖ ^ m, ω_n)) = q ^ (m p ^ n)`.
 
 ## References
 
@@ -61,16 +61,6 @@ namespace TauCeti.Iwasawa
 
 variable {O : Type*} [CommRing O]
 
-/-- **A vertical block has no torsion.** Over a local domain `O` with a prime `ϖ`, a power series
-`g` with nonzero reduction modulo the maximal ideal acts injectively on `O⟦X⟧ ⧸ (ϖ ^ m)`. -/
-theorem torsionBy_quotient_span_C_pow_eq_bot [IsDomain O] [IsLocalRing O] {ϖ : O} (hϖ : Prime ϖ)
-    {g : O⟦X⟧} (hg : g.map (residue O) ≠ 0) (m : ℕ) :
-    Submodule.torsionBy O⟦X⟧ (O⟦X⟧ ⧸ Ideal.span {C (ϖ ^ m)}) g = ⊥ := by
-  rw [← isSMulRegular_iff_torsionBy_eq_bot, map_pow]
-  refine (prime_C_iff.2 hϖ).isSMulRegular_quotient_span_pow (fun ⟨k, hk⟩ ↦ hg ?_) m
-  -- `ϖ` lies in the maximal ideal, so `C ϖ * k` reduces to zero.
-  rw [hk, map_mul, map_C, (residue_eq_zero_iff ϖ).2 hϖ.not_isUnit, map_zero, zero_mul]
-
 /-- **The order of a vertical block modulo a Weierstrass series.** Let `O` be a discrete valuation
 ring with uniformiser `ϖ`, complete for its maximal ideal, and `g = f * h` a Weierstrass
 factorization in `O⟦X⟧`. Then `O⟦X⟧ ⧸ (ϖ ^ m, g)` has `q ^ (m deg f)` elements, where `q` is the
@@ -83,23 +73,6 @@ theorem natCard_quotSMulTop_quotient_span_C_pow [IsDomain O] [IsDiscreteValuatio
   rw [H.natCard_quotSMulTop_quotient_span_C, ← Ideal.span_singleton_pow, ← hϖ.maximalIdeal_eq,
     TauCeti.IsDiscreteValuationRing.natCard_quotient_maximalIdeal_pow, pow_mul]
 
-/-- `(1 + X) ^ N - 1` is the image of the corresponding polynomial. -/
-private theorem coe_one_add_X_pow_sub_one (N : ℕ) :
-    (((1 + Polynomial.X) ^ N - 1 : Polynomial O) : O⟦X⟧) = (1 + X) ^ N - 1 := by
-  simp
-
-/-- **The cyclotomic kernel of a vertical block is zero.** Over a local domain `O` with a prime
-`ϖ`, `(1 + X) ^ N - 1` acts injectively on `O⟦X⟧ ⧸ (ϖ ^ m)` for `N ≠ 0`; in particular
-`(O⟦X⟧ ⧸ (ϖ ^ m))[ω_n] = 0` for `ω_n = (1 + X) ^ p ^ n - 1`. -/
-theorem torsionBy_quotient_span_C_pow_one_add_X_pow_sub_one_eq_bot [IsDomain O] [IsLocalRing O]
-    {ϖ : O} (hϖ : Prime ϖ) {N : ℕ} (hN : N ≠ 0) (m : ℕ) :
-    Submodule.torsionBy O⟦X⟧ (O⟦X⟧ ⧸ Ideal.span {C (ϖ ^ m)}) ((1 + X) ^ N - 1) = ⊥ := by
-  refine torsionBy_quotient_span_C_pow_eq_bot hϖ (fun h ↦ ?_) m
-  -- Over the residue field, `(1 + X) ^ N - 1` is the image of a monic polynomial of degree `N`.
-  refine (TauCeti.Polynomial.monic_one_add_X_pow_sub_one (R := ResidueField O) hN).ne_zero ?_
-  rw [← Polynomial.coe_eq_zero_iff]
-  simpa using h
-
 /-- **The cyclotomic quotient of a vertical block.** Let `O` be a discrete valuation ring with
 uniformiser `ϖ`, complete for its maximal ideal, whose residue field has characteristic `p`, with
 cardinality `q`. Then `O⟦X⟧ ⧸ (ϖ ^ m, ω_n)` has `q ^ (m p ^ n)` elements, where
@@ -111,7 +84,8 @@ theorem natCard_quotSMulTop_quotient_span_C_pow_one_add_X_pow_sub_one [IsDomain 
       Nat.card (ResidueField O) ^ (m * p ^ n) := by
   have H := (TauCeti.Polynomial.isDistinguishedAt_one_add_X_pow_sub_one hp hpO n
     ).isWeierstrassFactorizationAt
-  rw [coe_one_add_X_pow_sub_one] at H
+  simp only [Polynomial.coe_sub, Polynomial.coe_pow, Polynomial.coe_add, Polynomial.coe_one,
+    Polynomial.coe_X] at H
   rw [natCard_quotSMulTop_quotient_span_C_pow hϖ H,
     TauCeti.Polynomial.natDegree_one_add_X_pow_sub_one]
 
