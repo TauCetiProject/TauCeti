@@ -93,6 +93,9 @@ noncomputable def comapRegularMul : comapRegular f ⊗ comapRegular f ⟶ comapR
   Hom.mk' (tensorDesc (μ : B ⊗ B ⟶ B) (mul_tensorπ_condition f)) (by
     rw [← cancel_epi (A ◁ tensorπ _ _), whiskerLeft_tensorπ_smul_assoc, tensorπ_tensorDesc,
       selfLeftAction_actionHomRight, whiskerLeft_tensorπ_tensorDesc_assoc]
+    -- Rewriting with `comapRegular_smul` leaves `(comapRegular f).X` in the associators and
+    -- whiskerings, where the naturality lemmas need `B` syntactically, and `comapRegular_X`
+    -- cannot be rewritten there (the motive is not type correct). So the goal is restated in `C`.
     change (α_ A B B).inv ≫ (f ▷ B ≫ μ) ▷ B ≫ μ = A ◁ μ ≫ f ▷ B ≫ μ
     rw [comp_whiskerRight_assoc, MonObj.mul_assoc, ← associator_inv_naturality_left_assoc,
       Iso.inv_hom_id_assoc, whisker_exchange_assoc])
