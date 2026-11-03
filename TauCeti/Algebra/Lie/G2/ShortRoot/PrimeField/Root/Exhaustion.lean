@@ -48,7 +48,7 @@ theorem tangentMatrix_apply_eq_zero_of_not_root
     (x : Module.Dual (ZMod 3) (Bialgebra.CotangentSpace (ZMod 3) carrierAlgebra))
     (i j : Fin 7) (hij : i ≠ j) (hroot : weight i - weight j ∉ Set.range g2Root) :
     tangentMatrix x i j = 0 := by
-  apply crossDerivation_apply_eq_zero_of_not_root (by decide : IsUnit (2 : ZMod 3))
+  apply crossDerivation_apply_eq_zero_of_not_root (by decide : IsUnit (2 : ZMod 3)).isRegular
     (i := i) (j := j) ?_ hij hroot
   intro c
   convert tangentMatrix_mul_crossOperatorPrime x c using 1 <;>
