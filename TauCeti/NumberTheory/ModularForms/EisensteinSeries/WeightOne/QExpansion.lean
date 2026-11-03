@@ -25,9 +25,11 @@ at `k = 1`. For primitive `φ` this is `2 (-2π i) g(φ⁻¹) / v` times the twi
 raised series `E₁^{ψ,φ,t}`.
 
 The computation starts from the expansion of the weighted weight-one series in powers of
-`e(z / N) = e^(2π i z / N)` (`TauCeti.EisensteinSeries.hasSum_weightedE1_sub_valueAtInfty`),
-whose coefficient of `e(z / N)^(c k)` is `∑_j (W(c, j) - W(-c, -j)) e(k j / N)`. For the
-character weight the parity makes the odd part `W(c, j) - W(-c, -j)` equal to `2 ψ(c / v) φ⁻¹(j)`
+`e(z / N) = e^(2π i z / N)` (`TauCeti.EisensteinSeries.hasSum_weightedE1_sub_valueAtInfty`) as
+the double series `-2π i / N ∑_{c, k ≥ 1} w(c, k) e(z / N)^(c k)`, with inner weights
+`w(c, k) = ∑_j (W(c, j) - W(-c, -j)) e(k j / N)`; the coefficient of `e(z / N)^n` is `-2π i / N`
+times the sum of the `w(c, k)` over the pairs with `c k = n`. For the character weight
+the parity makes the odd part `W(c, j) - W(-c, -j)` equal to `2 ψ(c / v) φ⁻¹(j)`
 when `v ∣ c`, and the sum over `j` modulo `N` is the discrete Fourier transform of `φ⁻¹` pulled
 back from `ZMod v` (`ZMod.dft_comp_natCast_val`): with `L = N / v`, it vanishes unless `L ∣ k`,
 and is `L φ̂(k / L)` otherwise. So only the pairs `(c, k) = (v c', L m)` contribute, with
@@ -83,9 +85,11 @@ private lemma charWeight_sub_charWeight_neg (huv : u * v ∣ N) (hpar : ψ (-1) 
     linear_combination (-(ψ ((c / v : ℤ) : ZMod u) * φ⁻¹ (j.val : ZMod v))) * hpar
   · simp [hc]
 
-/-- The coefficient of `e(z / N)^(c k)` in the `q`-expansion of the weight-one series of the
-character weight: it vanishes unless `v ∣ c` and `L = N / v` divides `k`, and then it is
-`2 ψ(c / v) L φ̂(k / L)`, with `φ̂(m) = ∑_{r mod v} φ⁻¹(r) e(r m / v)`. -/
+/-- The inner weight at the pair `(c, k)` of the double series of the weight-one series of the
+character weight (`hasSum_weightedE1_sub_valueAtInfty`, before the factor `-2π i / N` and before
+grouping the pairs with the same product `c k`): it vanishes unless `v ∣ c` and `L = N / v`
+divides `k`, and then it is `2 ψ(c / v) L φ̂(k / L)`, with
+`φ̂(m) = ∑_{r mod v} φ⁻¹(r) e(r m / v)`. -/
 private lemma sum_charWeight_mul_stdAddChar [NeZero v] (huv : u * v ∣ N)
     (hpar : ψ (-1) * φ (-1) = -1) (c k : ℕ) :
     ∑ j : ZMod N, (charWeight N ψ φ ![(c : ZMod N), j] - charWeight N ψ φ ![-(c : ZMod N), -j]) *

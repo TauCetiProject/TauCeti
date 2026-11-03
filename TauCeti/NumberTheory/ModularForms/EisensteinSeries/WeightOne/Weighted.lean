@@ -13,11 +13,12 @@ public import Mathlib.NumberTheory.ModularForms.QExpansion
 import TauCeti.Analysis.Complex.UpperHalfPlane.Manifold
 import TauCeti.Analysis.SpecialFunctions.Exp.Summable
 import TauCeti.Analysis.SpecialFunctions.Trigonometric.Cotangent
+import TauCeti.Data.Int.Sign
 import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.Basic
 import TauCeti.NumberTheory.ModularForms.Basic
+import TauCeti.NumberTheory.TsumDivisorsAntidiagonal
 import Mathlib.Analysis.Normed.Group.Tannery
 import Mathlib.Analysis.Normed.Ring.Finite
-import Mathlib.NumberTheory.TsumDivisorsAntidiagonal
 
 /-!
 # Weight-one Eisenstein series weighted by a function of residues
@@ -84,7 +85,9 @@ For the `q`-expansion each cotangent at a point `w` of the upper half-plane is e
 (`TauCeti.hasSum_pi_mul_cot_pi_mul_add_pi_mul_I`). In the row `m` at `x = (a₀ z + a₁) / N`, write
 `x - m z = (n z + a₁) / N` with `n = a₀ - m N`: as `m` runs over `ℤ`, `n` runs over the residue
 class of `a₀`, the classes `n = c ≥ 1` and `n = -c ≤ -1` expand in powers of `e(z / N)`, and the
-cotangents `π cot (π m z)` cancel in pairs. Hence `F_a` minus its constant term `c_a` is
+cotangents `π cot (π m z)` cancel in pairs
+(`TauCeti.hasSum_pi_mul_cot_pi_mul_intCast_mul_add_sign`). Hence `F_a` minus its constant term
+`c_a` is
 `-2π i ∑_{c, k ≥ 1} D_a(c, k) e(z / N)^(c k)`, where `D_a(c, k)` is `e(k a₁ / N)` if `c ≡ a₀`
 minus `e(-k a₁ / N)` if `c ≡ -a₀`; the rows at the division points `z / 2` and `1 / 2` of the
 quasi-periods have no nonconstant terms. Summing over `a`, `E₁^W` minus its value at `i∞` is
@@ -775,111 +778,6 @@ private lemma norm_divCoeff_le (M b₀ b₁ c k : ℕ) [NeZero M] : ‖divCoeff 
     split_ifs <;> simp
   linarith
 
-/-- A family over `ℕ+ × ℕ+` bounded by `C ‖r‖^(c k)`, with `‖r‖ < 1`, is summable. -/
-private lemma summable_mul_pow_mul {r : ℂ} (hr : ‖r‖ < 1) {C : ℝ} {f : ℕ+ × ℕ+ → ℂ}
-    (hf : ∀ p, ‖f p‖ ≤ C) : Summable fun p : ℕ+ × ℕ+ ↦ f p * r ^ ((p.1 : ℕ) * p.2) := by
-  have hr' : ‖‖r‖‖ < 1 := by simpa using hr
-  refine ((summable_prod_mul_pow 0 hr').mul_left C).of_norm_bounded fun p ↦ ?_
-  simp only [pow_zero, one_mul, norm_mul, norm_pow]
-  exact mul_le_mul_of_nonneg_right (hf p) (by positivity)
-
-/-- `e((c z + b) / M)^k = e(k b / M) e(z / M)^(c k)`. -/
-private lemma cexp_div_pow (M c k : ℕ) [NeZero M] (b : ℤ) (z : ℂ) :
-    cexp (2 * π * Complex.I * ((c * z + b) / M)) ^ k =
-      ZMod.stdAddChar ((k : ZMod M) * (b : ZMod M)) *
-        cexp (2 * π * Complex.I * z / M) ^ (c * k) := by
-  rw [← Int.cast_natCast (R := ZMod M) k, ← Int.cast_mul, ZMod.stdAddChar_coe,
-    ← Complex.exp_nat_mul, ← Complex.exp_nat_mul, ← Complex.exp_add]
-  congr 1
-  push_cast
-  ring
-
-/-- The cotangent at the point `(c z + b) / M` of the upper half-plane, as a series in
-`e(z / M)`. -/
-private lemma hasSum_cot_div (M : ℕ) [NeZero M] (c : ℕ+) (b : ℤ) (z : ℍ) :
-    HasSum (fun k : ℕ+ ↦ -2 * π * Complex.I * (ZMod.stdAddChar ((k : ZMod M) * (b : ZMod M)) *
-        cexp (2 * π * Complex.I * z / M) ^ ((c : ℕ) * k)))
-      (π * cot (π * ((c * (z : ℂ) + b) / M)) + π * Complex.I) := by
-  have hw : 0 < ((c * (z : ℂ) + b) / M).im := by
-    have hM : (0 : ℝ) < M := Nat.cast_pos.mpr (NeZero.pos M)
-    simpa [Complex.div_natCast_im] using div_pos (mul_pos (by simp) z.im_pos) hM
-  convert TauCeti.hasSum_pi_mul_cot_pi_mul_add_pi_mul_I hw using 3 with k
-  rw [cexp_div_pow]
-
-/-- The cotangents at the points `(c z + b) / M` with `c ≥ 1` in a residue class `d` modulo `M`,
-as a double series in `e(z / M)`. -/
-private lemma hasSum_cot_div_residue (M : ℕ) [NeZero M] (d : ZMod M) (b : ℤ) (z : ℍ) :
-    HasSum (fun c : ℕ+ ↦ if (c : ZMod M) = d then
-        π * cot (π * ((c * (z : ℂ) + b) / M)) + π * Complex.I else 0)
-      (-2 * π * Complex.I * ∑' p : ℕ+ × ℕ+,
-        (if (p.1 : ZMod M) = d then ZMod.stdAddChar ((p.2 : ZMod M) * (b : ZMod M)) else 0) *
-          cexp (2 * π * Complex.I * z / M) ^ ((p.1 : ℕ) * p.2)) := by
-  have hr : ‖cexp (2 * π * Complex.I * z / M)‖ < 1 := by
-    simpa [Function.Periodic.qParam] using UpperHalfPlane.norm_qParam_lt_one M z
-  have hs := summable_mul_pow_mul hr (C := 1)
-    (f := fun p : ℕ+ × ℕ+ ↦
-      if (p.1 : ZMod M) = d then ZMod.stdAddChar ((p.2 : ZMod M) * (b : ZMod M)) else 0)
-    fun p ↦ by split_ifs <;> simp
-  rw [← tsum_mul_left]
-  refine ((hs.mul_left (-2 * π * Complex.I)).hasSum).prod_fiberwise fun c ↦ ?_
-  split_ifs with hc
-  · simpa [hc] using hasSum_cot_div M c b z
-  · simp
-
-/-- The odd part `π cot (π m z) + sign(m) π i` of the cotangent rows sums to zero over `m ∈ ℤ`. -/
-private lemma hasSum_pi_mul_cot_add_sign (z : ℍ) :
-    HasSum (fun m : ℤ ↦ π * cot (π * (m * (z : ℂ))) + m.sign * (π * Complex.I)) 0 := by
-  set β : ℤ → ℂ := fun m ↦ π * cot (π * (m * (z : ℂ))) + m.sign * (π * Complex.I) with hβ
-  set ρ := Real.exp (-2 * π * z.im)
-  have hρ : ρ < 1 := Real.exp_lt_one_iff.mpr (by nlinarith [Real.pi_pos, z.im_pos])
-  -- the terms `m ≥ 1` decay geometrically, as the cotangent approaches `-π i`
-  have hs : Summable fun n : ℕ ↦ β n := by
-    refine ((summable_geometric_of_lt_one (Real.exp_pos _).le hρ).mul_left
-      (2 * π / (1 - ρ))).of_norm_bounded fun n ↦ ?_
-    have hC : 0 ≤ 2 * π / (1 - ρ) := div_nonneg (by positivity) (by linarith)
-    rcases Nat.eq_zero_or_pos n with rfl | hn
-    · simp only [hβ, CharP.cast_eq_zero, zero_mul, mul_zero, cot_zero,
-        Int.sign_zero, Int.cast_zero, add_zero, norm_zero, pow_zero, mul_one]
-      exact hC
-    have hnz : z.im ≤ ((n : ℂ) * z).im := by
-      simpa using le_mul_of_one_le_left z.im_pos.le (Nat.one_le_cast.mpr hn)
-    have h := norm_pi_mul_cot_pi_mul_add_pi_mul_I_le z.im_pos hnz
-    have hexp : Real.exp (-2 * π * ((n : ℂ) * z).im) = ρ ^ n := by
-      rw [← Real.exp_nat_mul]
-      congr 1
-      simp
-      ring
-    rw [hexp] at h
-    have hβn : β n = π * cot (π * (n * (z : ℂ))) + π * Complex.I := by
-      simp [hβ, Int.sign_natCast_of_ne_zero hn.ne']
-    rw [hβn]
-    exact h
-  have hodd (n : ℕ) : β (-((n : ℤ) + 1)) = -β ((n + 1 : ℕ) : ℤ) := by
-    simp only [hβ, Int.cast_neg, neg_mul, mul_neg, cot_neg, Int.sign_neg]
-    push_cast
-    ring
-  have h₁ := hs.hasSum
-  have h₂ : HasSum (fun n : ℕ ↦ β (-((n : ℤ) + 1))) (-∑' n : ℕ, β n) := by
-    have h := ((hasSum_nat_add_iff' 1).mpr h₁).neg
-    simp only [Finset.range_one, Finset.sum_singleton] at h
-    convert h using 1
-    · ext n
-      rw [hodd]
-    · simp [hβ]
-  simpa using h₁.of_nat_of_neg_add_one h₂
-
-/-- The signs of the row index `m` and of `b₀ - m M` cancel, except at `m = 0`. -/
-private lemma sign_sub_mul_add_sign {M b₀ : ℕ} (hb : b₀ < M) (m : ℤ) :
-    ((b₀ : ℤ) - m * M).sign + m.sign = if m = 0 ∧ b₀ ≠ 0 then 1 else 0 := by
-  rcases lt_trichotomy m 0 with hm | rfl | hm
-  · rw [Int.sign_eq_one_of_pos (by nlinarith), Int.sign_eq_neg_one_of_neg hm]
-    simp [hm.ne]
-  · rcases eq_or_ne b₀ 0 with rfl | hb₀
-    · simp
-    · simp [Int.sign_natCast_of_ne_zero hb₀, hb₀]
-  · rw [Int.sign_eq_neg_one_of_neg (by nlinarith), Int.sign_eq_one_of_pos hm]
-    simp [hm.ne']
-
 /-- **The corrected cotangents along a residue class.** Over `n ≡ b₀` modulo `M`, the cotangents
 `π cot (π (n z + b₁) / M) + sign(n) π i` sum to `-2π i ∑_{c, k ≥ 1} D(c, k) e(z / M)^(c k)`,
 with `D = divCoeff M b₀ b₁`, plus the term `π cot (π b₁ / M)` at `n = 0` if `b₀ ≡ 0`: the classes
@@ -904,12 +802,14 @@ private lemma hasSum_cot_residue_int (M b₀ b₁ : ℕ) [NeZero M] (z : ℍ) :
   -- the classes `n ≥ 1`
   have h₁ : HasSum (fun n : ℕ ↦ Φ n) (-2 * π * Complex.I * P + Φ 0) := by
     refine hasSum_pnat_iff.mp ?_
-    convert hasSum_cot_div_residue M (b₀ : ZMod M) (b₁ : ℤ) z using 2 with c
+    convert hasSum_ite_pi_mul_cot_pi_mul_div_add_pi_mul_I M (b₀ : ZMod M) (b₁ : ℤ) z.im_pos
+      using 2 with c
     simp [hΦ, Int.sign_natCast_of_ne_zero c.ne_zero]
   -- the classes `n ≤ -1`, by the oddness of the cotangent
   have h₂ : HasSum (fun n : ℕ ↦ Φ (-((n : ℤ) + 1))) (-(-2 * π * Complex.I * Q)) := by
     refine (hasSum_pnat_iff_hasSum_succ (f := fun n : ℕ ↦ Φ (-n))).mp ?_
-    convert (hasSum_cot_div_residue M (-(b₀ : ZMod M)) (-(b₁ : ℤ)) z).neg using 2 with c
+    convert (hasSum_ite_pi_mul_cot_pi_mul_div_add_pi_mul_I M (-(b₀ : ZMod M)) (-(b₁ : ℤ))
+      z.im_pos).neg using 2 with c
     have hc : ((-((c : ℕ) : ℤ) : ℤ) : ZMod M) = b₀ ↔ ((c : ℕ) : ZMod M) = -(b₀ : ZMod M) := by
       push_cast
       exact neg_eq_iff_eq_neg
@@ -968,7 +868,8 @@ private lemma hasSum_cotRow_div {M b₀ : ℕ} [NeZero M] (hb : b₀ < M) (b₁ 
     exact absurd ⟨m, by dsimp only; linear_combination hm⟩ hn
   have hrows := (hinj.hasSum_iff hrange).mpr (hasSum_cot_residue_int M b₀ b₁ z)
   set δ : ℂ := if b₀ = 0 then 0 else -(π * Complex.I)
-  convert (hrows.add (hasSum_pi_mul_cot_add_sign z)).add (hasSum_ite_eq (0 : ℤ) δ) using 1
+  convert (hrows.add (hasSum_pi_mul_cot_pi_mul_intCast_mul_add_sign z.im_pos)).add
+    (hasSum_ite_eq (0 : ℤ) δ) using 1
   · ext m
     have hres : (((b₀ : ℤ) - m * M : ℤ) : ZMod M) = b₀ := by simp
     have harg : ((((b₀ : ℤ) - m * M : ℤ) : ℂ) * z + b₁) / M = (b₀ * (z : ℂ) + b₁) / M - m * z := by
@@ -976,7 +877,8 @@ private lemma hasSum_cotRow_div {M b₀ : ℕ} [NeZero M] (hb : b₀ < M) (b₁ 
       push_cast
       ring
     have hs : ((((b₀ : ℤ) - m * M).sign + m.sign : ℤ) : ℂ) = if m = 0 ∧ b₀ ≠ 0 then 1 else 0 := by
-      rw [sign_sub_mul_add_sign hb m]
+      rw [Int.sign_sub_mul_add_sign (Int.natCast_nonneg b₀) (by exact_mod_cast hb) m]
+      simp only [ne_eq, Nat.cast_eq_zero]
       split_ifs <;> simp
     have hδ : (if m = 0 then δ else 0) =
         -(if m = 0 ∧ b₀ ≠ 0 then 1 else 0) * (π * Complex.I) := by

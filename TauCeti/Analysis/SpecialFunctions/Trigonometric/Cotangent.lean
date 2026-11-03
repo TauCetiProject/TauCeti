@@ -5,7 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.SpecialFunctions.Complex.CircleAddChar
 public import Mathlib.Analysis.SpecialFunctions.Trigonometric.Cotangent
+import TauCeti.NumberTheory.TsumDivisorsAntidiagonal
 import Mathlib.Analysis.Complex.UpperHalfPlane.Exp
 import Mathlib.NumberTheory.ModularForms.EisensteinSeries.Summable
 
@@ -24,13 +26,21 @@ lattice series of the Weierstrass `ζ` function.
 Away from the real axis, `π cot (π u)` tends to `-π i` as `Im u → ∞`, and to `π i` as
 `Im u → -∞`, exponentially fast: with `q = e^(2π i u)`, `π cot (π u) + π i = 2π q / (i (1 - q))`
 (`TauCeti.norm_pi_mul_cot_pi_mul_add_pi_mul_I_le`,
-`TauCeti.norm_pi_mul_cot_pi_mul_sub_pi_mul_I_le`).
+`TauCeti.norm_pi_mul_cot_pi_mul_sub_pi_mul_I_le`). Correcting by these limits, the cotangents
+`π cot (π m w) + sign(m) π i` are odd in `m ∈ ℤ` and sum to `0`; at the division points
+`(c z + b) / M` the `q`-expansion is a series in `e(z / M) = e^(2π i z / M)` with coefficients
+`e(k b / M)`.
 
 ## Main results
 
 * `Complex.cot_neg`, `Complex.cot_zero`: the cotangent is odd, with junk value `0` at `0`.
 * `TauCeti.hasSum_one_div_sub_intCast_add_one_div_intCast`: the expansion over `ℤ`.
 * `TauCeti.hasSum_pi_mul_cot_pi_mul_add_pi_mul_I`: the `q`-expansion in the upper half-plane.
+* `TauCeti.hasSum_pi_mul_cot_pi_mul_div_add_pi_mul_I`,
+  `TauCeti.hasSum_ite_pi_mul_cot_pi_mul_div_add_pi_mul_I`: the `q`-expansion at the division
+  points `(c z + b) / M`, for one `c ≥ 1` and summed over a residue class of `c` modulo `M`.
+* `TauCeti.hasSum_pi_mul_cot_pi_mul_intCast_mul_add_sign`: the corrected cotangents
+  `π cot (π m w) + sign(m) π i` sum to `0` over `m ∈ ℤ`.
 * `TauCeti.norm_pi_mul_cot_pi_mul_add_pi_mul_I_le`,
   `TauCeti.norm_pi_mul_cot_pi_mul_sub_pi_mul_I_le`: the exponential approach to `∓ π i`.
 -/
@@ -143,5 +153,93 @@ theorem norm_pi_mul_cot_pi_mul_sub_pi_mul_I_le {u : ℂ} {t : ℝ} (ht : 0 < t) 
   rw [mul_neg, cot_neg, Complex.neg_im, mul_neg, neg_add_eq_sub, norm_sub_rev] at h
   convert h using 3
   ring
+
+/-- **The `q`-expansion of the cotangent at a division point**: if `0 < Im z`, `c ≥ 1` and
+`b ∈ ℤ`, then `π cot (π (c z + b) / M) + π i = -2π i ∑_{k ≥ 1} e(k b / M) e(z / M)^(c k)`, where
+`e(k b / M) = ZMod.stdAddChar (k b)` and `e(z / M) = e^(2π i z / M)`. -/
+theorem hasSum_pi_mul_cot_pi_mul_div_add_pi_mul_I (M : ℕ) [NeZero M] (c : ℕ+) (b : ℤ) {z : ℂ}
+    (hz : 0 < z.im) :
+    HasSum (fun k : ℕ+ ↦ -2 * π * I * (ZMod.stdAddChar ((k : ZMod M) * (b : ZMod M)) *
+        cexp (2 * π * I * z / M) ^ ((c : ℕ) * k)))
+      (π * cot (π * ((c * z + b) / M)) + π * I) := by
+  have hw : 0 < ((c * z + b) / M).im := by
+    have hM : (0 : ℝ) < M := Nat.cast_pos.mpr (NeZero.pos M)
+    simpa [Complex.div_natCast_im] using div_pos (mul_pos (by simp) hz) hM
+  -- `e((c z + b) / M)^k = e(k b / M) e(z / M)^(c k)`
+  have hpow (k : ℕ) : cexp (2 * π * I * ((c * z + b) / M)) ^ k =
+      ZMod.stdAddChar ((k : ZMod M) * (b : ZMod M)) * cexp (2 * π * I * z / M) ^ ((c : ℕ) * k) := by
+    rw [← Int.cast_natCast (R := ZMod M) k, ← Int.cast_mul, ZMod.stdAddChar_coe,
+      ← Complex.exp_nat_mul, ← Complex.exp_nat_mul, ← Complex.exp_add]
+    congr 1
+    push_cast
+    ring
+  convert hasSum_pi_mul_cot_pi_mul_add_pi_mul_I hw using 3 with k
+  rw [hpow]
+
+/-- **The `q`-expansion of the cotangents at the division points of a residue class**: if
+`0 < Im z`, the cotangents `π cot (π (c z + b) / M) + π i` with `c ≥ 1` and `c ≡ d` modulo `M` sum
+to the absolutely convergent double series `-2π i ∑_{c ≡ d, k ≥ 1} e(k b / M) e(z / M)^(c k)`. -/
+theorem hasSum_ite_pi_mul_cot_pi_mul_div_add_pi_mul_I (M : ℕ) [NeZero M] (d : ZMod M) (b : ℤ)
+    {z : ℂ} (hz : 0 < z.im) :
+    HasSum (fun c : ℕ+ ↦ if (c : ZMod M) = d then
+        π * cot (π * ((c * z + b) / M)) + π * I else 0)
+      (-2 * π * I * ∑' p : ℕ+ × ℕ+,
+        (if (p.1 : ZMod M) = d then ZMod.stdAddChar ((p.2 : ZMod M) * (b : ZMod M)) else 0) *
+          cexp (2 * π * I * z / M) ^ ((p.1 : ℕ) * p.2)) := by
+  have hr : ‖cexp (2 * π * I * z / M)‖ < 1 := by
+    simpa [Function.Periodic.qParam] using
+      Function.Periodic.norm_qParam_lt_one (Nat.cast_pos.mpr (NeZero.pos M)) hz
+  have hs := summable_mul_pow_mul hr (C := 1)
+    (f := fun p : ℕ+ × ℕ+ ↦
+      if (p.1 : ZMod M) = d then ZMod.stdAddChar ((p.2 : ZMod M) * (b : ZMod M)) else 0)
+    fun p ↦ by split_ifs <;> simp
+  rw [← tsum_mul_left]
+  refine ((hs.mul_left (-2 * π * I)).hasSum).prod_fiberwise fun c ↦ ?_
+  split_ifs with hc
+  · simpa [hc] using hasSum_pi_mul_cot_pi_mul_div_add_pi_mul_I M c b hz
+  · simp
+
+/-- **The corrected cotangents over `ℤ` sum to zero**: if `0 < Im w`, the terms
+`π cot (π m w) + sign(m) π i` are odd in `m ∈ ℤ`, decay geometrically, and sum to `0`. -/
+theorem hasSum_pi_mul_cot_pi_mul_intCast_mul_add_sign {w : ℂ} (hw : 0 < w.im) :
+    HasSum (fun m : ℤ ↦ π * cot (π * (m * w)) + m.sign * (π * I)) 0 := by
+  set β : ℤ → ℂ := fun m ↦ π * cot (π * (m * w)) + m.sign * (π * I) with hβ
+  set ρ := Real.exp (-2 * π * w.im)
+  have hρ : ρ < 1 := Real.exp_lt_one_iff.mpr (by nlinarith [Real.pi_pos])
+  -- the terms `m ≥ 1` decay geometrically, as the cotangent approaches `-π i`
+  have hs : Summable fun n : ℕ ↦ β n := by
+    refine ((summable_geometric_of_lt_one (Real.exp_pos _).le hρ).mul_left
+      (2 * π / (1 - ρ))).of_norm_bounded fun n ↦ ?_
+    have hC : 0 ≤ 2 * π / (1 - ρ) := div_nonneg (by positivity) (by linarith)
+    rcases Nat.eq_zero_or_pos n with rfl | hn
+    · simp only [hβ, CharP.cast_eq_zero, zero_mul, mul_zero, cot_zero,
+        Int.sign_zero, Int.cast_zero, add_zero, norm_zero, pow_zero, mul_one]
+      exact hC
+    have hnw : w.im ≤ ((n : ℂ) * w).im := by
+      simpa using le_mul_of_one_le_left hw.le (Nat.one_le_cast.mpr hn)
+    have h := norm_pi_mul_cot_pi_mul_add_pi_mul_I_le hw hnw
+    have hexp : Real.exp (-2 * π * ((n : ℂ) * w).im) = ρ ^ n := by
+      rw [← Real.exp_nat_mul]
+      congr 1
+      simp
+      ring
+    rw [hexp] at h
+    have hβn : β n = π * cot (π * (n * w)) + π * I := by
+      simp [hβ, Int.sign_natCast_of_ne_zero hn.ne']
+    rw [hβn]
+    exact h
+  have hodd (n : ℕ) : β (-((n : ℤ) + 1)) = -β ((n + 1 : ℕ) : ℤ) := by
+    simp only [hβ, Int.cast_neg, neg_mul, mul_neg, cot_neg, Int.sign_neg]
+    push_cast
+    ring
+  have h₁ := hs.hasSum
+  have h₂ : HasSum (fun n : ℕ ↦ β (-((n : ℤ) + 1))) (-∑' n : ℕ, β n) := by
+    have h := ((hasSum_nat_add_iff' 1).mpr h₁).neg
+    simp only [Finset.range_one, Finset.sum_singleton] at h
+    convert h using 1
+    · ext n
+      rw [hodd]
+    · simp [hβ]
+  simpa using h₁.of_nat_of_neg_add_one h₂
 
 end TauCeti
