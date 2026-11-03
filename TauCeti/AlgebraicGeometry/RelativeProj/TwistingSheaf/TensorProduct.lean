@@ -87,61 +87,12 @@ private def chartMul (W : A.relativeProj.Opens) (U : X.AffineZariskiSite) (m n :
     Γ(Proj.twistingSheaf (A.gradedSectionsGrading U.toOpens) (m + n), chartOpen A W U) :=
   mul (A.gradedSectionsGrading U.toOpens) (chartOpen A W U) m n s t
 
-section Bilinear
-
-/-! The multiplication of sections of twisting sheaves is bilinear. These restatements of
-`LinearMap.map_add₂` and `LinearMap.map_smul₂` are stated for an abstract graded ring, so that
-instantiating them at the charts of the relative `Proj` does not make the kernel unfold the
-module structures of the sections over the concrete rings `⨁ n, Γ(Aₙ, U)`. -/
-
-variable {B σ : Type u} [CommRing B] [SetLike σ B] [AddSubgroupClass σ B] {𝒜 : ℕ → σ}
-  [GradedRing 𝒜] {V : (Proj 𝒜).Opens} {m n : ℤ}
-
-private theorem twistingSheafMul_add_left (s s' : Γ(Proj.twistingSheaf 𝒜 m, V))
-    (t : Γ(Proj.twistingSheaf 𝒜 n, V)) :
-    mul 𝒜 V m n (s + s') t = mul 𝒜 V m n s t + mul 𝒜 V m n s' t :=
-  LinearMap.map_add₂ _ s s' t
-
-private theorem twistingSheafMul_add_right (s : Γ(Proj.twistingSheaf 𝒜 m, V))
-    (t t' : Γ(Proj.twistingSheaf 𝒜 n, V)) :
-    mul 𝒜 V m n s (t + t') = mul 𝒜 V m n s t + mul 𝒜 V m n s t' :=
-  map_add _ t t'
-
-private theorem twistingSheafMul_smul_left (r : Γ(Proj 𝒜, V))
-    (s : Γ(Proj.twistingSheaf 𝒜 m, V))
-    (t : Γ(Proj.twistingSheaf 𝒜 n, V)) :
-    mul 𝒜 V m n (r • s) t = r • mul 𝒜 V m n s t :=
-  LinearMap.map_smul₂ _ r s t
-
-private theorem twistingSheafMul_smul_right (r : Γ(Proj 𝒜, V))
-    (s : Γ(Proj.twistingSheaf 𝒜 m, V))
-    (t : Γ(Proj.twistingSheaf 𝒜 n, V)) :
-    mul 𝒜 V m n s (r • t) = r • mul 𝒜 V m n s t :=
-  map_smul _ r t
-
-end Bilinear
-
 /-- The image of a section of `𝒪(n)` over `W` in the chart over `U`: a section of the twisting
 sheaf `𝒪(n)` of `Proj (⨁ n, Γ(Aₙ, U))` over the preimage of `W`. -/
 private def chartSection (n : ℤ) (U : X.AffineZariskiSite)
     (s : Γ(A.relativeProjTwistingSheaf n, W)) :
     Γ(Proj.twistingSheaf (A.gradedSectionsGrading U.toOpens) n, chartOpen A W U) :=
   ((A.relativeProjTwistingSheafGlueData n).π U).app W s
-
-/-- The maps of twisting sheaves along `Proj.map`, followed by restriction, are multiplicative. -/
-private theorem res_twistingSheafMap_mul {B C σ τ : Type u} [CommRing B] [SetLike σ B]
-    [AddSubgroupClass σ B] {𝒜 : ℕ → σ} [GradedRing 𝒜] [CommRing C] [SetLike τ C]
-    [AddSubgroupClass τ C] {ℬ : ℕ → τ} [GradedRing ℬ] (f : 𝒜 →+*ᵍ ℬ)
-    (hf : HomogeneousIdeal.irrelevant ℬ ≤ (HomogeneousIdeal.irrelevant 𝒜).map f) {m n : ℤ}
-    (V : (Proj 𝒜).Opens) {U : (Proj ℬ).Opens} (e : U ⟶ Proj.map f hf ⁻¹ᵁ V)
-    (s : Γ(Proj.twistingSheaf 𝒜 m, V)) (t : Γ(Proj.twistingSheaf 𝒜 n, V)) :
-    (Proj.twistingSheaf ℬ (m + n)).presheaf.map e.op
-        ((Proj.twistingSheafMap f hf (m + n)).app V (mul 𝒜 V m n s t)) =
-      mul ℬ U m n
-        ((Proj.twistingSheaf ℬ m).presheaf.map e.op ((Proj.twistingSheafMap f hf m).app V s))
-        ((Proj.twistingSheaf ℬ n).presheaf.map e.op ((Proj.twistingSheafMap f hf n).app V t)) :=
-  (congrArg ((Proj.twistingSheaf ℬ (m + n)).presheaf.map e.op)
-    (Proj.twistingSheafMap_app_mul f hf V s t)).trans (res_mul _ _ _)
 
 /-- The transition maps of the twisting sheaves of the charts are multiplicative. -/
 private theorem transition_mul {U V : X.AffineZariskiSite} (i : U ⟶ V) (m n : ℤ)
@@ -157,7 +108,7 @@ private theorem transition_mul {U V : X.AffineZariskiSite} (i : U ⟶ V) (m n : 
   have h₃ := (A.relativeProjTwistingSheafGlueData n).transition_app_apply i W
   refine (h₁ (chartMul A W V m n s t)).trans (Eq.trans ?_
     (congrArg₂ (fun a b ↦ chartMul A W U m n a b) (h₂ s).symm (h₃ t).symm))
-  exact res_twistingSheafMap_mul
+  exact Proj.res_twistingSheafMap_app_mul
     (A.restrictGradedSectionsGradedHom ((Scheme.AffineZariskiSite.toOpensFunctor X).map i))
     (A.irrelevant_le_map_restrictGradedSectionsGradedHom_toOpensFunctor i) _ _ s t
 
@@ -236,13 +187,13 @@ def _root_.CategoryTheory.CommMon.relativeProjTwistingSheafMul (W : A.relativePr
         Γ(A.relativeProjTwistingSheaf (m + n), W) :=
   LinearMap.mk₂ _ (mulAux A m n)
     (fun s s' t ↦ ext_chartSection A fun U ↦ by
-      simp only [chartSection_add, chartSection_mulAux, chartMul, twistingSheafMul_add_left])
+      simp only [chartSection_add, chartSection_mulAux, chartMul, mul_add_left])
     (fun r s t ↦ ext_chartSection A fun U ↦ by
-      simp only [chartSection_smul, chartSection_mulAux, chartMul, twistingSheafMul_smul_left])
+      simp only [chartSection_smul, chartSection_mulAux, chartMul, mul_smul_left])
     (fun s t t' ↦ ext_chartSection A fun U ↦ by
-      simp only [chartSection_add, chartSection_mulAux, chartMul, twistingSheafMul_add_right])
+      simp only [chartSection_add, chartSection_mulAux, chartMul, mul_add_right])
     (fun r s t ↦ ext_chartSection A fun U ↦ by
-      simp only [chartSection_smul, chartSection_mulAux, chartMul, twistingSheafMul_smul_right])
+      simp only [chartSection_smul, chartSection_mulAux, chartMul, mul_smul_right])
 
 section MulCharts
 
@@ -416,11 +367,11 @@ private theorem bijective_lift_relativeProjTwistingSheafMul
     TensorProduct.ext' fun s t ↦ by
       obtain ⟨a, rfl⟩ := (chartLinearEquiv f hW hf m).surjective s
       obtain ⟨b, rfl⟩ := (chartLinearEquiv f hW hf n).surjective t
-      rw [LinearEquiv.coe_coe, LinearEquiv.trans_apply, LinearEquiv.trans_apply,
-        TensorProduct.congr_tmul, LinearEquiv.symm_apply_apply, LinearEquiv.symm_apply_apply,
-        TensorProduct.lid_tmul, TensorProduct.lift.tmul, chartLinearEquiv_apply,
-        chartLinearEquiv_apply, chartLinearEquiv_apply, LinearMap.map_smul₂, LinearMap.map_smul,
-        mul_chartGen, smul_eq_mul, mul_smul]
+      simp only [e, LinearEquiv.coe_coe, LinearEquiv.trans_apply, TensorProduct.congr_tmul,
+        LinearEquiv.symm_apply_apply, TensorProduct.lid_tmul, TensorProduct.lift.tmul]
+      -- the substantive step: the basis sections `fᵐ` and `fⁿ` multiply to `fᵐ⁺ⁿ`
+      simp only [chartLinearEquiv_apply, map_smul, LinearMap.smul_apply, mul_chartGen,
+        smul_eq_mul, smul_smul, mul_comm]
   rw [this]
   exact e.bijective
 
