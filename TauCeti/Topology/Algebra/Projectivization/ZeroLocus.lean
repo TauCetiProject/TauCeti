@@ -30,6 +30,10 @@ equations `c i`. It is closed in the product of the coefficient space with proje
 Since projective space is compact, the projection of the incidence variety to the coefficient
 space is a proper map; in particular it maps closed subsets to closed subsets.
 
+For a fixed finite family of homogeneous equations, the points of projective space at which the
+cone Jacobian is surjective form an open set, by lower semicontinuity of the rank, so the points of
+the zero locus where the Jacobian test fails form a closed set.
+
 The locus `complexProjectiveBadRankLocus N d` of incidence points where the cone Jacobian of
 the equations does not have full rank is closed as well, by lower semicontinuity of the rank.
 Its projection is therefore closed, and its complement, the set of coefficients all of whose
@@ -56,6 +60,8 @@ affine zero locus of the dehomogenized equations.
 * `TauCeti.isClosed_complexProjectiveIncidence`: the incidence variety is closed.
 * `TauCeti.isProperMap_complexProjectiveIncidence_fst`: its projection to the coefficient space
   is proper.
+* `TauCeti.isOpen_setOfPred_mulVec_surjective_jacobiMatrixAt_rep`: the points at which the cone
+  Jacobian of a fixed family is surjective form an open set.
 * `TauCeti.isClosed_complexProjectiveBadRankLocus`: the bad-rank locus is closed.
 * `TauCeti.isOpen_setOfPred_forall_mulVec_surjective_jacobiMatrixAt`: the coefficients whose cone
   Jacobian has full rank at every nonzero common zero form an open set.
@@ -158,6 +164,26 @@ closed subset of the incidence variety is closed. -/
 theorem isProperMap_complexProjectiveIncidence_fst (d : ι → ℕ) :
     IsProperMap fun x : complexProjectiveIncidence N d ↦ x.1.1 :=
   isProperMap_fst_of_compactSpace.restrict (isClosed_complexProjectiveIncidence d)
+
+/-! ### Full rank at a point -/
+
+/-- **Full rank is an open condition on the point.** For a finite family of homogeneous
+equations, the points of projective space at which the cone Jacobian is surjective form an open
+set. In particular, the points of the zero locus where the cone Jacobian is not surjective form a
+closed set. -/
+theorem isOpen_setOfPred_mulVec_surjective_jacobiMatrixAt_rep [Finite ι]
+    {p : ι → MvPolynomial (Fin N) ℂ} {d : ι → ℕ} (hp : ∀ i, (p i).IsHomogeneous (d i)) :
+    IsOpen {L : ℙ ℂ (Fin N → ℂ) | (jacobiMatrixAt p L.rep).mulVec.Surjective} := by
+  rw [← Projectivization.isQuotientMap_mk'.isOpen_preimage]
+  have hJ : Continuous fun v : {v : Fin N → ℂ // v ≠ 0} ↦ jacobiMatrixAt p v.1 :=
+    continuous_matrix fun i j ↦ by
+      simpa only [jacobiMatrixAt_apply, Function.comp_def] using
+        (continuous_eval _).comp continuous_subtype_val
+  convert Matrix.isOpen_setOfPred_mulVec_surjective.preimage hJ using 1
+  ext v
+  simp only [Set.mem_preimage, Projectivization.mk'_eq_mk, Set.mem_ofPred_eq]
+  exact mulVec_surjective_jacobiMatrixAt_iff_of_mk_eq_mk hp (Projectivization.rep_ne_zero _) v.2
+    (Projectivization.mk_rep _)
 
 /-! ### The bad-rank locus -/
 
