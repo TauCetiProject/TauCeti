@@ -7,7 +7,6 @@ module
 
 public import Mathlib.MeasureTheory.Measure.Lebesgue.Basic
 public import Mathlib.MeasureTheory.Measure.ProbabilityMeasure
-public import Mathlib.MeasureTheory.Measure.Support
 public import Mathlib.Topology.Instances.EReal.Lemmas
 public import TauCeti.MeasureTheory.Function.Monotone
 public import TauCeti.MeasureTheory.Measure.Mod0MeasureIso
@@ -621,31 +620,13 @@ theorem tendsto_quantile_nhdsLT_one_of_ae_le_of_cdf_lt_one (μ : Measure ℝ)
   · filter_upwards [Ioo_mem_nhdsLT zero_lt_one] with u hu
     exact (ordConnected_Iic.quantile_mem hbound hu.1 hu.2).trans_lt hb
 
-private theorem cdf_pos_of_mem_support_of_lt (μ : Measure ℝ) [IsProbabilityMeasure μ]
-    {x y : ℝ} (hy : y ∈ μ.support) (hyx : y < x) : 0 < cdf μ x := by
-  rw [cdf_eq_real, measureReal_def]
-  apply ENNReal.toReal_pos
-  · exact ((mem_support_iff_forall y).mp hy (Iic x)
-      (mem_of_superset (Iio_mem_nhds hyx) Iio_subset_Iic_self)).ne'
-  · finiteness
-
-private theorem cdf_lt_one_of_mem_support_of_lt (μ : Measure ℝ) [IsProbabilityMeasure μ]
-    {x y : ℝ} (hy : y ∈ μ.support) (hxy : x < y) : cdf μ x < 1 := by
-  have htail : 0 < μ.real (Ioi x) := by
-    rw [measureReal_def]
-    apply ENNReal.toReal_pos
-    · exact ((mem_support_iff_forall y).mp hy (Ioi x) (Ioi_mem_nhds hxy)).ne'
-    · finiteness
-  rw [← compl_Iic, probReal_compl_eq_one_sub measurableSet_Iic] at htail
-  rw [cdf_eq_real]
-  linarith
-
 /-- The lower quantile tends at zero to the infimum of the topological support. The infimum is
 taken in `EReal`, so this also states convergence to minus infinity for support unbounded below. -/
 theorem tendsto_quantile_nhdsGT_zero (μ : Measure ℝ) [IsProbabilityMeasure μ] :
     Tendsto (fun u ↦ (μ.quantile u : EReal)) (𝓝[>] 0)
       (𝓝 (⨅ x : μ.support, (x.1 : EReal))) := by
   let a := ⨅ x : μ.support, (x.1 : EReal)
+  -- Fold the displayed support infimum into the abbreviation used throughout the proof.
   change Tendsto (fun u ↦ (μ.quantile u : EReal)) (𝓝[>] 0) (𝓝 a)
   have hs : μ.support.Nonempty := μ.nonempty_support (IsProbabilityMeasure.ne_zero μ)
   have ha_top : a ≠ ⊤ := by
@@ -663,8 +644,8 @@ theorem tendsto_quantile_nhdsGT_zero (μ : Measure ℝ) [IsProbabilityMeasure μ
     rw [← ha_coe]
     apply tendsto_quantile_nhdsGT_zero_of_ae_le_of_cdf_pos
     · filter_upwards [μ.support_mem_ae] with x hx
-      have hle := iInf_le (fun y : μ.support ↦ (y.1 : EReal)) ⟨x, hx⟩
-      change a ≤ (x : EReal) at hle
+      have hle : a ≤ (x : EReal) :=
+        iInf_le (fun y : μ.support ↦ (y.1 : EReal)) ⟨x, hx⟩
       rw [← ha_coe] at hle
       exact EReal.coe_le_coe_iff.mp hle
     · intro x hax
@@ -680,6 +661,7 @@ theorem tendsto_quantile_nhdsLT_one (μ : Measure ℝ) [IsProbabilityMeasure μ]
     Tendsto (fun u ↦ (μ.quantile u : EReal)) (𝓝[<] 1)
       (𝓝 (⨆ x : μ.support, (x.1 : EReal))) := by
   let b := ⨆ x : μ.support, (x.1 : EReal)
+  -- Fold the displayed support supremum into the abbreviation used throughout the proof.
   change Tendsto (fun u ↦ (μ.quantile u : EReal)) (𝓝[<] 1) (𝓝 b)
   have hs : μ.support.Nonempty := μ.nonempty_support (IsProbabilityMeasure.ne_zero μ)
   have hb_bot : b ≠ ⊥ := by
@@ -697,8 +679,8 @@ theorem tendsto_quantile_nhdsLT_one (μ : Measure ℝ) [IsProbabilityMeasure μ]
     rw [← hb_coe]
     apply tendsto_quantile_nhdsLT_one_of_ae_le_of_cdf_lt_one
     · filter_upwards [μ.support_mem_ae] with x hx
-      have hle := le_iSup (fun y : μ.support ↦ (y.1 : EReal)) ⟨x, hx⟩
-      change (x : EReal) ≤ b at hle
+      have hle : (x : EReal) ≤ b :=
+        le_iSup (fun y : μ.support ↦ (y.1 : EReal)) ⟨x, hx⟩
       rw [← hb_coe] at hle
       exact EReal.coe_le_coe_iff.mp hle
     · intro x hxb
