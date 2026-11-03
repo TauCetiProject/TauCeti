@@ -12,7 +12,7 @@ public import TauCeti.Geometry.Manifold.Instances.Quotient
 public import TauCeti.Geometry.Manifold.LocalDiffeomorph.Composition
 public import TauCeti.Topology.Algebra.Group.DiscontinuousSubgroup
 public import TauCeti.Topology.Algebra.Module.Submodule
-public import Mathlib.Topology.Covering.Quotient
+public import TauCeti.Topology.Covering.Quotient
 
 /-!
 # Smooth quotients by discrete subgroups and submodules
@@ -100,12 +100,6 @@ open Topology
 
 namespace Subgroup
 
-private theorem isLocalHomeomorph_quotientMk {G : Type*} [Group G] [TopologicalSpace G]
-    [IsTopologicalGroup G] (N : Subgroup G) [DiscreteTopology N] :
-    IsLocalHomeomorph (QuotientGroup.mk (s := N)) :=
-  (N.isQuotientCoveringMap (SetLike.isDiscrete_iff_discreteTopology.mpr inferInstance))
-    |>.isLocalHomeomorph
-
 variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
   {E : Type*} [NormedAddCommGroup E] [NormedSpace 𝕜 E]
   {H : Type*} [TopologicalSpace H] {I : ModelWithCorners 𝕜 E H} {n : ℕ∞ω}
@@ -115,9 +109,7 @@ variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
 /-- The charts on the native coset space are pushed forward from the Lie group along the
 covering projection. -/
 instance instChartedSpaceDiscreteQuotient : ChartedSpace H (G ⧸ N) :=
-  -- The public chart data cannot refer to a private proof in the module system.
-  (N.isQuotientCoveringMap (SetLike.isDiscrete_iff_discreteTopology.mpr inferInstance))
-    |>.isLocalHomeomorph.chartedSpace QuotientGroup.mk_surjective
+  N.isLocalHomeomorph_quotientMk.chartedSpace QuotientGroup.mk_surjective
 
 variable [LieGroup I n G]
 

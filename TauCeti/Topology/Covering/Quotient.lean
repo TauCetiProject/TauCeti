@@ -42,6 +42,10 @@ translates are pairwise disjoint (Mathlib's
 `Topology.IsQuotientMap.isAddQuotientCoveringMap_of_addSubgroup`). For a lattice `L` this is the
 covering of the torus `E / L` by `E`.
 
+For a discrete subgroup `N` of a topological group `G`, the native coset projection
+`G → G ⧸ N` is a local homeomorphism, by Mathlib's `Subgroup.isQuotientCoveringMap`.
+Neither normality nor a separation axiom is needed.
+
 ## Main results
 
 * `IsCoveringMap.isOpenQuotientMap`: a surjective covering map is an open quotient map.
@@ -79,6 +83,14 @@ is Junyan Xu's, in `Mathlib/Topology/Covering/Quotient.lean`.
 -/
 
 public section
+
+/-- The native coset projection by a discrete subgroup of a topological group is a local
+homeomorphism. Neither normality nor a separation axiom is needed. -/
+theorem Subgroup.isLocalHomeomorph_quotientMk {G : Type*} [Group G] [TopologicalSpace G]
+    [IsTopologicalGroup G] (N : Subgroup G) [DiscreteTopology N] :
+    IsLocalHomeomorph (QuotientGroup.mk (s := N)) :=
+  (N.isQuotientCoveringMap (SetLike.isDiscrete_iff_discreteTopology.mpr inferInstance))
+    |>.isLocalHomeomorph
 
 namespace TauCeti
 
