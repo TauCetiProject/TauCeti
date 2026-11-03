@@ -30,8 +30,6 @@ coefficient space are used. Manifolds with boundary or corners are included.
 
 ## Main declarations
 
-* `TauCeti.exists_contMDiff_loop_pathIntegral_eq_sub`: two smooth curves with common endpoints
-  form a smooth loop whose line integral is the difference of theirs.
 * `TauCeti.exists_local_primitive_pathIntegral_eq_add_sub`: near a point `x`, a closed form `φ`
   has a function `g`, `C^r` at `x` with `dg x = φ x`, such that extending a curve from the base
   point to `x` by short curves changes its line integral by the increment of `g`.
@@ -60,25 +58,6 @@ namespace TauCeti
 variable {E H M F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSpace H]
   {I : ModelWithCorners ℝ E H} [TopologicalSpace M] [ChartedSpace H M]
   [NormedAddCommGroup F] [NormedSpace ℝ F]
-
-/-- Two smooth curves from `x₀` to `y`, constant on `(-∞, 0]` and on `[1, ∞)`, form a smooth loop
-at `x₀`, the first followed by the reversed second. The line integral of a continuous form along
-this loop is the difference of the line integrals along the two curves. -/
-theorem exists_contMDiff_loop_pathIntegral_eq_sub [IsManifold I 1 M]
-    {φ : RoughForm I M F 1} (hφ : IsSmoothForm I 0 φ) {x₀ y : M}
-    {γ γ' : ℝ → M} (hγ : ContMDiff 𝓘(ℝ, ℝ) I ∞ γ) (hγ₀ : ∀ t ≤ 0, γ t = x₀)
-    (hγ₁ : ∀ t, 1 ≤ t → γ t = y) (hγ' : ContMDiff 𝓘(ℝ, ℝ) I ∞ γ')
-    (hγ'₀ : ∀ t ≤ 0, γ' t = x₀) (hγ'₁ : ∀ t, 1 ≤ t → γ' t = y) :
-    ∃ ℓ : ℝ → M, ContMDiff 𝓘(ℝ, ℝ) I ∞ ℓ ∧ ℓ 0 = x₀ ∧ ℓ 1 = x₀ ∧
-      pathIntegral φ ℓ 0 1 = pathIntegral φ γ 0 1 - pathIntegral φ γ' 0 1 := by
-  have hrev : ContMDiff 𝓘(ℝ, ℝ) I ∞ fun t ↦ γ' (1 - t) :=
-    hγ'.comp (by fun_prop : ContDiff ℝ ∞ fun t : ℝ ↦ 1 - t).contMDiff
-  have h₂ : ∀ t ≤ 0, γ' (1 - t) = y := fun t ht ↦ hγ'₁ _ (by linarith)
-  refine ⟨_, hγ.curveConcat hrev hγ₁ h₂,
-    by rw [curveConcat_of_le (by norm_num), hγ₀ _ (by norm_num)],
-    by rw [curveConcat_of_lt (by norm_num)]; exact hγ'₀ _ (by norm_num), ?_⟩
-  rw [pathIntegral_curveConcat hφ (hγ.of_le (by simp)) (hrev.of_le (by simp)) hγ₁ h₂,
-    pathIntegral_comp_sub_left hφ (hγ'.of_le (by simp)), sub_self, sub_zero, sub_eq_add_neg]
 
 /-- If the integrals of `φ` along smooth loops at `x₀` vanish, then two smooth curves from `x₀` to
 `y`, constant on `(-∞, 0]` and on `[1, ∞)`, have the same line integral: the first followed by the

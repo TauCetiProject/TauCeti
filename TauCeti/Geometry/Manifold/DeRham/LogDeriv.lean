@@ -47,7 +47,7 @@ exponent on exponentials (`TauCeti.mlogDeriv_exp`).
 ## Main declarations
 
 * `TauCeti.mlogDeriv I u`: the logarithmic derivative `dlog u = u⁻¹ du`, with
-  `TauCeti.mlogDeriv_apply`.
+  `TauCeti.mlogDeriv_def` and `TauCeti.mlogDeriv_apply`.
 * `TauCeti.mlogDeriv_eq_of_eventuallyEq_mul_exp`: near a point, if `u = c exp g` then
   `dlog u = dg` there.
 * `TauCeti.isSmoothForm_mlogDeriv`: `dlog u` is a `C^n` form for a nowhere-vanishing `C^(n+1)`
@@ -88,6 +88,11 @@ variable (I) in
 complex-valued `1`-form. It is meaningful where `u` does not vanish. -/
 def mlogDeriv (u : M → ℂ) : RoughForm I M ℂ 1 :=
   fun x ↦ (u x)⁻¹ • mextDeriv (RoughForm.ofFunction I u) x
+
+/-- The logarithmic derivative is `u⁻¹` times the differential of `u`. -/
+theorem mlogDeriv_def (u : M → ℂ) (x : M) :
+    mlogDeriv I u x = (u x)⁻¹ • mextDeriv (RoughForm.ofFunction I u) x :=
+  (rfl)
 
 /-- The logarithmic derivative on a tangent vector `v` is `u⁻¹ du(v)`. -/
 @[simp]
