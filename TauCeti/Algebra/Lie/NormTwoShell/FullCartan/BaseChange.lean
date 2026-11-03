@@ -8,6 +8,7 @@ module
 public import TauCeti.Algebra.Lie.NormTwoShell.FullCartan.Basic
 public import Mathlib.Algebra.Lie.BaseChange
 import Mathlib.LinearAlgebra.DirectSum.Finsupp
+import Mathlib.LinearAlgebra.Dual.BaseChange
 import Mathlib.LinearAlgebra.TensorProduct.Prod
 
 /-!
@@ -111,13 +112,14 @@ theorem baseChangeEquiv_symm_apply (y : A ⊗[ℤ] Y) (f : B.normTwoShell →₀
 
 /-- The scalar-extended root weight, evaluated on the full Cartan tensor module. -/
 def baseChangeWeight (a : I → ℤ) : A ⊗[ℤ] Y →ₗ[A] A :=
-  (TensorProduct.AlgebraTensorModule.rid ℤ A A).toLinearMap ∘ₗ (D.weight a).baseChange A
+  Module.Dual.baseChange A (D.weight a)
 
 /-- Evaluation of a root weight on a pure Cartan tensor. -/
 @[simp]
 theorem baseChangeWeight_tmul (a : I → ℤ) (r : A) (y : Y) :
     baseChangeWeight D A a (r ⊗ₜ[ℤ] y) = (D.weight a y : A) * r := by
-  simp [baseChangeWeight, mul_comm]
+  simpa only [baseChangeWeight, zsmul_eq_mul] using
+    Module.Dual.baseChange_apply_tmul A (D.weight a) r y
 
 variable [LinearOrder I] [hB : Fact B.PosDef] [hdiag : Fact (∀ i, Even (B i i))]
 
