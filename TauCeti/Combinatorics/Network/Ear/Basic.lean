@@ -348,16 +348,7 @@ theorem singleton_stage (x : V) (i : Fin 1) :
     (singleton (N := N) x).stage i = N.singletonSubnetwork x :=
   rfl
 
-/-- The initial stage of a directed ear decomposition. -/
-@[simp]
-theorem stage_zero_eq (D : EarDecomposition T) :
-    D.stage 0 = N.singletonSubnetwork D.initialVertex :=
-  D.stage_zero
-
-/-- The final stage of a directed ear decomposition. -/
-@[simp]
-theorem stage_last_eq (D : EarDecomposition T) : D.stage (Fin.last D.length) = T :=
-  D.stage_last
+attribute [simp] EarDecomposition.stage_zero EarDecomposition.stage_last
 
 /-- Each stage is contained in its successor. -/
 theorem stage_le_succ (D : EarDecomposition T) (i : Fin D.length) :
