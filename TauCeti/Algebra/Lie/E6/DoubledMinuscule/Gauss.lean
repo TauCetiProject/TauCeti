@@ -38,31 +38,105 @@ universe v
 
 variable {A : Type v} [CommRing A]
 
-/-- A root point acts on a coordinate vector along its signed raising or lowering edge. -/
-@[simp↓]
-theorem rootSubgroupPoints_mulVec_single (j : Fin 6 ⊕ Fin 6) (t x : A) (k : Fin 54) :
-    ((rootSubgroupPoints j A (Multiplicative.ofAdd t) :
-        Matrix.GeneralLinearGroup (Fin 54) A) : Matrix (Fin 54) (Fin 54) A) *ᵥ
-          Pi.single k x =
-      Pi.single k x +
-        if matrixWeight k (Sum.elim id id j) =
-            (Sum.elim (fun _ ↦ -1) (fun _ ↦ 1) j : ℤ) then
-          Pi.single (matrixIndexEquiv (reflection (Sum.elim id id j)
-            (matrixIndexEquiv.symm k)))
-              (t * (summandSign (matrixIndexEquiv.symm k) : A) * x)
-        else 0 := by
-  rw [coe_rootSubgroupPoints_eq_one_add_smul, toAdd_ofAdd, Matrix.add_mulVec,
-    Matrix.one_mulVec, Matrix.smul_mulVec, Matrix.mulVec_single]
-  ext l
-  simp [Matrix.col_apply, rootIntMatrix_apply, Pi.single_apply]
-  split_ifs <;> simp_all [mul_left_comm, mul_comm]
-
 private theorem weightTorusPoints_mulVec_single (i : Fin 6) (u : Aˣ) (k : Fin 54) (x : A) :
     ((weightTorusPoints A (Pi.mulSingle i u) : Matrix.GeneralLinearGroup (Fin 54) A) :
         Matrix (Fin 54) (Fin 54) A) *ᵥ Pi.single k x =
       Pi.single k (((u ^ matrixWeight k i : Aˣ) : A) * x) := by
   rw [coe_weightTorusPoints, UniversalEnvelopingAlgebra.kostantTorusMatrix_apply, diagGL_coe]
   simp only [torusCharacter_mulSingle, Matrix.diagonal_mulVec_single]
+
+-- On a reflection pair, these are the two columns of the signed SL₂ block.
+private theorem inl_mul_inr_mulVec_block (i : Fin 6) (k : Fin 54)
+    (hk : matrixWeight k i = -1) (a b x y : A) :
+    let r := matrixIndexEquiv (reflection i (matrixIndexEquiv.symm k))
+    let s : A := summandSign (matrixIndexEquiv.symm k)
+    (((rootSubgroupPoints (.inl i) A (Multiplicative.ofAdd a) :
+        Matrix.GeneralLinearGroup (Fin 54) A) : Matrix (Fin 54) (Fin 54) A) *
+      ((rootSubgroupPoints (.inr i) A (Multiplicative.ofAdd b) :
+        Matrix.GeneralLinearGroup (Fin 54) A) : Matrix (Fin 54) (Fin 54) A)) *ᵥ
+        (Pi.single k x + Pi.single r y) =
+      Pi.single k (x + b * s * y) + Pi.single r (a * s * x + (1 + a * b) * y) := by
+  dsimp only
+  set r := matrixIndexEquiv (reflection i (matrixIndexEquiv.symm k)) with hrdef
+  set s := (summandSign (matrixIndexEquiv.symm k) : A) with hsdef
+  have hr : matrixWeight r i = 1 := by
+    have hw : matrixWeight r i = -matrixWeight k i := by simp [r, matrixWeight_apply]
+    omega
+  have hs : s ^ 2 = 1 := by
+    rw [hsdef, sq, ← Int.cast_mul, summandSign_mul_self, Int.cast_one]
+  have hrback : matrixIndexEquiv (reflection i (matrixIndexEquiv.symm r)) = k := by
+    simp [r]
+  have hsr : (summandSign (matrixIndexEquiv.symm r) : A) = s := by simp [r, s]
+  simp only [← Matrix.mulVec_mulVec, Matrix.mulVec_add, rootSubgroupPoints_mulVec_single,
+    Sum.elim_inl, Sum.elim_inr, id_eq, hk, hr, hrback, hsr, ← hrdef, ← hsdef,
+    Int.reduceEq, ↓reduceIte, add_zero]
+  ext l
+  simp only [Pi.add_apply, Pi.single_apply]
+  split_ifs <;> ring_nf <;> simp [hs]
+
+private theorem inr_torus_inl_mulVec_block (i : Fin 6) (k : Fin 54)
+    (hk : matrixWeight k i = -1) (c d x y : A) (u : Aˣ) :
+    let r := matrixIndexEquiv (reflection i (matrixIndexEquiv.symm k))
+    let s : A := summandSign (matrixIndexEquiv.symm k)
+    (((rootSubgroupPoints (.inr i) A (Multiplicative.ofAdd c) :
+        Matrix.GeneralLinearGroup (Fin 54) A) : Matrix (Fin 54) (Fin 54) A) *
+      ((weightTorusPoints A (Pi.mulSingle i u) : Matrix.GeneralLinearGroup (Fin 54) A) :
+        Matrix (Fin 54) (Fin 54) A) *
+      ((rootSubgroupPoints (.inl i) A (Multiplicative.ofAdd d) :
+        Matrix.GeneralLinearGroup (Fin 54) A) : Matrix (Fin 54) (Fin 54) A)) *ᵥ
+        (Pi.single k x + Pi.single r y) =
+      Pi.single k (↑u⁻¹ * x + c * s * (↑u * (y + d * s * x))) +
+        Pi.single r (↑u * (y + d * s * x)) := by
+  dsimp only
+  set r := matrixIndexEquiv (reflection i (matrixIndexEquiv.symm k)) with hrdef
+  set s := (summandSign (matrixIndexEquiv.symm k) : A) with hsdef
+  have hr : matrixWeight r i = 1 := by
+    have hw : matrixWeight r i = -matrixWeight k i := by simp [r, matrixWeight_apply]
+    omega
+  have hrback : matrixIndexEquiv (reflection i (matrixIndexEquiv.symm r)) = k := by
+    simp [r]
+  have hsr : (summandSign (matrixIndexEquiv.symm r) : A) = s := by simp [r, s]
+  simp only [← Matrix.mulVec_mulVec, Matrix.mulVec_add, rootSubgroupPoints_mulVec_single,
+    weightTorusPoints_mulVec_single, Sum.elim_inl, Sum.elim_inr, id_eq, hk, hr,
+    hrback, hsr, ← hrdef, ← hsdef, Int.reduceEq, ↓reduceIte, add_zero,
+    zpow_neg_one, zpow_one]
+  ext l
+  simp only [Pi.add_apply, Pi.single_apply]
+  split_ifs <;> ring
+
+private theorem gauss_mulVec_block (i : Fin 6) (k : Fin 54)
+    (hk : matrixWeight k i = -1) (a b x y : A) (u : Aˣ)
+    (hu : (u : A) = 1 + a * b) :
+    let r := matrixIndexEquiv (reflection i (matrixIndexEquiv.symm k))
+    (((rootSubgroupPoints (.inl i) A (Multiplicative.ofAdd a) :
+        Matrix.GeneralLinearGroup (Fin 54) A) : Matrix (Fin 54) (Fin 54) A) *
+      ((rootSubgroupPoints (.inr i) A (Multiplicative.ofAdd b) :
+        Matrix.GeneralLinearGroup (Fin 54) A) : Matrix (Fin 54) (Fin 54) A)) *ᵥ
+        (Pi.single k x + Pi.single r y) =
+    (((rootSubgroupPoints (.inr i) A (Multiplicative.ofAdd (b * ↑u⁻¹)) :
+        Matrix.GeneralLinearGroup (Fin 54) A) : Matrix (Fin 54) (Fin 54) A) *
+      ((weightTorusPoints A (Pi.mulSingle i u) : Matrix.GeneralLinearGroup (Fin 54) A) :
+        Matrix (Fin 54) (Fin 54) A) *
+      ((rootSubgroupPoints (.inl i) A (Multiplicative.ofAdd (a * ↑u⁻¹)) :
+        Matrix.GeneralLinearGroup (Fin 54) A) : Matrix (Fin 54) (Fin 54) A)) *ᵥ
+        (Pi.single k x + Pi.single r y) := by
+  dsimp only
+  rw [inl_mul_inr_mulVec_block i k hk, inr_torus_inl_mulVec_block i k hk]
+  set s := (summandSign (matrixIndexEquiv.symm k) : A) with hsdef
+  have hs : s ^ 2 = 1 := by
+    rw [hsdef, sq, ← Int.cast_mul, summandSign_mul_self, Int.cast_one]
+  have htop : (u : A) * (y + a * ↑u⁻¹ * s * x) = a * s * x + (1 + a * b) * y := by
+    calc
+      _ = a * s * x * (↑u * ↑u⁻¹) + ↑u * y := by ring
+      _ = _ := by rw [Units.mul_inv, mul_one, hu]
+  rw [htop]
+  congr 2
+  symm
+  calc
+    _ = (↑u⁻¹ * (1 + a * b)) * x + (↑u⁻¹ * (1 + a * b)) * b * s * y := by
+      ring_nf
+      simp [hs]
+    _ = _ := by rw [← hu, Units.inv_mul]; ring
 
 /-- The positive-negative simple-root product admits Gauss factorization with pivot
 `u = 1 + a * b` and simple-coroot factor `αᵢ∨(u)`. -/
@@ -78,65 +152,21 @@ theorem rootSubgroupPoints_inl_mul_inr (i : Fin 6) (a b : A) (u : Aˣ)
   simp only [Subgroup.coe_mul, Matrix.GeneralLinearGroup.coe_mul]
   apply Matrix.ext_of_mulVec_single
   intro k
-  let r := matrixIndexEquiv (reflection i (matrixIndexEquiv.symm k))
-  let s : A := summandSign (matrixIndexEquiv.symm k)
-  -- These equalities name the reflected coordinate and its signed matrix coefficient.
-  have hrdef : matrixIndexEquiv (reflection i (matrixIndexEquiv.symm k)) = r := rfl
-  have hsdef : (summandSign (matrixIndexEquiv.symm k) : A) = s := rfl
-  have hrback : matrixIndexEquiv (reflection i (matrixIndexEquiv.symm r)) = k := by
-    simp [r]
-  have hs : s * s = 1 := by
-    dsimp [s]
-    cases h : matrixIndexEquiv.symm k <;> simp
-  have hsr : (summandSign (matrixIndexEquiv.symm r) : A) = s := by
-    dsimp [r, s]
-    cases h : matrixIndexEquiv.symm k <;> simp
-  have hweight : matrixWeight r i = -matrixWeight k i := by
-    simp [r, matrixWeight_apply]
-  -- Scalar block identities retain the dual summand's sign until its square cancels.
-  have hcancel : (u : A) * (a * ↑u⁻¹ * s) = a * s := by
-    simpa only [mul_assoc, mul_comm (↑u⁻¹ : A), mul_left_comm] using
-      u.mul_inv_cancel_left (a * s)
-  have hsum : (↑u⁻¹ : A) + b * ↑u⁻¹ * s * (a * s) = 1 := by
-    calc
-      (↑u⁻¹ : A) + b * ↑u⁻¹ * s * (a * s) =
-          ↑u⁻¹ + a * b * ↑u⁻¹ * (s * s) := by ring
-      _ = (1 + a * b) * ↑u⁻¹ := by rw [hs, mul_one, add_mul, one_mul]
-      _ = 1 := by rw [← hu, Units.mul_inv]
-  have hprod : a * s * (b * s) = a * b := by
-    calc
-      a * s * (b * s) = a * b * (s * s) := by ring
-      _ = a * b := by rw [hs, mul_one]
-  have hcancel' : b * ↑u⁻¹ * s * (u : A) = b * s := by
-    calc
-      b * ↑u⁻¹ * s * (u : A) = b * s * (↑u⁻¹ * ↑u) := by ring
-      _ = b * s := by rw [Units.inv_mul, mul_one]
-  -- At weights -1 and 1 the reflection pair is an SL₂ block; weight zero is fixed.
-  simp only [← Matrix.mulVec_mulVec]
+  -- Nonzero weights lie in the same signed SL₂ block; weight zero is fixed.
   rcases DynkinType.e6DoubledMinusculeWeight_apply_eq_neg_one_or_eq_zero_or_eq_one
     (matrixIndexEquiv.symm k) i with hk | hk | hk
   all_goals rw [← matrixWeight_apply] at hk
-  · have hr : matrixWeight r i = 1 := by rw [hweight, hk]; decide
-    have hblock : (Pi.single k 1 : Fin 54 → A) + Pi.single r (a * s) =
-        (Pi.single k (↑u⁻¹ : A) : Fin 54 → A) +
-          ((Pi.single r (a * s) : Fin 54 → A) + Pi.single k (b * ↑u⁻¹ * s * (a * s))) := by
-      rw [add_comm (Pi.single r (a * s) : Fin 54 → A), ← add_assoc, ← Pi.single_add, hsum]
-    simpa [rootSubgroupPoints_mulVec_single, weightTorusPoints_mulVec_single,
-      ← Matrix.mulVec_mulVec, Matrix.mulVec_add, hk, hr, hsr, hcancel, hrdef, hrback, hsdef,
-      -coe_rootSubgroupPoints, -coe_weightTorusPoints, -matrixWeight_apply,
-      -Matrix.mulVec_single] using hblock
-  · simp [rootSubgroupPoints_mulVec_single, weightTorusPoints_mulVec_single,
-      hk, -coe_rootSubgroupPoints, -coe_weightTorusPoints,
-      -matrixWeight_apply, -Matrix.mulVec_single]
-  · have hr : matrixWeight r i = -1 := by rw [hweight, hk]
-    have hblock : (Pi.single k 1 : Fin 54 → A) +
-        ((Pi.single r (b * s) : Fin 54 → A) + Pi.single k (a * b)) =
-          (Pi.single k (u : A) : Fin 54 → A) + Pi.single r (b * s) := by
-      rw [add_comm (Pi.single r (b * s) : Fin 54 → A), ← add_assoc, ← Pi.single_add, ← hu]
-    simpa [rootSubgroupPoints_mulVec_single, weightTorusPoints_mulVec_single,
-      ← Matrix.mulVec_mulVec, Matrix.mulVec_add, hk, hr, hsr, hprod, hcancel', hrdef, hrback, hsdef,
-      -coe_rootSubgroupPoints, -coe_weightTorusPoints, -matrixWeight_apply,
-      -Matrix.mulVec_single] using hblock
+  · simpa only [Pi.single_zero, add_zero] using gauss_mulVec_block i k hk a b 1 0 u hu
+  · simp only [← Matrix.mulVec_mulVec, rootSubgroupPoints_mulVec_single,
+      weightTorusPoints_mulVec_single, Sum.elim_inl, Sum.elim_inr, id_eq, hk,
+      Int.reduceEq, ↓reduceIte,
+      add_zero, zpow_zero, Units.val_one, one_mul]
+  · set r := matrixIndexEquiv (reflection i (matrixIndexEquiv.symm k)) with hrdef
+    have hr : matrixWeight r i = -1 := by
+      have hw : matrixWeight r i = -matrixWeight k i := by simp [r, matrixWeight_apply]
+      rw [hw, hk]
+    simpa only [r, Equiv.symm_apply_apply, reflection_apply_apply, Equiv.apply_symm_apply,
+      Pi.single_zero, zero_add] using gauss_mulVec_block i r hr a b 0 1 u hu
 
 /-- The negative-positive simple-root product has the reverse Gauss factorization, with
 simple-coroot factor `αᵢ∨(u⁻¹)` for the same pivot `u = 1 + a * b`. -/

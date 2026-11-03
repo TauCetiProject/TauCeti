@@ -189,4 +189,24 @@ theorem root_mulVec_single_sub (R : Type*) [CommRing R] (j : Fin 6 ⊕ Fin 6) (a
   ext b
   simp [Matrix.map_apply, rootIntMatrix_apply, ha, Pi.single_apply]
 
+/-- A root point acts on a coordinate vector along its signed raising or lowering edge. -/
+@[simp↓]
+theorem rootSubgroupPoints_mulVec_single {A : Type*} [CommRing A]
+    (j : Fin 6 ⊕ Fin 6) (t x : A) (k : Fin 54) :
+    ((rootSubgroupPoints j A (Multiplicative.ofAdd t) :
+        Matrix.GeneralLinearGroup (Fin 54) A) : Matrix (Fin 54) (Fin 54) A) *ᵥ
+          Pi.single k x =
+      Pi.single k x +
+        if matrixWeight k (Sum.elim id id j) =
+            (Sum.elim (fun _ ↦ -1) (fun _ ↦ 1) j : ℤ) then
+          Pi.single (matrixIndexEquiv (reflection (Sum.elim id id j)
+            (matrixIndexEquiv.symm k)))
+              (t * (summandSign (matrixIndexEquiv.symm k) : A) * x)
+        else 0 := by
+  rw [coe_rootSubgroupPoints_eq_one_add_smul, toAdd_ofAdd, Matrix.add_mulVec,
+    Matrix.one_mulVec, Matrix.smul_mulVec, Matrix.mulVec_single]
+  ext l
+  simp [Matrix.col_apply, rootIntMatrix_apply, Pi.single_apply]
+  split_ifs <;> simp_all [mul_left_comm, mul_comm]
+
 end TauCeti.E6DoubledMinuscule
