@@ -40,7 +40,7 @@ theorem eLpNorm_iteratedFDeriv_comp_right_restrict_preimage_le (e : E ≃L[ℝ] 
       ENNReal.ofReal (‖(e : E →L[ℝ] E)‖ ^ i) *
         (ENNReal.ofReal |(LinearMap.det (e : E →ₗ[ℝ] E))⁻¹| ^ (1 / p).toReal *
           eLpNorm (iteratedFDeriv ℝ i f) p (μ.restrict s)) := by
-  rw [← TauCeti.eLpNorm_comp_continuousLinearEquiv_restrict_preimage]
+  rw [← Measure.eLpNorm_comp_continuousLinearEquiv_restrict_preimage]
   exact eLpNorm_le_mul_eLpNorm_of_ae_le_mul hm
     (ae_of_all _ fun y => e.norm_iteratedFDeriv_comp_right_le f y i) p
 

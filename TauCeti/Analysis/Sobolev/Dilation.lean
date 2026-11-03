@@ -6,8 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 -- `TauCeti.MeasureTheory.Function.Lp.Dilation` is imported publicly:
--- `TauCeti.eLpNorm_comp_inv_smul` is the companion of the statement below, and supplies the
--- `eLpNorm` and Haar measure API appearing in its signature.
+-- `MeasureTheory.Measure.eLpNorm_comp_inv_smul` is the companion of the statement below, and
+-- supplies the `eLpNorm` and Haar measure API appearing in its signature.
 public import TauCeti.MeasureTheory.Function.Lp.Dilation
 public import Mathlib.Analysis.Calculus.FDeriv.Basic
 -- `Mathlib.Analysis.Calculus.FDeriv.Equiv` is imported privately: its `fderiv_comp_smul` is used
@@ -21,7 +21,7 @@ Fix a finite-dimensional real normed space `E` of dimension `n` carrying an addi
 measure `μ`, and dilate the variable of a function by `r > 0`, i.e. replace `u` by
 `x ↦ u (r⁻¹ • x)`. This file records how that operation rescales the `Lᵖ` seminorm of the
 derivative, the second of the two quantities a first-order Sobolev estimate compares; the first,
-the `Lᵖ` seminorm of the function itself, is `TauCeti.eLpNorm_comp_inv_smul`.
+the `Lᵖ` seminorm of the function itself, is `MeasureTheory.Measure.eLpNorm_comp_inv_smul`.
 
 For every exponent `p` the two scaling laws are
 
@@ -37,14 +37,15 @@ the whole space.
 
 ## Main declarations
 
-* `TauCeti.eLpNorm_fderiv_comp_inv_smul`: `‖D(u (r⁻¹ • ·))‖_p = r ^ (n / p - 1) * ‖Du‖_p`.
+* `MeasureTheory.Measure.eLpNorm_fderiv_comp_inv_smul`:
+  `‖D(u (r⁻¹ • ·))‖_p = r ^ (n / p - 1) * ‖Du‖_p`.
 -/
 
 public section
 
-namespace TauCeti
+namespace MeasureTheory.Measure
 
-open MeasureTheory Module
+open Module
 open scoped ENNReal
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [MeasurableSpace E] [BorelSpace E]
@@ -53,8 +54,9 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [MeasurableSpace
 
 /-- **Dilation scaling of the `Lᵖ` seminorm of the derivative:**
 `‖D(u (r⁻¹ • ·))‖_p = r ^ (n / p - 1) * ‖Du‖_p`. The exponent drops by one relative to
-`TauCeti.eLpNorm_comp_inv_smul` because the chain rule contributes a factor `r⁻¹`. The exponent
-`n / p` is `n / p.toReal`, which is `0` at `p = 0` and `p = ∞`, where the factor is thus `r⁻¹`. -/
+`MeasureTheory.Measure.eLpNorm_comp_inv_smul` because the chain rule contributes a factor `r⁻¹`.
+The exponent `n / p` is `n / p.toReal`, which is `0` at `p = 0` and `p = ∞`, where the factor is
+thus `r⁻¹`. -/
 theorem eLpNorm_fderiv_comp_inv_smul (u : E → F) {r : ℝ} (hr : 0 < r) (p : ℝ≥0∞) :
     eLpNorm (fderiv ℝ fun y => u (r⁻¹ • y)) p μ =
       ENNReal.ofReal (r ^ ((finrank ℝ E : ℝ) / p.toReal - 1)) * eLpNorm (fderiv ℝ u) p μ := by
@@ -68,4 +70,4 @@ theorem eLpNorm_fderiv_comp_inv_smul (u : E → F) {r : ℝ} (hr : 0 < r) (p : �
   congr 1
   field_simp
 
-end TauCeti
+end MeasureTheory.Measure

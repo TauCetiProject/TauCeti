@@ -32,17 +32,18 @@ the `Lᵖ` seminorm on `s`, for any set `s`. The codomain only needs a continuou
 
 ## Main declarations
 
-* `TauCeti.eLpNorm_comp_inv_smul`: `‖u (r⁻¹ • ·)‖_p = r ^ (n / p) * ‖u‖_p`.
-* `TauCeti.eLpNorm_comp_continuousLinearEquiv`: `‖u ∘ e‖_p = |det e|^(-1 / p) * ‖u‖_p`.
-* `TauCeti.eLpNorm_comp_continuousLinearEquiv_restrict_preimage`: the same identity for the `Lᵖ`
-  seminorms on `e ⁻¹' s` and on `s`.
+* `MeasureTheory.Measure.eLpNorm_comp_inv_smul`: `‖u (r⁻¹ • ·)‖_p = r ^ (n / p) * ‖u‖_p`.
+* `MeasureTheory.Measure.eLpNorm_comp_continuousLinearEquiv`:
+  `‖u ∘ e‖_p = |det e|^(-1 / p) * ‖u‖_p`.
+* `MeasureTheory.Measure.eLpNorm_comp_continuousLinearEquiv_restrict_preimage`: the same identity
+  for the `Lᵖ` seminorms on `e ⁻¹' s` and on `s`.
 -/
 
 public section
 
-namespace TauCeti
+namespace MeasureTheory.Measure
 
-open MeasureTheory Module
+open Module
 open scoped ENNReal
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [MeasurableSpace E] [BorelSpace E]
@@ -57,7 +58,7 @@ theorem eLpNorm_comp_inv_smul (u : E → G) {r : ℝ} (hr : 0 < r) (p : ℝ≥0�
       ENNReal.ofReal (r ^ ((finrank ℝ E : ℝ) / p.toReal)) * eLpNorm u p μ := by
   have hr' : r⁻¹ ≠ 0 := inv_ne_zero hr.ne'
   rw [← Function.comp_def, ← (measurableEmbedding_const_smul₀ hr').eLpNorm_map_measure,
-    Measure.map_addHaar_smul μ hr', eLpNorm_smul_measure_of_ne_zero (by positivity), smul_eq_mul]
+    map_addHaar_smul μ hr', eLpNorm_smul_measure_of_ne_zero (by positivity), smul_eq_mul]
   congr 1
   rw [inv_pow, inv_inv, abs_of_pos (by positivity), ENNReal.ofReal_rpow_of_pos (by positivity),
     ← Real.rpow_natCast, ← Real.rpow_mul hr.le, one_div, ENNReal.toReal_inv, div_eq_mul_inv]
@@ -72,10 +73,10 @@ theorem eLpNorm_comp_continuousLinearEquiv_restrict_preimage
       ENNReal.ofReal |(LinearMap.det (e : E →ₗ[ℝ] E))⁻¹| ^ (1 / p).toReal *
         eLpNorm u p (μ.restrict s) := by
   have hdet : LinearMap.det (e : E →ₗ[ℝ] E) ≠ 0 := (LinearEquiv.isUnit_det' e.toLinearEquiv).ne_zero
-  have hmap : Measure.map e μ = ENNReal.ofReal |(LinearMap.det (e : E →ₗ[ℝ] E))⁻¹| • μ :=
-    Measure.map_linearMap_addHaar_eq_smul_addHaar μ hdet
+  have hmap : map e μ = ENNReal.ofReal |(LinearMap.det (e : E →ₗ[ℝ] E))⁻¹| • μ :=
+    map_linearMap_addHaar_eq_smul_addHaar μ hdet
   have he : MeasurableEmbedding e := e.toHomeomorph.measurableEmbedding
-  rw [← he.eLpNorm_map_measure, ← he.restrict_map, hmap, Measure.restrict_smul,
+  rw [← he.eLpNorm_map_measure, ← he.restrict_map, hmap, restrict_smul,
     eLpNorm_smul_measure_of_ne_zero (by simpa using hdet), smul_eq_mul]
 
 /-- **Linear change of variables in the `Lᵖ` seminorm:** composing with a linear automorphism `e`
@@ -86,16 +87,8 @@ theorem eLpNorm_comp_continuousLinearEquiv (u : E → G) (e : E ≃L[ℝ] E) (p 
       eLpNorm u p μ := by
   simpa using eLpNorm_comp_continuousLinearEquiv_restrict_preimage μ u e p (s := Set.univ)
 
-end TauCeti
-
-namespace MeasureTheory.Measure
-
-open Module TauCeti
-open scoped ENNReal
-
-variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [MeasurableSpace E] [BorelSpace E]
-  [FiniteDimensional ℝ E] {μ : Measure E} [μ.IsAddHaarMeasure]
-  {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] {p : ℝ≥0∞} [Fact (1 ≤ p)] {r s : ℝ}
+variable {μ} {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] {p : ℝ≥0∞} [Fact (1 ≤ p)]
+  {r s : ℝ}
 
 variable (μ p) in
 /-- **The normalized dilation of `Lᵖ`** by a factor `r > 0`, as a linear isometric equivalence:
