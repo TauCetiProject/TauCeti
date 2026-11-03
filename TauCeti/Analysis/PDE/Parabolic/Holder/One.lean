@@ -121,17 +121,17 @@ and the supremum over `x` of the Hölder norms of the time slices. -/
       add_mem' := by
         rintro J K ⟨hJ, hJs⟩ ⟨hK, hKs⟩
         refine ⟨fun t x ↦ ?_, fun x t ↦ ?_⟩
-        · simpa only [map_add, BoundedContinuousFunction.add_apply,
+        · simpa only [map_add, _root_.add_apply,
             HolderSpace.add_apply, Pi.add_def] using (hJ t x).add (hK t x)
         · simp only [map_add, lp.coeFn_add, Pi.add_apply, HolderSpace.add_apply,
-            BoundedContinuousFunction.add_apply, hJs x t, hKs x t]
+            _root_.add_apply, hJs x t, hKs x t]
       smul_mem' := by
         rintro c J ⟨hJ, hJs⟩
         refine ⟨fun t x ↦ ?_, fun x t ↦ ?_⟩
-        · simpa only [map_smul, BoundedContinuousFunction.smul_apply,
+        · simpa only [map_smul, _root_.smul_apply,
             HolderSpace.smul_apply, Pi.smul_def] using (hJ t x).const_smul c
         · simp only [map_smul, lp.coeFn_smul, Pi.smul_apply, HolderSpace.smul_apply,
-            BoundedContinuousFunction.smul_apply, hJs x t] }
+            _root_.smul_apply, hJs x t] }
   graph
 
 namespace ParabolicC1HolderSpace
@@ -178,23 +178,23 @@ theorem valueL_apply (f : ParabolicC1HolderSpace α E F a b) (p : slab (E := E) 
     valueL f p = f p := (rfl)
 
 theorem zero_apply (p : slab (E := E) a b) : (0 : ParabolicC1HolderSpace α E F a b) p = 0 := by
-  rw [← valueL_apply, map_zero, BoundedContinuousFunction.coe_zero, Pi.zero_apply]
+  rw [← valueL_apply, map_zero, FunLike.coe_zero, Pi.zero_apply]
 
 theorem add_apply (f g : ParabolicC1HolderSpace α E F a b) (p : slab (E := E) a b) :
     (f + g) p = f p + g p := by
-  rw [← valueL_apply, map_add, BoundedContinuousFunction.add_apply, valueL_apply, valueL_apply]
+  rw [← valueL_apply, map_add, _root_.add_apply, valueL_apply, valueL_apply]
 
 theorem neg_apply (f : ParabolicC1HolderSpace α E F a b) (p : slab (E := E) a b) :
     (-f) p = -f p := by
-  rw [← valueL_apply, map_neg, BoundedContinuousFunction.neg_apply, valueL_apply]
+  rw [← valueL_apply, map_neg, _root_.neg_apply, valueL_apply]
 
 theorem sub_apply (f g : ParabolicC1HolderSpace α E F a b) (p : slab (E := E) a b) :
     (f - g) p = f p - g p := by
-  rw [← valueL_apply, map_sub, BoundedContinuousFunction.sub_apply, valueL_apply, valueL_apply]
+  rw [← valueL_apply, map_sub, _root_.sub_apply, valueL_apply, valueL_apply]
 
 theorem smul_apply (c : ℝ) (f : ParabolicC1HolderSpace α E F a b) (p : slab (E := E) a b) :
     (c • f) p = c • f p := by
-  rw [← valueL_apply, map_smul, BoundedContinuousFunction.smul_apply, valueL_apply]
+  rw [← valueL_apply, map_smul, _root_.smul_apply, valueL_apply]
 
 /-- The gradient field is the actual Fréchet derivative of every time slice. -/
 theorem hasSpatialFDerivAt (f : ParabolicC1HolderSpace α E F a b) (t : Icc a b) (x : E) :
