@@ -34,8 +34,6 @@ and, since the rows of an invertible matrix are unimodular, it gives every such 
 * `Module.Basis.isUnimodular`: every vector of a basis is unimodular.
 * `MonoidAlgebra.isUnimodular_single`: the basis vectors `single i 1` of a monoid algebra are
   unimodular.
-* `MonoidAlgebra.span_single_one_eq_span_single_one_iff`: distinct basis vectors `single i 1` of
-  a monoid algebra over a nontrivial semiring span distinct lines.
 * `Matrix.isUnimodular_apply_of_isUnit_det`: every row of a square matrix of unit determinant is
   unimodular.
 * `TauCeti.Module.isUnimodular_iff_exists_isUnit`: over a directly finite local semiring, a vector
@@ -98,16 +96,6 @@ theorem Module.Basis.isUnimodular {ι : Type*} (b : Module.Basis ι R M) (i : ι
 theorem MonoidAlgebra.isUnimodular_single {ι : Type*} (i : ι) :
     Module.IsUnimodular R (MonoidAlgebra.single i (1 : R)) :=
   (MonoidAlgebra.basis ι R).isUnimodular i
-
-/-- Over a nontrivial semiring, the basis vectors `single i 1` and `single j 1` of a monoid
-algebra span the same line exactly when `i = j`. -/
-@[simp]
-theorem MonoidAlgebra.span_single_one_eq_span_single_one_iff [Nontrivial R] {ι : Type*}
-    {i j : ι} :
-    R ∙ MonoidAlgebra.single i (1 : R) = R ∙ MonoidAlgebra.single j (1 : R) ↔ i = j := by
-  refine ⟨fun h ↦ ?_, fun h ↦ h ▸ rfl⟩
-  have hi := h.le (Submodule.mem_span_singleton_self (MonoidAlgebra.single i (1 : R)))
-  simpa using (MonoidAlgebra.single_mem_span_single (s := {j})).mp (by simpa using hi)
 
 end Semiring
 

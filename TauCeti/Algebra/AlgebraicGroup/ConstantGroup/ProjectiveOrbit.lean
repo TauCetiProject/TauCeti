@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Algebra.AlgebraicGroup.ConstantGroup.Representation
 public import TauCeti.Algebra.AlgebraicGroup.Representation.ProjectiveOrbit.Points
+public import TauCeti.Algebra.MonoidAlgebra.Basis
 public import TauCeti.LinearAlgebra.Unimodular
 import TauCeti.Algebra.AlgebraicGroup.ConstantGroup.Points
 import TauCeti.Algebra.AlgebraicGroup.Representation.ProjectiveOrbit.ClosedPoints
