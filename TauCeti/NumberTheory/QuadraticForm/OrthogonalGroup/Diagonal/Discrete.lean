@@ -124,9 +124,9 @@ private theorem exists_mem_nhds_finite_preimage_fullAdelicOrthogonalDiagonal
       simpa only [fullAdelicOrthogonalDiagonal_apply, finiteAdelicOrthogonalDiagonal_apply,
         toMatrix_orthogonalGroupBaseChange, Matrix.map_apply, eq_ratCast] using hp.1 i j
     have hq : |q.num| < 2 := by
-      rw [← Rat.coe_int_num_of_den_eq_one hden] at hreal
+      rw [← Rat.intCast_num_of_den_eq_one hden] at hreal
       exact_mod_cast hreal
-    exact ⟨q.num, abs_lt.mp hq, Rat.coe_int_num_of_den_eq_one hden⟩
+    exact ⟨q.num, abs_lt.mp hq, Rat.intCast_num_of_den_eq_one hden⟩
 
 /-- Some neighbourhood of the identity in full adelic `SO` contains the diagonal images of only
 finitely many rational proper isometries. -/

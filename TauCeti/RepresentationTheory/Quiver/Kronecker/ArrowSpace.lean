@@ -47,7 +47,7 @@ private theorem not_isIrreducibleMorphism_end_P₁ (f : P₁ (k := k) (A := A) �
   intro hf
   have hd := finrank_end_indecProjRep_of_isAcyclic (k := k) (Q := Quiver.Kronecker A)
     Quiver.Kronecker.isAcyclic src
-  obtain ⟨c, rfl⟩ := (finrank_eq_one_iff_of_nonzero' (𝟙 P₁)
+  obtain ⟨c, rfl⟩ := (_root_.finrank_eq_one_iff_of_ne_zero' (𝟙 P₁)
     (id_ne_zero_of_finrank_end_eq_one hd)).mp hd f
   have hc : c ≠ 0 := by
     rintro rfl
@@ -173,7 +173,7 @@ theorem finrank_irreducibleMorphismSpace_kronecker
       rw [(irreducibleMorphismSpaceCongr k eM eN).finrank_eq]
     · have : Subsingleton (irreducibleMorphismSpace k (S₁ (k := k) (A := A)) S₁) :=
         subsingleton_irreducibleMorphismSpace_iff.mpr fun f hf ↦
-          hf.not_isIso ((isIso_iff_nonzero f).mpr hf.ne_zero)
+          hf.not_isIso ((CategoryTheory.isIso_iff_ne_zero f).mpr hf.ne_zero)
       exact Module.finrank_zero_of_subsingleton
     · have : Subsingleton (irreducibleMorphismSpace k (S₁ (k := k) (A := A)) S₂) :=
         subsingleton_irreducibleMorphismSpace_iff.mpr fun f hf ↦
@@ -190,7 +190,7 @@ theorem finrank_irreducibleMorphismSpace_kronecker
       exact Module.finrank_zero_of_subsingleton
     · have : Subsingleton (irreducibleMorphismSpace k (S₂ (k := k) (A := A)) S₂) :=
         subsingleton_irreducibleMorphismSpace_iff.mpr fun f hf ↦
-          hf.not_isIso ((isIso_iff_nonzero f).mpr hf.ne_zero)
+          hf.not_isIso ((CategoryTheory.isIso_iff_ne_zero f).mpr hf.ne_zero)
       exact Module.finrank_zero_of_subsingleton
     · exact (h (Or.inl ⟨⟨eM⟩, ⟨eN⟩⟩)).elim
     · exact (h (Or.inr ⟨⟨eM⟩, ⟨eN⟩⟩)).elim

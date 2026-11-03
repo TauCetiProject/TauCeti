@@ -231,7 +231,7 @@ theorem natCard_groupCohomology_two_res_padicCompletionUnits
   obtain ⟨-, -, hcard⟩ := exists_zmultiples_eq_top_groupCohomology_two_res_padicCompletionUnits
     p K L S
   obtain ⟨n, hn⟩ := IsPGroup.iff_card.mp hS
-  rw [hcard, hn, padicValNat.prime_pow]
+  rw [hcard, hn, Nat.padicValNat_def, Nat.multiplicity_prime_pow]
 
 /-- **`H²(Gal(L/K), A(L))` is cyclic of order the `p`-part of `[L : K]`** (NSW (3.6.4), read
 through local reciprocity): some class `u` generates `H²(Gal(L/K), A(L))`, and this group has

@@ -177,7 +177,7 @@ private lemma commute_normalizedAtkinLehnerCharCuspOneEnd_single (h : Q ∥ N)
   have hΓ₀ := congrArg DFunLike.coe (LinearMap.congr_fun
     (h.commute_normalizedAtkinLehnerOperatorCusp_heckeSlashGamma0CuspFormEnd hD).eq
     (cuspFormCharSpaceOneEquiv N k f))
-  simp only [Module.End.mul_apply, coe_normalizedAtkinLehnerOperatorCusp,
+  simp only [mul_apply_eq_comp, coe_normalizedAtkinLehnerOperatorCusp,
     coe_heckeSlashGamma0CuspFormEnd, coe_cuspFormCharSpaceOneEquiv_apply] at hΓ₀
   have key : h.normalizedAtkinLehnerCharCuspOneEnd k (twistedHeckeSlashCuspFormCharEnd k 1 D f) =
       twistedHeckeSlashCuspFormCharEnd k 1 D (h.normalizedAtkinLehnerCharCuspOneEnd k f) := by
