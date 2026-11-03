@@ -64,6 +64,16 @@ theorem pairColorDensity_mul_card_support [DecidableEq κ] [DecidableEq V]
     simp [pairColorDensity_def, h, hc]
   · rw [pairColorDensity_def, div_mul_cancel₀ _ (Nat.cast_ne_zero.mpr h)]
 
+/-- For disjoint sets, every pair in `s ×ˢ t` is a distinct pair, so the density times
+`#s * #t` is the color count. -/
+theorem pairColorDensity_mul_card_of_disjoint [DecidableEq κ] (S : PairColorSystem κ V) (c : κ)
+    {s t : Finset V} (hst : Disjoint s t) :
+    pairColorDensity S c s t * (#s * #t) =
+      (#((s ×ˢ t).filter fun p => S.colorOfPair p.1 p.2 = some c) : ℚ) := by
+  classical
+  rw [← pairColorDensity_mul_card_support, filter_ne_product_of_disjoint hst, card_product,
+    Nat.cast_mul]
+
 /-- Pair-color densities are nonnegative. -/
 theorem pairColorDensity_nonneg (S : PairColorSystem κ V) (c : κ) (s t : Finset V) :
     0 ≤ pairColorDensity S c s t := by
