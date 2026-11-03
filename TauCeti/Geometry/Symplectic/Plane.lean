@@ -80,9 +80,8 @@ theorem exists_eq_smul_one_of_apply_left (hV : finrank ℝ V = 2) {S : Module.En
   linarith
 
 /-- A homothety is skew-adjoint for `ω` only when it vanishes. -/
-theorem eq_zero_of_smul_one_mem (hV : finrank ℝ V = 2) {c : ℝ}
+theorem eq_zero_of_smul_one_mem [Nontrivial V] {c : ℝ}
     (hc : c • (1 : Module.End ℝ V) ∈ skewAdjointLieSubalgebra ω.toBilinForm) : c = 0 := by
-  have : Nontrivial V := Module.nontrivial_of_finrank_pos (R := ℝ) (by omega)
   obtain ⟨v, hv⟩ := exists_ne (0 : V)
   obtain ⟨w, hw⟩ : ∃ w, ω v w ≠ 0 := by
     by_contra! h
@@ -110,11 +109,12 @@ is a multiple of `A`. -/
 theorem exists_eq_smul_of_commute (hV : finrank ℝ V = 2)
     {A B : skewAdjointLieSubalgebra ω.toBilinForm} (hA : A ≠ 0)
     (hAB : Commute (A : Module.End ℝ V) B) : ∃ t : ℝ, B = t • A := by
+  have : Nontrivial V := Module.nontrivial_of_finrank_pos (R := ℝ) (by omega)
   -- `A` is not a homothety, so some `v` is not an eigenvector of `A`.
   obtain ⟨v, hv⟩ : ∃ v, LinearIndependent ℝ ![v, (A : Module.End ℝ V) v] := by
     by_contra! h
     obtain ⟨c, hc⟩ := LinearMap.exists_eq_smul_id_of_forall_notLinearIndependent h
-    have hc0 : c = 0 := eq_zero_of_smul_one_mem hV (hc ▸ A.2)
+    have hc0 : c = 0 := eq_zero_of_smul_one_mem (hc ▸ A.2)
     exact hA (Subtype.ext (by simpa [hc0] using hc))
   let b := basisOfLinearIndependentOfCardEqFinrank hv (by simp [hV])
   have hb0 : b 0 = v := by simp [b]
@@ -136,7 +136,7 @@ theorem exists_eq_smul_of_commute (hV : finrank ℝ V = 2)
       rw [← mul_apply_eq_comp, ← hAB.eq, mul_apply_eq_comp, ← hBv]
       simp only [map_add, map_smul]
       abel
-  have ha : a = 0 := eq_zero_of_smul_one_mem hV (by
+  have ha : a = 0 := eq_zero_of_smul_one_mem (by
     rw [← hBeq]
     exact sub_mem B.2 (Submodule.smul_mem _ t A.2))
   refine ⟨t, Subtype.ext ?_⟩
@@ -146,9 +146,12 @@ theorem exists_eq_smul_of_commute (hV : finrank ℝ V = 2)
 /-- In dimension two, if `A ∈ sp(V, ω)` squares to a nonzero homothety `c`, then `ad A` has no
 Jordan block of size two at the eigenvalue `0`: `⁅A, ⁅A, B⁆⁆ = 0` implies `⁅A, B⁆ = 0`. -/
 theorem lie_eq_zero_of_lie_lie_eq_zero (hV : finrank ℝ V = 2)
-    {A B : skewAdjointLieSubalgebra ω.toBilinForm} (hA0 : A ≠ 0) {c : ℝ} (hc : c ≠ 0)
+    {A B : skewAdjointLieSubalgebra ω.toBilinForm} {c : ℝ} (hc : c ≠ 0)
     (hA : (A : Module.End ℝ V) * A = c • 1) (hB : ⁅A, ⁅A, B⁆⁆ = 0) : ⁅A, B⁆ = 0 := by
   have : Nontrivial V := Module.nontrivial_of_finrank_pos (R := ℝ) (by omega)
+  have hA0 : A ≠ 0 := by
+    rintro rfl
+    exact hc (by simpa using hA.symm)
   -- `C = ⁅A, B⁆` commutes with `A`, so `C = t A`; and `A C + C A = A² B - B A² = 0` while
   -- `A C + C A = 2 t c`.
   obtain ⟨t, ht⟩ := exists_eq_smul_of_commute hV hA0 (commute_coe_iff.2 hB)
@@ -181,7 +184,7 @@ theorem engel_le_lieSpan_singleton (hV : finrank ℝ V = 2)
     | succ n ih =>
       intro B hB
       rw [pow_succ, mul_apply_eq_comp] at hB
-      exact lie_eq_zero_of_lie_lie_eq_zero hV hA0 hc hA (by simpa using ih _ hB)
+      exact lie_eq_zero_of_lie_lie_eq_zero hV hc hA (by simpa using ih _ hB)
   intro B hB
   obtain ⟨n, hn⟩ := (mem_engel_iff ℝ A B).1 hB
   rw [← LieSubalgebra.mem_toSubmodule, coe_lieSpan_eq_span_of_forall_lie_eq_zero (by simp)]
