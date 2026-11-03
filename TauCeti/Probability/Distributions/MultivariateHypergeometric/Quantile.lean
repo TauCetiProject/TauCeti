@@ -35,14 +35,6 @@ namespace TauCeti.Probability
 
 variable {ι : Type*} [Fintype ι]
 
-private theorem map_cast_eval_multivariateHypergeometricMeasure
-    (K : ι → ℕ) (n : ℕ) (i : ι) :
-    (multivariateHypergeometricMeasure K n).map (fun k ↦ (k i : ℝ)) =
-      ((multivariateHypergeometricMeasure K n).map (fun k ↦ k i)).map
-        (Nat.cast : ℕ → ℝ) := by
-  rw [Measure.map_map (by fun_prop) (by fun_prop)]
-  rfl
-
 /-- The real-cast quantile of a multivariate hypergeometric coordinate is the quantile of its
 scalar hypergeometric marginal. -/
 theorem quantile_map_cast_eval_multivariateHypergeometricMeasure
@@ -50,7 +42,9 @@ theorem quantile_map_cast_eval_multivariateHypergeometricMeasure
     ((multivariateHypergeometricMeasure K n).map (fun k ↦ (k i : ℝ))).quantile u =
       ((hypergeometricMeasure (∑ j, K j) (K i) n).map
         (Nat.cast : ℕ → ℝ)).quantile u := by
-  rw [map_cast_eval_multivariateHypergeometricMeasure,
+  rw [show (fun k : ι → ℕ ↦ (k i : ℝ)) =
+      (Nat.cast : ℕ → ℝ) ∘ fun k ↦ k i by rfl,
+    ← Measure.map_map (by fun_prop) (by fun_prop),
     map_eval_multivariateHypergeometricMeasure]
 
 /-- At level zero, a coordinate quantile tends to the number of objects from that category
@@ -63,7 +57,9 @@ theorem tendsto_quantile_map_cast_eval_multivariateHypergeometricMeasure_nhdsGT_
       (𝓝[>] 0) (𝓝 (n - ((∑ j, K j) - K i) : ℕ)) := by
   have hKi : K i ≤ ∑ j, K j :=
     Finset.single_le_sum (fun j _ ↦ Nat.zero_le (K j)) (Finset.mem_univ i)
-  rw [map_cast_eval_multivariateHypergeometricMeasure,
+  rw [show (fun k : ι → ℕ ↦ (k i : ℝ)) =
+      (Nat.cast : ℕ → ℝ) ∘ fun k ↦ k i by rfl,
+    ← Measure.map_map (by fun_prop) (by fun_prop),
     map_eval_multivariateHypergeometricMeasure]
   exact tendsto_quantile_map_cast_hypergeometricMeasure_nhdsGT_zero hKi hn
 
@@ -77,7 +73,9 @@ theorem tendsto_quantile_map_cast_eval_multivariateHypergeometricMeasure_nhdsLT_
       (𝓝[<] 1) (𝓝 (min (K i) n : ℕ)) := by
   have hKi : K i ≤ ∑ j, K j :=
     Finset.single_le_sum (fun j _ ↦ Nat.zero_le (K j)) (Finset.mem_univ i)
-  rw [map_cast_eval_multivariateHypergeometricMeasure,
+  rw [show (fun k : ι → ℕ ↦ (k i : ℝ)) =
+      (Nat.cast : ℕ → ℝ) ∘ fun k ↦ k i by rfl,
+    ← Measure.map_map (by fun_prop) (by fun_prop),
     map_eval_multivariateHypergeometricMeasure]
   exact tendsto_quantile_map_cast_hypergeometricMeasure_nhdsLT_one hKi hn
 

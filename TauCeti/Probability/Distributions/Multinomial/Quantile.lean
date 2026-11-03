@@ -31,13 +31,6 @@ namespace TauCeti.Probability
 
 variable {ι : Type*} [Fintype ι]
 
-private theorem map_cast_eval_multinomialMeasure (n : ℕ) (p : StdSimplex NNReal ι)
-    (i : ι) :
-    (multinomialMeasure n p).map (fun k ↦ (k i : ℝ)) =
-      ((multinomialMeasure n p).map (fun k ↦ k i)).map (Nat.cast : ℕ → ℝ) := by
-  rw [Measure.map_map (by fun_prop) (by fun_prop)]
-  rfl
-
 /-- The real-cast quantile of a multinomial coordinate is the quantile of its binomial
 marginal. -/
 theorem quantile_map_cast_eval_multinomialMeasure (n : ℕ) (p : StdSimplex NNReal ι)
@@ -45,7 +38,10 @@ theorem quantile_map_cast_eval_multinomialMeasure (n : ℕ) (p : StdSimplex NNRe
     ((multinomialMeasure n p).map (fun k ↦ (k i : ℝ))).quantile u =
       ((ProbabilityTheory.binomial n (p.multinomialCellProbability i)).map
         (Nat.cast : ℕ → ℝ)).quantile u := by
-  rw [map_cast_eval_multinomialMeasure, map_eval_multinomialMeasure]
+  rw [show (fun k : ι → ℕ ↦ (k i : ℝ)) =
+      (Nat.cast : ℕ → ℝ) ∘ fun k ↦ k i by rfl,
+    ← Measure.map_map (by fun_prop) (by fun_prop),
+    map_eval_multinomialMeasure]
 
 /-- At level zero, a multinomial coordinate quantile tends to the trial count when all mass is
 in that cell, and to zero otherwise. -/
@@ -55,7 +51,10 @@ theorem tendsto_quantile_map_cast_eval_multinomialMeasure_nhdsGT_zero
       (((multinomialMeasure n p).map (fun k ↦ (k i : ℝ))).quantile u : EReal))
       (𝓝[>] 0)
       (𝓝 (if p.multinomialCellProbability i = 1 then (n : EReal) else 0)) := by
-  rw [map_cast_eval_multinomialMeasure, map_eval_multinomialMeasure]
+  rw [show (fun k : ι → ℕ ↦ (k i : ℝ)) =
+      (Nat.cast : ℕ → ℝ) ∘ fun k ↦ k i by rfl,
+    ← Measure.map_map (by fun_prop) (by fun_prop),
+    map_eval_multinomialMeasure]
   exact tendsto_quantile_map_cast_binomial_nhdsGT_zero n (p.multinomialCellProbability i)
 
 /-- At level one, a multinomial coordinate quantile tends to zero when its cell has zero mass,
@@ -66,7 +65,10 @@ theorem tendsto_quantile_map_cast_eval_multinomialMeasure_nhdsLT_one
       (((multinomialMeasure n p).map (fun k ↦ (k i : ℝ))).quantile u : EReal))
       (𝓝[<] 1)
       (𝓝 (if p.multinomialCellProbability i = 0 then 0 else (n : EReal))) := by
-  rw [map_cast_eval_multinomialMeasure, map_eval_multinomialMeasure]
+  rw [show (fun k : ι → ℕ ↦ (k i : ℝ)) =
+      (Nat.cast : ℕ → ℝ) ∘ fun k ↦ k i by rfl,
+    ← Measure.map_map (by fun_prop) (by fun_prop),
+    map_eval_multinomialMeasure]
   exact tendsto_quantile_map_cast_binomial_nhdsLT_one n (p.multinomialCellProbability i)
 
 end TauCeti.Probability

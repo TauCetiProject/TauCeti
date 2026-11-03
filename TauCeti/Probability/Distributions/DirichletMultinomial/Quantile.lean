@@ -36,13 +36,6 @@ namespace TauCeti.Probability
 
 variable {ι : Type*} [Fintype ι] [Nonempty ι] {a : ι → ℝ}
 
-private theorem map_cast_eval_dirichletMultinomialMeasure (n : ℕ) (a : ι → ℝ) (i : ι) :
-    (dirichletMultinomialMeasure n a).map (fun k ↦ (k i : ℝ)) =
-      ((dirichletMultinomialMeasure n a).map (fun k ↦ k i)).map
-        (Nat.cast : ℕ → ℝ) := by
-  rw [Measure.map_map (by fun_prop) (by fun_prop)]
-  rfl
-
 /-- For at least two categories, the real-cast quantile of a Dirichlet-multinomial coordinate is
 the quantile of its beta-binomial marginal. -/
 theorem quantile_map_cast_eval_dirichletMultinomialMeasure [DecidableEq ι] [Nontrivial ι]
@@ -50,7 +43,9 @@ theorem quantile_map_cast_eval_dirichletMultinomialMeasure [DecidableEq ι] [Non
     ((dirichletMultinomialMeasure n a).map (fun k ↦ (k i : ℝ))).quantile u =
       ((betaBinomialMeasure n (a i) (∑ j with j ≠ i, a j)).map
         (Nat.cast : ℕ → ℝ)).quantile u := by
-  rw [map_cast_eval_dirichletMultinomialMeasure,
+  rw [show (fun k : ι → ℕ ↦ (k i : ℝ)) =
+      (Nat.cast : ℕ → ℝ) ∘ fun k ↦ k i by rfl,
+    ← Measure.map_map (by fun_prop) (by fun_prop),
     map_eval_dirichletMultinomialMeasure ha n i]
 
 /-- With one category, every interior coordinate quantile is the trial count. -/
@@ -79,7 +74,9 @@ theorem tendsto_quantile_map_cast_eval_dirichletMultinomialMeasure_nhdsGT_zero
     rw [quantile_map_cast_eval_dirichletMultinomialMeasure_of_card_eq_one ha hcard n i hu]
     norm_cast
   · rw [ite_eq_right (ne_of_gt Fintype.one_lt_card),
-      map_cast_eval_dirichletMultinomialMeasure,
+      show (fun k : ι → ℕ ↦ (k i : ℝ)) =
+        (Nat.cast : ℕ → ℝ) ∘ fun k ↦ k i by rfl,
+      ← Measure.map_map (by fun_prop) (by fun_prop),
       map_eval_dirichletMultinomialMeasure ha n i]
     exact tendsto_quantile_map_cast_betaBinomialMeasure_nhdsGT_zero
       (ha i) (Finset.sum_filter_ne_pos ha i) n
@@ -99,7 +96,9 @@ theorem tendsto_quantile_map_cast_eval_dirichletMultinomialMeasure_nhdsLT_one
     filter_upwards [Ioo_mem_nhdsLT (α := ℝ) zero_lt_one] with u hu
     rw [quantile_map_cast_eval_dirichletMultinomialMeasure_of_card_eq_one ha hcard n i hu]
     norm_cast
-  · rw [map_cast_eval_dirichletMultinomialMeasure,
+  · rw [show (fun k : ι → ℕ ↦ (k i : ℝ)) =
+        (Nat.cast : ℕ → ℝ) ∘ fun k ↦ k i by rfl,
+      ← Measure.map_map (by fun_prop) (by fun_prop),
       map_eval_dirichletMultinomialMeasure ha n i]
     exact tendsto_quantile_map_cast_betaBinomialMeasure_nhdsLT_one
       (ha i) (Finset.sum_filter_ne_pos ha i) n
