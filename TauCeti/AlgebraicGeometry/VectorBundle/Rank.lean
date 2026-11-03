@@ -30,9 +30,10 @@ components.
   `FiniteLocallyFreeSheaf.rank_apply_eq_natCard`;
 * `TauCeti.AlgebraicGeometry.FiniteLocallyFreeSheaf.rankLocus`: the clopen locus where the rank
   takes a given value;
-* `FiniteLocallyFreeSheaf.rank_eq_of_iso`, `FiniteLocallyFreeSheaf.rank_free_apply` and
-  `FiniteLocallyFreeSheaf.rank_pullback_apply`: the rank is invariant under isomorphism, is `|I|`
-  for the free sheaf on `I`, and is preserved by pullback;
+* `FiniteLocallyFreeSheaf.rank_eq_of_iso`, `FiniteLocallyFreeSheaf.rank_free_apply`,
+  `FiniteLocallyFreeSheaf.rank_pullback_apply` and `FiniteLocallyFreeSheaf.rank_pullback`: the
+  rank is invariant under isomorphism, is `|I|` for the free sheaf on `I`, and is preserved by
+  pullback;
 * `FiniteLocallyFreeSheaf.rank_biprod_apply` and `FiniteLocallyFreeSheaf.rank_tensor_apply`: rank
   is additive under direct sums and multiplicative under tensor products;
 * `FiniteLocallyFreeSheaf.isInvertible_iff_forall_rank_eq_one`: the invertible sheaves are exactly
@@ -180,6 +181,12 @@ theorem rank_pullback_apply {Y : Scheme.{u}} (f : X ⟶ Y) (E : FiniteLocallyFre
   exact ((pullback f).obj E).rank_apply_eq_natCard_of_obj_eq (pullback_obj_obj f E)
     (U := f ⁻¹ᵁ U) hx τ (SheafOfModules.GeneratingSections.isIso_mapIso_π _ _ _ _)
     (by rw [SheafOfModules.GeneratingSections.mapIso_I]; exact hI)
+
+/-- The rank of the pullback of a finite locally free sheaf `E` along `f : X ⟶ Y` is the rank of
+`E` composed with `f`. -/
+theorem rank_pullback {Y : Scheme.{u}} (f : X ⟶ Y) (E : FiniteLocallyFreeSheaf Y) :
+    ((pullback f).obj E).rank = E.rank.comap f.base.hom :=
+  LocallyConstant.ext fun x ↦ by simp
 
 /-- Two finite locally free sheaves are free on finite bases over a common open neighbourhood of
 each point: the intersection of neighbourhoods on which each of them is free. -/
