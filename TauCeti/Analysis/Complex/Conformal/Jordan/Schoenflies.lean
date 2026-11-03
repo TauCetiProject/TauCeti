@@ -87,7 +87,7 @@ theorem IsJordanCurve.exists_homeomorph_image_sphere_of_mem (hC : IsJordanCurve 
       e '' closedBall 0 1 = filledHull C := by
   obtain ⟨g, hgc, -, hgb, hgs, hg0, e₁, he₁⟩ := hC.exists_homeomorph_closedBall_filledHull hp
   obtain ⟨h, hhc, -, hhb, hhs, hht, -⟩ := hC.exists_homeomorph_compl_ball_compl_filledHull_sdiff
-  have hg : BijOn g (closedBall 0 1) (filledHull C) := BijOn.of_equiv_coe e₁.toEquiv he₁
+  have hg : BijOn g (closedBall 0 1) (filledHull C) := Equiv.bijOn_of_coe_eq e₁.toEquiv he₁
   have hsph : sphere (0 : ℂ) 1 ⊆ (ball 0 1)ᶜ := fun z hz => by
     simp [mem_sphere_zero_iff_norm.1 hz]
   /- The circle homeomorphism `σ = h⁻¹ ∘ g` comparing the two parametrizations of `C`. -/
