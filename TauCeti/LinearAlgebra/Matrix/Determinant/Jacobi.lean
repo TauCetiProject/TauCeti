@@ -67,7 +67,7 @@ theorem det_mul_det_submatrix_adjugate {n k : ℕ} (A : Matrix (Fin n) (Fin n) R
   set C := (adjugate A).submatrix Q P
   -- Reorder the rows as `I, Iᶜ` and the columns as `J, Jᶜ`; then `B * C = det A • 1` blockwise.
   have hBC : B * C = fromBlocks (A.det • 1) 0 0 (A.det • 1) := by
-    ext (i | i) (j | j) <;> simp [B, C, mul_adjugate, one_apply]
+    ext (i | i) (j | j) <;> simp [B, C, mul_adjugate, Matrix.one_apply]
   rw [← fromBlocks_toBlocks B, ← fromBlocks_toBlocks C, fromBlocks_multiply,
     fromBlocks_inj] at hBC
   have hC : C.toBlocks₂₂ =

@@ -44,6 +44,10 @@ definite, so is `h`. This is the positive Hermitian form that a Euclidean metric
   `B` preserve `h`.
 * `LinearMap.BilinForm.sesqComplexification_eq_zero_of_mem_eigenspace`: eigenspaces of a
   complexified map preserving `B` are `h`-orthogonal unless `conj z * w = 1`.
+* `LinearMap.BilinForm.sesqComplexification_baseChange_left_of_skewAdjoint`: real
+  skew-adjoint maps remain skew-adjoint after complexification.
+* `LinearMap.BilinForm.sesqComplexification_eq_zero_of_mem_eigenspace_of_skewAdjoint`:
+  their eigenspaces are orthogonal unless `conj z + w = 0`.
 * `LinearMap.BilinForm.IsSymm.sesqComplexification`: `h` is Hermitian when `B` is symmetric.
 * `LinearMap.BilinForm.sesqComplexification_one_tmul_add_I_tmul_self`: for symmetric `B`,
   `h (a + i b, a + i b) = B (a, a) + B (b, b)`.
@@ -136,6 +140,35 @@ theorem sesqComplexification_eq_zero_of_mem_eigenspace {f : V →ₗ[ℝ] V}
   have h' : (starRingEnd ℂ z * w - 1) * B.sesqComplexification x y = 0 := by
     linear_combination h
   exact (mul_eq_zero.mp h').resolve_left (sub_ne_zero.mpr hzw)
+
+/-- A real skew-adjoint endomorphism remains skew-adjoint for the sesquilinear
+complexification. Neither symmetry nor nondegeneracy of the form is required. -/
+theorem sesqComplexification_baseChange_left_of_skewAdjoint {f : V →ₗ[ℝ] V}
+    (hf : ∀ v w, B (f v) w = -B v (f w)) (x y : ℂ ⊗[ℝ] V) :
+    B.sesqComplexification (f.baseChange ℂ x) y =
+      -B.sesqComplexification x (f.baseChange ℂ y) := by
+  induction x using TensorProduct.inductionOn with
+  | tmul c v =>
+    induction y using TensorProduct.inductionOn with
+    | tmul d w => simp [sesqComplexification_tmul_tmul, hf]
+    | add y z hy hz => simp only [map_add, hy, hz, neg_add_rev, add_comm]
+  | add x z hx hz =>
+    simp only [map_add, LinearMap.add_apply, hx, hz, neg_add_rev, add_comm]
+
+/-- Eigenvectors of a complexified skew-adjoint endomorphism are orthogonal unless their
+eigenvalues satisfy `conj z + w = 0`. -/
+theorem sesqComplexification_eq_zero_of_mem_eigenspace_of_skewAdjoint {f : V →ₗ[ℝ] V}
+    (hf : ∀ v w, B (f v) w = -B v (f w)) {z w : ℂ}
+    (hzw : starRingEnd ℂ z + w ≠ 0) {x y : ℂ ⊗[ℝ] V}
+    (hx : x ∈ Module.End.eigenspace (f.baseChange ℂ) z)
+    (hy : y ∈ Module.End.eigenspace (f.baseChange ℂ) w) :
+    B.sesqComplexification x y = 0 := by
+  have h := B.sesqComplexification_baseChange_left_of_skewAdjoint hf x y
+  rw [Module.End.mem_eigenspace_iff.mp hx, Module.End.mem_eigenspace_iff.mp hy] at h
+  simp only [map_smulₛₗ, LinearMap.smul_apply, smul_eq_mul, RingHom.id_apply] at h
+  have h' : (starRingEnd ℂ z + w) * B.sesqComplexification x y = 0 := by
+    linear_combination h
+  exact (mul_eq_zero.mp h').resolve_left hzw
 
 /-! ### Hermitian symmetry and positivity -/
 

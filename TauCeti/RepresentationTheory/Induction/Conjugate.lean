@@ -521,7 +521,7 @@ theorem _root_.Representation.apply_conjNormal_inv (g : G) (n : N) (v : V) :
   have hg : g * (MulAut.conjNormal g⁻¹ n : G) = (n : G) * g := by
     rw [MulAut.conjNormal_apply]
     group
-  rw [← Module.End.mul_apply, ← Module.End.mul_apply, ← map_mul, ← map_mul, hg]
+  rw [← mul_apply_eq_comp, ← mul_apply_eq_comp, ← map_mul, ← map_mul, hg]
 
 end Representation
 
@@ -890,4 +890,4 @@ theorem Representation.apply_conjNormal_coe {k : Type u} {G : Type v} {V : Type 
     (σ : Representation k N V) (m n : N) (v : V) :
     σ m (σ n v) = σ (MulAut.conjNormal (m : G) n) (σ m v) := by
   have hm : m * n = MulAut.conjNormal (m : G) n * m := Subtype.ext (by simp [mul_assoc])
-  rw [← Module.End.mul_apply, ← Module.End.mul_apply, ← map_mul, ← map_mul, hm]
+  rw [← mul_apply_eq_comp, ← mul_apply_eq_comp, ← map_mul, ← map_mul, hm]

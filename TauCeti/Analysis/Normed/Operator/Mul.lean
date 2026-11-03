@@ -13,6 +13,8 @@ public import Mathlib.Analysis.Normed.Operator.Mul
 This file identifies the underlying linear maps of bounded left and right multiplication,
 and evaluates their powers. These identities connect the bounded-operator API with the
 algebraic multiplication maps and allow power-series calculations on multiplication operators.
+For unital algebras we also bundle the left regular representation as a unital algebra
+homomorphism and give its inverse norm bound without assuming that the identity has norm one.
 -/
 
 public section
@@ -64,6 +66,36 @@ theorem flip_mul_pow_apply (x y : R) (n : ℕ) :
   rw [← coe_coe, toLinearMap_pow, toLinearMap_flip_mul_eq_mulRight,
     LinearMap.pow_mulRight, LinearMap.mulRight_apply]
 
+/-- Evaluation at the identity bounds an element by its left multiplication operator,
+without normalizing the norm of the identity. -/
+theorem norm_le_opNorm_mul_apply_mul_norm_one (x : R) :
+    ‖x‖ ≤ ‖mul 𝕜 R x‖ * ‖(1 : R)‖ := by
+  simpa only [mul_apply', mul_one] using (mul 𝕜 R x).le_opNorm (1 : R)
+
 end Unital
 
 end ContinuousLinearMap
+
+namespace AlgHom
+
+variable (𝕜 R : Type*) [NontriviallyNormedField 𝕜] [SeminormedRing R]
+  [NormedAlgebra 𝕜 R]
+
+/-- The unital left regular representation by bounded operators. This is the unital
+version of `NonUnitalAlgHom.Lmul`. -/
+noncomputable def Lmul : R →ₐ[𝕜] R →L[𝕜] R :=
+  { NonUnitalAlgHom.Lmul 𝕜 R with
+    map_one' := by ext x; simp
+    commutes' := fun c ↦ by ext x; simp [Algebra.algebraMap_eq_smul_one] }
+
+/-- The left regular representation has the usual continuous multiplication map as its
+underlying function. -/
+@[simp]
+theorem coe_Lmul : ⇑(Lmul 𝕜 R) = ContinuousLinearMap.mul 𝕜 R := (rfl)
+
+/-- The left regular representation is faithful, as can be seen by evaluation at one. -/
+theorem Lmul_injective : Function.Injective (Lmul 𝕜 R) := by
+  intro x y h
+  simpa using DFunLike.congr_fun h (1 : R)
+
+end AlgHom

@@ -33,6 +33,7 @@ result.
 
 * `FirstOrder.Language.LHom.realize_onBoundedFormulaInf`: along an expansion, the image of a
   formula is realized exactly when the formula is.
+* `FirstOrder.Language.LHom.realize_sentenceInf_onBoundedFormulaInf`: its form for sentences.
 * `FirstOrder.Language.LHom.id_onBoundedFormulaInf` and
   `FirstOrder.Language.LHom.comp_onBoundedFormulaInf`: the action is functorial.
 * `FirstOrder.Language.LHom.onBoundedFormulaInf_toInf`,
@@ -141,6 +142,15 @@ theorem realize_onBoundedFormulaInf (g : L →ᴸ L') {M : Type w} [L.Structure 
   | all φ ih => simp [BoundedFormulaInf.realize_all, ih]
   | iSup φs ih => simp [BoundedFormulaInf.realize_iSup, ih]
   | iInf φs ih => simp [BoundedFormulaInf.realize_iInf, ih]
+
+/-- **Realization of sentences along an expansion.** If the `L'`-structure on `M` expands its
+`L`-structure along `g`, the image of an infinitary sentence under `g` holds exactly when the
+sentence does. -/
+@[simp]
+theorem realize_sentenceInf_onBoundedFormulaInf (g : L →ᴸ L') {M : Type w} [L.Structure M]
+    [L'.Structure M] [g.IsExpansionOn M] (φ : L.SentenceInf ι) :
+    SentenceInf.Realize (g.onBoundedFormulaInf φ) M ↔ SentenceInf.Realize φ M := by
+  simp only [SentenceInf.realize_def, FormulaInf.realize_def, realize_onBoundedFormulaInf]
 
 /-- The identity language map acts as the identity on infinitary formulas. -/
 @[simp]

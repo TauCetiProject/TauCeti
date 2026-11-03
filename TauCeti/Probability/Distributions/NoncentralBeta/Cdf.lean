@@ -79,7 +79,7 @@ theorem hasSum_cdf_noncentralBetaMeasure (ha : 0 ≤ a) (hb : 0 < b) (l : ℝ≥
     HasSum (fun j : ℕ ↦ (exp (-(l : ℝ) / 2) * ((l : ℝ) / 2) ^ j / j.factorial) *
       regularizedIncompleteBeta (a + j) b x) (cdf (noncentralBetaMeasure a b l) x) := by
   have := isProbabilityMeasure_noncentralBetaMeasure ha hb l
-  have hsum := (ENNReal.summable.hasSum_iff.mpr
+  have hsum := (CompleteLattice.summable.hasSum_iff.mpr
     (noncentralBetaMeasure_apply ha hb l (Iic x)).symm).toReal (measure_ne_top _ _)
   rw [← measureReal_def, ← cdf_eq_real] at hsum
   convert hsum using 1

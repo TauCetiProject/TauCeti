@@ -51,6 +51,8 @@ such a family of affine pieces.
 * `TauCeti.IsPiecewiseAffineOn`: a finite polyhedral decomposition on whose cells the map is
   affine.
 * `TauCeti.IsPLOn`: the localisation of the previous predicate, the piecewise-linear property.
+* `TauCeti.IsPLWithinAt`: its germ at a point, the property lifted to charted spaces in
+  `TauCeti.Geometry.Manifold.PLGroupoid.Map` to define PL maps between PL manifolds.
 
 ## Main results
 
@@ -62,6 +64,9 @@ such a family of affine pieces.
   argument.
 * `TauCeti.IsPLOn.mono`, `TauCeti.IsPLOn.congr`, `TauCeti.isPLOn_of_locally`,
   `TauCeti.IsPLOn.comp`: the four closure properties a `Pregroupoid` property must have.
+* `TauCeti.isPLOn_iff_forall_isPLWithinAt`, `TauCeti.isPLWithinAt_inter`,
+  `TauCeti.IsPLWithinAt.congr`, `TauCeti.IsPLWithinAt.comp`: the germ form and the closure
+  properties which make it a local invariant property of charted spaces.
 * `ContinuousAffineMap.isPLOn_affineGraph`: the graph of a continuous affine map is piecewise
   affine on every subset of its domain.
 * `TauCeti.IsPLOn.exists_eqOn_Icc`: a piecewise-linear map of the line is affine on each side of
@@ -253,6 +258,97 @@ theorem IsPLOn.comp {t : Set F} (hg : IsPLOn g t) (hf : IsPLOn f s) (hst : s ⊆
   have hpre : f ⁻¹' W ∈ 𝓝[s] x := (hf.continuousOn x hx).tendsto_nhdsWithin hst hW
   exact ⟨V ∩ (s ∩ f ⁻¹' W), inter_mem hV (inter_mem self_mem_nhdsWithin hpre),
     hPAg.comp (hPAf.mono inter_subset_left) fun _ hy => hy.2.2⟩
+
+/-! ### Piecewise linearity at a point
+
+The germ form of `TauCeti.IsPLOn`, as `ContDiffWithinAt` is to `ContDiffOn`: `f` is piecewise
+affine on a neighbourhood of `x` within `insert x s`. Asking for `insert x s` rather than `s` pins
+down the value of `f` at `x` even when `x ∉ s`, which is what the lift of the property to charted
+spaces needs (`TauCeti.PLWithinAtProp`). -/
+
+/-- `IsPLWithinAt f s x` says that `f` is piecewise affine on a neighbourhood of `x` within
+`insert x s`. -/
+def IsPLWithinAt (f : E → F) (s : Set E) (x : E) : Prop :=
+  ∃ V ∈ 𝓝[insert x s] x, IsPiecewiseAffineOn f V
+
+/-- Piecewise linearity at a point, unfolded: a piecewise affine neighbourhood of `x` within `s`
+which contains `x`. -/
+theorem isPLWithinAt_iff {x : E} :
+    IsPLWithinAt f s x ↔ ∃ V, x ∈ V ∧ V ∈ 𝓝[s] x ∧ IsPiecewiseAffineOn f V := by
+  simp only [IsPLWithinAt, mem_nhdsWithin_insert]
+  exact ⟨fun ⟨V, ⟨hx, hV⟩, h⟩ => ⟨V, hx, hV, h⟩, fun ⟨V, hx, hV, h⟩ => ⟨V, ⟨hx, hV⟩, h⟩⟩
+
+/-- Piecewise linearity within the whole space at a point: a piecewise affine neighbourhood. -/
+theorem isPLWithinAt_univ {x : E} :
+    IsPLWithinAt f univ x ↔ ∃ V ∈ 𝓝 x, IsPiecewiseAffineOn f V := by
+  rw [IsPLWithinAt, insert_eq_of_mem (mem_univ x), nhdsWithin_univ]
+
+/-- A map piecewise linear on `s` is piecewise linear within `s` at each point of `s`. -/
+theorem IsPLOn.isPLWithinAt {x : E} (h : IsPLOn f s) (hx : x ∈ s) : IsPLWithinAt f s x := by
+  rw [IsPLWithinAt, insert_eq_of_mem hx]
+  exact h x hx
+
+/-- Piecewise linearity on a set is piecewise linearity within the set at each of its points. -/
+theorem isPLOn_iff_forall_isPLWithinAt : IsPLOn f s ↔ ∀ x ∈ s, IsPLWithinAt f s x :=
+  ⟨fun h _ hx => h.isPLWithinAt hx, fun h x hx => by
+    simpa only [IsPLWithinAt, insert_eq_of_mem hx] using h x hx⟩
+
+/-- A continuous affine map is piecewise linear within every set at every point. -/
+theorem _root_.ContinuousAffineMap.isPLWithinAt (A : E →ᴬ[ℝ] F) (s : Set E) (x : E) :
+    IsPLWithinAt (⇑A) s x :=
+  ⟨univ, univ_mem, isPiecewiseAffineOn_continuousAffineMap A univ⟩
+
+/-- A map piecewise linear within `s` at `x` is continuous within `insert x s` at `x`. -/
+theorem IsPLWithinAt.continuousWithinAt_insert {x : E} (h : IsPLWithinAt f s x) :
+    ContinuousWithinAt f (insert x s) x := by
+  obtain ⟨V, hV, hPA⟩ := h
+  exact (hPA.continuousOn x (mem_of_mem_nhdsWithin (mem_insert x s) hV)).mono_of_mem_nhdsWithin hV
+
+/-- A map piecewise linear within `s` at `x` is continuous within `s` at `x`. -/
+theorem IsPLWithinAt.continuousWithinAt {x : E} (h : IsPLWithinAt f s x) :
+    ContinuousWithinAt f s x :=
+  continuousWithinAt_insert_self.1 h.continuousWithinAt_insert
+
+/-- Piecewise linearity within `s` at `x` passes to any set `t` of which `s` is a neighbourhood
+within at `x`. -/
+theorem IsPLWithinAt.mono_of_mem_nhdsWithin {x : E} (h : IsPLWithinAt f s x)
+    (hst : s ∈ 𝓝[t] x) : IsPLWithinAt f t x := by
+  obtain ⟨V, hV, hPA⟩ := h
+  refine ⟨V, ?_, hPA⟩
+  rw [nhdsWithin_insert] at hV ⊢
+  exact (sup_le_sup_left (nhdsWithin_le_of_mem hst) _) hV
+
+/-- Piecewise linearity within a set at a point passes to subsets. -/
+theorem IsPLWithinAt.mono {x : E} (h : IsPLWithinAt f s x) (hts : t ⊆ s) : IsPLWithinAt f t x :=
+  h.mono_of_mem_nhdsWithin (mem_of_superset self_mem_nhdsWithin hts)
+
+/-- Piecewise linearity within `s` at `x` is unchanged by intersecting `s` with a neighbourhood
+of `x`. -/
+theorem isPLWithinAt_inter {x : E} {u : Set E} (hu : u ∈ 𝓝 x) :
+    IsPLWithinAt f (s ∩ u) x ↔ IsPLWithinAt f s x :=
+  ⟨fun h => h.mono_of_mem_nhdsWithin (inter_mem self_mem_nhdsWithin (nhdsWithin_le_nhds hu)),
+    fun h => h.mono inter_subset_left⟩
+
+/-- Piecewise linearity within `s` at `x` only depends on the values of the map on `s` and at
+`x`. -/
+theorem IsPLWithinAt.congr {x : E} (h : IsPLWithinAt f s x) (h₁ : EqOn f' f s) (hx : f' x = f x) :
+    IsPLWithinAt f' s x := by
+  obtain ⟨V, hV, hPA⟩ := h
+  refine ⟨V ∩ insert x s, inter_mem hV self_mem_nhdsWithin,
+    (hPA.mono inter_subset_left).congr fun y hy => ?_⟩
+  rcases hy.2 with rfl | hy
+  · exact hx
+  · exact h₁ hy
+
+/-- Maps piecewise linear at a point compose. -/
+theorem IsPLWithinAt.comp {x : E} {t : Set F} (hg : IsPLWithinAt g t (f x))
+    (hf : IsPLWithinAt f s x) (hst : MapsTo f s t) : IsPLWithinAt (g ∘ f) s x := by
+  have hpre : ∀ W ∈ 𝓝[insert (f x) t] (f x), f ⁻¹' W ∈ 𝓝[insert x s] x := fun _ hW =>
+    hf.continuousWithinAt_insert.tendsto_nhdsWithin (hst.insert x) hW
+  obtain ⟨V, hV, hPAf⟩ := hf
+  obtain ⟨W, hW, hPAg⟩ := hg
+  exact ⟨V ∩ f ⁻¹' W, inter_mem hV (hpre W hW),
+    hPAg.comp (hPAf.mono inter_subset_left) fun _ hy => hy.2⟩
 
 section AffineTransport
 
