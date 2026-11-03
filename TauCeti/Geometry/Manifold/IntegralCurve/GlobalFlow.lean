@@ -135,12 +135,8 @@ theorem apply_globalFlow_eq_sub {f : M → ℝ} {a b : ℝ} (hf : Continuous f) 
 /-- Every integral curve of the field is an orbit of the flow. -/
 theorem globalFlow_eq_of_isMIntegralCurve {γ : ℝ → M} (hγ : IsMIntegralCurve γ v) (t : ℝ) :
     globalFlow v hv hcomplete t (γ 0) = γ t := by
-  have h := (hγ.isMIntegralCurveOn (Ioo (-(|t| + 1)) (|t| + 1))).eqOn_maximalIntegralCurve hv
-    (by constructor <;> linarith [abs_nonneg t]) rfl
-  have ht : t ∈ Ioo (-(|t| + 1)) (|t| + 1) :=
-    ⟨by linarith [neg_abs_le t], by linarith [le_abs_self t]⟩
-  rw [globalFlow_apply]
-  exact h ht
+  rw [← flowOf_eq_globalFlow hv hcomplete]
+  exact flowOf_eq_of_isMIntegralCurve hv hγ t
 
 omit hv in
 /-- The flow of a complete `C^n` vector field, `1 ≤ n`, is jointly `C^n` in time and space. -/
