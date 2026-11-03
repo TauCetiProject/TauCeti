@@ -65,7 +65,7 @@ instance faithfullyFlat_adicCompletion [IsNoetherianRing R] :
     .of_linearEquiv (completionEquiv I).symm.toLinearEquiv
   have : Module.Flat (algebra I) (AdicCompletion (extended I) (algebra I)) :=
     Algebra.WeaklyEtale.flat_iff.mpr this
-  exact AdicCompletion.faithfullyFlat_of_le_jacobson (henselian I).jac
+  exact AdicCompletion.faithfullyFlat_of_le_jacobson ((henselian I).jac.trans Ideal.jacobson_bot.ge)
 
 /-- The henselization of a Noetherian ring along any ideal is Noetherian. -/
 @[stacks 0AGV "Noetherianity of the henselization"]
