@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.MvPolynomial.Equiv
 public import Mathlib.RingTheory.LocalRing.ResidueField.Fiber
 public import TauCeti.RingTheory.CohenMacaulay.Basic
+public import TauCeti.RingTheory.CohenMacaulay.Ring
 import Mathlib.RingTheory.Flat.Localization
 import Mathlib.RingTheory.Ideal.KrullsHeightTheorem
 import Mathlib.RingTheory.Ideal.Quotient.Noetherian
@@ -42,6 +43,8 @@ over themselves (Stacks, Definition 10.103.12 (0AAH)).
 * `Module.isCohenMacaulay_localization_atPrime_of_flat`: for a flat Noetherian `R`-algebra `S` and
   a prime `q` of `S` over `p`, the local ring `S_q` is Cohen–Macaulay when `R_p` is and the local
   ring of the fibre `κ(p) ⊗[R] S` at the point corresponding to `q` is.
+* `TauCeti.Ring.IsCohenMacaulay.of_flat`: a flat Noetherian algebra over a Cohen–Macaulay ring
+  whose fibres `κ(p) ⊗[R] S` are Cohen–Macaulay rings is a Cohen–Macaulay ring.
 * `Polynomial.isCohenMacaulay_localization_atPrime` and
   `MvPolynomial.isCohenMacaulay_localization_atPrime`: polynomial rings in finitely many variables
   over a Noetherian Cohen–Macaulay ring are Cohen–Macaulay (Stacks, Lemma 10.103.13 (0AAI)).
@@ -146,6 +149,22 @@ theorem isCohenMacaulay_localization_atPrime_of_flat (p : Ideal R) [p.IsPrime] (
 end Global
 
 end Module
+
+namespace TauCeti.Ring
+
+variable {R S : Type u} [CommRing R] [CommRing S] [Algebra R S]
+
+/-- **Cohen–Macaulay rings along flat homomorphisms.** A flat Noetherian algebra `S` over a
+Cohen–Macaulay ring `R` is Cohen–Macaulay when each fibre `κ(p) ⊗[R] S` is a Cohen–Macaulay
+ring. H. Matsumura, *Commutative Ring Theory*, Corollary of Theorem 23.3. -/
+theorem IsCohenMacaulay.of_flat [IsCohenMacaulay R] [IsNoetherianRing S] [Module.Flat R S]
+    (h : ∀ (p : Ideal R) [p.IsPrime], IsCohenMacaulay (p.Fiber S)) : IsCohenMacaulay S :=
+  isCohenMacaulay_iff_forall_localization.mpr fun q _ ↦
+    Module.isCohenMacaulay_localization_atPrime_of_flat (q.under R) q
+      (IsCohenMacaulay.isCohenMacaulay_localization _) fun Q _ _ ↦
+        (h (q.under R)).isCohenMacaulay_localization Q
+
+end TauCeti.Ring
 
 open Module
 
