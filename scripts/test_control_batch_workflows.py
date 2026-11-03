@@ -63,6 +63,8 @@ class ControlBatches(unittest.TestCase):
         root_checkout = next(s for s in job["steps"] if s.get("uses", "").startswith("actions/checkout@"))
         self.assertEqual(root_checkout["with"]["ref"], "main")
         reconcile = next(s for s in job["steps"] if "--reconcile-open" in s.get("run", ""))
+        self.assertIn("scripts/control_batches/roadmap_batch.py", reconcile["run"])
+        self.assertIn("--max-wait 0", reconcile["run"])
         self.assertIn("--state-in", reconcile["run"])
         self.assertIn("--state-out", reconcile["run"])
         self.assertNotIn("--pr ", reconcile["run"])

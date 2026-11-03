@@ -118,8 +118,8 @@ jobs:
             --jq '.data.repository.pullRequests.totalCount')
           [[ "$count" =~ ^[0-9]+$ ]]
           limit=$((2 * count + 1))
-          python3 scripts/roadmap_label.py \
-            --repo "$REPO" --roadmap-dir roadmap --reconcile-open --limit "$limit" \
+          python3 scripts/control_batches/roadmap_batch.py \
+            --repo "$REPO" --roadmap-dir roadmap --reconcile-open --limit "$limit" --max-wait 0 \
             --apply --structure-nudge \
             --state-in "$RUNNER_TEMP/roadmap-state-in/state.json" \
             --state-out "$RUNNER_TEMP/roadmap-state-out/state.json" "${extra[@]}"
