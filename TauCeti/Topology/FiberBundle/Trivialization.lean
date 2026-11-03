@@ -8,20 +8,23 @@ module
 public import Mathlib.Topology.FiberBundle.Basic
 
 /-!
-# Points near a point of a fibre bundle and its preferred trivialization
+# Preferred trivializations near points and over compact subsets
 
 Near a point `v₀` of the total space of a fibre bundle, every point lies over the base set of the
 preferred trivialization at the base point `v₀.proj`, so it can be read in that trivialization.
+A compact subset of the total space lies over finitely many preferred trivializing base sets.
 
 ## Main results
 
 * `Bundle.TotalSpace.eventually_proj_mem_baseSet_trivializationAt`: near `v₀`, points lie over
   the base set of the trivialization at `v₀.proj`.
+* `IsCompact.exists_finset_subset_preimage_biUnion_baseSet`: a compact subset of the total
+  space lies over a finite union of preferred trivializing base sets.
 -/
 
 public section
 
-open Bundle Filter
+open Bundle Filter Set
 open scoped Topology
 
 namespace Bundle.TotalSpace
@@ -38,3 +41,17 @@ theorem eventually_proj_mem_baseSet_trivializationAt (v₀ : TotalSpace F E) :
       (FiberBundle.mem_baseSet_trivializationAt' v₀.proj))
 
 end Bundle.TotalSpace
+
+/-- A compact subset of a fibre bundle's total space lies over a finite union of the
+chosen trivializing base sets. -/
+theorem IsCompact.exists_finset_subset_preimage_biUnion_baseSet
+    {B : Type*} [TopologicalSpace B] {F : Type*} [TopologicalSpace F]
+    {E : B → Type*} [TopologicalSpace (TotalSpace F E)]
+    [∀ b, TopologicalSpace (E b)] [FiberBundle F E]
+    {K : Set (TotalSpace F E)} (hK : IsCompact K) :
+    ∃ s : Finset B, K ⊆ π F E ⁻¹' ⋃ b ∈ s, (trivializationAt F E b).baseSet := by
+  obtain ⟨s, hs⟩ := (hK.image (FiberBundle.continuous_proj F E)).elim_finite_subcover
+    (fun b : B ↦ (trivializationAt F E b).baseSet)
+    (fun b ↦ (trivializationAt F E b).open_baseSet)
+    (fun b _ ↦ mem_iUnion.2 ⟨b, mem_baseSet_trivializationAt F E b⟩)
+  exact ⟨s, fun p hp ↦ hs (mem_image_of_mem _ hp)⟩

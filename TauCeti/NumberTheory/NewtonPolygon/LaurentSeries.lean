@@ -474,7 +474,7 @@ theorem natTrailingDegree_initialPolynomial_of_isFiniteFace
     (coeff_initialPolynomial_ne_zero_iff hP l).mpr
       (supportingFace_intercept_of_isFiniteFace hface).2.1) ?_
   exact (Finset.mem_Icc.mp <| support_initialPolynomial_subset_Icc hface <|
-    natTrailingDegree_mem_support_of_nonzero (initialPolynomial_ne_zero σ hP)).1
+    Polynomial.natTrailingDegree_mem_support_of_ne_zero (initialPolynomial_ne_zero σ hP)).1
 
 /-- If the Newton polygon of `P` has the finite face `[l, u]` of slope `σ`, the initial
 polynomial of `P` at `σ` has degree exactly `u`. -/
@@ -486,7 +486,7 @@ theorem natDegree_initialPolynomial_of_isFiniteFace
     (coeff_initialPolynomial_ne_zero_iff hP u).mpr
       (supportingFace_intercept_of_isFiniteFace hface).2.2)
   exact (Finset.mem_Icc.mp <| support_initialPolynomial_subset_Icc hface <|
-    natDegree_mem_support_of_nonzero (initialPolynomial_ne_zero σ hP)).2
+    Polynomial.natDegree_mem_support_of_ne_zero (initialPolynomial_ne_zero σ hP)).2
 
 /-- If the Newton polygon of `P` has the finite face `[l, u]` of slope `σ`, the trailing
 coefficient of the initial polynomial of `P` at `σ` is the leading coefficient of `a_l`. -/

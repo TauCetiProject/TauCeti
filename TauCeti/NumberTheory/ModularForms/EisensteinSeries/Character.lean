@@ -202,7 +202,7 @@ theorem tsum_charWeight_mul_zpow [NeZero N] (huv : u * v ∣ N) (c a : ℤ) :
     split_ifs with hn
     · rw [MulChar.map_nonunit φ⁻¹, mul_zero, zero_mul]
       intro hu
-      rw [ZMod.coe_int_isUnit_iff_isCoprime] at hu
+      rw [ZMod.isUnit_intCast_iff_isCoprime] at hu
       exact hc ((hu.of_mul_right_left).dvd_of_dvd_mul_left (by simpa using hn))
     · rw [zero_mul]
 

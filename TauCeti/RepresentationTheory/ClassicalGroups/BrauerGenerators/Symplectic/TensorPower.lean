@@ -453,7 +453,7 @@ theorem symplecticCupCapAt_mul_self {i j : Fin d} (hij : i ≠ j) :
       Matrix.sum_sum_J_mul_J, Fintype.card_fin]
     exact (neg_smul _ _).symm
   rw [LinearMap.compMultilinearMap_apply, LinearMap.compMultilinearMap_apply,
-    Module.End.mul_apply, LinearMap.smul_apply, symplecticCupCapAt_tprod hij, map_smul, hT]
+    mul_apply_eq_comp, LinearMap.smul_apply, symplecticCupCapAt_tprod hij, map_smul, hT]
   exact smul_comm _ _ _
 
 /-! ### Two arcs -/
@@ -510,7 +510,7 @@ theorem commute_symplecticCupCapAt_piTensorProductMap
       Matrix.dotProduct_mulVec, ← Matrix.vecMul_transpose, Matrix.vecMul_vecMul,
       ← Matrix.mul_assoc, hA, ← Matrix.dotProduct_mulVec]
   rw [LinearMap.compMultilinearMap_apply, LinearMap.compMultilinearMap_apply,
-    Module.End.mul_apply, Module.End.mul_apply, PiTensorProduct.map_tprod,
+    mul_apply_eq_comp, mul_apply_eq_comp, PiTensorProduct.map_tprod,
     symplecticCupCapAt_tprod hij, symplecticCupCapAt_tprod hij, map_smul, map_neg, map_sum]
   simp only [Matrix.mulVecLin_apply]
   rw [hform]
