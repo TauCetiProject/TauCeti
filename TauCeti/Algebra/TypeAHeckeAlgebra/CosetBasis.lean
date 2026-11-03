@@ -156,6 +156,57 @@ theorem shift_cosetRep (k n m : ℕ) :
     · rw [cosetRep_succ h, map_mul, shift_T, ih, Nat.add_right_comm, cosetRep_succ (by omega)]
     · rw [cosetRep_of_le h, cosetRep_of_le (by omega), map_one]
 
+/-- The descending product from `T (n - 1)` is a unit of the stage of the first `n + 1`
+strands. -/
+theorem isUnit_mk_cosetRep (n m : ℕ) :
+    IsUnit (⟨cosetRep q n m, cosetRep_mem_stage n m⟩ : stage R q (n + 1)) := by
+  induction n with
+  | zero =>
+    simp only [cosetRep_of_le (Nat.zero_le m)]
+    exact isUnit_one
+  | succ n ih =>
+    rcases le_or_gt m n with h | h
+    · have e : (⟨cosetRep q (n + 1) m, cosetRep_mem_stage _ _⟩ : stage R q (n + 1 + 1)) =
+          ⟨T q n, T_mem_stage (by omega)⟩ *
+            Subalgebra.inclusion (stage_mono (by omega)) ⟨_, cosetRep_mem_stage n m⟩ :=
+        Subtype.ext (cosetRep_succ h)
+      rw [e]
+      exact (isUnit_mk_T (by omega)).mul (ih.map _)
+    · simp only [cosetRep_of_le h]
+      exact isUnit_one
+
+/-- Moving two strands past `b` strands carries the crossing `T 0` of the two strands to the
+crossing `T b`. -/
+theorem cosetRep_mul_cosetRep_mul_T_zero (b : ℕ) :
+    cosetRep q b 0 * cosetRep q (b + 1) 1 * T q 0 =
+      T q b * (cosetRep q b 0 * cosetRep q (b + 1) 1) := by
+  induction b with
+  | zero => simp
+  | succ b ih =>
+    have hc : cosetRep q b 0 * T q (b + 1) = T q (b + 1) * cosetRep q b 0 :=
+      (commute_T_of_mem_stage le_rfl (cosetRep_mem_stage b 0)).eq.symm
+    have hD : cosetRep q (b + 1) 0 * cosetRep q (b + 1 + 1) 1 =
+        T q b * T q (b + 1) * (cosetRep q b 0 * cosetRep q (b + 1) 1) :=
+      calc cosetRep q (b + 1) 0 * cosetRep q (b + 1 + 1) 1
+          = T q b * (cosetRep q b 0 * T q (b + 1)) * cosetRep q (b + 1) 1 := by
+            rw [cosetRep_succ (Nat.zero_le b), cosetRep_succ (by omega : 1 ≤ b + 1)]
+            simp only [mul_assoc]
+        _ = T q b * T q (b + 1) * (cosetRep q b 0 * cosetRep q (b + 1) 1) := by
+            rw [hc]
+            simp only [mul_assoc]
+    calc cosetRep q (b + 1) 0 * cosetRep q (b + 1 + 1) 1 * T q 0
+        = T q b * T q (b + 1) * (cosetRep q b 0 * cosetRep q (b + 1) 1 * T q 0) := by
+          rw [hD]
+          simp only [mul_assoc]
+      _ = T q b * T q (b + 1) * T q b * (cosetRep q b 0 * cosetRep q (b + 1) 1) := by
+          rw [ih]
+          simp only [mul_assoc]
+      _ = T q (b + 1) * (T q b * T q (b + 1) * (cosetRep q b 0 * cosetRep q (b + 1) 1)) := by
+          rw [T_braid]
+          simp only [mul_assoc]
+      _ = T q (b + 1) * (cosetRep q (b + 1) 0 * cosetRep q (b + 1 + 1) 1) := by
+          rw [hD]
+
 end CosetRep
 
 section CosetEquiv
