@@ -59,11 +59,11 @@ coroots, so the reflection equation reads `wt (s_i a) j = wt a j - wt a i * CM j
 * `TauCeti.MinusculeWeightTable.raisingMatrix_map_mulVec_reflection` and
   `loweringMatrix_map_mulVec_reflection`: at the reflection of a weight of coordinate `-1` or `1`,
   the raising or lowering matrix applied to a vector reads off that vector at the weight.
-* `TauCeti.MinusculeWeightTable.weylWord_map_mulVec`: the word
+* `TauCeti.MinusculeWeightTable.simpleWeyl_map_mulVec`: the simple Weyl word
   `(1 + eᵢ) (1 - fᵢ) (1 + eᵢ)` acts by a signed simple reflection over any coefficient ring.
-* `TauCeti.MinusculeWeightTable.weylWord_map_commute_of_cartanMatrix_eq_zero`: these words
+* `TauCeti.MinusculeWeightTable.simpleWeyl_map_commute_of_cartanMatrix_eq_zero`: these words
   commute at orthogonal nodes.
-* `TauCeti.MinusculeWeightTable.weylWord_map_braid_of_cartanMatrix_eq_neg_one`: these words
+* `TauCeti.MinusculeWeightTable.simpleWeyl_map_braid_of_cartanMatrix_eq_neg_one`: these words
   satisfy the length-three braid relation when both Cartan entries are `-1`.
 * `TauCeti.MinusculeWeightTable.raisingMatrix_pow_two` and `loweringMatrix_pow_two`: the raising
   and lowering matrices square to zero.
@@ -560,7 +560,7 @@ private theorem matrix_map_mulVec [Fintype ι] {R : Type*} [NonAssocRing R]
 
 /-- The Weyl word formed from the raising and lowering matrices acts by the simple reflection,
 with a minus sign in rows of coroot coordinate `-1`, over any coefficient ring. -/
-theorem weylWord_map_mulVec [Fintype ι] {R : Type*} [Ring R]
+theorem simpleWeyl_map_mulVec [Fintype ι] {R : Type*} [Ring R]
     (i : B) (v : ι → R) (a : ι) :
     (((1 + (T.raisingMatrix i).map (Int.cast : ℤ → R)) *
         (1 - (T.loweringMatrix i).map (Int.cast : ℤ → R)) *
@@ -579,7 +579,7 @@ theorem weylWord_map_mulVec [Fintype ι] {R : Type*} [Ring R]
 
 /-- Weyl words at orthogonal nodes of a minuscule weight table commute over any coefficient
 ring. -/
-theorem weylWord_map_commute_of_cartanMatrix_eq_zero [Fintype ι] {R : Type*} [Ring R]
+theorem simpleWeyl_map_commute_of_cartanMatrix_eq_zero [Fintype ι] {R : Type*} [Ring R]
     (i j : B) (hij : T.cartanMatrix i j = 0) :
     Commute
       ((1 + (T.raisingMatrix i).map (Int.cast : ℤ → R)) *
@@ -594,7 +594,7 @@ theorem weylWord_map_commute_of_cartanMatrix_eq_zero [Fintype ι] {R : Type*} [R
   funext a
   conv_lhs => rw [← Matrix.mulVec_mulVec]
   conv_rhs => rw [← Matrix.mulVec_mulVec]
-  simp only [T.weylWord_map_mulVec,
+  simp only [T.simpleWeyl_map_mulVec,
     T.weight_reflection_of_cartanMatrix_eq_zero i j a hij,
     T.weight_reflection_of_cartanMatrix_eq_zero j i a hji,
     T.reflection_comm_of_cartanMatrix_eq_zero i j a hij]
@@ -603,7 +603,7 @@ theorem weylWord_map_commute_of_cartanMatrix_eq_zero [Fintype ι] {R : Type*} [R
 
 /-- Weyl words of a minuscule weight table satisfy the length-three braid relation when both
 Cartan entries are `-1`, over any coefficient ring. -/
-theorem weylWord_map_braid_of_cartanMatrix_eq_neg_one [Fintype ι] {R : Type*} [Ring R]
+theorem simpleWeyl_map_braid_of_cartanMatrix_eq_neg_one [Fintype ι] {R : Type*} [Ring R]
     (i j : B) (hij : T.cartanMatrix i j = -1) (hji : T.cartanMatrix j i = -1) :
     ((1 + (T.raisingMatrix i).map (Int.cast : ℤ → R)) *
         (1 - (T.loweringMatrix i).map (Int.cast : ℤ → R)) *
@@ -637,7 +637,7 @@ theorem weylWord_map_braid_of_cartanMatrix_eq_neg_one [Fintype ι] {R : Type*} [
   simp only [T.weight_reflection, hji, mul_neg_one, sub_neg_eq_add] at hsum
   conv_lhs => rw [← Matrix.mulVec_mulVec, ← Matrix.mulVec_mulVec]
   conv_rhs => rw [← Matrix.mulVec_mulVec, ← Matrix.mulVec_mulVec]
-  simp only [T.weylWord_map_mulVec, href,
+  simp only [T.simpleWeyl_map_mulVec, href,
     T.weight_reflection, T.cartanMatrix_diag, hij, hji]
   -- `hsum` excludes the cases where both coordinates are nonzero with the same sign.
   rcases T.weight_eq_neg_one_or_eq_zero_or_eq_one a i with hi | hi | hi <;>

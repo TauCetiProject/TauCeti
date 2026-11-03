@@ -40,7 +40,7 @@ namespace TauCeti.E6Minuscule
 open DynkinType
 
 /-- Pinned simple Weyl words at nonadjacent E₆ nodes commute over every commutative ring. -/
-theorem rootSubgroupPoints_weyl_commute_of_cartanMatrix_eq_zero (i j : Fin 6)
+theorem simpleWeyl_commute_of_cartanMatrix_eq_zero (i j : Fin 6)
     (h : CartanMatrix.E 6 i j = 0) (A : Type*) [CommRing A] :
     Commute
       (rootSubgroupPoints (.inl i) A (Multiplicative.ofAdd 1) *
@@ -56,11 +56,11 @@ theorem rootSubgroupPoints_weyl_commute_of_cartanMatrix_eq_zero (i j : Fin 6)
   simp only [Subgroup.coe_mul, Units.val_mul, coe_rootSubgroupPoints_inl,
     coe_rootSubgroupPoints_inr, toAdd_ofAdd, neg_smul, one_smul]
   simpa only [sub_eq_add_neg] using
-    (weightTable.weylWord_map_commute_of_cartanMatrix_eq_zero (R := A) i j hij).eq
+    (weightTable.simpleWeyl_map_commute_of_cartanMatrix_eq_zero (R := A) i j hij).eq
 
 /-- Pinned simple Weyl words at adjacent E₆ nodes satisfy the length-three braid relation,
 including over rings with torsion or nilpotents. -/
-theorem rootSubgroupPoints_weyl_braid_of_cartanMatrix_eq_neg_one (i j : Fin 6)
+theorem simpleWeyl_braid_of_cartanMatrix_eq_neg_one (i j : Fin 6)
     (h : CartanMatrix.E 6 i j = -1) (A : Type*) [CommRing A] :
     (rootSubgroupPoints (.inl i) A (Multiplicative.ofAdd 1) *
         rootSubgroupPoints (.inr i) A (Multiplicative.ofAdd (-1)) *
@@ -89,6 +89,6 @@ theorem rootSubgroupPoints_weyl_braid_of_cartanMatrix_eq_neg_one (i j : Fin 6)
   simp only [Subgroup.coe_mul, Units.val_mul, coe_rootSubgroupPoints_inl,
     coe_rootSubgroupPoints_inr, toAdd_ofAdd, neg_smul, one_smul]
   simpa only [sub_eq_add_neg] using
-    weightTable.weylWord_map_braid_of_cartanMatrix_eq_neg_one (R := A) i j hij hji
+    weightTable.simpleWeyl_map_braid_of_cartanMatrix_eq_neg_one (R := A) i j hij hji
 
 end TauCeti.E6Minuscule
