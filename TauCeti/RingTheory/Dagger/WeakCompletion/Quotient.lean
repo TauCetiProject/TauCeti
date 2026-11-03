@@ -75,12 +75,15 @@ private theorem eval_eq_sum_range_add (z : weakCompletion π S) (a : ℕ → S)
       Ideal.Quotient.mk _ (∑ j ∈ range k, algebraMap O S π ^ j * a j)) (n k : ℕ) :
     AdicCompletion.evalₐ _ k (z : piAdicCompletion π S) =
       Ideal.Quotient.mk _ (∑ j ∈ range (n + k), algebraMap O S π ^ j * a j) := by
+  have hπ : Ideal.Quotient.mk (Ideal.span {algebraMap O S π} ^ k)
+      (algebraMap O S π ^ k) = 0 :=
+    Ideal.Quotient.eq_zero_iff_mem.mpr (Ideal.pow_mem_pow (Ideal.subset_span rfl) k)
   rw [hz k]
   symm
   rw [Nat.add_comm n k, sum_range_add, map_add, add_eq_left, map_sum]
   apply sum_eq_zero
   intro j hj
-  simp only [map_mul, map_pow, pow_add, ← eval_algebraMap, eval_parameter_pow, zero_mul]
+  simp only [pow_add, map_mul, hπ, zero_mul]
 
 /-- Every weakly completed element has a finite head in the original algebra and a
 weakly completed tail, after factoring out any prescribed power of the parameter. -/
@@ -110,17 +113,12 @@ private theorem exists_eq_of_add_pow_mul (z : weakCompletion π S) (n : ℕ) :
   apply AdicCompletion.ext_evalₐ
   intro k
   -- Compare at each level k using n + k terms, then split off the first n terms.
+  rw [← eval_eq, ← eval_eq]
+  simp only [map_add, map_mul, map_pow, eval_of, eval_algebraMap,
+    eval_eq π k z, eval_eq π k ⟨t, ht'⟩, hte k]
   rw [eval_eq_sum_range_add π z (fun j ↦ aeval x (P j)) hz n k]
-  simp only [Subalgebra.coe_add, Subalgebra.coe_mul, Subalgebra.coe_pow,
-    Subalgebra.coe_algebraMap, coe_of]
-  rw [map_add, map_mul, map_pow, AdicCompletion.evalₐ_of, hte k]
-  have hscalar : AdicCompletion.evalₐ (Ideal.span {algebraMap O S π}) k
-      (algebraMap O (piAdicCompletion π S) π) =
-      Ideal.Quotient.mk _ (algebraMap O S π) :=
-    ((AdicCompletion.evalₐ _ k).restrictScalars O).commutes π
-  rw [hscalar, ← map_pow, ← map_mul, ← map_add]
-  congr 1
-  simp only [sum_range_add, mul_sum, pow_add, mul_assoc]
+  simp only [sum_range_add, map_add, map_sum, map_mul, map_pow, mul_sum, pow_add,
+    mul_assoc]
 
 /-- Every weakly completed element agrees with an original element modulo the
 parameter power, with divisibility inside the weak completion. -/
