@@ -73,7 +73,7 @@ travel.
 * `TauCeti.PerfectMatching.orbitCount_mul_reconnect`: reconnecting a perfect matching so that it
   joins a point to its partner under an involution `T` cuts off a new two-point circle, adding
   two orbits to the product with `T`. When `T` and the matching attain the Euler bound
-  `TauCeti.orbitCount_add_orbitCount_add_orbitCount_mul_le`, so does the reconnected matching
+  `Equiv.Perm.orbitCount_add_orbitCount_add_orbitCount_mul_le`, so does the reconnected matching
   (`TauCeti.PerfectMatching.orbitCount_add_orbitCount_reconnect_add_orbitCount_reconnect_mul_eq`).
 
 ## References
@@ -767,7 +767,7 @@ theorem orbitCount_mul_reconnect (D : PerfectMatching α) {T : Perm α} {a : α}
     orbitCount_mul_swap_of_sameCycle h₁ hs₁.symm]
 
 /-- **Suppressing a vertex of degree two keeps a sphere a sphere.** Let `T` and `D.val` attain the
-Euler bound `TauCeti.orbitCount_add_orbitCount_add_orbitCount_mul_le`, and let `T` exchange `a`
+Euler bound `Equiv.Perm.orbitCount_add_orbitCount_add_orbitCount_mul_le`, and let `T` exchange `a`
 with `T a ≠ a`, a vertex of degree two. Reconnecting `D` so that it joins `a` to `T a` detaches
 this vertex as a loop of its own, joining the two arcs that ended there; the bound is attained
 again. -/
@@ -781,7 +781,7 @@ theorem orbitCount_add_orbitCount_reconnect_add_orbitCount_reconnect_mul_eq
         (Subgroup.closure {T, (D.reconnect a (T a)).val}) α) := by
   by_cases hD : D.val a = T a
   · rwa [← hD, reconnect_partner]
-  have hbound := orbitCount_add_orbitCount_add_orbitCount_mul_le T (D.reconnect a (T a)).val
+  have hbound := T.orbitCount_add_orbitCount_add_orbitCount_mul_le (D.reconnect a (T a)).val
   set K := Subgroup.closure {T, (D.reconnect a (T a)).val}
   -- The new loop adds two faces, its two sides.
   have hface := D.orbitCount_mul_reconnect hT ha hD
@@ -803,7 +803,7 @@ theorem orbitCount_add_orbitCount_reconnect_add_orbitCount_reconnect_mul_eq
     exact (Subgroup.closure_le _).2
       (Set.pair_subset_iff.2 ⟨hK (Subgroup.subset_closure (by simp)), hm⟩)
   have hanti := MulAction.card_orbitRelQuotient_anti (X := α) hle
-  have := card_orbitRelQuotient_le_card_orbitRelQuotient_closure_insert_swap_add_one K
+  have := K.card_orbitRelQuotient_le_card_orbitRelQuotient_closure_insert_swap_add_one
     (D.val a) (T a)
   omega
 

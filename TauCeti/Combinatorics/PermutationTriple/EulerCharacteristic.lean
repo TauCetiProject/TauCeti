@@ -133,11 +133,11 @@ theorem two_dvd_two_sub_eulerChar (t : PermutationTriple n) : (2 : ℤ) ∣ 2 - 
 /-- The Euler characteristic of a permutation triple is at most twice the number of orbits of
 its monodromy group. For a connected triple the orbit quotient has one element, recovering
 `TauCeti.PermutationTriple.IsConnected.eulerChar_le_two`. This is the Euler bound
-`TauCeti.orbitCount_add_orbitCount_add_orbitCount_mul_le` for the pair `t.σ0`, `t.σ1`. -/
+`Equiv.Perm.orbitCount_add_orbitCount_add_orbitCount_mul_le` for the pair `t.σ0`, `t.σ1`. -/
 theorem eulerChar_le_two_mul_card_monodromyOrbits (t : PermutationTriple n) :
     t.eulerChar ≤
       2 * Nat.card (MulAction.orbitRel.Quotient t.monodromyGroup (Fin n)) := by
-  have hbound := orbitCount_add_orbitCount_add_orbitCount_mul_le t.σ0 t.σ1
+  have hbound := t.σ0.orbitCount_add_orbitCount_add_orbitCount_mul_le t.σ1
   rw [closure_pair_eq_monodromyGroup, t.σ1_mul_σ0_eq_σinf_inv, orbitCount_inv,
     Nat.card_eq_fintype_card, Fintype.card_fin] at hbound
   rw [eulerChar_def]

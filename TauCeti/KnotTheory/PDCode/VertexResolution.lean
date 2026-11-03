@@ -606,7 +606,7 @@ the resolution beside the rotation of the four slots of `c`. Exchanging two oppo
 that rotation gives the local smoothing: in the underlying ribbon graph, the vertex `c` is
 smoothed into two vertices of degree two. Cutting off the two smoothing arcs then suppresses these
 vertices, leaving the resolution beside two loops. Each step keeps the Euler bound
-`TauCeti.orbitCount_add_orbitCount_add_orbitCount_mul_le` attained, so a planar code has planar
+`Equiv.Perm.orbitCount_add_orbitCount_add_orbitCount_mul_le` attained, so a planar code has planar
 resolutions. -/
 
 section Planar
@@ -665,7 +665,7 @@ private theorem orbitCount_add_orbitCount_add_orbitCount_mul_slot_eq (hD : D.IsP
       Nat.card (Fin (4 * n) ⊕ Fin 4) + 2 * Nat.card (MulAction.orbitRel.Quotient
         (Subgroup.closure {(D.slotEquiv c).symm.permCongr D.crossingRotation,
           (D.slotMatching c).val}) (Fin (4 * n) ⊕ Fin 4)) := by
-  have hbound := orbitCount_add_orbitCount_add_orbitCount_mul_le
+  have hbound := Equiv.Perm.orbitCount_add_orbitCount_add_orbitCount_mul_le
     ((D.slotEquiv c).symm.permCongr D.crossingRotation) (D.slotMatching c).val
   set G := Subgroup.closure {(D.slotEquiv c).symm.permCongr D.crossingRotation,
     (D.slotMatching c).val}
