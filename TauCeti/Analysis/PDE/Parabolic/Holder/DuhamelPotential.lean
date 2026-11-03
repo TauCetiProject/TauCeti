@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.PDE.HeatKernel.DuhamelPotential.Holder
-public import TauCeti.Analysis.Holder.Normed
+public import TauCeti.Analysis.PDE.Parabolic.Holder.Two
 
 /-!
 # The Duhamel potential as a bounded parabolic Hölder map
@@ -32,7 +32,7 @@ noncomputable section
 
 namespace TauCeti
 
-open MeasureTheory Set Real ParabolicSpaceTime
+open MeasureTheory Set Real ParabolicSpaceTime ParabolicC2HolderSpace
 open scoped NNReal Interval BoundedContinuousFunction
 
 variable {E F : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
@@ -40,27 +40,27 @@ variable {E F : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
   [NormedAddCommGroup F] [NormedSpace ℝ F]
   {α T : ℝ≥0}
 
-private def forcing (f : HolderSpace α (slab (E := E) 0 T) F) (s : ℝ) (x : E) : F :=
-  f (slabMk x (projIcc (0 : ℝ) (T : ℝ) T.coe_nonneg s))
-
 omit [InnerProductSpace ℝ E] [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] in
-private theorem forcing_continuous (f : HolderSpace α (slab (E := E) 0 T) F) :
-    Continuous (Function.uncurry (forcing f)) :=
-  f.continuous.comp (continuous_slabMk.comp
+private theorem timeExtension_continuous (f : HolderSpace α (slab (E := E) 0 T) F) :
+    Continuous (fun p : ℝ × E => timeExtension T.coe_nonneg f p.2 p.1) := by
+  simpa only [timeExtension_def, Function.comp_def] using f.continuous.comp (continuous_slabMk.comp
     (continuous_snd.prodMk ((continuous_projIcc (h := T.coe_nonneg)).comp continuous_fst)))
 
 omit [InnerProductSpace ℝ E] [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] in
-private theorem norm_forcing_le (f : HolderSpace α (slab (E := E) 0 T) F) (s : ℝ) (x : E) :
-    ‖forcing f s x‖ ≤ ‖f‖ := f.norm_apply_le _
+private theorem norm_timeExtension_le (f : HolderSpace α (slab (E := E) 0 T) F)
+    (s : ℝ) (x : E) :
+    ‖timeExtension T.coe_nonneg f x s‖ ≤ ‖f‖ := by
+  rw [timeExtension_def]
+  exact f.norm_apply_le _
 
 omit [InnerProductSpace ℝ E] [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] in
-private theorem holderWith_forcing (f : HolderSpace α (slab (E := E) 0 T) F) (s : ℝ) :
-    HolderWith ‖f‖₊ α (forcing f s) := by
+private theorem holderWith_timeExtension (f : HolderSpace α (slab (E := E) 0 T) F) (s : ℝ) :
+    HolderWith ‖f‖₊ α (fun x => timeExtension T.coe_nonneg f x s) := by
   intro x y
   have h := f.memHolder.holderWith (slabMk x (projIcc (0 : ℝ) (T : ℝ) T.coe_nonneg s))
     (slabMk y (projIcc (0 : ℝ) (T : ℝ) T.coe_nonneg s))
   simp only [HolderSpace.toBoundedContinuousFunction_apply] at h
-  unfold forcing
+  simp only [timeExtension_def]
   refine h.trans ?_
   simp only [edist_slabMk, edist_self,
     ENNReal.zero_rpow_of_pos (by norm_num : (0 : ℝ) < 1 / 2), add_zero]
@@ -70,19 +70,22 @@ private theorem holderWith_forcing (f : HolderSpace α (slab (E := E) 0 T) F) (s
 private theorem holderWith_potential (hα : 0 < α) (hα₂ : α ≤ 2)
     (f : HolderSpace α (slab (E := E) 0 T) F) :
     HolderWith (T * ‖f‖₊ * (1 + heatKernelMoment E α) + ‖f‖₊ * max 1 T) α
-      (fun p : slab (E := E) 0 T => heatDuhamelPotential (forcing f)
-        (p : ParabolicSpaceTime E).time (p : ParabolicSpaceTime E).space) :=
-  holderWith_heatDuhamelPotential (forcing_continuous f).stronglyMeasurable
-    (fun s _ x => norm_forcing_le f s x) (fun s _ => holderWith_forcing f s) hα hα₂
+      (fun p : slab (E := E) 0 T =>
+        heatDuhamelPotential (fun s x => timeExtension T.coe_nonneg f x s)
+          (p : ParabolicSpaceTime E).time (p : ParabolicSpaceTime E).space) :=
+  holderWith_heatDuhamelPotential (timeExtension_continuous f).stronglyMeasurable
+    (fun s _ x => norm_timeExtension_le f s x)
+    (fun s _ => holderWith_timeExtension f s) hα hα₂
 
 private theorem norm_forcing_potential_le (f : HolderSpace α (slab (E := E) 0 T) F)
     (p : slab (E := E) 0 T) :
-    ‖heatDuhamelPotential (forcing f) (p : ParabolicSpaceTime E).time
+    ‖heatDuhamelPotential (fun s x => timeExtension T.coe_nonneg f x s)
+      (p : ParabolicSpaceTime E).time
       (p : ParabolicSpaceTime E).space‖ ≤ (T : ℝ) * ‖f‖ := by
   have hp := (slabTime p).2
   rw [coe_slabTime] at hp
   exact ((norm_heatDuhamelPotential_le hp.1
-    (ae_of_all _ fun s => ae_of_all _ fun x => norm_forcing_le f s x) _).trans
+    (ae_of_all _ fun s => ae_of_all _ fun x => norm_timeExtension_le f s x) _).trans
     (mul_le_mul_of_nonneg_left hp.2 (norm_nonneg f))).trans_eq (mul_comm _ _)
 
 private def potentialBCF (hα : 0 < α) (hα₂ : α ≤ 2)
@@ -94,8 +97,8 @@ private def potentialBCF (hα : 0 < α) (hα₂ : α ≤ 2)
 private theorem coe_potentialBCF (hα : 0 < α) (hα₂ : α ≤ 2)
     (f : HolderSpace α (slab (E := E) 0 T) F) :
     ⇑(potentialBCF hα hα₂ f) = fun p : slab (E := E) 0 T =>
-      heatDuhamelPotential (forcing f) (p : ParabolicSpaceTime E).time
-        (p : ParabolicSpaceTime E).space :=
+      heatDuhamelPotential (fun s x => timeExtension T.coe_nonneg f x s)
+        (p : ParabolicSpaceTime E).time (p : ParabolicSpaceTime E).space :=
   BoundedContinuousFunction.coe_ofNormedAddCommGroup _ _ _ _
 
 private def potential (hα : 0 < α) (hα₂ : α ≤ 2)
@@ -104,10 +107,12 @@ private def potential (hα : 0 < α) (hα₂ : α ≤ 2)
     rw [coe_potentialBCF]
     exact (holderWith_potential hα hα₂ f).memHolder)
 
-private theorem potential_apply (hα : 0 < α) (hα₂ : α ≤ 2)
-    (f : HolderSpace α (slab (E := E) 0 T) F) (p : slab (E := E) 0 T) :
-    potential hα hα₂ f p = heatDuhamelPotential (forcing f)
-      (p : ParabolicSpaceTime E).time (p : ParabolicSpaceTime E).space := by
+private theorem coe_potential (hα : 0 < α) (hα₂ : α ≤ 2)
+    (f : HolderSpace α (slab (E := E) 0 T) F) :
+    ⇑(potential hα hα₂ f) = fun p : slab (E := E) 0 T =>
+      heatDuhamelPotential (fun s x => timeExtension T.coe_nonneg f x s)
+        (p : ParabolicSpaceTime E).time (p : ParabolicSpaceTime E).space := by
+  funext p
   rw [potential, HolderSpace.ofBoundedContinuousFunction_apply, coe_potentialBCF]
 
 private theorem norm_potential_le (hα : 0 < α) (hα₂ : α ≤ 2)
@@ -116,16 +121,12 @@ private theorem norm_potential_le (hα : 0 < α) (hα₂ : α ≤ 2)
   have hH := (holderWith_potential hα hα₂ f).nnholderNorm_le
   have hB : ‖(potential hα hα₂ f).toBoundedContinuousFunction‖ ≤ (T : ℝ) * ‖f‖ := by
     refine (BoundedContinuousFunction.norm_le (by positivity)).2 fun p => ?_
-    rw [HolderSpace.toBoundedContinuousFunction_apply, potential_apply]
+    rw [HolderSpace.toBoundedContinuousFunction_apply, coe_potential]
     exact norm_forcing_potential_le f p
   rw [HolderSpace.norm_def]
   have hH' : (nnHolderNorm α ((potential hα hα₂ f).toBoundedContinuousFunction : _ → _) : ℝ) ≤
       (T * ‖f‖₊ * (1 + heatKernelMoment E α) + ‖f‖₊ * max 1 T : ℝ≥0) := by
-    have heq : ((potential hα hα₂ f).toBoundedContinuousFunction : _ → _) =
-        fun p : slab (E := E) 0 T => heatDuhamelPotential (forcing f)
-          (p : ParabolicSpaceTime E).time (p : ParabolicSpaceTime E).space :=
-      funext fun p => by rw [HolderSpace.toBoundedContinuousFunction_apply, potential_apply]
-    rw [heq]
+    rw [HolderSpace.coe_toBoundedContinuousFunction, coe_potential]
     exact_mod_cast hH
   push_cast at hH' ⊢
   linarith
@@ -139,39 +140,22 @@ def heatDuhamelPotentialHolderL (hα : 0 < α) (hα₂ : α ≤ 2) :
     { toFun := potential hα hα₂
       map_add' f g := by
         ext p
-        simp only [HolderSpace.add_apply, potential_apply, ← coe_slabTime]
-        rw [heatDuhamelPotential_eq_integral_heatCauchyPotential (slabTime p).2.1,
-          heatDuhamelPotential_eq_integral_heatCauchyPotential (slabTime p).2.1,
-          heatDuhamelPotential_eq_integral_heatCauchyPotential (slabTime p).2.1]
-        have hf := intervalIntegrable_heatCauchyPotential (forcing_continuous f).stronglyMeasurable
-          (fun s _ x => norm_forcing_le f s x) (slabTime p).2 (slabTime p)
-          (p : ParabolicSpaceTime E).space
-        have hg := intervalIntegrable_heatCauchyPotential (forcing_continuous g).stronglyMeasurable
-          (fun s _ x => norm_forcing_le g s x) (slabTime p).2 (slabTime p)
-          (p : ParabolicSpaceTime E).space
-        rw [← intervalIntegral.integral_add hf hg]
-        apply intervalIntegral.integral_congr
-        intro s _
-        dsimp only
-        have heq : forcing (f + g) s = forcing f s + forcing g s :=
-          funext fun x => by simp [forcing, HolderSpace.add_apply]
-        rw [heq]
-        have hpair : Continuous (fun x : E => (s, x)) := continuous_const.prodMk continuous_id
-        have hfc : Continuous (forcing f s) := (forcing_continuous f).comp hpair
-        have hgc : Continuous (forcing g s) := (forcing_continuous g).comp hpair
-        exact heatCauchyPotential_add hfc (norm_forcing_le f s) hgc (norm_forcing_le g s) _ _
+        simp only [HolderSpace.add_apply, coe_potential]
+        simpa only [Pi.add_def, timeExtension_def, HolderSpace.add_apply, coe_slabTime] using
+          heatDuhamelPotential_add
+            (f := fun s x => timeExtension T.coe_nonneg f x s)
+            (g := fun s x => timeExtension T.coe_nonneg g x s)
+            (timeExtension_continuous f).stronglyMeasurable
+            (ae_of_all _ fun s => ae_of_all _ fun x => norm_timeExtension_le f s x)
+            (timeExtension_continuous g).stronglyMeasurable
+            (ae_of_all _ fun s => ae_of_all _ fun x => norm_timeExtension_le g s x)
+            (slabTime p).2.1 (p : ParabolicSpaceTime E).space
       map_smul' c f := by
         ext p
-        simp only [HolderSpace.smul_apply, potential_apply]
-        rw [heatDuhamelPotential_def, heatDuhamelPotential_def,
-          ← intervalIntegral.integral_smul]
-        apply intervalIntegral.integral_congr
-        intro s _
-        dsimp only
-        have heq : forcing (c • f) s = c • forcing f s :=
-          funext fun x => by simp [forcing, HolderSpace.smul_apply]
-        rw [heq, MeasureTheory.convolution_smul]
-        rfl }
+        simp only [HolderSpace.smul_apply, coe_potential, RingHom.id_apply]
+        simpa only [Pi.smul_def, timeExtension_def, HolderSpace.smul_apply] using
+          heatDuhamelPotential_smul c (fun s x => timeExtension T.coe_nonneg f x s)
+            (p : ParabolicSpaceTime E).time (p : ParabolicSpaceTime E).space }
     (T * (2 + heatKernelMoment E α) + max 1 T : ℝ≥0)
     (norm_potential_le hα hα₂)
 
@@ -181,9 +165,9 @@ given forcing at times in `[0,t]` when evaluating at a slab point of time `t`. -
 theorem heatDuhamelPotentialHolderL_apply (hα : 0 < α) (hα₂ : α ≤ 2)
     (f : HolderSpace α (slab (E := E) 0 T) F) (p : slab (E := E) 0 T) :
     heatDuhamelPotentialHolderL hα hα₂ f p =
-      heatDuhamelPotential (fun s x => f (slabMk x (projIcc (0 : ℝ) (T : ℝ) T.coe_nonneg s)))
+      heatDuhamelPotential (fun s x => timeExtension T.coe_nonneg f x s)
         (p : ParabolicSpaceTime E).time (p : ParabolicSpaceTime E).space := by
-  exact potential_apply hα hα₂ f p
+  exact congrFun (coe_potential hα hα₂ f) p
 
 /-- The norm of the Duhamel operator is bounded in terms of the horizon, exponent and
 heat-kernel moment, independently of the forcing and the codomain. -/

@@ -39,9 +39,9 @@ variable {E F : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
   [NormedAddCommGroup F] [NormedSpace ℝ F]
   {f : ℝ → E → F} {T M : ℝ} {H α : ℝ≥0}
 
-/-- The Cauchy-potential integrand of the Duhamel potential is integrable on any subinterval
-of the forcing slab, even when its elapsed-time argument is nonpositive. -/
-theorem intervalIntegrable_heatCauchyPotential
+/-- The Cauchy-potential integrand of the Duhamel potential is integrable on `[0, s]`
+for every `s ∈ [0, T]`, even when its elapsed-time argument is nonpositive. -/
+theorem intervalIntegrable_heatDuhamelPotential_integrand
     (hf : StronglyMeasurable (Function.uncurry f))
     (hM : ∀ r ∈ Icc 0 T, ∀ y, ‖f r y‖ ≤ M)
     {s : ℝ} (hs : s ∈ Icc 0 T) (t : ℝ) (x : E) :
@@ -82,9 +82,9 @@ private theorem norm_heatDuhamelPotential_sub_le_of_le
         (dist x y + √|t - s|) ^ (α : ℝ) + M * (t - s) := by
   have hsT : s ∈ Icc 0 T := ⟨hs, hst.trans ht⟩
   have htT : t ∈ Icc 0 T := ⟨hs.trans hst, ht⟩
-  have hit := intervalIntegrable_heatCauchyPotential hf hM htT t x
-  have his := intervalIntegrable_heatCauchyPotential hf hM hsT t x
-  have hjs := intervalIntegrable_heatCauchyPotential hf hM hsT s y
+  have hit := intervalIntegrable_heatDuhamelPotential_integrand hf hM htT t x
+  have his := intervalIntegrable_heatDuhamelPotential_integrand hf hM hsT t x
+  have hjs := intervalIntegrable_heatDuhamelPotential_integrand hf hM hsT s y
   have hist := his.symm.trans hit
   rw [heatDuhamelPotential_eq_integral_heatCauchyPotential htT.1,
     heatDuhamelPotential_eq_integral_heatCauchyPotential hs,
@@ -112,6 +112,20 @@ private theorem norm_heatDuhamelPotential_sub_le_of_le
     filter_upwards [] with r hr
     exact norm_heatCauchyPotential_le (hM r ⟨hs.trans hr.1.le, hr.2.trans ht⟩) _ _
 
+/-- A bounded time increment controlled by the squared parabolic distance is also controlled
+by its `α` power, for `0 ≤ α ≤ 2`. -/
+private theorem time_increment_le_max_mul_rpow {d δ T : ℝ} {α : ℝ≥0}
+    (hd : 0 ≤ d) (hsq : δ ≤ d ^ 2) (hT : δ ≤ T) (hα₂ : α ≤ 2) :
+    δ ≤ max 1 T * d ^ (α : ℝ) := by
+  by_cases hd₁ : d ≤ 1
+  · have hα₂' : (α : ℝ) ≤ 2 := by exact_mod_cast hα₂
+    have hp : d ^ 2 ≤ d ^ (α : ℝ) := by
+      simpa using Real.rpow_le_rpow_of_exponent_ge' hd hd₁ α.coe_nonneg hα₂'
+    exact (hsq.trans hp).trans (le_mul_of_one_le_left (by positivity) (le_max_left _ _))
+  · have hp : 1 ≤ d ^ (α : ℝ) := Real.one_le_rpow (le_of_not_ge hd₁) α.coe_nonneg
+    exact (hT.trans (le_max_right _ _)).trans
+      (le_mul_of_one_le_right (le_trans zero_le_one (le_max_left _ _)) hp)
+
 /-- **The value-field parabolic Hölder estimate for the Duhamel potential.** If the forcing
 is jointly measurable and its spatial slices on `[0,T]` are bounded by `M` and `α`-Hölder with
 constant `H`, where `0 < α ≤ 2`, then its Duhamel potential is parabolically `α`-Hölder on the
@@ -129,37 +143,23 @@ theorem holderWith_heatDuhamelPotential (hf : StronglyMeasurable (Function.uncur
         (T * H * (1 + heatKernelMoment E α) + M * max 1 T : ℝ≥0) *
           (dist x y + √|(t : ℝ) - s|) ^ (α : ℝ) := by
     -- The tail interval has length at most both `T` and the square of the parabolic distance.
-    -- Real-valued type ascriptions below distinguish real powers from NNReal constants.
     set d := dist x y + √|(t : ℝ) - s|
     have hd : 0 ≤ d := by positivity
-    have htime : (t : ℝ) - s ≤ (max 1 T : ℝ≥0) * d ^ (α : ℝ) := by
-      have hdiff : 0 ≤ (t : ℝ) - s := sub_nonneg.2 hst
-      have hsq : (t : ℝ) - s ≤ d ^ 2 := by
-        have hsqrt := Real.sq_sqrt hdiff
-        dsimp only [d]
-        rw [abs_of_nonneg hdiff]
-        nlinarith [show 0 ≤ dist x y from dist_nonneg, sqrt_nonneg ((t : ℝ) - s)]
-      by_cases hd₁ : d ≤ 1
-      · have hp : d ^ 2 ≤ d ^ (α : ℝ) := by
-          by_cases hd₀ : d = 0
-          · simp only [hd₀, zero_pow (by norm_num : (2 : ℕ) ≠ 0)]
-            positivity
-          · simpa using Real.rpow_le_rpow_of_exponent_ge (lt_of_le_of_ne hd (Ne.symm hd₀))
-              hd₁ (show (α : ℝ) ≤ 2 by exact_mod_cast hα₂)
-        exact (hsq.trans hp).trans (le_mul_of_one_le_left (by positivity)
-          (by exact_mod_cast (le_max_left (1 : ℝ≥0) T)))
-      · have hp : 1 ≤ d ^ (α : ℝ) := Real.one_le_rpow (le_of_not_ge hd₁) α.coe_nonneg
-        exact (show (t : ℝ) - s ≤ (max 1 T : ℝ≥0) by
-          have := le_max_right (1 : ℝ≥0) T
-          exact (sub_le_self _ s.2.1).trans (t.2.2.trans (by exact_mod_cast this))).trans
-          (le_mul_of_one_le_right (by positivity) hp)
+    have hdiff : 0 ≤ (t : ℝ) - s := sub_nonneg.2 hst
+    have hsq : (t : ℝ) - s ≤ d ^ 2 := by
+      have hsqrt := Real.sq_sqrt hdiff
+      dsimp only [d]
+      rw [abs_of_nonneg hdiff]
+      nlinarith [dist_nonneg (x := x) (y := y), sqrt_nonneg ((t : ℝ) - s)]
+    have htime := time_increment_le_max_mul_rpow hd hsq
+      ((sub_le_self _ s.2.1).trans t.2.2) hα₂
     -- Bound the common integration interval by its maximal length `T`.
     refine (norm_heatDuhamelPotential_sub_le_of_le hf hM hH hα s.2.1 hst t.2.2 x y).trans ?_
     push_cast at htime ⊢
     dsimp only [d] at *
-    nlinarith [mul_le_mul_of_nonneg_right s.2.2
-        (show (0 : ℝ) ≤ H * (1 + heatKernelMoment E α) *
-          (dist x y + √|(t : ℝ) - s|) ^ (α : ℝ) by positivity),
+    have hnonneg : (0 : ℝ) ≤ H * (1 + heatKernelMoment E α) *
+        (dist x y + √|(t : ℝ) - s|) ^ (α : ℝ) := by positivity
+    nlinarith [mul_le_mul_of_nonneg_right s.2.2 hnonneg,
       mul_le_mul_of_nonneg_left htime M.coe_nonneg]
   rw [← holderOnWith_univ]
   refine HolderOnWith.of_dist_le fun p _ q _ => ?_
