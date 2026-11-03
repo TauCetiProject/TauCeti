@@ -123,10 +123,8 @@ compactly supported scalar function. No differentiability assumption is needed. 
 protected theorem _root_.HasCompactSupport.inner_mgradient (hf : HasCompactSupport f)
     (X : Π x : M, TangentSpace I x) :
     HasCompactSupport (fun x ↦ inner ℝ (mgradient I f x) (X x)) := by
-  refine hf.mono' fun x hx ↦ by_contra fun h ↦ hx ?_
-  have hgrad : mgradient I f x = 0 := mgradient_eq_zero_iff.2
-    ((notMem_tsupport_iff_eventuallyEq.1 h).mvfderiv_eq.trans mvfderiv_zero)
-  simp only [hgrad, inner_zero_left]
+  refine (hf.mgradient I).mono' fun x hx ↦ subset_tsupport _ ?_
+  exact fun h ↦ hx ((congrArg (fun v ↦ inner ℝ v (X x)) h).trans (inner_zero_left _))
 
 /-- The gradient has the same length as the differential it represents: the Riesz equivalence is
 an isometry. -/
