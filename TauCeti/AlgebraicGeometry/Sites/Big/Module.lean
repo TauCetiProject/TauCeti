@@ -27,8 +27,8 @@ and under this identification restriction is the pullback of morphisms that Math
 `CategoryTheory.Pseudofunctor.presheafHom` performs for the pullback pseudofunctor of modules
 (`AlgebraicGeometry.Scheme.Modules.bigSectionsEquiv_bigSectionsRestrict`). The underlying
 presheaf of sets is therefore Mathlib's presheaf of morphisms from `𝒪_S` to `F`
-(`AlgebraicGeometry.Scheme.Modules.bigPresheafCompForgetIso`), whose sheaf property for a
-topology is the prestack condition of the pseudofunctor.
+(`AlgebraicGeometry.Scheme.Modules.bigPresheafCompForgetIso`). So for a topology for which the
+pseudofunctor is a prestack, this presheaf of sets is a sheaf.
 
 ## Main declarations
 
@@ -125,6 +125,7 @@ lemma bigSectionsEquiv_bigSectionsRestrict {T T' : Over S} (f : T ⟶ T')
       C)).symm.trans ?_
   exact congrArg _ (modulesPseudofunctor_pullHom _ _ _ _ _ _).symm
 
+@[simp]
 lemma bigSectionsRestrict_id (T : Over S) (s : Γ((pullback T.hom).obj F, ⊤)) :
     bigSectionsRestrict F (𝟙 T) s = s :=
   (bigSectionsEquiv F T).injective ((bigSectionsEquiv_bigSectionsRestrict F (𝟙 T) s).trans
