@@ -157,15 +157,13 @@ most `t`, counted with multiplicity. -/
 theorem IsHermitian.spectralMeasure_real_Iic {A : Matrix n n 𝕜} (hA : A.IsHermitian) (t : ℝ) :
     (A.spectralMeasure hA : Measure ℝ).real (Set.Iic t) =
       (#{i | hA.eigenvalues₀ i ≤ t} : ℝ) / Fintype.card n := by
+  classical
   have hsum : ∑ i, (Set.Iic t).indicator (1 : ℝ → ℝ≥0∞) (hA.eigenvalues₀ i) =
       (#{i | hA.eigenvalues₀ i ≤ t} : ℝ≥0∞) := by
-    rw [Finset.card_filter]
-    push_cast
-    exact Finset.sum_congr rfl fun i _ => by by_cases h : hA.eigenvalues₀ i ≤ t <;> simp [h]
+    simp [Set.indicator_apply]
   rw [Measure.real, spectralMeasure_eq_empiricalMeasureOfFintype_eigenvalues₀,
-    empiricalMeasureOfFintype_apply measurableSet_Iic, Fintype.card_fin, hsum,
-    ENNReal.toReal_mul, ENNReal.toReal_inv, ENNReal.toReal_natCast, ENNReal.toReal_natCast,
-    div_eq_inv_mul]
+    empiricalMeasureOfFintype_apply measurableSet_Iic, Fintype.card_fin, hsum]
+  simp [div_eq_inv_mul]
 
 /-- The spectral measure's atom at zero is the proportion of zero eigenvalues, expressed in terms
 of the matrix rank. -/

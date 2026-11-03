@@ -279,8 +279,7 @@ theorem rank_add_le (A B : Matrix m n K) : (A + B).rank ≤ A.rank + B.rank := b
   refine (Submodule.finrank_mono ?_).trans
     (Submodule.finrank_add_le_finrank_add_finrank (LinearMap.range A.mulVecLin)
       (LinearMap.range B.mulVecLin))
-  rintro _ ⟨v, rfl⟩
-  exact Submodule.add_mem_sup ⟨v, rfl⟩ ⟨v, rfl⟩
+  exact LinearMap.range_add_le A.mulVecLin B.mulVecLin
 
 /-- The column space of a matrix over a field `K` has `|K| ^ rank` elements. Over an infinite
 field both sides are `0` unless the rank is `0`. -/
@@ -404,6 +403,7 @@ end StarOrderedField
 
 /-- The conjugate transpose of a matrix over a field with a star ring structure has the same
 rank. -/
+@[simp]
 theorem rank_conjTranspose_of_field {R : Type*} [Field R] [StarRing R] {m n : Type*} [Fintype m]
     [Fintype n] (A : Matrix m n R) : Aᴴ.rank = A.rank := by
   have h : Aᴴ = (A.map (starRingEnd R))ᵀ := rfl
