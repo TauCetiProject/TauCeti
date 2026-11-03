@@ -29,7 +29,7 @@ of the splitting and of the model fibre. No finite-dimensionality is needed.
   edition, Appendix A.2, for stabilized kernels and determinant bundles.
 
 The coordinates use `ContinuousLinearMap.kernelHomeomorph` and
-`ContinuousLinearMap.kerEquivOfProd`.
+`ContinuousLinearMap.kerSection`.
 -/
 
 public section
