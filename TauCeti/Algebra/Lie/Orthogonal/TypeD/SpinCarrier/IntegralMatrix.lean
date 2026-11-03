@@ -24,6 +24,7 @@ joining two sign sets whose cardinalities have different parities.
 ## Main declarations
 
 * `TauCeti.TypeDSpinCarrier.rootIntMatrix`: the integral matrix of a numbered root generator.
+* `TauCeti.TypeDSpinCarrier.rootIntMatrix_mul_self`: every numbered root matrix squares to zero.
 * `TauCeti.TypeDSpinCarrier.rootIntMatrix_apply_of_eq`: a signed root step determines its
   integral matrix column.
 * `TauCeti.TypeDSpinCarrier.coe_rootSubgroupPoints_eq_one_add_smul`: a numbered root-subgroup
@@ -71,6 +72,22 @@ theorem rootIntMatrix_eq_toMatrix (k : Fin n ⊕ Fin n) :
         (rep_kostantForm_mem_lattice n hn) k) := by
   rw [rootIntMatrix]
   exact kostantRootGeneratorIntMatrix_eq_toMatrix _ _ _ _ _ _ _
+
+/-- The integral matrix of every numbered spin root generator squares to zero. -/
+theorem rootIntMatrix_mul_self (i : Fin n ⊕ Fin n) :
+    rootIntMatrix n hn i * rootIntMatrix n hn i = 0 := by
+  let X := kostantRootOperator
+    (TauCeti.serreRootGenerator (CartanMatrix.D n))
+    (TauCeti.serreH ℚ (CartanMatrix.D n)) (rep n hn) (lattice n).toAddSubgroup
+    (rep_kostantForm_mem_lattice n hn) i
+  have hsq : X * X = 0 := by
+    refine LinearMap.ext fun m => Subtype.ext ?_
+    have h := congrArg (fun f => f (m : ExteriorAlgebra ℚ (polarization n).W))
+      ((polarization n).typeDSpinRep_rootGenerator_sq (polarizationBasis n) hn i)
+    -- Restrict the rational square-zero operator to the invariant exterior lattice.
+    simpa only [pow_two, mul_apply_eq_comp, LinearMap.zero_apply,
+      ZeroMemClass.coe_zero, X, coe_kostantRootOperator_apply, rep] using h
+  rw [rootIntMatrix_eq_toMatrix, ← LinearMap.toMatrix_mul, hsq, map_zero]
 
 /-- A represented root generator acts on a lattice basis vector by its integral matrix column. -/
 theorem rep_rootGenerator_latticeBasis_eq_sum (k : Fin n ⊕ Fin n) (s : Fin (dimension n)) :
