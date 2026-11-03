@@ -58,11 +58,11 @@ variable (A : Type*) [CommRing A]
 /-- The height-two root operator remains nonzero over every nontrivial coefficient ring. -/
 theorem map_lie_raisingMatrix_ne_zero [Nontrivial A] {i j : Fin 6}
     (hij : CartanMatrix.E 6 i j = -1) :
-    ⁅raisingMatrix i, raisingMatrix j⁆.map (Int.castRingHom A) ≠ 0 := by
+    ⁅raisingMatrix i, raisingMatrix j⁆.map (Int.cast : ℤ → A) ≠ 0 := by
   obtain ⟨a, b, hab⟩ := exists_lie_raisingMatrix_apply_eq_one hij
   intro hzero
   have hentry := congrArg (fun M : Matrix (Fin 27) (Fin 27) A ↦ M a b) hzero
-  simp only [Matrix.map_apply, hab, map_one, Matrix.zero_apply] at hentry
+  simp only [Matrix.map_apply, hab, Int.cast_one, Matrix.zero_apply] at hentry
   exact one_ne_zero hentry
 
 /-- The polynomial matrices of an adjacent positive root have faithful parameters over every
@@ -70,11 +70,11 @@ commutative ring, including rings of characteristic two and nonreduced rings. -/
 theorem one_add_smul_lie_raisingMatrix_injective {i j : Fin 6}
     (hij : CartanMatrix.E 6 i j = -1) :
     Function.Injective (fun t : A ↦ (1 : Matrix (Fin 27) (Fin 27) A) +
-      t • ⁅raisingMatrix i, raisingMatrix j⁆.map (Int.castRingHom A)) := by
+      t • ⁅raisingMatrix i, raisingMatrix j⁆.map (Int.cast : ℤ → A)) := by
   obtain ⟨a, b, hab⟩ := exists_lie_raisingMatrix_apply_eq_one hij
   intro s t h
   have hentry := congrArg (fun M : Matrix (Fin 27) (Fin 27) A ↦ M a b) h
-  simp only [Matrix.add_apply, Matrix.smul_apply, Matrix.map_apply, hab, map_one,
+  simp only [Matrix.add_apply, Matrix.smul_apply, Matrix.map_apply, hab, Int.cast_one,
     smul_eq_mul, mul_one] at hentry
   exact add_left_cancel hentry
 
