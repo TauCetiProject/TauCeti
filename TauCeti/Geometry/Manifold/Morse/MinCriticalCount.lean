@@ -8,7 +8,7 @@ module
 public import Mathlib.Geometry.Manifold.ContMDiffMap
 public import TauCeti.Geometry.Manifold.Morse.LusternikSchnirelmann
 public import TauCeti.Geometry.Manifold.Morse.Sphere.Basic
-import TauCeti.Geometry.Manifold.Morse.Generic
+import TauCeti.Geometry.Manifold.Morse.Generic.Basic
 
 /-!
 # The minimal number of critical points of a smooth function

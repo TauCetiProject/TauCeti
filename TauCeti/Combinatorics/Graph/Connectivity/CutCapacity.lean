@@ -195,7 +195,6 @@ theorem isSubmodular_edgeCutCapacity [Fintype G.edgeSet] [DecidableEq G.vertexSe
   classical
   rw [TauCeti.isSubmodular_def]
   intro S T
-  simp only [sup_eq_union, inf_eq_inter]
   simp_rw [edgeCutCapacity_def]
   rw [← sum_add_distrib, ← sum_add_distrib]
   apply sum_le_sum

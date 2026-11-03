@@ -190,13 +190,13 @@ The sign in `hs` is that of Mathlib's `homotopyCofiber`, whose differential is `
 noncomputable def isoOfSplitting : homotopyCofiber φ ≅ M :=
   Hom.isoOfComponents
     (fun _ =>
-      { hom := fstX φ () () (ComplexShape.refl_rel ()) ≫ σ.s + sndX φ () ≫ inr
-        inv := fst ≫ inlX φ () () (ComplexShape.refl_rel ()) + σ.r ≫ inrX φ ()
+      { hom := fstX φ () () (ComplexShape.refl_rel_self ()) ≫ σ.s + sndX φ () ≫ inr
+        inv := fst ≫ inlX φ () () (ComplexShape.refl_rel_self ()) + σ.r ≫ inrX φ ()
         hom_inv_id := by
           have hsg : σ.s ≫ fst = 𝟙 _ := σ.s_g
           have hsr : σ.s ≫ σ.r = 0 := σ.s_r
           have hfr : inr ≫ σ.r = 𝟙 _ := σ.f_r
-          apply ext_from_X φ () () (ComplexShape.refl_rel ()) <;>
+          apply ext_from_X φ () () (ComplexShape.refl_rel_self ()) <;>
             simp [reassoc_of% hsg, reassoc_of% hsr, reassoc_of% hfr, reassoc_of% w]
         inv_hom_id := by
           simpa [add_comm] using σ.id })
@@ -206,19 +206,20 @@ noncomputable def isoOfSplitting : homotopyCofiber φ ≅ M :=
       let α : L ⟶ M := { f _ := inr, comm' := fun _ _ _ => hr }
       let h : Homotopy (φ ≫ α) 0 :=
         { hom _ _ := σ.s
-          zero _ _ hij := absurd (ComplexShape.refl_rel ()) hij
+          zero _ _ hij := absurd (ComplexShape.refl_rel_self ()) hij
           comm _ := by
-            rw [dNext_eq _ (ComplexShape.refl_rel ()), prevD_eq _ (ComplexShape.refl_rel ()), hs]
+            rw [dNext_eq _ (ComplexShape.refl_rel_self ()),
+              prevD_eq _ (ComplexShape.refl_rel_self ()), hs]
             simp [α] }
       dsimp only
-      rw [← desc_f φ α h () () (ComplexShape.refl_rel ())]
+      rw [← desc_f φ α h () () (ComplexShape.refl_rel_self ())]
       exact (desc φ α h).comm () ())
 
 /-- On the cone, `isoOfSplitting` is `σ.s` on the `K`-summand and `inr` on the `L`-summand. -/
 @[simp]
 theorem isoOfSplitting_hom_f :
     (isoOfSplitting φ σ hs hr).hom.f () =
-      fstX φ () () (ComplexShape.refl_rel ()) ≫ σ.s + sndX φ () ≫ inr :=
+      fstX φ () () (ComplexShape.refl_rel_self ()) ≫ σ.s + sndX φ () ≫ inr :=
   (rfl)
 
 /-- The inverse of `isoOfSplitting` sends `M` into the cone through `fst` and the retraction
@@ -226,7 +227,7 @@ theorem isoOfSplitting_hom_f :
 @[simp]
 theorem isoOfSplitting_inv_f :
     (isoOfSplitting φ σ hs hr).inv.f () =
-      fst ≫ inlX φ () () (ComplexShape.refl_rel ()) + σ.r ≫ inrX φ () :=
+      fst ≫ inlX φ () () (ComplexShape.refl_rel_self ()) + σ.r ≫ inrX φ () :=
   (rfl)
 
 end HomologicalComplex.homotopyCofiber

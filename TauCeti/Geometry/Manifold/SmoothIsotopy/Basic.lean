@@ -19,7 +19,8 @@ smooth maps; existence of an isotopy forces them to be embeddings.
 The time interval carries Mathlib's manifold-with-boundary structure. Forgetting
 smoothness produces the existing continuous `TauCeti.Isotopy`, with exactly the
 same time slices. Constant isotopies, smooth changes of time, and time reversal
-are provided here. Smooth concatenation is provided in `SmoothIsotopy.Trans`;
+are provided here, as is the isotopy `SmoothIsotopy.ofContDiff` given by a `C^n` map on
+`ℝ × E` between normed spaces. Smooth concatenation is provided in `SmoothIsotopy.Trans`;
 isotopy extension is a separate result.
 
 This slice-wise convention does not impose properness on a noncompact source.
@@ -206,6 +207,27 @@ theorem symm_apply (F : SmoothIsotopy f₀ f₁) (p : unitInterval × M) :
 theorem symm_symm (F : SmoothIsotopy f₀ f₁) : F.symm.symm = F := by
   ext p
   simp
+
+/-- The smooth isotopy given by a `C^n` map `G` on `ℝ × E`, read on `[0, 1] × E`, which starts at
+`f₀`, ends at `f₁`, and whose time slices over `[0, 1]` are smooth embeddings. -/
+def ofContDiff {f₀ f₁ : C^n⟮𝓘(ℝ, E), E; 𝓘(ℝ, E'), E'⟯} (G : ℝ × E → E') (hG : ContDiff ℝ n G)
+    (h₀ : ∀ x, G (0, x) = f₀ x) (h₁ : ∀ x, G (1, x) = f₁ x)
+    (hemb : ∀ u ∈ Set.Icc (0 : ℝ) 1,
+      Manifold.IsSmoothEmbedding 𝓘(ℝ, E) 𝓘(ℝ, E') n fun x => G (u, x)) :
+    SmoothIsotopy f₀ f₁ where
+  toContMDiffMap := ⟨fun q => G ((q.1 : ℝ), q.2),
+    hG.contMDiff.comp ((contMDiff_subtypeVal_Icc.comp contMDiff_fst).prodMk_space contMDiff_snd)⟩
+  map_zero_left x := h₀ x
+  map_one_left x := h₁ x
+  isSmoothEmbedding t := hemb t t.2
+
+/-- The isotopy given by a `C^n` map on `ℝ × E` evaluates to that map. -/
+@[simp]
+theorem ofContDiff_apply {f₀ f₁ : C^n⟮𝓘(ℝ, E), E; 𝓘(ℝ, E'), E'⟯} (G : ℝ × E → E')
+    (hG : ContDiff ℝ n G) (h₀ : ∀ x, G (0, x) = f₀ x) (h₁ : ∀ x, G (1, x) = f₁ x)
+    (hemb : ∀ u ∈ Set.Icc (0 : ℝ) 1,
+      Manifold.IsSmoothEmbedding 𝓘(ℝ, E) 𝓘(ℝ, E') n fun x => G (u, x))
+    (q : unitInterval × E) : ofContDiff G hG h₀ h₁ hemb q = G ((q.1 : ℝ), q.2) := (rfl)
 
 end SmoothIsotopy
 
