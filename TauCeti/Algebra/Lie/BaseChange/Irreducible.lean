@@ -59,14 +59,14 @@ theorem isIrreducible_baseChange_of_representation_surjective
     | algebraMap r =>
         intro m hm
         rw [AlgHom.commutes, Algebra.algebraMap_eq_smul_one, LinearMap.baseChange_smul,
-          LinearMap.baseChange_one, LinearMap.smul_apply, Module.End.one_apply]
+          LinearMap.baseChange_one, LinearMap.smul_apply, one_apply_eq_self]
         exact N.toSubmodule.smul_of_tower_mem r hm
     | add u v hu hv =>
         intro m hm
         simpa using N.add_mem (hu m hm) (hv m hm)
     | mul u v hu hv =>
         intro m hm
-        simpa only [map_mul, LinearMap.baseChange_mul, Module.End.mul_apply]
+        simpa only [map_mul, LinearMap.baseChange_mul, mul_apply_eq_comp]
           using hu _ (hv m hm)
   -- Extended K-linear operators span all A-linear operators, since M is finite projective.
   have hEnd (f : Module.End A (A ⊗[K] M)) : ∀ m ∈ N, f m ∈ N := by
