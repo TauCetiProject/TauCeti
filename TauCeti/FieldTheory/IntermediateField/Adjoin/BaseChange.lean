@@ -43,22 +43,34 @@ theorem adjoinBaseChange_gen (α : Ω) :
     adjoinBaseChange K L α (AdjoinSimple.gen K α) = AdjoinSimple.gen L α :=
   (rfl)
 
+/-- Multiplication into the compositum, with its `K(α)`-algebra structure induced by the
+canonical inclusion. -/
+def adjoinBaseChangeTensorLift (α : Ω) :
+    letI := (adjoinBaseChange K L α).toAlgebra
+    K⟮α⟯ ⊗[K] L →ₐ[K⟮α⟯] L⟮α⟯ :=
+  letI := (adjoinBaseChange K L α).toAlgebra
+  Algebra.TensorProduct.lift (Algebra.ofId K⟮α⟯ L⟮α⟯)
+    (IsScalarTower.toAlgHom K L L⟮α⟯) (fun _ _ ↦ Commute.all _ _)
+
+/-- The compositum multiplication map sends a pure tensor to the product of its factors. -/
+@[simp]
+theorem adjoinBaseChangeTensorLift_tmul (α : Ω) (x : K⟮α⟯) (l : L) :
+    adjoinBaseChangeTensorLift K L α (x ⊗ₜ[K] l) =
+      adjoinBaseChange K L α x * algebraMap L L⟮α⟯ l := by
+  let := (adjoinBaseChange K L α).toAlgebra
+  exact Algebra.TensorProduct.lift_tmul _ _ _ x l
+
 /-- If `α` is algebraic over `L`, multiplication maps `K(α) ⊗[K] L` onto `L(α)`. -/
 theorem surjective_adjoinBaseChange_tensorProduct {α : Ω} (hα : IsIntegral L α) :
-    letI := (adjoinBaseChange K L α).toAlgebra
-    Function.Surjective (Algebra.TensorProduct.lift (Algebra.ofId K⟮α⟯ L⟮α⟯)
-      (IsScalarTower.toAlgHom K L L⟮α⟯) (fun _ _ ↦ Commute.all _ _)) := by
+    Function.Surjective (adjoinBaseChangeTensorLift K L α) := by
   let := (adjoinBaseChange K L α).toAlgebra
-  let φ : K⟮α⟯ ⊗[K] L →ₐ[K⟮α⟯] L⟮α⟯ :=
-    Algebra.TensorProduct.lift (Algebra.ofId K⟮α⟯ L⟮α⟯)
-      (IsScalarTower.toAlgHom K L L⟮α⟯) (fun _ _ ↦ Commute.all _ _)
+  let φ := adjoinBaseChangeTensorLift K L α
   -- Regard the tensor-product image as an `L`-subalgebra, so the power basis applies.
   let S : Subalgebra L L⟮α⟯ :=
     { φ.range.toSubring with
       algebraMap_mem' := fun l ↦ ⟨1 ⊗ₜ[K] l, by simp [φ]⟩ }
   have hgen : AdjoinSimple.gen L α ∈ S :=
-    ⟨AdjoinSimple.gen K α ⊗ₜ[K] 1, by simp [φ, RingHom.algebraMap_toAlgebra,
-      AlgHom.toRingHom_eq_coe]⟩
+    ⟨AdjoinSimple.gen K α ⊗ₜ[K] 1, by simp [φ]⟩
   have htop : S = ⊤ := by
     apply top_unique
     rw [← (adjoin.powerBasis hα).adjoin_gen_eq_top,
@@ -66,6 +78,7 @@ theorem surjective_adjoinBaseChange_tensorProduct {α : Ω} (hα : IsIntegral L 
     exact Algebra.adjoin_le (Set.singleton_subset_iff.mpr hgen)
   intro x
   have hx : x ∈ S := htop ▸ Algebra.mem_top
-  exact hx
+  -- `S` retains the carrier of `φ.range`; only its coefficient algebra was changed.
+  exact (AlgHom.mem_range φ).mp hx
 
 end TauCeti.IntermediateField

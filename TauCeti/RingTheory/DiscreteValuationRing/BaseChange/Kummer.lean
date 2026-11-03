@@ -10,7 +10,7 @@ public import TauCeti.RingTheory.DiscreteValuationRing.TamelyRamified
 import Mathlib.FieldTheory.IsAlgClosed.Basic
 import TauCeti.FieldTheory.IntermediateField.Adjoin.Basic
 import TauCeti.RingTheory.DiscreteValuationRing.Kummer
-import TauCeti.RingTheory.DiscreteValuationRing.UnramifiedBaseChange
+import TauCeti.RingTheory.DiscreteValuationRing.BaseChange.Unramified
 
 /-!
 # Enlarging a root extraction under an unramified extension
@@ -71,8 +71,6 @@ theorem IsUnramifiedWRT.adjoin_root (h : IsUnramifiedWRT A L) {π : A}
     Module.finite_of_finrank_pos (hdegree ▸ Nat.pos_of_ne_zero hn)
   have : IsFractionRing (integralClosure A K⟮α⟯) K⟮α⟯ :=
     IsIntegralClosure.isFractionRing_of_finite_extension A K K⟮α⟯ _
-  have : IsScalarTower K K⟮α⟯ L⟮α⟯ :=
-    inferInstance
   have : IsScalarTower A K L⟮α⟯ := .of_algebraMap_eq fun a ↦ by
     simp [IsScalarTower.algebraMap_apply A L L⟮α⟯,
       IsScalarTower.algebraMap_apply K L L⟮α⟯, ← IsScalarTower.algebraMap_apply A K L]
@@ -81,8 +79,7 @@ theorem IsUnramifiedWRT.adjoin_root (h : IsUnramifiedWRT A L) {π : A}
   have hint : IsIntegral K α :=
     (IsIntegral.of_pow (Nat.pos_of_ne_zero hn) (hα ▸ isIntegral_algebraMap (R := A))).tower_top
   refine ⟨inferInstance, ?_⟩
-  exact h.baseChange (Algebra.TensorProduct.lift (Algebra.ofId K⟮α⟯ L⟮α⟯)
-    (IsScalarTower.toAlgHom K L L⟮α⟯) (fun _ _ ↦ Commute.all _ _))
+  exact h.baseChange (TauCeti.IntermediateField.adjoinBaseChangeTensorLift K L α)
     (TauCeti.IntermediateField.surjective_adjoinBaseChange_tensorProduct K L hint.tower_top)
 
 /-- In an algebraically closed ambient extension, every positive root degree admits an
