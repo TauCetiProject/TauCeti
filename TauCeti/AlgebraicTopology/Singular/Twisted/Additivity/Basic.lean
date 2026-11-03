@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Algebra.Category.ModuleCat.AB
 public import TauCeti.AlgebraicTopology.Singular.Twisted.Basic
 public import TauCeti.AlgebraicTopology.Singular.Additivity
 
@@ -18,8 +19,9 @@ with the differentials, including the coefficient transport on the first face.
 
 A singular simplex of a disjoint union lies in exactly one summand. Reindexing the coproduct
 of its coefficient fibres therefore identifies it with an iterated coproduct over summands
-and their singular simplices. This chain decomposition also gives the product decomposition
-of cochains with local coefficients after applying `Hom(-, M)`.
+and their singular simplices. Exactness of coproducts of modules gives the corresponding
+decomposition of twisted homology in every degree. This chain decomposition also gives the
+product decomposition of cochains with local coefficients after applying `Hom(-, M)`.
 
 ## References
 
@@ -56,5 +58,15 @@ def isColimitCofanTwistedChainComplex :
     (HomologicalComplex.eval (ModuleCat.{max v w} R) (ComplexShape.down ℕ) n) _ _).symm
       (isColimitCofanTwistedChainComplexXOfBijective X (sigmaι X) L n
         (toSSet_map_sigmaι_app_bijective X (Opposite.op ⦋n⦌)))
+
+/-- Twisted singular homology of a disjoint union is the coproduct of the twisted homologies
+of its summands. The coproduct legs are the maps induced by the actual inclusions. -/
+def isColimitCofanTwistedHomology (k : ℕ) :
+    IsColimit (Cofan.mk (L.twistedHomology k)
+      (fun i ↦ twistedHomologyMap (sigmaι X i) L k) :
+      Cofan fun i ↦ ((pullback (sigmaι X i).hom).obj L).twistedHomology k) := by
+  have : AB4OfSize.{v} (ModuleCat.{max v w} R) := AB4OfSize_shrink.{v, w} _
+  exact isColimitCofanMkObjOfIsColimit (HomologicalComplex.homologyFunctor _ _ k) _ _
+    (isColimitCofanTwistedChainComplex X L)
 
 end TauCeti.LocalCoefficientSystem
