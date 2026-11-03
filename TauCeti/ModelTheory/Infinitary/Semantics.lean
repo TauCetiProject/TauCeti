@@ -280,6 +280,19 @@ theorem SentenceInf.realize_not {M : Type w} [L.Structure M] {φ : L.SentenceInf
     SentenceInf.Realize φ.not M ↔ ¬φ.Realize M := by
   simp only [SentenceInf.realize_def, FormulaInf.realize_def, BoundedFormulaInf.realize_not]
 
+/-- An implication of sentences holds exactly when its conclusion holds whenever its hypothesis
+does. -/
+@[simp]
+theorem SentenceInf.realize_imp {M : Type w} [L.Structure M] {φ ψ : L.SentenceInf ι} :
+    SentenceInf.Realize (φ.imp ψ) M ↔ (φ.Realize M → ψ.Realize M) := by
+  simp only [SentenceInf.realize_def, FormulaInf.realize_def, BoundedFormulaInf.realize_imp]
+
+/-- Every closed term equals itself in every structure. -/
+@[simp]
+theorem SentenceInf.realize_equal_self {M : Type w} [L.Structure M] (t : L.Term (Empty ⊕ Fin 0)) :
+    SentenceInf.Realize (BoundedFormulaInf.equal t t : L.SentenceInf ι) M := by
+  simp only [SentenceInf.realize_def, FormulaInf.realize_def, BoundedFormulaInf.realize_equal]
+
 /-- The false sentence holds in no structure. -/
 @[simp]
 theorem SentenceInf.realize_bot {M : Type w} [L.Structure M] :
