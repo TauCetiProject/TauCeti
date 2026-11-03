@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.RingTheory.RootsOfUnity.Basic
-public import TauCeti.Algebra.AlgebraicGroup.MultiplicativeGroup.WeilRestriction
+public import TauCeti.Algebra.AlgebraicGroup.MultiplicativeGroup.WeilRestriction.Basic
 public import TauCeti.RingTheory.Norm.Units
 public import TauCeti.RingTheory.NormTrace.BaseChange
 
