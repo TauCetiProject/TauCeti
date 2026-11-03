@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicTopology.SimplicialNerve.HornThickening.Basic
+public import TauCeti.Order.Hom.ULift
 
 /-!
 # Gluing simplicial functors out of the simplicial thickening of a horn
@@ -296,14 +297,20 @@ private lemma exists_comp_eq (u : Arr (SimplicialThickening J) q) {k : J}
   ext z
   simp
 
-/-- If `A₁ ∪ A₂ = B₁ ∪ B₂`, where `A₁ ≤ k ≤ A₂` and `B₁ ≤ k' ≤ B₂` with `k ≤ k'`, then the part
-of `A₂` below `k'` connects `A₁` to `B₁` and `B₂` to `A₂`. -/
-private lemma union_inter_Iic_eq {A₁ A₂ B₁ B₂ : Set J} {k k' : J} (hkk' : k ≤ k')
-    (hA₁ : ∀ z ∈ A₁, z ≤ k) (hk : k ∈ A₂) (hB₁ : ∀ z ∈ B₁, z ≤ k')
-    (hB₂ : ∀ z ∈ B₂, k' ≤ z) (hk' : k' ∈ B₁) (h : A₁ ∪ A₂ = B₁ ∪ B₂) :
-    A₁ ∪ (A₂ ∩ Set.Iic k') = B₁ ∧ A₂ ∩ Set.Iic k' ∪ B₂ = A₂ := by
-  have hA (z : J) : z ∈ A₁ ∨ z ∈ A₂ ↔ z ∈ B₁ ∨ z ∈ B₂ := by
-    simpa using Set.ext_iff.1 h z
+/-- If `u₁ ∘ u₂ = v₁ ∘ v₂` where `u₁` ends at or below the end of `v₁`, then the part of the paths
+of `u₂` below the end of `v₁` connects `u₁` to `v₁` and `v₂` to `u₂`. -/
+private lemma paths_union_inter_Iic_eq {u₁ u₂ v₁ v₂ : Arr (SimplicialThickening J) q}
+    (hu : u₁.2.1 = u₂.1) (hv : v₁.2.1 = v₂.1) (h : Arr.comp u₁ u₂ = Arr.comp v₁ v₂)
+    (hle : u₁.2.1.as ≤ v₁.2.1.as) (t : Fin (q.unop.len + 1)) :
+    paths u₁ t ∪ (paths u₂ t ∩ Set.Iic v₁.2.1.as) = paths v₁ t ∧
+      paths u₂ t ∩ Set.Iic v₁.2.1.as ∪ paths v₂ t = paths u₂ t := by
+  have hA (z : J) : z ∈ paths u₁ t ∨ z ∈ paths u₂ t ↔ z ∈ paths v₁ t ∨ z ∈ paths v₂ t := by
+    simpa [paths_comp hu, paths_comp hv] using Set.ext_iff.1 (congrArg (paths · t) h) z
+  have hA₁ (z : J) (hz : z ∈ paths u₁ t) : z ≤ u₁.2.1.as := le_snd_of_mem_paths hz
+  have hB₁ (z : J) (hz : z ∈ paths v₁ t) : z ≤ v₁.2.1.as := le_snd_of_mem_paths hz
+  have hB₂ (z : J) (hz : z ∈ paths v₂ t) : v₁.2.1.as ≤ z := hv ▸ fst_le_of_mem_paths hz
+  have hk : u₁.2.1.as ∈ paths u₂ t := hu ▸ fst_mem_paths u₂ t
+  have hk' : v₁.2.1.as ∈ paths v₁ t := snd_mem_paths v₁ t
   constructor
   · ext z
     simp only [Set.mem_union, Set.mem_inter_iff, Set.mem_Iic]
@@ -311,7 +318,7 @@ private lemma union_inter_Iic_eq {A₁ A₂ B₁ B₂ : Set J} {k k' : J} (hkk' 
     · rintro (hz | ⟨hz, hzk'⟩)
       · rcases (hA z).1 (Or.inl hz) with hz' | hz'
         · exact hz'
-        · rwa [le_antisymm ((hA₁ z hz).trans hkk') (hB₂ z hz')]
+        · rwa [le_antisymm ((hA₁ z hz).trans hle) (hB₂ z hz')]
       · rcases (hA z).1 (Or.inr hz) with hz' | hz'
         · exact hz'
         · rwa [le_antisymm hzk' (hB₂ z hz')]
@@ -325,10 +332,10 @@ private lemma union_inter_Iic_eq {A₁ A₂ B₁ B₂ : Set J} {k k' : J} (hkk' 
     · rintro (⟨hz, -⟩ | hz)
       · exact hz
       · rcases (hA z).2 (Or.inr hz) with hz' | hz'
-        · rwa [le_antisymm (hA₁ z hz') (hkk'.trans (hB₂ z hz))]
+        · rwa [le_antisymm (hA₁ z hz') (hle.trans (hB₂ z hz))]
         · exact hz'
     · intro hz
-      by_cases hzk' : z ≤ k'
+      by_cases hzk' : z ≤ v₁.2.1.as
       · exact Or.inl ⟨hz, hzk'⟩
       · rcases (hA z).1 (Or.inr hz) with hz' | hz'
         · exact absurd (hB₁ z hz') hzk'
@@ -341,11 +348,7 @@ private lemma exists_comp_eq_comp {u₁ u₂ v₁ v₂ : Arr (SimplicialThickeni
     (hle : u₁.2.1.as ≤ v₁.2.1.as) :
     ∃ m : Arr (SimplicialThickening J) q, u₁.2.1 = m.1 ∧ m.2.1 = v₂.1 ∧
       Arr.comp u₁ m = v₁ ∧ Arr.comp m v₂ = u₂ := by
-  have hP (t) := paths_comp hu t ▸ paths_comp hv t ▸ congrArg (paths · t) h
-  have key (t) := union_inter_Iic_eq (A₁ := paths u₁ t) (A₂ := paths u₂ t) (B₁ := paths v₁ t)
-    (B₂ := paths v₂ t) (hu ▸ hle) (fun _ hz ↦ hu ▸ le_snd_of_mem_paths hz) (fst_mem_paths u₂ t)
-    (fun _ hz ↦ le_snd_of_mem_paths hz) (fun _ hz ↦ hv ▸ fst_le_of_mem_paths hz)
-    (snd_mem_paths v₁ t) (hP t)
+  have key := paths_union_inter_Iic_eq hu hv h hle
   have hk' (t) : v₁.2.1.as ∈ paths u₂ t ∩ Set.Iic v₁.2.1.as :=
     ⟨(key t).2 ▸ Set.mem_union_right _ (hv ▸ fst_mem_paths v₂ t), Set.mem_Iic.2 le_rfl⟩
   let m := mkArr u₂.1.as v₁.2.1.as (fun t ↦ paths u₂ t ∩ Set.Iic v₁.2.1.as)
@@ -409,34 +412,19 @@ private abbrev δF (j : Fin (n + 2)) :
       (SimplicialThickening (ULift.{v} (Fin (n + 2)))) :=
   SimplicialThickening.functor (SimplexCategory.δ j).toOrderHom.uliftMap
 
-private lemma injective_δ_uliftMap (j : Fin (n + 2)) :
-    Function.Injective ((SimplexCategory.δ j).toOrderHom.uliftMap :
-      ULift.{v} (Fin (n + 1)) →o ULift.{v} (Fin (n + 2))) := fun _ _ h ↦
-  ULift.ext (Fin.succAbove_right_injective (congrArg ULift.down h))
-
-private lemma mem_range_δ_uliftMap_iff (j : Fin (n + 2)) (x : ULift.{v} (Fin (n + 2))) :
-    x ∈ Set.range ((SimplexCategory.δ j).toOrderHom.uliftMap :
-      ULift.{v} (Fin (n + 1)) →o ULift.{v} (Fin (n + 2))) ↔ x.down ≠ j := by
-  constructor
-  · rintro ⟨y, rfl⟩
-    exact Fin.succAbove_ne j y.down
-  · intro h
-    obtain ⟨y, hy⟩ := Fin.exists_succAbove_eq h
-    exact ⟨⟨y⟩, ULift.ext hy⟩
-
 /-- A chain of paths avoiding the vertex `j` lies in the image of the coface functor `δF j`. -/
 private lemma exists_arrMap_δF_eq (j : Fin (n + 2))
     (u : Arr (SimplicialThickening (ULift.{v} (Fin (n + 2)))) q)
     (hu : ∀ t, ⟨j⟩ ∉ paths u t) : ∃ w, arrMap (δF j) w = u :=
-  exists_arrMap_functor_eq _ (injective_δ_uliftMap j) u fun t x hx ↦
-    (mem_range_δ_uliftMap_iff j x).2 fun h ↦ hu t (h ▸ hx)
+  exists_arrMap_functor_eq _ (OrderHom.uliftMap_injective Fin.succAbove_right_injective) u
+    fun t _ hx ↦ OrderHom.mem_range_uliftMap_iff.2 (Fin.exists_succAbove_eq fun h ↦ hu t (h ▸ hx))
 
 private lemma notMem_paths_arrMap_δF (j : Fin (n + 2))
     (w : Arr (SimplicialThickening (ULift.{v} (Fin (n + 1)))) q) (t : Fin (q.unop.len + 1)) :
     ⟨j⟩ ∉ paths (arrMap (δF j) w) t := by
   rw [paths_arrMap_functor]
   rintro ⟨y, -, hy⟩
-  exact (mem_range_δ_uliftMap_iff j _).1 ⟨y, hy⟩ rfl
+  exact Fin.succAbove_ne j y.down (congrArg ULift.down hy)
 
 /-- For `j < k`, a chain of paths lying in the faces `j` and `k` comes from the face `{j, k}`. -/
 private lemma exists_eq_arrMap_δF_of_lt {j k : Fin (n + 3)} (hjk : j < k)
@@ -448,7 +436,8 @@ private lemma exists_eq_arrMap_δF_of_lt {j k : Fin (n + 3)} (hjk : j < k)
     have := notMem_paths_arrMap_δF k w' t
     rw [← h, paths_arrMap_functor] at this
     exact this ⟨_, hk, ULift.ext (Fin.succAbove_pred_of_lt _ _ hjk)⟩
-  refine ⟨z, rfl, arrMap_functor_injective _ (injective_δ_uliftMap k) (h.symm.trans ?_)⟩
+  refine ⟨z, rfl, arrMap_functor_injective _
+    (OrderHom.uliftMap_injective Fin.succAbove_right_injective) (h.symm.trans ?_)⟩
   rw [← arrMap_comp_functor, ← arrMap_comp_functor, ← SimplicialThickening.functor_comp,
     ← SimplicialThickening.functor_comp]
   -- This is the simplicial identity `δ (k - 1) ≫ δ j = δ j ≫ δ k` (Mathlib's `δ_comp_δ`).
@@ -509,8 +498,9 @@ private lemma exists_arrMap_δF_comp {j : Fin (n + 3)}
   obtain ⟨w₁, rfl⟩ := exists_arrMap_δF_eq j u hu
   obtain ⟨w₂, rfl⟩ := exists_arrMap_δF_eq j v hv
   have h₁₂ : w₁.2.1 = w₂.1 := congrArg SimplicialThickening.mk
-    (injective_δ_uliftMap j (congrArg SimplicialThickening.as huv))
-  exact ⟨w₁, w₂, h₁₂, rfl, rfl, arrMap_functor_injective _ (injective_δ_uliftMap j)
+    (ULift.ext (Fin.succAbove_right_injective (congrArg (·.as.down) huv)))
+  exact ⟨w₁, w₂, h₁₂, rfl, rfl, arrMap_functor_injective _
+    (OrderHom.uliftMap_injective Fin.succAbove_right_injective)
     ((arrMap_comp _ h₁₂).trans h.symm)⟩
 
 include hσ in
@@ -521,7 +511,7 @@ private lemma arrMap_σ_eq {j k : Fin (n + 3)} (hj : j ≠ i) (hk : k ≠ i)
   · obtain ⟨z, rfl, rfl⟩ := exists_eq_arrMap_δF_of_lt hjk h
     have := hσ j k hj hk hjk
     exact congrArg (fun F ↦ arrMap F z) this
-  · rw [arrMap_functor_injective _ (injective_δ_uliftMap j) h]
+  · rw [arrMap_functor_injective _ (OrderHom.uliftMap_injective Fin.succAbove_right_injective) h]
   · obtain ⟨z, rfl, rfl⟩ := exists_eq_arrMap_δF_of_lt hjk h.symm
     have := hσ k j hk hj hjk
     exact (congrArg (fun F ↦ arrMap F z) this).symm
@@ -680,7 +670,8 @@ private lemma glue_id (x : ULift.{v} (Fin (n + 3))) :
     by_cases hx : x.down = 0
     · exact ⟨Fin.last _, h₁.ne', hx ▸ (Fin.last_pos' ..).ne⟩
     · exact ⟨0, h₀.ne, hx⟩
-  obtain ⟨a, rfl⟩ := (mem_range_δ_uliftMap_iff j x).2 hxj
+  obtain ⟨a, rfl⟩ : x ∈ Set.range (SimplexCategory.δ j).toOrderHom.uliftMap :=
+    OrderHom.mem_range_uliftMap_iff.2 (Fin.exists_succAbove_eq hxj)
   -- The objects `(δF j).obj ⟨a⟩` and `.mk ((δ j).uliftMap a)` agree by definition of `δF`.
   calc glue σ h₀ (Arr.id _ (.mk ((SimplexCategory.δ j).toOrderHom.uliftMap a)) q)
       = glue σ h₀ (arrMap (δF j) (Arr.id _ ⟨a⟩ q)) := by rw [arrMap_id]; rfl
