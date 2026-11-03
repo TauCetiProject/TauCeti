@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.Complex.UpperHalfPlane.FunctionsBoundedAtInfty
 public import Mathlib.Analysis.Complex.UpperHalfPlane.Manifold
 public import Mathlib.NumberTheory.ZetaValues
 public import TauCeti.Analysis.Complex.UpperHalfPlane.Exp
@@ -61,6 +62,8 @@ up to roots of unity.
   `g₀⁴ = 16 q^{1/3} / P(q)⁸`, `g₁⁴ = s^{-1/3} P(s)⁸` and `g₂⁴ = -s^{-1/3} P(-s)⁸` for
   `s = e^{π i τ}`, `q = s²` and `P(s) = ∏_{n ≥ 0} (1 - s^{2n+1})`.
 * `TauCeti.ModularForm.siegelFunction_pow_four_mul_mul`: `g₀⁴ g₁⁴ g₂⁴ = -16`.
+* `TauCeti.ModularForm.tendsto_tprod_one_sub_qParam_pow_odd_pow`: `P(q)ᵏ → 1` at `i∞`, for
+  `q = e^{2π i τ}` and `P(q) = ∏_{n ≥ 0} (1 - q^{2n+1})`.
 * `TauCeti.ModularForm.siegelFunction_zero_half_apply_add_one`,
   `TauCeti.ModularForm.siegelFunction_half_zero_apply_add_one`,
   `TauCeti.ModularForm.siegelFunction_half_half_apply_add_one`: `τ ↦ τ + 1` sends `g₀, g₁, g₂` to
@@ -530,6 +533,14 @@ theorem siegelFunction_pow_four_mul_mul (τ : ℍ) :
   rw [← mul_pow, ← mul_pow, siegelFunction_zero_half_mul_half_zero_mul_half_half τ.im_pos,
     mul_pow, h₈]
   norm_num
+
+open Filter Topology in
+/-- `(∏_{n ≥ 0} (1 - q^{2n+1}))ᵏ → 1` at `i∞`, for `q = e^{2π i τ}`. -/
+theorem tendsto_tprod_one_sub_qParam_pow_odd_pow (k : ℕ) :
+    Tendsto (fun τ : ℍ ↦ (∏' n : ℕ, (1 - 𝕢 1 τ ^ (2 * n + 1))) ^ k) atImInfty (𝓝 1) := by
+  simpa using ((hasDerivAt_tprod_one_sub_pow_odd (𝕜 := ℂ)).continuousAt.tendsto.comp
+    (((Function.Periodic.qParam_tendsto one_pos).mono_right nhdsWithin_le_nhds).comp
+      tendsto_coe_atImInfty)).pow k
 
 /-- `g₀(τ + 1) = e^{π i / 6} g₀(τ)` for `g₀ = g_{(0, 1/2)}`. -/
 theorem siegelFunction_zero_half_apply_add_one (τ : ℂ) :

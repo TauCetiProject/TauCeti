@@ -39,8 +39,6 @@ This is the input for the cube root `γ₂ = (g¹² + 16) / g⁴` of `j`.
 
 ## Main results
 
-* `TauCeti.ModularForm.tendsto_tprod_one_sub_qParam_pow_odd_pow`: `P(q)ᵏ → 1` at `i∞`, for
-  `q = e^{2π i τ}` and `P(q) = ∏_{n ≥ 0} (1 - q^{2n+1})`.
 * `TauCeti.ModularForm.prod_X_sub_C_siegelFunction_pow_twelve`: Weber's cubic
   `(X - g₀¹²)(X - g₁¹²)(X - g₂¹²) = (X + 16)³ - j X`.
 * `TauCeti.ModularForm.siegelFunction_zero_half_pow_twelve_add_sixteen_pow_three`,
@@ -130,12 +128,6 @@ private theorem siegelFunction_half_zero_pow_twelve_mul {τ : ℂ} (hτ : 0 < τ
   ring
 
 /-! ### Limits at `i∞` -/
-
-/-- `(∏_{n ≥ 0} (1 - q^{2n+1}))ᵏ → 1` at `i∞`, for `q = e^{2π i τ}`. -/
-theorem tendsto_tprod_one_sub_qParam_pow_odd_pow (k : ℕ) :
-    Tendsto (fun τ : ℍ ↦ (∏' n : ℕ, (1 - 𝕢 1 τ ^ (2 * n + 1))) ^ k) atImInfty (𝓝 1) := by
-  simpa using ((hasDerivAt_tprod_one_sub_pow_odd (𝕜 := ℂ)).continuousAt.tendsto.comp
-    (UpperHalfPlane.qParam_tendsto_atImInfty one_pos)).pow k
 
 /-- `g₁¹² + g₂¹² → -48` at `i∞`. -/
 private theorem tendsto_siegelFunction_half_zero_pow_twelve_add :
