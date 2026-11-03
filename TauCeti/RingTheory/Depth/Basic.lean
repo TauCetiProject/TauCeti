@@ -78,6 +78,8 @@ The regular-sequence transfer lemmas for linear maps live in
   `IsLocalRing.depth_eq_zero_iff_maximalIdeal_mem_associatedPrimes`: the depth vanishes exactly
   when the residue field maps nontrivially to the module, that is, when the maximal ideal is an
   associated prime.
+* `Ideal.depth_localizedModule_self`: the module localization `LocalizedModule p.primeCompl R`
+  has the depth of the local ring `R_p`.
 * `TauCeti.depth_localizedModule_eq_zero_iff`: `M_p` has depth zero exactly when `p` is an
   associated prime of `M`, and `TauCeti.one_le_depth_localizedModule_iff` is its negation. This
   combines the depth-zero criterion with
@@ -611,6 +613,18 @@ theorem depth_self_eq [IsNoetherianRing R] (e : R ≃+* S) :
   le_antisymm (depth_self_le e) (depth_self_le e.symm)
 
 end RingEquiv
+
+namespace Ideal
+
+/-- For a prime `p` of a commutative ring `R`, the module localization `LocalizedModule
+p.primeCompl R` has the same depth over `R_p` as the local ring `R_p` itself. -/
+theorem depth_localizedModule_self {R : Type u} [CommRing R] (p : Ideal R) [p.IsPrime] :
+    IsLocalRing.depth (ModuleCat.of (Localization.AtPrime p) (LocalizedModule p.primeCompl R)) =
+      IsLocalRing.depth (ModuleCat.of (Localization.AtPrime p) (Localization.AtPrime p)) :=
+  IsLocalRing.depth_eq_of_linearEquiv <| (IsLocalizedModule.iso p.primeCompl
+    (Algebra.linearMap R (Localization.AtPrime p))).extendScalarsOfIsLocalization p.primeCompl _
+
+end Ideal
 
 namespace TauCeti
 

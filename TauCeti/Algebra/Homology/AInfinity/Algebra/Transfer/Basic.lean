@@ -204,7 +204,7 @@ theorem isHomogeneous_perturbationSeries :
 private theorem perturbationSeries_ofLetter (a : A) :
     (𝒜.barTensorTrick c hh hincl hproj).perturbationSeries 𝒜.higherBarDifferential
       (ofLetter R A a) = 0 := by
-  rw [LinearSpecialContraction.perturbationSeries_def, Module.End.mul_apply,
+  rw [LinearSpecialContraction.perturbationSeries_def, mul_apply_eq_comp,
     higherBarDifferential_ofLetter, map_zero]
 
 /-- The higher bar differential strictly lowers tensor length. -/
@@ -231,10 +231,10 @@ private theorem perturbationSeries_of_mem_filtration_two {z : ReducedTensorWords
       (𝒜.barTensorTrick_homotopy_mem_filtration c hh hincl hproj
         (𝒜.higherBarDifferential_mem_filtration hz))
     rw [filtration_zero, Submodule.mem_bot] at h
-    rwa [pow_one, Module.End.mul_apply]
+    rwa [pow_one, mul_apply_eq_comp]
   rw [LinearSpecialContraction.perturbationSeries_apply_eq_sum_of_pow_apply_eq_zero _ _
     (𝒜.isUnit_one_add_higherBarDifferential_mul_barTensorTrick_homotopy c hh hincl hproj) h0,
-    Finset.sum_range_one, pow_zero, Module.End.one_apply]
+    Finset.sum_range_one, pow_zero, one_apply_eq_self]
 
 /-! ### The transferred bar differential -/
 
@@ -469,11 +469,11 @@ private theorem perturbationSeries_of_mem_filtration_three {z : ReducedTensorWor
           (𝒜.barTensorTrick_homotopy_mem_filtration c hh hincl hproj
             (𝒜.higherBarDifferential_mem_filtration hz))))
     rw [filtration_zero, Submodule.mem_bot] at h
-    rwa [pow_two, Module.End.mul_apply, Module.End.mul_apply, Module.End.mul_apply]
+    rwa [pow_two, mul_apply_eq_comp, mul_apply_eq_comp, mul_apply_eq_comp]
   rw [LinearSpecialContraction.perturbationSeries_apply_eq_sum_of_pow_apply_eq_zero _ _
     (𝒜.isUnit_one_add_higherBarDifferential_mul_barTensorTrick_homotopy c hh hincl hproj) h0,
-    Finset.sum_range_succ, Finset.sum_range_one, pow_zero, pow_one, Module.End.one_apply,
-    LinearMap.neg_apply, Module.End.mul_apply, sub_eq_add_neg]
+    Finset.sum_range_succ, Finset.sum_range_one, pow_zero, pow_one, one_apply_eq_self,
+    LinearMap.neg_apply, mul_apply_eq_comp, sub_eq_add_neg]
 
 include hincl in
 /-- The inclusion of the contraction has degree zero, so it intertwines the Koszul twists. -/

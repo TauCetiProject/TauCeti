@@ -7,12 +7,12 @@ module
 
 public import Mathlib.CategoryTheory.Abelian.GrothendieckAxioms.Basic
 public import Mathlib.CategoryTheory.Abelian.Monomorphisms
-public import Mathlib.CategoryTheory.Filtered.Final
 public import Mathlib.CategoryTheory.Functor.OfSequence
 public import Mathlib.CategoryTheory.Limits.FunctorCategory.EpiMono
 public import Mathlib.CategoryTheory.Limits.Shapes.SequentialProduct
 public import Mathlib.CategoryTheory.Limits.Types.Images
 public import Mathlib.CategoryTheory.MorphismProperty.Limits
+public import TauCeti.CategoryTheory.Limits.Final
 public import TauCeti.CategoryTheory.Limits.Shapes.Pullback.Pi
 
 /-!
@@ -109,10 +109,9 @@ theorem epi_π_app [IsReplete C] {F : ℕᵒᵖ ⥤ C} (hF : ∀ n, Epi (F.map (
   -- Reindex along `m ↦ n + m`, which is cofinal, so that the `n`-th projection becomes the first.
   -- The transition maps of the reindexed tower are those of `F`, and its first projection is
   -- `c.π.app ⟨n + 0⟩ = c.π.app ⟨n⟩`, by unfolding `Monotone.functor` and `Nat.add`.
-  have hmono : Monotone fun m : ℕ ↦ n + m := fun _ _ h ↦ Nat.add_le_add_left h n
-  have : hmono.functor.Final := hmono.final_functor_iff.2 fun m ↦ ⟨m, Nat.le_add_left m n⟩
-  exact epi_π_app_zero (F := hmono.functor.op ⋙ F) (c := c.whisker hmono.functor.op)
-    (fun m ↦ hF (n + m)) ((Functor.Initial.isLimitWhiskerEquiv hmono.functor.op c).symm hc)
+  exact epi_π_app_zero (c := c.whisker _) (fun m ↦ hF (n + m))
+    (hc.whiskerOfCofinal ⟨(n + ·), fun _ _ h ↦ Nat.add_le_add_left h n⟩
+      fun m ↦ ⟨m, Nat.le_add_left m n⟩)
 
 /-- **Repleteness descends along functors that preserve sequential limits and preserve and reflect
 epimorphisms.** If `G : D ⥤ C` is such a functor and `C` is replete, then so is `D`. -/
