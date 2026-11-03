@@ -7,7 +7,6 @@ module
 
 public import Mathlib.RingTheory.Jacobson.Ideal
 public import Mathlib.RingTheory.Polynomial.Resultant.Basic
-import Mathlib.RingTheory.Henselian
 import TauCeti.Algebra.Polynomial.Degree.Operations
 
 /-!
