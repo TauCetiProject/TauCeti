@@ -34,6 +34,8 @@ factors by vectors of that subspace does not change the product.
 
 * `exteriorPower.fromTensorPower` is the canonical surjection of the tensor power onto the
   exterior power.
+* `LinearEquiv.exteriorPower` is the equivalence of exterior powers induced by a linear
+  equivalence.
 ## Main results
 
 * `exteriorPower.eq_zero_of_finrank_lt` states that every element of `⋀[R]^d M` is zero when
@@ -48,6 +50,8 @@ factors by vectors of that subspace does not change the product.
 * `exteriorPower.range_toTensorPower`: the image of the antisymmetrization is the image of the
   antisymmetrization operator on the tensor power.
 * `exteriorPower.map_bijective`: a bijective linear map induces bijections of exterior powers.
+* `exteriorPower.ofEq_ιMulti`: the identification of exterior powers of equal degree renumbers the
+  factors of an exterior product.
 * `Submodule.ιMulti_eq_zero_of_finrank_lt`: an exterior product vanishes when more of its factors
   than the dimension of a finite-dimensional subspace lie in that subspace.
 * `Submodule.ιMulti_eq_of_sub_mem`: an exterior product with at least `dim P` factors in a
@@ -274,7 +278,69 @@ theorem map_bijective {n : ℕ} {f : M →ₗ[R] N} (hf : Function.Bijective f) 
 
 end Bijective
 
+/-! ### Exterior powers of equal degree -/
+
+section OfEq
+
+variable [CommRing R] [AddCommGroup M] [Module R M]
+
+/-- Exterior powers of equal degree are equal, and the identification renumbers the factors of an
+exterior product. -/
+theorem ofEq_ιMulti {n m : ℕ} (h : n = m) (v : Fin n → M) :
+    LinearEquiv.ofEq _ _ (congrArg (⋀[R]^· M) h) (ιMulti R n v) =
+      ιMulti R m (v ∘ Fin.cast h.symm) := by
+  subst h
+  rfl
+
+end OfEq
+
 end exteriorPower
+
+/-! ### Exterior powers of linear equivalences -/
+
+namespace LinearEquiv
+
+variable [CommRing R] [AddCommGroup M] [Module R M] {N P : Type*} [AddCommGroup N] [Module R N]
+  [AddCommGroup P] [Module R P]
+
+/-- A linear equivalence `e : M ≃ N` induces an equivalence `⋀ⁿ M ≃ ⋀ⁿ N` of every exterior
+power, sending `m₁ ∧ ⋯ ∧ mₙ` to `e m₁ ∧ ⋯ ∧ e mₙ` (`LinearEquiv.exteriorPower_apply_ιMulti`). The
+inverse is the map induced by `e.symm`, so `LinearEquiv.exteriorPower_symm` holds by definition. -/
+@[expose] noncomputable def exteriorPower (e : M ≃ₗ[R] N) (n : ℕ) : ⋀[R]^n M ≃ₗ[R] ⋀[R]^n N :=
+  .ofLinearMap (_root_.exteriorPower.map n e.toLinearMap)
+    (_root_.exteriorPower.map n e.symm.toLinearMap)
+    (by rw [← _root_.exteriorPower.map_comp]; simp)
+    (by rw [← _root_.exteriorPower.map_comp]; simp)
+
+/-- The underlying linear map is the map induced on exterior powers. -/
+@[simp]
+theorem exteriorPower_toLinearMap (e : M ≃ₗ[R] N) (n : ℕ) :
+    (e.exteriorPower n).toLinearMap = _root_.exteriorPower.map n e.toLinearMap :=
+  (rfl)
+
+@[simp]
+theorem exteriorPower_apply_ιMulti (e : M ≃ₗ[R] N) (n : ℕ) (m : Fin n → M) :
+    e.exteriorPower n (_root_.exteriorPower.ιMulti R n m) =
+      _root_.exteriorPower.ιMulti R n (e ∘ m) :=
+  _root_.exteriorPower.map_apply_ιMulti e.toLinearMap m
+
+@[simp]
+theorem exteriorPower_symm (e : M ≃ₗ[R] N) (n : ℕ) :
+    (e.exteriorPower n).symm = e.symm.exteriorPower n :=
+  (rfl)
+
+@[simp]
+theorem exteriorPower_refl (n : ℕ) :
+    (LinearEquiv.refl R M).exteriorPower n = LinearEquiv.refl R _ :=
+  toLinearMap_injective <| by simp
+
+@[simp]
+theorem exteriorPower_trans (e : M ≃ₗ[R] N) (e' : N ≃ₗ[R] P) (n : ℕ) :
+    (e.trans e').exteriorPower n = (e.exteriorPower n).trans (e'.exteriorPower n) :=
+  toLinearMap_injective <| by
+    simp only [coe_trans, exteriorPower_toLinearMap, _root_.exteriorPower.map_comp]
+
+end LinearEquiv
 
 /-! ### Exterior products with factors in a subspace -/
 

@@ -11,20 +11,28 @@ public import Mathlib.Algebra.Order.Ring.IsNonarchimedean
 public import Mathlib.Basic.Real.Basic
 import Mathlib.Algebra.Order.BigOperators.GroupWithZero.Finset
 import Mathlib.Algebra.Order.BigOperators.Ring.Finset
+import TauCeti.Algebra.MvPolynomial.Degrees
+import TauCeti.Data.Finsupp.Interval
 
 /-!
-# Absolute values of values of integer polynomials
+# Absolute values of values of polynomials
 
-Let `P ∈ ℤ[X_i : i ∈ ι]` have partial degrees `degreeOf i P ≤ L i` and length
-`ℓ(P) = ∑_s |c_s|`, the sum of the absolute values of its coefficients. For a point `x` of a
-commutative ring `R` and an absolute value `v` on `R`, the value
-`P(x) = ∑_s c_s ∏ i, x_i ^ s_i` satisfies:
+Let `P` be a polynomial over a commutative ring `R` with partial degrees `degreeOf i P ≤ L i` and
+coefficients of absolute value at most `B` under an absolute value `v` on `R`. Then `P(x)` is a sum
+of at most `∏ i, (L i + 1)` terms, each at most `B ∏ i, max(v(x_i), 1) ^ L i`, so
+
+* `v(P(x)) ≤ B ∏ i, (L i + 1) ∏ i, max(v(x_i), 1) ^ L i`;
+* if `v` is nonarchimedean, the ultrametric inequality removes the count:
+  `v(P(x)) ≤ B ∏ i, max(v(x_i), 1) ^ L i`.
+
+For an integer polynomial `P ∈ ℤ[X_i : i ∈ ι]` with length `ℓ(P) = ∑_s |c_s|`, the sum of the
+absolute values of its coefficients, the value at a point `x` of `R` satisfies:
 
 * `v(P(x)) ≤ ℓ(P) ∏ i, max(v(x_i), 1) ^ L i`;
-* if `v` is nonarchimedean, the integer coefficients have `v(c_s) ≤ 1` and the ultrametric
-  inequality removes the factor `ℓ(P)`: `v(P(x)) ≤ ∏ i, max(v(x_i), 1) ^ L i`.
+* if `v` is nonarchimedean, the integer coefficients have `v(c_s) ≤ 1`, so
+  `v(P(x)) ≤ ∏ i, max(v(x_i), 1) ^ L i`.
 
-These are the local estimates behind height bounds for values of integer polynomials.
+These are the local estimates behind height bounds for values of polynomials.
 
 ## Main results
 
@@ -32,6 +40,8 @@ These are the local estimates behind height bounds for values of integer polynom
 * `AbsoluteValue.apply_prod_pow_le`: `v(∏ i, x_i ^ s_i) ≤ ∏ i, max(v(x_i), 1) ^ L i` for `s ≤ L`.
 * `AbsoluteValue.apply_coeff_mul_prod_pow_le`: the same bound `v(c_s) ∏ i, max(v(x_i), 1) ^ L i`
   for a single term `c_s ∏ i, x_i ^ s_i` of `P(x)`.
+* `AbsoluteValue.apply_eval_le`, `IsNonarchimedean.apply_eval_le`: the bounds for a polynomial
+  over `R` with coefficients of absolute value at most `B`.
 * `AbsoluteValue.apply_aeval_le`: `v(P(x)) ≤ ℓ(P) ∏ i, max(v(x_i), 1) ^ L i`.
 * `IsNonarchimedean.apply_aeval_le`: `v(P(x)) ≤ ∏ i, max(v(x_i), 1) ^ L i` for nonarchimedean `v`.
 
@@ -99,11 +109,41 @@ theorem apply_aeval_le (v : AbsoluteValue R ℝ) {P : MvPolynomial ι ℤ} {L : 
   exact (v.apply_coeff_mul_prod_pow_le hL x hs).trans
     (mul_le_mul_of_nonneg_right hc (by positivity))
 
+/-- **The trivial bound for the value of a polynomial.** If `P` has partial degrees
+`degreeOf i P ≤ L i` and coefficients of absolute value at most `B`, then
+`v(P(x)) ≤ B ∏ i, (L i + 1) ∏ i, max(v(x_i), 1) ^ L i`. -/
+theorem apply_eval_le (v : AbsoluteValue R ℝ) {P : MvPolynomial ι R} {L : ι → ℕ}
+    (hL : ∀ i, P.degreeOf i ≤ L i) {B : ℝ} (hB : ∀ s, v (P.coeff s) ≤ B) (x : ι → R) :
+    v (eval x P) ≤ B * (∏ i, ((L i : ℝ) + 1)) * ∏ i, max (v (x i)) 1 ^ L i := by
+  have hB0 : 0 ≤ B := (v.nonneg _).trans (hB 0)
+  have hle (s) (hs : s ∈ P.support) (i : ι) : s i ≤ L i := (monomial_le_degreeOf i hs).trans (hL i)
+  rw [eval_eq']
+  refine (v.sum_le _ _).trans <| (Finsupp.sum_le_prod_mul_of_forall_le hle
+    (C := B * ∏ i, max (v (x i)) 1 ^ L i) (fun s hs ↦ ?_) (by positivity)).trans_eq (by ring)
+  rw [v.map_mul]
+  exact mul_le_mul (hB s) (v.apply_prod_pow_le (hle s hs) x) (v.nonneg _) hB0
+
 end AbsoluteValue
 
 namespace IsNonarchimedean
 
 variable {R : Type*} [CommRing R] [Nontrivial R]
+
+/-- **The trivial bound at a nonarchimedean absolute value.** If `P` has partial degrees
+`degreeOf i P ≤ L i` and coefficients of absolute value at most `B`, then
+`v(P(x)) ≤ B ∏ i, max(v(x_i), 1) ^ L i`. -/
+theorem apply_eval_le {v : AbsoluteValue R ℝ} (hv : IsNonarchimedean v) {P : MvPolynomial ι R}
+    {L : ι → ℕ} (hL : ∀ i, P.degreeOf i ≤ L i) {B : ℝ} (hB : ∀ s, v (P.coeff s) ≤ B)
+    (x : ι → R) : v (eval x P) ≤ B * ∏ i, max (v (x i)) 1 ^ L i := by
+  have hB0 : 0 ≤ B := (v.nonneg _).trans (hB 0)
+  rcases P.support.eq_empty_or_nonempty with hP | hP
+  · rw [support_eq_empty.mp hP, map_zero, v.map_zero]
+    positivity
+  rw [eval_eq']
+  refine (hv.apply_sum_le_sup hP).trans <| sup'_le _ _ fun s hs ↦ ?_
+  rw [v.map_mul]
+  exact mul_le_mul (hB s) (v.apply_prod_pow_le (fun i ↦ (monomial_le_degreeOf i hs).trans (hL i))
+    x) (v.nonneg _) hB0
 
 /-- At a nonarchimedean absolute value the value of an integer polynomial `P` with partial
 degrees `degreeOf i P ≤ L i` at a point `x` has absolute value at most
@@ -111,12 +151,10 @@ degrees `degreeOf i P ≤ L i` at a point `x` has absolute value at most
 theorem apply_aeval_le {v : AbsoluteValue R ℝ} (hv : IsNonarchimedean v)
     {P : MvPolynomial ι ℤ} {L : ι → ℕ} (hL : ∀ i, P.degreeOf i ≤ L i) (x : ι → R) :
     v (aeval x P) ≤ ∏ i, max (v (x i)) 1 ^ L i := by
-  rcases P.support.eq_empty_or_nonempty with hP | hP
-  · rw [support_eq_empty.mp hP, map_zero, v.map_zero]
-    positivity
-  rw [aeval_def, eval₂_eq']
-  refine (hv.apply_sum_le_sup hP).trans <| sup'_le _ _ fun s hs ↦ ?_
-  exact (v.apply_coeff_mul_prod_pow_le hL x hs).trans <| mul_le_of_le_one_left (by positivity)
-    (hv.apply_intCast_le_one (by simp) v.map_one v.map_neg)
+  rw [aeval_def, ← eval_map]
+  refine (hv.apply_eval_le (fun i ↦ (degreeOf_map_le _ P i).trans (hL i)) (fun s ↦ ?_) x).trans_eq
+    (one_mul _)
+  rw [coeff_map, algebraMap_int_eq, eq_intCast]
+  exact hv.apply_intCast_le_one (by simp) v.map_one v.map_neg
 
 end IsNonarchimedean

@@ -75,11 +75,9 @@ private theorem exists_eq_ratModulus_or_eq_ratFiniteModulus {𝔫 : Modulus ℚ}
     rw [Ne, Ideal.absNorm_eq_zero_iff]
     exact 𝔫.finitePart_ne_bot
   have hspan := Rat.RingOfIntegers.ideal_span_absNorm_eq_self 𝔫.finitePart
-  obtain ⟨hfin, hinf⟩ := Modulus.dvd_iff.mp h
-  rw [← hspan, ratModulus_finitePart, Ideal.span_singleton_dvd_span_singleton_iff_dvd,
-    NumberField.RingOfIntegers.natCast_dvd_natCast] at hfin
+  have hinf := (Modulus.dvd_iff.mp h).2
   rw [ratModulus_infinitePart] at hinf
-  refine ⟨_, hd, hfin, ?_⟩
+  refine ⟨_, hd, dvd_ratModulus_iff.mp h, ?_⟩
   rcases Finset.subset_singleton_iff.mp hinf with hinf | hinf
   · exact Or.inr (Modulus.ext (by rw [ratFiniteModulus_finitePart, hspan])
       (by rw [ratFiniteModulus_infinitePart, hinf]))

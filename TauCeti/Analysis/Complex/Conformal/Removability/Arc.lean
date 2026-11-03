@@ -22,10 +22,9 @@ the image of the domain by `DifferentiableOn.invFunOn`, and the removable set be
 the real axis. Painlevé removability of the real axis then applies, after which the result is
 transported back through `e`.
 
-This is the analytic-arc case requested by layer L4 of the conformal-mapping roadmap. It follows
-the standard coordinate reduction of removability across an analytic arc to the real axis; see
-Ahlfors, *Complex Analysis*, Chapter 6, §1.4, and Rudin, *Real and Complex Analysis*, Chapter 11,
-Exercise 11.
+This is the analytic-arc case of removability. It follows the standard coordinate reduction of
+removability across an analytic arc to the real axis; see Ahlfors, *Complex Analysis*, Chapter 6,
+§1.4, and Rudin, *Real and Complex Analysis*, Chapter 11, Exercise 11.
 
 ## Main results
 

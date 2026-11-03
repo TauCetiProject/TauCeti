@@ -58,6 +58,8 @@ and it holds at boundary and corner points as well.
 * `TauCeti.SmoothAlmostComplexStructure.sum_typeProjection`,
   `TauCeti.SmoothAlmostComplexStructure.typeProjection_eq_of_sum_eq`: existence and uniqueness of
   the type decomposition.
+* `TauCeti.SmoothAlmostComplexStructure.map_eq_of_forall_isOfType`: additive maps agreeing on the
+  forms of each type agree.
 * `TauCeti.SmoothForm.isOfType_one_zero_iff_eigenspace_le_ker`,
   `TauCeti.SmoothForm.isOfType_zero_one_iff_eigenspace_le_ker`: one-forms of type `(1,0)` and
   `(0,1)` through their complex-linear extensions to the complexified tangent spaces.
@@ -305,6 +307,26 @@ theorem isOfType_typeProjection (hpq : p + q = k) (φ : SmoothForm I M F k) :
   SmoothForm.isOfType_iff_forall.2 ⟨hpq, fun x ↦ by
     simpa only [coe_typeProjection] using
       ContinuousLinearMap.isOfType_typeProjection (J.square_neg_apply x) hpq (φ.1 x)⟩
+
+/-- Two additive maps out of the smooth `k`-forms agree if they agree on the forms of each type
+`(p,q)`, `p + q = k`. -/
+theorem map_eq_of_forall_isOfType {G 𝓕 𝓖 : Type*} [AddCommMonoid G]
+    [FunLike 𝓕 (SmoothForm I M F k) G] [AddMonoidHomClass 𝓕 (SmoothForm I M F k) G]
+    [FunLike 𝓖 (SmoothForm I M F k) G] [AddMonoidHomClass 𝓖 (SmoothForm I M F k) G]
+    {f : 𝓕} {g : 𝓖}
+    (h : ∀ p q, p + q = k → ∀ ψ : SmoothForm I M F k, ψ.IsOfType J p q → f ψ = g ψ)
+    (φ : SmoothForm I M F k) : f φ = g φ := by
+  rw [← J.sum_typeProjection φ, map_sum, map_sum]
+  exact Finset.sum_congr rfl fun pq hpq ↦ h _ _ (Finset.mem_antidiagonal.1 hpq) _
+    (J.isOfType_typeProjection (Finset.mem_antidiagonal.1 hpq) φ)
+
+/-- An additive map out of the smooth `k`-forms vanishes if it vanishes on the forms of each type
+`(p,q)`, `p + q = k`. -/
+theorem map_eq_zero_of_forall_isOfType {G 𝓕 : Type*} [AddCommMonoid G]
+    [FunLike 𝓕 (SmoothForm I M F k) G] [AddMonoidHomClass 𝓕 (SmoothForm I M F k) G] {f : 𝓕}
+    (h : ∀ p q, p + q = k → ∀ ψ : SmoothForm I M F k, ψ.IsOfType J p q → f ψ = 0)
+    (φ : SmoothForm I M F k) : f φ = 0 :=
+  J.map_eq_of_forall_isOfType (g := (0 : SmoothForm I M F k →+ G)) h φ
 
 /-- The type-`(p,q)` projection of smooth `k`-forms vanishes unless `p + q = k`. -/
 @[simp]

@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.Calculus.FDeriv.RestrictScalars
 public import Mathlib.Geometry.Manifold.MFDeriv.Basic
 public import Mathlib.Geometry.Manifold.VectorBundle.Tangent
+import Mathlib.Geometry.Manifold.MFDeriv.Atlas
 
 /-!
 # Restricting the scalars of manifold derivatives
@@ -43,7 +44,8 @@ its complex tangent coordinate changes regarded as `ℝ`-linear maps.
   with scalars restricted to `𝕜`.
 * `TauCeti.tangentCoordChange_restrictScalars`: the tangent coordinate changes over `𝕜` are those
   over `𝕜'` with scalars restricted to `𝕜`; in particular they are `𝕜'`-linear
-  (`TauCeti.tangentCoordChange_smul`).
+  (`TauCeti.tangentCoordChange_smul`), and so is the derivative of the inverse of a chart
+  (`TauCeti.mfderivWithin_extChartAt_symm_smul`).
 -/
 
 public section
@@ -206,5 +208,21 @@ theorem tangentCoordChange_smul [IsManifold 𝓘(𝕜', E) 1 M] [IsManifold 𝓘
     tangentCoordChange 𝓘(𝕜, E) x y z (c • w) = c • tangentCoordChange 𝓘(𝕜, E) x y z w := by
   rw [tangentCoordChange_restrictScalars 𝕜 (𝕜' := 𝕜') h, ContinuousLinearMap.coe_restrictScalars',
     map_smul]
+
+/-- On the target of the chart at `x`, the derivative over `𝕜` of the inverse of the chart is
+`𝕜'`-linear: it is a tangent coordinate change. For instance, on a complex manifold, regarded as
+a real manifold, the real derivative of the inverse of a chart commutes with multiplication by
+`i`. -/
+theorem mfderivWithin_extChartAt_symm_smul [IsManifold 𝓘(𝕜', E) 1 M] [IsManifold 𝓘(𝕜, E) 1 M]
+    {z : E} (hz : z ∈ (extChartAt 𝓘(𝕜, E) x).target) (c : 𝕜') (w : E) :
+    mfderivWithin 𝓘(𝕜, E) 𝓘(𝕜, E) (extChartAt 𝓘(𝕜, E) x).symm (range 𝓘(𝕜, E)) z
+        ((c • ContinuousLinearMap.id 𝕜 E) w) =
+      (c • ContinuousLinearMap.id 𝕜 E)
+        (mfderivWithin 𝓘(𝕜, E) 𝓘(𝕜, E) (extChartAt 𝓘(𝕜, E) x).symm (range 𝓘(𝕜, E)) z w) := by
+  have hy : (extChartAt 𝓘(𝕜, E) x).symm z ∈ (chartAt E x).source := by
+    simpa only [extChartAt_source] using (extChartAt 𝓘(𝕜, E) x).map_target hz
+  rw [← (extChartAt 𝓘(𝕜, E) x).right_inv hz, ← TangentBundle.symmL_trivializationAt hy,
+    TangentBundle.symmL_trivializationAt_eq_core hy]
+  exact tangentCoordChange_smul 𝕜 (𝕜' := 𝕜') ⟨hy, mem_chart_source E _⟩ c w
 
 end TauCeti

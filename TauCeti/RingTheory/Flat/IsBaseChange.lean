@@ -97,7 +97,7 @@ theorem IsBaseChange.of_left_exact_of_lTensor
     · exact congrArg (LinearMap.restrictScalars R)
         (LinearMap.liftBaseChange_comp_baseChange S comm₂).symm
     · exact isb₂.liftBaseChange_bijective
-  exact IsBaseChange.of_equiv (LinearEquiv.ofBijective (h₁.liftBaseChange S) hb) fun x ↦ by simp
+  exact IsBaseChange.iff_liftBaseChange_bijective.2 hb
 
 /-- **Kernels commute with flat base change**, with an injective comparison on the right. Let `S`
 be flat over `R`, and consider a commutative diagram with left exact rows

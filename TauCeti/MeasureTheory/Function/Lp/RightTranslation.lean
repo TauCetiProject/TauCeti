@@ -55,8 +55,15 @@ No σ-finiteness of `μ` and no countability of `G` is assumed.
   pointwise formulas, almost everywhere.
 * `MeasureTheory.Lp.modularInversion_modularInversion`: the modular inversion is an involution.
 * `MeasureTheory.Lp.leftTranslation_rightTranslation`: left and right translations commute.
+* `MeasureTheory.Lp.rightTranslation_le_rightTranslation_iff`: right translation is an order
+  automorphism of real `Lᵖ`.
+* `MeasureTheory.Lp.integral_rightTranslation`: right translation on `L¹` preserves the integral.
 * `MeasureTheory.Lp.continuous_rightTranslation_apply`: right translation is strongly continuous
   for `p < ∞`.
+* `MeasureTheory.eLpNorm_comp_mul_right_of_regular`: the unweighted right translate satisfies
+  `‖f (· * g)‖_p = c(g)^(1/p) ‖f‖_p`.
+* `MeasureTheory.MemLp.tendsto_eLpNorm_comp_mul_right_sub_of_regular`: `‖f (· * g) - f‖_p → 0`
+  as `g → 1`, for `1 ≤ p < ∞`.
 
 ## References
 
@@ -266,6 +273,32 @@ theorem leftTranslation_rightTranslation (g h : G) (f : Lp E p μ) :
         (coeFn_leftTranslation (𝕜 := 𝕜) h f)] with x h₁ h₂ h₃ h₄
     rw [h₁, h₂, h₃, h₄, mul_assoc]
 
+/-- Right translation is monotone on real `Lᵖ`. -/
+theorem rightTranslation_mono (g : G) {f f' : Lp ℝ p μ} (h : f ≤ f') :
+    rightTranslation μ p ℝ g f ≤ rightTranslation μ p ℝ g f' := by
+  rw [← coeFn_le] at h ⊢
+  filter_upwards [coeFn_rightTranslation (𝕜 := ℝ) g f, coeFn_rightTranslation (𝕜 := ℝ) g f',
+    (quasiMeasurePreserving_mul_right_of_regular μ g).ae h] with x hx hx' hle
+  rw [hx, hx']
+  exact smul_le_smul_of_nonneg_left hle (by positivity)
+
+/-- Right translation is an order automorphism of real `Lᵖ`. -/
+@[simp]
+theorem rightTranslation_le_rightTranslation_iff {g : G} {f f' : Lp ℝ p μ} :
+    rightTranslation μ p ℝ g f ≤ rightTranslation μ p ℝ g f' ↔ f ≤ f' := by
+  refine ⟨fun h => ?_, rightTranslation_mono g⟩
+  simpa [← rightTranslation_symm] using rightTranslation_mono (μ := μ) g⁻¹ h
+
+/-- Right translation on `L¹` preserves the integral: the weight `c(g⁻¹)` of
+`(R_g f)(x) = c(g⁻¹) • f (x * g)` compensates the factor `c(g)` by which right translation scales
+the integral. -/
+@[simp]
+theorem integral_rightTranslation (g : G) (f : Lp E 1 μ) :
+    ∫ x, rightTranslation μ 1 𝕜 g f x ∂μ = ∫ x, f x ∂μ := by
+  have hc : (modularCharacter g : ℝ) ≠ 0 := NNReal.coe_ne_zero.2 (modularCharacterFun_pos g).ne'
+  rw [integral_congr_ae (coeFn_rightTranslation g f)]
+  simp [integral_smul, integral_mul_right_eq_modularCharacter_smul_of_regular, smul_smul, hc]
+
 /-- **Right translation is strongly continuous** on `Lᵖ` for `p < ∞`: every orbit map
 `g ↦ R_g f` is continuous. -/
 theorem continuous_rightTranslation_apply (hp : p ≠ ∞) (f : Lp E p μ) :
@@ -276,5 +309,61 @@ theorem continuous_rightTranslation_apply (hp : p ≠ ∞) (f : Lp E p μ) :
     ((DomMulAct.continuous_mk.comp continuous_inv).smul continuous_const)
 
 end Lp
+
+omit [NormedSpace ℝ E] in
+/-- The unweighted right translate `f (· * g)` has `Lᵖ` seminorm `c(g)^(1/p) ‖f‖_p`, where `c` is
+the modular character, for every function and every exponent. -/
+@[simp]
+theorem eLpNorm_comp_mul_right_of_regular (f : G → E) (g : G) (p : ℝ≥0∞) :
+    eLpNorm (fun x => f (x * g)) p μ =
+      (modularCharacter g ^ p.toReal⁻¹ : ℝ≥0) * eLpNorm f p μ := by
+  have h := (MeasurableEquiv.mulRight g).measurableEmbedding.eLpNorm_map_measure (g := f) (μ := μ)
+    (p := p)
+  have hc : modularCharacter g ≠ 0 := (modularCharacterFun_pos g).ne'
+  rw [MeasurableEquiv.coe_mulRight, map_right_mul_eq_modularCharacter_smul_of_regular,
+    eLpNorm_smul_measure_of_ne_zero' hc] at h
+  exact h.symm
+
+omit [NormedSpace ℝ E] in
+/-- The unweighted right translate of an `Lᵖ` function is in `Lᵖ`. -/
+theorem MemLp.comp_mul_right_of_regular {f : G → E} (hf : MemLp f p μ) (g : G) :
+    MemLp (fun x => f (x * g)) p μ :=
+  memLp_iff.2 <| (eLpNorm_comp_mul_right_of_regular f g p).trans_lt <|
+    ENNReal.mul_lt_top ENNReal.coe_lt_top hf
+
+omit [NormedSpace ℝ E] in
+/-- A function is in `Lᵖ` exactly when its unweighted right translate is. -/
+theorem memLp_comp_mul_right_iff_of_regular {f : G → E} (g : G) :
+    MemLp (fun x => f (x * g)) p μ ↔ MemLp f p μ :=
+  ⟨fun h => by simpa [mul_assoc] using h.comp_mul_right_of_regular g⁻¹,
+    fun h => h.comp_mul_right_of_regular g⟩
+
+open Topology in
+/-- The unweighted right translates of an `Lᵖ` function converge to it in `Lᵖ` for
+`1 ≤ p < ∞`: `‖f (· * g) - f‖_p → 0` as `g → 1`. This is the counterpart for a regular left
+Haar measure of `MeasureTheory.MemLp.tendsto_eLpNorm_comp_add_sub` in
+`TauCeti/MeasureTheory/Function/Lp/Translation.lean`. -/
+theorem MemLp.tendsto_eLpNorm_comp_mul_right_sub_of_regular {f : G → E} (hf : MemLp f p μ)
+    (hp₁ : 1 ≤ p) (hp : p ≠ ∞) :
+    Tendsto (fun g => eLpNorm (fun x => f (x * g) - f x) p μ) (𝓝 1) (𝓝 0) := by
+  have := Fact.mk hp₁
+  -- `f (· * g) = c(g)^(1/p) • R_g f`, and both factors tend to their values at `g = 1`.
+  set F := hf.toLp f
+  set a : G → ℝ := fun g => (modularCharacter g : ℝ) ^ p.toReal⁻¹
+  have ha : Continuous a := (NNReal.continuous_coe.comp continuous_modularCharacter).rpow_const
+    fun _ => Or.inr (inv_nonneg.2 ENNReal.toReal_nonneg)
+  have h : Tendsto (fun g => a g • Lp.rightTranslation μ p ℝ g F - F) (𝓝 1) (𝓝 0) := by
+    simpa [a] using ((ha.tendsto 1).smul
+      ((Lp.continuous_rightTranslation_apply hp F).tendsto 1)).sub_const F
+  refine (enorm_zero (E := Lp E p μ) ▸ (continuous_enorm.tendsto 0).comp h).congr' <|
+    Eventually.of_forall fun g => ?_
+  rw [Function.comp_apply, Lp.enorm_def]
+  refine eLpNorm_congr_ae ?_
+  filter_upwards [Lp.coeFn_sub (a g • Lp.rightTranslation μ p ℝ g F) F,
+    Lp.coeFn_smul (a g) (Lp.rightTranslation μ p ℝ g F),
+    Lp.coeFn_rightTranslation (𝕜 := ℝ) g F, hf.coeFn_toLp,
+    (quasiMeasurePreserving_mul_right_of_regular μ g).ae hf.coeFn_toLp] with x h₁ h₂ h₃ h₄ h₅
+  rw [h₁, Pi.sub_apply, h₂, Pi.smul_apply, h₃, smul_smul, modularCharacter_rpow_mul_inv,
+    one_smul, h₄, h₅]
 
 end MeasureTheory
