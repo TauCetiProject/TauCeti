@@ -339,8 +339,10 @@ variable [LinearOrder ι]
 
 /-- The functor on finite sets of indices, with values in `Aᵒᵖ`, whose ordered Čech complex is
 `Čₒ(U, P)`: a finite set `s` goes to `P(∏_{i ∈ s} U i)` and an inclusion `t ⊆ s` to the restriction
-along the projection `∏_{i ∈ s} U i ⟶ ∏_{i ∈ t} U i`. It is reducible, so that its values are seen
-to be the objects `op (P.obj _)`. -/
+along the projection `∏_{i ∈ s} U i ⟶ ∏_{i ∈ t} U i` (`presheafCechFunctor_obj`,
+`presheafCechFunctor_map`). It is reducible, so that its values are seen to be the objects
+`op (P.obj _)`. -/
+@[simps]
 abbrev presheafCechFunctor (P : Cᵒᵖ ⥤ A) : (Finset ι)ᵒᵖ ⥤ Aᵒᵖ where
   obj s := op (P.obj (op (∏ᶜ fun i : s.unop ↦ U i)))
   map {s t} f := (P.map (Pi.lift fun i : t.unop ↦
