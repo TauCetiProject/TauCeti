@@ -146,7 +146,7 @@ noncomputable def contractingAction (t : IsSl2Triple h e f) : Kˣ →* Module.En
   map_mul' c d := by
     ext x
     simp only [mul_inv_rev, Units.val_mul, LinearMap.smul_apply, LinearEquiv.coe_coe,
-      LieEquiv.coe_toLinearEquiv, Module.End.mul_apply, map_smul]
+      LieEquiv.coe_toLinearEquiv, mul_apply_eq_comp, map_smul]
     rw [mul_comm d⁻¹, gradingAut_mul_apply, smul_smul]
     ring_nf
 

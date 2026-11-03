@@ -520,7 +520,7 @@ theorem sigma_zpow_mem_pureSubgroup_iff (i : Fin (n - 1)) (k : ℤ) :
 /-- A natural-number power of an elementary braid is pure exactly when its exponent is even. -/
 theorem sigma_pow_mem_pureSubgroup_iff (i : Fin (n - 1)) (k : ℕ) :
     sigma i ^ k ∈ pureSubgroup n ↔ Even k := by
-  simpa only [zpow_natCast, Int.even_coe_nat] using
+  simpa only [zpow_natCast, Int.even_natCast] using
     sigma_zpow_mem_pureSubgroup_iff i (k : ℤ)
 
 /-- The square of an elementary braid is a pure braid: the two strands cross twice and end where

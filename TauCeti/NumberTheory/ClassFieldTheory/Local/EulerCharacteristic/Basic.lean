@@ -112,7 +112,7 @@ local Euler characteristic formula `χ_F(A) = φ_F(A)`. -/
 def localCardNorm (A : GalRep n F) [Finite A.V] : Units.posSubgroup ℚ :=
   have hq : 0 < padicNorm p (Nat.card A.V) ^ Module.finrank ℚ_[p] F :=
     pow_pos ((padicNorm.nonneg _).lt_of_ne
-      (padicNorm.nonzero (Nat.cast_ne_zero.2 Nat.card_pos.ne')).symm) _
+      (padicNorm.ne_zero (Nat.cast_ne_zero.2 Nat.card_pos.ne')).symm) _
   ⟨Units.mk0 _ hq.ne', hq⟩
 
 /-- The value of `localCardNorm` in `ℚ`. -/

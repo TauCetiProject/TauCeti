@@ -198,12 +198,12 @@ theorem exists_forall_one_le_re_apply_of_tendsto [CompleteSpace E] {C : Set (Wea
   have hTC : Convex ℝ (T '' C) := by
     rintro _ ⟨f, hf, rfl⟩ _ ⟨g, hg, rfl⟩ a b ha hb hab
     refine ⟨a • f + b • g, hC hf hg ha hb hab, ZeroAtInftyContinuousMap.ext fun i ↦ ?_⟩
-    simp only [hT, ZeroAtInftyContinuousMap.add_apply, ZeroAtInftyContinuousMap.smul_apply,
+    simp only [hT, _root_.add_apply, _root_.smul_apply,
       smul_eq_mul]
     -- Mathlib has no apply lemma for sums in `WeakDual 𝕜 E`, so evaluate through `toStrongDual`;
     -- `simp` then splits the sum and applies `WeakDual.real_smul_apply`.
     rw [← toStrongDual_apply]
-    simp
+    simp [WeakDual.real_smul_apply]
   -- `T` maps `C` into the complement of the open unit ball of `c₀`.
   have hdisj : Disjoint (ball (0 : C₀(ι, ℝ)) 1) (T '' C) := by
     refine Set.disjoint_right.2 ?_

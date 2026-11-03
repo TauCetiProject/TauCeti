@@ -55,6 +55,7 @@ theorem prod_pow_padicValNat_eq_self_of_mem_factoredNumbers {S : Finset ℕ}
   rw [Nat.mem_factoredNumbers_iff_primeFactors_subset] at hn
   conv_rhs => rw [← Nat.prod_factorization_pow_eq_self hn.1]
   rw [Finsupp.prod_of_support_subset _ (by simpa using hn.2) _ (fun _ _ ↦ pow_zero _)]
-  exact Finset.prod_congr rfl fun p hp ↦ by rw [Nat.factorization_def n (hS p hp)]
+  exact Finset.prod_congr rfl fun p hp ↦ by
+    rw [Nat.padicValNat_def, Nat.factorization_def n (hS p hp)]
 
 end TauCeti

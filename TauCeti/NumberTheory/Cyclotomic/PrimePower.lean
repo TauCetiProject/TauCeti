@@ -60,8 +60,8 @@ theorem adjoin_nth_roots_le_iSup_adjoin_prime_pow {K L : Type*} [Field K] [Field
         simpa only [← pow_mul] using hζ)
       obtain ⟨u, v, huv⟩ := hab.isCoprime
       have heq : (ζ ^ a) ^ u * (ζ ^ b) ^ v = ζ := by
-        rw [← zpow_natCast, ← zpow_mul, ← zpow_natCast, ← zpow_mul, ← zpow_add₀ hζ0]
-        simp only [mul_comm, huv, zpow_one]
+        rw [← zpow_natCast, ← _root_.zpow_mul, ← zpow_natCast, ← _root_.zpow_mul, ← zpow_add₀ hζ0]
+        simp only [mul_comm, huv, _root_.zpow_one]
       exact heq ▸ mul_mem (zpow_mem hB u) (zpow_mem hA v)
   exact adjoin_le_iff.2 fun ζ hζ ↦ hroot m hm dvd_rfl ζ hζ
 

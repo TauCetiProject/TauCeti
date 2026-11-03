@@ -66,7 +66,7 @@ private lemma bernsteinLevyKhintchineDerivativeMeasure_singleton_zero
   have hjump : bernsteinLevyDerivativeMeasure μ {0} = 0 := by
     rw [bernsteinLevyDerivativeMeasure_apply μ (measurableSet_singleton 0)]
     simp
-  rw [bernsteinLevyKhintchineDerivativeMeasure, Measure.add_apply, hjump]
+  rw [bernsteinLevyKhintchineDerivativeMeasure, _root_.add_apply, hjump]
   simp
 
 /-- The Levy--Khintchine exponent of a measure with integrable truncated coordinate is
