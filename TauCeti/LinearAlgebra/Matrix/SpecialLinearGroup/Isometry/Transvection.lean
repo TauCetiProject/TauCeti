@@ -317,11 +317,11 @@ theorem unitaryTransvectionSubgroup_smul (g : Q.specialIsometryGroup σ)
   -- Both groups consist of the unitary transvections along `g v`, for a representative `v`.
   set v := (p : ℙ K (n → K)).rep
   have hgv : (g : SpecialLinearGroup n K) • v ≠ 0 :=
-    (smul_ne_zero_iff_ne (g : SpecialLinearGroup n K)).mpr (p : ℙ K (n → K)).rep_nonzero
+    (smul_ne_zero_iff_ne (g : SpecialLinearGroup n K)).mpr (p : ℙ K (n → K)).rep_ne_zero
   have hgp : ((g • p : Q.isotropicPoints σ) : ℙ K (n → K)) =
       Projectivization.mk K ((g : SpecialLinearGroup n K) • v) hgv := by
     rw [SubMulAction.val_smul, Subgroup.smul_def,
-      ← Projectivization.smul_mk _ (p : ℙ K (n → K)).rep_nonzero, Projectivization.mk_rep]
+      ← Projectivization.smul_mk _ (p : ℙ K (n → K)).rep_ne_zero, Projectivization.mk_rep]
   have hconj : ∀ h : Q.specialIsometryGroup σ, ∀ (u : n → K) (a : K),
       ((h : SpecialLinearGroup n K) : Matrix n n K) * Q.unitaryTransvection σ u a *
         ((h⁻¹ : Q.specialIsometryGroup σ) : SpecialLinearGroup n K) =
@@ -384,8 +384,8 @@ theorem exists_coe_eq_unitaryTransvection_iff (hσ : Function.Involutive σ)
     vecMulVec_eq_zero] at h
   -- The column `Q v` and the row `vᵀ ^ σ Q` are nonzero, as `Q` is invertible and `v ≠ 0`.
   have hQv : Q *ᵥ v ≠ 0 := fun h0 ↦
-    hdet (exists_mulVec_eq_zero_iff.mp ⟨v, (p : ℙ K (n → K)).rep_nonzero, h0⟩)
-  have hσv : σ ∘ v ≠ 0 := fun h0 ↦ (p : ℙ K (n → K)).rep_nonzero <| funext fun i ↦
+    hdet (exists_mulVec_eq_zero_iff.mp ⟨v, (p : ℙ K (n → K)).rep_ne_zero, h0⟩)
+  have hσv : σ ∘ v ≠ 0 := fun h0 ↦ (p : ℙ K (n → K)).rep_ne_zero <| funext fun i ↦
     (map_eq_zero σ).mp (congrFun h0 i)
   have hvQ : (σ ∘ v) ᵥ* Q ≠ 0 := fun h0 ↦
     hdet (exists_vecMul_eq_zero_iff.mp ⟨σ ∘ v, hσv, h0⟩)
