@@ -82,6 +82,8 @@ at least two omits a point, allowing the entire loop to be read in one stereogra
 * `TauCeti.toSpanSingleton_deriv_comp_circleExp`,
   `TauCeti.toSpanSingleton_deriv_chart_comp_circleExp`: the chain rule for a map of the circle read
   along `Circle.exp`, into a normed space or, through a chart, into a manifold.
+* `TauCeti.mfderiv_eq_of_deriv_comp_circleExp_eq`: two maps of the circle into a normed space
+  with the same velocity at `t` along `Circle.exp` have the same derivative at `exp (t i)`.
 * `TauCeti.deriv_comp_circleExp_ne_zero_and_range_mfderiv`: lifting a `C¹` immersed circle
   along `Circle.exp` gives a nonzero derivative spanning its tangent line.
 * `TauCeti.injective_mfderiv_of_deriv_comp_circleExp_ne_zero`: conversely, a map of the circle
@@ -93,8 +95,10 @@ at least two omits a point, allowing the entire loop to be read in one stereogra
   `TauCeti.deriv_coe_comp_circleExp_ne_zero`: the velocity of a loop in a sphere, read along
   `Circle.exp` in the ambient space, is tangent to the sphere, and nonzero where the loop is
   immersive.
-* `TauCeti.mfderiv_eq_of_deriv_coe_comp_circleExp_eq`: two loops in a sphere through the same point
-  with the same velocity there, read along `Circle.exp`, have the same derivative.
+* `TauCeti.mfderiv_eq_of_deriv_coe_comp_circleExp_eq`,
+  `TauCeti.deriv_coe_comp_circleExp_eq_of_mfderiv_eq`: two loops in a sphere through the same point
+  have the same derivative there exactly when they have the same velocity, read along
+  `Circle.exp`.
 * `TauCeti.exists_notMem_range_circle_sphere`: a differentiable loop in a sphere of dimension
   at least two omits a point.
 * `TauCeti.contMDiff_coe_sphere_compl_zero`, `TauCeti.contMDiff_normalize_sphere`: the inclusion
@@ -484,6 +488,19 @@ theorem deriv_comp_circleExp_ne_zero_and_range_mfderiv {f : Circle → V}
     LinearMap.range_comp_of_range_eq_top _ (LinearMap.range_eq_top.mpr he_surj)] at this
   exact this.symm
 
+/-- **The velocity along `Circle.exp` determines the derivative**, for maps of the circle into a
+real normed space. -/
+theorem mfderiv_eq_of_deriv_comp_circleExp_eq {f g : Circle → V} {t : ℝ}
+    (hf : MDifferentiableAt (𝓡 1) 𝓘(ℝ, V) f (Circle.exp t))
+    (hg : MDifferentiableAt (𝓡 1) 𝓘(ℝ, V) g (Circle.exp t))
+    (h : deriv (f ∘ Circle.exp) t = deriv (g ∘ Circle.exp) t) :
+    mfderiv (𝓡 1) 𝓘(ℝ, V) f (Circle.exp t) = mfderiv (𝓡 1) 𝓘(ℝ, V) g (Circle.exp t) := by
+  have hD := (toSpanSingleton_deriv_comp_circleExp hf).symm.trans
+    (h ▸ toSpanSingleton_deriv_comp_circleExp hg)
+  refine ContinuousLinearMap.ext fun τ => ?_
+  obtain ⟨s, rfl⟩ := surjective_mfderiv_circleExp t τ
+  exact congrArg (fun L : ℝ →L[ℝ] V => L s) hD
+
 /-- A map `f` of the circle, differentiable at `exp (t i)`, has injective derivative there as soon
 as the curve `s ↦ f (exp (s i))` has nonzero derivative at `t`. -/
 theorem injective_mfderiv_of_deriv_comp_circleExp_ne_zero {f : Circle → V} {t : ℝ}
@@ -572,6 +589,24 @@ theorem mfderiv_eq_of_deriv_coe_comp_circleExp_eq
     ((congrArg (s • ·) h₁).trans (smul_deriv_coe_comp_circleExp hg s))
   rw [← h₀] at h
   exact injective_mvfderiv_subtypeVal_sphere _ h
+
+/-- **The derivative determines the velocity along `Circle.exp`.** Two loops in a sphere which take
+the same value and have the same derivative at `exp (t i)` have the same velocity at `t`, read along
+`Circle.exp` in the ambient space. This is the converse of
+`TauCeti.mfderiv_eq_of_deriv_coe_comp_circleExp_eq`. -/
+theorem deriv_coe_comp_circleExp_eq_of_mfderiv_eq
+    (hf : MDifferentiableAt (𝓡 1) (𝓡 n) f (Circle.exp t))
+    (hg : MDifferentiableAt (𝓡 1) (𝓡 n) g (Circle.exp t))
+    (h₀ : f (Circle.exp t) = g (Circle.exp t))
+    (h₁ : mfderiv (𝓡 1) (𝓡 n) f (Circle.exp t) = mfderiv (𝓡 1) (𝓡 n) g (Circle.exp t)) :
+    deriv (fun s => (f (Circle.exp s) : E)) t = deriv (fun s => (g (Circle.exp s) : E)) t := by
+  have e₁ := smul_deriv_coe_comp_circleExp hf 1
+  have e₂ := smul_deriv_coe_comp_circleExp hg 1
+  rw [one_smul] at e₁ e₂
+  rw [e₁, e₂]
+  congr 1
+  · rw [h₀]
+  · exact DFunLike.congr_fun h₁ _
 
 end SphereLoop
 
