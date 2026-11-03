@@ -67,6 +67,11 @@ namespace TauCeti.Contour
 
 variable {n : ℕ} [NeZero n] (poly : Polygon ℂ n)
 
+/-- The boundary parametrization reaches the end point of edge `i` at time `i + 1`. -/
+private theorem boundaryParam_natCast_add_one (i : Fin n) :
+    poly.boundaryParam ((i : ℕ) + 1) = poly (finRotate n i) := by
+  simpa [Polygon.edgePath] using poly.boundaryParam_natCast_add i (s := 1) ⟨zero_le_one, le_rfl⟩
+
 /-- On each cell `[i, i + 1]` the boundary parametrization is the affine interpolation of its
 values at the end points, in the form used by polygonal curves. -/
 private theorem boundaryParam_eq_of_mem_cell (i : Fin n) (t : ℝ)
@@ -77,11 +82,9 @@ private theorem boundaryParam_eq_of_mem_cell (i : Fin n) (t : ℝ)
         (poly.boundaryParam (i.succ : Fin (n + 1)) -
           poly.boundaryParam (i.castSucc : Fin (n + 1))) := by
   simp only [Fin.val_castSucc, Fin.val_succ, Nat.cast_succ] at ht ⊢
-  have h₀ := poly.boundaryParam_natCast_add i (s := 0) ⟨le_rfl, zero_le_one⟩
-  have h₁ := poly.boundaryParam_natCast_add i (s := 1) ⟨zero_le_one, le_rfl⟩
-  rw [add_zero] at h₀
   rw [← add_sub_cancel ((i : ℕ) : ℝ) t,
-    poly.boundaryParam_natCast_add i ⟨by linarith [ht.1], by linarith [ht.2]⟩, h₀, h₁]
+    poly.boundaryParam_natCast_add i ⟨by linarith [ht.1], by linarith [ht.2]⟩,
+    poly.boundaryParam_natCast, boundaryParam_natCast_add_one]
   simp [Polygon.edgePath, AffineMap.lineMap_apply_module', add_comm]
 
 /-- The boundary parametrization is polygonal on `[0, n]`, with the integers as vertices. -/
@@ -188,11 +191,8 @@ theorem _root_.Polygon.windingNumber_contourCycle {z : ℂ} (hz : z ∉ poly.bou
     (s := fun j : Fin (n + 1) ↦ ((j : ℕ) : ℝ)) (fun _ _ hjk ↦ Nat.cast_lt.2 hjk)
     (by simp) (by simp) (boundaryParam_eq_of_mem_cell poly) (by rwa [image_boundaryParam])]
   refine Finset.sum_congr rfl fun i _ ↦ ?_
-  have h₀ := poly.boundaryParam_natCast_add i (s := 0) ⟨le_rfl, zero_le_one⟩
-  have h₁ := poly.boundaryParam_natCast_add i (s := 1) ⟨zero_le_one, le_rfl⟩
-  rw [add_zero] at h₀
   simp only [Fin.val_castSucc, Fin.val_succ, Nat.cast_succ]
-  rw [h₀, h₁]
+  rw [poly.boundaryParam_natCast, boundaryParam_natCast_add_one]
   congr 1
   ext t
   simp [Polygon.edgePath, AffineMap.lineMap_apply_module', add_comm]
