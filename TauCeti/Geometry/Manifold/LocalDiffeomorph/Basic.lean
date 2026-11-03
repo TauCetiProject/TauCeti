@@ -341,9 +341,11 @@ theorem _root_.IsLocalDiffeomorphAt.exists_mem_maximalAtlas_comp_eqOn {P : Type*
   · -- On the restricted chart `f` lands in the source of `Θ`, where `Θ⁻¹` cancels `k = Θ`.
     have hfy : f (φ.symm (I.symm u)) ∈ Θ.source :=
       (interior_subset.trans interior_subset : interior W ⊆ _) hu.1.2
-    change ψ.extend J (Θ.toPartialEquiv.symm (k (f (φ.symm (I.symm u))))) = _
-    rw [hkΘ hfy, Θ.toPartialEquiv.left_inv hfy]
-    rfl
+    simp only [OpenPartialHomeomorph.extend_coe, OpenPartialHomeomorph.extend_coe_symm,
+      OpenPartialHomeomorph.coe_trans, OpenPartialHomeomorph.restr_symm_apply,
+      Function.comp_apply]
+    rw [hkΘ hfy]
+    exact congrArg (fun z ↦ J (ψ z)) (Θ.left_inv hfy)
 
 /-- **Being a local diffeomorphism at a point is an open condition.** A `C^n` local diffeomorphism
 at `x` is a `C^n` local diffeomorphism at every nearby point. -/
