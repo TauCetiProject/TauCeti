@@ -22,8 +22,9 @@ Let `A : V →ₗ[ℝ] W` be a linear map, and let `e_A : V × W ≃ₗ[ℝ] V �
 
 Since `e_A` is a linear equivalence, a skew product of tame (respectively compatible) pairs is
 again tame (respectively compatible). The first projection is complex linear from `J_A` to `J₁`,
-and the inclusion of the second factor is complex linear from `J₂` to `J_A`: the fibres
-`{v} × W` are `J_A`-complex with the structure `J₂`.
+and the inclusion of the second factor is complex linear from `J₂` to `J_A`: the vertical
+subspace `{0} × W` is `J_A`-complex with the structure `J₂`, so every affine fibre `{v} × W` has
+tangent spaces carrying `J₂`.
 
 This is the pointwise linear algebra of Gromov's graph construction. For a map `L : V →ₗ[ℝ] W`,
 the graph map `v ↦ (v, L v)` is complex linear from `J₁` to `J_A` exactly when `L - A` is complex
@@ -111,8 +112,9 @@ lemma isComplexLinearMap_skewProd_fst (J₁ : AlmostComplexStructure V)
   intro p
   simp
 
-/-- The inclusion of the second factor is complex linear into a skew product: each fibre
-`{v} × W` is a complex subspace on which the skew product restricts to `J₂`. -/
+/-- The inclusion of the second factor is complex linear into a skew product: the vertical
+subspace `{0} × W` is a complex subspace on which the skew product restricts to `J₂`, so every
+affine fibre `{v} × W` has tangent spaces carrying `J₂`. -/
 @[simp]
 lemma isComplexLinearMap_skewProd_inr (J₁ : AlmostComplexStructure V)
     (J₂ : AlmostComplexStructure W) (A : V →ₗ[ℝ] W) :
