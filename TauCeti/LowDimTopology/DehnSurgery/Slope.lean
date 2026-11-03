@@ -65,6 +65,8 @@ the `ℚ ∪ {∞}` bijection through any framing's coordinate isomorphism.
 
 * `TauCeti.FramedBoundaryTorus.value_meridian` / `.value_longitude`: the meridian is `∞` and the
   longitude is `0`, fixing the meridian-longitude convention.
+* `TauCeti.FramedBoundaryTorus.slopeEquiv_symm_coe_ne_meridian`: a slope of finite value is not
+  the meridian.
 * `TauCeti.FramedBoundaryTorus.value_mk` / `.slopeEquiv_symm_apply`: the parametrisation in
   coordinates, in each direction — a primitive class has the value of its `(μ, λ)`-coordinates, and
   a value comes from the slope whose coordinates are the corresponding reduced pair.
@@ -443,6 +445,13 @@ theorem value_longitude : T.value T.longitude = (0 : ℚ) := by
   unfold value longitude
   rw [Slope.congr_mk, Slope.value_mk, T.coord_basis_one, slopeValue_of_snd_ne_zero one_ne_zero]
   norm_num
+
+/-- A slope of finite value is not the meridian, whose value is `∞`. -/
+theorem slopeEquiv_symm_coe_ne_meridian (x : ℚ) : T.slopeEquiv.symm x ≠ T.meridian := by
+  intro hx
+  have hv := congrArg T.slopeEquiv hx
+  rw [Equiv.apply_symm_apply, slopeEquiv_apply, value_meridian] at hv
+  exact OnePoint.coe_ne_infty x hv
 
 /-! ### Changing the longitude -/
 
