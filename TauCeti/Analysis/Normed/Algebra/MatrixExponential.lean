@@ -12,7 +12,7 @@ public import Mathlib.Analysis.Matrix.Order
 public import Mathlib.Analysis.Matrix.PosDef
 public import Mathlib.LinearAlgebra.Matrix.Trace
 public import TauCeti.Analysis.Calculus.FDeriv.Det
-public import TauCeti.Analysis.Normed.Algebra.MatrixTrace
+public import TauCeti.Analysis.Normed.Algebra.Matrix.Trace
 
 /-!
 # The matrix exponential
@@ -56,6 +56,8 @@ constant `1`. Evaluating at `t = 1` gives the identity.
 * `Matrix.exp_eq_mul_exp_half`: the exponential of a matrix is the square of its half.
 * `Matrix.IsHermitian.trace_exp_mul_nonneg` and `Matrix.IsHermitian.trace_exp_pos`: positivity of
   the trace of the exponential of a Hermitian matrix and of the functional `x ↦ Tr (exp K * x)`.
+* `Matrix.IsHermitian.trace_exp_smul_mul_exp_smul_nonneg`: nonnegativity of the trace of products
+  of scaled Hermitian exponentials, for every real scale.
 * `Matrix.IsHermitian.exp_posDef`: the exponential of a Hermitian matrix is positive definite.
 * `Matrix.IsHermitian.trace_exp_smul_mul_exp_smul_sq_le`: the first dyadic trace-power bound for
   exponential weights at arbitrary real scale.
@@ -209,6 +211,20 @@ theorem exp_posDef (hK : K.IsHermitian) : (NormedSpace.exp K).PosDef := by
       (Matrix.isUnit_exp _))
   rw [(hK.smul (IsSelfAdjoint.all (1 / 2 : ℝ))).exp.eq, ← exp_eq_mul_exp_half K] at h
   exact h
+
+/-- The trace of the product of scaled exponentials of Hermitian matrices is nonnegative. -/
+theorem trace_exp_smul_mul_exp_smul_nonneg (t : ℝ) (hK : K.IsHermitian)
+    {L : Matrix m m 𝕜} (hL : L.IsHermitian) :
+    0 ≤ (NormedSpace.exp (t • K) * NormedSpace.exp (t • L)).trace := by
+  have hKt : (t • K).IsHermitian := hK.smul (IsSelfAdjoint.all t)
+  have hLt : (t • L).IsHermitian := hL.smul (IsSelfAdjoint.all t)
+  exact hKt.trace_exp_mul_nonneg hLt.exp_posDef.posSemidef.nonneg
+
+/-- The trace of the product of exponentials of Hermitian matrices is nonnegative. -/
+theorem trace_exp_mul_exp_nonneg (hK : K.IsHermitian)
+    {L : Matrix m m 𝕜} (hL : L.IsHermitian) :
+    0 ≤ (NormedSpace.exp K * NormedSpace.exp L).trace := by
+  simpa using hK.trace_exp_smul_mul_exp_smul_nonneg (1 : ℝ) hL
 
 /-- Squaring a product of exponential weights is bounded by doubling both exponents. -/
 theorem trace_exp_smul_mul_exp_smul_sq_le (t : ℝ)

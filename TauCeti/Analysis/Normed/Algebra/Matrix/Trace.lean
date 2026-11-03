@@ -152,4 +152,33 @@ theorem trace_mul_mul_sq_le (A B : Matrix m m 𝕜)
   rw [← hx_eq, ← hy_eq]
   exact_mod_cast hnormReal
 
+/-- Powers of a positive semidefinite matrix with exponent a power of two remain positive
+semidefinite. -/
+private lemma posSemidef_pow_two_pow (A : Matrix m m 𝕜) (hA : A.PosSemidef) (k : ℕ) :
+    (A ^ (2 ^ k)).PosSemidef := by
+  induction k with
+  | zero =>
+      simpa using hA
+  | succ k ih =>
+      have hpow : A ^ (2 ^ (k + 1)) = (A ^ (2 ^ k)) ^ 2 := by
+        rw [← pow_mul, Nat.pow_succ]
+      rw [hpow]
+      convert (posSemidef_conjTranspose_mul_self (A ^ (2 ^ k))) using 1
+      simp [pow_two, ih.isHermitian.eq]
+
+/-- The squared-product trace inequality iterates along powers of two. This is the dyadic
+comparison between consecutive positive matrix powers; it does not compare
+`trace ((A * B) ^ (2 ^ (k + 1)))` with the right-hand side. -/
+theorem trace_mul_mul_sq_pow_two_le (A B : Matrix m m 𝕜)
+    (hA : A.PosSemidef) (hB : B.PosSemidef) (k : ℕ) :
+    ((A ^ (2 ^ k) * B ^ (2 ^ k)) ^ 2).trace ≤
+      (A ^ (2 ^ (k + 1)) * B ^ (2 ^ (k + 1))).trace := by
+  have hA_sq : (A ^ (2 ^ k)) ^ 2 = A ^ (2 ^ (k + 1)) := by
+    rw [← pow_mul, Nat.pow_succ]
+  have hB_sq : (B ^ (2 ^ k)) ^ 2 = B ^ (2 ^ (k + 1)) := by
+    rw [← pow_mul, Nat.pow_succ]
+  simpa only [hA_sq, hB_sq] using
+    trace_mul_mul_sq_le (A ^ (2 ^ k)) (B ^ (2 ^ k))
+      (posSemidef_pow_two_pow A hA k) (posSemidef_pow_two_pow B hB k)
+
 end Matrix
