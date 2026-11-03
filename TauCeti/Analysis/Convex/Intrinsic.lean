@@ -10,6 +10,7 @@ public import Mathlib.Analysis.Convex.Intrinsic
 public import Mathlib.Analysis.Normed.Module.Convex
 import Mathlib.Topology.Algebra.Module.FiniteDimension
 import TauCeti.Analysis.Convex.Gauge
+import TauCeti.Analysis.Normed.Affine.Interpolation
 
 /-!
 # Intrinsic interior points of compact and convex sets
@@ -34,7 +35,9 @@ If `s` has the same affine span as `t` and contains the part of `t` in an open s
 intrinsic interior points of `t` in `U` are intrinsic interior points of `s`
 (`TauCeti.intrinsicInterior_inter_subset_of_affineSpan_eq`). From an intrinsic interior point,
 every small move along the affine span stays in the set
-(`TauCeti.eventually_add_smul_mem_of_mem_intrinsicInterior`). The intrinsic frontier of a closed
+(`TauCeti.eventually_add_smul_mem_of_mem_intrinsicInterior`); in particular, so does some move
+by a positive multiple of a given direction
+(`TauCeti.exists_pos_add_smul_mem_of_mem_intrinsicInterior`). The intrinsic frontier of a closed
 set consists of its points outside its intrinsic interior (`IsClosed.sdiff_intrinsicInterior`).
 These are the tools for computing intrinsic interiors and frontiers of concrete cells, such as the
 bands of `TauCeti/Analysis/Convex/RegionBetween.lean`.
@@ -49,6 +52,17 @@ unit vector `u` of `V` the number `(gauge (-c +ᵥ C) u)⁻¹` is the length of 
 direction `u` inside `C`. No finite-dimensionality is needed. This identifies every nonempty
 compact convex set of a finite-dimensional space with a disk, which is how Brouwer's fixed-point
 theorem passes from the disk to compact convex sets.
+
+If a subset `t` of a convex set `s` contains an intrinsic interior point of `s`, then the
+intrinsic interior of `t` lies in that of `s`
+(`Convex.intrinsicInterior_subset_intrinsicInterior`). For the simplex spanned by an affinely
+independent finite set `s`, the intrinsic interior, or *open simplex*, consists of the points of the
+simplex lying in none of its facets (`AffineIndependent.mem_intrinsicInterior_convexHull_iff`). It
+contains the centroid of `s` (`AffineIndependent.centroid_mem_intrinsicInterior_convexHull`) and
+misses every proper face (`AffineIndependent.disjoint_convexHull_intrinsicInterior_convexHull`),
+and the intrinsic frontier of the simplex is the union of its facets
+(`AffineIndependent.intrinsicFrontier_convexHull`). The proofs use barycentric coordinate functions
+on the whole space, obtained by extending `s` to an affine basis.
 -/
 
 public section
@@ -276,6 +290,14 @@ theorem eventually_add_smul_mem_of_mem_intrinsicInterior (hc : c ∈ intrinsicIn
   simpa using (hcont.tendsto' 0 0 (zero_smul ℝ _)).eventually
     (setOf_add_mem_mem_nhds_of_mem_intrinsicInterior hc)
 
+/-- From a point `c` of the intrinsic interior of `C`, some move `ε • v` with `ε > 0` along a
+direction `v` of the affine span of `C` stays in `C`. -/
+theorem exists_pos_add_smul_mem_of_mem_intrinsicInterior (hc : c ∈ intrinsicInterior ℝ C)
+    {v : E} (hv : v ∈ (affineSpan ℝ C).direction) : ∃ ε > (0 : ℝ), c + ε • v ∈ C := by
+  have h : ∀ᶠ ε in 𝓝[>] (0 : ℝ), 0 < ε ∧ c + ε • v ∈ C := eventually_mem_nhdsWithin.and
+    ((eventually_add_smul_mem_of_mem_intrinsicInterior hc hv).filter_mono nhdsWithin_le_nhds)
+  exact h.exists
+
 /-- **A closed bounded convex set is a ball around each intrinsic interior point.** For a closed
 bounded convex set `C` of a real normed space and a point `c` of its intrinsic interior, the closed
 unit ball of the direction of the affine span of `C` is homeomorphic to `C`. The homeomorphism
@@ -349,3 +371,193 @@ theorem coe_convexClosedBallHomeomorph_symm_apply (hconv : Convex ℝ C) (hcl : 
     ← Submodule.norm_coe]
 
 end TauCeti
+
+/-! ### Open simplices -/
+
+section Simplex
+
+open Filter Topology
+
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] {s t : Set E} {c : E}
+
+/-- If a subset `t` of a convex set `s` contains a point of the intrinsic interior of `s`, then the
+intrinsic interior of `t` lies in that of `s`. For instance, every open simplex having an intrinsic
+interior point of `s` as a vertex and contained in `s` lies in the intrinsic interior of `s`. -/
+theorem Convex.intrinsicInterior_subset_intrinsicInterior (hs : Convex ℝ s) (hts : t ⊆ s)
+    (hct : c ∈ t) (hcs : c ∈ intrinsicInterior ℝ s) :
+    intrinsicInterior ℝ t ⊆ intrinsicInterior ℝ s := by
+  intro x hx
+  -- move from `x` slightly further away from `c`, staying in `t`
+  have hdir : x - c ∈ (affineSpan ℝ t).direction :=
+    AffineSubspace.vsub_mem_direction (subset_affineSpan ℝ t (intrinsicInterior_subset hx))
+      (subset_affineSpan ℝ t hct)
+  obtain ⟨ε, hε, hεt⟩ := TauCeti.exists_pos_add_smul_mem_of_mem_intrinsicInterior hx hdir
+  -- `x` lies on the open segment from `c` to that point
+  have h1ε : 1 + ε ≠ 0 := by positivity
+  refine hs.openSegment_intrinsicInterior_intrinsicClosure_subset_intrinsicInterior hcs
+    (subset_intrinsicClosure (hts hεt)) ⟨ε / (1 + ε), 1 / (1 + ε), by positivity, by positivity,
+      by rw [← add_div, add_comm ε, div_self h1ε], ?_⟩
+  have h : (ε / (1 + ε)) • c + (1 / (1 + ε)) • (x + ε • (x - c)) =
+      (1 + ε)⁻¹ • ((1 + ε) • x) := by
+    module
+  rw [h, smul_smul, inv_mul_cancel₀ h1ε, one_smul]
+
+variable [FiniteDimensional ℝ E] [DecidableEq E] {s t : Finset E} {x : E}
+
+omit [FiniteDimensional ℝ E] [DecidableEq E] in
+/-- An affine function which is `1` at one point of a finite family and `0` at the others takes
+an affine combination of the family to the weight of that point. -/
+private theorem coord_affineCombination {ι : Type*} {f : E →ᵃ[ℝ] ℝ} {u : Finset ι} {p : ι → E}
+    {w : ι → ℝ} {i : ι} (hw : ∑ j ∈ u, w j = 1) (hi : i ∈ u) (hfi : f (p i) = 1)
+    (hfj : ∀ j ∈ u, j ≠ i → f (p j) = 0) : f (u.affineCombination ℝ p w) = w i := by
+  rw [Finset.map_affineCombination _ _ _ hw, Finset.affineCombination_eq_linear_combination _ _ _
+    hw, Finset.sum_eq_single i (fun j hj hji => by simp [hfj j hj hji]) (fun h => (h hi).elim)]
+  simp [hfi]
+
+/-- An affinely independent finite set `s` has barycentric coordinate functions on the whole
+space: for each `v`, an affine function `f v` that is `1` at `v` and `0` at the other points of
+`s`. They come from `AffineIndependent.exists_continuousAffineMap_eqOn`. -/
+private theorem exists_coord (hs : AffineIndependent ℝ ((↑) : s → E)) :
+    ∃ f : E → E →ᵃ[ℝ] ℝ, ∀ v ∈ s, ∀ u ∈ s, f v u = if u = v then 1 else 0 := by
+  choose g hg using fun v : E =>
+    hs.exists_continuousAffineMap_eqOn fun u => if u = v then (1 : ℝ) else 0
+  exact ⟨fun v => (g v).toAffineMap, fun v _ u hu => hg v hu⟩
+
+omit [FiniteDimensional ℝ E] in
+/-- A barycentric coordinate function of `s` vanishes on the face opposite its vertex. -/
+private theorem coord_eq_zero_of_mem_convexHull_erase {f : E →ᵃ[ℝ] ℝ} {v : E}
+    (hf : ∀ u ∈ s, f u = if u = v then 1 else 0) (hx : x ∈ convexHull ℝ (s.erase v : Set E)) :
+    f x = 0 := by
+  refine convexHull_min (fun u hu => ?_) ((convex_singleton (0 : ℝ)).affine_preimage f) hx
+  obtain ⟨huv, hu⟩ := Finset.mem_erase.1 hu
+  simp [hf u hu, huv]
+
+omit [FiniteDimensional ℝ E] in
+/-- A barycentric coordinate function of `s` is nonnegative on the simplex spanned by `s`. -/
+private theorem coord_nonneg_of_mem_convexHull {f : E →ᵃ[ℝ] ℝ} {v : E}
+    (hf : ∀ u ∈ s, f u = if u = v then 1 else 0) (hx : x ∈ convexHull ℝ (s : Set E)) :
+    0 ≤ f x := by
+  refine convexHull_min (fun u hu => ?_) ((convex_Ici (0 : ℝ)).affine_preimage f) hx
+  simp only [mem_preimage, hf u hu]
+  split_ifs <;> simp
+
+omit [FiniteDimensional ℝ E] in
+/-- A point of the affine span of `s` is the combination of `s` weighted by its barycentric
+coordinates. -/
+private theorem sum_coord_eq {f : E → E →ᵃ[ℝ] ℝ}
+    (hf : ∀ v ∈ s, ∀ u ∈ s, f v u = if u = v then 1 else 0) (hx : x ∈ affineSpan ℝ (s : Set E)) :
+    ∑ v ∈ s, f v x = 1 ∧ ∑ v ∈ s, f v x • v = x := by
+  rw [show (s : Set E) = Set.range ((↑) : s → E) by simp] at hx
+  obtain ⟨w, hw1, rfl⟩ := eq_affineCombination_of_mem_affineSpan_of_fintype hx
+  have hfw (i : s) : f i (Finset.univ.affineCombination ℝ (↑) w) = w i :=
+    coord_affineCombination hw1 (Finset.mem_univ i) (by simp [hf i i.2 i i.2])
+      fun j _ hji => by simp [hf i i.2 j j.2, Subtype.coe_ne_coe.2 hji]
+  rw [← Finset.sum_coe_sort s, ← Finset.sum_coe_sort s]
+  simp_rw [hfw]
+  exact ⟨hw1, (Finset.affineCombination_eq_linear_combination _ _ _ hw1).symm⟩
+
+omit [FiniteDimensional ℝ E] in
+/-- A point of the affine span of `s` with nonnegative barycentric coordinates, one of which
+vanishes, lies in the opposite facet. -/
+private theorem mem_convexHull_erase_of_coord_eq_zero {f : E → E →ᵃ[ℝ] ℝ} {v : E}
+    (hf : ∀ v ∈ s, ∀ u ∈ s, f v u = if u = v then 1 else 0)
+    (hx : x ∈ affineSpan ℝ (s : Set E)) (hx0 : ∀ u ∈ s, 0 ≤ f u x) (hxv : f v x = 0) :
+    x ∈ convexHull ℝ (s.erase v : Set E) := by
+  obtain ⟨h1, h2⟩ := sum_coord_eq hf hx
+  have h1' : ∑ u ∈ s.erase v, f u x = 1 := by
+    rw [Finset.sum_erase (f := fun u => f u x) _ hxv, h1]
+  have h2' : ∑ u ∈ s.erase v, f u x • u = x := by
+    rw [Finset.sum_erase (f := fun u => f u x • u) _ (by rw [hxv, zero_smul]), h2]
+  rw [← h2']
+  exact (convex_convexHull ℝ _).sum_mem (fun u hu => hx0 u (Finset.mem_of_mem_erase hu)) h1'
+    fun u hu => subset_convexHull ℝ _ hu
+
+/-- A point lies in the intrinsic interior of the simplex spanned by an affinely independent finite
+set `s` if and only if it lies in the simplex but in none of its facets. -/
+theorem AffineIndependent.mem_intrinsicInterior_convexHull_iff
+    (hs : AffineIndependent ℝ ((↑) : s → E)) :
+    x ∈ intrinsicInterior ℝ (convexHull ℝ (s : Set E)) ↔
+      x ∈ convexHull ℝ (s : Set E) ∧ ∀ v ∈ s, x ∉ convexHull ℝ (s.erase v : Set E) := by
+  obtain ⟨f, hf⟩ := exists_coord hs
+  have hnonneg : ∀ v ∈ s, ∀ z ∈ convexHull ℝ (s : Set E), 0 ≤ f v z := fun v hv _ =>
+    coord_nonneg_of_mem_convexHull (hf v hv)
+  constructor
+  · intro hx
+    have hxs := intrinsicInterior_subset hx
+    refine ⟨hxs, fun v hv hxv => ?_⟩
+    -- moving from `x` away from `v` would make the coordinate of `v` negative
+    have hdir : x - v ∈ (affineSpan ℝ (convexHull ℝ (s : Set E))).direction :=
+      AffineSubspace.vsub_mem_direction (subset_affineSpan ℝ _ hxs)
+        (subset_affineSpan ℝ _ (subset_convexHull ℝ _ hv))
+    obtain ⟨ε, hε, hεs⟩ := TauCeti.exists_pos_add_smul_mem_of_mem_intrinsicInterior hx hdir
+    have h := hnonneg v hv _ hεs
+    have hcomp : f v (x + ε • (x - v)) = f v x + ε * (f v x - f v v) := by
+      rw [show x + ε • (x - v) = AffineMap.lineMap v x (1 + ε) by
+          rw [AffineMap.lineMap_apply_module']; module,
+        AffineMap.apply_lineMap, AffineMap.lineMap_apply_ring']
+      ring
+    rw [hcomp, coord_eq_zero_of_mem_convexHull_erase (hf v hv) hxv, hf v hv v hv] at h
+    simp only [↓reduceIte, zero_sub, mul_neg, mul_one, zero_add, Left.nonneg_neg_iff] at h
+    linarith
+  · rintro ⟨hxs, hx⟩
+    have hpos : ∀ v ∈ s, 0 < f v x := fun v hv => (hnonneg v hv x hxs).lt_of_ne' fun h0 =>
+      hx v hv (mem_convexHull_erase_of_coord_eq_zero hf (convexHull_subset_affineSpan _ hxs)
+        (fun u hu => hnonneg u hu x hxs) h0)
+    rw [mem_intrinsicInterior]
+    refine ⟨⟨x, subset_affineSpan ℝ _ hxs⟩, mem_interior.2 ⟨Subtype.val ⁻¹' ⋂ v ∈ s,
+      {z | 0 < f v z}, fun z hz => ?_, (isOpen_biInter_finset fun v _ => isOpen_lt
+        continuous_const (f v).continuous_of_finiteDimensional).preimage continuous_subtype_val,
+      by simpa using hpos⟩, rfl⟩
+    have hzs : (z : E) ∈ affineSpan ℝ (s : Set E) := by
+      rw [← affineSpan_convexHull]
+      exact z.2
+    simp only [mem_preimage, mem_iInter, mem_ofPred_eq] at hz
+    obtain ⟨h1, h2⟩ := sum_coord_eq hf hzs
+    rw [mem_preimage, ← h2]
+    exact (convex_convexHull ℝ _).sum_mem (fun v hv => (hz v hv).le) h1
+      fun v hv => subset_convexHull ℝ _ hv
+
+omit [DecidableEq E] in
+/-- The centroid of a nonempty affinely independent finite set lies in the intrinsic interior of
+the simplex it spans. -/
+theorem AffineIndependent.centroid_mem_intrinsicInterior_convexHull
+    (hs : AffineIndependent ℝ ((↑) : s → E)) (hne : s.Nonempty) :
+    s.centroid ℝ id ∈ intrinsicInterior ℝ (convexHull ℝ (s : Set E)) := by
+  classical
+  refine hs.mem_intrinsicInterior_convexHull_iff.2 ⟨s.centroid_mem_convexHull hne, fun v hv h => ?_⟩
+  obtain ⟨f, hf⟩ := exists_coord hs
+  have hcard : s.card ≠ 0 := hne.card_pos.ne'
+  have h1 := coord_eq_zero_of_mem_convexHull_erase (hf v hv) h
+  rw [Finset.centroid_def, coord_affineCombination (s.sum_centroidWeights_eq_one_of_card_ne_zero ℝ
+    hcard) hv (by simp [hf v hv v hv]) fun u hu huv => by simp [hf v hv u hu, huv]] at h1
+  simp [hcard] at h1
+
+omit [DecidableEq E] in
+/-- A proper subset of an affinely independent finite set spans a simplex disjoint from the
+intrinsic interior of the whole simplex. -/
+theorem AffineIndependent.disjoint_convexHull_intrinsicInterior_convexHull
+    (hs : AffineIndependent ℝ ((↑) : s → E)) (hts : t ⊂ s) :
+    Disjoint (convexHull ℝ (t : Set E)) (intrinsicInterior ℝ (convexHull ℝ (s : Set E))) := by
+  classical
+  obtain ⟨v, hv, hvt⟩ := Finset.exists_of_ssubset hts
+  refine Set.disjoint_left.2 fun x hxt hx => (hs.mem_intrinsicInterior_convexHull_iff.1 hx).2 v hv
+    (convexHull_mono ?_ hxt)
+  exact_mod_cast Finset.subset_erase.2 ⟨hts.subset, hvt⟩
+
+/-- The intrinsic frontier of the simplex spanned by an affinely independent finite set is the
+union of its facets. -/
+theorem AffineIndependent.intrinsicFrontier_convexHull (hs : AffineIndependent ℝ ((↑) : s → E)) :
+    intrinsicFrontier ℝ (convexHull ℝ (s : Set E)) =
+      ⋃ v ∈ s, convexHull ℝ (s.erase v : Set E) := by
+  have hcl : IsClosed (convexHull ℝ (s : Set E)) := s.finite_toSet.isClosed_convexHull ℝ
+  rw [← hcl.sdiff_intrinsicInterior (𝕜 := ℝ)]
+  ext x
+  simp only [Set.mem_sdiff, hs.mem_intrinsicInterior_convexHull_iff, mem_iUnion, exists_prop]
+  constructor
+  · rintro ⟨hxs, hx⟩
+    by_contra h
+    exact hx ⟨hxs, fun v hv hxv => h ⟨v, hv, hxv⟩⟩
+  · rintro ⟨v, hv, hxv⟩
+    exact ⟨convexHull_mono (by simp) hxv, fun h => h.2 v hv hxv⟩
+
+end Simplex
