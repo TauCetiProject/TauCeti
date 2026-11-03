@@ -21,7 +21,8 @@ reversal. Two `𝔸`-paths are *homotopic* when they are related by the elementa
 * `e, rev e ~` the empty word for every dart `e`;
 * `e, ω_e(c) ~ α_e(c), e` for every dart `e` and `c ∈ A_e`,
 
-in any context. These are the defining relations of `π₁(𝔸, T)`, read along a path. The alternating
+in any context. Read along a path, these are the defining relations of `π₁(𝔸, T)` for `T = ∅`;
+for a general set `T` of darts, `π₁(𝔸, T)` additionally imposes `e = 1` for `e ∈ T`. The alternating
 paths `g₀, e₁, g₁, …, e_k, g_k` of Kapovich, Weidmann and Myasnikov are the words in which vertex
 group letters and darts alternate. Merging consecutive vertex group letters and inserting the
 letter `1` turns any word into an alternating one, and their elementary equivalence
@@ -240,9 +241,8 @@ instance setoid (x y : 𝔸.LetterVertex) : Setoid (𝔸.Path x y) :=
 end Path
 
 /-- The fundamental group `π₁(𝔸, a)` of a graph of groups at a vertex `a`: the closed `𝔸`-paths
-at `a` modulo homotopy, with concatenation as multiplication. The body is exposed so that the
-group structure can be built on the quotient. -/
-@[expose] def π₁ (a : Γ.V) : Type (max u v w) := Quotient (Path.setoid 𝔸 ⟨a⟩ ⟨a⟩)
+at `a` modulo homotopy, with concatenation as multiplication. -/
+def π₁ (a : Γ.V) : Type (max u v w) := Quotient (Path.setoid 𝔸 ⟨a⟩ ⟨a⟩)
 
 namespace π₁
 
@@ -264,23 +264,27 @@ homotopic. -/
 theorem mk_eq_mk_iff {p q : 𝔸.Path ⟨a⟩ ⟨a⟩} : mk p = mk q ↔ p.Homotopic q :=
   Quotient.eq
 
-instance : Group (π₁ 𝔸 a) where
-  mul := Quotient.map₂ Quiver.Path.comp fun _ _ h _ _ k => Path.Homotopic.comp h k
-  one := mk Quiver.Path.nil
-  inv := Quotient.map Quiver.Path.reverse fun _ _ h => Path.Homotopic.reverse h
-  mul_assoc g h k := by
-    induction g using Quotient.ind; induction h using Quotient.ind
-    induction k using Quotient.ind
-    exact congrArg mk (Quiver.Path.comp_assoc _ _ _)
-  one_mul g := by
-    induction g using Quotient.ind
-    exact congrArg mk (Quiver.Path.nil_comp _)
-  mul_one g := by
-    induction g using Quotient.ind
-    rfl
-  inv_mul_cancel g := by
-    induction g using Quotient.ind
-    exact Quotient.sound (Path.Homotopic.reverse_comp _)
+/-- A function on closed paths at `a` that is constant on homotopy classes descends to
+`π₁(𝔸, a)`. -/
+def lift {β : Sort*} (f : 𝔸.Path ⟨a⟩ ⟨a⟩ → β) (hf : ∀ p q, p.Homotopic q → f p = f q) :
+    π₁ 𝔸 a → β :=
+  Quotient.lift f hf
+
+@[simp] theorem lift_mk {β : Sort*} (f : 𝔸.Path ⟨a⟩ ⟨a⟩ → β)
+    (hf : ∀ p q, p.Homotopic q → f p = f q) (p : 𝔸.Path ⟨a⟩ ⟨a⟩) : lift f hf (mk p) = f p :=
+  (rfl)
+
+instance : Mul (π₁ 𝔸 a) where
+  mul := lift (fun p => lift (fun q => mk (p.comp q))
+      fun _ _ h => mk_eq_mk_iff.2 ((Path.Homotopic.refl p).comp h))
+    fun _ _ h => funext fun g => induction_on g fun q => by
+      rw [lift_mk, lift_mk]
+      exact mk_eq_mk_iff.2 (h.comp (.refl q))
+
+instance : One (π₁ 𝔸 a) := ⟨mk Quiver.Path.nil⟩
+
+instance : Inv (π₁ 𝔸 a) where
+  inv := lift (fun p => mk p.reverse) fun _ _ h => mk_eq_mk_iff.2 h.reverse
 
 @[simp] theorem mk_comp (p q : 𝔸.Path ⟨a⟩ ⟨a⟩) : mk (p.comp q) = mk p * mk q :=
   (rfl)
@@ -290,6 +294,15 @@ instance : Group (π₁ 𝔸 a) where
 
 @[simp] theorem mk_reverse (p : 𝔸.Path ⟨a⟩ ⟨a⟩) : mk p.reverse = (mk p)⁻¹ :=
   (rfl)
+
+instance : Group (π₁ 𝔸 a) where
+  mul_assoc g h k := induction_on g fun p => induction_on h fun q => induction_on k fun r => by
+    simp only [← mk_comp, Quiver.Path.comp_assoc]
+  one_mul g := induction_on g fun p => by simp only [← mk_nil, ← mk_comp, Quiver.Path.nil_comp]
+  mul_one g := induction_on g fun p => by simp only [← mk_nil, ← mk_comp, Quiver.Path.comp_nil]
+  inv_mul_cancel g := induction_on g fun p => by
+    rw [← mk_reverse, ← mk_comp, ← mk_nil, mk_eq_mk_iff]
+    exact Path.Homotopic.reverse_comp p
 
 /-- The homomorphism `A_b →* π₁(𝔸, a)`, `g ↦ p g p⁻¹`, given by an `𝔸`-path `p` from `a` to
 `b`. -/
@@ -400,7 +413,7 @@ variable (𝔸) in
 /-- Reading the letters of closed `𝔸`-paths at `a` in `π₁(𝔸, T)` gives a homomorphism
 `π₁(𝔸, a) →* π₁(𝔸, T)`, for every set `T` of darts. -/
 def toπ₁Tree (a : Γ.V) (T : Set Γ.E) : π₁ 𝔸 a →* π₁Tree 𝔸 T where
-  toFun := Quotient.lift (Path.toπ₁Tree T) fun _ _ h => Path.Homotopic.toπ₁Tree_eq T h
+  toFun := lift (Path.toπ₁Tree T) fun _ _ h => Path.Homotopic.toπ₁Tree_eq T h
   map_one' := Path.toπ₁Tree_nil T
   map_mul' g h := by
     induction g using Quotient.ind
