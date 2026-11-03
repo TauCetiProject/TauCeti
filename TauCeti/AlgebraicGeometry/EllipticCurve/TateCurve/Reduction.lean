@@ -61,7 +61,7 @@ instance isIntegral_tateCurveAt (q : Kˣ) (hq : ‖(q : K)‖ < 1) :
     IsIntegral 𝒪[K] (tateCurveAt q hq) := by
   refine ⟨⟨⟨1, 0, 0, ⟨tateCurveA₄ (q : K) hq, ?_⟩, ⟨tateCurveA₆ (q : K) hq, ?_⟩⟩, ?_⟩⟩
   · exact Valued.integer.mem_iff.mpr ((norm_tateCurveA₄_le _ hq).trans hq.le)
-  · exact Valued.integer.mem_iff.mpr ((norm_tateCurveA₆_le _ hq).trans hq.le)
+  · exact Valued.integer.mem_iff.mpr ((norm_tateCurveA₆ _ hq).trans_le hq.le)
   · ext <;> simp [WeierstrassCurve.baseChange, Algebra.algebraMap_ofSubsemiring_apply]
 
 variable [IsDiscreteValuationRing 𝒪[K]]
@@ -104,7 +104,7 @@ instance hasSplitMultiplicativeReduction_tateCurveAt (q : Kˣ) (hq : ‖(q : K)�
     exact (norm_tateCurveA₄_le _ hq).trans_lt hq
   have ha₆ : (integralModel 𝒪[K] W).a₆ ∈ IsLocalRing.maximalIdeal 𝒪[K] := hmem _ <| by
     rw [hcoe, integralModel_a₆_eq, tateCurveAt_a₆]
-    exact (norm_tateCurveA₆_le _ hq).trans_lt hq
+    exact (norm_tateCurveA₆ _ hq).trans_lt hq
   -- `c₄` is a unit of `𝒪[K]`, so the equation is minimal
   have : IsMinimal 𝒪[K] W := isMinimal_of_valuation_c₄_eq_one _ W <| by
     rw [← integralModel_c₄_eq 𝒪[K] W]

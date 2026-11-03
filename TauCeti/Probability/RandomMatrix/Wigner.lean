@@ -321,7 +321,7 @@ theorem integral_re_trace_wignerMatrix_mul_self {σ2 s : ℝ}
   -- `trₙ Hₙ² = n⁻¹ ∑ᵢⱼ |Hᵢⱼ|²` because `Hₙ` is Hermitian.
   have htrace (ω : Ω) : (wignerMatrix ξ η n ω * wignerMatrix ξ η n ω).trace =
       ((∑ i, ∑ j, ‖wignerMatrix ξ η n ω i j‖ ^ 2 : ℝ) : ℂ) := by
-    simp only [trace, diag_apply, mul_apply, Complex.ofReal_sum, Complex.ofReal_pow]
+    simp only [trace, diag_apply, Matrix.mul_apply, Complex.ofReal_sum, Complex.ofReal_pow]
     refine Finset.sum_congr rfl fun i _ ↦ Finset.sum_congr rfl fun j _ ↦ ?_
     rw [← (wignerMatrix_isHermitian ξ η ω n).apply j i, Complex.star_def, Complex.mul_conj']
   simp_rw [htrace, ← Complex.ofReal_natCast, ← Complex.ofReal_inv,

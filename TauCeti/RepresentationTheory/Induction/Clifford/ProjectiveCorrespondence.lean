@@ -95,7 +95,7 @@ theorem tensorRep_inclusion_tmul (n : N) (x : A) (y : X) :
   have hn : ((Subgroup.inclusion (le_inertia A) n : inertia A) :
       inertia A ⧸ N.subgroupOf (inertia A)) = 1 :=
     (QuotientGroup.eq_one_iff _).2 (Subgroup.mem_subgroupOf.2 n.2)
-  rw [tensorRep_tmul, h.apply_inclusion, hn, hU.map_one, LinearEquiv.coe_one, id_eq]
+  rw [tensorRep_tmul, h.apply_inclusion, hn, hU.map_one, FunLike.coe_one_eq_id, id_eq]
 
 /-- **Vectors of `X` as `N`-intertwiners into `A ⊗ X`**: `y` gives `x ↦ x ⊗ y`, an intertwiner
 from `A` to the restriction of `ρ ⊗ U` to `N`. For an irreducible `A` over an algebraically closed
@@ -120,23 +120,14 @@ theorem homAction_tmulIntertwining (q : inertia A ⧸ N.subgroupOf (inertia A)) 
   induction q using QuotientGroup.induction_on with | H t =>
   exact IntertwiningMap.ext (LinearMap.ext fun x ↦ by simp)
 
-/-- The action of `k[N]` on the left factor of `A ⊗ X` preserves every subrepresentation of
-`ρ ⊗ U`, since `N` acts on `A ⊗ X` through `A`. -/
-private theorem rTensor_asAlgebraHom_mem {W : Subrepresentation (h.tensorRep hU)}
-    (r : MonoidAlgebra k N) {w : A ⊗[k] X} (hw : w ∈ W) :
-    (asAlgebraHom A.ρ r).rTensor X w ∈ W := by
-  induction r using MonoidAlgebra.induction_on with
-  | of n =>
-    have hn : (A.ρ n).rTensor X = h.tensorRep hU (Subgroup.inclusion (le_inertia A) n) :=
-      TensorProduct.ext' fun x y ↦ by simp [h.tensorRep_inclusion_tmul hU]
-    rw [asAlgebraHom_of, hn]
-    exact W.apply_mem_toSubmodule _ hw
-  | add r r' hr hr' =>
-    rw [map_add, LinearMap.rTensor_add, LinearMap.add_apply]
-    exact W.toSubmodule.add_mem hr hr'
-  | smul c r hr =>
-    rw [map_smul, LinearMap.rTensor_smul, LinearMap.smul_apply]
-    exact W.toSubmodule.smul_mem c hr
+/-- Acting by `N` on the left factor of `A ⊗ X` preserves every subrepresentation of `ρ ⊗ U`,
+since `N` acts on `A ⊗ X` through `A`. -/
+private theorem rTensor_mem {W : Subrepresentation (h.tensorRep hU)} (n : N) {w : A ⊗[k] X}
+    (hw : w ∈ W.toSubmodule) : (A.ρ n).rTensor X w ∈ W.toSubmodule := by
+  have hn : (A.ρ n).rTensor X = h.tensorRep hU (Subgroup.inclusion (le_inertia A) n) :=
+    TensorProduct.ext' fun x y ↦ by simp [h.tensorRep_inclusion_tmul hU]
+  rw [hn]
+  exact W.apply_mem_toSubmodule _ hw
 
 end Action
 
@@ -208,15 +199,12 @@ private theorem eq_top_of_ne_bot
   refine Subrepresentation.toSubmodule_injective ?_
   obtain ⟨w, hw, hw0⟩ := W.toSubmodule.exists_mem_ne_zero_of_ne_bot fun hW' ↦
     hW (Subrepresentation.toSubmodule_injective (hW'.trans Subrepresentation.toSubmodule_bot.symm))
-  obtain ⟨m, hm, hr⟩ := Representation.exists_ne_zero_forall_exists_rTensor_asAlgebraHom_eq_tmul
-    A.ρ (FDRep.isIrreducible_of_simple A) hw0
+  obtain ⟨m, hm, hmW⟩ := Representation.exists_ne_zero_forall_tmul_mem A.ρ
+    (FDRep.isIrreducible_of_simple A) (fun n _ ↦ h.rTensor_mem hU n) hw hw0
   let p : Submodule k X := ⨅ x : A, W.toSubmodule.comap (TensorProduct.mk k A X x)
   have hmem_p {y : X} : y ∈ p ↔ ∀ x : A, x ⊗ₜ y ∈ W.toSubmodule := by
     simp [p, Submodule.mem_iInf]
-  have hmp : m ∈ p := hmem_p.2 fun x ↦ by
-    obtain ⟨r, hr⟩ := hr x
-    rw [← hr]
-    exact h.rTensor_asAlgebraHom_mem hU r hw
+  have hmp : m ∈ p := hmem_p.2 hmW
   have hp : p = ⊤ := by
     refine (hirr p fun q y hy ↦ ?_).resolve_left fun hp ↦ hm (by simpa [hp] using hmp)
     induction q using QuotientGroup.induction_on with | H t =>

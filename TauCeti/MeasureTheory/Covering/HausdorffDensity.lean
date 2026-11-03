@@ -90,7 +90,7 @@ private lemma countable_and_tsum_le_of_pairwiseDisjoint (μ : Measure X) {d : �
   refine ⟨hcount, ?_⟩
   rw [ENNReal.le_div_iff_mul_le (Or.inl hc0) (Or.inr hUtop), ← ENNReal.tsum_mul_right]
   calc ∑' p : u, ENNReal.ofReal (2 * p.1.2) ^ d * c ≤ ∑' p : u, μ (closedBall p.1.1 p.1.2) :=
-        ENNReal.tsum_le_tsum fun p => by rw [mul_comm]; exact (hu _ p.2).2.2
+        tsum_le_tsum fun p => by rw [mul_comm]; exact (hu _ p.2).2.2
     _ = μ (⋃ p ∈ u, closedBall p.1 p.2) :=
         (measure_biUnion hcount hud fun _ _ => measurableSet_closedBall).symm
     _ ≤ μ U := measure_mono (iUnion₂_subset fun p hp => (hu p hp).2.1)
@@ -108,13 +108,13 @@ private lemma tsum_ofReal_two_mul_ite_le {ι : Type*} [DecidableEq ι] (F : Fins
       ENNReal.ofReal_ofNat]
   calc _ ≤ ∑' i, (ENNReal.ofReal (2 * ρ i) ^ d +
         {i | i ∉ F}.indicator (fun i => 3 ^ d * ENNReal.ofReal (2 * ρ i) ^ d) i) :=
-        ENNReal.tsum_le_tsum fun i => by
+        tsum_le_tsum fun i => by
           by_cases hi : i ∈ F
           · simp [hi]
           · rw [ite_eq_right hi, h3, indicator_of_mem (by exact hi)]
             exact le_add_self
     _ = _ := by
-        rw [ENNReal.tsum_add, ← tsum_subtype, ENNReal.tsum_mul_left]
+        rw [tsum_add, ← tsum_subtype, ENNReal.tsum_mul_left]
         -- `↥{i | i ∉ F}` is notation for the subtype `{i // i ∉ F}`.
         rfl
 

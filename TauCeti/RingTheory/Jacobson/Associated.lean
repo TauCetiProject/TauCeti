@@ -29,7 +29,7 @@ namespace TauCeti
 theorem associated_of_mul_dvd_sub_of_mem_jacobson {R : Type*} [CommRing R] {x y z : R}
     (hz : z ∈ Ideal.jacobson (⊥ : Ideal R)) (h : x * z ∣ y - x) : Associated x y := by
   obtain ⟨c, hc⟩ := h
-  refine ⟨(Ideal.mem_jacobson_bot.mp hz c).unit, ?_⟩
+  refine ⟨(Ring.mem_jacobson_iff.mp (by simpa only [Ideal.jacobson_bot] using hz) c).unit, ?_⟩
   rw [IsUnit.unit_spec, mul_add_one, ← mul_assoc, ← hc, sub_add_cancel]
 
 end TauCeti

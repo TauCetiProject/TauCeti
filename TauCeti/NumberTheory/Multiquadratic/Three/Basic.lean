@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.RingTheory.AdjoinRoot
+public import TauCeti.RingTheory.AdjoinRoot.Basic
 public import Mathlib.NumberTheory.NumberField.Basic
 import TauCeti.NumberTheory.NumberField.IntegralSqrt
 import Mathlib.FieldTheory.KummerPolynomial
@@ -46,7 +46,7 @@ theorem not_isSquare_three_rat : ¬ IsSquare ((3 : ℤ) : ℚ) := by
 
 /-- `X² - 3` is irreducible over `ℚ`, so `AdjoinRoot (X² - 3)` is a field. -/
 instance irreducible_X_sq_sub_three : Fact (Irreducible (X ^ 2 - C (3 : ℚ))) := ⟨by
-  refine (X_pow_sub_C_irreducible_iff_of_prime Nat.prime_two).mpr fun q hq => ?_
+  refine (irreducible_X_pow_sub_C_iff_of_prime Nat.prime_two).mpr fun q hq => ?_
   exact not_isSquare_three_rat ⟨q, by push_cast; rw [← hq]; ring⟩⟩
 
 /-- The concrete model `AdjoinRoot (X² - 3)` of `ℚ(√3)` carries an integral generator with minimal

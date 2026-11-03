@@ -8,6 +8,8 @@ module
 public import Mathlib.Algebra.MonoidAlgebra.Basic
 public import Mathlib.RingTheory.PowerSeries.Exp
 
+import Mathlib.Data.Rat.Cast.Lemmas
+
 /-!
 # The exponential specialization of a monoid algebra
 
@@ -38,6 +40,8 @@ the coefficients (the augmentation), and the higher coefficients are the moments
 * `AddMonoidAlgebra.expAlgHom_single`: `e^m ↦ e^{φ(m) X}`.
 * `AddMonoidAlgebra.constantCoeff_expAlgHom`: the constant coefficient of the exponential
   specialization is the sum of the coefficients.
+* `TauCeti.sum_antidiagonal_inv_factorial_mul_neg_one_pow`: the coefficients of `e^X e^{-X} = 1`,
+  `∑_{i + j = n} (-1)ʲ / (i! j!) = 0` for `n > 0`.
 -/
 
 public section
@@ -48,8 +52,8 @@ namespace PowerSeries
 @[simp]
 theorem constantCoeff_rescale {R : Type*} [CommSemiring R] (a : R) (f : R⟦X⟧) :
     constantCoeff (rescale a f) = constantCoeff f := by
-  rw [← coeff_zero_eq_constantCoeff_apply, coeff_rescale, pow_zero, one_mul,
-    coeff_zero_eq_constantCoeff_apply]
+  rw [← coeff_zero_eq_constantCoeff_apply, coeff_rescale]
+  simp
 
 variable (R : Type*) [CommRing R] [Algebra ℚ R]
 
@@ -65,27 +69,23 @@ variable {R}
 /-- `e^{aX} e^{-aX} = 1`. -/
 theorem rescale_exp_mul_rescale_neg_exp (a : R) :
     rescale a (exp R) * rescale (-a) (exp R) = 1 := by
-  rw [exp_mul_exp_eq_exp_add, add_neg_cancel, rescale_zero_apply, constantCoeff_exp, map_one]
+  simp [exp_mul_exp_eq_exp_add]
 
 /-- `e^{aX} e^{aX} = e^{2aX}`. -/
 theorem rescale_exp_mul_self (a : R) :
     rescale a (exp R) * rescale a (exp R) = rescale (2 * a) (exp R) := by
   rw [exp_mul_exp_eq_exp_add, two_mul]
 
-private theorem expMonoidHom_apply_def (a : Multiplicative R) :
-    expMonoidHom R a = rescale a.toAdd (exp R) :=
-  rfl
-
 /-- The exponential monoid homomorphism sends `a` to the exponential series rescaled by `a`. -/
 @[simp]
 theorem expMonoidHom_apply (a : Multiplicative R) :
     expMonoidHom R a = rescale a.toAdd (exp R) :=
-  expMonoidHom_apply_def a
+  (rfl)
 
 /-- `e^{aX}` is the exponential series rescaled by `a`. -/
 theorem expMonoidHom_ofAdd (a : R) :
-    expMonoidHom R (Multiplicative.ofAdd a) = rescale a (exp R) := by
-  simp only [expMonoidHom_apply, toAdd_ofAdd]
+    expMonoidHom R (Multiplicative.ofAdd a) = rescale a (exp R) :=
+  (rfl)
 
 end PowerSeries
 
@@ -113,16 +113,33 @@ to, whereas `algebraMap ℤ R⟦X⟧ n` simplifies to the cast `(n : R⟦X⟧)`.
 @[simp]
 theorem expAlgHom_single (φ : M →+ R) (m : M) (c : k) :
     expAlgHom φ (single m c) = algebraMap k R⟦X⟧ c * rescale (φ m) (exp R) := by
-  rw [expAlgHom, lift_single, Algebra.smul_def, MonoidHom.comp_apply,
-    AddMonoidHom.toMultiplicative_apply_apply, toAdd_ofAdd, expMonoidHom_ofAdd]
+  simp [expAlgHom, Algebra.smul_def]
 
 /-- **The constant coefficient of the exponential specialization is the sum of the
 coefficients**: the specialization at `X = 0` is the augmentation of the monoid algebra. -/
 @[simp]
 theorem constantCoeff_expAlgHom (φ : M →+ R) (f : k[M]) :
     constantCoeff (expAlgHom φ f) = algebraMap k R (f.coeff.sum fun _ c ↦ c) := by
-  rw [expAlgHom, lift_apply, map_finsuppSum, Finsupp.sum, Finsupp.sum, map_sum]
-  refine Finset.sum_congr rfl fun m _ ↦ ?_
-  simp [Algebra.algebraMap_eq_smul_one]
+  simp [expAlgHom, lift_apply, Finsupp.sum, Algebra.smul_def, PowerSeries.algebraMap_apply]
 
 end AddMonoidAlgebra
+
+namespace TauCeti
+
+open Finset
+
+open scoped Nat
+
+/-- The coefficients of `e^X e^{-X} = 1`: `∑_{i + j = n} (-1)ʲ / (i! j!)` is `1` for `n = 0` and
+`0` otherwise. -/
+theorem sum_antidiagonal_inv_factorial_mul_neg_one_pow {K : Type*} [DivisionRing K] [CharZero K]
+    (n : ℕ) :
+    ∑ ij ∈ antidiagonal n, (ij.1 ! : K)⁻¹ * ((-1) ^ ij.2 * (ij.2 ! : K)⁻¹) =
+      if n = 0 then 1 else 0 := by
+  have h := congr(PowerSeries.coeff n $(PowerSeries.exp_mul_exp_neg_eq_one (A := ℚ)))
+  rw [PowerSeries.coeff_mul, PowerSeries.coeff_one] at h
+  replace h := congr(Rat.castHom K $h)
+  simpa [PowerSeries.evalNegHom, PowerSeries.coeff_rescale, PowerSeries.coeff_exp, apply_ite]
+    using h
+
+end TauCeti

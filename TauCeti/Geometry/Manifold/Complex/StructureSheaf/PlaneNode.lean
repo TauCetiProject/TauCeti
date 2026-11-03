@@ -51,43 +51,29 @@ open scoped ContDiff Manifold
 
 namespace TauCeti.holomorphicStructureSheaf
 
-/-- The germ at the origin of a function analytic on all of `ℂ × ℂ`. -/
-private def planeGerm (F : ℂ × ℂ → ℂ) (hF : ContMDiff 𝓘(ℂ, ℂ × ℂ) 𝓘(ℂ) ω F) :
-    (holomorphicStructureSheaf 𝓘(ℂ, ℂ × ℂ) (ℂ × ℂ)).presheaf.stalk ((0 : ℂ), (0 : ℂ)) :=
-  ConcreteCategory.hom
-    ((holomorphicStructureSheaf 𝓘(ℂ, ℂ × ℂ) (ℂ × ℂ)).presheaf.germ ⊤ _ trivial)
-    (ofContMDiff (fun q : (⊤ : TopologicalSpace.Opens (ℂ × ℂ)) ↦ F q.1)
-      (hF.comp contMDiff_subtype_val))
-
-private theorem toFilterGerm_planeGerm (F : ℂ × ℂ → ℂ)
-    (hF : ContMDiff 𝓘(ℂ, ℂ × ℂ) 𝓘(ℂ) ω F) :
-    toFilterGerm 𝓘(ℂ, ℂ × ℂ) (ℂ × ℂ) _ (𝓝 ((0 : ℂ), (0 : ℂ))) le_rfl (planeGerm F hF) = F := by
-  unfold planeGerm
-  exact toFilterGerm_germ (U := ⊤) le_rfl trivial _ F fun q ↦ ofContMDiff_apply _ _ q
-
 /-- The germ of the coordinate `x` at the origin of `ℂ²`. -/
 def planeFstCoordinate :
     (holomorphicStructureSheaf 𝓘(ℂ, ℂ × ℂ) (ℂ × ℂ)).presheaf.stalk ((0 : ℂ), (0 : ℂ)) :=
-  planeGerm Prod.fst (contMDiff_iff_contDiff.2 contDiff_fst)
+  germOfContMDiff Prod.fst (contMDiff_iff_contDiff.2 contDiff_fst) _
 
 /-- The germ of the coordinate `y` at the origin of `ℂ²`. -/
 def planeSndCoordinate :
     (holomorphicStructureSheaf 𝓘(ℂ, ℂ × ℂ) (ℂ × ℂ)).presheaf.stalk ((0 : ℂ), (0 : ℂ)) :=
-  planeGerm Prod.snd (contMDiff_iff_contDiff.2 contDiff_snd)
+  germOfContMDiff Prod.snd (contMDiff_iff_contDiff.2 contDiff_snd) _
 
 /-- The coordinate germ `x` is the germ of the first projection. -/
 @[simp]
 theorem toFilterGerm_planeFstCoordinate :
     toFilterGerm 𝓘(ℂ, ℂ × ℂ) (ℂ × ℂ) _ (𝓝 ((0 : ℂ), (0 : ℂ))) le_rfl planeFstCoordinate =
       (Prod.fst : ℂ × ℂ → ℂ) :=
-  toFilterGerm_planeGerm _ _
+  toFilterGerm_germOfContMDiff _ _ le_rfl
 
 /-- The coordinate germ `y` is the germ of the second projection. -/
 @[simp]
 theorem toFilterGerm_planeSndCoordinate :
     toFilterGerm 𝓘(ℂ, ℂ × ℂ) (ℂ × ℂ) _ (𝓝 ((0 : ℂ), (0 : ℂ))) le_rfl planeSndCoordinate =
       (Prod.snd : ℂ × ℂ → ℂ) :=
-  toFilterGerm_planeGerm _ _
+  toFilterGerm_germOfContMDiff _ _ le_rfl
 
 namespace nodeLocalRing
 
