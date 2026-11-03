@@ -20,7 +20,9 @@ If a real function has a unique global minimum and one compact sublevel strictly
 then sufficiently small sublevels lie in any prescribed open neighbourhood of the minimum
 (`TauCeti.exists_pos_sublevel_subset_of_unique_min`).
 This allows local descriptions near the minimum to describe whole sublevels. Continuity is
-needed only on the one compact sublevel, not on the entire space.
+needed only on the one compact sublevel, not on the entire space. Similarly, if a superlevel
+`{w ≥ -δ}` of a continuous `w` is compact, a closed set avoiding the zero level of `w` avoids a
+whole band `{|w| ≤ η}` around it (`TauCeti.exists_forall_abs_le_notMem`).
 
 If a continuous motion of the space lowers `f` at unit speed through the band `a ≤ f ≤ b`, then
 following it until the level `a` is reached retracts the sublevel `{f ≤ b}` onto `{f ≤ a}`, by a
@@ -77,6 +79,20 @@ theorem exists_pos_sublevel_subset_of_unique_min {X : Type*} [TopologicalSpace X
   · refine ⟨(a - f x) / 2, by positivity, fun y hy ↦ ?_⟩
     by_contra hyU
     exact hne ⟨y, ⟨by dsimp at hy ⊢; linarith, hyU⟩⟩
+
+/-- If the superlevel `{w ≥ -δ}` of a continuous real function `w` is compact, then a closed set
+avoiding the zero level of `w` also avoids the band `{|w| ≤ η}` for some `0 < η ≤ δ`. -/
+theorem exists_forall_abs_le_notMem {X : Type*} [TopologicalSpace X] {w : X → ℝ}
+    (hw : Continuous w) {δ : ℝ} (hδ : 0 < δ) (hK : IsCompact {x | -δ ≤ w x}) {C : Set X}
+    (hC : IsClosed C) (hCw : ∀ x ∈ C, w x ≠ 0) :
+    ∃ η, 0 < η ∧ η ≤ δ ∧ ∀ x, |w x| ≤ η → x ∉ C := by
+  rcases ({x | -δ ≤ w x} ∩ C).eq_empty_or_nonempty with hA | hA
+  · exact ⟨δ, hδ, le_rfl, fun x hx hxC => hA.subset ⟨neg_le_of_abs_le hx, hxC⟩⟩
+  obtain ⟨x₀, hx₀, hmin⟩ := (hK.inter_right hC).exists_isMinOn hA hw.abs.continuousOn
+  have hm : 0 < |w x₀| := abs_pos.2 (hCw x₀ hx₀.2)
+  refine ⟨min δ (|w x₀| / 2), lt_min hδ (half_pos hm), min_le_left _ _, fun x hx hxC => ?_⟩
+  have := isMinOn_iff.1 hmin x ⟨neg_le_of_abs_le (hx.trans (min_le_left _ _)), hxC⟩
+  linarith [min_le_right δ (|w x₀| / 2)]
 
 /-- The sublevels `{f ≤ a}` of `f` increase with `a`. -/
 theorem sublevel_mono {X β : Type*} [Preorder β] (f : X → β) :
