@@ -7,6 +7,7 @@ module
 
 public import TauCeti.NumberTheory.LSeries.Newman.Detour
 public import TauCeti.NumberTheory.LSeries.Newman.Semicircle
+import TauCeti.Analysis.Complex.ClosedHalfPlane
 
 /-!
 # Newman's Tauberian theorem for bounded Laplace transforms
@@ -32,6 +33,10 @@ detour `newmanDetour R δ` through the left half-plane inside `Ω`. With
 * letting `R → ∞` gives the theorem.
 
 No radius-independent continuation width is used: the detour depends on `R`.
+
+Since the Laplace transform is already holomorphic on `0 < re z`, the continuation hypothesis
+only concerns the imaginary axis: `newmanLaplace_tendsto_integral_of_analyticAt` asks instead that
+`G` be analytic at each point of `re z = 0`.
 
 ## References
 
@@ -179,5 +184,22 @@ theorem newmanLaplace_tendsto_integral {Ω : Set ℂ}
     field_simp
     nlinarith
   linarith
+
+/-- **Newman's Tauberian theorem, with a pointwise continuation hypothesis.** Let `f : ℝ → ℂ` be
+measurable and bounded on `[0, ∞)`, and let `G` agree with the Laplace transform
+`∫ t in Ici 0, f t * exp (-z t)` on the open half-plane `0 < re z` and be analytic at every point
+of the imaginary axis `re z = 0`. Then `∫ t in 0..T, f t` converges to `G 0` as `T → ∞`.
+
+Since the Laplace transform is holomorphic on `0 < re z`, this hypothesis on `G` is equivalent to
+holomorphy on an open set containing the closed half-plane `0 ≤ re z`, as in
+`newmanLaplace_tendsto_integral`. -/
+theorem newmanLaplace_tendsto_integral_of_analyticAt
+    (hf : AEStronglyMeasurable f (volume.restrict (Ici 0)))
+    (hbound : ∀ t ∈ Ici (0 : ℝ), ‖f t‖ ≤ M) (hG : ∀ z : ℂ, z.re = 0 → AnalyticAt ℂ G z)
+    (hLaplace : ∀ z : ℂ, 0 < z.re → G z = ∫ t in Ici (0 : ℝ), f t * cexp (-z * t)) :
+    Tendsto (fun T : ℝ ↦ ∫ t in (0 : ℝ)..T, f t) atTop (𝓝 (G 0)) := by
+  obtain ⟨Ω, hΩ, hcover, hGΩ⟩ := (TauCeti.exists_isOpen_differentiableOn_iff_analyticAt
+    ((differentiableOn_integral_mul_cexp_neg_mul hf hbound).congr hLaplace)).mpr hG
+  exact newmanLaplace_tendsto_integral hf hbound hΩ hcover hGΩ hLaplace
 
 end TauCeti.LSeries

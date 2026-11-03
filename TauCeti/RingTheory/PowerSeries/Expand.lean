@@ -24,6 +24,7 @@ bound, the infinite product converges in the coefficientwise topology
 
 ## Main declarations
 
+* `PowerSeries.expand_injective`: expansion `f ↦ f (X ^ p)` is injective.
 * `PowerSeries.rescale_expand`: rescaling `f (X ^ p)` by `a` rescales `f` by `a ^ p`.
 * `PowerSeries.subst_expand`: substituting into `f(X ^ p)` substitutes the `p`-th power.
 * `PowerSeries.toMvPowerSeries_expand`: embedding in one coordinate commutes with expansion.
@@ -90,6 +91,13 @@ theorem order_eq_of_order_expand_eq (p : ℕ) (hp : p ≠ 0) {f : R⟦X⟧} {n :
   rw [order_expand, nsmul_eq_mul, ← coe_toNat_order hf₀, ← Nat.cast_mul] at hf
   have he : p * f.order.toNat = p * n := by exact_mod_cast hf
   rw [← coe_toNat_order hf₀, Nat.mul_left_cancel (Nat.pos_of_ne_zero hp) he]
+
+/-- Expansion `f ↦ f (X ^ p)` is injective: the coefficients of `f` reappear as the coefficients
+of `f (X ^ p)` in degrees divisible by `p`. -/
+theorem expand_injective (p : ℕ) (hp : p ≠ 0) :
+    Function.Injective (expand p hp : R⟦X⟧ → R⟦X⟧) := fun f g h ↦ by
+  ext m
+  rw [← coeff_expand_mul p hp f, h, coeff_expand_mul]
 
 /-- Rescaling an expanded series by `a` is expanding the series rescaled by `a ^ p`:
 `f ((a X) ^ p) = (f (a ^ p X)) (X ^ p)`. -/

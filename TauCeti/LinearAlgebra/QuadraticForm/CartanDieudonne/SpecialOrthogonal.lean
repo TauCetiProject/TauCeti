@@ -69,7 +69,7 @@ omit [NeZero (2 : K)] in
     (Q : QuadraticForm K V) (u v x : V) [Invertible (Q u)] [Invertible (Q v)] :
     (reflectionPairSpecialOrthogonal Q u v : V ≃ₗ[K] V) x =
       reflection Q u (reflection Q v x) := by
-  simp only [reflectionPairSpecialOrthogonal, Subgroup.coe_mk, LinearEquiv.mul_apply,
+  simp only [reflectionPairSpecialOrthogonal, Subgroup.coe_mk, mul_apply_eq_comp,
     coe_reflectionOrthogonal]
 
 end QuadraticMap

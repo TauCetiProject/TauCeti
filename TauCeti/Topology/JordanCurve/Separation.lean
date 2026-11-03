@@ -26,19 +26,18 @@ closed one (`Circle.compl_range_path`). So the two open arcs are complements of 
 *open*, and they are path connected as continuous images of the interval `Set.Ioo 0 1`; openness is
 what makes the pair a genuine separation rather than merely a partition.
 
-## Why this is a layer-L5 prerequisite
+## Use in the Carathéodory boundary correspondence
 
-Layer **L5** of the conformal-mapping roadmap (`TauCetiRoadmap/ConformalMapping/README.md`) is
-Carathéodory's boundary correspondence, and the injectivity half of its hard direction argues by
+In Carathéodory's boundary correspondence, the injectivity half of the hard direction argues by
 contradiction: if the continuous extension of a Riemann map identified two distinct points of the
 bounding circle, those two points would cut the circle into two arcs, and the geometry of the image
 would force the extension to be constant on one of them — which
 `TauCeti.not_eqOn_const_inter_sphere_of_injOn` in
-`TauCeti/Analysis/Complex/Conformal/ArcConstancy.lean` rules out. That file records the missing
-input explicitly: "two identified boundary points cut the circle into two arcs" is a statement about
-the curve, not about the map. Mathlib cuts the *circle*; what this file adds is the same cutting for
-an arbitrary Jordan curve, which is the generality the argument needs, since it applies the cutting
-to `frontier Ω` — a Jordan curve, not a circle — on the image side.
+`TauCeti/Analysis/Complex/Conformal/ArcConstancy.lean` rules out. The cutting step, "two identified
+boundary points cut the curve into two arcs", is a statement about the curve, not about the map.
+Mathlib cuts the *circle*; what this file adds is the same cutting for an arbitrary Jordan curve,
+which is the generality the argument needs, since it applies the cutting to `frontier Ω` — a Jordan
+curve, not a circle — on the image side.
 
 ## Generality
 

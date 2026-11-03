@@ -137,6 +137,16 @@ theorem chartCkSeminorm_le_iff (x : M)
     exact Seminorm.finset_sup_apply_le hr fun m _ ↦
       (chartDerivativeSeminorm_le_iff x K m _ f hr).mpr (h m (by omega))
 
+/-- Raising the derivative order can only increase the compact chart `C^k` seminorm. -/
+theorem chartCkSeminorm_le_of_le (x : M)
+    (K : TopologicalSpace.Compacts (extChartAt I x).target) {k l : ℕ} (hkl : k ≤ l)
+    (hl : l ≤ n) :
+    chartCkSeminorm (F := F) x K k ((Nat.cast_le.mpr hkl).trans hl) ≤
+      chartCkSeminorm x K l hl := by
+  intro f
+  refine (chartCkSeminorm_le_iff x K k _ f (apply_nonneg _ _)).mpr fun m hm z hz ↦ ?_
+  exact (chartCkSeminorm_le_iff x K l hl f (apply_nonneg _ _)).mp le_rfl m (hm.trans hkl) z hz
+
 /-- The compact chart `C^k` seminorm on the empty coordinate set is zero. -/
 @[simp]
 theorem chartCkSeminorm_bot (x : M) (k : ℕ) (hk : k ≤ n) :

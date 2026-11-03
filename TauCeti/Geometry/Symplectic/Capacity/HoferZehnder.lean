@@ -8,11 +8,11 @@ module
 public import Mathlib.Topology.Homotopy.Contractible
 public import Mathlib.Topology.Instances.AddCircle.Defs
 public import TauCeti.Geometry.Symplectic.Hamiltonian.Manifold
-import Mathlib.Geometry.Manifold.IsManifold.InteriorBoundary
+import TauCeti.Basic.ENNReal.Real
 import TauCeti.Geometry.Manifold.DifferentialForm.Pullback.Smooth
-import TauCeti.Geometry.Manifold.Flow.Diffeomorph
-import TauCeti.Geometry.Manifold.IntegralCurve.Basic
+import TauCeti.Geometry.Manifold.Diffeomorph.Support
 import TauCeti.Geometry.Symplectic.Manifold.Rescale
+import TauCeti.Topology.Algebra.Support
 
 /-!
 # The `π₁`-sensitive Hofer–Zehnder capacity
@@ -21,8 +21,9 @@ Let `σ` be a smooth two-form on a manifold `M` and `W ⊆ M`. A function `F : M
 **`HZ°`-admissible** for `W` (`TauCeti.SmoothTwoForm.IsContractibleHZAdmissible`) when
 
 * `F` is smooth, nonnegative, and its support is compact and contained in the interior of `W`
-  and in the interior of the manifold `M`;
-* `F` vanishes on a nonempty open subset of `W` and attains its maximum on a nonempty open set;
+  and in the interior of the manifold `M`, and `F` vanishes on a nonempty open subset of `W`
+  (`TauCeti.IsHZNormalized`, the normalisation shared with the relative capacity);
+* `F` attains its maximum on a nonempty open set;
 * the Hamiltonian vector field `X_F` (`TauCeti.SmoothTwoForm.hamiltonianVectorField`, which
   satisfies `ι_{X_F} σ = dF` when `σ` is nondegenerate and `M` is finite-dimensional) has no
   **fast contractible** periodic orbits: every integral curve `γ` of `X_F` that is `T`-periodic
@@ -56,6 +57,8 @@ and upper bounds for it are what Floer-theoretic spectral invariants of cotangen
 
 ## Main definitions
 
+* `TauCeti.IsHZNormalized`: the support, sign and vanishing normalisation of the Hamiltonians in
+  Hofer–Zehnder-type capacities.
 * `TauCeti.SmoothTwoForm.IsContractibleHZAdmissible`: the admissible Hamiltonians.
 * `TauCeti.SmoothTwoForm.contractibleHZCapacity`: the `π₁`-sensitive Hofer–Zehnder capacity.
 
@@ -86,32 +89,95 @@ open scoped ContDiff ENNReal Manifold
 
 namespace TauCeti
 
+variable {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSpace H]
+  {I : ModelWithCorners ℝ E H} [TopologicalSpace M] [ChartedSpace H M] {W : Set M} {F : M → ℝ}
+
+variable (I) in
+/-- A function `F` on a manifold is **Hofer–Zehnder normalised** for a subset `W` when it is
+smooth and nonnegative, its support is compact and lies in the interiors of `W` and of `M`, and it
+vanishes on a nonempty open subset of `W` (Hofer–Zehnder §4.1). These are the conditions, other
+than those on its maximum and on its periodic orbits, under which a Hamiltonian enters the
+`π₁`-sensitive Hofer–Zehnder capacities. On a closed manifold with `W = M` the support conditions
+are vacuous, and the vanishing condition is what excludes positive constants. -/
+structure IsHZNormalized (W : Set M) (F : M → ℝ) : Prop where
+  /-- A normalised Hamiltonian is smooth. -/
+  contMDiff : ContMDiff I 𝓘(ℝ) ∞ F
+  /-- A normalised Hamiltonian has compact support. -/
+  isCompact_tsupport : IsCompact (tsupport F)
+  /-- A normalised Hamiltonian is supported in the interior of `W`. -/
+  tsupport_subset_interior : tsupport F ⊆ interior W
+  /-- A normalised Hamiltonian is supported away from the boundary of the manifold. -/
+  tsupport_subset_interior_manifold : tsupport F ⊆ I.interior M
+  /-- A normalised Hamiltonian is nonnegative. -/
+  nonneg : ∀ x, 0 ≤ F x
+  /-- A normalised Hamiltonian vanishes on a nonempty open subset of `W`. -/
+  exists_isOpen_eqOn_zero : ∃ U : Set M, IsOpen U ∧ U.Nonempty ∧ U ⊆ W ∧ EqOn F 0 U
+
+/-- A Hamiltonian normalised for `W` is normalised for every `W' ⊇ W`. -/
+theorem IsHZNormalized.mono {W' : Set M} (hW : W ⊆ W') (hF : IsHZNormalized I W F) :
+    IsHZNormalized I W' F where
+  contMDiff := hF.contMDiff
+  isCompact_tsupport := hF.isCompact_tsupport
+  tsupport_subset_interior := hF.tsupport_subset_interior.trans (interior_mono hW)
+  tsupport_subset_interior_manifold := hF.tsupport_subset_interior_manifold
+  nonneg := hF.nonneg
+  exists_isOpen_eqOn_zero := by
+    obtain ⟨U, hU, hUne, hUW, hzero⟩ := hF.exists_isOpen_eqOn_zero
+    exact ⟨U, hU, hUne, hUW.trans hW, hzero⟩
+
+/-- A nonnegative multiple of a normalised Hamiltonian is normalised. -/
+theorem IsHZNormalized.smul {c : ℝ} (hc : 0 ≤ c) (hF : IsHZNormalized I W F) :
+    IsHZNormalized I W (c • F) where
+  contMDiff := (contDiff_const_smul c).comp_contMDiff hF.contMDiff
+  isCompact_tsupport := hF.isCompact_tsupport.of_isClosed_subset (isClosed_tsupport _)
+    (tsupport_smul_subset_right (fun _ ↦ c) F)
+  tsupport_subset_interior :=
+    (tsupport_smul_subset_right (fun _ ↦ c) F).trans hF.tsupport_subset_interior
+  tsupport_subset_interior_manifold :=
+    (tsupport_smul_subset_right (fun _ ↦ c) F).trans hF.tsupport_subset_interior_manifold
+  nonneg x := mul_nonneg hc (hF.nonneg x)
+  exists_isOpen_eqOn_zero := by
+    obtain ⟨U, hU, hUne, hUW, hzero⟩ := hF.exists_isOpen_eqOn_zero
+    exact ⟨U, hU, hUne, hUW, fun x hx ↦ by simp [hzero hx]⟩
+
+section Transport
+
+variable {E₂ H₂ M₂ : Type*} [NormedAddCommGroup E₂] [NormedSpace ℝ E₂] [TopologicalSpace H₂]
+  {I₂ : ModelWithCorners ℝ E₂ H₂} [TopologicalSpace M₂] [ChartedSpace H₂ M₂]
+
+/-- A diffeomorphism `ψ` carries a Hamiltonian `F` normalised for `W` to the Hamiltonian
+`F ∘ ψ⁻¹` normalised for `ψ(W)`. -/
+theorem IsHZNormalized.comp_symm (ψ : M ≃ₘ⟮I, I₂⟯ M₂) (hF : IsHZNormalized I W F) :
+    IsHZNormalized I₂ (ψ '' W) (F ∘ ψ.symm) where
+  contMDiff := hF.contMDiff.comp ψ.symm.contMDiff
+  isCompact_tsupport :=
+    ψ.toHomeomorph.tsupport_comp_symm F ▸ hF.isCompact_tsupport.image ψ.continuous
+  tsupport_subset_interior :=
+    ψ.toHomeomorph.tsupport_comp_symm_subset_interior_image hF.tsupport_subset_interior
+  tsupport_subset_interior_manifold :=
+    ψ.tsupport_comp_symm_subset_interior_manifold (by simp) hF.tsupport_subset_interior_manifold
+  nonneg := fun y ↦ hF.nonneg _
+  exists_isOpen_eqOn_zero := by
+    obtain ⟨U, hU, hUne, hUW, hzero⟩ := hF.exists_isOpen_eqOn_zero
+    refine ⟨ψ '' U, ψ.toHomeomorph.isOpenMap U hU, hUne.image ψ, image_mono hUW, ?_⟩
+    rintro _ ⟨x, hx, rfl⟩
+    simpa using hzero hx
+
+end Transport
+
 namespace SmoothTwoForm
 
-variable {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSpace H]
-  {I : ModelWithCorners ℝ E H} [TopologicalSpace M] [ChartedSpace H M] [IsManifold I ∞ M]
-  {σ : SmoothTwoForm I M} {W : Set M} {F : M → ℝ}
+variable [IsManifold I ∞ M] {σ : SmoothTwoForm I M}
 
 /-- A function `F` is **`HZ°`-admissible** for a subset `W` of a manifold with two-form `σ` when it
 is smooth and nonnegative, its support is compact and lies in the interiors of `W` and of `M`, it
-vanishes on a nonempty open subset of `W`, it attains its maximum on a nonempty open set, and its
-Hamiltonian vector field has no nonconstant `T`-periodic orbit with `0 < T ≤ 1` whose loop is
-contractible in `W`. These are the Hamiltonians whose maxima define the `π₁`-sensitive
-Hofer–Zehnder capacity. On a closed manifold with `W = M` the support conditions are vacuous,
-and the vanishing condition is what excludes positive constants. -/
-structure IsContractibleHZAdmissible (σ : SmoothTwoForm I M) (W : Set M) (F : M → ℝ) : Prop where
-  /-- An admissible Hamiltonian is smooth. -/
-  contMDiff : ContMDiff I 𝓘(ℝ) ∞ F
-  /-- An admissible Hamiltonian has compact support. -/
-  isCompact_tsupport : IsCompact (tsupport F)
-  /-- An admissible Hamiltonian is supported in the interior of `W`. -/
-  tsupport_subset_interior : tsupport F ⊆ interior W
-  /-- An admissible Hamiltonian is supported away from the boundary of the manifold. -/
-  tsupport_subset_interior_manifold : tsupport F ⊆ I.interior M
-  /-- An admissible Hamiltonian is nonnegative. -/
-  nonneg : ∀ x, 0 ≤ F x
-  /-- An admissible Hamiltonian vanishes on a nonempty open subset of `W`. -/
-  exists_isOpen_eqOn_zero : ∃ U : Set M, IsOpen U ∧ U.Nonempty ∧ U ⊆ W ∧ EqOn F 0 U
+vanishes on a nonempty open subset of `W` (that is, it is normalised for `W`,
+`TauCeti.IsHZNormalized`), it attains its maximum on a nonempty open set, and its Hamiltonian
+vector field has no nonconstant `T`-periodic orbit with `0 < T ≤ 1` whose loop is contractible
+in `W`. These are the Hamiltonians whose maxima define the `π₁`-sensitive Hofer–Zehnder
+capacity. -/
+structure IsContractibleHZAdmissible (σ : SmoothTwoForm I M) (W : Set M) (F : M → ℝ) : Prop
+    extends IsHZNormalized I W F where
   /-- An admissible Hamiltonian attains its maximum on a nonempty open set. -/
   exists_isOpen_isMaxOn : ∃ U : Set M, IsOpen U ∧ U.Nonempty ∧ ∀ x ∈ U, IsMaxOn F univ x
   /-- **No fast contractible periodic orbits.** A `T`-periodic orbit of the Hamiltonian vector
@@ -157,17 +223,7 @@ Hamiltonian. -/
 private theorem IsContractibleHZAdmissible.smul_smul (hσ : σ.IsNondegenerate) {c : ℝ}
     (hc : 0 < c) (hF : σ.IsContractibleHZAdmissible W F) :
     (c • σ).IsContractibleHZAdmissible W (c • F) where
-  contMDiff := (contDiff_const_smul c).comp_contMDiff hF.contMDiff
-  isCompact_tsupport := hF.isCompact_tsupport.of_isClosed_subset (isClosed_tsupport _)
-    (tsupport_smul_subset_right (fun _ ↦ c) F)
-  tsupport_subset_interior :=
-    (tsupport_smul_subset_right (fun _ ↦ c) F).trans hF.tsupport_subset_interior
-  tsupport_subset_interior_manifold :=
-    (tsupport_smul_subset_right (fun _ ↦ c) F).trans hF.tsupport_subset_interior_manifold
-  nonneg x := mul_nonneg hc.le (hF.nonneg x)
-  exists_isOpen_eqOn_zero := by
-    obtain ⟨U, hU, hUne, hUW, hzero⟩ := hF.exists_isOpen_eqOn_zero
-    exact ⟨U, hU, hUne, hUW, fun x hx ↦ by simp [hzero hx]⟩
+  toIsHZNormalized := hF.toIsHZNormalized.smul hc.le
   exists_isOpen_isMaxOn := by
     obtain ⟨U, hU, hUne, hmax⟩ := hF.exists_isOpen_isMaxOn
     exact ⟨U, hU, hUne, fun x hx ↦ isMaxOn_iff.2 fun y hy ↦
@@ -189,24 +245,8 @@ theorem IsNondegenerate.isContractibleHZAdmissible_smul_smul_iff (hσ : σ.IsNon
 `c°_HZ(W, cσ) = c · c°_HZ(W, σ)`. -/
 theorem IsNondegenerate.contractibleHZCapacity_smul (hσ : σ.IsNondegenerate) {c : ℝ} (hc : 0 < c)
     (W : Set M) :
-    (c • σ).contractibleHZCapacity W = ENNReal.ofReal c * σ.contractibleHZCapacity W := by
-  -- The maximum of `c • F` is `c` times the maximum of `F`.
-  have hmax (F : M → ℝ) :
-      ENNReal.ofReal (⨆ x, (c • F) x) = ENNReal.ofReal c * ENNReal.ofReal (⨆ x, F x) := by
-    simp only [Pi.smul_apply, smul_eq_mul, ← Real.mul_iSup_of_nonneg hc.le,
-      ENNReal.ofReal_mul hc.le]
-  refine le_antisymm (contractibleHZCapacity_le_iff.2 fun F hF ↦ ?_) ?_
-  · have hF' : F = c • (c⁻¹ • F) := by rw [smul_smul, mul_inv_cancel₀ hc.ne', one_smul]
-    rw [hF'] at hF ⊢
-    rw [hmax]
-    gcongr
-    exact ((hσ.isContractibleHZAdmissible_smul_smul_iff hc).1 hF
-      ).ofReal_iSup_le_contractibleHZCapacity
-  · simp only [contractibleHZCapacity_def, ENNReal.mul_iSup]
-    refine iSup₂_le fun F hF ↦ ?_
-    rw [← hmax]
-    exact ((hσ.isContractibleHZAdmissible_smul_smul_iff hc).2 hF
-      ).ofReal_iSup_le_contractibleHZCapacity
+    (c • σ).contractibleHZCapacity W = ENNReal.ofReal c * σ.contractibleHZCapacity W :=
+  iSup₂_ofReal_iSup_eq_ofReal_mul hc fun _ ↦ hσ.isContractibleHZAdmissible_smul_smul_iff hc
 
 end Conformality
 
@@ -226,35 +266,10 @@ theorem IsContractibleHZAdmissible.comp_symm (hσ₂ : σ₂.IsNondegenerate)
     σ₂.IsContractibleHZAdmissible (ψ '' W) (F ∘ ψ.symm) := by
   have hσ : σ.IsNondegenerate := hψ ▸ hσ₂.isNondegenerate_mpullback_of_isLocalDiffeomorph
     ψ.isLocalDiffeomorph
-  -- `ψ⁻¹` carries the Hamiltonian vector field of `F ∘ ψ⁻¹` to that of `F`.
-  have hX (y : M₂) : mfderiv I₂ I ψ.symm y (σ₂.hamiltonianVectorField (F ∘ ψ.symm) y) =
-      σ.hamiltonianVectorField F (ψ.symm y) := by
-    refine ψ.mfderiv_symm_apply_eq_of_mfderiv_apply_eq (by simp) (fun x ↦ ?_) y
-    have h := hσ.mfderiv_hamiltonianVectorField_comp hσ₂ ψ.contMDiff hψ
-      (ψ.isInvertible_mfderiv (by simp) (x := x)).surjective (g := F ∘ ψ.symm)
-      (((hF.contMDiff.comp ψ.symm.contMDiff) (ψ x)).mdifferentiableAt (by simp))
-    have hFψ : (F ∘ ψ.symm) ∘ ψ = F := funext fun x ↦ by simp
-    rwa [hFψ] at h
-  have hsupp : tsupport (F ∘ ψ.symm) = ψ '' tsupport F := by
-    rw [ψ.image_eq_preimage_symm, ← ψ.symm.coe_toHomeomorph,
-      ← tsupport_comp_eq_preimage F ψ.symm.toHomeomorph]
   refine
-    { contMDiff := hF.contMDiff.comp ψ.symm.contMDiff
-      isCompact_tsupport := hsupp ▸ hF.isCompact_tsupport.image ψ.continuous
-      tsupport_subset_interior := ?_
-      tsupport_subset_interior_manifold := ?_
-      nonneg := fun y ↦ hF.nonneg _
-      exists_isOpen_eqOn_zero := ?_
+    { toIsHZNormalized := hF.toIsHZNormalized.comp_symm ψ
       exists_isOpen_isMaxOn := ?_
       eq_of_isMIntegralCurve := ?_ }
-  · rw [hsupp, ← ψ.coe_toHomeomorph, ← ψ.toHomeomorph.image_interior]
-    exact image_mono hF.tsupport_subset_interior
-  · rw [hsupp, ← Diffeomorph.image_interior (by simp) ψ]
-    exact image_mono hF.tsupport_subset_interior_manifold
-  · obtain ⟨U, hU, hUne, hUW, hzero⟩ := hF.exists_isOpen_eqOn_zero
-    refine ⟨ψ '' U, ψ.toHomeomorph.isOpenMap U hU, hUne.image ψ, image_mono hUW, ?_⟩
-    rintro _ ⟨x, hx, rfl⟩
-    simpa using hzero hx
   · obtain ⟨U, hU, hUne, hmax⟩ := hF.exists_isOpen_isMaxOn
     refine ⟨ψ '' U, ψ.toHomeomorph.isOpenMap U hU, hUne.image ψ, ?_⟩
     rintro _ ⟨x, hx, rfl⟩
@@ -262,10 +277,11 @@ theorem IsContractibleHZAdmissible.comp_symm (hσ₂ : σ₂.IsNondegenerate)
     simpa using isMaxOn_iff.1 (hmax x hx) (ψ.symm y) hy
   · rintro T γ hT hT1 hγ hper ⟨g, hg, hgγ⟩ t
     -- The curve `ψ⁻¹ ∘ γ` is a contractible periodic orbit of `F` in `W`, so it is constant.
-    have hγ' : IsMIntegralCurve (ψ.symm ∘ γ) (σ.hamiltonianVectorField F) := by
-      rw [isMIntegralCurve_iff_isMIntegralCurveOn] at hγ ⊢
-      exact hγ.map_of_mfderiv_eq (fun s _ ↦ ψ.symm.mdifferentiable (by simp) (γ s))
-        fun s _ ↦ hX (γ s)
+    have hγ' : IsMIntegralCurve (ψ.symm ∘ γ) (σ.hamiltonianVectorField F) :=
+      hσ₂.isMIntegralCurve_comp_hamiltonianVectorField hσ ψ.symm.contMDiff
+        (SmoothForm.mpullback_symm_eq_of_mpullback_eq hψ)
+        (fun _ ↦ (ψ.symm.isInvertible_mfderiv (by simp)).surjective)
+        (fun _ ↦ (hF.contMDiff _).mdifferentiableAt (by simp)) hγ
     have hmem (y : ψ '' W) : ψ.symm y ∈ W := by
       obtain ⟨x, hx, hxy⟩ := y.2
       rwa [← hxy, ψ.symm_apply_apply]
@@ -281,17 +297,12 @@ theorem IsNondegenerate.contractibleHZCapacity_image (hσ₂ : σ₂.IsNondegene
     σ₂.contractibleHZCapacity (ψ '' W) = σ.contractibleHZCapacity W := by
   have hσ : σ.IsNondegenerate := hψ ▸ hσ₂.isNondegenerate_mpullback_of_isLocalDiffeomorph
     ψ.isLocalDiffeomorph
-  refine le_antisymm (contractibleHZCapacity_le_iff.2 fun F hF ↦ ?_)
-    (contractibleHZCapacity_le_iff.2 fun F hF ↦ ?_)
-  · have h := hF.comp_symm hσ ψ.symm
-      (SmoothForm.mpullback_symm_eq_of_mpullback_eq hψ)
-    -- `Diffeomorph.symm` is involutive by definition.
-    have hψ' : ψ.symm.symm = ψ := rfl
-    rw [hψ', ψ.symm_image_image] at h
-    have hsup : ⨆ x, (F ∘ ψ) x = ⨆ y, F y := ψ.surjective.iSup_comp F
-    exact hsup ▸ h.ofReal_iSup_le_contractibleHZCapacity
-  · have hsup : ⨆ y, (F ∘ ψ.symm) y = ⨆ x, F x := ψ.symm.surjective.iSup_comp F
-    exact hsup ▸ (hF.comp_symm hσ₂ ψ hψ).ofReal_iSup_le_contractibleHZCapacity
+  refine iSup₂_ofReal_iSup_eq_of_comp ψ.surjective ψ.symm.surjective
+    (fun _ hF ↦ hF.comp_symm hσ₂ ψ hψ) fun G hG ↦ ?_
+  have h := hG.comp_symm hσ ψ.symm (SmoothForm.mpullback_symm_eq_of_mpullback_eq hψ)
+  -- `Diffeomorph.symm` is involutive by definition.
+  have hψ' : ψ.symm.symm = ψ := rfl
+  rwa [hψ', ψ.symm_image_image] at h
 
 end Invariance
 

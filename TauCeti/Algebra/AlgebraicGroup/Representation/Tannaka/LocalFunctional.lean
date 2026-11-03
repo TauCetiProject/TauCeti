@@ -168,7 +168,6 @@ noncomputable def localFunctional
       (TensorProduct.mk k A N.1 (1 : A))
 
 /-- Evaluation formula for the functional extracted from a finite regular subcomodule. -/
-@[simp]
 theorem localFunctional_apply
     (η : Aut (FGComoduleCat.scalarExtensionMonoidalFunctor k H A))
     (N : Subcomodule.finiteSubcomodules (R := k) (C := H) (M := H)) (n : N.1) :

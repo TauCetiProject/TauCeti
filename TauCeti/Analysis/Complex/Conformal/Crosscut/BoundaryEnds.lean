@@ -28,18 +28,17 @@ image crosscut meets the boundary of the image domain in a pair of points,
 
 > `frontier (f '' ball c r) ∩ closure (f '' (ball c r ∩ sphere ζ ρ)) = {u, v}`,
 
-and those two points are no further apart than the image crosscut is wide. Feeding that width
-bound the length–area estimate of `Conformal/ShortCrosscut.lean` then gives the statement layer
-**L5** of `TauCetiRoadmap/ConformalMapping/README.md` — Carathéodory's boundary correspondence —
-consumes: at every boundary point of the disc, and below every prescribed radius, there is a
-crosscut whose image is narrow *and* whose two ends are two points of the image boundary within
-`ε` of each other.
+and those two points are no further apart than the image crosscut is wide. Feeding that width bound
+the length–area estimate of `Conformal/ShortCrosscut.lean` then gives the statement Carathéodory's
+boundary correspondence consumes: at every boundary point of the disc, and below every prescribed
+radius, there is a crosscut whose image is narrow *and* whose two ends are two points of the image
+boundary within `ε` of each other.
 
 That is precisely the hypothesis `TauCeti.IsJordanCurve.exists_pos_forall_exists_diam_le` of
 `TauCeti/Topology/JordanCurve/SmallArc.lean` runs on: two nearby points of a Jordan curve cut a
-small closed arc off it. Until now nothing connected the analytic side of L5 — the length–area
-method, which produces short image crosscuts — to the topological side, which turns two nearby
-boundary points into a small boundary arc; the pair `{u, v}` produced here is the connection.
+small closed arc off it. The pair `{u, v}` produced here is what connects the analytic side of the
+argument — the length–area method, which produces short image crosscuts — to the topological side,
+which turns two nearby boundary points into a small boundary arc.
 
 ## What is not claimed
 
@@ -64,10 +63,8 @@ domain rather than of the crosscut, and is untouched here.
 
 ## Generality
 
-In accordance with the generality bar of `ConformalMapping/README.md`, which fixes scalar `ℂ` for
-every theorem added in layers L0–L6, everything below is stated for maps of `ℂ`. The disc is a
-general `ball c r` rather than the unit disc, the boundary point entering only through
-`dist ζ c = r`.
+Everything below is stated for maps of `ℂ`. The disc is a general `ball c r` rather than the unit
+disc, the boundary point entering only through `dist ζ c = r`.
 
 ## References
 

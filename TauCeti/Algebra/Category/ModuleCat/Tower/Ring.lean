@@ -34,7 +34,10 @@ kernels of the projections `Â → A ⧸ Jₙ` are left ideals of `Â` and satis
 again, so multiplication is jointly continuous for the inverse limit topology
 (`TauCeti.ModuleTower.continuous_limMul`). The ring structure is
 `TauCeti.ModuleTower.limRing`; it is not an instance, since it depends on the right-shift estimate.
-With it, every smooth `A`-module is a module over `Â` (`TauCeti.ModuleTower.limModule`).
+With it, every smooth `A`-module is a module over `Â` (`TauCeti.ModuleTower.limModule`). The map
+of completions `TauCeti.ModuleTower.limQuotientsMap` induced by a ring homomorphism which is
+continuous for the left ideal topologies is multiplicative
+(`TauCeti.ModuleTower.limQuotientsMap_limMul`), by density of `A` and continuity.
 
 Mathlib's `UniformSpace.Completion.ring` completes a topological ring abstractly. Here the
 completion is the explicit inverse limit of modules `lim A ⧸ Jₙ`, and the action on smooth modules
@@ -60,6 +63,8 @@ the currents of high order are not two-sided.
   `TauCeti.ModuleTower.exists_forall_limπ_limMul_eq_zero`: the kernels of the projections are left
   ideals satisfying the right-shift estimate.
 * `TauCeti.ModuleTower.continuous_limMul`: multiplication is continuous.
+* `TauCeti.ModuleTower.limQuotientsMap_limMul`: the map of completions induced by a continuous
+  ring homomorphism is multiplicative.
 
 ## References
 
@@ -93,13 +98,6 @@ private theorem smul_eq_smul_of_quotientsπ_eq {N : Type*} [AddCommGroup N] [Mod
     b • m = b' • m := by
   rw [← sub_eq_zero, ← map_sub, quotientsπ_eq_zero_iff] at h
   rw [← sub_eq_zero, ← sub_smul, hm _ h]
-
-/-- A representative of the `k`-th coordinate of a point of `lim A ⧸ Jₙ` also represents its
-`n`-th coordinate for `n ≤ k`. -/
-private theorem quotientsπ_eq_limπ_of_le {x : (quotients J hJ).lim} {n k : ℕ} (h : n ≤ k) {b : A}
-    (hb : quotientsπ J hJ k b = (quotients J hJ).limπ k x) :
-    quotientsπ J hJ n b = (quotients J hJ).limπ n x := by
-  rw [← transitionOfLE_quotientsπ J hJ h, hb, ← LinearMap.comp_apply, transitionOfLE_comp_limπ]
 
 /-- **The action of the completion `lim A ⧸ Jₙ` on a smooth module.** A point `x` acts on a vector
 `m` killed by `Jₙ` as any element of `A` whose class modulo `Jₙ` is the `n`-th coordinate of `x`
@@ -383,5 +381,33 @@ theorem continuous_limMul :
   exact hm _ (by rw [map_sub, hq₁, sub_self])
 
 end Mul
+
+/-! ### Functoriality of the ring structure -/
+
+section Map
+
+variable {B : Type*} [Ring B] {J' : ℕ → Submodule B B} (hJ' : Antitone J')
+  (hJr : ∀ (b : A) (n : ℕ), ∃ m, ∀ c ∈ J m, c * b ∈ J n)
+  (hJ'r : ∀ (b : B) (n : ℕ), ∃ m, ∀ c ∈ J' m, c * b ∈ J' n)
+  (σ : A →+* B) (hσ : ∀ n, ∃ m, J m ≤ (J' n).comap σ.toSemilinearMap)
+
+/-- **The map of completions induced by a ring homomorphism is multiplicative.** If `σ : A → B`
+carries, for every `n`, some `Jₘ` into `J'ₙ`, the induced map `lim A ⧸ Jₙ → lim B ⧸ J'ₙ`
+preserves the multiplications `TauCeti.ModuleTower.limMul`. -/
+theorem limQuotientsMap_limMul (x y : (quotients J hJ).lim) :
+    limQuotientsMap hJ hJ' σ.toSemilinearMap hσ (limMul hJr x y) =
+      limMul hJ'r (limQuotientsMap hJ hJ' σ.toSemilinearMap hσ x)
+        (limQuotientsMap hJ hJ' σ.toSemilinearMap hσ y) := by
+  -- Both sides are continuous in `(x, y)` and agree on the dense image of `A × A`.
+  have hc := continuous_limQuotientsMap hJ hJ' σ.toSemilinearMap hσ
+  induction x, y using (denseRange_toLimQuotients J hJ).induction_on₂ with
+  | hp =>
+    exact isClosed_eq (hc.comp (continuous_limMul hJr))
+      ((continuous_limMul hJ'r).comp (hc.prodMap hc))
+  | h a b =>
+    simp only [← toLimQuotients_mul, limQuotientsMap_toLimQuotients, RingHom.coe_toSemilinearMap,
+      map_mul]
+
+end Map
 
 end TauCeti.ModuleTower

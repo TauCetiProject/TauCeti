@@ -5,9 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Geometry.Manifold.DeRham.Map
 public import TauCeti.Geometry.Manifold.DeRham.PathIntegral
 public import TauCeti.Geometry.Manifold.DifferentialForm.LocalPrimitive
 public import Mathlib.Topology.Homotopy.Lifting
+import TauCeti.Geometry.Manifold.DifferentialForm.Naturality
 
 /-!
 # Integrals of closed `1`-forms along continuous paths, and periods
@@ -31,6 +33,14 @@ a connected manifold a closed form is exact exactly when all its periods vanish
 (`TauCeti.mem_exactForms_one_iff_periodHom_eq_zero`). Hence the periods give an injective linear
 map `TauCeti.deRhamCohomology.period` from `H¹_dR(M)` to the homomorphisms `π₁(M, x) → ℝ`.
 
+Periods are natural under pullback: the integral of `f^* θ` along `γ` is the integral of `θ` along
+`f ∘ γ` (`TauCeti.pathClassIntegral_mpullback`), so the periods of `f^* θ` at `x` are those of `θ`
+at `f x` composed with `f_* : π₁(M, x) → π₁(M', f x)` (`TauCeti.periodHom_mpullback`,
+`TauCeti.deRhamCohomology.period_map`). Consequently, for a smooth map `f` from a connected
+manifold, `f^* θ` is exact exactly when the periods of `θ` vanish on the image of `f_*`
+(`TauCeti.mpullback_mem_exactForms_one_iff_periodHom_map_eq_zero`). For a covering map this image
+is the subgroup of loops lifting to loops, so this decides which covers make a closed form exact.
+
 ## Main declarations
 
 * `TauCeti.pathClassIntegral φ γ`: the integral of a closed `C¹` `1`-form along a homotopy class
@@ -40,6 +50,11 @@ map `TauCeti.deRhamCohomology.period` from `H¹_dR(M)` to the homomorphisms `π�
   manifold is exact exactly when its periods vanish.
 * `TauCeti.deRhamCohomology.period`: the periods of de Rham classes in degree one, an injective
   linear map on a connected manifold.
+* `TauCeti.pathClassIntegral_mpullback`, `TauCeti.periodHom_mpullback`,
+  `TauCeti.deRhamCohomology.period_map`: naturality of integrals and periods under pullback.
+* `TauCeti.mpullback_mem_exactForms_one_iff_periodHom_map_eq_zero`: the pullback of a closed form
+  along a smooth map from a connected manifold is exact exactly when the periods vanish on the
+  image of the fundamental group.
 
 ## References
 
@@ -63,6 +78,10 @@ variable {E H M F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [Topologic
   [NormedAddCommGroup F] [NormedSpace ℝ F]
   [FiniteDimensional ℝ E] [T2Space M] [IsManifold I ∞ M] [CompleteSpace F]
   {φ ψ : RoughForm I M F 1} {x y z : M}
+
+variable {E' H' M' : Type*} [NormedAddCommGroup E'] [NormedSpace ℝ E'] [TopologicalSpace H']
+  {I' : ModelWithCorners ℝ E' H'} [TopologicalSpace M'] [ChartedSpace H' M']
+  [FiniteDimensional ℝ E'] [T2Space M'] [IsManifold I' ∞ M'] {θ : RoughForm I' M' F 1} {f : M → M'}
 
 open Classical in
 /-- The integral of a closed `C¹` `1`-form `φ` along a homotopy class `γ` of paths from `x` to `y`:
@@ -325,6 +344,51 @@ theorem periodHom_ofMul_eq_pathIntegral (hφ : IsSmoothForm I 1 φ) (hclosed : m
     periodHom φ x (Additive.ofMul (.of (.mk γ))) = pathIntegral φ c 0 1 :=
   pathClassIntegral_mk_eq_pathIntegral hφ hclosed hc hγ
 
+/-! ### Naturality under pullback -/
+
+/-- **Naturality of path class integrals.** The integral of the pullback of a closed `C¹` form `θ`
+along a `C²` map `f` over a path class `γ` is the integral of `θ` over the image of `γ`. -/
+theorem pathClassIntegral_mpullback (hf : ContMDiff I I' 2 f) (hθ : IsSmoothForm I' 1 θ)
+    (hclosed : mextDeriv θ = 0) (γ : Path.Homotopic.Quotient x y) :
+    pathClassIntegral (mpullback I I' f θ) γ = pathClassIntegral θ (γ.map ⟨f, hf.continuous⟩) := by
+  induction γ with | mk γ =>
+  have hfθ : IsSmoothForm I 1 (mpullback I I' f θ) := hθ.mpullback hf
+  have hfclosed : mextDeriv (mpullback I I' f θ) = 0 := by
+    rw [← mpullback_mextDeriv hf ((isSmoothBundleForm_def _ _).mpr hθ.contMDiff), hclosed,
+      mpullback_zero]
+  have hp := PrimitiveSpace.isCoveringMap_proj (r := 1) le_rfl hθ hclosed
+  -- a lift of the image path `f ∘ γ`
+  obtain ⟨Γ, hΓγ, -⟩ := hp.exists_path_lifts (γ.map hf.continuous).toContinuousMap
+    (PrimitiveSpace.graph θ 0 (f x)) (by simp)
+  have hΓγ' (t : unitInterval) : PrimitiveSpace.proj θ (Γ t) = f (γ t) := congrFun hΓγ t
+  -- the same values over `γ` give a lift of `γ` for the pullback
+  let Λ (t : unitInterval) : PrimitiveSpace (mpullback I I' f θ) :=
+    PrimitiveSpace.graph _ (fun _ ↦ PrimitiveSpace.value θ (Γ t)) (γ t)
+  have hΛ : Continuous Λ := continuous_iff_continuousAt.mpr fun t₀ ↦ by
+    obtain ⟨g, -, U, hxU, hgU, c, hc⟩ :=
+      PrimitiveSpace.exists_isPrimitiveOn_eventually_value_eq le_rfl hθ hclosed
+        Γ.continuous.continuousAt (t := t₀)
+    refine PrimitiveSpace.continuousAt_of_eventually_value_eq
+      (by simp only [Λ, PrimitiveSpace.proj_graph]; exact γ.continuous.continuousAt)
+      ((hgU.mpullback (hf.mdifferentiable (by norm_num))).add_const c)
+      (by simpa only [Λ, PrimitiveSpace.proj_graph, mem_preimage, ← hΓγ'] using hxU) ?_
+    filter_upwards [hc] with s hs
+    simp only [Λ, PrimitiveSpace.value_graph, PrimitiveSpace.proj_graph, hs.2, hΓγ',
+      Function.comp_apply]
+  rw [pathClassIntegral_mk_eq_sub hfθ hfclosed hΛ fun t ↦ PrimitiveSpace.proj_graph (γ t),
+    ← Path.Homotopic.Quotient.mk_map,
+    pathClassIntegral_mk_eq_sub hθ hclosed Γ.continuous hΓγ']
+  simp [Λ]
+
+/-- **Naturality of periods.** The periods of the pullback of a closed `C¹` form `θ` along a `C²`
+map `f` are the periods of `θ` composed with the induced map of fundamental groups. -/
+theorem periodHom_mpullback (hf : ContMDiff I I' 2 f) (hθ : IsSmoothForm I' 1 θ)
+    (hclosed : mextDeriv θ = 0) (x : M) :
+    periodHom (mpullback I I' f θ) x =
+      (periodHom θ (f x)).comp (FundamentalGroup.map ⟨f, hf.continuous⟩ x).toAdditive :=
+  -- `FundamentalGroup.map` acts on the underlying path classes by `Path.Homotopic.Quotient.map`
+  AddMonoidHom.ext fun _ ↦ pathClassIntegral_mpullback hf hθ hclosed _
+
 /-! ### Periods of smooth real forms and de Rham cohomology -/
 
 /-- Exact smooth real `1`-forms have vanishing periods. -/
@@ -349,6 +413,23 @@ theorem mem_exactForms_one_iff_periodHom_eq_zero [PreconnectedSpace M]
   rw [← periodHom_ofMul_eq_pathIntegral (φ.isSmoothForm.of_le (by simp))
     ((mem_closedForms I φ).mp hφ) (hc.of_le (by simp)) (γ := γ) fun _ ↦ rfl, h,
     AddMonoidHom.zero_apply]
+
+/-- **Exactness of pullbacks.** The pullback of a closed smooth real `1`-form `θ` along a smooth
+map `f` from a connected manifold is exact exactly when the periods of `θ` vanish on the image of
+the fundamental group under `f`. For a covering map, this says that `θ` becomes exact on the cover
+exactly when its periods vanish on the loops which lift to loops. -/
+theorem mpullback_mem_exactForms_one_iff_periodHom_map_eq_zero [PreconnectedSpace M]
+    (hf : ContMDiff I I' ∞ f) {θ : SmoothForm I' M' ℝ 1} (hθ : θ ∈ closedForms I' M' 1) (x₀ : M) :
+    SmoothForm.mpullback f hf θ ∈ exactForms I M 1 ↔
+      ∀ γ : FundamentalGroup M x₀, periodHom (θ : RoughForm I' M' ℝ 1) (f x₀)
+        (Additive.ofMul (FundamentalGroup.map ⟨f, hf.continuous⟩ x₀ γ)) = 0 := by
+  have hc : SmoothForm.mpullback f hf θ ∈ closedForms I M 1 := by
+    simpa using (closedForms.mpullback f hf 1 ⟨θ, hθ⟩).2
+  rw [mem_exactForms_one_iff_periodHom_eq_zero hc x₀, SmoothForm.coe_mpullback,
+    periodHom_mpullback (hf.of_le (by simp)) (θ.isSmoothForm.of_le (by simp))
+      ((mem_closedForms I' θ).mp hθ)]
+  exact ⟨fun h γ ↦ DFunLike.congr_fun h (Additive.ofMul γ),
+    fun h ↦ AddMonoidHom.ext fun γ ↦ h (Additive.toMul γ)⟩
 
 namespace deRhamCohomology
 
@@ -391,6 +472,16 @@ theorem period_injective [PreconnectedSpace M] (x : M) :
   rw [period_mk] at hc
   rw [mk_eq_zero_iff, mem_exactForms_one_iff_periodHom_eq_zero φ.2 x]
   exact hc
+
+/-- **Naturality of periods of de Rham classes.** The periods of the pullback of a class along a
+smooth map `f` are the periods of the class composed with the induced map of fundamental groups. -/
+theorem period_map (hf : ContMDiff I I' ∞ f) (x : M) (c : deRhamCohomology I' M' 1) :
+    period x (map f hf 1 c) =
+      (period (f x) c).comp (FundamentalGroup.map ⟨f, hf.continuous⟩ x).toAdditive := by
+  obtain ⟨θ, rfl⟩ := mk_surjective I' 1 c
+  rw [map_mk, period_mk, period_mk, closedForms.coe_mpullback, SmoothForm.coe_mpullback]
+  exact periodHom_mpullback (hf.of_le (by simp)) (θ.1.isSmoothForm.of_le (by simp))
+    ((mem_closedForms I' _).mp θ.2) x
 
 end deRhamCohomology
 
