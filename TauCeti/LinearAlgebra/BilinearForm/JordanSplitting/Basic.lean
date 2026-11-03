@@ -813,8 +813,8 @@ theorem IsJordanSplitting.pow_succ_dvd_sub_apply_projectionOnto (h : B.IsJordanS
 
 /-- When `2 ∣ π` and the constituent of index `j + 1` of a Jordan splitting is even at its own
 scale, the self-pairings of the vectors of the constituents of index above `j` are divisible by
-`2 * π ^ (j + 1)`: the constituent of index `j + 1` is even, and the others have scale dividing
-`π ^ (j + 2)`. -/
+`2 * π ^ (j + 1)`: the constituent of index `j + 1` is even, and the pairings on the others are
+divisible by `π ^ (j + 2)`. -/
 theorem IsJordanSplitting.two_mul_pow_succ_dvd_apply_self_of_mem_biSup
     (h : B.IsJordanSplitting π N) (h2 : 2 ∣ π) {j : ℕ}
     (hnext : ∀ w ∈ N (j + 1), 2 * π ^ (j + 1) ∣ B w w) {x : M}
