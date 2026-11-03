@@ -139,6 +139,14 @@ theorem restrictedMvPowerSeriesGaussEquiv_weightedX (i : Fin n) :
         ⟨MvPowerSeries.X i, MvPowerSeries.isRestricted_X _ i⟩ :=
   Subtype.ext (by simp)
 
+/-- The Gauss comparison sends the Huber inclusion of a polynomial to the Gauss-normed
+inclusion of the same polynomial. -/
+@[simp]
+theorem restrictedMvPowerSeriesGaussEquiv_weightedPolynomialHom (p : MvPolynomial (Fin n) R) :
+    restrictedMvPowerSeriesGaussEquiv (weightedPolynomialHom _ isWeightFamily_one_weight p) =
+      TauCeti.MvPowerSeries.polynomialToRestricted (fun _ : Fin n ↦ (1 : ℝ)) p :=
+  Subtype.ext (by simp)
+
 /-- The identity Gauss comparison also respects the coefficient-algebra structure. -/
 noncomputable def restrictedMvPowerSeriesGaussAlgEquiv :
     weightedRestrictedSubring (fun _ : Fin n ↦ ({1} : Set R)) isWeightFamily_one_weight ≃ₐ[R]
@@ -264,6 +272,31 @@ theorem continuous_restrictedMvPowerSeriesCompletionGaussEquiv_symm :
     Continuous (restrictedMvPowerSeriesCompletionGaussEquiv (n := n) (R := R)).symm :=
   uniformContinuous_restrictedMvPowerSeriesCompletionEquiv_symm.continuous.comp
     continuous_restrictedMvPowerSeriesGaussEquiv_symm
+
+/-- Under the completed Gauss comparison, the polynomials in the completed Huber algebra are the
+Gauss-normed polynomial inclusion. -/
+theorem restrictedMvPowerSeriesCompletionGaussEquiv_comp_weightedPolynomialHom :
+    (restrictedMvPowerSeriesCompletionGaussEquiv (n := n) (R := R)).toRingHom.comp
+        (UniformSpace.Completion.coeRingHom.comp
+          (weightedPolynomialHom _ isWeightFamily_one_weight)) =
+      (TauCeti.MvPowerSeries.polynomialToRestricted (R := R) fun _ : Fin n ↦ (1 : ℝ)).toRingHom :=
+  RingHom.ext fun p ↦ by simp [UniformSpace.Completion.coeRingHom]
+
+/-- The inverse completed Gauss comparison sends the Gauss-normed polynomial inclusion to the
+polynomials in the completed Huber algebra. -/
+theorem restrictedMvPowerSeriesCompletionGaussEquiv_symm_comp_polynomialToRestricted :
+    (restrictedMvPowerSeriesCompletionGaussEquiv (n := n) (R := R)).symm.toRingHom.comp
+        (TauCeti.MvPowerSeries.polynomialToRestricted (R := R)
+          fun _ : Fin n ↦ (1 : ℝ)).toRingHom =
+      UniformSpace.Completion.coeRingHom.comp
+        (weightedPolynomialHom (k := n) (A := R) _ isWeightFamily_one_weight) := by
+  rw [← restrictedMvPowerSeriesCompletionGaussEquiv_comp_weightedPolynomialHom,
+    ← RingHom.comp_assoc, RingEquiv.symm_toRingHom_comp_toRingHom, RingHom.id_comp]
+
+/-- The completed Tate algebra over a complete nonarchimedean normed domain is a domain. -/
+instance isDomain_restrictedMvPowerSeriesCompletion [IsDomain R] :
+    IsDomain (restrictedMvPowerSeriesCompletion n R) :=
+  restrictedMvPowerSeriesCompletionGaussEquiv.toMulEquiv.isDomain _
 
 end Complete
 
