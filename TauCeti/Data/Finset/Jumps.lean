@@ -60,7 +60,7 @@ theorem sum_jumps {G : Type*} [AddCommGroup G] (S : Finset R) (V w : R → G)
       V a - V b = ∑ x ∈ S.filter (fun x => a < x ∧ x < b), w x := by
     induction hn : (S.filter (fun x => a < x ∧ x < b)).card using Nat.strong_induction_on
         generalizing a b with
-    | h n ih =>
+    | ind n ih =>
       set T := S.filter (fun x => a < x ∧ x < b)
       by_cases hT : T.Nonempty
       · let r := T.min' hT

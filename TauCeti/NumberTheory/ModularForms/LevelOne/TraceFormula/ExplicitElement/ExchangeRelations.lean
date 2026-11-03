@@ -260,7 +260,7 @@ private theorem popaZagierElement_one_add_S_fixed :
       (1 + ρR (.op ↑S)) (popaZagierElement k n) := by
   ext x
   induction x using TraceFormulaMatrixModule.induction with | h A => ?_
-  simp only [LinearMap.add_apply, Module.End.one_apply, map_add, coeff_add,
+  simp only [LinearMap.add_apply, one_apply_eq_self, map_add, coeff_add,
     Finsupp.add_apply, coeff_ofMulAction]
   simp only [smul_mk, inv_op_smul_mk, coeff_popaZagierElement_mk,
     FixedDetMatrices.smul_coe, val_traceFormulaMatrixRight]
@@ -288,8 +288,8 @@ private theorem popaZagierElement_one_add_U_add_U_sq_fixed :
         ρR (.op ((T : PSL(2, ℤ)) * S)) ^ 2 : Module.End k k[ℳ n]) (popaZagierElement k n) := by
   ext x
   induction x using TraceFormulaMatrixModule.induction with | h A => ?_
-  simp only [LinearMap.add_apply, Module.End.one_apply, map_add, coeff_add,
-    Finsupp.add_apply, sq, Module.End.mul_apply, coeff_ofMulAction]
+  simp only [LinearMap.add_apply, one_apply_eq_self, map_add, coeff_add,
+    Finsupp.add_apply, sq, mul_apply_eq_comp, coeff_ofMulAction]
   simp only [← QuotientGroup.mk_mul, smul_mk, inv_op_smul_mk, coeff_popaZagierElement_mk,
     FixedDetMatrices.smul_coe, val_traceFormulaMatrixRight]
   rw [Matrix.eta_fin_two A.1]

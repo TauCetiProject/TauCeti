@@ -111,7 +111,7 @@ theorem _root_.Measurable.exists_isClosed_measure_sdiff_lt_continuousOn (hf : Me
         = μ ((s \ K) ∪ ⋃ U, s \ (F U ∪ G U)) := by rw [sdiff_inter, sdiff_iInter]
       _ ≤ μ (s \ K) + μ (⋃ U, s \ (F U ∪ G U)) := measure_union_le _ _
       _ ≤ μ (s \ K) + ∑' U, μ (s \ (F U ∪ G U)) := add_le_add_right (measure_iUnion_le _) _
-      _ ≤ μ (s \ K) + ∑' U, δ U := add_le_add_right (ENNReal.tsum_le_tsum fun U ↦ ?_) _
+      _ ≤ μ (s \ K) + ∑' U, δ U := add_le_add_right (tsum_le_tsum fun U ↦ ?_) _
       _ < ε / 2 + ε / 2 := ENNReal.add_lt_add hKμ hδε
       _ = ε := ENNReal.add_halves ε
     have hsub : s \ (F U ∪ G U) ⊆ ((s ∩ f ⁻¹' U) \ F U) ∪ ((s \ f ⁻¹' U) \ G U) := fun x hx ↦ by

@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.Polynomial.AlgebraMap
 public import TauCeti.RingTheory.FormalGroup.BaseChange
 public import TauCeti.RingTheory.FormalGroup.CoordinateChange.Basic
+public import TauCeti.RingTheory.FormalGroup.Logarithm.Basic
 public import TauCeti.RingTheory.GradedAlgebra.Polynomial
 public import TauCeti.RingTheory.MvPowerSeries.Rescale
 -- Proof-only: the coefficients after swapping the variables.
@@ -50,6 +51,9 @@ case of the polynomial variable `s` over `R[s]`.
 * `FormalGroup.map_rescale`: rescaling commutes with base change.
 * `FormalGroup.rescale_one` and `FormalGroup.rescale_rescale`: rescaling is an action of the
   multiplicative monoid of `R`.
+* `FormalGroup.rescale_𝔾ₘ_toPowerSeries`: rescaling `X + Y + XY` by `s` gives `X + Y + s X Y`.
+* `FormalGroup.invariantDifferential_rescale`: the invariant differential of `F^s` is `P(s T) dT`
+  when that of `F` is `P(T) dT`.
 * `FormalGroup.homothety_smul`: transporting `F` along the homothety `X ↦ u X` by a unit `u` is
   rescaling by `u⁻¹`.
 * `FormalGroup.rescale_smul`: rescaling by a unit commutes with changes of coordinates, up to
@@ -192,6 +196,32 @@ theorem rescale_𝔾ₐ : (𝔾ₐ : FormalGroup R).rescale s = 𝔾ₐ := by
   ext d
   rw [coeff_rescale, 𝔾ₐ_toPowerSeries, map_add, coeff_X, coeff_X]
   split_ifs <;> simp_all
+
+/-- Rescaling the multiplicative formal group law by `s` gives `X + Y + s X Y`. -/
+@[simp]
+theorem rescale_𝔾ₘ_toPowerSeries :
+    ((𝔾ₘ : FormalGroup R).rescale s).toPowerSeries = X 0 + X 1 + s • (X 0 * X 1) := by
+  have hXY : (X 0 * X 1 : MvPowerSeries (Fin 2) R) =
+      monomial (Finsupp.single 0 1 + Finsupp.single 1 1) 1 := by
+    rw [X, X, monomial_mul_monomial, mul_one]
+  ext d
+  simp only [coeff_rescale, 𝔾ₘ_toPowerSeries, map_add, coeff_smul, hXY, coeff_X, coeff_monomial]
+  split_ifs <;> simp_all [Finsupp.degree_single]
+
+/-- **The invariant differential of a rescaling**: if `P(T) dT` is the invariant differential of
+`F`, then `P(s T) dT` is that of `F^s`. -/
+@[simp]
+theorem invariantDifferential_rescale :
+    (F.rescale s).invariantDifferential = PowerSeries.rescale s F.invariantDifferential := by
+  -- `F^s_X(0, T) = F_X(0, s T)`: the coefficient of `Tⁿ` on either side is `sⁿ` times that of
+  -- `X Yⁿ` in `F`.
+  have hD : subst ![0, PowerSeries.X] (pderiv 0 (F.rescale s).toPowerSeries) =
+      PowerSeries.rescale s (subst ![0, PowerSeries.X] (pderiv 0 F.toPowerSeries)) := by
+    ext n
+    simp [PowerSeries.coeff_rescale, coeff_subst_zero_X, coeff_pderiv, Finsupp.degree_single]
+  have h := congrArg (PowerSeries.rescale s) F.invariantDifferential_mul_subst_pderiv
+  rw [map_mul, map_one, ← hD, mul_comm] at h
+  exact left_inv_eq_right_inv (F.rescale s).invariantDifferential_mul_subst_pderiv h
 
 /-- **Changing coordinates by a homothety is rescaling**: transporting `F` along `X ↦ u X` gives
 `u F(u⁻¹ X, u⁻¹ Y)`, the rescaling of `F` by `u⁻¹`. -/

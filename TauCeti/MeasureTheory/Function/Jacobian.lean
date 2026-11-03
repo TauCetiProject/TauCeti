@@ -67,7 +67,7 @@ theorem map_restrict_le_smul_restrict_image (hs : NullMeasurableSet s μ)
   -- It remains to compare `μ` on `s` with `c⁻¹ |det f'| μ` on `s`.
   refine Measure.map_mono (Measure.le_iff.2 fun t ht => ?_) hg
   have hc0 : ENNReal.ofReal c ≠ 0 := by simpa using hc
-  rw [Measure.smul_apply, smul_eq_mul, withDensity_apply _ ht, ← ENNReal.mul_le_iff_le_inv hc0
+  rw [_root_.smul_apply, smul_eq_mul, withDensity_apply _ ht, ← ENNReal.mul_le_iff_le_inv hc0
     ENNReal.ofReal_ne_top, ← setLIntegral_const]
   exact lintegral_mono_ae ((ae_restrict_of_ae (ae_restrict_mem₀ hs)).mono fun x hx =>
     ENNReal.ofReal_le_ofReal (hdet x hx))

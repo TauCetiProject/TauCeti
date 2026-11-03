@@ -61,7 +61,15 @@ class NightlyVerification(unittest.TestCase):
         return dict(line.split('=', 1) for line in output.read_text().splitlines())
 
     def test_jobs_have_separate_budgets_and_transfer_only_the_clean_manifest(self):
-        self.assertEqual(JOBS['verify']['timeout-minutes'], 360)
+        # Regressions must not send the full clean rebuild back to a GitHub-hosted
+        # runner: even its platform maximum of six hours is insufficient.
+        self.assertEqual(JOBS['verify']['runs-on'], [
+            'nscloud-ubuntu-24.04-amd64-16x32-with-features;job.priority=1',
+            'namespace-features:container.privileged=true;github.run-id=${{ github.run_id }}',
+        ])
+        self.assertGreater(JOBS['verify']['timeout-minutes'], 360)
+        self.assertNotIn('needs', JOBS['verify'])
+        self.assertFalse(WORKFLOW['concurrency']['cancel-in-progress'])
         self.assertEqual(JOBS['reference']['timeout-minutes'], 240)
         self.assertIn('verify', JOBS['reference']['needs'])
         for s in JOBS['reference']['steps']:

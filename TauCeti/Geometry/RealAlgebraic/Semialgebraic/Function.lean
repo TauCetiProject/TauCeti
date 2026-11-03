@@ -83,6 +83,16 @@ theorem mem_preimage_sumArrowEquivProdArrow_graphOn {f : (σ → R) → (τ → 
   -- `Equiv.sumArrowEquivProdArrow σ τ R z` is `(z ∘ Sum.inl, z ∘ Sum.inr)` by definition.
   rfl
 
+omit [CommRing R] [LinearOrder R] in
+/-- Membership in a scalar graph encoded using `Unit` output coordinates is given by the
+input-domain condition and equality of the scalar output coordinate. -/
+theorem mem_preimage_sumArrowEquivProdArrow_scalar_graphOn {f : (σ → R) → R}
+    {s : Set (σ → R)} {z : σ ⊕ Unit → R} :
+    z ∈ Equiv.sumArrowEquivProdArrow σ Unit R ⁻¹' s.graphOn (fun x _ ↦ f x) ↔
+      z ∘ Sum.inl ∈ s ∧ f (z ∘ Sum.inl) = z (Sum.inr ()) := by
+  rw [mem_preimage_sumArrowEquivProdArrow_graphOn]
+  simp only [funext_iff, Function.comp_apply, Unique.forall_iff]
+
 /-- The domain of a function semialgebraic on a set is semialgebraic. -/
 theorem IsSemialgebraicOn.isSemialgebraic {f : (σ → R) → (τ → R)} {s : Set (σ → R)}
     (hf : IsSemialgebraicOn f s) : IsSemialgebraic s :=
