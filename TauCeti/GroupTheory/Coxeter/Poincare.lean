@@ -237,7 +237,7 @@ theorem poincarePolynomial_of_isEmpty [Finite W] [IsEmpty B] : poincarePolynomia
   have : Fintype W := Fintype.ofFinite W
   rw [poincarePolynomial_eq_sum, Finset.sum_eq_single (1 : W)]
   · simp
-  · exact fun w _ hw => absurd ((subsingleton_of_isEmpty_index cs).allEq w 1) hw
+  · exact fun w _ hw => absurd (cs.subsingleton_of_isEmpty.allEq w 1) hw
   · exact fun h => absurd (Finset.mem_univ (1 : W)) h
 
 /-- **The rank-one case**: a Coxeter system with a single simple reflection has Poincaré
