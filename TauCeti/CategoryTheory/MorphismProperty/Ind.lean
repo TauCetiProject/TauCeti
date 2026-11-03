@@ -16,19 +16,12 @@ Let `P` be a property of morphisms that is stable under composition and cobase c
 finite presentability, and spreads out of filtered colimits (`MorphismProperty.PreIndSpreads`).
 This file shows that `MorphismProperty.ind P` is then stable under composition.
 
-The argument has two steps. First, if `f : X ⟶ Y` is a filtered colimit of `P`-morphisms
-`X ⟶ Yᵢ` and `g : Y ⟶ Z` satisfies `P`, then `g` descends to a `P`-morphism `Yⱼ ⟶ Z'` at some
-stage, and `Z` is the filtered colimit of the pushouts of `Yⱼ ⟶ Z'` along the transition maps
-`Yⱼ ⟶ Yₖ`; so `f ≫ g` satisfies `ind P`. Second, for `g` itself in `ind P`, this exhibits
-`f ≫ g` as a filtered colimit of `ind P`-morphisms, and `ind (ind P) = ind P` because `P`
-implies finite presentability.
-
 Mathlib's `MorphismProperty.IsStableUnderComposition.ind_of_preIndSpreads` proves the same
 conclusion under the assumption that every under category of the ambient category is finitely
 accessible. The argument here replaces that assumption with local smallness, through
 `MorphismProperty.ind_ind`, so it applies for instance to commutative rings without first
-establishing that their under categories are finitely accessible. The first step reuses the
-diagram of pushouts from the proof of that Mathlib lemma, by Christian Merten.
+establishing that their under categories are finitely accessible. The proof of `ind_comp_mem`
+reuses the diagram of pushouts from the proof of that Mathlib lemma, by Christian Merten.
 
 ## Main results
 
@@ -52,6 +45,13 @@ namespace CategoryTheory.MorphismProperty
 open Limits
 
 variable {C : Type u} [Category.{v} C] {P : MorphismProperty C}
+
+-- The argument has two steps. First, if `f : X ⟶ Y` is a filtered colimit of `P`-morphisms
+-- `X ⟶ Yᵢ` and `g : Y ⟶ Z` satisfies `P`, then `g` descends to a `P`-morphism `Yⱼ ⟶ Z'` at some
+-- stage, and `Z` is the filtered colimit of the pushouts of `Yⱼ ⟶ Z'` along the transition maps
+-- `Yⱼ ⟶ Yₖ`; so `f ≫ g` satisfies `ind P` (`ind_comp_mem`). Second, for `g` itself in `ind P`,
+-- this exhibits `f ≫ g` as a filtered colimit of `ind P`-morphisms, and `ind (ind P) = ind P`
+-- because `P` implies finite presentability (`isStableUnderComposition_ind`).
 
 /-- If `P` spreads out of filtered colimits and is stable under composition and cobase change,
 then the composite of a morphism satisfying `ind P` with a morphism satisfying `P` satisfies

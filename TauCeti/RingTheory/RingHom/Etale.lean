@@ -20,14 +20,6 @@ This file shows that `A → B` is the pushout of an étale ring map `Aⱼ → B�
 `B ≅ A ⊗[Aⱼ] Bⱼ`. In the language of Mathlib's `MorphismProperty.PreIndSpreads`, étale ring maps
 spread out of filtered colimits.
 
-By Mathlib's `Algebra.Etale.exists_subalgebra_fg`, `B` is the base change `A ⊗[A₀] B₀` of an
-étale algebra `B₀` over a subring `A₀ ⊆ A` of finite type over `ℤ`. Such a subring is finitely
-presented over `ℤ`, so its inclusion into `A` factors through some stage `Aⱼ`
-(`RingHom.EssFiniteType.exists_eq_comp_ι_app_of_isColimit`), and `Bⱼ = Aⱼ ⊗[A₀] B₀` works by
-pasting the two pushout squares `A₀ → Aⱼ → A` and `B₀ → Bⱼ → B`. This follows the plan of
-`Ring.DirectLimit.exists_etale_finite_algEquiv_tensorProduct` for finite étale algebras over a
-directed colimit of rings.
-
 No finiteness or noetherian hypothesis is imposed on the stages.
 
 Together with the stability of étale ring maps under composition and cobase change and their
@@ -76,6 +68,13 @@ theorem Etale.toMorphismProperty_le_isFinitelyPresentable :
     have : Algebra.Etale _ _ := hf
     CommRingCat.isFinitelyPresentable_hom f (inferInstanceAs (Algebra.FinitePresentation _ _))
 
+-- By `Algebra.Etale.exists_subalgebra_fg`, `B` is the base change `A ⊗[A₀] B₀` of an étale
+-- algebra `B₀` over a subring `A₀ ⊆ A` of finite type over `ℤ`. Such a subring is finitely
+-- presented over `ℤ`, so its inclusion into `A` factors through some stage `Aⱼ`
+-- (`RingHom.EssFiniteType.exists_eq_comp_ι_app_of_isColimit`), and `Bⱼ = Aⱼ ⊗[A₀] B₀` works by
+-- pasting the two pushout squares `A₀ → Aⱼ → A` and `B₀ → Bⱼ → B`. This follows the plan of
+-- `Ring.DirectLimit.exists_etale_finite_algEquiv_tensorProduct` for finite étale algebras over a
+-- directed colimit of rings.
 /-- Étale ring maps spread out of small filtered colimits of commutative rings: an étale ring map
 out of the colimit is the pushout of an étale ring map out of some stage. -/
 instance Etale.preIndSpreads :
@@ -87,22 +86,16 @@ instance Etale.preIndSpreads :
     obtain ⟨A₀, B₀, _, _, hA₀, _, ⟨e⟩⟩ := Algebra.Etale.exists_subalgebra_fg ℤ c.pt T
     have : Algebra.FinitePresentation ℤ A₀ :=
       Algebra.FinitePresentation.of_finiteType.mp ((Subalgebra.fg_iff_finiteType A₀).mp hA₀)
-    -- The ring `ℤ`, lifted to the universe `u`, maps uniquely to every commutative ring.
-    let toZ (X : CommRingCat.{u}) : CommRingCat.of (ULift.{u} ℤ) ⟶ X :=
-      CommRingCat.ofHom ((Int.castRingHom X).comp ULift.ringEquiv.toRingHom)
-    have hZ {X : CommRingCat.{u}} (φ ψ : CommRingCat.of (ULift.{u} ℤ) ⟶ X) : φ = ψ := by
-      ext ⟨n⟩
-      rw [show (⟨n⟩ : ULift.{u} ℤ) = (n : ULift.{u} ℤ) from ULift.ext (by simp),
-        map_intCast, map_intCast]
     let α : (Functor.const J).obj (CommRingCat.of (ULift.{u} ℤ)) ⟶ D :=
-      { app _ := toZ _
-        naturality _ _ _ := hZ _ _ }
-    have hfp : (toZ (CommRingCat.of A₀)).hom.FinitePresentation :=
+      { app _ := CommRingCat.isInitial.to _
+        naturality _ _ _ := CommRingCat.isInitial.hom_ext _ _ }
+    -- The map out of the initial object `ULift ℤ` is the cast `ULift ℤ ≃+* ℤ → A₀`.
+    have hfp : (CommRingCat.isInitial.to (CommRingCat.of A₀)).hom.FinitePresentation :=
       (finitePresentation_algebraMap.mpr this).comp
         (FinitePresentation.of_bijective ULift.ringEquiv.bijective)
     -- The inclusion `A₀ → A` factors through a stage `Aᵢ`.
     obtain ⟨i, a, -, ha⟩ := EssFiniteType.exists_eq_comp_ι_app_of_isColimit _ D α _ c hc hfp
-      (CommRingCat.ofHom (algebraMap A₀ c.pt)) fun _ ↦ hZ _ _
+      (CommRingCat.ofHom (algebraMap A₀ c.pt)) fun _ ↦ CommRingCat.isInitial.hom_ext _ _
     let : Algebra A₀ (D.obj i) := a.hom.toAlgebra
     -- The outer square `A₀ → A → B`, `A₀ → B₀ → B` is a pushout, through `e`.
     have s : IsPushout (CommRingCat.ofHom (algebraMap A₀ (D.obj i)) ≫ c.ι.app i)
