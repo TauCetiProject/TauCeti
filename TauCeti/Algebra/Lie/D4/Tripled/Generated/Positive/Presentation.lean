@@ -73,6 +73,8 @@ theorem coordinateMap_ker :
     RingHom.ker (coordinateMap R).hom = (ambientDefiningIdeal R).toIdeal := by
   rw [coordinateMap_def, ambientDefiningIdeal,
     HopfIdeal.comapOfSurjective_eq_kerOfSurjective, HopfIdeal.kerOfSurjective_toIdeal]
+  -- The category composite's hom is the BialgHom composite of the quotient projection
+  -- with generatedCoordinateMap; coercing either composite to a ring hom is definitionally equal.
   rfl
 
 /-- The ambient quotient presentation of the positive subgroup. -/

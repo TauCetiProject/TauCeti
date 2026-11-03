@@ -43,21 +43,6 @@ universe v w
 
 variable (R : Type v) (S : Type max v w) [CommRing R] [CommRing S] [Algebra R S]
 
-/-- The scalar-extension isomorphism on each positive generator's coordinate algebra, typed
-using the positive generator family. -/
-def generatorCodomainBaseChangeIso (j : Fin 4 ⊕ Unit) :
-    CommHopfAlgCat.baseChange (K := S) (generatorCodomain R j) ≅ generatorCodomain S j :=
-  generatorCoordinateAlgebraBaseChangeIso R S (match j with
-    | .inl i => .inl (.inl i)
-    | .inr u => .inr u)
-
-/-- The positive-generator adapter is the corresponding full-carrier generator isomorphism. -/
-theorem generatorCodomainBaseChangeIso_def (j : Fin 4 ⊕ Unit) :
-    generatorCodomainBaseChangeIso R S j =
-      generatorCoordinateAlgebraBaseChangeIso R S (match j with
-        | .inl i => .inl (.inl i)
-        | .inr u => .inr u) := (rfl)
-
 /-- Scalar extension of the ambient positive defining ideal is contained in the ideal of the
 positive subgroup generated over the new base. -/
 theorem map_baseChangeHopfIdeal_ambientDefiningIdeal_le :
@@ -66,26 +51,11 @@ theorem map_baseChangeHopfIdeal_ambientDefiningIdeal_le :
       ambientDefiningIdeal S := by
   rw [ambientDefiningIdeal_eq_commonKernelHopfIdeal,
     ambientDefiningIdeal_eq_commonKernelHopfIdeal]
-  refine le_trans (HopfIdeal.map_mono _
-    (CommHopfAlgCat.baseChangeHopfIdeal_commonKernelHopfIdeal_le _)) ?_
-  rw [CommHopfAlgCat.map_commonKernelHopfIdeal]
-  rw [← CommHopfAlgCat.commonKernelHopfIdeal_comp_of_injective
-    (fun j ↦ (GeneralLinear.coordinateHopfAlgebraBaseChangeIso R S 24).inv ≫
-      CommHopfAlgCat.baseChangeMap (generatedCoordinateMap R ≫ generator R j))
-    (fun j ↦ (generatorCoordinateAlgebraBaseChangeIso R S (match j with
-      | .inl i => .inl (.inl i)
-      | .inr u => .inr u)).hom)
-    (fun j ↦ (ConcreteCategory.bijective_of_isIso
-      (generatorCoordinateAlgebraBaseChangeIso R S _).hom).1)]
-  apply le_of_eq
-  congr 1
-  funext j
-  rcases j with i | u
-  · simpa only [generator_inl, generatedCoordinateMap_comp_generatedCoordinateLift] using
-      generatorCoordinateMap_baseChange R S (.inl (.inl i))
-  · cases u
-    simpa only [generator_inr, generatedCoordinateMap_comp_generatedCoordinateLift] using
-      generatorCoordinateMap_baseChange R S (.inr ())
+  exact CommHopfAlgCat.map_baseChangeHopfIdeal_commonKernelHopfIdeal_le
+    (fun j ↦ generatedCoordinateMap R ≫ generator R j)
+    (GeneralLinear.coordinateHopfAlgebraBaseChangeIso R S 24)
+    (generatorCodomainBaseChangeIso R S) (fun j ↦ generatedCoordinateMap S ≫ generator S j)
+    (fun j ↦ (Category.assoc _ _ _).trans (generatorCoordinateMap_baseChange R S j))
 
 /-- The canonical comparison from scalar-extended positive coordinates to the positive
 coordinates generated after extension. No freeness or flatness hypothesis is required. -/
@@ -101,7 +71,7 @@ def coordinateHopfAlgebraBaseChangeMap :
 
 /-- The comparison's defining ambient GL₂₄ coordinate square. -/
 @[reassoc (attr := simp)]
-theorem baseChangeMap_coordinateMap_comp_baseChangeMap :
+theorem baseChangeMap_coordinateMap_comp_coordinateHopfAlgebraBaseChangeMap :
     CommHopfAlgCat.baseChangeMap (K := S) (coordinateMap R) ≫
         coordinateHopfAlgebraBaseChangeMap R S =
       (GeneralLinear.coordinateHopfAlgebraBaseChangeIso R S 24).hom ≫ coordinateMap S := by
@@ -133,7 +103,7 @@ theorem coordinateHopfAlgebraBaseChangeMap_unique
       (GeneralLinear.coordinateHopfAlgebraBaseChangeIso R S 24).hom ≫ coordinateMap S) :
     f = coordinateHopfAlgebraBaseChangeMap R S := by
   apply (cancel_epi (CommHopfAlgCat.baseChangeMap (K := S) (coordinateMap R))).mp
-  rw [hf, baseChangeMap_coordinateMap_comp_baseChangeMap]
+  rw [hf, baseChangeMap_coordinateMap_comp_coordinateHopfAlgebraBaseChangeMap]
 
 /-- The subgroup generated after extension is closed in the scalar-extended positive subgroup. -/
 theorem coordinateHopfAlgebraBaseChangeMap_surjective :
@@ -141,7 +111,7 @@ theorem coordinateHopfAlgebraBaseChangeMap_surjective :
   have hsurj : Function.Surjective
       (CommHopfAlgCat.baseChangeMap (K := S) (coordinateMap R) ≫
         coordinateHopfAlgebraBaseChangeMap R S).hom := by
-    rw [baseChangeMap_coordinateMap_comp_baseChangeMap]
+    rw [baseChangeMap_coordinateMap_comp_coordinateHopfAlgebraBaseChangeMap]
     exact (coordinateMap_surjective S).comp
       (ConcreteCategory.bijective_of_isIso
         (GeneralLinear.coordinateHopfAlgebraBaseChangeIso R S 24).hom).2
@@ -155,21 +125,14 @@ theorem baseChangeMap_commonKernelLift_comp_generatorCodomainBaseChangeIso_hom
         (generatorCodomainBaseChangeIso R S j).hom =
       coordinateHopfAlgebraBaseChangeMap R S ≫
         CommHopfAlgCat.commonKernelLift (generator S) j := by
-  rw [generatorCodomainBaseChangeIso_def]
   apply (cancel_epi (CommHopfAlgCat.baseChangeMap (K := S) (coordinateMap R))).mp
-  rw [baseChangeMap_coordinateMap_comp_baseChangeMap_assoc]
+  rw [baseChangeMap_coordinateMap_comp_coordinateHopfAlgebraBaseChangeMap_assoc]
   rw [coordinateMap_comp_commonKernelLift]
   rw [← Category.assoc, ← CommHopfAlgCat.baseChangeFunctor_map,
     ← CommHopfAlgCat.baseChangeFunctor_map, ← Functor.map_comp,
     coordinateMap_comp_commonKernelLift, CommHopfAlgCat.baseChangeFunctor_map]
-  rcases j with i | u
-  · simp only [generator_inl, generatedCoordinateMap_comp_generatedCoordinateLift]
-    exact (Iso.inv_comp_eq (GeneralLinear.coordinateHopfAlgebraBaseChangeIso R S 24)).mp
-      (generatorCoordinateMap_baseChange R S (.inl (.inl i)))
-  · cases u
-    simp only [generator_inr, generatedCoordinateMap_comp_generatedCoordinateLift]
-    exact (Iso.inv_comp_eq (GeneralLinear.coordinateHopfAlgebraBaseChangeIso R S 24)).mp
-      (generatorCoordinateMap_baseChange R S (.inr ()))
+  exact (Iso.inv_comp_eq (GeneralLinear.coordinateHopfAlgebraBaseChangeIso R S 24)).mp
+    (generatorCoordinateMap_baseChange R S j)
 
 /-- For free extensions the canonical comparison is the existing base-change isomorphism. -/
 theorem coordinateHopfAlgebraBaseChangeMap_eq_baseChangeIso_hom [Module.Free R S] :
