@@ -7,7 +7,6 @@ module
 
 public import Mathlib.RingTheory.Ideal.GoingUp
 public import Mathlib.RingTheory.Localization.Finiteness
-import Mathlib.RingTheory.Localization.Basic
 
 /-!
 # Localization at a singleton fibre of a finite algebra
@@ -29,8 +28,6 @@ a stalk of a finite morphism need not be finite over the corresponding base stal
 
 public section
 
-open IsLocalRing
-
 namespace Ideal
 
 variable {R S : Type*} [CommRing R] [CommRing S] [Algebra R S]
@@ -44,28 +41,20 @@ theorem isLocalization_atPrime_of_unique_liesOver [Algebra.IsIntegral R S]
     (T : Type*) [CommRing T] [Algebra S T] [IsLocalization.AtPrime T q] :
     IsLocalization (Algebra.algebraMapSubmonoid S p.primeCompl) T := by
   let M := Algebra.algebraMapSubmonoid S p.primeCompl
-  let B := Localization M
-  have : Algebra.IsIntegral (Localization.AtPrime p) B := ⟨isIntegral_localization⟩
   have hMq : M ≤ q.primeCompl := by
     rintro _ ⟨r, hr, rfl⟩
     exact fun hrs ↦ hr ((q.over_def p) ▸ hrs)
-  have hunit (s : S) (hs : s ∈ q.primeCompl) : IsUnit (algebraMap S B s) := by
-    by_contra hn
-    obtain ⟨m, hm, hsm⟩ := exists_max_ideal_of_mem_nonunits (mem_nonunits_iff.mpr hn)
-    have : m.IsMaximal := hm
-    have hmR : m.under (Localization.AtPrime p) = maximalIdeal (Localization.AtPrime p) :=
-      eq_maximalIdeal (inferInstance : (m.under (Localization.AtPrime p)).IsMaximal)
-    have hmS : (m.under S).LiesOver p := by
-      apply (liesOver_iff _ _).mpr
-      calc
-        p = (maximalIdeal (Localization.AtPrime p)).under R :=
-          Localization.AtPrime.under_maximalIdeal.symm
-        _ = (m.under (Localization.AtPrime p)).under R := by rw [hmR]
-        _ = m.under R := under_under m
-        _ = (m.under S).under R := (under_under m).symm
-    exact hs (h (m.under S) inferInstance hmS ▸ hsm)
-  have : IsLocalization q.primeCompl B := IsLocalization.of_le M q.primeCompl hMq hunit
-  exact IsLocalization.isLocalization_of_algEquiv M (IsLocalization.algEquiv q.primeCompl B T)
+  have hsingleton : p.primesOver S = {q} := by
+    ext q'
+    rw [Set.mem_singleton_iff]
+    constructor
+    · exact fun hq' ↦ h q' hq'.1 hq'.2
+    · rintro rfl
+      exact ⟨inferInstance, inferInstance⟩
+  apply (IsLocalization.iff_of_le_of_exists_dvd M q.primeCompl hMq ?_).mpr inferInstance
+  intro s hs
+  obtain ⟨r, hr, hsr⟩ := exists_notMem_dvd_algebraMap_of_primesOver_eq_singleton hsingleton s hs
+  exact ⟨algebraMap R S r, ⟨r, hr, rfl⟩, hsr⟩
 
 /-- At a singleton fibre, localizing a finite algebra gives a finite algebra over the
 localized base. The localization models and their compatible algebra structures are arbitrary. -/
