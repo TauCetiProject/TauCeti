@@ -142,6 +142,32 @@ theorem IsMetricCompatible.sectionalCurvature_comm
     real_inner_comm (curvature x u v v) u, real_inner_comm v u]
   ring
 
+/-- An upper sectional-curvature bound is equivalent to the corresponding bound on every
+curvature numerator, including dependent pairs. The latter have zero numerator and Gram
+determinant, so no dimension or nonzero-vector hypothesis is needed. -/
+theorem forall_sectionalCurvature_le_iff (hcov : CovariantDerivative.IsMetricCompatible
+    (V := fun x : M ↦ TangentSpace I x) cov) (x : M) (κ : ℝ) :
+    (∀ u v : TangentSpace I x, LinearIndependent ℝ ![u, v] →
+      cov.sectionalCurvature hcov x u v ≤ κ) ↔
+    ∀ u v : TangentSpace I x,
+      inner ℝ (curvature x u v v) u ≤ κ * (Matrix.gram ℝ ![u, v]).det := by
+  have hind (u v : TangentSpace I x) (huv : LinearIndependent ℝ ![u, v]) :
+      0 < (Matrix.gram ℝ ![u, v]).det :=
+    (Matrix.posDef_gram_of_linearIndependent huv).det_pos
+  refine ⟨fun h u v ↦ ?_, fun h u v huv ↦ ?_⟩
+  · by_cases huv : LinearIndependent ℝ ![u, v]
+    · exact (div_le_iff₀ (hind u v huv)).1 (h u v huv)
+    · by_cases hu : u = 0
+      · simp [hu, Matrix.real_det_gram_fin_two]
+      · obtain ⟨c, hc⟩ := not_forall.mp ((LinearIndependent.pair_iff' hu).not.mp huv)
+        rw [← not_not.mp hc]
+        simp only [map_smul, cov.curvatureTensor_self, LinearMap.zero_apply, smul_zero,
+          inner_zero_left, Matrix.real_det_gram_fin_two, real_inner_smul_left,
+          real_inner_smul_right]
+        ring_nf
+        exact le_rfl
+  · exact (div_le_iff₀ (hind u v huv)).2 (h u v)
+
 /-- A connection has sectional curvature `k` at `x` when every tangent two-plane at `x` has
 sectional curvature `k`. -/
 def HasSectionalCurvatureAt (hcov : CovariantDerivative.IsMetricCompatible

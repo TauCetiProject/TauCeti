@@ -14,13 +14,16 @@ For `0 ≤ a`, multiplying by `(√a)⁻¹` and squaring divides the square by `
 `((√a)⁻¹ * x) ^ 2 = x ^ 2 / a`. This is the change of variables `x ↦ (√a)⁻¹ * x` that turns the
 kernel `1 + x ^ 2 / a` into `1 + y ^ 2`. A square factor comes out of a square root as its
 absolute value: `√(x ^ 2 * y) = |x| * √y`. Doubling the argument does not decrease the square
-root, with no sign hypothesis since `√x = 0` for `x ≤ 0`.
+root, with no sign hypothesis since `√x = 0` for `x ≤ 0`. Powers of `(√a)⁻¹` absorb integer
+powers of `a`: `(√a)⁻¹ ^ n * a ^ p = (√a)⁻¹ ^ (n - 2p)` for `a > 0` and `2p ≤ n`, the
+normalisation that leaves a factor `(√N)⁻¹ ^ (n - 2p)` in a central limit theorem.
 
 ## Main results
 
 * `Real.inv_sqrt_mul_sq`: `((√a)⁻¹ * x) ^ 2 = x ^ 2 / a` for `0 ≤ a`.
 * `Real.sqrt_sq_mul`: `√(x ^ 2 * y) = |x| * √y`.
 * `Real.sqrt_le_sqrt_two_mul`: `√x ≤ √(2 * x)`.
+* `Real.inv_sqrt_pow_mul_pow`: `(√a)⁻¹ ^ n * a ^ p = (√a)⁻¹ ^ (n - 2p)` for `0 < a` and `2p ≤ n`.
 -/
 
 public section
@@ -43,5 +46,14 @@ theorem sqrt_le_sqrt_two_mul (x : ℝ) : √x ≤ √(2 * x) := by
   · exact Real.sqrt_le_sqrt (by linarith)
   · rw [Real.sqrt_eq_zero_of_nonpos h]
     positivity
+
+/-- Powers of `(√a)⁻¹` absorb powers of `a`: `(√a)⁻¹ ^ n * a ^ p = (√a)⁻¹ ^ (n - 2p)` for
+`0 < a` and `2p ≤ n`. -/
+theorem inv_sqrt_pow_mul_pow {a : ℝ} (ha : 0 < a) {n p : ℕ} (h : 2 * p ≤ n) :
+    (√a)⁻¹ ^ n * a ^ p = (√a)⁻¹ ^ (n - 2 * p) := by
+  obtain ⟨m, rfl⟩ := Nat.exists_eq_add_of_le h
+  have ha' : a ^ p = √a ^ (2 * p) := by rw [pow_mul, Real.sq_sqrt ha.le]
+  rw [Nat.add_sub_cancel_left, ha', pow_add, mul_right_comm, ← mul_pow,
+    inv_mul_cancel₀ (Real.sqrt_pos.2 ha).ne', one_pow, one_mul]
 
 end Real

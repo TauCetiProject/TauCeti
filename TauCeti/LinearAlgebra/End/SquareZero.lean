@@ -33,12 +33,12 @@ theorem eq_one_of_pow_eq_one_of_sub_one_sq_eq_zero (f : Module.End K V) {n : ℕ
     (hn : (n : K) ≠ 0) (hpow : f ^ n = 1) (hsq : (f - 1) ^ 2 = 0) : f = 1 := by
   have hfix (v : V) : f (f v - v) = f v - v := by
     have h := LinearMap.congr_fun hsq v
-    simpa [pow_two, Module.End.mul_apply, sub_eq_zero] using h
+    simpa [pow_two, mul_apply_eq_comp, sub_eq_zero] using h
   have hiter (m : ℕ) (v : V) : (f ^ m) v = v + (m : K) • (f v - v) := by
     induction m with
     | zero => simp
     | succ m ih =>
-      rw [pow_succ', Module.End.mul_apply, ih, map_add, map_smul, hfix, Nat.cast_succ,
+      rw [pow_succ', mul_apply_eq_comp, ih, map_add, map_smul, hfix, Nat.cast_succ,
         add_smul, one_smul]
       abel
   ext v
