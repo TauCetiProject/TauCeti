@@ -9,8 +9,10 @@ public import Mathlib.LinearAlgebra.Matrix.IsDiag
 public import TauCeti.Analysis.Matrix.Normal
 public import TauCeti.Analysis.Matrix.UnitaryGroup.Basic
 public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Diagonal.Basic
+public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.UpperTriangular.Basic
 import TauCeti.Algebra.Group.Subgroup.Centralizer
 import TauCeti.LinearAlgebra.Matrix.Diagonal
+import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.UpperTriangular.Unitary
 
 /-!
 # The diagonal torus of the unitary group
@@ -45,6 +47,8 @@ the union of the conjugates of a maximal torus; for `SU(2)` the same statement i
 ## Main results
 
 * `TauCeti.mem_unitaryTorus_iff`: the diagonal torus consists of the diagonal unitary matrices.
+* `TauCeti.comap_toUnits_upperTriangularGroup_eq_unitaryTorus`: the diagonal torus consists of the
+  upper triangular unitary matrices.
 * `TauCeti.centralizer_unitaryTorus`: the diagonal torus is its own centralizer.
 * `TauCeti.eq_unitaryTorus_of_isMulCommutative`: the diagonal torus is a maximal commutative
   subgroup of `U(n)`.
@@ -131,6 +135,14 @@ theorem mem_unitaryTorus_iff {g : unitaryGroup n ℂ} :
   refine ⟨fun i => ⟨(g : Matrix n n ℂ) i i,
     mem_sphere_zero_iff_norm.mpr (CStarRing.norm_of_mem_unitary (hunit i))⟩, Subtype.ext ?_⟩
   exact hg.diagonal_diag
+
+/-- **The unitary upper triangular matrices are the diagonal torus** of `U(n)`: a unitary matrix
+is upper triangular exactly when it is diagonal. Here `TauCeti.upperTriangularGroup` is taken with
+respect to a linear order on the index type. -/
+theorem comap_toUnits_upperTriangularGroup_eq_unitaryTorus (ι : Type*) [Fintype ι]
+    [LinearOrder ι] : (upperTriangularGroup ι ℂ).comap Unitary.toUnits = unitaryTorus ι := by
+  ext U
+  rw [mem_comap_toUnits_upperTriangularGroup_iff, mem_unitaryTorus_iff]
 
 /-- The diagonal torus of `U(n)` is commutative: diagonal matrices commute. -/
 instance : IsMulCommutative (unitaryTorus n) :=
