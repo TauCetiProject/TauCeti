@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Topology.VectorBundle.MayerVietoris
+public import TauCeti.Topology.VectorBundle.MayerVietoris.Basic
 public import TauCeti.Topology.VectorBundle.Orientation.Basic
 import TauCeti.Algebra.Module.Equiv.SpanSingleton
 
