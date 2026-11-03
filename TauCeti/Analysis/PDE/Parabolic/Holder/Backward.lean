@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.PDE.Parabolic.Holder.Operator
-public import TauCeti.Analysis.PDE.Parabolic.Holder.Restriction
 
 /-!
 # Backward parabolic operators and time reversal
@@ -26,8 +25,9 @@ trace of `v` at `T - b` is the terminal trace of `u` at `b`. Consequently the te
 
 On `ℝⁿ = EuclideanSpace ℝ ι` with scalar coefficients `aⁱʲ`, `bⁱ`, `c`, the forward comparison
 principle then yields the backward one: for degenerate elliptic `a` and `c ≤ γ` with `0 ≤ γ`,
-`P_back u ≥ -K` and `u(·, t₁) ≤ M` imply `u(x, t) ≤ exp (γ (t₁ - t)) (M + (t₁ - t) K)`, with the
-two-sided bound and uniqueness for the terminal-value problem.
+`P_back u ≥ -K` and `u(·, t₁) ≤ M`, where `0 ≤ M` and `0 ≤ K`, imply
+`u(x, t) ≤ exp (γ (t₁ - t)) (M + (t₁ - t) K)`, with the two-sided bound and uniqueness for the
+terminal-value problem.
 
 ## Main declarations
 
@@ -35,7 +35,6 @@ two-sided bound and uniqueness for the terminal-value problem.
 * `TauCeti.ParabolicC2HolderSpace.parabolicOperatorL_timeReverseLIE`: `P_R v = -(P_back u) ∘ R`.
 * `TauCeti.ParabolicC2HolderSpace.backwardParabolicOperatorL_eq_iff`:
   `P_back u = g ↔ P_R v = -g ∘ R`.
-* `TauCeti.ParabolicC2HolderSpace.spatialTrace_timeReverseLIE`: traces of `v` are traces of `u`.
 * `TauCeti.ParabolicC2HolderSpace.bijective_backwardParabolicOperatorL_prod_spatialTraceL_iff`: the
   terminal-data map is bijective iff the reversed initial-data map is.
 * `TauCeti.ParabolicC2HolderSpace.euclideanBackwardParabolicOperatorL` with the terminal-value
@@ -66,34 +65,6 @@ variable {α : ℝ≥0} {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
 local instance : NormedAddCommGroup (E →L[ℝ] E →L[ℝ] F) := inferInstance
 /-- A local shortcut for scalar operations on Hessians, needed for the same reason. -/
 local instance : NormedSpace ℝ (E →L[ℝ] E →L[ℝ] F) := inferInstance
-
-/-! ### Traces of a time reversal -/
-
-section Trace
-
-variable {a b a' b' T : ℝ} {hab : a < b} {ha : a' = T - b} {hb : b' = T - a}
-
-/-- The spatial trace of the time reversal `u ∘ R` at time `t` is the spatial trace of `u` at
-time `T - t`. -/
-theorem spatialTrace_timeReverseLIE (f : ParabolicC2HolderSpace α E F hab) (t : Icc a' b') :
-    (timeReverseLIE T ha hb f).spatialTrace t = f.spatialTrace ⟨T - t, by
-      obtain ⟨h₁, h₂⟩ := t.2
-      subst ha hb
-      constructor <;> linarith⟩ := by
-  ext x
-  simp
-
-/-- The initial trace of the time reversal `u ∘ R`, at `T - b`, is the terminal trace of `u`
-at `b`. -/
-theorem spatialTrace_timeReverseLIE_left (f : ParabolicC2HolderSpace α E F hab) :
-    (timeReverseLIE T ha hb f).spatialTrace
-        ⟨a', left_mem_Icc.2 (ha ▸ hb ▸ sub_lt_sub_left hab T).le⟩ =
-      f.spatialTrace ⟨b, right_mem_Icc.2 hab.le⟩ := by
-  rw [spatialTrace_timeReverseLIE]
-  congr
-  simp [ha]
-
-end Trace
 
 /-! ### The backward operator -/
 
@@ -278,11 +249,6 @@ section Euclidean
 
 variable {ι : Type*} [Fintype ι] [DecidableEq ι] {t₀ t₁ : ℝ} {ht : t₀ < t₁}
 
-/-- A local shortcut for the norm on covectors; see the shortcut for Hessians above. -/
-local instance : NormedAddCommGroup (EuclideanSpace ℝ ι →L[ℝ] ℝ) := inferInstance
-/-- A local shortcut for scalar operations on covectors. -/
-local instance : NormedSpace ℝ (EuclideanSpace ℝ ι →L[ℝ] ℝ) := inferInstance
-
 /-- The backward parabolic operator `P_back u = ∂ₜu + aⁱʲ ∂ᵢ∂ⱼu + bⁱ ∂ᵢu + c u` on
 `ℝⁿ = EuclideanSpace ℝ ι` with scalar coefficients `aⁱʲ`, `bⁱ`, `c` in `C_b^{α,α/2}`, as a
 continuous linear map from `C_b^{2+α,1+α/2}` to `C_b^{α,α/2}`. -/
@@ -292,16 +258,18 @@ def euclideanBackwardParabolicOperatorL (hα : α ≤ 1)
     (c : HolderSpace α (slab (E := EuclideanSpace ℝ ι) t₀ t₁) ℝ) :
     ParabolicC2HolderSpace α (EuclideanSpace ℝ ι) ℝ ht →L[ℝ]
       HolderSpace α (slab (E := EuclideanSpace ℝ ι) t₀ t₁) ℝ :=
-  backwardParabolicOperatorL hα
-    (∑ i, ∑ j, (ContinuousLinearMap.lsmul ℝ ℝ).compHolder₂ (a i j)
-      (HolderSpace.const ((ContinuousLinearMap.apply ℝ ℝ (EuclideanSpace.single j 1)).comp
-        (ContinuousLinearMap.apply ℝ _ (EuclideanSpace.single i 1)))))
-    (∑ i, (ContinuousLinearMap.lsmul ℝ ℝ).compHolder₂ (b i)
-      (HolderSpace.const (ContinuousLinearMap.apply ℝ ℝ (EuclideanSpace.single i 1))))
-    ((ContinuousLinearMap.lsmul ℝ ℝ).compHolder₂ c
-      (HolderSpace.const (ContinuousLinearMap.id ℝ ℝ)))
+  backwardParabolicOperatorL hα (euclideanSecondOrderCoeff a) (euclideanFirstOrderCoeff b)
+    (euclideanZerothOrderCoeff c)
 
 variable (hα : α ≤ 1)
+
+theorem euclideanBackwardParabolicOperatorL_def
+    {a : ι → ι → HolderSpace α (slab (E := EuclideanSpace ℝ ι) t₀ t₁) ℝ}
+    {b : ι → HolderSpace α (slab (E := EuclideanSpace ℝ ι) t₀ t₁) ℝ}
+    {c : HolderSpace α (slab (E := EuclideanSpace ℝ ι) t₀ t₁) ℝ} :
+    euclideanBackwardParabolicOperatorL (ht := ht) hα a b c =
+      backwardParabolicOperatorL hα (euclideanSecondOrderCoeff a) (euclideanFirstOrderCoeff b)
+        (euclideanZerothOrderCoeff c) := (rfl)
 
 @[simp]
 theorem euclideanBackwardParabolicOperatorL_apply
