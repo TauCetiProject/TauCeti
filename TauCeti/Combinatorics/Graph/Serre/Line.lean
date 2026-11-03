@@ -148,6 +148,7 @@ theorem line_connected : line.Connected := by
   · obtain ⟨p⟩ := key b a hab
     exact ⟨p.reverse⟩
 
+/-- The line is a tree. -/
 theorem line_isTree : line.IsTree :=
   (isTree_iff line).mpr ⟨line_connected, line_isAcyclic⟩
 
@@ -156,11 +157,16 @@ def lineShift : Multiplicative ℤ →* line.Aut where
   toFun k :=
     { equivV := (Equiv.addLeft k.toAdd : ℤ ≃ ℤ)
       equivE := ((Equiv.addLeft k.toAdd).prodCongr (Equiv.refl Bool) : ℤ × Bool ≃ ℤ × Bool)
+      -- The vertices and darts of `line` are only definitionally `ℤ` and `ℤ × Bool`, so the
+      -- lemmas about `Equiv.addLeft` and `Equiv.prodCongr` cannot rewrite these goals. Each
+      -- `show` below evaluates the two equivalences on their arguments, `k • n = k.toAdd + n`.
       map_src := fun ⟨n, d⟩ => show lineVertexEquiv (line.src (k.toAdd + n, d)) =
           k.toAdd + lineVertexEquiv (line.src (n, d)) by
         simp only [lineVertexEquiv_src]
         split_ifs <;> omega
       map_rev _ := rfl }
+  -- Here the `show`s also evaluate the identity automorphism as `Equiv.refl` and a product of
+  -- automorphisms as the composite of their equivalences.
   map_one' := Aut.ext
     (fun (v : ℤ) => show (1 : Multiplicative ℤ).toAdd + v = v by rw [toAdd_one, zero_add])
     (fun (e : ℤ × Bool) => Prod.ext
