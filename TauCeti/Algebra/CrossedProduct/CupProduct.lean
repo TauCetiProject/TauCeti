@@ -335,7 +335,7 @@ theorem brauerCohomologyEquiv_quaternionClass (a b : Kˣ) :
   let L := K⟮(α : SeparableClosure K)⟯
   have h2 : Module.finrank K L = 2 :=
     IntermediateField.finrank_adjoin_simple_eq_two_of_not_isSquare hα'
-    (mt isSquare_units_val_iff.1 (mt Subgroup.mem_square.2 ha))
+    (mt Units.isSquare_coe_iff.1 (mt Subgroup.mem_square.2 ha))
   have : Algebra.IsQuadraticExtension K L := ⟨h2⟩
   have : FiniteDimensional K L := Module.finite_of_finrank_eq_succ h2
   have : IsGalois K L := Algebra.IsQuadraticExtension.isGalois K L

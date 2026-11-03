@@ -40,7 +40,7 @@ trivialization pulls back to a global trivialization of the restriction of `E` t
 these restrictions have Thom classes (`Bundle.Trivialization.exists_isThomClass_pullback_baseSet`):
 these are the local Thom classes over trivializing open sets that the Mayer–Vietoris argument of
 Milnor and Stasheff (§10) glues to a Thom class of a general oriented bundle. The gluing over
-finite trivializing covers is in `TauCeti.Topology.VectorBundle.MayerVietoris`.
+finite trivializing covers is in `TauCeti.Topology.VectorBundle.MayerVietoris.Basic`.
 
 Over a point `b` in the base sets of two linear trivializations `e` and `e'`, the fibre equivalence
 `E_b ≃ F` of `e'` is that of `e` followed by the coordinate change `F ≃ F`

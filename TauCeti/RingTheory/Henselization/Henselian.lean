@@ -152,7 +152,7 @@ theorem exists_hom_isRoot_sub_mem (B : Neighbourhood.{u, u} I) {p : B.obj[X]} (h
 /-- **The henselization of a pair is henselian.** The pair formed by the henselization of
 `(R, I)` and the extended ideal is a henselian pair, with no hypothesis on `R` or `I`. -/
 instance henselian : HenselianRing (algebra I) (extended I) where
-  jac := extended_le_jacobson I
+  jac := by simpa only [Ideal.jacobson_bot] using extended_le_jacobson I
   is_henselian f hf a₀ hfa₀ hu := by
     -- Descend `a₀` and the coefficients of `f` below its leading term to a common stage `B`.
     obtain ⟨B, b, hb⟩ := exists_stage_family I

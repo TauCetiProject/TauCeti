@@ -71,7 +71,7 @@ theorem exactK0_ofMulAction_quotient_eq_index_nsmul [Finite G]
     apply (MonoidAlgebra.basis (G ⧸ D) k).ext
     intro q
     simp only [MonoidAlgebra.basis_apply, Representation.ofMulAction_single,
-      Module.End.one_apply]
+      one_apply_eq_self]
     congr 1
     induction q using Quotient.inductionOn with
     | h x =>
