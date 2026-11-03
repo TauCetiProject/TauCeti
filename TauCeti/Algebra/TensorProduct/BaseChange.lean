@@ -26,6 +26,8 @@ with passing to the opposite algebra, and composes in stages:
 
 * `LinearMap.lid_rTensor_distribBaseChange_symm`: pairing against a linear functional commutes with
   distributing scalar extension over a tensor product.
+* `AlgHom.liftEquiv_toLinearMap`: the algebra map out of a scalar extension attached to `f` is
+  the scalar extension `LinearMap.liftBaseChange` of `f`, as a linear map.
 * `TauCeti.Algebra.TensorProduct.baseChangeTensorAlgEquiv`:
   `L ⊗[K] (A ⊗[K] B) ≃ₐ[L] (L ⊗[K] A) ⊗[L] (L ⊗[K] B)`;
 * `TauCeti.Algebra.mulBaseChange`: the map
@@ -42,8 +44,8 @@ with passing to the opposite algebra, and composes in stages:
   `K`-algebra endomorphisms acts on `A ⊗[K] L` through the right factor; for automorphisms of
   `L` it is `baseChangeAutHom` (`rightMulSemiringAction_smul_eq_baseChangeAutHom`).
 * `TauCeti.ScalarAut.semilinearMap`: the scalar action as a semilinear map over `L`.
-* `TauCeti.ScalarAut.instMulSemiringAction`: scalar automorphisms act on a scalar extension
-  through its scalar factor.
+* `TauCeti.ScalarAut.toAlgAut` and `TauCeti.ScalarAut.instMulSemiringAction`: scalar
+  automorphisms act on a scalar extension through its scalar factor, by algebra automorphisms.
 * `TauCeti.ScalarAut.baseChangeMap_smul`: scalar extension of an algebra map is equivariant for
   scalar automorphisms.
 
@@ -91,6 +93,14 @@ theorem _root_.LinearMap.lid_rTensor_distribBaseChange_symm
   | tmul a m =>
     rw [← TensorProduct.AlgebraTensorModule.distribBaseChange_tmul, LinearEquiv.symm_apply_apply]
     simp [TensorProduct.smul_tmul']
+
+/-- The algebra map `S ⊗[R] A →ₐ[S] B` attached to `f : A →ₐ[R] B`, as a linear map, is the scalar
+extension of `f`. -/
+theorem _root_.AlgHom.liftEquiv_toLinearMap {R S A B : Type*} [CommSemiring R] [CommSemiring S]
+    [Semiring A] [Semiring B] [Algebra R A] [Algebra S B] [Algebra R S] [Algebra R B]
+    [IsScalarTower R S B] (f : A →ₐ[R] B) :
+    (AlgHom.liftEquiv R S A B f).toLinearMap = f.toLinearMap.liftBaseChange S :=
+  rfl
 
 namespace Algebra.TensorProduct
 
@@ -375,22 +385,33 @@ end Module
 variable {K L A : Type*} [CommSemiring K] [Semiring L] [Algebra K L]
   [Semiring A] [Algebra K A]
 
+-- Exposed so that `instMulSemiringAction` stays definitionally the left-factor action of Mathlib
+-- (`smul_tmul`, `smul_def`) in importing modules.
+/-- Scalar automorphisms act on a scalar extension by `K`-algebra automorphisms through the scalar
+factor, `σ ↦ σ ⊗ id`. -/
+@[expose] noncomputable def toAlgAut : (L ≃ₐ[K] L) →* (L ⊗[K] A ≃ₐ[K] L ⊗[K] A) where
+  toFun σ := Algebra.TensorProduct.congr σ .refl
+  map_one' := Algebra.TensorProduct.congr_refl
+  map_mul' σ τ := by
+    -- Multiplication of algebra equivalences is composition in the opposite textual order;
+    -- expose that representation so `congr_trans` can state the required compatibility.
+    change Algebra.TensorProduct.congr (τ.trans σ) .refl =
+      (Algebra.TensorProduct.congr τ (.refl : A ≃ₐ[K] A)).trans
+        (Algebra.TensorProduct.congr σ .refl)
+    convert Algebra.TensorProduct.congr_trans τ σ (.refl : A ≃ₐ[K] A) .refl using 1
+    ext
+    rfl
+
+/-- The algebra automorphism attached to a scalar automorphism, on a pure tensor. -/
+@[simp]
+theorem toAlgAut_tmul (σ : L ≃ₐ[K] L) (a : L) (x : A) :
+    toAlgAut (A := A) σ (a ⊗ₜ[K] x) = σ a ⊗ₜ[K] x :=
+  (rfl)
+
 /-- Scalar automorphisms act on a scalar extension through the scalar factor. -/
 noncomputable instance instMulSemiringAction :
     MulSemiringAction (L ≃ₐ[K] L) (L ⊗[K] A) :=
-  let congrHom : (L ≃ₐ[K] L) →* (L ⊗[K] A ≃ₐ[K] L ⊗[K] A) :=
-    { toFun σ := Algebra.TensorProduct.congr σ .refl
-      map_one' := Algebra.TensorProduct.congr_refl
-      map_mul' σ τ := by
-        -- Multiplication of algebra equivalences is composition in the opposite textual order;
-        -- expose that representation so `congr_trans` can state the required compatibility.
-        change Algebra.TensorProduct.congr (τ.trans σ) .refl =
-          (Algebra.TensorProduct.congr τ (.refl : A ≃ₐ[K] A)).trans
-            (Algebra.TensorProduct.congr σ .refl)
-        convert Algebra.TensorProduct.congr_trans τ σ (.refl : A ≃ₐ[K] A) .refl using 1
-        ext
-        rfl }
-  MulSemiringAction.compHom _ congrHom
+  MulSemiringAction.compHom _ (toAlgAut (A := A))
 
 /-- Scalar multiplication on a base change is the tensor-product congruence. -/
 theorem smul_def (σ : L ≃ₐ[K] L) (x : L ⊗[K] A) :

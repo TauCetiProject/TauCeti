@@ -138,6 +138,21 @@ variable [IsUltrametricDist R] {c : σ → ℝ} [hc : ∀ i, Fact (0 < c i)]
 theorem prod_pow_pos (t : σ →₀ ℕ) : 0 < t.prod (c · ^ ·) :=
   Finset.prod_pos fun i _ ↦ pow_pos (hc i).out _
 
+omit [IsUltrametricDist R] hc in
+/-- A coefficientwise convergent sequence of families that is uniformly Cauchy in the weighted
+coefficient norms `‖A k t‖ * w t` converges to its coefficientwise limit uniformly in these
+weighted norms. No decay or boundedness hypothesis is needed. -/
+theorem _root_.TauCeti.MvPowerSeries.exists_weighted_uniform_limit {ι E : Type*}
+    [SeminormedAddCommGroup E] [CompleteSpace E] (w : ι → ℝ) (A : ℕ → ι → E)
+    (hcoeff : ∀ t, CauchySeq fun k ↦ A k t)
+    (hC : ∀ ε > 0, ∃ N, ∀ k ≥ N, ∀ l ≥ N, ∀ t, ‖A k t - A l t‖ * w t < ε) :
+    ∃ a : ι → E, ∀ ε > 0, ∃ N, ∀ k ≥ N, ∀ t, ‖A k t - a t‖ * w t ≤ ε := by
+  choose a ha using fun t ↦ cauchySeq_tendsto_of_complete (hcoeff t)
+  refine ⟨a, fun ε hε ↦ ?_⟩
+  obtain ⟨N, hN⟩ := hC ε hε
+  exact ⟨N, fun k hk t ↦ le_of_tendsto (((tendsto_const_nhds.sub (ha t)).norm).mul_const (w t))
+    (eventually_atTop.mpr ⟨N, fun l hl ↦ (hN k hk l hl t).le⟩)⟩
+
 /-- A coefficientwise Cauchy sequence of restricted families that is uniformly Cauchy in the
 weighted coefficient norms has a restricted limit, with uniform weighted error estimates.
 This is the common limit construction for scalar and module-valued Gauss completeness. -/
@@ -151,15 +166,7 @@ theorem _root_.TauCeti.MvPowerSeries.exists_weighted_coefficient_limit {σ E : T
     ∃ a : (σ →₀ ℕ) → E,
       Tendsto (fun t ↦ ‖a t‖ * t.prod (c · ^ ·)) cofinite (𝓝 0) ∧
       ∀ ε > 0, ∃ N, ∀ k ≥ N, ∀ t, ‖A k t - a t‖ * t.prod (c · ^ ·) ≤ ε := by
-  choose a ha using fun t ↦ cauchySeq_tendsto_of_complete (hcoeff t)
-  -- Pass the Cauchy estimates to the coefficientwise limit uniformly in the exponent.
-  have hunif : ∀ ε > 0, ∃ N, ∀ k ≥ N, ∀ t,
-      ‖A k t - a t‖ * t.prod (c · ^ ·) ≤ ε := by
-    intro ε hε
-    obtain ⟨N, hN⟩ := hC ε hε
-    exact ⟨N, fun k hk t ↦ le_of_tendsto
-      (((tendsto_const_nhds.sub (ha t)).norm).mul_const (t.prod (c · ^ ·)))
-      (eventually_atTop.mpr ⟨N, fun l hl ↦ (hN k hk l hl t).le⟩)⟩
+  obtain ⟨a, hunif⟩ := TauCeti.MvPowerSeries.exists_weighted_uniform_limit _ A hcoeff hC
   refine ⟨a, ?_, hunif⟩
   -- A uniform weighted limit again vanishes at infinity.
   refine tendsto_order.mpr ⟨fun b hb ↦ .of_forall fun t ↦

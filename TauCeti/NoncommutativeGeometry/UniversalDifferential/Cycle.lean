@@ -112,7 +112,42 @@ theorem trace_differential (φ : MultilinearMap k (fun _ : Fin (n + 1) ↦ A) M)
     · exact trace_of_of_ne φ h _
   | add x y hx hy => rw [map_add, map_add, hx, hy, add_zero]
 
+/-- The functional `∫_φ` is additive in the cochain `φ`. -/
+@[simp]
+theorem trace_add (φ ψ : MultilinearMap k (fun _ : Fin (n + 1) ↦ A) M) :
+    trace (φ + ψ) = trace φ + trace ψ := by
+  refine DirectSum.linearMap_ext k fun m ↦ LinearMap.ext fun ω ↦ ?_
+  simp only [LinearMap.comp_apply, LinearMap.add_apply, DirectSum.lof_eq_of]
+  by_cases h : m = n
+  · subst h
+    induction ω using induction_on k A with
+    | hword x a => simp
+    | hadd ω η hω hη => simp only [map_add, hω, hη]; abel
+  · simp [h]
+
+/-- The functional `∫_φ` is homogeneous in the cochain `φ`. -/
+@[simp]
+theorem trace_smul (c : k) (φ : MultilinearMap k (fun _ : Fin (n + 1) ↦ A) M) :
+    trace (c • φ) = c • trace φ := by
+  refine DirectSum.linearMap_ext k fun m ↦ LinearMap.ext fun ω ↦ ?_
+  simp only [LinearMap.comp_apply, LinearMap.smul_apply, DirectSum.lof_eq_of]
+  by_cases h : m = n
+  · subst h
+    induction ω using induction_on k A with
+    | hword x a => simp
+    | hadd ω η hω hη => simp only [map_add, hω, hη, smul_add]
+  · simp [h]
+
 variable [IsScalarTower k A A] [SMulCommClass k A A]
+
+/-- On a zero-form `ι(a)`, the functional `∫_φ` of a `0`-cochain `φ` is `φ(a)`. -/
+@[simp]
+theorem trace_ι (φ : MultilinearMap k (fun _ : Fin 1 ↦ A) M) (a : A) :
+    trace φ (ι k A a) = φ fun _ ↦ a := by
+  rw [ι_apply, trace_of_word, Unitization.snd_inr]
+  congr 1
+  ext i
+  rw [Subsingleton.elim (α := Fin 1) i 0, Fin.cons_zero]
 
 /-- The form `ι(a₀) dι(a₁) ⋯ dι(aₙ)` of the universal-form cycle is the word `a₀ da₁ ⋯ daₙ`. -/
 theorem cycleForm_ι (a : Fin (n + 1) → A) :

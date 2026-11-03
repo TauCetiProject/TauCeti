@@ -198,7 +198,7 @@ theorem IsHermiteNormalForm.exists_isHermiteDecomposition {A : Matrix (Fin m) (F
   refine ⟨U, hkr ▸ Nat.le_add_right k r, hH, U.mul_inv, U.inv_mul, ?_⟩
   ext i j
   have hAU : (A * (U : Matrix (Fin n) (Fin n) ℤ)) i j = (A *ᵥ b' j) i := by
-    simp [U, mul_apply, mulVec, dotProduct, Module.Basis.toMatrix_apply]
+    simp [U, Matrix.mul_apply, mulVec, dotProduct, Module.Basis.toMatrix_apply]
   rw [hAU]
   obtain ⟨a | a, rfl⟩ := e.surjective j
   · simp [b', b₀, e, hs, hermitePad_apply]

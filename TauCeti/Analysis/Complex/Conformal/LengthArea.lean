@@ -47,11 +47,11 @@ The genuinely holomorphic content added here is the **chord bound**
 `TauCeti.ofReal_dist_le_circleImageLength`, which is what makes `ℓ` a length: the fundamental
 theorem of calculus along the arc bounds the distance between the images of the endpoints of a
 sub-arc by `ℓ ρ`. That is the form in which Wolff's lemma is used, and it is the analytic engine of
-layer **L5** of the conformal-mapping roadmap (`ConformalMapping/README.md`), Carathéodory's
-boundary correspondence. Only that quantitative input is proved here: a radius whose circle has
-short image, and a bound on the chords of its arcs. The crosscuts of a Riemann map at a boundary
-point `ζ` are not constructed here, nor is the bound on their diameter that a later file is to draw
-from these estimates in order to force the cluster set at `ζ` to degenerate to a point.
+Carathéodory's boundary correspondence. Only that quantitative input is proved here: a radius whose
+circle has short image, and a bound on the chords of its arcs. The crosscuts of a Riemann map at a
+boundary point `ζ` are not constructed here, nor is the bound on their diameter that
+`Conformal/ShortCrosscut.lean` draws from these estimates in order to force the cluster set at `ζ`
+to degenerate to a point.
 
 ## Main results
 
@@ -353,8 +353,7 @@ integration can be moved to `Ioc a (a + 2 * π)`.
 
 This is what makes `TauCeti.circleImageLength` a length rather than an abstract integral, and it is
 the form in which Wolff's lemma is used: a short image arc has small chords. Turning that into a
-crosscut of small diameter at a boundary point is left to the later file that constructs the
-crosscuts. -/
+crosscut of small diameter at a boundary point is `Conformal/ShortCrosscut.lean`. -/
 theorem ofReal_dist_le_circleImageLength (hUo : IsOpen U) (hf : DifferentiableOn ℂ f U) (ζ : ℂ)
     {ρ : ℝ} (hρ : 0 < ρ) {a b : ℝ} (hab : a ≤ b) (hb : b ≤ a + 2 * π)
     (hmem : ∀ θ ∈ Icc a b, circleMap ζ ρ θ ∈ s)

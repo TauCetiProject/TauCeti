@@ -211,6 +211,12 @@ theorem representative_surjective : Function.Surjective representative := by
   obtain ⟨t, ht⟩ := QuotientAddGroup.mk_surjective z.point
   exact ⟨(z.period, t), by simp [representative, ht]⟩
 
+/-- The real representative map is invariant under the deck translations `t ↦ t + k p`. -/
+@[simp]
+theorem representative_add_intCast_mul (p : PositivePeriod) (t : ℝ) (k : ℤ) :
+    representative (p, t + k * (p : ℝ)) = representative (p, t) := by
+  simp [representative, ← zsmul_eq_mul]
+
 /-- Normalize real representatives by dividing their time coordinate by their positive period. -/
 def realNormalization (n : ℕ∞ω) :
     (PositivePeriod × ℝ) ≃ₘ^n⟮𝓘(ℝ).prod 𝓘(ℝ), 𝓘(ℝ).prod 𝓘(ℝ)⟯

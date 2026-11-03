@@ -122,7 +122,7 @@ theorem free_of_isWeaklyRegular {M : Type*} [AddCommGroup M] [Module A M] [Modul
   have : Module.Finite Q (QuotSMulTop x M) := Module.Finite.of_restrictScalars_finite A Q _
   have : Module.FinitePresentation A M := Module.finitePresentation_of_finite A M
   exact (Module.free_quotSMulTop_iff_free A M
-    (by rwa [jacobson_eq_maximalIdeal ⊥ bot_ne_top]) hxreg).mp inferInstance
+    (by rwa [ringJacobson_eq_maximalIdeal A]) hxreg).mp inferInstance
 
 /-- In a regular local ring of dimension at most two, every prime ideal other than the maximal
 ideal is principal. In dimension two such a prime is a free module, since a pair generating the

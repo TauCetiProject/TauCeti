@@ -8,12 +8,14 @@ module
 public import Mathlib.Combinatorics.SimpleGraph.Connectivity.Connected
 
 /-!
-# Connectedness of a graph whose vertices descend to a root
+# Connectedness and connected components
 
 A graph on a well-founded order in which every vertex other than a fixed root has a neighbour
 below it is connected: well-founded induction walks every vertex down to the root. Numbering the
 vertices of a diagram by `Fin n` so that every nonzero vertex has a neighbour with a smaller
 number is what makes connectedness of the Dynkin diagrams, finite and affine alike, a short check.
+
+Graphs with the same reachability relation have canonically equivalent connected components.
 
 ## Main results
 
@@ -24,6 +26,28 @@ number is what makes connectedness of the Dynkin diagrams, finite and affine ali
 public section
 
 namespace SimpleGraph
+
+/-- Graphs on the same vertices with equal reachability have equivalent connected components,
+with the equivalence preserving the component of each vertex. -/
+def connectedComponentEquivOfReachableEq {V : Type*} (G : SimpleGraph V)
+    {H : SimpleGraph V} (h : G.Reachable = H.Reachable) :
+    G.ConnectedComponent ≃ H.ConnectedComponent where
+  toFun := ConnectedComponent.lift H.connectedComponentMk fun _ _ p _ =>
+    ConnectedComponent.sound (h ▸ p.reachable)
+  invFun := ConnectedComponent.lift G.connectedComponentMk fun _ _ p _ =>
+    ConnectedComponent.sound (h.symm ▸ p.reachable)
+  left_inv c := c.ind fun _ => by simp
+  right_inv c := c.ind fun _ => by simp
+
+@[simp] theorem connectedComponentEquivOfReachableEq_mk {V : Type*} (G : SimpleGraph V)
+    {H : SimpleGraph V} (h : G.Reachable = H.Reachable) (v : V) :
+    G.connectedComponentEquivOfReachableEq h (G.connectedComponentMk v) =
+      H.connectedComponentMk v := (rfl)
+
+@[simp] theorem connectedComponentEquivOfReachableEq_symm_mk {V : Type*} (G : SimpleGraph V)
+    {H : SimpleGraph V} (h : G.Reachable = H.Reachable) (v : V) :
+    (G.connectedComponentEquivOfReachableEq h).symm (H.connectedComponentMk v) =
+      G.connectedComponentMk v := (rfl)
 
 variable {V : Type*} [LT V] [WellFoundedLT V] {G : SimpleGraph V}
 
