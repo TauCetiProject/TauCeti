@@ -7,6 +7,7 @@ module
 
 public import TauCeti.AlgebraicGeometry.Modules.Pullback.Monoidal.Basic
 public import TauCeti.AlgebraicGeometry.Modules.Quasicoherent.GradedAlgebra.Basic
+public import TauCeti.CategoryTheory.Monoidal.EqToHom
 
 /-!
 # Pullback of graded quasicoherent algebras
@@ -97,36 +98,15 @@ private def pullbackMul (i j : ℕ) :
     μ (pullbackQ f) ((degree i).obj A) ((degree j).obj A) ≫ (pullbackQ f).map (A.mul i j) ≫
       (pullbackComponentIso f A (i + j)).inv
 
-/-- Pullback of modules commutes with transports along equalities of modules. -/
-private lemma pullback_map_eq_eqToHom_conj {M M' N N' : X.Modules} (hM : M = M') (hN : N = N')
-    (φ : M ⟶ N) (ψ : M' ⟶ N') (hψ : ψ = eqToHom hM.symm ≫ φ ≫ eqToHom hN) :
-    (Scheme.Modules.pullback f).map φ =
-      eqToHom (congrArg (Scheme.Modules.pullback f).obj hM) ≫ (Scheme.Modules.pullback f).map ψ ≫
-        eqToHom (congrArg (Scheme.Modules.pullback f).obj hN).symm := by
-  subst hM hN hψ
-  simp
-
-/-- The inverse tensor comparison of pullback commutes with transports along equalities of
-modules. -/
-private lemma inv_δ_map_eq_eqToHom_conj {M M' N N' P P' : X.Modules} (hM : M = M') (hN : N = N')
-    (hP : P = P') [IsIso (δ (Scheme.Modules.pullback f) M N)]
-    [IsIso (δ (Scheme.Modules.pullback f) M' N')] (φ : M ⊗ N ⟶ P) (ψ : M' ⊗ N' ⟶ P')
-    (hψ : ψ = (eqToHom hM.symm ⊗ₘ eqToHom hN.symm) ≫ φ ≫ eqToHom hP) :
-    (eqToHom (congrArg (Scheme.Modules.pullback f).obj hM) ⊗ₘ
-        eqToHom (congrArg (Scheme.Modules.pullback f).obj hN)) ≫
-      inv (δ (Scheme.Modules.pullback f) M' N') ≫ (Scheme.Modules.pullback f).map ψ ≫
-        eqToHom (congrArg (Scheme.Modules.pullback f).obj hP).symm =
-      inv (δ (Scheme.Modules.pullback f) M N) ≫ (Scheme.Modules.pullback f).map φ := by
-  subst hM hN hP hψ
-  simp
-
 private lemma pullbackOne_def :
     pullbackOne f A = (Scheme.Modules.pullbackObjUnitIso f).inv ≫
       (Scheme.Modules.pullback f).map A.obj.toMon.one := by
   rw [pullbackOne, Scheme.Modules.pullbackToModules_ε]
   -- `pullbackQ f` acts on morphisms of quasicoherent sheaves by pullback of the underlying maps.
-  exact congrArg (_ ≫ ·) ((pullback_map_eq_eqToHom_conj f rfl (degree_obj_obj A 0).symm _ _
-    (A.one_hom.trans (Category.id_comp _).symm)).trans (Category.id_comp _)).symm
+  exact congrArg (_ ≫ ·) (eq_of_heq ((comp_eqToHom_heq _
+    (congrArg (Scheme.Modules.pullback f).obj (degree_obj_obj A 0).symm).symm).trans
+      (Functor.map_heq _ rfl (degree_obj_obj A 0)
+        ((heq_of_eq A.one_hom).trans (comp_eqToHom_heq _ _)))))
 
 private lemma pullbackMul_def (i j : ℕ) :
     pullbackMul f A i j =
@@ -136,8 +116,8 @@ private lemma pullbackMul_def (i j : ℕ) :
   have := @Scheme.Modules.isIso_pullback_δ_of_isQuasicoherent _ _ f _
     ((degree j).obj A).obj ((degree i).obj A).property
   -- `pullbackQ f` acts on morphisms of quasicoherent sheaves by pullback of the underlying maps.
-  exact inv_δ_map_eq_eqToHom_conj f (degree_obj_obj A i).symm (degree_obj_obj A j).symm
-    (degree_obj_obj A (i + j)).symm _ _ (A.mul_hom i j)
+  exact eqToHom_conjugate_inv_δ_comp_map (C := X.Modules) _ (degree_obj_obj A i).symm
+    (degree_obj_obj A j).symm (degree_obj_obj A (i + j)).symm _ _ (A.mul_hom i j)
 
 /-- The homogeneous components `f^* Aₙ` of the pullback of a graded quasicoherent algebra. -/
 private abbrev pullbackComponents : GradedObject ℕ Y.Modules :=
@@ -208,8 +188,11 @@ private lemma pullback_map_degree_map (g : A ⟶ B) (n : ℕ) :
       (pullbackComponentIso f A n).hom ≫ (pullbackQ f).map ((degree n).map g) ≫
         (pullbackComponentIso f B n).inv :=
   -- `pullbackQ f` acts on morphisms of quasicoherent sheaves by pullback of the underlying maps.
-  pullback_map_eq_eqToHom_conj f (degree_obj_obj A n).symm (degree_obj_obj B n).symm _ _
-    (degree_map_hom g n)
+  (conj_eqToHom_iff_heq _ _ (congrArg (Scheme.Modules.pullback f).obj (degree_obj_obj A n).symm)
+    (congrArg (Scheme.Modules.pullback f).obj (degree_obj_obj B n).symm)).mpr
+      (Functor.map_heq _ (degree_obj_obj A n).symm (degree_obj_obj B n).symm
+        ((conj_eqToHom_iff_heq _ _ (degree_obj_obj A n) (degree_obj_obj B n)).mp
+          (degree_map_hom g n)).symm)
 
 private lemma pullbackOne_map (g : A ⟶ B) :
     pullbackOne f A ≫ (Scheme.Modules.pullback f).map (g.hom.hom.hom 0) = pullbackOne f B := by
