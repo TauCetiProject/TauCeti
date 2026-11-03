@@ -112,9 +112,9 @@ theorem isFiniteEtaleTorsor_iff_exists_algEquiv_pi {B : Type v} [CommRing B] [Al
   -- translation: `b * k • (g • b') = b * (k * g) • b'`.
   refine ⟨B, inferInstance, inferInstance, inferInstance,
     AlgEquiv.ofBijective _ h.bijective_tensorToPi, fun g x k ↦ ?_⟩
-  induction x using TensorProduct.inductionOn with
-  | add x y hx hy => simp only [smul_add, map_add, Pi.add_apply, hx, hy]
-  | tmul b b' => simp [mul_smul]
+  rw [AlgEquiv.ofBijective_apply, AlgEquiv.ofBijective_apply,
+    Algebra.TensorProduct.rightMulSemiringAction_smul_def]
+  exact MulSemiringAction.tensorToPi_map_toAlgHom g x k
 
 end Algebra
 
