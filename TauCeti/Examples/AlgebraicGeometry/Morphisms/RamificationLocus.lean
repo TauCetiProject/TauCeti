@@ -331,9 +331,10 @@ theorem AlgebraicGeometry.isGenericPoint_branchLocus_square (h2 : (2 : k) ≠ 0)
   rw [AlgebraicGeometry.branchLocus_square k h2, IsGenericPoint, PrimeSpectrum.closure_singleton,
     PrimeSpectrum.zeroLocus_span]
 
-/-- *test_purity_branchLocus_square*: the generic point `(u)` of the branch locus of the map
-`𝔸²_k ⟶ 𝔸²_k`, `(x, y) ↦ (u, v) = (x², y)`, has codimension one: the local ring of `𝔸²_k` there
-has dimension one. -/
+/-- *test_purity_branchLocus_square*: the point `(u)` of `𝔸²_k` has codimension one: the local
+ring of `𝔸²_k` there has dimension one. If `2 ≠ 0` in `k`, then `(u)` is the generic point of the
+branch locus of the map `𝔸²_k ⟶ 𝔸²_k`, `(x, y) ↦ (u, v) = (x², y)`
+(`isGenericPoint_branchLocus_square`). -/
 example :
     ringKrullDim ((Spec (CommRingCat.of (MvPolynomial (Fin 2) k))).presheaf.stalk
       (⟨Ideal.span {X 0}, (Ideal.span_singleton_prime (X_ne_zero _)).mpr prime_X⟩ :
