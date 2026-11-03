@@ -19,6 +19,7 @@ the module of sections of a quasi-coherent sheaf this says that restricting from
 
 ## Main statements
 
+* `IsLocalizedModule.map_comp_map`: induced maps preserve composition.
 * `IsLocalizedModule.isUnit_algebraMap_of_isUnit`: invertible scalars stay invertible on a
   localization.
 * `IsLocalizedModule.isLocalizedModule_map`: the map induced on localizations at `S` by a
@@ -33,6 +34,16 @@ variable {R : Type*} [CommSemiring R] (S : Submonoid R) {T : Submonoid R}
   {M M' N N' : Type*} [AddCommMonoid M] [AddCommMonoid M'] [AddCommMonoid N] [AddCommMonoid N']
   [Module R M] [Module R M'] [Module R N] [Module R N']
   (f : M →ₗ[R] M') [IsLocalizedModule S f]
+
+/-- Composing two induced maps on localized modules localizes their composition. -/
+@[simp]
+theorem map_comp_map {P P' : Type*} [AddCommMonoid P] [AddCommMonoid P']
+    [Module R P] [Module R P'] (f₂ : N →ₗ[R] N') [IsLocalizedModule S f₂]
+    (f₃ : P →ₗ[R] P') [IsLocalizedModule S f₃] (h : N →ₗ[R] P) (g : M →ₗ[R] N) :
+    map S f₂ f₃ h ∘ₗ map S f f₂ g = map S f f₃ (h ∘ₗ g) := by
+  apply IsLocalizedModule.ext S f (IsLocalizedModule.map_units f₃)
+  ext m
+  simp only [LinearMap.comp_apply, map_apply]
 
 include S f in
 /-- A scalar acting invertibly on a module acts invertibly on each of its localizations. -/
