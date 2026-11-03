@@ -6,7 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Normed.Operator.Splitting.Family
-public import Mathlib.Topology.VectorBundle.Basic
+public import Mathlib.Topology.FiberBundle.Constructions
+public import TauCeti.Topology.VectorBundle.Subbundle
 
 /-!
 # The kernel bundle of a continuously split operator family
@@ -46,14 +47,7 @@ variable {𝕜 X E F G : Type*} [NontriviallyNormedField 𝕜] [TopologicalSpace
 independently of the model-fibre parameter. -/
 instance instTopologicalSpaceTotalSpaceKernel (G : Type*) (A : X → E →L[𝕜] F) :
     TopologicalSpace (TotalSpace G fun x ↦ (A x).ker) :=
-  .induced (fun v ↦ (v.proj, (v.2 : E))) inferInstance
-
-/-- The total space of the kernels embeds in the product of the base and the domain. -/
-theorem isEmbedding_totalSpace_kernel (G : Type*) (A : X → E →L[𝕜] F) :
-    IsEmbedding fun v : TotalSpace G (fun x ↦ (A x).ker) ↦ (v.proj, (v.2 : E)) := by
-  refine ⟨⟨rfl⟩, fun ⟨x, v⟩ ⟨y, w⟩ h ↦ ?_⟩
-  obtain rfl : x = y := congrArg Prod.fst h
-  exact congrArg (TotalSpace.mk x) (Subtype.ext (congrArg Prod.snd h))
+  subbundleTopology E (E := Trivial X E) (fun x ↦ (A x).ker)
 
 variable [CompleteSpace E] {A : X → E →L[𝕜] F} {q : E →L[𝕜] G}
   (hA : Continuous A) (h : ∀ x, ((A x).prod q).IsInvertible)
@@ -61,16 +55,18 @@ variable [CompleteSpace E] {A : X → E →L[𝕜] F} {q : E →L[𝕜] G}
 /-- A fixed complementary coordinate globally trivializes the kernel bundle.
 The fibre coordinate is `q`, with inverse `kerSection`. -/
 noncomputable def kernelTrivialization :
-    Trivialization G (π G fun x ↦ (A x).ker) :=
+    Trivialization G (π G fun x ↦ (A x).ker) := by
+  have he := (Trivial.homeomorphProd X E).isEmbedding.comp
+    (isEmbedding_totalSpace_subbundle E G (E := Trivial X E) (fun x ↦ (A x).ker))
   let e : TotalSpace G (fun x ↦ (A x).ker) ≃ₜ {p : X × E | A p.1 p.2 = 0} :=
     { toFun := fun v ↦ ⟨(v.proj, v.2), v.2.property⟩
       invFun := fun p ↦ ⟨p.val.1, ⟨p.val.2, p.property⟩⟩
       left_inv := fun _ ↦ rfl
       right_inv := fun _ ↦ rfl
-      continuous_toFun := (isEmbedding_totalSpace_kernel G A).continuous.subtype_mk _
-      continuous_invFun := (isEmbedding_totalSpace_kernel G A).continuous_iff.mpr
-        continuous_subtype_val }
-  { toOpenPartialHomeomorph :=
+      continuous_toFun := he.continuous.subtype_mk _
+      continuous_invFun := he.continuous_iff.mpr continuous_subtype_val }
+  exact {
+    toOpenPartialHomeomorph :=
       (e.trans (ContinuousLinearMap.kernelHomeomorph A q hA h)).toOpenPartialHomeomorph
     baseSet := univ
     open_baseSet := isOpen_univ
@@ -78,7 +74,7 @@ noncomputable def kernelTrivialization :
     target_eq := by simp
     proj_toFun := by
       intro v _
-      simp [ContinuousLinearMap.kernelHomeomorph_apply, e] }
+      exact congrArg Prod.fst (ContinuousLinearMap.kernelHomeomorph_apply hA h (e v)) }
 
 @[simp]
 theorem kernelTrivialization_baseSet : (kernelTrivialization hA h).baseSet = univ :=
@@ -87,7 +83,7 @@ theorem kernelTrivialization_baseSet : (kernelTrivialization hA h).baseSet = uni
 @[simp]
 theorem kernelTrivialization_apply (v : TotalSpace G fun x ↦ (A x).ker) :
     kernelTrivialization hA h v = (v.proj, q v.2) := by
-  simp [kernelTrivialization, ContinuousLinearMap.kernelHomeomorph_apply]
+  exact ContinuousLinearMap.kernelHomeomorph_apply hA h ⟨(v.proj, v.2), v.2.property⟩
 
 /-- The inverse chart's underlying domain vector is the kernel section. -/
 @[simp]
@@ -108,9 +104,8 @@ instance isLinear_kernelTrivialization : (kernelTrivialization hA h).IsLinear �
 /-- The kernel bundle with its global split-kernel chart. Install as a local instance. -/
 @[instance_reducible]
 noncomputable def kernelFiberBundle : FiberBundle G fun x ↦ (A x).ker where
-  totalSpaceMk_isInducing' x := by
-    rw [← (isEmbedding_totalSpace_kernel G A).isInducing.of_comp_iff]
-    exact (isInducing_prodMkRight x).comp IsInducing.subtypeVal
+  totalSpaceMk_isInducing' :=
+    isInducing_totalSpaceMk_subbundle E G (E := Trivial X E) (fun x ↦ (A x).ker)
   trivializationAtlas' := {kernelTrivialization hA h}
   trivializationAt' _ := kernelTrivialization hA h
   mem_baseSet_trivializationAt' x := mem_univ x
