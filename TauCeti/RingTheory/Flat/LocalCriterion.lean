@@ -249,7 +249,8 @@ theorem Flat.of_flat_quotSMulTop [IsNoetherianRing R] {S : Type*} [CommRing S]
     rw [← Ideal.map_pow, Ideal.smul_restrictScalars, Submodule.restrictScalars_top]
   have hjac : IS ≤ (⊥ : Ideal S).jacobson := by
     simpa [IS, I, Ideal.map_span, Ideal.span_singleton_le_iff_mem] using hx
-  have hbot := Ideal.iInf_pow_smul_eq_bot_of_le_jacobson IS hjac (M := M ⊗[R] J)
+  have hbot := Ideal.iInf_pow_smul_eq_bot_of_le_jacobson IS
+    (by simpa only [Ideal.jacobson_bot] using hjac) (M := M ⊗[R] J)
   have : t ∈ ⨅ n : ℕ, IS ^ n • (⊤ : Submodule S (M ⊗[R] J)) :=
     Submodule.mem_iInf _ |>.mpr fun n ↦ hle n (hmem n)
   simpa [hbot] using this

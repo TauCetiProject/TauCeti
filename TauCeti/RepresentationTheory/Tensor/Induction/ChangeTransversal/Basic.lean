@@ -51,12 +51,12 @@ noncomputable def tensorInducedChangeTransversalLinearEquiv :
     constructor
     · intro x y h
       have h' := congrArg (W c⁻¹) h
-      simpa only [← Module.End.mul_apply, ← map_mul, inv_mul_cancel, map_one,
-        Module.End.one_apply] using h'
+      simpa only [← mul_apply_eq_comp, ← map_mul, inv_mul_cancel, map_one,
+        one_apply_eq_self] using h'
     · intro y
       refine ⟨W c⁻¹ y, ?_⟩
-      simp only [← Module.End.mul_apply, ← map_mul, mul_inv_cancel, map_one,
-        Module.End.one_apply]
+      simp only [← mul_apply_eq_comp, ← map_mul, mul_inv_cancel, map_one,
+        one_apply_eq_self]
   exact LinearEquiv.ofBijective (W c) hbij
 
 /-- The change-of-transversal linear equivalence acts by the wreath tensor representation of
@@ -98,7 +98,7 @@ theorem tensorInducedChangeTransversalLinearEquiv_trans (v : U.LeftTransversal) 
   simp only [LinearEquiv.trans_apply]
   rw [tensorInducedChangeTransversalLinearEquiv_apply,
     tensorInducedChangeTransversalLinearEquiv_apply,
-    tensorInducedChangeTransversalLinearEquiv_apply, ← Module.End.mul_apply, ← map_mul,
+    tensorInducedChangeTransversalLinearEquiv_apply, ← mul_apply_eq_comp, ← map_mul,
     monomialChangeTransversal_mul]
 
 /-- Reversing the two transversals gives the inverse linear equivalence. -/
@@ -124,7 +124,7 @@ noncomputable def tensorInducedChangeTransversal :
     simp only [LinearEquiv.coe_coe]
     rw [tensorInducedChangeTransversalLinearEquiv_apply,
       tensorInducedChangeTransversalLinearEquiv_apply]
-    rw [← Module.End.mul_apply, ← Module.End.mul_apply, ← map_mul, ← map_mul,
+    rw [← mul_apply_eq_comp, ← mul_apply_eq_comp, ← map_mul, ← map_mul,
       monomialChangeTransversal_mul_monomialHom])
 
 /-- The underlying linear equivalence of the representation comparison is the named

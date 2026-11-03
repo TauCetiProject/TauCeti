@@ -231,7 +231,7 @@ theorem _root_.Function.Exact.bijective_mapQ_range_of_prod_coprod
   · induction y using Submodule.Quotient.induction_on with | H c => ?_
     obtain ⟨⟨c₀, k⟩, hck⟩ := hsurj c
     refine ⟨Submodule.Quotient.mk (-k), (Submodule.Quotient.eq _).2 ⟨-c₀, ?_⟩⟩
-    simp only [coprod_apply, neg_apply] at hck
+    simp only [coprod_apply] at hck
     simp [← hck]
 
 end TwoTermComplex

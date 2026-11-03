@@ -164,6 +164,26 @@ class ContentWorkflowCompleteness(unittest.TestCase):
         self.assertIn("publish-merge-group-cache", jobs)
         self.assertIn("finalize-merge-group-build", jobs)
 
+    def test_long_build_refreshes_credentials_before_terminal_reporting(self):
+        steps = workflow_jobs("pr-build.yml")["sandboxed-build"]["steps"]
+        by_id = {step.get("id"): i for i, step in enumerate(steps) if step.get("id")}
+        self.assertLess(by_id["build"], by_id["report-ci-api"])
+        self.assertLess(by_id["report-ci-api"], by_id["report"])
+        original, refreshed = steps[by_id["ci-api"]], steps[by_id["report-ci-api"]]
+        self.assertEqual(refreshed["if"], "always()")
+        self.assertEqual(refreshed["uses"], original["uses"])
+        self.assertEqual(refreshed["with"], original["with"])
+        report = steps[by_id["report"]]
+        self.assertEqual(report["if"], "always()")
+        for variable, output in [("GH_TOKEN", "status-token"), ("GH_READ_TOKEN", "read-token"),
+                                 ("TAUCETI_GITHUB_READ_ROLE", "read-role"),
+                                 ("TAUCETI_GITHUB_WRITE_ROLE", "status-role")]:
+            self.assertEqual(report["env"][variable],
+                             "${{ steps.report-ci-api.outputs." + output +
+                             " || steps.ci-api.outputs." + output + " }}")
+        # Retained reporting still runs when refreshing credentials itself fails.
+        self.assertIn("ci_status.py resume", report["run"])
+
     def test_status_retry_retains_intent_discovery_and_guarded_resumption(self):
         steps = workflow_jobs("retry-ci-status.yml")["publish"]["steps"]
         names = [step.get("name") for step in steps]

@@ -69,7 +69,7 @@ theorem exists_fieldUnit_not_isSquare_at_places
     (GlobalNumberFields.signHom_apply_eq_neg_one_iff a w).mp
       (by simpa [s, hw] using (congrFun hs w))
   refine ⟨hneg, ?_⟩
-  exact TauCeti.isSquare_units_val_iff.not.mp
+  exact Units.isSquare_coe_iff.not.mp
     (not_isSquare_of_neg (by simpa only [unitAtRealPlace_apply] using hneg))
 
 end TauCeti.NumberField.QuadraticForm
