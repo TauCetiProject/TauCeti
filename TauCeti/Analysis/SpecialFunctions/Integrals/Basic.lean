@@ -21,8 +21,6 @@ Interval integrals of elementary functions in closed form or as series, continui
 
 * `TauCeti.intervalIntegrable_sub_rpow`, `TauCeti.integral_sub_rpow`:
   `∫ x in a..b, (b - x)^r = (b - a)^(r + 1) / (r + 1)` for `r > -1`.
-* `TauCeti.intervalIntegrable_abs_sub_rpow`: the weight `|c - x|^r` is interval integrable on
-  every interval for `r > -1`.
 * `TauCeti.integral_sub_rpow_le_of_lt_neg_one`: `∫ x in a..b - c, (b - x)^r ≤ c^(r + 1) / -(r + 1)`
   for `r < -1`.
 * `TauCeti.norm_integral_le_of_ae_norm_le_rpow`: an integral over `[0, t]` with two power-weight
@@ -59,28 +57,6 @@ namespace TauCeti
 theorem intervalIntegrable_sub_rpow {r : ℝ} (hr : -1 < r) (a b : ℝ) :
     IntervalIntegrable (fun x => (b - x) ^ r) MeasureTheory.volume a b := by
   simpa using (intervalIntegral.intervalIntegrable_rpow' hr (a := b - a) (b := 0)).comp_sub_left b
-
-/-- The weight `|c - x|^r`, singular at `x = c`, is interval integrable on every interval for
-`r > -1`. -/
-theorem intervalIntegrable_abs_sub_rpow {r : ℝ} (hr : -1 < r) (c a b : ℝ) :
-    IntervalIntegrable (fun x => |c - x| ^ r) MeasureTheory.volume a b := by
-  -- Left of `c` the weight is `(c - x)^r`, right of `c` it is `(x - c)^r`.
-  have hl : ∀ a ≤ c, IntervalIntegrable (fun x => |c - x| ^ r) MeasureTheory.volume a c :=
-    fun a ha => (intervalIntegrable_congr fun x hx => by
-      rw [Set.uIoc_of_le ha] at hx
-      rw [abs_of_nonneg (sub_nonneg.2 hx.2)]).2 (intervalIntegrable_sub_rpow hr a c)
-  have hr' : ∀ b, c ≤ b → IntervalIntegrable (fun x => |c - x| ^ r) MeasureTheory.volume c b := by
-    intro b hb
-    have h := (intervalIntegral.intervalIntegrable_rpow' hr (a := 0) (b := b - c)).comp_sub_right c
-    simp only [zero_add, sub_add_cancel] at h
-    refine (intervalIntegrable_congr fun x hx => ?_).2 h
-    rw [Set.uIoc_of_le hb] at hx
-    rw [abs_sub_comm, abs_of_nonneg (sub_nonneg.2 hx.1.le)]
-  have h : ∀ a, IntervalIntegrable (fun x => |c - x| ^ r) MeasureTheory.volume a c := fun a => by
-    rcases le_total a c with ha | ha
-    · exact hl a ha
-    · exact (hr' a ha).symm
-  exact (h a).trans (h b).symm
 
 /-- `∫ x in a..b, (b - x)^r = (b - a)^(r + 1) / (r + 1)` for `r > -1`. -/
 theorem integral_sub_rpow {r : ℝ} (hr : -1 < r) (a b : ℝ) :

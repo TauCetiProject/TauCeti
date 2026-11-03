@@ -10,7 +10,8 @@ public import TauCeti.Analysis.PDE.HeatKernel.DuhamelPotential.Basic
 import Mathlib.Analysis.Calculus.Deriv.Shift
 import Mathlib.Analysis.Calculus.ParametricIntegral
 import TauCeti.Analysis.InnerProductSpace.Laplacian.Basic
-import TauCeti.Analysis.SpecialFunctions.Integrals.Basic
+import TauCeti.MeasureTheory.Integral.NormRpow
+import TauCeti.MeasureTheory.Measure.OpenPos
 
 /-!
 # The Duhamel heat potential solves the inhomogeneous heat equation
@@ -22,13 +23,15 @@ it solves the inhomogeneous heat equation at positive times:
 `∂ₜw(t, x) = Δw(t, ·)(x) + f(t, x)`
 
 whenever `f` is jointly measurable and essentially bounded on `(0, T) × E`, its time slices are
-`α`-Hölder in space with a common constant, and `s ↦ f(s, x)` is continuous at `t ∈ (0, T)`.
-No further regularity in time is assumed. The Laplacian of `w(t, ·)` is computed under the time
-integral (`TauCeti.laplacian_heatDuhamelPotential`).
+`α`-Hölder in space with a common constant, `0 < α ≤ 2`, and `s ↦ f(s, x)` is continuous at
+`t ∈ (0, T)`. No further regularity in time is assumed. The Laplacian of `w(t, ·)` is computed
+under the time integral (`TauCeti.laplacian_heatDuhamelPotential`).
 
-The time derivative is not taken directly under the integral `∫₀ᵗ`, whose integrand has a
-non-integrable time derivative `O(|t - s|⁻¹)` near the diagonal. Instead, extending each Cauchy
-potential `u_s(r) = (K_r ⋆ f(s, ·))(x)` by `f(s, x)` for `r ≤ 0`
+The time derivative is not taken directly under the integral `∫₀ᵗ`: its upper limit moves with
+`t`, and the time derivative `Δ(K_{t-s} ⋆ f(s, ·))(x)` of its integrand is singular at the
+diagonal `s = t`. Bounded data alone only give the non-integrable bound `O(|t - s|⁻¹)` there;
+spatial Hölder continuity improves it to the integrable bound `O(|t - s|^(α/2 - 1))`. Instead,
+extending each Cauchy potential `u_s(r) = (K_r ⋆ f(s, ·))(x)` by `f(s, x)` for `r ≤ 0`
 (`TauCeti.heatCauchyPotential`) gives, for `0 < τ < T`,
 
 `w(τ, x) = ∫₀ᵀ u_s(τ - s) ds - ∫_τ^T f(s, x) ds`.
@@ -111,21 +114,6 @@ private theorem stronglyMeasurable_heatCauchyPotential_sub
   exact ((contDiff_heatKernel (k := 0) 1).continuous.comp continuous_snd).stronglyMeasurable.smul
     (hf.comp_measurable (g := fun p : ℝ × E => (p.1, x - √(τ - p.1) • p.2)) (by fun_prop))
 
-omit [NormedSpace ℝ F] [CompleteSpace F] in
-/-- Almost every slice of a forcing that is essentially bounded and `α`-Hölder, `α > 0`, is
-continuous and bounded everywhere. -/
-private theorem ae_holderWith_continuous_norm_le {μ : Measure ℝ}
-    (hfM : ∀ᵐ s ∂μ, ∀ᵐ y, ‖f s y‖ ≤ M) (hH : ∀ᵐ s ∂μ, HolderWith H α (f s)) (hα : 0 < α) :
-    ∀ᵐ s ∂μ, HolderWith H α (f s) ∧ Continuous (f s) ∧ ∀ y, ‖f s y‖ ≤ M := by
-  filter_upwards [hfM, hH] with s hsM hsH
-  have hc := hsH.continuous hα
-  refine ⟨hsH, hc, fun y => ?_⟩
-  -- A closed set of full measure is everything.
-  have hcl : IsClosed {y | ‖f s y‖ ≤ M} := isClosed_le (continuous_norm.comp hc) continuous_const
-  have huniv := (Measure.dense_of_ae hsM).closure_eq
-  rw [hcl.closure_eq] at huniv
-  exact (eq_univ_iff_forall.1 huniv) y
-
 /-- On `(0, T)`, the Duhamel potential is `w(τ, x) = ∫₀ᵀ u_s(τ - s) ds - ∫_τ^T f(s, x) ds`, where
 `u_s` is the Cauchy potential of `f(s, ·)`, equal to `f(s, x)` at nonpositive times. -/
 private theorem heatDuhamelPotential_eq_setIntegral_sub
@@ -166,7 +154,11 @@ private theorem hasDerivAt_setIntegral_heatCauchyPotential_sub
       (Δ (heatDuhamelPotential f t) x) t := by
   set μ := volume.restrict (Ioo (0 : ℝ) T)
   set u : ℝ → ℝ → F := fun τ s => heatCauchyPotential (f s) (τ - s) x
-  have hgood := ae_holderWith_continuous_norm_le hfM hH hα₀
+  -- Almost every slice is Hölder, continuous and bounded everywhere.
+  have hgood : ∀ᵐ s ∂μ, HolderWith H α (f s) ∧ Continuous (f s) ∧ ∀ y, ‖f s y‖ ≤ M := by
+    filter_upwards [hfM, hH] with s hsM hsH
+    have hc := hsH.continuous hα₀
+    exact ⟨hsH, hc, ((continuous_norm.comp hc).ae_le_iff_le volume continuous_const).1 hsM⟩
   have hfM' := ae_restrict_of_ae_restrict_of_subset (Ioo_subset_Ioo_right htT.le) hfM
   have hH' := ae_restrict_of_ae_restrict_of_subset (Ioo_subset_Ioo_right htT.le) hH
   obtain ⟨C, hC⟩ := exists_norm_heatCauchyPotential_sub_heatCauchyPotential_le_mul
@@ -181,11 +173,14 @@ private theorem hasDerivAt_setIntegral_heatCauchyPotential_sub
       min_eq_left htT.le]
     exact h
   have hbound : Integrable (fun s => C * H * |t - s| ^ ((α : ℝ) / 2 - 1)) μ := by
-    have hr : -1 < (α : ℝ) / 2 - 1 := by
+    have hr : -(Module.finrank ℝ ℝ : ℝ) < (α : ℝ) / 2 - 1 := by
       have : (0 : ℝ) < α := hα₀
+      rw [Module.finrank_self, Nat.cast_one]
       linarith
-    exact ((intervalIntegrable_iff_integrableOn_Ioo_of_le (ht.trans htT).le).1
-      (intervalIntegrable_abs_sub_rpow hr t 0 T)).const_mul (C * H)
+    have h := ((locallyIntegrable_norm_sub_rpow (mu := volume) hr t).integrableOn_isCompact
+      isCompact_Icc).mono_set (Ioo_subset_Icc_self (a := 0) (b := T))
+    simp only [Real.norm_eq_abs] at h
+    exact h.const_mul (C * H)
   set L : F →L[ℝ] ℝ →L[ℝ] F := ContinuousLinearMap.smulRightL ℝ ℝ F 1
   have key := hasFDerivAt_integral_of_dominated_loc_of_lip' (μ := μ) (F := u)
     (F' := fun s => L (G s)) (x₀ := t) (Ioo_mem_nhds ht htT)
@@ -237,7 +232,9 @@ theorem hasDerivAt_heatDuhamelPotential (hf : StronglyMeasurable (Function.uncur
   have hfint : IntervalIntegrable (fun s => f s x) volume 0 T := by
     rw [intervalIntegrable_iff_integrableOn_Ioo_of_le hT.le]
     refine (integrable_const M).mono' hfm.aestronglyMeasurable ?_
-    filter_upwards [ae_holderWith_continuous_norm_le hfM hH hα₀] with s hs using hs.2.2 x
+    filter_upwards [hfM, hH] with s hsM hsH
+    exact ((continuous_norm.comp (hsH.continuous hα₀)).ae_le_iff_le volume continuous_const).1
+      hsM x
   have hI : HasDerivAt (fun τ => ∫ s in τ..T, f s x) (-f t x) t :=
     intervalIntegral.integral_hasDerivAt_left (hfint.mono_set (by
       rw [uIcc_of_le htT.le, uIcc_of_le hT.le]
