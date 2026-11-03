@@ -6,8 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.ModularForms.SiegelFunction.JInvariant
-import Mathlib.RingTheory.IntegralClosure.IsIntegralClosure.Basic
-import Mathlib.Tactic.ComputeDegree
+public import TauCeti.RingTheory.IntegralClosure.IsIntegral.Basic
 
 /-!
 # Integrality of the level-two Siegel functions
@@ -32,21 +31,9 @@ functions themselves, not only to their values.
 
 public section
 
-open Polynomial UpperHalfPlane
+open UpperHalfPlane
 
 namespace TauCeti.ModularForm
-
--- This algebraic step works in a function ring as well as in `ℂ`.
-private theorem isIntegral_of_cubic_power_eq {R A : Type*} [CommRing R] [CommRing A]
-    [Algebra R A] {z g : A} (hz : IsIntegral R z) {c k : ℕ} (hk : k < 3)
-    (hg : (g ^ 12 + c) ^ 3 = z * (g ^ 12) ^ k) : IsIntegral R g := by
-  let z' : integralClosure R A := ⟨z, hz⟩
-  have hpow : IsIntegral (integralClosure R A) (g ^ 12) := by
-    refine ⟨(X + C (c : integralClosure R A)) ^ 3 - C z' * X ^ k, ?_, ?_⟩
-    · monicity!; simp [hk.le, hk.not_ge]
-    · simpa only [eval₂_sub, eval₂_pow, eval₂_add, eval₂_mul, eval₂_C, eval₂_X,
-        eval₂_natCast, map_natCast, Subalgebra.algebraMap_apply] using sub_eq_zero.mpr hg
-  exact isIntegral_trans g (hpow.of_pow (by decide))
 
 private theorem isIntegral_of_weber_eq {R A : Type*} [CommRing R] [CommRing A]
     [Algebra R A] {z g : A} (hz : IsIntegral R z)
