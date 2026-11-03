@@ -38,6 +38,8 @@ against the pullback `q^* σ`, because `q` is surjective and its differentials a
 
 * `TauCeti.SmoothAlmostComplexStructure.descend_apply_mfderiv`: every differential of `q` is
   complex linear for `J` and its descent.
+* `TauCeti.SmoothAlmostComplexStructure.contMDiff_descend_family`: a family of structures
+  depending smoothly on a parameter descends to a family depending smoothly on the parameter.
 * `TauCeti.SmoothAlmostComplexStructure.eq_descend_iff`: the descent is the only almost complex
   structure with this property.
 * `TauCeti.SmoothAlmostComplexStructure.mfderiv_apply_eq_of_deck`,
@@ -171,49 +173,81 @@ private theorem descendEndomorphism_comp_square (y : N) :
   simp only [ContinuousLinearMap.comp_apply, descendEndomorphism_apply_mfderiv hq hsurj J hJ,
     apply_apply, map_neg, _root_.neg_apply, ContinuousLinearMap.id_apply]
 
-variable [FiniteDimensional ℝ E'] [IsManifold I' ∞ N] [T2Space N]
+variable [FiniteDimensional ℝ E'] [IsManifold I' ∞ N]
 
-include hJ in
-private theorem contMDiff_descendEndomorphism :
-    ContMDiff I' (I'.prod 𝓘(ℝ, E' →L[ℝ] E')) ∞
-      (fun y ↦ TotalSpace.mk' (E' →L[ℝ] E')
-        (E := fun y : N ↦ TangentSpace I' y →L[ℝ] TangentSpace I' y) y
-        (descendEndomorphism hq hsurj J y)) := by
-  refine (Manifold.contMDiff_hom_iff _).2 fun V hV z₀ ↦ ?_
-  obtain ⟨x₀, rfl⟩ := hsurj z₀
+section Family
+
+variable {EΛ HΛ Λ : Type*} [NormedAddCommGroup EΛ] [NormedSpace ℝ EΛ] [TopologicalSpace HΛ]
+  {IΛ : ModelWithCorners ℝ EΛ HΛ} [TopologicalSpace Λ] [ChartedSpace HΛ Λ]
+
+/-- For a family `K λ` of `q`-compatible structures depending smoothly on a parameter in `Λ`, the
+descended endomorphisms depend smoothly on the parameter and the point. -/
+private theorem contMDiff_descendEndomorphism_family {K : Λ → SmoothAlmostComplexStructure I M}
+    (hK : ∀ (l : Λ) ⦃x x' : M⦄ (v : TangentSpace I x) (v' : TangentSpace I x'), q x = q x' →
+      mfderiv I I' q x v = mfderiv I I' q x' v' →
+        mfderiv I I' q x (K l x v) = mfderiv I I' q x' (K l x' v'))
+    (hKs : ContMDiff (IΛ.prod I) (I.prod 𝓘(ℝ, E →L[ℝ] E)) ∞
+      (fun r : Λ × M ↦ TotalSpace.mk' (E →L[ℝ] E)
+        (E := fun x : M ↦ TangentSpace I x →L[ℝ] TangentSpace I x) r.2
+        ((K r.1).toEndomorphism r.2))) :
+    ContMDiff (IΛ.prod I') (I'.prod 𝓘(ℝ, E' →L[ℝ] E')) ∞
+      (fun r : Λ × N ↦ TotalSpace.mk' (E' →L[ℝ] E')
+        (E := fun y : N ↦ TangentSpace I' y →L[ℝ] TangentSpace I' y) r.2
+        (descendEndomorphism hq hsurj (K r.1) r.2)) := by
+  refine (TauCeti.contMDiff_hom_bundle_prod_iff _).2 fun ⟨l₀, w₀⟩ ↦ ?_
+  obtain ⟨x₀, hx₀q⟩ := hsurj w₀.proj
   have hx₀ := hq x₀
   set s := hx₀.localInverse
-  have hs : ContMDiffAt I' I ∞ s (q x₀) := hx₀.contMDiffAt_localInverse
-  -- Read near `q x₀` through the local inverse `s`: `J' z (V z) = dq (J (ds (V z)))`.
-  have hA : ContMDiffAt I' I.tangent ∞ (fun z ↦ tangentMap I' I s ⟨z, V z⟩) (q x₀) :=
-    (hs.contMDiffAt_tangentMap (X := ⟨q x₀, V (q x₀)⟩) (by simp)).comp (q x₀) (hV (q x₀))
-  have hB : ContMDiffAt I' I.tangent ∞
-      (fun z ↦ TotalSpace.mk' E (s z) (J (s z) (mfderiv I' I s z (V z)))) (q x₀) :=
-    ((J.toEndomorphism.contMDiff (s (q x₀))).comp (q x₀) hs).clm_bundle_apply hA
-  have hC := ((hq.contMDiff.contMDiff_tangentMap (m := ∞) (by simp)).contMDiffAt).comp (q x₀) hB
+  -- Read near `w₀` through the local inverse `s`: `K' l w = dq (K l (ds w))`.
+  have hs : ContMDiffAt I' I ∞ s w₀.proj := hx₀q ▸ hx₀.contMDiffAt_localInverse
+  have hTs : ContMDiffAt I'.tangent I.tangent ∞ (tangentMap I' I s) w₀ :=
+    hs.contMDiffAt_tangentMap (by simp)
+  have hA : ContMDiffAt (IΛ.prod I'.tangent) (IΛ.prod I.tangent) ∞
+      (fun r : Λ × TangentBundle I' N ↦ (r.1, tangentMap I' I s r.2)) (l₀, w₀) :=
+    contMDiffAt_fst.prodMk (hTs.comp (l₀, w₀) contMDiffAt_snd)
+  have hK' : ContMDiff (IΛ.prod I.tangent) I.tangent ∞
+      (fun r : Λ × TangentBundle I M ↦ TotalSpace.mk' E r.2.proj (K r.1 r.2.proj r.2.2)) :=
+    (hKs.comp (contMDiff_fst.prodMk ((contMDiff_proj (TangentSpace I)).comp
+      contMDiff_snd))).clm_bundle_apply contMDiff_snd
+  have hC := ((hq.contMDiff.contMDiff_tangentMap (m := ∞) (by simp)).contMDiffAt).comp (l₀, w₀)
+    ((hK' _).comp (l₀, w₀) hA)
   refine hC.congr_of_eventuallyEq ?_
-  have hev : ∀ᶠ z in 𝓝 (q x₀), z ∈ hx₀.localInverse.source :=
-    hx₀.localInverse_open_source.mem_nhds hx₀.localInverse_mem_source
-  filter_upwards [hev] with z hz
+  have hev : ∀ᶠ r : Λ × TangentBundle I' N in 𝓝 (l₀, w₀), r.2.proj ∈ hx₀.localInverse.source :=
+    ((FiberBundle.continuous_proj E' (TangentSpace I')).comp
+      continuous_snd).continuousAt.preimage_mem_nhds (hx₀.localInverse_open_source.mem_nhds (by
+        simpa only [Function.comp_apply, ← hx₀q] using hx₀.localInverse_mem_source))
+  filter_upwards [hev] with ⟨l, z, V⟩ hz
   have hqs : q (s z) = z := hx₀.localInverse_right_inv hz
-  -- The chain rule for `q ∘ s = id` near `z`: `dq_(s z) (ds_z (V z)) = V z`.
-  have hchain : mfderiv I I' q (s z) (mfderiv I' I s z (V z)) = V z := by
+  -- The chain rule for `q ∘ s = id` near `z`: `dq_(s z) (ds_z V) = V`.
+  have hchain : mfderiv I I' q (s z) (mfderiv I' I s z V) = V := by
     have hid : q ∘ s =ᶠ[𝓝 z] id :=
       eventuallyEq_of_mem (hx₀.localInverse_open_source.mem_nhds hz)
         hx₀.localInverse_eqOn_right
     have hsz : MDifferentiableAt I' I s z :=
       (hx₀.contMDiffOn_localInverse.contMDiffAt
         (hx₀.localInverse_open_source.mem_nhds hz)).mdifferentiableAt (by simp)
-    have h := mfderiv_comp_apply z ((hq.contMDiff (s z)).mdifferentiableAt (by simp)) hsz (V z)
+    have h := mfderiv_comp_apply z ((hq.contMDiff (s z)).mdifferentiableAt (by simp)) hsz V
     rw [hid.mfderiv_eq, mfderiv_id] at h
     -- The base points `q (s z)` and `z` agree, so `h` is the claim.
     exact h.symm
-  have key (y : M) (v : TangentSpace I y) (hy : q y = z) (hv : mfderiv I I' q y v = V z) :
-      (⟨z, descendEndomorphism hq hsurj J z (V z)⟩ : TangentBundle I' N) =
-        ⟨q y, mfderiv I I' q y (J y v)⟩ := by
+  have key (y : M) (v : TangentSpace I y) (hy : q y = z) (hv : mfderiv I I' q y v = V) :
+      (⟨z, descendEndomorphism hq hsurj (K l) z V⟩ : TangentBundle I' N) =
+        ⟨q y, mfderiv I I' q y (K l y v)⟩ := by
     subst hy
-    rw [← hv, descendEndomorphism_apply_mfderiv hq hsurj J hJ]
+    rw [← hv, descendEndomorphism_apply_mfderiv hq hsurj (K l) (hK l)]
   exact key (s z) _ hqs hchain
+
+end Family
+
+include hJ in
+private theorem contMDiff_descendEndomorphism :
+    ContMDiff I' (I'.prod 𝓘(ℝ, E' →L[ℝ] E')) ∞
+      (fun y ↦ TotalSpace.mk' (E' →L[ℝ] E')
+        (E := fun y : N ↦ TangentSpace I' y →L[ℝ] TangentSpace I' y) y
+        (descendEndomorphism hq hsurj J y)) :=
+  -- This is the case of the constant family, with parameter in `N` itself.
+  (contMDiff_descendEndomorphism_family hq hsurj (IΛ := I') (K := fun _ : N ↦ J) (fun _ ↦ hJ)
+    (J.toEndomorphism.contMDiff.comp contMDiff_snd)).comp (contMDiff_id.prodMk contMDiff_id)
 
 /-- The almost complex structure on `N` induced by a smooth almost complex structure `J` on `M`
 along a surjective smooth local diffeomorphism `q : M → N`, provided that `J` respects the
@@ -224,6 +258,26 @@ sent by `J` to vectors with the same image. It is characterized by `K (dq v) = d
 def descend : SmoothAlmostComplexStructure I' N where
   toEndomorphism := ⟨descendEndomorphism hq hsurj J, contMDiff_descendEndomorphism hq hsurj J hJ⟩
   square_neg := descendEndomorphism_comp_square hq hsurj J hJ
+
+/-- For a family `K λ` of `q`-compatible smooth almost complex structures depending smoothly on a
+parameter `λ` in a manifold `Λ`, the descended structures depend smoothly on the parameter:
+`(λ, y) ↦ (descend (K λ))_y` is a smooth section of the tangent endomorphism bundle along the
+projection `Λ × N → N`. -/
+theorem contMDiff_descend_family {EΛ HΛ Λ : Type*} [NormedAddCommGroup EΛ] [NormedSpace ℝ EΛ]
+    [TopologicalSpace HΛ] {IΛ : ModelWithCorners ℝ EΛ HΛ} [TopologicalSpace Λ]
+    [ChartedSpace HΛ Λ] {K : Λ → SmoothAlmostComplexStructure I M}
+    (hK : ∀ (l : Λ) ⦃x x' : M⦄ (v : TangentSpace I x) (v' : TangentSpace I x'), q x = q x' →
+      mfderiv I I' q x v = mfderiv I I' q x' v' →
+        mfderiv I I' q x (K l x v) = mfderiv I I' q x' (K l x' v'))
+    (hKs : ContMDiff (IΛ.prod I) (I.prod 𝓘(ℝ, E →L[ℝ] E)) ∞
+      (fun r : Λ × M ↦ TotalSpace.mk' (E →L[ℝ] E)
+        (E := fun x : M ↦ TangentSpace I x →L[ℝ] TangentSpace I x) r.2
+        ((K r.1).toEndomorphism r.2))) :
+    ContMDiff (IΛ.prod I') (I'.prod 𝓘(ℝ, E' →L[ℝ] E')) ∞
+      (fun r : Λ × N ↦ TotalSpace.mk' (E' →L[ℝ] E')
+        (E := fun y : N ↦ TangentSpace I' y →L[ℝ] TangentSpace I' y) r.2
+        ((descend hq hsurj (K r.1) (hK r.1)).toEndomorphism r.2)) :=
+  contMDiff_descendEndomorphism_family hq hsurj hK hKs
 
 /-- Every differential of `q` is complex linear for `J` and its descent:
 `K (dq v) = dq (J v)`. -/
