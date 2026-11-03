@@ -17,10 +17,12 @@ Let `J` be a smooth almost complex structure on a manifold `M` and let `F` be a 
 space. On a smooth function `f : M → F`, regarded as a `0`-form, the operators `∂` and `∂bar` of
 `J` are the Wirtinger parts of the differential:
 
-`∂f(v) = (df(v) - i df(J v)) / 2`, `∂bar f(v) = (df(v) + i df(J v)) / 2`.
+`∂f(v) = (df(v) - i df(J v)) / 2`, `∂bar f(v) = (df(v) + i df(J v)) / 2`
 
-So `∂bar f` vanishes at a point exactly when `df` is complex linear there, `df ∘ J = i df`; that
-is, exactly when `f` is pseudoholomorphic there as a map into the complex vector space `F`.
+(`TauCeti.SmoothAlmostComplexStructure.delBar_apply_apply` in
+`TauCeti.Geometry.Manifold.DifferentialForm.Dolbeault.Basic`). So `∂bar f` vanishes at a point
+exactly when `df` is complex linear there, `df ∘ J = i df`; that is, exactly when `f` is
+pseudoholomorphic there as a map into the complex vector space `F`.
 
 On a complex manifold, with its almost complex structure
 `TauCeti.SmoothAlmostComplexStructure.ofComplexManifold`, the pseudoholomorphic maps are the
@@ -31,8 +33,6 @@ cohomology `H^(0,0)` of `M` with coefficients in `F`, since there are no forms o
 
 ## Main declarations
 
-* `TauCeti.SmoothAlmostComplexStructure.del_apply_apply`,
-  `TauCeti.SmoothAlmostComplexStructure.delBar_apply_apply`: `∂` and `∂bar` on functions.
 * `TauCeti.SmoothAlmostComplexStructure.delBar_apply_eq_zero_iff_isPseudoholomorphicAt`,
   `TauCeti.SmoothAlmostComplexStructure.delBar_eq_zero_iff_isPseudoholomorphic`: on any almost
   complex manifold, `∂bar f = 0` exactly when `f` is pseudoholomorphic.
@@ -58,60 +58,13 @@ namespace TauCeti
 
 namespace SmoothAlmostComplexStructure
 
-/-! ### `∂` and `∂bar` on functions on an almost complex manifold -/
+/-! ### `∂bar`-closed functions on an almost complex manifold -/
 
 section AlmostComplex
 
 variable {E H M F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSpace H]
   {I : ModelWithCorners ℝ E H} [TopologicalSpace M] [ChartedSpace H M] [IsManifold I ∞ M]
   [NormedAddCommGroup F] [NormedSpace ℂ F] (J : SmoothAlmostComplexStructure I M)
-
-/-- **`∂` on functions.** For a smooth function `f`, `∂f(v) = (df(v) - i df(J v)) / 2`. -/
-theorem del_apply_apply (f : SmoothForm I M F 0) (x : M) (v : TangentSpace I x) :
-    (J.del f).1 x ![v] = (2 : ℂ)⁻¹ • (mvfderiv I (fun y ↦ f.1 y 0) x v -
-      Complex.I • mvfderiv I (fun y ↦ f.1 y 0) x (J x v)) := by
-  rw [(SmoothForm.isOfType_zero_zero f J).del_eq]
-  simp only [coe_typeProjection, zero_add, ContinuousLinearMap.typeProjection_one_zero,
-    LinearMap.smul_apply, LinearMap.sub_apply, one_apply_eq_self,
-    ContinuousAlternatingMap.smul_apply, ContinuousAlternatingMap.sub_apply]
-  rw [ContinuousLinearMap.alternatingDerivation_apply_vecCons_fin_one, mextDerivₗ_zero_apply,
-    mextDerivₗ_zero_apply]
-
-/-- **`∂bar` on functions.** For a smooth function `f`, `∂bar f(v) = (df(v) + i df(J v)) / 2`. -/
-theorem delBar_apply_apply (f : SmoothForm I M F 0) (x : M) (v : TangentSpace I x) :
-    (J.delBar f).1 x ![v] = (2 : ℂ)⁻¹ • (mvfderiv I (fun y ↦ f.1 y 0) x v +
-      Complex.I • mvfderiv I (fun y ↦ f.1 y 0) x (J x v)) := by
-  rw [(SmoothForm.isOfType_zero_zero f J).delBar_eq]
-  simp only [coe_typeProjection, zero_add, ContinuousLinearMap.typeProjection_zero_one,
-    LinearMap.smul_apply, LinearMap.add_apply, one_apply_eq_self,
-    ContinuousAlternatingMap.smul_apply, ContinuousAlternatingMap.add_apply]
-  rw [ContinuousLinearMap.alternatingDerivation_apply_vecCons_fin_one, mextDerivₗ_zero_apply,
-    mextDerivₗ_zero_apply]
-
-/-- `∂bar f` vanishes at a point exactly when the differential of `f` there is complex linear
-for `J`: `df(J v) = i df(v)`. -/
-theorem delBar_apply_eq_zero_iff (f : SmoothForm I M F 0) (x : M) :
-    (J.delBar f).1 x = 0 ↔ ∀ v, mvfderiv I (fun y ↦ f.1 y 0) x (J x v) =
-      Complex.I • mvfderiv I (fun y ↦ f.1 y 0) x v := by
-  refine (ContinuousAlternatingMap.eq_zero_iff_forall_apply_fin_one _).trans
-    (forall_congr' fun v ↦ ?_)
-  rw [delBar_apply_apply, smul_eq_zero, or_iff_right (by norm_num)]
-  constructor <;> intro h
-  · rw [eq_neg_of_add_eq_zero_left h, smul_neg, smul_smul, Complex.I_mul_I, neg_one_smul,
-      _root_.neg_neg]
-  · rw [h, smul_smul, Complex.I_mul_I, neg_one_smul, add_neg_cancel]
-
-/-- `∂f` vanishes at a point exactly when the differential of `f` there is conjugate linear for
-`J`: `df(J v) = -i df(v)`. -/
-theorem del_apply_eq_zero_iff (f : SmoothForm I M F 0) (x : M) :
-    (J.del f).1 x = 0 ↔ ∀ v, mvfderiv I (fun y ↦ f.1 y 0) x (J x v) =
-      -Complex.I • mvfderiv I (fun y ↦ f.1 y 0) x v := by
-  refine (ContinuousAlternatingMap.eq_zero_iff_forall_apply_fin_one _).trans
-    (forall_congr' fun v ↦ ?_)
-  rw [del_apply_apply, smul_eq_zero, or_iff_right (by norm_num)]
-  constructor <;> intro h
-  · rw [sub_eq_zero.1 h, neg_smul, smul_smul, Complex.I_mul_I, neg_one_smul, _root_.neg_neg]
-  · rw [h, smul_smul, mul_neg, Complex.I_mul_I, _root_.neg_neg, one_smul, sub_self]
 
 /-- **`∂bar f = 0` is the Cauchy–Riemann equation.** On any almost complex manifold, `∂bar f`
 vanishes at a point exactly when `f` is pseudoholomorphic there as a map into the complex vector
