@@ -69,8 +69,8 @@ theorem orderOf_automorphism [Nontrivial R] : orderOf (automorphism R) = 3 := by
   apply orderOf_eq_prime
   · apply LinearEquiv.ext
     intro x
-    simpa only [pow_succ, pow_zero, mul_one, LinearEquiv.mul_apply,
-      LinearEquiv.coe_one, id_eq] using automorphism_cube R x
+    simpa only [pow_succ, pow_zero, mul_one, mul_apply_eq_comp,
+      FunLike.coe_one_eq_id, id_eq] using automorphism_cube R x
   · intro h
     have hx := congrFun (LinearEquiv.congr_fun h ![1, 0]) 0
     norm_num at hx
