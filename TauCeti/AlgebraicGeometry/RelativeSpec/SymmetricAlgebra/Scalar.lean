@@ -37,24 +37,10 @@ noncomputable section
 
 variable {R : CommRingCat.{u}} (M : ModuleCat.{u} R)
 
-/-- The linear functional of a point of `Spec_{Spec R} (Sym M~)` is obtained by pulling back
-the generators of `Sym_R M` through the affine comparison. -/
-theorem relativeSpecSymmetricAlgebraTildeHomEquiv_eq_appTop {T : Over (Spec R)}
-    (t : T ⟶ (MorphismProperty.Over.forget _ _ _).obj ((relativeSpec (Spec R)).obj
-      (op ((symmetricAlgebra (Spec R)).obj ((tildeEquiv (R := R)).functor.obj M))))) (m : M) :
-    relativeSpecSymmetricAlgebraTildeHomEquiv M T t m =
-      (t.left ≫ (relativeSpecSymmetricAlgebraTildeIso M).hom.left).appTop
-        ((Scheme.ΓSpecIso _).inv (SymmetricAlgebra.ι R M m)) := by
-  have ht := relativeSpecSymmetricAlgebraTildeHomEquiv_comp M t (𝟙 _) m
-  have hi := congrArg (fun s ↦ relativeSpecSymmetricAlgebraTildeHomEquiv M T s m)
-    (Category.comp_id t)
-  exact hi.symm.trans (ht.trans ((congrArg t.left.appTop
-    (relativeSpecSymmetricAlgebraTildeIso_hom_left_appTop_ι M m)).symm.trans
-      (ConcreteCategory.congr_hom
-        (Scheme.Hom.comp_appTop t.left (relativeSpecSymmetricAlgebraTildeIso M).hom.left) _).symm))
-
 /-- The affine linear functional associated with a scalar multiple of a point is the scalar
 function times the original functional. The test scheme need not be affine. -/
+-- Apply before simp normalizes the semilinear map's scalar homomorphism.
+@[simp↓]
 theorem relativeSpecSymmetricAlgebraTildeHomEquiv_lift_comp_smul {T : Over (Spec R)}
     (a : T ⟶ 𝔸(PUnit.{u + 1}; Spec R).asOver (Spec R))
     (t : T ⟶ (MorphismProperty.Over.forget _ _ _).obj ((relativeSpec (Spec R)).obj
@@ -70,6 +56,8 @@ theorem relativeSpecSymmetricAlgebraTildeHomEquiv_lift_comp_smul {T : Over (Spec
 
 /-- In affine coordinates, scalar multiplication on the relative spectrum multiplies every
 linear generator by the corresponding global function. -/
+-- Apply before simp expands the underlying morphism of the product lift.
+@[simp↓]
 theorem relativeSpecSymmetricAlgebraTildeIso_lift_comp_smul_appTop_ι {T : Over (Spec R)}
     (a : T ⟶ 𝔸(PUnit.{u + 1}; Spec R).asOver (Spec R))
     (t : T ⟶ (MorphismProperty.Over.forget _ _ _).obj ((relativeSpec (Spec R)).obj

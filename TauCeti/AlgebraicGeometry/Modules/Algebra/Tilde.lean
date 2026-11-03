@@ -123,6 +123,8 @@ lemma _root_.AlgebraicGeometry.Scheme.Hom.tildeHomPushforwardEquiv_apply (q : T 
 
 /-- Multiplication by a function on the test scheme multiplies the associated linear
 functional by that function. -/
+-- Apply before simp normalizes the semilinear map's scalar homomorphism.
+@[simp↓]
 lemma _root_.AlgebraicGeometry.Scheme.Hom.tildeHomPushforwardEquiv_globalSectionsSmul
     (q : T ⟶ Spec R) (M : ModuleCat.{u} R)
     (φ : tilde M ⟶ (Scheme.Modules.pushforward q).obj (𝟙_ T.Modules))
