@@ -51,7 +51,7 @@ theorem traceCLM_apply (T : V →L[𝕜] V) :
 
 /-- The trace of a composition does not depend on the order of the factors:
 `tr (S ∘ T) = tr (T ∘ S)`. -/
-theorem traceCLM_comp_comm (S T : V →L[𝕜] V) :
+theorem _root_.ContinuousLinearMap.traceCLM_comp_comm (S T : V →L[𝕜] V) :
     traceCLM 𝕜 V (S ∘L T) = traceCLM 𝕜 V (T ∘L S) := by
   rw [traceCLM_apply, traceCLM_apply, ContinuousLinearMap.toLinearMap_comp,
     ContinuousLinearMap.toLinearMap_comp]

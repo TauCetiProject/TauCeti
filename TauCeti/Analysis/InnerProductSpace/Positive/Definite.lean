@@ -27,20 +27,21 @@ because the form is definite, so dividing the `i`-th eigenvector by `√(λ i)` 
 is orthonormal *for the form*, and `e` is the map carrying the eigenbasis to it.
 
 Over the reals, a related factorization can be chosen compatibly with a prescribed direction `ν`:
-`TauCeti.exists_continuousLinearEquiv_comp_adjoint_eq_of_isSymmetric` factors a positive-definite
-symmetric operator as `A = e e†`, so that `⟪A x, y⟫ = ⟪e† x, e† y⟫`, with `e† ν` a positive
-multiple of `ν`. Composing with such an
-`e` turns the second-order operator `u ↦ tr (A D²u)` into the Laplacian, since
-`D²(u ∘ e) = e† (D²u ∘ e) e`, while `e⁻¹` maps each half-space `{⟪x, ν⟫ > a}` onto another
-half-space with the same normal. This is how constant-coefficient elliptic equations on a
-half-space reduce to Poisson's equation on a half-space.
+`ContinuousLinearMap.exists_continuousLinearEquiv_comp_adjoint_eq_of_isSymmetric` factors a
+positive-definite symmetric operator as `A = e e†`, so that `⟪A x, y⟫ = ⟪e† x, e† y⟫`, with
+`e† ν` a positive multiple of `ν`. Composing with such an `e` turns the second-order operator
+`u ↦ tr (A D²u)` into the Laplacian, since `D²(u ∘ e) = e† (D²u ∘ e) e`, while `e⁻¹` maps each
+half-space `{⟪x, ν⟫ > a}` onto another half-space with the same normal. This is how
+constant-coefficient elliptic equations on a half-space reduce to Poisson's equation on a
+half-space.
 
 ## Main statements
 
 * `TauCeti.exists_continuousLinearEquiv_inner_map_map`: a positive-definite symmetric operator's
   form becomes the standard inner product after a change of coordinates.
-* `TauCeti.exists_continuousLinearEquiv_comp_adjoint_eq_of_isSymmetric`: a positive-definite
-  symmetric operator factors as `e e†`, with `e†` fixing the direction of a given vector.
+* `ContinuousLinearMap.exists_continuousLinearEquiv_comp_adjoint_eq_of_isSymmetric`: a
+  positive-definite symmetric operator factors as `e e†`, with `e†` fixing the direction of a
+  given vector.
 
 Only the existence of `e` is exported, since it depends on a choice of eigenbasis. The operator is
 taken continuous and the change of coordinates produced is a continuous linear equivalence; on a
@@ -127,7 +128,7 @@ some `λ > 0`, and let `ν ≠ 0`. Then there is a continuous linear automorphis
 
 One can take `e = √A ∘ R`, where `√A` is the positive square root of `A` and `R` is the reflection
 exchanging `ν` and the vector of the same length in the direction of `√A ν`. -/
-theorem exists_continuousLinearEquiv_comp_adjoint_eq_of_isSymmetric
+theorem _root_.ContinuousLinearMap.exists_continuousLinearEquiv_comp_adjoint_eq_of_isSymmetric
     (A : V →L[ℝ] V) (hA : (A : V →ₗ[ℝ] V).IsSymmetric) {lam : ℝ} (hlam : 0 < lam)
     (hpos : ∀ ξ : V, lam * ‖ξ‖ ^ 2 ≤ ⟪A ξ, ξ⟫_ℝ) {ν : V} (hν : ν ≠ 0) :
     ∃ e : V ≃L[ℝ] V, (e : V →L[ℝ] V) ∘L (e : V →L[ℝ] V).adjoint = A ∧

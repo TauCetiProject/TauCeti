@@ -11,8 +11,6 @@ import TauCeti.Analysis.InnerProductSpace.Positive.Definite
 import TauCeti.Analysis.InnerProductSpace.Trace.Free
 import TauCeti.Analysis.Sobolev.Wkp.ChangeOfVariables
 import TauCeti.Analysis.Sobolev.Wkp.Laplacian
-import TauCeti.MeasureTheory.Function.Lp.Dilation
-import TauCeti.MeasureTheory.Function.Lp.Precomposition
 import TauCeti.MeasureTheory.Measure.Haar.InnerProductSpace
 
 /-!
@@ -57,17 +55,18 @@ at most `2 ‖f‖_{Lᵖ(H)}` because `ρ` preserves volume. The whole-space est
 (`TauCeti.exists_norm_iteratedGradient_le_mul_norm_of_traceCLM_compLpL_eq`) bounds `D²v` by
 `Δv`, and `D²v` restricts to `D²u` on `H`.
 
-For constant coefficients, only the symmetric part `S = (A + A†) / 2` of `A` enters, because the
-weak Hessian is self-adjoint almost everywhere (`TauCeti.Wkp.adjoint_iteratedGradient_one_ae_eq`).
-Write `S = e e†` for a linear automorphism `e` whose adjoint maps the normal `(1, 0)` to a
-positive multiple `c (1, 0)`
-(`TauCeti.exists_continuousLinearEquiv_comp_adjoint_eq_of_isSymmetric`). Then `e` maps the
-half-space `{a / c < x.fst}` onto `H`, and `v = u ∘ e` lies in `W^{2,p}` of that half-space, with
-zero boundary values and weak Hessian `e† ∘ D²u(e ·) ∘ e`
+For constant coefficients, only the symmetric part `S = (A + A†) / 2` of `A` enters
+(`ContinuousLinearMap.traceCLM_symmPart_comp`), because the weak Hessian is self-adjoint almost
+everywhere (`TauCeti.Wkp.adjoint_iteratedGradient_one_ae_eq`). Write `S = e e†` for a linear
+automorphism `e` whose adjoint maps the normal `(1, 0)` to a positive multiple `c (1, 0)`
+(`ContinuousLinearMap.exists_continuousLinearEquiv_comp_adjoint_eq_of_isSymmetric`). Then `e`
+maps the half-space `{a / c < x.fst}` onto `H`, and `v = u ∘ e` lies in `W^{2,p}` of that
+half-space, with zero boundary values and weak Hessian `e† ∘ D²u(e ·) ∘ e`
 (`TauCeti.Wkp.exists_value_ae_eq_comp_continuousLinearEquiv`). Its trace is
 `tr (D²u(e ·) e e†) = tr (S D²u) ∘ e = f ∘ e`, so the estimate for the Laplacian applies to `v`.
 Since `‖e⁻¹‖ ≤ λ^(-1/2)`, `‖D²u ∘ e‖ ≤ λ⁻¹ ‖D²v‖` pointwise, and changing variables multiplies
-the `Lᵖ` norms of `D²u ∘ e` and of `f ∘ e` by the same Jacobian factor.
+the `Lᵖ` norms of `D²u ∘ e` and of `f ∘ e` by the same Jacobian factor
+(`TauCeti.Wkp.norm_iteratedGradient_le_of_ae_eq_adjoint_comp_comp`).
 
 ## References
 
@@ -257,118 +256,6 @@ theorem exists_norm_iteratedGradient_le_mul_norm_of_integral_laplacian_smul_eq_o
 
 /-! ### Constant coefficients -/
 
-/-- If `‖e⁻¹ x‖ ≤ ‖x‖ / √λ` for all `x`, then `‖M‖ ≤ λ⁻¹ ‖e† ∘ M ∘ e‖`. -/
-private theorem norm_le_inv_mul_norm_adjoint_comp_comp {V : Type*} [NormedAddCommGroup V]
-    [InnerProductSpace ℝ V] [CompleteSpace V] (e : V ≃L[ℝ] V) {lam : ℝ} (hlam : 0 < lam)
-    (he : ∀ x, ‖e.symm x‖ ≤ (√lam)⁻¹ * ‖x‖) (M : V →L[ℝ] V) :
-    ‖M‖ ≤ lam⁻¹ * ‖(e : V →L[ℝ] V).adjoint ∘L M ∘L (e : V →L[ℝ] V)‖ := by
-  have hK : ‖(e.symm : V →L[ℝ] V)‖ ≤ (√lam)⁻¹ :=
-    ContinuousLinearMap.opNorm_le_bound _ (by positivity) he
-  -- `M = (e⁻¹)† ∘ (e† ∘ M ∘ e) ∘ e⁻¹`
-  have hM : M = (e.symm : V →L[ℝ] V).adjoint ∘L
-      ((e : V →L[ℝ] V).adjoint ∘L M ∘L (e : V →L[ℝ] V)) ∘L (e.symm : V →L[ℝ] V) := by
-    ext x
-    refine ext_inner_right ℝ fun z => ?_
-    simp [ContinuousLinearMap.adjoint_inner_left]
-  set N := (e : V →L[ℝ] V).adjoint ∘L M ∘L (e : V →L[ℝ] V)
-  calc ‖M‖ = ‖(e.symm : V →L[ℝ] V).adjoint ∘L N ∘L (e.symm : V →L[ℝ] V)‖ := by rw [← hM]
-    _ ≤ ‖(e.symm : V →L[ℝ] V).adjoint‖ * (‖N‖ * ‖(e.symm : V →L[ℝ] V)‖) :=
-        (ContinuousLinearMap.opNorm_comp_le _ _).trans
-          (mul_le_mul_of_nonneg_left (ContinuousLinearMap.opNorm_comp_le _ _) (norm_nonneg _))
-    _ ≤ (√lam)⁻¹ * (‖N‖ * (√lam)⁻¹) := by
-        rw [LinearIsometryEquiv.norm_map]
-        gcongr
-    _ = lam⁻¹ * ‖N‖ := by
-        rw [mul_comm ‖N‖, ← mul_assoc, ← mul_inv, Real.mul_self_sqrt hlam.le]
-
-/-- **Transferring the estimate along a linear change of variables.** Let `e e† = A` with
-`‖e⁻¹ x‖ ≤ ‖x‖ / √λ`, let `U = e⁻¹(W)`, and let `v ∈ W^{2,p}(U)` have weak Hessian
-`e† ∘ D²u(e ·) ∘ e`. If `u` solves `tr (A D²u) = f` on `W` and the Hessian of `v` is bounded by
-`C` times the norm of its trace, then `‖D²u‖ ≤ (C / λ) ‖f‖`. -/
-private theorem norm_iteratedGradient_le_of_ae_eq_adjoint_comp_comp {V : Type*}
-    [NormedAddCommGroup V] [InnerProductSpace ℝ V] [FiniteDimensional ℝ V] [MeasurableSpace V]
-    [BorelSpace V] {A : V →L[ℝ] V} (e : V ≃L[ℝ] V) (hee : (e : V →L[ℝ] V) ∘L
-      (e : V →L[ℝ] V).adjoint = A) {lam : ℝ} (hlam : 0 < lam)
-    (he : ∀ x, ‖e.symm x‖ ≤ (√lam)⁻¹ * ‖x‖) {U W : Opens V} (hUW : (U : Set V) = e ⁻¹' W)
-    {u : Wkp (volume : Measure V) W p 2} {v : Wkp (volume : Measure V) U p 2}
-    (hD : Wkp.iteratedGradient 1 v =ᵐ[volume.restrict U] fun x =>
-      (e : V →L[ℝ] V).adjoint ∘L Wkp.iteratedGradient 1 u (e x) ∘L (e : V →L[ℝ] V))
-    {f : Lp ℝ p ((volume : Measure V).restrict W)}
-    (hf : ∀ᵐ x ∂((volume : Measure V).restrict W),
-      traceCLM ℝ V (A ∘L Wkp.iteratedGradient 1 u x) = f x)
-    {C : ℝ} (hv : ∀ g : Lp ℝ p ((volume : Measure V).restrict U),
-      (traceCLM ℝ V).compLpL p _ (Wkp.iteratedGradient 1 v) = g →
-        ‖Wkp.iteratedGradient 1 v‖ ≤ C * ‖g‖) :
-    ‖Wkp.iteratedGradient 1 u‖ ≤ C / lam * ‖f‖ := by
-  have habs : 0 < |(e : V →L[ℝ] V).det| :=
-    abs_pos.2 (LinearEquiv.isUnit_det' e.toLinearEquiv).ne_zero
-  have hmap : ((volume : Measure V).restrict U).map e ≤
-      (ENNReal.ofReal |(e : V →L[ℝ] V).det|)⁻¹ • (volume : Measure V).restrict W :=
-    map_restrict_le_smul_restrict_of_differentiableOn volume U.isOpen
-      e.differentiable.differentiableOn e.injective.injOn (hUW ▸ mapsTo_preimage _ _) habs
-      fun x _ => by rw [e.fderiv]
-  have hC' : (ENNReal.ofReal |(e : V →L[ℝ] V).det|)⁻¹ ≠ ∞ :=
-    ENNReal.inv_ne_top.2 (ENNReal.ofReal_pos.2 habs).ne'
-  have hqmp := QuasiMeasurePreserving.of_map_le_smul e.continuous.measurable hmap
-  -- `v` solves Poisson's equation with forcing term `f ∘ e`
-  set f' := Lp.compOfMapLeSmul ℝ e.continuous.measurable hC' hmap f
-  have hf'e := Lp.coeFn_compOfMapLeSmul (𝕜 := ℝ) e.continuous.measurable hC' hmap f
-  have hv' := hv f' <| Lp.ext <| by
-    filter_upwards [(traceCLM ℝ V).coeFn_compLpL (Wkp.iteratedGradient 1 v), hD, hf'e,
-      hqmp.ae hf] with y h1 h2 h3 h4
-    -- `tr (e† M e) = tr (M e e†) = tr (M A) = tr (A M)`
-    rw [h1, h2, h3, Function.comp_apply, ← h4, traceCLM_comp_comm, ContinuousLinearMap.comp_assoc,
-      hee, traceCLM_comp_comm]
-  -- Both sides change by the same Jacobian factor `δ` under the change of variables.
-  obtain ⟨δ, hδ⟩ : ∃ δ, δ = ENNReal.ofReal |(LinearMap.det (e : V →ₗ[ℝ] V))⁻¹| ^ (1 / p).toReal :=
-    ⟨_, rfl⟩
-  have hf' : eLpNorm f' p ((volume : Measure V).restrict U) =
-      δ * eLpNorm f p ((volume : Measure V).restrict W) := by
-    rw [eLpNorm_congr_ae hf'e, hUW, hδ]
-    exact eLpNorm_comp_continuousLinearEquiv_restrict_preimage volume _ e p
-  have hDu : δ * eLpNorm (Wkp.iteratedGradient 1 u) p ((volume : Measure V).restrict W) ≤
-      ENNReal.ofReal lam⁻¹ * eLpNorm (Wkp.iteratedGradient 1 v) p
-        ((volume : Measure V).restrict U) := by
-    have hcomp := eLpNorm_comp_continuousLinearEquiv_restrict_preimage (volume : Measure V)
-      (⇑(Wkp.iteratedGradient 1 u)) e p (s := (W : Set V))
-    rw [← hδ, ← hUW] at hcomp
-    rw [← hcomp]
-    refine eLpNorm_le_mul_eLpNorm_of_ae_le_mul
-      ((Lp.aestronglyMeasurable _).comp_quasiMeasurePreserving hqmp) ?_ p
-    filter_upwards [hD] with y hy
-    rw [hy, Function.comp_apply]
-    exact norm_le_inv_mul_norm_adjoint_comp_comp e hlam he (Wkp.iteratedGradient 1 u (e y))
-  -- Back to real norms, cancelling `δ`.
-  have hδr : 0 < δ.toReal := by
-    rw [hδ, ← ENNReal.toReal_rpow, ENNReal.toReal_ofReal (abs_nonneg _)]
-    exact Real.rpow_pos_of_pos (abs_pos.2 (inv_ne_zero
-      (LinearEquiv.isUnit_det' e.toLinearEquiv).ne_zero)) _
-  have h1 := ENNReal.toReal_mono
-    (ENNReal.mul_ne_top ENNReal.ofReal_ne_top (Lp.eLpNorm_ne_top _)) hDu
-  rw [ENNReal.toReal_mul, ENNReal.toReal_mul, ENNReal.toReal_ofReal (inv_nonneg.2 hlam.le),
-    ← Lp.norm_def, ← Lp.norm_def] at h1
-  have h2 : ‖f'‖ = δ.toReal * ‖f‖ := by
-    rw [Lp.norm_def, Lp.norm_def, hf', ENNReal.toReal_mul]
-  refine le_of_mul_le_mul_left ?_ hδr
-  calc δ.toReal * ‖Wkp.iteratedGradient 1 u‖ ≤ lam⁻¹ * ‖Wkp.iteratedGradient 1 v‖ := h1
-    _ ≤ lam⁻¹ * (C * (δ.toReal * ‖f‖)) := by
-        rw [← h2]
-        exact mul_le_mul_of_nonneg_left hv' (inv_nonneg.2 hlam.le)
-    _ = δ.toReal * (C / lam * ‖f‖) := by ring
-
-/-- Only the symmetric part `(A + A†) / 2` of `A` enters `tr (A M)` for self-adjoint `M`. -/
-private theorem traceCLM_symmPart_comp {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V]
-    [FiniteDimensional ℝ V] (A M : V →L[ℝ] V) (hM : M.adjoint = M) :
-    traceCLM ℝ V (((2⁻¹ : ℝ) • (A + A.adjoint)) ∘L M) = traceCLM ℝ V (A ∘L M) := by
-  -- `tr (A† M) = tr ((M A)†) = tr (M A) = tr (A M)`
-  have h : traceCLM ℝ V (A.adjoint ∘L M) = traceCLM ℝ V (A ∘L M) := by
-    conv_lhs => rw [← hM, ← ContinuousLinearMap.adjoint_comp]
-    rw [traceCLM_apply, ContinuousLinearMap.trace_adjoint, RCLike.conj_to_real, ← traceCLM_apply,
-      traceCLM_comp_comm]
-  rw [ContinuousLinearMap.smul_comp, ContinuousLinearMap.add_comp, map_smul, map_add, h,
-    smul_eq_mul]
-  ring
-
 omit [MeasurableSpace E] [BorelSpace E] in
 /-- For `A` on `ℝ × E` with `λ ‖ξ‖² ≤ ⟪A ξ, ξ⟫` and `0 < λ`, there is a linear automorphism `e`
 with `e e† = (A + A†) / 2` and `‖e⁻¹ x‖ ≤ ‖x‖ / √λ` that maps each half-space `{a / c < x.fst}`
@@ -397,7 +284,7 @@ private theorem exists_continuousLinearEquiv_preimage_normalHalfSpace
   set ν : WithLp 2 (ℝ × E) := WithLp.toLp 2 (1, 0)
   have hν : ν ≠ 0 := fun h => one_ne_zero (congrArg (fun x => (WithLp.ofLp x).1) h)
   obtain ⟨e, hee, ⟨c, hc, hcν⟩, he⟩ :=
-    exists_continuousLinearEquiv_comp_adjoint_eq_of_isSymmetric _ hS hlam
+    ContinuousLinearMap.exists_continuousLinearEquiv_comp_adjoint_eq_of_isSymmetric _ hS hlam
       (fun ξ => (hSA ξ).symm ▸ hA ξ) hν
   have hinner (x : WithLp 2 (ℝ × E)) : ⟪x, ν⟫_ℝ = (WithLp.ofLp x).1 := by
     simp [ν, WithLp.prod_inner_apply]
@@ -439,9 +326,9 @@ theorem exists_norm_iteratedGradient_le_mul_norm_of_traceCLM_comp_eq_of_normalHa
   -- `{a / c < x.fst}` onto `{a < x.fst}` and turns the equation into Poisson's equation.
   obtain ⟨e, c, hee, he, hH⟩ := exists_continuousLinearEquiv_preimage_normalHalfSpace hlam hA
   obtain ⟨v, -, hD, h0⟩ := Wkp.exists_value_ae_eq_comp_continuousLinearEquiv hp_top e (hH a) u
-  refine norm_iteratedGradient_le_of_ae_eq_adjoint_comp_comp e hee hlam he (hH a) hD ?_
+  refine Wkp.norm_iteratedGradient_le_of_ae_eq_adjoint_comp_comp e hee hlam he (hH a) hD ?_
     fun g hg => hC (a / c) v g (h0 hu) hg
   filter_upwards [hf, Wkp.adjoint_iteratedGradient_one_ae_eq u] with x h1 h2
-  rw [traceCLM_symmPart_comp A _ h2, h1]
+  rw [A.traceCLM_symmPart_comp _ h2, h1]
 
 end TauCeti

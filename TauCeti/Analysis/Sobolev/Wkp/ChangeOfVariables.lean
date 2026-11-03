@@ -7,8 +7,11 @@ module
 
 public import TauCeti.Analysis.Sobolev.Wkp.LineDeriv
 public import TauCeti.Analysis.Sobolev.W1p.ChangeOfVariables
+public import TauCeti.Topology.Algebra.Module.Trace
 
 import Mathlib.MeasureTheory.Measure.Lebesgue.EqHaar
+import TauCeti.Analysis.InnerProductSpace.Adjoint
+import TauCeti.MeasureTheory.Function.Lp.Dilation
 
 /-!
 # Linear changes of variables in `W^{2,p}`
@@ -23,9 +26,11 @@ almost everywhere on `U`, where `e†` is the adjoint of `e`, and that it preser
 values of the first-order part (`TauCeti.Wkp.exists_value_ae_eq_comp_continuousLinearEquiv`).
 
 Linear changes of variables reduce constant-coefficient equations to the Laplacian: if
-`e e† = A`, then `tr (D²(u ∘ e)) = tr (A D²u) ∘ e`. When `e⁻¹` maps a half-space onto a
-half-space, this transfers estimates for strong solutions of Poisson's equation vanishing on the
-boundary hyperplane to constant-coefficient equations.
+`e e† = A`, then `tr (D²(u ∘ e)) = tr (A D²u) ∘ e`. Hence an `Lᵖ` bound on the Hessian of `u ∘ e`
+by its trace transfers to the bound `‖D²u‖ ≤ (C / λ) ‖f‖` for solutions of `tr (A D²u) = f`,
+when `‖e⁻¹ x‖ ≤ ‖x‖ / √λ` (`TauCeti.Wkp.norm_iteratedGradient_le_of_ae_eq_adjoint_comp_comp`).
+When `e⁻¹` maps a half-space onto a half-space, this transfers estimates for strong solutions of
+Poisson's equation vanishing on the boundary hyperplane to constant-coefficient equations.
 
 ## The argument
 
@@ -43,6 +48,8 @@ boundary values are preserved because `e` is a homeomorphism
 
 * `TauCeti.Wkp.exists_value_ae_eq_comp_continuousLinearEquiv`: precomposition with a linear
   automorphism in `W^{2,p}`, and the chain rule for the weak Hessian.
+* `TauCeti.Wkp.norm_iteratedGradient_le_of_ae_eq_adjoint_comp_comp`: transferring a Hessian
+  estimate for the Laplacian to a constant-coefficient operator along a linear change of variables.
 
 ## References
 
@@ -215,5 +222,76 @@ theorem Wkp.exists_value_ae_eq_comp_continuousLinearEquiv (hp : p ≠ ⊤) (e : 
       InnerProductSpace.ext_inner_right_basis b.toBasis fun j => by simpa using hx i j)
   · rw [Wkp.firstOrder_succ, Wkp.firstOrder_zero, hw]
     exact compCLE_mem_w1p0Submodule hp e hUW hu
+
+/-! ### Transferring Hessian estimates along a linear change of variables -/
+
+/-- **Transferring the estimate along a linear change of variables.** Let `e e† = A` with
+`‖e⁻¹ x‖ ≤ ‖x‖ / √λ`, let `U = e⁻¹(W)`, and let `v ∈ W^{2,p}(U)` have weak Hessian
+`e† ∘ D²u(e ·) ∘ e`. If `u` solves `tr (A D²u) = f` on `W` and the Hessian of `v` is bounded by
+`C` times the norm of its trace, then `‖D²u‖ ≤ (C / λ) ‖f‖`. -/
+theorem Wkp.norm_iteratedGradient_le_of_ae_eq_adjoint_comp_comp {A : E →L[ℝ] E} (e : E ≃L[ℝ] E)
+    (hee : (e : E →L[ℝ] E) ∘L (e : E →L[ℝ] E).adjoint = A) {lam : ℝ} (hlam : 0 < lam)
+    (he : ∀ x, ‖e.symm x‖ ≤ (√lam)⁻¹ * ‖x‖) (hUW : (U : Set E) = e ⁻¹' W)
+    {u : Wkp mu W p 2} {v : Wkp mu U p 2}
+    (hD : Wkp.iteratedGradient 1 v =ᵐ[mu.restrict U] fun x =>
+      (e : E →L[ℝ] E).adjoint ∘L Wkp.iteratedGradient 1 u (e x) ∘L (e : E →L[ℝ] E))
+    {f : Lp ℝ p (mu.restrict W)}
+    (hf : ∀ᵐ x ∂(mu.restrict W), traceCLM ℝ E (A ∘L Wkp.iteratedGradient 1 u x) = f x)
+    {C : ℝ} (hv : ∀ g : Lp ℝ p (mu.restrict U),
+      (traceCLM ℝ E).compLpL p _ (Wkp.iteratedGradient 1 v) = g →
+        ‖Wkp.iteratedGradient 1 v‖ ≤ C * ‖g‖) :
+    ‖Wkp.iteratedGradient 1 u‖ ≤ C / lam * ‖f‖ := by
+  have habs := abs_det_pos e
+  have hmap : (mu.restrict U).map e ≤
+      (ENNReal.ofReal |(e : E →L[ℝ] E).det|)⁻¹ • mu.restrict W :=
+    map_restrict_le_smul_restrict_of_differentiableOn mu U.isOpen
+      e.differentiable.differentiableOn e.injective.injOn (mapsTo_of_coe_eq_preimage e hUW) habs
+      fun x _ => abs_det_le e x
+  have hC' : (ENNReal.ofReal |(e : E →L[ℝ] E).det|)⁻¹ ≠ ⊤ :=
+    ENNReal.inv_ne_top.2 (ENNReal.ofReal_pos.2 habs).ne'
+  have hqmp := QuasiMeasurePreserving.of_map_le_smul e.continuous.measurable hmap
+  -- `v` solves Poisson's equation with forcing term `f ∘ e`
+  set f' := Lp.compOfMapLeSmul ℝ e.continuous.measurable hC' hmap f
+  have hf'e := Lp.coeFn_compOfMapLeSmul (𝕜 := ℝ) e.continuous.measurable hC' hmap f
+  have hv' := hv f' <| Lp.ext <| by
+    filter_upwards [(traceCLM ℝ E).coeFn_compLpL (Wkp.iteratedGradient 1 v), hD, hf'e,
+      hqmp.ae hf] with y h1 h2 h3 h4
+    -- `tr (e† M e) = tr (M e e†) = tr (M A) = tr (A M)`
+    rw [h1, h2, h3, Function.comp_apply, ← h4, ContinuousLinearMap.traceCLM_comp_comm,
+      ContinuousLinearMap.comp_assoc, hee, ContinuousLinearMap.traceCLM_comp_comm]
+  -- Both sides change by the same Jacobian factor `δ` under the change of variables.
+  obtain ⟨δ, hδ⟩ : ∃ δ, δ = ENNReal.ofReal |(LinearMap.det (e : E →ₗ[ℝ] E))⁻¹| ^ (1 / p).toReal :=
+    ⟨_, rfl⟩
+  have hf' : eLpNorm f' p (mu.restrict U) = δ * eLpNorm f p (mu.restrict W) := by
+    rw [eLpNorm_congr_ae hf'e, hUW, hδ]
+    exact eLpNorm_comp_continuousLinearEquiv_restrict_preimage mu _ e p
+  have hDu : δ * eLpNorm (Wkp.iteratedGradient 1 u) p (mu.restrict W) ≤
+      ENNReal.ofReal lam⁻¹ * eLpNorm (Wkp.iteratedGradient 1 v) p (mu.restrict U) := by
+    have hcomp := eLpNorm_comp_continuousLinearEquiv_restrict_preimage mu
+      (⇑(Wkp.iteratedGradient 1 u)) e p (s := (W : Set E))
+    rw [← hδ, ← hUW] at hcomp
+    rw [← hcomp]
+    refine eLpNorm_le_mul_eLpNorm_of_ae_le_mul
+      ((Lp.aestronglyMeasurable _).comp_quasiMeasurePreserving hqmp) ?_ p
+    filter_upwards [hD] with y hy
+    rw [hy, Function.comp_apply]
+    exact e.norm_le_inv_mul_norm_adjoint_comp_comp hlam he (Wkp.iteratedGradient 1 u (e y))
+  -- Back to real norms, cancelling `δ`.
+  have hδr : 0 < δ.toReal := by
+    rw [hδ, ← ENNReal.toReal_rpow, ENNReal.toReal_ofReal (abs_nonneg _)]
+    exact Real.rpow_pos_of_pos (abs_pos.2 (inv_ne_zero
+      (LinearEquiv.isUnit_det' e.toLinearEquiv).ne_zero)) _
+  have h1 := ENNReal.toReal_mono
+    (ENNReal.mul_ne_top ENNReal.ofReal_ne_top (Lp.eLpNorm_ne_top _)) hDu
+  rw [ENNReal.toReal_mul, ENNReal.toReal_mul, ENNReal.toReal_ofReal (inv_nonneg.2 hlam.le),
+    ← Lp.norm_def, ← Lp.norm_def] at h1
+  have h2 : ‖f'‖ = δ.toReal * ‖f‖ := by
+    rw [Lp.norm_def, Lp.norm_def, hf', ENNReal.toReal_mul]
+  refine le_of_mul_le_mul_left ?_ hδr
+  calc δ.toReal * ‖Wkp.iteratedGradient 1 u‖ ≤ lam⁻¹ * ‖Wkp.iteratedGradient 1 v‖ := h1
+    _ ≤ lam⁻¹ * (C * (δ.toReal * ‖f‖)) := by
+        rw [← h2]
+        exact mul_le_mul_of_nonneg_left hv' (inv_nonneg.2 hlam.le)
+    _ = δ.toReal * (C / lam * ‖f‖) := by ring
 
 end TauCeti
