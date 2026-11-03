@@ -70,7 +70,7 @@ theorem DifferentiableAt.sub_eq_smul_gradient_of_forall_dist_le (hd : Differenti
       simpa using ((hasDerivAt_id (0 : ℝ)).smul_const e).const_add y
     have hderiv : HasDerivAt (fun h : ℝ => v (y + h • e)) ⟪g, e⟫ 0 := by
       have h2 := hd.hasFDerivAt.comp_hasDerivAt_of_eq (0 : ℝ) h1 (by simp)
-      rwa [show fderiv ℝ v y e = ⟪g, e⟫ by simp [g, gradient]] at h2
+      rwa [← inner_gradient_left] at h2
     have hev : ∀ᶠ h in 𝓝[>] (0 : ℝ), y + h • e ∈ {z | v z ≤ v y} := by
       filter_upwards [hderiv.tendsto_slope_zero_right.eventually (gt_mem_nhds he),
         self_mem_nhdsWithin] with h hh (hpos : 0 < h)
