@@ -30,7 +30,8 @@ larger space back, with a dimension count.
 ## Main results
 
 * `LinearMap.IsSymmetric.eigenvalues_le_eigenvalues_of_isometry` and
-  `LinearMap.IsSymmetric.eigenvalues_le_eigenvalues_of_isometry'`: the operator-level bounds.
+  `LinearMap.IsSymmetric.eigenvalues_le_eigenvalues_of_isometry'` in
+  `TauCeti.Analysis.InnerProductSpace.CourantFischer`: the operator-level bounds.
 * `Matrix.IsHermitian.eigenvalues₀_submatrix_le`: `λᵢ(B) ≤ λᵢ(A)`.
 * `Matrix.IsHermitian.eigenvalues₀_le_eigenvalues₀_submatrix`:
   `λ_{i + (|n| - |m|)}(A) ≤ λᵢ(B)`.
@@ -46,48 +47,6 @@ public section
 
 open Module (finrank)
 open scoped InnerProductSpace
-
-namespace LinearMap.IsSymmetric
-
-variable {𝕜 E F : Type*} [RCLike 𝕜] [NormedAddCommGroup E] [InnerProductSpace 𝕜 E]
-  [NormedAddCommGroup F] [InnerProductSpace 𝕜 F] [FiniteDimensional 𝕜 E] [FiniteDimensional 𝕜 F]
-  {n m : ℕ} {T : E →ₗ[𝕜] E} {S : F →ₗ[𝕜] F}
-
-/-- **Cauchy interlacing for a compression, upper bound.** If `S` is the compression of the
-symmetric operator `T` along a linear isometry `ι`, then `λₖ(S) ≤ λₖ(T)`. -/
-theorem eigenvalues_le_eigenvalues_of_isometry (hT : T.IsSymmetric) (hS : S.IsSymmetric)
-    (hE : finrank 𝕜 E = n) (hF : finrank 𝕜 F = m) (ι : F →ₗᵢ[𝕜] E)
-    (hST : ∀ x, ⟪S x, x⟫_𝕜 = ⟪T (ι x), ι x⟫_𝕜) (hmn : m ≤ n) (k : Fin m) :
-    hS.eigenvalues hF k ≤ hT.eigenvalues hE (Fin.castLE hmn k) := by
-  obtain ⟨V, hVdim, hVlow⟩ := hS.exists_submodule_forall_unit_eigenvalue_le_re_inner hF k
-  obtain ⟨y, hyV, hy1, hyle⟩ := hT.exists_unit_vector_re_inner_le_eigenvalue hE
-    (Fin.castLE hmn k) (V.map ι.toLinearMap)
-    (by rw [← (Submodule.equivMapOfInjective _ ι.injective V).finrank_eq, hVdim]; simp)
-  obtain ⟨x, hxV, rfl⟩ := Submodule.mem_map.mp hyV
-  calc _ ≤ RCLike.re ⟪S x, x⟫_𝕜 := hVlow x hxV (by simpa using hy1)
-    _ = RCLike.re ⟪T (ι x), ι x⟫_𝕜 := congrArg RCLike.re (hST x)
-    _ ≤ _ := hyle
-
-/-- **Cauchy interlacing for a compression, lower bound.** If `S` is the compression of the
-symmetric operator `T` along a linear isometry `ι`, then `λ_{k + (n - m)}(T) ≤ λₖ(S)`. -/
-theorem eigenvalues_le_eigenvalues_of_isometry' (hT : T.IsSymmetric) (hS : S.IsSymmetric)
-    (hE : finrank 𝕜 E = n) (hF : finrank 𝕜 F = m) (ι : F →ₗᵢ[𝕜] E)
-    (hST : ∀ x, ⟪S x, x⟫_𝕜 = ⟪T (ι x), ι x⟫_𝕜) (hmn : m ≤ n) (k : Fin m) :
-    hT.eigenvalues hE (Fin.cast (Nat.add_sub_of_le hmn) (k.addNat (n - m))) ≤
-      hS.eigenvalues hF k := by
-  obtain ⟨V, hVdim, hVlow⟩ := hT.exists_submodule_forall_unit_eigenvalue_le_re_inner hE
-    (Fin.cast (Nat.add_sub_of_le hmn) (k.addNat (n - m)))
-  have hU : (k : ℕ) + 1 ≤ finrank 𝕜 (V.comap ι.toLinearMap) := by
-    have := Submodule.finrank_add_finrank_le_finrank_comap_add_finrank ι.toLinearMap V
-    simp only [hE, hF, hVdim, Fin.val_cast, Fin.val_addNat] at this
-    omega
-  obtain ⟨x, hxW, hx1, hxle⟩ :=
-    hS.exists_unit_vector_re_inner_le_eigenvalue_of_le_finrank hF k _ hU
-  calc _ ≤ RCLike.re ⟪T (ι x), ι x⟫_𝕜 := hVlow _ hxW (by simpa using hx1)
-    _ = RCLike.re ⟪S x, x⟫_𝕜 := congrArg RCLike.re (hST x).symm
-    _ ≤ _ := hxle
-
-end LinearMap.IsSymmetric
 
 namespace Matrix.IsHermitian
 

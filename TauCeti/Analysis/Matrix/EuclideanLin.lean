@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.CStarAlgebra.Matrix
 public import Mathlib.LinearAlgebra.Matrix.Rank
+public import TauCeti.Analysis.Normed.Lp.PiLp
 
 /-!
 # The map of a matrix on Euclidean space
@@ -65,18 +66,6 @@ theorem inner_toEuclideanLin_toEuclideanLin (A : Matrix κ ι 𝕜) (B : Matrix 
   rw [← LinearMap.adjoint_inner_right, ← toEuclideanLin_conjTranspose_eq_adjoint]
   simp only [toEuclideanLin, toLpLin_mul_same, LinearMap.comp_apply]
 
-omit [DecidableEq ι] [DecidableEq κ] in
-private theorem sum_mul_piLpExtendByZero (f : ι ↪ κ) (x : EuclideanSpace 𝕜 ι) (h : κ → 𝕜) :
-    ∑ b, h b * LinearIsometry.piLpExtendByZero 2 𝕜 𝕜 f x b = ∑ a, h (f a) * x a := by
-  rw [← Finset.sum_extend_zero_of_injective (t := Finset.univ) (fun a ↦ h (f a) * x a)
-    f.injective fun _ => Finset.mem_univ _]
-  refine Finset.sum_congr rfl fun b _ => ?_
-  by_cases hb : b ∈ Set.range f
-  · obtain ⟨a, rfl⟩ := hb
-    simp [f.injective.extend_apply]
-  · simp [Function.extend_apply' _ _ _ (by simpa using hb),
-      LinearIsometry.piLpExtendByZero_apply_eq_zero hb]
-
 /-- The quadratic form of `A` at a vector extended by zero along `f` is the quadratic form of the
 principal submatrix `A.submatrix f f` at the original vector. -/
 theorem inner_toEuclideanLin_piLpExtendByZero (A : Matrix κ κ 𝕜) (f : ι ↪ κ)
@@ -86,10 +75,10 @@ theorem inner_toEuclideanLin_piLpExtendByZero (A : Matrix κ κ 𝕜) (f : ι �
       ⟪(A.submatrix f f).toEuclideanLin x, x⟫_𝕜 := by
   have hmul : ∀ b, (A.mulVec (LinearIsometry.piLpExtendByZero 2 𝕜 𝕜 f x).ofLp) b =
       ∑ c, A b (f c) * x c := fun b => by
-    simpa [mulVec, dotProduct] using sum_mul_piLpExtendByZero f x (A b)
+    simpa [mulVec, dotProduct] using LinearIsometry.sum_mul_piLpExtendByZero f x (A b)
   simp only [PiLp.inner_apply, toLpLin_apply, RCLike.inner_apply]
   conv_lhs => enter [2, b]; rw [mul_comm]
-  rw [sum_mul_piLpExtendByZero f x (fun b => (starRingEnd 𝕜)
+  rw [LinearIsometry.sum_mul_piLpExtendByZero f x (fun b => (starRingEnd 𝕜)
     (A.mulVec (LinearIsometry.piLpExtendByZero 2 𝕜 𝕜 f x).ofLp b))]
   refine Finset.sum_congr rfl fun a _ => ?_
   rw [mul_comm, hmul (f a)]
