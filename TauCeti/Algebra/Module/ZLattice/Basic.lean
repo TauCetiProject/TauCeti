@@ -95,7 +95,7 @@ theorem _root_.Module.Basis.addHaar_eq_measure_fundamentalDomain_mul_volume_imag
   obtain ⟨c, hc⟩ : ∃ c : ENNReal, μ.map φ = c • volume :=
     ⟨_, by rw [← addHaarMeasure_eq_volume_pi ι]; exact Measure.addHaarMeasure_unique _ _⟩
   have hμ (t : Set E) : μ t = c * volume (φ '' t) := by
-    rw [← smul_eq_mul, ← Measure.smul_apply, ← hc, hφ.map_apply,
+    rw [← smul_eq_mul, ← _root_.smul_apply, ← hc, hφ.map_apply,
       Set.preimage_image_eq t φ.injective]
   have hy (y : ι → ℝ) (i : ι) : b.repr (φ.symm y) i = y i := by
     rw [← b.equivFun_apply, LinearEquiv.apply_symm_apply]

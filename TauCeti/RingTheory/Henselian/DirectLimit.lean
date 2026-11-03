@@ -53,11 +53,11 @@ theorem henselianRing [Nonempty ι] [IsDirectedOrder ι] [DirectedSystem G (f ·
     HenselianRing (DirectLimit G (f · · ·)) (⨆ i, (I i).map (of G (f · · ·) i)) where
   jac z hz := by
     obtain ⟨i, x, hx, rfl⟩ := (mem_iSup_map_of_iff hI).1 hz
-    refine Ideal.mem_jacobson_bot.2 fun c ↦ ?_
+    refine Ring.mem_jacobson_iff.2 fun c ↦ ?_
     induction c using DirectLimit.induction_on with
     | ih j y =>
       obtain ⟨k, hik, hjk⟩ := exists_ge_ge i j
-      have hu := Ideal.mem_jacobson_bot.1
+      have hu := Ring.mem_jacobson_iff.1
         (HenselianRing.jac (I := I k) (hI i k hik hx)) (f j k hjk y)
       simpa using hu.map (of G (f · · ·) k)
   is_henselian P hP a₀ h₁ h₂ := by

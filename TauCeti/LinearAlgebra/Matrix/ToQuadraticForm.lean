@@ -57,75 +57,49 @@ theorem toQuadraticForm'_smul (c : R) (A : Matrix ι ι R) :
 theorem toQuadraticForm'_transpose (A : Matrix ι ι R) :
     (Aᵀ).toQuadraticForm' = A.toQuadraticForm' := by
   ext x
-  rw [toQuadraticForm'_apply, toQuadraticForm'_apply, ← vecMul_transpose, transpose_transpose,
-    dotProduct_comm, dotProduct_mulVec]
+  rw [toQuadraticForm'_apply, toQuadraticForm'_apply, dotProduct_transpose_mulVec]
 
 /-- The quadratic form of `A + Aᵀ` is twice the quadratic form of `A`. -/
 theorem toQuadraticForm'_add_transpose (A : Matrix ι ι R) :
     (A + Aᵀ).toQuadraticForm' = (2 : R) • A.toQuadraticForm' := by
   ext x
-  rw [toQuadraticForm'_apply, _root_.smul_apply, smul_eq_mul, toQuadraticForm'_apply,
-    add_mulVec, dotProduct_add, ← toQuadraticForm'_apply, ← toQuadraticForm'_apply,
-    toQuadraticForm'_transpose]
-  ring
+  simp [toQuadraticForm'_apply, add_mulVec, dotProduct_transpose_mulVec, two_mul]
 
 /-- The quadratic form of `-A` is the negative of the quadratic form of `A`. -/
 @[simp]
 theorem toQuadraticForm'_neg (A : Matrix ι ι R) :
     (-A).toQuadraticForm' = -A.toQuadraticForm' := by
   ext x
-  rw [toQuadraticForm'_apply, _root_.neg_apply, toQuadraticForm'_apply, neg_mulVec,
-    dotProduct_neg]
+  simp [toQuadraticForm'_apply, neg_mulVec]
 
 /-- The quadratic form of a diagonal matrix is the corresponding weighted sum of squares. -/
 theorem toQuadraticForm'_diagonal (d : ι → R) :
     (diagonal d).toQuadraticForm' = weightedSumSquares R d := by
   ext x
-  rw [toQuadraticForm'_apply, weightedSumSquares_apply, dotProduct]
-  refine Finset.sum_congr rfl fun i _ => ?_
-  rw [mulVec_diagonal, smul_eq_mul]
-  ring
+  simp only [toQuadraticForm'_apply, weightedSumSquares_apply, dotProduct, mulVec_diagonal,
+    smul_eq_mul]
+  exact Finset.sum_congr rfl fun i _ => by ring
 
 /-- Congruence by a matrix with unit determinant is an isometry of the attached quadratic
 forms. -/
 noncomputable def isometryEquivCongr {P : Matrix ι ι R} (hP : IsUnit P.det) (A : Matrix ι ι R) :
     (P * A * Pᵀ).toQuadraticForm'.IsometryEquiv A.toQuadraticForm' where
-  toLinearEquiv :=
-    { toFun := fun x => Pᵀ *ᵥ x
-      map_add' := fun x y => by rw [mulVec_add]
-      map_smul' := fun c x => by rw [mulVec_smul, RingHom.id_apply]
-      invFun := fun x => (Pᵀ)⁻¹ *ᵥ x
-      left_inv := fun x => by
-        dsimp only
-        rw [mulVec_mulVec, nonsing_inv_mul _ (by rwa [det_transpose]), one_mulVec]
-      right_inv := fun x => by
-        dsimp only
-        rw [mulVec_mulVec, mul_nonsing_inv _ (by rwa [det_transpose]), one_mulVec] }
+  toLinearEquiv := Pᵀ.toLinearEquiv (Pi.basisFun R ι) (by rwa [det_transpose])
   map_app' x := by
-    have h₁ : (P * A * Pᵀ) *ᵥ x = P *ᵥ A *ᵥ Pᵀ *ᵥ x := by
-      rw [mulVec_mulVec, mulVec_mulVec, mul_assoc]
-    have h₂ : x ⬝ᵥ P *ᵥ A *ᵥ Pᵀ *ᵥ x = (x ᵥ* P) ⬝ᵥ A *ᵥ Pᵀ *ᵥ x := dotProduct_mulVec _ _ _
-    dsimp only
-    rw [toQuadraticForm'_apply, toQuadraticForm'_apply, h₁, h₂, mulVec_transpose]
+    simp [toQuadraticForm'_apply, toLin_eq_toLin', ← mulVec_mulVec, dotProduct_mulVec,
+      mulVec_transpose]
 
 /-- Splitting the coordinates of a block-diagonal matrix is an isometry onto the orthogonal
 product of the quadratic forms of the two blocks. -/
 def isometryEquivFromBlocks (A : Matrix ι ι R) (B : Matrix κ κ R) :
     (fromBlocks A 0 0 B).toQuadraticForm'.IsometryEquiv
       (A.toQuadraticForm'.prod B.toQuadraticForm') where
-  toLinearEquiv :=
-    { toFun := fun x => (fun i => x (Sum.inl i), fun j => x (Sum.inr j))
-      map_add' := fun _ _ => rfl
-      map_smul' := fun _ _ => rfl
-      invFun := fun p => Sum.elim p.1 p.2
-      left_inv := fun x => funext fun p => by cases p <;> rfl
-      right_inv := fun _ => rfl }
+  toLinearEquiv := LinearEquiv.sumArrowLequivProdArrow ι κ R R
   map_app' x := by
-    have hx : Sum.elim (fun i => x (Sum.inl i)) (fun j => x (Sum.inr j)) = x :=
-      funext fun p => by cases p <;> rfl
-    rw [QuadraticMap.prod_apply, toQuadraticForm'_apply, toQuadraticForm'_apply,
-      toQuadraticForm'_apply, ← hx, fromBlocks_mulVec]
-    simp [sumElim_dotProduct_sumElim]
+    obtain ⟨u, v, rfl⟩ : ∃ u v, Sum.elim u v = x := ⟨_, _, Sum.elim_comp_inl_inr x⟩
+    have huv : LinearEquiv.sumArrowLequivProdArrow ι κ R R (Sum.elim u v) = (u, v) := by
+      ext <;> simp
+    simp [toQuadraticForm'_apply, huv, fromBlocks_mulVec, sumElim_dotProduct_sumElim]
 
 /-- Reindexing the rows and columns of a matrix along the same equivalence only transports the
 coordinates of its quadratic form. -/
@@ -133,9 +107,7 @@ def isometryEquivReindex (e : ι ≃ κ) (A : Matrix ι ι R) :
     (reindex e e A).toQuadraticForm'.IsometryEquiv A.toQuadraticForm' where
   toLinearEquiv := LinearEquiv.funCongrLeft R R e
   map_app' x := by
-    rw [toQuadraticForm'_apply, toQuadraticForm'_apply, reindex_apply, submatrix_mulVec_equiv,
-      ← comp_equiv_dotProduct_comp_equiv (e := e)]
-    simp only [Equiv.symm_symm, Function.comp_assoc, Equiv.symm_comp_self, Function.comp_id]
-    rfl
+    have hx : LinearEquiv.funCongrLeft R R e x = x ∘ e := funext fun _ => by simp
+    simp [toQuadraticForm'_apply, hx, submatrix_mulVec_equiv]
 
 end Matrix

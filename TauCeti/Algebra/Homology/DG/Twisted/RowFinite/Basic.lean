@@ -48,7 +48,7 @@ open DirectSum
 
 namespace TauCeti
 
-universe uR uA uP
+universe uR uA uP uQ
 
 section Grading
 
@@ -155,13 +155,82 @@ theorem ext {m₁ m₂ : RowFiniteTwistingCocycle 𝒜 d P ind}
 
 end RowFiniteTwistingCocycle
 
+section SignedMap
+
+variable {Q : Type uQ} {indQ : Q → ℤ}
+
+/-- The signed extension of finite rows. On a coefficient of degree `q`, it sends
+`single x a` to `(-1)^q • (a • h x)`. It supplies both twisting and homotopy terms. -/
+noncomputable def rowFiniteSignedMap (h : P → Q →₀ A) : (P →₀ A) →ₗ[R] (Q →₀ A) :=
+  Finsupp.lsum R fun x ↦
+    ((LinearMap.toSpanSingleton A (Q →₀ A) (h x)).restrictScalars R).comp
+      ((InternalGrading.ofDecomposition 𝒜).koszulTwist 1)
+
+/-- Signed row substitution is a finite sum over the support of the input vector. -/
+theorem rowFiniteSignedMap_apply (h : P → Q →₀ A) (f : P →₀ A) :
+    rowFiniteSignedMap (𝒜 := 𝒜) h f =
+      f.sum (fun x a ↦ (InternalGrading.ofDecomposition 𝒜).koszulTwist 1 a • h x) := by
+  classical
+  simp [rowFiniteSignedMap, Finsupp.lsum_apply, LinearMap.toSpanSingleton_apply,
+    Function.comp_def]
+
+/-- The signed extension evaluated on a homogeneous elementary vector. -/
+theorem rowFiniteSignedMap_single (h : P → Q →₀ A) (x : P)
+    {q : ℤ} {a : A} (ha : a ∈ 𝒜 q) :
+    rowFiniteSignedMap (𝒜 := 𝒜) h (Finsupp.single x a) = q.negOnePow • (a • h x) := by
+  classical
+  simp [rowFiniteSignedMap, Finsupp.lsum_single,
+    koszulTwist_one_eq_negOnePow_smul (R := R) ha]
+
+/-- A generator maps to its specified finite row. -/
+@[simp]
+theorem rowFiniteSignedMap_single_one (h : P → Q →₀ A) (x : P) :
+    rowFiniteSignedMap (𝒜 := 𝒜) h (Finsupp.single x 1) = h x := by
+  rw [rowFiniteSignedMap_single h x (SetLike.one_mem_graded 𝒜)]
+  simp
+
+/-- Signed row extension is graded left-linear of odd degree. -/
+theorem rowFiniteSignedMap_smul (h : P → Q →₀ A) {q : ℤ} {a : A}
+    (ha : a ∈ 𝒜 q) (f : P →₀ A) :
+    rowFiniteSignedMap (𝒜 := 𝒜) h (a • f) =
+      q.negOnePow • (a • rowFiniteSignedMap (𝒜 := 𝒜) h f) := by
+  classical
+  induction f using Finsupp.induction_linear with
+  | zero => simp
+  | add f g hf hg => simp only [smul_add, map_add, hf, hg]
+  | single x b =>
+    induction b using DirectSum.Decomposition.inductionOn 𝒜 with
+    | zero => simp
+    | @homogeneous p b =>
+      rw [Finsupp.smul_single, smul_eq_mul,
+        rowFiniteSignedMap_single h x (SetLike.GradedMul.mul_mem ha b.2),
+        rowFiniteSignedMap_single h x b.2]
+      simp [Int.negOnePow_add, mul_smul, smul_comm a p.negOnePow]
+    | add b c hb hc => simp only [Finsupp.single_add, smul_add, map_add, hb, hc]
+
+/-- Rows with shifted degree `k` give a signed map of total degree `k`. -/
+theorem rowFiniteSignedMap_mem_totalGrading (h : P → Q →₀ A) {k : ℤ}
+    (hh : ∀ x y, h x y ∈ 𝒜 (indQ y - ind x + k)) {n : ℤ} {f : P →₀ A}
+    (hf : f ∈ rowFiniteTotalGrading 𝒜 ind n) :
+    rowFiniteSignedMap (𝒜 := 𝒜) h f ∈ rowFiniteTotalGrading 𝒜 indQ (n + k) := by
+  classical
+  rw [mem_rowFiniteTotalGrading_iff] at hf
+  rw [← Finsupp.sum_single f, Finsupp.sum, map_sum]
+  refine Submodule.sum_mem _ fun x _ ↦ ?_
+  rw [rowFiniteSignedMap_single h x (hf x), mem_rowFiniteTotalGrading_iff]
+  intro y
+  simp only [Finsupp.smul_apply, smul_eq_mul]
+  apply Submodule.smul_of_tower_mem
+  have := SetLike.GradedMul.mul_mem (hf x) (hh x y)
+  convert this using 2; ring
+
+end SignedMap
+
 /-- The differential of the free left module of a row-finite matrix. The Koszul twist applies
 the sign to each coefficient before multiplication into the finite row. -/
 noncomputable def rowFiniteTwistedDifferential (m : P → P →₀ A) :
     (P →₀ A) →ₗ[R] (P →₀ A) :=
-  Finsupp.mapRange.linearMap d + Finsupp.lsum R (fun x ↦
-    ((LinearMap.toSpanSingleton A (P →₀ A) (m x)).restrictScalars R).comp
-      ((InternalGrading.ofDecomposition 𝒜).koszulTwist 1))
+  Finsupp.mapRange.linearMap d + rowFiniteSignedMap (𝒜 := 𝒜) m
 
 /-- The differential on a finite-support vector is the coefficient differential plus the
 finite sum of its Koszul-twisted coefficients acting on the twisting rows. -/
@@ -169,9 +238,7 @@ theorem rowFiniteTwistedDifferential_apply (m : P → P →₀ A) (f : P →₀ 
     rowFiniteTwistedDifferential (𝒜 := 𝒜) (d := d) m f =
       Finsupp.mapRange.linearMap d f +
         f.sum (fun x a ↦ (InternalGrading.ofDecomposition 𝒜).koszulTwist 1 a • m x) := by
-  classical
-  simp [rowFiniteTwistedDifferential, Finsupp.lsum_apply, LinearMap.toSpanSingleton_apply,
-    Function.comp_def]
+  simp only [rowFiniteTwistedDifferential, LinearMap.add_apply, rowFiniteSignedMap_apply]
 
 /-- The differential evaluated on a single homogeneous coefficient. -/
 theorem rowFiniteTwistedDifferential_single (m : P → P →₀ A) (x : P)
@@ -179,8 +246,7 @@ theorem rowFiniteTwistedDifferential_single (m : P → P →₀ A) (x : P)
     rowFiniteTwistedDifferential (𝒜 := 𝒜) (d := d) m (Finsupp.single x a) =
       Finsupp.single x (d a) + q.negOnePow • (a • m x) := by
   classical
-  simp [rowFiniteTwistedDifferential, Finsupp.lsum_single,
-    koszulTwist_one_eq_negOnePow_smul (R := R) ha]
+  simp [rowFiniteTwistedDifferential, rowFiniteSignedMap_single m x ha]
 
 /-- The finite-support total grading is compatible with the pointwise left algebra action. -/
 instance instGradedSMulRowFiniteTotalGrading :
@@ -196,36 +262,19 @@ variable (m : P → P →₀ A) (h : IsDGAlgebra 𝒜 d)
 
 include h
 
-/-- The graded Leibniz rule on a homogeneous elementary vector. -/
-theorem rowFiniteTwistedDifferential_smul_single {p q : ℤ} {a b : A}
-    (ha : a ∈ 𝒜 p) (hb : b ∈ 𝒜 q) (x : P) :
-    rowFiniteTwistedDifferential (𝒜 := 𝒜) (d := d) m (a • Finsupp.single x b) =
-      d a • Finsupp.single x b +
-        p.negOnePow • (a • rowFiniteTwistedDifferential (𝒜 := 𝒜) (d := d) m
-          (Finsupp.single x b)) := by
-  rw [Finsupp.smul_single, smul_eq_mul,
-    rowFiniteTwistedDifferential_single m x (SetLike.GradedMul.mul_mem ha hb),
-    rowFiniteTwistedDifferential_single m x hb, h.leibniz ha b]
-  simp only [Finsupp.single_add, smul_add, Finsupp.smul_single,
-    Int.negOnePow_add, mul_smul, smul_eq_mul]
-  rw [add_assoc, smul_comm a q.negOnePow]
-
 /-- The graded Leibniz rule for a homogeneous algebra element and any finite-support vector. -/
 theorem rowFiniteTwistedDifferential_smul {p : ℤ} {a : A} (ha : a ∈ 𝒜 p) (f : P →₀ A) :
     rowFiniteTwistedDifferential (𝒜 := 𝒜) (d := d) m (a • f) =
       d a • f + p.negOnePow •
         (a • rowFiniteTwistedDifferential (𝒜 := 𝒜) (d := d) m f) := by
   classical
-  induction f using Finsupp.induction_linear with
-  | zero => simp
-  | add f g hf hg => simp only [smul_add, map_add, hf, hg]; abel
-  | single x b =>
-    induction b using DirectSum.Decomposition.inductionOn 𝒜 with
-    | zero => simp
-    | @homogeneous q b => exact rowFiniteTwistedDifferential_smul_single m h ha b.2 x
-    | add b c hb hc =>
-      simp only [Finsupp.single_add, smul_add, map_add, hb, hc]
-      abel
+  have hd : Finsupp.mapRange.linearMap d (a • f) =
+      d a • f + p.negOnePow • (a • Finsupp.mapRange.linearMap d f) := by
+    ext x
+    simpa only [Finsupp.mapRange.linearMap_apply, Finsupp.mapRange_apply,
+      Finsupp.add_apply, Finsupp.smul_apply, smul_eq_mul] using h.leibniz ha (f x)
+  simp only [rowFiniteTwistedDifferential, LinearMap.add_apply, hd,
+    rowFiniteSignedMap_smul m ha, smul_add, add_assoc]
 
 /-- The differential increases total degree by one. -/
 theorem rowFiniteTwistedDifferential_mem_totalGrading
@@ -234,18 +283,11 @@ theorem rowFiniteTwistedDifferential_mem_totalGrading
     rowFiniteTwistedDifferential (𝒜 := 𝒜) (d := d) m f ∈
       rowFiniteTotalGrading 𝒜 ind (n + 1) := by
   classical
-  rw [← Finsupp.sum_single f, Finsupp.sum, map_sum]
-  refine Submodule.sum_mem _ fun x _ ↦ ?_
-  rw [rowFiniteTwistedDifferential_single m x (hf x)]
+  rw [rowFiniteTwistedDifferential, LinearMap.add_apply]
+  refine add_mem ?_ (rowFiniteSignedMap_mem_totalGrading m hm hf)
   intro y
-  simp only [Finsupp.add_apply, Finsupp.smul_apply, smul_eq_mul]
-  refine add_mem ?_ (Submodule.smul_of_tower_mem _ _ ?_)
-  · by_cases hy : x = y
-    · subst y
-      simpa only [Finsupp.single_eq_same, add_right_comm] using h.map_mem (hf x)
-    · simp [Finsupp.single_eq_of_ne (Ne.symm hy)]
-  · have := SetLike.GradedMul.mul_mem (hf x) (hm x y)
-    convert this using 2; ring
+  simpa only [Finsupp.mapRange.linearMap_apply, Finsupp.mapRange_apply,
+    add_right_comm] using h.map_mem (hf y)
 
 end DifferentialLaws
 

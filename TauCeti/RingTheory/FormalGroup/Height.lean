@@ -57,6 +57,8 @@ so the height is defined over fields.
 * `FormalGroup.height_eq_top_iff` and `FormalGroup.height_eq_natCast_iff`: `F` has height `⊤`
   exactly when `[p]_F = 0`, and height `h` exactly when `[p]_F` has order `p ^ h`.
 * `FormalGroup.one_le_height`: the height is at least one.
+* `FormalGroup.height_eq_one_iff`: `F` has height one exactly when the coefficient of `Tᵖ` in
+  `[p]_F` is nonzero.
 * `FormalGroup.coeff_nsmulSeries_eq_zero_of_lt_height`: below the height `h`, the `p`-series has
   no term of degree `pᵏ`, `k < h`.
 * `FormalGroup.height_map`: the height is invariant under extension of the base field.
@@ -227,6 +229,19 @@ theorem one_le_height [hp : Fact p.Prime] [CharP K p] [F.IsComm] : 1 ≤ F.heigh
   obtain ⟨k, hk0, hk⟩ := F.exists_order_nsmulSeries_eq_pow hp.out (CharP.cast_eq_zero K p) h0
   rw [(F.height_eq_natCast_iff).mpr hk]
   exact_mod_cast Nat.one_le_iff_ne_zero.mpr hk0
+
+/-- A commutative formal group law over a field of characteristic `p` has height one exactly when
+the coefficient of `Tᵖ` in `[p]_F(T)` is nonzero. -/
+theorem height_eq_one_iff [hp : Fact p.Prime] [CharP K p] [F.IsComm] :
+    F.height p = 1 ↔ PowerSeries.coeff p (F.nsmulSeries p) ≠ 0 := by
+  -- in characteristic `p`, `[p]_F(T) = p T u(T) + Tᵖ h(T)` is divisible by `Tᵖ`
+  obtain ⟨u, h, -, hf⟩ := F.exists_nsmulSeries_eq_of_prime hp.out
+  have hlow (i : ℕ) (hi : i < p) : PowerSeries.coeff i (F.nsmulSeries p) = 0 := by
+    rw [hf, ← map_natCast PowerSeries.C, CharP.cast_eq_zero K p, map_zero, zero_mul, zero_mul,
+      _root_.zero_add, PowerSeries.coeff_X_pow_mul']
+    split_ifs <;> first | omega | rfl
+  rw [← Nat.cast_one, height_eq_natCast_iff, pow_one, PowerSeries.order_eq_nat]
+  exact ⟨And.left, fun h ↦ ⟨h, hlow⟩⟩
 
 /-- Below the height, the `p`-series has no terms of `p`-power degree: if `k` is less than the
 height of a commutative formal group law `F` over a field of characteristic `p`, the coefficient
