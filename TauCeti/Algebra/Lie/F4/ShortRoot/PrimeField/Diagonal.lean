@@ -31,6 +31,7 @@ No identification with an independently pinned group is asserted.
 
 * J. E. Humphreys, *Linear Algebraic Groups*, §§16 and 26.
 * N. Bourbaki, *Lie Groups and Lie Algebras, Chapters 4--6*, Plate VIII.
+* The organization follows `TauCeti.Algebra.Lie.D4.Tripled.MaximalTorus`.
 
 The proof uses the bracket invariance and integral weight table of the short-root module,
 and the diagonal constant-multiplication criterion in
