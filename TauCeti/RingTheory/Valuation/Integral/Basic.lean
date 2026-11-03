@@ -8,27 +8,27 @@ module
 public import Mathlib.RingTheory.Valuation.Integral
 
 /-!
-# The integers of a valuation are integrally closed in the ambient ring
+# Rings of integers of a valuation are integrally closed in the ambient ring
 
-For a valuation `v` on a commutative ring `R`, an element of `R` integral over the subring
-`v.integer` already lies in `v.integer`. Mathlib proves that content as
-`Valuation.Integers.mem_of_integral`; what this file adds is the `IsIntegrallyClosedIn`
-instance, which is the form the integral-closure API consumes.
+Let `v` be a valuation on a commutative ring `R` and `O` a ring of integers for `v`
+(`Valuation.Integers v O`). Mathlib proves that the integral closure of `O` in `R` is `⊥`
+(`Valuation.Integers.integralClosure`); this file records the same content as
+`IsIntegrallyClosedIn O R`, the form the integral-closure API consumes, and registers the
+instance for the canonical ring of integers `v.integer`.
 
-Mathlib's `Valuation.Integers.isIntegrallyClosed_integers` is a different statement:
-`IsIntegrallyClosed v.integer` is a condition on the *fraction field* of `v.integer`, and it is
-available only for a valuation of a field. Over a general commutative ring `R` the instance
-below is the one that holds, and the one a consumer bounding a valuation on an integral closure
-inside `R` needs.
+Mathlib's `Valuation.Integers.isIntegrallyClosed` is a different statement:
+`IsIntegrallyClosed O` is a condition on the *fraction field* of `O`, and it is available only
+for a valuation of a field. Over a general commutative ring `R` the statement below is the one
+that holds.
 
-Recording it as an instance is what makes `Subring.integralClosure_le_iff` usable at
-`v.integer`: a bound `v ≤ 1` on a subring of `R` becomes a bound on the whole integral closure
-of that subring in `R` in a single step, with no hand-built `RingHom.codRestrict` into the
-valuation ring and no `IsIntegral.map_of_comp_eq` transport.
+The instance makes `Subring.integralClosure_le_iff` usable at `v.integer`: a bound `v ≤ 1` on a
+subring of `R` becomes a bound on the whole integral closure of that subring in `R`.
 
 ## Main results
 
-* `Valuation.integer.isIntegrallyClosedIn`: `v.integer` is integrally closed in `R`.
+* `Valuation.Integers.isIntegrallyClosedIn`: a ring of integers `O` of `v` is integrally closed
+  in `R`.
+* `Valuation.integer.isIntegrallyClosedIn`: the instance for `v.integer`.
 
 -/
 
@@ -38,15 +38,22 @@ namespace Valuation
 
 variable {R : Type*} [CommRing R] {Γ₀ : Type*} [LinearOrderedCommGroupWithZero Γ₀]
 
+/-- **A ring of integers of a valuation is integrally closed in the ambient ring**: if `O` is a
+ring of integers for the valuation `v` on `R`, every element of `R` integral over `O` lies in
+the image of `O`. -/
+theorem Integers.isIntegrallyClosedIn {v : Valuation R Γ₀} {O : Type*} [CommRing O]
+    [Algebra O R] (hv : v.Integers O) : IsIntegrallyClosedIn O R :=
+  (IsIntegrallyClosedIn.integralClosure_eq_bot_iff R hv.hom_inj).mp hv.integralClosure
+
 /-- **The integers of a valuation are integrally closed in the ambient ring**: an element of `R`
 integral over `v.integer` lies in `v.integer`.
 
-This is an instance rather than a theorem so that `Subring.integralClosure_le_iff` applies at
-`v.integer` with no side goal; that is how a bound on a generating subring is upgraded to a
-bound on its integral closure in `R`. -/
+This is an instance so that `Subring.integralClosure_le_iff` applies at `v.integer` with no side
+goal; that is how a bound on a generating subring is upgraded to a bound on its integral closure
+in `R`. -/
 instance integer.isIntegrallyClosedIn (v : Valuation R Γ₀) :
     IsIntegrallyClosedIn v.integer R :=
-  Subring.isIntegrallyClosedIn_iff.mpr fun _ ↦ (integer.integers v).mem_of_integral
+  (integer.integers v).isIntegrallyClosedIn
 
 end Valuation
 
