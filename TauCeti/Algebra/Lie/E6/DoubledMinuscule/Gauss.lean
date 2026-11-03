@@ -11,11 +11,12 @@ public import TauCeti.Algebra.Lie.E6.DoubledMinuscule.IntegralMatrix
 # Opposite-root Gauss factorization in the doubled E₆ carrier
 
 The numbered positive and negative simple-root points of `V(ϖ₁) ⊕ V(ϖ₆)` satisfy the
-rank-one Gauss relation. The simple coroot is given in fundamental-weight coordinates by
-`Pi.mulSingle i u`. Both multiplication orders are covered over every commutative value
-ring, assuming only that the pivot `1 + a * b` is a unit. Neither parameter need be
-invertible, and value rings may be nonreduced. The signed action on coordinate vectors
-keeps track of the negative root-matrix coefficients in the dual summand.
+rank-one Gauss relation. In simple-coroot coordinates, dual to the fundamental weights,
+the simple coroot `αᵢ∨(u)` is `Pi.mulSingle i u`. Both multiplication orders are covered over
+every commutative value ring, assuming only that the pivot `1 + a * b` is a unit. Neither
+parameter need be invertible, and value rings may be nonreduced. The factorizations use
+`rootSubgroupPoints_mulVec_single` from `IntegralMatrix` to retain the negative root-matrix
+coefficients in the dual summand.
 
 The carrier is not identified here with the independently pinned simply connected group
 scheme of type E₆; transfer of these identities to that group requires such an identification.
@@ -38,13 +39,6 @@ universe v
 
 variable {A : Type v} [CommRing A]
 
-private theorem weightTorusPoints_mulVec_single (i : Fin 6) (u : Aˣ) (k : Fin 54) (x : A) :
-    ((weightTorusPoints A (Pi.mulSingle i u) : Matrix.GeneralLinearGroup (Fin 54) A) :
-        Matrix (Fin 54) (Fin 54) A) *ᵥ Pi.single k x =
-      Pi.single k (((u ^ matrixWeight k i : Aˣ) : A) * x) := by
-  rw [coe_weightTorusPoints, UniversalEnvelopingAlgebra.kostantTorusMatrix_apply, diagGL_coe]
-  simp only [torusCharacter_mulSingle, Matrix.diagonal_mulVec_single]
-
 -- On a reflection pair, these are the two columns of the signed SL₂ block.
 private theorem inl_mul_inr_mulVec_block (i : Fin 6) (k : Fin 54)
     (hk : matrixWeight k i = -1) (a b x y : A) :
@@ -60,13 +54,12 @@ private theorem inl_mul_inr_mulVec_block (i : Fin 6) (k : Fin 54)
   set r := matrixIndexEquiv (reflection i (matrixIndexEquiv.symm k)) with hrdef
   set s := (summandSign (matrixIndexEquiv.symm k) : A) with hsdef
   have hr : matrixWeight r i = 1 := by
-    rw [hrdef, matrixWeight_reflection_apply_self, hk]
-    norm_num
+    simpa [hrdef, matrixWeight_apply] using congrArg Neg.neg hk
   have hs : s ^ 2 = 1 := summandSign_cast_sq _
-  have hrback : matrixIndexEquiv (reflection i (matrixIndexEquiv.symm r)) = k :=
-    matrixIndexEquiv_reflection_involutive i k
-  have hsr : (summandSign (matrixIndexEquiv.symm r) : A) = s :=
-    congrArg (Int.cast : ℤ → A) (summandSign_matrixIndexEquiv_reflection i k)
+  have hrback : matrixIndexEquiv (reflection i (matrixIndexEquiv.symm r)) = k := by
+    simp [hrdef]
+  have hsr : (summandSign (matrixIndexEquiv.symm r) : A) = s := by
+    simp [hrdef, hsdef]
   simp only [← Matrix.mulVec_mulVec, Matrix.mulVec_add, rootSubgroupPoints_mulVec_single,
     Sum.elim_inl, Sum.elim_inr, id_eq, hk, hr, hrback, hsr, ← hrdef, ← hsdef,
     Int.reduceEq, ↓reduceIte, add_zero]
@@ -91,14 +84,14 @@ private theorem inr_torus_inl_mulVec_block (i : Fin 6) (k : Fin 54)
   set r := matrixIndexEquiv (reflection i (matrixIndexEquiv.symm k)) with hrdef
   set s := (summandSign (matrixIndexEquiv.symm k) : A) with hsdef
   have hr : matrixWeight r i = 1 := by
-    rw [hrdef, matrixWeight_reflection_apply_self, hk]
-    norm_num
-  have hrback : matrixIndexEquiv (reflection i (matrixIndexEquiv.symm r)) = k :=
-    matrixIndexEquiv_reflection_involutive i k
-  have hsr : (summandSign (matrixIndexEquiv.symm r) : A) = s :=
-    congrArg (Int.cast : ℤ → A) (summandSign_matrixIndexEquiv_reflection i k)
+    simpa [hrdef, matrixWeight_apply] using congrArg Neg.neg hk
+  have hrback : matrixIndexEquiv (reflection i (matrixIndexEquiv.symm r)) = k := by
+    simp [hrdef]
+  have hsr : (summandSign (matrixIndexEquiv.symm r) : A) = s := by
+    simp [hrdef, hsdef]
   simp only [← Matrix.mulVec_mulVec, Matrix.mulVec_add, rootSubgroupPoints_mulVec_single,
-    weightTorusPoints_mulVec_single, Sum.elim_inl, Sum.elim_inr, id_eq, hk, hr,
+    weightTorusPoints_mulVec_single, torusCharacter_mulSingle,
+    Sum.elim_inl, Sum.elim_inr, id_eq, hk, hr,
     hrback, hsr, ← hrdef, ← hsdef, Int.reduceEq, ↓reduceIte, add_zero,
     zpow_neg_one, zpow_one]
   ext l
@@ -157,14 +150,15 @@ theorem rootSubgroupPoints_inl_mul_inr (i : Fin 6) (a b : A) (u : Aˣ)
   all_goals rw [← matrixWeight_apply] at hk
   · simpa only [Pi.single_zero, add_zero] using gauss_mulVec_block i k hk a b 1 0 u hu
   · simp only [← Matrix.mulVec_mulVec, rootSubgroupPoints_mulVec_single,
-      weightTorusPoints_mulVec_single, Sum.elim_inl, Sum.elim_inr, id_eq, hk,
+      weightTorusPoints_mulVec_single, torusCharacter_mulSingle,
+      Sum.elim_inl, Sum.elim_inr, id_eq, hk,
       Int.reduceEq, ↓reduceIte,
       add_zero, zpow_zero, Units.val_one, one_mul]
   · set r := matrixIndexEquiv (reflection i (matrixIndexEquiv.symm k)) with hrdef
     have hr : matrixWeight r i = -1 := by
-      rw [hrdef, matrixWeight_reflection_apply_self, hk]
-    have hrback : matrixIndexEquiv (reflection i (matrixIndexEquiv.symm r)) = k :=
-      matrixIndexEquiv_reflection_involutive i k
+      simpa [hrdef, matrixWeight_apply] using congrArg Neg.neg hk
+    have hrback : matrixIndexEquiv (reflection i (matrixIndexEquiv.symm r)) = k := by
+      simp [hrdef]
     simpa only [hrback, Pi.single_zero, zero_add] using
       gauss_mulVec_block i r hr a b 0 1 u hu
 

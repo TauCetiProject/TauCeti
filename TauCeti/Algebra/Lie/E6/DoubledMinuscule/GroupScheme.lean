@@ -143,26 +143,6 @@ theorem matrixWeight_apply (a : Fin 54) :
     matrixWeight a = e6DoubledMinusculeWeight (matrixIndexEquiv.symm a) :=
   (rfl)
 
-/-- A simple reflection negates its simple-coroot coordinate in matrix coordinates. -/
-theorem matrixWeight_reflection_apply_self (i : Fin 6) (a : Fin 54) :
-    matrixWeight (matrixIndexEquiv (reflection i (matrixIndexEquiv.symm a))) i =
-      -matrixWeight a i := by
-  simp [matrixWeight_apply]
-
-/-- A simple reflection is involutive in matrix coordinates. -/
-theorem matrixIndexEquiv_reflection_involutive (i : Fin 6) :
-    Function.Involutive (fun a : Fin 54 ↦
-      matrixIndexEquiv (reflection i (matrixIndexEquiv.symm a))) := by
-  intro a
-  simp
-
-/-- A simple reflection preserves the summand sign in matrix coordinates. -/
-theorem summandSign_matrixIndexEquiv_reflection (i : Fin 6) (a : Fin 54) :
-    summandSign (matrixIndexEquiv.symm
-      (matrixIndexEquiv (reflection i (matrixIndexEquiv.symm a)))) =
-        summandSign (matrixIndexEquiv.symm a) := by
-  simp
-
 /-- Every matrix-coordinate basis vector has its named Cartan weight. -/
 theorem isCartanWeightVector_matrixBasis (a : Fin 54) :
     TauCeti.UniversalEnvelopingAlgebra.IsCartanWeightVector
@@ -398,6 +378,16 @@ theorem coe_weightTorusPoints (A : Type v) [CommRing A] (s : Fin 6 → Aˣ) :
         lattice.toAddSubgroup matrixBasis matrixWeight s := by
   rw [weightTorusPoints]
   rfl
+
+/-- A weight-torus point scales each coordinate vector by its weight character. -/
+@[simp↓]
+theorem weightTorusPoints_mulVec_single (A : Type v) [CommRing A]
+    (s : Fin 6 → Aˣ) (k : Fin 54) (x : A) :
+    ((weightTorusPoints A s : Matrix.GeneralLinearGroup (Fin 54) A) :
+        Matrix (Fin 54) (Fin 54) A) *ᵥ Pi.single k x =
+      Pi.single k ((torusCharacter s (matrixWeight k) : A) * x) := by
+  rw [coe_weightTorusPoints, kostantTorusMatrix_apply, diagGL_coe,
+    Matrix.diagonal_mulVec_single]
 
 /-! ## The pinning equation -/
 
