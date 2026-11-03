@@ -125,6 +125,33 @@ theorem twoVectorContraction_apply (F : ⋀[ℝ]^2 V) (u : V) :
       ExteriorAlgebra.ιInv (contractLeft (innerₗ V u) (F : ExteriorAlgebra ℝ V)) :=
   (rfl)
 
+omit [FiniteDimensional ℝ V] in
+@[simp]
+theorem twoVectorContraction_zero : twoVectorContraction (0 : ⋀[ℝ]^2 V) = 0 := by
+  ext u
+  simp [twoVectorContraction_apply]
+
+omit [FiniteDimensional ℝ V] in
+@[simp]
+theorem twoVectorContraction_add (F G : ⋀[ℝ]^2 V) :
+    twoVectorContraction (F + G) = twoVectorContraction F + twoVectorContraction G := by
+  ext u
+  simp [twoVectorContraction_apply]
+
+omit [FiniteDimensional ℝ V] in
+@[simp]
+theorem twoVectorContraction_smul (c : ℝ) (F : ⋀[ℝ]^2 V) :
+    twoVectorContraction (c • F) = c • twoVectorContraction F := by
+  ext u
+  simp [twoVectorContraction_apply]
+
+omit [FiniteDimensional ℝ V] in
+@[simp]
+theorem twoVectorContraction_neg (F : ⋀[ℝ]^2 V) :
+    twoVectorContraction (-F) = -twoVectorContraction F := by
+  ext u
+  simp [twoVectorContraction_apply]
+
 /-- **The contraction represents the two-form of `F`**: `⟪u ⌟ F, w⟫ = ⟪F, u ∧ w⟫`. Equivalently,
 on two-forms, wedging with `u` is adjoint to contracting with `⟪u, ·⟫`. -/
 @[simp]
