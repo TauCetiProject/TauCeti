@@ -67,7 +67,7 @@ private theorem extend_lpGauge_coe (p : ℝ) (hp : 1 ≤ p) (a : ℕ → ℝ≥0
   · rw [hsum]
     gcongr
     exact (Finset.sum_le_sum fun n _ ↦ ENNReal.rpow_le_rpow (hb n) hp0.le).trans
-      (ENNReal.sum_le_tsum _)
+      (sum_le_tsum _)
   · rw [one_div, ENNReal.rpow_inv_le_iff hp0, ENNReal.tsum_eq_iSup_nat]
     refine iSup_le fun N ↦ ?_
     have h := (lpGauge p hp).apply_le_extend
@@ -93,7 +93,7 @@ theorem extend_lpGauge (p : ℝ) (hp : 1 ≤ p) (a : ℕ → ℝ≥0∞) :
     have htop : (lpGauge p hp).extend a = ⊤ :=
       top_unique (hn ▸ (le_iSup a n).trans ((lpGauge p hp).iSup_le_extend a))
     have hsum : ∑' n, a n ^ p = ⊤ :=
-      top_unique (by simpa [hn, hp0] using ENNReal.le_tsum n (f := fun k ↦ a k ^ p))
+      top_unique (by simpa [hn, hp0] using le_tsum n (f := fun k ↦ a k ^ p))
     rw [htop, hsum, ENNReal.top_rpow_of_pos (one_div_pos.mpr hp0)]
   · push Not at ha
     lift a to ℕ → ℝ≥0 using ha

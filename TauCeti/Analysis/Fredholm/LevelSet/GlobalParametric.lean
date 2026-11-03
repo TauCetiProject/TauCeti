@@ -112,7 +112,7 @@ theorem isMeagre_setOf_not_isRegularParameter [SecondCountableTopology (E × Λ)
     have hstrict : HasStrictFDerivAt f ((fixedDeriv z).coprod (parameterDeriv z)) z := by
       simpa only [fixedDeriv, parameterDeriv,
         ContinuousLinearMap.coprod_comp_inl_inr] using
-        (hcont z z.2).hasStrictFDerivAt hn0
+        (hcont z z.2).hasStrictFDerivAt_fderiv hn0
     have hfixed : ContinuousLinearMap.IsFredholm (fixedDeriv z) := hFred z z.2
     have hsurj : Surjective ((fixedDeriv z).coprod (parameterDeriv z)) := by
       simpa only [fixedDeriv, parameterDeriv,
