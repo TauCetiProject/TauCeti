@@ -168,10 +168,14 @@ namespace FDRep
 
 universe u
 
-variable {k G : Type u} [Field k] [Group G] {H : Subgroup G} {s : G}
+variable {k G : Type u} [Group G] {H : Subgroup G} {s : G}
 
-/-- The finite-dimensional Mackey Hom component represented by an element of `H` identifies
-with the original Hom space, by removing the inner conjugation twist. -/
+section
+
+variable [CommRing k]
+
+/-- For finitely generated representations, the Mackey Hom component represented by an
+element of `H` identifies with the original Hom space, by removing the inner conjugation twist. -/
 noncomputable def mackeyHomSelfLinearEquiv (hs : s ∈ H) (A B : FDRep k H) :
     (Subgroup.resFDRep ((mackeySubgroup s H H).subgroupOf H) A ⟶
       (Action.res (FGModuleCat k) (mackeyToH s H H)).obj B) ≃ₗ[k] (A ⟶ B) :=
@@ -181,7 +185,8 @@ noncomputable def mackeyHomSelfLinearEquiv (hs : s ∈ H) (A B : FDRep k H) :
       ((forget₂ (FDRep k H) (Rep k H)).obj B)).trans <|
       FDRep.forget₂HomLinearEquiv A B
 
-/-- The finite-dimensional identification acts by the chosen representative on the target. -/
+/-- For finitely generated representations, the identification acts by the chosen representative
+on the target. -/
 @[simp]
 theorem mackeyHomSelfLinearEquiv_apply (hs : s ∈ H) (A B : FDRep k H)
     (f : Subgroup.resFDRep ((mackeySubgroup s H H).subgroupOf H) A ⟶
@@ -193,7 +198,8 @@ theorem mackeyHomSelfLinearEquiv_apply (hs : s ∈ H) (A B : FDRep k H)
     ((forget₂ (FDRep k H) (Rep k H)).obj B)
     ((FDRep.forget₂HomLinearEquiv _ _).symm f) a
 
-/-- The inverse finite-dimensional identification removes the representative's action. -/
+/-- For finitely generated representations, the inverse identification removes the
+representative's action. -/
 theorem mackeyHomSelfLinearEquiv_symm_apply (hs : s ∈ H) (A B : FDRep k H)
     (g : A ⟶ B) (a : A) :
     (mackeyHomSelfLinearEquiv hs A B).symm g a =
@@ -204,7 +210,9 @@ theorem mackeyHomSelfLinearEquiv_symm_apply (hs : s ∈ H) (A B : FDRep k H)
   exact (Representation.inv_self_apply B.ρ ⟨s, hs⟩ _).symm.trans
     (congrArg (B.ρ (⟨s, hs⟩ : H)⁻¹) h.symm)
 
-variable [Finite G]
+end
+
+variable [Field k] [Finite G]
 
 /-- The identity double-coset projection of the actual finite-dimensional Mackey Hom
 isomorphism, with its component identified with `Hom_H(A, B)`. -/
