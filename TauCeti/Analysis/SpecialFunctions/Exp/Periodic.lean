@@ -22,6 +22,7 @@ the period is `1`.
   even integer.
 * `Complex.exp_two_pi_mul_I_mul_add_intCast`: `exp (2 π i (z + k)) = exp (2 π i z)` for an
   integer `k`.
+* `Complex.norm_exp_two_pi_mul_I_mul_ofReal`: `‖exp (2 π i x)‖ = 1` for real `x`.
 -/
 
 public section
@@ -40,5 +41,10 @@ theorem exp_pi_mul_I_mul_eq_of_sub_eq {a b : ℂ} {m : ℤ} (h : a - b = 2 * m) 
 theorem exp_two_pi_mul_I_mul_add_intCast (z : ℂ) (k : ℤ) :
     cexp (2 * π * I * (z + k)) = cexp (2 * π * I * z) := by
   rw [mul_add, exp_add, mul_comm (2 * π * I) (k : ℂ), exp_int_mul_two_pi_mul_I, mul_one]
+
+/-- `‖e(x)‖ = 1` for `e(x) = exp (2 π i x)` and real `x`. -/
+@[simp]
+theorem norm_exp_two_pi_mul_I_mul_ofReal (x : ℝ) : ‖cexp (2 * π * I * x)‖ = 1 := by
+  simp [norm_exp]
 
 end Complex
