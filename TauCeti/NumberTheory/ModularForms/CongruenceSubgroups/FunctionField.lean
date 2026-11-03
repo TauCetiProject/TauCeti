@@ -39,6 +39,9 @@ function of every level.
 * `TauCeti.compactifiedQuotientComap_mem_modularFunctionField`: the level map `F_M → F_N`.
 * `TauCeti.compactifiedQuotientComap_mem_modularFunctionField_of_mem_coeffSubfield_bot`: the level
   map `ℚ(j) = F_1 → F_N` from the level-one curve.
+* `TauCeti.modularFunctionFieldMap` and `TauCeti.modularFunctionFieldMapOfLevelOne`: the level maps
+  `F_M →+* F_N` and `ℚ(j) →+* F_N`, bundled as ring homomorphisms, with their identity and
+  composition laws.
 
 ## References
 
@@ -140,5 +143,68 @@ theorem compactifiedQuotientComap_jMeromorphicFunction_mem_modularFunctionField 
       ModularGroup.jMeromorphicFunction ∈ modularFunctionField N :=
   compactifiedQuotientComap_mem_modularFunctionField_of_mem_coeffSubfield_bot
     (ModularGroup.jMeromorphicFunction_mem_coeffSubfield ⊥)
+
+/-- **The level map `F_M →+* F_N`, for `M ∣ N`**, bundled as a ring homomorphism: the pullback
+along `X(N) → X(M)`, restricted to `F_M` and corestricted to `F_N`. -/
+def modularFunctionFieldMap (h : M ∣ N) : modularFunctionField M →+* modularFunctionField N :=
+  (Subgroup.compactifiedQuotientComap
+    (Subgroup.map_mono (Gamma_le_Gamma_of_dvd h))).toRingHom.restrict _ _
+    fun _ hF ↦ compactifiedQuotientComap_mem_modularFunctionField h hF
+
+/-- The level map `F_M →+* F_N` is the pullback along `X(N) → X(M)`. -/
+@[simp]
+theorem coe_modularFunctionFieldMap_apply (h : M ∣ N) (F : modularFunctionField M) :
+    (modularFunctionFieldMap h F :
+        MeromorphicFunction ((Gamma N).map sl2zToPSL2R).CompactifiedQuotient) =
+      Subgroup.compactifiedQuotientComap (Subgroup.map_mono (Gamma_le_Gamma_of_dvd h)) F :=
+  RingHom.coe_restrict_apply ..
+
+/-- The level map `F_M →+* F_N` is injective. -/
+theorem modularFunctionFieldMap_injective (h : M ∣ N) :
+    Function.Injective (modularFunctionFieldMap h) :=
+  (modularFunctionFieldMap h).injective
+
+/-- The level map `F_N →+* F_N` is the identity. -/
+@[simp]
+theorem modularFunctionFieldMap_refl :
+    modularFunctionFieldMap (dvd_refl N) = RingHom.id (modularFunctionField N) :=
+  RingHom.ext fun _ ↦ Subtype.ext (Subgroup.compactifiedQuotientComap_refl _)
+
+/-- **Functoriality of the level maps.** For `L ∣ M ∣ N`, the level map `F_L →+* F_N` is the
+composite of the level maps `F_L →+* F_M` and `F_M →+* F_N`. -/
+theorem modularFunctionFieldMap_comp {L : ℕ} [NeZero L] (h : L ∣ M) (k : M ∣ N) :
+    (modularFunctionFieldMap k).comp (modularFunctionFieldMap h) =
+      modularFunctionFieldMap (h.trans k) :=
+  RingHom.ext fun _ ↦ Subtype.ext (Subgroup.compactifiedQuotientComap_trans _ _ _).symm
+
+/-- **The level map `ℚ(j) →+* F_N`**, bundled as a ring homomorphism: the pullback along
+`X(N) → X(1)`, restricted to the level-one field `ℚ(j)`
+(`TauCeti.ModularGroup.coeffSubfield_cuspDatumInfty_bot`) and corestricted to `F_N`. -/
+def modularFunctionFieldMapOfLevelOne (N : ℕ) [NeZero N] :
+    coeffSubfield ModularGroup.cuspDatumInfty ⊥ →+* modularFunctionField N :=
+  (Subgroup.compactifiedQuotientComap
+    (Gamma N).map_sl2zToPSL2R_le_range_psl2zToPSL2R).toRingHom.restrict _ _
+    fun _ hF ↦ compactifiedQuotientComap_mem_modularFunctionField_of_mem_coeffSubfield_bot hF
+
+/-- The level map `ℚ(j) →+* F_N` is the pullback along `X(N) → X(1)`. -/
+@[simp]
+theorem coe_modularFunctionFieldMapOfLevelOne_apply
+    (F : coeffSubfield ModularGroup.cuspDatumInfty ⊥) :
+    (modularFunctionFieldMapOfLevelOne N F :
+        MeromorphicFunction ((Gamma N).map sl2zToPSL2R).CompactifiedQuotient) =
+      Subgroup.compactifiedQuotientComap (Gamma N).map_sl2zToPSL2R_le_range_psl2zToPSL2R F :=
+  RingHom.coe_restrict_apply ..
+
+/-- The level map `ℚ(j) →+* F_N` is injective. -/
+theorem modularFunctionFieldMapOfLevelOne_injective :
+    Function.Injective (modularFunctionFieldMapOfLevelOne N) :=
+  (modularFunctionFieldMapOfLevelOne N).injective
+
+/-- For `M ∣ N`, the level map `ℚ(j) →+* F_N` factors through the level map
+`ℚ(j) →+* F_M`. -/
+theorem modularFunctionFieldMap_comp_modularFunctionFieldMapOfLevelOne (h : M ∣ N) :
+    (modularFunctionFieldMap h).comp (modularFunctionFieldMapOfLevelOne M) =
+      modularFunctionFieldMapOfLevelOne N :=
+  RingHom.ext fun _ ↦ Subtype.ext (Subgroup.compactifiedQuotientComap_trans _ _ _).symm
 
 end TauCeti
