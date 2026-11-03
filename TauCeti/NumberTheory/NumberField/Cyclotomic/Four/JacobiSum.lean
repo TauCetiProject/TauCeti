@@ -83,12 +83,14 @@ theorem isPrimaryGaussian_neg_apply_neg_one_mul_jacobiSum {χ : MulChar F (𝓞 
 a finite field `F`, with values in `𝓞 K = ℤ[i]`, then `J(χ, χ)` has norm `#F`. -/
 theorem norm_jacobiSum_eq_card_of_orderOf_eq_four {χ : MulChar F (𝓞 K)} (hχ : orderOf χ = 4) :
     Algebra.norm ℤ (jacobiSum χ χ) = Fintype.card F := by
-  obtain ⟨σ, hσ⟩ := exists_ringHom_apply_eq_pow_three_of_four (K := K)
+  obtain ⟨τ, _, hσ⟩ := exists_gal_apply_eq_pow_three_of_four (K := K)
+  let σ : 𝓞 K →+* 𝓞 K := MulSemiringAction.toRingEquiv Gal(K/ℚ) (𝓞 K) τ
   have h4 : χ ^ 4 = 1 := hχ ▸ pow_orderOf_eq_one χ
   -- `σ` inverts the values of `χ`, so it maps `J(χ, χ)` to `J(χ⁻¹, χ⁻¹)`.
   have hinv : χ⁻¹ = χ.ringHomComp σ := by
     refine MulChar.ext fun u ↦ ?_
-    rw [MulChar.ringHomComp_apply,
+    dsimp only [σ]
+    rw [MulChar.ringHomComp_apply, RingEquiv.coe_toRingHom,
       hσ _ (by rw [← MulChar.pow_apply_coe, h4, MulChar.one_apply_coe]),
       inv_eq_of_mul_eq_one_right (b := χ ^ 3) (by rw [← pow_succ', h4]), MulChar.pow_apply_coe]
   -- Mathlib's `jacobiSum_mul_jacobiSum_inv`, applied in `K`, gives `J(χ, χ) J(χ⁻¹, χ⁻¹) = #F`.
