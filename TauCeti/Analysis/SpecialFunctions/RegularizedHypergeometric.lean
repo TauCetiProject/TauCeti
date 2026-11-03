@@ -48,6 +48,15 @@ theorem regularizedHGFunCoeff_zero_singleton (b : ℂ) (n : ℕ) :
     regularizedHGFunCoeff 0 {b} n = (n ! * Gamma (b + n))⁻¹ := by
   simp [regularizedHGFunCoeff]
 
+/-- At zero argument and a real parameter, the real part of `₀F₁(; b; 0)` is `1 / Γ(b)`,
+including the poles of `Γ`, where its inverse vanishes. -/
+theorem regularizedHGFun_zero_singleton_ofReal_zero_re (b : ℝ) :
+    (regularizedHGFun 0 {(b : ℂ)} 0).re = (Real.Gamma b)⁻¹ := by
+  have h : regularizedHGFun 0 {(b : ℂ)} 0 = (((Real.Gamma b)⁻¹ : ℝ) : ℂ) := by
+    rw [ofReal_inv, ← Gamma_ofReal]
+    simp
+  rw [h, ofReal_re]
+
 /-- When there are at most as many upper as lower parameters, the regularized hypergeometric
 series converges to `regularizedHGFun a b z` at every `z`. -/
 theorem hasSum_regularizedHGFun {a b : Multiset ℂ} (h : a.card ≤ b.card) (z : ℂ) :

@@ -151,6 +151,27 @@ theorem integral_exp_inner_uniformSphereMeasure_eq_besselI (hd : 2 ≤ Module.fi
   simp_rw [hF, ← cosh_eq_tsum, ← hcosh, integral_inner_pow_div_uniformSphereMeasure hd hη] at hsum
   simpa only [neg_sub, mul_assoc] using hsum.unique hseries
 
+/-- The sphere normalizer in regularized hypergeometric form. Its argument is the squared
+norm divided by four, which permits differentiation without differentiating the norm. -/
+theorem integral_exp_inner_uniformSphereMeasure_eq_regularizedHGFun
+    (hd : 2 ≤ Module.finrank ℝ E) (η : E) :
+    ∫ x : sphere (0 : E) 1, exp ⟪η, (x : E)⟫ ∂uniformSphereMeasure E =
+      Gamma ((Module.finrank ℝ E : ℝ) / 2) *
+        (Complex.regularizedHGFun 0 {(((Module.finrank ℝ E : ℝ) / 2 : ℝ) : ℂ)}
+          (‖η‖ ^ 2 / 4 : ℝ)).re := by
+  by_cases hη : η = 0
+  · subst η
+    have : Nontrivial E := Module.nontrivial_of_finrank_pos (R := ℝ) (by omega :
+      0 < Module.finrank ℝ E)
+    have hb : Gamma ((Module.finrank ℝ E : ℝ) / 2) ≠ 0 :=
+      (Gamma_pos_of_pos (div_pos
+        (Nat.cast_pos.mpr (lt_of_lt_of_le zero_lt_two hd)) two_pos)).ne'
+    rw [norm_zero, zero_pow two_ne_zero, zero_div, Complex.ofReal_zero,
+      Complex.regularizedHGFun_zero_singleton_ofReal_zero_re]
+    simp [hb]
+  rw [integral_exp_inner_uniformSphereMeasure_eq_besselI hd hη,
+    regularizedHGFun_zero_singleton_ofReal_re_eq_rpow_mul_besselI _ (norm_pos_iff.mpr hη), neg_sub]
+
 /-- **The von Mises–Fisher normalizer on the surface measure.** In dimension `d ≥ 2`, the surface
 integral of `exp ⟪η, x⟫` over the unit sphere is `(2 π) ^ (d / 2) * ‖η‖ ^ (1 - d / 2) *
 I_{d/2-1}(‖η‖)` for every `η ≠ 0`. -/
