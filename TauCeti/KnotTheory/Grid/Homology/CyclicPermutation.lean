@@ -131,13 +131,8 @@ theorem relabelRowsEquiv_mem_alexanderChainMinusPiece {a : ℤ} {c : GridChainMi
     GridChain.relabelRowsEquiv (finRotate n) c ∈
       (G.relabelRows (finRotate n)).alexanderChainMinusPiece R a := by
   rw [mem_alexanderChainMinusPiece] at hc ⊢
-  intro x e he
-  obtain ⟨x, rfl⟩ : ∃ x', x'.relabelRows (finRotate n) = x :=
-    ⟨x.relabelRows (finRotate n).symm, by simp⟩
-  rw [GridChain.relabelRowsEquiv_apply, GridState.relabelRows_relabelRows, Equiv.self_trans_symm,
-    GridState.relabelRows_refl] at he
-  rw [alexanderℤ_relabelRows_finRotate]
-  exact hc x e he
+  rw [GridChain.forall_mem_support_relabelRowsEquiv_iff]
+  simpa only [alexanderℤ_relabelRows_finRotate] using hc
 
 /-- Relabeling the grid states along a cyclic permutation of the columns and renaming the
 variables along the same permutation preserves the Alexander grading of chains. -/
@@ -145,18 +140,9 @@ theorem relabelColumnsRenameEquiv_mem_alexanderChainMinusPiece {a : ℤ}
     {c : GridChainMinus R n} (hc : c ∈ G.alexanderChainMinusPiece R a) :
     GridChain.relabelColumnsRenameEquiv R (finRotate n) c ∈
       (G.relabelColumns (finRotate n)).alexanderChainMinusPiece R a := by
-  classical
   rw [mem_alexanderChainMinusPiece] at hc ⊢
-  intro x e he
-  rw [← LinearEquiv.coe_coe, GridChain.relabelColumnsRenameEquiv_apply,
-    support_rename_of_injective (finRotate n).injective, Finset.mem_image] at he
-  obtain ⟨e, he, rfl⟩ := he
-  obtain ⟨x, rfl⟩ : ∃ x', x'.relabelColumns (finRotate n) = x :=
-    ⟨x.relabelColumns (finRotate n).symm, by simp⟩
-  rw [GridState.relabelColumns_relabelColumns, Equiv.self_trans_symm,
-    GridState.relabelColumns_refl] at he
-  rw [alexanderℤ_relabelColumns_finRotate, Finsupp.degree_mapDomain]
-  exact hc x e he
+  rw [GridChain.forall_mem_support_relabelColumnsRenameEquiv_iff]
+  simpa only [alexanderℤ_relabelColumns_finRotate, Finsupp.degree_mapDomain] using hc
 
 end OddComponentGridDiagram
 
