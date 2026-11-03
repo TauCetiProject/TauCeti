@@ -69,7 +69,7 @@ theorem mass_segmentCurrent [FiniteDimensional ℝ E] {p q : E} (h : segment ℝ
   -- Test against `χ • ℓ` for a cutoff `χ` equal to one near the segment and a norming
   -- functional `ℓ` of `q - p`.
   obtain ⟨ℓ, hℓ, hℓpq⟩ := exists_dual_vector ℝ (q - p) (norm_ne_zero_iff.2 hpq)
-  obtain ⟨χ, hχ, hχ01⟩ := exists_eventually_eq_one (n := n) (isCompact_segment ℝ p q) h
+  obtain ⟨χ, hχ, hχ01⟩ := exists_eventually_eq_one (n := n) (TauCeti.isCompact_segment ℝ p q) h
   let α : E [⋀^Fin 1]→L[ℝ] ℝ := ContinuousAlternatingMap.ofSubsingleton ℝ E ℝ 0 ℓ
   let ω : 𝓓^{n}(Ω, E [⋀^Fin 1]→L[ℝ] ℝ) := postcompCLM (ContinuousLinearMap.toSpanSingleton ℝ α) χ
   have hω (x : E) : ‖ω x‖ ≤ 1 := by

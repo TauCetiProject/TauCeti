@@ -171,7 +171,8 @@ theorem dsupport_segmentCurrent_subset (p q : E) :
     dsupport (segmentCurrent p q : 𝓓^{n}(Ω, E [⋀^Fin 1]→L[ℝ] ℝ) →L[ℝ] ℝ) ⊆ segment ℝ p q := by
   refine compl_subset_compl.1 fun y hy => ?_
   rw [mem_compl_iff, notMem_dsupport_iff]
-  refine ⟨(segment ℝ p q)ᶜ, fun ω hω => ?_, (isCompact_segment ℝ p q).isClosed.isOpen_compl, hy⟩
+  refine ⟨(segment ℝ p q)ᶜ, fun ω hω => ?_,
+    (TauCeti.isCompact_segment ℝ p q).isClosed.isOpen_compl, hy⟩
   rw [segmentCurrent_apply_eq_intervalIntegral_lineMap]
   refine intervalIntegral.integral_zero_ae (Filter.Eventually.of_forall fun t ht => ?_)
   rw [uIoc_of_le zero_le_one] at ht

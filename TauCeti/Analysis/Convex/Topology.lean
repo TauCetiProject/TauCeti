@@ -66,6 +66,8 @@ theorem Convex.zero_mem_interior_of_symmetric {𝕜 E : Type*} [Field 𝕜] [Lin
   simpa using hs.interior hx hx' (by norm_num : (0 : 𝕜) ≤ 1 / 2)
     (by norm_num : (0 : 𝕜) ≤ 1 / 2) (by norm_num)
 
+namespace TauCeti
+
 /-- A closed segment is compact: it is the convex hull of its two endpoints. -/
 theorem isCompact_segment (𝕜 : Type*) {E : Type*} [Field 𝕜] [LinearOrder 𝕜]
     [IsStrictOrderedRing 𝕜] [TopologicalSpace 𝕜] [OrderClosedTopology 𝕜] [CompactIccSpace 𝕜]
@@ -73,3 +75,5 @@ theorem isCompact_segment (𝕜 : Type*) {E : Type*} [Field 𝕜] [LinearOrder �
     [IsTopologicalAddGroup E] [ContinuousSMul 𝕜 E] (x y : E) :
     IsCompact (segment 𝕜 x y) :=
   convexHull_pair (𝕜 := 𝕜) x y ▸ (toFinite {x, y}).isCompact_convexHull 𝕜
+
+end TauCeti
