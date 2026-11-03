@@ -83,6 +83,14 @@ theorem finrank_ker_inf_add_one {f : Dual K V} {U : Submodule K V} [FiniteDimens
   have hfin := finrank_ker_add_one_of_ne_zero hne
   rwa [hker, (Submodule.comapSubtypeEquivOfLe inf_le_right).finrank_eq] at hfin
 
+/-- A hyperplane contained in the kernel of a nonzero functional equals that kernel. -/
+theorem ker_eq_of_le_of_finrank_add_one [FiniteDimensional K V] (f : Dual K V)
+    (hf : f ≠ 0) {S : Submodule K V} (hle : S ≤ LinearMap.ker f)
+    (hdim : finrank K S + 1 = finrank K V) : LinearMap.ker f = S := by
+  apply (Submodule.eq_of_le_of_finrank_eq hle ?_).symm
+  have hker := finrank_ker_add_one_of_ne_zero hf
+  omega
+
 /-- The kernel of a nonzero functional has codimension one. The ambient vector space need not be
 finite-dimensional. -/
 theorem finrank_quotient_ker_eq_one_of_ne_zero {f : Dual K V} (hf : f ≠ 0) :
