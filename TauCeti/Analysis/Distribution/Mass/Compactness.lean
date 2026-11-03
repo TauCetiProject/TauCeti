@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.Distribution.Mass.Basic
 public import TauCeti.Analysis.Distribution.Support
 import Mathlib.Analysis.Normed.Module.HahnBanach
+import Mathlib.Analysis.Normed.Operator.Extend
 import Mathlib.Analysis.Normed.Module.WeakDual
 
 /-!
@@ -55,21 +56,21 @@ theorem mass_le_iff_exists_extension {𝓕 : Type*} [FunLike 𝓕 𝓓^{n}(Ω, F
   · intro hT
     let j : 𝓓^{n}(Ω, F) →ₗ[ℝ] (E →ᵇ F) :=
       (TestFunction.toBoundedContinuousFunctionCLM ℝ).toLinearMap
-    let e := LinearEquiv.ofInjective j (TestFunction.injective_toBoundedContinuousFunctionCLM ℝ)
-    let f : LinearMap.range j →ₗ[ℝ] ℝ := (LinearMap.ofClass T).comp e.symm.toLinearMap
-    have hf (x : LinearMap.range j) : ‖f x‖ ≤ C * ‖x‖ := by
-      have hx : (((e.symm x : 𝓓^{n}(Ω, F)) : E →ᵇ F)) = x :=
-        congrArg Subtype.val (e.apply_symm_apply x)
-      simpa [f, hx] using norm_apply_le_of_mass_le T hT (e.symm x)
-    let f' : StrongDual ℝ (LinearMap.range j) := f.mkContinuous C hf
+    have hbound (φ : 𝓓^{n}(Ω, F)) : ‖T φ‖ ≤ C * ‖j φ‖ :=
+      norm_apply_le_of_mass_le T hT φ
+    let f' := (LinearMap.ofClass T).compLeftInverse j
+    have hf (x : LinearMap.range j) : ‖f' x‖ ≤ C * ‖x‖ := by
+      rcases x with ⟨x, φ, rfl⟩
+      rw [LinearMap.compLeftInverse_apply_of_bdd _ _ ⟨C, hbound⟩ φ (j φ) rfl]
+      exact hbound φ
     obtain ⟨L, hL, hnorm⟩ := exists_extension_norm_eq (LinearMap.range j) f'
     refine ⟨L, hnorm.trans_le (f'.opNorm_le_bound C.2 hf), fun φ => ?_⟩
-    have he : (e φ : E →ᵇ F) = (φ : E →ᵇ F) :=
-      (LinearEquiv.ofInjective_apply j φ).trans
-        (TestFunction.toBoundedContinuousFunctionCLM_apply ℝ φ)
-    calc L (φ : E →ᵇ F) = L (e φ) := congrArg L he.symm
-         _ = f' (e φ) := hL (e φ)
-         _ = T φ := by simp [f', f]
+    calc L (φ : E →ᵇ F) = L (j φ) :=
+           congrArg L (TestFunction.toBoundedContinuousFunctionCLM_apply ℝ φ).symm
+         _ = f' ⟨j φ, LinearMap.mem_range_self j φ⟩ :=
+           hL ⟨j φ, LinearMap.mem_range_self j φ⟩
+         _ = T φ :=
+           LinearMap.compLeftInverse_apply_of_bdd _ _ ⟨C, hbound⟩ φ (j φ) rfl
   · rintro ⟨L, hL, heq⟩
     refine mass_le_iff.2 fun φ hφ => ?_
     rw [← heq φ]
