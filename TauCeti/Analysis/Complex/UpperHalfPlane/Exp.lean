@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Complex.UpperHalfPlane.Exp
+public import Mathlib.Analysis.Complex.UpperHalfPlane.FunctionsBoundedAtInfty
 
 /-!
 # The exponential `e^{2π i τ}` on the upper half-plane
@@ -18,6 +19,8 @@ for `τ` in the upper half-plane, complementing `Mathlib.Analysis.Complex.UpperH
 * `TauCeti.UpperHalfPlane.exp_two_pi_I_eq_exp_pi_I_sq`: `e^{2π i τ} = (e^{π i τ})²`.
 * `TauCeti.UpperHalfPlane.norm_exp_two_pi_I_mul`: `|q| = e^{-2π Im τ}`.
 * `TauCeti.UpperHalfPlane.norm_exp_two_pi_I_mul_add`: `‖e^{2π i (x τ + y)}‖ = |q|^x`.
+* `TauCeti.UpperHalfPlane.tendsto_exp_two_pi_I_mul_add`: for `x > 0`,
+  `e^{2π i (x τ + y)} → 0` as `Im τ → ∞`.
 * `TauCeti.UpperHalfPlane.norm_exp_two_pi_I_mul_le`: `|q| ≤ e^{-2π t}` when `t ≤ Im τ`.
 * `TauCeti.UpperHalfPlane.norm_one_sub_exp_two_pi_I_mul`: `|1 - e^{2π i y}| = |2 sin (π y)|`.
 * `TauCeti.UpperHalfPlane.norm_exp_pi_I_lt_one`: `‖e^{π i τ}‖ < 1` on the upper half-plane.
@@ -53,6 +56,22 @@ theorem norm_exp_two_pi_I_mul_add (x y : ℝ) (τ : ℂ) :
   rw [Complex.norm_exp, norm_exp_two_pi_I_mul, ← Real.exp_mul]
   congr 1
   simp
+  ring
+
+/-- For `x > 0`, `e^{2π i (x τ + y)}` tends to zero as `Im τ → ∞`, with no restriction on
+`Re τ`. -/
+theorem tendsto_exp_two_pi_I_mul_add {x : ℝ} (hx : 0 < x) (y : ℝ) :
+    Filter.Tendsto (fun τ : ℍ ↦ cexp (2 * π * I * (x * (τ : ℂ) + y)))
+      atImInfty (nhds 0) := by
+  rw [tendsto_zero_iff_norm_tendsto_zero]
+  have him : Filter.Tendsto (fun τ : ℍ ↦ τ.im) atImInfty Filter.atTop := Filter.tendsto_comap
+  have h := Real.tendsto_exp_atBot.comp
+    (him.const_mul_atTop_of_neg (neg_neg_of_pos (by positivity : 0 < 2 * π * x)))
+  convert h using 1
+  funext τ
+  rw [norm_exp_two_pi_I_mul_add, norm_exp_two_pi_I_mul, ← Real.exp_mul]
+  congr 1
+  rw [coe_im]
   ring
 
 /-- `Im τ ≥ t` means `|q| ≤ e^{-2π t}` for `q = e^{2π i τ}`. -/
