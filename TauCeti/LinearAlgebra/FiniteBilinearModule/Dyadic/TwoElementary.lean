@@ -9,7 +9,7 @@ public import TauCeti.LinearAlgebra.FiniteBilinearModule.Decomposition
 public import TauCeti.LinearAlgebra.FiniteBilinearModule.Dyadic.GaussSum
 public import TauCeti.LinearAlgebra.FiniteBilinearModule.Comparison
 
-import TauCeti.LinearAlgebra.FiniteBilinearModule.ZMod
+import TauCeti.LinearAlgebra.FiniteBilinearModule.ZMod.Basic
 import TauCeti.LinearAlgebra.BilinearForm.Classification
 import Mathlib.FieldTheory.Finiteness
 
