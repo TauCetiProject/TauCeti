@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Lie.Orthogonal.TypeB.SpinCarrier.Generated.StandardComodule
-public import TauCeti.Algebra.AlgebraicGroup.DiagonalizableGroup.Centralizer.Functorial
 public import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.Weight.Centralizer
 
 /-!
@@ -54,20 +53,13 @@ theorem mem_centralizerPointsSubgroup_iff_isDiag (A : CommAlgCat.{v} R)
       (GeneralLinear.pointsMulEquiv (dimension n)
         (BialgHom.mapDomain (generatedCoordinateMap n R).hom g) :
           Matrix (Fin (dimension n)) (Fin (dimension n)) A).IsDiag := by
-  have hcomp : (generatedWeightTorusCoordinateMap n R).hom.comp
-        (generatedCoordinateMap n R).hom =
-      GeneralLinear.weightTorusCoordinateBialgHom (S := R) (basisWeight n) := by
-    rw [← CommHopfAlgCat.hom_comp,
-      generatedCoordinateMap_comp_generatedWeightTorusCoordinateMap,
-      GeneralLinear.hom_weightTorusBaseChangeCoordinateMap]
-  have hwt : Function.Injective (basisWeight n) := fun _ _ h ↦
-    basisCharacter_injective n (congrArg SplitTorus.weightCharacter h)
-  have h := BialgHom.centralizerHopfIdeal_comp_le_ker_iff
+  exact BialgHom.mem_centralizerPointsSubgroup_iff_isDiag_of_comp
     (generatedCoordinateMap n R).hom (generatedCoordinateMap_surjective n R)
-    (generatedWeightTorusCoordinateMap n R).hom g
-  rw [hcomp, GeneralLinear.centralizerHopfIdeal_weightTorus_le_ker_iff_isDiag _ hwt] at h
-  rw [BialgHom.centralizerPointsSubgroup, CommHopfAlgCat.mem_quotientPointsSubgroup_iff]
-  simpa only [IsConcreteLE.le_iff, RingHom.mem_ker, HopfIdeal.mem_toIdeal] using h.symm
+    (generatedWeightTorusCoordinateMap n R).hom (basisWeight n)
+    (fun _ _ h ↦ basisCharacter_injective n (congrArg SplitTorus.weightCharacter h))
+    (by rw [← CommHopfAlgCat.hom_comp,
+      generatedCoordinateMap_comp_generatedWeightTorusCoordinateMap,
+      GeneralLinear.hom_weightTorusBaseChangeCoordinateMap]) A g
 
 /-- Over every value algebra, the schematic weight-torus centralizer is the inverse image
 of the full diagonal torus under the generated spin carrier's closed matrix embedding. -/
@@ -76,9 +68,12 @@ theorem centralizerPointsSubgroup_eq_comap_diagonalTorus (A : CommAlgCat.{v} R) 
       (diagonalTorus A (dimension n)).comap
         ((GeneralLinear.pointsMulEquiv (R := R) (dimension n)).toMonoidHom.comp
           (BialgHom.mapDomain (generatedCoordinateMap n R).hom)) := by
-  ext g
-  simp only [Subgroup.mem_comap, MonoidHom.comp_apply, MulEquiv.coe_toMonoidHom,
-    mem_diagonalTorus_iff]
-  exact mem_centralizerPointsSubgroup_iff_isDiag n R A g
+  exact BialgHom.centralizerPointsSubgroup_eq_comap_diagonalTorus_of_comp
+    (generatedCoordinateMap n R).hom (generatedCoordinateMap_surjective n R)
+    (generatedWeightTorusCoordinateMap n R).hom (basisWeight n)
+    (fun _ _ h ↦ basisCharacter_injective n (congrArg SplitTorus.weightCharacter h))
+    (by rw [← CommHopfAlgCat.hom_comp,
+      generatedCoordinateMap_comp_generatedWeightTorusCoordinateMap,
+      GeneralLinear.hom_weightTorusBaseChangeCoordinateMap]) A
 
 end TauCeti.TypeBSpinCarrier
