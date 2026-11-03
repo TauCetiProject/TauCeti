@@ -175,10 +175,10 @@ theorem linftyOfAbsolutelyContinuous_mono (h : ν ≪ μ) {f g : Lp ℝ ∞ μ} 
 
 /-- The constant class one goes to the constant class one. -/
 @[simp]
-theorem linftyOfAbsolutelyContinuous_linftyOne (h : ν ≪ μ) :
-    linftyOfAbsolutelyContinuous ℝ h TauCeti.linftyOne = TauCeti.linftyOne :=
+theorem linftyOfAbsolutelyContinuous_one (h : ν ≪ μ) :
+    linftyOfAbsolutelyContinuous ℝ h (1 : Lp ℝ ∞ μ) = 1 :=
   Lp.ext <| (coeFn_linftyOfAbsolutelyContinuous (𝕜 := ℝ) h _).trans <|
-    (h.ae_eq TauCeti.coeFn_linftyOne).trans TauCeti.coeFn_linftyOne.symm
+    (h.ae_eq coeFn_one).trans coeFn_one.symm
 
 /-- The class of a bounded continuous function for `μ` goes to its class for `ν`. -/
 @[simp]
