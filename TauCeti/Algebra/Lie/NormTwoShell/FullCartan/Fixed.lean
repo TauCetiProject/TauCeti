@@ -18,7 +18,7 @@ Its integral fixed module is therefore the product of the fixed module of the ac
 automorphism and the fixed module of the signed root permutation. This is a decomposition of
 modules, not of Lie algebras: opposite root brackets can have nonzero Cartan components.
 
-The same decomposition holds after extension to every commutative coefficient ring, without
+The same decomposition holds after extension to every coefficient ring, without
 flatness, freeness, or invertibility of the action order. The canonical comparison from the
 scalar extension of integral invariants respects these two parts. Thus a computation of the
 Cartan kernel and a computation of the signed root cycles can be combined independently;
@@ -119,7 +119,7 @@ theorem equivProd_fixedCartanRootEquiv_symm
   · simpa using (fixedCartanRootEquiv_apply_snd D σ hσ γ
       ((fixedCartanRootEquiv D σ hσ γ).symm x)).symm
 
-variable (A : Type*) [CommRing A]
+variable (A : Type*) [Ring A]
 
 /-- Product coordinates after scalar extension, retaining the full tensor-extended Cartan
 module rather than a chosen complement to the coroots. -/
