@@ -123,7 +123,8 @@ theorem transfer_comp_map_subtype_id (M : Rep R G) (S : Subgroup G) [S.FiniteInd
       S.index • 𝟙 _ := by
   rw [← TauCeti.groupHomology.indIso_inv_comp_map_counit, transfer_comp_indIso_inv_assoc,
     _root_.groupHomology.functor_map, ← _root_.groupHomology.map_id_comp,
-    TauCeti.Rep.resIndAdjunction_unit_app_comp_indResAdjunction_counit_app, map_id_nsmul_id]
+    TauCeti.Rep.resIndAdjunction_unit_app_comp_indResAdjunction_counit_app,
+    _root_.groupHomology.map_id_nsmul_id]
 
 /-- A class in `Hₙ(G, M)` whose transfer to the finite-index subgroup `S` vanishes is killed by
 the index of `S`. -/
@@ -197,7 +198,7 @@ theorem subsingleton_of_bijective_nsmul (A : Rep k G)
   have : IsIso ((forget (Rep k G)).map (Nat.card G • 𝟙 A)) := (isIso_iff_bijective _).2 h
   have hA : IsIso (Nat.card G • 𝟙 A) := isIso_of_reflects_iso _ (forget (Rep k G))
   have : IsIso (Nat.card G • 𝟙 (groupHomology A (n + 1))) := by
-    rw [← TauCeti.groupHomology.map_id_nsmul_id, ← functor_map]
+    rw [← map_id_nsmul_id, ← functor_map]
     exact Functor.map_isIso _ _
   refine subsingleton_of_forall_eq 0 fun x ↦ ?_
   obtain ⟨y, rfl⟩ := (ConcreteCategory.bijective_of_isIso
