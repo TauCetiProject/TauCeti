@@ -52,7 +52,8 @@ theorem exists_triangulation_vertex_image {S : Set M} (hS : S.Finite)
     ∃ (ι : Type w) (K : AbstractSimplicialComplex ι) (e : Realization K ≃ₜ M) (s : Set ι),
       Finite ι ∧ e '' (K.vertex '' s) = S := by
   classical
-  have : Infinite M := infinite_of_one_lt_rank (E := E) hdim
+  have : Nontrivial E := (rank_pos_iff_nontrivial (R := ℝ)).mp (lt_trans zero_lt_one hdim)
+  have : Infinite M := infinite_of_nontrivial_model (E := E)
   have := hS.to_subtype
   obtain ⟨ι, K, hι, ⟨e⟩, hcard⟩ :=
     htri.exists_finite_triangulation_card_ge (Nat.card S)
