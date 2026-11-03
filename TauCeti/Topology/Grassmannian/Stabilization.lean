@@ -140,14 +140,15 @@ theorem mem_ambientStabilization (V : finiteGrassmannian 𝕜 r N) (v : Fin (N +
   rw [coe_ambientStabilization, Submodule.mem_map]
   constructor
   · rintro ⟨w, hw, rfl⟩
-    exact ⟨(Function.ExtendByZero.init_linearMap_castSucc w).symm ▸ hw,
-      Function.ExtendByZero.linearMap_castSucc_last w⟩
+    exact ⟨(Function.ExtendByZero.init_linearMap_castSucc 𝕜 w).symm ▸ hw,
+      Function.ExtendByZero.linearMap_castSucc_last 𝕜 w⟩
   · rintro ⟨hv, hlast⟩
     refine ⟨Fin.init v, hv, funext fun i ↦ ?_⟩
     cases i using Fin.lastCases with
-    | last => rw [Function.ExtendByZero.linearMap_castSucc_last, hlast]
+    | last => rw [Function.ExtendByZero.linearMap_castSucc_last 𝕜, hlast]
     | cast i =>
-      rw [Function.ExtendByZero.linearMap_apply_of_injective (Fin.castSucc_injective N), Fin.init]
+      rw [Function.ExtendByZero.linearMap_apply_of_injective 𝕜 (Fin.castSucc_injective N),
+        Fin.init]
 
 /-- Rank and ambient stabilization commute as actual maps, with no intervening
 coordinate permutation or homotopy. -/
