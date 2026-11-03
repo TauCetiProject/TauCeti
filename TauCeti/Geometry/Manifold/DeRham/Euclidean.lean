@@ -63,6 +63,8 @@ duality on oriented manifolds, which proceed by Mayer–Vietoris arguments over 
   `k ≠ dim E`.
 * `TauCeti.finrank_compactlySupportedDeRhamCohomology_normedSpace`: `H^n_c(E)` is one-dimensional
   for `n = dim E`.
+* `TauCeti.finrank_compactlySupportedDeRhamCohomology_normedSpace_eq_ite`: `H^k_c(E)` is
+  one-dimensional for `k = dim E` and zero otherwise.
 * `TauCeti.compactlySupportedDeRhamCohomology.bijective_integral_normedSpace`: for an
   orientation of `E`, integration `H^n_c(E) → ℝ` is bijective.
 * `TauCeti.compactlySupportedDeRhamCohomologyNormedSpaceEquiv`: the resulting isomorphism
@@ -327,16 +329,24 @@ theorem finrank_compactlySupportedDeRhamCohomology_normedSpace {k : ℕ} (hk : f
   · -- `E` is a line: transfer from `ℝ`, where integration is an isomorphism.
     let Φ : E ≃ₘ⟮𝓘(ℝ, E), 𝓘(ℝ, ℝ)⟯ ℝ :=
       (ContinuousLinearEquiv.ofFinrankEq (hk.trans (finrank_self ℝ).symm)).toDiffeomorph
-    let o : Manifold.Orientation 𝓘(ℝ, ℝ) ℝ (Fin 1) :=
-      Manifold.Orientation.model (Module.Basis.singleton (Fin 1) ℝ).orientation (by simp)
     rw [← (compactlySupportedDeRhamCohomology.equivOfDiffeomorph Φ 1).finrank_eq,
-      (LinearEquiv.ofBijective _
-        (compactlySupportedDeRhamCohomology.bijective_integral_real o)).finrank_eq, finrank_self]
+      (LinearEquiv.ofBijective _ (compactlySupportedDeRhamCohomology.bijective_integral_real
+        Manifold.Orientation.real)).finrank_eq, finrank_self]
   · -- Transfer from the Euclidean space of the same dimension.
     rw [← (compactlySupportedDeRhamCohomology.equivOfDiffeomorph
       (toEuclidean (E := E)).toDiffeomorph (n + 2)).finrank_eq]
     exact finrank_compactlySupportedDeRhamCohomology_innerProductSpace
       (by rw [finrank_euclideanSpace_fin, hk])
+
+/-- **The compactly supported de Rham cohomology of `ℝⁿ`.** On a finite-dimensional real normed
+space `E`, `H^k_c(E)` is one-dimensional in degree `k = dim E` and zero in every other degree. -/
+theorem finrank_compactlySupportedDeRhamCohomology_normedSpace_eq_ite (k : ℕ) :
+    finrank ℝ (compactlySupportedDeRhamCohomology 𝓘(ℝ, E) E k) =
+      if k = finrank ℝ E then 1 else 0 := by
+  split_ifs with h
+  · exact finrank_compactlySupportedDeRhamCohomology_normedSpace E h.symm
+  · have := subsingleton_compactlySupportedDeRhamCohomology_normedSpace E h
+    exact finrank_zero_of_subsingleton
 
 variable {E}
 
