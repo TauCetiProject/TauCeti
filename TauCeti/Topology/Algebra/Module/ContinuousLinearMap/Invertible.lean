@@ -8,6 +8,7 @@ module
 public import Mathlib.Topology.Algebra.Module.ContinuousLinearMap.Invertible
 public import Mathlib.Topology.Algebra.Module.Equiv.Prod
 public import Mathlib.Topology.Algebra.Module.Spaces.ContinuousLinearMap
+import Mathlib.Tactic.Abel
 
 /-!
 # Invertibility of continuous linear maps: persistence, products, and completeness
@@ -25,8 +26,12 @@ coordinate is block lower triangular, and it is invertible exactly when its diag
 `M₂ → M₃` is. This is the shape of the differential of a fibre-preserving map between vector
 bundles over the same base, read in bundle charts.
 
-Finally, between uniformly topologized modules an invertible continuous linear map transfers
+Between uniformly topologized modules an invertible continuous linear map transfers
 completeness from the codomain to the domain, because its inverse is a uniform homeomorphism.
+
+The rectangular Jacobson identity says that `1 - u ∘ v` and `1 - v ∘ u` are invertible together,
+even for maps between different modules. It transports invertibility from an operator to its
+extension through a continuous linear retract, without any choice of complementary submodule.
 -/
 
 public section
@@ -158,5 +163,40 @@ theorem isInvertible_iff_of_fst_comp_eq {T : M₁ × M₂ →L[R] M₁ × M₃}
       simp [hKp, add_comm]
 
 end FstPreserving
+
+section OneSubComp
+
+variable {R M N : Type*} [Ring R]
+  [TopologicalSpace M] [AddCommGroup M] [Module R M] [IsTopologicalAddGroup M]
+  [TopologicalSpace N] [AddCommGroup N] [Module R N] [IsTopologicalAddGroup N]
+
+private theorem isUnit_one_sub_comp_of (u : N →L[R] M) (v : M →L[R] N)
+    (h : IsUnit (1 - v.comp u)) : IsUnit (1 - u.comp v) := by
+  obtain ⟨t, ht, ht'⟩ := isUnit_iff_exists.mp h
+  have hleft (y : N) : t y - v (u (t y)) = y := by
+    simpa using DFunLike.congr_fun ht y
+  have hright (y : N) : t y - t (v (u y)) = y := by
+    simpa using DFunLike.congr_fun ht' y
+  refine isUnit_iff_exists.mpr ⟨1 + u.comp (t.comp v), ?_, ?_⟩
+  · ext x
+    simp only [mul_apply_eq_comp, sub_apply, add_apply, one_apply_eq_self, comp_apply, map_add]
+    calc
+      x - u (v x) + (u (t (v x)) - u (v (u (t (v x))))) =
+          x + u (t (v x) - v (u (t (v x))) - v x) := by simp only [map_sub]; abel
+      _ = x := by rw [hleft]; simp
+  · ext x
+    simp only [mul_apply_eq_comp, sub_apply, add_apply, one_apply_eq_self, comp_apply, map_sub]
+    calc
+      x + u (t (v x)) - (u (v x) + u (t (v (u (v x))))) =
+          x + u (t (v x) - t (v (u (v x))) - v x) := by simp only [map_sub]; abel
+      _ = x := by rw [hright]; simp
+
+/-- The rectangular Jacobson identity: for maps between two topological modules,
+`1 - u ∘ v` is invertible exactly when `1 - v ∘ u` is invertible. -/
+theorem isUnit_one_sub_comp_comm (u : N →L[R] M) (v : M →L[R] N) :
+    IsUnit (1 - u.comp v) ↔ IsUnit (1 - v.comp u) :=
+  ⟨isUnit_one_sub_comp_of v u, isUnit_one_sub_comp_of u v⟩
+
+end OneSubComp
 
 end ContinuousLinearMap

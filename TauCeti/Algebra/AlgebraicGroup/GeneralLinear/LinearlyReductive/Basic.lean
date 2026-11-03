@@ -92,7 +92,7 @@ private theorem fixed_of_center_and_specialLinear (hn : 0 < n) (m : M)
       apply (pointsMulEquiv n).injective
       have hcval : pointsMulEquiv n c = z := hcz
       simpa only [map_mul, hp, hcval] using hsz
-    rw [← hg, map_mul, Module.End.mul_apply, hc c hc']
+    rw [← hg, map_mul, mul_apply_eq_comp, hc c hc']
     exact hs _
 
 variable [CharZero k]

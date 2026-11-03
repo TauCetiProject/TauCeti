@@ -39,6 +39,8 @@ expansion of `t ^ (n + 1) * z` whenever this product is integral.
   in the degree of the order is nonzero (`TauCeti.Place.laurentCoeff_ord_ne_zero`), the
   coefficients below the order vanish (`TauCeti.Place.laurentCoeff_eq_zero_of_lt_ord`), and a
   nonzero coefficient bounds the order (`TauCeti.Place.ord_le_of_laurentCoeff_ne_zero`).
+* `TauCeti.Place.sub_sum_laurentCoeff_mem_filtration`: truncating the Laurent expansion below
+  `m` leaves a function vanishing to order at least `m`.
 * `TauCeti.Place.residue_eq_coeff_powerSeriesExpansion`: the residue as a power-series
   coefficient.
 
@@ -219,6 +221,19 @@ theorem laurentCoeff_ord_ne_zero {z : F} (hz : z ≠ 0) :
       · exact h
   have := (P.mem_filtration_iff_le_ord hz).mp hmem
   omega
+
+/-- **Truncated Laurent expansions.** Removing the terms of the Laurent expansion of a function
+from its order up to degree `m - 1` leaves a function vanishing to order at least `m`. -/
+theorem sub_sum_laurentCoeff_mem_filtration (m : ℤ) (z : F) :
+    z - ∑ j ∈ Finset.Ico (P.ord z) m, algebraMap k F (P.laurentCoeff hP ht j z) * t ^ j ∈
+      P.filtration m := by
+  refine (P.mem_filtration_iff_forall_laurentCoeff_eq_zero hP ht).mpr fun n hn ↦ ?_
+  rw [map_sub, laurentCoeff_apply, laurentCoeff_apply,
+    coeff_laurentSeriesExpansion_sum, sub_eq_zero]
+  split_ifs with hs
+  · exact (laurentCoeff_apply ..).symm
+  · rw [Finset.mem_Ico] at hs
+    simpa using P.laurentCoeff_eq_zero_of_lt_ord hP ht (n := n) (z := z) (by omega)
 
 /-! ### Residues -/
 

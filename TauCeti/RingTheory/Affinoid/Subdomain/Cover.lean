@@ -93,7 +93,7 @@ theorem exists_maximalSpectrumComap_eq (hA : IsAffinoidAlgebra K A) (g : Fin n �
   obtain ⟨i, hi⟩ := Set.mem_iUnion.mp hx
   have hgi : Ideal.span (insert (g i) (Set.range g)) = ⊤ := by
     simpa only [Set.insert_eq_of_mem (Set.mem_range_self i)] using hg
-  rw [← range_maximalSpectrumComap hA hgi] at hi
+  rw [← (isAffinoidSubdomainMap hA hgi).range_maximalSpectrumComap hA] at hi
   exact ⟨i, hi⟩
 
 end RationalFraction

@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.Order.Ring.Defs
 public import Mathlib.Algebra.Ring.Int.Units
 import Mathlib.Algebra.Ring.Int.Parity
+public import Mathlib.Data.Nat.Choose.Basic
 import Mathlib.Tactic.Linarith
 import Mathlib.Tactic.LinearCombination
 import Mathlib.Tactic.Ring
@@ -24,15 +25,18 @@ The unit-shifted form `0 ≤ s * (s - δ)` for `δ : ℤˣ` follows by rescaling
 
 The same product is always even, so every integer satisfies `c ^ 2 ≡ c` modulo `2`, and the
 halved product `n * (n - 1) / 2` is an exact quotient. It satisfies the addition law
-`T(n + k) = T(n) + T(k) + n k` and the reflection `T(1 - n) = T(n)`.
+`T(n + k) = T(n) + T(k) + n k` and the reflection `T(1 - n) = T(n)`, and on natural numbers it is
+the binomial coefficient `n.choose 2`.
 
 ## Main results
 
 * `Int.zero_le_mul_sub_one` : `0 ≤ t * (t - 1)`.
 * `Int.zero_le_mul_sub_units` : `0 ≤ s * (s - δ)` for a unit `δ`.
 * `Int.two_dvd_sq_sub_self` : `2 ∣ c ^ 2 - c`.
+* `Int.two_mul_mul_sub_one_ediv_two` : `n * (n - 1) / 2` is an exact quotient.
 * `Int.add_mul_add_sub_one_ediv_two` : the addition law for `n * (n - 1) / 2`.
 * `Int.one_sub_mul_one_sub_sub_one_ediv_two` : the reflection `n ↦ 1 - n` fixes `n * (n - 1) / 2`.
+* `Int.natCast_choose_two` : `n.choose 2 = n * (n - 1) / 2` for a natural number `n`.
 -/
 
 public section
@@ -62,12 +66,15 @@ theorem two_dvd_sq_sub_self (c : ℤ) : (2 : ℤ) ∣ c ^ 2 - c := by
   rw [sq, ← mul_sub_one]
   exact (even_mul_pred_self c).two_dvd
 
+/-- The halved product `m (m - 1) / 2` of consecutive integers is an exact quotient. -/
+theorem two_mul_mul_sub_one_ediv_two (m : ℤ) : 2 * (m * (m - 1) / 2) = m * (m - 1) :=
+  two_mul_ediv_two_of_even (even_mul_pred_self m)
+
 /-- The addition law for the halved product of consecutive integers:
 `T(n + k) = T(n) + T(k) + n k` for `T(m) = m (m - 1) / 2`. -/
 theorem add_mul_add_sub_one_ediv_two (n k : ℤ) :
     (n + k) * (n + k - 1) / 2 = n * (n - 1) / 2 + k * (k - 1) / 2 + n * k := by
-  have h (m : ℤ) : 2 * (m * (m - 1) / 2) = m * (m - 1) :=
-    two_mul_ediv_two_of_even (even_mul_pred_self m)
+  have h := two_mul_mul_sub_one_ediv_two
   refine mul_left_cancel₀ (two_ne_zero (α := ℤ)) ?_
   rw [mul_add, mul_add, h, h, h]
   ring
@@ -78,5 +85,19 @@ theorem one_sub_mul_one_sub_sub_one_ediv_two (n : ℤ) :
     (1 - n) * (1 - n - 1) / 2 = n * (n - 1) / 2 := by
   congr 1
   ring
+
+/-- On natural numbers the halved product `n (n - 1) / 2` is the binomial coefficient
+`n.choose 2`. -/
+theorem natCast_choose_two (n : ℕ) : ((n.choose 2 : ℕ) : ℤ) = n * ((n : ℤ) - 1) / 2 := by
+  have h := two_mul_mul_sub_one_ediv_two n
+  have h' : 2 * n.choose 2 = n * (n - 1) := by
+    rw [Nat.choose_two_right]
+    exact Nat.mul_div_cancel' (Nat.even_mul_pred_self n).two_dvd
+  rcases n with _ | n
+  · simp
+  · have h'' : (2 : ℤ) * ((n + 1).choose 2 : ℕ) = ((n : ℤ) + 1) * n := by
+      exact_mod_cast h'
+    push_cast at h ⊢
+    linarith
 
 end Int

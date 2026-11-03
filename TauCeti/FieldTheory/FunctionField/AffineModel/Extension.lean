@@ -100,14 +100,6 @@ section Restrict
 
 variable (k F) (P' : Place k' F')
 
-/-- A function of `F` has a zero at a place of `F'` exactly when it has a zero at the restriction
-of that place, because the ramification index is a positive factor. -/
-private theorem ord_algebraMap_pos_iff (x : F) :
-    0 < P'.ord (algebraMap F F' x) ↔ 0 < (P'.restrict k F).ord x := by
-  have he : (0 : ℤ) < ramificationIdx F P' := mod_cast ramificationIdx_pos F P'
-  rw [ord_algebraMap_restrict k F P' x]
-  exact mul_pos_iff_of_pos_left he
-
 section FiniteOnModel
 
 variable (hS : ∀ s : S, algebraMap S F' s ∈ P'.integers)

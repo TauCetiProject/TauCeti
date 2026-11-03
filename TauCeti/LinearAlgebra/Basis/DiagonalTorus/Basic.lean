@@ -131,7 +131,7 @@ the corresponding finitely supported product. -/
 /-- Characters multiply when weights are added. -/
 theorem torusCharacter_add (s : κ → Rˣ) (μ ν : κ → ℤ) :
     torusCharacter s (μ + ν) = torusCharacter s μ * torusCharacter s ν := by
-  simp [torusCharacter, zpow_add, prod_mul_distrib]
+  simp [torusCharacter, _root_.zpow_add, prod_mul_distrib]
 
 /-- Evaluating a finite sum of characters is the product of their evaluations. -/
 theorem torusCharacter_sum {ι : Type*} (s : κ → Rˣ) (t : Finset ι) (μ : ι → κ → ℤ) :
@@ -147,7 +147,7 @@ theorem torusCharacter_nsmul (s : κ → Rˣ) (μ : κ → ℤ) (n : ℕ) :
     torusCharacter s (n • μ) = torusCharacter s μ ^ n := by
   simp only [torusCharacter, Pi.smul_apply, nsmul_eq_mul, ← prod_pow]
   refine prod_congr rfl fun j _ => ?_
-  rw [mul_comm, zpow_mul, zpow_natCast]
+  rw [mul_comm, _root_.zpow_mul, zpow_natCast]
 
 /-- Negating a weight inverts the value of its character. -/
 theorem torusCharacter_neg (s : κ → Rˣ) (μ : κ → ℤ) :
@@ -164,7 +164,7 @@ theorem torusCharacter_zsmul (s : κ → Rˣ) (μ : κ → ℤ) (z : ℤ) :
     torusCharacter s (z • μ) = torusCharacter s μ ^ z := by
   simp only [torusCharacter, Pi.smul_apply, smul_eq_mul, ← prod_zpow]
   refine prod_congr rfl fun j _ => ?_
-  rw [mul_comm, zpow_mul]
+  rw [mul_comm, _root_.zpow_mul]
 
 /-- Every character takes the value one at the identity point. -/
 @[simp] theorem torusCharacter_one (μ : κ → ℤ) : torusCharacter (1 : κ → Rˣ) μ = 1 := by
@@ -179,13 +179,15 @@ theorem torusCharacter_mul (s t : κ → Rˣ) (μ : κ → ℤ) :
 value there: the other coordinates contribute the factor `1`. -/
 @[simp] theorem torusCharacter_mulSingle [DecidableEq κ] (c : κ) (z : Rˣ) (μ : κ → ℤ) :
     torusCharacter (Pi.mulSingle c z) μ = z ^ μ c := by
-  rw [torusCharacter, prod_eq_single c (fun j _ hj => by rw [Pi.mulSingle_eq_of_ne hj, one_zpow])
+  rw [torusCharacter, prod_eq_single c (fun j _ hj => by rw [Pi.mulSingle_eq_of_ne hj,
+    _root_.one_zpow])
     fun hc => absurd (mem_univ c) hc, Pi.mulSingle_eq_same]
 
 /-- The character of the weight `z • e_c` is the `z`-th power of the `c`-th coordinate. -/
 @[simp] theorem torusCharacter_single [DecidableEq κ] (s : κ → Rˣ) (c : κ) (z : ℤ) :
     torusCharacter s (Pi.single c z) = s c ^ z := by
-  rw [torusCharacter, prod_eq_single c (fun j _ hj => by rw [Pi.single_eq_of_ne hj, zpow_zero])
+  rw [torusCharacter, prod_eq_single c (fun j _ hj => by rw [Pi.single_eq_of_ne hj,
+    _root_.zpow_zero])
     fun hc => absurd (mem_univ c) hc, Pi.single_eq_same]
 
 /-- **A unimodular weight is surjective on points.** If the coordinates of `μ` have a `ℤ`-linear
@@ -200,10 +202,10 @@ theorem exists_torusCharacter_eq_of_sum_mul_eq_one {μ m : κ → ℤ} (hm : ∑
   refine ⟨fun j => u ^ m j, ?_⟩
   rw [torusCharacter_def]
   calc ∏ j, (u ^ m j) ^ μ j = ∏ j, u ^ (m j * μ j) :=
-        Finset.prod_congr rfl fun j _ => (zpow_mul u (m j) (μ j)).symm
+        Finset.prod_congr rfl fun j _ => (_root_.zpow_mul u (m j) (μ j)).symm
     _ = u ^ ∑ j, m j * μ j := Finset.prod_zpow_eq_zpow_sum _ u _
     _ = u := by
-        rw [Finset.sum_congr rfl fun j _ => mul_comm (m j) (μ j), hm, zpow_one]
+        rw [Finset.sum_congr rfl fun j _ => mul_comm (m j) (μ j), hm, _root_.zpow_one]
 
 /-! ## Reflections of split-torus points -/
 
@@ -319,7 +321,7 @@ theorem weightChar_add (μ ν : κ → ℤ) :
 @[simp]
 theorem weightChar_single [DecidableEq κ] (c : κ) (s : κ → Rˣ) :
     weightChar R (Pi.single c 1) s = s c := by
-  rw [weightChar_apply, torusCharacter_single, zpow_one]
+  rw [weightChar_apply, torusCharacter_single, _root_.zpow_one]
 
 /-- The character of a constant weight is a power of the product of the coordinates. -/
 theorem weightChar_const (z : ℤ) (s : κ → Rˣ) :
@@ -364,7 +366,7 @@ theorem weightChar_injective {K : Type*} [Field K] [Infinite K] :
   refine hu ?_
   have hval := congrArg (fun χ : (κ → Kˣ) →* Kˣ ↦ χ (Pi.mulSingle c u)) h
   simp only [weightChar_apply, torusCharacter_mulSingle] at hval
-  rw [zpow_sub, hval, mul_inv_cancel]
+  rw [_root_.zpow_sub, hval, mul_inv_cancel]
 
 /-- Over an infinite field, two distinct weights take different values at some point of the split
 torus. This is `TauCeti.weightChar_injective` read pointwise. -/
@@ -430,7 +432,7 @@ theorem basisDiagonal_intertwine_of_map_basis (b : Basis ι R M) (v w : ι → R
     (hvw : ∀ i, w (τ i) = v i) :
     θ * basisDiagonal b v = basisDiagonal b w * θ := by
   refine LinearEquiv.toLinearMap_injective (b.ext fun i => ?_)
-  simp only [LinearEquiv.coe_coe, LinearEquiv.mul_apply, basisDiagonal_basis, map_smul, hθ, hvw]
+  simp only [LinearEquiv.coe_coe, _root_.mul_apply_eq_comp, basisDiagonal_basis, map_smul, hθ, hvw]
   rw [smul_smul, smul_smul, mul_comm]
 
 /-- Conjugating a diagonal automorphism by a compatible basis automorphism acting by scalar
