@@ -106,10 +106,8 @@ theorem MonoidAlgebra.span_single_one_eq_span_single_one_iff [Nontrivial R] {ι 
     {i j : ι} :
     R ∙ MonoidAlgebra.single i (1 : R) = R ∙ MonoidAlgebra.single j (1 : R) ↔ i = j := by
   refine ⟨fun h ↦ ?_, fun h ↦ h ▸ rfl⟩
-  obtain ⟨c, hc⟩ := Submodule.mem_span_singleton.mp
-    (h.le (Submodule.mem_span_singleton_self (MonoidAlgebra.single i (1 : R))))
-  rw [MonoidAlgebra.smul_single, smul_eq_mul, mul_one, MonoidAlgebra.single_inj] at hc
-  exact (hc.resolve_right fun h ↦ one_ne_zero h.2).1.symm
+  have hi := h.le (Submodule.mem_span_singleton_self (MonoidAlgebra.single i (1 : R)))
+  simpa using (MonoidAlgebra.single_mem_span_single (s := {j})).mp (by simpa using hi)
 
 end Semiring
 
