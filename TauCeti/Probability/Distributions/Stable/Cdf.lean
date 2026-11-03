@@ -48,19 +48,6 @@ namespace TauCeti.Probability
 
 variable {α β : ℝ} {s : ℝ≥0} {m : ℝ}
 
-/-- A positive-scale stable law is absolutely continuous with respect to Lebesgue measure.
-This includes invalid shapes, for which the stable law is the zero measure. -/
-theorem stableMeasure_absolutelyContinuous (hs : 0 < s) :
-    stableMeasure α β s m ≪ volume := by
-  rw [stableMeasure_eq_withDensity α β hs]
-  exact MeasureTheory.withDensity_absolutelyContinuous volume (stablePDF α β s m)
-
-/-- A positive-scale stable law gives every singleton zero mass. -/
-@[simp]
-theorem stableMeasure_singleton (hs : 0 < s) (x : ℝ) :
-    stableMeasure α β s m {x} = 0 :=
-  stableMeasure_absolutelyContinuous hs (measure_singleton x)
-
 /-- The cdf of a positive-scale stable law is the integral of its Fourier-inversion density over
 the left half-line. -/
 theorem cdf_stableMeasure_eq_integral (hα : α ∈ Ioc 0 2) (hβ : |β| ≤ 1) (hs : 0 < s)

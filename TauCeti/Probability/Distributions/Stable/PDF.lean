@@ -187,6 +187,19 @@ theorem stableMeasure_eq_withDensity (α β : ℝ) (hs : 0 < s) (m : ℝ) :
   simp_rw [funext (stablePDF_eq_ofReal α β s m), stablePDFReal_def]
   exact Measure.eq_withDensity_charFunDensity (integrable_charFun_stableMeasure α β hs m)
 
+/-- A positive-scale stable law is absolutely continuous with respect to Lebesgue measure.
+This includes invalid shapes, for which the stable law is the zero measure. -/
+theorem stableMeasure_absolutelyContinuous (hs : 0 < s) :
+    stableMeasure α β s m ≪ volume := by
+  rw [stableMeasure_eq_withDensity α β hs]
+  exact MeasureTheory.withDensity_absolutelyContinuous volume (stablePDF α β s m)
+
+/-- A positive-scale stable law gives every singleton zero mass. -/
+@[simp]
+theorem stableMeasure_singleton (hs : 0 < s) (x : ℝ) :
+    stableMeasure α β s m {x} = 0 :=
+  stableMeasure_absolutelyContinuous hs (measure_singleton x)
+
 variable {Ω : Type*} [MeasurableSpace Ω] {P : Measure Ω} {X : Ω → ℝ} {m : ℝ}
 
 /-- A random variable with a positive-scale stable law has a density. -/
