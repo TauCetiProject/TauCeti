@@ -26,9 +26,10 @@ operators on Banach spaces of analytic functions.
 
 Two degenerate cases bound the class. Substituting `h = 0` gives `f ↦ f(0) g`, whose range lies
 in the line spanned by `g`, so it has finite rank. Substituting the variables themselves with
-weight `g = 1` gives the identity, which is not completely continuous as soon as there is a
-variable. Weighted substitutions compose: substituting `h₂` with weight `g₂` and then `h₁` with
-weight `g₁` is the weighted substitution of `h₂(h₁)` with weight `g₁ · g₂(h₁)`.
+weight `g = 1` gives the identity, which is not completely continuous as soon as `R` is
+nontrivial and there is a variable. Weighted substitutions compose: substituting `h₂` with weight
+`g₂` and then `h₁` with weight `g₁` is the weighted substitution of `h₂(h₁)` with weight
+`g₁ · g₂(h₁)`.
 
 ## Main definitions
 

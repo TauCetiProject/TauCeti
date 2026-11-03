@@ -28,14 +28,15 @@ In one variable, after identifying the exponents with `ℕ`, these are the entri
 Suppose that the weight and the substituted series are the unit-radius restrictions of series
 `G` and `Hᵢ` restricted at polyradii `c`, with `‖Hᵢ‖_c ≤ 1`. Then the operator factors through
 series restricted at `c`, and row `e` of its matrix is bounded by `‖G‖_c ‖1‖ c⁻ᵉ`
-(`TauCeti.MvPowerSeries.norm_matrixCoeff_restrictedWeightedSubstCoeffCLM_le`). If every
-`cⱼ > 1`, these bounds tend to zero, so the operator is row compact
-(`TauCeti.MvPowerSeries.isRowCompact_restrictedWeightedSubstCoeffCLM`), and the weighted
-substitution operator on unit-radius restricted series is completely continuous
+(`TauCeti.MvPowerSeries.norm_matrixCoeff_restrictedWeightedSubstCoeffCLM_le`). If there are
+finitely many variables `Y` and every `cⱼ > 1`, these bounds tend to zero, so the operator is
+row compact (`TauCeti.MvPowerSeries.isRowCompact_restrictedWeightedSubstCoeffCLM`), and the
+weighted substitution operator on unit-radius restricted series is completely continuous
 (`TauCeti.MvPowerSeries.isCompletelyContinuous_restrictedWeightedSubstCLM`). This is the
 mechanism behind the compactness of Dwork's operators and of the `U_p`-operator on
 overconvergent functions. Without the larger radius it fails: substituting the variables with
-weight one is the identity, which is not completely continuous
+weight one is the identity, which is not completely continuous when `R` is nontrivial and there
+is at least one variable
 (`TauCeti.MvPowerSeries.not_isCompletelyContinuous_id_isRestrictedSubring`).
 
 ## Main definitions
@@ -47,8 +48,8 @@ weight one is the identity, which is not completely continuous
 
 * `TauCeti.MvPowerSeries.matrixCoeff_restrictedWeightedSubstCoeffCLM`: the matrix entries are the
   coefficients of `g hᵗ`.
-* `TauCeti.MvPowerSeries.isRowCompact_restrictedWeightedSubstCoeffCLM`: overconvergent weight
-  and substitution give a row-compact operator.
+* `TauCeti.MvPowerSeries.isRowCompact_restrictedWeightedSubstCoeffCLM`: in finitely many target
+  variables, overconvergent weight and substitution give a row-compact operator.
 * `TauCeti.MvPowerSeries.isCompletelyContinuous_restrictedWeightedSubstCLM`: the corresponding
   operator on unit-radius restricted series is completely continuous.
 
@@ -174,9 +175,9 @@ theorem norm_matrixCoeff_restrictedWeightedSubstCoeffCLM_le (e : τ →₀ ℕ)
 
 include hc hg hH hHc in
 /-- **Overconvergent weighted substitutions are row compact.** If `g` and the `hᵢ` are the
-unit-radius restrictions of series `G` and `Hᵢ` restricted at polyradii `c`, with every `cⱼ > 1`
-and `‖Hᵢ‖_c ≤ 1`, then `f ↦ g · f(h)` at unit radius, in coefficient coordinates, is row
-compact. -/
+unit-radius restrictions of series `G` and `Hᵢ` restricted at polyradii `c` in finitely many
+variables `τ`, with every `cⱼ > 1` and `‖Hᵢ‖_c ≤ 1`, then `f ↦ g · f(h)` at unit radius, in
+coefficient coordinates, is row compact. -/
 theorem isRowCompact_restrictedWeightedSubstCoeffCLM :
     (restrictedWeightedSubstCoeffCLM g h hh).IsRowCompact := by
   refine isRowCompact_of_apply_eq_coeff hc (C := ‖G‖)
@@ -189,9 +190,9 @@ theorem isRowCompact_restrictedWeightedSubstCoeffCLM :
 omit [DecidableEq (WithDiscreteTopology (Fin k →₀ ℕ))] in
 include hc hg hH hHc in
 /-- **Overconvergent weighted substitutions are completely continuous.** If `g` and the `hᵢ` are
-the unit-radius restrictions of series `G` and `Hᵢ` restricted at polyradii `c`, with every
-`cⱼ > 1` and `‖Hᵢ‖_c ≤ 1`, then `f ↦ g · f(h)` is a completely continuous operator between
-unit-radius restricted series. -/
+the unit-radius restrictions of series `G` and `Hᵢ` restricted at polyradii `c` in finitely many
+variables `τ`, with every `cⱼ > 1` and `‖Hᵢ‖_c ≤ 1`, then `f ↦ g · f(h)` is a completely
+continuous operator between unit-radius restricted series. -/
 theorem isCompletelyContinuous_restrictedWeightedSubstCLM :
     (restrictedWeightedSubstCLM (r := fun _ ↦ 1) g h hh).IsCompletelyContinuous := by
   classical
