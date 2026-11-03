@@ -476,8 +476,8 @@ private theorem IsSeifertLoop.ne_length_of_not_exists (h : ¬∃ x ∈ u ++ v, x
       obtain ⟨y, hy, hyi⟩ := exists_mem_of_levelAt_append_cons u v hk hk'
       exact h ⟨y, hy, Fin.ext hyi⟩
   constructor <;> intro he
-  · exact hlone (show p.2 ≠ u.length by omega) (by rw [hl, he, hi])
-  · exact hlone (show p.1 ≠ u.length by omega) (by rw [← hl, he, hi])
+  · exact hlone (k := p.2) (by omega) (by rw [hl, he, hi])
+  · exact hlone (k := p.1) (by omega) (by rw [← hl, he, hi])
 
 /-- **The sign of a letter alone on its level does not change the Seifert matrix.** If no other
 letter lies on level `i`, the band of the letter `σᵢ^ε` is the only band between the discs `Dᵢ`
