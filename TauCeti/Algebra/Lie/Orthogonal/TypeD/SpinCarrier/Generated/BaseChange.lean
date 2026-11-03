@@ -48,18 +48,11 @@ theorem map_baseChangeHopfIdeal_generatedDefiningIdeal_le :
         (GeneralLinear.coordinateHopfAlgebraBaseChangeIso k K (dimension n)).hom.hom ≤
       generatedDefiningIdeal n hn K := by
   rw [generatedDefiningIdeal_def, generatedDefiningIdeal_def]
-  calc
-    _ ≤ (CommHopfAlgCat.commonKernelHopfIdeal
-        (fun j ↦ CommHopfAlgCat.baseChangeMap (K := K)
-          (generatorCoordinateMap n hn k j))).map
-        (GeneralLinear.coordinateHopfAlgebraBaseChangeIso k K (dimension n)).hom.hom :=
-      HopfIdeal.map_mono _ (CommHopfAlgCat.baseChangeHopfIdeal_commonKernelHopfIdeal_le _)
-    _ = _ := by
-      rw [CommHopfAlgCat.map_commonKernelHopfIdeal,
-        ← funext (generatorCoordinateMap_baseChange n hn k K),
-        CommHopfAlgCat.commonKernelHopfIdeal_comp_of_injective _ _ fun j ↦
-          (ConcreteCategory.bijective_of_isIso
-            (generatorCoordinateAlgebraBaseChangeIso n k K j).hom).1]
+  exact CommHopfAlgCat.map_baseChangeHopfIdeal_commonKernelHopfIdeal_le
+    (generatorCoordinateMap n hn k)
+    (GeneralLinear.coordinateHopfAlgebraBaseChangeIso k K (dimension n))
+    (generatorCoordinateAlgebraBaseChangeIso n k K) (generatorCoordinateMap n hn K)
+    (generatorCoordinateMap_baseChange n hn k K)
 
 private theorem baseChangeDefiningIdeal_le_ker :
     (CommHopfAlgCat.baseChangeHopfIdeal (K := K) (generatedDefiningIdeal n hn k)).toIdeal ≤
@@ -69,8 +62,8 @@ private theorem baseChangeDefiningIdeal_le_ker :
   have hx' := HopfIdeal.mem_toIdeal.mpr ((HopfIdeal.map_le_iff.mp
     (map_baseChangeHopfIdeal_generatedDefiningIdeal_le n hn k K)) hx)
   rw [← generatedCoordinateMap_ker] at hx'
-  -- Membership in the composite kernel is vanishing of the target quotient on the ambient image.
-  exact hx'
+  simpa only [RingHom.mem_ker, AlgHom.toRingHom_eq_coe, AlgHom.coe_toRingHom,
+    BialgHom.coe_toAlgHom, _root_.CommHopfAlgCat.hom_comp, BialgHom.comp_apply] using hx'
 
 /-- The canonical coordinate morphism from the scalar extension of the generated spin subgroup
 to the subgroup generated after scalar extension. Geometrically it is a closed immersion in
