@@ -39,45 +39,6 @@ namespace TauCeti.E6Minuscule
 
 open DynkinType
 
-private def weylMatrix (i : Fin 6) : Matrix (Fin 27) (Fin 27) ℤ :=
-  (1 + raisingMatrix i) * (1 - loweringMatrix i) * (1 + raisingMatrix i)
-
-private theorem weylMatrix_commute (i j : Fin 6) (h : CartanMatrix.E 6 i j = 0) :
-    weylMatrix i * weylMatrix j = weylMatrix j * weylMatrix i := by
-  have hij : weightTable.cartanMatrix j i = 0 := by
-    simpa only [weightTable_cartanMatrix, Matrix.transpose_apply] using h
-  have hcast : (Int.cast : ℤ → ℤ) = id := funext fun _ => Int.cast_id
-  simpa only [Commute, SemiconjBy, weylMatrix, weightTable_raisingMatrix,
-    weightTable_loweringMatrix, hcast, Matrix.map_id] using
-    (weightTable.weylWord_map_commute_of_cartanMatrix_eq_zero (R := ℤ) j i hij).symm
-
-private theorem weylMatrix_braid (i j : Fin 6) (h : CartanMatrix.E 6 i j = -1) :
-    weylMatrix i * weylMatrix j * weylMatrix i =
-      weylMatrix j * weylMatrix i * weylMatrix j := by
-  have hij : weightTable.cartanMatrix i j = -1 := by
-    simpa only [weightTable_cartanMatrix, CartanMatrix.E_transpose] using h
-  have hji : weightTable.cartanMatrix j i = -1 := by
-    simpa only [weightTable_cartanMatrix, Matrix.transpose_apply] using h
-  have hcast : (Int.cast : ℤ → ℤ) = id := funext fun _ => Int.cast_id
-  simpa only [weylMatrix, weightTable_raisingMatrix, weightTable_loweringMatrix,
-    hcast, Matrix.map_id] using
-    weightTable.weylWord_map_braid_of_cartanMatrix_eq_neg_one (R := ℤ) i j hij hji
-
-private theorem coe_root_word (i : Fin 6) (A : Type*) [CommRing A] :
-    (((rootSubgroupPoints (.inl i) A (Multiplicative.ofAdd 1) *
-        rootSubgroupPoints (.inr i) A (Multiplicative.ofAdd (-1)) *
-        rootSubgroupPoints (.inl i) A (Multiplicative.ofAdd 1) : points A) :
-        Matrix.GeneralLinearGroup (Fin 27) A) : Matrix (Fin 27) (Fin 27) A) =
-      (Int.castRingHom A).mapMatrix (weylMatrix i) := by
-  simp only [Subgroup.coe_mul, Units.val_mul]
-  rw [coe_rootSubgroupPoints_inl, coe_rootSubgroupPoints_inr]
-  simp only [toAdd_ofAdd, one_smul, neg_smul,
-    weightTable_raisingMatrix, weightTable_loweringMatrix]
-  simp only [weylMatrix, map_mul, map_add, map_sub, map_one]
-  simp only [RingHom.mapMatrix_apply, sub_eq_add_neg]
-  -- The remaining scalar-map coercion is the underlying function of `Int.castRingHom A`.
-  rfl
-
 /-- Pinned simple Weyl words at nonadjacent E₆ nodes commute over every commutative ring. -/
 theorem rootSubgroupPoints_weyl_commute_of_cartanMatrix_eq_zero (i j : Fin 6)
     (h : CartanMatrix.E 6 i j = 0) (A : Type*) [CommRing A] :
@@ -90,9 +51,12 @@ theorem rootSubgroupPoints_weyl_commute_of_cartanMatrix_eq_zero (i j : Fin 6)
         rootSubgroupPoints (.inl j) A (Multiplicative.ofAdd 1)) := by
   apply Subtype.ext
   apply Units.ext
-  have hword := coe_root_word
-  simp only [Subgroup.coe_mul, Units.val_mul] at hword ⊢
-  rw [hword, hword, ← map_mul, ← map_mul, weylMatrix_commute i j h]
+  have hij : weightTable.cartanMatrix i j = 0 := by
+    simpa only [weightTable_cartanMatrix, CartanMatrix.E_transpose] using h
+  simp only [Subgroup.coe_mul, Units.val_mul, coe_rootSubgroupPoints_inl,
+    coe_rootSubgroupPoints_inr, toAdd_ofAdd, neg_smul, one_smul]
+  simpa only [sub_eq_add_neg] using
+    (weightTable.weylWord_map_commute_of_cartanMatrix_eq_zero (R := A) i j hij).eq
 
 /-- Pinned simple Weyl words at adjacent E₆ nodes satisfy the length-three braid relation,
 including over rings with torsion or nilpotents. -/
@@ -118,9 +82,13 @@ theorem rootSubgroupPoints_weyl_braid_of_cartanMatrix_eq_neg_one (i j : Fin 6)
         rootSubgroupPoints (.inl j) A (Multiplicative.ofAdd 1)) := by
   apply Subtype.ext
   apply Units.ext
-  have hword := coe_root_word
-  simp only [Subgroup.coe_mul, Units.val_mul] at hword ⊢
-  rw [hword, hword, ← map_mul, ← map_mul,
-    ← map_mul, ← map_mul, weylMatrix_braid i j h]
+  have hij : weightTable.cartanMatrix i j = -1 := by
+    simpa only [weightTable_cartanMatrix, CartanMatrix.E_transpose] using h
+  have hji : weightTable.cartanMatrix j i = -1 := by
+    simpa only [weightTable_cartanMatrix, Matrix.transpose_apply] using h
+  simp only [Subgroup.coe_mul, Units.val_mul, coe_rootSubgroupPoints_inl,
+    coe_rootSubgroupPoints_inr, toAdd_ofAdd, neg_smul, one_smul]
+  simpa only [sub_eq_add_neg] using
+    weightTable.weylWord_map_braid_of_cartanMatrix_eq_neg_one (R := A) i j hij hji
 
 end TauCeti.E6Minuscule

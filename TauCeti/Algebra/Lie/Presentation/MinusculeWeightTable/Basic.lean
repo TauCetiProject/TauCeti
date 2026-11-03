@@ -639,9 +639,10 @@ theorem weylWord_map_braid_of_cartanMatrix_eq_neg_one [Fintype ι] {R : Type*} [
   conv_rhs => rw [← Matrix.mulVec_mulVec, ← Matrix.mulVec_mulVec]
   simp only [T.weylWord_map_mulVec, href,
     T.weight_reflection, T.cartanMatrix_diag, hij, hji]
+  -- `hsum` excludes the cases where both coordinates are nonzero with the same sign.
   rcases T.weight_eq_neg_one_or_eq_zero_or_eq_one a i with hi | hi | hi <;>
     rcases T.weight_eq_neg_one_or_eq_zero_or_eq_one a j with hj | hj | hj <;>
-    norm_num [hi, hj] at *
+    norm_num [hi, hj] at hsum <;> norm_num [hi, hj]
 
 /-- The entry formula for a simple Cartan generator matrix. -/
 @[simp]
