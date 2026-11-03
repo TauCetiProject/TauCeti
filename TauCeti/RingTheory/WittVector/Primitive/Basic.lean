@@ -65,7 +65,9 @@ properties used to construct the untilt `𝕎 R⁺ ⧸ (ξ)`.
 * `WittVector.IsPrimitive.isUnit_of_eq_mul`: if `ξ` is primitive and `ξ' = y ξ` is distinguished,
   `y` is a unit, and `WittVector.IsPrimitive.associated_of_dvd`: a primitive element dividing a
   distinguished one is associated to it.
-* `WittVector.IsDistinguished.teichmuller_dvd_of_dvd_mul`: `ξ` is a nonzerodivisor modulo `[ϖ]`.
+* `WittVector.IsDistinguished.teichmuller_dvd_of_dvd_mul`,
+  `WittVector.IsDistinguished.teichmuller_pow_dvd_of_dvd_mul`: `ξ` is a nonzerodivisor modulo
+  `[ϖ]`, and modulo every power of `[ϖ]`.
 * `WittVector.IsDistinguished.mem_nonZeroDivisors`, `WittVector.IsPrimitive.mem_nonZeroDivisors`:
   distinguished elements with `ξ₀` in the radical of `(ϖ)`, and hence primitive elements, are
   nonzerodivisors.
@@ -316,6 +318,19 @@ theorem IsDistinguished.teichmuller_dvd_of_dvd_mul {ξ : 𝕎 S} (hξ : ξ.IsDis
     push_cast
     ring
   exact (Units.dvd_mul_left).mp (teichmuller_dvd_mul_natCast_pow_iff.mp h₃)
+
+/-- **A distinguished element is a nonzerodivisor modulo `[ϖ] ^ n`.** Over a perfect ring of
+characteristic `p`, let `ξ` be distinguished with `ξ₀` in the radical of `(ϖ)`. If `[ϖ] ^ n`
+divides `ξ x`, then `[ϖ] ^ n` divides `x`. -/
+theorem IsDistinguished.teichmuller_pow_dvd_of_dvd_mul {ξ : 𝕎 S} (hξ : ξ.IsDistinguished)
+    (hξ₀ : ξ.coeff 0 ∈ (Ideal.span {ϖ}).radical) {x : 𝕎 S} {n : ℕ}
+    (h : teichmuller p ϖ ^ n ∣ ξ * x) : teichmuller p ϖ ^ n ∣ x := by
+  -- `[ϖ] ^ n = [ϖ ^ n]`, and `(ϖ ^ n)` has the same radical as `(ϖ)`.
+  obtain ⟨N, hN⟩ := hξ₀
+  rw [← map_pow] at h ⊢
+  refine hξ.teichmuller_dvd_of_dvd_mul ⟨N * n, ?_⟩ h
+  rw [pow_mul, ← Ideal.span_singleton_pow]
+  exact Ideal.pow_mem_pow hN n
 
 /-- **Distinguished elements are nonzerodivisors.** Over a perfect ring `S` of characteristic `p`
 which is `ϖ`-adically separated for a nonzerodivisor `ϖ`, a distinguished Witt vector `ξ` whose
