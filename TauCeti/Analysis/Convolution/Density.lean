@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.Convolution.Basic
 public import Mathlib.MeasureTheory.Measure.WithDensity
+import Mathlib.MeasureTheory.Function.AEEqOfLIntegral
 
 /-!
 # Convolution of real densities
@@ -26,6 +27,8 @@ continuity and strict positivity, to be combined with measure-level convolution 
   Bochner convolutions of nonnegative real functions.
 * `MeasureTheory.conv_withDensity_ofReal_eq_withDensity_convolution` computes the convolution of
   two measures presented by nonnegative real densities.
+* `MeasureTheory.continuous_eq_of_withDensity_ofReal_eq` identifies continuous nonnegative real
+  densities pointwise from equality of their weighted measures.
 -/
 
 public section
@@ -54,15 +57,38 @@ theorem lconvolution_ofReal_eq_ofReal_convolution (hf0 : 0 ≤ f) (hg0 : 0 ≤ g
 variable [MeasurableAdd₂ G] [MeasurableNeg G] [SFinite μ] [μ.IsAddLeftInvariant]
 
 /-- Convolving two measures with nonnegative real densities produces the measure whose real
-density is their Bochner convolution.  The explicit convolution-existence hypothesis also
-guarantees that this density is finite pointwise. -/
+density is their Bochner convolution, provided the latter exists almost everywhere. -/
 theorem conv_withDensity_ofReal_eq_withDensity_convolution (hf : Measurable f)
     (hg : Measurable g) (hf0 : 0 ≤ f) (hg0 : 0 ≤ g)
-    (hfg : ConvolutionExists f g (mul ℝ ℝ) μ) :
+    (hfg : ∀ᵐ x ∂μ, ConvolutionExistsAt f g x (mul ℝ ℝ) μ) :
     μ.withDensity (fun x ↦ ENNReal.ofReal (f x)) ∗
         μ.withDensity (fun x ↦ ENNReal.ofReal (g x)) =
       μ.withDensity (fun x ↦ ENNReal.ofReal ((f ⋆[mul ℝ ℝ, μ] g) x)) := by
-  rw [conv_withDensity_eq_lconvolution hf.ennreal_ofReal hg.ennreal_ofReal,
-    lconvolution_ofReal_eq_ofReal_convolution hf0 hg0 hfg]
+  rw [conv_withDensity_eq_lconvolution hf.ennreal_ofReal hg.ennreal_ofReal]
+  apply withDensity_congr_ae
+  filter_upwards [hfg] with x hx
+  rw [lconvolution_def, convolution_def,
+    ofReal_integral_eq_lintegral_ofReal hx.integrable
+      (.of_forall fun y ↦ mul_nonneg (hf0 y) (hg0 (x - y)))]
+  refine lintegral_congr fun y ↦ ?_
+  rw [← ENNReal.ofReal_mul (hf0 y)]
+  simp only [mul_apply', sub_eq_add_neg, add_comm x]
+
+variable {X : Type*} [TopologicalSpace X] [MeasurableSpace X] [BorelSpace X]
+  {ν : Measure X} [SigmaFinite ν] [ν.IsOpenPosMeasure] {p q : X → ℝ}
+
+/-- Continuous nonnegative real densities that present the same measure are equal pointwise. -/
+theorem continuous_eq_of_withDensity_ofReal_eq (hp : Continuous p) (hq : Continuous q)
+    (hp0 : 0 ≤ p) (hq0 : 0 ≤ q)
+    (h : ν.withDensity (fun x ↦ ENNReal.ofReal (p x)) =
+      ν.withDensity (fun x ↦ ENNReal.ofReal (q x))) :
+    p = q := by
+  have haeENN : (fun x ↦ ENNReal.ofReal (p x)) =ᵐ[ν] fun x ↦ ENNReal.ofReal (q x) :=
+    (withDensity_eq_iff_of_sigmaFinite hp.measurable.ennreal_ofReal.aemeasurable
+      hq.measurable.ennreal_ofReal.aemeasurable).1 h
+  have hae : p =ᵐ[ν] q := by
+    filter_upwards [haeENN] with x hx
+    exact (ENNReal.ofReal_eq_ofReal_iff (hp0 x) (hq0 x)).mp hx
+  exact (hp.ae_eq_iff_eq ν hq).1 hae
 
 end MeasureTheory
