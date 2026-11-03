@@ -301,11 +301,13 @@ theorem IsSerreSystem.lie_F_F_of_eq_zero (h : IsSerreSystem R CM H E F) {i j : B
 variable (R CM)
 
 /-- The generators `Eᵢ` and `Eⱼ` of the presented algebra commute when `CMᵢⱼ = 0`. -/
+@[simp]
 theorem lie_serreE_serreE_of_eq_zero {i j : B} (hij : CM i j = 0) :
     ⁅serreE R CM i, serreE R CM j⁆ = 0 :=
   (isSerreSystem_serre R CM).lie_E_E_of_eq_zero hij
 
 /-- The generators `Fᵢ` and `Fⱼ` of the presented algebra commute when `CMᵢⱼ = 0`. -/
+@[simp]
 theorem lie_serreF_serreF_of_eq_zero {i j : B} (hij : CM i j = 0) :
     ⁅serreF R CM i, serreF R CM j⁆ = 0 :=
   (isSerreSystem_serre R CM).lie_F_F_of_eq_zero hij
