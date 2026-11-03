@@ -95,10 +95,7 @@ private noncomputable def completedNeighbourhoodDiagramIso :
 
 /-- The germs at `p` of the sections of `O_{Spf A}` over the basic open sets `D(f)` containing
 `p`, read through the identifications of these sections with the completed localisations `A_{f}`,
-form a cocone on the diagram `f ↦ A_{f}` with vertex the stalk of `O_{Spf A}` at `p`.
-
-The body is exposed so that the vertex and the legs are definitionally the stalk and the germs. -/
-@[expose, simps]
+form a cocone on the diagram `f ↦ A_{f}` with vertex the stalk of `O_{Spf A}` at `p`. -/
 noncomputable def completedNeighbourhoodCocone : Cocone (completedNeighbourhoodDiagram p) where
   pt := TopCat.Presheaf.stalk (C := CommRingCat) (structureSheaf hI).obj p
   ι.app f := (basicOpenSectionsIso hI hIfg f.elem).inv ≫
@@ -111,6 +108,23 @@ noncomputable def completedNeighbourhoodCocone : Cocone (completedNeighbourhoodD
     dsimp only [completedNeighbourhoodDiagram, Functor.const_obj_map]
     simp only [AlgHom.toRingHom_eq_coe, ← key, Category.assoc, Iso.hom_inv_id_assoc]
     exact congrArg _ ((TopCat.Presheaf.germ_res _ _ _ _).trans (Category.comp_id _).symm)
+
+/-- The vertex of the germ cocone is the stalk of `O_{Spf A}` at `p`. -/
+@[simp]
+theorem completedNeighbourhoodCocone_pt :
+    (completedNeighbourhoodCocone p hI hIfg).pt =
+      TopCat.Presheaf.stalk (C := CommRingCat) (structureSheaf hI).obj p :=
+  (rfl)
+
+/-- The leg of the germ cocone at `A_{f}` is the germ at `p` of the corresponding section over
+`D(f)`. -/
+theorem completedNeighbourhoodCocone_ι_app (f : BasicNeighbourhood p) :
+    (completedNeighbourhoodCocone p hI hIfg).ι.app f ≫
+        eqToHom (completedNeighbourhoodCocone_pt p hI hIfg) =
+      (basicOpenSectionsIso hI hIfg f.elem).inv ≫
+        TopCat.Presheaf.germ (C := CommRingCat) (structureSheaf hI).obj (basicOpen f.elem) p
+          (mem_basicOpen.mpr f.notMem) :=
+  (Category.comp_id _)
 
 /-- The stalk of `O_{Spf A}` at `p` is the colimit of the completed localisations `A_{f}` over the
 basic open neighbourhoods `D(f)` of `p` (EGA I, Ch. I, 10.1.6). -/
