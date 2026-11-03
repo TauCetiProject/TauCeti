@@ -95,8 +95,8 @@ variable {D} in
 theorem IsStable.preimage {Y : Over S'} {E : DescentDatum p Y} (f : Hom D E) {U : Y.left.Opens}
     (hU : E.IsStable U) : D.IsStable (f.hom.left ⁻¹ᵁ U) := by
   unfold IsStable at hU ⊢
-  rw [← Scheme.Hom.comp_preimage, ← f.map_act, Scheme.Hom.comp_preimage, hU,
-    ← Scheme.Hom.comp_preimage, ← Scheme.Hom.comp_preimage, pullback.lift_snd]
+  rw [← Scheme.Hom.comp_preimage, ← f.map_act, Scheme.Hom.comp_preimage, hU]
+  simp only [← Scheme.Hom.comp_preimage, pullback.lift_snd]
 
 section Restrict
 
@@ -111,11 +111,10 @@ variable {U}
 
 private theorem range_restrictActionMap_comp_act_subset (hU : D.IsStable U) :
     Set.range (restrictActionMap U ≫ D.act) ⊆ Set.range U.ι := by
-  unfold IsStable at hU
   rintro _ ⟨z, rfl⟩
-  rw [Scheme.Opens.range_ι, SetLike.mem_coe, ← Scheme.Hom.mem_preimage, Scheme.Hom.comp_preimage,
-    hU, ← Scheme.Hom.comp_preimage, pullback.lift_snd]
-  simp
+  rw [Scheme.Opens.range_ι, SetLike.mem_coe, Scheme.Hom.comp_apply, isStable_iff.mp hU,
+    ← Scheme.Hom.comp_apply, pullback.lift_snd, Scheme.Hom.comp_apply]
+  exact Subtype.prop _
 
 /-- The descent datum induced by `D` on a stable open `U`: the action of `D` restricted to
 `S' ×_S U`, which lands in `U` by stability. -/
@@ -128,8 +127,8 @@ noncomputable def restrict (U : X.left.Opens) (hU : D.IsStable U) :
     have h : pullback.lift (f := p) (Over.mk (U.ι ≫ X.hom)).hom (𝟙 _) (by simp) ≫
         restrictActionMap U = U.ι ≫ pullback.lift (f := p) X.hom (𝟙 X.left) (by simp) :=
       pullback.hom_ext (by simp) (by simp)
-    rw [← cancel_mono U.ι, Category.assoc, IsOpenImmersion.lift_fac, reassoc_of% h, D.lift_act,
-      Category.comp_id, Category.id_comp]
+    rw [← cancel_mono U.ι, Category.assoc, IsOpenImmersion.lift_fac, reassoc_of% h]
+    simp
   act_assoc := by
     rw [← cancel_mono U.ι]
     simp only [Category.assoc, IsOpenImmersion.lift_fac]
@@ -183,6 +182,16 @@ theorem Hom.restrictHom_comp_codRestrict {Y : Over S'} {E : DescentDatum p Y} (f
     (hU : D.IsStable U) (hf : Set.range f.hom.left ⊆ U) :
     (D.restrictHom U hU).comp (f.codRestrict hU hf) = f :=
   Hom.ext (Over.OverMorphism.ext (by simp))
+
+variable {D} in
+/-- `Hom.codRestrict` is the unique factorization through the restriction of `D` to `U`. -/
+theorem Hom.eq_codRestrict_iff {Y : Over S'} {E : DescentDatum p Y} (f : Hom E D)
+    (hU : D.IsStable U) (hf : Set.range f.hom.left ⊆ U) (g : Hom E (D.restrict U hU)) :
+    g = f.codRestrict hU hf ↔ (D.restrictHom U hU).comp g = f := by
+  refine ⟨fun h ↦ h ▸ f.restrictHom_comp_codRestrict hU hf, fun h ↦ ?_⟩
+  refine Hom.ext (Over.OverMorphism.ext ?_)
+  rw [← cancel_mono U.ι, Hom.codRestrict_hom_left_ι, ← h]
+  simp
 
 end Restrict
 
@@ -277,33 +286,18 @@ theorem exists_baseChange_hom_isIso_restrict {X₀ : Over S} (f : Hom (baseChang
   have hrange : Set.range m.hom.left = SetLike.coe (pullback.fst X₀.hom p ⁻¹ᵁ U₀) := by
     have := Scheme.image_preimage_eq_of_isPullback hm Set.univ
     rwa [Set.preimage_univ, Set.image_univ, Set.image_univ, Scheme.Opens.range_ι] at this
-  have hfm : Set.range (f.comp m).hom.left ⊆ U := by
-    rintro _ ⟨y, rfl⟩
-    have hy : m.hom.left y ∈ pullback.fst X₀.hom p ⁻¹ᵁ U₀ := by
-      rw [← SetLike.mem_coe, ← hrange]
-      exact Set.mem_range_self y
-    rw [hU₀] at hy
-    simpa using hy
-  let g := (f.comp m).codRestrict hU hfm
+  -- `f` maps the image `pullback.fst X₀.hom p ⁻¹ᵁ U₀` of `U₀ ×_S S'` onto `U`.
+  have hrange' : Set.range (f.comp m).hom.left = Set.range U.ι := by
+    simp [Set.range_comp, hrange, hU₀, Set.image_preimage_eq _ f.hom.left.surjective]
+  let g := (f.comp m).codRestrict hU (hrange'.trans (Scheme.Opens.range_ι U)).subset
   refine ⟨U₀, g, ?_, Hom.restrictHom_comp_codRestrict _ _ _⟩
   suffices IsIso ((Over.forget S').map g.hom) from isIso_of_reflects_iso _ (Over.forget S')
-  rw [Over.forget_map, isIso_iff_isOpenImmersion_and_surjective]
   have : IsOpenImmersion m.hom.left := MorphismProperty.of_isPullback hm inferInstance
-  have : IsOpenImmersion (g.hom.left ≫ U.ι) := by
-    rw [Hom.codRestrict_hom_left_ι, Hom.comp_hom, Over.comp_left]
+  have : IsOpenImmersion (f.comp m).hom.left := by
+    rw [Hom.comp_hom, Over.comp_left]
     infer_instance
-  refine ⟨.of_comp _ U.ι, ⟨fun u ↦ ?_⟩⟩
-  -- A point of `U` comes from `X₀ ×_S S'` through `f`, and lies over `U₀`.
-  obtain ⟨y, hy⟩ : inv f.hom.left (U.ι u) ∈ Set.range m.hom.left := by
-    rw [hrange, hU₀, SetLike.mem_coe, Scheme.Hom.mem_preimage, ← Scheme.Hom.comp_apply,
-      IsIso.inv_hom_id]
-    simp only [Scheme.Hom.id_base, TopCat.hom_id, ContinuousMap.id_apply]
-    -- `U.ι u` is the point `u` of `X` (`Scheme.Opens.ι_apply`).
-    exact u.2
-  refine ⟨y, U.ι.isOpenEmbedding.injective ?_⟩
-  rw [← Scheme.Hom.comp_apply, Hom.codRestrict_hom_left_ι, Hom.comp_hom, Over.comp_left,
-    Scheme.Hom.comp_apply, hy, ← Scheme.Hom.comp_apply, IsIso.inv_hom_id]
-  simp only [Scheme.Hom.id_base, TopCat.hom_id, ContinuousMap.id_apply]
+  -- `g.hom.left` is the lift underlying the isomorphism of open immersions with equal ranges.
+  exact (IsOpenImmersion.isoOfRangeEq _ U.ι hrange').isIso_hom
 
 end Effective
 
