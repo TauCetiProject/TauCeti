@@ -446,6 +446,18 @@ theorem orderTop_ramifiedEmbedding (n : ℕ+) (f : R⸨X⸩) :
 theorem ramifiedEmbedding_injective (n : ℕ+) : Function.Injective (ramifiedEmbedding R n) :=
   embDomain_injective
 
+/-- The order of the level-`n` image of `f` is the order of `f` divided by `n`. -/
+@[simp]
+theorem order_ramifiedEmbedding (n : ℕ+) (f : R⸨X⸩) :
+    (ramifiedEmbedding R n f).order = (f.order : ℚ) / n := by
+  rcases eq_or_ne f 0 with rfl | hf
+  · simp
+  have hι : ramifiedEmbedding R n f ≠ 0 :=
+    (map_ne_zero_iff _ (ramifiedEmbedding_injective n)).mpr hf
+  apply WithTop.coe_injective
+  rw [order_eq_orderTop_of_ne_zero hι, orderTop_ramifiedEmbedding,
+    ← order_eq_orderTop_of_ne_zero hf, WithTop.map_coe]
+
 /-- The level-`n` image consists of the Hahn series all of whose exponents have denominator
 dividing `n`. -/
 theorem mem_range_ramifiedEmbedding_iff (n : ℕ+) {x : HahnSeries ℚ R} :
