@@ -440,14 +440,6 @@ theorem integralTopForm_inner_add_left (o : Manifold.Orientation I M (Fin m)) (h
   funext x
   rw [Submodule.coe_add, Pi.add_apply, LinearMap.map_add₂, add_smul, Pi.add_apply]
 
-omit [RiemannianBundle (fun x : M ↦ TangentSpace I x)]
-  [IsContMDiffRiemannianBundle I ∞ E (fun x : M ↦ TangentSpace I x)] in
-/-- A smooth form whose degree exceeds the dimension of the manifold vanishes. -/
-private theorem eq_zero_of_lt (o : Manifold.Orientation I M (Fin m)) {j : ℕ} (hj : m < j)
-    (α : SmoothForm I M ℝ j) : α = 0 :=
-  Subtype.ext <| funext fun x ↦ ContinuousAlternatingMap.eq_zero_of_finrank_lt (α.1 x)
-    (by rw [Fintype.card_fin, (o.fact_finrank_tangentSpace x).out]; exact hj)
-
 variable [BoundarylessManifold I M] [T2Space M] [SigmaCompactSpace M]
 
 /-- **The codifferential is the formal adjoint of the exterior derivative**: on an oriented
@@ -517,9 +509,11 @@ theorem integralTopForm_inner_mextDeriv_codifferential (o : Manifold.Orientation
   integralTopForm_inner_mextDeriv_eq_inner_codifferential o hkl _ β
     (h.imp_left (codifferential_mem_compactlySupportedForms o hkl))
 
-/-- Strictly between degree `0` and the top degree,
-`∫_M ⟨Δα, β⟩ vol = ∫_M ⟨dα, dβ⟩ vol + ∫_M ⟨d*α, d*β⟩ vol`. -/
-private theorem integralTopForm_inner_hodgeLaplacian_add_one_add_one
+/-- **The Dirichlet pairing of the Hodge Laplacian**: on an oriented boundaryless Riemannian
+manifold, strictly between degree `0` and the top degree,
+`∫_M ⟨Δα, β⟩ vol = ∫_M ⟨dα, dβ⟩ vol + ∫_M ⟨d*α, d*β⟩ vol` for smooth forms `α` and `β`, one of
+them compactly supported. -/
+theorem integralTopForm_inner_hodgeLaplacian_add_one_add_one
     (o : Manifold.Orientation I M (Fin m)) (hkl : k + 1 + (l + 1) = m)
     (α β : SmoothForm I M ℝ (k + 1))
     (h : α ∈ compactlySupportedForms I M (k + 1) ∨ β ∈ compactlySupportedForms I M (k + 1)) :
@@ -598,7 +592,8 @@ theorem hodgeLaplacian_eq_zero_iff_mextDeriv_eq_zero (o : Manifold.Orientation I
     (hl : 0 + l = m) {f : SmoothForm I M ℝ 0} (hf : f ∈ compactlySupportedForms I M 0) :
     hodgeLaplacian o hl f = 0 ↔ mextDerivₗ I 0 f = 0 := by
   rcases l with _ | l
-  · simpa using eq_zero_of_lt o (by omega) (mextDerivₗ I 0 f)
+  · simpa using (mextDerivₗ I 0 f).eq_zero_of_finrank_lt
+      (by rw [← o.card_eq, Fintype.card_fin]; omega)
   have : NeZero m := ⟨by omega⟩
   have hl' : 0 + 1 + l = m := by omega
   refine ⟨fun h ↦ ?_, fun h ↦ by rw [hodgeLaplacian_zero_add_one o hl hl', h, map_zero]⟩
@@ -629,7 +624,8 @@ theorem hodgeLaplacian_eq_zero_iff (o : Manifold.Orientation I M (Fin m)) (hkl :
     simp only [ZeroMemClass.coe_zero, Pi.zero_apply, LinearMap.map_zero₂, zero_smul]
     exact integralTopForm_zero o
   rcases l with _ | l
-  · have hd : mextDerivₗ I (k + 1) α = 0 := eq_zero_of_lt o (by omega) _
+  · have hd : mextDerivₗ I (k + 1) α = 0 :=
+      SmoothForm.eq_zero_of_finrank_lt (by rw [← o.card_eq, Fintype.card_fin]; omega) _
     refine ⟨fun h ↦ ⟨hd, hdown.1 ?_⟩, fun h ↦ ?_⟩
     · rw [← integralTopForm_inner_mextDeriv_codifferential o hkl α α (.inl hα),
         ← hodgeLaplacian_add_one_zero, h, hzero]
