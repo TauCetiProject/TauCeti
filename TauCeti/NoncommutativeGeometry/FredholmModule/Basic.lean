@@ -5,8 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.InnerProductSpace.Adjoint
-public import Mathlib.LinearAlgebra.Complex.Module
 public import TauCeti.Algebra.Star.SelfAdjoint
 public import TauCeti.Analysis.Normed.Operator.Compact.Basic
 public import TauCeti.Analysis.Normed.Operator.Compact.HilbertAdjoint
