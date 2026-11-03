@@ -84,6 +84,12 @@ theorem isTopRegularRoute_iff (ψ : PairColorPlacement3 φ) (H : Colored3Graph �
       H.IsTopRegularOverPolyad (ψ.polyad i j l hij hjl) η r :=
   Iff.rfl
 
+/-- A route that is top-regular at a rank is top-regular at every lower rank. -/
+theorem IsTopRegularRoute.of_rank_le {ψ : PairColorPlacement3 φ} {H : Colored3Graph κ' V}
+    {η : ℝ} {r r' : ℕ} (h : ψ.IsTopRegularRoute H η r') (hr : r ≤ r') :
+    ψ.IsTopRegularRoute H η r :=
+  fun i j l hij hjl ↦ (h i j l hij hjl).of_rank_le hr
+
 end PairColorPlacement3
 
 /-! ### The exceptional predicted mass -/

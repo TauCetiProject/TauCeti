@@ -14,11 +14,10 @@ public import Mathlib.GroupTheory.GroupAction.Defs
 /-!
 # The automorphism group of the complex unit disc
 
-`Conformal/UnitDisc/Automorphism/Classification.lean` shows that a holomorphic self-map of the
-open unit disc with a holomorphic two-sided inverse has the standard form
-`z ↦ u * (z - a) / (1 - conj a * z)`.  That is a statement about individual maps.  This file
-turns the family into the *group* `Aut(𝔻)` that the conformal-mapping roadmap's L2 layer asks
-for, and identifies it with the standard family.
+`Conformal/UnitDisc/Automorphism/Classification.lean` shows that a holomorphic self-map of the open
+unit disc with a holomorphic two-sided inverse has the standard form
+`z ↦ u * (z - a) / (1 - conj a * z)`. That is a statement about individual maps. This file turns the
+family into the *group* `Aut(𝔻)`, and identifies it with the standard family.
 
 The group is `unitDiscAut`, a `Subgroup (Equiv.Perm Complex.UnitDisc)`: a permutation of the
 bundled disc belongs to it exactly when both it and its inverse are restrictions of functions
@@ -47,9 +46,6 @@ Transitivity together with the stabiliser description is how `Aut(𝔻)` gets us
 normalise a map at a chosen base point (transitivity), then read off the freedom that is left
 over (a rotation).
 
-This discharges the group half of the conformal-mapping roadmap's L2 description of the disc
-automorphism group `Aut(𝔻) = {e^{iθ}(z−a)/(1−āz)}` (see `ConformalMapping/README.md`).
-
 ## References
 
 * L. Ahlfors, *Complex Analysis*, Ch. 6 §2.
@@ -65,9 +61,8 @@ open scoped ComplexConjugate
 /-- A permutation of the complex unit disc is *holomorphic* when it is the restriction of a
 function `ℂ → ℂ` that is holomorphic on the open unit ball.
 
-Holomorphy of a map of the bundled disc is phrased through a scalar representative, matching the
-generality bar of the conformal-mapping roadmap (everything is stated for `f : ℂ → ℂ`) and the
-hypotheses of `exists_forall_unitDisc_eq_unitDiscStandardAutomorphismEquiv`. -/
+Holomorphy of a map of the bundled disc is phrased through a scalar representative `f : ℂ → ℂ`,
+matching the hypotheses of `exists_forall_unitDisc_eq_unitDiscStandardAutomorphismEquiv`. -/
 def IsHolomorphicUnitDiscPerm (e : Equiv.Perm Complex.UnitDisc) : Prop :=
   ∃ f : ℂ → ℂ, DifferentiableOn ℂ f (ball (0 : ℂ) 1) ∧ ∀ z : Complex.UnitDisc, (e z : ℂ) = f z
 

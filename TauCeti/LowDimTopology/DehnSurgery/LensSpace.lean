@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.LowDimTopology.DehnSurgery.Filling
+public import TauCeti.LowDimTopology.DehnSurgery.Uniqueness
 public import TauCeti.LowDimTopology.Heegaard.LensSpace.Splitting
 public import TauCeti.LowDimTopology.SolidTorusNeighborhood.Unknot
 
@@ -37,6 +37,14 @@ On the common boundary torus these coordinates differ by the gluing
 meridian `(a, 1)` of the filling solid torus to the `(p, q)` curve of the boundary torus of the
 exterior.
 
+This gluing is induced by the matrix `[[p, -t], [q, s]]`
+(`TauCeti.exists_torusHomeomorph_eq_torusGluing`), so the uniqueness of Dehn fillings with gluings
+isotopic to matrix gluings (`TauCeti.DehnFilling.exists_homeomorph_of_isotopic_torusHomeomorph`)
+shows that every filling along the slope `p / q` whose gluing is isotopic to a matrix gluing is
+homeomorphic to this lens space. As for
+the `∞`- and `0`-surgeries, the one input not formalized is that every homeomorphism of the torus
+is isotopic to one induced by a matrix.
+
 ## Main definitions
 
 * `TauCeti.unknotLensSpaceDehnFilling`: the lens space `L(p; ℓ₀, ℓ₁)`, with `ℓ₁ = -q ℓ₀`, as the
@@ -44,13 +52,17 @@ exterior.
 
 ## Main results
 
-* `TauCeti.unknotLensSpaceDehnFilling_gluing_apply`: the gluing of the boundary tori.
+* `TauCeti.unknotLensSpaceDehnFilling_gluing`,
+  `TauCeti.unknotLensSpaceDehnFilling_gluing_apply`: the gluing of the boundary tori.
 * `TauCeti.unknotLensSpaceDehnFilling_solidTorusEmbedding_apply`,
   `TauCeti.unknotLensSpaceDehnFilling_exteriorEmbedding_apply`: values of the embeddings on the
   power-map cover of the solid torus.
 * `TauCeti.range_unknotLensSpaceDehnFilling_solidTorusEmbedding`,
   `TauCeti.range_unknotLensSpaceDehnFilling_exteriorEmbedding`: the filling solid torus and the
   knot exterior are the two handlebodies of the genus-one Heegaard splitting of the lens space.
+* `TauCeti.DehnFilling.nonempty_homeomorph_lensSpace_of_unknot_slopeValue`: every filling of the
+  exterior of the unknot along the slope `p / q` whose gluing is isotopic to a matrix gluing is
+  homeomorphic to the lens space `L(p; ℓ₀, ℓ₁)`, `ℓ₁ = -q ℓ₀`.
 
 ## References
 
@@ -182,6 +194,13 @@ def unknotLensSpaceDehnFilling (hst : s * p + t * q = 1) (hℓ : (ℓ 1 : ZMod p
 
 variable {p ℓ}
 
+/-- The `p / q`-surgery on the unknot glues the boundary tori by the determinant-one torus map
+`torusGluing p q s t hst`. -/
+theorem unknotLensSpaceDehnFilling_gluing (hst : s * p + t * q = 1)
+    (hℓ : (ℓ 1 : ZMod p) = -q * ℓ 0) :
+    (unknotLensSpaceDehnFilling p ℓ hst hℓ).gluing = torusGluing p q s t hst :=
+  (rfl)
+
 /-- The `p / q`-surgery on the unknot glues the boundary tori by
 `(a, b) ↦ (a ^ p b ^ (-t), a ^ q b ^ s)`. -/
 @[simp]
@@ -231,5 +250,44 @@ theorem range_unknotLensSpaceDehnFilling_exteriorEmbedding (hst : s * p + t * q 
     ((LensSpace.range_rightEmbedding _).trans (LensSpace.heegaardSplitting_right p ℓ).symm)
 
 end Surgery
+
+/-! ### Every `p / q`-surgery on the unknot is a lens space -/
+
+section Uniqueness
+
+variable {p : ℕ} [NeZero p] {ℓ : Fin 2 → (ZMod p)ˣ} {q : ℤ}
+
+namespace DehnFilling
+
+variable {Y : Type*} [TopologicalSpace Y]
+
+/-- **`p / q`-surgery on the unknot.** For `ℓ₁ = -q ℓ₀` modulo `p`, a Dehn filling of the exterior
+of the unknot along the slope of value `p / q` in the framing of its standard solid torus
+neighbourhood, which is the preferred framing, whose gluing is isotopic to a homeomorphism induced
+by an invertible integral matrix, is homeomorphic to the lens space `L(p; ℓ₀, ℓ₁)`. For `ℓ₀ = 1`
+this identifies every such `p / q`-surgery with `L(p, -q)`. -/
+theorem nonempty_homeomorph_lensSpace_of_unknot_slopeValue (hℓ : (ℓ 1 : ZMod p) = -q * ℓ 0)
+    (F : DehnFilling isSolidTorusNeighborhood_unknotSolidTorus
+      (isSolidTorusNeighborhood_unknotSolidTorus.framedBoundaryTorus.slopeEquiv.symm
+        (slopeValue (p, q))) Y)
+    {A : GL (Fin 2) ℤ}
+    (hA : Isotopic (F.gluing : C(Circle × Circle, Circle × Circle)) A.torusHomeomorph) :
+    Nonempty (Y ≃ₜ LensSpace p ℓ) := by
+  -- `q = -ℓ₁ ℓ₀⁻¹` is a unit modulo `p`, so `s p + t q = 1` for some integers `s`, `t`.
+  have hq : (q : ZMod p) = ↑(-(ℓ 1 * (ℓ 0)⁻¹)) := by
+    rw [Units.val_neg, Units.val_mul, hℓ, mul_assoc, Units.mul_inv, mul_one, neg_neg]
+  obtain ⟨s, t, hst⟩ := (ZMod.isUnit_intCast_iff_isCoprime q p).1 (hq ▸ Units.isUnit _)
+  obtain ⟨B, -, hB⟩ := exists_torusHomeomorph_eq_torusGluing p q s t hst
+  have hB' : Isotopic ((unknotLensSpaceDehnFilling p ℓ hst hℓ).gluing :
+      C(Circle × Circle, Circle × Circle)) B.torusHomeomorph := by
+    rw [unknotLensSpaceDehnFilling_gluing, hB]
+    exact Isotopic.refl _ (torusGluing p q s t hst).isEmbedding
+  obtain ⟨e, -⟩ := F.exists_homeomorph_of_isotopic_torusHomeomorph
+    (unknotLensSpaceDehnFilling p ℓ hst hℓ) hA hB'
+  exact ⟨e⟩
+
+end DehnFilling
+
+end Uniqueness
 
 end TauCeti
