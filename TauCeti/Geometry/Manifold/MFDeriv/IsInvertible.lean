@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Geometry.Manifold.MFDeriv.Basic
+public import Mathlib.Geometry.Manifold.MFDeriv.SpecificFunctions
 public import Mathlib.Topology.Algebra.Module.FiniteDimension
 
 /-!
@@ -20,6 +21,9 @@ manifolds is assumed.
 Conversely, between manifolds modelled on finite-dimensional spaces of the same dimension over a
 complete field, if a composite of differentiable maps has invertible manifold derivative then so do
 both factors (`isInvertible_mfderiv_of_isInvertible_mfderiv_comp`).
+
+Without any finite-dimensionality, a differentiable map with a differentiable left inverse near a
+point has injective manifold derivative there (`injective_mfderiv_of_comp_eventuallyEq_id`).
 -/
 
 public section
@@ -69,5 +73,17 @@ theorem isInvertible_mfderiv_of_isInvertible_mfderiv_comp [CompleteSpace 𝕜]
       (mfderiv I' I'' g (f x) : TangentSpace I' (f x) →ₗ[𝕜] TangentSpace I'' (g (f x)))
       ⟨(LinearMap.injective_iff_surjective_of_finrank_eq_finrank hdim').2 hsurj, hsurj⟩
       ).toContinuousLinearEquiv, ContinuousLinearMap.ext fun _ ↦ rfl⟩⟩
+
+/-- A map with a differentiable left inverse near a point has injective manifold derivative
+there: if `g ∘ f` agrees with the identity near `x`, then `mfderiv g (f x) ∘ mfderiv f x` is the
+identity. -/
+theorem injective_mfderiv_of_comp_eventuallyEq_id {f : M → M'} {g : M' → M} {x : M}
+    (hf : MDifferentiableAt I I' f x) (hg : MDifferentiableAt I' I g (f x))
+    (hgf : g ∘ f =ᶠ[nhds x] id) : Function.Injective (mfderiv I I' f x) := by
+  have h := mfderiv_comp x hg hf
+  rw [hgf.mfderiv_eq, mfderiv_id] at h
+  intro a b hab
+  have := congrArg (mfderiv I' I g (f x)) hab
+  rwa [← ContinuousLinearMap.comp_apply, ← ContinuousLinearMap.comp_apply, ← h] at this
 
 end TauCeti
