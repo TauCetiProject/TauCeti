@@ -1,0 +1,144 @@
+/-
+Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: The Tau Ceti contributors
+-/
+module
+
+public import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.Dual.Basic
+public import Mathlib.Algebra.Module.Torsion.Basic
+import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.MulByInt.Surjective
+
+/-!
+# Kernels of dual isogenies and degree torsion
+
+For an isogeny `φ : W₁ → W₂`, the identity `φ̂ ∘ φ = [deg φ]` gives an exact sequence
+`ker φ → W₁[deg φ] → ker φ̂`. The first map is inclusion and the second is induced by `φ`.
+Over a separably closed field, if the degree is invertible, the second map is surjective.
+Applying this to the dual also lifts every point of `ker φ` through `φ̂` on degree torsion.
+
+## References
+
+* J. H. Silverman, *The Arithmetic of Elliptic Curves*, III.6 and III.8.
+-/
+
+public section
+
+noncomputable section
+
+open WeierstrassCurve.Affine
+
+namespace TauCeti.Isogeny
+
+variable {F : Type*} [Field F] [DecidableEq F]
+  {W₁ W₂ : WeierstrassCurve.Affine F} [W₁.IsElliptic] [W₂.IsElliptic]
+  (φ : Isogeny W₁ W₂)
+
+/-- A point killed by an isogeny is killed by its degree. -/
+theorem nsmul_eq_zero_of_mem_ker_pointMapHom {P : W₁.Point}
+    (hP : P ∈ (Hom.ofIsogeny φ).pointMapHom.ker) : φ.degree • P = 0 := by
+  rw [← φ.pointMap_dual_pointMap, (Hom.mem_ker_pointMapHom_iff _ _).mp hP]
+  exact (Hom.ofIsogeny φ.dual).pointMap_zero
+
+/-- The inclusion of an isogeny's kernel in the torsion subgroup at its degree. -/
+def kerToDegreeTorsion : (Hom.ofIsogeny φ).pointMapHom.ker →+
+    Submodule.torsionBy ℤ W₁.Point (φ.degree : ℤ) :=
+  AddSubgroup.inclusion (K := (Submodule.torsionBy ℤ W₁.Point (φ.degree : ℤ)).toAddSubgroup)
+    fun P hP ↦ by
+      rw [Submodule.mem_toAddSubgroup, Submodule.mem_torsionBy_iff, natCast_zsmul]
+      exact φ.nsmul_eq_zero_of_mem_ker_pointMapHom hP
+
+/-- Inclusion in degree torsion does not change the underlying point. -/
+@[simp]
+theorem coe_kerToDegreeTorsion (P : (Hom.ofIsogeny φ).pointMapHom.ker) :
+    (φ.kerToDegreeTorsion P : W₁.Point) = P :=
+  (rfl)
+
+/-- The isogeny kills every point in the image of its kernel inclusion. -/
+theorem pointMap_kerToDegreeTorsion (P : (Hom.ofIsogeny φ).pointMapHom.ker) :
+    (Hom.ofIsogeny φ).pointMap (φ.kerToDegreeTorsion P) = 0 := by
+  rw [coe_kerToDegreeTorsion]
+  exact (Hom.mem_ker_pointMapHom_iff _ _).mp P.property
+
+/-- The map from the kernel to degree torsion is injective. -/
+theorem kerToDegreeTorsion_injective : Function.Injective φ.kerToDegreeTorsion :=
+  AddSubgroup.inclusion_injective _
+
+/-- The map from degree torsion to the dual kernel, `R ↦ φ R`. -/
+def degreeTorsionToDualKer :
+    Submodule.torsionBy ℤ W₁.Point (φ.degree : ℤ) →+
+      (Hom.ofIsogeny φ.dual).pointMapHom.ker where
+  toFun R := ⟨(Hom.ofIsogeny φ).pointMap R, by
+    rw [Hom.mem_ker_pointMapHom_iff, φ.pointMap_dual_pointMap]
+    simpa only [Submodule.mem_torsionBy_iff, natCast_zsmul] using R.property⟩
+  map_zero' := Subtype.ext ((Hom.ofIsogeny φ).pointMap_zero)
+  map_add' R S := Subtype.ext ((Hom.ofIsogeny φ).pointMap_add R S)
+
+/-- The map to the dual kernel is the original isogeny on underlying points. -/
+@[simp]
+theorem coe_degreeTorsionToDualKer (R : Submodule.torsionBy ℤ W₁.Point (φ.degree : ℤ)) :
+    (φ.degreeTorsionToDualKer R : W₂.Point) = (Hom.ofIsogeny φ).pointMap R :=
+  (rfl)
+
+/-- The dual sends degree torsion into the original kernel. -/
+theorem dual_pointMap_mem_ker_pointMapHom
+    (S : Submodule.torsionBy ℤ W₂.Point (φ.degree : ℤ)) :
+    (Hom.ofIsogeny φ.dual).pointMap S ∈ (Hom.ofIsogeny φ).pointMapHom.ker := by
+  have h : ∀ S : Submodule.torsionBy ℤ W₂.Point (φ.dual.degree : ℤ),
+      (Hom.ofIsogeny φ.dual).pointMap S ∈
+        (Hom.ofIsogeny φ.dual.dual).pointMapHom.ker := fun S ↦ by
+    rw [← coe_degreeTorsionToDualKer]
+    exact (φ.dual.degreeTorsionToDualKer S).property
+  rw [degree_dual, dual_dual] at h
+  exact h S
+
+/-- The kernel of the map from degree torsion consists exactly of the points killed by `φ`. -/
+@[simp]
+theorem degreeTorsionToDualKer_eq_zero_iff
+    (R : Submodule.torsionBy ℤ W₁.Point (φ.degree : ℤ)) :
+    φ.degreeTorsionToDualKer R = 0 ↔ (Hom.ofIsogeny φ).pointMap R = 0 :=
+  Subtype.ext_iff
+
+/-- The image of the kernel inclusion is exactly the degree-torsion points killed by `φ`.
+Together with `degreeTorsionToDualKer_eq_zero_iff`, this expresses exactness at degree
+torsion. -/
+theorem mem_range_kerToDegreeTorsion_iff
+    (R : Submodule.torsionBy ℤ W₁.Point (φ.degree : ℤ)) :
+    R ∈ φ.kerToDegreeTorsion.range ↔ (Hom.ofIsogeny φ).pointMap R = 0 := by
+  constructor
+  · rintro ⟨P, rfl⟩
+    exact φ.pointMap_kerToDegreeTorsion P
+  · intro hR
+    refine ⟨⟨R, (Hom.mem_ker_pointMapHom_iff _ _).mpr hR⟩, ?_⟩
+    exact Subtype.ext (φ.coe_kerToDegreeTorsion _)
+
+variable [IsSepClosed F] (hd : (φ.degree : F) ≠ 0)
+
+include hd in
+/-- Every point of the dual kernel is the image under `φ` of a degree-torsion point. -/
+theorem degreeTorsionToDualKer_surjective : Function.Surjective φ.degreeTorsionToDualKer := by
+  intro Q
+  obtain ⟨R, hR⟩ := W₂.nsmul_surjective hd (Q : W₂.Point)
+  dsimp only at hR
+  refine ⟨⟨(Hom.ofIsogeny φ.dual).pointMap R, ?_⟩, Subtype.ext ?_⟩
+  · rw [Submodule.mem_torsionBy_iff, natCast_zsmul, ← Hom.pointMap_nsmul, hR]
+    exact (Hom.mem_ker_pointMapHom_iff _ _).mp Q.property
+  · exact (φ.pointMap_pointMap_dual R).trans hR
+
+include hd in
+/-- Every point killed by `φ` lifts through `φ̂` on degree torsion. -/
+theorem exists_dual_pointMap_eq_of_mem_ker {P : W₁.Point}
+    (hP : P ∈ (Hom.ofIsogeny φ).pointMapHom.ker) :
+    ∃ S : Submodule.torsionBy ℤ W₂.Point (φ.degree : ℤ),
+      (Hom.ofIsogeny φ.dual).pointMap S = P := by
+  have hs := φ.dual.degreeTorsionToDualKer_surjective
+    (by simpa only [degree_dual] using hd)
+  have hs' : ∀ Q : (Hom.ofIsogeny φ.dual.dual).pointMapHom.ker,
+      ∃ S : Submodule.torsionBy ℤ W₂.Point (φ.dual.degree : ℤ),
+        (Hom.ofIsogeny φ.dual).pointMap S = Q := fun Q ↦ by
+    obtain ⟨S, hS⟩ := hs Q
+    exact ⟨S, by simpa only [coe_degreeTorsionToDualKer] using congrArg Subtype.val hS⟩
+  rw [degree_dual, dual_dual] at hs'
+  exact hs' ⟨P, hP⟩
+
+end TauCeti.Isogeny
