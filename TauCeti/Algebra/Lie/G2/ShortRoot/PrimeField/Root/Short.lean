@@ -216,36 +216,28 @@ theorem cotangentLinearEquiv_highestShortVector_mem :
 theorem adjointWeightSpace_shortSum_eq_span :
     Derivation.adjointWeightSpace weightTorusCoordinateMap.hom
       (SplitTorus.weightCharacter ![-1, 1]) = (ZMod 3) ∙ shortSumVector := by
-  apply le_antisymm
-  · intro x hx
-    obtain ⟨t, ht⟩ := exists_eq_smul_of_weight_shortSum (tangentMatrix x)
-      (tangentMatrix_mul_crossOperatorPrime x)
-      ((mem_adjointWeightSpace_weightCharacter_iff _ x).mp hx)
-    refine Submodule.mem_span_singleton.mpr ⟨t, tangentMatrix_injective ?_⟩
-    rw [map_smul, tangentMatrix_shortSumVector, ht]
-  · rw [Submodule.span_singleton_le_iff_mem, mem_adjointWeightSpace_weightCharacter_iff,
-      tangentMatrix_shortSumVector]
+  apply adjointWeightSpace_weightCharacter_eq_span_of
+  · rw [tangentMatrix_shortSumVector]
     intro i j h
     revert h
     fin_cases i <;> fin_cases j <;> decide
+  · intro X hX hsupp
+    rw [tangentMatrix_shortSumVector]
+    exact exists_eq_smul_of_weight_shortSum X hX hsupp
 
 /-- The entire `2α₁ + α₂` weight space is the line spanned by `[X₁, [X₁, X₂]]`. -/
 @[simp↓]
 theorem adjointWeightSpace_highestShort_eq_span :
     Derivation.adjointWeightSpace weightTorusCoordinateMap.hom
       (SplitTorus.weightCharacter ![1, 0]) = (ZMod 3) ∙ highestShortVector := by
-  apply le_antisymm
-  · intro x hx
-    obtain ⟨t, ht⟩ := exists_eq_smul_of_weight_highestShort (tangentMatrix x)
-      (tangentMatrix_mul_crossOperatorPrime x)
-      ((mem_adjointWeightSpace_weightCharacter_iff _ x).mp hx)
-    refine Submodule.mem_span_singleton.mpr ⟨t, tangentMatrix_injective ?_⟩
-    rw [map_smul, tangentMatrix_highestShortVector, ht]
-  · rw [Submodule.span_singleton_le_iff_mem, mem_adjointWeightSpace_weightCharacter_iff,
-      tangentMatrix_highestShortVector]
+  apply adjointWeightSpace_weightCharacter_eq_span_of
+  · rw [tangentMatrix_highestShortVector]
     intro i j h
     revert h
     fin_cases i <;> fin_cases j <;> decide
+  · intro X hX hsupp
+    rw [tangentMatrix_highestShortVector]
+    exact exists_eq_smul_of_weight_highestShort X hX hsupp
 
 /-- The normalized trivialization of the `α₁ + α₂` root space. -/
 def shortSumRootSpaceEquiv :
