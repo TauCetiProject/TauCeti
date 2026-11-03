@@ -140,7 +140,7 @@ private theorem barycentricSubdivisionLinearMap_injective_of_nonneg_of_isChain
     (hab : barycentricSubdivisionLinearMap K a = barycentricSubdivisionLinearMap K b) : a = b := by
   induction hmeasure : a.support.card + b.support.card using Nat.strong_induction_on
     generalizing a b with
-  | h n ih =>
+  | ind n ih =>
       -- A nonzero nonnegative combination has nonzero image, so the zero cases agree.
       by_cases ha0 : a = 0
       · subst a

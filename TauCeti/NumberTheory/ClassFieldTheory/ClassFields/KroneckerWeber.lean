@@ -9,6 +9,8 @@ public import TauCeti.NumberTheory.ClassFieldTheory.Global.AdmissibleModulus.Rec
 public import TauCeti.NumberTheory.ClassFieldTheory.GlobalExistence.NormLimitation
 public import TauCeti.NumberTheory.NumberField.Global.Cyclotomic.RayClass
 
+import TauCeti.NumberTheory.ClassFieldTheory.ClassFields.RaySubgroup
+
 /-!
 # The norm group of `ℚ(ζ_n)/ℚ` and the Kronecker–Weber theorem
 
@@ -28,10 +30,13 @@ ray class group of some admissible modulus `(N)·∞` with `n ∣ N`, and on the
 map is determined by its values on primes.
 
 The **Kronecker–Weber theorem** (`kroneckerWeber`) follows from the uniqueness half of the global
-class-field correspondence. If `E/ℚ` is finite abelian and `(N)·∞` is a multiple of its conductor,
-then the ray subgroup of `(N)·∞`, which is the norm group of `ℚ(ζ_N)`, lies in the norm group of
-`E`. Norm groups detect embeddings of abelian extensions
-(`range_ideleClassNormMap_le_iff_nonempty_algHom`), so `E` embeds in `ℚ(ζ_N)`.
+class-field correspondence. Norm groups detect embeddings of abelian extensions
+(`range_ideleClassNormMap_le_iff_nonempty_algHom`), so a finite abelian extension `E/ℚ` embeds in
+`ℚ(ζ_n)` exactly when the ray subgroup of `(n)·∞` lies in the norm group of `E`, that is, when the
+conductor of `E/ℚ` divides `(n)·∞` (`nonempty_algHom_iff_abelianConductor_dvd_ratModulus`). The real
+place imposes no condition, so this happens exactly when the absolute norm of the finite part of
+the conductor divides `n` (`nonempty_algHom_iff_absNorm_abelianConductor_finitePart_dvd`), and in
+particular `E` embeds in the cyclotomic field of that level.
 
 ## Main results
 
@@ -43,6 +48,11 @@ then the ray subgroup of `(N)·∞`, which is the norm group of `ℚ(ζ_N)`, lie
   `ℚ(ζ_n)/ℚ`.
 * `TauCeti.ClassFieldTheory.rayClassArtinMap_ratModulus`: the ray-class Artin map of `ℚ(ζ_n)/ℚ`
   at `(n)·∞` is `ratModulusEquivGal`.
+* `TauCeti.ClassFieldTheory.nonempty_algHom_iff_abelianConductor_dvd_ratModulus`: a finite abelian
+  extension `E/ℚ` embeds in `ℚ(ζ_n)` exactly when its conductor divides `(n)·∞`.
+* `TauCeti.ClassFieldTheory.nonempty_algHom_iff_absNorm_abelianConductor_finitePart_dvd` and
+  `TauCeti.ClassFieldTheory.nonempty_algHom_cyclotomicField_iff`: it embeds in `ℚ(ζ_n)` exactly
+  when the absolute norm of the finite part of its conductor divides `n`.
 * `TauCeti.ClassFieldTheory.kroneckerWeber`: every finite abelian extension of `ℚ` embeds in a
   cyclotomic field.
 
@@ -125,23 +135,50 @@ theorem rayClassArtinMap_ratModulus [IsAbelianGalois ℚ F]
 
 end Cyclotomic
 
+/-! ### The cyclotomic fields containing an abelian extension -/
+
+section Level
+
+variable (E : Type) [Field E] [NumberField E] [IsAbelianGalois ℚ E] (n : ℕ) [NeZero n]
+
+/-- **A finite abelian extension `E/ℚ` embeds in `ℚ(ζ_n)` exactly when its conductor divides
+`(n)·∞`**: the norm group of `ℚ(ζ_n)` is the ray subgroup of `(n)·∞`, and norm groups detect
+embeddings of abelian extensions. -/
+theorem nonempty_algHom_iff_abelianConductor_dvd_ratModulus (F : Type) [Field F] [NumberField F]
+    [IsCyclotomicExtension {n} ℚ F] :
+    Nonempty (E →ₐ[ℚ] F) ↔ abelianConductor ℚ E ∣ ratModulus n (NeZero.ne n) := by
+  have := IsCyclotomicExtension.isGalois {n} ℚ F
+  exact nonempty_algHom_iff_abelianConductor_dvd_of_range_eq E
+    (range_ideleClassNormMap_eq_raySubgroup_ratModulus n F)
+
+/-- **A finite abelian extension `E/ℚ` embeds in `ℚ(ζ_n)` exactly when the absolute norm of the
+finite part of its conductor divides `n`.** -/
+theorem nonempty_algHom_iff_absNorm_abelianConductor_finitePart_dvd (F : Type) [Field F]
+    [NumberField F] [IsCyclotomicExtension {n} ℚ F] :
+    Nonempty (E →ₐ[ℚ] F) ↔ Ideal.absNorm (abelianConductor ℚ E).finitePart ∣ n := by
+  rw [nonempty_algHom_iff_abelianConductor_dvd_ratModulus E n F, dvd_ratModulus_iff]
+
+/-- **A finite abelian extension `E/ℚ` embeds in `CyclotomicField n ℚ` exactly when the absolute
+norm of the finite part of its conductor divides `n`.** -/
+theorem nonempty_algHom_cyclotomicField_iff :
+    Nonempty (E →ₐ[ℚ] CyclotomicField n ℚ) ↔
+      Ideal.absNorm (abelianConductor ℚ E).finitePart ∣ n := by
+  -- Instance search finds `Algebra ℚ (CyclotomicField n ℚ)` through the `ℚ`-algebra structure of
+  -- a characteristic-zero field, so the cyclotomic instance is supplied explicitly.
+  have : IsCyclotomicExtension {n} ℚ (CyclotomicField n ℚ) :=
+    CyclotomicField.isCyclotomicExtension n ℚ
+  exact nonempty_algHom_iff_absNorm_abelianConductor_finitePart_dvd E n _
+
+end Level
+
 /-! ### The Kronecker–Weber theorem -/
 
 /-- **The Kronecker–Weber theorem**: every finite abelian extension of `ℚ` embeds in a cyclotomic
 field `ℚ(ζ_n)`. -/
 theorem kroneckerWeber (E : Type) [Field E] [NumberField E] [IsAbelianGalois ℚ E] :
     ∃ n : ℕ, n ≠ 0 ∧ Nonempty (E →ₐ[ℚ] CyclotomicField n ℚ) := by
-  obtain ⟨n, hn, hdvd⟩ : ∃ (n : ℕ) (hn : n ≠ 0), abelianConductor ℚ E ∣ ratModulus n hn :=
-    ⟨_, _, dvd_ratModulus_absNorm _⟩
-  have : NeZero n := ⟨hn⟩
-  -- Instance search finds `Algebra ℚ (CyclotomicField n ℚ)` through the `ℚ`-algebra structure of
-  -- a characteristic-zero field, so the cyclotomic instance is supplied explicitly.
-  have : IsCyclotomicExtension {n} ℚ (CyclotomicField n ℚ) :=
-    CyclotomicField.isCyclotomicExtension n ℚ
-  have := IsCyclotomicExtension.isGalois {n} ℚ (CyclotomicField n ℚ)
-  -- The norm group of `ℚ(ζ_n)` is the ray subgroup of `(n)·∞`, which lies in that of `E`.
-  refine ⟨n, hn, (range_ideleClassNormMap_le_iff_nonempty_algHom _ E).mp ?_⟩
-  rw [range_ideleClassNormMap_eq_raySubgroup_ratModulus n (CyclotomicField n ℚ)]
-  exact isAdmissibleModulus_iff.mp ((isAdmissibleModulus_iff_abelianConductor_dvd _).mpr hdvd)
+  have hf := Ideal.absNorm_eq_zero_iff.not.mpr (abelianConductor ℚ E).finitePart_ne_bot
+  have : NeZero (Ideal.absNorm (abelianConductor ℚ E).finitePart) := ⟨hf⟩
+  exact ⟨_, hf, (nonempty_algHom_cyclotomicField_iff E _).mpr dvd_rfl⟩
 
 end TauCeti.ClassFieldTheory
