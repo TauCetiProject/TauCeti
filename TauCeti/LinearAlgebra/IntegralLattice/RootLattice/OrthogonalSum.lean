@@ -178,7 +178,7 @@ a glue word `w` to the class of the word whose label in position `j` is
 `u (σ.symm j) • w (σ.symm j)`. -/
 theorem discriminantQuadraticIsometry_signedPerm_glueWordIsometry (u : ι → ℤˣ)
     (σ : Equiv.Perm ι) (w : ∀ _ : ι, T.glueAlphabet hT) :
-    ((Isometry.pi fun i ↦ Isometry.unitsSMul (T.rootLattice hT) (u i)).trans
+    ((Isometry.pi fun i ↦ Isometry.unitsSMul (u i) (T.rootLattice hT)).trans
         (Isometry.piCongrLeft (fun _ ↦ T.rootLattice hT) σ)).discriminantQuadraticIsometry
         (isEven_pi_rootLattice _ _) (glueWordIsometry (fun _ ↦ T) (fun _ ↦ hT) (fun _ ↦ hvT) w) =
       glueWordIsometry (fun _ ↦ T) (fun _ ↦ hT) (fun _ ↦ hvT)
@@ -187,10 +187,10 @@ theorem discriminantQuadraticIsometry_signedPerm_glueWordIsometry (u : ι → �
   have h1 := (Isometry.discriminantQuadraticIsometry_apply _ (isEven_pi_rootLattice _ _)
     _).symm.trans (discriminantQuadraticIsometry_pi_glueWordIsometry (fun _ ↦ T)
       (fun _ ↦ hT) (fun _ ↦ hvT) (fun _ ↦ hvT)
-      (fun i ↦ Isometry.unitsSMul (T.rootLattice hT) (u i))
+      (fun i ↦ Isometry.unitsSMul (u i) (T.rootLattice hT))
       (fun i x ↦ u i • x) (fun i x ↦ by
         refine Eq.trans ?_ ((Isometry.discriminantQuadraticIsometry_apply _ _ _).trans
-          (Isometry.discriminantGroupEquiv_unitsSMul _ (u i) _)).symm
+          (Isometry.discriminantGroupEquiv_unitsSMul_apply (u i) _ _)).symm
         exact map_zsmul (T.glueAlphabetIsometry hvT hT) (u i : ℤ) x) w)
   have h2 := (Isometry.discriminantQuadraticIsometry_apply _ (isEven_pi_rootLattice _ _)
     _).symm.trans (discriminantQuadraticIsometry_piCongrLeft_glueWordIsometry (fun _ ↦ T)

@@ -41,6 +41,8 @@ level `d` with `d • A_L = 0`; it contains `-1` exactly when `A_L` is `2`-eleme
   nondegenerate `L`.
 * `TauCeti.IntegralLattice.Isometry.congruenceSubgroup_le_discriminantKernel`: the congruence
   subgroup of level `d` lies in `Õ(L)` when `d` kills `A_L`.
+* `TauCeti.IntegralLattice.Isometry.discriminantGroupEquiv_unitsSMul_apply`: multiplication by a
+  unit `u` of `ℤ` acts on `A_L` as multiplication by `u`.
 * `TauCeti.IntegralLattice.Isometry.neg_mem_discriminantKernel_iff`: `-1 ∈ Õ(L)` exactly when
   `2 • A_L = 0`.
 * `TauCeti.IntegralLattice.IsUnimodular.discriminantKernel_eq_top`: `Õ(L) = O(L)` for unimodular
@@ -100,11 +102,16 @@ theorem discriminantGroupEquiv_neg (L : IntegralLattice V) :
     ext
     simp
 
-/-- Multiplying a lattice by a sign `u : ℤˣ` acts on its discriminant group by the same sign. -/
+/-- Multiplication by a unit `u` of `ℤ` acts on the discriminant group as multiplication by `u`. -/
 @[simp]
-theorem discriminantGroupEquiv_unitsSMul (L : IntegralLattice V) (u : ℤˣ)
-    (x : L.DiscriminantGroup) : (unitsSMul L u).discriminantGroupEquiv x = u • x := by
-  rcases Int.units_eq_one_or u with rfl | rfl <;> simp [one_def]
+theorem discriminantGroupEquiv_unitsSMul_apply (u : ℤˣ) (L : IntegralLattice V)
+    (a : L.DiscriminantGroup) : (unitsSMul u L).discriminantGroupEquiv a = (u : ℤ) • a := by
+  induction a using Submodule.Quotient.induction_on with
+  | _ x =>
+    rw [discriminantGroupEquiv_mk, ← Submodule.Quotient.mk_smul]
+    congr 1
+    ext
+    simp
 
 /-! ### The discriminant kernel -/
 

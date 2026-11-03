@@ -517,7 +517,7 @@ noncomputable def gluedLatticeSignedPermIsometry (u : ι → ℤˣ) (σ : Equiv.
     IntegralLattice.Isometry (gluedLattice (fun _ ↦ T) (fun _ ↦ hT) (fun _ ↦ hvT) K hK)
       (gluedLattice (fun _ ↦ T) (fun _ ↦ hT) (fun _ ↦ hvT) K hK) :=
   gluedLatticeIsometry (fun _ ↦ T) (fun _ ↦ hT) (fun _ ↦ hvT) K hK (fun _ ↦ hvT) hK
-    ((Isometry.pi fun i ↦ Isometry.unitsSMul _ (u i)).trans
+    ((Isometry.pi fun i ↦ Isometry.unitsSMul (u i) _).trans
       (Isometry.piCongrLeft (fun _ ↦ T.rootLattice hT) σ))
     (fun w j ↦ u (σ.symm j) • w (σ.symm j))
     (discriminantQuadraticIsometry_signedPerm_glueWordIsometry hvT u σ) hσ
@@ -533,7 +533,7 @@ theorem gluedLatticeSignedPermIsometry_apply (u : ι → ℤˣ) (σ : Equiv.Perm
   obtain ⟨k, rfl⟩ := σ.surjective j
   rw [gluedLatticeSignedPermIsometry, gluedLatticeIsometry_apply, Isometry.trans_apply,
     Isometry.piCongrLeft_apply_apply, Isometry.pi_apply, Equiv.symm_apply_apply,
-    Isometry.unitsSMul_apply]
+    Isometry.unitsSMul_apply, Units.smul_def]
 
 end SignedPermutation
 
