@@ -12,7 +12,6 @@ public import Mathlib.RingTheory.Flat.Localization
 public import TauCeti.LinearAlgebra.FreeModule.Filtration
 
 import Mathlib.RingTheory.Flat.Rank
-import Mathlib.RingTheory.Localization.Away.Lemmas
 import TauCeti.RingTheory.Flat.Pi
 import TauCeti.RingTheory.Ideal.Pure
 
