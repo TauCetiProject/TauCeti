@@ -80,6 +80,7 @@ private theorem quotientBackward_comp_map :
         (Ideal.Quotient.mk (J.map (algebraMap R (algebra I)))).comp
           (algebraMap R (algebra I)) := RingHom.ext (quotientBackward_algebraMap I J)
     rw [h, ← Ideal.map_map, ← extended]
+    rw [Ideal.jacobson_bot]
     exact _root_.HenselianRing.jac
 
 /-- Henselization commutes with quotienting the base by an arbitrary ideal. The forward map

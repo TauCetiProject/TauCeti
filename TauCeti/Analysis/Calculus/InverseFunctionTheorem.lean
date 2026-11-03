@@ -159,7 +159,7 @@ theorem ContDiffOn.exists_openPartialHomeomorph
   have hgAt : ∀ y ∈ s, ContDiffAt 𝕂 n g y := fun y hy => hg.contDiffAt (hs.mem_nhds hy)
   have he₀ : HasFDerivAt g (e : E →L[𝕂] F) a :=
     he ▸ ((hg.differentiableOn hn0).differentiableAt (hs.mem_nhds ha)).hasFDerivAt
-  have hstrict := (hgAt a ha).hasStrictFDerivAt' he₀ hn0
+  have hstrict := (hgAt a ha).hasStrictFDerivAt he₀ hn0
   refine ⟨((hgAt a ha).toOpenPartialHomeomorph g he₀ hn0).restrOpen s hs, rfl,
     ⟨(hgAt a ha).mem_toOpenPartialHomeomorph_source he₀ hn0, ha⟩, fun y hy => hy.2, ?_⟩
   intro w hw

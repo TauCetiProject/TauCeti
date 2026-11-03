@@ -26,6 +26,11 @@ For a single complementary pair `F₀`, `F₁`, the projection onto `F₁` also 
 vanishing on `F₀` from its values on a basis of `F₁`
 (`Submodule.apply_eq_sum_repr_projectionOnto`).
 
+Moving a map `f : α → M` by multiples of a vector `d` which lies on none of its secant lines keeps
+it injective (`TauCeti.injective_sub_smul`). This is the algebraic step of projecting along a
+direction `d`: every map `x ↦ f x - a x • d`, for instance the projection `f - φ (f) • d` along `d`,
+remains injective.
+
 ## Main definitions
 
 * `TauCeti.internalProjection`: the projection of `M` onto the summand `Q i` of an internal direct
@@ -42,6 +47,8 @@ vanishing on `F₀` from its values on a basis of `F₁`
   component supplied by the inverse direct-sum equivalence is the internal projection.
 * `Submodule.apply_eq_sum_repr_projectionOnto`: a linear map vanishing on `F₀` is determined by
   its values on a basis of a complement of `F₀`.
+* `TauCeti.injective_sub_smul`: `x ↦ f x - a x • d` is injective when no secant of `f` is a
+  multiple of `d`.
 
 ## Implementation notes
 
@@ -124,6 +131,19 @@ theorem sum_coe_internalProjection [Fintype ι] (hQi : iSupIndep Q) (hQt : ⨆ i
   rw [LinearMap.mem_ker, LinearMap.sub_apply, LinearMap.id_apply, LinearMap.sum_apply,
     sub_eq_zero] at hx
   simpa using hx
+
+/-- Moving a map by multiples of a vector `d` on none of its secant lines keeps it injective:
+`x ↦ f x - a x • d` is injective for every coefficient function `a`. -/
+theorem injective_sub_smul {α : Type*} {f : α → M} {d : M}
+    (hsec : ∀ x y (c : A), f x - f y = c • d → x = y) (a : α → A) :
+    Function.Injective fun x => f x - a x • d := by
+  intro x y h
+  dsimp only at h
+  refine hsec x y (a x - a y) ?_
+  calc f x - f y = (f x - a x • d) - (f y - a y • d) + (a x - a y) • d := by
+        rw [sub_smul]
+        abel
+    _ = _ := by rw [h, sub_self, zero_add]
 
 end TauCeti
 

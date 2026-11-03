@@ -23,7 +23,8 @@ contributes nothing to the derivative, so the operator-valued map need only be c
 records the derivative of the application of a varying continuous linear map to a fixed vector
 (or of a varying bilinear map to two fixed vectors), the product rule for a varying bilinear map
 applied to two varying vectors, and the fact that the derivative of a field of symmetric bilinear
-maps takes symmetric values. Finally, a family of
+maps takes symmetric values, and that a continuous linear map vanishing on a function near a point
+vanishes on its derivative there. Finally, a family of
 continuous linear maps out of a finite-dimensional space is differentiable, or has a given
 derivative in a scalar variable, within a set or at a point, exactly when each of its evaluations
 does; this is how derivatives of families of linear and bilinear maps are tested on vectors.
@@ -37,6 +38,8 @@ does; this is how derivatives of families of linear and bilinear maps are tested
 * `TauCeti.fderiv_bilin_apply`: the product rule for `y ↦ c y (A y) (B y)`.
 * `TauCeti.fderiv_apply_apply_comm`: the derivative of a field of bilinear maps that is symmetric
   near a point takes symmetric values there.
+* `TauCeti.clm_apply_fderiv_eq_zero`: a continuous linear map that vanishes on `g` near a point
+  vanishes on the derivative of `g` there.
 * `TauCeti.differentiableWithinAt_clm_apply`: a family of continuous linear maps out of a
   finite-dimensional space is differentiable within a set exactly when each evaluation is;
   `TauCeti.differentiableAt_clm_apply` is the pointwise form.
@@ -117,6 +120,15 @@ theorem fderiv_apply_apply_comm {c : E → F →L[𝕜] F →L[𝕜] G} {x : E}
     have heq : (fun y ↦ c y v w) =ᶠ[𝓝 x] fun y ↦ c y w v := hc.mono fun y hy ↦ hy v w
     rw [← fderiv_clm_apply_const_apply₂ hd, ← fderiv_clm_apply_const_apply₂ hd, heq.fderiv_eq]
   · simp [fderiv_zero_of_not_differentiableAt hd]
+
+/-- If a continuous linear map `L` vanishes on `g` near `x`, then `L` vanishes on every directional
+derivative of `g` at `x`. -/
+theorem clm_apply_fderiv_eq_zero {L : F →L[𝕜] G} {g : E → F} {x : E}
+    (hL : ∀ᶠ y in 𝓝 x, L (g y) = 0) (w : E) : L (fderiv 𝕜 g x w) = 0 := by
+  by_cases hg : DifferentiableAt 𝕜 g x
+  · have hc := L.hasFDerivAt.comp x hg.hasFDerivAt
+    simpa using congrArg (· w) (hc.unique ((hasFDerivAt_const 0 x).congr_of_eventuallyEq hL))
+  · simp [fderiv_zero_of_not_differentiableAt hg]
 
 /-- A family of continuous linear maps out of a finite-dimensional space is differentiable within
 a set exactly when its evaluation at each fixed vector is differentiable within that set. -/

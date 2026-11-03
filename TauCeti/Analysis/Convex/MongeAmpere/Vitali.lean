@@ -110,7 +110,7 @@ theorem exists_measure_convexSection_le_sqrt_mul :
   have hMAS : mongeAmpereMeasure μ (fun y => if y ∈ Ω then (u y : EReal) else ⊤) S ≤
       Lam * μ S := by
     refine (Measure.le_iff'.1 hMA' S).trans ?_
-    rw [Measure.smul_apply, smul_eq_mul]
+    rw [_root_.smul_apply, smul_eq_mul]
     exact mul_le_mul_right (Measure.restrict_apply_le _ _) _
   have hsq : (lam : ℝ≥0∞) * μ SK ^ 2 ≤ (C₁ * C₂ * K ^ n * Lam : ℝ≥0) * μ S ^ 2 :=
     calc (lam : ℝ≥0∞) * μ SK ^ 2 ≤ C₁ * ENNReal.ofReal (K * h) ^ n :=
@@ -298,7 +298,7 @@ theorem exists_countable_pairwiseDisjoint_convexSection_measure_le :
         measure_biUnion_le μ hs _
     _ ≤ ∑' j : s, (NNReal.sqrt (A * K ^ finrank ℝ E * Lam / lam) : ℝ≥0∞) *
           μ (convexSection Ω u (c j) (ℓ j) (h j)) :=
-        ENNReal.tsum_le_tsum fun j => hdbl j j.2
+        tsum_le_tsum fun j => hdbl j j.2
     _ = _ := by rw [ENNReal.tsum_mul_left, measure_biUnion hs hdisj hmeas]
 
 end TauCeti

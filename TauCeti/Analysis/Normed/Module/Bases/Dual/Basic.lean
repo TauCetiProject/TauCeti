@@ -55,7 +55,7 @@ theorem mem_closure_span_coord_iff (f : StrongDual 𝕜 E) :
     let P : ℕ → StrongDual 𝕜 E →L[𝕜] StrongDual 𝕜 E :=
       fun n ↦ ContinuousLinearMap.precomp 𝕜 (b.proj n)
     have heq : Equicontinuous (fun n (g : StrongDual 𝕜 E) ↦ g.comp (b.proj n)) := by
-      apply ((NormedSpace.equicontinuous_TFAE P).out 4 2).mp
+      apply ((NormedSpace.equicontinuous_tfae P).out 4 2).mp
       refine ⟨b.nnnormProjBound, fun n g ↦ ?_⟩
       exact (ContinuousLinearMap.opNorm_comp_le g (b.proj n)).trans
         (by simpa [mul_comm] using

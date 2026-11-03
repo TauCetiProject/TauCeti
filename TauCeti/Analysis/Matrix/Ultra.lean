@@ -221,7 +221,8 @@ theorem norm_sum_coeff_charpolyRev_smul_pow_apply_le {A : Matrix ι ι R} {r : �
     intro k l
     rcases eq_or_ne k j with rfl | hk
     · rw [updateRow_self, Pi.single_apply, ite_eq_left rfl]
-    · rw [updateRow_ne hk, sub_apply, one_apply, smul_apply, map_apply, smul_eq_mul,
+    · rw [updateRow_ne hk, Matrix.sub_apply, Matrix.one_apply, Matrix.smul_apply, map_apply,
+      smul_eq_mul,
         ite_eq_right hk]
   refine norm_coeff_det_le_of_natDegree_le_one (r := r) (fun k l ↦ ?_) (fun k l ↦ ?_)
     (fun k l ↦ ?_) hc hs <;> rw [hM]

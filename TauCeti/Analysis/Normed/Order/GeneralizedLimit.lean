@@ -243,7 +243,7 @@ private theorem two_mul_norm_div_mem_dilationUpperBounds (f : ℕ →ᵇ ℝ) (k
   refine ⟨Fin N, inferInstance, inferInstance, fun j ↦ k ^ (j : ℕ), fun j ↦ pow_pos hk _,
     Eventually.of_forall fun n ↦ ?_⟩
   have hsum : ∑ j : Fin N, (f - f.dilate k) (n / k ^ (j : ℕ)) = f n - f (n / k ^ N) := by
-    simp only [BoundedContinuousFunction.coe_sub, Pi.sub_apply,
+    simp only [FunLike.coe_sub, Pi.sub_apply,
       BoundedContinuousFunction.dilate_apply, Nat.div_div_eq_div_mul, ← pow_succ]
     rw [Fin.sum_univ_eq_sum_range (fun j ↦ f (n / k ^ j) - f (n / k ^ (j + 1))),
       Finset.sum_range_sub']

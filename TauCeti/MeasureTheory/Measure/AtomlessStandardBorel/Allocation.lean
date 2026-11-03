@@ -167,8 +167,8 @@ private theorem measure_inter_occupied_le (hZ : IsAlloc μ A m {j | lvl j < n} Z
           (ne_top_of_le_ne_top hAi (measure_mono (hVU.trans (occupied_subset hW hi))))
     _ ≤ ∑' j, (below A lvl i ∩ {j | lvl j = n}).indicator m j := by
         rw [occupied, hW.measure_biUnion (below_inter_subset hi),
-          hZ.measure_biUnion hVsub, tsub_le_iff_left, ← ENNReal.tsum_add]
-        refine ENNReal.tsum_le_tsum fun j ↦ ?_
+          hZ.measure_biUnion hVsub, tsub_le_iff_left, ← _root_.tsum_add]
+        refine _root_.tsum_le_tsum fun j ↦ ?_
         by_cases hj : j ∈ below A lvl i
         · rcases lt_trichotomy (lvl j) n with h | h | h
           · simp [hj, h, h.le, h.ne]
@@ -189,7 +189,7 @@ private theorem measure_inter_occupied_le_sdiff (hZ : IsAlloc μ A m {j | lvl j 
   refine ENNReal.le_sub_of_add_le_left hZU ?_
   rw [measure_union_add_inter _ hU, hZ.measure_eq i hi', occupied,
     hW.measure_biUnion (below_inter_subset hi)]
-  exact (add_le_add le_rfl (ENNReal.tsum_le_tsum fun j ↦
+  exact (add_le_add le_rfl (_root_.tsum_le_tsum fun j ↦
     indicator_le_indicator_of_subset inter_subset_left (fun _ ↦ zero_le) j)).trans (hm i)
 
 end Reallocation
@@ -204,14 +204,14 @@ private theorem tsum_measure_symmDiff_stages_le
     (i : ι) : ∑' l, μ (Zs (l + 1 + (lvl i + 1)) i ∆ Zs (l + (lvl i + 1)) i) ≤ 2 * μ (A i) :=
   calc ∑' l, μ (Zs (l + 1 + (lvl i + 1)) i ∆ Zs (l + (lvl i + 1)) i)
       ≤ ∑' l, 2 * ∑' j, (below A lvl i ∩ {j | lvl j = l + (lvl i + 1)}).indicator m j :=
-        ENNReal.tsum_le_tsum fun l ↦ by
+        _root_.tsum_le_tsum fun l ↦ by
           have := hZs (l + (lvl i + 1)) i (by omega)
           rwa [show l + (lvl i + 1) + 1 = l + 1 + (lvl i + 1) by omega] at this
     _ ≤ ∑' n, 2 * ∑' j, (below A lvl i ∩ {j | lvl j = n}).indicator m j :=
-        ENNReal.tsum_comp_le_tsum_of_injective (add_left_injective _)
+        _root_.tsum_comp_le_tsum_of_injective (add_left_injective _)
           (fun n ↦ 2 * ∑' j, (below A lvl i ∩ {j | lvl j = n}).indicator m j)
     _ = 2 * ∑' j, (below A lvl i).indicator m j := by
-        rw [ENNReal.tsum_mul_left, ← ENNReal.tsum_fiberwise _ lvl]
+        rw [ENNReal.tsum_mul_left, ← _root_.tsum_fiberwise _ lvl]
         refine congrArg (2 * ·) (tsum_congr fun n ↦ ?_)
         have hfib : lvl ⁻¹' {n} ∩ below A lvl i = below A lvl i ∩ {j | lvl j = n} := by
           ext j

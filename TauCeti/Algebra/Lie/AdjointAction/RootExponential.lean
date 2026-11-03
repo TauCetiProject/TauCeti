@@ -145,7 +145,7 @@ theorem _root_.LieSubalgebra.exists_rootExponentialPolynomialParametrization {ι
         exact Submodule.sum_mem _ fun j _ ↦
           Submodule.smul_mem _ _ (Submodule.subset_span ⟨Sum.inr j, rfl⟩)
       · set α : H.root := ⟨χ, Finset.mem_filter.mpr ⟨Finset.mem_univ _, hχ⟩⟩
-        obtain ⟨r, hr⟩ := (finrank_eq_one_iff_of_nonzero' (⟨e α, he α⟩ : rootSpace H χ)
+        obtain ⟨r, hr⟩ := (finrank_eq_one_iff_of_ne_zero' (⟨e α, he α⟩ : rootSpace H χ)
           (by simpa [Subtype.ext_iff] using he0 α)).mp (finrank_rootSpace_eq_one χ hχ) ⟨z, hz⟩
         have hz' : z = r • e α := by simpa [Subtype.ext_iff] using hr.symm
         have hbr : ⁅e α, (h₀ : L)⁆ = -(χ h₀) • e α := by

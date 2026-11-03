@@ -77,16 +77,7 @@ theorem divisorClass_sub_one_zsmul_poles_eq_canonicalClass (hF : IsFunctionField
   · rw [Divisor.degree_zsmul, Divisor.degree_poles hF (Units.mk0 x hx.ne_zero) hx, Units.val_mk0,
       hdeg]
     ring
-  · have := finiteDimensional_riemannRochSpace hF
-      ((genus k F - 1 : ℤ) • Divisor.poles hF (Units.mk0 x hx.ne_zero))
-    have hle : Submodule.span k (Set.range fun i : Fin (genus k F) ↦ x ^ (i : ℕ)) ≤
-        riemannRochSpace ((genus k F - 1 : ℤ) • Divisor.poles hF (Units.mk0 x hx.ne_zero)) :=
-      Submodule.span_le.mpr (by
-        rintro _ ⟨i, rfl⟩
-        have := i.isLt
-        exact pow_mem_riemannRochSpace_zsmul_poles_of_le hF _ (by omega))
-    have h := Submodule.finrank_mono hle
-    rwa [hx.finrank_span_range_pow, ← Divisor.dim_def] at h
+  · exact le_dim_zsmul_poles hF (Units.mk0 x hx.ne_zero) hx (by omega)
 
 /-- **`L((g - 1) · (x)_∞)` is spanned by `1, x, …, x^{g-1}`** when `[F : k(x)] = 2`: the `g`
 powers are independent, and `ℓ((g - 1) · (x)_∞) = g` since the divisor is canonical. -/
@@ -97,13 +88,12 @@ theorem riemannRochSpace_sub_one_zsmul_poles_eq_span (hF : IsFunctionField k F)
       Submodule.span k (Set.range fun i : Fin (genus k F) ↦ x ^ (i : ℕ)) := by
   have := finiteDimensional_riemannRochSpace hF
     ((genus k F - 1 : ℤ) • Divisor.poles hF (Units.mk0 x hx.ne_zero))
-  refine (Submodule.eq_of_le_of_finrank_eq (Submodule.span_le.mpr ?_) ?_).symm
-  · rintro _ ⟨i, rfl⟩
-    have := i.isLt
-    exact pow_mem_riemannRochSpace_zsmul_poles_of_le hF _ (by omega)
-  · rw [hx.finrank_span_range_pow, ← Divisor.dim_def,
-      (isRiemannRochDivisor_of_divisorClass_eq_canonicalClass hF hex
-        (divisorClass_sub_one_zsmul_poles_eq_canonicalClass hF hex hx hdeg)).dim_eq hF hex]
+  refine (Submodule.eq_of_le_of_finrank_eq
+    (S₁ := Submodule.span k (Set.range fun i : Fin (genus k F) ↦ x ^ (i : ℕ)))
+    (span_range_pow_le_riemannRochSpace_zsmul_poles hF (Units.mk0 x hx.ne_zero) (by omega)) ?_).symm
+  rw [hx.finrank_span_range_pow, ← Divisor.dim_def,
+    (isRiemannRochDivisor_of_divisorClass_eq_canonicalClass hF hex
+      (divisorClass_sub_one_zsmul_poles_eq_canonicalClass hF hex hx hdeg)).dim_eq hF hex]
 
 /-- **`L((g - 1) · (x)_∞) ⊆ k(x)`** when `[F : k(x)] = 2`. -/
 theorem mem_adjoin_of_mem_riemannRochSpace_sub_one_zsmul_poles (hF : IsFunctionField k F)
@@ -130,12 +120,7 @@ theorem mem_adjoin_of_finrank_adjoin_le_genus (hF : IsFunctionField k F)
   have hz0 : z ≠ 0 := fun h ↦ halg (h ▸ isAlgebraic_zero)
   -- `ℓ((z)_∞) ≥ 2`, from the independent functions `1` and `z`
   have hdimB : 2 ≤ Divisor.dim (Divisor.poles hF (Units.mk0 z hz0)) := by
-    have := finiteDimensional_riemannRochSpace hF (Divisor.poles hF (Units.mk0 z hz0))
-    rw [Divisor.dim_def, ← (Transcendental.finrank_span_range_pow (K := k) halg 2)]
-    refine Submodule.finrank_mono (Submodule.span_le.mpr ?_)
-    rintro _ ⟨i, rfl⟩
-    simpa using pow_mem_riemannRochSpace_zsmul_poles_of_le hF (Units.mk0 z hz0)
-      (m := 1) (by omega)
+    simpa using le_dim_zsmul_poles hF (Units.mk0 z hz0) halg (n := 2) (m := 1) (by norm_num)
   -- Riemann–Roch at `(z)_∞` with the canonical divisor `(g - 1) · (x)_∞`: `ℓ(W - B) ≥ 1`
   have hRR := Divisor.isRiemannRochDivisor_iff.mp
     (isRiemannRochDivisor_of_divisorClass_eq_canonicalClass hF hex
