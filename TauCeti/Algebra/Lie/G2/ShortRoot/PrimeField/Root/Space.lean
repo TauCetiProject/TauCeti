@@ -393,6 +393,22 @@ theorem mem_adjointWeightSpace_iff (α : Multiplicative (Fin 2 →₀ ℤ))
       GeneralLinear.weightTorusBaseChangeCoordinateMap_eq]
   exact HopfIdeal.mem_adjointWeightSpace_iff_of_weightTorus _ weight _ hπ α x
 
+/-- In integral fundamental-weight coordinates, weight-space membership is the vanishing of
+matrix entries at every other weight difference. -/
+theorem mem_adjointWeightSpace_weightCharacter_iff (μ : Fin 2 → ℤ)
+    (x : Module.Dual (ZMod 3) (Bialgebra.CotangentSpace (ZMod 3) carrierAlgebra)) :
+    x ∈ Derivation.adjointWeightSpace weightTorusCoordinateMap.hom
+        (SplitTorus.weightCharacter μ) ↔
+      ∀ i j, weight i - weight j ≠ μ → tangentMatrix x i j = 0 := by
+  rw [mem_adjointWeightSpace_iff]
+  have hinj (ν : Fin 2 → ℤ) :
+      SplitTorus.weightCharacter ν = SplitTorus.weightCharacter μ ↔ ν = μ :=
+    ⟨fun h => funext fun l => by
+      simpa only [SplitTorus.toAdd_weightCharacter] using
+        congrArg (fun χ : Multiplicative (Fin 2 →₀ ℤ) => Multiplicative.toAdd χ l) h,
+      fun h => h ▸ rfl⟩
+  simp only [ne_eq, hinj]
+
 /-- In the standard lifted torus coordinates, adjoint weight-space membership is characterized
 by the short-root module's matrix weight differences. -/
 theorem mem_adjointWeightSpace_splitMaximalTorus_iff
