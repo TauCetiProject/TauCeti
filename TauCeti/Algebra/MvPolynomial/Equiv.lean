@@ -31,6 +31,8 @@ list, as happens to the coefficient ring of a grid complex when a grid diagram i
 
 * `MvPolynomial.finSuccEquiv'_X_self`, `MvPolynomial.finSuccEquiv'_rename_succAbove`: the
   singled-out variable goes to the polynomial variable, and the others are constants.
+* `MvPolynomial.finSuccEquiv'_symm_apply`: the inverse renames the coefficients along
+  `p.succAbove` and evaluates the polynomial variable at `X p`.
 * `MvPolynomial.polynomial_eval_finSuccEquiv'`: evaluating the polynomial variable at `a`
   substitutes `a` for `X p`.
 * `MvPolynomial.finSuccEquiv'_zero`: for `p = 0` this is Mathlib's `MvPolynomial.finSuccEquiv`.
@@ -107,6 +109,15 @@ theorem finSuccEquiv'_symm_X (p : Fin (n + 1)) :
 theorem finSuccEquiv'_symm_C (p : Fin (n + 1)) (f : MvPolynomial (Fin n) R) :
     (finSuccEquiv' R p).symm (Polynomial.C f) = rename p.succAbove f :=
   (finSuccEquiv' R p).symm_apply_eq.mpr (finSuccEquiv'_rename_succAbove p f).symm
+
+/-- The inverse of `finSuccEquiv' R p` renames the coefficients along `p.succAbove` and then
+evaluates the polynomial variable at `X p`. -/
+theorem finSuccEquiv'_symm_apply (p : Fin (n + 1)) (f : Polynomial (MvPolynomial (Fin n) R)) :
+    (finSuccEquiv' R p).symm f = (f.map (rename p.succAbove).toRingHom).eval (X p) := by
+  rw [Polynomial.eval_map]
+  induction f using Polynomial.induction_on' with
+  | add f g hf hg => simp only [map_add, Polynomial.eval₂_add, hf, hg]
+  | monomial k a => simp [← Polynomial.C_mul_X_pow_eq_monomial]
 
 /-- Evaluating the singled-out variable at `a` is substituting `a` for `X p` and keeping the
 other variables. -/

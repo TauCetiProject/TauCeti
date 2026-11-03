@@ -16,7 +16,7 @@ two equal sets, acts on points in both directions.
 ## Main results
 
 * `Homeomorph.setCongr_apply`: `setCongr` retypes a point without moving it.
-* `TauCeti.Homeomorph.setCongr_symm_apply`: its inverse also retypes a point without moving it.
+* `Homeomorph.setCongr_symm_apply`: its inverse also retypes a point without moving it.
 -/
 
 public section
@@ -32,15 +32,11 @@ theorem setCongr_apply {s t : Set X} (h : s = t) (x : s) :
     setCongr h x = ⟨x, h ▸ x.2⟩ :=
   rfl
 
-end Homeomorph
-
-namespace TauCeti
-
-/-- The inverse of `Homeomorph.setCongr` retypes a point without moving it. -/
+/-- The inverse of `Homeomorph.setCongr` retypes a point without moving it. This is the
+homeomorphism counterpart of Mathlib's `Set.equivOfEq_symm_apply`. -/
 @[simp]
-theorem Homeomorph.setCongr_symm_apply {X : Type*} [TopologicalSpace X]
-    {s t : Set X} (h : s = t) (x : t) :
-    (Homeomorph.setCongr h).symm x = ⟨x, h.symm ▸ x.2⟩ :=
+theorem setCongr_symm_apply {s t : Set X} (h : s = t) (x : t) :
+    (setCongr h).symm x = ⟨x, h.symm ▸ x.2⟩ :=
   rfl
 
-end TauCeti
+end Homeomorph

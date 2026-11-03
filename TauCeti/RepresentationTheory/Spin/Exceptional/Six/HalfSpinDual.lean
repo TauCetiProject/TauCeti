@@ -160,7 +160,7 @@ private noncomputable def reverseEvenFirstToSecondAlgEquiv
     (Module.End K M)ᵐᵒᵖ ≃ₐ[K] Module.End K N := by
   let f := reverseEvenFirstToSecondAlgHom e hswap
   have hunit := reverseEvenToSecondAlgHom_one_zero e hswap
-  have hsurj : Function.Surjective f := AlgHom.prodFirst_surjective _ hunit <|
+  have hsurj : Function.Surjective f := (AlgHom.prodFirst_surjective_iff _ hunit).2 <|
     Prod.snd_surjective.comp <|
       ((endProdMulOppositeEquiv (K := K) (M := M) (N := N)).symm.trans
         (reverseEvenProdEquiv e)).surjective
