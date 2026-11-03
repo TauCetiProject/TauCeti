@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Analysis.InnerProductSpace.PiL2
 public import Mathlib.Geometry.Manifold.ChartedSpace
-public import TauCeti.Topology.Triangulable
+public import TauCeti.Topology.Triangulable.Basic
 
 /-!
 # The triangulation conjecture

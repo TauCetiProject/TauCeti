@@ -250,9 +250,9 @@ private theorem exists_isUnit_restrict {f : BasicNeighbourhood p} {x : Completed
     rw [← r.comp_algebraMap, ← Ideal.map_map]
     exact Ideal.mem_map_of_mem _ hy
   have := (CompletedAway.isAdic A g.elem).isAdicComplete
-  have hjac := IsAdicComplete.le_jacobson_bot _ hmem
+  have hjac := IsAdicComplete.le_jacobson _ hmem
   obtain ⟨v, hv⟩ := hunit
-  have := Ideal.mem_jacobson_bot.mp hjac ↑v⁻¹
+  have := Ring.mem_jacobson_iff.mp hjac ↑v⁻¹
   rw [← sub_add_cancel x (algebraMap _ _ y), map_add, ← hv]
   convert v.isUnit.mul this using 1
   rw [mul_add, mul_one, mul_comm, mul_assoc, v.inv_mul, mul_one, add_comm]

@@ -130,7 +130,7 @@ theorem ad_pow_rootVector_eq_zero_or_exists {α β : Weight K H L} (hα : α.IsN
     refine Or.inr ⟨β, by simp, by simp, 1, by simp, by simp⟩
   | succ n ih =>
     rcases ih with h0 | ⟨γ, hγcoe, hγbot, z, hznat, hz⟩
-    · exact Or.inl (by rw [pow_succ', Module.End.mul_apply, h0, map_zero])
+    · exact Or.inl (by rw [pow_succ', mul_apply_eq_comp, h0, map_zero])
     have hγ : γ.IsNonZero := by
       rw [Weight.IsNonZero, Weight.IsZero, hγcoe]
       exact coe_add_natCast_smul_ne_zero hα hβ hαβ n
@@ -142,7 +142,7 @@ theorem ad_pow_rootVector_eq_zero_or_exists {α β : Weight K H L} (hα : α.IsN
       rw [hshift]
       exact coe_add_natCast_smul_ne_zero hα hβ hαβ (n + 1)
     have hstep : ((ad K L (x α)) ^ (n + 1)) (x β) = (z : K) • ⁅x α, x γ⁆ := by
-      rw [pow_succ', Module.End.mul_apply, hz, map_smul, ad_apply]
+      rw [pow_succ', mul_apply_eq_comp, hz, map_smul, ad_apply]
     by_cases hbot : rootSpace H ((α : H → K) + (γ : H → K)) = ⊥
     · refine Or.inl ?_
       rw [hstep, hx.toIsSl2System.lie_eq_zero_of_rootSpace_add_eq_bot α γ hbot, smul_zero]
@@ -190,9 +190,9 @@ private theorem inv_factorial_smul_ad_pow_root_neg_mem (α : Weight K H L)
   have h3 : (ad K L (x α)) ((-2 : K) • x α) = 0 := by
     rw [map_smul, ad_apply, lie_self, smul_zero]
   have h2' : ((ad K L (x α)) ^ 2) (x (-α)) = (-2 : K) • x α := by
-    rw [pow_succ', Module.End.mul_apply, pow_one, h1, h2]
+    rw [pow_succ', mul_apply_eq_comp, pow_one, h1, h2]
   have h3' : ((ad K L (x α)) ^ 3) (x (-α)) = 0 := by
-    rw [pow_succ', Module.End.mul_apply, h2', h3]
+    rw [pow_succ', mul_apply_eq_comp, h2', h3]
   match n with
   | 0 => simp
   | 1 =>
@@ -206,7 +206,7 @@ private theorem inv_factorial_smul_ad_pow_root_neg_mem (α : Weight K H L)
     rw [h2', hcancel]
     exact neg_mem (hx.rootVector_mem_chevalleyLieLattice α)
   | (m + 3) =>
-    rw [pow_add, Module.End.mul_apply, h3', map_zero, smul_zero]
+    rw [pow_add, mul_apply_eq_comp, h3', map_zero, smul_zero]
     exact zero_mem _
 
 /-- **Divided powers of the adjoint action of a root vector send root vectors into the Chevalley
@@ -270,8 +270,8 @@ theorem inv_factorial_smul_ad_pow_coroot_mem (α β : Weight K H L) (n : ℕ) :
       zsmul_mem (hx.rootVector_mem_chevalleyLieLattice α) (-m)
   | (k + 2) =>
     have h2' : ((ad K L (x α)) ^ 2) ((coroot β : L)) = 0 := by
-      rw [pow_succ', Module.End.mul_apply, pow_one, h1, h2]
-    rw [pow_add, Module.End.mul_apply, h2', map_zero, smul_zero]
+      rw [pow_succ', mul_apply_eq_comp, pow_one, h1, h2]
+    rw [pow_add, mul_apply_eq_comp, h2', map_zero, smul_zero]
     exact zero_mem _
 
 /-- **The Chevalley lattice is stable under the divided powers of the adjoint action of a root

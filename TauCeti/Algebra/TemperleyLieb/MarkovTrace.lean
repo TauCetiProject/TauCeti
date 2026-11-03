@@ -164,7 +164,7 @@ theorem spinGenerator_mul_apply {j k : Fin n} (hjk : j ≠ k)
     (spinGenerator q j k * X) s u =
       spinCup q (s j) (s k) * ∑ b, ∑ c, spinCap q b c * X (update (update s j b) k c) u := by
   classical
-  rw [mul_apply]
+  rw [Matrix.mul_apply]
   simp only [spinGenerator_apply, ite_mul, zero_mul]
   rw [← Finset.sum_filter]
   have himage : Finset.univ.filter (fun t : Fin n → Bool ↦ ∀ l ∉ ({j, k} : Finset (Fin n)),

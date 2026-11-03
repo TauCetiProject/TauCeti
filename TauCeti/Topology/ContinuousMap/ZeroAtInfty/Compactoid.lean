@@ -66,7 +66,7 @@ theorem IsCompactoidSet.exists_finset_forall_norm_lt {S : Set C₀(I, K)}
     rw [hδ, mul_div_assoc', div_lt_div_iff₀ (by positivity) two_pos]
     nlinarith
   have hi' : x i = (x - ∑ k, a k • v k) i + ∑ k, a k * v k i := by
-    simp [coe_sum, Finset.sum_apply]
+    simp
   calc ‖x i‖ ≤ ‖(x - ∑ k, a k • v k) i‖ + ‖∑ k, a k * v k i‖ := hi' ▸ norm_add_le _ _
     _ < ε / 2 + ε / 2 := add_lt_add_of_lt_of_le
         ((norm_coe_le_norm _ i).trans_lt hx) (hsum.trans hnδ.le)

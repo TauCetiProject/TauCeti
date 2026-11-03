@@ -227,7 +227,7 @@ theorem representation_vermaModule_apply (u : U) (m : VermaModule b lam) :
   | ι x => rw [UniversalEnvelopingAlgebra.representation_ι_apply, vermaModule_ι_smul]
   | algebraMap r => rw [AlgHom.commutes, Module.algebraMap_end_apply, algebraMap_smul]
   | add u w hu hw => rw [map_add, LinearMap.add_apply, hu, hw, add_smul]
-  | mul u w hu hw => rw [map_mul, Module.End.mul_apply, hw, hu, mul_smul]
+  | mul u w hu hw => rw [map_mul, mul_apply_eq_comp, hw, hu, mul_smul]
 
 /-- **The canonical projection** `U(L) → M(lam)`, bundled as a `U(L)`-linear map so that its
 algebraic behaviour — `map_zero`, `map_add`, `map_smul` — is available from the `LinearMap` API
@@ -504,7 +504,7 @@ theorem pow_toEnd_vermaGenerator_ne_zero {f : L} (hf : f ∈ negativeNilradical 
     induction k with
     | zero => simp
     | succ k ih =>
-      rw [pow_succ', Module.End.mul_apply, ih, pow_succ', mul_smul, LieSubalgebra.coe_incl,
+      rw [pow_succ', mul_apply_eq_comp, ih, pow_succ', mul_smul, LieSubalgebra.coe_incl,
         vermaModule_ι_smul, toEnd_apply_apply]
   rw [key, LinearEquiv.map_ne_zero_iff]
   refine pow_ne_zero _ fun h ↦ hf0 ?_
