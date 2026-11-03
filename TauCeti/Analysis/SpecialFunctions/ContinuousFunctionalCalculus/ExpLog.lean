@@ -22,7 +22,8 @@ continuity of `CFC.log` identifies it with `CFC.log` on the strictly positive el
 `CFC.log` is `C^n` on the strictly positive elements for every `n : ℕ∞ω`, including the analytic
 case `n = ω`: near each strictly positive element it agrees on them with a function that is
 analytic on a whole neighbourhood in `A`. The real powers `a ^ s = exp (s • log a)` and the square
-root inherit this smoothness.
+root inherit this smoothness. The same identity and the continuity of `CFC.log` make the real
+powers jointly continuous in the base and the exponent.
 
 The hypothesis on the derivative holds for matrices; see
 `TauCeti/Analysis/Matrix/Exponential/Log.lean`.
@@ -30,6 +31,8 @@ The hypothesis on the derivative holds for matrices; see
 ## Main results
 
 * `CFC.rpow_eq_exp_smul_log`: `a ^ s = exp (s • log a)` for strictly positive `a`.
+* `CFC.continuousOn_rpow_prod`: `(a, s) ↦ a ^ s` is jointly continuous on the strictly positive
+  elements.
 * `CFC.contDiffWithinAt_log_exp`: if `expFDeriv 𝕂 a` is invertible at a self-adjoint `a`, then
   `CFC.log` is `C^n` at `exp a` within the strictly positive elements, for every `n`.
 * `CFC.contDiffOn_log`, `CFC.contDiffOn_rpow`, `CFC.contDiffOn_sqrt`: if `expFDeriv 𝕂 a` is
@@ -67,6 +70,29 @@ theorem rpow_eq_exp_smul_log (a : A) (s : ℝ) (ha : IsStrictlyPositive a := by 
 
 end RpowExpLog
 
+section Continuity
+
+variable {A : Type*} [NormedRing A] [StarRing A] [NormedAlgebra ℝ A] [CompleteSpace A]
+  [IsometricContinuousFunctionalCalculus ℝ A IsSelfAdjoint] [ContinuousStar A] [PartialOrder A]
+  [StarOrderedRing A] [NonnegSpectrumClass ℝ A]
+
+/-- **Real powers are jointly continuous** in the base and the exponent: `(a, s) ↦ a ^ s` is
+continuous on the pairs whose base is strictly positive. For a fixed exponent this is
+`CFC.continuousOn_rpow`. -/
+theorem continuousOn_rpow_prod :
+    ContinuousOn (fun p : A × ℝ ↦ p.1 ^ p.2) ({a : A | IsStrictlyPositive a} ×ˢ Set.univ) := by
+  have hexp : Continuous (exp : A → A) :=
+    continuous_iff_continuousAt.2 fun x ↦ (exp_analytic (𝕂 := ℝ) x).continuousAt
+  have hlog₀ : ContinuousOn (log : A → A) {a : A | IsStrictlyPositive a} :=
+    continuousOn_log.mono fun _ ha ↦ ⟨ha.isSelfAdjoint, ha.isUnit⟩
+  have hlog : ContinuousOn (fun p : A × ℝ ↦ log p.1)
+      ({a : A | IsStrictlyPositive a} ×ˢ Set.univ) :=
+    hlog₀.comp continuousOn_fst fun _ hp ↦ hp.1
+  exact (hexp.comp_continuousOn (continuousOn_snd.smul hlog)).congr fun p hp ↦
+    rpow_eq_exp_smul_log p.1 p.2 hp.1
+
+end Continuity
+
 section Smooth
 
 variable {𝕂 A : Type*} [RCLike 𝕂] [NormedRing A] [StarRing A] [NormedAlgebra ℝ A]
@@ -92,7 +118,7 @@ theorem contDiffWithinAt_log_exp {a : A} (ha : IsSelfAdjoint a)
   let g := hexp.localInverse hderiv hω
   have hg : ContDiffAt 𝕂 ω g (exp a) := hexp.to_localInverse hderiv hω
   have hleft : ∀ᶠ x in 𝓝 a, g (exp x) = x :=
-    (hexp.hasStrictFDerivAt' hderiv hω).eventually_left_inverse
+    (hexp.hasStrictFDerivAt hderiv hω).eventually_left_inverse
   -- `log` is continuous at `exp a` on the strictly positive elements, with value `a` there.
   have hlog : Tendsto log (𝓝[{b : A | IsStrictlyPositive b}] (exp a)) (𝓝 a) := by
     have hcont : ContinuousWithinAt log {b : A | IsSelfAdjoint b ∧ IsUnit b} (exp a) :=

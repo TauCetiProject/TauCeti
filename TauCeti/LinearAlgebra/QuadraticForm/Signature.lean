@@ -24,7 +24,8 @@ opposite index of inertia. It also characterizes positive-definiteness by the ne
 index and the radical. These are convenient consequences of Sylvester's law of inertia which
 complement Mathlib's definitions of `QuadraticMap.PosDef`, `sigPos`, and `sigNeg`.
 
-It also proves that restriction to a subspace cannot increase either index of inertia, that
+It also proves that restriction to a subspace cannot increase either index of inertia, that an
+orthogonal family of vectors of positive (or negative) square bounds the corresponding index, that
 quotienting a quadratic form by its radical preserves both indices, and that multiplication by a
 positive scalar preserves both indices while multiplication by a negative scalar exchanges them; a
 form which a linear automorphism negates has equal indices.
@@ -41,6 +42,9 @@ of positive (negative) square has at most as many members as the positive (negat
   positive index of inertia.
 * `QuadraticForm.sigNeg_restrict_le`: restriction to a subspace cannot increase the
   negative index of inertia.
+* `QuadraticForm.card_le_sigPos_of_isOrthoᵢ` and `QuadraticForm.card_le_sigNeg_of_isOrthoᵢ`: a
+  family of pairwise orthogonal vectors of positive (resp. negative) square bounds the positive
+  (resp. negative) index of inertia from below.
 * `QuadraticForm.sigPos_smul_of_pos` and `QuadraticForm.sigNeg_smul_of_pos`: positive scaling
   preserves both indices.
 * `QuadraticForm.sigPos_smul_of_neg` and `QuadraticForm.sigNeg_smul_of_neg`: negative scaling
@@ -210,6 +214,44 @@ theorem sigNeg_restrict_le (Q : _root_.QuadraticForm K M) (W : Subspace K M) :
     ext x
     simp only [QuadraticMap.restrict_apply, neg_apply]
   simpa only [hneg, sigPos_neg] using sigPos_restrict_le (-Q) W
+
+/-- A finite family of pairwise orthogonal vectors on which a quadratic form is positive spans a
+positive-definite subspace, so its size is at most the positive index of inertia. -/
+theorem card_le_sigPos_of_isOrthoᵢ {ι : Type*} [Fintype ι] {Q : _root_.QuadraticForm K M}
+    {v : ι → M} (hv : Q.polarBilin.IsOrthoᵢ v) (hpos : ∀ i, 0 < Q (v i)) :
+    Fintype.card ι ≤ sigPos Q := by
+  classical
+  have hli : LinearIndependent K v :=
+    LinearMap.linearIndependent_of_isOrthoᵢ hv fun i ↦ by
+      rw [polarBilin_apply_apply, polar_self, two_nsmul]
+      exact (add_pos (hpos i) (hpos i)).ne'
+  rw [← finrank_span_eq_card hli]
+  refine le_sigPos_of_posDef Q fun ⟨x, hx⟩ hx0 ↦ ?_
+  obtain ⟨c, rfl⟩ := (Submodule.mem_span_range_iff_exists_fun K).1 hx
+  -- The cross terms of `Q (∑ i, c i • v i)` vanish by orthogonality.
+  have hcross : ∑ ij ∈ univ.sym2 with ¬ij.IsDiag,
+      polarSym2 Q (ij.map fun i ↦ c i • v i) = 0 := by
+    refine Finset.sum_eq_zero fun ij hij ↦ ?_
+    induction ij using Sym2.ind with
+    | h i j =>
+      have hij' : i ≠ j := by simpa using (Finset.mem_filter.1 hij).2
+      simp [← polarBilin_apply_apply, hv hij']
+  obtain ⟨i, hi⟩ : ∃ i, c i ≠ 0 := by
+    by_contra! h
+    exact hx0 (by simp [h])
+  rw [restrict_apply, Q.map_sum, hcross, add_zero]
+  simp only [QuadraticMap.map_smul, smul_eq_mul]
+  exact Finset.sum_pos' (fun j _ ↦ mul_nonneg (mul_self_nonneg _) (hpos j).le)
+    ⟨i, mem_univ _, mul_pos (mul_self_pos.2 hi) (hpos i)⟩
+
+/-- A finite family of pairwise orthogonal vectors on which a quadratic form is negative spans a
+negative-definite subspace, so its size is at most the negative index of inertia. -/
+theorem card_le_sigNeg_of_isOrthoᵢ {ι : Type*} [Fintype ι] {Q : _root_.QuadraticForm K M}
+    {v : ι → M} (hv : Q.polarBilin.IsOrthoᵢ v) (hneg : ∀ i, Q (v i) < 0) :
+    Fintype.card ι ≤ sigNeg Q := by
+  rw [← sigPos_neg]
+  refine card_le_sigPos_of_isOrthoᵢ (fun i j hij ↦ ?_) fun i ↦ neg_pos.2 (hneg i)
+  simpa [polar_neg] using hv hij
 
 section Prod
 

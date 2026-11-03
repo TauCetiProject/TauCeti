@@ -135,7 +135,7 @@ noncomputable instance laurentSeriesLieAlgebra : LieAlgebra R (Derivation R R⸨
   __ := (inferInstance : Module R (Derivation R R⸨X⸩ R⸨X⸩))
   lie_smul r δ ε := by
     ext1 f
-    simp only [laurentSeries_commutator_apply, Derivation.smul_apply,
+    simp only [laurentSeries_commutator_apply, _root_.smul_apply,
       smul_sub]
     congr 1
     -- The input action on a derivation is algebra-induced; its output action is coefficientwise.
@@ -152,7 +152,7 @@ theorem lie_smul_laurentSeriesDerivation {R : Type*} [CommRing R] (a b : R⸨X�
       (a * TauCeti.laurentSeriesDerivation R b - b * TauCeti.laurentSeriesDerivation R a) •
         TauCeti.laurentSeriesDerivation R := by
   ext1 f
-  simp only [Derivation.laurentSeries_commutator_apply, Derivation.smul_apply, smul_eq_mul,
+  simp only [Derivation.laurentSeries_commutator_apply, _root_.smul_apply, smul_eq_mul,
     Derivation.leibniz]
   ring
 

@@ -204,7 +204,8 @@ theorem ringKrullDim_eq_of_flat_of_map_maximalIdeal_eq [IsLocalRing R] [IsLocalR
     [IsNoetherianRing R] [IsNoetherianRing S] [Module.Flat R S]
     (h : (maximalIdeal R).map (algebraMap R S) = maximalIdeal S) :
     ringKrullDim S = ringKrullDim R := by
-  have : IsLocalHom (algebraMap R S) := ((local_hom_TFAE (algebraMap R S)).out 1 3).mpr h.le
+  have : IsLocalHom (algebraMap R S) :=
+    ((IsLocalRing.local_hom_tfae (algebraMap R S)).out 1 3).mpr h.le
   rw [← maximalIdeal_height_eq_ringKrullDim, ← maximalIdeal_height_eq_ringKrullDim,
     Ideal.height_eq_height_add_of_liesOver_of_hasGoingDown (maximalIdeal R) (maximalIdeal S), h,
     Ideal.map_quotient_self, Ideal.height_bot, add_zero]
