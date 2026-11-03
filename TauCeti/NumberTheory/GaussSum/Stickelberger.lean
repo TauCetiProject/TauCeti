@@ -357,11 +357,8 @@ private theorem intValuation_natCast_eq_exp {p : ℕ} [Fact p.Prime] {F : Type*}
   have hζ1 : ζ ≠ 1 := fun h ↦ by simpa [h] using hζ.symm
   have hζp : IsPrimitiveRoot ζ p :=
     IsPrimitiveRoot.iff_orderOf.2 (orderOf_eq_prime (zeta_pow_eq_one hψ) hζ1)
-  obtain ⟨u, hu⟩ := hζp.associated_sub_one_pow_prime
-  have hu1 : v.intValuation (u : R) = 1 := by
-    rw [HeightOneSpectrum.intValuation_eq_one_iff_mem_primeCompl, Ideal.mem_primeCompl_iff]
-    exact fun h ↦ v.isPrime.ne_top (Ideal.eq_top_of_isUnit_mem _ h u.isUnit)
-  rw [← hu, map_mul, hu1, mul_one, map_pow, hζ, ← WithZero.exp_nsmul, smul_neg, nsmul_one]
+  rw [hζp.valuation_natCast_eq_valuation_sub_one_pow v.intValuation v.intValuation_le_one, hζ,
+    ← WithZero.exp_nsmul, smul_neg, nsmul_one]
 
 open IsDedekindDomain in
 /-- **The Gauss sum valuation normalised at `p`.** Under the hypotheses of
