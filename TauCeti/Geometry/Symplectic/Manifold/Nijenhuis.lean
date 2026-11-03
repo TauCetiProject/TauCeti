@@ -375,8 +375,8 @@ variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V] [FiniteDimension
 The right side uses the ordinary zero of the model space, not a tangent-space instance. -/
 theorem SmoothAlmostComplexStructure.nijenhuis_model_eq_zero_iff
     (J : SmoothAlmostComplexStructure 𝓘(ℝ, V) V) (x : V) :
-    let N : V →L[ℝ] V →L[ℝ] V := J.nijenhuis x
-    J.nijenhuis x = 0 ↔ ∀ v w : V, N v w = 0 := by
+    J.nijenhuis x = 0 ↔
+      ∀ v w : V, (J.nijenhuis x : V →L[ℝ] V →L[ℝ] V) v w = (0 : V) := by
   -- TangentSpace of the model manifold is V. Make this identification once at the tensor level
   -- so that zero-map evaluation and extensionality use the ordinary model-space instances.
   let N : V →L[ℝ] V →L[ℝ] V := J.nijenhuis x
