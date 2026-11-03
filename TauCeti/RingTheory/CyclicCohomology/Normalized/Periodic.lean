@@ -7,7 +7,6 @@ module
 
 public import TauCeti.RingTheory.CyclicCohomology.Normalized.Basic
 public import TauCeti.Algebra.Homology.ModuleCat.Basic
-public import Mathlib.Algebra.Homology.ShortComplex.HomologicalComplex
 public import Mathlib.Data.ZMod.Defs
 public import Mathlib.LinearAlgebra.DFinsupp
 public import TauCeti.Data.DFinsupp.ExtendDomain
@@ -423,8 +422,10 @@ theorem mem_normalizedPeriodicCocycles_iff_complex (i : ZMod 2)
     (φ : normalizedPeriodicCochains R A M i) :
     φ ∈ normalizedPeriodicCocycles R A M i ↔
       (normalizedPeriodicCochainComplex R A M).d i (i + 1)
-        ((normalizedPeriodicCochainComplexXIso R A M i).inv φ) = 0 :=
-  Iff.rfl
+        ((normalizedPeriodicCochainComplexXIso R A M i).inv φ) = 0 := by
+  rw [mem_normalizedPeriodicCocycles_iff,
+    ← (normalizedPeriodicCochainComplexXIso R A M (i + 1)).toLinearEquiv.map_eq_zero_iff,
+    Iso.toLinearEquiv_apply, normalizedPeriodicCochainComplex_d_apply, Iso.inv_hom_id_apply]
 
 /-- A cyclic normalized `n`-cocycle, placed in its own degree, is a periodic cocycle. -/
 theorem single_mem_normalizedPeriodicCocycles_of_mem_cyclicCochains {n : ℕ}
