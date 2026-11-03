@@ -92,16 +92,18 @@ def gradedProjective :
     ObjectProperty (DGHomotopyCategory R (CurvedDGRightModuleCat.{u, u, u} h)) :=
   fun X ↦ Projective (toGradedModuleCat X.underlying)
 
-/-- A curved module is graded-projective when its underlying graded right module is projective. -/
+/-- An object of the curved homotopy category is graded-projective when its underlying graded
+right module is projective. -/
 @[simp]
-theorem gradedProjective_of_iff (M : CurvedDGRightModuleCat.{u, u, u} h) :
-    gradedProjective R h (DGHomotopyCategory.of R M) ↔ Projective (toGradedModuleCat M) :=
+theorem gradedProjective_iff (X : DGHomotopyCategory R (CurvedDGRightModuleCat.{u, u, u} h)) :
+    gradedProjective R h X ↔ Projective (toGradedModuleCat X.underlying) :=
   Iff.rfl
 
 /-- Shifts of graded-projective curved modules are graded-projective: the underlying graded
 module of a cohomological shift is a grading shift. -/
 instance : (gradedProjective R h).IsStableUnderShift ℤ where
-  isStableUnderShiftBy n := ⟨fun X (_ : Projective (toGradedModuleCat X.underlying)) ↦
+  isStableUnderShiftBy n := ⟨fun X hX ↦ (gradedProjective_iff _).2 <|
+    have := (gradedProjective_iff X).1 hX
     Projective.of_iso ((closedShiftFunctorCompForgetDifferentialIso (h := h) n).app
       (ForgetEnrichment.of (CochainComplex (ModuleCat R) ℤ) X.underlying)).symm
       (GradedModuleCat.projective_shiftObj (toGradedModuleCat X.underlying) (-n))⟩
@@ -328,7 +330,8 @@ theorem totalizations_le_rightOrthogonal_gradedProjective :
   rw [totalization_eq]
   exact (gradedProjective R h).rightOrthogonal_obj₃_of_bijective
     (coneTriangle (coneDesc S.f S.g S.zero)) (coneTriangle_distinguished _)
-    fun K (hK : Projective (toGradedModuleCat K.underlying)) ↦
+    fun K hK ↦
+      have := (gradedProjective_iff K).1 hK
       bijective_comp_coneDesc_of_shortExact hS K.underlying
 
 variable (R h) in
