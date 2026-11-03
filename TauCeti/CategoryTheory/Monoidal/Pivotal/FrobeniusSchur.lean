@@ -266,7 +266,7 @@ theorem coe_frobeniusSchurEnd (n : ℕ) : ⇑(frobeniusSchurEnd k V n) = frobeni
 /-- The `(n + 1)`-st power of `E_V^{(n+1)}` is the identity. -/
 theorem frobeniusSchurEnd_pow_eq_one (n : ℕ) : frobeniusSchurEnd k V n ^ (n + 1) = 1 := by
   ext f
-  rw [Module.End.pow_apply, Module.End.one_apply, coe_frobeniusSchurEnd,
+  rw [pow_apply_eq_iterate, one_apply_eq_self, coe_frobeniusSchurEnd,
     iterate_frobeniusSchurRotate_eq_id, id]
 
 /-- The `n`-th *Frobenius–Schur indicator* `ν_n(V)` of an object `V` of a `k`-linear pivotal
