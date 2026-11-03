@@ -24,8 +24,7 @@ count the unit norm classes, including in residue characteristic two.
 `mem_range_uniformizerNormSquareClass_iff` identifies the counted range with unit norms.
 
 The proof uses the sharp local square theorem and the obstruction to a square differing
-from one to odd order below `2 v_K(2)`. It does not use the quadratic norm-index theorem
-or bimultiplicativity of the Hilbert symbol.
+from one to odd order below `2 v_K(2)`.
 
 ## References
 
@@ -42,7 +41,7 @@ variable {K : Type*} [Field K] [ValuativeRel K] [TopologicalSpace K]
   [IsNonarchimedeanLocalField K]
 
 omit [TopologicalSpace K] [IsNonarchimedeanLocalField K] in
-/-- The values `1 - π t²` of the uniformizer norm family have valuation zero. -/
+/-- The values `1 - π t²` of the uniformizer norm family have valuation one. -/
 theorem valuation_one_sub_uniformizer_mul_sq {π : 𝒪[K]} (hπ : Irreducible π)
     (t : 𝒪[K]) : valuation K (1 - (π : K) * (t : K) ^ 2) = 1 := by
   apply (valuation K).map_one_sub_of_lt
@@ -60,13 +59,18 @@ theorem one_sub_uniformizer_mul_sq_ne_zero {π : 𝒪[K]} (hπ : Irreducible π)
   exact zero_ne_one hv
 
 omit [TopologicalSpace K] [IsNonarchimedeanLocalField K] in
-private theorem normFamily_div_sub_one {π : 𝒪[K]} (hπ : Irreducible π) (s t : 𝒪[K]) :
-    (1 - (π : K) * (t : K) ^ 2) / (1 - (π : K) * (s : K) ^ 2) - 1 =
+private theorem valuation_normFamily_div_sub_one {π : 𝒪[K]} (hπ : Irreducible π)
+    (s t : 𝒪[K]) :
+    valuation K ((1 - (π : K) * (t : K) ^ 2) / (1 - (π : K) * (s : K) ^ 2) - 1) =
+      valuation K (π : K) * valuation K ((t : K) - s) * valuation K ((t : K) + s) := by
+  have hid : (1 - (π : K) * (t : K) ^ 2) / (1 - (π : K) * (s : K) ^ 2) - 1 =
       -(π : K) * ((t : K) - s) * ((t : K) + s) /
         (1 - (π : K) * (s : K) ^ 2) := by
-  rw [div_sub_one (one_sub_uniformizer_mul_sq_ne_zero hπ s)]
-  congr 1
-  ring
+    rw [div_sub_one (one_sub_uniformizer_mul_sq_ne_zero hπ s)]
+    congr 1
+    ring
+  rw [hid, map_div₀, map_mul, map_mul, Valuation.map_neg,
+    valuation_one_sub_uniformizer_mul_sq hπ s, div_one]
 
 /-- Two members of the uniformizer norm family differ by a square exactly when their
 parameters differ by an element of valuation at least `v_K(2)`. -/
@@ -76,7 +80,12 @@ theorem isSquare_div_one_sub_uniformizer_mul_sq_iff (h2 : (2 : K) ≠ 0)
       valuation K ((t : K) - s) ≤ valuation K (2 : K) := by
   have hπlt := Valuation.integer.v_irreducible_lt_one (v := valuation K) hπ
   have hv2 : valuation K (2 : K) = valuation K (π : K) ^ natCastValuation K 2 h2 := by
-    simpa using valuation_natCast_eq_pow hπ 2 h2
+    simpa only [Nat.cast_ofNat] using valuation_natCast_eq_pow hπ 2 h2
+  -- Both directions compare `t + s = (t - s) + 2s` with the depth of `2`.
+  have hid : (t : K) + s = ((t : K) - s) + 2 * s := by ring
+  have htwo : valuation K (2 * (s : K)) ≤ valuation K (2 : K) := by
+    simpa only [map_mul, mul_one] using
+      mul_le_mul_right ((Valuation.mem_integer_iff _ _).mp s.2) (valuation K (2 : K))
   constructor
   · -- Below depth `v_K(2)`, the quotient differs from one to the odd order `2k + 1`.
     intro hsq
@@ -85,54 +94,41 @@ theorem isSquare_div_one_sub_uniformizer_mul_sq_iff (h2 : (2 : K) ≠ 0)
     have hdiff0 : (t : K) - s ≠ 0 := by
       intro h
       simp [h] at hlt
-    let x : Kˣ := Units.mk0 ((t : K) - s) hdiff0
-    have hxnonneg : 0 ≤ (normalizedValuation K x).toAdd :=
-      (mem_integer_iff_toAdd_normalizedValuation_nonneg x).mp (t - s).2
-    let k := (normalizedValuation K x).toAdd.toNat
-    have hxk : (normalizedValuation K x).toAdd = (k : ℤ) := (Int.toNat_of_nonneg hxnonneg).symm
+    -- The DVR factorization gives the nonnegative order of the parameter difference.
+    obtain ⟨k, u, hu⟩ := _root_.IsDiscreteValuationRing.eq_unit_mul_pow_irreducible (x := t - s)
+      (sub_ne_zero.mpr (fun h => hdiff0 (by rw [h, sub_self]))) hπ
     have hxv : valuation K ((t : K) - s) = valuation K (π : K) ^ k := by
-      simpa only [x, Units.val_mk0, zpow_natCast] using
-        (toAdd_normalizedValuation_eq_iff_valuation_eq_zpow
-          (normalizedValuation_irreducible hπ) _ x).mp hxk
+      have hvu := (Valuation.Integers.isUnit_iff_valuation_eq_one
+        (Valuation.integer.integers (valuation K))).mp u.isUnit
+      simp only [Algebra.algebraMap_ofSubsemiring_apply] at hvu
+      rw [← AddSubgroupClass.coe_sub, hu, Subring.coe_mul, Subring.coe_pow, map_mul, hvu, one_mul,
+        map_pow]
     have hk : k < natCastValuation K 2 h2 := by
       rw [hv2, hxv] at hlt
       exact (pow_lt_pow_iff_right_of_lt_one₀
         (Valuation.pos_iff _ |>.mpr (fun h => hπ.ne_zero (Subtype.ext h))) hπlt).mp hlt
     have hvsum : valuation K ((t : K) + s) = valuation K ((t : K) - s) := by
-      have htwo : valuation K (2 * (s : K)) ≤ valuation K (2 : K) := by
-        simpa only [map_mul, mul_one] using
-          mul_le_mul_right ((Valuation.mem_integer_iff _ _).mp s.2) (valuation K (2 : K))
-      have hsmall := htwo.trans_lt hlt
-      calc
-        valuation K ((t : K) + s) = valuation K (((t : K) - s) + 2 * s) := by
-          congr 1
-          ring
-        _ = _ := (valuation K).map_add_eq_of_lt_left hsmall
+      rw [hid]
+      exact (valuation K).map_add_eq_of_lt_left (htwo.trans_lt hlt)
     obtain ⟨ξ, hξ⟩ := hsq
     apply valuation_sq_sub_one_ne_pow_odd h2 hπ hk ξ
     have hξsq : ξ ^ 2 = (1 - (π : K) * (t : K) ^ 2) /
         (1 - (π : K) * (s : K) ^ 2) := by simpa only [sq] using hξ.symm
-    rw [hξsq, normFamily_div_sub_one hπ, map_div₀, map_mul, map_mul,
-      Valuation.map_neg, valuation_one_sub_uniformizer_mul_sq hπ s, div_one, hvsum, hxv]
+    rw [hξsq, valuation_normFamily_div_sub_one hπ, hvsum, hxv]
     rw [pow_succ, mul_comm 2 k, pow_mul, sq]
     ac_rfl
   · -- Congruent parameters give a quotient in the square subgroup `U(K, 2 v_K(2) + 1)`.
     intro hdiff
     have hsum : valuation K ((t : K) + s) ≤ valuation K (2 : K) := by
-      have hid : (t : K) + s = ((t : K) - s) + 2 * s := by ring
       rw [hid]
-      apply ((valuation K).map_add _ _).trans
-      refine max_le hdiff ?_
-      simpa only [map_mul, mul_one] using
-        mul_le_mul_right ((Valuation.mem_integer_iff _ _).mp s.2) (valuation K (2 : K))
+      exact ((valuation K).map_add _ _).trans (max_le hdiff htwo)
     let b : Kˣ := Units.mk0
       ((1 - (π : K) * (t : K) ^ 2) / (1 - (π : K) * (s : K) ^ 2))
       (div_ne_zero (one_sub_uniformizer_mul_sq_ne_zero hπ t)
         (one_sub_uniformizer_mul_sq_ne_zero hπ s))
     have hb : b ∈ unitFiltration K (2 * natCastValuation K 2 h2 + 1) := by
       apply (mem_unitFiltration_succ_valuation _ b π hπ).mpr
-      rw [Units.val_mk0, normFamily_div_sub_one hπ, map_div₀, map_mul, map_mul,
-        Valuation.map_neg, valuation_one_sub_uniformizer_mul_sq hπ s, div_one, map_pow]
+      rw [Units.val_mk0, valuation_normFamily_div_sub_one hπ, map_pow]
       calc
         valuation K (π : K) * valuation K ((t : K) - s) * valuation K ((t : K) + s) ≤
             valuation K (π : K) * valuation K (2 : K) * valuation K (2 : K) :=
@@ -154,10 +150,8 @@ theorem isSquare_div_one_sub_uniformizer_mul_sq_iff_sub_mem (h2 : (2 : K) ≠ 0)
   have hmem := Set.ext_iff.mp
     (hπ.maximalIdeal_pow_eq_setOfPred_le_v_coe_pow (valuation K)
       (natCastValuation K 2 h2)) (t - s)
-  have hv2 : valuation K (2 : K) = valuation K (π : K) ^ natCastValuation K 2 h2 := by
-    simpa using valuation_natCast_eq_pow hπ 2 h2
-  rw [hv2]
-  simpa using hmem.symm
+  simpa only [Set.mem_ofPred_eq, SetLike.mem_coe, ← valuation_natCast_eq_pow hπ 2 h2,
+    Nat.cast_ofNat, AddSubgroupClass.coe_sub] using hmem.symm
 
 /-- The square class of the unit norm `1 - π t²`, for a uniformizer `π`. -/
 noncomputable def uniformizerNormSquareClass (K : Type*) [Field K] [ValuativeRel K]
@@ -191,33 +185,35 @@ theorem mem_range_uniformizerNormSquareClass_iff {π : 𝒪[K]} (hπ : Irreducib
     c ∈ Set.range (uniformizerNormSquareClass K hπ) ↔
       ∃ b : Kˣ, valuation K (b : K) = 1 ∧
         b ∈ quadraticNormSubgroup (π : K) ∧ squareClassHom b = c := by
+  let a := Units.mk0 (π : K) (fun h => hπ.ne_zero (Subtype.ext h))
+  have ha : IsUniformizer K a :=
+    (isUniformizer_def a).mpr (normalizedValuation_irreducible hπ)
   constructor
   · rintro ⟨t, rfl⟩
     let b := Units.mk0 (1 - (π : K) * (t : K) ^ 2)
       (one_sub_uniformizer_mul_sq_ne_zero hπ t)
-    refine ⟨b, valuation_one_sub_uniformizer_mul_sq hπ t, ?_,
-      (uniformizerNormSquareClass_def hπ t).symm⟩
-    apply (mem_quadraticNormSubgroup_iff_exists_norm_eq _ b).mpr
-    refine ⟨⟨1, (t : K)⟩, ?_⟩
-    simp [b, QuadraticAlgebra.norm_def, sq, mul_assoc]
+    have hbv : valuation K (b : K) = 1 := valuation_one_sub_uniformizer_mul_sq hπ t
+    refine ⟨b, hbv, ?_, (uniformizerNormSquareClass_def hπ t).symm⟩
+    exact (mem_quadraticNormSubgroup_iff_of_isUniformizer ha hbv).mpr
+      ⟨1, t, by simp only [b, a, Units.val_one, Subring.coe_one, one_pow, one_mul,
+        Units.val_mk0]⟩
   · rintro ⟨b, hbv, hbn, rfl⟩
-    let a := Units.mk0 (π : K) (fun h => hπ.ne_zero (Subtype.ext h))
-    have ha : IsUniformizer K a :=
-      (isUniformizer_def a).mpr (normalizedValuation_irreducible hπ)
     obtain ⟨u, t, hbt⟩ := (mem_quadraticNormSubgroup_iff_of_isUniformizer ha hbv).mp hbn
     let v := Units.map (algebraMap 𝒪[K] K).toMonoidHom u
     let n := Units.mk0 (1 - (π : K) * (t : K) ^ 2)
       (one_sub_uniformizer_mul_sq_ne_zero hπ t)
     have hb : b = v ^ 2 * n := by
       apply Units.ext
-      simpa [v, n, a, Algebra.algebraMap_ofSubsemiring_apply] using hbt
+      simpa only [v, n, a, RingHom.toMonoidHom_eq_coe, Units.val_mul, Units.val_pow_eq_pow_val,
+        Units.coe_map, MonoidHom.coe_ofClass, Algebra.algebraMap_ofSubsemiring_apply,
+        Units.val_mk0] using hbt
     have hv : squareClassHom (v ^ 2) = 1 :=
       (squareClassHom_eq_one_iff _).mpr ⟨v, pow_two v⟩
     refine ⟨t, ?_⟩
     rw [uniformizerNormSquareClass_def, hb, map_mul, hv, one_mul]
 
 /-- The uniformizer norm family meets exactly `q ^ v_K(2)` square classes, where `q` is
-the residue-field cardinality. The count is direct and does not use the norm index. -/
+the residue-field cardinality. -/
 theorem ncard_range_uniformizerNormSquareClass (h2 : (2 : K) ≠ 0)
     {π : 𝒪[K]} (hπ : Irreducible π) :
     (Set.range (uniformizerNormSquareClass K hπ)).ncard =
