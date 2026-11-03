@@ -7,6 +7,7 @@ module
 
 public import Mathlib.AlgebraicGeometry.AffineScheme
 public import Mathlib.AlgebraicGeometry.Properties
+public import Mathlib.CategoryTheory.Sites.Spaces
 import TauCeti.RingTheory.Localization.Tower
 
 /-!
@@ -52,6 +53,9 @@ be injective. This is the local reason why an affine blowup changes nothing away
   isomorphism over `D(a)`.
 * `AlgebraicGeometry.IsAffineOpen.mem_basicOpen_iff_notMem_primeIdealOf`: on an affine open, a
   point lies in the basic open of a section iff the section is not in the point's prime ideal.
+* `AlgebraicGeometry.IsAffineOpen.span_setOf_basicOpen_mem_sieve_eq_top`: the basic opens of an
+  affine open `U` lying in a covering sieve of `U` are defined by functions generating the unit
+  ideal of `Γ(X, U)`.
 * `TauCeti.AlgebraicGeometry.overPullback_map_bijective_of_isIso_appTop`: over an affine base,
   base change along `j : T ⟶ S` is a bijection on morphisms `Y ⟶ Y'` into an affine `Y'` when
   `Γ(Y, 𝒪) → Γ(Y ×_S T, 𝒪)` is an isomorphism.
@@ -171,6 +175,18 @@ theorem IsAffineOpen.mem_basicOpen_iff_notMem_primeIdealOf {X : Scheme.{u}} {x :
   have := hV.isLocalization_stalk ⟨x, hx⟩
   exact (X.mem_basicOpen r x hx).trans
     (IsLocalization.AtPrime.isUnit_to_map_iff (X.presheaf.stalk x) _ r)
+
+/-- The basic opens of an affine open `U` that lie in a covering sieve of `U` (for the Zariski
+topology) are defined by functions generating the unit ideal of `Γ(X, U)`. -/
+theorem IsAffineOpen.span_setOf_basicOpen_mem_sieve_eq_top {X : Scheme.{u}} {U : X.Opens}
+    (hU : IsAffineOpen U) {S : Sieve U}
+    (hS : S ∈ Opens.grothendieckTopology X U) :
+    Ideal.span {f : Γ(X, U) | S (homOfLE (X.basicOpen_le f))} = ⊤ := by
+  rw [← hU.iSup_basicOpen_eq_self_iff]
+  refine le_antisymm (iSup_le fun f ↦ X.basicOpen_le f.1) fun x hx ↦ ?_
+  obtain ⟨V, i, hi, hxV⟩ := hS x hx
+  obtain ⟨f, hfV, hxf⟩ := hU.exists_basicOpen_le ⟨x, hxV⟩ hx
+  exact TopologicalSpace.Opens.mem_iSup.2 ⟨⟨f, S.downward_closed hi (homOfLE hfV)⟩, hxf⟩
 
 end AlgebraicGeometry
 
