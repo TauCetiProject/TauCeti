@@ -5,8 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.LinearAlgebra.IntegralLattice.Rank24.Glue.EnumeratedRows
-public import TauCeti.LinearAlgebra.IntegralLattice.RootLattice.GlueAlphabet.Roots
+public import TauCeti.LinearAlgebra.IntegralLattice.Rank24.Glue.Lagrangian
 
 /-!
 # The rootful rank-24 lattices glued from the table
@@ -29,13 +28,13 @@ representatives can be chosen to be shortest vectors of their cosets, of norm `�
 Uniformly in the row, `N_r` is even, positive definite and of rank `24`, and it is unimodular
 exactly when `H_r` has the displayed order `|H|`, since `|H|² = |A_R|`.
 
-The finite checks of the table then specialize these statements.  For the 19 rows whose glue
-subgroup is enumerated in `TauCeti.LinearAlgebra.IntegralLattice.Rank24.Glue.EnumeratedRows`, that
-is all rows other than `A₁²⁴`, `A₂¹²`, `D₄⁶` and `A₁₁ D₇ E₆`, the glue subgroup has order `|H|`, so
-`N_r` is unimodular, and every nonzero glue word has minimum norm at least `4`.  By the
-coset-minimum theorem, `N_r` then has exactly the norm-`2` vectors of `R_r`, and its root
-sublattice is literally the carrier of `R_r`.  This root-system statement is derived from the
-glue minima, not from evenness, unimodularity or a root count.
+The finite checks of the table, proved for every row in
+`TauCeti.LinearAlgebra.IntegralLattice.Rank24.Glue.Lagrangian`, then specialize these statements:
+the glue subgroup of every row has order `|H|`, so `N_r` is unimodular, and every nonzero glue
+word has minimum norm at least `4`.  By the coset-minimum theorem, `N_r` then has exactly the
+norm-`2` vectors of `R_r`, and its root sublattice is literally the carrier of `R_r`.  This
+root-system statement is derived from the glue minima, not from evenness, unimodularity or a root
+count.
 
 ## Main declarations
 
@@ -49,10 +48,10 @@ glue minima, not from evenness, unimodularity or a root count.
 * `TauCeti.RootfulNiemeierType.isEven_lattice`, `isPosDef_lattice`, `finrank_lattice`.
 * `TauCeti.RootfulNiemeierType.isUnimodular_lattice_iff`: `N_r` is unimodular exactly when
   `|H_r| = |H|`.
-* `TauCeti.RootfulNiemeierType.isUnimodular_lattice_of_ne`,
-  `TauCeti.RootfulNiemeierType.image_vectorsOfNorm_two_lattice_of_ne`,
-  `TauCeti.RootfulNiemeierType.span_vectorsOfNorm_two_lattice_of_ne`: unimodularity, the norm-`2`
-  vectors and the root sublattice for the enumerated rows.
+* `TauCeti.RootfulNiemeierType.isUnimodular_lattice`,
+  `TauCeti.RootfulNiemeierType.image_vectorsOfNorm_two_lattice`,
+  `TauCeti.RootfulNiemeierType.span_vectorsOfNorm_two_lattice`: unimodularity, the norm-`2`
+  vectors and the root sublattice of every row.
 
 ## References
 
@@ -172,38 +171,30 @@ theorem isUnimodular_lattice_iff (r : RootfulNiemeierType) :
     ← glueOrder_sq_eq_natCard_glueModule]
   exact (Nat.pow_left_injective two_ne_zero).eq_iff
 
-/-! ### The enumerated rows -/
+/-! ### Unimodularity and the root sublattice -/
 
-/-- **The lattice is unimodular** for every row other than `A₁²⁴`, `A₂¹²`, `D₄⁶` and
-`A₁₁ D₇ E₆`. -/
-theorem isUnimodular_lattice_of_ne (r : RootfulNiemeierType) (h₁ : r ≠ .a1TwentyFourth)
-    (h₂ : r ≠ .a2Twelfth) (h₃ : r ≠ .d4Sixth) (h₄ : r ≠ .a11d7e6) :
-    r.lattice.IsUnimodular :=
-  (isUnimodular_lattice_iff r).mpr (natCard_glueSubgroup_of_ne r h₁ h₂ h₃ h₄)
+/-- **The lattice of every row is unimodular.** -/
+theorem isUnimodular_lattice (r : RootfulNiemeierType) : r.lattice.IsUnimodular :=
+  (isUnimodular_lattice_iff r).mpr (natCard_glueSubgroup r)
 
-/-- **Gluing adds no roots**: for every row other than `A₁²⁴`, `A₂¹²`, `D₄⁶` and `A₁₁ D₇ E₆`, the
-norm-`2` vectors of `N_r` are exactly the norm-`2` vectors of `R_r`, compared in the common
-ambient space.  In particular every norm-`2` vector of `N_r` lies in `R_r`. -/
-theorem image_vectorsOfNorm_two_lattice_of_ne (r : RootfulNiemeierType)
-    (h₁ : r ≠ .a1TwentyFourth) (h₂ : r ≠ .a2Twelfth) (h₃ : r ≠ .d4Sixth) (h₄ : r ≠ .a11d7e6) :
+/-- **Gluing adds no roots**: for every row, the norm-`2` vectors of `N_r` are exactly the norm-`2`
+vectors of `R_r`, compared in the common ambient space.  In particular every norm-`2` vector of
+`N_r` lies in `R_r`. -/
+theorem image_vectorsOfNorm_two_lattice (r : RootfulNiemeierType) :
     (fun x : r.lattice ↦ (x : ∀ i, Fin (r.componentType i).rank → ℚ)) ''
         r.lattice.vectorsOfNorm 2 =
       (fun x : r.rootLattice ↦ (x : ∀ i, Fin (r.componentType i).rank → ℚ)) ''
         r.rootLattice.vectorsOfNorm 2 :=
   DynkinType.image_vectorsOfNorm_gluedLattice_eq _ _ r.valid_componentType _ _
-    (fun _ hw hw0 ↦ four_le_sum_glueMinimum_of_mem_glueSubgroup_of_ne r h₁ h₂ h₃ h₄ hw hw0)
-    (by norm_num)
+    (fun _ hw hw0 ↦ four_le_sum_glueMinimum_of_mem_glueSubgroup r hw hw0) (by norm_num)
 
-/-- **The root sublattice of `N_r` is `R_r`**: for every row other than `A₁²⁴`, `A₂¹²`, `D₄⁶` and
-`A₁₁ D₇ E₆`, the norm-`2` vectors of `N_r` span exactly the carrier of the orthogonal sum of the
-component root lattices. -/
-theorem span_vectorsOfNorm_two_lattice_of_ne (r : RootfulNiemeierType)
-    (h₁ : r ≠ .a1TwentyFourth) (h₂ : r ≠ .a2Twelfth) (h₃ : r ≠ .d4Sixth) (h₄ : r ≠ .a11d7e6) :
+/-- **The root sublattice of `N_r` is `R_r`**: for every row, the norm-`2` vectors of `N_r` span
+exactly the carrier of the orthogonal sum of the component root lattices. -/
+theorem span_vectorsOfNorm_two_lattice (r : RootfulNiemeierType) :
     Submodule.span ℤ ((fun x : r.lattice ↦ (x : ∀ i, Fin (r.componentType i).rank → ℚ)) ''
         r.lattice.vectorsOfNorm 2) = r.rootLattice.carrier :=
   DynkinType.span_vectorsOfNorm_two_gluedLattice _ _ r.valid_componentType _ _
-    (fun _ hw hw0 ↦ four_le_sum_glueMinimum_of_mem_glueSubgroup_of_ne r h₁ h₂ h₃ h₄ hw hw0)
-    (by norm_num)
+    (fun _ hw hw0 ↦ four_le_sum_glueMinimum_of_mem_glueSubgroup r hw hw0) (by norm_num)
 
 end RootfulNiemeierType
 
