@@ -86,6 +86,9 @@ nothing more.
   `TauCeti.Octonion.moufang_middle`: the three **Moufang identities**.
 * `TauCeti.Octonion.mul_self`: every octonion satisfies its rank-two equation
   `x * x = trace x • x - norm x • 1`.
+* `TauCeti.Octonion.nondegenerate_associated_normQuadraticForm`: the symmetric bilinear form of the
+  norm is nondegenerate when `2` is invertible.
+* `TauCeti.Octonion.exists_eq_smul_one_of_forall_mul_mul_eq`: the nucleus of `𝕆` is the scalars.
 * `TauCeti.Octonion.finrank_imaginary`: the imaginary octonions, the trace-zero subspace, are
   `7`-dimensional. The derivation algebra `Der 𝕆` is `TauCeti.derivationLieAlgebra R (Octonion R)`
   (`TauCeti/Algebra/Lie/Derivation/Basic.lean`), of rank `14` by
@@ -859,6 +862,51 @@ theorem finrank_imaginary (R : Type*) [CommRing R] [StrongRankCondition R] :
     Module.finrank R (imaginary R) = 7 := by
   rw [(imaginaryLinearEquivProd R).finrank_eq]
   simp
+
+/-! ### Nondegeneracy of the norm form and the nucleus -/
+
+/-- **The symmetric bilinear form of the norm is nondegenerate** when `2` is invertible. -/
+theorem nondegenerate_associated_normQuadraticForm [Invertible (2 : R)] :
+    (QuadraticMap.associated (normQuadraticForm R)).Nondegenerate := by
+  -- Pairing with the four kinds of basis vector of the Zorn model reads off the four entries of an
+  -- octonion.
+  refine (QuadraticForm.associated_isSymm R (normQuadraticForm R)).isRefl
+    |>.nondegenerate_iff_separatingLeft.mpr fun x hx => ?_
+  have hp (y : Octonion R) : QuadraticMap.polar (normQuadraticForm R) x y = 0 := by
+    have h := hx y
+    rw [associated_normQuadraticForm_apply, trace_mul_conj] at h
+    rw [← mul_invOf_cancel_left' (2 : R) (QuadraticMap.polar _ x y), h, mul_zero]
+  have ha := hp ⟨0, 1, 0, 0⟩
+  have hb := hp ⟨1, 0, 0, 0⟩
+  have hv (i : Fin 3) := hp ⟨0, 0, 0, Pi.single i 1⟩
+  have hw (i : Fin 3) := hp ⟨0, 0, Pi.single i 1, 0⟩
+  simp only [polar_normQuadraticForm] at ha hb hv hw
+  refine Octonion.ext (by simpa using ha) (by simpa using hb) (funext fun i => ?_)
+    (funext fun i => ?_)
+  · simpa using hv i
+  · simpa using hw i
+
+/-- **The nucleus of the split octonions is the scalars**: an octonion `c` that associates with
+every pair of octonions in the middle position, `(x c) y = x (c y)`, is a scalar multiple of `1`.
+-/
+theorem exists_eq_smul_one_of_forall_mul_mul_eq {c : Octonion R}
+    (h : ∀ x y : Octonion R, x * c * y = x * (c * y)) : ∃ r : R, c = r • 1 := by
+  -- Products against the vector entries already force the vector entries of `c` to vanish and its
+  -- two diagonal entries to agree.
+  have key (i j : Fin 3) := h ⟨0, 0, Pi.single i 1, 0⟩ ⟨0, 0, 0, Pi.single j 1⟩
+  have v₀ : c.v 0 = 0 := by simpa [cross_apply] using congrArg (fun z => z.v 0) (key 1 1)
+  have v₁ : c.v 1 = 0 := by simpa [cross_apply] using congrArg (fun z => z.v 1) (key 0 0)
+  have v₂ : c.v 2 = 0 := by simpa [cross_apply] using congrArg (fun z => z.v 2) (key 0 0)
+  have w₀ : c.w 0 = 0 := by simpa [cross_apply] using congrArg (fun z => z.w 0) (key 1 1)
+  have w₁ : c.w 1 = 0 := by simpa [cross_apply] using congrArg (fun z => z.w 1) (key 0 0)
+  have w₂ : c.w 2 = 0 := by simpa [cross_apply] using congrArg (fun z => z.w 2) (key 0 0)
+  have hab : c.b = c.a := by
+    simpa [cross_apply, vecHead, vecTail] using
+      congrArg (fun z => z.w 2) (h ⟨0, 0, Pi.single 0 1, 0⟩ ⟨0, 0, Pi.single 1 1, 0⟩)
+  refine ⟨c.a, Octonion.ext (by simp) (by simpa using hab) (funext fun j => ?_)
+    (funext fun j => ?_)⟩
+  · fin_cases j <;> simp [v₀, v₁, v₂]
+  · fin_cases j <;> simp [w₀, w₁, w₂]
 
 end Octonion
 

@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Geometry.Manifold.VectorBundle.Hom
 public import TauCeti.Topology.VectorBundle.Descent
+import TauCeti.Data.Bundle
 
 /-!
 # `C^n` cocycle morphisms and `C^n` bundle equivalences
@@ -33,6 +34,9 @@ the same as holomorphic bundle equivalences of the glued holomorphic vector bund
   fibre, the glued map of a cocycle morphism is `C^n` exactly when all its chart operators are.
 * `VectorBundleCore.CoordinateHom.toDiffeomorph`: a cocycle morphism with `C^n` chart operators
   and bijective fibre maps is a `C^n` diffeomorphism of total spaces.
+* `VectorBundleCore.CoordinateHom.exists_diffeomorph_iff`: for a finite-dimensional source fibre,
+  the glued map of a cocycle morphism underlies a `C^n` diffeomorphism exactly when its chart
+  operators are `C^n` and its fibre maps are bijective.
 
 ## References
 
@@ -69,11 +73,7 @@ theorem contMDiffOn_inChartCoordinates [Z.IsContMDiff IB n] [W.IsContMDiff IB n]
   let e := (Z.localTriv i).continuousLinearMap (RingHom.id 𝕜) (W.localTriv j)
   have he := (e.contMDiffOn_section_iff ((Z.isOpen_baseSet i).inter (W.isOpen_baseSet j))
     subset_rfl).1 hf
-  refine he.congr fun x hx ↦ ContinuousLinearMap.ext fun v ↦ ?_
-  simp only [e, Trivialization.continuousLinearMap_apply, localTriv_continuousLinearMapAt _ hx.2,
-    localTriv_symmL _ hx.1, inChartCoordinates_apply]
-  -- The remaining composite is stated between the core fibres, which are `F` and `G`.
-  rfl
+  exact he.congr fun x hx ↦ inChartCoordinates_eq_localTriv_comp hx.1 hx.2 (f x)
 
 /-- A family of fibre maps is a `C^n` section of the Hom bundle between two `C^n` cores exactly
 when it is `C^n` in every pair of charts. This is the `C^n` counterpart of
@@ -99,6 +99,17 @@ theorem contMDiff_hom_bundle_iff_forall_contMDiffOn [Z.IsContMDiff IB n] [W.IsCo
 
 namespace CoordinateHom
 
+/-- A cocycle morphism between two `C^n` cores whose chart operators are `C^n` glues to a `C^n`
+map of total spaces. Unlike `VectorBundleCore.CoordinateHom.contMDiff_totalSpaceMap_iff`, this
+direction needs no finite-dimensionality. -/
+theorem contMDiff_totalSpaceMap [Z.IsContMDiff IB n] [W.IsContMDiff IB n] (a : CoordinateHom Z W)
+    (ha : ∀ i j, ContMDiffOn IB 𝓘(𝕜, F →L[𝕜] G) n
+      (fun x ↦ Z.inChartCoordinates W i j x (a.fiberMap x)) (Z.baseSet i ∩ W.baseSet j)) :
+    ContMDiff (IB.prod 𝓘(𝕜, F)) (IB.prod 𝓘(𝕜, G)) n a.totalSpaceMap := by
+  rw [totalSpaceMap_def]
+  exact ((contMDiff_hom_bundle_iff_forall_contMDiffOn.2 ha).comp
+    (contMDiff_proj Z.Fiber)).clm_bundle_apply contMDiff_id
+
 variable [CompleteSpace 𝕜] [FiniteDimensional 𝕜 F] [Z.IsContMDiff IB n] [W.IsContMDiff IB n]
 
 /-- For a finite-dimensional source fibre, the map of total spaces glued from a cocycle morphism
@@ -109,12 +120,9 @@ theorem contMDiff_totalSpaceMap_iff (a : CoordinateHom Z W) :
     ContMDiff (IB.prod 𝓘(𝕜, F)) (IB.prod 𝓘(𝕜, G)) n a.totalSpaceMap ↔
       ∀ i j, ContMDiffOn IB 𝓘(𝕜, F →L[𝕜] G) n
         (fun x ↦ Z.inChartCoordinates W i j x (a.fiberMap x)) (Z.baseSet i ∩ W.baseSet j) := by
-  -- Regard the fibre maps as maps between the core fibres, to apply the general criterion.
-  let ϕ : ∀ x, Z.Fiber x →L[𝕜] W.Fiber x := a.fiberMap
-  have h : a.totalSpaceMap = fun p ↦ TotalSpace.mk' G p.proj (ϕ p.proj p.2) :=
-    funext fun ⟨x, v⟩ ↦ a.totalSpaceMap_mk x v
-  rw [h, ← TauCeti.contMDiff_hom_bundle_iff ϕ]
-  exact contMDiff_hom_bundle_iff_forall_contMDiffOn
+  rw [totalSpaceMap_def]
+  exact (TauCeti.contMDiff_hom_bundle_iff (E₁ := Z.Fiber) (E₂ := W.Fiber) a.fiberMap).symm.trans
+    contMDiff_hom_bundle_iff_forall_contMDiffOn
 
 /-- The fibrewise continuous linear equivalences of a cocycle morphism with bijective fibre
 maps. -/
@@ -185,6 +193,21 @@ theorem exists_toDiffeomorph_eq (e : ∀ x, Z.Fiber x ≃L[𝕜] W.Fiber x)
     -- the model fibres `F` and `G`; `ContinuousLinearEquiv.coe_coe` does not fire on a vector of
     -- the core fibre `Z.Fiber x`, which is `F` only up to unfolding.
     rfl
+
+/-- **Cocycle isomorphisms are bundle equivalences.** For a finite-dimensional source fibre, a
+cocycle morphism between two `C^n` cores glues to the underlying map of a `C^n` diffeomorphism of
+total spaces exactly when its chart operators are `C^n` and its fibre maps are bijective. -/
+theorem exists_diffeomorph_iff (a : CoordinateHom Z W) :
+    (∃ Φ : Z.TotalSpace ≃ₘ^n⟮IB.prod 𝓘(𝕜, F), IB.prod 𝓘(𝕜, G)⟯ W.TotalSpace,
+        ⇑Φ = a.totalSpaceMap) ↔
+      (∀ i j, ContMDiffOn IB 𝓘(𝕜, F →L[𝕜] G) n
+        (fun x ↦ Z.inChartCoordinates W i j x (a.fiberMap x)) (Z.baseSet i ∩ W.baseSet j)) ∧
+      ∀ x, Function.Bijective (a.fiberMap x) := by
+  refine ⟨fun ⟨Φ, hΦ⟩ ↦ ⟨a.contMDiff_totalSpaceMap_iff.1 (hΦ ▸ Φ.contMDiff), ?_⟩,
+    fun ⟨ha, hbij⟩ ↦ ⟨a.toDiffeomorph ha hbij, a.coe_toDiffeomorph ha hbij⟩⟩
+  rw [totalSpaceMap_def] at hΦ
+  exact TauCeti.bijective_totalSpace_map_iff (E₁ := Z.Fiber) (E₂ := W.Fiber)
+    (ϕ := fun x ↦ a.fiberMap x) |>.1 (hΦ ▸ Φ.bijective)
 
 end CoordinateHom
 

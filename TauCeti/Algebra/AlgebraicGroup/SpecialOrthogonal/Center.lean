@@ -18,8 +18,9 @@ The matrix-center computation in
 `TauCeti.LinearAlgebra.Matrix.SpecialOrthogonalGroup.Center` identifies these as the scalar
 matrices `c • 1` with `c² = 1` and `c^n = 1`.
 
-In odd dimension these conditions force `c = 1`. Thus the full scheme-theoretic center is
-trivial over every field of characteristic different from two. The argument allows nonreduced
+In odd dimension these conditions force `c = 1`. Thus the full scheme-theoretic center of `SOₙ` for
+odd `n`, dimension one included, is trivial over every field of characteristic different from two: a
+universally central point has central matrix in every dimension. The argument allows nonreduced
 value algebras, retaining the infinitesimal information absent from a calculation on field-valued
 points alone.
 
@@ -69,23 +70,25 @@ theorem isCentralPoint_iff_mem_center_pointsMulEquiv
       (Matrix.SpecialOrthogonalGroup.mem_center_of_coe_eq_scalar _ (φ c) hscalar)
         (pointsMulEquiv R n (A := B) h)).symm
 
-include hn h2 in
+include h2 in
 /-- Every universally central point of an odd-dimensional special orthogonal group is the
-identity, including points with values in nonreduced algebras. -/
+identity, including points with values in nonreduced algebras and dimension one. -/
 theorem eq_one_of_isCentralPoint_of_odd (hodd : Odd n)
     (g : WithConv (coordinateHopfAlgebra R n →ₐ[R] A))
     (hg : HopfAlgebra.IsCentralPoint g) : g = 1 := by
+  -- A universally central point has central matrix; this direction needs no bound on `n`.
   have hmatrix := Matrix.SpecialOrthogonalGroup.eq_one_of_mem_center_of_odd h2
-    (pointsMulEquiv R n (A := A) g) (by simpa using hn) (by simpa using hodd)
-    ((isCentralPoint_iff_mem_center_pointsMulEquiv n hn h2 g).mp hg)
+    (pointsMulEquiv R n (A := A) g) (by simpa using hodd)
+    (MulEquivClass.apply_mem_center (pointsMulEquiv R n (A := A))
+      (HopfAlgebra.center_le_center (HopfAlgebra.mem_center.mpr hg)))
   exact (pointsMulEquiv R n).injective (hmatrix.trans (map_one _).symm)
 
 end Ring
 
-/-- The full scheme-theoretic center of odd-dimensional `SOₙ`, for `n ≥ 3`, is trivial over
-every field of characteristic different from two. -/
+/-- The full scheme-theoretic center of odd-dimensional `SOₙ` is trivial over every field of
+characteristic different from two. -/
 theorem centerDefiningIdeal_eq_augmentation_of_odd (k : Type u) [Field k] [NeZero (2 : k)]
-    (n : ℕ) (hn : 3 ≤ n) (hodd : Odd n) :
+    (n : ℕ) (hodd : Odd n) :
     CommHopfAlgCat.centerDefiningIdeal (coordinateHopfAlgebra k n) =
       HopfIdeal.augmentation k (coordinateHopfAlgebra k n) := by
   apply (CommHopfAlgCat.centerDefiningIdeal_eq_augmentation_iff_forall_isCentralPoint_eq_one
@@ -93,6 +96,6 @@ theorem centerDefiningIdeal_eq_augmentation_of_odd (k : Type u) [Field k] [NeZer
   intro A g hg
   have htwo : IsUnit (2 : A) := by
     simpa only [map_ofNat] using (isUnit_iff_ne_zero.mpr (NeZero.ne (2 : k))).map (algebraMap k A)
-  exact eq_one_of_isCentralPoint_of_odd n hn htwo.isRegular hodd g hg
+  exact eq_one_of_isCentralPoint_of_odd n htwo.isRegular hodd g hg
 
 end TauCeti.SpecialOrthogonal
