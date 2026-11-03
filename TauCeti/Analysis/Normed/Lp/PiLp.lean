@@ -210,7 +210,7 @@ end LinearIsometry
 
 namespace LinearIsometry
 
-variable {p : ℝ≥0∞} [Fact (1 ≤ p)] {𝕜 : Type*} [RCLike 𝕜]
+variable {p : ℝ≥0∞} [Fact (1 ≤ p)] {𝕜 : Type*} [NormedRing 𝕜]
   {ι ι' : Type*} [Fintype ι] [Fintype ι']
 
 /-- A finite sum paired with a vector extended by zero along an embedding reduces to the sum over
