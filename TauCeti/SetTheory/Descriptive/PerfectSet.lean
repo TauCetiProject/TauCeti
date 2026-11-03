@@ -101,8 +101,7 @@ Hausdorff space contains the range of a continuous injection of Cantor space. -/
 theorem AnalyticSet.exists_nat_bool_injection_of_not_countable [T2Space X] {s : Set X}
     (hs : AnalyticSet s) (hunc : ¬s.Countable) :
     ∃ f : (ℕ → Bool) → X, range f ⊆ s ∧ Continuous f ∧ Injective f := by
-  obtain rfl | ⟨g, hg, rfl⟩ := hs.eq_empty_or_exists_nat_nat
-  · exact absurd countable_empty hunc
+  obtain ⟨γ, _, _, g, hg, rfl⟩ := analyticSet_iff_exists_polishSpace_range.1 hs
   obtain ⟨h, hh, -, hker⟩ :=
     Setoid.hasCantorAntichainOn_iff.1 (Setoid.hasCantorAntichainOn_ker_univ_of_not_countable_range
       hg hunc)
