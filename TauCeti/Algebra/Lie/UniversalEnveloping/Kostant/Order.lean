@@ -111,20 +111,20 @@ theorem iSup_kostantFiltration_eq_top : ⨆ n, kostantFiltration e h n = ⊤ := 
 Use this equivalence explicitly: the membership simp rule instead reduces to rational PBW order. -/
 theorem antipode_mem_kostantFiltration_iff (a : K) (n : ℕ) :
     HopfAlgebra.antipode ℤ a ∈ kostantFiltration e h n ↔ a ∈ kostantFiltration e h n := by
-  rw [mem_kostantFiltration, mem_kostantFiltration, kostantForm_antipode,
-    coe_kostantFormAntipodeLinearMap_apply, hopfAlgebraStructAntipode_eq_antipode,
+  rw [mem_kostantFiltration, mem_kostantFiltration, coe_antipode_kostantForm,
     antipode_mem_pbwFiltration_iff]
 
 /-- On integral order `n + 1`, the antipode has leading sign `(-1)^(n + 1)`; the difference
 has order at most `n`. In particular this is an integral lower-order error, not just a
 rational congruence. -/
-theorem antipode_sub_sign_smul_mem_kostantFiltration {n : ℕ} {a : K}
+theorem antipode_sub_neg_one_pow_smul_mem_kostantFiltration {n : ℕ} {a : K}
     (ha : a ∈ kostantFiltration e h (n + 1)) :
     HopfAlgebra.antipode ℤ a - (-1 : ℤ) ^ (n + 1) • a ∈ kostantFiltration e h n := by
-  have hs := antipode_sub_sign_smul_mem_pbwFiltrationPrevious ℚ L
+  have hs := antipode_sub_neg_one_pow_smul_mem_pbwFiltrationPrevious ℚ L
     ((mem_kostantFiltration e h).mp ha)
   rw [pbwFiltrationPrevious_succ] at hs
-  simpa [kostantForm_antipode, coe_kostantFormAntipodeLinearMap_apply,
-    hopfAlgebraStructAntipode_eq_antipode, Algebra.smul_def] using hs
+  rw [mem_kostantFiltration, AddSubgroupClass.coe_sub, coe_antipode_kostantForm,
+    AddSubgroupClass.coe_zsmul, ← Int.cast_smul_eq_zsmul ℚ]
+  simpa only [Int.cast_pow, Int.cast_neg, Int.cast_one] using hs
 
 end TauCeti.UniversalEnvelopingAlgebra

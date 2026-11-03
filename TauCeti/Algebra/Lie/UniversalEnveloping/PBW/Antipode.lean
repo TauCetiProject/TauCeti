@@ -85,7 +85,7 @@ theorem antipode_mem_pbwFiltrationPrevious_iff {n : ℕ} {a : U} :
 
 /-- **The leading sign of the antipode.** For an element of PBW degree at most `n`, the
 antipode agrees with multiplication by `(-1)^n` modulo degree strictly below `n`. -/
-theorem antipode_sub_sign_smul_mem_pbwFiltrationPrevious {n : ℕ} {a : U}
+theorem antipode_sub_neg_one_pow_smul_mem_pbwFiltrationPrevious {n : ℕ} {a : U}
     (ha : a ∈ pbwFiltration R L n) :
     S a - (-1 : R) ^ n • a ∈ pbwFiltrationPrevious R L n := by
   let f : U →ₗ[R] U := S - (-1 : R) ^ n • LinearMap.id
