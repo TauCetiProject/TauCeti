@@ -308,7 +308,7 @@ def oneSubPow (A : T ≃+ T) (k : ℕ) : T →+ T :=
 @[simp]
 theorem oneSubPow_apply (A : T ≃+ T) (k : ℕ) (x : T) :
     A.oneSubPow k x = x - (⇑A)^[k] x := by
-  simp [oneSubPow, LinearEquiv.coe_pow]
+  simp [oneSubPow, FunLike.coe_pow_eq_iterate]
 
 /-- The difference from the zeroth power vanishes. -/
 @[simp]
