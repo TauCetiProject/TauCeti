@@ -275,8 +275,8 @@ theorem mem_geckPositiveGeneratedCarrierDefiningIdeal
       (t.geckPositiveGeneratedRestriction ht A).hom x = 0 :=
   HopfIdeal.mem_kerOfSurjective _ _
 
-/-- Quotienting the full generated group by the intrinsic positive ideal recovers the existing
-coordinate algebra of the positive generated subgroup. -/
+/-- Quotienting the coordinate algebra of the full generated group by the intrinsic positive ideal
+recovers the coordinate algebra of the positive generated subgroup. -/
 def geckPositiveGeneratedCarrierQuotientIso :
     CommHopfAlgCat.quotient (t.geckGeneratedCoordinateHopfAlgebra ht A)
         (t.geckPositiveGeneratedCarrierDefiningIdeal ht A) ≅
