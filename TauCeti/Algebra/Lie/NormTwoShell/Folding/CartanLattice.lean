@@ -78,17 +78,13 @@ private theorem rootProjection_orbitCartan (O : Quotient (Equiv.Perm.SameCycle.s
   classical
   simp [orbitCartan, rootProjection_apply]
 
-omit [Fintype I] [DecidableEq I] in
-private theorem sameCycle_out_iff (O P : Quotient (Equiv.Perm.SameCycle.setoid σ)) :
-    σ.SameCycle O.out P.out ↔ O = P :=
-  (Quotient.eq (r := Equiv.Perm.SameCycle.setoid σ)).symm.trans
-    (by simp only [Quotient.out_eq])
-
 private theorem orbitCartan_coord [DecidableEq (Quotient (Equiv.Perm.SameCycle.setoid σ))]
     (O P : Quotient (Equiv.Perm.SameCycle.setoid σ)) :
     cartanProjection (orbitCartan (B := B) σ P) O.out = if O = P then 1 else 0 := by
   classical
-  simp only [cartanProjection_orbitCartan, sameCycle_out_iff]
+  simp only [cartanProjection_orbitCartan]
+  simp only [show σ.SameCycle O.out P.out ↔ O = P from
+    Quotient.out_equiv_out (s := Equiv.Perm.SameCycle.setoid σ)]
 
 private theorem cartan_permutationFixedBasis
     (O : Quotient (Equiv.Perm.SameCycle.setoid σ)) :
@@ -219,9 +215,6 @@ theorem foldedCartanLattice_le_fixedCartanLattice :
   rw [foldedH_def]
   exact (fixedCartanLattice B σ).smul_mem _ (Submodule.subset_span ⟨O, rfl⟩)
 
-private theorem foldedH_eq_smul_orbitCartan (O : Quotient (Equiv.Perm.SameCycle.setoid σ)) :
-    foldedH B σ O = B.foldingScale σ O • orbitCartan σ O := foldedH_def B σ O
-
 /-- The normalized lattice consists of fixed Cartan vectors whose orbit coordinates are
 divisible by the corresponding folding scales. -/
 @[simp]
@@ -236,7 +229,7 @@ theorem mem_foldedCartanLattice_iff (x : ShellLieAlgebra B) :
     intro O
     have hcoord : cartanProjection (∑ P, f P • foldedH B σ P) O.out =
         f O * B.foldingScale σ O := by
-      simp [map_sum, map_smul, foldedH_eq_smul_orbitCartan, Finset.sum_apply,
+      simp [map_sum, map_smul, foldedH_def, ← orbitCartan.eq_def, Finset.sum_apply,
         orbitCartan_coord, mul_ite]
     rw [← cartanProjection_apply, ← hf, hcoord]
     exact dvd_mul_left _ _
@@ -264,7 +257,7 @@ theorem linearIndependent_foldedH : LinearIndependent ℤ (foldedH B σ) := by
       IsRightRegular (B.foldingScale σ O) :=
     (isRegular_iff_ne_zero.mpr (foldingScale_pos hB hdiag hoff hσ O).ne').right
   have heq : foldedH B σ = B.foldingScale σ • orbitCartan σ :=
-    funext (foldedH_eq_smul_orbitCartan σ)
+    funext (foldedH_def B σ)
   rw [heq]
   exact (linearIndependent_orbitCartan (B := B) σ).smul_of_isRightRegular hscale
 
@@ -291,7 +284,7 @@ theorem foldingScale_mul_foldedCartanBasis_repr (x : foldedCartanLattice B σ)
     ((foldedCartanBasis σ hB hdiag hoff hσ).sum_repr x)
   rw [← cartanProjection_apply]
   simp only [Submodule.coe_sum, SetLike.val_smul, coe_foldedCartanBasis, map_sum,
-    map_smul, Finset.sum_apply, Pi.smul_apply, foldedH_eq_smul_orbitCartan,
+    map_smul, Finset.sum_apply, Pi.smul_apply, foldedH_def, ← orbitCartan.eq_def,
     orbitCartan_coord, smul_eq_mul, mul_ite, mul_one, mul_zero,
     sum_ite_eq, mem_univ, ite_true] at h
   simpa only [mul_comm] using h
