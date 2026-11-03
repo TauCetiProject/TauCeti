@@ -39,6 +39,9 @@ node `xy = 0`. This is the linear model of the Hardy decomposition at a node.
   for `‖a‖ ≤ 1` (and `0` otherwise).
 * `TauCeti.CircleSobolev.neckGraph s E a`: the pairs `(F, G)` of elements of `H^s` with
   `F₋ₙ = -aⁿ Gₙ` and `G₋ₙ = -aⁿ Fₙ` for every `n > 0`.
+* `TauCeti.CircleSobolev.neckPoint a (P, Q)`: the pair
+  `(P - neckTransfer a Q, Q - neckTransfer a P)` with nonnegative parts `(P, Q)`; for `‖a‖ ≤ 1` it
+  lies in the neck graph.
 
 ## Main statements
 
@@ -53,6 +56,9 @@ node `xy = 0`. This is the linear model of the Hardy decomposition at a node.
   it is a complement of the pair of negative Laurent subspaces.
 * `TauCeti.CircleSobolev.neckGraph_zero`: at `a = 0` it is the pair of nonnegative Laurent
   subspaces.
+* `TauCeti.CircleSobolev.neckPoint_indicatorProj`: for `‖a‖ ≤ 1` every element of the neck graph
+  is the `neckPoint` of its nonnegative parts, and `TauCeti.CircleSobolev.analyticAt_neckPoint`:
+  `neckPoint a (P, Q)` is holomorphic in `(a, P, Q)` for `‖a‖ < 1`.
 * `TauCeti.CircleSobolev.hasSum_zpow_smul_coeff_of_mem_neckGraph`: for `s > 1/2`, `a ≠ 0` and
   `(F, G)` in the neck graph, the Laurent series `G(a / x) = ∑ₙ (a / x)ⁿ Gₙ` converges on `|x| = 1`
   and `F(x) + G(a / x) = F₀ + G₀`.
@@ -495,9 +501,88 @@ theorem isCompl_neckGraph (ha : ‖a‖ ≤ 1) :
       · simp only [Prod.fst_add, sub_add_add_cancel, indicator_Ici_add_indicator_Iio]
       · simp only [Prod.snd_add, sub_add_add_cancel, indicator_Ici_add_indicator_Iio]
 
+/-! ### The neck graph as a graph over the nonnegative Laurent subspaces -/
+
+/-- The pair `(P - neckTransfer a Q, Q - neckTransfer a P)`, whose nonnegative parts are `(P, Q)`
+(`CircleSobolev.indicatorProj_sub_neckTransfer`). For `‖a‖ ≤ 1` it lies in the neck graph
+(`CircleSobolev.neckPoint_mem_neckGraph`). -/
+def neckPoint (a : ℂ) (PQ : supported s E (Set.Ici 0) × supported s E (Set.Ici 0)) :
+    CircleSobolev s E × CircleSobolev s E :=
+  ((PQ.1 : CircleSobolev s E) - neckTransfer a PQ.2,
+    (PQ.2 : CircleSobolev s E) - neckTransfer a PQ.1)
+
+@[simp]
+theorem neckPoint_fst (a : ℂ) (PQ : supported s E (Set.Ici 0) × supported s E (Set.Ici 0)) :
+    (neckPoint a PQ).1 = (PQ.1 : CircleSobolev s E) - neckTransfer a PQ.2 :=
+  (rfl)
+
+@[simp]
+theorem neckPoint_snd (a : ℂ) (PQ : supported s E (Set.Ici 0) × supported s E (Set.Ici 0)) :
+    (neckPoint a PQ).2 = (PQ.2 : CircleSobolev s E) - neckTransfer a PQ.1 :=
+  (rfl)
+
+theorem neckPoint_mem_neckGraph (ha : ‖a‖ ≤ 1)
+    (PQ : supported s E (Set.Ici 0) × supported s E (Set.Ici 0)) :
+    neckPoint a PQ ∈ neckGraph s E a :=
+  sub_neckTransfer_mem_neckGraph ha PQ.1.2 PQ.2.2
+
+/-- The nonnegative part of `P - neckTransfer a u` is `P`. -/
+@[simp]
+theorem indicatorProj_sub_neckTransfer (a : ℂ) (P : supported s E (Set.Ici 0))
+    (u : CircleSobolev s E) :
+    indicatorProj (Set.Ici 0) ((P : CircleSobolev s E) - neckTransfer a u) = P := by
+  ext1
+  rw [coe_indicatorProj, map_sub, indicator_eq_self_iff.2 P.2,
+    indicator_eq_zero_iff.2 (by rw [Set.compl_Ici]; exact neckTransfer_mem_supported a u),
+    sub_zero]
+
+/-- For `‖a‖ ≤ 1`, every element of the neck graph is the `neckPoint` of its nonnegative parts. -/
+theorem neckPoint_indicatorProj (ha : ‖a‖ ≤ 1) {p : CircleSobolev s E × CircleSobolev s E}
+    (hp : p ∈ neckGraph s E a) :
+    neckPoint a (indicatorProj (Set.Ici 0) p.1, indicatorProj (Set.Ici 0) p.2) = p := by
+  simpa only [neckPoint, coe_indicatorProj, neckTransfer_indicator Set.Ioi_subset_Ici_self] using
+    (eq_of_mem_neckGraph ha hp).symm
+
+/-- `neckPoint a (P, Q)` depends holomorphically on `(a, P, Q)` for `a` in the open unit disc. -/
+theorem analyticAt_neckPoint [CompleteSpace E] {X : Type*} [NormedAddCommGroup X]
+    [NormedSpace ℂ X] {g : X → ℂ} {h : X → supported s E (Set.Ici 0) × supported s E (Set.Ici 0)}
+    {x : X} (hg : AnalyticAt ℂ g x) (hgx : ‖g x‖ < 1) (hh : AnalyticAt ℂ h x) :
+    AnalyticAt ℂ (fun y ↦ neckPoint (g y) (h y)) x := by
+  have hT : AnalyticAt ℂ (fun y ↦ (neckTransfer (g y) : CircleSobolev s E →L[ℂ] _)) x :=
+    (analyticOnNhd_neckTransfer (g x) (mem_ball_zero_iff.2 hgx)).comp hg
+  have hι (k : X → supported s E (Set.Ici 0)) (hk : AnalyticAt ℂ k x) :
+      AnalyticAt ℂ (fun y ↦ (k y : CircleSobolev s E)) x :=
+    ((supported s E (Set.Ici 0)).subtypeL.analyticAt _).comp hk
+  have happ (k : X → supported s E (Set.Ici 0)) (hk : AnalyticAt ℂ k x) :
+      AnalyticAt ℂ (fun y ↦ neckTransfer (g y) (k y : CircleSobolev s E)) x := by
+    simpa [Function.comp_def] using
+      ((ContinuousLinearMap.apply ℂ (CircleSobolev s E)).analyticAt_bilinear _).comp
+        ((hι k hk).prod hT)
+  have h₁ : AnalyticAt ℂ (fun y ↦ (h y).1) x := analyticAt_fst.comp hh
+  have h₂ : AnalyticAt ℂ (fun y ↦ (h y).2) x := analyticAt_snd.comp hh
+  exact ((hι _ h₁).sub (happ _ h₂)).prod ((hι _ h₂).sub (happ _ h₁))
+
 section Boundary
 
 variable {T : ℝ} [Fact (0 < T)] [CompleteSpace E]
+
+/-- Boundary values in the neck graph are differences of the two branch disc functions.
+This formula also makes sense at `a = 0` and uses no Laurent evaluation at a zero coordinate. -/
+theorem toContinuousMap_eq_diskFunction_sub_of_mem_neckGraph (hs : 1 / 2 < s)
+    (ha : ‖a‖ ≤ 1) {p : CircleSobolev s E × CircleSobolev s E}
+    (hp : p ∈ neckGraph s E a) (x : AddCircle T) :
+    toContinuousMap T hs p.1 x = diskFunction p.1 (fourier 1 x) -
+      diskFunction p.2 (a / fourier 1 x) + p.2.coeff 0 := by
+  have he := congrArg Prod.fst (eq_of_mem_neckGraph ha hp)
+  calc
+    toContinuousMap T hs p.1 x =
+        toContinuousMap T hs (indicator (Set.Ici 0) p.1 - neckTransfer a p.2) x :=
+      congrArg (fun u ↦ toContinuousMap T hs u x) he
+    _ = _ := by
+      rw [map_sub, ContinuousMap.sub_apply,
+        toContinuousMap_apply_eq_diskFunction T hs (indicator_mem_supported _ _),
+        diskFunction_indicator_Ici, toContinuousMap_neckTransfer hs ha]
+      abel
 
 /-- **The linearized node equation.** For `s > 1/2`, `a ≠ 0` and `(F, G)` in the neck graph,
 the Laurent series `G(a / x) = ∑ₙ (a / x)ⁿ Gₙ` converges at every point `x = fourier 1 x` of the

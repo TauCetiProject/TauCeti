@@ -166,9 +166,7 @@ theorem computable_serializedStage {α : Type*} [Primcodable α]
   | succ s ih =>
     simp only [ih, serializedStage_succ]
     split_ifs with h
-    · apply Finset.equivBitIndices.injective
-      rw [Finset.equivBitIndices_lor, Equiv.apply_symm_apply]
-      simp [Finset.equivBitIndices_apply, Finset.union_singleton]
+    · exact (Finset.equivBitIndices_symm_insert _ _).symm
     · rfl
 
 /-- The canonical c.e. domain enumeration has uniformly computable serialized stages. -/

@@ -47,6 +47,16 @@ and `x ∈ A`, the element `x eₜ ⊗ q` of the middle term is sent to
 arrow `b` in the component `b`; the boundary of this sum telescopes to `x q ⊗ eₛ - x eₜ ⊗ q`. The
 same homotopy composed with the left map is minus the identity.
 
+Applied to `1 ⊗ y`, the homotopy is the **universal derivation**
+`∂ : kQ → ⨁_{b : i ⟶ j} A eⱼ ⊗_k eᵢ A` relative to `kQ₀`, sending a path `q` to `∑ q'' ⊗ q'`
+over its factorizations `q = q'' b q'`. It satisfies the Leibniz rule, kills the vertex
+idempotents, sends an arrow `b : i ⟶ j` to the generator `eⱼ ⊗ eᵢ` of its component, and its
+boundary in `A ⊗_{kQ₀} A` is `y ⊗ 1 - 1 ⊗ y`. Every derivation of `kQ` into a bimodule which kills
+the vertex idempotents factors uniquely through it, so the left term of the resolution is the
+bimodule of noncommutative differentials of `kQ` relative to `kQ₀`. In the small resolution of a
+semifree differential graded path algebra, the differential twists the generator of an arrow `b`
+by `∂ (d b)`, up to sign.
+
 ## Main definitions
 
 * `TauCeti.PathAlgebra.vertexTensorIdempotent`: the idempotent `∑ᵥ eᵥ ⊗ eᵥ` of `Aᵉ`.
@@ -55,6 +65,10 @@ same homotopy composed with the left map is minus the identity.
 * `TauCeti.PathAlgebra.arrowTensorBimodule`: the bimodule `⨁_{b : i ⟶ j} A eⱼ ⊗_k eᵢ A`.
 * `TauCeti.PathAlgebra.vertexTensorMul`: the multiplication map `A ⊗_{kQ₀} A → A`.
 * `TauCeti.PathAlgebra.arrowTensorDifferential`: the map `x ⊗ y ↦ x b ⊗ y - x ⊗ b y`.
+* `TauCeti.PathAlgebra.arrowTensorDerivation`: the universal derivation
+  `∂ : kQ → ⨁_{b : i ⟶ j} A eⱼ ⊗_k eᵢ A`.
+* `TauCeti.PathAlgebra.arrowTensorLift`: the bimodule map out of `⨁_{b : i ⟶ j} A eⱼ ⊗_k eᵢ A`
+  prescribed on the generators `eⱼ ⊗ eᵢ`.
 
 ## Main results
 
@@ -64,6 +78,14 @@ same homotopy composed with the left map is minus the identity.
   a short exact sequence of bimodules**.
 * The instances `Module.Projective Aᵉ (vertexTensorBimodule k Q)` and
   `Module.Projective Aᵉ (arrowTensorBimodule k Q)`: both terms are projective bimodules.
+* `TauCeti.PathAlgebra.arrowTensorDerivation_mul`, `arrowTensorDerivation_vertexIdempotent` and
+  `arrowTensorDerivation_ofArrow`: `∂` is a derivation killing the vertex idempotents, with
+  `∂ b = eⱼ ⊗ eᵢ`.
+* `TauCeti.PathAlgebra.coe_arrowTensorDifferential_arrowTensorDerivation`: the boundary of `∂ y`
+  is `y ⊗ 1 - 1 ⊗ y`.
+* `TauCeti.PathAlgebra.arrowTensorLift_arrowTensorDerivation` and
+  `TauCeti.PathAlgebra.arrowTensorBimodule_hom_ext`: **the universal property of `∂`** among
+  derivations into bimodules which kill the vertex idempotents.
 
 ## References
 
@@ -72,6 +94,9 @@ same homotopy composed with the left map is minus the identity.
   for the standard bimodule resolution of a path algebra.
 * W. Crawley-Boevey, *Lectures on representations of quivers*, Section 1, for the standard
   resolution of a quiver representation, which is this sequence tensored with the module.
+* J. Cuntz and D. Quillen, *Algebra extensions and nonsingularity*, J. Amer. Math. Soc. 8 (1995),
+  251--289, for the bimodule of noncommutative differentials of an algebra relative to a
+  subalgebra, the kernel of the multiplication map, and its universal derivation `a ⊗ 1 - 1 ⊗ a`.
 -/
 
 public section
@@ -207,6 +232,15 @@ private theorem arrowTensorProj_tmul (b : Σ i j : Q, i ⟶ j) (x y : 𝒜) :
   rw [← arrowTensorProj_mul_arrowTensorIdempotent, arrowTensorIdempotent,
     Algebra.TensorProduct.tmul_mul_tmul, ← op_mul]
 
+/-- The projection onto the component of an arrow `b` sends `eⱼ ⊗ eᵢ` to the generator. -/
+private theorem arrowTensorProj_arrowTensorIdempotent (b : Σ i j : Q, i ⟶ j) :
+    arrowTensorProj b (arrowTensorIdempotent k Q b) =
+      DirectSum.lof 𝒜ᵉ _ _ b (spanSingletonGenerator (arrowTensorIdempotent k Q b)) := by
+  have h := smul_spanSingletonGenerator (isIdempotentElem_arrowTensorIdempotent k Q b)
+    (spanSingletonGenerator (arrowTensorIdempotent k Q b))
+  rw [coe_spanSingletonGenerator] at h
+  rw [arrowTensorProj, LinearMap.comp_apply, LinearMap.toSpanSingleton_apply, h]
+
 /-- The homotopy on the elements `x ⊗ q` of the enveloping algebra, for a path `q`: the sum, over
 the factorizations `q = q'' c q'` with `c` an arrow, of `x q'' ⊗ q'` in the component of `c`. It is
 defined by recursion on the last arrow of `q`. -/
@@ -227,6 +261,13 @@ private theorem homotopyPath_cons {s t t' : Q} (q : Quiver.Path s t) (c : t ⟶ 
         arrowTensorProj ⟨_, _, c⟩ (x ⊗ₜ[k] op (ofPath ⟨_, _, q⟩)) := by
   simp [homotopyPath]
 
+/-- On an arrow `b : i ⟶ j`, the homotopy has the single term `x ⊗ eᵢ` in the component of `b`. -/
+private theorem homotopyPath_toPath {i j : Q} (b : i ⟶ j) (x : 𝒜) :
+    homotopyPath b.toPath x = arrowTensorProj ⟨i, j, b⟩ (x ⊗ₜ[k] op (ε i)) := by
+  -- An arrow is the path `nil.cons b`.
+  rw [Quiver.Hom.toPath, homotopyPath_cons, homotopyPath_nil, LinearMap.zero_apply, zero_add,
+    vertexIdempotent_eq_ofPath]
+
 /-- The contracting homotopy, from the enveloping algebra to `⨁_b kQ eⱼ ⊗_k eᵢ kQ`: the `k`-linear
 map sending `x ⊗ q`, for a path `q`, to `homotopyPath q x`. -/
 private noncomputable def homotopy : 𝒜ᵉ →ₗ[k] arrowTensorBimodule k Q :=
@@ -239,7 +280,115 @@ private theorem homotopy_tmul {s t : Q} (x : 𝒜) (q : Quiver.Path s t) :
 
 end Homotopy
 
+/-! ### The universal derivation -/
+
+section Derivation
+
+variable [DecidableEq Q] [∀ i j : Q, DecidableEq (i ⟶ j)]
+
+variable (k Q)
+
+/-- **The universal derivation** `∂ : kQ → ⨁_{b : i ⟶ j} kQ eⱼ ⊗_k eᵢ kQ` of the path algebra
+relative to its vertex idempotents. On a path `q` it is the sum, over the factorizations
+`q = q'' b q'` with `b` an arrow, of `q'' ⊗ q'` in the component of `b`. It is a derivation
+(`TauCeti.PathAlgebra.arrowTensorDerivation_mul`) which kills the vertex idempotents and sends an
+arrow `b : i ⟶ j` to the generator `eⱼ ⊗ eᵢ` of its component, and it is universal among such
+derivations into a bimodule (`TauCeti.PathAlgebra.arrowTensorLift_arrowTensorDerivation` and
+`TauCeti.PathAlgebra.arrowTensorBimodule_hom_ext`). -/
+noncomputable def arrowTensorDerivation : 𝒜 →ₗ[k] arrowTensorBimodule k Q :=
+  homotopy ∘ₗ TensorProduct.mk k 𝒜 𝒜ᵐᵒᵖ 1 ∘ₗ (opLinearEquiv k).toLinearMap
+
+variable {k Q}
+
+private theorem arrowTensorDerivation_apply (y : 𝒜) :
+    arrowTensorDerivation k Q y = homotopy ((1 : 𝒜) ⊗ₜ[k] op y) := (rfl)
+
+/-- The universal derivation kills the vertex idempotents. -/
+@[simp]
+theorem arrowTensorDerivation_vertexIdempotent (v : Q) :
+    arrowTensorDerivation k Q (ε v) = 0 := by
+  rw [arrowTensorDerivation_apply, vertexIdempotent_eq_ofPath, homotopy_tmul, homotopyPath_nil,
+    LinearMap.zero_apply]
+
+/-- **The universal derivation of an arrow** `b : i ⟶ j` is the generator `eⱼ ⊗ eᵢ` of the
+component of `b`. -/
+theorem arrowTensorDerivation_ofArrow {i j : Q} (b : i ⟶ j) :
+    arrowTensorDerivation k Q (ofArrow b) =
+      DirectSum.lof 𝒜ᵉ _ _ ⟨i, j, b⟩
+        (spanSingletonGenerator (arrowTensorIdempotent k Q ⟨i, j, b⟩)) := by
+  -- The homotopy of `1 ⊗ b` is `1 ⊗ eᵢ` projected to the component of `b`, which is `eⱼ ⊗ eᵢ`.
+  have h : ((1 : 𝒜) ⊗ₜ[k] op (ε i)) * arrowTensorIdempotent k Q ⟨i, j, b⟩ =
+      arrowTensorIdempotent k Q ⟨i, j, b⟩ := by
+    rw [arrowTensorIdempotent_def, Algebra.TensorProduct.tmul_mul_tmul, one_mul, ← op_mul,
+      vertexIdempotent_mul_self]
+  rw [arrowTensorDerivation_apply, ofArrow_eq_ofPath, homotopy_tmul, homotopyPath_toPath,
+    ← arrowTensorProj_mul_arrowTensorIdempotent, h, arrowTensorProj_arrowTensorIdempotent]
+
+/-- The simp-normal form of `TauCeti.PathAlgebra.arrowTensorDerivation_ofArrow`, in which
+`TauCeti.PathAlgebra.ofArrow_eq_ofPath` has written the arrow as its length-one path. -/
+@[simp]
+theorem arrowTensorDerivation_ofPath_toPath {i j : Q} (b : i ⟶ j) :
+    arrowTensorDerivation k Q (ofPath ⟨i, j, b.toPath⟩) =
+      DirectSum.lof 𝒜ᵉ _ _ ⟨i, j, b⟩
+        (spanSingletonGenerator (arrowTensorIdempotent k Q ⟨i, j, b⟩)) := by
+  rw [← ofArrow_eq_ofPath, arrowTensorDerivation_ofArrow]
+
+end Derivation
+
+/-! ### Bimodule maps out of the left term -/
+
+section Lift
+
+variable {M : Type*} [AddCommGroup M] [Module (pathAlgebra k Q ⊗[k] (pathAlgebra k Q)ᵐᵒᵖ) M]
+
+variable [DecidableEq Q] [∀ i j : Q, DecidableEq (i ⟶ j)]
+
+variable (k Q) in
+/-- The bimodule map out of `⨁_{b : i ⟶ j} kQ eⱼ ⊗_k eᵢ kQ` which sends the generator `eⱼ ⊗ eᵢ` of
+the component of each arrow `b` to `(eⱼ ⊗ eᵢ) m_b`, for a family `m` of elements of a bimodule `M`.
+Applied to the values of a derivation on the arrows, it is the factorization of that derivation
+through the universal derivation (`TauCeti.PathAlgebra.arrowTensorLift_arrowTensorDerivation`). -/
+noncomputable def arrowTensorLift (m : (Σ i j : Q, i ⟶ j) → M) :
+    arrowTensorBimodule k Q →ₗ[𝒜ᵉ] M :=
+  DirectSum.toModule 𝒜ᵉ _ _ fun b ↦
+    LinearMap.toSpanSingleton 𝒜ᵉ M (m b) ∘ₗ (Ideal.span {arrowTensorIdempotent k Q b}).subtype
+
+/-- On the component of an arrow `b`, the lift of a family `m` acts on `m_b`. -/
+@[simp]
+theorem arrowTensorLift_lof (m : (Σ i j : Q, i ⟶ j) → M) (b : Σ i j : Q, i ⟶ j)
+    (u : (Ideal.span {arrowTensorIdempotent k Q b} : Ideal 𝒜ᵉ)) :
+    arrowTensorLift k Q m (DirectSum.lof 𝒜ᵉ _ _ b u) = (u : 𝒜ᵉ) • m b := by
+  simp [arrowTensorLift]
+
+/-- The lift of a family `m` sends the universal derivation of an arrow `b : i ⟶ j` to
+`(eⱼ ⊗ eᵢ) m_b`. This is not a `simp` lemma, since `TauCeti.PathAlgebra.ofArrow_eq_ofPath`
+rewrites its left-hand side, and `simp` evaluates the resulting form through
+`TauCeti.PathAlgebra.arrowTensorDerivation_ofPath_toPath` and
+`TauCeti.PathAlgebra.arrowTensorLift_lof`. -/
+theorem arrowTensorLift_arrowTensorDerivation_ofArrow (m : (Σ i j : Q, i ⟶ j) → M) {i j : Q}
+    (b : i ⟶ j) :
+    arrowTensorLift k Q m (arrowTensorDerivation k Q (ofArrow b)) =
+      arrowTensorIdempotent k Q ⟨i, j, b⟩ • m ⟨i, j, b⟩ := by
+  rw [arrowTensorDerivation_ofArrow, arrowTensorLift_lof, coe_spanSingletonGenerator]
+
+/-- **Bimodule maps out of `⨁_b kQ eⱼ ⊗_k eᵢ kQ` are determined by their values on the universal
+derivations of the arrows.** -/
+@[ext]
+theorem arrowTensorBimodule_hom_ext {f g : arrowTensorBimodule k Q →ₗ[𝒜ᵉ] M}
+    (h : ∀ ⦃i j : Q⦄ (b : i ⟶ j),
+      f (arrowTensorDerivation k Q (ofArrow b)) = g (arrowTensorDerivation k Q (ofArrow b))) :
+    f = g := by
+  refine DirectSum.linearMap_ext 𝒜ᵉ fun b ↦ LinearMap.ext fun u ↦ ?_
+  obtain ⟨i, j, b⟩ := b
+  obtain ⟨w, rfl⟩ := exists_smul_spanSingletonGenerator u
+  simpa only [LinearMap.comp_apply, map_smul, arrowTensorDerivation_ofArrow] using
+    congr_arg (w • ·) (h b)
+
+end Lift
+
 end
+
+section
 
 /-! ### The vertex idempotent -/
 
@@ -298,10 +447,9 @@ theorem arrowTensorBoundary_mul_vertexTensorIdempotent (b : Σ i j : Q, i ⟶ j)
     arrowTensorBoundary k Q b * vertexTensorIdempotent k Q = arrowTensorBoundary k Q b := by
   obtain ⟨i, j, b⟩ := b
   rw [arrowTensorBoundary, sub_mul,
-    tmul_mul_vertexTensorIdempotent_of_mul_vertexIdempotent (v := i) (by
-      rw [ofArrow_eq_ofPath, ofPath_mul_vertexIdempotent]),
+    tmul_mul_vertexTensorIdempotent_of_mul_vertexIdempotent (ofArrow_mul_vertexIdempotent_self b),
     tmul_mul_vertexTensorIdempotent_of_mul_vertexIdempotent (vertexIdempotent_mul_self j),
-    vertexIdempotent_mul_self, ofArrow_eq_ofPath, vertexIdempotent_mul_ofPath]
+    vertexIdempotent_mul_self, vertexIdempotent_mul_ofArrow_self]
 
 /-! ### The middle term of the resolution -/
 
@@ -370,19 +518,13 @@ variable [DecidableEq Q] [∀ i j : Q, DecidableEq (i ⟶ j)]
 
 variable (k Q)
 
-/-- The component at an arrow `b : i ⟶ j` of the differential of the standard resolution: right
-multiplication by `b ⊗ eᵢ - eⱼ ⊗ b`, from `kQ eⱼ ⊗_k eᵢ kQ` to `kQ ⊗_{kQ₀} kQ`. -/
-private noncomputable def arrowTensorDifferentialComponent (b : Σ i j : Q, i ⟶ j) :
-    (Ideal.span {arrowTensorIdempotent k Q b} : Ideal 𝒜ᵉ) →ₗ[𝒜ᵉ] vertexTensorBimodule k Q :=
-  LinearMap.toSpanSingleton 𝒜ᵉ _ ⟨arrowTensorBoundary k Q b, mem_vertexTensorBimodule_iff.2
-    (arrowTensorBoundary_mul_vertexTensorIdempotent b)⟩ ∘ₗ
-      (Ideal.span {arrowTensorIdempotent k Q b}).subtype
-
 /-- **The differential of the standard resolution**, `x eⱼ ⊗ eᵢ y ↦ x b ⊗ eᵢ y - x eⱼ ⊗ b y` in
-the component of an arrow `b : i ⟶ j`. -/
+the component of an arrow `b : i ⟶ j`: the bimodule map sending the generator `eⱼ ⊗ eᵢ` to
+`b ⊗ eᵢ - eⱼ ⊗ b`. -/
 noncomputable def arrowTensorDifferential :
     arrowTensorBimodule k Q →ₗ[𝒜ᵉ] vertexTensorBimodule k Q :=
-  DirectSum.toModule 𝒜ᵉ _ _ (arrowTensorDifferentialComponent k Q)
+  arrowTensorLift k Q fun b ↦ (⟨arrowTensorBoundary k Q b, mem_vertexTensorBimodule_iff.2
+    (arrowTensorBoundary_mul_vertexTensorIdempotent b)⟩ : vertexTensorBimodule k Q)
 
 variable {k Q}
 
@@ -393,7 +535,7 @@ theorem coe_arrowTensorDifferential_lof (b : Σ i j : Q, i ⟶ j)
     (u : (Ideal.span {arrowTensorIdempotent k Q b} : Ideal 𝒜ᵉ)) :
     (arrowTensorDifferential k Q (DirectSum.lof 𝒜ᵉ _ _ b u) : 𝒜ᵉ) =
       u * arrowTensorBoundary k Q b := by
-  simp [arrowTensorDifferential, arrowTensorDifferentialComponent]
+  rw [arrowTensorDifferential, arrowTensorLift_lof, Submodule.coe_smul, smul_eq_mul]
 
 /-- **The differential is `x ⊗ y ↦ x b ⊗ y - x ⊗ b y`**: on the generator `x eⱼ ⊗ eᵢ y` of the
 component of an arrow `b : i ⟶ j` its value is `x b ⊗ eᵢ y - x eⱼ ⊗ b y`. -/
@@ -523,6 +665,94 @@ theorem exact_arrowTensorDifferential_vertexTensorMul :
     rw [map_neg, Submodule.coe_neg, key, neg_neg]
   · rintro ⟨w, rfl⟩
     exact vertexTensorMul_arrowTensorDifferential w
+
+/-! ### The Leibniz rule and the universal property -/
+
+/-- **The boundary of the universal derivation** is `y ⊗ 1 - 1 ⊗ y`: followed by the differential
+of the standard resolution, `∂` is `y ↦ (y ⊗ 1 - 1 ⊗ y)(∑ᵥ eᵥ ⊗ eᵥ)`, with values in
+`kQ ⊗_{kQ₀} kQ`. -/
+@[simp]
+theorem coe_arrowTensorDifferential_arrowTensorDerivation (y : 𝒜) :
+    (arrowTensorDifferential k Q (arrowTensorDerivation k Q y) : 𝒜ᵉ) =
+      (y ⊗ₜ[k] 1 - 1 ⊗ₜ[k] op y) * vertexTensorIdempotent k Q := by
+  -- Both sides are `k`-linear in `y`, so they agree as linear maps, compared on the paths.
+  have key : (vertexTensorBimodule k Q).subtype.restrictScalars k ∘ₗ
+      (arrowTensorDifferential k Q).restrictScalars k ∘ₗ arrowTensorDerivation k Q =
+      LinearMap.mulRight k (vertexTensorIdempotent k Q) ∘ₗ
+        ((TensorProduct.mk k 𝒜 𝒜ᵐᵒᵖ).flip 1 -
+          TensorProduct.mk k 𝒜 𝒜ᵐᵒᵖ 1 ∘ₗ (opLinearEquiv k).toLinearMap) := by
+    refine (pathAlgebraBasis k Q).ext fun q ↦ ?_
+    obtain ⟨s, t, q⟩ := q
+    simp only [coe_pathAlgebraBasis, LinearMap.comp_apply, LinearMap.sub_apply,
+      LinearMap.mulRight_apply, LinearMap.restrictScalars_apply, Submodule.subtype_apply,
+      TensorProduct.mk_apply, LinearMap.flip_apply, LinearEquiv.coe_coe, coe_opLinearEquiv]
+    rw [arrowTensorDerivation_apply, homotopy_tmul, coe_arrowTensorDifferential_homotopyPath,
+      sub_mul, ← op_one,
+      tmul_mul_vertexTensorIdempotent_of_mul_vertexIdempotent (ofPath_mul_vertexIdempotent q),
+      tmul_mul_vertexTensorIdempotent_of_vertexIdempotent_mul 1 (vertexIdempotent_mul_ofPath q),
+      one_mul, mul_one]
+  simpa using LinearMap.congr_fun key y
+
+end
+
+variable [Finite Q] [DecidableEq Q] [∀ i j : Q, DecidableEq (i ⟶ j)]
+
+/-- **The Leibniz rule** `∂ (x y) = x ∂y + ∂x y`, the two bimodule actions on
+`⨁_b kQ eⱼ ⊗_k eᵢ kQ` being those of `x ⊗ 1` and `1 ⊗ y` in the enveloping algebra. -/
+theorem arrowTensorDerivation_mul (x y : 𝒜) :
+    arrowTensorDerivation k Q (x * y) =
+      (x ⊗ₜ[k] 1 : 𝒜ᵉ) • arrowTensorDerivation k Q y +
+        ((1 : 𝒜) ⊗ₜ[k] op y) • arrowTensorDerivation k Q x := by
+  have := Fintype.ofFinite Q
+  refine arrowTensorDifferential_injective (Subtype.ext ?_)
+  simp only [map_add, map_smul, Submodule.coe_add, Submodule.coe_smul, smul_eq_mul,
+    coe_arrowTensorDifferential_arrowTensorDerivation, ← mul_assoc, mul_sub,
+    Algebra.TensorProduct.tmul_mul_tmul, mul_one, one_mul, ← op_mul, ← add_mul]
+  congr 1
+  abel
+
+/-- The universal derivation kills `1`. -/
+@[simp]
+theorem arrowTensorDerivation_one : arrowTensorDerivation k Q (1 : 𝒜) = 0 := by
+  have := Fintype.ofFinite Q
+  simp [one_def]
+
+variable {M : Type*} [AddCommGroup M] [Module (pathAlgebra k Q ⊗[k] (pathAlgebra k Q)ᵐᵒᵖ) M]
+  [Module k M] [IsScalarTower k (pathAlgebra k Q ⊗[k] (pathAlgebra k Q)ᵐᵒᵖ) M]
+
+/-- **The universal property of the universal derivation.** A `k`-linear derivation `D` of the path
+algebra into a bimodule `M` which kills the vertex idempotents factors through `∂`: the bimodule map
+sending the generator of the component of each arrow `b` to `D b` takes `∂ x` to `D x`. By
+`TauCeti.PathAlgebra.arrowTensorBimodule_hom_ext` it is the only bimodule map doing so. -/
+theorem arrowTensorLift_arrowTensorDerivation (D : 𝒜 →ₗ[k] M)
+    (hD : ∀ x y : 𝒜, D (x * y) = (x ⊗ₜ[k] 1 : 𝒜ᵉ) • D y + ((1 : 𝒜) ⊗ₜ[k] op y) • D x)
+    (hD₀ : ∀ v : Q, D (ε v) = 0) (x : 𝒜) :
+    arrowTensorLift k Q (fun b ↦ D (ofArrow b.2.2)) (arrowTensorDerivation k Q x) = D x := by
+  -- The derivation of an arrow `b : i ⟶ j` lies in the image of `eⱼ ⊗ eᵢ`.
+  have hDb {i j : Q} (b : i ⟶ j) :
+      arrowTensorIdempotent k Q ⟨i, j, b⟩ • D (ofArrow b) = D (ofArrow b) := by
+    have hl := hD (ε j) (ofArrow b)
+    have hr := hD (ofArrow b) (ε i)
+    rw [vertexIdempotent_mul_ofArrow_self, hD₀, smul_zero, add_zero] at hl
+    rw [ofArrow_mul_vertexIdempotent_self, hD₀, smul_zero, zero_add] at hr
+    calc arrowTensorIdempotent k Q ⟨i, j, b⟩ • D (ofArrow b)
+        = (ε j ⊗ₜ[k] 1 : 𝒜ᵉ) • ((1 : 𝒜) ⊗ₜ[k] op (ε i)) • D (ofArrow b) := by
+          rw [← mul_smul, Algebra.TensorProduct.tmul_mul_tmul, mul_one, one_mul,
+            arrowTensorIdempotent_def]
+      _ = D (ofArrow b) := by rw [← hr, ← hl]
+  -- Both sides are `k`-linear in `x`, so they agree as linear maps, compared on the paths.
+  have key : (arrowTensorLift k Q (fun b ↦ D (ofArrow b.2.2))).restrictScalars k ∘ₗ
+      arrowTensorDerivation k Q = D := by
+    refine (pathAlgebraBasis k Q).ext fun q ↦ ?_
+    obtain ⟨s, t, q⟩ := q
+    simp only [coe_pathAlgebraBasis, LinearMap.comp_apply, LinearMap.restrictScalars_apply]
+    induction q with
+    | nil => rw [← vertexIdempotent_eq_ofPath, arrowTensorDerivation_vertexIdempotent, map_zero,
+        hD₀]
+    | @cons t t' q c ih =>
+      rw [← ofArrow_mul_ofPath, arrowTensorDerivation_mul, map_add, map_smul, map_smul, ih,
+        arrowTensorLift_arrowTensorDerivation_ofArrow, hDb, hD]
+  exact LinearMap.congr_fun key x
 
 end PathAlgebra
 

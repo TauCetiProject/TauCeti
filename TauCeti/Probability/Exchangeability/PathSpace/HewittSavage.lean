@@ -13,7 +13,7 @@ public import Mathlib.MeasureTheory.Constructions.Cylinders
 -- Non-public: used only inside proofs.
 import TauCeti.MeasureTheory.Constructions.CylinderApproximation
 import TauCeti.Algebra.GroupAction.FiniteSupportPerm
-import Mathlib.Probability.Independence.InfinitePi
+import TauCeti.Probability.Independence.InfinitePi
 import TauCeti.MeasureTheory.Measure.ZeroOne
 
 /-!
@@ -188,8 +188,8 @@ theorem measure_eq_zero_or_one_of_exchangeableSigma {ρ : Measure (ℕ → α)} 
     ?_
   intro ε hε
   obtain ⟨F, S, hS, hFS⟩ :=
-    TauCeti.MeasureTheory.exists_cylinder_measure_symmDiff_lt (ρ := ρ) hs_meas
-    (ε := ENNReal.ofReal ε) (ENNReal.ofReal_pos.mpr hε)
+    TauCeti.MeasureTheory.exists_cylinder_measure_symmDiff_lt (ρ := ρ)
+    hs_meas.nullMeasurableSet (ε := ENNReal.ofReal ε) (ENNReal.ofReal_pos.mpr hε)
   obtain ⟨N, hN⟩ := Finset.exists_nat_subset_range F
   set π := N.blockSwap
   set t := cylinder (α := fun _ : ℕ => α) F S with ht
@@ -245,21 +245,6 @@ theorem hewittSavage_trivial_of_iIndep {μ : Measure Ω} {X : ℕ → Ω → α}
     (fun {_F _G} hFG {_S} hS {_T} hT =>
       measure_pathLaw_inter_cylinder_of_disjoint hX h_indep hFG hS hT) hs
 
-/-- The coordinate process of `P^{⊗ℕ}` is independent. -/
-private theorem iIndepFun_coord_infinitePi (P : ProbabilityMeasure α) :
-    ProbabilityTheory.iIndepFun (fun n (x : ℕ → α) => x n)
-      (Measure.infinitePi fun _ : ℕ => (P : Measure α)) :=
-  ProbabilityTheory.iIndepFun_infinitePi (P := fun _ : ℕ => (P : Measure α))
-    (X := fun _ x => x) fun _ => measurable_id
-
-/-- The coordinate process of `P^{⊗ℕ}` is identically distributed. -/
-private theorem identDistrib_coord_infinitePi (P : ProbabilityMeasure α) (n : ℕ) :
-    ProbabilityTheory.IdentDistrib (fun x : ℕ → α => x n) (fun x => x 0)
-      (Measure.infinitePi fun _ : ℕ => (P : Measure α))
-      (Measure.infinitePi fun _ : ℕ => (P : Measure α)) :=
-  ⟨(measurable_pi_apply n).aemeasurable, (measurable_pi_apply 0).aemeasurable, by
-    simp [Measure.infinitePi_map_eval]⟩
-
 /-- **The zero-one law for an i.i.d. product law.** Every exchangeable event has probability `0` or
 `1` under `P^{⊗ℕ}`.
 
@@ -270,8 +255,8 @@ theorem exchangeableSigma_trivial_of_infinitePi (P : ProbabilityMeasure α) {s :
     (hs : MeasurableSet[exchangeableSigma α] s) :
     (Measure.infinitePi fun _ : ℕ => (P : Measure α)) s = 0 ∨
       (Measure.infinitePi fun _ : ℕ => (P : Measure α)) s = 1 := by
-  have hzeroOne := hewittSavage_trivial_of_iIndep (iIndepFun_coord_infinitePi P)
-    (identDistrib_coord_infinitePi P) hs
+  have hzeroOne := hewittSavage_trivial_of_iIndep (iIndepFun_eval_infinitePi _)
+    (fun n => (P : Measure α).identDistrib_eval_infinitePi n 0) hs
   rwa [pathLaw_coord] at hzeroOne
 
 end HewittSavage
