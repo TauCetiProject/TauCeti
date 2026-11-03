@@ -112,7 +112,7 @@ private theorem exists_matrix_norm_sub_le [NormalSpace K] [NormalSpace L]
   have hterm (i : ι) : ‖B (f i) (g i) - B (f' i) (g' i)‖ ≤ 2 * C * δ := by
     have heq : B (f i) (g i) - B (f' i) (g' i) =
         B (f i - f' i) (g i) + B (f' i) (g i - g' i) := by
-      simp only [map_sub, sub_apply]
+      simp only [map_sub, LinearMap.sub_apply]
       ring
     rw [heq]
     refine (norm_add_le _ _).trans ?_

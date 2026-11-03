@@ -38,6 +38,8 @@ indefinite form, which takes values of both signs, has surjective spinor norm on
 * `CliffordAlgebra.orthogonalSpinorNorm_eq_orthogonalDetSquareClass_of_negDef` and
   `CliffordAlgebra.spinorNorm_eq_one_of_negDef`: the negative definite case, the determinant square
   class on `O(Q)` and the trivial map on `SO(Q)`.
+* `CliffordAlgebra.spinToSpecialOrthogonal_surjective_of_negDef`: the Spin action is onto `SO(Q)`
+  for a negative definite form.
 * `CliffordAlgebra.orthogonalSpinorNorm_surjective_of_negValue` and
   `CliffordAlgebra.spinorNorm_surjective_of_indefinite`: surjectivity on `O(Q)` as soon as the form
   takes a negative value, and on `SO(Q)` for an indefinite form.
@@ -131,6 +133,17 @@ theorem spinorNorm_eq_one_of_negDef (Q : QuadraticForm ℝ V) (hneg : (-Q).PosDe
     QuadraticMap.orthogonalDetSquareClass_apply, coe_specialOrthogonalToOrthogonal,
     QuadraticMap.det_coe_specialOrthogonalGroup, map_one]
   simp only [MonoidHom.one_apply]
+
+/-- The Spin action of a finite-dimensional negative-definite real quadratic space is onto its
+special orthogonal group. -/
+theorem spinToSpecialOrthogonal_surjective_of_negDef
+    (Q : QuadraticForm ℝ V) (hneg : (-Q).PosDef) :
+    Function.Surjective (spinToSpecialOrthogonal Q) := by
+  apply MonoidHom.range_eq_top.mp
+  rw [range_spinToSpecialOrthogonal_eq_ker_spinorNorm Q
+    ((QuadraticMap.nondegenerate_neg Q).mp hneg.anisotropic.nondegenerate),
+    spinorNorm_eq_one_of_negDef Q hneg]
+  exact MonoidHom.ker_one
 
 /-- The spinor norm of a real quadratic form taking a negative value is surjective on `O(Q)`.
 This holds in particular for a negative definite form of positive dimension and for an indefinite

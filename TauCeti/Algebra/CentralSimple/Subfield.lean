@@ -408,10 +408,10 @@ noncomputable def mulRightAlgHom :
   toFun b := mulRight L g b.unop
   map_one' := by
     ext x
-    rw [MulOpposite.unop_one, mulRight_of, map_one g, mul_one, Module.End.one_apply]
+    rw [MulOpposite.unop_one, mulRight_of, map_one g, mul_one, one_apply_eq_self]
   map_mul' b c := by
     ext x
-    rw [MulOpposite.unop_mul, Module.End.mul_apply, mulRight_of, mulRight_of, mulRight_of,
+    rw [MulOpposite.unop_mul, mul_apply_eq_comp, mulRight_of, mulRight_of, mulRight_of,
       map_mul g, mul_assoc]
   map_zero' := by
     ext x
