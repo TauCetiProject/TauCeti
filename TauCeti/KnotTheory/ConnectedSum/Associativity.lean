@@ -392,6 +392,10 @@ private theorem smoothIsotopic_capSum {c : unitInterval → Fin m → Circle}
 
 /-! ### Connected sums as cap sums -/
 
+/-- The height of a point toward the cap at `-1` is minus its imaginary part. -/
+private theorem inner_neg_one_mul_I (z : ℂ) : ⟪z, ((-1 : Circle) : ℂ) * Complex.I⟫ = -z.im := by
+  simp
+
 variable {K₁ K₂ K₃ : SmoothCircleEmbedding (𝓡 n) (sphere (0 : E) 1)}
 
 /-- The connected sum of two knots in cap position is their cap sum at `1` and `-1`. -/
@@ -404,7 +408,7 @@ private theorem connectedSum_eq_capSum {c : Fin 2 → Circle} (h : IsCapConfig �
   · rw [connectedSum_apply_of_im_nonneg _ _ hz, h.capSumFun_eq_slide 0 fun k hk => ?_]
     · simp [hc₀, slide_one_apply]
     · obtain rfl : k = 1 := by omega
-      rw [hc₁, show ⟪(z : ℂ), ((-1 : Circle) : ℂ) * Complex.I⟫ = -(z : ℂ).im by simp]
+      rw [hc₁, inner_neg_one_mul_I]
       linarith [h.pos]
   · rw [coe_connectedSum_apply_of_im_neg _ _ hz, h.capSumFun_eq_slide 1 fun k hk => ?_]
     · rw [hc₁, ← reflection_slide_neg, slide_one_apply]
@@ -427,7 +431,7 @@ private theorem connectedSum_capSum_eq {c : Fin 2 → Circle} {c' : Fin 3 → Ci
   · rw [connectedSum_apply_of_im_nonneg _ _ hz, coe_capSum_apply, capSumFun, capSumFun,
       Fin.sum_univ_two, Fin.sum_univ_three, hc₀, hc₁, hc₂]
     have h₃' := (h'.isCapPosition 2).coe_slide_apply_of_le (c := -1) (z := z) (by
-      rw [show ⟪(z : ℂ), ((-1 : Circle) : ℂ) * Complex.I⟫ = -(z : ℂ).im by simp]; linarith [h.pos])
+      rw [inner_neg_one_mul_I]; linarith [h.pos])
     simp only [Matrix.cons_val_zero, Matrix.cons_val_one, Matrix.cons_val_two,
       Matrix.head_cons, Matrix.tail_cons] at h₃' ⊢
     rw [h₃', sub_self, add_zero]
@@ -506,14 +510,22 @@ private theorem cos_lt_of_mem_Icc {x : ℝ} (hx : π / 4 ≤ x) (hx' : x ≤ 7 *
 connected-sum position sits. -/
 private abbrev capPoint : Circle := Circle.exp (7 * π / 4)
 
+/-- Turning `-1` through `3 π / 4` reaches `capPoint`; this is the end of the second cap's
+path. -/
+private theorem circleExp_pi_add_three_pi_div_four : Circle.exp (π + 3 * π / 4) = capPoint := by
+  rw [capPoint]
+  congr 1
+  ring
+
 private theorem circleExp_three_pi_div_four : Circle.exp (3 * π / 4) = -capPoint := by
-  rw [capPoint, show 7 * π / 4 = 3 * π / 4 + π by ring, Circle.exp_add, Circle.exp_pi, mul_neg,
-    mul_one, neg_neg]
+  rw [← circleExp_pi_add_three_pi_div_four, Circle.exp_add, Circle.exp_pi, neg_mul, one_mul,
+    neg_neg]
 
 private theorem re_capPoint :
     (0 : ℝ) ≤ (capPoint : ℂ).re ∧ 1 - (capPoint : ℂ).re ^ 2 < capRadius ^ 2 := by
   have hcos : cos (7 * π / 4) = √2 / 2 := by
-    rw [show 7 * π / 4 = -(π / 4) + 2 * π by ring, cos_add_two_pi, cos_neg, cos_pi_div_four]
+    have hangle : 7 * π / 4 = -(π / 4) + 2 * π := by ring
+    rw [hangle, cos_add_two_pi, cos_neg, cos_pi_div_four]
   rw [capPoint, Circle.coe_exp, Complex.exp_ofReal_mul_I_re, hcos]
   refine ⟨by positivity, ?_⟩
   rw [div_pow, sq_sqrt (by norm_num)]
@@ -611,7 +623,7 @@ theorem exists_concordant_connectedSum_assoc (h₁ : IsConnectedSumPosition ι K
     fin_cases j
     · simp [pathTwo, capRadius]
     · simp only [pathTwo, Fin.mk_one, Matrix.cons_val_one, Set.Icc.coe_one, mul_one]
-      rw [show π + 3 * π / 4 = 7 * π / 4 by ring]
+      rw [circleExp_pi_add_three_pi_div_four]
       exact re_capPoint
   -- Evaluating the paths at their ends.
   have hp₂₀ : pathTwo 0 0 = 1 := by simp [pathTwo]
@@ -619,18 +631,19 @@ theorem exists_concordant_connectedSum_assoc (h₁ : IsConnectedSumPosition ι K
   have hq₂₀ : pathTwo 1 0 = 1 := by simp [pathTwo]
   have hq₂₁ : pathTwo 1 1 = capPoint := by
     simp only [pathTwo, Matrix.cons_val_one, Matrix.cons_val_zero, Set.Icc.coe_one, mul_one]
-    rw [show π + 3 * π / 4 = 7 * π / 4 by ring]
+    exact circleExp_pi_add_three_pi_div_four
   have hp₃₀ : pathThree 0 0 = 1 := by simp [pathThree]
   have hp₃₁ : pathThree 0 1 = -1 := by simp [pathThree, Circle.exp_pi]
   have hp₃₂ : pathThree 0 2 = -capPoint := by simp [pathThree, circleExp_three_pi_div_four]
   have hq₃₀ : pathThree 1 0 = 1 := by simp [pathThree]
   have hq₃₁ : pathThree 1 1 = capPoint := by
     simp only [pathThree, Matrix.cons_val_one, Matrix.cons_val_zero, Set.Icc.coe_one, mul_one]
-    rw [show π + 3 * π / 4 = 7 * π / 4 by ring]
+    exact circleExp_pi_add_three_pi_div_four
   have hq₃₂ : pathThree 1 2 = -1 := by
     simp only [pathThree, Matrix.cons_val_two, Matrix.tail_cons, Matrix.head_cons,
       Set.Icc.coe_one, mul_one]
-    rw [show 3 * π / 4 + π / 4 = π by ring, Circle.exp_pi]
+    have hangle : 3 * π / 4 + π / 4 = π := by ring
+    rw [hangle, Circle.exp_pi]
   set P := capSum (hcap₂ L₁ L₂ ha₁ ha₂ 1)
   set Q := capSum (hcap₂ L₂ L₃ ha₂ ha₃ 1)
   have hP : IsConnectedSumPosition ι P :=
