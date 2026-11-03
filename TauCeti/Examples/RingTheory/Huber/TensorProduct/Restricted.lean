@@ -66,6 +66,25 @@ example : IsHomeomorph (CompletedTensor.weightedRestrictedEquiv B hT) :=
 variable (S : Pair A) (U : Pair B)
   (hplus : S.plus ≤ U.plus.comap (algebraMap A B))
 
+-- The bundled maps are inverse morphisms, not only inverse functions.
+example :
+    (Pair.completedTensor.ofWeighted S U hT).comp
+      (Pair.completedTensor.toWeighted S U hT hplus) = Pair.Hom.id _ := by
+  simp
+
+example :
+    (Pair.completedTensor.toWeighted S U hT hplus).comp
+      (Pair.completedTensor.ofWeighted S U hT) = Pair.Hom.id _ := by
+  simp
+
+-- The projection API computes without unfolding the bundled maps.
+example (b : B) :
+    (Pair.completedTensor.toWeighted S U hT hplus).toRingHom
+        (CompletedTensor.inr A (Completion (weightedRestrictedSubring T hT)) B b) =
+      algebraMap B (Completion (weightedRestrictedSubring (fun i ↦ algebraMap A B '' T i)
+        (hAB.isWeightFamily_image hT))) b := by
+  simp
+
 -- Membership is reflected on the entire completion, not only on elementary tensors.
 example (y : Completion (weightedRestrictedSubring (fun i ↦ algebraMap A B '' T i)
     (hAB.isWeightFamily_image hT))) :
