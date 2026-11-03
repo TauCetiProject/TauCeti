@@ -185,7 +185,7 @@ theorem exists_hasStrictFDerivAt_symm_trans (hn : n ≠ 0)
     {z : E} (hz : z ∈ (q.symm.trans q').source) :
     ∃ A : E ≃L[𝕜] E, HasStrictFDerivAt (q.symm.trans q') (A : E →L[𝕜] E) z := by
   obtain ⟨A, hA⟩ := exists_hasFDerivAt_symm_trans hn hq hq' hz
-  exact ⟨A, hA.fderiv ▸ (contDiffAt_symm_trans_of_mem_maximalAtlas hq hq' hz).hasStrictFDerivAt hn⟩
+  exact ⟨A, (contDiffAt_symm_trans_of_mem_maximalAtlas hq hq' hz).hasStrictFDerivAt hA hn⟩
 
 end StrictFDeriv
 
