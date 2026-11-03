@@ -337,7 +337,7 @@ theorem isExhaustiveGradedSimpleFamily_gradedPositiveMulQuotient [Fintype I] [Mo
   -- `M` has a nonzero element, hence a nonzero homogeneous piece.
   obtain ⟨x, hx⟩ : ∃ x : M.obj, x ≠ 0 := by
     by_contra! h
-    exact id_nonzero M.obj (GradedModuleCat.hom_ext (LinearMap.ext h))
+    exact CategoryTheory.id_ne_zero M.obj (GradedModuleCat.hom_ext (LinearMap.ext h))
   have hfin := M.obj.grading.finite_piece_ne_bot
   have hne' : hfin.toFinset.Nonempty := by
     by_contra h
@@ -395,7 +395,7 @@ theorem isExhaustiveGradedSimpleFamily_gradedPositiveMulQuotient [Fintype I] [Mo
     rw [← hφg]
     exact LinearMap.mem_ker.1 (h ▸ Submodule.mem_top)
   have : Mono φ := (GradedModuleCat.mono_iff_injective φ).2 hinj
-  have : Epi φ := epi_of_nonzero_to_simple fun h => hi <| by
+  have : Epi φ := CategoryTheory.epi_of_ne_zero_to_simple fun h => hi <| by
     rw [← hφg, h, GradedModuleCat.hom_zero, LinearMap.zero_apply]
   have : IsIso φ := isIso_of_mono_of_epi φ
   exact ⟨i, p, ⟨(asIso φ).symm⟩⟩

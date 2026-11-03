@@ -128,7 +128,7 @@ theorem pow_apply_eq_zero_of_filtration_lowering (f : Module.End R (ReducedTenso
       simp [this]
   | succ n ih =>
       have hfz : f z ∈ filtration R M n := hf n ⟨z, hz, rfl⟩
-      simpa only [pow_succ, Module.End.mul_apply] using ih hfz
+      simpa only [pow_succ, mul_apply_eq_comp] using ih hfz
 
 /-- A map strictly lowering the tensor-length filtration is locally nilpotent. -/
 theorem exists_pow_apply_eq_zero_of_filtration_lowering

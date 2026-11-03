@@ -121,6 +121,7 @@ theorem mul_integralDividedPower (x : A) (M : S)
     integralDividedPower x M m hm * integralDividedPower x M n hn =
       Nat.choose (m + n) m • integralDividedPower x M (m + n) hmn := by
   ext v
+  rw [mul_apply_eq_comp]
   dsimp [integralDividedPower]
   rw [smul_smul, Associative.mul_dividedPower, smul_assoc]
 
@@ -261,7 +262,7 @@ theorem commute_baseChangeExp {x y : A} (M : S) (hxy : Commute x y)
   have hcomm : Commute (integralDividedPower x M m (hMx m))
       (integralDividedPower y M n (hMy n)) := by
     ext v
-    simp only [Module.End.mul_apply, coe_integralDividedPower_apply, ← mul_smul]
+    simp only [_root_.mul_apply_eq_comp, coe_integralDividedPower_apply, ← mul_smul]
     rw [(Associative.commute_dividedPower_dividedPower hxy m n).eq]
   exact hcomm.map (Module.End.baseChangeHom ℤ R M)
 
@@ -559,7 +560,7 @@ theorem baseChange_integralUnitRestrict_conj_baseChangeExp (x : A) (M : S) (u : 
   refine LinearMap.ext fun z => ?_
   induction z using TensorProduct.inductionOn with
   | tmul r v =>
-      rw [Module.End.mul_apply, Module.End.mul_apply, LinearMap.baseChange_tmul,
+      rw [_root_.mul_apply_eq_comp, _root_.mul_apply_eq_comp, LinearMap.baseChange_tmul,
         baseChangeExp_tmul_of_pow_eq_zero x M hM hk,
         baseChangeExp_tmul_of_pow_eq_zero ((u : A) * x * ↑u⁻¹) M hM' hk', map_sum]
       refine Finset.sum_congr rfl fun n _ => ?_

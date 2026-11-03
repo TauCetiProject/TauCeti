@@ -117,7 +117,7 @@ theorem forall_sub_dual_apply_mem_span_singleton_iff :
     simp only [LinearMap.smul_apply, LinearMap.mem_ker.1 hv, smul_zero, LinearMap.sub_apply,
       dual_apply, Module.Dual.transpose_apply, LinearMap.comp_apply] at hcv
     rw [map_sub, ← neg_sub, ← hcv, neg_zero]
-  rw [LinearMap.mem_ker, LinearMap.sub_apply, Module.End.one_apply, sub_eq_zero]
+  rw [LinearMap.mem_ker, LinearMap.sub_apply, one_apply_eq_self, sub_eq_zero]
   exact (ρ.inv_apply_eq_iff.1 hginv).symm
 
 variable {ρ} in
