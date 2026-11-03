@@ -21,8 +21,8 @@ lattice, including central directions and toral vectors outside the integral cor
 No integral splitting of the center and derived algebra is required. The result concerns the
 simple-generator form; its comparison with an all-root form is a separate question.
 
-The main result `LieAlgebra.Basis.orbitOfRep_kostantForm_toralExtension` identifies the enlarged
-orbit with the original one. Consequently `fg_orbitOfRep_kostantForm_toralExtension` supplies
+The main result `LieAlgebra.Basis.orbitOfRep_kostantForm_sumElim_eq` identifies the enlarged
+orbit with the original one. Consequently `fg_orbitOfRep_kostantForm_sumElim` supplies
 finite generation in a finite-dimensional representation. The weight formula and binomial
 stability theorem also apply without finite dimensionality.
 
@@ -90,7 +90,7 @@ theorem ringChoose_apply_mem_orbitOfRep_kostantForm
 integral orbit unchanged. The enlarged Cartan family retains the original coroot operators and
 adds the specified vectors `t`; neither an integral coroot-span condition nor an integral
 center/derived splitting is assumed. -/
-theorem orbitOfRep_kostantForm_toralExtension
+theorem orbitOfRep_kostantForm_sumElim_eq
     {μ : ι → ℤ} (hv : IsCartanWeightVector b.h σ μ v)
     (he : ∀ i, σ (_root_.UniversalEnvelopingAlgebra.ι ℚ (b.e i)) v = 0)
     (hα : ∀ i j, ⁅t j, φ (b.f i)⁆ = (α i j : ℚ) • φ (b.f i))
@@ -148,7 +148,7 @@ theorem orbitOfRep_kostantForm_toralExtension
 
 /-- In finite dimension, the highest-weight orbit remains finitely generated after adjoining
 integral toral directions, including directions not in the integral coroot lattice. -/
-theorem fg_orbitOfRep_kostantForm_toralExtension [FiniteDimensional ℚ V]
+theorem fg_orbitOfRep_kostantForm_sumElim [FiniteDimensional ℚ V]
     {μ : ι → ℤ} (hv : IsCartanWeightVector b.h σ μ v)
     (he : ∀ i, σ (_root_.UniversalEnvelopingAlgebra.ι ℚ (b.e i)) v = 0)
     (hα : ∀ i j, ⁅t j, φ (b.f i)⁆ = (α i j : ℚ) • φ (b.f i))
@@ -157,7 +157,7 @@ theorem fg_orbitOfRep_kostantForm_toralExtension [FiniteDimensional ℚ V]
       (TauCeti.UniversalEnvelopingAlgebra.kostantForm
         (fun i => φ (rootGenerator b i)) (Sum.elim (fun i => φ (b.h i)) t))
       ρ {v}).FG := by
-  rw [b.orbitOfRep_kostantForm_toralExtension φ ρ t hv he hα ht]
+  rw [b.orbitOfRep_kostantForm_sumElim_eq φ ρ t hv he hα ht]
   exact b.fg_orbitOfRep_kostantForm hv he
 
 end LieAlgebra.Basis
