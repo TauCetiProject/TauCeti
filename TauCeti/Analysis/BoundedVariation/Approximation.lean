@@ -230,48 +230,6 @@ private theorem contDiff_mollifiedPiece (hu : LocallyIntegrableOn u Ω μ) {ζ :
     (ContDiffBump.shrinking one_pos (n k)).contDiff_normed
     (integrable_cutoff_mul hu (hζ k)).locallyIntegrable
 
-omit [MeasurableSpace E] [BorelSpace E] in
-/-- Let `ζ k` be nonnegative smooth functions compactly supported in `Ω` whose partial sums are at
-most one, and `φ` a test vector field with `‖φ‖ ≤ 1`. For any vectors `τ k`, the field
-`∑ k < M, ζ k φ(· + τ k)` is a test vector field on `Ω` of norm at most one, whose divergence is
-given by the Leibniz rule `div (ζ φ) = ζ div φ + Dζ φ`. -/
-private theorem exists_testFunction_sum_smul_comp_add {ζ : ℕ → E → ℝ}
-    (hζ : ∀ k, ContDiff ℝ ∞ (ζ k) ∧ HasCompactSupport (ζ k) ∧ tsupport (ζ k) ⊆ Ω)
-    (hζ0 : ∀ k x, 0 ≤ ζ k x) (hζ1 : ∀ N x, ∑ k ∈ Finset.range N, ζ k x ≤ 1)
-    (φ : 𝓓(Ω, E)) (hφ : ∀ x, ‖φ x‖ ≤ 1) (M : ℕ) (τ : ℕ → E) :
-    ∃ Φ : 𝓓(Ω, E), (∀ y, ‖Φ y‖ ≤ 1) ∧ ∀ y, divergenceCLM Φ y = ∑ k ∈ Finset.range M,
-      (ζ k y * divergenceCLM φ (y + τ k) + fderiv ℝ (ζ k) y (φ (y + τ k))) := by
-  have hφτ (k : ℕ) : ContDiff ℝ ∞ (fun y => φ (y + τ k)) :=
-    φ.contDiff.comp (contDiff_id.add contDiff_const)
-  set L : Set E := ⋃ k ∈ Finset.range M, tsupport (ζ k)
-  have hL : IsCompact L := (Finset.range M).isCompact_biUnion fun k _ => (hζ k).2.1
-  have hLΩ : L ⊆ Ω := iUnion₂_subset fun k _ => (hζ k).2.2
-  have hΦL : support (fun y => ∑ k ∈ Finset.range M, ζ k y • φ (y + τ k)) ⊆ L := fun y hy => by
-    by_contra hyL
-    refine hy (Finset.sum_eq_zero fun k hk => ?_)
-    rw [image_eq_zero_of_notMem_tsupport fun h => hyL (mem_iUnion₂.2 ⟨k, hk, h⟩), zero_smul]
-  have hΦt : tsupport (fun y => ∑ k ∈ Finset.range M, ζ k y • φ (y + τ k)) ⊆ L :=
-    closure_minimal hΦL hL.isClosed
-  refine ⟨⟨fun y => ∑ k ∈ Finset.range M, ζ k y • φ (y + τ k),
-    ContDiff.sum fun k _ => (hζ k).1.smul (hφτ k),
-    .of_support_subset_isCompact hL hΦL, hΦt.trans hLΩ⟩, fun y => ?_, fun y => ?_⟩
-  · simp only [TestFunction.coe_mk]
-    calc ‖∑ k ∈ Finset.range M, ζ k y • φ (y + τ k)‖
-        ≤ ∑ k ∈ Finset.range M, ‖ζ k y • φ (y + τ k)‖ := norm_sum_le _ _
-      _ ≤ ∑ k ∈ Finset.range M, ζ k y := Finset.sum_le_sum fun k _ => by
-          rw [norm_smul, Real.norm_of_nonneg (hζ0 k y)]
-          exact mul_le_of_le_one_right (hζ0 k y) (hφ _)
-      _ ≤ 1 := hζ1 M y
-  · have hζd (k : ℕ) : DifferentiableAt ℝ (ζ k) y := (hζ k).1.differentiable (by simp) y
-    have hd (k : ℕ) : DifferentiableAt ℝ (fun y => φ (y + τ k)) y :=
-      (hφτ k).differentiable (by simp) y
-    rw [divergenceCLM_apply]
-    simp only [TestFunction.coe_mk]
-    rw [fderiv_fun_sum (A := fun k y => ζ k y • φ (y + τ k)) fun k _ => (hζd k).smul (hd k),
-      ContinuousLinearMap.toLinearMap_sum, map_sum]
-    refine Finset.sum_congr rfl fun k _ => ?_
-    rw [trace_fderiv_smul (hζd k) (hd k), fderiv_comp_add_right, divergenceCLM_apply]
-
 omit [μ.IsAddHaarMeasure] in
 /-- **The pairing estimate behind approximation on open sets.** Let `ζ k` be nonnegative smooth
 functions compactly supported in `Ω` whose partial sums are at most one, and suppose that the
@@ -323,7 +281,8 @@ private theorem sum_integral_mul_comp_sub_le [μ.IsAddRightInvariant]
       (τ k)]
     simp only [sub_add_cancel]
   -- The single test vector field `Φ = ∑ k, ζ k φ(· + τ k)` on `Ω`, of norm at most one.
-  obtain ⟨Φ, hΦ1, hdiv⟩ := exists_testFunction_sum_smul_comp_add hζ hζ0 hζ1 φ hφ M τ
+  obtain ⟨Φ, -, hΦ1, hdiv⟩ := exists_testFunction_sum_smul_comp_add (fun k _ => hζ k)
+    (fun k _ => hζ0 k) (hζ1 M) φ hφ τ
   have hTV : ∫ y, divergenceCLM Φ y * u y ∂μ ≤ (totalVariationOn μ Ω u).toReal :=
     (ENNReal.ofReal_le_iff_le_toReal hT).mp (ofReal_integral_le_totalVariationOn Φ hΦ1)
   have hsplit : ∫ y, divergenceCLM Φ y * u y ∂μ =
