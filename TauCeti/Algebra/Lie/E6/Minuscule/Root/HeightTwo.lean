@@ -15,9 +15,9 @@ Choose a minuscule weight with coordinates `0`, `-1` at `i`, `j`: raising first 
 at `i` is possible, while raising first at `i` is not. This gives the unit entry without a
 matrix rank computation or division by a bad prime.
 
-Consequently the height-two root operator remains nonzero over every nontrivial commutative
-ring, and the polynomial matrix parametrization `t ↦ 1 + t [Eᵢ,Eⱼ]` is injective over every
-commutative ring. These are nondegeneracy inputs for nonsimple root subgroups of the minuscule
+Consequently the height-two root operator remains nonzero over every nontrivial ring,
+and the polynomial matrix parametrization `t ↦ 1 + t [Eᵢ,Eⱼ]` is injective over every
+ring. These are nondegeneracy inputs for nonsimple root subgroups of the minuscule
 carrier; no group-scheme or root-subgroup identification is asserted here.
 
 ## Main results
@@ -51,7 +51,7 @@ theorem exists_lie_raisingMatrix_apply_eq_one {i j : Fin 6}
   refine ⟨DynkinType.e6MinusculeReflection i (DynkinType.e6MinusculeReflection j b), b, ?_⟩
   simp [Ring.lie_def, Matrix.mul_apply, raisingMatrix_apply, hbi, hbj, hstep]
 
-variable (A : Type*) [CommRing A]
+variable (A : Type*) [Ring A]
 
 /-- The height-two root operator remains nonzero over every nontrivial coefficient ring. -/
 theorem map_lie_raisingMatrix_ne_zero [Nontrivial A] {i j : Fin 6}
@@ -64,7 +64,7 @@ theorem map_lie_raisingMatrix_ne_zero [Nontrivial A] {i j : Fin 6}
   exact one_ne_zero hentry
 
 /-- The polynomial matrices of an adjacent positive root have faithful parameters over every
-commutative ring, including rings of characteristic two and nonreduced rings. -/
+ring, including noncommutative rings, rings of characteristic two and nonreduced rings. -/
 theorem one_add_smul_lie_raisingMatrix_injective {i j : Fin 6}
     (hij : CartanMatrix.E 6 i j = -1) :
     Function.Injective (fun t : A ↦ (1 : Matrix (Fin 27) (Fin 27) A) +
