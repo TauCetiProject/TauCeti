@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicTopology.SimplicialSet.Join
+public import TauCeti.AlgebraicTopology.SimplicialSet.Join.Basic
 
 /-!
 # Slices of simplicial sets
