@@ -158,6 +158,7 @@ private lemma pullbackMul_eq (i j : ℕ) :
             (Iso.refl ((pullbackToModules f).obj (component A (i + j)))).inv := by
   rw [Iso.refl_hom, Iso.refl_hom, Iso.refl_inv, id_tensorHom_id, Category.id_comp,
     Category.comp_id]
+  rfl
 
 private lemma pullbackOne_eq :
     pullbackOne f A =
@@ -165,6 +166,7 @@ private lemma pullbackOne_eq :
         (pullbackToModules f).map (componentOne A) ≫
           (Iso.refl ((pullbackToModules f).obj (component A 0))).inv := by
   rw [Iso.refl_inv, Category.comp_id]
+  rfl
 
 /-- The pullback `f^* A` of a graded quasicoherent algebra `A` on `Y` along `f : X ⟶ Y`: its
 homogeneous components are the pullbacks `f^* Aₙ`, with unit and homogeneous multiplications
