@@ -160,6 +160,29 @@ theorem binomialPolynomialBasis_apply [Nontrivial K] (n : ℕ) :
     binomialPolynomialBasis K n = Ring.choose X n :=
   Polynomial.Sequence.basisOfIsUnitLeadingCoeff_apply _ _ _
 
+/-- The first `n + 1` binomial basis vectors span the polynomials of degree at most `n`. -/
+theorem span_binomialPolynomialBasis_image_Iic_eq_degreeLE [Nontrivial K] (n : ℕ) :
+    Submodule.span K (binomialPolynomialBasis K '' Set.Iic n) = degreeLE K n := by
+  simpa only [binomialPolynomialBasis_apply, binomialPolynomialSequence_apply] using
+    (binomialPolynomialSequence K).span_degreeLE
+      (fun i _ => by simpa only [binomialPolynomialSequence_apply] using
+        isUnit_leadingCoeff_ringChoose_X K i)
+
+/-- The coordinates of an integral binomial expansion are its integer coefficients cast to `K`. -/
+theorem binomialPolynomialBasis_repr_sum_zsmul [Nontrivial K] (a : ℕ →₀ ℤ) (i : ℕ) :
+    (binomialPolynomialBasis K).repr
+      (a.sum (fun j z => z • Ring.choose (X : K[X]) j)) i = (a i : K) := by
+  classical
+  calc
+    _ = (binomialPolynomialBasis K).repr
+        (Finsupp.linearCombination K (binomialPolynomialBasis K)
+          (a.mapRange (Int.cast : ℤ → K) Int.cast_zero)) i := by
+      rw [Finsupp.linearCombination_apply,
+        Finsupp.sum_mapRange_index (fun j => zero_smul K (binomialPolynomialBasis K j))]
+      simp only [binomialPolynomialBasis_apply, Int.cast_smul_eq_zsmul]
+    _ = (a i : K) := by
+      rw [Module.Basis.repr_linearCombination, Finsupp.mapRange_apply]
+
 /-! ## The integral basis -/
 
 /-- The binomial polynomials remain linearly independent after restricting scalars to `ℤ`. -/
