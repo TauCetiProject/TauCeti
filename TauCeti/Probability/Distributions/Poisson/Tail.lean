@@ -21,8 +21,9 @@ This is the Poisson entry of the closed-form cdf and tail target of
 cumulative-mass formula that the Poisson family entry of Layer 4 asks for, together with the cdf
 of the cast law `Po(ℝ, r)` that the same entry derives from it.
 
-The proof writes the complementary lower half-line as the finite union of its singleton atoms and
-then applies `TauCeti.regularizedGamma_natCast`, the integer-shape closed form for `P(n + 1, r)`.
+The finite-sum identity
+`∑ k ≤ n, exp (-r) * r ^ k / k! = 1 - P(n + 1, r)` expresses the lower cumulative mass; its
+complement is the upper-tail identity above.
 
 Read the other way round, the resulting identity is the classical duality between a Poisson law of
 rate `r` and a gamma law of integer shape: a Poisson variable of rate `r` exceeds `n` exactly as

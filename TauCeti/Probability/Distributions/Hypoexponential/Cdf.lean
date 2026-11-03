@@ -107,8 +107,9 @@ theorem cdf_hypoexponentialMeasure_eq_integral (hr : ∀ i, 0 < r i) (x : ℝ) :
   rw [← integral_eq_lintegral_of_nonneg_ae (ae_of_all _ (hypoexponentialPDFReal_nonneg r))
     (by fun_prop)]
 
-/-- **The hypoexponential cdf as an Erlang mixture.** For positive rates, the hypoexponential
-cdf is the combination of the Erlang cdfs `P(k, ρ * x)` with the partial-fraction weights
+/-- **The hypoexponential cdf as a signed Erlang combination.** For positive rates, the
+hypoexponential cdf is the signed linear combination of the Erlang cdfs `P(k, ρ * x)` with the
+partial-fraction weights
 `A ρ k / ρ ^ k` of `TauCeti.Probability.hypoexponentialPDFReal_eq_sum_gammaPDFReal`. No sign
 hypothesis on `x` is needed, since both sides vanish on `(-∞, 0]`. -/
 theorem cdf_hypoexponentialMeasure_eq_sum_regularizedGamma (hr : ∀ i, 0 < r i) (x : ℝ) :
