@@ -57,8 +57,8 @@ theorem comp_C_mul_X_eq_C_pow_mul_iff (p : R[X]) (he : 0 < e)
     · rw [(hpow n).2 hn]
     · rw [hp n hn, zero_mul, zero_mul]
 
-/-- The least nonnegative character exponent bounds the order of vanishing in the
-normal coordinate. -/
+/-- If `p(ζX) = ζ ^ a * p(X)` for a primitive `e`-th root `ζ` and `a < e`, then
+`X ^ a` divides `p`: the order of vanishing in the normal coordinate is at least `a`. -/
 theorem X_pow_dvd_of_comp_C_mul_X_eq_C_pow_mul (p : R[X]) (ha : a < e)
     (hζ : IsPrimitiveRoot ζ e) (hp : p.comp (C ζ * X) = C (ζ ^ a) * p) :
     X ^ a ∣ p := by
