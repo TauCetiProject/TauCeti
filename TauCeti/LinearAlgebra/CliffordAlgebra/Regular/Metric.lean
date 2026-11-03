@@ -109,14 +109,6 @@ theorem regularBilinForm_spin_mul (g : spinGroup Q) (x y : CliffordAlgebra Q) :
       regularBilinForm Q x y :=
   regularBilinForm_unitary_mul Q (spinGroup.coe_star_mul_self g) x y
 
-/-- The external opposite-sign Clifford action has reversion as its adjoint. In particular,
-its vector operators are self-adjoint, unlike the left vector operators. -/
-theorem regularBilinForm_parityTwistedRightAction_left
-    (a : CliffordAlgebra (-Q)) (x y : CliffordAlgebra Q) :
-    regularBilinForm Q (parityTwistedRightAction Q a x) y =
-      regularBilinForm Q x (parityTwistedRightAction Q (reverse a) y) :=
-  scalarTrace_star_parityTwistedRightAction_mul Q a x y
-
 section Basis
 
 variable {I : Type*} [LinearOrder I] {b : Module.Basis I R M}
