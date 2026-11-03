@@ -58,16 +58,6 @@ variable {E H : Type*} {M : Type u} [NormedAddCommGroup E] [NormedSpace ℝ E] [
   [I.Boundaryless] [IsManifold I ∞ M] [T2Space M]
   {X : Type*} [TopologicalSpace X] {j : M → X} {F : X → ℝ}
 
-omit [T2Space M] in
-/-- A band of `F` in `X` which avoids the complement of the open manifold part has compact
-preimage in `M` as soon as it is compact. -/
-private theorem isCompact_preimage_Icc (hj : IsOpenEmbedding j) {a b : ℝ}
-    (hA : ∀ x ∉ range j, F x < a) (hcompact : IsCompact (F ⁻¹' Icc a b)) :
-    IsCompact ((F ∘ j) ⁻¹' Icc a b) :=
-  hj.isInducing.isCompact_preimage' hcompact fun x hx ↦ by
-    by_contra hxj
-    exact (hA x hxj).not_ge hx.1
-
 /-- **Deformation across a band without critical points, extended over the complement of an open
 manifold part.** Let `j : M → X` be an open embedding of a manifold into a space `X`, and
 `F : X → ℝ` a continuous function, smooth on `M`, with `F < a` off the range of `j`. If the band
@@ -82,7 +72,7 @@ theorem exists_sublevelDeformation_of_isOpenEmbedding (hj : IsOpenEmbedding j) (
       Nonempty (ContinuousMap.HomotopyRel ((sublevelInclusion F a b hab).comp r)
         (ContinuousMap.id _) {x | F x ≤ a}) := by
   obtain ⟨r, -, ⟨G⟩⟩ :=
-    exists_sublevelDeformation hFj hab (isCompact_preimage_Icc hj hA hcompact) hreg
+    exists_sublevelDeformation hFj hab (hj.isInducing.isCompact_comp_preimage_Icc hA hcompact) hreg
   -- Both sublevel inclusions are inclusions of sets.
   rw [sublevelInclusion_eq_inclusion] at G ⊢
   exact hj.exists_deformation_of_preimage _ _ rfl rfl (isOpen_lt hF continuous_const)
@@ -108,7 +98,8 @@ theorem IsMorse.exists_relCWComplex_sublevel_deformation_of_isOpenEmbedding
         Nonempty (((ContinuousMap.inclusion inter_subset_left).comp r).HomotopyRel
           (ContinuousMap.id _) {x | (x : X) ∈ {x | F x ≤ c - ε} ∪ j '' C}) := by
   obtain ⟨ε, hε, hεδ, C, _, hfin, hC, hcell, r, -, ⟨G⟩⟩ :=
-    hf.exists_relCWComplex_sublevel_deformation hδ (isCompact_preimage_Icc hj hA hcompact)
+    hf.exists_relCWComplex_sublevel_deformation hδ
+      (hj.isInducing.isCompact_comp_preimage_Icc hA hcompact)
   -- The lower sublevel of `F ∘ j` is the base of `C ⊆ {F ∘ j ≤ c + ε}`, so `C` is the preimage of
   -- the target.
   have hpre : j ⁻¹' ({x | F x ≤ c + ε} ∩ ({x | F x ≤ c - ε} ∪ j '' C)) = C := by
