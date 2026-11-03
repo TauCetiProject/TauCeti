@@ -217,6 +217,11 @@ def IsMorse (I : ModelWithCorners ℝ E H) (f : M → ℝ) : Prop :=
 theorem isMorseOn_univ {I : ModelWithCorners ℝ E H} : IsMorseOn I f univ ↔ IsMorse I f :=
   Iff.rfl
 
+/-- Every function is Morse on the empty set. -/
+@[simp]
+theorem isMorseOn_empty {I : ModelWithCorners ℝ E H} : IsMorseOn I f ∅ :=
+  ⟨contMDiffOn_empty, fun _ hx ↦ hx.elim⟩
+
 /-- A function is Morse exactly when it is smooth and all of its critical points are
 nondegenerate. -/
 theorem isMorse_iff {I : ModelWithCorners ℝ E H} :

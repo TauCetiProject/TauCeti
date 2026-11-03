@@ -8,9 +8,9 @@ module
 public import TauCeti.Geometry.Manifold.Morse.Generic.Relative
 public import TauCeti.Geometry.Manifold.ContMDiffMap.Chart.Evaluation
 public import TauCeti.Geometry.Manifold.ContMDiffMap.Chart.Strong
-public import Mathlib.Topology.Maps.Proper.CompactlyGenerated
 import Mathlib.Analysis.SpecificLimits.Basic
 import TauCeti.Geometry.Manifold.Exhaustion
+import TauCeti.Topology.Maps.Proper.Metric
 
 /-!
 # Morse approximation in the strong Whitney topology
@@ -65,10 +65,67 @@ universe u
 
 namespace TauCeti
 
+/-- A sequence of `C^n` maps which stabilizes along a compact exhaustion `L`, in the sense that
+the maps of index `r + 1` and `r + 2` agree on `L r`, has a `C^n` limit which agrees with the map
+of index `N + 1` on `L N`. -/
+private theorem exists_eqOn_of_eqOn_compactExhaustion {E H E' H' : Type*}
+    [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
+    [NormedAddCommGroup E'] [NormedSpace ℝ E'] [TopologicalSpace H'] {J : ModelWithCorners ℝ E' H'}
+    {M Y : Type*} [TopologicalSpace M] [ChartedSpace H M] [TopologicalSpace Y] [ChartedSpace H' Y]
+    {n : WithTop ℕ∞} (L : CompactExhaustion M) (F : ℕ → C^n⟮I, M; J, Y⟯)
+    (hF : ∀ r, EqOn (F (r + 2)) (F (r + 1)) (L r)) :
+    ∃ g : C^n⟮I, M; J, Y⟯, ∀ N, EqOn g (F (N + 1)) (L N) := by
+  classical
+  -- On `L N` nothing changes after index `N + 1`.
+  have hstab : ∀ N, ∀ x ∈ L N, ∀ m, N + 1 ≤ m → F m x = F (N + 1) x := by
+    intro N x hx m hm
+    induction m, hm using Nat.le_induction with
+    | base => rfl
+    | succ m hm ih =>
+      obtain ⟨r, rfl⟩ : ∃ r, m = r + 1 := ⟨m - 1, by omega⟩
+      rw [← ih]
+      exact hF r (L.subset (by omega) hx)
+  have hloc : ∀ N, EqOn (fun x ↦ F (L.find x + 1) x) (F (N + 1)) (L N) := fun N x hx ↦
+    (hstab _ x (L.mem_find x) (N + 1) (by have := L.mem_iff_find_le.mp hx; omega)).symm
+  exact ⟨⟨fun x ↦ F (L.find x + 1) x, fun x ↦ by
+    obtain ⟨N, hN⟩ := L.exists_mem_nhds x
+    exact (F (N + 1)).contMDiff.contMDiffAt.congr_of_eventuallyEq
+      (eventuallyEq_of_mem hN (hloc N))⟩, hloc⟩
+
 variable {E H : Type*} {M : Type u} [NormedAddCommGroup E] [NormedSpace ℝ E]
   [TopologicalSpace H] {I : ModelWithCorners ℝ E H} [I.Boundaryless]
   [TopologicalSpace M] [ChartedSpace H M]
-  [FiniteDimensional ℝ E] [IsManifold I ∞ M] [T2Space M] [SigmaCompactSpace M]
+  [FiniteDimensional ℝ E] [IsManifold I ∞ M] [T2Space M]
+
+/-- One stage of the strong Morse approximation. A function `φ` which is Morse on `K₀` and agrees
+with `f` near `C`, where `f` is Morse on a neighbourhood `V` of `C`, is made Morse on a compact
+set `K₁` by a perturbation in a prescribed neighbourhood of `φ`. The perturbation is supported
+away from `C`, in an open set `W` containing the part of `K₁` outside `interior K₀`. -/
+private theorem exists_isMorseOn_tsupport_sub_inter_compl (f φ : C^∞⟮I, M; 𝓘(ℝ), ℝ⟯)
+    {C V : Set M} (hC : IsClosed C) (hV : IsOpen V) (hCV : C ⊆ V) (hfV : IsMorseOn I f V)
+    (hφC : tsupport (fun x ↦ φ x - f x) ⊆ Cᶜ) {K₀ K₁ W : Set M} (hφ : IsMorseOn I φ K₀)
+    (hK₁ : IsCompact K₁) (hW : IsOpen W) (hK : K₁ \ W ⊆ interior K₀)
+    {𝒰 : Set C^∞⟮I, M; 𝓘(ℝ), ℝ⟯} (h𝒰 : 𝒰 ∈ 𝓝 φ) :
+    ∃ ψ ∈ 𝒰, IsMorseOn I ψ K₁ ∧ tsupport (fun x ↦ ψ x - φ x) ⊆ W ∩ Cᶜ := by
+  have hO : IsOpen (tsupport fun x ↦ φ x - f x)ᶜ := (isClosed_tsupport _).isOpen_compl
+  -- Near `C` the function `φ` is still `f`, hence Morse.
+  have hφV : IsMorseOn I φ (V ∩ (tsupport fun x ↦ φ x - f x)ᶜ) :=
+    (hfV.mono inter_subset_left).congr (hV.inter hO) fun x hx ↦
+      sub_eq_zero.mp (image_eq_zero_of_notMem_tsupport (f := fun y ↦ φ y - f y) hx.2)
+  have hφV' : IsMorseOn I φ (V ∩ (tsupport fun x ↦ φ x - f x)ᶜ ∪ interior K₀) :=
+    isMorseOn_of_forall_exists_mem_nhds fun x hx ↦ hx.elim
+      (fun hx ↦ ⟨_, (hV.inter hO).mem_nhds hx, hφV⟩)
+      (fun hx ↦ ⟨_, isOpen_interior.mem_nhds hx, hφ.mono interior_subset⟩)
+  have hsub : K₁ ∩ (C ∪ Wᶜ) ⊆ V ∩ (tsupport fun x ↦ φ x - f x)ᶜ ∪ interior K₀ := by
+    rintro x ⟨hxK, hxC | hxW⟩
+    · exact Or.inl ⟨hCV hxC, fun hx ↦ hφC hx hxC⟩
+    · exact Or.inr (hK ⟨hxK, hxW⟩)
+  obtain ⟨ψ, hψ𝒰, hψ, -, hψs⟩ := φ.exists_isMorseOn_hasCompactSupport_sub_compl hK₁
+    (hC.union hW.isClosed_compl) ((hV.inter hO).union isOpen_interior) hsub hφV' h𝒰
+  refine ⟨ψ, hψ𝒰, hψ, hψs.trans ?_⟩
+  rw [compl_union, compl_compl, inter_comm]
+
+variable [SigmaCompactSpace M]
 
 open ContMDiffMap in
 /-- **Relative Morse approximation in the strong Whitney topology.** Every strong `C^k`
@@ -119,17 +176,6 @@ theorem _root_.ContMDiffMap.exists_isMorse_mem_ball_sub_compl (f : C^∞⟮I, M;
         (∀ x ∈ L (r + 2), |ψ x - φ x| < ε x * w r) ∧ IsMorseOn I ψ (L (r + 1)) ∧
         tsupport (fun x ↦ ψ x - φ x) ⊆ (interior (L (r + 2)) \ L (r - 1)) ∩ Cᶜ := by
     intro r φ hφ hφC
-    have hW : IsOpen (interior (L (r + 2)) \ L (r - 1)) :=
-      isOpen_interior.sdiff (L.isCompact _).isClosed
-    have hO : IsOpen (tsupport fun x ↦ φ x - f x)ᶜ := (isClosed_tsupport _).isOpen_compl
-    -- Near `C` the function `φ` is still `f`, hence Morse.
-    have hφV : IsMorseOn I φ (V ∩ (tsupport fun x ↦ φ x - f x)ᶜ) :=
-      (hfV.mono inter_subset_left).congr (hV.inter hO) fun x hx ↦
-        sub_eq_zero.mp (image_eq_zero_of_notMem_tsupport (f := fun y ↦ φ y - f y) hx.2)
-    have hφV' : IsMorseOn I φ (V ∩ (tsupport fun x ↦ φ x - f x)ᶜ ∪ interior (L r)) :=
-      isMorseOn_of_forall_exists_mem_nhds fun x hx ↦ hx.elim
-        (fun hx ↦ ⟨_, (hV.inter hO).mem_nhds hx, hφV⟩)
-        (fun hx ↦ ⟨_, isOpen_interior.mem_nhds hx, hφ.mono interior_subset⟩)
     have hfin : {i | (A i ∩ L (r + 2)).Nonempty}.Finite :=
       c.locallyFinite.finite_nonempty_inter_compact (L.isCompact _)
     have h𝒰 : ∀ᶠ ψ in 𝓝 φ,
@@ -142,18 +188,11 @@ theorem _root_.ContMDiffMap.exists_isMorse_mem_ball_sub_compl (f : C^∞⟮I, M;
           (hε.mul continuous_const) fun x _ ↦ mul_pos (hε₀ x) (hw r)).mono fun ψ hψ x hx ↦ by
             simpa only [Real.dist_eq] using hψ x hx
     -- Off `interior (L (r + 2)) \ L (r - 1)`, the part of `L (r + 1)` lies in `interior (L r)`.
-    have hsub : L (r + 1) ∩ (C ∪ (interior (L (r + 2)) \ L (r - 1))ᶜ) ⊆
-        V ∩ (tsupport fun x ↦ φ x - f x)ᶜ ∪ interior (L r) := by
-      rintro x ⟨hxL, hxC | hxW⟩
-      · exact Or.inl ⟨hCV hxC, fun hx ↦ hφC hx hxC⟩
-      · refine Or.inr (hLpred r ?_)
-        by_contra hx
-        exact hxW ⟨L.subset_interior_succ _ hxL, hx⟩
-    obtain ⟨ψ, hψ𝒰, hψ, -, hψs⟩ := φ.exists_isMorseOn_hasCompactSupport_sub_compl
-      (L.isCompact (r + 1)) (hC.union hW.isClosed_compl)
-      ((hV.inter hO).union isOpen_interior) hsub hφV' h𝒰
-    refine ⟨ψ, hψ𝒰.1, hψ𝒰.2, hψ, hψs.trans ?_⟩
-    rw [compl_union, compl_compl, inter_comm]
+    have hK : L (r + 1) \ (interior (L (r + 2)) \ L (r - 1)) ⊆ interior (L r) := fun x hx ↦
+      hLpred r (not_not.mp fun h ↦ hx.2 ⟨L.subset_interior_succ _ hx.1, h⟩)
+    obtain ⟨ψ, hψ𝒰, hψ, hψs⟩ := exists_isMorseOn_tsupport_sub_inter_compl f φ hC hV hCV hfV hφC hφ
+      (L.isCompact (r + 1)) (isOpen_interior.sdiff (L.isCompact _).isClosed) hK h𝒰
+    exact ⟨ψ, hψ𝒰.1, hψ𝒰.2, hψ, hψs⟩
   -- Iterate the stages.
   choose! next hnext_p hnext_ε hnext_morse hnext_supp using step
   let F : ℕ → C^∞⟮I, M; 𝓘(ℝ), ℝ⟯ := fun r ↦ Nat.rec f (fun r φ ↦ next r φ) r
@@ -162,7 +201,7 @@ theorem _root_.ContMDiffMap.exists_isMorse_mem_ball_sub_compl (f : C^∞⟮I, M;
     intro r
     induction r with
     | zero =>
-      refine ⟨isMorseOn_of_forall_exists_mem_nhds fun x hx ↦ absurd hx (notMem_empty x), ?_⟩
+      refine ⟨isMorseOn_empty, ?_⟩
       simp [F]
     | succ r ih =>
       refine ⟨hF r ▸ hnext_morse r _ ih.1 ih.2, ?_⟩
@@ -184,26 +223,15 @@ theorem _root_.ContMDiffMap.exists_isMorse_mem_ball_sub_compl (f : C^∞⟮I, M;
   have hD_zero : ∀ r x, x ∉ interior (L (r + 2)) \ L (r - 1) → F (r + 1) x = F r x :=
     fun r x hx ↦ sub_eq_zero.mp (image_eq_zero_of_notMem_tsupport
       (f := fun y ↦ F (r + 1) y - F r y) fun h ↦ hx (hD_supp r h).1)
-  -- The stages stabilize: on `L N` nothing changes after stage `N + 1`.
-  have hstab : ∀ N, ∀ x ∈ L N, ∀ m, N + 1 ≤ m → F m x = F (N + 1) x := by
-    intro N x hx m hm
-    induction m, hm using Nat.le_induction with
-    | base => rfl
-    | succ m hm ih =>
-      rw [← ih]
-      exact hD_zero m x fun h ↦ h.2 (L.subset (by omega) hx)
-  have hloc : ∀ N, EqOn (fun x ↦ F (L.find x + 1) x) (F (N + 1)) (L N) := fun N x hx ↦
-    (hstab _ x (L.mem_find x) (N + 1) (by have := L.mem_iff_find_le.mp hx; omega)).symm
-  let g : C^∞⟮I, M; 𝓘(ℝ), ℝ⟯ := ⟨fun x ↦ F (L.find x + 1) x, fun x ↦ by
-    obtain ⟨N, hN⟩ := L.exists_mem_nhds x
-    exact (F (N + 1)).contMDiff.contMDiffAt.congr_of_eventuallyEq
-      (eventuallyEq_of_mem hN (hloc N))⟩
-  have hgF : ∀ N, EqOn g (F (N + 1)) (L N) := hloc
+  -- The stages stabilize: stage `r + 1` changes nothing on `L r`, so they have a smooth limit.
+  obtain ⟨g, hgF⟩ := exists_eqOn_of_eqOn_compactExhaustion L F fun r x hx ↦
+    hD_zero (r + 1) x fun h ↦ h.2 hx
   -- Telescoping the perturbations up to stage `N`.
   have htel : ∀ N x, F N x - f x = ∑ r ∈ Finset.range N, (F (r + 1) x - F r x) := fun N x ↦
     (Finset.sum_range_sub (fun r ↦ F r x) N).symm
   refine ⟨g, StrongCkControl.mem_ball.mpr fun i ↦ ?_, ?_, fun x ↦ ?_, ?_⟩
   · -- Only the stages up to `N + 1` affect the `i`th member of the control.
+    -- `p i` is the `i`th seminorm of the control, by definition.
     change p i (g - f) < c.tolerance i
     obtain ⟨N, hN⟩ := L.exists_superset_of_isCompact (hA i)
     have hzero : p i (g - F (N + 2)) = 0 := hp0 i _ fun y hy ↦ by
@@ -268,8 +296,7 @@ theorem dense_setOf_isMorse_manifoldStrongWhitney :
   refine (mem_closure_iff_nhds_basis
     (ContMDiffMap.hasBasis_nhds_manifoldStrongWhitney f)).mpr fun c _ ↦ ?_
   obtain ⟨g, hg, hgm, -⟩ := f.exists_isMorse_mem_ball_sub_compl c continuous_const
-    (fun _ ↦ one_pos) isClosed_empty isOpen_empty (subset_refl _)
-    (isMorseOn_of_forall_exists_mem_nhds fun x hx ↦ absurd hx (notMem_empty x))
+    (fun _ ↦ one_pos) isClosed_empty isOpen_empty (subset_refl _) isMorseOn_empty
   exact ⟨g, hgm, hg⟩
 
 /-- **Proper Morse approximation.** A proper smooth function `f` is approximated, in every strong
@@ -279,18 +306,10 @@ theorem _root_.ContMDiffMap.exists_isMorse_isProperMap_mem_ball (f : C^∞⟮I, 
     (c : ContMDiffMap.StrongCkControl I M ∞) (hf : IsProperMap f) :
     ∃ g ∈ c.ball f, IsMorse I g ∧ IsProperMap g ∧ ∀ x, |g x - f x| < 1 := by
   obtain ⟨g, hg, hgm, hgf, -⟩ := f.exists_isMorse_mem_ball_sub_compl c continuous_const
-    (fun _ ↦ one_pos) isClosed_empty isOpen_empty (subset_refl _)
-    (isMorseOn_of_forall_exists_mem_nhds fun x hx ↦ absurd hx (notMem_empty x))
-  refine ⟨g, hg, hgm, isProperMap_iff_isCompact_preimage.mpr
-    ⟨g.contMDiff.continuous, fun K hK ↦ ?_⟩, hgf⟩
-  -- A compact set of values lies in an interval, and `f` maps the preimage into its
-  -- `1`-neighbourhood.
-  obtain ⟨a, ha⟩ := hK.bddBelow
-  obtain ⟨b, hb⟩ := hK.bddAbove
-  refine (hf.isCompact_preimage (isCompact_Icc (a := a - 1) (b := b + 1))).of_isClosed_subset
-    (hK.isClosed.preimage g.contMDiff.continuous) fun x hx ↦ ?_
-  have h := abs_lt.mp (hgf x)
-  exact ⟨by linarith [ha hx], by linarith [hb hx]⟩
+    (fun _ ↦ one_pos) isClosed_empty isOpen_empty (subset_refl _) isMorseOn_empty
+  refine ⟨g, hg, hgm, hf.of_dist_le g.contMDiff.continuous (C := 1) fun x ↦ ?_, hgf⟩
+  rw [Real.dist_eq, abs_sub_comm]
+  exact (hgf x).le
 
 /-- **Existence of proper Morse functions.** A boundaryless finite-dimensional Hausdorff
 sigma-compact manifold carries a proper Morse function which is bounded below. -/
