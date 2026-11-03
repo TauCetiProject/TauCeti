@@ -38,14 +38,14 @@ namespace TauCeti.ModularForm
 private theorem isIntegral_of_weber_eq {R A : Type*} [CommRing R] [CommRing A]
     [Algebra R A] {z g : A} (hz : IsIntegral R z)
     (hg : (g ^ 12 + 16) ^ 3 = z * g ^ 12) : IsIntegral R g :=
-  isIntegral_of_cubic_power_eq hz (c := 16) (k := 1) (by decide)
-    (by simpa only [pow_one, Nat.cast_ofNat] using hg)
+  isIntegral_of_pow_add_pow_eq_mul_pow hz (isIntegral_natCast 16) (n := 12) (m := 3)
+    (k := 1) (by decide) (by decide) (by simpa only [pow_one, Nat.cast_ofNat] using hg)
 
 private theorem isIntegral_of_reciprocal_weber_eq {R A : Type*} [CommRing R] [CommRing A]
     [Algebra R A] {z y : A} (hz : IsIntegral R z)
     (hy : (y ^ 12 + 256) ^ 3 = z * y ^ 24) : IsIntegral R y :=
-  isIntegral_of_cubic_power_eq hz (c := 256) (k := 2) (by decide)
-    (by simpa only [← pow_mul, Nat.cast_ofNat] using hy)
+  isIntegral_of_pow_add_pow_eq_mul_pow hz (isIntegral_natCast 256) (n := 12) (m := 3)
+    (k := 2) (by decide) (by decide) (by simpa only [← pow_mul, Nat.cast_ofNat] using hy)
 
 private theorem reciprocal_weber_eq {z g : ℂ}
     (hg : (g ^ 12 + 16) ^ 3 = z * g ^ 12) :

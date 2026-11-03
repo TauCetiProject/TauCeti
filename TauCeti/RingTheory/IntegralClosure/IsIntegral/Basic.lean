@@ -33,8 +33,8 @@ without either being an algebra over the other.
   clears the denominators of the product of differences from any one of its elements.
 * `TauCeti.isIntegral_rat_of_isIntegral_natCast_mul`: if `b x` is integral over `ℤ` for some
   `b ≠ 0`, then `x` is integral over `ℚ`.
-* `TauCeti.isIntegral_of_cubic_power_eq`: integrality from a cubic relation in a twelfth power
-  with an integral coefficient.
+* `TauCeti.isIntegral_of_pow_add_pow_eq_mul_pow`: integrality from a monic power relation
+  with integral coefficients.
 -/
 
 public section
@@ -105,20 +105,22 @@ theorem isIntegral_rat_of_isIntegral_natCast_mul {F : Type*} [Field F] [CharZero
   have h := (isIntegral_algebraMap (R := ℚ) (x := ((b : ℚ)⁻¹))).mul (hbx.tower_top (A := ℚ))
   rwa [map_inv₀, map_natCast, ← mul_assoc, inv_mul_cancel₀ (by exact_mod_cast hb), one_mul] at h
 
-/-- If `(g ^ 12 + c) ^ 3 = z * (g ^ 12) ^ k` with `c : ℕ`, `k < 3`, and `z` integral over
-`R`, then `g` is integral over `R`. The degree bound makes the relation monic over the integral
-closure, and integrality descends from the twelfth power. -/
-theorem isIntegral_of_cubic_power_eq {R A : Type*} [CommRing R] [CommRing A]
-    [Algebra R A] {z g : A} (hz : IsIntegral R z) {c k : ℕ} (hk : k < 3)
-    (hg : (g ^ 12 + c) ^ 3 = z * (g ^ 12) ^ k) : IsIntegral R g := by
+/-- If `(g ^ n + c) ^ m = z * (g ^ n) ^ k` with `0 < n`, `k < m`, and both `c` and `z`
+integral over `R`, then `g` is integral over `R`. The degree bound makes the relation monic
+in `g ^ n` over the integral closure, and integrality descends from this positive power. -/
+theorem isIntegral_of_pow_add_pow_eq_mul_pow {R A : Type*} [CommRing R] [CommRing A]
+    [Algebra R A] {z c g : A} (hz : IsIntegral R z) (hc : IsIntegral R c)
+    {n m k : ℕ} (hn : 0 < n) (hk : k < m)
+    (hg : (g ^ n + c) ^ m = z * (g ^ n) ^ k) : IsIntegral R g := by
   let z' : integralClosure R A := ⟨z, hz⟩
-  have hpow : IsIntegral (integralClosure R A) (g ^ 12) := by
-    refine ⟨(Polynomial.X + Polynomial.C (c : integralClosure R A)) ^ 3 -
+  let c' : integralClosure R A := ⟨c, hc⟩
+  have hpow : IsIntegral (integralClosure R A) (g ^ n) := by
+    refine ⟨(Polynomial.X + Polynomial.C c') ^ m -
       Polynomial.C z' * Polynomial.X ^ k, ?_, ?_⟩
     · monicity!; simp [hk.le, hk.not_ge]
     · simpa only [Polynomial.eval₂_sub, Polynomial.eval₂_pow, Polynomial.eval₂_add,
-        Polynomial.eval₂_mul, Polynomial.eval₂_C, Polynomial.eval₂_X, Polynomial.eval₂_natCast,
-        map_natCast, Subalgebra.algebraMap_apply] using sub_eq_zero.mpr hg
-  exact isIntegral_trans g (hpow.of_pow (by decide))
+        Polynomial.eval₂_mul, Polynomial.eval₂_C, Polynomial.eval₂_X,
+        Subalgebra.algebraMap_apply] using sub_eq_zero.mpr hg
+  exact isIntegral_trans g (hpow.of_pow hn)
 
 end TauCeti
