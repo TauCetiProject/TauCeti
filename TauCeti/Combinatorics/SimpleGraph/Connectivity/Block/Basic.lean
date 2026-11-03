@@ -54,6 +54,9 @@ def IsBlock (G : SimpleGraph V) (B : Set V) : Prop :=
   Maximal (fun C : Set V ↦
     (G.induce C).Connected ∧ ∀ v, ¬(G.induce C).IsCutVertex v) B
 
+/-- The type of blocks of a simple graph. -/
+abbrev Block (G : SimpleGraph V) := {B : Set V // G.IsBlock B}
+
 /-- The defining characterization of a block, including its maximality among connected induced
 subgraphs without cut vertices. -/
 theorem isBlock_iff : G.IsBlock B ↔
@@ -324,5 +327,34 @@ theorem not_isCutVertex_iff_existsUnique_isBlock_mem [Finite V] :
     refine ⟨B, ⟨hB, hvB⟩, fun C ⟨hC, hvC⟩ ↦ by_contra fun hCB ↦ h ⟨C, B, hC, hB, hCB, hvC, hvB⟩⟩
   · rintro ⟨B, -, huniq⟩ ⟨C, D, hC, hD, hCD, hvC, hvD⟩
     exact hCD ((huniq C ⟨hC, hvC⟩).trans (huniq D ⟨hD, hvD⟩).symm)
+
+/-! ### Canonical block of a non-cut vertex -/
+
+/-- The unique block containing a vertex that is not a cut vertex. -/
+noncomputable def blockOfNotCutVertex [Finite V] (G : SimpleGraph V) (v : V)
+    (hv : ¬G.IsCutVertex v) : G.Block :=
+  ⟨((G.not_isCutVertex_iff_existsUnique_isBlock_mem).mp hv).choose,
+    ((G.not_isCutVertex_iff_existsUnique_isBlock_mem).mp hv).choose_spec.1.1⟩
+
+/-- A non-cut vertex belongs to its unique block. -/
+theorem mem_blockOfNotCutVertex [Finite V] (G : SimpleGraph V) (v : V)
+    (hv : ¬G.IsCutVertex v) : v ∈ (G.blockOfNotCutVertex v hv).1 :=
+  ((G.not_isCutVertex_iff_existsUnique_isBlock_mem).mp hv).choose_spec.1.2
+
+/-- Any block containing a non-cut vertex is its canonical block. -/
+theorem blockOfNotCutVertex_eq [Finite V] (G : SimpleGraph V) (v : V)
+    (hv : ¬G.IsCutVertex v) (B : G.Block) (hvB : v ∈ B.1) :
+    G.blockOfNotCutVertex v hv = B := by
+  apply Subtype.ext
+  exact (((G.not_isCutVertex_iff_existsUnique_isBlock_mem).mp hv).choose_spec.2 B
+    ⟨B.2, hvB⟩).symm
+
+/-- An original vertex is reachable from every vertex in its canonical block. -/
+theorem reachable_of_mem_blockOfNotCutVertex [Finite V] (G : SimpleGraph V) (v w : V)
+    (hv : ¬G.IsCutVertex v) (hw : w ∈ (G.blockOfNotCutVertex v hv).1) :
+    G.Reachable v w := by
+  exact ((G.blockOfNotCutVertex v hv).2.connected
+    ⟨v, G.mem_blockOfNotCutVertex v hv⟩ ⟨w, hw⟩).map
+      ⟨Subtype.val, fun h ↦ h⟩
 
 end SimpleGraph

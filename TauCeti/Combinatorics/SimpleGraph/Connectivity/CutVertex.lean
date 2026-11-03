@@ -42,6 +42,9 @@ previously connected. -/
 def IsCutVertex (G : SimpleGraph V) (v : V) : Prop :=
   (Graph.ofSimpleGraph G).IsCutVertex v
 
+/-- The type of cut vertices of a simple graph. -/
+abbrev CutVertex (G : SimpleGraph V) := {v : V // G.IsCutVertex v}
+
 /-- The cut-vertex predicate for a simple graph is the native multigraph predicate after applying
 `Graph.ofSimpleGraph`. -/
 theorem isCutVertex_def (G : SimpleGraph V) (v : V) :

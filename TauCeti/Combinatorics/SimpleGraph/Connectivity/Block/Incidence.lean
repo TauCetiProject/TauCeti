@@ -39,12 +39,6 @@ variable {V : Type u} {G : SimpleGraph V} {u v : V}
 
 /-! ### Incidence data -/
 
-/-- The type of blocks of a simple graph. -/
-abbrev Block (G : SimpleGraph V) := {B : Set V // G.IsBlock B}
-
-/-- The type of cut vertices of a simple graph. -/
-abbrev CutVertex (G : SimpleGraph V) := {v : V // G.IsCutVertex v}
-
 /-- The vertices of the block--cut incidence graph: blocks on the left and cut vertices on the
 right. -/
 abbrev BlockCutVertex (G : SimpleGraph V) := G.Block ⊕ G.CutVertex
@@ -115,6 +109,12 @@ theorem neighborSet_blockCutGraph_inr (v : G.CutVertex) :
 def BlockCutIncidence.toEdge (i : G.BlockCutIncidence) : G.blockCutGraph.edgeSet :=
   ⟨s(.inl i.1.1, .inr i.1.2), by simpa using i.2⟩
 
+/-- The edge associated to an incidence joins its specified block and cut vertex. -/
+@[simp]
+theorem BlockCutIncidence.toEdge_val (i : G.BlockCutIncidence) :
+    i.toEdge.val = s(.inl i.1.1, .inr i.1.2) := by
+  rfl
+
 /-- Distinct block--cut incidences give distinct edges. -/
 theorem BlockCutIncidence.toEdge_injective :
     Function.Injective (BlockCutIncidence.toEdge (G := G)) := by
@@ -143,26 +143,13 @@ noncomputable def blockCutIncidenceEquivEdgeSet (G : SimpleGraph V) :
   Equiv.ofBijective BlockCutIncidence.toEdge
     ⟨BlockCutIncidence.toEdge_injective, BlockCutIncidence.toEdge_surjective⟩
 
+/-- The incidence-to-edge equivalence sends an incidence to its associated edge. -/
+@[simp]
+theorem blockCutIncidenceEquivEdgeSet_apply (i : G.BlockCutIncidence) :
+    G.blockCutIncidenceEquivEdgeSet i = i.toEdge := by
+  rfl
+
 /-! ### Original vertices in the incidence graph -/
-
-/-- The unique block containing a vertex that is not a cut vertex. -/
-noncomputable def blockOfNotCutVertex [Finite V] (G : SimpleGraph V) (v : V)
-    (hv : ¬G.IsCutVertex v) : G.Block :=
-  ⟨((G.not_isCutVertex_iff_existsUnique_isBlock_mem).mp hv).choose,
-    ((G.not_isCutVertex_iff_existsUnique_isBlock_mem).mp hv).choose_spec.1.1⟩
-
-/-- A non-cut vertex belongs to its unique block. -/
-theorem mem_blockOfNotCutVertex [Finite V] (G : SimpleGraph V) (v : V)
-    (hv : ¬G.IsCutVertex v) : v ∈ (G.blockOfNotCutVertex v hv).1 :=
-  ((G.not_isCutVertex_iff_existsUnique_isBlock_mem).mp hv).choose_spec.1.2
-
-/-- Any block containing a non-cut vertex is its canonical block. -/
-theorem blockOfNotCutVertex_eq [Finite V] (G : SimpleGraph V) (v : V)
-    (hv : ¬G.IsCutVertex v) (B : G.Block) (hvB : v ∈ B.1) :
-    G.blockOfNotCutVertex v hv = B := by
-  apply Subtype.ext
-  exact (((G.not_isCutVertex_iff_existsUnique_isBlock_mem).mp hv).choose_spec.2 B
-    ⟨B.2, hvB⟩).symm
 
 /-- The canonical location of an original vertex in the block--cut graph.  Cut vertices use their
 cut-vertex node; every other vertex uses its unique block node. -/
@@ -212,14 +199,6 @@ theorem Reachable.blockCutVertexOf [Finite V] (h : G.Reachable u v) :
   induction p with
   | nil => exact .rfl
   | cons hadj _ ih => exact (Adj.reachable_blockCutVertexOf hadj).trans ih
-
-/-- An original vertex is reachable from every vertex in its canonical block. -/
-theorem reachable_of_mem_blockOfNotCutVertex [Finite V] (G : SimpleGraph V) (v w : V)
-    (hv : ¬G.IsCutVertex v) (hw : w ∈ (G.blockOfNotCutVertex v hv).1) :
-    G.Reachable v w := by
-  exact ((G.blockOfNotCutVertex v hv).2.connected
-    ⟨v, G.mem_blockOfNotCutVertex v hv⟩ ⟨w, hw⟩).map
-      ⟨Subtype.val, fun h ↦ h⟩
 
 /-! ### Reachability and connectivity -/
 
