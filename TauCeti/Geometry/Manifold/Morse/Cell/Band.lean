@@ -11,6 +11,7 @@ public import TauCeti.AlgebraicTopology.Singular.Triple
 public import TauCeti.Geometry.Manifold.Morse.Cell.Homology
 public import TauCeti.Geometry.Manifold.Morse.Deformation
 public import TauCeti.Geometry.Manifold.Morse.Exhaustion
+import TauCeti.Data.Finset.Basic
 
 /-!
 # Homology of a Morse function with bounded indices
@@ -94,24 +95,6 @@ private theorem isZero_singularHomology_sublevelPair_trans [HasCoproducts.{u} C]
   (TopTriple.ofInclusions (X := TopCat.of M) (sublevel_mono f hab)
     (sublevel_mono f hbc)).isZero_singularHomology_totalPair R n h₁ h₂
 
-/-- Around a value `c` above `a` and above every element of a finite set `s`, and below `b`, some
-interval `[c - δ, c + δ]` lies inside `(a, b)` and above `s`. -/
-private theorem exists_pos_lt_sub_and_add_lt {c : ℝ} {s : Finset ℝ} (hac : a < c) (hcb : c < b)
-    (hs : ∀ x ∈ s, x < c) : ∃ δ > 0, a < c - δ ∧ c + δ < b ∧ ∀ x ∈ s, x < c - δ := by
-  -- The largest of `a` and the elements of `s` lies below `c`.
-  set m := (insert a s).max' (Finset.insert_nonempty a s)
-  have ham : a ≤ m := Finset.le_max' _ _ (Finset.mem_insert_self a s)
-  have hms (x : ℝ) (hx : x ∈ s) : x ≤ m := Finset.le_max' _ _ (Finset.mem_insert_of_mem hx)
-  have hmc : m < c := by
-    refine (Finset.max'_lt_iff _ _).2 fun x hx ↦ ?_
-    rcases Finset.mem_insert.1 hx with rfl | hx
-    · exact hac
-    · exact hs x hx
-  refine ⟨min (c - m) (b - c) / 2, by positivity, ?_, ?_, fun x hx ↦ ?_⟩
-  · linarith [min_le_left (c - m) (b - c)]
-  · linarith [min_le_right (c - m) (b - c)]
-  · linarith [min_le_left (c - m) (b - c), hms x hx]
-
 /-- The band statement, by induction over a finite set `S` of reals containing the critical values
 in the band, adding the largest element last: either no critical point lies on that level, or the
 band is cut just below and just above it into a smaller band, a single critical level and a band
@@ -146,7 +129,7 @@ private theorem IsMorse.isZero_singularHomology_sublevelPair_of_forall_mem_finse
       · exact absurd ⟨p, hp, h⟩ hc
       · exact h
     obtain ⟨p, ⟨hpcrit, hpa, hpb⟩, rfl⟩ := hc
-    obtain ⟨δ, hδ, hδa, hδb, hδs⟩ := exists_pos_lt_sub_and_add_lt
+    obtain ⟨δ, hδ, hδa, hδb, hδs⟩ := Finset.exists_pos_lt_sub_and_add_lt
       (hpa.lt_of_ne fun h ↦ ha ⟨p, hpcrit, h.symm⟩) (hpb.lt_of_ne fun h ↦ hb' ⟨p, hpcrit, h⟩) hcs
     have hband : IsCompact (f ⁻¹' Icc (f p - δ) (f p + δ)) :=
       hcompact.of_isClosed_subset (isClosed_Icc.preimage hcont)
@@ -218,7 +201,8 @@ theorem IsMorse.isZero_singularHomology_sublevel_of_manifoldMorseIndex_le [HasCo
   obtain ⟨m, hm⟩ := hcompact.bddBelow_image hcont.continuousOn
   have hab : min m b - 1 ≤ b := by linarith [min_le_right m b]
   have hempty (x : M) : ¬f x ≤ min m b - 1 := fun hx ↦ by
-    have := hm (mem_image_of_mem f (show x ∈ {x | f x ≤ b} from hx.trans hab))
+    have hxb : x ∈ {x | f x ≤ b} := hx.trans hab
+    have := hm (mem_image_of_mem f hxb)
     linarith [min_le_left m b]
   have : IsEmpty (sublevelPair f hab).snd := ⟨fun x ↦ hempty x.1 x.2⟩
   have hzero := hf.isZero_singularHomology_sublevelPair_of_manifoldMorseIndex_le hab

@@ -169,17 +169,18 @@ theorem IsMorse.isZero_singularHomology_of_isManifoldStronglyPseudoconvexAt
       (mem_criticalPoints.1 hx)) R hk
 
 /-- **A closed complex submanifold of a complex inner product space has no homology above its
-complex dimension.** Let `i` be a holomorphic immersion of a second-countable complex manifold of
-complex dimension `n` into a finite-dimensional complex inner product space, which is a closed
-embedding. Then the singular homology `Hₖ(M; R)` vanishes for every `k > n`, with coefficients in
+complex dimension.** Let `i` be a holomorphic immersion of a complex manifold of complex
+dimension `n` into a finite-dimensional complex inner product space, which is a closed embedding.
+Then the singular homology `Hₖ(M; R)` vanishes for every `k > n`, with coefficients in
 any abelian category with coproducts in which colimits of sequences are exact. -/
-theorem isZero_singularHomology_of_isClosedEmbedding [SecondCountableTopology M]
-    {A : Type v} [Category.{w} A] [Abelian A] [HasCoproducts.{u} A] [HasColimitsOfShape ℕ A]
-    [HasExactColimitsOfShape ℕ A] {F : Type*} [NormedAddCommGroup F] [InnerProductSpace ℂ F]
-    [FiniteDimensional ℂ F] {i : M → F} (hi : ContMDiff 𝓘(ℂ, E) 𝓘(ℂ, F) ∞ i)
+theorem isZero_singularHomology_of_isClosedEmbedding {A : Type v} [Category.{w} A] [Abelian A]
+    [HasCoproducts.{u} A] [HasColimitsOfShape ℕ A] [HasExactColimitsOfShape ℕ A] {F : Type*}
+    [NormedAddCommGroup F] [InnerProductSpace ℂ F] [FiniteDimensional ℂ F] {i : M → F}
+    (hi : ContMDiff 𝓘(ℂ, E) 𝓘(ℂ, F) ∞ i)
     (hinj : ∀ x, Function.Injective (mvfderiv 𝓘(ℂ, E) i x)) (hclosed : IsClosedEmbedding i)
     (R : A) {k : ℕ} (hk : finrank ℂ E < k) :
     IsZero (((singularHomologyFunctor A k).obj R).obj (TopCat.of M)) := by
+  have : SecondCountableTopology M := hclosed.isEmbedding.secondCountableTopology
   let : InnerProductSpace ℝ F := InnerProductSpace.rclikeToReal ℂ F
   let : MeasurableSpace F := borel F
   have : BorelSpace F := ⟨rfl⟩
