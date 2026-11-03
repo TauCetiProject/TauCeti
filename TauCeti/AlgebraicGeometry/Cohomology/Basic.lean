@@ -127,6 +127,14 @@ lemma cohomologyOnRes_comp (n : ℕ) {U V W : Opens X} (hUV : U ≤ V) (hVW : V 
   dsimp only [cohomologyOnRes]
   rw [← CategoryTheory.Functor.map_comp, ← op_comp, homOfLE_comp]
 
+/-- Restricting twice in cohomology is restricting along the composite inclusion. -/
+@[simp]
+lemma cohomologyOnRes_comp_apply (n : ℕ) {U V W : Opens X} (hUV : U ≤ V) (hVW : V ≤ W)
+    (x : cohomologyOn M n W) :
+    cohomologyOnRes M n hUV (cohomologyOnRes M n hVW x) =
+      cohomologyOnRes M n (hUV.trans hVW) x := by
+  rw [← ConcreteCategory.comp_apply, cohomologyOnRes_comp]
+
 /-- The cohomology of the whole space is the cohomology of the scheme. -/
 noncomputable abbrev cohomologyOnTopIso (n : ℕ) :
     cohomologyOn M n ⊤ ≅ AddCommGrpCat.of (Cohomology M n) :=
