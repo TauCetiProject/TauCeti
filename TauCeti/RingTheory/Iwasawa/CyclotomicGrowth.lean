@@ -88,7 +88,7 @@ theorem exists_mk_cyclotomic_prime_pow_comp_X_add_one_eq_mul_unit (hF : F.IsDist
   -- `1 + p c` is a unit of `O⟦T⟧`, since its constant coefficient `1 + p c₀` is a unit of `O`.
   have hunit : IsUnit (1 + (p : PowerSeries O) * c) := by
     rw [PowerSeries.isUnit_iff_constantCoeff, map_add, map_mul, map_one, map_natCast, add_comm]
-    exact Ideal.mem_jacobson_bot.1 hpO _
+    exact Ring.mem_jacobson_iff.1 ((Ideal.jacobson_bot (R := O)) ▸ hpO) _
   refine ⟨(hunit.map (Ideal.Quotient.mk J)).unit, ?_⟩
   rw [IsUnit.unit_spec, map_add, map_mul, map_one, map_natCast, hmk, sub_eq_iff_eq_add'.1 hc]
   ring

@@ -246,11 +246,11 @@ theorem eventually_isConnectedSumPosition_boost {F : Concordance K K'} {z₀ : C
       rw [coe_greatCircle_apply, hz₀, map_neg]
       exact hzt.symm
     exact hz (congrArg Prod.fst (F.toSmoothEmbedding.isEmbedding.injective heq) ▸ hz₀U)
-  have h₁ := hC.eventually_forall_inner_sphereBoost_pos ι.norm_map_I
-    (by rintro _ ⟨p, -, rfl⟩; exact norm_eq_of_mem_sphere (F p).1) hCv
+  have h₁ := hC.eventually_forall_lt_inner_sphereBoost ι.norm_map_I
+    (by rintro _ ⟨p, -, rfl⟩; exact norm_eq_of_mem_sphere (F p).1) hCv zero_lt_one
   -- Boosting back a parameter `w` with `m w ∉ U` lands in the open upper half of the circle.
-  filter_upwards [h₁, eventually_forall_im_pos_of_circleBoostDiffeotopy_final_notMem (m := ∞)
-    (hUo.mem_nhds hz₀U) hz₀] with a ha₁ him
+  filter_upwards [h₁, eventually_forall_lt_im_of_circleBoostDiffeotopy_final_notMem (m := ∞)
+    (hUo.mem_nhds hz₀U) hz₀ zero_lt_one] with a ha₁ him
   set m := (circleBoostDiffeotopy (m := ∞) (-a)).final
   -- Where the boosted-back parameter lies in `U`, the boosted concordance is the standard strip.
   have hstrip (q : Circle × ℝ) (hq : m q.1 ∈ U) :

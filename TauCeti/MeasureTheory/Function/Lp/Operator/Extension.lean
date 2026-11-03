@@ -60,7 +60,7 @@ def lpTwoSubmodule : Submodule ℝ (Lp E p μ) where
     exact (hf.const_smul c).ae_eq (Lp.coeFn_smul c f).symm
 
 /-- Membership in `Lᵖ ∩ L²` means that the `Lᵖ` representative also has finite `L²` norm. -/
-@[simp] theorem mem_lpTwoSubmodule (f : Lp E p μ) :
+theorem mem_lpTwoSubmodule (f : Lp E p μ) :
     f ∈ lpTwoSubmodule (E := E) (p := p) (μ := μ) ↔ MemLp (f : α → E) 2 μ :=
   Iff.rfl
 

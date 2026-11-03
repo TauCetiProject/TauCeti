@@ -12,45 +12,46 @@ public import TauCeti.Topology.Algebra.Module.Trace
 public import TauCeti.Analysis.PDE.Regularity.Hessian.ConstantCoefficient
 public import TauCeti.Analysis.Sobolev.Wkp.Basic
 import TauCeti.Analysis.Calculus.Morse.Linearization
-import TauCeti.Analysis.PDE.Ellipticity.Basic
 import TauCeti.Analysis.Sobolev.Wkp.Classical
 import TauCeti.Analysis.Sobolev.Wkp.Density
 import TauCeti.Analysis.Sobolev.Wkp.Laplacian
 
 /-!
-# The Calderón–Zygmund estimate for strong solutions in `W^{2,p}(ℝⁿ)`
+# The Calderón–Zygmund estimate for strong solutions in `W^{2,p}` of the whole space
 
-For every dimension `n` and `1 < p < ∞`, this file proves the `W^{2,p}` estimate of the Hessian on
-the whole
-space for constant-coefficient operators, and in particular for the Laplacian. Here `D²u` is the
-highest recorded weak derivative `TauCeti.Wkp.iteratedGradient 1 u`, the weak Hessian as an `Lᵖ`
-field of endomorphisms of `ℝⁿ` with the operator norm, so that `⟪D²u(x) eᵢ, eⱼ⟫` is the weak
-second derivative `∂ᵢ∂ⱼu`.
+For `1 < p < ∞`, this file proves the `W^{2,p}` estimate of the Hessian on the whole space for
+constant-coefficient operators on `ℝⁿ`, and for the Laplacian on every finite-dimensional real
+inner product space `V`. Here `D²u` is the highest recorded weak derivative
+`TauCeti.Wkp.iteratedGradient 1 u`, the weak Hessian as an `Lᵖ` field of endomorphisms with the
+operator norm, so that `⟪D²u(x) eᵢ, eⱼ⟫` is the weak second derivative `∂ᵢ∂ⱼu`.
 
 * **Constant coefficients**
   (`TauCeti.exists_norm_iteratedGradient_le_mul_norm_of_sum_mul_inner_eq`). There is a constant
   `C`, depending only on `n` and `p`, such that for every matrix `A` with `λ ‖ξ‖² ≤ ξᵀ A ξ` and
   `0 < λ`, every `u ∈ W^{2,p}(ℝⁿ)` with `∑ᵢⱼ Aᵢⱼ ∂ᵢ∂ⱼu = f ∈ Lᵖ(ℝⁿ)` almost everywhere satisfies
   `‖D²u‖_{Lᵖ} ≤ (C / λ) ‖f‖_{Lᵖ}`.
-* **The Laplacian**. There is a constant `C`, depending only on `n` and `p`, such that
-  `‖D²u‖_{Lᵖ} ≤ C ‖f‖_{Lᵖ}` for every `u ∈ W^{2,p}(ℝⁿ)` and `f ∈ Lᵖ(ℝⁿ)` with `Δu = f`. The
+* **The Laplacian**. There is a constant `C`, depending only on `V` and `p`, such that
+  `‖D²u‖_{Lᵖ} ≤ C ‖f‖_{Lᵖ}` for every `u ∈ W^{2,p}(V)` and `f ∈ Lᵖ(V)` with `Δu = f`. The
   equation `Δu = f` is taken either strongly, the trace of the weak Hessian of `u` being `f` in
   `Lᵖ` (`TauCeti.exists_norm_iteratedGradient_le_mul_norm_of_traceCLM_compLpL_eq`), or against
-  test functions, `∫ Δφ • u = ∫ φ • f` for every `φ ∈ C_c^∞(ℝⁿ)`
+  test functions, `∫ Δφ • u = ∫ φ • f` for every `φ ∈ C_c^∞(V)`
   (`TauCeti.exists_norm_iteratedGradient_le_mul_norm_of_integral_laplacian_smul_eq`); the two
-  agree by `TauCeti.Wkp.forall_integral_laplacian_smul_value_eq_iff`.
+  agree by `TauCeti.Wkp.forall_integral_laplacian_smul_value_eq_iff`. Stating this on a general
+  `V` rather than on `ℝⁿ` lets it apply on products such as `ℝ × E`, where half-spaces are
+  described.
 
 ## The argument
 
 For Schwartz functions the constant-coefficient estimate is
-`TauCeti.PDE.exists_eLpNorm_iteratedFDeriv_two_le_eLpNorm_sum_smul_fderiv_fderiv_real`, the
-singular integral estimate for the Hessian, and test functions are Schwartz functions. Both sides
-of the estimate are continuous on `W^{2,p}(ℝⁿ)`: `D²u` is a continuous projection, and
-`D²u ↦ ∑ᵢⱼ Aᵢⱼ ⟪D²u eᵢ, eⱼ⟫` is the continuous linear functional `Matrix.contraction A`
-applied pointwise. Test functions are dense in `W^{2,p}(ℝⁿ)` for `p < ∞`
-(`TauCeti.Wkp.denseRange_ofTestFunctionₗ_top`), so the estimate holds on all of `W^{2,p}(ℝⁿ)`.
-The Laplacian is the case `A = 1`, `λ = 1`: contracting with the identity matrix is the trace
-(`Matrix.contraction_one`).
+`TauCeti.PDE.exists_eLpNorm_iteratedFDeriv_two_le_eLpNorm_sum_smul_fderiv_fderiv_real` and the
+estimate for the Laplacian is `TauCeti.exists_eLpNorm_iteratedFDeriv_two_le_eLpNorm_laplacian_real`,
+the singular integral estimates for the Hessian, and test functions are Schwartz functions. Both
+sides of each estimate are continuous on `W^{2,p}`: `D²u` is a continuous projection, and
+`D²u ↦ ∑ᵢⱼ Aᵢⱼ ⟪D²u eᵢ, eⱼ⟫` and `D²u ↦ tr D²u` are continuous linear functionals
+(`Matrix.contraction A` and `traceCLM`) applied pointwise. For a test function `φ` the trace of
+the Hessian is `Δφ` (`TauCeti.Wkp.trace_iteratedGradient_ofTestFunctionₗ_ae_eq`). Test functions
+are dense in `W^{2,p}` of the whole space for `p < ∞`
+(`TauCeti.Wkp.denseRange_ofTestFunctionₗ_top`), so the estimates hold on all of `W^{2,p}`.
 
 ## References
 
@@ -92,18 +93,18 @@ private theorem contraction_compLpL_iteratedGradient_ofTestFunctionₗ_ae_eq
 
 /-- An `Lᵖ` bound on the classical Hessian of a test function `φ` bounds the weak Hessian of `φ`,
 regarded as an element of `W^{2,p}(ℝⁿ)`. -/
-private theorem norm_iteratedGradient_ofTestFunctionₗ_le {c : ℝ} (hc : 0 ≤ c)
-    {L : EuclideanSpace ℝ (Fin n) → ℝ} (hL : eLpNorm L p volume ≠ ∞)
-    (φ : 𝓓((⊤ : Opens (EuclideanSpace ℝ (Fin n))), ℝ))
-    (h : eLpNorm (iteratedFDeriv ℝ 2 (φ : EuclideanSpace ℝ (Fin n) → ℝ)) p volume ≤
+private theorem norm_iteratedGradient_ofTestFunctionₗ_le {V : Type*} [NormedAddCommGroup V]
+    [InnerProductSpace ℝ V] [FiniteDimensional ℝ V] [MeasurableSpace V] [BorelSpace V]
+    {c : ℝ} (hc : 0 ≤ c) {L : V → ℝ} (hL : eLpNorm L p volume ≠ ∞) (φ : 𝓓((⊤ : Opens V), ℝ))
+    (h : eLpNorm (iteratedFDeriv ℝ 2 (φ : V → ℝ)) p volume ≤
       ENNReal.ofReal c * eLpNorm L p volume) :
     ‖Wkp.iteratedGradient 1 (Wkp.ofTestFunctionₗ (mu := volume) (p := p) 2 φ)‖ ≤
       c * lpNorm L p volume := by
-  have hφ : ContDiff ℝ 2 (φ : EuclideanSpace ℝ (Fin n) → ℝ) := φ.contDiff.of_le (by simp)
+  have hφ : ContDiff ℝ 2 (φ : V → ℝ) := φ.contDiff.of_le (by simp)
   rw [Wkp.norm_iteratedGradient_eq_lpNorm_of_contDiffOn 1 _ hφ.contDiffOn
     (by rw [Wkp.value_ofTestFunctionₗ]; exact testFunctionLp_apply_ae p φ), Opens.coe_top,
     Measure.restrict_univ]
-  calc lpNorm (iteratedFDeriv ℝ (1 + 1) (φ : EuclideanSpace ℝ (Fin n) → ℝ)) p volume
+  calc lpNorm (iteratedFDeriv ℝ (1 + 1) (φ : V → ℝ)) p volume
       ≤ (ENNReal.ofReal c * eLpNorm L p volume).toReal :=
         ENNReal.toReal_mono (ENNReal.mul_ne_top ENNReal.ofReal_ne_top hL) h
     _ = c * lpNorm L p volume := by
@@ -172,63 +173,91 @@ theorem exists_norm_iteratedGradient_le_mul_norm_of_sum_mul_inner_eq
   rw [hTH]
   exact norm_iteratedGradient_ofTestFunctionₗ_le (by positivity) hLfin φ h
 
-/-- **The Calderón–Zygmund estimate for strong solutions in `W^{2,p}(ℝⁿ)`.** Let `1 < p < ∞`, in
-any dimension `n`. There is a constant `C` such that every `u ∈ W^{2,p}(ℝⁿ)` solving `Δu = f` with
-`f ∈ Lᵖ(ℝⁿ)` strongly, in the sense that the trace of the weak Hessian of `u` is `f` in `Lᵖ`,
-satisfies
+section InnerProductSpace
+
+variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V] [FiniteDimensional ℝ V]
+  [MeasurableSpace V] [BorelSpace V]
+
+/-- **The Calderón–Zygmund estimate for strong solutions in `W^{2,p}`.** Let `1 < p < ∞`, and let
+`V` be a finite-dimensional real inner product space with its volume measure. There is a constant
+`C` such that every `u ∈ W^{2,p}(V)` solving `Δu = f` with `f ∈ Lᵖ(V)` strongly, in the sense that
+the trace of the weak Hessian of `u` is `f` in `Lᵖ`, satisfies
 
 `‖D²u‖_{Lᵖ} ≤ C ‖f‖_{Lᵖ}`,
 
 where `D²u` is the weak Hessian `TauCeti.Wkp.iteratedGradient 1 u`, with the operator norm on
-endomorphisms of `ℝⁿ`. -/
+endomorphisms of `V`. -/
 theorem exists_norm_iteratedGradient_le_mul_norm_of_traceCLM_compLpL_eq
     (hp : 1 < p) (hp_top : p ≠ ∞) :
-    ∃ C : ℝ≥0, ∀ (u : Wkp (volume : Measure (EuclideanSpace ℝ (Fin n))) ⊤ p 2)
-      (f : Lp ℝ p ((volume : Measure (EuclideanSpace ℝ (Fin n))).restrict
-        (⊤ : Opens (EuclideanSpace ℝ (Fin n))))),
-      (traceCLM ℝ (EuclideanSpace ℝ (Fin n))).compLpL p _ (Wkp.iteratedGradient 1 u) = f →
+    ∃ C : ℝ≥0, ∀ (u : Wkp (volume : Measure V) ⊤ p 2)
+      (f : Lp ℝ p ((volume : Measure V).restrict (⊤ : Opens V))),
+      (traceCLM ℝ V).compLpL p _ (Wkp.iteratedGradient 1 u) = f →
       ‖Wkp.iteratedGradient 1 u‖ ≤ C * ‖f‖ := by
-  obtain ⟨C, hC⟩ := exists_norm_iteratedGradient_le_mul_norm_of_sum_mul_inner_eq hp hp_top
+  obtain ⟨C, hC⟩ := exists_eLpNorm_iteratedFDeriv_two_le_eLpNorm_laplacian_real (V := V) hp hp_top
   refine ⟨C, fun u f hf => ?_⟩
-  -- The Laplacian has the identity matrix as constant coefficients, and contracting with the
-  -- identity matrix is the trace.
-  rw [← Matrix.contraction_one] at hf
-  have htop :
-      MeasurableSet ((⊤ : Opens (EuclideanSpace ℝ (Fin n))) : Set (EuclideanSpace ℝ (Fin n))) :=
-    (⊤ : Opens (EuclideanSpace ℝ (Fin n))).isOpen.measurableSet
-  have h := hC one_pos (fun ξ => (one_mul _).trans_le (PDE.toQuadraticForm'_one ξ).ge) u f (by
-    filter_upwards [(ae_restrict_iff' htop).1
-      ((Matrix.contraction 1).coeFn_compLpL (Wkp.iteratedGradient 1 u))] with x hx
-    rw [← hf, hx (by simp), Matrix.contraction_apply])
-  rwa [div_one] at h
+  subst hf
+  set T := (traceCLM ℝ V).compLpL p ((volume : Measure V).restrict ((⊤ : Opens V) : Set V))
+  -- Both sides are continuous on `W^{2,p}(V)`, so it suffices to treat test functions.
+  refine (Wkp.denseRange_ofTestFunctionₗ_top hp_top 2).induction_on u
+    (isClosed_le ?_ ?_) fun φ => ?_
+  · simp only [← Wkp.iteratedGradientL_apply]
+    exact (Wkp.iteratedGradientL 1).continuous.norm
+  · simp only [← Wkp.iteratedGradientL_apply]
+    exact continuous_const.mul (T.continuous.comp (Wkp.iteratedGradientL 1).continuous).norm
+  -- For a test function, the right side is the norm of `Δφ`, and the estimate is the one for
+  -- Schwartz functions.
+  have hvol : (volume : Measure V).restrict ((⊤ : Opens V) : Set V) = volume := by
+    rw [Opens.coe_top, Measure.restrict_univ]
+  have hae : (T (Wkp.iteratedGradient 1 (Wkp.ofTestFunctionₗ (mu := volume) (p := p) 2 φ)) :
+      V → ℝ) =ᵐ[(volume : Measure V).restrict ((⊤ : Opens V) : Set V)] Δ (φ : V → ℝ) := by
+    filter_upwards [(traceCLM ℝ V).coeFn_compLpL (Wkp.iteratedGradient 1
+        (Wkp.ofTestFunctionₗ (mu := volume) (p := p) 2 φ)),
+      Wkp.trace_iteratedGradient_ofTestFunctionₗ_ae_eq (mu := volume) (p := p) φ] with x hx hΔ
+    rw [hx, traceCLM_apply, hΔ]
+  have hLfin : eLpNorm (Δ (φ : V → ℝ)) p volume ≠ ∞ := by
+    rw [← hvol, ← eLpNorm_congr_ae hae]
+    exact Lp.eLpNorm_ne_top _
+  have h : eLpNorm (iteratedFDeriv ℝ 2 (φ : V → ℝ)) p volume ≤
+      ENNReal.ofReal C * eLpNorm (Δ (φ : V → ℝ)) p volume := by
+    set ψ := φ.hasCompactSupport.toSchwartzMap φ.contDiff
+    have hcoe : ⇑ψ = φ := funext (HasCompactSupport.toSchwartzMap_toFun _ _)
+    have hΔ : ⇑(Δ ψ : 𝓢(V, ℝ)) = Δ (φ : V → ℝ) := funext fun x => by
+      rw [SchwartzMap.laplacian_apply, hcoe]
+    rw [ENNReal.ofReal_coe_nnreal, ← hΔ, ← hcoe]
+    exact hC ψ
+  have hTH : ‖T (Wkp.iteratedGradient 1 (Wkp.ofTestFunctionₗ (mu := volume) (p := p) 2 φ))‖ =
+      lpNorm (Δ (φ : V → ℝ)) p volume := by
+    rw [Lp.norm_def, eLpNorm_congr_ae hae, hvol, lpNorm]
+  rw [hTH]
+  exact norm_iteratedGradient_ofTestFunctionₗ_le C.coe_nonneg hLfin φ h
 
-/-- **The Calderón–Zygmund estimate in `W^{2,p}(ℝⁿ)`, against test functions.** Let `1 < p < ∞`,
-in any dimension `n`. There is a constant `C` such that every `u ∈ W^{2,p}(ℝⁿ)` solving `Δu = f`
-with
-`f ∈ Lᵖ(ℝⁿ)`, in the sense that `∫ Δφ • u = ∫ φ • f` for every test function `φ`, satisfies
+/-- **The Calderón–Zygmund estimate in `W^{2,p}`, against test functions.** Let `1 < p < ∞`, and
+let `V` be a finite-dimensional real inner product space with its volume measure. There is a
+constant `C` such that every `u ∈ W^{2,p}(V)` solving `Δu = f` with `f ∈ Lᵖ(V)`, in the sense that
+`∫ Δφ • u = ∫ φ • f` for every test function `φ`, satisfies
 
 `‖D²u‖_{Lᵖ} ≤ C ‖f‖_{Lᵖ}`,
 
 where `D²u` is the weak Hessian `TauCeti.Wkp.iteratedGradient 1 u`, with the operator norm on
-endomorphisms of `ℝⁿ`. -/
+endomorphisms of `V`. -/
 theorem exists_norm_iteratedGradient_le_mul_norm_of_integral_laplacian_smul_eq
     (hp : 1 < p) (hp_top : p ≠ ∞) :
-    ∃ C : ℝ≥0, ∀ (u : Wkp (volume : Measure (EuclideanSpace ℝ (Fin n))) ⊤ p 2)
-      (f : Lp ℝ p ((volume : Measure (EuclideanSpace ℝ (Fin n))).restrict
-        (⊤ : Opens (EuclideanSpace ℝ (Fin n))))),
-      (∀ φ : 𝓓((⊤ : Opens (EuclideanSpace ℝ (Fin n))), ℝ),
-        ∫ x, Δ (φ : EuclideanSpace ℝ (Fin n) → ℝ) x • Wkp.value 2 u x = ∫ x, φ x • f x) →
+    ∃ C : ℝ≥0, ∀ (u : Wkp (volume : Measure V) ⊤ p 2)
+      (f : Lp ℝ p ((volume : Measure V).restrict (⊤ : Opens V))),
+      (∀ φ : 𝓓((⊤ : Opens V), ℝ), ∫ x, Δ (φ : V → ℝ) x • Wkp.value 2 u x = ∫ x, φ x • f x) →
       ‖Wkp.iteratedGradient 1 u‖ ≤ C * ‖f‖ := by
-  obtain ⟨C, hC⟩ := exists_norm_iteratedGradient_le_mul_norm_of_traceCLM_compLpL_eq hp hp_top
+  obtain ⟨C, hC⟩ := exists_norm_iteratedGradient_le_mul_norm_of_traceCLM_compLpL_eq (V := V) hp
+    hp_top
   refine ⟨C, fun u f hf => hC u f ?_⟩
   -- A solution against test functions is a strong solution: the trace of its weak Hessian is `f`.
-  have hloc : LocallyIntegrableOn (f : EuclideanSpace ℝ (Fin n) → ℝ) ⊤ volume :=
+  have hloc : LocallyIntegrableOn (f : V → ℝ) ⊤ volume :=
     (((Lp.memLp f).locallyIntegrable Fact.out).mono_measure
       (by rw [Opens.coe_top, Measure.restrict_univ])).locallyIntegrableOn _
   refine Lp.ext ?_
-  filter_upwards [(traceCLM ℝ (EuclideanSpace ℝ (Fin n))).coeFn_compLpL
-      (Wkp.iteratedGradient 1 u),
+  filter_upwards [(traceCLM ℝ V).coeFn_compLpL (Wkp.iteratedGradient 1 u),
     (Wkp.forall_integral_laplacian_smul_value_eq_iff u hloc).1 hf] with x hx htr
   rw [hx, traceCLM_apply, htr]
+
+end InnerProductSpace
 
 end TauCeti

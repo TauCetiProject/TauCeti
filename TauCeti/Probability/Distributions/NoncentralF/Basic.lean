@@ -140,14 +140,14 @@ theorem noncentralFMeasure_eq_bind (hm : 0 < m) (l : ℝ≥0) :
   ext s hs
   rw [noncentralFMeasure_eq_sum hm, Measure.sum_apply _ hs,
     Measure.bind_apply hs (.of_discrete), lintegral_countable']
-  simp only [Measure.smul_apply, smul_eq_mul, mul_comm]
+  simp only [_root_.smul_apply, smul_eq_mul, mul_comm]
 
 /-- Set evaluation as an extended-real Poisson series; the formula holds for every set. -/
 theorem noncentralFMeasure_apply (hm : 0 < m) (l : ℝ≥0) (s : Set ℝ) :
     noncentralFMeasure m n l s = ∑' j : ℕ, poissonMeasure (l / 2) {j} *
       (fisherSnedecorMeasure (m + 2 * j) n).map (fun x ↦ (m + 2 * j) / m * x) s := by
   rw [noncentralFMeasure_eq_sum hm, Measure.sum_apply_of_countable]
-  simp only [Measure.smul_apply, smul_eq_mul]
+  simp only [_root_.smul_apply, smul_eq_mul]
 
 /-- Nonnegative integration against the noncentral F law can be performed component by
 component, without measurability, finiteness or integrability assumptions on the observable. -/

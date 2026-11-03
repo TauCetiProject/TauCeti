@@ -71,11 +71,11 @@ noncomputable def transvectionSubgroup (p : ℙ K (Fin (m + m) → K)) :
 along `v`. -/
 theorem transvectionSubgroup_mk {v : Fin (m + m) → K} (hv : v ≠ 0) :
     transvectionSubgroup (Projectivization.mk K v hv) = (symplecticTransvectionHom v).range := by
-  obtain ⟨a, ha⟩ := (Projectivization.mk_eq_mk_iff' K _ v (Projectivization.rep_nonzero _) hv).mp
+  obtain ⟨a, ha⟩ := (Projectivization.mk_eq_mk_iff' K _ v (Projectivization.rep_ne_zero _) hv).mp
     (Projectivization.mk_rep _)
   have ha0 : a ≠ 0 := by
     rintro rfl
-    exact Projectivization.rep_nonzero (Projectivization.mk K v hv) (by rw [← ha, zero_smul])
+    exact Projectivization.rep_ne_zero (Projectivization.mk K v hv) (by rw [← ha, zero_smul])
   rw [transvectionSubgroup, ← ha, range_symplecticTransvectionHom_smul ha0]
 
 /-- An element lies in the transvection group along the point of a nonzero vector `v` exactly when

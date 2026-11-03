@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Lie.G2.ShortRoot.PrimeField.Root.Positive
+public import TauCeti.Algebra.Lie.G2.ShortRoot.PrimeField.Root.Exhaustion
 import Mathlib.Tactic.ReduceModChar
 
 /-!
@@ -118,6 +119,15 @@ theorem simpleRootCharacter_injective : Function.Injective simpleRootCharacter :
   revert h0
   fin_cases i <;> fin_cases j <;> decide
 
+private theorem adjointWeightSpace_liftCharacter_eq_weightTorus (μ : Fin 2 → ℤ) :
+    Derivation.adjointWeightSpace splitMaximalTorus.coordinateMap.hom
+        (Multiplicative.ofAdd (liftCharacter μ)) =
+      Derivation.adjointWeightSpace weightTorusCoordinateMap.hom
+        (SplitTorus.weightCharacter μ) :=
+  (congrArg (Derivation.adjointWeightSpace splitMaximalTorus.coordinateMap.hom)
+    (ofAdd_liftCharacter μ)).trans
+      (adjointWeightSpace_splitMaximalTorus_weightCharacter_eq_weightTorus μ)
+
 /-- **The weight-space criterion in fundamental-weight coordinates.** A tangent vector of the
 carrier lies in the root space of the chosen torus at the character with coordinates `μ` exactly
 when the entries of its matrix vanish off the weight differences equal to `μ`. -/
@@ -126,21 +136,8 @@ private theorem mem_adjointWeightSpace_liftCharacter_iff (μ : Fin 2 → ℤ)
     x ∈ Derivation.adjointWeightSpace splitMaximalTorus.coordinateMap.hom
         (Multiplicative.ofAdd (liftCharacter μ)) ↔
       ∀ i j, weight i - weight j ≠ μ → tangentMatrix x i j = 0 := by
-  have hspace : Derivation.adjointWeightSpace splitMaximalTorus.coordinateMap.hom
-      (Multiplicative.ofAdd (liftCharacter μ)) =
-        Derivation.adjointWeightSpace weightTorusCoordinateMap.hom
-          (SplitTorus.weightCharacter μ) :=
-    (congrArg (Derivation.adjointWeightSpace splitMaximalTorus.coordinateMap.hom)
-      (ofAdd_liftCharacter μ)).trans
-        (adjointWeightSpace_splitMaximalTorus_weightCharacter_eq_weightTorus μ)
-  rw [hspace, mem_adjointWeightSpace_iff]
-  have hinj : ∀ ν : Fin 2 → ℤ,
-      SplitTorus.weightCharacter ν = SplitTorus.weightCharacter μ ↔ ν = μ := fun ν =>
-    ⟨fun h => funext fun l => by
-      simpa only [SplitTorus.toAdd_weightCharacter] using
-        congrArg (fun χ : Multiplicative (Fin 2 →₀ ℤ) => Multiplicative.toAdd χ l) h,
-      fun h => h ▸ rfl⟩
-  simp only [ne_eq, hinj]
+  rw [adjointWeightSpace_liftCharacter_eq_weightTorus,
+    mem_adjointWeightSpace_weightCharacter_iff]
 
 /-! ## Cross-product derivations of a positive weight -/
 
@@ -156,66 +153,6 @@ private def IsCrossDerivation (X : Matrix (Fin 7) (Fin 7) (ZMod 3)) : Prop :=
   ∀ c, X * crossOperatorPrime c =
     ConstantMultiplication.imageStructureMatrix (ZMod 3) 7 crossOperatorPrime X c +
       crossOperatorPrime c * X
-
-/-- A cross-product derivation of weight `2α₁` vanishes. -/
-private theorem eq_zero_of_weight_twice_short (X : Matrix (Fin 7) (Fin 7) (ZMod 3))
-    (hX : IsCrossDerivation X) (hsupp : ∀ i j, weight i - weight j ≠ ![4, -2] → X i j = 0) :
-    X = 0 := by
-  have hXe : X = !![0, 0, 0, 0, 0, 0, 0;
-      0, 0, 0, 0, 0, 0, 0;
-      0, 0, 0, 0, X 2 4, 0, 0;
-      0, 0, 0, 0, 0, 0, 0;
-      0, 0, 0, 0, 0, 0, 0;
-      0, 0, 0, 0, 0, 0, 0;
-      0, 0, 0, 0, 0, 0, 0] := by
-    ext i j
-    fin_cases i <;> fin_cases j <;> first | rfl | exact hsupp _ _ (by decide)
-  rw [hXe] at hX
-  have h : X 2 4 = 0 := by
-    linear_combination (norm := cross_entry_norm) congrFun (congrFun (hX 1) 0) 4
-  rw [hXe, h]
-  ext i j
-  fin_cases i <;> fin_cases j <;> rfl
-
-/-- A cross-product derivation of weight `2(α₁ + α₂)` vanishes. -/
-private theorem eq_zero_of_weight_twice_shortSum (X : Matrix (Fin 7) (Fin 7) (ZMod 3))
-    (hX : IsCrossDerivation X) (hsupp : ∀ i j, weight i - weight j ≠ ![-2, 2] → X i j = 0) :
-    X = 0 := by
-  have hXe : X = !![0, 0, 0, 0, 0, 0, 0;
-      0, 0, 0, 0, 0, X 1 5, 0;
-      0, 0, 0, 0, 0, 0, 0;
-      0, 0, 0, 0, 0, 0, 0;
-      0, 0, 0, 0, 0, 0, 0;
-      0, 0, 0, 0, 0, 0, 0;
-      0, 0, 0, 0, 0, 0, 0] := by
-    ext i j
-    fin_cases i <;> fin_cases j <;> first | rfl | exact hsupp _ _ (by decide)
-  rw [hXe] at hX
-  have h : X 1 5 = 0 := by
-    linear_combination (norm := cross_entry_norm) congrFun (congrFun (hX 2) 1) 6
-  rw [hXe, h]
-  ext i j
-  fin_cases i <;> fin_cases j <;> rfl
-
-/-- A cross-product derivation of weight `2(2α₁ + α₂)` vanishes. -/
-private theorem eq_zero_of_weight_twice_highestShort (X : Matrix (Fin 7) (Fin 7) (ZMod 3))
-    (hX : IsCrossDerivation X) (hsupp : ∀ i j, weight i - weight j ≠ ![2, 0] → X i j = 0) :
-    X = 0 := by
-  have hXe : X = !![0, 0, 0, 0, 0, 0, X 0 6;
-      0, 0, 0, 0, 0, 0, 0;
-      0, 0, 0, 0, 0, 0, 0;
-      0, 0, 0, 0, 0, 0, 0;
-      0, 0, 0, 0, 0, 0, 0;
-      0, 0, 0, 0, 0, 0, 0;
-      0, 0, 0, 0, 0, 0, 0] := by
-    ext i j
-    fin_cases i <;> fin_cases j <;> first | rfl | exact hsupp _ _ (by decide)
-  rw [hXe] at hX
-  have h : X 0 6 = 0 := by
-    linear_combination (norm := cross_entry_norm) congrFun (congrFun (hX 4) 1) 6
-  rw [hXe, h]
-  ext i j
-  fin_cases i <;> fin_cases j <;> rfl
 
 /-- The root generator `E₁` reduced to `𝔽₃`. -/
 private theorem map_raisingMatrix_zero :
@@ -307,19 +244,6 @@ private theorem exists_eq_smul_of_weight_highestShort (X : Matrix (Fin 7) (Fin 7
 
 /-! ## Root spaces of positive weights -/
 
-/-- A weight whose cross-product derivations all vanish has zero root space. -/
-private theorem adjointWeightSpace_liftCharacter_eq_bot (μ : Fin 2 → ℤ)
-    (h : ∀ X, IsCrossDerivation X → (∀ i j, weight i - weight j ≠ μ → X i j = 0) → X = 0) :
-    Derivation.adjointWeightSpace splitMaximalTorus.coordinateMap.hom
-      (Multiplicative.ofAdd (liftCharacter μ)) = ⊥ := by
-  rw [eq_bot_iff]
-  intro x hx
-  rw [Submodule.mem_bot]
-  apply tangentMatrix_injective
-  rw [map_zero]
-  exact h _ (tangentMatrix_mul_crossOperatorPrime x)
-    ((mem_adjointWeightSpace_liftCharacter_iff μ x).mp hx)
-
 /-- A weight whose root space is the line spanned by a nonzero tangent vector of the positive
 subgroup is an intrinsic positive root. -/
 private theorem isPositiveRoot_liftCharacter (μ : Fin 2 → ℤ) (hμ : μ ≠ 0)
@@ -405,35 +329,37 @@ private theorem cotangentLinearEquiv_highestShortVector_mem :
 private theorem adjointWeightSpace_shortSum_eq_span :
     Derivation.adjointWeightSpace splitMaximalTorus.coordinateMap.hom
       (Multiplicative.ofAdd (liftCharacter ![-1, 1])) = (ZMod 3) ∙ shortSumVector := by
-  apply le_antisymm
-  · intro x hx
-    obtain ⟨t, ht⟩ := exists_eq_smul_of_weight_shortSum (tangentMatrix x)
-      (tangentMatrix_mul_crossOperatorPrime x)
-      ((mem_adjointWeightSpace_liftCharacter_iff _ x).mp hx)
-    refine Submodule.mem_span_singleton.mpr ⟨t, tangentMatrix_injective ?_⟩
-    rw [map_smul, tangentMatrix_shortSumVector, ht]
-  · rw [Submodule.span_singleton_le_iff_mem, mem_adjointWeightSpace_liftCharacter_iff,
-      tangentMatrix_shortSumVector]
-    intro i j h
-    revert h
-    fin_cases i <;> fin_cases j <;> decide
+  calc
+    _ = Derivation.adjointWeightSpace weightTorusCoordinateMap.hom
+        (SplitTorus.weightCharacter ![-1, 1]) :=
+      adjointWeightSpace_liftCharacter_eq_weightTorus _
+    _ = _ := by
+      apply adjointWeightSpace_weightCharacter_eq_span_of
+      · rw [tangentMatrix_shortSumVector]
+        intro i j h
+        revert h
+        fin_cases i <;> fin_cases j <;> decide
+      · intro X hX hsupp
+        rw [tangentMatrix_shortSumVector]
+        exact exists_eq_smul_of_weight_shortSum X hX hsupp
 
 /-- The root space of `2α₁ + α₂` is the line spanned by `[X₁, [X₁, X₂]]`. -/
 private theorem adjointWeightSpace_highestShort_eq_span :
     Derivation.adjointWeightSpace splitMaximalTorus.coordinateMap.hom
       (Multiplicative.ofAdd (liftCharacter ![1, 0])) = (ZMod 3) ∙ highestShortVector := by
-  apply le_antisymm
-  · intro x hx
-    obtain ⟨t, ht⟩ := exists_eq_smul_of_weight_highestShort (tangentMatrix x)
-      (tangentMatrix_mul_crossOperatorPrime x)
-      ((mem_adjointWeightSpace_liftCharacter_iff _ x).mp hx)
-    refine Submodule.mem_span_singleton.mpr ⟨t, tangentMatrix_injective ?_⟩
-    rw [map_smul, tangentMatrix_highestShortVector, ht]
-  · rw [Submodule.span_singleton_le_iff_mem, mem_adjointWeightSpace_liftCharacter_iff,
-      tangentMatrix_highestShortVector]
-    intro i j h
-    revert h
-    fin_cases i <;> fin_cases j <;> decide
+  calc
+    _ = Derivation.adjointWeightSpace weightTorusCoordinateMap.hom
+        (SplitTorus.weightCharacter ![1, 0]) :=
+      adjointWeightSpace_liftCharacter_eq_weightTorus _
+    _ = _ := by
+      apply adjointWeightSpace_weightCharacter_eq_span_of
+      · rw [tangentMatrix_highestShortVector]
+        intro i j h
+        revert h
+        fin_cases i <;> fin_cases j <;> decide
+      · intro X hX hsupp
+        rw [tangentMatrix_highestShortVector]
+        exact exists_eq_smul_of_weight_highestShort X hX hsupp
 
 /-- The short root `α₁ + α₂` is an intrinsic positive root. -/
 private theorem isPositiveRoot_shortSum :
@@ -525,13 +451,16 @@ theorem isSimpleRoot_iff_exists_simpleRootCharacter (α : ULift.{0} (Fin 2) →�
     · exact absurd (hv.trans (by decide)) (hsum _ _ h₁ isPositiveRoot_highestShort)
     · exact absurd (hv.trans (by decide)) (hsum _ _ isPositiveRoot_shortSum
         isPositiveRoot_highestShort)
-    · exact absurd (adjointWeightSpace_liftCharacter_eq_bot _ eq_zero_of_weight_twice_short)
-        (hv ▸ hne)
-    · exact absurd (adjointWeightSpace_liftCharacter_eq_bot _ eq_zero_of_weight_twice_shortSum)
-        (hv ▸ hne)
-    · exact absurd
-        (adjointWeightSpace_liftCharacter_eq_bot _ eq_zero_of_weight_twice_highestShort)
-        (hv ▸ hne)
+    all_goals
+      exfalso
+      apply hne
+      rw [hv]
+      -- Rewriting through the bundled character-group carrier needs reducible transparency.
+      erw [ofAdd_liftCharacter]
+      apply adjointWeightSpace_splitMaximalTorus_eq_bot_of_not_root
+      · decide
+      · simp only [Set.mem_range, g2Root_apply]
+        decide
   · rintro ⟨i, rfl⟩
     exact isSimpleRoot_simpleRootCharacter i
 
