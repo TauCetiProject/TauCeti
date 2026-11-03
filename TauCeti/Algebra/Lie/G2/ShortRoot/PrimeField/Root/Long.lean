@@ -83,19 +83,30 @@ private theorem positiveRestriction_comp_root (i : Fin 2) :
 private theorem includePositiveTangent_root (i : Fin 2) :
     includePositiveTangent (positiveRootDerivation i) = rootVector (.inl i) := by
   apply (Derivation.cotangentLinearEquiv (B := F)).injective
-  rw [includePositiveTangent, LinearEquiv.apply_symm_apply, positiveRootDerivation,
-    ← LinearMap.comp_apply, ← derivationComp_comp, ← CommHopfAlgCat.hom_comp,
-    positiveRestriction_comp_root,
-    cotangentLinearEquiv_rootVector]
+  rw [cotangentLinearEquiv_rootVector, includePositiveTangent, LinearEquiv.apply_symm_apply]
+  ext x
+  apply (Bialgebra.CounitAlgebra.algEquivSelf F carrierAlgebra F).injective
+  have h := congrArg (fun f => f.hom x) (positiveRestriction_comp_root i)
+  simpa only [positiveRootDerivation, algEquivSelf_derivationComp_apply,
+    BialgHom.coe_toAlgHom, CommHopfAlgCat.hom_comp, BialgHom.comp_apply] using congrArg
+      (fun y => Bialgebra.CounitAlgebra.algEquivSelf F
+        (AdditiveGroup.coordinateHopfAlgebra F) F
+          (((AdditiveGroup.gaTangentLinearEquiv (R := F) (B := F)).symm 1) y)) h
 
 private theorem tangentMatrix_includePositiveTangent (d : D) :
     tangentMatrix (includePositiveTangent d) =
       GeneralLinear.tangentMatrix 7 (HopfIdeal.quotientLieHom Positive.definingIdeal d) := by
-  rw [includePositiveTangent, tangentMatrix_apply, LinearEquiv.apply_symm_apply,
-    HopfIdeal.quotientLieHom_apply, ← LinearMap.comp_apply, ← derivationComp_comp,
-    ← CommHopfAlgCat.hom_mkQuotient, ← CommHopfAlgCat.hom_comp,
-    CommHopfAlgCat.mkQuotient_comp_quotientMapOfLe, CommHopfAlgCat.hom_mkQuotient,
-    HopfIdeal.quotientLieHom_apply]
+  rw [tangentMatrix_apply, includePositiveTangent, LinearEquiv.apply_symm_apply]
+  apply congrArg (GeneralLinear.tangentMatrix 7)
+  ext x
+  apply (Bialgebra.CounitAlgebra.algEquivSelf F
+    (GeneralLinear.coordinateHopfAlgebra F 7) F).injective
+  have h := congrArg (fun f => f.hom x)
+    (CommHopfAlgCat.mkQuotient_comp_quotientMapOfLe _ Positive.carrierDefiningIdeal_le)
+  simpa only [HopfIdeal.quotientLieHom_apply, algEquivSelf_derivationComp_apply,
+    BialgHom.coe_toAlgHom, CommHopfAlgCat.hom_comp, BialgHom.comp_apply,
+    CommHopfAlgCat.hom_mkQuotient] using congrArg
+      (fun y => Bialgebra.CounitAlgebra.algEquivSelf F P F (d y)) h
 
 private theorem ambient_positiveRootPoint (u : F) :
     GeneralLinear.counitPointsMulEquiv 7
@@ -111,10 +122,15 @@ private theorem ambient_positiveRootPoint (u : F) :
       (positiveRootPoint u) =
       (CommHopfAlgCat.Hom.mapPointsFunctor (generator (.inl (.inl 0)))).app
         (CommAlgCat.of F F) q := by
-    rw [positiveRootPoint, ← MonoidHom.comp_apply, ← BialgHom.mapDomain_comp,
-      ← CommHopfAlgCat.hom_mkQuotient, ← CommHopfAlgCat.hom_comp,
-      CommHopfAlgCat.mkQuotient_comp_commonKernelLift, Positive.generator_inl,
-      CommHopfAlgCat.Hom.mapPointsFunctor_app_apply, BialgHom.mapDomain_apply]
+    rw [CommHopfAlgCat.Hom.mapPointsFunctor_app_apply]
+    apply WithConv.ofConv_injective
+    ext x
+    have h := congrArg (fun f => f.hom x)
+      (CommHopfAlgCat.mkQuotient_comp_commonKernelLift Positive.generator (.inl 0))
+    simpa only [positiveRootPoint, BialgHom.mapDomain_apply_apply, CommHopfAlgCat.hom_comp,
+      BialgHom.comp_apply, CommHopfAlgCat.hom_mkQuotient,
+      Bialgebra.Quotient.mkBialgHom_apply, Positive.generator_inl, Positive.definingIdeal,
+      AlgHom.comp_apply, BialgHom.coe_toAlgHom, q] using congrArg q.ofConv h
   have hcounit := Derivation.pointInCounitAlgebra_comp F
     (Bialgebra.Quotient.mkBialgHom Positive.definingIdeal.toIdeal)
     (positiveRootPoint u).ofConv
