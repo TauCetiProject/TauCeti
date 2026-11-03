@@ -506,14 +506,7 @@ theorem simplyConnectedSpace_of_interior_union
     obtain ⟨g', rfl⟩ := hsurj g
     obtain ⟨h', rfl⟩ := hsurj h
     rw [himage_one, himage_one]
-  refine simply_connected_iff_loops_nullhomotopic.mpr ⟨inferInstance, fun x γ ↦ ?_⟩
-  let e := FundamentalGroup.fundamentalGroupMulEquivOfPath
-    (PathConnectedSpace.somePath z x)
-  have hxsub : Subsingleton (FundamentalGroup X x) :=
-    ⟨fun a b ↦ e.symm.injective (hzsub.elim (e.symm a) (e.symm b))⟩
-  exact Quotient.eq.mp (congrArg End.asHom (hxsub.elim
-    (FundamentalGroup.fromPath (Path.Homotopic.Quotient.mk γ))
-    (FundamentalGroup.fromPath (Path.Homotopic.Quotient.mk (Path.refl x)))))
+  exact simplyConnectedSpace_of_subsingleton_fundamentalGroup z
 
 /-- **The based Seifert--van Kampen theorem for a simply connected overlap.**
 
