@@ -91,12 +91,13 @@ theorem integralTopForm_model_eq_integral (o : _root_.Orientation ℝ E (Fin k))
       ∫ x, φ x b ∂b.addHaar := by
   rw [Manifold.Orientation.model_eq_mk,
     integralTopForm_of_tsupport_subset_chart _ hφ hc 0 (by simp) b
-      (hb.trans (Manifold.OrientationLift.model_modelOrientation o hk).symm)]
+      (hb.trans (Manifold.OrientationLift.ofHasGroupoid_modelOrientation o hk).symm)]
   simp only [extChartAt_model_space_eq_id, PartialEquiv.refl_target, PartialEquiv.refl_symm,
     PartialEquiv.refl_coe, Measure.restrict_univ]
   refine integral_congr_ae (ae_of_all _ fun x ↦ ?_)
   simp only [id_eq, mpullback_id]
-  rw [Manifold.OrientationLift.signAt_of_mem _ (by simp), Manifold.OrientationLift.model_sign]
+  rw [Manifold.OrientationLift.signAt_of_mem _ (by simp),
+    Manifold.OrientationLift.ofHasGroupoid_sign]
   simp
 
 omit [MeasurableSpace E] [BorelSpace E] in

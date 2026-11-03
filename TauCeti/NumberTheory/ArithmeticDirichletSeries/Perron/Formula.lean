@@ -78,7 +78,7 @@ private theorem lintegral_norm_term_mul_perronIntegrand_ne_top (hx : 0 < x) (hc 
       _ = ENNReal.ofReal (‖LSeries.term f (c : ℂ) n‖ * (x ^ c / c)) * ENNReal.ofReal (2 * T) := by
           have hlen : T - -T = 2 * T := by ring
           rw [setLIntegral_const, Real.volume_Ioc, hlen]
-  refine ne_of_lt (lt_of_le_of_lt (ENNReal.tsum_le_tsum hstep) ?_)
+  refine ne_of_lt (lt_of_le_of_lt (tsum_le_tsum hstep) ?_)
   rw [ENNReal.tsum_mul_right]
   refine ENNReal.mul_lt_top ?_ ENNReal.ofReal_lt_top
   rw [← ENNReal.ofReal_tsum_of_nonneg (fun n ↦ by positivity) (h.norm.mul_right _)]

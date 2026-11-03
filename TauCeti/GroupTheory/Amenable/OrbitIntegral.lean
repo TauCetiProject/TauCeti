@@ -132,7 +132,7 @@ theorem integral_smul_leftTranslation_nonneg (hh : Integrable h μ) (hh₀ : 0 �
     (hf : 0 ≤ f) : 0 ≤ ∫ y, h y • leftTranslation y f ∂μ := by
   refine le_def.2 fun x => ?_
   rw [integral_smul_leftTranslation_apply hh, ZeroMemClass.coe_zero,
-    BoundedContinuousFunction.coe_zero, Pi.zero_apply]
+    FunLike.coe_zero, Pi.zero_apply]
   refine integral_nonneg_of_ae ?_
   filter_upwards [hh₀] with y hy
   exact mul_nonneg hy (le_def.1 hf _)
