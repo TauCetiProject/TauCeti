@@ -30,7 +30,7 @@ factor `MvPolynomial.map η_R`; `TauCeti.LazardRing.tensorLift` is its universal
 
 The equations are proved by comparing classified data: a ring homomorphism out of `Γ` is
 determined by its restriction to `L` and by its base change of the universal strict coordinate
-(`TauCeti.LazardRing.ringHom_ext_universalStrictCoordinate`), and then each equation is a
+(`TauCeti.FormalCoordinate.ringHom_ext_universalStrictCoordinate`), and then each equation is a
 groupoid law in the group of strict coordinates. In the tensor model, the composite
 `μ ∘ (f ⊗ g) : Γ ⊗_L Γ → R` of a tensor product of maps with multiplication is `tensorLift (f, g)`.
 
@@ -76,6 +76,8 @@ namespace LazardRing
 variable {R : Type*} [CommRing R]
 
 open MvPolynomial
+open FormalCoordinate (universalStrictCoordinate map_universalStrictCoordinate_mem_ker
+  ringHom_ext_universalStrictCoordinate)
 
 /-! ### The tensor square `Γ ⊗_L Γ` -/
 
