@@ -303,7 +303,7 @@ theorem forall_mem_newtonSlopes_eq_iff_norm_coeff_mul_rpow_pow_le (hb : 1 < b)
   have hnorm {n : ℕ} (hn : f.coeff n ≠ 0) :
       ‖f.coeff n‖ * (b ^ m) ^ n = b ^ (-((v (f.coeff n)).untop₀ - m * n)) := by
     simpa using (f : PowerSeries K).norm_coeff_mul_rpow_pow_eq v hb hv (by simpa using hn) m
-  rw [forall_mem_newtonSlopes_eq_iff (mt v.top_iff.mp (trailingCoeff_nonzero_iff_nonzero.mpr hf))
+  rw [forall_mem_newtonSlopes_eq_iff (mt v.top_iff.mp (Polynomial.trailingCoeff_ne_zero.mpr hf))
     (mt v.top_iff.mp (leadingCoeff_ne_zero.mpr hf)), ← coeff_natDegree, trailingCoeff,
     hnorm (coeff_natTrailingDegree_ne_zero.mpr hf),
     hnorm (by rw [coeff_natDegree]; exact leadingCoeff_ne_zero.mpr hf),

@@ -169,7 +169,7 @@ theorem inhomogeneousCochainsIso_hom_linearYonedaObjMap_resChainMap :
       (Finsupp.single x (MonoidAlgebra.single 1 1))) rfl
   rw [TauCeti.Rep.barComplex.resChainMap_f, TauCeti.Rep.barComplex.resHom_single]
   simp only [res_obj_ρ, ConcreteCategory.hom_ofHom, map_one,
-    Representation.freeLift_single_single, Module.End.one_apply, one_smul]
+    Representation.freeLift_single_single, one_apply_eq_self, one_smul]
 
 /-- The inverse form of `inhomogeneousCochainsIso_hom_linearYonedaObjMap_resChainMap`. -/
 @[reassoc]

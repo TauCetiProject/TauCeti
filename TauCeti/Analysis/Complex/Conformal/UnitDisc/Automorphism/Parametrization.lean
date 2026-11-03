@@ -22,7 +22,7 @@ centre `a` are uniquely determined by the automorphism, not merely available for
 
 ## Why uniqueness is a separate matter
 
-Surjectivity onto `Aut(𝔻)` is the Schwarz-lemma classification and is already merged.  Injectivity
+Surjectivity onto `Aut(𝔻)` is the Schwarz-lemma classification.  Injectivity
 is elementary, but it is not formal: the family is indexed by two parameters and *a priori* nothing
 prevents different pairs from naming the same map — a family of Möbius maps of `ℂ` written in
 homogeneous coordinates is a genuine example of a parametrisation that is not injective.  What
@@ -51,13 +51,11 @@ isomorphism onto `TauCeti.unitDiscRotation`, as recorded by the `example` below.
 
 ## Generality
 
-Everything here concerns `Aut(𝔻)` and is `ℂ`-scalar, as the conformal-mapping roadmap's generality
-bar fixes for layers L0--L6; the underlying facts about `Complex.UnitDisc` and its `Circle` action
-are stated at that generality in `Analysis/Complex/UnitDisc/Basic.lean`.
+Everything here concerns `Aut(𝔻)` and is `ℂ`-scalar; the underlying facts about `Complex.UnitDisc`
+and its `Circle` action are stated at that generality in `Analysis/Complex/UnitDisc/Basic.lean`.
 
-This completes the conformal-mapping roadmap's L2 description of the disc automorphism group
-`Aut(𝔻) = {e^{iθ}(z−a)/(1−āz)}` (see `ConformalMapping/README.md`), whose existence half is
-`TauCeti.mem_unitDiscAut_iff`.
+Together with `TauCeti.mem_unitDiscAut_iff`, this describes the disc automorphism group as
+`Aut(𝔻) = {e^{iθ}(z−a)/(1−āz)}`.
 
 ## References
 
