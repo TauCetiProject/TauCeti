@@ -13,6 +13,7 @@ public import TauCeti.Algebra.Homology.Embedding.TruncLE
 public import TauCeti.AlgebraicTopology.DoldKan.Normalized
 public import TauCeti.AlgebraicTopology.DoldKan.SimplexChainMap
 import Mathlib.CategoryTheory.Adjunction.Whiskering
+import TauCeti.AlgebraicTopology.SimplicialSet.Cochains.Basic
 import TauCeti.AlgebraicTopology.SimplicialSet.Homology.Basic
 import TauCeti.AlgebraicTopology.SimplicialSet.StdSimplex
 import TauCeti.Data.Finset.Sort
@@ -123,9 +124,8 @@ private lemma coeff_injective
     (h : ∀ m α, coeff f m α = coeff f' m α) : f = f' := by
   ext m : 1
   rw [← cancel_mono (K.truncLE'ToX m)]
-  refine SSet.chainComplex_hom_ext fun α ↦ ?_
-  ext
-  simpa [coeff] using h m α
+  exact (TauCeti.cochainValuesEquiv R _ Δ[n] m).injective <|
+    funext fun α ↦ by simpa [coeff] using h m α
 
 private lemma d_coeff (f : Δ[n].chainComplex (ModuleCat.of R R) ⟶ K.truncLE' embeddingDownNat)
     (m : ℕ) (α : Δ[n] _⦋m + 1⦌) :
@@ -205,25 +205,17 @@ private lemma d_simplexVal (g : K.SimplexChainMap n) {m : ℕ} (α : Δ[n] _⦋m
 `m`-simplex `α` to `g.simplexVal α`. -/
 private noncomputable def toX (g : K.SimplexChainMap n) (m : ℕ) :
     (Δ[n].chainComplex (ModuleCat.of R R)).X m ⟶ K.X (-(m : ℤ)) :=
-  Sigma.desc fun α ↦ ConcreteCategory.ofHom (C := ModuleCat R) (X := ModuleCat.of R R)
-    (Y := K.X (-(m : ℤ))) (LinearMap.toSpanSingleton R _ (g.simplexVal α))
+  (TauCeti.cochainValuesEquiv R (K.X (-(m : ℤ))) Δ[n] m).symm g.simplexVal
 
-@[reassoc]
-private lemma ι_toX (g : K.SimplexChainMap n) {m : ℕ} (α : Δ[n] _⦋m⦌) :
-    Δ[n].ιChainComplex α ≫ g.toX m =
-      ConcreteCategory.ofHom (C := ModuleCat R) (X := ModuleCat.of R R) (Y := K.X (-(m : ℤ)))
-        (LinearMap.toSpanSingleton R _ (g.simplexVal α)) :=
-  Sigma.ι_comp_desc _ _
+private lemma ι_toX_apply (g : K.SimplexChainMap n) {m : ℕ} (α : Δ[n] _⦋m⦌) :
+    (Δ[n].ιChainComplex α ≫ g.toX m).hom (1 : R) = g.simplexVal α := by
+  rw [ModuleCat.hom_comp, LinearMap.comp_apply, toX, TauCeti.cochainValuesEquiv_symm_apply,
+    one_smul]
 
 private lemma ι_toX_comp_apply (g : K.SimplexChainMap n) {m : ℕ} (α : Δ[n] _⦋m⦌) {M : ModuleCat R}
     (φ : K.X (-(m : ℤ)) ⟶ M) :
     (Δ[n].ιChainComplex α ≫ g.toX m ≫ φ).hom (1 : R) = φ.hom (g.simplexVal α) := by
-  rw [ι_toX_assoc, ModuleCat.hom_comp, LinearMap.comp_apply]
-  exact congrArg φ.hom (LinearMap.toSpanSingleton_apply_one R _ (g.simplexVal α))
-
-private lemma ι_toX_apply (g : K.SimplexChainMap n) {m : ℕ} (α : Δ[n] _⦋m⦌) :
-    (Δ[n].ιChainComplex α ≫ g.toX m).hom (1 : R) = g.simplexVal α := by
-  simpa using g.ι_toX_comp_apply α (𝟙 _)
+  rw [← Category.assoc, ModuleCat.hom_comp, LinearMap.comp_apply, ι_toX_apply]
 
 /-- The chain map to the restriction of `K` sending the generator of the `m`-simplex `α` to
 `g.simplexVal α`. -/
