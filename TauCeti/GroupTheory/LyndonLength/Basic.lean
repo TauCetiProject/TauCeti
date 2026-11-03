@@ -27,7 +27,9 @@ common initial segment `u` of length `c(g, f)`: `g = u * g₁` and `f = u * f₁
 `l g = l u + l g₁` and `l f = l u + l f₁`.
 
 The based length function `g ↦ d(x, g • x)` of an isometric action on a `Λ`-tree is a Lyndon
-length function, and by Chiswell's theorem every Lyndon length function arises in this way. Free
+length function. Conversely, by Chiswell's theorem every Lyndon length function whose Gromov
+products lie in `Λ`, i.e. which satisfies (L4), arises in this way; in general the Gromov products
+lie in `½Λ ⊆ DivisibleHull Λ`, and the length function arises from an action on a `½Λ`-tree. Free
 Lyndon length functions are those of free actions without inversions. Freeness and regularity are
 independent properties; the main example of a free regular length function is the word length
 on a free group (`TauCeti.LyndonLength.freeGroupNorm`).
