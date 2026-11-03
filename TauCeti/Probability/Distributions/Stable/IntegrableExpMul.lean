@@ -8,6 +8,7 @@ module
 public import TauCeti.Probability.Distributions.Stable.Basic
 public import Mathlib.Probability.Moments.IntegrableExpMul
 import TauCeti.MeasureTheory.Measure.LowerSemicontinuousLintegral
+import TauCeti.Probability.Distributions.Affine
 import TauCeti.Probability.Distributions.CompoundPoisson.Transforms
 import TauCeti.Probability.Distributions.Stable.Operations
 
@@ -34,8 +35,6 @@ location are handled by `TauCeti.Probability.stableMeasure_map_affine`.
 
 ## Main results
 
-* `TauCeti.Probability.integrable_exp_mul_sub_one_sub_mul_sin_stableLevyMeasure`: integrability
-  of the real compensated kernel when the Lévy measure lives on `{x | t * x ≤ 0}`.
 * `TauCeti.Probability.mgf_stableCompensatedPoissonMeasure`: the moment generating function of
   a compensated approximation as the exponential of a truncated compensated Lévy integral.
 * `TauCeti.Probability.mgf_stableCompensatedPoissonMeasure_le`: the cutoff-independent bound.
@@ -62,19 +61,6 @@ namespace TauCeti.Probability
 
 variable {α β ε t : ℝ}
 
-/-- If `t * x ≤ 0` for almost every jump `x` of the stable Lévy measure, then the real
-compensated kernel `exp (t * x) - 1 - t * sin x` is integrable against the Lévy measure. -/
-theorem integrable_exp_mul_sub_one_sub_mul_sin_stableLevyMeasure
-    (ht : ∀ᵐ x ∂stableLevyMeasure α β, t * x ≤ 0) :
-    Integrable (fun x : ℝ ↦ exp (t * x) - 1 - t * sin x) (stableLevyMeasure α β) := by
-  -- This is the real part of the complex kernel along the direction `1`.
-  have h := integrable_cexp_mul_sub_one_sub_mul_sin_mul_stableLevyMeasure (C := 1) norm_one
-    (ht.mono fun x hx ↦ by
-      rw [mul_one, ← Complex.ofReal_exp, Complex.norm_real, Real.norm_of_nonneg (exp_pos _).le]
-      exact exp_le_one_iff.mpr hx)
-  simpa only [mul_one, RCLike.re_to_complex, Complex.sub_re, Complex.exp_ofReal_re,
-    Complex.one_re, Complex.ofReal_re] using h.re
-
 /-- If `t * x ≤ 0` for almost every jump `x` of the stable Lévy measure, then `exp (t * x)` is
 integrable under the normalized jump law, which is absolutely continuous with respect to the
 Lévy measure. -/
@@ -95,15 +81,14 @@ private theorem integrable_exp_mul_cond_stableLevyMeasure
 theorem integrable_exp_mul_stableCompensatedPoissonMeasure
     (ht : ∀ᵐ x ∂stableLevyMeasure α β, t * x ≤ 0) :
     Integrable (fun x ↦ exp (t * x)) (stableCompensatedPoissonMeasure α β ε) := by
+  -- Translation by the sine compensator is the affine map with slope one.
+  change t ∈ integrableExpSet id _
   rw [stableCompensatedPoissonMeasure_def]
-  set ν := stableLevyMeasure α β
-  set c := ∫ y in {y : ℝ | ε < |y|}, sin y ∂ν
-  rw [integrable_map_measure (by fun_prop) (by fun_prop)]
-  refine ((integrable_exp_mul_compoundPoissonMeasure _ measurable_id
-    (integrable_exp_mul_cond_stableLevyMeasure ht)).const_mul
-    (exp (-(t * c)))).congr (ae_of_all _ fun x ↦ ?_)
-  simp only [Function.comp_apply, AddMonoidHom.id_apply, ← exp_add]
-  ring_nf
+  set c := ∫ y in {y : ℝ | ε < |y|}, sin y ∂stableLevyMeasure α β
+  rw [show (fun x : ℝ ↦ x - c) = fun x ↦ -c + 1 * x by ext x; ring,
+    integrableExpSet_id_map_affine, mem_preimage, one_mul]
+  exact integrable_exp_mul_compoundPoissonMeasure _ measurable_id
+    (integrable_exp_mul_cond_stableLevyMeasure ht)
 
 /-- If `t * x ≤ 0` for almost every jump `x` of the stable Lévy measure, then the moment
 generating function of a compensated stable approximation is the exponential of the truncated
@@ -200,13 +185,11 @@ theorem integrable_exp_mul_stableMeasure (hβ : |β| = 1) (s : ℝ≥0) (m : ℝ
     simpa [Real.sign_of_pos (NNReal.coe_pos.mpr hs)] using
       stableMeasure_map_affine (α := α) (β := β) (s := 1) (m := 0) (a := m) (b := s)
         (Or.inl (NNReal.coe_ne_zero.mpr hs.ne'))
-  rw [← hmap, integrable_map_measure (by fun_prop) (by fun_prop)]
-  have hts : β * (t * s) ≤ 0 := by
-    rw [← mul_assoc]; exact mul_nonpos_of_nonpos_of_nonneg ht s.2
-  refine ((integrable_exp_mul_stableMeasure_one_zero ⟨hα.1, hα2⟩ hβ hts).const_mul
-    (exp (t * m))).congr (ae_of_all _ fun x ↦ ?_)
-  simp only [Function.comp_apply, ← exp_add]
-  ring_nf
+  change t ∈ integrableExpSet id _
+  rw [← hmap, integrableExpSet_id_map_affine]
+  have hts : β * (s * t) ≤ 0 := by
+    rw [mul_left_comm]; exact mul_nonpos_of_nonneg_of_nonpos s.2 ht
+  exact integrable_exp_mul_stableMeasure_one_zero ⟨hα.1, hα2⟩ hβ hts
 
 /-- The half-line `β * t ≤ 0` lies in the exponential-integrability set of a totally skewed
 stable law. -/

@@ -114,6 +114,19 @@ theorem integrable_exp_sub_one_sub_sin_stableLevyMeasure (α β t : ℝ) :
   integrable_cexp_mul_sub_one_sub_mul_sin_mul_stableLevyMeasure Complex.norm_I
     (ae_of_all _ fun _ ↦ (Complex.norm_exp_ofReal_mul_I _).le)
 
+/-- If `t * x ≤ 0` for almost every jump `x` of the stable Lévy measure, then the real
+compensated kernel `exp (t * x) - 1 - t * sin x` is integrable against the Lévy measure. -/
+theorem integrable_exp_mul_sub_one_sub_mul_sin_stableLevyMeasure {α β t : ℝ}
+    (ht : ∀ᵐ x ∂stableLevyMeasure α β, t * x ≤ 0) :
+    Integrable (fun x : ℝ ↦ exp (t * x) - 1 - t * sin x) (stableLevyMeasure α β) := by
+  -- This is the real part of the complex kernel along the direction `1`.
+  have h := integrable_cexp_mul_sub_one_sub_mul_sin_mul_stableLevyMeasure (C := 1) norm_one
+    (ht.mono fun x hx ↦ by
+      rw [mul_one, ← Complex.ofReal_exp, Complex.norm_real, Real.norm_of_nonneg (exp_pos _).le]
+      exact exp_le_one_iff.mpr hx)
+  simpa only [mul_one, RCLike.re_to_complex, Complex.sub_re, Complex.exp_ofReal_re,
+    Complex.one_re, Complex.ofReal_re] using h.re
+
 /-- Removing a shrinking neighbourhood of zero from the compensated integral recovers the
 full integral. No one-sided restriction on the cutoff is needed. -/
 theorem tendsto_integral_exp_sub_one_sub_sin_stableLevyMeasure (α β t : ℝ) :
