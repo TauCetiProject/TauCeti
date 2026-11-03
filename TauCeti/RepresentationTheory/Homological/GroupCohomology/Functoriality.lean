@@ -29,8 +29,8 @@ induced by its inclusions give the inverse.
 * `TauCeti.groupCohomology.mapCocycles₂_apply`: the value of a pulled-back `2`-cocycle.
 * `TauCeti.groupCohomology.map_id_add`: the map induced on cohomology is additive in the
   morphism of representations.
-* `groupCohomology.prodEquivOfIsBilimit`: the cohomology of a biproduct is the product of
-  the cohomologies.
+* `CategoryTheory.Limits.BinaryBicone.IsBilimit.groupCohomologyProdEquiv`: the cohomology of a
+  biproduct is the product of the cohomologies.
 -/
 
 public section
@@ -80,9 +80,9 @@ theorem map_id_zero (A B : Rep k G) (n : ℕ) : map (MonoidHom.id G) (0 : A ⟶ 
 
 end TauCeti.groupCohomology
 
-namespace groupCohomology
+namespace CategoryTheory.Limits.BinaryBicone.IsBilimit
 
-open TauCeti.groupCohomology
+open _root_.groupCohomology TauCeti.groupCohomology
 
 variable {k G : Type u} [CommRing k] [Group G]
 
@@ -97,7 +97,7 @@ attribute [local instance] preservesBinaryBiproducts_of_preservesBiproducts
 inverse sends `(a, b)` to the sum of the images of `a` and `b` under the maps induced by the
 inclusions of `c`. It is the comparison of the image of `c` under the additive functor
 `Hⁿ(G, -)`, a biproduct by `isBinaryBilimitOfPreserves`, with the product of modules. -/
-noncomputable def prodEquivOfIsBilimit (hc : c.IsBilimit) (n : ℕ) :
+noncomputable def groupCohomologyProdEquiv (hc : c.IsBilimit) (n : ℕ) :
     groupCohomology c.pt n ≃ₗ[k] groupCohomology A n × groupCohomology B n :=
   (IsLimit.conePointUniqueUpToIso (isBinaryBilimitOfPreserves (functor k G n) hc).isLimit
     (ModuleCat.binaryProductLimitCone _ _).isLimit).toLinearEquiv
@@ -105,8 +105,8 @@ noncomputable def prodEquivOfIsBilimit (hc : c.IsBilimit) (n : ℕ) :
 /-- The identification of the cohomology of a biproduct with a product is given by the maps
 induced by the projections. -/
 @[simp]
-theorem prodEquivOfIsBilimit_apply (hc : c.IsBilimit) (n : ℕ) (x : groupCohomology c.pt n) :
-    prodEquivOfIsBilimit hc n x =
+theorem groupCohomologyProdEquiv_apply (hc : c.IsBilimit) (n : ℕ) (x : groupCohomology c.pt n) :
+    groupCohomologyProdEquiv hc n x =
       (map (MonoidHom.id G) c.fst n x, map (MonoidHom.id G) c.snd n x) := by
   have h := IsLimit.conePointUniqueUpToIso_hom_comp
     (isBinaryBilimitOfPreserves (functor k G n) hc).isLimit
@@ -115,24 +115,24 @@ theorem prodEquivOfIsBilimit_apply (hc : c.IsBilimit) (n : ℕ) (x : groupCohomo
 
 /-- The first component of the identification of the cohomology of a biproduct with a product is
 the map induced by the first projection. -/
-theorem prodEquivOfIsBilimit_apply_fst (hc : c.IsBilimit) (n : ℕ) (x : groupCohomology c.pt n) :
-    (prodEquivOfIsBilimit hc n x).1 = map (MonoidHom.id G) c.fst n x :=
-  congrArg Prod.fst (prodEquivOfIsBilimit_apply hc n x)
+theorem groupCohomologyProdEquiv_apply_fst (hc : c.IsBilimit) (n : ℕ) (x : groupCohomology c.pt n) :
+    (groupCohomologyProdEquiv hc n x).1 = map (MonoidHom.id G) c.fst n x :=
+  congrArg _root_.Prod.fst (groupCohomologyProdEquiv_apply hc n x)
 
 /-- The second component of the identification of the cohomology of a biproduct with a product
 is the map induced by the second projection. -/
-theorem prodEquivOfIsBilimit_apply_snd (hc : c.IsBilimit) (n : ℕ) (x : groupCohomology c.pt n) :
-    (prodEquivOfIsBilimit hc n x).2 = map (MonoidHom.id G) c.snd n x :=
-  congrArg Prod.snd (prodEquivOfIsBilimit_apply hc n x)
+theorem groupCohomologyProdEquiv_apply_snd (hc : c.IsBilimit) (n : ℕ) (x : groupCohomology c.pt n) :
+    (groupCohomologyProdEquiv hc n x).2 = map (MonoidHom.id G) c.snd n x :=
+  congrArg _root_.Prod.snd (groupCohomologyProdEquiv_apply hc n x)
 
 /-- The inverse of the identification of the cohomology of a biproduct with a product is the sum
 of the maps induced by the inclusions. -/
 @[simp]
-theorem prodEquivOfIsBilimit_symm_apply (hc : c.IsBilimit) (n : ℕ)
+theorem groupCohomologyProdEquiv_symm_apply (hc : c.IsBilimit) (n : ℕ)
     (y : groupCohomology A n × groupCohomology B n) :
-    (prodEquivOfIsBilimit hc n).symm y =
+    (groupCohomologyProdEquiv hc n).symm y =
       map (MonoidHom.id G) c.inl n y.1 + map (MonoidHom.id G) c.inr n y.2 := by
-  rw [LinearEquiv.symm_apply_eq, prodEquivOfIsBilimit_apply]
+  rw [LinearEquiv.symm_apply_eq, groupCohomologyProdEquiv_apply]
   have h₁ := congr((map (MonoidHom.id G) $(c.inl_fst) n).hom y.1)
   have h₂ := congr((map (MonoidHom.id G) $(c.inr_fst) n).hom y.2)
   have h₃ := congr((map (MonoidHom.id G) $(c.inl_snd) n).hom y.1)
@@ -143,4 +143,4 @@ theorem prodEquivOfIsBilimit_symm_apply (hc : c.IsBilimit) (n : ℕ)
 
 end Biproduct
 
-end groupCohomology
+end CategoryTheory.Limits.BinaryBicone.IsBilimit

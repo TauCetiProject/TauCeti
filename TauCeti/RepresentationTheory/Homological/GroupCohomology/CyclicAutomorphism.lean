@@ -69,15 +69,16 @@ the maps of the sequences commute with `δ` (`TauCeti.map_δ_cyclicRepShortCompl
 The construction is compatible with products. The cyclic representation of the product
 automorphism `A × B` of `T × M` is the biproduct of those of `A` and `B`
 (`AddEquiv.cyclicRepBinaryBiconeIsBilimit`), so the projections identify its cohomology with the
-product of the two cohomologies (`groupCohomology.prodEquivOfIsBilimit`); in degrees one
-and two this sends the class of `(t, u)` to the pair of classes of `t` and `u`
-(`TauCeti.prodEquivOfIsBilimit_groupCohomologyπOdd_one`,
-`TauCeti.prodEquivOfIsBilimit_groupCohomologyπEven_two`). The product of two equivariant exact
+product of the two cohomologies
+(`CategoryTheory.Limits.BinaryBicone.IsBilimit.groupCohomologyProdEquiv`); in degrees one and two
+this sends the class of `(t, u)` to the pair of classes of `t` and `u`
+(`TauCeti.groupCohomologyProdEquiv_groupCohomologyπOdd_one`,
+`TauCeti.groupCohomologyProdEquiv_groupCohomologyπEven_two`). The product of two equivariant exact
 sequences is again one (`AddMonoidHom.shortExact_cyclicRepShortComplex_prodMap`), and under these
 identifications its connecting homomorphism is the product of the two connecting homomorphisms
-(`TauCeti.prodEquivOfIsBilimit_δ_cyclicRepShortComplex_prodMap`); in particular the connecting
+(`TauCeti.groupCohomologyProdEquiv_δ_cyclicRepShortComplex_prodMap`); in particular the connecting
 isomorphism of a product of tori is the product of their connecting isomorphisms
-(`TauCeti.prodEquivOfIsBilimit_cyclicConnectingEquiv`).
+(`TauCeti.groupCohomologyProdEquiv_cyclicConnectingEquiv`).
 
 The last part of the file specializes to the trivial action, given by the identity automorphism.
 Then the odd-degree cohomology of `C_m` is the `m`-torsion `T[m]`
@@ -124,11 +125,11 @@ description of its `m`-torsion points as `(1 / m) Λ ⧸ Λ ≃ Λ ⧸ m Λ`.
   `v / m` to the class of `v`.
 * `TauCeti.map_δ_cyclicRepShortComplex`: naturality of the connecting homomorphism under maps of
   equivariant exact sequences.
-* `TauCeti.prodEquivOfIsBilimit_groupCohomologyπOdd_one`,
-  `TauCeti.prodEquivOfIsBilimit_groupCohomologyπEven_two`: the cohomology of a product of cyclic
+* `TauCeti.groupCohomologyProdEquiv_groupCohomologyπOdd_one`,
+  `TauCeti.groupCohomologyProdEquiv_groupCohomologyπEven_two`: the cohomology of a product of cyclic
   representations is the product of the cohomologies, computed on representatives.
-* `TauCeti.prodEquivOfIsBilimit_δ_cyclicRepShortComplex_prodMap`,
-  `TauCeti.prodEquivOfIsBilimit_cyclicConnectingEquiv`: the connecting homomorphism and the
+* `TauCeti.groupCohomologyProdEquiv_δ_cyclicRepShortComplex_prodMap`,
+  `TauCeti.groupCohomologyProdEquiv_cyclicConnectingEquiv`: the connecting homomorphism and the
   connecting isomorphism of a product of sequences are the products of those of the factors.
 * `TauCeti.groupCohomologyEvenEquivQuotSMulTop_δ`: for trivial actions, the connecting
   homomorphism is the snake-lemma map `T[m] → Λ ⧸ m Λ`.
@@ -444,17 +445,17 @@ variable {T M : Type} [AddCommGroup T] [AddCommGroup M] {m : ℕ} [NeZero m] {A 
 /-- **Degree-one classes of a product.** The identification of `H¹(C_m, T × M)` with
 `H¹(C_m, T) × H¹(C_m, M)` by the projections sends the class of a norm-zero element `(t, u)` of
 `T × M` to the pair of the classes of `t` and `u`. -/
-theorem prodEquivOfIsBilimit_groupCohomologyπOdd_one
+theorem groupCohomologyProdEquiv_groupCohomologyπOdd_one
     (x : LinearMap.ker
       ((A.prodCongr B).cyclicRep (A.iterate_prodCongr_eq_id hA hB)).norm.asHom.hom.toLinearMap)
     (y : LinearMap.ker (A.cyclicRep hA).norm.asHom.hom.toLinearMap)
     (z : LinearMap.ker (B.cyclicRep hB).norm.asHom.hom.toLinearMap)
     (hy : (y : T) = (x : T × M).1) (hz : (z : M) = (x : T × M).2) :
-    groupCohomology.prodEquivOfIsBilimit (AddEquiv.cyclicRepBinaryBiconeIsBilimit hA hB) 1
+    (AddEquiv.cyclicRepBinaryBiconeIsBilimit hA hB).groupCohomologyProdEquiv 1
         (groupCohomologyπOdd _ (.ofAdd 1) mem_zpowers_ofAdd_one 1 odd_one x) =
       (groupCohomologyπOdd (A.cyclicRep hA) (.ofAdd 1) mem_zpowers_ofAdd_one 1 odd_one y,
         groupCohomologyπOdd (B.cyclicRep hB) (.ofAdd 1) mem_zpowers_ofAdd_one 1 odd_one z) := by
-  rw [groupCohomology.prodEquivOfIsBilimit_apply]
+  rw [Limits.BinaryBicone.IsBilimit.groupCohomologyProdEquiv_apply]
   exact Prod.ext
     (AddMonoidHom.map_cyclicRepHom_groupCohomologyπOdd_one (AddMonoidHom.fst T M) _ hA
       (fun _ ↦ rfl) x y hy)
@@ -464,17 +465,17 @@ theorem prodEquivOfIsBilimit_groupCohomologyπOdd_one
 /-- **Degree-two classes of a product.** The identification of `H²(C_m, T × M)` with
 `H²(C_m, T) × H²(C_m, M)` by the projections sends the class of a fixed point `(t, u)` of `A × B`
 to the pair of the classes of `t` and `u`. -/
-theorem prodEquivOfIsBilimit_groupCohomologyπEven_two
+theorem groupCohomologyProdEquiv_groupCohomologyπEven_two
     (x : LinearMap.ker (applyAsHom ((A.prodCongr B).cyclicRep (A.iterate_prodCongr_eq_id hA hB))
       (.ofAdd 1) - 𝟙 _).hom.toLinearMap)
     (y : LinearMap.ker (applyAsHom (A.cyclicRep hA) (.ofAdd 1) - 𝟙 _).hom.toLinearMap)
     (z : LinearMap.ker (applyAsHom (B.cyclicRep hB) (.ofAdd 1) - 𝟙 _).hom.toLinearMap)
     (hy : (y : T) = (x : T × M).1) (hz : (z : M) = (x : T × M).2) :
-    groupCohomology.prodEquivOfIsBilimit (AddEquiv.cyclicRepBinaryBiconeIsBilimit hA hB) 2
+    (AddEquiv.cyclicRepBinaryBiconeIsBilimit hA hB).groupCohomologyProdEquiv 2
         (groupCohomologyπEven _ (.ofAdd 1) mem_zpowers_ofAdd_one 2 even_two x) =
       (groupCohomologyπEven (A.cyclicRep hA) (.ofAdd 1) mem_zpowers_ofAdd_one 2 even_two y,
         groupCohomologyπEven (B.cyclicRep hB) (.ofAdd 1) mem_zpowers_ofAdd_one 2 even_two z) := by
-  rw [groupCohomology.prodEquivOfIsBilimit_apply]
+  rw [Limits.BinaryBicone.IsBilimit.groupCohomologyProdEquiv_apply]
   exact Prod.ext
     (AddMonoidHom.map_cyclicRepHom_groupCohomologyπEven_two (AddMonoidHom.fst T M) _ hA
       (fun _ ↦ rfl) x y hy)
@@ -507,13 +508,12 @@ variable {Λ E T Λ' E' T' : Type} [AddCommGroup Λ] [AddCommGroup E] [AddCommGr
 `AddMonoidHom.shortExact_cyclicRepShortComplex_prodMap`) is the product of the two connecting
 homomorphisms, once the cohomology of each product is identified with the product of the
 cohomologies by the projections. -/
-theorem prodEquivOfIsBilimit_δ_cyclicRepShortComplex_prodMap (n q : ℕ) (hnq : n + 1 = q)
+theorem groupCohomologyProdEquiv_δ_cyclicRepShortComplex_prodMap (n q : ℕ) (hnq : n + 1 = q)
     (x : groupCohomology ((AT.prodCongr AT').cyclicRep (AT.iterate_prodCongr_eq_id hT hT')) n) :
-    groupCohomology.prodEquivOfIsBilimit (AddEquiv.cyclicRepBinaryBiconeIsBilimit hΛ hΛ') q
+    (AddEquiv.cyclicRepBinaryBiconeIsBilimit hΛ hΛ').groupCohomologyProdEquiv q
         (δ hS₂ n q hnq x) =
       Prod.map (δ hS n q hnq) (δ hS' n q hnq)
-        (groupCohomology.prodEquivOfIsBilimit (AddEquiv.cyclicRepBinaryBiconeIsBilimit hT hT') n
-          x) := by
+        ((AddEquiv.cyclicRepBinaryBiconeIsBilimit hT hT').groupCohomologyProdEquiv n x) := by
   -- Each component is the naturality of the connecting homomorphism along a projection.
   have h₁ : map (MonoidHom.id _) (AddEquiv.cyclicRepBinaryBicone hΛ hΛ').fst q (δ hS₂ n q hnq x) =
       δ hS n q hnq (map (MonoidHom.id _) (AddEquiv.cyclicRepBinaryBicone hT hT').fst n x) :=
@@ -526,11 +526,11 @@ theorem prodEquivOfIsBilimit_δ_cyclicRepShortComplex_prodMap (n q : ℕ) (hnq :
       (AddMonoidHom.snd T T') (fun _ ↦ rfl) (fun _ ↦ rfl) (fun _ ↦ rfl) (fun _ ↦ rfl)
       (fun _ ↦ rfl) n q hnq x
   exact Prod.ext
-    ((groupCohomology.prodEquivOfIsBilimit_apply_fst _ q _).trans <| h₁.trans <|
-      congrArg (δ hS n q hnq) (groupCohomology.prodEquivOfIsBilimit_apply_fst
+    ((Limits.BinaryBicone.IsBilimit.groupCohomologyProdEquiv_apply_fst _ q _).trans <| h₁.trans <|
+      congrArg (δ hS n q hnq) (Limits.BinaryBicone.IsBilimit.groupCohomologyProdEquiv_apply_fst
         (AddEquiv.cyclicRepBinaryBiconeIsBilimit hT hT') n x).symm)
-    ((groupCohomology.prodEquivOfIsBilimit_apply_snd _ q _).trans <| h₂.trans <|
-      congrArg (δ hS' n q hnq) (groupCohomology.prodEquivOfIsBilimit_apply_snd
+    ((Limits.BinaryBicone.IsBilimit.groupCohomologyProdEquiv_apply_snd _ q _).trans <| h₂.trans <|
+      congrArg (δ hS' n q hnq) (Limits.BinaryBicone.IsBilimit.groupCohomologyProdEquiv_apply_snd
         (AddEquiv.cyclicRepBinaryBiconeIsBilimit hT hT') n x).symm)
 
 /-- **The connecting isomorphism of a product.** When multiplication by `m` is bijective on `E`
@@ -538,16 +538,15 @@ and on `E'`, the connecting isomorphism `H¹(C_m, T × T') ≃ H²(C_m, Λ × Λ
 sequence is the product of the connecting isomorphisms `H¹(C_m, T) ≃ H²(C_m, Λ)` and
 `H¹(C_m, T') ≃ H²(C_m, Λ')`, once the cohomology of each product is identified with the product of
 the cohomologies by the projections. -/
-theorem prodEquivOfIsBilimit_cyclicConnectingEquiv (hm : Function.Bijective fun x : E ↦ m • x)
+theorem groupCohomologyProdEquiv_cyclicConnectingEquiv (hm : Function.Bijective fun x : E ↦ m • x)
     (hm' : Function.Bijective fun x : E' ↦ m • x)
     (x : groupCohomology ((AT.prodCongr AT').cyclicRep (AT.iterate_prodCongr_eq_id hT hT')) 1) :
-    groupCohomology.prodEquivOfIsBilimit (AddEquiv.cyclicRepBinaryBiconeIsBilimit hΛ hΛ') 2
+    (AddEquiv.cyclicRepBinaryBiconeIsBilimit hΛ hΛ').groupCohomologyProdEquiv 2
         (cyclicConnectingEquiv hS₂ (hm.prodMap hm') x) =
       Prod.map (cyclicConnectingEquiv hS hm) (cyclicConnectingEquiv hS' hm')
-        (groupCohomology.prodEquivOfIsBilimit (AddEquiv.cyclicRepBinaryBiconeIsBilimit hT hT') 1
-          x) := by
+        ((AddEquiv.cyclicRepBinaryBiconeIsBilimit hT hT').groupCohomologyProdEquiv 1 x) := by
   rw [cyclicConnectingEquiv_apply,
-    prodEquivOfIsBilimit_δ_cyclicRepShortComplex_prodMap hS hS' hS₂ 1 2 rfl x]
+    groupCohomologyProdEquiv_δ_cyclicRepShortComplex_prodMap hS hS' hS₂ 1 2 rfl x]
   exact Prod.ext (cyclicConnectingEquiv_apply hS hm _).symm
     (cyclicConnectingEquiv_apply hS' hm' _).symm
 
