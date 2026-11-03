@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RingTheory.GradedAlgebra.Basic
-public import TauCeti.RingTheory.GradedAlgebra.Homogeneous.Quotient
+public import TauCeti.RingTheory.GradedAlgebra.Quotient
 public import Mathlib.RingTheory.PowerSeries.Basic
 public import Mathlib.LinearAlgebra.FiniteDimensional.Defs
 import TauCeti.LinearAlgebra.Exact
@@ -27,8 +27,8 @@ quotient piece vanishes.
 
 These are the one-element exact-sequence formulas used to compute the Hilbert series
 of a quotient by a homogeneous regular sequence, in particular a coinvariant algebra
-presented by homogeneous basic invariants. The quotient pieces use the induced grading
-from `TauCeti.GradedAlgebra.gradedAlgebraQuotientPiece`.
+presented by homogeneous basic invariants. The quotient pieces are the images of the
+original graded pieces under the quotient map.
 
 ## Main results
 
@@ -50,29 +50,29 @@ public section
 
 namespace TauCeti.GradedAlgebra
 
-variable {k A : Type*} [Field k] [CommRing A] [Algebra k A]
-  (𝒜 : ℕ → Submodule k A) [GradedAlgebra 𝒜]
+variable {k A : Type*} [CommRing A]
+
+section Field
+
+variable [Field k] [Algebra k A] (𝒜 : ℕ → Submodule k A) [GradedAlgebra 𝒜]
   {f : A} {d : ℕ}
 
 /-- Multiplication by a homogeneous non-zero-divisor identifies the kernel of the
 quotient map in degree `d + n` with the original degree-`n` piece. Consequently the
-dimensions of those two pieces sum to the dimension of the original degree-`d + n` piece. -/
+dimensions of the quotient degree-`d + n` piece and the original degree-`n` piece sum
+to the dimension of the original degree-`d + n` piece. -/
 theorem finrank_quotientPiece_span_singleton_add (hf : f ∈ 𝒜 d)
     (hreg : IsLeftRegular f) (n : ℕ) [Module.Finite k (𝒜 (d + n))] :
     Module.finrank k (quotientPiece 𝒜 (Ideal.span {f}) (d + n)) +
       Module.finrank k (𝒜 n) = Module.finrank k (𝒜 (d + n)) := by
+  rw [quotientPiece_def]
   let μ : 𝒜 n →ₗ[k] 𝒜 (d + n) :=
     ((LinearMap.mulLeft k f).domRestrict (𝒜 n)).codRestrict (𝒜 (d + n))
       (fun x ↦ SetLike.mul_mem_graded hf x.2)
-  let q : 𝒜 (d + n) →ₗ[k] quotientPiece 𝒜 (Ideal.span {f}) (d + n) :=
-    ((Ideal.Quotient.mkₐ k (Ideal.span {f})).toLinearMap.domRestrict
-      (𝒜 (d + n))).codRestrict _ (fun x ↦ mk_mem_quotientPiece 𝒜 _ x.2)
+  let q := (Ideal.Quotient.mkₐ k (Ideal.span {f})).toLinearMap.submoduleMap (𝒜 (d + n))
   have hμ : Function.Injective μ := fun x y h ↦
     Subtype.ext (hreg (congrArg Subtype.val h))
-  have hq : Function.Surjective q := by
-    intro x
-    obtain ⟨a, ha, hax⟩ := (mem_quotientPiece_iff 𝒜 _).1 x.2
-    exact ⟨⟨a, ha⟩, Subtype.ext hax⟩
+  have hq : Function.Surjective q := LinearMap.submoduleMap_surjective _ _
   have hex : Function.Exact μ q := by
     intro x
     constructor
@@ -88,29 +88,40 @@ theorem finrank_quotientPiece_span_singleton_add (hf : f ∈ 𝒜 d)
       exact Ideal.Quotient.eq_zero_iff_mem.2 (Ideal.mem_span_singleton.2 ⟨a, rfl⟩)
   simpa only [add_comm] using (hex.finrank_eq_add hμ hq).symm
 
+end Field
+
+section CommSemiring
+
+variable [CommSemiring k] [Algebra k A] (𝒜 : ℕ → Submodule k A) [GradedAlgebra 𝒜]
+  {f : A} {d : ℕ}
+
 /-- Quotienting by a homogeneous element of degree `d` does not change the dimension
 of any graded piece of degree less than `d`. Regularity is not needed here. -/
 theorem finrank_quotientPiece_span_singleton_of_lt (hf : f ∈ 𝒜 d) {n : ℕ} (hn : n < d) :
     Module.finrank k (quotientPiece 𝒜 (Ideal.span {f}) n) = Module.finrank k (𝒜 n) := by
-  let q : 𝒜 n →ₗ[k] quotientPiece 𝒜 (Ideal.span {f}) n :=
-    ((Ideal.Quotient.mkₐ k (Ideal.span {f})).toLinearMap.domRestrict
-      (𝒜 n)).codRestrict _ (fun x ↦ mk_mem_quotientPiece 𝒜 _ x.2)
+  rw [quotientPiece_def]
+  let q := (Ideal.Quotient.mkₐ k (Ideal.span {f})).toLinearMap.submoduleMap (𝒜 n)
   have hq : Function.Bijective q := by
-    refine ⟨(LinearMap.ker_eq_bot).1 ?_, ?_⟩
-    · rw [eq_bot_iff]
-      intro x hx
-      have hxI : (x : A) ∈ Ideal.span {f} :=
-        Ideal.Quotient.eq_zero_iff_mem.1 (congrArg Subtype.val hx)
-      obtain ⟨a, ha⟩ := Ideal.mem_span_singleton.1 hxI
-      apply Subtype.ext
-      have hproj := DirectSum.coe_decompose_mul_of_left_mem_of_not_le 𝒜 (b := a) hf
-        (Nat.not_le_of_lt hn)
-      rw [← ha, DirectSum.decompose_of_mem_same 𝒜 x.2] at hproj
-      exact hproj
-    · intro x
-      obtain ⟨a, ha, hax⟩ := (mem_quotientPiece_iff 𝒜 _).1 x.2
-      exact ⟨⟨a, ha⟩, Subtype.ext hax⟩
+    refine ⟨?_, LinearMap.submoduleMap_surjective _ _⟩
+    intro x y hxy
+    have hxyI : (x : A) - y ∈ Ideal.span {f} :=
+      Ideal.Quotient.eq.1 (congrArg Subtype.val hxy)
+    obtain ⟨a, ha⟩ := Ideal.mem_span_singleton.1 hxyI
+    apply Subtype.ext
+    apply sub_eq_zero.1
+    have hproj := DirectSum.coe_decompose_mul_of_left_mem_of_not_le 𝒜 (b := a) hf
+      (Nat.not_le_of_lt hn)
+    rw [← GradedAlgebra.proj_apply, ← ha, map_sub] at hproj
+    simpa only [GradedAlgebra.proj_apply, DirectSum.decompose_of_mem_same 𝒜 x.2,
+      DirectSum.decompose_of_mem_same 𝒜 y.2] using hproj
   exact (LinearEquiv.ofBijective q hq).finrank_eq.symm
+
+end CommSemiring
+
+section Field
+
+variable [Field k] [Algebra k A] (𝒜 : ℕ → Submodule k A) [GradedAlgebra 𝒜]
+  {f : A} {d : ℕ}
 
 /-- The Hilbert series of a quotient by a homogeneous non-zero-divisor of degree `d`
 is the original Hilbert series multiplied by `1 - t^d`. The coefficients can be taken
@@ -133,5 +144,7 @@ theorem mk_finrank_quotientPiece_span_singleton {S : Type*} [Ring S]
   · rw [sub_zero]
     exact congrArg (fun m : ℕ ↦ (m : S))
       (finrank_quotientPiece_span_singleton_of_lt 𝒜 hf (Nat.lt_of_not_ge hdn))
+
+end Field
 
 end TauCeti.GradedAlgebra
