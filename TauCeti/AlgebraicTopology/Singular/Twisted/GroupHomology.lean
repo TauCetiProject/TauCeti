@@ -46,10 +46,9 @@ and the induced map on twisted homology corresponds to Mathlib's map
 (`IsQuotientCoveringMap.twistedHomologyIsoGroupHomology_hom_naturality`).
 
 The identification also respects coefficient connecting maps for arbitrary short exact sequences
-of representations (`twistedHomologyIsoGroupHomology_hom_δ`). The proof uses Mathlib's
-`HomologicalComplex.HomologySequence.δ_naturality` for the chain comparison from the bar
-resolution to the singular resolution, identified on homology by
-`Rep.groupHomologyIso_hom_eq_homologyMap`.
+of representations (`twistedHomologyIsoGroupHomology_hom_δ`). Together with coefficient
+naturality, the comparison identifies the coefficient long exact sequences of twisted singular
+homology and group homology.
 
 ## Main definitions
 
