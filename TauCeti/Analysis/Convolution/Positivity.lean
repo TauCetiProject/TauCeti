@@ -53,7 +53,7 @@ theorem convolution_pos_iff_mem_add_support (hf : Continuous f) (hg : Continuous
     exact support_convolution_subset (mul ℝ ℝ) hx.ne'
   · rintro ⟨a, ha, b, hb, rfl⟩
     rw [convolution_def]
-    exact integral_pos_of_integrable_nonneg_nonzero
+    exact MeasureTheory.integral_pos_of_integrable_nonneg_ne_zero
       (x := a)
       (hf.mul (hg.comp (continuous_const.sub continuous_id))) hfg.integrable
       (fun y ↦ mul_nonneg (hf0 y) (hg0 _))

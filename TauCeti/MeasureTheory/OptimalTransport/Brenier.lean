@@ -213,7 +213,7 @@ private theorem IsCoupling.integral_inner_le_of_ae_mem_subdifferential [IsFinite
   rcases eq_or_ne π 0 with rfl | hπ0
   · have hσ0 : σ = 0 := by
       rw [← Measure.measure_univ_eq_zero, ← hσ.measure_univ_left, hπ.measure_univ_left,
-        Measure.coe_zero, Pi.zero_apply]
+        FunLike.coe_zero, Pi.zero_apply]
     simp [hσ0]
   have := ae_neBot.2 hπ0
   obtain ⟨⟨x₀, y₀⟩, h₀⟩ := h.exists

@@ -155,12 +155,12 @@ noncomputable def tensorPowerIntertwiningRep {W : Type*} [AddCommGroup W] [Modul
     ext f x
     simp only [← Representation.IntertwiningMap.comp_def,
       Representation.IntertwiningMap.toLinearMap_apply, Representation.IntertwiningMap.comp_apply,
-      tensorPowerPermIntertwiningMap_apply, map_one, Module.End.one_apply]
+      tensorPowerPermIntertwiningMap_apply, map_one, one_apply_eq_self]
   map_mul' g h := by
     ext f x
     simp only [← Representation.IntertwiningMap.comp_def,
       Representation.IntertwiningMap.toLinearMap_apply, Representation.IntertwiningMap.comp_apply,
-      tensorPowerPermIntertwiningMap_apply, map_mul, Module.End.mul_apply]
+      tensorPowerPermIntertwiningMap_apply, map_mul, mul_apply_eq_comp]
 
 variable {k n d} in
 @[simp]
