@@ -84,11 +84,9 @@ theorem killingForm_cartan_cartan [Fintype B.normTwoShell] (hB : B.PosDef)
       ∑ a : B.normTwoShell, (h ⬝ᵥ B *ᵥ (a : I → ℤ)) * (k ⬝ᵥ B *ᵥ (a : I → ℤ)) := by
   let _ := lieRing hB hev
   classical
-  have hr (a : B.normTwoShell) : (basis B).repr (root B a) = Finsupp.single (.inr a) 1 := by
-    rw [← basis_inr, Basis.repr_self]
   rw [killingForm_apply_apply, LinearMap.trace_eq_matrix_trace ℤ (basis B), Matrix.trace,
     Fintype.sum_sum_type]
-  simp [LinearMap.toMatrix_apply, hr, mul_comm]
+  simp [LinearMap.toMatrix_apply, mul_comm]
 
 /-- **Cartan vectors are Killing orthogonal to root vectors**: `κ(H_h, x_a) = 0`. -/
 @[simp]
