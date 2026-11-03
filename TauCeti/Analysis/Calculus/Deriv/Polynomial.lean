@@ -8,6 +8,9 @@ module
 public import Mathlib.Algebra.Polynomial.HasseDeriv
 public import Mathlib.Analysis.Calculus.Deriv.Polynomial
 public import Mathlib.Analysis.Calculus.IteratedDeriv.Defs
+public import Mathlib.RingTheory.Polynomial.Wronskian
+-- Proof-only: the quotient rule.
+import Mathlib.Analysis.Calculus.Deriv.Inv
 import Mathlib.Algebra.Polynomial.Eval.SMul
 import Mathlib.Algebra.Polynomial.Taylor
 import Mathlib.Analysis.Calculus.ContDiff.Polynomial
@@ -18,7 +21,8 @@ import TauCeti.Algebra.Polynomial.Taylor
 # Iterated derivatives of polynomial functions and Taylor polynomials of rational functions
 
 The `n`-th derivative of the function `x ↦ p.eval x` is the function of the `n`-th formal
-derivative of `p`.
+derivative of `p`. Where `Q` does not vanish, the derivative of the rational function `P / Q` is
+`W(Q, P) / Q²`, for `W(Q, P) = Q P' - Q' P` the Wronskian.
 
 If `Q a ≠ 0`, the rational function `P / Q` is smooth near `a`. Its Taylor polynomial `T` of
 order `m` at `a` is characterized algebraically by `T * Q ≡ P` modulo `(X - a) ^ m`. This
@@ -28,6 +32,7 @@ partial-fraction expansion of a rational function with a pole of order `m` at `a
 ## Main results
 
 * `Polynomial.iteratedDeriv`: the iterated derivative of a polynomial function.
+* `Polynomial.hasDerivAt_eval_div_eval`: the quotient rule `(P / Q)' = W(Q, P) / Q²`.
 * `Polynomial.X_sub_C_pow_dvd_sub_sum_iteratedDeriv_mul`: `(X - a) ^ m` divides `P - T * Q`,
   where `T` is the order-`m` Taylor polynomial of `P / Q` at `a`.
 -/
@@ -57,6 +62,15 @@ theorem iteratedDeriv_eq_factorial_mul_eval_hasseDeriv (p : 𝕜[X]) (n : ℕ) (
     iteratedDeriv n (fun x ↦ p.eval x) x = n ! * (hasseDeriv n p).eval x := by
   rw [Polynomial.iteratedDeriv, ← factorial_smul_hasseDeriv]
   simp [nsmul_eq_mul]
+
+/-- **The quotient rule for a rational function**: where `Q a ≠ 0`, the function `P / Q` has
+derivative `W(Q, P) / Q²` at `a`, for `W(Q, P) = Q P' - Q' P` the Wronskian. -/
+theorem hasDerivAt_eval_div_eval {P Q : 𝕜[X]} {a : 𝕜} (hQ : Q.eval a ≠ 0) :
+    HasDerivAt (fun x ↦ P.eval x / Q.eval x) ((wronskian Q P).eval a / Q.eval a ^ 2) a := by
+  convert (P.hasDerivAt a).div (Q.hasDerivAt a) hQ using 1
+  rw [wronskian]
+  simp only [eval_sub, eval_mul]
+  ring
 
 variable [CharZero 𝕜]
 
