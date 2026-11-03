@@ -106,6 +106,8 @@ example (R : Type*) [CommRing R] :
 -- The differential of a nilpotent is not generally zero, in any characteristic.
 example (R : Type*) [CommRing R] [Nontrivial R] :
     Omega.d R R[ε] ε ≠ 0 := by
+  -- R[ε] is TrivSqZeroExt R R, whose underlying R-module is R × R.
+  -- inferInstanceAs exposes the product so instance search can use its finiteness instance.
   have : Module.Finite R R[ε] := inferInstanceAs (Module.Finite R (R × R))
   let D : Derivation R R[ε] R[ε] :=
     { toLinearMap := (TrivSqZeroExt.inrHom R R).comp (TrivSqZeroExt.sndHom R R)
@@ -114,6 +116,7 @@ example (R : Type*) [CommRing R] [Nontrivial R] :
         ext <;> simp [smul_eq_mul, TrivSqZeroExt.snd_mul, mul_comm] }
   have hD_eps : D.liftKaehlerDifferential (KaehlerDifferential.D R R[ε] ε) = ε := by
     rw [Derivation.liftKaehlerDifferential_comp_D]
+    -- D applies inr to the second coordinate, and ε is definitionally inr 1.
     rfl
   intro h
   have hD := congrArg D.liftKaehlerDifferential ((Omega.d_eq_zero_iff R R[ε] ε).mp h)
