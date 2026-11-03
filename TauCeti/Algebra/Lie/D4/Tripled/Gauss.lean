@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Lie.D4.Tripled.GroupScheme
+public import TauCeti.Algebra.Lie.Presentation.MinusculeWeightTable.Gauss
 
 /-!
 # Opposite-root factorization in the tripled D₄ carrier
@@ -28,8 +29,8 @@ scheme. These identities transfer to that group only along such an identificatio
 * R. Steinberg, *Lectures on Chevalley Groups*, §3, for the rank-one relations.
 * R. W. Carter, *Simple Groups of Lie Type*, Chapter 6.
 
-The calculation uses the minuscule column formulas in
-`TauCeti.Algebra.Lie.Presentation.MinusculeWeightTable.Basic` and the root and weight-torus
+The calculation specializes the generic minuscule Gauss factorization in
+`TauCeti.Algebra.Lie.Presentation.MinusculeWeightTable.Gauss` using the root and weight-torus
 matrices constructed in `TauCeti.Algebra.Lie.D4.Tripled.GroupScheme`.
 -/
 
@@ -43,40 +44,6 @@ open DynkinType TauCeti.UniversalEnvelopingAlgebra
 
 variable {A : Type*} [CommRing A]
 
-private theorem positive_mulVec_single (i : Fin 4) (t : A) (j : Fin 24) :
-    ((rootSubgroupPoints (.inl i) A (Multiplicative.ofAdd t) :
-        Matrix.GeneralLinearGroup (Fin 24) A) : Matrix (Fin 24) (Fin 24) A) *ᵥ
-      Pi.single j 1 =
-        Pi.single j 1 +
-          if d4TripledWeight j i = -1 then t • Pi.single (d4TripledReflection i j) 1
-          else 0 := by
-  rw [coe_rootSubgroupPoints_inl, Matrix.add_mulVec, Matrix.one_mulVec,
-    Matrix.smul_mulVec, Matrix.mulVec_single_one, raisingMatrix_def,
-    weightTable.raisingMatrix_map_col]
-  simp only [weightTable_weight, weightTable_reflection, toAdd_ofAdd,
-    smul_ite, smul_zero]
-
-private theorem negative_mulVec_single (i : Fin 4) (t : A) (j : Fin 24) :
-    ((rootSubgroupPoints (.inr i) A (Multiplicative.ofAdd t) :
-        Matrix.GeneralLinearGroup (Fin 24) A) : Matrix (Fin 24) (Fin 24) A) *ᵥ
-      Pi.single j 1 =
-        Pi.single j 1 +
-          if d4TripledWeight j i = 1 then t • Pi.single (d4TripledReflection i j) 1
-          else 0 := by
-  rw [coe_rootSubgroupPoints_inr, Matrix.add_mulVec, Matrix.one_mulVec,
-    Matrix.smul_mulVec, Matrix.mulVec_single_one, loweringMatrix_def,
-    weightTable.loweringMatrix_map_col]
-  simp only [weightTable_weight, weightTable_reflection, toAdd_ofAdd,
-    smul_ite, smul_zero]
-
-private theorem coroot_mulVec_single (i : Fin 4) (c : Aˣ) (j : Fin 24) :
-    ((weightTorusPoints A (Pi.mulSingle i c) :
-        Matrix.GeneralLinearGroup (Fin 24) A) : Matrix (Fin 24) (Fin 24) A) *ᵥ
-      Pi.single j 1 = (↑(c ^ d4TripledWeight j i) : A) • Pi.single j 1 := by
-  rw [coe_weightTorusPoints, kostantTorusMatrix_apply]
-  ext r
-  by_cases hr : r = j <;> simp [hr]
-
 /-- The Gauss factorization for opposite simple-root points. The unit `c` is `1 + a * b`,
 and the middle factor is the `i`-th simple coroot evaluated at `c`. No invertibility
 of either root parameter is required. -/
@@ -87,44 +54,14 @@ theorem rootSubgroupPoints_inl_mul_inr (i : Fin 4) (a b : A) (c : Aˣ)
       rootSubgroupPoints (.inr i) A (Multiplicative.ofAdd (b * ↑c⁻¹)) *
         weightTorusPoints A (Pi.mulSingle i c) *
           rootSubgroupPoints (.inl i) A (Multiplicative.ofAdd (a * ↑c⁻¹)) := by
-  have hinv : (↑c⁻¹ : A) + a * ↑c⁻¹ * b = 1 := by
-    calc
-      _ = (1 + a * b) * (↑c⁻¹ : A) := by ring
-      _ = 1 := by rw [← hc, c.mul_inv]
   apply Subtype.ext
+  simp only [Subgroup.coe_mul]
   apply Units.ext
-  apply Matrix.ext_of_mulVec_single
-  intro j
-  have href : d4TripledWeight (d4TripledReflection i j) i = -d4TripledWeight j i :=
-    by simpa only [weightTable_weight, weightTable_reflection] using
-      weightTable.weight_reflection_self i j
-  have hrr : d4TripledReflection i (d4TripledReflection i j) = j :=
-    by simpa only [weightTable_reflection] using weightTable.reflection_apply_apply i j
-  -- Subtype multiplication and multiplication of matrix units have the same underlying matrix.
-  change (_ * _) *ᵥ Pi.single j (1 : A) = ((_ * _) * _) *ᵥ Pi.single j (1 : A)
-  rcases d4TripledWeight_apply_eq_neg_one_or_eq_zero_or_eq_one j i with hj | hj | hj
-  all_goals
-    simp only [← Matrix.mulVec_mulVec, positive_mulVec_single, negative_mulVec_single,
-      Matrix.mulVec_add, Matrix.mulVec_smul, coroot_mulVec_single, href, hj, hrr,
-      neg_neg, zpow_neg_one, zpow_zero, zpow_one, Units.val_one,
-      ite_true, ite_eq_right (by decide : (-1 : ℤ) ≠ 1),
-      ite_eq_right (by decide : (1 : ℤ) ≠ -1), ite_eq_right (by decide : (0 : ℤ) ≠ -1),
-      ite_eq_right (by decide : (0 : ℤ) ≠ 1),
-      smul_add, smul_smul, add_zero, one_smul]
-  · rw [mul_comm b (↑c⁻¹ : A), c.mul_inv_cancel_left, Units.inv_mul_cancel_right]
-    calc
-      Pi.single j 1 + a • Pi.single (d4TripledReflection i j) 1 =
-          ((↑c⁻¹ : A) + a * ↑c⁻¹ * b) • Pi.single j 1 +
-            a • Pi.single (d4TripledReflection i j) 1 := by rw [hinv, one_smul]
-      _ = _ := by rw [add_smul]; abel
-  · rw [mul_comm b (↑c⁻¹ : A), c.mul_inv_cancel_left]
-    calc
-      Pi.single j 1 + (b • Pi.single (d4TripledReflection i j) 1 +
-          (b * a) • Pi.single j 1) =
-          (1 + b * a) • Pi.single j 1 + b • Pi.single (d4TripledReflection i j) 1 := by
-        rw [add_smul, one_smul]
-        abel
-      _ = _ := by rw [mul_comm b a, ← hc]
+  simp only [Units.val_mul, coe_rootSubgroupPoints_inl, coe_rootSubgroupPoints_inr,
+    toAdd_ofAdd, raisingMatrix_def, loweringMatrix_def, coe_weightTorusPoints,
+    kostantTorusMatrix_apply, diagGL_coe, torusCharacter_mulSingle]
+  simpa only [weightTable_weight] using
+    weightTable.one_add_raising_mul_one_add_lowering i a b c hc
 
 /-- The reverse Gauss factorization. Relative to positive times negative, the simple-coroot
 factor is inverted, and the positive root factor comes first. -/
