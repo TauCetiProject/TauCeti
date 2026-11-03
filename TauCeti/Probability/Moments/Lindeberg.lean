@@ -22,8 +22,12 @@ finite measures.
   bounded by `M`, then `g x` differs from its degree-`r` Taylor evaluation by at most
   `M * |x| ^ (r + 1) / (r + 1)!`.
 * `TauCeti.Probability.abs_integral_sub_integral_le`: the one-variable replacement bound.
+* `TauCeti.Probability.abs_integral_prod_sub_integral_prod_le`: the one-coordinate replacement
+  bound with an arbitrary background measure.
 * `TauCeti.Probability.abs_integral_pi_sub_integral_pi_le`: the replacement inequality for product
-  measures on `Fin n → ℝ`.
+  measures on `Fin n → ℝ`, assuming integrability under the hybrid product measures.
+* `TauCeti.Probability.abs_integral_pi_sub_integral_pi_le_of_bounded`: the bounded-continuous
+  specialization.
 
 ## References
 
@@ -121,8 +125,9 @@ theorem abs_integral_sub_integral_le {μ ν : Measure ℝ} [IsFiniteMeasure μ]
     _ ≤ _ := by rw [mul_add]; exact add_le_add (hb μ hμ) (hb ν hν)
 
 /-- Replacing one coordinate of a product of probability measures is controlled by the
-one-variable replacement bound. -/
-private theorem abs_integral_prod_sub_integral_prod_le {μ ν : Measure ℝ}
+one-variable replacement bound. The assumptions allow the background space and test function to
+be arbitrary, including unbounded test functions. -/
+theorem abs_integral_prod_sub_integral_prod_le {μ ν : Measure ℝ}
     [IsProbabilityMeasure μ] [IsProbabilityMeasure ν] {β : Type*} [MeasurableSpace β]
     (κ : Measure β) [IsProbabilityMeasure κ] {r : ℕ} {g : ℝ × β → ℝ} (M : ℝ)
     (hμg : Integrable g (μ.prod κ)) (hνg : Integrable g (ν.prod κ))
@@ -144,10 +149,10 @@ private theorem abs_integral_prod_sub_integral_prod_le {μ ν : Measure ℝ}
     (g := fun t ↦ g (t, w)) (M := M) (r := r) (hsm w) (hM w) hμ hν hmom
 
 /-- **Lindeberg replacement.** Let `μ i` and `ν i` be probability measures on `ℝ` with finite
-absolute moments of order `r + 1` and the same moments up to order `r`. If `f` is bounded,
-continuous and `C^(r+1)` in each coordinate, with `(r+1)`st derivative in coordinate `i` bounded
-by `M i`, then replacing the product measure `Measure.pi μ` by `Measure.pi ν` changes the
-expectation of `f` by at most
+absolute moments of order `r + 1` and the same moments up to order `r`. If `f` is integrable under
+every hybrid product measure that chooses each coordinate from either `μ` or `ν`, and is
+`C^(r+1)` in each coordinate with `(r+1)`st derivative in coordinate `i` bounded by `M i`, then
+replacing `Measure.pi μ` by `Measure.pi ν` changes the expectation of `f` by at most
 `∑ i, M i / (r + 1)! * (∫ |t| ^ (r + 1) ∂μ i + ∫ |t| ^ (r + 1) ∂ν i)`.
 
 This is the finite-dimensional Lindeberg swapping argument; see the references above. -/
@@ -156,7 +161,9 @@ theorem abs_integral_pi_sub_integral_pi_le {r n : ℕ} (μ ν : Fin n → Measur
     (hμ : ∀ i, Integrable (fun t : ℝ ↦ |t| ^ (r + 1)) (μ i))
     (hν : ∀ i, Integrable (fun t : ℝ ↦ |t| ^ (r + 1)) (ν i))
     (hmom : ∀ i, ∀ k ≤ r, ∫ t, t ^ k ∂μ i = ∫ t, t ^ k ∂ν i)
-    {f : (Fin n → ℝ) → ℝ} (hf : Continuous f) {C : ℝ} (hfb : ∀ z, |f z| ≤ C)
+    {f : (Fin n → ℝ) → ℝ}
+    (hfi : ∀ s : Fin n → Bool,
+      Integrable f (Measure.pi fun i ↦ if s i then ν i else μ i))
     {M : Fin n → ℝ}
     (hsm : ∀ z i, ContDiff ℝ (r + 1) fun t ↦ f (Function.update z i t))
     (hM : ∀ z i t, |iteratedDeriv (r + 1) (fun s ↦ f (Function.update z i s)) t| ≤ M i) :
@@ -165,14 +172,18 @@ theorem abs_integral_pi_sub_integral_pi_le {r n : ℕ} (μ ν : Fin n → Measur
   induction n with
   | zero => rw [Measure.pi_of_empty μ, Measure.pi_of_empty ν]; simp
   | succ n ih =>
-    have hc : Continuous
-        (fun p : ℝ × (Fin n → ℝ) ↦ (Fin.cons p.1 p.2 : Fin (n + 1) → ℝ)) :=
-      continuous_fst.finCons (A := fun _ : Fin (n + 1) ↦ ℝ) continuous_snd
-    have hFc : Continuous fun p : ℝ × (Fin n → ℝ) ↦ f (Fin.cons p.1 p.2) := hf.comp hc
-    have hFi : ∀ (ρ : Measure (ℝ × (Fin n → ℝ))) [IsFiniteMeasure ρ],
-        Integrable (fun p : ℝ × (Fin n → ℝ) ↦ f (Fin.cons p.1 p.2)) ρ := fun ρ _ ↦
-      Integrable.of_bound hFc.aestronglyMeasurable C (Filter.Eventually.of_forall fun p ↦ by
-        simpa using hfb _)
+    have hprod (b : Bool) (s : Fin n → Bool) :
+        Integrable (fun p : ℝ × (Fin n → ℝ) ↦ f (Fin.cons p.1 p.2))
+          ((if b then ν 0 else μ 0).prod
+            (Measure.pi fun i : Fin n ↦ if s i then ν i.succ else μ i.succ)) := by
+      let bs : Fin (n + 1) → Bool := Fin.cons b s
+      let ρ : Fin (n + 1) → Measure ℝ := fun i ↦
+        if bs i = true then ν i else μ i
+      have h := (measurePreserving_piFinSuccAbove ρ 0).symm.integrable_comp_of_integrable
+        (hfi bs)
+      simpa [ρ, MeasurableEquiv.piFinSuccAbove_symm_apply, Fin.insertNthEquiv_zero,
+        Fin.zero_succAbove, bs, Fin.cons_zero, Fin.cons_succ, Function.comp_def,
+        Fin.consEquiv_apply] using h
     rw [integral_pi_succ μ, integral_pi_succ ν]
     simp only [MeasurableEquiv.piFinSuccAbove_symm_apply, Fin.insertNthEquiv_zero,
       Fin.zero_succAbove]
@@ -180,7 +191,8 @@ theorem abs_integral_pi_sub_integral_pi_le {r n : ℕ} (μ ν : Fin n → Measur
     set ν' : Fin n → Measure ℝ := fun i ↦ ν i.succ with hν'
     -- Change the first marginal, then apply induction to the remaining coordinates.
     have h1 := abs_integral_prod_sub_integral_prod_le (μ := μ 0) (ν := ν 0)
-      (κ := Measure.pi μ') (M := M 0) (hμg := hFi _) (hνg := hFi _)
+      (κ := Measure.pi μ') (M := M 0)
+      (hμg := hprod false fun _ ↦ false) (hνg := hprod true fun _ ↦ false)
       (hμ := hμ 0) (hν := hν 0) (hmom := hmom 0)
       (hsm := fun w ↦ by simpa [Fin.update_cons_zero] using hsm (Fin.cons 0 w) 0)
       (hM := fun w t ↦ by
@@ -192,21 +204,60 @@ theorem abs_integral_pi_sub_integral_pi_le {r n : ℕ} (μ ν : Fin n → Measur
             f (Fin.cons p.1 p.2) ∂((ν 0).prod (Measure.pi ν'))| ≤
         ∑ i : Fin n, M i.succ / (r + 1)! *
           (∫ t, |t| ^ (r + 1) ∂μ i.succ + ∫ t, |t| ^ (r + 1) ∂ν i.succ) := by
-      rw [integral_prod _ (hFi _), integral_prod _ (hFi _),
-        ← integral_sub ((hFi _).integral_prod_left) ((hFi _).integral_prod_left)]
+      have hμmix : Integrable (fun p : ℝ × (Fin n → ℝ) ↦ f (Fin.cons p.1 p.2))
+          ((ν 0).prod (Measure.pi μ')) := by
+        simpa [hμ'] using hprod true fun _ ↦ false
+      have hνmix : Integrable (fun p : ℝ × (Fin n → ℝ) ↦ f (Fin.cons p.1 p.2))
+          ((ν 0).prod (Measure.pi ν')) := by
+        simpa [hν'] using hprod true fun _ ↦ true
+      have htail : ∀ s : Fin n → Bool, ∀ᵐ t ∂ν 0,
+          Integrable (fun w : Fin n → ℝ ↦ f (Fin.cons t w))
+            (Measure.pi fun i ↦ if s i then ν i.succ else μ i.succ) := by
+        intro s
+        exact (hprod true s).prod_right_ae
+      have htail_all : ∀ᵐ t ∂ν 0, ∀ s : Fin n → Bool,
+          Integrable (fun w : Fin n → ℝ ↦ f (Fin.cons t w))
+            (Measure.pi fun i ↦ if s i then ν i.succ else μ i.succ) :=
+        ae_all_iff.2 htail
+      rw [integral_prod _ hμmix, integral_prod _ hνmix,
+        ← integral_sub hμmix.integral_prod_left hνmix.integral_prod_left]
       rw [← Real.norm_eq_abs]
       refine le_trans (norm_integral_le_of_norm_le_const
         (C := ∑ i : Fin n, M i.succ / (r + 1)! *
           (∫ t, |t| ^ (r + 1) ∂μ i.succ + ∫ t, |t| ^ (r + 1) ∂ν i.succ))
-        (Filter.Eventually.of_forall fun t ↦ ?_)) (by simp)
-      refine ih μ' ν' (fun i ↦ hμ i.succ) (fun i ↦ hν i.succ) (fun i ↦ hmom i.succ)
-        (f := fun w ↦ f (Fin.cons t w)) (hf.comp (by fun_prop))
-        (fun z ↦ hfb _) (M := fun i ↦ M i.succ) (fun z i ↦ ?_) (fun z i s ↦ ?_)
+        ?_) (by simp)
+      filter_upwards [htail_all] with t ht
+      have h := ih μ' ν' (fun i ↦ hμ i.succ) (fun i ↦ hν i.succ)
+        (fun i ↦ hmom i.succ)
+        (f := fun w ↦ f (Fin.cons t w)) (fun s ↦ ht s)
+        (M := fun i ↦ M i.succ) (fun z i ↦ ?_) (fun z i s ↦ ?_)
+      · exact h
       · simpa [Fin.cons_update] using hsm (Fin.cons t z) i.succ
       · simpa [Fin.cons_update] using hM (Fin.cons t z) i.succ s
     rw [Fin.sum_univ_succ]
     calc _ ≤ _ := abs_sub_le _ (∫ p : ℝ × (Fin n → ℝ), f (Fin.cons p.1 p.2)
         ∂((ν 0).prod (Measure.pi μ'))) _
       _ ≤ _ := add_le_add h1 h2
+
+/-- The Lindeberg replacement inequality for bounded continuous test functions. Boundedness and
+continuity imply the integrability hypothesis of `abs_integral_pi_sub_integral_pi_le`. -/
+theorem abs_integral_pi_sub_integral_pi_le_of_bounded {r n : ℕ} (μ ν : Fin n → Measure ℝ)
+    [∀ i, IsProbabilityMeasure (μ i)] [∀ i, IsProbabilityMeasure (ν i)]
+    (hμ : ∀ i, Integrable (fun t : ℝ ↦ |t| ^ (r + 1)) (μ i))
+    (hν : ∀ i, Integrable (fun t : ℝ ↦ |t| ^ (r + 1)) (ν i))
+    (hmom : ∀ i, ∀ k ≤ r, ∫ t, t ^ k ∂μ i = ∫ t, t ^ k ∂ν i)
+    {f : (Fin n → ℝ) → ℝ} (hf : Continuous f) {C : ℝ} (hfb : ∀ z, |f z| ≤ C)
+    {M : Fin n → ℝ}
+    (hsm : ∀ z i, ContDiff ℝ (r + 1) fun t ↦ f (Function.update z i t))
+    (hM : ∀ z i t, |iteratedDeriv (r + 1) (fun s ↦ f (Function.update z i s)) t| ≤ M i) :
+    |∫ z, f z ∂Measure.pi μ - ∫ z, f z ∂Measure.pi ν| ≤
+      ∑ i, M i / (r + 1)! *
+        (∫ t, |t| ^ (r + 1) ∂μ i + ∫ t, |t| ^ (r + 1) ∂ν i) := by
+  apply abs_integral_pi_sub_integral_pi_le μ ν hμ hν hmom
+    (f := f) (M := M) (hsm := hsm) (hM := hM)
+  intro s
+  exact Integrable.of_bound hf.aestronglyMeasurable C
+    (Filter.Eventually.of_forall fun z ↦ by
+      simpa [Real.norm_eq_abs] using hfb z)
 
 end TauCeti.Probability
