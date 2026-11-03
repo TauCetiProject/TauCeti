@@ -238,7 +238,7 @@ theorem kepler_radialAction (hm : 0 < m) (hℓ : ℓ ≠ 0) (h₁ : 0 < r₁) (h
   have hπ : π⁻¹ * (√(-2 * m * E) * (π * ((r₁ + r₂) / 2 - √(r₁ * r₂)))) =
       √(-2 * m * E) * (r₁ + r₂) / 2 - √(-2 * m * E) * √(r₁ * r₂) := by
     field_simp
-  rw [radialAction_def, hint, integral_sqrt_mul_sub_mul_sub_div h₁ hlt.le, hπ, habs,
+  rw [radialAction_def, hint, integral_sqrt_mul_sub_mul_sub_div h₁.le hlt.le, hπ, habs,
     sqrt_neg_two_mul_mul hm hE, hκ]
   ring
 
