@@ -54,6 +54,18 @@ noncomputable def localizationAwayDiagram : Finset M ⥤ CommAlgCat.{u} R where
 theorem localizationAwayDiagram_obj (s : Finset M) :
     (localizationAwayDiagram M).obj s = .of R (Localization.Away (∏ x ∈ s, (x : R))) := (rfl)
 
+/-- A transition map lifts the base map to the larger principal localization. -/
+@[simp]
+theorem localizationAwayDiagram_map {s t : Finset M} (h : s ⟶ t) :
+    eqToHom (localizationAwayDiagram_obj M s).symm ≫
+        (localizationAwayDiagram M).map h ≫ eqToHom (localizationAwayDiagram_obj M t) = ofHom
+      (IsLocalization.Away.liftAlgHom (∏ x ∈ s, (x : R))
+        (f := Algebra.ofId R (Localization.Away (∏ x ∈ t, (x : R))))
+        (IsLocalization.Away.isUnit_of_dvd _
+          (Finset.prod_dvd_prod_of_subset s t (fun x : M ↦ (x : R)) (leOfHom h)))) := by
+  unfold localizationAwayDiagram
+  simp
+
 variable (S : Type u) [CommRing S] [Algebra R S] [IsLocalization M S]
 
 /-- The canonical cocone from principal localizations to a localization at all denominators. -/
@@ -72,6 +84,18 @@ noncomputable def localizationAwayCocone : Cocone (localizationAwayDiagram M) wh
 /-- The localization cocone has the specified localization algebra as its apex. -/
 @[simp]
 theorem localizationAwayCocone_pt : (localizationAwayCocone M S).pt = .of R S := (rfl)
+
+/-- A leg of the localization cocone is the canonical lift to the full localization. -/
+@[simp]
+theorem localizationAwayCocone_ι_app (s : Finset M) :
+    eqToHom (localizationAwayDiagram_obj M s).symm ≫
+        (localizationAwayCocone M S).ι.app s ≫ eqToHom (localizationAwayCocone_pt M S) = ofHom
+      (IsLocalization.Away.liftAlgHom (∏ x ∈ s, (x : R)) (f := Algebra.ofId R S)
+        (by
+          rw [Algebra.ofId_apply, map_prod]
+          exact IsUnit.prod_iff.mpr fun x _ ↦ IsLocalization.map_units S x)) := by
+  unfold localizationAwayCocone localizationAwayDiagram
+  simp
 
 /-- Every localization is the filtered colimit of principal localizations indexed by finite
 sets of denominators. No finite generation, domain or Noetherian hypothesis is required. -/
