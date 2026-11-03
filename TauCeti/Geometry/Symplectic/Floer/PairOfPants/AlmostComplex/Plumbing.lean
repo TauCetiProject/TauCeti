@@ -49,17 +49,16 @@ variable {M V : Type*} [AddCommGroup V] [Module ℝ V] [FiniteDimensional ℝ V]
   {q : Puncture} {L : ℝ}
 
 /-- The structures on the two pairs of pants match on the cylindrical plumbing overlap. -/
-theorem pairOfPantsAlmostComplex_plumbingMap (hJap : Periodic (Ja inf) 1)
-    (hJbp : Periodic (Jb q) 1) (hab : Jb q = Ja inf) {w : ℂ}
+theorem pairOfPantsAlmostComplex_plumbingMap (hab : Jb q = Ja inf) {w : ℂ}
     (h₁ : (inf.endCoord w).re ≤ -2) (h₂ : 2 ≤ q.endSign * ((inf.endCoord w).re + L))
     (x : M) :
     pairOfPantsAlmostComplex hᵦ Jb hJb (q.plumbingMap L w) x =
       pairOfPantsAlmostComplex hₐ Ja hJa w x := by
   have hw : w ≠ 0 := by
     simpa using inf.ne_endCenter_of_re_endCoord_ne_zero (by linarith : (inf.endCoord w).re < 0).ne
-  rw [pairOfPantsAlmostComplex_eq_endStructure hᵦ hJbp
+  rw [pairOfPantsAlmostComplex_eq_endStructure hᵦ
       (by rw [re_endCoord_plumbingMap q L hw]; exact h₂),
-    pairOfPantsAlmostComplex_eq_endStructure hₐ hJap (by simp; linarith),
+    pairOfPantsAlmostComplex_eq_endStructure (q := inf) hₐ (by simp; linarith),
     endCoord_plumbingMap q L hw, Complex.add_im, Complex.ofReal_im, add_zero, hab]
 
 open Classical in
@@ -98,8 +97,7 @@ theorem compatible_plumbedAlmostComplex
   · exact compatible_pairOfPantsAlmostComplex hᵦ hJbc _ _
 
 /-- Outside the width-two collar at the receiving cut, the glued structure is unchanged. -/
-theorem plumbedAlmostComplex_of_re_endCoord_le (hq : q ≠ inf)
-    (hJap : Periodic (Ja inf) 1) (hJbp : Periodic (Jb q) 1) (hab : Jb q = Ja inf)
+theorem plumbedAlmostComplex_of_re_endCoord_le (hq : q ≠ inf) (hab : Jb q = Ja inf)
     {w : ℂ} (hw : (q.endCoord w).re ≤ L - 2) (x : M) :
     plumbedAlmostComplex hₐ hᵦ Ja Jb hJa hJb q L w x =
       pairOfPantsAlmostComplex hᵦ Jb hJb w x := by
@@ -108,27 +106,25 @@ theorem plumbedAlmostComplex_of_re_endCoord_le (hq : q ≠ inf)
   · have hc : w ≠ q.endCenter :=
       q.ne_endCenter_of_re_endCoord_ne_zero (by linarith : 0 < (q.endCoord w).re).ne'
     have hre := re_endCoord_inf_sub_endCenter_div q L hc
-    rw [← pairOfPantsAlmostComplex_plumbingMap (L := L) hₐ hᵦ hJap hJbp hab (by linarith)
+    rw [← pairOfPantsAlmostComplex_plumbingMap (L := L) hₐ hᵦ hab (by linarith)
       (by rw [endSign_eq_one hq]; linarith) x, plumbingMap_sub_endCenter_div]
   · rfl
 
 /-- Outside the width-two collar at the inserted cut, the glued structure pulls back to the
 original structure on the inserted pair of pants. -/
-theorem plumbedAlmostComplex_plumbingMap (hq : q ≠ inf)
-    (hJap : Periodic (Ja inf) 1) (hJbp : Periodic (Jb q) 1) (hab : Jb q = Ja inf)
+theorem plumbedAlmostComplex_plumbingMap (hq : q ≠ inf) (hab : Jb q = Ja inf)
     {w : ℂ} (hw : w ≠ 0) (h : 2 - L ≤ (inf.endCoord w).re) (x : M) :
     plumbedAlmostComplex hₐ hᵦ Ja Jb hJa hJb q L (q.plumbingMap L w) x =
       pairOfPantsAlmostComplex hₐ Ja hJa w x := by
   rw [plumbedAlmostComplex_def, re_endCoord_plumbingMap q L hw]
   split_ifs with h'
   · rw [plumbingMap_sub_endCenter_div_plumbingFactor]
-  · exact pairOfPantsAlmostComplex_plumbingMap hₐ hᵦ hJap hJbp hab (by linarith)
+  · exact pairOfPantsAlmostComplex_plumbingMap hₐ hᵦ hab (by linarith)
       (by rw [endSign_eq_one hq]; linarith) x
 
 /-- Deep in the receiving end, the glued structure is the inserted structure in the affine
 plumbing coordinate. This formula holds on an open set independent of the neck length. -/
-theorem plumbedAlmostComplex_eq_inserted (hq : q ≠ inf)
-    (hJap : Periodic (Ja inf) 1) (hJbp : Periodic (Jb q) 1) (hab : Jb q = Ja inf)
+theorem plumbedAlmostComplex_eq_inserted (hq : q ≠ inf) (hab : Jb q = Ja inf)
     {w : ℂ} (hw : 2 < (q.endCoord w).re) (x : M) :
     plumbedAlmostComplex hₐ hᵦ Ja Jb hJa hJb q L w x =
       pairOfPantsAlmostComplex hₐ Ja hJa ((w - q.endCenter) / q.plumbingFactor L) x := by
@@ -136,7 +132,7 @@ theorem plumbedAlmostComplex_eq_inserted (hq : q ≠ inf)
     q.ne_endCenter_of_re_endCoord_ne_zero (by linarith : 0 < (q.endCoord w).re).ne'
   have hre := re_endCoord_inf_sub_endCenter_div q L hc
   have h := plumbedAlmostComplex_plumbingMap (L := L) (hJa := hJa) (hJb := hJb)
-    hₐ hᵦ hq hJap hJbp hab
+    hₐ hᵦ hq hab
     (q.sub_endCenter_div_plumbingFactor_ne_zero L hc) (by linarith) x
   rwa [plumbingMap_sub_endCenter_div] at h
 
@@ -181,7 +177,7 @@ theorem contMDiffAt_plumbedAlmostComplex {n : ℕ∞} (hq : q ≠ inf)
       (continuousAt_fst.sub continuousAt_const).sub hcont
     filter_upwards [hdiff.eventually (lt_mem_nhds (by linarith : 0 < L - 2 - (q.endCoord w).re))]
       with p hp
-    rw [plumbedAlmostComplex_of_re_endCoord_le hₐ hᵦ hq (hJap inf) (hJbp q) hab
+    rw [plumbedAlmostComplex_of_re_endCoord_le hₐ hᵦ hq hab
       (by linarith : (q.endCoord p.2.1).re ≤ p.1 - 2)]
     rfl
   · have h2 : 2 < (q.endCoord w).re := by linarith
@@ -208,7 +204,7 @@ theorem contMDiffAt_plumbedAlmostComplex {n : ℕ∞} (hq : q ≠ inf)
     refine ((contMDiffAt_pairOfPantsAlmostComplex (hJ := hJa) hₐ hJap hJas ⟨w', hw'0, hw'1⟩ x).comp
       (L, (w, x)) (hcoord.prodMk (contMDiffAt_snd.comp _ contMDiffAt_snd))).congr_of_eventuallyEq ?_
     filter_upwards [hcont.eventually (lt_mem_nhds h2)] with p hp
-    rw [plumbedAlmostComplex_eq_inserted hₐ hᵦ hq (hJap inf) (hJbp q) hab hp]
+    rw [plumbedAlmostComplex_eq_inserted hₐ hᵦ hq hab hp]
     rfl
 
 end TauCeti.Floer
