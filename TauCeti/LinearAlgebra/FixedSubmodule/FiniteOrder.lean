@@ -5,8 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.LinearAlgebra.FixedSubmodule
 public import TauCeti.LinearAlgebra.FixedSubmodule.BaseChange
-import Mathlib.Dynamics.FixedPoints.Basic
 
 /-!
 # Scalar extension of fixed vectors of finite-order maps
@@ -41,13 +41,6 @@ public section
 open TensorProduct
 
 namespace LinearMap
-
-/-- Every power of an endomorphism fixes each vector in its fixed submodule. -/
-theorem pow_apply_of_mem_fixedSubmodule {R M : Type*} [Semiring R] [AddCommMonoid M]
-    [Module R M] (f : M →ₗ[R] M) {x : M} (hx : x ∈ f.fixedSubmodule) (i : ℕ) :
-    (f ^ i) x = x := by
-  rw [pow_apply_eq_iterate]
-  exact Function.IsFixedPt.iterate (mem_fixedSubmodule_iff.mp hx) i
 
 variable {R M : Type*} [CommSemiring R] [AddCommMonoid M] [Module R M]
   (f : M →ₗ[R] M) {n : ℕ}
