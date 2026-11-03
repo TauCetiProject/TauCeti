@@ -81,7 +81,7 @@ private theorem interval_mem (S : LieSubalgebra A (sl (Fin (r + 1)) A))
           (show i.castSucc < j.succ from Nat.lt_succ_of_le hij).ne' ∈ S := by
     intro n
     induction n using Nat.strong_induction_on with
-    | h n ih =>
+    | ind n ih =>
       intro i j hij hj
       by_cases h : i = j
       · subst j

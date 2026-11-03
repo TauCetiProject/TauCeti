@@ -130,10 +130,10 @@ theorem trace_ofModule'_eq_zero_of_dvd_orderOf (hp : ¬IsUnit (p : A)) {g : G}
     induction k with
     | zero => simp [← one_def]
     | succ k ih =>
-      rw [pow_succ', Module.End.mul_apply, ih, pow_succ']
+      rw [pow_succ', mul_apply_eq_comp, ih, pow_succ']
       exact (mul_smul _ _ x).symm.trans (by rw [single_mul_single, one_mul])
   have hS : S ^ m = 1 := LinearMap.ext fun x ↦ by
-    rw [hSpow, hsm, ← one_def, one_smul, Module.End.one_apply]
+    rw [hSpow, hsm, ← one_def, one_smul, one_apply_eq_self]
   -- The element `g = s * q` acts as the scalar `q ∈ A[Q]` times `S`.
   let q' : Q := ⟨q, Subgroup.mem_zpowers q⟩
   have hg' : Representation.ofModule' X (s * q) =

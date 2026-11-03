@@ -85,7 +85,7 @@ theorem le_integralOrthogonalSubgroup_of_isCompact_of_reflection_mem
     have hr : r ∈ H := hrefl i inferInstance
     have hproj : F (a i * g) j - F (a i * r * g) j =
         (2 * b.repr ((g : V ≃ₗ[ℚ_[p]] V) (b j)) i) • F (a i) i := by
-      simp only [F, Subgroup.coe_mul, LinearEquiv.mul_apply, r, coe_reflectionOrthogonal,
+      simp only [F, Subgroup.coe_mul, mul_apply_eq_comp, r, coe_reflectionOrthogonal,
         reflection_basis_apply Q b hb, map_sub, map_smul]
       module
     have hle : ‖F (a i * g) j - F (a i * r * g) j‖ ≤ C j := by

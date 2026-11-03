@@ -226,7 +226,7 @@ private theorem apply_eq_one_or_eq_neg_one_of_apply_monomialGroupEpsilon_eq_one
         Subtype.ext (by simpa using hc.eq)
       rw [← map_mul, hgh, map_mul, hρ, one_mul, map_mul]
   let T : IntertwiningMap ρ ρ := (ρ g).intertwiningMap_of_isIntertwiningMap ρ ρ fun h w ↦ by
-    rw [← Module.End.mul_apply, hcomm, Module.End.mul_apply]
+    rw [← mul_apply_eq_comp, hcomm, mul_apply_eq_comp]
   -- Every signed monomial squares to `1` or `ε`, which both act trivially.
   have hT : T * T = 1 := DFunLike.ext _ _ fun w ↦ by
     have hsq : ρ g * ρ g = 1 := by

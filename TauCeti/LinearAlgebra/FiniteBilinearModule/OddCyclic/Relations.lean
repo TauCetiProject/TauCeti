@@ -69,8 +69,8 @@ noncomputable def oddCyclicProdSelfIsometry (p k : ℕ) [Fact p.Prime] (hp : Odd
     Isometry ((oddCyclic (p ^ k) hp.pow θ).prod (oddCyclic (p ^ k) hp.pow θ))
       ((oddCyclic (p ^ k) hp.pow η).prod (oddCyclic (p ^ k) hp.pow η)) :=
   Classical.choice <| by
-    obtain ⟨Θ, hΘ⟩ := (ZMod.coe_int_isUnit_iff_isCoprime θ (p ^ k)).mpr hθ
-    obtain ⟨Η, hΗ⟩ := (ZMod.coe_int_isUnit_iff_isCoprime η (p ^ k)).mpr hη
+    obtain ⟨Θ, hΘ⟩ := (ZMod.isUnit_intCast_iff_isCoprime θ (p ^ k)).mpr hθ
+    obtain ⟨Η, hΗ⟩ := (ZMod.isUnit_intCast_iff_isCoprime η (p ^ k)).mpr hη
     obtain ⟨a, b, hab⟩ := ZMod.exists_sq_add_sq_eq_of_isUnit_prime_pow p k hp
       ((Units.isUnit Η).mul (Units.isUnit Θ⁻¹))
     have hscale : (θ : ZMod (p ^ k)) * (a ^ 2 + b ^ 2) = η := by
@@ -98,7 +98,7 @@ theorem nonempty_isometry_oddCyclic_prod {p : ℕ} [Fact p.Prime] (hp : Odd p) (
     Nonempty (Isometry ((oddCyclic (p ^ e) hp.pow a).prod (oddCyclic (p ^ e) hp.pow b))
       ((oddCyclic (p ^ e) hp.pow c).prod (oddCyclic (p ^ e) hp.pow d))) := by
   have hχ (t : ℤ) (ht : IsCoprime (p : ℤ) t) : legendreSym p t = 1 ∨ legendreSym p t = -1 :=
-    legendreSym.eq_one_or_neg_one p ((ZMod.coe_int_isUnit_iff_isCoprime t p).2 ht).ne_zero
+    legendreSym.eq_one_or_neg_one p ((ZMod.isUnit_intCast_iff_isCoprime t p).2 ht).ne_zero
   have hcyc := fun {s t : ℤ} (hs : IsCoprime (p : ℤ) s) (ht : IsCoprime (p : ℤ) t)
     (hst : legendreSym p s = legendreSym p t) ↦
       nonempty_isometry_oddCyclic_of_legendreSym_eq hp e hs ht hst
