@@ -11,7 +11,7 @@ public import TauCeti.NumberTheory.NewtonPolygon.GaussNorm
 public import Mathlib.Analysis.SpecialFunctions.Log.Base
 
 /-!
-# Row Hodge lower polygons of Fredholm series
+# Row Hodge lower polygons of principal-minor series
 
 Let `r : ι → ℝ` be a bounded row majorant of a square matrix `A`, with
 `‖A i j‖ ≤ r i`, and let `r*` be its decreasing rearrangement
@@ -28,16 +28,20 @@ nondecreasing, so it is convex (`TauCeti.isConvexSeq_rowHodgePolygon`).
 Fix a real additive valuation `v` on a normed field with `‖x‖ = b ^ (-v x)` for `x ≠ 0`; a
 normalisation `‖x‖ = b ^ (-e w x)` with `e > 0` is the case `v = e w`. The coefficient estimate
 `‖cₙ‖ ≤ ∏ k < n, r* k` of `Matrix.norm_charCoeff_le_prod_decreasingRearrangement` then says
-that the row Hodge polygon lies below every coefficient height of the Fredholm series
-`det (1 - T A) = ∑ cₙ Tⁿ`, and hence below its Newton polygon
-(`Matrix.rowHodgePolygon_le_newtonPolygon_charPowerSeries`). Beyond `m` the coefficients vanish:
-for finite `m` the Fredholm series is a polynomial of degree at most `m`, possibly less. The row
+that the row Hodge polygon lies below every coefficient height of the principal-minor series
+`A.charPowerSeries = ∑ cₙ Tⁿ`, and hence below its Newton polygon
+(`Matrix.rowHodgePolygon_le_newtonPolygon_charPowerSeries`). Here `cₙ` is `(-1) ^ n` times the
+unconditional sum of the size-`n` principal minors (`Matrix.charCoeff`), and the estimates need
+no summability. When these families are summable, for instance when `r` tends to zero and the
+field is complete (`Matrix.summable_principalMinor`), the series is the Fredholm determinant
+`det (1 - T A)`. Beyond `m` the coefficients vanish: for finite `m` the principal-minor series
+is a polynomial of degree at most `m`, possibly less. The row
 Hodge polygon depends on the chosen coordinates and majorant: it need not have the same right
 endpoint as the Newton polygon, and it is not the intrinsic Hodge polygon of a lattice.
 
 A uniform bound `‖A i j‖ ≤ C` gives the line of slope `-logb b C` through the origin below the
 Newton polygon (`Matrix.isSupportingLine_newtonPolygon_charPowerSeries`): every finite slope of
-the Fredholm series is at least `-logb b C`.
+the principal-minor series is at least `-logb b C`.
 
 ## Main definitions
 
@@ -51,7 +55,7 @@ the Fredholm series is at least `-logb b C`.
   entries of `r`.
 * `Matrix.rowHodgePolygon_le_addValuation_charCoeff`,
   `Matrix.rowHodgePolygon_le_newtonPolygon_charPowerSeries`: it lies below the coefficient
-  heights and the Newton polygon of the Fredholm series.
+  heights and the Newton polygon of the principal-minor series.
 * `Matrix.isSupportingLine_newtonPolygon_charPowerSeries`: the slope bound from a uniform bound
   on the entries.
 
@@ -178,9 +182,10 @@ open TauCeti
 variable {ι K : Type*} [DecidableEq ι] [NormedField K] [IsUltrametricDist K]
   {v : AddValuation K (WithTop ℝ)} {b : ℝ} {A : Matrix ι ι K} {r : ι → ℝ}
 
-/-- **The row Hodge polygon lies below the Fredholm coefficients.** Let `v` be a real additive
-valuation with `‖x‖ = b ^ (-v x)` for `x ≠ 0`, where `b > 1`. For a bounded row majorant
-`‖A i j‖ ≤ r i`, the height of the `n`-th coefficient of `det (1 - T A)` is at least the row
+/-- **The row Hodge polygon lies below the principal-minor coefficients.** Let `v` be a real
+additive valuation with `‖x‖ = b ^ (-v x)` for `x ≠ 0`, where `b > 1`. For a bounded row majorant
+`‖A i j‖ ≤ r i`, the height of the `n`-th coefficient `A.charCoeff n` of the principal-minor
+series, no summability assumed, is at least the row
 Hodge polygon at `n`. In particular the coefficient vanishes when `r` has fewer than `n`
 positive entries. -/
 theorem rowHodgePolygon_le_addValuation_charCoeff (hb : 1 < b)
@@ -205,9 +210,11 @@ theorem rowHodgePolygon_le_addValuation_charCoeff (hb : 1 < b)
       prod_eq_zero (mem_range.mpr hk) hk0
     simp [hzero]
 
-/-- **Row Hodge lower bound for the Fredholm series.** Let `v` be a real additive valuation with
-`‖x‖ = b ^ (-v x)` for `x ≠ 0`, where `b > 1`. For a bounded row majorant `‖A i j‖ ≤ r i`, the
-row Hodge polygon of `r` lies below the Newton polygon of `det (1 - T A)`. -/
+/-- **Row Hodge lower bound for the principal-minor series.** Let `v` be a real additive
+valuation with `‖x‖ = b ^ (-v x)` for `x ≠ 0`, where `b > 1`. For a bounded row majorant
+`‖A i j‖ ≤ r i`, the row Hodge polygon of `r` lies below the Newton polygon of the principal-minor
+series `A.charPowerSeries`, which is the Fredholm determinant `det (1 - T A)` when its
+principal-minor families are summable. -/
 theorem rowHodgePolygon_le_newtonPolygon_charPowerSeries (hb : 1 < b)
     (hv : ∀ x ≠ 0, ‖x‖ = b ^ (-(v x).untop₀)) (hr : BddAbove (Set.range r))
     (hA : ∀ i j, ‖A i j‖ ≤ r i) :
@@ -216,10 +223,12 @@ theorem rowHodgePolygon_le_newtonPolygon_charPowerSeries (hb : 1 < b)
     simpa only [coeff_charPowerSeries] using
       rowHodgePolygon_le_addValuation_charCoeff hb hv hr hA n
 
-/-- **Slope bound for the Fredholm series.** Let `v` be a real additive valuation with
+/-- **Slope bound for the principal-minor series.** Let `v` be a real additive valuation with
 `‖x‖ = b ^ (-v x)` for `x ≠ 0`, where `b > 1`. If every entry of `A` has norm at most `C`, the
-line of slope `-logb b C` through the origin lies below the Newton polygon of `det (1 - T A)`.
-Since that polygon starts at the origin, every finite slope is at least `-logb b C`. -/
+line of slope `-logb b C` through the origin lies below the Newton polygon of the principal-minor
+series `A.charPowerSeries`, which is the Fredholm determinant `det (1 - T A)` when its
+principal-minor families are summable. Since that polygon starts at the origin, every finite
+slope is at least `-logb b C`. -/
 theorem isSupportingLine_newtonPolygon_charPowerSeries (hb : 1 < b)
     (hv : ∀ x ≠ 0, ‖x‖ = b ^ (-(v x).untop₀)) {C : ℝ} (hA : ∀ i j, ‖A i j‖ ≤ C) :
     IsSupportingLine (A.charPowerSeries.newtonPolygon v) (-Real.logb b C) 0 :=
