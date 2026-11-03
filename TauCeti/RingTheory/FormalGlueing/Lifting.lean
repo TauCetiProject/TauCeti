@@ -70,10 +70,10 @@ private theorem amitsur_differential_eq_zero_of_locally_in_range
       have h := congr(IsLocalizedModule.map (.powers g)
         (LocalizedModule.mkLinearMap (.powers g) (S ⊗[R] M))
         (LocalizedModule.mkLinearMap (.powers g) (S ⊗[R] (S ⊗[R] M))) d $hz)
-      have hcomp := IsLocalizedModule.map_comp_map (.powers g)
+      have hcomp := (IsLocalizedModule.map_comp' (.powers g)
         (LocalizedModule.mkLinearMap (.powers g) M)
         (LocalizedModule.mkLinearMap (.powers g) (S ⊗[R] M))
-        (LocalizedModule.mkLinearMap (.powers g) (S ⊗[R] (S ⊗[R] M))) d η
+        (LocalizedModule.mkLinearMap (.powers g) (S ⊗[R] (S ⊗[R] M))) η d).symm
       rw [hd, map_zero] at hcomp
       have hzero := h.symm.trans (LinearMap.congr_fun hcomp z)
       simpa only [IsLocalizedModule.map_apply, LinearMap.zero_apply] using hzero
