@@ -9,7 +9,6 @@ public import Mathlib.Analysis.SpecialFunctions.SmoothTransition
 public import Mathlib.MeasureTheory.Integral.IntegralEqImproper
 public import TauCeti.Analysis.Quaternion.Integral
 public import TauCeti.Analysis.Quaternion.Kernel
-import Mathlib.Analysis.SpecialFunctions.Sqrt
 
 /-!
 # The radial cutoff of the Cauchy–Fueter kernel and its mass
