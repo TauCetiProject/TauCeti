@@ -21,8 +21,9 @@ Cartan lattice.
 
 This file gives both lattices inside `Matrix.ShellLieAlgebra`, their coordinate membership
 criteria, and the relative index: the product of the folding scales. Thus the index is a
-power of two. No identification of the whole fixed Lie lattice with a normalized folded
-Chevalley lattice is asserted.
+power of two. The normalized basis and product-index formula only require nonzero folding
+scales. No identification of the whole fixed Lie lattice with a normalized folded Chevalley
+lattice is asserted.
 
 The construction uses the folded frame of `Matrix.ShellLieAlgebra.isSerreSystem_folded`,
 `Equiv.Perm.permutationFixedBasis` for the integral orbit basis, and Mathlib's lattice
@@ -244,32 +245,31 @@ theorem mem_foldedCartanLattice_iff (x : ShellLieAlgebra B) :
     simpa only [Submodule.coe_sum, SetLike.val_smul, coe_fixedCartanBasis,
       ← foldedH_def] using congrArg Subtype.val heq
 
-section PositiveDefinite
+section NonzeroScales
 
-variable (hB : B.PosDef) (hdiag : ∀ i, B i i = 2)
-  (hoff : ∀ i j, i ≠ j → B i j ≤ 0) (hσ : B.reindex σ σ = B)
+variable (hscale : ∀ O, B.foldingScale σ O ≠ 0)
 
-include hB hdiag hoff hσ
+include hscale
 
 /-- The normalized folded Cartan generators are integrally linearly independent. -/
 theorem linearIndependent_foldedH : LinearIndependent ℤ (foldedH B σ) := by
-  have hscale (O : Quotient (Equiv.Perm.SameCycle.setoid σ)) :
+  have hregular (O : Quotient (Equiv.Perm.SameCycle.setoid σ)) :
       IsRightRegular (B.foldingScale σ O) :=
-    (isRegular_iff_ne_zero.mpr (foldingScale_pos hB hdiag hoff hσ O).ne').right
+    (isRegular_iff_ne_zero.mpr (hscale O)).right
   have heq : foldedH B σ = B.foldingScale σ • orbitCartan σ :=
     funext (foldedH_def B σ)
   rw [heq]
-  exact (linearIndependent_orbitCartan (B := B) σ).smul_of_isRightRegular hscale
+  exact (linearIndependent_orbitCartan (B := B) σ).smul_of_isRightRegular hregular
 
 /-- The normalized folded Cartan generators form a basis of their integral span. -/
 noncomputable def foldedCartanBasis :
     Basis (Quotient (Equiv.Perm.SameCycle.setoid σ)) ℤ (foldedCartanLattice B σ) :=
-  Basis.span (linearIndependent_foldedH σ hB hdiag hoff hσ)
+  Basis.span (linearIndependent_foldedH σ hscale)
 
 /-- The normalized lattice basis consists of the actual folded Cartan generators. -/
 @[simp]
 theorem coe_foldedCartanBasis (O : Quotient (Equiv.Perm.SameCycle.setoid σ)) :
-    (foldedCartanBasis σ hB hdiag hoff hσ O : ShellLieAlgebra B) = foldedH B σ O :=
+    (foldedCartanBasis σ hscale O : ShellLieAlgebra B) = foldedH B σ O :=
   Basis.coe_span_apply _ _
 
 /-- Normalized lattice coordinates, multiplied by the folding scale, recover the actual
@@ -277,11 +277,11 @@ integral Cartan coordinates. -/
 @[simp]
 theorem foldingScale_mul_foldedCartanBasis_repr (x : foldedCartanLattice B σ)
     (O : Quotient (Equiv.Perm.SameCycle.setoid σ)) :
-    B.foldingScale σ O * (foldedCartanBasis σ hB hdiag hoff hσ).repr x O =
+    B.foldingScale σ O * (foldedCartanBasis σ hscale).repr x O =
       (equivProd B x).1 O.out := by
   classical
   have h := congrArg (fun y : foldedCartanLattice B σ ↦ cartanProjection (B := B) y O.out)
-    ((foldedCartanBasis σ hB hdiag hoff hσ).sum_repr x)
+    ((foldedCartanBasis σ hscale).sum_repr x)
   rw [← cartanProjection_apply]
   simp only [Submodule.coe_sum, SetLike.val_smul, coe_foldedCartanBasis, map_sum,
     map_smul, Finset.sum_apply, Pi.smul_apply, foldedH_def, ← orbitCartan.eq_def,
@@ -298,7 +298,7 @@ theorem relIndex_foldedCartanLattice_fixedCartanLattice :
         ∏ O : Quotient (Equiv.Perm.SameCycle.setoid σ), (B.foldingScale σ O).natAbs := by
   classical
   let inc (O : Quotient (Equiv.Perm.SameCycle.setoid σ)) : fixedCartanLattice B σ :=
-    ⟨foldedCartanBasis σ hB hdiag hoff hσ O,
+    ⟨foldedCartanBasis σ hscale O,
       foldedCartanLattice_le_fixedCartanLattice σ (SetLike.coe_mem _)⟩
   have hinc (O : Quotient (Equiv.Perm.SameCycle.setoid σ)) :
       inc O = B.foldingScale σ O • fixedCartanBasis (B := B) σ O := by
@@ -313,10 +313,19 @@ theorem relIndex_foldedCartanLattice_fixedCartanLattice :
     · simp [Basis.toMatrix_apply, hinc, hOP]
   rw [AddSubgroup.relIndex_eq_natAbs_det _ _
     (foldedCartanLattice_le_fixedCartanLattice σ)
-    (foldedCartanBasis σ hB hdiag hoff hσ) (fixedCartanBasis (B := B) σ)]
+    (foldedCartanBasis σ hscale) (fixedCartanBasis (B := B) σ)]
   -- `inc` is precisely the inclusion of the normalized lattice basis into the fixed lattice.
   change ((fixedCartanBasis (B := B) σ).det inc).natAbs = _
   rw [Basis.det_apply, hmatrix, Matrix.det_diagonal, Int.natAbs_prod]
+
+end NonzeroScales
+
+section PositiveDefinite
+
+variable (hB : B.PosDef) (hdiag : ∀ i, B i i = 2)
+  (hoff : ∀ i j, i ≠ j → B i j ≤ 0) (hσ : B.reindex σ σ = B)
+
+include hB hdiag hoff hσ
 
 open Classical in
 /-- Each orbit whose folding scale is two contributes one factor of two to the index. -/
@@ -326,7 +335,8 @@ theorem relIndex_foldedCartanLattice_fixedCartanLattice_eq_two_pow :
         2 ^ Fintype.card {O : Quotient (Equiv.Perm.SameCycle.setoid σ) //
           B.foldingScale σ O = 2} := by
   classical
-  rw [relIndex_foldedCartanLattice_fixedCartanLattice σ hB hdiag hoff hσ]
+  rw [relIndex_foldedCartanLattice_fixedCartanLattice σ
+    (fun O ↦ (foldingScale_pos hB hdiag hoff hσ O).ne')]
   have habs (O : Quotient (Equiv.Perm.SameCycle.setoid σ)) :
       (B.foldingScale σ O).natAbs = if B.foldingScale σ O = 2 then 2 else 1 := by
     rcases foldingScale_eq_one_or_eq_two hB hdiag hoff hσ O with h | h <;> simp [h]
