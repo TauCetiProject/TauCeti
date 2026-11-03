@@ -5,7 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicGeometry.Curves.NodalGluing.UnstableComponent
+public import TauCeti.AlgebraicGeometry.Curves.NodalGluing.ComponentAut
+public import TauCeti.Geometry.Manifold.Instances.OnePoint.Automorphism
 public import Mathlib.GroupTheory.Index
 
 /-!
@@ -22,9 +23,13 @@ component embeds its fixing group in the ordered automorphism group. Auxiliary-l
 are retained: for finitely many auxiliary labels the same finiteness criterion applies to the
 unordered automorphism group (`AuxiliaryAut.finite_iff`).
 
-These results do not prove analytic finiteness for stable smooth components; they reduce the
-nodal assertion to precisely that componentwise statement. No faithfulness of an action on a
-deformation base is assumed.
+For components of genus zero the componentwise statement holds: a component biholomorphic to the
+Riemann sphere has finitely many automorphisms fixing its special points exactly when it carries
+at least three of them (`Diffeomorph.finite_fixingSubgroup_iff_two_lt_encard`). So if every
+component is biholomorphic to the Riemann sphere, the curve has finitely many automorphisms exactly
+when it is stable, that is, every component carries at least three special points
+(`AuxiliaryAut.finite_ordered_iff_forall_two_lt_encard`). Components of positive genus are not
+treated here. No faithfulness of an action on a deformation base is assumed.
 
 ## References
 
@@ -132,5 +137,38 @@ theorem finite_iff [Finite ι] [Finite Flag] [Finite R] :
   · intro h
     have := finite_ordered_iff.mpr h
     infer_instance
+
+end TauCeti.NodalGluing.AuxiliaryAut
+
+namespace TauCeti.NodalGluing.AuxiliaryAut
+
+/-! ### Curves with rational components -/
+
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E] {H : Type*} [TopologicalSpace H]
+  {I : ModelWithCorners ℂ E H} {n : ℕ∞ω} {ι Flag : Type*} {X : ι → Type*}
+  [∀ i, TopologicalSpace (X i)] [∀ i, ChartedSpace H (X i)] {d : FlagPairData ι Flag X}
+  {N R : Type*} {m : Marking d (N ⊕ R)}
+
+/-- **Stability is finiteness of automorphisms for curves with rational components.** If every
+normalization component is biholomorphic to the Riemann sphere, the marked curve has finitely
+many automorphisms fixing every label exactly when every component carries at least three special
+points, the stability condition `2 g_i - 2 + n_i > 0` for components of genus `g_i = 0`. -/
+theorem finite_ordered_iff_forall_two_lt_encard [Finite ι] [Finite Flag] (hn : n ≠ 0)
+    (e : ∀ i, X i ≃ₘ^n⟮I, 𝓘(ℂ)⟯ OnePoint ℂ) :
+    Finite (ordered I n m) ↔ ∀ i, 2 < (m.specialPoints i).encard := by
+  have (i : ι) : ConnectedSpace (X i) :=
+    (e i).symm.surjective.connectedSpace (e i).symm.continuous
+  rw [finite_ordered_iff]
+  exact forall_congr' fun i ↦ (e i).finite_fixingSubgroup_iff_two_lt_encard hn
+
+/-- With finitely many auxiliary labels, allowing their permutations does not change the
+stability criterion for curves whose components are all biholomorphic to the Riemann sphere. -/
+theorem finite_iff_forall_two_lt_encard [Finite ι] [Finite Flag] [Finite R] (hn : n ≠ 0)
+    (e : ∀ i, X i ≃ₘ^n⟮I, 𝓘(ℂ)⟯ OnePoint ℂ) :
+    Finite (AuxiliaryAut I n m) ↔ ∀ i, 2 < (m.specialPoints i).encard := by
+  have (i : ι) : ConnectedSpace (X i) :=
+    (e i).symm.surjective.connectedSpace (e i).symm.continuous
+  rw [finite_iff]
+  exact forall_congr' fun i ↦ (e i).finite_fixingSubgroup_iff_two_lt_encard hn
 
 end TauCeti.NodalGluing.AuxiliaryAut

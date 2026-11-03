@@ -60,6 +60,8 @@ domain.
   `TauCeti.SymplecticForm.integral_abs_hamiltonianCurvature_image`: the integrated energy and
   curvature are invariant under injective orientation-preserving changes of coordinates, and the
   integrated absolute curvature under all injective ones.
+* `TauCeti.SymplecticForm.lintegral_enorm_hamiltonianCurvature_image`: the same invariance of the
+  integrated absolute curvature as a lower Lebesgue integral, along arbitrary maps.
 
 ## References
 
@@ -342,6 +344,29 @@ theorem integral_abs_hamiltonianCurvature_image (ω : SymplecticForm V) (hs : Me
   refine setIntegral_congr_fun hs fun w hw ↦ ?_
   rw [ω.hamiltonianCurvature_perturbationPullback (hφ w hw) (hKs w hw) (hKt w hw) (hKs' w hw)
     (hKt' w hw), abs_mul, smul_eq_mul]
+
+/-- **Invariance of the curvature allowance as a lower integral.** For a `C²` change of
+coordinates `φ` that is injective on a measurable set `s`, the lower Lebesgue integral of
+`|R_K(u)|` over `φ '' s` is that of `|R_{φ^*K}(u ∘ φ)|` over `s`. Unlike
+`TauCeti.SymplecticForm.integral_abs_hamiltonianCurvature_image`, no integrability or
+measurability of the integrands is needed, so curvature allowances along arbitrary maps `u` may
+be computed in any chart. -/
+theorem lintegral_enorm_hamiltonianCurvature_image (ω : SymplecticForm V) (hs : MeasurableSet s)
+    (hinj : InjOn φ s) (hφ : ∀ w ∈ s, ContDiffAt ℝ 2 φ w)
+    (hKs : ∀ w ∈ s, DifferentiableAt ℝ (fun z ↦ Ks z (u (φ w))) (φ w))
+    (hKt : ∀ w ∈ s, DifferentiableAt ℝ (fun z ↦ Kt z (u (φ w))) (φ w))
+    (hKs' : ∀ w ∈ s, DifferentiableAt ℝ (Ks (φ w)) (u (φ w)))
+    (hKt' : ∀ w ∈ s, DifferentiableAt ℝ (Kt (φ w)) (u (φ w))) :
+    ∫⁻ z in φ '' s, ‖ω.hamiltonianCurvature Ks Kt z (u z)‖ₑ =
+      ∫⁻ w in s, ‖ω.hamiltonianCurvature (perturbationPullback φ Ks Kt stdComplexLineReal)
+        (perturbationPullback φ Ks Kt stdComplexLineImag) w (u (φ w))‖ₑ := by
+  -- Lebesgue measure on `ℝ × ℝ` is the product measure, an additive Haar measure.
+  have := Measure.prod.instIsAddHaarMeasure (volume : Measure ℝ) (volume : Measure ℝ)
+  rw [lintegral_image_eq_lintegral_abs_det_fderiv_mul volume hs
+    (fun w hw ↦ ((hφ w hw).differentiableAt (by norm_num)).hasFDerivAt.hasFDerivWithinAt) hinj]
+  refine setLIntegral_congr_fun hs fun w hw ↦ ?_
+  rw [ω.hamiltonianCurvature_perturbationPullback (hφ w hw) (hKs w hw) (hKt w hw) (hKs' w hw)
+    (hKt' w hw), enorm_mul, Real.enorm_eq_ofReal_abs, Real.enorm_eq_ofReal_abs]
 
 end Integral
 

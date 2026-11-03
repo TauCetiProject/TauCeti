@@ -64,13 +64,13 @@ noncomputable def cyclicRepresentation : Representation ℤ (Multiplicative (ZMo
   LinearEquiv.automorphismGroup.toLinearMapMonoidHom.comp
     ((TauCeti.zmodMonoidHomEquiv m (T ≃ₗ[ℤ] T)).symm ⟨A.toIntLinearEquiv, by
       ext x
-      rw [LinearEquiv.coe_pow]
+      rw [FunLike.coe_pow_eq_iterate]
       simpa using congrFun hA x⟩)
 
 /-- The element `a` of `C_m` acts on `T` by the `a.val`-th iterate of `A`. -/
 theorem cyclicRepresentation_ofAdd_apply (a : ZMod m) (x : T) :
     A.cyclicRepresentation hA (.ofAdd a) x = (⇑A)^[a.val] x := by
-  simp [cyclicRepresentation, LinearEquiv.coe_pow]
+  simp [cyclicRepresentation, FunLike.coe_pow_eq_iterate]
 
 /-- The generator `ofAdd 1` of `C_m` acts on `T` by `A`. -/
 @[simp]

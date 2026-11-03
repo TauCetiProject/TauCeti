@@ -170,6 +170,13 @@ theorem coe_basis (hX : IsSubbundleFrameOn F V X U) {y : B} (hy : y ∈ U) (i : 
     (hX.basis hy i : E y) = X i y := by
   simp [basis]
 
+/-- At a point `y` of `U`, the vector of `V y` with coordinates `c` in the frame `X` is the
+combination `∑ i, c i • X i y`. -/
+theorem coe_basis_equivFun_symm [Fintype ι] (hX : IsSubbundleFrameOn F V X U) {y : B}
+    (hy : y ∈ U) (c : ι → 𝕜) :
+    ((hX.basis hy).equivFun.symm c : E y) = ∑ i, c i • X i y := by
+  simp
+
 section Coordinates
 
 variable [Finite ι] (hX : IsSubbundleFrameOn F V X U)
@@ -202,8 +209,7 @@ end Coordinates
 
 private theorem coe_vec [Fintype ι] (hX : IsSubbundleFrameOn F V X U) {y : B} (hy : y ∈ U)
     (c : ι → 𝕜) : (hX.vec y c : E y) = ∑ i, c i • X i y := by
-  simp only [vec_of_mem hX hy, Basis.equivFun_symm_apply, Submodule.coe_sum, Submodule.coe_smul,
-    coe_basis]
+  rw [vec_of_mem hX hy, coe_basis_equivFun_symm]
 
 end IsSubbundleFrameOn
 
