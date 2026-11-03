@@ -199,6 +199,7 @@ theorem degreeOneEquiv_apply_apply_vec (φ : SmoothForm I M F 1) (x : M) (v : Ta
   rw [degreeOneEquiv_apply_apply, Matrix.vec_single_eq_const]
 
 /-- A smooth one-form sends the one-element family `![-v]` to minus its value on `![v]`. -/
+@[simp]
 theorem apply_neg_vec (φ : SmoothForm I M F 1) (x : M) (v : TangentSpace I x) :
     φ.1 x ![-v] = -φ.1 x ![v] := by
   rw [← degreeOneEquiv_apply_apply_vec, map_neg, degreeOneEquiv_apply_apply_vec]
