@@ -59,30 +59,32 @@ theorem eq_sq_add_sq_iff {a : ℚ} :
       intro h
       rw [h, Nat.cast_zero] at hclear
       exact (mul_ne_zero hzero (pow_ne_zero 2 hd)) hclear
-    have heven : Even (padicValNat p (m ^ 2 + n ^ 2)) := by
+    have heven : Even (multiplicity p (m ^ 2 + n ^ 2)) := by
       by_cases hdiv : p ∣ m ^ 2 + n ^ 2
-      · exact Nat.eq_sq_add_sq_iff.1 ⟨m, n, rfl⟩ p
+      · simpa only [Nat.padicValNat_def] using Nat.eq_sq_add_sq_iff.1 ⟨m, n, rfl⟩ p
           (Nat.mem_primeFactors.mpr ⟨hp, hdiv, hN⟩) hp4
-      · simp [padicValNat.eq_zero_of_not_dvd hdiv]
+      · simp [multiplicity_eq_zero_of_not_dvd hdiv]
     -- The square of the common denominator contributes an even valuation.
     have hv := congrArg (padicValRat p) hclear
     rw [padicValRat.mul hzero (pow_ne_zero 2 hd), padicValRat.pow] at hv
     simp only [padicValRat.of_nat] at hv
-    have hevenZ : Even (padicValNat p (m ^ 2 + n ^ 2) : ℤ) := by exact_mod_cast heven
+    have hevenZ : Even (multiplicity p (m ^ 2 + n ^ 2) : ℤ) := by exact_mod_cast heven
     obtain ⟨t, ht⟩ := hevenZ
-    exact ⟨t - padicValNat p d, by omega⟩
+    exact ⟨t - multiplicity p d, by omega⟩
   · rintro ⟨ha, h⟩
     -- Coprimality of numerator and denominator makes both sets of valuations even.
     have hnum : ∃ x y : ℕ, a.num.natAbs = x ^ 2 + y ^ 2 := by
       apply Nat.eq_sq_add_sq_iff.2
       intro p hp hp4
-      exact (Rat.num_den_even_padicVal_of_even_padicVal
-        (Nat.prime_of_mem_primeFactors hp) (h p (Nat.prime_of_mem_primeFactors hp) hp4)).1
+      simpa only [Nat.padicValNat_def, padicValInt] using
+        (Rat.num_den_even_padicVal_of_even_padicVal
+          (Nat.prime_of_mem_primeFactors hp) (h p (Nat.prime_of_mem_primeFactors hp) hp4)).1
     have hden : ∃ x y : ℕ, a.den = x ^ 2 + y ^ 2 := by
       apply Nat.eq_sq_add_sq_iff.2
       intro p hp hp4
-      exact (Rat.num_den_even_padicVal_of_even_padicVal
-        (Nat.prime_of_mem_primeFactors hp) (h p (Nat.prime_of_mem_primeFactors hp) hp4)).2
+      simpa only [Nat.padicValNat_def] using
+        (Rat.num_den_even_padicVal_of_even_padicVal
+          (Nat.prime_of_mem_primeFactors hp) (h p (Nat.prime_of_mem_primeFactors hp) hp4)).2
     obtain ⟨x, y, hxy⟩ := hnum
     obtain ⟨u, v, huv⟩ := hden
     -- Represent numerator times denominator, and divide the two coordinates by the denominator.
