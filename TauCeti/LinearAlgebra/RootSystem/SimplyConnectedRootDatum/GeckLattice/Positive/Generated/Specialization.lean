@@ -118,18 +118,11 @@ theorem geckPositiveGeneratedCoordinateHopfAlgebraBaseChangeMap_unique
 /-- The coordinate comparison is surjective over every commutative extension ring. -/
 theorem geckPositiveGeneratedCoordinateHopfAlgebraBaseChangeMap_surjective :
     Function.Surjective (t.geckPositiveGeneratedCoordinateHopfAlgebraBaseChangeMap ht k K).hom := by
-  intro y
-  obtain ⟨x, hx⟩ := t.geckPositiveGeneratedCoordinateMap_surjective ht K y
-  let e := GeneralLinear.coordinateHopfAlgebraBaseChangeIso k K (t.geckDim ht)
-  refine ⟨(CommHopfAlgCat.baseChangeMap (K := K)
-    (t.geckPositiveGeneratedCoordinateMap ht k)).hom (e.inv.hom x), ?_⟩
-  have h := congrArg (fun f ↦ f.hom (e.inv.hom x))
-    (t.baseChangeMap_geckPositiveGeneratedCoordinateMap_comp_baseChangeMap ht k K)
-  -- State inverse cancellation for the underlying bialgebra maps, which are the maps in h.
-  have he : e.hom.hom (e.inv.hom x) = x := _root_.CommHopfAlgCat.hom_inv_apply e x
-  simp only [_root_.CommHopfAlgCat.hom_comp, BialgHom.comp_apply] at h
-  rw [he, hx] at h
-  exact h
+  unfold geckPositiveGeneratedCoordinateHopfAlgebraBaseChangeMap
+  simp only [_root_.CommHopfAlgCat.hom_comp, BialgHom.coe_comp]
+  exact (ConcreteCategory.bijective_of_isIso _).2.comp
+    ((CommHopfAlgCat.quotientMapOfLe_surjective _ _).comp
+      (ConcreteCategory.bijective_of_isIso _).2)
 
 /-- Over a free extension the comparison is the previously constructed isomorphism. -/
 theorem geckPositiveGeneratedCoordinateHopfAlgebraBaseChangeMap_eq_hom [Module.Free k K] :
