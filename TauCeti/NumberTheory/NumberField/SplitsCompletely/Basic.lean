@@ -37,7 +37,7 @@ criteria connect complete splitting with the residue conditions used in prime-sp
 * `NumberField.ncard_primesOver_eq_finrank_iff`: the rational-prime specialization.
 * `Ideal.isUnramifiedAt_of_ncard_primesOver_eq_finrank`: complete splitting implies
   unramifiedness in any extension of number fields.
-* `Ideal.bijective_algebraMap_quotient_of_ncard_primesOver_eq_finrank`:
+* `Ideal.bijective_algebraMap_int_quotient_of_ncard_primesOver_eq_finrank`:
   complete splitting makes each residue field the prime field.
 * `Ideal.absNorm_eq_of_ncard_primesOver_eq_finrank`: a prime above a completely split
   rational prime has that prime as its absolute norm.
@@ -52,7 +52,7 @@ available. The splitting criterion itself rests on the Galois identity
 a Galois hypothesis — that complete splitting forces `e = f = 1`, and hence that the residue field
 at `Q` is the prime field — rest instead on the general identity for finite flat extensions of
 domains (`Ideal.sum_ramification_inertia_eq_finrank`), applied through
-the general theorem in `TauCeti.RamificationInertia.Splitting`.
+the general theorem in `TauCeti.NumberTheory.RamificationInertia.Splitting`.
 The decomposition-group criterion uses the description of the primes above an ideal as one
 orbit (`Algebra.IsInvariant.orbit_eq_primesOver`) and orbit–stabilizer
 (`MulAction.index_stabilizer`), through `TauCeti.NumberTheory.RamificationInertia.Galois`.
@@ -100,7 +100,6 @@ end NumberField
 
 namespace Ideal
 
-open TauCeti.RamificationInertia in
 /-- **A full complement of primes forces unramifiedness.** If `𝓞 L` has `[L : K]` primes above a
 prime ideal `𝔭` of `𝓞 K`, then every prime `Q` of `𝓞 L` above `𝔭` is unramified over `𝓞 K`.
 No Galois hypothesis is needed. -/
@@ -117,16 +116,15 @@ theorem isUnramifiedAt_of_ncard_primesOver_eq_finrank {K L : Type*} [Field K] [N
 
 /-- **Complete splitting makes the residue field at `Q` the prime field.** If `p` splits
 completely then `algebraMap (ℤ ⧸ (p)) (𝓞 K ⧸ Q)` is bijective. No Galois hypothesis is needed. -/
-theorem bijective_algebraMap_quotient_of_ncard_primesOver_eq_finrank {K : Type*} [Field K]
+theorem bijective_algebraMap_int_quotient_of_ncard_primesOver_eq_finrank {K : Type*} [Field K]
     [NumberField K]
     {p : ℕ} [Fact p.Prime] (Q : Ideal (𝓞 K)) [Q.IsPrime]
     [Q.LiesOver (span {(p : ℤ)})]
     (hsplit : (primesOver (span {(p : ℤ)}) (𝓞 K)).ncard = finrank ℚ K) :
     Function.Bijective (algebraMap (ℤ ⧸ span {(p : ℤ)}) (𝓞 K ⧸ Q)) :=
-  TauCeti.RamificationInertia.bijective_algebraMap_quotient_of_ncard_primesOver_eq_finrank
-    (span {(p : ℤ)}) Q (by rwa [NumberField.RingOfIntegers.rank])
+  bijective_algebraMap_quotient_of_ncard_primesOver_eq_finrank (span {(p : ℤ)}) Q
+    (by rwa [NumberField.RingOfIntegers.rank])
 
-open TauCeti.RamificationInertia in
 /-- **The absolute norm of a prime above a completely split rational prime is that prime.** If
 `p` splits completely in `K` then the inertia degree at each prime `𝔭` above `p` is `1`, so the
 residue field at `𝔭` is `ℤ/p` and `N(𝔭) = p`. No Galois hypothesis is needed. -/
