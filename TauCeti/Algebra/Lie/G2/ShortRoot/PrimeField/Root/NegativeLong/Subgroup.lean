@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Lie.G2.ShortRoot.PrimeField.Root.NegativeLong.Basic
-public import TauCeti.Algebra.Lie.G2.ShortRoot.PrimeField.ClosedGenerators
 public import TauCeti.Algebra.AlgebraicGroup.CommHopfAlgCat.InnerConjugation
 
 /-!
@@ -64,14 +63,7 @@ private theorem coe_negativeSimpleLong (A : Type v) [CommRing A] [Algebra (ZMod 
       1 + u.toAdd • (tangentMatrix (rootVector (.inr 1))).map (algebraMap (ZMod 3) A) := by
   rw [coe_rootSubgroupPoints, IntegralToralClosure.coe_rootSubgroupPoints,
     tangentMatrix_rootVector]
-  have hsq : rootDividedSquareMatrix (.inr 1) = 0 := by
-    simp [rootDividedSquareMatrix_inr]
-  rw [hsq, Matrix.map_zero _ (by simp), smul_zero, add_zero, Matrix.map_map]
-  have hm : (rootMatrix (.inr 1)).map (Int.cast : ℤ → A) =
-      (rootMatrix (.inr 1)).map ((algebraMap (ZMod 3) A) ∘ (Int.cast : ℤ → ZMod 3)) := by
-    ext a b
-    simp only [Matrix.map_apply, Function.comp_apply, map_intCast]
-  rw [hm]
+  simp [rootDividedSquareMatrix_inr, Matrix.map_map, Function.comp_def]
 
 /-- The root parameter is linear, with exactly the matrix normalization of the previously
 constructed negative long-root vector. This holds even over nonreduced coefficient algebras. -/
@@ -92,16 +84,8 @@ theorem coe_negativeLongRootSubgroupPoints (i : Fin 2) (A : Type v) [CommRing A]
   rw [negativeLongRootSubgroupPoints_apply,
     ← map_inv (pointsMap (Algebra.ofId (ZMod 3) A))]
   simp only [Subgroup.coe_mul, Units.val_mul, hmap]
-  rw [coe_negativeSimpleLong, negativeLongRootVector_def, tangentMatrix_conjugateTangent,
-    Matrix.map_mul, Matrix.map_mul, mul_add, add_mul, Matrix.mul_smul, Matrix.smul_mul,
-    mul_one, ← Matrix.map_mul]
-  have hinv :
-      ((negativeLongConjugator i : Matrix.GeneralLinearGroup (Fin 7) (ZMod 3)) :
-          Matrix (Fin 7) (Fin 7) (ZMod 3)) *
-        (((negativeLongConjugator i)⁻¹ : points (ZMod 3)) :
-          Matrix.GeneralLinearGroup (Fin 7) (ZMod 3)) = 1 := by
-    exact Units.mul_inv _
-  rw [hinv, Matrix.map_one (algebraMap (ZMod 3) A) (map_zero _) (map_one _)]
+  rw [coe_negativeSimpleLong, negativeLongRootVector_def, tangentMatrix_conjugateTangent]
+  simp [mul_add, add_mul, ← Matrix.map_mul]
 
 /-- The root parameter is recovered faithfully over every coefficient algebra. -/
 theorem negativeLongRootSubgroupPoints_injective (i : Fin 2) (A : Type v) [CommRing A]
