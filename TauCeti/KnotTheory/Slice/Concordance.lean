@@ -9,6 +9,7 @@ public import TauCeti.Analysis.Normed.Group.BallSphere
 public import TauCeti.Analysis.Normed.Module.Ball.Retraction
 public import TauCeti.Geometry.Manifold.Boundary.Invariance
 public import TauCeti.Geometry.Manifold.Boundary.Collar.ClosedBall
+public import TauCeti.Geometry.Manifold.LocallyFlat.Ball
 public import TauCeti.Geometry.Manifold.LocallyFlat.Concordance.Basic
 public import TauCeti.Geometry.Manifold.LocallyFlat.Smooth
 public import TauCeti.KnotTheory.Slice.Basic
@@ -235,32 +236,6 @@ end Cap
 
 section ConeExtension
 
-variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V]
-
-/-- The radial retraction of a normed space onto its closed unit ball, as a map to the ball. -/
-private def retractBall (v : V) : closedBall (0 : V) 1 :=
-  ⟨radialRetraction 1 v, radialRetraction_mem_closedBall zero_le_one v⟩
-
-private theorem coe_retractBall (v : V) : (retractBall v : V) = radialRetraction 1 v :=
-  (rfl)
-
-private theorem continuous_retractBall : Continuous (retractBall (V := V)) :=
-  (lipschitzWith_radialRetraction zero_le_one).continuous.subtype_mk _
-
-private theorem retractBall_of_norm_le {v : V} (hv : ‖v‖ ≤ 1) :
-    retractBall v = ⟨v, mem_closedBall_zero_iff.2 hv⟩ :=
-  Subtype.ext (radialRetraction_of_norm_le hv)
-
-/-- A vector is its radial retraction scaled back by `max ‖v‖ 1`. -/
-private theorem max_norm_one_smul_retractBall (v : V) : max ‖v‖ 1 • (retractBall v : V) = v := by
-  rcases le_total ‖v‖ 1 with hv | hv
-  · rw [max_eq_right hv, one_smul, retractBall_of_norm_le hv]
-  · rw [max_eq_left hv, coe_retractBall, radialRetraction_of_le_norm hv, smul_smul,
-      mul_one_div_cancel (by linarith : ‖v‖ ≠ 0), one_smul]
-
-private theorem norm_retractBall (v : V) : ‖(retractBall v : V)‖ = min ‖v‖ 1 :=
-  norm_radialRetraction zero_le_one v
-
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] {n : ℕ}
   [Fact (finrank ℝ E = n + 1)] {K₀ : SmoothCircleEmbedding (𝓡 n) (sphere (0 : E) 1)}
   {Ψ : closedBall (0 : ℂ) 1 → closedBall (0 : E) 1}
@@ -268,29 +243,33 @@ variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] {n : ℕ}
 /-- The extension of a disc `Ψ` by the cone on its boundary: `Ψ` on the closed unit disc, and
 `r • Ψ u` at the point `r • u` for `r ≥ 1` and `u` on the unit circle. -/
 private def coneExt (Ψ : closedBall (0 : ℂ) 1 → closedBall (0 : E) 1) (z : ℂ) : E :=
-  max ‖z‖ 1 • (Ψ (retractBall z) : E)
+  max ‖z‖ 1 • (Ψ (radialRetractionToClosedBall zero_le_one z) : E)
 
 private theorem continuous_coneExt (hΨ : Continuous Ψ) : Continuous (coneExt Ψ) :=
   (continuous_norm.max continuous_const).smul
-    (continuous_subtype_val.comp (hΨ.comp continuous_retractBall))
+    (continuous_subtype_val.comp (hΨ.comp (continuous_radialRetractionToClosedBall zero_le_one)))
 
 /-- For a slice disc, the cone extension has `max ‖·‖ 1` equal to that of its argument. -/
 private theorem max_norm_coneExt (hΨ : IsTopologicalSliceDisc K₀ Ψ) (z : ℂ) :
     max ‖coneExt Ψ z‖ 1 = max ‖z‖ 1 := by
-  have hle : ‖(Ψ (retractBall z) : E)‖ ≤ 1 := mem_closedBall_zero_iff.1 (Ψ (retractBall z)).2
+  have hle : ‖(Ψ (radialRetractionToClosedBall zero_le_one z) : E)‖ ≤ 1 :=
+    mem_closedBall_zero_iff.1 (Ψ (radialRetractionToClosedBall zero_le_one z)).2
   rcases le_total ‖z‖ 1 with hz | hz
   · rw [coneExt, max_eq_right hz, one_smul, max_eq_right hle]
-  · have h1 : ‖(Ψ (retractBall z) : E)‖ = 1 :=
-      (hΨ.norm_eq_one_iff _).2 (by rw [norm_retractBall, min_eq_right hz])
+  · have h1 : ‖(Ψ (radialRetractionToClosedBall zero_le_one z) : E)‖ = 1 :=
+      (hΨ.norm_eq_one_iff _).2
+        (by rw [norm_radialRetractionToClosedBall zero_le_one, min_eq_right hz])
     rw [coneExt, max_eq_left hz, norm_smul, h1, mul_one, Real.norm_of_nonneg (by linarith),
       max_eq_left hz]
 
 /-- For a slice disc, the cone extension retracts radially onto the disc. -/
-private theorem retractBall_coneExt (hΨ : IsTopologicalSliceDisc K₀ Ψ) (z : ℂ) :
-    retractBall (coneExt Ψ z) = Ψ (retractBall z) := by
+private theorem radialRetractionToClosedBall_coneExt (hΨ : IsTopologicalSliceDisc K₀ Ψ) (z : ℂ) :
+    radialRetractionToClosedBall zero_le_one (coneExt Ψ z) =
+      Ψ (radialRetractionToClosedBall zero_le_one z) := by
   have hpos : 0 < max ‖z‖ 1 := lt_max_of_lt_right one_pos
-  have h := max_norm_one_smul_retractBall (coneExt Ψ z)
+  have h := max_norm_one_smul_radialRetraction_one (coneExt Ψ z)
   rw [max_norm_coneExt hΨ, coneExt] at h
+  rw [← coe_radialRetractionToClosedBall zero_le_one] at h
   exact Subtype.ext (smul_right_injective E hpos.ne' h)
 
 private theorem norm_coneExt_le (hΨ : IsTopologicalSliceDisc K₀ Ψ) (z : ℂ) :
@@ -300,11 +279,16 @@ private theorem norm_coneExt_le (hΨ : IsTopologicalSliceDisc K₀ Ψ) (z : ℂ)
 private theorem coneExt_injective (hΨ : IsTopologicalSliceDisc K₀ Ψ) :
     Function.Injective (coneExt Ψ) := by
   intro z z' h
-  have hr : retractBall z = retractBall z' :=
-    hΨ.isEmbedding.injective (by rw [← retractBall_coneExt hΨ, h, retractBall_coneExt hΨ])
+  have hr' : radialRetractionToClosedBall zero_le_one z =
+      radialRetractionToClosedBall zero_le_one z' :=
+    hΨ.isEmbedding.injective (by
+      rw [← radialRetractionToClosedBall_coneExt hΨ, h, radialRetractionToClosedBall_coneExt hΨ])
+  have hr : radialRetraction (1 : ℝ) z = radialRetraction 1 z' := by
+    simpa only [coe_radialRetractionToClosedBall] using congrArg Subtype.val hr'
   have hm : max ‖z‖ 1 = max ‖z'‖ 1 := by
     rw [← max_norm_coneExt hΨ, h, max_norm_coneExt hΨ]
-  rw [← max_norm_one_smul_retractBall z, ← max_norm_one_smul_retractBall z', hr, hm]
+  rw [← max_norm_one_smul_radialRetraction_one z, ← max_norm_one_smul_radialRetraction_one z',
+    hr, hm]
 
 /-- For a slice disc, the cone extension is a closed embedding of the plane: it is proper, since
 it does not decrease norms outside the unit disc. -/
@@ -335,8 +319,8 @@ private theorem one_le_of_isTopologicalSliceDisc (hΨ : IsTopologicalSliceDisc K
   omega
 
 /-- Near every point of the plane, the cone extension of a slice disc is locally flat. A
-flattening chart `φ` of the ball at the point `Ψ (retractBall z)` sends the sphere into the
-boundary hyperplane of the half-space
+flattening chart `φ` of the ball at the point `Ψ (radialRetractionToClosedBall zero_le_one z)`
+sends the sphere into the boundary hyperplane of the half-space
 (`OpenPartialHomeomorph.coe_fst_apply_zero_eq_zero_of_notMem_interior`), so it extends past the
 sphere by `r • v ↦ φ v - log r • e₀`. By invariance of domain this extension is an open
 embedding, and it carries the cone extension to the coordinate plane. -/
@@ -353,7 +337,8 @@ private theorem exists_isLocallyFlat_coneExt_comp_coe (hΨ : IsTopologicalSliceD
     omega
   have hdim' : finrank ℝ E = finrank ℝ (EuclideanSpace ℝ (Fin 2) × V') := by
     rw [finrank_prod, finrank_euclideanSpace_fin, hdim]
-  obtain ⟨φ, hφz, hφ⟩ := hΨ.isLocallyFlat.exists_isSliceChart (retractBall z)
+  obtain ⟨φ, hφz, hφ⟩ :=
+    hΨ.isLocallyFlat.exists_isSliceChart (radialRetractionToClosedBall zero_le_one z)
   -- The chart `φ` sends the unit sphere into the boundary hyperplane.
   have hsphere {w : closedBall (0 : E) 1} (hw : w ∈ φ.source) (hw1 : ‖(w : E)‖ = 1) :
       (φ w).1.1 0 = 0 :=
@@ -361,14 +346,17 @@ private theorem exists_isLocallyFlat_coneExt_comp_coe (hΨ : IsTopologicalSliceD
       rw [interior_closedBall _ one_ne_zero, mem_ball_zero_iff, hw1]
       exact lt_irrefl 1)
   -- The extended chart `Θ` on the open set `W` of points retracting into the source of `φ`.
-  set W : Set E := retractBall ⁻¹' φ.source
-  have hW : IsOpen W := continuous_retractBall.isOpen_preimage _ φ.open_source
+  set W : Set E := radialRetractionToClosedBall zero_le_one ⁻¹' φ.source
+  have hW : IsOpen W :=
+    (continuous_radialRetractionToClosedBall zero_le_one).isOpen_preimage _ φ.open_source
   let Θ : E → EuclideanSpace ℝ (Fin 2) × V' := fun y =>
-    ((φ (retractBall y)).1.1 - Real.log (max ‖y‖ 1) • EuclideanSpace.single 0 1,
-      (φ (retractBall y)).2)
+    ((φ (radialRetractionToClosedBall zero_le_one y)).1.1 -
+        Real.log (max ‖y‖ 1) • EuclideanSpace.single 0 1,
+      (φ (radialRetractionToClosedBall zero_le_one y)).2)
   have hΘc : ContinuousOn Θ W := by
-    have hφr : ContinuousOn (fun y => φ (retractBall y)) W :=
-      φ.continuousOn.comp continuous_retractBall.continuousOn fun _ hy => hy
+    have hφr : ContinuousOn (fun y => φ (radialRetractionToClosedBall zero_le_one y)) W :=
+      φ.continuousOn.comp (continuous_radialRetractionToClosedBall zero_le_one).continuousOn
+        fun _ hy => hy
     have hlog : Continuous fun y : E => Real.log (max ‖y‖ 1) :=
       (continuous_norm.max continuous_const).log fun y =>
         (lt_max_of_lt_right one_pos).ne'
@@ -376,28 +364,34 @@ private theorem exists_isLocallyFlat_coneExt_comp_coe (hΨ : IsTopologicalSliceD
       ((hlog.smul continuous_const).continuousOn))).prodMk (continuous_snd.comp_continuousOn hφr)
   -- The zeroth coordinate of `Θ` recovers `log (max ‖y‖ 1)`, so `Θ` is injective on `W`.
   have hlogΘ {y : E} (hy : y ∈ W) : Real.log (max ‖y‖ 1) = max (-(Θ y).1 0) 0 := by
-    have hcoord : (Θ y).1 0 = (φ (retractBall y)).1.1 0 - Real.log (max ‖y‖ 1) := by
+    have hcoord : (Θ y).1 0 =
+        (φ (radialRetractionToClosedBall zero_le_one y)).1.1 0 - Real.log (max ‖y‖ 1) := by
       simp [Θ]
     rcases le_or_gt ‖y‖ 1 with hy1 | hy1
     · rw [hcoord, max_eq_right hy1, Real.log_one, sub_zero]
-      exact (max_eq_right (neg_nonpos.2 (φ (retractBall y)).1.2)).symm
-    · have h0 := hsphere hy (by rw [norm_retractBall, min_eq_right hy1.le])
+      exact (max_eq_right (neg_nonpos.2 (φ (radialRetractionToClosedBall zero_le_one y)).1.2)).symm
+    · have h0 := hsphere hy
+        (by rw [norm_radialRetractionToClosedBall zero_le_one, min_eq_right hy1.le])
       have hlogpos : 0 < Real.log ‖y‖ := Real.log_pos hy1
       rw [hcoord, h0, max_eq_left hy1.le, zero_sub, neg_neg, max_eq_left hlogpos.le]
   have hΘinj : InjOn Θ W := by
     intro y hy y' hy' h
     have hlog : Real.log (max ‖y‖ 1) = Real.log (max ‖y'‖ 1) := by
       rw [hlogΘ hy, hlogΘ hy', h]
-    have hφeq : φ (retractBall y) = φ (retractBall y') := by
+    have hφeq : φ (radialRetractionToClosedBall zero_le_one y) =
+        φ (radialRetractionToClosedBall zero_le_one y') := by
       have h2 : (Θ y).2 = (Θ y').2 := congrArg Prod.snd h
       refine Prod.ext (Subtype.ext ?_) h2
       have h1 := congrArg Prod.fst h
       simp only [Θ, hlog] at h1
       exact sub_left_injective h1
-    have hr : retractBall y = retractBall y' := φ.injOn hy hy' hφeq
+    have hr : radialRetraction (1 : ℝ) y = radialRetraction 1 y' :=
+      by simpa only [coe_radialRetractionToClosedBall] using
+        congrArg Subtype.val (φ.injOn hy hy' hφeq)
     have hm : max ‖y‖ 1 = max ‖y'‖ 1 :=
       Real.log_injOn_pos (lt_max_of_lt_right one_pos) (lt_max_of_lt_right one_pos) hlog
-    rw [← max_norm_one_smul_retractBall y, ← max_norm_one_smul_retractBall y', hr, hm]
+    rw [← max_norm_one_smul_radialRetraction_one y, ← max_norm_one_smul_radialRetraction_one y',
+      hr, hm]
   -- By invariance of domain, `Θ` is an open embedding on `W`.
   have hΘW : IsOpenEmbedding (W.domRestrict Θ) :=
     hW.isOpenEmbedding_domRestrict_of_continuousOn_of_injOn hΘc hΘinj hdim'
@@ -406,14 +400,14 @@ private theorem exists_isLocallyFlat_coneExt_comp_coe (hΨ : IsTopologicalSliceD
   have hc := continuous_coneExt hΨ.continuous
   have hU : IsOpen U := hc.isOpen_preimage _ hW
   have hzU : z ∈ U := by
-    change retractBall (coneExt Ψ z) ∈ φ.source
-    rwa [retractBall_coneExt hΨ]
+    simp only [U, W, Set.mem_preimage]
+    rwa [radialRetractionToClosedBall_coneExt hΨ]
   have hslice {w : ℂ} (hw : w ∈ U) : (Θ (coneExt Ψ w)).2 = 0 := by
-    have hw' : Ψ (retractBall w) ∈ φ.source := by
-      rw [← retractBall_coneExt hΨ]
+    have hw' : Ψ (radialRetractionToClosedBall zero_le_one w) ∈ φ.source := by
+      rw [← radialRetractionToClosedBall_coneExt hΨ]
       exact hw
     have := (hφ.mem_iff hw').1 (mem_range_self _)
-    simp only [Θ, retractBall_coneExt hΨ]
+    simp only [Θ, radialRetractionToClosedBall_coneExt hΨ]
     exact this.2
   let h₀ : ℂ → EuclideanSpace ℝ (Fin 2) := fun w => (Θ (coneExt Ψ w)).1
   have hΘext {w : ℂ} (hw : w ∈ U) : Θ (coneExt Ψ w) = (h₀ w, 0) :=
@@ -461,19 +455,6 @@ variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] {n : ℕ}
   {Φ : Circle × ℝ → sphere (0 : E) 1 × ℝ} {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
   {Ψ : closedBall (0 : ℂ) 1 → closedBall (0 : E) 1}
 
-omit [InnerProductSpace ℝ E] in
-/-- A map into the closed unit ball avoiding the unit sphere is locally flat as soon as it is
-locally flat as a map to `E`. -/
-private theorem isLocallyFlat_of_isLocallyFlat_coe {X G G' : Type*} [TopologicalSpace X]
-    [TopologicalSpace G] [TopologicalSpace G'] [Zero G'] {g : X → closedBall (0 : E) 1}
-    (hg : ∀ x, ‖(g x : E)‖ < 1) (h : IsLocallyFlat G G' fun x => (g x : E)) :
-    IsLocallyFlat G G' g := by
-  set O := {y : closedBall (0 : E) 1 | ‖(y : E)‖ < 1}
-  have hO : IsOpen O := isOpen_lt (by fun_prop) continuous_const
-  exact (IsLocallyFlat.of_isOpenEmbedding_comp (g := fun y : O => ((y : closedBall (0 : E) 1) : E))
-    (f := fun x => (⟨g x, hg x⟩ : O)) (hO.isOpenEmbedding_coe_openSubset_closedBall fun y hy => hy)
-    h).isOpenEmbedding_comp hO.isOpenEmbedding_subtypeVal
-
 /-- On an open subset of the open punctured disc the capped disc is the track read in polar
 coordinates, hence locally flat; its tangential model `F × ℝ ≅ ℝ²` sits openly in the
 half-plane. -/
@@ -505,7 +486,7 @@ private theorem isLocallyFlat_capDisc_comp_coe_of_pos_of_lt (hF : finrank ℝ F 
   have : FiniteDimensional ℝ F := Module.finite_of_finrank_eq_succ hF
   let L : (F × ℝ) ≃L[ℝ] EuclideanSpace ℝ (Fin (1 + 1)) :=
     ContinuousLinearEquiv.ofFinrankEq (by simp [hF])
-  exact isLocallyFlat_of_isLocallyFlat_coe hmem (h2.transIsOpenEmbedding
+  exact IsLocallyFlat.of_coe_closedBall hmem (h2.transIsOpenEmbedding
     ((EuclideanHalfSpace.isOpenEmbedding_interiorEmbedding 1).comp L.toHomeomorph.isOpenEmbedding))
 
 /-- Near the boundary circle the capped disc is the cone `r • K u` over the knot, which is locally
@@ -602,9 +583,11 @@ private theorem glueMap_eq_of_norm_le {ε : ℝ} (hΨ : IsTopologicalSliceDisc K
   have hnorm : ‖Real.exp t • (u : ℂ)‖ = Real.exp t := by
     rw [norm_smul, Circle.norm_coe, mul_one, Real.norm_of_nonneg (Real.exp_pos t).le]
   have her : 1 ≤ Real.exp t := Real.one_le_exp (by linarith)
-  have hret : retractBall (Real.exp t • (u : ℂ)) = Set.inclusion sphere_subset_closedBall u := by
+  have hret : radialRetractionToClosedBall zero_le_one (Real.exp t • (u : ℂ)) =
+      Set.inclusion sphere_subset_closedBall u := by
     refine Subtype.ext ?_
-    rw [coe_retractBall, radialRetraction_of_le_norm (by rw [hnorm]; exact her), hnorm, smul_smul,
+    rw [coe_radialRetractionToClosedBall zero_le_one,
+      radialRetraction_of_le_norm (by rw [hnorm]; exact her), hnorm, smul_smul,
       one_div_mul_cancel (Real.exp_pos t).ne', one_smul]
   rw [capMap_polarC, hΦ u t (by linarith), polar_apply, hsmul, coneExt, hnorm, max_eq_left her,
     hret, hΨ.apply_inclusion, smul_smul, ← Real.exp_add, neg_add_eq_sub]
@@ -689,7 +672,7 @@ private theorem exists_isLocallyFlat_glueDisc_comp_coe (hF : finrank ℝ F = 1)
     have hS := (((isLocallyFlat_coneExt hΨ).homeomorph_comp
       (Homeomorph.smulOfNeZero (Real.exp (-1)) (Real.exp_pos _).ne')).comp_homeomorph
       (Homeomorph.smulOfNeZero (Real.exp 1) (Real.exp_pos _).ne')).comp_isOpenEmbedding hι
-    refine ⟨U, hU, h0, isLocallyFlat_of_isLocallyFlat_coe (fun z => ?_) ?_⟩
+    refine ⟨U, hU, h0, IsLocallyFlat.of_coe_closedBall (fun z => ?_) ?_⟩
     · exact lt_of_le_of_ne (norm_glueMap_le_one hΨ hΦ (mem_closedBall_zero_iff.1 z.1.2))
         ((norm_glueMap_eq_one_iff hΨ hΦ _).not.2 (z.2.trans hρ).ne)
     · convert hS using 1
