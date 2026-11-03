@@ -54,6 +54,8 @@ noncommutative words.
   `FreeAlgebra.lift`.
 * `TauCeti.StarPolynomial.lift_apply` — evaluation at `a` is free-algebra evaluation at
   `withStar a`.
+* `TauCeti.StarPolynomial.span_range_list_prod_withStar` — the words in the generators and their
+  adjoints span the star polynomials.
 * `TauCeti.StarPolynomial.star_X_ne_X` — over a nontrivial ring no generator is self-adjoint.
 
 ## References
@@ -396,6 +398,26 @@ variable [StarRing R]
 theorem toFreeAlgebra_star_X (i : ι) :
     toFreeAlgebra R ι (star (X i)) = FreeAlgebra.ι R (i, true) :=
   congrArg (toFreeAlgebra R ι) (star_X i)
+
+/-- The words in the generators and their adjoints span the star polynomials as an `R`-module. -/
+theorem span_range_list_prod_withStar :
+    Submodule.span R (Set.range fun w : List (ι × Bool) ↦ (w.map (withStar (X (R := R)))).prod) =
+      ⊤ := by
+  rw [eq_top_iff]
+  rintro p -
+  induction p with
+  | algebraMap r =>
+    rw [Algebra.algebraMap_eq_smul_one]
+    exact Submodule.smul_mem _ r (Submodule.subset_span ⟨[], rfl⟩)
+  | X i => exact Submodule.subset_span ⟨[(i, false)], by simp⟩
+  | star_X i => exact Submodule.subset_span ⟨[(i, true)], by simp⟩
+  | mul p q hp hq =>
+    have h := Submodule.mul_mem_mul hp hq
+    rw [Submodule.span_mul_span] at h
+    refine Submodule.span_mono ?_ h
+    rintro _ ⟨_, ⟨u, rfl⟩, _, ⟨v, rfl⟩, rfl⟩
+    exact ⟨u ++ v, by simp⟩
+  | add p q hp hq => exact add_mem hp hq
 
 variable {A : Type*} [Semiring A] [Algebra R A] [StarRing A] [StarModule R A]
 
