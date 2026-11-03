@@ -94,7 +94,7 @@ private def euclideanMetric :
     nlinarith [norm_nonneg (e v)]
   contMDiff := by
     intro α
-    rw [contMDiffAt_section]
+    rw [contMDiffAt_section_iff]
     let euclidean : ℂ →L[ℝ] ℂ →L[ℝ] ℝ := innerSL ℝ
     have hconst : ContMDiffAt 𝓘(ℝ, ℂ) 𝓘(ℝ, ℂ →L[ℝ] ℂ →L[ℝ] ℝ) ∞
         (fun _ : ℍ ↦ euclidean) α :=

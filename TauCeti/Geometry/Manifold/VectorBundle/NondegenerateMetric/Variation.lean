@@ -77,7 +77,7 @@ private theorem contMDiff_atPoint (y : M) :
     (fun x : M ↦ TangentSpace I x →L[ℝ] TangentSpace I x →L[ℝ] ℝ) y
   have hy : y ∈ e.baseSet := FiberBundle.mem_baseSet_trivializationAt _ _ y
   have h : ContMDiffAt IP 𝓘(ℝ, E →L[ℝ] E →L[ℝ] ℝ) ∞ (fun p' ↦ (e ⟨y, g (p', y)⟩).2) p :=
-    (Bundle.contMDiffAt_totalSpace.mp
+    (Bundle.contMDiffAt_totalSpace_iff.mp
       ((g.contMDiff (p, y)).comp p (contMDiffAt_id.prodMk contMDiffAt_const))).2
   let L : (E →L[ℝ] E →L[ℝ] ℝ) →L[ℝ] E →L[ℝ] E →L[ℝ] ℝ :=
     Bundle.Trivialization.symmL ℝ (F := E →L[ℝ] E →L[ℝ] ℝ)
@@ -182,13 +182,13 @@ theorem contMDiff_variation [IsManifold IP 1 P] (p : P) (u : TangentSpace IP p) 
         (E := fun z : M ↦ TangentSpace I z →L[ℝ] TangentSpace I z →L[ℝ] ℝ)
         y (g.variation p u y)) := by
   intro x
-  rw [Bundle.contMDiffAt_section]
+  rw [Bundle.contMDiffAt_section_iff]
   let e := trivializationAt (E →L[ℝ] E →L[ℝ] ℝ)
     (fun z : M ↦ TangentSpace I z →L[ℝ] TangentSpace I z →L[ℝ] ℝ) x
   let f : M → P → E →L[ℝ] E →L[ℝ] ℝ := fun y p' ↦ (e ⟨y, g (p', y)⟩).2
   have hf : ContMDiffAt (I.prod IP) 𝓘(ℝ, E →L[ℝ] E →L[ℝ] ℝ) ∞
       (Function.uncurry f) (x, p) :=
-    (Bundle.contMDiffAt_totalSpace.mp
+    (Bundle.contMDiffAt_totalSpace_iff.mp
       ((g.contMDiff (p, x)).comp (x, p) (contMDiffAt_snd.prodMk contMDiffAt_fst))).2
   have hderiv := hf.mfderiv f (fun _ ↦ p) (m := ∞) contMDiffAt_const (by simp)
   -- The source parameter is fixed, and the target is a normed space, so both tangent

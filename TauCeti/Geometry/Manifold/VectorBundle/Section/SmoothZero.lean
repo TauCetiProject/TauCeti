@@ -90,7 +90,7 @@ theorem exists_isManifold_sectionZero_of_contMDiff {n : ℕ} (hm : m ≠ 0)
       ContMDiffAt 𝓘(𝕜, X) 𝓘(𝕜, F) m (fun y ↦ (e z ⟨b y, s y⟩).2) w.1 :=
     (((e z).contMDiffAt_iff ((e z).mem_source.2 hw)).1 (hs w.1 w.2)).2
   have hb (z : ↥{y | s y = 0}) : ContinuousAt b z.1 :=
-    (contMDiffAt_totalSpace.1 (hs z.1 z.2)).1.continuousAt
+    (contMDiffAt_totalSpace_iff.1 (hs z.1 z.2)).1.continuousAt
   have hchart (z w : ↥{y | s y = 0}) (hc : w.1 ∈ (chartAt X z.1).source)
       (hw : b w.1 ∈ (e z).baseSet) :
       ContDiffAt 𝕜 m

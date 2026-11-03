@@ -173,7 +173,7 @@ theorem contMDiff_legendreMap [IsManifold I 2 M] {L : TangentBundle I M → 𝕜
         (fun p : TangentBundle I M × E ↦ p.1.proj) (v₀, (e v₀).2) :=
       (contMDiffAt_proj (TangentSpace I)).comp (v₀, (e v₀).2)
         (contMDiffAt_fst (I := I.tangent) (J := 𝓘(𝕜, E)))
-    rw [contMDiffAt_totalSpace]
+    rw [contMDiffAt_totalSpace_iff]
     refine ⟨hproj,
       contMDiffAt_snd.congr_of_eventuallyEq ?_⟩
     filter_upwards [continuousAt_fst.preimage_mem_nhds hbase] with p hp
@@ -230,7 +230,7 @@ theorem contMDiff_lagrangianEnergy [IsManifold I 2 M] {L : TangentBundle I M →
   -- Apply the covector `FL(v)` to `v` as sections of bundles over `TM`, then read off the scalar.
   have h := ContMDiff.clm_bundle_apply (E₂ := Trivial M 𝕜) (v := fun v : TangentBundle I M ↦ v.2)
     (contMDiff_legendreMap hL hmn) contMDiff_id
-  exact fun v ↦ (contMDiffAt_totalSpace.1 (h v)).2.sub (hL.of_le (le_self_add.trans hmn) v)
+  exact fun v ↦ (contMDiffAt_totalSpace_iff.1 (h v)).2.sub (hL.of_le (le_self_add.trans hmn) v)
 
 end LegendreMap
 
@@ -571,7 +571,7 @@ theorem contMDiff_mechanicalLagrangian [IsManifold I 1 M] {n : WithTop ℕ∞}
     ContMDiff.clm_bundle_apply₂ (F₁ := E) (F₂ := E) (hg.comp (contMDiff_proj _)) contMDiff_id
       contMDiff_id
   have hq' : ContMDiff I.tangent 𝓘(ℝ) n (fun v : TangentBundle I M ↦ g v.proj v.2 v.2) :=
-    fun v ↦ (contMDiffAt_totalSpace.1 (hq v)).2
+    fun v ↦ (contMDiffAt_totalSpace_iff.1 (hq v)).2
   have hhalf : ContMDiff 𝓘(ℝ) 𝓘(ℝ) n (fun t : ℝ ↦ 2⁻¹ * t) :=
     (contDiff_const.mul contDiff_id).contMDiff
   rw [funext (mechanicalLagrangian_apply g V)]

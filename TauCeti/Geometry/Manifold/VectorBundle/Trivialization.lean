@@ -46,7 +46,7 @@ variable {n : WithTop ℕ∞} {𝕜 B F : Type*} {E : B → Type*} [Nontrivially
 theorem contMDiffAt_trivializationAt_snd (v₀ : TotalSpace F E) :
     ContMDiffAt (IB.prod 𝓘(𝕜, F)) 𝓘(𝕜, F) n
       (fun v ↦ (trivializationAt F E v₀.proj v).2) v₀ :=
-  (contMDiffAt_totalSpace.1 contMDiffAt_id).2
+  (contMDiffAt_totalSpace_iff.1 contMDiffAt_id).2
 
 end Bundle.TotalSpace
 
@@ -66,8 +66,9 @@ theorem contDiffAt_continuousLinearMapAt_trivializationAt
     (h : ContMDiffAt 𝓘(𝕜, G) (IB.prod 𝓘(𝕜, F)) n (fun z ↦ TotalSpace.mk' F (b z) (s z)) z₀) :
     ContDiffAt 𝕜 n (fun z ↦ (trivializationAt F E (b z₀)).continuousLinearMapAt 𝕜 (b z) (s z))
       z₀ := by
-  refine (contMDiffAt_iff_contDiffAt.mp (contMDiffAt_totalSpace.mp h).2).congr_of_eventuallyEq ?_
-  filter_upwards [(contMDiffAt_totalSpace.mp h).1.continuousAt.preimage_mem_nhds
+  refine (contMDiffAt_iff_contDiffAt.mp
+    (contMDiffAt_totalSpace_iff.mp h).2).congr_of_eventuallyEq ?_
+  filter_upwards [(contMDiffAt_totalSpace_iff.mp h).1.continuousAt.preimage_mem_nhds
     ((trivializationAt F E (b z₀)).open_baseSet.mem_nhds
       (FiberBundle.mem_baseSet_trivializationAt F E _))] with z hz
   exact (trivializationAt F E (b z₀)).continuousLinearMapAt_apply_of_mem (R := 𝕜) hz _

@@ -84,8 +84,8 @@ theorem contMDiffAt_bilinearForm_pullback
         (E := fun x : M ↦ TangentSpace I x →L[ℝ] TangentSpace I x →L[ℝ] ℝ) x
         ((ContinuousLinearMap.precomp ℝ (mfderiv I J f x)).comp
           ((b (f x)).comp (mfderiv I J f x)))) x₀ := by
-  refine (contMDiffAt_section x₀).2 ?_
-  have hg := (contMDiffAt_section (f x₀)).1 hb
+  refine (contMDiffAt_section_iff x₀).2 ?_
+  have hg := (contMDiffAt_section_iff (f x₀)).1 hb
   have hfn : ContMDiffAt I J n f x₀ := hf.of_le le_self_add
   -- In the coordinates centred at `x₀` and `f x₀`, the pulled-back form is the coordinate
   -- expression of `g` at `f x` pulled back along the differential of `f` read in those

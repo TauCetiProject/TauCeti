@@ -503,7 +503,7 @@ theorem _root_.ContMDiffOn.contMDiffOn_curveVelocityLiftWithin {m n : ℕ∞ω} 
     TotalSpace.mk' 𝕜 t ((NormedSpace.fromTangentSpace (𝕜 := 𝕜) t).symm 1)
   have hι : ContMDiff 𝓘(𝕜, 𝕜) 𝓘(𝕜, 𝕜).tangent m ι := by
     intro t
-    rw [contMDiffAt_totalSpace]
+    rw [contMDiffAt_totalSpace_iff]
     refine ⟨contMDiffAt_id, ?_⟩
     refine (contMDiffAt_const (c := (1 : 𝕜))).congr_of_eventuallyEq ?_
     filter_upwards with r
