@@ -89,6 +89,28 @@ theorem positiveIntegralSpan_le_iff {x y z w v s : A} {M : Submodule ℤ A} :
       _, ⟨c, rfl⟩, rfl⟩, _, ⟨d, rfl⟩, rfl⟩, _, ⟨e, rfl⟩, rfl⟩, _, ⟨f, rfl⟩, rfl⟩
     exact h a b c d e f
 
+/-- Membership in the positive integral span means being a finite integral combination of
+ordered six-root products. The six indices follow the order `s, y, z, w, v, x`. -/
+theorem mem_positiveIntegralSpan_iff {x y z w v s u : A} :
+    u ∈ positiveIntegralSpan x y z w v s ↔
+      ∃ c : (ℕ × ℕ × ℕ × ℕ × ℕ × ℕ) →₀ ℤ,
+        c.sum (fun ⟨a, b, c, d, e, f⟩ r => r •
+          (dividedPower a s * dividedPower b y * dividedPower c z * dividedPower d w *
+            dividedPower e v * dividedPower f x)) = u := by
+  let p : (ℕ × ℕ × ℕ × ℕ × ℕ × ℕ) → A := fun ⟨a, b, c, d, e, f⟩ =>
+    dividedPower a s * dividedPower b y * dividedPower c z * dividedPower d w *
+      dividedPower e v * dividedPower f x
+  have hspan : positiveIntegralSpan x y z w v s = Submodule.span ℤ (Set.range p) := by
+    apply le_antisymm
+    · rw [positiveIntegralSpan_le_iff]
+      intro a b c d e f
+      exact Submodule.subset_span ⟨⟨a, b, c, d, e, f⟩, rfl⟩
+    · rw [Submodule.span_le]
+      rintro _ ⟨⟨a, b, c, d, e, f⟩, rfl⟩
+      exact orderedProduct_mem_positiveIntegralSpan x y z w v s a b c d e f
+  rw [hspan]
+  exact Finsupp.mem_span_range_iff_exists_finsupp
+
 /-- Integral ordered spanning of the positive type-G₂ algebra. The hypotheses are its signed
 Chevalley commutator table; in particular the highest-root correction occurs in both `[y,v]`
 and `[w,z]`. No linear independence or characteristic-p division is implicit. -/

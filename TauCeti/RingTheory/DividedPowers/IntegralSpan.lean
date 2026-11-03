@@ -55,6 +55,26 @@ theorem dividedPowerExtensionSpan_le_iff {T : Subring A} {x : A} {S : AddSubgrou
   · rintro h _ ⟨t, ht, n, rfl⟩
     exact h t ht n
 
+/-- Membership in the ordered extension span means being a finite integral combination of
+products of coefficient-ring elements with divided powers. -/
+theorem mem_dividedPowerExtensionSpan_iff {T : Subring A} {x a : A} :
+    a ∈ dividedPowerExtensionSpan T x ↔
+      ∃ c : (T × ℕ) →₀ ℤ,
+        c.sum (fun i r => r • ((i.1 : A) * dividedPower i.2 x)) = a := by
+  let p : T × ℕ → A := fun i => (i.1 : A) * dividedPower i.2 x
+  have hspan : dividedPowerExtensionSpan T x =
+      (Submodule.span ℤ (Set.range p)).toAddSubgroup := by
+    apply le_antisymm
+    · rw [dividedPowerExtensionSpan_le_iff]
+      intro t ht n
+      exact Submodule.subset_span ⟨(⟨t, ht⟩, n), rfl⟩
+    · rw [← AddSubgroup.toIntSubmodule_toAddSubgroup (dividedPowerExtensionSpan T x),
+        Submodule.toAddSubgroup_le, Submodule.span_le]
+      rintro _ ⟨⟨t, n⟩, rfl⟩
+      exact mul_dividedPower_mem_extensionSpan T x t.property n
+  rw [hspan]
+  exact Finsupp.mem_span_range_iff_exists_finsupp
+
 /-- The coefficient ring is contained in the ordered extension span. -/
 theorem mem_extensionSpan_of_mem {T : Subring A} {x t : A} (ht : t ∈ T) :
     t ∈ dividedPowerExtensionSpan T x := by
