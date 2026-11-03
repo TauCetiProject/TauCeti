@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.Central.Defs
 public import Mathlib.Algebra.Quaternion
 public import Mathlib.Data.Matrix.Basic
+import TauCeti.Algebra.Quaternion.Basic
 import Mathlib.Data.Matrix.Basis
 import Mathlib.Tactic.LinearCombination
 
@@ -65,7 +66,8 @@ The regularity hypothesis of `center_eq_bot` is carried as `IsLeftRegular (2 : R
 what the proof consumes. `instIsCentral` restates it with the typeclass assumptions
 `[NoZeroDivisors R] [NeZero (2 : R)]` so that instance search can discharge it, as it does for
 `R = ℝ`. Conversely, if `ℍ[R]` itself has no zero divisors then `2` is automatically left regular
-in `R`, since `(r + r i)² = 2 r² i`; the results stated under `[NoZeroDivisors ℍ[R]]` use this.
+in `R`, since `(r + r i)² = 2 r² i` (`Quaternion.isLeftRegular_two`); the results stated under
+`[NoZeroDivisors ℍ[R]]` use this.
 
 ## References
 
@@ -179,31 +181,18 @@ section NoZeroDivisors
 
 variable {R : Type*} [CommRing R] [NoZeroDivisors ℍ[R]]
 
-/-- If `ℍ[R]` has no zero divisors then `2` is left regular in `R`: for `2 * r = 0` the quaternion
-`r + r i` squares to `2 r² i = 0`. -/
-private theorem isLeftRegular_two : IsLeftRegular (2 : R) := by
-  intro a b (h : 2 * a = 2 * b)
-  have hsq : (⟨a - b, a - b, 0, 0⟩ : ℍ[R]) * ⟨a - b, a - b, 0, 0⟩ = 0 := by
-    ext <;> simp only [_root_.Quaternion.re_mul, _root_.Quaternion.imI_mul,
-      _root_.Quaternion.imJ_mul, _root_.Quaternion.imK_mul, _root_.Quaternion.re_zero,
-      _root_.Quaternion.imI_zero, _root_.Quaternion.imJ_zero, _root_.Quaternion.imK_zero]
-    · ring
-    · linear_combination (a - b) * h
-    all_goals ring
-  exact sub_eq_zero.mp (congrArg _root_.QuaternionAlgebra.re (mul_self_eq_zero.mp hsq))
-
 variable {x c : ℍ[R]}
 
 /-- The commutator with `x` followed by right multiplication by `c` vanishes identically exactly
 when `c = 0` or `x` is real. -/
 theorem forall_sub_mul_eq_zero_iff : (∀ y, (x * y - y * x) * c = 0) ↔ c = 0 ∨ x.im = 0 := by
-  rw [← forall_mul_comm_iff_im_eq_zero isLeftRegular_two]
+  rw [← forall_mul_comm_iff_im_eq_zero _root_.Quaternion.isLeftRegular_two]
   simp only [mul_eq_zero, sub_eq_zero, forall_or_right, or_comm]
 
 /-- Left multiplication by `c` of the commutator with `x` vanishes identically exactly when `c = 0`
 or `x` is real. -/
 theorem forall_mul_sub_eq_zero_iff : (∀ y, c * (y * x - x * y) = 0) ↔ c = 0 ∨ x.im = 0 := by
-  rw [← forall_mul_comm_iff_im_eq_zero isLeftRegular_two]
+  rw [← forall_mul_comm_iff_im_eq_zero _root_.Quaternion.isLeftRegular_two]
   simp only [mul_eq_zero, sub_eq_zero, forall_or_left, eq_comm]
 
 variable (R) [Nontrivial R]
@@ -236,7 +225,7 @@ variable {R : Type*} [Field R] [LinearOrder R] [IsStrictOrderedRing R] {x : ℍ[
 /-- A quaternion is real exactly when its inverse is. -/
 @[simp]
 theorem im_inv_eq_zero_iff : x⁻¹.im = 0 ↔ x.im = 0 := by
-  simp_rw [← forall_mul_comm_iff_im_eq_zero isLeftRegular_two, ← commute_iff_eq]
+  simp_rw [← forall_mul_comm_iff_im_eq_zero _root_.Quaternion.isLeftRegular_two, ← commute_iff_eq]
   exact ⟨fun H y ↦ by simpa using (H y).inv_left₀, fun H y ↦ (H y).inv_left₀⟩
 
 end LinearOrderedField
