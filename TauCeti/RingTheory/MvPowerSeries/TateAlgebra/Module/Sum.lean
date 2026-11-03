@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RingTheory.MvPowerSeries.TateAlgebra.Module.Norm
+import TauCeti.Data.Finsupp.Sum
 import TauCeti.Data.Finsupp.Weight
 
 /-!

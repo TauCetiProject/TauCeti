@@ -10,6 +10,7 @@ public import TauCeti.RingTheory.MvPowerSeries.Convolution
 public import Mathlib.LinearAlgebra.Finsupp.Pi
 public import Mathlib.Data.Finsupp.Option
 import Mathlib.Algebra.Order.Antidiag.Tendsto
+import TauCeti.Data.Finsupp.Sum
 import TauCeti.Data.Finsupp.Weight
 
 /-!
