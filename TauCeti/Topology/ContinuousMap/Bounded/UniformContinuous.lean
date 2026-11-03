@@ -23,10 +23,10 @@ public section
 
 namespace BoundedContinuousFunction
 
-variable {X F : Type*} [UniformSpace X] [NormedAddCommGroup F]
+variable {X F : Type*} [UniformSpace X]
 
-/-- Uniformly continuous bounded functions form a closed subset for the supremum norm. -/
-theorem isClosed_setOf_uniformContinuous :
+/-- Uniformly continuous bounded functions form a closed subset for the supremum metric. -/
+theorem isClosed_setOf_uniformContinuous [PseudoMetricSpace F] :
     IsClosed {f : X →ᵇ F | UniformContinuous f} := by
   apply isSeqClosed_iff_isClosed.mp
   intro f g hf hg
@@ -43,7 +43,7 @@ def uniformContinuousSubmodule (𝕜 X F : Type*) [NormedField 𝕜] [UniformSpa
   smul_mem' c _ hf := hf.const_smul c
   isClosed' := isClosed_setOf_uniformContinuous
 
-variable {𝕜 : Type*} [NormedField 𝕜] [NormedSpace 𝕜 F]
+variable {𝕜 : Type*} [NormedField 𝕜] [NormedAddCommGroup F] [NormedSpace 𝕜 F]
 
 /-- Membership in the bounded uniformly continuous subspace. -/
 @[simp]
