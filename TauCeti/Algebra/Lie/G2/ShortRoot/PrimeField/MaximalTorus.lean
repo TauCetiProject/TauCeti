@@ -65,13 +65,9 @@ theorem carrierGenericMatrix_map_weightTorusCoordinateMap :
     carrierQuotient_comp_weightTorusCoordinateMap]
   apply Matrix.ext
   intro i j
-  have hχ : Multiplicative.ofAdd (Finsupp.equivFunOnFinite.symm (weight i)) =
-      SplitTorus.weightCharacter (weight i) := by
-    apply Multiplicative.toAdd.injective
-    ext l
-    simp [SplitTorus.toAdd_weightCharacter]
   simpa only [Matrix.map_apply, BialgHom.coe_toAlgHom,
-    GeneralLinear.genericMatrix_apply, Matrix.diagonal_apply, hχ] using
+    GeneralLinear.genericMatrix_apply, Matrix.diagonal_apply,
+    ← SplitTorus.weightCharacter_coe, Finsupp.coe_equivFunOnFinite_symm] using
       (GeneralLinear.weightTorusCoordinateMap_X (R := ZMod 3) weight i j)
 
 /-- The weight-torus coordinate morphism is surjective. -/

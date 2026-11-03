@@ -87,13 +87,8 @@ private theorem isDiag_of_centralizerHopfIdeal_le_ker
   simp only [map_mul, Subgroup.coe_mul, Units.val_mul] at hm
   rw [hM, hD] at hm
   intro i j hij
-  apply Matrix.apply_eq_zero_of_commute_diagonal_monomial (R := ZMod 3) _ χ hm
-  intro he
-  apply hij
-  apply weight_injective
-  funext l
-  have hl := congrArg (fun c : X ↦ Multiplicative.toAdd c l) he
-  simpa only [χ, SplitTorus.toAdd_weightCharacter] using hl.symm
+  exact Matrix.apply_eq_zero_of_commute_diagonal_monomial (R := ZMod 3) _ χ hm
+    (weightCharacter_injective.ne (Ne.symm hij))
 
 /-- The scheme-theoretic centralizer of the weight torus is the weight torus itself.
 This is equality of Hopf ideals, not merely equality of geometric point groups. -/
@@ -128,7 +123,7 @@ theorem centralizerHopfIdeal_weightTorusCoordinateMap :
 /-- A tangent vector has trivial adjoint character exactly when it lies in the tangent Lie
 algebra of the weight torus. In particular there are no additional infinitesimal centralizer
 directions. -/
-theorem cotangentLinearEquiv_mem_weightTorusDefiningIdeal_lieSubalgebra_iff
+theorem cotangentLinearEquiv_mem_lieSubalgebra_weightTorusDefiningIdeal_iff
     (x : Module.Dual (ZMod 3) (Bialgebra.CotangentSpace (ZMod 3) carrierAlgebra)) :
     Derivation.cotangentLinearEquiv (B := ZMod 3) x ∈ weightTorusDefiningIdeal.lieSubalgebra ↔
       x ∈ Derivation.adjointWeightSpace weightTorusCoordinateMap.hom 1 := by
