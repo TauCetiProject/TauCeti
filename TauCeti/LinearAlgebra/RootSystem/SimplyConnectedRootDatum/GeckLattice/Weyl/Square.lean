@@ -52,12 +52,11 @@ private theorem coe_root_eq_basisMatrix (i : Fin t.rank ⊕ Fin t.rank)
     (t.geckRootSubgroupPoints ht i A u :
       Matrix.GeneralLinearGroup (Fin (t.geckDim ht)) A) =
     Units.map (LinearMap.toMatrixAlgEquiv
-      ((t.geckCoordinateBasisFin ht).baseChange A)).toMonoidHom
+      ((t.geckCoordinateBasisFin ht).baseChange A)).toMulEquiv
       (t.geckRootSubgroupParam ht i (CommAlgCat.of ℤ A) u) := by
-  rw [coe_geckRootSubgroupPoints,
-    UniversalEnvelopingAlgebra.kostantRootSubgroupParam_apply]
-  simp only [geckRootSubgroupMatrix,
-    UniversalEnvelopingAlgebra.kostantRootSubgroupMatrix_def, MonoidHom.comp_apply]
+  exact (t.coe_geckRootSubgroupPoints ht i A u).trans
+    (UniversalEnvelopingAlgebra.basisMatrix_kostantRootSubgroupParam
+      _ _ _ _ _ _ (t.geckCoordinateBasisFin ht) A i u).symm
 
 private theorem coe_torus_eq_basisMatrix (A : Type v) [CommRing A]
     (s : Fin t.rank → Aˣ) :
@@ -109,8 +108,8 @@ theorem geckRootSubgroupPoints_weyl_sq (i : Fin t.rank) (A : Type v) [CommRing A
   simp only [Subgroup.coe_pow, Subgroup.coe_mul, coe_root_eq_basisMatrix,
     coe_torus_eq_basisMatrix]
   simpa only [UniversalEnvelopingAlgebra.kostantWeylParam_def,
-    UniversalEnvelopingAlgebra.kostantCoordinateCocharacter_apply, map_pow, map_mul]
-    using hmatrix
+    UniversalEnvelopingAlgebra.kostantCoordinateCocharacter_apply, map_pow, map_mul,
+    MulEquiv.toMonoidHom_eq_coe] using hmatrix
 
 /-- The pinned simple Weyl representative squares to the simple-coroot value at `-1`. -/
 @[simp]
@@ -119,20 +118,8 @@ theorem geckSimpleWeylPoint_sq (i : Fin t.rank) (A : Type v) [CommRing A] :
       t.geckWeightTorusPoints ht A (Pi.mulSingle i (-1)) := by
   classical
   have h := t.geckRootSubgroupPoints_weyl_sq ht i A (1 : Aˣ)
-  -- At unit parameter one, the three-root word is the existing pinned Weyl representative.
-  have hword :
-      t.geckRootSubgroupPoints ht (.inl i) A (Multiplicative.ofAdd (1 : A)) *
-        t.geckRootSubgroupPoints ht (.inr i) A (Multiplicative.ofAdd (-1 : A)) *
-        t.geckRootSubgroupPoints ht (.inl i) A (Multiplicative.ofAdd (1 : A)) =
-      t.geckSimpleWeylPoint ht i A := by
-    apply Subtype.ext
-    simp only [Subgroup.coe_mul, coe_root_eq_basisMatrix, coe_geckSimpleWeylPoint]
-    rw [UniversalEnvelopingAlgebra.kostantWeylGL_eq_kostantRootSubgroupParam_mul
-      (A := CommAlgCat.of ℤ A), map_mul, map_mul]
-    -- Both matrix maps come from the same basis algebra equivalence, viewed as a monoid map
-    -- on the left and as a multiplicative equivalence on the right.
-    rfl
-  simpa only [inv_one, Units.val_one, hword] using h
+  rw [geckSimpleWeylPoint_eq_mul]
+  simpa only [inv_one, Units.val_one] using h
 
 /-- The pinned simple Weyl representatives have fourth power one, without a characteristic
 restriction or an assumption that their squares are trivial. -/
