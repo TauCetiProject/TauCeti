@@ -5,11 +5,13 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.BigOperators.Finprod
 public import Mathlib.Data.ENat.Lattice
 public import Mathlib.Data.Set.Card
 public import Mathlib.Topology.Homotopy.Contractible
 public import Mathlib.Topology.Homotopy.LocallyContractible
 public import Mathlib.Topology.Sets.Opens
+import TauCeti.Topology.ConnectedComponents
 
 /-!
 # Lusternik–Schnirelmann categorical covers
@@ -60,6 +62,8 @@ components, this lets the critical-point bound be computed one component at a ti
 * `TauCeti.lsCategoryCount_eq_sum_inter`: additivity over finitely many pairwise disjoint clopen
   sets, and `TauCeti.lsCategoryCount_sigma`, `TauCeti.lsCategoryCount_univ_sigma`: the count of a
   finite disjoint union is the sum of the counts of its summands.
+* `TauCeti.lsCategoryCount_univ_eq_finsum_connectedComponents`: the count of a space with
+  finitely many components is the sum of the counts of its components.
 * `TauCeti.lsCategoryCount_univ_of_contractibleSpace` and
   `TauCeti.lsCategoryCount_eq_encard`: a contractible space has count `1`, and in a discrete space
   the count of a set is its cardinality.
@@ -549,3 +553,21 @@ theorem Homeomorph.lsCategoryCount_image {X Y : Type*} [TopologicalSpace X] [Top
       (by rintro _ ⟨x, hx, rfl⟩; simpa using hx))
     (TauCeti.lsCategoryCount_le_of_mapsTo (e : C(X, Y)) e.symm
       (e.symm_comp_toContinuousMap ▸ .refl _) (mapsTo_image _ _))
+
+namespace TauCeti
+
+variable {X : Type*} [TopologicalSpace X]
+
+/-- **Component sum formula.** The Lusternik–Schnirelmann count of a space with finitely many
+connected components is the sum of the counts of its components, each regarded as a space in its
+own right. -/
+theorem lsCategoryCount_univ_eq_finsum_connectedComponents [Finite (ConnectedComponents X)] :
+    lsCategoryCount X univ =
+      ∑ᶠ C : ConnectedComponents X,
+        lsCategoryCount (ConnectedComponents.mk ⁻¹' {C} : Set X) univ := by
+  have := Fintype.ofFinite (ConnectedComponents X)
+  rw [finsum_eq_sum_of_fintype, ← lsCategoryCount_univ_sigma,
+    ← Homeomorph.lsCategoryCount_image connectedComponentsSigmaHomeomorph univ,
+    image_univ_of_surjective connectedComponentsSigmaHomeomorph.surjective]
+
+end TauCeti
