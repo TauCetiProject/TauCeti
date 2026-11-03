@@ -50,9 +50,9 @@ the singular integral estimates for the Hessian, and test functions are Schwartz
 sides of each estimate are continuous on `W^{2,p}`: `D²u` is a continuous projection, and
 `D²u ↦ ∑ᵢⱼ Aᵢⱼ ⟪D²u eᵢ, eⱼ⟫` and `D²u ↦ tr D²u` are continuous linear functionals
 (`Matrix.contraction A` and `traceCLM`) applied pointwise. For a test function `φ` the trace of
-the Hessian is `Δφ` (`TauCeti.laplacian_eq_trace_iteratedGradientChain_one`). Test functions are
-dense in `W^{2,p}` of the whole space for `p < ∞` (`TauCeti.Wkp.denseRange_ofTestFunctionₗ_top`),
-so the estimates hold on all of `W^{2,p}`.
+the Hessian is `Δφ` (`TauCeti.Wkp.trace_iteratedGradient_ofTestFunctionₗ_ae_eq`). Test functions
+are dense in `W^{2,p}` of the whole space for `p < ∞`
+(`TauCeti.Wkp.denseRange_ofTestFunctionₗ_top`), so the estimates hold on all of `W^{2,p}`.
 
 ## References
 
@@ -179,19 +179,6 @@ section InnerProductSpace
 variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V] [FiniteDimensional ℝ V]
   [MeasurableSpace V] [BorelSpace V]
 
-/-- The trace of the weak Hessian of a test function `φ`, regarded as an element of `W^{2,p}(V)`,
-is `Δφ` almost everywhere. -/
-private theorem traceCLM_compLpL_iteratedGradient_ofTestFunctionₗ_ae_eq
-    (φ : 𝓓((⊤ : Opens V), ℝ)) :
-    ((traceCLM ℝ V).compLpL p _ (Wkp.iteratedGradient 1
-      (Wkp.ofTestFunctionₗ (mu := volume) (p := p) 2 φ)) : V → ℝ)
-        =ᵐ[(volume : Measure V).restrict ((⊤ : Opens V) : Set V)] Δ (φ : V → ℝ) := by
-  filter_upwards [(traceCLM ℝ V).coeFn_compLpL (Wkp.iteratedGradient 1
-      (Wkp.ofTestFunctionₗ (mu := volume) (p := p) 2 φ)),
-    iteratedGradientTestFunctionLp_apply_ae (mu := volume) p 1 φ] with x hx hHx
-  rw [hx, traceCLM_apply, Wkp.iteratedGradient_ofTestFunctionₗ 1 φ, hHx,
-    iteratedGradientTestFunction_def, laplacian_eq_trace_iteratedGradientChain_one]
-
 /-- **The Calderón–Zygmund estimate for strong solutions in `W^{2,p}`.** Let `1 < p < ∞`, and let
 `V` be a finite-dimensional real inner product space with its volume measure. There is a constant
 `C` such that every `u ∈ W^{2,p}(V)` solving `Δu = f` with `f ∈ Lᵖ(V)` strongly, in the sense that
@@ -222,7 +209,12 @@ theorem exists_norm_iteratedGradient_le_mul_norm_of_traceCLM_compLpL_eq
   -- Schwartz functions.
   have hvol : (volume : Measure V).restrict ((⊤ : Opens V) : Set V) = volume := by
     rw [Opens.coe_top, Measure.restrict_univ]
-  have hae := traceCLM_compLpL_iteratedGradient_ofTestFunctionₗ_ae_eq (p := p) φ
+  have hae : (T (Wkp.iteratedGradient 1 (Wkp.ofTestFunctionₗ (mu := volume) (p := p) 2 φ)) :
+      V → ℝ) =ᵐ[(volume : Measure V).restrict ((⊤ : Opens V) : Set V)] Δ (φ : V → ℝ) := by
+    filter_upwards [(traceCLM ℝ V).coeFn_compLpL (Wkp.iteratedGradient 1
+        (Wkp.ofTestFunctionₗ (mu := volume) (p := p) 2 φ)),
+      Wkp.trace_iteratedGradient_ofTestFunctionₗ_ae_eq (mu := volume) (p := p) φ] with x hx hΔ
+    rw [hx, traceCLM_apply, hΔ]
   have hLfin : eLpNorm (Δ (φ : V → ℝ)) p volume ≠ ∞ := by
     rw [← hvol, ← eLpNorm_congr_ae hae]
     exact Lp.eLpNorm_ne_top _

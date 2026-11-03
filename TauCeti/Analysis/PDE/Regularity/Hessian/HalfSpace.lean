@@ -99,7 +99,7 @@ private theorem eLpNorm_traceCLM_le_of_ae_eq_sub_comp_normalReflection
   have htr : (fun x => traceCLM ℝ (WithLp 2 (ℝ × E)) (W x)) =ᵐ[volume]
       g - g ∘ normalReflection E a := by
     filter_upwards [hW] with x hx
-    have hR := traceCLM_comp_comp_symm (normalLinearReflection E).toContinuousLinearEquiv
+    have hR := (normalLinearReflection E).toContinuousLinearEquiv.traceCLM_comp_comp_symm
       ((normalHalfSpace (E := E) a : Set (WithLp 2 (ℝ × E))).indicator D (normalReflection E a x))
     rw [← LinearIsometryEquiv.toContinuousLinearEquiv_symm, normalLinearReflection_symm] at hR
     rw [hx, map_sub, hR, hgD, hgD, Pi.sub_apply, Function.comp_apply]

@@ -51,8 +51,9 @@ theorem traceCLM_apply (T : V →L[𝕜] V) :
 
 /-- The trace is invariant under conjugation by a continuous linear equivalence:
 `tr (e ∘ T ∘ e⁻¹) = tr T`. -/
-theorem traceCLM_comp_comp_symm {W : Type*} [AddCommGroup W] [Module 𝕜 W] [TopologicalSpace W]
-    [IsTopologicalAddGroup W] [ContinuousSMul 𝕜 W] [T2Space W] [FiniteDimensional 𝕜 W]
+theorem _root_.ContinuousLinearEquiv.traceCLM_comp_comp_symm {W : Type*} [AddCommGroup W]
+    [Module 𝕜 W] [TopologicalSpace W] [IsTopologicalAddGroup W] [ContinuousSMul 𝕜 W] [T2Space W]
+    [FiniteDimensional 𝕜 W]
     (e : V ≃L[𝕜] W) (T : V →L[𝕜] V) :
     traceCLM 𝕜 W ((e : V →L[𝕜] W) ∘L T ∘L (e.symm : W →L[𝕜] V)) = traceCLM 𝕜 V T := by
   have h : (((e : V →L[𝕜] W) ∘L T ∘L (e.symm : W →L[𝕜] V) : W →L[𝕜] W) : W →ₗ[𝕜] W) =
