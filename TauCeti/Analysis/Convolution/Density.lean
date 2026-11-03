@@ -40,6 +40,17 @@ namespace MeasureTheory
 
 variable {G : Type*} [AddCommGroup G] [MeasurableSpace G] {μ : Measure G} {f g : G → ℝ}
 
+private theorem lconvolution_ofReal_apply_eq_ofReal_convolution (hf0 : 0 ≤ f) (hg0 : 0 ≤ g)
+    (x : G) (hfg : ConvolutionExistsAt f g x (mul ℝ ℝ) μ) :
+    ((fun y ↦ ENNReal.ofReal (f y)) ⋆ₗ[μ] (fun y ↦ ENNReal.ofReal (g y))) x =
+      ENNReal.ofReal ((f ⋆[mul ℝ ℝ, μ] g) x) := by
+  rw [lconvolution_def, convolution_def,
+    ofReal_integral_eq_lintegral_ofReal hfg.integrable
+      (.of_forall fun y ↦ mul_nonneg (hf0 y) (hg0 (x - y)))]
+  refine lintegral_congr fun y ↦ ?_
+  rw [← ENNReal.ofReal_mul (hf0 y)]
+  simp only [mul_apply', sub_eq_add_neg, add_comm x]
+
 /-- The lower-integral convolution of the `ENNReal.ofReal` lifts of two nonnegative real
 functions is the lift of their Bochner convolution, provided the latter exists everywhere. -/
 theorem lconvolution_ofReal_eq_ofReal_convolution (hf0 : 0 ≤ f) (hg0 : 0 ≤ g)
@@ -47,12 +58,7 @@ theorem lconvolution_ofReal_eq_ofReal_convolution (hf0 : 0 ≤ f) (hg0 : 0 ≤ g
     (fun x ↦ ENNReal.ofReal (f x)) ⋆ₗ[μ] (fun x ↦ ENNReal.ofReal (g x)) =
       fun x ↦ ENNReal.ofReal ((f ⋆[mul ℝ ℝ, μ] g) x) := by
   funext x
-  rw [lconvolution_def, convolution_def,
-    ofReal_integral_eq_lintegral_ofReal (hfg x).integrable
-      (.of_forall fun y ↦ mul_nonneg (hf0 y) (hg0 (x - y)))]
-  refine lintegral_congr fun y ↦ ?_
-  rw [← ENNReal.ofReal_mul (hf0 y)]
-  simp only [mul_apply', sub_eq_add_neg, add_comm x]
+  exact lconvolution_ofReal_apply_eq_ofReal_convolution hf0 hg0 x (hfg x)
 
 variable [MeasurableAdd₂ G] [MeasurableNeg G] [SFinite μ] [μ.IsAddLeftInvariant]
 
@@ -67,12 +73,7 @@ theorem conv_withDensity_ofReal_eq_withDensity_convolution (hf : Measurable f)
   rw [conv_withDensity_eq_lconvolution hf.ennreal_ofReal hg.ennreal_ofReal]
   apply withDensity_congr_ae
   filter_upwards [hfg] with x hx
-  rw [lconvolution_def, convolution_def,
-    ofReal_integral_eq_lintegral_ofReal hx.integrable
-      (.of_forall fun y ↦ mul_nonneg (hf0 y) (hg0 (x - y)))]
-  refine lintegral_congr fun y ↦ ?_
-  rw [← ENNReal.ofReal_mul (hf0 y)]
-  simp only [mul_apply', sub_eq_add_neg, add_comm x]
+  exact lconvolution_ofReal_apply_eq_ofReal_convolution hf0 hg0 x hx
 
 variable {X : Type*} [TopologicalSpace X] [MeasurableSpace X] [BorelSpace X]
   {ν : Measure X} [SigmaFinite ν] [ν.IsOpenPosMeasure] {p q : X → ℝ}

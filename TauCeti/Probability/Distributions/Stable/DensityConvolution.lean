@@ -99,11 +99,12 @@ theorem stablePDFReal_convolution_stablePDFReal_of_eq (hα : α ∈ Ioc 0 2) {β
           ((stablePDFReal α β₁ s₁ m₁ ⋆[mul ℝ ℝ]
             stablePDFReal α β₂ s₂ m₂) x)) =
         volume.withDensity (fun x ↦ ENNReal.ofReal (stablePDFReal α β s m x)) := by
-    have hpdf₁ := stableMeasure_eq_withDensity_ofReal α β₁ hs₁ m₁
-    have hpdf₂ := stableMeasure_eq_withDensity_ofReal α β₂ hs₂ m₂
-    have hpdf := stableMeasure_eq_withDensity_ofReal α β hs0 m
-    rw [← hmeasure, ← hpdf₁, ← hpdf₂,
-      stableMeasure_conv_stableMeasure_of_eq hα hβ₁ hβ₂ hβ hs hskew hm, hpdf]
+    rw [← hmeasure]
+    simp only [← stablePDF_eq_ofReal]
+    rw [← stableMeasure_eq_withDensity α β₁ hs₁ m₁,
+      ← stableMeasure_eq_withDensity α β₂ hs₂ m₂,
+      stableMeasure_conv_stableMeasure_of_eq hα hβ₁ hβ₂ hβ hs hskew hm,
+      stableMeasure_eq_withDensity α β hs0 m]
   apply continuous_eq_of_withDensity_ofReal_eq hconvcont (continuous_stablePDFReal α β s m)
       (fun x ↦ ?_) (fun x ↦ stablePDFReal_nonneg α β s m x) hdensityMeasure
   rw [convolution_def]
