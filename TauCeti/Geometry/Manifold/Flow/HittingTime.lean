@@ -26,8 +26,9 @@ flow at time `flowHittingTime v g T p z` carries every `z` near `p` into the lev
 (`TauCeti.eventually_flowHittingTime`). Near `(T, p)` it is the only solution of the equation
 (`TauCeti.eventually_eq_flowHittingTime_iff`), so any other hitting time continuous at `p` with
 the value `T` agrees with it near `p` (`TauCeti.eventuallyEq_flowHittingTime`). The induced
-transition `z ↦ flowOf v (flowHittingTime v g T p z) z` from a neighbourhood of `p` to the level
-of `g` through `q` is `C^n` at `p` (`TauCeti.contMDiffAt_flowOf_flowHittingTime`).
+transition `TauCeti.flowTransition v g T p`, which sends `z` to
+`flowOf v (flowHittingTime v g T p z) z`, maps a neighbourhood of `p` to the level of `g` through
+`q` and is `C^n` at `p` (`TauCeti.contMDiffAt_flowTransition`).
 
 These are the local hitting times and transition maps between transverse sections of a periodic
 orbit: restricting `z` to a section through `p` gives the transition map between the sections,
@@ -39,6 +40,8 @@ intersections with the section are not excluded.
 
 * `TauCeti.flowHittingTime v g T p`: the hitting time of the level of `g` through `flowOf v T p`,
   for points near `p` and times near `T`.
+* `TauCeti.flowTransition v g T p`: the transition `z ↦ flowOf v (flowHittingTime v g T p z) z`
+  to that level.
 
 ## Main results
 
@@ -46,7 +49,7 @@ intersections with the section are not excluded.
 * `TauCeti.eventually_flowHittingTime`: the flow at the hitting time lands in the level.
 * `TauCeti.eventually_eq_flowHittingTime_iff`: local uniqueness of the hitting time.
 * `TauCeti.eventuallyEq_flowHittingTime`: uniqueness of the germ of continuous hitting times.
-* `TauCeti.contMDiffAt_flowOf_flowHittingTime`: the transition map to the level is `C^n`.
+* `TauCeti.contMDiffAt_flowTransition`: the transition map to the level is `C^n`.
 
 ## References
 
@@ -157,6 +160,25 @@ theorem flowHittingTime_self (v : (x : M) → TangentSpace I x) (g : M → ℝ) 
     exact ContDiffAt.implicitFunction_apply_self (u := (extChartAt I p p, T)) _ _ _
   · simp [flowHittingTime, h]
 
+/-- **The transition to a transverse section.** Flowing each point `z` for its hitting time
+`flowHittingTime v g T p z` carries `z` near `p` into the level of `g` through `flowOf v T p`. -/
+def flowTransition (v : (x : M) → TangentSpace I x) (g : M → ℝ) (T : ℝ) (p : M) (z : M) : M :=
+  flowOf v (flowHittingTime v g T p z) z
+
+theorem flowTransition_def (v : (x : M) → TangentSpace I x) (g : M → ℝ) (T : ℝ) (p : M) :
+    flowTransition v g T p = fun z ↦ flowOf v (flowHittingTime v g T p z) z :=
+  (rfl)
+
+theorem flowTransition_apply (v : (x : M) → TangentSpace I x) (g : M → ℝ) (T : ℝ) (p z : M) :
+    flowTransition v g T p z = flowOf v (flowHittingTime v g T p z) z :=
+  (rfl)
+
+/-- The transition to the section through `flowOf v T p` carries `p` to `flowOf v T p`. -/
+@[simp]
+theorem flowTransition_self (v : (x : M) → TangentSpace I x) (g : M → ℝ) (T : ℝ) (p : M) :
+    flowTransition v g T p p = flowOf v T p := by
+  rw [flowTransition_apply, flowHittingTime_self]
+
 section Hypotheses
 
 variable (hv : CMDiff 1 (fun y ↦ (⟨y, v y⟩ : TangentBundle I M))) (hT : (T, p) ∈ flowDomain v)
@@ -245,11 +267,28 @@ theorem contMDiffAt_flowHittingTime : ContMDiffAt I 𝓘(ℝ) n (flowHittingTime
 
 /-- **The transition to a transverse section is `C^n`.** Flowing each point near `p` for its
 hitting time is a `C^n` map at `p`, with value `flowOf v T p` at `p`. -/
-theorem contMDiffAt_flowOf_flowHittingTime :
-    ContMDiffAt I I n (fun z ↦ flowOf v (flowHittingTime v g T p z) z) p :=
-  contMDiffAt_flowOf_comp hn hv (contMDiffAt_flowHittingTime hn hv hT hg hgv) contMDiffAt_id
-    (by simpa using hT)
+theorem contMDiffAt_flowTransition : ContMDiffAt I I n (flowTransition v g T p) p := by
+  rw [flowTransition_def]
+  exact contMDiffAt_flowOf_comp hn hv (contMDiffAt_flowHittingTime hn hv hT hg hgv)
+    contMDiffAt_id (by simpa using hT)
 
 end Smooth
+
+section Continuous
+
+variable (hv : CMDiff 1 (fun y ↦ (⟨y, v y⟩ : TangentBundle I M))) (hT : (T, p) ∈ flowDomain v)
+  (hg : ContMDiffAt I 𝓘(ℝ) 1 g (flowOf v T p))
+  (hgv : mvfderiv I g (flowOf v T p) (v (flowOf v T p)) ≠ 0)
+include hv hT hg hgv
+
+/-- The hitting time of a transverse section is continuous at `p`. -/
+theorem continuousAt_flowHittingTime : ContinuousAt (flowHittingTime v g T p) p :=
+  (contMDiffAt_flowHittingTime le_rfl hv hT hg hgv).continuousAt
+
+/-- The transition to a transverse section is continuous at `p`. -/
+theorem continuousAt_flowTransition : ContinuousAt (flowTransition v g T p) p :=
+  (contMDiffAt_flowTransition le_rfl hv hT hg hgv).continuousAt
+
+end Continuous
 
 end TauCeti
