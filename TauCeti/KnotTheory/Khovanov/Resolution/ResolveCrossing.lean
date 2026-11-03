@@ -187,6 +187,7 @@ theorem mem_resolveCrossingVertex_self_iff {S : Finset (Fin n)} :
 
 /-- The state of the vertex over `S` is the state of `S` with the smoothing `t` inserted at
 `c`. -/
+@[simp]
 theorem cubeState_resolveCrossingVertex (S : Finset (Fin n)) :
     cubeState (resolveCrossingVertex c t S) = c.insertNth t (cubeState S) := by
   funext j
@@ -196,6 +197,7 @@ theorem cubeState_resolveCrossingVertex (S : Finset (Fin n)) :
 
 /-- The vertex over `S` has as many crossings as `S` on the `A`-face and one more on the
 `B`-face. -/
+@[simp]
 theorem card_resolveCrossingVertex (S : Finset (Fin n)) :
     #(resolveCrossingVertex c t S) = #S + bif t then 0 else 1 := by
   cases t
@@ -204,6 +206,7 @@ theorem card_resolveCrossingVertex (S : Finset (Fin n)) :
 
 /-- Adding a crossing to a vertex of the cube of the resolution adds the corresponding crossing
 to the vertex over it. -/
+@[simp]
 theorem resolveCrossingVertex_insert (S : Finset (Fin n)) (a : Fin n) :
     resolveCrossingVertex c t (insert a S) = insert (c.succAbove a) (resolveCrossingVertex c t S) :=
   by cases t <;> simp [map_insert, insert_comm]
