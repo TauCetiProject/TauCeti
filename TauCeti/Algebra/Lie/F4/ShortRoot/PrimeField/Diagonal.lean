@@ -159,10 +159,16 @@ theorem exists_torusCharacter_eq_of_preservesBracket_diagonal (d : Fin 26 → A�
       (by rw [hc, map_one]; exact isUnit_one)
   have h12 : d 1 = d 12 * d 1 := by
     apply hmul
-    simpa [f4ShortRootWeight] using bracket_toral_coefficient 0 1 (by decide)
+    simpa only [f4ShortRootWeightIndexEquiv_symm_apply_inr_zero,
+      f4ShortSimpleIndex_zero, Fin.cast_cast, Fin.cast_refl, id_eq,
+      (by decide : (f4ShortRootWeight 1 2 : ZMod 2) = 1)] using
+      bracket_toral_coefficient 0 1 (by decide)
   have h13 : d 0 = d 13 * d 0 := by
     apply hmul
-    simpa [f4ShortRootWeight] using bracket_toral_coefficient 1 0 (by decide)
+    simpa only [f4ShortRootWeightIndexEquiv_symm_apply_inr_one,
+      f4ShortSimpleIndex_one, Fin.cast_cast, Fin.cast_refl, id_eq,
+      (by decide : (f4ShortRootWeight 0 3 : ZMod 2) = 1)] using
+      bracket_toral_coefficient 1 0 (by decide)
   exact exists_character_of_root_relations d
     (fun _ _ _ hw ↦ hmul (bracket_coefficient_of_weight_add _ _ _
       hw.1 hw.2.1 hw.2.2.1 hw.2.2.2))
