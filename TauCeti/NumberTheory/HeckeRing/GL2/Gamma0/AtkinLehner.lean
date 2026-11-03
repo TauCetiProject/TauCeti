@@ -176,7 +176,8 @@ private lemma atkinLehnerHom_involutive (g : GL (Fin 2) ℚ) :
       (natDiagGL 2 ![1, N])⁻¹).unop =
       (natDiagGL 2 ![1, N])⁻¹ := by
     rw [map_inv, MulOpposite.unop_inv, transposeMulEquiv_natDiagGL 2 ![1, N]]
-  rw [h_tr, transposeMulEquiv_transposeMulEquiv, transposeMulEquiv_natDiagGL 2 ![1, N], h_inv]
+  rw [h_tr, Matrix.GeneralLinearGroup.transposeMulEquiv_transposeMulEquiv,
+    transposeMulEquiv_natDiagGL 2 ![1, N], h_inv]
   group
 
 /-- The ambient Atkin–Lehner anti-involution as an equivalence with the opposite group. -/

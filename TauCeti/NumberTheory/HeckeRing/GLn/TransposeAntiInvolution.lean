@@ -7,6 +7,7 @@ module
 
 public import TauCeti.NumberTheory.HeckeRing.Commutativity
 public import TauCeti.NumberTheory.HeckeRing.GLn.DiagonalCosets
+public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Transpose
 
 /-!
 # Commutativity of the `GL_n` Hecke ring
@@ -48,15 +49,6 @@ namespace HeckeRing.GLn
 
 variable (n : ℕ)
 
-/-- Transposing twice is the identity. -/
-@[simp] lemma transposeMulEquiv_transposeMulEquiv (g : GL (Fin n) ℚ) :
-    (Matrix.GeneralLinearGroup.transposeMulEquiv (Fin n)
-      (Matrix.GeneralLinearGroup.transposeMulEquiv (Fin n) g).unop).unop = g := by
-  have h := (Matrix.GeneralLinearGroup.transposeMulEquiv (R := ℚ) (Fin n)).apply_symm_apply
-    (MulOpposite.op g)
-  rw [Matrix.GeneralLinearGroup.transposeMulEquiv_symm_apply_op] at h
-  exact congrArg MulOpposite.unop h
-
 /-- Transposition preserves `SL_n(ℤ)`: the transpose of an integral matrix of determinant
 one again has determinant one. -/
 lemma transposeMulEquiv_mem_SLnZ {g : GL (Fin n) ℚ} (hg : g ∈ SLnZ n) :
@@ -91,7 +83,7 @@ noncomputable def transposeAntiInvolution :
     HeckeAntiInvolution (posDetInt n) (SLnZ n) :=
   HeckeAntiInvolution.ofAmbient
     (Matrix.GeneralLinearGroup.transposeMulEquiv (R := ℚ) (Fin n)).toMonoidHom
-    (transposeMulEquiv_transposeMulEquiv n)
+    Matrix.GeneralLinearGroup.transposeMulEquiv_transposeMulEquiv
     (fun _ hg ↦ transposeMulEquiv_mem_SLnZ n hg)
     (fun _ hg ↦ transposeMulEquiv_mem_posDetInt n hg)
 
