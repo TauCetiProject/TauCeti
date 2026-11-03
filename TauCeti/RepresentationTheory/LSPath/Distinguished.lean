@@ -65,6 +65,8 @@ same minimum height.
 * `TauCeti.LSPath.isDistinguished_timed`: for dominant `λ` and a realization `f` injective on
   the Weyl orbit `W λ`, the presentation of an LS path by its directions and breaks is
   distinguished for the realized orbit.
+* `TauCeti.LSPath.hasDistinguished_toPLPath`: for any shape `λ` and realization `f`, a realized
+  LS path has a distinguished presentation for the realized orbit.
 * `TauCeti.PLPath.distinguished_ofSegments`: the distinguished presentation of the path presented
   by a distinguished `p` is `p`.
 * `TauCeti.PLPath.isDistinguished_normalize`, `TauCeti.PLPath.hasDistinguished_ofSegments`:
@@ -415,5 +417,17 @@ theorem isDistinguished_timed (hlam : lam ∈ dominantChamber P b)
   have hj := eq_of_isMinimalCosetRep_of_smul_eq hlam (π.dir ⟨i, by omega⟩).2
     (π.dir ⟨i + 1, hi⟩).2 (hf ⟨_, rfl⟩ ⟨_, rfl⟩ heq)
   exact π.dir_succ_ne ⟨i, by omega⟩ (Subtype.ext hj.symm)
+
+omit [P.flip.IsReduced] in
+/-- **A realized LS path has a distinguished presentation for the realized orbit.** For any shape
+`λ` and realization `f`, normalizing the presentation by directions and breaks gives a
+distinguished presentation of `π` for `f (W λ)`. -/
+theorem hasDistinguished_toPLPath :
+    PLPath.HasDistinguished (Set.range fun w : P.weylGroup ↦ f (w • lam)) (π.toPLPath 𝕜 f) := by
+  rw [toPLPath_def]
+  exact PLPath.hasDistinguished_ofSegments
+    (fun _ hy _ ↦ ⟨PLPath.isTimed_iff.1 (π.isTimed_timed 𝕜 f) _ hy,
+      π.inv_smul_mem_range_of_mem_timed 𝕜 f hy⟩)
+    (π.duration_timed 𝕜 f)
 
 end TauCeti.LSPath

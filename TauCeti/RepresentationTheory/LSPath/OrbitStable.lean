@@ -43,8 +43,8 @@ ray, this is the distinguished presentation of `f_α π`.
 * `TauCeti.PLPath.distinguished_of_lower_eq_some`: the distinguished presentation of `f_α π` is
   the segment list of the lowered graph of the distinguished presentation of `π`.
 * `TauCeti.LSPath.hasDistinguished_of_lower_eq_some`,
-  `TauCeti.LSPath.hasDistinguished_of_raise_eq_some`: lowering or raising an LS path of dominant
-  shape `λ` along any root gives a path with velocities in the Weyl orbit `W λ`.
+  `TauCeti.LSPath.hasDistinguished_of_raise_eq_some`: lowering or raising an LS path of shape `λ`
+  along any root gives a path with velocities in the Weyl orbit `W λ`.
 
 ## References
 
@@ -145,38 +145,30 @@ namespace TauCeti.LSPath
 open Module RootPairing Set
 
 variable {ι M N : Type*} [AddCommGroup M] [AddCommGroup N] {P : RootPairing ι ℤ M N}
-  {b : P.Base} [Finite ι] [P.IsReduced] [P.flip.IsReduced] {lam : M} (π : LSPath P b lam)
+  {b : P.Base} [Finite ι] [P.IsReduced] {lam : M} (π : LSPath P b lam)
   {𝕜 : Type*} {V : Type*} [Field 𝕜] [LinearOrder 𝕜] [IsStrictOrderedRing 𝕜] [AddCommGroup V]
   [Module 𝕜 V] {f : M →+ V}
 
-/-- **Lowering an LS path stays in the Weyl orbit.** For dominant `λ`, a realization `f`
-injective on `W λ`, and a height form `F` agreeing with the coroot `αᵢ^∨` on the weight lattice,
-lowering the realized LS path along the realized root `f αᵢ` gives a path with a distinguished
-presentation for the realized orbit `f (W λ)`. -/
-theorem hasDistinguished_of_lower_eq_some (hlam : lam ∈ dominantChamber P b)
-    (hf : InjOn f (range fun w : P.weylGroup ↦ w • lam)) (i : ι) {F : Dual 𝕜 V}
+/-- **Lowering an LS path stays in the Weyl orbit.** For a height form `F` agreeing with the
+coroot `αᵢ^∨` on the weight lattice, lowering the realized LS path along the realized root `f αᵢ`
+gives a path with a distinguished presentation for the realized orbit `f (W λ)`. -/
+theorem hasDistinguished_of_lower_eq_some (i : ι) {F : Dual 𝕜 V}
     (hF : ∀ m, F (f m) = (P.coroot' i m : 𝕜)) {π' : PLPath 𝕜 V}
     (h : PLPath.lower F (f (P.root i)) (π.toPLPath 𝕜 f) = some π') :
     PLPath.HasDistinguished (range fun w : P.weylGroup ↦ f (w • lam)) π' := by
   have hS := P.mapsTo_preReflection_image_orbit_weylGroup i hF lam
   rw [MulAction.orbit, ← range_comp] at hS
-  rw [toPLPath_def] at h
-  exact PLPath.hasDistinguished_of_lower_eq_some
-    (π.isDistinguished_timed 𝕜 f hlam hf).hasDistinguished hS h
+  exact PLPath.hasDistinguished_of_lower_eq_some (π.hasDistinguished_toPLPath 𝕜 f) hS h
 
-/-- **Raising an LS path stays in the Weyl orbit.** For dominant `λ`, a realization `f`
-injective on `W λ`, and a height form `F` agreeing with the coroot `αᵢ^∨` on the weight lattice,
-raising the realized LS path along the realized root `f αᵢ` gives a path with a distinguished
-presentation for the realized orbit `f (W λ)`. -/
-theorem hasDistinguished_of_raise_eq_some (hlam : lam ∈ dominantChamber P b)
-    (hf : InjOn f (range fun w : P.weylGroup ↦ w • lam)) (i : ι) {F : Dual 𝕜 V}
+/-- **Raising an LS path stays in the Weyl orbit.** For a height form `F` agreeing with the
+coroot `αᵢ^∨` on the weight lattice, raising the realized LS path along the realized root `f αᵢ`
+gives a path with a distinguished presentation for the realized orbit `f (W λ)`. -/
+theorem hasDistinguished_of_raise_eq_some (i : ι) {F : Dual 𝕜 V}
     (hF : ∀ m, F (f m) = (P.coroot' i m : 𝕜)) {π' : PLPath 𝕜 V}
     (h : PLPath.raise F (f (P.root i)) (π.toPLPath 𝕜 f) = some π') :
     PLPath.HasDistinguished (range fun w : P.weylGroup ↦ f (w • lam)) π' := by
   have hS := P.mapsTo_preReflection_image_orbit_weylGroup i hF lam
   rw [MulAction.orbit, ← range_comp] at hS
-  rw [toPLPath_def] at h
-  exact PLPath.hasDistinguished_of_raise_eq_some
-    (π.isDistinguished_timed 𝕜 f hlam hf).hasDistinguished hS h
+  exact PLPath.hasDistinguished_of_raise_eq_some (π.hasDistinguished_toPLPath 𝕜 f) hS h
 
 end TauCeti.LSPath
