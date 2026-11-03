@@ -575,7 +575,7 @@ theorem graphAutomorphismMatrix_sq (A : Type v) [CommRing A] :
   rw [graphAutomorphismMatrix]
   apply kostantNumberedSymmetryMatrix_pow_eq_one
   intro x
-  rw [pow_two, LinearEquiv.mul_apply]
+  rw [pow_two, mul_apply_eq_comp]
   exact graphModuleEquiv_apply_apply x
 
 /-- Conjugation by the signed graph-automorphism matrix preserves the doubled carrier's point

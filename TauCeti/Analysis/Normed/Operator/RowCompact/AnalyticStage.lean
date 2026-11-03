@@ -93,7 +93,7 @@ theorem isCompletelyContinuous_transition [Module.Finite R E] :
   let s : Finset (ZMod (p ^ (h + 1)) × ℕ) := Finset.univ ×ˢ Finset.range N
   refine ⟨(indicatorCLM R (s : Set _)).comp (transition R),
     (isFiniteRank_indicatorCLM s).comp_right _, fun c ↦ (norm_le (by positivity)).2 fun i ↦ ?_⟩
-  rw [coe_sub, Pi.sub_apply, ContinuousLinearMap.comp_apply, coe_indicatorCLM]
+  rw [FunLike.coe_sub, Pi.sub_apply, ContinuousLinearMap.comp_apply, coe_indicatorCLM]
   by_cases hi : i ∈ (s : Set (ZMod (p ^ (h + 1)) × ℕ))
   · rw [Set.indicator_of_mem hi, sub_self, norm_zero]
     positivity

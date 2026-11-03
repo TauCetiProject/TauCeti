@@ -32,6 +32,8 @@ the component of `R` cut out by `e`.
 
 If `R / I → B / IB` is surjective, algebra maps from `B` to an algebra annihilated by `I`
 are unique. This quotient extensionality lemma is used to construct compatible residue maps.
+More generally, if `R ⧸ I → S ⧸ J` is surjective, every element of `S` is congruent modulo `J` to
+the image of an element of `R` (`Ideal.exists_sub_mem_of_surjective_quotientMap`).
 
 If every class modulo a maximal ideal `m` comes from `f`, then `m.comap f` is maximal
 (`Ideal.isMaximal_comap_of_surjective_quotient_mk_comp`).
@@ -82,6 +84,16 @@ theorem algHom_ext_of_surjective_algebraMap_quotient (I : Ideal R)
     obtain ⟨r, rfl⟩ := Ideal.Quotient.mk_surjective r
     simp [f', g']
   exact AlgHom.ext fun b ↦ congrArg (fun a ↦ a (Ideal.Quotient.mk _ b)) he
+
+/-- If `R ⧸ I → S ⧸ J` is surjective, every element of `S` is congruent modulo `J` to the image
+of an element of `R`. -/
+theorem exists_sub_mem_of_surjective_quotientMap {S : Type*} [CommRing S] {I : Ideal R}
+    {J : Ideal S} {f : R →+* S} {hIJ : I ≤ J.comap f}
+    (hf : Function.Surjective (quotientMap J f hIJ)) (s : S) : ∃ r, s - f r ∈ J := by
+  obtain ⟨x, hx⟩ := hf (Ideal.Quotient.mk _ s)
+  obtain ⟨r, rfl⟩ := Ideal.Quotient.mk_surjective x
+  rw [quotientMap_mk] at hx
+  exact ⟨r, Ideal.Quotient.eq.mp hx.symm⟩
 
 /-- If `I ≤ J` are ideals with `I` finitely generated, then `J.spanFinrank` is at most the sum
 of the `spanFinrank`s of its image in `R ⧸ I` and `I`. For finitely generated `J`, this bounds
