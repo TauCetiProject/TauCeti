@@ -62,15 +62,11 @@ to the group generated after extension. Contravariantly, it is a closed subgroup
 noncomputable def geckGeneratedCoordinateHopfAlgebraBaseChangeMap :
     CommHopfAlgCat.baseChange (K := K) (t.geckGeneratedCoordinateHopfAlgebra ht k) ⟶
       t.geckGeneratedCoordinateHopfAlgebra ht K :=
-  eqToHom (congrArg (CommHopfAlgCat.baseChange (K := K))
-      (t.geckGeneratedCoordinateHopfAlgebra_def ht k)) ≫
-    (CommHopfAlgCat.quotientBaseChangeIsoOfMapEq (t.geckGeneratedDefiningIdeal ht k)
-      ((CommHopfAlgCat.baseChangeHopfIdeal (K := K) (t.geckGeneratedDefiningIdeal ht k)).map
-        (GeneralLinear.coordinateHopfAlgebraBaseChangeIso k K (t.geckDim ht)).hom.hom)
-      (GeneralLinear.coordinateHopfAlgebraBaseChangeIso k K (t.geckDim ht)) rfl).hom ≫
-    CommHopfAlgCat.quotientMapOfLe _
-      (t.map_baseChangeHopfIdeal_geckGeneratedDefiningIdeal_le ht k K) ≫
-    eqToHom (t.geckGeneratedCoordinateHopfAlgebra_def ht K).symm
+  CommHopfAlgCat.baseChangeMapOfLeQuotient (t.geckGeneratedDefiningIdeal ht k)
+    (t.geckGeneratedDefiningIdeal ht K) (t.geckGeneratedCoordinateHopfAlgebra_def ht k)
+    (t.geckGeneratedCoordinateHopfAlgebra_def ht K)
+    (GeneralLinear.coordinateHopfAlgebraBaseChangeIso k K (t.geckDim ht))
+    (t.map_baseChangeHopfIdeal_geckGeneratedDefiningIdeal_le ht k K)
 
 /-- The arbitrary-extension comparison preserves the closed immersion into the general-linear
 group. This square characterizes the comparison. -/
@@ -81,31 +77,8 @@ theorem
         t.geckGeneratedCoordinateHopfAlgebraBaseChangeMap ht k K =
       (GeneralLinear.coordinateHopfAlgebraBaseChangeIso k K (t.geckDim ht)).hom ≫
         t.geckGeneratedCoordinateMap ht K := by
-  let F := CommHopfAlgCat.baseChangeFunctor (k := k) (K := K)
-  -- Transport the sealed quotient presentation through the scalar-extension functor.
-  have hbase :
-      CommHopfAlgCat.baseChangeMap (K := K) (t.geckGeneratedCoordinateMap ht k) ≫
-          eqToHom (congrArg (CommHopfAlgCat.baseChange (K := K))
-            (t.geckGeneratedCoordinateHopfAlgebra_def ht k)) =
-        CommHopfAlgCat.baseChangeMap (K := K)
-          (CommHopfAlgCat.mkQuotient _ (t.geckGeneratedDefiningIdeal ht k)) := by
-    calc
-      _ = F.map (t.geckGeneratedCoordinateMap ht k) ≫
-          F.map (eqToHom (t.geckGeneratedCoordinateHopfAlgebra_def ht k)) := by
-        rw [CommHopfAlgCat.baseChangeFunctor_map]
-        congr 1
-        exact (eqToHom_map F (t.geckGeneratedCoordinateHopfAlgebra_def ht k)).symm
-      _ = F.map (t.geckGeneratedCoordinateMap ht k ≫
-          eqToHom (t.geckGeneratedCoordinateHopfAlgebra_def ht k)) :=
-        (F.map_comp _ _).symm
-      _ = _ := by
-        simp only [geckGeneratedCoordinateMap_def, Category.assoc, eqToHom_trans,
-          eqToHom_refl, Category.comp_id, F]
-  simp only [geckGeneratedCoordinateHopfAlgebraBaseChangeMap]
-  rw [← Category.assoc, hbase, ← Category.assoc,
-    CommHopfAlgCat.baseChangeMap_mkQuotient_comp_quotientBaseChangeIsoOfMapEq_hom,
-    Category.assoc, CommHopfAlgCat.mkQuotient_comp_quotientMapOfLe_assoc,
-    ← geckGeneratedCoordinateMap_def]
+  apply CommHopfAlgCat.baseChangeMap_comp_baseChangeMapOfLeQuotient
+  all_goals simp [geckGeneratedCoordinateMap_def]
 
 private noncomputable instance baseChangeGeckGeneratedCoordinateMap_epi :
     Epi (CommHopfAlgCat.baseChangeMap (K := K) (t.geckGeneratedCoordinateMap ht k)) :=
@@ -156,10 +129,8 @@ theorem geckGeneratedCoordinateHopfAlgebraBaseChangeMap_comp_geckGeneratedCoordi
       ht k K
   rw [← Category.assoc, hsquare, Category.assoc,
     geckGeneratedCoordinateMap_comp_geckGeneratedCoordinateLift]
-  rw [← Category.assoc, ← CommHopfAlgCat.baseChangeFunctor_map,
-    ← CommHopfAlgCat.baseChangeFunctor_map, ← Functor.map_comp,
-    geckGeneratedCoordinateMap_comp_geckGeneratedCoordinateLift,
-    CommHopfAlgCat.baseChangeFunctor_map]
+  rw [← Category.assoc, ← (CommHopfAlgCat.baseChangeFunctor (K := K)).map_comp,
+    geckGeneratedCoordinateMap_comp_geckGeneratedCoordinateLift]
   exact ((Iso.inv_comp_eq
     (GeneralLinear.coordinateHopfAlgebraBaseChangeIso k K (t.geckDim ht))).mp
       (t.geckGeneratorCoordinateMap_baseChange ht k K j)).symm
