@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Analysis.ODE.InitialCondition
 public import TauCeti.Geometry.Manifold.IntegralCurve.Basic
-import TauCeti.Geometry.Manifold.VectorBundle.Tangent
+import TauCeti.Geometry.Manifold.VectorBundle.Tangent.Basic
 
 /-!
 # Smooth dependence of integral curves on their initial point

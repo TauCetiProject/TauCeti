@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.MeasureTheory.OuterMeasure.Basic
-import TauCeti.Data.Set.SymmDiff
+import TauCeti.Order.SymmDiff
 
 /-!
 # Estimates in symmetric-difference outer measure
@@ -67,6 +67,6 @@ theorem abs_toReal_inter_sub_le_toReal_symmDiff_add {A B s : Set Ω}
         (ne_top_of_le_ne_top hAfin (measure_mono inter_subset_left)) hs
     _ ≤ (μ (A ∆ s)).toReal + (μ (B ∆ s)).toReal :=
       ENNReal.toReal_le_add
-        ((measure_mono Set.inter_symmDiff_subset).trans (measure_union_le _ _)) hA hB
+        ((measure_mono inf_symmDiff_le_symmDiff_sup_symmDiff).trans (measure_union_le _ _)) hA hB
 
 end TauCeti.MeasureTheory

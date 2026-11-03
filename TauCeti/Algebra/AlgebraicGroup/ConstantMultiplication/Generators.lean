@@ -26,9 +26,18 @@ The derivation equation is the tangent equation of the subgroup scheme preservin
 multiplication, `TauCeti.ConstantMultiplication.mem_lieSubalgebra_definingHopfIdeal_iff`; the
 second criterion integrates it along a square-zero direction.
 
+The diagonal criterion makes the diagonal entries multiplicative along every unit structure
+constant. A function multiplicative along the nonzero structure constants is then controlled by
+its values on a few indices: triviality propagates from a set of indices to every index occurring
+in a nonzero structure constant together with two of them.
+
 ## Main results
 
 * `TauCeti.ConstantMultiplication.preserves_diagonal_iff`: the diagonal criterion.
+* `TauCeti.ConstantMultiplication.eq_mul_of_preserves_diagonal`: the diagonal entries are
+  multiplicative along every unit structure constant.
+* `TauCeti.ConstantMultiplication.eq_one_of_eq_mul_of_ne_zero`: one round of propagation of
+  triviality for a function multiplicative along the nonzero structure constants.
 * `TauCeti.ConstantMultiplication.preserves_one_add_smul`: the elementary-matrix criterion.
 
 ## References
@@ -60,6 +69,12 @@ theorem preserves_diagonal_iff (d : Fin n → S) :
         ite_true]
   simp only [preserves_def, himage, ← Matrix.ext_iff, diagonal_mul, mul_diagonal,
     Matrix.smul_apply, map_apply, smul_eq_mul]
+
+/-- **The diagonal entries of a diagonal matrix preserving a constant multiplication are
+multiplicative along every unit structure constant**: `dᵢ = dₖ dⱼ` whenever `(Cₖ)ᵢⱼ` is a unit. -/
+theorem eq_mul_of_preserves_diagonal {d : Fin n → S} (hd : Preserves R n C (diagonal d))
+    {k i j : Fin n} (hc : IsUnit (algebraMap R S (C k i j))) : d i = d k * d j :=
+  hc.mul_right_cancel (by rw [(preserves_diagonal_iff C d).mp hd k i j, mul_right_comm])
 
 /-- **An elementary matrix `1 + u X` preserves a constant multiplication** when `X` is a derivation
 of it whose second-order terms vanish: `X Cₖ = ∑ₐ Xₐₖ Cₐ + Cₖ X` and `(∑ₐ Xₐₖ Cₐ) X = 0` for every
@@ -93,5 +108,22 @@ theorem preserves_one_add_smul {X : Matrix (Fin n) (Fin n) R}
   simp only [mul_add, add_mul, mul_one, mul_smul_comm, smul_mul_assoc, hsq', smul_zero, add_zero,
     smul_add]
   abel
+
+/-- **One round of propagation along a multiplication.** Let `f` take values in a type with a
+multiplication and a two-sided unit `1`, and satisfy `fᵢ = fₖ fⱼ` whenever the structure constant
+`c k i j` is nonzero. If `f` is trivial on a set `T` of indices, it is trivial at every index
+occurring in a nonzero structure constant together with two indices of `T`. -/
+theorem eq_one_of_eq_mul_of_ne_zero {ι M G : Type*} [Zero M] [MulOneClass G] {c : ι → ι → ι → M}
+    {f : ι → G} (hf : ∀ k i j, c k i j ≠ 0 → f i = f k * f j) {T : Set ι}
+    (hT : ∀ a ∈ T, f a = 1) {x : ι}
+    (hx : ∃ k ∈ T, ∃ j ∈ T, c k x j ≠ 0 ∨ c x k j ≠ 0 ∨ c k j x ≠ 0) : f x = 1 := by
+  obtain ⟨k, hk, j, hj, h | h | h⟩ := hx
+  · rw [hf k x j h, hT k hk, hT j hj, one_mul]
+  · have hx := hf x k j h
+    rw [hT k hk, hT j hj, mul_one] at hx
+    exact hx.symm
+  · have hx := hf k j x h
+    rw [hT k hk, hT j hj, one_mul] at hx
+    exact hx.symm
 
 end TauCeti.ConstantMultiplication

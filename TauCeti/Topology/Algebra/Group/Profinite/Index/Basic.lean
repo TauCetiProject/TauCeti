@@ -87,7 +87,7 @@ theorem _root_.Subgroup.profiniteIndex_top : Subgroup.profiniteIndex (⊤ : Subg
     Subgroup.map_top_of_surjective _ (QuotientGroup.mk'_surjective N.toSubgroup)
   ext ℓ
   simp_rw [Subgroup.profiniteIndex_apply, hmap]
-  simp
+  simp [Nat.padicValNat_def]
 
 section Profinite
 
@@ -226,11 +226,12 @@ theorem _root_.Subgroup.profiniteIndex_eq_primePower {H : Subgroup G} (hH : IsOp
   have : Fact (ℓ : ℕ).Prime := ⟨ℓ.prop⟩
   rw [hval, h]
   rcases eq_or_ne ℓ q with rfl | hne
-  · rw [Supernatural.primePower_apply_self, padicValNat.prime_pow]
+  · rw [Supernatural.primePower_apply_self, Nat.padicValNat_def, Nat.multiplicity_prime_pow]
   · have hnd : ¬((ℓ : ℕ) ∣ (q : ℕ) ^ k) := fun hdvd ↦
       hne (Nat.Primes.coe_nat_inj ℓ q |>.mp
         ((Nat.prime_dvd_prime_iff_eq ℓ.prop q.prop).mp (ℓ.prop.dvd_of_dvd_pow hdvd)))
-    rw [Supernatural.primePower_apply_of_ne hne, padicValNat.eq_zero_of_not_dvd hnd, Nat.cast_zero]
+    rw [Supernatural.primePower_apply_of_ne hne, Nat.padicValNat_def,
+      multiplicity_eq_zero_of_not_dvd hnd, Nat.cast_zero]
 
 /-- The finite-quotient and supernatural-index formulations of the prime-to-`ℓ` condition
 for a subgroup of a profinite group agree. -/
@@ -246,7 +247,8 @@ theorem _root_.Subgroup.not_dvd_profiniteIndex_iff_forall_not_dvd_index (H : Sub
     rw [Supernatural.coe_prime_dvd_iff, Subgroup.profiniteIndex_apply]
     have hval : (padicValNat ℓ.val
         (H.map (QuotientGroup.mk' N.toSubgroup)).index : ℕ∞) ≠ 0 := by
-      exact_mod_cast (dvd_iff_padicValNat_ne_zero
+      simp only [Nat.padicValNat_def]
+      exact_mod_cast (_root_.dvd_iff_multiplicity_ne_zero
         (Subgroup.index_ne_zero_of_finite (H := H.map (QuotientGroup.mk' N.toSubgroup)))).mp hpN
     exact fun hsup ↦ hval <| le_antisymm
       ((le_iSup (fun M : OpenNormalSubgroup G ↦
@@ -256,7 +258,8 @@ theorem _root_.Subgroup.not_dvd_profiniteIndex_iff_forall_not_dvd_index (H : Sub
     rw [Supernatural.coe_prime_dvd_iff, not_ne_iff, Subgroup.profiniteIndex_apply,
       ENat.iSup_eq_zero]
     intro N
-    exact_mod_cast padicValNat.eq_zero_of_not_dvd (h N)
+    simpa only [Nat.padicValNat_def, Nat.cast_eq_zero] using
+      multiplicity_eq_zero_of_not_dvd (h N)
 
 omit [CompactSpace G] in
 /-- Taking the topological closure of a subgroup does not change its supernatural index. -/

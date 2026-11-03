@@ -83,6 +83,8 @@ statement above then reads as a relation in the group of units rather than in th
   spaces onto reflected root spaces.
 * `TauCeti.weylAut_apply_eq_weylUnit_conj`: in an associative algebra the Weyl automorphism is
   conjugation by the Weyl element.
+* `LieHom.map_weylAut_eq_weylUnit_conj`: a Lie homomorphism into an associative algebra carries
+  the Weyl automorphism to conjugation by the Weyl element of the images of `e` and `f`.
 * `TauCeti.weylUnit_conj_h`, `TauCeti.weylUnit_conj_e`, `TauCeti.weylUnit_conj_f`,
   `TauCeti.weylUnit_conj_of_lie_eq_smul`, `TauCeti.inv_weylUnit_conj_of_lie_eq_smul` and
   `TauCeti.lie_weylUnit_conj`: the conjugation form of the statements above.
@@ -469,6 +471,29 @@ theorem coe_inv_weylUnit (hE : IsNilpotent E) (hF : IsNilpotent F) :
 
 variable {K : Type*} [CommRing K] [Algebra K A]
 
+/-- **A Lie homomorphism into an associative algebra carries the Weyl automorphism to conjugation
+by the Weyl element.** If `φ : L → A` maps the raising and lowering elements of an `sl₂` triple of
+`L` to nilpotent elements `φ e`, `φ f`, then `φ (weylAut t he hf y) = n (φ y) n⁻¹` for the unit
+`n = exp (φ e) · exp (-φ f) · exp (φ e)`.
+
+For a representation `φ` this identifies the action of the Weyl-transformed element with the
+conjugate of the action of `y` by Chevalley's group element `n_α`, whatever `y` is; the triple of
+`L` need not consist of root vectors of any distinguished family. -/
+theorem _root_.LieHom.map_weylAut_eq_weylUnit_conj {L : Type*} [LieRing L] [LieAlgebra K L]
+    [LieAlgebra ℚ L] {h e f : L} (φ : L →ₗ⁅K⁆ A) (t : IsSl2Triple h e f)
+    (he : IsNilpotent (ad K L e)) (hf : IsNilpotent (ad K L f)) (hφe : IsNilpotent (φ e))
+    (hφf : IsNilpotent (φ f)) (y : L) :
+    φ (weylAut t he hf y) =
+      ((weylUnit hφe hφf : Aˣ) : A) * φ y * (((weylUnit hφe hφf)⁻¹ : Aˣ) : A) := by
+  have hφf' : IsNilpotent (φ (-f)) := by simpa only [map_neg] using hφf.neg
+  rw [weylAut_apply,
+    LieHom.map_expAd φ he (LieAlgebra.ad_nilpotent_of_nilpotent (R := K) hφe),
+    LieHom.map_expAd φ _ (LieAlgebra.ad_nilpotent_of_nilpotent (R := K) hφf'),
+    LieHom.map_expAd φ he (LieAlgebra.ad_nilpotent_of_nilpotent (R := K) hφe)]
+  simp only [map_neg] at hφf' ⊢
+  simp [expAd_apply_eq_exp_mul_exp_neg (K := K) hφe,
+    expAd_apply_eq_exp_mul_exp_neg (K := K) hφf', mul_assoc]
+
 /-- **The Weyl automorphism is conjugation by the Weyl element.** Each of the three exponentials
 of `TauCeti.weylAut` over `K` acts by conjugation on an associative `ℚ`-algebra, so their
 composite does too. -/
@@ -476,9 +501,10 @@ theorem weylAut_apply_eq_weylUnit_conj (t : IsSl2Triple H E F) (hE : IsNilpotent
     (hF : IsNilpotent F) (y : A) :
     weylAut (K := K) t (LieAlgebra.ad_nilpotent_of_nilpotent (R := K) hE)
         (LieAlgebra.ad_nilpotent_of_nilpotent (R := K) hF) y =
-      ((weylUnit hE hF : Aˣ) : A) * y * (((weylUnit hE hF)⁻¹ : Aˣ) : A) := by
-  simp [weylAut_apply, expAd_apply_eq_exp_mul_exp_neg (K := K) hE,
-    expAd_apply_eq_exp_mul_exp_neg (K := K) hF.neg, mul_assoc]
+      ((weylUnit hE hF : Aˣ) : A) * y * (((weylUnit hE hF)⁻¹ : Aˣ) : A) :=
+  (LieHom.id : A →ₗ⁅K⁆ A).map_weylAut_eq_weylUnit_conj t
+    (LieAlgebra.ad_nilpotent_of_nilpotent (R := K) hE)
+    (LieAlgebra.ad_nilpotent_of_nilpotent (R := K) hF) hE hF y
 
 /-- The Weyl element negates the Cartan element of the triple. -/
 @[simp]

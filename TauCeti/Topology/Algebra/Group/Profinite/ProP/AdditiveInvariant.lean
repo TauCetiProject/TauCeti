@@ -40,7 +40,7 @@ variable {p : ℕ} {G : Type v} [Group G] [TopologicalSpace G]
 variable
   (I : ∀ (A : Type u) [AddCommGroup A] [TopologicalSpace A]
     [DiscreteTopology A] [DistribMulAction G A] [ContinuousSMul G A] [Finite A],
-    (∀ a : A, ∃ k : ℕ, p ^ k • a = 0) → R)
+    IsAddPGroup p A → R)
   (hExact : ∀ {A B C : Type u}
     [AddCommGroup A] [TopologicalSpace A] [DiscreteTopology A]
     [DistribMulAction G A] [ContinuousSMul G A] [Finite A]
@@ -48,9 +48,9 @@ variable
     [DistribMulAction G B] [ContinuousSMul G B] [Finite B]
     [AddCommGroup C] [TopologicalSpace C] [DiscreteTopology C]
     [DistribMulAction G C] [ContinuousSMul G C] [Finite C]
-    (hA : ∀ a : A, ∃ k : ℕ, p ^ k • a = 0)
-    (hB : ∀ b : B, ∃ k : ℕ, p ^ k • b = 0)
-    (hC : ∀ c : C, ∃ k : ℕ, p ^ k • c = 0)
+    (hA : IsAddPGroup p A)
+    (hB : IsAddPGroup p B)
+    (hC : IsAddPGroup p C)
     (f : A →+ B) (q : B →+ C),
     (∀ (g : G) (a : A), f (g • a) = g • f a) →
     (∀ (g : G) (b : B), q (g • b) = g • q b) →
@@ -72,7 +72,7 @@ because it is additively equivalent to `ZMod p`, and its trivial action is conti
 is assumed. No exponent-`p` assumption on `M` is needed. -/
 theorem invariant_eq_padicValNat_nsmul_of_isProP
     (hG : IsProP p G)
-    (hM : ∀ m : M, ∃ k : ℕ, p ^ k • m = 0)
+    (hM : IsAddPGroup p M)
     (eP : P ≃+ ZMod p)
     (hPsmul : ∀ (g : G) (x : P), g • x = x) :
     haveI : Finite P := Finite.of_equiv _ eP.symm.toEquiv
@@ -81,12 +81,12 @@ theorem invariant_eq_padicValNat_nsmul_of_isProP
       I P (forall_exists_nsmul_eq_zero_of_addEquiv_zmod eP) := by
   have _ : Finite P := Finite.of_equiv _ eP.symm.toEquiv
   have _ : ContinuousSMul G P := ⟨continuous_snd.congr fun z ↦ (hPsmul z.1 z.2).symm⟩
-  have hP := forall_exists_nsmul_eq_zero_of_addEquiv_zmod eP
+  have hP : IsAddPGroup p P := forall_exists_nsmul_eq_zero_of_addEquiv_zmod eP
   obtain ⟨N, hN, h0, hmono, htop, _, hfactors⟩ :=
     exists_filtration_with_trivial_factors_of_isProP hG hM
   let _ (i : ℕ) := (N i).restrictDistribMulAction (hN i)
   let _ (i : ℕ) := (N i).restrictDistribMulAction_continuousSMul (hN i)
-  have hprim := fun i ↦ (N i).forall_exists_nsmul_eq_zero hM
+  have hprim := fun i ↦ hM.to_addSubgroup (N i)
   let _ : Subsingleton (N 0) := by rw [h0]; infer_instance
   have hzero := invariant_eq_zero_of_subsingleton I hExact (hprim 0)
   -- Each successive factor contributes the same value `I P hP`.
@@ -111,7 +111,7 @@ theorem invariant_eq_padicValNat_nsmul_of_isProP
       let _ : ContinuousSMul G Q :=
         ⟨by simpa only [htriv] using (continuous_snd : Continuous fun z : G × Q ↦ z.2)⟩
       let e : Q ≃+ P := eQ.trans eP.symm
-      have hQ := forall_exists_nsmul_eq_zero_of_addEquiv_zmod eQ
+      have hQ : IsAddPGroup p Q := forall_exists_nsmul_eq_zero_of_addEquiv_zmod eQ
       have heq : I Q hQ = I P hP :=
         invariant_eq_of_equiv I hExact hQ hP e
           (by intro g y; rw [htriv, hPsmul])
