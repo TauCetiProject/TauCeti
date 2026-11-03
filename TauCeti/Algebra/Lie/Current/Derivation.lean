@@ -336,6 +336,27 @@ theorem vectorFieldEnvelopingDerivation_ι (h : R⸨X⸩) (x : ofTwoCocycle c) :
     vectorFieldExtensionDerivation_ofProd, ι_ofProd, Algebra.algebraMap_eq_smul_one, map_smul,
     derivationLieAlgebra.apply_one_eq_zero, smul_zero, map_zero, mul_zero, map_zero]
 
+/-- A vector field of order at least `P` carries `I_N` into `I_(min N (P + N - 1))`.
+The minimum accounts for differentiating the left factor in a left-ideal generator. -/
+theorem vectorFieldEnvelopingDerivation_mem_orderLeftIdeal_min {P N : ℤ} {h : R⸨X⸩}
+    (hh : (P : WithTop ℤ) ≤ h.orderTop) {x : UK} (hx : x ∈ orderLeftIdeal Φ hΦ hΦs a N) :
+    (vectorFieldEnvelopingDerivation Φ hΦ hΦs a h : Module.End R UK) x ∈
+      orderLeftIdeal Φ hΦ hΦs a (min N (P + N - 1)) := by
+  rw [orderLeftIdeal_def] at hx
+  induction hx using Submodule.span_induction with
+  | mem x hx =>
+    obtain ⟨u, hu, rfl⟩ := hx
+    rw [vectorFieldEnvelopingDerivation_envelopingι]
+    exact orderLeftIdeal_antitone Φ hΦ hΦs a (min_le_right _ _)
+      (envelopingι_mem_orderLeftIdeal (vectorFieldDerivation_mem_orderSubmodule hh hu))
+  | zero => simp
+  | add x y _ _ hx hy => simpa only [map_add] using add_mem hx hy
+  | smul y x hx' hx =>
+    rw [smul_eq_mul, derivationLieAlgebra.leibniz]
+    exact add_mem (Submodule.smul_mem _ _
+      (orderLeftIdeal_antitone Φ hΦ hΦs a (min_le_left _ _)
+        (by rwa [orderLeftIdeal_def]))) (Submodule.smul_mem _ y hx)
+
 /-- **Vector fields of positive order preserve the left ideals.** If `h` has order at least one,
 for instance for the degree derivation `t d/dt`, the lift carries each `I_N = U · ι(a_N)` into
 itself. -/
@@ -343,18 +364,7 @@ theorem vectorFieldEnvelopingDerivation_mem_orderLeftIdeal {h : R⸨X⸩}
     (hh : (1 : WithTop ℤ) ≤ h.orderTop) {N : ℤ} {x : UK} (hx : x ∈ orderLeftIdeal Φ hΦ hΦs a N) :
     (vectorFieldEnvelopingDerivation Φ hΦ hΦs a h : Module.End R UK) x ∈
       orderLeftIdeal Φ hΦ hΦs a N := by
-  rw [orderLeftIdeal_def] at hx
-  induction hx using Submodule.span_induction with
-  | mem x hx =>
-    obtain ⟨u, hu, rfl⟩ := hx
-    rw [vectorFieldEnvelopingDerivation_envelopingι]
-    apply envelopingι_mem_orderLeftIdeal
-    simpa using vectorFieldDerivation_mem_orderSubmodule (P := 1) (by exact_mod_cast hh) hu
-  | zero => simp
-  | add x y _ _ hx hy => simpa only [map_add] using add_mem hx hy
-  | smul y x hx' hx =>
-    rw [smul_eq_mul, derivationLieAlgebra.leibniz]
-    exact add_mem (Submodule.smul_mem _ _ (by rwa [orderLeftIdeal_def])) (Submodule.smul_mem _ y hx)
+  simpa using vectorFieldEnvelopingDerivation_mem_orderLeftIdeal_min Φ hΦ hΦs a hh hx
 
 /-- **The degree derivation on the mode generators**: `[d, x_n] = n x_n`. -/
 theorem vectorFieldEnvelopingDerivation_single_one_envelopingι_single_tmul (n : ℤ) (r : R)
