@@ -102,6 +102,18 @@ lemma precompIdHom_app (F : LocallyDiscrete Γ ⥤ᵖ B) :
     (precompIdHom B Γ).app F = F.pullbackIdHom :=
   (rfl)
 
+@[simp]
+lemma precompIdHom_naturality_hom_as_app {F G : LocallyDiscrete Γ ⥤ᵖ B} (η : F ⟶ G)
+    (x : LocallyDiscrete Γ) :
+    ((precompIdHom B Γ).naturality η).hom.as.app x = (ρ_ (η.app x)).hom ≫ (λ_ (η.app x)).inv :=
+  (rfl)
+
+@[simp]
+lemma precompIdHom_naturality_inv_as_app {F G : LocallyDiscrete Γ ⥤ᵖ B} (η : F ⟶ G)
+    (x : LocallyDiscrete Γ) :
+    ((precompIdHom B Γ).naturality η).inv.as.app x = (λ_ (η.app x)).hom ≫ (ρ_ (η.app x)).inv :=
+  (rfl)
+
 variable (B Γ) in
 /-- The strong transformation `Pseudofunctor.id _ ⟶ precomp B (𝟭 Γ).toPseudofunctor` with
 components `F.pullbackIdInv`. Its naturality isomorphisms are given by the unitors. -/
@@ -128,6 +140,18 @@ components `F.pullbackIdInv`. Its naturality isomorphisms are given by the unito
 @[simp]
 lemma precompIdInv_app (F : LocallyDiscrete Γ ⥤ᵖ B) :
     (precompIdInv B Γ).app F = F.pullbackIdInv :=
+  (rfl)
+
+@[simp]
+lemma precompIdInv_naturality_hom_as_app {F G : LocallyDiscrete Γ ⥤ᵖ B} (η : F ⟶ G)
+    (x : LocallyDiscrete Γ) :
+    ((precompIdInv B Γ).naturality η).hom.as.app x = (ρ_ (η.app x)).hom ≫ (λ_ (η.app x)).inv :=
+  (rfl)
+
+@[simp]
+lemma precompIdInv_naturality_inv_as_app {F G : LocallyDiscrete Γ ⥤ᵖ B} (η : F ⟶ G)
+    (x : LocallyDiscrete Γ) :
+    ((precompIdInv B Γ).naturality η).inv.as.app x = (λ_ (η.app x)).hom ≫ (ρ_ (η.app x)).inv :=
   (rfl)
 
 variable (B Γ) in
@@ -250,6 +274,20 @@ lemma precompCompHom_app (f : Γ ⥤ Λ) (g : Λ ⥤ Λ') (F : LocallyDiscrete �
     (precompCompHom B f g).app F = F.pullbackCompHom f g :=
   (rfl)
 
+@[simp]
+lemma precompCompHom_naturality_hom_as_app (f : Γ ⥤ Λ) (g : Λ ⥤ Λ')
+    {F G : LocallyDiscrete Λ' ⥤ᵖ B} (η : F ⟶ G) (x : LocallyDiscrete Γ) :
+    ((precompCompHom B f g).naturality η).hom.as.app x =
+      (ρ_ (η.app ⟨g.obj (f.obj x.as)⟩)).hom ≫ (λ_ (η.app ⟨g.obj (f.obj x.as)⟩)).inv :=
+  (rfl)
+
+@[simp]
+lemma precompCompHom_naturality_inv_as_app (f : Γ ⥤ Λ) (g : Λ ⥤ Λ')
+    {F G : LocallyDiscrete Λ' ⥤ᵖ B} (η : F ⟶ G) (x : LocallyDiscrete Γ) :
+    ((precompCompHom B f g).naturality η).inv.as.app x =
+      (λ_ (η.app ⟨g.obj (f.obj x.as)⟩)).hom ≫ (ρ_ (η.app ⟨g.obj (f.obj x.as)⟩)).inv :=
+  (rfl)
+
 variable (B) in
 /-- The strong transformation from the composite of pulling back along `g` and along `f` to
 pulling back along `f ⋙ g`, with components `F.pullbackCompInv f g`. Its naturality
@@ -280,6 +318,20 @@ isomorphisms are given by the unitors. -/
 @[simp]
 lemma precompCompInv_app (f : Γ ⥤ Λ) (g : Λ ⥤ Λ') (F : LocallyDiscrete Λ' ⥤ᵖ B) :
     (precompCompInv B f g).app F = F.pullbackCompInv f g :=
+  (rfl)
+
+@[simp]
+lemma precompCompInv_naturality_hom_as_app (f : Γ ⥤ Λ) (g : Λ ⥤ Λ')
+    {F G : LocallyDiscrete Λ' ⥤ᵖ B} (η : F ⟶ G) (x : LocallyDiscrete Γ) :
+    ((precompCompInv B f g).naturality η).hom.as.app x =
+      (ρ_ (η.app ⟨g.obj (f.obj x.as)⟩)).hom ≫ (λ_ (η.app ⟨g.obj (f.obj x.as)⟩)).inv :=
+  (rfl)
+
+@[simp]
+lemma precompCompInv_naturality_inv_as_app (f : Γ ⥤ Λ) (g : Λ ⥤ Λ')
+    {F G : LocallyDiscrete Λ' ⥤ᵖ B} (η : F ⟶ G) (x : LocallyDiscrete Γ) :
+    ((precompCompInv B f g).naturality η).inv.as.app x =
+      (λ_ (η.app ⟨g.obj (f.obj x.as)⟩)).hom ≫ (ρ_ (η.app ⟨g.obj (f.obj x.as)⟩)).inv :=
   (rfl)
 
 variable (B) in
