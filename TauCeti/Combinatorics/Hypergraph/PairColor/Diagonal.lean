@@ -124,8 +124,13 @@ theorem pairColorDensity_fillDiagonal_of_ne {A B s t : Finset V}
 variable {S P} in
 /-- Filling diagonal blocks preserves regularity between different cells. -/
 theorem IsRegularPair.fillDiagonal {ε : ℝ} {A B : Finset V}
-    (h : S.IsRegularPair ε A B) (hA : A ∈ P.parts) (hB : B ∈ P.parts) (hAB : A ≠ B)
-    (hε : 0 ≤ ε) : (S.fillDiagonal P).IsRegularPair ε A B := by
+    (h : S.IsRegularPair ε A B) (hA : A ∈ P.parts) (hB : B ∈ P.parts) (hAB : A ≠ B) :
+    (S.fillDiagonal P).IsRegularPair ε A B := by
+  obtain ⟨x, hx⟩ := P.nonempty_of_mem_parts hA
+  obtain ⟨y, hy⟩ := P.nonempty_of_mem_parts hB
+  have hxy : x ≠ y := fun hxy ↦ hAB (P.eq_of_mem_parts hA hB hx (hxy.symm ▸ hy))
+  let : Nonempty κ := ⟨S.color ⟨(x, y), hxy⟩⟩
+  have hε : 0 ≤ ε := h.nonneg
   apply isRegularPair_iff.2
   intro c s hs t ht hs' ht'
   rw [S.pairColorDensity_fillDiagonal_of_ne P hA hB hAB hs ht c,
@@ -191,12 +196,11 @@ theorem isPairColorRegular_fillDiagonal {ε : ℝ}
     (⟨P, S.fillDiagonal P⟩ : PairSkeleton3 (Option κ) V).IsPairColorRegular ε := by
   apply PairSkeleton3.isPairColorRegular_iff.2
   intro c A hA B hB s hs t ht hs' ht'
-  have hε : 0 < ε := pos_of_mul_pos_left (one_pos.trans (hsize A hA)) (Nat.cast_nonneg _)
   have hpair : (S.fillDiagonal P).IsRegularPair ε A B := by
     by_cases hAB : A = B
     · subst B
       exact S.isRegularPair_fillDiagonal_self P hA (hsize A hA)
-    · exact (hreg A hA B hB hAB).fillDiagonal hA hB hAB hε.le
+    · exact (hreg A hA B hB hAB).fillDiagonal hA hB hAB
   exact isRegularPair_iff.1 hpair c s hs t ht hs' ht'
 
 open Classical in
