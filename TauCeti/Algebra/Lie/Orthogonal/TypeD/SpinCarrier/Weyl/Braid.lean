@@ -59,58 +59,6 @@ private theorem basisWeight_injective : Function.Injective (basisWeight n) := by
   apply (Fintype.equivFin (Finset (Fin n))).symm.injective
   exact DynkinType.typeDSpinWeight_injective h
 
-private theorem root_column (k : Fin n ⊕ Fin n) (a : Fin (dimension n)) :
-    (fun r ↦ rootIntMatrix n hn k r a) =
-      if basisWeight n a (Sum.elim id id k) = (Sum.elim (fun _ ↦ -1) (fun _ ↦ 1) k : ℤ)
-      then Pi.single (basisReflection n (Sum.elim id id k) a) 1 else 0 := by
-  classical
-  cases k with
-  | inl i =>
-    dsimp only [Sum.elim, id]
-    by_cases h : basisWeight n a i = -1
-    · have hc := (polarization n).typeDSpinRep_serreE_exteriorBasis
-        (polarizationBasis n) hn i (signSet n a) h
-      have he : rep n hn (_root_.UniversalEnvelopingAlgebra.ι ℚ
-          (serreRootGenerator (CartanMatrix.D n) (.inl i)))
-          (latticeBasis n a : ExteriorAlgebra ℚ (polarization n).W) =
-          (1 : ℤˣ) • (latticeBasis n (basisReflection n i a) :
-            ExteriorAlgebra ℚ (polarization n).W) := by
-        simpa only [serreRootGenerator_inl, coe_latticeBasis, signSet_basisReflection,
-          one_smul] using hc
-      simp only [h, ite_true]
-      ext r
-      simp only [rootIntMatrix_apply_of_eq n hn (.inl i) he, Units.val_one,
-        Pi.single_apply]
-    · simp only [h, ite_false]
-      ext r
-      exact rootIntMatrix_inl_eq_zero_of_ne_basisReflection n hn i (fun ha ↦ (h ha).elim)
-  | inr i =>
-    dsimp only [Sum.elim, id]
-    by_cases h : basisWeight n a i = 1
-    · have hc := (polarization n).typeDSpinRep_serreF_exteriorBasis
-        (polarizationBasis n) hn i (signSet n a) h
-      have he : rep n hn (_root_.UniversalEnvelopingAlgebra.ι ℚ
-          (serreRootGenerator (CartanMatrix.D n) (.inr i)))
-          (latticeBasis n a : ExteriorAlgebra ℚ (polarization n).W) =
-          (1 : ℤˣ) • (latticeBasis n (basisReflection n i a) :
-            ExteriorAlgebra ℚ (polarization n).W) := by
-        simpa only [serreRootGenerator_inr, coe_latticeBasis, signSet_basisReflection,
-          one_smul] using hc
-      simp only [h, ite_true]
-      ext r
-      simp only [rootIntMatrix_apply_of_eq n hn (.inr i) he, Units.val_one,
-        Pi.single_apply]
-    · simp only [h, ite_false]
-      ext r
-      apply rootIntMatrix_eq_zero_of_weight_ne
-      intro hw
-      have hi := congrFun hw i
-      rw [Pi.sub_apply, TypeDStd.rootGeneratorWeight_inr, CartanMatrix.D_diag] at hi
-      have hr := weight_range n i r
-      have ha := weight_range n i a
-      have hgap : basisWeight n r i - basisWeight n a i ≠ -2 := by omega
-      exact hgap hi
-
 private theorem root_mulVec (k : Fin n ⊕ Fin n) (a : Fin (dimension n))
     (A : Type*) [CommRing A] (t : Multiplicative A) :
     ((rootSubgroupPoints n hn k A t :
@@ -119,22 +67,61 @@ private theorem root_mulVec (k : Fin n ⊕ Fin n) (a : Fin (dimension n))
       if basisWeight n a (Sum.elim id id k) = (Sum.elim (fun _ ↦ -1) (fun _ ↦ 1) k : ℤ)
       then toAdd t • Pi.single (basisReflection n (Sum.elim id id k) a) 1 else 0 := by
   classical
-  rw [coe_rootSubgroupPoints_eq_one_add_smul, Matrix.add_mulVec, Matrix.one_mulVec,
-    Matrix.smul_mulVec, Matrix.mulVec_single_one]
-  have hc := root_column n hn k a
-  split_ifs with h
-  · rw [ite_eq_left h] at hc
-    congr 1
-    congr 1
-    ext r
-    simpa [Pi.single_apply] using congrArg (fun f ↦ (f r : A)) hc
-  · rw [ite_eq_right h] at hc
-    congr 1
-    ext r
-    have hr := congrFun hc r
-    simp only [Pi.zero_apply] at hr
-    simp only [Pi.smul_apply, Matrix.col_apply, Matrix.map_apply, hr, Int.cast_zero,
-      smul_eq_mul, mul_zero, Pi.zero_apply]
+  cases k with
+  | inl i =>
+    simp only [Sum.elim_inl, id_eq]
+    by_cases h : basisWeight n a i = -1
+    · have he : rep n hn (_root_.UniversalEnvelopingAlgebra.ι ℚ
+          (serreRootGenerator (CartanMatrix.D n) (.inl i)))
+          (latticeBasis n a : ExteriorAlgebra ℚ (polarization n).W) =
+          (1 : ℤˣ) • (latticeBasis n (basisReflection n i a) :
+            ExteriorAlgebra ℚ (polarization n).W) := by
+        simpa only [serreRootGenerator_inl, coe_latticeBasis, signSet_basisReflection,
+          one_smul] using
+          (polarization n).typeDSpinRep_serreE_exteriorBasis
+            (polarizationBasis n) hn i (signSet n a) h
+      simpa only [h, ite_true, Units.val_one, Int.cast_one, mul_one] using
+        sub_eq_iff_eq_add'.1 (rootSubgroupPoints_mulVec_single_sub_of_eq n hn (.inl i) he A t)
+    · simp only [h, ite_false, add_zero]
+      rw [coe_rootSubgroupPoints_eq_one_add_smul, Matrix.add_mulVec, Matrix.one_mulVec,
+        Matrix.smul_mulVec, Matrix.mulVec_single_one]
+      suffices hc : ((rootIntMatrix n hn (.inl i)).map (Int.cast : ℤ → A)).col a = 0 by
+        rw [hc, smul_zero, add_zero]
+      ext r
+      simp only [Matrix.col_apply, Matrix.map_apply, Pi.zero_apply]
+      rw [rootIntMatrix_inl_eq_zero_of_ne_basisReflection n hn i (fun ha ↦ (h ha).elim),
+        Int.cast_zero]
+  | inr i =>
+    simp only [Sum.elim_inr, id_eq]
+    by_cases h : basisWeight n a i = 1
+    · have he : rep n hn (_root_.UniversalEnvelopingAlgebra.ι ℚ
+          (serreRootGenerator (CartanMatrix.D n) (.inr i)))
+          (latticeBasis n a : ExteriorAlgebra ℚ (polarization n).W) =
+          (1 : ℤˣ) • (latticeBasis n (basisReflection n i a) :
+            ExteriorAlgebra ℚ (polarization n).W) := by
+        simpa only [serreRootGenerator_inr, coe_latticeBasis, signSet_basisReflection,
+          one_smul] using
+          (polarization n).typeDSpinRep_serreF_exteriorBasis
+            (polarizationBasis n) hn i (signSet n a) h
+      simpa only [h, ite_true, Units.val_one, Int.cast_one, mul_one] using
+        sub_eq_iff_eq_add'.1 (rootSubgroupPoints_mulVec_single_sub_of_eq n hn (.inr i) he A t)
+    · simp only [h, ite_false, add_zero]
+      rw [coe_rootSubgroupPoints_eq_one_add_smul, Matrix.add_mulVec, Matrix.one_mulVec,
+        Matrix.smul_mulVec, Matrix.mulVec_single_one]
+      suffices hc : ((rootIntMatrix n hn (.inr i)).map (Int.cast : ℤ → A)).col a = 0 by
+        rw [hc, smul_zero, add_zero]
+      ext r
+      simp only [Matrix.col_apply, Matrix.map_apply, Pi.zero_apply]
+      have hr : rootIntMatrix n hn (.inr i) r a = 0 := by
+        apply rootIntMatrix_eq_zero_of_weight_ne
+        intro hw
+        have hi := congrFun hw i
+        rw [Pi.sub_apply, TypeDStd.rootGeneratorWeight_inr, CartanMatrix.D_diag] at hi
+        have hr := weight_range n i r
+        have ha := weight_range n i a
+        have hgap : basisWeight n r i - basisWeight n a i ≠ -2 := by omega
+        exact hgap hi
+      rw [hr, Int.cast_zero]
 
 private def word (i : Fin n) (A : Type*) [CommRing A] :=
   rootSubgroupPoints n hn (.inl i) A (ofAdd 1) *
