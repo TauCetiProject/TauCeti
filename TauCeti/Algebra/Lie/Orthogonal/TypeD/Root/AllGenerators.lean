@@ -268,7 +268,7 @@ theorem lie_differenceRootGenerator_differenceRootGenerator_eq_ite (i j k l : ι
       neg_neg, Matrix.single_mul_single_eq_ite, one_mul, zero_mul, mul_zero,
       zero_add, add_zero]
     ext (a | a) (b | b) <;> simp_all [eq_comm]
-  all_goals abel
+  abel
 
 /-- The bracket of a difference-root generator and a positive sum-root generator. -/
 theorem lie_differenceRootGenerator_sumRootGenerator_eq_ite (i j k l : ι) :
@@ -285,7 +285,7 @@ theorem lie_differenceRootGenerator_sumRootGenerator_eq_ite (i j k l : ι) :
       Matrix.mul_neg, Matrix.single_mul_single_eq_ite, one_mul, zero_mul, mul_zero,
       zero_add, add_zero]
     ext (a | a) (b | b) <;> simp_all [eq_comm]
-  all_goals abel
+  abel
 
 /-- The bracket of a difference-root generator and a negative sum-root generator. -/
 theorem lie_differenceRootGenerator_negSumRootGenerator_eq_ite (i j k l : ι) :
@@ -302,7 +302,7 @@ theorem lie_differenceRootGenerator_negSumRootGenerator_eq_ite (i j k l : ι) :
       Matrix.neg_mul, Matrix.single_mul_single_eq_ite, one_mul, zero_mul, mul_zero,
       zero_add, add_zero]
     ext (a | a) (b | b) <;> simp_all [eq_comm]
-  all_goals abel
+  abel
 
 /-- The bracket of opposite sum-root families, with their native matrix signs. -/
 theorem lie_sumRootGenerator_negSumRootGenerator_eq_ite (i j k l : ι) :
@@ -322,7 +322,7 @@ theorem lie_sumRootGenerator_negSumRootGenerator_eq_ite (i j k l : ι) :
       Matrix.sub_mul, Matrix.single_mul_single_eq_ite, one_mul, zero_mul, mul_zero,
       zero_add, add_zero]
     ext (a | a) (b | b) <;> simp_all [eq_comm]
-  all_goals abel
+  abel
 
 /-- Any two positive sum-root generators commute. -/
 @[simp]
@@ -398,7 +398,7 @@ theorem sumRootGenerator_mem_rootSpace (i j : ι) :
   intro a b hab
   rcases a with a | a <;> rcases b with b | b <;>
     simp [sumRootGenerator, sumRootMatrix, Matrix.fromBlocks, Matrix.single_apply] at hab ⊢
-  all_goals split_ifs with h <;> simp_all [typeDWeightAdd_comm]
+  split_ifs with h <;> simp_all [typeDWeightAdd_comm]
 
 /-- The standard negative sum-root generator has weight `-εᵢ - εⱼ`. -/
 theorem negSumRootGenerator_mem_rootSpace (i j : ι) :
@@ -408,7 +408,7 @@ theorem negSumRootGenerator_mem_rootSpace (i j : ι) :
   intro a b hab
   rcases a with a | a <;> rcases b with b | b <;>
     simp [negSumRootGenerator, negSumRootMatrix, Matrix.fromBlocks, Matrix.single_apply] at hab ⊢
-  all_goals split_ifs with h <;> simp_all [typeDWeightAdd_comm]
+  split_ifs with h <;> simp_all [typeDWeightAdd_comm]
 
 /-! ## Compatibility with the numbered simple generators -/
 

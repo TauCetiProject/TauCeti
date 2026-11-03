@@ -134,7 +134,7 @@ theorem genusCharAtLevel_apply_int (t : Finset s) (n : ℤ)
     (hn : IsCoprime n (∏ Q ∈ s, Q).natAbs) :
     genusCharAtLevel s hs t n = ∏ P ∈ t, primeDiscriminantCharFun P n := by
   have hu : IsUnit ((n : ℤ) : ZMod (∏ Q ∈ s, Q).natAbs) :=
-    (ZMod.coe_int_isUnit_iff_isCoprime _ _).mpr hn.symm
+    (ZMod.isUnit_intCast_iff_isCoprime _ _).mpr hn.symm
   induction t using Finset.induction_on with
   | empty => rw [genusCharAtLevel_empty, Finset.prod_empty, MulChar.one_apply hu]
   | @insert P t hP ih =>
@@ -195,7 +195,7 @@ theorem genusCharAtLevel_injective
   have haLevel : IsCoprime (a : ℤ) ((∏ Q ∈ s, Q).natAbs : ℤ) := by
     simpa only [Int.isCoprime_iff_nat_coprime, Int.natAbs_natCast] using hcopProd
   have hu : IsUnit (((a : ℕ) : ℤ) : ZMod (∏ Q ∈ s, Q).natAbs) :=
-    (ZMod.coe_int_isUnit_iff_isCoprime _ _).mpr haLevel.symm
+    (ZMod.isUnit_intCast_iff_isCoprime _ _).mpr haLevel.symm
   have hvalue := genusCharAtLevel_apply_int s hs (t ∆ u) (a : ℤ) haLevel
   rw [hchar, MulChar.one_apply hu] at hvalue
   have hprod : ∏ Q ∈ t ∆ u, primeDiscriminantCharFun Q a = -1 := by
