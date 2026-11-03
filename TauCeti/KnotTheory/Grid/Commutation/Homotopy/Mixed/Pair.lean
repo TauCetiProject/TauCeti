@@ -7,7 +7,7 @@ module
 
 public import TauCeti.KnotTheory.Grid.Commutation.Homotopy.Recut
 import TauCeti.Data.Finset.Basic
-import TauCeti.KnotTheory.Grid.Commutation.Homotopy.MixedSideRecut
+import TauCeti.KnotTheory.Grid.Commutation.Homotopy.Mixed.Recut
 
 /-!
 # Mixed-side commutation pentagon pairs
