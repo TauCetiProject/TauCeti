@@ -4,7 +4,7 @@ Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Wentao Li
 -/
 module
-public import Mathlib.Algebra.QuadraticAlgebra.Rat
+public import Mathlib.Algebra.QuadraticAlgebra.Discriminant
 import Mathlib.Algebra.Order.Ring.Defs
 import Mathlib.Tactic.Linarith
 
