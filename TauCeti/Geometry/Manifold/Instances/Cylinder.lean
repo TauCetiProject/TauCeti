@@ -6,11 +6,13 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Geometry.Manifold.Instances.Sphere
+public import TauCeti.Analysis.Normed.Module.Ball.Radial.Equiv
 public import TauCeti.Geometry.Manifold.Orientation.Pullback
 public import TauCeti.Geometry.Manifold.VectorBundle.Tangent
 
 import Mathlib.Analysis.InnerProductSpace.Calculus
 import Mathlib.Analysis.SpecialFunctions.Log.Deriv
+import TauCeti.Geometry.Manifold.LocalDiffeomorph.OpenSubset
 
 /-!
 # The cylinder over a sphere is the punctured space
@@ -21,6 +23,10 @@ sends `v` to `(v / ‖v‖, log ‖v‖)`. Both maps are smooth, so this is a di
 (`TauCeti.sphereProdRealDiffeomorph`) from the cylinder, modelled on `ℝⁿ × ℝ`, onto the open subset
 `V ∖ {0}` of `V`, modelled on `V`. It is the smooth counterpart of Mathlib's
 `homeomorphUnitSphereProd`, with the radius read logarithmically.
+
+The exponential polar coordinates `TauCeti.polar`, `(u, t) ↦ exp (t - 1) • u`, which put time `1` on
+the unit sphere, are this diffeomorphism followed by the dilation by `exp (-1)`, so they are a local
+diffeomorphism of the cylinder into `V` (`TauCeti.isLocalDiffeomorph_polar`).
 
 Pulling back the orientation of `V` along it shows that the cylinder `Sⁿ × ℝ` is orientable,
 in particular the cylinder `S¹ × ℝ` over the unit circle of `ℂ`. Mathlib's atlas of the sphere
@@ -36,6 +42,8 @@ charts of the sphere directly.
 ## Main results
 
 * `TauCeti.contMDiff_exp_smul_coe_sphere`: polar coordinates `(u, t) ↦ exp t • u` are smooth.
+* `TauCeti.isLocalDiffeomorph_polar`: exponential polar coordinates are a local diffeomorphism of
+  the cylinder into `V`.
 * `TauCeti.mvfderiv_exp_smul_coe_sphere_apply`: the differential of polar coordinates sends
   `(v, a)` at `(u, t)` to `e^t (v + a u)`.
 * `TauCeti.orientable_sphere_prod_real`, `TauCeti.orientable_circle_prod_real`: the cylinders
@@ -121,6 +129,30 @@ theorem coe_sphereProdRealDiffeomorph_symm_apply_fst (v : puncturedSpace V) :
 theorem sphereProdRealDiffeomorph_symm_apply_snd (v : puncturedSpace V) :
     (sphereProdRealDiffeomorph (n := n) |>.symm v).2 = Real.log ‖(v : V)‖ :=
   (rfl)
+
+/-- Exponential polar coordinates are polar coordinates followed by the dilation by `exp (-1)`. -/
+theorem polar_eq_exp_neg_one_smul_sphereProdRealDiffeomorph (p : sphere (0 : V) 1 × ℝ) :
+    polar p = Real.exp (-1) • (sphereProdRealDiffeomorph (n := n) p : V) := by
+  rw [polar_apply, coe_sphereProdRealDiffeomorph_apply, smul_smul, ← Real.exp_add, neg_add_eq_sub]
+
+/-- **Exponential polar coordinates are a local diffeomorphism**: `TauCeti.polar`,
+`(u, t) ↦ exp (t - 1) • u`, is a smooth local diffeomorphism from the cylinder `Sⁿ × ℝ` into `V`. -/
+theorem isLocalDiffeomorph_polar :
+    IsLocalDiffeomorph ((𝓡 n).prod 𝓘(ℝ)) 𝓘(ℝ, V) ∞ (polar (V := V)) := by
+  have : FiniteDimensional ℝ V := .of_fact_finrank_eq_succ n
+  let L : V ≃L[ℝ] V :=
+    (LinearEquiv.smulOfNeZero ℝ V _ (Real.exp_pos (-1)).ne').toContinuousLinearEquiv
+  have h : polar (V := V) = L ∘ Subtype.val ∘ sphereProdRealDiffeomorph (n := n) :=
+    funext fun p => by
+      rw [polar_eq_exp_neg_one_smul_sphereProdRealDiffeomorph (n := n), Function.comp_apply,
+        Function.comp_apply, LinearEquiv.coe_toContinuousLinearEquiv',
+        LinearEquiv.smulOfNeZero_apply]
+  rw [h]
+  -- `IsLocalDiffeomorphAt.comp` takes the target model of the outer map as its first explicit
+  -- argument, so the two local diffeomorphisms are passed by name.
+  exact fun p => IsLocalDiffeomorphAt.comp (hf := IsLocalDiffeomorphAt.comp
+    (hf := sphereProdRealDiffeomorph.isLocalDiffeomorph p) (hg := isLocalDiffeomorph_subtype_val _))
+    (hg := L.toDiffeomorph.isLocalDiffeomorph _)
 
 /-- The differential of polar coordinates `(u, t) ↦ e^t u`, the map underlying
 `TauCeti.sphereProdRealDiffeomorph`: a tangent vector `(v, a)` at `(u, t)` is sent to
