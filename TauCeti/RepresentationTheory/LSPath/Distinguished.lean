@@ -371,8 +371,7 @@ theorem IsDistinguished.reverseTimed (hp : IsDistinguished S p) :
     IsDistinguished (-S) (reverseTimed p) := by
   have hslope (z : 𝕜 × V) : (fun y : 𝕜 × V ↦ y.1⁻¹ • y.2) (z.1, -z.2) = -(z.1⁻¹ • z.2) :=
     smul_neg _ _
-  refine ⟨isTimed_iff.2 fun z hz ↦ ?_, ?_, fun z hz ↦ ?_, ?_⟩
-  · exact isTimed_iff.1 hp.isTimed (z.1, -z.2) (mem_reverseTimed.1 hz)
+  refine ⟨isTimed_reverseTimed.2 hp.isTimed, ?_, fun z hz ↦ ?_, ?_⟩
   · rw [duration_reverseTimed, hp.duration_eq_one]
   · rw [Set.mem_neg, ← smul_neg]
     exact hp.slope_mem (z.1, -z.2) (mem_reverseTimed.1 hz)

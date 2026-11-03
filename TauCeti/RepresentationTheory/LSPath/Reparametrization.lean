@@ -176,6 +176,11 @@ theorem reverseTimed_reverseTimed [InvolutiveNeg V] (p : List (𝕜 × V)) :
   simp [reverseTimed_def, List.map_reverse, Function.comp_def]
 
 @[simp]
+theorem isTimed_reverseTimed [Zero 𝕜] [LT 𝕜] [Neg V] {p : List (𝕜 × V)} :
+    IsTimed (reverseTimed p) ↔ IsTimed p := by
+  simp only [isTimed_iff, reverseTimed_def, List.mem_reverse, List.forall_mem_map]
+
+@[simp]
 theorem duration_reverseTimed [AddCommMonoid 𝕜] [Neg V] (p : List (𝕜 × V)) :
     duration (reverseTimed p) = duration p := by
   simp [reverseTimed_def, duration_def, List.map_reverse, Function.comp_def]
