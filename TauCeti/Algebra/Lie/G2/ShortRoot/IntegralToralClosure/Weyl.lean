@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Group.Subgroup.Normalizer
-public import TauCeti.Algebra.Lie.G2.ShortRoot.IntegralToralClosure.RootDatum
+public import TauCeti.Algebra.Lie.G2.ShortRoot.IntegralToralClosure.Basic
 public import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.Scheme.ToralClosure.Weyl
 
 /-!
