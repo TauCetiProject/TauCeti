@@ -181,7 +181,7 @@ theorem _root_.Subring.dividedPower_mem_of_commutator_eq (S : Subring A) {x y z 
     (hx : ∀ n, dividedPower n x ∈ S) (hy : ∀ n, dividedPower n y ∈ S) (n : ℕ) :
     dividedPower n z ∈ S := by
   induction n using Nat.strong_induction_on with
-  | h n ih =>
+  | ind n ih =>
     have hstraight := dividedPower_mul_dividedPower_of_commutator_eq hxy hxz hyz n n
     rw [min_self, sum_range_succ] at hstraight
     simp only [Nat.sub_self, dividedPower_zero, one_mul, mul_one] at hstraight
