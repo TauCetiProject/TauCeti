@@ -62,9 +62,9 @@ namespace TopPair
 attribute [local instance] hasFiniteCoproducts_of_hasCoproducts
 attribute [local instance] HasFiniteBiproducts.of_hasFiniteCoproducts
 
-section Homology
+section Chain
 
-variable {C : Type u} [Category.{v} C] [Abelian C] [HasCoproducts.{w} C] [MonoidalCategory C]
+variable {C : Type u} [Category.{v} C] [Preadditive C] [HasCoproducts.{w} C] [MonoidalCategory C]
   [MonoidalPreadditive C] {R S T M N : C}
   [∀ J : Type w, PreservesColimitsOfShape (Discrete J) (tensorLeft M)]
 
@@ -108,6 +108,14 @@ lemma ιChainComplex_singularChainComplexπ_capChain_alexanderWhitneyDiagonal (P
   (congrArg (_ ≫ ·)
     (singularChainComplexπ_capChain_alexanderWhitneyDiagonal P k u μ p q n h φ)).trans
       (TopCat.ιChainComplex_capChain_alexanderWhitneyDiagonal _ _ _ _ _ _ _ _ _)
+
+end Chain
+
+section Homology
+
+variable {C : Type u} [Category.{v} C] [Abelian C] [HasCoproducts.{w} C] [MonoidalCategory C]
+  [MonoidalPreadditive C] {R S T M N : C}
+  [∀ J : Type w, PreservesColimitsOfShape (Discrete J) (tensorLeft M)]
 
 /-- **The relative cap product** `Hᵖ(X, A; R, M) ⟶ (Hₙ(X, A; T) ⟶ H_q(X; N))` for `p + q = n`:
 the cap product of relative homology and relative cohomology classes along the relative
