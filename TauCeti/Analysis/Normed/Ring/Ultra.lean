@@ -47,6 +47,8 @@ Integer casts have norm at most `‖1‖`, without requiring the seminorm to be 
   by their arguments has norm at most `‖q w‖`.
 * `TauCeti.norm_tsum_sub_tsum_le_norm_mul`: for `f` vanishing at zero and `1`-Lipschitz on the
   open unit ball, `∑_{n ≥ 1} f(qⁿ w)` and `∑_{n ≥ 1} f(qⁿ w')` differ by at most `‖q (w - w')‖`.
+* `TauCeti.norm_tsum_sub_tsum_add_tsum_sub_tsum_le`: on the unit sphere, the pair of series
+  `∑_{n ≥ 1} f(qⁿ u)` and `∑_{n ≥ 1} g(qⁿ u⁻¹)` together depend on `u` in a `‖q‖`-Lipschitz way.
 * `TauCeti.norm_div_one_sub_sq_sub_div_one_sub_sq_le`: `t ↦ t / (1 - t)²` is `1`-Lipschitz on the
   open unit ball; `TauCeti.norm_one_sub_cube_div_sub_one_sub_cube_div_le`:
   `(1 - v)³ / v` is `1`-Lipschitz on the unit sphere.
@@ -222,6 +224,32 @@ theorem norm_tsum_sub_tsum_le_norm_mul {R E : Type*} [SeminormedRing R]
   refine (hf _ _ ((hle w n).trans_lt hw) ((hle w' n).trans_lt hw')).trans ?_
   rw [← mul_sub]
   exact hle _ n
+
+/-- Two pairs of one-sided series, `∑_{n ≥ 1} f(qⁿ u)` with `∑_{n ≥ 1} g(qⁿ u⁻¹)` and the same at
+`u'`, with values in a complete ultrametric group, together depend on `u` in a `‖q‖`-Lipschitz way
+on the unit sphere of a normed division ring, when `f` and `g` vanish at zero and are
+`1`-Lipschitz on the open unit ball and `‖q‖ < 1`. -/
+theorem norm_tsum_sub_tsum_add_tsum_sub_tsum_le {K E : Type*} [NormedDivisionRing K]
+    [NormedAddCommGroup E] [IsUltrametricDist E] [CompleteSpace E] (f g : K → E) (hf₀ : f 0 = 0)
+    (hg₀ : g 0 = 0)
+    (hf : ∀ t t' : K, ‖t‖ < 1 → ‖t'‖ < 1 → ‖f t - f t'‖ ≤ ‖t - t'‖)
+    (hg : ∀ t t' : K, ‖t‖ < 1 → ‖t'‖ < 1 → ‖g t - g t'‖ ≤ ‖t - t'‖) {q u u' : K} (hq : ‖q‖ < 1)
+    (hu : ‖u‖ = 1) (hu' : ‖u'‖ = 1) :
+    ‖(∑' n : ℕ, f (q ^ (n + 1) * u) - ∑' n : ℕ, f (q ^ (n + 1) * u')) +
+        (∑' n : ℕ, g (q ^ (n + 1) * u⁻¹) - ∑' n : ℕ, g (q ^ (n + 1) * u'⁻¹))‖ ≤
+      ‖q‖ * ‖u - u'‖ := by
+  have hqw {w : K} (hw : ‖w‖ = 1) : ‖q * w‖ < 1 := by rwa [norm_mul, hw, mul_one]
+  have hinv : ‖q * (u⁻¹ - u'⁻¹)‖ = ‖q‖ * ‖u - u'‖ := by
+    have h := dist_inv_inv₀ (norm_ne_zero_iff.mp (by rw [hu]; exact one_ne_zero))
+      (norm_ne_zero_iff.mp (by rw [hu']; exact one_ne_zero))
+    rw [dist_eq_norm, dist_eq_norm, hu, hu', mul_one, div_one] at h
+    rw [norm_mul, h]
+  refine (IsUltrametricDist.norm_add_le_max _ _).trans (max_le ?_ ?_)
+  · rw [← norm_mul]
+    exact norm_tsum_sub_tsum_le_norm_mul f hf₀ hf hq (hqw hu) (hqw hu')
+  · rw [← hinv]
+    exact norm_tsum_sub_tsum_le_norm_mul g hg₀ hg hq (hqw (by rw [norm_inv, hu, inv_one]))
+      (hqw (by rw [norm_inv, hu', inv_one]))
 
 section Lipschitz
 

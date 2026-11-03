@@ -42,7 +42,8 @@ on the ball `‖1 - u‖ < 1`, which is closed because the norm is ultrametric. 
 contraction with constant `‖q‖`, by the Lipschitz estimates
 `TauCeti.norm_tateUniformizationX_sub_sub_le` and `TauCeti.norm_tateUniformizationY_sub_sub_le`.
 At its fixed point `x Y(u) = y X(u)`, and a line through the origin meets the curve in at most
-one point whose first coordinate has norm above one.
+one point whose first coordinate has norm above one
+(`TauCeti.eq_of_mul_eq_mul_of_one_lt_norm`).
 
 ## References
 
@@ -55,71 +56,9 @@ public section
 
 namespace TauCeti
 
-variable {K : Type*} [NormedField K] [IsUltrametricDist K]
-
-/-! ### Solutions of the Tate equation with a pole -/
-
-/-- On a curve `y² + xy = x³ + A₄x + A₆` with `‖A₄‖, ‖A₆‖ < 1`, a solution with `‖x‖ > 1` has
-`‖x‖ < ‖x + y‖`. -/
-private theorem norm_lt_norm_add_of_equation {A₄ A₆ x y : K} (hA₄ : ‖A₄‖ < 1) (hA₆ : ‖A₆‖ < 1)
-    (hx : 1 < ‖x‖) (h : y ^ 2 + x * y = x ^ 3 + A₄ * x + A₆) : ‖x‖ < ‖x + y‖ := by
-  have hx₀ : 0 < ‖x‖ := one_pos.trans hx
-  have hx₃ : ‖x‖ < ‖x‖ ^ 3 := lt_self_pow₀ hx (by norm_num)
-  -- the right-hand side has the norm `‖x‖³` of its leading term
-  have hsmall : ‖A₄ * x + A₆‖ < ‖x ^ 3‖ := by
-    rw [norm_pow]
-    refine (IsUltrametricDist.norm_add_le_max _ _).trans_lt (max_lt ?_ ?_)
-    · rw [norm_mul]
-      nlinarith
-    · linarith
-  have hr : ‖y * (x + y)‖ = ‖x‖ ^ 3 := by
-    rw [← norm_pow, show y * (x + y) = x ^ 3 + (A₄ * x + A₆) by linear_combination h,
-      IsUltrametricDist.norm_add_eq_max_of_norm_ne_norm hsmall.ne', max_eq_left hsmall.le]
-  -- if `‖x + y‖ ≤ ‖x‖`, then also `‖y‖ ≤ ‖x‖`, and the left-hand side is too small
-  by_contra! hle
-  have hy : ‖y‖ ≤ ‖x‖ := by
-    simpa using (IsUltrametricDist.norm_sub_le_max (x + y) x).trans (max_le hle le_rfl)
-  have h₂ : ‖x‖ ^ 3 ≤ ‖x‖ * ‖x‖ := by
-    rw [← hr, norm_mul]
-    exact mul_le_mul hy hle (norm_nonneg _) hx₀.le
-  nlinarith [mul_lt_mul_of_pos_left hx (mul_pos hx₀ hx₀)]
-
-/-- **A line through the origin meets the curve in at most one point with a pole.** If `(x, y)`
-and `(X, Y)` solve `y² + xy = x³ + A₄x + A₆` with `‖A₄‖, ‖A₆‖ < 1`, both first coordinates have
-norm above one and `x Y = y X`, then the two points are equal. -/
-private theorem eq_of_mul_eq_mul_of_one_lt_norm {A₄ A₆ x y X Y : K} (hA₄ : ‖A₄‖ < 1)
-    (hA₆ : ‖A₆‖ < 1) (hx : 1 < ‖x‖) (hX : 1 < ‖X‖) (h₁ : y ^ 2 + x * y = x ^ 3 + A₄ * x + A₆)
-    (h₂ : Y ^ 2 + X * Y = X ^ 3 + A₄ * X + A₆) (h : x * Y = y * X) : X = x ∧ Y = y := by
-  have key : (x - X) * (x ^ 2 * X ^ 2 - (A₄ * x * X + A₆ * (x + X))) = 0 := by
-    linear_combination x ^ 2 * h₂ - X ^ 2 * h₁ - (x * Y + y * X + x * X) * h
-  have hx₀ : 0 < ‖x‖ := one_pos.trans hx
-  have hX₀ : 0 < ‖X‖ := one_pos.trans hX
-  have hxX : ‖x‖ * ‖X‖ < ‖x‖ ^ 2 * ‖X‖ ^ 2 :=
-    (lt_self_pow₀ (one_lt_mul_of_lt_of_le hx hX.le) one_lt_two).trans_eq (by ring)
-  -- the cofactor of `x - X` is dominated by `x² X²`, so it does not vanish
-  have hlt : ‖A₄ * x * X + A₆ * (x + X)‖ < ‖x ^ 2 * X ^ 2‖ := by
-    rw [norm_mul, norm_pow, norm_pow]
-    refine (IsUltrametricDist.norm_add_le_max _ _).trans_lt (max_lt ?_ ?_)
-    · rw [norm_mul, norm_mul, mul_assoc]
-      exact (mul_lt_of_lt_one_left (mul_pos hx₀ hX₀) hA₄).trans hxX
-    · have hsum : ‖x + X‖ ≤ ‖x‖ * ‖X‖ :=
-        (IsUltrametricDist.norm_add_le_max _ _).trans
-          (max_le (le_mul_of_one_le_right hx₀.le hX.le) (le_mul_of_one_le_left hX₀.le hx.le))
-      rw [norm_mul]
-      calc ‖A₆‖ * ‖x + X‖ ≤ ‖A₆‖ * (‖x‖ * ‖X‖) := by gcongr
-        _ < ‖x‖ * ‖X‖ := mul_lt_of_lt_one_left (mul_pos hx₀ hX₀) hA₆
-        _ < ‖x‖ ^ 2 * ‖X‖ ^ 2 := hxX
-  have hne : x ^ 2 * X ^ 2 - (A₄ * x * X + A₆ * (x + X)) ≠ 0 := fun h₀ ↦ by
-    rw [sub_eq_zero.mp h₀] at hlt
-    exact lt_irrefl _ hlt
-  have hXx : X = x := (sub_eq_zero.mp ((mul_eq_zero.mp key).resolve_right hne)).symm
-  refine ⟨hXx, ?_⟩
-  rw [hXx, mul_comm y] at h
-  exact mul_left_cancel₀ (norm_pos_iff.mp hx₀) h
+variable {K : Type*} [NormedField K] [CompleteSpace K] [IsUltrametricDist K]
 
 /-! ### Solving for the parameter by a contraction -/
-
-variable [CompleteSpace K]
 
 /-- The error term of the contraction: the combination `(1 - c) Y(u) - c X(u)` with the nodal
 parametrisation subtracted from each coordinate. -/

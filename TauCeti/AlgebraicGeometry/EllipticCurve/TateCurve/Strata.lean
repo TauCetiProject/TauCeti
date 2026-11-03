@@ -152,28 +152,6 @@ theorem norm_tateUniformizationY_sub_le_of_norm_eq_one (q u : Kˣ) (hq : ‖(q :
     exact (one_lt_inv₀ (norm_pos_iff.mpr q.ne_zero)).mpr hq
   simpa [hu] using norm_tateUniformizationY_sub_le q u (by rwa [hu]) huq
 
-/-- The two one-sided series of a Tate coordinate, one at `u` and one at `u⁻¹`, together depend
-on `u` in a `‖q‖`-Lipschitz way on the unit circle, when their terms vanish at zero and are
-`1`-Lipschitz on the open unit ball. -/
-private theorem norm_tsum_sub_tsum_add_tsum_sub_tsum_le (q u u' : Kˣ) (hq : ‖(q : K)‖ < 1)
-    (hu : ‖(u : K)‖ = 1) (hu' : ‖(u' : K)‖ = 1) (f g : K → K) (hf₀ : f 0 = 0) (hg₀ : g 0 = 0)
-    (hf : ∀ t t' : K, ‖t‖ < 1 → ‖t'‖ < 1 → ‖f t - f t'‖ ≤ ‖t - t'‖)
-    (hg : ∀ t t' : K, ‖t‖ < 1 → ‖t'‖ < 1 → ‖g t - g t'‖ ≤ ‖t - t'‖) :
-    ‖(∑' n : ℕ, f ((q : K) ^ (n + 1) * u) - ∑' n : ℕ, f ((q : K) ^ (n + 1) * u')) +
-        (∑' n : ℕ, g ((q : K) ^ (n + 1) * (u : K)⁻¹) -
-          ∑' n : ℕ, g ((q : K) ^ (n + 1) * (u' : K)⁻¹))‖ ≤
-      ‖(q : K)‖ * ‖(u : K) - u'‖ := by
-  have hqw {w : K} (hw : ‖w‖ = 1) : ‖(q : K) * w‖ < 1 := by rwa [norm_mul, hw, mul_one]
-  have hinv : ‖(q : K) * ((u : K)⁻¹ - (u' : K)⁻¹)‖ = ‖(q : K)‖ * ‖(u : K) - u'‖ := by
-    rw [norm_mul]
-    simpa [dist_eq_norm, hu, hu'] using dist_inv_inv₀ u.ne_zero u'.ne_zero
-  refine (IsUltrametricDist.norm_add_le_max _ _).trans (max_le ?_ ?_)
-  · rw [← norm_mul]
-    exact norm_tsum_sub_tsum_le_norm_mul f hf₀ hf hq (hqw hu) (hqw hu')
-  · rw [← hinv]
-    exact norm_tsum_sub_tsum_le_norm_mul g hg₀ hg hq (hqw (by rw [norm_inv, hu, inv_one]))
-      (hqw (by rw [norm_inv, hu', inv_one]))
-
 /-- **The first Tate coordinate is the nodal parametrisation up to a `‖q‖`-Lipschitz error.** On
 the unit circle, `u ↦ X(u) - u / (1 - u)²` is Lipschitz with constant `‖q‖`. At `u = 1` the
 central term `u / (1 - u)²` and the zero-denominator summand of `X(u)` are both the totalised value
@@ -185,10 +163,10 @@ theorem norm_tateUniformizationX_sub_sub_le (q u u' : Kˣ) (hq : ‖(q : K)‖ <
   have e (a A B s a' A' B' : K) :
       a + A + B - 2 * s - a - (a' + A' + B' - 2 * s - a') = (A - A') + (B - B') := by ring
   rw [tateUniformizationX_eq_tsum_nat q hq u, tateUniformizationX_eq_tsum_nat q hq u', e]
-  exact norm_tsum_sub_tsum_add_tsum_sub_tsum_le q u u' hq hu hu' (fun w ↦ w / (1 - w) ^ 2)
+  exact norm_tsum_sub_tsum_add_tsum_sub_tsum_le (fun w ↦ w / (1 - w) ^ 2)
     (fun w ↦ w / (1 - w) ^ 2) (by simp) (by simp)
     (fun _ _ ↦ norm_div_one_sub_sq_sub_div_one_sub_sq_le)
-    (fun _ _ ↦ norm_div_one_sub_sq_sub_div_one_sub_sq_le)
+    (fun _ _ ↦ norm_div_one_sub_sq_sub_div_one_sub_sq_le) hq hu hu'
 
 /-- **The second Tate coordinate is the nodal parametrisation up to a `‖q‖`-Lipschitz error.** On
 the unit circle, `u ↦ Y(u) - u² / (1 - u)³` is Lipschitz with constant `‖q‖`. -/
@@ -200,13 +178,13 @@ theorem norm_tateUniformizationY_sub_sub_le (q u u' : Kˣ) (hq : ‖(q : K)‖ <
   have e (a A B s a' A' B' : K) :
       a + A + B + s - a - (a' + A' + B' + s - a') = (A - A') + (B - B') := by ring
   rw [tateUniformizationY_eq_tsum_nat q hq u, tateUniformizationY_eq_tsum_nat q hq u', e]
-  exact norm_tsum_sub_tsum_add_tsum_sub_tsum_le q u u' hq hu hu' (fun w ↦ w ^ 2 / (1 - w) ^ 3)
+  exact norm_tsum_sub_tsum_add_tsum_sub_tsum_le (fun w ↦ w ^ 2 / (1 - w) ^ 3)
     (fun w ↦ -w / (1 - w) ^ 3) (by simp) (by simp)
     (fun _ _ ht ht' ↦ (norm_sq_div_one_sub_cube_sub_sq_div_one_sub_cube_le_max_mul ht ht').trans
       (mul_le_of_le_one_left (norm_nonneg _) (max_lt ht ht').le))
     (fun t _ ht ht' ↦ by
       simpa only [neg_div, neg_sub_neg, norm_sub_rev (t / (1 - t) ^ 3)] using
-        norm_div_one_sub_cube_sub_div_one_sub_cube_le ht ht')
+        norm_div_one_sub_cube_sub_div_one_sub_cube_le ht ht') hq hu hu'
 
 /-- **Points near the identity: the kernel of reduction.** If `‖1 - u‖ < 1` and `u ≠ 1`, then
 `‖X(u)‖ = ‖1 - u‖⁻²`, which exceeds one. -/
