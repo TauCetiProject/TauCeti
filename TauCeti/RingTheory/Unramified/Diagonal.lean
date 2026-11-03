@@ -25,8 +25,9 @@ Jacobson radical of `T`, then they agree already in `T`. In particular, residue 
 henselian pair have at most one lift, without any completeness or nilpotence hypothesis.
 
 For an unramified quotient `S = W ⧸ I` over `R`, Mathlib's diagonal element of `S ⊗[R] S` lifts to
-some `t ∈ S ⊗[R] W` which identifies the two images `1 ⊗ w` and `(w mod I) ⊗ 1` of `w ∈ W` modulo
-`I` (`exists_mul_tmul_sub_mem_map_includeRight`).
+some `t ∈ S ⊗[R] W` which annihilates the difference of the two images `1 ⊗ w` and `(w mod I) ⊗ 1`
+of every `w ∈ W` modulo the extension of `I` to `S ⊗[R] W`. Thus these images become congruent
+modulo this ideal after inverting `t` (`exists_mul_tmul_sub_mem_map_includeRight`).
 
 ## References
 
@@ -98,9 +99,10 @@ theorem ext_of_quotient_eq (R S : Type*) [CommRing R] [CommRing S] [Algebra R S]
     (AlgHom.id R T) hu
 
 /-- For a quotient `S = W ⧸ I` unramified over `A`, some `t ∈ S ⊗[A] W` maps to `1` on the
-diagonal and makes the two images `1 ⊗ w` and `(w mod I) ⊗ 1` of every `w ∈ W` congruent modulo
-`I`. It lifts the element of `S ⊗[A] S` given by Mathlib's
-`Algebra.FormallyUnramified.iff_exists_tensorProduct`. -/
+diagonal and such that, for every `w ∈ W`, the product of `t` with the difference
+`1 ⊗ w - (w mod I) ⊗ 1` lies in the extension of `I` along `includeRight`. So the two images become
+congruent modulo this ideal after inverting `t`. It lifts the element of `S ⊗[A] S` given by
+Mathlib's `Algebra.FormallyUnramified.iff_exists_tensorProduct`. -/
 theorem exists_mul_tmul_sub_mem_map_includeRight (A : Type*) {W : Type*} [CommRing A]
     [CommRing W] [Algebra A W] (I : Ideal W) [Algebra.FormallyUnramified A (W ⧸ I)]
     [Algebra.EssFiniteType A (W ⧸ I)] :
