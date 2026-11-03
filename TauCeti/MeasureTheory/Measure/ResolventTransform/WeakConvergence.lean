@@ -8,6 +8,7 @@ module
 public import TauCeti.MeasureTheory.Measure.ResolventTransform.Basic
 public import Mathlib.MeasureTheory.Measure.ProbabilityMeasure
 public import Mathlib.MeasureTheory.Measure.Tight
+import TauCeti.MeasureTheory.Measure.ResolventTransform.Atoms
 import TauCeti.MeasureTheory.Measure.ResolventTransform.Expansion
 import TauCeti.MeasureTheory.Measure.ResolventTransform.Inversion
 import Mathlib.MeasureTheory.Measure.Prokhorov
@@ -97,11 +98,7 @@ theorem measureReal_le_abs_le_two_mul_sub_mul_im_resolventTransform {ν : Measur
     nlinarith
   -- `y Im m_ν(iy) = ∫ y² / (x² + y²) dν`, and the two kernels add up to `1`.
   have him : y * (resolventTransform ν (y * I)).im = ∫ x, y ^ 2 / (x ^ 2 + y ^ 2) ∂ν := by
-    rw [im_resolventTransform, ← integral_const_mul]
-    refine integral_congr_ae (ae_of_all _ fun x ↦ ?_)
-    simp only [mul_im, ofReal_re, I_im, ofReal_im, I_re, mul_zero, mul_one, add_zero, mul_re,
-      sub_zero, sub_self]
-    ring
+    simpa using mul_im_resolventTransform (μ := ν) (a := 0) (η := y)
   have htot : ∫ x, x ^ 2 / (x ^ 2 + y ^ 2) ∂ν + ∫ x, y ^ 2 / (x ^ 2 + y ^ 2) ∂ν =
       ν.real univ := by
     have h1 : (fun x : ℝ ↦ x ^ 2 / (x ^ 2 + y ^ 2) + y ^ 2 / (x ^ 2 + y ^ 2)) = fun _ ↦ 1 := by
