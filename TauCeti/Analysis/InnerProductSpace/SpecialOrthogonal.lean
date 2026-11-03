@@ -8,7 +8,7 @@ module
 public import Mathlib.Analysis.InnerProductSpace.Adjoint
 public import Mathlib.Topology.Algebra.Module.Determinant
 import Mathlib.Analysis.InnerProductSpace.NormDet
-import Mathlib.Analysis.InnerProductSpace.Projection.FiniteDimensional
+import TauCeti.Analysis.InnerProductSpace.Reflection
 
 /-!
 # The special orthogonal group of a real inner product space
@@ -52,18 +52,11 @@ theorem det_eq_one_or_eq_neg_one [FiniteDimensional ℝ V] (g : unitary (V →L[
 reflection in a hyperplane. -/
 theorem exists_det_eq_neg_one [FiniteDimensional ℝ V] (hV : 0 < Module.finrank ℝ V) :
     ∃ r : unitary (V →L[ℝ] V), (r : V →L[ℝ] V).det = -1 := by
-  obtain ⟨v, hv⟩ := Module.finrank_pos_iff_exists_ne_zero.1 hV
-  refine ⟨linearIsometryEquiv.symm (ℝ ∙ v)ᗮ.reflection, ?_⟩
-  -- `ContinuousLinearMap.det` is the determinant of the underlying linear map, while
-  -- `Submodule.det_reflection` is stated for the linear-equivalence coercion of the reflection.
-  -- Mathlib has no lemma identifying the two underlying linear maps, so compare them pointwise.
-  have hcoe : (((ℝ ∙ v)ᗮ.reflection : V →L[ℝ] V) : V →ₗ[ℝ] V) =
-      (ℝ ∙ v)ᗮ.reflection.toLinearMap :=
-    LinearMap.ext fun x => by
-      rw [ContinuousLinearMap.coe_coe, LinearIsometryEquiv.coe_coe'', LinearEquiv.coe_coe,
-        LinearIsometryEquiv.coe_toLinearEquiv]
-  rw [coe_symm_linearIsometryEquiv_apply, ContinuousLinearMap.det, hcoe,
-    Submodule.det_reflection, Submodule.orthogonal_orthogonal, finrank_span_singleton hv, pow_one]
+  have := Module.nontrivial_of_finrank_pos hV
+  obtain ⟨r, hr⟩ := TauCeti.exists_det_eq_neg_one (F := V)
+  refine ⟨linearIsometryEquiv.symm r, ?_⟩
+  rw [coe_symm_linearIsometryEquiv_apply, ContinuousLinearMap.det, ← hr, LinearEquiv.coe_det]
+  rfl
 
 end Unitary
 
