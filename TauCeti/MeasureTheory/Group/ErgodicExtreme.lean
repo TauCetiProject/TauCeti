@@ -87,7 +87,7 @@ theorem convex_invariantMeasuresOfMeasureUnivEq {c : ℝ≥0∞} :
     Convex ℝ≥0∞ (invariantMeasuresOfMeasureUnivEq G X c) := by
   rintro ν₁ ⟨hν₁, hν₁u⟩ ν₂ ⟨hν₂, hν₂u⟩ a b _ _ hab
   refine ⟨inferInstance, ?_⟩
-  simp [Measure.add_apply, Measure.smul_apply, hν₁u, hν₂u, ← add_mul, hab]
+  simp [_root_.add_apply, _root_.smul_apply, hν₁u, hν₂u, ← add_mul, hab]
 
 /-- **A mixture of invariant measures is invariant**: if almost every measure of the kernel `κ` is
 `G`-invariant, then so is its mixture `κ ∘ₘ π`. The integral counterpart of the convexity of
@@ -148,7 +148,7 @@ theorem eq_of_absolutelyContinuous_measure_univ_eq (G : Type*) [SMul G X]
   rcases eq_or_ne μ 0 with rfl | hμ0
   · simp
   · have hc : c = 1 := by
-      rw [Measure.smul_apply, smul_eq_mul] at huniv
+      rw [_root_.smul_apply, smul_eq_mul] at huniv
       exact (ENNReal.mul_eq_right (measure_univ_ne_zero.mpr hμ0) (measure_ne_top μ _)).mp huniv
     rw [hc, one_smul]
 
@@ -206,7 +206,7 @@ theorem of_mem_extremePoints_measure_univ_eq {c : ℝ≥0∞} (hc : c ≠ ∞)
     refine ⟨?_, ?_⟩
     · -- `μ[|u]` is `(μ u)⁻¹ • μ.restrict u` by the definition of `ProbabilityTheory.cond`
       rw [ProbabilityTheory.cond]; infer_instance
-    · rw [Measure.smul_apply, (cond_isProbabilityMeasure hu0).1, smul_eq_mul, mul_one]
+    · rw [_root_.smul_apply, (cond_isProbabilityMeasure hu0).1, smul_eq_mul, mul_one]
   by_contra H
   obtain ⟨hs, hs'⟩ : μ t ≠ 0 ∧ μ tᶜ ≠ 0 := by
     simpa [eventuallyEmptyOrUniv_iff, ae_iff, and_comm] using! H
@@ -281,7 +281,7 @@ theorem ae_eq_of_comp_eq [MeasurableSpace.CountablyGenerated X] [IsProbabilityMe
     ae_eq_of_forall_setLIntegral_eq_of_sigmaFinite (κ.measurable_coe hs) measurable_const
       fun B hB _ => by
         rw [← Measure.bind_apply hs κ.aemeasurable, hmix B hB, setLIntegral_const,
-          Measure.smul_apply, smul_eq_mul, mul_comm]
+          _root_.smul_apply, smul_eq_mul, mul_comm]
   have hall : ∀ᵐ z ∂π, ∀ s : ProbabilityMeasureCodeIndex X, κ z s.1 = μ s.1 :=
     ae_all_iff.2 fun s => hset _ (measurableSet_probabilityMeasureCodeIndex s)
   filter_upwards [hall] with z hz

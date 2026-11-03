@@ -11,6 +11,7 @@ public import TauCeti.AlgebraicGeometry.Cohomology.ProjectiveLine.Finite
 public import TauCeti.AlgebraicGeometry.Curves.AffineCover
 public import TauCeti.AlgebraicGeometry.Curves.ProjectiveLine
 public import TauCeti.AlgebraicGeometry.Modules.Quasicoherent.Kernels
+import TauCeti.AlgebraicGeometry.Curves.Smooth
 import TauCeti.FieldTheory.RatFunc.Transcendental
 
 /-!
@@ -164,9 +165,7 @@ theorem finiteDimensional_cohomology_of_smooth [IsProper (X ↘ Spec (.of k))]
   have : ∀ x : X, IsRegularLocalRing (X.presheaf.stalk x) :=
     isRegularLocalRing_stalk_of_smooth (X ↘ Spec (.of k))
   have : IsIntegral X := isIntegral_of_connected_of_isRegularLocalRing_stalk X
-  have : X.IsCurveOver k :=
-    { topologicalKrullDim_eq_one :=
-        topologicalKrullDim_eq_of_smoothOfRelativeDimension (X ↘ Spec (.of k)) }
+  have := IsCurveOver.of_smooth k X
   exact finiteDimensional_cohomology_of_isCurveOver k M n
 
 end AlgebraicGeometry.Scheme.Modules

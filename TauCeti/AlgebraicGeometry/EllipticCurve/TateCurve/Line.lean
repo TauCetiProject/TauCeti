@@ -52,6 +52,8 @@ division by `2` takes place in `K`. The expansion on the unit circle is made for
   `θ(a⁻¹ u) θ(b⁻¹ u) θ(a b u) = θ(u)³ (α + β X(u) + γ Y(u))` with `γ ≠ 0`.
 * `TauCeti.exists_tateUniformizationY_eq_iff`: the line through the images of `a`, `b` and
   `(a b)⁻¹` meets the image of `Kˣ ∖ q^ℤ` only there.
+* `TauCeti.exists_tateQuotientCoordinates_snd_eq_iff`: the same on `Kˣ / q^ℤ`, for classes `x`,
+  `y` and `(x y)⁻¹`.
 
 ## References
 
@@ -643,6 +645,25 @@ theorem exists_tateUniformizationY_eq_iff (q : Kˣ) (hq : ‖(q : K)‖ < 1) {a 
   · intro h'
     field_simp
     linear_combination h'
+
+/-- **The line through three points of the Tate curve, on the quotient.** For classes `x, y` in
+`Kˣ / q^ℤ` with `x, y, x y ≠ 1` there is a line `Y = μ X + ν` that passes through the Tate
+coordinates `(X, Y)` of a nonidentity class `w` exactly when `w` is `x`, `y` or `(x y)⁻¹`. -/
+theorem exists_tateQuotientCoordinates_snd_eq_iff (q : Kˣ) (hq : ‖(q : K)‖ < 1)
+    {x y : Kˣ ⧸ Subgroup.zpowers q} (hx : x ≠ 1) (hy : y ≠ 1) (hxy : x * y ≠ 1) :
+    ∃ μ ν : K, ∀ w : Kˣ ⧸ Subgroup.zpowers q, w ≠ 1 →
+      ((tateQuotientCoordinates q w).2 = μ * (tateQuotientCoordinates q w).1 + ν ↔
+        w = x ∨ w = y ∨ w = (x * y)⁻¹) := by
+  induction x using QuotientGroup.induction_on with | H a => ?_
+  induction y using QuotientGroup.induction_on with | H b => ?_
+  have hnot {u : Kˣ} (hu : (u : Kˣ ⧸ Subgroup.zpowers q) ≠ 1) : u ∉ Subgroup.zpowers q :=
+    fun h ↦ hu ((QuotientGroup.eq_one_iff u).mpr h)
+  obtain ⟨μ, ν, h⟩ := exists_tateUniformizationY_eq_iff q hq (hnot hx) (hnot hy)
+    (hnot (by rwa [QuotientGroup.mk_mul]))
+  refine ⟨μ, ν, fun w hw ↦ ?_⟩
+  induction w using QuotientGroup.induction_on with | H u => ?_
+  rw [tateQuotientCoordinates_mk, h u (hnot hw), ← QuotientGroup.mk_mul, ← QuotientGroup.mk_inv]
+  simp only [eq_comm (a := (u : Kˣ ⧸ Subgroup.zpowers q)), QuotientGroup.eq, inv_inv]
 
 end Line
 

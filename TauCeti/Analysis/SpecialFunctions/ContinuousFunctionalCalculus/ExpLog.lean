@@ -144,7 +144,7 @@ theorem contDiffWithinAt_log_exp {a : A} (ha : IsSelfAdjoint a)
   let g := hexp.localInverse hderiv hω
   have hg : ContDiffAt 𝕂 ω g (exp a) := hexp.to_localInverse hderiv hω
   have hleft : ∀ᶠ x in 𝓝 a, g (exp x) = x :=
-    (hexp.hasStrictFDerivAt' hderiv hω).eventually_left_inverse
+    (hexp.hasStrictFDerivAt hderiv hω).eventually_left_inverse
   -- `log` is continuous at `exp a` on the strictly positive elements, with value `a` there.
   have hlog : Tendsto log (𝓝[{b : A | IsStrictlyPositive b}] (exp a)) (𝓝 a) := by
     have hcont : ContinuousWithinAt log {b : A | IsSelfAdjoint b ∧ IsUnit b} (exp a) :=
