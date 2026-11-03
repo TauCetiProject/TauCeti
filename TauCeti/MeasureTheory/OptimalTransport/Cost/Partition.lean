@@ -101,17 +101,19 @@ theorem transportCost_le_sum_of_partition {ι : Type*} [Fintype ι] {A : ι → 
   set β : ι → Measure Y := fun i ↦ t i • ν.restrict (B i)
   set β' : ι → Measure Y := fun i ↦ (1 - t i) • ν.restrict (B i)
   have hμ : μ = ∑ i, α i + ∑ i, α' i :=
-    Measure.eq_sum_smul_restrict_add_sum_one_sub_smul_restrict hAm hAd hAu hs1 μ
+    Measure.eq_sum_smul_restrict_add_sum_one_sub_smul_restrict (hAm · |>.nullMeasurableSet)
+      hAd.aedisjoint (by rw [hAu]) hs1
   have hν : ν = ∑ i, β i + ∑ i, β' i :=
-    Measure.eq_sum_smul_restrict_add_sum_one_sub_smul_restrict hBm hBd hBu ht1 ν
+    Measure.eq_sum_smul_restrict_add_sum_one_sub_smul_restrict (hBm · |>.nullMeasurableSet)
+      hBd.aedisjoint (by rw [hBu]) ht1
   have hα_univ (i : ι) : α i univ = m i := by
-    simp only [α, Measure.smul_apply, Measure.restrict_apply MeasurableSet.univ, univ_inter,
+    simp only [α, _root_.smul_apply, Measure.restrict_apply MeasurableSet.univ, univ_inter,
       smul_eq_mul, hsμ]
   have hβ_univ (i : ι) : β i univ = m i := by
-    simp only [β, Measure.smul_apply, Measure.restrict_apply MeasurableSet.univ, univ_inter,
+    simp only [β, _root_.smul_apply, Measure.restrict_apply MeasurableSet.univ, univ_inter,
       smul_eq_mul, htν]
   have hα'_univ (i : ι) : α' i univ = μ (A i) - ν (B i) := by
-    simp only [α', Measure.smul_apply, Measure.restrict_apply MeasurableSet.univ, univ_inter,
+    simp only [α', _root_.smul_apply, Measure.restrict_apply MeasurableSet.univ, univ_inter,
       smul_eq_mul]
     rw [ENNReal.sub_mul fun _ _ ↦ measure_ne_top _ _, one_mul, hsμ, hm, tsub_min]
   -- Inside each cell the matched parts are transported at cost at most `η i` per unit of mass.
@@ -128,12 +130,12 @@ theorem transportCost_le_sum_of_partition {ι : Type*} [Fintype ι] {A : ι → 
   -- The remainders have equal mass, and are transported at cost at most `M` per unit of mass.
   have hrest : (∑ i, α' i) univ = (∑ i, β' i) univ := by
     have hsum : (∑ i, α i) univ = (∑ i, β i) univ := by
-      simp only [Measure.coe_finsetSum, Finset.sum_apply, hα_univ, hβ_univ]
+      simp only [FunLike.coe_sum, Finset.sum_apply, hα_univ, hβ_univ]
     have hne : (∑ i, α i) univ ≠ ∞ := by
-      simp only [Measure.coe_finsetSum, Finset.sum_apply, hα_univ]
+      simp only [FunLike.coe_sum, Finset.sum_apply, hα_univ]
       exact ENNReal.sum_ne_top.2 fun i _ ↦ ((min_le_left _ _).trans_lt (measure_lt_top _ _)).ne
     have htot : (∑ i, α i) univ + (∑ i, α' i) univ = (∑ i, β i) univ + (∑ i, β' i) univ := by
-      rw [← Measure.add_apply, ← Measure.add_apply, ← hμ, ← hν, h]
+      rw [← _root_.add_apply, ← _root_.add_apply, ← hμ, ← hν, h]
     rwa [hsum, ENNReal.add_right_inj (hsum ▸ hne)] at htot
   calc transportCost c μ ν
       = transportCost c (∑ i, α i + ∑ i, α' i) (∑ i, β i + ∑ i, β' i) := by rw [← hμ, ← hν]
@@ -143,11 +145,11 @@ theorem transportCost_le_sum_of_partition {ι : Type*} [Fintype ι] {A : ι → 
         add_le_add (transportCost_finset_sum_le _ c _ _) (transportCost_mono hM)
     _ ≤ ∑ i, η i * ν (B i) + M * ∑ i, (μ (A i) - ν (B i)) := by
         have : IsFiniteMeasure (∑ i, α' i) := ⟨by
-          simp only [Measure.coe_finsetSum, Finset.sum_apply, hα'_univ]
+          simp only [FunLike.coe_sum, Finset.sum_apply, hα'_univ]
           exact lt_top_iff_ne_top.2 (ENNReal.sum_ne_top.2 fun i _ ↦
             ne_top_of_le_ne_top (measure_ne_top μ (A i)) tsub_le_self)⟩
         rw [transportCost_const (exists_isCoupling_iff.2 hrest)]
         refine add_le_add (Finset.sum_le_sum fun i _ ↦ hcell i) (le_of_eq ?_)
-        simp only [Measure.coe_finsetSum, Finset.sum_apply, hα'_univ]
+        simp only [FunLike.coe_sum, Finset.sum_apply, hα'_univ]
 
 end TauCeti

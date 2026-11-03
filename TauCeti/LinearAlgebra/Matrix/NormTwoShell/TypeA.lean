@@ -87,7 +87,8 @@ theorem typeASimpleRootMatrix_apply (m : Fin (r + 1)) (k : Fin r) :
 theorem transpose_typeASimpleRootMatrix_mul_self :
     (typeASimpleRootMatrix r)ᵀ * typeASimpleRootMatrix r = CartanMatrix.A r := by
   ext i j
-  simp only [mul_apply, transpose_apply, typeASimpleRootMatrix_apply, sub_mul, mul_sub, ite_mul,
+  simp only [Matrix.mul_apply, transpose_apply, typeASimpleRootMatrix_apply, sub_mul, mul_sub,
+    ite_mul,
     one_mul, zero_mul, Finset.sum_sub_distrib, Finset.sum_ite_eq', Finset.mem_univ, ite_true]
   simp only [CartanMatrix.A, of_apply, Fin.ext_iff, Fin.val_castSucc, Fin.val_succ]
   split_ifs <;> omega

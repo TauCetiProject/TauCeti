@@ -121,7 +121,7 @@ theorem fromBlocks_J_submatrix_finSuccSumFinSuccEquiv :
         (finSuccSumFinSuccEquiv n) = J (Fin (n + 1)) R := by
   ext (x | x) (y | y) <;>
     induction x using Fin.lastCases <;> induction y using Fin.lastCases <;>
-    simp [J, one_apply, Fin.castSucc_ne_last, eq_comm (a := Fin.last n)]
+    simp [J, Matrix.one_apply, Fin.castSucc_ne_last, eq_comm (a := Fin.last n)]
 
 end TauCeti
 
@@ -310,7 +310,7 @@ theorem exists_symplecticBlockSucc_eq_iff_mulVec_single (g : symplecticGroup (Fi
       · ext i j
         simp [X, toBlocks₁₂, hcol]
       · ext i j
-        simp [X, toBlocks₂₂, hcol, Pi.single_apply, one_apply, e.symm.injective.eq_iff]
+        simp [X, toBlocks₂₂, hcol, Pi.single_apply, Matrix.one_apply, e.symm.injective.eq_iff]
     have hGX : X.submatrix e e = G := by simp [X]
     have hmem : G ∈ symplecticGroup (Fin (n + 1)) R := g.property
     rw [← hGX, submatrix_finSuccSumFinSuccEquiv_mem_symplecticGroup_iff, hX] at hmem
