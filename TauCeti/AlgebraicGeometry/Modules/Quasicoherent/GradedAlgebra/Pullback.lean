@@ -548,51 +548,30 @@ private abbrev pullbackιTotal (n : ℕ) :
 
 /-- Pullback preserves the direct sum `⨁ₙ Aₙ`: the pullbacks of its summand inclusions exhibit
 `f^* (⨁ₙ Aₙ)` as a direct sum of the `f^* Aₙ`. -/
-private def isColimitPullbackMapιTotal :
-    IsColimit (Cofan.mk _ fun n ↦ (Scheme.Modules.pullback f).map (ιTotal A n) :
-      Cofan fun n ↦ (Scheme.Modules.pullback f).obj (A.obj.X n)) :=
-  isColimitCofanMkObjOfIsColimit (Scheme.Modules.pullback f) _ _ (isColimitιTotal A)
+private def isColimitPullbackιTotal : IsColimit (Cofan.mk _ (pullbackιTotal f A)) :=
+  (IsColimit.precomposeHomEquiv
+      (Discrete.natIso fun n ↦ eqToIso (congrFun (pullback_obj_obj_X f A) n.as)) _).symm
+    (isColimitCofanMkObjOfIsColimit (Scheme.Modules.pullback f) _ _ (isColimitιTotal A))
 
-/-- The comparison `⨁ₙ f^* Aₙ ⟶ f^* (⨁ₙ Aₙ)` of modules, given on the summand `f^* Aₙ` by the
+/-- The comparison of modules `⨁ₙ f^* Aₙ ≅ f^* (⨁ₙ Aₙ)`, given on the summand `f^* Aₙ` by the
 pullback of the inclusion of `Aₙ`. -/
-private def directSumPullbackHom :
-    (toQuasicoherentAlgebra.obj ((pullback f).obj A)).obj.X ⟶
-      (Scheme.Modules.pullback f).obj (toQuasicoherentAlgebra.obj A).obj.X :=
-  Cofan.IsColimit.desc (isColimitιTotal ((pullback f).obj A)) (pullbackιTotal f A)
-
-private lemma ιTotal_directSumPullbackHom (n : ℕ) :
-    ιTotal ((pullback f).obj A) n ≫ directSumPullbackHom f A = pullbackιTotal f A n :=
-  Cofan.IsColimit.fac (isColimitιTotal ((pullback f).obj A)) (pullbackιTotal f A) n
-
-/-- The inverse comparison `f^* (⨁ₙ Aₙ) ⟶ ⨁ₙ f^* Aₙ`. -/
-private def directSumPullbackInv :
-    (Scheme.Modules.pullback f).obj (toQuasicoherentAlgebra.obj A).obj.X ⟶
-      (toQuasicoherentAlgebra.obj ((pullback f).obj A)).obj.X :=
-  Cofan.IsColimit.desc (isColimitPullbackMapιTotal f A)
-    fun n ↦ eqToHom (congrFun (pullback_obj_obj_X f A) n).symm ≫ ιTotal ((pullback f).obj A) n
-
-private lemma pullback_map_ιTotal_directSumPullbackInv (n : ℕ) :
-    (Scheme.Modules.pullback f).map (ιTotal A n) ≫ directSumPullbackInv f A =
-      eqToHom (congrFun (pullback_obj_obj_X f A) n).symm ≫ ιTotal ((pullback f).obj A) n :=
-  Cofan.IsColimit.fac (isColimitPullbackMapιTotal f A) _ n
-
-/-- The comparison of modules `⨁ₙ f^* Aₙ ≅ f^* (⨁ₙ Aₙ)`. -/
 private def directSumPullbackIso :
     (toQuasicoherentAlgebra.obj ((pullback f).obj A)).obj.X ≅
-      (Scheme.Modules.pullback f).obj (toQuasicoherentAlgebra.obj A).obj.X where
-  hom := directSumPullbackHom f A
-  inv := directSumPullbackInv f A
-  hom_inv_id := toQuasicoherentAlgebra_hom_ext fun n ↦ by
-    rw [reassoc_of% ιTotal_directSumPullbackHom, Category.comp_id,
-      pullback_map_ιTotal_directSumPullbackInv, eqToHom_trans_assoc, eqToHom_refl,
-      Category.id_comp]
-  inv_hom_id := Cofan.IsColimit.hom_ext (isColimitPullbackMapιTotal f A) _ _ fun n ↦ by
-    rw [cofan_mk_inj, reassoc_of% pullback_map_ιTotal_directSumPullbackInv,
-      ιTotal_directSumPullbackHom, eqToHom_trans_assoc, eqToHom_refl, Category.id_comp]
-    exact (Category.comp_id _).symm
+      (Scheme.Modules.pullback f).obj (toQuasicoherentAlgebra.obj A).obj.X :=
+  (isColimitιTotal ((pullback f).obj A)).coconePointUniqueUpToIso (isColimitPullbackιTotal f A)
 
-private lemma one_directSumPullbackHom :
-    η[(toQuasicoherentAlgebra.obj ((pullback f).obj A)).obj.X] ≫ directSumPullbackHom f A =
+private lemma ιTotal_directSumPullbackIso_hom (n : ℕ) :
+    ιTotal ((pullback f).obj A) n ≫ (directSumPullbackIso f A).hom = pullbackιTotal f A n :=
+  IsColimit.comp_coconePointUniqueUpToIso_hom (isColimitιTotal _) (isColimitPullbackιTotal f A)
+    (Discrete.mk n)
+
+private lemma pullbackιTotal_directSumPullbackIso_inv (n : ℕ) :
+    pullbackιTotal f A n ≫ (directSumPullbackIso f A).inv = ιTotal ((pullback f).obj A) n :=
+  IsColimit.comp_coconePointUniqueUpToIso_inv (isColimitιTotal _) (isColimitPullbackιTotal f A)
+    (Discrete.mk n)
+
+private lemma one_directSumPullbackIso_hom :
+    η[(toQuasicoherentAlgebra.obj ((pullback f).obj A)).obj.X] ≫ (directSumPullbackIso f A).hom =
       (Scheme.Modules.pullbackObjUnitIso f).inv ≫
         (Scheme.Modules.pullback f).map η[(toQuasicoherentAlgebra.obj A).obj.X] := by
   -- The carriers of quasicoherent algebras defeat `rw` and `simp` here, so the composites are
@@ -602,14 +581,14 @@ private lemma one_directSumPullbackHom :
     simp
   rw [← one_ιTotal, ← one_ιTotal]
   refine (Category.assoc _ _ _).trans ?_
-  refine (congrArg _ (ιTotal_directSumPullbackHom f A 0)).trans ?_
+  refine (congrArg _ (ιTotal_directSumPullbackIso_hom f A 0)).trans ?_
   refine (congrArg (· ≫ _) (pullback_obj_one f A)).trans ?_
   refine (key _ _ _ _ _).trans ?_
   exact congrArg _ ((Scheme.Modules.pullback f).map_comp _ _).symm
 
-private lemma mul_directSumPullbackHom :
-    μ[(toQuasicoherentAlgebra.obj ((pullback f).obj A)).obj.X] ≫ directSumPullbackHom f A =
-      (directSumPullbackHom f A ⊗ₘ directSumPullbackHom f A) ≫
+private lemma mul_directSumPullbackIso_hom :
+    μ[(toQuasicoherentAlgebra.obj ((pullback f).obj A)).obj.X] ≫ (directSumPullbackIso f A).hom =
+      ((directSumPullbackIso f A).hom ⊗ₘ (directSumPullbackIso f A).hom) ≫
         inv (Functor.OplaxMonoidal.δ (Scheme.Modules.pullback f)
           (toQuasicoherentAlgebra.obj A).obj.X (toQuasicoherentAlgebra.obj A).obj.X) ≫
           (Scheme.Modules.pullback f).map μ[(toQuasicoherentAlgebra.obj A).obj.X] := by
@@ -644,8 +623,8 @@ private lemma mul_directSumPullbackHom :
     rw [IsIso.inv_comp_eq, Functor.OplaxMonoidal.δ_natural_assoc, IsIso.hom_inv_id,
       Category.comp_id]
   rw [ιTotal_tensorHom_ιTotal_mul_assoc, tensorHom_comp_tensorHom_assoc,
-    ιTotal_directSumPullbackHom, ιTotal_directSumPullbackHom f A i,
-    ιTotal_directSumPullbackHom f A j, reassoc_of% hmul, pullback_obj_mul]
+    ιTotal_directSumPullbackIso_hom, ιTotal_directSumPullbackIso_hom f A i,
+    ιTotal_directSumPullbackIso_hom f A j, reassoc_of% hmul, pullback_obj_mul]
   exact key _ _ _ _ _ _ _ _ _ _ (mul_ιTotal A i j).symm
 
 /-- The direct-sum algebra `⨁ₙ f^* Aₙ` of the pullback is the pullback `f^* (⨁ₙ Aₙ)` of the
@@ -658,17 +637,17 @@ private def toQuasicoherentAlgebraPullbackIsoApp :
     (by
       rw [QuasicoherentAlgebra.pullback_obj_one]
       exact (Category.assoc _ _ _).symm.trans
-        ((congrArg (· ≫ _) (one_directSumPullbackHom f A)).trans (Category.assoc _ _ _)))
+        ((congrArg (· ≫ _) (one_directSumPullbackIso_hom f A)).trans (Category.assoc _ _ _)))
     (by
       rw [QuasicoherentAlgebra.pullback_obj_mul]
-      -- As in `mul_directSumPullbackHom`, cancel the carrier transports for abstract modules.
+      -- As in `mul_directSumPullbackIso_hom`, cancel the carrier transports for abstract modules.
       have key {S P T Q : X.Modules} (g : S ⟶ P) (h : P = T) (h' : T = P) (r : P ⊗ P ⟶ Q) :
           ((g ≫ eqToHom h) ⊗ₘ (g ≫ eqToHom h)) ≫ (eqToHom h' ⊗ₘ eqToHom h') ≫ r =
             (g ⊗ₘ g) ≫ r := by
         subst h
         simp
       exact (Category.assoc _ _ _).symm.trans ((congrArg (· ≫ _)
-        (mul_directSumPullbackHom f A)).trans ((Category.assoc _ _ _).trans
+        (mul_directSumPullbackIso_hom f A)).trans ((Category.assoc _ _ _).trans
           ((congrArg (_ ≫ ·) (Category.assoc _ _ _).symm).trans
             (key _ (QuasicoherentAlgebra.pullback_obj_X f _).symm _ _).symm)))))
 
@@ -677,7 +656,7 @@ private lemma ιTotal_toQuasicoherentAlgebraPullbackIsoApp_hom (n : ℕ) :
       eqToHom (congrFun (pullback_obj_obj_X f A) n) ≫
         (Scheme.Modules.pullback f).map (ιTotal A n) ≫
           eqToHom (QuasicoherentAlgebra.pullback_obj_X f _).symm :=
-  (reassoc_of% ιTotal_directSumPullbackHom f A n) _
+  (reassoc_of% ιTotal_directSumPullbackIso_hom f A n) _
 
 /-- The pullback of the direct-sum algebra of a graded quasicoherent algebra is the direct-sum
 algebra of its pullback: `f^* (⨁ₙ Aₙ) ≅ ⨁ₙ f^* Aₙ` as quasicoherent algebras, naturally in `A`.
@@ -698,7 +677,7 @@ def pullbackToQuasicoherentAlgebraIso :
       (Eq.trans ?_ ((Category.assoc _ _ _).symm.trans
         (congrArg (· ≫ _) (ιTotal_toQuasicoherentAlgebraPullbackIsoApp_hom f A n))).symm)
     rw [pullback_map_hom_hom_hom, QuasicoherentAlgebra.pullback_map_hom_hom_hom]
-    -- Cancel the carrier transports for abstract modules, as in `mul_directSumPullbackHom`.
+    -- Cancel the carrier transports for abstract modules, as in `mul_directSumPullbackIso_hom`.
     have key {a b MA MB : Y.Modules} {Sa Sb TA TB : X.Modules} (φn : a ⟶ b) (ιA : a ⟶ MA)
         (ιB : b ⟶ MB) (ψ : MA ⟶ MB) (hψ : ιA ≫ ψ = φn ≫ ιB)
         (h₁ : Sa = (Scheme.Modules.pullback f).obj a)
@@ -737,14 +716,15 @@ theorem pullback_map_ιTotal_pullbackToQuasicoherentAlgebraIso_hom_app (n : ℕ)
           ((pullbackToQuasicoherentAlgebraIso f).hom.app A).hom.hom.hom =
       eqToHom (congrFun (pullback_obj_obj_X f A) n).symm ≫ ιTotal ((pullback f).obj A) n := by
   have h : ((pullbackToQuasicoherentAlgebraIso f).hom.app A).hom.hom.hom =
-      eqToHom (QuasicoherentAlgebra.pullback_obj_X f _) ≫ directSumPullbackInv f A :=
+      eqToHom (QuasicoherentAlgebra.pullback_obj_X f _) ≫ (directSumPullbackIso f A).inv :=
     -- The inverse of the component built from `directSumPullbackIso` and a transport.
     (rfl)
   rw [h]
   -- The carrier of the pulled-back algebra defeats `rw` here; cancel the transports directly.
   exact (congrArg (_ ≫ ·) ((eqToHom_trans_assoc _ _ _).trans
     ((congrArg (· ≫ _) (eqToHom_refl _ _)).trans (Category.id_comp _)))).trans
-      (pullback_map_ιTotal_directSumPullbackInv f A n)
+      ((eqToIso (congrFun (pullback_obj_obj_X f A) n)).eq_inv_comp.mpr
+        ((Category.assoc _ _ _).symm.trans (pullbackιTotal_directSumPullbackIso_inv f A n)))
 
 end DirectSum
 
