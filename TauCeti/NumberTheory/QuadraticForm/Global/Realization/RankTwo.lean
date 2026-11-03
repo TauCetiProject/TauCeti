@@ -91,8 +91,41 @@ private theorem exists_hilbertSymbol_eq_of_rank_eq_two (hI : I.IsAdmissible)
     simpa using neg_neg_of_pos hdpos) heven
   exact ⟨a, fun v => (ha v).trans (hs v).symm, fun w => (har w).trans (ht w).symm⟩
 
+/-- The discriminant and real Hasse sign determine the positive index of a regular binary form
+at a real place. -/
+private theorem realPositiveIndex_eq_of_rank_eq_two (hI : I.IsAdmissible) (hn : I.rank = 2)
+    (Q : _root_.QuadraticForm K (Fin 2 → K)) (hQ : Q.Nondegenerate)
+    (hd : RegularFormClass.discr (formClass Q hQ) = I.discr)
+    (w : {w : InfinitePlace K // w.IsReal})
+    (hh : (Q.globalInvariants hQ).realHasse w = I.realHasse w) :
+    Q.realPositiveIndex w = I.realPositiveIndex w := by
+  have hsum := _root_.QuadraticForm.realPositiveIndex_add_realNegativeIndex_eq_finrank hQ w
+  have hbound := hI.realPositiveIndex_le_rank w
+  have hdreal := _root_.QuadraticForm.squareClassMap_discr_formClass_eq_realNegativeIndex_nsmul
+    Q hQ w
+  rw [hd, ← discrAtRealPlace_def, hI.discrAtRealPlace_eq] at hdreal
+  rw [realHasse_def, _root_.QuadraticForm.globalInvariants_realNegativeIndex, realHasse_def,
+    realNegativeIndex_def, hn] at hh
+  simp only [Module.finrank_fin_fun] at hsum
+  rw [hn] at hbound
+  have hqbound : Q.realNegativeIndex w ≤ 2 := by omega
+  simp only [realNegativeIndex_def, hn] at hdreal
+  have hne : squareClass (-1 : ℝˣ) ≠ 0 := by norm_num [Units.isSquare_iff_pos]
+  -- Discriminant parity separates the indefinite signature; the Hasse sign separates
+  -- the two definite signatures. Close each of the nine cases independently.
+  interval_cases Q.realNegativeIndex w <;> interval_cases I.realPositiveIndex w
+  · norm_num at hh
+  · exact (hne (by simpa [← squareClass_pow] using hdreal)).elim
+  · omega
+  · exact (hne (by simpa [← squareClass_pow] using hdreal.symm)).elim
+  · omega
+  · exact (hne (by simpa [← squareClass_pow] using hdreal.symm)).elim
+  · omega
+  · exact (hne (by simpa [← squareClass_pow] using hdreal)).elim
+  · norm_num at hh
+
 /-- Every admissible rank-two system over a number field is the invariant system of a regular
-binary form. The construction uses Hilbert sign prescription, not Hasse–Minkowski. -/
+binary form. -/
 theorem IsAdmissible.exists_globalForm_of_rank_eq_two (hI : I.IsAdmissible) (hn : I.rank = 2) :
     ∃ (Q : _root_.QuadraticForm K (Fin 2 → K)) (hQ : Q.Nondegenerate),
       Q.globalInvariants hQ = I := by
@@ -112,7 +145,7 @@ theorem IsAdmissible.exists_globalForm_of_rank_eq_two (hI : I.IsAdmissible) (hn 
   have hfinite (v : HeightOneSpectrum (𝓞 K)) : Q.finiteHasse hQ v = I.finiteHasse v := by
     let _ : Finite (𝓞 K ⧸ v.asIdeal) := Ring.HasFiniteQuotients.finiteQuotient v.ne_bot
     have hc : (fun i => (c i : K)) = ![(a : K), (a * δ : K)] := by
-      ext i; fin_cases i <;> rfl
+      ext i; fin_cases i <;> simp [c]
     have hh := _root_.QuadraticForm.finiteHasse_weightedSumSquares_binary a (a * δ)
       (by simpa only [Q, hc] using hQ) v
     rw [map_mul, hilbertSymbol_self_mul two_ne_zero] at hh
@@ -135,25 +168,8 @@ theorem IsAdmissible.exists_globalForm_of_rank_eq_two (hI : I.IsAdmissible) (hn 
   refine ⟨Q, hQ, GlobalFormInvariants.ext (by simp [hn]) (by simpa using hd)
     (by simpa using funext hfinite) ?_⟩
   funext w
-  -- In rank two, discriminant parity separates the indefinite signature, and the
-  -- real Hasse sign distinguishes the two definite signatures.
-  have hsum := _root_.QuadraticForm.realPositiveIndex_add_realNegativeIndex_eq_finrank hQ w
-  have hbound := hI.realPositiveIndex_le_rank w
-  have hdreal := _root_.QuadraticForm.squareClassMap_discr_formClass_eq_realNegativeIndex_nsmul
-    Q hQ w
-  rw [hd, ← discrAtRealPlace_def, hI.discrAtRealPlace_eq] at hdreal
-  have hh := hreal w
-  rw [realHasse_def, _root_.QuadraticForm.globalInvariants_realNegativeIndex, realHasse_def,
-    realNegativeIndex_def, hn] at hh
-  simp only [Module.finrank_fin_fun] at hsum
-  rw [hn] at hbound
-  have hqbound : Q.realNegativeIndex w ≤ 2 := by omega
-  simp only [realNegativeIndex_def, hn] at hdreal
-  have hne : squareClass (-1 : ℝˣ) ≠ 0 := by norm_num [Units.isSquare_iff_pos]
-  interval_cases Q.realNegativeIndex w <;>
-    interval_cases I.realPositiveIndex w <;> simp_all
-  have hz : squareClass (-1 : ℝˣ) = 0 := by simpa using hdreal.symm
-  norm_num [Units.isSquare_iff_pos] at hz
+  rw [_root_.QuadraticForm.globalInvariants_realPositiveIndex]
+  exact realPositiveIndex_eq_of_rank_eq_two hI hn Q hQ hd w (hreal w)
 
 /-- For a rank-two system, admissibility is equivalent to realization by a regular global
 binary form, including all real positive indices and finite Hasse signs. -/
