@@ -124,6 +124,14 @@ omit [TopologicalSpace Y] in
     (b.map (LinearEquiv.ofInjective (P y) (hinj y))) (LinearEquiv.ofInjective (P y) (hinj y) l) i
   rwa [Basis.map_repr, LinearEquiv.trans_apply, LinearEquiv.symm_apply_apply] at h
 
+omit [TopologicalSpace Y] in
+/-- The coordinate vector of a period `P y l` in the period basis at `y` is the integer coordinate
+vector of `l` in `b`. -/
+theorem periodBasis_equivFun_period {ι : Type*} [Finite ι] (b : Basis ι ℤ Λ)
+    (hinj : ∀ y, Injective (P y)) (y : Y) (l : Λ) :
+    (periodBasis P b hinj y).equivFun (P y l) = fun i ↦ (b.repr l i : ℝ) :=
+  funext fun i ↦ by simp
+
 /-- **Uniform bound for inverse period maps.** For a basis `b` of `Λ`, the real linear maps
 `x ↦ ∑ i, x i • P y (b i)` are bounded below by one constant `c > 0` as `y` ranges over a
 compact set: `c * ‖x‖ ≤ ‖∑ i, x i • P y (b i)‖`. -/

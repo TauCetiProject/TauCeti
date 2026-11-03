@@ -37,6 +37,8 @@ pushforward commutes with the boundary `∂T = T ∘ d`. A bound `‖DΦ‖ ≤ 
 * `TestFunction.extDerivCLM_pullbackCLM`: `d (Φ^* ω) = Φ^* (d ω)`.
 * `ContinuousLinearMap.comp_pullbackCLM_comp_extDerivCLM`: `∂ (Φ_# T) = Φ_# (∂ T)`.
 * `Distribution.mass_comp_pullbackCLM_le`: `M(Φ_# T) ≤ L ^ k M(T)` when `‖DΦ‖ ≤ L` on `Ω`.
+* `Distribution.HasLocallyFiniteMass.comp_pullbackCLM`: pushforward preserves locally finite
+  mass.
 
 ## Implementation notes
 
@@ -359,5 +361,39 @@ theorem mass_comp_pullbackCLM_le (T : 𝓕) {L : ℝ≥0} (hL : ∀ x ∈ Ω, �
         rw [← ofReal_norm, ← ENNReal.ofReal_coe_nnreal, ← ENNReal.ofReal_pow L.coe_nonneg]
         exact ENNReal.ofReal_le_ofReal hb
     _ = (L : ℝ≥0∞) ^ k * mass T := mul_comm _ _
+
+omit [NormedSpace ℝ V] in
+/-- **Pushforward preserves locally finite mass.** If a map `T` on test `k`-forms on `Ω` has
+locally finite mass, so does its pushforward `T ∘ Φ^*` on `Ω'`. On a compact `K ⊆ Ω'` its
+order-zero bound is that of `T` on the compact set `Ω ∩ Φ ⁻¹' K`, times a bound for `‖DΦ‖ ^ k`
+there. -/
+theorem HasLocallyFiniteMass.comp_pullbackCLM {T : 𝓓(Ω, E [⋀^Fin k]→L[ℝ] F) → V}
+    (hT : HasLocallyFiniteMass T) : HasLocallyFiniteMass (T ∘ pullbackCLM Φ hΦ hΦp) := by
+  rw [hasLocallyFiniteMass_def] at hT ⊢
+  intro K hK hKΩ'
+  have hK' := hΦp K hK hKΩ'
+  obtain ⟨C, hC, hTC⟩ := hT _ hK' inter_subset_left
+  obtain ⟨M, hM⟩ := hK'.exists_bound_of_continuousOn
+    ((hΦ.continuousOn_fderiv_of_isOpen Ω.isOpen (by simp)).mono inter_subset_left)
+  refine ⟨C * max M 0 ^ k, by positivity, fun ω hω ↦ ?_⟩
+  have hsupp : tsupport (pullbackCLM Φ hΦ hΦp ω) ⊆ (Ω : Set E) ∩ Φ ⁻¹' K :=
+    (tsupport_pullbackCLM_subset ω).trans (inter_subset_inter_right _ (preimage_mono hω))
+  -- On `Ω ∩ Φ ⁻¹' K` the derivative is bounded by `max M 0`; off it the pullback vanishes.
+  have hb : ‖(pullbackCLM Φ hΦ hΦp ω : E →ᵇ E [⋀^Fin k]→L[ℝ] F)‖ ≤
+      max M 0 ^ k * ‖(ω : E' →ᵇ E' [⋀^Fin k]→L[ℝ] F)‖ := by
+    refine (BoundedContinuousFunction.norm_le (by positivity)).2 fun x ↦ ?_
+    rw [coe_toBoundedContinuousFunction]
+    by_cases hx : x ∈ (Ω : Set E) ∩ Φ ⁻¹' K
+    · refine (norm_pullbackCLM_apply_le ω x).trans ?_
+      rw [mul_comm]
+      gcongr
+      · exact (hM x hx).trans (le_max_left _ _)
+      · exact BoundedContinuousFunction.norm_coe_le_norm (ω : E' →ᵇ E' [⋀^Fin k]→L[ℝ] F) (Φ x)
+    · rw [image_eq_zero_of_notMem_tsupport fun h ↦ hx (hsupp h), norm_zero]
+      positivity
+  calc ‖(T ∘ pullbackCLM Φ hΦ hΦp) ω‖
+      ≤ C * ‖(pullbackCLM Φ hΦ hΦp ω : E →ᵇ E [⋀^Fin k]→L[ℝ] F)‖ := hTC _ hsupp
+    _ ≤ C * (max M 0 ^ k * ‖(ω : E' →ᵇ E' [⋀^Fin k]→L[ℝ] F)‖) := by gcongr
+    _ = C * max M 0 ^ k * ‖(ω : E' →ᵇ E' [⋀^Fin k]→L[ℝ] F)‖ := (mul_assoc _ _ _).symm
 
 end Distribution

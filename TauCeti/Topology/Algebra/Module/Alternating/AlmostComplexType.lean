@@ -416,7 +416,7 @@ theorem sum_typeProjection (J : V →L[ℝ] V) (ω : V [⋀^Fin k]→L[ℝ] F) :
     ∑ pq ∈ Finset.antidiagonal k, J.typeProjection pq.1 pq.2 ω = ω := by
   simp only [typeProjection, Prod.mk.eta]
   rw [← LinearMap.sum_apply, ← map_sum,
-    Lagrange.sum_basis (typeEigenvalue_injOn k) ⟨(k, 0), by simp⟩, map_one, Module.End.one_apply]
+    Lagrange.sum_basis (typeEigenvalue_injOn k) ⟨(k, 0), by simp⟩, map_one, one_apply_eq_self]
 
 /-- The projection onto type `(p,q)` fixes the forms of type `(p,q)`. -/
 @[simp]
@@ -458,9 +458,9 @@ theorem typeProjection_one_zero (J : V →L[ℝ] V) :
   ext ω v
   simp only [Lagrange.basisDivisor, typeEigenvalue, Nat.cast_one, CharP.cast_eq_zero, sub_zero,
     one_mul, zero_sub, neg_mul, sub_neg_eq_add, map_neg, map_mul, aeval_C, map_add, aeval_X,
-    Module.End.mul_apply, LinearMap.add_apply, Module.algebraMap_end_apply,
+    mul_apply_eq_comp, LinearMap.add_apply, Module.algebraMap_end_apply,
     ContinuousAlternatingMap.add_apply, ContinuousAlternatingMap.coe_smul, Pi.smul_apply,
-    LinearMap.smul_apply, LinearMap.sub_apply, Module.End.one_apply,
+    LinearMap.smul_apply, LinearMap.sub_apply, one_apply_eq_self,
     ContinuousAlternatingMap.coe_sub, Pi.sub_apply]
   rw [← two_mul, mul_inv, inv_I]
   match_scalars <;> ring_nf
@@ -475,10 +475,10 @@ theorem typeProjection_zero_one (J : V →L[ℝ] V) :
   rw [typeProjection, h, Lagrange.basis_pair_right (by decide)]
   ext ω v
   simp only [Lagrange.basisDivisor, typeEigenvalue, CharP.cast_eq_zero, Nat.cast_one, zero_sub,
-    neg_mul, one_mul, sub_zero, map_mul, aeval_C, aeval_sub, aeval_X, Module.End.mul_apply,
+    neg_mul, one_mul, sub_zero, map_mul, aeval_C, aeval_sub, aeval_X, mul_apply_eq_comp,
     LinearMap.sub_apply, Module.algebraMap_end_apply, ContinuousAlternatingMap.coe_smul,
     ContinuousAlternatingMap.coe_sub, Pi.smul_apply, Pi.sub_apply, smul_add, LinearMap.add_apply,
-    LinearMap.smul_apply, Module.End.one_apply, ContinuousAlternatingMap.add_apply]
+    LinearMap.smul_apply, one_apply_eq_self, ContinuousAlternatingMap.add_apply]
   rw [← neg_add', ← two_mul, inv_neg, mul_inv, inv_I]
   match_scalars <;> ring_nf
   norm_num
@@ -513,7 +513,7 @@ theorem typeProjection_two_zero_apply (hJ : ∀ v, J (J v) = -v) (β : V [⋀^Fi
   simp only [Lagrange.basisDivisor, typeEigenvalue, Nat.cast_ofNat, CharP.cast_eq_zero, sub_zero,
     Nat.cast_one, sub_self, zero_mul, mul_inv_rev, inv_I, neg_mul, map_neg, map_mul, map_zero,
     zero_sub, sub_neg_eq_add, aeval_C, aeval_X, map_add, LinearMap.neg_apply,
-    Module.End.mul_apply, LinearMap.add_apply, Module.algebraMap_end_apply, map_smul, smul_add,
+    mul_apply_eq_comp, LinearMap.add_apply, Module.algebraMap_end_apply, map_smul, smul_add,
     neg_add_rev, ContinuousAlternatingMap.add_apply, ContinuousAlternatingMap.coe_neg,
     ContinuousAlternatingMap.coe_smul, Pi.neg_apply, Pi.smul_apply,
     alternatingDerivation_apply_vecCons_fin_two,
@@ -530,7 +530,7 @@ theorem typeProjection_one_one_apply (hJ : ∀ v, J (J v) = -v) (β : V [⋀^Fin
   simp only [Lagrange.basisDivisor, typeEigenvalue, Nat.cast_one, sub_self, zero_mul,
     Nat.cast_ofNat, CharP.cast_eq_zero, sub_zero, zero_sub, inv_neg, mul_inv_rev, inv_I, neg_mul,
     neg_neg, map_mul, sub_neg_eq_add, zero_add, map_neg, mul_neg, aeval_C, aeval_sub,
-    aeval_X, map_add, LinearMap.neg_apply, Module.End.mul_apply, LinearMap.add_apply,
+    aeval_X, map_add, LinearMap.neg_apply, mul_apply_eq_comp, LinearMap.add_apply,
     Module.algebraMap_end_apply, map_smul, smul_add, LinearMap.sub_apply,
     ContinuousAlternatingMap.coe_neg, ContinuousAlternatingMap.coe_smul,
     ContinuousAlternatingMap.coe_sub, ContinuousAlternatingMap.coe_add, Pi.neg_apply, Pi.smul_apply,
@@ -549,7 +549,7 @@ theorem typeProjection_zero_two_apply (hJ : ∀ v, J (J v) = -v) (β : V [⋀^Fi
   rw [typeProjection, Lagrange.basis, h, Finset.prod_pair (by decide)]
   simp only [Lagrange.basisDivisor, typeEigenvalue, CharP.cast_eq_zero, Nat.cast_ofNat, zero_sub,
     neg_mul, sub_zero, map_mul, Nat.cast_one, sub_self, zero_mul, inv_neg, mul_inv_rev, inv_I,
-    neg_neg, map_zero, aeval_C, aeval_sub, aeval_X, Module.End.mul_apply,
+    neg_neg, map_zero, aeval_C, aeval_sub, aeval_X, mul_apply_eq_comp,
     Module.algebraMap_end_apply, map_smul, LinearMap.sub_apply, ContinuousAlternatingMap.coe_smul,
     ContinuousAlternatingMap.coe_sub, Pi.smul_apply, Pi.sub_apply,
     alternatingDerivation_alternatingDerivation_apply_vecCons_fin_two hJ,
@@ -767,7 +767,7 @@ theorem alternatingDerivation_typeProjection (hJ : ∀ v, J (J v) = -v)
         simp
       · rw [eval_mul, ← typeEigenvalue_mk,
           Lagrange.eval_basis_of_ne (Ne.symm h) (by simpa using hpq'), mul_zero])
-  rw [map_mul, Module.End.mul_apply, map_sub, aeval_X, aeval_C, LinearMap.sub_apply,
+  rw [map_mul, mul_apply_eq_comp, map_sub, aeval_X, aeval_C, LinearMap.sub_apply,
     Module.algebraMap_end_apply, LinearMap.zero_apply, sub_eq_zero] at h
   exact h
 
