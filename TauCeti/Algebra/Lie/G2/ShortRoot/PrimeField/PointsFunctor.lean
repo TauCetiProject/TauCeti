@@ -452,8 +452,9 @@ theorem coe_weightTorusPoints_pointsMulEquiv (A : Type v) [CommRing A] [Algebra 
   rw [weightTorusPoints]
   exact congrArg _ (congrArg _ (MulEquiv.symm_apply_apply _ q))
 
-private theorem pointsMulEquiv_commonKernelLift_root (k : Fin 2 ⊕ Fin 2)
-    (A : Type) [CommRing A] [Algebra (ZMod 3) A]
+/-- A lifted numbered root coordinate map evaluates to the named matrix root point. -/
+theorem pointsMulEquiv_commonKernelLift_root (k : Fin 2 ⊕ Fin 2)
+    (A : Type v) [CommRing A] [Algebra (ZMod 3) A]
     (q : HopfAlgebra.points (R := ZMod 3)
       (H := AdditiveGroup.coordinateHopfAlgebra (ZMod 3)) (CommAlgCat.of (ZMod 3) A)) :
     pointsMulEquiv (CommAlgCat.of (ZMod 3) A)
@@ -663,6 +664,23 @@ theorem coe_pointsMap {A : Type v} {B : Type w} [CommRing A] [CommRing B] [Algeb
       _root_.Matrix.GeneralLinearGroup.map (f : A →+* B) g :=
   TauCeti.GeneralLinear.coe_mapHopfIdealPointsSubgroupCongr 7 definingIdeal
     (points_eq_hopfIdealPointsSubgroup A) (points_eq_hopfIdealPointsSubgroup B) f g
+
+/-- The coordinate-point equivalence is natural in the value algebra. -/
+-- Match the point equivalence before `AlgHom.mapValue_apply` expands its argument.
+@[simp↓]
+theorem pointsMulEquiv_mapValue {A : Type v} {B : Type w} [CommRing A] [CommRing B]
+    [Algebra (ZMod 3) A] [Algebra (ZMod 3) B] (f : A →ₐ[ZMod 3] B)
+    (q : HopfAlgebra.points (R := ZMod 3) (H := carrierAlgebra) (CommAlgCat.of (ZMod 3) A)) :
+    pointsMulEquiv (CommAlgCat.of (ZMod 3) B) (AlgHom.mapValue f q) =
+      pointsMap f (pointsMulEquiv (CommAlgCat.of (ZMod 3) A) q) := by
+  apply Subtype.ext
+  apply Units.ext
+  rw [coe_pointsMap, coe_pointsMulEquiv_eq_map_carrierGenericMatrix]
+  ext a b
+  rw [Matrix.map_apply, Matrix.GeneralLinearGroup.map_apply]
+  have h := congrFun (congrFun (coe_pointsMulEquiv_eq_map_carrierGenericMatrix q) a) b
+  rw [h, AlgHom.mapValue_apply, Matrix.map_apply]
+  rfl
 
 /-- The identity algebra homomorphism induces the identity on carrier points. -/
 @[simp]
