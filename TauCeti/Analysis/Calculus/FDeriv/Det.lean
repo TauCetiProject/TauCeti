@@ -21,8 +21,7 @@ row replacements, or equivalently Jacobi's adjugate formula:
 `D det (A) H = trace (adjugate A * H)`.
 
 At an invertible matrix this is `det A * trace (A⁻¹ * H)`, and at the identity it is `trace H`.
-The matrix index may be empty. The pointwise differential formulas need no completeness
-assumption on the field.
+The matrix index may be empty, and the field need not be complete.
 
 The multilinear proof generalizes the real determinant calculus in the
 [KLS formalization](https://github.com/human-ai-mathematics/kls-lean/blob/9cde7938fc09cd017519c7c8a498bee99c12f717/formalization/FunctionalInequalities/Analysis/Matrix/DeterminantDerivative.lean).
@@ -96,24 +95,23 @@ theorem fderiv_det_apply {A : Matrix n n 𝕜} (hA : IsUnit A.det) (H : Matrix n
     adjugate_eq_det_smul_of_mul_eq_one (mul_nonsing_inv A hA),
     smul_mul_assoc, trace_smul, smul_eq_mul]
 
-variable [CompleteSpace 𝕜]
-
 /-- The Fréchet derivative of the determinant at the identity is the trace. -/
 theorem hasFDerivAt_det_one :
     HasFDerivAt (det : Matrix n n 𝕜 → 𝕜)
-      (LinearMap.toContinuousLinearMap (traceLinearMap n 𝕜 𝕜)) 1 := by
-  convert (differentiable_det (𝕜 := 𝕜) (n := n) 1).hasFDerivAt using 1
+      ⟨traceLinearMap n 𝕜 𝕜, continuous_id.matrix_trace⟩ 1 := by
+  refine ((differentiable_det (𝕜 := 𝕜) (n := n) 1).hasFDerivAt).congr_fderiv ?_
   ext H
-  simp [fderiv_det_apply_adjugate]
+  change fderiv 𝕜 det 1 H = H.trace
+  simp only [fderiv_det_apply_adjugate, adjugate_one, one_mul]
 
 /-- **Jacobi's inverse formula.** At a matrix with invertible determinant, the differential is
 `H ↦ det A * trace (A⁻¹ * H)`. -/
 theorem hasFDerivAt_det {A : Matrix n n 𝕜} (hA : IsUnit A.det) :
     HasFDerivAt (det : Matrix n n 𝕜 → 𝕜)
-      (A.det • (LinearMap.toContinuousLinearMap (traceLinearMap n 𝕜 𝕜)).comp
-        (LinearMap.toContinuousLinearMap (LinearMap.mulLeft 𝕜 A⁻¹))) A := by
-  convert (differentiable_det (𝕜 := 𝕜) (n := n) A).hasFDerivAt using 1
+      (A.det • (⟨traceLinearMap n 𝕜 𝕜, continuous_id.matrix_trace⟩ : Matrix n n 𝕜 →L[𝕜] 𝕜).comp
+        (ContinuousLinearMap.mul 𝕜 (Matrix n n 𝕜) A⁻¹)) A := by
+  refine (differentiable_det A).hasFDerivAt.congr_fderiv ?_
   ext H
-  exact (fderiv_det_apply hA H).symm
+  exact fderiv_det_apply hA H
 
 end Matrix
