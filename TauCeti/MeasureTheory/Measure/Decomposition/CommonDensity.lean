@@ -17,7 +17,7 @@ Let `λ` be a measure and let `ν₁ i`, `ν₂ i` be finitely many pairs of mea
 topological space, all finite on compact sets. The sum `ρ = λ + ∑ i, (ν₁ i + ν₂ i)` is finite on
 compact sets and dominates all of them, so each signed difference `ν₁ i - ν₂ i` has a real density
 `dν₁ i/dρ - dν₂ i/dρ` with respect to `ρ`, integrable on compact sets
-(`TauCeti.exists_common_density_sub`).
+(`MeasureTheory.Measure.exists_common_density_sub`).
 
 This is how a vector-valued functional, given componentwise as differences of measures, is
 represented by a single vector-valued density against one measure `ρ` which also dominates a
@@ -32,9 +32,7 @@ with respect to `ρ`, as in a polar decomposition.
 
 public section
 
-open MeasureTheory
-
-namespace TauCeti
+namespace MeasureTheory.Measure
 
 /-- **Common densities.** For a measure `λ` and finitely many pairs of measures `ν₁ i`, `ν₂ i`, all
 finite on compact sets of a σ-compact space, there is a measure `ρ`, finite on compact sets and
@@ -65,8 +63,7 @@ theorem exists_common_density_sub {X ι : Type*} [TopologicalSpace X] [SigmaComp
   have hint {i} {ν : Measure X} (hν : ν = ν₁ i ∨ ν = ν₂ i) {K : Set X} (hK : IsCompact K) :
       IntegrableOn (fun x => (ν.rnDeriv ρ x).toReal) K ρ := by
     have : IsFiniteMeasureOnCompacts ν := by rcases hν with rfl | rfl <;> infer_instance
-    exact integrable_toReal_of_lintegral_ne_top (Measure.measurable_rnDeriv _ _).aemeasurable
-      (ne_top_of_le_ne_top hK.measure_lt_top.ne (Measure.setLIntegral_rnDeriv_le K))
+    exact Measure.integrableOn_toReal_rnDeriv hK.measure_lt_top.ne
   refine ⟨ρ, hρc, Measure.AbsolutelyContinuous.rfl.add_right _,
     fun i x => ((ν₁ i).rnDeriv ρ x).toReal - ((ν₂ i).rnDeriv ρ x).toReal,
     fun i => (Measure.measurable_rnDeriv _ _).ennreal_toReal.sub
@@ -79,4 +76,4 @@ theorem exists_common_density_sub {X ι : Type*} [TopologicalSpace X] [SigmaComp
   rw [integral_sub h₁' h₂', integral_toReal_rnDeriv_mul (hac (Or.inl rfl)),
     integral_toReal_rnDeriv_mul (hac (Or.inr rfl))]
 
-end TauCeti
+end MeasureTheory.Measure

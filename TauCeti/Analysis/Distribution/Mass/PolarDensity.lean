@@ -38,10 +38,10 @@ finite near its frontier, so the density is only locally integrable.
 The proof assembles the scalar distributions `ψ ↦ T (ψ • bᵢ)` along a basis `b` of `F`. Each has
 order zero, so it is a difference of two regular measures
 (`Distribution.forall_exists_abs_le_iff_exists_regular`). With respect to a common reference
-measure `ρ`, which also dominates `‖T‖` (`TauCeti.exists_common_density_sub`), their densities
-form a dual-valued field `g` with `T φ = ∫ g(x) (φ x) dρ`. A test of norm at most one supported in
-an open `U` has `|T φ| ≤ ‖T‖(U)`, so the dual norm of `g` is at most the density of `‖T‖` with
-respect to `ρ` (`TauCeti.ae_enorm_le_of_forall_enorm_integral_apply_le`), and
+measure `ρ`, which also dominates `‖T‖` (`MeasureTheory.Measure.exists_common_density_sub`),
+their densities form a dual-valued field `g` with `T φ = ∫ g(x) (φ x) dρ`. A test of norm at
+most one supported in an open `U` has `|T φ| ≤ ‖T‖(U)`, so the dual norm of `g` is at most the
+density of `‖T‖` with respect to `ρ` (`TauCeti.ae_enorm_le_of_forall_enorm_integral_apply_le`), and
 `τ = g / (d‖T‖/dρ)` has norm at most one. Testing the supremum that defines `‖T‖(U)` against this
 representation gives `‖T‖(U) ≤ ∫_U ‖τ‖ d‖T‖`, hence `‖τ‖ = 1`
 (`TauCeti.ae_eq_one_of_measure_le_setLIntegral`).
@@ -106,7 +106,7 @@ private theorem exists_le_one (hT : HasLocallyFiniteMass T) :
   -- Densities `f i` of the scalar distributions against a reference measure `ρ` dominating `‖T‖`.
   have (i : _) : IsFiniteMeasureOnCompacts (ν₁ i) := ⟨fun _ hK => (h₁ i).lt_top_of_isCompact hK⟩
   have (i : _) : IsFiniteMeasureOnCompacts (ν₂ i) := ⟨fun _ hK => (h₂ i).lt_top_of_isCompact hK⟩
-  obtain ⟨ρ, hρ, hlam, f, hfm, hfK, hf⟩ := TauCeti.exists_common_density_sub lam ν₁ ν₂
+  obtain ⟨ρ, hρ, hlam, f, hfm, hfK, hf⟩ := lam.exists_common_density_sub ν₁ ν₂
   have hψ (ν : Measure Ω) [IsFiniteMeasureOnCompacts ν] (ψ : 𝓓(Ω, ℝ)) :
       Integrable (fun x : Ω => ψ x) ν :=
     ψ.toCompactlySupportedContinuousMap.integrable.congr
@@ -225,6 +225,7 @@ theorem measurable_polarDensity : Measurable (polarDensity T) := by
 
 omit [FiniteDimensional ℝ F] in
 /-- The polar density of a functional without locally finite mass is `0`, by convention. -/
+@[simp]
 theorem polarDensity_of_not_hasLocallyFiniteMass (hT : ¬HasLocallyFiniteMass T) :
     polarDensity T = 0 := by
   unfold polarDensity

@@ -39,7 +39,7 @@ measure-theoretic outer unit normal `ν_E`.
 The proof assembles the directional derivatives `∂_{bᵢ} u` along an orthonormal basis, each a
 difference of two regular measures (`TauCeti.exists_regular_lineDeriv_ofFun_apply_eq`). With
 respect to a common reference measure `ρ`, which also dominates `|Du|`
-(`TauCeti.exists_common_density_sub`), their densities form a vector field `g` with
+(`MeasureTheory.Measure.exists_common_density_sub`), their densities form a vector field `g` with
 `∫ u div φ dμ = -∫ ⟪φ, g⟫ dρ`. A pairing with a test vector field of norm at most one supported in
 `U` is bounded by `|Du|(U)`, so `‖g‖` is at most the density of `|Du|` with respect to `ρ`
 (`TauCeti.ae_enorm_le_of_forall_enorm_integral_inner_le`), and `σ_u = g / (d|Du|/dρ)` has norm at
@@ -108,7 +108,7 @@ private theorem exists_le_one :
   -- `|Du|`.
   have (i : _) : IsFiniteMeasureOnCompacts (ν₁ i) := ⟨fun _ hK => (h₁ i).lt_top_of_isCompact hK⟩
   have (i : _) : IsFiniteMeasureOnCompacts (ν₂ i) := ⟨fun _ hK => (h₂ i).lt_top_of_isCompact hK⟩
-  obtain ⟨ρ, hρ, hlam, f, hfm, hfK, hf⟩ := exists_common_density_sub lam ν₁ ν₂
+  obtain ⟨ρ, hρ, hlam, f, hfm, hfK, hf⟩ := lam.exists_common_density_sub ν₁ ν₂
   have hψ (ν : Measure Ω) [IsFiniteMeasureOnCompacts ν] (ψ : 𝓓(Ω, ℝ)) :
       Integrable (fun x : Ω => ψ x) ν :=
     ψ.toCompactlySupportedContinuousMap.integrable.congr
