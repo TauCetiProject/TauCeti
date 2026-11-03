@@ -22,35 +22,14 @@ ring.
 
 ## Main results
 
-* `Algebra.IsPushout.finite_and_etale_iff_of_faithfullyFlat`: across a pushout square whose base
-  extension is faithfully flat, finite étaleness holds on one side if and only if it holds on the
-  other.
-* `CommRingCat.finite_and_etale_iff_of_isPushout_of_faithfullyFlat`: the same statement for a
-  pushout square in `CommRingCat`, phrased with `RingHom.Finite` and `RingHom.Etale`.
+* `CommRingCat.finite_and_etale_iff_of_isPushout_of_faithfullyFlat`: across a pushout square in
+  `CommRingCat` whose base extension is faithfully flat, a ring map is finite étale if and only if
+  its base change is.
 -/
 
 public section
 
 universe u
-
-namespace Algebra.IsPushout
-
-variable {R S R' S' : Type u} [CommRing R] [CommRing S] [CommRing R'] [CommRing S']
-  [Algebra R S] [Algebra R R'] [Algebra R S'] [Algebra S S'] [Algebra R' S']
-  [IsScalarTower R S S'] [IsScalarTower R R' S'] [Algebra.IsPushout R S R' S']
-
-/-- For a pushout square `S' = R' ⊗[R] S` with `R'` faithfully flat over `R`, the algebra `S` is
-finite étale over `R` if and only if `S'` is finite étale over `R'`. -/
-theorem finite_and_etale_iff_of_faithfullyFlat [Module.FaithfullyFlat R R'] :
-    (Module.Finite R S ∧ Algebra.Etale R S) ↔ (Module.Finite R' S' ∧ Algebra.Etale R' S') := by
-  have hR' : (algebraMap R R').FaithfullyFlat := RingHom.faithfullyFlat_algebraMap_iff.mpr ‹_›
-  simp only [← RingHom.finite_algebraMap, ← RingHom.etale_algebraMap]
-  exact ⟨fun h ↦ ⟨RingHom.finite_isStableUnderBaseChange R S R' S' h.1,
-      RingHom.Etale.isStableUnderBaseChange R S R' S' h.2⟩,
-    fun h ↦ ⟨RingHom.Finite.codescendsAlong_faithfullyFlat hR' h.1,
-      RingHom.Etale.codescendsAlong_faithfullyFlat hR' h.2⟩⟩
-
-end Algebra.IsPushout
 
 namespace CommRingCat
 
@@ -65,6 +44,9 @@ theorem finite_and_etale_iff_of_isPushout_of_faithfullyFlat {R S R' S' : CommRin
   algebraize [f.hom, g.hom, inl.hom, inr.hom, inr.hom.comp g.hom]
   have : IsScalarTower R S S' := .of_algebraMap_eq fun x ↦ congr($(hsq.w).hom x).symm
   have : Algebra.IsPushout R S R' S' := CommRingCat.isPushout_iff_isPushout.mp hsq
-  exact Algebra.IsPushout.finite_and_etale_iff_of_faithfullyFlat
+  exact ⟨fun h ↦ ⟨RingHom.finite_isStableUnderBaseChange R S R' S' h.1,
+      RingHom.Etale.isStableUnderBaseChange R S R' S' h.2⟩,
+    fun h ↦ ⟨RingHom.Finite.codescendsAlong_faithfullyFlat hg h.1,
+      RingHom.Etale.codescendsAlong_faithfullyFlat hg h.2⟩⟩
 
 end CommRingCat

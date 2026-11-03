@@ -19,9 +19,9 @@ import TauCeti.RingTheory.Etale.FiniteDescent
 Let `A → A'` be a flat local homomorphism of Noetherian local rings such that the closed point is
 the only point of `Spec A'` over the closed point of `Spec A`, for instance the completion of `A`
 at its maximal ideal. Then the punctured spectrum `U'` of `A'` is the preimage of the punctured
-spectrum `U` of `A`. If `A` has depth at least two, a finite étale cover `V` of `U` extends to a
-finite étale cover of `Spec A` if and only if its base change to `U'` extends to a finite étale
-cover of `Spec A'`.
+spectrum `U` of `A` (`TauCeti.IsLocalRing.preimage_puncturedSpectrum`). If `A` has depth at
+least two, a finite étale cover `V` of `U` extends to a finite étale cover of `Spec A` if and only
+if its base change to `U'` extends to a finite étale cover of `Spec A'`.
 
 By the criterion `TauCeti.IsLocalRing.extends_iff_sections_finiteEtale` (Stacks 0BLK), applied to
 `A` and to `A'` (whose depth is at least that of `A`, by the depth formula for flat local
@@ -33,8 +33,6 @@ the faithfully flat map `A → A'`
 
 ## Main results
 
-* `TauCeti.IsLocalRing.preimage_puncturedSpectrum`: the punctured spectrum of `A'` is the preimage
-  of that of `A`.
 * `TauCeti.IsLocalRing.isPushout_appTop_pullback_of_flat`: the global sections of the base change
   of a finite étale cover `V` of `U` to `U'` are `A' ⊗[A] Γ(V, 𝒪_V)`.
 * `TauCeti.IsLocalRing.extends_iff_extends_pullback_of_flat`: for `A` of depth at least two, a
@@ -59,32 +57,6 @@ open CategoryTheory Limits AlgebraicGeometry IsLocalRing
 universe u
 
 namespace TauCeti.IsLocalRing
-
-section
-
-variable {A A' : Type u} [CommRing A] [IsLocalRing A] [CommRing A'] [IsLocalRing A']
-  [Algebra A A']
-
-/-- If the closed point of `Spec A'` is the only point over the closed point of `Spec A`, the
-punctured spectrum of `A'` is the preimage of the punctured spectrum of `A`. -/
-theorem preimage_puncturedSpectrum
-    (h : ((maximalIdeal A).map (algebraMap A A')).radical = maximalIdeal A') :
-    Spec.map (CommRingCat.ofHom (algebraMap A A')) ⁻¹ᵁ puncturedSpectrum A =
-      puncturedSpectrum A' := by
-  have : IsLocalHom (algebraMap A A') :=
-    ((local_hom_tfae (algebraMap A A')).out 1 3).mpr (h ▸ Ideal.le_radical)
-  -- A point `x` of `Spec A'` maps to the point `PrimeSpectrum.comap (algebraMap A A') x`.
-  have key (x : PrimeSpectrum A') :
-      PrimeSpectrum.comap (algebraMap A A') x = closedPoint A ↔ x = closedPoint A' := by
-    refine ⟨fun hx ↦ PrimeSpectrum.ext (le_antisymm (le_maximalIdeal x.isPrime.ne_top)
-      (?_ : maximalIdeal A' ≤ x.asIdeal)), fun hx ↦ hx ▸ comap_closedPoint _⟩
-    rw [← h, x.isPrime.radical_le_iff, Ideal.map_le_iff_le_comap]
-    exact (congrArg PrimeSpectrum.asIdeal hx).ge
-  ext x
-  exact ((mem_puncturedSpectrum_iff A _).trans (key x).not).trans
-    (mem_puncturedSpectrum_iff A' x).symm
-
-end
 
 variable {A A' : Type u} [CommRing A] [IsLocalRing A] [IsNoetherianRing A]
   [CommRing A'] [IsLocalRing A'] [Algebra A A'] [Module.Flat A A']
