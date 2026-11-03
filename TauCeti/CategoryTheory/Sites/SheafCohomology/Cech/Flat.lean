@@ -7,8 +7,8 @@ module
 
 public import Mathlib.Algebra.Category.ModuleCat.Limits
 public import Mathlib.Algebra.Category.ModuleCat.Products
+public import Mathlib.CategoryTheory.Sites.SheafCohomology.Cech
 public import TauCeti.CategoryTheory.Limits.Lattice
-public import TauCeti.CategoryTheory.Sites.SheafCohomology.Cech.Basic
 public import TauCeti.RingTheory.Flat.Pi
 
 /-!
