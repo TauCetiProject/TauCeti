@@ -37,7 +37,6 @@ nonnegative entries, after a shift by a natural number.
 * `TauCeti.GTPattern.shiftTopWeightEquiv`: translation between the fibers over `l` and `l.shift m`.
 * `TauCeti.GTPattern.detShiftEquivBoundedSSYT`: patterns over an arbitrary dominant weight are
   equivalent to bounded semistandard tableaux of its determinant-normalized shape.
-* `TauCeti.GTPattern.const n m`: the pattern all of whose informative entries equal `m`.
 
 ## Main results
 
@@ -293,35 +292,7 @@ theorem card_topWeight_eq_card_boundedSSYT_detShiftShape (l : DominantWeight n) 
     Nat.card {P : GTPattern n // P.topWeight = l} = Nat.card (BoundedSSYT n l.detShiftShape) :=
   Nat.card_congr (detShiftEquivBoundedSSYT l)
 
-/-! ### Constant patterns and determinant shifts -/
-
-/-- The constant pattern: every informative entry equals `m`.  Adding it to a pattern is the
-determinant shift by `m` (`TauCeti.GTPattern.shift_eq_add_const`). -/
-def const (n : ℕ) (m : ℤ) : GTPattern n :=
-  (0 : GTPattern n).shift m
-
-theorem const_apply (m : ℤ) (i j : ℕ) : const n m i j = if i < j ∧ j ≤ n then m else 0 := by
-  rw [const, shift_apply, zero_apply, zero_add]
-
-@[simp]
-theorem const_apply_of_lt_of_le (m : ℤ) {i j : ℕ} (hij : i < j) (hj : j ≤ n) :
-    const n m i j = m := by
-  rw [const_apply, ite_eq_left_iff.2 fun h => absurd ⟨hij, hj⟩ h]
-
-@[simp]
-theorem topRow_const (m : ℤ) : (const n m).topRow = fun _ => m := by
-  funext i
-  rw [topRow_apply]
-  exact const_apply_of_lt_of_le m i.2 le_rfl
-
-@[simp]
-theorem const_zero : const n 0 = 0 :=
-  shift_zero 0
-
-theorem const_add (m m' : ℤ) : const n (m + m') = const n m + const n m' := by
-  ext i j
-  rw [add_apply, const_apply, const_apply, const_apply]
-  split_ifs <;> simp
+/-! ### Determinant shifts as additions of constant patterns -/
 
 /-- **The determinant shift is addition of a constant pattern.** -/
 theorem shift_eq_add_const (P : GTPattern n) (m : ℤ) : P.shift m = P + const n m := by

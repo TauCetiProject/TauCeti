@@ -23,6 +23,7 @@ nonnegative ones for this order: those whose top weight is polynomial.
 * `TauCeti.GTPattern.instAddCancelCommMonoid`, `TauCeti.GTPattern.instPartialOrder` and
   `TauCeti.GTPattern.instIsOrderedCancelAddMonoid`: the entrywise additive and order structures.
 * `TauCeti.GTPattern.coeFnAddMonoidHom`: the array of entries, as an additive monoid homomorphism.
+* `TauCeti.GTPattern.const n m`: the pattern all of whose informative entries equal `m`.
 
 ## Main results
 
@@ -111,6 +112,42 @@ theorem topRow_add (P Q : GTPattern n) : (P + Q).topRow = P.topRow + Q.topRow :=
 theorem topRow_nsmul (k : ℕ) (P : GTPattern n) : (k • P).topRow = k • P.topRow := by
   funext i
   rw [topRow_apply, nsmul_apply, Pi.smul_apply, topRow_apply]
+
+/-! ### Constant patterns -/
+
+/-- The constant pattern: every informative entry equals `m`.  Adding it to a pattern is the
+determinant shift by `m` (`TauCeti.GTPattern.shift_eq_add_const`). -/
+def const (n : ℕ) (m : ℤ) : GTPattern n where
+  entry i j := if i < j ∧ j ≤ n then m else 0
+  zeros' h := by
+    rw [ite_eq_right_iff]
+    omega
+  interlacing' hij hj := by
+    constructor <;> split_ifs <;> omega
+
+theorem const_apply (m : ℤ) (i j : ℕ) : const n m i j = if i < j ∧ j ≤ n then m else 0 :=
+  (rfl)
+
+@[simp]
+theorem const_apply_of_lt_of_le (m : ℤ) {i j : ℕ} (hij : i < j) (hj : j ≤ n) :
+    const n m i j = m := by
+  rw [const_apply, ite_eq_left_iff.2 fun h => absurd ⟨hij, hj⟩ h]
+
+@[simp]
+theorem topRow_const (m : ℤ) : (const n m).topRow = fun _ => m := by
+  funext i
+  rw [topRow_apply]
+  exact const_apply_of_lt_of_le m i.2 le_rfl
+
+@[simp]
+theorem const_zero : const n 0 = 0 := by
+  ext i j
+  rw [const_apply, zero_apply, ite_self]
+
+theorem const_add (m m' : ℤ) : const n (m + m') = const n m + const n m' := by
+  ext i j
+  rw [add_apply, const_apply, const_apply, const_apply]
+  split_ifs <;> simp
 
 /-! ### The entrywise order -/
 

@@ -6,7 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Data.Fin.Basic
-public import TauCeti.RepresentationTheory.ClassicalGroups.GelfandTsetlin.Shift
+public import TauCeti.RepresentationTheory.ClassicalGroups.GelfandTsetlin.AddMonoid
+public import Mathlib.Algebra.BigOperators.Pi
 public import Mathlib.Algebra.Order.Monoid.Submonoid
 public import Mathlib.GroupTheory.Finiteness
 
