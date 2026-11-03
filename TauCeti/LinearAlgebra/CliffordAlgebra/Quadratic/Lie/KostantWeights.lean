@@ -10,7 +10,7 @@ public import TauCeti.LinearAlgebra.CliffordAlgebra.Quadratic.Lie.RootWeights
 public import TauCeti.LinearAlgebra.RootSystem.Weyl.Vector
 
 import TauCeti.Algebra.Lie.HighestWeight.Weight.Lattice
-import TauCeti.LinearAlgebra.CliffordAlgebra.Bivector.Isotropic
+import TauCeti.LinearAlgebra.CliffordAlgebra.Bivector.Square
 import TauCeti.LinearAlgebra.CliffordAlgebra.Quadratic.Lie.Subalgebra
 import TauCeti.LinearAlgebra.Eigenspace.JointEigenvector.Exists
 
@@ -96,8 +96,8 @@ private theorem coe_add_self_ne_zero {χ : Weight K H L} (hχ : χ.IsNonZero) :
     simpa using congrFun hc u
 
 /-- The element `X_χ = ∑ᵢ β(π_χ bᵢ, π_{-χ} b'ᵢ)` of the Clifford algebra, for a basis `b` of `L`
-with Killing-dual basis `b'`. By `adjointCliffordHom_cartan_eq_sum_rootInvolution` the lift of a
-Cartan element is a combination of these elements. -/
+with Killing-dual basis `b'`. By `adjointCliffordHom_cartan_eq_sum_posRoots` the lift of a Cartan
+element is a combination of these elements. -/
 private noncomputable def rootInvolution (χ : Weight K H L) :
     CliffordAlgebra (killingQuadraticForm K L) :=
   ∑ i, bivector (killingQuadraticForm K L)
@@ -142,8 +142,8 @@ private theorem rootInvolution_mul_self {χ : Weight K H L} (hχ : χ.IsNonZero)
     rw [killingQuadraticForm_apply]
     exact killingForm_apply_eq_zero_of_mem_rootSpace_of_add_ne_zero K L H hx hx
       (coe_add_self_ne_zero H hψ)
-  rw [hX, bivector_mul_self_of_isotropic (hQ hχ he) (hQ (Weight.IsNonZero.neg hχ) hf),
-    polar_killingQuadraticForm, hef, mul_one, invOf_mul_self, one_pow, map_one]
+  rw [hX, bivector_mul_self, hQ hχ he, hQ (Weight.IsNonZero.neg hχ) hf,
+    polar_killingQuadraticForm, hef, mul_one, invOf_mul_self, one_pow, mul_zero, sub_zero, map_one]
 
 omit [IsAlgClosed K] in
 /-- The elements `X_χ` and `X_ψ` commute unless `ψ = ± χ`: they are bivectors of mutually orthogonal
@@ -178,13 +178,6 @@ private theorem commute_rootInvolution_of_mem_posRootsFinset {a b : H.root}
   refine reflectionPerm_self_notMem_posRoots _ base hb ?_
   rwa [IsKilling.rootSystem_reflectionPerm_self_eq_neg, ← hneg]
 
-/-- The lift of a Cartan element, expressed through the elements `X_α` of the positive roots. -/
-private theorem adjointCliffordHom_cartan_eq_sum_rootInvolution (h : H) :
-    adjointCliffordHom K L (h : L) =
-      (2 : K)⁻¹ • ∑ a ∈ posRootsFinset (IsKilling.rootSystem H) base,
-        ((a : H.root) : Weight K H L) h • rootInvolution H (a : H.root) :=
-  adjointCliffordHom_cartan_eq_sum_posRoots H (Module.finBasis K L) base h
-
 /-- Inside any joint eigenspace of the lift of the Cartan subalgebra, the commuting involutions
 `X_α` have a joint eigenvector. -/
 private theorem exists_forall_rootInvolution_mul_eq {c : CliffordAlgebra (killingQuadraticForm K L)}
@@ -205,7 +198,7 @@ private theorem exists_forall_rootInvolution_mul_eq {c : CliffordAlgebra (killin
     refine hmem.2 fun h ↦ ?_
     have hcomm : Commute (adjointCliffordHom K L (h : L))
         (rootInvolution H ((a : H.root) : Weight K H L)) := by
-      rw [adjointCliffordHom_cartan_eq_sum_rootInvolution base h]
+      rw [adjointCliffordHom_cartan_eq_sum_posRoots H (Module.finBasis K L) base h]
       exact (Commute.sum_left _ _ _ fun b hb ↦
         (commute_rootInvolution_of_mem_posRootsFinset base hb a.2).smul_left _).smul_left _
     rw [LinearMap.mulLeft_apply, ← mul_assoc, hcomm.eq, mul_assoc, hmem.1 hw h, mul_smul_comm]
@@ -269,8 +262,9 @@ theorem exists_eq_weylVector_sub_sum_kostant_of_forall_lie_eq_smul
     simp [A]
   refine smul_left_injective K hv0 ?_
   simp only [LinearMap.sub_apply, hρ, hroot]
-  rw [← hv h, adjointCliffordHom_cartan_eq_sum_rootInvolution base h, smul_mul_assoc,
-    Finset.sum_mul, Finset.sum_congr rfl fun a _ ↦ smul_mul_assoc _ _ _,
+  rw [← hv h, adjointCliffordHom_cartan_eq_sum_posRoots H (Module.finBasis K L) base h]
+  change ((2 : K)⁻¹ • ∑ a ∈ Φ, A a • rootInvolution H (a : Weight K H L)) * v = _
+  rw [smul_mul_assoc, Finset.sum_mul, Finset.sum_congr rfl fun a _ ↦ smul_mul_assoc _ _ _,
     ← Finset.sum_filter_add_sum_filter_not Φ p, hneg, hpos, ← add_smul, smul_smul]
   congr 1
   ring
