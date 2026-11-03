@@ -48,6 +48,11 @@ attribute [local instance 100] LieRing.ofAssociativeRing
 /-- The fixed Lie algebra of the pinned reversal of `sl₄`. -/
 abbrev Fixed := (typeASpecialLinearGraphAutomorphism 3 R).toLieHom.fixedSubalgebra
 
+/-- Fixed elements are equal when all their matrix entries agree. -/
+@[ext]
+theorem Fixed.ext {X Y : Fixed R} (h : ∀ i j, X.val.val i j = Y.val.val i j) : X = Y :=
+  Subtype.ext (Subtype.ext (Matrix.ext h))
+
 /-- Reconstruct a fixed matrix from its two Cartan and eight root coordinates. -/
 private def matrixOf (c : Fin 10 → R) : Matrix (Fin 4) (Fin 4) R :=
   !![c 0, c 2, c 4, c 5;
@@ -83,6 +88,8 @@ def coordinates : Fixed R ≃ₗ[R] (Fin 10 → R) where
         typeAGraphLieEquiv_apply_apply] using
         congrArg (fun Y : sl (Fin 4) R ↦ Y.val i j)
           (LieHom.mem_fixedSubalgebra.mp X.property)
+    -- These six fixed-point equations determine the dependent entries at
+    -- (1,3), (2,2), (2,3), (3,1), (3,2), (3,3); the other ten are coordinates.
     have h13 := h 1 3
     have h22 := h 2 2
     have h23 := h 2 3
@@ -132,7 +139,6 @@ theorem basis_repr (X : Fixed R) (i : Fin 10) :
   (rfl)
 
 /-- Each basis matrix is obtained by setting its corresponding independent coordinate to one. -/
-@[simp]
 theorem basis_apply_val (i : Fin 10) :
     (basis R i).val.val =
       let c : Fin 10 → R := Pi.single i 1
@@ -143,21 +149,87 @@ theorem basis_apply_val (i : Fin 10) :
   rw [basis, Module.Basis.coe_ofEquivFun]
   exact coordinates_symm_apply_val R _
 
+/-- The outer simple-coroot orbit sum is `H₀ + H₂`. -/
+@[simp]
+theorem basis_zero_val :
+    (basis R 0).val.val =
+      Matrix.single 0 0 1 - Matrix.single 1 1 1 +
+        Matrix.single 2 2 1 - Matrix.single 3 3 1 := by
+  ext i j
+  fin_cases i <;> fin_cases j <;> simp [basis_apply_val]
+
+/-- The middle simple coroot is `H₁`. -/
+@[simp]
+theorem basis_one_val :
+    (basis R 1).val.val = Matrix.single 1 1 1 - Matrix.single 2 2 1 := by
+  ext i j
+  fin_cases i <;> fin_cases j <;> simp [basis_apply_val]
+
+/-- The paired simple positive root vector is `E₀₁ + E₂₃`. -/
+@[simp]
+theorem basis_two_val :
+    (basis R 2).val.val = Matrix.single 0 1 1 + Matrix.single 2 3 1 := by
+  ext i j
+  fin_cases i <;> fin_cases j <;> simp [basis_apply_val]
+
+/-- The middle simple positive root vector is `E₁₂`. -/
+@[simp]
+theorem basis_three_val : (basis R 3).val.val = Matrix.single 1 2 1 := by
+  ext i j
+  fin_cases i <;> fin_cases j <;> simp [basis_apply_val]
+
+/-- The height-two positive root vector is `E₀₂ - E₁₃`. -/
+@[simp]
+theorem basis_four_val :
+    (basis R 4).val.val = Matrix.single 0 2 1 - Matrix.single 1 3 1 := by
+  ext i j
+  fin_cases i <;> fin_cases j <;> simp [basis_apply_val]
+
+/-- The highest positive root vector is `E₀₃`. -/
+@[simp]
+theorem basis_five_val : (basis R 5).val.val = Matrix.single 0 3 1 := by
+  ext i j
+  fin_cases i <;> fin_cases j <;> simp [basis_apply_val]
+
+/-- The paired simple negative root vector is `E₁₀ + E₃₂`. -/
+@[simp]
+theorem basis_six_val :
+    (basis R 6).val.val = Matrix.single 1 0 1 + Matrix.single 3 2 1 := by
+  ext i j
+  fin_cases i <;> fin_cases j <;> simp [basis_apply_val]
+
+/-- The middle simple negative root vector is `E₂₁`. -/
+@[simp]
+theorem basis_seven_val : (basis R 7).val.val = Matrix.single 2 1 1 := by
+  ext i j
+  fin_cases i <;> fin_cases j <;> simp [basis_apply_val]
+
+/-- The height-two negative root vector is `-E₂₀ + E₃₁`. -/
+@[simp]
+theorem basis_eight_val :
+    (basis R 8).val.val = -Matrix.single 2 0 1 + Matrix.single 3 1 1 := by
+  ext i j
+  fin_cases i <;> fin_cases j <;> simp [basis_apply_val]
+
+/-- The lowest negative root vector is `E₃₀`. -/
+@[simp]
+theorem basis_nine_val : (basis R 9).val.val = Matrix.single 3 0 1 := by
+  ext i j
+  fin_cases i <;> fin_cases j <;> simp [basis_apply_val]
+
 /-- The bracket of the paired simple positive root and the middle root. -/
 @[simp]
 theorem lie_basis_two_three : ⁅basis R 2, basis R 3⁆ = basis R 4 := by
-  apply Subtype.ext
-  apply Subtype.ext
-  ext i j
+  apply Fixed.ext R
+  intro i j
   fin_cases i <;> fin_cases j <;>
     simp [LieSubalgebra.coe_bracket, Ring.lie_def, basis_apply_val]
 
 /-- The highest root vector occurs with the integral root-string coefficient `-2`. -/
 @[simp]
 theorem lie_basis_two_four : ⁅basis R 2, basis R 4⁆ = (-2 : R) • basis R 5 := by
-  apply Subtype.ext
-  apply Subtype.ext
-  ext i j
+  apply Fixed.ext R
+  intro i j
   fin_cases i <;> fin_cases j <;>
     simp [LieSubalgebra.coe_bracket, Ring.lie_def, basis_apply_val]
   ring
@@ -165,18 +237,16 @@ theorem lie_basis_two_four : ⁅basis R 2, basis R 4⁆ = (-2 : R) • basis R 5
 /-- The bracket of the paired simple negative root and the middle negative root. -/
 @[simp]
 theorem lie_basis_six_seven : ⁅basis R 6, basis R 7⁆ = basis R 8 := by
-  apply Subtype.ext
-  apply Subtype.ext
-  ext i j
+  apply Fixed.ext R
+  intro i j
   fin_cases i <;> fin_cases j <;>
     simp [LieSubalgebra.coe_bracket, Ring.lie_def, basis_apply_val]
 
 /-- The lowest root vector has the same integral root-string coefficient `-2`. -/
 @[simp]
 theorem lie_basis_six_eight : ⁅basis R 6, basis R 8⁆ = (-2 : R) • basis R 9 := by
-  apply Subtype.ext
-  apply Subtype.ext
-  ext i j
+  apply Fixed.ext R
+  intro i j
   fin_cases i <;> fin_cases j <;>
     simp [LieSubalgebra.coe_bracket, Ring.lie_def, basis_apply_val]
   ring
@@ -184,20 +254,88 @@ theorem lie_basis_six_eight : ⁅basis R 6, basis R 8⁆ = (-2 : R) • basis R 
 /-- The paired positive and negative simple roots produce the outer Cartan orbit sum. -/
 @[simp]
 theorem lie_basis_two_six : ⁅basis R 2, basis R 6⁆ = basis R 0 := by
-  apply Subtype.ext
-  apply Subtype.ext
-  ext i j
+  apply Fixed.ext R
+  intro i j
   fin_cases i <;> fin_cases j <;>
     simp [LieSubalgebra.coe_bracket, Ring.lie_def, basis_apply_val]
 
 /-- The middle positive and negative simple roots produce the middle coroot. -/
 @[simp]
 theorem lie_basis_three_seven : ⁅basis R 3, basis R 7⁆ = basis R 1 := by
-  apply Subtype.ext
-  apply Subtype.ext
-  ext i j
+  apply Fixed.ext R
+  intro i j
   fin_cases i <;> fin_cases j <;>
     simp [LieSubalgebra.coe_bracket, Ring.lie_def, basis_apply_val]
+
+/-- The outer coroot orbit sum acts on its simple positive root with weight two. -/
+@[simp]
+theorem lie_basis_zero_two : ⁅basis R 0, basis R 2⁆ = (2 : R) • basis R 2 := by
+  apply Fixed.ext R
+  intro i j
+  fin_cases i <;> fin_cases j <;>
+    simp [LieSubalgebra.coe_bracket, Ring.lie_def, basis_apply_val]
+  all_goals ring
+
+/-- The outer coroot orbit sum acts on the middle positive root with weight minus two. -/
+@[simp]
+theorem lie_basis_zero_three : ⁅basis R 0, basis R 3⁆ = (-2 : R) • basis R 3 := by
+  apply Fixed.ext R
+  intro i j
+  fin_cases i <;> fin_cases j <;>
+    simp [LieSubalgebra.coe_bracket, Ring.lie_def, basis_apply_val]
+  ring
+
+/-- The outer coroot orbit sum acts on its simple negative root with weight minus two. -/
+@[simp]
+theorem lie_basis_zero_six : ⁅basis R 0, basis R 6⁆ = (-2 : R) • basis R 6 := by
+  apply Fixed.ext R
+  intro i j
+  fin_cases i <;> fin_cases j <;>
+    simp [LieSubalgebra.coe_bracket, Ring.lie_def, basis_apply_val]
+  all_goals ring
+
+/-- The outer coroot orbit sum acts on the middle negative root with weight two. -/
+@[simp]
+theorem lie_basis_zero_seven : ⁅basis R 0, basis R 7⁆ = (2 : R) • basis R 7 := by
+  apply Fixed.ext R
+  intro i j
+  fin_cases i <;> fin_cases j <;>
+    simp [LieSubalgebra.coe_bracket, Ring.lie_def, basis_apply_val]
+  ring
+
+/-- The middle coroot acts on the paired simple positive root with weight minus one. -/
+@[simp]
+theorem lie_basis_one_two : ⁅basis R 1, basis R 2⁆ = -basis R 2 := by
+  apply Fixed.ext R
+  intro i j
+  fin_cases i <;> fin_cases j <;>
+    simp [LieSubalgebra.coe_bracket, Ring.lie_def, basis_apply_val]
+
+/-- The middle coroot acts on its simple positive root with weight two. -/
+@[simp]
+theorem lie_basis_one_three : ⁅basis R 1, basis R 3⁆ = (2 : R) • basis R 3 := by
+  apply Fixed.ext R
+  intro i j
+  fin_cases i <;> fin_cases j <;>
+    simp [LieSubalgebra.coe_bracket, Ring.lie_def, basis_apply_val]
+  ring
+
+/-- The middle coroot acts on the paired simple negative root with weight one. -/
+@[simp]
+theorem lie_basis_one_six : ⁅basis R 1, basis R 6⁆ = basis R 6 := by
+  apply Fixed.ext R
+  intro i j
+  fin_cases i <;> fin_cases j <;>
+    simp [LieSubalgebra.coe_bracket, Ring.lie_def, basis_apply_val]
+
+/-- The middle coroot acts on its simple negative root with weight minus two. -/
+@[simp]
+theorem lie_basis_one_seven : ⁅basis R 1, basis R 7⁆ = (-2 : R) • basis R 7 := by
+  apply Fixed.ext R
+  intro i j
+  fin_cases i <;> fin_cases j <;>
+    simp [LieSubalgebra.coe_bracket, Ring.lie_def, basis_apply_val]
+  ring
 
 /-- When two is invertible, the folded positive and negative simple root vectors
 `E₀₁ + E₂₃`, `E₁₂`, `E₁₀ + E₃₂`, `E₂₁` generate the actual fixed Lie algebra. -/
