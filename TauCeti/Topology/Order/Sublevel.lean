@@ -22,6 +22,10 @@ then sufficiently small sublevels lie in any prescribed open neighbourhood of th
 This allows local descriptions near the minimum to describe whole sublevels. Continuity is
 needed only on the one compact sublevel, not on the entire space.
 
+Conversely, restricting a function to a set `S` which is not closed can destroy compactness of
+sublevels: if `S` accumulates at a point `p ∉ S` with `f p < r`, then `{x ∈ S | f x ≤ r}` is not
+compact (`TauCeti.not_isCompact_inter_preimage_Iic`).
+
 If a continuous motion of the space lowers `f` at unit speed through the band `a ≤ f ≤ b`, then
 following it until the level `a` is reached retracts the sublevel `{f ≤ b}` onto `{f ≤ a}`, by a
 homotopy fixing `{f ≤ a}` pointwise (`TauCeti.exists_sublevelDeformation_of_apply_eq_sub`); here
@@ -77,6 +81,20 @@ theorem exists_pos_sublevel_subset_of_unique_min {X : Type*} [TopologicalSpace X
   · refine ⟨(a - f x) / 2, by positivity, fun y hy ↦ ?_⟩
     by_contra hyU
     exact hne ⟨y, ⟨by dsimp at hy ⊢; linarith, hyU⟩⟩
+
+/-- A sublevel of a function restricted to a set `S` of a Hausdorff space is not compact if `S`
+accumulates at a point `p ∉ S` where the function is continuous and strictly below the level.
+Then the sublevel accumulates at `p` as well, so it is not closed. -/
+theorem not_isCompact_inter_preimage_Iic {X β : Type*} [TopologicalSpace X] [T2Space X]
+    [TopologicalSpace β] [LinearOrder β] [ClosedIciTopology β] {f : X → β} {S : Set X} {p : X}
+    {r : β} (hpS : p ∈ closure S) (hp : p ∉ S) (hf : ContinuousAt f p) (hr : f p < r) :
+    ¬IsCompact (S ∩ f ⁻¹' Iic r) := by
+  intro hK
+  have hmem : p ∈ closure (S ∩ f ⁻¹' Iic r) := by
+    rw [mem_closure_iff_frequently] at hpS ⊢
+    exact (hpS.and_eventually (hf.eventually (eventually_lt_nhds hr))).mono
+      fun x hx ↦ ⟨hx.1, hx.2.le⟩
+  exact hp (hK.isClosed.closure_eq ▸ hmem).1
 
 /-- The sublevels `{f ≤ a}` of `f` increase with `a`. -/
 theorem sublevel_mono {X β : Type*} [Preorder β] (f : X → β) :
