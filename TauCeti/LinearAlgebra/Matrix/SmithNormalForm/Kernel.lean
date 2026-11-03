@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.Module.Torsion.Basic
 public import Mathlib.LinearAlgebra.FixedSubmodule
 public import Mathlib.LinearAlgebra.Matrix.GeneralLinearGroup.Defs
+public import TauCeti.LinearAlgebra.Pi
 
 /-!
 # Kernels after specializing a diagonalization
@@ -74,43 +75,30 @@ noncomputable def kerEquivOfDiagonalization (M : Matrix ι ι R)
     apply (mulVec_map_eq_zero_iff_of_diagonalization M U V d h f _).mp
     rw [← heval, e.apply_symm_apply]
     exact v.property
-  let assemble (z : ({i // d i = 0} → A) ×
-      ((i : {i // d i ≠ 0}) → Submodule.torsionBy A A (f (d i)))) : ι → A :=
-    fun i ↦ if hi : d i = 0 then z.1 ⟨i, hi⟩ else (z.2 ⟨i, hi⟩).val
-  exact
-    { toFun := fun v ↦ ⟨fun i ↦ e.symm v.val i,
-        fun i ↦ ⟨e.symm v.val i, hc v i⟩⟩
-      invFun := fun z ↦ ⟨e (assemble z), by
+  let k : LinearMap.ker (M.map f).mulVecLin ≃ₗ[A]
+      ((i : ι) → Submodule.torsionBy A A (f (d i))) :=
+    { toFun := fun v i ↦ ⟨e.symm v.val i, hc v i⟩
+      invFun := fun z ↦ ⟨e (fun i ↦ (z i).val), by
         apply (mulVec_map_eq_zero_iff_of_diagonalization M U V d h f _).mpr
-        intro i
-        by_cases hi : d i = 0
-        · simp [assemble, hi]
-        · have hz : f (d i) * (z.2 ⟨i, hi⟩).val = 0 := (z.2 ⟨i, hi⟩).property
-          simpa only [assemble, dite_eq_right hi] using hz⟩
-      left_inv := fun v ↦ by
-        apply Subtype.ext
-        apply e.symm.injective
-        ext i
-        simp only [LinearEquiv.symm_apply_apply, assemble]
-        split_ifs <;> rfl
+        exact fun i ↦ (z i).property⟩
+      left_inv := fun v ↦ Subtype.ext (e.apply_symm_apply v.val)
       right_inv := fun z ↦ by
-        apply Prod.ext
-        · ext i
-          simp [assemble, i.property]
-        · ext i
-          simp [assemble, i.property]
+        ext i
+        exact congrFun (e.symm_apply_apply (fun i ↦ (z i).val)) i
       map_add' := fun v w ↦ by
-        apply Prod.ext
-        · ext i
-          exact congrFun (e.symm.map_add v.val w.val) i
-        · ext i
-          exact congrFun (e.symm.map_add v.val w.val) i
+        ext i
+        exact congrFun (e.symm.map_add v.val w.val) i
       map_smul' := fun a v ↦ by
-        apply Prod.ext
-        · ext i
-          exact congrFun (e.symm.map_smul a v.val) i
-        · ext i
-          exact congrFun (e.symm.map_smul a v.val) i }
+        ext i
+        exact congrFun (e.symm.map_smul a v.val) i }
+  exact k.trans
+    ((LinearEquiv.piEquivPiSubtypeProd A (fun i ↦ d i = 0)
+      (fun i ↦ Submodule.torsionBy A A (f (d i)))).trans
+      ((LinearEquiv.piCongrRight fun i : {i // d i = 0} ↦
+        LinearEquiv.ofTop (Submodule.torsionBy A A (f (d i))) (by
+          ext x
+          simp [Submodule.mem_torsionBy_iff, i.property])).prodCongr
+        (LinearEquiv.refl A _)))
 
 /-- The free coordinates are the zero positions of the original diagonal, read after
 applying the inverse specialized column transformation. -/
@@ -121,6 +109,9 @@ theorem kerEquivOfDiagonalization_fst_apply (M : Matrix ι ι R)
     (f : R →+* A) (v : LinearMap.ker (M.map f).mulVecLin) (i : {i // d i = 0}) :
     (kerEquivOfDiagonalization M U V d h f v).1 i =
       ((GeneralLinearGroup.map f V⁻¹ : Matrix ι ι A) *ᵥ v.val) i := by
+  simp only [kerEquivOfDiagonalization, LinearEquiv.trans_apply,
+    LinearEquiv.prodCongr_apply, LinearEquiv.piEquivPiSubtypeProd_apply,
+    LinearEquiv.piCongrRight_apply, LinearEquiv.ofTop_apply]
   rfl
 
 /-- The annihilator coordinates use the same inverse column transformation. -/
@@ -131,6 +122,9 @@ theorem kerEquivOfDiagonalization_snd_apply (M : Matrix ι ι R)
     (f : R →+* A) (v : LinearMap.ker (M.map f).mulVecLin) (i : {i // d i ≠ 0}) :
     ((kerEquivOfDiagonalization M U V d h f v).2 i : A) =
       ((GeneralLinearGroup.map f V⁻¹ : Matrix ι ι A) *ᵥ v.val) i := by
+  simp only [kerEquivOfDiagonalization, LinearEquiv.trans_apply,
+    LinearEquiv.prodCongr_apply, LinearEquiv.piEquivPiSubtypeProd_apply,
+    LinearEquiv.refl_apply]
   rfl
 
 open Classical in
@@ -147,7 +141,7 @@ theorem kerEquivOfDiagonalization_symm_apply (M : Matrix ι ι R)
       (GeneralLinearGroup.map f V : Matrix ι ι A) *ᵥ
         (fun i ↦ if hi : d i = 0 then z.1 ⟨i, hi⟩ else (z.2 ⟨i, hi⟩).val) := by
   classical
-  rfl
+  simp [kerEquivOfDiagonalization, apply_dite]
 
 /-- Fixed vectors after specialization, computed from a diagonalization of `γ - 1`.
 The nonzero diagonal factors retain all torsion in the coefficient ring. -/
@@ -173,7 +167,7 @@ theorem fixedEquivOfDiagonalization_fst_apply (γ : Matrix ι ι R)
     (f : R →+* A) (v : (γ.map f).mulVecLin.fixedSubmodule) (i : {i // d i = 0}) :
     (fixedEquivOfDiagonalization γ U V d h f v).1 i =
       ((GeneralLinearGroup.map f V⁻¹ : Matrix ι ι A) *ᵥ v.val) i := by
-  rfl
+  simp [fixedEquivOfDiagonalization]
 
 /-- The torsion fixed-vector coordinates are read by the inverse column transformation. -/
 @[simp]
@@ -183,7 +177,7 @@ theorem fixedEquivOfDiagonalization_snd_apply (γ : Matrix ι ι R)
     (f : R →+* A) (v : (γ.map f).mulVecLin.fixedSubmodule) (i : {i // d i ≠ 0}) :
     ((fixedEquivOfDiagonalization γ U V d h f v).2 i : A) =
       ((GeneralLinearGroup.map f V⁻¹ : Matrix ι ι A) *ᵥ v.val) i := by
-  rfl
+  simp [fixedEquivOfDiagonalization]
 
 open Classical in
 /-- Reconstruct a fixed vector by the specialized column transformation. -/
@@ -198,6 +192,6 @@ theorem fixedEquivOfDiagonalization_symm_apply (γ : Matrix ι ι R)
       (GeneralLinearGroup.map f V : Matrix ι ι A) *ᵥ
         (fun i ↦ if hi : d i = 0 then z.1 ⟨i, hi⟩ else (z.2 ⟨i, hi⟩).val) := by
   classical
-  rfl
+  simp [fixedEquivOfDiagonalization]
 
 end Matrix
