@@ -117,10 +117,15 @@ computations converges. Completeness requires all defined oracle answers to be s
 theorem exists_raceStage_eq_some_iff {O : ℕ →. ℕ}
     (hσ : ∀ q y, σ q = some y ↔ y ∈ O q) :
     (∃ s z, raceStage σ s c d x = some z) ↔ (eval O c x).Dom ∨ (eval O d x).Dom := by
-  simp only [← Option.ne_none_iff_exists', ne_eq, raceStage_eq_none_iff, not_and_or, exists_or]
-  simp only [← ne_eq, Option.ne_none_iff_exists', Part.dom_iff_mem,
+  simp only [raceStage_def, Staged.exists_race_eq_some_iff, Part.dom_iff_mem,
     mem_eval_iff_exists_evalStage hσ]
-  aesop
+  apply or_congr
+  all_goals
+    constructor
+    · rintro ⟨s, a, ha⟩
+      exact ⟨a.output, s, a, ha, rfl⟩
+    · rintro ⟨y, s, a, ha, -⟩
+      exact ⟨s, a, ha⟩
 
 /-- Normalized racing is primitive recursive uniformly in finite oracle data, the two
 programs, the input and the stage. -/
