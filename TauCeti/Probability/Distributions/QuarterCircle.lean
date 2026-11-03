@@ -72,17 +72,20 @@ theorem ae_mem_Icc_quarterCircle : ∀ᵐ s ∂quarterCircle, s ∈ Icc (0 : ℝ
   simp only [NNReal.coe_one, Real.sqrt_one, mul_one, zero_sub, zero_add, mem_Icc] at hx
   exact ⟨abs_nonneg x, abs_le.2 hx⟩
 
-/-- The even moments of the quarter-circle law are those of the variance-one semicircle law. -/
+/-- The `2k`th moment of the quarter-circle law is the Catalan number `catalan k`. -/
+@[simp]
 theorem integral_pow_two_mul_quarterCircle (k : ℕ) :
-    ∫ s, s ^ (2 * k) ∂quarterCircle = ∫ x, x ^ (2 * k) ∂semicircleReal 0 1 := by
+    ∫ s, s ^ (2 * k) ∂quarterCircle = catalan k := by
   rw [quarterCircle_def, integral_map continuous_abs.measurable.aemeasurable (by fun_prop)]
-  exact integral_congr_ae (Filter.Eventually.of_forall fun x ↦ (even_two_mul k).pow_abs x)
+  calc
+    ∫ x, |x| ^ (2 * k) ∂semicircleReal 0 1 =
+        ∫ x, x ^ (2 * k) ∂semicircleReal 0 1 :=
+      integral_congr_ae (Filter.Eventually.of_forall fun x ↦ (even_two_mul k).pow_abs x)
+    _ = catalan k := by rw [integral_pow_two_mul_semicircleReal_zero]; norm_num
 
 /-- The second moment of the quarter-circle law is one. -/
 @[simp]
 theorem integral_sq_quarterCircle : ∫ s, s ^ 2 ∂quarterCircle = 1 := by
-  have h := integral_pow_two_mul_quarterCircle 1
-  rw [integral_pow_two_mul_semicircleReal_zero] at h
-  simpa using h
+  simpa using integral_pow_two_mul_quarterCircle 1
 
 end TauCeti.Probability
