@@ -226,7 +226,7 @@ private theorem exists_quotient_mk_eq_diagGL {x : GL (Fin 2) F} (hx : x ∈ GL2B
     rw [Units.val_mul]
     ext i j
     fin_cases i <;> fin_cases j <;> simp [Matrix.mul_apply, Matrix.diagonal]
-    all_goals field_simp
+    field_simp
   rw [eq_comm, QuotientGroup.eq, hsplit, inv_mul_cancel_left]
   exact jordanGL_mem_gl2ScalarUnipotent _ _
 
@@ -259,7 +259,7 @@ private theorem inv_diagGL_mul_jordanGL_mul_diagGL (a : Fˣ) (b : F) (c : Fˣ) :
     rw [Units.val_mul, Units.val_mul]
     ext i j
     fin_cases i <;> fin_cases j <;> simp [Matrix.mul_apply, Matrix.diagonal]
-    all_goals field_simp
+    field_simp
   rw [mul_assoc, hprod, inv_mul_cancel_left]
 
 /-! ### The central, split semisimple and elliptic values -/
