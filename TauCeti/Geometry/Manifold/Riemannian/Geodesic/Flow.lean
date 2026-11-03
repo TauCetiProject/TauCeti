@@ -36,6 +36,8 @@ This is the smooth-dependence input for smoothness of the exponential map on its
   initial data and on time.
 * `TauCeti.Manifold.exists_contMDiffOn_maximalGeodesic_of_isCompact`: nearby initial states
   share a smooth flow domain around any compact subset of a maximal geodesic interval.
+* `TauCeti.Manifold.exists_contMDiffOn_maximalGeodesic_comp_of_isCompact`: a curve of initial
+  states gives a geodesic variation on a common domain around a compact time subset.
 
 ## References
 
@@ -142,6 +144,41 @@ theorem exists_contMDiffOn_maximalGeodesic_of_isCompact (z : TangentBundle I M)
   exact ⟨U, V, hU, hV, hz (mem_singleton z), hKV,
     fun w hw t ht ↦ hUV (a := (w, t)) ⟨hw, ht⟩,
     contMDiffOn_maximalGeodesic.mono hUV⟩
+
+/-- A Cⁿ curve of initial states gives a Cⁿ geodesic variation on one product neighbourhood of
+any compact subset of the central maximal interval, for every finite order `n`. Both the variation
+parameter and the time domain are open, so derivatives at compact segment endpoints
+are unrestricted. -/
+theorem exists_contMDiffOn_maximalGeodesic_comp_of_isCompact
+    {σ : ℝ → TangentBundle I M} {n : ℕ} (hσ : ContMDiffAt 𝓘(ℝ, ℝ) I.tangent n σ 0)
+    {K : Set ℝ} (hK : IsCompact K)
+    (hsub : K ⊆ geodesicInterval I M (σ 0).proj (σ 0).2) :
+    ∃ (U V : Set ℝ), IsOpen U ∧ IsOpen V ∧ 0 ∈ U ∧ K ⊆ V ∧
+      ContMDiffOn 𝓘(ℝ, ℝ × ℝ) I n
+        (fun z : ℝ × ℝ ↦ maximalGeodesic I M (σ z.1).proj (σ z.1).2 z.2) (U ×ˢ V) ∧
+      ∀ q ∈ U, IsGeodesicCurveOn I (maximalGeodesic I M (σ q).proj (σ q).2) V := by
+  obtain ⟨A, V, hA, hV, hσA, hKV, hdom, hflow⟩ :=
+    exists_contMDiffOn_maximalGeodesic_of_isCompact (σ 0) hK hsub
+  obtain ⟨W, hW, hσW⟩ := (contMDiffAt_iff_contMDiffOn_nhds (by simp)).1 hσ
+  let U := interior W ∩ interior (σ ⁻¹' A)
+  have h0 : 0 ∈ U := ⟨mem_interior_iff_mem_nhds.2 hW,
+    mem_interior_iff_mem_nhds.2 (hσ.continuousAt.preimage_mem_nhds (hA.mem_nhds hσA))⟩
+  have hσU : ContMDiffOn 𝓘(ℝ, ℝ) I.tangent n σ U :=
+    hσW.mono fun _ hq ↦ interior_subset hq.1
+  have hUA : MapsTo σ U A := fun _ hq ↦ (interior_subset (s := σ ⁻¹' A)) hq.2
+  refine ⟨U, V, isOpen_interior.inter isOpen_interior, hV, h0, hKV, ?_, ?_⟩
+  · have hfst : ContMDiff 𝓘(ℝ, ℝ × ℝ) 𝓘(ℝ, ℝ) n Prod.fst :=
+      contMDiff_iff_contDiff.mpr contDiff_fst
+    have hsnd : ContMDiff 𝓘(ℝ, ℝ × ℝ) 𝓘(ℝ, ℝ) n Prod.snd :=
+      contMDiff_iff_contDiff.mpr contDiff_snd
+    have hσfst : ContMDiffOn 𝓘(ℝ, ℝ × ℝ) I.tangent n
+        (fun z : ℝ × ℝ ↦ σ z.1) (U ×ˢ V) :=
+      hσU.comp hfst.contMDiffOn (fun _ h ↦ h.1)
+    exact (hflow.of_le (by simp)).comp (hσfst.prodMk hsnd.contMDiffOn)
+      (fun z hz ↦ ⟨hUA hz.1, hz.2⟩)
+  · intro q hq
+    exact (isGeodesicCurveOnFrom_maximalGeodesic (σ q).proj (σ q).2).isGeodesicCurveOn.mono
+      hV.uniqueDiffOn (hdom (σ q) (hUA hq))
 
 end TauCeti.Manifold
 
