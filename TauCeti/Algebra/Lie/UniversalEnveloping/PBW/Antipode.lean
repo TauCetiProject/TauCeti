@@ -34,22 +34,13 @@ variable (R L : Type*) [CommRing R] [LieRing L] [LieAlgebra R L]
 
 local notation "U" => _root_.UniversalEnvelopingAlgebra R L
 local notation "S" => _root_.UniversalEnvelopingAlgebra.antipode R
-local notation "ι" => _root_.UniversalEnvelopingAlgebra.ι R (L := L)
-
-/-- The antipode reverses a word in canonical Lie generators, with one minus sign per factor. -/
-theorem antipode_prod_map_ι (l : List L) :
-    S (l.map ι).prod = (-1 : R) ^ l.length • (l.reverse.map ι).prod := by
-  induction l with
-  | nil => simp
-  | cons x l ih =>
-    simp [List.reverse_cons, ih, pow_succ]
 
 /-- The antipode preserves PBW filtration degree. -/
 theorem antipode_mem_pbwFiltration {n : ℕ} {a : U} (ha : a ∈ pbwFiltration R L n) :
     S a ∈ pbwFiltration R L n := by
   apply (pbwFiltration_le_iff R L (p := (pbwFiltration R L n).comap S)).2 ?_ ha
   intro l hl
-  rw [Submodule.mem_comap, antipode_prod_map_ι]
+  rw [Submodule.mem_comap, _root_.UniversalEnvelopingAlgebra.antipode_prod_map_ι]
   exact Submodule.smul_mem _ _ (prod_map_ι_mem_pbwFiltration R L (by simpa using hl))
 
 /-- Membership in a PBW filtration step is unchanged by the involutive antipode. -/
@@ -96,7 +87,7 @@ theorem antipode_sub_neg_one_pow_smul_mem_pbwFiltrationPrevious {n : ℕ} {a : U
   simp only [Submodule.mem_comap, f, LinearMap.sub_apply, LinearMap.smul_apply,
     LinearMap.id_apply]
   rcases hl.eq_or_lt with hlen | hlen
-  · rw [antipode_prod_map_ι, hlen, ← smul_sub]
+  · rw [_root_.UniversalEnvelopingAlgebra.antipode_prod_map_ι, hlen, ← smul_sub]
     apply Submodule.smul_mem
     simpa only [List.length_reverse, hlen] using
       prod_map_ι_sub_prod_map_ι_mem_pbwFiltrationPrevious_of_perm R L
