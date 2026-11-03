@@ -20,7 +20,7 @@ presheaf at this point is the classical stalk of [BGR, §9.1]. We introduce the 
 admissible opens containing `x` (`GTopology.isColimitGermCocone`). For presheaves with values in
 a concrete category whose forgetful functor preserves filtered colimits, every element of the
 stalk is a germ (`GTopology.exists_germ_eq`), and two sections have the same germ exactly when
-they agree on a smaller admissible open containing `x` (`GTopology.germ_eq_iff`).
+they agree on a common smaller admissible open containing `x` (`GTopology.germ_eq_iff`).
 
 Thus Mathlib's general theory of points of sites applies to these stalks. For instance, under the
 usual hypotheses on the coefficient category, they are exact functors and invert the morphisms
@@ -80,6 +80,8 @@ theorem nonempty_point_fiber_obj_iff (x : X) (U : B) :
     Nonempty ((G.point x).fiber.obj U) ↔ x ∈ ι U :=
   ⟨fun ⟨h⟩ ↦ h.down.down, fun h ↦ ⟨⟨⟨h⟩⟩⟩⟩
 
+/-- The fibre of any point `Φ` of the G-site over an admissible open `U` has at most one element:
+`U` maps monomorphically to the terminal admissible open `⊤`, since the site is a poset. -/
 instance (U : B) (Φ : GrothendieckTopology.Point.{v} G.grothendieckTopology) :
     Subsingleton (Φ.fiber.obj U) :=
   Φ.subsingleton_fiber_obj (homOfLE le_top) isTerminalTop
@@ -163,9 +165,9 @@ theorem exists_germ_eq {P : Bᵒᵖ ⥤ A} {x : X} (p : ToType ((G.point x).pres
   obtain ⟨U, ⟨⟨hx⟩⟩, s, rfl⟩ := (G.point x).toPresheafFiber_jointly_surjective p
   exact ⟨U, hx, s, rfl⟩
 
-/-- Two sections over an admissible open containing `x` have the same germ at `x` if and only if
-they agree on a smaller admissible open containing `x`. -/
-theorem germ_eq_iff {P : Bᵒᵖ ⥤ A} {U : B} {x : X} (hx : x ∈ ι U) (s t : ToType (P.obj (op U))) :
+/-- Two sections over the same admissible open containing `x` have the same germ at `x` if and
+only if they agree on a smaller admissible open containing `x`. -/
+theorem germ_eq_iff' {P : Bᵒᵖ ⥤ A} {U : B} {x : X} (hx : x ∈ ι U) (s t : ToType (P.obj (op U))) :
     G.germ P U x hx s = G.germ P U x hx t ↔
       ∃ (V : B) (h : V ≤ U), x ∈ ι V ∧ P.map (homOfLE h).op s = P.map (homOfLE h).op t := by
   refine ((G.point x).toPresheafFiber_eq_iff' U ⟨⟨hx⟩⟩ s t).trans ⟨?_, ?_⟩
@@ -173,6 +175,24 @@ theorem germ_eq_iff {P : Bᵒᵖ ⥤ A} {U : B} {x : X} (hx : x ∈ ι U) (s t :
     exact ⟨V, leOfHom f, hV, hst⟩
   · rintro ⟨V, h, hV, hst⟩
     exact ⟨V, homOfLE h, ⟨⟨hV⟩⟩, Subsingleton.elim _ _, hst⟩
+
+/-- Two sections over admissible opens containing `x` have the same germ at `x` if and only if
+they agree on a common smaller admissible open containing `x`. -/
+theorem germ_eq_iff {P : Bᵒᵖ ⥤ A} {U V : B} {x : X} (hU : x ∈ ι U) (hV : x ∈ ι V)
+    (s : ToType (P.obj (op U))) (t : ToType (P.obj (op V))) :
+    G.germ P U x hU s = G.germ P V x hV t ↔
+      ∃ (W : B) (hWU : W ≤ U) (hWV : W ≤ V), x ∈ ι W ∧
+        P.map (homOfLE hWU).op s = P.map (homOfLE hWV).op t := by
+  have hUV : x ∈ ι (U ⊓ V) := by simpa only [G.map_inf] using ⟨hU, hV⟩
+  rw [← G.germ_res_apply P (homOfLE inf_le_left) x hUV s,
+    ← G.germ_res_apply P (homOfLE inf_le_right) x hUV t, G.germ_eq_iff']
+  constructor
+  · rintro ⟨W, hW, hxW, hst⟩
+    refine ⟨W, hW.trans inf_le_left, hW.trans inf_le_right, hxW, ?_⟩
+    simpa [← ConcreteCategory.comp_apply, ← Functor.map_comp, ← op_comp] using hst
+  · rintro ⟨W, hWU, hWV, hxW, hst⟩
+    refine ⟨W, le_inf hWU hWV, hxW, ?_⟩
+    simpa [← ConcreteCategory.comp_apply, ← Functor.map_comp, ← op_comp] using hst
 
 end Concrete
 
