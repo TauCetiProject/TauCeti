@@ -58,19 +58,10 @@ theorem map_sub_const {ι : Type*} [Fintype ι] [DecidableEq ι] (f : M [⋀^ι]
       cases i using Fin.cases <;> simp [Fin.tail]
     rw [hv, ← curryLeft_apply_apply, map_sub, sub_apply, curryLeft_apply_apply,
       curryLeft_apply_apply, h0, hb, hz, sub_zero, Fin.sum_univ_succ]
-    have hc : Matrix.vecCons (v 0) (Fin.tail v) = v := by
-      ext i
-      cases i using Fin.cases <;> simp [Fin.tail]
-    have hu0 : update v 0 b = Matrix.vecCons b (Fin.tail v) := by
-      ext i
-      cases i using Fin.cases <;> simp [Fin.tail]
-    have hus (i : Fin n) :
-        update v i.succ b = Matrix.vecCons (v 0) (update (Fin.tail v) i b) := by
-      ext k
-      cases k using Fin.cases with
-      | zero => simp [(Fin.succ_ne_zero i).symm]
-      | succ k => simp [Fin.tail, update_apply]
-    simp only [hc, hu0, hus]
+    -- `Matrix.vecCons` is `Fin.cons` by definition, so the remaining terms match once `v` is read
+    -- as `Fin.cons (v 0) (Fin.tail v)`.
+    simp only [Matrix.vecCons, Fin.cons_update, Fin.cons_self_tail]
+    rw [← Fin.update_cons_zero (x := v 0), Fin.cons_self_tail]
     abel
 
 /-- An alternating map evaluated on the edge vectors `w i.succ - w 0` of a simplex with vertices

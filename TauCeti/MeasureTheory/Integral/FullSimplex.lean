@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.Calculus.ContDiff.Defs
 public import Mathlib.MeasureTheory.Integral.Bochner.Basic
+public import Mathlib.MeasureTheory.Integral.IntegrableOn
 public import Mathlib.MeasureTheory.Measure.Haar.InnerProductSpace
 public import TauCeti.Geometry.Convex.FullSimplex
 import Mathlib.Analysis.Calculus.Deriv.Add
@@ -32,7 +33,7 @@ These are the scalar computations behind Stokes' theorem on the standard simplex
 
 ## Main results
 
-* `TauCeti.setIntegral_fullSimplex_eq_iterated`: the integral over `Δᵖ⁺¹` of a function continuous
+* `TauCeti.setIntegral_fullSimplex_eq_iterated`: the integral over `Δᵖ⁺¹` of a function integrable
   on it, as an iterated integral along the `j`-th coordinate and then over `Δᵖ`.
 * `ContDiffOn.integral_fderivWithin_fullSimplex`: the integral over `Δᵖ⁺¹` of the `j`-th partial
   derivative of a `C¹` function is the difference of its integrals over the face `∑ xᵢ = 1` and
@@ -51,10 +52,10 @@ variable {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] [CompleteSpace F
 
 omit [CompleteSpace F] in
 /-- **Slicing the standard simplex along a coordinate.** The integral over `Δᵖ⁺¹` of a function
-continuous on it is the iterated integral that first integrates along the `j`-th coordinate, over
+integrable on it is the iterated integral that first integrates along the `j`-th coordinate, over
 `0 ≤ t ≤ 1 - ∑ k, y k`, and then over the remaining coordinates `y` in the coordinate simplex. -/
 theorem setIntegral_fullSimplex_eq_iterated {p : ℕ}
-    {D : EuclideanSpace ℝ (Fin (p + 1)) → F} (hD : ContinuousOn D (fullSimplex (p + 1)))
+    {D : EuclideanSpace ℝ (Fin (p + 1)) → F} (hD : IntegrableOn D (fullSimplex (p + 1)))
     (j : Fin (p + 1)) :
     ∫ x in fullSimplex (p + 1), D x = ∫ y in coordinateSimplex (Fin p),
       ∫ t in Icc 0 (1 - ∑ k, y k), D (toLp 2 (j.insertNth t y)) := by
@@ -76,7 +77,7 @@ theorem setIntegral_fullSimplex_eq_iterated {p : ℕ}
     exact toLp_insertNth_mem_fullSimplex_iff j t y
   have hSm : MeasurableSet S := hΔc.isClosed.measurableSet.preimage Γ.measurable
   have hint : IntegrableOn (fun q ↦ D (Γ q)) S :=
-    (hΓ.integrableOn_comp_preimage Γ.measurableEmbedding).2 (hD.integrableOn_compact hΔc)
+    (hΓ.integrableOn_comp_preimage Γ.measurableEmbedding).2 hD
   have hslice (y : Fin p → ℝ) : ∫ t, S.indicator (fun q ↦ D (Γ q)) (t, y) =
       (coordinateSimplex (Fin p)).indicator
         (fun y ↦ ∫ t in Icc 0 (1 - ∑ k, y k), D (toLp 2 (j.insertNth t y))) y := by
@@ -143,7 +144,8 @@ theorem _root_.ContDiffOn.integral_fderivWithin_fullSimplex {p : ℕ}
   have hΔp : ofLp ⁻¹' coordinateSimplex (Fin p) = fullSimplex p := by
     ext y
     simp
-  rw [setIntegral_fullSimplex_eq_iterated hDc j,
+  rw [setIntegral_fullSimplex_eq_iterated
+      (hDc.integrableOn_compact (isCompact_fullSimplex _)) j,
     setIntegral_congr_fun (isClosed_coordinateSimplex _).measurableSet hftc,
     ← (PiLp.volume_preserving_ofLp (Fin p)).setIntegral_preimage_emb
       (MeasurableEquiv.toLp 2 (Fin p → ℝ)).symm.measurableEmbedding, hΔp]
