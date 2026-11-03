@@ -146,21 +146,19 @@ theorem mapValue_cartanVector {C : Type*} [CommRing C] (φ : B →ₐ[ℤ] C)
 theorem derivationCompLieHom_weightTorusIntegralCoordinateMap_tangentBasis (i : Fin (n + 1)) :
     derivationCompLieHom (B := B) (weightTorusIntegralCoordinateMap n).hom
         (SplitTorus.tangentBasis (R := ℤ) (B := B) i) = cartanVector n (B := B) i := by
-  rw [SplitTorus.derivationCompLieHom_tangentBasis,
-    cartanVector_eq_derivationComp_corootCocharacter, corootCocharacter_def,
-    derivationCompLieHom_apply]
+  simpa only [cartanVector_eq_derivationComp_corootCocharacter, corootCocharacter_def,
+    derivationCompLieHom_apply] using
+    (SplitTorus.derivationCompLieHom_tangentBasis
+      (B := B) (weightTorusIntegralCoordinateMap n).hom i)
 
 /-- The toral tangent image is exactly the span of the normalized Cartan vectors. -/
 theorem range_derivationCompLieHom_weightTorusIntegralCoordinateMap_eq_span :
     LinearMap.range
         (derivationCompLieHom (B := B) (weightTorusIntegralCoordinateMap n).hom).toLinearMap =
       Submodule.span B (Set.range (cartanVector n (B := B))) := by
-  rw [SplitTorus.range_derivationCompLieHom]
-  congr 1
-  apply congrArg Set.range
-  funext i
-  rw [cartanVector_eq_derivationComp_corootCocharacter, corootCocharacter_def,
-    derivationCompLieHom_apply]
+  simpa only [funext (cartanVector_eq_derivationComp_corootCocharacter n (B := B)),
+    corootCocharacter_def, derivationCompLieHom_apply] using
+    (SplitTorus.range_derivationCompLieHom (B := B) (weightTorusIntegralCoordinateMap n).hom)
 
 /-- The weight-torus differential is injective over every commutative value ring. -/
 theorem derivationCompLieHom_weightTorusIntegralCoordinateMap_injective :
@@ -170,17 +168,11 @@ theorem derivationCompLieHom_weightTorusIntegralCoordinateMap_injective :
 
 /-- The simple-coroot differentials are independent, including in characteristic two. -/
 theorem linearIndependent_cartanVector : LinearIndependent B (cartanVector n (B := B)) := by
-  have h := (SplitTorus.tangentBasis (R := ℤ) (B := B)
-    (I := Fin (n + 1))).linearIndependent.map_injOn
-    (derivationCompLieHom (B := B) (weightTorusIntegralCoordinateMap n).hom).toLinearMap
-    (derivationCompLieHom_weightTorusIntegralCoordinateMap_injective n (B := B)).injOn
-  have heq :
-      ⇑(derivationCompLieHom (B := B) (weightTorusIntegralCoordinateMap n).hom).toLinearMap ∘
-          SplitTorus.tangentBasis (R := ℤ) (B := B) (I := Fin (n + 1)) =
-        cartanVector n (B := B) := by
-    funext i
-    exact derivationCompLieHom_weightTorusIntegralCoordinateMap_tangentBasis n i
-  rwa [heq] at h
+  simpa only [funext (cartanVector_eq_derivationComp_corootCocharacter n (B := B)),
+    corootCocharacter_def, derivationCompLieHom_apply] using
+    (SplitTorus.linearIndependent_derivationCompLieHom_cocharacter
+      (B := B) (weightTorusIntegralCoordinateMap n).hom
+      (derivationCompLieHom_weightTorusIntegralCoordinateMap_injective n (B := B)))
 
 /-- The numbered Cartan vectors form a basis of their span, the toral tangent image. -/
 def cartanBasis :

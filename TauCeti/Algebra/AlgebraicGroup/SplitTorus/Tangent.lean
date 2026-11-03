@@ -24,6 +24,8 @@ The coordinate vectors are the differentials of its coordinate cocharacters.
 * `tangentBasis_apply`: the basis vectors are the coordinate-cocharacter differentials.
 * `tangentLinearEquiv_symm_apply`: the finite coordinate decomposition.
 * `range_derivationCompLieHom`: the tangent image is spanned by the cocharacter differentials.
+* `linearIndependent_derivationCompLieHom_cocharacter`: an injective differential preserves
+  independence of the coordinate-cocharacter differentials.
 -/
 
 public section
@@ -195,6 +197,18 @@ theorem derivationCompLieHom_tangentBasis [Finite I] (π : H →ₐc[R] A) (i : 
         ((MultiplicativeGroup.tangentLinearEquiv (R := R) (B := B)).symm 1) := by
   rw [tangentBasis_apply, ← LieHom.comp_apply, ← derivationCompLieHom_comp,
     BialgHom.cocharacter_id_comp]
+
+/-- An injective split-torus differential gives independent coordinate-cocharacter
+differentials over every commutative coefficient algebra. -/
+theorem linearIndependent_derivationCompLieHom_cocharacter [Finite I] (π : H →ₐc[R] A)
+    (hπ : Function.Injective (derivationCompLieHom (B := B) π)) :
+    LinearIndependent B (fun i : I ↦
+      derivationCompLieHom (π.cocharacter (Finsupp.applyAddHom i).toMultiplicative)
+        ((MultiplicativeGroup.tangentLinearEquiv (R := R) (B := B)).symm 1)) := by
+  have h := (tangentBasis (R := R) (B := B) (I := I)).linearIndependent.map_injOn
+    (derivationCompLieHom (B := B) π).toLinearMap hπ.injOn
+  simpa only [Function.comp_def, LieHom.coe_toLinearMap,
+    derivationCompLieHom_tangentBasis] using h
 
 /-- The tangent image of a finite split torus is the span of the differentials of its
 coordinate cocharacters. The map from the torus need not be an immersion. -/

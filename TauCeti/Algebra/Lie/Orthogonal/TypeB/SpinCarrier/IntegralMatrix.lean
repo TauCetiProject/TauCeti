@@ -14,7 +14,8 @@ public import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.Schem
 The invariant spin lattice gives an integral matrix for each numbered simple root generator.
 Each generator squares to zero, so its root subgroup points are `1 + u X` over any commutative
 ring. Each matrix is supported on the pairs of basis vectors whose integral spin weights differ
-by the signed simple root of its generator.
+by the signed simple root of its generator. The bracket of opposite integral root matrices
+is the diagonal matrix of the basis spin weights' simple-coroot coordinates.
 
 ## References
 
@@ -131,8 +132,9 @@ theorem rootIntMatrix_inl_eq_zero_of_ne_basisReflection (i : Fin (n + 1))
     rw [Pi.sub_apply, rootGeneratorWeight_inl, CartanMatrix.B_diag] at hi
     rcases hpair a with ha | ha | ha <;> omega
 
-/-- The bracket of opposite integral root matrices is the diagonal matrix of their spin
-weight's simple-coroot coordinate. This identity remains integral at the short terminal node. -/
+/-- The bracket of opposite integral root matrices is the diagonal matrix whose entry at each
+basis vector is its spin weight's coordinate at simple coroot `i`. This identity remains integral
+at the short terminal node. -/
 theorem lie_rootIntMatrix_inl_inr (i : Fin (n + 1)) :
     ⁅rootIntMatrix n (.inl i), rootIntMatrix n (.inr i)⁆ =
       Matrix.diagonal (fun a ↦ basisWeight n a i) := by
@@ -151,16 +153,17 @@ theorem lie_rootIntMatrix_inl_inr (i : Fin (n + 1)) :
     simpa only [E, H, Ring.lie_def, LinearMap.sub_apply, Module.End.mul_apply,
       AddSubgroup.coe_sub, coe_kostantRootOperator_apply, coe_kostantCartanOperator_apply]
       using h
-  have hm := (LinearMap.toMatrixAlgEquiv (latticeBasis n)).toAlgHom.toLieHom.map_lie
-    (E (.inl i)) (E (.inr i))
-  simp only [hEF, AlgHom.toLieHom_apply, AlgEquiv.coe_toAlgHom,
-    LinearMap.toMatrixAlgEquiv, AlgEquiv.ofLinearEquiv_apply, E] at hm
-  simp only [rootIntMatrix_eq_toMatrix, ← hm]
+  have hm := congrArg (LinearMap.toMatrix (latticeBasis n) (latticeBasis n)) hEF
+  simp only [Ring.lie_def, map_sub, LinearMap.toMatrix_mul, E] at hm
+  simp only [rootIntMatrix_eq_toMatrix, Ring.lie_def, hm]
   ext a b
   rw [LinearMap.toMatrix_apply, Matrix.diagonal_apply]
   simp only [H, kostantCartanOperator_apply_of_isCartanWeightVector _ _ _ _ _
     (isCartanWeightVector_latticeBasis n b) i, map_zsmul, Module.Basis.repr_self,
     Finsupp.smul_apply, Finsupp.single_apply, smul_eq_mul]
-  split_ifs with h <;> simp_all
+  by_cases h : a = b
+  · subst b
+    simp only [↓reduceIte, mul_one]
+  · simp only [h, Ne.symm h, ↓reduceIte, mul_zero]
 
 end TauCeti.TypeBSpinCarrier
