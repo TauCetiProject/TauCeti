@@ -25,6 +25,8 @@ on vertices and arrows also undoes it on paths.
 * `Prefunctor.obj_bijective_of_comp_eq_id`: mutually inverse prefunctors are bijective on vertices.
 * `Prefunctor.comp_comp_comp_eq_id`: composing two one-sided inverse pairs of prefunctors gives a
   one-sided inverse pair.
+* `Prefunctor.cast_mapPath_eq_of_eq`: equal prefunctors have equal path maps after casting the
+  endpoints.
 * `Prefunctor.cast_mapPath_mapPath`: a prefunctor that undoes another on vertices and arrows
   undoes it on paths.
 
@@ -80,6 +82,15 @@ theorem _root_.Prefunctor.comp_comp_comp_eq_id (φ : Q ⥤q R) (ψ : R ⥤q Q) (
     (ψ' : S ⥤q R) (hφψ : φ.comp ψ = Prefunctor.id Q) (hφψ' : φ'.comp ψ' = Prefunctor.id R) :
     (φ.comp φ').comp (ψ'.comp ψ) = Prefunctor.id Q := by
   rw [Prefunctor.comp_assoc, ← Prefunctor.comp_assoc φ' ψ' ψ, hφψ', Prefunctor.id_comp, hφψ]
+
+/-- Equal prefunctors map a path equally after casting along the induced endpoint equalities. -/
+theorem _root_.Prefunctor.cast_mapPath_eq_of_eq {φ ψ : Q ⥤q R} (h : φ = ψ)
+    {a b : Q} (p : Quiver.Path a b) :
+    (φ.mapPath p).cast
+      (congrArg (fun ξ : Q ⥤q R ↦ ξ.obj a) h)
+      (congrArg (fun ξ : Q ⥤q R ↦ ξ.obj b) h) = ψ.mapPath p := by
+  subst ψ
+  rfl
 
 /-- **A prefunctor that undoes another on vertices and arrows undoes it on paths**: pushing a path
 along `φ` and then `ψ` returns the original path once its endpoints are transported back. -/
