@@ -500,13 +500,13 @@ theorem colemanDSeries_X_left (F : PowerSeries R) : (X : R[X]).colemanDSeries F 
     colemanDBounded_X_left (Nat.lt_succ_iff.1 (natDegree_trunc_lt F k)), PowerSeries.coeff_trunc,
     ite_eq_left k.lt_succ_self]
 
-/-- With `B = 0`, Coleman's transform of a normalised power series is one. -/
+/-- With `B = 0`, Coleman's transform of any power series is one. -/
 @[simp]
-theorem colemanDSeries_zero_left {F : PowerSeries R} (hF0 : PowerSeries.constantCoeff F = 1) :
-    (0 : R[X]).colemanDSeries F = 1 := by
+theorem colemanDSeries_zero_left (F : PowerSeries R) : (0 : R[X]).colemanDSeries F = 1 := by
   ext k
-  rw [coeff_colemanDSeries (N := 0) (Polynomial.coeff_zero 0) (by simp), colemanDBounded_zero_left
-    (by simp [hF0]), ← coeff_coe, coe_one]
+  rw [coeff_colemanDSeries_eq_coeff_colemanDBounded, natDegree_zero, colemanDBounded,
+    Polynomial.map_zero, mul_zero, mul_zero, sub_zero, resultant_one_right, pow_zero, ← coeff_coe,
+    coe_one]
 
 /-- When `B(0) = 0`, Coleman's transform of `1` is one. -/
 @[simp]
