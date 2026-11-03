@@ -64,6 +64,22 @@ lemma twoCochainMap_apply_apply (e : M →ₗ[R] M') (φ : L' →ₗ⁅R⁆ L) (
     (x y : L') : twoCochainMap e φ c x y = e (c (φ x) (φ y)) :=
   (rfl)
 
+/-- Pullback and coefficient pushforward by identity maps leave two-cochains unchanged. -/
+@[simp]
+lemma twoCochainMap_id :
+    twoCochainMap (LinearMap.id : M →ₗ[R] M) (LieHom.id : L →ₗ⁅R⁆ L) = LinearMap.id := by
+  ext c x y
+  rfl
+
+/-- Coefficient pushforward composes covariantly and Lie algebra pullback contravariantly. -/
+lemma twoCochainMap_comp {L'' M'' : Type*} [LieRing L''] [LieAlgebra R L'']
+    [AddCommGroup M''] [Module R M''] (e : M →ₗ[R] M') (e' : M' →ₗ[R] M'')
+    (φ : L' →ₗ⁅R⁆ L) (ψ : L'' →ₗ⁅R⁆ L') :
+    (twoCochainMap e' ψ).comp (twoCochainMap e φ) =
+      twoCochainMap (e'.comp e) (φ.comp ψ) := by
+  ext c x y
+  rfl
+
 variable [LieRingModule L M] [LieModule R L M]
 
 /-- Every coboundary is a 2-cocycle. -/
@@ -79,6 +95,14 @@ lemma d₁₂_comp_lieHom_apply_apply_ofTrivial [LieRingModule L' M'] [LieModule
     d₁₂ R L' M' (e ∘ₗ f ∘ₗ φ.toLinearMap) x y = e (d₁₂ R L M f (φ x) (φ y)) := by
   simp only [d₁₂_apply_apply_ofTrivial, LinearMap.comp_apply, LieHom.coe_toLinearMap,
     LieHom.map_lie, map_neg]
+
+/-- With trivial coefficients, pullback and coefficient pushforward commute with `d₁₂`. -/
+lemma twoCochainMap_d₁₂ [LieRingModule L' M'] [LieModule R L' M']
+    [LieModule.IsTrivial L M] [LieModule.IsTrivial L' M'] (e : M →ₗ[R] M')
+    (φ : L' →ₗ⁅R⁆ L) (f : oneCochain R L M) :
+    twoCochainMap e φ (d₁₂ R L M f) = d₁₂ R L' M' (e ∘ₗ f ∘ₗ φ.toLinearMap) := by
+  ext x y
+  exact (d₁₂_comp_lieHom_apply_apply_ofTrivial e φ f x y).symm
 
 /-- With trivial coefficients, pulling back along a Lie algebra morphism and pushing forward along
 a linear map sends 2-cocycles to 2-cocycles. -/
