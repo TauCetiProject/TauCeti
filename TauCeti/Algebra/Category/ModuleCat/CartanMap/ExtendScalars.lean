@@ -105,7 +105,8 @@ theorem finiteProjectiveModulesK0Extend_of_linearEquiv
     f.finiteProjectiveModulesK0Extend (ExactK0.of P) =
       (ExactK0.of Q : ExactK0.{u} (finiteProjectiveModulesExactStructure S)) := by
   rw [finiteProjectiveModulesK0Extend_of]
-  exact ExactK0.of_congr (ObjectProperty.isoMk _ θ.toModuleIso)
+  exact ExactK0.of_congr (ObjectProperty.isoMk _
+    (eqToIso (f.finiteProjectiveModulesExtendScalars_obj_obj P) ≪≫ θ.toModuleIso))
 
 /-! ### Functoriality in the ring homomorphism
 
@@ -130,9 +131,13 @@ theorem finiteProjectiveModulesK0Extend_comp (g : S →+* T) :
       g.finiteProjectiveModulesK0Extend.comp f.finiteProjectiveModulesK0Extend :=
   ExactK0.hom_ext fun P ↦ by
     rw [AddMonoidHom.comp_apply, f.finiteProjectiveModulesK0Extend_of,
-      g.finiteProjectiveModulesK0Extend_of]
-    exact (g.comp f).finiteProjectiveModulesK0Extend_of_linearEquiv P _
-      (BalancedExtension.cancelBaseChange f g (P := P.obj)).symm
+      g.finiteProjectiveModulesK0Extend_of, (g.comp f).finiteProjectiveModulesK0Extend_of]
+    exact ExactK0.of_congr (ObjectProperty.isoMk _
+      (eqToIso ((g.comp f).finiteProjectiveModulesExtendScalars_obj_obj P) ≪≫
+        (BalancedExtension.cancelBaseChange f g (P := P.obj)).symm.toModuleIso ≪≫
+          eqToIso (by
+            rw [finiteProjectiveModulesExtendScalars_obj_obj,
+              finiteProjectiveModulesExtendScalars_obj_obj])))
 
 /-! ### Idempotent matrices -/
 

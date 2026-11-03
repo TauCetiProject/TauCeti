@@ -77,7 +77,7 @@ open TauCeti
 /-- **Extension of scalars on finitely generated projective modules.** A ring homomorphism
 `f : R →+* S` induces a functor from the finitely generated projective `R`-modules to the
 finitely generated projective `S`-modules, sending `P` to `S ⊗_R P`. -/
-@[expose] noncomputable def finiteProjectiveModulesExtendScalars :
+noncomputable def finiteProjectiveModulesExtendScalars :
     (finiteProjectiveModules R).FullSubcategory ⥤ (finiteProjectiveModules S).FullSubcategory :=
   (finiteProjectiveModules S).lift
     ((finiteProjectiveModules R).ι ⋙ BalancedExtension.functor.{u, u, u} f)
