@@ -180,8 +180,11 @@ theorem length_pathToWalk {i j : V} (p : Quiver.Path (vertex G i) (vertex G j)) 
   unfold pathToWalk
   rw [SimpleGraph.Walk.length_copy, length_pathToWalkAux]
 
-/-- Graph reachability is directed reachability in the doubled quiver. -/
-@[simp]
+/-- Graph reachability is directed reachability in the doubled quiver.
+
+Simplification removes the doubled-quiver encoding rather than introducing it into arbitrary
+graph reachability statements. -/
+@[simp ←]
 theorem reachable_iff {i j : V} :
     G.Reachable i j ↔ Quiver.Reachable (vertex G i) (vertex G j) := by
   constructor
