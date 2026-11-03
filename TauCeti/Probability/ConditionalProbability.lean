@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Probability.ConditionalProbability
 import Mathlib.Probability.Kernel.MeasurableLIntegral
+import Mathlib.MeasureTheory.Integral.Average
 public import Mathlib.MeasureTheory.Integral.Bochner.Set
 public import Mathlib.MeasureTheory.Integral.IntegrableOn
 public import Mathlib.MeasureTheory.Measure.Interval
@@ -47,6 +48,7 @@ recovers the law.
 
 * `ProbabilityTheory.sum_meas_smul_cond_fiber_of_countable`
 * `ProbabilityTheory.cond_congr_ae`
+* `ProbabilityTheory.toNNReal_mul_integral_cond_eq_setIntegral`
 * `Measurable.cond`, `Measurable.cond_const`, and `Measurable.cond_preimage_Ioc` (with the
   corresponding `Icc`, `Ioo`, and `Ico` forms)
 * `ProbabilityTheory.integrable_cond_of_norm_le`
@@ -73,6 +75,16 @@ variable {Ω β : Type*} [MeasurableSpace Ω] [MeasurableSpace β]
 theorem cond_congr_ae {μ : Measure Ω} {s t : Set Ω} (h : s =ᵐ[μ] t) :
     μ[|s] = μ[|t] := by
   rw [cond, cond, measure_congr h, Measure.restrict_congr_set h]
+
+/-- Multiplying an integral under a conditional measure by the finite mass of the conditioning
+event recovers the corresponding set integral. -/
+theorem toNNReal_mul_integral_cond_eq_setIntegral (μ : Measure Ω) (s : Set Ω) (f : Ω → ℝ)
+    (h : μ s ≠ ⊤) :
+    (μ s).toNNReal * ∫ x, f x ∂cond μ s = ∫ x in s, f x ∂μ := by
+  have haverage := measure_smul_setAverage f h
+  rw [setAverage_eq', ← cond, Measure.real, ← ENNReal.coe_toNNReal_eq_toReal,
+    smul_eq_mul] at haverage
+  exact haverage
 
 /-! ### Measurability in a law and a conditioning event -/
 

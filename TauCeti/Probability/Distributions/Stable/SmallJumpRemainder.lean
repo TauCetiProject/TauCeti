@@ -8,6 +8,7 @@ module
 public import TauCeti.Probability.Distributions.Stable.SmallJumps
 public import TauCeti.Probability.Distributions.CompoundPoisson.Moments
 import Mathlib.Analysis.SpecialFunctions.Trigonometric.Bounds
+import TauCeti.Probability.ConditionalProbability
 import TauCeti.Probability.Distributions.Affine
 
 /-!
@@ -69,14 +70,6 @@ theorem stableSmallJumpRemainderMeasure_self (α β r : ℝ) :
     stableSmallJumpRemainderMeasure α β r r = Measure.dirac 0 := by
   rw [stableSmallJumpRemainderMeasure_def, smallJumpBand_self]
   simp
-
-private lemma toNNReal_mul_integral_cond_eq_setIntegral {Ω : Type*} [MeasurableSpace Ω]
-    (μ : Measure Ω) (s : Set Ω) (f : Ω → ℝ) (h : μ s ≠ ∞) :
-    (μ s).toNNReal * ∫ x, f x ∂cond μ s = ∫ x in s, f x ∂μ := by
-  have haverage := measure_smul_setAverage f h
-  rw [setAverage_eq', ← ProbabilityTheory.cond, Measure.real,
-    ← ENNReal.coe_toNNReal_eq_toReal, smul_eq_mul] at haverage
-  exact haverage
 
 /-- A valid compensated small-jump remainder is a probability measure. -/
 theorem isProbabilityMeasure_stableSmallJumpRemainderMeasure {α β ε r : ℝ}
