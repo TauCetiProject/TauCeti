@@ -83,26 +83,6 @@ namespace TauCeti
 
 variable {R : Type*} [CommRing R] {ι : Type*} {n : ℕ}
 
-section Density
-
-variable [LinearOrder ι] (pos : ι → Prop) [DecidablePred pos]
-
-/-- The product density commutes with the signed checked R-matrix on any two strands, which only
-permutes the letters of a word. -/
-theorem commute_productDensity_signedCheckedR (p : ι → R) (s : R) (j k : Fin n) :
-    Commute (productDensity p) (signedCheckedR pos s j k) := by
-  have hw (w : Fin n → ι) : (∏ i, p ((w ∘ Equiv.swap j k) i)) = ∏ i, p (w i) :=
-    Equiv.prod_comp (Equiv.swap j k) (fun i ↦ p (w i))
-  unfold Commute SemiconjBy
-  ext w : 2
-  simp only [LinearMap.coe_comp, Function.comp_apply, Finsupp.lsingle_apply,
-    mul_apply_eq_comp, signedCheckedR_single_one, productDensity_single_one]
-  split_ifs <;>
-    simp_all only [map_smul, map_sub, map_neg, productDensity_single_one,
-      signedCheckedR_single_one, ↓reduceIte] <;> module
-
-end Density
-
 namespace TypeAHeckeAlgebra
 
 variable [LinearOrder ι] (pos : ι → Prop) [DecidablePred pos] (q : Rˣ)
