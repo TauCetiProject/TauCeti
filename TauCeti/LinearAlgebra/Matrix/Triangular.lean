@@ -182,7 +182,7 @@ theorem pow_apply_eq_zero_of_isUpperTriangular_of_diag_eq_zero
       subst j
       omega
   | succ k ih =>
-      rw [pow_succ, mul_apply]
+      rw [pow_succ, Matrix.mul_apply]
       apply Finset.sum_eq_zero
       intro l _
       by_cases hil : i.1 + k ≤ l.1

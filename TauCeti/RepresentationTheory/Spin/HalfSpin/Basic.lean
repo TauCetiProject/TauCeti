@@ -226,7 +226,7 @@ theorem spinAction_mem_evenOdd (hline : P.line = ⊥) {i j : ZMod 2} {x : Cliffo
       exact cliffordOperator_mem_evenOdd P hline a hs
   | add x y hx hy ihx ihy => simpa only [map_add, LinearMap.add_apply] using add_mem ihx ihy
   | ι_mul_ι_mul m₁ m₂ x hx ih =>
-    rw [map_mul, map_mul, Module.End.mul_apply, Module.End.mul_apply, spinAction_ι, spinAction_ι,
+    rw [map_mul, map_mul, mul_apply_eq_comp, mul_apply_eq_comp, spinAction_ι, spinAction_ι,
       ← htwice (i + j)]
     exact cliffordOperator_mem_evenOdd P hline m₁ (cliffordOperator_mem_evenOdd P hline m₂ ih)
 

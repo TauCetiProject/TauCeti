@@ -37,6 +37,13 @@ condition `da = 0` comes from the vanishing of `(da)⁺`: an exact two-form `β`
 (`TauCeti.SmoothForm.integralTopForm_inner_selfDualPart_eq_inner_antiSelfDualPart`), so
 `β⁺ = 0` forces `β = 0`.
 
+The range of `T` is `L²`-orthogonal to the closed functions and to the closed self-dual two-forms:
+for `df = 0`, `∫_X ⟨f, -2 d*a⟩ vol = -2 ∫_X ⟨df, a⟩ vol = 0`, and for a closed self-dual `γ`,
+`∫_X ⟨(da)⁺, γ⟩ vol = ∫_X da ∧ γ = 0`
+(`TauCeti.SmoothForm.integralTopForm_inner_selfDualPart_eq_zero`). These are the harmonic
+functions and harmonic self-dual two-forms, so `H⁰ ⊕ H⁺` lies in the `L²`-orthogonal complement of
+the range of `T`; that it is the whole complement needs the Hodge decomposition.
+
 ## Main definitions
 
 * `TauCeti.SeibergWitten.abelianDeformationOperator o`: the operator `a ↦ (-2 d*a, (da)⁺)` from
@@ -48,6 +55,10 @@ condition `da = 0` comes from the vanishing of `(da)⁺`: an exact two-form `β`
   `T a = 0` exactly when `da = 0` and `d*a = 0`.
 * `TauCeti.SeibergWitten.ker_abelianDeformationOperator`: on a closed four-manifold, the kernel of
   `T` is the intersection of the kernels of `d` and `d*`.
+* `TauCeti.SeibergWitten.integralTopForm_inner_abelianDeformationOperator_fst_eq_zero`,
+  `TauCeti.SeibergWitten.integralTopForm_inner_abelianDeformationOperator_snd_eq_zero`: on a closed
+  four-manifold, the range of `T` is `L²`-orthogonal to the closed functions and to the closed
+  self-dual two-forms.
 
 ## References
 
@@ -127,5 +138,38 @@ theorem ker_abelianDeformationOperator :
         LinearMap.ker (SmoothForm.codifferential o (show 0 + 1 + 3 = 2 + 2 from rfl)) := by
   ext a
   simp only [LinearMap.mem_ker, Submodule.mem_inf, abelianDeformationOperator_eq_zero_iff]
+
+/-- **The range of `T` is orthogonal to the closed functions**: on a closed oriented Riemannian
+four-manifold, `∫_X ⟨f, -2 d*a⟩ vol = 0` for every one-form `a` and every function `f` with
+`df = 0`. -/
+theorem integralTopForm_inner_abelianDeformationOperator_fst_eq_zero (a : SmoothForm I M ℝ 1)
+    {f : SmoothForm I M ℝ 0} (hf : mextDerivₗ I 0 f = 0) :
+    integralTopForm o (fun x ↦ alternatingFormInner (TangentSpace I x) 0 (f.1 x)
+      ((abelianDeformationOperator o a).1.1 x) • riemannianVolumeForm o x) = 0 := by
+  -- `∫ ⟨f, d*a⟩ vol = ∫ ⟨df, a⟩ vol = 0`.
+  have h := SmoothForm.integralTopForm_inner_mextDeriv_eq_inner_codifferential o
+    (show 0 + 1 + 3 = 2 + 2 from rfl) f a (.inl (by simp [compactlySupportedForms_eq_top]))
+  rw [hf] at h
+  simp only [ZeroMemClass.coe_zero, Pi.zero_apply, map_zero, LinearMap.zero_apply,
+    zero_smul] at h
+  simp only [abelianDeformationOperator_apply_fst, Submodule.coe_smul, Pi.smul_apply, map_smul,
+    smul_eq_mul, mul_smul]
+  rw [← Pi.smul_def, integralTopForm_smul, ← h]
+  exact mul_eq_zero_of_right _ (integralTopForm_zero o)
+
+/-- **The range of `T` is orthogonal to the closed self-dual two-forms**: on a closed oriented
+Riemannian four-manifold, `∫_X ⟨(da)⁺, γ⟩ vol = 0` for every one-form `a` and every closed
+self-dual two-form `γ`. -/
+theorem integralTopForm_inner_abelianDeformationOperator_snd_eq_zero (a : SmoothForm I M ℝ 1)
+    {γ : SmoothForm.selfDualForms (I := I) (M := M) o}
+    (hγ : mextDerivₗ I 2 (γ : SmoothForm I M ℝ 2) = 0) :
+    integralTopForm o (fun x ↦ alternatingFormInner (TangentSpace I x) 2
+      (((abelianDeformationOperator o a).2 : SmoothForm I M ℝ 2).1 x)
+        ((γ : SmoothForm I M ℝ 2).1 x) • riemannianVolumeForm o x) = 0 := by
+  rw [coe_abelianDeformationOperator_apply_snd]
+  exact SmoothForm.integralTopForm_inner_selfDualPart_eq_zero o even_two
+    (by rw [exactForms_succ]; exact LinearMap.mem_range_self _ a)
+    ((mem_compactlySupportedClosedForms I).2 ⟨by simp [compactlySupportedForms_eq_top],
+      (mem_closedForms_iff_mextDerivₗ_eq_zero I _).2 hγ⟩) γ.2
 
 end TauCeti.SeibergWitten

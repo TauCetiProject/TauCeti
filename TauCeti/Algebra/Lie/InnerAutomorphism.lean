@@ -139,8 +139,8 @@ lemma expAd_apply_self (x : L) (hx : IsNilpotent (ad K L x)) : expAd x hx x = x 
 theorem expAd_symm (x : L) (hx : IsNilpotent (ad K L x)) :
     (expAd x hx).symm = expAd (-x) (by simpa only [map_neg] using hx.neg) := by
   ext y
-  rw [LieEquiv.symm_apply_eq, expAd_apply, expAd_apply, ← Module.End.mul_apply, map_neg,
-    hx.exp_mul_exp_neg_self, Module.End.one_apply]
+  rw [LieEquiv.symm_apply_eq, expAd_apply, expAd_apply, ← mul_apply_eq_comp, map_neg,
+    hx.exp_mul_exp_neg_self, one_apply_eq_self]
 
 /-- **`exp (ad x)` is natural in Lie homomorphisms**: a Lie homomorphism `f` carries
 `exp (ad x) y` to `exp (ad (f x)) (f y)`. The nilpotency of `ad (f x)` is a hypothesis, since `f`
@@ -198,7 +198,7 @@ theorem expAd_apply_eq_exp_mul_exp_neg {x y : A} (hx : IsNilpotent x) :
   have hnegRight : -(LinearMap.mulRight K x) = LinearMap.mulRight K (-x) := by
     ext a
     simp
-  rw [Module.End.mul_apply, hnegRight, hx.neg.exp_mulRight_apply, hx.exp_mulLeft_apply]
+  rw [mul_apply_eq_comp, hnegRight, hx.neg.exp_mulRight_apply, hx.exp_mulLeft_apply]
   exact (mul_assoc _ _ _).symm
 
 end Conjugation
