@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Algebra.Homology.HomologicalComplex.FunctorCategory
 public import TauCeti.CategoryTheory.Abelian.Injective.Ext
 public import TauCeti.CategoryTheory.Sites.SheafCohomology.FreeYoneda
 
@@ -114,15 +115,6 @@ private def cyclesToCohomologyPresheaf :
     ext z
     exact cyclesToH'_naturality R n g z
 
-omit [HasExt.{v} (Sheaf J AddCommGrpCat.{v})] in
-private lemma iCycles_app_toCycles_app (i : ℕ) {U : Cᵒᵖ} (x : ((sectionsComplex R).X i).obj U) :
-    ((sectionsComplex R).iCycles n).app U (((sectionsComplex R).toCycles i n).app U x) =
-      (R.cocomplex.d i n).hom.app U x := by
-  have h := ConcreteCategory.congr_hom
-    (NatTrans.congr_app ((sectionsComplex R).toCycles_i i n) U) x
-  rw [NatTrans.comp_app, ConcreteCategory.comp_apply] at h
-  exact h
-
 private lemma cyclesToH'_toCycles_app (i : ℕ) (hi : i + 1 = n) {U : Cᵒᵖ}
     (x : ((sectionsComplex R).X i).obj U) :
     cyclesToH' R n U.unop (((sectionsComplex R).toCycles i n).app U x) = 0 := by
@@ -133,7 +125,7 @@ private lemma cyclesToH'_toCycles_app (i : ℕ) (hi : i + 1 = n) {U : Cᵒᵖ}
   apply (freeYonedaSheafSectionsEquiv J _ _).injective
   rw [freeYonedaSheafSectionsEquiv_naturality_right, AddEquiv.apply_symm_apply,
     AddEquiv.apply_symm_apply]
-  exact (iCycles_app_toCycles_app R n i x).symm
+  exact ((sectionsComplex R).iCycles_app_toCycles_app i n x).symm
 
 /-- Boundaries have zero class. -/
 private lemma toCycles_comp_cyclesToCohomologyPresheaf (i : ℕ) :
@@ -154,17 +146,6 @@ private lemma homologyπ_comp_homologyToCohomologyPresheaf :
     (sectionsComplex R).homologyπ n ≫ homologyToCohomologyPresheaf R n =
       cyclesToCohomologyPresheaf R n :=
   Cofork.IsColimit.π_desc ((sectionsComplex R).homologyIsCokernel _ n rfl)
-
-omit [HasExt.{v} (Sheaf J AddCommGrpCat.{v})] in
-/-- A section of a term of the resolution killed by the differential comes from a cycle. -/
-private lemma exists_iCycles_app_eq {U : Cᵒᵖ} (s : ((sectionsComplex R).X n).obj U)
-    (hs : (R.cocomplex.d n (n + 1)).hom.app U s = 0) :
-    ∃ z, ((sectionsComplex R).iCycles n).app U z = s := by
-  let S := ShortComplex.mk ((sectionsComplex R).iCycles n) ((sectionsComplex R).d n (n + 1))
-    ((sectionsComplex R).iCycles_d n (n + 1))
-  have hS : S.Exact :=
-    S.exact_of_f_is_kernel ((sectionsComplex R).cyclesIsKernel n (n + 1) (by simp))
-  exact (ShortComplex.ab_exact_iff _).1 (hS.map ((evaluation Cᵒᵖ AddCommGrpCat.{v}).obj U)) s hs
 
 private lemma isIso_homologyToCohomologyPresheaf : IsIso (homologyToCohomologyPresheaf R n) := by
   rw [NatTrans.isIso_iff_isIso_app]
@@ -196,15 +177,19 @@ private lemma isIso_homologyToCohomologyPresheaf : IsIso (homologyToCohomologyPr
       have hz : z = ((sectionsComplex R).toCycles p (p + 1)).app U
           (freeYonedaSheafSectionsEquiv J _ _ g) := by
         apply hi
-        rw [iCycles_app_toCycles_app, ← freeYonedaSheafSectionsEquiv_naturality_right, hg,
-          AddEquiv.apply_symm_apply]
+        rw [HomologicalComplex.iCycles_app_toCycles_app]
+        refine Eq.trans ?_
+          (freeYonedaSheafSectionsEquiv_naturality_right J g (R.cocomplex.d p (p + 1)))
+        rw [hg, AddEquiv.apply_symm_apply]
       rw [hz, ← ConcreteCategory.comp_apply, ← NatTrans.comp_app,
         HomologicalComplex.toCycles_comp_homologyπ, NatTrans.app_zero]
       rfl
   · intro α
     obtain ⟨f, hf, hfα⟩ := R.extMk_surjective (F.H'AddEquivExt n U.unop α) (n + 1) rfl
-    obtain ⟨z, hz⟩ := exists_iCycles_app_eq R n (freeYonedaSheafSectionsEquiv J U.unop _ f) (by
-      rw [← freeYonedaSheafSectionsEquiv_naturality_right, hf, map_zero])
+    obtain ⟨z, hz⟩ := (sectionsComplex R).exists_iCycles_app_eq (n + 1) (by simp)
+      (freeYonedaSheafSectionsEquiv J U.unop _ f)
+      ((freeYonedaSheafSectionsEquiv_naturality_right J f (R.cocomplex.d n (n + 1))).symm.trans
+        (by rw [hf, map_zero]))
     refine ⟨((sectionsComplex R).homologyπ n).app U z, ?_⟩
     rw [hfac]
     apply (F.H'AddEquivExt n U.unop).injective
