@@ -47,7 +47,8 @@ the structure sheaf.
   structure sheaves.
 * `AlgebraicGeometry.Proj.twistingSheaf.comap_const`, `AlgebraicGeometry.Proj.comap_toTwistingSheaf`
   and `AlgebraicGeometry.Proj.twistingSheaf.comap_mul`: compatibility with fractions, with the
-  sections `r / 1` and with multiplication.
+  sections `r / 1` and with multiplication, with `AlgebraicGeometry.Proj.twistingSheafMap_app_mul`
+  the form of the last for the morphism of twisting sheaves.
 * `AlgebraicGeometry.Proj.twistingSheafMap_comp` and `AlgebraicGeometry.Proj.twistingSheafMap_id`:
   compatibility with composition and identities, with the sectionwise forms
   `AlgebraicGeometry.Proj.twistingSheafMap_app_apply_of_eq_comp` and
@@ -252,6 +253,15 @@ theorem twistingSheafMap_app (U : (Proj 𝒜).Opens) :
     Scheme.Modules.Hom.app (twistingSheafMap f hf n) U =
       AddCommGrpCat.ofHom (comap f hf (U := U) Set.Subset.rfl) :=
   (rfl)
+
+/-- The morphisms of twisting sheaves are multiplicative on sections: they send the product of
+sections of `𝒪(m)` and `𝒪(n)` to the product of their images. -/
+theorem twistingSheafMap_app_mul {m : ℤ} (U : (Proj 𝒜).Opens) (s : Γ(twistingSheaf 𝒜 m, U))
+    (t : Γ(twistingSheaf 𝒜 n, U)) :
+    (twistingSheafMap f hf (m + n)).app U (mul 𝒜 U m n s t) =
+      mul ℬ (map f hf ⁻¹ᵁ U) m n ((twistingSheafMap f hf m).app U s)
+        ((twistingSheafMap f hf n).app U t) :=
+  comap_mul f hf Set.Subset.rfl s t
 
 /-- **The morphisms of twisting sheaves are compatible with composition**: under
 `Proj.map (g.comp f) = Proj.map g ≫ Proj.map f`, the morphism induced by `g.comp f` is the
