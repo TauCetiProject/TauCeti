@@ -16,6 +16,10 @@ public import TauCeti.Analysis.Matrix.Frobenius
 
 This file records trace inequalities obtained from the Frobenius inner product. They are useful
 for proving inequalities involving traces of products of matrices.
+
+The main results are `norm_trace_conjTranspose_mul_le`, the Frobenius Cauchy–Schwarz inequality
+for the trace pairing, and `trace_mul_mul_sq_le`, the first nontrivial dyadic trace-power
+inequality for positive semidefinite matrices.
 -/
 
 public section

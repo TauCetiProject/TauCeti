@@ -56,6 +56,9 @@ constant `1`. Evaluating at `t = 1` gives the identity.
 * `Matrix.exp_eq_mul_exp_half`: the exponential of a matrix is the square of its half.
 * `Matrix.IsHermitian.trace_exp_mul_nonneg` and `Matrix.IsHermitian.trace_exp_pos`: positivity of
   the trace of the exponential of a Hermitian matrix and of the functional `x ↦ Tr (exp K * x)`.
+* `Matrix.IsHermitian.exp_posDef`: the exponential of a Hermitian matrix is positive definite.
+* `Matrix.IsHermitian.trace_exp_half_mul_exp_half_sq_le`: the first dyadic trace-power bound for
+  half-sized exponential weights.
 * `Matrix.trace_exp_add_of_commute`: the commuting-matrix case of Golden–Thompson, as an equality.
 
 ## References
@@ -197,15 +200,37 @@ theorem trace_exp_mul_nonneg (hK : K.IsHermitian) {x : Matrix m m 𝕜}
   simpa only [hF, Matrix.mul_assoc] using
     star_left_conjugate_nonneg hx (NormedSpace.exp ((1 / 2 : ℝ) • K))
 
+/-- The exponential of a Hermitian matrix is positive definite. -/
+theorem exp_posDef (hK : K.IsHermitian) : (NormedSpace.exp K).PosDef := by
+  have h := Matrix.PosDef.conjTranspose_mul_self (NormedSpace.exp ((1 / 2 : ℝ) • K))
+    (Matrix.mulVec_injective_iff_isUnit.mpr
+      (Matrix.isUnit_exp _))
+  rw [(hK.smul (IsSelfAdjoint.all (1 / 2 : ℝ))).exp.eq, ← exp_eq_mul_exp_half K] at h
+  exact h
+
 variable [Nonempty m]
 
 /-- For a Hermitian matrix `K` the exponential `exp K` has positive trace. -/
 theorem trace_exp_pos (hK : K.IsHermitian) :
-    0 < (NormedSpace.exp K).trace := by
-  have h := Matrix.PosDef.conjTranspose_mul_self (NormedSpace.exp ((1 / 2 : ℝ) • K))
-    (Matrix.mulVec_injective_iff_isUnit.mpr (Matrix.isUnit_exp _))
-  rw [(hK.smul (IsSelfAdjoint.all (1 / 2 : ℝ))).exp.eq, ← exp_eq_mul_exp_half K] at h
-  exact h.trace_pos
+    0 < (NormedSpace.exp K).trace :=
+  hK.exp_posDef.trace_pos
+
+omit [Nonempty m] in
+/-- The first Golden trace-power bound, applied to half-sized exponential weights. -/
+theorem trace_exp_half_mul_exp_half_sq_le
+    (hK : K.IsHermitian) {L : Matrix m m 𝕜} (hL : L.IsHermitian) :
+    ((NormedSpace.exp ((1 / 2 : ℝ) • K) *
+      NormedSpace.exp ((1 / 2 : ℝ) • L)) ^ 2).trace ≤
+      (NormedSpace.exp K * NormedSpace.exp L).trace := by
+  let X := NormedSpace.exp ((1 / 2 : ℝ) • K)
+  let Y := NormedSpace.exp ((1 / 2 : ℝ) • L)
+  have hX : X.PosSemidef := (hK.smul (IsSelfAdjoint.all (1 / 2 : ℝ))).exp_posDef.posSemidef
+  have hY : Y.PosSemidef := (hL.smul (IsSelfAdjoint.all (1 / 2 : ℝ))).exp_posDef.posSemidef
+  have hXsq : X ^ 2 = NormedSpace.exp K := by
+    simpa [X, pow_two] using (exp_eq_mul_exp_half K).symm
+  have hYsq : Y ^ 2 = NormedSpace.exp L := by
+    simpa [Y, pow_two] using (exp_eq_mul_exp_half L).symm
+  simpa only [X, Y, hXsq, hYsq] using Matrix.trace_mul_mul_sq_le X Y hX hY
 
 end IsHermitian
 
