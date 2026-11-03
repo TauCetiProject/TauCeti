@@ -45,9 +45,9 @@ theorem exists_toLaurent_eq_iff [Semiring A] {p : LaurentPolynomial A} :
       p.coeff ∈ Set.range (Finsupp.mapDomain (Nat.cast : ℕ → ℤ)) := by
     constructor
     · rintro ⟨q, rfl⟩
-      exact ⟨q.toFinsupp.coeff, rfl⟩
+      exact ⟨q.coeff, rfl⟩
     · rintro ⟨q, hq⟩
-      refine ⟨Polynomial.ofFinsupp (AddMonoidAlgebra.ofCoeff q), ?_⟩
+      refine ⟨AddMonoidAlgebra.ofCoeff q, ?_⟩
       exact AddMonoidAlgebra.coeff_injective hq
   rw [hrange, Finsupp.mem_range_mapDomain_iff (Nat.cast : ℕ → ℤ) Nat.cast_injective]
   exact forall_congr' fun n ↦ imp_congr_left (hcast n)
