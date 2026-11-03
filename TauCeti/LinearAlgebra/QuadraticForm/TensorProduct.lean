@@ -38,7 +38,7 @@ variable {R : Type*} [CommRing R] [Invertible (2 : R)]
 theorem _root_.QuadraticForm.smul_tmul
     {A M₁ M₂ : Type*} [CommRing A] [Algebra R A]
     [AddCommGroup M₁] [Module R M₁] [Module A M₁]
-    [SMulCommClass R A M₁] [IsScalarTower R A M₁]
+    [IsScalarTower R A M₁]
     [AddCommGroup M₂] [Module R M₂]
     (a : A) (Q₁ : QuadraticForm A M₁) (Q₂ : QuadraticForm R M₂) :
     QuadraticForm.tmul (a • Q₁) Q₂ = a • QuadraticForm.tmul Q₁ Q₂ := by
@@ -114,7 +114,7 @@ theorem _root_.QuadraticMap.Equivalent.tmul
 def _root_.QuadraticForm.IsometryEquiv.tmulProd
     {A M N P : Type*} [CommRing A] [Algebra R A]
     [AddCommGroup M] [Module R M] [Module A M]
-    [SMulCommClass R A M] [IsScalarTower R A M]
+    [IsScalarTower R A M]
     [AddCommGroup N] [Module R N]
     [AddCommGroup P] [Module R P]
     (Q : QuadraticForm A M) (S : QuadraticForm R N) (T : QuadraticForm R P) :
@@ -144,7 +144,7 @@ factor. -/
 theorem _root_.QuadraticForm.IsometryEquiv.tmulProd_tmul
     {A M N P : Type*} [CommRing A] [Algebra R A]
     [AddCommGroup M] [Module R M] [Module A M]
-    [SMulCommClass R A M] [IsScalarTower R A M]
+    [IsScalarTower R A M]
     [AddCommGroup N] [Module R N]
     [AddCommGroup P] [Module R P]
     (Q : QuadraticForm A M) (S : QuadraticForm R N) (T : QuadraticForm R P)
@@ -159,7 +159,7 @@ factor into a pure tensor with product-valued second factor. -/
 theorem _root_.QuadraticForm.IsometryEquiv.tmulProd_symm_tmul
     {A M N P : Type*} [CommRing A] [Algebra R A]
     [AddCommGroup M] [Module R M] [Module A M]
-    [SMulCommClass R A M] [IsScalarTower R A M]
+    [IsScalarTower R A M]
     [AddCommGroup N] [Module R N]
     [AddCommGroup P] [Module R P]
     (Q : QuadraticForm A M) (S : QuadraticForm R N) (T : QuadraticForm R P)
