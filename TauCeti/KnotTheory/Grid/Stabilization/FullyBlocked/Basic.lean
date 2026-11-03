@@ -237,7 +237,7 @@ private noncomputable def reducedConeIso :
 private theorem reducedConeIso_hom_f :
     (G.reducedConeIso s).hom.f () =
       ModuleCat.ofHom P ≫
-        homotopyCofiber.inlX (G.reducedConnectingHom s) () () (ComplexShape.refl_rel ()) +
+        homotopyCofiber.inlX (G.reducedConnectingHom s) () () (ComplexShape.refl_rel_self ()) +
       ModuleCat.ofHom Q ≫ homotopyCofiber.inrX (G.reducedConnectingHom s) () :=
   homotopyCofiber.isoOfSplitting_inv_f _ _ _ _
 
@@ -268,7 +268,7 @@ private noncomputable def reducedZeroConeIso :
 private theorem reducedZeroConeIso_hom_f :
     G.reducedZeroConeIso.hom.f () =
       homotopyCofiber.fstX (0 : G.reducedCenterComplex ⟶ G.reducedCenterComplex)
-          () () (ComplexShape.refl_rel ()) ≫ ModuleCat.ofHom (LinearMap.inl F C C) +
+          () () (ComplexShape.refl_rel_self ()) ≫ ModuleCat.ofHom (LinearMap.inl F C C) +
       homotopyCofiber.sndX (0 : G.reducedCenterComplex ⟶ G.reducedCenterComplex) () ≫
         ModuleCat.ofHom (LinearMap.inr F C C) :=
   homotopyCofiber.isoOfSplitting_hom_f _ _ _ _
@@ -286,18 +286,18 @@ private noncomputable def reducedArrowHom :
 private noncomputable def reducedConeMap :
     homotopyCofiber (G.reducedConnectingHom s) ⟶
       homotopyCofiber (0 : G.reducedCenterComplex ⟶ G.reducedCenterComplex) :=
-  homotopyCofiber.mapArrowHom _ _ (fun x => ⟨x, ComplexShape.refl_rel x⟩)
+  homotopyCofiber.mapArrowHom _ _ (fun x => ⟨x, ComplexShape.refl_rel_self x⟩)
     (G.reducedArrowHom s)
 
 private theorem reducedConeMap_f :
     (G.reducedConeMap s).f () =
-      homotopyCofiber.fstX (G.reducedConnectingHom s) () () (ComplexShape.refl_rel ()) ≫
+      homotopyCofiber.fstX (G.reducedConnectingHom s) () () (ComplexShape.refl_rel_self ()) ≫
         homotopyCofiber.inlX (0 : G.reducedCenterComplex ⟶ G.reducedCenterComplex)
-          () () (ComplexShape.refl_rel ()) +
+          () () (ComplexShape.refl_rel_self ()) +
       homotopyCofiber.sndX (G.reducedConnectingHom s) () ≫ ModuleCat.ofHom H ≫
         homotopyCofiber.inrX (0 : G.reducedCenterComplex ⟶ G.reducedCenterComplex) () := by
   apply homotopyCofiber.ext_from_X (G.reducedConnectingHom s)
-    () () (ComplexShape.refl_rel ()) <;>
+    () () (ComplexShape.refl_rel_self ()) <;>
     simp [reducedConeMap, reducedArrowHom, reducedComparisonHom]
 
 private instance quasiIso_reducedConeMap : QuasiIso (G.reducedConeMap s) := by

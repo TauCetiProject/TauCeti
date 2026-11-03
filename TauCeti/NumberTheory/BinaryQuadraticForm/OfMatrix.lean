@@ -108,9 +108,9 @@ theorem eval_ofMatrix_eq_eval_fixpointPolynomial (g : GL (Fin 2) R) (z : R) :
 /-- Conjugation by `γ ∈ SL(2, R)` acts on `Q_M` as `γ` acts on forms: `Q_{γ M γ⁻¹} = γ • Q_M`. -/
 theorem ofMatrix_conj (γ : SL(2, R)) (M : Matrix (Fin 2) (Fin 2) R) :
     ofMatrix (γ * M * γ⁻¹ : Matrix (Fin 2) (Fin 2) R) = γ • ofMatrix M := by
-  simp only [BinaryQuadraticForm.ext_iff, SpecialLinearGroup.coe_inv, adjugate_fin_two, ofMatrix_a,
-    ofMatrix_b, ofMatrix_c, smul_a, smul_b, smul_c, mul_apply, Fin.sum_univ_two, of_apply,
-    cons_val', cons_val_zero, cons_val_one]
+  simp only [Matrix.mul_apply, Fin.sum_univ_two, of_apply, BinaryQuadraticForm.ext_iff,
+    SpecialLinearGroup.coe_inv, adjugate_fin_two, ofMatrix_a, ofMatrix_b, ofMatrix_c, smul_a,
+    smul_b, smul_c, cons_val', cons_val_zero, cons_val_one]
   refine ⟨?_, ?_, ?_⟩ <;> ring
 
 /-- Over `ℤ`, a `2 × 2` matrix is determined by its trace and its form `Q_M`. -/

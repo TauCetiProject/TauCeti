@@ -133,8 +133,8 @@ theorem hessian_norm_sq {X : Π x : M, TangentSpace I x} (hX : CMDiff ∞ (T% X)
       mvfderiv I (fun y ↦ ⟪X y, X y⟫_ℝ) x w = ⟪cov X x w, X x⟫_ℝ + ⟪X x, cov X x w⟫_ℝ := by
     have hXd : MDiffAt (T% X) x := hX.mdifferentiable (by simp) x
     simpa using hcov.mvfderiv_inner_eq (FiberBundle.extend E w) hXd hXd
-  obtain ⟨U, hU, rfl⟩ := FiberBundle.exists_contMDiff_section_eq I E u
-  obtain ⟨V, hV, rfl⟩ := FiberBundle.exists_contMDiff_section_eq I E v
+  obtain ⟨U, hU, rfl⟩ := FiberBundle.exists_contMDiff_section_eq I E ∞ u
+  obtain ⟨V, hV, rfl⟩ := FiberBundle.exists_contMDiff_section_eq I E ∞ v
   -- The bundle argument of `ContMDiff.inner_bundle` is not inferred through `TangentSpace`.
   have hXX : CMDiff ∞ fun y ↦ ⟪X y, X y⟫_ℝ :=
     ContMDiff.inner_bundle (IB := I) (F := E) (E := fun x : M ↦ TangentSpace I x) (b := id) hX hX
@@ -181,8 +181,8 @@ theorem inner_secondCovariantDerivative_mgradient_comm {φ : M → ℝ} (hφ : C
     ⟪cov.secondCovariantDerivative cov (mgradient I φ) x u v, w⟫_ℝ =
       ⟪cov.secondCovariantDerivative cov (mgradient I φ) x u w, v⟫_ℝ := by
   have hφ2 : ContMDiffAt I 𝓘(ℝ) 2 φ x := (hφ.of_le (by simp)).contMDiffAt
-  obtain ⟨V, hV, rfl⟩ := FiberBundle.exists_contMDiff_section_eq I E v
-  obtain ⟨W, hW, rfl⟩ := FiberBundle.exists_contMDiff_section_eq I E w
+  obtain ⟨V, hV, rfl⟩ := FiberBundle.exists_contMDiff_section_eq I E ∞ v
+  obtain ⟨W, hW, rfl⟩ := FiberBundle.exists_contMDiff_section_eq I E ∞ w
   have hpair : (fun y ↦ hessian I φ y (V y) (W y)) = fun y ↦ hessian I φ y (W y) (V y) :=
     funext fun y ↦ hessian_symm y (hφ.of_le (by simp)).contMDiffAt _ _
   rw [inner_secondCovariantDerivative_mgradient_eq_mvfderiv_hessian hφ hV

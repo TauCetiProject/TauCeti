@@ -63,7 +63,7 @@ theorem lastRowTransvection_zero : lastRowTransvection d (0 : Fin d → A) = 1 :
   · subst hi
     induction j using Fin.lastCases with
     | last => simp
-    | cast j => simp [one_apply, (Fin.castSucc_lt_last j).ne']
+    | cast j => simp [(Fin.castSucc_lt_last j).ne']
   · rfl
 
 end ZeroOne
@@ -83,8 +83,8 @@ theorem lastRowTransvection_mul_lastRowTransvection (b b' : Fin d → A) :
     simp only [vecMul, dotProduct, Fin.sum_univ_castSucc, Fin.snoc_castSucc, Fin.snoc_last,
       one_mul, lastRowTransvection_apply, Fin.castSucc_ne_last, ↓reduceIte]
     induction j using Fin.lastCases with
-    | last => simp [one_apply, Fin.castSucc_ne_last]
-    | cast j => simp [one_apply]
+    | last => simp [Fin.castSucc_ne_last]
+    | cast j => simp [Matrix.one_apply]
   · simp [lastRowTransvection_apply, hi]
 
 /-- Right multiplication by `diagonal (1, …, 1, x)` scales the last column by `x`. -/
@@ -102,7 +102,7 @@ theorem lastRowTransvection_mul_diagonal (b : Fin d → A) (x : A) :
     | cast j => simp
   · induction i using Fin.lastCases with
     | last => exact absurd rfl hi
-    | cast i => simp [diagonal_apply, one_apply]
+    | cast i => simp [diagonal_apply, Matrix.one_apply]
 
 end Semiring
 

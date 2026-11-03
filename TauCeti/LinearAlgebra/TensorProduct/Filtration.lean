@@ -5,131 +5,137 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.GradedMonoid
 public import TauCeti.LinearAlgebra.TensorProduct.Submodule
 
 /-!
-# Total-degree filtrations on tensor products
+# Total filtration on a tensor product
 
-The total tensor filtration of two families of submodules is the sum of the images of
-`F i ⊗ G j` with `i + j ≤ n`. Using images avoids any flatness assumption. This construction
-transports multiplicativity and exhaustivity to tensor products, for example for order
-filtrations on enveloping algebras and their integral forms.
+For submodule families `F` and `G`, the total degree `n` part of their tensor product is
+spanned by `x ⊗ y` with `x ∈ F i`, `y ∈ G j`, and `i + j ≤ n`. No flatness is needed:
+we use the images of the tensor factors, not an asserted embedding of their tensor product.
+Multiplicative families give a multiplicative total filtration. This allows coproduct degree
+bounds to be stated with the sum of the two degrees, rather than separate bounds on each leg.
+Increasing exhaustive factor filtrations give an exhaustive tensor filtration. If the
+algebra filtrations start at the scalars, their total tensor filtration does too.
 -/
 
 public section
 
 open scoped TensorProduct
 
-namespace TensorProduct
+namespace TauCeti
 
 variable {R M N : Type*} [CommSemiring R]
 variable [AddCommMonoid M] [Module R M] [AddCommMonoid N] [Module R N]
-variable (F : ℕ → Submodule R M) (G : ℕ → Submodule R N)
 
-/-- The total-degree tensor filtration, formed from tensor images rather than embeddings. -/
-def filtration (n : ℕ) : Submodule R (M ⊗[R] N) :=
+/-- Total tensor degree at most `n`, formed from two families of submodules. -/
+def tensorFiltration (F : ℕ → Submodule R M) (G : ℕ → Submodule R N)
+    (n : ℕ) : Submodule R (M ⊗[R] N) :=
   ⨆ (i : ℕ) (j : ℕ) (_ : i + j ≤ n),
-    Submodule.map₂ (_root_.TensorProduct.mk R M N) (F i) (G j)
+    Submodule.map₂ (TensorProduct.mk R M N) (F i) (G j)
 
-/-- The total-degree tensor filtration is the sum of its bounded-degree tensor images. -/
-theorem filtration_def (n : ℕ) : filtration F G n =
-    ⨆ (i : ℕ) (j : ℕ) (_ : i + j ≤ n),
-      Submodule.map₂ (_root_.TensorProduct.mk R M N) (F i) (G j) := (rfl)
+/-- The total tensor filtration is the sum of its bounded-degree tensor images. -/
+theorem tensorFiltration_def (F : ℕ → Submodule R M) (G : ℕ → Submodule R N) (n : ℕ) :
+    tensorFiltration F G n = ⨆ (i : ℕ) (j : ℕ) (_ : i + j ≤ n),
+      Submodule.map₂ (TensorProduct.mk R M N) (F i) (G j) := (rfl)
 
-/-- A total tensor step is contained in a submodule exactly when its pure tensors are. -/
-theorem filtration_le_iff {n : ℕ} {P : Submodule R (M ⊗[R] N)} :
-    filtration F G n ≤ P ↔
+/-- A submodule contains a total filtration step exactly when it contains its pure tensors. -/
+theorem tensorFiltration_le_iff {F : ℕ → Submodule R M} {G : ℕ → Submodule R N}
+    {n : ℕ} {P : Submodule R (M ⊗[R] N)} :
+    tensorFiltration F G n ≤ P ↔
       ∀ i j, i + j ≤ n → ∀ x ∈ F i, ∀ y ∈ G j, x ⊗ₜ[R] y ∈ P := by
-  simp only [filtration_def, iSup_le_iff, Submodule.map₂_le,
-    _root_.TensorProduct.mk_apply]
+  simp only [tensorFiltration, iSup_le_iff, Submodule.map₂_le, TensorProduct.mk_apply]
 
-/-- A pure tensor has total degree bounded by the sum of its factor degrees. -/
-theorem tmul_mem_filtration {i j : ℕ} {x : M} {y : N}
-    (hx : x ∈ F i) (hy : y ∈ G j) : x ⊗ₜ[R] y ∈ filtration F G (i + j) :=
-  (filtration_le_iff F G).1 le_rfl i j le_rfl x hx y hy
+/-- Pure tensors whose degrees sum to at most `n` belong to total degree `n`. -/
+theorem tmul_mem_tensorFiltration {F : ℕ → Submodule R M} {G : ℕ → Submodule R N}
+    {i j n : ℕ} {x : M} {y : N} (hij : i + j ≤ n) (hx : x ∈ F i) (hy : y ∈ G j) :
+    x ⊗ₜ[R] y ∈ tensorFiltration F G n :=
+  tensorFiltration_le_iff.mp le_rfl i j hij x hx y hy
 
-/-- Total tensor steps increase with the degree bound. -/
-theorem filtration_mono : Monotone (filtration F G) := by
+/-- Total degree is increasing, even if the input families are not increasing. -/
+theorem tensorFiltration_mono (F : ℕ → Submodule R M) (G : ℕ → Submodule R N) :
+    Monotone (tensorFiltration F G) := by
   intro m n hmn
-  refine (filtration_le_iff F G).2 fun i j hij x hx y hy => ?_
-  exact (filtration_le_iff F G).1 le_rfl i j (hij.trans hmn) x hx y hy
+  exact tensorFiltration_le_iff.mpr fun i j hij x hx y hy ↦
+    tmul_mem_tensorFiltration (hij.trans hmn) hx hy
+
+/-- Degree zero is the image of the tensor product of the degree-zero submodules. -/
+@[simp]
+theorem tensorFiltration_zero (F : ℕ → Submodule R M) (G : ℕ → Submodule R N) :
+    tensorFiltration F G 0 = Submodule.map₂ (TensorProduct.mk R M N) (F 0) (G 0) := by
+  apply le_antisymm
+  · apply tensorFiltration_le_iff.mpr
+    intro i j hij x hx y hy
+    obtain ⟨rfl, rfl⟩ : i = 0 ∧ j = 0 := by omega
+    exact Submodule.apply_mem_map₂ _ hx hy
+  · exact Submodule.map₂_le.mpr fun x hx y hy ↦ tmul_mem_tensorFiltration (by omega) hx hy
 
 /-- Increasing exhaustive factor filtrations give an exhaustive total tensor filtration. -/
-theorem iSup_filtration_eq_top (hF : Monotone F) (hG : Monotone G)
+theorem iSup_tensorFiltration_eq_top (F : ℕ → Submodule R M) (G : ℕ → Submodule R N)
+    (hF : Monotone F) (hG : Monotone G)
     (hFtop : ⨆ i, F i = ⊤) (hGtop : ⨆ j, G j = ⊤) :
-    ⨆ n, filtration F G n = ⊤ := by
+    ⨆ n, tensorFiltration F G n = ⊤ := by
   apply top_unique
   intro z hz
   clear hz
-  induction z using _root_.TensorProduct.inductionOn with
+  induction z using TensorProduct.inductionOn with
   | tmul x y =>
     have hx : x ∈ ⨆ i, F i := by rw [hFtop]; exact Submodule.mem_top
     have hy : y ∈ ⨆ j, G j := by rw [hGtop]; exact Submodule.mem_top
     obtain ⟨i, hi⟩ := (Submodule.mem_iSup_of_directed _ hF.directed_le).1 hx
     obtain ⟨j, hj⟩ := (Submodule.mem_iSup_of_directed _ hG.directed_le).1 hy
-    exact Submodule.mem_iSup_of_mem (i + j) (tmul_mem_filtration F G hi hj)
+    exact Submodule.mem_iSup_of_mem (i + j) (tmul_mem_tensorFiltration le_rfl hi hj)
   | add x y hx hy => exact Submodule.add_mem _ hx hy
 
 /-- Every tensor has finite total degree for increasing exhaustive factor filtrations. -/
-theorem exists_mem_filtration (hF : Monotone F) (hG : Monotone G)
+theorem exists_mem_tensorFiltration (F : ℕ → Submodule R M) (G : ℕ → Submodule R N)
+    (hF : Monotone F) (hG : Monotone G)
     (hFtop : ⨆ i, F i = ⊤) (hGtop : ⨆ j, G j = ⊤) (z : M ⊗[R] N) :
-    ∃ n, z ∈ filtration F G n := by
-  rw [← Submodule.mem_iSup_of_directed _ (filtration_mono F G).directed_le,
-    iSup_filtration_eq_top F G hF hG hFtop hGtop]
+    ∃ n, z ∈ tensorFiltration F G n := by
+  rw [← Submodule.mem_iSup_of_directed _ (tensorFiltration_mono F G).directed_le,
+    iSup_tensorFiltration_eq_top F G hF hG hFtop hGtop]
   exact Submodule.mem_top
 
 section Algebra
 
 variable {A B : Type*} [Semiring A] [Algebra R A] [Semiring B] [Algebra R B]
-variable (F : ℕ → Submodule R A) (G : ℕ → Submodule R B)
+variable {F : ℕ → Submodule R A} {G : ℕ → Submodule R B}
 
 /-- If both factor filtrations start at the scalars, so does the tensor filtration. -/
-@[simp]
-theorem filtration_zero (hF : F 0 = 1) (hG : G 0 = 1) : filtration F G 0 = 1 := by
-  have hblock : Submodule.map₂ (_root_.TensorProduct.mk R A B) (F 0) (G 0) = 1 := by
-    simp [hF, hG, Submodule.one_eq_span, Submodule.map₂_span_span,
-      Algebra.TensorProduct.one_def]
-  apply le_antisymm
-  · refine (filtration_le_iff F G).2 fun i j hij => ?_
-    have hi : i = 0 := by omega
-    have hj : j = 0 := by omega
-    subst i
-    subst j
-    exact Submodule.map₂_le.1 hblock.le
-  · rw [← hblock, filtration_def]
-    exact le_iSup_of_le 0 (le_iSup_of_le 0 (le_iSup_of_le le_rfl le_rfl))
+theorem tensorFiltration_zero_eq_one (hF : F 0 = 1) (hG : G 0 = 1) :
+    tensorFiltration F G 0 = 1 := by
+  rw [tensorFiltration_zero, hF, hG]
+  simp only [Submodule.one_eq_span, Submodule.map₂_span_span,
+    TensorProduct.mk_apply, Set.image2_singleton, Algebra.TensorProduct.one_def]
 
-/-- The tensor unit belongs to every total step of unital factor filtrations. -/
-theorem one_mem_filtration [SetLike.GradedOne F] [SetLike.GradedOne G] (n : ℕ) :
-    (1 : A ⊗[R] B) ∈ filtration F G n := by
+/-- The tensor unit belongs to every total step when it belongs to both degree-zero steps. -/
+theorem one_mem_tensorFiltration (hF : (1 : A) ∈ F 0) (hG : (1 : B) ∈ G 0) (n : ℕ) :
+    (1 : A ⊗[R] B) ∈ tensorFiltration F G n := by
   simpa only [Algebra.TensorProduct.one_def] using
-    (filtration_le_iff F G).1 le_rfl 0 0 (Nat.zero_le n)
-      1 (SetLike.one_mem_graded F) 1 (SetLike.one_mem_graded G)
+    tmul_mem_tensorFiltration (Nat.zero_le n) hF hG
 
-/-- The product of total tensor steps is contained in the step of summed degree. -/
-theorem filtration_mul_le [SetLike.GradedMul F] [SetLike.GradedMul G] (m n : ℕ) :
-    filtration F G m * filtration F G n ≤ filtration F G (m + n) := by
-  rw [filtration_def F G m, filtration_def F G n]
+/-- Multiplicativity of the two families implies multiplicativity in total tensor degree. -/
+theorem tensorFiltration_mul_le
+    (hF : ∀ i j, F i * F j ≤ F (i + j))
+    (hG : ∀ i j, G i * G j ≤ G (i + j)) (m n : ℕ) :
+    tensorFiltration F G m * tensorFiltration F G n ≤ tensorFiltration F G (m + n) := by
+  rw [tensorFiltration, tensorFiltration]
   simp only [Submodule.iSup_mul, Submodule.mul_iSup, iSup_le_iff]
   intro k l hkl i j hij
-  have hF : F i * F k ≤ F (i + k) :=
-    Submodule.mul_le.2 fun _ ha _ hc => SetLike.mul_mem_graded ha hc
-  have hG : G j * G l ≤ G (j + l) :=
-    Submodule.mul_le.2 fun _ hb _ hd => SetLike.mul_mem_graded hb hd
-  have hdegree : (i + k) + (j + l) ≤ m + n := by omega
-  refine (Submodule.map₂_tmul_mul_le (F i) (F k) (G j) (G l)).trans
-    ((Submodule.map₂_le_map₂ hF hG).trans ?_)
-  rw [filtration_def]
-  exact le_iSup_of_le (i + k) (le_iSup_of_le (j + l) (le_iSup_of_le hdegree le_rfl))
+  refine (Submodule.map₂_tmul_mul_le (F i) (F k) (G j) (G l)).trans ?_
+  refine (Submodule.map₂_le_map₂ (hF i k) (hG j l)).trans ?_
+  exact Submodule.map₂_le.mpr fun x hx y hy ↦
+    tmul_mem_tensorFiltration (by omega) hx hy
 
 /-- Multiplication adds total degrees for multiplicative factor filtrations. -/
-theorem mul_mem_filtration [SetLike.GradedMul F] [SetLike.GradedMul G]
+theorem mul_mem_tensorFiltration
+    (hF : ∀ i j, F i * F j ≤ F (i + j))
+    (hG : ∀ i j, G i * G j ≤ G (i + j))
     {m n : ℕ} {x y : A ⊗[R] B}
-    (hx : x ∈ filtration F G m) (hy : y ∈ filtration F G n) :
-    x * y ∈ filtration F G (m + n) :=
-  (filtration_mul_le F G m n) (Submodule.mul_mem_mul hx hy)
+    (hx : x ∈ tensorFiltration F G m) (hy : y ∈ tensorFiltration F G n) :
+    x * y ∈ tensorFiltration F G (m + n) :=
+  tensorFiltration_mul_le hF hG m n (Submodule.mul_mem_mul hx hy)
 
 end Algebra
 
-end TensorProduct
+end TauCeti

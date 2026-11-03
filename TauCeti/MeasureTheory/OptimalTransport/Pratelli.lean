@@ -301,10 +301,10 @@ private theorem IsCoupling.exists_hasLaw_transportMapCost_le_add_mul (hπ : IsCo
   calc transportMapCost c μ T = ∫⁻ x in ⋃ i, Z i, c (x, T x) ∂μ := by
         rw [hμZ, transportMapCost_def]
     _ = ∑' i, ∫⁻ x in Z i, c (x, T x) ∂μ := lintegral_iUnion hZm hZd _
-    _ ≤ ∑' i, (∫⁻ z in S i, c z ∂π + ε * π (S i)) := ENNReal.tsum_le_tsum fun i ↦
+    _ ≤ ∑' i, (∫⁻ z in S i, c z ∂π + ε * π (S i)) := tsum_le_tsum fun i ↦
         setLIntegral_le_of_measurePreserving hcm htXm htYm (hZm i) (hZA i) (hTZ i)
     _ = ∫⁻ z in ⋃ i, S i, c z ∂π + ε * π (⋃ i, S i) := by
-        rw [ENNReal.tsum_add, ENNReal.tsum_mul_left, lintegral_iUnion hSm hSd,
+        rw [tsum_add, ENNReal.tsum_mul_left, lintegral_iUnion hSm hSd,
           measure_iUnion hSd hSm]
     _ ≤ ∫⁻ z, c z ∂π + ε * μ univ := by
         rw [hπ.measure_univ_left]
