@@ -63,7 +63,7 @@ theorem mem_quotientPointsSubgroup_weightTorusDefiningIdeal_iff_isDiag
   have hmem := Subgroup.mem_map_iff_mem (carrierPointsHom_injective R A)
     (K := CommHopfAlgCat.quotientPointsSubgroup (generatedCoordinateHopfAlgebra R)
       (weightTorusDefiningIdeal R) A) (x := g)
-  rw [map_torus_carrierPointsHom R A] at hmem
+  rw [map_carrierPointsHom_quotientPointsSubgroup_weightTorusDefiningIdeal R A] at hmem
   refine hmem.symm.trans ?_
   have hdiag := mem_range_weightTorusPoints_iff_isDiag (carrierPointsHom R A g)
   rw [coe_carrierPointsHom] at hdiag

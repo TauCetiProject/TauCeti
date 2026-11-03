@@ -173,7 +173,8 @@ theorem map_quotientPointsSubgroup_weightTorusDefiningIdeal (A : CommAlgCat.{v} 
 
 /-- The carrier inclusion sends the generated weight torus onto the integral carrier's
 weight torus over every value algebra. -/
-theorem map_torus_carrierPointsHom (A : CommAlgCat.{v} R) :
+theorem map_carrierPointsHom_quotientPointsSubgroup_weightTorusDefiningIdeal
+    (A : CommAlgCat.{v} R) :
     (CommHopfAlgCat.quotientPointsSubgroup (generatedCoordinateHopfAlgebra R)
         (weightTorusDefiningIdeal R) A).map (carrierPointsHom R A) =
       (weightTorusPoints A).range := by

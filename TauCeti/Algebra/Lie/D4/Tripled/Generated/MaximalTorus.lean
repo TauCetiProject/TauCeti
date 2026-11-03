@@ -64,9 +64,9 @@ theorem eq_weightTorusDefiningIdeal_of_le_of_isCocomm [IsAlgClosed k]
     Subgroup.map_isMulCommutative GI (carrierPointsHom k A)
   have hTG : GT ≤ GI := CommHopfAlgCat.quotientPointsSubgroup_le_of_le H hI A
   have hmap : GI.map (carrierPointsHom k A) = GT.map (carrierPointsHom k A) := by
-    rw [map_torus_carrierPointsHom]
+    rw [map_carrierPointsHom_quotientPointsSubgroup_weightTorusDefiningIdeal]
     apply eq_range_weightTorusPoints_of_le_of_isMulCommutative
-    rw [← map_torus_carrierPointsHom k A]
+    rw [← map_carrierPointsHom_quotientPointsSubgroup_weightTorusDefiningIdeal k A]
     exact Subgroup.map_mono hTG
   have hpoints : GI = GT := Subgroup.map_injective (carrierPointsHom_injective k A) hmap
   exact le_antisymm hI (HopfIdeal.le_of_quotientPointsSubgroup_le hpoints.le)
