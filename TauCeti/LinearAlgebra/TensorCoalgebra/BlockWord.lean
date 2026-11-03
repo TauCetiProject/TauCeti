@@ -138,6 +138,7 @@ theorem blockWord_one (a : ℕ) : blockWord R e a 1 = ofLetter R M (e a 1) := by
   rw [blockWord_succ, Finset.range_zero, Finset.sum_empty, add_zero]
 
 /-- The letter of the block word of a nonempty block is the letter of that block. -/
+@[simp]
 theorem letter_blockWord {a b : ℕ} (hb : 0 < b) : letter R M (blockWord R e a b) = e a b := by
   obtain ⟨b, rfl⟩ := Nat.exists_eq_add_of_lt hb
   rw [zero_add, blockWord_succ, map_add, map_sum, letter_ofLetter]
@@ -202,8 +203,10 @@ theorem isBlockFamily_blockWord : IsBlockFamily R (blockWord R e) := by
       exact ⟨by omega, HEq.rfl⟩
     · rintro ⟨c, k⟩ h
       simp only [Finset.mem_sigma, Finset.mem_range, Finset.mem_Ioo] at h
-      rw [show c + k - c = k by omega, show a + (c + k) + 1 = a + c + 1 + k by omega,
-        show b - (c + k) = b - c - k by omega]
+      have h₁ : c + k - c = k := by omega
+      have h₂ : a + (c + k) + 1 = a + c + 1 + k := by omega
+      have h₃ : b - (c + k) = b - c - k := by omega
+      rw [h₁, h₂, h₃]
 
 /-- **A block family is determined by its letters**: if the letters of a block family agree with
 `e` on every sub-block of a nonempty block, then on that block the family is the block word

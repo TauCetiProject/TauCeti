@@ -164,6 +164,6 @@ theorem minimalModel_taylor_subword_mem_masseyProduct {n : ℕ} {x : Fin (n + 2)
       (by rw [linearPart_minimalModelInclusion])).trans
         (𝒜.cohomologyClass_cohomologyContraction_incl z)
   simpa only [hclass] using
-    𝒜.minimalModelInclusion.cohomologyClass_mem_masseyProduct hy (fun i ↦ hincl (x i)) (hincl _)
+    𝒜.minimalModelInclusion.cohomologyClass_mem_masseyProduct hy
 
 end TauCeti.AInfinityAlgebra

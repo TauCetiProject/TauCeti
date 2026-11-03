@@ -148,6 +148,22 @@ theorem taylor_mem_cycles_of_isBlockFamily (hV : IsBlockFamily R V) {a b : ℕ}
   rw [mem_cycles]
   simpa using congrArg (letter R A) hd.symm
 
+/-- If the suspended Taylor map vanishes on every proper block of the word `y₀ ⋯ y_{n+1}`, then
+its value on the whole word is a cycle. -/
+theorem taylor_subword_mem_cycles {n : ℕ} {y : Fin (n + 2) → A}
+    (hy : ∀ a b, 0 < b → b ≤ n + 1 → a + b ≤ n + 2 → 𝒜.taylor (subword R y a b) = 0) :
+    𝒜.taylor (subword R y 0 (n + 2)) ∈ 𝒜.cycles :=
+  taylor_mem_cycles_of_isBlockFamily (isBlockFamily_subword y)
+    fun c k hk _ _ h₂ ↦ hy c k hk (by omega) (by omega)
+
+/-- If the suspended Taylor map vanishes on every proper block of the word `y₀ ⋯ y_{n+1}`, then
+every letter `y i` is a cycle. -/
+theorem mem_cycles_of_taylor_subword_eq_zero {n : ℕ} {y : Fin (n + 2) → A}
+    (hy : ∀ a b, 0 < b → b ≤ n + 1 → a + b ≤ n + 2 → 𝒜.taylor (subword R y a b) = 0)
+    (i : Fin (n + 2)) : y i ∈ 𝒜.cycles := by
+  have h := hy i 1 one_pos (by omega) (by omega)
+  rwa [subword_one R A y i.isLt, Fin.eta, taylor_ofLetter, ← mem_cycles] at h
+
 variable (𝒜)
 
 /-! ### Defining systems and Massey cycles -/
@@ -209,7 +225,7 @@ theorem cycle_def : S.cycle = 𝒜.taylor (blockWord R S.entry 0 (n + 2)) := (rf
 interval into at least two blocks. -/
 theorem cycle_eq_sum : S.cycle = ∑ c ∈ Finset.range (n + 1),
     𝒜.taylor (prepend R A (S.entry 0 (c + 1)) (blockWord R S.entry (c + 1) (n + 1 - c))) := by
-  rw [cycle_def, show n + 2 = n + 1 + 1 from rfl, blockWord_succ,
+  rw [cycle_def, blockWord_succ,
     S.entry_eq_zero 0 (n + 1 + 1) (by omega), map_zero, zero_add, map_sum]
   simp only [zero_add]
 
@@ -249,6 +265,7 @@ theorem mem_masseyProduct {n : ℕ} {x : Fin (n + 2) → 𝒜.Cohomology} {w : �
   Iff.rfl
 
 /-- The value of a defining system lies in the Massey product. -/
+@[simp]
 theorem MasseyDefiningSystem.value_mem {n : ℕ} {x : Fin (n + 2) → 𝒜.Cohomology}
     (S : 𝒜.MasseyDefiningSystem x) : S.value ∈ 𝒜.masseyProduct x :=
   ⟨S, rfl⟩
@@ -280,16 +297,8 @@ theorem cycle_three {x : Fin 3 → 𝒜.Cohomology} (S : 𝒜.MasseyDefiningSyst
         𝒜.m 2 ![𝒜.grading.koszulTwist 1 (S.entry 0 2), S.entry 2 1] := by
   have h₃ : ∀ a b c : A, prepend R A a (prepend R A b (ofLetter R A c)) =
       of R A (3 : ℕ+) (PiTensorProduct.tprod R ![a, b, c]) := fun a b c ↦ by
-    -- Build the three-letter word as nested blocks of `![a, b, c]`.
-    have h₁ : ofLetter R A c = subword R ![a, b, c] 2 1 := by
-      rw [subword_one R A ![a, b, c] (a := 2) (by omega)]
-      congr 1
-    have h₂ : prepend R A b (subword R ![a, b, c] 2 1) = subword R ![a, b, c] 1 2 :=
-      prepend_subword ![a, b, c] (a := 1) (by omega) one_pos
-    have h₃ : prepend R A a (subword R ![a, b, c] 1 2) = subword R ![a, b, c] 0 3 :=
-      prepend_subword ![a, b, c] (a := 0) (by omega) two_pos
-    rw [h₁, h₂, h₃, ← of_tprod_eq_subword R (by omega)]
-    rfl
+    rw [prepend_ofLetter]
+    exact prepend_of_tprod a (2 : ℕ+) ![b, c]
   simp only [cycle_eq_sum, Finset.sum_range_succ, Finset.sum_range_zero, zero_add,
     Nat.reduceAdd, Nat.reduceSub, blockWord_two, blockWord_one, map_add, h₃, taylor_of_three]
   simp only [prepend_ofLetter, taylor_of_two]
@@ -439,10 +448,13 @@ proper block `y_a ⋯ y_{a+b-1}` (in particular every `y i` is a cycle).  Then t
 `f₁ (b_{n+2} (y₀, …, y_{n+1}))` lies in the Massey product of the classes of the `f₁ (y i)`.  The
 defining system consists of the Taylor components of `f` on the proper blocks of `y₀ ⋯ y_{n+1}`. -/
 theorem cohomologyClass_mem_masseyProduct (f : AInfinityHom ℋ 𝒜) {n : ℕ} {y : Fin (n + 2) → H}
-    (hy : ∀ a b, 0 < b → b ≤ n + 1 → a + b ≤ n + 2 → ℋ.taylor (subword R y a b) = 0)
-    (hx : ∀ i, f.linearPart (y i) ∈ 𝒜.cycles)
-    (hm : f.linearPart (ℋ.taylor (subword R y 0 (n + 2))) ∈ 𝒜.cycles) :
-    𝒜.cohomologyClass hm ∈ 𝒜.masseyProduct fun i ↦ 𝒜.cohomologyClass (hx i) := by
+    (hy : ∀ a b, 0 < b → b ≤ n + 1 → a + b ≤ n + 2 → ℋ.taylor (subword R y a b) = 0) :
+    𝒜.cohomologyClass
+        (f.linearPart_mem_cycles (AInfinityAlgebra.taylor_subword_mem_cycles hy)) ∈
+      𝒜.masseyProduct fun i ↦ 𝒜.cohomologyClass
+        (f.linearPart_mem_cycles (AInfinityAlgebra.mem_cycles_of_taylor_subword_eq_zero hy i)) := by
+  have hx : ∀ i, f.linearPart (y i) ∈ 𝒜.cycles := fun i ↦
+    f.linearPart_mem_cycles (AInfinityAlgebra.mem_cycles_of_taylor_subword_eq_zero hy i)
   -- The bar differential of `H` vanishes on the proper blocks of `y`, and sends the whole word to
   -- the single letter `b_{n+2} (y₀, …, y_{n+1})`.
   have hd₀ : ∀ a b, 0 < b → b ≤ n + 1 → a + b ≤ n + 2 →
@@ -482,7 +494,8 @@ theorem cohomologyClass_mem_masseyProduct (f : AInfinityHom ℋ 𝒜) {n : ℕ} 
   -- The Massey cycle differs from `f₁ (b_{n+2} (y₀, …, y_{n+1}))` by a boundary.
   have hsplit := blockWord_add_ofLetter (R := R) e (e' := e') (a := 0) (b := n + 2) (by omega)
     fun c k hk hkn _ h₂ ↦ ite_eq_left ⟨hk, by omega, by omega⟩
-  rw [show e 0 (n + 2) = 0 from ite_eq_right (by omega), map_zero, add_zero,
+  have he₀ : e 0 (n + 2) = 0 := ite_eq_right (by omega)
+  rw [he₀, map_zero, add_zero,
     ← hVe' 0 (n + 2) (by omega)] at hsplit
   have hcycle :
       S.cycle = f.linearPart (ℋ.taylor (subword R y 0 (n + 2))) - 𝒜.m 1 ![e' 0 (n + 2)] := by
