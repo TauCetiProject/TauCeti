@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.Complex.Circle
 public import TauCeti.Analysis.PDE.Vortex.Deformation
 import Mathlib.Analysis.Calculus.ContDiff.WithLp
+import Mathlib.Algebra.Group.Action.Basic
 
 /-!
 # Smooth framed gauge transformations of plane vortex fields
@@ -16,9 +17,9 @@ The smooth framed gauge group consists of all smooth circle-valued maps on the p
 to one at infinity. There is no condition at a finite base point. Its charge-one action is
 `(a, α) ↦ (a - u⁻¹ du, u α)`, in the real coordinates of `Vortex.equation`.
 
-The action preserves the equation, the physical energy density and the end phase framing.
-It agrees with the existing real-phase action. The logarithmic derivative is expressed without
-choosing a real phase. This permits gauges whose phase tends to zero too slowly to lie in an
+The action is free and preserves the equation, the physical energy density and the end phase
+framing. It agrees with the existing real-phase action. The logarithmic derivative is expressed
+without choosing a real phase. This permits gauges whose phase tends to zero too slowly to lie in an
 unweighted Sobolev space. The smooth group here is not a Banach completion.
 
 ## References
@@ -147,6 +148,43 @@ theorem fderiv_coe_eq_mul_gaugeForm {u : ℂ → Circle} {z : ℂ}
       -((fderiv ℝ (fun w ↦ (u w : ℂ)) z) v).re * hn - (u z : ℂ).re / 2 * h
   · linear_combination
       -((fderiv ℝ (fun w ↦ (u w : ℂ)) z) v).im * hn - (u z : ℂ).im / 2 * h
+
+/-- The smooth framed gauge action is free. The connection coordinates suffice; no
+nonvanishing, regularity or equation hypothesis on the field is required. -/
+instance : IsCancelSMul framedGaugeGroup (ℂ → EuclideanSpace ℝ (Fin 4)) := by
+  apply isCancelSMul_iff_eq_one_of_smul_eq.mpr
+  intro u x hu
+  have hup := (mem_framedGaugeGroup _).mp u.property
+  have hud : Differentiable ℝ (fun z ↦ (u.val z : ℂ)) :=
+    hup.1.differentiable (by simp)
+  have hzero (z : ℂ) : fderiv ℝ (fun w ↦ (u.val w : ℂ)) z = 0 := by
+    have hg (i : Fin 4) := congrArg (fun v ↦ v z i) hu
+    have hg₁ : gaugeForm u.val z 1 = 0 := by
+      simpa only [framedGaugeGroup_smul, gaugeTransform_apply, PiLp.toLp_apply,
+        Matrix.cons_val_zero, sub_eq_self] using hg 0
+    have hgI : gaugeForm u.val z I = 0 := by
+      simpa only [framedGaugeGroup_smul, gaugeTransform_apply, PiLp.toLp_apply,
+        Matrix.cons_val_one, Matrix.cons_val_zero, sub_eq_self] using hg 1
+    have hlin : (gaugeForm u.val z).toLinearMap = 0 := by
+      apply Complex.basisOneI.ext
+      intro i
+      fin_cases i
+      · simpa using hg₁
+      · simpa using hgI
+    have hform : gaugeForm u.val z = 0 := by
+      ext v
+      exact LinearMap.congr_fun hlin v
+    ext v
+    simp [fderiv_coe_eq_mul_gaugeForm (hud z) v, hform]
+  have hconst (z : ℂ) : u.val z = u.val 0 := by
+    apply Subtype.ext
+    exact is_const_of_fderiv_eq_zero hud hzero z 0
+  have hend : Tendsto (fun _ : ℂ ↦ u.val 0) (cocompact ℂ) (𝓝 1) :=
+    hup.2.congr fun z ↦ hconst z
+  have hone : u.val 0 = 1 := tendsto_nhds_unique tendsto_const_nhds hend
+  apply Subtype.ext
+  funext z
+  exact (hconst z).trans hone
 
 /-- The logarithmic derivative of a smooth gauge is smooth as a one-form. -/
 theorem contDiff_gaugeForm {u : ℂ → Circle}
