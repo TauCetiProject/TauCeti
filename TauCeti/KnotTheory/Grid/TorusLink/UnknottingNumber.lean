@@ -312,7 +312,7 @@ theorem unknottingNumber_toGridLink_torusLink_le (p q : ℕ) (h : (p + 1).Coprim
     have key {a b : ℕ} (hab : a < b) (hs : a + b = s) (h : (a + 1).Coprime (b + 1)) :
         (torusLink a b).toGridLink.unknottingNumber ≤ (a * b / 2 : ℕ) := by
       obtain ⟨r, rfl⟩ : ∃ r, b = r + (a + 1) := ⟨b - (a + 1), by omega⟩
-      rw [show r + (a + 1) + 1 = r + 1 + (a + 1) by omega, Nat.coprime_add_self_right] at h
+      rw [Nat.add_right_comm r (a + 1) 1, Nat.coprime_add_self_right] at h
       exact unknottingNumber_toGridLink_torusLink_add_le_of_le (ih (a + r) (by omega) a r h rfl)
     rcases Nat.lt_trichotomy p q with hpq | rfl | hpq
     · exact key hpq hs h
