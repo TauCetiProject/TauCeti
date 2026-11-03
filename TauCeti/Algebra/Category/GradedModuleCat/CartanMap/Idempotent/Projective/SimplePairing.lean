@@ -169,6 +169,7 @@ theorem gradedProjectiveSimplePairing_of_right
 
 /-- **The graded multiplicity convention**: `⟨[A eᵢ], [Sⱼ{d}]⟩ = δᵢⱼ qᵈ`. Thus the `qᵈ`
 coefficient of `⟨[A eᵢ], [M]⟩` counts the composition factors `Sᵢ{d}`. -/
+@[simp high]
 theorem gradedProjectiveSimplePairing_basis_shiftObj [DecidableEq I] (i j : I) (d : ℤ) :
     gradedProjectiveSimplePairing hneg he he₀ hprim hnoniso (LaurentK0.of.{uA} _ (P i))
         (LaurentK0.of.{uA} _
@@ -182,6 +183,7 @@ theorem gradedProjectiveSimplePairing_basis_shiftObj [DecidableEq I] (i j : I) (
   split_ifs <;> simp
 
 /-- The basis classes `[A eᵢ]` and `[Sⱼ]` pair as a Kronecker delta. -/
+@[simp high]
 theorem gradedProjectiveSimplePairing_basis [DecidableEq I] (i j : I) :
     gradedProjectiveSimplePairing hneg he he₀ hprim hnoniso (LaurentK0.of.{uA} _ (P i))
         (LaurentK0.of.{uA} _ (S j)) =
