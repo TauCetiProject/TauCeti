@@ -309,6 +309,6 @@ theorem reducedBoundary_subset_essentialBoundary (hn : 2 ≤ finrank ℝ E) :
   filter_upwards [eventually_ofReal_pow_le_mul_measure_ball_sdiff hp hx one_lt_two] with r hr
   refine hr.trans ?_
   gcongr
-  exact fun y hy => ⟨fun h => hy.2 h.1, hy.1⟩
+  exact fun y hy => ⟨.inl hy.2, hy.1⟩
 
 end TauCeti
