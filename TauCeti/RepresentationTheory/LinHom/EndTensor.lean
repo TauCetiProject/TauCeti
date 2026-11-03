@@ -5,8 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.LinearAlgebra.Contraction
-public import Mathlib.LinearAlgebra.TensorProduct.Lift
+public import TauCeti.LinearAlgebra.LinearMap.BaseChange
 public import TauCeti.RepresentationTheory.BaseChange
 import TauCeti.RepresentationTheory.Intertwining
 import TauCeti.RepresentationTheory.Invariants
@@ -23,8 +22,9 @@ Clifford multiplication of a real vector space on a complex module, extends `A`-
 
   `t(c) ∈ (A ⊗[R] V)* ⊗[A] (E* ⊗[A] E)`
 
-(`TauCeti.endValuedTensorEquiv`). It is characterized by contraction: the pure tensor
-`φ ⊗ (ψ ⊗ e)` corresponds to the map `v ↦ (x ↦ φ (1 ⊗ v) • ψ x • e)`.
+(`TauCeti.endValuedTensorEquiv`, in `TauCeti.LinearAlgebra.LinearMap.BaseChange`). It is
+characterized by contraction: the pure tensor `φ ⊗ (ψ ⊗ e)` corresponds to the map
+`v ↦ (x ↦ φ (1 ⊗ v) • ψ x • e)`.
 
 Now let a group `G` act on `V` by `ρ` and on `E` by `μ`. Then `G` acts on the tensor space by the
 tensor product representation `(ρ_A)* ⊗ (μ* ⊗ μ)` of the dual of the base-changed representation
@@ -41,14 +41,8 @@ This is the form in which equivariance of a Clifford multiplication is used to b
 module bundles associated to a principal bundle: the intertwining equation is what makes `c`
 descend, and a fixed tensor is what an invariant-section argument consumes.
 
-## Main definitions
-
-* `TauCeti.endValuedTensorEquiv`: the identification of `R`-linear maps `V → End_A E` with
-  tensors in `(A ⊗[R] V)* ⊗[A] (E* ⊗[A] E)`.
-
 ## Main results
 
-* `TauCeti.endValuedTensorEquiv_symm_tmul_apply_apply`: the map attached to a pure tensor.
 * `TauCeti.endValuedTensorEquiv_mem_invariants_iff`: the tensor of `c` is invariant if and only
   if `c` intertwines `ρ` with the conjugation action of `μ`.
 -/
@@ -61,29 +55,12 @@ open TensorProduct
 
 noncomputable section
 
-variable (R A V E : Type*) [CommRing R] [CommRing A] [Algebra R A]
+-- Rings and additive groups, unlike for `endValuedTensorEquiv`: Mathlib's
+-- `Representation.invariants` is only defined in that setting.
+variable {R A V E : Type*} [CommRing R] [CommRing A] [Algebra R A]
   [AddCommGroup V] [Module R V] [Module.Finite R V] [Module.Projective R V]
   [AddCommGroup E] [Module A E] [Module.Finite A E] [Module.Projective A E]
   [Module R E] [IsScalarTower R A E]
-
-/-- **An endomorphism-valued linear map as a tensor.** An `R`-linear map `c : V → End_A E`
-corresponds to its `A`-linear extension `A ⊗[R] V → End_A E`, and hence, `A ⊗[R] V` and `E`
-being finitely generated and projective, to a tensor in `(A ⊗[R] V)* ⊗[A] (E* ⊗[A] E)`. -/
-def endValuedTensorEquiv :
-    (V →ₗ[R] Module.End A E) ≃ₗ[A] Module.Dual A (A ⊗[R] V) ⊗[A] (Module.Dual A E ⊗[A] E) :=
-  (LinearMap.liftBaseChangeEquiv A).trans
-    ((TensorProduct.congr (LinearEquiv.refl A _) (dualTensorHomEquiv A E E)).trans
-      (dualTensorHomEquiv A (A ⊗[R] V) (Module.End A E))).symm
-
-variable {R A V E}
-
-/-- The endomorphism-valued map attached to a pure tensor `φ ⊗ (ψ ⊗ e)` sends `v` to the
-rank-one endomorphism `x ↦ φ (1 ⊗ v) • ψ x • e`. -/
-@[simp]
-theorem endValuedTensorEquiv_symm_tmul_apply_apply (φ : Module.Dual A (A ⊗[R] V))
-    (ψ : Module.Dual A E) (e : E) (v : V) (x : E) :
-    (endValuedTensorEquiv R A V E).symm (φ ⊗ₜ (ψ ⊗ₜ e)) v x = φ (1 ⊗ₜ v) • ψ x • e := by
-  simp [endValuedTensorEquiv]
 
 variable {G : Type*} [Group G] (ρ : Representation R G V) (μ : Representation A G E)
 
