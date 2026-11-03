@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Combinatorics.Network.Menger.SetToSet
 public import TauCeti.Combinatorics.SimpleGraph.Connectivity.ArrowWalk
+import TauCeti.Combinatorics.SimpleGraph.Paths
 
 /-!
 # Menger's theorem for vertex-disjoint paths in simple graphs
@@ -109,12 +110,6 @@ theorem InternallyDisjoint.symm (h : p.InternallyDisjoint q) : q.InternallyDisjo
 
 theorem internallyDisjoint_comm : p.InternallyDisjoint q ↔ q.InternallyDisjoint p :=
   ⟨.symm, .symm⟩
-
-/-- The start of a path does not occur in the tail of its support. -/
-theorem IsPath.start_notMem_tail_support (hp : p.IsPath) : s ∉ p.support.tail := by
-  have hnodup := hp.support_nodup
-  rw [← p.cons_tail_support, List.nodup_cons] at hnodup
-  exact hnodup.1
 
 /-- Two distinct internally disjoint paths form a cycle when one is traversed in reverse. -/
 theorem InternallyDisjoint.isCycle_append_reverse (h : p.InternallyDisjoint q) (hp : p.IsPath)
