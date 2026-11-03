@@ -35,7 +35,7 @@ public section
 
 open Module Polynomial MonoidAlgebra
 
-variable {p : ℕ} [hp : Fact p.Prime] {G : Type*} [CommGroup G]
+variable {p : ℕ} [hp : Fact p.Prime] {G : Type*} [Group G]
 
 namespace TauCeti
 

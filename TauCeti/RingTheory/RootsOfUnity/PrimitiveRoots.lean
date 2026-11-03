@@ -96,7 +96,7 @@ theorem _root_.IsPrimitiveRoot.exists_algEquiv_apply_eq_pow_of_coprime
 /-- A character of a group of prime order `p` sends every element outside its kernel to a
 primitive `p`-th root of unity. -/
 theorem _root_.MonoidHom.isPrimitiveRoot_apply_of_card_eq_prime {p : ℕ} [Fact p.Prime]
-    {G M : Type*} [CommGroup G] [CommMonoid M] (χ : G →* M) (hG : Nat.card G = p) {g : G}
+    {G M : Type*} [Group G] [CommMonoid M] (χ : G →* M) (hG : Nat.card G = p) {g : G}
     (hg : χ g ≠ 1) : IsPrimitiveRoot (χ g) p :=
   IsPrimitiveRoot.iff_orderOf.2 <| orderOf_eq_prime (by
     rw [← map_pow, ← hG, pow_card_eq_one', map_one]) hg
@@ -104,7 +104,7 @@ theorem _root_.MonoidHom.isPrimitiveRoot_apply_of_card_eq_prime {p : ℕ} [Fact 
 /-- A group of prime order `p` has a nontrivial character with values in any commutative monoid
 containing a primitive `p`-th root of unity. -/
 theorem exists_monoidHom_ne_one_of_isPrimitiveRoot {p : ℕ} [hp : Fact p.Prime] {G : Type*}
-    [CommGroup G] (hG : Nat.card G = p) {M : Type*} [CommMonoid M] {ζ : M}
+    [Group G] (hG : Nat.card G = p) {M : Type*} [CommMonoid M] {ζ : M}
     (hζ : IsPrimitiveRoot ζ p) : ∃ χ : G →* M, χ ≠ 1 := by
   have := isCyclic_of_prime_card hG
   obtain ⟨g, hg⟩ := IsCyclic.exists_generator (α := G)
