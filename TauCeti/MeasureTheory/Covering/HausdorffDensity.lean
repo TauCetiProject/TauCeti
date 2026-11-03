@@ -181,7 +181,7 @@ private lemma measure_le_mul_hausdorffMeasure_of_forall_closedBall_le (μ : Meas
         rw [← Measure.mkMetric_toOuterMeasure, toOuterMeasure_apply]
     _ ≤ ((2 ^ d * c) • μH[d]) B :=
         Measure.mkMetric_mono_smul h2top h2 (Eventually.of_forall fun _ => le_rfl) _
-    _ = 2 ^ d * c * μH[d] B := by rw [Measure.smul_apply, smul_eq_mul]
+    _ = 2 ^ d * c * μH[d] B := by rw [smul_apply, smul_eq_mul]
 
 end TauCeti
 
