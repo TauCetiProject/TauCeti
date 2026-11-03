@@ -18,7 +18,7 @@ Near a point `x` where a `C^m` vector field `v` on a finite-dimensional boundary
 not vanish, some chart of the `C^m` maximal atlas carries `v` to a constant vector field: the
 differential of the chart, read in the model vector space, sends `v y` to one fixed nonzero vector
 `u` at every point `y` of its domain (`TauCeti.exists_chart_mfderiv_eq_const`). In such a chart the
-integral curves of `v` are parallel straight lines traversed at unit speed along `u`.
+integral curves of `v` are parallel straight lines traversed with constant velocity `u`.
 
 The field read in the extended chart at `x` is a nonvanishing `C^m` vector field on an open subset
 of the model space, so the flat straightening theorem

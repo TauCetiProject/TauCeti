@@ -19,8 +19,8 @@ vanish, some `C^n` change of coordinates carries `w` to a constant field. Precis
 open partial homeomorphism `φ` of `E`, `C^n` with `C^n` inverse, whose domain contains the point
 `a` and whose derivative sends `w y` to `w a` at every point `y` of its domain
 (`TauCeti.exists_openPartialHomeomorph_fderiv_eq_const`). This is the flow-box theorem: in the
-coordinates `φ`, the integral curves of `w` become parallel straight lines traversed at unit speed
-along `w a`.
+coordinates `φ`, the integral curves of `w` become parallel straight lines traversed with constant
+velocity `w a`.
 
 Cut `w` off to a globally Lipschitz `C^n` field `g` that agrees with it near `a`, and let `Φ` be the
 global flow of `g`, which is `C^n` jointly in the initial condition and time. Choose a continuous
@@ -30,8 +30,10 @@ linear functional `ℓ` with `ℓ (w a) = 1` and set
 
 The flow law gives `ψ (z + s • w a) = Φ (ψ z) s`, so differentiating in `s` shows that `dψ z`
 sends `w a` to `g (ψ z)`. At `z = 0` the derivative of `ψ` is the identity, so by the inverse
-function theorem with `C^n` inverse (`TauCeti.ContDiffOn.exists_openPartialHomeomorph`) `ψ` is a
-local diffeomorphism near `0`; restricted to where `g = w`, its inverse is the required `φ`.
+function theorem with `C^n` inverse
+(`TauCeti.ContDiffOn.exists_openPartialHomeomorph_fderiv_symm_apply_eq`) `ψ` is a local
+diffeomorphism near `0` whose inverse sends `g` to `w a`; restricted to where `g = w`, that inverse
+is the required `φ`.
 
 ## Main results
 
@@ -136,45 +138,6 @@ private theorem hasFDerivAt_flowBoxMap_zero (hga : g a = u)
 
 end Flow
 
-/-- **The inverse function theorem step of the flow-box construction.** Let `ψ` be a `C^n` map,
-`1 ≤ n`, with the identity as derivative at `0`, whose derivative at every point `z` sends `u` to
-`g (ψ z)`. Then, for an open set `S ∋ ψ 0`, a local inverse of `ψ` landing in `S` is an open
-partial homeomorphism `φ` with `ψ 0 ∈ φ.source ⊆ S`, `C^n` with `C^n` inverse, whose derivative
-sends `g y` to `u` at every point `y` of its source. -/
-private theorem exists_openPartialHomeomorph_of_fderiv_apply_eq [CompleteSpace E] {n : ℕ∞}
-    (hn : 1 ≤ n) {ψ g : E → E} {u : E} {S : Set E} (hψs : ContDiff ℝ n ψ)
-    (hψ0 : HasFDerivAt ψ (ContinuousLinearMap.id ℝ E) 0) (hψu : ∀ z, fderiv ℝ ψ z u = g (ψ z))
-    (hSo : IsOpen S) (hS0 : ψ 0 ∈ S) :
-    ∃ φ : OpenPartialHomeomorph E E, ψ 0 ∈ φ.source ∧ φ.source ⊆ S ∧
-      (∀ y ∈ φ.source, ContDiffAt ℝ n φ y) ∧ (∀ z ∈ φ.target, ContDiffAt ℝ n φ.symm z) ∧
-      ∀ y ∈ φ.source, fderiv ℝ φ y (g y) = u := by
-  have hn' : (1 : WithTop ℕ∞) ≤ n := by exact_mod_cast hn
-  have hn0 : (n : WithTop ℕ∞) ≠ 0 := (lt_of_lt_of_le zero_lt_one hn').ne'
-  -- The inverse function theorem, on the open set where `ψ` lands in `S`.
-  obtain ⟨Θ, hΘ, h0Θ, hΘS, hΘs⟩ := ContDiffOn.exists_openPartialHomeomorph
-    hψs.contDiffOn (hSo.preimage hψs.continuous) hS0 hn' (e := ContinuousLinearEquiv.refl ℝ E)
-    (by rw [ContinuousLinearEquiv.coe_refl, hψ0.fderiv])
-  refine ⟨Θ.symm, hΘ ▸ Θ.map_source h0Θ, fun y hy ↦ ?_,
-    fun y hy ↦ hΘs.contDiffAt (Θ.open_target.mem_nhds hy), fun z _ ↦ ?_, fun y hy ↦ ?_⟩
-  · rw [← Θ.right_inv hy, hΘ]
-    exact hΘS (Θ.map_target hy)
-  · rw [OpenPartialHomeomorph.symm_symm, hΘ]
-    exact hψs.contDiffAt
-  · -- Differentiate `Θ.symm ∘ ψ = id`, valid near `Θ.symm y`, at `Θ.symm y`.
-    have hz := Θ.map_target hy
-    have hψy : ψ (Θ.symm y) = y := hΘ ▸ Θ.right_inv hy
-    have hd : HasFDerivAt (Θ.symm ∘ ψ) ((fderiv ℝ Θ.symm y).comp (fderiv ℝ ψ (Θ.symm y)))
-        (Θ.symm y) := by
-      refine HasFDerivAt.comp _ ?_ (hψs.differentiable hn0 _).hasFDerivAt
-      rw [hψy]
-      exact ((hΘs.contDiffAt (Θ.open_target.mem_nhds hy)).differentiableAt hn0).hasFDerivAt
-    have hid : Θ.symm ∘ ψ =ᶠ[𝓝 (Θ.symm y)] id :=
-      eventually_of_mem (Θ.open_source.mem_nhds hz) fun x hx ↦ by
-        rw [Function.comp_apply, ← hΘ, Θ.left_inv hx, id]
-    have h := congrArg (fun L : E →L[ℝ] E ↦ L u)
-      ((hd.congr_of_eventuallyEq hid.symm).unique (hasFDerivAt_id _))
-    simpa only [ContinuousLinearMap.comp_apply, hψu, hψy, ContinuousLinearMap.id_apply] using h
-
 variable [FiniteDimensional ℝ E]
 
 /-- **The straightening theorem** (flow-box theorem). A `C^n` vector field `w`, `1 ≤ n`, defined
@@ -216,11 +179,20 @@ theorem exists_openPartialHomeomorph_fderiv_eq_const {n : ℕ∞} (hn : 1 ≤ n)
     fderiv_flowBoxMap_apply hgK hℓ (hψs.differentiable hn0 z)
   have hψ0' : HasFDerivAt ψ (ContinuousLinearMap.id ℝ E) 0 :=
     hasFDerivAt_flowBoxMap_zero hgK (hSg a haS) (hΦs.differentiable hn0 _)
-  -- Invert `ψ` near `0`, where `g = w`.
-  obtain ⟨φ, h0φ, hφS, hφ, hφs, hφg⟩ :=
-    exists_openPartialHomeomorph_of_fderiv_apply_eq hn hψs hψ0' hψu hSo (hψ0 ▸ haS)
-  refine ⟨φ, hψ0 ▸ h0φ, hφ, hφs, fun y hy ↦ ?_⟩
-  rw [← hSg y (hφS hy)]
-  exact hφg y hy
+  -- Invert `ψ` near `0`, on the open set where `ψ` lands in `S`, where `g = w`.
+  obtain ⟨Θ, hΘ, h0Θ, hΘS, hΘs, hΘg⟩ :=
+    ContDiffOn.exists_openPartialHomeomorph_fderiv_symm_apply_eq hψs.contDiffOn
+      (hSo.preimage hψs.continuous) (show ψ 0 ∈ S from hψ0 ▸ haS) (by exact_mod_cast hn)
+      (e := ContinuousLinearEquiv.refl ℝ E) (by rw [ContinuousLinearEquiv.coe_refl, hψ0'.fderiv])
+      fun z _ ↦ hψu z
+  refine ⟨Θ.symm, hψ0 ▸ hΘ ▸ Θ.map_source h0Θ,
+    fun y hy ↦ hΘs.contDiffAt (Θ.open_target.mem_nhds hy), fun z _ ↦ ?_, fun y hy ↦ ?_⟩
+  · rw [OpenPartialHomeomorph.symm_symm, hΘ]
+    exact hψs.contDiffAt
+  · have hyS : y ∈ S := by
+      rw [← Θ.right_inv hy, hΘ]
+      exact hΘS (Θ.map_target hy)
+    rw [← hSg y hyS]
+    exact hΘg y hy
 
 end TauCeti
