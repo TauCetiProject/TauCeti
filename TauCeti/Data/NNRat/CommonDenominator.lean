@@ -18,7 +18,7 @@ These let a statement phrased through `q.num` and `q.den` be checked on any frac
 ## Main results
 
 * `TauCeti.NNRat.num_mul_eq_of_eq_div`: `q = a / b` gives `q.num * b = a * q.den`.
-* `TauCeti.NNRat.natCast_mul_eq_div`: `n * q` as the fraction `(n * q.num) / q.den`.
+* `NNRat.natCast_mul_eq_div`: `n * q` as the fraction `(n * q.num) / q.den`.
 * `NNRat.eq_div_den_mul_den`: `q` and `q'` as fractions over `q.den * q'.den`.
 -/
 
@@ -33,14 +33,14 @@ theorem num_mul_eq_of_eq_div {q : ℚ≥0} {a b : ℕ} (hb : b ≠ 0) (hq : q = 
   rw [← NNRat.num_div_den q, div_eq_div_iff (by simp) (by simpa using hb)] at hq
   exact_mod_cast hq
 
-/-- **Scaling the reduced fraction**: `n * q` is the fraction `(n * q.num) / q.den`. -/
-theorem natCast_mul_eq_div (n : ℕ) (q : ℚ≥0) :
-    (n : ℚ≥0) * q = ((n * q.num : ℕ) : ℚ≥0) / (q.den : ℚ≥0) := by
-  rw [Nat.cast_mul, mul_div_assoc, NNRat.num_div_den]
-
 end TauCeti.NNRat
 
 namespace NNRat
+
+/-- **Scaling the reduced fraction**: `n * q` is the fraction `(n * q.num) / q.den`. -/
+theorem natCast_mul_eq_div (q : ℚ≥0) (n : ℕ) :
+    (n : ℚ≥0) * q = ((n * q.num : ℕ) : ℚ≥0) / (q.den : ℚ≥0) := by
+  rw [Nat.cast_mul, mul_div_assoc, NNRat.num_div_den]
 
 /-- **A common denominator**: two nonnegative rationals `q` and `q'` are the fractions
 `(q.num * q'.den) / (q.den * q'.den)` and `(q'.num * q.den) / (q.den * q'.den)`. -/

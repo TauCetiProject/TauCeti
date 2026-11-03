@@ -25,8 +25,9 @@ This is the shape of the Hasse domains `{|Ha| ≥ |p| ^ ε}` and of the discs `{
 When the threshold `|g| ^ q` is realised by an element, the fractional bound is an ordinary one:
 if `c ^ b = g ^ a u` for a unit `u` with `u, u⁻¹ ∈ A⁺`, then `v(u) = 1` on `Spa(A, A⁺)`, and there
 `|f| ≤ |g| ^ q` is `v(f) ≤ v(c)` and `|f| ≥ |g| ^ q` is `v(c) ≤ v(f)`. For instance
-`c = ϖ ^ (a / b)` in `K(ϖ ^ (1 / b))`, or `c = p ^ ε` in `ℤ_p^cycl`. For the same reason the
-bounds do not change when `f` is multiplied by such a unit.
+`c = ϖ ^ (a / b)` in `K(ϖ ^ (1 / b))`, or, in `ℤ_p^cycl` and for `ε` in its value group
+`(1 / (p - 1)) ℤ[1 / p]`, a product `c` of powers of the `ζ_{p^n} - 1` with `|c| = |p| ^ ε`. For the
+same reason the bounds do not change when `f` is multiplied by such a unit.
 
 ## Main results
 

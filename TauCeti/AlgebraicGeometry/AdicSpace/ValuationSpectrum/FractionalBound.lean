@@ -224,7 +224,7 @@ theorem mem_fracPowGE_of_le {q' : ℚ≥0} {v : Spv A} (hg : v.toValuativeRel.vl
 theorem fracPowLE_pow (f g : A) (q : ℚ≥0) {n : ℕ} (hn : n ≠ 0) :
     fracPowLE (f ^ n) g (n * q) = fracPowLE f g q := by
   ext v
-  rw [mem_fracPowLE_iff q.den_ne_zero (NNRat.natCast_mul_eq_div n q), mem_fracPowLE,
+  rw [mem_fracPowLE_iff q.den_ne_zero (q.natCast_mul_eq_div n), mem_fracPowLE,
     pow_right_comm, pow_mul', ← valuation_le_iff, ← valuation_le_iff,
     map_pow v.valuation (f ^ q.den), map_pow v.valuation (g ^ q.num)]
   exact pow_le_pow_iff_left₀ zero_le zero_le hn
@@ -234,7 +234,7 @@ theorem fracPowLE_pow (f g : A) (q : ℚ≥0) {n : ℕ} (hn : n ≠ 0) :
 theorem fracPowGE_pow (f g : A) (q : ℚ≥0) {n : ℕ} (hn : n ≠ 0) :
     fracPowGE (f ^ n) g (n * q) = fracPowGE f g q := by
   ext v
-  rw [mem_fracPowGE_iff q.den_ne_zero (NNRat.natCast_mul_eq_div n q), mem_fracPowGE,
+  rw [mem_fracPowGE_iff q.den_ne_zero (q.natCast_mul_eq_div n), mem_fracPowGE,
     pow_right_comm, pow_mul', ← valuation_le_iff, ← valuation_le_iff,
     map_pow v.valuation (f ^ q.den), map_pow v.valuation (g ^ q.num)]
   exact pow_le_pow_iff_left₀ zero_le zero_le hn
