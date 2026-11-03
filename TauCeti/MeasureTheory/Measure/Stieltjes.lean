@@ -7,6 +7,7 @@ module
 
 public import Mathlib.MeasureTheory.Measure.Stieltjes
 public import Mathlib.MeasureTheory.Measure.Real
+public import TauCeti.MeasureTheory.Measure.Interval
 
 /-!
 # Stieltjes functions of measures with finite left tails
@@ -35,13 +36,7 @@ def cumulativeStieltjes : StieltjesFunction ℝ where
   toFun t := μ.real (Iic t)
   mono' _ _ hab := measureReal_mono (Iic_subset_Iic.mpr hab) (hμ _)
   right_continuous' t := by
-    have hinter : ⋂ r > t, Iic r = Iic t := by
-      ext x
-      simpa using forall_gt_imp_ge_iff_le_of_dense (a₁ := x) (a₂ := t)
-    have hlim : Tendsto (fun r ↦ μ (Iic r)) (𝓝[>] t) (𝓝 (μ (Iic t))) := by
-      rw [← hinter]
-      exact tendsto_measure_biInter_gt (fun _ _ ↦ measurableSet_Iic.nullMeasurableSet)
-        (fun _ _ _ h ↦ Iic_subset_Iic.mpr h) ⟨t + 1, lt_add_one t, hμ _⟩
+    have hlim := tendsto_measure_Iic_nhdsGT (μ := μ) ⟨t + 1, lt_add_one t, hμ _⟩
     rw [← continuousWithinAt_Ioi_iff_Ici]
     exact (ENNReal.tendsto_toReal (hμ t)).comp hlim
 
@@ -55,10 +50,10 @@ theorem measure_cumulativeStieltjes : (μ.cumulativeStieltjes hμ).measure = μ 
   refine (μ.cumulativeStieltjes hμ).measure.ext_of_Ioc' μ
     (fun _ _ _ ↦ by simp) ?_
   intro a b hab
+  have hdiff : μ.real (Ioc a b) = μ.real (Iic b) - μ.real (Iic a) := by
+    rw [← Iic_sdiff_Iic,
+      measureReal_sdiff (Iic_subset_Iic.mpr hab.le) measurableSet_Iic (hμ b)]
   rw [StieltjesFunction.measure_Ioc, cumulativeStieltjes_apply, cumulativeStieltjes_apply,
-    measureReal_def, measureReal_def, ← ENNReal.toReal_sub_of_le
-      (measure_mono (Iic_subset_Iic.mpr hab.le)) (hμ b),
-    ENNReal.ofReal_toReal (ENNReal.sub_ne_top (hμ b)), ← Iic_sdiff_Iic,
-    measure_sdiff (Iic_subset_Iic.mpr hab.le) measurableSet_Iic.nullMeasurableSet (hμ a)]
+    ← hdiff, ofReal_measureReal (measure_ne_top_of_subset Ioc_subset_Iic_self (hμ b))]
 
 end MeasureTheory.Measure
