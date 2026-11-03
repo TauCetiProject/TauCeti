@@ -26,7 +26,6 @@ neither a central/coroot splitting nor a permutation basis of the full Cartan la
 
 ## Main definitions
 
-* `Matrix.FullShellLieAlgebra.rootReindex`: the signed permutation on the root coefficients.
 * `Matrix.FullShellLieAlgebra.fixedCartanRootEquiv`: the integral fixed-module decomposition.
 * `Matrix.FullShellLieAlgebra.fixedCartanRootBaseChangeEquiv`: the decomposition after scalar
   extension, with its compatibility equation for the canonical fixed-module comparison.
@@ -49,30 +48,11 @@ open scoped TensorProduct
 namespace Matrix.FullShellLieAlgebra
 
 open Module
+open ShellLieAlgebra (rootReindex)
 
 variable {I : Type*} [Fintype I] [LinearOrder I] {B : Matrix I I ℤ}
   {Y : Type*} [AddCommGroup Y] (D : ShellCartanDatum B Y)
   (σ : Equiv.Perm I) (hσ : B.reindex σ σ = B) (γ : Y ≃ₗ[ℤ] Y)
-
-/-- The action on the root coefficients: `δ_a ↦ s_σ(a) δ_(σa)`.
-It is independent of the full Cartan group and its automorphism. -/
-noncomputable def rootReindex : (B.normTwoShell →₀ ℤ) ≃ₗ[ℤ] (B.normTwoShell →₀ ℤ) :=
-  Finsupp.basisSingleOne.equiv
-    (Finsupp.basisSingleOne.unitsSMul
-      (fun a ↦ inversionSign B σ ((normTwoShellCongr hσ).symm a)))
-    (normTwoShellCongr hσ)
-
-/-- A root coordinate vector is sent to the relabelled coordinate with its pinned sign. -/
-@[simp]
-theorem rootReindex_single (a : B.normTwoShell) (n : ℤ) :
-    rootReindex σ hσ (Finsupp.single a n) =
-      inversionSign B σ a • Finsupp.single (normTwoShellCongr hσ a) n := by
-  have hone : rootReindex σ hσ (Finsupp.single a 1) =
-      inversionSign B σ a • Finsupp.single (normTwoShellCongr hσ a) 1 := by
-    rw [rootReindex, ← congrFun Finsupp.coe_basisSingleOne a, Basis.equiv_apply,
-      Basis.unitsSMul_apply, Equiv.symm_apply_apply, Finsupp.coe_basisSingleOne]
-  rw [← Finsupp.smul_single_one a n, map_smul, hone, smul_comm,
-    Finsupp.smul_single_one]
 
 /-- In product coordinates the pinned action is the actual Cartan action together with the
 signed root permutation. -/
