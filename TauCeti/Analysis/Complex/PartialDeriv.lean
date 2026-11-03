@@ -11,6 +11,7 @@ import Mathlib.Analysis.Calculus.Deriv.Mul
 import Mathlib.Analysis.Calculus.FDeriv.Pi
 import Mathlib.Analysis.Calculus.FDeriv.Symmetric
 import TauCeti.Analysis.Complex.CauchyIntegralPolydisc
+import TauCeti.Analysis.Complex.IteratedDeriv
 
 /-!
 # Partial derivatives of entire functions on `ℂⁿ`

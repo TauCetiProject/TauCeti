@@ -10,7 +10,7 @@ public import Mathlib.Analysis.SpecialFunctions.ExpDeriv
 public import Mathlib.Data.Matrix.Mul
 public import TauCeti.Analysis.Complex.PartialDeriv
 import Mathlib.Analysis.Calculus.IteratedDeriv.Lemmas
-import TauCeti.Analysis.Complex.CauchyIntegralPolydisc
+import TauCeti.Analysis.Complex.IteratedDeriv
 
 /-!
 # Mixed partial derivatives of entire functions on `ℂⁿ`

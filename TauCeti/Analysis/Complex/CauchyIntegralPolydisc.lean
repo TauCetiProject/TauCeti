@@ -53,8 +53,7 @@ distinguished boundary is the torus `T(c, R)` of Mathlib's `torusIntegral`.
 * `DifferentiableOn.contDiffOn_of_finiteDimensional`: such a function is `C^n` on an open set on
   which it is complex differentiable, for every `n`.
   `Differentiable.contDiff_of_finiteDimensional` and `Differentiable.fderiv_of_finiteDimensional`
-  are the corresponding statements for a function differentiable everywhere, and
-  `Differentiable.iteratedDeriv` is the iterated form of `Differentiable.deriv` in one variable.
+  are the corresponding statements for a function differentiable everywhere.
 * `TauCeti.analyticOnNhd_iff_differentiableOn_of_finiteDimensional`: on an open subset of a
   finite-dimensional complex normed space, analyticity and complex differentiability agree.
 * `TauCeti.hasFDerivAt_integral_smul_of_analyticAt`: an integral `q ↦ ∫ a, g a • f (q, φ a) ∂μ`,
@@ -374,12 +373,6 @@ theorem _root_.Differentiable.fderiv_of_finiteDimensional (hd : Differentiable �
     Differentiable ℂ (fderiv ℂ f) :=
   ((hd.contDiff_of_finiteDimensional (n := 2)).fderiv_right (m := 1) (by norm_num)).differentiable
     one_ne_zero
-
-/-- An iterated derivative of a complex differentiable function `g : ℂ → E` is complex
-differentiable. This is the iterated form of `Differentiable.deriv`. -/
-theorem _root_.Differentiable.iteratedDeriv {g : ℂ → E} (hg : Differentiable ℂ g) (k : ℕ) :
-    Differentiable ℂ (iteratedDeriv k g) :=
-  (hg.contDiff (n := ⊤)).differentiable_iteratedDeriv k (by simp)
 
 /-- On an open subset of a finite-dimensional complex normed space, a function is analytic if and
 only if it is complex differentiable. This is the several-variable form of
