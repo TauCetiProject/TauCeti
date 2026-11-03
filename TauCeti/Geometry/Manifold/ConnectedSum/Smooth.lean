@@ -11,6 +11,7 @@ public import TauCeti.Geometry.Manifold.ConnectedSum.Basic
 import Mathlib.Geometry.Euclidean.Inversion.Calculus
 import TauCeti.Geometry.Manifold.ContMDiff.Subtype
 import TauCeti.Geometry.Manifold.Instances.Quotient
+import TauCeti.Geometry.Manifold.LocalDiffeomorph.Basic
 import TauCeti.Geometry.Manifold.LocalDiffeomorph.Sum
 
 /-!
@@ -46,6 +47,11 @@ The charts are not instances, as they depend on the hypotheses on the balls; con
 * `TauCeti.ConnectedSum.isLocalDiffeomorph_mk`: its quotient map is a `C^n` local diffeomorphism.
 * `TauCeti.ConnectedSum.isLocalDiffeomorph_inl`, `TauCeti.ConnectedSum.isLocalDiffeomorph_inr`:
   so are the inclusions of the punctured summands.
+* `TauCeti.ConnectedSum.isLocalDiffeomorph_punctureBall`,
+  `TauCeti.ConnectedSum.isLocalDiffeomorph_inlBall`,
+  `TauCeti.ConnectedSum.isLocalDiffeomorph_inrBall`: a ball of a summand avoiding the centre of
+  the ball of the connected sum which is a `C^n` local diffeomorphism stays one as a ball of the
+  punctured summand and of the connected sum.
 
 ## References
 
@@ -60,6 +66,16 @@ open Set Filter Function Topology TopologicalSpace EuclideanGeometry
 open scoped Manifold ContDiff
 
 namespace TauCeti.ConnectedSum
+
+/-- A ball avoiding the centre of the ball `e` which is a `C^n` local diffeomorphism is one as a
+ball of the punctured summand `M ∖ {e 0}`. -/
+theorem isLocalDiffeomorph_punctureBall {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+    {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H} {n : ℕ∞}
+    {M : Type*} [TopologicalSpace M] [T1Space M] [ChartedSpace H M] {e f : E → M}
+    (h : e 0 ∉ range f) (df : IsLocalDiffeomorph 𝓘(ℝ, E) I n f) :
+    IsLocalDiffeomorph 𝓘(ℝ, E) I n (punctureBall e f h) := fun w ↦
+  IsLocalDiffeomorphAt.of_comp_left (df w) (isLocalDiffeomorph_subtype_val _)
+    (df.contMDiff.continuous.subtype_mk _).continuousAt
 
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
   {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
@@ -196,5 +212,34 @@ theorem isLocalDiffeomorph_inr (h₁ : IsOpenEmbedding e₁) (h₂ : IsOpenEmbed
   let := chartedSpace (H := H) h₁ h₂
   rw [← mk_comp_inr]
   exact fun y ↦ (isLocalDiffeomorph_sumInr y).comp (hg := isLocalDiffeomorph_mk h₁ h₂ d₁ d₂ _)
+
+section Ball
+
+variable {f : E → M} {g : E → N} (h₁ : IsOpenEmbedding e₁) (h₂ : IsOpenEmbedding e₂)
+  (d₁ : IsLocalDiffeomorph 𝓘(ℝ, E) I n e₁) (d₂ : IsLocalDiffeomorph 𝓘(ℝ, E) I n e₂)
+
+include d₁ d₂ in
+/-- A ball of the first summand which is a `C^n` local diffeomorphism is one as a ball of the
+connected sum. -/
+theorem isLocalDiffeomorph_inlBall (h : e₁ 0 ∉ range f)
+    (df : IsLocalDiffeomorph 𝓘(ℝ, E) I n f) :
+    letI := chartedSpace (H := H) h₁ h₂
+    IsLocalDiffeomorph 𝓘(ℝ, E) I n (inlBall e₁ e₂ f h) := fun w ↦
+  letI := chartedSpace (H := H) h₁ h₂
+  (isLocalDiffeomorph_punctureBall h df w).comp
+    (hg := isLocalDiffeomorph_inl h₁ h₂ d₁ d₂ _)
+
+include d₁ d₂ in
+/-- A ball of the second summand which is a `C^n` local diffeomorphism is one as a ball of the
+connected sum. -/
+theorem isLocalDiffeomorph_inrBall (h : e₂ 0 ∉ range g)
+    (dg : IsLocalDiffeomorph 𝓘(ℝ, E) I n g) :
+    letI := chartedSpace (H := H) h₁ h₂
+    IsLocalDiffeomorph 𝓘(ℝ, E) I n (inrBall e₁ e₂ g h) := fun w ↦
+  letI := chartedSpace (H := H) h₁ h₂
+  (isLocalDiffeomorph_punctureBall h dg w).comp
+    (hg := isLocalDiffeomorph_inr h₁ h₂ d₁ d₂ _)
+
+end Ball
 
 end TauCeti.ConnectedSum

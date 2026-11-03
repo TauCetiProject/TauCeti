@@ -8,7 +8,6 @@ module
 public import TauCeti.Geometry.Manifold.ConnectedSum.Map
 
 import TauCeti.Geometry.Manifold.LocalDiffeomorph.OpenSubset
-import TauCeti.Geometry.Manifold.LocalDiffeomorph.Sum
 
 /-!
 # Associativity of the connected sum
@@ -20,8 +19,11 @@ neighbours. This file shows that the result does not depend on the bracketing.
 
 * **Balls in a summand.** A ball `f : E → M` of a summand whose image avoids the centre of the
   ball `e₁` of the connected sum stays a ball of the connected sum, through the punctured summand:
-  `TauCeti.ConnectedSum.inlBall` and `TauCeti.ConnectedSum.inrBall`. They are open embeddings,
-  and `C^n` local diffeomorphisms for the charts of the connected sum when `f` is one.
+  `TauCeti.ConnectedSum.inlBall` and `TauCeti.ConnectedSum.inrBall`, from
+  `TauCeti.Geometry.Manifold.ConnectedSum.Basic`. They are open embeddings, and `C^n` local
+  diffeomorphisms for the charts of the connected sum when `f` is one
+  (`TauCeti.ConnectedSum.isLocalDiffeomorph_inlBall`, in
+  `TauCeti.Geometry.Manifold.ConnectedSum.Smooth`).
 * **Associativity.** Let `a : E → M`, `b, b' : E → N` and `c : E → P` be balls, where `b` is used
   to glue `N` to `M` and `b'` to glue `N` to `P`, and assume that neither of `b` and `b'` meets the
   centre of the other. Then `(M # N) # P`, formed along `a`, `b` and then along `b'` (as a ball of
@@ -42,20 +44,11 @@ with unit the sphere, for connected sums along explicit balls.
 
 ## Main definitions
 
-* `TauCeti.ConnectedSum.punctureBall`: a ball avoiding the centre of another ball, as a ball of
-  the punctured summand.
-* `TauCeti.ConnectedSum.inlBall`, `TauCeti.ConnectedSum.inrBall`: a ball of a summand avoiding
-  the centre of the ball of the connected sum, as a ball of the connected sum.
 * `TauCeti.ConnectedSum.assocHomeomorph`: the homeomorphism `(M # N) # P ≃ M # (N # P)`.
 * `TauCeti.ConnectedSum.assocDiffeomorph`: the same map, as a `C^n` diffeomorphism.
 
 ## Main results
 
-* `TauCeti.ConnectedSum.isOpenEmbedding_inlBall`, `TauCeti.ConnectedSum.isLocalDiffeomorph_inlBall`
-  and their `inrBall` forms: balls of a summand are balls of the connected sum.
-* `TauCeti.ConnectedSum.inr_ne_inlBall_zero`, `TauCeti.ConnectedSum.inl_ne_inrBall_zero`: when the
-  two balls of the middle summand avoid each other's centres, the centre of the outer ball lies in
-  one punctured summand only.
 * `TauCeti.ConnectedSum.assocHomeomorph_inl_inl`, `TauCeti.ConnectedSum.assocHomeomorph_inl_inr`,
   `TauCeti.ConnectedSum.assocHomeomorph_inr`: the associativity homeomorphism is the identity on
   each of the three punctured summands.
@@ -77,126 +70,6 @@ namespace TauCeti.ConnectedSum
 variable {E : Type*} [NormedAddCommGroup E]
   {M : Type*} [TopologicalSpace M] [T1Space M] {N : Type*} [TopologicalSpace N] [T1Space N]
   {P : Type*} [TopologicalSpace P] [T1Space P]
-
-/-! ### Balls in a summand -/
-
-section Ball
-
-/-- A ball `f : E → M` whose image avoids the centre of the ball `e`, as a ball of the punctured
-summand `M ∖ {e 0}`. -/
-def punctureBall (e f : E → M) (h : e 0 ∉ range f) : E → puncture e :=
-  codRestrict f (puncture e) fun w ↦ mem_puncture.2 fun hw ↦ h ⟨w, hw⟩
-
-variable {e f : E → M} (h : e 0 ∉ range f)
-
-@[simp]
-theorem coe_punctureBall (w : E) : (punctureBall e f h w : M) = f w :=
-  (rfl)
-
-theorem subtypeVal_comp_punctureBall : Subtype.val ∘ punctureBall e f h = f :=
-  (rfl)
-
-theorem isOpenEmbedding_punctureBall (hf : IsOpenEmbedding f) :
-    IsOpenEmbedding (punctureBall e f h) :=
-  (puncture e).isOpen.isOpenEmbedding_subtypeVal.of_comp_iff _ |>.1 hf
-
-theorem isLocalDiffeomorph_punctureBall {H : Type*} [TopologicalSpace H] [NormedSpace ℝ E]
-    {I : ModelWithCorners ℝ E H} {n : ℕ∞} [ChartedSpace H M]
-    (df : IsLocalDiffeomorph 𝓘(ℝ, E) I n f) :
-    IsLocalDiffeomorph 𝓘(ℝ, E) I n (punctureBall e f h) := fun w ↦
-  IsLocalDiffeomorphAt.of_comp_left (df w) (isLocalDiffeomorph_subtype_val _)
-    (df.contMDiff.continuous.subtype_mk _).continuousAt
-
-variable [InnerProductSpace ℝ E]
-
-variable (e₁ : E → M) (e₂ : E → N) {f : E → M} {g : E → N}
-
-/-- A ball `f : E → M` of the first summand avoiding the centre of `e₁`, as a ball of the
-connected sum along `e₁` and `e₂`, through the first punctured summand. -/
-def inlBall (f : E → M) (h : e₁ 0 ∉ range f) : E → ConnectedSum e₁ e₂ :=
-  inl e₁ e₂ ∘ punctureBall e₁ f h
-
-/-- A ball `g : E → N` of the second summand avoiding the centre of `e₂`, as a ball of the
-connected sum along `e₁` and `e₂`, through the second punctured summand. -/
-def inrBall (g : E → N) (h : e₂ 0 ∉ range g) : E → ConnectedSum e₁ e₂ :=
-  inr e₁ e₂ ∘ punctureBall e₂ g h
-
-theorem inlBall_apply (h : e₁ 0 ∉ range f) (w : E) :
-    inlBall e₁ e₂ f h w = inl e₁ e₂ (punctureBall e₁ f h w) :=
-  (rfl)
-
-theorem inrBall_apply (h : e₂ 0 ∉ range g) (w : E) :
-    inrBall e₁ e₂ g h w = inr e₁ e₂ (punctureBall e₂ g h w) :=
-  (rfl)
-
-theorem inl_comp_punctureBall (h : e₁ 0 ∉ range f) :
-    inl e₁ e₂ ∘ punctureBall e₁ f h = inlBall e₁ e₂ f h :=
-  (rfl)
-
-theorem inr_comp_punctureBall (h : e₂ 0 ∉ range g) :
-    inr e₁ e₂ ∘ punctureBall e₂ g h = inrBall e₁ e₂ g h :=
-  (rfl)
-
-variable {e₁ e₂}
-
-/-- If moreover `f 0 ∉ range e₁`, the centre of the ball `f` of the connected sum is not a point
-of the second summand. -/
-theorem inr_ne_inlBall_zero (he₁ : Injective e₁) (he₂ : Injective e₂) (h : e₁ 0 ∉ range f)
-    (hf : f 0 ∉ range e₁) (y : puncture e₂) : inr e₁ e₂ y ≠ inlBall e₁ e₂ f h 0 := by
-  intro hy
-  rw [inlBall_apply, eq_comm, inl_eq_inr_iff he₁ he₂] at hy
-  obtain ⟨v, -, hv, -⟩ := hy
-  exact hf ⟨v, by simpa using hv⟩
-
-/-- If moreover `g 0 ∉ range e₂`, the centre of the ball `g` of the connected sum is not a point
-of the first summand. -/
-theorem inl_ne_inrBall_zero (he₁ : Injective e₁) (he₂ : Injective e₂) (h : e₂ 0 ∉ range g)
-    (hg : g 0 ∉ range e₂) (x : puncture e₁) : inl e₁ e₂ x ≠ inrBall e₁ e₂ g h 0 := by
-  intro hx
-  rw [inrBall_apply, inl_eq_inr_iff he₁ he₂] at hx
-  obtain ⟨v, -, -, hv⟩ := hx
-  exact hg ⟨_, by simpa using hv⟩
-
-theorem isOpenEmbedding_inlBall (h₁ : IsOpenEmbedding e₁) (h₂ : IsOpenEmbedding e₂)
-    (h : e₁ 0 ∉ range f) (hf : IsOpenEmbedding f) : IsOpenEmbedding (inlBall e₁ e₂ f h) :=
-  (isOpenEmbedding_inl h₁ h₂).comp (isOpenEmbedding_punctureBall h hf)
-
-theorem isOpenEmbedding_inrBall (h₁ : IsOpenEmbedding e₁) (h₂ : IsOpenEmbedding e₂)
-    (h : e₂ 0 ∉ range g) (hg : IsOpenEmbedding g) : IsOpenEmbedding (inrBall e₁ e₂ g h) :=
-  (isOpenEmbedding_inr h₁ h₂).comp (isOpenEmbedding_punctureBall h hg)
-
-section Smooth
-
-variable {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H} {n : ℕ∞}
-  [ChartedSpace H M] [ChartedSpace H N] [IsManifold I n M] [IsManifold I n N]
-  (h₁ : IsOpenEmbedding e₁) (h₂ : IsOpenEmbedding e₂)
-  (d₁ : IsLocalDiffeomorph 𝓘(ℝ, E) I n e₁) (d₂ : IsLocalDiffeomorph 𝓘(ℝ, E) I n e₂)
-
-include d₁ d₂ in
-/-- A ball of the first summand which is a `C^n` local diffeomorphism is one as a ball of the
-connected sum. -/
-theorem isLocalDiffeomorph_inlBall (h : e₁ 0 ∉ range f)
-    (df : IsLocalDiffeomorph 𝓘(ℝ, E) I n f) :
-    letI := chartedSpace (H := H) h₁ h₂
-    IsLocalDiffeomorph 𝓘(ℝ, E) I n (inlBall e₁ e₂ f h) := fun w ↦
-  letI := chartedSpace (H := H) h₁ h₂
-  (isLocalDiffeomorph_punctureBall h df w).comp
-    (hg := isLocalDiffeomorph_inl h₁ h₂ d₁ d₂ _)
-
-include d₁ d₂ in
-/-- A ball of the second summand which is a `C^n` local diffeomorphism is one as a ball of the
-connected sum. -/
-theorem isLocalDiffeomorph_inrBall (h : e₂ 0 ∉ range g)
-    (dg : IsLocalDiffeomorph 𝓘(ℝ, E) I n g) :
-    letI := chartedSpace (H := H) h₁ h₂
-    IsLocalDiffeomorph 𝓘(ℝ, E) I n (inrBall e₁ e₂ g h) := fun w ↦
-  letI := chartedSpace (H := H) h₁ h₂
-  (isLocalDiffeomorph_punctureBall h dg w).comp
-    (hg := isLocalDiffeomorph_inr h₁ h₂ d₁ d₂ _)
-
-end Smooth
-
-end Ball
 
 /-! ### Associativity -/
 

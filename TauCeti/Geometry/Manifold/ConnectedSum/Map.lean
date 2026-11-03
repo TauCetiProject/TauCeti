@@ -185,17 +185,10 @@ theorem isOpenEmbedding_map (hφo : IsOpenEmbedding φ) (hψo : IsOpenEmbedding 
   refine .of_continuous_injective_isOpenMap (continuous_map hφ hψ h₁ h₂ hφo.continuous
     hψo.continuous) (map_injective hφ hψ h₁ h₂ he₁.injective he₂.injective) fun U hU ↦ ?_
   -- The image of `U` is the image under the quotient map of the open set `Sum.map _ _ '' (mk⁻¹ U)`.
-  have hpφ : IsOpenMap (punctureMap φ hφ (congrFun h₁ 0)) := fun V hV ↦ by
-    rw [(puncture e₁').isOpen.isOpenEmbedding_subtypeVal.isOpen_iff_image_isOpen, image_image]
-    simp only [coe_punctureMap]
-    exact (hφo.isOpenMap.comp (puncture e₁).isOpen.isOpenMap_subtype_val) V hV
-  have hpψ : IsOpenMap (punctureMap ψ hψ (congrFun h₂ 0)) := fun V hV ↦ by
-    rw [(puncture e₂').isOpen.isOpenEmbedding_subtypeVal.isOpen_iff_image_isOpen, image_image]
-    simp only [coe_punctureMap]
-    exact (hψo.isOpenMap.comp (puncture e₂).isOpen.isOpenMap_subtype_val) V hV
   rw [← (mk_surjective e₁ e₂).image_preimage U, ← image_comp, map_comp_mk, image_comp]
-  exact (isOpenQuotientMap_mk he₁' he₂').isOpenMap _ ((hpφ.sumMap hpψ) _
-    (hU.preimage (continuous_mk e₁ e₂)))
+  exact (isOpenQuotientMap_mk he₁' he₂').isOpenMap _
+    (((isOpenMap_punctureMap hφ _ hφo.isOpenMap).sumMap (isOpenMap_punctureMap hψ _ hψo.isOpenMap))
+      _ (hU.preimage (continuous_mk e₁ e₂)))
 
 section Smooth
 
