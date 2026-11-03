@@ -126,6 +126,66 @@ noncomputable def _root_.SheafOfModules.LocalGeneratorsData.pushforward
     haveI : PreservesColimitsOfSize.{u, u, _} (_root_.SheafOfModules.pushforward ψ) := h _ _ _
     exact (P.generators i.2.1).map (_root_.SheafOfModules.pushforward ψ) e.symm
 
+/-- Carrying local generators along `G` indexes the cover by an object of `D`, a member of the
+original cover, and a morphism from the image of the former to the latter. -/
+@[simp]
+theorem _root_.SheafOfModules.LocalGeneratorsData.pushforward_I
+    (η : (_root_.SheafOfModules.pushforward φ).obj (_root_.SheafOfModules.unit R) ≅
+      _root_.SheafOfModules.unit S)
+    [∀ (X : D), (Over.post G).IsContinuous (K.over X) (J.over _)]
+    (h : ∀ (X : D) (Y : C) (f : G.obj X ⟶ Y),
+      PreservesColimitsOfSize.{u, u} <|
+      _root_.SheafOfModules.pushforward.{u} (R := (R.over Y))
+        (F := Over.post (X := X) G ⋙ Over.map f)
+        (((Over.forget X).sheafPushforwardContinuous RingCat.{u} (K.over X) K).map φ))
+    {M : SheafOfModules.{u} R} (P : _root_.SheafOfModules.LocalGeneratorsData M) :
+    (P.pushforward G φ η h).I = Σ (X : D) (i : P.I), G.obj X ⟶ P.X i :=
+  (rfl)
+
+/-- The covering objects of carried local generators are the objects of `D` indexing them. -/
+@[simp]
+theorem _root_.SheafOfModules.LocalGeneratorsData.pushforward_X
+    (η : (_root_.SheafOfModules.pushforward φ).obj (_root_.SheafOfModules.unit R) ≅
+      _root_.SheafOfModules.unit S)
+    [∀ (X : D), (Over.post G).IsContinuous (K.over X) (J.over _)]
+    (h : ∀ (X : D) (Y : C) (f : G.obj X ⟶ Y),
+      PreservesColimitsOfSize.{u, u} <|
+      _root_.SheafOfModules.pushforward.{u} (R := (R.over Y))
+        (F := Over.post (X := X) G ⋙ Over.map f)
+        (((Over.forget X).sheafPushforwardContinuous RingCat.{u} (K.over X) K).map φ))
+    {M : SheafOfModules.{u} R} (P : _root_.SheafOfModules.LocalGeneratorsData M) :
+    (P.pushforward G φ η h).X = fun i ↦
+      ((_root_.SheafOfModules.LocalGeneratorsData.pushforward_I G φ η h P).mp i).1 :=
+  (rfl)
+
+/-- The generators of carried local generators are the original generators on the target of the
+indexing morphism, mapped along the pushforward of modules on the slices. -/
+@[simp]
+theorem _root_.SheafOfModules.LocalGeneratorsData.pushforward_generators
+    (η : (_root_.SheafOfModules.pushforward φ).obj (_root_.SheafOfModules.unit R) ≅
+      _root_.SheafOfModules.unit S)
+    [∀ (X : D), (Over.post G).IsContinuous (K.over X) (J.over _)]
+    (h : ∀ (X : D) (Y : C) (f : G.obj X ⟶ Y),
+      PreservesColimitsOfSize.{u, u} <|
+      _root_.SheafOfModules.pushforward.{u} (R := (R.over Y))
+        (F := Over.post (X := X) G ⋙ Over.map f)
+        (((Over.forget X).sheafPushforwardContinuous RingCat.{u} (K.over X) K).map φ))
+    {M : SheafOfModules.{u} R} (P : _root_.SheafOfModules.LocalGeneratorsData M)
+    (i : (P.pushforward G φ η h).I) :
+    (P.pushforward G φ η h).generators i =
+      cast (by rw [_root_.SheafOfModules.LocalGeneratorsData.pushforward_X]; rfl)
+        (letI j := (_root_.SheafOfModules.LocalGeneratorsData.pushforward_I G φ η h P).mp i
+        letI overS : SheafOfModules.{u} S ⥤ SheafOfModules.{u} (S.over j.1) :=
+          _root_.SheafOfModules.pushforward (𝟙 _)
+        letI ψ : S.over j.1 ⟶
+            ((Over.post (X := j.1) G ⋙ Over.map j.2.2).sheafPushforwardContinuous RingCat.{u}
+              (K.over j.1) (J.over (P.X j.2.1))).obj (R.over (P.X j.2.1)) :=
+          ((Over.forget j.1).sheafPushforwardContinuous RingCat.{u} (K.over j.1) K).map φ
+        haveI : PreservesColimitsOfSize.{u, u, _} (_root_.SheafOfModules.pushforward ψ) :=
+          h _ _ _
+        (P.generators j.2.1).map (_root_.SheafOfModules.pushforward ψ) (overS.mapIso η).symm) :=
+  (rfl)
+
 /-- Carrying local generators along a continuous and cocontinuous functor preserves finiteness. -/
 instance _root_.SheafOfModules.LocalGeneratorsData.isFiniteType_pushforward
     (η : (_root_.SheafOfModules.pushforward φ).obj (_root_.SheafOfModules.unit R) ≅
