@@ -51,6 +51,9 @@ which we reuse instead of redefining.
   `TauCeti.Probability.map_im_apply_ginibreComplex`: the real and imaginary parts of the complex
   Ginibre entries are `N(0, 1/2)`; the pair is a product law by
   `TauCeti.Probability.map_re_im_apply_ginibreComplex`.
+* `TauCeti.Probability.integrable_norm_sq_properComplexGaussianScalar` and
+  `TauCeti.Probability.integral_norm_sq_properComplexGaussianScalar`: integrability and the
+  second moment of a standard scalar proper complex Gaussian.
 * `TauCeti.Probability.ae_posSemidef_gaussianGramReal` and
   `TauCeti.Probability.ae_posSemidef_gaussianGramComplex`: the Gram laws are supported on
   positive semidefinite matrices.
@@ -88,6 +91,25 @@ instance : IsProbabilityMeasure properComplexGaussianScalar := by
   unfold properComplexGaussianScalar
   infer_instance
 
+/-- The squared modulus of a standard scalar proper complex Gaussian is integrable. -/
+theorem integrable_norm_sq_properComplexGaussianScalar :
+    Integrable (fun z : ℂ ↦ ‖z‖ ^ 2) properComplexGaussianScalar := by
+  rw [properComplexGaussianScalar]
+  have hcont : Continuous (fun z : ℂ ↦ ‖z‖ ^ 2) := by fun_prop
+  apply (integrable_map_measure (f := fun z : Unit → ℂ ↦ z ())
+    (g := fun z : ℂ ↦ ‖z‖ ^ 2) hcont.aestronglyMeasurable
+    (measurable_pi_apply ()).aemeasurable).2
+  simpa [Function.comp_def] using integrable_norm_sq_sub_eval_properComplexGaussianMeasure
+    (fun _ : Unit ↦ (0 : ℂ)) 1 ()
+
+/-- The expected squared modulus of a standard scalar proper complex Gaussian is `1`. -/
+theorem integral_norm_sq_properComplexGaussianScalar :
+    ∫ z : ℂ, ‖z‖ ^ 2 ∂properComplexGaussianScalar = 1 := by
+  rw [properComplexGaussianScalar,
+    integral_map (measurable_pi_apply ()).aemeasurable (by fun_prop)]
+  simpa using integral_norm_sq_sub_eval_properComplexGaussianMeasure
+    (fun _ : Unit ↦ (0 : ℂ)) Matrix.PosSemidef.one ()
+
 /-- The complex Ginibre law on `m × n` matrices: a product of standard proper complex Gaussian
 entry laws, arranged as a matrix. -/
 def ginibreComplex (m n : ℕ) : Measure (Matrix (Fin m) (Fin n) ℂ) :=
@@ -113,45 +135,6 @@ theorem gaussianGramReal_def (m n : ℕ) :
       (wishartGramMeasure n (1 : Matrix (Fin m) (Fin m) ℝ)).map Subtype.val :=
   (rfl)
 
-/-- Reindexing independent standard Gaussian coordinates by columns gives independent standard
-Gaussian vectors. -/
-private theorem measurePreserving_pi_matrixColumns (m n : ℕ) :
-    MeasurePreserving
-      (fun z : Fin n × Fin m → ℝ ↦ fun j ↦ WithLp.toLp 2 fun i ↦ z (j, i))
-      (Measure.pi fun _ : Fin n × Fin m ↦ gaussianReal 0 1)
-      (Measure.pi fun _ : Fin n ↦
-        (Measure.pi fun _ : Fin m ↦ gaussianReal 0 1).map (WithLp.toLp 2)) := by
-  let e := Equiv.sigmaEquivProd (Fin n) (Fin m)
-  let μ : Fin n × Fin m → Measure ℝ := fun _ ↦ gaussianReal 0 1
-  have h₁ := (measurePreserving_piCongrLeft μ e).symm
-  have h₂ := TauCeti.measurePreserving_piCurry
-    (fun _ : Fin n ↦ fun _ : Fin m ↦ gaussianReal 0 1)
-  have h := h₂.comp h₁
-  have hfun :
-      (MeasurableEquiv.piCurry (fun _ : Fin n ↦ fun _ : Fin m ↦ ℝ) ∘
-        (MeasurableEquiv.piCongrLeft (fun _ : Fin n × Fin m ↦ ℝ) e).symm) =
-        fun z : Fin n × Fin m → ℝ ↦ fun j i ↦ z (j, i) := by
-    funext z j i
-    rfl
-  rw [hfun] at h
-  have hpi : (Measure.pi fun j : Fin n ↦
-      (Measure.pi fun i : Fin m ↦ gaussianReal 0 1).map (WithLp.toLp 2)) =
-      (Measure.pi fun j : Fin n ↦
-        Measure.pi fun i : Fin m ↦ gaussianReal 0 1).map
-          (fun x j ↦ WithLp.toLp 2 (x j)) := by
-    rw [Measure.pi_map_pi fun _ ↦ (WithLp.measurable_toLp 2 _).aemeasurable]
-  refine ⟨(by fun_prop), ?_⟩
-  calc
-    _ = Measure.map (fun x j ↦ WithLp.toLp 2 (x j))
-          (Measure.map (fun z j i ↦ z (j, i))
-            (Measure.pi fun _ : Fin n × Fin m ↦ gaussianReal 0 1)) := by
-      rw [Measure.map_map (by fun_prop) (by fun_prop)]
-      rfl
-    _ = Measure.map (fun x j ↦ WithLp.toLp 2 (x j))
-          (Measure.pi fun j : Fin n ↦ Measure.pi fun i : Fin m ↦ gaussianReal 0 1) :=
-      congrArg (Measure.map _) h.map_eq
-    _ = _ := hpi.symm
-
 /-- The columns of a real Ginibre matrix are independent standard Gaussian vectors. -/
 theorem map_columns_ginibreReal (m n : ℕ) :
     (ginibreReal m n).map
@@ -171,9 +154,48 @@ theorem map_columns_ginibreReal (m n : ℕ) :
       (multivariateGaussian_one_eq_map_pi
         (0 : EuclideanSpace ℝ (Fin n × Fin m)))
   rw [hgauss]
-  have hregroup := measurePreserving_pi_matrixColumns m n
+  let fiber (j : Fin n) := {p : Fin n × Fin m // p.1 = j}
+  let e (j : Fin n) : Fin m ≃ fiber j :=
+    { toFun := fun i ↦ ⟨(j, i), rfl⟩
+      invFun := fun p ↦ p.1.2
+      left_inv := fun _ ↦ rfl
+      right_inv := fun p ↦ by
+        apply Subtype.ext
+        exact Prod.ext p.2.symm rfl }
+  have hfiber (j : Fin n) :
+      MeasurePreserving
+        (fun z : ∀ p : fiber j, ℝ ↦ WithLp.toLp 2 fun i : Fin m ↦ z (e j i))
+        (Measure.pi fun _ : fiber j ↦ gaussianReal 0 1)
+        (multivariateGaussian 0 (1 : Matrix (Fin m) (Fin m) ℝ)) := by
+    refine ⟨(WithLp.measurable_toLp 2 _).comp
+      (MeasurableEquiv.piCongrLeft (fun _ : fiber j ↦ ℝ) (e j)).symm.measurable, ?_⟩
+    calc
+      Measure.map (fun z : ∀ p : fiber j, ℝ ↦ WithLp.toLp 2 fun i : Fin m ↦ z (e j i))
+          (Measure.pi fun _ : fiber j ↦ gaussianReal 0 1) =
+        Measure.map (WithLp.toLp 2 ∘
+          (MeasurableEquiv.piCongrLeft (fun _ : fiber j ↦ ℝ) (e j)).symm)
+          (Measure.pi fun _ : fiber j ↦ gaussianReal 0 1) := by
+            congr 1
+      _ = Measure.map (WithLp.toLp 2)
+          (Measure.map
+            (MeasurableEquiv.piCongrLeft (fun _ : fiber j ↦ ℝ) (e j)).symm
+            (Measure.pi fun _ : fiber j ↦ gaussianReal 0 1)) := by
+              rw [← Measure.map_map (WithLp.measurable_toLp 2 _)
+                (MeasurableEquiv.piCongrLeft (fun _ : fiber j ↦ ℝ) (e j)).symm.measurable]
+      _ = Measure.map (WithLp.toLp 2)
+          (Measure.pi fun _ : Fin m ↦ gaussianReal 0 1) := by
+            rw [(measurePreserving_piCongrLeft
+              (fun _ : fiber j ↦ gaussianReal 0 1) (e j)).symm.map_eq]
+      _ = multivariateGaussian 0 (1 : Matrix (Fin m) (Fin m) ℝ) :=
+        (multivariateGaussian_one_eq_map_pi (0 : EuclideanSpace ℝ (Fin m))).symm
+  have hregroup := measurePreserving_pi_fiberwise
+    (f := fun p : Fin n × Fin m ↦ p.1)
+    (μ := fun _ : Fin n × Fin m ↦ gaussianReal 0 1)
+    (ν := fun _ : Fin n ↦
+      multivariateGaussian 0 (1 : Matrix (Fin m) (Fin m) ℝ))
+    (g := fun j z ↦ WithLp.toLp 2 fun i : Fin m ↦ z (e j i))
+    hfiber
   rw [Measure.map_map (by fun_prop) (by fun_prop)]
-  simp_rw [multivariateGaussian_one_eq_map_pi]
   calc
     _ = Measure.map (fun z j ↦ WithLp.toLp 2 fun i : Fin m ↦ z (j, i))
           (Measure.pi fun _ : Fin n × Fin m ↦ gaussianReal 0 1) := by
@@ -181,7 +203,8 @@ theorem map_columns_ginibreReal (m n : ℕ) :
       funext z j
       ext i
       simp [E, matrixVecMeasurableEquiv_symm_apply]
-    _ = _ := hregroup.map_eq
+    _ = _ := by
+      convert hregroup.map_eq using 1
 
 /-- The real Gaussian Gram law is the pushforward of the real Ginibre law under
 `X ↦ X * Xᵀ`. -/
@@ -248,8 +271,7 @@ theorem iIndepFun_apply_ginibreComplex (m n : ℕ) :
       AEMeasurable (fun X : Matrix (Fin m) (Fin n) ℂ ↦ X p.1 p.2)
         (ginibreComplex m n) := by
     intro p
-    change AEMeasurable (fun X : Fin m → Fin n → ℂ ↦ X p.1 p.2) _
-    exact ((measurable_pi_apply p.2).comp (measurable_pi_apply p.1)).aemeasurable
+    exact (Matrix.measurable_apply (i := p.1) (j := p.2)).aemeasurable
   apply (iIndepFun_iff_map_fun_eq_pi_map hmeas).2
   rw [ginibreComplex_def, Measure.map_map (by fun_prop) (by fun_prop)]
   calc
@@ -331,19 +353,8 @@ theorem integral_trace_gaussianGramReal (m n : ℕ) :
 `m * n`; the trace is real, so we take its real part. -/
 theorem integral_trace_re_gaussianGramComplex (m n : ℕ) :
     ∫ A, A.trace.re ∂(gaussianGramComplex m n) = m * n := by
-  have hscalar_int : Integrable (fun z : ℂ ↦ ‖z‖ ^ 2) properComplexGaussianScalar := by
-    rw [properComplexGaussianScalar]
-    have hcont : Continuous (fun z : ℂ ↦ ‖z‖ ^ 2) := by fun_prop
-    apply (integrable_map_measure (f := fun z : Unit → ℂ ↦ z ())
-      (g := fun z : ℂ ↦ ‖z‖ ^ 2) hcont.aestronglyMeasurable
-      (measurable_pi_apply ()).aemeasurable).2
-    simpa [Function.comp_def] using integrable_norm_sq_sub_eval_properComplexGaussianMeasure
-      (fun _ : Unit ↦ (0 : ℂ)) 1 ()
-  have hscalar_val : ∫ z : ℂ, ‖z‖ ^ 2 ∂properComplexGaussianScalar = 1 := by
-    rw [properComplexGaussianScalar,
-      integral_map (measurable_pi_apply ()).aemeasurable (by fun_prop)]
-    simpa using integral_norm_sq_sub_eval_properComplexGaussianMeasure
-      (fun _ : Unit ↦ (0 : ℂ)) Matrix.PosSemidef.one ()
+  have hscalar_int := integrable_norm_sq_properComplexGaussianScalar
+  have hscalar_val := integral_norm_sq_properComplexGaussianScalar
   have hint : ∀ i j, Integrable (fun z : Fin m × Fin n → ℂ ↦ ‖z (i, j)‖ ^ 2)
       (Measure.pi fun _ : Fin m × Fin n ↦ properComplexGaussianScalar) := by
     intro i j
@@ -390,7 +401,7 @@ theorem integral_trace_re_gaussianGramComplex (m n : ℕ) :
 theorem ae_posSemidef_gaussianGramReal (m n : ℕ) :
     ∀ᵐ A ∂(gaussianGramReal m n), A.PosSemidef := by
   rw [gaussianGramReal, ae_map_iff measurable_subtype_coe.aemeasurable
-    isClosed_setOfPred_posSemidef.measurableSet]
+      Matrix.posSemidef_is_closed.measurableSet]
   exact ae_posSemidef_wishartGramMeasure n 1
 
 open scoped ComplexOrder in
@@ -398,7 +409,7 @@ open scoped ComplexOrder in
 theorem ae_posSemidef_gaussianGramComplex (m n : ℕ) :
     ∀ᵐ A ∂(gaussianGramComplex m n), A.PosSemidef := by
   rw [gaussianGramComplex, ae_map_iff measurable_matrix_mul_conjTranspose.aemeasurable
-    isClosed_setOfPred_posSemidef.measurableSet]
+      Matrix.posSemidef_is_closed.measurableSet]
   exact Filter.Eventually.of_forall fun X ↦ posSemidef_self_mul_conjTranspose X
 
 end Probability
