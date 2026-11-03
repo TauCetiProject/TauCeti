@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.LinearAlgebra.Matrix.Rank
-public import TauCeti.NumberTheory.Transcendental.Waldschmidt.InterpolationData
+public import TauCeti.NumberTheory.Transcendental.Waldschmidt.Interpolation.Data
 import Mathlib.LinearAlgebra.FiniteDimensional.Lemmas
 import TauCeti.Algebra.MvPolynomial.PDeriv
 import TauCeti.RingTheory.MvPolynomial.Finrank
