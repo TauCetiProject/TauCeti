@@ -299,11 +299,24 @@ noncomputable def realModelDualEquiv :
   (M.ratModelRealModelIsometry hM).dualCarrierEquiv.trans
     (ZLattice.ratModelDualEquiv (M.isIntegral_realModel hM)).symm
 
+/-- The dual identification followed by rationalization is the round-trip isometry on duals. -/
+@[simp]
+theorem ratModelDualEquiv_realModelDualEquiv (x : M.dualCarrier) :
+    ZLattice.ratModelDualEquiv (M.isIntegral_realModel hM) (M.realModelDualEquiv hM x) =
+      (M.ratModelRealModelIsometry hM).dualCarrierEquiv x := by
+  simp [realModelDualEquiv]
+
 /-- On dual vectors, the dual identification is the rational embedding. -/
 @[simp]
 theorem coe_realModelDualEquiv (x : M.dualCarrier) :
     (M.realModelDualEquiv hM x : M.RealModelSpace hM) = M.realModelMap hM x := by
   simp [realModelDualEquiv]
+
+/-- The inverse dual identification recovers a real dual vector through the rational embedding. -/
+@[simp]
+theorem realModelMap_realModelDualEquiv_symm (y : ZLattice.dual (M.realModel hM)) :
+    M.realModelMap hM ((M.realModelDualEquiv hM).symm y) = y := by
+  rw [← coe_realModelDualEquiv, LinearEquiv.apply_symm_apply]
 
 /-- A rational vector belongs to the dual of the real model exactly when it belongs to the
 rational dual carrier. -/
@@ -325,6 +338,15 @@ noncomputable def realModelDiscriminantGroupEquiv :
   (M.ratModelRealModelIsometry hM).discriminantGroupEquiv.trans
     (ZLattice.ratModelDiscriminantGroupEquiv (M.isIntegral_realModel hM)).symm
 
+/-- The discriminant identification followed by rationalization is the round-trip isometry. -/
+@[simp]
+theorem ratModelDiscriminantGroupEquiv_realModelDiscriminantGroupEquiv
+    (x : M.DiscriminantGroup) :
+    ZLattice.ratModelDiscriminantGroupEquiv (M.isIntegral_realModel hM)
+      (M.realModelDiscriminantGroupEquiv hM x) =
+        (M.ratModelRealModelIsometry hM).discriminantGroupEquiv x := by
+  simp [realModelDiscriminantGroupEquiv]
+
 /-- The discriminant-group identification sends the class of a rational dual vector to the
 class of its real image. -/
 @[simp]
@@ -334,10 +356,19 @@ theorem realModelDiscriminantGroupEquiv_mk (x : M.dualCarrier) :
   apply (ZLattice.ratModelDiscriminantGroupEquiv (M.isIntegral_realModel hM)).injective
   simp [realModelDiscriminantGroupEquiv, realModelDualEquiv]
 
+/-- The inverse discriminant identification sends a real dual class to the class of its
+rational preimage. -/
+@[simp]
+theorem realModelDiscriminantGroupEquiv_symm_mk (y : ZLattice.dual (M.realModel hM)) :
+    (M.realModelDiscriminantGroupEquiv hM).symm (Submodule.Quotient.mk y) =
+      Submodule.Quotient.mk ((M.realModelDualEquiv hM).symm y) := by
+  apply (M.realModelDiscriminantGroupEquiv hM).injective
+  simp
+
 /-- The discriminant pairing transported through the real model agrees with the original
 rational discriminant pairing. The real-model pairing is read through its rational model,
 so no second discriminant form is introduced. -/
-@[simp]
+@[simp↓]
 theorem discriminantPairing_realModelDiscriminantGroupEquiv (x y : M.DiscriminantGroup) :
     (ZLattice.ratModel (M.isIntegral_realModel hM)).discriminantPairing
       (ZLattice.ratModelDiscriminantGroupEquiv (M.isIntegral_realModel hM)
@@ -345,12 +376,12 @@ theorem discriminantPairing_realModelDiscriminantGroupEquiv (x y : M.Discriminan
       (ZLattice.ratModelDiscriminantGroupEquiv (M.isIntegral_realModel hM)
         (M.realModelDiscriminantGroupEquiv hM y)) = M.discriminantPairing x y := by
   have : M.IsNondegenerate := ⟨(M.isPosDef_iff_isPosSemidef_and_nondegenerate.mp hM).2⟩
-  simpa [realModelDiscriminantGroupEquiv, Isometry.discriminantBilinearIsometry_apply] using
+  simpa [Isometry.discriminantBilinearIsometry_apply] using
     (M.ratModelRealModelIsometry hM).discriminantBilinearIsometry.map_pairing x y
 
 /-- For an even lattice, the half-norm discriminant quadratic map transported through the
 real model agrees with the original quadratic map. -/
-@[simp]
+@[simp↓]
 theorem discriminantQuadraticMap_realModelDiscriminantGroupEquiv (hE : M.IsEven)
     (x : M.DiscriminantGroup) :
     (ZLattice.ratModel (M.isIntegral_realModel hM)).discriminantQuadraticMap
@@ -358,7 +389,7 @@ theorem discriminantQuadraticMap_realModelDiscriminantGroupEquiv (hE : M.IsEven)
       (ZLattice.ratModelDiscriminantGroupEquiv (M.isIntegral_realModel hM)
         (M.realModelDiscriminantGroupEquiv hM x)) = M.discriminantQuadraticMap hE x := by
   have : M.IsNondegenerate := ⟨(M.isPosDef_iff_isPosSemidef_and_nondegenerate.mp hM).2⟩
-  simpa [realModelDiscriminantGroupEquiv, Isometry.discriminantQuadraticIsometry_apply] using
+  simpa [Isometry.discriminantQuadraticIsometry_apply] using
     ((M.ratModelRealModelIsometry hM).discriminantQuadraticIsometry hE).map_app x
 
 namespace Isometry
