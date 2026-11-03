@@ -6,8 +6,7 @@ Authors: Codex
 module
 
 public import TauCeti.Analysis.Convolution.Basic
-public import Mathlib.MeasureTheory.Measure.WithDensity
-import Mathlib.MeasureTheory.Function.AEEqOfLIntegral
+public import TauCeti.MeasureTheory.Measure.WithDensity
 
 /-!
 # Convolution of real densities
@@ -27,8 +26,6 @@ continuity and strict positivity, to be combined with measure-level convolution 
   Bochner convolutions of nonnegative real functions.
 * `MeasureTheory.conv_withDensity_ofReal_eq_withDensity_convolution` computes the convolution of
   two measures presented by nonnegative real densities.
-* `MeasureTheory.continuous_eq_of_withDensity_ofReal_eq` identifies continuous nonnegative real
-  densities pointwise from equality of their weighted measures.
 -/
 
 public section
@@ -74,22 +71,5 @@ theorem conv_withDensity_ofReal_eq_withDensity_convolution (hf : Measurable f)
   apply withDensity_congr_ae
   filter_upwards [hfg] with x hx
   exact lconvolution_ofReal_apply_eq_ofReal_convolution hf0 hg0 x hx
-
-variable {X : Type*} [TopologicalSpace X] [MeasurableSpace X] [BorelSpace X]
-  {ν : Measure X} [SigmaFinite ν] [ν.IsOpenPosMeasure] {p q : X → ℝ}
-
-/-- Continuous nonnegative real densities that present the same measure are equal pointwise. -/
-theorem continuous_eq_of_withDensity_ofReal_eq (hp : Continuous p) (hq : Continuous q)
-    (hp0 : 0 ≤ p) (hq0 : 0 ≤ q)
-    (h : ν.withDensity (fun x ↦ ENNReal.ofReal (p x)) =
-      ν.withDensity (fun x ↦ ENNReal.ofReal (q x))) :
-    p = q := by
-  have haeENN : (fun x ↦ ENNReal.ofReal (p x)) =ᵐ[ν] fun x ↦ ENNReal.ofReal (q x) :=
-    (withDensity_eq_iff_of_sigmaFinite hp.measurable.ennreal_ofReal.aemeasurable
-      hq.measurable.ennreal_ofReal.aemeasurable).1 h
-  have hae : p =ᵐ[ν] q := by
-    filter_upwards [haeENN] with x hx
-    exact (ENNReal.ofReal_eq_ofReal_iff (hp0 x) (hq0 x)).mp hx
-  exact (hp.ae_eq_iff_eq ν hq).1 hae
 
 end MeasureTheory
