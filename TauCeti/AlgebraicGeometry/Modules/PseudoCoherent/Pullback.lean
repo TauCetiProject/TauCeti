@@ -60,12 +60,8 @@ theorem HasFiniteFreeResolution.pullback (h : M.HasFiniteFreeResolution)
   have hρ : ρ.f 0 = ε := ChainComplex.toSingle₀Equiv_symm_apply_f_zero _ _
   refine hasFiniteFreeResolution_iff.mpr ⟨Q, ρ, fun n ↦ ?_, ⟨fun n ↦ ?_⟩⟩
   · obtain ⟨ι, hι, ⟨e⟩⟩ := hP n
-    -- The free-sheaf comparison uses the sheaf category, rather than its scheme-module wrapper.
-    let T : SheafOfModules Y.ringCatSheaf ⥤ SheafOfModules X.ringCatSheaf := Modules.pullback f
-    have : PreservesColimitsOfShape (Discrete ι) T :=
-      (pullbackPushforwardAdjunction f).leftAdjoint_preservesColimits.preservesColimitsOfShape
     exact ⟨ι, hι, ⟨(Modules.pullback f).mapIso e ≪≫
-      (SheafOfModules.mapFreeIso T ι (pullbackObjUnitIso f).symm).symm⟩⟩
+      SheafOfModules.pullbackObjFreeIso f.toRingCatSheafHom ι⟩⟩
   · cases n with
     | zero =>
       -- Right exactness preserves the cokernel presentation of the augmentation.
