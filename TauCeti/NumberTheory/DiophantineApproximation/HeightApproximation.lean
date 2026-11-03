@@ -27,14 +27,15 @@ attained, and a constant cannot in general be removed at the endpoint.
 * Y. Bugeaud, *Approximation by Algebraic Numbers*, Cambridge University Press (2004), Chapter 3.
 
 The constant-absorption argument follows Mathlib's `LiouvilleWith.frequently_lt_rpow_neg`;
-the passage to infinitely many reduced fractions follows
-`LiouvilleWith.infinite_setOf_abs_sub_lt_rpow_neg`.
+the passage from denominator bounds to height bounds uses
+`LiouvilleWith.infinite_setOf_abs_sub_lt_rpow_neg` and the height comparison previously used in
+`IsAlgebraic.not_liouvilleWith`.
 -/
 
 public section
 
 open Filter Height
-open scoped Topology
+open scoped ENNReal Topology
 
 namespace TauCeti
 
@@ -77,13 +78,15 @@ end TauCeti
 
 namespace LiouvilleWith
 
-/-- After strictly decreasing a positive exponent, the Liouville condition holds with constant
-one and the maximum of numerator and denominator in place of the denominator. -/
+/-- After strictly decreasing the exponent, the Liouville condition holds with constant one
+and the maximum of numerator and denominator in place of the denominator. -/
 theorem frequently_lt_max_rpow_neg {p q ξ : ℝ} (h : LiouvilleWith p ξ)
-    (hq : 0 < q) (hqp : q < p) :
+    (hqp : q < p) :
     ∃ᶠ n : ℕ in atTop, 0 < n ∧ ∃ m : ℤ, ξ ≠ m / n ∧
       |ξ - m / n| < (max |(m : ℝ)| (n : ℝ)) ^ (-q) := by
-  obtain ⟨C, hC, hf⟩ := (TauCeti.liouvilleWith_iff_frequently_max (hq.trans hqp).le).mp h
+  wlog hp : 0 < p generalizing p
+  · exact this (liouvilleWith_one ξ) (hqp.trans_le (by linarith)) zero_lt_one
+  obtain ⟨C, hC, hf⟩ := (TauCeti.liouvilleWith_iff_frequently_max hp.le).mp h
   have hlarge : ∀ᶠ n : ℕ in atTop, C < (n : ℝ) ^ (p - q) :=
     ((tendsto_rpow_atTop (sub_pos.mpr hqp)).comp
       tendsto_natCast_atTop_atTop).eventually_gt_atTop C
@@ -96,87 +99,103 @@ theorem frequently_lt_max_rpow_neg {p q ξ : ℝ} (h : LiouvilleWith p ξ)
   exact hnC.trans_le (Real.rpow_le_rpow hn0.le (le_max_right _ _) (sub_pos.mpr hqp).le)
 
 /-- A Liouville number with exponent `p` has infinitely many rational approximations measured
-by their multiplicative height, for every positive exponent strictly smaller than `p`. -/
+by their multiplicative height, for every exponent strictly smaller than `p`. -/
 theorem infinite_setOf_abs_sub_lt_mulHeight₁_rpow_neg {p q ξ : ℝ} (h : LiouvilleWith p ξ)
-    (hq : 0 < q) (hqp : q < p) :
+    (hqp : q < p) :
     {r : ℚ | |ξ - r| < mulHeight₁ r ^ (-q)}.Infinite := by
-  intro hfin
-  -- A finite set of approximants distinct from `ξ` has a positive separation from it.
-  obtain ⟨M, hM⟩ := (hfin.image fun r : ℚ ↦ |ξ - r|⁻¹).bddAbove
-  have hsmall : ∀ᶠ n : ℕ in atTop, (n : ℝ) ^ (-q) < (max M 1)⁻¹ :=
-    ((tendsto_rpow_neg_atTop hq).comp tendsto_natCast_atTop_atTop).eventually
-      (gt_mem_nhds (by positivity))
-  obtain ⟨n, hnM, hn, m, hne, hlt⟩ :=
-    (hsmall.and_frequently (h.frequently_lt_max_rpow_neg hq hqp)).exists
-  let r : ℚ := (m : ℚ) / n
-  have hr : (r : ℝ) = m / n := by simp [r]
-  have hn0 : (0 : ℝ) < n := by positivity
-  have hheight : mulHeight₁ r ≤ max |(m : ℝ)| (n : ℝ) := by
-    simpa [r] using Rat.mulHeight₁_intCast_div_le m (y := (n : ℤ)) (by omega)
-  have hmem : r ∈ {r : ℚ | |ξ - r| < mulHeight₁ r ^ (-q)} := by
-    refine (hr ▸ hlt).trans_le ?_
-    exact Real.rpow_le_rpow_of_nonpos (mulHeight₁_pos _) hheight (neg_nonpos.mpr hq.le)
-  have hpos : 0 < |ξ - r| := abs_pos.mpr (sub_ne_zero.mpr (hr ▸ hne))
-  have hsep : (max M 1)⁻¹ ≤ |ξ - r| := by
-    rw [inv_le_comm₀ (by positivity) hpos]
-    exact (hM ⟨r, hmem, rfl⟩).trans (le_max_left _ _)
-  have hlt' : |ξ - r| < (n : ℝ) ^ (-q) := by
-    refine (hr ▸ hlt).trans_le ?_
-    exact Real.rpow_le_rpow_of_nonpos hn0 (le_max_right _ _) (neg_nonpos.mpr hq.le)
-  exact (hsep.trans_lt (hlt'.trans hnM)).false
+  wlog hp : 0 < p generalizing p
+  · exact this (liouvilleWith_one ξ) (hqp.trans_le (by linarith)) zero_lt_one
+  wlog hq : 0 < q generalizing q
+  · refine (this (max_lt hqp (half_lt_self hp))
+      (lt_max_of_lt_right (half_pos hp))).mono fun r hr ↦ ?_
+    exact hr.trans_le (Real.rpow_le_rpow_of_exponent_le (one_le_mulHeight₁ r)
+      (neg_le_neg (le_max_left q (p / 2))))
+  -- Near `ξ`, height is at most a fixed multiple of the denominator. Absorb this
+  -- multiple by choosing an intermediate exponent and discarding bounded heights.
+  obtain ⟨q', hqq', hq'p⟩ := exists_between hqp
+  set A := |ξ| + 1
+  have hA : 1 ≤ A := by linarith [abs_nonneg ξ]
+  obtain ⟨N, hN⟩ := exists_nat_ge (A ^ (q / (q' - q)))
+  refine ((h.infinite_setOf_abs_sub_lt_rpow_neg hq'p).sdiff
+    (Northcott.finite_le (h := mulHeight₁ (K := ℚ)) (A * N))).mono ?_
+  rintro r ⟨hr, hrN⟩
+  have hr : |ξ - r| < (r.den : ℝ) ^ (-q') := hr
+  have hd : (1 : ℝ) ≤ r.den := by exact_mod_cast r.pos
+  have hr1 : |ξ - r| < 1 := hr.trans_le
+    (Real.rpow_le_one_of_one_le_of_nonpos hd (by linarith))
+  have hrA : |(r : ℝ)| ≤ A := by
+    have := abs_sub_abs_le_abs_sub (r : ℝ) ξ
+    rw [abs_sub_comm] at this
+    linarith
+  have hH : mulHeight₁ r ≤ A * r.den := (Rat.mulHeight₁_le_max_one_abs_mul_den r).trans
+    (mul_le_mul_of_nonneg_right (max_le hA hrA) (by positivity))
+  have hdN : (N : ℝ) ≤ r.den := by
+    by_contra! hlt
+    exact hrN (hH.trans (mul_le_mul_of_nonneg_left hlt.le (by positivity)))
+  have hAd : A ^ q ≤ (r.den : ℝ) ^ (q' - q) :=
+    calc A ^ q = (A ^ (q / (q' - q))) ^ (q' - q) := by
+          rw [← Real.rpow_mul (by linarith), div_mul_cancel₀ _ (by linarith)]
+      _ ≤ (N : ℝ) ^ (q' - q) := Real.rpow_le_rpow (by positivity) hN (by linarith)
+      _ ≤ (r.den : ℝ) ^ (q' - q) := Real.rpow_le_rpow (by positivity) hdN (by linarith)
+  refine hr.trans_le ?_
+  calc (r.den : ℝ) ^ (-q') = (r.den : ℝ) ^ (-q) / (r.den : ℝ) ^ (q' - q) := by
+        rw [← Real.rpow_sub (by positivity)]
+        ring_nf
+    _ ≤ (r.den : ℝ) ^ (-q) / A ^ q :=
+        div_le_div_of_nonneg_left (by positivity) (by positivity) hAd
+    _ = (A * r.den) ^ (-q) := by
+        rw [Real.mul_rpow (by positivity) (by positivity),
+          Real.rpow_neg (by positivity : (0 : ℝ) ≤ A) q]
+        ring
+    _ ≤ mulHeight₁ r ^ (-q) :=
+        Real.rpow_le_rpow_of_nonpos (mulHeight₁_pos r) hH (by linarith)
 
 end LiouvilleWith
 
 namespace Real
 
-/-- A positive real number `μ` is at most the irrationality exponent of `ξ` exactly when, for
-every positive `ν < μ`, infinitely many rational numbers approximate `ξ` within `H(r) ^ (-ν)`.
-Here `H` is the rational height `max |num r| (den r)`. -/
-theorem le_irrationalityExponent_iff (ξ : ℝ) {μ : ℝ} (hμ : 0 < μ) :
-    ENNReal.ofReal μ ≤ TauCeti.irrationalityExponent ξ ↔
-      ∀ ν : ℝ, 0 < ν → ν < μ →
+/-- An extended nonnegative real `μ` is at most the irrationality exponent of `ξ` exactly when,
+for every real `ν` with `ENNReal.ofReal ν < μ`, infinitely many rational numbers approximate
+`ξ` within `H(r) ^ (-ν)`. Here `H` is the rational height `max |num r| (den r)`; the case
+`μ = ⊤` characterizes Liouville numbers. -/
+theorem le_irrationalityExponent_iff (ξ : ℝ) {μ : ℝ≥0∞} :
+    μ ≤ TauCeti.irrationalityExponent ξ ↔
+      ∀ ν : ℝ, ENNReal.ofReal ν < μ →
         {r : ℚ | |ξ - r| < mulHeight₁ r ^ (-ν)}.Infinite := by
   constructor
-  · intro h ν hν hνμ
-    obtain ⟨p, hνp, hpμ⟩ := exists_between hνμ
-    have hp : ENNReal.ofReal p < TauCeti.irrationalityExponent ξ :=
-      (ENNReal.ofReal_lt_ofReal_iff hμ).mpr hpμ |>.trans_le h
+  · intro h ν hνμ
+    obtain ⟨p, _, hνp, hpμ⟩ := ENNReal.lt_iff_exists_real_btwn.mp hνμ
     exact LiouvilleWith.infinite_setOf_abs_sub_lt_mulHeight₁_rpow_neg
-      (TauCeti.liouvilleWith_of_lt_irrationalityExponent hp) hν hνp
+      (TauCeti.liouvilleWith_of_lt_irrationalityExponent (hpμ.trans_le h))
+      (ENNReal.ofReal_lt_ofReal_iff'.mp hνp).1
   · intro h
     refine le_of_forall_lt fun c hc ↦ ?_
-    have hcμ : c.toReal < μ := (ENNReal.lt_ofReal_iff_toReal_lt hc.ne_top).mp hc
-    obtain ⟨ν, hcν, hνμ⟩ := exists_between hcμ
-    have hν : 0 < ν := ENNReal.toReal_nonneg.trans_lt hcν
+    obtain ⟨ν, hν, hcν, hνμ⟩ := ENNReal.lt_iff_exists_real_btwn.mp hc
     have hden : {r : ℚ | |ξ - r| < (r.den : ℝ) ^ (-ν)}.Infinite := by
-      refine (h ν hν hνμ).mono ?_
+      refine (h ν hνμ).mono ?_
       intro r hr
-      simp only [Set.mem_ofPred_eq] at hr ⊢
-      refine hr.trans_le ?_
-      have hheight : (r.den : ℝ) ≤ mulHeight₁ r := by
-        rw [Rat.mulHeight₁_eq_max]
-        exact_mod_cast le_max_right r.num.natAbs r.den
-      exact Real.rpow_le_rpow_of_nonpos (by exact_mod_cast r.pos) hheight
-        (neg_nonpos.mpr hν.le)
-    exact ((ENNReal.lt_ofReal_iff_toReal_lt hc.ne_top).mpr hcν).trans_le
-      (TauCeti.le_irrationalityExponent_of_liouvilleWith
-        hden.liouvilleWith_of_abs_sub_lt_rpow_neg)
+      exact hr.trans_le (Real.rpow_le_rpow_of_nonpos (by exact_mod_cast r.pos)
+        (Rat.den_le_mulHeight₁ r) (neg_nonpos.mpr hν))
+    exact hcν.trans_le (TauCeti.le_irrationalityExponent_of_liouvilleWith
+      hden.liouvilleWith_of_abs_sub_lt_rpow_neg)
 
 end Real
 
 /-! ### Boundary checks -/
 
 /-- Rational numbers still have infinitely many height approximations below exponent one. -/
-example (ξ : ℚ) {ν : ℝ} (hν : 0 < ν) (hν1 : ν < 1) :
+example (ξ : ℚ) {ν : ℝ} (hν1 : ν < 1) :
     {r : ℚ | |(ξ : ℝ) - r| < mulHeight₁ r ^ (-ν)}.Infinite := by
-  exact ((Real.le_irrationalityExponent_iff ξ zero_lt_one).mp
-    (by simp [TauCeti.irrationalityExponent_ratCast])) ν hν hν1
+  exact ((Real.le_irrationalityExponent_iff ξ (μ := 1)).mp
+    (by simp [TauCeti.irrationalityExponent_ratCast])) ν
+      (by simpa using (ENNReal.ofReal_lt_ofReal_iff zero_lt_one).mpr hν1)
 
 /-- Dirichlet's lower bound is unchanged when approximation is measured by height. -/
-example {ξ : ℝ} (hξ : Irrational ξ) {ν : ℝ} (hν : 0 < ν) (hν2 : ν < 2) :
+example {ξ : ℝ} (hξ : Irrational ξ) {ν : ℝ} (hν2 : ν < 2) :
     {r : ℚ | |ξ - r| < mulHeight₁ r ^ (-ν)}.Infinite := by
-  exact ((Real.le_irrationalityExponent_iff ξ zero_lt_two).mp
-    (by simpa using (TauCeti.two_le_irrationalityExponent_iff ξ).mpr hξ)) ν hν hν2
+  exact ((Real.le_irrationalityExponent_iff ξ (μ := 2)).mp
+    ((TauCeti.two_le_irrationalityExponent_iff ξ).mpr hξ)) ν
+      (by simpa using (ENNReal.ofReal_lt_ofReal_iff zero_lt_two).mpr hν2)
 
 /-- For an unreduced fraction the maximum is only an upper bound on its rational height. -/
 example : mulHeight₁ ((2 : ℚ) / 2) < max |(2 : ℝ)| (2 : ℝ) := by
