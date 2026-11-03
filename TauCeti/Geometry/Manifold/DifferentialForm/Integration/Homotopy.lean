@@ -63,6 +63,7 @@ operator and Stokes' formula on a rectangle; no Stokes theorem on a manifold wit
 ## Main results
 
 * `TauCeti.rectangleIntegral_mpullback`: naturality under pullback of forms.
+* `TauCeti.rectangleIntegral_congr`: the integral only depends on the map on the closed rectangle.
 * `TauCeti.rectangleIntegral_comp_fst`, `TauCeti.rectangleIntegral_comp_snd`: the integral over a
   map depending on only one coordinate vanishes.
 * `TauCeti.rectangleIntegral_sub_rectangleIntegral_eq_sides`: Stokes' formula for a homotopy of
@@ -85,7 +86,7 @@ public section
 noncomputable section
 
 open Set MeasureTheory
-open scoped Manifold Interval ContDiff
+open scoped Manifold Interval ContDiff Topology
 
 namespace TauCeti
 
@@ -128,31 +129,66 @@ theorem rectangleIntegral_mpullback {E' H' M' : Type*} [NormedAddCommGroup E'] [
   refine intervalIntegral.integral_congr fun s hs ↦ intervalIntegral.integral_congr fun t ht ↦ ?_
   rw [mpullback_comp_at (hu _ ⟨hs, ht⟩) (hf _ ⟨hs, ht⟩)]
 
-/-- The pullback of a form along `γ ∘ P`, for a continuous linear map `P : ℝ × ℝ → ℝ` with an
-affine section `j`, vanishes on every family of vectors one of which lies in the kernel of `P`.
-Where `γ` is differentiable this is the chain rule; where it is not, neither is `γ ∘ P`, since
-`γ = (γ ∘ P) ∘ j`, and the pullback is zero. -/
-private theorem mpullback_comp_clm_apply_eq_zero {k : ℕ} (φ : RoughForm I M F k) (γ : ℝ → M)
-    (P : ℝ × ℝ →L[ℝ] ℝ) {j : ℝ → ℝ × ℝ} (hj : Differentiable ℝ j) (hjP : ∀ t, P (j t) = t)
-    {z : ℝ × ℝ} (hjz : j (P z) = z) {v : Fin k → ℝ × ℝ} {i : Fin k} (hv : P (v i) = 0) :
-    mpullback 𝓘(ℝ, ℝ × ℝ) I (γ ∘ P) φ z v = 0 := by
-  by_cases hγ : MDifferentiableAt 𝓘(ℝ, ℝ) I γ (P z)
-  · rw [mpullback_comp_apply_of_hasFDerivAt P.hasFDerivAt hγ]
-    exact (mpullback 𝓘(ℝ, ℝ) I γ φ (P z)).map_coord_zero i hv
-  · have hnd : ¬ MDifferentiableAt 𝓘(ℝ, ℝ × ℝ) I (γ ∘ P) z := by
-      intro h
-      refine hγ ?_
-      have hγ' : γ = (γ ∘ P) ∘ j := funext fun t ↦ by simp [hjP]
-      rw [hγ']
-      exact (hjz ▸ h).comp (P z) (hj (P z)).mdifferentiableAt
-    have h0 : mpullback 𝓘(ℝ, ℝ × ℝ) I (γ ∘ P) φ z = 0 := by
-      ext w
-      rw [mpullback_apply, mfderiv_zero_of_not_mdifferentiableAt hnd,
-        ContinuousAlternatingMap.coe_zero, Pi.zero_apply]
-      exact (φ _).map_coord_zero i (zero_apply _)
-    -- The zero alternating map evaluates to zero.
-    rw [h0]
-    rfl
+/-- The integral only depends on the map on the closed rectangle. -/
+theorem rectangleIntegral_congr {φ : RoughForm I M F 2} {u v : ℝ × ℝ → M} {a b : ℝ × ℝ}
+    (h : EqOn u v ([[a.1, b.1]] ×ˢ [[a.2, b.2]])) :
+    rectangleIntegral φ u a b = rectangleIntegral φ v a b := by
+  -- The maps agree near every interior point, so their pullbacks agree there; the boundary of
+  -- the rectangle is a null set.
+  have hne (x y : ℝ) : ∀ᵐ r ∂volume, r ≠ max x y := by
+    simpa using (countable_singleton (max x y)).ae_notMem volume
+  refine intervalIntegral.integral_congr_ae ?_
+  filter_upwards [hne a.1 b.1] with s hs₁ hs₂
+  refine intervalIntegral.integral_congr_ae ?_
+  filter_upwards [hne a.2 b.2] with t ht₁ ht₂
+  have hmem : Ioo (min a.1 b.1) (max a.1 b.1) ×ˢ Ioo (min a.2 b.2) (max a.2 b.2) ∈ 𝓝 (s, t) :=
+    prod_mem_nhds (Ioo_mem_nhds hs₂.1 (lt_of_le_of_ne hs₂.2 hs₁))
+      (Ioo_mem_nhds ht₂.1 (lt_of_le_of_ne ht₂.2 ht₁))
+  exact congrFun (congrArg DFunLike.coe ((Filter.eventuallyEq_of_mem hmem
+    (h.mono (prod_mono Ioo_subset_Icc_self Ioo_subset_Icc_self))).mpullback_eq φ)) _
+
+/-- The integral of the zero form vanishes. -/
+@[simp]
+theorem rectangleIntegral_zero (u : ℝ × ℝ → M) (a b : ℝ × ℝ) :
+    rectangleIntegral (0 : RoughForm I M F 2) u a b = 0 := by
+  simp [rectangleIntegral_def]
+
+/-- The integral of the negative of a form is the negative of its integral. -/
+@[simp]
+theorem rectangleIntegral_neg (φ : RoughForm I M F 2) (u : ℝ × ℝ → M) (a b : ℝ × ℝ) :
+    rectangleIntegral (-φ) u a b = -rectangleIntegral φ u a b := by
+  simp [rectangleIntegral_eq, intervalIntegral.integral_neg]
+
+/-- The integral is linear in the coefficients for scalar multiplication. -/
+@[simp]
+theorem rectangleIntegral_smul {𝕜 : Type*} [NontriviallyNormedField 𝕜] [NormedSpace 𝕜 F]
+    [SMulCommClass ℝ 𝕜 F] (c : 𝕜) (φ : RoughForm I M F 2) (u : ℝ × ℝ → M) (a b : ℝ × ℝ) :
+    rectangleIntegral (c • φ) u a b = c • rectangleIntegral φ u a b := by
+  simp [rectangleIntegral_eq, intervalIntegral.integral_smul]
+
+/-- The integral over a rectangle of zero width vanishes. -/
+@[simp]
+theorem rectangleIntegral_of_fst_eq (φ : RoughForm I M F 2) (u : ℝ × ℝ → M) {a b : ℝ × ℝ}
+    (h : a.1 = b.1) : rectangleIntegral φ u a b = 0 := by
+  simp [rectangleIntegral_def, h]
+
+/-- The integral over a rectangle of zero height vanishes. -/
+@[simp]
+theorem rectangleIntegral_of_snd_eq (φ : RoughForm I M F 2) (u : ℝ × ℝ → M) {a b : ℝ × ℝ}
+    (h : a.2 = b.2) : rectangleIntegral φ u a b = 0 := by
+  simp [rectangleIntegral_def, h]
+
+/-- Exchanging the corners in the first coordinate changes the sign of the integral. -/
+theorem rectangleIntegral_symm_fst (φ : RoughForm I M F 2) (u : ℝ × ℝ → M) (a₁ a₂ b₁ b₂ : ℝ) :
+    rectangleIntegral φ u (b₁, a₂) (a₁, b₂) = -rectangleIntegral φ u (a₁, a₂) (b₁, b₂) :=
+  intervalIntegral.integral_symm _ _
+
+/-- Exchanging the corners in the second coordinate changes the sign of the integral. -/
+theorem rectangleIntegral_symm_snd (φ : RoughForm I M F 2) (u : ℝ × ℝ → M) (a₁ a₂ b₁ b₂ : ℝ) :
+    rectangleIntegral φ u (a₁, b₂) (b₁, a₂) = -rectangleIntegral φ u (a₁, a₂) (b₁, b₂) := by
+  simp only [rectangleIntegral_def]
+  rw [← intervalIntegral.integral_neg]
+  exact intervalIntegral.integral_congr fun _ _ ↦ intervalIntegral.integral_symm _ _
 
 /-- The integral of a two-form over a map that only depends on the second coordinate vanishes. -/
 @[simp]
@@ -174,18 +210,24 @@ theorem rectangleIntegral_comp_fst (φ : RoughForm I M F 2) (γ : ℝ → M) (a 
       (fun _ ↦ rfl) rfl (i := 1) rfl
   simp [rectangleIntegral_def, h]
 
-/-- A side face of a homotopy has zero integral when its edge stays fixed, or remains a constant
-path, during the homotopy. -/
+/-- A side face of a homotopy, over `[y₀, y₁] × [0, 1]`, has zero integral when its edge stays
+fixed, or remains a constant path at `y`, during the homotopy. -/
 private theorem rectangleIntegral_side_eq_zero (φ : RoughForm I M F 2) {Φ : (ℝ × ℝ) × ℝ → M}
-    {x y : ℝ} (h : (∀ t c, Φ ((x, t), c) = Φ ((x, t), 0)) ∨ ∀ t c, Φ ((x, t), c) = Φ ((x, y), c))
-    (a b : ℝ × ℝ) : rectangleIntegral φ (fun p ↦ Φ ((x, p.1), p.2)) a b = 0 := by
+    {x y y₀ y₁ : ℝ}
+    (h : (∀ t ∈ [[y₀, y₁]], ∀ c ∈ Icc (0 : ℝ) 1, Φ ((x, t), c) = Φ ((x, t), 0)) ∨
+      ∀ t ∈ [[y₀, y₁]], ∀ c ∈ Icc (0 : ℝ) 1, Φ ((x, t), c) = Φ ((x, y), c)) :
+    rectangleIntegral φ (fun p ↦ Φ ((x, p.1), p.2)) (y₀, 0) (y₁, 1) = 0 := by
   rcases h with h | h
-  · rw [show (fun p : ℝ × ℝ ↦ Φ ((x, p.1), p.2)) = (fun t ↦ Φ ((x, t), 0)) ∘ Prod.fst from
-      funext fun p ↦ h p.1 p.2]
-    exact rectangleIntegral_comp_fst φ _ a b
-  · rw [show (fun p : ℝ × ℝ ↦ Φ ((x, p.1), p.2)) = (fun c ↦ Φ ((x, y), c)) ∘ Prod.snd from
-      funext fun p ↦ h p.1 p.2]
-    exact rectangleIntegral_comp_snd φ _ a b
+  · have hface : EqOn (fun p : ℝ × ℝ ↦ Φ ((x, p.1), p.2)) ((fun t ↦ Φ ((x, t), 0)) ∘ Prod.fst)
+        ([[y₀, y₁]] ×ˢ [[0, 1]]) :=
+      fun p hp ↦ h p.1 hp.1 p.2 ((uIcc_of_le zero_le_one).subset hp.2)
+    rw [rectangleIntegral_congr hface]
+    exact rectangleIntegral_comp_fst φ _ _ _
+  · have hface : EqOn (fun p : ℝ × ℝ ↦ Φ ((x, p.1), p.2)) ((fun c ↦ Φ ((x, y), c)) ∘ Prod.snd)
+        ([[y₀, y₁]] ×ˢ [[0, 1]]) :=
+      fun p hp ↦ h p.1 hp.1 p.2 ((uIcc_of_le zero_le_one).subset hp.2)
+    rw [rectangleIntegral_congr hface]
+    exact rectangleIntegral_comp_snd φ _ _ _
 
 variable [CompleteSpace F] [IsManifold I 2 M]
 
@@ -246,21 +288,24 @@ theorem rectangleIntegral_sub_rectangleIntegral_eq_sides {φ : RoughForm I M F 2
 `Φ : (ℝ × ℝ) × ℝ → M` a `C²` homotopy through cylinders `Φ(·, c)` on the rectangle `[a, b]`: the
 edges `t = a.2` and `t = b.2` of each rectangle are mapped alike, so that `t ↦ Φ((s, t), c)` is a
 loop on `[a.2, b.2]` for every `s`. Suppose that each of the two boundary loops `s = a.1` and
-`s = b.1` either stays fixed or remains a constant loop during the homotopy. Then the integrals of
-`φ` over `Φ(·, 0)` and `Φ(·, 1)` agree. -/
+`s = b.1` either stays fixed or remains a constant loop during the homotopy. These conditions are
+only imposed on the rectangle and for `c ∈ [0, 1]`. Then the integrals of `φ` over `Φ(·, 0)` and
+`Φ(·, 1)` agree. -/
 theorem rectangleIntegral_eq_of_homotopy {φ : RoughForm I M F 2} (hφ : IsSmoothForm I 1 φ)
     (hdφ : mextDeriv φ = 0) {Φ : (ℝ × ℝ) × ℝ → M} (hΦ : ContMDiff 𝓘(ℝ, (ℝ × ℝ) × ℝ) I 2 Φ)
     {a b : ℝ × ℝ}
-    (ha : (∀ t c, Φ ((a.1, t), c) = Φ ((a.1, t), 0)) ∨
-      ∀ t c, Φ ((a.1, t), c) = Φ ((a.1, a.2), c))
-    (hb : (∀ t c, Φ ((b.1, t), c) = Φ ((b.1, t), 0)) ∨
-      ∀ t c, Φ ((b.1, t), c) = Φ ((b.1, b.2), c))
-    (hper : ∀ s c, Φ ((s, b.2), c) = Φ ((s, a.2), c)) :
+    (ha : (∀ t ∈ [[a.2, b.2]], ∀ c ∈ Icc (0 : ℝ) 1, Φ ((a.1, t), c) = Φ ((a.1, t), 0)) ∨
+      ∀ t ∈ [[a.2, b.2]], ∀ c ∈ Icc (0 : ℝ) 1, Φ ((a.1, t), c) = Φ ((a.1, a.2), c))
+    (hb : (∀ t ∈ [[a.2, b.2]], ∀ c ∈ Icc (0 : ℝ) 1, Φ ((b.1, t), c) = Φ ((b.1, t), 0)) ∨
+      ∀ t ∈ [[a.2, b.2]], ∀ c ∈ Icc (0 : ℝ) 1, Φ ((b.1, t), c) = Φ ((b.1, b.2), c))
+    (hper : ∀ s ∈ [[a.1, b.1]], ∀ c ∈ Icc (0 : ℝ) 1, Φ ((s, b.2), c) = Φ ((s, a.2), c)) :
     rectangleIntegral φ (fun z ↦ Φ (z, 1)) a b = rectangleIntegral φ (fun z ↦ Φ (z, 0)) a b := by
   have h := rectangleIntegral_sub_rectangleIntegral_eq_sides hφ hdφ hΦ a b
-  rw [rectangleIntegral_side_eq_zero φ ha, rectangleIntegral_side_eq_zero φ hb,
-    show (fun p : ℝ × ℝ ↦ Φ ((p.1, b.2), p.2)) = fun p ↦ Φ ((p.1, a.2), p.2) from
-      funext fun p ↦ hper p.1 p.2] at h
+  -- The two edges `t = a.2` and `t = b.2` sweep out the same side face.
+  have hper' : rectangleIntegral φ (fun p ↦ Φ ((p.1, b.2), p.2)) (a.1, 0) (b.1, 1) =
+      rectangleIntegral φ (fun p ↦ Φ ((p.1, a.2), p.2)) (a.1, 0) (b.1, 1) :=
+    rectangleIntegral_congr fun p hp ↦ hper p.1 hp.1 p.2 ((uIcc_of_le zero_le_one).subset hp.2)
+  rw [rectangleIntegral_side_eq_zero φ ha, rectangleIntegral_side_eq_zero φ hb, hper'] at h
   simpa [sub_eq_zero] using h
 
 end TauCeti
