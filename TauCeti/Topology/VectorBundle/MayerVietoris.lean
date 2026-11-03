@@ -496,19 +496,6 @@ private theorem singularCohomologyMap_fiberThomPairOverMap_thomPairOverMap {W W'
       TopPair.singularCohomologyMap (fiberThomPairOverMap F E (h hb)) n x := by
   rw [← TopPair.singularCohomologyMap_comp_apply, fiberThomPairOverMap_comp_thomPairOverMap]
 
-variable (F E) in
-omit [NormedSpace ℝ F] [FiniteDimensional ℝ F] [∀ b, Module ℝ (E b)] in
-/-- The fibre inclusion over `b` into the Thom pair `(E, E₀)`, followed by the inclusion of the
-pair over the whole base into the pair over a set `W'` covering the base, is the fibre inclusion
-into the pair over any `W ⊆ W'` containing `b`, followed by the inclusion of the pair over `W`
-into the pair over `W'`. -/
-theorem fiberThomPairMap_comp_thomPairOverUnivIso_inv_comp_thomPairOverMap {W W' : Set B}
-    (h : univ ⊆ W') (h' : W ⊆ W') {b : B} (hb : b ∈ W) :
-    fiberThomPairMap F E b ≫ (thomPairOverUnivIso F E).inv ≫ thomPairOverMap F E h =
-      fiberThomPairOverMap F E hb ≫ thomPairOverMap F E h' := by
-  rw [← fiberThomPairOverMap_comp_thomPairOverUnivIso_hom, Category.assoc, Iso.hom_inv_id_assoc,
-    fiberThomPairOverMap_comp_thomPairOverMap, fiberThomPairOverMap_comp_thomPairOverMap]
-
 omit [TopologicalSpace B] [NormedAddCommGroup F] [NormedSpace ℝ F] [FiniteDimensional ℝ F]
   [∀ b, Module ℝ (E b)] [∀ b, TopologicalSpace (E b)] [FiberBundle F E] in
 /-- Restricting a class to a smaller set and then to a still smaller one is restricting it to the

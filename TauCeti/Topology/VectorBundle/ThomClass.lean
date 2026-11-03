@@ -44,7 +44,8 @@ finite trivializing covers is in `TauCeti.Topology.VectorBundle.MayerVietoris`.
 
 Over a point `b` in the base sets of two linear trivializations `e` and `e'`, the fibre equivalence
 `E_b ≃ F` of `e'` is that of `e` followed by the coordinate change `F ≃ F`
-(`Bundle.Trivialization.continuousLinearEquivAt_trans_coordChangeL`). The coordinate change acts
+(`Bundle.Trivialization.continuousLinearEquivAt_trans_coordChangeL`, in
+`TauCeti.Topology.VectorBundle.Trivialization`). The coordinate change acts
 on `Hⁿ(F, F ∖ {0})` by the sign of its determinant, so the pull-backs of a class of the fibre pair
 along `e` and along `e'` differ by that sign
 (`Bundle.Trivialization.singularCohomologyMap_complZeroPairIso_hom_eq_sign_smul`). This is the
@@ -88,8 +89,6 @@ instance a Thom class, is determined by its restrictions to the fibres
   class.
 * `Bundle.Trivialization.exists_isThomClass_pullback_baseSet`: the restriction of a bundle to the
   base set of any trivialization has a Thom class.
-* `Bundle.Trivialization.continuousLinearEquivAt_trans_coordChangeL`: the fibre equivalences of
-  two trivializations differ by the coordinate change.
 * `Bundle.Trivialization.singularCohomologyMap_complZeroPairIso_hom_eq_sign_smul`: changing the
   trivialization multiplies a pulled-back fibre class by the sign of the determinant of the
   coordinate change.
@@ -281,18 +280,6 @@ theorem fiberThomPairMap_comp_thomPairIso_hom (he : e.baseSet = Set.univ) (b : B
     ContinuousLinearEquiv.complZeroPairIso_hom_fst_apply]
   -- `TotalSpace.mk'` is `TotalSpace.mk` with the fibre made explicit.
   rfl
-
-variable (e' : Trivialization F (π F E)) [e'.IsLinear 𝕜] {b : B}
-
-/-- **The fibre equivalences of two trivializations differ by the coordinate change**: for linear
-trivializations `e` and `e'` whose base sets contain `b`, the equivalence `E_b ≃ F` given by `e`,
-followed by the coordinate change from `e` to `e'`, is the one given by `e'`. -/
-theorem continuousLinearEquivAt_trans_coordChangeL (hb : b ∈ e.baseSet) (hb' : b ∈ e'.baseSet) :
-    (e.continuousLinearEquivAt 𝕜 b hb).trans (e.coordChangeL 𝕜 e' b) =
-      e'.continuousLinearEquivAt 𝕜 b hb' := by
-  rw [← comp_continuousLinearEquivAt_eq_coord_change e e' ⟨hb, hb'⟩]
-  ext x
-  simp only [ContinuousLinearEquiv.trans_apply, ContinuousLinearEquiv.symm_apply_apply]
 
 end Geometry
 
