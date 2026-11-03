@@ -6,11 +6,14 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Category.ModuleCat.FilteredColimits
+public import Mathlib.Algebra.Category.Ring.Basic
 public import Mathlib.RingTheory.Flat.EquationalCriterion
+public import Mathlib.RingTheory.RingHom.Flat
+import Mathlib.Algebra.Category.Ring.FilteredColimits
 import Mathlib.CategoryTheory.Limits.ConcreteCategory.Basic
 
 /-!
-# Filtered colimits of flat modules
+# Filtered colimits and flatness
 
 A small filtered colimit of flat modules is flat (Stacks, Lemma 10.39.3 (05UU)). The proof uses
 the equational criterion for flatness: a relation `∑ fᵢ xᵢ = 0` in the colimit comes from a
@@ -18,10 +21,17 @@ relation at some stage, because finitely many elements and the vanishing of one 
 witnessed at a common stage of a filtered diagram. Flatness of that stage makes the relation
 trivial there, and the trivialization maps to the colimit.
 
+The same criterion applies when the base ring, rather than the module, is a filtered colimit
+`B = colim Bⱼ` of commutative rings: a `B`-module `C` is flat as soon as it is flat over every
+`Bⱼ`. A relation `∑ bᵢ xᵢ = 0` in `C` has its finitely many coefficients `bᵢ` at a common stage
+`Bⱼ`, where it is trivial, and the trivialization maps to `B`.
+
 ## Main results
 
 * `Module.Flat.of_isColimit`: the point of a colimit cocone of a small filtered diagram of flat
   modules is flat.
+* `RingHom.Flat.of_isColimit`: a ring homomorphism out of the point of a colimit cocone of a small
+  filtered diagram of commutative rings is flat if its composite with every leg is flat.
 
 ## References
 
@@ -68,3 +78,33 @@ theorem of_isColimit {J : Type u} [SmallCategory J] [IsFiltered J] {F : J ⥤ Mo
   rw [← hi, ← hy' i, ← c.w g, ConcreteCategory.comp_apply]
 
 end Module.Flat
+
+namespace RingHom.Flat
+
+/-- Let `c` be a colimit cocone of a small filtered diagram of commutative rings. A ring
+homomorphism out of its point is flat as soon as its composite with every leg is flat. -/
+theorem of_isColimit {J : Type u} [SmallCategory J] [IsFiltered J] {F : J ⥤ CommRingCat.{u}}
+    {c : Cocone F} (hc : IsColimit c) {C : Type*} [CommRing C] (g : c.pt →+* C)
+    (hg : ∀ j, (g.comp (c.ι.app j).hom).Flat) : g.Flat := by
+  classical
+  algebraize [g]
+  refine Module.Flat.of_forall_isTrivialRelation fun {l f x} hfx => ?_
+  -- The finitely many coefficients `f i` come from a common stage `k`.
+  choose j y hy using fun i => Concrete.isColimit_exists_rep F hc (f i)
+  let O : Finset J := Finset.univ.image j
+  have hO (i : Fin l) : j i ∈ O := Finset.mem_image_of_mem j (Finset.mem_univ i)
+  let k := IsFiltered.sup O ∅
+  let y' (i : Fin l) : F.obj k := F.map (IsFiltered.toSup O ∅ (hO i)) (y i)
+  have hy' (i : Fin l) : c.ι.app k (y' i) = f i := by
+    rw [← hy i, ← c.w (IsFiltered.toSup O ∅ (hO i)), ConcreteCategory.comp_apply]
+  -- Over the stage `k`, the relation has coefficients `y' i`, and flatness trivializes it.
+  let := (g.comp (c.ι.app k).hom).toAlgebra
+  have : Module.Flat (F.obj k) C := hg k
+  have hrel : ∑ i, y' i • x i = 0 := by
+    simpa [Algebra.smul_def, RingHom.algebraMap_toAlgebra, hy'] using hfx
+  obtain ⟨n, a, z, hz, ha⟩ := Module.Flat.isTrivialRelation_of_sum_smul_eq_zero hrel
+  refine ⟨n, fun i t => c.ι.app k (a i t), z, fun i => ?_, fun t => ?_⟩
+  · simpa [Algebra.smul_def, RingHom.algebraMap_toAlgebra] using hz i
+  · simpa [hy'] using congrArg (c.ι.app k) (ha t)
+
+end RingHom.Flat
