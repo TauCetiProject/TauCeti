@@ -1,0 +1,265 @@
+/-
+Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: The Tau Ceti contributors
+-/
+module
+
+public import Mathlib.CategoryTheory.Action.Limits
+public import Mathlib.LinearAlgebra.PID
+public import Mathlib.RepresentationTheory.Invariants
+public import TauCeti.CategoryTheory.Monoidal.Pivotal.FrobeniusSchur.Simple
+public import TauCeti.RepresentationTheory.CharacterTable.FrobeniusSchur.Basic
+public import TauCeti.RepresentationTheory.FDRep.Basic
+public import TauCeti.RepresentationTheory.FDRep.Pivotal
+
+/-!
+# Frobenius–Schur indicators in `FDRep k G`
+
+We compute the Ng–Schauenburg Frobenius–Schur indicators of a finite-dimensional representation
+`V : FDRep k G` equipped with the standard spherical structure (`FDRep.Pivotal`) when `G` is finite
+and `|G|` is invertible in `k`: for every `n : ℕ+`,
+
+`TauCeti.frobeniusSchurIndicator k V n = (Nat.card G : k)⁻¹ * ∑ g : G, V.character (g ^ (n : ℕ))`.
+
+Specializing to `n = 2` shows that the categorical second Frobenius–Schur indicator agrees with the
+representation-theoretic indicator `FDRep.frobeniusSchurIndicator V = |G|⁻¹ ∑ g, χ_V(g²)`.
+Combining this identification with the categorical trichotomy in
+`TauCeti.CategoryTheory.Monoidal.Pivotal.FrobeniusSchur.Simple` yields the self-duality criterion
+`FDRep.frobeniusSchurIndicator V ≠ 0 ↔ Nonempty (V ≅ Vᘁ)` and the `{1, 0, -1}` trichotomy for any
+simple `V : FDRep k G` over an algebraically closed field in which `|G|` is invertible (including
+characteristic `2` when `|G|` is odd).
+
+Note that invertibility of `|G|` in `k` is genuinely required to equate the categorical indicator
+with the character average: for `G = C₂` and `k = 𝔽₂`, the trivial `1`-dimensional representation
+has `dim_k Hom(𝟙_, V ⊗ V) = 1` and identity rotation, so its categorical indicator is `1`, whereas
+`(Nat.card G : k)⁻¹` vanishes in `𝔽₂`.
+
+## Main definitions
+
+* `FDRep.tensorUnitHomEquivInvariants`: `R`-linear equivalence `(𝟙_ (FDRep R G) ⟶ W) ≃ₗ[R]
+  Representation.invariants W.ρ` given by evaluation at `1 : R`.
+
+## Main results
+
+* `FDRep.trace_rightComp_tensorUnit`: when `|G|` is invertible in `k`, the trace of postcomposition
+  with `φ : W ⟶ W` on `𝟙_ (FDRep k G) ⟶ W` equals `|G|⁻¹ ∑ g : G, tr_W(φ ∘ ρ(g))`.
+* `TauCeti.frobeniusSchurIndicator_fdRep`: `ν_n(V) = (Nat.card G : k)⁻¹ * ∑ g : G,
+  V.character (g ^ (n : ℕ))` for `[Invertible (Nat.card G : k)]` (and
+  `TauCeti.frobeniusSchurIndicator_fdRep_of_charZero` without an explicit invertibility hypothesis
+  in characteristic zero).
+* `TauCeti.frobeniusSchurIndicator_fdRep_two`, `TauCeti.frobeniusSchurIndicator_fdRep_of_two`, and
+  `TauCeti.frobeniusSchurIndicator_fdRep_ofShrink_two`: agreement of the categorical `n = 2`
+  indicator with `FDRep.frobeniusSchurIndicator` and
+  `TauCeti.Representation.frobeniusSchurIndicator`.
+* `FDRep.frobeniusSchurIndicator_eq_one_or_eq_zero_or_eq_neg_one`,
+  `FDRep.frobeniusSchurIndicator_ne_zero_iff`, and `FDRep.frobeniusSchurIndicator_eq_zero_iff`:
+  categorical trichotomy and self-duality criterion for simple representations whenever `|G|` is
+  invertible in an algebraically closed field `k`.
+
+## References
+
+* S.-H. Ng, P. Schauenburg, *Higher Frobenius–Schur indicators for pivotal categories*, in
+  *Hopf algebras and generalizations*, Contemp. Math. **441** (2007), 63–90, §§4–5
+* [P. Etingof, S. Gelaki, D. Nikshych, V. Ostrik, *Tensor categories*][egno15], §4.7
+-/
+
+public section
+
+open CategoryTheory MonoidalCategory TauCeti
+
+universe u v w
+
+namespace FDRep
+
+section CommRing
+
+variable {R : Type u} {G : Type v} [CommRing R] [Group G]
+
+/-- An equivariant morphism carries `G`-invariant vectors to `G`-invariant vectors. -/
+theorem map_mem_invariants {W W' : FDRep R G} (φ : W ⟶ W') {v : W}
+    (hv : v ∈ Representation.invariants W.ρ) :
+    φ.hom.hom.hom v ∈ Representation.invariants W'.ρ := fun g ↦ by
+  have h := LinearMap.congr_fun (hom_hom_hom_comm φ g) v
+  simpa [hv g] using h.symm
+
+/-- Morphisms out of the trivial representation `𝟙_ (FDRep R G)` identify `R`-linearly with the
+submodule `Representation.invariants W.ρ` of `G`-invariant vectors by evaluation at `1 : R`. -/
+def tensorUnitHomEquivInvariants (W : FDRep R G) :
+    (𝟙_ (FDRep R G) ⟶ W) ≃ₗ[R] Representation.invariants W.ρ where
+  toFun f :=
+    ⟨FGModuleCat.tensorUnitHomLinearEquiv W.V f.hom, fun g ↦ by
+      have h := LinearMap.congr_fun (hom_hom_hom_comm f g) (1 : R)
+      rw [tensorUnit_ρ] at h
+      simpa using h.symm⟩
+  invFun v :=
+    { hom := (FGModuleCat.tensorUnitHomLinearEquiv W.V).symm v.1
+      comm := fun g ↦ by
+        ext : 1
+        refine LinearMap.ext_ring ?_
+        simp only [FGModuleCat.hom_hom_comp, hom_hom_action_ρ, LinearMap.comp_apply,
+          FGModuleCat.tensorUnitHomLinearEquiv_symm_apply_hom_hom]
+        change (LinearMap.toSpanSingleton R W v.1) (((𝟙_ (FDRep R G)).ρ g) (1 : R)) =
+          W.ρ g ((LinearMap.toSpanSingleton R W v.1) (1 : R))
+        rw [tensorUnit_ρ, LinearMap.id_apply, LinearMap.toSpanSingleton_apply_one]
+        exact (v.2 g).symm }
+  left_inv f := by
+    ext : 1
+    exact (FGModuleCat.tensorUnitHomLinearEquiv W.V).symm_apply_apply f.hom
+  right_inv v := Subtype.ext ((FGModuleCat.tensorUnitHomLinearEquiv W.V).apply_symm_apply v.1)
+  map_add' _ _ := Subtype.ext (by simp)
+  map_smul' _ _ := Subtype.ext (by simp)
+
+@[simp]
+theorem tensorUnitHomEquivInvariants_coe_apply (W : FDRep R G) (f : 𝟙_ (FDRep R G) ⟶ W) :
+    (tensorUnitHomEquivInvariants W f : W) = f.hom.hom.hom (1 : R) := by
+  simp [tensorUnitHomEquivInvariants]
+
+@[simp]
+theorem tensorUnitHomEquivInvariants_symm_apply_hom (W : FDRep R G)
+    (v : Representation.invariants W.ρ) :
+    ((tensorUnitHomEquivInvariants W).symm v).hom =
+      (FGModuleCat.tensorUnitHomLinearEquiv W.V).symm v.1 :=
+  (rfl)
+
+/-- Under `tensorUnitHomEquivInvariants`, postcomposition with an equivariant endomorphism `φ`
+corresponds to the restriction of `φ` to `Representation.invariants W.ρ`. -/
+theorem conj_tensorUnitHomEquivInvariants_rightComp {W : FDRep R G} (φ : W ⟶ W) :
+    (tensorUnitHomEquivInvariants W).conj (Linear.rightComp R (𝟙_ (FDRep R G)) φ) =
+      φ.hom.hom.hom.restrict (fun _ hv ↦ map_mem_invariants φ hv) := by
+  ext ⟨v, hv⟩
+  simp only [LinearEquiv.conj_apply, LinearMap.comp_apply, Linear.rightComp_apply,
+    LinearMap.restrict_apply, LinearEquiv.coe_coe, tensorUnitHomEquivInvariants_coe_apply,
+    Action.comp_hom, FGModuleCat.hom_hom_comp, tensorUnitHomEquivInvariants_symm_apply_hom,
+    FGModuleCat.tensorUnitHomLinearEquiv_symm_apply_hom_hom]
+  exact congrArg φ.hom.hom.hom (LinearMap.toSpanSingleton_apply_one R W v)
+
+end CommRing
+
+section Trace
+
+variable {k : Type u} {G : Type v} [Field k] [Group G] [Fintype G] [Invertible (Nat.card G : k)]
+
+/-- When `|G|` is invertible in `k`, the trace of postcomposition with `φ : W ⟶ W` on
+`𝟙_ (FDRep k G) ⟶ W` equals the group average `|G|⁻¹ ∑ g : G, tr_W(φ ∘ ρ(g))`. -/
+theorem trace_rightComp_tensorUnit {W : FDRep k G} (φ : W ⟶ W) :
+    LinearMap.trace k (𝟙_ (FDRep k G) ⟶ W) (Linear.rightComp k (𝟙_ (FDRep k G)) φ) =
+      (Nat.card G : k)⁻¹ * ∑ g : G, LinearMap.trace k W (φ.hom.hom.hom ∘ₗ W.ρ g) := by
+  have : Invertible (Fintype.card G : k) :=
+    invertibleOfNonzero (Fintype.card_eq_nat_card (α := G) ▸ Invertible.ne_zero (Nat.card G : k))
+  have hmem : ∀ w : W,
+      (φ.hom.hom.hom ∘ₗ Representation.averageMap W.ρ) w ∈ Representation.invariants W.ρ :=
+    fun w ↦ map_mem_invariants φ (Representation.averageMap_invariant W.ρ w)
+  have hres : φ.hom.hom.hom.restrict (fun _ hv ↦ map_mem_invariants φ hv) =
+      (φ.hom.hom.hom ∘ₗ Representation.averageMap W.ρ).restrict (fun w _ ↦ hmem w) := by
+    ext ⟨v, hv⟩
+    simp only [LinearMap.restrict_apply, LinearMap.comp_apply,
+      Representation.averageMap_id W.ρ v hv]
+  have havg : φ.hom.hom.hom ∘ₗ Representation.averageMap W.ρ =
+      (Nat.card G : k)⁻¹ • ∑ g : G, (φ.hom.hom.hom ∘ₗ W.ρ g) := by
+    ext w
+    rw [Representation.averageMap, GroupAlgebra.average, map_smul, map_sum,
+      invOf_eq_inv, Fintype.card_eq_nat_card]
+    simp only [Representation.asAlgebraHom_of, LinearMap.comp_apply, LinearMap.smul_apply,
+      LinearMap.sum_apply, map_smul, map_sum]
+  rw [← LinearMap.trace_conj' _ (tensorUnitHomEquivInvariants W),
+    conj_tensorUnitHomEquivInvariants_rightComp, hres,
+    LinearMap.trace_restrict_eq_of_forall_mem (Representation.invariants W.ρ) _ hmem, havg,
+    map_smul, map_sum, smul_eq_mul]
+
+end Trace
+
+end FDRep
+
+namespace TauCeti
+
+section Indicator
+
+variable {k : Type u} {G : Type v} [Field k] [Group G] [Fintype G]
+
+/-- In `FDRep k G` with its standard spherical structure, the `n`-th Frobenius–Schur indicator of
+`V` equals `(Nat.card G : k)⁻¹ * ∑ g : G, V.character (g ^ (n : ℕ))` whenever `|G|` is invertible
+in `k`. -/
+theorem frobeniusSchurIndicator_fdRep [Invertible (Nat.card G : k)] (V : FDRep k G) (n : ℕ+) :
+    frobeniusSchurIndicator k V n = (Nat.card G : k)⁻¹ * ∑ g : G, V.character (g ^ (n : ℕ)) := by
+  have hn : n.natPred.succPNat = n := Subtype.ext (Nat.succ_pred_eq_of_pos n.2)
+  rw [← hn, frobeniusSchurIndicator_succPNat_eq_trace_rightComp, FDRep.trace_rightComp_tensorUnit]
+  refine congrArg ((Nat.card G : k)⁻¹ * ·) (Finset.sum_congr rfl fun g _ ↦ ?_)
+  have htr := congrArg (fun ψ : 𝟙_ (FGModuleCat k) ⟶ 𝟙_ (FGModuleCat k) ↦ ψ.hom.hom 1)
+    (Action.trace_ρ_comp_tensorPowShiftIso_hom V g n.natPred)
+  simp only [FGModuleCat.trace_hom_hom_one, FGModuleCat.hom_hom_comp, FDRep.hom_hom_action_ρ]
+    at htr
+  exact htr
+
+/-- In characteristic zero, `|G|` is automatically invertible in `k`, so the `n`-th categorical
+Frobenius–Schur indicator of `V : FDRep k G` is `|G|⁻¹ ∑ g : G, V.character (g ^ (n : ℕ))`. -/
+theorem frobeniusSchurIndicator_fdRep_of_charZero [CharZero k] (V : FDRep k G) (n : ℕ+) :
+    frobeniusSchurIndicator k V n = (Nat.card G : k)⁻¹ * ∑ g : G, V.character (g ^ (n : ℕ)) := by
+  have : Invertible (Nat.card G : k) :=
+    invertibleOfNonzero (Nat.cast_ne_zero.mpr Nat.card_pos.ne')
+  exact frobeniusSchurIndicator_fdRep V n
+
+end Indicator
+
+section Two
+
+variable {k : Type} {G : Type v} [Field k] [Group G] [Fintype G] [Invertible (Nat.card G : k)]
+
+/-- The categorical second Frobenius–Schur indicator of `V : FDRep k G` agrees with the
+character-average indicator `FDRep.frobeniusSchurIndicator V`. -/
+theorem frobeniusSchurIndicator_fdRep_two (V : FDRep k G) :
+    frobeniusSchurIndicator k V 2 = FDRep.frobeniusSchurIndicator V := by
+  rw [frobeniusSchurIndicator_fdRep, FDRep.frobeniusSchurIndicator_def,
+    Representation.frobeniusSchurIndicator_def]
+  simp [FDRep.character_ρ]
+
+/-- The categorical second Frobenius–Schur indicator of `FDRep.of ρ` agrees with
+`TauCeti.Representation.frobeniusSchurIndicator ρ`. -/
+theorem frobeniusSchurIndicator_fdRep_of_two {W : Type} [AddCommGroup W] [Module k W]
+    [FiniteDimensional k W] (ρ : Representation k G W) :
+    frobeniusSchurIndicator k (FDRep.of ρ) 2 = Representation.frobeniusSchurIndicator ρ := by
+  rw [frobeniusSchurIndicator_fdRep_two, FDRep.frobeniusSchurIndicator_def, FDRep.of_ρ']
+
+/-- The categorical second Frobenius–Schur indicator of `FDRep.ofShrink ρ` agrees with
+`TauCeti.Representation.frobeniusSchurIndicator ρ` for representations in any universe. -/
+theorem frobeniusSchurIndicator_fdRep_ofShrink_two {W : Type w} [AddCommGroup W] [Module k W]
+    [FiniteDimensional k W] (ρ : Representation k G W) :
+    frobeniusSchurIndicator k (FDRep.ofShrink ρ) 2 = Representation.frobeniusSchurIndicator ρ := by
+  rw [frobeniusSchurIndicator_fdRep_two, FDRep.frobeniusSchurIndicator_def]
+  exact Representation.frobeniusSchurIndicator_eq_of_equiv (FDRep.ofShrinkEquiv ρ)
+
+end Two
+
+end TauCeti
+
+namespace FDRep
+
+variable {k : Type} {G : Type v} [Field k] [IsAlgClosed k] [Group G] [Fintype G]
+  [Invertible (Nat.card G : k)] (V : FDRep k G) [Simple V]
+
+/-- Over any algebraically closed field in which `|G|` is invertible (characteristic two included
+when `|G|` is odd), the Frobenius–Schur indicator of a simple `V : FDRep k G` takes only the values
+`1`, `0`, or `-1`. -/
+theorem frobeniusSchurIndicator_eq_one_or_eq_zero_or_eq_neg_one :
+    FDRep.frobeniusSchurIndicator V = 1 ∨ FDRep.frobeniusSchurIndicator V = 0 ∨
+      FDRep.frobeniusSchurIndicator V = -1 := by
+  rw [← TauCeti.frobeniusSchurIndicator_fdRep_two]
+  exact TauCeti.frobeniusSchurIndicator_two_eq_one_or_eq_zero_or_eq_neg_one k V
+
+/-- Over an algebraically closed field in which `|G|` is invertible, the Frobenius–Schur indicator
+of a simple representation `V : FDRep k G` is nonzero if and only if `V` is isomorphic to its dual
+`Vᘁ`. -/
+theorem frobeniusSchurIndicator_ne_zero_iff :
+    FDRep.frobeniusSchurIndicator V ≠ 0 ↔ Nonempty (V ≅ Vᘁ) := by
+  rw [← TauCeti.frobeniusSchurIndicator_fdRep_two]
+  exact TauCeti.frobeniusSchurIndicator_two_ne_zero_iff k V
+
+/-- Over an algebraically closed field in which `|G|` is invertible, the Frobenius–Schur indicator
+of a simple representation `V : FDRep k G` is zero if and only if `V` is not isomorphic to its dual
+`Vᘁ`. -/
+theorem frobeniusSchurIndicator_eq_zero_iff :
+    FDRep.frobeniusSchurIndicator V = 0 ↔ IsEmpty (V ≅ Vᘁ) := by
+  rw [← TauCeti.frobeniusSchurIndicator_fdRep_two]
+  exact TauCeti.frobeniusSchurIndicator_two_eq_zero_iff k V
+
+end FDRep

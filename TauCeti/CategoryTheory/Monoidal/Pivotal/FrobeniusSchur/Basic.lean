@@ -82,6 +82,16 @@ theorem pivotalRotate_def {X Y : C} (f : 𝟙_ C ⟶ X ⊗ Y) :
       ε_ X Xᘁ ▷ Y ▷ X ⊗≫ 𝟙 _ :=
   (rfl)
 
+/-- Rotating the coevaluation `η_ X Xᘁ : 𝟙_ C ⟶ X ⊗ Xᘁ` yields the coevaluation of
+`pivotalExactPairing X`. -/
+@[simp]
+theorem pivotalRotate_coevaluation (X : C) :
+    pivotalRotate (η_ X Xᘁ) = @coevaluation C _ _ Xᘁ X (pivotalExactPairing X) := by
+  rw [pivotalRotate_def]
+  calc _ = @coevaluation C _ _ Xᘁ X (pivotalExactPairing X) ⊗≫
+        (Xᘁ ◁ η_ X Xᘁ ⊗≫ ε_ X Xᘁ ▷ Xᘁ) ▷ X ⊗≫ 𝟙 _ := by monoidal
+    _ = _ := by rw [coevaluation_evaluation'']; monoidal
+
 /-- The rotation is natural in the second factor. -/
 theorem pivotalRotate_comp_whiskerLeft {X Y Y' : C} (f : 𝟙_ C ⟶ X ⊗ Y) (g : Y ⟶ Y') :
     pivotalRotate (f ≫ X ◁ g) = pivotalRotate f ≫ g ▷ X := by

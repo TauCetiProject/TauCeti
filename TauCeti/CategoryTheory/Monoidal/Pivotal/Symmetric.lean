@@ -30,7 +30,10 @@ structure is spherical, registered as the instance `TauCeti.symmetricSphericalCa
 * `TauCeti.rightTrace_eq_braiding` and `TauCeti.leftTrace_eq_braiding`: the traces as braided
   loops, and `TauCeti.leftTrace_eq_rightTrace_of_symmetric`: the two traces agree;
 * `TauCeti.symmetricSphericalCategory`: the canonical pivotal structure is spherical, and
-  `TauCeti.trace_eq_braiding`: its trace as a braided loop.
+  `TauCeti.trace_eq_braiding`: its trace as a braided loop;
+* `TauCeti.trace_tensorHom_comp_braiding` and
+  `TauCeti.trace_associator_inv_braiding_whiskerRight_associator_hom_comp_whiskerLeft`: contracting
+  a symmetric braiding in a categorical trace.
 
 ## References
 
@@ -65,6 +68,19 @@ Drinfeld isomorphisms. -/
 theorem pivotalIsoApp_eq_drinfeldIso (X : C) : pivotalIsoApp X = drinfeldIso X :=
   Iso.ext ((pivotalIso_hom_app X).symm.trans (drinfeldNatIso_hom_app X))
 
+/-- In a symmetric rigid category, the coevaluation of `pivotalExactPairing X` is the coevaluation
+of `(X, Xᘁ)` followed by the braiding. -/
+theorem pivotalExactPairing_coevaluation_eq_braiding (X : C) :
+    @coevaluation C _ _ Xᘁ X (pivotalExactPairing X) = η_ X Xᘁ ≫ (β_ X Xᘁ).hom := by
+  rw [pivotalExactPairing_coevaluation, pivotalIsoApp_eq_drinfeldIso,
+    coevaluation_comp_drinfeldIso_inv, SymmetricCategory.braiding_swap_eq_inv_braiding]
+
+/-- In a symmetric rigid category, the evaluation of `pivotalExactPairing X` is the braiding
+followed by the evaluation of `(X, Xᘁ)`. -/
+theorem pivotalExactPairing_evaluation_eq_braiding (X : C) :
+    @evaluation C _ _ Xᘁ X (pivotalExactPairing X) = (β_ X Xᘁ).hom ≫ ε_ X Xᘁ := by
+  rw [pivotalExactPairing_evaluation, pivotalIsoApp_eq_drinfeldIso, drinfeldIso_hom_comp_evaluation]
+
 /-- In a symmetric rigid category with its canonical pivotal structure, the right trace of `f`
 closes up `f` with the coevaluation of `(X, Xᘁ)` and the braided evaluation. -/
 theorem rightTrace_eq_braiding {X : C} (f : X ⟶ X) :
@@ -93,6 +109,68 @@ closes up `f` with the coevaluation of `(X, Xᘁ)` and the braided evaluation. -
 theorem trace_eq_braiding {X : C} (f : X ⟶ X) :
     trace f = η_ X Xᘁ ≫ f ▷ Xᘁ ≫ (β_ X Xᘁ).hom ≫ ε_ X Xᘁ := by
   rw [trace_eq_rightTrace, rightTrace_eq_braiding]
+
+/-- Left partial trace over the first factor of `(β_ X X).hom` is the identity on `X`. -/
+private theorem coevaluation_braiding_comp_braiding_comp_evaluation (X : C) :
+    (λ_ X).inv ≫ (η_ X Xᘁ ≫ (β_ X Xᘁ).hom) ▷ X ≫ (α_ Xᘁ X X).hom ≫
+      Xᘁ ◁ (β_ X X).hom ≫ (α_ Xᘁ X X).inv ≫ ε_ X Xᘁ ▷ X ≫ (λ_ X).hom = 𝟙 X := by
+  have h : (β_ X Xᘁ).hom ▷ X ≫ (α_ Xᘁ X X).hom ≫ Xᘁ ◁ (β_ X X).hom ≫ (α_ Xᘁ X X).inv =
+      (α_ X Xᘁ X).hom ≫ (β_ X (Xᘁ ⊗ X)).hom := by
+    rw [braiding_tensor_right_hom, Iso.hom_inv_id_assoc]
+  rw [comp_whiskerRight, Category.assoc, reassoc_of% h,
+    ← braiding_naturality_right_assoc, braiding_tensorUnit_right]
+  calc _ = (λ_ X).inv ≫ (η_ X Xᘁ ▷ X ≫ (α_ X Xᘁ X).hom ≫ X ◁ ε_ X Xᘁ) ≫ (ρ_ X).hom := by
+        monoidal
+    _ = 𝟙 X := by
+        rw [evaluation_coevaluation]
+        monoidal
+
+/-- Contracting the first two factors of `(α_ X X Z)⁻¹ ≫ β_{X,X} ▷ Z ≫ α_ X X Z ≫ X ◁ h` in the
+categorical trace leaves the trace of `h : X ⊗ Z ⟶ X ⊗ Z`. -/
+theorem trace_associator_inv_braiding_whiskerRight_associator_hom_comp_whiskerLeft {X Z : C}
+    (h : X ⊗ Z ⟶ X ⊗ Z) :
+    trace ((α_ X X Z).inv ≫ (β_ X X).hom ▷ Z ≫ (α_ X X Z).hom ≫ X ◁ h) = trace h := by
+  have key : (λ_ (X ⊗ Z)).inv ≫ (η_ X Xᘁ ≫ (β_ X Xᘁ).hom) ▷ (X ⊗ Z) ≫
+      (α_ Xᘁ X (X ⊗ Z)).hom ≫
+        Xᘁ ◁ ((α_ X X Z).inv ≫ (β_ X X).hom ▷ Z ≫ (α_ X X Z).hom ≫ X ◁ h) ≫
+        (α_ Xᘁ X (X ⊗ Z)).inv ≫ ε_ X Xᘁ ▷ (X ⊗ Z) ≫ (λ_ (X ⊗ Z)).hom = h := by
+    calc _ = ((λ_ X).inv ≫ (η_ X Xᘁ ≫ (β_ X Xᘁ).hom) ▷ X ≫ (α_ Xᘁ X X).hom ≫
+          Xᘁ ◁ (β_ X X).hom ≫ (α_ Xᘁ X X).inv) ▷ Z ≫
+          (α_ (Xᘁ ⊗ X) X Z).hom ≫ ((Xᘁ ⊗ X) ◁ h ≫ ε_ X Xᘁ ▷ (X ⊗ Z)) ≫ (λ_ (X ⊗ Z)).hom := by
+          monoidal
+      _ = ((λ_ X).inv ≫ (η_ X Xᘁ ≫ (β_ X Xᘁ).hom) ▷ X ≫ (α_ Xᘁ X X).hom ≫
+          Xᘁ ◁ (β_ X X).hom ≫ (α_ Xᘁ X X).inv ≫ ε_ X Xᘁ ▷ X ≫ (λ_ X).hom) ▷ Z ≫ h := by
+          rw [whisker_exchange]
+          monoidal
+      _ = h := by
+          rw [coevaluation_braiding_comp_braiding_comp_evaluation, id_whiskerRight,
+            Category.id_comp]
+  rw [trace_eq_leftTrace, trace_eq_leftTrace, leftTrace_tensorObj,
+    pivotalExactPairing_coevaluation_eq_braiding, key]
+
+/-- Tracing `(β_ X X).hom ≫ X ◁ f` contracts one loop and gives `trace f`. -/
+theorem trace_braiding_comp_whiskerLeft {X : C} (f : X ⟶ X) :
+    trace ((β_ X X).hom ≫ X ◁ f) = trace f := by
+  have key : (λ_ X).inv ≫ (η_ X Xᘁ ≫ (β_ X Xᘁ).hom) ▷ X ≫ (α_ Xᘁ X X).hom ≫
+      Xᘁ ◁ ((β_ X X).hom ≫ X ◁ f) ≫ (α_ Xᘁ X X).inv ≫ ε_ X Xᘁ ▷ X ≫ (λ_ X).hom = f := by
+    calc _ = (λ_ X).inv ≫ (η_ X Xᘁ ≫ (β_ X Xᘁ).hom) ▷ X ≫ (α_ Xᘁ X X).hom ≫
+          Xᘁ ◁ (β_ X X).hom ≫ (α_ Xᘁ X X).inv ≫ ((Xᘁ ⊗ X) ◁ f ≫ ε_ X Xᘁ ▷ X) ≫ (λ_ X).hom := by
+          monoidal
+      _ = ((λ_ X).inv ≫ (η_ X Xᘁ ≫ (β_ X Xᘁ).hom) ▷ X ≫ (α_ Xᘁ X X).hom ≫
+          Xᘁ ◁ (β_ X X).hom ≫ (α_ Xᘁ X X).inv ≫ ε_ X Xᘁ ▷ X ≫ (λ_ X).hom) ≫ f := by
+          rw [whisker_exchange]
+          monoidal
+      _ = f := by
+          rw [coevaluation_braiding_comp_braiding_comp_evaluation, Category.id_comp]
+  rw [trace_eq_leftTrace, trace_eq_leftTrace, leftTrace_tensorObj,
+    pivotalExactPairing_coevaluation_eq_braiding, key]
+
+/-- In a symmetric rigid category, the categorical trace of `(f ⊗ₘ g) ≫ (β_ X X).hom` is
+`trace (g ≫ f)`. -/
+theorem trace_tensorHom_comp_braiding {X : C} (f g : X ⟶ X) :
+    trace ((f ⊗ₘ g) ≫ (β_ X X).hom) = trace (g ≫ f) := by
+  rw [tensorHom_def, Category.assoc, braiding_naturality_right, trace_comm, Category.assoc,
+    ← comp_whiskerRight, ← braiding_naturality_right, trace_comm, trace_braiding_comp_whiskerLeft]
 
 end Pivotal
 

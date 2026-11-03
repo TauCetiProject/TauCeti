@@ -165,6 +165,29 @@ theorem tensorPowSuccIso_hom (X : C) (n : ℕ) :
       eqToHom (congrArg (tensorPow X) (Nat.add_comm 1 n)) :=
   (rfl)
 
+/-- Appending a factor on the right of the zeroth tensor power swaps the left and right unitors. -/
+@[simp]
+theorem tensorPowSuccIso_zero_hom (X : C) :
+    (tensorPowSuccIso X 0).hom = (λ_ X).hom ≫ (ρ_ X).inv := by
+  simp only [tensorPowSuccIso_hom, tensorPowAddIso_zero, eqToHom_refl, Category.comp_id]
+  monoidal
+
+/-- The inverse of `tensorPowSuccIso` at `0`. -/
+@[simp]
+theorem tensorPowSuccIso_zero_inv (X : C) :
+    (tensorPowSuccIso X 0).inv = (ρ_ X).hom ≫ (λ_ X).inv :=
+  Iso.inv_ext (by simp)
+
+/-- Recursive step for appending a factor on the right of a tensor power. -/
+theorem tensorPowSuccIso_succ_hom (X : C) (n : ℕ) :
+    (tensorPowSuccIso X (n + 1)).hom =
+      (α_ X (tensorPow X n) X).hom ≫ X ◁ (tensorPowSuccIso X n).hom := by
+  have h : eqToHom (congrArg (tensorPow X) (Nat.add_comm 1 (n + 1))) =
+      X ◁ eqToHom (congrArg (tensorPow X) (Nat.add_comm 1 n)) := by
+    rw [MonoidalCategory.whiskerLeft_eqToHom]
+  rw [tensorPowSuccIso_hom, tensorPowSuccIso_hom, tensorPowAddIso_succ_hom, h]
+  monoidal
+
 /-- Appending a factor to the first of two blocks and then joining them is joining the factor to
 the second block. -/
 @[reassoc]
