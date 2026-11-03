@@ -123,6 +123,16 @@ noncomputable def generatedCoordinateMap :
       generatedCoordinateHopfAlgebra n hn A :=
   CommHopfAlgCat.mkQuotient _ _
 
+/-- The named coordinate map is the quotient map after transport to its quotient presentation. -/
+theorem generatedCoordinateMap_comp_eqToIso_hom :
+    generatedCoordinateMap n hn A ≫ (eqToIso (generatedCoordinateHopfAlgebra_def n hn A)).hom =
+      CommHopfAlgCat.mkQuotient (GeneralLinear.coordinateHopfAlgebra A (dimension n))
+        (generatedDefiningIdeal n hn A) := by
+  -- In the defining module the named quotient and its transport reduce to the same object.
+  change CommHopfAlgCat.mkQuotient (GeneralLinear.coordinateHopfAlgebra A (dimension n))
+      (generatedDefiningIdeal n hn A) ≫ 𝟙 _ = _
+  simp
+
 /-- The generated subgroup's coordinate map is surjective. -/
 theorem generatedCoordinateMap_surjective :
     Function.Surjective (generatedCoordinateMap n hn A).hom :=
@@ -172,6 +182,20 @@ theorem generatedCoordinateMap_comp_generatedCoordinateLift (j : Sum (Fin n ⊕ 
       generatorCoordinateMap n hn A j :=
   generatedCoordinateMap_comp_generatedCoordinateDesc n hn A (generatorCoordinateMap n hn A j)
     ((le_generatedDefiningIdeal_iff n hn A _).mp le_rfl j)
+
+/-- The numbered root-subgroup coordinate maps of the generated spin group are surjective.
+Thus the numbered root subgroups are closed subgroups of the generated group. -/
+theorem generatedCoordinateLift_inl_surjective (k : Fin n ⊕ Fin n) :
+    Function.Surjective (generatedCoordinateLift n hn A (.inl k)).hom := by
+  have h : Function.Surjective
+      (generatedCoordinateMap n hn A ≫ generatedCoordinateLift n hn A (.inl k)).hom := by
+    rw [generatedCoordinateMap_comp_generatedCoordinateLift, generatorCoordinateMap_inl,
+      ← coordinateMap_comp_rootSubgroupToBaseChangeCoordinateMap,
+      _root_.CommHopfAlgCat.hom_comp, BialgHom.coe_comp]
+    exact (rootSubgroupToBaseChangeCoordinateMap_surjective n hn A k).comp
+      (coordinateMap_surjective n hn A)
+  rw [_root_.CommHopfAlgCat.hom_comp, BialgHom.coe_comp] at h
+  exact Function.Surjective.of_comp h
 
 /-- The generator lift is the unique factorization through the generated subgroup. -/
 theorem generatedCoordinateLift_unique (j : Sum (Fin n ⊕ Fin n) Unit)
