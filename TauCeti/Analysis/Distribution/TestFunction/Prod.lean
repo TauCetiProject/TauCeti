@@ -7,7 +7,8 @@ module
 
 public import Mathlib.Analysis.Distribution.TestFunction
 import Mathlib.Analysis.Calculus.ContDiff.Bounds
-import Mathlib.Analysis.Normed.Operator.Prod
+import TauCeti.Analysis.Calculus.IteratedFDeriv.CompLinear
+import TauCeti.Topology.Algebra.Support
 
 /-!
 # Tensor products of test functions with a fixed test function
@@ -34,7 +35,7 @@ public section
 
 noncomputable section
 
-open Set TopologicalSpace
+open Set TopologicalSpace TauCeti
 open scoped Distributions
 
 namespace TestFunction
@@ -43,48 +44,6 @@ variable {E D F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   [NormedAddCommGroup D] [NormedSpace ℝ D] [NormedAddCommGroup F] [NormedSpace ℝ F]
   {Ω : Opens E} {O : Opens D} {V : Opens (E × D)}
 
-/-- The tensor product `(x, t) ↦ ψ t • φ x` of two smooth functions is smooth. -/
-private theorem contDiff_prodSMul {ψ : D → ℝ} {φ : E → F} (hψ : ContDiff ℝ (⊤ : ℕ∞) ψ)
-    (hφ : ContDiff ℝ (⊤ : ℕ∞) φ) : ContDiff ℝ (⊤ : ℕ∞) fun p : E × D ↦ ψ p.2 • φ p.1 :=
-  (hψ.comp contDiff_snd).smul (hφ.comp contDiff_fst)
-
-omit [NormedAddCommGroup E] [NormedSpace ℝ E] [NormedAddCommGroup D] [NormedSpace ℝ D] in
-/-- The tensor product `(x, t) ↦ ψ t • φ x` is supported in the product of the supports. -/
-private theorem support_prodSMul_subset (ψ : D → ℝ) (φ : E → F) :
-    Function.support (fun p : E × D ↦ ψ p.2 • φ p.1) ⊆
-      Function.support φ ×ˢ Function.support ψ := fun _ hp ↦
-  ⟨right_ne_zero_of_smul hp, left_ne_zero_of_smul hp⟩
-
-omit [NormedSpace ℝ E] [NormedSpace ℝ D] in
-/-- The tensor product `(x, t) ↦ ψ t • φ x` is supported in the product of the closed
-supports. -/
-private theorem tsupport_prodSMul_subset (ψ : D → ℝ) (φ : E → F) :
-    tsupport (fun p : E × D ↦ ψ p.2 • φ p.1) ⊆ tsupport φ ×ˢ tsupport ψ :=
-  closure_minimal ((support_prodSMul_subset ψ φ).trans
-    (prod_mono (subset_tsupport _) (subset_tsupport _)))
-    ((isClosed_tsupport _).prod (isClosed_tsupport _))
-
-/-- The derivatives of `t ↦ ψ t` and `x ↦ φ x`, read on `E × D`, are bounded by those of `ψ` and
-`φ`, since the projections have norm at most one. -/
-private theorem norm_iteratedFDeriv_comp_snd_le {G : Type*} [NormedAddCommGroup G]
-    [NormedSpace ℝ G] {f : D → G} (hf : ContDiff ℝ (⊤ : ℕ∞) f) (j : ℕ) (p : E × D) :
-    ‖iteratedFDeriv ℝ j (f ∘ Prod.snd) p‖ ≤ ‖iteratedFDeriv ℝ j f p.2‖ := by
-  rw [show f ∘ Prod.snd = f ∘ ContinuousLinearMap.snd ℝ E D from rfl,
-    (ContinuousLinearMap.snd ℝ E D).iteratedFDeriv_comp_right hf p (mod_cast le_top)]
-  refine (ContinuousMultilinearMap.norm_compContinuousLinearMap_le _ _).trans ?_
-  exact mul_le_of_le_one_right (norm_nonneg _) (Finset.prod_le_one₀ (fun _ _ ↦ norm_nonneg _)
-    fun _ _ ↦ ContinuousLinearMap.norm_snd_le ℝ E D)
-
-/-- See `norm_iteratedFDeriv_comp_snd_le`. -/
-private theorem norm_iteratedFDeriv_comp_fst_le {f : E → F} (hf : ContDiff ℝ (⊤ : ℕ∞) f)
-    (j : ℕ) (p : E × D) :
-    ‖iteratedFDeriv ℝ j (f ∘ Prod.fst) p‖ ≤ ‖iteratedFDeriv ℝ j f p.1‖ := by
-  rw [show f ∘ Prod.fst = f ∘ ContinuousLinearMap.fst ℝ E D from rfl,
-    (ContinuousLinearMap.fst ℝ E D).iteratedFDeriv_comp_right hf p (mod_cast le_top)]
-  refine (ContinuousMultilinearMap.norm_compContinuousLinearMap_le _ _).trans ?_
-  exact mul_le_of_le_one_right (norm_nonneg _) (Finset.prod_le_one₀ (fun _ _ ↦ norm_nonneg _)
-    fun _ _ ↦ ContinuousLinearMap.norm_fst_le ℝ E D)
-
 /-- The tensor product with `ψ` of tests supported in a compact `K`, which is supported in
 `K ×ˢ tsupport ψ`. -/
 private def prodSMulSupportedInCLM (ψ : 𝓓(O, ℝ)) (K : Compacts E) :
@@ -92,15 +51,17 @@ private def prodSMulSupportedInCLM (ψ : 𝓓(O, ℝ)) (K : Compacts E) :
       𝓓_{⟨(K : Set E) ×ˢ tsupport ψ, K.isCompact.prod ψ.hasCompactSupport⟩}(E × D, F) :=
   letI P : 𝓓_{K}(E, F) →ₗ[ℝ]
       𝓓_{⟨(K : Set E) ×ˢ tsupport ψ, K.isCompact.prod ψ.hasCompactSupport⟩}(E × D, F) :=
-    { toFun φ := ⟨fun p ↦ ψ p.2 • φ p.1, contDiff_prodSMul ψ.contDiff φ.contDiff,
+    { toFun φ := ⟨fun p ↦ ψ p.2 • φ p.1,
+        (ψ.contDiff.comp contDiff_snd).smul (φ.contDiff.comp contDiff_fst),
         fun p hp ↦ Function.notMem_support.1 fun h ↦ hp <|
-          prod_mono φ.support_subset (subset_tsupport _) (support_prodSMul_subset _ _ h)⟩
+          prod_mono φ.support_subset (subset_tsupport _) (support_snd_smul_fst_subset _ _ h)⟩
       map_add' φ η := ContDiffMapSupportedIn.ext fun p ↦ smul_add (ψ p.2) (φ p.1) (η p.1)
       map_smul' c φ := ContDiffMapSupportedIn.ext fun p ↦ smul_comm (ψ p.2) c (φ p.1) }
   { toLinearMap := P
     cont := by
       -- Leibniz: the `i`-th derivative is controlled by the first `i` derivatives of `φ`, with
       -- constants given by bounds for the derivatives of `ψ`.
+      have hle (m : ℕ) : (m : WithTop ℕ∞) ≤ (⊤ : ℕ∞) := mod_cast le_top
       choose M hM using fun j : ℕ ↦
         (ψ.contDiff.continuous_iteratedFDeriv (m := j) (mod_cast le_top)).norm
           |>.bddAbove_range_of_hasCompactSupport (ψ.hasCompactSupport.iteratedFDeriv j).norm
@@ -115,11 +76,11 @@ private def prodSMulSupportedInCLM (ψ : 𝓓(O, ℝ)) (K : Compacts E) :
       refine Finset.sum_le_sum fun j hj ↦ ?_
       have hj : j ≤ i := Nat.lt_succ_iff.1 (Finset.mem_range.1 hj)
       have hψj : ‖iteratedFDeriv ℝ j (ψ ∘ Prod.snd) p‖ ≤ |M j| :=
-        (norm_iteratedFDeriv_comp_snd_le ψ.contDiff j p).trans
+        (norm_iteratedFDeriv_comp_snd_le ψ.contDiff p (hle j)).trans
           ((hM j ⟨p.2, rfl⟩).trans (le_abs_self _))
       have hφj : ‖iteratedFDeriv ℝ (i - j) (φ ∘ Prod.fst) p‖ ≤
           (Finset.range (i + 1)).sup (ContDiffMapSupportedIn.seminorm ℝ E F ⊤ K) φ :=
-        (norm_iteratedFDeriv_comp_fst_le φ.contDiff (i - j) p).trans
+        (norm_iteratedFDeriv_comp_fst_le φ.contDiff p (hle (i - j))).trans
           ((ContDiffMapSupportedIn.norm_iteratedFDeriv_apply_le_seminorm_top ℝ).trans
             (Seminorm.le_finset_sup_apply (Finset.mem_range.2 (by omega))))
       calc (i.choose j : ℝ) * ‖iteratedFDeriv ℝ j (fun p : E × D ↦ ψ p.2) p‖ *
@@ -135,10 +96,10 @@ sending a test function `φ` on `Ω` to the test function `(x, t) ↦ ψ t • �
 def prodSMulCLM (ψ : 𝓓(O, ℝ)) (hV : (Ω : Set E) ×ˢ (O : Set D) ⊆ V) :
     𝓓(Ω, F) →L[ℝ] 𝓓(V, F) :=
   letI T (φ : 𝓓(Ω, F)) : 𝓓(V, F) :=
-    ⟨fun p ↦ ψ p.2 • φ p.1, contDiff_prodSMul ψ.contDiff φ.contDiff,
+    ⟨fun p ↦ ψ p.2 • φ p.1, (ψ.contDiff.comp contDiff_snd).smul (φ.contDiff.comp contDiff_fst),
       (φ.hasCompactSupport.prod ψ.hasCompactSupport).of_isClosed_subset (isClosed_tsupport _)
-        (tsupport_prodSMul_subset _ _),
-      (tsupport_prodSMul_subset _ _).trans
+        (tsupport_snd_smul_fst_subset _ _),
+      (tsupport_snd_smul_fst_subset _ _).trans
         ((prod_mono φ.tsupport_subset ψ.tsupport_subset).trans hV)⟩
   TestFunction.limitCLM ℝ T
     (fun K hK ↦ ofSupportedInCLM ℝ ((prod_mono hK ψ.tsupport_subset).trans hV) ∘L
@@ -156,6 +117,6 @@ theorem prodSMulCLM_apply (φ : 𝓓(Ω, F)) (p : E × D) :
 /-- The tensor product of `φ` with `ψ` is supported in `tsupport φ ×ˢ tsupport ψ`. -/
 theorem tsupport_prodSMulCLM_subset (φ : 𝓓(Ω, F)) :
     tsupport (prodSMulCLM ψ hV φ) ⊆ tsupport φ ×ˢ tsupport ψ :=
-  tsupport_prodSMul_subset _ _
+  tsupport_snd_smul_fst_subset _ _
 
 end TestFunction

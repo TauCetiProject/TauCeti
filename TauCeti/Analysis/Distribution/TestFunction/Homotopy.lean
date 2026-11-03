@@ -5,8 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Analysis.Calculus.ContDiff.Prod
 public import TauCeti.Analysis.Distribution.TestFunction.CylinderHomotopy
 public import TauCeti.Analysis.Distribution.TestFunction.Prod
+public import TauCeti.Topology.Compactness.Compact
 import Mathlib.Analysis.SpecialFunctions.SmoothTransition
 import Mathlib.MeasureTheory.Integral.IntervalIntegral.IntegrationByParts
 import TauCeti.Analysis.Calculus.ContDiff.ContinuousAlternatingMap
@@ -76,35 +78,6 @@ noncomputable section
 
 open Set Filter TopologicalSpace ContinuousAlternatingMap
 open scoped Distributions Topology NNReal ENNReal Interval
-
-namespace TauCeti
-
-variable {X Y : Type*} [TopologicalSpace X] {s : Set X} {I : Set ℝ} {H : X × ℝ → Y}
-
-/-- **Slices of a homotopy proper on `s ×ˢ I` are proper**: if `(s ×ˢ I) ∩ H ⁻¹' K` is compact for
-every compact `K ⊆ U`, then so is `s ∩ H (·, t) ⁻¹' K` for every `t ∈ I`. -/
-theorem isCompact_inter_preimage_comp_prodMk_left [T2Space X] [TopologicalSpace Y] {U : Set Y}
-    (hHp : ∀ K : Set Y, IsCompact K → K ⊆ U → IsCompact ((s ×ˢ I) ∩ H ⁻¹' K)) {t : ℝ}
-    (ht : t ∈ I) (K : Set Y) (hK : IsCompact K) (hKU : K ⊆ U) :
-    IsCompact (s ∩ (fun x ↦ H (x, t)) ⁻¹' K) := by
-  have hC := hHp K hK hKU
-  have h : s ∩ (fun x ↦ H (x, t)) ⁻¹' K = (fun x ↦ (x, t)) ⁻¹' ((s ×ˢ I) ∩ H ⁻¹' K) := by
-    ext x
-    simp [ht]
-  rw [h]
-  exact (hC.image continuous_fst).of_isClosed_subset
-    (hC.isClosed.preimage (continuous_id.prodMk continuous_const)) fun x hx ↦ ⟨_, hx, rfl⟩
-
-variable {E E' : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [NormedAddCommGroup E']
-  [NormedSpace ℝ E'] {s : Set E} {H : E × ℝ → E'}
-
-/-- **Slices of a homotopy smooth near `s ×ˢ I` are smooth**: for `t ∈ I`, the slice `H (·, t)` is
-smooth on `s`. -/
-theorem contDiffOn_comp_prodMk_left {n : WithTop ℕ∞} (hH : ∀ p ∈ s ×ˢ I, ContDiffAt ℝ n H p)
-    {t : ℝ} (ht : t ∈ I) : ContDiffOn ℝ n (fun x ↦ H (x, t)) s :=
-  fun x hx ↦ ((hH (x, t) ⟨hx, ht⟩).comp x (contDiff_prodMk_left t).contDiffAt).contDiffWithinAt
-
-end TauCeti
 
 namespace TestFunction
 
