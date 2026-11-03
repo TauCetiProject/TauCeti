@@ -531,6 +531,9 @@ theorem mapDGShiftClosureHom_shiftHomEquiv {X Y : DGShiftClosure C} (n : ℤ) {p
     F.mapDGShiftClosureHom _ _ p (shiftHomEquiv R X Y n p f) =
       shiftHomEquiv R _ _ n p (F.mapDGShiftClosureHom X Y p f) :=
   (dgHomEquiv R _ _ p).injective <| by
+    -- After the first rewrite the right side's objects are unreduced projections such as
+    -- `{ obj := X.obj, shift := X.shift + n }.shift`, which keyed matching does not unify with the
+    -- pattern of `dgHomEquiv_shiftHomEquiv`: its second use is given the objects explicitly.
     rw [dgHomEquiv_mapDGShiftClosureHom, dgHomEquiv_shiftHomEquiv,
       dgHomEquiv_shiftHomEquiv R (X := ⟨F.obj X.obj, X.shift⟩) (Y := ⟨F.obj Y.obj, Y.shift⟩),
       dgHomEquiv_mapDGShiftClosureHom, dgMap_castDeg]

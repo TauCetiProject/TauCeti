@@ -53,8 +53,8 @@ along a DG functor between them, for instance along a quasi-equivalence.
 
 * `CategoryTheory.EnrichedFunctor.dgComp_dgMap_shiftFunctor_mapDGTwistedComplexShiftHom`: the
   shift isomorphism is natural.
-* `CategoryTheory.EnrichedFunctor.dgHomEquiv_dgMap_shiftAddHom`: the induced functor preserves the
-  comparison `P⟦a + b⟧ ⟶ P⟦a⟧⟦b⟧` of iterated shifts.
+* `CategoryTheory.EnrichedFunctor.dgHomEquiv_dgMap_mapDGTwistedComplex_shiftAddHom`: the induced
+  functor preserves the comparison `P⟦a + b⟧ ⟶ P⟦a⟧⟦b⟧` of iterated shifts.
 * The instances `Functor.CommShift ℤ` and `Functor.IsTriangulated` for
   `F.mapDGTwistedComplex.mapDGHomotopyCategory`.
 * `CategoryTheory.EnrichedFunctor.oneSided_mapDGHomotopyCategory_obj`: `H⁰(F)` sends the
@@ -194,7 +194,7 @@ theorem dgComp_dgMap_shiftFunctor_mapDGTwistedComplexShiftHom
 
 /-- The image of the comparison morphism `P⟦n⟧ ⟶ P` has the matrix of the comparison morphism
 `(F P)⟦n⟧ ⟶ F P`. -/
-theorem dgHomEquiv_dgMap_fromShift :
+theorem dgHomEquiv_dgMap_mapDGTwistedComplex_fromShift :
     DGTwistedObject.dgHomEquiv R _ _ n (F.mapDGTwistedComplex.dgMap n (fromShift P n)) =
       DGTwistedObject.dgHomEquiv R _ _ n (fromShift (F.mapDGTwistedComplex.obj P) n) := by
   rw [dgHomEquiv_dgMap_mapDGTwistedObject, DGTwistedObject.dgHomEquiv_fromShift,
@@ -202,7 +202,7 @@ theorem dgHomEquiv_dgMap_fromShift :
 
 /-- The image of the comparison morphism `P ⟶ P⟦n⟧` has the matrix of the comparison morphism
 `F P ⟶ (F P)⟦n⟧`. -/
-theorem dgHomEquiv_dgMap_toShift :
+theorem dgHomEquiv_dgMap_mapDGTwistedComplex_toShift :
     DGTwistedObject.dgHomEquiv R _ _ (-n) (F.mapDGTwistedComplex.dgMap (-n) (toShift P n)) =
       DGTwistedObject.dgHomEquiv R _ _ (-n) (toShift (F.mapDGTwistedComplex.obj P) n) := by
   rw [dgHomEquiv_dgMap_mapDGTwistedObject, DGTwistedObject.dgHomEquiv_toShift,
@@ -215,7 +215,7 @@ theorem dgComp_mapDGTwistedComplexShiftHom_fromShift :
       (zero_add n) = F.mapDGTwistedComplex.dgMap n (fromShift P n) :=
   (DGTwistedObject.dgHomEquiv R _ _ n).injective <| by
     rw [DGTwistedObject.dgHomEquiv_dgComp, dgHomEquiv_mapDGTwistedComplexShiftHom, dgId_dgComp,
-      dgHomEquiv_dgMap_fromShift]
+      dgHomEquiv_dgMap_mapDGTwistedComplex_fromShift]
 
 /-- The image of the comparison morphism `P ⟶ P⟦n⟧`, followed by the isomorphism
 `F (P⟦n⟧) ⟶ (F P)⟦n⟧`, is the comparison morphism `F P ⟶ (F P)⟦n⟧`. -/
@@ -225,27 +225,28 @@ theorem dgComp_dgMap_toShift_mapDGTwistedComplexShiftHom :
         toShift (F.mapDGTwistedComplex.obj P) n :=
   (DGTwistedObject.dgHomEquiv R _ _ (-n)).injective <| by
     rw [DGTwistedObject.dgHomEquiv_dgComp, dgHomEquiv_mapDGTwistedComplexShiftHom, dgComp_dgId,
-      dgHomEquiv_dgMap_toShift]
+      dgHomEquiv_dgMap_mapDGTwistedComplex_toShift]
 
-private theorem dgHomEquiv_dgMap_shiftFunctor_dgMap_toShift (a b : ℤ) :
+private theorem dgHomEquiv_dgMap_shiftFunctor_dgMap_mapDGTwistedComplex_toShift (a b : ℤ) :
     DGTwistedObject.dgHomEquiv R _ _ (-a) ((DGTwistedObject.shiftFunctor R b).dgMap (-a)
         (F.mapDGTwistedComplex.dgMap (-a) (toShift P a))) =
       DGTwistedObject.dgHomEquiv R _ _ (-a) ((DGTwistedObject.shiftFunctor R b).dgMap (-a)
         (toShift (F.mapDGTwistedComplex.obj P) a)) := by
-  rw [dgHomEquiv_dgMap_mapDGTwistedObject, F.dgHomEquiv_dgMap_toShift P a,
+  rw [dgHomEquiv_dgMap_mapDGTwistedObject, F.dgHomEquiv_dgMap_mapDGTwistedComplex_toShift P a,
     dgHomEquiv_dgMap_mapDGTwistedObject]
 
 /-- The image of the comparison `P⟦a + b⟧ ⟶ P⟦a⟧⟦b⟧` of iterated shifts has the matrix of the
 comparison `(F P)⟦a + b⟧ ⟶ (F P)⟦a⟧⟦b⟧`. -/
-theorem dgHomEquiv_dgMap_shiftAddHom (a b : ℤ) :
+theorem dgHomEquiv_dgMap_mapDGTwistedComplex_shiftAddHom (a b : ℤ) :
     DGTwistedObject.dgHomEquiv R _ _ 0 (F.mapDGTwistedComplex.dgMap 0 (shiftAddHom P a b)) =
       DGTwistedObject.dgHomEquiv R _ _ 0 (shiftAddHom (F.mapDGTwistedComplex.obj P) a b) := by
   rw [shiftAddHom_def, shiftAddHom_def, EnrichedFunctor.dgMap_dgComp,
     EnrichedFunctor.dgMap_dgComp, DGTwistedObject.dgHomEquiv_dgComp,
     DGTwistedObject.dgHomEquiv_dgComp, DGTwistedObject.dgHomEquiv_dgComp,
-    DGTwistedObject.dgHomEquiv_dgComp, F.dgHomEquiv_dgMap_fromShift P (a + b),
-    F.dgHomEquiv_dgMap_toShift P b, F.dgHomEquiv_dgMap_mapDGTwistedComplex_dgMap_shiftFunctor b,
-    F.dgHomEquiv_dgMap_shiftFunctor_dgMap_toShift P a b]
+    DGTwistedObject.dgHomEquiv_dgComp, F.dgHomEquiv_dgMap_mapDGTwistedComplex_fromShift P (a + b),
+    F.dgHomEquiv_dgMap_mapDGTwistedComplex_toShift P b,
+    F.dgHomEquiv_dgMap_mapDGTwistedComplex_dgMap_shiftFunctor b,
+    F.dgHomEquiv_dgMap_shiftFunctor_dgMap_mapDGTwistedComplex_toShift P a b]
 
 end shift
 
@@ -344,7 +345,7 @@ theorem mapDGTwistedComplexShiftIso_zero :
   rw [mapDGTwistedComplexShiftIso_hom_app_of, Functor.CommShift.isoZero_hom_app, h, h']
   refine (homOf_comp_eq_homOf_of_dgComp_eq R _ _ _
     ((DGTwistedObject.dgHomEquiv R _ _ 0).injective ?_)).symm
-  rw [DGTwistedObject.dgHomEquiv_dgComp, F.dgHomEquiv_dgMap_fromShift P 0,
+  rw [DGTwistedObject.dgHomEquiv_dgComp, F.dgHomEquiv_dgMap_mapDGTwistedComplex_fromShift P 0,
     ← DGTwistedObject.dgHomEquiv_dgComp, dgComp_fromShift_toShift,
     dgHomEquiv_mapDGTwistedComplexShiftHom, DGTwistedObject.dgHomEquiv_dgId]
 
@@ -371,10 +372,8 @@ private theorem homOf_comp_homOf_comp_homOf_comp_homOf (P : DGTwistedObject R
   rw [DGTwistedObject.dgHomEquiv_dgComp, DGTwistedObject.dgHomEquiv_dgComp,
     DGTwistedObject.dgHomEquiv_dgComp,
     F.dgHomEquiv_mapDGTwistedComplexShiftHom ((DGTwistedObject.shiftFunctor R a).obj P) b,
-    dgHomEquiv_dgMap_mapDGTwistedObject
-      (F := (DGShiftClosure.shiftFunctor R b).mapDGAdditiveClosure),
-    F.dgHomEquiv_mapDGTwistedComplexShiftHom P a,
-    dgMap_dgId, dgId_dgComp, dgId_dgComp, F.dgHomEquiv_dgMap_shiftAddHom P a b,
+    F.dgHomEquiv_dgMap_mapDGTwistedComplex_shiftAddHom P a b, dgHomEquiv_dgMap_mapDGTwistedObject,
+    F.dgHomEquiv_mapDGTwistedComplexShiftHom P a, dgMap_dgId, dgId_dgComp, dgId_dgComp,
     ← DGTwistedObject.dgHomEquiv_dgComp, dgComp_shiftAddHom_shiftAddInv,
     DGTwistedObject.dgHomEquiv_dgId, F.dgHomEquiv_mapDGTwistedComplexShiftHom P (a + b)]
 
@@ -451,7 +450,7 @@ theorem dgComp_mapDGTwistedComplexShiftHom_coneMorphism (u : DGHom R 0 P Q) :
     rw [coneMorphism_def, coneMorphism_def, EnrichedFunctor.dgMap_dgComp,
       DGTwistedObject.dgHomEquiv_dgComp, DGTwistedObject.dgHomEquiv_dgComp,
       DGTwistedObject.dgHomEquiv_dgComp, dgHomEquiv_mapDGTwistedComplexShiftHom, dgId_dgComp,
-      F.dgHomEquiv_dgMap_fromShift P 1]
+      F.dgHomEquiv_dgMap_mapDGTwistedComplex_fromShift P 1]
 
 /-- **A DG functor preserves cones**: the image of the cone of a closed morphism `u` is isomorphic
 in the homotopy category to the cone of `F u`. -/
