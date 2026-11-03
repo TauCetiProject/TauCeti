@@ -87,8 +87,9 @@ theorem ellipticOrbits_psl2zToPSL2RRange :
     simp only [Set.mem_insert_iff, Set.mem_singleton_iff]
     tauto
 
-/-- The elliptic orbits of the modular group, of orders `3` and `2`, contribute
-`(1 - 1 / 3) + (1 - 1 / 2) = 7 / 6` to the orbifold Euler characteristic. -/
+/-- The elliptic defect sum of the modular group: its elliptic orbits, of orders `3` and `2`, give
+`(1 - 1 / 3) + (1 - 1 / 2) = 7 / 6`. This is the elliptic term subtracted from the Euler
+characteristic in the orbifold Euler characteristic, and added in the area formula. -/
 theorem finsum_mem_ellipticOrbits_psl2zToPSL2RRange :
     ∑ᶠ e ∈ psl2zToPSL2R.range.ellipticOrbits, (1 - (cardStabilizerOnOrbit e : ℝ)⁻¹) = 7 / 6 := by
   have hne : Quotient.mk (orbitRel psl2zToPSL2R.range ℍ) ρ ≠ Quotient.mk _ I := fun h ↦
