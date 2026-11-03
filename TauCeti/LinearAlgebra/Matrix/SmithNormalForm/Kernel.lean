@@ -151,6 +151,8 @@ noncomputable def kerEquivProdTorsionOfDiagonalization (M : Matrix ι ι R)
       (LinearMap.ker (M.map f).mulVecLin).comap e.toLinearMap := by
     have hd : (GeneralLinearGroup.map f L : Matrix ι ι A) * M.map f *
         (GeneralLinearGroup.map f Q : Matrix ι ι A) = diagonal (f ∘ d) := by
+      -- Expose the entrywise matrix maps underlying the mapped GL coercions so that
+      -- Matrix.map_mul can match the mapped diagonalization hypothesis below.
       change (L : Matrix ι ι R).map f * M.map f * (Q : Matrix ι ι R).map f = _
       simpa only [Matrix.map_mul, diagonal_map f.map_zero, Function.comp_def] using
         congrArg (fun N : Matrix ι ι R ↦ N.map f) h
