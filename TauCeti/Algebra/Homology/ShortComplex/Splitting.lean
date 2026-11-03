@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Homology.ShortComplex.Exact
+public import Mathlib.Algebra.Homology.ShortComplex.HomologicalComplex
 public import Mathlib.Algebra.Homology.ShortComplex.ModuleCat
 
 /-!
@@ -17,6 +18,8 @@ morphism into `X₂` which vanishes after `g` factors through the inclusion `f` 
 `r`. Both are immediate from the identity `r ≫ f + g ≫ s = 𝟙`.
 The canonical biproduct comparison sends the inclusion `f` to `biprod.inl`, and its
 composition with `biprod.snd` recovers the projection `g`.
+For a split short complex of homological complexes, the homology of the outer terms is a retract
+of that of the middle term, so the outer terms are exact wherever the middle term is.
 
 ## Main results
 
@@ -31,6 +34,9 @@ composition with `biprod.snd` recovers the projection `g`.
   `k ≫ s.r ≫ S.f = k`.
 * `CategoryTheory.ShortComplex.Splitting.comp_s_hom_comp_g_hom_of_comp_f_hom_eq_zero`: the first
   statement for linear maps out of a split short complex of modules into an arbitrary module.
+* `CategoryTheory.ShortComplex.Splitting.acyclic_X₁` and
+  `CategoryTheory.ShortComplex.Splitting.acyclic_X₃`: the outer terms of a split short complex of
+  homological complexes are acyclic when the middle term is.
 
 ## Implementation notes
 
@@ -82,6 +88,39 @@ theorem isoBinaryBiproduct_hom_snd (s : S.Splitting) :
   simp [isoBinaryBiproduct]
 
 end Preadditive
+
+section HomologicalComplex
+
+variable {C ι : Type*} [Category C] [Preadditive C] [CategoryWithHomology C] {c : ComplexShape ι}
+  {S : ShortComplex (HomologicalComplex C c)}
+
+/-- In a split short complex of homological complexes, the first term is exact in every degree
+where the middle term is, since its homology is a retract of that of the middle term. -/
+theorem exactAt_X₁ (s : S.Splitting) {i : ι} (h : S.X₂.ExactAt i) : S.X₁.ExactAt i := by
+  rw [HomologicalComplex.exactAt_iff_isZero_homology] at h ⊢
+  rw [IsZero.iff_id_eq_zero, ← HomologicalComplex.homologyMap_id, ← s.f_r,
+    HomologicalComplex.homologyMap_comp, h.eq_of_tgt (HomologicalComplex.homologyMap S.f i) 0,
+    zero_comp]
+
+/-- In a split short complex of homological complexes, the third term is exact in every degree
+where the middle term is, since its homology is a retract of that of the middle term. -/
+theorem exactAt_X₃ (s : S.Splitting) {i : ι} (h : S.X₂.ExactAt i) : S.X₃.ExactAt i := by
+  rw [HomologicalComplex.exactAt_iff_isZero_homology] at h ⊢
+  rw [IsZero.iff_id_eq_zero, ← HomologicalComplex.homologyMap_id, ← s.s_g,
+    HomologicalComplex.homologyMap_comp, h.eq_of_tgt (HomologicalComplex.homologyMap s.s i) 0,
+    zero_comp]
+
+/-- The first term of a split short complex of homological complexes is acyclic when the middle
+term is. -/
+theorem acyclic_X₁ (s : S.Splitting) (h : S.X₂.Acyclic) : S.X₁.Acyclic :=
+  fun i ↦ s.exactAt_X₁ (h i)
+
+/-- The third term of a split short complex of homological complexes is acyclic when the middle
+term is. -/
+theorem acyclic_X₃ (s : S.Splitting) (h : S.X₂.Acyclic) : S.X₃.Acyclic :=
+  fun i ↦ s.exactAt_X₃ (h i)
+
+end HomologicalComplex
 
 section ModuleCat
 

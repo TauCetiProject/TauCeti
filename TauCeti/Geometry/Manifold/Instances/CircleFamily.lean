@@ -124,6 +124,11 @@ theorem contMDiff_period (n : ℕ∞ω) :
   simpa only [Function.comp_def, normalization_fst] using
     contMDiff_fst.comp (normalization n).contMDiff
 
+/-- The real-valued period projection is smooth. -/
+theorem contMDiff_periodReal {n : ℕ∞ω} :
+    ContMDiff (𝓘(ℝ).prod 𝓘(ℝ)) 𝓘(ℝ, ℝ) n fun z : CircleFamily ↦ (z.period : ℝ) :=
+  contMDiff_subtype_val.comp (contMDiff_period n)
+
 /-- In normalized coordinates, a fixed-period inclusion rescales only the circle. -/
 @[simp]
 theorem normalization_mk (n : ℕ∞ω) (p : PositivePeriod) (x : AddCircle (p : ℝ)) :
@@ -205,6 +210,12 @@ theorem representative_surjective : Function.Surjective representative := by
   intro z
   obtain ⟨t, ht⟩ := QuotientAddGroup.mk_surjective z.point
   exact ⟨(z.period, t), by simp [representative, ht]⟩
+
+/-- The real representative map is invariant under the deck translations `t ↦ t + k p`. -/
+@[simp]
+theorem representative_add_intCast_mul (p : PositivePeriod) (t : ℝ) (k : ℤ) :
+    representative (p, t + k * (p : ℝ)) = representative (p, t) := by
+  simp [representative, ← zsmul_eq_mul]
 
 /-- Normalize real representatives by dividing their time coordinate by their positive period. -/
 def realNormalization (n : ℕ∞ω) :

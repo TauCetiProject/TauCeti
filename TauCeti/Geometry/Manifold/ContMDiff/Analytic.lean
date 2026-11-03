@@ -44,7 +44,8 @@ The model is assumed boundaryless throughout, so that chart images of open sets 
   maps between manifolds in arbitrary and in preferred charts.
 * `ContMDiffAt.analyticAt_comp_extend_symm`,
   `TauCeti.contMDiffAt_omega_iff_analyticAt_of_mem_maximalAtlas` and
-  `TauCeti.contMDiffAt_omega_iff_analyticAt`: `C^ω` functions with values in a normed space.
+  `TauCeti.contMDiffAt_omega_iff_analyticAt`: `C^ω` functions with values in a normed space;
+  `TauCeti.contMDiffAt_modelSpace_omega_iff_analyticAt` is the case of the trivial model.
 * `TauCeti.contMDiffOn_omega_iff_analyticOnNhd_of_mem_maximalAtlas`: the same on open subsets of a
   chart domain.
 * `TauCeti.eqOn_of_preconnected_of_eventuallyEq_of_contMDiffAt` and
@@ -85,7 +86,7 @@ between two charts of the maximal `C^ω` atlas is analytic at the coordinate of 
 chart domains. -/
 theorem analyticAt_extendCoordChange (he : e ∈ maximalAtlas I ω M)
     (he' : e' ∈ maximalAtlas I ω M) (hxe : x ∈ e.source) (hxe' : x ∈ e'.source) :
-    AnalyticAt 𝕜 (I.extendCoordChange e e') (e.extend I x) :=
+    AnalyticAt 𝕜 (I.extendCoordChange e e') (I (e x)) :=
   I.analyticOnNhd_extendCoordChange he he' _ <|
     e.extend_image_source_inter (I := I) e' ▸ mem_image_of_mem _ ⟨hxe, hxe'⟩
 
@@ -104,7 +105,7 @@ theorem TauCeti.analyticOnNhd_ext_coord_change [IsManifold I ω M] (x x' : M) :
 expression at the coordinate of `x` in any chart at `x` of the maximal `C^ω` atlas. -/
 theorem ContMDiffAt.analyticAt_comp_extend_symm {f : M → F}
     (hf : ContMDiffAt I 𝓘(𝕜, F) ω f x) (he : e ∈ maximalAtlas I ω M) (hx : x ∈ e.source) :
-    AnalyticAt 𝕜 (f ∘ (e.extend I).symm) (e.extend I x) :=
+    AnalyticAt 𝕜 (f ∘ (e.extend I).symm) (I (e x)) :=
   ((TauCeti.contMDiffAt_iff_contDiffAt_comp_extend_symm he hx).1 hf).analyticAt
 
 /-- A map that is `C^ω` at `x` has an analytic coordinate expression at the coordinate of `x` in
@@ -163,6 +164,12 @@ theorem contMDiffAt_omega_iff_analyticAt [CompleteSpace F] {f : M → F} :
       AnalyticAt 𝕜 (f ∘ (extChartAt I x).symm) (extChartAt I x x) :=
   contMDiffAt_iff_contDiffAt_comp_extChartAt_symm.trans
     ⟨ContDiffAt.analyticAt, AnalyticAt.contDiffAt⟩
+
+/-- **Analytic functions on a normed space.** With the trivial model `𝓘(𝕜, E)`, a function with
+values in a complete normed space is `C^ω` at `x` if and only if it is analytic at `x`. -/
+theorem contMDiffAt_modelSpace_omega_iff_analyticAt [CompleteSpace F] {f : E → F} {x : E} :
+    ContMDiffAt 𝓘(𝕜, E) 𝓘(𝕜, F) ω f x ↔ AnalyticAt 𝕜 f x :=
+  contMDiffAt_iff_contDiffAt.trans ⟨ContDiffAt.analyticAt, AnalyticAt.contDiffAt⟩
 
 /-- **Analytic functions on a chart domain.** For a boundaryless model and an open subset `U` of
 the domain of a chart `e` of the maximal `C^ω` atlas, a function with values in a normed space is

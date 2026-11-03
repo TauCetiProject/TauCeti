@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Lie.TraceForm
+public import TauCeti.Algebra.Lie.Basic
 public import TauCeti.LinearAlgebra.Trace.Nilpotent
 
 /-!
@@ -38,6 +39,9 @@ centraliser. Over a field of characteristic zero the same holds when `x` only ki
 `⁅x, ⁅x, y⁆⁆ = 0`: then `x` acts by an endomorphism commuting with the commutator of the two
 actions, and `LinearMap.trace_mul_eq_zero_of_isNilpotent_of_lie_lie_eq_zero` applies.
 
+Finally, the trace of the action of a commutator vanishes on every representation, so every element
+of a perfect Lie subalgebra `L` of `𝔤𝔩(V)` has trace zero on each `L`-submodule of `V`.
+
 ## Main results
 
 * `TauCeti.traceForm_lie_lie_cyclic_eq_zero`: the four-element cyclic identity above.
@@ -45,6 +49,8 @@ actions, and `LinearMap.trace_mul_eq_zero_of_isNilpotent_of_lie_lie_eq_zero` app
   them acting nilpotently, are orthogonal for the trace form.
 * `TauCeti.traceForm_eq_zero_of_isNilpotent_of_lie_lie_eq_zero`: in characteristic zero, the same
   for `x` acting nilpotently and `⁅x, ⁅x, y⁆⁆ = 0`.
+* `LieSubalgebra.trace_restrict_eq_zero_of_mem`: an element of a perfect Lie subalgebra of `𝔤𝔩(V)`
+  has trace zero on each of its submodules.
 
 ## References
 
@@ -120,3 +126,26 @@ theorem traceForm_eq_zero_of_isNilpotent_of_lie_lie_eq_zero {K : Type*} [Field K
 end Nilpotent
 
 end TauCeti
+
+section EndSubalgebra
+
+open LieModule
+
+attribute [local instance 100] LieRing.ofAssociativeRing
+
+/-- Every element of a perfect Lie subalgebra `L` of `𝔤𝔩(V)` has trace zero on each `L`-submodule
+of `V`. This applies in particular when `L` has nondegenerate Killing form, by
+`TauCeti.derivedSeries_one_eq_top_of_isKilling`. -/
+theorem LieSubalgebra.trace_restrict_eq_zero_of_mem {K V : Type*} [CommRing K] [AddCommGroup V]
+    [Module K V] (L : LieSubalgebra K (Module.End K V)) (hL : LieAlgebra.derivedSeries K L 1 = ⊤)
+    {z : Module.End K V} (hz : z ∈ L) (W : LieSubmodule K L V) :
+    LinearMap.trace K W (z.restrict (L.apply_mem_of_mem hz W)) = 0 := by
+  -- The restriction of `z` to `W` is, by definition, the action of `z` on the Lie module `W`.
+  have hzW : z.restrict (L.apply_mem_of_mem hz W) = toEnd K L W ⟨z, hz⟩ := rfl
+  rw [hzW]
+  refine trace_toEnd_eq_zero_of_mem_lcs K L W le_rfl
+    (derivedSeries_le_lowerCentralSeries K L 1 ?_)
+  rw [hL]
+  exact LieSubmodule.mem_top _
+
+end EndSubalgebra

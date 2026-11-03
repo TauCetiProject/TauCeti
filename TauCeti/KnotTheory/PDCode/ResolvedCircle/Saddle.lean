@@ -15,8 +15,9 @@ all source circles through that crossing and is a bijection elsewhere. This file
 its fibres and extends it to all resolved circles, retaining every crossing-free circle label.
 The only possible collision is between the source circles in slots `0` and `2`. When these
 circles are distinct, the correspondence is exactly a merge of two circles, and the total
-circle count decreases by one. These facts identify the factors multiplied by a resolution
-saddle on indexed circle tensors.
+circle count decreases by one; along any saddle edge it changes by exactly one
+(`TauCeti.PDCode.card_resolvedCircle_of_saddle`). These facts identify the factors multiplied by
+a resolution saddle on indexed circle tensors.
 
 More generally, if only one circle of `t` passes through each crossing at which `s` and `t`
 differ, the circle of a half-edge in `s` determines its circle in `t`
@@ -186,6 +187,22 @@ theorem card_resolvedCircle_source_eq_target_add_one (hs : #(D.circlesAt s c) = 
   have h := D.stateLoopCount_add_card_circlesAt hst
   rw [card_resolvedCircle, card_resolvedCircle]
   omega
+
+include hst in
+/-- Along a saddle edge the circle count drops by one if two circles merge, and rises by one if a
+circle splits. -/
+theorem card_resolvedCircle_of_saddle (hc : s c ≠ t c)
+    (h : #(D.circlesAt s c) = 2 ∨ #(D.circlesAt t c) = 2) :
+    #(D.circlesAt s c) = 2 ∧
+        Fintype.card (D.ResolvedCircle s) = Fintype.card (D.ResolvedCircle t) + 1 ∨
+      #(D.circlesAt t c) = 2 ∧
+        Fintype.card (D.ResolvedCircle t) = Fintype.card (D.ResolvedCircle s) + 1 := by
+  refine h.imp (fun hs ↦ ⟨hs, ?_⟩) (fun ht ↦ ⟨ht, ?_⟩)
+  · exact D.card_resolvedCircle_source_eq_target_add_one hst
+      (D.card_circlesAt_eq_one_of_card_circlesAt_eq_two hst hc hs) hs
+  · have hts : ∀ j, j ≠ c → t j = s j := fun j hj ↦ (hst j hj).symm
+    exact D.card_resolvedCircle_source_eq_target_add_one hts
+      (D.card_circlesAt_eq_one_of_card_circlesAt_eq_two hts hc.symm ht) ht
 
 section Coarsening
 

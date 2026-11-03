@@ -68,6 +68,7 @@ conjugation action.
 * `MulEquiv.conjClassesEquiv`: a multiplicative equivalence induces an equivalence of
   conjugacy classes, compatible with representatives, powers, inversion, composition, and
   multiplicative automorphisms acting on conjugacy classes.
+* `MulEquiv.isConj_apply_iff`: a multiplicative equivalence preserves and reflects conjugacy.
 * `MulAut.smul_conjClasses_mk`: an automorphism acts on a conjugacy class by
   mapping its representative; inner automorphisms fix every class.
 * `ConjClasses.mk_ne_mk_of_orderOf_ne`: elements of different orders lie in different conjugacy
@@ -499,6 +500,12 @@ theorem conjClassesEquiv_refl :
   ext C
   obtain ⟨a, rfl⟩ := ConjClasses.exists_rep C
   simp
+
+/-- A multiplicative equivalence preserves and reflects conjugacy.
+
+Not `@[simp]`: Mathlib's `isConj_iff` is itself `simp` and rewrites the left-hand side first. -/
+theorem isConj_apply_iff (e : M ≃* N) {a b : M} : IsConj (e a) (e b) ↔ IsConj a b :=
+  ⟨fun h => by simpa using e.symm.toMonoidHom.map_isConj h, e.toMonoidHom.map_isConj⟩
 
 end MulEquiv
 

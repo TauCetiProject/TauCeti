@@ -94,6 +94,13 @@ theorem timeExtension_of_mem (hab : a ≤ b) (f : slab (E := E) a b → F)
     (x : E) (t : Icc a b) : timeExtension hab f x t = f (slabMk x t) := by
   simp [timeExtension, projIcc_of_mem hab t.2]
 
+omit [NormedAddCommGroup E] [NormedSpace ℝ E] [NormedAddCommGroup F] [NormedSpace ℝ F] in
+/-- A slab map is recovered from its total time slices. -/
+theorem timeExtension_space_slabTime (hab : a ≤ b) (f : slab (E := E) a b → F) :
+    (fun p : slab (E := E) a b ↦
+      timeExtension hab f (p : ParabolicSpaceTime E).space (slabTime p)) = f :=
+  funext fun p ↦ by rw [timeExtension_of_mem, slabMk_space_slabTime]
+
 private def IsJetGraph (hab : a < b) (J : Jet α E F a b) : Prop :=
   (∀ (t : Icc a b) (x : E), HasFDerivAt (fun y ↦ valueJetL J (slabMk y t))
     (spatialJetL J (slabMk x t)) x) ∧
@@ -145,22 +152,22 @@ supremum-plus-Hölder norms. -/
       add_mem' := by
         rintro J K ⟨hJ, hJ', hJt⟩ ⟨hK, hK', hKt⟩
         refine ⟨fun t x ↦ ?_, fun t x ↦ ?_, fun x t ↦ ?_⟩
-        · simpa only [map_add, BoundedContinuousFunction.add_apply, Pi.add_def] using
+        · simpa only [map_add, _root_.add_apply, Pi.add_def] using
             (hJ t x).add (hK t x)
-        · simpa only [map_add, BoundedContinuousFunction.add_apply,
+        · simpa only [map_add, _root_.add_apply,
             HolderSpace.add_apply, Pi.add_def] using
             (hJ' t x).add (hK' t x)
-        · simpa only [map_add, timeExtension_def, BoundedContinuousFunction.add_apply,
+        · simpa only [map_add, timeExtension_def, _root_.add_apply,
             HolderSpace.add_apply, Pi.add_def] using (hJt x t).add (hKt x t)
       smul_mem' := by
         rintro c J ⟨hJ, hJ', hJt⟩
         refine ⟨fun t x ↦ ?_, fun t x ↦ ?_, fun x t ↦ ?_⟩
-        · simpa only [map_smul, BoundedContinuousFunction.smul_apply, Pi.smul_def] using
+        · simpa only [map_smul, _root_.smul_apply, Pi.smul_def] using
             (hJ t x).const_smul c
-        · simpa only [map_smul, BoundedContinuousFunction.smul_apply,
+        · simpa only [map_smul, _root_.smul_apply,
             HolderSpace.smul_apply, Pi.smul_def] using
             (hJ' t x).const_smul c
-        · simpa only [map_smul, timeExtension_def, BoundedContinuousFunction.smul_apply,
+        · simpa only [map_smul, timeExtension_def, _root_.smul_apply,
             HolderSpace.smul_apply, Pi.smul_def] using (hJt x t).const_smul c }
   graph
 
@@ -203,18 +210,28 @@ theorem valueL_apply (f : ParabolicC2HolderSpace α E F hab) (p : slab (E := E) 
 
 theorem zero_apply (p : slab (E := E) a b) :
     (0 : ParabolicC2HolderSpace α E F hab) p = 0 := by
-  simpa only [valueL_apply, BoundedContinuousFunction.coe_zero, Pi.zero_apply] using
+  simpa only [valueL_apply, FunLike.coe_zero, Pi.zero_apply] using
     congrArg (fun g : slab (E := E) a b →ᵇ F ↦ g p)
       (valueL (α := α) (E := E) (F := F) (hab := hab)).map_zero
 
 theorem add_apply (f g : ParabolicC2HolderSpace α E F hab) (p : slab (E := E) a b) :
     (f + g) p = f p + g p := by
-  simpa only [valueL_apply, BoundedContinuousFunction.add_apply] using
+  simpa only [valueL_apply, _root_.add_apply] using
     congrArg (fun g : slab (E := E) a b →ᵇ F ↦ g p) (valueL.map_add f g)
+
+theorem neg_apply (f : ParabolicC2HolderSpace α E F hab) (p : slab (E := E) a b) :
+    (-f) p = -f p := by
+  simpa only [valueL_apply, _root_.neg_apply] using
+    congrArg (fun g : slab (E := E) a b →ᵇ F ↦ g p) (valueL.map_neg f)
+
+theorem sub_apply (f g : ParabolicC2HolderSpace α E F hab) (p : slab (E := E) a b) :
+    (f - g) p = f p - g p := by
+  simpa only [valueL_apply, _root_.sub_apply] using
+    congrArg (fun g : slab (E := E) a b →ᵇ F ↦ g p) (valueL.map_sub f g)
 
 theorem smul_apply (c : ℝ) (f : ParabolicC2HolderSpace α E F hab) (p : slab (E := E) a b) :
     (c • f) p = c • f p := by
-  simpa only [valueL_apply, BoundedContinuousFunction.smul_apply] using
+  simpa only [valueL_apply, _root_.smul_apply] using
     congrArg (fun g : slab (E := E) a b →ᵇ F ↦ g p) (valueL.map_smul c f)
 
 /-- The spatial gradient is the actual Fréchet derivative of every time slice. -/
@@ -240,6 +257,14 @@ theorem fderiv_eq (f : ParabolicC2HolderSpace α E F hab) (t : Icc a b) (x : E) 
 theorem fderiv_spatialFDeriv_eq (f : ParabolicC2HolderSpace α E F hab)
     (t : Icc a b) (x : E) : fderiv ℝ (fun y ↦ spatialFDerivL f (slabMk y t)) x =
       spatialSecondFDerivL f (slabMk x t) := (f.hasSpatialSecondFDerivAt t x).fderiv
+
+/-- The second Fréchet derivative of each spatial slice is the Hessian field. -/
+@[simp]
+theorem fderiv_fderiv_eq (f : ParabolicC2HolderSpace α E F hab) (t : Icc a b) (x : E) :
+    fderiv ℝ (fderiv ℝ fun y ↦ f (slabMk y t)) x = spatialSecondFDerivL f (slabMk x t) := by
+  have hx : fderiv ℝ (fun y ↦ f (slabMk y t)) =
+      fun y ↦ spatialFDerivL f (slabMk y t) := funext (f.fderiv_eq t)
+  rw [hx, f.fderiv_spatialFDeriv_eq]
 
 @[simp]
 theorem derivWithin_eq (f : ParabolicC2HolderSpace α E F hab) (x : E) (t : Icc a b) :
@@ -367,25 +392,51 @@ theorem norm_def (f : ParabolicC2HolderSpace α E F hab) :
   rw [norm_eq, HolderSpace.norm_def, HolderSpace.norm_def]
   ring
 
+/-- The supremum norm of the value is bounded by the reduced parabolic norm. -/
+theorem norm_valueL_le (f : ParabolicC2HolderSpace α E F hab) : ‖valueL f‖ ≤ ‖f‖ := by
+  rw [norm_eq]
+  linarith [norm_nonneg (spatialFDerivL f), norm_nonneg (spatialSecondFDerivL f),
+    norm_nonneg (timeDerivL f)]
+
+/-- The Hölder norm of the Hessian field is bounded by the reduced parabolic norm. -/
+theorem norm_spatialSecondFDerivL_le (f : ParabolicC2HolderSpace α E F hab) :
+    ‖spatialSecondFDerivL f‖ ≤ ‖f‖ := by
+  rw [norm_eq]
+  linarith [norm_nonneg (valueL f), norm_nonneg (spatialFDerivL f), norm_nonneg (timeDerivL f)]
+
+/-- The Hölder norm of the time-derivative field is bounded by the reduced parabolic norm. -/
+theorem norm_timeDerivL_le (f : ParabolicC2HolderSpace α E F hab) :
+    ‖timeDerivL f‖ ≤ ‖f‖ := by
+  rw [norm_eq]
+  linarith [norm_nonneg (valueL f), norm_nonneg (spatialFDerivL f),
+    norm_nonneg (spatialSecondFDerivL f)]
+
+/-- The Hölder norms of the Hessian and time-derivative fields together are bounded by the reduced
+parabolic norm. -/
+theorem norm_spatialSecondFDerivL_add_norm_timeDerivL_le (f : ParabolicC2HolderSpace α E F hab) :
+    ‖spatialSecondFDerivL f‖ + ‖timeDerivL f‖ ≤ ‖f‖ := by
+  rw [norm_eq]
+  linarith [norm_nonneg (valueL f), norm_nonneg (spatialFDerivL f)]
+
+/-- The time-derivative projection has operator norm at most one. -/
+theorem norm_timeDerivL_le_one :
+    ‖timeDerivL (α := α) (E := E) (F := F) (hab := hab)‖ ≤ 1 :=
+  ContinuousLinearMap.opNorm_le_bound _ zero_le_one fun f ↦ by
+    simpa using norm_timeDerivL_le f
+
 /-- The Hessian field gives the native second iterated Fréchet derivative of each slice. -/
 theorem iteratedFDeriv_two_apply (f : ParabolicC2HolderSpace α E F hab)
     (t : Icc a b) (x : E) (v : Fin 2 → E) :
     iteratedFDeriv ℝ 2 (fun y ↦ f (slabMk y t)) x v =
       spatialSecondFDerivL f (slabMk x t) (v 0) (v 1) := by
-  rw [_root_.iteratedFDeriv_two_apply]
-  have hx : fderiv ℝ (fun y ↦ f (slabMk y t)) =
-      fun y ↦ spatialFDerivL f (slabMk y t) := funext (f.fderiv_eq t)
-  rw [hx, f.fderiv_spatialFDeriv_eq]
+  rw [_root_.iteratedFDeriv_two_apply, f.fderiv_fderiv_eq]
 
 /-- The iterated derivative uses its continuous multilinear operator norm. -/
 theorem norm_iteratedFDeriv_two (f : ParabolicC2HolderSpace α E F hab)
     (t : Icc a b) (x : E) :
     ‖iteratedFDeriv ℝ 2 (fun y ↦ f (slabMk y t)) x‖ =
       ‖spatialSecondFDerivL f (slabMk x t)‖ := by
-  rw [← norm_iteratedFDeriv_fderiv (n := 1), norm_iteratedFDeriv_one]
-  have hx : fderiv ℝ (fun y ↦ f (slabMk y t)) =
-      fun y ↦ spatialFDerivL f (slabMk y t) := funext (f.fderiv_eq t)
-  rw [hx, f.fderiv_spatialFDeriv_eq]
+  rw [← norm_iteratedFDeriv_fderiv (n := 1), norm_iteratedFDeriv_one, f.fderiv_fderiv_eq]
 
 /-- The temporal gradient seminorm is controlled by the top-order parabolic seminorms. -/
 theorem timeEHolderNorm_spatialFDeriv_le (f : ParabolicC2HolderSpace α E F hab) :

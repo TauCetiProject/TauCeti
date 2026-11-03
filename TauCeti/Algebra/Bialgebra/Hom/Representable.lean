@@ -7,7 +7,7 @@ module
 
 public import Mathlib.RingTheory.Bialgebra.TensorProduct
 public import TauCeti.Algebra.Bialgebra.BaseChange
-public import TauCeti.RingTheory.WeilRestriction
+public import TauCeti.RingTheory.WeilRestriction.Basic
 import TauCeti.Algebra.Bialgebra.Equiv
 import TauCeti.Algebra.Coalgebra.BaseChange
 

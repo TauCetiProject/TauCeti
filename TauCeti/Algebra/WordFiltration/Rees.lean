@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.WordFiltration.AssociatedGraded
-public import TauCeti.RingTheory.GradedAlgebra.CoeffSubalgebra
+public import TauCeti.RingTheory.GradedAlgebra.CoeffSubalgebra.Basic
 public import Mathlib.RingTheory.Ideal.Quotient.Operations
 public import Mathlib.Algebra.Polynomial.Inductions
 

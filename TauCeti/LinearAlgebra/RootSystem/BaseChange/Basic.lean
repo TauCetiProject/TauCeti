@@ -8,6 +8,8 @@ module
 public import Mathlib.LinearAlgebra.RootSystem.Reduced
 public import Mathlib.RingTheory.Flat.Basic
 public import TauCeti.LinearAlgebra.PerfectPairing.BaseChange
+-- `Function.Injective.isDomain`, pulling `IsDomain` back along an injective algebra map.
+import Mathlib.Algebra.Ring.Hom.InjSurj
 
 /-!
 # Extension of scalars of a root pairing
@@ -27,7 +29,9 @@ determines. Unlike the integral root datum, this rational pairing can be a root 
 the roots do not span `X` over `ℤ`.
 
 The properties that pass to the extension are recorded here: the pairing values (hence being
-crystallographic and the integral Cartan integers), reducedness (for flat `S`), and spanning, via
+crystallographic and the integral Cartan integers), linear independence of two roots and
+reducedness (for flat `S`, or for finitely many roots and a domain `S` of characteristic zero), and
+spanning, via
 the identification of the root span of the extension with the base change of the root span.
 Irreducibility is not transported. `RootPairing.IsIrreducible` asks every nonzero
 reflection-invariant submodule to be the whole module, which fails over `ℤ` for any nonzero lattice
@@ -50,7 +54,13 @@ can be written on `κ → S` without tensor products, see
 * `RootPairing.isValuedIn_baseChange` and `RootPairing.baseChange_pairingIn`: the extension of a
   pairing valued in `T` is valued in `T`, with the same values; in particular extension of scalars
   preserves being crystallographic.
+* `RootPairing.baseChange_coxeterWeight`: the Coxeter weights of the extension are the images of
+  those of `P`.
 * `RootPairing.isReduced_baseChange`: extension along a flat algebra preserves reducedness.
+* `RootPairing.linearIndependent_pair_root_baseChange_iff` and
+  `RootPairing.isReduced_baseChange_of_charZero`: for finitely many roots and a domain `S` of
+  characteristic zero, extension of scalars preserves and reflects linear independence of two
+  roots, and preserves reducedness, with no flatness hypothesis.
 * `RootPairing.rootSpan_baseChange` and `RootPairing.corootSpan_baseChange`: the root and coroot
   spans of the extension are the extensions of the root and coroot spans.
 
@@ -114,6 +124,12 @@ theorem baseChange_pairing (i j : ι) :
   simp only [baseChange_toLinearMap, baseChange_root, baseChange_coroot,
     LinearMap.baseChangePairing_tmul_tmul, one_mul]
 
+/-- The Coxeter weights of the extension are those of `P`, mapped to `S`. -/
+@[simp]
+theorem baseChange_coxeterWeight (i j : ι) :
+    (P.baseChange S).coxeterWeight i j = algebraMap R S (P.coxeterWeight i j) := by
+  simp [coxeterWeight]
+
 /-- The reflections of the extension are the extensions of the reflections of `P`. -/
 @[simp]
 theorem baseChange_reflection_tmul (i : ι) (a : S) (x : M) :
@@ -157,6 +173,29 @@ instance isReduced_baseChange [Flat R S] [P.IsReduced] : (P.baseChange S).IsRedu
     ext k
     fin_cases k <;> rfl
   rcases IsReduced.eq_or_eq_neg i j hR with hij | hij <;> simp [hij, tmul_neg]
+
+/-- For finitely many roots and a domain `S` of characteristic zero, two roots of the extension are
+linearly independent exactly when the corresponding roots of `P` are: both conditions say that
+their Coxeter weight is not `4`. -/
+theorem linearIndependent_pair_root_baseChange_iff [Finite ι] [IsDomain S] [CharZero S]
+    (i j : ι) :
+    LinearIndependent S ![(P.baseChange S).root i, (P.baseChange S).root j] ↔
+      LinearIndependent R ![P.root i, P.root j] := by
+  have : IsDomain R := (FaithfulSMul.algebraMap_injective R S).isDomain
+  have : CharZero R := (algebraMap R S).charZero
+  have : Module.IsReflexive R M := .of_isPerfPair P.toLinearMap
+  have : Module.IsReflexive S (S ⊗[R] M) := .of_isPerfPair (P.baseChange S).toLinearMap
+  rw [linearIndependent_iff_coxeterWeight_ne_four, linearIndependent_iff_coxeterWeight_ne_four,
+    baseChange_coxeterWeight, ← map_ofNat (algebraMap R S) 4,
+    (FaithfulSMul.algebraMap_injective R S).ne_iff]
+
+/-- For finitely many roots and a domain `S` of characteristic zero, extension of scalars preserves
+reducedness, whether or not `S` is flat over `R`. -/
+theorem isReduced_baseChange_of_charZero [Finite ι] [IsDomain S] [CharZero S] [P.IsReduced] :
+    (P.baseChange S).IsReduced := by
+  refine ⟨fun i j h ↦ ?_⟩
+  rw [linearIndependent_pair_root_baseChange_iff] at h
+  rcases IsReduced.eq_or_eq_neg i j h with hij | hij <;> simp [hij, tmul_neg]
 
 /-- The root span of the extension is the extension of the root span. -/
 theorem rootSpan_baseChange : (P.baseChange S).rootSpan S = (P.rootSpan R).baseChange S := by

@@ -31,11 +31,20 @@ particular to the marked presentations of `TauCeti.NumberTheory.LocalField.ProP.
 whatever their branch; only the presented groups and their orientations are related, and no marking
 data (generators, relator, values of the orientation on the generators) is transported.
 
+Without the assumption that `σ(L)` lies in `K(p)`, the map `G_L(p) → G_K(p)` need not be injective,
+but it is still read off through `m_K` and `m_L` as a continuous homomorphism `φ : Q → P` with open
+image of index dividing `[L : K]`, and `φ` still carries the orientation of `Q` to that of `P`. The
+values of the orientation of `G_K(p)` on the images under `φ` of the marked generators of a marked
+presentation of `G_L(p)` are therefore the values recorded for `L`.
+
 ## Main results
 
 * `TauCeti.exists_continuousMulEquiv_of_le_range_absoluteGaloisGroupExtend`: when `G_L` contains
   the pro-`p` kernel of `G_K`, any presentation of `G_L(p)` is an open subgroup of index `[L : K]`
   of any presentation of `G_K(p)`, compatibly with the cyclotomic orientations.
+* `TauCeti.exists_continuousMonoidHom_absoluteGaloisGroupExtend`: for an arbitrary finite
+  extension, any presentation of `G_L(p)` maps to any presentation of `G_K(p)` with open image of
+  index dividing `[L : K]`, compatibly with the cyclotomic orientations.
 
 ## References
 
@@ -104,5 +113,46 @@ theorem exists_continuousMulEquiv_of_le_range_absoluteGaloisGroupExtend
     exact hφ y
   · rw [ContinuousMonoidHom.equivRangeOfIsEmbedding_apply]
     simp only [hφ, ι, cyclotomicOrientation_maximalProPQuotient_map_absoluteGaloisGroupExtend]
+
+/-- **Presentations of maximal pro-`p` Galois groups along an arbitrary finite extension.** Let
+`L/K` be a finite extension embedded in `Kˢ` by `σ`, where `K` contains a primitive `p`th root of
+unity, and let `m_K : G_K(p) ≃ₜ* P` and `m_L : G_L(p) ≃ₜ* Q` be presentations of the maximal
+pro-`p` Galois groups. Then the map `G_L(p) → G_K(p)` induced by `σ` is read off through `m_K` and
+`m_L` as a continuous homomorphism `φ : Q →ₜ* P`, whose image is open of index dividing `[L : K]`,
+and the cyclotomic orientation of `G_K(p)`, read on `P` through `m_K`, restricts along `φ` to that
+of `G_L(p)`, read on `Q` through `m_L`. Unlike
+`TauCeti.exists_continuousMulEquiv_of_le_range_absoluteGaloisGroupExtend`, no containment of `σ(L)`
+in the maximal pro-`p` extension of `K` is assumed, and `φ` need not be injective. -/
+theorem exists_continuousMonoidHom_absoluteGaloisGroupExtend
+    (hmu : ∃ ζ : K, IsPrimitiveRoot ζ p)
+    (mK : absoluteGaloisGroupProP p K ≃ₜ* P) (mL : absoluteGaloisGroupProP p L ≃ₜ* Q) :
+    ∃ φ : Q →ₜ* P,
+      (∀ x, φ (mL x) = mK (maximalProPQuotient.map (absoluteGaloisGroupExtend K L σ)
+          (continuous_absoluteGaloisGroupExtend K L σ) x)) ∧
+      IsOpen (φ.toMonoidHom.range : Set P) ∧ φ.toMonoidHom.range.index ∣ Module.finrank K L ∧
+      ∀ y, cyclotomicOrientation p K hmu (mK.symm (φ y)) =
+        cyclotomicOrientation p L
+          (hmu.elim fun _ hζ ↦ ⟨_, hζ.map_of_injective (algebraMap K L).injective⟩)
+          (mL.symm y) := by
+  set ι := maximalProPQuotient.map (p := p) (absoluteGaloisGroupExtend K L σ)
+    (continuous_absoluteGaloisGroupExtend K L σ)
+  -- The map `Q → P` read off through `mK` and `mL` from `ι : G_L(p) → G_K(p)`.
+  let φ : Q →ₜ* P :=
+    ⟨(mK.toMulEquiv.toMonoidHom.comp ι).comp mL.symm.toMulEquiv.toMonoidHom,
+      mK.continuous.comp ((maximalProPQuotient.continuous_map _ _).comp mL.symm.continuous)⟩
+  have hφ : ∀ y, mK.symm (φ y) = ι (mL.symm y) := fun y ↦ mK.symm_apply_apply _
+  have hrange : φ.toMonoidHom.range = ι.range.comap (mK.symm : P ≃* _).toMonoidHom := by
+    rw [MonoidHom.range_comp,
+      MonoidHom.range_eq_top_of_surjective _ mL.symm.surjective, Subgroup.map_top,
+      MonoidHom.range_comp]
+    exact Subgroup.map_equiv_eq_comap_symm' mK.toMulEquiv ι.range
+  refine ⟨φ, fun x ↦ ?_, ?_, ?_, fun y ↦ ?_⟩
+  · exact congrArg (fun y ↦ mK (ι y)) (mL.symm_apply_apply x)
+  · rw [hrange, Subgroup.coe_comap]
+    exact (isOpen_range_maximalProPQuotient_map_absoluteGaloisGroupExtend p K L σ).preimage
+      mK.symm.continuous
+  · rw [hrange, Subgroup.index_comap_of_surjective _ mK.symm.surjective]
+    exact index_range_maximalProPQuotient_map_absoluteGaloisGroupExtend_dvd p K L σ
+  · simp only [hφ, ι, cyclotomicOrientation_maximalProPQuotient_map_absoluteGaloisGroupExtend]
 
 end TauCeti

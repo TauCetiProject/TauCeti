@@ -138,7 +138,7 @@ theorem isGroebnerBasis_iff_no_remainderStep (m : MonomialOrder σ)
     obtain ⟨f, r, hf, hrem, hr, hH⟩ := remainderStep_iff.mp hstep
     exact hr ((h.remainder_eq_zero_iff_mem hrem).2 hf)
   · intro h
-    apply (m.isGroebnerBasis_iff_isRemainder_zero hG).2
+    apply m.isGroebnerBasis_iff_isRemainder_zero.2
     refine ⟨Ideal.subset_span, fun f hf ↦ ?_⟩
     obtain ⟨r, hr⟩ := exists_isRemainder hG f
     have hr0 : r = 0 := by

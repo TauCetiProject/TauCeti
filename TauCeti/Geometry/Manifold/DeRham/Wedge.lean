@@ -105,8 +105,8 @@ so its argument is reindexed along the associativity equality `k + (l + 1) = k +
 private theorem mextDeriv_wedge_of_left_closed {φ : SmoothForm I M ℝ k}
     (hφ : mextDeriv φ.1 = 0) (β : SmoothForm I M ℝ l) (x : M)
     (v : Fin (k + l + 1) → TangentSpace I x) :
-    mextDeriv (φ.1.wedge β.1) x v =
-      (-1 : ℝ) ^ k • φ.1.wedge (mextDeriv β.1) x
+    mextDeriv (RoughForm.wedge φ.1 β.1) x v =
+      (-1 : ℝ) ^ k • RoughForm.wedge φ.1 (mextDeriv β.1) x
         (v ∘ Fin.cast (Nat.add_assoc k l 1).symm) := by
   have h := mextDeriv_wedge_apply φ β x v
   rw [hφ] at h

@@ -31,7 +31,8 @@ bijection between permutations and pairs of standard tableaux of the same shape.
 ## Main definitions
 
 * `List.IsLatticeWord`: a lattice word, in which every prefix contains each letter `i` at least as
-  often as `i + 1`.
+  often as `i + 1`; a weakly increasing word is one as soon as the word itself satisfies these
+  inequalities (`List.isLatticeWord_of_pairwise_le`).
 * `TauCeti.robinsonSchensted`: the insertion tableau and the recording word of a word.
 * `TauCeti.robinsonSchenstedEquiv`: the Robinson--Schensted correspondence, as a bijection.
 
@@ -81,6 +82,22 @@ theorem IsLatticeWord.of_prefix {r s : List ℕ} (h : r.IsLatticeWord) (hs : s <
 theorem IsLatticeWord.count_succ_le {r : List ℕ} (h : r.IsLatticeWord) (i : ℕ) :
     r.count (i + 1) ≤ r.count i :=
   h r (prefix_refl r) i
+
+/-- A weakly increasing word is a lattice word as soon as it contains each letter `i` at least as
+often as the letter `i + 1`: a prefix that already contains an `i + 1` contains every `i` of the
+word. -/
+theorem isLatticeWord_of_pairwise_le {r : List ℕ} (hr : r.Pairwise (· ≤ ·))
+    (hc : ∀ i, r.count (i + 1) ≤ r.count i) : r.IsLatticeWord := by
+  rintro p ⟨s, rfl⟩ i
+  by_cases hp : i + 1 ∈ p
+  · have hs : i ∉ s := fun hi => by
+      have := (pairwise_append.mp hr).2.2 _ hp _ hi
+      omega
+    have := hc i
+    rw [count_append, count_append, count_eq_zero_of_not_mem hs] at this
+    omega
+  · rw [count_eq_zero_of_not_mem hp]
+    exact Nat.zero_le _
 
 /-- A word ending in the letter `k` is a lattice word exactly when the rest of it is a lattice
 word which, if `k = i + 1`, contains `k` strictly fewer times than `i`. -/

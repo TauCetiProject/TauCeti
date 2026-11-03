@@ -41,6 +41,8 @@ of `df` on a chart-local frame are `C^n`, and so is the Riesz dual of such a fie
   point for a `C^n` metric is `C^n` at that point.
 * `TauCeti.Manifold.contMDiff_mgradient`: the gradient of a `C^{n+1}` function for a `C^n`
   metric is a `C^n` vector field.
+* `TauCeti.Manifold.continuous_inner_mgradient`: the inner product of the gradients of two `C¹`
+  functions is continuous.
 * `TauCeti.Manifold.mdifferentiable_mgradient`: a `C²` function has a differentiable Riemannian
   gradient section.
 * `TauCeti.Manifold.contMDiff_neg_mgradient`: so is the negative gradient, and
@@ -107,6 +109,14 @@ theorem mvfderiv_apply_mgradient :
 @[simp]
 theorem mgradient_eq_zero_iff : mgradient I f x = 0 ↔ mvfderiv I f x = 0 := by
   rw [mgradient, LinearIsometryEquiv.map_eq_zero_iff]
+
+variable (I) in
+/-- The gradient of a compactly supported function is compactly supported, since it vanishes off
+the support of the function. -/
+protected theorem _root_.HasCompactSupport.mgradient (hf : HasCompactSupport f) :
+    HasCompactSupport (β := E) (mgradient I f) :=
+  hf.mono' fun _ hx ↦ by_contra fun h ↦ hx <| mgradient_eq_zero_iff.2 <|
+    (notMem_tsupport_iff_eventuallyEq.1 h).mvfderiv_eq.trans mvfderiv_zero
 
 /-- The gradient has the same length as the differential it represents: the Riesz equivalence is
 an isometry. -/
@@ -275,21 +285,43 @@ theorem contMDiff_neg_mgradient_one [IsManifold I 2 M]
   have : IsManifold I (1 + 1) M := by rwa [one_add_one_eq_two]
   contMDiff_neg_mgradient (n := 1) (by rwa [one_add_one_eq_two])
 
+/-- For a `C^n` Riemannian metric, the inner product of the gradients of two `C^{n+1}`
+functions is `C^n`. -/
+theorem contMDiff_inner_mgradient {n : ℕ∞ω} [IsManifold I (n + 1) M]
+    [IsContMDiffRiemannianBundle I n E (fun x : M ↦ TangentSpace I x)] {g : M → ℝ}
+    (hf : ContMDiff I 𝓘(ℝ) (n + 1) f) (hg : ContMDiff I 𝓘(ℝ) (n + 1) g) :
+    ContMDiff I 𝓘(ℝ) n (fun x ↦ inner ℝ (mgradient I f x) (mgradient I g x)) := by
+  -- The bundle argument of `ContMDiff.inner_bundle` is not inferred through `TangentSpace`.
+  exact ContMDiff.inner_bundle (IB := I) (F := E)
+    (E := fun x : M ↦ TangentSpace I x) (b := id)
+    (contMDiff_mgradient hf) (contMDiff_mgradient hg)
+
+/-- **The inner product of two gradients is continuous.** For a continuous Riemannian metric, the
+pointwise inner product `⟪grad f, grad g⟫` of two `C¹` functions is a continuous function. -/
+theorem continuous_inner_mgradient
+    [IsContMDiffRiemannianBundle I 0 E (fun x : M ↦ TangentSpace I x)] {g : M → ℝ}
+    (hf : ContMDiff I 𝓘(ℝ) 1 f) (hg : ContMDiff I 𝓘(ℝ) 1 g) :
+    Continuous fun x ↦ inner ℝ (mgradient I f x) (mgradient I g x) := by
+  have : IsManifold I (0 + 1) M := by rwa [zero_add]
+  exact (contMDiff_inner_mgradient (n := 0) (by rwa [zero_add])
+    (by rwa [zero_add])).continuous
+
 /-! ### Comparison with the differential in a chart -/
 
 /-- **The differential in a chart is controlled by the gradient.** Near `p`, the Fréchet
-derivative of the coordinate expression of `f` in the extended chart at `p` is bounded by a fixed
-multiple of the Riemannian length of the gradient of `f`. The constant bounds the operator norm of
-the inverse of the tangent chart, measured with the metric on its target, which is locally bounded
+derivative of the coordinate expression of a function `f` in the extended chart at `p` is bounded
+by a fixed multiple of the Riemannian length of the gradient of `f`. The constant and the
+neighbourhood depend only on the metric, not on `f`: the constant bounds the operator norm of the
+inverse of the tangent chart, measured with the metric on its target, which is locally bounded
 for a continuous metric. -/
 theorem eventually_norm_fderiv_comp_extChartAt_symm_le_mul_norm_mgradient
-    [IsContinuousRiemannianBundle E (fun x : M ↦ TangentSpace I x)] (f : M → ℝ) (p : M) :
-    ∃ C > 0, ∀ᶠ y in 𝓝 p,
+    [IsContinuousRiemannianBundle E (fun x : M ↦ TangentSpace I x)] (p : M) :
+    ∃ C > 0, ∀ᶠ y in 𝓝 p, ∀ f : M → ℝ,
       ‖fderiv ℝ (f ∘ (extChartAt I p).symm) (extChartAt I p y)‖ ≤ C * ‖mgradient I f y‖ := by
   obtain ⟨C, hC, hsymm⟩ :=
     eventually_norm_symmL_trivializationAt_lt E (fun x : M ↦ TangentSpace I x) p
   refine ⟨C, hC, ?_⟩
-  filter_upwards [hsymm, chart_source_mem_nhds H p] with y hy hys
+  filter_upwards [hsymm, chart_source_mem_nhds H p] with y hy hys f
   by_cases hd : DifferentiableAt ℝ (f ∘ (extChartAt I p).symm) (extChartAt I p y)
   swap
   · rw [fderiv_zero_of_not_differentiableAt hd, norm_zero]

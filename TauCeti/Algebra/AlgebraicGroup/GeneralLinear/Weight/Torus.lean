@@ -514,7 +514,7 @@ theorem mapPointsFunctor_weightTorusCoordinateMap_app [Finite Îº] (wt : Fin N â†
         (DiagonalizableGroup.pointsMap (weightCharacterMap wt) p) := by
   rw [weightTorusCoordinateMap, CommHopfAlgCat.Hom.mapPointsFunctor_comp_app_apply,
     DiagonalizableGroup.mapPointsFunctor_coordinateMap_app,
-    mapPointsFunctor_diagonalTorusCoordinateMap_app, FGCommGrpCat.toMonoidHom_ofHom]
+    mapPointsFunctor_diagonalTorusCoordinateMap_app, FGCommGrpCat.hom_hom_ofHom]
 
 /-- The diagonal coordinates obtained by restricting a split-torus point along a weight family
 are the corresponding torus characters. -/

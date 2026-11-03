@@ -11,7 +11,8 @@ public import TauCeti.Computability.Primrec.Bitwise
 # Primitive recursive operations on binary finite-set codes
 
 Primitive recursion certificates for membership, bounded filtering and least-element search on
-binary finite-set codes. The code operations and their finite-set interpretations are defined
+binary finite-set codes, and for the codes of the set of entries of a list and of
+`Finset.range n`. The code operations and their finite-set interpretations are defined
 in `TauCeti.Data.Nat.BitIndices`, using Mathlib's `Finset.equivBitIndices` rather than another
 encoding or a `Primcodable` instance for finite sets.
 
@@ -50,6 +51,26 @@ theorem nat_filterBitIndices {α : Type*} [Primcodable α]
   simp [Finset.equivBitIndices_symm_apply, ← List.sum_eq_foldr,
     ← List.sum_toFinset _ (Nat.bitIndices_nodup.filter _), List.toFinset_filter,
     Finset.equivBitIndices_apply]
+
+/-- The code of the set of entries of a list is primitive recursive. -/
+theorem equivBitIndices_symm_toFinset :
+    Primrec fun l : List ℕ => Finset.equivBitIndices.symm l.toFinset := by
+  -- add `2 ^ x` for each entry `x` whose bit is not yet set
+  refine (list_foldr (h := fun _ (p : ℕ × ℕ) => bif p.2.testBit p.1 then p.2 else p.2 + 2 ^ p.1)
+    .id (const 0) (cond (nat_testBit.comp (snd.comp snd) (fst.comp snd)) (snd.comp snd)
+      (nat_add.comp (snd.comp snd) (nat_pow.comp (const 2) (fst.comp snd))))).of_eq fun l => ?_
+  simp only [id]
+  induction l with
+  | nil => simp [Finset.equivBitIndices_symm_apply]
+  | cons x l ih =>
+    rw [List.foldr_cons, ih, List.toFinset_cons]
+    by_cases hx : x ∈ l.toFinset <;>
+      simp [hx, Finset.equivBitIndices_symm_apply, Finset.sum_insert, add_comm]
+
+/-- The code `2 ^ n - 1` of `Finset.range n` is primitive recursive in `n`. -/
+theorem equivBitIndices_symm_range :
+    Primrec fun n => Finset.equivBitIndices.symm (Finset.range n) :=
+  (equivBitIndices_symm_toFinset.comp list_range).of_eq fun n => by rw [List.toFinset_range]
 
 /-- Least-element search on binary finite-set codes is primitive recursive. -/
 theorem nat_leastBitIndex : Primrec Nat.leastBitIndex :=

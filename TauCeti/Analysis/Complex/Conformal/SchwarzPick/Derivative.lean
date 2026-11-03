@@ -22,15 +22,9 @@ it into itself, then at every point `z` of the disc
 (hyperbolic) metric `|dz| / (1 - |z| ^ 2)`.  The bundled `Complex.UnitDisc` form is
 `norm_deriv_div_one_sub_norm_sq_le_unitDisc`.
 
-This advances the conformal-mapping roadmap's **L2 Schwarz--Pick** target
-(`TauCetiRoadmap/ConformalMapping/README.md`, the L2 hyperbolic/Poincaré-metric contraction),
-complementing Tau Ceti's finite Schwarz--Pick estimate `pseudoHyperbolicExpr_map_le`.  It
+This complements Tau Ceti's finite Schwarz--Pick estimate `pseudoHyperbolicExpr_map_le`.  It
 reuses Mathlib's Schwarz lemma (`Complex.norm_deriv_le_one_of_mapsTo_ball`) and Tau Ceti's
-unit-disc Moebius API.  As with the rest of the L0--L3 conformal-mapping material, it is
-coordinated with the upstream Mathlib RMT effort leanprover-community/mathlib4#33505.  Mathlib
-already contains the preceding human-curated work in `Analysis/Complex/RiemannMapping.lean` and
-`Analysis/Complex/BranchLogRoot.lean`; none of it is duplicated here, and should that work land
-a human-curated Schwarz--Pick theorem this file should be refactored onto it.
+unit-disc Moebius API.
 -/
 
 public section

@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Topology.Compactness.Compact
+public import Mathlib.Topology.Compactness.SigmaCompact
 public import Mathlib.Topology.Connected.Basic
 public import Mathlib.Topology.Separation.Hausdorff
 import TauCeti.Topology.Separation.InvFunOn
@@ -13,7 +14,7 @@ import TauCeti.Topology.Separation.InvFunOn
 /-!
 # Compactness utilities
 
-General lemmas about compact subsets of topological spaces.
+General lemmas about compact and σ-compact subsets of topological spaces.
 -/
 
 public section
@@ -60,6 +61,12 @@ theorem _root_.IsCompact.image_connectedComponentIn {Y : Type*} [TopologicalSpac
     simpa only [hgf (hA hwA)] using hg (mem_image_of_mem _ hv)
   · have hfx : f x ∉ f '' A := fun ⟨w, hwA, hw⟩ => hxA (hinj (hA hwA) hx hw ▸ hwA)
     rw [connectedComponentIn_eq_empty hxA, connectedComponentIn_eq_empty hfx, image_empty]
+
+/-- The union of two σ-compact sets is σ-compact. -/
+theorem _root_.IsSigmaCompact.union {s t : Set X} (hs : IsSigmaCompact s)
+    (ht : IsSigmaCompact t) : IsSigmaCompact (s ∪ t) := by
+  rw [union_eq_iUnion]
+  exact isSigmaCompact_iUnion _ (Bool.forall_bool.2 ⟨ht, hs⟩)
 
 end TauCeti
 

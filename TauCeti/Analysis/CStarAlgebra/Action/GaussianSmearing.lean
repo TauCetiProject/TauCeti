@@ -35,6 +35,7 @@ complex linear and commutes with `star`.
 ## Main definitions
 
 * `TauCeti.CStarAction.gaussianSmear`: the Gaussian smearing of an element.
+* `TauCeti.CStarAction.gaussianSmearCLM`: Gaussian smearing as a continuous linear map.
 
 ## Main statements
 
@@ -60,7 +61,7 @@ public section
 noncomputable section
 
 open Complex MeasureTheory Filter Topology Real
-open scoped Convolution
+open scoped Convolution NNReal
 
 namespace TauCeti.CStarAction
 
@@ -251,6 +252,26 @@ theorem norm_gaussianSmear_le (c : ℝ) (a : A) : ‖α.gaussianSmear c a‖ ≤
   · simpa using key (neg_pos.mpr hc)
   · simp
   · exact key hc
+
+/-- Gaussian smearing as a continuous complex-linear map. -/
+def gaussianSmearCLM (c : ℝ) : A →L[ℂ] A :=
+  ({ toFun := α.gaussianSmear c
+     map_add' := α.gaussianSmear_add c
+     map_smul' := α.gaussianSmear_smul c } : A →ₗ[ℂ] A).mkContinuous 1
+    (fun a => by simpa using α.norm_gaussianSmear_le c a)
+
+/-- Applying the continuous linear Gaussian smearing map gives the Gaussian smearing. -/
+@[simp]
+theorem gaussianSmearCLM_apply (c : ℝ) (a : A) :
+    α.gaussianSmearCLM c a = α.gaussianSmear c a := by
+  rfl
+
+/-- Gaussian smearing commutes with the associated strongly continuous semigroup. -/
+theorem toSemigroup_gaussianSmearCLM (c : ℝ) (t : ℝ≥0) (a : A) :
+    α.toStronglyContinuousGroup.toSemigroup t (α.gaussianSmearCLM c a) =
+      α.gaussianSmearCLM c (α.toStronglyContinuousGroup.toSemigroup t a) := by
+  simpa only [Semigroups.StronglyContinuousGroup.toSemigroup_apply,
+    toStronglyContinuousGroup_apply, gaussianSmearCLM_apply] using α.apply_gaussianSmear c t a
 
 /-- At positive width, Gaussian smearing is heat-kernel convolution of the reversed orbit. -/
 private theorem gaussianSmear_eq_heatKernel_convolution {c : ℝ} (hc : 0 < c) (a : A) :

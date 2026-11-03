@@ -6,7 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.AlgebraicTopology.SimplicialSet.KanComplex
-public import TauCeti.AlgebraicTopology.SimplicialSet.NerveCodiscrete
+public import Mathlib.AlgebraicTopology.SingularSet
+public import TauCeti.AlgebraicTopology.SimplicialSet.KanComplex
+public import TauCeti.AlgebraicTopology.SimplicialSet.Nerve.Codiscrete
+public import TauCeti.AlgebraicTopology.SimplicialSet.PiZero
 
 /-!
 # Small models of simplicial homotopy types
@@ -19,7 +22,12 @@ to the common universe `max u v`, and simplicial homotopies from both composites
 universe control needed when representing mapping spaces by small Kan complexes.
 
 The nerve of the codiscrete category on any nonempty type admits the point as a small model,
-even when its vertices do not form a small type.
+even when its vertices do not form a small type. Since homotopic maps induce the same map on
+connected components, a simplicial set with a small model has a small set of connected
+components (`TauCeti.HasSmallSpaceModel.small_π₀`). For a discrete simplicial set this is the only
+obstruction: the discrete simplicial set on a type has a small model exactly when the type is small
+(`TauCeti.hasSmallSpaceModel_const_iff`), the model being the singular simplicial set of the
+discrete space on a small copy of the type.
 
 ## References
 
@@ -165,5 +173,37 @@ lemma exists_hasSmallSpaceModel_not_small_vertices :
   refine ⟨nerve (Codiscrete (Type u)), hasSmallSpaceModel_nerveCodiscrete _, ?_⟩
   intro h
   exact not_small_type ((small_congr (nerveEquiv.trans codiscreteEquiv)).mp h)
+
+/-- A simplicial set with a small Kan model has a small set of connected components: the comparison
+maps induce mutually inverse bijections between its connected components and those of the
+model, since homotopic maps induce the same map on connected components. -/
+lemma HasSmallSpaceModel.small_π₀ {X : SSet.{v}} (h : HasSmallSpaceModel.{u, v} X) :
+    Small.{u} (SSet.π₀ X) := by
+  obtain ⟨M⟩ := h
+  have hinj : Function.Injective (SSet.mapπ₀ M.inv) :=
+    Function.LeftInverse.injective (g := SSet.mapπ₀ M.hom) fun c ↦ by
+      rw [← SSet.mapπ₀_comp_apply, M.homotopyInvHomId.mapπ₀_eq, SSet.mapπ₀_id_apply]
+  have : Small.{u} (SSet.π₀ (SSet.uliftFunctor.{v, u}.obj M.model)) :=
+    small_of_injective (SSet.π₀UliftEquiv M.model).injective
+  have : Small.{u} (SSet.π₀ (SSet.uliftFunctor.{u, v}.obj X)) := small_of_injective hinj
+  exact small_of_injective (SSet.π₀UliftEquiv X).symm.injective
+
+/-- The discrete simplicial set on a type has a Kan model in universe `u` exactly when the type
+is `u`-small. A model is the singular simplicial set of the discrete space on a `u`-small copy of
+the type, which is a Kan complex isomorphic to the discrete simplicial set. -/
+lemma hasSmallSpaceModel_const_iff (ι : Type v) :
+    HasSmallSpaceModel.{u, v} ((Functor.const SimplexCategoryᵒᵖ).obj ι) ↔ Small.{u} ι := by
+  refine ⟨fun h ↦ ?_, fun _ ↦ ?_⟩
+  · have := h.small_π₀
+    exact small_of_injective (SSet.constπ₀Equiv ι).symm.injective
+  · let : TopologicalSpace (Shrink.{u} ι) := ⊥
+    have : DiscreteTopology (Shrink.{u} ι) := ⟨rfl⟩
+    let e : ULift.{v} (Shrink.{u} ι) ≃ ULift.{u} ι :=
+      Equiv.ulift.trans ((equivShrink ι).symm.trans Equiv.ulift.symm)
+    exact ⟨SmallSpaceModel.ofIso (TopCat.toSSet.obj (TopCat.of (Shrink.{u} ι)))
+      (SSet.uliftFunctor.mapIso (TopCat.toSSetIsoConst (TopCat.of (Shrink.{u} ι))) ≪≫
+        Functor.constComp SimplexCategoryᵒᵖ (Shrink.{u} ι) uliftFunctor.{v, u} ≪≫
+        (Functor.const _).mapIso e.toIso ≪≫
+        (Functor.constComp SimplexCategoryᵒᵖ ι uliftFunctor.{u, v}).symm)⟩
 
 end TauCeti

@@ -8,6 +8,8 @@ module
 public import TauCeti.Analysis.Normed.Module.Alternating.Uncurry.AlmostComplexType
 public import TauCeti.Geometry.Symplectic.Manifold.JHolomorphic
 public import TauCeti.Geometry.Manifold.DifferentialForm.MapCoeff
+public import TauCeti.Geometry.Symplectic.Complex.Complexification
+public import TauCeti.Topology.Algebra.Module.Alternating.BaseChange
 public import Mathlib.Analysis.Normed.Module.Alternating.Basic
 
 /-!
@@ -26,7 +28,10 @@ Mathlib's derivative `ContinuousAlternatingMap.fderivCompContinuousLinearMap` of
 identity, so it preserves smoothness. A form has type `(p,q)` for `J`
 (`TauCeti.SmoothForm.IsOfType`) when `p + q = k` and the derivation of `J` acts on it as
 multiplication by `(p - q) * I`; equivalently, `p + q = k` and its value at every point has type
-`(p,q)` for the almost complex structure of that tangent space.
+`(p,q)` for the almost complex structure of that tangent space. A one-form has type `(1,0)`
+exactly when its complex-linear extension to the complexified tangent space vanishes on the vectors
+of type `(0,1)` (the `-i`-eigenvectors of the complexification of `J`) at every point, and type
+`(0,1)` exactly when it vanishes on the vectors of type `(1,0)`.
 
 The type projections `TauCeti.SmoothAlmostComplexStructure.typeProjection J p q` are the fibrewise
 type polynomials evaluated at the derivation of `J`. Hence they are complex-linear endomorphisms
@@ -53,6 +58,11 @@ and it holds at boundary and corner points as well.
 * `TauCeti.SmoothAlmostComplexStructure.sum_typeProjection`,
   `TauCeti.SmoothAlmostComplexStructure.typeProjection_eq_of_sum_eq`: existence and uniqueness of
   the type decomposition.
+* `TauCeti.SmoothAlmostComplexStructure.map_eq_of_forall_isOfType`: additive maps agreeing on the
+  forms of each type agree.
+* `TauCeti.SmoothForm.isOfType_one_zero_iff_eigenspace_le_ker`,
+  `TauCeti.SmoothForm.isOfType_zero_one_iff_eigenspace_le_ker`: one-forms of type `(1,0)` and
+  `(0,1)` through their complex-linear extensions to the complexified tangent spaces.
 * `TauCeti.SmoothAlmostComplexStructure.mapCoeff_typeProjection_of_map_smul_conj`: conjugation.
 * `TauCeti.SmoothAlmostComplexStructure.mpullback_typeProjection`: pullback along
   pseudoholomorphic maps.
@@ -149,7 +159,7 @@ def alternatingDerivation
     (A : ContMDiffSection I (E →L[ℝ] E) ∞ fun x : M ↦ TangentSpace I x →L[ℝ] TangentSpace I x) :
     Module.End ℂ (SmoothForm I M F k) where
   toFun φ := ⟨fun x ↦ (A x).alternatingDerivation (φ.1 x),
-    (φ.isSmoothForm.alternatingDerivation A.contMDiff).mem_smoothForms⟩
+    (φ.isSmoothForm.alternatingDerivation A.contMDiff).mem_smoothBundleForms⟩
   map_add' φ ψ := Subtype.ext <| funext fun x ↦ map_add _ (φ.1 x) (ψ.1 x)
   map_smul' c φ := Subtype.ext <| funext fun x ↦ map_smul _ c (φ.1 x)
 
@@ -238,6 +248,26 @@ theorem isOfType_zero_one_iff {α : SmoothForm I M F 1} :
     α.IsOfType J 0 1 ↔ ∀ x v, α.1 x ![J x v] = -Complex.I • α.1 x ![v] := by
   simp only [isOfType_iff_forall, ContinuousAlternatingMap.isOfType_zero_one_iff, true_and]
 
+/-- A smooth one-form has type `(1,0)` exactly when, at every point, its complex-linear extension
+vanishes on the complexified tangent vectors of type `(0,1)`. -/
+theorem isOfType_one_zero_iff_eigenspace_le_ker {α : SmoothForm I M F 1} :
+    α.IsOfType J 1 0 ↔ ∀ x, Module.End.eigenspace
+      ((J.almostComplexStructureAt x).toLinearMap.baseChange ℂ) (-Complex.I) ≤
+        LinearMap.ker ((α.1 x).liftBaseChangeFinOne ℂ) := by
+  simp_rw [isOfType_one_zero_iff, ContinuousAlternatingMap.liftBaseChangeFinOne_def,
+    AlmostComplexStructure.eigenspace_neg_I_le_ker_liftBaseChange_iff]
+  simp [Matrix.vec_single_eq_const]
+
+/-- A smooth one-form has type `(0,1)` exactly when, at every point, its complex-linear extension
+vanishes on the complexified tangent vectors of type `(1,0)`. -/
+theorem isOfType_zero_one_iff_eigenspace_le_ker {α : SmoothForm I M F 1} :
+    α.IsOfType J 0 1 ↔ ∀ x, Module.End.eigenspace
+      ((J.almostComplexStructureAt x).toLinearMap.baseChange ℂ) Complex.I ≤
+        LinearMap.ker ((α.1 x).liftBaseChangeFinOne ℂ) := by
+  simp_rw [isOfType_zero_one_iff, ContinuousAlternatingMap.liftBaseChangeFinOne_def,
+    AlmostComplexStructure.eigenspace_I_le_ker_liftBaseChange_iff]
+  simp [Matrix.vec_single_eq_const]
+
 end SmoothForm
 
 /-! ### The type projections -/
@@ -277,6 +307,26 @@ theorem isOfType_typeProjection (hpq : p + q = k) (φ : SmoothForm I M F k) :
   SmoothForm.isOfType_iff_forall.2 ⟨hpq, fun x ↦ by
     simpa only [coe_typeProjection] using
       ContinuousLinearMap.isOfType_typeProjection (J.square_neg_apply x) hpq (φ.1 x)⟩
+
+/-- Two additive maps out of the smooth `k`-forms agree if they agree on the forms of each type
+`(p,q)`, `p + q = k`. -/
+theorem map_eq_of_forall_isOfType {G 𝓕 𝓖 : Type*} [AddCommMonoid G]
+    [FunLike 𝓕 (SmoothForm I M F k) G] [AddMonoidHomClass 𝓕 (SmoothForm I M F k) G]
+    [FunLike 𝓖 (SmoothForm I M F k) G] [AddMonoidHomClass 𝓖 (SmoothForm I M F k) G]
+    {f : 𝓕} {g : 𝓖}
+    (h : ∀ p q, p + q = k → ∀ ψ : SmoothForm I M F k, ψ.IsOfType J p q → f ψ = g ψ)
+    (φ : SmoothForm I M F k) : f φ = g φ := by
+  rw [← J.sum_typeProjection φ, map_sum, map_sum]
+  exact Finset.sum_congr rfl fun pq hpq ↦ h _ _ (Finset.mem_antidiagonal.1 hpq) _
+    (J.isOfType_typeProjection (Finset.mem_antidiagonal.1 hpq) φ)
+
+/-- An additive map out of the smooth `k`-forms vanishes if it vanishes on the forms of each type
+`(p,q)`, `p + q = k`. -/
+theorem map_eq_zero_of_forall_isOfType {G 𝓕 : Type*} [AddCommMonoid G]
+    [FunLike 𝓕 (SmoothForm I M F k) G] [AddMonoidHomClass 𝓕 (SmoothForm I M F k) G] {f : 𝓕}
+    (h : ∀ p q, p + q = k → ∀ ψ : SmoothForm I M F k, ψ.IsOfType J p q → f ψ = 0)
+    (φ : SmoothForm I M F k) : f φ = 0 :=
+  J.map_eq_of_forall_isOfType (g := (0 : SmoothForm I M F k →+ G)) h φ
 
 /-- The type-`(p,q)` projection of smooth `k`-forms vanishes unless `p + q = k`. -/
 @[simp]
@@ -353,6 +403,15 @@ end SmoothForm
 namespace SmoothAlmostComplexStructure
 
 variable (J : SmoothAlmostComplexStructure I M)
+
+/-- Type projection commutes with transport across an equality of form degrees. -/
+theorem typeProjection_cast {l : ℕ} (h : k = l) (p q : ℕ) (φ : SmoothForm I M F k) :
+    J.typeProjection p q
+        (LinearEquiv.cast (R := ℝ) (M := fun n ↦ SmoothForm I M F n) h φ) =
+      LinearEquiv.cast (R := ℝ) (M := fun n ↦ SmoothForm I M F n) h
+        (J.typeProjection p q φ) := by
+  subst l
+  rfl
 
 /-- On one-forms, the type-`(1,0)` projection sends `α` to `(α - I • α ∘ J) / 2`. -/
 theorem typeProjection_one_zero :
@@ -542,8 +601,8 @@ variable {J : SmoothAlmostComplexStructure I M} {φ : SmoothForm I M F k} {p q P
 equation for the almost complex structure read in the chart. -/
 private theorem IsOfType.fderivCompContinuousLinearMap_inChartAt (hφ : φ.IsOfType J p q)
     (x : M) {z : E} (hz : z ∈ (extChartAt I x).target) :
-    (φ.1.inChartAt x z).fderivCompContinuousLinearMap (.id ℝ E) (J.inChart x z) =
-      (((p : ℂ) - q) * Complex.I) • φ.1.inChartAt x z := by
+    (RoughForm.inChartAt φ.1 x z).fderivCompContinuousLinearMap (.id ℝ E) (J.inChart x z) =
+      (((p : ℂ) - q) * Complex.I) • RoughForm.inChartAt φ.1 x z := by
   have hy := (extChartAt I x).map_target hz
   have h₁ := inCoordinates_alternatingDerivation (fun y ↦ J.toEndomorphism y) φ.1 x _
     (SmoothAlmostComplexStructure.mem_baseSet_of_mem_target x hz)
@@ -565,16 +624,17 @@ private theorem IsOfType.typeProjection_mextDeriv_apply_eq_zero (hφ : φ.IsOfTy
   -- gives a first-order variation of the pair `(φ x, J x)` preserving type. Its alternation is
   -- the exterior derivative of `φ` at `x`, so the fibrewise theorem applies.
   set z₀ := extChartAt I x x
-  have hd : DifferentiableWithinAt ℝ (φ.1.inChartAt x) (Set.range I) z₀ :=
+  have hd : DifferentiableWithinAt ℝ (RoughForm.inChartAt φ.1 x) (Set.range I) z₀ :=
     (φ.isSmoothForm.contDiffWithinAt_inChartAt_self x).differentiableWithinAt (by simp)
-  set η := fderivWithin ℝ (φ.1.inChartAt x) (Set.range I) z₀
+  set η := fderivWithin ℝ (RoughForm.inChartAt φ.1 x) (Set.range I) z₀
   set A := fderivWithin ℝ (J.inChart x) (Set.range I) z₀
   have hη (v : E) : (J.inChart x z₀).alternatingDerivation (η v) +
-      (A v).alternatingDerivation (φ.1.inChartAt x z₀) = (((p : ℂ) - q) * Complex.I) • η v := by
+      (A v).alternatingDerivation (RoughForm.inChartAt φ.1 x z₀) =
+        (((p : ℂ) - q) * Complex.I) • η v := by
     let G := ContinuousAlternatingMap.fderivCompContinuousLinearMapCLM F
       (ContinuousLinearMap.id ℝ E) (ι := Fin k)
-    have heq : (fun z ↦ G (φ.1.inChartAt x z) (J.inChart x z)) =ᶠ[𝓝[Set.range I] z₀]
-        fun z ↦ (((p : ℂ) - q) * Complex.I) • φ.1.inChartAt x z := by
+    have heq : (fun z ↦ G (RoughForm.inChartAt φ.1 x z) (J.inChart x z)) =ᶠ[𝓝[Set.range I] z₀]
+        fun z ↦ (((p : ℂ) - q) * Complex.I) • RoughForm.inChartAt φ.1 x z := by
       filter_upwards [extChartAt_target_mem_nhdsWithin x] with z hz using
         hφ.fderivCompContinuousLinearMap_inChartAt x hz
     have h := (I.uniqueDiffOn.uniqueDiffWithinAt (Set.mem_range_self _)).eq
@@ -590,7 +650,7 @@ private theorem IsOfType.typeProjection_mextDeriv_apply_eq_zero (hφ : φ.IsOfTy
       ← ContinuousLinearMap.alternatingDerivation_eq_fderivCompContinuousLinearMap] at hv
     rw [add_comm]
     exact hv
-  have hφ₀ : (φ.1.inChartAt x z₀).IsOfType (J.inChart x z₀) p q := by
+  have hφ₀ : (RoughForm.inChartAt φ.1 x z₀).IsOfType (J.inChart x z₀) p q := by
     rw [RoughForm.inChartAt_extChartAt_self, J.inChart_extChartAt_self]
     exact hφ.apply x
   rw [mextDeriv_def, extDerivWithin, ← J.inChart_extChartAt_self x]

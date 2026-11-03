@@ -10,6 +10,7 @@ public import Mathlib.NumberTheory.DirichletCharacter.Basic
 public import TauCeti.NumberTheory.LegendreSymbol.JacobiSymbol
 import TauCeti.Data.Int.Sign
 import TauCeti.Data.Nat.Factorization.GcdSplit
+import TauCeti.NumberTheory.DirichletCharacter.Basic
 
 /-!
 # The Kronecker symbol
@@ -58,6 +59,8 @@ The character need not be primitive: `(-12 / ·)` is induced from `(-3 / ·)`.
 * `TauCeti.kroneckerChar_intCast`, `TauCeti.kroneckerChar_isQuadratic`,
   `TauCeti.kroneckerChar_neg_one`: the character computes the Kronecker symbol, is quadratic, and
   has value `sign D` at `-1`.
+* `TauCeti.conductor_kroneckerChar_dvd_iff`: the conductor of `kroneckerChar` divides `N`
+  exactly when `(D / a) = 1` for the odd `a ≡ 1 (mod N)` prime to `D`.
 
 ## References
 
@@ -107,7 +110,7 @@ theorem kroneckerSym_of_odd (a : ℤ) {b : ℤ} (hb : Odd b) :
 /-- At an odd positive denominator the Kronecker symbol is the Jacobi symbol. -/
 theorem kroneckerSym_eq_jacobiSym (a : ℤ) {b : ℕ} (hb : Odd b) :
     kroneckerSym a b = jacobiSym a b := by
-  rw [kroneckerSym_of_odd a (Int.odd_coe_nat b |>.mpr hb), Int.natAbs_natCast,
+  rw [kroneckerSym_of_odd a (Int.odd_natCast b |>.mpr hb), Int.natAbs_natCast,
     ite_eq_right (fun h ↦ (Int.natCast_nonneg b).not_gt h.2), one_mul]
 
 /-- At an odd prime the Kronecker symbol is the Legendre symbol. -/
@@ -301,15 +304,15 @@ private theorem kroneckerSym_eq_jacobiSym_emod {D : ℤ} (hD : D % 4 = 0) (hD₀
   have hr₀ : 0 ≤ m % D := Int.emod_nonneg m hD₀
   have hr : Odd (m % D).toNat := by
     have h2 : Even D := even_iff_two_dvd.mpr (dvd_trans (by norm_num) (Int.dvd_of_emod_eq_zero hD))
-    rw [← Int.odd_coe_nat, Int.toNat_of_nonneg hr₀, Int.emod_def]
+    rw [← Int.odd_natCast, Int.toNat_of_nonneg hr₀, Int.emod_def]
     exact hm.sub_even (h2.mul_right _)
   rcases Int.eq_nat_or_neg m with ⟨k, rfl | rfl⟩
-  · have hk : Odd k := (Int.odd_coe_nat k).mp hm
+  · have hk : Odd k := (Int.odd_natCast k).mp hm
     have hmod : ((k : ℤ) % D).toNat = k % D.natAbs := by
       rw [← Int.emod_abs, ← Int.natCast_natAbs, ← Int.natCast_mod, Int.toNat_natCast]
     rw [kroneckerSym_eq_jacobiSym D hk, jacobiSym_mod_natAbs_of_emod_four_eq_zero hD hk, hmod,
       jacobiSym_mod_natAbs_of_emod_four_eq_zero hD (hmod ▸ hr), Nat.mod_mod]
-  · have hk : Odd k := (Int.odd_coe_nat k).mp (by simpa using hm)
+  · have hk : Odd k := (Int.odd_natCast k).mp (by simpa using hm)
     have hdvd : D.natAbs ∣ k + (-(k : ℤ) % D).toNat := by
       rw [← Int.natCast_dvd_natCast, Nat.cast_add, Int.toNat_of_nonneg hr₀, Int.natCast_natAbs,
         abs_dvd, Int.emod_def]
@@ -421,6 +424,22 @@ theorem kroneckerChar_isQuadratic : (kroneckerChar R D hD hD₀).IsQuadratic := 
 theorem kroneckerChar_neg_one : kroneckerChar R D hD hD₀ (-1) = D.sign := by
   rw [← Int.cast_one (R := ZMod D.natAbs), ← Int.cast_neg, kroneckerChar_intCast,
     kroneckerSym_neg_one_right, Int.ite_lt_zero_eq_sign hD₀]
+
+/-- **The conductor of the Kronecker character.** The conductor of `(D / ·)` divides `N` exactly
+when `(D / a) = 1` for every odd natural number `a` prime to `D` with `a ≡ 1 (mod N)`. The
+modulus `N` need not divide `D`, so this is how `(D / ·)` is shown to be induced from a character
+modulo `N` when only the values at odd `a ≡ 1 (mod N)` are known. The coefficient ring only needs
+`2 ≠ 0`, so that the values `0`, `1` and `-1` stay distinct. -/
+theorem conductor_kroneckerChar_dvd_iff [NeZero (2 : R)] {N : ℕ} :
+    (kroneckerChar R D hD hD₀).conductor ∣ N ↔
+      ∀ a : ℕ, Odd a → a.Coprime D.natAbs → a ≡ 1 [MOD N] → kroneckerSym D a = 1 := by
+  have : NeZero D.natAbs := ⟨Int.natAbs_ne_zero.mpr hD₀⟩
+  have : Nontrivial R := nontrivial_of_ne 2 0 two_ne_zero
+  rw [DirichletCharacter.conductor_dvd_iff_forall_odd]
+  refine forall_congr' fun a ↦ forall₃_congr fun _ _ _ ↦ ?_
+  rw [kroneckerChar_natCast]
+  rcases kroneckerSym_trichotomy D a with h | h | h <;>
+    simp [h, neg_eq_iff_add_eq_zero, one_add_one_eq_two, two_ne_zero]
 
 end KroneckerChar
 

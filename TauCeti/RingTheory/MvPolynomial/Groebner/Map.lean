@@ -94,13 +94,13 @@ whose nonzero members have unit leading coefficients to a Gröbner basis of the 
 theorem IsGroebnerBasis.map (hφ : Function.Injective φ) (h : m.IsGroebnerBasis G I)
     (hG : ∀ g ∈ G, g ≠ 0 → IsUnit (m.leadingCoeff g)) :
     m.IsGroebnerBasis (MvPolynomial.map φ '' G) (I.map (MvPolynomial.map φ)) := by
-  rw [h.ideal_eq_span hG, Ideal.map_span]
+  rw [h.ideal_eq_span, Ideal.map_span]
   refine isGroebnerBasis_span_of_isRemainder_sPolynomial_zero ?_ ?_
   · rintro _ ⟨g, hg, rfl⟩ hg0
     rw [m.leadingCoeff_map_of_injective hφ]
     exact (hG g hg fun h ↦ hg0 (by rw [h, map_zero])).map φ
   rintro _ ⟨g₁, hg₁, rfl⟩ _ ⟨g₂, hg₂, rfl⟩
-  have := (h.isRemainder_sPolynomial_zero hG hg₁ hg₂).map hφ
+  have := (h.isRemainder_sPolynomial_zero hg₁ hg₂).map hφ
   rwa [map_zero, ← m.sPolynomial_map_of_injective hφ] at this
 
 /-- Let `φ` be an injective coefficient map and let `G ⊆ I` have nonzero members with unit leading

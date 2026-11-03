@@ -41,6 +41,8 @@ example.
 * `TauCeti.SmoothTwoForm.IsNondegenerate.symplecticFormAt`: the symplectic form on a tangent fiber.
 * `TauCeti.SmoothTwoForm.IsNondegenerate.symplecticFormAt_transport`: transport of tangent-fiber
   symplectic forms by the differential of a symplectomorphism.
+* `TauCeti.SmoothTwoForm.IsNondegenerate.isNondegenerate_mpullback_of_isLocalDiffeomorph`: a local
+  diffeomorphism pulls a nondegenerate form back to a nondegenerate form.
 * `TauCeti.SmoothTwoForm.Tames` and `TauCeti.SmoothTwoForm.Compatible`: the unbundled pointwise
   relations to a smooth almost complex structure.
 * `TauCeti.SmoothTwoForm.IsNondegenerate.tames_iff`, `invariant_iff`, and `compatible_iff`: these
@@ -79,7 +81,7 @@ alternating form this one-sided condition implies the corresponding condition on
 lemma isNondegenerate_iff_separatingLeft :
     form.IsNondegenerate ↔
       ∀ (x : M) (v : TangentSpace I x),
-        (∀ w, SmoothForm.eval₂ form x v w = 0) → v = 0 := by
+        (∀ w, SmoothBundleForm.eval₂ form x v w = 0) → v = 0 := by
   constructor
   · intro h x v hv
     apply (h x).1 v
@@ -106,7 +108,7 @@ theorem IsNondegenerate.apply_ne_zero [Nontrivial E] (h : form.IsNondegenerate) 
 theorem IsNondegenerate.neg (h : form.IsNondegenerate) : (-form).IsNondegenerate := by
   rw [isNondegenerate_iff_separatingLeft] at h ⊢
   intro x v hv
-  exact h x v fun w ↦ neg_eq_zero.mp ((SmoothForm.eval₂_neg form x v w).symm.trans (hv w))
+  exact h x v fun w ↦ by simpa using hv w
 
 /-- A smooth two-form is **symplectic** when it is closed and fiberwise nondegenerate. This is the
 manifold-level notion of a symplectic form; a symplectic manifold is a manifold carrying one. -/
@@ -127,7 +129,7 @@ def IsNondegenerate.symplecticFormAt (h : form.IsNondegenerate) (x : M) :
 @[simp]
 lemma IsNondegenerate.symplecticFormAt_apply (h : form.IsNondegenerate) (x : M)
     (v w : TangentSpace I x) :
-    h.symplecticFormAt x v w = SmoothForm.eval₂ form x v w :=
+    h.symplecticFormAt x v w = SmoothBundleForm.eval₂ form x v w :=
   SmoothForm.bilinFormAt_apply form x v w
 
 section Transport
@@ -151,12 +153,27 @@ theorem IsNondegenerate.symplecticFormAt_transport (ψ : M ≃ₘ⟮I, I₂⟯ M
     ContinuousLinearEquiv.coe_toLinearEquiv, ← ContinuousLinearEquiv.coe_coe,
     Diffeomorph.mfderivToContinuousLinearEquiv_coe]
 
+include hσ in
+/-- A local diffeomorphism, such as a diffeomorphism, pulls a nondegenerate form back to a
+nondegenerate form. -/
+theorem IsNondegenerate.isNondegenerate_mpullback_of_isLocalDiffeomorph {f : M₂ → M}
+    (hf : IsLocalDiffeomorph I₂ I ∞ f) :
+    SmoothTwoForm.IsNondegenerate (SmoothForm.mpullback f hf.contMDiff σ) := by
+  rw [isNondegenerate_iff_separatingLeft] at hσ ⊢
+  intro x v hv
+  -- The differential at `x` is invertible, so `df v` pairs to zero with every tangent vector.
+  have hinv := hf.isInvertible_mfderiv (by simp) x
+  refine (injective_iff_map_eq_zero _).1 hinv.injective v (hσ (f x) _ fun w ↦ ?_)
+  obtain ⟨u, rfl⟩ := hinv.surjective w
+  simpa only [SmoothForm.eval₂_mpullback] using hv u
+
 end Transport
 
 /-- A smooth two-form tames a smooth almost complex structure when
 `form_x(v, J_x v) > 0` for every nonzero tangent vector. -/
 def Tames (form : SmoothTwoForm I M) (J : SmoothAlmostComplexStructure I M) : Prop :=
-  ∀ (x : M) (v : TangentSpace I x), v ≠ 0 → 0 < SmoothForm.eval₂ form x v (J x v)
+  ∀ (x : M) (v : TangentSpace I x),
+    v ≠ 0 → 0 < SmoothBundleForm.eval₂ form x v (J x v)
 
 /-- Tameness is positivity on each nonzero tangent vector and its complex rotation. -/
 theorem tames_iff : form.Tames J ↔
@@ -184,7 +201,8 @@ lemma Tames.isNondegenerate (h : form.Tames J) : form.IsNondegenerate := by
 structure in both tangent arguments leaves the form unchanged. -/
 def Invariant (form : SmoothTwoForm I M) (J : SmoothAlmostComplexStructure I M) : Prop :=
   ∀ (x : M) (v w : TangentSpace I x),
-    SmoothForm.eval₂ form x (J x v) (J x w) = SmoothForm.eval₂ form x v w
+    SmoothBundleForm.eval₂ form x (J x v) (J x w) =
+      SmoothBundleForm.eval₂ form x v w
 
 /-- Invariance is preservation of the form on each tangent fibre. -/
 theorem invariant_iff : form.Invariant J ↔ ∀ (x : M) (v w : TangentSpace I x),
@@ -193,7 +211,8 @@ theorem invariant_iff : form.Invariant J ↔ ∀ (x : M) (v w : TangentSpace I x
 
 /-- Apply invariance at a point and two tangent vectors. -/
 lemma Invariant.apply (h : form.Invariant J) (x : M) (v w : TangentSpace I x) :
-    SmoothForm.eval₂ form x (J x v) (J x w) = SmoothForm.eval₂ form x v w :=
+    SmoothBundleForm.eval₂ form x (J x v) (J x w) =
+      SmoothBundleForm.eval₂ form x v w :=
   h x v w
 
 /-- Manifold-level invariance is the pointwise linear invariance condition once nondegeneracy has
@@ -251,10 +270,10 @@ def constSmooth (omegaForm : SymplecticForm V) :
 /-- A constant smooth symplectic form evaluates as its defining algebraic form. -/
 @[simp]
 lemma constSmooth_apply (omegaForm : SymplecticForm V) (x v w : V) :
-    SmoothForm.eval₂ omegaForm.constSmooth x v w = omegaForm v w := by
+    SmoothBundleForm.eval₂ omegaForm.constSmooth x v w = omegaForm v w := by
   -- `const_model_apply` is stated in the model-space tangent coordinates, so
   -- convert the two model vectors to the corresponding tangent vectors explicitly.
-  change SmoothForm.eval₂ omegaForm.constSmooth x
+  change SmoothBundleForm.eval₂ omegaForm.constSmooth x
       ((NormedSpace.fromTangentSpace x).symm v)
       ((NormedSpace.fromTangentSpace x).symm w) = omegaForm v w
   exact (SmoothTwoForm.const_model_apply omegaForm.toBilinForm.toContinuousBilinearMap
@@ -264,7 +283,7 @@ lemma constSmooth_apply (omegaForm : SymplecticForm V) (x v w : V) :
 evaluating a constant smooth symplectic form is evaluating its defining bilinear form. -/
 lemma fromTangentSpace_constSmooth_apply (omegaForm : SymplecticForm V) (x : V)
     (v w : TangentSpace 𝓘(ℝ, V) x) :
-    SmoothForm.eval₂ omegaForm.constSmooth x v w =
+    SmoothBundleForm.eval₂ omegaForm.constSmooth x v w =
       omegaForm (NormedSpace.fromTangentSpace x v) (NormedSpace.fromTangentSpace x w) := by
   exact (SmoothTwoForm.const_apply omegaForm.toBilinForm.toContinuousBilinearMap
     omegaForm.isAlt x v w).trans (by rfl)

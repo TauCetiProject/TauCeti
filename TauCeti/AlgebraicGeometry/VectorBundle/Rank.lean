@@ -9,6 +9,7 @@ public import Mathlib.Topology.LocallyConstant.Basic
 public import Mathlib.Topology.Sets.Closeds
 public import TauCeti.Algebra.Category.ModuleCat.Sheaf.FiniteLocallyFree
 public import TauCeti.AlgebraicGeometry.VectorBundle.FiniteLocallyFree
+public import TauCeti.Topology.LocallyConstant.Fiber
 
 /-!
 # The rank of a finite locally free sheaf
@@ -29,9 +30,10 @@ components.
   `FiniteLocallyFreeSheaf.rank_apply_eq_natCard`;
 * `TauCeti.AlgebraicGeometry.FiniteLocallyFreeSheaf.rankLocus`: the clopen locus where the rank
   takes a given value;
-* `FiniteLocallyFreeSheaf.rank_eq_of_iso`, `FiniteLocallyFreeSheaf.rank_free_apply` and
-  `FiniteLocallyFreeSheaf.rank_pullback_apply`: the rank is invariant under isomorphism, is `|I|`
-  for the free sheaf on `I`, and is preserved by pullback;
+* `FiniteLocallyFreeSheaf.rank_eq_of_iso`, `FiniteLocallyFreeSheaf.rank_free_apply`,
+  `FiniteLocallyFreeSheaf.rank_pullback_apply` and `FiniteLocallyFreeSheaf.rank_pullback`: the
+  rank is invariant under isomorphism, is `|I|` for the free sheaf on `I`, and is preserved by
+  pullback;
 * `FiniteLocallyFreeSheaf.rank_biprod_apply` and `FiniteLocallyFreeSheaf.rank_tensor_apply`: rank
   is additive under direct sums and multiplicative under tensor products;
 * `FiniteLocallyFreeSheaf.isInvertible_iff_forall_rank_eq_one`: the invertible sheaves are exactly
@@ -92,7 +94,6 @@ theorem natCard_generatingSections_eq_of_mem
 
 namespace FiniteLocallyFreeSheaf
 
-attribute [local instance] hasBinaryBiproducts_of_finite_biproducts
 attribute [local instance] preservesBinaryBiproducts_of_preservesBinaryProducts
 
 /-- A finite locally free sheaf is free on a finite basis over some open neighbourhood of each
@@ -181,6 +182,12 @@ theorem rank_pullback_apply {Y : Scheme.{u}} (f : X ⟶ Y) (E : FiniteLocallyFre
     (U := f ⁻¹ᵁ U) hx τ (SheafOfModules.GeneratingSections.isIso_mapIso_π _ _ _ _)
     (by rw [SheafOfModules.GeneratingSections.mapIso_I]; exact hI)
 
+/-- The rank of the pullback of a finite locally free sheaf `E` along `f : X ⟶ Y` is the rank of
+`E` composed with `f`. -/
+theorem rank_pullback {Y : Scheme.{u}} (f : X ⟶ Y) (E : FiniteLocallyFreeSheaf Y) :
+    ((pullback f).obj E).rank = E.rank.comap f.base.hom :=
+  LocallyConstant.ext fun x ↦ by simp
+
 /-- Two finite locally free sheaves are free on finite bases over a common open neighbourhood of
 each point: the intersection of neighbourhoods on which each of them is free. -/
 private theorem exists_generatingSections_pair (E F : FiniteLocallyFreeSheaf X) (x : X) :
@@ -245,13 +252,13 @@ theorem rank_tensor_apply (E F : FiniteLocallyFreeSheaf X) (x : X) :
 
 /-- The rank locus of `E` in rank `n`: the clopen set of points at which `E` has rank `n`. -/
 def rankLocus (E : FiniteLocallyFreeSheaf X) (n : ℕ) : TopologicalSpace.Clopens X :=
-  ⟨E.rank ⁻¹' {n}, E.rank.isLocallyConstant.isClopen_fiber n⟩
+  E.rank.fiberClopens n
 
 /-- A point lies in the rank locus of `E` in rank `n` exactly when `E` has rank `n` there. -/
 @[simp]
 theorem mem_rankLocus {E : FiniteLocallyFreeSheaf X} {n : ℕ} {x : X} :
     x ∈ E.rankLocus n ↔ E.rank x = n :=
-  Iff.rfl
+  LocallyConstant.mem_fiberClopens
 
 end FiniteLocallyFreeSheaf
 

@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Geometry.Manifold.Algebra.SMul
 public import Mathlib.GroupTheory.OrderOfElement
+public import TauCeti.Geometry.Manifold.ContMDiff.RestrictScalars
 
 /-!
 # Smooth translations and diffeomorphisms from group actions
@@ -20,15 +21,33 @@ smooth addition for additive translations.
 It also records that pointwise smoothness of the action of an element of finite order passes to
 the finite cyclic group it generates, since every element of that group acts by an iterate.
 
+Finally, an action by `C^n` maps stays one after a continuous linear change of the model vector
+space, and after restricting the scalars of a self-modelled manifold. Both operations keep the
+charted space, so the quotient atlas of a free, properly discontinuous action
+(`MulAction.instChartedSpaceQuotient`) is literally the same atlas for the new model. The quotient
+manifold theorem `TauCeti.instIsManifoldQuotient` and the local diffeomorphism
+`TauCeti.isLocalDiffeomorph_quotientMk` therefore apply to the new model on the same orbit space.
+For a linear change of model, Mathlib's `ContinuousLinearEquiv.toTransContinuousLinearEquiv`
+is the identity comparison diffeomorphism there. In particular, the quotient of a complex
+manifold by an action by biholomorphisms has as underlying real manifold the quotient of the
+underlying real manifold.
+
 ## Main declarations
 
 * `ContMDiffMul.contMDiffConstSMul`: smooth multiplication gives smooth left translations.
 * `SetLike.contMDiffConstSMul`: a subobject, such as a submonoid, a subgroup or a submodule, of
   a type acting by `C^n` maps also acts by `C^n` maps.
 * `ContMDiffSMul.contMDiff_smul_const`: the orbit maps `g ↦ g • x` of a `C^n` action are `C^n`.
+* `ContinuousLinearEquiv.contMDiffConstSMul_transContinuousLinearEquiv_iff`: a linear change of
+  the model vector space does not change whether an action is by `C^n` maps.
+* `ContMDiffConstSMul.restrictScalars`: an action by maps that are `C^n` over `𝕜'` is by maps that
+  are `C^n` over a smaller field `𝕜`; for instance, biholomorphisms are diffeomorphisms.
 * `Diffeomorph.constSmul`: the diffeomorphism given by a fixed element of a pointwise-smooth
   group action. It sends the identity element to the identity diffeomorphism and products to
   composites (`Diffeomorph.constSmul_one`, `Diffeomorph.constSmul_mul`).
+* `Diffeomorph.constSmul_injective`, `Diffeomorph.infinite_of_faithfulSMul`: for a faithful
+  action these diffeomorphisms are distinct, so an infinite group acting faithfully gives
+  infinitely many diffeomorphisms.
 * `TauCeti.contMDiff_smul_of_mem_zpowers`: if an element of finite order acts by a `C^n` map, so
   does every element of the cyclic group it generates.
 -/
@@ -68,6 +87,53 @@ theorem ContMDiffSMul.contMDiff_smul_const {𝕜 : Type*} [NontriviallyNormedFie
     {M : Type*} [TopologicalSpace M] [ChartedSpace H' M] [SMul G M] {n : ℕ∞ω}
     [ContMDiffSMul I I' n G M] (x : M) : ContMDiff I I' n fun g : G ↦ g • x :=
   contMDiff_id.smul contMDiff_const
+
+/-! ### Changes of model -/
+
+namespace ContinuousLinearEquiv
+
+variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
+  {E F : Type*} [NormedAddCommGroup E] [NormedSpace 𝕜 E] [NormedAddCommGroup F] [NormedSpace 𝕜 F]
+  {H : Type*} [TopologicalSpace H] {I : ModelWithCorners 𝕜 E H}
+  {G M : Type*} [TopologicalSpace M] [ChartedSpace H M] [SMul G M] {n : ℕ∞ω}
+
+/-- Changing the vector-space coordinates of the model by a continuous linear equivalence does not
+change whether a type acts by `C^n` maps. The charted space is unchanged. -/
+@[to_additive (attr := simp) /-- Changing the vector-space coordinates of the model by a
+continuous linear equivalence does not change whether a type acts additively by `C^n` maps. The
+charted space is unchanged. -/]
+theorem contMDiffConstSMul_transContinuousLinearEquiv_iff (e : E ≃L[𝕜] F) :
+    ContMDiffConstSMul (I.transContinuousLinearEquiv e) n G M ↔ ContMDiffConstSMul I n G M :=
+  ⟨fun h ↦ ⟨fun g ↦ by simpa using h.contMDiff_const_smul g⟩,
+    fun h ↦ ⟨fun g ↦ by simpa using h.contMDiff_const_smul g⟩⟩
+
+/-- An action by `C^n` maps remains an action by `C^n` maps after a linear change of the model
+vector space, so that quotients by it inherit the transported model. -/
+@[to_additive /-- An additive action by `C^n` maps remains an additive action by `C^n` maps after
+a linear change of the model vector space. -/]
+instance instContMDiffConstSMulTransContinuousLinearEquiv [ContMDiffConstSMul I n G M]
+    (e : E ≃L[𝕜] F) : ContMDiffConstSMul (I.transContinuousLinearEquiv e) n G M :=
+  (contMDiffConstSMul_transContinuousLinearEquiv_iff e).2 ‹_›
+
+end ContinuousLinearEquiv
+
+namespace ContMDiffConstSMul
+
+variable (𝕜 : Type*) {𝕜' : Type*} [NontriviallyNormedField 𝕜] [NontriviallyNormedField 𝕜']
+  [NormedAlgebra 𝕜 𝕜'] {E : Type*} [NormedAddCommGroup E] [NormedSpace 𝕜 E] [NormedSpace 𝕜' E]
+  [IsScalarTower 𝕜 𝕜' E] {G M : Type*} [TopologicalSpace M] [ChartedSpace E M] [SMul G M]
+  {n : ℕ∞ω}
+
+/-- An action by maps which are `C^n` over `𝕜'` is an action by maps which are `C^n` over the
+smaller field `𝕜`, for the same charts. For instance, an action by biholomorphisms of a complex
+manifold is an action by diffeomorphisms of the underlying real manifold. -/
+@[to_additive (dont_translate := 𝕜 𝕜') /-- An additive action by maps which are `C^n` over `𝕜'`
+is an additive action by maps which are `C^n` over the smaller field `𝕜`, for the same charts. -/]
+theorem restrictScalars (h : ContMDiffConstSMul 𝓘(𝕜', E) n G M) :
+    ContMDiffConstSMul 𝓘(𝕜, E) n G M :=
+  ⟨fun g ↦ by simpa using (h.contMDiff_const_smul g).restrictScalars 𝕜⟩
+
+end ContMDiffConstSMul
 
 namespace Diffeomorph
 
@@ -137,6 +203,20 @@ the right-hand factor acting first. -/
 lemma constSmul_mul (h : G) :
     constSmul I n (g * h) = (constSmul I n h).trans (constSmul I n g : M ≃ₘ^n⟮I, I⟯ M) :=
   Diffeomorph.ext fun x ↦ mul_smul g h x
+
+/-- Distinct elements of a group acting faithfully give distinct diffeomorphisms. -/
+@[to_additive
+  /-- Distinct elements of an additive group acting faithfully give distinct diffeomorphisms. -/]
+theorem constSmul_injective [FaithfulSMul G M] :
+    Function.Injective (constSmul I n : G → M ≃ₘ^n⟮I, I⟯ M) :=
+  fun _ _ h ↦ eq_of_smul_eq_smul fun x ↦ DFunLike.congr_fun h x
+
+/-- An infinite group acting faithfully by `C^n` maps gives infinitely many `C^n`
+self-diffeomorphisms. -/
+@[to_additive /-- An infinite additive group acting faithfully by `C^n` maps gives infinitely many
+`C^n` self-diffeomorphisms; for instance the translations of an infinite additive Lie group. -/]
+theorem infinite_of_faithfulSMul [Infinite G] [FaithfulSMul G M] : Infinite (M ≃ₘ^n⟮I, I⟯ M) :=
+  Infinite.of_injective _ (constSmul_injective (I := I) (n := n) (G := G))
 
 end Diffeomorph
 

@@ -241,10 +241,7 @@ theorem range_lieMapSubtypeVal_eq :
   -- `LieHom.range` is definitionally the range of its underlying linear map.
   change Module.finrank ℝ (LinearMap.range d.lieMapSubtypeVal.toLinearMap) = _
   rw [LinearMap.finrank_range_of_inj d.injective_lieMapSubtypeVal]
-  exact finrank_leftInvariantDerivation_eq_modelVectorSpace
-    (ContMDiffMul.isInteriorPoint
-      (I := 𝓘(ℝ, (lieSubalgebraOfSubgroup (I := I) K).toSubmodule))
-      (n := ∞) (by simp) (1 : K))
+  exact finrank_leftInvariantDerivation_eq_modelVectorSpace BoundarylessManifold.isInteriorPoint
 
 /-- For the smooth structure supplied by the closed-subgroup theorem, the differential of the
 inclusion identifies the subgroup's Lie algebra with its one-parameter-subgroup Lie subalgebra in

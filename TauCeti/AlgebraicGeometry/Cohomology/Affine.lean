@@ -54,9 +54,8 @@ induction on the number of members.
   opens of an affine open by basic opens are acyclic for a quasi-coherent sheaf.
 * `AlgebraicGeometry.Scheme.Modules.subsingleton_cohomologyOn_succ_of_isAffineOpen`: Serre's
   vanishing theorem on the affine opens of a scheme.
-* `AlgebraicGeometry.Scheme.Modules.subsingleton_cohomology_succ_of_isAffine` and the instance
-  `AlgebraicGeometry.Scheme.Modules.subsingleton_cohomology_succ_of_isQuasicoherent`: the same on
-  an affine scheme and on `Spec R`.
+* `AlgebraicGeometry.Scheme.Modules.subsingleton_cohomology_succ_of_isAffine`: the same on an
+  affine scheme, for example on `Spec R`, as an instance.
 * `AlgebraicGeometry.Scheme.Modules.subsingleton_cohomology_succ_of_isAffineHom`: the same on the
   source of an affine morphism (for example a finite morphism) to an affine scheme.
 
@@ -252,18 +251,12 @@ theorem subsingleton_cohomologyOn_succ_of_isAffineOpen (n : ℕ) :
     exact ⟨_, ⟨g, rfl⟩, hxg, hg⟩
 
 /-- **Serre's vanishing theorem on affine schemes**: a quasi-coherent sheaf of modules on an
-affine scheme has no cohomology in positive degrees. -/
-theorem subsingleton_cohomology_succ_of_isAffine [IsAffine X] (n : ℕ) :
+affine scheme, for example on the spectrum `Spec R` of any commutative ring, has no cohomology in
+positive degrees. -/
+instance subsingleton_cohomology_succ_of_isAffine [IsAffine X] (n : ℕ) :
     Subsingleton (Cohomology M (n + 1)) := by
   have := subsingleton_cohomologyOn_succ_of_isAffineOpen M (isAffineOpen_top X) n
   exact (cohomologyOnTopIso M (n + 1)).symm.addCommGroupIsoToAddEquiv.toEquiv.subsingleton
-
-/-- **Serre's vanishing theorem on the spectrum of a ring**: a quasi-coherent sheaf of modules on
-`Spec R` has no cohomology in positive degrees. -/
-instance subsingleton_cohomology_succ_of_isQuasicoherent {R : CommRingCat.{u}}
-    (N : (Spec R).Modules) [N.IsQuasicoherent] (n : ℕ) :
-    Subsingleton (Cohomology N (n + 1)) :=
-  subsingleton_cohomology_succ_of_isAffine N n
 
 /-- A quasi-coherent sheaf on the source of an affine morphism to an affine scheme (for example, on
 a scheme finite over a field) has no cohomology in positive degrees. -/

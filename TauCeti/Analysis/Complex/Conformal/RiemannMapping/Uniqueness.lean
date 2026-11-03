@@ -23,11 +23,7 @@ standard Moebius formula. The inverse is represented by Mathlib's `Function.invF
 holomorphy follows from Mathlib's analytic inverse-function theorem and Tau Ceti's local
 injectivity criterion.
 
-This advances `TauCetiRoadmap/ConformalMapping/README.md`, layer L3, specifically “Uniqueness up
-to `Aut(𝔻)`”. The argument follows Ahlfors, *Complex Analysis*, Chapter 6. As with all L0--L3
-material in this roadmap, it is coordinated with the upstream Riemann-mapping work in
-leanprover-community/mathlib4#33505 and should be replaced by public human-curated Mathlib API
-when that becomes available.
+The argument follows Ahlfors, *Complex Analysis*, Chapter 6.
 -/
 
 public section

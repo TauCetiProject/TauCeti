@@ -24,7 +24,8 @@ forms, `f` may have poles in the upper half-plane, and a pole at the cusp. Such 
 over `ℂ`: if the pole at `q = 0` has order at most `k`, then `𝕢 ^ k * f` has an analytic cusp
 function, and the Laurent `q`-expansion is the `q`-expansion of `𝕢 ^ k * f` shifted down by `k`.
 The result does not depend on `k` (`TauCeti.UpperHalfPlane.laurentQExpansion_eq`), and it agrees
-with Mathlib's `UpperHalfPlane.qExpansion` when the cusp function is analytic at `0`.
+with Mathlib's `UpperHalfPlane.qExpansion` when the cusp function is analytic at `0`, in which case
+its constant term is the value of the cusp function at `0`.
 
 The Laurent `q`-expansion is compatible with the field operations: it is additive and
 multiplicative, and it commutes with scalars, powers, inverses and quotients. It only depends on
@@ -194,6 +195,15 @@ theorem laurentQExpansion_of_analyticAt (hh : 0 < h) (hf : AnalyticAt ℂ (cuspF
   rw [laurentQExpansion_eq hh hf.meromorphicAt (k := 0)
     (by simpa using hf.meromorphicNFAt.meromorphicOrderAt_nonneg_iff_analyticAt.mpr hf)]
   simp
+
+/-- When the cusp function of `f` is analytic at `0`, the constant term of the Laurent
+`q`-expansion is the value of the cusp function at `0`. -/
+theorem laurentQExpansion_coeff_zero_of_analyticAt (hh : 0 < h)
+    (hf : AnalyticAt ℂ (cuspFunction h f) 0) :
+    (laurentQExpansion h f).coeff 0 = cuspFunction h f 0 := by
+  rw [laurentQExpansion_of_analyticAt hh hf]
+  simpa [UpperHalfPlane.qExpansion_coeff] using
+    HahnSeries.ofPowerSeries_apply_coeff (Γ := ℤ) (qExpansion h f) 0
 
 /-- The coefficients of the Laurent `q`-expansion are those of the `q`-expansion of `𝕢 ^ k * f`,
 shifted down by `k`. -/

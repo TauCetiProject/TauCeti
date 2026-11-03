@@ -40,18 +40,22 @@ to manifolds, including manifolds with boundary or corners.
   surjectivity of the Fréchet derivative.
 * `TauCeti.isRegularPoint_iff_injective_mfderiv`: between models of the same finite dimension,
   regularity is injectivity of the manifold derivative.
+* `TauCeti.isRegularPoint_iff_isInvertible_mfderiv`: between models of the same finite dimension
+  over a complete field, regularity is invertibility of the manifold derivative.
 * `TauCeti.IsRegularPoint.mdifferentiableAt`: a map into a normed space is differentiable at its
   regular points.
-* `TauCeti.range_mfderiv_le_ker_mfderiv_of_forall_eq`: a map into a level set `f ⁻¹' {y}` has
-  tangent images in the kernel of the derivative of `f`.
+* `TauCeti.range_mfderiv_le_ker_mfderiv_of_eventually_eq`: a map into a level set `f ⁻¹' {y}`
+  near a point has tangent images there in the kernel of the derivative of `f`.
 * `TauCeti.IsRegularPoint.finrank_ker_mfderiv_add_finrank` and
   `TauCeti.IsRegularPoint.range_mfderiv_eq_ker_mfderiv`: at a regular point the kernel of the
   derivative has codimension the dimension of the target, and it is the tangent image of every
   immersion into the level from a manifold of that dimension.
-* `TauCeti.IsRegularPoint.surjective_fderiv_comp_extChartAt_symm` and
+* `TauCeti.IsRegularPoint.surjective_fderiv_comp_extChartAt_symm`,
+  `TauCeti.IsRegularPoint.finrank_ker_fderiv_comp_extChartAt_symm_add_finrank` and
   `TauCeti.IsRegularPoint.finrank_ker_fderiv_comp_extChartAt_symm`: on a boundaryless manifold, at
   a regular point of a map into a normed space the derivative in the preferred extended chart is
-  surjective, with kernel of codimension one for scalar functions.
+  surjective, with kernel of codimension the dimension of the target, so of codimension one for
+  scalar functions.
 
 ## References
 
@@ -62,7 +66,7 @@ to manifolds, including manifolds with boundary or corners.
 public section
 
 open Function Set
-open scoped Manifold
+open scoped Manifold Topology
 
 namespace TauCeti
 
@@ -137,15 +141,27 @@ theorem isRegularPoint_iff_surjective_fderivWithin [IsManifold I 1 M] [IsManifol
   rw [← hA, ← hB, isRegularPoint_iff]
   exact ((EquivLike.comp_surjective _ A).trans (EquivLike.surjective_comp B _)).symm
 
+/-- For a map into a normed space, regularity is surjectivity of the vector-valued manifold
+derivative. The canonical target tangent-space identification preserves surjectivity. -/
+theorem isRegularPoint_iff_surjective_mvfderiv {g : M → E'} :
+    IsRegularPoint I 𝓘(𝕜, E') g x ↔ Surjective (mvfderiv I g x) := by
+  rw [isRegularPoint_iff]
+  symm
+  simpa only [mvfderiv, ContinuousLinearMap.coe_comp, ContinuousLinearEquiv.coe_coe] using
+    EquivLike.comp_surjective (mfderiv I 𝓘(𝕜, E') g x) (NormedSpace.fromTangentSpace (g x))
+
+/-- The vector-valued manifold derivative has the same kernel as the manifold derivative:
+the canonical target tangent-space identification does not change the kernel. -/
+@[simp]
+theorem ker_mvfderiv {g : M → E'} :
+    (mvfderiv I g x).ker = (mfderiv I 𝓘(𝕜, E') g x).ker :=
+  (NormedSpace.fromTangentSpace (g x)).toLinearEquiv.ker_comp _
+
 /-- For a scalar function, regularity is equivalent to a nonzero differential, read in the
 scalar field using `mvfderiv`. No differentiability hypothesis is needed. -/
 theorem isRegularPoint_iff_mvfderiv_ne_zero {g : M → 𝕜} :
     IsRegularPoint I 𝓘(𝕜) g x ↔ mvfderiv I g x ≠ 0 := by
-  rw [isRegularPoint_iff]
-  have h : Surjective (mvfderiv I g x) ↔ Surjective (mfderiv I 𝓘(𝕜) g x) := by
-    simpa only [mvfderiv, ContinuousLinearMap.coe_comp, ContinuousLinearEquiv.coe_coe] using
-      EquivLike.comp_surjective (mfderiv I 𝓘(𝕜) g x) (NormedSpace.fromTangentSpace (g x))
-  rw [← h]
+  rw [isRegularPoint_iff_surjective_mvfderiv]
   refine (LinearMap.surjective_iff_ne_zero (f := (mvfderiv I g x).toLinearMap)).trans ?_
   exact not_congr (ContinuousLinearMap.coe_inj (f := mvfderiv I g x) (g := 0))
 
@@ -168,6 +184,17 @@ theorem isRegularPoint_iff_injective_mfderiv [FiniteDimensional 𝕜 E] [FiniteD
   isRegularPoint_iff.trans (LinearMap.injective_iff_surjective_of_finrank_eq_finrank
     (f := (mfderiv I J f x : TangentSpace I x →ₗ[𝕜] TangentSpace J (f x))) hdim).symm
 
+/-- Between manifolds modelled on finite-dimensional spaces of the same dimension over a complete
+field, a point is regular exactly when the manifold derivative there is invertible. -/
+theorem isRegularPoint_iff_isInvertible_mfderiv [CompleteSpace 𝕜] [FiniteDimensional 𝕜 E]
+    [FiniteDimensional 𝕜 E'] (hdim : Module.finrank 𝕜 E = Module.finrank 𝕜 E') :
+    IsRegularPoint I J f x ↔ (mfderiv I J f x).IsInvertible := by
+  refine ⟨fun h ↦ ?_, fun h ↦ h.surjective⟩
+  -- A bijective linear map out of a finite-dimensional space is a continuous linear equivalence.
+  exact ⟨(LinearEquiv.ofBijective (mfderiv I J f x : TangentSpace I x →ₗ[𝕜] TangentSpace J (f x))
+    ⟨(isRegularPoint_iff_injective_mfderiv hdim).1 h, h⟩).toContinuousLinearEquiv,
+    ContinuousLinearMap.ext fun _ ↦ rfl⟩
+
 /-- A regular point of a map into a normed space is a point of differentiability. Without
 differentiability the derivative is `0`, so the target is the zero space and the map is constant. -/
 theorem IsRegularPoint.mdifferentiableAt {g : M → E'} (h : IsRegularPoint I 𝓘(𝕜, E') g x) :
@@ -181,23 +208,39 @@ theorem IsRegularPoint.mdifferentiableAt {g : M → E'} (h : IsRegularPoint I �
   exact hg ((mdifferentiableAt_const (c := g x)).congr_of_eventuallyEq
     (Filter.Eventually.of_forall fun _ ↦ Subsingleton.elim _ _))
 
+section Composition
+
+variable {E'' : Type*} [NormedAddCommGroup E''] [NormedSpace 𝕜 E'']
+  {H'' : Type*} [TopologicalSpace H''] {K : ModelWithCorners 𝕜 E'' H''}
+  {P : Type*} [TopologicalSpace P] [ChartedSpace H'' P] {g : P → M} {p : P}
+
+/-- A composite is regular at a point if both maps are differentiable and regular at the
+corresponding points. -/
+theorem IsRegularPoint.comp (hf : IsRegularPoint I J f (g p))
+    (hg : IsRegularPoint K I g p) (hfd : MDifferentiableAt I J f (g p))
+    (hgd : MDifferentiableAt K I g p) : IsRegularPoint K J (f ∘ g) p := by
+  rw [isRegularPoint_iff, mfderiv_comp p hfd hgd]
+  exact (isRegularPoint_iff.1 hf).comp (isRegularPoint_iff.1 hg)
+
+end Composition
+
 section Level
 
 variable {E'' : Type*} [NormedAddCommGroup E''] [NormedSpace 𝕜 E'']
   {H'' : Type*} [TopologicalSpace H''] {K : ModelWithCorners 𝕜 E'' H''}
   {P : Type*} [TopologicalSpace P] [ChartedSpace H'' P] {g : P → M}
 
-/-- The tangent images of a map into a level set `f ⁻¹' {y}` lie in the kernel of the derivative
-of `f`. No differentiability is needed: where `g` or `f` is not differentiable, the tangent image
-is `0` or the kernel is everything. -/
-theorem range_mfderiv_le_ker_mfderiv_of_forall_eq (hg : ∀ p, f (g p) = y) (p : P) :
+/-- The tangent images at `p` of a map into a level set `f ⁻¹' {y}` near `p` lie in the kernel of
+the derivative of `f`. No differentiability is needed: where `g` or `f` is not differentiable, the
+tangent image is `0` or the kernel is everything. -/
+theorem range_mfderiv_le_ker_mfderiv_of_eventually_eq {p : P} (hg : ∀ᶠ q in 𝓝 p, f (g q) = y) :
     (mfderiv K I g p).range ≤ (mfderiv I J f (g p)).ker := by
   by_cases hgp : MDifferentiableAt K I g p
   · by_cases hfp : MDifferentiableAt I J f (g p)
     · rintro _ ⟨v, rfl⟩
-      have hfg : f ∘ g = fun _ ↦ y := funext hg
+      have hfg : f ∘ g =ᶠ[𝓝 p] fun _ ↦ y := hg
       have := mfderiv_comp_apply p hfp hgp v
-      rw [hfg, mfderiv_const] at this
+      rw [hfg.mfderiv_eq, mfderiv_const] at this
       exact this.symm
     · simp [mfderiv_zero_of_not_mdifferentiableAt hfp]
   · simp [mfderiv_zero_of_not_mdifferentiableAt hgp]
@@ -213,14 +256,14 @@ theorem IsRegularPoint.finrank_ker_mfderiv_add_finrank (h : IsRegularPoint I J f
   rw [LinearMap.range_eq_top.2 h, finrank_top, finrank_tangentSpace, finrank_tangentSpace] at this
   rw [← this, add_comm]
 
-/-- **The tangent space of a regular level.** Let `g : P → M` map into the level `f ⁻¹' {y}`, with
-injective derivative at `p`, from a manifold of the dimension of the level. If `g p` is a regular
-point of `f`, the tangent image of `g` at `p` is the kernel of the derivative of `f`. -/
-theorem IsRegularPoint.range_mfderiv_eq_ker_mfderiv (hg : ∀ p, f (g p) = y) {p : P}
+/-- **The tangent space of a regular level.** Let `g : P → M` map into the level `f ⁻¹' {y}` near
+`p`, with injective derivative at `p`, from a manifold of the dimension of the level. If `g p` is a
+regular point of `f`, the tangent image of `g` at `p` is the kernel of the derivative of `f`. -/
+theorem IsRegularPoint.range_mfderiv_eq_ker_mfderiv {p : P} (hg : ∀ᶠ q in 𝓝 p, f (g q) = y)
     (h : IsRegularPoint I J f (g p)) (hinj : Injective (mfderiv K I g p))
     (hdim : Module.finrank 𝕜 E'' + Module.finrank 𝕜 E' = Module.finrank 𝕜 E) :
     (mfderiv K I g p).range = (mfderiv I J f (g p)).ker := by
-  refine Submodule.eq_of_le_of_finrank_eq (range_mfderiv_le_ker_mfderiv_of_forall_eq hg p) ?_
+  refine Submodule.eq_of_le_of_finrank_eq (range_mfderiv_le_ker_mfderiv_of_eventually_eq hg) ?_
   rw [LinearMap.finrank_range_of_inj hinj, finrank_tangentSpace]
   have := h.finrank_ker_mfderiv_add_finrank
   omega
@@ -246,19 +289,25 @@ theorem IsRegularPoint.surjective_fderiv_comp_extChartAt_symm {g : M → E'}
     obtain ⟨u, hu⟩ := h v
     exact ⟨0, by rw [map_zero]; exact hu⟩
 
+/-- At a regular point of a map into a normed space on a boundaryless manifold, the kernel of the
+preferred-chart derivative has codimension the dimension of the target. -/
+theorem IsRegularPoint.finrank_ker_fderiv_comp_extChartAt_symm_add_finrank
+    [FiniteDimensional 𝕜 E] {g : M → E'} (h : IsRegularPoint I 𝓘(𝕜, E') g x) :
+    Module.finrank 𝕜 (fderiv 𝕜 (g ∘ (extChartAt I x).symm) (extChartAt I x x)).ker +
+      Module.finrank 𝕜 E' = Module.finrank 𝕜 E := by
+  have := LinearMap.finrank_range_add_finrank_ker
+    (fderiv 𝕜 (g ∘ (extChartAt I x).symm) (extChartAt I x x) : E →ₗ[𝕜] E')
+  rw [LinearMap.range_eq_top.2 h.surjective_fderiv_comp_extChartAt_symm, finrank_top] at this
+  omega
+
 /-- At a regular point of a scalar function on a boundaryless manifold, the kernel of the
 preferred-chart derivative has codimension one. -/
 theorem IsRegularPoint.finrank_ker_fderiv_comp_extChartAt_symm [FiniteDimensional 𝕜 E]
     {g : M → 𝕜} (h : IsRegularPoint I 𝓘(𝕜) g x) :
     Module.finrank 𝕜 (fderiv 𝕜 (g ∘ (extChartAt I x).symm) (extChartAt I x x)).ker =
       Module.finrank 𝕜 E - 1 := by
-  have hne : (fderiv 𝕜 (g ∘ (extChartAt I x).symm) (extChartAt I x x) : E →ₗ[𝕜] 𝕜) ≠ 0 := by
-    intro h0
-    obtain ⟨v, hv⟩ := h.surjective_fderiv_comp_extChartAt_symm 1
-    have hv' := LinearMap.congr_fun h0 v
-    rw [ContinuousLinearMap.coe_coe, hv, LinearMap.zero_apply] at hv'
-    exact one_ne_zero hv'
-  have := Module.Dual.finrank_ker_add_one_of_ne_zero hne
+  have := h.finrank_ker_fderiv_comp_extChartAt_symm_add_finrank
+  rw [Module.finrank_self] at this
   omega
 
 end Boundaryless

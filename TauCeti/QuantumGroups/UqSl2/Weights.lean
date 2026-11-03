@@ -143,6 +143,13 @@ theorem map_weightSpace_le {W : Type*} [AddCommGroup W] [Module ℂ W] [Module (
     (weightSpace q V μ).map (φ.restrictScalars ℂ) ≤ weightSpace q W μ :=
   Module.End.map_genEigenspace_le _ (LinearMap.ext fun x => (φ.map_smul (k q) x).symm) μ 1
 
+variable (q V) in
+/-- A finite-dimensional module has only finitely many weights. -/
+theorem finite_setOf_weightSpace_ne_bot [FiniteDimensional ℂ V] :
+    {μ | weightSpace q V μ ≠ ⊥}.Finite := by
+  simpa only [weightSpace_def] using
+    Submodule.finite_ne_bot_of_iSupIndep (Algebra.lsmul ℂ ℂ V (k q)).eigenspaces_iSupIndep
+
 /-! ### Generalized weight spaces -/
 
 /-- The generalized `μ`-weight space of a module is the native maximal generalized eigenspace of

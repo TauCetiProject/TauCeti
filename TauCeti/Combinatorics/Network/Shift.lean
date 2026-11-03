@@ -68,7 +68,7 @@ end ExcessFlow
 
 namespace ExcessFlow
 
-variable [PartialOrder K] [IsOrderedAddMonoid K] [DecidableEq V]
+variable [Preorder K] [AddLeftMono K] [DecidableEq V]
 variable {lo hi : Assignment Q K} {b : V → K}
 
 /-- Every feasible prescribed-excess assignment satisfies the incoming cut inequality. -/

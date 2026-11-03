@@ -424,6 +424,12 @@ def quotientHomEquiv : GHom (quotientCoeff N) ι ≃ V ι (N : Set (GX G X)) whe
 theorem quotientHomEquiv_apply_coe (φ : GHom (quotientCoeff N) ι) (x : X) :
     (quotientHomEquiv ι N φ : X → H) x = φ (inr (FreeGroup.of x) : GX G X) := (rfl)
 
+/-- Evaluation at the point corresponding to a `G`-homomorphism `φ : G[X] ⧸ N → H` is `φ`
+composed with the quotient map. -/
+theorem eval_quotientHomEquiv (φ : GHom (quotientCoeff N) ι) (w : GX G X) :
+    eval ι (quotientHomEquiv ι N φ) w = φ (w : GX G X ⧸ N) :=
+  DFunLike.congr_fun (eval_eq_comp_mk' φ) w
+
 @[simp]
 theorem quotientHomEquiv_symm_apply (v : V ι (N : Set (GX G X))) :
     (quotientHomEquiv ι N).symm v = quotientEvalGHom v v.2 := (rfl)
@@ -444,6 +450,17 @@ theorem quotientCoeff_injective (hι : Function.Injective ι)
   ext g
   simp
 
+/-- A surjective `G`-homomorphism `π : G[X] →* K` induces a `G`-isomorphism `G[X] ⧸ N → K` from
+the quotient by its kernel `N`. -/
+theorem exists_bijective_gHom_of_eq_ker {K : Type*} [Group K] {κ : G →* K}
+    (π : GHom (inl : G →* GX G X) κ) (hπ : Function.Surjective π)
+    (hN : N = (π : GX G X →* K).ker) :
+    ∃ ψ : GHom (quotientCoeff N) κ, Function.Bijective ψ ∧
+      ∀ w : GX G X, ψ (w : GX G X ⧸ N) = π w := by
+  let e := QuotientGroup.liftEquiv N (φ := (π : GX G X →* K)) hπ hN
+  refine ⟨⟨e.toMonoidHom, fun g => ?_⟩, e.bijective, fun w => rfl⟩
+  simp [e]
+
 end GX
 
 /-! ### Coordinate groups and the group of a system -/
@@ -459,6 +476,8 @@ variable (ι) in
 /-- The coefficient homomorphism `G →* G_{R(S)}`. -/
 def coeff (S : Set (GX G X)) : G →* CoordGroup ι S :=
   GX.quotientCoeff _
+
+theorem coeff_def (S : Set (GX G X)) : coeff ι S = GX.quotientCoeff (Rad ι S) := (rfl)
 
 @[simp]
 theorem coeff_apply (S : Set (GX G X)) (g : G) :
@@ -623,6 +642,8 @@ namespace SystemGroup
 /-- The coefficient homomorphism `G →* G_S`. -/
 def coeff (S : Set (GX G X)) : G →* SystemGroup G S :=
   GX.quotientCoeff _
+
+theorem coeff_def (S : Set (GX G X)) : coeff S = GX.quotientCoeff (normalClosure S) := (rfl)
 
 @[simp]
 theorem coeff_apply (S : Set (GX G X)) (g : G) :

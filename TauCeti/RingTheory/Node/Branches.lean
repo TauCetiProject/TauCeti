@@ -56,6 +56,11 @@ theorem ker_origin : RingHom.ker (origin R).toRingHom = jacobianIdeal (0 : R) :=
   simp only [AlgHom.comp_apply, Algebra.ofId_apply] at hz
   simp [Ideal.mem_comap, RingHom.mem_ker, hz]
 
+variable [IsDomain R] in
+/-- The ideal of the origin of the split node over a domain is prime. -/
+instance isPrime_ker_origin : (RingHom.ker (origin R).toRingHom).IsPrime :=
+  RingHom.ker_isPrime _
+
 /-- Pulling the branch algebra back to the origin gives the two independent branch values. -/
 theorem isPushout_branchValues :
     IsPushout (CommRingCat.ofHom (branchMap R).toRingHom)

@@ -8,6 +8,7 @@ module
 public import Mathlib.Basic.NNReal.Basic
 public import TauCeti.RingTheory.Valuation.Continuous.Basic
 public import TauCeti.Topology.Algebra.Nonarchimedean.AdicTopology
+import TauCeti.RingTheory.Valuation.LtAddSubgroup
 import TauCeti.RingTheory.Valuation.SpanPow
 
 /-!
@@ -43,8 +44,9 @@ theorem isContinuous_of_isAdic (hI : IsAdic (Ideal.span s)) (h1 : ∀ a ∈ Idea
   rcases eq_or_ne γ 0 with rfl | hγ
   · simp
   obtain ⟨N, hN⟩ := NNReal.exists_pow_lt_of_lt_one (pos_iff_ne_zero.mpr hγ) hc
+  rw [← coe_ltAddSubgroupOfNeZero hγ]
   exact AddSubgroup.isOpen_mono (H₁ := (Ideal.span s ^ (N + 1)).toAddSubgroup)
-    (H₂ := v.ltAddSubgroup (Units.mk0 γ hγ))
-    (fun a ha ↦ (v.map_le_pow_of_mem_span_pow_succ hs h1 ha).trans_lt hN) (hI.isOpen_pow _)
+    (fun a ha ↦ (mem_ltAddSubgroupOfNeZero hγ).mpr
+      ((v.map_le_pow_of_mem_span_pow_succ hs h1 ha).trans_lt hN)) (hI.isOpen_pow _)
 
 end Valuation

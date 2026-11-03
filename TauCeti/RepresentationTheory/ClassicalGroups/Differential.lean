@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Lie.UniversalEnveloping
 public import Mathlib.Analysis.Complex.Polynomial.Basic
 public import Mathlib.RepresentationTheory.Submodule
 public import TauCeti.RepresentationTheory.ClassicalGroups.Rational
@@ -14,8 +15,10 @@ public import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.Tangent
 public import TauCeti.Algebra.AlgebraicGroup.Representation.Fixed
 public import TauCeti.Algebra.AlgebraicGroup.Representation.LieStable
 public import TauCeti.Algebra.AlgebraicGroup.Representation.PointsAction.Basic
+public import TauCeti.Algebra.AlgebraicGroup.Representation.TensorProduct
 public import TauCeti.Algebra.Coalgebra.Comodule.MatrixCoefficient.FromMatrix
 import TauCeti.Algebra.Coalgebra.Subcomodule.PointSeparation
+import TauCeti.Algebra.Lie.UniversalEnveloping.Basic
 import TauCeti.RingTheory.FiniteType.Tensor.PointSeparation
 
 /-!
@@ -57,10 +60,19 @@ to rational representations of the group, and conversely.
   matrix multiplication.
 * `TauCeti.IsRationalRep.mem_invtSubmodule_iff_forall_mem_invtSubmodule_differential`: the
   invariant subspaces of `ρ` are the subspaces stable under `dρ`.
+* `TauCeti.IsRationalRep.isIrreducible_differential`: an irreducible rational representation is
+  irreducible for `𝔤𝔩ₙ`.
 * `TauCeti.IsRationalRep.mem_invariants_iff_forall_differential_apply_eq_zero`: the invariants of
   `ρ` are the vectors killed by `dρ`.
 * `TauCeti.IsRationalRep.isIntertwiningMap_iff_forall_map_differential`: the intertwiners of two
   rational representations are the intertwiners of their differentials.
+* `TauCeti.IsRationalRep.map_lift_differential_apply`: they also intertwine the actions of the
+  universal enveloping algebra `U(𝔤𝔩ₙ)`.
+* `TauCeti.IsRationalRep.differential_tprod`: the differential of a tensor product of rational
+  representations is the tensor product of their differentials, `dρ X ⊗ 1 + 1 ⊗ dσ X`.
+* `TauCeti.IsRationalRep.tprodLieModuleEquiv`: isomorphisms of `𝔤𝔩ₙ`-modules out of two
+  differentiated rational representations tensor to one out of their differentiated tensor
+  product.
 
 ## References
 
@@ -174,6 +186,16 @@ theorem basePointsRepresentation_comodule (hρ : IsRationalRep ρ) (g : GL (Fin 
     Comodule.coefficientMatrix_apply, Comodule.apply_matrixCoefficient,
     Module.Basis.coord_apply]
 
+/-- Every complex point `p` of `GLₙ` acts on `TauCeti.IsRationalRep.comodule` by `ρ` of the
+invertible matrix `p` names. -/
+theorem basePointsRepresentation_comodule_eq_pointsMulEquiv (hρ : IsRationalRep ρ)
+    (p : WithConv (coordinateHopfAlgebra ℂ n →ₐ[ℂ] ℂ)) :
+    letI := hρ.comodule
+    Comodule.basePointsRepresentation (H := coordinateHopfAlgebra ℂ n) W p =
+      ρ (pointsMulEquiv n p) := by
+  have h := basePointsRepresentation_comodule hρ (pointsMulEquiv n p)
+  rwa [← pointsMulEquiv_symm_apply, MulEquiv.symm_apply_apply] at h
+
 /-- The coefficient matrix of a comodule integrating a representation is evaluated, point by
 point, by the matrices of the representation. -/
 private theorem apply_coefficientMatrix_of_basePointsRepresentation_eq {ι : Type*} [Fintype ι]
@@ -270,10 +292,9 @@ theorem mem_invtSubmodule_iff_forall_mem_invtSubmodule_differential (hρ : IsRat
     · intro h
       refine ⟨Subcomodule.ofEndOfPointStable (K := ℂ) U fun f m hm ↦ ?_,
         Subcomodule.ofEndOfPointStable_toSubmodule _ _⟩
-      have hf := basePointsRepresentation_comodule hρ (pointToGeneralLinear n (toConv f))
-      rw [generalLinearToPoint_pointToGeneralLinear] at hf
       rw [Comodule.endOfPoint_tmul, one_smul,
-        Comodule.endOfPoint_one_tmul_eq_one_tmul_basePointsRepresentation (g := toConv f), hf]
+        Comodule.endOfPoint_one_tmul_eq_one_tmul_basePointsRepresentation (g := toConv f),
+        hρ.basePointsRepresentation_comodule_eq_pointsMulEquiv]
       exact Submodule.tmul_mem_baseChange_of_mem 1 (h _ hm)
     · rintro ⟨N, rfl⟩ g w hw
       have hN := Comodule.basePointsRepresentation_mem N (generalLinearToPoint n g) hw
@@ -282,6 +303,25 @@ theorem mem_invtSubmodule_iff_forall_mem_invtSubmodule_differential (hρ : IsRat
   refine ⟨fun h X w hw ↦ h _ w hw, fun h d w hw ↦ ?_⟩
   have hd := h (tangentLieEquivMatrix n d) hw
   rwa [differential_apply, LieEquiv.symm_apply_apply] at hd
+
+/-- **An irreducible rational representation is irreducible for `𝔤𝔩ₙ`**: through its
+differential, an irreducible rational representation is an irreducible module over the matrix Lie
+algebra `𝔤𝔩ₙ(ℂ)`. -/
+theorem isIrreducible_differential (hρ : IsRationalRep ρ) [ρ.IsIrreducible] :
+    letI := LieRingModule.compLieHom W hρ.differential
+    LieModule.IsIrreducible ℂ (Matrix (Fin n) (Fin n) ℂ) W := by
+  let _ := LieRingModule.compLieHom W hρ.differential
+  have := Representation.IsIrreducible.nontrivial (ρ := ρ) inferInstance
+  refine LieModule.IsIrreducible.mk fun N hN ↦ ?_
+  have hN' : N.toSubmodule ∈ ρ.invtSubmodule :=
+    (hρ.mem_invtSubmodule_iff_forall_mem_invtSubmodule_differential _).mpr
+      fun X _ hw ↦ N.lie_mem (x := X) hw
+  let S : Subrepresentation ρ :=
+    ⟨N.toSubmodule, fun g _ hw ↦ (Representation.mem_invtSubmodule ρ).mp hN' g hw⟩
+  rcases IsSimpleOrder.eq_bot_or_eq_top S with h | h
+  · exact absurd ((LieSubmodule.toSubmodule_eq_bot N).mp
+      (congrArg Subrepresentation.toSubmodule h)) hN
+  · exact (LieSubmodule.toSubmodule_eq_top N).mp (congrArg Subrepresentation.toSubmodule h)
 
 /-- **The invariants of a rational representation are the vectors killed by `𝔤𝔩ₙ`**: a vector
 is fixed by every `ρ g` exactly when every `dρ X` sends it to zero. -/
@@ -293,9 +333,7 @@ theorem mem_invariants_iff_forall_differential_apply_eq_zero (hρ : IsRationalRe
   trans Comodule.coact (R := ℂ) (C := H) w = w ⊗ₜ 1
   · rw [Comodule.coact_eq_tmul_one_iff_forall_basePointsRepresentation_eq]
     refine ⟨fun h g ↦ ?_, fun h g ↦ ?_⟩
-    · have hg := basePointsRepresentation_comodule hρ (pointToGeneralLinear n g)
-      rw [generalLinearToPoint_pointToGeneralLinear] at hg
-      rw [hg]
+    · rw [hρ.basePointsRepresentation_comodule_eq_pointsMulEquiv]
       exact h _
     · rw [← basePointsRepresentation_comodule hρ g]
       exact h _
@@ -365,7 +403,110 @@ theorem isIntertwiningMap_iff_forall_map_differential (hρ : IsRationalRep ρ) (
   have hd := h (tangentLieEquivMatrix n d) w
   rwa [differential_apply, differential_apply, LieEquiv.symm_apply_apply] at hd
 
+/-- **Intertwiners of rational representations intertwine the enveloping-algebra actions** of
+their differentials: a linear map commuting with the actions of `GL n ℂ` commutes with the action
+of every element of `U(𝔤𝔩ₙ)`. -/
+theorem map_lift_differential_apply (hρ : IsRationalRep ρ) (hσ : IsRationalRep σ)
+    {f : W →ₗ[ℂ] V} (hf : Representation.IsIntertwiningMap ρ σ f)
+    (u : UniversalEnvelopingAlgebra ℂ (Matrix (Fin n) (Fin n) ℂ)) (w : W) :
+    f (UniversalEnvelopingAlgebra.lift ℂ hρ.differential u w) =
+      UniversalEnvelopingAlgebra.lift ℂ hσ.differential u (f w) := by
+  have hd := (hρ.isIntertwiningMap_iff_forall_map_differential hσ f).mp hf
+  induction u using UniversalEnvelopingAlgebra.induction_ι generalizing w with
+  | ι X => simpa only [UniversalEnvelopingAlgebra.lift_ι_apply] using hd X w
+  | algebraMap c => simp [Algebra.algebraMap_eq_smul_one]
+  | add a b ha hb => simp only [map_add, LinearMap.add_apply, ha, hb]
+  | mul a b ha hb => simp only [map_mul, mul_apply_eq_comp, ha, hb]
+
 end Intertwining
+
+section TensorProduct
+
+variable {V : Type*} [AddCommGroup V] [Module ℂ V] {σ : Representation ℂ (GL (Fin n) ℂ) V}
+
+/-- **The comodule of a tensor product of rational representations** is the diagonal tensor
+product (`TauCeti.Comodule.tensor`) of their comodules. -/
+theorem comodule_tprod (hρ : IsRationalRep ρ) (hσ : IsRationalRep σ) :
+    (hρ.tprod hσ).comodule =
+      (letI := hρ.comodule; letI := hσ.comodule
+        Comodule.tensor ℂ (coordinateHopfAlgebra ℂ n) W V) := by
+  let _ := hρ.comodule
+  let _ := hσ.comodule
+  refine ((hρ.tprod hσ).eq_comodule (Comodule.tensor ℂ _ W V) fun g ↦
+    TensorProduct.ext' fun w v ↦ ?_).symm
+  rw [Comodule.basePointsRepresentation_tensor_tmul, basePointsRepresentation_comodule,
+    basePointsRepresentation_comodule, Representation.tprod_apply, TensorProduct.map_tmul]
+
+/-- **The differential of a tensor product of rational representations** acts by the Leibniz
+rule: `d(ρ ⊗ σ) X (w ⊗ v) = dρ X w ⊗ v + w ⊗ dσ X v`. -/
+theorem differential_tprod_tmul (hρ : IsRationalRep ρ) (hσ : IsRationalRep σ)
+    (X : Matrix (Fin n) (Fin n) ℂ) (w : W) (v : V) :
+    (hρ.tprod hσ).differential X (w ⊗ₜ v) =
+      hρ.differential X w ⊗ₜ v + w ⊗ₜ hσ.differential X v := by
+  let _ := hρ.comodule
+  let _ := hσ.comodule
+  rw [differential_apply, differential_apply, differential_apply, comodule_tprod,
+    Comodule.differential_tensor_tmul]
+
+/-- **The differential of a tensor product of rational representations** is the tensor product
+of their differentials, `d(ρ ⊗ σ) X = dρ X ⊗ 1 + 1 ⊗ dσ X`: differentiating carries the tensor
+product of representations of `GL n ℂ` to the tensor product of representations of `𝔤𝔩ₙ(ℂ)`. -/
+theorem differential_tprod (hρ : IsRationalRep ρ) (hσ : IsRationalRep σ)
+    (X : Matrix (Fin n) (Fin n) ℂ) :
+    (hρ.tprod hσ).differential X =
+      (hρ.differential X).rTensor V + (hσ.differential X).lTensor W :=
+  TensorProduct.ext' fun w v ↦ by
+    rw [differential_tprod_tmul, LinearMap.add_apply, LinearMap.rTensor_tmul,
+      LinearMap.lTensor_tmul]
+
+variable {M N : Type*} [AddCommGroup M] [Module ℂ M] [LieRingModule (Matrix (Fin n) (Fin n) ℂ) M]
+  [LieModule ℂ (Matrix (Fin n) (Fin n) ℂ) M] [AddCommGroup N] [Module ℂ N]
+  [LieRingModule (Matrix (Fin n) (Fin n) ℂ) N] [LieModule ℂ (Matrix (Fin n) (Fin n) ℂ) N]
+
+/-- **Differentiation preserves tensor products of `𝔤𝔩ₙ`-modules**: isomorphisms of `𝔤𝔩ₙ`-modules
+`e₁ : W ≅ M` and `e₂ : V ≅ N`, the sources carrying the differentials of rational
+representations `ρ` and `σ`, tensor to an isomorphism `W ⊗ V ≅ M ⊗ N` whose source carries the
+differential of `ρ ⊗ σ` and whose target carries the tensor product `𝔤𝔩ₙ`-module structure. -/
+noncomputable def tprodLieModuleEquiv (hρ : IsRationalRep ρ) (hσ : IsRationalRep σ)
+    (e₁ : letI := LieRingModule.compLieHom W hρ.differential
+      W ≃ₗ⁅ℂ,Matrix (Fin n) (Fin n) ℂ⁆ M)
+    (e₂ : letI := LieRingModule.compLieHom V hσ.differential
+      V ≃ₗ⁅ℂ,Matrix (Fin n) (Fin n) ℂ⁆ N) :
+    letI := LieRingModule.compLieHom (W ⊗[ℂ] V) (hρ.tprod hσ).differential
+    W ⊗[ℂ] V ≃ₗ⁅ℂ,Matrix (Fin n) (Fin n) ℂ⁆ M ⊗[ℂ] N :=
+  -- The linear equivalences underlying `e₁` and `e₂` are extracted with the `𝔤𝔩ₙ`-module
+  -- structures of the factors in scope only locally, so that they never compete with the
+  -- structure on the tensor product.
+  let f₁ : W ≃ₗ[ℂ] M := letI := LieRingModule.compLieHom W hρ.differential; e₁.toLinearEquiv
+  let f₂ : V ≃ₗ[ℂ] N := letI := LieRingModule.compLieHom V hσ.differential; e₂.toLinearEquiv
+  -- On `W ⊗ V` with the Lie tensor product structure of the factors, the bracket is
+  -- `dρ X ⊗ 1 + 1 ⊗ dσ X`, which Mathlib's `TensorProduct.LieModule.map` respects.
+  have hf (X : Matrix (Fin n) (Fin n) ℂ) (t : W ⊗[ℂ] V) :
+      TensorProduct.congr f₁ f₂ (((hρ.differential X).rTensor V +
+        (hσ.differential X).lTensor W) t) = ⁅X, TensorProduct.congr f₁ f₂ t⁆ :=
+    letI := LieRingModule.compLieHom W hρ.differential
+    letI := LieRingModule.compLieHom V hσ.differential
+    haveI := LieModule.compLieHom W hρ.differential
+    haveI := LieModule.compLieHom V hσ.differential
+    (TensorProduct.LieModule.map e₁.toLieModuleHom e₂.toLieModuleHom).map_lie X t
+  letI := LieRingModule.compLieHom (W ⊗[ℂ] V) (hρ.tprod hσ).differential
+  { TensorProduct.congr f₁ f₂ with
+    map_lie' := fun {X t} ↦ by
+      simp only [LieRingModule.compLieHom_apply, Module.End.lie_apply, AddHom.toFun_eq_coe,
+        LinearMap.coe_toAddHom, LinearEquiv.coe_coe]
+      rw [differential_tprod hρ hσ, hf] }
+
+/-- `TauCeti.IsRationalRep.tprodLieModuleEquiv` acts on pure tensors factorwise. -/
+@[simp]
+theorem tprodLieModuleEquiv_tmul (hρ : IsRationalRep ρ) (hσ : IsRationalRep σ)
+    (e₁ : letI := LieRingModule.compLieHom W hρ.differential
+      W ≃ₗ⁅ℂ,Matrix (Fin n) (Fin n) ℂ⁆ M)
+    (e₂ : letI := LieRingModule.compLieHom V hσ.differential
+      V ≃ₗ⁅ℂ,Matrix (Fin n) (Fin n) ℂ⁆ N) (w : W) (v : V) :
+    tprodLieModuleEquiv hρ hσ e₁ e₂ (w ⊗ₜ v) = e₁ w ⊗ₜ e₂ v :=
+  (rfl)
+
+end TensorProduct
 
 end IsRationalRep
 

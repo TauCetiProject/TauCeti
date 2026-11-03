@@ -16,6 +16,10 @@ parameters a weight matrix `A : Matrix ο ι R` and a bias vector `b : ο → R`
 `x ↦ A *ᵥ x + b`. Setting the bias to zero recovers the bias-free (linear) layer, which as
 a realization map is Mathlib's `Matrix.mulVec` itself.
 
+For presenting these layers with parameters indexed by a single type, `linearParameterEquiv`
+identifies `ο × ι → R` with the weight matrices and `denseParameterEquiv` identifies
+`ο × ι ⊕ ο → R` with the weight-bias pairs.
+
 As a first application of `compose`, two bias-free dense layers with identity activation
 realize `x ↦ (B * A) *ᵥ x`, so their neuromanifold is the image of the matrix products
 `B * A` under matrix evaluation. The parameter space is the full product of the two weight
@@ -33,6 +37,44 @@ namespace TauCeti.Neuromanifold
 open Matrix
 
 variable {R : Type*} {ι κ ο : Type*}
+
+section ParameterEquiv
+
+/-- The parameters of a linear layer, indexed by matrix positions, form its weight matrix. -/
+def linearParameterEquiv (R ο ι : Type*) : (ο × ι → R) ≃ Matrix ο ι R :=
+  (Equiv.curry ο ι R).trans Matrix.of
+
+/-- The weight matrix read off from linear-layer parameters. -/
+@[simp] theorem linearParameterEquiv_apply (p : ο × ι → R) (o : ο) (i : ι) :
+    linearParameterEquiv R ο ι p o i = p (o, i) := (rfl)
+
+/-- Linear-layer parameters read off from a weight matrix. -/
+@[simp] theorem linearParameterEquiv_symm_apply (A : Matrix ο ι R) (q : ο × ι) :
+    (linearParameterEquiv R ο ι).symm A q = A q.1 q.2 := (rfl)
+
+/-- The parameters of a dense affine layer, indexed by matrix positions and then by output
+coordinates, form its weight matrix and bias vector. -/
+def denseParameterEquiv (R ο ι : Type*) : (ο × ι ⊕ ο → R) ≃ Matrix ο ι R × (ο → R) :=
+  (Equiv.sumArrowEquivProdArrow (ο × ι) ο R).trans
+    ((linearParameterEquiv R ο ι).prodCongr (Equiv.refl _))
+
+/-- The weight matrix read off from dense-layer parameters. -/
+@[simp] theorem denseParameterEquiv_apply_fst (p : ο × ι ⊕ ο → R) (o : ο) (i : ι) :
+    (denseParameterEquiv R ο ι p).1 o i = p (Sum.inl (o, i)) := (rfl)
+
+/-- The bias vector read off from dense-layer parameters. -/
+@[simp] theorem denseParameterEquiv_apply_snd (p : ο × ι ⊕ ο → R) (o : ο) :
+    (denseParameterEquiv R ο ι p).2 o = p (Sum.inr o) := (rfl)
+
+/-- Dense-layer parameters at a matrix position are the corresponding weight. -/
+@[simp] theorem denseParameterEquiv_symm_apply_inl (p : Matrix ο ι R × (ο → R)) (q : ο × ι) :
+    (denseParameterEquiv R ο ι).symm p (Sum.inl q) = p.1 q.1 q.2 := (rfl)
+
+/-- Dense-layer parameters at an output coordinate are the corresponding bias. -/
+@[simp] theorem denseParameterEquiv_symm_apply_inr (p : Matrix ο ι R × (ο → R)) (o : ο) :
+    (denseParameterEquiv R ο ι).symm p (Sum.inr o) = p.2 o := (rfl)
+
+end ParameterEquiv
 
 section Dense
 

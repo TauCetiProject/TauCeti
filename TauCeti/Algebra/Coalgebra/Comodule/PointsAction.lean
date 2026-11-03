@@ -38,6 +38,7 @@ tensor expressions in the regular cocycle identity.
 ## Main declarations
 
 * `TauCeti.Comodule.pointCochain`: evaluation of a regular one-cochain at a point.
+* `TauCeti.Comodule.rTensor_pointCochain`: this evaluation is natural in the value algebra.
 * `TauCeti.Comodule.pointCochain_includeLeft` and
   `TauCeti.Comodule.endOfPoint_includeLeft_pointCochain_includeRight`: cochain evaluation at the
   universal pair of points.
@@ -96,6 +97,26 @@ variable (V) in
 theorem pointCochain_tmul (g : H →ₐ[R] A) (v : V) (h : H) :
     pointCochain V g (v ⊗ₜ[R] h) = g h ⊗ₜ[R] v := by
   simp [pointCochain]
+
+variable (V) in
+/-- Evaluating the cochain of `x : H ⊗[R] V` at a point `g` pushes the `H`-factor of `x` through
+`g`. At the universal point `g = AlgHom.id R H` this recovers `x`. -/
+@[simp]
+theorem pointCochain_comm (g : H →ₐ[R] A) (x : H ⊗[R] V) :
+    pointCochain V g (TensorProduct.comm R H V x) = LinearMap.rTensor V g.toLinearMap x := by
+  induction x using TensorProduct.inductionOn with
+  | tmul h v => simp
+  | add x₁ x₂ h₁ h₂ => simp only [map_add, h₁, h₂]
+
+variable (V) in
+/-- Evaluation of regular cochains is natural in the value algebra. -/
+@[simp]
+theorem rTensor_pointCochain {B : Type*} [CommSemiring B] [Algebra R B] (φ : A →ₐ[R] B)
+    (g : H →ₐ[R] A) (b : V ⊗[R] H) :
+    LinearMap.rTensor V φ.toLinearMap (pointCochain V g b) = pointCochain V (φ.comp g) b := by
+  induction b using TensorProduct.inductionOn with
+  | tmul v h => simp
+  | add b₁ b₂ h₁ h₂ => simp only [map_add, h₁, h₂]
 
 end Cochain
 

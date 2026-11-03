@@ -50,6 +50,8 @@ minus the chirality element `CliffordAlgebra.chirality` of
 * `CliffordAlgebra.volumeElement_eq`: the volume element is `c(e₁) ⋯ c(eₙ)` for every positively
   oriented orthonormal basis `e` that is orthogonal for `Q`.
 * `CliffordAlgebra.volumeElement_neg_orientation`: reversing the orientation negates it.
+* `CliffordAlgebra.map_volumeElement`: an isometry of quadratic forms that also preserves the norms
+  carries the volume element to that of the transported orientation.
 * `CliffordAlgebra.involute_volumeElement`, `CliffordAlgebra.reverse_volumeElement` and
   `CliffordAlgebra.star_volumeElement`: the grade involution, reversal and Clifford conjugation
   multiply it by `(-1) ^ n`, `(-1) ^ ⌊n / 2⌋` and `(-1) ^ ⌊(n + 1) / 2⌋`.
@@ -58,6 +60,8 @@ minus the chirality element `CliffordAlgebra.chirality` of
   dimension.
 * `CliffordAlgebra.volumeElement_mul_self`: for `Q v = -‖v‖²` it squares to
   `(-1) ^ ⌊(n + 1) / 2⌋`.
+* `CliffordAlgebra.volumeElement_mul_basis`: for `Q v = -‖v‖²` it sends the Clifford basis vector
+  `e_s` of a positively oriented orthonormal basis to a signed `e_{sᶜ}`.
 
 ## References
 
@@ -120,6 +124,34 @@ private theorem volumeElement_eq_basis_or_eq_neg (b : OrthonormalBasis (Fin n) �
 private abbrev frame (V : Type*) [NormedAddCommGroup V] [InnerProductSpace ℝ V]
     [FiniteDimensional ℝ V] (n : ℕ) [Fact (finrank ℝ V = n)] : OrthonormalBasis (Fin n) ℝ V :=
   (stdOrthonormalBasis ℝ V).reindex (finCongr Fact.out)
+
+section Naturality
+
+variable {V' : Type*} [NormedAddCommGroup V'] [InnerProductSpace ℝ V'] [FiniteDimensional ℝ V']
+  [Fact (finrank ℝ V' = n)] {Q' : QuadraticForm ℝ V'}
+
+/-- **Naturality of the volume element**: an isometric equivalence `e` of the quadratic forms that
+also preserves the norms carries the volume element of `o` to that of the transported orientation.
+In particular an orientation-preserving isometry of `V` fixing `Q` fixes the volume element, while
+an orientation-reversing one negates it (`CliffordAlgebra.volumeElement_neg_orientation`). -/
+theorem map_volumeElement (e : Q.IsometryEquiv Q') (he : ∀ v, ‖e v‖ = ‖v‖) :
+    map e.toIsometry (volumeElement Q o) = volumeElement Q' (o.map (Fin n) e.toLinearEquiv) := by
+  let f : V ≃ₗᵢ[ℝ] V' := { e.toLinearEquiv with norm_map' := he }
+  -- Both sides are signed by the orientation, so it suffices to treat the orientation of a frame.
+  suffices h : ∀ b : OrthonormalBasis (Fin n) ℝ V, map e.toIsometry
+      (volumeElement Q b.toBasis.orientation) =
+        volumeElement Q' (b.toBasis.orientation.map (Fin n) e.toLinearEquiv) by
+    rcases (frame V n).toBasis.orientation_eq_or_eq_neg o with ho | ho
+    · rw [ho, h]
+    · rw [ho, volumeElement_neg_orientation, map_neg, h, Orientation.map_neg,
+        volumeElement_neg_orientation]
+  intro b
+  have hb : (b.map f).toBasis.orientation = b.toBasis.orientation.map (Fin n) e.toLinearEquiv := by
+    rw [OrthonormalBasis.toBasis_map, Basis.orientation_map]
+  rw [volumeElement_eq_basis _ b rfl, volumeElement_eq_basis _ (b.map f) hb, map_basis,
+    OrthonormalBasis.toBasis_map]
+
+end Naturality
 
 /-- The volume element is homogeneous of degree `n`: the grade involution multiplies it by
 `(-1) ^ n`. -/
@@ -214,5 +246,38 @@ theorem volumeElement_mul_self (hQ : ∀ v, Q v = -‖v‖ ^ 2) :
   rw [Finset.card_univ, Fintype.card_fin, Nat.neg_one_pow_choose_two] at h
   rcases volumeElement_eq_basis_or_eq_neg (Q := Q) o (frame V n) with h' | h' <;>
     simp only [h', neg_mul_neg, h]
+
+open Set in
+/-- For `Q v = -‖v‖²`, the Clifford product of the volume element with the basis vector `e_s` of a
+positively oriented orthonormal basis is the signed basis vector
+`(-1) ^ ((k + 1).choose 2) ε(sᶜ) e_{sᶜ}`, where `ε(sᶜ)` is the shuffle sign of the complement. -/
+theorem volumeElement_mul_basis (hQ : ∀ v, Q v = -‖v‖ ^ 2) (b : OrthonormalBasis (Fin n) ℝ V)
+    (hb : b.toBasis.orientation = o) {k l : ℕ} (hcard : l + k = Fintype.card (Fin n))
+    (s : powersetCard (Fin n) k) :
+    volumeElement Q o * basis Q b.toBasis s =
+      ((-1 : ℝ) ^ (k + 1).choose 2 * ((powersetCard.sign (powersetCard.compl hcard s) : ℤ) : ℝ))
+        • basis Q b.toBasis (powersetCard.compl hcard s) := by
+  set t := powersetCard.compl hcard s
+  have hts : Disjoint t.val s.val := (powersetCard.disjoint_iff_eq_compl hcard).2 rfl
+  have hunion : (powersetCard.disjUnion hts : Finset (Fin n)) = Finset.univ :=
+    Finset.eq_univ_of_card _ <| by
+      rw [powersetCard.coe_disjUnion, Finset.card_disjUnion, powersetCard.mem_iff.1 s.2,
+        powersetCard.mem_iff.1 t.2]
+      exact hcard
+  -- `e_t e_s = ε(t) vol`, and `ε(t) ^ 2 = 1`.
+  have hsq : ((powersetCard.sign t : ℤ) : ℝ) * ((powersetCard.sign t : ℤ) : ℝ) = 1 := by
+    rw [← Int.cast_mul, ← Units.val_mul, Int.units_mul_self, Units.val_one, Int.cast_one]
+  have hvol : volumeElement Q o = ((powersetCard.sign t : ℤ) : ℝ) •
+      (basis Q b.toBasis t * basis Q b.toBasis s) := by
+    rw [basis_mul_basis_of_disjoint (b.isOrthoᵢ_associated hQ) hts,
+      ← powersetCard.sign_eq_permOfDisjoint_sign (by omega) t s hts, hunion,
+      ← volumeElement_eq_basis o b hb]
+    simp only [Units.smul_def, ← Int.cast_smul_eq_zsmul ℝ, smul_smul, hsq, one_smul]
+  have hss : basis Q b.toBasis s * basis Q b.toBasis s =
+      algebraMap ℝ (CliffordAlgebra Q) ((-1) ^ (k + 1).choose 2) := by
+    rw [basis_mul_self_of_orthonormal hQ, powersetCard.mem_iff.1 s.2]
+    simp
+  rw [hvol, smul_mul_assoc, mul_assoc, hss, ← Algebra.commutes, ← Algebra.smul_def, smul_smul,
+    mul_comm]
 
 end CliffordAlgebra

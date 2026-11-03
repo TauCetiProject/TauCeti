@@ -18,6 +18,8 @@ lets the level sets `⟪ζ, z⟫_ℝ = t` be read in the rotated coordinate `w =
 
 * `Complex.mul_conj_eq_one_of_norm_eq_one` -- a unit complex number times its conjugate is `1`.
 * `Complex.inner_mul_left_of_norm_eq_one` -- `⟪ζ, ζ * w⟫_ℝ = w.re` for a unit `ζ`.
+* `Complex.real_inner_I_right` -- `⟪z, i⟫_ℝ = z.im`: the height of `z` in the direction of `i`.
+* `LinearIsometry.norm_map_I` -- a linear isometry from the plane maps `i` to a unit vector.
 -/
 
 public section
@@ -35,4 +37,13 @@ theorem mul_conj_eq_one_of_norm_eq_one (hζ : ‖ζ‖ = 1) : ζ * (starRingEnd 
 theorem inner_mul_left_of_norm_eq_one (hζ : ‖ζ‖ = 1) (w : ℂ) : inner ℝ ζ (ζ * w) = w.re := by
   rw [Complex.inner, mul_comm ζ w, mul_assoc, mul_conj_eq_one_of_norm_eq_one hζ, mul_one]
 
+/-- The real inner product of `z` with `i` is the imaginary part of `z`. -/
+theorem real_inner_I_right (z : ℂ) : inner ℝ z I = z.im := by
+  simp [Complex.inner]
+
 end Complex
+
+/-- A linear isometry from the plane maps `i` to a unit vector. -/
+theorem LinearIsometry.norm_map_I {E : Type*} [SeminormedAddCommGroup E] [NormedSpace ℝ E]
+    (ι : ℂ →ₗᵢ[ℝ] E) : ‖ι Complex.I‖ = 1 :=
+  (ι.norm_map _).trans Complex.norm_I

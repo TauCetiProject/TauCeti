@@ -10,6 +10,8 @@ public import Mathlib.Algebra.Lie.Weights.RootSystem
 public import Mathlib.LinearAlgebra.LinearPMap
 public import TauCeti.Algebra.Lie.Weights.Span
 public import TauCeti.LinearAlgebra.RootSystem.Positive
+import TauCeti.Algebra.Lie.Basic
+import TauCeti.Algebra.Lie.Weights.Basic
 
 /-!
 # The nilradicals and the Borel subalgebra of a positive system
@@ -382,6 +384,37 @@ theorem negativeNilradical_le_iff {K' : LieSubalgebra K L} :
       ∀ α ∈ negRoots (IsKilling.rootSystem H) b, ∀ x ∈ rootSpace H (α : H → K), x ∈ K' :=
   rootSpaceSubalgebra_le_iff (isSpecialClosedRootSet_negRoots b)
 
+variable {H b} in
+/-- **The positive eigenspaces of a dominant element lie in the positive nilradical.** If every
+simple root takes a natural value at `x : H`, then a generalized eigenvector of `ad x` whose
+eigenvalue is a nonzero natural number lies in `n⁺`. Such a vector is a sum of root vectors for
+roots taking that value at `x`, and a root taking a positive value at a dominant element is
+positive. -/
+theorem mem_positiveNilradical_of_mem_genWeightSpaceOf {x : H}
+    (hx : ∀ j ∈ b.support, ∃ n : ℕ, (j : Weight K H L) x = n) {n : ℕ} (hn : n ≠ 0) {y : L}
+    (hy : y ∈ genWeightSpaceOf L (n : K) x) : y ∈ positiveNilradical H b := by
+  rw [genWeightSpaceOf_eq_iSup_genWeightSpace] at hy
+  refine (mem_positiveNilradical H b y).mpr ?_
+  suffices hle : ⨆ (χ : Weight K H L) (_ : χ x = n), genWeightSpace L χ ≤
+      rootSpaceSpan H (posRoots (IsKilling.rootSystem H) b) from hle hy
+  refine iSup₂_le fun χ hχ ↦ ?_
+  have hχ0 : χ.IsNonZero := fun hz ↦ hn <| by
+    have := congr_fun hz x
+    simp only [hχ, Pi.zero_apply] at this
+    exact_mod_cast this
+  let jχ : H.root := ⟨χ, by simpa [LieSubalgebra.root] using hχ0⟩
+  -- `χ` is positive: on a negative root `x` takes a nonpositive value, not `n`
+  have hposχ : jχ ∈ posRoots (IsKilling.rootSystem H) b := by
+    refine (mem_posRoots_or_mem_negRoots (IsKilling.rootSystem H) b jχ).resolve_right
+      fun hneg ↦ hn ?_
+    -- the root `jχ` coerces back to the weight `χ`
+    obtain ⟨m, hm : χ x = -m⟩ := exists_nat_root_apply_eq_neg_of_mem_negRoots hx hneg
+    have hcast : ((n + m : ℕ) : K) = 0 := by
+      rw [Nat.cast_add, ← hχ, hm, neg_add_cancel]
+    have := Nat.cast_eq_zero.mp hcast
+    omega
+  exact rootSpace_le_rootSpaceSpan (α := jχ) hposχ
+
 /-- The sum of the Cartan subalgebra and the positive nilradical is closed under the bracket: the
 Cartan preserves each root space, and the positive root spaces bracket into one another. -/
 private theorem lie_mem_sup_positiveNilradical {x y : L}
@@ -460,14 +493,9 @@ theorem lie_mem_positiveNilradical_of_mem_borelSubalgebra_of_mem_borelSubalgebra
   refine add_mem (neg_mem ?_) (lie_mem_positiveNilradical_of_mem_borelSubalgebra H b hx hn)
   rw [← LieSubalgebra.mem_toSubmodule, borelSubalgebra_toSubmodule, Submodule.mem_sup] at hx
   obtain ⟨h', hh', n', hn', rfl⟩ := hx
-  have hab : ⁅(⟨h, hh⟩ : H), (⟨h', hh'⟩ : H)⁆ = 0 := trivial_lie_zero _ _ _ _
-  rw [lie_add]
-  refine add_mem ?_ (lie_mem_positiveNilradical_of_mem_borelSubalgebra H b
+  rw [lie_add, LieSubalgebra.lie_eq_zero_of_mem hh hh']
+  exact add_mem (zero_mem _) (lie_mem_positiveNilradical_of_mem_borelSubalgebra H b
     (le_borelSubalgebra H b hh) hn')
-  have hcoe := congrArg Subtype.val hab
-  simp only [LieSubalgebra.coe_bracket, ZeroMemClass.coe_zero] at hcoe
-  rw [hcoe]
-  exact zero_mem _
 
 /-! ### The triangular decomposition -/
 
@@ -603,7 +631,7 @@ private theorem rootSpace_le_span_negRootVector (i : H.root) :
   have hone : finrank K (rootSpace H (-((i : Weight K H L) : H → K))) = 1 :=
     IsKilling.finrank_rootSpace_eq_one (-(i : Weight K H L))
       (Weight.IsNonZero.neg (Finset.mem_filter.mp i.2).2)
-  obtain ⟨c, hc⟩ := (finrank_eq_one_iff_of_nonzero'
+  obtain ⟨c, hc⟩ := (finrank_eq_one_iff_of_ne_zero'
     (⟨negRootVector i, negRootVector_mem_rootSpace i⟩ :
       rootSpace H (-((i : Weight K H L) : H → K)))
     (by simpa using negRootVector_ne_zero i)).mp hone ⟨x, hx⟩

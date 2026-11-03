@@ -6,29 +6,45 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.BoundedVariation.Perimeter
+import TauCeti.Analysis.BoundedVariation.Convex
 import TauCeti.Analysis.BoundedVariation.RegularLevel
 import TauCeti.Analysis.BoundedVariation.Convolution
 import TauCeti.MeasureTheory.Function.Lp.ApproximateIdentity
 import TauCeti.MeasureTheory.Integral.LayerCake
 
 /-!
-# Smooth approximation of bounded sets of finite perimeter
+# Smooth approximation of sets of finite volume in perimeter
 
-A bounded Lebesgue-measurable set admits bounded open approximations with smooth boundary,
-converging both in symmetric-difference measure and in perimeter on the whole space.
+A Lebesgue-measurable set of finite volume admits bounded open approximations with smooth
+boundary, converging both in symmetric-difference measure and in perimeter on the whole space.
+The set need not be bounded, and finite perimeter is not assumed: the perimeter convergence is
+extended-valued, so the construction also covers infinite perimeter. Finite volume cannot be
+replaced by finite perimeter here, since the complement of a ball has finite perimeter but no
+bounded set approximates it in measure.
 The approximations are positive regular superlevels of compactly supported smooth functions.
 Thus their smoothness is witnessed by defining functions, rather than assumed as a predicate.
-The perimeter convergence is extended-valued, so the construction also covers infinite perimeter.
 
-Mollify the indicator, choose regular levels in intervals expanding to `(0, 1)`, and use
+The first step is a truncation: cutting a set of finite measure by the closed half-spaces
+bounding a large cube does not increase its perimeter
+(`TauCeti.perimeter_inter_biInter_halfSpace_le`), so the set is the limit of bounded subsets whose
+perimeters converge to its own
+(`MeasureTheory.NullMeasurableSet.exists_isBounded_perimeter_approximation`).
+A bounded set is then approximated as follows. Mollify the indicator, choose regular levels in
+intervals expanding to `(0, 1)`, and use
 `ContDiff.exists_mem_Ioo_isCompact_closure_perimeter_le` for perimeter control. The quantitative
 threshold estimate `Measure.measure_symmDiff_setOf_lt_indicator_le` controls the volume error
 uniformly in each interval. Lower semicontinuity then supplies the reverse perimeter bound.
 Null modifications of the original set require no choice of a Borel representative.
 
+## Main results
+
+* `MeasureTheory.NullMeasurableSet.exists_smooth_perimeter_approximation`: approximation of a set
+  of finite measure by bounded open sets with smooth boundary, in measure and in perimeter.
+
 ## References
 
 * L. C. Evans, R. F. Gariepy, *Measure Theory and Fine Properties of Functions*, §5.2.2.
+* F. Maggi, *Sets of Finite Perimeter and Geometric Variational Problems*, Chapter 13.
 -/
 
 public section
@@ -43,7 +59,7 @@ namespace TauCeti
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
   [MeasurableSpace E] [BorelSpace E] {μ : Measure E} [μ.IsAddHaarMeasure] {s : Set E}
 
-private theorem exists_regular_superlevel_approximation (hs : NullMeasurableSet s μ)
+private theorem exists_regular_superlevel_approximation_of_isBounded (hs : NullMeasurableSet s μ)
     (hb : Bornology.IsBounded s) {δ ε : ℝ} (hδ : 0 < δ) (hδ' : δ < 1 / 2) (hε : 0 < ε) :
     ∃ (u : E → ℝ) (t : ℝ), ContDiff ℝ ∞ u ∧ HasCompactSupport u ∧ t ∈ Ioo δ (1 - δ) ∧
       (∀ x, u x = t → Function.Surjective (fderiv ℝ u x)) ∧
@@ -95,12 +111,37 @@ private theorem exists_regular_superlevel_approximation (hs : NullMeasurableSet 
     rw [hwidth]
     gcongr
 
-/-- Every bounded null-measurable set is approximated in volume and perimeter by bounded open
-sets with smooth boundary. The sets are positive regular superlevels of compactly supported
-smooth functions and have finite perimeter; their frontiers are the corresponding regular levels.
-Perimeters are extended-valued, including when the original set has infinite perimeter. -/
-theorem _root_.MeasureTheory.NullMeasurableSet.exists_smooth_perimeter_approximation_of_isBounded
-    (hs : NullMeasurableSet s μ) (hb : Bornology.IsBounded s) :
+private theorem exists_regular_superlevel_approximation (hs : NullMeasurableSet s μ)
+    (hμs : μ s ≠ ⊤) {δ ε : ℝ} (hδ : 0 < δ) (hδ' : δ < 1 / 2) (hε : 0 < ε) :
+    ∃ (u : E → ℝ) (t : ℝ), ContDiff ℝ ∞ u ∧ HasCompactSupport u ∧ t ∈ Ioo δ (1 - δ) ∧
+      (∀ x, u x = t → Function.Surjective (fderiv ℝ u x)) ∧
+      IsCompact (closure {x | t < u x}) ∧ frontier {x | t < u x} = {x | u x = t} ∧
+      perimeter μ ⊤ {x | t < u x} < ⊤ ∧
+      μ ({x | t < u x} ∆ s) ≤ ENNReal.ofReal ε ∧
+      perimeter μ ⊤ {x | t < u x} ≤ perimeter μ ⊤ s / ENNReal.ofReal (1 - 2 * δ) := by
+  -- Cut `s` to a bounded subset `r` with `μ (s \ r) < ε / 2` and `P(r) ≤ P(s)`, then approximate
+  -- `r` to within `ε / 2`.
+  obtain ⟨r, -, hr, hrlim, -⟩ := hs.exists_isBounded_perimeter_approximation hμs
+  obtain ⟨m, hm⟩ :=
+    (hrlim.eventually (gt_mem_nhds (ENNReal.ofReal_pos.2 (half_pos hε)))).exists
+  obtain ⟨hrs, hrm, hrb, hrP⟩ := hr m
+  obtain ⟨u, t, hu, huc, ht, hreg, hc, hfront, hfin, hvol, hP⟩ :=
+    exists_regular_superlevel_approximation_of_isBounded hrm hrb hδ hδ' (half_pos hε)
+  refine ⟨u, t, hu, huc, ht, hreg, hc, hfront, hfin, ?_, hP.trans (by gcongr)⟩
+  calc μ ({x | t < u x} ∆ s) ≤ μ ({x | t < u x} ∆ r m) + μ (r m ∆ s) :=
+        measure_symmDiff_le _ _ _
+    _ ≤ ENNReal.ofReal (ε / 2) + ENNReal.ofReal (ε / 2) :=
+        add_le_add hvol (by rw [symmDiff_of_le hrs]; exact hm.le)
+    _ = ENNReal.ofReal ε := by
+        rw [← ENNReal.ofReal_add (half_pos hε).le (half_pos hε).le, add_halves]
+
+/-- **Smooth approximation of sets of finite volume.** Every null-measurable set of finite
+measure is approximated in volume and perimeter by bounded open sets with smooth boundary. The
+sets are positive regular superlevels of compactly supported smooth functions and have finite
+perimeter; their frontiers are the corresponding regular levels. Perimeters are extended-valued,
+including when the original set has infinite perimeter, and the set itself need not be bounded. -/
+theorem _root_.MeasureTheory.NullMeasurableSet.exists_smooth_perimeter_approximation
+    (hs : NullMeasurableSet s μ) (hμs : μ s ≠ ⊤) :
     ∃ (u : ℕ → E → ℝ) (t : ℕ → ℝ),
       (∀ n, ContDiff ℝ ∞ (u n) ∧ HasCompactSupport (u n) ∧ t n ∈ Ioo 0 1 ∧
         (∀ x, u n x = t n → Function.Surjective (fderiv ℝ (u n) x)) ∧
@@ -119,7 +160,7 @@ theorem _root_.MeasureTheory.NullMeasurableSet.exists_smooth_perimeter_approxima
     linarith
   have hε (n : ℕ) : 0 < ε n := by positivity
   choose u t hu huc ht hreg hc hfront hfinite hvol hP using
-    fun n => exists_regular_superlevel_approximation hs hb (hδ n) (hδ' n) (hε n)
+    fun n => exists_regular_superlevel_approximation hs hμs (hδ n) (hδ' n) (hε n)
   have hvolconv : Tendsto (fun n => μ ({x | t n < u n x} ∆ s)) atTop (𝓝 0) :=
     tendsto_of_tendsto_of_tendsto_of_le_of_le tendsto_const_nhds
       (by simpa [ε] using (ENNReal.tendsto_ofReal

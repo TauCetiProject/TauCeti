@@ -221,14 +221,10 @@ theorem eq_top_of_root_subgroups_of_diagonal
   have hM : M ∈ Matrix.symplecticGroup (Fin m) K := by
     simpa only [M] using GLSymplectic.mem_iff_mem_symplecticGroup.mp
       (mulEquivGLSymplectic m K g).property
-  have hker (x : Fin m → K) (hAx : A • x = 0) (hCx : C • x = 0) : x = 0 := by
-    have hAx' : M.toBlocks₁₁ *ᵥ x = 0 := by
-      simpa only [Matrix.smul_eq_mulVec, A] using hAx
-    have hCx' : M.toBlocks₂₁ *ᵥ x = 0 := by
-      simpa only [Matrix.smul_eq_mulVec, C] using hCx
+  have hker (x : Fin m → K) (hAx : A *ᵥ x = 0) (hCx : C *ᵥ x = 0) : x = 0 := by
     have hv : M *ᵥ Sum.elim x 0 = M *ᵥ Sum.elim 0 0 := by
       rw [← M.fromBlocks_toBlocks]
-      simp [Matrix.fromBlocks_mulVec, hAx', hCx']
+      simp [Matrix.fromBlocks_mulVec, A, C, hAx, hCx]
     exact (Sum.elim_eq_iff.mp
       (Matrix.mulVec_injective_iff_isUnit.mpr
         (((mulEquivGLSymplectic m K g : GLSymplectic (Fin m) K) :

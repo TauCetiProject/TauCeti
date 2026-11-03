@@ -36,9 +36,10 @@ two-dimensional algebra `F[M]`. That is `TauCeti.commute_fin_two_iff`, from
 
 Two consequences organize the conjugacy classes of `GL₂(F)`. First, the commutant of a non-scalar
 matrix is commutative, so the centralizer of a non-central element of `GL₂(F)` is an **abelian**
-subgroup (`TauCeti.isMulCommutative_centralizer_of_notMem_range_scalar`). Second, when a regular
-element generates a maximal commutative subalgebra of `Matrix (Fin 2) (Fin 2) F` — a split one,
-`F × F`, or a quadratic field extension `E/F` — its centralizer is that subalgebra's unit group:
+subgroup (`TauCeti.isMulCommutative_centralizer_of_notMem_range_scalar`, which holds more generally
+over any commutative ring without zero divisors). Second, when a regular element generates a
+maximal commutative subalgebra of `Matrix (Fin 2) (Fin 2) F` — a split one, `F × F`, or a
+quadratic field extension `E/F` — its centralizer is that subalgebra's unit group:
 
 * the *split* case, an invertible diagonal matrix with distinct diagonal entries: its centralizer
   is the split torus `TauCeti.diagonalTorus F 2` of all invertible diagonal matrices
@@ -102,7 +103,7 @@ The class sizes are read off the centralizer orders by orbit-stabilizer
 ## Main results
 
 * `TauCeti.isMulCommutative_centralizer_of_notMem_range_scalar`: the centralizer of a non-central
-  element of `GL (Fin 2) F` is abelian.
+  element of `GL (Fin 2) R` is abelian, over any commutative ring `R` without zero divisors.
 * `TauCeti.centralizer_diagGL`, `TauCeti.natCard_centralizer_diagGL`,
   `TauCeti.ncard_carrier_mk_diagGL`: the centralizer of an invertible diagonal matrix with
   distinct entries is the split torus, of order `(q - 1)²`, and its conjugacy class has `q (q + 1)`
@@ -120,8 +121,6 @@ The class sizes are read off the centralizer orders by orbit-stabilizer
 
 ## References
 
-* [Character theory roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/CharacterTheory/README.md),
-  Layer 9, "The conjugacy classes (a build target)".
 * C. Bonnafé, *Representations of `SL₂(𝔽_q)`* (2011), Chapter 1.
 * W. Fulton and J. Harris, *Representation Theory: A First Course* (1991), Lecture 5.2.
 -/
@@ -134,14 +133,17 @@ namespace TauCeti
 
 section GeneralLinearGroup
 
-variable {F : Type*} [Field F] {g : GL (Fin 2) F}
+variable {R : Type*} [CommRing R] [NoZeroDivisors R] {g : GL (Fin 2) R}
 
-/-- A non-central element of `GL (Fin 2) F` is one whose matrix is not scalar; the matrices
-commuting with it then form a commutative algebra, so its centralizer is an **abelian** subgroup.
-This is the prerequisite for the centralizers computed below being tori: an abelian overgroup of
-the torus can be no larger than it. -/
+/-- A non-central element of `GL (Fin 2) R` is one whose matrix is not scalar; the matrices
+commuting with it then commute with each other (`TauCeti.commute_of_commute_fin_two`), so its
+centralizer is an **abelian** subgroup. No field is needed: the statement holds over any
+commutative ring without zero divisors, such as `ℤ`.
+
+Over a field this is the prerequisite for the centralizers computed below being tori: an abelian
+overgroup of the torus can be no larger than it. -/
 theorem isMulCommutative_centralizer_of_notMem_range_scalar
-    (hg : (g : Matrix (Fin 2) (Fin 2) F) ∉ Set.range (Matrix.scalar (Fin 2))) :
+    (hg : (g : Matrix (Fin 2) (Fin 2) R) ∉ Set.range (Matrix.scalar (Fin 2))) :
     IsMulCommutative ↥(Subgroup.centralizer {g}) :=
   ⟨⟨fun x y => Subtype.ext (Commute.units_val_iff.mp (commute_of_commute_fin_two hg
     (mem_centralizer_singleton_iff_commute_val.mp x.2)

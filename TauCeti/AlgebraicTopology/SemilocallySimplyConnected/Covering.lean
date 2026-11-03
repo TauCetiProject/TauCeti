@@ -23,7 +23,8 @@ than `SimplyConnectedSpace E`: it does not ask `E` to be path-connected, and so 
 cover whose components are separately simply connected.
 
 The same neighbourhoods run the other way as well: the preimage of a witnessing neighbourhood is
-one upstairs, because a covering map is injective on the Hom-sets of the fundamental groupoid.
+one upstairs, because a covering map is injective on fundamental groups
+(`TauCeti.SemilocallySimplyConnectedSpace.of_map_injective`).
 
 ## Main results
 
@@ -105,10 +106,9 @@ theorem SemilocallySimplyConnectedSpace.of_isCoveringMap [SimplyConnectedSpace E
   .of_isLocalHomeomorph hp.isLocalHomeomorph hsurj
     fun e γ ↦ (simply_connected_iff_loops_nullhomotopic.mp ‹_›).2 e γ
 
-/-- **Semilocal simple connectivity passes to the total space of a covering map.** A loop in the
-preimage of a witnessing neighbourhood downstairs projects to a null-homotopic loop, and a
-covering map is injective on the Hom-sets of the fundamental groupoid, so the loop upstairs is
-null-homotopic as well.
+/-- **Semilocal simple connectivity passes to the total space of a covering map.** A covering map
+is injective on fundamental groups (`IsCoveringMap.map_injective`), so the preimage of a witnessing
+neighbourhood downstairs is one upstairs.
 
 Together with `IsLocalHomeomorph.locallyPathConnectedSpace` this says that a covering map
 preserves the two *local* standing hypotheses of the universal-cover construction: over a locally
@@ -116,19 +116,7 @@ path-connected, semilocally simply connected base, the total space is again loca
 and semilocally simply connected. Path-connectedness of the base is not inherited — a cover can be
 disconnected — so to iterate the construction one restricts to a path component of `E`. -/
 theorem _root_.IsCoveringMap.semilocallySimplyConnectedSpace [SemilocallySimplyConnectedSpace X]
-    (hp : IsCoveringMap p) : SemilocallySimplyConnectedSpace E where
-  semilocallySimplyConnectedAt e := by
-    obtain ⟨U, hU, hloop⟩ := semilocallySimplyConnectedAt_def.mp
-      (SemilocallySimplyConnectedSpace.semilocallySimplyConnectedAt (p e))
-    refine semilocallySimplyConnectedAt_def.mpr
-      ⟨p ⁻¹' U, hp.continuous.continuousAt.preimage_mem_nhds hU, fun γ hγ ↦ ?_⟩
-    have hdown := hloop (γ.map (map_continuous (⟨p, hp.continuous⟩ : C(E, X)))) <| by
-      rintro _ ⟨t, rfl⟩
-      exact hγ ⟨t, rfl⟩
-    have key : Path.Homotopic.Quotient.mk γ = Path.Homotopic.Quotient.mk (Path.refl e) := by
-      refine hp.injective_path_homotopic_map e e ?_
-      simp only [← Path.Homotopic.Quotient.mk_map, Path.map_refl]
-      exact Quotient.sound hdown
-    exact Quotient.exact key
+    (hp : IsCoveringMap p) : SemilocallySimplyConnectedSpace E :=
+  .of_map_injective ⟨p, hp.continuous⟩ hp.map_injective
 
 end TauCeti

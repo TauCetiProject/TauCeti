@@ -9,6 +9,7 @@ public import Mathlib.MeasureTheory.Measure.Tilted
 public import Mathlib.Probability.HasLaw
 public import TauCeti.Analysis.Fourier.ExpCos
 public import TauCeti.MeasureTheory.Measure.WithDensity
+public import TauCeti.MeasureTheory.Measure.Typeclasses.Probability
 
 import TauCeti.MeasureTheory.Measure.Tilted
 
@@ -209,7 +210,7 @@ theorem isProbabilityMeasure_vonMisesMeasure_iff :
   refine ⟨fun h => ?_, isProbabilityMeasure_vonMisesMeasure m⟩
   by_contra hκ
   rw [vonMisesMeasure_of_neg (not_le.mp hκ)] at h
-  exact IsProbabilityMeasure.ne_zero (0 : Measure (AddCircle (2 * π))) rfl
+  exact not_isProbabilityMeasure_zero h
 
 /-- For a nonnegative concentration, the von Mises law has topological support the whole circle,
 since its density is positive and continuous. -/

@@ -70,12 +70,29 @@ lemma natCast_renewalCountNat {ω : Ω}
     ((tendsto_arrival_atTop_iff.1 hω t).ne)
   simp [renewalCountNat_def, hω, hn]
 
+variable (T) in
+/-- The natural-valued count never exceeds the extended count: they agree on nonexplosive paths,
+and the natural-valued count is zero on the others. -/
+lemma natCast_renewalCountNat_le (t : ℝ≥0) (ω : Ω) :
+    (renewalCountNat T t ω : ℝ≥0∞) ≤ renewalCount T t ω := by
+  by_cases hω : Tendsto (fun n ↦ arrival T n ω) atTop atTop
+  · exact (natCast_renewalCountNat hω t).le
+  · simp [hω]
+
 /-- The natural count reaches `n` exactly when the `n`-th arrival has occurred. -/
 lemma le_renewalCountNat_iff {ω : Ω}
     (hω : Tendsto (fun n ↦ arrival T n ω) atTop atTop) {t : ℝ≥0} {n : ℕ} :
     n ≤ renewalCountNat T t ω ↔ arrival T n ω ≤ t := by
   rw [← Nat.cast_le (α := ℝ≥0∞), natCast_renewalCountNat hω]
   exact natCast_le_renewalCount_iff
+
+/-- On a nonexplosive path the number of arrivals tends to infinity with time. -/
+lemma tendsto_renewalCountNat_atTop {ω : Ω}
+    (hω : Tendsto (fun n ↦ arrival T n ω) atTop atTop) :
+    Tendsto (fun t ↦ renewalCountNat T t ω) atTop atTop := by
+  refine tendsto_atTop.2 fun n ↦ ?_
+  filter_upwards [eventually_ge_atTop (arrival T n ω)] with t ht
+  exact (le_renewalCountNat_iff hω).2 ht
 
 /-- The count equals `n` exactly between the `n`-th and `(n + 1)`-st arrivals,
 including the left endpoint and excluding the right endpoint. -/

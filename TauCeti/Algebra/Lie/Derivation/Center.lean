@@ -69,7 +69,7 @@ theorem restrictCenter_innerDerivation (b : A) :
     restrictCenter R A (innerDerivation R b) = 0 := by
   ext z
   simp only [coe_restrictCenter_apply, coe_innerDerivation, LieAlgebra.ad_apply,
-    Ring.lie_def, Derivation.zero_apply, ZeroMemClass.coe_zero]
+    Ring.lie_def, _root_.zero_apply, ZeroMemClass.coe_zero]
   exact sub_eq_zero.mpr (Subalgebra.mem_center_iff.mp z.property b)
 
 /-- Central multiplication of the values of a derivation is again a derivation. -/
@@ -93,5 +93,30 @@ instance instModuleCenter : Module (Subalgebra.center R A) (derivationLieAlgebra
   exact Function.Injective.module _
     (derivationLieAlgebra R A).toSubmodule.subtype.toAddMonoidHom
     Subtype.val_injective (fun _ _ => rfl)
+
+/-- Multiplying an inner derivation by a central element gives an actual inner derivation. -/
+@[simp]
+theorem center_smul_innerDerivation (z : Subalgebra.center R A) (b : A) :
+    z • innerDerivation R b = innerDerivation R ((z : A) * b) := by
+  ext a
+  simp only [center_smul_apply, coe_innerDerivation, LieAlgebra.ad_apply, Ring.lie_def]
+  simp only [mul_sub, ← mul_assoc, Subalgebra.mem_center_iff.mp z.property a]
+
+/-- The bracket is a derivation in a central coefficient, with anchor given by restriction
+of the first derivation to the center. In particular it is not generally center-bilinear. -/
+theorem lie_center_smul (D E : derivationLieAlgebra R A) (z : Subalgebra.center R A) :
+    ⁅D, z • E⁆ = z • ⁅D, E⁆ + restrictCenter R A D z • E := by
+  apply Subtype.ext
+  ext a
+  simp [LieSubalgebra.coe_bracket, Ring.lie_def, mul_apply_eq_comp,
+    center_smul_apply, leibniz, mul_sub]
+  abel
+
+/-- Restriction to the center respects central multiplication. -/
+@[simp]
+theorem restrictCenter_center_smul (z : Subalgebra.center R A) (D : derivationLieAlgebra R A) :
+    restrictCenter R A (z • D) = z • restrictCenter R A D := by
+  ext w
+  rfl
 
 end TauCeti.derivationLieAlgebra

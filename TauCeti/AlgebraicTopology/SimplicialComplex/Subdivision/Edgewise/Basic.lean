@@ -49,6 +49,8 @@ sending each vertex `u` to the point `edgewisePoint u`, is constructed in
 ## Main results
 
 * `PreAbstractSimplicialComplex.mem_edgewiseSubdivision_iff`: the face criterion.
+* `PreAbstractSimplicialComplex.finite_edgewiseVertex_entries_subset`: only finitely many vertices
+  have all their entries in a given finite set.
 * `PreAbstractSimplicialComplex.EdgewiseVertex.ne_zero`: the edgewise subdivision has a vertex
   only for `k ≠ 0`.
 * `PreAbstractSimplicialComplex.le_or_le_of_mem_edgewiseSubdivision`,
@@ -110,6 +112,13 @@ def edgewiseSubdivision (K : PreAbstractSimplicialComplex ι) (k : ℕ) :
     intro a ha b hb j j' hjj'
     rw [ha, hb]
     exact u.2.1 hjj'.le
+
+/-- Only finitely many vertices of an edgewise subdivision have all their entries in a given
+finite set of original vertices. -/
+theorem finite_edgewiseVertex_entries_subset (K : PreAbstractSimplicialComplex ι) (k : ℕ)
+    (σ : Finset ι) :
+    {u : K.EdgewiseVertex k | ∀ l, u.1 l ∈ σ}.Finite := by
+  exact (Set.Finite.pi' fun _ : Fin k => σ.finite_toSet).preimage Subtype.val_injective.injOn
 
 variable {K : PreAbstractSimplicialComplex ι} {k : ℕ} {ρ : Finset (K.EdgewiseVertex k)}
   {u w : K.EdgewiseVertex k}

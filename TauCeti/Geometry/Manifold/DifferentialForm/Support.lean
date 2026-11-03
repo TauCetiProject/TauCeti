@@ -16,6 +16,8 @@ import Mathlib.Topology.Compactness.LocallyFinite
 
 This file establishes how the topological support of a rough differential form behaves under
 scalar multiplication, pullback, exterior differentiation and finite partition localization.
+Pullback along a continuous open map with invertible derivative carries the support to its
+preimage.
 Locality of the exterior derivative
 preserves support and compact support without any regularity assumption. A rough form is a dependent
 function whose fibre at `x` is
@@ -136,6 +138,27 @@ theorem isCompact_tsupport_mpullback {f : X → Y} (hf : IsProperMap f)
   (hf.isCompact_preimage hφ).of_isClosed_subset
     (_root_.isClosed_tsupport (α := E [⋀^Fin k]→L[ℝ] F) _)
     (tsupport_mpullback_subset_preimage hf.continuous φ)
+
+/-- Along a continuous open map whose manifold derivative is invertible at every point, for
+instance a homeomorphism or an open embedding, the topological support of a pullback is the
+preimage of the support of the form. -/
+theorem tsupport_mpullback_eq_preimage (φ : RoughForm I' Y F k) {f : X → Y} (hf : Continuous f)
+    (hfo : IsOpenMap f) (hd : ∀ x, (mfderiv I I' f x).IsInvertible) :
+    _root_.tsupport (α := E [⋀^Fin k]→L[ℝ] F) (mpullback I I' f φ) =
+      f ⁻¹' _root_.tsupport (α := E' [⋀^Fin k]→L[ℝ] F) φ := by
+  refine (tsupport_mpullback_subset_preimage hf φ).antisymm ?_
+  -- An open continuous map pulls closures back to closures, so it suffices to compare supports.
+  refine (hfo.preimage_closure_eq_closure_preimage hf _).trans_subset (closure_mono fun x hx ↦ ?_)
+  intro h₀
+  apply hx
+  obtain ⟨e, he⟩ := hd x
+  ext v
+  have h := (mpullback_apply f φ x (fun i ↦ e.symm (v i))).symm.trans
+    (congrArg (fun ω ↦ ω (fun i ↦ e.symm (v i))) h₀)
+  simp only [← he, ContinuousLinearEquiv.coe_coe, ContinuousLinearEquiv.apply_symm_apply] at h
+  -- Both sides evaluate the zero form of the dependent fibre, which is `0` by definition; the
+  -- fibre types obstruct rewriting with `ContinuousAlternatingMap.coe_zero`.
+  exact h.trans rfl
 
 end RoughForm
 

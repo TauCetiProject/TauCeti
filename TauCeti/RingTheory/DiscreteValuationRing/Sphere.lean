@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RingTheory.DiscreteValuationRing.Basic
+public import Mathlib.Basic.ENNReal.Inv
 
 /-!
 # Counting the balls in a valuation sphere
@@ -15,7 +16,8 @@ In a discrete valuation ring with finite residue field of cardinality `q`, the s
 of the maximal ideal, for `s < r`. Consequently every disjoint partition of this sphere into
 balls of order `r` has that many members. For the uniformizers (`s = 1`) these are the finite
 partitions used to integrate polynomial root counts: the number of balls, multiplied by the
-common measure of a local fibre, gives the integral.
+common measure of a local fibre, gives the integral. Equivalently, if each ball of order `r` is
+given mass `q ^ (-r)`, the partition has total mass `q ^ (-s) (1 - q⁻¹)`, independently of `r`.
 
 The count is purely algebraic and requires neither completeness nor a topology. It follows by
 subtracting the numbers of classes in two successive ideal powers, computed using the third
@@ -30,6 +32,7 @@ isomorphism theorem and the cardinality of the quotient by an ideal power.
 public section
 
 open IsLocalRing IsDiscreteValuationRing
+open scoped ENNReal
 
 namespace TauCeti
 
@@ -118,5 +121,33 @@ theorem card_finset_of_addVal_eq_biUnion {s r : ℕ} (hsr : s < r) (C : Finset A
       exact ⟨c, hc, ((heq x c).mpr hxc).symm⟩
   rw [← Set.ncard_coe_finset, ← hinj.ncard_image, himage]
   exact ncard_image_quotient_mk_addVal_eq hsr
+
+/-- Every disjoint partition of the sphere of order `s` into balls of order `r > s` has total
+mass `q ^ (-s) (1 - q⁻¹)` when each ball has mass `q ^ (-r)`, where `q` is the residue
+cardinality. -/
+theorem card_finset_div_pow_of_addVal_eq_biUnion {s r : ℕ} (hsr : s < r) (C : Finset A)
+    (hcover : {x : A | addVal A x = s} =
+      ⋃ c ∈ C, {x : A | (r : ℕ∞) ≤ addVal A (x - c)})
+    (hdisj : (C : Set A).PairwiseDisjoint
+      (fun c ↦ {x : A | (r : ℕ∞) ≤ addVal A (x - c)})) :
+    (C.card : ℝ≥0∞) / (Nat.card (ResidueField A) : ℝ≥0∞) ^ r =
+      1 / (Nat.card (ResidueField A) : ℝ≥0∞) ^ s *
+        (1 - 1 / (Nat.card (ResidueField A) : ℝ≥0∞)) := by
+  obtain ⟨m, rfl⟩ := Nat.exists_eq_add_of_lt hsr
+  have hq : (Nat.card (ResidueField A) : ℝ≥0∞) ≠ 0 := by simp [Nat.card_pos.ne']
+  have hq' : (Nat.card (ResidueField A) : ℝ≥0∞) ≠ ∞ := ENNReal.natCast_ne_top _
+  rw [card_finset_of_addVal_eq_biUnion hsr C hcover hdisj,
+    show s + m + 1 - s = m + 1 by omega, show s + m + 1 - (s + 1) = m by omega,
+    ENNReal.natCast_sub, Nat.cast_pow, Nat.cast_pow]
+  generalize (Nat.card (ResidueField A) : ℝ≥0∞) = q at hq hq' ⊢
+  have hdiv (k l : ℕ) : q ^ k / q ^ (l + k) = 1 / q ^ l := by
+    rw [pow_add, mul_comm, ← ENNReal.mul_div_mul_left 1 (q ^ l) (pow_ne_zero k hq)
+      (ENNReal.pow_ne_top hq'), mul_one]
+  rw [ENNReal.sub_div fun _ _ ↦ pow_ne_zero _ hq, show s + m + 1 = s + (m + 1) by omega, hdiv,
+    show s + (m + 1) = s + 1 + m by omega, hdiv,
+    ENNReal.mul_sub fun _ _ ↦ ENNReal.div_ne_top ENNReal.one_ne_top (pow_ne_zero _ hq), mul_one,
+    pow_succ]
+  simp only [one_div]
+  rw [ENNReal.mul_inv (.inl (pow_ne_zero _ hq)) (.inl (ENNReal.pow_ne_top hq'))]
 
 end TauCeti

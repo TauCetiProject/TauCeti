@@ -212,7 +212,7 @@ noncomputable def geckBaseChangePointsMulEquiv (B : CommAlgCat.{w} A) :
       t.geckPoints ht B :=
   (CommHopfAlgCat.baseChangeIsoPointsMulEquiv (t.geckBaseChangeCoordinateIso ht A) B).trans
     (t.geckPointsPresentation ht
-      (TauCeti.CommAlgCat.restrictScalarsObj (algebraMap ℤ A) B)).mulEquiv
+      (CommAlgCat.restrictScalarsObj (algebraMap ℤ A) B)).mulEquiv
 
 /-- Under `geckBaseChangePointsMulEquiv`, a quotient point has the same ambient invertible matrix
 as its composite with the quotient map over `A`. -/
@@ -272,10 +272,10 @@ theorem geckBaseChangePointsMulEquiv_mapPoints {B C : CommAlgCat.{w} A} (χ : B 
   simp only [geckBaseChangePointsMulEquiv, MulEquiv.trans_apply]
   rw [CommHopfAlgCat.baseChangeIsoPointsMulEquiv_mapPoints,
     (t.geckPointsPresentation ht
-      (TauCeti.CommAlgCat.restrictScalarsObj (algebraMap ℤ A) B)).mulEquiv_mapPoints
+      (CommAlgCat.restrictScalarsObj (algebraMap ℤ A) B)).mulEquiv_mapPoints
       (t.geckPointsPresentation ht
-        (TauCeti.CommAlgCat.restrictScalarsObj (algebraMap ℤ A) C))
-      ((TauCeti.CommAlgCat.restrictScalars (algebraMap ℤ A)).map χ)]
+        (CommAlgCat.restrictScalarsObj (algebraMap ℤ A) C))
+      ((CommAlgCat.restrictScalars (algebraMap ℤ A)).map χ)]
   -- Restricting the scalars of `χ` to `ℤ` leaves its underlying ring homomorphism unchanged.
   rfl
 

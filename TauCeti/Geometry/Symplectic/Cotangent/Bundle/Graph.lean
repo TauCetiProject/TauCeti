@@ -165,7 +165,7 @@ theorem exists_isExactLagrangianMap_section_iff (α : SmoothForm I M ℝ 1) :
       α ∈ exactForms I M 1 := by
   simp only [isExactLagrangianMap_section_iff, exactForms_succ, LinearMap.mem_range]
   refine ⟨fun ⟨h, hh, hα⟩ ↦ ⟨⟨RoughForm.ofFunction I h,
-    (isSmoothForm_ofFunction_iff.mpr hh).mem_smoothForms⟩, Subtype.ext ?_⟩,
+    (isSmoothForm_ofFunction_iff.mpr hh).mem_smoothBundleForms⟩, Subtype.ext ?_⟩,
     fun ⟨g, hg⟩ ↦ ⟨fun x ↦ g.1 x 0, ?_, ?_⟩⟩
   · rw [mextDerivₗ_apply, hα]
   · rw [← isSmoothForm_ofFunction_iff, ← RoughForm.eq_ofFunction, isSmoothForm_def]

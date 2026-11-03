@@ -104,7 +104,7 @@ is a special case of the other. The unweighted predicate in
 `TauCeti/RingTheory/Huber/Restricted/PowerSeries.lean` is a topological limit; that file discusses
 this comparison without a proved declaration.
 
-`NonarchimedeanRing.left_mul_subset` underlies the weight-independent finite-family absorption in
+The weight-independent finite-family absorption lives in
 `TauCeti/Topology/Algebra/Nonarchimedean/Absorption.lean`.
 
 ## Provenance
@@ -116,9 +116,9 @@ Proofs follow the AINTLIB-derived `TauCeti/RingTheory/Huber/Restricted/PowerSeri
 choose `W · W ⊆ U`, collect the finitely many bad coefficients, absorb them with one open subgroup,
 exclude `(F + G_Z) ∪ (F_Z + G)`, then split antidiagonal terms by which factors are bad.
 Here targets vary with the index: `IsWeightFamily` and
-`NonarchimedeanRing.exists_openAddSubgroup_forall_mul_subset` supply the required common absorbing
-subgroup, and `mul_mem_weightMul_add` recombines the separate `Tα · U` and `Tβ · U` bounds.
-The unweighted proof needs neither modification. The API layout follows the same file.
+`NonarchimedeanAddGroup.exists_openAddSubgroup_forall_mul_mem` supply the required common
+absorbing subgroup, and `mul_mem_weightMul_add` recombines the separate `Tα · U` and `Tβ · U`
+bounds. The unweighted proof needs neither modification. The API layout follows the same file.
 
 ## References
 
@@ -599,7 +599,7 @@ private theorem exists_openAddSubgroup_forall_pair_weightMul_mem [Nonarchimedean
       (∀ α ∈ F, ∀ z ∈ Z, MvPowerSeries.coeff α f * z ∈ weightMul T α U.toAddSubgroup) ∧
         ∀ β ∈ G, ∀ z ∈ Z, MvPowerSeries.coeff β g * z ∈ weightMul T β U.toAddSubgroup := by
   have hU : (U : Set A) ∈ nhds (0 : A) := U.isOpen.mem_nhds U.zero_mem
-  obtain ⟨Z, hZ⟩ := NonarchimedeanRing.exists_openAddSubgroup_forall_mul_subset (F.disjSum G)
+  obtain ⟨Z, hZ⟩ := NonarchimedeanAddGroup.exists_openAddSubgroup_forall_mul_mem (F.disjSum G)
     (Sum.elim (fun α ↦ MvPowerSeries.coeff α f) fun β ↦ MvPowerSeries.coeff β g)
     (Sum.elim (fun α ↦ weightMul T α U.toAddSubgroup) fun β ↦ weightMul T β U.toAddSubgroup)
     (by rintro (α | β) _ <;> exact hT.weightMul_mem_nhds _ hU)
@@ -901,7 +901,7 @@ theorem exists_weightedNhd_mul_mem [NonarchimedeanRing A] {T : Fin k → Set A}
   obtain ⟨W, hWU⟩ := NonarchimedeanRing.mul_subset U
   have hx : IsWeightedRestricted T (x : MvPowerSeries (Fin k) A) := x.2
   have hF := hx.finite_coeff_notMem W
-  obtain ⟨Zx, hZx⟩ := NonarchimedeanRing.exists_openAddSubgroup_forall_mul_subset hF.toFinset
+  obtain ⟨Zx, hZx⟩ := NonarchimedeanAddGroup.exists_openAddSubgroup_forall_mul_mem hF.toFinset
     (fun α ↦ MvPowerSeries.coeff α (x : MvPowerSeries (Fin k) A))
     (fun α ↦ weightMul T α U.toAddSubgroup) (fun α _ ↦ hT.weightMul_mem_nhds α hUnhds)
   refine ⟨W ⊓ Zx, fun g hg ν ↦ ?_⟩

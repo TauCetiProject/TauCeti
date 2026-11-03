@@ -34,6 +34,8 @@ Its two fixed points force it to be the identity of `Aut(𝔻)` by the automorph
 
 ## References
 
+* [Mathlib PR #33505](https://github.com/leanprover-community/mathlib4/pull/33505), the preceding
+  human-curated Riemann-mapping development and its local analytic prerequisites.
 * L. Ahlfors, *Complex Analysis*, Ch. 6 §1.2.
 * J. B. Conway, *Functions of One Complex Variable I* (GTM 11), Ch. VI §2.
 -/

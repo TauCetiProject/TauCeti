@@ -16,7 +16,8 @@ The increasing list of set bits of a natural number can be obtained by testing e
 below the number. Mathlib's `Finset.equivBitIndices` identifies natural numbers with finite
 sets of natural numbers, using `∑ x ∈ D, 2 ^ x` as the code of a finite set `D`.
 
-Bitwise union, intersection and difference decode to the corresponding finite-set operations.
+The `i`-th bit of the code `∑ j ∈ s, 2 ^ j` records whether `i ∈ s`. Bitwise union, intersection
+and difference decode to the corresponding finite-set operations, and inserting `x` sets bit `x`.
 Bounded filtering keeps the requested members of a binary code, and least-element search returns
 `none` precisely for the zero code.
 
@@ -38,6 +39,13 @@ theorem bitIndices_eq_filter_range (n : ℕ) :
   exact ⟨fun h => ⟨(i.lt_two_pow_self.trans_le (ge_two_pow_of_testBit h)), h⟩,
     fun h => h.2⟩
 
+/-- The `i`-th bit of the binary code of `s` records whether `i ∈ s`. -/
+@[simp]
+theorem testBit_sum_two_pow (s : Finset ℕ) (i : ℕ) :
+    (∑ j ∈ s, 2 ^ j).testBit i = decide (i ∈ s) := by
+  rw [Bool.eq_iff_iff, decide_eq_true_iff, ← mem_bitIndices, ← List.mem_toFinset,
+    Finset.toFinset_bitIndices_sum_two_pow]
+
 end Nat
 
 namespace Finset
@@ -53,6 +61,13 @@ theorem equivBitIndices_land (m n : ℕ) :
     equivBitIndices (m &&& n) = equivBitIndices m ∩ equivBitIndices n := by
   ext x
   simp
+
+/-- Inserting `x` into a finite set sets bit `x` of its binary code. -/
+theorem equivBitIndices_symm_insert (x : ℕ) (D : Finset ℕ) :
+    equivBitIndices.symm (insert x D) = equivBitIndices.symm D ||| 2 ^ x := by
+  apply equivBitIndices.injective
+  ext y
+  simp [Nat.testBit_two_pow, eq_comm (a := x), or_comm]
 
 /-- Binary difference decodes to finite-set difference. -/
 theorem equivBitIndices_ldiff (m n : ℕ) :
