@@ -10,7 +10,7 @@ public import Mathlib.Topology.Algebra.Order.Field
 import Mathlib.Tactic.Linarith
 
 /-!
-# Ratios whose denominator diverges, and reciprocals of vanishing powers
+# Ratios, reciprocals of vanishing powers, and one-sided bounds in ordered fields
 
 Mathlib's `Mathlib/Topology/Algebra/Order/Field.lean` proves
 `tendsto_bdd_div_atTop_nhds_zero`: a numerator confined to a fixed interval, divided by a
@@ -20,7 +20,8 @@ up to a two-sided additive bounded error and `g` diverges, then `f / g` tends to
 
 It also records that the reciprocal of a positive power of `x - a` diverges to `atTop` as `x`
 tends to `a` from the right, and likewise for `a - x` from the left. These are the one-sided
-blow-ups of `tendsto_inv_nhdsGT_zero` along a vanishing power.
+blow-ups of `tendsto_inv_nhdsGT_zero` along a vanishing power. Finally, it records the
+one-sided bound `x ^ 2 < 1` for `x` sufficiently close to `1` from below.
 
 ## Main results
 
@@ -32,6 +33,8 @@ blow-ups of `tendsto_inv_nhdsGT_zero` along a vanishing power.
 * `TauCeti.tendsto_inv_pow_sub_nhdsGT`, `TauCeti.tendsto_inv_pow_sub_nhdsLT` — for `k ≠ 0`,
   `((x - a) ^ k)⁻¹` tends to `atTop` as `x` tends to `a` from the right, and `((a - x) ^ k)⁻¹`
   tends to `atTop` as `x` tends to `a` from the left.
+
+* `TauCeti.eventually_sq_lt_one_nhdsLT_one` — eventually `x ^ 2 < 1` along `𝓝[<] 1`.
 
 ## Implementation notes
 

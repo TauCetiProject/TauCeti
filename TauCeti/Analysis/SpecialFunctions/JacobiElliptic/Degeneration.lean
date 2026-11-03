@@ -67,7 +67,7 @@ theorem tendsto_jacobiSn_nhdsLT_one (u : ℝ) :
 theorem tendsto_jacobiCn_nhdsLT_one (u : ℝ) :
     Tendsto (fun k ↦ jacobiCn k u) (𝓝[<] 1) (𝓝 (1 / cosh u)) := by
   simp_rw [jacobiCn_def]
-  simpa only [Function.comp_def, cos_arcsin, sqrt_one_sub_tanh_sq]
+  simpa only [Function.comp_def, cos_arcsin, sqrt_one_sub_tanh_sq, one_div]
     using continuous_cos.continuousAt.tendsto.comp (tendsto_jacobiAm_nhdsLT_one u)
 
 /-- `dn(u, k)` tends to `1 / cosh u` as the modulus tends to one from below. -/
@@ -75,7 +75,7 @@ theorem tendsto_jacobiDn_nhdsLT_one (u : ℝ) :
     Tendsto (fun k ↦ jacobiDn k u) (𝓝[<] 1) (𝓝 (1 / cosh u)) := by
   have hk : Tendsto (fun k : ℝ ↦ k) (𝓝[<] 1) (𝓝 (1 : ℝ)) :=
     tendsto_id.mono_left nhdsWithin_le_nhds
-  simpa only [← jacobiDn_def, one_pow, one_mul, sqrt_one_sub_tanh_sq] using
+  simpa only [← jacobiDn_def, one_pow, one_mul, sqrt_one_sub_tanh_sq, one_div] using
     ((tendsto_const_nhds (x := (1 : ℝ))).sub
       ((hk.pow 2).mul ((tendsto_jacobiSn_nhdsLT_one u).pow 2))).sqrt
 
