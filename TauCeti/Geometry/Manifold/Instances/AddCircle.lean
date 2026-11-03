@@ -62,7 +62,8 @@ analytic diffeomorphism with derivative `p⁻¹ * q`.
   multiplication by an integer is analytic (`TauCeti.contMDiff_zsmul`).
 * `AddCircle.contMDiff_of_comp_coe_eq`, `AddCircle.hasMFDerivAt_of_comp_coe_eq`: a map
   `AddCircle p → AddCircle q` lifting a map `f : ℝ → ℝ` is as smooth as `f`, and has the
-  derivative of `f`.
+  derivative of `f`. Conversely a continuous lift of a `C^n` map is `C^n`
+  (`AddCircle.contDiff_of_comp_coe_eq`).
 * `AddCircle.hasMFDerivAt_coe`, `AddCircle.mfderiv_add_right`: the quotient map and the
   translations have derivative the identity of `ℝ`.
 * `AddCircle.mfderiv_zsmul`: multiplication by an integer `k` has derivative multiplication by `k`.
@@ -472,6 +473,16 @@ theorem contMDiff_of_comp_coe_eq {n : ℕ∞ω} {g : AddCircle p → AddCircle q
     (h : g ∘ (↑) = (↑) ∘ f) (hf : ContDiff ℝ n f) : ContMDiff 𝓘(ℝ) 𝓘(ℝ) n g := by
   rw [← (isLocalDiffeomorph_coe p n).contMDiff_comp_iff QuotientAddGroup.mk_surjective le_rfl, h]
   exact (contMDiff_coe q n).comp hf.contMDiff
+
+/-- Conversely, a continuous lift `f : ℝ → ℝ` of a `C^n` map `g : AddCircle p → AddCircle q`, in
+the sense that `g ∘ (↑) = (↑) ∘ f`, is `C^n`, since the quotient map is a local diffeomorphism. -/
+theorem contDiff_of_comp_coe_eq {n : ℕ∞ω} {g : AddCircle p → AddCircle q} {f : ℝ → ℝ}
+    (h : g ∘ (↑) = (↑) ∘ f) (hf : Continuous f) (hg : ContMDiff 𝓘(ℝ) 𝓘(ℝ) n g) :
+    ContDiff ℝ n f := by
+  refine contMDiff_iff_contDiff.1 ((ContMDiff.of_comp_isLocalDiffeomorph
+    (isLocalDiffeomorph_coe q n) hf) ?_)
+  rw [← h]
+  exact hg.comp (contMDiff_coe p n)
 
 /-- A map `g : AddCircle p → AddCircle q` lifting a map `f : ℝ → ℝ`, in the sense that
 `g ∘ (↑) = (↑) ∘ f`, has at the image of `t` the derivative of `f` at `t`. -/

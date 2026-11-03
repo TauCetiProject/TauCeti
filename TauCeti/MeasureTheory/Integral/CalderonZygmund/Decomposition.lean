@@ -228,7 +228,7 @@ theorem mul_volume_biUnion_calderonZygmundCubes_le :
     measure_iUnion pairwise_disjoint_calderonZygmundCubes fun q => measurableSet_dyadicCube _ _,
     lintegral_iUnion (fun q => measurableSet_dyadicCube _ _) pairwise_disjoint_calderonZygmundCubes,
     ← ENNReal.tsum_mul_left]
-  exact ENNReal.tsum_le_tsum fun q =>
+  exact tsum_le_tsum fun q =>
     (mul_volume_lt_setLIntegral_of_mem_calderonZygmundCubes q.2).le
 
 end Cubes
@@ -342,7 +342,7 @@ theorem lintegral_enorm_calderonZygmundGood_le (f : (ι → ℝ) → E) (t : ℝ
         pairwise_disjoint_calderonZygmundCubes,
       lintegral_iUnion (fun q => measurableSet_dyadicCube _ _)
         pairwise_disjoint_calderonZygmundCubes]
-    refine ENNReal.tsum_le_tsum fun q => ?_
+    refine tsum_le_tsum fun q => ?_
     rw [setLIntegral_congr_fun (measurableSet_dyadicCube _ _)
       fun x hx => by rw [calderonZygmundGood_of_mem q.2 hx], setLIntegral_const, mul_comm]
     exact measure_mul_enorm_setAverage_le _ _ _

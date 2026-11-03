@@ -116,7 +116,7 @@ private theorem permutationGL_apply_mem_weightSpace {σ : Equiv.Perm (Fin n)} {l
     ρ (permutationGL (k := k) σ) w ∈ weightSpace ρ (l ∘ ⇑σ⁻¹) := by
   rw [mem_weightSpace_iff]
   intro t
-  rw [← Module.End.mul_apply, ← map_mul, diagGL_mul_permutationGL, map_mul, Module.End.mul_apply,
+  rw [← mul_apply_eq_comp, ← map_mul, diagGL_mul_permutationGL, map_mul, mul_apply_eq_comp,
     apply_of_mem_weightSpace hw, map_smul, weightChar_comp_perm]
 
 /-- **A permutation matrix carries the weight vectors of `l` exactly onto those of `l ∘ σ⁻¹`.** -/

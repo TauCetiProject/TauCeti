@@ -63,6 +63,9 @@ isometry classes of rational lattices, such as non-isometry, transfer to the rea
   `TauCeti.IntegralLattice.isUnimodular_realModel_iff`: the real model is even, resp. unimodular,
   exactly when `M` is.
 * `TauCeti.IntegralLattice.RealModelSpace.finrank_eq`: the real model space has the rank of `M`.
+* `TauCeti.IntegralLattice.det_realModel` and
+  `TauCeti.IntegralLattice.natCard_discriminantGroup_realModel`: the real model has the
+  determinant of `M`, and its discriminant group has the order of that of `M`.
 * `ZLattice.map_realModel_realModelRatModelIsometry`: the isometry carries the real model of the
   rational model onto `L`.
 * `TauCeti.IntegralLattice.Isometry.realModelMap_ofRealModel_apply`: the induced isometry agrees
@@ -391,6 +394,22 @@ theorem discriminantQuadraticMap_realModelDiscriminantGroupEquiv (hE : M.IsEven)
   have : M.IsNondegenerate := ⟨(M.isPosDef_iff_isPosSemidef_and_nondegenerate.mp hM).2⟩
   simpa [Isometry.discriminantQuadraticIsometry_apply] using
     ((M.ratModelRealModelIsometry hM).discriminantQuadraticIsometry hE).map_app x
+
+/-- The discriminant group of the real model of `M` has the order of the discriminant group of
+`M`. -/
+@[simp]
+theorem natCard_discriminantGroup_realModel :
+    Nat.card (ZLattice.DiscriminantGroup (M.realModel hM)) = Nat.card M.DiscriminantGroup :=
+  Nat.card_congr <|
+    (ZLattice.ratModelDiscriminantGroupEquiv (M.isIntegral_realModel hM)).toEquiv.trans
+      (M.ratModelRealModelIsometry hM).discriminantGroupEquiv.symm.toEquiv
+
+/-- The determinant of the real model of `M`, its squared covolume, is the determinant of `M`. -/
+@[simp]
+theorem det_realModel [MeasurableSpace (M.RealModelSpace hM)] [BorelSpace (M.RealModelSpace hM)] :
+    ZLattice.det (M.realModel hM) = M.determinant := by
+  rw [← ZLattice.determinant_ratModel (M.isIntegral_realModel hM),
+    (M.ratModelRealModelIsometry hM).determinant_eq]
 
 namespace Isometry
 
