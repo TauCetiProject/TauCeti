@@ -110,17 +110,17 @@ theorem exists_natCast_mul_tsum_div_mem {R : Subring ℂ} (hR : ∀ ζ : ℂ, ζ
   -- the rational coefficients of the values of `𝓕Φ`, and their common denominator
   set ρ : ZMod N → ℚ := fun j ↦
     -(Polynomial.bernoulli k).eval ((j.val : ℚ) / N) / (k.factorial * N)
-  set D : ℕ := ∏ j, (ρ j).den with hD
-  refine ⟨D, Finset.prod_ne_zero_iff.mpr fun j _ ↦ (ρ j).den_nz, fun Φ hΦ ↦ ?_⟩
+  obtain ⟨b, hb⟩ := IsLocalization.exist_integer_multiples_of_finite (nonZeroDivisors ℤ) ρ
+  refine ⟨(b : ℤ).natAbs, Int.natAbs_ne_zero.mpr (nonZeroDivisors.coe_ne_zero b),
+    fun Φ hΦ ↦ ?_⟩
   rw [(hasSum_mul_zpow_neg_bernoulli Φ hk).tsum_eq, Finset.mul_sum, Finset.mul_sum,
     Finset.sum_div]
   refine R.sum_mem fun j _ ↦ ?_
-  obtain ⟨m, hm⟩ : ∃ m : ℤ, (D : ℚ) * ρ j = m := by
-    refine ⟨(∏ i ∈ Finset.univ.erase j, (ρ i).den : ℕ) * (ρ j).num, ?_⟩
-    rw [hD, ← Finset.prod_erase_mul _ _ (Finset.mem_univ j), Nat.cast_mul, mul_assoc,
-      Rat.den_mul_eq_num]
-    push_cast
-    rfl
+  obtain ⟨m, hm⟩ : ∃ m : ℤ, ((b : ℤ).natAbs : ℚ) * ρ j = m := by
+    obtain ⟨m, hm⟩ := hb j
+    refine ⟨(b : ℤ).sign * m, ?_⟩
+    rw [Int.cast_mul, ← eq_intCast (algebraMap ℤ ℚ) m, hm, zsmul_eq_mul, ← mul_assoc,
+      ← Int.cast_mul, Int.sign_mul_self, Int.cast_natCast]
   convert R.mul_mem (dft_apply_mem hR hΦ j) (intCast_mem R m) using 1
   rw [← Rat.cast_intCast (α := ℂ), ← hm]
   have hN : (N : ℂ) ≠ 0 := Nat.cast_ne_zero.mpr (NeZero.ne N)

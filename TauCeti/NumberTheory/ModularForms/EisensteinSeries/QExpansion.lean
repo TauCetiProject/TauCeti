@@ -577,8 +577,7 @@ private lemma summable_norm_weightedTerm (z : ℍ) :
   set q := cexp (2 * π * I * z / N)
   set g : ZMod N × ZMod N → ℝ := fun x ↦ ‖𝓕 (fun d ↦ W ![x.1, d] + (-1) ^ k * W ![-x.1, -d]) x.2‖
   have hr : ‖‖q‖‖ < 1 := by
-    rw [norm_norm, show q = Function.Periodic.qParam N z by simp [q, Function.Periodic.qParam]]
-    exact UpperHalfPlane.norm_qParam_lt_one N z
+    simpa [q, Function.Periodic.qParam] using UpperHalfPlane.norm_qParam_lt_one N z
   refine ((summable_prod_mul_pow (k - 1) hr).mul_left (∑ x, g x)).of_nonneg_of_le
     (fun _ ↦ norm_nonneg _) fun p ↦ ?_
   have hg : g (((p.1 : ℕ) : ZMod N), -((p.2 : ℕ) : ZMod N)) ≤ ∑ x, g x :=
