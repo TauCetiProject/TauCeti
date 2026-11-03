@@ -14,6 +14,9 @@ import Mathlib.Analysis.SpecialFunctions.Trigonometric.Deriv
 import Mathlib.Analysis.SpecialFunctions.Trigonometric.Inverse
 import Mathlib.MeasureTheory.Function.JacobianOneDim
 import Mathlib.MeasureTheory.Integral.Bochner.ContinuousLinearMap
+import TauCeti.Algebra.Order.Group.EvenFunction
+import TauCeti.Analysis.SpecialFunctions.Trigonometric.Arcsin
+import TauCeti.Analysis.SpecialFunctions.Trigonometric.Bounds
 
 /-!
 # Legendre's integrals in Carlson's symmetric form
@@ -74,48 +77,9 @@ namespace TauCeti.Real
 
 open _root_.Real MeasureTheory Set
 open Complex (carlsonRF carlsonRD carlsonRJ carlsonRF_def carlsonRD_def carlsonRJ_def ofReal_cpow
-  ofReal_one real_smul)
+  ofReal_neg ofReal_one real_smul)
 
 /-! ### The substitution `t = sin² φ / sin² θ - 1` -/
-
-/-- The hypotheses `k² sin² φ < 1` and `α² sin² φ < 1` propagate from the endpoint `φ` to every
-`θ ∈ [0, φ] ⊆ [0, π / 2]`. -/
-private lemma mul_sin_sq_lt_one {a θ φ : ℝ} (ha : a * sin φ ^ 2 < 1) (h0 : 0 ≤ θ) (hθ : θ ≤ φ)
-    (hφ : φ ≤ π / 2) : a * sin θ ^ 2 < 1 := by
-  rcases le_or_gt 0 a with ha0 | ha0
-  · have hsin : sin θ ^ 2 ≤ sin φ ^ 2 :=
-      pow_le_pow_left₀ (sin_nonneg_of_nonneg_of_le_pi h0 (by linarith [pi_pos]))
-        (sin_le_sin_of_le_of_le_pi_div_two (by linarith [pi_pos]) hφ hθ) 2
-    exact (mul_le_mul_of_nonneg_left hsin ha0).trans_lt ha
-  · nlinarith [sq_nonneg (sin θ)]
-
-/-- The substitution `t = sin² φ / sin² θ - 1` maps `(0, φ)` onto `(0, ∞)`, for `0 < φ ≤ π / 2`. -/
-private lemma image_substitution {φ : ℝ} (hφ0 : 0 < φ) (hφ : φ ≤ π / 2) :
-    (fun θ ↦ sin φ ^ 2 / sin θ ^ 2 - 1) '' Ioo 0 φ = Ioi 0 := by
-  have hs : 0 < sin φ := sin_pos_of_pos_of_lt_pi hφ0 (by linarith [pi_pos])
-  have hs1 : sin φ ≤ 1 := sin_le_one φ
-  ext t
-  constructor
-  · rintro ⟨θ, ⟨hθ0, hθ⟩, rfl⟩
-    have hu : 0 < sin θ := sin_pos_of_pos_of_lt_pi hθ0 (by linarith [pi_pos])
-    have hus : sin θ < sin φ := sin_lt_sin_of_lt_of_le_pi_div_two (by linarith [pi_pos]) hφ hθ
-    rw [mem_Ioi, sub_pos, one_lt_div (by positivity)]
-    exact pow_lt_pow_left₀ hus hu.le two_ne_zero
-  · intro ht
-    have ht : (0 : ℝ) < t := ht
-    have hr : 1 < √(t + 1) := by
-      rw [lt_sqrt zero_le_one]
-      linarith
-    set x := sin φ / √(t + 1) with hx
-    have hx0 : 0 < x := div_pos hs (by linarith)
-    have hxs : x < sin φ := div_lt_self hs hr
-    refine ⟨arcsin x, ⟨arcsin_pos.mpr hx0, ?_⟩, ?_⟩
-    · calc arcsin x < arcsin (sin φ) := arcsin_lt_arcsin (by linarith) hxs (by linarith)
-        _ = φ := arcsin_sin (by linarith [pi_pos]) hφ
-    · simp only
-      rw [sin_arcsin (by linarith) (by linarith), hx, div_pow, sq_sqrt (by linarith)]
-      field_simp
-      ring
 
 /-- **The substitution `t = sin² φ / sin² θ - 1`.** For `0 < φ ≤ π / 2` and `k² sin² φ < 1`, it
 turns the common factor of Carlson's integrands at `(cos² φ, 1 - k² sin² φ, 1)` into the integrand
@@ -150,7 +114,7 @@ private theorem integral_carlson_eq_integral_legendre {φ k : ℝ} (hφ0 : 0 < �
       nlinarith [heq]
     refine injOn_sin ⟨by linarith [pi_pos], by linarith⟩ ⟨by linarith [pi_pos], by linarith⟩ ?_
     exact (pow_left_inj₀ hu₁.le hu₂.le two_ne_zero).mp hsq
-  rw [← image_substitution hφ0 hφ, ← hs_def,
+  rw [← image_sin_sq_div_sin_sq_sub_one_Ioo hφ0 hφ, ← hs_def,
     integral_image_eq_integral_abs_deriv_smul measurableSet_Ioo hderiv hinj,
     intervalIntegral.integral_of_le hφ0.le, integral_Ioc_eq_integral_Ioo, ← integral_const_mul,
     ← integral_complex_ofReal]
@@ -159,7 +123,7 @@ private theorem integral_carlson_eq_integral_legendre {φ k : ℝ} (hφ0 : 0 < �
   have hc : 0 < cos θ := cos_pos_of_mem_Ioo ⟨by linarith [pi_pos], by linarith⟩
   have hus : sin θ < s := sin_lt_sin_of_lt_of_le_pi_div_two (by linarith [pi_pos]) hφ hθ
   have hku : 0 < 1 - k ^ 2 * sin θ ^ 2 :=
-    sub_pos.mpr (mul_sin_sq_lt_one hk hθ0.le hθ.le hφ)
+    sub_pos.mpr (mul_sin_sq_lt_one_of_le hk hθ0.le hθ.le hφ)
   -- The three arguments of the square roots are perfect squares up to `1 - k² sin² θ`.
   have hA : s ^ 2 / sin θ ^ 2 - 1 + cos φ ^ 2 = (s * cos θ / sin θ) ^ 2 := by
     rw [cos_sq', ← hs_def, div_pow, mul_pow, cos_sq' θ]
@@ -193,50 +157,23 @@ private theorem integral_carlson_eq_integral_legendre {φ k : ℝ} (hφ0 : 0 < �
   norm_cast
   field_simp
 
-/-- The integrand of `F(φ, k)` is continuous on `[0, φ]` when `k² sin² φ < 1`. -/
-private lemma continuousOn_legendreF_integrand {φ k : ℝ} (hφ0 : 0 ≤ φ) (hφ : φ ≤ π / 2)
-    (hk : k ^ 2 * sin φ ^ 2 < 1) :
-    ContinuousOn (fun θ ↦ (1 - k ^ 2 * sin θ ^ 2) ^ (-1 / 2 : ℝ)) (uIcc 0 φ) := by
-  rw [uIcc_of_le hφ0]
-  exact (continuous_const.sub (continuous_const.mul (continuous_sin.pow 2))).continuousOn.rpow_const
-    fun θ ⟨h0, hθ⟩ ↦ Or.inl (sub_pos.mpr (mul_sin_sq_lt_one hk h0 hθ hφ)).ne'
-
-/-- Reduce an identity `L φ = sin φ · R φ`, with `L` odd and `R` even, to `0 < φ`. -/
-private lemma ofReal_eq_sin_mul_of_abs {L : ℝ → ℝ} {R : ℝ → ℂ} (hL : ∀ φ, L (-φ) = -L φ)
-    (hR : ∀ φ, R (-φ) = R φ) {φ : ℝ} (h : 0 < |φ| → (L |φ| : ℂ) = (sin |φ| : ℝ) * R |φ|) :
-    (L φ : ℂ) = (sin φ : ℝ) * R φ := by
-  rcases lt_trichotomy φ 0 with hφ | rfl | hφ
-  · have h := h (abs_pos.mpr hφ.ne)
-    rw [abs_of_neg hφ, hL, sin_neg, hR] at h
-    push_cast at h ⊢
-    linear_combination -h
-  · have h0 : L 0 = 0 := by
-      have h := hL 0
-      rw [neg_zero] at h
-      linarith
-    simp [h0]
-  · simpa [abs_of_pos hφ] using h (abs_pos.mpr hφ.ne')
-
 /-! ### Carlson's integrals at `(cos² φ, 1 - k² sin² φ, 1)` for `0 < φ ≤ π / 2` -/
 
 private theorem carlsonRF_eq_of_pos {φ k : ℝ} (hφ0 : 0 < φ) (hφ : φ ≤ π / 2)
     (hk : k ^ 2 * sin φ ^ 2 < 1) :
     carlsonRF (cos φ ^ 2 : ℝ) (1 - k ^ 2 * sin φ ^ 2 : ℝ) 1 = (legendreF φ k / sin φ : ℝ) := by
-  have hs : sin φ ≠ 0 := (sin_pos_of_pos_of_lt_pi hφ0 (by linarith [pi_pos])).ne'
   have h := integral_carlson_eq_integral_legendre (h := fun _ ↦ 1) (g := fun _ ↦ 1) hφ0 hφ hk
     fun _ _ ↦ ofReal_one.symm
   simp only [mul_one] at h
   rw [carlsonRF_def, h, legendreF_def]
   generalize (∫ θ in (0 : ℝ)..φ, (1 - k ^ 2 * sin θ ^ 2) ^ (-1 / 2 : ℝ)) = I
-  rw [show (1 / 2 : ℂ) = ((1 / 2 : ℝ) : ℂ) by norm_num, ← Complex.ofReal_mul]
-  congr 1
-  field_simp
+  push_cast
+  ring
 
 private theorem carlsonRD_eq_of_pos {φ k : ℝ} (hφ0 : 0 < φ) (hφ : φ ≤ π / 2)
     (hk : k ^ 2 * sin φ ^ 2 < 1) :
     carlsonRD (cos φ ^ 2 : ℝ) (1 - k ^ 2 * sin φ ^ 2 : ℝ) 1 = (3 / sin φ ^ 3 *
       ∫ θ in (0 : ℝ)..φ, (1 - k ^ 2 * sin θ ^ 2) ^ (-1 / 2 : ℝ) * sin θ ^ 2 : ℝ) := by
-  have hs : sin φ ≠ 0 := (sin_pos_of_pos_of_lt_pi hφ0 (by linarith [pi_pos])).ne'
   -- Under the substitution, `(t + 1)⁻¹ = sin² θ / sin² φ`.
   have h := integral_carlson_eq_integral_legendre (h := fun t ↦ ((t : ℂ) + 1)⁻¹)
     (g := fun θ ↦ sin θ ^ 2 / sin φ ^ 2) hφ0 hφ hk fun θ _ ↦ by
@@ -247,23 +184,21 @@ private theorem carlsonRD_eq_of_pos {φ k : ℝ} (hφ0 : 0 < φ) (hφ : φ ≤ �
     simp only [mul_div_assoc]
   rw [carlsonRD_def, carlsonRJ_def, h, hdiv]
   generalize (∫ θ in (0 : ℝ)..φ, (1 - k ^ 2 * sin θ ^ 2) ^ (-1 / 2 : ℝ) * sin θ ^ 2) = J
-  rw [show (3 / 2 : ℂ) = ((3 / 2 : ℝ) : ℂ) by norm_num, ← Complex.ofReal_mul]
-  congr 1
-  field_simp
+  push_cast
+  ring
 
 private theorem carlsonRJ_eq_of_pos {φ k α2 : ℝ} (hφ0 : 0 < φ) (hφ : φ ≤ π / 2)
     (hk : k ^ 2 * sin φ ^ 2 < 1) (hα : α2 * sin φ ^ 2 < 1) :
     carlsonRJ (cos φ ^ 2 : ℝ) (1 - k ^ 2 * sin φ ^ 2 : ℝ) 1 (1 - α2 * sin φ ^ 2 : ℝ) =
       (3 / sin φ ^ 3 * ∫ θ in (0 : ℝ)..φ,
         (1 - k ^ 2 * sin θ ^ 2) ^ (-1 / 2 : ℝ) * (sin θ ^ 2 / (1 - α2 * sin θ ^ 2)) : ℝ) := by
-  have hs : sin φ ≠ 0 := (sin_pos_of_pos_of_lt_pi hφ0 (by linarith [pi_pos])).ne'
   -- Under the substitution, `(t + 1 - α² sin² φ)⁻¹ = sin² θ / (sin² φ (1 - α² sin² θ))`.
   have h := integral_carlson_eq_integral_legendre
     (h := fun t ↦ ((t : ℂ) + ((1 - α2 * sin φ ^ 2 : ℝ) : ℂ))⁻¹)
     (g := fun θ ↦ sin θ ^ 2 / (1 - α2 * sin θ ^ 2) / sin φ ^ 2) hφ0 hφ hk fun θ ⟨hθ0, hθ⟩ ↦ by
       have hu : sin θ ≠ 0 := (sin_pos_of_pos_of_lt_pi hθ0 (by linarith [pi_pos])).ne'
       have hαu : 1 - α2 * sin θ ^ 2 ≠ 0 :=
-        (sub_pos.mpr (mul_sin_sq_lt_one hα hθ0.le hθ.le hφ)).ne'
+        (sub_pos.mpr (mul_sin_sq_lt_one_of_le hα hθ0.le hθ.le hφ)).ne'
       have hsum : sin φ ^ 2 / sin θ ^ 2 - 1 + (1 - α2 * sin φ ^ 2) =
           sin φ ^ 2 * (1 - α2 * sin θ ^ 2) / sin θ ^ 2 := by
         field_simp
@@ -280,48 +215,7 @@ private theorem carlsonRJ_eq_of_pos {φ k α2 : ℝ} (hφ0 : 0 < φ) (hφ : φ �
   rw [carlsonRJ_def, h, hdiv]
   generalize (∫ θ in (0 : ℝ)..φ,
     (1 - k ^ 2 * sin θ ^ 2) ^ (-1 / 2 : ℝ) * (sin θ ^ 2 / (1 - α2 * sin θ ^ 2))) = J
-  rw [show (3 / 2 : ℂ) = ((3 / 2 : ℝ) : ℂ) by norm_num, ← Complex.ofReal_mul]
-  congr 1
-  field_simp
-
-/-! ### Reduction of the second and third kinds to the first -/
-
-/-- `E(φ, k) = F(φ, k) - k² ∫₀^φ sin² θ (1 - k² sin² θ)^(-1/2) dθ` on `[0, π / 2]`. -/
-private lemma legendreE_eq_legendreF_sub {φ k : ℝ} (hφ0 : 0 ≤ φ) (hφ : φ ≤ π / 2)
-    (hk : k ^ 2 * sin φ ^ 2 < 1) :
-    legendreE φ k = legendreF φ k -
-      k ^ 2 * ∫ θ in (0 : ℝ)..φ, (1 - k ^ 2 * sin θ ^ 2) ^ (-1 / 2 : ℝ) * sin θ ^ 2 := by
-  have hX := continuousOn_legendreF_integrand hφ0 hφ hk
-  have hX2 : ContinuousOn (fun θ ↦ (1 - k ^ 2 * sin θ ^ 2) ^ (-1 / 2 : ℝ) * sin θ ^ 2)
-      (uIcc 0 φ) := hX.mul (continuous_sin.pow 2).continuousOn
-  rw [legendreF_def, legendreE_def, ← intervalIntegral.integral_const_mul,
-    ← intervalIntegral.integral_sub hX.intervalIntegrable (hX2.intervalIntegrable.const_mul _)]
-  refine intervalIntegral.integral_congr fun θ hθ ↦ ?_
-  rw [uIcc_of_le hφ0] at hθ
-  have hD : 0 < 1 - k ^ 2 * sin θ ^ 2 := sub_pos.mpr (mul_sin_sq_lt_one hk hθ.1 hθ.2 hφ)
-  rw [show (1 / 2 : ℝ) = -1 / 2 + 1 by norm_num, rpow_add_one hD.ne']
-  ring
-
-/-- `Π(φ, k, α²) = F(φ, k) + α² ∫₀^φ sin² θ (1 - α² sin² θ)⁻¹ (1 - k² sin² θ)^(-1/2) dθ` on
-`[0, π / 2]`. -/
-private lemma legendrePi_eq_legendreF_add {φ k α2 : ℝ} (hφ0 : 0 ≤ φ) (hφ : φ ≤ π / 2)
-    (hk : k ^ 2 * sin φ ^ 2 < 1) (hα : α2 * sin φ ^ 2 < 1) :
-    legendrePi φ k α2 = legendreF φ k + α2 * ∫ θ in (0 : ℝ)..φ,
-      (1 - k ^ 2 * sin θ ^ 2) ^ (-1 / 2 : ℝ) * (sin θ ^ 2 / (1 - α2 * sin θ ^ 2)) := by
-  have hαθ {θ : ℝ} (hθ : θ ∈ uIcc 0 φ) : 0 < 1 - α2 * sin θ ^ 2 := by
-    rw [uIcc_of_le hφ0] at hθ
-    exact sub_pos.mpr (mul_sin_sq_lt_one hα hθ.1 hθ.2 hφ)
-  have hX := continuousOn_legendreF_integrand hφ0 hφ hk
-  have hX2 : ContinuousOn (fun θ ↦ (1 - k ^ 2 * sin θ ^ 2) ^ (-1 / 2 : ℝ) *
-      (sin θ ^ 2 / (1 - α2 * sin θ ^ 2))) (uIcc 0 φ) :=
-    hX.mul ((continuous_sin.pow 2).continuousOn.div
-      (continuous_const.sub (continuous_const.mul (continuous_sin.pow 2))).continuousOn
-      fun θ hθ ↦ (hαθ hθ).ne')
-  rw [legendreF_def, legendrePi_def, ← intervalIntegral.integral_const_mul,
-    ← intervalIntegral.integral_add hX.intervalIntegrable (hX2.intervalIntegrable.const_mul _)]
-  refine intervalIntegral.integral_congr fun θ hθ ↦ ?_
-  have hD := (hαθ hθ).ne'
-  field_simp
+  push_cast
   ring
 
 /-! ### The incomplete integrals -/
@@ -331,9 +225,11 @@ private lemma legendrePi_eq_legendreF_add {φ k α2 : ℝ} (hφ0 : 0 ≤ φ) (h�
 theorem ofReal_legendreF_eq_carlsonRF {φ k : ℝ} (hφ : |φ| ≤ π / 2) (hk : k ^ 2 * sin φ ^ 2 < 1) :
     (legendreF φ k : ℂ) =
       (sin φ : ℝ) * carlsonRF (cos φ ^ 2 : ℝ) (1 - k ^ 2 * sin φ ^ 2 : ℝ) 1 := by
-  refine ofReal_eq_sin_mul_of_abs (L := (legendreF · k))
-    (R := fun φ ↦ carlsonRF (cos φ ^ 2 : ℝ) (1 - k ^ 2 * sin φ ^ 2 : ℝ) 1)
-    (fun φ ↦ legendreF_neg φ k) (fun φ ↦ by simp only [cos_neg, sin_neg, neg_sq]) fun hφ0 ↦ ?_
+  -- Both sides are odd in `φ`, so it suffices to prove the identity at `|φ| > 0`.
+  refine Function.Odd.eq_of_eq_abs (f := fun φ ↦ (legendreF φ k : ℂ))
+    (g := fun φ ↦ (sin φ : ℝ) * carlsonRF (cos φ ^ 2 : ℝ) (1 - k ^ 2 * sin φ ^ 2 : ℝ) 1)
+    (fun φ ↦ by simp only [legendreF_neg, ofReal_neg])
+    (fun φ ↦ by simp only [sin_neg, cos_neg, neg_sq, ofReal_neg, neg_mul]) fun hφ0 ↦ ?_
   have hk' : k ^ 2 * sin |φ| ^ 2 < 1 := by rcases abs_choice φ with h | h <;> simpa [h] using hk
   have hs : sin |φ| ≠ 0 := (sin_pos_of_pos_of_lt_pi hφ0 (by linarith [pi_pos])).ne'
   rw [carlsonRF_eq_of_pos hφ0 hφ hk']
@@ -348,21 +244,18 @@ theorem ofReal_legendreE_eq_carlsonRF_sub_carlsonRD {φ k : ℝ} (hφ : |φ| ≤
       (sin φ : ℝ) * carlsonRF (cos φ ^ 2 : ℝ) (1 - k ^ 2 * sin φ ^ 2 : ℝ) 1 -
         (k : ℂ) ^ 2 / 3 * (sin φ : ℝ) ^ 3 *
           carlsonRD (cos φ ^ 2 : ℝ) (1 - k ^ 2 * sin φ ^ 2 : ℝ) 1 := by
-  have key := ofReal_eq_sin_mul_of_abs (L := (legendreE · k)) (φ := φ)
-    (R := fun φ ↦ carlsonRF (cos φ ^ 2 : ℝ) (1 - k ^ 2 * sin φ ^ 2 : ℝ) 1 -
-      (k : ℂ) ^ 2 / 3 * (sin φ ^ 2 : ℝ) * carlsonRD (cos φ ^ 2 : ℝ) (1 - k ^ 2 * sin φ ^ 2 : ℝ) 1)
-    (fun φ ↦ legendreE_neg φ k) (fun φ ↦ by simp only [cos_neg, sin_neg, neg_sq]) fun hφ0 ↦ by
-      have hk' : k ^ 2 * sin |φ| ^ 2 < 1 := by
-        rcases abs_choice φ with h | h <;> simpa [h] using hk
-      have hs : sin |φ| ≠ 0 := (sin_pos_of_pos_of_lt_pi hφ0 (by linarith [pi_pos])).ne'
-      rw [carlsonRF_eq_of_pos hφ0 hφ hk', carlsonRD_eq_of_pos hφ0 hφ hk',
-        legendreE_eq_legendreF_sub (abs_nonneg φ) hφ hk']
-      exact_mod_cast (show ∀ F J : ℝ, F - k ^ 2 * J =
-        sin |φ| * (F / sin |φ| - k ^ 2 / 3 * sin |φ| ^ 2 * (3 / sin |φ| ^ 3 * J)) by
-          intro F J; field_simp) _ _
-  rw [key]
-  push_cast
-  ring
+  -- Both sides are odd in `φ`, so it suffices to prove the identity at `|φ| > 0`.
+  refine Function.Odd.eq_of_eq_abs (f := fun φ ↦ (legendreE φ k : ℂ))
+    (g := fun φ ↦ (sin φ : ℝ) * carlsonRF (cos φ ^ 2 : ℝ) (1 - k ^ 2 * sin φ ^ 2 : ℝ) 1 -
+      (k : ℂ) ^ 2 / 3 * (sin φ : ℝ) ^ 3 * carlsonRD (cos φ ^ 2 : ℝ) (1 - k ^ 2 * sin φ ^ 2 : ℝ) 1)
+    (fun φ ↦ by simp only [legendreE_neg, ofReal_neg])
+    (fun φ ↦ by simp only [sin_neg, cos_neg, neg_sq, ofReal_neg]; ring) fun hφ0 ↦ ?_
+  have hk' : k ^ 2 * sin |φ| ^ 2 < 1 := by rcases abs_choice φ with h | h <;> simpa [h] using hk
+  have hs : sin |φ| ≠ 0 := (sin_pos_of_pos_of_lt_pi hφ0 (by linarith [pi_pos])).ne'
+  rw [carlsonRF_eq_of_pos hφ0 hφ hk', carlsonRD_eq_of_pos hφ0 hφ hk',
+    legendreE_eq_legendreF_sub (abs_nonneg φ) hφ hk']
+  norm_cast
+  field_simp
 
 /-- **Legendre's integral of the third kind in Carlson's form** (DLMF 19.25.14): for
 `|φ| ≤ π / 2`, `k² sin² φ < 1` and `α² sin² φ < 1`, with `c = cos² φ` and `Δ = 1 - k² sin² φ`,
@@ -373,25 +266,20 @@ theorem ofReal_legendrePi_eq_carlsonRF_add_carlsonRJ {φ k α2 : ℝ} (hφ : |φ
       (sin φ : ℝ) * carlsonRF (cos φ ^ 2 : ℝ) (1 - k ^ 2 * sin φ ^ 2 : ℝ) 1 +
         (α2 : ℂ) / 3 * (sin φ : ℝ) ^ 3 *
           carlsonRJ (cos φ ^ 2 : ℝ) (1 - k ^ 2 * sin φ ^ 2 : ℝ) 1 (1 - α2 * sin φ ^ 2 : ℝ) := by
-  have key := ofReal_eq_sin_mul_of_abs (L := (legendrePi · k α2)) (φ := φ)
-    (R := fun φ ↦ carlsonRF (cos φ ^ 2 : ℝ) (1 - k ^ 2 * sin φ ^ 2 : ℝ) 1 +
-      (α2 : ℂ) / 3 * (sin φ ^ 2 : ℝ) *
+  -- Both sides are odd in `φ`, so it suffices to prove the identity at `|φ| > 0`.
+  refine Function.Odd.eq_of_eq_abs (f := fun φ ↦ (legendrePi φ k α2 : ℂ))
+    (g := fun φ ↦ (sin φ : ℝ) * carlsonRF (cos φ ^ 2 : ℝ) (1 - k ^ 2 * sin φ ^ 2 : ℝ) 1 +
+      (α2 : ℂ) / 3 * (sin φ : ℝ) ^ 3 *
         carlsonRJ (cos φ ^ 2 : ℝ) (1 - k ^ 2 * sin φ ^ 2 : ℝ) 1 (1 - α2 * sin φ ^ 2 : ℝ))
-    (fun φ ↦ legendrePi_neg φ k α2) (fun φ ↦ by simp only [cos_neg, sin_neg, neg_sq])
-    fun hφ0 ↦ by
-      have hk' : k ^ 2 * sin |φ| ^ 2 < 1 := by
-        rcases abs_choice φ with h | h <;> simpa [h] using hk
-      have hα' : α2 * sin |φ| ^ 2 < 1 := by
-        rcases abs_choice φ with h | h <;> simpa [h] using hα
-      have hs : sin |φ| ≠ 0 := (sin_pos_of_pos_of_lt_pi hφ0 (by linarith [pi_pos])).ne'
-      rw [carlsonRF_eq_of_pos hφ0 hφ hk', carlsonRJ_eq_of_pos hφ0 hφ hk' hα',
-        legendrePi_eq_legendreF_add (abs_nonneg φ) hφ hk' hα']
-      exact_mod_cast (show ∀ F J : ℝ, F + α2 * J =
-        sin |φ| * (F / sin |φ| + α2 / 3 * sin |φ| ^ 2 * (3 / sin |φ| ^ 3 * J)) by
-          intro F J; field_simp) _ _
-  rw [key]
-  push_cast
-  ring
+    (fun φ ↦ by simp only [legendrePi_neg, ofReal_neg])
+    (fun φ ↦ by simp only [sin_neg, cos_neg, neg_sq, ofReal_neg]; ring) fun hφ0 ↦ ?_
+  have hk' : k ^ 2 * sin |φ| ^ 2 < 1 := by rcases abs_choice φ with h | h <;> simpa [h] using hk
+  have hα' : α2 * sin |φ| ^ 2 < 1 := by rcases abs_choice φ with h | h <;> simpa [h] using hα
+  have hs : sin |φ| ≠ 0 := (sin_pos_of_pos_of_lt_pi hφ0 (by linarith [pi_pos])).ne'
+  rw [carlsonRF_eq_of_pos hφ0 hφ hk', carlsonRJ_eq_of_pos hφ0 hφ hk' hα',
+    legendrePi_eq_legendreF_add (abs_nonneg φ) hφ hk' hα']
+  norm_cast
+  field_simp
 
 /-! ### The complete integrals -/
 
