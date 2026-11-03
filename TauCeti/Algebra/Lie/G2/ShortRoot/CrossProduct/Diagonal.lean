@@ -8,13 +8,16 @@ module
 public import TauCeti.Algebra.Lie.G2.ShortRoot.CrossProduct.Generators
 
 /-!
-# Diagonal automorphisms of the type-G₂ cross product
+# Diagonal automorphisms and derivations of the type-G₂ cross product
 
 When multiplication by two is injective, an invertible diagonal matrix preserves the
 seven-dimensional cross product exactly when its diagonal entries are the characters
 of the short-root weight diagram. Thus tensor invariance identifies diagonal elements
 with the rank-two weight torus, rather than the full diagonal torus of `GL₇`.
 This is the diagonal part of the centralizer calculation for the short-root carrier.
+The infinitesimal counterpart, `diagonal_derivation_iff`, identifies the diagonal derivations
+with the linear span of the two weight coordinates, for the corresponding zero-weight tangent
+space calculation.
 
 The cross-product normalization is that of
 `TauCeti.Algebra.Lie.G2.ShortRoot.CrossProduct.Basic`; the weight coordinates follow
@@ -77,5 +80,46 @@ theorem preservesG2Cross_diagonal_iff (h2 : IsRegular (2 : R)) (d : Fin 7 → R�
   · rintro ⟨s, hs⟩
     simp_rw [hs]
     exact preservesG2Cross_diagonal_torusCharacter s
+
+/-- A diagonal endomorphism is a derivation of the type-`G₂` cross product exactly when
+its diagonal is an infinitesimal weight-torus character, provided two is regular.
+The condition is written entrywise, so it applies over arbitrary commutative rings. -/
+theorem diagonal_derivation_iff (h2 : IsRegular (2 : R)) (d : Fin 7 → R) :
+    (∀ k i j, d i * (crossOperator k i j : R) =
+      d k * (crossOperator k i j : R) + (crossOperator k i j : R) * d j) ↔
+      ∃ c : Fin 2 → R, ∀ a, d a = ∑ i, (weight a i : R) * c i := by
+  constructor
+  · intro h
+    have h3 : d 3 = 0 := by
+      have he := h 3 0 0
+      norm_num [crossOperator_def] at he
+      apply h2.right
+      linear_combination -he
+    have h24 : d 4 = -d 2 := by
+      have he := h 2 3 4
+      simpa [crossOperator_def, h3, eq_neg_iff_add_eq_zero, add_comm] using he.symm
+    have h15 : d 5 = -d 1 := by
+      have he := h 1 3 5
+      simp [crossOperator_def, h3] at he
+      linear_combination he
+    have h06 : d 6 = -d 0 := by
+      have he := h 0 3 6
+      simp [crossOperator_def, h3] at he
+      linear_combination he
+    have h012 : d 2 = d 0 - d 1 := by
+      have he := h 1 0 2
+      norm_num [crossOperator_def] at he
+      have hc : (d 0 - d 1 - d 2) * 2 = 0 * (2 : R) := by
+        linear_combination he
+      have hz := h2.right hc
+      linear_combination -hz
+    refine ⟨![d 0, d 0 + d 1], fun a ↦ ?_⟩
+    fin_cases a <;> simp [Fin.sum_univ_two, weight_apply, h3, h24, h15, h06, h012] <;> ring
+  · rintro ⟨c, hc⟩ k i j
+    by_cases h : crossOperator k i j = 0
+    · simp [h]
+    · simp_rw [hc, weight_eq_add_of_crossOperator_ne_zero k i j h,
+        Pi.add_apply, Int.cast_add, add_mul, Finset.sum_add_distrib]
+      ring
 
 end TauCeti.G2ShortRoot
