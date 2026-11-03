@@ -222,6 +222,18 @@ theorem baseChangeMap_generatedCoordinateMap_comp_generatedCoordinateHopfAlgebra
   CommHopfAlgCat.baseChangeMap_mkQuotient_comp_quotientBaseChangeIsoOfMapEq_hom _ _ _
     (map_baseChangeHopfIdeal_generatedDefiningIdeal k K)
 
+/-- The generated-carrier base-change comparison intertwines each numbered root or torus lift. -/
+@[reassoc (attr := simp)]
+theorem baseChangeMap_generatedCoordinateLift_comp_generatorCoordinateAlgebraBaseChangeIso_hom
+    [Module.Free k K] (j : Sum (Fin 6 ⊕ Fin 6) Unit) :
+    CommHopfAlgCat.baseChangeMap (K := K) (generatedCoordinateLift k j) ≫
+        (generatorCoordinateAlgebraBaseChangeIso k K j).hom =
+      (generatedCoordinateHopfAlgebraBaseChangeIso k K).hom ≫
+        generatedCoordinateLift K j :=
+  CommHopfAlgCat.baseChangeMap_liftQuotient_comp_quotientBaseChangeIsoOfMapEq_hom
+    _ _ _ (map_baseChangeHopfIdeal_generatedDefiningIdeal k K)
+    _ _ _ _ _ (generatorCoordinateMap_baseChange k K j)
+
 end BaseChange
 
 end TauCeti.E6DoubledMinuscule
