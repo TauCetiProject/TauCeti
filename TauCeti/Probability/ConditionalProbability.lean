@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Probability.ConditionalProbability
+import Mathlib.Probability.Kernel.MeasurableLIntegral
 public import Mathlib.MeasureTheory.Integral.Bochner.Set
 public import Mathlib.MeasureTheory.Integral.IntegrableOn
 public import Mathlib.MeasureTheory.Measure.Interval
@@ -29,6 +30,9 @@ zero contribute nothing, so no positivity hypothesis on the fibres is needed.
 Conditioning on almost-everywhere equal events gives equal conditional measures, and a function
 bounded on a measurable event is integrable for the conditional measure on it. A measurable map
 that scales measure by a constant factor carries conditional measures to conditional measures.
+Conditional measures also depend measurably on a measurable family of finite measures and a
+jointly measurable family of conditioning events. In particular, conditioning between measurable
+moving endpoints is measurable for all four endpoint conventions.
 Conditioning a probability measure away from a single point removes that atom and rescales the
 rest by `1 / (1 - μ {a})`; this computes the masses of, and integrals against, the conditioned
 measure. Conditional measures on intervals agree across endpoint conventions whenever the relevant
@@ -43,6 +47,8 @@ recovers the law.
 
 * `ProbabilityTheory.sum_meas_smul_cond_fiber_of_countable`
 * `ProbabilityTheory.cond_congr_ae`
+* `Measurable.cond`, `Measurable.cond_const`, and `Measurable.cond_preimage_Ioc` (with the
+  corresponding `Icc`, `Ioo`, and `Ico` forms)
 * `ProbabilityTheory.integrable_cond_of_norm_le`
 * `ProbabilityTheory.map_cond_preimage`
 * `ProbabilityTheory.cond_compl_singleton_real`,
@@ -67,6 +73,102 @@ variable {Ω β : Type*} [MeasurableSpace Ω] [MeasurableSpace β]
 theorem cond_congr_ae {μ : Measure Ω} {s t : Set Ω} (h : s =ᵐ[μ] t) :
     μ[|s] = μ[|t] := by
   rw [cond, cond, measure_congr h, Measure.restrict_congr_set h]
+
+/-! ### Measurability in a law and a conditioning event -/
+
+/-- Conditioning a measurable family of finite measures on a jointly measurable family of
+events gives a measurable family of measures. The event at `a` is the section
+`{x | (a, x) ∈ s}`. This statement includes the zero-mass totalization of `cond`. -/
+theorem _root_.Measurable.cond {α : Type*} [MeasurableSpace α] {μ : α → Measure Ω}
+    (hμ : Measurable μ) (hfinite : ∀ a, IsFiniteMeasure (μ a))
+    {s : Set (α × Ω)} (hs : MeasurableSet s) :
+    Measurable fun a ↦ ProbabilityTheory.cond (μ a) (Prod.mk a ⁻¹' s) := by
+  let κ : Kernel α Ω := ⟨μ, hμ⟩
+  have hfinite' (a : α) : IsFiniteMeasure (κ a) := hfinite a
+  have hsection (a : α) : MeasurableSet (Prod.mk a ⁻¹' s) :=
+    hs.preimage measurable_prodMk_left
+  rw [Measure.measurable_measure]
+  intro t ht
+  have hmass : Measurable fun a ↦ μ a (Prod.mk a ⁻¹' s) := by
+    simpa only [κ, Kernel.coe_mk] using
+      Kernel.measurable_kernel_prodMk_left_of_finite (κ := κ) hs hfinite'
+  have hinter : Measurable fun a ↦ μ a ((Prod.mk a ⁻¹' s) ∩ t) := by
+    have hst : MeasurableSet (s ∩ (Set.univ ×ˢ t)) := hs.inter (MeasurableSet.univ.prod ht)
+    have h : Measurable fun a ↦ μ a (Prod.mk a ⁻¹' (s ∩ (Set.univ ×ˢ t))) := by
+      simpa only [κ, Kernel.coe_mk] using
+        Kernel.measurable_kernel_prodMk_left_of_finite (κ := κ) hst hfinite'
+    convert h using 1
+    funext a
+    congr 1
+    ext x
+    simp
+  simp_rw [ProbabilityTheory.cond_apply (hsection _)]
+  convert hmass.inv.mul hinter using 1
+
+/-- Conditioning a measurable family of measures on a fixed measurable event is measurable. -/
+theorem _root_.Measurable.cond_const {α : Type*} [MeasurableSpace α] {μ : α → Measure Ω}
+    (hμ : Measurable μ) {s : Set Ω} (hs : MeasurableSet s) :
+    Measurable fun a ↦ ProbabilityTheory.cond (μ a) s := by
+  refine Measure.measurable_measure.2 fun t ht ↦ ?_
+  simp_rw [ProbabilityTheory.cond_apply hs]
+  exact ((Measure.measurable_coe hs).comp hμ).inv.mul
+    ((Measure.measurable_coe (hs.inter ht)).comp hμ)
+
+section MovingIntervals
+
+variable {α δ : Type*} [MeasurableSpace α] [LinearOrder δ] [TopologicalSpace δ]
+  [MeasurableSpace δ] [OpensMeasurableSpace δ] [SecondCountableTopology δ] [OrderClosedTopology δ]
+  {μ : α → Measure Ω} {g : Ω → δ} {l r : α → δ}
+
+/-- Conditioning on the inverse image of a moving half-open interval `(l, r]` is measurable. -/
+theorem _root_.Measurable.cond_preimage_Ioc (hμ : Measurable μ)
+    (hfinite : ∀ a, IsFiniteMeasure (μ a)) (hg : Measurable g)
+    (hl : Measurable l) (hr : Measurable r) :
+    Measurable fun a ↦ ProbabilityTheory.cond (μ a) (g ⁻¹' Set.Ioc (l a) (r a)) := by
+  have hs : MeasurableSet {p : α × Ω | g p.2 ∈ Set.Ioc (l p.1) (r p.1)} := by
+    simpa only [Function.comp_apply, Set.mem_Ioc, Set.ofPred_and] using
+      (measurableSet_lt (hl.comp measurable_fst) (hg.comp measurable_snd)).inter
+        (measurableSet_le (hg.comp measurable_snd) (hr.comp measurable_fst))
+  convert hμ.cond hfinite hs using 1
+  rfl
+
+/-- Conditioning on the inverse image of a moving closed interval `[l, r]` is measurable. -/
+theorem _root_.Measurable.cond_preimage_Icc (hμ : Measurable μ)
+    (hfinite : ∀ a, IsFiniteMeasure (μ a)) (hg : Measurable g)
+    (hl : Measurable l) (hr : Measurable r) :
+    Measurable fun a ↦ ProbabilityTheory.cond (μ a) (g ⁻¹' Set.Icc (l a) (r a)) := by
+  have hs : MeasurableSet {p : α × Ω | g p.2 ∈ Set.Icc (l p.1) (r p.1)} := by
+    simpa only [Function.comp_apply, Set.mem_Icc, Set.ofPred_and] using
+      (measurableSet_le (hl.comp measurable_fst) (hg.comp measurable_snd)).inter
+        (measurableSet_le (hg.comp measurable_snd) (hr.comp measurable_fst))
+  convert hμ.cond hfinite hs using 1
+  rfl
+
+/-- Conditioning on the inverse image of a moving open interval `(l, r)` is measurable. -/
+theorem _root_.Measurable.cond_preimage_Ioo (hμ : Measurable μ)
+    (hfinite : ∀ a, IsFiniteMeasure (μ a)) (hg : Measurable g)
+    (hl : Measurable l) (hr : Measurable r) :
+    Measurable fun a ↦ ProbabilityTheory.cond (μ a) (g ⁻¹' Set.Ioo (l a) (r a)) := by
+  have hs : MeasurableSet {p : α × Ω | g p.2 ∈ Set.Ioo (l p.1) (r p.1)} := by
+    simpa only [Function.comp_apply, Set.mem_Ioo, Set.ofPred_and] using
+      (measurableSet_lt (hl.comp measurable_fst) (hg.comp measurable_snd)).inter
+        (measurableSet_lt (hg.comp measurable_snd) (hr.comp measurable_fst))
+  convert hμ.cond hfinite hs using 1
+  rfl
+
+/-- Conditioning on the inverse image of a moving half-open interval `[l, r)` is measurable. -/
+theorem _root_.Measurable.cond_preimage_Ico (hμ : Measurable μ)
+    (hfinite : ∀ a, IsFiniteMeasure (μ a)) (hg : Measurable g)
+    (hl : Measurable l) (hr : Measurable r) :
+    Measurable fun a ↦ ProbabilityTheory.cond (μ a) (g ⁻¹' Set.Ico (l a) (r a)) := by
+  have hs : MeasurableSet {p : α × Ω | g p.2 ∈ Set.Ico (l p.1) (r p.1)} := by
+    simpa only [Function.comp_apply, Set.mem_Ico, Set.ofPred_and] using
+      (measurableSet_le (hl.comp measurable_fst) (hg.comp measurable_snd)).inter
+        (measurableSet_lt (hg.comp measurable_snd) (hr.comp measurable_fst))
+  convert hμ.cond hfinite hs using 1
+  rfl
+
+end MovingIntervals
 
 /-- A function whose norm is bounded on a measurable event `s` is integrable for the conditional
 measure `μ[|s]`. For instance, a point drawn uniformly from a bounded Borel set of a normed space
