@@ -9,6 +9,7 @@ public import TauCeti.Geometry.Manifold.Morse.Generic.Relative
 public import TauCeti.Geometry.Manifold.ContMDiffMap.Chart.Evaluation
 public import TauCeti.Geometry.Manifold.ContMDiffMap.Chart.Strong
 import Mathlib.Analysis.SpecificLimits.Basic
+import TauCeti.Geometry.Manifold.ContMDiffMap.CompactExhaustion
 import TauCeti.Geometry.Manifold.Exhaustion
 import TauCeti.Topology.Maps.Proper.Metric
 
@@ -64,33 +65,6 @@ open scoped Manifold ContDiff TauCeti.ManifoldWeakWhitney
 universe u
 
 namespace TauCeti
-
-/-- A sequence of `C^n` maps which stabilizes along a compact exhaustion `L`, in the sense that
-the maps of index `r + 1` and `r + 2` agree on `L r`, has a `C^n` limit which agrees with the map
-of index `N + 1` on `L N`. -/
-private theorem exists_eqOn_of_eqOn_compactExhaustion {E H E' H' : Type*}
-    [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
-    [NormedAddCommGroup E'] [NormedSpace ℝ E'] [TopologicalSpace H'] {J : ModelWithCorners ℝ E' H'}
-    {M Y : Type*} [TopologicalSpace M] [ChartedSpace H M] [TopologicalSpace Y] [ChartedSpace H' Y]
-    {n : WithTop ℕ∞} (L : CompactExhaustion M) (F : ℕ → C^n⟮I, M; J, Y⟯)
-    (hF : ∀ r, EqOn (F (r + 2)) (F (r + 1)) (L r)) :
-    ∃ g : C^n⟮I, M; J, Y⟯, ∀ N, EqOn g (F (N + 1)) (L N) := by
-  classical
-  -- On `L N` nothing changes after index `N + 1`.
-  have hstab : ∀ N, ∀ x ∈ L N, ∀ m, N + 1 ≤ m → F m x = F (N + 1) x := by
-    intro N x hx m hm
-    induction m, hm using Nat.le_induction with
-    | base => rfl
-    | succ m hm ih =>
-      obtain ⟨r, rfl⟩ : ∃ r, m = r + 1 := ⟨m - 1, by omega⟩
-      rw [← ih]
-      exact hF r (L.subset (by omega) hx)
-  have hloc : ∀ N, EqOn (fun x ↦ F (L.find x + 1) x) (F (N + 1)) (L N) := fun N x hx ↦
-    (hstab _ x (L.mem_find x) (N + 1) (by have := L.mem_iff_find_le.mp hx; omega)).symm
-  exact ⟨⟨fun x ↦ F (L.find x + 1) x, fun x ↦ by
-    obtain ⟨N, hN⟩ := L.exists_mem_nhds x
-    exact (F (N + 1)).contMDiff.contMDiffAt.congr_of_eventuallyEq
-      (eventuallyEq_of_mem hN (hloc N))⟩, hloc⟩
 
 variable {E H : Type*} {M : Type u} [NormedAddCommGroup E] [NormedSpace ℝ E]
   [TopologicalSpace H] {I : ModelWithCorners ℝ E H} [I.Boundaryless]
@@ -224,7 +198,7 @@ theorem _root_.ContMDiffMap.exists_isMorse_mem_ball_sub_compl (f : C^∞⟮I, M;
     fun r x hx ↦ sub_eq_zero.mp (image_eq_zero_of_notMem_tsupport
       (f := fun y ↦ F (r + 1) y - F r y) fun h ↦ hx (hD_supp r h).1)
   -- The stages stabilize: stage `r + 1` changes nothing on `L r`, so they have a smooth limit.
-  obtain ⟨g, hgF⟩ := exists_eqOn_of_eqOn_compactExhaustion L F fun r x hx ↦
+  obtain ⟨g, hgF⟩ := ContMDiffMap.exists_eqOn_of_eqOn_compactExhaustion L F fun r x hx ↦
     hD_zero (r + 1) x fun h ↦ h.2 hx
   -- Telescoping the perturbations up to stage `N`.
   have htel : ∀ N x, F N x - f x = ∑ r ∈ Finset.range N, (F (r + 1) x - F r x) := fun N x ↦
