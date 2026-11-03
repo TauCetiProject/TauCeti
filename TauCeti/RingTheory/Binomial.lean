@@ -203,6 +203,51 @@ theorem prodRingChooseSpan_le_iff {r : σ → R} {S : AddSubgroup R} :
   rw [prodRingChooseSpan_def, AddSubgroup.closure_le, Set.range_subset_iff]
   rfl
 
+/-- The `ℤ`-linear span of the binomial products is the integral submodule associated to
+`prodRingChooseSpan r`. -/
+@[simp]
+theorem span_int_range_prod_ringChoose (r : σ → R) :
+    Submodule.span ℤ (Set.range fun n : σ →₀ ℕ =>
+      n.prod (fun i k => Ring.choose (r i) k)) =
+      (prodRingChooseSpan r).toIntSubmodule := by
+  apply Submodule.toAddSubgroup_injective
+  rw [Submodule.span_int_eq_addSubgroupClosure,
+    AddSubgroup.toIntSubmodule_toAddSubgroup, prodRingChooseSpan_def]
+
+/-- The integral product span contains one, the product indexed by the zero multi-index. -/
+@[simp]
+theorem one_mem_prodRingChooseSpan (r : σ → R) : 1 ∈ prodRingChooseSpan r := by
+  simpa using prod_ringChoose_mem_prodRingChooseSpan r 0
+
+/-- The integral product span is closed under multiplication. -/
+theorem mul_mem_prodRingChooseSpan (r : σ → R) {x y : R}
+    (hx : x ∈ prodRingChooseSpan r) (hy : y ∈ prodRingChooseSpan r) :
+    x * y ∈ prodRingChooseSpan r := by
+  classical
+  rw [prodRingChooseSpan_def] at hx hy ⊢
+  refine AddSubgroup.mul_mem_closure_of_mul_mem ?_ hx hy
+  rintro _ ⟨m, rfl⟩ _ ⟨n, rfl⟩
+  dsimp only
+  let s := m.support ∪ n.support
+  rw [m.prod_of_support_subset Finset.subset_union_left _ (by simp),
+    n.prod_of_support_subset Finset.subset_union_right _ (by simp),
+    ← Finset.prod_mul_distrib]
+  simp_rw [ringChoose_mul_ringChoose]
+  rw [Finset.prod_sum]
+  refine sum_mem fun p _ => ?_
+  rw [Finset.prod_smul]
+  apply AddSubgroup.nsmul_mem
+  -- Each term of the product expansion is another finitely supported binomial product.
+  let d : σ →₀ ℕ := Finsupp.onFinset s
+    (fun i => if h : i ∈ s then m i + (p i h).1 else 0)
+    (by intro i hi; by_contra h; simp [h] at hi)
+  have hd : d.prod (fun i k => Ring.choose (r i) k) =
+      ∏ i ∈ s.attach, Ring.choose (r i) (m i + (p i i.property).1) := by
+    rw [Finsupp.prod_onFinset _ _ _ _ (by simp)]
+    rw [← Finset.prod_attach]
+    exact Finset.prod_congr rfl fun i _ => by simp [i.property]
+  exact hd ▸ AddSubgroup.subset_closure ⟨d, rfl⟩
+
 /-- Membership in the integral product span is equivalent to a unique finite integral
 expansion, provided the binomial products are linearly independent over the integers. -/
 theorem mem_prodRingChooseSpan_iff_existsUnique {r : σ → R}
@@ -211,8 +256,8 @@ theorem mem_prodRingChooseSpan_iff_existsUnique {r : σ → R}
     x ∈ prodRingChooseSpan r ↔
       ∃! a : (σ →₀ ℕ) →₀ ℤ,
         a.sum (fun n z => z • n.prod (fun i k => Ring.choose (r i) k)) = x := by
-  rw [prodRingChooseSpan_def, ← Submodule.span_int_eq_addSubgroupClosure,
-    Submodule.mem_toAddSubgroup]
+  rw [← AddSubgroup.toIntSubmodule_toAddSubgroup (prodRingChooseSpan r),
+    Submodule.mem_toAddSubgroup, ← span_int_range_prod_ringChoose r]
   exact LinearIndependent.mem_span_range_iff_existsUnique h x
 
 end ProductSpan

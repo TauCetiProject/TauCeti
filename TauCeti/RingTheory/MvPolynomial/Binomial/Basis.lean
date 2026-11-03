@@ -172,10 +172,11 @@ noncomputable def mvBinomialSpanBasis (σ : Type*) :
     Module.Basis (σ →₀ ℕ) ℤ
       (prodRingChooseSpan (X : σ → MvPolynomial σ K)).toIntSubmodule :=
   (mvBinomialPolynomialBasis K σ).addSubgroupOfClosure _ (by
-    rw [prodRingChooseSpan_def]
-    congr 1
-    ext p
-    simp)
+    have heq : ⇑(mvBinomialPolynomialBasis K σ) =
+        fun n => n.prod (fun i k => Ring.choose (X i) k) :=
+      funext (mvBinomialPolynomialBasis_apply K σ)
+    rw [heq, ← Submodule.span_int_eq_addSubgroupClosure, span_int_range_prod_ringChoose,
+      AddSubgroup.toIntSubmodule_toAddSubgroup])
 
 /-- The integral basis has the same binomial-product vectors as the polynomial basis. -/
 @[simp]
