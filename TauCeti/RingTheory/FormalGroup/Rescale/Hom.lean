@@ -100,16 +100,15 @@ private theorem scaledSeries_hom (f : FormalGroupHom F G) (s : R) :
       (constantCoeff_scaledSeries (f.map Polynomial.C) Polynomial.X))] at h
   have hseries : (scaledSeries (f.map Polynomial.C) Polynomial.X).map
       (Polynomial.evalRingHom s) = scaledSeries f s := by
-    ext n
-    simp [coeff_scaledSeries]
-    ring
+    rw [map_scaledSeries]
+    simp [scaledSeries, map_toPowerSeries, PowerSeries.map, Polynomial.evalRingHom]
   have hlaw (L : FormalGroup R) :
       MvPowerSeries.map (Polynomial.evalRingHom s)
         ((L.map Polynomial.C).rescale Polynomial.X).toPowerSeries =
       (L.rescale s).toPowerSeries := by
-    ext d
-    simp
-    ring
+    rw [← FormalGroup.map_toPowerSeries, FormalGroup.map_rescale, FormalGroup.map_comp]
+    simp only [Polynomial.evalRingHom, Polynomial.eval₂RingHom_comp_C, FormalGroup.map_id,
+      Polynomial.coe_eval₂RingHom, Polynomial.eval₂_X]
   simpa only [hseries, hlaw, PowerSeries.map_toMvPowerSeries] using h
 
 /-- Rescale a formal group homomorphism together with its source and target. Its coefficient
@@ -184,9 +183,8 @@ theorem rescale_comp (g : FormalGroupHom G H) (f : FormalGroupHom F G) (s : R) :
   have hscaled {L M : FormalGroup R} (f : FormalGroupHom L M) :
       ((f.map Polynomial.C).rescale Polynomial.X).toPowerSeries.map
         (Polynomial.evalRingHom s) = (f.rescale s).toPowerSeries := by
-    ext n
-    simp only [PowerSeries.coeff_map, coeff_rescale, map_toPowerSeries, map_mul, map_pow]
-    simp
+    rw [map_rescale_toPowerSeries]
+    simp [rescale, scaledSeries, map_toPowerSeries, PowerSeries.map, Polynomial.evalRingHom]
   apply FormalGroupHom.ext
   rw [← map_comp] at h
   simp only [comp_toPowerSeries] at h
