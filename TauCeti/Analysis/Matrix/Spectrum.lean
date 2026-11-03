@@ -82,7 +82,7 @@ theorem apply_eq_sum_eigenvalues (i j : ι) :
     B i j = ∑ k, (hB.eigenvalues k : 𝕜) * (hB.eigenvectorUnitary : Matrix ι ι 𝕜) i k *
       star ((hB.eigenvectorUnitary : Matrix ι ι 𝕜) j k) := by
   conv_lhs => rw [hB.spectral_theorem]
-  rw [conjStarAlgAut_apply, mul_apply]
+  rw [conjStarAlgAut_apply, Matrix.mul_apply]
   refine Finset.sum_congr rfl fun k _ ↦ ?_
   rw [mul_diagonal, star_apply, Function.comp_apply]
   ring

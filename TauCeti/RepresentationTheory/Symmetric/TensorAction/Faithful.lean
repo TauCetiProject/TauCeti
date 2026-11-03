@@ -183,7 +183,7 @@ theorem permTensorAction_eq_one_of_le_one (h : n ≤ 1) (σ : Equiv.Perm (Fin d)
     permTensorAction R n d σ = 1 := by
   have : Subsingleton (Fin n) := Fin.subsingleton_iff_le_one.mpr h
   refine (tensorPowerBasis R n d).ext fun f => ?_
-  rw [permTensorAction_tensorPowerBasis, Module.End.one_apply]
+  rw [permTensorAction_tensorPowerBasis, one_apply_eq_self]
   exact congrArg _ (funext fun i => Subsingleton.elim _ _)
 
 /-- With at least two coordinate directions the permutation action on `(Rⁿ)^{⊗d}` is faithful:

@@ -161,7 +161,7 @@ theorem primePowerProd_mul_eq_sum_divisors_gcd
     ih _ hlt (Nat.ordCompl_pos p hm).ne' (Nat.ordCompl_pos p hn).ne' rfl]
   exact primePowerProd_sum_mul_sum_eq_sum_divisors D S hp hm' hn'
     (Nat.ordProj_mul_ordCompl_eq_self m p).symm (Nat.ordProj_mul_ordCompl_eq_self n p).symm
-    (gcd_eq_gcd_ordCompl_mul_pow_min hp hm hn)
+    (gcd_eq_gcd_ordCompl_mul_pow_min hm hn)
 
 end CommSemiring
 
