@@ -84,7 +84,8 @@ reduction modulo `J` is a bijection from the `S`-algebra maps `A → S` out of a
 @[stacks 09XI "(1) ⇒ (2), with uniqueness of the lift"]
 theorem comp_bijective :
     Function.Bijective ((Ideal.Quotient.mkₐ S J).comp : (A →ₐ[S] S) → A →ₐ[S] S ⧸ J) := by
-  refine ⟨fun _ _ h ↦ Algebra.FormallyUnramified.ext_of_quotient_eq S A J HenselianRing.jac h,
+  refine ⟨fun _ _ h ↦ Algebra.FormallyUnramified.ext_of_quotient_eq S A J
+    (by simpa only [Ideal.jacobson_bot] using (HenselianRing.jac (I := J))) h,
     fun ψ ↦ ?_⟩
   -- Invert some `g` with `ψ g = 1` that kills the kernel of `ψ` modulo `JA`.
   obtain ⟨g, hψg, hg⟩ := Algebra.FormallyUnramified.exists_mul_mem_map_of_eq_zero J ψ
@@ -160,7 +161,7 @@ theorem henselianRing_iff_forall_comp_surjective {R : Type u} [CommRing R] {I : 
       Function.Surjective ((Ideal.Quotient.mkₐ R I).comp : (A →ₐ[R] R) → A →ₐ[R] R ⧸ I) := by
   refine ⟨fun _ A _ _ _ ↦ (HenselianRing.comp_bijective I).2, fun h ↦ ⟨fun x hx ↦ ?_, ?_⟩⟩
   · -- A unit `u ≡ 1 mod I` of `R ⧸ I` lifts along `R → R[1/u]`, so `u` is a unit of `R`.
-    refine Ideal.mem_jacobson_bot.mpr fun y ↦ ?_
+    refine Ring.mem_jacobson_iff.mpr fun y ↦ ?_
     have hu : Ideal.Quotient.mk I (x * y + 1) = 1 := by
       simp [Ideal.Quotient.eq_zero_iff_mem.mpr (I.mul_mem_right y hx)]
     have := Algebra.Etale.of_isLocalizationAway (A := Localization.Away (x * y + 1)) (x * y + 1)

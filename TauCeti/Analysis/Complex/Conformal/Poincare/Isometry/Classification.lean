@@ -13,12 +13,10 @@ public import TauCeti.Analysis.Complex.UnitDisc.Basic
 /-!
 # The isometries of the Poincaré disc are the disc automorphisms and their conjugates
 
-The two objects layer **L2** of the conformal-mapping roadmap
-(`TauCetiRoadmap/ConformalMapping/README.md`) asks for — "the **hyperbolic / Poincaré metric** on
-`𝔻`" and "the disc automorphism group `Aut(𝔻) = {e^{iθ}(z−a)/(1−āz)}`" — are already on `main`,
-and `Conformal/Poincare/MetricSpace.lean` records the one implication relating them: every
-standard automorphism is a Poincaré isometry. This file proves the converse, which is what makes
-`Aut(𝔻)` the *right* group for that metric:
+For the hyperbolic (Poincaré) metric on `𝔻` and the disc automorphism group
+`Aut(𝔻) = {e^{iθ}(z−a)/(1−āz)}`, `Conformal/Poincare/MetricSpace.lean` records the one implication
+relating them: every standard automorphism is a Poincaré isometry. This file proves the converse,
+which is what makes `Aut(𝔻)` the *right* group for that metric:
 
 > a map of the open unit disc into itself that preserves the hyperbolic distance is
 > `z ↦ u * (z - b) / (1 - conj b * z)` or `z ↦ u * (conj z - b) / (1 - conj b * conj z)`,

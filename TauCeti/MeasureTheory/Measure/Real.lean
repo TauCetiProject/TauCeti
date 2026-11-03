@@ -56,8 +56,8 @@ theorem map_abs_eq_restrict_add_restrict (μ : Measure ℝ) :
   have hdisj : Disjoint (s ∩ Ici 0) (-s ∩ Iio 0) :=
     disjoint_left.2 fun x hx hx' => not_le.2 hx'.2 hx.2
   rw [Measure.map_apply measurable_abs hs, hpre,
-    measure_union hdisj (hs.neg.inter measurableSet_Iio), Measure.add_apply,
-    Measure.restrict_apply hs, Measure.restrict_apply hs, Measure.neg_apply,
+    measure_union hdisj (hs.neg.inter measurableSet_Iio), _root_.add_apply,
+    Measure.restrict_apply hs, Measure.restrict_apply hs, MeasureTheory.Measure.neg_apply,
     (by ext x; simp : -(s ∩ Ioi (0 : ℝ)) = -s ∩ Iio 0)]
 
 /-- The atom of the folded law at `0` is the atom of `μ` at `0`. -/

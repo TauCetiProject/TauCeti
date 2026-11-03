@@ -105,7 +105,7 @@ theorem map_augmentation_comp_rightUnit :
     (MvPolynomial.map augmentation).comp rightUnit = hurewicz :=
   hom_ext <| by
     rw [map_comp_rightUnit, MvPolynomial.map_comp_C, ← FormalGroup.map_comp, map_augmentation,
-      FormalGroup.map_𝔾ₐ, map_universalStrictCoordinate, map_hurewicz]
+      FormalGroup.map_𝔾ₐ, FormalCoordinate.map_universalStrictCoordinate, map_hurewicz]
     congr 2
     funext i
     simp

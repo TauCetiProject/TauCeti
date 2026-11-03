@@ -266,7 +266,7 @@ private theorem pow_succ_higherBarDifferential_comp_rTensor_tmul_of_tprod (k : M
       (x ⊗ₜ[R] TensorWords.of R A n (PiTensorProduct.tprod R a)) = 0 := by
   induction n using Nat.strong_induction_on generalizing x with
   | _ n ih =>
-    rw [pow_succ, Module.End.mul_apply, LinearMap.comp_apply, LinearMap.rTensor_tmul,
+    rw [pow_succ, mul_apply_eq_comp, LinearMap.comp_apply, LinearMap.rTensor_tmul,
       higherBarDifferential_tmul_of_tprod, map_sum]
     refine Finset.sum_eq_zero fun j hj ↦ ?_
     have hj : j < n := Finset.mem_range.1 hj
@@ -353,6 +353,34 @@ theorem barContraction_homotopy :
     (MM.barContraction c hh hincl hproj).homotopy = c.homotopy.rTensor (TensorWords R A) :=
   LinearSpecialContraction.rTensor_homotopy ..
 
+/-- The bar contraction's inclusion has degree zero in the total suspended grading. -/
+theorem isHomogeneous_barContraction_incl :
+    LinearMap.IsHomogeneous (MM.barContraction c hh hincl hproj).incl
+      (barGrading AA GN).piece (barGrading AA MM.grading).piece 0 := by
+  rw [barContraction_incl]
+  exact isHomogeneous_rTensor hincl
+
+/-- The bar contraction's projection has degree zero in the total suspended grading. -/
+theorem isHomogeneous_barContraction_proj :
+    LinearMap.IsHomogeneous (MM.barContraction c hh hincl hproj).proj
+      (barGrading AA MM.grading).piece (barGrading AA GN).piece 0 := by
+  rw [barContraction_proj]
+  exact isHomogeneous_rTensor hproj
+
+/-- The bar contraction's homotopy has degree minus one in the total suspended grading. -/
+theorem isHomogeneous_barContraction_homotopy :
+    LinearMap.IsHomogeneous (MM.barContraction c hh hincl hproj).homotopy
+      (barGrading AA MM.grading).piece (barGrading AA MM.grading).piece (-1) := by
+  rw [barContraction_homotopy]
+  exact isHomogeneous_rTensor hh
+
+/-- The source differential of the extended contraction is square-zero. -/
+theorem unaryBarDifferential_differential_comp_self :
+    unaryBarDifferential AA MM.grading MM.differential ∘ₗ
+      unaryBarDifferential AA MM.grading MM.differential = 0 :=
+  unaryBarDifferential_comp_self AA MM.grading MM.isHomogeneous_differential_shift
+    MM.differential_comp_self_eq_zero
+
 /-- The higher part is a perturbation of the unary part: `(D₀ + δ)² = D₀²`, since `D₀ + δ` is the
 bar differential and both sides vanish. -/
 theorem unaryBarDifferential_add_higherBarDifferential_comp_self :
@@ -361,8 +389,7 @@ theorem unaryBarDifferential_add_higherBarDifferential_comp_self :
       unaryBarDifferential AA MM.grading MM.differential ∘ₗ
         unaryBarDifferential AA MM.grading MM.differential := by
   rw [unaryBarDifferential_add_higherBarDifferential, barDifferential_sq,
-    unaryBarDifferential_comp_self AA MM.grading MM.isHomogeneous_differential_shift
-      MM.differential_comp_self_eq_zero]
+    MM.unaryBarDifferential_differential_comp_self]
 
 /-- The unit hypothesis of the perturbation lemma for the bar contraction. -/
 theorem isUnit_one_add_higherBarDifferential_mul_barContraction_homotopy :
@@ -413,7 +440,7 @@ theorem isHomogeneous_perturbationSeries :
 theorem perturbationSeries_tmul_one (x : M) :
     (MM.barContraction c hh hincl hproj).perturbationSeries MM.higherBarDifferential
       (x ⊗ₜ[R] (1 : TensorWords R A)) = 0 := by
-  rw [LinearSpecialContraction.perturbationSeries_def, Module.End.mul_apply,
+  rw [LinearSpecialContraction.perturbationSeries_def, mul_apply_eq_comp,
     higherBarDifferential_tmul_one, map_zero]
 
 /-! ### The transferred module -/
@@ -515,8 +542,7 @@ theorem transferBarDifferential_comp_self :
   LinearSpecialContraction.perturbedDifferential_comp_perturbedDifferential_eq_zero _ _
     MM.unaryBarDifferential_add_higherBarDifferential_comp_self
     (MM.isUnit_one_add_higherBarDifferential_mul_barContraction_homotopy c hh hincl hproj)
-    (unaryBarDifferential_comp_self AA MM.grading MM.isHomogeneous_differential_shift
-      MM.differential_comp_self_eq_zero)
+    MM.unaryBarDifferential_differential_comp_self
 
 include hincl hproj in
 /-- The differential of the retract has degree one for the suspended grading. -/
@@ -531,7 +557,8 @@ theorem isHomogeneous_transferBarDifferential :
       (barGrading AA GN).piece (barGrading AA GN).piece 1 := by
   rw [transferBarDifferential_def]
   have hpXi := (isHomogeneous_rTensor hproj).comp
-    ((MM.isHomogeneous_perturbationSeries c hh hincl hproj).comp (isHomogeneous_rTensor hincl))
+    ((MM.isHomogeneous_perturbationSeries c hh hincl hproj).comp
+      (isHomogeneous_rTensor hincl))
   simpa only [zero_add, add_zero] using
     (isHomogeneous_unaryBarDifferential AA GN (MM.isHomogeneous_dN_shift c hincl hproj)).add hpXi
 
@@ -571,7 +598,8 @@ theorem isHomogeneous_transferContraction_incl :
       (barGrading AA GN).piece (barGrading AA MM.grading).piece 0 := by
   rw [transferContraction_incl]
   have hhXi := (isHomogeneous_rTensor hh).comp
-    ((MM.isHomogeneous_perturbationSeries c hh hincl hproj).comp (isHomogeneous_rTensor hincl))
+    ((MM.isHomogeneous_perturbationSeries c hh hincl hproj).comp
+      (isHomogeneous_rTensor hincl))
   simpa only [zero_add, add_neg_cancel] using (isHomogeneous_rTensor hincl).sub hhXi
 
 /-- The perturbed projection has degree zero. -/
@@ -580,7 +608,8 @@ theorem isHomogeneous_transferContraction_proj :
       (barGrading AA MM.grading).piece (barGrading AA GN).piece 0 := by
   rw [transferContraction_proj]
   have hpXh := (isHomogeneous_rTensor hproj).comp
-    ((MM.isHomogeneous_perturbationSeries c hh hincl hproj).comp (isHomogeneous_rTensor hh))
+    ((MM.isHomogeneous_perturbationSeries c hh hincl hproj).comp
+      (isHomogeneous_rTensor hh))
   simpa only [zero_add, neg_add_cancel] using (isHomogeneous_rTensor hproj).sub hpXh
 
 /-- The **extending morphism** of right `A∞` modules from the transferred module to `M`: its bar

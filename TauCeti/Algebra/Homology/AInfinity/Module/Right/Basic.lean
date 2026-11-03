@@ -79,9 +79,9 @@ theorem isHomogeneous_rTensor {AA : AInfinityAlgebra R A} {N : Type*} [AddCommGr
     (hf : LinearMap.IsHomogeneous f G.piece G'.piece r) :
     LinearMap.IsHomogeneous (f.rTensor (TensorWords R A)) (barGrading AA G).piece
       (barGrading AA G').piece r := by
-  rw [barGrading_def, barGrading_def, LinearMap.rTensor_def]
-  simpa only [add_zero] using (LinearMap.isHomogeneous_shift_piece_iff.2 hf).tensorProduct
-    (LinearMap.isHomogeneous_id (R := R) (TensorWords.grading (AA.grading.shift 1)).piece)
+  rw [barGrading_def, barGrading_def]
+  exact (LinearMap.isHomogeneous_shift_piece_iff.2 hf).rTensor
+    (TensorWords.grading (AA.grading.shift 1))
 
 end AInfinityRightModule
 

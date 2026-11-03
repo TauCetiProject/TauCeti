@@ -59,9 +59,9 @@ the parameter range.
 ## Implementation
 
 The guard `0 < s` in the definition of `regularizedGamma` mirrors the one built into
-`TauCeti.lowerIncompleteGamma`, which is the definition shape the roadmap prescribes. It changes no
-value: `γ(s, x)` already vanishes for `s ≤ 0`, so dividing unconditionally would give the same
-function, and `TauCeti.regularizedGamma_eq_div` accordingly needs no hypothesis on `s`.
+`TauCeti.lowerIncompleteGamma`. It changes no value: `γ(s, x)` already vanishes for `s ≤ 0`, so
+dividing unconditionally would give the same function, and `TauCeti.regularizedGamma_eq_div`
+accordingly needs no hypothesis on `s`.
 
 The limit at infinity is Mathlib's `Real.GammaIntegral_convergent` together with
 `Real.Gamma_eq_integral`, which state Euler's integrand as `exp (-t) * t ^ (s - 1)`; this file uses
@@ -75,8 +75,6 @@ differentiable there for `s < 1`. The bridge is
 
 ## References
 
-* Roadmap: `TauCetiRoadmap/StandardDistributions/README.md`, Layer 2, the "Lower incomplete gamma"
-  target.
 * *NIST Digital Library of Mathematical Functions*, [ch. 8](https://dlmf.nist.gov/8),
   especially [§8.2](https://dlmf.nist.gov/8.2) for incomplete gamma functions and
   [Eq. 8.4.1](https://dlmf.nist.gov/8.4.E1) for their relation with the error function.

@@ -104,6 +104,33 @@ variable {𝕜 E H M G : Type*} [RCLike 𝕜] [NormedAddCommGroup E] [NormedSpac
   [TopologicalSpace H] {I : ModelWithCorners 𝕜 E H} [I.Boundaryless] [TopologicalSpace M]
   [ChartedSpace H M] [Group G] [MulAction G M] [CompleteSpace E]
 
+omit [CompleteSpace E] in
+/-- At a common fixed point of a `C¹` action, choose an open partial homeomorphism realizing
+`extChartAt` and its isotropy representation, with strict derivatives of all conjugated maps.
+This is the common coordinate setup for topological and smooth Bochner linearization. -/
+theorem exists_chart_isotropyRepresentation [ContinuousConstSMul G M] {y : M}
+    (hsmooth : ∀ g : G, ContMDiffAt I I 1 (fun x : M ↦ g • x) y) (hy : ∀ g : G, g • y = y) :
+    ∃ (χ : OpenPartialHomeomorph M E) (σ : ContRepresentation 𝕜 G E),
+      y ∈ χ.source ∧ ⇑χ = extChartAt I y ∧ ⇑χ.symm = (extChartAt I y).symm ∧
+      χ.source = (extChartAt I y).source ∧ χ.target = (extChartAt I y).target ∧
+      ∀ g : G, HasStrictFDerivAt (χ ∘ (g • ·) ∘ χ.symm) (σ g) (χ y) := by
+  let χ := (chartAt H y).transHomeomorph I.toHomeomorph
+  have hyχ : y ∈ χ.source := mem_chart_source H y
+  have hχ : ⇑χ = extChartAt I y := by ext; simp [χ]
+  have hχs : ⇑χ.symm = (extChartAt I y).symm := by ext; simp [χ]
+  have hχt : χ.target = (extChartAt I y).target := by
+    -- `toHomeomorph` and `extChartAt` use the same inverse, but there is no target
+    -- comparison lemma for this boundaryless homeomorphism in Mathlib.
+    simp [χ, ModelWithCorners.toHomeomorph, I.range_eq_univ]
+  have hL (g : G) : HasStrictFDerivAt (χ ∘ (g • ·) ∘ χ.symm)
+      (fderiv 𝕜 (χ ∘ (g • ·) ∘ χ.symm) (χ y)) (χ y) := by
+    have h := (hsmooth g).hasStrictFDerivAt_extChartAt_conj
+    rw [hy g] at h
+    rwa [hχ, hχs]
+  exact ⟨χ, isotropyRepresentation hyχ hy (fun g ↦ (hL g).differentiableAt),
+    hyχ, hχ, hχs, by simp [χ], hχt,
+    hasStrictFDerivAt_conj_smul_isotropyRepresentation hyχ hy hL⟩
+
 /-- **Bochner linearization on a manifold.** Let a finite group act continuously on a manifold
 without boundary, fixing `y`, by maps that are `C¹` at `y`. Then in some chart `e` at `y` with
 invariant domain, sending `y` to `0`, the group acts linearly, through a continuous representation
@@ -116,22 +143,7 @@ theorem exists_equivariant_chart_of_contMDiffAt [Finite G] [ContinuousConstSMul 
   let : Fintype G := Fintype.ofFinite G
   let : Invertible (Fintype.card G : 𝕜) :=
     invertibleOfNonzero (Nat.cast_ne_zero.mpr Fintype.card_ne_zero)
-  -- The chart of `M` at `y`, as an open partial homeomorphism to `E`.
-  let χ := (chartAt H y).transHomeomorph I.toHomeomorph
-  have hyχ : y ∈ χ.source := mem_chart_source H y
-  have hχ : ⇑χ = extChartAt I y := by
-    ext
-    simp [χ]
-  have hχs : ⇑χ.symm = (extChartAt I y).symm := by
-    ext
-    simp [χ]
-  have hL (g : G) : HasStrictFDerivAt (χ ∘ (g • ·) ∘ χ.symm)
-      (fderiv 𝕜 (χ ∘ (g • ·) ∘ χ.symm) (χ y)) (χ y) := by
-    have h := (hsmooth g).hasStrictFDerivAt_extChartAt_conj
-    rw [hy g] at h
-    rwa [hχ, hχs]
-  let σ := isotropyRepresentation hyχ hy fun g ↦ (hL g).differentiableAt
-  have hσ := hasStrictFDerivAt_conj_smul_isotropyRepresentation hyχ hy hL
+  obtain ⟨χ, σ, hyχ, -, -, -, -, hσ⟩ := exists_chart_isotropyRepresentation hsmooth hy
   obtain ⟨e, hye, hey, -, he, -⟩ := χ.exists_equivariant_chart hyχ hy σ hσ
   exact ⟨σ, e, hye, hey, he, χ.map_eq_one_iff_mem_germKernel hyχ hy σ hσ⟩
 

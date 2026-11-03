@@ -42,6 +42,9 @@ definitionally equal to it, so the algebra maps here are assembled from the ring
 
 * `LaurentSeries.coeff_expand_mul`, `LaurentSeries.coeff_expand_of_not_dvd`,
   `LaurentSeries.coeff_expand_of_lt_mul_order`: the coefficients of `expand R d f`.
+* `LaurentSeries.orderTop_expand`, `LaurentSeries.order_expand` and
+  `LaurentSeries.leadingCoeff_expand`: expansion multiplies the order by `d` and preserves the
+  leading coefficient.
 * `LaurentSeries.mem_range_expand_iff`: a Laurent series is in the image of `X ↦ X ^ d` exactly
   when all its exponents are divisible by `d`.
 * `LaurentSeries.expand_coe`: `expand` extends `PowerSeries.expand`.
@@ -148,6 +151,22 @@ theorem orderTop_expand (d : ℕ+) (f : R⸨X⸩) :
 /-- Expansion is injective. -/
 theorem expand_injective (d : ℕ+) : Function.Injective (expand R d) :=
   embDomain_injective
+
+/-- Expansion multiplies the order by `d`; the zero series has order zero on both sides. -/
+@[simp]
+theorem order_expand (d : ℕ+) (f : R⸨X⸩) : (expand R d f).order = d * f.order := by
+  rcases eq_or_ne f 0 with rfl | hf
+  · simp
+  have hf' : expand R d f ≠ 0 := (map_ne_zero_iff _ (expand_injective d)).mpr hf
+  apply WithTop.coe_injective
+  rw [order_eq_orderTop_of_ne_zero hf', orderTop_expand, ← order_eq_orderTop_of_ne_zero hf,
+    ← WithTop.coe_nsmul, nsmul_eq_mul]
+
+/-- Expansion preserves the leading coefficient. -/
+@[simp]
+theorem leadingCoeff_expand (d : ℕ+) (f : R⸨X⸩) :
+    (expand R d f).leadingCoeff = f.leadingCoeff := by
+  rw [leadingCoeff_eq, leadingCoeff_eq, order_expand, coeff_expand_mul]
 
 /-- A Laurent series is in the image of `X ↦ X ^ d` exactly when all its exponents are divisible
 by `d`. -/
@@ -426,6 +445,18 @@ theorem orderTop_ramifiedEmbedding (n : ℕ+) (f : R⸨X⸩) :
 /-- The level-`n` embedding is injective. -/
 theorem ramifiedEmbedding_injective (n : ℕ+) : Function.Injective (ramifiedEmbedding R n) :=
   embDomain_injective
+
+/-- The order of the level-`n` image of `f` is the order of `f` divided by `n`. -/
+@[simp]
+theorem order_ramifiedEmbedding (n : ℕ+) (f : R⸨X⸩) :
+    (ramifiedEmbedding R n f).order = (f.order : ℚ) / n := by
+  rcases eq_or_ne f 0 with rfl | hf
+  · simp
+  have hι : ramifiedEmbedding R n f ≠ 0 :=
+    (map_ne_zero_iff _ (ramifiedEmbedding_injective n)).mpr hf
+  apply WithTop.coe_injective
+  rw [order_eq_orderTop_of_ne_zero hι, orderTop_ramifiedEmbedding,
+    ← order_eq_orderTop_of_ne_zero hf, WithTop.map_coe]
 
 /-- The level-`n` image consists of the Hahn series all of whose exponents have denominator
 dividing `n`. -/
