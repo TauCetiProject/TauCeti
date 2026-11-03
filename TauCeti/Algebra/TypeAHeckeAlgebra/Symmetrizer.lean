@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.TypeAHeckeAlgebra.Basis
+public import TauCeti.Algebra.Ring.QuadraticPow
 
 /-!
 # Parabolic q-symmetrizers
@@ -81,15 +82,6 @@ theorem parabolicEigenSum_ne_zero [Nontrivial R] (a : R) :
   have := basisTw_repr_parabolicEigenSum (q := q) cs J a 1
   simp [h] at this
 
-private theorem eigenvalue_length_step {a : R} (ha : a * a = ((q : R) - ↑q⁻¹) * a + 1)
-    {l k : ℕ} (h : k + 1 = l) :
-    ((q : R) - ↑q⁻¹) * a ^ l + a ^ k = a * a ^ l := by
-  subst l
-  calc
-    ((q : R) - ↑q⁻¹) * a ^ (k + 1) + a ^ k =
-        (((q : R) - ↑q⁻¹) * a + 1) * a ^ k := by ring
-    _ = a * a ^ (k + 1) := by rw [← ha]; ring
-
 /-- Every parabolic generator acts on the weighted sum on the left by `a`. -/
 theorem T_mul_parabolicEigenSum {a : R} (ha : a * a = ((q : R) - ↑q⁻¹) * a + 1)
     {i : Fin (n - 1)} (hi : i ∈ J) :
@@ -106,7 +98,8 @@ theorem T_mul_parabolicEigenSum {a : R} (ha : a * a = ((q : R) - ↑q⁻¹) * a 
   · simp only [hw, hmem.mpr hw, ite_true]
     by_cases hd : cs.IsLeftDescent w i
     · rw [ite_eq_left hd]
-      exact eigenvalue_length_step ha (cs.isLeftDescent_iff.mp hd)
+      rw [← cs.isLeftDescent_iff.mp hd]
+      exact mul_pow_succ_add_pow_of_mul_self_eq ha _
     · rw [ite_eq_right hd, zero_add, cs.not_isLeftDescent_iff.mp hd, pow_succ, mul_comm]
   · simp [hw, hmem]
 
@@ -126,7 +119,8 @@ theorem parabolicEigenSum_mul_T {a : R} (ha : a * a = ((q : R) - ↑q⁻¹) * a 
   · simp only [hw, hmem.mpr hw, ite_true]
     by_cases hd : cs.IsRightDescent w i
     · rw [ite_eq_left hd]
-      exact eigenvalue_length_step ha (cs.isRightDescent_iff.mp hd)
+      rw [← cs.isRightDescent_iff.mp hd]
+      exact mul_pow_succ_add_pow_of_mul_self_eq ha _
     · rw [ite_eq_right hd, zero_add, cs.not_isRightDescent_iff.mp hd, pow_succ, mul_comm]
   · simp [hw, hmem]
 
