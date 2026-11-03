@@ -170,6 +170,9 @@ def dividedPowerSpecializationBasis (x : A)
 theorem dividedPowerSpecializationBasis_apply (x : A)
     (h : LinearIndependent ℤ (fun n => dividedPower n x)) (n : ℕ) :
     dividedPowerSpecializationBasis R x h n = dividedPowerSpecialization R x n := by
+  -- `Submodule.toSubalgebra` preserves the lattice carrier and its module structure
+  -- definitionally. Expose that carrier here so `Module.Basis.baseChange_apply` and the
+  -- lattice basis evaluation lemma apply to the integral-algebra tensor factors.
   change (dividedPowerLatticeBasis x h).baseChange R n =
     (1 : R) ⊗ₜ[ℤ] (⟨dividedPower n x, dividedPower_mem_dividedPowerLattice x n⟩ :
       dividedPowerLattice x)
