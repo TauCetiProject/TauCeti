@@ -8,6 +8,7 @@ module
 public import TauCeti.Geometry.Manifold.Riemannian.Sphere.Basic
 import Mathlib.Analysis.Calculus.Deriv.Inv
 import Mathlib.Analysis.InnerProductSpace.Calculus
+import TauCeti.Geometry.Manifold.Instances.Sphere
 
 /-!
 # The round metric in stereographic coordinates
@@ -105,9 +106,8 @@ theorem inner_mfderiv_stereographic'_symm (v : sphere (0 : E) 1)
     mdifferentiableAt_atlas_symm (e := stereographic' n v) (Exists.intro v rfl) (by simp)
   -- Read in `E`, the inverse chart is `σ⁻¹` precomposed with the isometry `U.symm`.
   have hfun : ((↑) : sphere (0 : E) 1 → E) ∘ (stereographic' n v).symm =
-      stereoInvFunAux (v : E) ∘ ((↑) : (ℝ ∙ (v : E))ᗮ → E) ∘ U.symm := by
-    funext y
-    simp [stereographic'_symm_apply, smul_add, U]
+      stereoInvFunAux (v : E) ∘ ((↑) : (ℝ ∙ (v : E))ᗮ → E) ∘ U.symm :=
+    coe_comp_stereographic'_symm v
   have hd (c : TangentSpace (𝓡 n) y) :
       mvfderiv (𝓡 n) ((↑) : sphere (0 : E) 1 → E) _
           (mfderiv (𝓡 n) (𝓡 n) (stereographic' n v).symm y c) =
