@@ -7,6 +7,7 @@ module
 
 public import TauCeti.AlgebraicGeometry.Modules.Quasicoherent.GradedAlgebra.DirectSum
 public import TauCeti.AlgebraicGeometry.RelativeSpec.PullbackAlgebra
+public import TauCeti.CategoryTheory.Monoidal.EqToHom
 
 /-!
 # Pullback of graded quasicoherent algebras
@@ -420,46 +421,6 @@ theorem pullbackId_inv_app_hom_hom_hom (P : GradedQuasicoherentAlgebra X) (n : �
         eqToHom (congrFun (pullback_obj_obj_X (𝟙 X) P) n).symm :=
   pullbackIdApp_inv_hom_hom P n
 
-/-- Transporting the inverse tensor comparison of a monoidal functor along identifications of
-the factors. -/
-@[reassoc]
-private lemma inv_δ_comp_map_eqToHom {C D : Type*} [Category C] [Category D]
-    [MonoidalCategory C] [MonoidalCategory D] (F : C ⥤ D) [F.OplaxMonoidal] {a a' b b' : C}
-    [IsIso (Functor.OplaxMonoidal.δ F a b)] [IsIso (Functor.OplaxMonoidal.δ F a' b')]
-    (ha : a = a') (hb : b = b') (h : a ⊗ b = a' ⊗ b') :
-    inv (Functor.OplaxMonoidal.δ F a b) ≫ F.map (eqToHom h) =
-      eqToHom (by rw [ha, hb]) ≫ inv (Functor.OplaxMonoidal.δ F a' b') := by
-  subst ha hb
-  simp
-
-/-- The composite `𝒪_X ≅ f^* 𝒪_Y ≅ f^* g^* 𝒪_Z ≅ (f ≫ g)^* 𝒪_Z` is the inverse of the
-identification `(f ≫ g)^* 𝒪_Z ≅ 𝒪_X`. -/
-@[reassoc]
-private lemma pullbackObjUnitIso_inv_comp (g : Y ⟶ Z) :
-    (Scheme.Modules.pullbackObjUnitIso f).inv ≫
-        (Scheme.Modules.pullback f).map (Scheme.Modules.pullbackObjUnitIso g).inv ≫
-          (Scheme.Modules.pullbackComp f g).hom.app _ =
-      (Scheme.Modules.pullbackObjUnitIso (f ≫ g)).inv := by
-  refine (Iso.inv_ext ?_).symm
-  rw [← Scheme.Modules.pullbackObjUnitIso_comp]
-  simp only [Category.assoc, Iso.hom_inv_id_assoc, Iso.hom_inv_id_map_assoc, Iso.inv_hom_id_app]
-
-/-- The inverse tensor comparisons of `f^*` and `g^*` composed with `pullbackComp` give the
-inverse tensor comparison of `(f ≫ g)^*`. -/
-@[reassoc]
-private lemma inv_δ_comp_pullbackComp_hom_app (g : Y ⟶ Z) (M N : Z.Modules)
-    [N.IsQuasicoherent] :
-    inv (Functor.OplaxMonoidal.δ (Scheme.Modules.pullback f) _ _) ≫
-        (Scheme.Modules.pullback f).map
-          (inv (Functor.OplaxMonoidal.δ (Scheme.Modules.pullback g) M N)) ≫
-          (Scheme.Modules.pullbackComp f g).hom.app (M ⊗ N) =
-      ((Scheme.Modules.pullbackComp f g).hom.app M ⊗ₘ
-          (Scheme.Modules.pullbackComp f g).hom.app N) ≫
-        inv (Functor.OplaxMonoidal.δ (Scheme.Modules.pullback (f ≫ g)) M N) := by
-  rw [IsIso.eq_comp_inv, Category.assoc, Category.assoc, pullbackComp_hom_app_comp_δ,
-    ← Functor.map_comp_assoc, IsIso.inv_hom_id, CategoryTheory.Functor.map_id, Category.id_comp,
-    IsIso.inv_hom_id_assoc]
-
 /-- The component at `P` of `pullbackComp`, given degreewise by `Scheme.Modules.pullbackComp`. -/
 private def pullbackCompApp (g : Y ⟶ Z) (P : GradedQuasicoherentAlgebra Z) :
     (pullback f).obj ((pullback g).obj P) ≅ (pullback (f ≫ g)).obj P :=
@@ -497,11 +458,12 @@ private def pullbackCompApp (g : Y ⟶ Z) (P : GradedQuasicoherentAlgebra Z) :
     (by
       dsimp only [CommMon.toMon]
       rw [Iso.app_hom, Category.assoc, Category.assoc, ← Functor.comp_map, NatTrans.naturality,
-        pullbackObjUnitIso_inv_comp_assoc])
+        Scheme.Modules.pullbackObjUnitIso_inv_comp_assoc])
     (fun i j ↦ by
       dsimp only [CommMon.toMon]
       rw [Iso.app_hom, Iso.app_hom, Iso.app_hom, Category.assoc, Category.assoc,
-        ← Functor.comp_map, NatTrans.naturality, inv_δ_comp_pullbackComp_hom_app_assoc])
+        ← Functor.comp_map, NatTrans.naturality,
+        Scheme.Modules.inv_δ_comp_pullbackComp_hom_app_assoc])
 
 private lemma pullbackCompApp_hom_hom_hom (g : Y ⟶ Z) (P : GradedQuasicoherentAlgebra Z)
     (n : ℕ) :
