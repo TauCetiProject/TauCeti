@@ -7,7 +7,6 @@ module
 
 public import TauCeti.AlgebraicTopology.Cellular.Dimension
 public import TauCeti.AlgebraicTopology.Singular.Empty
-public import TauCeti.AlgebraicTopology.Singular.Triple.Free
 public import TauCeti.Geometry.Manifold.Morse.Cell.Homology
 public import TauCeti.Geometry.Manifold.Morse.Deformation.Homology
 
@@ -29,9 +28,9 @@ and gluing along the long exact sequence of each sublevel triple `M_a ⊆ M_m �
 * **Projectivity and freeness of top homology in degree `d`**
   (`TauCeti.IsMorse.projective_singularHomology_sublevelPair_of_manifoldMorseIndex_le`,
   `TauCeti.IsMorse.free_singularHomology_sublevelPair_of_manifoldMorseIndex_le`):
-  `H_d(M_b, M_a; R)` is projective over any hereditary abelian category with coproducts, and
-  `H_d(M_b, M_a; P)` is a free `k`-module over any principal ideal ring `k` without zero divisors
-  (in any universe, including `ℤ`) for any projective `k`-module `P`.
+  `H_d(M_b, M_a; R)` is projective over any hereditary abelian category with coproducts when `R` is
+  projective, and `H_d(M_b, M_a; P)` is a free `k`-module over any principal ideal ring `k` without
+  zero divisors (in any universe, including `ℤ`) for any projective `k`-module `P`.
 * **Cohomology vanishing above `d`**
   (`TauCeti.IsMorse.isZero_singularCohomology_sublevelPair_of_manifoldMorseIndex_le`):
   `Hⁿ(M_b, M_a; R, N) = 0` for every `n > d` over any hereditary commutative ring `k` (in any
@@ -237,30 +236,27 @@ theorem IsMorse.free_singularHomology_sublevelPair_of_manifoldMorseIndex_le
     (ha : IsRegularValue I 𝓘(ℝ) f a) (hb : IsRegularValue I 𝓘(ℝ) f b) {d : ℕ}
     (hd : ∀ x ∈ criticalPoints I f, f x ∈ Ioc a b → manifoldMorseIndex I f x ≤ d) :
     Module.Free k ((sublevelPair f hab).singularHomology P d : ModuleCat k) := by
-  refine (hf.sublevelPair_induction (Q := fun x ↦ manifoldMorseIndex I f x ≤ d)
-    (P := fun hab ↦ Module.Free k ((sublevelPair f hab).singularHomology P d : ModuleCat k) ∧
-      IsZero ((sublevelPair f hab).singularHomology P (d + 1)))
-    (fun hab' hc hcrit ↦ ?_) (fun hδ hc hd' ↦ ?_) (fun ham hmb h₁ h₂ ↦ ?_)
-    hab hcompact ha hb hd).1
-  · have hzero (j : ℕ) := isZero_singularHomology_sublevelPair_of_mfderiv_ne_zero hf.contMDiff
-      hab' hc (fun x hax hxb hx ↦
-        hcrit x (mem_criticalPoints_iff_mfderiv_eq_zero.2 hx) ⟨hax, hxb⟩) P j
-    have : Subsingleton ((sublevelPair f hab').singularHomology P d : ModuleCat k) :=
-      ModuleCat.isZero_iff_subsingleton.1 (hzero d)
-    exact ⟨Module.Free.of_subsingleton k _, hzero (d + 1)⟩
-  · obtain ⟨ε, hε, hεδ, hsub, C, _, _, hempty, hiso⟩ :=
-      hf.exists_level_relCWComplex_of_manifoldMorseIndex_le.{u, max v (u + 1), u} hδ hc hd'
-    have : IsEmpty (cell C (d + 1)) := hempty (d + 1) (Nat.lt_succ_self d)
-    have hfree := free_singularHomology_complexBasePair_of_isEmpty_cell_succ C P d
-    refine ⟨ε, hε, hεδ, hsub,
-      Module.Free.of_equiv' hfree (hiso P d).some.toLinearEquiv,
-      (isZero_singularHomology_complexBasePair_of_isEmpty_cell C P (d + 1)).of_iso
-        (hiso P (d + 1)).some.symm⟩
-  · let T := TopTriple.ofInclusions (X := TopCat.of M) (sublevel_mono f ham) (sublevel_mono f hmb)
-    have : Module.Free k ((TopTriple.innerPair.obj T).singularHomology P d : ModuleCat k) := h₁.1
-    have : Module.Free k ((TopTriple.outerPair.obj T).singularHomology P d : ModuleCat k) := h₂.1
-    exact ⟨T.free_singularHomology_totalPair P d h₂.2,
-      T.isZero_singularHomology_totalPair P (d + 1) h₁.2 h₂.2⟩
+  by_cases! hP : Subsingleton P
+  · have hP₀ : IsZero P := ModuleCat.isZero_iff_subsingleton.2 hP
+    have hX : IsZero ((TopPair.toSSetPair.obj (sublevelPair f hab)).right.chainComplex P) :=
+      (Functor.isZero_iff _).1 ((SSet.chainComplexFunctor (ModuleCat.{u} k)).map_isZero hP₀) _
+    have hQ : IsZero ((sublevelPair f hab).singularChainComplex P) :=
+      hX.of_epi ((sublevelPair f hab).singularChainComplexπ P)
+    have : Subsingleton ((sublevelPair f hab).singularHomology P d : ModuleCat k) :=
+      ModuleCat.isZero_iff_subsingleton.1
+        ((HomologicalComplex.homologyFunctor _ _ d).map_isZero hQ)
+    exact Module.Free.of_subsingleton k _
+  · -- A nontrivial projective module over a PID is free on a nonempty basis, so `k` embeds in `P`
+    -- and `Small.{u} k` holds, making `ModuleCat.{u} k` hereditary.
+    have : Module.Free k P :=
+      .of_injective_of_projective_of_isPrincipalIdealRing .id Function.injective_id
+    let b := Module.Free.chooseBasis k P
+    let i := b.index_nonempty.some
+    have : Small.{u} k := small_of_injective (f := (· • b i)) fun r s hrs ↦ by
+      simpa using congr(b.coord i $hrs)
+    have : Projective ((sublevelPair f hab).singularHomology P d) :=
+      hf.projective_singularHomology_sublevelPair_of_manifoldMorseIndex_le P hab hcompact ha hb hd
+    exact .of_injective_of_projective_of_isPrincipalIdealRing .id Function.injective_id
 
 /-- **Vanishing of relative singular cohomology above a Morse index bound** over any hereditary
 commutative ring `k` (in any universe, including `ℤ`): if `a ≤ b` are regular values with compact
@@ -323,7 +319,8 @@ theorem IsMorse.isZero_singularHomology_sublevel_of_manifoldMorseIndex_le
       (fun x hx hxab ↦ hd x hx hxab.2) hn)
 
 /-- **Top singular homology of a compact regular sublevel set is projective** over a hereditary
-abelian category when all critical points in `{f ≤ b}` have index at most `d`. -/
+abelian category when `R` is projective and all critical points in `{f ≤ b}` have index at most
+`d`. -/
 theorem IsMorse.projective_singularHomology_sublevel_of_manifoldMorseIndex_le
     (hf : IsMorse I f) {A : Type v} [Category.{w} A] [Abelian A] [HasCoproducts.{u} A]
     [∀ V : A, HasProjectiveDimensionLE V 1] (R : A) [Projective R]
@@ -404,7 +401,7 @@ theorem IsMorse.isZero_singularHomology_of_manifoldMorseIndex_le
     (fun x hx _ ↦ hd x hx) hn).of_iso (e.toHomotopyEquiv.singularHomologyIso R n).symm
 
 /-- **Top singular homology of a compact manifold is projective** over a hereditary abelian
-category when every critical point of `f` has Morse index at most `d`. -/
+category when `R` is projective and every critical point of `f` has Morse index at most `d`. -/
 theorem IsMorse.projective_singularHomology_of_manifoldMorseIndex_le
     (hf : IsMorse I f) {A : Type v} [Category.{w} A] [Abelian A] [HasCoproducts.{u} A]
     [∀ V : A, HasProjectiveDimensionLE V 1] (R : A) [Projective R]

@@ -10,6 +10,7 @@ public import TauCeti.Algebra.Homology.PrincipalIdealRing
 public import TauCeti.AlgebraicTopology.Cellular.EulerCharacteristic.Singular
 public import TauCeti.AlgebraicTopology.Cohomology.HomotopyInvariance
 public import TauCeti.AlgebraicTopology.Cohomology.UniversalCoefficient
+public import TauCeti.Topology.CWComplex.Classical.Finite
 
 /-!
 # Top cellular homology and dimension bounds for CW complexes and CW models
@@ -24,19 +25,21 @@ assumption on the number of cells in any degree (in particular allowing countabl
 infinitely many `d`-cells) and no assumption on cells above degree `d + 1`:
 
 * No boundary enters degree `d`, so `H_d(C_*(C, D; R))` is isomorphic to the `d`-cycles, a
-  subobject of the projective object `C_d(C, D; R)`. Over a hereditary abelian category it is
-  therefore projective (`TauCeti.projective_homology_cellularChainComplex_of_isEmpty_cell_succ`),
-  and over a principal ideal ring without zero divisors (in any universe, including `ℤ`) it is a
-  free module (`TauCeti.free_homology_cellularChainComplex_of_isEmpty_cell_succ`).
+  subobject of `C_d(C, D; R)`. Over a hereditary abelian category it is therefore projective when
+  `R` is (`TauCeti.projective_homology_cellularChainComplex_of_isEmpty_cell_succ`), and over a
+  principal ideal ring without zero divisors (in any universe, including `ℤ`) it is a free module
+  for any projective coefficient module
+  (`TauCeti.free_homology_cellularChainComplex_of_isEmpty_cell_succ`).
 * Via the cellular--singular comparison `TauCeti.cellularSingularHomologyIso` (which needs no
   dimension bound on `C` for modules over any ring, since sequential colimits of modules are exact
   by `TauCeti.moduleCat_ab5OfSize`), the same holds for `H_d(C, D; R)`, for `H_d(C; R)` of an
   absolute CW complex, and for `H_d(Y; R)` of any space `Y` homotopy equivalent to `C`.
 * In degree `d + 1`, both terms of the universal coefficient sequence
   `0 ⟶ Ext¹_k(H_d, M) ⟶ H^{d+1}(-; R, M) ⟶ Hom_k(H_{d+1}, M) ⟶ 0` vanish over a hereditary
-  commutative ring `k` (including `ℤ` in every universe): `Ext¹_k(H_d, M) = 0` because `H_d` is
-  projective, and `Hom_k(H_{d+1}, M) = 0` because `H_{d+1} = 0`. Thus `H^{d+1}(C, D; R, M)`,
-  `H^{d+1}(C; R, M)`, and `H^{d+1}(Y; R, M)` vanish whenever there are no `(d + 1)`-cells
+  commutative ring `k` (including `ℤ` in every universe) when `R` is projective:
+  `Ext¹_k(H_d, M) = 0` because `H_d` is projective, and `Hom_k(H_{d+1}, M) = 0` because
+  `H_{d+1} = 0`. Thus `H^{d+1}(C, D; R, M)`, `H^{d+1}(C; R, M)`, and `H^{d+1}(Y; R, M)` vanish
+  whenever there are no `(d + 1)`-cells
   (`TauCeti.isZero_singularCohomology_complexBasePair_succ_of_isEmpty_cell`,
   `TauCeti.isZero_singularCohomology_succ_of_isEmpty_cell`,
   `ContinuousMap.HomotopyEquiv.isZero_singularCohomology_succ_of_isEmpty_cell`).
@@ -48,9 +51,9 @@ torsion of `H_{d-1}` (for instance `H^2(ℝP²; ℤ) ≅ ℤ/2ℤ`).
 When `(C, D)` has **no cells in dimensions strictly above `d`** (`∀ m, d < m → IsEmpty (cell C m)`),
 it is finite-dimensional (`Topology.RelCWComplex.finiteDimensional_of_isEmpty_cell_gt`), and both
 singular homology (with coefficients in any abelian category with exact cell coproducts) and
-singular cohomology (over any hereditary commutative ring `k`, including `ℤ`, for any coefficient
-module `M`) vanish in every degree `n > d` — for `(C, D)`, for `C`, for a space with a CW structure
-on `Set.univ`, and for any space homotopy equivalent to `C`.
+singular cohomology (over any hereditary commutative ring `k`, including `ℤ`, for projective `R`
+and any coefficient module `M`) vanish in every degree `n > d` — for `(C, D)`, for `C`, for a space
+with a CW structure on `Set.univ`, and for any space homotopy equivalent to `C`.
 
 ## References
 
@@ -66,70 +69,9 @@ noncomputable section
 
 open CategoryTheory Limits Module Set Topology Topology.RelCWComplex
 
-universe w w' v u
-
-namespace Topology
-
-/-- A relative CW complex with no cells in dimensions strictly above `d` is finite-dimensional,
-regardless of how many cells lie in dimensions at most `d`. -/
-@[alias_in CWComplex]
-lemma RelCWComplex.finiteDimensional_of_isEmpty_cell_gt {X : Type*} [TopologicalSpace X]
-    {D : Set X} (C : Set X) [RelCWComplex C D] {d : ℕ}
-    (h : ∀ m, d < m → IsEmpty (RelCWComplex.cell C m)) :
-    RelCWComplex.FiniteDimensional C :=
-  ⟨Filter.eventually_atTop.2 ⟨d + 1, fun m hm ↦ h m (Nat.lt_of_succ_le hm)⟩⟩
-
-end Topology
+universe w v u
 
 namespace TauCeti
-
-section Chains
-
-variable {X : Type w} [TopologicalSpace X] [T2Space X] {D : Set X} (C : Set X) [RelCWComplex C D]
-
-section Abelian
-
-variable {A : Type u} [Category.{v} A] [HasCoproducts.{w} A] [Abelian A] (R : A) [Projective R]
-
-/-- With projective coefficients, the cellular chain group in degree `n` is projective whenever
-coproducts indexed by the `n`-cells are exact in `A`. -/
-instance projective_cellularChainGroup (n : ℕ) [HasExactColimitsOfShape (Discrete (cell C n)) A] :
-    Projective (cellularChainGroup C R n) := by
-  refine Projective.of_iso (cellularChainGroupIso C R n).symm ⟨fun f e _ ↦ ?_⟩
-  exact ⟨Sigma.desc fun b ↦ Projective.factorThru (Sigma.ι (fun _ : cell C n ↦ R) b ≫ f) e,
-    Sigma.hom_ext _ _ fun b ↦ by simp⟩
-
-/-- With projective coefficients, the degree-`n` term of the cellular chain complex is projective
-whenever coproducts indexed by the `n`-cells are exact in `A`. -/
-instance projective_cellularChainComplex_X (n : ℕ)
-    [HasExactColimitsOfShape (Discrete (cell C n)) A] :
-    Projective ((cellularChainComplex C R).X n) := by
-  rw [cellularChainComplex_X]
-  infer_instance
-
-end Abelian
-
-section Ring
-
-variable {k : Type u} [Ring k] (M : ModuleCat.{w} k)
-
-/-- With free coefficients over a ring `k`, the terms of the cellular chain complex are free
-`k`-modules, with no finiteness assumption on the cell sets. -/
-instance free_cellularChainComplex_X [Module.Free k M] (n : ℕ) :
-    Module.Free k ((cellularChainComplex C M).X n : ModuleCat k) := by
-  rw [cellularChainComplex_X]
-  infer_instance
-
-/-- With projective coefficients over a ring `k`, the terms of the cellular chain complex are
-projective `k`-modules, with no finiteness assumption on the cell sets. -/
-instance moduleProjective_cellularChainComplex_X [Module.Projective k M] (n : ℕ) :
-    Module.Projective k ((cellularChainComplex C M).X n : ModuleCat k) := by
-  rw [cellularChainComplex_X]
-  infer_instance
-
-end Ring
-
-end Chains
 
 section RelativeMissingCell
 
