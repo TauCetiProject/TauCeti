@@ -92,6 +92,8 @@ theorem totalArrow_mapComposableArrows_obj (φ : C ⥤ D) (F : ComposableArrows 
 theorem ext_of_totalArrow {F G : ComposableArrows C n}
     (h : ∀ i j (hij : i ≤ j), F.totalArrow i j hij = G.totalArrow i j hij) : F = G := by
   refine Functor.hext (fun i ↦ congrArg Quiver.Total.left (h i i le_rfl)) fun i j g ↦ ?_
+  -- Morphisms in the poset `Fin (n + 1)` are unique, so `g` is the morphism `homOfLE g.le` that
+  -- `totalArrow` uses, and the hypothesis `h i j g.le` applies to it.
   rw [show g = homOfLE g.le from Subsingleton.elim _ _]
   have := h i j g.le
   simp only [totalArrow, Quiver.Total.mk.injEq] at this
