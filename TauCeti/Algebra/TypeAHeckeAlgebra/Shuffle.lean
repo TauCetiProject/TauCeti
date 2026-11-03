@@ -706,9 +706,9 @@ theorem shuffleRep_val_inv_unitT_single_of_mem_of_notMem {i : Fin (k + l - 1)}
     shuffleRep_T_single_of_mem_of_notMem ρ ha hb, Module.algebraMap_end_apply]
   abel
 
-/-- **Shuffle words are monomial on the shuffle module.** Along a shuffle path `w` to `S`, the
-product of the inverse generators sends the vector `u` at the initial mask to `(-1) ^ S.length • u`
-at `S`. -/
+/-- **Inverse shuffle words are monomial on the initial mask.** Along a shuffle path `w` to `S`,
+the product of the inverse generators sends the vector `u` at the initial mask to
+`(-1) ^ S.length • u` at `S`. -/
 theorem ShuffleMask.IsShufflePath.shuffleRep_prod_val_inv_unitT_single_initial
     {w : List (Fin (k + l - 1))} {S : ShuffleMask k l} (h : ShuffleMask.IsShufflePath w S)
     (u : U) :
