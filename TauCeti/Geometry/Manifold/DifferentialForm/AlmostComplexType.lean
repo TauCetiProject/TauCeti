@@ -66,6 +66,9 @@ and it holds at boundary and corner points as well.
 * `TauCeti.SmoothAlmostComplexStructure.mapCoeff_typeProjection_of_map_smul_conj`: conjugation.
 * `TauCeti.SmoothAlmostComplexStructure.mpullback_typeProjection`: pullback along
   pseudoholomorphic maps.
+* `TauCeti.SmoothAlmostComplexStructure.inChart`: the almost complex structure read in a chart.
+* `TauCeti.SmoothForm.IsOfType.alternatingDerivation_fderivWithin_inChartAt`: the derivative of
+  the type equation in a chart.
 * `TauCeti.SmoothForm.IsOfType.typeProjection_mextDerivₗ_eq_zero`,
   `TauCeti.SmoothForm.IsOfType.mextDerivₗ_eq_typeProjection_add`: the exterior derivative of a form
   of type `(p,q)` splits into its four bidegrees.
@@ -533,7 +536,7 @@ variable (J : SmoothAlmostComplexStructure I M) (x : M)
 
 /-- The almost complex structure read in the trivialization of the tangent bundle at `x`, along
 the inverse of the extended chart at `x`. -/
-private def inChart (z : E) : E →L[ℝ] E :=
+def inChart (z : E) : E →L[ℝ] E :=
   ContinuousLinearMap.inCoordinates E (TangentSpace I) E (TangentSpace I) x
     ((extChartAt I x).symm z) x ((extChartAt I x).symm z)
       (J.toEndomorphism ((extChartAt I x).symm z))
@@ -543,8 +546,21 @@ private theorem mem_baseSet_of_mem_target {z : E} (hz : z ∈ (extChartAt I x).t
   rw [TangentBundle.trivializationAt_baseSet, ← extChartAt_source I]
   exact (extChartAt I x).map_target hz
 
+/-- At the image of a point `y` of the chart at `x`, the almost complex structure read in the chart
+is `J y` in the coordinates of the trivialization of the tangent bundle at `x`. -/
+theorem inChart_extChartAt_apply {y : M} (hy : y ∈ (extChartAt I x).source) (u : E) :
+    J.inChart x (extChartAt I x y) u =
+      (trivializationAt E (TangentSpace I) x
+        ⟨y, J y ((trivializationAt E (TangentSpace I) x).symm y u)⟩).2 := by
+  have hy' : y ∈ (trivializationAt E (TangentSpace I) x).baseSet := by
+    rwa [TangentBundle.trivializationAt_baseSet, ← extChartAt_source I]
+  simp only [inChart, ContinuousLinearMap.inCoordinates, ContinuousLinearMap.comp_apply]
+  rw [(extChartAt I x).left_inv hy,
+    Trivialization.continuousLinearMapAt_apply_of_mem (R := ℝ) _ hy',
+    Trivialization.symmL_apply _ hy']
+
 /-- In the chart, the almost complex structure still squares to `-1`. -/
-private theorem inChart_inChart {z : E} (hz : z ∈ (extChartAt I x).target) (w : E) :
+theorem inChart_inChart {z : E} (hz : z ∈ (extChartAt I x).target) (w : E) :
     J.inChart x z (J.inChart x z w) = -w := by
   simp only [inChart, ContinuousLinearMap.inCoordinates, ContinuousLinearMap.comp_apply]
   rw [Trivialization.symmL_continuousLinearMapAt _ (mem_baseSet_of_mem_target x hz),
@@ -552,7 +568,7 @@ private theorem inChart_inChart {z : E} (hz : z ∈ (extChartAt I x).target) (w 
     Trivialization.continuousLinearMapAt_symmL _ (mem_baseSet_of_mem_target x hz)]
 
 /-- At the chart point, the almost complex structure read in the chart is `J x`. -/
-private theorem inChart_extChartAt_self : J.inChart x (extChartAt I x x) = J.toEndomorphism x := by
+theorem inChart_extChartAt_self : J.inChart x (extChartAt I x x) = J.toEndomorphism x := by
   simp only [inChart]
   rw [extChartAt_to_inv]
   ext w
@@ -563,7 +579,8 @@ private theorem inChart_extChartAt_self : J.inChart x (extChartAt I x x) = J.toE
   -- Both chart derivatives are identities of tangent spaces that are definitionally `E`.
   rfl
 
-private theorem differentiableWithinAt_inChart :
+/-- The almost complex structure read in the chart at `x` is differentiable at the chart point. -/
+theorem differentiableWithinAt_inChart :
     DifferentiableWithinAt ℝ (J.inChart x) (Set.range I) (extChartAt I x x) := by
   have h := ((contMDiffAt_hom_bundle _).1 (J.toEndomorphism.contMDiff x)).2
   have h' := h.comp_contMDiffWithinAt_of_eq (contMDiffWithinAt_extChartAt_symm_range_self x)
@@ -572,7 +589,7 @@ private theorem differentiableWithinAt_inChart :
 
 /-- Differentiating `J² = -1` in the chart at `x`: the derivative of the almost complex structure
 read in the chart anticommutes with its value at the chart point. -/
-private theorem fderivWithin_inChart_apply_apply (v w : E) :
+theorem fderivWithin_inChart_apply_apply (v w : E) :
     fderivWithin ℝ (J.inChart x) (Set.range I) (extChartAt I x x) v
         (J.inChart x (extChartAt I x x) w) =
       -J.inChart x (extChartAt I x x)
@@ -615,47 +632,59 @@ private theorem IsOfType.fderivCompContinuousLinearMap_inChartAt (hφ : φ.IsOfT
   rw [h₃] at h₁
   exact h₁.symm.trans h₂
 
+/-- **Differentiating the type equation in a chart.** The coordinate expression `φ'` of a form of
+type `(p,q)` in the chart at `x` and the almost complex structure `J'` read in that chart satisfy
+`J'.alternatingDerivation φ' = (p - q) * I • φ'` near the chart point; differentiating in the
+direction `v` gives `J'.alternatingDerivation (Dφ' v) + (DJ' v).alternatingDerivation φ' =
+(p - q) * I • Dφ' v` at the chart point. Together with `fderivWithin_inChart_apply_apply`, this
+makes `(Dφ', DJ')` a first-order variation of the pair `(φ x, J x)` preserving the type. -/
+theorem IsOfType.alternatingDerivation_fderivWithin_inChartAt (hφ : φ.IsOfType J p q) (x : M)
+    (v : E) :
+    (J.inChart x (extChartAt I x x)).alternatingDerivation
+        (fderivWithin ℝ (RoughForm.inChartAt φ.1 x) (Set.range I) (extChartAt I x x) v) +
+      (fderivWithin ℝ (J.inChart x) (Set.range I) (extChartAt I x x) v).alternatingDerivation
+        (RoughForm.inChartAt φ.1 x (extChartAt I x x)) =
+      (((p : ℂ) - q) * Complex.I) •
+        fderivWithin ℝ (RoughForm.inChartAt φ.1 x) (Set.range I) (extChartAt I x x) v := by
+  set z₀ := extChartAt I x x
+  have hd : DifferentiableWithinAt ℝ (RoughForm.inChartAt φ.1 x) (Set.range I) z₀ :=
+    (φ.isSmoothForm.contDiffWithinAt_inChartAt_self x).differentiableWithinAt (by simp)
+  let G := ContinuousAlternatingMap.fderivCompContinuousLinearMapCLM F
+    (ContinuousLinearMap.id ℝ E) (ι := Fin k)
+  have heq : (fun z ↦ G (RoughForm.inChartAt φ.1 x z) (J.inChart x z)) =ᶠ[𝓝[Set.range I] z₀]
+      fun z ↦ (((p : ℂ) - q) * Complex.I) • RoughForm.inChartAt φ.1 x z := by
+    filter_upwards [extChartAt_target_mem_nhdsWithin x] with z hz using
+      hφ.fderivCompContinuousLinearMap_inChartAt x hz
+  have h := (I.uniqueDiffOn.uniqueDiffWithinAt (Set.mem_range_self _)).eq
+    ((G.hasFDerivWithinAt_of_bilinear hd.hasFDerivWithinAt
+      (J.differentiableWithinAt_inChart x).hasFDerivWithinAt).congr_of_eventuallyEq heq.symm
+        (heq.symm.eq_of_nhdsWithin (Set.mem_range_self _)))
+      (hd.hasFDerivWithinAt.const_smul (((p : ℂ) - q) * Complex.I))
+  have hv := congrArg (fun L ↦ L v) h
+  simp only [add_apply, ContinuousLinearMap.precompR_apply,
+    ContinuousLinearMap.precompL_apply, ContinuousLinearMap.compL_apply,
+    ContinuousLinearMap.comp_apply, smul_apply, G,
+    ContinuousAlternatingMap.fderivCompContinuousLinearMapCLM_apply,
+    ← ContinuousLinearMap.alternatingDerivation_eq_fderivCompContinuousLinearMap] at hv
+  rw [add_comm]
+  exact hv
+
 /-- At each point `x`, the exterior derivative of a smooth form of type `(p,q)` has no component
 of type `(P,Q)` for `J x` unless `P - p ∈ {-1, 0, 1, 2}`. -/
 private theorem IsOfType.typeProjection_mextDeriv_apply_eq_zero (hφ : φ.IsOfType J p q)
     (x : M) (hP : P + 1 < p ∨ p + 2 < P) :
     (J.toEndomorphism x).typeProjection P Q (mextDeriv φ.1 x) = 0 := by
-  -- Differentiating the type equation of `φ` in the chart at `x`, and differentiating `J² = -1`,
-  -- gives a first-order variation of the pair `(φ x, J x)` preserving type. Its alternation is
-  -- the exterior derivative of `φ` at `x`, so the fibrewise theorem applies.
-  set z₀ := extChartAt I x x
-  have hd : DifferentiableWithinAt ℝ (RoughForm.inChartAt φ.1 x) (Set.range I) z₀ :=
-    (φ.isSmoothForm.contDiffWithinAt_inChartAt_self x).differentiableWithinAt (by simp)
-  set η := fderivWithin ℝ (RoughForm.inChartAt φ.1 x) (Set.range I) z₀
-  set A := fderivWithin ℝ (J.inChart x) (Set.range I) z₀
-  have hη (v : E) : (J.inChart x z₀).alternatingDerivation (η v) +
-      (A v).alternatingDerivation (RoughForm.inChartAt φ.1 x z₀) =
-        (((p : ℂ) - q) * Complex.I) • η v := by
-    let G := ContinuousAlternatingMap.fderivCompContinuousLinearMapCLM F
-      (ContinuousLinearMap.id ℝ E) (ι := Fin k)
-    have heq : (fun z ↦ G (RoughForm.inChartAt φ.1 x z) (J.inChart x z)) =ᶠ[𝓝[Set.range I] z₀]
-        fun z ↦ (((p : ℂ) - q) * Complex.I) • RoughForm.inChartAt φ.1 x z := by
-      filter_upwards [extChartAt_target_mem_nhdsWithin x] with z hz using
-        hφ.fderivCompContinuousLinearMap_inChartAt x hz
-    have h := (I.uniqueDiffOn.uniqueDiffWithinAt (Set.mem_range_self _)).eq
-      ((G.hasFDerivWithinAt_of_bilinear hd.hasFDerivWithinAt
-        (J.differentiableWithinAt_inChart x).hasFDerivWithinAt).congr_of_eventuallyEq heq.symm
-          (heq.symm.eq_of_nhdsWithin (Set.mem_range_self _)))
-        (hd.hasFDerivWithinAt.const_smul (((p : ℂ) - q) * Complex.I))
-    have hv := congrArg (fun L ↦ L v) h
-    simp only [add_apply, ContinuousLinearMap.precompR_apply,
-      ContinuousLinearMap.precompL_apply, ContinuousLinearMap.compL_apply,
-      ContinuousLinearMap.comp_apply, smul_apply, G,
-      ContinuousAlternatingMap.fderivCompContinuousLinearMapCLM_apply,
-      ← ContinuousLinearMap.alternatingDerivation_eq_fderivCompContinuousLinearMap] at hv
-    rw [add_comm]
-    exact hv
-  have hφ₀ : (RoughForm.inChartAt φ.1 x z₀).IsOfType (J.inChart x z₀) p q := by
+  -- The derivatives of `φ` and of `J` in the chart at `x` form a first-order variation of the
+  -- pair `(φ x, J x)` preserving type. Its alternation is the exterior derivative of `φ` at `x`,
+  -- so the fibrewise theorem applies.
+  have hφ₀ : (RoughForm.inChartAt φ.1 x (extChartAt I x x)).IsOfType
+      (J.inChart x (extChartAt I x x)) p q := by
     rw [RoughForm.inChartAt_extChartAt_self, J.inChart_extChartAt_self]
     exact hφ.apply x
   rw [mextDeriv_def, extDerivWithin, ← J.inChart_extChartAt_self x]
   exact hφ₀.typeProjection_alternatizeUncurryFin_eq_zero
-    (J.inChart_inChart x (mem_extChartAt_target x)) (J.fderivWithin_inChart_apply_apply x) hη hP
+    (J.inChart_inChart x (mem_extChartAt_target x)) (J.fderivWithin_inChart_apply_apply x)
+    (hφ.alternatingDerivation_fderivWithin_inChartAt x) hP
 
 /-- The exterior derivative of a smooth form of type `(p,q)` has no component of type `(P,Q)`
 unless `P - p ∈ {-1, 0, 1, 2}`. -/

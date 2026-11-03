@@ -9,23 +9,26 @@ public import TauCeti.Geometry.Manifold.DifferentialForm.AlmostComplexType
 public import TauCeti.Geometry.Manifold.DifferentialForm.VectorField
 public import TauCeti.Geometry.Symplectic.Manifold.Nijenhuis
 import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
+import TauCeti.Geometry.Manifold.VectorField.Regularity
 
 /-!
-# The Nijenhuis tensor and the exterior derivative of one-forms
+# The Nijenhuis tensor and the exterior derivative
 
 Let `J` be a smooth almost complex structure on a finite-dimensional manifold and let `F` be a
-complex normed space. The exterior derivative of a complex-valued smooth one-form `α` of type
-`(1,0)` has components of types `(2,0)`, `(1,1)` and `(0,2)`, and its `(0,2)` component, the
-component of bidegree `(-1,2)`, involves no derivative of `α` at all: it is the tensor
-`(v, w) ↦ α (N_J (v, w)) / 4`, where `N_J` is the Nijenhuis tensor
-`TauCeti.SmoothAlmostComplexStructure.nijenhuis`. Symmetrically, the `(2,0)` component of the
-exterior derivative of a one-form `α` of type `(0,1)`, of bidegree `(2,-1)`, is
-`(v, w) ↦ α (N_J (v, w)) / 4`.
+complex normed space. The exterior derivative of a complex-valued smooth form of type `(p,q)` has
+components of the four types `(p+2,q-1)`, `(p+1,q)`, `(p,q+1)` and `(p-1,q+2)`. The two outer
+components, of bidegrees `(2,-1)` and `(-1,2)`, involve no derivative of the form at all: they are
+given by the Nijenhuis tensor `N_J = TauCeti.SmoothAlmostComplexStructure.nijenhuis`.
 
-Consequently these components vanish exactly when `α ∘ N_J = 0`, and in particular whenever
-`N_J = 0`: then, by the decomposition of `d` into its four bidegrees, the exterior derivative of a
-one-form of type `(1,0)` has only components of types `(2,0)` and `(1,1)`, and that of a one-form
-of type `(0,1)` only components of types `(1,1)` and `(0,2)`, as on a complex manifold.
+On one-forms this is explicit. The `(0,2)` component of `dα` for a one-form `α` of type `(1,0)`
+is the tensor `(v, w) ↦ α (N_J (v, w)) / 4`, and symmetrically the `(2,0)` component of `dα` for
+a one-form `α` of type `(0,1)` is `(v, w) ↦ α (N_J (v, w)) / 4`. These components vanish exactly
+when `α ∘ N_J = 0`.
+
+In every degree, the components of types `(p+2,q-1)` and `(p-1,q+2)` of `dφ` at `x` are `1 / 8`
+times those of the alternation of `v ↦ (N_J(v, ·)).alternatingDerivation (φ x)`, which inserts
+`N_J` into `φ x`. Consequently they vanish whenever `N_J = 0`, so that then `d = ∂ + ∂bar` on forms
+of every degree, as on a complex manifold.
 
 ## Main declarations
 
@@ -36,19 +39,30 @@ of type `(0,1)` only components of types `(1,1)` and `(0,2)`, as on a complex ma
 * `TauCeti.SmoothForm.IsOfType.typeProjection_zero_two_mextDerivₗ_eq_zero_iff`,
   `TauCeti.SmoothForm.IsOfType.typeProjection_two_zero_mextDerivₗ_eq_zero_iff`: these components
   vanish exactly when `α ∘ N_J = 0`.
-* `TauCeti.SmoothForm.IsOfType.typeProjection_zero_two_mextDerivₗ_eq_zero`,
-  `TauCeti.SmoothForm.IsOfType.typeProjection_two_zero_mextDerivₗ_eq_zero`: they vanish when
-  `N_J = 0`.
+* `TauCeti.SmoothAlmostComplexStructure.nijenhuis_apply_eq_fderivWithin_inChart`: the Nijenhuis
+  tensor through the derivative of `J` read in a chart.
+* `TauCeti.SmoothForm.IsOfType.typeProjection_mextDeriv_apply_eq_inv_eight_smul`: the components
+  of bidegrees `(2,-1)` and `(-1,2)` of `d` on forms of every degree through `N_J`.
+* `TauCeti.SmoothForm.IsOfType.typeProjection_mextDerivₗ_eq_zero_of_nijenhuis_eq_zero`: these
+  components vanish when `N_J = 0`.
 
 ## Implementation notes
 
-Both sides are evaluated on vector fields extending the given tangent vectors. By the invariant
-formula `dα(X, Y) = X (α Y) - Y (α X) - α [X, Y]`, the combination
+For one-forms, both sides are evaluated on vector fields extending the given tangent vectors. By
+the invariant formula `dα(X, Y) = X (α Y) - Y (α X) - α [X, Y]`, the combination
 `dα(X, Y) - dα(JX, JY) + c • (dα(JX, Y) + dα(X, JY))`, where `α (J v) = c • α v` and `c² = -1`,
 has no derivative terms left, and its bracket terms are `α (N_J (X, Y))`. By the fibrewise
 formulas `ContinuousLinearMap.typeProjection_zero_two_apply` and
 `ContinuousLinearMap.typeProjection_two_zero_apply`, this combination is four times the `(0,2)`
 component of `dα` when `c = I`, and four times its `(2,0)` component when `c = -I`.
+
+In every degree, the form and `J` are read in the chart at `x`. Their derivatives form a
+first-order variation of the pair `(φ x, J x)` preserving the type, and the fibrewise theorem
+`ContinuousAlternatingMap.IsOfType.typeProjection_alternatizeUncurryFin_eq_inv_eight_smul`
+computes the outer components of its alternation, which is `dφ` at `x`, through the bilinear map
+`A (J v) w + A v (J w) - A (J w) v - A w (J v)` built from the derivative `A` of `J` in the chart.
+Evaluating the Lie brackets of the vector fields with constant coordinates in that chart and of
+their images under `J` identifies this bilinear map with `N_J`.
 
 ## References
 
@@ -61,7 +75,7 @@ public section
 noncomputable section
 
 open Bundle FiberBundle VectorField
-open scoped Manifold ContDiff
+open scoped Manifold ContDiff Topology
 
 variable {E H M F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSpace H]
   {I : ModelWithCorners ℝ E H} [TopologicalSpace M] [ChartedSpace H M]
@@ -170,21 +184,184 @@ theorem IsOfType.typeProjection_two_zero_mextDerivₗ_eq_zero_iff (hα : α.IsOf
   · rw [SmoothBundleForm.eval₂_apply, hα.typeProjection_two_zero_mextDerivₗ_apply, h, smul_zero]
     simp
 
-/-- If the Nijenhuis tensor vanishes, the exterior derivative of a smooth one-form of type
-`(1,0)` has no `(0,2)` component. -/
-theorem IsOfType.typeProjection_zero_two_mextDerivₗ_eq_zero (hα : α.IsOfType J 1 0)
-    (hJ : J.nijenhuis = 0) : J.typeProjection 0 2 (mextDerivₗ I 1 α) = 0 :=
-  hα.typeProjection_zero_two_mextDerivₗ_eq_zero_iff.2 fun x v w ↦ by
-    rw [hJ]
-    exact (α.1 x).map_coord_zero 0 rfl
+end SmoothForm
 
-/-- If the Nijenhuis tensor vanishes, the exterior derivative of a smooth one-form of type
-`(0,1)` has no `(2,0)` component. -/
-theorem IsOfType.typeProjection_two_zero_mextDerivₗ_eq_zero (hα : α.IsOfType J 0 1)
-    (hJ : J.nijenhuis = 0) : J.typeProjection 2 0 (mextDerivₗ I 1 α) = 0 :=
-  hα.typeProjection_two_zero_mextDerivₗ_eq_zero_iff.2 fun x v w ↦ by
-    rw [hJ]
-    exact (α.1 x).map_coord_zero 0 rfl
+/-! ### Forms of every degree -/
+
+namespace SmoothAlmostComplexStructure
+
+variable [IsManifold I ∞ M] (J : SmoothAlmostComplexStructure I M) (x : M)
+
+/-- Along the inverse of the extended chart at `x`, the vector field with constant coordinates
+`u` in the trivialization of the tangent bundle at `x` pulls back to the constant field `u` near
+the chart point. -/
+private theorem mpullbackWithin_symm_trivializationAt_eventuallyEq (u : E) :
+    VectorField.mpullbackWithin 𝓘(ℝ, E) I (extChartAt I x).symm
+        (fun y ↦ (trivializationAt E (TangentSpace I) x).symm y u) (Set.range I)
+      =ᶠ[𝓝[Set.range I] extChartAt I x x] fun _ ↦ u := by
+  filter_upwards [extChartAt_target_mem_nhdsWithin x] with z hz
+  have hy := (extChartAt I x).map_target hz
+  have hy' : (extChartAt I x).symm z ∈ (trivializationAt E (TangentSpace I) x).baseSet := by
+    rwa [TangentBundle.trivializationAt_baseSet, ← extChartAt_source I]
+  have h := VectorField.mpullbackWithin_extChartAt_symm_apply
+    (fun y ↦ (trivializationAt E (TangentSpace I) x).symm y u) hy
+  rw [(extChartAt I x).right_inv hz] at h
+  rw [h, Bundle.Trivialization.apply_mk_symm _ hy']
+
+/-- Along the inverse of the extended chart at `x`, the image under `J` of the vector field with
+constant coordinates `u` in the trivialization of the tangent bundle at `x` pulls back to
+`z ↦ J.inChart x z u` near the chart point. -/
+private theorem mpullbackWithin_apply_symm_trivializationAt_eventuallyEq (u : E) :
+    VectorField.mpullbackWithin 𝓘(ℝ, E) I (extChartAt I x).symm
+        (fun y ↦ J y ((trivializationAt E (TangentSpace I) x).symm y u)) (Set.range I)
+      =ᶠ[𝓝[Set.range I] extChartAt I x x] fun z ↦ J.inChart x z u := by
+  filter_upwards [extChartAt_target_mem_nhdsWithin x] with z hz
+  have hy := (extChartAt I x).map_target hz
+  have h := VectorField.mpullbackWithin_extChartAt_symm_apply
+    (fun y ↦ J y ((trivializationAt E (TangentSpace I) x).symm y u)) hy
+  rw [(extChartAt I x).right_inv hz] at h
+  rw [h, ← J.inChart_extChartAt_apply x hy, (extChartAt I x).right_inv hz]
+
+variable [FiniteDimensional ℝ E]
+
+/-- **The Nijenhuis tensor in a chart.** Let `A` be the derivative at the chart point of the
+almost complex structure read in the chart at `x` (`SmoothAlmostComplexStructure.inChart`). Then
+`N_J(v, w) = A (J v) w + A v (J w) - A (J w) v - A w (J v)`. -/
+theorem nijenhuis_apply_eq_fderivWithin_inChart (v w : TangentSpace I x) :
+    J.nijenhuis x v w =
+      fderivWithin ℝ (J.inChart x) (Set.range I) (extChartAt I x x) (J x v) w +
+        fderivWithin ℝ (J.inChart x) (Set.range I) (extChartAt I x x) v (J x w) -
+        fderivWithin ℝ (J.inChart x) (Set.range I) (extChartAt I x x) (J x w) v -
+        fderivWithin ℝ (J.inChart x) (Set.range I) (extChartAt I x x) w (J x v) := by
+  -- Work with `v` and `w` as vectors of the model space, the coordinates of the constant fields.
+  obtain ⟨v, rfl⟩ : ∃ v' : E, v' = v := ⟨v, rfl⟩
+  obtain ⟨w, rfl⟩ : ∃ w' : E, w' = w := ⟨w, rfl⟩
+  set A := fderivWithin ℝ (J.inChart x) (Set.range I) (extChartAt I x x)
+  set e := trivializationAt E (TangentSpace I) x
+  have hs : UniqueDiffWithinAt ℝ (Set.range I) (extChartAt I x x) :=
+    I.uniqueDiffOn _ (Set.mem_range_self _)
+  -- The vector fields with constant coordinates `v` and `w` near `x`, and their images under `J`.
+  have hx : x ∈ e.baseSet := FiberBundle.mem_baseSet_trivializationAt' x
+  have hext (u : E) : (fun y ↦ e.symm y u : Π y : M, TangentSpace I y) =
+      FiberBundle.extend E (e.symm x u) := by
+    funext y
+    simp only [FiberBundle.extend, e, Bundle.Trivialization.apply_mk_symm _ hx]
+  have hmdiff (u : E) : MDiffAt (T% (fun y ↦ e.symm y u : Π y : M, TangentSpace I y)) x := by
+    have h := mdifferentiableAt_extend (I := I) E (e.symm x u)
+    rwa [← hext] at h
+  have hself (u : E) : e.symm x u = u := by
+    have h := VectorField.mpullbackWithin_extChartAt_symm_self (I := I)
+      (fun y ↦ e.symm y u : Π y : M, TangentSpace I y) x
+    rw [(mpullbackWithin_symm_trivializationAt_eventuallyEq x u).eq_of_nhdsWithin
+      (Set.mem_range_self _)] at h
+    exact h.symm
+  -- Lie brackets at `x` are Lie brackets of the pullbacks to the model space.
+  have hbr {V W : Π y : M, TangentSpace I y} {V' W' : E → E}
+      (hV : VectorField.mpullbackWithin 𝓘(ℝ, E) I (extChartAt I x).symm V (Set.range I)
+        =ᶠ[𝓝[Set.range I] extChartAt I x x] V')
+      (hW : VectorField.mpullbackWithin 𝓘(ℝ, E) I (extChartAt I x).symm W (Set.range I)
+        =ᶠ[𝓝[Set.range I] extChartAt I x x] W') :
+      mlieBracket I V W x = lieBracketWithin ℝ V' W' (Set.range I) (extChartAt I x x) := by
+    have h := VectorField.lieBracketWithin_mpullbackWithin_extChartAt_symm V W Set.univ x
+    rw [Set.preimage_univ, Set.univ_inter, mlieBracketWithin_univ] at h
+    rw [← h]
+    exact hV.lieBracketWithin_vectorField_eq_of_mem hW (Set.mem_range_self _)
+  have hd (u d : E) :
+      fderivWithin ℝ (fun z ↦ J.inChart x z u) (Set.range I) (extChartAt I x x) d = A d u := by
+    rw [fderivWithin_clm_apply hs (J.differentiableWithinAt_inChart x)
+      (differentiableWithinAt_const u)]
+    simp [A]
+  have hA (u u' : E) : A u (J.toEndomorphism x u') = -J.toEndomorphism x (A u u') := by
+    have h := J.fderivWithin_inChart_apply_apply x u u'
+    rwa [J.inChart_extChartAt_self] at h
+  have hN := J.nijenhuis_apply (hmdiff v) (hmdiff w)
+  rw [hself v, hself w] at hN
+  rw [hbr (mpullbackWithin_apply_symm_trivializationAt_eventuallyEq J x v)
+      (mpullbackWithin_apply_symm_trivializationAt_eventuallyEq J x w),
+    hbr (mpullbackWithin_symm_trivializationAt_eventuallyEq x v)
+      (mpullbackWithin_symm_trivializationAt_eventuallyEq x w),
+    hbr (mpullbackWithin_apply_symm_trivializationAt_eventuallyEq J x v)
+      (mpullbackWithin_symm_trivializationAt_eventuallyEq x w),
+    hbr (mpullbackWithin_symm_trivializationAt_eventuallyEq x v)
+      (mpullbackWithin_apply_symm_trivializationAt_eventuallyEq J x w)] at hN
+  simp only [lieBracketWithin, hd, fderivWithin_const_apply, zero_apply,
+    J.inChart_extChartAt_self, sub_zero, zero_sub] at hN
+  have hJA : J.toEndomorphism x (-(A w v)) = A w (J.toEndomorphism x v) :=
+    (map_neg _ _).trans (hA w v).symm
+  have hJA' : J.toEndomorphism x (A v w) = -A v (J.toEndomorphism x w) :=
+    (neg_eq_iff_eq_neg.2 (hA v w)).symm
+  beta_reduce
+  rw [hN, hJA, hJA']
+  -- The two sides use the additive structures of `TangentSpace I x` and of `E`, which agree
+  -- definitionally but are not identified by `abel`.
+  exact (fun a b c d ↦ by abel : ∀ a b c d : E, a - b - 0 - c - -d = a + d - b - c) _ _ _ _
+
+end SmoothAlmostComplexStructure
+
+namespace SmoothForm
+
+variable [IsManifold I ∞ M] [FiniteDimensional ℝ E] {J : SmoothAlmostComplexStructure I M}
+  {k p q P Q : ℕ} {φ : SmoothForm I M F k}
+
+open ContinuousAlternatingMap (alternatizeUncurryFin)
+
+/-- The components of bidegrees `(2,-1)` and `(-1,2)` of `d`, for any bilinear map `N` on the
+model space with the values of the Nijenhuis tensor at `x`. Stating this for such an `N`, rather
+than for `J.nijenhuis x` itself, keeps the bilinear map a map of the normed model space, where the
+alternation lives, rather than of the tangent space. -/
+private theorem IsOfType.typeProjection_mextDeriv_apply_eq_inv_eight_smul_of_forall_eq
+    (hφ : φ.IsOfType J p q) (x : M) (hP : P = p + 2 ∨ P + 1 = p) {N : E →L[ℝ] E →L[ℝ] E}
+    (hN : ∀ v w, N v w = J.nijenhuis x v w) :
+    (J.toEndomorphism x).typeProjection P Q (mextDeriv φ.1 x) =
+      (8 : ℂ)⁻¹ • (J.toEndomorphism x).typeProjection P Q
+        (alternatizeUncurryFin ((φ.1 x : E [⋀^Fin k]→L[ℝ] F).fderivCompContinuousLinearMap
+          (.id ℝ E) ∘L N) : E [⋀^Fin (k + 1)]→L[ℝ] F) := by
+  -- The derivatives of `φ` and of `J` in the chart at `x` form a first-order variation of the
+  -- pair `(φ x, J x)` preserving type, whose bilinear map `N` is the Nijenhuis tensor in that
+  -- chart. Its alternation is the exterior derivative of `φ` at `x`.
+  have hφ₀ : (RoughForm.inChartAt φ.1 x (extChartAt I x x)).IsOfType
+      (J.inChart x (extChartAt I x x)) p q := by
+    rw [RoughForm.inChartAt_extChartAt_self, J.inChart_extChartAt_self]
+    exact hφ.apply x
+  have h := hφ₀.typeProjection_alternatizeUncurryFin_eq_inv_eight_smul
+    (J.inChart_inChart x (mem_extChartAt_target x)) (J.fderivWithin_inChart_apply_apply x)
+    (hφ.alternatingDerivation_fderivWithin_inChartAt x) (N := N) (fun v w ↦ by
+      have h := J.nijenhuis_apply_eq_fderivWithin_inChart x v w
+      beta_reduce at h
+      rw [← J.inChart_extChartAt_self] at h
+      exact (hN v w).trans h) (Q := Q) hP
+  rw [J.inChart_extChartAt_self, RoughForm.inChartAt_extChartAt_self] at h
+  rw [mextDeriv_def, extDerivWithin]
+  exact h
+
+/-- **The components of bidegrees `(2,-1)` and `(-1,2)` of `d` are given by the Nijenhuis
+tensor.** Let `φ` be a smooth form of type `(p,q)`. At each point `x`, the components of types
+`(p+2,q-1)` and `(p-1,q+2)` of `dφ` are `1 / 8` times those of the alternation of
+`v ↦ (N_J(v, ·)).alternatingDerivation (φ x)`, the form
+`(v₀, …, v_k) ↦ ∑_{i ≠ j} ± φ x (…, N_J(v_i, v_j), …)` that inserts the Nijenhuis tensor into
+`φ x`. In particular they involve no derivative of `φ`. -/
+theorem IsOfType.typeProjection_mextDeriv_apply_eq_inv_eight_smul (hφ : φ.IsOfType J p q)
+    (x : M) (hP : P = p + 2 ∨ P + 1 = p) :
+    (J.toEndomorphism x).typeProjection P Q (mextDeriv φ.1 x) =
+      (8 : ℂ)⁻¹ • (J.toEndomorphism x).typeProjection P Q
+        (alternatizeUncurryFin ((φ.1 x : E [⋀^Fin k]→L[ℝ] F).fderivCompContinuousLinearMap
+          (.id ℝ E) ∘L (J.nijenhuis x : E →L[ℝ] E →L[ℝ] E)) : E [⋀^Fin (k + 1)]→L[ℝ] F) :=
+  hφ.typeProjection_mextDeriv_apply_eq_inv_eight_smul_of_forall_eq x hP fun _ _ ↦ rfl
+
+/-- If the Nijenhuis tensor vanishes, the exterior derivative of a smooth form of type `(p,q)` has
+no components of types `(p+2,q-1)` and `(p-1,q+2)`. -/
+theorem IsOfType.typeProjection_mextDerivₗ_eq_zero_of_nijenhuis_eq_zero (hφ : φ.IsOfType J p q)
+    (hJ : J.nijenhuis = 0) (hP : P = p + 2 ∨ P + 1 = p) :
+    J.typeProjection P Q (mextDerivₗ I k φ) = 0 :=
+  Subtype.ext <| funext fun x ↦ by
+    simp only [SmoothAlmostComplexStructure.coe_typeProjection, mextDerivₗ_apply,
+      ZeroMemClass.coe_zero, Pi.zero_apply]
+    rw [hφ.typeProjection_mextDeriv_apply_eq_inv_eight_smul_of_forall_eq x hP (N := 0)
+        fun v w ↦ by rw [hJ]; rfl,
+      ContinuousLinearMap.comp_zero, ← ContinuousAlternatingMap.alternatizeUncurryFinCLM_apply,
+      map_zero]
+    -- The alternation is a form on the model space, definitionally the tangent space at `x`.
+    exact smul_eq_zero_of_right _ (map_zero ((J.toEndomorphism x).typeProjection P Q))
 
 end SmoothForm
 
