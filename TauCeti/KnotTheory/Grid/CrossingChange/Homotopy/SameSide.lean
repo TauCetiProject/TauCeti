@@ -64,38 +64,6 @@ variable {n : ℕ} {G : GridDiagram n} {C : ColumnTurn n} {t : Fin n}
 local notation "a" => C.column
 local notation "b" => finRotate n C.column
 
-/-! ### Comparing the squares of a pair with those of a composite -/
-
-/-- Let `A₀, B₀` and `S, F₀` be two partitions of the same squares into two disjoint sets. Suppose
-that, away from the columns `a` and `b`, the sets `A`, `B` and `F` agree with `A₀`, `B₀` and `F₀`,
-that `S` covers nothing in the columns `a` and `b`, and that there `A` and `B` cover exactly the
-squares of `F`, without overlap. Then `A, B` and `S, F` partition the same squares. -/
-private theorem squares_eq_of_repartition {A B S F A₀ B₀ F₀ : Finset (Fin n × Fin n)}
-    (hrep : S ∪ F₀ = A₀ ∪ B₀) (hSF : Disjoint S F₀) (hAB : Disjoint A₀ B₀)
-    (hA : ∀ p : Fin n × Fin n, p.1 ≠ a → p.1 ≠ b → (p ∈ A ↔ p ∈ A₀))
-    (hB : ∀ p : Fin n × Fin n, p.1 ≠ a → p.1 ≠ b → (p ∈ B ↔ p ∈ B₀))
-    (hF : ∀ p : Fin n × Fin n, p.1 ≠ a → p.1 ≠ b → (p ∈ F ↔ p ∈ F₀))
-    (hS : ∀ p ∈ S, p.1 ≠ a ∧ p.1 ≠ b)
-    (hcol : ∀ p : Fin n × Fin n, p.1 = a ∨ p.1 = b →
-      (p ∈ A ∨ p ∈ B ↔ p ∈ F) ∧ ¬(p ∈ A ∧ p ∈ B)) :
-    A ∪ B = S ∪ F ∧ Disjoint A B ∧ Disjoint S F := by
-  refine ⟨Finset.ext fun p => ?_, Finset.disjoint_left.mpr fun {p} h₁ h₂ => ?_,
-    Finset.disjoint_left.mpr fun {p} h₁ h₂ => ?_⟩
-  · rw [Finset.mem_union, Finset.mem_union]
-    by_cases hp : p.1 = a ∨ p.1 = b
-    · have hSp : p ∉ S := fun h => by
-        rcases hp with hp | hp
-        exacts [(hS p h).1 hp, (hS p h).2 hp]
-      rw [(hcol p hp).1, iff_false_intro hSp, false_or]
-    · rw [not_or] at hp
-      rw [hA p hp.1 hp.2, hB p hp.1 hp.2, hF p hp.1 hp.2, ← Finset.mem_union, ← Finset.mem_union,
-        hrep]
-  · by_cases hp : p.1 = a ∨ p.1 = b
-    · exact (hcol p hp).2 ⟨h₁, h₂⟩
-    · rw [not_or] at hp
-      exact Finset.disjoint_left.mp hAB ((hA p hp.1 hp.2).mp h₁) ((hB p hp.1 hp.2).mp h₂)
-  · exact Finset.disjoint_left.mp hSF h₁ ((hF p (hS p h₁).1 (hS p h₁).2).mp h₂)
-
 variable (R : Type*) [CommSemiring R]
 
 /-! ### Terminal-side pairs -/
@@ -146,13 +114,16 @@ private theorem terminalPair_squares {u v u' v' : GridState n} (S : GridRectangl
     · rcases Finset.mem_union.mp hPQr with h' | h'
       · exact P.mk_notMem_toGridRectangle_coveredSquares_right_column r h'
       · exact Q.mk_notMem_toGridRectangle_coveredSquares_right_column r h'
-  refine squares_eq_of_repartition hrep hSH hPQ
-    (fun p ha hb => P.mem_coveredSquares_iff_of_ne ha hb)
-    (fun p ha hb => (Finset.mem_map_swap_prodCongr_refl_iff_of_ne _ ha hb).trans
-      (Q.mem_coveredSquares_iff_of_ne ha hb))
-    (fun p ha hb => by
+  refine Finset.union_eq_union_and_disjoint_and_disjoint_of_repartition
+    (fun p : Fin n × Fin n => p.1 = a ∨ p.1 = b) hrep hSH hPQ
+    (fun p hp => P.mem_coveredSquares_iff_of_ne (hp <| .inl ·) (hp <| .inr ·))
+    (fun p hp => (Finset.mem_map_swap_prodCongr_refl_iff_of_ne _ (hp <| .inl ·)
+      (hp <| .inr ·)).trans (Q.mem_coveredSquares_iff_of_ne (hp <| .inl ·) (hp <| .inr ·)))
+    (fun p hp => by
+      rw [not_or] at hp
       rw [H.mem_crossingCoveredSquares]
-      simp only [ha, hb, false_and, not_false_eq_true, and_true, or_false]) hS ?_
+      simp only [hp.1, hp.2, false_and, not_false_eq_true, and_true, or_false])
+    (fun p h => not_or.mpr (hS p h)) ?_
   -- In the columns `a` and `b`, membership in each domain is a cyclic row interval.
   rintro ⟨c, r⟩ (rfl | rfl)
   · rw [P.mk_mem_coveredSquares_left_column, Finset.mk_mem_map_swap_prodCongr_refl_iff,
@@ -351,13 +322,16 @@ private theorem initialPair_squares {u v u' v' : GridState n} (S : GridRectangle
       rcases Finset.mem_union.mp hPQr with h' | h'
       · exact Or.inl ((P.mk_mem_toGridRectangle_coveredSquares_right_column r).mp h')
       · exact Or.inr (hbottom ▸ (Q.mk_mem_toGridRectangle_coveredSquares_right_column r).mp h')
-  refine squares_eq_of_repartition hrep hSH hPQ
-    (fun p ha hb => P.mem_coveredSquares_iff_of_ne ha hb)
-    (fun p ha hb => (Finset.mem_map_swap_prodCongr_refl_iff_of_ne _ ha hb).trans
-      (Q.mem_coveredSquares_iff_of_ne ha hb))
-    (fun p ha hb => by
+  refine Finset.union_eq_union_and_disjoint_and_disjoint_of_repartition
+    (fun p : Fin n × Fin n => p.1 = a ∨ p.1 = b) hrep hSH hPQ
+    (fun p hp => P.mem_coveredSquares_iff_of_ne (hp <| .inl ·) (hp <| .inr ·))
+    (fun p hp => (Finset.mem_map_swap_prodCongr_refl_iff_of_ne _ (hp <| .inl ·)
+      (hp <| .inr ·)).trans (Q.mem_coveredSquares_iff_of_ne (hp <| .inl ·) (hp <| .inr ·)))
+    (fun p hp => by
+      rw [not_or] at hp
       rw [H.mem_crossingCoveredSquares]
-      simp only [ha, hb, false_and, not_false_eq_true, and_true, or_false]) hS ?_
+      simp only [hp.1, hp.2, false_and, not_false_eq_true, and_true, or_false])
+    (fun p h => not_or.mpr (hS p h)) ?_
   -- In the columns `a` and `b`, membership in each domain is a cyclic row interval.
   rintro ⟨c, r⟩ (rfl | rfl)
   · rw [P.mk_mem_coveredSquares_left_column, Finset.mk_mem_map_swap_prodCongr_refl_iff,
