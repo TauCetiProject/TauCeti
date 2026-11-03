@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RingTheory.Invariant.EquivalenceRelation.Basic
+public import TauCeti.RingTheory.IsTensorProduct.EqLocus
 public import TauCeti.RingTheory.IsTensorProduct.Pushout
 
 /-!
@@ -41,6 +42,9 @@ relation (SGA 3, Exposé V, Théorème 4.1) to the case of a local ring of invar
 ## Main results
 
 * `RingHom.IsSpecEquivRel.of_isPushout`: an equivalence relation remains one after base change.
+* `RingHom.IsSpecEquivRel.exists_baseChange_ringEquiv_eqLocus`: the base change of the relation
+  along a flat map `C → C'` from its ring of invariants `C` is an equivalence relation whose ring of
+  invariants is a copy of `C'`.
 
 ## References
 
@@ -110,5 +114,58 @@ theorem IsSpecEquivRel.of_isPushout (R : Type*) [CommRing R] [Algebra R A] [Alge
     · simpa [ht₂'] using congr($hxy (algebraMap R' A' r))
 
 end EquivRel
+
+section Invariants
+
+open TensorProduct
+
+variable {A B : Type u} [CommRing A] [CommRing B] [Algebra A B] {t : A →+* B}
+
+attribute [local instance] Algebra.TensorProduct.rightAlgebra in
+/-- **Flat base change of the relation and its invariants.** Let `Spec B ⇉ Spec A` be an
+equivalence relation with ring of invariants `C = {a : s a = t a}`, and let `C'` be a flat
+`C`-algebra. Put `A' = C' ⊗[C] A` and `B' = A' ⊗[A] B`. Then there is a ring homomorphism
+`t' : A' →+* B'`, which is `t` on `A` and the first morphism `A' → B'` on `C'`, such that
+`Spec B' ⇉ Spec A'` is an equivalence relation whose ring of invariants is the image of `C'` in
+`A'`, a copy of `C'`. -/
+theorem IsSpecEquivRel.exists_baseChange_ringEquiv_eqLocus
+    (h : (algebraMap A B).IsSpecEquivRel t) (C' : Type u) [CommRing C']
+    [Algebra ((algebraMap A B).eqLocus t) C'] [Module.Flat ((algebraMap A B).eqLocus t) C'] :
+    ∃ (t' : C' ⊗[(algebraMap A B).eqLocus t] A →+* (C' ⊗[(algebraMap A B).eqLocus t] A) ⊗[A] B)
+      (e : C' ≃+* (algebraMap (C' ⊗[(algebraMap A B).eqLocus t] A)
+        ((C' ⊗[(algebraMap A B).eqLocus t] A) ⊗[A] B)).eqLocus t'),
+      (algebraMap _ _).IsSpecEquivRel t' ∧
+      t'.comp (algebraMap A _) = (algebraMap B _).comp t ∧
+      t'.comp (algebraMap C' _) =
+        (algebraMap _ _).comp (algebraMap C' (C' ⊗[(algebraMap A B).eqLocus t] A)) ∧
+      ∀ y, (e y : C' ⊗[(algebraMap A B).eqLocus t] A) = algebraMap C' _ y := by
+  let A' := C' ⊗[(algebraMap A B).eqLocus t] A
+  let B' := A' ⊗[A] B
+  -- the base change `t' : A' → B'` of `t`
+  have hct : ((algebraMap B B').comp t).comp (algebraMap ((algebraMap A B).eqLocus t) A) =
+      ((algebraMap A' B').comp (algebraMap C' A')).comp
+        (algebraMap ((algebraMap A B).eqLocus t) C') := by
+    ext c
+    have hc : t (algebraMap _ A c) = algebraMap A B (algebraMap _ A c) := (mem_eqLocus.mp c.2).symm
+    simp only [RingHom.comp_apply, hc]
+    rw [← IsScalarTower.algebraMap_apply A B B', IsScalarTower.algebraMap_apply A A' B',
+      ← IsScalarTower.algebraMap_apply _ A A', IsScalarTower.algebraMap_apply _ C' A']
+  let t' : A' →+* B' := Algebra.IsPushout.liftRingHom A' _ _ hct
+  have ht₁ : t'.comp (algebraMap A A') = (algebraMap B B').comp t := by
+    ext; simp [t']
+  have ht₂ : t'.comp (algebraMap C' A') = (algebraMap A' B').comp (algebraMap C' A') := by
+    ext; simp [t']
+  have hR' := eqLocus_eq_range_of_isPushout (R' := C') (A := A) (B := B) (A' := A')
+    (B' := B') ((algebraMap A B).eqLocus t).range_subtype.symm ht₁ ht₂
+  -- the invariants of `A'` are a copy of `C'`
+  have hinj : Function.Injective (algebraMap C' A') :=
+    Algebra.TensorProduct.includeLeft_injective (S := C') Subtype.val_injective
+  let e : C' ≃+* (algebraMap A' B').eqLocus t' :=
+    (RingEquiv.ofBijective (algebraMap C' A').rangeRestrict ⟨fun x y hxy ↦
+      hinj (congrArg Subtype.val hxy), (algebraMap C' A').rangeRestrict_surjective⟩).trans
+      (RingEquiv.subringCongr hR'.symm)
+  exact ⟨t', e, h.of_isPushout ((algebraMap A B).eqLocus t) ht₁ ht₂, ht₁, ht₂, fun _ ↦ rfl⟩
+
+end Invariants
 
 end RingHom

@@ -7,7 +7,8 @@ module
 
 public import Mathlib.CategoryTheory.Monoidal.Rigid.Braided
 public import TauCeti.CategoryTheory.Monoidal.Center.Basic
-public import TauCeti.CategoryTheory.Monoidal.Rigid.Mate
+public import TauCeti.CategoryTheory.Monoidal.Rigid.DualFunctor
+public import TauCeti.CategoryTheory.Monoidal.Rigid.Functor
 
 /-!
 # The Drinfeld centre of a rigid category is rigid
@@ -40,6 +41,8 @@ category.
   natural and monoidal in `U`;
 * `CategoryTheory.HalfBraiding.rightDualβHom_eq_rightMate`: the same components as mates of the
   half-braiding at a left dual;
+* `CategoryTheory.HalfBraiding.rightDualβHom_rightDual`: at the right dual `Uᘁ` of an object `U`,
+  the same components as the right adjoint mate of the half-braiding at `U`;
 * `CategoryTheory.HalfBraiding.rightDual`: the half-braiding induced on a right dual, in a left
   rigid category;
 * `CategoryTheory.Center.rightDualObj` and `CategoryTheory.Center.exactPairingRightDualObj`: a
@@ -47,7 +50,13 @@ category.
 * `CategoryTheory.Center.rigidCategory`: the centre of a rigid category is rigid, with right
   duals and their evaluation, coevaluation and mates computed in `C`
   (`CategoryTheory.Center.rightDual_fst`, `CategoryTheory.Center.coevaluation_f`,
-  `CategoryTheory.Center.evaluation_f`, `CategoryTheory.Center.rightAdjointMate_f`).
+  `CategoryTheory.Center.evaluation_f`, `CategoryTheory.Center.rightAdjointMate_f`);
+* `CategoryTheory.Center.doubleRightDualFunctor_μ_f` and
+  `CategoryTheory.Center.doubleRightDualFunctor_ε_f`: the tensor and unit comparisons of the double
+  right dual functor of the centre are those of `C`, as are the comparisons
+  `(X ⊗ Y)ᘁ ≅ Yᘁ ⊗ Xᘁ` and `(𝟙_ (Center C))ᘁ ≅ 𝟙_ (Center C)` they are built from;
+* `CategoryTheory.Center.forget_mapRightDualIso`: the comparison of the forgetful functor with
+  right duals is the identity.
 
 ## References
 
@@ -167,6 +176,18 @@ theorem rightDualβHom_eq_rightMate {U V : C} [ExactPairing V U] :
     _ = 𝟙 _ ⊗≫ X' ◁ ((b.β U).inv ▷ V ⊗≫ X ◁ ε_ V U ⊗≫ 𝟙 X) ⊗≫ ε_ X X' := by
       rw [← whisker_exchange]; monoidal
     _ = _ := by rw [inv_whiskerRight_comp_whiskerLeft]; monoidal
+
+/-- The half-braiding induced on the right dual `Xᘁ`, at the right dual `Uᘁ` of `U`, is the right
+adjoint mate of the half-braiding at `U`, up to the comparisons `(U ⊗ X)ᘁ ≅ Xᘁ ⊗ Uᘁ` and
+`(X ⊗ U)ᘁ ≅ Uᘁ ⊗ Xᘁ`. -/
+theorem rightDualβHom_rightDual [HasRightDual X] (U : C) [HasRightDual U]
+    [HasRightDual (U ⊗ X)] [HasRightDual (X ⊗ U)] :
+    b.rightDualβHom Xᘁ Uᘁ =
+      (rightDualTensorIso U X).inv ≫ ((b.β U).hom)ᘁ ≫ (rightDualTensorIso X U).hom := by
+  rw [b.rightDualβHom_eq_rightMate Xᘁ (U := Uᘁ) (V := U), Iso.eq_inv_comp]
+  simp only [rightDualTensorIso, ExactPairing.rightDualIso_hom,
+    TauCeti.rightAdjointMate_eq_rightMate, ← ExactPairing.comp_rightMate, Category.id_comp,
+    Category.comp_id]
 
 /-- The coevaluation of `X` and `X'` commutes with the half-braidings of the unit and of
 `X ⊗ X'`, the latter built from `b` and `rightDualβHom`. -/
@@ -360,5 +381,100 @@ the induced half-braiding `HalfBraiding.rightDual`; left duals are obtained from
 the braiding of the centre. -/
 noncomputable instance Center.rigidCategory [RigidCategory C] : RigidCategory (Center C) where
   leftDual X := BraidedCategory.hasLeftDualOfHasRightDual (X := X)
+
+namespace Center
+
+variable [RigidCategory C]
+
+/-- The comparison `(X ⊗ Y)ᘁ ≅ Yᘁ ⊗ Xᘁ` of the centre is computed in `C`. -/
+@[simp]
+theorem rightDualTensorIso_hom_f (X Y : Center C) :
+    (rightDualTensorIso X Y).hom.f = (rightDualTensorIso X.1 Y.1).hom := by
+  -- Both sides are characterized by their composites with the evaluation of the tensor product
+  -- pairing, and the evaluations of the centre are computed in `C`.
+  refine ExactPairing.rightHom_ext (X := X.1 ⊗ Y.1) (Y := Y.1ᘁ ⊗ X.1ᘁ) ?_
+  -- Writing the evaluation of the tensor product pairing of the centre with explicit structure
+  -- morphisms lets the `Center.*_f` lemmas compute it in `C`.
+  have e : ε_ (X ⊗ Y) (Yᘁ ⊗ Xᘁ) = (α_ _ _ _).hom ≫ (Yᘁ : Center C) ◁ (α_ _ _ _).inv ≫
+      (Yᘁ : Center C) ◁ ε_ X Xᘁ ▷ Y ≫ (Yᘁ : Center C) ◁ (λ_ Y).hom ≫ ε_ Y Yᘁ := by
+    simp [ExactPairing.tensor_evaluation, monoidalComp]
+  have h := congrArg Hom.f (TauCeti.rightDualTensorIso_hom_whiskerRight_evaluation X Y)
+  refine Eq.trans ?_ (TauCeti.rightDualTensorIso_hom_whiskerRight_evaluation X.1 Y.1).symm
+  simp only [e, comp_f, whiskerRight_f, whiskerLeft_f, associator_hom_f, associator_inv_f,
+    leftUnitor_hom_f, evaluation_f] at h
+  rw [ExactPairing.tensor_evaluation]
+  refine Eq.trans ?_ h
+  monoidal
+
+/-- The inverse of the comparison `(X ⊗ Y)ᘁ ≅ Yᘁ ⊗ Xᘁ` of the centre is computed in `C`. -/
+@[simp]
+theorem rightDualTensorIso_inv_f (X Y : Center C) :
+    (rightDualTensorIso X Y).inv.f = (rightDualTensorIso X.1 Y.1).inv := by
+  have h := congrArg Hom.f (rightDualTensorIso X Y).inv_hom_id
+  simp only [comp_f, id_f, rightDualTensorIso_hom_f] at h
+  exact (Iso.comp_hom_eq_id _).1 h
+
+/-- The identification of the chosen right dual of the unit of the centre with the unit is
+computed in `C`. -/
+@[simp]
+theorem rightDualIso_exactPairingUnit_hom_f :
+    (rightDualIso (RightRigidCategory.rightDual (𝟙_ (Center C))).exact exactPairingUnit).hom.f =
+      (rightDualIso (RightRigidCategory.rightDual (𝟙_ C)).exact exactPairingUnit).hom := by
+  refine ExactPairing.rightHom_ext (X := 𝟙_ C) (Y := 𝟙_ C) ?_
+  have h := congrArg Hom.f (ExactPairing.rightDualIso_hom_whiskerRight_evaluation
+    (RightRigidCategory.rightDual (𝟙_ (Center C))).exact exactPairingUnit)
+  refine Eq.trans ?_ (ExactPairing.rightDualIso_hom_whiskerRight_evaluation _ _).symm
+  simp only [comp_f, whiskerRight_f, TauCeti.ExactPairing.unit_evaluation, rightUnitor_hom_f,
+    evaluation_f] at h ⊢
+  exact h
+
+/-- The inverse identification of the chosen right dual of the unit of the centre with the unit
+is computed in `C`. -/
+@[simp]
+theorem rightDualIso_exactPairingUnit_inv_f :
+    (rightDualIso (RightRigidCategory.rightDual (𝟙_ (Center C))).exact exactPairingUnit).inv.f =
+      (rightDualIso (RightRigidCategory.rightDual (𝟙_ C)).exact exactPairingUnit).inv := by
+  have h := congrArg Hom.f
+    (rightDualIso (RightRigidCategory.rightDual (𝟙_ (Center C))).exact exactPairingUnit).inv_hom_id
+  simp only [comp_f, id_f, rightDualIso_exactPairingUnit_hom_f] at h
+  exact (Iso.comp_hom_eq_id _).1 h
+
+open Functor.LaxMonoidal TauCeti
+
+/-- The tensor comparison of the double right dual functor of the centre is that of `C`. -/
+@[simp]
+theorem doubleRightDualFunctor_μ_f (X Y : Center C) :
+    (μ (doubleRightDualFunctor (Center C)) X Y).f = μ (doubleRightDualFunctor C) X.1 Y.1 := by
+  rw [doubleRightDualFunctor_μ, doubleRightDualFunctor_μ, comp_f, rightAdjointMate_f,
+    rightDualTensorIso_inv_f, rightDualTensorIso_hom_f]
+  -- The two sides differ only in how `(Xᘁ).1` and `X.1ᘁ` are written.
+  rfl
+
+/-- The unit comparison of the double right dual functor of the centre is that of `C`. -/
+@[simp]
+theorem doubleRightDualFunctor_ε_f :
+    (ε (doubleRightDualFunctor (Center C))).f = ε (doubleRightDualFunctor C) := by
+  -- In both categories, the unit comparison is the inverse identification of the right dual of
+  -- the unit with the unit, followed by the mate of that identification.
+  rw [doubleRightDualFunctor_ε_eq_rightAdjointMate, doubleRightDualFunctor_ε_eq_rightAdjointMate,
+    comp_f, rightAdjointMate_f, rightDualIso_exactPairingUnit_inv_f,
+    rightDualIso_exactPairingUnit_hom_f]
+  -- The two sides differ only in how the right duals of the units are written.
+  rfl
+
+/-- The comparison between the image of a right dual under the forgetful functor of the centre
+and the right dual of the image is the identity: right duals in the centre are computed in
+`C`. -/
+@[simp]
+theorem forget_mapRightDualIso (X : Center C) :
+    (forget C).mapRightDualIso X = Iso.refl X.1ᘁ := by
+  ext
+  refine ExactPairing.rightHom_ext (X := X.1) (Y := X.1ᘁ)
+    ((Functor.mapRightDualIso_hom_whiskerRight_evaluation X).trans ?_)
+  have h : 𝟙 X.1ᘁ ▷ X.1 ≫ ε_ X.1 X.1ᘁ = ε_ X.1 X.1ᘁ := by simp
+  exact (Category.id_comp _).trans ((Category.comp_id _).trans ((evaluation_f (X := X)).trans
+    h.symm))
+
+end Center
 
 end CategoryTheory

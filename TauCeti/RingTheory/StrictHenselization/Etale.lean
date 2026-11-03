@@ -7,6 +7,8 @@ module
 
 public import TauCeti.RingTheory.StrictHenselization.Local
 public import Mathlib.RingTheory.LocalRing.ResidueField.Ideal
+public import Mathlib.FieldTheory.Separable
+import Mathlib.RingTheory.Etale.StandardEtale
 import TauCeti.RingTheory.Unramified.Diagonal
 
 /-!
@@ -33,10 +35,13 @@ Stacks, Tag 04GT, with `S = R`, about the strict henselization. In the form give
   `toTarget` is bijective.
 * `TauCeti.StrictHenselization.existsUnique_algHom_of_etale`: the form of Stacks, Tag 04GT, for
   a field `Ω`.
+* `TauCeti.StrictHenselization.toTarget_surjective`: for a local ring `R` and a separable
+  algebraic extension `Ω` of its residue field, `toTarget` is surjective. Each element of `Ω`
+  is the point of a standard étale algebra, built from a monic lift of its minimal polynomial.
 
 ## References
 
-* Stacks Project, Tag 04GT.
+* Stacks Project, Tags 04GP and 04GT.
 -/
 
 public section
@@ -117,5 +122,39 @@ theorem existsUnique_algHom_of_etale (A : Type w) [CommRing A] [Algebra R A] [Al
     IsScalarTower.coe_toAlgHom', Ideal.algebraMap_residueField_eq_zero]
 
 end Field
+
+section SeparableExtension
+
+variable (R Ω : Type u) [CommRing R] [IsLocalRing R] [Field Ω] [Algebra R Ω]
+  [Algebra (ResidueField R) Ω] [IsScalarTower R (ResidueField R) Ω]
+  [Algebra.IsSeparable (ResidueField R) Ω]
+
+open Polynomial in
+/-- **The residue field of the strict henselization.** If `Ω` is a separable algebraic extension
+of the residue field of the local ring `R`, for instance a separable closure, then every element
+of `Ω` is the point of an element of the colimit. With `ker_toTarget_eq_maximalIdeal`, this
+identifies the residue field of the strict henselization with `Ω`. -/
+@[stacks 04GP "(5), surjectivity"]
+theorem toTarget_surjective : Function.Surjective (toTarget R Ω) := by
+  intro α
+  -- Lift the minimal polynomial of `α` to a monic polynomial `p` over `R`. Its root `α` is
+  -- simple, so the standard étale algebra of `p` has a point sending its root to `α`.
+  have hsep := Algebra.IsSeparable.isSeparable (ResidueField R) α
+  obtain ⟨p, hp, -, hmonic⟩ := lifts_and_natDegree_eq_and_monic
+    ((lifts_iff_coeff_lifts (f := algebraMap R (ResidueField R))
+      (minpoly (ResidueField R) α)).mpr fun _ ↦ Ideal.Quotient.mk_surjective _)
+    (minpoly.monic (Algebra.IsSeparable.isIntegral (ResidueField R) α))
+  have hroot : aeval α p = 0 := by
+    rw [← aeval_map_algebraMap (ResidueField R), hp, minpoly.aeval]
+  have hderiv : aeval α (derivative p) ≠ 0 := by
+    rw [← aeval_map_algebraMap (ResidueField R), ← derivative_map, hp]
+    exact hsep.aeval_derivative_ne_zero (minpoly.aeval _ _)
+  let P : StandardEtalePair R :=
+    { f := p, monic_f := hmonic, g := derivative p, cond := ⟨1, 0, 1, by simp⟩ }
+  have hP : P.HasMap α := ⟨hroot, isUnit_iff_ne_zero.mpr hderiv⟩
+  obtain ⟨f, hf⟩ := (toTarget_comp_bijective R Ω P.Ring).2 (P.lift α hP)
+  exact ⟨f P.X, by rw [← AlgHom.comp_apply, hf, P.lift_X]⟩
+
+end SeparableExtension
 
 end TauCeti.StrictHenselization

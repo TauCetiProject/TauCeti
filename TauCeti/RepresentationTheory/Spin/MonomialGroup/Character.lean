@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.GroupTheory.FiniteAbelian.Duality
-public import TauCeti.LinearAlgebra.CliffordAlgebra.MonomialGroup
+public import TauCeti.LinearAlgebra.CliffordAlgebra.MonomialGroup.Basic
 public import TauCeti.RepresentationTheory.Induction.Restriction
 public import TauCeti.RepresentationTheory.LinearCharacter.Basic
 public import TauCeti.RepresentationTheory.Spin.MonomialGroup.Spinor
@@ -20,7 +20,7 @@ import TauCeti.RingTheory.RootsOfUnity.Basic
 Let `b` be an orthogonal basis of a quadratic module `(M, Q)` whose generators square to `±1`,
 indexed by a type with `n` elements. The group `CliffordAlgebra.monomialGroup Q b` of signed
 monomials `±e_s`, its central element `ε = -1`, the sign subgroup `⟨ε⟩` it generates and the
-quotient by that subgroup are built in `TauCeti.LinearAlgebra.CliffordAlgebra.MonomialGroup`:
+quotient by that subgroup are built in `TauCeti.LinearAlgebra.CliffordAlgebra.MonomialGroup.Basic`:
 over a nontrivial coefficient ring in which `2` is invertible the group has `2 ^ (n + 1)` elements,
 the sign subgroup has two, and the quotient is commutative with every element of order dividing
 two and has `2 ^ n` elements. Every count below inherits those two hypotheses on the coefficient
@@ -226,7 +226,7 @@ private theorem apply_eq_one_or_eq_neg_one_of_apply_monomialGroupEpsilon_eq_one
         Subtype.ext (by simpa using hc.eq)
       rw [← map_mul, hgh, map_mul, hρ, one_mul, map_mul]
   let T : IntertwiningMap ρ ρ := (ρ g).intertwiningMap_of_isIntertwiningMap ρ ρ fun h w ↦ by
-    rw [← Module.End.mul_apply, hcomm, Module.End.mul_apply]
+    rw [← mul_apply_eq_comp, hcomm, mul_apply_eq_comp]
   -- Every signed monomial squares to `1` or `ε`, which both act trivially.
   have hT : T * T = 1 := DFunLike.ext _ _ fun w ↦ by
     have hsq : ρ g * ρ g = 1 := by

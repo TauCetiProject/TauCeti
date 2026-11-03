@@ -50,6 +50,10 @@ polynomials in the entries of `g`, a rational function.
   finite basis.
 * `TauCeti.IsRationalRep.comp_toGL`: a rational representation of `GL n ℂ` restricts to a rational
   representation of `SL n ℂ`.
+* `TauCeti.IsRationalSLRep.of_surjective` and `Representation.Equiv.isRationalSLRep_iff`:
+  rationality passes to quotients and across equivalences.
+* `TauCeti.IsRationalRep.of_comp_toGL`: a representation with rational restriction and a scalar
+  power character is rational.
 * `TauCeti.IsRationalSLRep.isRationalRep_extendToGL`: **the extension of a rational
   representation of `SL n ℂ` to `GL n ℂ` is rational.**
 
@@ -146,6 +150,44 @@ theorem IsRationalRep.comp_toGL {ρ : Representation ℂ (GL (Fin n) ℂ) W} (h 
   refine ⟨b, P, fun s i j => ?_⟩
   simpa using hP (SpecialLinearGroup.toGL s) i j
 
+/-- **A quotient of a rational representation of `SL n ℂ` is rational.** -/
+theorem IsRationalSLRep.of_surjective {V : Type*} [AddCommMonoid V] [Module ℂ V]
+    {ρ : Representation ℂ (SpecialLinearGroup (Fin n) ℂ) W}
+    {σ : Representation ℂ (SpecialLinearGroup (Fin n) ℂ) V} (h : IsRationalSLRep ρ)
+    (f : Representation.IntertwiningMap ρ σ) (hf : Function.Surjective f) :
+    IsRationalSLRep σ := by
+  -- `Module.finBasis` needs an additive group; over the field `ℂ` one is recovered from the module
+  -- structure, with negation `(-1) • ·`, extending the given `AddCommMonoid`.
+  let _ : AddCommGroup V := Module.addCommMonoidToAddCommGroup ℂ
+  obtain ⟨b, P, hP⟩ := h
+  have : Module.Finite ℂ W := Module.Finite.of_basis b
+  have : Module.Finite ℂ V := Module.Finite.of_surjective f.toLinearMap hf
+  let A : Subalgebra ℂ (SpecialLinearGroup (Fin n) ℂ → ℂ) :=
+    (aeval fun (p : Fin n × Fin n) (s : SpecialLinearGroup (Fin n) ℂ) =>
+      (s : Matrix (Fin n) (Fin n) ℂ) p.1 p.2).range
+  have hA (Q : MvPolynomial (Fin n × Fin n) ℂ) :
+      (fun s : SpecialLinearGroup (Fin n) ℂ =>
+        eval (fun p => (s : Matrix (Fin n) (Fin n) ℂ) p.1 p.2) Q) ∈ A :=
+    ⟨Q, funext fun s => by
+      simpa [aeval_eq_eval] using comp_aeval_apply _ (Pi.evalAlgHom ℂ (fun _ => ℂ) s) Q⟩
+  choose Q hQ using fun q : Fin (Module.finrank ℂ V) × Fin (Module.finrank ℂ V) =>
+    Representation.toMatrix_mem_of_toMatrix_mem_of_surjective A b (Module.finBasis ℂ V) f hf
+      (fun p l => (funext fun s => hP s p l) ▸ hA (P p l)) q.1 q.2
+  refine (isRationalSLRep_iff_exists_toMatrix_eq_eval (Module.finBasis ℂ V)).mpr
+    ⟨fun i j => Q (i, j), fun s i j => ?_⟩
+  rw [← congrFun (hQ (i, j)) s]
+  simpa [aeval_eq_eval] using comp_aeval_apply
+    (fun (p : Fin n × Fin n) (s : SpecialLinearGroup (Fin n) ℂ) =>
+      (s : Matrix (Fin n) (Fin n) ℂ) p.1 p.2) (Pi.evalAlgHom ℂ (fun _ => ℂ) s) (Q (i, j))
+
+/-- **Rationality of a representation of `SL n ℂ` is invariant under equivalence.** -/
+theorem _root_.Representation.Equiv.isRationalSLRep_iff {V : Type*} [AddCommMonoid V]
+    [Module ℂ V] {ρ : Representation ℂ (SpecialLinearGroup (Fin n) ℂ) W}
+    {σ : Representation ℂ (SpecialLinearGroup (Fin n) ℂ) V} (e : ρ.Equiv σ) :
+    IsRationalSLRep ρ ↔ IsRationalSLRep σ :=
+  ⟨fun h => h.of_surjective e.toIntertwiningMap e.toLinearEquiv.surjective,
+    fun h => h.of_surjective e.symm.toIntertwiningMap e.symm.toLinearEquiv.surjective⟩
+
 /-! ### The extension to `GL n ℂ` is rational -/
 
 variable {ρ : Representation ℂ (SpecialLinearGroup (Fin n) ℂ) W} {a : ℤ}
@@ -189,7 +231,7 @@ private theorem toMatrix_apply_eq_sum_homogeneousComponent [NeZero n]
       smul_eq_mul, mul_comm]
   have hact : ρ (s * t) = (ζ ^ k) ^ a • ρ s := by
     ext v
-    rw [map_mul, Module.End.mul_apply, ha _ _ ht, map_smul, LinearMap.smul_apply,
+    rw [map_mul, _root_.mul_apply_eq_comp, ha _ _ ht, map_smul, LinearMap.smul_apply,
       Units.val_zpow_eq_zpow_val, Units.val_pow_eq_pow_val, IsUnit.unit_spec]
   rw [hent, ← hQ, hact, map_smul, Matrix.smul_apply, smul_eq_mul, hQ]
 
@@ -231,7 +273,8 @@ private theorem toMatrix_extendToGL_apply [NeZero n]
     exact (Finset.mem_filter.mp hd).2
   rw [map_mul, SpecialLinearGroup.coeToGL_det, one_mul,
     _root_.Matrix.GeneralLinearGroup.det_scalar, Fintype.card_fin, ← zpow_natCast z n,
-    ← zpow_mul, Int.mul_ediv_cancel' hdvd, zpow_sub, Units.val_mul, Units.val_inv_eq_inv_val,
+    ← _root_.zpow_mul, Int.mul_ediv_cancel' hdvd, _root_.zpow_sub, Units.val_mul,
+      Units.val_inv_eq_inv_val,
     zpow_natCast, Units.val_pow_eq_pow_val, inv_pow]
 
 /-- **The extension of a rational representation of `SL n ℂ` to `GL n ℂ` is rational.** If the
@@ -269,5 +312,25 @@ theorem IsRationalSLRep.isRationalRep_extendToGL (hρ : IsRationalSLRep ρ) (a :
   rw [hF]
   exact Subalgebra.sum_mem _ fun d _ => Subalgebra.mul_mem _ (det_zpow_mem_rationalFunctions _)
     (polynomialFunctions_le_rationalFunctions (mem_polynomialFunctions.mpr ⟨_, fun _ => rfl⟩))
+
+/-- **A representation of `GL n ℂ` is rational once its restriction to `SL n ℂ` is rational and
+the scalar matrices act through a power `z ↦ z ^ a` of the scalar.** It is the unique extension
+of its restriction with this scalar character, and that extension preserves rationality. -/
+theorem IsRationalRep.of_comp_toGL {σ : Representation ℂ (GL (Fin n) ℂ) W}
+    (h : IsRationalSLRep (σ.comp SpecialLinearGroup.toGL)) {a : ℤ}
+    (ha : ∀ z : ℂˣ, σ (_root_.Matrix.GeneralLinearGroup.scalar (Fin n) z) =
+      ((z ^ a : ℂˣ) : ℂ) • 1) : IsRationalRep σ := by
+  have hscalar : ∀ (s : SpecialLinearGroup (Fin n) ℂ) (z : ℂˣ),
+      SpecialLinearGroup.toGL s = _root_.Matrix.GeneralLinearGroup.scalar (Fin n) z →
+        ∀ v, (σ.comp SpecialLinearGroup.toGL) s v = ((z ^ a : ℂˣ) : ℂ) • v := by
+    intro s z hs v
+    simp [MonoidHom.comp_apply, hs, ha]
+  have heq : σ = Representation.extendToGL (σ.comp SpecialLinearGroup.toGL) a hscalar :=
+    (Representation.existsUnique_comp_toGL_eq_and_apply_scalar _ a hscalar).unique
+      ⟨rfl, fun z v => by simp [ha]⟩
+      ⟨Representation.extendToGL_comp_toGL _ a hscalar,
+        Representation.extendToGL_scalar _ a hscalar⟩
+  rw [heq]
+  exact h.isRationalRep_extendToGL a hscalar
 
 end TauCeti

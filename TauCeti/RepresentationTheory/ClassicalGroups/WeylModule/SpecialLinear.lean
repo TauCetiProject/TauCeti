@@ -89,6 +89,7 @@ the constant weights (`TauCeti.IsRationalSLRep.existsUnique_nonempty_equiv_weylS
   `SL n k` are isomorphic exactly when `λ` and `λ'` differ by a constant weight.**
 * `TauCeti.nonempty_equiv_weylSLRepOfShape_iff`: Young diagrams with at most `n - 1` rows are
   recovered from the restrictions of their Weyl modules to `SL n k`.
+* `TauCeti.isRationalSLRep_weylSLRepOfShape`: the restricted Weyl modules are rational.
 * `TauCeti.isRationalSLRep_rationalWeylSLRep`: the restrictions of the rational Weyl modules are
   rational.
 * `TauCeti.IsRationalSLRep.exists_nonempty_equiv_rationalWeylSLRep`: **every irreducible rational
@@ -350,6 +351,12 @@ theorem isRationalSLRep_rationalWeylSLRep (l : DominantWeight n) :
     IsRationalSLRep (rationalWeylSLRep ℂ n l) :=
   (isRationalRep_rationalWeylRep n l).comp_toGL
 
+/-- The Weyl module of a shape is a rational representation of `SL n ℂ`. -/
+@[simp]
+theorem isRationalSLRep_weylSLRepOfShape (n : ℕ) (μ : YoungDiagram) :
+    IsRationalSLRep (weylSLRepOfShape ℂ n μ) :=
+  (isPolynomialRep_weylRepOfShape n μ).isRationalRep.comp_toGL
+
 namespace IsRationalSLRep
 
 variable {W : Type*} [AddCommGroup W] [Module ℂ W]
@@ -366,7 +373,7 @@ theorem exists_nonempty_equiv_rationalWeylSLRep (hρ : IsRationalSLRep ρ) [ρ.I
         ∀ v, ρ s v = ((z ^ a : ℂˣ) : ℂ) • v := by
     rcases Nat.eq_zero_or_pos n with rfl | hn
     · refine ⟨0, fun s z _ v => ?_⟩
-      rw [Subsingleton.elim s 1, map_one, zpow_zero, Units.val_one, one_smul, Module.End.one_apply]
+      rw [Subsingleton.elim s 1, map_one, zpow_zero, Units.val_one, one_smul, one_apply_eq_self]
     · have : NeZero (Fintype.card (Fin n) : ℂ) := ⟨by simpa using hn.ne'⟩
       exact Representation.IsIrreducible.exists_forall_apply_eq_zpow_smul ρ
   have : (ρ.extendToGL a ha).IsIrreducible :=

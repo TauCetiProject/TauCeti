@@ -11,6 +11,7 @@ public import Mathlib.RingTheory.Flat.Localization
 public import Mathlib.RingTheory.Localization.Away.Basic
 public import Mathlib.Topology.Algebra.UniformRing
 public import TauCeti.RingTheory.AdicCompletion.Algebra
+public import TauCeti.RingTheory.AdicCompletion.IdealIndependence
 public import TauCeti.RingTheory.AdicCompletion.Noetherian
 public import TauCeti.RingTheory.AdicRing.Basic
 
@@ -42,7 +43,10 @@ maps are the restriction maps of the structure sheaf of `Spf A` on basic open se
 The completion is formed with the chosen ideal of definition `TauCeti.IsAdicRing.ideal A`. The
 image of `A` in `A_{f}` is not dense in general; the image of `A_f` is, and a continuous ring
 homomorphism out of `A_{f}` is determined by its restriction to `A` because it preserves the
-inverse of `f`.
+inverse of `f`. The comparison `CompletedAway.idealEquiv` identifies it bicontinuously with
+the completion formed using any other finitely generated ideal of definition, fixing every
+element of the ordinary localisation. Thus the basic-open section rings depend only on the
+topology, not on the chosen ideal of definition.
 
 ## Main definitions
 
@@ -62,6 +66,8 @@ inverse of `f`.
   `TauCeti.AdicRing.CompletedAway.isUnit_algebraMap_self`: the canonical map `A → A_{f}` is
   continuous and sends `f` to a unit.
 * `TauCeti.AdicRing.CompletedAway.denseRange_algebraMap`: the image of `A_f` is dense.
+* `TauCeti.AdicRing.CompletedAway.exists_sub_mem_map`: every element of `A_{f}` is congruent
+  modulo `I A_{f}` to an element of `A_f`.
 * `TauCeti.AdicRing.CompletedAway.ringHom_ext`: continuous ring homomorphisms out of `A_{f}` into
   a Hausdorff ring agreeing on `A` are equal.
 * `TauCeti.AdicRing.CompletedAway.existsUnique_lift`: the universal property of `A_{f}`.
@@ -85,8 +91,8 @@ inverse of `f`.
 
 ## References
 
-* A. Grothendieck and J. Dieudonné, *Éléments de géométrie algébrique I*, Ch. 0, §7.6
-  (7.6.1, 7.6.2, 7.6.6, 7.6.11, 7.6.13 and 7.6.15).
+* A. Grothendieck and J. Dieudonné, *Éléments de géométrie algébrique I*, Ch. 0,
+  §§7.1.8–7.1.9 and §7.6 (7.6.1, 7.6.2, 7.6.6, 7.6.11, 7.6.13 and 7.6.15).
 -/
 
 public section
@@ -181,6 +187,14 @@ theorem denseRange_algebraMap :
       (algebraMap A (Localization.Away f))) (Localization.Away f)) :=
     inferInstanceAs (TopologicalSpace (CompletedAway A f))
   AdicCompletion.denseRange_algebraMap (fg_map A f) (map_algebraMap_eq A f ▸ isAdic A f)
+
+/-- Every element of the completed localisation `A_{f}` is congruent modulo `I A_{f}` to the image
+of an element of `A_f`. -/
+theorem exists_sub_mem_map (x : CompletedAway A f) :
+    ∃ y : Localization.Away f, x - algebraMap (Localization.Away f) (CompletedAway A f) y ∈
+      (IsAdicRing.ideal A).map (algebraMap A (CompletedAway A f)) := by
+  rw [map_algebraMap_eq, ← pow_one (Ideal.map _ (IsAdicRing.ideal A))]
+  exact AdicCompletion.exists_sub_algebraMap_mem_map_pow (fg_map A f) 1 x
 
 /-- Two continuous ring homomorphisms out of the completed localisation `A_{f}` into a Hausdorff
 ring are equal as soon as they agree on the image of `A`. -/
@@ -371,9 +385,9 @@ theorem isUnit_algebraMap_of_mem_radical
   have := (isAdic A g).isAdicComplete
   -- the image of `i` lies in the ideal of definition of `A_{g}`, hence in its Jacobson radical
   have hi' :=
-    IsAdicComplete.le_jacobson_bot _ (Ideal.mem_map_of_mem (algebraMap A (CompletedAway A g)) hi)
+    IsAdicComplete.le_jacobson _ (Ideal.mem_map_of_mem (algebraMap A (CompletedAway A g)) hi)
   obtain ⟨u, hu⟩ := (isUnit_algebraMap_self A g).pow n
-  have hunit := Ideal.mem_jacobson_bot.mp (neg_mem hi') ↑u⁻¹
+  have hunit := Ring.mem_jacobson_iff.mp (neg_mem hi') ↑u⁻¹
   have hai' := congrArg (algebraMap A (CompletedAway A g)) hai
   rw [map_add, map_mul, map_pow, ← hu] at hai'
   refine isUnit_of_mul_isUnit_right (x := algebraMap A (CompletedAway A g) a) ?_
@@ -392,11 +406,7 @@ theorem mem_radical_of_isUnit_algebraMap
   set K := Ideal.span {f} ⊔ IsAdicRing.ideal A
   -- approximate the inverse `v` of `f` in `A_{g}` modulo `I A_{g}` by some `y ∈ A_g`
   obtain ⟨v, hv⟩ := h.exists_right_inv
-  have hopen : IsOpen ((v - ·) ⁻¹'
-      ((IsAdicRing.ideal A).map (algebraMap A (CompletedAway A g)) : Set (CompletedAway A g))) :=
-    (by simpa using (isAdic_iff.mp (isAdic A g)).1 1 : IsOpen _).preimage
-      (continuous_const.sub continuous_id)
-  obtain ⟨y, hy⟩ := (denseRange_algebraMap A g).exists_mem_open hopen ⟨v, by simp⟩
+  obtain ⟨y, hy⟩ := exists_sub_mem_map A g v
   -- then `f y - 1` lies in `I A_g`
   have hfy : algebraMap A (Localization.Away g) f * y - 1 ∈ J := by
     rw [← pow_one J, ← algebraMap_mem_pow_iff A g 1, pow_one]
@@ -493,6 +503,80 @@ theorem restrict_restrict
   DFunLike.congr_fun (restrict_comp_restrict hfg hgk hfk) x
 
 end Restriction
+
+section IdealIndependence
+
+variable {A} (f : A) (J : Ideal A) (hJ : IsAdic J) (hJfg : J.FG)
+
+include hJ hJfg
+
+/-- The extension of another ideal of definition defines the same topology on the ordinary
+localisation as the extension of the chosen ideal. -/
+private theorem isAdic_map :
+    letI := ((IsAdicRing.ideal A).map (algebraMap A (Localization.Away f))).adicTopology
+    IsAdic (J.map (algebraMap A (Localization.Away f))) := by
+  let := ((IsAdicRing.ideal A).map (algebraMap A (Localization.Away f))).adicTopology
+  apply IsAdic.of_radical_eq (I := (IsAdicRing.ideal A).map
+    (algebraMap A (Localization.Away f))) rfl ((IsAdicRing.ideal_spec A).1.map _) (hJfg.map _)
+  simp only [← IsLocalization.map_radical (Submonoid.powers f),
+    (IsAdicRing.ideal_spec A).2.1.radical_eq hJ]
+
+/-- The canonical comparison from the completed localisation formed with the chosen ideal
+to the completion formed with another finitely generated ideal of definition. -/
+noncomputable def idealEquiv :
+    CompletedAway A f ≃ₐ[A]
+      AdicCompletion (J.map (algebraMap A (Localization.Away f))) (Localization.Away f) := by
+  letI : WithIdeal (Localization.Away f) :=
+    ⟨(IsAdicRing.ideal A).map (algebraMap A (Localization.Away f))⟩
+  exact (IsAdic.adicCompletionEquiv (I := (IsAdicRing.ideal A).map
+    (algebraMap A (Localization.Away f))) rfl (isAdic_map f J hJ hJfg)
+    ((IsAdicRing.ideal_spec A).1.map _) (hJfg.map _)).restrictScalars A
+
+/-- The change of ideal fixes every element of the ordinary localisation. -/
+@[simp]
+theorem idealEquiv_algebraMap_away (x : Localization.Away f) :
+    idealEquiv f J hJ hJfg (algebraMap (Localization.Away f) (CompletedAway A f) x) =
+      algebraMap (Localization.Away f)
+        (AdicCompletion (J.map (algebraMap A (Localization.Away f))) (Localization.Away f)) x := by
+  let : WithIdeal (Localization.Away f) :=
+    ⟨(IsAdicRing.ideal A).map (algebraMap A (Localization.Away f))⟩
+  exact (IsAdic.adicCompletionEquiv (I := (IsAdicRing.ideal A).map
+    (algebraMap A (Localization.Away f))) rfl (isAdic_map f J hJ hJfg)
+    ((IsAdicRing.ideal_spec A).1.map _) (hJfg.map _)).commutes x
+
+/-- The inverse comparison also fixes every element of the ordinary localisation. -/
+@[simp]
+theorem idealEquiv_symm_algebraMap_away (x : Localization.Away f) :
+    (idealEquiv f J hJ hJfg).symm (algebraMap (Localization.Away f)
+      (AdicCompletion (J.map (algebraMap A (Localization.Away f))) (Localization.Away f)) x) =
+        algebraMap (Localization.Away f) (CompletedAway A f) x := by
+  apply (idealEquiv f J hJ hJfg).injective
+  simp
+
+/-- The change of ideal is bicontinuous for the extended-ideal adic topologies. -/
+theorem isHomeomorph_idealEquiv :
+    @IsHomeomorph _ _ _
+      ((J.map (algebraMap A (Localization.Away f))).map
+        (algebraMap (Localization.Away f)
+          (AdicCompletion (J.map (algebraMap A (Localization.Away f)))
+            (Localization.Away f)))).adicTopology
+      (idealEquiv f J hJ hJfg) := by
+  let : WithIdeal (Localization.Away f) :=
+    ⟨(IsAdicRing.ideal A).map (algebraMap A (Localization.Away f))⟩
+  have htop : (inferInstance : TopologicalSpace (CompletedAway A f)) =
+      (((IsAdicRing.ideal A).map (algebraMap A (Localization.Away f))).map
+        (algebraMap (Localization.Away f) (CompletedAway A f))).adicTopology := by
+    rw [Ideal.map_map, ← IsScalarTower.algebraMap_eq]
+    exact isAdic A f
+  -- The source is the `CompletedAway` wrapper, whose topology uses the composite map from `A`.
+  convert (IsAdic.isHomeomorph_adicCompletionEquiv (I := (IsAdicRing.ideal A).map
+    (algebraMap A (Localization.Away f))) rfl (isAdic_map f J hJ hJfg)
+    ((IsAdicRing.ideal_spec A).1.map _) (hJfg.map _)) using 1
+  · rfl
+  · exact heq_of_eq htop
+  · rfl
+
+end IdealIndependence
 
 end CompletedAway
 

@@ -24,9 +24,9 @@ matches the shape used in limit theorems.
 There is one construction, not three: the probability measures are *defined* from the finite
 measure, and the sequence form as a specialization, so they can never drift apart.
 
-The API covers evaluation, integration, pushforward, measurability and finite support. Values are
-counted with multiplicity: the empirical measure depends only on the multiset of values, so it is
-invariant under reindexing, and the empirical measure of a concatenation is the average of the
+The API covers evaluation, integration, pushforward, continuity, measurability and finite support.
+Values are counted with multiplicity: the empirical measure depends only on the multiset of values,
+so it is invariant under reindexing. The empirical measure of a concatenation is the average of the
 empirical measures of its pieces weighted by their sizes. The finite-population form is used by
 quantitative sampling arguments and, applied to eigenvalues, defines empirical spectral measures of
 matrices. The sequence form is the process-level input to the empirical-measure form of de
@@ -93,7 +93,7 @@ theorem empiricalFiniteMeasure_apply {x : κ → α} {s : Set α} (hs : Measurab
     (empiricalFiniteMeasure x : Measure α) s = ((Fintype.card κ : ℕ) : ℝ≥0∞)⁻¹ *
       ∑ i, s.indicator (1 : α → ℝ≥0∞) (x i) := by
   rw [empiricalFiniteMeasure_toMeasure]
-  simp only [Measure.coe_finsetSum, Measure.coe_smul, Finset.sum_apply, Pi.smul_apply,
+  simp only [FunLike.coe_sum, FunLike.coe_smul, Finset.sum_apply, Pi.smul_apply,
     smul_eq_mul, Measure.dirac_apply' _ hs, Finset.mul_sum]
 
 /-- A nonempty family has an empirical probability measure. -/
@@ -319,6 +319,17 @@ theorem lintegral_empiricalMeasureOfFintype {x : κ → α} {f : α → ℝ≥0�
       ((Fintype.card κ : ℕ) : ℝ≥0∞)⁻¹ * ∑ i, f (x i) := by
   simp [lintegral_finsetSum_measure, lintegral_dirac' _ hf, Finset.mul_sum]
 
+/-- Finite empirical probability measures depend continuously on the population for the weak
+topology. Colliding values retain their multiplicities. -/
+@[fun_prop]
+theorem continuous_empiricalMeasureOfFintype [TopologicalSpace α] [OpensMeasurableSpace α] :
+    Continuous (empiricalMeasureOfFintype : (κ → α) → ProbabilityMeasure α) := by
+  apply ProbabilityMeasure.continuous_iff_forall_continuous_integral.mpr
+  intro f
+  simp_rw [integral_empiricalMeasureOfFintype f.continuous.stronglyMeasurable]
+  exact (continuous_finsetSum _ fun i _ => f.continuous.comp (continuous_apply i)).const_smul
+    ((Fintype.card κ : ℝ)⁻¹)
+
 /-- Finite empirical distributions depend measurably on the population. -/
 theorem measurable_empiricalMeasureOfFintype :
     Measurable (empiricalMeasureOfFintype : (κ → α) → ProbabilityMeasure α) :=
@@ -363,7 +374,7 @@ theorem empiricalMeasure_apply {x : ℕ → α} {n : ℕ} {s : Set α} (hs : Mea
     (empiricalMeasure x n : Measure α) s = ((n + 1 : ℕ) : ℝ≥0∞)⁻¹ *
         ∑ i ∈ Finset.range (n + 1), s.indicator (1 : α → ℝ≥0∞) (x i) := by
   rw [empiricalMeasure_toMeasure]
-  simp only [Measure.coe_finsetSum, Measure.coe_smul, Finset.sum_apply, Pi.smul_apply,
+  simp only [FunLike.coe_sum, FunLike.coe_smul, Finset.sum_apply, Pi.smul_apply,
     smul_eq_mul, Measure.dirac_apply' _ hs, Finset.mul_sum]
 
 /-- The real-valued form of `empiricalMeasure_apply`. -/
@@ -420,7 +431,7 @@ theorem measurable_empiricalMeasure {X : ℕ → Ω → α}
     simp_rw [empiricalMeasure_toMeasure]
     exact Finset.measurable_fun_sum _ fun i hi =>
       Measure.measurable_of_measurable_coe _ fun s hs => by
-        simp only [Measure.smul_apply, smul_eq_mul, Measure.dirac_apply' _ hs]
+        simp only [_root_.smul_apply, smul_eq_mul, Measure.dirac_apply' _ hs]
         exact measurable_const.mul (measurable_one.indicator (hX i hi hs))
   exact hmeasure.subtype_mk
 

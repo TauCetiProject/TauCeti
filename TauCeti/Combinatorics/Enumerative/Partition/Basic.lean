@@ -20,9 +20,11 @@ hypothesis on `n`.
 
 It also records `TauCeti.parts_equivCast`, the transport of a partition along an equality of the
 number being partitioned: such a transport leaves the parts alone, and
-`Nat.Partition.card_parts_le`, which says a partition of `n` has at most `n` parts.
+`Nat.Partition.card_parts_le`, which says a partition of `n` has at most `n` parts, while the
+squares of its parts sum to at least `n` (`Nat.Partition.le_sum_sq_parts`).
 Positive-part counts determine the parts even for partitions of different numbers
-(`Nat.Partition.parts_eq_of_count_succ`); zero never occurs as a part. Finally,
+(`Nat.Partition.parts_eq_of_count_succ`); zero never occurs as a part, so filtering the
+parts by positivity keeps them all (`Nat.Partition.filter_pos_parts`). Finally,
 `Nat.Partition.sum_sort_parts` and `Nat.Partition.sort_parts_injective` say that the
 decreasingly sorted parts of a partition of `n` sum to `n` and determine the partition.
 -/
@@ -94,6 +96,11 @@ namespace Nat.Partition
 theorem count_parts_zero {n : ℕ} (p : n.Partition) : p.parts.count 0 = 0 := by
   exact Multiset.count_eq_zero.mpr fun h => (p.parts_pos h).ne' rfl
 
+/-- Every part of a partition is positive, so keeping the positive parts keeps them all. -/
+@[simp]
+theorem filter_pos_parts {n : ℕ} (p : n.Partition) : p.parts.filter (0 < ·) = p.parts :=
+  Multiset.filter_eq_self.mpr fun _ => p.parts_pos
+
 /-- Equal multiplicities of all positive parts determine the parts of two partitions,
 even when the numbers being partitioned are not assumed equal. -/
 theorem parts_eq_of_count_succ {m n : ℕ} {p : m.Partition} {q : n.Partition}
@@ -107,6 +114,11 @@ theorem parts_eq_of_count_succ {m n : ℕ} {p : m.Partition} {q : n.Partition}
 /-- **A partition of `n` has at most `n` parts**, since every part is at least `1`. -/
 theorem card_parts_le {n : ℕ} (μ : n.Partition) : μ.parts.card ≤ n := by
   simpa [μ.parts_sum] using μ.parts.card_nsmul_le_sum (a := 1) fun _ hx => μ.parts_pos hx
+
+/-- The sum of the squares of the parts of a partition of `n` is at least `n`. -/
+theorem le_sum_sq_parts {n : ℕ} (μ : n.Partition) : n ≤ (μ.parts.map (· ^ 2)).sum :=
+  calc n = (μ.parts.map id).sum := by rw [Multiset.map_id, μ.parts_sum]
+    _ ≤ _ := Multiset.sum_map_le_sum_map _ _ fun x _ => Nat.le_self_pow two_ne_zero x
 
 /-- The decreasingly sorted parts of a partition of `n` sum to `n`. -/
 @[simp]

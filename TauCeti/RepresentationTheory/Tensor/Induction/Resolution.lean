@@ -68,6 +68,8 @@ invariant `w`, so cohomologous cocycles have the same norm.
   chain endomorphisms of the total resolution over the identity of the coefficients.
 * `TauCeti.smoothTensorInducedDiagonalClass_eq_of_sub_eq_d`: cohomologous cocycles have the same
   norm, when `2` generates a maximal ideal of the coefficient ring.
+* `Subgroup.smoothTensorInducedDiagonalClass_eq_degreeZeroClass`: in degree zero the norm of a
+  cocycle with value `a` is the degree-zero class of the invariant tensor `a ⊗ ⋯ ⊗ a`.
 
 ## References
 
@@ -333,8 +335,8 @@ It lowers the total degree by one and is not equivariant. -/
 noncomputable def smoothTensorInducedGradedResolutionHomotopy :
     Module.End R (⨂[R] _ : G ⧸ U, A.obj.gradedResolutionModule) :=
   PiTensorProduct.slotHomotopy (G ⧸ U)
-    (A.obj.gradedResolutionAugmentation ∘ₗ A.obj.gradedResolutionProjection)
-    A.obj.gradedResolutionHomotopy
+    (fun _ ↦ A.obj.gradedResolutionAugmentation ∘ₗ A.obj.gradedResolutionProjection)
+    (fun _ ↦ A.obj.gradedResolutionHomotopy)
 
 omit [DiscreteTopology R] [U.FiniteIndex] [CompactSpace U] in
 /-- The contracting homotopy of the tensor-induced total resolution is the slot homotopy of the
@@ -343,8 +345,8 @@ resolution. -/
 theorem smoothTensorInducedGradedResolutionHomotopy_def :
     smoothTensorInducedGradedResolutionHomotopy U A =
       PiTensorProduct.slotHomotopy (G ⧸ U)
-        (A.obj.gradedResolutionAugmentation ∘ₗ A.obj.gradedResolutionProjection)
-        A.obj.gradedResolutionHomotopy :=
+        (fun _ ↦ A.obj.gradedResolutionAugmentation ∘ₗ A.obj.gradedResolutionProjection)
+        (fun _ ↦ A.obj.gradedResolutionHomotopy) :=
   (rfl)
 
 omit [DiscreteTopology R] [U.FiniteIndex] [CompactSpace U] in
@@ -354,8 +356,8 @@ theorem isHomogeneous_smoothTensorInducedGradedResolutionHomotopy :
     LinearMap.IsHomogeneous (smoothTensorInducedGradedResolutionHomotopy U A)
       (PiTensorProduct.totalDegreePiece (G ⧸ U) (fun _ ↦ A.obj.gradedResolutionPiece))
       (PiTensorProduct.totalDegreePiece (G ⧸ U) (fun _ ↦ A.obj.gradedResolutionPiece)) (-1) := by
-  refine PiTensorProduct.isHomogeneous_slotHomotopy ?_
-    A.obj.isHomogeneous_gradedResolutionHomotopy
+  refine PiTensorProduct.isHomogeneous_slotHomotopy (fun _ ↦ ?_)
+    (fun _ ↦ A.obj.isHomogeneous_gradedResolutionHomotopy)
   rw [LinearMap.isHomogeneous_def]
   intro p v hv
   rw [add_zero]
@@ -380,11 +382,11 @@ theorem slotSum_smoothTensorInducedGradedResolutionHomotopy_add (hA : ∀ a : A.
     ← LinearMap.comp_apply (PiTensorProduct.map fun _ ↦ A.obj.gradedResolutionAugmentation),
     ← PiTensorProduct.map_comp, smoothTensorInducedGradedResolutionHomotopy_def]
   exact LinearMap.congr_fun (PiTensorProduct.slotSum_comp_slotHomotopy_add
-    (A.obj.gradedResolutionModule_add_self_eq_zero hA)
-    (LinearMap.ext fun x ↦ by
+    (fun _ ↦ A.obj.gradedResolutionModule_add_self_eq_zero hA)
+    (fun _ ↦ LinearMap.ext fun x ↦ by
       simp only [LinearMap.comp_apply, TopRep.gradedResolutionDifferential_augmentation,
         TopRep.gradedResolutionProjection_differential, map_zero])
-    (LinearMap.ext fun x ↦ by
+    (fun _ ↦ LinearMap.ext fun x ↦ by
       simpa using A.obj.gradedResolutionDifferential_gradedResolutionHomotopy_add x)) v
 
 /-- **The contraction of the tensor-induced total resolution** onto the tensor induction of the
@@ -416,8 +418,8 @@ noncomputable def smoothTensorInducedGradedResolutionContraction
       (fun _ _ hp _ hv ↦ A.obj.gradedResolutionProjection_eq_zero_of_mem hp.ne' hv)
       (Int.natCast_pos.2 n.succ_pos) hv)
     (fun _ hv ↦ PiTensorProduct.slotHomotopy_eq_zero_of_mem_totalDegreePiece_zero
-      (fun _ hp ↦ A.obj.gradedResolutionPiece_of_neg hp)
-      (fun _ hv ↦ A.obj.gradedResolutionHomotopy_eq_zero_of_mem_zero hv) hv)
+      (fun _ _ hp ↦ A.obj.gradedResolutionPiece_of_neg hp)
+      (fun _ _ hv ↦ A.obj.gradedResolutionHomotopy_eq_zero_of_mem_zero hv) hv)
     (fun v ↦ by
       rw [smoothTensorInducedGradedResolutionDifferential_apply,
         smoothTensorInducedGradedResolutionDifferential_apply]
@@ -566,6 +568,78 @@ theorem smoothTensorInducedDiagonalClass_eq [LinearOrder (G ⧸ U)]
   apply TopRep.ResolutionContraction.gradedCohomologyClass_eq_of_ι_eq
   rw [smoothTensorInducedGradedResolutionContraction_ι,
     smoothTensorInducedGradedResolutionContraction_ι]
+
+/-- The retraction of the diagonal tensor `z ⊗ ⋯ ⊗ z` of a `U`-invariant cocycle is the diagonal
+tensor of the values `z(1)`. -/
+private theorem smoothTensorInducedGradedResolutionContraction_proj_tprod_const
+    [LinearOrder (G ⧸ U)] (hA : ∀ a : A.obj.V, a + a = 0) {z : A.obj.gradedResolutionModule}
+    (hz : z ∈ A.obj.gradedResolutionPiece (0 : ℕ))
+    (hinv : ∀ u, A.obj.gradedResolutionTopRep.ρ u z = z) :
+    (smoothTensorInducedGradedResolutionContraction U hU s A hA).proj
+        (TopRep.gradedCochainComplexInvariant
+          ((smoothTensorInducedGradedResolutionFunctor U hU s).obj A).obj
+          (smoothTensorInducedGradedResolutionPiece U hU s A)
+          (smoothTensorInducedGradedResolutionPiece_ρ_mem U hU s A)
+          (smoothTensorInducedGradedResolutionDifferential U hU s A).hom
+          (isHomogeneous_smoothTensorInducedGradedResolutionDifferential U hU s A)
+          (smoothTensorInducedGradedResolutionDifferential_sq U hU s A hA) _ _
+          (tprod_const_mem_smoothTensorInducedGradedResolutionPiece U hU s A hz)
+          (smoothTensorInducedGradedResolutionFunctor_obj_ρ_tprod_const U hU s A hinv)) =
+      PiTensorProduct.tprod R fun _ : G ⧸ U ↦ A.obj.gradedResolutionProjection z :=
+  (smoothTensorInducedGradedResolutionContraction_proj_apply U hU s A hA _).trans <|
+    (congrArg (smoothTensorInducedGradedResolutionProjection U A)
+      (TopRep.gradedCochainComplexInvariant_val _ _ _ _ _ _ _ _ _ _)).trans
+      (smoothTensorInducedGradedResolutionProjection_tprod U A _)
+
+omit [Fintype (G ⧸ U)] in
+/-- The diagonal tensor `a ⊗ ⋯ ⊗ a` of the value `a = z(1)` of a `U`-invariant degree-zero cocycle
+`z` of the total resolution is `G`-invariant. -/
+theorem _root_.Subgroup.smoothTensorInduced_ρ_tprod_gradedResolutionProjection
+    {z : A.obj.gradedResolutionModule} (hz : z ∈ A.obj.gradedResolutionPiece (0 : ℕ))
+    (hinv : ∀ u, A.obj.gradedResolutionTopRep.ρ u z = z)
+    (hdz : A.obj.gradedResolutionDifferential z = 0) (g : G) :
+    ((toSmoothDiscrete R G).obj
+        (DiscreteRep.tensorInduced U hU s ((ofSmoothDiscrete R U).obj A))).obj.ρ g
+        (PiTensorProduct.tprod R fun _ : G ⧸ U ↦ A.obj.gradedResolutionProjection z) =
+      PiTensorProduct.tprod R fun _ : G ⧸ U ↦ A.obj.gradedResolutionProjection z := by
+  -- The value `z(1)` is the retraction of `z` in the contraction of the total resolution of `A`,
+  -- so it is `U`-invariant, and the diagonal tensor of a `U`-invariant vector is `G`-invariant.
+  let c := TopRep.gradedResolutionContraction A.property
+  have hproj (u : U) :
+      A.obj.ρ u (A.obj.gradedResolutionProjection z) = A.obj.gradedResolutionProjection z := by
+    have h := c.ρ_proj_of_d_eq_zero
+      (TopRep.gradedCochainComplex_d_invariant _ _ _ _ _ _ hz hinv
+        ((A.obj.gradedResolutionTopRepDifferential_apply z).trans hdz))
+      ((ContRepresentation.mem_invariants _).1 (Subtype.property _)) u
+    refine (congrArg (A.obj.ρ u) ?_).symm.trans (h.trans ?_) <;>
+      exact (TopRep.gradedResolutionContraction_proj_apply _ _).trans
+        (congrArg _ (TopRep.gradedCochainComplexInvariant_val _ _ _ _ _ _ _ _ _ _))
+  let B := (ofSmoothDiscrete R U).obj A
+  have hB (u : U) : B.ρ u (A.obj.gradedResolutionProjection z) =
+      A.obj.gradedResolutionProjection z :=
+    (ofSmoothDiscrete_obj_ρ_apply R U A u _).trans (hproj u)
+  have h := (B.ρ.tensorInducedDiagonal s ⟨_, hB⟩).property g
+  rw [Representation.coe_tensorInducedDiagonal] at h
+  exact (DiscreteRep.tensorInduced_ρ_apply U hU s _ g _).trans h
+
+/-- **The norm of a degree-zero cocycle**: in degree zero the class of the diagonal tensor of a
+cocycle `z` is the degree-zero class of the diagonal tensor `a ⊗ ⋯ ⊗ a` of its value
+`a = z(1) ∈ A`, read through `H⁰(G, Ind⊗ A) = (Ind⊗ A)^G`. -/
+theorem _root_.Subgroup.smoothTensorInducedDiagonalClass_eq_degreeZeroClass
+    (hA : ∀ a : A.obj.V, a + a = 0) (z : A.obj.gradedResolutionModule)
+    (hz : z ∈ A.obj.gradedResolutionPiece (0 : ℕ))
+    (hinv : ∀ u, A.obj.gradedResolutionTopRep.ρ u z = z)
+    (hdz : A.obj.gradedResolutionDifferential z = 0) :
+    smoothTensorInducedDiagonalClass U hU s A hA z hz hinv hdz =
+      ContinuousCohomology.degreeZeroClass _
+        (PiTensorProduct.tprod R fun _ : G ⧸ U ↦ A.obj.gradedResolutionProjection z)
+        (U.smoothTensorInduced_ρ_tprod_gradedResolutionProjection hU s A hz hinv hdz) := by
+  let : LinearOrder (G ⧸ U) := LinearOrder.lift' _ (Fintype.equivFin (G ⧸ U)).injective
+  rw [smoothTensorInducedDiagonalClass_eq]
+  refine (TopRep.ResolutionContraction.gradedCohomologyClass_eq_degreeZeroClass.{u, v, max u w}
+    _ _ _ _ _).trans ?_
+  congr 1
+  exact smoothTensorInducedGradedResolutionContraction_proj_tprod_const U hU s A hA hz hinv
 
 section Endomorphism
 

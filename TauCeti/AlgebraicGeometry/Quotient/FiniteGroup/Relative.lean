@@ -53,6 +53,11 @@ change to every open subscheme of `Spec_X(A)/G`; hence the local descents agree 
 (`AlgebraicGeometry.Scheme.Hom.exists_comp_eq_of_openCover`). The étaleness of the projection for
 free actions is not proved in this file.
 
+The points of the quotient with values in a field are the orbits of `G` on such points of
+`Spec_X(A)`: a point of `Spec_X(A)` with values in a field lies over a single affine open `U` of
+`X`, hence factors through the chart `Spec Γ(A.X, U)`, where this is the affine statement
+`TauCeti.AffineInvariantQuotient.exists_comp_specComap_eq`.
+
 The localization statement is a case of `TauCeti.FixedPoints.isLocalization_of_mem_range_iff`,
 which also gives `TauCeti.FixedPoints.isLocalization`, and the gluing is the relative spectrum of
 a presheaf of subalgebras, which also gives the relative spectrum of an equalizer,
@@ -88,6 +93,8 @@ a presheaf of subalgebras, which also gives the relative spectrum of an equalize
   projection are injective, so the projection is an epimorphism of schemes.
 * `CommMon.existsUnique_relativeSpecπ_comp_eq`: the universal property of the quotient for
   arbitrary target schemes.
+* `CommMon.exists_comp_relativeSpecMap_eq`: two points of `Spec_X(A)` with values in a field and
+  the same image in the quotient differ by the action of an element of `G`.
 
 ## References
 
@@ -326,6 +333,61 @@ private lemma specComap_relativeSpecCover_f (U : X.AffineZariskiSite) (g : G) :
   congr 2
   ext x
   exact sectionsMulSemiringAction_smul ρ U.toOpens g x
+
+open TauCeti.AffineInvariantQuotient in
+/-- **Points of the relative invariant quotient are orbits.** Two morphisms from the spectrum of a
+field to `Spec_X(A)` with the same image in `Spec_X(A)/G` differ by the action of an element of
+`G`. -/
+theorem exists_comp_relativeSpecMap_eq {K : Type u} [Field K]
+    {x₁ x₂ : Spec (CommRingCat.of K) ⟶ A.relativeSpec}
+    (h : x₁ ≫ (invariantSubalgebraPresheaf ρ).relativeSpecπ =
+      x₂ ≫ (invariantSubalgebraPresheaf ρ).relativeSpecπ) :
+    ∃ g : G, x₁ ≫ relativeSpecMap (ρ g).asIso.hom = x₂ := by
+  -- Both points lie over the same point of `X`; choose an affine open `U` containing it.
+  have hbase : x₁ ≫ A.relativeSpecToBase = x₂ ≫ A.relativeSpecToBase := by
+    simpa using congr($h ≫ (invariantSubalgebraPresheaf ρ).relativeSpecToBase)
+  let pt : Spec (CommRingCat.of K) := default
+  obtain ⟨V, hV, hmem, -⟩ := exists_isAffineOpen_mem_and_subset
+    (TopologicalSpace.Opens.mem_top ((x₁ ≫ A.relativeSpecToBase) pt))
+  let U : X.AffineZariskiSite := ⟨V, hV⟩
+  -- Rebind the charts over `U` at their explicit sources, as in
+  -- `SubalgebraPresheaf.relativeSpecπ_relativeSpecToBase`.
+  let ι : Spec (CommRingCat.of Γ(A.X, U.toOpens)) ⟶ A.relativeSpec := A.relativeSpecCover.f U
+  let ιQ : Spec (CommRingCat.of (invariantSections ρ U.toOpens)) ⟶
+      (invariantSubalgebraPresheaf ρ).relativeSpec :=
+    (invariantSubalgebraPresheaf ρ).relativeSpecCover.f U
+  have : IsOpenImmersion ι := A.isOpenImmersion_relativeSpecCover_f U
+  have : IsOpenImmersion ιQ :=
+    (invariantSubalgebraPresheaf ρ).isOpenImmersion_relativeSpecCover_f U
+  -- Over `U`, both points factor through the chart `Spec Γ(A.X, U) ⟶ Spec_X(A)`.
+  have hrange (x : Spec (CommRingCat.of K) ⟶ A.relativeSpec)
+      (hx : (x ≫ A.relativeSpecToBase) pt ∈ V) : Set.range x ⊆ Set.range ι := by
+    rintro _ ⟨y, rfl⟩
+    rw [Subsingleton.elim y pt]
+    exact (congrArg (fun W : A.relativeSpec.Opens ↦ x pt ∈ W)
+      (relativeSpecToBase_preimage A U)).mp hx
+  let y₁ := IsOpenImmersion.lift ι x₁ (hrange x₁ hmem)
+  let y₂ := IsOpenImmersion.lift ι x₂ (hrange x₂ (hbase ▸ hmem))
+  let := sectionsMulSemiringAction ρ U.toOpens
+  -- The chart points have the same image in the affine invariant quotient of `Γ(A.X, U)`.
+  have hw : (projection Γ(A.X, U.toOpens) G ≫ (chartIso ρ U.toOpens).hom) ≫ ιQ =
+      ι ≫ (invariantSubalgebraPresheaf ρ).relativeSpecπ :=
+    (isPullback_projection (ρ := ρ) U).w
+  have key (y : Spec (CommRingCat.of K) ⟶ Spec (CommRingCat.of Γ(A.X, U.toOpens))) :
+      y ≫ projection Γ(A.X, U.toOpens) G ≫ (chartIso ρ U.toOpens).hom ≫ ιQ =
+        y ≫ ι ≫ (invariantSubalgebraPresheaf ρ).relativeSpecπ := by
+    rw [← hw, Category.assoc]
+  have hy : y₁ ≫ projection Γ(A.X, U.toOpens) G = y₂ ≫ projection Γ(A.X, U.toOpens) G := by
+    refine (cancel_mono ((chartIso ρ U.toOpens).hom ≫ ιQ)).mp ?_
+    rw [Category.assoc, Category.assoc, key, key, IsOpenImmersion.lift_fac_assoc,
+      IsOpenImmersion.lift_fac_assoc, h]
+  obtain ⟨g, hg⟩ := exists_comp_specComap_eq Γ(A.X, U.toOpens) G hy
+  have hι : specComap Γ(A.X, U.toOpens) G g ≫ ι = ι ≫ relativeSpecMap (ρ g).asIso.hom :=
+    specComap_relativeSpecCover_f (ρ := ρ) U g
+  refine ⟨g, ?_⟩
+  rw [← IsOpenImmersion.lift_fac ι x₁ (hrange x₁ hmem), Category.assoc, ← hι,
+    ← Category.assoc]
+  exact (congrArg (· ≫ ι) hg).trans (IsOpenImmersion.lift_fac _ _ _)
 
 /-- The stalk maps of the quotient projection `Spec_X(A) ⟶ Spec_X(A)/G` are injective. -/
 theorem stalkMap_invariantSubalgebraPresheaf_relativeSpecπ_injective (x : A.relativeSpec) :

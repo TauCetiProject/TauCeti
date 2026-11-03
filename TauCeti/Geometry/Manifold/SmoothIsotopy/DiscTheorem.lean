@@ -29,8 +29,10 @@ this into the ambient form of Palais's disc theorem, used to show that connected
 defined: on every compact subset of `E`, `g` is `f` followed by the final diffeomorphism of a
 compactly supported diffeotopy of `M`
 (`TauCeti.SmoothEmbedding.exists_diffeotopy_eqOn_of_det_chartAt_mul_pos`). On a connected
-manifold the centres can first be made to agree by a compactly supported diffeotopy
-(`TauCeti.exists_diffeotopy_final_apply_eq`); that step is not taken here.
+oriented manifold the centres can first be made to agree by a compactly supported diffeotopy
+(`TauCeti.exists_diffeotopy_final_apply_eq`), which gives the ambient disc theorem for embeddings
+with different centres
+(`TauCeti.SmoothEmbedding.exists_diffeotopy_eqOn_of_isOrientationPreservingAt`).
 
 The Euclidean case is `TauCeti.SmoothEmbedding.exists_smoothIsotopy_of_det_mul_pos`. To reduce to
 it, both embeddings are first shrunk by precomposing with a radial contraction of `E` onto a small

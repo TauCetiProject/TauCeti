@@ -47,6 +47,8 @@ bilinear forms on `E × F`.
 * `TauCeti.CompletedProjectiveTensor.continuousLinearMap_ext` and
   `TauCeti.CompletedInjectiveTensor.continuousLinearMap_ext`: bounded operators out of the
   completed tensor products are determined by their values on pure tensors.
+* `TauCeti.CompletedProjectiveTensor.norm_coe_tmul_le`: the completed norm of a pure tensor is at
+  most the product of the norms of its factors.
 * `TauCeti.CompletedProjectiveTensor.norm_mapL_le` and
   `TauCeti.CompletedInjectiveTensor.norm_mapL_le`: `‖mapL f g‖ ≤ ‖f‖ * ‖g‖`.
 * `TauCeti.CompletedProjectiveTensor.toCompletedInjectiveTensor_comp_mapL`: naturality of the
@@ -97,6 +99,13 @@ theorem continuousLinearMap_ext {M : Type*} [AddCommGroup M] [Module 𝕜 M] [To
   exact DFunLike.coe_injective <|
     Completion.ext l.continuous l'.continuous fun u ↦ by simpa using congr($h' u)
 
+/-- The completed projective norm of a pure tensor is at most the product of the norms of its
+factors. -/
+theorem norm_coe_tmul_le (x : E) (y : F) :
+    ‖((⟨x ⊗ₜ y⟩ : ProjectiveTensor 𝕜 E F) : CompletedProjectiveTensor 𝕜 E F)‖ ≤ ‖x‖ * ‖y‖ := by
+  simpa [Completion.norm_coe, ProjectiveTensor.norm_def] using
+    TensorProduct.projectiveSeminorm_tmul_le (𝕜 := 𝕜) x y
+
 /-- The bounded operator `x ⊗ₜ y ↦ f x ⊗ₜ g y` between completed projective tensor products
 induced by bounded operators `f` and `g`. -/
 noncomputable def mapL (f : E →L[𝕜] E') (g : F →L[𝕜] F') :
@@ -108,6 +117,11 @@ noncomputable def mapL (f : E →L[𝕜] E') (g : F →L[𝕜] F') :
 theorem mapL_coe (f : E →L[𝕜] E') (g : F →L[𝕜] F') (u : ProjectiveTensor 𝕜 E F) :
     mapL f g u = ProjectiveTensor.mapL f g u :=
   ContinuousLinearMap.completion_apply_coe _ u
+
+/-- The induced operator is the extension of `ProjectiveTensor.mapL f g` to the completions. -/
+theorem mapL_eq_completion (f : E →L[𝕜] E') (g : F →L[𝕜] F') :
+    mapL f g = (ProjectiveTensor.mapL f g).completion :=
+  (rfl)
 
 /-- The operator induced by `f` and `g` on completed projective tensor products has norm at most
 `‖f‖ * ‖g‖`. -/
@@ -215,6 +229,11 @@ noncomputable def mapL (f : E →L[𝕜] E') (g : F →L[𝕜] F') :
 theorem mapL_coe (f : E →L[𝕜] E') (g : F →L[𝕜] F') (u : InjectiveTensor 𝕜 E F) :
     mapL f g u = InjectiveTensor.mapL f g u :=
   ContinuousLinearMap.completion_apply_coe _ u
+
+/-- The induced operator is the extension of `InjectiveTensor.mapL f g` to the completions. -/
+theorem mapL_eq_completion (f : E →L[𝕜] E') (g : F →L[𝕜] F') :
+    mapL f g = (InjectiveTensor.mapL f g).completion :=
+  (rfl)
 
 /-- The operator induced by `f` and `g` on completed injective tensor products has norm at most
 `‖f‖ * ‖g‖`. -/

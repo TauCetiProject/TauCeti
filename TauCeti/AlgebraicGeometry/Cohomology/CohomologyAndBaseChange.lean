@@ -6,6 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.Cohomology.FlatBaseChange
+public import Mathlib.RingTheory.Spectrum.Prime.FreeLocus
+import TauCeti.AlgebraicGeometry.Cohomology.Semicontinuity
+import Mathlib.RingTheory.Flat.EquationalCriterion
 import TauCeti.RingTheory.Flat.IsBaseChange
 import TauCeti.RingTheory.TensorProduct.IsBaseChange
 
@@ -30,6 +33,19 @@ sections, whose formation commutes with every base change. Flatness of the secti
 `W` is stated for the `R`-module `((sectionsBasePresheafFunctor R).obj M).obj (op W)`, whose
 carrier is `Γ(M, W)` with `R` acting through `Scheme.baseRingToStructurePresheaf`.
 
+Combined with the semicontinuity of `H¹` on the fibres
+(`TauCeti.AlgebraicGeometry.Cohomology.Semicontinuity`), this gives the relative-dimension-one form
+of cohomology and base change. Suppose that the sections of `M` over `U`, `V` and `U ∩ V` are flat
+over `R` and that `H¹(X, M)` is a finite `R`-module. If `H¹` of `M` vanishes on every closed fibre
+`X ×_R κ(p)`, then `H¹(X, M) = 0`, so `H⁰(X, M)` is flat and commutes with every base change. It is
+projective when it is finitely presented, so it is the module of sections of a locally free sheaf
+on `Spec R`, and the dimension of `H⁰` on the fibres is locally constant. If `H¹` vanishes on a
+single fibre `X ×_R κ(p)`, then after base change to `R_f` for some `f ∉ p`, that is over a basic
+open neighbourhood `D(f)` of `p`, the first cohomology vanishes and `H⁰` is flat over `R_f`.
+Flatness of the sections over the two charts and their overlap persists after base change
+(`AlgebraicGeometry.Scheme.Hom.flat_sectionsBase_pullback`), so the base change theorem above also
+applies over `D(f)`.
+
 The proof uses the Mayer–Vietoris sequence of the cover. Since `H¹(X, M) = 0`, it gives a short
 exact sequence of `R`-modules
 
@@ -47,6 +63,17 @@ lemma identifies `R' ⊗_R H⁰(X, M)` with `H⁰(Y, g^* M)`
 * `TauCeti.AlgebraicGeometry.bijective_cohomologyBaseChange_zero_of_subsingleton_cohomology_one`:
   the base change map on `H⁰` is bijective along every ring map when `H¹(X, M) = 0` and
   `Γ(M, U ∩ V)` is flat.
+* `TauCeti.AlgebraicGeometry.finrank_cohomology_zero_pullback_eq_finrank_fiber`: when
+  `H¹(X, M) = 0`, the dimension of `H⁰` on the fibre at `p` is the dimension of `κ(p) ⊗_R H⁰(X, M)`.
+* `TauCeti.AlgebraicGeometry.flat_cohomology_zero_of_forall_isMaximal`: if `H¹` vanishes on
+  every closed fibre, then `H¹(X, M) = 0` and `H⁰(X, M)` is flat.
+* `TauCeti.AlgebraicGeometry.projective_cohomology_zero_of_forall_isMaximal`: if `H¹` vanishes on
+  every closed fibre, then the finitely presented module `H⁰(X, M)` is projective.
+* `TauCeti.AlgebraicGeometry.isLocallyConstant_finrank_cohomology_zero_fiber`: under the same
+  hypotheses, the dimension of `H⁰` on the fibres is a locally constant function on `Spec R`.
+* `TauCeti.AlgebraicGeometry.exists_notMem_flat_cohomology_zero_away`: if `H¹` vanishes on the
+  fibre at `p`, then over some basic open neighbourhood `D(f)` of `p` the first cohomology vanishes
+  and `H⁰` is flat over `R_f`.
 
 ## References
 
@@ -177,5 +204,134 @@ theorem bijective_cohomologyBaseChange_zero_of_subsingleton_cohomology_one (M : 
     (mayerVietorisSectionsRestrictionLinear_comp_cohomologyZeroLinearEquiv_injective _ _ _ hUV')
 
 end BaseChange
+
+section Fiber
+
+variable (p : PrimeSpectrum R) {Y : Scheme.{u}} [Y.Over (Spec (.of p.asIdeal.ResidueField))]
+  {g : Y ⟶ X} (H : IsPullback g (Y ↘ Spec (.of p.asIdeal.ResidueField)) (X ↘ Spec (.of R))
+    (Spec.map (CommRingCat.ofHom (algebraMap R p.asIdeal.ResidueField))))
+
+include H in
+/-- On a two-affine cover with affine intersection, if `H¹(X, M) = 0` and the sections of `M`
+over `U ∩ V` are flat over `R`, then the dimension of `H⁰` of `M` on the fibre `Y = X ×_R κ(p)`
+is the dimension of the fibre `κ(p) ⊗_R H⁰(X, M)` of `H⁰(X, M)` at `p`. -/
+theorem finrank_cohomology_zero_pullback_eq_finrank_fiber (M : X.Modules) [M.IsQuasicoherent]
+    {U V : X.Opens} (hU : IsAffineOpen U) (hV : IsAffineOpen V) (hInter : IsAffineOpen (U ⊓ V))
+    (hUV : U ⊔ V = ⊤) [Module.Flat R (((sectionsBasePresheafFunctor R).obj M).obj (op (U ⊓ V)))]
+    [Subsingleton (Cohomology M 1)] :
+    Module.finrank p.asIdeal.ResidueField (Cohomology ((Scheme.Modules.pullback g).obj M) 0) =
+      Module.finrank p.asIdeal.ResidueField (p.asIdeal.Fiber (Cohomology M 0)) :=
+  (LinearEquiv.ofBijective _ (bijective_cohomologyBaseChange_zero_of_subsingleton_cohomology_one
+    H M hU hV hInter hUV)).finrank_eq.symm
+
+end Fiber
+
+section FibrewiseVanishing
+
+variable (M : X.Modules) [M.IsQuasicoherent] {U V : X.Opens} (hU : IsAffineOpen U)
+  (hV : IsAffineOpen V) (hInter : IsAffineOpen (U ⊓ V)) (hUV : U ⊔ V = ⊤)
+  [Module.Flat R (((sectionsBasePresheafFunctor R).obj M).obj (op U))]
+  [Module.Flat R (((sectionsBasePresheafFunctor R).obj M).obj (op V))]
+  [Module.Flat R (((sectionsBasePresheafFunctor R).obj M).obj (op (U ⊓ V)))]
+  [Module.Finite R (Cohomology M 1)]
+
+include hU hV hInter hUV in
+/-- **`H⁰` is flat when `H¹` vanishes on the closed fibres.** Let `X` be a scheme over `R`
+covered by affine opens `U` and `V` with affine intersection, and let `M` be a quasi-coherent
+sheaf on `X` whose sections over `U`, `V` and `U ∩ V` are flat over `R`, with `H¹(X, M)` a finite
+`R`-module. If `H¹` of `M` vanishes on the fibre `X ×_R κ(p)` at every maximal ideal `p` of `R`,
+then `H¹(X, M) = 0` (`subsingleton_cohomology_one_iff_forall_isMaximal`), so `H⁰(X, M)` is a flat
+`R`-module. -/
+theorem flat_cohomology_zero_of_forall_isMaximal
+    (h : ∀ p : PrimeSpectrum R, p.asIdeal.IsMaximal →
+      Subsingleton (Cohomology ((Scheme.Modules.pullback (pullback.fst (X ↘ Spec (.of R))
+        (Spec.map (CommRingCat.ofHom (algebraMap R p.asIdeal.ResidueField))))).obj M) 1)) :
+    Module.Flat R (Cohomology M 0) :=
+  have := (subsingleton_cohomology_one_iff_forall_isMaximal M hU hV hInter hUV).mpr h
+  flat_cohomology_zero_of_subsingleton_cohomology_one M U V hUV
+
+include hU hV hInter hUV in
+/-- **`H⁰` is locally free when `H¹` vanishes on the closed fibres.** Let `X` be a scheme over
+`R` covered by affine opens `U` and `V` with affine intersection, and let `M` be a quasi-coherent
+sheaf on `X` whose sections over `U`, `V` and `U ∩ V` are flat over `R`, with `H¹(X, M)` a finite
+`R`-module. If `H¹` of `M` vanishes on the fibre `X ×_R κ(p)` at every maximal ideal `p` of `R`
+and `H⁰(X, M)` is finitely presented, then `H⁰(X, M)` is a projective `R`-module.
+
+In this situation `H¹(X, M) = 0` (`subsingleton_cohomology_one_iff_forall_isMaximal`), so the
+formation of `H⁰(X, M)` also commutes with every base change of `R`
+(`bijective_cohomologyBaseChange_zero_of_subsingleton_cohomology_one`). -/
+theorem projective_cohomology_zero_of_forall_isMaximal
+    [Module.FinitePresentation R (Cohomology M 0)]
+    (h : ∀ p : PrimeSpectrum R, p.asIdeal.IsMaximal →
+      Subsingleton (Cohomology ((Scheme.Modules.pullback (pullback.fst (X ↘ Spec (.of R))
+        (Spec.map (CommRingCat.ofHom (algebraMap R p.asIdeal.ResidueField))))).obj M) 1)) :
+    Module.Projective R (Cohomology M 0) := by
+  have := flat_cohomology_zero_of_forall_isMaximal M hU hV hInter hUV h
+  exact Module.Flat.projective_of_finitePresentation
+
+include hU hV hInter hUV in
+/-- **The fibre dimension of `H⁰` is locally constant when `H¹` vanishes on the closed fibres.**
+Under the hypotheses of `projective_cohomology_zero_of_forall_isMaximal`, the dimension of `H⁰`
+of `M` on the fibre `X ×_R κ(p)` is a locally constant function of `p ∈ Spec R`: it is the rank
+of the projective module `H⁰(X, M)` at `p`. -/
+theorem isLocallyConstant_finrank_cohomology_zero_fiber
+    [Module.FinitePresentation R (Cohomology M 0)]
+    (h : ∀ p : PrimeSpectrum R, p.asIdeal.IsMaximal →
+      Subsingleton (Cohomology ((Scheme.Modules.pullback (pullback.fst (X ↘ Spec (.of R))
+        (Spec.map (CommRingCat.ofHom (algebraMap R p.asIdeal.ResidueField))))).obj M) 1)) :
+    IsLocallyConstant fun p : PrimeSpectrum R ↦ Module.finrank p.asIdeal.ResidueField
+      (Cohomology ((Scheme.Modules.pullback (pullback.fst (X ↘ Spec (.of R))
+        (Spec.map (CommRingCat.ofHom (algebraMap R p.asIdeal.ResidueField))))).obj M) 0) := by
+  -- `H¹(X, M) = 0` identifies the fibre dimension of `H⁰` with the rank of `H⁰(X, M)`.
+  have := (subsingleton_cohomology_one_iff_forall_isMaximal M hU hV hInter hUV).mpr h
+  have := flat_cohomology_zero_of_forall_isMaximal M hU hV hInter hUV h
+  convert Module.isLocallyConstant_rankAtStalk (R := R) (M := Cohomology M 0) using 1
+  funext p
+  rw [finrank_cohomology_zero_pullback_eq_finrank_fiber p (IsPullback.of_hasPullback _ _) M hU hV
+    hInter hUV, Ideal.finrank_fiber_eq_rankAtStalk]
+
+include hU hV hInter hUV in
+/-- **`H⁰` is flat near a point where `H¹` vanishes on the fibre.** Let `X` be a scheme over `R`
+covered by affine opens `U` and `V` with affine intersection, and let `M` be a quasi-coherent
+sheaf on `X` whose sections over `U`, `V` and `U ∩ V` are flat over `R`, with `H¹(X, M)` a finite
+`R`-module. If `H¹` of `M` vanishes on the fibre `X ×_R κ(p)`, then there is `f ∉ p` such that,
+over the basic open neighbourhood `D(f)` of `p`, that is after base change to `R_f`, `H¹` of `M`
+vanishes and `H⁰` of `M` is a flat `R_f`-module.
+
+The sections of the pullback of `M` over the preimages of `U`, `V` and `U ∩ V` remain flat over
+`R_f` (`Scheme.Hom.flat_sectionsBase_pullback`), so the formation of this `H⁰` commutes with
+every base change of `R_f` (`bijective_cohomologyBaseChange_zero_of_subsingleton_cohomology_one`).
+-/
+theorem exists_notMem_flat_cohomology_zero_away (p : PrimeSpectrum R) {Y : Scheme.{u}}
+    [Y.Over (Spec (.of p.asIdeal.ResidueField))] {g : Y ⟶ X}
+    (H : IsPullback g (Y ↘ Spec (.of p.asIdeal.ResidueField)) (X ↘ Spec (.of R))
+      (Spec.map (CommRingCat.ofHom (algebraMap R p.asIdeal.ResidueField))))
+    (h : Subsingleton (Cohomology ((Scheme.Modules.pullback g).obj M) 1)) :
+    ∃ f ∉ p.asIdeal,
+      Subsingleton (Cohomology ((Scheme.Modules.pullback (pullback.fst (X ↘ Spec (.of R))
+        (Spec.map (CommRingCat.ofHom (algebraMap R (Localization.Away f)))))).obj M) 1) ∧
+      Module.Flat (Localization.Away f)
+        (Cohomology ((Scheme.Modules.pullback (pullback.fst (X ↘ Spec (.of R))
+          (Spec.map (CommRingCat.ofHom (algebraMap R (Localization.Away f)))))).obj M) 0) := by
+  obtain ⟨f, hf, hsub⟩ := exists_notMem_subsingleton_cohomology_one_away M hU hV hInter hUV p H h
+  refine ⟨f, hf, hsub, ?_⟩
+  let g' := pullback.fst (X ↘ Spec (.of R))
+    (Spec.map (CommRingCat.ofHom (algebraMap R (Localization.Away f))))
+  have H' : IsPullback g' (pullback (X ↘ Spec (.of R))
+      (Spec.map (CommRingCat.ofHom (algebraMap R (Localization.Away f)))) ↘
+        Spec (.of (Localization.Away f))) (X ↘ Spec (.of R))
+      (Spec.map (CommRingCat.ofHom (algebraMap R (Localization.Away f)))) :=
+    IsPullback.of_hasPullback _ _
+  have := g'.flat_sectionsBase_pullback M _ H' hU
+  have := g'.flat_sectionsBase_pullback M _ H' hV
+  -- The preimage `g' ⁻¹ᵁ (U ⊓ V)` is definitionally the overlap `g' ⁻¹ᵁ U ⊓ g' ⁻¹ᵁ V`.
+  have : Module.Flat (Localization.Away f) (((sectionsBasePresheafFunctor (Localization.Away f)).obj
+      ((Scheme.Modules.pullback g').obj M)).obj (op (g' ⁻¹ᵁ U ⊓ g' ⁻¹ᵁ V))) :=
+    g'.flat_sectionsBase_pullback M _ H' hInter
+  have hUV' : g' ⁻¹ᵁ U ⊔ g' ⁻¹ᵁ V = ⊤ := by
+    rw [← Scheme.Hom.preimage_sup, hUV, Scheme.Hom.preimage_top]
+  exact flat_cohomology_zero_of_subsingleton_cohomology_one _ _ _ hUV'
+
+end FibrewiseVanishing
 
 end TauCeti.AlgebraicGeometry

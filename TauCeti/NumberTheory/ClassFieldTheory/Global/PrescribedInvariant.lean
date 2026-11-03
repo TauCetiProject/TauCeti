@@ -16,7 +16,7 @@ import TauCeti.NumberTheory.ClassFieldTheory.Global.Cyclotomic.Input
 import TauCeti.NumberTheory.ClassFieldTheory.Global.PrimeDegreeDecomposition
 import TauCeti.NumberTheory.Cyclotomic.FixingSubgroup
 import TauCeti.NumberTheory.LocalField.Unramified.Existence
-import TauCeti.NumberTheory.NumberField.FinitePlace
+import TauCeti.NumberTheory.NumberField.FinitePlace.Basic
 import TauCeti.NumberTheory.NumberField.Global.Ideles.Norm.Basic
 import TauCeti.RepresentationTheory.Homological.ContCohomology.Corestriction.Conjugation
 import TauCeti.RingTheory.RootsOfUnity.PrimitiveRoots

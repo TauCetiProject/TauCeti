@@ -9,14 +9,14 @@ public import TauCeti.Geometry.Manifold.IntegralCurve.Reparam
 public import TauCeti.Geometry.Manifold.RegularValue
 public import TauCeti.Geometry.Symplectic.Hamiltonian.Manifold
 public import TauCeti.Geometry.Symplectic.Lagrangian.Basic
-import TauCeti.Geometry.Manifold.RegularValue.Scalar.Level
+import TauCeti.Geometry.Manifold.RegularValue.Level
 
 /-!
 # Characteristic foliations of regular hypersurfaces
 
 Let `σ` be a nondegenerate two-form on a manifold `M` modelled on a finite-dimensional space, and
 let `S = f⁻¹(c)` be a regular level of a function `f : M → ℝ`, a hypersurface whose tangent space
-at `x` is `ker df_x` (`TauCeti.range_mfderiv_coe_scalarRegularLevel`). The restriction of `σ` to
+at `x` is `ker df_x` (`TauCeti.range_mfderiv_coe_regularLevel`). The restriction of `σ` to
 `T_x S` has a one-dimensional kernel `T_x S ∩ (T_x S)^σ`, the **characteristic line** of `S` at
 `x`; these lines form the characteristic foliation of `S`. With the convention `ι_{X_f} σ = df`:
 

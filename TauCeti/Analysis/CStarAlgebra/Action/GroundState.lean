@@ -9,7 +9,7 @@ public import TauCeti.Analysis.CStarAlgebra.Action.KMS.Basic
 import Mathlib.Analysis.CStarAlgebra.GelfandNaimarkSegal
 import Mathlib.Analysis.Complex.Liouville
 import Mathlib.Analysis.Complex.LocallyUniformLimit
-import TauCeti.Analysis.CStarAlgebra.Action.GaussianSmearing
+import TauCeti.Analysis.CStarAlgebra.Action.Generator.Core
 import TauCeti.Analysis.Complex.Conformal.Reflection.Principle
 import TauCeti.Analysis.Complex.PhragmenLindelof
 import TauCeti.Analysis.SpecificLimits.SqLeMulDoubling
@@ -25,7 +25,7 @@ state, a positive continuous functional of norm one, admitting a ground-state fu
 every pair `a, b`. This is the zero-temperature limit of the KMS condition: the strip
 `0 ≤ im z ≤ β` becomes the upper half-plane and the second boundary condition disappears.
 Bratteli and Robinson define ground states instead by the generator inequality
-`-i ω (a⋆ δ(a)) ≥ 0`; the analytic condition used here is equivalent to it.
+`-i ω (a⋆ δ(a)) ≥ 0`; the analytic condition used here is equivalent to it, as shown below.
 
 The ground-state function of a pair is unique, `IsGroundStateFunction.eqOn`, by Schwarz
 reflection across the real axis, and it is bounded on the upper half-plane by `‖φ‖ ‖a‖ ‖b‖`,
@@ -44,8 +44,17 @@ by Liouville's theorem. Every state is a ground state of the trivial dynamics,
 For a ground state `ω`, an entire analytic `a` and `s ≥ 0`, the imaginary-time correlation
 `ω (a⋆ α_{is}(a))` is at most its value `ω (a⋆ a)` at `s = 0`,
 `IsGroundState.apply_star_mul_entireExtension_mul_I_le`. Consequently ground states satisfy the
-generator inequality `-i ω (a⋆ δ(a)) ≥ 0` for entire analytic `a`, where `δ` is the generator of
-the dynamics, `IsGroundState.neg_I_mul_apply_star_mul_generator_nonneg`.
+generator inequality `-i ω (a⋆ δ(a)) ≥ 0`, where `δ` is the generator of the dynamics: first for
+entire analytic `a`, and then for every `a` in the domain of `δ`, since the entire analytic
+elements form a core, `IsGroundState.neg_I_mul_apply_star_mul_generator_nonneg`.
+
+Conversely, a state satisfying the generator inequality on entire analytic elements is a ground
+state, `IsGroundState.of_neg_I_mul_apply_star_mul_generator_nonneg`. For entire analytic `b` and
+`v` in the closed upper half-plane, the inequality makes `t ↦ ω ((α_{tv}(b))⋆ α_{tv}(b))` antitone
+on the real line, so `ω ((α_z(b))⋆ α_z(b)) ≤ ‖b‖ ^ 2` when `im z ≥ 0`. The Cauchy–Schwarz
+inequality turns this into the analytic bound `‖ω (a α_z(b))‖ ≤ ‖a‖ ‖b‖`. So ground states are
+exactly the states satisfying the generator inequality on the generator domain,
+`isGroundState_iff_neg_I_mul_apply_star_mul_generator_nonneg`.
 
 Weak-* limits of β-KMS states as `β → +∞` are ground states whenever the limit is a state,
 `IsGroundState.of_tendsto_isKMSState`; on a unital algebra the limit is automatically a state,
@@ -329,10 +338,10 @@ theorem IsGroundState.apply_star_mul_entireExtension_mul_I_le (hω : α.IsGround
     _ ≤ g 0 := Complex.real_le_real.mpr hle
     _ = ω (star a * a) := (hGg 0).symm.trans hG0
 
-/-- **Ground states satisfy the generator inequality.** For a ground state `ω` with generator
-`δ` of the dynamics and an entire analytic `a`, `-i ω (a⋆ δ(a)) ≥ 0`. -/
-theorem IsGroundState.neg_I_mul_apply_star_mul_generator_nonneg (hω : α.IsGroundState ω)
-    (ha : α.IsEntireAnalytic a) :
+/-- A ground state satisfies the generator inequality `-i ω (a⋆ δ(a)) ≥ 0` on entire analytic
+elements `a`. -/
+private theorem IsGroundState.neg_I_mul_apply_star_mul_generator_nonneg_of_isEntireAnalytic
+    (hω : α.IsGroundState ω) (ha : α.IsEntireAnalytic a) :
     0 ≤ -I * ω (star a * α.generator ⟨a, ha.mem_generator_domain⟩) := by
   rw [ha.generator_eq_deriv]
   set F : ℂ → ℂ := fun z => ω (star a * α.entireExtension a z) with hF_def
@@ -354,6 +363,98 @@ theorem IsGroundState.neg_I_mul_apply_star_mul_generator_nonneg (hω : α.IsGrou
     simp only [hF_def, zero_add, ofReal_zero, zero_mul, ha.entireExtension_apply_zero]
     exact smul_nonpos_of_nonneg_of_nonpos (inv_nonneg.mpr ht.le) (sub_nonpos.mpr h)
   rwa [neg_mul, mul_comm, neg_nonneg]
+
+/-- **Ground states satisfy the generator inequality.** For a ground state `ω`, with `δ` the
+generator of the dynamics, `-i ω (a⋆ δ(a)) ≥ 0` for every `a` in the domain of `δ`. -/
+theorem IsGroundState.neg_I_mul_apply_star_mul_generator_nonneg (hω : α.IsGroundState ω)
+    (a : α.generator.domain) : 0 ≤ -I * ω (star (a : A) * α.generator a) := by
+  -- Gaussian smearings are entire analytic and converge to `a` in the graph of `δ`
+  have hcont : Continuous fun p : A × A => -I * ω (star p.1 * p.2) := by fun_prop
+  exact ge_of_tendsto ((hcont.tendsto _).comp (α.tendsto_gaussianSmear_graph a)) <|
+    .of_forall fun c => hω.neg_I_mul_apply_star_mul_generator_nonneg_of_isEntireAnalytic
+      (α.isEntireAnalytic_gaussianSmear c a)
+
+/-- Under the generator inequality, `t ↦ ω ((α_{tv}(b))⋆ α_{tv}(b))` is antitone for every
+direction `v` in the closed upper half-plane: its derivative is `2 re (v ω (x⋆ δ(x)))` at
+`x = α_{tv}(b)`, and the generator inequality says that `ω (x⋆ δ(x))` is `i` times a nonnegative
+real number. -/
+private theorem antitone_re_apply_star_entireExtension_mul_entireExtension
+    (h : ∀ a (ha : α.IsEntireAnalytic a),
+      0 ≤ -I * ω (star a * α.generator ⟨a, ha.mem_generator_domain⟩))
+    (hb : α.IsEntireAnalytic b) {v : ℂ} (hv : 0 ≤ v.im) :
+    Antitone fun t : ℝ =>
+      (ω (star (α.entireExtension b (t * v)) * α.entireExtension b (t * v))).re := by
+  let L : A →L[ℝ] ℝ := reCLM.comp ((ω : A →L[ℂ] ℂ).restrictScalars ℝ)
+  have hL (y : A) : L y = (ω y).re := rfl
+  set x : ℝ → A := fun t => α.entireExtension b (t * v)
+  set d : ℝ → A := fun t => v • deriv (α.entireExtension b) (t * v) with hd_def
+  have hx (t : ℝ) : HasDerivAt x (d t) t := by
+    have hp : HasDerivAt (fun s : ℝ => (s : ℂ) * v) v t := by
+      simpa using (hasDerivAt_id (t : ℂ)).comp_ofReal.mul_const v
+    exact (hb.differentiable_entireExtension _).hasDerivAt.scomp t hp
+  refine antitone_of_hasDerivAt_nonpos
+    (f' := fun t => L (star (x t) * d t + star (d t) * x t)) (fun t => ?_) (fun t => ?_)
+  · exact L.hasFDerivAt.comp_hasDerivAt t
+      ((ContinuousLinearMap.mul ℝ A).hasDerivAt_of_bilinear (fun _ => (hx t).star)
+        fun _ => hx t)
+  · have hW := h _ (hb.isEntireAnalytic_entireExtension (t * v))
+    rw [hb.generator_entireExtension] at hW
+    set W := ω (star (x t) * deriv (α.entireExtension b) (t * v))
+    have hy : ω (star (x t) * d t) = v * W := by
+      rw [hd_def, mul_smul_comm, map_smul, smul_eq_mul]
+    have hy' : ω (star (d t) * x t) = star (v * W) := by
+      rw [← hy, ← map_star, star_mul, star_star]
+    -- `W` is purely imaginary with nonnegative imaginary part
+    rw [Complex.nonneg_iff] at hW
+    simp only [neg_mul, neg_re, mul_re, I_re, zero_mul, I_im, one_mul, zero_sub, neg_neg,
+      neg_im, mul_im, zero_add] at hW
+    simp only [hL, map_add, add_re, hy, hy', star_def, conj_re, mul_re, Pi.zero_apply]
+    rw [show W.re = 0 by linarith [hW.2]]
+    linarith [mul_nonneg hv hW.1]
+
+/-- **The generator inequality characterizes ground states.** A positive functional `ω` of norm
+one is a ground state as soon as `-i ω (a⋆ δ(a)) ≥ 0` for every entire analytic `a`, where `δ` is
+the generator of the dynamics. -/
+theorem IsGroundState.of_neg_I_mul_apply_star_mul_generator_nonneg
+    (hnorm : ‖(ω : A →L[ℂ] ℂ)‖ = 1)
+    (h : ∀ a (ha : α.IsEntireAnalytic a),
+      0 ≤ -I * ω (star a * α.generator ⟨a, ha.mem_generator_domain⟩)) :
+    α.IsGroundState ω := by
+  -- For entire analytic `b` and `im z ≥ 0` the inequality makes `ω ((α_z(b))⋆ α_z(b))` at most
+  -- `ω (b⋆ b) ≤ ‖b‖ ^ 2`, and the Cauchy–Schwarz inequality then gives the analytic bound
+  -- `‖ω (a α_z(b))‖ ≤ ‖a‖ ‖b‖` of `isGroundState_iff_norm_apply_mul_entireExtension_le`.
+  refine isGroundState_iff_norm_apply_mul_entireExtension_le.mpr ⟨hnorm, fun a b hb z hz => ?_⟩
+  set x := α.entireExtension b z
+  have hnorm_eq (y : A) : ‖ω (star y * y)‖ = (ω (star y * y)).re :=
+    (congrArg re (Complex.eq_coe_norm_of_nonneg (ω.map_nonneg (star_mul_self_nonneg y)))).symm
+  have hle (y : A) : ‖ω y‖ ≤ ‖y‖ := by
+    simpa [hnorm] using (ω : A →L[ℂ] ℂ).le_opNorm y
+  have hx : ‖ω (star x * x)‖ ≤ ‖b‖ ^ 2 := by
+    have hmono := antitone_re_apply_star_entireExtension_mul_entireExtension h hb hz
+      (zero_le_one' ℝ)
+    simp only [ofReal_one, one_mul, ofReal_zero, zero_mul, hb.entireExtension_apply_zero]
+      at hmono
+    rw [hnorm_eq, sq, ← CStarRing.norm_star_mul_self]
+    exact hmono.trans ((hnorm_eq b).symm.le.trans (hle _))
+  have ha : ‖ω (a * star a)‖ ≤ ‖a‖ ^ 2 := by
+    rw [sq, ← CStarRing.norm_self_mul_star]
+    exact hle _
+  have hcs := PositiveLinearMap.norm_map_star_mul_sq_le ω (star a) x
+  rw [star_star] at hcs
+  refine (pow_le_pow_iff_left₀ (norm_nonneg _) (by positivity) two_ne_zero).mp ?_
+  calc ‖ω (a * x)‖ ^ 2 ≤ ‖ω (a * star a)‖ * ‖ω (star x * x)‖ := hcs
+    _ ≤ ‖a‖ ^ 2 * ‖b‖ ^ 2 := mul_le_mul ha hx (norm_nonneg _) (by positivity)
+    _ = (‖a‖ * ‖b‖) ^ 2 := (mul_pow _ _ _).symm
+
+/-- **Ground states are the states satisfying the generator inequality.** A positive functional
+`ω` is a ground state exactly when it has norm one and `-i ω (a⋆ δ(a)) ≥ 0` for every `a` in the
+domain of the generator `δ` of the dynamics. -/
+theorem isGroundState_iff_neg_I_mul_apply_star_mul_generator_nonneg :
+    α.IsGroundState ω ↔ ‖(ω : A →L[ℂ] ℂ)‖ = 1 ∧
+      ∀ a : α.generator.domain, 0 ≤ -I * ω (star (a : A) * α.generator a) :=
+  ⟨fun hω => ⟨hω.norm_eq_one, hω.neg_I_mul_apply_star_mul_generator_nonneg⟩, fun ⟨hnorm, h⟩ =>
+    .of_neg_I_mul_apply_star_mul_generator_nonneg hnorm fun a ha =>
+      h ⟨a, ha.mem_generator_domain⟩⟩
 
 /-! ### Zero-temperature limits of KMS states -/
 

@@ -36,6 +36,8 @@ bidual into `E`. This is unrelated to Helly's intersection theorem for convex se
   functionals and an element of the bidual.
 * `StrongDual.exists_norm_lt_and_forall_mem_apply_eq`: the same for a finite-dimensional
   subspace of the dual.
+* `StrongDual.norm_sum_apply_comp_single_le`: a coordinatewise bound for functionals on a finite
+  product `κ → E`, paired with bidual vectors of norm at most one.
 * `TauCeti.exists_norm_lt_and_forall_apply_eq_iff`: Helly's criterion for prescribed values.
 
 ## References
@@ -122,6 +124,30 @@ theorem exists_norm_lt_and_forall_mem_apply_eq (φ : StrongDual 𝕜 (StrongDual
   refine ⟨x, hx, fun f hf ↦ ?_⟩
   exact LinearMap.eqOn_span' (f := (ContinuousLinearMap.apply 𝕜 𝕜 x : StrongDual 𝕜 E →ₗ[𝕜] 𝕜))
     (g := (φ : StrongDual 𝕜 E →ₗ[𝕜] 𝕜)) (fun g hg ↦ hs ⟨g, hg⟩) hf
+
+/-- **Helly's lemma**, coordinatewise: a functional `f` of norm at most one on a finite product
+`κ → E` pairs bidual vectors `z i` of norm at most one with its coordinate functionals
+`f ∘ single i` to a value of norm at most one. -/
+theorem norm_sum_apply_comp_single_le {κ : Type*} [Fintype κ] [DecidableEq κ]
+    (f : StrongDual 𝕜 (κ → E)) (hf : ‖f‖ ≤ 1) (z : κ → StrongDual 𝕜 (StrongDual 𝕜 E))
+    (hz : ∀ i, ‖z i‖ ≤ 1) :
+    ‖∑ i, z i (f.comp (.single 𝕜 (fun _ ↦ E) i))‖ ≤ 1 := by
+  refine le_of_forall_pos_le_add fun η hη ↦ ?_
+  have he : ∀ i, ∃ e : E, ‖e‖ < 1 + η ∧
+      f.comp (.single 𝕜 (fun _ ↦ E) i) e = z i (f.comp (.single 𝕜 (fun _ ↦ E) i)) := by
+    intro i
+    obtain ⟨e, he, hhe⟩ := StrongDual.exists_norm_lt_and_forall_apply_eq
+      (z i) (fun _ : Unit ↦ f.comp (.single 𝕜 (fun _ ↦ E) i)) hη
+    exact ⟨e, he.trans_le (by simpa using hz i), hhe ()⟩
+  choose e he hhe using he
+  calc ‖∑ i, z i (f.comp (.single 𝕜 (fun _ ↦ E) i))‖ = ‖f e‖ := by
+        rw [← ContinuousLinearMap.sum_comp_single (L := f) (v := e)]
+        simp only [hhe]
+    _ ≤ ‖f‖ * ‖e‖ := f.le_opNorm e
+    _ ≤ 1 * (1 + η) := by
+        gcongr
+        exact (pi_norm_le_iff_of_nonneg (by positivity)).2 fun i ↦ (he i).le
+    _ = 1 + η := one_mul _
 
 end StrongDual
 

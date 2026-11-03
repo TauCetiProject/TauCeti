@@ -10,6 +10,7 @@ public import Mathlib.RingTheory.LaurentSeries
 public import Mathlib.RingTheory.PowerSeries.Expand
 public import TauCeti.Data.Rat.NumDenDvd
 public import TauCeti.RingTheory.HahnSeries.EmbDomain
+public import TauCeti.RingTheory.LaurentSeries.Basic
 
 /-!
 # Ramified levels of Laurent series
@@ -41,9 +42,14 @@ definitionally equal to it, so the algebra maps here are assembled from the ring
 
 * `LaurentSeries.coeff_expand_mul`, `LaurentSeries.coeff_expand_of_not_dvd`,
   `LaurentSeries.coeff_expand_of_lt_mul_order`: the coefficients of `expand R d f`.
+* `LaurentSeries.orderTop_expand`, `LaurentSeries.order_expand` and
+  `LaurentSeries.leadingCoeff_expand`: expansion multiplies the order by `d` and preserves the
+  leading coefficient.
 * `LaurentSeries.mem_range_expand_iff`: a Laurent series is in the image of `X ↦ X ^ d` exactly
   when all its exponents are divisible by `d`.
 * `LaurentSeries.expand_coe`: `expand` extends `PowerSeries.expand`.
+* `LaurentSeries.valuation_expand`: over a field, expansion `X ↦ X ^ d` raises the valuation to
+  the `d`-th power.
 * `FiniteField.LaurentSeries.expand_card`: over a finite field with `q` elements, the expansion
   `X ↦ X ^ q` of a Laurent series is its `q`-th power.
 * `LaurentSeries.sum_single_mul_expand_contract`: reconstruction from congruence components.
@@ -146,6 +152,22 @@ theorem orderTop_expand (d : ℕ+) (f : R⸨X⸩) :
 theorem expand_injective (d : ℕ+) : Function.Injective (expand R d) :=
   embDomain_injective
 
+/-- Expansion multiplies the order by `d`; the zero series has order zero on both sides. -/
+@[simp]
+theorem order_expand (d : ℕ+) (f : R⸨X⸩) : (expand R d f).order = d * f.order := by
+  rcases eq_or_ne f 0 with rfl | hf
+  · simp
+  have hf' : expand R d f ≠ 0 := (map_ne_zero_iff _ (expand_injective d)).mpr hf
+  apply WithTop.coe_injective
+  rw [order_eq_orderTop_of_ne_zero hf', orderTop_expand, ← order_eq_orderTop_of_ne_zero hf,
+    ← WithTop.coe_nsmul, nsmul_eq_mul]
+
+/-- Expansion preserves the leading coefficient. -/
+@[simp]
+theorem leadingCoeff_expand (d : ℕ+) (f : R⸨X⸩) :
+    (expand R d f).leadingCoeff = f.leadingCoeff := by
+  rw [leadingCoeff_eq, leadingCoeff_eq, order_expand, coeff_expand_mul]
+
 /-- A Laurent series is in the image of `X ↦ X ^ d` exactly when all its exponents are divisible
 by `d`. -/
 theorem mem_range_expand_iff (d : ℕ+) {f : R⸨X⸩} :
@@ -186,6 +208,20 @@ theorem expand_coe {R : Type*} [CommRing R] (d : ℕ+) (f : R⟦X⟧) :
     rw [PowerSeries.coeff_expand_of_not_dvd]
     rintro ⟨c, hc⟩
     exact hk ⟨c, by omega⟩
+
+/-- Expansion `X ↦ X ^ d` raises the `X`-adic valuation of a Laurent series to the `d`-th power:
+it multiplies the order by `d`. -/
+@[simp]
+theorem valuation_expand {K : Type*} [Field K] (d : ℕ+) (f : K⸨X⸩) :
+    Valued.v (expand K d f) = Valued.v f ^ (d : ℕ) := by
+  rcases eq_or_ne f 0 with rfl | hf
+  · simp
+  have hf' : expand K d f ≠ 0 := (map_ne_zero_iff _ (expand_injective d)).mpr hf
+  have h := orderTop_expand d f
+  rw [← HahnSeries.order_eq_orderTop_of_ne_zero hf, ← HahnSeries.order_eq_orderTop_of_ne_zero hf',
+    ← WithTop.coe_nsmul, WithTop.coe_eq_coe] at h
+  rw [TauCeti.LaurentSeries.valuation_eq_exp_neg_order hf,
+    TauCeti.LaurentSeries.valuation_eq_exp_neg_order hf', h, ← WithZero.exp_nsmul, smul_neg]
 
 /-- Over a finite field with `q` elements, the expansion `X ↦ X ^ q` of a Laurent series is its
 `q`-th power. The modulus is given as a positive natural number `d` with `d = q`. -/

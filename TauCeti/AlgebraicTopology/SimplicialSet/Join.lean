@@ -40,6 +40,8 @@ on standard simplices, and `SSet.join.homEquiv` identifies its maps from `X` wit
   `0` and `1` are `K` and `L`, through the inverses of the inclusions.
 * `SSet.join.map`: the functoriality of the join in both variables.
 * `SSet.join.edgeMk`: the edge of `K ⋆ L` from a vertex of `K` to a vertex of `L`.
+* `SSet.joinFiberZeroRetraction`: the retraction of `Δ[m]` onto its part over the vertex `0` of
+  `Δ[1]`, when that part contains the vertex `0`.
 
 ## Main results
 
@@ -47,6 +49,8 @@ on standard simplices, and `SSet.join.homEquiv` identifies its maps from `X` wit
   (`SSet.join.homEquiv_comp`); this is the representability `SSet.join.representableBy`.
 * `SSet.join.edge_mem_joinFiber_zero`: an edge of `K ⋆ L` ending over the vertex `0` lies over
   `0`.
+* `SSet.join.exists_eq_comp_inr_or_exists_eq_comp_map`: every simplex of `K ⋆ L` comes from `L`
+  or is the image of a simplex of `Δ[m] ⋆ L` under `g ⋆ L` for a simplex `g : Δ[m] ⟶ K`.
 * `SSet.join.isoOfIsTerminal`: the join of two terminal simplicial sets, such as
   `Δ[0] ⋆ Δ[0]`, is `Δ[1]`.
 * `SSet.join.quasicategory`: the join of two quasicategories is a quasicategory (Joyal).
@@ -113,6 +117,75 @@ lemma joinFiber_ι_comp (p : X ⟶ Δ[1]) (e : Fin 2) :
   induction n using Opposite.rec with | op n
   induction n using SimplexCategory.rec with | _ n
   exact stdSimplex.ext _ _ ((mem_joinFiber_iff p e x).1 hx)
+
+section retraction
+
+variable {m : ℕ} (q : Δ[m] ⟶ Δ[1]) (h : yonedaEquiv q 0 = 0)
+
+/-- The last vertex of `Δ[m]` lying over the vertex `0` of `Δ[1]`. -/
+private noncomputable def lastZero : Fin (m + 1) :=
+  (Finset.univ.filter fun j ↦ yonedaEquiv q j = 0).max' ⟨0, by simp [h]⟩
+
+private lemma apply_lastZero : yonedaEquiv q (lastZero q h) = 0 := by
+  have := Finset.max'_mem (Finset.univ.filter fun j ↦ yonedaEquiv q j = 0) ⟨0, by simp [h]⟩
+  simpa [lastZero] using this
+
+private lemma le_lastZero {j : Fin (m + 1)} (hj : yonedaEquiv q j = 0) : j ≤ lastZero q h :=
+  Finset.le_max' _ _ (by simp [hj])
+
+private lemma apply_min_lastZero (j : Fin (m + 1)) :
+    yonedaEquiv q (min j (lastZero q h)) = 0 :=
+  le_antisymm ((stdSimplex.monotone_apply _ (min_le_right _ _)).trans
+    (apply_lastZero q h).le) (Fin.zero_le _)
+
+/-- When the vertex `0` of `Δ[m]` lies over the vertex `0` of `Δ[1]` along `q`, the retraction of
+`Δ[m]` onto its part over `0`, which collapses the vertices over `1` onto the last vertex over
+`0`. -/
+noncomputable def joinFiberZeroRetraction : Δ[m] ⟶ (joinFiber q 0 : SSet) :=
+  Subcomplex.lift (stdSimplex.map (SimplexCategory.mkHom
+    ⟨fun j ↦ min j (lastZero q h), fun _ _ hab ↦ min_le_min_right _ hab⟩)) (by
+    rintro ⟨k⟩ _ ⟨y, rfl⟩
+    induction k using SimplexCategory.rec with | _ k
+    rw [mem_joinFiber_iff]
+    intro j
+    rw [stdSimplex.hom_app_apply]
+    exact apply_min_lastZero q h _)
+
+/-- The retraction `joinFiberZeroRetraction` fixes the part of `Δ[m]` over `0`. -/
+lemma joinFiberZeroRetraction_app_of_mem {k : ℕ} (y : Δ[m] _⦋k⦌)
+    (hy : y ∈ (joinFiber q 0).obj _) : (joinFiberZeroRetraction q h).app _ y = ⟨y, hy⟩ := by
+  apply Subtype.ext
+  refine stdSimplex.ext _ _ fun j ↦ ?_
+  have hyj := (mem_joinFiber_iff q 0 y).1 hy j
+  rw [stdSimplex.hom_app_apply] at hyj
+  exact min_eq_left (le_lastZero q h hyj)
+
+/-- The retraction `joinFiberZeroRetraction` is a retraction of the inclusion of the part of `Δ[m]`
+over `0`. -/
+@[reassoc (attr := simp)]
+lemma ι_joinFiberZeroRetraction : (joinFiber q 0).ι ≫ joinFiberZeroRetraction q h = 𝟙 _ := by
+  ext ⟨k⟩ ⟨y, hy⟩
+  induction k using SimplexCategory.rec with | _ k
+  exact joinFiberZeroRetraction_app_of_mem q h y hy
+
+end retraction
+
+/-- If the vertex `0` of `Δ[m]` does not lie over `0` along `q`, every vertex lies over `1`. -/
+private lemma yonedaEquiv_apply_eq_one_of_ne_zero {m : ℕ} {q : Δ[m] ⟶ Δ[1]}
+    (h : yonedaEquiv q 0 ≠ 0) (j : Fin (m + 1)) : yonedaEquiv q j = 1 := by
+  have h10 : ∀ a : Fin 2, a ≠ 0 → a = 1 := by decide
+  exact le_antisymm (Fin.le_last _) (h10 _ h ▸ stdSimplex.monotone_apply _ (Fin.zero_le j))
+
+/-- If the vertex `0` of `Δ[m]` does not lie over `0` along `q`, the whole of `Δ[m]` lies over
+`1`. -/
+lemma joinFiber_one_eq_top {m : ℕ} {q : Δ[m] ⟶ Δ[1]} (h : yonedaEquiv q 0 ≠ 0) :
+    joinFiber q 1 = ⊤ := by
+  ext k x
+  induction k using Opposite.rec with | op k
+  induction k using SimplexCategory.rec with | _ k
+  simp only [mem_joinFiber_iff, stdSimplex.hom_app_apply, Subfunctor.top_obj, Set.mem_univ,
+    iff_true]
+  exact fun _ ↦ yonedaEquiv_apply_eq_one_of_ne_zero h _
 
 /-- The data of a map from `X` to the join of `K` and `L`: a map `p : X ⟶ Δ[1]`, a map to `K` from
 the part of `X` over the vertex `0`, and a map to `L` from the part of `X` over the vertex `1`. -/
@@ -687,6 +760,51 @@ lemma edge_mem_joinFiber_zero {v w : (join K L) _⦋0⦌} (e : (join K L).Edge v
     rw [hnat, stdSimplex.δ_apply]
     rfl
   exact fun j ↦ le_antisymm (h1 ▸ stdSimplex.monotone_apply _ (Fin.le_last j)) (Fin.zero_le _)
+
+/-- The map from a standard simplex given by the join data of a simplex `s` of the join is the map
+`yonedaEquiv.symm s` corresponding to `s`. -/
+@[simp]
+lemma homEquiv_symm_objEquiv {n : SimplexCategory} (s : (join K L).obj (op n)) :
+    homEquiv.symm (objEquiv s) = yonedaEquiv.symm s :=
+  (Equiv.symm_apply_eq _).2
+    ((univ_precomp_yonedaEquiv_symm s).symm.trans (homEquiv_apply _).symm)
+
+/-- A simplex `t` of `K ⋆ L` none of whose vertices lies over `0` comes from `L`. -/
+lemma exists_eq_comp_inr {m : ℕ} (t : Δ[m] ⟶ join K L) (h : yonedaEquiv (homEquiv t).p 0 ≠ 0) :
+    ∃ l : Δ[m] ⟶ L, t = l ≫ inr K L := by
+  have hs : yonedaEquiv t ∈ (joinFiber (univ K L).p 1).obj _ := by
+    rw [mem_joinFiber_iff]
+    intro j
+    rw [univ_p, ← yonedaEquiv_comp, ← homEquiv_p]
+    exact yonedaEquiv_apply_eq_one_of_ne_zero h j
+  refine ⟨yonedaEquiv.symm ((univ K L).right.app _ ⟨_, hs⟩), ?_⟩
+  rw [yonedaEquiv_symm_comp, inr_app_univ_right_app, Equiv.symm_apply_apply]
+
+/-- A simplex of `K ⋆ L` with join data `e` whose vertex `0` lies over `0` is the image, under
+`g ⋆ L`, of the simplex of `Δ[m] ⋆ L` with the same splitting and the same part in `L`, where
+`g : Δ[m] ⟶ K` extends the part of `e` in `K` along the retraction `joinFiberZeroRetraction`. -/
+lemma homEquiv_symm_eq_comp_map {m : ℕ} (e : JoinData Δ[m] K L) (h : yonedaEquiv e.p 0 = 0) :
+    homEquiv.symm e = homEquiv.symm ⟨e.p, (joinFiber e.p 0).ι, e.right⟩ ≫
+      map (joinFiberZeroRetraction e.p h ≫ e.left) (𝟙 L) := by
+  apply homEquiv.injective
+  rw [homEquiv_comp_map, Equiv.apply_symm_apply, Equiv.apply_symm_apply]
+  refine JoinData.ext (by simp) (fun n x hx hx' ↦ ?_) (fun n x hx hx' ↦ ?_)
+  · induction n using Opposite.rec with | op n
+    induction n using SimplexCategory.rec with | _ n
+    rw [JoinData.postcomp_left_app]
+    simp [joinFiberZeroRetraction_app_of_mem _ _ x hx]
+  · simp
+
+/-- Every simplex of `K ⋆ L` either comes from `L`, or is the image of a simplex of `Δ[m] ⋆ L`
+under `g ⋆ L` for a simplex `g : Δ[m] ⟶ K`. -/
+lemma exists_eq_comp_inr_or_exists_eq_comp_map {m : ℕ} (s : Δ[m] ⟶ join K L) :
+    (∃ l : Δ[m] ⟶ L, s = l ≫ inr K L) ∨
+      ∃ (t : Δ[m] ⟶ join Δ[m] L) (g : Δ[m] ⟶ K), s = t ≫ map g (𝟙 L) := by
+  by_cases h : yonedaEquiv (homEquiv s).p 0 = 0
+  · refine Or.inr ⟨homEquiv.symm ⟨_, (joinFiber _ 0).ι, (homEquiv s).right⟩,
+      joinFiberZeroRetraction _ h ≫ (homEquiv s).left, ?_⟩
+    rw [← homEquiv_symm_eq_comp_map _ h, Equiv.symm_apply_apply]
+  · exact Or.inl (exists_eq_comp_inr s h)
 
 end join
 

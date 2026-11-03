@@ -6,6 +6,7 @@ Authors: Taylor Dupuy, Thomas Tucker, Zhuoran Wang
 module
 
 public import Mathlib.AlgebraicGeometry.Morphisms.UniversallyClosed
+public import TauCeti.AlgebraicGeometry.Morphisms.LocallyQuasiFinite
 public import TauCeti.AlgebraicGeometry.Morphisms.StalkMap
 public import TauCeti.Topology.Sets.Opens
 
@@ -33,6 +34,14 @@ ramification locus is the union of the opens on which `f` is unramified
 (`unramifiedAt_iff_stalkMap`), so the ramification locus is closed, and so is the branch locus of
 a universally closed morphism. The non-étale locus is closed directly from its definition.
 
+The two loci in `X` differ in general (a closed immersion is unramified but rarely flat), but they
+agree for a dominant morphism of integral schemes, locally of finite type, onto a locally
+Noetherian normal scheme (`ramificationLocus_eq_nonEtaleLocus`, SGA 1, Exposé I, 9.5 (ii)). At an
+unramified point `x` the morphism is quasi-finite, so `dim 𝒪_{X, x} = dim 𝒪_{Y, f x}`
+(`Scheme.Hom.ringKrullDim_stalk_eq_of_quasiFiniteAt`), and an unramified point over a normal
+local ring of the same dimension is étale
+(`Scheme.Hom.exists_etale_of_formallyUnramified_stalkMap_of_ringKrullDim_le`).
+
 ## Main results
 
 * `AlgebraicGeometry.Scheme.Hom.ramificationLocus_eq_setOf_not_exists`: for `f` locally of finite
@@ -46,17 +55,26 @@ a universally closed morphism. The non-étale locus is closed directly from its 
   `AlgebraicGeometry.Scheme.Hom.isClosed_branchLocus` (for `f` universally closed and locally of
   finite type, in particular finite, Stacks 01WM).
 * `AlgebraicGeometry.Scheme.Hom.ramificationLocus_subset_nonEtaleLocus`.
+* `AlgebraicGeometry.Scheme.Hom.ramificationLocus_eq_nonEtaleLocus`: for a dominant morphism of
+  integral schemes, locally of finite type, onto a locally Noetherian normal (for instance,
+  regular) scheme, the ramification locus is the non-étale locus.
 * `AlgebraicGeometry.Scheme.Hom.ramificationLocus_specMap`,
   `AlgebraicGeometry.Scheme.Hom.nonEtaleLocus_specMap`,
   `AlgebraicGeometry.Scheme.Hom.branchLocus_specMap`: the affine comparisons with
   `Algebra.unramifiedLocus` and `Algebra.etaleLocus`.
+* `RingHom.support_subset_ramificationLocus_specMap`,
+  `AlgHom.ramificationLocus_specMap_subset_zeroLocus`: the ramification locus of
+  `Spec S ⟶ Spec R` contains the support of any module spanned by the image of a derivation
+  vanishing on `R`, and lies in the zero locus of any element of `S` annihilating every such
+  derivation.
 
 ## References
 
 * [Stacks Project, Definition 29.36.1](https://stacks.math.columbia.edu/tag/02G4),
   [Definition 29.37.1](https://stacks.math.columbia.edu/tag/02GI),
   [Lemma 29.45.7](https://stacks.math.columbia.edu/tag/01WM), and Section 58.21.
-* A. Grothendieck, *Revêtements étales et groupe fondamental* (SGA 1), Exposé X, Théorème 3.1.
+* A. Grothendieck, *Revêtements étales et groupe fondamental* (SGA 1), Exposé X, Théorème 3.1,
+  and Exposé I, Théorème 9.5.
 * The affine non-étale locus `(Algebra.etaleLocus R S)ᶜ` and its closedness appear in
   T. Dupuy, T. Tucker and Z. Wang,
   [pcfawd-formalization](https://github.com/tdupu/pcfawd-formalization) at commit
@@ -172,6 +190,22 @@ theorem ramificationLocus_subset_nonEtaleLocus : f.ramificationLocus ⊆ f.nonEt
   rintro x hx ⟨U, hxU, hU⟩
   exact hx <| formallyUnramified_stalkMap_of_isOpenImmersion_comp f U.ι ⟨x, hxU⟩
 
+/-- **Unramified points are étale over a normal base** (SGA 1, Exposé I, 9.5 (ii)). For a
+dominant morphism `f : X ⟶ Y` of integral schemes, locally of finite type, with `Y` locally
+Noetherian and normal (for instance, regular), the ramification locus of `f` is its non-étale
+locus. Normality of `X` is not needed. -/
+theorem ramificationLocus_eq_nonEtaleLocus [IsLocallyNoetherian Y] [IsIntegral X] [IsIntegral Y]
+    [IsDominant f] [LocallyOfFiniteType f] [TauCeti.AlgebraicGeometry.IsNormalScheme Y] :
+    f.ramificationLocus = f.nonEtaleLocus := by
+  refine (ramificationLocus_subset_nonEtaleLocus f).antisymm fun x hx hfu ↦ hx ?_
+  -- `f` is unramified, hence quasi-finite, near `x`, so the local rings have equal dimension.
+  obtain ⟨U, hxU, _, _⟩ := (unramifiedAt_iff_stalkMap f x).mpr hfu
+  have hqf : f.QuasiFiniteAt x :=
+    (quasiFiniteAt_comp_iff_of_isOpenImmersion (f := U.ι) (x := ⟨x, hxU⟩)).mp
+      ((U.ι ≫ f).quasiFiniteAt ⟨x, hxU⟩)
+  exact f.exists_etale_of_formallyUnramified_stalkMap_of_ringKrullDim_le hfu
+    (f.ringKrullDim_stalk_eq_of_quasiFiniteAt hqf).ge
+
 /-- The image of the closed ramification locus under a closed map is closed, for `f` locally of
 finite type. -/
 theorem isClosed_branchLocus_of_isClosedMap [LocallyOfFiniteType f] (hf : IsClosedMap f) :
@@ -213,3 +247,64 @@ theorem nonEtaleLocus_specMap [Algebra.FinitePresentation R S] :
 end Scheme.Hom
 
 end AlgebraicGeometry
+
+namespace RingHom
+
+open AlgebraicGeometry
+
+variable {R S : Type u} [CommRing R] [CommRing S]
+
+/-- If a derivation `S → M`, over any base, vanishes on the image of `φ : R →+* S` and its image
+spans `M`, then the support of `M` lies in the ramification locus of `Spec S ⟶ Spec R`. -/
+theorem support_subset_ramificationLocus_specMap (φ : R →+* S) {A : Type*} [CommRing A]
+    [Algebra A S] {M : Type u} [AddCommGroup M] [Module A M] [Module S M]
+    (D : Derivation A S M) (hφ : ∀ r, D (φ r) = 0) (hD : Submodule.span S (Set.range D) = ⊤) :
+    Module.support S M ⊆ (Spec.map (CommRingCat.ofHom φ)).ramificationLocus := by
+  algebraize [φ]
+  let : Module R M := Module.compHom M (algebraMap R S)
+  have : IsScalarTower R S M := IsScalarTower.of_compHom R S M
+  -- Vanishing on the image of `φ` makes `D` linear over `R`, which acts on `M` through `φ`.
+  let D' : Derivation R S M := Derivation.mk'
+    { toFun := D, map_add' := D.map_add, map_smul' := fun r s ↦ by
+        simp [Algebra.smul_def, D.leibniz, RingHom.algebraMap_toAlgebra, hφ]; rfl }
+      fun a b ↦ D.leibniz a b
+  have hsurj : Function.Surjective D'.liftKaehlerDifferential := by
+    rw [← LinearMap.range_eq_top, eq_top_iff, ← hD, Submodule.span_le]
+    rintro _ ⟨s, rfl⟩
+    exact ⟨KaehlerDifferential.D R S s, D'.liftKaehlerDifferential_comp_D s⟩
+  refine (Module.support_subset_of_surjective _ hsurj).trans ?_
+  rw [Scheme.Hom.ramificationLocus_specMap, Algebra.unramifiedLocus_eq_compl_support,
+    compl_compl]
+
+end RingHom
+
+namespace AlgHom
+
+open AlgebraicGeometry
+
+variable {R S : Type u} [CommRing R] [CommRing S]
+
+/-- If `s : S` annihilates every `A`-derivation `S → M` vanishing on the image of the `A`-algebra
+map `φ : R →ₐ[A] S`, then the ramification locus of `Spec S ⟶ Spec R` lies in the zero locus of
+`s`. Taking `A = ℤ` covers an arbitrary ring homomorphism. -/
+theorem ramificationLocus_specMap_subset_zeroLocus {A : Type*} [CommRing A] [Algebra A R]
+    [Algebra A S] (φ : R →ₐ[A] S) (s : S)
+    (hs : ∀ (M : Type u) [AddCommGroup M] [Module S M] [Module A M] [IsScalarTower A S M]
+      (D : Derivation A S M), (∀ r, D (φ r) = 0) → ∀ t, s • D t = 0) :
+    (Spec.map (CommRingCat.ofHom φ.toRingHom)).ramificationLocus ⊆
+      PrimeSpectrum.zeroLocus {s} := by
+  algebraize [φ.toRingHom]
+  have : IsScalarTower A R S := .of_algebraMap_eq fun a ↦ (φ.commutes a).symm
+  rw [Scheme.Hom.ramificationLocus_specMap, Algebra.unramifiedLocus_eq_compl_support,
+    compl_compl]
+  intro p hp
+  -- Apply the hypothesis to the universal derivation: `s` annihilates `Ω[S⁄R]`.
+  have hann : s ∈ Module.annihilator S Ω[S⁄R] := by
+    rw [← Submodule.annihilator_top, ← KaehlerDifferential.span_range_derivation,
+      Submodule.mem_annihilator_span]
+    rintro ⟨_, t, rfl⟩
+    exact hs _ ((KaehlerDifferential.D R S).restrictScalars A)
+      (KaehlerDifferential.D R S).map_algebraMap t
+  exact Set.singleton_subset_iff.mpr (Module.annihilator_le_of_mem_support hp hann)
+
+end AlgHom

@@ -52,6 +52,8 @@ statements that use it.
   `TauCeti.GradedLinearQuiver.totalHom_induction_homProjection` and
   `TauCeti.GradedLinearQuiver.totalGrading_piece_induction`: induction on the total module, on the
   components of a single element, and on the elements of a given degree, from the hom modules.
+* `TauCeti.GradedLinearQuiver.totalHom_linearMap_ext`: linear maps out of the total module agree
+  when they agree on every hom module.
 * `TauCeti.GradedLinearQuiver.homInclusion_homProjection_of_mem_range`: an element of the image
   of a hom module is recovered from its component there.
 * `TauCeti.GradedLinearQuiver.multilinearMap_apply_mem_of_mem_totalGrading_piece`: on elements of
@@ -167,6 +169,15 @@ theorem totalHom_induction_homProjection {P : TotalHom R C → Prop} (zero : P 0
   refine Finset.sum_induction _ P add zero fun a _ ↦ ?_
   have h := homInclusion a.1 a.2
   rwa [homProjection_apply, homInclusion_eq_lof, DirectSum.lof_eq_of] at h
+
+/-- Two linear maps out of the total module of morphisms are equal when they agree on every hom
+module. -/
+theorem totalHom_linearMap_ext {M : Type*} [AddCommMonoid M] [Module R M]
+    {f g : TotalHom R C →ₗ[R] M}
+    (h : ∀ (X Y : C) (a : homModule (R := R) X Y),
+      f (homInclusion X Y a) = g (homInclusion X Y a)) :
+    f = g :=
+  LinearMap.ext fun x ↦ totalHom_induction (by simp) (fun x y hx hy ↦ by simp [hx, hy]) h x
 
 /-- An element of the image of the morphisms `X ⟶ Y` is the inclusion of its component there. -/
 theorem homInclusion_homProjection_of_mem_range {X Y : C} {x : TotalHom R C}

@@ -69,14 +69,12 @@ namespace RoughForm
 variable (G) in
 /-- The descent of a form `α` on `M` to the orbit space of `G`. At an orbit `y` it is the form `α`
 at the chosen representative `y.out`, read through the inverse of the derivative of the orbit
-projection there. When `α` is invariant under `G` this does not depend on the choice of
+projection there: it is `TauCeti.RoughForm.descendAlong` along the orbit projection through
+`Quotient.out`. When `α` is invariant under `G` this does not depend on the choice of
 representatives, and the descent pulls back to `α` along the orbit projection
 (`TauCeti.RoughForm.mpullback_quotientMk_descend`). -/
 def descend (α : RoughForm I M F k) : RoughForm I (MulAction.orbitRel.Quotient G M) F k :=
-  fun y ↦ (α y.out).compContinuousLinearMap
-    ((mfderiv I I (Quotient.mk (MulAction.orbitRel G M)) y.out).inverse ∘L
-      (tangentSpaceCast I y (Quotient.mk (MulAction.orbitRel G M) y.out) :
-        TangentSpace I y →L[ℝ] TangentSpace I (Quotient.mk (MulAction.orbitRel G M) y.out)))
+  descendAlong I I (Quotient.mk (MulAction.orbitRel G M)) Quotient.out α
 
 /-- Evaluation of the descent of a form: tangent vectors at the orbit `y` are sent through the
 inverse of the derivative of the orbit projection at the chosen representative `y.out`. -/
@@ -85,37 +83,19 @@ theorem descend_apply (α : RoughForm I M F k) (y : MulAction.orbitRel.Quotient 
     descend G α y v = α y.out fun i ↦
       (mfderiv I I (Quotient.mk (MulAction.orbitRel G M)) y.out).inverse
         (tangentSpaceCast I y (Quotient.mk (MulAction.orbitRel G M) y.out) (v i)) :=
-  (rfl)
+  descendAlong_apply _ α y v
 
 variable {n : WithTop ℕ∞} [IsManifold I n M] [ContMDiffConstSMul I n G M]
 
 /-- A form invariant under `G` is the pullback of its descent along the orbit projection. -/
 theorem mpullback_quotientMk_descend (hn : n ≠ 0) {α : RoughForm I M F k}
     (hα : ∀ g : G, mpullback I I (g • ·) α = α) :
-    mpullback I I (Quotient.mk (MulAction.orbitRel G M)) (descend G α) = α := by
-  have hq := isLocalDiffeomorph_quotientMk (I := I) (n := n) (G := G) (M := M)
-  funext x
-  refine ContinuousAlternatingMap.ext fun v ↦ ?_
-  -- The chosen representative of the orbit of `x` is `g • x` for some `g`.
-  obtain ⟨g, hg⟩ : ∃ g : G, g • x = (Quotient.mk (MulAction.orbitRel G M) x).out :=
-    MulAction.mem_orbit_iff.mp (Quotient.mk_out (s := MulAction.orbitRel G M) x)
-  have hderiv (w : TangentSpace I x) :
-      (mfderiv I I (Quotient.mk (MulAction.orbitRel G M)) (g • x)).inverse
-          (mfderiv I I (Quotient.mk (MulAction.orbitRel G M)) x w) =
-        mfderiv I I (g • · : M → M) x w :=
-    (hq.isInvertible_mfderiv hn (g • x)).inverse_apply_eq.mpr
-      (mfderiv_quotientMk_smul_apply hn (hq.mdifferentiable hn (g • x)) w).symm
-  -- `tangentSpaceCast` is the identity of the model space.
-  have hcast (w : TangentSpace I x) :
-      (mfderiv I I (Quotient.mk (MulAction.orbitRel G M)) (g • x)).inverse
-          (tangentSpaceCast I (Quotient.mk (MulAction.orbitRel G M) x)
-            (Quotient.mk (MulAction.orbitRel G M) (g • x))
-            (mfderiv I I (Quotient.mk (MulAction.orbitRel G M)) x w)) =
-        mfderiv I I (g • · : M → M) x w :=
-    hderiv w
-  rw [mpullback_apply, descend_apply, ← hg]
-  simp only [hcast]
-  rw [← mpullback_apply, hα]
+    mpullback I I (Quotient.mk (MulAction.orbitRel G M)) (descend G α) = α :=
+  (isLocalDiffeomorph_quotientMk (n := n)).mpullback_descendAlong hn (σ := fun g : G ↦ (g • ·))
+    (fun g ↦ (contMDiff_const_smul g).mdifferentiable hn)
+    (fun g ↦ funext fun x ↦ Quotient.sound (MulAction.mem_orbit x g))
+    (fun _ _ h ↦ Or.inr (MulAction.mem_orbit_iff.mp (Quotient.exact h.symm)))
+    (fun _ ↦ Quotient.out_eq _) hα
 
 end RoughForm
 

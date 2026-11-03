@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.Complex.UpperHalfPlane.Manifold
 public import Mathlib.NumberTheory.ZetaValues
 public import TauCeti.Analysis.Complex.UpperHalfPlane.Exp
 public import TauCeti.Analysis.SpecialFunctions.QPochhammer
@@ -39,8 +40,9 @@ Weber's modular functions), proves `g₀ g₁ g₂ = 2 ζ₈` with `ζ₈ = e^{2
   product `θ_q(w)`, and as a phase times `1 - w` and its two half products.
 * `TauCeti.ModularForm.hasProdLocallyUniformlyOn_siegelFunction`: the defining product
   `∏_{n ≥ 1} (1 - qⁿ w) (1 - qⁿ w⁻¹)` converges locally uniformly on the upper half-plane.
-* `TauCeti.ModularForm.differentiableOn_siegelFunction`: `g_r` is holomorphic on the upper
-  half-plane.
+* `TauCeti.ModularForm.differentiableOn_siegelFunction`,
+  `TauCeti.ModularForm.mdifferentiable_siegelFunction`: `g_r` is holomorphic on the upper
+  half-plane, as a function on `upperHalfPlaneSet` and as a function on `ℍ`.
 * `TauCeti.ModularForm.siegelFunction_ne_zero`: for `r ∉ ℤ²`, `g_r` has no zero on the upper
   half-plane.
 * `TauCeti.ModularForm.siegelFunction_add_intCast`: for `s ∈ ℤ²`,
@@ -70,7 +72,7 @@ public section
 
 open Complex
 open UpperHalfPlane hiding I
-open scoped Real
+open scoped Real Manifold
 
 namespace TauCeti.ModularForm
 
@@ -163,6 +165,13 @@ theorem differentiableOn_siegelFunction (r : Fin 2 → ℝ) :
     (by fun_prop)).mul
     (differentiableOn_tprod_one_sub_pow_mul isOpen_upperHalfPlaneSet (by fun_prop) hq₁
       (by fun_prop))
+
+/-- The Siegel function is holomorphic as a function on `ℍ`. -/
+theorem mdifferentiable_siegelFunction (r : Fin 2 → ℝ) :
+    MDiff fun τ : ℍ ↦ siegelFunction r τ := by
+  rw [UpperHalfPlane.mdifferentiable_iff]
+  exact (differentiableOn_siegelFunction r).congr fun z hz ↦ by
+    simp [Function.comp_apply, ofComplex_apply_of_im_pos hz]
 
 /-- **The Siegel function has no zeros** on the upper half-plane when `r ∉ ℤ²`. -/
 theorem siegelFunction_ne_zero {r : Fin 2 → ℝ} (hr : ∀ s : Fin 2 → ℤ, r ≠ fun i ↦ (s i : ℝ))

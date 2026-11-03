@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.GroupTheory.GroupAction.Stabilizer
+public import TauCeti.GroupTheory.GroupAction.Stabilizer.Basic
 
 /-!
 # The faithful quotient of a group action

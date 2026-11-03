@@ -11,6 +11,7 @@ public import TauCeti.GroupTheory.DerivedCentralQuotient
 import TauCeti.GroupTheory.Commutator
 import TauCeti.Algebra.Group.Subgroup.Normalizer
 import TauCeti.GroupTheory.QuotientGroup.Basic
+import TauCeti.GroupTheory.QuotientGroup.Simple
 
 /-!
 # Tits's simplicity criterion for the normal closure of a split unipotent subgroup
@@ -165,19 +166,9 @@ theorem isSimpleGroup_quotient_normalCore_subgroupOf
     [Nontrivial (Subgroup.normalClosure (U : Set G) ⧸
       T.subgroupB.normalCore.subgroupOf (Subgroup.normalClosure (U : Set G)))] :
     IsSimpleGroup (Subgroup.normalClosure (U : Set G) ⧸
-      T.subgroupB.normalCore.subgroupOf (Subgroup.normalClosure (U : Set G))) := by
-  set P := Subgroup.normalClosure (U : Set G)
-  set Z := T.subgroupB.normalCore.subgroupOf P
-  have hπ := QuotientGroup.mk'_surjective Z
-  refine { eq_bot_or_eq_top_of_normal := fun K hK ↦ ?_ }
-  have := hK.comap (QuotientGroup.mk' Z)
-  rcases T.le_normalCore_subgroupOf_or_eq_top_of_normal hirr hBU hsplit
-    (K.comap (QuotientGroup.mk' Z)) with h | h
-  · refine Or.inl (eq_bot_iff.mpr fun x hx ↦ ?_)
-    obtain ⟨g, rfl⟩ := hπ x
-    exact (QuotientGroup.eq_one_iff g).mpr (h hx)
-  · rw [← Subgroup.map_comap_eq_self_of_surjective hπ K, h, Subgroup.map_top_of_surjective _ hπ]
-    exact Or.inr rfl
+      T.subgroupB.normalCore.subgroupOf (Subgroup.normalClosure (U : Set G))) :=
+  QuotientGroup.isSimpleGroup_of_forall_normal (QuotientGroup.nontrivial_iff.mp inferInstance)
+    (T.le_normalCore_subgroupOf_or_eq_top_of_normal hirr hBU hsplit)
 
 /-- **Simplicity of the derived central quotient from a split Tits system.** Suppose the Weyl group
 is irreducible, `U` is a solvable subgroup normalized by `B` with `B ≤ U (B ∩ N)` and
