@@ -263,6 +263,12 @@ theorem tristramLevineSignature_neg (V : Matrix ι ι ℝ) (ω : ℂ) :
   unfold tristramLevineSignature
   simpa only [tristramLevineForm_neg] using (isHermitian_tristramLevineForm V ω).signature_neg
 
+/-- The singular parameters of `-V` are those of `V`. -/
+theorem det_tristramLevineForm_neg_ne_zero_iff [DecidableEq ι] (V : Matrix ι ι ℝ) (ω : ℂ) :
+    (tristramLevineForm (-V) ω).det ≠ 0 ↔ (tristramLevineForm V ω).det ≠ 0 := by
+  rw [tristramLevineForm_neg, det_neg]
+  simp
+
 /-- **Additivity of the Tristram--Levine signature along a block diagonal**, the Seifert matrix
 of a connected sum. -/
 @[simp]

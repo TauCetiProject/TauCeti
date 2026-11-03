@@ -5,13 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.SpecialFunctions.Complex.Circle
-public import Mathlib.Topology.Algebra.Group.Order
-public import Mathlib.Topology.Order.LeftRightLim
-public import TauCeti.Algebra.Polynomial.Laurent.Detection
+public import TauCeti.Analysis.SpecialFunctions.Complex.Circle
 public import TauCeti.KnotTheory.TristramLevine.Continuity
 public import TauCeti.KnotTheory.TristramLevine.Metabolic
 public import TauCeti.KnotTheory.TristramLevine.SEquivalence
+public import TauCeti.Topology.Order.LeftRightLim
 
 /-!
 # The averaged Tristram--Levine signature
@@ -35,20 +33,28 @@ the form is nonsingular at every point of a punctured neighbourhood of `ω` on t
 singular parameters other than `1` are the roots of the Alexander polynomial, this holds at every
 `ω` when the Alexander polynomial is nonzero
 (`TauCeti.KnotTheory.eventually_det_tristramLevineForm_ne_zero`), for instance for the Seifert
-matrix of a knot, where `Δ(1) = det (V - Vᵀ) = ±1`. Under that hypothesis the signature is
-constant on each side of `ω` close to `ω`
+matrix of a knot, where `Δ(1) = det (V - Vᵀ) = ±1`.
+
+Some properties of the averaged signature hold unconditionally, whether or not the one-sided
+limits exist, because they hold pointwise for the signature and the fallback values of
+`Function.leftLim` and `Function.rightLim` match:
+
+* it is invariant under congruence, transposition and S-equivalence, like the signature;
+* it is negated by passing to `-V` and to `-Vᵀ`, the Seifert matrices of the reverse mirror image
+  and of the mirror image, and is unchanged by `ω ↦ ω⁻¹ = conj ω`.
+
+The remaining results assume that the singular parameters do not accumulate at `ω`. Under that
+hypothesis the signature is constant on each side of `ω` close to `ω`
 (`TauCeti.KnotTheory.eventually_tristramLevineSignature_mul_exp_eq_rightLim` and its left version),
 and:
 
-* at a nonsingular parameter the averaged signature is the signature itself
-  (`TauCeti.KnotTheory.averagedTristramLevineSignature_eq_of_det_ne_zero`);
-* it is invariant under congruence, transposition and S-equivalence, like the signature, and it is
-  additive along block diagonals, the Seifert matrices of connected sums;
-* it is negated by passing to `-V` and to `-Vᵀ`, the Seifert matrices of the reverse mirror image
-  and of the mirror image, and is unchanged by `ω ↦ ω⁻¹ = conj ω`;
-* it vanishes for a metabolic Seifert matrix at **every** parameter of the circle, including the
-  roots of the Alexander polynomial
+* the averaged signature is additive along block diagonals, the Seifert matrices of connected sums;
+* it vanishes for a metabolic Seifert matrix at **every** such parameter of the circle, including
+  the roots of the Alexander polynomial
   (`TauCeti.KnotTheory.averagedTristramLevineSignature_eq_zero_of_congr_zero_block`).
+
+At a nonsingular parameter the averaged signature is the signature itself
+(`TauCeti.KnotTheory.averagedTristramLevineSignature_eq_of_det_ne_zero`).
 
 Combining the last three: if `V ⊕ (-W)` is metabolic, that is `V` and `W` are algebraically
 concordant, then `σ_ω^avg(V) = σ_ω^avg(W)` for every `ω` on the circle
@@ -65,12 +71,13 @@ concordant, is not proved here.
 
 ## Main results
 
-* `TauCeti.KnotTheory.eventually_det_tristramLevineForm_ne_zero`: if the Alexander polynomial is
-  nonzero, the singular parameters on the circle are isolated.
 * `TauCeti.KnotTheory.averagedTristramLevineSignature_eq_of_eventually`: the averaged signature
   from the values of the signature on the two sides of `ω`.
 * `TauCeti.KnotTheory.averagedTristramLevineSignature_eq_of_det_ne_zero`: at a nonsingular
   parameter the averaged signature is the signature.
+* `TauCeti.KnotTheory.averagedTristramLevineSignature_neg` and
+  `TauCeti.KnotTheory.averagedTristramLevineSignature_inv`: negation of the Seifert matrix and
+  conjugation of the parameter, at every parameter.
 * `TauCeti.KnotTheory.averagedTristramLevineSignature_fromBlocks_zero`: additivity along block
   diagonals.
 * `TauCeti.KnotTheory.averagedTristramLevineSignature_eq_zero_of_congr_zero_block`: vanishing for
@@ -102,9 +109,11 @@ circle: the mean of the limits of `σ_z(V)` as `z = ω e^{it}` approaches `ω` c
 and counterclockwise (`t → 0⁺`).
 
 Both limits exist when the singular parameters of the form do not accumulate at `ω`, in
-particular at every `ω` when the Alexander polynomial of `V` is nonzero. Otherwise Mathlib's
-`Function.leftLim` and `Function.rightLim` fall back to the value `σ_ω(V)`, and no result below
-applies. -/
+particular at every `ω` when the Alexander polynomial of `V` is nonzero. When one of the limits
+does not exist, Mathlib's `Function.leftLim` or `Function.rightLim` falls back to the value
+`σ_ω(V)` for that side. Invariance under congruence, transposition, S-equivalence, negation and
+`ω ↦ ω⁻¹` holds at every `ω`; the computations from the two sides, additivity and vanishing on
+metabolic matrices assume that the singular parameters do not accumulate at `ω`. -/
 noncomputable def averagedTristramLevineSignature (V : Matrix ι ι ℝ) (ω : Circle) : ℚ :=
   (((leftLim (fun t : ℝ => tristramLevineSignature V ↑(ω * Circle.exp t)) 0 : ℤ) : ℚ) +
     ((rightLim (fun t : ℝ => tristramLevineSignature V ↑(ω * Circle.exp t)) 0 : ℤ) : ℚ)) / 2
@@ -117,26 +126,6 @@ theorem averagedTristramLevineSignature_def (V : Matrix ι ι ℝ) (ω : Circle)
         ((rightLim (fun t : ℝ => tristramLevineSignature V ↑(ω * Circle.exp t)) 0 : ℤ) : ℚ)) /
           2 := by
   rw [averagedTristramLevineSignature]
-
-/-! ### Moving along the circle -/
-
-/-- Moving away from `ω` along the circle leaves `ω`. -/
-private theorem tendsto_mul_circleExp_nhdsNE (ω : Circle) :
-    Tendsto (fun t : ℝ => ω * Circle.exp t) (𝓝[≠] 0) (𝓝[≠] ω) := by
-  refine tendsto_nhdsWithin_of_tendsto_nhds_of_eventually_within _ ?_ ?_
-  · exact tendsto_nhdsWithin_of_tendsto_nhds
-      ((continuous_const.mul Circle.exp.continuous).tendsto' 0 ω (by simp))
-  · have hpi := Real.pi_pos
-    filter_upwards [nhdsWithin_le_nhds (Ioo_mem_nhds (neg_neg_of_pos hpi) hpi),
-      self_mem_nhdsWithin] with t ht ht0
-    rw [Set.mem_compl_singleton_iff, Ne, mul_eq_left, ← Circle.exp_zero]
-    exact fun h => ht0 (Circle.exp_injOn_Ioc (a := -Real.pi) (b := Real.pi) (by linarith)
-      (Set.Ioo_subset_Ioc_self ht) ⟨neg_neg_of_pos hpi, hpi.le⟩ h)
-
-/-- The coordinate `t ↦ ω e^{it}` around `ω` is continuous into `ℂ`. -/
-private theorem continuous_coe_mul_circleExp (ω : Circle) :
-    Continuous fun t : ℝ => ((ω * Circle.exp t : Circle) : ℂ) :=
-  continuous_subtype_val.comp (continuous_const.mul Circle.exp.continuous)
 
 /-! ### Computing the averaged signature -/
 
@@ -190,39 +179,7 @@ theorem averagedTristramLevineSignature_congr {P : Matrix ι ι ℝ} (hP : IsUni
     averagedTristramLevineSignature (P * V * Pᵀ) ω = averagedTristramLevineSignature V ω := by
   simp only [averagedTristramLevineSignature_def, tristramLevineSignature_congr hP]
 
-/-! ### Isolated singular parameters and one-sided limits -/
-
-/-- **The singular parameters of the Tristram--Levine form on the unit circle are isolated** when
-the Alexander polynomial is nonzero: they are `1` and the finitely many roots of the Alexander
-polynomial on the circle. -/
-theorem eventually_det_tristramLevineForm_ne_zero {V : Matrix ι ι ℝ} (hΔ : alexander V ≠ 0)
-    (ω : Circle) : ∀ᶠ z : Circle in 𝓝[≠] ω, (tristramLevineForm V z).det ≠ 0 := by
-  have hroots : {u : ℂˣ | eval₂ Complex.ofRealHom u (alexander V) = 0}.Finite :=
-    Set.not_infinite.mp fun h =>
-      hΔ ((alexander V).eq_zero_of_infinite_eval₂_eq_zero _ Complex.ofRealHom.injective h)
-  have hinj : Injective Circle.toUnits := fun a b h =>
-    Circle.ext (by simpa using congrArg Units.val h)
-  have hS : (insert 1 (Circle.toUnits ⁻¹'
-      {u : ℂˣ | eval₂ Complex.ofRealHom u (alexander V) = 0})).Finite :=
-    (hroots.preimage hinj.injOn).insert 1
-  filter_upwards [hS.eventually_cofinite_notMem.filter_mono (nhdsNE_le_cofinite ω)] with z hz
-  rw [Set.mem_insert_iff, not_or] at hz
-  exact (det_tristramLevineForm_ne_zero_iff V z hz.1).mpr hz.2
-
-/-- The signature is constant along a preconnected set of parameters on which the form is
-nonsingular. -/
-private theorem tristramLevineSignature_comp_eq_of_isPreconnected (V : Matrix ι ι ℝ)
-    {γ : ℝ → ℂ} (hγ : Continuous γ) {s : Set ℝ} (hs : IsPreconnected s)
-    (hdet : ∀ t ∈ s, (tristramLevineForm V (γ t)).det ≠ 0) {t₀ t : ℝ} (ht₀ : t₀ ∈ s)
-    (ht : t ∈ s) :
-    tristramLevineSignature V (γ t) = tristramLevineSignature V (γ t₀) := by
-  have hloc : IsLocallyConstant fun x : s => tristramLevineSignature V (γ x) := by
-    rw [IsLocallyConstant.iff_eventually_eq]
-    intro x
-    exact (hγ.comp continuous_subtype_val).continuousAt.eventually
-      (eventually_tristramLevineSignature_eq V (hdet x x.2))
-  have : PreconnectedSpace s := isPreconnected_iff_preconnectedSpace.mp hs
-  exact hloc.apply_eq_of_preconnectedSpace ⟨t, ht⟩ ⟨t₀, ht₀⟩
+/-! ### One-sided limits near isolated singular parameters -/
 
 variable {V : Matrix ι ι ℝ} {ω : Circle}
 
@@ -231,7 +188,7 @@ at `ω e^{it}` for all small `t ≠ 0`. -/
 private theorem eventually_det_tristramLevineForm_mul_circleExp_ne_zero
     (hdet : ∀ᶠ z : Circle in 𝓝[≠] ω, (tristramLevineForm V z).det ≠ 0) :
     ∀ᶠ t in 𝓝[≠] (0 : ℝ), (tristramLevineForm V ↑(ω * Circle.exp t)).det ≠ 0 :=
-  (tendsto_mul_circleExp_nhdsNE ω).eventually hdet
+  (Circle.tendsto_mul_exp_nhdsNE ω).eventually hdet
 
 /-- **The signature is eventually constant counterclockwise of `ω`**, where it equals its right
 limit, provided the singular parameters do not accumulate at `ω`. -/
@@ -246,7 +203,7 @@ theorem eventually_tristramLevineSignature_mul_exp_eq_rightLim
   have hev : ∀ᶠ t in 𝓝[>] (0 : ℝ), tristramLevineSignature V ↑(ω * Circle.exp t) =
       tristramLevineSignature V ↑(ω * Circle.exp (ε / 2)) :=
     Filter.mem_of_superset (Ioo_mem_nhdsGT hε') fun t ht =>
-      tristramLevineSignature_comp_eq_of_isPreconnected V (continuous_coe_mul_circleExp ω)
+      tristramLevineSignature_comp_eq_of_isPreconnected V (by fun_prop)
         isPreconnected_Ioo hsub ⟨by positivity, by linarith⟩ ht
   rwa [rightLim_eq_of_tendsto (tendsto_const_nhds.congr' (hev.mono fun _ h => h.symm))]
 
@@ -263,7 +220,7 @@ theorem eventually_tristramLevineSignature_mul_exp_eq_leftLim
   have hev : ∀ᶠ t in 𝓝[<] (0 : ℝ), tristramLevineSignature V ↑(ω * Circle.exp t) =
       tristramLevineSignature V ↑(ω * Circle.exp (ε / 2)) :=
     Filter.mem_of_superset (Ioo_mem_nhdsLT hε') fun t ht =>
-      tristramLevineSignature_comp_eq_of_isPreconnected V (continuous_coe_mul_circleExp ω)
+      tristramLevineSignature_comp_eq_of_isPreconnected V (by fun_prop)
         isPreconnected_Ioo hsub ⟨by linarith, by linarith⟩ ht
   rwa [leftLim_eq_of_tendsto (tendsto_const_nhds.congr' (hev.mono fun _ h => h.symm))]
 
@@ -275,7 +232,8 @@ theorem averagedTristramLevineSignature_eq_of_det_ne_zero
     averagedTristramLevineSignature V ω = tristramLevineSignature V ω := by
   have hev : ∀ᶠ t in 𝓝 (0 : ℝ),
       tristramLevineSignature V ↑(ω * Circle.exp t) = tristramLevineSignature V ω :=
-    ((continuous_coe_mul_circleExp ω).tendsto' 0 ω (by simp)).eventually
+    ((show Continuous fun t : ℝ => ((ω * Circle.exp t : Circle) : ℂ) by fun_prop).tendsto' 0 ω
+      (by simp)).eventually
       (eventually_tristramLevineSignature_eq V hdet)
   rw [averagedTristramLevineSignature_eq_of_eventually (hev.filter_mono nhdsWithin_le_nhds)
     (hev.filter_mono nhdsWithin_le_nhds)]
@@ -289,63 +247,47 @@ theorem averagedTristramLevineSignature_eq_of_alexander_ne_zero (hω : ω ≠ 1)
   averagedTristramLevineSignature_eq_of_det_ne_zero
     ((det_tristramLevineForm_ne_zero_iff V ω hω).mpr hΔ)
 
+omit [DecidableEq ι] in
 /-- **Conjugate parameters give the same averaged signature**: passing from `ω` to
-`ω⁻¹ = conj ω` exchanges the two one-sided limits. -/
-theorem averagedTristramLevineSignature_inv
-    (hdet : ∀ᶠ z : Circle in 𝓝[≠] ω, (tristramLevineForm V z).det ≠ 0) :
+`ω⁻¹ = conj ω` exchanges the two one-sided limits. This holds at every parameter. -/
+theorem averagedTristramLevineSignature_inv (V : Matrix ι ι ℝ) (ω : Circle) :
     averagedTristramLevineSignature V ω⁻¹ = averagedTristramLevineSignature V ω := by
-  have hconj (t : ℝ) : tristramLevineSignature V ↑(ω⁻¹ * Circle.exp t) =
-      tristramLevineSignature V ↑(ω * Circle.exp (-t)) := by
+  have hconj : (fun t : ℝ => tristramLevineSignature V ↑(ω⁻¹ * Circle.exp t)) =
+      fun t => tristramLevineSignature V ↑(ω * Circle.exp (-t)) := by
+    funext t
     rw [← tristramLevineSignature_conj V ↑(ω * Circle.exp (-t)), ← Circle.coe_inv_eq_conj,
       Circle.exp_neg, _root_.mul_inv_rev, inv_inv, mul_comm]
-  have hL := eventually_tristramLevineSignature_mul_exp_eq_leftLim hdet
-  have hR := eventually_tristramLevineSignature_mul_exp_eq_rightLim hdet
-  have hneg₁ : Tendsto Neg.neg (𝓝[<] (0 : ℝ)) (𝓝[>] 0) := by
-    simpa using tendsto_neg_nhdsLT_neg (a := (0 : ℝ))
-  have hneg₂ : Tendsto Neg.neg (𝓝[>] (0 : ℝ)) (𝓝[<] 0) := by
-    simpa using tendsto_neg_nhdsGT_neg (a := (0 : ℝ))
-  rw [averagedTristramLevineSignature_eq_of_eventually hL hR,
-    averagedTristramLevineSignature_eq_of_eventually
-      ((hneg₁.eventually hR).mono fun t ht => (hconj t).trans ht)
-      ((hneg₂.eventually hL).mono fun t ht => (hconj t).trans ht)]
+  have hL := TauCeti.leftLim_comp_neg
+    (fun t : ℝ => tristramLevineSignature V ↑(ω * Circle.exp t)) 0
+  have hR := TauCeti.rightLim_comp_neg
+    (fun t : ℝ => tristramLevineSignature V ↑(ω * Circle.exp t)) 0
+  rw [neg_zero] at hL hR
+  rw [averagedTristramLevineSignature_def, averagedTristramLevineSignature_def, hconj, hL, hR]
   ring
 
 /-! ### Negation and block sums -/
 
-/-- The singular parameters of `-V` are those of `V`. -/
-private theorem det_tristramLevineForm_neg_ne_zero_iff (V : Matrix ι ι ℝ) (z : ℂ) :
-    (tristramLevineForm (-V) z).det ≠ 0 ↔ (tristramLevineForm V z).det ≠ 0 := by
-  rw [tristramLevineForm_neg, det_neg]
-  simp
-
-/-- The singular parameters of `Vᵀ` are those of `V`. -/
-private theorem det_tristramLevineForm_transpose_ne_zero_iff (V : Matrix ι ι ℝ) (z : ℂ) :
-    (tristramLevineForm Vᵀ z).det ≠ 0 ↔ (tristramLevineForm V z).det ≠ 0 := by
-  rw [tristramLevineForm_transpose, tristramLevineForm_conj, ← RingHom.mapMatrix_apply,
-    ← RingHom.map_det]
-  simp
-
-/-- **Negating a Seifert matrix negates its averaged signature.** The reverse mirror image of a
-knot, its inverse in the concordance group, has Seifert matrix `-V`. -/
-theorem averagedTristramLevineSignature_neg
-    (hdet : ∀ᶠ z : Circle in 𝓝[≠] ω, (tristramLevineForm V z).det ≠ 0) :
+omit [DecidableEq ι] in
+/-- **Negating a Seifert matrix negates its averaged signature** at every parameter. The reverse
+mirror image of a knot, its inverse in the concordance group, has Seifert matrix `-V`. -/
+theorem averagedTristramLevineSignature_neg (V : Matrix ι ι ℝ) (ω : Circle) :
     averagedTristramLevineSignature (-V) ω = -averagedTristramLevineSignature V ω := by
-  have hL := eventually_tristramLevineSignature_mul_exp_eq_leftLim hdet
-  have hR := eventually_tristramLevineSignature_mul_exp_eq_rightLim hdet
-  rw [averagedTristramLevineSignature_eq_of_eventually
-      (hL.mono fun t ht => by rw [tristramLevineSignature_neg, ht])
-      (hR.mono fun t ht => by rw [tristramLevineSignature_neg, ht]),
-    averagedTristramLevineSignature_eq_of_eventually hL hR, Int.cast_neg, Int.cast_neg]
+  have hL : leftLim (fun t : ℝ => -tristramLevineSignature V ↑(ω * Circle.exp t)) 0 =
+      -leftLim (fun t : ℝ => tristramLevineSignature V ↑(ω * Circle.exp t)) 0 :=
+    (Homeomorph.neg ℤ).leftLim_comp _ 0
+  have hR : rightLim (fun t : ℝ => -tristramLevineSignature V ↑(ω * Circle.exp t)) 0 =
+      -rightLim (fun t : ℝ => tristramLevineSignature V ↑(ω * Circle.exp t)) 0 :=
+    (Homeomorph.neg ℤ).rightLim_comp _ 0
+  simp only [averagedTristramLevineSignature_def, tristramLevineSignature_neg, hL, hR,
+    Int.cast_neg]
   ring
 
-/-- **The mirror image negates the averaged signature.** The mirror image of a knot has Seifert
-matrix `-Vᵀ`. -/
-theorem averagedTristramLevineSignature_neg_transpose
-    (hdet : ∀ᶠ z : Circle in 𝓝[≠] ω, (tristramLevineForm V z).det ≠ 0) :
+omit [DecidableEq ι] in
+/-- **The mirror image negates the averaged signature** at every parameter. The mirror image of
+a knot has Seifert matrix `-Vᵀ`. -/
+theorem averagedTristramLevineSignature_neg_transpose (V : Matrix ι ι ℝ) (ω : Circle) :
     averagedTristramLevineSignature (-Vᵀ) ω = -averagedTristramLevineSignature V ω := by
-  have hdet' : ∀ᶠ z : Circle in 𝓝[≠] ω, (tristramLevineForm Vᵀ z).det ≠ 0 :=
-    hdet.mono fun z hz => (det_tristramLevineForm_transpose_ne_zero_iff V z).mpr hz
-  rw [averagedTristramLevineSignature_neg hdet', averagedTristramLevineSignature_transpose]
+  rw [averagedTristramLevineSignature_neg, averagedTristramLevineSignature_transpose]
 
 /-- **Additivity of the averaged signature along a block diagonal**, the Seifert matrix of a
 connected sum. -/
@@ -405,7 +347,7 @@ theorem averagedTristramLevineSignature_eq_of_congr_zero_block {κ κ' : Type*} 
   have h := averagedTristramLevineSignature_eq_zero_of_congr_zero_block hP hzero hB
   rw [averagedTristramLevineSignature_submatrix_equiv_self,
     averagedTristramLevineSignature_fromBlocks_zero hV hW',
-    averagedTristramLevineSignature_neg hW] at h
+    averagedTristramLevineSignature_neg W ω] at h
   linarith
 
 end TauCeti.KnotTheory
