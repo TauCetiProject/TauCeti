@@ -44,6 +44,8 @@ space by them.
   closure whose frontier misses `F`.
 * `TauCeti.connectedComponentIn_eq_of_lt`: a preconnected set on which a function stays on one
   side of a value it never takes is a connected component.
+* `TauCeti.connectedComponentIn_compl_Icc_eq_Ioi`, `TauCeti.connectedComponentIn_compl_Icc_eq_Iio`:
+  the components of the complement of a closed interval are the two open half-lines.
 * `TauCeti.isPreconnected_compl_of_isPreconnected_frontier`: in a preconnected, locally connected
   space, an open set with preconnected frontier has preconnected complement.
 * `TauCeti.isPreconnected_compl_of_isDiscrete`: removing from a preconnected space a closed
@@ -273,6 +275,30 @@ theorem connectedComponentIn_eq_of_lt {α : Type*} [LinearOrder α] [Topological
       exact (hDne p (connectedComponentIn_subset D z hpC) hpc).elim
     · exact hqgt
   · exact hH.subset_connectedComponentIn hz hHD
+
+/-- The component of `[a, b]ᶜ` containing a point above `b` is the half-line `(b, ∞)`. -/
+theorem connectedComponentIn_compl_Icc_eq_Ioi {α : Type*} [ConditionallyCompleteLinearOrder α]
+    [TopologicalSpace α] [OrderTopology α] [DenselyOrdered α] {a b x : α} (hab : a ≤ b)
+    (hx : b < x) : connectedComponentIn (Icc a b)ᶜ x = Ioi b := by
+  refine Subset.antisymm (fun y hy => ?_)
+    (isPreconnected_Ioi.subset_connectedComponentIn hx fun y hy h => not_lt.2 h.2 hy)
+  by_contra hyb
+  have hya : y < a := not_le.1 fun hay => connectedComponentIn_subset _ _ hy ⟨hay, not_lt.1 hyb⟩
+  exact connectedComponentIn_subset _ _ (isPreconnected_connectedComponentIn.Icc_subset hy
+    (mem_connectedComponentIn fun h => not_lt.2 h.2 hx) ⟨(hya.trans_le hab).le, hx.le⟩)
+    ⟨hab, le_rfl⟩
+
+/-- The component of `[a, b]ᶜ` containing a point below `a` is the half-line `(-∞, a)`. -/
+theorem connectedComponentIn_compl_Icc_eq_Iio {α : Type*} [ConditionallyCompleteLinearOrder α]
+    [TopologicalSpace α] [OrderTopology α] [DenselyOrdered α] {a b x : α} (hab : a ≤ b)
+    (hx : x < a) : connectedComponentIn (Icc a b)ᶜ x = Iio a := by
+  refine Subset.antisymm (fun y hy => ?_)
+    (isPreconnected_Iio.subset_connectedComponentIn hx fun y hy h => not_lt.2 h.1 hy)
+  by_contra hya
+  have hyb : b < y := not_le.1 fun hyb => connectedComponentIn_subset _ _ hy ⟨not_lt.1 hya, hyb⟩
+  exact connectedComponentIn_subset _ _ (isPreconnected_connectedComponentIn.Icc_subset
+    (mem_connectedComponentIn fun h => not_lt.2 h.1 hx) hy ⟨hx.le, (hab.trans_lt hyb).le⟩)
+    ⟨le_rfl, hab⟩
 
 /-- **An open set with preconnected frontier has preconnected complement**, in a preconnected,
 locally connected space.

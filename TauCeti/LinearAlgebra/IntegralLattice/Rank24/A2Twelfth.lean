@@ -7,8 +7,11 @@ module
 
 public import TauCeti.InformationTheory.Coding.A2
 public import TauCeti.InformationTheory.Coding.Equivalence
+public import TauCeti.InformationTheory.Coding.RootDiscriminant
 public import TauCeti.LinearAlgebra.FiniteBilinearModule.Pi
 public import Mathlib.Data.List.GetD
+public import TauCeti.LinearAlgebra.IntegralLattice.Discriminant.OrthogonalGroup
+public import TauCeti.LinearAlgebra.IntegralLattice.Overlattice.Naturality
 public import TauCeti.LinearAlgebra.IntegralLattice.Rank24.Glue.Pattern
 public import TauCeti.LinearAlgebra.IntegralLattice.Rank24.GlueWord
 public import TauCeti.LinearAlgebra.IntegralLattice.RootLattice.GlueAlphabet.Roots
@@ -51,6 +54,14 @@ lattices along the table subgroup by `TauCeti.DynkinType.gluedLattice` therefore
 definite even unimodular lattice `a2TwelfthLattice` of rank `24`, whose carrier is the set of dual
 vectors of `R` with glue word in the Golay code, and whose norm-`2` vectors span exactly `R`.
 
+The same lattice is recovered from the coding side.  The coding library places the ternary Golay
+code as a quadratic Lagrangian `TauCeti.codeInTypeA2CoordinatePowerDiscriminant` in the
+discriminant group of the coordinate power `(A₂)¹²` of the simple-root model of `A₂`.  The signed
+coordinate change `x ↦ (j ↦ s j • x (p j))` is an isometry `a2TwelfthRootIsometry` from `R` to
+`(A₂)¹²` acting on discriminant classes by `a2TwelfthGolayIsometry`, so it restricts to an
+isometry `a2TwelfthTernaryGolayIsometry` from `a2TwelfthLattice` onto the overlattice of `(A₂)¹²`
+glued along that code.
+
 ## Main declarations
 
 * `TauCeti.a2TwelfthGlueModule`: the module of `A₂¹²` glue words.
@@ -70,6 +81,10 @@ vectors of `R` with glue word in the Golay code, and whose norm-`2` vectors span
   `isEven_a2TwelfthLattice`, `isUnimodular_a2TwelfthLattice`, `isPosDef_a2TwelfthLattice`,
   `finrank_a2TwelfthLattice`, and the root-sublattice equality
   `span_vectorsOfNorm_two_a2TwelfthLattice`.
+* `TauCeti.a2TwelfthRootIsometry`: the signed coordinate change from `R` to `(A₂)¹²`, with
+  `discriminantGroupEquiv_a2TwelfthRootIsometry_glueWordIsometry`.
+* `TauCeti.a2TwelfthTernaryGolayIsometry`: the isometry from `a2TwelfthLattice` onto the ternary
+  Golay gluing of `(A₂)¹²`.
 
 ## References
 
@@ -370,5 +385,129 @@ theorem span_vectorsOfNorm_two_a2TwelfthLattice :
       a2TwelfthLattice.vectorsOfNorm 2) = a2TwelfthRootLattice.carrier :=
   span_vectorsOfNorm_two_gluedLattice _ _ _ _ isLagrangian_a2TwelfthGlueSubgroup.isIsotropic
     (fun _ hw hw0 ↦ four_le_sum_glueMinimum_of_mem_a2TwelfthGlueSubgroup hw hw0) (by norm_num)
+
+/-! ### Comparison with the ternary Golay gluing of `(A₂)¹²` -/
+
+/-- **The `A₂¹²` comparison on root lattices.**  The isometry from the orthogonal sum of twelve
+`A₂` root lattices in table coordinates to the coordinate power `(A₂)¹²` in Golay coordinates
+whose `j`-th coordinate is the sign of `j` times the table coordinate `p j`. -/
+noncomputable def a2TwelfthRootIsometry :
+    IntegralLattice.Isometry a2TwelfthRootLattice
+      ((typeARootLattice 2).coordinatePower (Fin 12)) :=
+  (IntegralLattice.Isometry.piCongrLeft (fun _ : Fin 12 ↦ (A 2).rootLattice (isSimplyLaced_A 2))
+      a2TwelfthDestinationToSource.symm).trans
+    (IntegralLattice.Isometry.pi fun j ↦
+      (IntegralLattice.Isometry.ofEq (rootLattice_A 2 (isSimplyLaced_A 2))).trans
+        (IntegralLattice.Isometry.unitsSMul (a2TwelfthSign j) (typeARootLattice 2)))
+
+/-- The `j`-th coordinate of the image of `x` under the root-lattice comparison is the sign of
+`j` times the table coordinate `p j` of `x`. -/
+-- Not `@[simp]`: `simp` rewrites `(A 2).rank` inside the left-hand side by `rank_A`.
+theorem a2TwelfthRootIsometry_apply (x : Fin 12 → Fin (A 2).rank → ℚ) (j : Fin 12) :
+    a2TwelfthRootIsometry x j = (a2TwelfthSign j : ℤ) • x (a2TwelfthDestinationToSource j) := by
+  have h := IntegralLattice.Isometry.piCongrLeft_apply_apply
+    (fun _ : Fin 12 ↦ (A 2).rootLattice (isSimplyLaced_A 2)) a2TwelfthDestinationToSource.symm x
+    (a2TwelfthDestinationToSource j)
+  rw [Equiv.symm_apply_apply] at h
+  rw [a2TwelfthRootIsometry, IntegralLattice.Isometry.trans_apply,
+    IntegralLattice.Isometry.pi_apply]
+  -- The identification with the simple-root model changes the ambient index type from
+  -- `Fin (A 2).rank` to `Fin 2`; `erw` reduces `(A 2).rank` when matching the composite.
+  erw [IntegralLattice.Isometry.trans_apply]
+  exact (IntegralLattice.Isometry.unitsSMul_apply _ _ _).trans
+    (congrArg _ ((IntegralLattice.Isometry.ofEq_apply _ _).trans h))
+
+/-- On the class of an `A₂` glue label `x`, identifying the root lattice with the simple-root
+model and then applying the sign of `j` gives the class of `x` times that sign. -/
+private theorem discriminantGroupEquiv_ofEq_trans_unitsSMul_a2TwelfthSign (j : Fin 12)
+    (x : (A 2).glueAlphabet (isSimplyLaced_A 2)) :
+    ((IntegralLattice.Isometry.ofEq (rootLattice_A 2 (isSimplyLaced_A 2))).trans
+        (IntegralLattice.Isometry.unitsSMul (a2TwelfthSign j)
+          (typeARootLattice 2))).discriminantGroupEquiv
+      ((A 2).glueAlphabetIsometry (valid_A.mpr one_le_two) (isSimplyLaced_A 2) x) =
+      typeADiscriminantGroupEquiv 2 ((a2TwelfthSign j : ℤ) • x) := by
+  -- The composite changes the ambient index type from `Fin (A 2).rank` to `Fin 2`, so it is
+  -- only type-correct up to reducing `(A 2).rank`, which `erw` does when matching.
+  erw [IntegralLattice.Isometry.discriminantGroupEquiv_trans, LinearEquiv.trans_apply,
+    glueAlphabetIsometry_A_apply,
+    ← IntegralLattice.Isometry.symm_ofEq (rootLattice_A 2 (isSimplyLaced_A 2)),
+    IntegralLattice.Isometry.discriminantGroupEquiv_symm, LinearEquiv.apply_symm_apply]
+  exact (IntegralLattice.Isometry.discriminantGroupEquiv_unitsSMul_apply _ _ _).trans
+    (map_zsmul _ _ _).symm
+
+/-- **The root-lattice comparison acts on glue words by the Golay comparison.**  It carries the
+discriminant class of an `A₂¹²` glue word `w` to the class of the ternary word
+`a2TwelfthGolayIsometry w` in the discriminant group of `(A₂)¹²`. -/
+theorem discriminantGroupEquiv_a2TwelfthRootIsometry_glueWordIsometry
+    (w : a2TwelfthGlueModule) :
+    a2TwelfthRootIsometry.discriminantGroupEquiv
+        (glueWordIsometry (fun _ : Fin 12 ↦ A 2) (fun _ ↦ isSimplyLaced_A 2)
+          (fun _ ↦ valid_A.mpr one_le_two) w) =
+      (typeADiscriminantQuadraticIsometry 2).coordinatePowerDiscriminant (Fin 12)
+        (a2TwelfthGolayIsometry w) := by
+  apply (discriminantGroupPiEquiv fun _ : Fin 12 ↦ typeARootLattice 2).injective
+  funext j
+  have hperm := discriminantGroupPiEquiv_discriminantGroupEquiv_piCongrLeft
+    (fun _ : Fin 12 ↦ (A 2).rootLattice (isSimplyLaced_A 2)) a2TwelfthDestinationToSource.symm
+    (glueWordIsometry (fun _ : Fin 12 ↦ A 2) (fun _ ↦ isSimplyLaced_A 2)
+      (fun _ ↦ valid_A.mpr one_le_two) w) (a2TwelfthDestinationToSource j)
+  rw [Equiv.symm_apply_apply, discriminantGroupPiEquiv_glueWordIsometry] at hperm
+  have hw : a2TwelfthGolayIsometry w j =
+      (a2TwelfthSign j : ℤ) • w (a2TwelfthDestinationToSource j) :=
+    (a2TwelfthGolayIsometry_apply w j).trans (Units.smul_def _ _)
+  rw [a2TwelfthRootIsometry, IntegralLattice.Isometry.discriminantGroupEquiv_trans]
+  -- As in `discriminantGroupEquiv_ofEq_trans_unitsSMul_a2TwelfthSign`, the second factor changes
+  -- the ambient index type, so the composite is matched by `erw`.
+  erw [LinearEquiv.trans_apply, discriminantGroupPiEquiv_discriminantGroupEquiv_pi, hperm,
+    discriminantGroupEquiv_ofEq_trans_unitsSMul_a2TwelfthSign]
+  rw [FiniteQuadraticModule.Isometry.discriminantGroupPiEquiv_coordinatePowerDiscriminant_apply]
+  exact (congrArg (typeADiscriminantGroupEquiv 2) hw.symm).trans
+    (typeADiscriminantQuadraticIsometry_apply 2 _).symm
+
+/-- The root-lattice comparison carries the table glue subgroup, read in the discriminant group of
+`A₂¹²`, onto the extended ternary Golay code in the discriminant group of `(A₂)¹²`. -/
+private theorem map_discriminantGroupEquiv_a2TwelfthRootIsometry :
+    (a2TwelfthGlueSubgroup.map (glueWordIsometry (fun _ : Fin 12 ↦ A 2)
+        (fun _ ↦ isSimplyLaced_A 2) (fun _ ↦ valid_A.mpr one_le_two)).toAddEquiv.toAddMonoidHom).map
+      a2TwelfthRootIsometry.discriminantGroupEquiv.toAddEquiv.toAddMonoidHom =
+      codeInTypeA2CoordinatePowerDiscriminant TernaryGolay.code.toAddSubgroup := by
+  have hcode : codeInTypeA2CoordinatePowerDiscriminant TernaryGolay.code.toAddSubgroup =
+      TernaryGolay.code.toAddSubgroup.map ((typeADiscriminantQuadraticIsometry 2)
+        |>.coordinatePowerDiscriminant (Fin 12)).toAddEquiv.toAddMonoidHom :=
+    AddSubgroup.ext fun x ↦ (mem_codeInTypeA2CoordinatePowerDiscriminant_iff _ x).trans
+      AddSubgroup.mem_map_equiv.symm
+  refine Eq.trans ?_ hcode.symm
+  exact (AddSubgroup.map_map _ _ _).trans <|
+    ((congrArg a2TwelfthGlueSubgroup.map
+      (AddMonoidHom.ext discriminantGroupEquiv_a2TwelfthRootIsometry_glueWordIsometry)).trans
+        (AddSubgroup.map_map _ _ _).symm).trans
+      (congrArg (AddSubgroup.map _) map_a2TwelfthGlueSubgroup_eq_ternaryGolay)
+
+/-- **`A₂¹²` is the ternary Golay gluing of `(A₂)¹²`.**  The root-lattice comparison
+`a2TwelfthRootIsometry` restricts to an isometry from the Niemeier lattice `A₂¹²` onto the
+overlattice of the coordinate power `(A₂)¹²` glued along the extended ternary Golay code, placed in
+its discriminant group by `TauCeti.codeInTypeA2CoordinatePowerDiscriminant`. -/
+noncomputable def a2TwelfthTernaryGolayIsometry :
+    IntegralLattice.Isometry a2TwelfthLattice
+      (((typeARootLattice 2).coordinatePower (Fin 12)).ofIsotropicSubgroup
+        ((isEven_typeARootLattice 2).coordinatePower (Fin 12))
+        (codeInTypeA2CoordinatePowerDiscriminant TernaryGolay.code.toAddSubgroup)
+        TernaryGolay.isLagrangian_codeInTypeA2CoordinatePowerDiscriminant.isIsotropic) :=
+  (IntegralLattice.Isometry.ofEq (gluedLattice_def _ _ _ _ _)).trans
+    (a2TwelfthRootIsometry.ofIsotropicSubgroups (isEven_pi_rootLattice _ _) _ _ _
+      map_discriminantGroupEquiv_a2TwelfthRootIsometry)
+
+/-- The isometry onto the ternary Golay gluing acts by the root-lattice comparison: the `j`-th
+coordinate of the image of `x` is the sign of `j` times the table coordinate `p j` of `x`. -/
+-- Not `@[simp]`: `simp` rewrites `(A 2).rank` inside the left-hand side by `rank_A`.
+theorem a2TwelfthTernaryGolayIsometry_apply (x : Fin 12 → Fin (A 2).rank → ℚ) (j : Fin 12) :
+    a2TwelfthTernaryGolayIsometry x j =
+      (a2TwelfthSign j : ℤ) • x (a2TwelfthDestinationToSource j) := by
+  unfold a2TwelfthTernaryGolayIsometry
+  -- The isotropy proofs are typed on discriminant quadratic-module carriers, while the subgroups
+  -- are typed on the underlying discriminant groups; `erw` identifies these.
+  erw [IntegralLattice.Isometry.trans_apply, IntegralLattice.Isometry.ofEq_apply,
+    IntegralLattice.Isometry.ofIsotropicSubgroups_apply]
+  exact a2TwelfthRootIsometry_apply x j
 
 end TauCeti

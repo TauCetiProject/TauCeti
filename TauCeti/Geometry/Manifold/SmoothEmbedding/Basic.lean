@@ -38,6 +38,8 @@ later tubular-neighbourhood and surgery interfaces.
 
 * `TauCeti.isSmoothEmbedding_prodMkLeft_of_extChartAt_eq_zero`: the slice `x ↦ (x, c)` of a product
   `M × M'` is a smooth embedding when the preferred chart of `M'` at `c` sends `c` to `0`.
+* `Manifold.IsImmersion.isSmoothEmbedding_of_isProperMap`: an injective proper immersion is a
+  smooth embedding.
 
 The construction is a thin wrapper around Mathlib's
 `Manifold.IsSmoothEmbedding` API, especially `IsSmoothEmbedding.id`, `of_opens`, `prodMap`,
@@ -295,5 +297,13 @@ theorem isSmoothEmbedding_prodMkLeft_of_extChartAt_eq_zero [IsManifold I n M] [I
   simp only [Function.comp_apply, ContinuousLinearEquiv.refl_apply]
   rw [extChartAt_prod, PartialEquiv.prod_coe]
   simp only [hc, (extChartAt I x).right_inv hv]
+
+/-- **Proper injective immersions are smooth embeddings.** A proper map is closed, so an injective
+proper immersion is a closed topological embedding. -/
+theorem _root_.Manifold.IsImmersion.isSmoothEmbedding_of_isProperMap {f : M → N}
+    (hf : Manifold.IsImmersion I J n f) (hinj : Function.Injective f) (hp : IsProperMap f) :
+    Manifold.IsSmoothEmbedding I J n f :=
+  ⟨hf, (Topology.IsClosedEmbedding.of_continuous_injective_isClosedMap hp.continuous hinj
+    hp.isClosedMap).isEmbedding⟩
 
 end TauCeti

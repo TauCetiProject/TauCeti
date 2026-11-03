@@ -123,14 +123,14 @@ private theorem secondDerivAux_congr (hσ : CMDiff ∞ (T% σ)) (x : M)
 
 /-- The value of `∇²σ` at `(u, v)`, computed with a chosen smooth extension of `v`. -/
 private def secondDerivValue (σ : Π y : M, V y) (x : M) (u v : TangentSpace I x) : V x :=
-  secondDerivAux cov covT σ x (Classical.choose (exists_contMDiff_section_eq I E v)) u
+  secondDerivAux cov covT σ x (Classical.choose (exists_contMDiff_section_eq I E ∞ v)) u
 
 private theorem secondDerivValue_eq (hσ : CMDiff ∞ (T% σ)) (x : M)
     {Y : Π y : M, TangentSpace I y} (hY : CMDiff ∞ (T% Y)) (u : TangentSpace I x) :
     secondDerivValue cov covT σ x u (Y x) = secondDerivAux cov covT σ x Y u :=
   secondDerivAux_congr cov covT hσ x
-    (Classical.choose_spec (exists_contMDiff_section_eq I E (Y x))).1 hY
-    (Classical.choose_spec (exists_contMDiff_section_eq I E (Y x))).2 u
+    (Classical.choose_spec (exists_contMDiff_section_eq I E ∞ (Y x))).1 hY
+    (Classical.choose_spec (exists_contMDiff_section_eq I E ∞ (Y x))).2 u
 
 /-- The second covariant derivative of a smooth section, as a bilinear map. -/
 private def secondCovariantDerivativeOfContMDiff (hσ : CMDiff ∞ (T% σ)) (x : M) :
@@ -139,13 +139,13 @@ private def secondCovariantDerivativeOfContMDiff (hσ : CMDiff ∞ (T% σ)) (x :
     (fun u u' v ↦ by simp only [secondDerivValue, secondDerivAux, map_add]; abel)
     (fun c u v ↦ by simp only [secondDerivValue, secondDerivAux, map_smul, smul_sub])
     (fun u v v' ↦ by
-      obtain ⟨Y, hY, rfl⟩ := exists_contMDiff_section_eq I E v
-      obtain ⟨Y', hY', rfl⟩ := exists_contMDiff_section_eq I E v'
+      obtain ⟨Y, hY, rfl⟩ := exists_contMDiff_section_eq I E ∞ v
+      obtain ⟨Y', hY', rfl⟩ := exists_contMDiff_section_eq I E ∞ v'
       rw [← Pi.add_apply Y Y', secondDerivValue_eq cov covT hσ x (hY.add_section hY'),
         secondDerivValue_eq cov covT hσ x hY, secondDerivValue_eq cov covT hσ x hY',
         secondDerivAux_add cov covT hσ x hY hY'])
     (fun c u v ↦ by
-      obtain ⟨Y, hY, rfl⟩ := exists_contMDiff_section_eq I E v
+      obtain ⟨Y, hY, rfl⟩ := exists_contMDiff_section_eq I E ∞ v
       have hcY : CMDiff ∞ (T% ((fun _ : M ↦ c) • Y)) := contMDiff_const.smul_section hY
       have h := secondDerivValue_eq cov covT hσ x hcY u
       rw [secondDerivAux_smul cov covT hσ x contMDiff_const hY,
@@ -187,7 +187,7 @@ theorem eq_secondCovariantDerivative_iff (hσ : CMDiff ∞ (T% σ)) (x : M)
     exact secondCovariantDerivative_apply cov covT hσ x hY u
   · intro h
     ext u v
-    obtain ⟨Y, hY, rfl⟩ := exists_contMDiff_section_eq I E v
+    obtain ⟨Y, hY, rfl⟩ := exists_contMDiff_section_eq I E ∞ v
     rw [h Y hY u, secondCovariantDerivative_apply cov covT hσ x hY u]
 
 /-- The second covariant derivative is additive in the section. -/
