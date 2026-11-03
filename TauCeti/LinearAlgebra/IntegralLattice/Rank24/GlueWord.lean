@@ -38,7 +38,8 @@ Sums and shortest norms of glue words can be computed on their digit words: `glu
 two digit words label by label (`encodeGlueWord_add`), and `glueWordMinimum` sums the shortest
 norms of the printed labels, giving the shortest norm `μ(w)` of the coset named by the word
 (`glueWordMinimum_encodeGlueWord`). Finite checks on printed glue words therefore evaluate by
-`decide`.
+`decide`. Like digit lists, shortest norms are unchanged by passing to an equal family of
+components (`sum_glueMinimum_piGlueAlphabetCongr`).
 
 For a constant type-`A` family, `typeAGlueWordOfDigits` reads digits modulo the alphabet size.
 `encodeGlueWord_typeA_eq` gives the encoder's residue formula, and
@@ -272,6 +273,19 @@ theorem glueWordMinimum_encodeGlueWord (w : ∀ i, (t i).glueAlphabet (ht i)) :
     glueWordMinimum t (encodeGlueWord t ht w) = ∑ i, (t i).glueMinimum (ht i) (w i) := by
   refine Finset.sum_congr rfl fun i _ ↦ ?_
   rw [getD_encodeGlueWord, ← DynkinType.glueMinimum_glueLabelEquiv, Equiv.apply_symm_apply]
+
+/-- **Shortest norms are unchanged by passing to an equal family of components**: a glue word and
+its image under `TauCeti.DynkinType.piGlueAlphabetCongr` have the same shortest norm `μ(w)`. -/
+theorem sum_glueMinimum_piGlueAlphabetCongr {m : ℕ} {s : Fin m → DynkinType}
+    (hs : ∀ k, (s k).IsSimplyLaced) (hmn : m = n) (h : ∀ k, t (finCongr hmn k) = s k)
+    (w : ∀ i, (t i).glueAlphabet (ht i)) :
+    ∑ k, (s k).glueMinimum (hs k) (DynkinType.piGlueAlphabetCongr t ht (finCongr hmn) h w k) =
+      ∑ i, (t i).glueMinimum (ht i) (w i) := by
+  rw [← glueWordMinimum_encodeGlueWord, ← glueWordMinimum_encodeGlueWord,
+    encodeGlueWord_piGlueAlphabetCongr]
+  subst hmn
+  obtain rfl : t = s := funext fun k ↦ by simpa using h k
+  rfl
 
 /-! ### Constant type-`A` families -/
 
