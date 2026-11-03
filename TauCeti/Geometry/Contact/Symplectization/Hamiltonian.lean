@@ -76,29 +76,6 @@ variable {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [Topological
   {I : ModelWithCorners ℝ E H} [TopologicalSpace M] [ChartedSpace H M] [IsManifold I ∞ M]
   {α : SmoothForm I M ℝ 1} {f g : M → ℝ} {X : (x : M) → TangentSpace I x}
 
-omit [IsManifold I ∞ M] in
-/-- The derivative of `(t, x) ↦ eᵗ f(x)` sends a tangent vector `(s, v)` at `(t, x)` to
-`eᵗ (s f(x) + df_x(v))`. -/
-private theorem mvfderiv_exp_mul_apply {p : ℝ × M} (hf : MDifferentiableAt I 𝓘(ℝ) f p.2)
-    (v : TangentSpace (𝓘(ℝ).prod I) p) :
-    mvfderiv (𝓘(ℝ).prod I) (fun q : ℝ × M ↦ Real.exp q.1 * f q.2) p v =
-      Real.exp p.1 *
-        (NormedSpace.fromTangentSpace p.1 (Manifold.tangentSpaceProdEquiv p v).1 * f p.2 +
-          mvfderiv I f p.2 (Manifold.tangentSpaceProdEquiv p v).2) := by
-  have he : MDifferentiableAt (𝓘(ℝ).prod I) 𝓘(ℝ) (Real.exp ∘ Prod.fst) p :=
-    ((Real.contDiff_exp (n := 1)).contMDiff.comp contMDiff_fst p).mdifferentiableAt
-      one_ne_zero
-  have hf' : MDifferentiableAt (𝓘(ℝ).prod I) 𝓘(ℝ) (f ∘ Prod.snd) p :=
-    hf.comp p mdifferentiableAt_snd
-  have h := congrArg (fun φ ↦ φ v) (mvfderiv_mul he hf')
-  simp only [add_apply, smul_apply, smul_eq_mul,
-    mvfderiv_comp_snd_apply, (Real.hasDerivAt_exp p.1).mvfderiv_comp_fst_apply,
-    Function.comp_apply] at h
-  rw [Manifold.tangentSpaceProdEquiv_apply]
-  -- The product `(exp ∘ Prod.fst) * (f ∘ Prod.snd)` is the function `(t, x) ↦ eᵗ f(x)`.
-  refine h.trans ?_
-  ring
-
 /-- **Contraction of `d(eᵗ α)` with the lift of a contact Hamiltonian vector field.** If `X` is a
 contact Hamiltonian vector field of `f` for a one-form `α`, and `f` is differentiable at `x`, then
 at `(t, x)` the contraction of `d(eᵗ α)` with `(R_α f)(x) ∂_t - X(x)` is the differential of
@@ -111,11 +88,20 @@ theorem IsContactHamiltonianVectorField.eval₂_mextDerivₗ_symplectization
           ((NormedSpace.fromTangentSpace p.1).symm (mvfderiv I f p.2 (α.reebVectorField p.2)),
             -X p.2)) w =
       mvfderiv (𝓘(ℝ).prod I) (fun q : ℝ × M ↦ Real.exp q.1 * f q.2) p w := by
-  rw [SmoothForm.eval₂_mextDerivₗ_symplectization, mvfderiv_exp_mul_apply hf,
+  have hexp (s : TangentSpace 𝓘(ℝ) p.1) :
+      mvfderiv 𝓘(ℝ) Real.exp p.1 s = NormedSpace.fromTangentSpace p.1 s * Real.exp p.1 := by
+    rw [mvfderiv_eq_fderiv, (Real.hasDerivAt_exp p.1).hasFDerivAt.fderiv]
+    -- `ContinuousLinearMap.toSpanSingleton ℝ (eᵗ)` sends `s` to `s • eᵗ`, read through
+    -- `NormedSpace.fromTangentSpace`.
+    rfl
+  rw [SmoothForm.eval₂_mextDerivₗ_symplectization,
+    mvfderiv_comp_fst_mul_comp_snd_apply Real.differentiable_exp.differentiableAt.mdifferentiableAt
+      hf,
     ContinuousLinearEquiv.apply_symm_apply, SmoothBundleForm.eval₂_neg_left,
     SmoothBundleForm.eval₂_apply, mextDerivₗ_apply, hX.mextDeriv_apply_eq]
-  simp only [ContinuousLinearEquiv.apply_symm_apply, apply_neg_vec, hX.apply_eq]
-  ring
+  simp only [ContinuousLinearEquiv.apply_symm_apply, apply_neg_vec, hX.apply_eq,
+    Manifold.tangentSpaceProdEquiv_apply]
+  linear_combination -f p.2 * hexp w.1
 
 /-- **Hamiltonian vector fields of homogeneous functions on the symplectization.** If `X` is a
 contact Hamiltonian vector field of a differentiable function `f` for a one-form `α`, then
