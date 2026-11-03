@@ -55,6 +55,26 @@ theorem simpleWeylPoint_inv (i : Fin 4) (A : Type v) [CommRing A] [Algebra (ZMod
     (simpleWeylPoint i A)⁻¹ = simpleWeylPoint i A :=
   inv_eq_of_mul_eq_one_right (by rw [← sq, simpleWeylPoint_sq])
 
+/-- In characteristic two, the inverse-free pinned conjugation sends a positive simple-root
+subgroup to its opposite, retaining the integral sign convention. -/
+@[simp]
+theorem simpleWeylPoint_mul_rootSubgroupPoints_mul_self (i : Fin 4) (A : Type v)
+    [CommRing A] [Algebra (ZMod 2) A] (u : A) :
+    simpleWeylPoint i A * rootSubgroupPoints (.inl i) A (Multiplicative.ofAdd u) *
+        simpleWeylPoint i A =
+      rootSubgroupPoints (.inr i) A (Multiplicative.ofAdd (-u)) := by
+  simpa only [simpleWeylPoint_inv] using simpleWeylPoint_conj_rootSubgroupPoints i A u
+
+/-- In characteristic two, the inverse-free pinned conjugation acts on the weight torus
+by the simple reflection. -/
+@[simp]
+theorem simpleWeylPoint_mul_weightTorusPoints_mul_self (i : Fin 4) (A : Type v)
+    [CommRing A] [Algebra (ZMod 2) A] (s : Fin 4 → Aˣ) :
+    simpleWeylPoint i A * weightTorusPoints A s * simpleWeylPoint i A =
+      weightTorusPoints A
+        (DynkinType.F4.geckSimpleReflectionTorusPoint DynkinType.valid_F4 i A s) := by
+  simpa only [simpleWeylPoint_inv] using simpleWeylPoint_conj_weightTorusPoints i A s
+
 /-- Two equal adjacent pinned simple Weyl representatives cancel in characteristic two. -/
 @[simp]
 theorem simpleWeylPoint_mul_self (i : Fin 4) (A : Type v) [CommRing A]
