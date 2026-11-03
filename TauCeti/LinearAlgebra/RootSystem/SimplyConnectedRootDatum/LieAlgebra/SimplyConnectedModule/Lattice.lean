@@ -128,21 +128,19 @@ theorem representation_mem_scLattice
 
 /-- The inclusion of the `i`-th summand carries the fundamental lattice of `L(ϖᵢ)` into the Kostant
 orbit of the highest weight vectors of all the summands. -/
-private theorem lof_mem_orbitOfRep {i : Fin t.rank} {x : t.fundamentalModule ht i}
-    (hx : x ∈ t.fundamentalLattice ht i) :
-    lof ℚ _ (t.fundamentalModule ht) i x ∈ Subring.orbitOfRep (t.kostantForm ht)
+private theorem fundamentalLattice_le_comap_orbitOfRep (i : Fin t.rank) :
+    t.fundamentalLattice ht i ≤ (Subring.orbitOfRep (t.kostantForm ht)
       (representation ℚ (t.lieAlgebra ht) (t.scModule ht))
       (Set.range fun j =>
-        lof ℚ _ (t.fundamentalModule ht) j (t.fundamentalModuleGenerator ht j)) := by
-  rw [t.fundamentalLattice_def ht i, Subring.orbitOfRep_def] at hx
-  induction hx using Submodule.span_induction with
-  | mem y hy =>
-    obtain ⟨u, hu, _, rfl, rfl⟩ := hy
-    rw [← representation_lof]
-    exact Subring.apply_mem_orbitOfRep _ _ _ hu (Set.mem_range_self i)
-  | zero => simp
-  | add y z _ _ hy hz => simpa using add_mem hy hz
-  | smul n y _ hy => simpa using Submodule.smul_mem _ n hy
+        lof ℚ _ (t.fundamentalModule ht) j (t.fundamentalModuleGenerator ht j))).comap
+      ((lof ℚ _ (t.fundamentalModule ht) i).restrictScalars ℤ) := by
+  refine (t.fundamentalLattice_def ht i).trans_le ((Subring.orbitOfRep_le_iff _ _ _ _).2 ?_)
+  rintro u hu _ rfl
+  have h := Subring.apply_mem_orbitOfRep (t.kostantForm ht)
+    (representation ℚ (t.lieAlgebra ht) (t.scModule ht)) (Set.range fun j =>
+      lof ℚ _ (t.fundamentalModule ht) j (t.fundamentalModuleGenerator ht j)) hu
+    (Set.mem_range_self i)
+  rwa [representation_lof] at h
 
 /-- **The full-weight lattice is the Kostant orbit of the highest weight vectors**: it is the
 represented orbit `U_ℤ · {v⁺ᵢ}` of the highest weight vectors of the summands of `V_sc(t)` under
@@ -156,7 +154,7 @@ theorem scLattice_eq_orbitOfRep :
   · rw [← sum_univ_of x]
     refine Submodule.sum_mem _ fun i _ => ?_
     rw [← lof_eq_of ℚ]
-    exact t.lof_mem_orbitOfRep ht (mem_scLattice_iff.mp hx i)
+    exact t.fundamentalLattice_le_comap_orbitOfRep ht i (mem_scLattice_iff.mp hx i)
   · rintro u hu _ ⟨i, rfl⟩
     exact t.representation_mem_scLattice ht hu
       (lof_mem_scLattice_iff.mpr (t.fundamentalModuleGenerator_mem_fundamentalLattice ht i))
