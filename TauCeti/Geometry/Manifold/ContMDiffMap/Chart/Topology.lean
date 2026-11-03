@@ -234,7 +234,7 @@ theorem manifoldWeakWhitneyTopology_self :
     intro x y m hm K hK V hV
     rw [chartJetSet_self_target x y m hm]
     have h := (ContinuousMap.continuous_restrict (extChartAt 𝓘(𝕜, E) x).target).comp
-      (ContMDiffMap.continuous_iteratedFDerivContinuousMap (k := 𝕜)
+      (ContMDiffMap.continuous_iteratedFDerivContinuousMap (𝕜 := 𝕜)
         (E := E) (F := F) (n := n) m hm)
     have hchart : Continuous (fun f : C^n⟮𝓘(𝕜, E), E; 𝓘(𝕜, F), F⟯ ↦
         chartIteratedFDeriv f x m hm) := by

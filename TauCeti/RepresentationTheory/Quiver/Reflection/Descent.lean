@@ -71,7 +71,7 @@ private theorem exists_pos_pow_apply_eq (v : M) {s : Set M} (hs : s.Finite)
   have key : ∀ m n : ℕ, m < n → (f ^ m) v = (f ^ n) v →
       ∃ N p : ℕ, 0 < p ∧ (f ^ p) ((f ^ N) v) = (f ^ N) v := fun m n hmn hv ↦
     ⟨m, n - m, by omega, by
-      rw [← Module.End.mul_apply, ← pow_add, Nat.sub_add_cancel (Nat.le_of_lt hmn)]
+      rw [← mul_apply_eq_comp, ← pow_add, Nat.sub_add_cancel (Nat.le_of_lt hmn)]
       exact hv.symm⟩
   obtain ⟨a, b, hab, heq⟩ :=
     Finite.exists_ne_map_eq_of_infinite fun N : ℕ ↦ (⟨(f ^ N) v, hmem N⟩ : s)
@@ -83,11 +83,11 @@ private theorem exists_pos_pow_apply_eq (v : M) {s : Set M} (hs : s.Finite)
 /-- The sum of an orbit over one period is fixed. -/
 private theorem apply_sum_range_pow {x : M} {p : ℕ} (hfix : (f ^ p) x = x) :
     f (∑ j ∈ Finset.range p, (f ^ j) x) = ∑ j ∈ Finset.range p, (f ^ j) x := by
-  rw [map_sum, Finset.sum_congr rfl fun j _ ↦ (by rw [pow_succ', Module.End.mul_apply] :
+  rw [map_sum, Finset.sum_congr rfl fun j _ ↦ (by rw [pow_succ', mul_apply_eq_comp] :
     f ((f ^ j) x) = (f ^ (j + 1)) x)]
   have h1 := Finset.sum_range_succ' (fun j ↦ (f ^ j) x) p
   have h2 := Finset.sum_range_succ (fun j ↦ (f ^ j) x) p
-  simp only [pow_zero, Module.End.one_apply] at h1
+  simp only [pow_zero, one_apply_eq_self] at h1
   rw [hfix] at h2
   exact add_right_cancel (h1.symm.trans h2)
 
@@ -124,7 +124,7 @@ theorem exists_vertexPreReflectionList_pow_apply_neg (hpd : (titsForm Q).PosDef)
     induction N with
     | zero => simp
     | succ N ih =>
-      rw [pow_succ', Module.End.mul_apply, hc_preserves, ih]
+      rw [pow_succ', mul_apply_eq_comp, hc_preserves, ih]
   -- The level set is finite, so the orbit returns to one of its own points.
   have hfin : {x : Q → ℤ | titsForm Q x = titsForm Q d}.Finite :=
     QuadraticMap.PosDef.finite_setOf_apply_eq hpd _
@@ -132,11 +132,11 @@ theorem exists_vertexPreReflectionList_pow_apply_neg (hpd : (titsForm Q).PosDef)
   set x := (c ^ N) d with hx
   have hxnn : ∀ j : ℕ, 0 ≤ (c ^ j) x := by
     intro j
-    rw [hx, ← Module.End.mul_apply, ← pow_add]
+    rw [hx, ← mul_apply_eq_comp, ← pow_add]
     exact hnn (j + N)
   have hx0 : x ≠ 0 := by
     have hinj : Function.Injective ⇑(c ^ N) := by
-      rw [Module.End.coe_pow]
+      rw [FunLike.coe_pow_eq_iterate]
       exact ((vertexPreReflectionList_bijective Q hloop).1).iterate N
     rw [hx]
     intro h

@@ -75,7 +75,7 @@ namespace TauCeti
 
 /-- A commutative semiring equipped with a valuative relation is a valuative extension of itself. -/
 instance valuativeExtension_self (K : Type*) [CommSemiring K] [ValuativeRel K] :
-    ValuativeExtension K K := ⟨fun a b ↦ by simp⟩
+    ValuativeExtension K K := ⟨by intro a b; simp⟩
 
 variable {K : Type*} [Ring K] [ValuativeRel K]
 
