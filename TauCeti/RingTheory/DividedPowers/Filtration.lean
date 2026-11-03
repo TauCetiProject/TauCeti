@@ -19,7 +19,8 @@ public import Mathlib.LinearAlgebra.LinearIndependent.Basic
 For an element `x` of an associative rational algebra, the integral span of
 `1, x, x²/2!, …, xⁿ/n!` is its divided-power degree stage. These stages exhaust the integral
 divided-power lattice and multiply with additive degree bounds. Each stage is finite free.
-If the divided powers are integrally independent, its displayed basis has rank `n + 1`.
+If the divided powers up to degree `n` are integrally independent, the stage has a displayed
+basis of rank `n + 1`.
 
 These are the finite root-factor stages used in a filtered integral triangular factorization
 of an enveloping algebra. No nilpotence or commutativity of the ambient algebra is required.
@@ -50,6 +51,12 @@ theorem dividedPowerFiltration_def (x : A) (n : ℕ) :
     dividedPowerFiltration x n =
       span ℤ (Set.range fun k : Fin (n + 1) => dividedPower k.val x) := by
   rfl
+
+/-- Stage membership means being an integral linear combination of the bounded divided powers. -/
+theorem mem_dividedPowerFiltration_iff {x y : A} {n : ℕ} :
+    y ∈ dividedPowerFiltration x n ↔
+      ∃ c : Fin (n + 1) → ℤ, ∑ k, c k • dividedPower k.val x = y :=
+  Submodule.mem_span_range_iff_exists_fun ℤ
 
 /-- To bound a degree stage, it suffices to bound its divided-power generators. -/
 @[simp] theorem dividedPowerFiltration_le_iff {x : A} {n : ℕ} {p : Submodule ℤ A} :
@@ -126,17 +133,28 @@ instance (x : A) (n : ℕ) : Module.Free ℤ (dividedPowerFiltration x n) := by
 
 section Independent
 
-variable (x : A) (h : LinearIndependent ℤ (fun k : ℕ => dividedPower k x))
+variable (x : A)
 
-/-- The divided powers up to degree `n` form the integral basis of that degree stage. -/
-noncomputable def dividedPowerFiltrationBasis (n : ℕ) :
+/-- Integrally independent divided powers up to degree `n` form a basis of that stage. -/
+noncomputable def dividedPowerFiltrationBasis (n : ℕ)
+    (h : LinearIndependent ℤ (fun k : Fin (n + 1) => dividedPower k.val x)) :
     Module.Basis (Fin (n + 1)) ℤ (dividedPowerFiltration x n) :=
-  Module.Basis.span (h.comp (fun k : Fin (n + 1) => k.val) Fin.val_injective)
+  Module.Basis.span h
 
 /-- A finite-stage basis vector is the indicated divided power in the ambient algebra. -/
-@[simp] theorem coe_dividedPowerFiltrationBasis (n : ℕ) (k : Fin (n + 1)) :
-    (dividedPowerFiltrationBasis x h n k : A) = dividedPower k.val x :=
+@[simp] theorem coe_dividedPowerFiltrationBasis (n : ℕ)
+    (h : LinearIndependent ℤ (fun k : Fin (n + 1) => dividedPower k.val x))
+    (k : Fin (n + 1)) :
+    (dividedPowerFiltrationBasis x n h k : A) = dividedPower k.val x :=
   Module.Basis.coe_span_apply _ _
+
+/-- Independence through degree `n` gives the integral stage rank `n + 1`. -/
+@[simp] theorem finrank_dividedPowerFiltration (n : ℕ)
+    (h : LinearIndependent ℤ (fun k : Fin (n + 1) => dividedPower k.val x)) :
+    Module.finrank ℤ (dividedPowerFiltration x n) = n + 1 := by
+  simpa using Module.finrank_eq_card_basis (dividedPowerFiltrationBasis x n h)
+
+variable (h : LinearIndependent ℤ (fun k : ℕ => dividedPower k x))
 
 include h
 
@@ -150,11 +168,6 @@ include h
   apply span_mono ?_ hk
   rintro _ ⟨i, rfl⟩
   exact ⟨i.val, by simp; omega, rfl⟩
-
-/-- The degree-`n` integral divided-power stage has rank `n + 1`. -/
-@[simp] theorem finrank_dividedPowerFiltration (n : ℕ) :
-    Module.finrank ℤ (dividedPowerFiltration x n) = n + 1 := by
-  simpa using Module.finrank_eq_card_basis (dividedPowerFiltrationBasis x h n)
 
 end Independent
 
