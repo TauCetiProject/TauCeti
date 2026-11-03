@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.Distribution.Mass.Basic
 public import TauCeti.Analysis.Distribution.TestFunction.ExtDeriv
 import Mathlib.Analysis.Calculus.ContDiff.Bounds
+import TauCeti.Analysis.Calculus.BumpFunction.Cutoff
 import TauCeti.Analysis.Calculus.ContDiff.ContinuousAlternatingMap
 import TauCeti.Analysis.Calculus.DifferentialForm.Regularity
 
@@ -334,15 +335,10 @@ support. -/
 /-- A cutoff pullback of a smooth form is smooth. -/
 private theorem contDiff_smul_pullbackFun (hΦ : ContDiffOn ℝ (⊤ : ℕ∞) Φ Ω) (χ : 𝓓(Ω, ℝ))
     {ω : E' → E' [⋀^Fin k]→L[ℝ] F} (hω : ContDiff ℝ (⊤ : ℕ∞) ω) :
-    ContDiff ℝ (⊤ : ℕ∞) (⇑χ • pullbackFun Ω Φ ω) := by
-  refine contDiff_iff_contDiffAt.2 fun x ↦ ?_
-  by_cases hx : x ∈ Ω
-  · exact χ.contDiff.contDiffAt.smul (contDiffAt_pullbackFun hΦ hω hx)
-  · -- Off `Ω`, the point lies outside the closed set `tsupport χ`, near which `χ` vanishes.
-    refine (contDiffAt_const (c := 0)).congr_of_eventuallyEq ?_
-    filter_upwards [(isClosed_tsupport χ).isOpen_compl.mem_nhds fun h ↦ hx (χ.tsupport_subset h)]
-      with y hy
-    simp [image_eq_zero_of_notMem_tsupport hy]
+    ContDiff ℝ (⊤ : ℕ∞) (⇑χ • pullbackFun Ω Φ ω) :=
+  ContDiffOn.contDiff_smul_of_tsupport_subset
+    (fun _ hx ↦ (contDiffAt_pullbackFun hΦ hω hx).contDiffWithinAt) Ω.isOpen
+    χ.contDiff.contDiffOn χ.tsupport_subset
 
 /-- The `i`-th derivative of a cutoff pullback is bounded by a constant times a bound for the
 first `i` derivatives of the form. -/
