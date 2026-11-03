@@ -104,7 +104,7 @@ theorem coe_binaryFormRep_apply (M : Matrix (Fin 2) (Fin 2) ℤ)
 theorem binaryFormRep_op_mul_apply (M N : Matrix (Fin 2) (Fin 2) ℤ)
     (P : homogeneousSubmodule (Fin 2) R w) :
     binaryFormRep R w (op (M * N)) P = binaryFormRep R w (op N) (binaryFormRep R w (op M) P) := by
-  rw [op_mul, map_mul, Module.End.mul_apply]
+  rw [op_mul, map_mul, mul_apply_eq_comp]
 
 /-- Negating the matrix multiplies a form of degree `w` by `(-1)ʷ`. -/
 theorem binaryFormRep_op_neg (M : Matrix (Fin 2) (Fin 2) ℤ) :

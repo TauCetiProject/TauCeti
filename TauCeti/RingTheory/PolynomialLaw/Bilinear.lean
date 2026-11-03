@@ -93,7 +93,7 @@ theorem toPolynomialLaw₂_toFun_sum_add_sum (B : M →ₗ[R] N →ₗ[R] P) {S 
     B.toPolynomialLaw₂.toFun S
         (∑ i ∈ t, s i ⊗ₜ[R] (m i, 0) + ∑ j ∈ t', s' j ⊗ₜ[R] (0, n j)) =
       ∑ i ∈ t, ∑ j ∈ t', (s i * s' j) ⊗ₜ[R] B (m i) (n j) := by
-  simp [toPolynomialLaw₂_toFun, map_sum, sum_apply]
+  simp [toPolynomialLaw₂_toFun, map_sum, LinearMap.sum_apply]
 
 /-- The ground map of `B.toPolynomialLaw₂` is `(m, n) ↦ B m n`. -/
 @[simp]
@@ -105,7 +105,7 @@ theorem ground_toPolynomialLaw₂ (B : M →ₗ[R] N →ₗ[R] P) (x : M × N) :
 theorem isHomogeneousOfDegree_toPolynomialLaw₂ (B : M →ₗ[R] N →ₗ[R] P) :
     B.toPolynomialLaw₂.IsHomogeneousOfDegree 2 :=
   PolynomialLaw.isHomogeneousOfDegree_iff.mpr fun S _ _ s x ↦ by
-    simp only [toPolynomialLaw₂, map_smul, smul_apply, smul_smul, sq]
+    simp only [toPolynomialLaw₂, map_smul, LinearMap.smul_apply, smul_smul, sq]
 
 /-- Precomposing a bilinear map with linear maps of its arguments precomposes its law with the
 law of the product map. -/

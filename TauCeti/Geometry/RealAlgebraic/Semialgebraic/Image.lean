@@ -47,7 +47,8 @@ All results assume projection closure, `[TauCeti.HasSemialgebraicProjections R]`
 * `TauCeti.IsSemialgebraicOn.isSemialgebraic_image`,
   `TauCeti.IsSemialgebraicMap.isSemialgebraic_image`: images under semialgebraic functions with
   finitely many input coordinates; `TauCeti.IsSemialgebraic.image_eval`: images under polynomial
-  maps with finitely many input and output coordinates.
+  maps with finitely many input and output coordinates; `TauCeti.IsSemialgebraic.image_comp`:
+  images under changes of coordinates, such as coordinate projections.
 * `TauCeti.IsSemialgebraicOn.isSemialgebraic_inter_preimage`,
   `TauCeti.IsSemialgebraicMap.isSemialgebraic_preimage`: inverse images under semialgebraic
   functions with finitely many output coordinates.
@@ -172,6 +173,13 @@ theorem IsSemialgebraic.image_eval [Finite σ] [Finite τ] {s : Set (σ → R)}
     (hs : IsSemialgebraic s) (p : τ → MvPolynomial σ R) :
     IsSemialgebraic ((fun x i => eval x (p i)) '' s) :=
   (isSemialgebraicOn_eval p hs).isSemialgebraic_image
+
+/-- Given projection closure, the image of a semialgebraic set under a change of coordinates
+`x ↦ x ∘ f`, such as a coordinate projection, is semialgebraic. -/
+theorem IsSemialgebraic.image_comp [Finite σ] [Finite τ] {s : Set (σ → R)}
+    (hs : IsSemialgebraic s) (f : τ → σ) :
+    IsSemialgebraic ((fun x : σ → R => x ∘ f) '' s) := by
+  simpa [Function.comp_def] using hs.image_eval fun i => X (f i)
 
 /-- Given projection closure, the points of the domain of a semialgebraic function with finitely
 many output coordinates at which it takes values in a semialgebraic set form a semialgebraic

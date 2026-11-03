@@ -199,7 +199,7 @@ theorem map_latticeConj_deligneSplitting_le_sup_WC (p q : ℤ) :
       (p + q - 1) q hdiffW (by simpa only [hstep] using hdiffF)
         (by simpa only [hstep, hconjIndex] using hdiffConj)
   convert Submodule.add_mem_sup hyIAmbient hdrop using 1
-  all_goals abel
+  abel
 
 /-- The swapped Deligne piece lands in the conjugate of `I^{p,q}` modulo `W_{p+q-2}`.
 

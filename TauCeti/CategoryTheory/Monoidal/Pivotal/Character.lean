@@ -246,7 +246,8 @@ theorem globalDim_ne_zero : globalDim C ≠ 0 := by
   let σ : algebraicClosure ℚ k →ₐ[ℚ] ℂ := IsAlgClosed.lift
   let ψ : SplitK0 C →+* ℂ := (σ : algebraicClosure ℚ k →+* ℂ).comp (χ.codRestrict _ hχ)
   intro h
-  rw [globalDim_eq_sum_leftDimChar_smul k, smul_eq_zero, or_iff_left (id_nonzero _)] at h
+  rw [globalDim_eq_sum_leftDimChar_smul k, smul_eq_zero,
+    or_iff_left (CategoryTheory.id_ne_zero _)] at h
   -- Transport the vanishing scalar `∑ S, χ [S] * χ [Sᘁ]` to `ℂ` along `σ`.
   have h₁ : ∑ S : SimpleClasses C, ψ (SplitK0.of S.repr) * ψ (SplitK0.of (S.repr)ᘁ) = 0 := by
     have h₀ : ∑ S : SimpleClasses C, χ.codRestrict _ hχ (SplitK0.of S.repr) *
