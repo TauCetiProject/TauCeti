@@ -10,6 +10,7 @@ public import Mathlib.Analysis.Normed.Module.MultipliableUniformlyOn
 public import TauCeti.Algebra.Ring.Parity
 public import TauCeti.Analysis.Normed.Ring.InfiniteProd
 public import TauCeti.Analysis.Normed.Ring.Basic
+import TauCeti.Topology.Algebra.InfiniteSum.NatInt
 
 /-!
 # The infinite q-Pochhammer products `∏_{n ≥ 1} (1 - qⁿ w)`
@@ -20,7 +21,9 @@ obtained by splitting off the first factor, and its nonvanishing. It also introd
 product `θ_q(w) = (w; q)_∞ (q w⁻¹; q)_∞ = (1 - w) ∏_{n ≥ 1} (1 - qⁿ w) (1 - qⁿ w⁻¹)` and proves its
 convergence, its nonvanishing and its quasi-periodicity `θ_q(q w) = -w⁻¹ θ_q(w)`, and evaluates it
 at `w = -1` and at `q = w²`. These evaluations, together with Euler's identity
-`∏_{n ≥ 1} (1 + qⁿ) ∏_{n ≥ 0} (1 - q^{2n+1}) = 1`, compute the Siegel functions of level two. When
+`∏_{n ≥ 1} (1 + qⁿ) ∏_{n ≥ 0} (1 - q^{2n+1}) = 1`, compute the Siegel functions of level two. Its
+evaluations at `q = w³` and at a primitive cube root of unity `w`, multiplied by an Euler function,
+compute those of level three. When
 `q` and
 `w` depend continuously on `τ` in an open set `U ⊆ ℂ` with `‖q‖ < 1` on `U`, the product converges
 locally uniformly on `U`, and is holomorphic there when `q` and `w` are; for example
@@ -48,6 +51,10 @@ holomorphy argument is adapted from `Mathlib.NumberTheory.ModularForms.DedekindE
   `0 < ‖q‖ < 1` and `w ≠ 0`.
 * `TauCeti.qTheta_neg_one`, `TauCeti.qTheta_sq_self`: `θ_q(-1) = 2 (∏_{n ≥ 1} (1 + qⁿ))²` and
   `θ_{s²}(s) = (∏_{n ≥ 0} (1 - s^{2n+1}))²`.
+* `TauCeti.qTheta_pow_three_self_mul`, `TauCeti.qTheta_mul_tprod_of_sq_add_add_one_eq_zero`:
+  `θ_{s³}(s) ∏_{n ≥ 1} (1 - s^{3n}) = ∏_{n ≥ 1} (1 - sⁿ)`, and
+  `θ_q(ω) ∏_{n ≥ 1} (1 - qⁿ) = (1 - ω) ∏_{n ≥ 1} (1 - q^{3n})` for a primitive cube root of
+  unity `ω`.
 * `TauCeti.tprod_one_sub_pow_eq_tprod_one_sub_pow_odd_mul`,
   `TauCeti.tprod_one_add_pow_mul_tprod_one_sub_pow`: the Euler function `∏_{n ≥ 1} (1 - qⁿ)` is
   `∏_{n ≥ 0} (1 - q^{2n+1}) ∏_{n ≥ 1} (1 - q^{2n})`, and multiplying it by `∏_{n ≥ 1} (1 + qⁿ)`
@@ -262,6 +269,59 @@ theorem qTheta_sq_self {s : 𝕜} (hs : ‖s‖ < 1) :
       field_simp
       ring
   rw [h₁, h₂, sq]
+
+/-- The theta product with nome the cube of its argument, times the Euler function of the nome, is
+the Euler function of the argument: `θ_{s³}(s) ∏_{n ≥ 1} (1 - s^{3n}) = ∏_{n ≥ 1} (1 - sⁿ)` for
+`‖s‖ < 1`. -/
+theorem qTheta_pow_three_self_mul {s : 𝕜} (hs : ‖s‖ < 1) :
+    qTheta (s ^ 3) s * ∏' n : ℕ, (1 - (s ^ 3) ^ (n + 1)) = ∏' n : ℕ, (1 - s ^ (n + 1)) := by
+  rcases eq_or_ne s 0 with rfl | hs₀
+  · simp [qTheta_def]
+  have hs3 := norm_pow_lt_one hs three_ne_zero
+  -- The factors `1 - sᵐ` sorted by the residue of `m` modulo `3`.
+  have h₁ : Multipliable fun n : ℕ ↦ 1 - s ^ (3 * n + 1) :=
+    (multipliable_one_sub_pow_mul hs3 (s ^ 2)⁻¹).congr fun n ↦ by
+      rw [← pow_mul, show 3 * (n + 1) = 3 * n + 1 + 2 by ring, pow_add,
+        mul_inv_cancel_right₀ (pow_ne_zero 2 hs₀)]
+  have h₂ : ∀ n : ℕ, 1 - (s ^ 3) ^ (n + 1) * s⁻¹ = 1 - s ^ (3 * n + 2) := fun n ↦ by
+    rw [← pow_mul, show 3 * (n + 1) = 3 * n + 2 + 1 by ring, pow_succ, mul_inv_cancel_right₀ hs₀]
+  have h₃ : ∀ n : ℕ, 1 - (s ^ 3) ^ (n + 1) = 1 - s ^ (3 * n + 3) := fun n ↦ by ring
+  have hsplit : ∏' n : ℕ, (1 - s ^ (n + 1)) =
+      ∏' n : ℕ, (1 - s ^ (3 * n + 1)) * (1 - s ^ (3 * n + 2)) * (1 - s ^ (3 * n + 3)) := by
+    have hf : Multipliable fun n : ℕ ↦ 1 - s ^ (n + 1) := by
+      simpa using multipliable_one_sub_pow_mul hs 1
+    rw [← (hf.hasProd.prod_fin_mul_add_nat 3).tprod_eq]
+    exact tprod_congr fun n ↦ by
+      simp only [Fin.prod_univ_three, Fin.val_zero, Fin.val_one, Fin.val_two]
+      ring_nf
+  -- `(1 - s) ∏_{n ≥ 1} (1 - s^{3n+1}) = ∏_{n ≥ 0} (1 - s^{3n+1})`.
+  have h₄ : (1 - s) * ∏' n : ℕ, (1 - (s ^ 3) ^ (n + 1) * s) = ∏' n : ℕ, (1 - s ^ (3 * n + 1)) := by
+    rw [tprod_eq_zero_mul' (f := fun n ↦ 1 - s ^ (3 * n + 1))
+      (by simpa only [← pow_mul, ← pow_succ] using multipliable_one_sub_pow_mul hs3 s)]
+    exact congrArg₂ (· * ·) (by norm_num) (tprod_congr fun n ↦ by ring)
+  -- The three residue-class products multiply to the product of the blockwise factors.
+  have hgroup : (∏' n : ℕ, (1 - s ^ (3 * n + 1))) * (∏' n : ℕ, (1 - s ^ (3 * n + 2))) *
+      ∏' n : ℕ, (1 - s ^ (3 * n + 3)) =
+      ∏' n : ℕ, (1 - s ^ (3 * n + 1)) * (1 - s ^ (3 * n + 2)) * (1 - s ^ (3 * n + 3)) := by
+    have hm₂ := (multipliable_one_sub_pow_mul hs3 s⁻¹).congr h₂
+    have hm₃ := (multipliable_one_sub_pow_mul hs3 1).congr fun n ↦ by rw [mul_one, h₃]
+    rw [← h₁.tprod_mul hm₂, ← (h₁.mul hm₂).tprod_mul hm₃]
+  rw [hsplit, ← hgroup, qTheta_def, (multipliable_one_sub_pow_mul hs3 _).tprod_mul
+    (multipliable_one_sub_pow_mul hs3 _), ← mul_assoc, h₄, tprod_congr h₂, tprod_congr h₃]
+
+/-- The theta product at a primitive cube root of unity, times the Euler function of the nome: if
+`ω² + ω + 1 = 0` then `θ_q(ω) ∏_{n ≥ 1} (1 - qⁿ) = (1 - ω) ∏_{n ≥ 1} (1 - q^{3n})` for
+`‖q‖ < 1`. -/
+theorem qTheta_mul_tprod_of_sq_add_add_one_eq_zero {q ω : 𝕜} (hq : ‖q‖ < 1)
+    (hω : ω ^ 2 + ω + 1 = 0) :
+    qTheta q ω * ∏' n : ℕ, (1 - q ^ (n + 1)) = (1 - ω) * ∏' n : ℕ, (1 - (q ^ 3) ^ (n + 1)) := by
+  have hinv : ω⁻¹ = -1 - ω := inv_eq_of_mul_eq_one_right (by linear_combination -hω)
+  rw [qTheta_def, mul_assoc, ← (multipliable_qTheta hq ω).tprod_mul
+    (by simpa using multipliable_one_sub_pow_mul hq 1)]
+  -- Each factor is `(1 - x ω)(1 - x ω²)(1 - x) = 1 - x³` with `x = qⁿ`.
+  exact congrArg₂ (· * ·) rfl (tprod_congr fun n ↦ by
+    rw [hinv]
+    linear_combination (-(1 - q ^ (n + 1)) * (q ^ (n + 1)) ^ 2) * hω)
 
 end NormedField
 
