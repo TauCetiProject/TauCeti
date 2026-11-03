@@ -622,10 +622,8 @@ private theorem permCongr_crossingRotation :
     have hR : (D.resolveCrossing c t).crossingRotation (crossingSlotEquiv n (i, k)) =
         crossingSlotEquiv n (i, k + 1) := by
       simpa [crossing_resolveCrossing] using (D.resolveCrossing c t).crossingRotation_crossing i k
-    rw [permCongr_apply, symm_symm, Equiv.symm_apply_eq, Perm.sumCongr_apply, Sum.map_inl, hR,
-      slotEquiv_inl, slotEquiv_inl, crossing_apply, crossingRotation_crossing]
-  · rw [permCongr_apply, symm_symm, Equiv.symm_apply_eq, Perm.sumCongr_apply, Sum.map_inr,
-      slotEquiv_inr, slotEquiv_inr, crossing_apply, crossingRotation_crossing, finRotate_apply]
+    simp [Equiv.symm_apply_eq, hR, slotEquiv_inl, crossing_apply]
+  · simp [Equiv.symm_apply_eq, slotEquiv_inr, crossing_apply]
 
 /-- The local smoothing at `c` is the rotation of its slots followed by the transposition of two
 opposite slots. -/
