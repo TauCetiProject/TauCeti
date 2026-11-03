@@ -12,7 +12,6 @@ public import TauCeti.AlgebraicGeometry.ProjectiveSpectrum.TwistingSheaf.Basic
 import Mathlib.Algebra.Category.Grp.Zero
 import Mathlib.Data.Int.Interval
 import TauCeti.Algebra.Homology.HomologicalComplex.Basic
-import TauCeti.Algebra.Homology.Linear
 import TauCeti.AlgebraicGeometry.Cohomology.Cech.Basic
 import TauCeti.AlgebraicGeometry.Cohomology.ProjectiveSpace.TwistingSheaf
 import TauCeti.AlgebraicGeometry.Cohomology.ProjectiveSpace.Vanishing
@@ -31,9 +30,9 @@ import TauCeti.LinearAlgebra.SymmetricAlgebra.BasisComparison
 Let `M` be a free `R`-module with a basis `x₀, …, xₙ` indexed by a finite type `κ`, so that
 `Proj (Sym M) = ℙⁿ_R` is projective space over an arbitrary commutative ring `R`. This file proves
 that the twisting sheaves `𝒪(m)` have no cohomology in the intermediate degrees `0 < q < n`, for
-every `m : ℤ`, and none at all in positive degrees when `m > -n - 1`. For `n ≥ 1` it identifies the
-top cohomology `Hⁿ(ℙⁿ_R, 𝒪(m))` with the free `R`-module on the Laurent monomials `xᵉ` of degree
-`m` all of whose exponents are negative. Together with the computation of `H⁰`
+every `m : ℤ`, and none at all in positive degrees when `m > -n - 1`. For `n ≥ 1` it shows that the
+top cohomology `Hⁿ(ℙⁿ_R, 𝒪(m))` is isomorphic to the free `R`-module on the Laurent monomials `xᵉ`
+of degree `m` all of whose exponents are negative. Together with the computation of `H⁰`
 (`TauCeti.SymmetricAlgebra.free_cohomology_zero_twistingSheaf`) and the vanishing above degree `n`
 (`Module.Basis.subsingleton_cohomology_proj_of_card_le`), this computes the groups
 `Hᵠ(ℙⁿ_R, 𝒪(m))` in every degree, and shows that for `n ≥ 1` they are finitely generated
@@ -76,11 +75,10 @@ Laurent coefficients.
   `Hᵠ(ℙⁿ_R, 𝒪(m)) = 0` for `0 < q < n` and every `m : ℤ`.
 * `Module.Basis.subsingleton_cohomology_twistingSheaf_of_neg_card_lt`:
   `Hᵠ(ℙⁿ_R, 𝒪(m)) = 0` for every `q > 0` when `m > -n - 1`.
-* `Module.Basis.cohomologyTopTwistingSheafLinearEquiv`: for `n ≥ 1`, `Hⁿ(ℙⁿ_R, 𝒪(m))` is the free
-  `R`-module on the exponents `TauCeti.SymmetricAlgebra.negativeExponents κ m` of the Laurent
-  monomials of degree `m` with all exponents negative, given an ordering of the coordinates.
-  Reordering them multiplies the identification by the sign of the permutation
-  (`Module.Basis.cohomologyTopTwistingSheafLinearEquiv_trans_apply`).
+* `Module.Basis.nonempty_linearEquiv_cohomology_top_twistingSheaf`: for `n ≥ 1`,
+  `Hⁿ(ℙⁿ_R, 𝒪(m))` is isomorphic to the free `R`-module on the exponents
+  `TauCeti.SymmetricAlgebra.negativeExponents κ m` of the Laurent monomials of degree `m` with all
+  exponents negative.
 * `Module.Basis.finite_cohomology_twistingSheaf`: for `n ≥ 1`, `Hᵠ(ℙⁿ_R, 𝒪(m))` is a finitely
   generated `R`-module for every `q` and `m`.
 
@@ -708,9 +706,10 @@ end Cech
 
 /-! ### Laurent monomials with all exponents negative -/
 
-/-- The exponents `e : κ → ℤ` of total degree `m` whose entries are all negative. The Laurent
-monomials `xᵉ` with these exponents form a basis of the top cohomology of `𝒪(m)` on projective
-space with homogeneous coordinates indexed by `κ`. -/
+/-- The exponents `e : κ → ℤ` of total degree `m` whose entries are all negative. When `κ` has at
+least two elements, the top cohomology of `𝒪(m)` on projective space with homogeneous coordinates
+indexed by `κ` is isomorphic to the free module on the Laurent monomials `xᵉ` with these
+exponents. -/
 def negativeExponents (κ : Type*) [Fintype κ] (m : ℤ) : Set (κ → ℤ) :=
   {e | ∑ i, e i = m ∧ ∀ i, e i < 0}
 
@@ -1306,30 +1305,6 @@ private lemma topHomologyIso_hom_smul (r : R)
       HomologicalComplex.singleObjHomologySelfIso_hom_naturality]
   exact ConcreteCategory.congr_hom h y
 
-/-- Changing the ordering of the coordinates by a permutation `σ` multiplies the identification of
-the top Čech cohomology of the Laurent polynomials by the sign of `σ`. -/
-private lemma topHomologyIso_trans_hom (σ : Equiv.Perm (Fin (n + 2))) :
-    (topHomologyIso (R := R) m (e.trans σ)).hom =
-      (Equiv.Perm.sign σ : ℤ) • (topHomologyIso m e).hom := by
-  dsimp only [topHomologyIso]
-  rw [HomologicalComplex.homologyMap_eq_of_iCycles_comp
-      (g := (Equiv.Perm.sign σ : ℤ) • toTop m e) ?_,
-    HomologicalComplex.homologyMap_smul, Linear.smul_comp]
-  simp only [toTop, HomologicalComplex.smul_f_apply, HomologicalComplex.mkHomToSingle_f,
-    Linear.comp_smul]
-  rw [← Category.assoc, ← Category.assoc, ← Linear.smul_comp]
-  refine congrArg (· ≫ _) (AddCommGrpCat.ext fun x ↦ ?_)
-  have hz : (laurentCech (R := R) (κ := κ) m).d (n + 1) (n + 2)
-      ((laurentCech m).iCycles (n + 1) x) = 0 := by
-    rw [← ConcreteCategory.comp_apply, HomologicalComplex.iCycles_d]
-    rfl
-  have hsign : e.tupleSign ℤ (e.trans σ).symm = Equiv.Perm.sign σ := by
-    rw [Equiv.symm_trans, Equiv.coe_trans, Equiv.tupleSign_comp_perm, Equiv.tupleSign_symm,
-      mul_one, Int.cast_id, Equiv.Perm.sign_symm]
-  rw [ConcreteCategory.comp_apply, topCoefficient_apply, negPart_cechπ_eq_tupleSign_smul m e hz,
-    hsign]
-  rfl
-
 include b in
 /-- The top cohomology of `𝒪(m)` as an `R`-module, for an index type in the universe of the
 ring. -/
@@ -1343,14 +1318,6 @@ private def cohomologyTopLinearEquivAux :
       change (topHomologyIso m e).hom ((cohomologyIsoHomologyLaurentCech b m (n + 1)).hom (r • x)) =
         r • (topHomologyIso m e).hom ((cohomologyIsoHomologyLaurentCech b m (n + 1)).hom x)
       rw [cohomologyIsoHomologyLaurentCech_hom_smul, topHomologyIso_hom_smul] }
-
-/-- Changing the ordering of the coordinates by a permutation `σ` multiplies the identification of
-the top cohomology by the sign of `σ`. -/
-private lemma cohomologyTopLinearEquivAux_trans_apply (σ : Equiv.Perm (Fin (n + 2)))
-    (x : Cohomology (Proj.twistingSheaf 𝒜 m) (n + 1)) :
-    cohomologyTopLinearEquivAux b m (e.trans σ) x =
-      (Equiv.Perm.sign σ : ℤ) • cohomologyTopLinearEquivAux b m e x :=
-  ConcreteCategory.congr_hom (topHomologyIso_trans_hom m e σ) _
 
 end TopComparison
 
@@ -1390,7 +1357,7 @@ end TauCeti.SymmetricAlgebra
 namespace Module.Basis
 
 open TauCeti.SymmetricAlgebra (subsingleton_cohomology_twistingSheaf_of_or negativeExponents
-  negativeExponentsCongr cohomologyTopLinearEquivAux cohomologyTopLinearEquivAux_trans_apply)
+  negativeExponentsCongr cohomologyTopLinearEquivAux)
 
 universe u
 
@@ -1418,38 +1385,26 @@ theorem subsingleton_cohomology_twistingSheaf_of_neg_card_lt {κ : Type*} [Finty
 
 /-- **The top cohomology of the twisting sheaves on projective space.** Let `M` be a free `R`-module
 with a basis `x₀, …, x_{n+1}` indexed by `κ`, so that `Proj (Sym M)` is projective space of
-dimension `n + 1 ≥ 1` over `R`. Then `H^{n+1}(Proj (Sym M), 𝒪(m))` is the free `R`-module on the
-Laurent monomials `xᵉ` of degree `m` all of whose exponents are negative, over any commutative
-ring `R`. The identification depends on the ordering `e` of the coordinates: on Čech cocycles for
-the charts `D₊(xᵢ)`, it takes the coefficients at these monomials of the component at the tuple
-`e.symm`, and `r • xᵉ` corresponds to the cocycle `a ↦ e.tupleSign ℤ a • r xᵉ`. Reordering the
-coordinates by `σ` multiplies it by the sign of `σ`
-(`Module.Basis.cohomologyTopTwistingSheafLinearEquiv_trans_apply`). -/
-noncomputable def cohomologyTopTwistingSheafLinearEquiv {κ : Type*} [Fintype κ]
-    (b : Module.Basis κ R M) (m : ℤ) {n : ℕ} (e : κ ≃ Fin (n + 2)) :
-    Cohomology (Proj.twistingSheaf 𝒜 m) (n + 1) ≃ₗ[R] (negativeExponents κ m →₀ R) :=
+dimension `n + 1 ≥ 1` over `R`. Then `H^{n+1}(Proj (Sym M), 𝒪(m))` is isomorphic, as an `R`-module,
+to the free `R`-module on the Laurent monomials `xᵉ` of degree `m` all of whose exponents are
+negative, over any commutative ring `R`. No isomorphism is singled out: the one constructed in the
+proof depends on an ordering of the coordinates. -/
+theorem nonempty_linearEquiv_cohomology_top_twistingSheaf {κ : Type*} [Fintype κ]
+    (b : Module.Basis κ R M) (m : ℤ) {n : ℕ} (hn : Fintype.card κ = n + 2) :
+    Nonempty (Cohomology (Proj.twistingSheaf 𝒜 m) (n + 1) ≃ₗ[R] (negativeExponents κ m →₀ R)) :=
   -- reindexing by `ULift (Fin (card κ))` puts the index type in the universe of the ring
   let e₀ : κ ≃ ULift.{u} (Fin (Fintype.card κ)) := (Fintype.equivFin κ).trans Equiv.ulift.symm
-  (cohomologyTopLinearEquivAux (b.reindex e₀) m (e₀.symm.trans e)).trans
-    (Finsupp.domLCongr (negativeExponentsCongr e₀.symm m))
-
-/-- Reordering the coordinates by a permutation `σ` multiplies the identification of the top
-cohomology of `𝒪(m)` on projective space with the free module on the Laurent monomials with all
-exponents negative by the sign of `σ`. -/
-theorem cohomologyTopTwistingSheafLinearEquiv_trans_apply {κ : Type*} [Fintype κ]
-    (b : Module.Basis κ R M) (m : ℤ) {n : ℕ} (e : κ ≃ Fin (n + 2)) (σ : Equiv.Perm (Fin (n + 2)))
-    (x : Cohomology (Proj.twistingSheaf 𝒜 m) (n + 1)) :
-    b.cohomologyTopTwistingSheafLinearEquiv m (e.trans σ) x =
-      (Equiv.Perm.sign σ : ℤ) • b.cohomologyTopTwistingSheafLinearEquiv m e x := by
-  simp only [cohomologyTopTwistingSheafLinearEquiv, LinearEquiv.trans_apply, ← Equiv.trans_assoc,
-    cohomologyTopLinearEquivAux_trans_apply, map_zsmul]
+  ⟨(cohomologyTopLinearEquivAux (b.reindex e₀) m
+      (e₀.symm.trans (Fintype.equivFinOfCardEq hn))).trans
+    (Finsupp.domLCongr (negativeExponentsCongr e₀.symm m))⟩
 
 /-- The top cohomology `H^{n+1}(ℙ^{n+1}_R, 𝒪(m))` of a twisting sheaf on projective space is a
 free `R`-module. -/
 theorem free_cohomology_top_twistingSheaf {κ : Type*} [Fintype κ] (b : Module.Basis κ R M)
     (m : ℤ) {n : ℕ} (hn : Fintype.card κ = n + 2) :
     Module.Free R (Cohomology (Proj.twistingSheaf 𝒜 m) (n + 1)) :=
-  .of_equiv (b.cohomologyTopTwistingSheafLinearEquiv m (Fintype.equivFinOfCardEq hn)).symm
+  have ⟨φ⟩ := b.nonempty_linearEquiv_cohomology_top_twistingSheaf m hn
+  .of_equiv φ.symm
 
 /-- The top cohomology `H^{n+1}(ℙ^{n+1}_R, 𝒪(m))` of a twisting sheaf on projective space is a
 finitely generated `R`-module, since there are finitely many monomials of degree `m` with all
@@ -1457,7 +1412,8 @@ exponents negative. -/
 theorem finite_cohomology_top_twistingSheaf {κ : Type*} [Fintype κ] (b : Module.Basis κ R M)
     (m : ℤ) {n : ℕ} (hn : Fintype.card κ = n + 2) :
     Module.Finite R (Cohomology (Proj.twistingSheaf 𝒜 m) (n + 1)) :=
-  .equiv (b.cohomologyTopTwistingSheafLinearEquiv m (Fintype.equivFinOfCardEq hn)).symm
+  have ⟨φ⟩ := b.nonempty_linearEquiv_cohomology_top_twistingSheaf m hn
+  .equiv φ.symm
 
 /-- The rank of the top cohomology `H^{n+1}(ℙ^{n+1}_R, 𝒪(m))` of a twisting sheaf on projective
 space is the number of monomials of degree `m` with all exponents negative. -/
@@ -1466,7 +1422,8 @@ theorem finrank_cohomology_top_twistingSheaf [Nontrivial R] {κ : Type*} [Fintyp
     Module.finrank R (Cohomology (Proj.twistingSheaf 𝒜 m) (n + 1)) =
       Nat.card (negativeExponents κ m) := by
   have := Fintype.ofFinite (negativeExponents κ m)
-  rw [(b.cohomologyTopTwistingSheafLinearEquiv m (Fintype.equivFinOfCardEq hn)).finrank_eq,
+  obtain ⟨φ⟩ := b.nonempty_linearEquiv_cohomology_top_twistingSheaf m hn
+  rw [φ.finrank_eq,
     Module.finrank_finsupp_self, Nat.card_eq_fintype_card]
 
 /-- **The cohomology of the twisting sheaves on projective space is finitely generated.** Let `M`
