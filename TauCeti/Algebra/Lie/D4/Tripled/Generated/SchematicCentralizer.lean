@@ -17,8 +17,9 @@ import TauCeti.Algebra.Lie.D4.Tripled.MaximalTorus
 The rank-four weight torus is its own scheme-theoretic centralizer in the subgroup of
 `GL₂₄` generated over any commutative ground ring by the tripled root subgroups and torus.
 The calculation tests all value algebras, not just field-valued points: the distinct
-characters of `8ᵥ ⊕ 8ₛ ⊕ 8꜀` force a centralizing matrix to be diagonal. The invariant
-triality product then identifies those diagonal carrier points with the weight torus.
+characters of the vector and two half-spin representations force a centralizing matrix
+to be diagonal. The invariant triality product then identifies those diagonal carrier
+points with the weight torus.
 In particular the equality retains all infinitesimal centralizer structure, including
 in characteristic two.
 
