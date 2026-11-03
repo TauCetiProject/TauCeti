@@ -15,8 +15,10 @@ public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Diagonal.Bruhat
 Let `B` be the upper-triangular subgroup of `GL ι R`, `U` its upper-unitriangular subgroup, and
 `P_w = TauCeti.permutationGL w` the permutation matrix of `w : Equiv.Perm ι`. The **Bruhat cell**
 of `w` is the image `B P_w B / B` of the double coset `B P_w B` in the flag quotient `GL ι R ⧸ B`.
-This file shows that it is an affine space whose coordinates are the matrix entries at the
-inversions of `w⁻¹`, so that over a finite field with `q` elements it has `q ^ ℓ(w)` points.
+This file parametrizes it, as a set, by the matrix entries at the inversions of `w⁻¹`, so that
+over a finite field with `q` elements it has `q ^ ℓ(w)` points. Only this set-level
+parametrization and point count are established; no variety structure or geometric dimension of
+the cell is claimed.
 
 The coordinates come from two subgroups of `U`, cut out by which entries above the diagonal may be
 nonzero. A pair of indices `i < j` is an *inversion* of `w⁻¹` when `w⁻¹ j < w⁻¹ i`; these are the
@@ -30,16 +32,14 @@ pairs in `Finset.univ.inversions w.symm`.
   `P_w B` of the flag quotient.
 
 These two subgroups meet trivially, and every upper-unitriangular matrix factors as `j * h` with
-`j ∈ U_w` and `h ∈ U'_w`. The factorization is solved column by column: the new column of `h`
-solves a unitriangular linear system, a principal submatrix of `j`, and the new column of `j` is
-then read off. Writing an element of `B P_w B` as `u t P_w b` with `u ∈ U` and `t` diagonal, and
-moving `h t` across `P_w`, gives the **normal form** of the Bruhat cell: every element of
-`B P_w B` is uniquely `j * P_w * b` with `j ∈ U_w` and `b ∈ B`. Consequently `j ↦ j P_w B` is a
-bijection from `U_w` onto the Bruhat cell, and reading off the entries at the inversions
-identifies `U_w` with `R ^ {inversions of w⁻¹}`. All of this holds over any commutative ring.
+`j ∈ U_w` and `h ∈ U'_w`. It follows that every element of `B P_w B` is uniquely
+`j * P_w * b` with `j ∈ U_w` and `b ∈ B`, the **normal form** of the Bruhat cell. Consequently
+`j ↦ j P_w B` is a bijection from `U_w` onto the Bruhat cell, and reading off the entries at the
+inversions identifies `U_w` with `R ^ {inversions of w⁻¹}`. All of this holds over any
+commutative ring.
 
 For `ι = Fin n` the number of inversions is the Coxeter length of `w`
-(`TauCeti.permCoxeterSystem_length_eq_card_inversion`), which gives the cell-dimension formula
+(`TauCeti.permCoxeterSystem_length_eq_card_inversion`), which gives the point-count formula
 `|B P_w B / B| = q ^ ℓ(w)` over a finite ring with `q` elements. Over a field the cells cover the
 flag quotient, by the Bruhat decomposition `TauCeti.exists_mem_doubleCoset_permutationGL`.
 
@@ -51,7 +51,8 @@ flag quotient, by the Bruhat decomposition `TauCeti.exists_mem_doubleCoset_permu
 * `TauCeti.unitriangularInversionGroupEquivBruhatCell R w`: the bijection `j ↦ j P_w B` from `U_w`
   onto the Bruhat cell.
 * `TauCeti.unitriangularInversionGroupEquivFun R w`: the coordinates of `U_w`, its entries at the
-  inversions of `w⁻¹`.
+  inversions of `w⁻¹`; the `@[simp]` lemmas `unitriangularInversionGroupEquivFun_symm_apply_*`
+  evaluate the entries of the matrix with prescribed coordinates.
 
 ## Main results
 
@@ -93,32 +94,12 @@ variable (R : Type*) [CommRing R]
 /-! ### The two unitriangular subgroups attached to a permutation -/
 
 /-- The subgroup `U_w = U ∩ P_w B⁻ P_w⁻¹` of upper-unitriangular matrices `g` for which the
-conjugate `P_w⁻¹ g P_w` is lower triangular. Its entries above the diagonal vanish off the
-inversions of `w⁻¹` (`TauCeti.mem_unitriangularInversionGroup_iff`). -/
-def unitriangularInversionGroup (w : Equiv.Perm ι) : Subgroup (GL ι R) where
-  carrier := {g | (g : Matrix ι ι R).IsUpperUnitriangular ∧
-    (((permutationGL (k := R) w)⁻¹ * g * permutationGL (k := R) w : GL ι R) :
-      Matrix ι ι R).IsLowerTriangular}
-  one_mem' := ⟨isUpperUnitriangular_one, by simpa using blockTriangular_one⟩
-  mul_mem' := by
-    rintro g h ⟨hg, hg'⟩ ⟨hh, hh'⟩
-    refine ⟨UpperUnitriangularGroup.mem_iff.mp <| (upperUnitriangularGroup ι R).mul_mem
-      (UpperUnitriangularGroup.mem_iff.mpr hg) (UpperUnitriangularGroup.mem_iff.mpr hh), ?_⟩
-    have : (permutationGL (k := R) w)⁻¹ * (g * h) * permutationGL (k := R) w =
-        ((permutationGL (k := R) w)⁻¹ * g * permutationGL (k := R) w) *
-          ((permutationGL (k := R) w)⁻¹ * h * permutationGL (k := R) w) := by
-      group
-    rw [this, Units.val_mul]
-    exact hg'.mul hh'
-  inv_mem' := by
-    rintro g ⟨hg, hg'⟩
-    refine ⟨UpperUnitriangularGroup.mem_iff.mp <| (upperUnitriangularGroup ι R).inv_mem
-      (UpperUnitriangularGroup.mem_iff.mpr hg), ?_⟩
-    have : (permutationGL (k := R) w)⁻¹ * g⁻¹ * permutationGL (k := R) w =
-        ((permutationGL (k := R) w)⁻¹ * g * permutationGL (k := R) w)⁻¹ := by
-      group
-    rw [this, Matrix.coe_units_inv]
-    exact Matrix.blockTriangular_inv_of_blockTriangular hg'
+conjugate `P_w⁻¹ g P_w` is lower triangular, that is, upper triangular for the reversed order
+`ιᵒᵈ`. Its entries above the diagonal vanish off the inversions of `w⁻¹`
+(`TauCeti.mem_unitriangularInversionGroup_iff`). -/
+def unitriangularInversionGroup (w : Equiv.Perm ι) : Subgroup (GL ι R) :=
+  upperUnitriangularGroup ι R ⊓
+    (upperTriangularGroup ιᵒᵈ R).comap (MulAut.conj (permutationGL (k := R) w)⁻¹).toMonoidHom
 
 /-- The subgroup `U'_w = U ∩ P_w B P_w⁻¹` of upper-unitriangular matrices `g` for which the
 conjugate `P_w⁻¹ g P_w` is upper triangular. Its entries above the diagonal vanish on the
@@ -155,8 +136,13 @@ private theorem isLowerTriangular_permutationGL_inv_mul_mul_iff {w : Equiv.Perm 
 theorem mem_unitriangularInversionGroup_iff {w : Equiv.Perm ι} {g : GL ι R} :
     g ∈ unitriangularInversionGroup R w ↔ (g : Matrix ι ι R).IsUpperUnitriangular ∧
       ∀ i j, i < j → w.symm i < w.symm j → (g : Matrix ι ι R) i j = 0 := by
-  rw [unitriangularInversionGroup, Subgroup.mem_mk, Submonoid.mem_mk, Subsemigroup.mem_mk,
-    Set.mem_ofPred_eq]
+  -- Upper triangularity over `ιᵒᵈ` is lower triangularity over `ι` by definition.
+  have hB : g ∈ (upperTriangularGroup ιᵒᵈ R).comap
+      (MulAut.conj (permutationGL (k := R) w)⁻¹).toMonoidHom ↔
+      (((permutationGL (k := R) w)⁻¹ * g * permutationGL (k := R) w : GL ι R) :
+        Matrix ι ι R).IsLowerTriangular :=
+    Subgroup.mem_comap.trans UpperTriangularGroup.mem_iff
+  rw [unitriangularInversionGroup, Subgroup.mem_inf, UpperUnitriangularGroup.mem_iff, hB]
   exact and_congr_right fun hg ↦ isLowerTriangular_permutationGL_inv_mul_mul_iff
     hg.isUpperTriangular
 
@@ -222,17 +208,6 @@ theorem unitriangularInversionGroup_inf_unitriangularStabilizerGroup (w : Equiv.
     (unitriangularInversionGroup_inf_comap_upperTriangularGroup w).le
 
 /-! ### The factorization `U = U_w U'_w` -/
-
-/-- Changing only the column `a` of both factors of a product leaves the earlier columns of the
-product unchanged, when the right factor is upper triangular. -/
-private theorem updateCol_mul_updateCol_apply_of_lt {J H : Matrix ι ι R}
-    (hH : H.IsUpperTriangular) {a c : ι} (hca : c < a) (x y : ι → R) (i : ι) :
-    (J.updateCol a x * H.updateCol a y) i c = (J * H) i c := by
-  simp only [Matrix.mul_apply, updateCol_apply, hca.ne, ↓reduceIte]
-  refine Finset.sum_congr rfl fun l _ ↦ ?_
-  split_ifs with hl
-  · rw [hl, hH hca, mul_zero, mul_zero]
-  · rfl
 
 /-- **The column step of the factorization.** Given factors `J` of `U_w`-shape and `H` of
 `U'_w`-shape, the column `a` of both can be replaced so that the shapes are kept and the column
@@ -336,13 +311,14 @@ private theorem exists_updateCol_mul_updateCol (w : Equiv.Perm ι) {u J H : Matr
       · simp [x, hia, hi]
 
 /-- **Every upper-unitriangular matrix factors as a matrix of `U_w`-shape times a matrix of
-`U'_w`-shape.** The factors are built column by column with
-`exists_updateCol_mul_updateCol`. -/
+`U'_w`-shape.** -/
 private theorem exists_mul_eq_of_isUpperUnitriangular (w : Equiv.Perm ι) {u : Matrix ι ι R}
     (hu : u.IsUpperUnitriangular) :
     ∃ J H : Matrix ι ι R, J.IsUpperUnitriangular ∧
       (∀ i j, i < j → w.symm i < w.symm j → J i j = 0) ∧ H.IsUpperUnitriangular ∧
       (∀ i j, i < j → w.symm j < w.symm i → H i j = 0) ∧ J * H = u := by
+  -- The factors are built column by column with `exists_updateCol_mul_updateCol`, in increasing
+  -- order of columns, so that the earlier columns of the product are kept.
   suffices h : ∀ s : Finset ι, ∃ J H : Matrix ι ι R, J.IsUpperUnitriangular ∧
       (∀ i j, i < j → w.symm i < w.symm j → J i j = 0) ∧ H.IsUpperUnitriangular ∧
       (∀ i j, i < j → w.symm j < w.symm i → H i j = 0) ∧ ∀ i, ∀ c ∈ s, (J * H) i c = u i c by
@@ -442,7 +418,7 @@ theorem eq_and_eq_of_mul_permutationGL_mul_eq {w : Equiv.Perm ι} {j j' b b' : G
   subst hmem
   exact ⟨rfl, mul_left_cancel h⟩
 
-/-! ### The Bruhat cell as an affine space -/
+/-! ### The parametrization of the Bruhat cell by inversion coordinates -/
 
 variable (R) in
 /-- The **Bruhat cell** of `w`: the image `B P_w B / B` of the double coset `B P_w B` in the flag
@@ -541,6 +517,33 @@ theorem unitriangularInversionGroupEquivFun_apply (w : Equiv.Perm ι)
     unitriangularInversionGroupEquivFun R w j p = ((j : GL ι R) : Matrix ι ι R) p.1.1 p.1.2 :=
   (rfl)
 
+/-- The element of `U_w` with coordinates `c` has the entry `c (i, j)` at an inversion `(i, j)` of
+`w⁻¹`. -/
+@[simp]
+theorem unitriangularInversionGroupEquivFun_symm_apply_of_mem_inversions (w : Equiv.Perm ι)
+    (c : Finset.univ.inversions ⇑w.symm → R) {i j : ι}
+    (h : (i, j) ∈ Finset.univ.inversions ⇑w.symm) :
+    (((unitriangularInversionGroupEquivFun R w).symm c : GL ι R) : Matrix ι ι R) i j =
+      c ⟨(i, j), h⟩ := by
+  have hij : i ≠ j := (Finset.mem_inversions.mp h).2.2.1.ne
+  simp [unitriangularInversionGroupEquivFun, inversionMatrix, hij, h]
+
+/-- The element of `U_w` with coordinates `c` has the diagonal entries `1`. -/
+@[simp]
+theorem unitriangularInversionGroupEquivFun_symm_apply_self (w : Equiv.Perm ι)
+    (c : Finset.univ.inversions ⇑w.symm → R) (i : ι) :
+    (((unitriangularInversionGroupEquivFun R w).symm c : GL ι R) : Matrix ι ι R) i i = 1 := by
+  simp [unitriangularInversionGroupEquivFun, inversionMatrix]
+
+/-- The element of `U_w` with coordinates `c` has the entry `0` off the diagonal and off the
+inversions of `w⁻¹`. -/
+@[simp]
+theorem unitriangularInversionGroupEquivFun_symm_apply_of_notMem_inversions (w : Equiv.Perm ι)
+    (c : Finset.univ.inversions ⇑w.symm → R) {i j : ι} (hij : i ≠ j)
+    (h : (i, j) ∉ Finset.univ.inversions ⇑w.symm) :
+    (((unitriangularInversionGroupEquivFun R w).symm c : GL ι R) : Matrix ι ι R) i j = 0 := by
+  simp [unitriangularInversionGroupEquivFun, inversionMatrix, hij, h]
+
 /-- **The number of points of the Bruhat cell**: it is `|R| ^ N`, where `N` is the number of
 inversions of `w⁻¹`. Cardinalities are `Nat.card`, so for an infinite ring and `N > 0` both sides
 are `0`. -/
@@ -549,7 +552,7 @@ theorem natCard_bruhatCell (w : Equiv.Perm ι) :
   rw [Nat.card_congr ((unitriangularInversionGroupEquivBruhatCell R w).symm.trans
     (unitriangularInversionGroupEquivFun R w)), Nat.card_fun, Nat.card_eq_finsetCard]
 
-/-- **The cell-dimension formula**: the Bruhat cell of a permutation `w` of `Fin n` has
+/-- **The point-count formula**: the Bruhat cell of a permutation `w` of `Fin n` has
 `|R| ^ ℓ(w)` points, for `ℓ` the Coxeter length. -/
 theorem natCard_bruhatCell_eq_pow_length {n : ℕ} (w : Equiv.Perm (Fin n)) :
     Nat.card (bruhatCell R w) = Nat.card R ^ (permCoxeterSystem n).length w := by
