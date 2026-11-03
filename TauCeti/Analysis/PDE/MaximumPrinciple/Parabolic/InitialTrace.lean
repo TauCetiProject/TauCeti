@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.PDE.MaximumPrinciple.Parabolic.WholeSpace
 public import Mathlib.Topology.UniformSpace.UniformConvergence
 import TauCeti.Analysis.Calculus.BumpFunction.Oscillation
+import TauCeti.Analysis.Matrix.Contraction
 
 /-!
 # Uniform attainment of the initial data by a modulus of continuity
@@ -77,24 +78,6 @@ variable {a : ℝ → EuclideanSpace ℝ ι → Matrix ι ι ℝ}
   {b : ℝ → EuclideanSpace ℝ ι → EuclideanSpace ℝ ι} {c : ℝ → EuclideanSpace ℝ ι → ℝ}
   {u : ℝ → EuclideanSpace ℝ ι → ℝ} {T Lam β γ : ℝ}
 
-/-- The principal part `∑ᵢⱼ Aᵢⱼ ∂ᵢ∂ⱼh` at a point is at most `(card ι)² Λ ‖D²h‖` in absolute
-value when every entry of `A` is at most `Λ` in absolute value. -/
-private theorem abs_sum_mul_fderiv_fderiv_le {A : Matrix ι ι ℝ} {h : EuclideanSpace ℝ ι → ℝ}
-    {x : EuclideanSpace ℝ ι} (hA : ∀ i j, |A i j| ≤ Lam) :
-    |∑ i, ∑ j, A i j * fderiv ℝ (fderiv ℝ h) x (EuclideanSpace.single i 1)
-      (EuclideanSpace.single j 1)| ≤ Fintype.card ι ^ 2 * Lam * ‖fderiv ℝ (fderiv ℝ h) x‖ := by
-  have hterm : ∀ i j, |A i j * fderiv ℝ (fderiv ℝ h) x (EuclideanSpace.single i 1)
-      (EuclideanSpace.single j 1)| ≤ Lam * ‖fderiv ℝ (fderiv ℝ h) x‖ := fun i j ↦ by
-    rw [abs_mul]
-    refine mul_le_mul (hA i j) ?_ (abs_nonneg _) ((abs_nonneg _).trans (hA i j))
-    simpa using (fderiv ℝ (fderiv ℝ h) x).le_opNorm₂ (EuclideanSpace.single i 1)
-      (EuclideanSpace.single j 1)
-  refine (Finset.abs_sum_le_sum_abs _ _).trans ?_
-  refine (Finset.sum_le_sum fun i _ ↦ (Finset.abs_sum_le_sum_abs _ _).trans
-    (Finset.sum_le_sum fun j _ ↦ hterm i j)).trans_eq ?_
-  simp only [Finset.sum_const, Finset.card_univ, nsmul_eq_mul]
-  ring
-
 /-- **Comparison of a solution with a time-independent function.** Let the coefficients satisfy,
 for `0 < t < T`, `0 ≤ ξᵀ a(t, x) ξ`, `|aⁱʲ(t, x)| ≤ Λ`, `‖b(t, x)‖ ≤ β` and `|c(t, x)| ≤ γ`. Let
 `u` be continuous and bounded on `[0, T] × ℝⁿ`, `C²` in space and differentiable in time for
@@ -158,7 +141,8 @@ theorem abs_sub_le_exp_mul_mul_add_mul_of_abs_deriv_sub_sum_mul_fderiv_fderiv_ad
       simp only [hv]
       exact deriv_sub_const (h y)
     rw [hderiv, sum_mul_fderiv_fderiv_add_fderiv_add_smul (hcd htT y) hh.contDiffAt, hv]
-    have h2 := abs_sum_mul_fderiv_fderiv_le (h := h) (x := y) (haLam htT y)
+    have h2 := Matrix.abs_sum_sum_mul_apply_single_single_le (haLam htT y)
+      (fderiv ℝ (fderiv ℝ h) y)
     have h1 : |fderiv ℝ h y (b t y)| ≤ D₁ * β := by
       simpa only [Real.norm_eq_abs] using
         (fderiv ℝ h y).le_of_opNorm_le (hD₁ y) (b t y) |>.trans

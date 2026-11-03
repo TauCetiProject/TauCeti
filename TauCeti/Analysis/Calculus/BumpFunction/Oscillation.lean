@@ -164,17 +164,23 @@ theorem exists_contDiff_norm_sub_le_and_norm_fderiv_le :
   have hw0 : 0 ≤ w := by simpa using hw 0 0 (by simpa using hε)
   have hD : fderiv ℝ (fun x ↦ h (ε⁻¹ • x)) = fun x ↦ ε⁻¹ • fderiv ℝ h (ε⁻¹ • x) :=
     funext fun x ↦ fderiv_comp_smul (f := h) ε⁻¹
+  -- Rescaling multiplies the second derivative by `ε⁻¹ ^ 2`.
+  have hD2 : ∀ x, fderiv ℝ (fderiv ℝ (fun x ↦ h (ε⁻¹ • x))) x =
+      ε⁻¹ ^ 2 • fderiv ℝ (fderiv ℝ h) (ε⁻¹ • x) := fun x ↦ by
+    have hdiff : DifferentiableAt ℝ (fun y ↦ fderiv ℝ h (ε⁻¹ • y)) x :=
+      ((hd.fderiv_right (m := ∞) le_rfl).differentiable (by simp)).differentiableAt.comp x
+        (differentiableAt_id.const_smul ε⁻¹)
+    rw [hD, fderiv_fun_const_smul hdiff, fderiv_comp_smul (f := fderiv ℝ h), smul_smul, sq]
   refine ⟨fun x ↦ h (ε⁻¹ • x), hd.comp (contDiff_const_smul _), fun x ↦ ?_, fun x ↦ ?_,
     fun x ↦ ?_⟩
   · simpa [smul_inv_smul₀ hε.ne'] using h0 (ε⁻¹ • x)
   · rw [hD, norm_smul, Real.norm_of_nonneg (inv_nonneg.2 hε.le), div_eq_inv_mul]
     exact mul_le_mul_of_nonneg_left (h1 _) (inv_nonneg.2 hε.le)
-  · have hdiff : DifferentiableAt ℝ (fun y ↦ fderiv ℝ h (ε⁻¹ • y)) x :=
-      ((hd.fderiv_right (m := ∞) le_rfl).differentiable (by simp)).differentiableAt.comp x
-        (differentiableAt_id.const_smul ε⁻¹)
-    rw [hD, fderiv_fun_const_smul hdiff, fderiv_comp_smul (f := fderiv ℝ h), norm_smul, norm_smul,
-      Real.norm_of_nonneg (inv_nonneg.2 hε.le), ← mul_assoc, div_eq_inv_mul, ← inv_pow, sq]
-    exact mul_le_mul_of_nonneg_left (h2 _) (by positivity)
+  · calc ‖fderiv ℝ (fderiv ℝ (fun x ↦ h (ε⁻¹ • x))) x‖
+        = ε⁻¹ ^ 2 * ‖fderiv ℝ (fderiv ℝ h) (ε⁻¹ • x)‖ := by
+          rw [hD2, norm_smul, Real.norm_of_nonneg (by positivity)]
+      _ ≤ ε⁻¹ ^ 2 * (C * w) := by gcongr; exact h2 _
+      _ = C * w / ε ^ 2 := by field_simp
 
 end TauCeti
 
