@@ -164,7 +164,7 @@ private theorem realFockAction_sum_ι_mul_ι_ι_mul (x : (J.spinPolarizationData
   have h := congr(J.fockAction hQJ hQnd
     $(J.ofBaseChangeAux_sum_ι_mul_ι_mul_ι_sub hQJ hQ b (x : ℂ ⊗[ℝ] V)) s)
   rw [hx] at h
-  simp only [map_sub, map_mul, map_smul, Module.End.mul_apply, LinearMap.sub_apply,
+  simp only [map_sub, map_mul, map_smul, mul_apply_eq_comp, LinearMap.sub_apply,
     LinearMap.smul_apply, fockAction_ι_coe_W, SpinPolarizationData.wedge_apply] at h
   rw [realFockAction_apply]
   refine smul_right_injective _ (by norm_num : (Real.sqrt 2 : ℂ) ≠ 0) ?_

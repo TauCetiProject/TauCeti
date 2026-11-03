@@ -7,7 +7,7 @@ module
 
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.Evens.Class
 public import TauCeti.RepresentationTheory.Tensor.Induction.Resolution
-public import TauCeti.RepresentationTheory.Tensor.Induction.TrivialF2
+public import TauCeti.RepresentationTheory.Tensor.Induction.TrivialF2.Basic
 import TauCeti.RepresentationTheory.Homological.ContCohomology.Resolution.Explicit
 import Mathlib.GroupTheory.IndexNormal
 
@@ -201,7 +201,7 @@ private theorem projection_action_primitive_action (x y : U.toSubgroup) :
         ((trivialF2 U.toSubgroup).gradedResolutionRepresentation y
           (characterPrimitive U α hα)))) =
       Multiplicative.toAdd (α x) + Multiplicative.toAdd (α y) := by
-  rw [← Module.End.mul_apply, ← map_mul, characterPrimitive_projection_action,
+  rw [← mul_apply_eq_comp, ← map_mul, characterPrimitive_projection_action,
     AddEquiv.apply_symm_apply, map_mul, toAdd_mul]
 
 open scoped Classical in
@@ -232,9 +232,9 @@ private theorem twoTensor_slotHomotopy (hU : U.toSubgroup.index = 2) (s : G) (hs
     (hlt : (QuotientGroup.mk 1 : G ⧸ U.toSubgroup) < QuotientGroup.mk s)
     (x y : (trivialF2 U.toSubgroup).gradedResolutionModule) :
     PiTensorProduct.slotHomotopy (G ⧸ U.toSubgroup)
-        ((trivialF2 U.toSubgroup).gradedResolutionAugmentation ∘ₗ
+        (fun _ ↦ (trivialF2 U.toSubgroup).gradedResolutionAugmentation ∘ₗ
           (trivialF2 U.toSubgroup).gradedResolutionProjection)
-        (trivialF2 U.toSubgroup).gradedResolutionHomotopy (twoTensor U x y) =
+        (fun _ ↦ (trivialF2 U.toSubgroup).gradedResolutionHomotopy) (twoTensor U x y) =
       twoTensor U ((trivialF2 U.toSubgroup).gradedResolutionHomotopy x) y +
         twoTensor U ((trivialF2 U.toSubgroup).gradedResolutionAugmentation
           ((trivialF2 U.toSubgroup).gradedResolutionProjection x))
@@ -256,9 +256,9 @@ private theorem twoTensor_diagonal_homotopy (hU : U.toSubgroup.index = 2) (s : G
     [Fintype (G ⧸ U.toSubgroup)] [LinearOrder (G ⧸ U.toSubgroup)]
     (hlt : (QuotientGroup.mk 1 : G ⧸ U.toSubgroup) < QuotientGroup.mk s) :
     PiTensorProduct.slotHomotopy (G ⧸ U.toSubgroup)
-        ((trivialF2 U.toSubgroup).gradedResolutionAugmentation ∘ₗ
+        (fun _ ↦ (trivialF2 U.toSubgroup).gradedResolutionAugmentation ∘ₗ
           (trivialF2 U.toSubgroup).gradedResolutionProjection)
-        (trivialF2 U.toSubgroup).gradedResolutionHomotopy
+        (fun _ ↦ (trivialF2 U.toSubgroup).gradedResolutionHomotopy)
         (PiTensorProduct.tprod ℤ (fun _ ↦ characterTotal U α hα)) =
       twoTensor U (characterPrimitive U α hα) (characterTotal U α hα) := by
   rw [← twoTensor_self, twoTensor_slotHomotopy U hU s hs hlt,
@@ -392,9 +392,9 @@ private theorem tensorRead_twoTensor
 
 private noncomputable abbrev tensorHomotopy [LinearOrder (G ⧸ U.toSubgroup)] :=
   PiTensorProduct.slotHomotopy (G ⧸ U.toSubgroup)
-    ((trivialF2 U.toSubgroup).gradedResolutionAugmentation ∘ₗ
+    (fun _ ↦ (trivialF2 U.toSubgroup).gradedResolutionAugmentation ∘ₗ
       (trivialF2 U.toSubgroup).gradedResolutionProjection)
-    (trivialF2 U.toSubgroup).gradedResolutionHomotopy
+    (fun _ ↦ (trivialF2 U.toSubgroup).gradedResolutionHomotopy)
 
 private theorem tensorRead_graph [LinearOrder (G ⧸ U.toSubgroup)]
     (hlt : (QuotientGroup.mk 1 : G ⧸ U.toSubgroup) < QuotientGroup.mk s) (g h : G) :

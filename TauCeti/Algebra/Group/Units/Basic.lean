@@ -13,9 +13,9 @@ import Mathlib.Algebra.Group.Commute.Units
 /-!
 # Units in monoids
 
-This file lifts units in the range of a local monoid homomorphism to units of its source, and
-relates squares in a monoid to squares in its group of units. It also rewrites integer
-powers of products of units as monomials with consecutive natural exponents. These identities
+This file lifts units in the range of a local monoid homomorphism to units of its source.
+It also rewrites integer powers of products of units as monomials with consecutive natural
+exponents. These identities
 let bilateral sums over integer powers split into two sums over natural numbers, without
 requiring a zero in the ambient monoid.
 
@@ -23,8 +23,6 @@ requiring a zero in the ambient monoid.
 
 * `TauCeti.mem_range_iff_exists_units_map_eq`: a unit lies in the range of a local monoid
   homomorphism exactly when it is the image of a unit under `Units.map`.
-* `TauCeti.isSquare_units_val_iff`: a unit is a square exactly when its underlying monoid element
-  is a square.
 * `Units.val_mul_zpow_natCast_mul`: nonnegative product powers give consecutive monomials.
 * `Units.val_mul_zpow_neg_natCast_succ_mul`: negative product powers give inverse monomials.
 -/
@@ -43,16 +41,6 @@ theorem mem_range_iff_exists_units_map_eq {M N F : Type*} [Monoid M] [Monoid N]
   · rintro ⟨a, rfl⟩
     exact ⟨a, rfl⟩
 
-/-- A unit is a square exactly when its underlying monoid element is a square. -/
-@[simp]
-theorem isSquare_units_val_iff {M : Type*} [Monoid M] {u : Mˣ} :
-    IsSquare (u : M) ↔ IsSquare u := by
-  constructor
-  · rintro ⟨x, hx⟩
-    have hxu : IsUnit x := isUnit_mul_self_iff.mp (hx ▸ u.isUnit)
-    exact ⟨hxu.unit, Units.ext (by simpa using hx)⟩
-  · rintro ⟨v, rfl⟩
-    exact ⟨(v : M), by simp⟩
 
 end TauCeti
 

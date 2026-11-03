@@ -141,6 +141,7 @@ private theorem from_comp_to :
     let J := ⨆ j, (extended (I j)).map
       (of (fun j ↦ algebra (I j)) (directLimitTransition f I hI · · ·) j)
     let : HenselianRing _ J := Ring.DirectLimit.henselianRing (extended_compatible f I hI)
+    rw [Ideal.jacobson_bot]
     exact (le_iSup (fun j ↦ (extended (I j)).map
       (of (fun j ↦ algebra (I j)) (directLimitTransition f I hI · · ·) j)) i).trans
         (HenselianRing.jac (I := J))

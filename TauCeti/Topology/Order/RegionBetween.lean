@@ -192,6 +192,13 @@ theorem regionBetweenMap_apply (g : X → Y) (φ φ' : X → ℝ) (ψ ψ' : Y �
 theorem regionBetweenMap_fst (p : X × ℝ) : (regionBetweenMap g φ φ' ψ ψ' p).1 = g p.1 :=
   (rfl)
 
+/-- The height coordinate of the band map is affine interpolation between the endpoints. -/
+@[simp]
+theorem regionBetweenMap_snd (p : X × ℝ) :
+    (regionBetweenMap g φ φ' ψ ψ' p).2 =
+      ψ (g p.1) + (p.2 - φ p.1) / (φ' p.1 - φ p.1) * (ψ' (g p.1) - ψ (g p.1)) :=
+  (rfl)
+
 /-- Over a collapsed fibre `φ x = φ' x`, the band map is the graph map of the lower target
 endpoint. -/
 @[simp]

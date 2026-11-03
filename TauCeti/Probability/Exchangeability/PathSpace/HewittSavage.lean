@@ -188,8 +188,8 @@ theorem measure_eq_zero_or_one_of_exchangeableSigma {ρ : Measure (ℕ → α)} 
     ?_
   intro ε hε
   obtain ⟨F, S, hS, hFS⟩ :=
-    TauCeti.MeasureTheory.exists_cylinder_measure_symmDiff_lt (ρ := ρ) hs_meas
-    (ε := ENNReal.ofReal ε) (ENNReal.ofReal_pos.mpr hε)
+    TauCeti.MeasureTheory.exists_cylinder_measure_symmDiff_lt (ρ := ρ)
+    hs_meas.nullMeasurableSet (ε := ENNReal.ofReal ε) (ENNReal.ofReal_pos.mpr hε)
   obtain ⟨N, hN⟩ := Finset.exists_nat_subset_range F
   set π := N.blockSwap
   set t := cylinder (α := fun _ : ℕ => α) F S with ht

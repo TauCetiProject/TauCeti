@@ -98,6 +98,17 @@ private theorem apply_sum_take (π : LSPath P b lam) (f : M →+ V)
       min_eq_left (by omega : k ≤ π.length + 1),
       min_eq_left (by omega : k + 1 ≤ π.length + 1)]
 
+/-- The minimum height of an LS path is at most the height of its first vertex. -/
+theorem minHeight_le_duration_mul_dir_zero (π : LSPath P b lam) (f : M →+ V)
+    (F : Module.Dual 𝕜 V) :
+    (π.toPLPath 𝕜 f).minHeight F ≤
+      (π.duration 0 : 𝕜) * F (f ((π.dir 0).1 • lam)) := by
+  rw [toPLPath_def, PLPath.minHeight_ofSegments]
+  simpa only [timed_def, List.ofFn_succ, List.map_cons, Prod.snd,
+    List.take_succ_cons, List.take_zero, List.sum_cons, List.sum_nil, add_zero,
+    map_smul, smul_eq_mul] using
+    PLPath.listMinHeight_le_apply_sum_take (f := F) ((π.timed 𝕜 f).map Prod.snd) 1
+
 variable [P.flip.IsReduced]
 
 /-- The endpoint of an LS path has integral value under every height form agreeing with an

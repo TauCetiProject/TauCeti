@@ -65,7 +65,7 @@ private def pt (N k : ℕ) : I := Set.Icc.addNSMul zero_le_one (1 / N : ℝ) k
 private lemma coe_pt {N k : ℕ} (hk : k ≤ N) : (pt N k : ℝ) = k / N := by
   rcases Nat.eq_zero_or_pos N with rfl | hN
   · obtain rfl : k = 0 := by omega
-    simp [pt, Set.Icc.addNSMul_zero]
+    simp [pt]
   rw [pt, Set.Icc.addNSMul, projIcc_of_mem]
   · simp [div_eq_mul_inv]
   · simp only [zero_add, nsmul_eq_mul, mem_Icc]
@@ -73,7 +73,7 @@ private lemma coe_pt {N k : ℕ} (hk : k ≤ N) : (pt N k : ℝ) = k / N := by
     rw [mul_one_div, div_le_one (by exact_mod_cast hN)]
     exact_mod_cast hk
 
-private lemma pt_zero (N : ℕ) : pt N 0 = 0 := Subtype.ext (by simp [pt, Set.Icc.addNSMul_zero])
+private lemma pt_zero (N : ℕ) : pt N 0 = 0 := Subtype.ext (by simp [pt])
 
 private lemma pt_self {N : ℕ} (hN : N ≠ 0) : pt N N = 1 :=
   Subtype.ext (by rw [coe_pt le_rfl]; simp [hN])

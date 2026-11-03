@@ -118,10 +118,8 @@ def toContinuousMap (L : SmoothLinkEmbedding I M n) : C((Σ _ : Fin n, Circle), 
 /-- Two components of a smooth link have disjoint images exactly when their labels differ. -/
 @[simp, grind =]
 theorem disjoint_range_iff (L : SmoothLinkEmbedding I M n) (i j : Fin n) :
-    Disjoint (Set.range (L i)) (Set.range (L j)) ↔ i ≠ j := by
-  apply Pairwise.disjoint_iff_ne L.pairwiseDisjoint_range
-  intro i
-  exact Set.nonempty_iff_ne_empty.mp (Set.range_nonempty (L i))
+    Disjoint (Set.range (L i)) (Set.range (L j)) ↔ i ≠ j :=
+  L.pairwiseDisjoint_range.disjoint_iff_ne (Set.range_nonempty (L i)).ne_empty
 
 /-! ### Empty and one-component links -/
 
