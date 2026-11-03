@@ -31,8 +31,9 @@ gcd. The bond gcd of a concatenation of two chains is the gcd of their bond gcds
 
 In Littelmann's description of the Lakshmibai–Seshadri paths of shape `λ`, a pair of cosets
 `τ > σ` can follow each other at a rational break `a` exactly when there is an `a`-chain for
-`(τ, σ)`; the bond gcd turns that condition into a divisibility. The gcd turns out not to depend
-on the saturated chain from `τ` to `σ`; that independence is not proved here.
+`(τ, σ)`; the bond gcd turns that condition into a divisibility. The gcd does not depend on the
+saturated chain from `τ` to `σ`, by `TauCeti.bondGcd_eq_intervalBondGcd` in
+`TauCeti.LinearAlgebra.RootSystem.Weyl.IntervalBondGcd`.
 
 The `a`-chain condition makes the corresponding Lakshmibai–Seshadri paths integral where it
 matters. Along an `a`-chain from `x` to `y` every integral pairing changes by an `a`-integral
@@ -60,10 +61,14 @@ construction and their gcd is defined.
   `a ⟨x_{h-1} λ, β_h^∨⟩ ∈ ℤ` for the positive root label `β_h` of each cover.
 * `TauCeti.dvd_bondGcd_iff` and `TauCeti.bondGcd_dvd`: the bond gcd is the gcd of the bonds, as a
   divisibility characterization.
-* `TauCeti.bondGcd_eq_zero_iff`: the bond gcd is positive exactly when the chain is nonempty.
+* `TauCeti.bondGcd_eq_zero_iff`: the bond gcd is positive exactly when the chain is nonempty;
+  `TauCeti.bondGcd_eq_zero_of_length_eq_zero` says a chain of length `0` has bond gcd `0`.
 * `TauCeti.bondGcd_smash` and `TauCeti.isAChain_smash_iff`: the bond gcd and the `a`-chain
   condition of a concatenation of two chains; `TauCeti.bondGcd_snoc` and
-  `TauCeti.isAChain_snoc_iff` for the extension of a chain by one cover.
+  `TauCeti.isAChain_snoc_iff` for the extension of a chain by one cover, and
+  `TauCeti.bondGcd_cons` and `TauCeti.bondGcd_eq_gcd_bondGcd_tail` at its start.
+* `TauCeti.bondGcd_dvd_sub`: the bond gcd of a chain from `x` to `y` divides
+  `f (x λ) - f (y λ)` for every integral linear form `f`.
 * `TauCeti.IsAChain.exists_mul_sub_eq_intCast`: along an `a`-chain from `x` to `y`,
   `a (f (x λ) - f (y λ))` is an integer for every integral linear form `f`.
 * `TauCeti.IsAChain.exists_mul_coroot'_eq_intCast`: **an `a`-chain from `x` to `y` with
@@ -218,6 +223,47 @@ theorem bondGcd_snoc {C : (weylCoxeterSystem P b).MinimalCosetRepChain (P.wallIn
   · exact (Finset.gcd_dvd (Finset.mem_univ (i.castSucc : Fin (C.length + 1)))).trans (hC i).dvd
   · exact (Finset.gcd_dvd (Finset.mem_univ (Fin.last C.length))).trans hy.dvd
 
+/-- The bond gcd of a saturated chain extended by one more cover `x₀ ⋖ x` at its start is the gcd
+of the bond `b_λ(x, x₀)` of the new cover and the bond gcd of the chain. -/
+@[simp]
+theorem bondGcd_cons {C : (weylCoxeterSystem P b).MinimalCosetRepChain (P.wallIndices b lam)}
+    {x : {w // (weylCoxeterSystem P b).IsMinimalCosetRep (P.wallIndices b lam) w}}
+    (h : (weylCoxeterSystem P b).MinimalCosetRepCovBy (P.wallIndices b lam) C.head x) :
+    bondGcd lam (C.cons x h) =
+      (P.reflectionBond b (x.1 • lam) (C.head.1 • lam)).natAbs.gcd (bondGcd lam C) := by
+  -- The entries of the extended chain are `x`, followed by those of `C`.
+  have hlen : (C.cons x h).length = C.length + 1 := RelSeries.cons_length C x h
+  have h₀ (hk : 0 < (C.cons x h).length + 1) : C.cons x h ⟨0, hk⟩ = x :=
+    (congrArg (C.cons x h) (Fin.ext (by simp))).trans (RelSeries.head_cons C x h)
+  have hs (j : ℕ) (hj : j < C.length + 1) (hk : j + 1 < (C.cons x h).length + 1) :
+      C.cons x h ⟨j + 1, hk⟩ = C ⟨j, hj⟩ :=
+    (congrArg (C.cons x h) (Fin.ext (by simp))).trans (RelSeries.cons_cast_succ C x h ⟨j, hj⟩)
+  have hC₀ : C ⟨0, Nat.succ_pos _⟩ = C.head := congrArg C (Fin.ext (by simp))
+  refine Nat.dvd_antisymm (Nat.dvd_gcd ?_ (dvd_bondGcd_iff.mpr fun i ↦ ?_))
+    (dvd_bondGcd_iff.mpr fun ⟨k, hk⟩ ↦ ?_)
+  · have := bondGcd_dvd (C := C.cons x h) ⟨0, by omega⟩
+    rwa [Fin.castSucc_mk, Fin.succ_mk, h₀, hs 0 (Nat.succ_pos _), hC₀] at this
+  · have := bondGcd_dvd (C := C.cons x h) ⟨i + 1, by omega⟩
+    rwa [Fin.castSucc_mk, Fin.succ_mk, hs i (by omega), hs (i + 1) (by omega)] at this
+  · cases k with
+    | zero =>
+      rw [Fin.castSucc_mk, Fin.succ_mk, h₀, hs 0 (Nat.succ_pos _), hC₀]
+      exact Nat.gcd_dvd_left _ _
+    | succ j =>
+      rw [Fin.castSucc_mk, Fin.succ_mk, hs j (by omega), hs (j + 1) (by omega)]
+      exact (Nat.gcd_dvd_right _ _).trans (bondGcd_dvd ⟨j, by omega⟩)
+
+/-- The bond gcd of a saturated chain `x₀ ⋗ x₁ ⋗ ⋯ ⋗ x_l` of positive length is the gcd of the
+bond `b_λ(x₀, x₁)` of its first cover and the bond gcd of its tail `x₁ ⋗ ⋯ ⋗ x_l`. -/
+theorem bondGcd_eq_gcd_bondGcd_tail
+    (C : (weylCoxeterSystem P b).MinimalCosetRepChain (P.wallIndices b lam)) (h : C.length ≠ 0) :
+    bondGcd lam C = (P.reflectionBond b (C.head.1 • lam) ((C.tail h).head.1 • lam)).natAbs.gcd
+      (bondGcd lam (C.tail h)) := by
+  have hcov : (weylCoxeterSystem P b).MinimalCosetRepCovBy (P.wallIndices b lam)
+      (C.tail h).head C.head := C.step ⟨0, Nat.pos_of_ne_zero h⟩
+  have hC : (C.tail h).cons C.head hcov = C := RelSeries.cons_self_tail h
+  rw [← bondGcd_cons hcov, hC]
+
 /-- The concatenation of two saturated chains, the second starting where the first ends, is an
 `a`-chain exactly when both pieces are. -/
 @[simp]
@@ -311,18 +357,43 @@ theorem isAChain_iff_forall_coroot' (hlam : lam ∈ dominantChamber P b)
     push_cast at hz ⊢
     linarith
 
+omit [P.flip.IsReduced] in
+/-- A saturated chain of `W / W_λ` of length `0` has bond gcd `0`, the gcd of no bonds. -/
+theorem bondGcd_eq_zero_of_length_eq_zero
+    {C : (weylCoxeterSystem P b).MinimalCosetRepChain (P.wallIndices b lam)} (h : C.length = 0) :
+    bondGcd lam C = 0 :=
+  Finset.gcd_eq_zero_iff.mpr fun i _ ↦ (Fin.cast h i).elim0
+
 /-- The bond gcd of a saturated chain of `W / W_λ` vanishes exactly when the chain has length `0`:
 the bonds of covers are positive. -/
 theorem bondGcd_eq_zero_iff (hlam : lam ∈ dominantChamber P b)
     {C : (weylCoxeterSystem P b).MinimalCosetRepChain (P.wallIndices b lam)} :
     bondGcd lam C = 0 ↔ C.length = 0 := by
-  rw [bondGcd, Finset.gcd_eq_zero_iff]
-  refine ⟨fun h ↦ ?_, fun h i ↦ (Fin.cast h i).elim0⟩
+  refine ⟨fun h ↦ ?_, bondGcd_eq_zero_of_length_eq_zero⟩
+  rw [bondGcd, Finset.gcd_eq_zero_iff] at h
   by_contra hC
   have hpos := reflectionBond_pos_of_minimalCosetRepCovBy hlam
     (C.minimalCosetRepCovBy ⟨0, Nat.pos_of_ne_zero hC⟩)
   have := h ⟨0, Nat.pos_of_ne_zero hC⟩ (Finset.mem_univ _)
   omega
+
+/-- **The bond gcd divides the change of every integral linear form along the chain.** If
+`C : x₀ ⋗ x₁ ⋗ ⋯ ⋗ x_l` is a saturated chain of `W / W_λ`, then `d(C)` divides
+`f (x₀ λ) - f (x_l λ)` for every integral linear form `f` on the weight lattice: each cover changes
+the weight by its bond times a root. -/
+theorem bondGcd_dvd_sub (hlam : lam ∈ dominantChamber P b)
+    (C : (weylCoxeterSystem P b).MinimalCosetRepChain (P.wallIndices b lam))
+    (f : Module.Dual ℤ M) : (bondGcd lam C : ℤ) ∣ f (C.head.1 • lam) - f (C.last.1 • lam) := by
+  induction C using RelSeries.inductionOn with
+  | singleton y => simp
+  | cons C x hx ih =>
+    rw [bondGcd_cons, RelSeries.head_cons, RelSeries.last_cons,
+      ← sub_add_sub_cancel _ (f (C.head.1 • lam))]
+    obtain ⟨β, ⟨hβ, hβx⟩, -⟩ :=
+      existsUnique_isPos_reflection_smul_eq_of_minimalCosetRepCovBy hlam hx
+    exact dvd_add ((Int.natCast_dvd_natCast.mpr (Nat.gcd_dvd_left _ _)).trans
+        (Int.natAbs_dvd.mpr (reflectionBond_dvd_sub hβ hβx f)))
+      ((Int.natCast_dvd_natCast.mpr (Nat.gcd_dvd_right _ _)).trans ih)
 
 /-! ### Integrality along `a`-chains -/
 
@@ -333,23 +404,10 @@ integer for every integral linear form `f` on the weight lattice, for instance f
 theorem IsAChain.exists_mul_sub_eq_intCast (hlam : lam ∈ dominantChamber P b)
     {C : (weylCoxeterSystem P b).MinimalCosetRepChain (P.wallIndices b lam)}
     (hC : IsAChain a lam C) (f : Module.Dual ℤ M) :
-    ∃ z : ℤ, a * (f (C.head.1 • lam) - f (C.last.1 • lam) : ℤ) = z := by
-  -- Telescope along the chain, one cover at a time.
-  suffices key : ∀ k (hk : k ≤ C.length),
-      ∃ z : ℤ, a * (f ((C 0).1 • lam) - f ((C ⟨k, Nat.lt_succ_of_le hk⟩).1 • lam) : ℤ) = z from
-    key C.length le_rfl
-  intro k hk
-  induction k with
-  | zero => exact ⟨0, by simp⟩
-  | succ k ih =>
-    obtain ⟨z₁, hz₁⟩ := ih (Nat.le_of_succ_le hk)
-    obtain ⟨z₂, hz₂⟩ := exists_mul_sub_eq_intCast_of_minimalCosetRepCovBy hlam
-      (C.minimalCosetRepCovBy ⟨k, hk⟩) (hC ⟨k, hk⟩) f
-    simp only [Fin.castSucc_mk, Fin.succ_mk] at hz₂
-    refine ⟨z₁ + z₂, ?_⟩
-    rw [Int.cast_add, ← hz₁, ← hz₂]
-    simp only [Int.cast_sub]
-    ring
+    ∃ z : ℤ, a * (f (C.head.1 • lam) - f (C.last.1 • lam) : ℤ) = z :=
+  (Rat.den_dvd_iff_exists_mul_intCast_eq a _).mp
+    ((Int.natCast_dvd_natCast.mpr (isAChain_iff_den_dvd_bondGcd.mp hC)).trans
+      (bondGcd_dvd_sub hlam C f))
 
 /-- **Littelmann's integrality at a simple wall.** Let `C : x₀ ⋗ ⋯ ⋗ x_l` be an `a`-chain of
 `W / W_λ` and `αᵢ` a simple root with `⟨x₀ λ, αᵢ^∨⟩ < 0 ≤ ⟨x_l λ, αᵢ^∨⟩`. Then `a ⟨x₀ λ, αᵢ^∨⟩`
