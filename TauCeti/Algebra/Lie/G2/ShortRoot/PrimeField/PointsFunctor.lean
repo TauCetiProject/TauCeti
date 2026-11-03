@@ -372,6 +372,22 @@ noncomputable def rootSubgroupPoints (k : Fin 2 ⊕ Fin 2) (A : Type v) [CommRin
     fun _ => TauCeti.GeneralLinear.pointsMulEquiv_mapPointsFunctor_mem_generatedPointsSubgroup
       7 generator (.inl k) A _
 
+/-- The rank-one word `x_{-αⱼ}(1) x_{αⱼ}(-1) x_{-αⱼ}(1)` in the prime-field carrier. -/
+noncomputable def rankOneWordPoints (j : Fin 2) (A : Type v) [CommRing A]
+    [Algebra (ZMod 3) A] : points A :=
+  rootSubgroupPoints (.inr j) A (Multiplicative.ofAdd 1) *
+    rootSubgroupPoints (.inl j) A (Multiplicative.ofAdd (-1)) *
+      rootSubgroupPoints (.inr j) A (Multiplicative.ofAdd 1)
+
+/-- The rank-one word is the indicated product of three numbered simple-root points. -/
+theorem rankOneWordPoints_def (j : Fin 2) (A : Type v) [CommRing A]
+    [Algebra (ZMod 3) A] :
+    rankOneWordPoints j A =
+      rootSubgroupPoints (.inr j) A (Multiplicative.ofAdd 1) *
+        rootSubgroupPoints (.inl j) A (Multiplicative.ofAdd (-1)) *
+          rootSubgroupPoints (.inr j) A (Multiplicative.ofAdd 1) :=
+  (rfl)
+
 /-- A numbered simple-root point of the carrier is the image of the corresponding point of `𝔾ₐ`
 under the generating coordinate map. -/
 theorem coe_rootSubgroupPoints_gaPointsMulEquiv (k : Fin 2 ⊕ Fin 2) (A : Type v) [CommRing A]
