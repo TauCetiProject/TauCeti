@@ -51,7 +51,11 @@ theorem coeff_colemanDEntire (B F : R⟦X⟧) (k : ℕ) :
       (Polynomial.colemanDBounded (trunc (p.2 + 1) B) (trunc (p.1 + 1) F) p.1 p.2).coeff k :=
   coeff_mk _ _
 
-variable [CompleteSpace R] [NormOneClass R] [IsUltrametricDist R] {B F G : R⟦X⟧}
+variable {B F G : R⟦X⟧}
+
+section Entire
+
+variable [CompleteSpace R] [NormOneClass R] [IsUltrametricDist R]
 
 /-- The finite transforms converge coefficientwise to the entire Coleman transform. -/
 theorem tendsto_coeff_colemanDBounded_trunc (hB : B.IsEntire) (hF : F.IsEntire)
@@ -118,29 +122,32 @@ theorem tendsto_gaussNorm_colemanDBounded (hB : B.IsEntire) (hF : F.IsEntire)
       abs_of_nonneg (prod_nonneg fun i _ ↦ hβ₀ i)] using
       (isRestricted_iff' r _).mp (hprod.isRestricted r)
 
+end Entire
+
 /-- Uniqueness of the Coleman transform from its defining coefficient limits. -/
-theorem colemanDEntire_eq_of_tendsto_coeff (hB : B.IsEntire) (hF : F.IsEntire)
-    (hB₀ : coeff 0 B = 0) (hF₀ : coeff 0 F = 1)
+theorem colemanDEntire_eq_of_tendsto_coeff
     (hG : ∀ k, Tendsto (fun p : ℕ × ℕ ↦
       (Polynomial.colemanDBounded (trunc (p.2 + 1) B) (trunc (p.1 + 1) F) p.1 p.2).coeff k)
       atTop (𝓝 (coeff k G))) : colemanDEntire B F = G := by
   ext k
-  exact tendsto_nhds_unique (tendsto_coeff_colemanDBounded_trunc hB hF hB₀ hF₀ k) (hG k)
+  rw [coeff_colemanDEntire]
+  exact (hG k).limUnder_eq
 
 /-- The entire Coleman transform is normalized to have constant coefficient one. -/
 @[simp]
-theorem coeff_zero_colemanDEntire (hB : B.IsEntire) (hF : F.IsEntire)
-    (hB₀ : coeff 0 B = 0) (hF₀ : coeff 0 F = 1) : coeff 0 (colemanDEntire B F) = 1 := by
-  apply tendsto_nhds_unique (tendsto_coeff_colemanDBounded_trunc hB hF hB₀ hF₀ 0)
+theorem coeff_zero_colemanDEntire (hF₀ : coeff 0 F = 1) :
+    coeff 0 (colemanDEntire B F) = 1 := by
+  rw [coeff_colemanDEntire]
+  apply Filter.Tendsto.limUnder_eq
   apply tendsto_const_nhds.congr'
   exact Eventually.of_forall fun p ↦
     (Polynomial.coeff_zero_colemanDBounded (by simp [coeff_trunc, hF₀]) _ p.1 p.2).symm
 
 /-- The zero functional input gives the constant series one. -/
 @[simp]
-theorem colemanDEntire_zero_left (hF : F.IsEntire) (hF₀ : coeff 0 F = 1) :
+theorem colemanDEntire_zero_left (hF₀ : coeff 0 F = 1) :
     colemanDEntire 0 F = 1 := by
-  apply colemanDEntire_eq_of_tendsto_coeff isEntire_zero hF (by simp) hF₀
+  apply colemanDEntire_eq_of_tendsto_coeff
   intro k
   apply tendsto_const_nhds.congr'
   exact Eventually.of_forall fun p ↦ by
@@ -150,9 +157,9 @@ theorem colemanDEntire_zero_left (hF : F.IsEntire) (hF₀ : coeff 0 F = 1) :
 
 /-- The transform of the constant series one is one, regardless of the truncation rank. -/
 @[simp]
-theorem colemanDEntire_one_right (hB : B.IsEntire) (hB₀ : coeff 0 B = 0) :
+theorem colemanDEntire_one_right (hB₀ : coeff 0 B = 0) :
     colemanDEntire B 1 = 1 := by
-  apply colemanDEntire_eq_of_tendsto_coeff hB isEntire_one hB₀ (by simp)
+  apply colemanDEntire_eq_of_tendsto_coeff
   intro k
   have hD (p : ℕ × ℕ) :
       Polynomial.colemanDBounded (trunc (p.2 + 1) B) (trunc (p.1 + 1) (1 : R⟦X⟧)) p.1 p.2 = 1 := by
@@ -164,10 +171,10 @@ theorem colemanDEntire_one_right (hB : B.IsEntire) (hB₀ : coeff 0 B = 0) :
 
 /-- Substituting the identity function in Coleman's transform returns the original series. -/
 @[simp]
-theorem colemanDEntire_X_left (hF : F.IsEntire) (hF₀ : coeff 0 F = 1) :
+theorem colemanDEntire_X_left (hF₀ : coeff 0 F = 1) :
     colemanDEntire X F = F := by
   nontriviality R
-  apply colemanDEntire_eq_of_tendsto_coeff isEntire_X hF (by simp) hF₀
+  apply colemanDEntire_eq_of_tendsto_coeff
   intro k
   apply tendsto_const_nhds.congr'
   filter_upwards [eventually_ge_atTop (k, 1)] with p hp
