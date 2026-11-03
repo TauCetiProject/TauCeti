@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.LinearAlgebra.FixedSubmodule.BaseChange
-import Mathlib.Algebra.Ring.GeomSum
 import Mathlib.Dynamics.FixedPoints.Basic
 
 /-!
@@ -43,7 +42,14 @@ open TensorProduct
 
 namespace LinearMap
 
-variable {R M : Type*} [CommSemiring R] [AddCommGroup M] [Module R M]
+/-- Every power of an endomorphism fixes each vector in its fixed submodule. -/
+theorem pow_apply_of_mem_fixedSubmodule {R M : Type*} [Semiring R] [AddCommMonoid M]
+    [Module R M] (f : M →ₗ[R] M) {x : M} (hx : x ∈ f.fixedSubmodule) (i : ℕ) :
+    (f ^ i) x = x := by
+  rw [pow_apply_eq_iterate]
+  exact Function.IsFixedPt.iterate (mem_fixedSubmodule_iff.mp hx) i
+
+variable {R M : Type*} [CommSemiring R] [AddCommMonoid M] [Module R M]
   (f : M →ₗ[R] M) {n : ℕ}
 
 /-- Sum the first `n` powers of a map satisfying `f ^ n = 1`, with values in its fixed
@@ -52,8 +58,13 @@ def fixedNorm (hn : f ^ n = 1) : M →ₗ[R] f.fixedSubmodule :=
   (∑ i ∈ Finset.range n, f ^ i).codRestrict _ fun x ↦ by
     rw [mem_fixedSubmodule_iff]
     have h : f * (∑ i ∈ Finset.range n, f ^ i) = ∑ i ∈ Finset.range n, f ^ i := by
-      apply sub_eq_zero.mp
-      simpa only [sub_mul, one_mul, hn, sub_self] using mul_geom_sum f n
+      cases n with
+      | zero => simp
+      | succ n =>
+        rw [Finset.mul_sum]
+        simp_rw [← pow_succ']
+        rw [Finset.sum_range_succ, hn, Finset.sum_range_succ']
+        simp
     exact LinearMap.congr_fun h x
 
 /-- On ambient vectors, the norm is the sum of the powers. -/
@@ -66,11 +77,8 @@ theorem coe_fixedNorm (hn : f ^ n = 1) (x : M) :
 @[simp]
 theorem fixedNorm_coe (hn : f ^ n = 1) (x : f.fixedSubmodule) :
     f.fixedNorm hn x = n • x := by
-  have h (i : ℕ) : (f ^ i) (x : M) = x := by
-    rw [pow_apply_eq_iterate]
-    exact Function.IsFixedPt.iterate (mem_fixedSubmodule_iff.mp x.property) i
   apply Subtype.ext
-  simp [coe_fixedNorm, h]
+  simp [coe_fixedNorm, pow_apply_of_mem_fixedSubmodule f x.property]
 
 /-- Composing the norm with the fixed-vector inclusion gives the sum of powers. -/
 @[simp]
@@ -86,7 +94,30 @@ theorem fixedNorm_comp_subtype (hn : f ^ n = 1) :
   ext x
   simp
 
-variable (A : Type*) [CommSemiring A] [Algebra R A] [Invertible (n : A)]
+variable (A : Type*) [CommSemiring A] [Algebra R A]
+
+/-- After scalar extension, composing the inclusion with the norm gives the sum of powers
+of the extended endomorphism. -/
+@[simp]
+theorem subtype_baseChange_comp_fixedNorm_baseChange (hn : f ^ n = 1) :
+    f.fixedSubmodule.subtype.baseChange A ∘ₗ (f.fixedNorm hn).baseChange A =
+      ∑ i ∈ Finset.range n, (f.baseChange A) ^ i := by
+  rw [← baseChange_comp, subtype_comp_fixedNorm]
+  simpa only [baseChangeHom_apply, baseChange_pow] using
+    map_sum (LinearMap.baseChangeHom R A M M) (fun i ↦ f ^ i) (Finset.range n)
+
+/-- After scalar extension, composing the norm with the inclusion gives multiplication
+by the exponent. -/
+@[simp]
+theorem fixedNorm_baseChange_comp_subtype_baseChange (hn : f ^ n = 1) :
+    (f.fixedNorm hn).baseChange A ∘ₗ f.fixedSubmodule.subtype.baseChange A =
+      n • LinearMap.id := by
+  rw [← baseChange_comp, fixedNorm_comp_subtype]
+  simpa only [baseChangeHom_apply, baseChange_id] using
+    _root_.map_nsmul (LinearMap.baseChangeHom R A f.fixedSubmodule f.fixedSubmodule) n
+      (LinearMap.id : f.fixedSubmodule →ₗ[R] f.fixedSubmodule)
+
+variable [Invertible (n : A)]
 
 /-- Fixed vectors commute with scalar extension whenever an exponent of the original action
 is invertible in the target algebra. Neither flatness nor invertibility in the base ring is
@@ -100,34 +131,17 @@ noncomputable def fixedSubmoduleBaseChangeEquivOfInvertible (hn : f ^ n = 1) :
   · apply LinearMap.ext
     intro x
     apply Subtype.ext
-    have hp (i : ℕ) : ((f.baseChange A) ^ i) (x : A ⊗[R] M) = x := by
-      rw [pow_apply_eq_iterate]
-      exact Function.IsFixedPt.iterate (mem_fixedSubmodule_iff.mp x.property) i
-    have he : f.fixedSubmodule.subtype.baseChange A ∘ₗ (f.fixedNorm hn).baseChange A =
-        ∑ i ∈ Finset.range n, (f.baseChange A) ^ i := by
-      rw [← baseChange_comp, subtype_comp_fixedNorm]
-      simpa only [baseChangeHom_apply, baseChange_pow] using
-        map_sum (LinearMap.baseChangeHom R A M M) (fun i ↦ f ^ i) (Finset.range n)
-    have hv := LinearMap.congr_fun he (x : A ⊗[R] M)
-    simp only [LinearMap.comp_apply, LinearMap.sum_apply, hp, Finset.sum_const,
-      Finset.card_range] at hv
     simp only [g, LinearMap.comp_apply, LinearMap.smul_apply,
       Submodule.coe_subtype, map_smul, Submodule.coe_smul,
       coe_fixedSubmoduleBaseChange, LinearMap.id_apply]
-    rw [hv, ← Nat.cast_smul_eq_nsmul A, smul_smul, invOf_mul_self, one_smul]
+    rw [← LinearMap.comp_apply, subtype_baseChange_comp_fixedNorm_baseChange]
+    simp [pow_apply_of_mem_fixedSubmodule _ x.property, ← Nat.cast_smul_eq_nsmul A]
   · apply LinearMap.ext
     intro x
-    have he : (f.fixedNorm hn).baseChange A ∘ₗ f.fixedSubmodule.subtype.baseChange A =
-        n • LinearMap.id := by
-      rw [← baseChange_comp, fixedNorm_comp_subtype]
-      simpa only [baseChangeHom_apply, baseChange_id] using
-        _root_.map_nsmul (LinearMap.baseChangeHom R A f.fixedSubmodule f.fixedSubmodule) n
-          (LinearMap.id : f.fixedSubmodule →ₗ[R] f.fixedSubmodule)
-    have hv := LinearMap.congr_fun he x
-    simp only [LinearMap.comp_apply, LinearMap.smul_apply, LinearMap.id_apply] at hv
     simp only [g, LinearMap.comp_apply, LinearMap.smul_apply,
       coe_fixedSubmoduleBaseChange, Submodule.coe_subtype, LinearMap.id_apply]
-    rw [hv, ← Nat.cast_smul_eq_nsmul A, smul_smul, invOf_mul_self, one_smul]
+    rw [← LinearMap.comp_apply, fixedNorm_baseChange_comp_subtype_baseChange]
+    simp [← Nat.cast_smul_eq_nsmul A]
 
 /-- The forward equivalence is the existing canonical comparison. -/
 @[simp]
