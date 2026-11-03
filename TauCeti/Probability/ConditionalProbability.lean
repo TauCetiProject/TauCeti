@@ -117,7 +117,7 @@ theorem _root_.Measurable.cond_const {α : Type*} [MeasurableSpace α] {μ : α 
 section MovingIntervals
 
 variable {α δ : Type*} [MeasurableSpace α] [LinearOrder δ] [TopologicalSpace δ]
-  [MeasurableSpace δ] [BorelSpace δ] [SecondCountableTopology δ] [OrderClosedTopology δ]
+  [MeasurableSpace δ] [OpensMeasurableSpace δ] [SecondCountableTopology δ] [OrderClosedTopology δ]
   {μ : α → Measure Ω} {g : Ω → δ} {l r : α → δ}
 
 /-- Conditioning on the inverse image of a moving half-open interval `(l, r]` is measurable. -/
