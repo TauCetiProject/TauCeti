@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.AlgebraicTopology.SimplicialSet.Degenerate
+public import TauCeti.AlgebraicTopology.SimplicialObject.TopCat
 public import TauCeti.Topology.CategoryTheory.Etale
 public import TauCeti.Topology.CategoryTheory.Nerve
 public import TauCeti.Topology.Homotopy.Extension.Basic
@@ -24,8 +25,9 @@ Now let the total arrows of the category carry a topology and give the strings o
 arrows the topology of `TauCeti.topologicalNerve`. Each image of a degeneracy is then the
 preimage of the set of identity arrows along a continuous map, so it is open or closed when the
 identity arrows are, and each degeneracy is an embedding, as in any simplicial space
-(`CategoryTheory.SimplicialObject.isEmbedding_σ`). The degenerate locus is a finite union of such
-images, so it is open or closed too (`TauCeti.isOpen_nerve_degenerate`,
+(`CategoryTheory.SimplicialObject.isEmbedding_σ`, in
+`TauCeti.AlgebraicTopology.SimplicialObject.TopCat`). The degenerate locus is a finite union of
+such images, so it is open or closed too (`TauCeti.isOpen_nerve_degenerate`,
 `TauCeti.isClosed_nerve_degenerate`).
 
 For a topological category whose source is a local homeomorphism (an étale category, such as

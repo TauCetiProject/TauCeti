@@ -35,9 +35,7 @@ degeneracies along `SemiSimplexCategory.toSimplexCategory`.
 An `n + 1`-simplex of the nerve lies in the image of the `i`-th degeneracy exactly when its
 `i`-th arrow is an identity arrow (`CategoryTheory.nerve.mem_range_σ_iff`, in `Set.range` form
 `CategoryTheory.nerve.range_σ_eq_preimage`). This generalizes, and adapts the proof of, Mathlib's
-`PartialOrder.mem_range_nerve_σ_iff` from partial orders to arbitrary categories. Each degeneracy
-of a simplicial space, such as the topological nerve, is an embedding
-(`CategoryTheory.SimplicialObject.isEmbedding_σ`).
+`PartialOrder.mem_range_nerve_σ_iff` from partial orders to arbitrary categories.
 
 ## References
 
@@ -191,18 +189,6 @@ theorem range_σ_eq_preimage {n : ℕ} (i : Fin (n + 1)) :
   Set.ext fun s ↦ mem_range_σ_iff s i
 
 end CategoryTheory.nerve
-
-namespace CategoryTheory.SimplicialObject
-
-/-- Each degeneracy of a simplicial space is an embedding: the face deleting the repeated
-simplex is a continuous left inverse. -/
-theorem isEmbedding_σ (X : SimplicialObject TopCat) {n : ℕ} (i : Fin (n + 1)) :
-    IsEmbedding (X.σ i) :=
-  .of_leftInverse (f := X.δ i.castSucc)
-    (fun x ↦ by rw [← ConcreteCategory.comp_apply, δ_comp_σ_self, ConcreteCategory.id_apply])
-    (ContinuousMap.continuous _) (ContinuousMap.continuous _)
-
-end CategoryTheory.SimplicialObject
 
 namespace TauCeti
 
