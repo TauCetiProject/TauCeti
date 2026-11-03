@@ -5,122 +5,121 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.RingTheory.Flat.Basic
-public import Mathlib.RingTheory.Ideal.Quotient.Operations
-import Mathlib.RingTheory.Filtration
-import Mathlib.RingTheory.TensorProduct.Finite
+public import Mathlib.RingTheory.RingHom.Flat
 import Mathlib.RingTheory.Flat.Tensor
-import TauCeti.LinearAlgebra.TensorProduct.ScalarExtension
+import TauCeti.RingTheory.Ideal.ArtinRees
 import TauCeti.RingTheory.Ideal.KrullIntersection
+import TauCeti.RingTheory.Ideal.TensorProduct
 
 /-!
-# Flatness from the infinitesimal neighbourhoods of maximal ideals
+# Flatness from bijections on infinitesimal quotients
 
-Let `A → B` be a homomorphism of Noetherian rings. Suppose that for every maximal ideal `𝔫` of
-`B`, with contraction `𝔪 = 𝔫 ∩ A`, all the maps `A ⧸ 𝔪 ^ k → B ⧸ 𝔪 ^ k B` are bijective. Then `B`
-is flat over `A` (`Module.Flat.of_bijective_quotientMap_pow`).
+Let `A → B` be a homomorphism of noetherian rings. Suppose that for every maximal ideal `𝔫` of
+`B`, with contraction `𝔪 = 𝔫 ∩ A`, the induced maps `A ⧸ 𝔪ᵏ → B ⧸ 𝔪ᵏ B` are bijective for every
+`k`. Then `B` is flat over `A`. The contraction `𝔪` need not be maximal, and no completion or
+localisation of `A` or `B` enters the statement.
 
-This applies when `B` is a completion-like enlargement of `A` with the same infinitesimal
-neighbourhoods at every closed point of `B`, for instance the inclusion of the
-Monsky–Washnitzer algebra into the Tate algebra. In that situation the `𝔫`-adic completion of
-`B` is the `𝔪`-adic completion of `A`, and the statement is the usual flatness of completions;
-the proof below avoids completions and localizations.
+This is the criterion through which restriction maps of affinoid subdomains are flat: there the
+bijections `A ⧸ 𝔪ᵏ ≃ B ⧸ 𝔪ᵏ B` come from the universal property alone.
 
 ## Implementation notes
 
-By Mathlib's ideal criterion it suffices that `B ⊗[A] J → B ⊗[A] A` is injective for every ideal
-`J` of `A`. Let `t` be in the kernel and fix a maximal ideal `𝔫` of `B`, with `𝔪 = 𝔫 ∩ A`.
-
-1. Since `B = A + 𝔪 ^ k B`, the element `t` is `1 ⊗ j` modulo `𝔪 ^ k (B ⊗[A] J)` for some `j ∈ J`
-   (`TensorProduct.exists_sub_one_tmul_mem_smul_top`).
-   Its image in `B` then shows that `j` lies in `𝔪 ^ k B ∩ A = 𝔪 ^ k`.
-2. By the Artin–Rees lemma `𝔪 ^ k ∩ J ⊆ 𝔪 ^ (k - c) J`, so `t ∈ 𝔪 ^ (k - c) (B ⊗[A] J)` for every
-   `k`.
-3. As this holds for every maximal ideal `𝔫`, Krull's intersection theorem for the finite
-   `B`-module `B ⊗[A] J` (`Ideal.iInf_isMaximal_pow_smul_eq_bot`) gives `t = 0`.
-
-## References
-
-* H. Matsumura, *Commutative Ring Theory*, Theorems 8.8 and 8.10 (Artin–Rees and Krull's
-  intersection theorem) and Theorem 22.3 (the local flatness criterion, of which this is a
-  special case).
+By Mathlib's ideal criterion it suffices that `B ⊗[A] I → B` is injective for every ideal `I` of
+`A`. Let `z` be in its kernel and fix a maximal ideal `𝔫` of `B` with contraction `𝔪`, and `j > 0`.
+Artin–Rees gives `c` with `𝔪ᵏ ∩ I ⊆ 𝔪ʲ I` for `k = j + c`. Surjectivity of `A → B ⧸ 𝔪ᵏ B` writes
+`z = 1 ⊗ i + w` with `i ∈ I` and `w ∈ 𝔪ᵏ (B ⊗[A] I)`. The image of `z` in `B` vanishes, so the
+image of `i` lies in `𝔪ᵏ B`, and injectivity of `A ⧸ 𝔪ᵏ → B ⧸ 𝔪ᵏ B` puts `i` in `𝔪ᵏ ∩ I ⊆ 𝔪ʲ I`.
+Hence `z ∈ 𝔫ʲ (B ⊗[A] I)`. Since `B ⊗[A] I` is a finite `B`-module and `𝔫` and `j` were arbitrary,
+the separation of finite modules by powers of all maximal ideals gives `z = 0`.
 -/
 
 public section
 
-open TensorProduct LinearMap
+open TensorProduct
 
 namespace Module.Flat
 
 variable {A B : Type*} [CommRing A] [CommRing B] [Algebra A B]
+  [IsNoetherianRing A] [IsNoetherianRing B]
 
-/-- Steps 1 and 2 of the proof: an element `t` of the kernel of `B ⊗[A] J → B` lies in
-`𝔫 ^ n (B ⊗[A] J)` for every maximal ideal `𝔫` of `B` and every `n`. -/
-private theorem mem_pow_smul_top_of_lTensor_eq_zero [IsNoetherianRing A]
-    (h : ∀ (𝔫 : Ideal B) [𝔫.IsMaximal] (k : ℕ), Function.Bijective
-      (Ideal.quotientMap ((𝔫.comap (algebraMap A B) ^ k).map (algebraMap A B)) (algebraMap A B)
-        Ideal.le_comap_map))
-    (J : Ideal A) {t : B ⊗[A] J} (ht : (lTensor B J.subtype) t = 0) (𝔫 : Ideal B) [𝔫.IsMaximal]
-    (n : ℕ) : t ∈ (𝔫 ^ n • ⊤ : Submodule B (B ⊗[A] J)) := by
-  set 𝔪 := 𝔫.comap (algebraMap A B)
-  obtain ⟨c, hc⟩ := 𝔪.exists_pow_inf_eq_pow_smul (M := A) J
-  set k := n + c
-  -- The map `A ⧸ 𝔪 ^ k → B ⧸ 𝔪 ^ k B` is surjective and injective.
-  have hsurj (b : B) : ∃ a : A, b - algebraMap A B a ∈ (𝔪 ^ k).map (algebraMap A B) := by
-    obtain ⟨x, hx⟩ := (h 𝔫 k).2 (Ideal.Quotient.mk _ b)
-    obtain ⟨a, rfl⟩ := Ideal.Quotient.mk_surjective x
-    exact ⟨a, Ideal.Quotient.eq.mp (by simpa using hx.symm)⟩
-  have hinj (a : A) (ha : algebraMap A B a ∈ (𝔪 ^ k).map (algebraMap A B)) : a ∈ 𝔪 ^ k := by
-    rw [← Ideal.Quotient.eq_zero_iff_mem]
-    refine (injective_iff_map_eq_zero _).mp (h 𝔫 k).1 _ ?_
-    rwa [Ideal.quotientMap_mk, Ideal.Quotient.eq_zero_iff_mem]
-  obtain ⟨j, hj⟩ := TensorProduct.exists_sub_one_tmul_mem_smul_top hsurj t
-  -- The image of `1 ⊗ j` in `B` is that of `j`, which therefore lies in `𝔪 ^ k B`.
-  have hjk : (j : A) ∈ 𝔪 ^ k := by
-    refine hinj _ ?_
-    have himg := Submodule.mem_map_of_mem
-      (f := (TensorProduct.rid A B).toLinearMap ∘ₗ J.subtype.lTensor B) hj
-    rw [Submodule.map_smul'', map_sub, LinearMap.comp_apply, ht, map_zero, zero_sub,
-      neg_mem_iff] at himg
-    have := Submodule.smul_mono (le_refl (𝔪 ^ k)) le_top himg
-    rw [Ideal.smul_top_eq_map] at this
-    simpa [Algebra.algebraMap_eq_smul_one] using this
-  -- By Artin–Rees, `j ∈ 𝔪 ^ n J`, so `1 ⊗ j ∈ 𝔪 ^ n (B ⊗[A] J)`.
-  have hjn : (j : A) ∈ 𝔪 ^ n • J := by
-    have hj' : (j : A) ∈ 𝔪 ^ k • (⊤ : Submodule A A) ⊓ J :=
-      ⟨by simpa [smul_eq_mul, Ideal.mul_top] using hjk, j.2⟩
-    rw [hc k (Nat.le_add_left c n), Nat.add_sub_cancel] at hj'
-    exact Submodule.smul_mono le_rfl inf_le_right hj'
-  have h1 : (1 : B) ⊗ₜ[A] j ∈ (𝔪 ^ n • ⊤ : Submodule A (B ⊗[A] J)) := by
-    have hj'' : j ∈ (𝔪 ^ n • ⊤ : Submodule A J) := (Submodule.mem_smul_top_iff _ _ _).mpr hjn
-    have := Submodule.mem_map_of_mem (f := (TensorProduct.mk A B J) 1) hj''
-    rw [Submodule.map_smul''] at this
-    exact Submodule.smul_mono le_rfl le_top this
-  have ht' : t ∈ (𝔪 ^ n • ⊤ : Submodule A (B ⊗[A] J)) := by
-    have := add_mem h1 (Submodule.smul_mono_left (Ideal.pow_le_pow_right
-      (Nat.le_add_right n c)) hj)
-    simpa using this
-  -- Pass from `𝔪 ^ n` over `A` to `𝔫 ^ n` over `B`.
-  have hle : (𝔪 ^ n • ⊤ : Submodule A (B ⊗[A] J)) ≤
-      (𝔫 ^ n • (⊤ : Submodule B (B ⊗[A] J))).restrictScalars A := by
-    rw [← Submodule.restrictScalars_top A B, ← Ideal.smul_restrictScalars, Ideal.map_pow]
-    exact Submodule.restrictScalars_mono A
-      (Submodule.smul_mono_left (Ideal.pow_right_mono Ideal.map_comap_le n))
-  exact hle ht'
-
-/-- **Flatness from the infinitesimal neighbourhoods of maximal ideals.** Let `A → B` be a
-homomorphism of Noetherian rings. If for every maximal ideal `𝔫` of `B` and every `k` the map
-`A ⧸ 𝔪 ^ k → B ⧸ 𝔪 ^ k B` is bijective, where `𝔪 = 𝔫 ∩ A`, then `B` is flat over `A`. -/
-theorem of_bijective_quotientMap_pow [IsNoetherianRing A] [IsNoetherianRing B]
-    (h : ∀ (𝔫 : Ideal B) [𝔫.IsMaximal] (k : ℕ), Function.Bijective
-      (Ideal.quotientMap ((𝔫.comap (algebraMap A B) ^ k).map (algebraMap A B)) (algebraMap A B)
-        Ideal.le_comap_map)) :
-    Flat A B := by
-  refine iff_lTensor_injective'.mpr fun J ↦ (injective_iff_map_eq_zero _).mpr fun t ht ↦ ?_
-  -- Krull's intersection theorem for the finite `B`-module `B ⊗[A] J`.
-  have hbot := Ideal.iInf_isMaximal_pow_smul_eq_bot (R := B) (M := B ⊗[A] J)
-  rw [← Submodule.mem_bot B, ← hbot]
+/-- **Flatness from bijections on infinitesimal quotients.** If, for every maximal ideal `𝔫` of
+`B` with contraction `𝔪` to `A`, the maps `A ⧸ 𝔪ᵏ → B ⧸ 𝔪ᵏ B` are bijective for all `k`, then
+`B` is flat over `A`. -/
+theorem of_bijective_quotientMap_pow
+    (h : ∀ (n : Ideal B), n.IsMaximal → ∀ k : ℕ,
+      Function.Bijective (Ideal.quotientMap ((n.comap (algebraMap A B) ^ k).map (algebraMap A B))
+        (algebraMap A B) Ideal.le_comap_map)) :
+    Module.Flat A B := by
+  rw [Module.Flat.iff_lTensor_injective']
+  intro I
+  rw [injective_iff_map_eq_zero]
+  intro z hz
+  -- The multiplication map `B ⊗[A] I → B`, as a `B`-linear map.
+  let μ : B ⊗[A] I →ₗ[B] B :=
+    (AlgebraTensorModule.rid A B B).toLinearMap ∘ₗ AlgebraTensorModule.lTensor B B I.subtype
+  have hμz : μ z = 0 := by
+    simp only [μ, LinearMap.coe_comp, Function.comp_apply, AlgebraTensorModule.coe_lTensor, hz,
+      map_zero]
+  have hμ (b : B) (i : I) : μ (b ⊗ₜ i) = algebraMap A B i * b := by
+    simp [μ, Algebra.smul_def]
+  suffices hz' : z ∈ (⨅ (n : Ideal B) (_ : n.IsMaximal) (j : ℕ) (_ : 0 < j),
+      n ^ j • ⊤ : Submodule B (B ⊗[A] I)) by
+    rwa [Ideal.iInf_isMaximal_pow_smul_eq_bot, Submodule.mem_bot] at hz'
   simp only [Submodule.mem_iInf]
-  exact fun 𝔫 _ n _ ↦ mem_pow_smul_top_of_lTensor_eq_zero h J ht 𝔫 n
+  intro n hn j _
+  set m := n.comap (algebraMap A B)
+  have hmn : m.map (algebraMap A B) ≤ n := Ideal.map_comap_le
+  obtain ⟨c, hc⟩ := TauCeti.ArtinRees.exists_controlled_lift m I
+  set J := (m ^ (j + c)).map (algebraMap A B) with hJdef
+  have hJ : J ≤ n ^ j := by
+    rw [hJdef, Ideal.map_pow]
+    exact (Ideal.pow_le_pow_right (Nat.le_add_right j c)).trans (Ideal.pow_right_mono hmn j)
+  obtain ⟨hinj, hsurj⟩ := h n hn (j + c)
+  -- Every element of `B ⊗[A] I` is `1 ⊗ i` modulo `J (B ⊗[A] I)`.
+  obtain ⟨i, hi⟩ := exists_sub_one_tmul_mem_smul_top (fun b ↦ by
+    obtain ⟨q, rfl⟩ := hsurj b
+    obtain ⟨a, rfl⟩ := Ideal.Quotient.mk_surjective q
+    exact ⟨a, by rw [RingHom.comp_apply, Ideal.quotientMap_mk]⟩) z
+  -- The image of `i` in `B` lies in `J`, so `i ∈ 𝔪^(j + c)` by injectivity.
+  have hiJ : algebraMap A B i ∈ J := by
+    have hmap := Submodule.mem_map_of_mem (f := μ) hi
+    rw [Submodule.map_smul''] at hmap
+    have : μ (z - 1 ⊗ₜ i) ∈ J := by
+      simpa [Ideal.smul_eq_mul] using
+        IsConcreteLE.le_iff.mp (smul_mono_right J le_top) hmap
+    simpa [hμz, hμ] using J.neg_mem_iff.mpr this
+  have him : (i : A) ∈ m ^ (j + c) := by
+    rw [← Ideal.Quotient.eq_zero_iff_mem]
+    apply hinj
+    rw [Ideal.quotientMap_mk, map_zero, Ideal.Quotient.eq_zero_iff_mem]
+    exact hiJ
+  -- Artin–Rees puts `i` into `𝔪ʲ I`.
+  obtain ⟨i', hiI, hi'⟩ := hc LinearMap.id Function.surjective_id j i
+    (by simpa [Ideal.smul_eq_mul] using him)
+  rw [LinearMap.id_apply] at hi'
+  rw [hi'] at hiI
+  -- Hence `1 ⊗ i ∈ 𝔫ʲ (B ⊗[A] I)`.
+  have h1i : (1 : B) ⊗ₜ[A] i ∈ (n ^ j • ⊤ : Submodule B (B ⊗[A] I)) := by
+    refine Submodule.smul_mono_left ?_ (one_tmul_mem_map_smul_top hiI)
+    rw [Ideal.map_pow]
+    exact Ideal.pow_right_mono hmn j
+  have := add_mem (Submodule.smul_mono_left hJ hi) h1i
+  rwa [sub_add_cancel] at this
 
 end Module.Flat
+
+namespace RingHom.Flat
+
+variable {A B : Type*} [CommRing A] [CommRing B] [IsNoetherianRing A] [IsNoetherianRing B]
+
+/-- **Flatness from bijections on infinitesimal quotients**, for a ring homomorphism. If, for
+every maximal ideal `𝔫` of `B` with contraction `𝔪` along `f`, the maps `A ⧸ 𝔪ᵏ → B ⧸ 𝔪ᵏ B`
+induced by `f` are bijective for all `k`, then `f` is flat. -/
+theorem of_bijective_quotientMap_pow {f : A →+* B}
+    (h : ∀ (n : Ideal B), n.IsMaximal → ∀ k : ℕ,
+      Function.Bijective (Ideal.quotientMap ((n.comap f ^ k).map f) f Ideal.le_comap_map)) :
+    f.Flat := by
+  algebraize [f]
+  exact Module.Flat.of_bijective_quotientMap_pow h
+
+end RingHom.Flat

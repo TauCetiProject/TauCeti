@@ -141,7 +141,8 @@ lemma associatedLocalSystemEvaluationIso_inv_app {x : FundamentalGroupoid B}
       (hG.associatedLocalSystemFiberIso k A e).inv :=
   (rfl)
 
-instance : (hG.associatedLocalSystemFunctor k).Additive where
+/-- Associated local coefficient systems form an additive functor of the representation. -/
+instance additive_associatedLocalSystemFunctor : (hG.associatedLocalSystemFunctor k).Additive where
   map_add {X Y} {f g} := by
     apply NatTrans.ext
     funext x

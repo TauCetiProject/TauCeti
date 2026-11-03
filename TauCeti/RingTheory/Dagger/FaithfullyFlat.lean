@@ -11,9 +11,7 @@ public import Mathlib.RingTheory.RingHom.FaithfullyFlat
 import TauCeti.RingTheory.Affinoid.Polyradius
 import TauCeti.RingTheory.Affinoid.PowerBounded
 import TauCeti.RingTheory.Affinoid.Restricted
-import TauCeti.RingTheory.Dagger.Weierstrass
 import TauCeti.RingTheory.Flat.QuotientPow
-import TauCeti.RingTheory.MvPowerSeries.TateAlgebra.ClosedIdeal
 import TauCeti.RingTheory.MvPowerSeries.TateAlgebra.Groebner
 
 /-!

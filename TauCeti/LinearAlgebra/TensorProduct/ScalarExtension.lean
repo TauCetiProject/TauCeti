@@ -42,8 +42,6 @@ this compares base change to the fibre ring `B ⊗[R] κ(p)` with base change to
   a scalar-extended algebra identifies two iterated scalar extensions.
 * `TensorProduct.AlgebraTensorModule.cancelBaseChangeTensor`: tensoring with two
   scalar-extended modules cancels both copies of the extended coefficient ring.
-* `TensorProduct.exists_sub_one_tmul_mem_smul_top`: if `B = A + I B`, then every element of
-  `B ⊗[A] M` is a unit pure tensor modulo `I (B ⊗[A] M)`.
 -/
 
 public section
@@ -266,35 +264,5 @@ instance free_range_mk_one [Module.Free R M] :
   Module.Free.of_equiv (unitTmulEquiv R K M)
 
 end CommSemiring
-
-section CommRing
-
-variable {A B : Type*} [CommRing A] [CommRing B] [Algebra A B] [AddCommGroup M] [Module A M]
-
-/-- If every element of `B` is congruent modulo `I B` to an element of `A`, then every element of
-the scalar extension `B ⊗[A] M` is congruent modulo `I (B ⊗[A] M)` to a unit pure tensor. -/
-theorem exists_sub_one_tmul_mem_smul_top {I : Ideal A}
-    (hI : ∀ b : B, ∃ a : A, b - algebraMap A B a ∈ I.map (algebraMap A B)) (t : B ⊗[A] M) :
-    ∃ m : M, t - (1 : B) ⊗ₜ m ∈ (I • ⊤ : Submodule A (B ⊗[A] M)) := by
-  induction t using TensorProduct.inductionOn with
-  | add x y hx hy =>
-    obtain ⟨m, hm⟩ := hx
-    obtain ⟨m', hm'⟩ := hy
-    exact ⟨m + m', by simpa [tmul_add, add_sub_add_comm] using add_mem hm hm'⟩
-  | tmul b m =>
-    obtain ⟨a, ha⟩ := hI b
-    refine ⟨a • m, ?_⟩
-    -- `b ⊗ m - 1 ⊗ a m = (b - a) ⊗ m`, the image of `b - a ∈ I • B` under `· ⊗ m`.
-    have hmem : b - algebraMap A B a ∈ (I • ⊤ : Submodule A B) := by
-      rwa [Ideal.smul_top_eq_map]
-    have key := Submodule.mem_map_of_mem (f := (TensorProduct.mk A B M).flip m) hmem
-    rw [Submodule.map_smul''] at key
-    have heq : ((TensorProduct.mk A B M).flip m) (b - algebraMap A B a) =
-        b ⊗ₜ m - (1 : B) ⊗ₜ (a • m) := by
-      simp [Algebra.algebraMap_eq_smul_one]
-    rw [heq] at key
-    exact Submodule.smul_mono le_rfl le_top key
-
-end CommRing
 
 end TensorProduct
