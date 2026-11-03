@@ -79,7 +79,8 @@ private theorem baseChange_generatedDefiningIdeal_le_ker :
   have hker : (GeneralLinear.coordinateHopfAlgebraBaseChangeIso k K (dimension n)).hom.hom x ∈
       RingHom.ker (generatedCoordinateMap n hn K).hom := by
     rwa [generatedCoordinateMap_ker]
-  exact hker
+  rw [RingHom.mem_ker]
+  simpa [_root_.CommHopfAlgCat.hom_comp] using RingHom.mem_ker.mp hker
 
 /-- The canonical coordinate map from scalar extension of the generated spin group to the group
 generated over the extension ring. Contravariantly, it is a closed subgroup inclusion. -/
