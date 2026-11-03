@@ -42,6 +42,17 @@ open Finset
 
 variable {A : Type*} [Semiring A] [Algebra ℚ A] {x y z w v s : A}
 
+/-- The positive type-G₂ ordered monomial `y⁽ᵃ⁾ z⁽ᵇ⁾ w⁽ᶜ⁾ v⁽ᵈ⁾ s⁽ᵉ⁾ x⁽ᶠ⁾`. -/
+noncomputable def orderedMonomial (x y z w v s : A) (a b c d e f : ℕ) : A :=
+  dividedPower a y * dividedPower b z * dividedPower c w * dividedPower d v *
+    dividedPower e s * dividedPower f x
+
+/-- The six factors of a type-G₂ ordered monomial. -/
+theorem orderedMonomial_def (x y z w v s : A) (a b c d e f : ℕ) :
+    orderedMonomial x y z w v s a b c d e f =
+      dividedPower a y * dividedPower b z * dividedPower c w * dividedPower d v *
+        dividedPower e s * dividedPower f x := (rfl)
+
 -- Only the w/z crossing is noncommutative in the product of these two tails.
 private theorem collect_tails (hwz : w * z = z * w + 3 • s)
     (hzv : Commute z v) (hzs : Commute z s) (hwv : Commute w v)
@@ -140,8 +151,7 @@ theorem dividedPower_mul_orderedMonomial
     (hxv : Commute x v) (hxs : Commute x s) (hyz : Commute y z)
     (hzv : Commute z v) (hzs : Commute z s) (hwv : Commute w v)
     (hws : Commute w s) (hvs : Commute v s) (n a b c d e f : ℕ) :
-    dividedPower n x * (dividedPower a y * dividedPower b z * dividedPower c w *
-        dividedPower d v * dividedPower e s * dividedPower f x) =
+    dividedPower n x * orderedMonomial x y z w v s a b c d e f =
       ∑ p ∈ chainG2Index n a,
         let N := n - p.1 - 2 * p.2.1 - 3 * p.2.2.1 - 3 * p.2.2.2
         ∑ q ∈ g2ShortPairIndex N b,
@@ -160,11 +170,10 @@ theorem dividedPower_mul_orderedMonomial
                   Nat.choose (p.2.1 - t + C) (p.2.1 - t) *
                   Nat.choose (p.2.2.1 + D) p.2.2.1 * Nat.choose (t + p.2.2.2) t *
                   Nat.choose (t + p.2.2.2 + E) (t + p.2.2.2))) •
-              (dividedPower (a - p.1 - p.2.1 - p.2.2.1 - 2 * p.2.2.2) y *
-                dividedPower (p.1 + (B - t)) z * dividedPower (p.2.1 - t + C) w *
-                dividedPower (p.2.2.1 + D) v * dividedPower (t + p.2.2.2 + E) s *
-                dividedPower F x) := by
+              orderedMonomial x y z w v s (a - p.1 - p.2.1 - p.2.2.1 - 2 * p.2.2.2)
+                (p.1 + (B - t)) (p.2.1 - t + C) (p.2.2.1 + D) (t + p.2.2.2 + E) F := by
   classical
+  simp only [orderedMonomial_def]
   rw [← mul_assoc, ← mul_assoc, ← mul_assoc, ← mul_assoc, ← mul_assoc,
     dividedPower_mul_dividedPower_of_commutator_eq_three_nsmul
       hxy hxz hxw hwz hxv hxs hyz hwv hzs hws hvs]
