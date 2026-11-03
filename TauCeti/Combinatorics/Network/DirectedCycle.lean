@@ -98,15 +98,14 @@ theorem nonempty_arrowWalk_of_symmetrify
 /-- **Directed bridge criterion.** An arrow family is strongly connected exactly when it is
 weakly connected and every arrow lies on a directed cycle. -/
 theorem isStronglyConnected_iff_isWeaklyConnected_and_forall_liesOnCycle :
-    @Quiver.IsStronglyConnected V ⟨Q⟩ ↔ @IsWeaklyConnected V ⟨Q⟩ ∧
+    @Quiver.IsStronglyConnected V ⟨Q⟩ ↔
+      @Quiver.IsStronglyConnected (Quiver.Symmetrify V) (@Quiver.symmetrifyQuiver V ⟨Q⟩) ∧
       ∀ ⦃s t⦄ (e : Q s t), ArrowWalk.LiesOnCycle e := by
   constructor
   · intro h
-    exact ⟨(@isWeaklyConnected_def V ⟨Q⟩).2
-        (@Quiver.IsStronglyConnected.isStronglyConnected_symmetrify V ⟨Q⟩ h),
+    exact ⟨@Quiver.IsStronglyConnected.isStronglyConnected_symmetrify V ⟨Q⟩ h,
       fun ⦃s t⦄ e ↦ h.liesOnCycle e⟩
   · rintro ⟨hweak, hcycle⟩ s t
-    exact nonempty_arrowWalk_of_symmetrify hcycle
-      ((@isWeaklyConnected_def V ⟨Q⟩).1 hweak s t)
+    exact nonempty_arrowWalk_of_symmetrify hcycle (hweak s t)
 
 end TauCeti

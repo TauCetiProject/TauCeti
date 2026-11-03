@@ -27,8 +27,6 @@ connected components of its underlying graph.
 
 * `Quiver.reachable_iff_reflTransGen`: directed reachability is the reflexive transitive closure
   of being joined by an arrow.
-* `TauCeti.IsWeaklyConnected`: every two vertices are joined by a walk after formally adjoining a
-  reverse of every arrow.
 * `TauCeti.Quiver.nonempty_path_symmetrify_iff_reachable`: two vertices are joined by a zigzag of
   arrows exactly when they are reachable in the underlying graph.
 * `TauCeti.Quiver.weaklyConnectedComponentEquiv`: the weakly connected components of a quiver are
@@ -58,23 +56,6 @@ theorem reachable_iff_reflTransGen :
     | tail _ he ih => exact he.elim fun e ↦ ih.trans e.reachable
 
 end Quiver
-
-namespace TauCeti
-
-variable {V : Type u} [Quiver.{v} V]
-
-/-- A quiver is weakly connected when every ordered pair of vertices is joined by a walk after
-formally adjoining a reverse of every arrow. -/
-def IsWeaklyConnected (V : Type u) [Quiver.{v} V] : Prop :=
-  Quiver.IsStronglyConnected (Quiver.Symmetrify V)
-
-/-- Weak connectivity unfolds to the existence of a symmetrified walk between every ordered pair
-of vertices. -/
-theorem isWeaklyConnected_def : IsWeaklyConnected V ↔
-    ∀ s t : V, Nonempty (@Quiver.Path (Quiver.Symmetrify V) _ s t) :=
-  Iff.rfl
-
-end TauCeti
 
 namespace TauCeti.Quiver
 
