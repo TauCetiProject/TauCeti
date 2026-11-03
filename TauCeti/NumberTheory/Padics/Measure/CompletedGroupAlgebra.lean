@@ -63,6 +63,8 @@ the integral measures on a profinite group are weakly compact because `ℤ_p[[Γ
   continuous for the weak topology on measures.
 * `AbstractMeasure.isHomeomorph_toCompletedGroupAlgebra_weak`: for `ℤ_p` coefficients, the
   comparison is a homeomorphism from the weak topology to the inverse-limit topology.
+* `AbstractMeasure.isTopologicalRing_integralMeasures_weak`: integral measures form a
+  topological ring for convolution and the weak topology.
 * `AbstractMeasure.compactSpace_integralMeasures_weak`: integral measures on a profinite group
   are compact for the weak topology.
 
@@ -493,6 +495,21 @@ theorem isHomeomorph_toCompletedGroupAlgebra_weak :
     ⟨le_antisymm (continuous_iff_le_induced.mp continuous_toCompletedGroupAlgebra) hle⟩
   exact isHomeomorph_iff_isEmbedding_surjective.mpr
     ⟨⟨hind, toCompletedGroupAlgebra_injective⟩, toCompletedGroupAlgebra_surjective⟩
+
+open Topology in
+/-- Integral measures on a profinite group form a topological ring for the weak topology. -/
+theorem _root_.TauCeti.isTopologicalRing_integralMeasures_weak :
+    @IsTopologicalRing D(Γ, ℤ_[p]) WeakTopology _ := by
+  let : TopologicalSpace D(Γ, ℤ_[p]) := WeakTopology
+  have h := (isHomeomorph_toCompletedGroupAlgebra_weak (Γ := Γ) (p := p)).isEmbedding.isInducing
+  let : IsTopologicalAddGroup D(Γ, ℤ_[p]) :=
+    h.isTopologicalAddGroup (toCompletedGroupAlgebra (Γ := Γ) (R := ℤ_[p])).toAddMonoidHom
+  let : ContinuousMul D(Γ, ℤ_[p]) := h.continuousMul
+    (toCompletedGroupAlgebra (Γ := Γ) (R := ℤ_[p]))
+  exact
+    { continuous_add := continuous_add
+      continuous_mul := continuous_mul
+      continuous_neg := continuous_neg }
 
 /-- **Weak compactness of integral measures.** The integral measures on a profinite group are
 compact for the weak topology, being homeomorphic to the compact completed group algebra. -/
