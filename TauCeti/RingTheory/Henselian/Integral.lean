@@ -11,6 +11,7 @@ import Mathlib.RingTheory.IntegralClosure.Algebra.Ideal
 import Mathlib.RingTheory.Polynomial.Eisenstein.Distinguished
 import TauCeti.RingTheory.AdjoinRoot.Idempotent
 import TauCeti.RingTheory.Henselian.Factorization
+import TauCeti.RingTheory.Idempotents.Polynomial
 
 /-!
 # Idempotents of integral algebras over a Henselian pair
@@ -46,7 +47,8 @@ To lift an idempotent `s` modulo `IS`: the element `s² - s` lies in `IS`, so it
 monic polynomial `q ≡ Xᵈ (mod I)`. Then `s` is a root of the monic polynomial
 `P = q(X² - X) · (X² - X)`, which is `Xᵈ⁺¹ (X - 1)ᵈ⁺¹` modulo `I`. This factorization into coprime
 monic polynomials lifts to `P = g h` with `a g + b h = 1`, and `a(s) g(s)` is the idempotent
-lifting `s`. The special case of an idempotent cutting out a summand that is cyclic modulo `I`,
+lifting `s` (`Ideal.aeval_mul_sub_mem_map_of_add_eq_one`). The special case of an idempotent
+cutting out a summand that is cyclic modulo `I`,
 `TauCeti.HenselianRing.exists_isIdempotentElem_sub_mem_map`, has a direct proof by Hensel's
 lemma; it is an input to the lifting of sections of étale algebras, on which the lifting of
 factorizations used here rests.
@@ -100,34 +102,7 @@ end TauCeti
 namespace Ideal
 
 variable {R : Type*} [CommRing R] (I : Ideal R)
-  {S : Type*} [CommRing S] [Algebra R S]
-
-/-- Let `a g + b h = 1` over `R` with `g ≡ Xᵈ⁺¹` and `h ≡ (X - 1)ᵈ⁺¹` modulo `I`, and let `s` be
-idempotent modulo `IS`. Then `a(s) g(s) ≡ s` modulo `IS`: there `g(s) ≡ sᵈ⁺¹ = s` and
-`h(s) s ≡ (s - 1)ᵈ⁺¹ s = 0`. -/
-private theorem aeval_mul_sub_mem_map_of_add_eq_one {s : S}
-    (hs : s * s - s ∈ I.map (algebraMap R S)) {a b g h : R[X]} {d : ℕ}
-    (hab : a * g + b * h = 1) (hgmap : g.map (Ideal.Quotient.mk I) = X ^ (d + 1))
-    (hhmap : h.map (Ideal.Quotient.mk I) = (X - C 1) ^ (d + 1)) :
-    aeval s (a * g) - s ∈ I.map (algebraMap R S) := by
-  set J := I.map (algebraMap R S)
-  set φ : R ⧸ I →+* S ⧸ J := Ideal.quotientMap J (algebraMap R S) Ideal.le_comap_map
-  set t := Ideal.Quotient.mk J s
-  have hφ (f : R[X]) :
-      Ideal.Quotient.mk J (aeval s f) = (f.map (Ideal.Quotient.mk I)).eval₂ φ t := by
-    rw [aeval_def, hom_eval₂, eval₂_map, Ideal.quotientMap_comp_mk]
-  have ht : IsIdempotentElem t := Ideal.Quotient.isIdempotentElem_mk_iff.mpr hs
-  have htt : (t - 1) ^ (d + 1) * t = 0 := by
-    rw [pow_succ, mul_assoc, sub_mul, one_mul, ht.eq, sub_self, mul_zero]
-  have hab' := congrArg (fun f : R[X] ↦ (f.map (Ideal.Quotient.mk I)).eval₂ φ t) hab
-  simp only [Polynomial.map_add, Polynomial.map_mul, hgmap, hhmap, eval₂_add, eval₂_mul,
-    eval₂_pow, eval₂_sub, eval₂_X, map_one, Polynomial.map_one, eval₂_one] at hab'
-  rw [← Ideal.Quotient.eq, hφ, Polynomial.map_mul, eval₂_mul, hgmap, eval₂_X_pow]
-  linear_combination t * hab' - (eval₂ φ t (b.map (Ideal.Quotient.mk I))) * htt +
-    (eval₂ φ t (a.map (Ideal.Quotient.mk I))) * (1 - t) * ht.pow_succ_eq d -
-    (eval₂ φ t (a.map (Ideal.Quotient.mk I))) * ht.eq
-
-variable [HenselianRing R I] [Algebra.IsIntegral R S]
+  {S : Type*} [CommRing S] [Algebra R S] [HenselianRing R I] [Algebra.IsIntegral R S]
 
 /-- **Idempotents lift along a Henselian pair in integral algebras.** If `(R, I)` is Henselian, `S`
 is an integral `R`-algebra and `s : S` is idempotent modulo `IS`, then some idempotent of `S` is
