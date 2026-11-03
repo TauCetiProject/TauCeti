@@ -208,7 +208,7 @@ theorem surjective_toZeroAtInftySMulCLM (A : Matrix ℕ ℕ R)
     exact congrArg norm (V.apply_symm_apply y)
   -- `A - U` is strictly lower triangular, with entries of norm at most `max c 0`.
   have hD (i j : ℕ) : ‖(A - U) i j‖ ≤ max c 0 := by
-    rw [sub_apply]
+    rw [Matrix.sub_apply]
     by_cases h : j < i
     · simpa [U, h] using (hlow i j h).trans (le_max_left c 0)
     · simp [U, h]

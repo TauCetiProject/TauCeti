@@ -5,8 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Topology.Connected.HausdorffMeasure
 public import TauCeti.Analysis.ConstantSpeed
-public import TauCeti.Topology.Connected.HausdorffMeasure
 
 /-!
 # Hausdorff measure and the length of curves

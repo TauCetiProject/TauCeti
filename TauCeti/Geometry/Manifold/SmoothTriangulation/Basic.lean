@@ -288,7 +288,6 @@ private theorem eq_zero_of_coordOne_eq_zero {σ : Finset (Fin 2)} {v : σ → �
   · rwa [Finset.sum_eq_single a (fun b _ hba => h1 b (key a b ha fun h => hba (Subtype.ext h)))
       (by simp)] at hv
 
-variable [Fact ((0 : ℝ) < 1)]
 
 /-- The standard one-simplex, realized as the unit interval through its second barycentric
 coordinate, is a `Cⁿ` triangulation of the unit interval for every `n`. -/
@@ -341,7 +340,6 @@ private theorem contMDiff_sqHomeomorph : ContMDiff (𝓡∂ 1) (𝓡∂ 1) n sqH
     ⟨sqHomeomorph.continuous,
       (contDiff_id.pow 2).contMDiff.comp (contMDiff_subtypeVal_Icc (x := 0) (y := 1))⟩
 
-omit [Fact ((0 : ℝ) < 1)] in
 /-- If `F` extends the standard triangulation of the unit interval followed by squaring on a face
 `σ`, then, read in `ℝ`, `F` is the square of the barycentric coordinate at the vertex `1` on the
 standard simplex. -/

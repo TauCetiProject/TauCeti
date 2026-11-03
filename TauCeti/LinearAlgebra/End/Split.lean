@@ -39,7 +39,8 @@ def splitEnd (π : F →ₗ[R] M) (σ : M →ₗ[R] F) (h : π ∘ₗ σ = id) :
   map_mul' f g := by
     have h' (x : M) : π (σ x) = x := congr($h x)
     ext x
-    simp only [add_apply, comp_apply, sub_apply, Module.End.one_apply, Module.End.mul_apply,
+    simp only [LinearMap.add_apply, comp_apply, LinearMap.sub_apply, _root_.one_apply_eq_self,
+      _root_.mul_apply_eq_comp,
       map_add, map_sub, h']
     abel
 

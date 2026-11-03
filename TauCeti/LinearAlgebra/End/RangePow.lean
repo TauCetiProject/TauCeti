@@ -52,7 +52,7 @@ theorem codisjoint_ker_pow_range_pow_of_range_pow_succ_eq
   obtain ⟨z, hz⟩ : (f ^ n) x ∈ range (f ^ (n + n)) := by
     rw [range_pow_add_eq_of_range_pow_succ_eq h]
     exact mem_range_self _ x
-  rw [pow_add, Module.End.mul_apply] at hz
+  rw [pow_add, mul_apply_eq_comp] at hz
   exact Submodule.mem_sup.mpr
     ⟨x - (f ^ n) z, by simp [hz], (f ^ n) z, mem_range_self _ z, sub_add_cancel x _⟩
 

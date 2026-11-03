@@ -81,7 +81,8 @@ theorem norm_operatorAbs_apply_sub_le (M : E →ₗ[𝕜] F) {δ : ℝ}
   have hsub : M.operatorAbs - 1 = hT.cfc (fun μ ↦ √μ - 1) := by
     rw [(isPositive_adjoint_comp_self M).sqrt_unique M.isPositive_operatorAbs M.operatorAbs_sq]
     refine (hT.eq_cfc_iff _).mpr fun μ v hv ↦ ?_
-    rw [sub_apply, IsPositive.sqrt_apply_of_apply_eq_smul _ hv, one_apply, RCLike.ofReal_sub,
+    rw [LinearMap.sub_apply, IsPositive.sqrt_apply_of_apply_eq_smul _ hv,
+      _root_.one_apply_eq_self, RCLike.ofReal_sub,
       RCLike.ofReal_one, sub_smul, one_smul]
   have hx : M.operatorAbs x - x = (M.operatorAbs - 1) x := by simp
   rw [hx, hsub]
