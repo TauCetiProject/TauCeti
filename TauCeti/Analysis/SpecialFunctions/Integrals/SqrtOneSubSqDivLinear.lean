@@ -5,9 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.MeasureTheory.Integral.IntervalIntegral.FundThmCalculus
-public import Mathlib.Analysis.SpecialFunctions.Sqrt
-public import Mathlib.Analysis.SpecialFunctions.Trigonometric.InverseDeriv
+public import TauCeti.Analysis.SpecialFunctions.Integrals.SqrtQuadratic
 
 /-!
 # The integral of `√(1 - t²) / (c + r t)`
@@ -17,9 +15,9 @@ For `0 < r ≤ c`,
 `∫_{-1}^{1} √(1 - t²) / (c + r t) dt = π (c - √(c² - r²)) / r²`.
 
 At `r = c` the denominator vanishes at `t = -1` and the integrand is unbounded there, but it
-remains integrable. The integral is computed by the fundamental theorem of calculus: for `|t| < 1`,
-a primitive of `√(1 - t²) / (c + r t)` is
-`(c arcsin t + r √(1 - t²) - √(c² - r²) arcsin ((c t + r) / (c + r t))) / r²`.
+remains integrable. Both facts are transported along the substitution `x = r t + c` from the
+quadrature of `√((x - a) (b - x)) / x` with `a = c - r` and `b = c + r` in
+`TauCeti.Analysis.SpecialFunctions.Integrals.SqrtQuadratic`, which allows the lower root `a = 0`.
 
 Integrals of this shape compute the inverse moment of a semicircle law.
 
@@ -40,100 +38,34 @@ open MeasureTheory Real Set
 
 namespace TauCeti
 
-/-- The arcsine part of the primitive of `√(1 - t²) / (c + r t)`. It vanishes when `c = r`. -/
-private theorem hasDerivAt_sqrt_mul_arcsin {c r t : ℝ} (hr : 0 < r) (hrc : r ≤ c)
-    (ht : t ∈ Ioo (-1 : ℝ) 1) :
-    HasDerivAt (fun t ↦ √(c ^ 2 - r ^ 2) * arcsin ((c * t + r) / (c + r * t)))
-      ((c ^ 2 - r ^ 2) / ((c + r * t) * √(1 - t ^ 2))) t := by
-  rcases hrc.eq_or_lt with rfl | hrc
-  · simpa using hasDerivAt_const t (0 : ℝ)
-  have hq : 0 < c + r * t := by nlinarith [ht.1]
-  have hs : 0 < 1 - t ^ 2 := by nlinarith [ht.1, ht.2]
-  have hd2 : √(c ^ 2 - r ^ 2) ^ 2 = c ^ 2 - r ^ 2 := sq_sqrt (by nlinarith)
-  have hd : 0 < √(c ^ 2 - r ^ 2) := sqrt_pos.2 (by nlinarith)
-  have hst : 0 < √(1 - t ^ 2) := sqrt_pos.2 hs
-  have hg : 1 - ((c * t + r) / (c + r * t)) ^ 2 =
-      (√(c ^ 2 - r ^ 2) * √(1 - t ^ 2) / (c + r * t)) ^ 2 := by
-    rw [div_pow, div_pow, mul_pow, hd2, sq_sqrt hs.le, one_sub_div (by positivity)]
-    ring
-  have hg1 : 0 < 1 - ((c * t + r) / (c + r * t)) ^ 2 := by
-    rw [hg]
-    positivity
-  have hinner : HasDerivAt (fun t ↦ (c * t + r) / (c + r * t))
-      ((c ^ 2 - r ^ 2) / (c + r * t) ^ 2) t := by
-    convert (((hasDerivAt_id' t).const_mul c).add_const r).fun_div
-      (((hasDerivAt_id' t).const_mul r).const_add c) hq.ne' using 1
-    ring
-  have harcsin : HasDerivAt (fun t ↦ arcsin ((c * t + r) / (c + r * t)))
-      (1 / √(1 - ((c * t + r) / (c + r * t)) ^ 2) * ((c ^ 2 - r ^ 2) / (c + r * t) ^ 2)) t :=
-    (hasDerivAt_arcsin (by nlinarith) (by nlinarith)).comp t hinner
-  convert harcsin.const_mul √(c ^ 2 - r ^ 2) using 1
-  rw [hg, sqrt_sq (by positivity)]
-  field_simp
-
-/-- The derivative of the primitive of `√(1 - t²) / (c + r t)`, scaled by `r²`. -/
-private theorem hasDerivAt_primitive {c r t : ℝ} (hr : 0 < r) (hrc : r ≤ c)
-    (ht : t ∈ Ioo (-1 : ℝ) 1) :
-    HasDerivAt (fun t ↦ c * arcsin t + r * √(1 - t ^ 2) -
-        √(c ^ 2 - r ^ 2) * arcsin ((c * t + r) / (c + r * t)))
-      (r ^ 2 * (√(1 - t ^ 2) * (c + r * t)⁻¹)) t := by
-  have hq : 0 < c + r * t := by nlinarith [ht.1]
-  have hs : 0 < 1 - t ^ 2 := by nlinarith [ht.1, ht.2]
-  have hst : 0 < √(1 - t ^ 2) := sqrt_pos.2 hs
-  have h1 := (hasDerivAt_arcsin (x := t) (by linarith [ht.1]) (by linarith [ht.2])).const_mul c
-  have h0 : HasDerivAt (fun t ↦ 1 - t ^ 2) (-(2 * t)) t := by
-    simpa using (hasDerivAt_pow 2 t).const_sub 1
-  have h2 := (HasDerivAt.sqrt h0 hs.ne').const_mul r
-  convert (h1.add h2).sub (hasDerivAt_sqrt_mul_arcsin hr hrc ht) using 1
-  field_simp
-  rw [sq_sqrt hs.le]
-  ring
-
-/-- The primitive of `√(1 - t²) / (c + r t)` is continuous on `[-1, 1]`. -/
-private theorem continuousOn_primitive {c r : ℝ} (hr : 0 < r) (hrc : r ≤ c) :
-    ContinuousOn (fun t ↦ c * arcsin t + r * √(1 - t ^ 2) -
-        √(c ^ 2 - r ^ 2) * arcsin ((c * t + r) / (c + r * t))) (Icc (-1) 1) := by
-  refine (Continuous.continuousOn (by fun_prop)).sub ?_
-  rcases hrc.eq_or_lt with rfl | hrc
-  · simpa using continuousOn_const
-  refine ContinuousOn.mul continuousOn_const (continuous_arcsin.comp_continuousOn ?_)
-  exact (Continuous.continuousOn (by fun_prop)).div (Continuous.continuousOn (by fun_prop))
-    fun t ht ↦ by nlinarith [ht.1]
+/-- Under `x = r t + c`, `√(1 - t²) / (c + r t)` is `r⁻¹ √((x - (c - r)) (c + r - x)) / x`. -/
+private theorem sqrt_one_sub_sq_mul_inv_eq {c r : ℝ} (hr : 0 < r) :
+    (fun t ↦ √(1 - t ^ 2) * (c + r * t)⁻¹) =
+      fun t ↦ r⁻¹ * (√((r * t + c - (c - r)) * (c + r - (r * t + c))) / (r * t + c)) := by
+  ext t
+  rw [show (r * t + c - (c - r)) * (c + r - (r * t + c)) = r ^ 2 * (1 - t ^ 2) by ring,
+    sqrt_mul (sq_nonneg r), sqrt_sq hr.le, add_comm (r * t), mul_div_assoc,
+    inv_mul_cancel_left₀ hr.ne', div_eq_mul_inv]
 
 /-- The integrand `√(1 - t²) / (c + r t)` is integrable on `(-1, 1]` when `0 < r ≤ c`. -/
 theorem integrableOn_sqrt_one_sub_sq_mul_inv {c r : ℝ} (hr : 0 < r) (hrc : r ≤ c) :
     IntegrableOn (fun t ↦ √(1 - t ^ 2) * (c + r * t)⁻¹) (Ioc (-1) 1) := by
-  have h := intervalIntegral.integrableOn_deriv_of_nonneg (continuousOn_primitive hr hrc)
-    (fun t ht ↦ hasDerivAt_primitive hr hrc ht) fun t ht ↦ by
-      have : 0 < c + r * t := by nlinarith [ht.1]
-      positivity
-  refine IntegrableOn.congr_fun (h.const_mul (r ^ 2)⁻¹) (fun t _ ↦ ?_) measurableSet_Ioc
-  field_simp
+  have h := (((intervalIntegrable_sqrt_mul_sub_mul_sub_div (a := c - r) (b := c + r)
+    (by linarith) (by linarith)).comp_add_right c).comp_mul_left (c := r)).const_mul r⁻¹
+  rw [show (c - r - c) / r = -1 by field_simp; ring, show (c + r - c) / r = 1 by field_simp; ring,
+    intervalIntegrable_iff_integrableOn_Ioc_of_le (by norm_num)] at h
+  rw [sqrt_one_sub_sq_mul_inv_eq hr]
+  simpa only [add_sub_cancel_right, sub_add_cancel] using h
 
 /-- For `0 < r ≤ c`, `∫_{-1}^{1} √(1 - t²) / (c + r t) dt = π (c - √(c² - r²)) / r²`. -/
 theorem integral_sqrt_one_sub_sq_mul_inv {c r : ℝ} (hr : 0 < r) (hrc : r ≤ c) :
     ∫ t in -1..1, √(1 - t ^ 2) * (c + r * t)⁻¹ = π * (c - √(c ^ 2 - r ^ 2)) / r ^ 2 := by
-  have hint : IntervalIntegrable (fun t ↦ r ^ 2 * (√(1 - t ^ 2) * (c + r * t)⁻¹)) volume
-      (-1) 1 :=
-    (intervalIntegrable_iff_integrableOn_Ioc_of_le (by norm_num)).2
-      ((integrableOn_sqrt_one_sub_sq_mul_inv hr hrc).const_mul _)
-  have h := intervalIntegral.integral_eq_sub_of_hasDerivAt_of_le (by norm_num)
-    (continuousOn_primitive hr hrc) (fun t ht ↦ hasDerivAt_primitive hr hrc ht) hint
-  rw [intervalIntegral.integral_const_mul] at h
-  have hleft : √(c ^ 2 - r ^ 2) * arcsin ((c * -1 + r) / (c + r * -1)) =
-      -(√(c ^ 2 - r ^ 2) * (π / 2)) := by
-    rcases hrc.eq_or_lt with rfl | hrc
-    · simp
-    rw [show (c * -1 + r) / (c + r * -1) = -1 by
-      rw [div_eq_iff (by linarith)]
-      ring, arcsin_neg_one]
-    ring
-  have hright : (c * 1 + r) / (c + r * 1) = 1 := by
-    rw [div_eq_one_iff_eq (by linarith)]
-    ring
-  simp only [hright, hleft, arcsin_one, arcsin_neg_one, one_pow, neg_one_sq, sub_self,
-    sqrt_zero, mul_zero, add_zero] at h
-  rw [eq_div_iff (by positivity)]
-  linear_combination h
+  rw [sqrt_one_sub_sq_mul_inv_eq hr, intervalIntegral.integral_const_mul,
+    intervalIntegral.integral_comp_mul_add (fun x ↦ √((x - (c - r)) * (c + r - x)) / x) hr.ne',
+    show r * -1 + c = c - r by ring, show r * 1 + c = c + r by ring,
+    integral_sqrt_mul_sub_mul_sub_div (sub_nonneg.2 hrc) (by linarith),
+    show (c - r) * (c + r) = c ^ 2 - r ^ 2 by ring, smul_eq_mul]
+  field_simp
+  ring
 
 end TauCeti
