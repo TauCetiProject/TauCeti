@@ -90,7 +90,10 @@ def ofComplexManifold : SmoothAlmostComplexStructure 𝓘(ℝ, E) M where
           (extChartAt 𝓘(ℝ, E) x₀).source := by
         simp [hx]
       simp only [ContinuousLinearMap.comp_apply, smul_apply, ContinuousLinearMap.id_apply]
-      exact (tangentCoordChange_smul ℝ (𝕜' := ℂ) ⟨mem_chart_source E x, hx⟩ _ _).trans
+      have hsmul := tangentCoordChange_smul_self ℝ (𝕜' := ℂ)
+        ⟨mem_chart_source E x, hx⟩ Complex.I
+        (tangentCoordChange 𝓘(ℝ, E) x₀ x x v)
+      exact hsmul.trans
         (congrArg (Complex.I • ·)
           ((tangentCoordChange_comp hx').trans (tangentCoordChange_self (by simp [hx]))))⟩
   square_neg x := ContinuousLinearMap.ext fun v ↦ by
@@ -148,18 +151,26 @@ theorem isPseudoholomorphicWithinAt_ofComplexManifold_iff :
       rwa [ofComplexManifold_apply (E := E) x w,
         ofComplexManifold_apply (E := E') (f x) (u w)] at h
     -- Read in the model spaces, `complexOfMapISmul` with scalars restricted to `ℝ` is `u₀`.
-    exact (hu.of_restrictScalars ℝ (f' := u₀.complexOfMapISmul hI)
-      (by ext w; exact congrFun (u₀.coe_complexOfMapISmul hI) w)).mdifferentiableWithinAt
+    have hu' : HasMFDerivWithinAt (𝓘(ℂ, E).restrictScalars ℝ)
+        (𝓘(ℂ, E').restrictScalars ℝ) f s x u₀ :=
+      hasMFDerivWithinAt_restrictScalars_self_iff.mpr hu
+    exact (hu'.of_restrictScalars ℝ (f' := u₀.complexOfMapISmul hI)
+      (by
+        ext w
+        exact congrFun (u₀.coe_complexOfMapISmul hI) w)).mdifferentiableWithinAt
   · intro h
     -- The complex derivative, regarded as a real linear map between the real tangent spaces.
     let u : TangentSpace 𝓘(ℝ, E) x →L[ℝ] TangentSpace 𝓘(ℝ, E') (f x) :=
       (mfderivWithin 𝓘(ℂ, E) 𝓘(ℂ, E') f s x).restrictScalars ℝ
-    refine ⟨u, h.hasMFDerivWithinAt.restrictScalars ℝ rfl,
-      (isComplexLinearMap_iff_apply _ _ _).mpr fun w ↦ ?_⟩
-    rw [almostComplexStructureAt_apply, almostComplexStructureAt_apply]
-    exact (congrArg u (ofComplexManifold_apply (E := E) x w)).trans
-      (((mfderivWithin 𝓘(ℂ, E) 𝓘(ℂ, E') f s x).map_smul Complex.I w).trans
-        (ofComplexManifold_apply (E := E') (f x) (u w)).symm)
+    have hu : HasMFDerivWithinAt (𝓘(ℂ, E).restrictScalars ℝ)
+        (𝓘(ℂ, E').restrictScalars ℝ) f s x u :=
+      h.hasMFDerivWithinAt.restrictScalars ℝ rfl
+    refine ⟨u, ?_, (isComplexLinearMap_iff_apply _ _ _).mpr fun w ↦ ?_⟩
+    · exact hasMFDerivWithinAt_restrictScalars_self_iff.mp hu
+    · rw [almostComplexStructureAt_apply, almostComplexStructureAt_apply]
+      exact (congrArg u (ofComplexManifold_apply (E := E) x w)).trans
+        (((mfderivWithin 𝓘(ℂ, E) 𝓘(ℂ, E') f s x).map_smul Complex.I w).trans
+          (ofComplexManifold_apply (E := E') (f x) (u w)).symm)
 
 /-- A map between complex manifolds is pseudoholomorphic at a point, for their almost complex
 structures, exactly when it is holomorphic at that point. -/
@@ -210,8 +221,9 @@ private lemma mpullbackWithin_ofComplexManifold_eventuallyEq
   have h : y ∈ (chartAt E y).source ∩ (chartAt E x).source := by
     simpa using hy
   rw [smul_apply, ContinuousLinearMap.id_apply]
+  have hsmul := tangentCoordChange_smul_self ℝ (𝕜' := ℂ) h Complex.I (V y)
   exact (congrArg (tangentCoordChange 𝓘(ℝ, E) y x y)
-    (ofComplexManifold_apply (E := E) y (V y))).trans (tangentCoordChange_smul ℝ (𝕜' := ℂ) h _ _)
+    (ofComplexManifold_apply (E := E) y (V y))).trans hsmul
 
 variable [FiniteDimensional ℂ E]
 
