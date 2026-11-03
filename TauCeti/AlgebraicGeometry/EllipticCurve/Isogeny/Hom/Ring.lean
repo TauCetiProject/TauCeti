@@ -112,6 +112,10 @@ noncomputable def pointMapHom (f : Hom W₁ W₂) : W₁.Point →+ W₂.Point :
 theorem pointMapHom_apply (f : Hom W₁ W₂) (P : W₁.Point) : f.pointMapHom P = f.pointMap P :=
   (rfl)
 
+/-- The underlying function of `f.pointMapHom` is `f.pointMap`. -/
+theorem coe_pointMapHom (f : Hom W₁ W₂) : ⇑f.pointMapHom = f.pointMap :=
+  funext f.pointMapHom_apply
+
 @[simp]
 theorem pointMap_neg (f : Hom W₁ W₂) (P : W₁.Point) : f.pointMap (-P) = -f.pointMap P :=
   f.pointMapHom.map_neg P

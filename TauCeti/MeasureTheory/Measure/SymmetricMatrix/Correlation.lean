@@ -294,7 +294,7 @@ theorem measurableSet_posDefCorrelationRegion : MeasurableSet (posDefCorrelation
 
 variable (p) in
 theorem convex_posDefCorrelationRegion : Convex ℝ (posDefCorrelationRegion p) :=
-  (convex_setOf_posDef.affine_preimage
+  (convex_setOfPred_posDef.affine_preimage
     ((selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ)).subtype.toAffineMap)).affine_preimage
     (correlationMatrix p).toAffineMap
 
@@ -426,7 +426,7 @@ theorem closure_posDefCorrelationRegion :
       {x | (correlationMatrix p x : Matrix (Fin p) (Fin p) ℝ).PosSemidef} := by
   refine Subset.antisymm ?_ fun x hx => ?_
   · refine closure_minimal (fun x hx => hx.posSemidef) ?_
-    exact Matrix.posSemidef_is_closed.preimage
+    exact isClosed_setOfPred_posSemidef.preimage
       (continuous_subtype_val.comp (correlationMatrix p).continuous)
   · have hmem : ∀ᶠ t in 𝓝[<] (1 : ℝ), t • x ∈ posDefCorrelationRegion p := by
       filter_upwards [Ioo_mem_nhdsLT zero_lt_one] with t ht

@@ -31,7 +31,7 @@ theorem apply_sum_smul_sum_smul (B : M →ₗ[R] N →ₗ[R] P) (s : Finset ι) 
     (c : ι → R) (φ : ι → M) (d : κ → R) (ψ : κ → N) :
     B (∑ k ∈ s, c k • φ k) (∑ l ∈ t, d l • ψ l) =
       ∑ k ∈ s, ∑ l ∈ t, c k • d l • B (φ k) (ψ l) := by
-  simp only [map_sum, map_smul, sum_apply, smul_apply, Finset.smul_sum]
+  simp only [LinearMap.sum_apply, Finset.smul_sum, map_sum, map_smul, LinearMap.smul_apply]
   rw [Finset.sum_comm]
   exact Finset.sum_congr rfl fun _ _ ↦ Finset.sum_congr rfl fun _ _ ↦ smul_comm _ _ _
 

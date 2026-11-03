@@ -13,7 +13,7 @@ import Mathlib.Algebra.EuclideanDomain.Int
 -- below.
 import TauCeti.LinearAlgebra.Matrix.Divisibility
 import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Equivalence
-import TauCeti.LinearAlgebra.Matrix.SmithNormalForm.Basic
+import TauCeti.LinearAlgebra.Matrix.SmithNormalForm.Diagonal
 -- `prod_eq_det_of_mul_mul_eq_diagonal`, `exists_SL_mul_mul_eq_of_mul_mul_eq` and
 -- `TauCeti.fin_two_eq_of_normalize_eq_of_dvd_of_dvd_of_mul_eq_mul`, used only inside the `2 × 2`
 -- classification below.
@@ -51,9 +51,10 @@ operations of determinant one:
   integer matrix is determined up to `SL₂(ℤ)`-equivalence by its determinant and the common
   divisors of its entries.
 
-`Matrix.exists_mul_mul_eq_diagonal_of_det_ne_zero` in
-`TauCeti.LinearAlgebra.Matrix.SmithNormalForm.Basic` diagonalises over a PID with transformations
-of unit determinant; this file refines it over `ℤ` in three ways that the general result does not
+`Matrix.exists_mul_mul_eq_diagonal` in
+`TauCeti.LinearAlgebra.Matrix.SmithNormalForm.Diagonal` diagonalises over a PID with transformations
+of unit determinant, allowing singular matrices; this file refines its nonsingular case over `ℤ`
+in three ways that the general result does not
 give: the transforming matrices have determinant `1` (not merely unit
 determinant), the diagonal entries are positive, and successive entries divide each other
 (the invariant-factor chain).  The proof first diagonalises using the general theorem,
@@ -206,7 +207,7 @@ private theorem exists_diagonal_of_det_pos (A : Matrix (Fin n) (Fin n) ℤ) (hde
       (L : Matrix (Fin n) (Fin n) ℤ) * A * (R : Matrix (Fin n) (Fin n) ℤ) =
       Matrix.diagonal d := by
   obtain ⟨P, Q, a, hP_unit, hQ_unit, hdiag⟩ :=
-    exists_mul_mul_eq_diagonal_of_det_ne_zero A hdet.ne'
+    exists_mul_mul_eq_diagonal A
   have ha_ne : ∀ i, a i ≠ 0 := by
     have hprod : P.det * A.det * Q.det = ∏ i, a i := by
       rw [← det_mul, ← det_mul, hdiag, det_diagonal]
@@ -258,11 +259,11 @@ private lemma gcd_2x2_mul (a b : ℤ) :
   have h1 : !![s, t; -q, p] * (!![a, (0 : ℤ); 0, b] : Matrix (Fin 2) (Fin 2) ℤ) =
       !![s * a, t * b; -(q * a), p * b] := by
     ext i j; fin_cases i <;> fin_cases j <;>
-      simp only [Fin.zero_eta, Fin.isValue, Fin.mk_one, mul_apply, of_apply, cons_val',
+      simp only [Fin.zero_eta, Fin.isValue, Fin.mk_one, Matrix.mul_apply, of_apply, cons_val',
         cons_val_fin_one, cons_val_zero, cons_val_one, Fin.sum_univ_two, mul_zero, add_zero,
         zero_add, neg_mul]
   rw [h1]; ext i j; fin_cases i <;> fin_cases j <;>
-    simp only [Fin.zero_eta, Fin.isValue, Fin.mk_one, mul_apply, of_apply, cons_val',
+    simp only [Fin.zero_eta, Fin.isValue, Fin.mk_one, Matrix.mul_apply, of_apply, cons_val',
       cons_val_fin_one, cons_val_zero, cons_val_one, Fin.sum_univ_two, mul_one, mul_neg,
       neg_mul, neg_neg]
   · linarith

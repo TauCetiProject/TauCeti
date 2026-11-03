@@ -650,8 +650,7 @@ variable (k : Type*) [Field k]
 
 /-- The signless preprojective algebra of the Bourbaki-labelled `E₇` diagram is
 finite-dimensional over every field. -/
-instance instFiniteDimensionalSignlessPreprojectiveAlgebraE7
-    [∀ i, Fintype ((diagramGraph DynkinType.E7.cartanMatrix).neighborSet i)] :
+instance instFiniteDimensionalSignlessPreprojectiveAlgebraE7 :
     FiniteDimensional k
       (signlessPreprojectiveAlgebra k
         (DoubledQuiver (diagramGraph DynkinType.E7.cartanMatrix))) := by
