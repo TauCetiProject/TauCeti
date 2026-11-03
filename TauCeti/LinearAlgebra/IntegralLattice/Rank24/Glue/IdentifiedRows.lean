@@ -8,9 +8,7 @@ module
 public import TauCeti.LinearAlgebra.IntegralLattice.Rank24.A11D7E6
 public import TauCeti.LinearAlgebra.IntegralLattice.Rank24.A2Twelfth
 public import TauCeti.LinearAlgebra.IntegralLattice.Rank24.D4Six.Glue
-public import TauCeti.LinearAlgebra.IntegralLattice.Rank24.Glue.Table
 public import TauCeti.LinearAlgebra.IntegralLattice.Rank24.TableRow.A1TwentyFour
-import TauCeti.FieldTheory.Finite.Four
 
 /-!
 # The table glue subgroups of the separately identified rows

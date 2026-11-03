@@ -9,7 +9,6 @@ public import TauCeti.LinearAlgebra.FiniteBilinearModule.Pi
 public import TauCeti.LinearAlgebra.IntegralLattice.Rank24.Glue.Pattern
 public import TauCeti.LinearAlgebra.IntegralLattice.Rank24.GlueWord
 public import TauCeti.LinearAlgebra.IntegralLattice.Rank24.RootSystems
-public import TauCeti.LinearAlgebra.IntegralLattice.RootLattice.GlueAlphabet.CosetMinimum
 
 /-!
 # The glue columns of the rootful rank-24 table
