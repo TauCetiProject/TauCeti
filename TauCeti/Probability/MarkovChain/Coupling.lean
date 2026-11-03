@@ -78,11 +78,13 @@ noncomputable def spliceAtMeeting (ω : ℕ → α × α) (n : ℕ) : α :=
   open Classical in if ∃ k ≤ n, (ω k).1 = (ω k).2 then (ω n).2 else (ω n).1
 
 /-- Once the coordinates have met, the splice is the second coordinate. -/
+@[simp]
 theorem spliceAtMeeting_of_exists {ω : ℕ → α × α} {n : ℕ} (h : ∃ k ≤ n, (ω k).1 = (ω k).2) :
     spliceAtMeeting ω n = (ω n).2 := by
   simp [spliceAtMeeting, h]
 
 /-- Before the coordinates meet, the splice is the first coordinate. -/
+@[simp]
 theorem spliceAtMeeting_of_forall_ne {ω : ℕ → α × α} {n : ℕ} (h : ∀ k ≤ n, (ω k).1 ≠ (ω k).2) :
     spliceAtMeeting ω n = (ω n).1 := by
   have : ¬∃ k ≤ n, (ω k).1 = (ω k).2 := by simpa using h
@@ -90,6 +92,7 @@ theorem spliceAtMeeting_of_forall_ne {ω : ℕ → α × α} {n : ℕ} (h : ∀ 
 
 /-- Before the coordinates have met by time `n`, the splice at `n + 1` is the first coordinate,
 also when they meet at time `n + 1`. -/
+@[simp]
 theorem spliceAtMeeting_succ_of_forall_ne {ω : ℕ → α × α} {n : ℕ}
     (h : ∀ k ≤ n, (ω k).1 ≠ (ω k).2) : spliceAtMeeting ω (n + 1) = (ω (n + 1)).1 := by
   by_cases hm : (ω (n + 1)).1 = (ω (n + 1)).2
@@ -217,7 +220,7 @@ theorem markovChainLaw_map_spliceAtMeeting [MeasurableEq α] [IsMarkovKernel κ]
       have hne : ∀ k ≤ n, (ω k).1 ≠ (ω k).2 := fun k hk he => hm ⟨k, hk, he⟩
       refine ⟨⟨hb, ?_⟩, hm⟩
       rwa [← spliceAtMeeting_succ_of_forall_ne hne] at hc
-  rw [prefixLaw_compProd_apply_prod hZ κ n hA hC, Measure.map_apply
+  rw [prefixLaw_compProd_apply_prod κ hZ n hA hC, Measure.map_apply
     ((measurable_pi_iff.2 fun i => hZ i.1).prodMk (hZ _)) (hA.prod hC), hfib,
     ← measure_inter_add_sdiff _ hM, hin, hout,
     markovChainLaw_inter_preimage_eval_succ ρ η n (hBn.inter hMn) (measurable_snd hC),
