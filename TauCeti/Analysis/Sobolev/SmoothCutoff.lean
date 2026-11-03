@@ -34,7 +34,8 @@ L. C. Evans, *Partial Differential Equations*, §5.3.1. The derivative estimate 
 `norm_iteratedFDeriv_smul_le` and `iteratedFDeriv_comp_const_smul`.
 
 The expanding-cutoff construction and the compactly supported bump's derivative bounds are
-adapted from `SchwartzMap.dense_hasCompactSupport` and
+adapted from Mathlib's `SchwartzMap.dense_hasCompactSupport` in
+`Mathlib/Analysis/Distribution/SchwartzSpace/CompactSupport.lean` and
 `SchwartzMap.tendsto_smulLeftCLM_comp_inv_smul_atTop` in
 `TauCeti/Analysis/Distribution/SchwartzSpace/Cutoff.lean`. Their positive-order derivative
 scaling estimate is shared via `TauCeti.norm_iteratedFDeriv_comp_inv_smul_sub_const_le`.
