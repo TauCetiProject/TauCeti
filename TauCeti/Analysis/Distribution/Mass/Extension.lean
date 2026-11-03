@@ -23,7 +23,7 @@ on every `F`-valued function integrable for `‖T‖`, for instance on compactly
 forms, and on tests multiplied by Borel weights.
 
 For a function `g : Ω → ℝ` locally integrable for `‖T‖` this defines the *weighted* functional
-`T ⌞ g = Distribution.withDensity T g`, `(T ⌞ g) φ = T̄ (g φ)`, where `T̄` is the extension. It is
+`T ⌞ g = Distribution.withDensity T g`, `(T ⌞ g) φ = extendL1 T (g φ)`. It is
 again continuous and real-linear with locally finite mass, its mass measure is at most
 `|g| ‖T‖`, it is additive in `g`, and for a smooth `g` it is the smooth multiple
 `T ∘ (g ·)`. Locally bounded Borel weights are locally integrable for `‖T‖`, which is finite on
@@ -131,7 +131,7 @@ theorem extendL1_toLp (hT : HasLocallyFiniteMass T) (φ : 𝓓^{n}(Ω, F)) :
   LinearMap.extendOfNorm_eq (TestFunction.denseRange_toLp ENNReal.one_ne_top)
     ⟨1, norm_apply_le_norm_toLp hT⟩ φ
 
-/-- **The extension has norm at most one:** `|T̄ f| ≤ ∫ ‖f‖ d‖T‖`. -/
+/-- **The extension has norm at most one:** `|extendL1 T f| ≤ ∫ ‖f‖ d‖T‖`. -/
 theorem norm_extendL1_apply_le (hT : HasLocallyFiniteMass T) (f : Lp F 1 (massMeasure T)) :
     ‖extendL1 T f‖ ≤ ‖f‖ := by
   simpa [extendL1] using LinearMap.norm_extendOfNorm_apply_le
@@ -167,8 +167,8 @@ private theorem enorm_withDensityLM_apply_le (hT : HasLocallyFiniteMass T)
 open Classical in
 variable (T) in
 /-- The **weighted functional** `T ⌞ g`: for a weight `g : Ω → ℝ` locally integrable for the mass
-measure `‖T‖`, the continuous linear map `φ ↦ T̄ (g φ)`, where `T̄ = Distribution.extendL1 T` is the
-extension of `T` to `L¹(‖T‖)`. For a smooth `g` it is `T ∘ (g ·)`
+measure `‖T‖`, the continuous linear map `φ ↦ extendL1 T (g φ)`, where
+`Distribution.extendL1 T` is the extension of `T` to `L¹(‖T‖)`. For a smooth `g` it is `T ∘ (g ·)`
 (`Distribution.withDensity_apply_of_contDiff`). If `T` does not have locally finite mass or `g` is
 not locally integrable, it is zero by convention. -/
 def withDensity (g : Ω → ℝ) : 𝓓^{n}(Ω, F) →L[ℝ] ℝ :=
@@ -180,7 +180,7 @@ def withDensity (g : Ω → ℝ) : 𝓓^{n}(Ω, F) →L[ℝ] ℝ :=
         exact enorm_withDensityLM_apply_le h.1 h.2 φ).continuous }
   else 0
 
-/-- The value of `T ⌞ g` on a test `φ` is the value of the extension `T̄` on `g φ`. -/
+/-- The value of `T ⌞ g` on a test `φ` is the value of the extension `extendL1 T` on `g φ`. -/
 theorem withDensity_apply (hT : HasLocallyFiniteMass T) (hg : LocallyIntegrable g (massMeasure T))
     (φ : 𝓓^{n}(Ω, F)) {f : Lp F 1 (massMeasure T)} (hf : ⇑f =ᵐ[massMeasure T] fun x => g x • φ x) :
     withDensity T g φ = extendL1 T f := by
@@ -262,9 +262,9 @@ private theorem locallyIntegrable_indicator (hs : MeasurableSet s) :
 
 variable (T) in
 /-- The **Borel restriction** `T ⌞ s` of a functional of locally finite mass to a subset `s` of `Ω`:
-the weighted functional `T ⌞ 1_s`, so that `(T ⌞ s) φ = T̄ (1_s φ)` with `T̄` the extension of `T`
-to `L¹(‖T‖)`. For a measurable `s` its mass measure is the restriction of `‖T‖` to `s`
-(`Distribution.massMeasure_restrict`). -/
+the weighted functional `T ⌞ 1_s`, so that `(T ⌞ s) φ = extendL1 T (1_s φ)`, with `extendL1 T`
+the extension of `T` to `L¹(‖T‖)`. For a measurable `s` its mass measure is the restriction of
+`‖T‖` to `s` (`Distribution.massMeasure_restrict`). -/
 def restrict (s : Set Ω) : 𝓓^{n}(Ω, F) →L[ℝ] ℝ :=
   withDensity T (s.indicator 1)
 
