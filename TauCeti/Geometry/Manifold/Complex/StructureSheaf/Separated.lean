@@ -73,8 +73,7 @@ private theorem analyticAt_line_of_toFilterGerm_eq {x : X} (hx : x ∈ e.source)
   have hφe : AnalyticAt ℂ (φ ∘ e.symm) (e x) := by
     simpa using ((exists_toFilterGerm_nhds_eq_iff.1 ⟨s, hφ⟩).self_of_nhds
       |>.analyticAt_comp_extend_symm he hx)
-  have hline : AnalyticAt ℂ (fun z : ℂ ↦ e x + z • v) 0 := by fun_prop
-  exact hφe.comp_of_eq hline (by simp)
+  exact hφe.comp_of_eq (by fun_prop) (by simp)
 
 include he in
 /-- Every representative of a germ in `RingHom.ker (eval 𝓘(ℂ, E) X x) ^ n` vanishes to analytic
@@ -86,11 +85,10 @@ private theorem natCast_le_analyticOrderAt_line_of_mem_pow_ker_eval {x : X} (hx 
       ∀ v : E, (n : ℕ∞) ≤ analyticOrderAt (fun z : ℂ ↦ φ (e.symm (e x + z • v))) 0
   | 0, _, _, _, _, _ => by simp
   | n + 1, s, hs, φ, hφ, v => by
-    have hline_tendsto : Tendsto (fun z : ℂ ↦ e.symm (e x + z • v)) (𝓝 0) (𝓝 x) := by
-      have h1 : Tendsto (fun z : ℂ ↦ e x + z • v) (𝓝 0) (𝓝 (e x)) := by
-        simpa using (by fun_prop : Continuous fun z : ℂ ↦ e x + z • v).tendsto 0
+    have hline : Tendsto (fun z : ℂ ↦ e.symm (e x + z • v)) (𝓝 0) (𝓝 x) := by
       simpa only [Function.comp_def, e.left_inv hx] using
-        (e.continuousAt_symm (e.map_source hx)).tendsto.comp h1
+        (e.continuousAt_symm (e.map_source hx)).tendsto.comp
+          (by simpa using (by fun_prop : Continuous fun z : ℂ ↦ e x + z • v).tendsto 0)
     rw [pow_succ] at hs
     refine Submodule.mul_induction_on
       (C := fun t ↦ ∀ ψ : X → ℂ, toFilterGerm 𝓘(ℂ, E) X x (𝓝 x) le_rfl t = ψ →
@@ -98,32 +96,23 @@ private theorem natCast_le_analyticOrderAt_line_of_mem_pow_ker_eval {x : X} (hx 
       hs (fun a ha b hb ψ hψ ↦ ?_) (fun a b ha hb ψ hψ ↦ ?_) φ hφ
     · obtain ⟨α, -, hα⟩ := exists_toFilterGerm_eq x a
       obtain ⟨β, -, hβ⟩ := exists_toFilterGerm_eq x b
-      set f₁ : ℂ → ℂ := fun z ↦ α (e.symm (e x + z • v))
-      set f₂ : ℂ → ℂ := fun z ↦ β (e.symm (e x + z • v))
-      have hf₁ : AnalyticAt ℂ f₁ 0 := analyticAt_line_of_toFilterGerm_eq e he hx (hα _ le_rfl) v
-      have hf₂ : AnalyticAt ℂ f₂ 0 := analyticAt_line_of_toFilterGerm_eq e he hx (hβ _ le_rfl) v
-      have hev : ψ =ᶠ[𝓝 x] α * β := by
-        rw [← Germ.coe_eq, ← hψ, map_mul, hα, hβ, Germ.coe_mul]
-      have hcongr : (fun z : ℂ ↦ ψ (e.symm (e x + z • v))) =ᶠ[𝓝 0] f₁ * f₂ :=
-        hline_tendsto.eventually hev
-      have hf₂0 : f₂ 0 = 0 := by
-        simp only [f₂, zero_smul, add_zero, e.left_inv hx]
-        exact (eval_eq_of_toFilterGerm_eq (hβ _ le_rfl)).symm.trans hb
-      have hord₂ : (1 : ℕ∞) ≤ analyticOrderAt f₂ 0 :=
-        Order.one_le_iff_ne_zero.2 (hf₂.analyticOrderAt_ne_zero.2 hf₂0)
-      have hord₁ : (n : ℕ∞) ≤ analyticOrderAt f₁ 0 :=
-        natCast_le_analyticOrderAt_line_of_mem_pow_ker_eval hx ha (hα _ le_rfl) v
-      have hsmul : f₁ * f₂ = f₁ • f₂ := rfl
-      rw [analyticOrderAt_congr hcongr, hsmul, analyticOrderAt_smul hf₁ hf₂, Nat.cast_add,
-        Nat.cast_one]
-      exact add_le_add hord₁ hord₂
+      have hf₁ := analyticAt_line_of_toFilterGerm_eq e he hx (hα _ le_rfl) v
+      have hf₂ := analyticAt_line_of_toFilterGerm_eq e he hx (hβ _ le_rfl) v
+      have hev : ψ =ᶠ[𝓝 x] α * β := Germ.coe_eq.1 (by rw [← hψ, map_mul, hα, hβ, Germ.coe_mul])
+      have hcongr : (fun z : ℂ ↦ ψ (e.symm (e x + z • v))) =ᶠ[𝓝 0]
+          (fun z ↦ α (e.symm (e x + z • v))) * fun z ↦ β (e.symm (e x + z • v)) :=
+        hline.eventually hev
+      have hf₂0 : β (e.symm (e x + (0 : ℂ) • v)) = 0 := by
+        simpa [e.left_inv hx] using (eval_eq_of_toFilterGerm_eq (hβ _ le_rfl)).symm.trans hb
+      rw [analyticOrderAt_congr hcongr, analyticOrderAt_mul hf₁ hf₂, Nat.cast_add, Nat.cast_one]
+      exact add_le_add (natCast_le_analyticOrderAt_line_of_mem_pow_ker_eval hx ha (hα _ le_rfl) v)
+        (Order.one_le_iff_ne_zero.2 (hf₂.analyticOrderAt_ne_zero.2 hf₂0))
     · obtain ⟨α, -, hα⟩ := exists_toFilterGerm_eq x a
       obtain ⟨β, -, hβ⟩ := exists_toFilterGerm_eq x b
-      have hev : ψ =ᶠ[𝓝 x] α + β := by
-        rw [← Germ.coe_eq, ← hψ, map_add, hα, hβ, Germ.coe_add]
+      have hev : ψ =ᶠ[𝓝 x] α + β := Germ.coe_eq.1 (by rw [← hψ, map_add, hα, hβ, Germ.coe_add])
       have hcongr : (fun z : ℂ ↦ ψ (e.symm (e x + z • v))) =ᶠ[𝓝 0]
           (fun z ↦ α (e.symm (e x + z • v))) + fun z ↦ β (e.symm (e x + z • v)) :=
-        hline_tendsto.eventually hev
+        hline.eventually hev
       rw [analyticOrderAt_congr hcongr]
       exact (le_min (ha α (hα _ le_rfl)) (hb β (hβ _ le_rfl))).trans le_analyticOrderAt_add
 
@@ -138,41 +127,27 @@ theorem iInf_pow_ker_eval_eq_bot {x : X} (hx : x ∈ e.source) :
     simpa using ((exists_toFilterGerm_nhds_eq_iff.1 ⟨s, hφ _ le_rfl⟩).self_of_nhds
       |>.analyticAt_comp_extend_symm he hx)
   obtain ⟨r, hr, hball⟩ := Metric.isOpen_iff.1 (isOpen_analyticAt ℂ (φ ∘ e.symm)) (e x) hφe
-  -- Along every complex line through `e x`, `φ ∘ e.symm` has infinite analytic order at `0`.
   have hline_zero (v : E) : ∀ᶠ z : ℂ in 𝓝 0, φ (e.symm (e x + z • v)) = 0 := by
     rw [← analyticOrderAt_eq_top]
     by_contra hne
     obtain ⟨m, hm⟩ := ENat.ne_top_iff_exists.1 hne
-    have hle := natCast_le_analyticOrderAt_line_of_mem_pow_ker_eval e he hx
-      (Ideal.mem_iInf.1 hs (m + 1)) (hφ _ le_rfl) v
-    rw [← hm] at hle
-    exact (Nat.lt_succ_self m).not_ge (ENat.natCast_le_natCast.1 hle)
-  -- Analytic continuation along radial discs forces `φ ∘ e.symm` to vanish on `ball (e x) r`.
-  have hzero_on_ball : ∀ y ∈ ball (e x) r, (φ ∘ e.symm) y = 0 := by
-    intro y hy
+    exact (Nat.lt_succ_self m).not_ge <| ENat.natCast_le_natCast.1 <| hm ▸
+      natCast_le_analyticOrderAt_line_of_mem_pow_ker_eval e he hx
+        (Ideal.mem_iInf.1 hs (m + 1)) (hφ _ le_rfl) v
+  have hzero_on_ball : ∀ y ∈ ball (e x) r, (φ ∘ e.symm) y = 0 := fun y hy ↦ by
     set v := y - e x
-    have hv_lt : ‖v‖ < r := by simpa [v, dist_eq_norm] using hy
     rcases eq_or_ne v 0 with hv0 | hv0
-    · have hyx : y = e x := sub_eq_zero.1 hv0
-      subst hyx
-      simpa using (hline_zero 0).self_of_nhds
+    · simpa [sub_eq_zero.1 hv0] using (hline_zero 0).self_of_nhds
     · have hv_pos : 0 < ‖v‖ := norm_pos_iff.2 hv0
-      set R : ℝ := r / ‖v‖
-      have h1R : 1 < R := (one_lt_div hv_pos).2 hv_lt
-      have hR0 : 0 < R := zero_lt_one.trans h1R
-      have hg_an : AnalyticOnNhd ℂ (fun z : ℂ ↦ (φ ∘ e.symm) (e x + z • v)) (ball 0 R) := by
-        intro z hz
-        have hmem : e x + z • v ∈ ball (e x) r := by
+      have h1R : 1 < r / ‖v‖ := (one_lt_div hv_pos).2 (by simpa [v, dist_eq_norm] using hy)
+      have hg_an : AnalyticOnNhd ℂ (fun z : ℂ ↦ (φ ∘ e.symm) (e x + z • v)) (ball 0 (r / ‖v‖)) :=
+        fun z hz ↦ (hball (by
           rw [mem_ball, dist_self_add_left, norm_smul]
-          calc ‖z‖ * ‖v‖ < R * ‖v‖ := mul_lt_mul_of_pos_right (by simpa using hz) hv_pos
-            _ = r := div_mul_cancel₀ r hv_pos.ne'
-        exact (hball hmem).comp_of_eq
-          (by fun_prop : AnalyticAt ℂ (fun w : ℂ ↦ e x + w • v) z) rfl
-      have h0_mem : (0 : ℂ) ∈ ball (0 : ℂ) R := mem_ball_self hR0
-      have h1_mem : (1 : ℂ) ∈ ball (0 : ℂ) R := by simp [h1R]
-      have hval := hg_an.eqOn_zero_of_preconnected_of_eventuallyEq_zero
-        (convex_ball (0 : ℂ) R).isPreconnected h0_mem (hline_zero v) h1_mem
-      simpa [v] using hval
+          exact (mul_lt_mul_of_pos_right (by simpa using hz) hv_pos).trans_eq
+            (div_mul_cancel₀ r hv_pos.ne'))).comp_of_eq (by fun_prop) rfl
+      simpa [v] using hg_an.eqOn_zero_of_preconnected_of_eventuallyEq_zero
+        (convex_ball (0 : ℂ) (r / ‖v‖)).isPreconnected (mem_ball_self (zero_lt_one.trans h1R))
+        (hline_zero v) (show (1 : ℂ) ∈ ball 0 (r / ‖v‖) by simpa using h1R)
   apply toFilterGerm_nhds_injective x
   rw [hφ _ le_rfl, map_zero, ← Germ.coe_zero, Germ.coe_eq]
   filter_upwards [e.open_source.mem_nhds hx, (e.continuousAt hx).eventually (ball_mem_nhds _ hr)]

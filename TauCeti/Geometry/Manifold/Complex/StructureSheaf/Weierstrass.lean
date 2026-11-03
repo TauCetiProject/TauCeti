@@ -159,13 +159,8 @@ theorem toFilterGerm_evalVertical_sum_monomial {x₀ : E} {w₀ : ℂ} {d : ℕ}
       (fun p : E × ℂ ↦ ∑ i : Fin d, C i p.1 * (p.2 - w₀) ^ (i : ℕ)) := by
   simp only [map_sum, evalVertical_monomial, map_mul, map_pow, toFilterGerm_stalkPrecomp, hC,
     toFilterGerm_germOfContMDiff, Germ.coe_compTendsto, ← Germ.coe_pow, ← Germ.coe_mul]
-  have hsum := (map_sum (Germ.coeAddHom (M := ℂ) (𝓝 (x₀, w₀)))
-    (fun i : Fin d ↦ (C i ∘ Prod.fst) * (fun p : E × ℂ ↦ p.2 - w₀) ^ (i : ℕ)) Finset.univ).symm
-  simp only [Germ.coe_coeAddHom] at hsum
-  refine hsum.trans ?_
-  congr 1
-  ext p
-  simp [Function.comp_apply]
+  exact (map_sum (Germ.coeAddHom (M := ℂ) (𝓝 (x₀, w₀))) _ Finset.univ).symm.trans
+    (congrArg _ (funext fun _ ↦ by simp [Function.comp_apply]))
 
 /-- If `C i` represents `c i` near `x₀`, then `(x, w) ↦ (monicOfCoeff (C · x)).eval (w - w₀)`
 represents `evalVertical x₀ w₀ (monicOfCoeff c)` near `(x₀, w₀)`. -/
@@ -176,28 +171,13 @@ theorem toFilterGerm_evalVertical_monicOfCoeff {x₀ : E} {w₀ : ℂ} {d : ℕ}
     toFilterGerm 𝓘(ℂ, E × ℂ) (E × ℂ) (x₀, w₀) (𝓝 (x₀, w₀)) le_rfl
         (evalVertical x₀ w₀ (TauCeti.Polynomial.monicOfCoeff c)) =
       (fun p : E × ℂ ↦ (TauCeti.Polynomial.monicOfCoeff (fun i ↦ C i p.1)).eval (p.2 - w₀)) := by
-  have hP : TauCeti.Polynomial.monicOfCoeff c =
-      Polynomial.X ^ d + ∑ i : Fin d, Polynomial.monomial (i : ℕ) (c i) := by
-    ext k
-    rcases lt_trichotomy k d with hk | rfl | hk
-    · have hk' : k = ((⟨k, hk⟩ : Fin d) : ℕ) := rfl
-      rw [hk', TauCeti.Polynomial.coeff_monicOfCoeff]
-      simp only [coeff_add, coeff_X_pow, ite_eq_right hk.ne, zero_add, finsetSum_coeff,
-        coeff_monomial]
-      rw [Finset.sum_eq_single ⟨k, hk⟩ (fun j _ hj ↦ ite_eq_right (Fin.val_ne_of_ne hj)) (by simp),
-        ite_eq_left rfl]
-    · simp [coeff_monomial, fun j : Fin k ↦ j.2.ne]
-    · have hlt : (∑ i : Fin d, Polynomial.monomial (i : ℕ) (c i)).degree < d := by
-        simpa only [C_mul_X_pow_eq_monomial] using Polynomial.degree_sum_fin_lt c
-      rw [coeff_eq_zero_of_natDegree_lt (by simpa using hk), coeff_add, coeff_X_pow,
-        ite_eq_right hk.ne', zero_add,
-        coeff_eq_zero_of_degree_lt (hlt.trans (Nat.cast_lt.2 hk))]
-  rw [hP, map_add, map_pow, evalVertical_X, map_add, map_pow,
-    toFilterGerm_germOfContMDiff, toFilterGerm_evalVertical_sum_monomial hC, ← Germ.coe_pow,
-    ← Germ.coe_add]
-  congr 1
-  ext p
-  exact (TauCeti.Polynomial.eval_monicOfCoeff _ _).symm
+  rw [show evalVertical x₀ w₀ (TauCeti.Polynomial.monicOfCoeff c) =
+      evalVertical x₀ w₀ Polynomial.X ^ d +
+        evalVertical x₀ w₀ (∑ i : Fin d, Polynomial.monomial (i : ℕ) (c i)) by
+    simp [evalVertical, Polynomial.eval₂_eq_eval_map, TauCeti.Polynomial.eval_monicOfCoeff],
+    map_add, map_pow, evalVertical_X, toFilterGerm_germOfContMDiff,
+    toFilterGerm_evalVertical_sum_monomial hC, ← Germ.coe_pow, ← Germ.coe_add]
+  exact congrArg _ (funext fun _ ↦ (TauCeti.Polynomial.eval_monicOfCoeff _ _).symm)
 
 /-- A monic polynomial `monicOfCoeff c` over `𝒪_{E, x₀}` is distinguished at the maximal ideal if
 and only if all lower coefficient germs `c i` vanish at `x₀`. -/
@@ -206,40 +186,44 @@ theorem isDistinguishedAt_monicOfCoeff_iff {x₀ : E} {d : ℕ}
     (TauCeti.Polynomial.monicOfCoeff c).IsDistinguishedAt
         (IsLocalRing.maximalIdeal ((holomorphicStructureSheaf 𝓘(ℂ, E) E).presheaf.stalk x₀)) ↔
       ∀ i, eval 𝓘(ℂ, E) E x₀ (c i) = 0 := by
-  constructor
-  · intro h i
-    have hmem := h.mem (n := (i : ℕ)) (by simp [i.2])
+  refine ⟨fun h i ↦ ?_, fun hc ↦ ⟨⟨fun {n} hn ↦ ?_⟩, TauCeti.Polynomial.monic_monicOfCoeff c⟩⟩
+  · have hmem := h.mem (n := (i : ℕ)) (by simp [i.2])
     rwa [TauCeti.Polynomial.coeff_monicOfCoeff, maximalIdeal_stalk, RingHom.mem_ker] at hmem
-  · intro hc
-    refine ⟨⟨fun {n} hn ↦ ?_⟩, TauCeti.Polynomial.monic_monicOfCoeff c⟩
-    rw [TauCeti.Polynomial.natDegree_monicOfCoeff] at hn
-    have hn' : n = ((⟨n, hn⟩ : Fin d) : ℕ) := rfl
-    rw [maximalIdeal_stalk, RingHom.mem_ker, hn', TauCeti.Polynomial.coeff_monicOfCoeff]
+  · rw [TauCeti.Polynomial.natDegree_monicOfCoeff] at hn
+    rw [maximalIdeal_stalk, RingHom.mem_ker, show n = ((⟨n, hn⟩ : Fin d) : ℕ) from rfl,
+      TauCeti.Polynomial.coeff_monicOfCoeff]
     exact hc ⟨n, hn⟩
 
 /-! ### Vertical Taylor expansion -/
 
-private theorem eventually_contMDiffAt_verticalCoeff (x₀ : E) (w₀ : ℂ) (n : ℕ)
+private theorem exists_analyticAt_toFilterGerm_eq {F : Type} [NormedAddCommGroup F]
+    [NormedSpace ℂ F] (p : F) (s : (holomorphicStructureSheaf 𝓘(ℂ, F) F).presheaf.stalk p) :
+    ∃ φ : F → ℂ, AnalyticAt ℂ φ p ∧ toFilterGerm 𝓘(ℂ, F) F p (𝓝 p) le_rfl s = φ := by
+  obtain ⟨φ, hφ_cm, hφ⟩ := exists_toFilterGerm_eq p s
+  exact ⟨φ, contMDiffAt_modelSpace_omega_iff_analyticAt.1 hφ_cm.self_of_nhds, hφ _ le_rfl⟩
+
+private theorem exists_toFilterGerm_eq_of_analyticAt {F : Type} [NormedAddCommGroup F]
+    [NormedSpace ℂ F] {p : F} {φ : F → ℂ} (hφ : AnalyticAt ℂ φ p) :
+    ∃ s : (holomorphicStructureSheaf 𝓘(ℂ, F) F).presheaf.stalk p,
+      toFilterGerm 𝓘(ℂ, F) F p (𝓝 p) le_rfl s = φ :=
+  exists_toFilterGerm_nhds_eq_iff.2
+    (hφ.eventually_analyticAt.mono fun _ ↦ contMDiffAt_modelSpace_omega_iff_analyticAt.2)
+
+private theorem exists_verticalCoeffFun (x₀ : E) (w₀ : ℂ) (n : ℕ)
     (g : (holomorphicStructureSheaf 𝓘(ℂ, E × ℂ) (E × ℂ)).presheaf.stalk (x₀, w₀)) :
-    ∀ᶠ x in 𝓝 x₀, ContMDiffAt 𝓘(ℂ, E) 𝓘(ℂ) ω
-      (fun x : E ↦ (n.factorial : ℂ)⁻¹ *
-        iteratedDeriv n (fun w ↦ Classical.choose (exists_toFilterGerm_eq (x₀, w₀) g) (x, w)) w₀)
-      x := by
-  have hG_an : AnalyticAt ℂ (Classical.choose (exists_toFilterGerm_eq (x₀, w₀) g)) (x₀, w₀) :=
-    contMDiffAt_modelSpace_omega_iff_analyticAt.1
-      (Classical.choose_spec (exists_toFilterGerm_eq (x₀, w₀) g)).1.self_of_nhds
-  have han : AnalyticAt ℂ
-      (fun x : E ↦ (n.factorial : ℂ)⁻¹ *
-        iteratedDeriv n (fun w ↦ Classical.choose (exists_toFilterGerm_eq (x₀, w₀) g) (x, w)) w₀)
-      x₀ :=
-    analyticAt_const.fun_mul (hG_an.curry_left_iteratedDeriv_snd n)
-  exact han.eventually_analyticAt.mono fun _ ↦ contMDiffAt_modelSpace_omega_iff_analyticAt.2
+    ∃ c : (holomorphicStructureSheaf 𝓘(ℂ, E) E).presheaf.stalk x₀,
+      toFilterGerm 𝓘(ℂ, E) E x₀ (𝓝 x₀) le_rfl c =
+        (fun x : E ↦ (n.factorial : ℂ)⁻¹ * iteratedDeriv n
+          (fun w ↦ Classical.choose (exists_analyticAt_toFilterGerm_eq (x₀, w₀) g) (x, w)) w₀) :=
+  exists_toFilterGerm_eq_of_analyticAt <|
+    (analyticAt_const : AnalyticAt ℂ (fun _ : E ↦ (n.factorial : ℂ)⁻¹) x₀).fun_mul <|
+      (Classical.choose_spec (exists_analyticAt_toFilterGerm_eq (x₀, w₀) g)).1
+        |>.curry_left_iteratedDeriv_snd n
 
 private def verticalCoeffFun (x₀ : E) (w₀ : ℂ) (n : ℕ)
     (g : (holomorphicStructureSheaf 𝓘(ℂ, E × ℂ) (E × ℂ)).presheaf.stalk (x₀, w₀)) :
     (holomorphicStructureSheaf 𝓘(ℂ, E) E).presheaf.stalk x₀ :=
-  Classical.choose (exists_toFilterGerm_eq_of_eventually_contMDiffAt
-    (eventually_contMDiffAt_verticalCoeff x₀ w₀ n g))
+  Classical.choose (exists_verticalCoeffFun x₀ w₀ n g)
 
 private theorem toFilterGerm_verticalCoeffFun {x₀ : E} {w₀ : ℂ}
     {g : (holomorphicStructureSheaf 𝓘(ℂ, E × ℂ) (E × ℂ)).presheaf.stalk (x₀, w₀)}
@@ -247,19 +231,15 @@ private theorem toFilterGerm_verticalCoeffFun {x₀ : E} {w₀ : ℂ}
     (hgG : toFilterGerm 𝓘(ℂ, E × ℂ) (E × ℂ) (x₀, w₀) (𝓝 (x₀, w₀)) le_rfl g = G) (n : ℕ) :
     toFilterGerm 𝓘(ℂ, E) E x₀ (𝓝 x₀) le_rfl (verticalCoeffFun x₀ w₀ n g) =
       (fun x : E ↦ (n.factorial : ℂ)⁻¹ * iteratedDeriv n (fun w ↦ G (x, w)) w₀) := by
-  unfold verticalCoeffFun
-  have hspec := Classical.choose_spec (exists_toFilterGerm_eq_of_eventually_contMDiffAt
-    (eventually_contMDiffAt_verticalCoeff x₀ w₀ n g)) (𝓝 x₀) le_rfl
-  set G₀ := Classical.choose (exists_toFilterGerm_eq (x₀, w₀) g)
-  have hG₀ : toFilterGerm 𝓘(ℂ, E × ℂ) (E × ℂ) (x₀, w₀) (𝓝 (x₀, w₀)) le_rfl g = G₀ :=
-    (Classical.choose_spec (exists_toFilterGerm_eq (x₀, w₀) g)).2 (𝓝 (x₀, w₀)) le_rfl
-  have heq : G₀ =ᶠ[𝓝 (x₀, w₀)] G := Germ.coe_eq.1 (hG₀.symm.trans hgG)
-  obtain ⟨δ, hδ, hball⟩ := Metric.mem_nhds_iff.1 heq
+  have hspec := Classical.choose_spec (exists_verticalCoeffFun x₀ w₀ n g)
+  have hG₀ := (Classical.choose_spec (exists_analyticAt_toFilterGerm_eq (x₀, w₀) g)).2
+  obtain ⟨δ, hδ, hball⟩ := Metric.mem_nhds_iff.1 (Germ.coe_eq.1 (hG₀.symm.trans hgG))
   refine hspec.trans (Germ.coe_eq.2 ?_)
   filter_upwards [ball_mem_nhds x₀ hδ] with x hx
-  have hslice : (fun w ↦ G₀ (x, w)) =ᶠ[𝓝 w₀] fun w ↦ G (x, w) := by
+  have hslice : (fun w ↦ Classical.choose (exists_analyticAt_toFilterGerm_eq (x₀, w₀) g) (x, w))
+      =ᶠ[𝓝 w₀] fun w ↦ G (x, w) := by
     filter_upwards [ball_mem_nhds w₀ hδ] with w hw
-    exact hball (ball_prod_same x₀ w₀ δ ▸ (⟨hx, hw⟩ : (x, w) ∈ ball x₀ δ ×ˢ ball w₀ δ))
+    exact hball (ball_prod_same x₀ w₀ δ ▸ ⟨hx, hw⟩)
   rw [hslice.iteratedDeriv_eq n]
 
 /-- Expands a holomorphic germ at `(x₀, w₀)` on `E × ℂ` as a formal power series in `w - w₀` over
@@ -270,93 +250,56 @@ def verticalPowerSeries (x₀ : E) (w₀ : ℂ) :
       ((holomorphicStructureSheaf 𝓘(ℂ, E) E).presheaf.stalk x₀)⟦X⟧ where
   toFun g := PowerSeries.mk fun n ↦ verticalCoeffFun x₀ w₀ n g
   map_one' := by
-    ext n
-    apply toFilterGerm_nhds_injective x₀
+    ext n; apply toFilterGerm_nhds_injective x₀
     rw [PowerSeries.coeff_mk,
       toFilterGerm_verticalCoeffFun (G := fun _ ↦ 1) (by rw [map_one]; rfl) n]
-    rcases n with _ | n
-    · simp [iteratedDeriv_zero]; rfl
-    · simp [iteratedDeriv_const]; rfl
+    rcases n with _ | n <;> simp [iteratedDeriv_const] <;> rfl
   map_mul' g₁ g₂ := by
-    obtain ⟨G₁, hG₁_cm, hG₁⟩ := exists_toFilterGerm_eq (x₀, w₀) g₁
-    obtain ⟨G₂, hG₂_cm, hG₂⟩ := exists_toFilterGerm_eq (x₀, w₀) g₂
-    have hG₁_an : AnalyticAt ℂ G₁ (x₀, w₀) :=
-      contMDiffAt_modelSpace_omega_iff_analyticAt.1 hG₁_cm.self_of_nhds
-    have hG₂_an : AnalyticAt ℂ G₂ (x₀, w₀) :=
-      contMDiffAt_modelSpace_omega_iff_analyticAt.1 hG₂_cm.self_of_nhds
-    obtain ⟨δ, hδ, hball⟩ := Metric.mem_nhds_iff.1
-      (Filter.inter_mem ((isOpen_analyticAt ℂ G₁).mem_nhds hG₁_an)
-        ((isOpen_analyticAt ℂ G₂).mem_nhds hG₂_an))
-    ext n
-    apply toFilterGerm_nhds_injective x₀
-    have hmul_germ : toFilterGerm 𝓘(ℂ, E × ℂ) (E × ℂ) (x₀, w₀) (𝓝 (x₀, w₀)) le_rfl (g₁ * g₂) =
-        G₁ * G₂ := by
-      rw [map_mul, hG₁ _ le_rfl, hG₂ _ le_rfl, ← Germ.coe_mul]
-    rw [PowerSeries.coeff_mk, toFilterGerm_verticalCoeffFun hmul_germ n, PowerSeries.coeff_mul,
-      Finset.Nat.sum_antidiagonal_eq_sum_range_succ
-        (fun i j ↦ PowerSeries.coeff i _ * PowerSeries.coeff j _) n,
-      map_sum]
-    simp only [PowerSeries.coeff_mk, map_mul, toFilterGerm_verticalCoeffFun (hG₁ _ le_rfl),
-      toFilterGerm_verticalCoeffFun (hG₂ _ le_rfl), ← Germ.coe_mul]
-    have hsum := map_sum (Germ.coeAddHom (M := ℂ) (𝓝 x₀))
-      (fun i ↦ (fun x ↦ (i.factorial : ℂ)⁻¹ * iteratedDeriv i (fun w ↦ G₁ (x, w)) w₀) *
-        fun x ↦ ((n - i).factorial : ℂ)⁻¹ * iteratedDeriv (n - i) (fun w ↦ G₂ (x, w)) w₀)
-      (Finset.range n.succ)
-    simp only [Germ.coe_coeAddHom] at hsum
-    rw [← hsum]
-    refine Germ.coe_eq.2 ?_
-    filter_upwards [ball_mem_nhds x₀ hδ] with x hx
-    have hxw₀ : (x, w₀) ∈ ball (x₀, w₀) δ := by
-      rw [← ball_prod_same]
-      exact ⟨hx, mem_ball_self hδ⟩
-    have h₁ : AnalyticAt ℂ (fun w ↦ G₁ (x, w)) w₀ := (hball hxw₀).1.curry_right
-    have h₂ : AnalyticAt ℂ (fun w ↦ G₂ (x, w)) w₀ := (hball hxw₀).2.curry_right
+    obtain ⟨G₁, hG₁_an, hG₁⟩ := exists_analyticAt_toFilterGerm_eq (x₀, w₀) g₁
+    obtain ⟨G₂, hG₂_an, hG₂⟩ := exists_analyticAt_toFilterGerm_eq (x₀, w₀) g₂
+    ext n; apply toFilterGerm_nhds_injective x₀
+    rw [PowerSeries.coeff_mk,
+      toFilterGerm_verticalCoeffFun (by rw [map_mul, hG₁, hG₂, ← Germ.coe_mul]) n,
+      PowerSeries.coeff_mul, Finset.Nat.sum_antidiagonal_eq_sum_range_succ
+        (fun i j ↦ PowerSeries.coeff i _ * PowerSeries.coeff j _) n, map_sum]
+    simp only [PowerSeries.coeff_mk, map_mul, toFilterGerm_verticalCoeffFun hG₁,
+      toFilterGerm_verticalCoeffFun hG₂, ← Germ.coe_mul]
+    refine (Germ.coe_eq.2 ?_).trans
+      (map_sum (Germ.coeAddHom (M := ℂ) (𝓝 x₀)) _ (Finset.range n.succ))
+    filter_upwards [((by fun_prop : Continuous fun x : E ↦ (x, w₀)).tendsto x₀).eventually
+      (hG₁_an.eventually_analyticAt.and hG₂_an.eventually_analyticAt)] with x ⟨h₁, h₂⟩
     simp only [Pi.mul_apply, Finset.sum_apply]
-    rw [iteratedDeriv_fun_mul (h₁.contDiffAt.of_le le_top) (h₂.contDiffAt.of_le le_top),
-      Finset.mul_sum]
+    rw [iteratedDeriv_fun_mul (h₁.curry_right.contDiffAt.of_le le_top)
+      (h₂.curry_right.contDiffAt.of_le le_top), Finset.mul_sum]
     refine Finset.sum_congr rfl fun i hi ↦ ?_
-    have hle : i ≤ n := Finset.mem_range_succ_iff.1 hi
+    have hle := Finset.mem_range_succ_iff.1 hi
     have hfac : (n.factorial : ℂ) =
         (n.choose i : ℂ) * (i.factorial : ℂ) * ((n - i).factorial : ℂ) := by
       exact_mod_cast (Nat.choose_mul_factorial_mul_factorial hle).symm
-    have hchoose : (n.choose i : ℂ) ≠ 0 := Nat.cast_ne_zero.2 (Nat.choose_pos hle).ne'
     rw [hfac, mul_inv, mul_inv]
     linear_combination
       (iteratedDeriv i (fun w ↦ G₁ (x, w)) w₀ * iteratedDeriv (n - i) (fun w ↦ G₂ (x, w)) w₀ *
         (i.factorial : ℂ)⁻¹ * ((n - i).factorial : ℂ)⁻¹) *
-        inv_mul_cancel₀ hchoose
+        inv_mul_cancel₀ (a := (n.choose i : ℂ)) (Nat.cast_ne_zero.2 (Nat.choose_pos hle).ne')
   map_zero' := by
-    ext n
-    apply toFilterGerm_nhds_injective x₀
+    ext n; apply toFilterGerm_nhds_injective x₀
     rw [PowerSeries.coeff_mk,
       toFilterGerm_verticalCoeffFun (G := fun _ ↦ 0) (by rw [map_zero]; rfl) n, map_zero]
     simp; rfl
   map_add' g₁ g₂ := by
-    obtain ⟨G₁, hG₁_cm, hG₁⟩ := exists_toFilterGerm_eq (x₀, w₀) g₁
-    obtain ⟨G₂, hG₂_cm, hG₂⟩ := exists_toFilterGerm_eq (x₀, w₀) g₂
-    have hG₁_an : AnalyticAt ℂ G₁ (x₀, w₀) :=
-      contMDiffAt_modelSpace_omega_iff_analyticAt.1 hG₁_cm.self_of_nhds
-    have hG₂_an : AnalyticAt ℂ G₂ (x₀, w₀) :=
-      contMDiffAt_modelSpace_omega_iff_analyticAt.1 hG₂_cm.self_of_nhds
-    obtain ⟨δ, hδ, hball⟩ := Metric.mem_nhds_iff.1
-      (Filter.inter_mem ((isOpen_analyticAt ℂ G₁).mem_nhds hG₁_an)
-        ((isOpen_analyticAt ℂ G₂).mem_nhds hG₂_an))
-    ext n
-    apply toFilterGerm_nhds_injective x₀
-    have hadd_germ : toFilterGerm 𝓘(ℂ, E × ℂ) (E × ℂ) (x₀, w₀) (𝓝 (x₀, w₀)) le_rfl (g₁ + g₂) =
-        G₁ + G₂ := by
-      rw [map_add, hG₁ _ le_rfl, hG₂ _ le_rfl, ← Germ.coe_add]
-    rw [PowerSeries.coeff_mk, toFilterGerm_verticalCoeffFun hadd_germ n, map_add, map_add,
-      PowerSeries.coeff_mk, PowerSeries.coeff_mk, toFilterGerm_verticalCoeffFun (hG₁ _ le_rfl) n,
-      toFilterGerm_verticalCoeffFun (hG₂ _ le_rfl) n, ← Germ.coe_add, Germ.coe_eq]
-    filter_upwards [ball_mem_nhds x₀ hδ] with x hx
-    have hxw₀ : (x, w₀) ∈ ball (x₀, w₀) δ := by
-      rw [← ball_prod_same]
-      exact ⟨hx, mem_ball_self hδ⟩
-    have h₁ : AnalyticAt ℂ (fun w ↦ G₁ (x, w)) w₀ := (hball hxw₀).1.curry_right
-    have h₂ : AnalyticAt ℂ (fun w ↦ G₂ (x, w)) w₀ := (hball hxw₀).2.curry_right
+    obtain ⟨G₁, hG₁_an, hG₁⟩ := exists_analyticAt_toFilterGerm_eq (x₀, w₀) g₁
+    obtain ⟨G₂, hG₂_an, hG₂⟩ := exists_analyticAt_toFilterGerm_eq (x₀, w₀) g₂
+    ext n; apply toFilterGerm_nhds_injective x₀
+    rw [PowerSeries.coeff_mk,
+      toFilterGerm_verticalCoeffFun (by rw [map_add, hG₁, hG₂, ← Germ.coe_add]) n,
+      map_add, map_add, PowerSeries.coeff_mk, PowerSeries.coeff_mk,
+      toFilterGerm_verticalCoeffFun hG₁ n, toFilterGerm_verticalCoeffFun hG₂ n, ← Germ.coe_add,
+      Germ.coe_eq]
+    filter_upwards [((by fun_prop : Continuous fun x : E ↦ (x, w₀)).tendsto x₀).eventually
+      (hG₁_an.eventually_analyticAt.and hG₂_an.eventually_analyticAt)] with x ⟨h₁, h₂⟩
     simp only [Pi.add_apply]
-    rw [iteratedDeriv_fun_add (h₁.contDiffAt.of_le le_top) (h₂.contDiffAt.of_le le_top), mul_add]
+    rw [iteratedDeriv_fun_add (h₁.curry_right.contDiffAt.of_le le_top)
+      (h₂.curry_right.contDiffAt.of_le le_top), mul_add]
 
 /-- If `G` represents `g` near `(x₀, w₀)`, then `x ↦ (n!)⁻¹ * iteratedDeriv n (G (x, ·)) w₀`
 represents the `n`-th coefficient of `verticalPowerSeries x₀ w₀ g` near `x₀`. -/
@@ -367,9 +310,7 @@ theorem toFilterGerm_coeff_verticalPowerSeries {x₀ : E} {w₀ : ℂ}
     toFilterGerm 𝓘(ℂ, E) E x₀ (𝓝 x₀) le_rfl
         (PowerSeries.coeff n (verticalPowerSeries x₀ w₀ g)) =
       (fun x : E ↦ (n.factorial : ℂ)⁻¹ * iteratedDeriv n (fun w ↦ G (x, w)) w₀) := by
-  simp only [verticalPowerSeries, RingHom.coe_mk, MonoidHom.coe_mk, OneHom.coe_mk,
-    PowerSeries.coeff_mk]
-  exact toFilterGerm_verticalCoeffFun hgG n
+  simpa [verticalPowerSeries] using toFilterGerm_verticalCoeffFun hgG n
 
 /-- Evaluating the constant coefficient of `verticalPowerSeries x₀ w₀ g` at `x₀` recovers the
 value of `g` at `(x₀, w₀)`. -/
@@ -394,10 +335,8 @@ theorem verticalPowerSeries_stalkPrecomp_fst (x₀ : E) (w₀ : ℂ)
   obtain ⟨A, -, hA⟩ := exists_toFilterGerm_eq x₀ a
   have hpre : toFilterGerm 𝓘(ℂ, E × ℂ) (E × ℂ) (x₀, w₀) (𝓝 (x₀, w₀)) le_rfl
       (stalkPrecomp 𝓘(ℂ, E × ℂ) (E × ℂ) Prod.fst hf (x₀, w₀) a) = (fun p : E × ℂ ↦ A p.1) := by
-    rw [toFilterGerm_stalkPrecomp, hA _ le_rfl, Germ.coe_compTendsto]
-    rfl
-  ext n
-  apply toFilterGerm_nhds_injective x₀
+    rw [toFilterGerm_stalkPrecomp, hA _ le_rfl, Germ.coe_compTendsto]; rfl
+  ext n; apply toFilterGerm_nhds_injective x₀
   rw [toFilterGerm_coeff_verticalPowerSeries hpre n]
   rcases n with _ | n
   · simp [iteratedDeriv_zero, hA _ le_rfl]
@@ -410,21 +349,19 @@ theorem verticalPowerSeries_evalVertical (x₀ : E) (w₀ : ℂ)
     verticalPowerSeries x₀ w₀ (evalVertical x₀ w₀ P) = P := by
   have heq : (verticalPowerSeries x₀ w₀).comp (evalVertical x₀ w₀) =
       Polynomial.coeToPowerSeries.ringHom := by
-    apply Polynomial.ringHom_ext'
-    · refine RingHom.ext fun a ↦ ?_
-      simpa only [RingHom.comp_apply, evalVertical_C, Polynomial.coeToPowerSeries.ringHom_apply,
+    refine Polynomial.ringHom_ext' (RingHom.ext fun a ↦ ?_) ?_
+    · simpa only [RingHom.comp_apply, evalVertical_C, Polynomial.coeToPowerSeries.ringHom_apply,
         Polynomial.coe_C] using verticalPowerSeries_stalkPrecomp_fst x₀ w₀ _ a
     · simp only [RingHom.comp_apply, evalVertical_X, Polynomial.coeToPowerSeries.ringHom_apply,
         Polynomial.coe_X]
-      ext n
-      apply toFilterGerm_nhds_injective x₀
+      ext n; apply toFilterGerm_nhds_injective x₀
       rw [toFilterGerm_coeff_verticalPowerSeries (toFilterGerm_germOfContMDiff _ _ le_rfl) n,
         PowerSeries.coeff_X]
       rcases n with _ | _ | n
       · simp [iteratedDeriv_zero]; rfl
       · simp [iteratedDeriv_succ', iteratedDeriv_zero]; rfl
-      · have hderiv : deriv (fun w : ℂ ↦ w - w₀) = fun _ ↦ 1 := funext fun _ ↦ by simp
-        simp [iteratedDeriv_succ', hderiv, iteratedDeriv_const]; rfl
+      · simp [iteratedDeriv_succ', show deriv (fun w : ℂ ↦ w - w₀) = fun _ ↦ 1 from
+          funext fun _ ↦ by simp, iteratedDeriv_const]; rfl
   exact RingHom.congr_fun heq P
 
 /-- Vertical Taylor expansion at `(x₀, w₀)` is injective (without assuming finite-dimensionality
@@ -433,58 +370,42 @@ theorem verticalPowerSeries_injective (x₀ : E) (w₀ : ℂ) :
     Injective (verticalPowerSeries x₀ w₀) := by
   rw [injective_iff_map_eq_zero]
   intro g hg
-  obtain ⟨G, hG_cm, hG⟩ := exists_toFilterGerm_eq (x₀, w₀) g
-  have hG_an : AnalyticAt ℂ G (x₀, w₀) :=
-    contMDiffAt_modelSpace_omega_iff_analyticAt.1 hG_cm.self_of_nhds
+  obtain ⟨G, hG_an, hG⟩ := exists_analyticAt_toFilterGerm_eq (x₀, w₀) g
   obtain ⟨r, hr, hball⟩ := Metric.isOpen_iff.1 (isOpen_analyticAt ℂ G) (x₀, w₀) hG_an
-  -- Each vertical Taylor coefficient is analytic on `ball x₀ r` and vanishes near `x₀`, hence
-  -- vanishes on all of `ball x₀ r`.
-  have hcoeff_zero (n : ℕ) : ∀ x ∈ ball x₀ r, iteratedDeriv n (fun w ↦ G (x, w)) w₀ = 0 := by
+  have hmem {x : E} {w : ℂ} (hx : x ∈ ball x₀ r) (hw : w ∈ ball w₀ r) :
+      (x, w) ∈ ball (x₀, w₀) r := ball_prod_same x₀ w₀ r ▸ ⟨hx, hw⟩
+  have hcoeff_zero (n : ℕ) {x : E} (hx : x ∈ ball x₀ r) :
+      iteratedDeriv n (fun w ↦ G (x, w)) w₀ = 0 := by
     have han_n : AnalyticOnNhd ℂ
         (fun x : E ↦ (n.factorial : ℂ)⁻¹ * iteratedDeriv n (fun w ↦ G (x, w)) w₀) (ball x₀ r) :=
-      fun x hx ↦ by
-        have hxw₀ : (x, w₀) ∈ ball (x₀, w₀) r := by
-          rw [← ball_prod_same]
-          exact ⟨hx, mem_ball_self hr⟩
-        exact analyticAt_const.fun_mul ((hball hxw₀).curry_left_iteratedDeriv_snd n)
+      fun x hx ↦ analyticAt_const.fun_mul
+        ((hball (hmem hx (mem_ball_self hr))).curry_left_iteratedDeriv_snd n)
     have hev_n : (fun x : E ↦ (n.factorial : ℂ)⁻¹ * iteratedDeriv n (fun w ↦ G (x, w)) w₀)
-        =ᶠ[𝓝 x₀] 0 := by
-      have h0 : toFilterGerm 𝓘(ℂ, E) E x₀ (𝓝 x₀) le_rfl
-          (PowerSeries.coeff n (verticalPowerSeries x₀ w₀ g)) = (0 : E → ℂ) := by
-        rw [hg, map_zero, map_zero]; rfl
-      exact Germ.coe_eq.1 ((toFilterGerm_coeff_verticalPowerSeries (hG _ le_rfl) n).symm.trans h0)
-    intro x hx
-    have hmul0 : (n.factorial : ℂ)⁻¹ * iteratedDeriv n (fun w ↦ G (x, w)) w₀ = 0 :=
-      han_n.eqOn_zero_of_preconnected_of_eventuallyEq_zero
-        (convex_ball x₀ r).isPreconnected (mem_ball_self hr) hev_n hx
-    exact (mul_eq_zero.1 hmul0).resolve_left (inv_ne_zero (Nat.cast_ne_zero.2 n.factorial_ne_zero))
-  -- For each `x ∈ ball x₀ r`, the vertical slice `w ↦ G (x, w)` has infinite analytic order at
-  -- `w₀`, hence vanishes on `ball w₀ r`.
+        =ᶠ[𝓝 x₀] 0 := Germ.coe_eq.1
+      ((toFilterGerm_coeff_verticalPowerSeries hG n).symm.trans
+        (by rw [hg, map_zero, map_zero]; rfl))
+    exact (mul_eq_zero.1 (han_n.eqOn_zero_of_preconnected_of_eventuallyEq_zero
+      (convex_ball x₀ r).isPreconnected (mem_ball_self hr) hev_n hx)).resolve_left
+      (inv_ne_zero (Nat.cast_ne_zero.2 n.factorial_ne_zero))
   apply toFilterGerm_nhds_injective (x₀, w₀)
-  rw [hG _ le_rfl, map_zero, ← Germ.coe_zero, Germ.coe_eq]
+  rw [hG, map_zero, ← Germ.coe_zero, Germ.coe_eq]
   filter_upwards [ball_mem_nhds (x₀, w₀) hr] with ⟨x, w⟩ hxw
   obtain ⟨hx, hw⟩ : x ∈ ball x₀ r ∧ w ∈ ball w₀ r := by rwa [← ball_prod_same] at hxw
-  have hslice_an : AnalyticOnNhd ℂ (fun ζ ↦ G (x, ζ)) (ball w₀ r) := fun ζ hζ ↦ by
-    have hxζ : (x, ζ) ∈ ball (x₀, w₀) r := by
-      rw [← ball_prod_same]
-      exact ⟨hx, hζ⟩
-    exact (hball hxζ).curry_right
+  have hslice_an : AnalyticOnNhd ℂ (fun ζ ↦ G (x, ζ)) (ball w₀ r) :=
+    fun ζ hζ ↦ (hball (hmem hx hζ)).curry_right
   have hslice_ev : ∀ᶠ ζ in 𝓝 w₀, G (x, ζ) = 0 := by
     rw [← analyticOrderAt_eq_top]
     by_contra hne
     obtain ⟨m, hm⟩ := ENat.ne_top_iff_exists.1 hne
-    have hle : ((m + 1 : ℕ) : ℕ∞) ≤ analyticOrderAt (fun ζ ↦ G (x, ζ)) w₀ :=
+    exact (Nat.lt_succ_self m).not_ge <| ENat.natCast_le_natCast.1 <| hm ▸
       (natCast_le_analyticOrderAt_iff_iteratedDeriv_eq_zero
-        (hslice_an w₀ (mem_ball_self hr))).2 fun i _ ↦ hcoeff_zero i x hx
-    rw [← hm] at hle
-    exact (Nat.lt_succ_self m).not_ge (ENat.natCast_le_natCast.1 hle)
+        (hslice_an w₀ (mem_ball_self hr))).2 fun i _ ↦ hcoeff_zero i hx
   exact hslice_an.eqOn_zero_of_preconnected_of_eventuallyEq_zero
     (convex_ball w₀ r).isPreconnected (mem_ball_self hr) hslice_ev hw
 
 /-- Polynomial evaluation `evalVertical x₀ w₀` is injective. -/
-theorem evalVertical_injective (x₀ : E) (w₀ : ℂ) : Injective (evalVertical x₀ w₀) := by
-  intro P Q hPQ
-  exact Polynomial.coe_inj.1 <|
+theorem evalVertical_injective (x₀ : E) (w₀ : ℂ) : Injective (evalVertical x₀ w₀) :=
+  fun P Q hPQ ↦ Polynomial.coe_inj.1 <|
     (verticalPowerSeries_evalVertical x₀ w₀ P).symm.trans <|
       (congrArg (verticalPowerSeries x₀ w₀) hPQ).trans (verticalPowerSeries_evalVertical x₀ w₀ Q)
 
@@ -505,10 +426,9 @@ theorem order_map_residue_verticalPowerSeries {x₀ : E} {w₀ : ℂ}
     ((verticalPowerSeries x₀ w₀ g).map
         (IsLocalRing.residue ((holomorphicStructureSheaf 𝓘(ℂ, E) E).presheaf.stalk x₀))).order =
       analyticOrderAt (fun w ↦ G (x₀, w)) w₀ := by
-  have hG_an : AnalyticAt ℂ G (x₀, w₀) :=
-    contMDiffAt_modelSpace_omega_iff_analyticAt.1
-      (exists_toFilterGerm_nhds_eq_iff.1 ⟨g, hgG⟩).self_of_nhds
-  have hslice_an : AnalyticAt ℂ (fun w ↦ G (x₀, w)) w₀ := hG_an.curry_right
+  have hslice_an : AnalyticAt ℂ (fun w ↦ G (x₀, w)) w₀ :=
+    (contMDiffAt_modelSpace_omega_iff_analyticAt.1
+      (exists_toFilterGerm_nhds_eq_iff.1 ⟨g, hgG⟩).self_of_nhds).curry_right
   have hle_iff (n : ℕ) :
       (n : ℕ∞) ≤ ((verticalPowerSeries x₀ w₀ g).map (IsLocalRing.residue _)).order ↔
         (n : ℕ∞) ≤ analyticOrderAt (fun w ↦ G (x₀, w)) w₀ := by
@@ -520,16 +440,12 @@ theorem order_map_residue_verticalPowerSeries {x₀ : E} {w₀ : ℂ}
       eval_eq_of_toFilterGerm_eq (toFilterGerm_coeff_verticalPowerSeries hgG i), mul_eq_zero,
       or_iff_right (inv_ne_zero (Nat.cast_ne_zero.2 i.factorial_ne_zero))]
   have haux {a b : ℕ∞} (H : ∀ n : ℕ, (n : ℕ∞) ≤ a → (n : ℕ∞) ≤ b) : a ≤ b := by
-    rcases eq_top_or_lt_top a with rfl | ha
-    · rw [top_le_iff]
-      by_contra hnb
-      obtain ⟨m, hm⟩ := ENat.ne_top_iff_exists.1 hnb
-      have := H (m + 1) le_top
-      rw [← hm] at this
-      exact (Nat.lt_succ_self m).not_ge (ENat.natCast_le_natCast.1 this)
-    · obtain ⟨m, rfl⟩ := ENat.ne_top_iff_exists.1 ha.ne
-      exact H m le_rfl
-  exact le_antisymm (haux fun n hn ↦ (hle_iff n).1 hn) (haux fun n hn ↦ (hle_iff n).2 hn)
+    cases a <;> cases b
+    · exact le_rfl
+    · exact absurd (ENat.natCast_le_natCast.1 (H (_ + 1) le_top)) (Nat.lt_succ_self _).not_ge
+    · exact le_top
+    · exact H _ le_rfl
+  exact le_antisymm (haux fun n ↦ (hle_iff n).1) (haux fun n ↦ (hle_iff n).2)
 
 /-- The residue-field reduction of `verticalPowerSeries x₀ w₀ g` is nonzero if and only if the
 vertical slice `w ↦ G (x₀, w)` has finite analytic order at `w₀`. -/
@@ -666,23 +582,12 @@ theorem evalVertical_dvd_iff_of_isDistinguishedAt {x₀ : E} {w₀ : ℂ}
       (IsLocalRing.maximalIdeal ((holomorphicStructureSheaf 𝓘(ℂ, E) E).presheaf.stalk x₀))) :
     P ∣ Q ↔ evalVertical x₀ w₀ P ∣ evalVertical x₀ w₀ Q := by
   refine ⟨fun ⟨S, hS⟩ ↦ ⟨evalVertical x₀ w₀ S, by rw [hS, map_mul]⟩, fun ⟨q, hq⟩ ↦ ?_⟩
-  have hmod_eq : evalVertical x₀ w₀ Q =
-      evalVertical x₀ w₀ P * evalVertical x₀ w₀ (Q /ₘ P) + evalVertical x₀ w₀ (Q %ₘ P) := by
-    rw [← map_mul, ← map_add, add_comm, Polynomial.modByMonic_add_div Q]
-  have hdeg_mod : (Q %ₘ P).degree < P.natDegree := by
-    simpa only [degree_eq_natDegree hP.monic.ne_zero] using
-      Polynomial.degree_modByMonic_lt Q hP.monic
-  have hdeg_zero : (0 : ((holomorphicStructureSheaf 𝓘(ℂ, E) E).presheaf.stalk x₀)[X]).degree <
-      P.natDegree := by
-    simp
-  have hq_zero : evalVertical x₀ w₀ Q = evalVertical x₀ w₀ P * q + evalVertical x₀ w₀ 0 := by
-    rw [map_zero, add_zero, hq]
-  have hr0 : Q %ₘ P = 0 :=
-    (weierstrassDivision_unique_of_isDistinguishedAt hP hdeg_mod hmod_eq hdeg_zero hq_zero).2
-  refine ⟨Q /ₘ P, ?_⟩
-  have hdiv := Polynomial.modByMonic_add_div Q P
-  rw [hr0, zero_add] at hdiv
-  exact hdiv.symm
+  have hr0 : Q %ₘ P = 0 := (weierstrassDivision_unique_of_isDistinguishedAt hP
+    (by simpa only [degree_eq_natDegree hP.monic.ne_zero] using
+      Polynomial.degree_modByMonic_lt Q hP.monic)
+    (by rw [← map_mul, ← map_add, add_comm, Polynomial.modByMonic_add_div Q])
+    (by simp) (by rw [map_zero, add_zero, hq])).2
+  exact ⟨Q /ₘ P, by simpa [hr0] using (Polynomial.modByMonic_add_div Q P).symm⟩
 
 /-! ### Existence, uniqueness, quotients, and flatness in finite dimension -/
 
@@ -707,27 +612,21 @@ theorem existsUnique_weierstrassPreparation_of_analyticOrderAt {x₀ : E} {w₀ 
     contMDiffAt_modelSpace_omega_iff_analyticAt.1
       (exists_toFilterGerm_nhds_eq_iff.1 ⟨f, hfF⟩).self_of_nhds
   obtain ⟨C, U, hC_an, hC0, hU_an, hU0, hfac⟩ := hF_an.exists_weierstrassPreparation hd
-  have hc_ex (i : Fin d) : ∃ s, toFilterGerm 𝓘(ℂ, E) E x₀ (𝓝 x₀) le_rfl s = C i :=
-    exists_toFilterGerm_nhds_eq_iff.2
-      ((hC_an i).eventually_analyticAt.mono fun _ ↦ contMDiffAt_modelSpace_omega_iff_analyticAt.2)
   let c : Fin d → (holomorphicStructureSheaf 𝓘(ℂ, E) E).presheaf.stalk x₀ :=
-    fun i ↦ Classical.choose (hc_ex i)
-  have hc_germ : ∀ i, toFilterGerm 𝓘(ℂ, E) E x₀ (𝓝 x₀) le_rfl (c i) = C i :=
-    fun i ↦ Classical.choose_spec (hc_ex i)
-  obtain ⟨u, hu_germ⟩ := exists_toFilterGerm_nhds_eq_iff.2
-    (hU_an.eventually_analyticAt.mono fun _ ↦ contMDiffAt_modelSpace_omega_iff_analyticAt.2)
-  have hc_eval : ∀ i, eval 𝓘(ℂ, E) E x₀ (c i) = 0 := fun i ↦
+    fun i ↦ Classical.choose (exists_toFilterGerm_eq_of_analyticAt (hC_an i))
+  have hc_germ (i : Fin d) : toFilterGerm 𝓘(ℂ, E) E x₀ (𝓝 x₀) le_rfl (c i) = C i :=
+    Classical.choose_spec (exists_toFilterGerm_eq_of_analyticAt (hC_an i))
+  obtain ⟨u, hu_germ⟩ := exists_toFilterGerm_eq_of_analyticAt hU_an
+  have hc_eval (i : Fin d) : eval 𝓘(ℂ, E) E x₀ (c i) = 0 :=
     (eval_eq_of_toFilterGerm_eq (hc_germ i)).trans (hC0 i)
-  have hu_unit : IsUnit u := by
-    rw [isUnit_stalk_iff, eval_eq_of_toFilterGerm_eq hu_germ]
-    exact hU0
-  have hf_eq : f = evalVertical x₀ w₀ (TauCeti.Polynomial.monicOfCoeff c) * u := by
-    apply toFilterGerm_nhds_injective (x₀, w₀)
-    rw [hfF, map_mul, toFilterGerm_evalVertical_monicOfCoeff hc_germ, hu_germ, ← Germ.coe_mul,
-      Germ.coe_eq]
-    exact hfac
-  refine ⟨(c, u), ⟨hc_eval, hu_unit, hf_eq⟩, ?_⟩
-  rintro ⟨c', u'⟩ ⟨hc'_eval, hu'_unit, hf'_eq⟩
+  have hu_unit : IsUnit u :=
+    (isUnit_stalk_iff 𝓘(ℂ, E × ℂ) (E × ℂ) u).2 ((eval_eq_of_toFilterGerm_eq hu_germ).symm ▸ hU0)
+  have hf_eq : f = evalVertical x₀ w₀ (TauCeti.Polynomial.monicOfCoeff c) * u :=
+    toFilterGerm_nhds_injective (x₀, w₀) <| by
+      rw [hfF, map_mul, toFilterGerm_evalVertical_monicOfCoeff hc_germ, hu_germ, ← Germ.coe_mul,
+        Germ.coe_eq]
+      exact hfac
+  refine ⟨(c, u), ⟨hc_eval, hu_unit, hf_eq⟩, fun ⟨c', u'⟩ ⟨hc'_eval, hu'_unit, hf'_eq⟩ ↦ ?_⟩
   obtain ⟨hP, hu⟩ := weierstrassPreparation_unique
     ((isDistinguishedAt_monicOfCoeff_iff c').2 hc'_eval) hu'_unit hf'_eq
     ((isDistinguishedAt_monicOfCoeff_iff c).2 hc_eval) hu_unit hf_eq
@@ -747,14 +646,13 @@ theorem existsUnique_weierstrassPreparation {x₀ : E} {w₀ : ℂ}
           (IsLocalRing.maximalIdeal ((holomorphicStructureSheaf 𝓘(ℂ, E) E).presheaf.stalk x₀)) ∧
         IsUnit pu.2 ∧ f = evalVertical x₀ w₀ pu.1 * pu.2 := by
   obtain ⟨F, -, hfF⟩ := exists_toFilterGerm_eq (x₀, w₀) f
-  have hne_top : analyticOrderAt (fun w ↦ F (x₀, w)) w₀ ≠ ⊤ :=
-    (map_residue_verticalPowerSeries_ne_zero_iff (hfF _ le_rfl)).1 hf
-  obtain ⟨d, hd⟩ := ENat.ne_top_iff_exists.1 hne_top
+  obtain ⟨d, hd⟩ := ENat.ne_top_iff_exists.1
+    ((map_residue_verticalPowerSeries_ne_zero_iff (hfF _ le_rfl)).1 hf)
   obtain ⟨⟨c, u⟩, ⟨hc0, hu, hfac⟩, _⟩ :=
     existsUnique_weierstrassPreparation_of_analyticOrderAt (hfF _ le_rfl) hd.symm
   refine ⟨(TauCeti.Polynomial.monicOfCoeff c, u),
-    ⟨(isDistinguishedAt_monicOfCoeff_iff c).2 hc0, hu, hfac⟩, ?_⟩
-  rintro ⟨P', u'⟩ ⟨hP', hu', hfac'⟩
+    ⟨(isDistinguishedAt_monicOfCoeff_iff c).2 hc0, hu, hfac⟩,
+    fun ⟨P', u'⟩ ⟨hP', hu', hfac'⟩ ↦ ?_⟩
   obtain ⟨hPP', huu'⟩ := weierstrassPreparation_unique hP' hu' hfac'
     ((isDistinguishedAt_monicOfCoeff_iff c).2 hc0) hu hfac
   exact Prod.ext hPP' huu'
@@ -777,39 +675,27 @@ theorem existsUnique_weierstrassDivision_of_isDistinguishedAt {x₀ : E} {w₀ :
     TauCeti.Polynomial.monicOfCoeff_coeff hP.monic rfl
   have hc0_germ : ∀ i : Fin d, eval 𝓘(ℂ, E) E x₀ (c i) = 0 :=
     (isDistinguishedAt_monicOfCoeff_iff c).1 (hP_eq.symm ▸ hP)
-  let C : Fin d → E → ℂ := fun i ↦ Classical.choose (exists_toFilterGerm_eq x₀ (c i))
-  have hC_germ : ∀ i : Fin d, toFilterGerm 𝓘(ℂ, E) E x₀ (𝓝 x₀) le_rfl (c i) = C i :=
-    fun i ↦ (Classical.choose_spec (exists_toFilterGerm_eq x₀ (c i))).2 _ le_rfl
-  have hC_an : ∀ i : Fin d, AnalyticAt ℂ (C i) x₀ := fun i ↦
-    contMDiffAt_modelSpace_omega_iff_analyticAt.1
-      (Classical.choose_spec (exists_toFilterGerm_eq x₀ (c i))).1.self_of_nhds
-  have hC0 : ∀ i : Fin d, C i x₀ = 0 := fun i ↦
-    (eval_eq_of_toFilterGerm_eq (hC_germ i)).symm.trans (hc0_germ i)
-  obtain ⟨G, hG_cm, hgG⟩ := exists_toFilterGerm_eq (x₀, w₀) g
-  have hG_an : AnalyticAt ℂ G (x₀, w₀) :=
-    contMDiffAt_modelSpace_omega_iff_analyticAt.1 hG_cm.self_of_nhds
-  obtain ⟨Q, R, hQ_an, hR_an, hdiv⟩ := hG_an.exists_weierstrassDivision_monicOfCoeff hC_an hC0
-  obtain ⟨q, hq_germ⟩ := exists_toFilterGerm_nhds_eq_iff.2
-    (hQ_an.eventually_analyticAt.mono fun _ ↦ contMDiffAt_modelSpace_omega_iff_analyticAt.2)
-  have hr_ex (i : Fin d) : ∃ s, toFilterGerm 𝓘(ℂ, E) E x₀ (𝓝 x₀) le_rfl s = R i :=
-    exists_toFilterGerm_nhds_eq_iff.2
-      ((hR_an i).eventually_analyticAt.mono fun _ ↦ contMDiffAt_modelSpace_omega_iff_analyticAt.2)
+  let C : Fin d → E → ℂ := fun i ↦ Classical.choose (exists_analyticAt_toFilterGerm_eq x₀ (c i))
+  have hC_spec := fun i : Fin d ↦ Classical.choose_spec (exists_analyticAt_toFilterGerm_eq x₀ (c i))
+  obtain ⟨G, hG_an, hgG⟩ := exists_analyticAt_toFilterGerm_eq (x₀, w₀) g
+  obtain ⟨Q, R, hQ_an, hR_an, hdiv⟩ := hG_an.exists_weierstrassDivision_monicOfCoeff
+    (fun i ↦ (hC_spec i).1)
+    (fun i ↦ (eval_eq_of_toFilterGerm_eq (hC_spec i).2).symm.trans (hc0_germ i))
+  obtain ⟨q, hq_germ⟩ := exists_toFilterGerm_eq_of_analyticAt hQ_an
   let r_coeff : Fin d → (holomorphicStructureSheaf 𝓘(ℂ, E) E).presheaf.stalk x₀ :=
-    fun i ↦ Classical.choose (hr_ex i)
-  have hr_germ : ∀ i, toFilterGerm 𝓘(ℂ, E) E x₀ (𝓝 x₀) le_rfl (r_coeff i) = R i :=
-    fun i ↦ Classical.choose_spec (hr_ex i)
+    fun i ↦ Classical.choose (exists_toFilterGerm_eq_of_analyticAt (hR_an i))
+  have hr_germ (i : Fin d) := Classical.choose_spec (exists_toFilterGerm_eq_of_analyticAt (hR_an i))
   let r : ((holomorphicStructureSheaf 𝓘(ℂ, E) E).presheaf.stalk x₀)[X] :=
     ∑ i : Fin d, Polynomial.monomial (i : ℕ) (r_coeff i)
   have hr_deg : r.degree < d := by
     simpa only [r, C_mul_X_pow_eq_monomial] using Polynomial.degree_sum_fin_lt r_coeff
-  have hg_eq : g = evalVertical x₀ w₀ P * q + evalVertical x₀ w₀ r := by
-    apply toFilterGerm_nhds_injective (x₀, w₀)
-    rw [hgG _ le_rfl, ← hP_eq, map_add, map_mul, toFilterGerm_evalVertical_monicOfCoeff hC_germ,
-      hq_germ, toFilterGerm_evalVertical_sum_monomial hr_germ, ← Germ.coe_mul, ← Germ.coe_add,
-      Germ.coe_eq]
-    exact hdiv
-  refine ⟨(q, r), ⟨hr_deg, hg_eq⟩, ?_⟩
-  rintro ⟨q', r'⟩ ⟨hr'_deg, hg'_eq⟩
+  have hg_eq : g = evalVertical x₀ w₀ P * q + evalVertical x₀ w₀ r :=
+    toFilterGerm_nhds_injective (x₀, w₀) <| by
+      rw [hgG, ← hP_eq, map_add, map_mul,
+        toFilterGerm_evalVertical_monicOfCoeff (fun i ↦ (hC_spec i).2), hq_germ,
+        toFilterGerm_evalVertical_sum_monomial hr_germ, ← Germ.coe_mul, ← Germ.coe_add, Germ.coe_eq]
+      exact hdiv
+  refine ⟨(q, r), ⟨hr_deg, hg_eq⟩, fun ⟨q', r'⟩ ⟨hr'_deg, hg'_eq⟩ ↦ ?_⟩
   obtain ⟨hqq', hrr'⟩ := weierstrassDivision_unique_of_isDistinguishedAt hP hr'_deg hg'_eq
     hr_deg hg_eq
   exact Prod.ext hqq' hrr'
@@ -828,22 +714,16 @@ theorem existsUnique_weierstrassDivision {x₀ : E} {w₀ : ℂ}
       (verticalPowerSeries x₀ w₀ g).IsWeierstrassDivision
         (verticalPowerSeries x₀ w₀ f) (verticalPowerSeries x₀ w₀ qr.1) qr.2 := by
   obtain ⟨⟨P, u⟩, ⟨hP, hu, hf_eq⟩, _⟩ := existsUnique_weierstrassPreparation hf
-  have hH : (verticalPowerSeries x₀ w₀ f).IsWeierstrassFactorization P
-      (verticalPowerSeries x₀ w₀ u) :=
-    isWeierstrassFactorization_verticalPowerSeries_iff.2 ⟨hP, hu, hf_eq⟩
+  have hH := isWeierstrassFactorization_verticalPowerSeries_iff.2 ⟨hP, hu, hf_eq⟩
   obtain ⟨⟨q₀, r⟩, ⟨hr_deg, hg_eq⟩, _⟩ := existsUnique_weierstrassDivision_of_isDistinguishedAt hP g
   obtain ⟨u_inv, hu_inv⟩ := hu.exists_right_inv
   have hdiv : (verticalPowerSeries x₀ w₀ g).IsWeierstrassDivision
       (verticalPowerSeries x₀ w₀ f) (verticalPowerSeries x₀ w₀ (u_inv * q₀)) r := by
     rw [isWeierstrassDivision_verticalPowerSeries_iff, ← hH.natDegree_eq_toNat_order_map]
     refine ⟨hr_deg, ?_⟩
-    rw [hg_eq, hf_eq]
-    calc evalVertical x₀ w₀ P * q₀ + evalVertical x₀ w₀ r
-        = evalVertical x₀ w₀ P * (u * u_inv) * q₀ + evalVertical x₀ w₀ r := by
-            rw [hu_inv, mul_one]
-      _ = evalVertical x₀ w₀ P * u * (u_inv * q₀) + evalVertical x₀ w₀ r := by ring
-  refine ⟨(u_inv * q₀, r), hdiv, ?_⟩
-  rintro ⟨q', r'⟩ hdiv'
+    rw [hf_eq]
+    linear_combination hg_eq - evalVertical x₀ w₀ P * q₀ * hu_inv
+  refine ⟨(u_inv * q₀, r), hdiv, fun ⟨q', r'⟩ hdiv' ↦ ?_⟩
   obtain ⟨hr', hg'⟩ := isWeierstrassDivision_verticalPowerSeries_iff.1 hdiv'
   obtain ⟨hr₀, hg₀⟩ := isWeierstrassDivision_verticalPowerSeries_iff.1 hdiv
   obtain ⟨hqq', hrr'⟩ := weierstrassDivision_unique hf hr' hg' hr₀ hg₀
@@ -860,29 +740,22 @@ def quotientEquivOfIsDistinguishedAt (x₀ : E) (w₀ : ℂ)
     (((holomorphicStructureSheaf 𝓘(ℂ, E) E).presheaf.stalk x₀)[X] ⧸ Ideal.span {P}) ≃+*
       ((holomorphicStructureSheaf 𝓘(ℂ, E × ℂ) (E × ℂ)).presheaf.stalk (x₀, w₀) ⧸
         Ideal.span {evalVertical x₀ w₀ P}) := by
-  let φ : ((holomorphicStructureSheaf 𝓘(ℂ, E) E).presheaf.stalk x₀)[X] →+*
-      ((holomorphicStructureSheaf 𝓘(ℂ, E × ℂ) (E × ℂ)).presheaf.stalk (x₀, w₀) ⧸
-        Ideal.span {evalVertical x₀ w₀ P}) :=
-    (Ideal.Quotient.mk (Ideal.span {evalVertical x₀ w₀ P})).comp (evalVertical x₀ w₀)
-  have hker : ∀ Q ∈ Ideal.span {P}, φ Q = 0 := by
-    intro Q hQ
-    rw [Ideal.mem_span_singleton] at hQ
-    simp only [φ, RingHom.comp_apply, Ideal.Quotient.eq_zero_iff_mem, Ideal.mem_span_singleton]
-    exact (evalVertical_dvd_iff_of_isDistinguishedAt hP).1 hQ
-  refine RingEquiv.ofBijective (Ideal.Quotient.lift (Ideal.span {P}) φ hker) ⟨?_, ?_⟩
+  refine RingEquiv.ofBijective (Ideal.Quotient.lift (Ideal.span {P})
+    ((Ideal.Quotient.mk (Ideal.span {evalVertical x₀ w₀ P})).comp (evalVertical x₀ w₀))
+    fun Q hQ ↦ Ideal.Quotient.eq_zero_iff_mem.2 <| Ideal.mem_span_singleton.2 <|
+      (evalVertical_dvd_iff_of_isDistinguishedAt hP).1 (Ideal.mem_span_singleton.1 hQ)) ⟨?_, ?_⟩
   · rw [injective_iff_map_eq_zero]
     intro x hx
     obtain ⟨Q, rfl⟩ := Ideal.Quotient.mk_surjective x
-    rw [Ideal.Quotient.lift_mk, RingHom.comp_apply, Ideal.Quotient.eq_zero_iff_mem,
-      Ideal.mem_span_singleton] at hx
-    exact Ideal.Quotient.eq_zero_iff_mem.2
-      (Ideal.mem_span_singleton.2 ((evalVertical_dvd_iff_of_isDistinguishedAt hP).2 hx))
+    exact Ideal.Quotient.eq_zero_iff_mem.2 <| Ideal.mem_span_singleton.2 <|
+      (evalVertical_dvd_iff_of_isDistinguishedAt hP).2 <| Ideal.mem_span_singleton.1 <|
+        Ideal.Quotient.eq_zero_iff_mem.1 hx
   · intro y
     obtain ⟨g, rfl⟩ := Ideal.Quotient.mk_surjective y
     obtain ⟨⟨q, r⟩, ⟨_, hg_eq⟩, _⟩ := existsUnique_weierstrassDivision_of_isDistinguishedAt hP g
-    refine ⟨Ideal.Quotient.mk _ r, ?_⟩
-    rw [Ideal.Quotient.lift_mk, RingHom.comp_apply, hg_eq, map_add,
-      Ideal.Quotient.eq_zero_iff_mem.2 (Ideal.mem_span_singleton.2 ⟨q, rfl⟩), zero_add]
+    exact ⟨Ideal.Quotient.mk _ r, by
+      rw [Ideal.Quotient.lift_mk, RingHom.comp_apply, hg_eq, map_add,
+        Ideal.Quotient.eq_zero_iff_mem.2 (Ideal.mem_span_singleton.2 ⟨q, rfl⟩), zero_add]⟩
 
 @[simp]
 theorem quotientEquivOfIsDistinguishedAt_mk (x₀ : E) (w₀ : ℂ)
@@ -903,10 +776,10 @@ theorem quotientEquivOfIsDistinguishedAt_symm_mk_of_eq {x₀ : E} {w₀ : ℂ}
     {g q : (holomorphicStructureSheaf 𝓘(ℂ, E × ℂ) (E × ℂ)).presheaf.stalk (x₀, w₀)}
     (hg : g = evalVertical x₀ w₀ P * q + evalVertical x₀ w₀ r) :
     (quotientEquivOfIsDistinguishedAt x₀ w₀ hP).symm (Ideal.Quotient.mk _ g) =
-      Ideal.Quotient.mk _ r := by
-  apply (quotientEquivOfIsDistinguishedAt x₀ w₀ hP).injective
-  rw [RingEquiv.apply_symm_apply, quotientEquivOfIsDistinguishedAt_mk, hg, map_add,
-    Ideal.Quotient.eq_zero_iff_mem.2 (Ideal.mem_span_singleton.2 ⟨q, rfl⟩), zero_add]
+      Ideal.Quotient.mk _ r :=
+  (quotientEquivOfIsDistinguishedAt x₀ w₀ hP).injective <| by
+    rw [RingEquiv.apply_symm_apply, quotientEquivOfIsDistinguishedAt_mk, hg, map_add,
+      Ideal.Quotient.eq_zero_iff_mem.2 (Ideal.mem_span_singleton.2 ⟨q, rfl⟩), zero_add]
 
 /-- Composing `quotientEquivOfIsDistinguishedAt` with the canonical `𝒪_{E, x₀}`-algebra map into
 `(𝒪_{E, x₀})[X] ⧸ (P)` recovers pullback along `Prod.fst` followed by the quotient map. -/
@@ -963,10 +836,10 @@ theorem weierstrassQuotientEquiv_symm_mk_of_eq {x₀ : E} {w₀ : ℂ}
     (hu : IsUnit u) (hf : f = evalVertical x₀ w₀ P * u)
     (hg : g = f * q + evalVertical x₀ w₀ r) :
     (weierstrassQuotientEquiv hP hu hf).symm (Ideal.Quotient.mk _ g) =
-      Ideal.Quotient.mk _ r := by
-  apply (weierstrassQuotientEquiv hP hu hf).injective
-  rw [RingEquiv.apply_symm_apply, weierstrassQuotientEquiv_mk, hg, map_add,
-    Ideal.Quotient.eq_zero_iff_mem.2 (Ideal.mem_span_singleton.2 ⟨q, rfl⟩), zero_add]
+      Ideal.Quotient.mk _ r :=
+  (weierstrassQuotientEquiv hP hu hf).injective <| by
+    rw [RingEquiv.apply_symm_apply, weierstrassQuotientEquiv_mk, hg, map_add,
+      Ideal.Quotient.eq_zero_iff_mem.2 (Ideal.mem_span_singleton.2 ⟨q, rfl⟩), zero_add]
 
 /-- Composing `weierstrassQuotientEquiv` with the canonical `𝒪_{E, x₀}`-algebra map into
 `(𝒪_{E, x₀})[X] ⧸ (P)` recovers pullback along `Prod.fst` followed by the quotient map modulo
@@ -1032,12 +905,9 @@ theorem flat_quotientMk_comp_stalkPrecomp_fst {x₀ : E} {w₀ : ℂ}
     ((Ideal.Quotient.mk (Ideal.span {f})).comp
       (stalkPrecomp 𝓘(ℂ, E × ℂ) (E × ℂ) Prod.fst hπ (x₀, w₀))).Flat := by
   obtain ⟨⟨P, u⟩, ⟨hP, hu, hf_eq⟩, _⟩ := existsUnique_weierstrassPreparation hf
-  have : Module.Free ((holomorphicStructureSheaf 𝓘(ℂ, E) E).presheaf.stalk x₀)
-      (((holomorphicStructureSheaf 𝓘(ℂ, E) E).presheaf.stalk x₀)[X] ⧸ Ideal.span {P}) :=
-    hP.monic.free_quotient
-  rw [← weierstrassQuotientEquiv_comp_algebraMap hπ hP hu hf_eq]
-  exact (RingHom.flat_algebraMap_iff.2 inferInstance).comp
-    (RingHom.Flat.of_bijective (weierstrassQuotientEquiv hP hu hf_eq).bijective)
+  have hspan : Ideal.span {f} = Ideal.span {evalVertical x₀ w₀ P} := by
+    rw [hf_eq, Ideal.span_singleton_mul_right_unit hu]
+  exact hspan ▸ flat_quotientMk_comp_stalkPrecomp_fst_of_isDistinguishedAt hπ hP
 
 /-- **Local hypersurface finiteness via Weierstrass preparation.** If `f ∈ 𝒪_{E × ℂ, (x₀, w₀)}` has
 vertical power series with nonzero residue-field reduction, then `𝒪_{E × ℂ, (x₀, w₀)} ⧸ (f)` is a
@@ -1050,13 +920,9 @@ theorem finite_quotientMk_comp_stalkPrecomp_fst {x₀ : E} {w₀ : ℂ}
     ((Ideal.Quotient.mk (Ideal.span {f})).comp
       (stalkPrecomp 𝓘(ℂ, E × ℂ) (E × ℂ) Prod.fst hπ (x₀, w₀))).Finite := by
   obtain ⟨⟨P, u⟩, ⟨hP, hu, hf_eq⟩, _⟩ := existsUnique_weierstrassPreparation hf
-  have : Module.Finite ((holomorphicStructureSheaf 𝓘(ℂ, E) E).presheaf.stalk x₀)
-      (((holomorphicStructureSheaf 𝓘(ℂ, E) E).presheaf.stalk x₀)[X] ⧸ Ideal.span {P}) :=
-    hP.monic.finite_quotient
-  rw [← weierstrassQuotientEquiv_comp_algebraMap hπ hP hu hf_eq]
-  exact RingHom.Finite.comp
-    (RingHom.Finite.of_surjective _ (weierstrassQuotientEquiv hP hu hf_eq).surjective)
-    (RingHom.finite_algebraMap.2 inferInstance)
+  have hspan : Ideal.span {f} = Ideal.span {evalVertical x₀ w₀ P} := by
+    rw [hf_eq, Ideal.span_singleton_mul_right_unit hu]
+  exact hspan ▸ finite_quotientMk_comp_stalkPrecomp_fst_of_isDistinguishedAt hπ hP
 
 end FiniteDimensional
 
