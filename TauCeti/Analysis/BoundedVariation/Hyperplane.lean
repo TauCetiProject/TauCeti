@@ -140,8 +140,7 @@ theorem perimeter_ball_setOf_inner_lt (hν : ‖ν‖ = 1) (x : F) {r : ℝ} (hr
     rw [Submodule.mem_orthogonal_singleton_iff_inner_left, inner_sub_left,
       real_inner_smul_left, real_inner_self_eq_norm_sq, hν]
     ring
-  have hι : Isometry fun y : (ℝ ∙ ν)ᗮ => c • ν + (y : F) :=
-    (isometry_add_left (c • ν)).comp isometry_subtype_coe
+  have hι := isometry_smul_add_coe (ν := ν) c
   have hpre : (fun y : (ℝ ∙ ν)ᗮ => c • ν + (y : F)) ⁻¹' ball x r = ball ⟨x - c • ν, hx₀⟩ r := by
     convert hι.preimage_ball ⟨x - c • ν, hx₀⟩ r
     simp

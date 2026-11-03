@@ -298,7 +298,7 @@ variable {F : Type*} [NormedAddCommGroup F] [InnerProductSpace ℝ F] {ν : F}
 
 /-- The parametrization `y ↦ c • ν + y` of the hyperplane `{x | ⟪x, ν⟫ = c}` by `(ℝ ∙ ν)ᗮ` is an
 isometry. -/
-private theorem isometry_smul_add_coe (c : ℝ) :
+theorem isometry_smul_add_coe (c : ℝ) :
     Isometry fun y : (ℝ ∙ ν)ᗮ => c • ν + (y : F) :=
   (isometry_add_left (c • ν)).comp isometry_subtype_coe
 
