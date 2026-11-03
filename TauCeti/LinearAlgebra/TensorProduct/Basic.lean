@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.LinearAlgebra.TensorProduct.Associator
+public import Mathlib.LinearAlgebra.TensorProduct.Lift
 public import Mathlib.Algebra.BigOperators.Group.Finset.Sigma
 
 /-!
@@ -25,6 +26,8 @@ the Casimir element of a trace commute with multiplication.
 * `LinearMap.injective_rTensor_congr`: injectivity of `f ⊗ 𝟙 M` is invariant under isomorphisms
   of `M`.
 * `LinearMap.tensorComponent`: contraction against the right factor of a tensor product.
+* `LinearMap.sum_tensorComponent_tmul`: reconstruct a tensor from a dual family.
+* `LinearMap.tensorComponent_eq_liftBaseChange`: contraction as scalar-linear extension.
 * `LinearMap.tensorComponent_map`: naturality of contraction under `TensorProduct.map`.
 * `LinearMap.tensorComponent_assoc_symm`: contraction commutes with reassociation.
 * `LinearMap.comp_tensorComponent`: contraction commutes with a functional on the left.
@@ -97,6 +100,27 @@ theorem tensorComponent_def (phi : N →ₗ[R] R) :
 theorem tensorComponent_tmul (phi : N →ₗ[R] R) (m : M) (n : N) :
     tensorComponent (R := R) (M := M) phi (m ⊗ₜ[R] n) = phi n • m := by
   simp [tensorComponent]
+
+/-- A family of vectors and functionals that reconstructs each vector also reconstructs
+any tensor, by contracting its second factor. The family need not be linearly independent. -/
+theorem sum_tensorComponent_tmul {ι : Type*} [Fintype ι]
+    (b : ι → N) (φ : ι → N →ₗ[R] R)
+    (hb : ∀ x, ∑ i, φ i x • b i = x) (z : M ⊗[R] N) :
+    ∑ i, tensorComponent (φ i) z ⊗ₜ[R] b i = z := by
+  induction z using TensorProduct.inductionOn with
+  | tmul m n =>
+    simpa only [tensorComponent_tmul, smul_tmul, ← tmul_sum] using
+      congrArg (fun n ↦ m ⊗ₜ[R] n) (hb n)
+  | add z w hz hw => simp [add_tmul, Finset.sum_add_distrib, hz, hw]
+
+/-- Over an algebra, contraction is the scalar-linear extension of the functional followed
+by the algebra map. This expresses contraction as a linear map over the larger scalar ring. -/
+theorem tensorComponent_eq_liftBaseChange {S : Type*} [CommSemiring S] [Algebra R S]
+    (φ : N →ₗ[R] R) (z : S ⊗[R] N) :
+    tensorComponent φ z = ((Algebra.linearMap R S).comp φ).liftBaseChange S z := by
+  induction z using TensorProduct.inductionOn with
+  | tmul s n => simp [Algebra.smul_def, mul_comm]
+  | add z w hz hw => simp only [map_add, hz, hw]
 
 /-- Taking a right tensor component commutes with a map on both tensor factors. -/
 @[simp]
