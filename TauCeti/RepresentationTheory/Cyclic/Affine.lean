@@ -88,6 +88,9 @@ cohomology, as shown in
   exponent.
 * `AddEquiv.partialNorm_refl`: for the identity linear part, the partial norm of `k` iterates is
   `k • t`.
+* `AddEquiv.oneSubPow_comp_cyclicNormHom`, `AddEquiv.cyclicNormHom_comp_oneSubPow`: for a
+  linear part of period dividing `m`, both composites of the norm and `1 - A` vanish.
+* `AddEquiv.cyclicNormHom_two`: the norm for two iterates is `1 + A`, including with 2-torsion.
 * `AddEquiv.cyclicRepresentation_norm_eq_partialNorm`: the norm of the cyclic representation of `A`
   is the partial norm of order `m`.
 * `AddEquiv.affineEquiv_iterate_eq_id_iff`, `AddEquiv.affineEquiv_pow_eq_one_iff`: the affine

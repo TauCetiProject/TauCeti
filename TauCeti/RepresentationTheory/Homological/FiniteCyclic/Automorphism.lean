@@ -15,8 +15,10 @@ public import Mathlib.RepresentationTheory.Homological.FiniteCyclic
 For an additive automorphism `A` of period dividing `m`, Mathlib's periodic short
 complexes have differentials `cyclicNormHom m` and `-oneSubPow 1`. We identify
 their maps and give isomorphisms to the convention with differential `1 - A` by
-negating one end of each short complex. Both composites of the norm and `1 - A`
-vanish. For period two, the norm is `1 + A`.
+negating one end of each short complex. The target short complexes use the
+zero-composite laws `AddEquiv.oneSubPow_comp_cyclicNormHom` and
+`AddEquiv.cyclicNormHom_comp_oneSubPow` from
+`TauCeti.RepresentationTheory.Cyclic.Affine`.
 
 The shared complexes are `Rep.FiniteCyclicGroup.normHomCompSub` and
 `Rep.FiniteCyclicGroup.subCompNormHom` from Mathlib's finite-cyclic resolution.
