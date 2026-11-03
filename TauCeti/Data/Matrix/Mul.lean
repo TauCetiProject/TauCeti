@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Data.Matrix.Mul
-import Mathlib.Algebra.Order.BigOperators.Group.Finset
 
 /-!
 # Positivity of matrix powers
