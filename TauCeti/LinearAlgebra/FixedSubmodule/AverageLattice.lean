@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.LinearAlgebra.FixedSubmodule.Permutation
-public import Mathlib.Algebra.BigOperators.Finprod
+public import TauCeti.GroupTheory.Perm.Cycle.Size
 public import Mathlib.Data.ZMod.QuotientGroup
 public import Mathlib.GroupTheory.Index
 
@@ -40,23 +40,7 @@ variable {I : Type*} (σ : Equiv.Perm I)
 
 private abbrev Cycles := Quotient (SameCycle.setoid σ)
 
-/-- The number of coordinates in a permutation cycle, independent of decidability instances. -/
-def cycleSize (c : Quotient (SameCycle.setoid σ)) : ℕ :=
-  Nat.card {i : I // Quotient.mk (SameCycle.setoid σ) i = c}
-
-/-- The size of the cycle containing `i` counts the coordinates in the same cycle as `i`. -/
-@[simp]
-theorem cycleSize_mk (i : I) :
-    cycleSize σ (Quotient.mk _ i) = Nat.card {j : I // σ.SameCycle j i} := by
-  simp only [cycleSize, Quotient.eq, SameCycle.setoid]
-
 variable [Finite I]
-
-/-- Every permutation cycle contains at least one coordinate. -/
-theorem cycleSize_pos (c : Quotient (SameCycle.setoid σ)) : 0 < cycleSize σ c := by
-  have : Nonempty {i : I // Quotient.mk (SameCycle.setoid σ) i = c} :=
-    ⟨⟨c.out, Quotient.out_eq c⟩⟩
-  exact Nat.card_pos
 
 variable {K : Type*} [Field K] [CharZero K]
 
@@ -106,8 +90,16 @@ theorem permutationAverage_fixed
   have hv (j : {j : I // Quotient.mk (SameCycle.setoid σ) j = Quotient.mk _ i}) :
       v.val j.val = v.val i :=
     permutationFixed_apply_eq_of_quotient_eq σ v j.property
-  simp only [hv, sum_const, card_univ, nsmul_eq_mul, ← Nat.card_eq_fintype_card]
+  simp only [hv, sum_const, card_univ, nsmul_eq_mul, ← Nat.card_eq_fintype_card,
+    ← cycleSize_def]
   exact mul_div_cancel_left₀ _ (cycleSize_cast_ne_zero σ _)
+
+/-- Averaging is a linear retraction of the fixed-submodule inclusion. -/
+theorem permutationAverage_comp_subtype :
+    (permutationAverage (K := K) σ).comp
+      (LinearEquiv.funCongrLeft K K σ).toLinearMap.fixedSubmodule.subtype = LinearMap.id := by
+  ext v i
+  exact congrFun (congrArg Subtype.val (permutationAverage_fixed σ v)) i
 
 private def integralCoordinates : (Cycles σ → ℤ) →ₗ[ℤ]
     (LinearEquiv.funCongrLeft K K σ).toLinearMap.fixedSubmodule :=
