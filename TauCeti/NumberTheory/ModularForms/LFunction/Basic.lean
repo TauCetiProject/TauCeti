@@ -36,6 +36,8 @@ API and Mathlib's `LSeries` of the `q`-expansion coefficients:
 * `ModularForm.LSeries_qExpansion_coeff_eq`, `CuspForm.LSeries_qExpansion_coeff_eq`:
   on the respective half-planes, `LSeries` of the coefficients is
   `(Γ.strictWidthInfty : ℂ) ^ (-s) * L hk f s` for Mathlib's `ModularForm.L`.
+* `ModularForm.Λ_natCast_add_one`: `Λ(f, n + 1) = n! / (2π)ⁿ⁺¹ · L(f, n + 1)` at the positive
+  integers, so that there `Λ` and `L` vanish together (`ModularForm.Λ_natCast_add_one_eq_zero_iff`).
 * `CuspForm.hasEntireExtension_qExpansion_coeff`: the coefficient series of a cusp form
   of positive weight has an entire extension (the Layer-7 continuation milestone).
 * `CuspForm.L_ne_zero_of_qExpansion_coeff_ne_zero`: a nonzero positive-index coefficient makes
@@ -110,6 +112,26 @@ theorem LSeries_qExpansion_coeff_eq (hk : 0 < k) [ModularFormClass F Γ k] (f : 
     have hk' : (0 : ℝ) ≤ (k : ℝ) := mod_cast hk.le
     linarith
   exact LSeries_eq_of_hasSum hs0 (hasSum_L hk f hs)
+
+/-- At a positive integer `n + 1` the completed `L`-function of a modular form is
+`Λ(f, n + 1) = n! / (2π)ⁿ⁺¹ · L(f, n + 1)`: the archimedean factor `Γ_ℂ(s) / 2 = (2π)⁻ˢ Γ(s)`
+at `s = n + 1`. -/
+theorem Λ_natCast_add_one (hk : 0 < k) [ModularFormClass F Γ k] (f : F) (n : ℕ) :
+    Λ hk f (n + 1) = n.factorial / (2 * Real.pi) ^ (n + 1) * L hk f (n + 1) := by
+  have h2π : (2 * Real.pi : ℂ) ^ (n + 1) ≠ 0 :=
+    pow_ne_zero _ (by exact_mod_cast Real.two_pi_pos.ne')
+  have hn : (n.factorial : ℂ) ≠ 0 := by exact_mod_cast n.factorial_ne_zero
+  rw [L_apply_of_ne_zero hk f (by exact_mod_cast n.succ_ne_zero), Complex.Gammaℂ_def,
+    Complex.Gamma_nat_eq_factorial, Complex.cpow_neg, ← Nat.cast_succ, Complex.cpow_natCast]
+  field_simp
+
+/-- At a positive integer the completed `L`-function of a modular form vanishes exactly when its
+`L`-function does. -/
+theorem Λ_natCast_add_one_eq_zero_iff (hk : 0 < k) [ModularFormClass F Γ k] (f : F) (n : ℕ) :
+    Λ hk f (n + 1) = 0 ↔ L hk f (n + 1) = 0 := by
+  rw [Λ_natCast_add_one, mul_eq_zero, or_iff_right]
+  exact div_ne_zero (by exact_mod_cast n.factorial_ne_zero)
+    (pow_ne_zero _ (by exact_mod_cast Real.two_pi_pos.ne'))
 
 end ModularForm
 
