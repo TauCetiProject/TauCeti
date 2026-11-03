@@ -102,10 +102,18 @@ class MergeBatch(unittest.TestCase):
         others = [pr(n, "2026-11-03T03:00:00Z") for n in range(2, 22)]
         for other in others:
             other["batch_comments"] = dict(count=1, latest=[dict(id="new", updatedAt="2026-11-03T03:00:00Z")])
-        with patch.object(sweep, "read_sweep_progress", return_value={"1": old}):
+        progress = {"1": old}
+        for other in others:
+            progress[str(other["number"])] = observed(other) | dict(batch_observed_comments=dict(count=0, latest=[]))
+        with patch.object(sweep, "read_sweep_progress", return_value=progress):
             selected = sweep.candidates(others + [queued], {1}, set())
         self.assertEqual(selected[0]["number"], 1)
         self.assertEqual(len(selected), 21)
+        # Without active membership in the ordering key, every newer changed
+        # comment would beat this revocation. The fixture must exercise that case.
+        with patch.object(sweep, "read_sweep_progress", return_value=progress):
+            without_active_priority = sweep.candidates(others + [queued], set(), set())
+        self.assertNotEqual(without_active_priority[0]["number"], 1)
 
     def test_failed_policy_attempt_does_not_acknowledge_changed_comments(self):
         p = pr(1)
