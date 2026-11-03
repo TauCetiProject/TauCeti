@@ -11,7 +11,6 @@ public import TauCeti.ModelTheory.Infinitary.Semantics
 public import TauCeti.ModelTheory.Infinitary.Symbols
 public import TauCeti.ModelTheory.LanguageMap
 public import TauCeti.ModelTheory.Syntax
-import TauCeti.Logic.Function.Update
 
 /-!
 # Abstracting constants in infinitary formulas
@@ -334,6 +333,18 @@ theorem relationsIn_constantsVarsEquiv (φ : L[[γ]].BoundedFormulaInf ι α n) 
   | iSup _ ih | iInf _ ih => simp [ih, Set.image_iUnion]
   | _ => simp
 
+private theorem constantsVarsEquiv_symm_rel_onRelation {l : ℕ} (R : L.Relations l)
+    (ts : Fin l → L.Term ((γ ⊕ α) ⊕ Fin n)) :
+    constantsVarsEquiv.symm (.rel R ts : L.BoundedFormulaInf ι (γ ⊕ α) n) =
+      .rel ((L.lhomWithConstants γ).onRelation R)
+        (fun i => Term.constantsVarsEquivLeft.symm (ts i)) := by
+  -- `constantsVarsEquiv_symm_rel` types `(Equiv.sumEmpty _ _).symm R` in the unfolded sum rather
+  -- than `L[[γ]].Relations l`, blocking `implicit`-transparency matching in downstream rewrites.
+  rw [constantsVarsEquiv_symm_rel]
+  refine congrArg (fun R' => rel R' _) ?_
+  have h := lhomWithConstants_onRelation_sumEmpty (L := L) (γ := γ) ((Equiv.sumEmpty _ _).symm R)
+  rwa [_root_.Equiv.apply_symm_apply] at h
+
 /-- Restoring constants embeds the occurring relation symbols along `lhomWithConstants`. -/
 @[simp]
 theorem relationsIn_constantsVarsEquiv_symm (φ : L.BoundedFormulaInf ι (γ ⊕ α) n) :
@@ -341,12 +352,28 @@ theorem relationsIn_constantsVarsEquiv_symm (φ : L.BoundedFormulaInf ι (γ ⊕
       (fun s => ⟨s.1, (L.lhomWithConstants γ).onRelation s.2⟩) '' φ.relationsIn := by
   induction φ with
   | rel R _ =>
-    change (rel ((L.lhomWithConstants γ).onRelation R) _).relationsIn = _
-    rw [relationsIn_rel, relationsIn_rel, Set.image_singleton]
+    rw [constantsVarsEquiv_symm_rel_onRelation, relationsIn_rel, relationsIn_rel,
+      Set.image_singleton]
   | imp _ _ ihφ ihψ => simp [ihφ, ihψ, Set.image_union]
   | all _ ih => simp [ih]
   | iSup _ ih | iInf _ ih => simp [ih, Set.image_iUnion]
   | _ => simp
+
+private theorem constantsVarsEquivLeft_symm_var_inl_inl {β : Type*} (c : γ) :
+    Term.constantsVarsEquivLeft.symm (Term.var (Sum.inl (Sum.inl c)) : L.Term ((γ ⊕ α) ⊕ β)) =
+      (L.con c).term := by
+  -- Mathlib's `Term.varsToConstants` unfolds to `Constants.term (Sum.inr c)`, matching `L.con c`.
+  rw [Term.constantsVarsEquivLeft_symm_apply]
+  rfl
+
+private theorem constantsVarsEquivLeft_symm_func {β : Type*} {l : ℕ} (f : L.Functions l)
+    (ts : Fin l → L.Term ((γ ⊕ α) ⊕ β)) :
+    Term.constantsVarsEquivLeft.symm (Term.func f ts) =
+      Term.func ((L.lhomWithConstants γ).onFunction f)
+        fun i => Term.constantsVarsEquivLeft.symm (ts i) := by
+  -- `Term.varsToConstants` maps `f` to `Sum.inl f`, matching `lhomWithConstants`.
+  rw [Term.constantsVarsEquivLeft_symm_apply]
+  rfl
 
 /-- Restoring constants embeds the occurring function symbols of `L` and adds the constants
 corresponding to the left free variables. -/
@@ -364,20 +391,14 @@ theorem functionsIn_constantsVarsEquiv_symm (φ : L.BoundedFormulaInf ι (γ ⊕
     induction t with
     | var x =>
       rcases x with (c | a) | i
-      · change ((L.con c).term : L[[γ]].Term (α ⊕ Fin k)).functionsIn = _
+      · rw [constantsVarsEquivLeft_symm_var_inl_inl]
         ext s; simp [Constants.term, Term.varFinsetLeft, eq_comm]
       · ext s; simp [Term.varFinsetLeft]
       · ext s; simp [Term.varFinsetLeft]
     | func f ts ih =>
-      have hf : (Term.func (Sum.inl f) fun i =>
-          (Term.relabel (Equiv.sumAssoc γ α (Fin k)) (ts i)).varsToConstants :
-          L[[γ]].Term (α ⊕ Fin k)) =
-          Term.func ((L.lhomWithConstants γ).onFunction f)
-            fun i => Term.constantsVarsEquivLeft.symm (ts i) := rfl
-      rw [Term.constantsVarsEquivLeft_symm_apply]
-      simp only [Term.relabel, Term.varsToConstants, hf, Term.functionsIn_func, ih]
+      rw [constantsVarsEquivLeft_symm_func, Term.functionsIn_func, Term.functionsIn_func]
       ext s
-      simp only [Set.mem_union, Set.mem_singleton_iff, Set.mem_iUnion, Set.mem_image,
+      simp only [ih, Set.mem_union, Set.mem_singleton_iff, Set.mem_iUnion, Set.mem_image,
         Set.mem_preimage, Finset.mem_coe, Term.varFinsetLeft, Finset.mem_biUnion, Finset.mem_univ,
         true_and]
       aesop
@@ -388,9 +409,8 @@ theorem functionsIn_constantsVarsEquiv_symm (φ : L.BoundedFormulaInf ι (γ ⊕
       Set.image_union, Set.preimage_union]
     ext; simp only [Set.mem_union]; tauto
   | rel R _ =>
-    change (rel ((L.lhomWithConstants γ).onRelation R) _).functionsIn = _
-    simp only [functionsIn_rel, freeVarSupport_rel, hterm, Set.image_iUnion, Set.preimage_iUnion,
-      Set.iUnion_union_distrib]
+    simp only [constantsVarsEquiv_symm_rel_onRelation, functionsIn_rel, freeVarSupport_rel, hterm,
+      Set.image_iUnion, Set.preimage_iUnion, Set.iUnion_union_distrib]
   | imp _ _ ihφ ihψ =>
     simp only [constantsVarsEquiv_symm_imp, functionsIn_imp, freeVarSupport_imp, ihφ, ihψ,
       Set.image_union, Set.preimage_union]
@@ -436,8 +456,8 @@ theorem freeVarSupport_constantsVarsEquiv_symm (φ : L.BoundedFormulaInf ι (γ 
     rw [constantsVarsEquiv_symm_equal, freeVarSupport_equal, freeVarSupport_equal]
     simp only [hterm, Set.preimage_union]
   | rel R _ =>
-    change (rel ((L.lhomWithConstants γ).onRelation R) _).freeVarSupport = _
-    simp only [freeVarSupport_rel, hterm, Set.preimage_iUnion]
+    simp only [constantsVarsEquiv_symm_rel_onRelation, freeVarSupport_rel, hterm,
+      Set.preimage_iUnion]
   | imp _ _ ihφ ihψ => simp [ihφ, ihψ, Set.preimage_union]
   | all _ ih => simp [ih]
   | iSup _ ih | iInf _ ih => simp [ih, Set.preimage_iUnion]

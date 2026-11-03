@@ -8,6 +8,7 @@ module
 public import TauCeti.ModelTheory.Infinitary.LanguageMap
 public import TauCeti.ModelTheory.Infinitary.SubstBounds
 import TauCeti.ModelTheory.Infinitary.Sublanguage
+import TauCeti.ModelTheory.LanguageMap
 
 /-!
 # The constant support of a formula of `L[[γ]]`
@@ -67,25 +68,6 @@ private theorem funMap_withConstants_eq {M : Type w} [L.Structure M] {e e' : γ 
   · cases k with
     | zero => exact h c hf
     | succ k => exact c.elim
-
-private theorem subset_range_lhomWithConstants_onFunction
-    {X : Set (Σ k, L[[γ]].Functions k)}
-    (hX : ∀ c, (⟨0, L.con c⟩ : Σ k, L[[γ]].Functions k) ∉ X) :
-    X ⊆ Set.range fun s : Σ k, L.Functions k =>
-      (⟨s.1, (L.lhomWithConstants γ).onFunction s.2⟩ : Σ k, L[[γ]].Functions k) := by
-  rintro ⟨k, f | c⟩ hf
-  · exact ⟨⟨k, f⟩, rfl⟩
-  · cases k with
-    | zero => exact (hX c hf).elim
-    | succ k => exact c.elim
-
-private theorem subset_range_lhomWithConstants_onRelation
-    (Y : Set (Σ k, L[[γ]].Relations k)) :
-    Y ⊆ Set.range fun s : Σ k, L.Relations k =>
-      (⟨s.1, (L.lhomWithConstants γ).onRelation s.2⟩ : Σ k, L[[γ]].Relations k) := by
-  rintro ⟨k, R | R⟩ -
-  · exact ⟨⟨k, R⟩, rfl⟩
-  · exact R.elim
 
 namespace Term
 

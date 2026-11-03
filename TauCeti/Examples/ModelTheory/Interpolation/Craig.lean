@@ -171,18 +171,6 @@ private abbrev invRel : InvLang.Relations 2 := .inr Language.adj
 private def invAtom {n : ℕ} (i j : Fin n) : InvLang.BoundedFormulaω Empty n :=
   BoundedFormulaInf.rel invRel ![bvar i, bvar j]
 
-@[simp] private theorem snoc1_zero {α : Type w} (f : Fin 0 → α) (x : α) :
-    (Fin.snoc f x : Fin 1 → α) 0 = x := (rfl)
-
-@[simp] private theorem snoc2_one {α : Type w} (f : Fin 0 → α) (x y : α) :
-    (Fin.snoc (Fin.snoc f x) y : Fin 2 → α) 1 = y := (rfl)
-
-@[simp] private theorem snoc3_one {α : Type w} (f : Fin 0 → α) (x y z : α) :
-    (Fin.snoc (Fin.snoc (Fin.snoc f x) y) z : Fin 3 → α) 1 = y := (rfl)
-
-@[simp] private theorem snoc3_two {α : Type w} (f : Fin 0 → α) (x y z : α) :
-    (Fin.snoc (Fin.snoc (Fin.snoc f x) y) z : Fin 3 → α) 2 = z := (rfl)
-
 @[simp]
 private theorem realize_invAtom {M : Type w} [InvLang.Structure M] {n : ℕ}
     (i j : Fin n) (xs : Fin n → M) :
@@ -230,7 +218,12 @@ private theorem involutionGraphSentence_realize_iff {M : Type w} [InvLang.Struct
       (∀ x y : M,
         Structure.RelMap (L := InvLang) invRel ![x, y] →
         Structure.RelMap (L := InvLang) invRel ![y, x]) := by
-  simp [involutionGraphSentence, SentenceInf.realize_def, FormulaInf.realize_def, bvar, and_assoc]
+  simp only [involutionGraphSentence, SentenceInf.realize_def, FormulaInf.realize_def,
+    BoundedFormulaInf.realize_inf, BoundedFormulaInf.realize_all, BoundedFormulaInf.realize_ex,
+    BoundedFormulaInf.realize_imp, BoundedFormulaInf.realize_equal, realize_invAtom, bvar,
+    Term.realize_var, Sum.elim_inr, Fin.snoc_apply_zero, Fin.snoc_zero,
+    show (1 : Fin 2) = Fin.last 1 from rfl, show (1 : Fin 3) = (Fin.last 1).castSucc from rfl,
+    show (2 : Fin 3) = Fin.last 2 from rfl, Fin.snoc_castSucc, Fin.snoc_last, and_assoc]
 
 /-- Extract an involutive permutation whose graph is `invRel` from `involutionGraphSentence`. -/
 private theorem exists_perm_of_involutionGraphSentence {M : Type w} [InvLang.Structure M]
@@ -282,7 +275,7 @@ theorem pcMem_evenFiniteSentence_iff {M : Type w} [Language.empty.Structure M] :
     let : Fintype M := Fintype.ofFinite M
     obtain ⟨σ, hσ, hgraph⟩ := exists_perm_of_involutionGraphSentence hinv
     have hnofix : ∀ x : M, σ x ≠ x := by
-      simpa [SentenceInf.realize_def, FormulaInf.realize_def, hgraph] using hlast
+      simpa [SentenceInf.realize_def, FormulaInf.realize_def, Fin.snoc_zero, hgraph] using hlast
     refine ⟨hfin, ?_⟩
     rw [Nat.card_eq_fintype_card, even_iff_two_dvd]
     by_contra hndvd
@@ -303,7 +296,7 @@ theorem pcMem_evenFiniteSentence_iff {M : Type w} [Language.empty.Structure M] :
       SentenceInf.realize_not, realize_infiniteSentence_iff]
     exact ⟨⟨not_infinite_iff_finite.2 hfin,
       realize_structureOfInvolutive_involution fun x => by simp [f]⟩,
-      by simp [S, SentenceInf.realize_def, FormulaInf.realize_def, hnofix]⟩
+      by simp [S, SentenceInf.realize_def, FormulaInf.realize_def, Fin.snoc_zero, hnofix]⟩
 
 /-- Over `Language.empty`, the projective class of `oddFiniteSentence` consists of the finite
 structures whose carrier has odd cardinality. -/
@@ -321,9 +314,13 @@ theorem pcMem_oddFiniteSentence_iff {M : Type w} [Language.empty.Structure M] :
     let : Fintype M := Fintype.ofFinite M
     obtain ⟨σ, hσ, hgraph⟩ := exists_perm_of_involutionGraphSentence hinv
     obtain ⟨x₀, hx₀⟩ : ∃ x : M, σ x = x := by
-      simpa [SentenceInf.realize_def, FormulaInf.realize_def, hgraph] using hex0
+      simpa [SentenceInf.realize_def, FormulaInf.realize_def, Fin.snoc_zero, hgraph] using hex0
     have huniqfix : ∀ x y : M, σ x = x → σ y = y → x = y := by
-      simpa [SentenceInf.realize_def, FormulaInf.realize_def, bvar, hgraph] using huniq0
+      simp only [SentenceInf.realize_def, FormulaInf.realize_def, BoundedFormulaInf.realize_all,
+        BoundedFormulaInf.realize_imp, BoundedFormulaInf.realize_equal, realize_invAtom, bvar,
+        Term.realize_var, Sum.elim_inr, Fin.snoc_apply_zero, Fin.snoc_zero,
+        show (1 : Fin 2) = Fin.last 1 from rfl, Fin.snoc_last, hgraph] at huniq0
+      exact huniq0
     refine ⟨hfin, Nat.card_eq_fintype_card (α := M) ▸ Nat.not_even_iff_odd.1
       (even_iff_two_dvd.not.2 fun hdvd => ?_)⟩
     obtain ⟨y, hy, hne⟩ := Equiv.Perm.exists_fixed_point_of_prime' (p := 2) (n := 1) hdvd hσ hx₀
@@ -352,12 +349,12 @@ theorem pcMem_oddFiniteSentence_iff {M : Type w} [Language.empty.Structure M] :
       realize_structureOfInvolutive_involution fun x => by simp [f, swapOdd]⟩, ?_⟩, ?_⟩
     · simp only [S, SentenceInf.realize_def, FormulaInf.realize_def, BoundedFormulaInf.realize_ex,
         realize_invAtom, relMap_structureOfInvolutive, Matrix.cons_val_zero, Matrix.cons_val_one,
-        snoc1_zero]
+        show (0 : Fin 1) = Fin.last 0 from rfl, Fin.snoc_last]
       exact ⟨e.symm (.inr ()), (hfix_iff (e.symm (.inr ()))).2 rfl⟩
     · simp only [S, SentenceInf.realize_def, FormulaInf.realize_def, BoundedFormulaInf.realize_all,
         BoundedFormulaInf.realize_imp, BoundedFormulaInf.realize_equal, realize_invAtom, bvar,
         Term.realize_var, Sum.elim_inr, relMap_structureOfInvolutive, Matrix.cons_val_zero,
-        Matrix.cons_val_one, Fin.snoc_apply_zero, snoc1_zero, snoc2_one]
+        Fin.snoc_apply_zero, Fin.snoc_zero, show (1 : Fin 2) = Fin.last 1 from rfl, Fin.snoc_last]
       exact fun x y hx hy => ((hfix_iff x).1 hx).trans ((hfix_iff y).1 hy).symm
 
 /-- `evenCardSentence` holds in `M` exactly when `M` is finite of even cardinality. -/

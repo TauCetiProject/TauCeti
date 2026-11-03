@@ -95,12 +95,9 @@ private abbrev liftRel (R : Set (Σ n, L.Relations n)) : Set (Σ n, L[[ℕ]].Rel
   (fun s => ⟨s.1, (L.lhomWithConstants ℕ).onRelation s.2⟩) '' R
 
 private theorem liftRel_inter (R₁ R₂ : Set (Σ n, L.Relations n)) :
-    liftRel R₁ ∩ liftRel R₂ = liftRel (R₁ ∩ R₂) := by
-  refine Set.Subset.antisymm ?_ (Set.image_inter_subset _ R₁ R₂)
-  rintro _ ⟨⟨⟨n₁, r₁⟩, hr₁, h₁⟩, ⟨⟨n₂, r₂⟩, hr₂, h₂⟩⟩
-  obtain ⟨rfl, hr⟩ := Sigma.mk.inj_iff.1 (h₁.trans h₂.symm)
-  obtain rfl := (L.lhomWithConstants_injective ℕ).onRelation (eq_of_heq hr)
-  exact ⟨⟨n₁, r₁⟩, ⟨hr₁, hr₂⟩, h₁⟩
+    liftRel R₁ ∩ liftRel R₂ = liftRel (R₁ ∩ R₂) :=
+  (Set.image_inter
+    (Function.injective_id.sigma_map fun _ => (L.lhomWithConstants_injective ℕ).onRelation)).symm
 
 /-- Combined constant support of a pair `(Γ, Δ)` of theories over `L[[ℕ]]`. -/
 private def pairSupport (Γ Δ : L[[ℕ]].Theoryω) : Set ℕ :=
@@ -162,21 +159,44 @@ private theorem updateStructure_con {M : Type w} [iM : L[[ℕ]].Structure M] (c 
   rw [Function.update_eq_self]
   exact withConstantsStructure_reduct_eq (L := L) (γ := ℕ) M
 
-private theorem model_updateStructure {M : Type w} [iM : L[[ℕ]].Structure M]
-    {Γ : L[[ℕ]].Theoryω} {c : ℕ} (hc : ∀ χ ∈ Γ, c ∉ χ.constantSupport) (m : M)
-    (hM : Γ.Model M) : @Theoryω.Model _ Γ M (updateStructure c m) := by
+private theorem realize_con_updateStructure_self {M : Type w} [L[[ℕ]].Structure M] {α : Type*}
+    (c : ℕ) (m : M) (v : α → M) :
+    @Term.realize _ M (updateStructure c m) _ v (L.con c).term = m := by
+  rw [@Term.realize_constants _ M (updateStructure c m)]
+  -- Under `withConstantsStructure` and `constantsOn.structure`, `L.con c` (`Sum.inr c`) evaluates
+  -- the constant map at `c`.
+  exact Function.update_self c m fun d => (L.con d : M)
+
+private theorem term_realize_updateStructure_of_notMem {M : Type w} [iM : L[[ℕ]].Structure M]
+    {α : Type*} {t : L[[ℕ]].Term α} {c : ℕ} (hc : c ∉ t.constantSupport) (m : M) (v : α → M) :
+    @Term.realize _ M (updateStructure c m) _ v t = t.realize v := by
   let S_L : L.Structure M := (L.lhomWithConstants ℕ).reduct M
   have hS : iM = @withConstantsStructure L M S_L ℕ (constantsOn.structure fun d => (L.con d : M)) :=
     (withConstantsStructure_reduct_eq (L := L) (γ := ℕ) M).symm
-  refine (@Theoryω.model_iff _ Γ M (updateStructure c m)).2 fun χ hχ => ?_
   unfold updateStructure
-  have h₀ := hM.realize_of_mem hχ
-  simp only [SentenceInf.realize_def, FormulaInf.realize_def] at h₀ ⊢
-  rw [hS] at h₀
-  exact (χ.realize_congr_of_eqOn_constantSupport
-    (fun d hd => Function.update_of_ne (by rintro rfl; exact hc χ hχ hd : d ≠ c) m
-      (fun d => (L.con d : M)))
-    Empty.elim default).2 h₀
+  rw [t.realize_congr_of_eqOn_constantSupport
+    (fun d hd => Function.update_of_ne (by rintro rfl; exact hc hd : d ≠ c) m
+      (fun d => (L.con d : M))) v, ← hS]
+
+private theorem realize_updateStructure_of_notMem {M : Type w} [iM : L[[ℕ]].Structure M]
+    {α : Type*} {n : ℕ} {φ : L[[ℕ]].BoundedFormulaω α n} {c : ℕ}
+    (hc : c ∉ φ.constantSupport) (m : M) (v : α → M) (xs : Fin n → M) :
+    @Realize _ _ _ M (updateStructure c m) n φ v xs ↔ φ.Realize v xs := by
+  let S_L : L.Structure M := (L.lhomWithConstants ℕ).reduct M
+  have hS : iM = @withConstantsStructure L M S_L ℕ (constantsOn.structure fun d => (L.con d : M)) :=
+    (withConstantsStructure_reduct_eq (L := L) (γ := ℕ) M).symm
+  unfold updateStructure
+  rw [φ.realize_congr_of_eqOn_constantSupport
+    (fun d hd => Function.update_of_ne (by rintro rfl; exact hc hd : d ≠ c) m
+      (fun d => (L.con d : M))) v xs, ← hS]
+
+private theorem model_updateStructure {M : Type w} [L[[ℕ]].Structure M]
+    {Γ : L[[ℕ]].Theoryω} {c : ℕ} (hc : ∀ χ ∈ Γ, c ∉ χ.constantSupport) (m : M)
+    (hM : Γ.Model M) : @Theoryω.Model _ Γ M (updateStructure c m) :=
+  (@Theoryω.model_iff _ Γ M (updateStructure c m)).2 fun χ hχ => by
+    have h₀ := hM.realize_of_mem hχ
+    simp only [SentenceInf.realize_def, FormulaInf.realize_def] at h₀ ⊢
+    exact (realize_updateStructure_of_notMem (hc χ hχ) m Empty.elim default).2 h₀
 
 private theorem realize_abstractConst_snoc {M : Type w} [iM : L[[ℕ]].Structure M]
     (c : ℕ) (θ : L[[ℕ]].Sentenceω) (m : M) :
@@ -468,29 +488,16 @@ private theorem InsepPair.not_all_left {R₁ R₂ : Set (Σ n, L.Relations n)}
       hp.insep <| hasSep_elim_witness hcK ?_
         ⟨θ, hr, hs.trans (pairSupport_insert_left _ ▸ Set.union_subset Set.subset_union_left hsupp),
           hΓ, hΔ⟩⟩
-  intro M iM _ hM
+  intro M _ _ hM
   have hm := SentenceInf.realize_not.1 (hM.realize_of_mem hnall)
   rw [SentenceInf.realize_def, FormulaInf.realize_def, realize_all, not_forall] at hm
   obtain ⟨m, hm⟩ := hm
   refine ⟨m, (@SentenceInf.realize_not _ _ M (updateStructure c m)).2 ?_⟩
-  let S_L : L.Structure M := (L.lhomWithConstants ℕ).reduct M
-  have hS : iM = @withConstantsStructure L M S_L ℕ (constantsOn.structure fun d => (L.con d : M)) :=
-    (withConstantsStructure_reduct_eq (L := L) (γ := ℕ) M).symm
   rw [@SentenceInf.realize_def _ _ _ M (updateStructure c m),
     @realize_inst _ _ _ M (updateStructure c m),
-    @Term.realize_constants _ M (updateStructure c m)]
-  unfold updateStructure
-  change ¬ @Realize _ _ _ M (@withConstantsStructure L M S_L ℕ
-    (constantsOn.structure (Function.update (fun d => (L.con d : M)) c m))) 1 φ Empty.elim
-    (fun _ => Function.update (fun d => (L.con d : M)) c m c)
-  rw [Function.update_self]
-  intro hφm
-  have hφm₀ := (φ.realize_congr_of_eqOn_constantSupport
-    (fun d hd => Function.update_of_ne (by rintro rfl; exact hcK (hφK hd) : d ≠ c) m
-      (fun d => (L.con d : M)))
-    Empty.elim (fun _ => m)).1 hφm
-  rw [← hS] at hφm₀
-  exact hm (by simpa only [Fin.snoc_zero] using hφm₀)
+    realize_con_updateStructure_self,
+    realize_updateStructure_of_notMem (fun h => hcK (hφK h)), ← Fin.snoc_zero default m]
+  exact hm
 
 private theorem InsepPair.eq_refl_left {R₁ R₂ : Set (Σ n, L.Relations n)}
     {Γ Δ : L[[ℕ]].Theoryω} (hp : InsepPair R₁ R₂ Γ Δ) (t : L[[ℕ]].Term (Empty ⊕ Fin 0)) :
@@ -569,25 +576,14 @@ private theorem InsepPair.eq_name_left {R₁ R₂ : Set (Σ n, L.Relations n)}
   refine hp.insep <| hasSep_of_finite_extra t.finite_constantSupport
     (fun _ => subset_pairSupport_left) <|
       hasSep_elim_witness (fun h => hcKt (.inl h)) ?_ ⟨θ, hr, hs', hΓ, hΔ⟩
-  intro M iM _ _
-  let S_L : L.Structure M := (L.lhomWithConstants ℕ).reduct M
-  have hS : iM = @withConstantsStructure L M S_L ℕ (constantsOn.structure fun d => (L.con d : M)) :=
-    (withConstantsStructure_reduct_eq (L := L) (γ := ℕ) M).symm
+  intro M _ _ _
   let m : M := t.realize (Sum.elim Empty.elim default)
   refine ⟨m, ?_⟩
   rw [@SentenceInf.realize_def _ _ _ M (updateStructure c m),
     @FormulaInf.realize_def _ _ _ M (updateStructure c m),
     @realize_equal _ _ _ _ M (updateStructure c m),
-    @Term.realize_constants _ M (updateStructure c m)]
-  unfold updateStructure
-  change Function.update (fun d => (L.con d : M)) c m c =
-    @Term.realize _ M (@withConstantsStructure L M S_L ℕ
-      (constantsOn.structure (Function.update (fun d => (L.con d : M)) c m))) _
-      (Sum.elim Empty.elim default) t
-  rw [Function.update_self, t.realize_congr_of_eqOn_constantSupport
-    (fun d hd => Function.update_of_ne (by rintro rfl; exact hcKt (.inr hd) : d ≠ c) m
-      (fun d => (L.con d : M)))
-    (Sum.elim Empty.elim default), ← hS]
+    realize_con_updateStructure_self,
+    term_realize_updateStructure_of_notMem (fun h => hcKt (.inr h))]
 
 /-- **The paired-inseparability consistency property** over `L[[ℕ]]`, requiring no relational or
 countability assumption on `L`. Right-hand and symmetric mixed cases reduce to the left-hand
