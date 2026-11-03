@@ -63,6 +63,7 @@ faithful additive functor to a finite semisimple category. -/
 theorem of_faithful [IsFiniteSemisimpleCategory C] [SplitMonoCategory D] (F : D ⥤ C)
     [F.Faithful] [F.Additive] : IsFiniteSemisimpleCategory D where
   exists_biproduct_simples X := by
+    let _ : HasFiniteBiproducts D := Abelian.hasFiniteBiproducts
     -- Induct on the total simple multiplicity of `F.obj X`.
     suffices ∀ (n : ℕ) (X : D), (simpleMultiplicities (F.obj X)).degree = n →
         ∃ (ι : Type) (_ : Fintype ι) (f : ι → D) (_ : ∀ i, Simple (f i))

@@ -73,6 +73,8 @@ class IsFiniteSemisimpleCategory (C : Type u) [Category.{v} C] [Abelian C] : Pro
 
 namespace IsFiniteSemisimpleCategory
 
+section Abelian
+
 variable {C : Type u} [Category.{v} C] [Abelian C]
 variable {D : Type u'} [Category.{v'} D] [Abelian D]
 
@@ -102,11 +104,16 @@ theorem iff_of_equivalence (e : C ≌ D) :
     let _ := h
     exact of_equivalence e.symm
 
+end Abelian
+
+section Biproducts
+
+variable {C : Type u} [Category.{v} C] [HasZeroMorphisms C]
+
 /-- A zero object is the biproduct of the empty family of simple objects. -/
-theorem exists_biproduct_simples_of_isZero {X : C} (hX : IsZero X) :
+theorem exists_biproduct_simples_of_isZero [HasFiniteBiproducts C] {X : C} (hX : IsZero X) :
     ∃ (ι : Type) (_ : Fintype ι) (f : ι → C) (_ : ∀ i, Simple (f i)) (_ : HasBiproduct f),
       Nonempty (X ≅ ⨁ f) := by
-  let _ : HasFiniteBiproducts C := Abelian.hasFiniteBiproducts
   refine ⟨Empty, inferInstance, Empty.elim, fun i ↦ i.elim, inferInstance, ⟨hX.iso ?_⟩⟩
   exact (IsZero.iff_id_eq_zero _).2 (biproduct.hom_ext _ _ fun i ↦ i.elim)
 
@@ -114,13 +121,12 @@ theorem exists_biproduct_simples_of_isZero {X : C} (hX : IsZero X) :
 theorem exists_biproduct_simples_of_simple (X : C) [Simple X] :
     ∃ (ι : Type) (_ : Fintype ι) (f : ι → C) (_ : ∀ i, Simple (f i)) (_ : HasBiproduct f),
       Nonempty (X ≅ ⨁ f) := by
-  let _ : HasFiniteBiproducts C := Abelian.hasFiniteBiproducts
   exact ⟨Unit, inferInstance, fun _ ↦ X, fun _ ↦ inferInstance, inferInstance,
     ⟨(biproductUniqueIso fun _ : Unit ↦ X).symm⟩⟩
 
 /-- Decompositions of `X` and `Y` into finite biproducts of simple objects combine to one of
 `X ⊞ Y`. -/
-theorem exists_biproduct_simples_biprod {X Y : C}
+theorem exists_biproduct_simples_biprod [HasFiniteBiproducts C] {X Y : C} [HasBinaryBiproduct X Y]
     (hX : ∃ (ι : Type) (_ : Fintype ι) (f : ι → C) (_ : ∀ i, Simple (f i)) (_ : HasBiproduct f),
       Nonempty (X ≅ ⨁ f))
     (hY : ∃ (ι : Type) (_ : Fintype ι) (f : ι → C) (_ : ∀ i, Simple (f i)) (_ : HasBiproduct f),
@@ -129,9 +135,11 @@ theorem exists_biproduct_simples_biprod {X Y : C}
       Nonempty (X ⊞ Y ≅ ⨁ f) := by
   obtain ⟨ι, hι, f, hf, hbf, ⟨e⟩⟩ := hX
   obtain ⟨κ, hκ, g, hg, hbg, ⟨d⟩⟩ := hY
-  let _ : HasFiniteBiproducts C := Abelian.hasFiniteBiproducts
+  have := hasBinaryBiproducts_of_finite_biproducts C
   refine ⟨ι ⊕ κ, inferInstance, Sum.elim f g, fun | .inl i => hf i | .inr j => hg j,
     inferInstance, ⟨biprod.mapIso e d ≪≫ (biproductSumIso f g).symm⟩⟩
+
+end Biproducts
 
 end IsFiniteSemisimpleCategory
 
