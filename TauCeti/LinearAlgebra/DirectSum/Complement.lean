@@ -5,8 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.DirectSum.Decomposition
 public import Mathlib.LinearAlgebra.Basis.VectorSpace
+public import TauCeti.Algebra.DirectSum.Internal
 
 /-!
 # Degree-preserving retractions onto homogeneous subspaces
@@ -23,36 +23,16 @@ namespace LinearMap
 variable {R ι V : Type*} [DecidableEq ι] [Semiring R] [AddCommMonoid V] [Module R V]
   (f : V →ₗ[R] V) (𝒱 : ι → Submodule R V) [DirectSum.Decomposition 𝒱]
 
-/-- An endomorphism preserving each graded piece commutes with homogeneous components. -/
-theorem map_decompose_of_mapsTo
-    (hf : ∀ i, Set.MapsTo f (𝒱 i) (𝒱 i)) (x : V) (i : ι) :
-    f (DirectSum.decompose 𝒱 x i) = (DirectSum.decompose 𝒱 (f x) i : V) := by
-  classical
-  let π : V →ₗ[R] V := (𝒱 i).subtype ∘ₗ
-    DirectSum.component R ι (fun j ↦ 𝒱 j) i ∘ₗ (DirectSum.decomposeLinearEquiv 𝒱).toLinearMap
-  -- This composite is the degree-`i` component, viewed in the ambient module.
-  have hπ (y : V) : π y = (DirectSum.decompose 𝒱 y i : V) := rfl
-  have h : f ∘ₗ π = π ∘ₗ f := by
-    apply DirectSum.decompose_lhom_ext 𝒱
-    intro j
-    ext y
-    by_cases hji : j = i
-    · subst j
-      simp only [LinearMap.comp_apply, Submodule.subtype_apply, hπ]
-      rw [DirectSum.decompose_of_mem_same 𝒱 y.2,
-        DirectSum.decompose_of_mem_same 𝒱 (hf i y.2)]
-    · simp only [LinearMap.comp_apply, Submodule.subtype_apply, hπ]
-      rw [DirectSum.decompose_of_mem_ne 𝒱 y.2 hji,
-        DirectSum.decompose_of_mem_ne 𝒱 (hf j y.2) hji, map_zero]
-  exact LinearMap.congr_fun h x
-
 /-- The kernel of a degree-preserving endomorphism is homogeneous. -/
 theorem isHomogeneous_ker_of_mapsTo
     (hf : ∀ i, Set.MapsTo f (𝒱 i) (𝒱 i)) :
     DirectSum.SetLike.IsHomogeneous 𝒱 (LinearMap.ker f) := by
   intro i x hx
   rw [LinearMap.mem_ker] at hx ⊢
-  rw [f.map_decompose_of_mapsTo 𝒱 hf, hx, DirectSum.decompose_zero]
+  have h := DirectSum.map_decompose_shift 𝒱 𝒱 f.toAddMonoidHom (fun j ↦ j)
+    Function.injective_id (fun j _ hx ↦ hf j hx) i x
+  simp only [LinearMap.toAddMonoidHom_coe] at h
+  rw [h, hx, DirectSum.decompose_zero]
   rfl
 
 end LinearMap
