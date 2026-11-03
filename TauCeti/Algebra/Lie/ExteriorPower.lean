@@ -123,7 +123,7 @@ private theorem actionLinear_mul_sub_mul (d : ℕ) (f g : Module.End K V) :
         ∑ i : Fin d, ∑ j : Fin d, actionTerm d f g v i j := by
     simp [actionTerm]
   refine linearMap_ext (AlternatingMap.ext fun v => ?_)
-  simp only [LinearMap.compAlternatingMap_apply, LinearMap.sub_apply, Module.End.mul_apply]
+  simp only [LinearMap.compAlternatingMap_apply, LinearMap.sub_apply, mul_apply_eq_comp]
   -- Off-diagonal terms of the two composites cancel in pairs by `actionTerm_swap`, leaving the
   -- diagonal terms, where the commutator acts on a single factor.
   rw [hcomp, hcomp, actionLinear_apply_ιMulti, Finset.sum_comm (f := actionTerm d g f v),

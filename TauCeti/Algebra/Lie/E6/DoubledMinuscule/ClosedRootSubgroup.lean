@@ -134,7 +134,7 @@ private theorem rep_serreRootGenerator_sq_apply_matrixBasis (k : Fin 6 ⊕ Fin 6
     (fun f : Module.End ℚ ((Fin 27 ⊕ Fin 27) → ℚ) =>
       f ((matrixBasis (rootSource k) : lattice) : (Fin 27 ⊕ Fin 27) → ℚ))
     (rep_serreRootGenerator_sq k)
-  simpa only [pow_two, Module.End.mul_apply, LinearMap.zero_apply] using h
+  simpa only [pow_two, mul_apply_eq_comp, LinearMap.zero_apply] using h
 
 /-! ## Closed root-subgroup morphisms -/
 
