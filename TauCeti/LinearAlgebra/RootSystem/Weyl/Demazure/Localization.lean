@@ -239,7 +239,7 @@ theorem map_prod_map_demazureOperator_apply_eq_sum_div (φ : AddMonoidAlgebra �
       simpa [s] using hφ (Fin.cons true ε) k.succ
     have hα : 1 - φ (single (-P.root i) 1) ≠ 0 := by
       simpa using hφ (Fin.cons false fun _ ↦ false) 0
-    rw [List.map_cons, List.prod_cons, Module.End.mul_apply,
+    rw [List.map_cons, List.prod_cons, mul_apply_eq_comp,
       map_demazureOperator_eq_add_div P φ i hα,
       ← RingEquiv.coe_toRingHom, ← RingHom.comp_apply, ih φ h₀, ih (φ.comp s) h₁]
     -- Split `ε ∈ {0,1}^{r+1}` as `(ε₁, ε')`.
