@@ -214,6 +214,64 @@ theorem mem_mapEdgeSet_iff (f : Iso G H) (F : Set β) (e : H.edgeSet) :
   · intro h
     exact ⟨e.2, by simpa only [Subtype.coe_eta] using h⟩
 
+/-- Transporting a vertex set along the identity isomorphism intersects it with the actual
+vertex set. -/
+@[simp]
+theorem mapVertexSet_refl (G : Graph α β) (S : Set α) :
+    (refl G).mapVertexSet S = S ∩ V(G) := by
+  ext x
+  constructor
+  · rintro ⟨hx, hS⟩
+    exact ⟨hS, hx⟩
+  · rintro ⟨hS, hx⟩
+    exact ⟨hx, hS⟩
+
+/-- Transporting an edge set along the identity isomorphism intersects it with the actual edge
+set. -/
+@[simp]
+theorem mapEdgeSet_refl (G : Graph α β) (F : Set β) :
+    (refl G).mapEdgeSet F = F ∩ E(G) := by
+  ext e
+  constructor
+  · rintro ⟨he, hF⟩
+    exact ⟨hF, he⟩
+  · rintro ⟨hF, he⟩
+    exact ⟨he, hF⟩
+
+/-- Transporting a vertex set along a composite applies the two transports in order. -/
+@[simp]
+theorem mapVertexSet_trans (f : Iso G H) (g : Iso H K) (S : Set α) :
+    (f.trans g).mapVertexSet S = g.mapVertexSet (f.mapVertexSet S) := by
+  ext z
+  by_cases hz : z ∈ V(K)
+  · let z' : K.vertexSet := ⟨z, hz⟩
+    have hz' : (z' : α'') = z := rfl
+    rw [← hz', (f.trans g).mem_mapVertexSet_iff, g.mem_mapVertexSet_iff,
+      f.mem_mapVertexSet_iff]
+    rfl
+  · have hleft : z ∉ (f.trans g).mapVertexSet S := fun h ↦
+      hz ((f.trans g).mapVertexSet_subset_vertexSet S h)
+    have hright : z ∉ g.mapVertexSet (f.mapVertexSet S) := fun h ↦
+      hz (g.mapVertexSet_subset_vertexSet _ h)
+    exact iff_of_false hleft hright
+
+/-- Transporting an edge set along a composite applies the two transports in order. -/
+@[simp]
+theorem mapEdgeSet_trans (f : Iso G H) (g : Iso H K) (F : Set β) :
+    (f.trans g).mapEdgeSet F = g.mapEdgeSet (f.mapEdgeSet F) := by
+  ext e
+  by_cases he : e ∈ E(K)
+  · let e' : K.edgeSet := ⟨e, he⟩
+    have he' : (e' : β'') = e := rfl
+    rw [← he', (f.trans g).mem_mapEdgeSet_iff, g.mem_mapEdgeSet_iff,
+      f.mem_mapEdgeSet_iff]
+    rfl
+  · have hleft : e ∉ (f.trans g).mapEdgeSet F := fun h ↦
+      he ((f.trans g).mapEdgeSet_subset_edgeSet F h)
+    have hright : e ∉ g.mapEdgeSet (f.mapEdgeSet F) := fun h ↦
+      he (g.mapEdgeSet_subset_edgeSet _ h)
+    exact iff_of_false hleft hright
+
 /-- A graph isomorphism transports a singleton actual vertex to the corresponding singleton. -/
 @[simp]
 theorem mapVertexSet_singleton (f : Iso G H) (x : G.vertexSet) :
