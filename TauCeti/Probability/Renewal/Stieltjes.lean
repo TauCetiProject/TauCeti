@@ -60,10 +60,11 @@ def renewalStieltjes : StieltjesFunction ℝ :=
 @[simp]
 theorem renewalStieltjes_coe (t : ℝ≥0) :
     μ.renewalStieltjes hμ t = (μ.renewalFunction t).toReal := by
+  have hpreimage : ((↑) : ℝ≥0 → ℝ) ⁻¹' Iic (t : ℝ) = Iic t := by
+    ext x
+    simp
   rw [renewalStieltjes, cumulativeStieltjes_apply, measureReal_def,
-    map_apply measurable_coe_nnreal_real measurableSet_Iic, renewalFunction_def]
-  -- The preimage of `Iic ↑t` under the half-line inclusion is definitionally `Iic t`.
-  rfl
+    map_apply measurable_coe_nnreal_real measurableSet_Iic, renewalFunction_def, hpreimage]
 
 /-- The extension vanishes at every negative time. -/
 @[simp]
