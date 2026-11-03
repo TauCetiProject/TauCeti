@@ -206,27 +206,9 @@ theorem kernelProduct_kernelProduct_sub_kernelProduct_kernelProduct
       (fun u p₀ h => by linarith [hm' q.1.1 u p₀ h]) (hmfin' q.1.1) (hmfin q.1.2 q.2) using 1
     ext p₀
     rw [kernelComp_apply]
-  -- Potential bounds of the two composites with the homotopy kernel.
-  have hkδ (q : (S₁ × S₂) × S₃) (p₀ : S₀) (h : kernelComp k δ₀ q p₀ ≠ 0) :
-      F₀ p₀ ≤ F₁ q.1.1 + F₂ q.1.2 + F₃ q.2 + (Ck + C₀) := by
-    linarith [potential_le_of_kernelComp_ne_zero (hk q) (hδ₀ · p₀) h]
-  have hDk (q : (S₁ × S₂) × S₃) (p₀ : S₀) (h : kernelComp D k q p₀ ≠ 0) :
-      F₀ p₀ ≤ F₁ q.1.1 + F₂ q.1.2 + F₃ q.2 + (CD + Ck) := by
-    linarith [potential_le_of_kernelComp_ne_zero (hD q) (hk · p₀) h]
   rw [kernelProduct_kernelProduct_left hn hfin hn' hfin' hN hNfin,
-    kernelProduct_kernelProduct_right hm hmfin hm' hmfin' hM hMfin,
-    kernelMap_kernelMap hk hkfin hδ₀ hδ₀fin hkδ fun q => kernelComp_mem hδ₀ hδ₀fin (hkfin q),
-    kernelMap_kernelMap hD hDfin hk hkfin hDk fun q => kernelComp_mem hk hkfin (hDfin q)]
-  -- All four maps are kernel maps on the same completed module, so it suffices to compare
-  -- the kernels, which is the hypothesis.
-  ext p₀
-  simp only [Submodule.coe_sub, Submodule.coe_add, Pi.sub_apply, Pi.add_apply,
-    kernelMap_apply_val]
-  rw [← finsum_sub_distrib (finite_support_mul_kernelMap hN _ p₀)
-      (finite_support_mul_kernelMap hM _ p₀),
-    ← finsum_add_distrib (finite_support_mul_kernelMap hkδ _ p₀)
-      (finite_support_mul_kernelMap hDk _ p₀)]
-  exact finsum_congr fun q => by rw [← mul_sub, hassoc, mul_add]
+    kernelProduct_kernelProduct_right hm hmfin hm' hmfin' hM hMfin]
+  exact kernelMap_sub_kernelMap hN hNfin hM hMfin hk hkfin hD hDfin hδ₀ hδ₀fin hassoc _
 
 /-- **Associativity up to homotopy, with the Koszul signs.** Let `δ₁`, `δ₂`, `δ₃` be kernels on
 the three input generators and `d₁`, `d₂` degree functions on the first two, and let

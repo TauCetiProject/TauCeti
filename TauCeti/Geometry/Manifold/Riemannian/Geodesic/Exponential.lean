@@ -343,7 +343,7 @@ theorem hasStrictFDerivAt_riemannianExp_zero [T2Space M] (p : M) :
     have h := (contMDiffAt_iff.1 hsmooth).2.contDiffAt (by simp)
     simpa only [writtenInExtChartAt, extChartAt_model_space_eq_id, PartialEquiv.refl_coe,
       Function.comp_id, Function.id_def, riemannianExp_zero] using h
-  apply hcoord.hasStrictFDerivAt'
+  apply hcoord.hasStrictFDerivAt
   · have h := (hasMFDerivAt_riemannianExp_zero (I := I) p).2
     rw [riemannianExp_zero] at h
     have h' : HasFDerivWithinAt

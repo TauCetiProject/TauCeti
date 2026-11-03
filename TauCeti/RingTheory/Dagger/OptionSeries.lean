@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.RingTheory.Dagger.WashnitzerAlgebra
+public import TauCeti.RingTheory.Dagger.GaussNorm
 public import TauCeti.RingTheory.MvPowerSeries.TateAlgebra.Iterate
 
 /-!
@@ -24,6 +24,9 @@ radius bound. The split polyradius `MvPowerSeries.splitRadius r ρ`, with radius
 are carried out. By `MvPowerSeries.isRestricted_of_map_subtype_eq_optionEquivLeft`, separating `Y`
 in a series restricted at `r` gives a series in `Y` restricted at `r` over the series restricted
 at `ρ ≤ r`.
+
+The Gauss norm of a series in `Option σ` is the unit-radius Gauss norm of its separated series over
+the Tate algebra, so `optionC` preserves Gauss norms.
 
 ## References
 
@@ -241,6 +244,21 @@ theorem restrictedOptionEquiv_toTate_polynomialToOption
   rw [← map_toTate_optionSeries, optionSeries_polynomialToOption]
   ext m : 1
   simp [Polynomial.coeff_coe]
+
+/-- The Gauss norm of a series in `R⟨X, Y⟩†` is the Gauss norm at unit radius of its separated
+series in `Y`, with coefficients in the Tate algebra in the variables `X`. -/
+theorem norm_eq_gaussNorm_map_optionSeries (f : washnitzerAlgebra (Option σ) R) :
+    ‖f‖ = (PowerSeries.map (toTate σ R : washnitzerAlgebra σ R →+*
+      IsRestricted.subring (R := R) (fun _ : σ ↦ (1 : ℝ))) (optionSeries f)).gaussNorm norm 1 := by
+  rw [map_toTate_optionSeries, ← TauCeti.PowerSeries.norm_eq_gaussNorm,
+    norm_restrictedOptionEquiv, norm_toTate]
+
+/-- Adjoining the variable `Y` preserves Gauss norms. -/
+@[simp]
+theorem norm_optionC (f : washnitzerAlgebra σ R) : ‖optionC f‖ = ‖f‖ := by
+  rw [norm_eq_gaussNorm_map_optionSeries, optionSeries_optionC, PowerSeries.map_C,
+    ← norm_toTate]
+  exact TauCeti.PowerSeries.norm_C (c := 1) _
 
 end washnitzerAlgebra
 
