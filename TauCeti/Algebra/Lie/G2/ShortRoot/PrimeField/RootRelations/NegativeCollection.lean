@@ -16,7 +16,7 @@ four-factor Chevalley collection formula, with the nonsimple-root factors normal
 by explicit Weyl words. The identity holds over every commutative `𝔽₃`-algebra,
 including nonreduced algebras, and retains the cubic short-root parameter.
 
-`commutator_rootSubgroupPoints_inr_zero_inr_one` transfers the integral identity through
+`commutatorElement_rootSubgroupPoints_inr_zero_inr_one` transfers the integral identity through
 the existing comparisons of the simple-root matrices. It does not identify this
 carrier with the specialization of the integral toral closure or with an independently
 pinned simply connected group.
@@ -36,7 +36,7 @@ universe v
 
 /-- The negative-simple-root commutator in the characteristic-three carrier is the
 ordered product of the four Weyl-normalized nonsimple-root points. -/
-theorem commutator_rootSubgroupPoints_inr_zero_inr_one (A : Type v) [CommRing A]
+theorem commutatorElement_rootSubgroupPoints_inr_zero_inr_one (A : Type v) [CommRing A]
     [Algebra (ZMod 3) A] (a b : A) :
     let x := fun k t => rootSubgroupPoints k A (Multiplicative.ofAdd t)
     let n := fun i => x (.inl i) 1 * x (.inr i) (-1) * x (.inl i) 1
@@ -47,7 +47,7 @@ theorem commutator_rootSubgroupPoints_inr_zero_inr_one (A : Type v) [CommRing A]
       ((n 1 * n 0) * x (.inr 1) (2 * a ^ 3 * b ^ 2) * (n 1 * n 0)⁻¹) := by
   have h := congrArg (fun g : IntegralToralClosure.points A =>
     (g : Matrix.GeneralLinearGroup (Fin 7) A))
-    (IntegralToralClosure.commutator_rootSubgroupPoints_inr_zero_inr_one A a b)
+    (IntegralToralClosure.commutatorElement_rootSubgroupPoints_inr_zero_inr_one A a b)
   apply Subtype.ext
   simpa only [commutatorElement_def, Subgroup.coe_mul, Subgroup.coe_inv,
     coe_rootSubgroupPoints] using h

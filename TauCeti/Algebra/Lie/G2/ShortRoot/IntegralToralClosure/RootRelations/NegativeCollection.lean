@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Lie.G2.ShortRoot.IntegralToralClosure.Basic
-import Mathlib.GroupTheory.Commutator.Basic
 
 /-!
 # Negative-root Chevalley collection in the seven-dimensional G₂ carrier
@@ -16,7 +15,7 @@ Weyl-conjugated root points. The conjugating words fix the signs of the nonsimpl
 parameters: in order of increasing height the parameters are `ab`, `a²b`, `-a³b`, and
 `2a³b²`. The coefficient two is retained over arbitrary commutative rings.
 
-`commutator_rootSubgroupPoints_inr_zero_inr_one` states this group identity, not just an
+`commutatorElement_rootSubgroupPoints_inr_zero_inr_one` states this group identity, not just an
 identity of tangent vectors or selected matrix entries. The roots of the four factors
 are `-(α₁+α₂)`, `-(2α₁+α₂)`, `-(3α₁+α₂)`, and `-(3α₁+2α₂)`.
 
@@ -62,8 +61,9 @@ private theorem simpleMatrix_map {B : Type w} [CommRing B] (f : A →+* B)
 
 private theorem coe_x (k : Fin 2 ⊕ Fin 2) (t : A) :
     ((x k t : Matrix.GeneralLinearGroup (Fin 7) A) : Matrix (Fin 7) (Fin 7) A) =
-      simpleMatrix k t :=
-  coe_rootSubgroupPoints k A (Multiplicative.ofAdd t)
+      simpleMatrix k t := by
+  simp only [x, coe_rootSubgroupPoints, toAdd_ofAdd, simpleMatrix,
+    RingHom.mapMatrix_apply, Int.coe_castRingHom]
 
 private def weylMatrix (i : Fin 2) : Matrix (Fin 7) (Fin 7) ℤ :=
   ![!![0, 1, 0, 0, 0, 0, 0;
@@ -253,7 +253,7 @@ private theorem collection_row_six (a b : A) (s : Fin 7) : collectionEntry a b 6
 
 /-- The negative-simple-root Chevalley commutator is the four root factors in increasing
 height order. The actual pinned Weyl words specify the normalization of every factor. -/
-theorem commutator_rootSubgroupPoints_inr_zero_inr_one (A : Type v) [CommRing A] (a b : A) :
+theorem commutatorElement_rootSubgroupPoints_inr_zero_inr_one (A : Type v) [CommRing A] (a b : A) :
     let x := fun k t => rootSubgroupPoints k A (Multiplicative.ofAdd t)
     let n := fun i => x (.inl i) 1 * x (.inr i) (-1) * x (.inl i) 1
     ⁅x (.inr 0) a, x (.inr 1) b⁆ =
@@ -264,7 +264,9 @@ theorem commutator_rootSubgroupPoints_inr_zero_inr_one (A : Type v) [CommRing A]
   suffices ⁅x (.inr 0) a, x (.inr 1) b⁆ =
       collectedPoint 0 (a * b) * collectedPoint 1 (a ^ 2 * b) *
       collectedPoint 2 (-(a ^ 3 * b)) * collectedPoint 3 (2 * a ^ 3 * b ^ 2) by
-    simpa [x, n, collectedPoint, conjugatorPoint, negativeRoot] using this
+    -- Expand only the four indexed Weyl words, without using group simplification.
+    simpa only [x, n, collectedPoint, conjugatorPoint, negativeRoot,
+      Matrix.cons_val, Fin.reduceLT, ↓reduceIte] using this
   apply Subtype.ext
   apply Units.ext
   simp only [commutatorElement_def, x_inv, Subgroup.coe_mul,
