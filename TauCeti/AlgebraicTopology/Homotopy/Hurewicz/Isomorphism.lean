@@ -311,7 +311,7 @@ theorem subsingleton_homotopyGroup_of_isZero_homology_normalizedCubicalChainComp
       IsZero (((normalizedCubicalChainComplex ℤ).obj (TopCat.of X)).homology (n + 2)))
     (k : ℕ) : Subsingleton (π_ k X x) := by
   induction k using Nat.strong_induction_on with
-  | h k ih =>
+  | ind k ih =>
     match k with
     | 0 => exact (pathConnectedSpace_iff_subsingleton_homotopyGroup_zero x).mp inferInstance
     | 1 => exact inferInstance
