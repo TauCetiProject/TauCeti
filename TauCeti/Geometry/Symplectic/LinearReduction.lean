@@ -324,8 +324,7 @@ noncomputable def reducedSpaceRepresentation {G : Type*} [Group G] (ρ : G →* 
   have hmap (g : G) : U.map (ρ g : V →ₗ[ℝ] V) = U := by
     refine le_antisymm (Submodule.map_le_iff_le_comap.2 fun u hu => hU g u hu) fun u hu => ?_
     refine ⟨ρ g⁻¹ u, hU g⁻¹ u hu, ?_⟩
-    rw [LinearEquiv.coe_coe, ← mul_apply_eq_comp, ← map_mul, mul_inv_cancel, map_one,
-      one_apply_eq_self]
+    simp
   { toFun g := reducedSpaceCongr ω ω (ρ g) (hρ g) (hmap g)
     map_one' := by
       ext x
