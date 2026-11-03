@@ -168,7 +168,8 @@ theorem coprime_absNorm_of_absNorm_ne (hK : Module.finrank ℚ K = 2) {P₁ P₂
   obtain rfl | hp := eq_or_ne p₁ p₂
   · -- Both primes lie over `p₁`, so `p₁ 𝓞 K ≤ P₁ ⊓ P₂ = P₁ P₂` and `p₁ ^ (n₁ + n₂) ∣ p₁ ^ 2`.
     have hle : span {(p₁ : 𝓞 K)} ≤ P₁ * P₂ := by
-      rw [mul_eq_inf_of_coprime (IsMaximal.coprime_of_ne ‹_› ‹_› hne)]
+      rw [Ideal.mul_eq_inf_of_isCoprime
+        (Ideal.isCoprime_iff_sup_eq.mpr (IsMaximal.coprime_of_ne ‹_› ‹_› hne))]
       exact le_inf ((span_singleton_le_iff_mem _).mpr hp₁P)
         ((span_singleton_le_iff_mem _).mpr hp₂P)
     have hdvd := absNorm_dvd_absNorm_of_le hle

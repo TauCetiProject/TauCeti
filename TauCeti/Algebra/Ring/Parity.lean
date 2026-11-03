@@ -13,7 +13,8 @@ public import Mathlib.Algebra.Ring.Parity
 This file records the identity `1 - (-x)^{2n+1} = 1 + x^{2n+1}` in a ring, which turns a product
 of factors `1 - (-q)^{2n+1}` into a product of factors `1 + q^{2n+1}`, and two sign cancellations
 for powers of `-1` in a monoid with a distributive negation: an even summand of the exponent can be
-dropped, and two equal powers of `-1` cancel.
+dropped, and two equal powers of `-1` cancel. It also records that multiplying a sign `±1` by a
+power of `-1` gives a sign.
 -/
 
 public section
@@ -39,6 +40,11 @@ theorem neg_one_pow_add_two_mul (a b : ℕ) : (-1 : α) ^ (a + 2 * b) = (-1) ^ a
 theorem neg_one_pow_mul_neg_one_pow_mul (a : ℕ) (x : α) :
     (-1 : α) ^ a * ((-1) ^ a * x) = x := by
   rw [← mul_assoc, ← pow_add, ← two_mul, (even_two_mul a).neg_one_pow, one_mul]
+
+/-- Multiplying a sign `μ = ±1` by a power of `-1` gives a sign. -/
+theorem neg_one_pow_mul_eq_or {μ : α} (hμ : μ = 1 ∨ μ = -1) (n : ℕ) :
+    (-1 : α) ^ n * μ = 1 ∨ (-1 : α) ^ n * μ = -1 := by
+  rcases neg_one_pow_eq_or α n with h | h <;> rcases hμ with rfl | rfl <;> simp [h]
 
 end NegOnePow
 

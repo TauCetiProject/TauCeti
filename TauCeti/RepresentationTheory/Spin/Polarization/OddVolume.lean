@@ -101,7 +101,7 @@ private theorem spinAction_ι_mul_ι_apply_one {e f : V}
       mul_one, sub_zero, sub_zero, Complex.real_smul, mul_one]
   -- `c(f)` sends the vacuum to `i x`, and `c(e)` sends `i x` to `i · polar Q_ℂ x y`.
   rw [hf, he]
-  simp only [map_smul, map_sub, map_add, mul_smul_comm, map_mul, Module.End.mul_apply,
+  simp only [map_smul, map_sub, map_add, mul_smul_comm, map_mul, mul_apply_eq_comp,
     LinearMap.smul_apply, LinearMap.sub_apply, LinearMap.add_apply, spinAction_ι_wedge,
     spinAction_ι_contract, mul_one, ExteriorAlgebra.ι_sq_zero, contractLeft_ι, contractLeft_one,
     zero_add, sub_zero, P.pairingEquiv_apply, hpolar,
@@ -146,7 +146,7 @@ theorem spinAction_complexVolume :
   -- Evaluate both sides on the vacuum: `u` gives `λ`, and each of the `ℓ` pairs gives `-i`.
   have h1 := congr($ha 1)
   rw [complexVolume_eq_prod_pairs_mul b hb (b.isOrthoᵢ_associated hQ)] at h1
-  simp only [map_smul, map_mul, map_list_prod, LinearMap.smul_apply, Module.End.mul_apply, hu,
+  simp only [map_smul, map_mul, map_list_prod, LinearMap.smul_apply, mul_apply_eq_comp, hu,
     hpairs, Module.algebraMap_end_apply, smul_smul] at h1
   have hI : Complex.I ^ ℓ * (-1) ^ ℓ * Complex.I ^ ℓ = 1 := by
     rw [mul_comm, ← mul_assoc, ← mul_pow, Complex.I_mul_I, ← mul_pow]
