@@ -48,7 +48,7 @@ recovers the law.
 
 * `ProbabilityTheory.sum_meas_smul_cond_fiber_of_countable`
 * `ProbabilityTheory.cond_congr_ae`
-* `ProbabilityTheory.toNNReal_mul_integral_cond_eq_setIntegral`
+* `MeasureTheory.Measure.toNNReal_mul_integral_cond_eq_setIntegral`
 * `Measurable.cond`, `Measurable.cond_const`, and `Measurable.cond_preimage_Ioc` (with the
   corresponding `Icc`, `Ioo`, and `Ico` forms)
 * `ProbabilityTheory.integrable_cond_of_norm_le`
@@ -78,7 +78,8 @@ theorem cond_congr_ae {μ : Measure Ω} {s t : Set Ω} (h : s =ᵐ[μ] t) :
 
 /-- Multiplying an integral under a conditional measure by the finite mass of the conditioning
 event recovers the corresponding set integral. -/
-theorem toNNReal_mul_integral_cond_eq_setIntegral (μ : Measure Ω) (s : Set Ω) (f : Ω → ℝ)
+theorem _root_.MeasureTheory.Measure.toNNReal_mul_integral_cond_eq_setIntegral
+    (μ : Measure Ω) (s : Set Ω) (f : Ω → ℝ)
     (h : μ s ≠ ⊤) :
     (μ s).toNNReal * ∫ x, f x ∂cond μ s = ∫ x in s, f x ∂μ := by
   have haverage := measure_smul_setAverage f h

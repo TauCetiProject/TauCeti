@@ -127,7 +127,7 @@ theorem integral_id_stableSmallJumpRemainderMeasure {α β ε r : ℝ}
     rw [stableSmallJumpRemainderMeasure_def]
     simpa only [ν, band, sub_eq_add_neg] using hmean
   rw [hmean_exact, integral_id_compoundPoissonMeasure hjump_one]
-  have hid := toNNReal_mul_integral_cond_eq_setIntegral ν band id htop
+  have hid := ν.toNNReal_mul_integral_cond_eq_setIntegral band id htop
   simp only [id_eq] at hid
   simp only [smul_eq_mul]
   rw [hid]
@@ -174,7 +174,7 @@ theorem variance_id_stableSmallJumpRemainderMeasure {α β ε r : ℝ}
     simpa only [ν, band, sub_eq_add_neg, add_comm] using hvariance
   rw [hvariance_exact, variance_id_compoundPoissonMeasure hjump]
   have hsecond :=
-    toNNReal_mul_integral_cond_eq_setIntegral ν band (fun x : ℝ ↦ x ^ 2) htop
+    ν.toNNReal_mul_integral_cond_eq_setIntegral band (fun x : ℝ ↦ x ^ 2) htop
   simpa only [ν, band] using hsecond
 
 /-- The variance of a valid band remainder is bounded by the full stable second moment below
