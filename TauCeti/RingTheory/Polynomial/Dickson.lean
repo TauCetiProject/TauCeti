@@ -129,11 +129,13 @@ theorem dickson_eval_neg (k : ℕ) (a t : R) (n : ℕ) :
   rwa [neg_one_sq, one_mul, neg_one_mul] at h
 
 /-- An even-degree Dickson polynomial takes the same value at `-t` and `t`. -/
+@[simp]
 theorem dickson_eval_neg_of_even (k : ℕ) (a t : R) {n : ℕ} (hn : Even n) :
     (dickson k a n).eval (-t) = (dickson k a n).eval t := by
   rw [dickson_eval_neg, hn.neg_one_pow, one_mul]
 
 /-- An odd-degree Dickson polynomial negates when its argument is negated. -/
+@[simp]
 theorem dickson_eval_neg_of_odd (k : ℕ) (a t : R) {n : ℕ} (hn : Odd n) :
     (dickson k a n).eval (-t) = -(dickson k a n).eval t := by
   rw [dickson_eval_neg, hn.neg_one_pow, neg_one_mul]

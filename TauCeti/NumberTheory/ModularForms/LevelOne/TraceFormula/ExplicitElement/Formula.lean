@@ -322,27 +322,13 @@ theorem trace_periodActionRestrict_popaZagierElement_one {K : Type*} [Field K] [
     LinearMap.trace K (periodPolynomials K w)
         ((exchangeRelations_popaZagierElement K 1).periodActionRestrict hw) =
       (Module.finrank K (periodPolynomials K w) : K) := by
-  have htr := trace_periodActionRestrict_popaZagierElement (K := K) one_ne_zero hw hw₀
-  simp only [Nat.cast_one] at htr
-  rw [htr]
   have hsqrt : (4 * 1).sqrt = 2 := (Nat.eq_sqrt.mpr (by decide)).symm
   have hIcc : Finset.Icc (-2 : ℤ) 2 = {-2, -1, 0, 1, 2} := by decide
-  rw [hsqrt, Nat.cast_ofNat, hIcc, Nat.divisors_one, Nat.divisorsAntidiagonal_one,
-    Finset.sum_singleton, Finset.sum_singleton, min_self, Nat.cast_one, one_pow,
-    Finset.sum_insert (by decide), Finset.sum_insert (by decide),
-    Finset.sum_insert (by decide), Finset.sum_insert (by decide), Finset.sum_singleton]
-  have hd_neg2 : (4 * (1 : ℤ) - (-2) ^ 2).toNat = 0 := by decide
-  have hd_neg1 : (4 * (1 : ℤ) - (-1) ^ 2).toNat = 3 := by decide
-  have hd_zero : (4 * (1 : ℤ) - 0 ^ 2).toNat = 4 := by decide
-  have hd_one : (4 * (1 : ℤ) - 1 ^ 2).toNat = 3 := by decide
-  have hd_two : (4 * (1 : ℤ) - 2 ^ 2).toNat = 0 := by decide
-  simp only [hd_neg2, hd_neg1, hd_zero, hd_one, hd_two,
-    hurwitzClassNumber_zero, hurwitzClassNumber_three, hurwitzClassNumber_four,
-    Int.cast_neg, Int.cast_ofNat, Int.cast_one, Int.cast_zero,
-    Polynomial.dickson_eval_neg_of_even _ _ _ hw]
   have hp2 : (Polynomial.dickson 2 (1 : K) w).eval 2 = w + 1 := by
     simpa using Polynomial.dickson_two_sq_eval_two_mul (1 : K) w
-  rw [hp2]
+  rw [trace_periodActionRestrict_popaZagierElement one_ne_zero hw hw₀,
+    hsqrt, Nat.cast_ofNat, hIcc, Nat.divisors_one, Nat.divisorsAntidiagonal_one]
+  norm_num [hurwitzClassNumber_zero, hurwitzClassNumber_three, hurwitzClassNumber_four, hw, hp2]
   have hW := congrArg (Nat.cast : ℕ → K) (finrank_periodPolynomials_add_eq (K := K) hw hw₀)
   obtain ⟨q, r, hr, rfl⟩ : ∃ q r,
       (r = 0 ∨ r = 2 ∨ r = 4 ∨ r = 6 ∨ r = 8 ∨ r = 10) ∧ w = 12 * q + r :=
@@ -371,19 +357,12 @@ equals `2001`** (`= σ₁₁(2) + 2 · (-24)`, matching Ramanujan's `τ(2) = -24
 theorem trace_periodActionRestrict_popaZagierElement_two_ten {K : Type*} [Field K] [CharZero K] :
     LinearMap.trace K (periodPolynomials K 10)
         ((exchangeRelations_popaZagierElement K 2).periodActionRestrict ⟨5, rfl⟩) = 2001 := by
-  have htr := trace_periodActionRestrict_popaZagierElement (K := K) (n := 2) (by decide)
-    ⟨5, rfl⟩ (by decide)
-  simp only [Nat.cast_ofNat] at htr
-  rw [htr]
   have hsqrt : (4 * 2).sqrt = 2 := (Nat.eq_sqrt.mpr (by decide)).symm
   have hIcc : Finset.Icc (-2 : ℤ) 2 = {-2, -1, 0, 1, 2} := by decide
   have hdiv : (2 : ℕ).divisors = {1, 2} := by decide
   have hanti : (2 : ℕ).divisorsAntidiagonal = {(1, 2), (2, 1)} := by decide
-  rw [hsqrt, Nat.cast_ofNat, hIcc, hdiv, hanti,
-    Finset.sum_insert (by decide), Finset.sum_singleton,
-    Finset.sum_insert (by decide), Finset.sum_insert (by decide),
-    Finset.sum_insert (by decide), Finset.sum_insert (by decide), Finset.sum_singleton,
-    Finset.sum_insert (by decide), Finset.sum_singleton]
+  rw [trace_periodActionRestrict_popaZagierElement (by decide) ⟨5, rfl⟩ (by decide),
+    hsqrt, Nat.cast_ofNat, hIcc, hdiv, hanti]
   norm_num [hurwitzClassNumber_four, hurwitzClassNumber_seven, hurwitzClassNumber_eight,
     Polynomial.dickson_add_two, Polynomial.dickson_two]
 
