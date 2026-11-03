@@ -59,6 +59,8 @@ rows and columns of the interpolation matrix, hence its rank, unchanged.
 * `TauCeti.waldschmidtNormalize c₀ c`: the coefficients after dividing a linear form
   `c₀ + c₁ λ₁ + ⋯ + cₘ λₘ` by `-cₘ`.
 * `TauCeti.waldschmidtPoint b s`: the grid point `s · y`.
+* `TauCeti.waldschmidtPointMap b`: the linear map `v ↦ v · y` on `Rᵐ`, extending the grid points
+  `s ↦ s · y` from `ℤᵐ`.
 * `TauCeti.waldschmidtFunction l F t`: the auxiliary function
   `z ↦ F(z) exp(t (z₀ + λ₁ z₁ + ⋯ + λ_{m-1} z_{m-1}))`.
 * `TauCeti.waldschmidtEntry α b F t σ s`: the coefficient-field factor `γ ∈ K` of the `σ`-th
@@ -69,6 +71,8 @@ rows and columns of the interpolation matrix, hence its rank, unchanged.
 
 ## Main results
 
+* `TauCeti.waldschmidtPointMap_snoc`: the coefficient vector `(β₁, …, β_{m-1}, -1)` is
+  sent to `-β₀ e₀`.
 * `TauCeti.add_sum_mul_eq_neg_mul_waldschmidtLinearForm`: a linear form with nonzero last
   coefficient `cₘ` is `-cₘ` times the normalized linear form.
 * `TauCeti.iteratedDeriv_waldschmidtFunction`: the entry identity
@@ -183,6 +187,49 @@ theorem waldschmidtPoint_map {S : Type*} [CommRing S] (f : R →+* S) (s : Fin (
   cases i using Fin.cases <;> simp
 
 end Point
+
+section PointMap
+
+variable {R : Type*} [CommRing R]
+
+/-- The linear map `v ↦ v · y = v₁ y₁ + ⋯ + vₘ yₘ` on `Rᵐ`, where `yⱼ = e_j` for `1 ≤ j < m` and
+`yₘ = b = (β₀, β₁, …, β_{m-1})`; on integral vectors it is the grid point map
+`TauCeti.waldschmidtPoint b`. -/
+def waldschmidtPointMap (b : Fin (n + 1) → R) : (Fin (n + 1) → R) →ₗ[R] Fin (n + 1) → R where
+  toFun v := Fin.cons (v (Fin.last n) * b 0) fun k ↦ v k.castSucc + v (Fin.last n) * b k.succ
+  map_add' v w := by
+    ext i
+    cases i using Fin.cases <;> simp <;> ring
+  map_smul' a v := by
+    ext i
+    cases i using Fin.cases <;> simp <;> ring
+
+@[simp]
+theorem waldschmidtPointMap_apply_zero (b v : Fin (n + 1) → R) :
+    waldschmidtPointMap b v 0 = v (Fin.last n) * b 0 :=
+  (rfl)
+
+@[simp]
+theorem waldschmidtPointMap_apply_succ (b v : Fin (n + 1) → R) (k : Fin n) :
+    waldschmidtPointMap b v k.succ = v k.castSucc + v (Fin.last n) * b k.succ :=
+  (rfl)
+
+/-- On integral vectors, `TauCeti.waldschmidtPointMap b` is the grid point map. -/
+@[simp]
+theorem waldschmidtPointMap_intCast (b : Fin (n + 1) → R) (s : Fin (n + 1) → ℤ) :
+    waldschmidtPointMap b (fun i ↦ (s i : R)) = waldschmidtPoint b s := by
+  ext i
+  cases i using Fin.cases <;> simp
+
+/-- The coefficient vector `(β₁, …, β_{m-1}, -1)` of the normalized linear form, as a vector of
+the space of the indices `s`, is sent to `-β₀ e₀`. In particular it lies in the kernel of
+`TauCeti.waldschmidtPointMap b` when `β₀ = 0`. -/
+theorem waldschmidtPointMap_snoc (b : Fin (n + 1) → R) :
+    waldschmidtPointMap b (Fin.snoc (fun k : Fin n ↦ b k.succ) (-1)) = Pi.single 0 (-b 0) := by
+  ext i
+  cases i using Fin.cases <;> simp
+
+end PointMap
 
 /-- Waldschmidt's auxiliary function `z ↦ F(z) exp(t (z₀ + λ₁ z₁ + ⋯ + λ_{m-1} z_{m-1}))` on
 `ℂᵐ`, for a polynomial `F` and an integer `t`; here `l = (λ₁, …, λₘ)`, of which `λₘ` does not
