@@ -10,9 +10,9 @@ public import Mathlib.Topology.Algebra.ContinuousMonoidHom
 public import TauCeti.Geometry.Symplectic.Darboux.Basis
 public import TauCeti.Geometry.Symplectic.PolarCompatible
 public import TauCeti.Geometry.Symplectic.Restrict
-import Mathlib.Analysis.Complex.Polynomial.Basic
+import TauCeti.Geometry.Symplectic.Complex.JointEigenvector
 import TauCeti.Geometry.Symplectic.Complex.Module.Hom
-import TauCeti.LinearAlgebra.Eigenspace.JointEigenvector.Exists
+import TauCeti.LinearAlgebra.Eigenspace.JointEigenvector.Basic
 
 /-!
 # Weight decompositions of symplectic representations of compact abelian groups
@@ -29,29 +29,20 @@ characters `χ₁, …, χₙ : G → S¹` such that, writing `χₖ(g) = a + b 
 the weight decomposition of the isotropy representation of a compact torus at a fixed point of a
 symplectic action, the linear input of the local model `TauCeti.weightRotation` near such a point.
 
-The proof is linear algebra over a compatible complex structure. By
-`TauCeti.SymplecticForm.exists_compatible_forall_isComplexLinearMap` there is a complex structure
-`J` compatible with `ω` for which every `π g` is complex linear, so `E` becomes a complex vector
-space on which the `π g` act by commuting complex-linear maps. The algebraic core is the statement
-for any pairwise commuting family `f` of complex-linear maps preserving `ω`
-(`TauCeti.SymplecticForm.exists_isDarbouxBasis_forall_apply_eq_of_pairwise_commute`), with
-`pₖ = J qₖ` and each `fᵢ` rotating every line `span(qₖ, J qₖ)` by a complex number of modulus
-one. Over `ℂ` the family has a joint eigenvector `v`
-(`TauCeti.AlmostComplexStructure.exists_jointEigenvector_of_pairwise_commute`); its eigenvalues
-have modulus one because the `fᵢ` preserve `ω(v, J v) > 0`
-(`TauCeti.SymplecticForm.sq_add_sq_eq_one_of_apply_eq`). The line `span(v, J v)` is then
-invariant, and so is its symplectic complement, which is again a symplectic space with a
-compatible complex structure; induction on the dimension finishes the proof.
+The underlying algebraic statement is available separately
+(`TauCeti.SymplecticForm.exists_isDarbouxBasis_forall_apply_eq_of_pairwise_commute`). Its
+hypotheses are a complex structure `J` compatible with `ω` and an arbitrary pairwise commuting
+family `f` of `J`-complex-linear maps preserving `ω`, with no group, topology or norm. It yields a
+Darboux basis with `pₖ = J qₖ` in which each `fᵢ` rotates every line `span(qₖ, J qₖ)` by a
+complex number of modulus one. For a compact abelian group,
+`TauCeti.SymplecticForm.exists_compatible_forall_isComplexLinearMap` supplies `J`, and continuity
+of `π` makes the rotation numbers continuous characters of `G`.
 
 No inner product on `E` is assumed and the characters need not be distinct: a character may occur
 several times, and a trivial character marks a fixed direction.
 
 ## Main results
 
-* `TauCeti.AlmostComplexStructure.exists_jointEigenvector_of_pairwise_commute`: commuting
-  complex-linear maps have a joint eigenvector in the induced complex structure.
-* `TauCeti.SymplecticForm.sq_add_sq_eq_one_of_apply_eq`: complex-linear symplectic maps rotate
-  their complex eigenlines by complex numbers of modulus one.
 * `TauCeti.SymplecticForm.exists_isDarbouxBasis_forall_apply_eq_of_pairwise_commute`: a
   commuting family of complex-linear symplectic maps is simultaneously diagonal, by unit complex
   numbers, in a Darboux basis adapted to `J`.
@@ -79,48 +70,9 @@ namespace TauCeti
 
 variable {V : Type u} [AddCommGroup V] [Module ℝ V]
 
-/-! ### Joint eigenvectors of commuting complex-linear maps -/
-
-namespace AlmostComplexStructure
-
-/-- **Joint eigenvectors of commuting complex-linear maps.** A pairwise commuting family of
-real-linear maps, complex linear for an almost complex structure `J` on a nonzero
-finite-dimensional space, has a joint eigenvector for the induced complex scalars: a nonzero `v`
-with `f i v = (c i) v = (c i).re v + (c i).im J v` for every `i`. -/
-theorem exists_jointEigenvector_of_pairwise_commute [FiniteDimensional ℝ V] [Nontrivial V]
-    (J : AlmostComplexStructure V) {ι : Type*} (f : ι → V →ₗ[ℝ] V)
-    (hcomm : Pairwise fun i j ↦ Commute (f i) (f j)) (hJ : ∀ i, IsComplexLinearMap J J (f i)) :
-    ∃ (c : ι → ℂ) (v : V), v ≠ 0 ∧ ∀ i, f i v = (c i).re • v + (c i).im • J v := by
-  let := J.complexModule
-  have := J.complexModule_isScalarTower
-  have : FiniteDimensional ℂ V := Module.Finite.of_restrictScalars_finite ℝ ℂ V
-  obtain ⟨c, v, hv, hmem⟩ := exists_jointEigenvector_of_pairwise_commute_of_isAlgClosed
-    (fun i ↦ (hJ i).toComplexLinearMap) fun i j hij ↦
-      LinearMap.ext fun x ↦ LinearMap.congr_fun (hcomm hij).eq x
-  refine ⟨c, v, hv, fun i ↦ ?_⟩
-  have h := Module.End.mem_eigenspace_iff.1 (hmem i)
-  rw [IsComplexLinearMap.toComplexLinearMap_apply] at h
-  rw [h, J.complexModule_smul_def]
-
-end AlmostComplexStructure
-
 namespace SymplecticForm
 
 variable {ω : SymplecticForm V} {J : AlmostComplexStructure V}
-
-/-- A `J`-complex-linear map `f` preserving `ω` which sends a vector `v` with `ω(v, J v) ≠ 0` to
-`a v + b J v` multiplies `v` by a complex number `a + b i` of modulus one. -/
-theorem sq_add_sq_eq_one_of_apply_eq {f : V →ₗ[ℝ] V} (hf : ∀ x y, ω (f x) (f y) = ω x y)
-    (hfJ : IsComplexLinearMap J J f) {v : V} (hv : ω v (J v) ≠ 0) {a b : ℝ}
-    (h : f v = a • v + b • J v) : a ^ 2 + b ^ 2 = 1 := by
-  have hJv : f (J v) = (-b) • v + a • J v := by
-    rw [(isComplexLinearMap_iff_apply J J f).1 hfJ v, h, map_add, map_smul, map_smul,
-      J.apply_apply]
-    module
-  have h₁ := hf v (J v)
-  rw [h, hJv, ω.apply_smul_add_smul] at h₁
-  have h₂ : (a ^ 2 + b ^ 2 - 1) * ω v (J v) = 0 := by linear_combination h₁
-  linear_combination (mul_eq_zero.1 h₂).resolve_right hv
 
 /-! ### The splitting induction -/
 
@@ -148,10 +100,7 @@ private theorem mapsTo_orthogonal_span_pair {f : V →ₗ[ℝ] V} (hf : ∀ x y,
   simp only [mem_orthogonal_span_iff, Set.mem_insert_iff, Set.mem_singleton_iff,
     forall_eq_or_imp, forall_eq] at hx ⊢
   have hab := sq_add_sq_eq_one_of_apply_eq hf hfJ (by rw [hq]; exact one_ne_zero) h
-  have hJq : f (J q) = (-b) • q + a • J q := by
-    rw [(isComplexLinearMap_iff_apply J J f).1 hfJ q, h, map_add, map_smul, map_smul,
-      J.apply_apply]
-    module
+  have hJq := hfJ.apply_apply_eq_of_apply_eq h
   -- `q` and `J q` are the images of `a q - b J q` and `b q + a J q`.
   have h₁ : f (a • q - b • J q) = q := by
     rw [map_sub, map_smul, map_smul, h, hJq]
@@ -211,6 +160,9 @@ private theorem exists_isDarbouxBasis_aux {ι : Type*} (n : ℕ) :
   rcases subsingleton_or_nontrivial U with _ | _
   · exact ⟨0, Basis.empty _, ⟨fun i ↦ i.elim0, fun i ↦ i.elim0, fun i ↦ i.elim0⟩,
       fun k ↦ k.elim0, fun _ k ↦ k.elim0⟩
+  -- Over `ℂ` the family has a joint eigenvector `q`. Its complex line `span(q, J q)` and the
+  -- symplectic complement of that line are invariant, and the complement is again a symplectic
+  -- space with a compatible complex structure, of smaller dimension.
   obtain ⟨c, q, hqJq, hcq⟩ := exists_jointEigenvector_apply_eq_one hJ f hcomm hfJ
   have hq : q ≠ 0 := by
     rintro rfl
@@ -302,9 +254,7 @@ theorem exists_isDarbouxBasis_forall_apply_eq_of_pairwise_commute [FiniteDimensi
   let χ (i : ι) (k : Fin n) : Circle := ⟨c i k, mem_sphere_zero_iff_norm.2 (hnorm i k)⟩
   have hχ (i : ι) (k : Fin n) : (χ i k : ℂ) = c i k := rfl
   refine ⟨n, b, χ, hb, hbJ, fun i k ↦ ⟨by rw [hχ, hc i k], ?_⟩⟩
-  rw [hχ, hbJ k, (isComplexLinearMap_iff_apply J J (f i)).1 (hfJ i), hc i k, hbJ k, map_add,
-    map_smul, map_smul, J.apply_apply]
-  module
+  rw [hχ, hbJ k, (hfJ i).apply_apply_eq_of_apply_eq (by rw [hc i k, hbJ]), neg_smul]
 
 /-- **Weight decomposition of a symplectic representation of a compact abelian group.** A
 continuous linear action `π` of a compact commutative group `G` on a finite-dimensional real space
@@ -320,11 +270,9 @@ theorem exists_isDarbouxBasis_forall_apply_eq {E G : Type*} [NormedAddCommGroup 
       ∀ g k, π g (b (k, 0)) = (χ k g : ℂ).re • b (k, 0) + (χ k g : ℂ).im • b (k, 1) ∧
         π g (b (k, 1)) = -(χ k g : ℂ).im • b (k, 0) + (χ k g : ℂ).re • b (k, 1) := by
   obtain ⟨J, hJ, hπJ⟩ := ω.exists_compatible_forall_isComplexLinearMap π hπ hω
-  obtain ⟨n, b, c, hb, -, hc⟩ := exists_isDarbouxBasis_forall_apply_eq_of_pairwise_commute hJ
+  obtain ⟨n, b, c, hb, hbJ, hc⟩ := exists_isDarbouxBasis_forall_apply_eq_of_pairwise_commute hJ
     (fun g ↦ (π g : E →ₗ[ℝ] E))
-    (fun g h _ ↦ LinearMap.ext fun x ↦ by
-      simpa [mul_apply_eq_comp] using congrArg (fun T : E →L[ℝ] E ↦ T x)
-        (show π g * π h = π h * π g by rw [← map_mul, mul_comm, map_mul]))
+    (fun g h _ ↦ ((Commute.all g h).map π).map ContinuousLinearMap.toLinearMapRingHom)
     hω hπJ
   simp only [ContinuousLinearMap.coe_coe] at hc
   -- The rotation numbers are read off by pairing with the Darboux basis.
@@ -349,22 +297,22 @@ theorem exists_isDarbouxBasis_forall_apply_eq {E G : Type*} [NormedAddCommGroup 
     rw [h]
     exact (Complex.continuous_ofReal.comp h₁).add
       ((Complex.continuous_ofReal.comp h₂).mul continuous_const)
+  -- In the complex structure `J`, each `b (k, 0)` is a joint eigenvector of the `π g` with
+  -- eigenvalues `c g k`, so these are multiplicative in `g`.
+  let := J.complexModule
+  have := J.complexModule_isScalarTower
+  let ρ : G →* Module.End ℂ E :=
+    { toFun := fun g ↦ (hπJ g).toComplexLinearMap
+      map_one' := LinearMap.ext fun x ↦ by simp
+      map_mul' := fun g h ↦ LinearMap.ext fun x ↦ by simp }
+  have hmem (k : Fin n) (g : G) : b (k, 0) ∈ (ρ g).eigenspace (c g k : ℂ) := by
+    rw [Module.End.mem_eigenspace_iff, J.complexModule_smul_def, ← hbJ]
+    exact (hc g k).1
   let χ (k : Fin n) : G →ₜ* Circle :=
     { toFun := fun g ↦ c g k
-      map_one' := Circle.ext <| Complex.ext (by rw [hre, map_one]; simp [hb.apply_fst_snd])
-        (by rw [him, map_one]; simp)
-      map_mul' := fun g h ↦ by
-        -- Composing the two rotations of the line multiplies their rotation numbers.
-        have e : π (g * h) (b (k, 0)) =
-            ((c g k : ℂ) * c h k).re • b (k, 0) + ((c g k : ℂ) * c h k).im • b (k, 1) := by
-          rw [map_mul, mul_apply_eq_comp, (hc h k).1, map_add, map_smul, map_smul, (hc g k).1,
-            (hc g k).2, Complex.mul_re, Complex.mul_im]
-          module
-        refine Circle.ext (Complex.ext ?_ ?_)
-        · rw [hre, e, Circle.coe_mul]
-          simp [hb.apply_fst_snd]
-        · rw [him, e, Circle.coe_mul]
-          simp [hb.apply_fst_snd, hb.apply_fst_fst]
+      map_one' := Circle.ext <| ρ.eigenvalue_one_of_jointEigenvector _ _ (b.ne_zero _) (hmem k)
+      map_mul' := fun g h ↦
+        Circle.ext <| ρ.eigenvalue_mul_of_jointEigenvector _ _ (b.ne_zero _) (hmem k) g h
       continuous_toFun := Topology.IsInducing.subtypeVal.continuous_iff.2 (hcont k) }
   exact ⟨n, b, χ, hb, fun g k ↦ hc g k⟩
 
