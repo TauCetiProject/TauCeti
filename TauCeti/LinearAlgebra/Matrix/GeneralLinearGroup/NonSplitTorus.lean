@@ -26,6 +26,8 @@ import TauCeti.Algebra.Group.Units.Basic
 -- Non-public: the order of `GL (Fin 2) F` over a finite field is used only inside the proof of
 -- `TauCeti.GL2NonSplitTorus.index_eq`.
 import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Card
+-- Non-public: `Algebra.leftMulMatrix_algebraMap` is used only inside a proof.
+import TauCeti.LinearAlgebra.Matrix.ToLin
 import Mathlib.RingTheory.Norm.Basic
 import Mathlib.FieldTheory.Finiteness
 import Mathlib.Algebra.GroupWithZero.Units.Fintype
@@ -238,7 +240,7 @@ theorem notMem_range_scalar_gl2NonSplitTorusHom {x : Eˣ}
       Set.range (Matrix.scalar (Fin 2)) := by
   rintro ⟨c, hc⟩
   refine hx ⟨c, Algebra.leftMulMatrix_injective (nonSplitTorusBasis F E) ?_⟩
-  rw [leftMulMatrix_algebraMap, ← coe_gl2NonSplitTorusHom]
+  rw [Algebra.leftMulMatrix_algebraMap, ← coe_gl2NonSplitTorusHom]
   exact hc
 
 /-- The key computation behind non-splitness: for `x : E` outside `F`, the matrix of multiplication
