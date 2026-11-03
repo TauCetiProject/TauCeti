@@ -224,9 +224,11 @@ end Linear
 morphism space is finite-dimensional. This uses the canonical linear structure on the centre. -/
 instance instFiniteDimensionalHom [Preadditive C] [MonoidalPreadditive C]
     {k : Type*} [DivisionRing k] [Linear k C] [MonoidalLinear k C]
-    (X Y : Center C) [h : FiniteDimensional k (X.1 ⟶ Y.1)] : FiniteDimensional k (X ⟶ Y) := by
-  exact @FiniteDimensional.of_injective k (X ⟶ Y) _ _ _ (X.1 ⟶ Y.1) _ _
-    ((forget C).mapLinearMap k) (forget C).map_injective h
+    (X Y : Center C) [FiniteDimensional k (X.1 ⟶ Y.1)] : FiniteDimensional k (X ⟶ Y) := by
+  -- Instance search does not unfold the forgetful functor's object projections.
+  have : FiniteDimensional k ((forget C).obj X ⟶ (forget C).obj Y) :=
+    ‹FiniteDimensional k (X.1 ⟶ Y.1)›
+  exact FiniteDimensional.of_injective ((forget C).mapLinearMap k) (forget C).map_injective
 
 section Biproduct
 

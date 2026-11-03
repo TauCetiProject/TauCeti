@@ -8,6 +8,7 @@ module
 public import Mathlib.CategoryTheory.Simple
 public import Mathlib.CategoryTheory.Limits.Constructions.EpiMono
 public import TauCeti.CategoryTheory.Monoidal.Center.Preadditive
+public import TauCeti.CategoryTheory.Monoidal.Center.Limits
 
 /-!
 # Simple objects in the Drinfeld centre
@@ -52,9 +53,8 @@ instance instSimple [(forget C).PreservesMonomorphisms] (X : Center C) [Simple X
 simple tensor unit in its centre, for the canonical monoidal structure. -/
 instance instSimpleUnit [(forget C).PreservesMonomorphisms]
     [Simple (𝟙_ C)] : Simple (𝟙_ (Center C)) := by
-  -- Register simplicity at the underlying object of the canonical unit, since instance search
-  -- does not unfold the monoidal structure of the centre.
-  have : Simple (𝟙_ (Center C)).1 := ‹Simple (𝟙_ C)›
-  infer_instance
+  have : Simple ((forget C).obj (𝟙_ (Center C))) :=
+    Simple.of_iso (Functor.Monoidal.εIso (forget C)).symm
+  exact (forget C).simple_of_simple_obj _
 
 end CategoryTheory.Center
