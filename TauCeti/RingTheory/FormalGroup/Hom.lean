@@ -144,6 +144,7 @@ theorem homDefect_eq_sub_subst_pair (f : PowerSeries R) :
 variable {F G}
 
 /-- The homomorphism defect of zero vanishes. -/
+@[simp]
 theorem homDefect_zero : F.homDefect G 0 = 0 := by
   have h₀ : ![PowerSeries.subst (X 0 : MvPowerSeries (Fin 2) R) (0 : PowerSeries R),
       PowerSeries.subst (X 1 : MvPowerSeries (Fin 2) R) (0 : PowerSeries R)] = 0 := by
