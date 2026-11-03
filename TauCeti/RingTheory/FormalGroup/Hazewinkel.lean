@@ -19,11 +19,12 @@ import TauCeti.RingTheory.FormalGroup.Logarithm.Naturality
 
 Fix a natural number `p` (in applications a prime) and a family `v = (v₁, v₂, …)` of elements of a
 `ℚ`-algebra `K`. **Hazewinkel's logarithm coefficients** `mₙ = mₙ(v)` (`TauCeti.hazewinkelLogCoeff`)
-are defined by `m₀ = 1` and the recursion
+are defined by `m₀ = 1` and, for `p ≠ 0` and `n ≥ 1`, the recursion
 
   `p mₙ = ∑_{0 ≤ i < n} mᵢ v_(n - i)^(pⁱ)`.
 
-The power series `f(X) = ∑ₙ mₙ X^(pⁿ)` (`TauCeti.hazewinkelLog`) is a strict formal coordinate, and
+When `p > 1`, the power series `f(X) = ∑ₙ mₙ X^(pⁿ)` (`TauCeti.hazewinkelLog`) is a strict formal
+coordinate, and
 `F_v(X, Y) = f⁻¹(f(X) + f(Y))` (`TauCeti.hazewinkelFormalGroup`) is a commutative formal group law
 with logarithm `f`. For `K = ℚ[v₁, v₂, …]` and `p` prime this is the formal group law of
 Brown–Peterson theory written in Hazewinkel's generators, rationally: `BP_* ⊗ ℚ = ℚ[v₁, v₂, …]` with
@@ -32,7 +33,7 @@ recursion below, the coefficients of `F_v` then lie in `ℤ_(p)[v₁, v₂, …]
 
 Unwinding the recursion, `mₙ` is the sum over all chains `0 = s₀ < s₁ < ⋯ < s_k = n` of
 `∏ⱼ v_(sⱼ - sⱼ₋₁)^(p^(sⱼ₋₁)) / pᵏ`. The defining recursion splits off the last step of the chain;
-splitting off the first step instead gives
+splitting off the first step instead gives, for `p ≠ 0` and `n ≥ 1`,
 
   `p mₙ(v) = ∑_{1 ≤ i ≤ n} vᵢ m_(n - i)(v^(pⁱ))`,
 
@@ -50,24 +51,30 @@ outside the degrees `pⁿ` are exactly the laws `F_v`, each for a unique `v`
 group laws over `K`, and this is the statement that `ℚ[v₁, v₂, …]` carries the universal
 `p`-typical formal group law over `ℚ`-algebras.
 
+The degrees `pⁿ` are distinct only when `p > 1`. The definition of `TauCeti.hazewinkelLog` takes
+the coefficient of `X^k` to be `m_(log_p k)` when `k` is a power of `p` and `0` otherwise, so for
+`p ≤ 1` (where the only such `k` is `1`) it is the coordinate `X`.
+
 ## Main definitions
 
 * `TauCeti.hazewinkelLogCoeff`: Hazewinkel's logarithm coefficients `mₙ(v)`.
-* `TauCeti.hazewinkelLog`: the strict formal coordinate `∑ₙ mₙ(v) X^(pⁿ)`.
-* `TauCeti.hazewinkelFormalGroup`: the formal group law with logarithm `∑ₙ mₙ(v) X^(pⁿ)`.
+* `TauCeti.hazewinkelLog`: the strict formal coordinate `∑ₙ mₙ(v) X^(pⁿ)` (for `p > 1`).
+* `TauCeti.hazewinkelFormalGroup`: the formal group law with logarithm `∑ₙ mₙ(v) X^(pⁿ)`
+  (for `p > 1`).
 
 ## Main results
 
-* `TauCeti.natCast_mul_hazewinkelLogCoeff_succ`: `p mₙ₊₁ = ∑_{i ≤ n} mᵢ v_(n + 1 - i)^(pⁱ)`.
+* `TauCeti.natCast_mul_hazewinkelLogCoeff_succ`: `p mₙ₊₁ = ∑_{i ≤ n} mᵢ v_(n + 1 - i)^(pⁱ)` for
+  `p ≠ 0`.
 * `TauCeti.natCast_mul_hazewinkelLogCoeff_succ'`:
-  `p mₙ₊₁(v) = ∑_{i ≤ n} vᵢ₊₁ m_(n - i)(v^(p^(i + 1)))`.
+  `p mₙ₊₁(v) = ∑_{i ≤ n} vᵢ₊₁ m_(n - i)(v^(p^(i + 1)))` for `p ≠ 0`.
 * `TauCeti.map_hazewinkelLogCoeff`, `TauCeti.map_hazewinkelLog`,
   `TauCeti.map_hazewinkelFormalGroup`: compatibility with ring homomorphisms.
 * `TauCeti.hazewinkelLogCoeff_injective`, `TauCeti.exists_hazewinkelLogCoeff_eq`: the coefficients
   `mₙ` determine `v`, and every family `ℓ` with `ℓ₀ = 1` occurs.
-* `TauCeti.log_hazewinkelFormalGroup`: the logarithm of `F_v` is `∑ₙ mₙ(v) X^(pⁿ)`.
+* `TauCeti.log_hazewinkelFormalGroup`: the logarithm of `F_v` is Hazewinkel's logarithm `f`.
 * `TauCeti.eq_hazewinkelFormalGroup_iff`: a formal group law is `F_v` exactly when its logarithm is
-  `∑ₙ mₙ(v) X^(pⁿ)`.
+  `f`.
 * `TauCeti.existsUnique_eq_hazewinkelFormalGroup`: a formal group law whose logarithm is supported
   in the degrees `pⁿ` is `F_v` for a unique `v`.
 
@@ -123,6 +130,10 @@ theorem natCast_mul_hazewinkelLogCoeff_succ (hp : p ≠ 0) (n : ℕ) :
   rw [hazewinkelLogCoeff_succ, ← nsmul_eq_mul, ← Nat.cast_smul_eq_nsmul ℚ,
     ← eq_inv_smul_iff₀ (Nat.cast_ne_zero.2 hp)]
 
+/-- Over a `ℚ`-algebra, `p⁻¹ •` undoes multiplication by a nonzero natural number `p`. -/
+private theorem inv_smul_natCast_mul (hp : p ≠ 0) (x : K) : (p : ℚ)⁻¹ • ((p : K) * x) = x := by
+  rw [← nsmul_eq_mul, ← Nat.cast_smul_eq_nsmul ℚ, inv_smul_smul₀ (Nat.cast_ne_zero.2 hp)]
+
 /-- In `p mₙ₊₁ = ∑ᵢ mᵢ v_(n + 1 - i)^(pⁱ)` the term `i = 0` is `vₙ₊₁`, and the other terms only
 involve `v₁, …, vₙ`. -/
 private theorem natCast_mul_hazewinkelLogCoeff_succ_eq_add (hp : p ≠ 0) (n : ℕ) :
@@ -132,6 +143,7 @@ private theorem natCast_mul_hazewinkelLogCoeff_succ_eq_add (hp : p ≠ 0) (n : �
   simp
 
 /-- Hazewinkel's logarithm coefficients commute with ring homomorphisms of `ℚ`-algebras. -/
+@[simp]
 theorem map_hazewinkelLogCoeff (φ : K →+* L) (n : ℕ) :
     φ (hazewinkelLogCoeff p v n) = hazewinkelLogCoeff p (φ ∘ v) n := by
   induction n using Nat.strong_induction_on with
@@ -162,9 +174,9 @@ theorem natCast_mul_hazewinkelLogCoeff_succ' (hp : p ≠ 0) (n : ℕ) :
     have hl : ∀ k ∈ range n, hazewinkelLogCoeff p v (k + 1) * v (n - (k + 1)).succPNat ^ p ^ (k + 1)
         = ∑ j ∈ range (k + 1), f j (k - j) := by
       intro k hk
-      rw [← inv_smul_smul₀ (Nat.cast_ne_zero.2 hp : (p : ℚ) ≠ 0) (hazewinkelLogCoeff p v (k + 1)),
-        Nat.cast_smul_eq_nsmul, nsmul_eq_mul, ih k (mem_range.1 hk) v, smul_mul_assoc, sum_mul,
-        smul_sum]
+      -- `mₖ₊₁ = p⁻¹ (p mₖ₊₁)`, and the induction hypothesis expands `p mₖ₊₁`
+      rw [← inv_smul_natCast_mul hp (hazewinkelLogCoeff p v (k + 1)), ih k (mem_range.1 hk) v]
+      simp only [smul_mul_assoc, sum_mul, smul_sum]
       refine sum_congr rfl fun j hj ↦ ?_
       have hjk : j + (k - j) = k := by grind
       simp only [f, hjk, show j + 1 + (k - j) = k + 1 by omega,
@@ -172,11 +184,13 @@ theorem natCast_mul_hazewinkelLogCoeff_succ' (hp : p ≠ 0) (n : ℕ) :
     have hr : ∀ j ∈ range n, v j.succPNat * hazewinkelLogCoeff p (fun i ↦ v i ^ p ^ (j + 1)) (n - j)
         = ∑ l ∈ range (n - j), f j l := by
       intro j hj
-      rw [show n - j = n - j - 1 + 1 by grind, hazewinkelLogCoeff_succ, mul_smul_comm,
-        mul_sum, smul_sum, Nat.sub_add_cancel (by grind)]
+      -- expand `m_(n - j)` by its defining recursion
+      obtain ⟨m, hm⟩ : ∃ m, n - j = m + 1 := ⟨n - j - 1, by grind⟩
+      rw [hm, hazewinkelLogCoeff_succ]
+      simp only [mul_smul_comm, mul_sum, smul_sum]
       refine sum_congr rfl fun l hl ↦ ?_
       simp only [f, ← pow_mul, ← pow_add, mul_assoc,
-        show n - j - 1 - l = n - 1 - (j + l) by omega]
+        show m - l = n - 1 - (j + l) by omega]
     rw [sum_congr rfl hl, sum_congr rfl hr, sum_range_diag_flip]
 
 /-- **The logarithm coefficients determine the family**: if `p ≠ 0`, then `v` is determined by
@@ -227,7 +241,9 @@ theorem exists_hazewinkelLogCoeff_eq (hp : p ≠ 0) {ℓ : ℕ → K} (h₀ : �
 /-! ### The logarithm and the formal group law -/
 
 variable (p) in
-/-- **Hazewinkel's logarithm** `∑ₙ mₙ(v) X^(pⁿ)`, a strict formal coordinate. -/
+/-- **Hazewinkel's logarithm**, a strict formal coordinate: for `p > 1` it is `∑ₙ mₙ(v) X^(pⁿ)`.
+In general its coefficient of `X^k` is `m_(log_p k)(v)` if `k` is a power of `p` and `0` otherwise,
+so for `p ≤ 1` it is `X`. -/
 noncomputable def hazewinkelLog : FormalCoordinate K where
   toPowerSeries := PowerSeries.mk fun k ↦
     if p ^ Nat.log p k = k then hazewinkelLogCoeff p v (Nat.log p k) else 0
@@ -236,11 +252,13 @@ noncomputable def hazewinkelLog : FormalCoordinate K where
   isUnit_coeff_one := by simp
 
 /-- The coefficient of `X^(pⁿ)` in Hazewinkel's logarithm is `mₙ(v)`. -/
+@[simp]
 theorem coeff_hazewinkelLog_pow (hp : 1 < p) (n : ℕ) :
     coeff (p ^ n) (hazewinkelLog p v).toPowerSeries = hazewinkelLogCoeff p v n := by
   simp [hazewinkelLog, Nat.log_pow hp]
 
 /-- Hazewinkel's logarithm has no terms outside the degrees `pⁿ`. -/
+@[simp]
 theorem coeff_hazewinkelLog_eq_zero {k : ℕ} (hk : ∀ n, p ^ n ≠ k) :
     coeff k (hazewinkelLog p v).toPowerSeries = 0 := by
   simp [hazewinkelLog, hk]
@@ -254,6 +272,7 @@ theorem linearCoeff_hazewinkelLog : FormalCoordinate.linearCoeff (hazewinkelLog 
   Units.ext (by simp)
 
 /-- Hazewinkel's logarithm commutes with ring homomorphisms of `ℚ`-algebras. -/
+@[simp]
 theorem map_hazewinkelLog (φ : K →+* L) :
     FormalCoordinate.map φ (hazewinkelLog p v) = hazewinkelLog p (φ ∘ v) := by
   ext k
@@ -262,7 +281,7 @@ theorem map_hazewinkelLog (φ : K →+* L) :
 
 variable (p) in
 /-- **Hazewinkel's formal group law** `F_v(X, Y) = f⁻¹(f(X) + f(Y))`, where `f` is Hazewinkel's
-logarithm `∑ₙ mₙ(v) X^(pⁿ)`. -/
+logarithm `TauCeti.hazewinkelLog` (`∑ₙ mₙ(v) X^(pⁿ)` for `p > 1`). -/
 noncomputable def hazewinkelFormalGroup : FormalGroup K :=
   (hazewinkelLog p v)⁻¹ • FormalGroup.𝔾ₐ
 
@@ -270,10 +289,12 @@ instance : (hazewinkelFormalGroup p v).IsComm :=
   FormalGroup.instIsCommSMul _ _
 
 /-- The logarithm of Hazewinkel's formal group law is Hazewinkel's logarithm. -/
+@[simp]
 theorem log_hazewinkelFormalGroup :
     (hazewinkelFormalGroup p v).log = (hazewinkelLog p v).toPowerSeries := by
-  rw [hazewinkelFormalGroup, FormalGroup.log_smul, map_inv, linearCoeff_hazewinkelLog, inv_one,
-    Units.val_one, one_smul, inv_inv, FormalGroup.log_𝔾ₐ, subst_X (hazewinkelLog p v).hasSubst]
+  rw [hazewinkelFormalGroup, FormalGroup.log_smul, FormalGroup.log_𝔾ₐ, inv_inv,
+    subst_X (hazewinkelLog p v).hasSubst]
+  simp
 
 /-- A formal group law over a `ℚ`-algebra is Hazewinkel's formal group law of `v` exactly when its
 logarithm is Hazewinkel's logarithm of `v`. -/
@@ -284,6 +305,7 @@ theorem eq_hazewinkelFormalGroup_iff {F : FormalGroup K} :
     inv_smul_smul]
 
 /-- Hazewinkel's formal group law commutes with ring homomorphisms of `ℚ`-algebras. -/
+@[simp]
 theorem map_hazewinkelFormalGroup (φ : K →+* L) :
     (hazewinkelFormalGroup p v).map φ = hazewinkelFormalGroup p (φ ∘ v) := by
   rw [hazewinkelFormalGroup, FormalGroup.map_smul, map_inv, map_hazewinkelLog,
