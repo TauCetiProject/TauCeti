@@ -99,13 +99,15 @@ variable (R : Type u) [CommRing R]
 root subgroups are closed subgroups of it. -/
 theorem generatedCoordinateLift_inl_surjective (k : Fin 6 ⊕ Fin 6) :
     Function.Surjective (generatedCoordinateLift R (.inl k)).hom := by
-  apply Function.Surjective.of_comp (g := (generatedCoordinateMap R).hom)
-  rw [← BialgHom.coe_comp, ← _root_.CommHopfAlgCat.hom_comp,
-    generatedCoordinateMap_comp_generatedCoordinateLift, generatorCoordinateMap_inl,
-    ← coordinateMap_comp_rootSubgroupToBaseChangeCoordinateMap,
-    _root_.CommHopfAlgCat.hom_comp, BialgHom.coe_comp]
-  exact (rootSubgroupToBaseChangeCoordinateMap_surjective R k).comp
-    (coordinateMap_surjective R)
+  have h : Function.Surjective
+      (generatedCoordinateMap R ≫ generatedCoordinateLift R (.inl k)).hom := by
+    rw [generatedCoordinateMap_comp_generatedCoordinateLift, generatorCoordinateMap_inl,
+      ← coordinateMap_comp_rootSubgroupToBaseChangeCoordinateMap,
+      _root_.CommHopfAlgCat.hom_comp, BialgHom.coe_comp]
+    exact (rootSubgroupToBaseChangeCoordinateMap_surjective R k).comp
+      (coordinateMap_surjective R)
+  rw [_root_.CommHopfAlgCat.hom_comp, BialgHom.coe_comp] at h
+  exact Function.Surjective.of_comp h
 
 /-- The generic matrix of `GL₂₇`, restricted to the `k`th numbered root subgroup, is
 `1 + t X_k` for the coordinate `t` of `𝔾ₐ` and the integral raising or lowering matrix `X_k`. -/
