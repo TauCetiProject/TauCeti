@@ -45,7 +45,8 @@ which quantifies over both subgroups. Neither reduces a comparison to generators
   `N`, the commutator `⁅a, y ^ n⁆` lies in `N` exactly when `⁅a, y⁆ ^ n` does.
 * `TauCeti.commutatorElement_mul_mul_eq_mul_of_commute`: the commutator of two paired products
   splits into the product of their same-position commutators when the cross terms commute and
-  `c * a` commutes with `⁅b, d⁆`.
+  `c * a` commutes with `⁅b, d⁆`; `TauCeti.commutatorElement_mul_mul_of_mem_center` is the case of
+  central right factors, which do not change the commutator.
 * `Commute.mul_pow_eq_pow_mul_pow_mul_commutatorElement_pow_choose_two`: the binomial formula
   `(a * b) ^ n = a ^ n * b ^ n * ⁅b, a⁆ ^ (n choose 2)` when `⁅b, a⁆` commutes with `a` and `b`.
 * `Commute.inv_pow_mul_pow_mul_pow_eq_commutatorElement_pow_mul_pow`: conjugating `b ^ n` by
@@ -89,6 +90,14 @@ theorem commutatorElement_mul_mul_eq_mul_of_commute {a b c d : G}
     commutatorElement_mul_left_eq_conj_mul, had.commutator_eq]
   simpa only [mul_one, one_mul, mul_inv_cancel, mul_inv_rev, mul_assoc] using
     congrArg (⁅a, c⁆ * ·) hcabd.mul_inv_cancel
+
+/-- Multiplying the two entries of a commutator on the right by central elements does not change
+it. -/
+theorem commutatorElement_mul_mul_of_mem_center {a b c d : G} (hb : b ∈ center G)
+    (hd : d ∈ center G) : ⁅a * b, c * d⁆ = ⁅a, c⁆ := by
+  have hbd : ⁅b, d⁆ = 1 := commutatorElement_eq_one_iff_mul_comm.mpr (mem_center_iff.mp hd b)
+  rw [commutatorElement_mul_mul_eq_mul_of_commute (mem_center_iff.mp hb c).symm
+    (mem_center_iff.mp hd a) (hbd ▸ Commute.one_right _), hbd, mul_one]
 
 /-- **The binomial formula of nilpotency class two**: when the commutator `⁅b, a⁆` commutes with
 `a` and with `b`, for instance when it is central,
