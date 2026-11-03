@@ -250,7 +250,8 @@ theorem IsKnot.traversal_apply {G : GridDiagram n} (hG : G.IsKnot) (c₀ t : Fin
 @[simp]
 theorem IsKnot.val_traversal_symm_self {G : GridDiagram n} (hG : G.IsKnot) (c₀ : Fin n) :
     ((hG.traversal c₀).symm c₀ : ℕ) = 0 := by
-  rw [(Equiv.symm_apply_eq _).2 (show c₀ = hG.traversal c₀ ⟨0, c₀.pos⟩ by simp)]
+  have h : c₀ = hG.traversal c₀ ⟨0, c₀.pos⟩ := by simp
+  rw [(Equiv.symm_apply_eq _).2 h]
 
 /-- Each step of the traversal follows the component permutation: the column after `c` is reached
 one step after `c`, unless it is the starting column `c₀`, which the traversal returns to after
@@ -263,12 +264,12 @@ theorem IsKnot.val_traversal_symm_componentPerm {G : GridDiagram n} (hG : G.IsKn
   have hstep : (G.componentPerm ^ ((t : ℕ) + 1)) c₀ = G.componentPerm c := by
     rw [pow_succ', Equiv.Perm.mul_apply, ht]
   have hlt : (t : ℕ) + 1 < n := by
-    refine (show (t : ℕ) + 1 ≤ n from t.isLt).lt_of_ne fun h ↦ hc ?_
+    refine (Nat.add_one_le_of_lt t.isLt).lt_of_ne fun h ↦ hc ?_
     rw [← hstep, h]
     have hcyc := Finset.coe_univ (α := Fin n) ▸ hG.isCycleOn_componentPerm
     simpa using hcyc.pow_card_apply (Finset.mem_univ c₀)
-  rw [(Equiv.symm_apply_eq _).2 (show G.componentPerm c = hG.traversal c₀ ⟨t + 1, hlt⟩ by
-    simp [hstep])]
+  have hnext : G.componentPerm c = hG.traversal c₀ ⟨t + 1, hlt⟩ := by simp [hstep]
+  rw [(Equiv.symm_apply_eq _).2 hnext]
 
 /-! ### Naturality under grid symmetries -/
 
