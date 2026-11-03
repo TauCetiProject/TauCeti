@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.SpecialFunctions.Complex.CircleAddChar
 public import Mathlib.Analysis.SpecialFunctions.Trigonometric.Cotangent
+import TauCeti.Data.Int.Sign
 import TauCeti.NumberTheory.TsumDivisorsAntidiagonal
 import Mathlib.Analysis.Complex.UpperHalfPlane.Exp
 import Mathlib.NumberTheory.ModularForms.EisensteinSeries.Summable
@@ -41,6 +42,11 @@ Away from the real axis, `π cot (π u)` tends to `-π i` as `Im u → ∞`, and
   points `(c z + b) / M`, for one `c ≥ 1` and summed over a residue class of `c` modulo `M`.
 * `TauCeti.hasSum_pi_mul_cot_pi_mul_intCast_mul_add_sign`: the corrected cotangents
   `π cot (π m w) + sign(m) π i` sum to `0` over `m ∈ ℤ`.
+* `TauCeti.hasSum_ite_pi_mul_cot_pi_mul_intCast_div_add_sign`: the corrected cotangents
+  `π cot (π (n z + b) / M) + sign(n) π i` summed over a residue class of `n ∈ ℤ` modulo `M`.
+* `TauCeti.hasSum_pi_mul_cot_pi_mul_div_sub_intCast_mul_add_pi_mul_cot`: the cotangent rows
+  `π cot (π (x - m z)) + π cot (π m z)` at a division point `x = (b₀ z + b) / M`, summed over
+  `m ∈ ℤ`, as a `q`-expansion in `e(z / M)`.
 * `TauCeti.norm_pi_mul_cot_pi_mul_add_pi_mul_I_le`,
   `TauCeti.norm_pi_mul_cot_pi_mul_sub_pi_mul_I_le`: the exponential approach to `∓ π i`.
 -/
@@ -241,5 +247,127 @@ theorem hasSum_pi_mul_cot_pi_mul_intCast_mul_add_sign {w : ℂ} (hw : 0 < w.im) 
       rw [hodd]
     · simp [hβ]
   simpa using h₁.of_nat_of_neg_add_one h₂
+
+/-- **The corrected cotangents along a residue class of `ℤ`**: if `0 < Im z`, the cotangents
+`π cot (π (n z + b) / M) + sign(n) π i` over `n ≡ d` modulo `M` sum to the absolutely convergent
+double series `-2π i ∑_{c, k ≥ 1} D(c, k) e(z / M)^(c k)`, plus the term `π cot (π b / M)` at
+`n = 0` if `d = 0`. Here `D(c, k)` is `e(k b / M)` if `c ≡ d` minus `e(-k b / M)` if `c ≡ -d`:
+the classes `n = c ≥ 1` and `n = -c ≤ -1` give its two parts. -/
+theorem hasSum_ite_pi_mul_cot_pi_mul_intCast_div_add_sign (M : ℕ) [NeZero M] (d : ZMod M)
+    (b : ℤ) {z : ℂ} (hz : 0 < z.im) :
+    HasSum (fun n : ℤ ↦ if (n : ZMod M) = d then
+        π * cot (π * ((n * z + b) / M)) + n.sign * (π * I) else 0)
+      ((if d = 0 then π * cot (π * (b / M)) else 0) +
+        ∑' p : ℕ+ × ℕ+, -2 * π * I *
+          ((if (p.1 : ZMod M) = d then ZMod.stdAddChar ((p.2 : ZMod M) * (b : ZMod M)) else 0) -
+            if (p.1 : ZMod M) = -d then ZMod.stdAddChar (-((p.2 : ZMod M) * (b : ZMod M)))
+            else 0) *
+          cexp (2 * π * I * z / M) ^ ((p.1 : ℕ) * p.2)) := by
+  have hr : ‖cexp (2 * π * I * z / M)‖ < 1 := by
+    simpa [Function.Periodic.qParam] using
+      Function.Periodic.norm_qParam_lt_one (Nat.cast_pos.mpr (NeZero.pos M)) hz
+  set r := cexp (2 * π * I * z / M)
+  set Φ : ℤ → ℂ := fun n ↦ if (n : ZMod M) = d then
+    π * cot (π * ((n * z + b) / M)) + n.sign * (π * I) else 0 with hΦ
+  set P := ∑' p : ℕ+ × ℕ+,
+    (if (p.1 : ZMod M) = d then ZMod.stdAddChar ((p.2 : ZMod M) * (b : ZMod M)) else 0) *
+      r ^ ((p.1 : ℕ) * p.2)
+  set Q := ∑' p : ℕ+ × ℕ+,
+    (if (p.1 : ZMod M) = -d then
+      ZMod.stdAddChar ((p.2 : ZMod M) * ((-b : ℤ) : ZMod M)) else 0) * r ^ ((p.1 : ℕ) * p.2)
+  -- the classes `n ≥ 1`
+  have h₁ : HasSum (fun n : ℕ ↦ Φ n) (-2 * π * I * P + Φ 0) := by
+    refine hasSum_pnat_iff.mp ?_
+    convert hasSum_ite_pi_mul_cot_pi_mul_div_add_pi_mul_I M d b hz using 2 with c
+    simp [hΦ, Int.sign_natCast_of_ne_zero c.ne_zero]
+  -- the classes `n ≤ -1`, by the oddness of the cotangent
+  have h₂ : HasSum (fun n : ℕ ↦ Φ (-((n : ℤ) + 1))) (-(-2 * π * I * Q)) := by
+    refine (hasSum_pnat_iff_hasSum_succ (f := fun n : ℕ ↦ Φ (-n))).mp ?_
+    convert (hasSum_ite_pi_mul_cot_pi_mul_div_add_pi_mul_I M (-d) (-b) hz).neg using 2 with c
+    have hc : ((-((c : ℕ) : ℤ) : ℤ) : ZMod M) = d ↔ ((c : ℕ) : ZMod M) = -d := by
+      push_cast
+      exact neg_eq_iff_eq_neg
+    have harg : π * ((((-((c : ℕ) : ℤ) : ℤ) : ℂ) * z + b) / M) =
+        -(π * ((((c : ℕ) : ℂ) * z + ((-b : ℤ) : ℂ)) / M)) := by
+      push_cast
+      ring
+    simp only [hΦ, hc, harg, cot_neg, Int.sign_neg, Int.sign_natCast_of_ne_zero c.ne_zero]
+    split_ifs <;> push_cast <;> ring
+  convert h₁.of_nat_of_neg_add_one h₂ using 1
+  have hsP := summable_mul_pow_mul hr (C := 1)
+    (f := fun p : ℕ+ × ℕ+ ↦ if (p.1 : ZMod M) = d then
+      ZMod.stdAddChar ((p.2 : ZMod M) * (b : ZMod M)) else 0)
+    fun p ↦ by split_ifs <;> simp
+  have hsQ := summable_mul_pow_mul hr (C := 1)
+    (f := fun p : ℕ+ × ℕ+ ↦ if (p.1 : ZMod M) = -d then
+      ZMod.stdAddChar ((p.2 : ZMod M) * ((-b : ℤ) : ZMod M)) else 0)
+    fun p ↦ by split_ifs <;> simp
+  have hD : ∑' p : ℕ+ × ℕ+, -2 * π * I *
+      ((if (p.1 : ZMod M) = d then ZMod.stdAddChar ((p.2 : ZMod M) * (b : ZMod M)) else 0) -
+        if (p.1 : ZMod M) = -d then ZMod.stdAddChar (-((p.2 : ZMod M) * (b : ZMod M)))
+        else 0) * r ^ ((p.1 : ℕ) * p.2) = -2 * π * I * (P - Q) := by
+    rw [← hsP.tsum_sub hsQ, ← tsum_mul_left]
+    refine tsum_congr fun p ↦ ?_
+    simp only [Int.cast_neg, mul_neg]
+    ring
+  rw [hD]
+  simp only [hΦ, Int.cast_zero, zero_mul, zero_add, Int.sign_zero, add_zero,
+    eq_comm (a := (0 : ZMod M))]
+  ring
+
+/-- **The cotangent rows at a division point, as a `q`-expansion.** If `0 < Im z` and
+`0 ≤ b₀ < M`, the rows `π cot (π (x - m z)) + π cot (π m z)` at `x = (b₀ z + b) / M` sum over
+`m ∈ ℤ` to `-2π i ∑_{c, k ≥ 1} D(c, k) e(z / M)^(c k)`, plus the constant `π cot (π b / M)` if
+`b₀ = 0` and `-π i` otherwise, with `D` as in
+`TauCeti.hasSum_ite_pi_mul_cot_pi_mul_intCast_div_add_sign`. Write `x - m z = (n z + b) / M` with
+`n = b₀ - m M`, which runs over the residue class of `b₀`; the signs of `n` and `m` cancel except
+at `m = 0`, and the remaining cotangents `π cot (π m z) + sign(m) π i` cancel in pairs. -/
+theorem hasSum_pi_mul_cot_pi_mul_div_sub_intCast_mul_add_pi_mul_cot {M b₀ : ℕ} [NeZero M]
+    (hb : b₀ < M) (b : ℤ) {z : ℂ} (hz : 0 < z.im) :
+    HasSum (fun m : ℤ ↦ π * cot (π * ((b₀ * z + b) / M - m * z)) + π * cot (π * (m * z)))
+      ((if b₀ = 0 then π * cot (π * (b / M)) else -(π * I)) +
+        ∑' p : ℕ+ × ℕ+, -2 * π * I *
+          ((if (p.1 : ZMod M) = b₀ then ZMod.stdAddChar ((p.2 : ZMod M) * (b : ZMod M)) else 0) -
+            if (p.1 : ZMod M) = -(b₀ : ZMod M) then
+              ZMod.stdAddChar (-((p.2 : ZMod M) * (b : ZMod M))) else 0) *
+          cexp (2 * π * I * z / M) ^ ((p.1 : ℕ) * p.2)) := by
+  have hb₀ : (b₀ : ZMod M) = 0 ↔ b₀ = 0 :=
+    (ZMod.natCast_eq_zero_iff _ _).trans
+      ⟨fun h ↦ Nat.eq_zero_of_dvd_of_lt h hb, fun h ↦ h ▸ dvd_zero M⟩
+  set Φ : ℤ → ℂ := fun n ↦ if (n : ZMod M) = b₀ then
+    π * cot (π * ((n * z + b) / M)) + n.sign * (π * I) else 0 with hΦ
+  -- the row `m` lies on the residue class at `n = b₀ - m M`
+  have hinj : Function.Injective fun m : ℤ ↦ (b₀ : ℤ) - m * M := fun m m' h ↦ by
+    have : (m - m') * (M : ℤ) = 0 := by linear_combination -h
+    exact sub_eq_zero.mp ((mul_eq_zero.mp this).resolve_right (by exact_mod_cast NeZero.ne M))
+  have hrange (n : ℤ) (hn : n ∉ Set.range fun m : ℤ ↦ (b₀ : ℤ) - m * M) : Φ n = 0 := by
+    simp only [hΦ, ite_eq_right_iff]
+    intro h
+    rw [← Int.cast_natCast, ZMod.intCast_eq_intCast_iff_dvd_sub] at h
+    obtain ⟨m, hm⟩ := h
+    exact absurd ⟨m, by dsimp only; linear_combination hm⟩ hn
+  have hrows := (hinj.hasSum_iff hrange).mpr
+    (hasSum_ite_pi_mul_cot_pi_mul_intCast_div_add_sign M (b₀ : ZMod M) b hz)
+  set δ : ℂ := if b₀ = 0 then 0 else -(π * I)
+  convert (hrows.add (hasSum_pi_mul_cot_pi_mul_intCast_mul_add_sign hz)).add
+    (hasSum_ite_eq (0 : ℤ) δ) using 1
+  · ext m
+    have hres : (((b₀ : ℤ) - m * M : ℤ) : ZMod M) = b₀ := by simp
+    have harg : ((((b₀ : ℤ) - m * M : ℤ) : ℂ) * z + b) / M = (b₀ * z + b) / M - m * z := by
+      field_simp [Nat.cast_ne_zero.mpr (NeZero.ne M)]
+      push_cast
+      ring
+    have hs : ((((b₀ : ℤ) - m * M).sign + m.sign : ℤ) : ℂ) = if m = 0 ∧ b₀ ≠ 0 then 1 else 0 := by
+      rw [Int.sign_sub_mul_add_sign (Int.natCast_nonneg b₀) (by exact_mod_cast hb) m]
+      simp only [ne_eq, Nat.cast_eq_zero]
+      split_ifs <;> simp
+    have hδ : (if m = 0 then δ else 0) =
+        -(if m = 0 ∧ b₀ ≠ 0 then 1 else 0) * (π * I) := by
+      by_cases hm : m = 0 <;> by_cases h0 : b₀ = 0 <;> simp [δ, hm, h0]
+    simp only [Function.comp_apply, hΦ, hres, ↓reduceIte, harg, hδ, ← hs]
+    push_cast
+    ring
+  · simp only [hb₀, δ]
+    split_ifs <;> ring
 
 end TauCeti
