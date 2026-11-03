@@ -18,7 +18,7 @@ coefficient formula, and the expansion of `∑ gᵢ ^ p (a + b X ^ p) ^ i` in th
 
 ## Main results
 
-* `TauCeti.coeff_pow_char_mul`: the coefficient of `X ^ (p n)` in `f ^ p` is `f.coeff n ^ p`.
+* `Polynomial.coeff_pow_char_mul`: the coefficient of `X ^ (p n)` in `f ^ p` is `f.coeff n ^ p`.
 * `TauCeti.sum_pow_mul_C_add_C_mul_X_pow`: `∑_{i < p} gᵢ ^ p (a + b X ^ p) ^ i` written in the
   monomials `a ^ m b ^ j` with `m, j < p`.
 -/
@@ -27,15 +27,19 @@ public section
 
 open Polynomial Finset
 
-namespace TauCeti
-
 variable {R : Type*} [CommSemiring R] {p : ℕ} [ExpChar R p]
+
+namespace Polynomial
 
 /-- In exponential characteristic `p`, the coefficient of `X ^ (p n)` in `f ^ p` is the `p`-th
 power of the coefficient of `X ^ n` in `f`. -/
 @[simp]
 theorem coeff_pow_char_mul (f : R[X]) (n : ℕ) : (f ^ p).coeff (p * n) = f.coeff n ^ p := by
   rw [← map_frobenius_expand, coeff_map, coeff_expand_mul' (expChar_pos R p), frobenius_def]
+
+end Polynomial
+
+namespace TauCeti
 
 /-- In exponential characteristic `p`, expanding `(a + b X ^ p) ^ i` writes
 `∑_{i < p} gᵢ ^ p (a + b X ^ p) ^ i` in the monomials `a ^ m b ^ j`, whose coefficient is
