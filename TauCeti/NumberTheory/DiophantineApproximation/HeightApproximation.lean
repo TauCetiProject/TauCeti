@@ -78,26 +78,6 @@ end TauCeti
 
 namespace LiouvilleWith
 
-/-- After strictly decreasing the exponent, the Liouville condition holds with constant one
-and the maximum of numerator and denominator in place of the denominator. -/
-theorem frequently_lt_max_rpow_neg {p q ξ : ℝ} (h : LiouvilleWith p ξ)
-    (hqp : q < p) :
-    ∃ᶠ n : ℕ in atTop, 0 < n ∧ ∃ m : ℤ, ξ ≠ m / n ∧
-      |ξ - m / n| < (max |(m : ℝ)| (n : ℝ)) ^ (-q) := by
-  wlog hp : 0 < p generalizing p
-  · exact this (liouvilleWith_one ξ) (hqp.trans_le (by linarith)) zero_lt_one
-  obtain ⟨C, hC, hf⟩ := (TauCeti.liouvilleWith_iff_frequently_max hp.le).mp h
-  have hlarge : ∀ᶠ n : ℕ in atTop, C < (n : ℝ) ^ (p - q) :=
-    ((tendsto_rpow_atTop (sub_pos.mpr hqp)).comp
-      tendsto_natCast_atTop_atTop).eventually_gt_atTop C
-  refine (hlarge.and_frequently hf).mono ?_
-  rintro n ⟨hnC, hn, m, hne, hlt⟩
-  have hn0 : (0 : ℝ) < n := by positivity
-  have hmax : 0 < max |(m : ℝ)| (n : ℝ) := hn0.trans_le (le_max_right _ _)
-  refine ⟨hn, m, hne, hlt.trans ?_⟩
-  rw [div_lt_iff₀ (by positivity), ← Real.rpow_add hmax, neg_add_eq_sub]
-  exact hnC.trans_le (Real.rpow_le_rpow hn0.le (le_max_right _ _) (sub_pos.mpr hqp).le)
-
 /-- A Liouville number with exponent `p` has infinitely many rational approximations measured
 by their multiplicative height, for every exponent strictly smaller than `p`. -/
 theorem infinite_setOf_abs_sub_lt_mulHeight₁_rpow_neg {p q ξ : ℝ} (h : LiouvilleWith p ξ)
