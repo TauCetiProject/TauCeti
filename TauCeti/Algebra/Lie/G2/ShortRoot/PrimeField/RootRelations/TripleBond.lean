@@ -37,20 +37,32 @@ namespace TauCeti.G2ShortRoot.PrimeField
 
 universe v
 
-/-- The matrix of the positive-simple-root commutator in the short-root G₂ carrier generated
+/-- The positive short simple-root point `x_{α₁}(t)` is the normal form with parameters
+`(t, 0, 0, 0, 0, 0)`. -/
+theorem coe_rootSubgroupPoints_inl_zero_eq_crossUnipotentMatrix
+    {A : Type v} [CommRing A] [Algebra (ZMod 3) A] (t : A) :
+    ((rootSubgroupPoints (.inl 0) A (ofAdd t) : Matrix.GeneralLinearGroup (Fin 7) A) :
+      Matrix (Fin 7) (Fin 7) A) = crossUnipotentMatrix t 0 0 0 0 0 := by
+  rw [coe_rootSubgroupPoints]
+  exact IntegralToralClosure.coe_rootSubgroupPoints_inl_zero_eq_crossUnipotentMatrix t
+
+/-- The positive long simple-root point `x_{α₂}(t)` is the normal form with parameters
+`(0, t, 0, 0, 0, 0)`. -/
+theorem coe_rootSubgroupPoints_inl_one_eq_crossUnipotentMatrix
+    {A : Type v} [CommRing A] [Algebra (ZMod 3) A] (t : A) :
+    ((rootSubgroupPoints (.inl 1) A (ofAdd t) : Matrix.GeneralLinearGroup (Fin 7) A) :
+      Matrix (Fin 7) (Fin 7) A) = crossUnipotentMatrix 0 t 0 0 0 0 := by
+  rw [coe_rootSubgroupPoints]
+  exact IntegralToralClosure.coe_rootSubgroupPoints_inl_one_eq_crossUnipotentMatrix t
+
+/-- The normal form of the positive-simple-root commutator in the short-root G₂ carrier generated
 over 𝔽₃. The parameters and signs are those of the integral numbered root subgroups. -/
 theorem coe_commutatorElement_rootSubgroupPoints_inl_zero_inl_one
     (A : Type v) [CommRing A] [Algebra (ZMod 3) A] (a b : A) :
     (((⁅rootSubgroupPoints (.inl 0) A (ofAdd a),
         rootSubgroupPoints (.inl 1) A (ofAdd b)⁆ : points A) :
         Matrix.GeneralLinearGroup (Fin 7) A) : Matrix (Fin 7) (Fin 7) A) =
-      !![1, 0, a * b, -2 * a ^ 2 * b, a ^ 3 * b, -a ^ 3 * b ^ 2, 0;
-         0, 1, 0, -2 * a * b, a ^ 2 * b, -a ^ 2 * b ^ 2, 0;
-         0, 0, 1, 0, 0, a ^ 2 * b, -a ^ 3 * b;
-         0, 0, 0, 1, 0, a * b, -a ^ 2 * b;
-         0, 0, 0, 0, 1, 0, -a * b;
-         0, 0, 0, 0, 0, 1, 0;
-         0, 0, 0, 0, 0, 0, 1] := by
+      crossUnipotentMatrix 0 0 (a * b) (-a ^ 2 * b) (a ^ 3 * b) (-a ^ 3 * b ^ 2) := by
   have h := IntegralToralClosure.coe_commutatorElement_rootSubgroupPoints_inl_zero_inl_one
     A a b
   simpa only [commutatorElement_def, Subgroup.coe_mul, Subgroup.coe_inv,
