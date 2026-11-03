@@ -33,11 +33,12 @@ neither its numerator nor its denominator. -/
 theorem eq_zero_iff {p : ℕ} [hp : Fact p.Prime] {q : ℚ} (hq : q ≠ 0) :
     padicValRat p q = 0 ↔ ¬ p ∣ q.num.natAbs ∧ ¬ p ∣ q.den := by
   have hnum : padicValInt p q.num = 0 ↔ ¬ p ∣ q.num.natAbs := by
-    simp [padicValInt, padicValNat.eq_zero_iff, hp.out.ne_one, hq]
+    simp [padicValInt, Nat.multiplicity_eq_zero_iff, hp.out.ne_one, hq]
   have hden : padicValNat p q.den = 0 ↔ ¬ p ∣ q.den := by
-    simp [padicValNat.eq_zero_iff, hp.out.ne_one]
+    simp [Nat.padicValNat_def, Nat.multiplicity_eq_zero_iff, hp.out.ne_one]
+  simp only [Nat.padicValNat_def] at hden ⊢
   rw [padicValRat_def, ← hnum, ← hden]
-  rcases Rat.num_or_den_zero_padicVal q hp.out with h | h <;> simp [h]
+  rcases Rat.num_or_den_zero_padicVal q hp.out with h | h <;> simp [h, hp.out.ne_one, hq]
 
 /-- If `x + y = 1` and `x` has positive `p`-adic valuation, then `y` has `p`-adic valuation
 zero. -/
@@ -74,7 +75,7 @@ theorem max_natAbs_eq_of_add_eq_one {p : ℕ} [hp : Fact p.Prime] {x y : ℚ} (h
   -- a prime cannot divide both the numerator and the denominator of `x`, or of `y`
   have hx := Rat.num_or_den_zero_padicVal x hp.out
   have hy := Rat.num_or_den_zero_padicVal y hp.out
-  simp only [padicValRat_def, hden] at h₁ h₂ hy ⊢
+  simp only [padicValRat_def, hden, Nat.padicValNat_def] at h₁ h₂ hx hy ⊢
   omega
 
 end padicValRat

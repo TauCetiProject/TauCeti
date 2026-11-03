@@ -30,12 +30,6 @@ public section
 
 namespace TauCeti
 
-/-- The Galois field of order four has four elements, independently of its enumeration. -/
-theorem card_galoisField_two_two [Fintype (GaloisField 2 2)] :
-    Fintype.card (GaloisField 2 2) = 4 := by
-  rw [← Nat.card_eq_fintype_card, GaloisField.card 2 2 (by decide)]
-  decide
-
 variable {F : Type*} [Field F] [Finite F]
 
 /-- Every element other than zero and one in a field of order four is a root of

@@ -254,7 +254,7 @@ def nonUnitalRepresentation : A →ₙₐ[ℂ] Module.End ℂ φ.GNS where
   map_mul' a b := by
     apply φ.classMap_ext
     intro c
-    simp [Module.End.mul_apply, mul_assoc]
+    simp [mul_apply_eq_comp, mul_assoc]
   map_zero' := by
     apply φ.classMap_ext
     intro b

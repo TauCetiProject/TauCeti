@@ -89,7 +89,7 @@ theorem peterssonInnerCosets_heckeTCuspNat_left_of_mem_cuspFormCharSpace
         ((χ (ZMod.unitOfCoprime n hn) : ℂ)⁻¹ • heckeTCuspNat k n g) := by
   have hcomm := DFunLike.congr_fun
     (commute_heckeTCuspNat_diamondOpCusp k n (ZMod.unitOfCoprime n hn)⁻¹).eq g
-  simp only [Module.End.mul_apply] at hcomm
+  simp only [mul_apply_eq_comp] at hcomm
   rw [peterssonInnerCosets_heckeTCuspNat_left k hn, ← hcomm,
     diamondOpCusp_apply_of_mem_cuspFormCharSpace k χ _ hg, map_smul, map_inv,
     Units.val_inv_eq_inv_val]

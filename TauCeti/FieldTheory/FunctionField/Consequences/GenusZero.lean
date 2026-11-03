@@ -181,7 +181,9 @@ theorem genus_eq_zero_of_adjoin_eq_top {x : F} (hx : Transcendental k x)
     rw [Divisor.degree_poles hF (Units.mk0 x hx0) hx]
     exact_mod_cast hfinrank
   set l : ℕ := 2 * genus k F with hl
-  have hlow := Divisor.succ_le_dim_nsmul_poles hF (Units.mk0 x hx0) hx l
+  have hlow : l + 1 ≤ Divisor.dim (l • Divisor.poles hF (Units.mk0 x hx0)) := by
+    simpa only [natCast_zsmul] using
+      le_dim_zsmul_poles hF (Units.mk0 x hx0) hx (n := l + 1) (m := (l : ℤ)) (by omega)
   have hdeg : Divisor.degree (l • Divisor.poles hF (Units.mk0 x hx0)) = (l : ℤ) := by
     rw [map_nsmul, hpoles, nsmul_eq_mul, mul_one]
   have heq := Divisor.dim_eq_degree_add_one_sub_genus_of_two_mul_genus_sub_one_le_degree hF hex
