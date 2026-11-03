@@ -25,8 +25,8 @@ assert that distinct integral roots remain distinct as Lie algebra weights in th
 
 The construction uses `Sym2.lift` for symmetric entries and `Module.Basis.ofEquivFun` for the
 basis, together with `Matrix.mem_symplecticLieAlgebra_iff` for the block equations.
-`TauCeti.GLSymplecticFin.RootSubgroupIndex.rootEntryBasis_val` identifies all root vectors with
-the existing normalized root-subgroup tangent matrices.
+`TauCeti.GLSymplecticFin.RootSubgroupIndex.val_rootEntryBasis_rootEntryIndex` identifies all
+root vectors with the existing normalized root-subgroup tangent matrices.
 
 ## References
 
@@ -36,9 +36,9 @@ the existing normalized root-subgroup tangent matrices.
 
 public section
 
-open Matrix
+open Matrix LieAlgebra.Symplectic
 
-namespace LieAlgebra.Symplectic
+namespace TauCeti.LieAlgebra.Symplectic
 
 variable (l : Type*) [Fintype l] [DecidableEq l] (R : Type*) [CommRing R]
 
@@ -48,6 +48,9 @@ abbrev RootEntryIndex := (l × l) ⊕ (Sym2 l ⊕ Sym2 l)
 
 /-- Independent entries identify the symplectic Lie algebra with its coordinate module.
 The inverse fills the last block with the negative transpose of the first. -/
+-- On explicit sum constructors and unordered pairs, entry evaluation through `fromBlocks`,
+-- `Matrix.of` and `Sym2.lift` is definitional. The `rfl` proofs below use these reductions,
+-- including pointwise addition and scalar multiplication in the Lie subalgebra.
 def rootEntryEquiv : sp l R ≃ₗ[R] (RootEntryIndex l → R) where
   toFun X := Sum.elim (fun p ↦ X.val (.inl p.1) (.inl p.2))
     (Sum.elim
@@ -92,24 +95,25 @@ def rootEntryEquiv : sp l R ≃ₗ[R] (RootEntryIndex l → R) where
 
 /-- The first family of coordinates consists of the upper-left entries. -/
 @[simp]
-theorem rootEntryEquiv_inl (X : sp l R) (i j : l) :
+theorem rootEntryEquiv_apply_inl (X : sp l R) (i j : l) :
     rootEntryEquiv l R X (.inl (i, j)) = X.val (.inl i) (.inl j) :=
   (rfl)
 
 /-- The second family consists of the symmetric upper-right entries. -/
 @[simp]
-theorem rootEntryEquiv_inr_inl (X : sp l R) (i j : l) :
+theorem rootEntryEquiv_apply_inr_inl (X : sp l R) (i j : l) :
     rootEntryEquiv l R X (.inr (.inl s(i, j))) = X.val (.inl i) (.inr j) :=
   (rfl)
 
 /-- The third family consists of the symmetric lower-left entries. -/
 @[simp]
-theorem rootEntryEquiv_inr_inr (X : sp l R) (i j : l) :
+theorem rootEntryEquiv_apply_inr_inr (X : sp l R) (i j : l) :
     rootEntryEquiv l R X (.inr (.inr s(i, j))) = X.val (.inr i) (.inl j) :=
   (rfl)
 
 /-- Reconstruction from independent entries in block form. -/
-theorem rootEntryEquiv_symm_val (c : RootEntryIndex l → R) :
+@[simp]
+theorem val_rootEntryEquiv_symm (c : RootEntryIndex l → R) :
     ((rootEntryEquiv l R).symm c).val =
       fromBlocks (Matrix.of fun i j ↦ c (.inl (i, j)))
         (Matrix.of fun i j ↦ c (.inr (.inl s(i, j))))
@@ -130,37 +134,40 @@ theorem rootEntryBasis_repr (X : sp l R) (p : RootEntryIndex l) :
 
 /-- The first family consists of a matrix unit in the upper-left block and its negative
 transpose in the lower-right block. -/
-theorem rootEntryBasis_inl (i j : l) :
+@[simp]
+theorem val_rootEntryBasis_inl (i j : l) :
     (rootEntryBasis l R (.inl (i, j))).val =
       single (.inl i) (.inl j) 1 - single (.inr j) (.inr i) 1 := by
   classical
-  rw [rootEntryBasis, Module.Basis.coe_ofEquivFun, rootEntryEquiv_symm_val]
+  rw [rootEntryBasis, Module.Basis.coe_ofEquivFun, val_rootEntryEquiv_symm]
   ext (a | a) (b | b) <;>
     simp [Matrix.single_apply, Pi.single_apply, Prod.ext_iff, eq_comm, and_comm]
 
 /-- An unordered pair gives a symmetric upper-right matrix unit. The diagonal has coefficient
 one, so this formula also gives the long-root vector in characteristic two. -/
-theorem rootEntryBasis_inr_inl (p : Sym2 l) :
+@[simp]
+theorem val_rootEntryBasis_inr_inl (p : Sym2 l) :
     (rootEntryBasis l R (.inr (.inl p))).val =
       fromBlocks 0 (Matrix.of fun i j ↦ if s(i, j) = p then 1 else 0) 0 0 := by
   classical
-  rw [rootEntryBasis, Module.Basis.coe_ofEquivFun, rootEntryEquiv_symm_val]
+  rw [rootEntryBasis, Module.Basis.coe_ofEquivFun, val_rootEntryEquiv_symm]
   ext (a | a) (b | b) <;> simp [Pi.single_apply, eq_comm]
 
 /-- An unordered pair gives a symmetric lower-left matrix unit, again without doubling the
 diagonal long-root vector. -/
-theorem rootEntryBasis_inr_inr (p : Sym2 l) :
+@[simp]
+theorem val_rootEntryBasis_inr_inr (p : Sym2 l) :
     (rootEntryBasis l R (.inr (.inr p))).val =
       fromBlocks 0 0 (Matrix.of fun i j ↦ if s(i, j) = p then 1 else 0) 0 := by
   classical
-  rw [rootEntryBasis, Module.Basis.coe_ofEquivFun, rootEntryEquiv_symm_val]
+  rw [rootEntryBasis, Module.Basis.coe_ofEquivFun, val_rootEntryEquiv_symm]
   ext (a | a) (b | b) <;> simp [Pi.single_apply, eq_comm]
 
-end LieAlgebra.Symplectic
+end TauCeti.LieAlgebra.Symplectic
 
 namespace TauCeti.GLSymplecticFin.RootSubgroupIndex
 
-open LieAlgebra.Symplectic
+open TauCeti.LieAlgebra.Symplectic
 
 variable {m : ℕ}
 
@@ -198,26 +205,58 @@ theorem rootEntryIndex_positiveSum (i j : Fin m) (hij : i < j) :
 theorem rootEntryIndex_negativeSum (i j : Fin m) (hij : i < j) :
     (negativeSum i j hij).rootEntryIndex = .inr (.inr s(i, j)) := (rfl)
 
+/-- Distinct standard roots have distinct independent-entry labels. -/
+theorem rootEntryIndex_injective : Function.Injective (rootEntryIndex (m := m)) := by
+  intro root root' h
+  cases root <;> cases root' <;> simp_all [rootEntryIndex] <;> omega
+
+/-- The root labels are exactly the independent-entry labels other than the Cartan diagonal. -/
+theorem range_rootEntryIndex :
+    Set.range (rootEntryIndex (m := m)) = {p | ∀ i, p ≠ .inl (i, i)} := by
+  ext p
+  constructor
+  · rintro ⟨root, rfl⟩ i
+    cases root <;> grind [rootEntryIndex]
+  · intro h
+    rcases p with ⟨i, j⟩ | (p | p)
+    · exact ⟨difference i j (by simpa [eq_comm] using h i), rfl⟩
+    · induction p using Sym2.inductionOn with
+      | _ i j =>
+        rcases lt_trichotomy i j with hij | rfl | hji
+        · exact ⟨positiveSum i j hij, rfl⟩
+        · exact ⟨positiveLong i, rfl⟩
+        · exact ⟨positiveSum j i hji, by simp [rootEntryIndex, Sym2.eq_swap]⟩
+    · induction p using Sym2.inductionOn with
+      | _ i j =>
+        rcases lt_trichotomy i j with hij | rfl | hji
+        · exact ⟨negativeSum i j hij, rfl⟩
+        · exact ⟨negativeLong i, rfl⟩
+        · exact ⟨negativeSum j i hji, by simp [rootEntryIndex, Sym2.eq_swap]⟩
+
 /-- Every standard root-subgroup tangent vector is the corresponding matrix root basis vector,
 with its original parameter normalization, including at the long roots. -/
-theorem rootEntryBasis_val (root : RootSubgroupIndex m) (R : Type*) [CommRing R] :
+theorem val_rootEntryBasis_rootEntryIndex (root : RootSubgroupIndex m) (R : Type*) [CommRing R] :
     (rootEntryBasis (Fin m) R root.rootEntryIndex).val = root.tangentMatrix (1 : R) := by
   cases root with
   | difference i j hij =>
-      rw [rootEntryIndex, rootEntryBasis_inl, tangentMatrix_difference]
+      rw [rootEntryIndex, val_rootEntryBasis_inl, tangentMatrix_difference]
   | positiveLong i =>
-      rw [rootEntryIndex, rootEntryBasis_inr_inl, tangentMatrix_positiveLong]
+      rw [rootEntryIndex, val_rootEntryBasis_inr_inl, tangentMatrix_positiveLong]
       ext (a | a) (b | b) <;> simp [Matrix.single_apply, eq_comm, and_comm]
   | negativeLong i =>
-      rw [rootEntryIndex, rootEntryBasis_inr_inr, tangentMatrix_negativeLong]
+      rw [rootEntryIndex, val_rootEntryBasis_inr_inr, tangentMatrix_negativeLong]
       ext (a | a) (b | b) <;> simp [Matrix.single_apply, eq_comm, and_comm]
   | positiveSum i j hij =>
-      rw [rootEntryIndex, rootEntryBasis_inr_inl, tangentMatrix_positiveSum]
+      rw [rootEntryIndex, val_rootEntryBasis_inr_inl, tangentMatrix_positiveSum]
       ext (a | a) (b | b) <;>
-        simp [Matrix.single_apply, eq_comm, and_comm]; grind
+        simp only [fromBlocks_apply₁₁, fromBlocks_apply₁₂, fromBlocks_apply₂₁,
+          fromBlocks_apply₂₂, Matrix.of_apply, Matrix.zero_apply, Matrix.add_apply,
+          Matrix.single_apply, Sym2.eq_iff] <;> grind
   | negativeSum i j hij =>
-      rw [rootEntryIndex, rootEntryBasis_inr_inr, tangentMatrix_negativeSum]
+      rw [rootEntryIndex, val_rootEntryBasis_inr_inr, tangentMatrix_negativeSum]
       ext (a | a) (b | b) <;>
-        simp [Matrix.single_apply, eq_comm, and_comm]; grind
+        simp only [fromBlocks_apply₁₁, fromBlocks_apply₁₂, fromBlocks_apply₂₁,
+          fromBlocks_apply₂₂, Matrix.of_apply, Matrix.zero_apply, Matrix.add_apply,
+          Matrix.single_apply, Sym2.eq_iff] <;> grind
 
 end TauCeti.GLSymplecticFin.RootSubgroupIndex
