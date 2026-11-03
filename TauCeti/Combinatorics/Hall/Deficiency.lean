@@ -63,6 +63,26 @@ theorem exists_card_sub_card_biUnion_eq_hallDeficiency (t : ι → Finset α) :
       (by simp : univ.powerset.Nonempty) (fun S ↦ #S - #(S.biUnion t))
     exact ⟨S, hmax.symm⟩
 
+/-- The Hall deficiency as the maximum excess over all subfamilies. -/
+theorem hallDeficiency_def (t : ι → Finset α) :
+    hallDeficiency t = univ.powerset.sup fun S ↦ #S - #(S.biUnion t) := by
+  classical
+  apply le_antisymm
+  · obtain ⟨S, hS⟩ := exists_card_sub_card_biUnion_eq_hallDeficiency t
+    rw [← hS]
+    exact Finset.le_sup (f := fun T ↦ #T - #(T.biUnion t))
+      (mem_powerset.mpr (subset_univ S))
+  · apply Finset.sup_le
+    intro S _
+    exact card_sub_card_biUnion_le_hallDeficiency t S
+
+/-- The Hall deficiency is at most `k` exactly when every subfamily has at most `k` more
+indices than available choices. -/
+theorem hallDeficiency_le_iff (t : ι → Finset α) (k : ℕ) :
+    hallDeficiency t ≤ k ↔ ∀ S : Finset ι, #S ≤ #(S.biUnion t) + k := by
+  classical
+  simp [hallDeficiency_def, Finset.sup_le_iff, Nat.sub_le_iff_le_add, add_comm]
+
 /-- The Hall deficiency is at most the number of indices. -/
 theorem hallDeficiency_le_card (t : ι → Finset α) :
     hallDeficiency t ≤ Fintype.card ι := by
