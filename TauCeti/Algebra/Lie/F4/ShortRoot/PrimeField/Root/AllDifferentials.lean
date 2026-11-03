@@ -91,16 +91,18 @@ theorem tangentMatrix_derivationComp_weylRootSubgroupCoordinateMap
   simp only [weylRootSubgroupPoints_apply, Subgroup.coe_mul, Subgroup.coe_inv,
     Units.val_mul] at hentry
   rw [hn, ← map_inv] at hentry
+  simp only [Matrix.GeneralLinearGroup.map, Units.coe_map, RingHom.toMonoidHom_eq_coe,
+    MonoidHom.coe_ofClass, RingHom.mapMatrix_apply, Algebra.toRingHom_ofId] at hentry
   rw [← map_genericMatrix_generator_inl (.inl i)] at hentry
-  rw [GeneralLinear.tangentMatrix_derivationComp_eq_conj_of_map_genericMatrix
+  rw [GeneralLinear.tangentMatrix_derivationComp_eq_mul_mul_of_map_genericMatrix
     ((weylRootSubgroupCoordinateMap l i).hom.comp
       (Bialgebra.Quotient.mkBialgHom (J).toIdeal))
-    (generator (.inl (.inl i))).hom (weylWordPoint l R) hentry d,
+    (generator (.inl (.inl i))).hom _ _ hentry d,
     tangentMatrix_derivationComp_generator_inl]
   rw [hnB, ← map_inv]
   rw [Matrix.mul_smul, Matrix.smul_mul]
-  -- The underlying matrix of `GeneralLinearGroup.map` is entrywise coefficient change.
-  rfl
+  simp only [Matrix.GeneralLinearGroup.map, Units.coe_map, RingHom.toMonoidHom_eq_coe,
+    MonoidHom.coe_ofClass, RingHom.mapMatrix_apply, Algebra.toRingHom_ofId]
 
 /-- The unit tangent vector of the selected root subgroup, with values in a coefficient
 algebra. Its normalization is fixed by the selected root parametrization. -/
@@ -145,9 +147,8 @@ under cotangent duality. -/
 theorem rootDerivationAt_simpleIndex (i : Fin 4) :
     rootDerivationAt R (Fin.castAdd 44 i) =
       Derivation.cotangentLinearEquiv (B := R) (rootVector (.inl i)) := by
-  -- The explicit index has type Fin 48, the computed number of F₄ roots.
-  erw [rootDerivationAt_def, rootSubgroupCoordinateMapAt_simpleIndex,
-    cotangentLinearEquiv_rootVector]
+  simp only [rootDerivationAt, rootSubgroupCoordinateMapAt_simpleIndex]
+  exact (cotangentLinearEquiv_rootVector (.inl i)).symm
 
 /-- The matrix of every selected root differential is the Weyl conjugate of its simple
 root matrix. The word and node are those of the root subgroup itself. -/

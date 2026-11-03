@@ -107,22 +107,20 @@ theorem tangentMatrix_derivationComp_eq_smul_of_map_genericMatrix
     map_mul, map_intCast]
   ring
 
-/-- Conjugating a matrix-valued coordinate morphism by a constant base-ring point conjugates
-its differential by the same point after coefficient change. No linearity assumption on the
-original matrix-valued morphism is needed. -/
-theorem tangentMatrix_derivationComp_eq_conj_of_map_genericMatrix
+/-- Multiplying a matrix-valued coordinate morphism on either side by constant base-ring
+matrices multiplies its differential by the same matrices after coefficient change. Neither
+invertibility of the constant matrices nor linearity of the original morphism is needed. -/
+theorem tangentMatrix_derivationComp_eq_mul_mul_of_map_genericMatrix
     {H : Type*} [CommRing H] [Bialgebra R H]
     (φ ψ : coordinateHopfAlgebra R n →ₐc[R] H)
-    (g : Matrix.GeneralLinearGroup (Fin n) R)
+    (M N : Matrix (Fin n) (Fin n) R)
     (hφ : (genericMatrix R n).map φ.toAlgHom =
-      (g : Matrix (Fin n) (Fin n) R).map (algebraMap R H) *
-        (genericMatrix R n).map ψ.toAlgHom *
-        (↑g⁻¹ : Matrix (Fin n) (Fin n) R).map (algebraMap R H))
+      M.map (algebraMap R H) * (genericMatrix R n).map ψ.toAlgHom *
+        N.map (algebraMap R H))
     (d : Derivation R H (Bialgebra.CounitAlgebra R H B)) :
     tangentMatrix n (derivationComp (B := B) φ d) =
-      (g : Matrix (Fin n) (Fin n) R).map (algebraMap R B) *
-        tangentMatrix n (derivationComp (B := B) ψ d) *
-        (↑g⁻¹ : Matrix (Fin n) (Fin n) R).map (algebraMap R B) := by
+      M.map (algebraMap R B) * tangentMatrix n (derivationComp (B := B) ψ d) *
+        N.map (algebraMap R B) := by
   ext a b
   rw [tangentMatrix_apply, algEquivSelf_derivationComp_apply, ← genericMatrix_apply]
   have hentry := congrFun (congrFun hφ a) b
