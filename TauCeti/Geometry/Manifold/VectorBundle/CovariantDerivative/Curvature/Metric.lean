@@ -116,10 +116,10 @@ theorem IsMetricCompatible.inner_curvatureTensor_eq_neg
     (x : M) (u v : TangentSpace I x) (w z : V x) :
     inner ℝ (cov.curvatureTensor x u v w) z =
       -inner ℝ w (cov.curvatureTensor x u v z) := by
-  obtain ⟨X, hX, rfl⟩ := exists_contMDiff_section_eq I E u
-  obtain ⟨Y, hY, rfl⟩ := exists_contMDiff_section_eq I E v
-  obtain ⟨σ, hσ, rfl⟩ := exists_contMDiff_section_eq I F w
-  obtain ⟨τ, hτ, rfl⟩ := exists_contMDiff_section_eq I F z
+  obtain ⟨X, hX, rfl⟩ := exists_contMDiff_section_eq I E ∞ u
+  obtain ⟨Y, hY, rfl⟩ := exists_contMDiff_section_eq I E ∞ v
+  obtain ⟨σ, hσ, rfl⟩ := exists_contMDiff_section_eq I F ∞ w
+  obtain ⟨τ, hτ, rfl⟩ := exists_contMDiff_section_eq I F ∞ z
   rw [curvatureTensor_apply cov x hX hY hσ, curvatureTensor_apply cov x hX hY hτ]
   let _ : IsManifold I (∞ + 1) M := by
     simpa using (inferInstance : IsManifold I ∞ M)

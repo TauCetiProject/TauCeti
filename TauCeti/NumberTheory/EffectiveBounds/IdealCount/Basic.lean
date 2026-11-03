@@ -317,7 +317,7 @@ private theorem count_eq_padicValNat {I : Ideal (𝓞 F)} {P : Ideal (𝓞 F)}
     have := hQp
     have : NeZero Q := ⟨hQ0⟩
     exact pow_ne_zero _ (by simpa [absNormUnder] using (Nat.absNorm_under_prime Q).pos.ne')
-  rw [eq_comm, ← Nat.factorization_def _ hpp]
+  rw [Nat.padicValNat_def, eq_comm, ← Nat.factorization_def _ hpp]
   simp only [encodeIdeal]
   rw [Nat.factorization_prod hfact]
   rw [Finset.sum_apply']
@@ -401,7 +401,7 @@ theorem card_ideal_absNorm_le (F : Type*) [Field F] [NumberField F] {X : ℝ} (h
       (({I : Ideal (𝓞 F) | I ≠ ⊥ ∧ (Ideal.absNorm I : ℝ) ≤ X}.ncard : ℝ)) ≤
         X ^ 2 * 2 ^ Module.finrank ℚ F := by
   refine ⟨?_, ?_⟩
-  · apply Set.Finite.subset (Ideal.finite_setOfPred_absNorm_le ⌊X⌋₊)
+  · apply Set.Finite.subset (Ring.HasFiniteQuotients.finite_absNorm_le ⌊X⌋₊)
     rintro I ⟨-, hI⟩
     exact Nat.le_floor hI
   · calc ((({I : Ideal (𝓞 F) | I ≠ ⊥ ∧ (Ideal.absNorm I : ℝ) ≤ X}).ncard : ℝ))
@@ -433,7 +433,7 @@ private abbrev idealsWithAbsNormRealLe (F : Type*) [Field F] [NumberField F] (X 
 
 private theorem idealsWithAbsNormNatLe_finite (F : Type*) [Field F] [NumberField F] (N : ℕ) :
     (idealsWithAbsNormNatLe F N).Finite :=
-  (Ideal.finite_setOfPred_absNorm_le N).subset fun _ hI => hI.2
+  (Ring.HasFiniteQuotients.finite_absNorm_le N).subset fun _ hI => hI.2
 
 private theorem idealsWithAbsNormNatLe_eq_real (F : Type*) [Field F] [NumberField F] (N : ℕ) :
     idealsWithAbsNormNatLe F N = idealsWithAbsNormRealLe F (N : ℝ) := by

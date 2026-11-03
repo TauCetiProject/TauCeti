@@ -173,6 +173,6 @@ theorem PivotalCategory.eq_of_leftDim_eq_frobeniusPerronDim {P Q : PivotalCatego
   ext_of_leftDim ℂ (fun X _ ↦ (hP X).trans (hQ X).symm) fun X _ ↦ by
     rw [hQ X]
     exact smul_ne_zero (Complex.ofReal_ne_zero.2 (frobeniusPerronDim_pos_of_simple ℂ X).ne')
-      (id_nonzero _)
+      (id_ne_zero _)
 
 end TauCeti

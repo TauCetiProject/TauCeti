@@ -56,6 +56,15 @@ theorem subsequence_transition (n : ℕ) :
     (F.subsequence φ).transition n = F.transitionOfLE (φ.monotone (Nat.le_succ n)) := by
   rw [← transitionOfLE_succ, subsequence_transitionOfLE]
 
+/-- Restriction of a product family along `φ`. -/
+def subsequenceRestriction : F.Product →ₗ[R] (F.subsequence φ).Product :=
+  LinearMap.pi fun n ↦ LinearMap.proj (φ n)
+
+@[simp]
+theorem subsequenceRestriction_apply (x : F.Product) (n : ℕ) :
+    F.subsequenceRestriction φ x n = x (φ n) :=
+  (rfl)
+
 private def limSubsequenceIso (hφ : ∀ n, ∃ m, n ≤ φ m) :
     ModuleCat.of R F.lim ≅ ModuleCat.of R (F.subsequence φ).lim :=
   (F.isLimitLimCone.whiskerOfCofinal φ hφ).conePointUniqueUpToIso
@@ -111,6 +120,13 @@ theorem limSubsequenceEquiv_naturality (hφ : ∀ n, ∃ m, n ≤ φ m) (f : F �
   apply LinearMap.ext
   intro x
   apply Subtype.ext
+  funext n
+  simp [productMap_apply]
+
+/-- Restriction along `φ` commutes with the product map of a morphism of towers. -/
+theorem subsequenceRestriction_natural_apply (f : F ⟶ G) (x : F.Product) :
+    G.subsequenceRestriction φ (productMap f x) =
+      productMap (Functor.whiskerLeft φ.monotone.functor.op f) (F.subsequenceRestriction φ x) := by
   funext n
   simp [productMap_apply]
 

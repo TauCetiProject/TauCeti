@@ -211,7 +211,7 @@ theorem mongeAmpereMeasure_comp_affineEquiv (f : E → EReal) (A : E ≃ᵃ[ℝ]
         (mongeAmpereMeasure μ f).map A.symm := by
   ext s hs
   have hA : Measurable A.symm := (AffineEquiv.toContinuousAffineEquiv A.symm).continuous.measurable
-  rw [mongeAmpereMeasure_comp_affineEquiv_apply μ f A hs, Measure.smul_apply,
+  rw [mongeAmpereMeasure_comp_affineEquiv_apply μ f A hs, _root_.smul_apply,
     Measure.map_apply hA hs, smul_eq_mul, ← AffineEquiv.image_symm]
   simp
 

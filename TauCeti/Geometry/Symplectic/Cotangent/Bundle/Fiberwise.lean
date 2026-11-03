@@ -84,7 +84,7 @@ theorem mpullback_vectorBundleTranslateDiffeomorph_liouvilleForm (α : SmoothFor
   ext v
   rw [mpullback_liouvilleForm_apply_of_proj_eq (vectorBundleTranslateDiffeomorph _ _).contMDiff
       (fun _ ↦ by simp), vectorBundleTranslateDiffeomorph_apply]
-  simp [Fin.fin_one_eq_zero]
+  simp [Fin.fin_one_eq_zero, Matrix.vec_single_eq_const]
 
 /-- **Fibre dilation rescales the Liouville form.** Multiplying the fibres of the cotangent bundle
 by a nonzero real number `c` pulls the Liouville form back to `c • λ`. -/

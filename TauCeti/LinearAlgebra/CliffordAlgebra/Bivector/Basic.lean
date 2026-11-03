@@ -42,7 +42,8 @@ rotation.
   Clifford algebra satisfies `⁅f (bivector Q a b), f (ι Q x)⁆ =
   f (ι Q (QuadraticMap.polar Q b x • a - QuadraticMap.polar Q a x • b))`.
 * `CliffordAlgebra.ι_mul_ι_lie_ι`: the commutator of a product of two generators with a third,
-  valid without inverting `2`.
+  valid without inverting `2`; `CliffordAlgebra.commute_ι_mul_ι_ι_of_isOrtho`: it vanishes when
+  the third generator is orthogonal to the other two.
 * `CliffordAlgebra.ι_mul_ι_eq_bivector_add`: the product of two generators is
   its Clifford bivector plus its scalar symmetric part.
 * `CliffordAlgebra.bivector_eq_ι_mul_ι_of_isOrtho` and
@@ -364,6 +365,14 @@ theorem ι_mul_ι_lie_ι (a b x : M) :
     QuadraticMap.polar_comm Q x a, map_sub, map_smul, map_smul, Algebra.smul_def,
     Algebra.smul_def, mul_sub, sub_mul, ← Algebra.commutes (QuadraticMap.polar Q b x) (ι Q a)]
   noncomm_ring
+
+variable {Q} in
+omit [Invertible (2 : R)] in
+/-- The product of two generators commutes with every generator orthogonal to both. -/
+theorem commute_ι_mul_ι_ι_of_isOrtho {a b x : M} (ha : Q.IsOrtho a x) (hb : Q.IsOrtho b x) :
+    Commute (ι Q a * ι Q b) (ι Q x) := by
+  rw [commute_iff_lie_eq, ι_mul_ι_lie_ι, ha.polar_eq_zero, hb.polar_eq_zero, zero_smul,
+    zero_smul, sub_zero, map_zero]
 
 section Map
 
