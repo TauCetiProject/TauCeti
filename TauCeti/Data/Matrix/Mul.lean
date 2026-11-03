@@ -42,7 +42,7 @@ theorem pow_apply_pos_of_le (hA : ∀ i j, 0 ≤ A i j) {k : ℕ} (hk : 0 < k)
   -- Every row of `A` has a positive entry, since `A ^ k = A * A ^ (k - 1)` does.
   have hrow : ∀ i, ∃ l, 0 < A i l := fun i => by
     have h := hAk i i
-    rw [← Nat.sub_add_cancel hk, pow_succ', mul_apply] at h
+    rw [← Nat.sub_add_cancel hk, pow_succ', Matrix.mul_apply] at h
     obtain ⟨l, -, hl⟩ := Finset.exists_ne_zero_of_sum_ne_zero h.ne'
     exact ⟨l, (hA i l).lt_of_ne' (left_ne_zero_of_mul hl)⟩
   induction m, hkm using Nat.le_induction with
@@ -50,7 +50,7 @@ theorem pow_apply_pos_of_le (hA : ∀ i j, 0 ≤ A i j) {k : ℕ} (hk : 0 < k)
   | succ m _ ih =>
     intro i j
     obtain ⟨l, hl⟩ := hrow i
-    rw [pow_succ', mul_apply]
+    rw [pow_succ', Matrix.mul_apply]
     exact Finset.sum_pos' (fun l _ => mul_nonneg (hA i l) (ih l j).le)
       ⟨l, Finset.mem_univ l, mul_pos hl (ih l j)⟩
 
