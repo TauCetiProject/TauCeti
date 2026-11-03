@@ -15,14 +15,12 @@ public import Mathlib.NumberTheory.Padics.PadicVal.Basic
 Mathlib's `IsAddPGroup p A` says that every element `a` satisfies `p ^ k • a = 0` for some
 `k`. This file records the additional facts that the theory of pro-`p` actions on finite discrete
 coefficient modules needs: the normalized formula
-`Nat.card A = p ^ padicValNat p (Nat.card A)` and divisibility by `p` for a nontrivial finite
-`p`-group; the `AddMonoid`-level construction from an additive equivalence with `ZMod p`; and the
-effect on cardinality of adjoining to a subgroup `N` an element `x ∉ N` with `p • x ∈ N`.
+`Nat.card A = p ^ padicValNat p (Nat.card A)`; the `AddMonoid`-level construction from an additive
+equivalence with `ZMod p`; and the effect on cardinality of adjoining to a subgroup `N` an element
+`x ∉ N` with `p • x ∈ N`.
 
 ## Main results
 
-* `IsAddPGroup.prime_dvd_natCard_of_forall_exists_nsmul_eq_zero`: `p ∣ Nat.card A` for a nontrivial
-  finite `p`-primary additive group `A`.
 * `IsAddPGroup.natCard_eq_pow_padicValNat_of_forall_exists_nsmul_eq_zero`:
   `Nat.card A = p ^ padicValNat p (Nat.card A)` for a finite `p`-primary additive group `A`.
 * `TauCeti.forall_exists_nsmul_eq_zero_of_addEquiv_zmod`: an additive monoid additively
@@ -60,14 +58,6 @@ variable {p : ℕ}
 section AddGroup
 
 variable [hp : Fact p.Prime] {A : Type*} [AddGroup A]
-
-/-- A nontrivial finite additive group in which every element has `p`-power order has order
-divisible by `p`. -/
-theorem prime_dvd_natCard_of_forall_exists_nsmul_eq_zero [Finite A] [Nontrivial A]
-    (htors : IsAddPGroup p A) : p ∣ Nat.card A := by
-  obtain ⟨n, hn, hcard⟩ := htors.nontrivial_iff_card.mp inferInstance
-  rw [hcard]
-  exact dvd_pow_self p hn.ne'
 
 /-- A finite additive group in which every element has `p`-power order has order the power of
 `p` given by the `p`-adic valuation of its order. -/
