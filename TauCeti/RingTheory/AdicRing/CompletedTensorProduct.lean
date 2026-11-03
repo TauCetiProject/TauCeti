@@ -130,8 +130,9 @@ noncomputable instance : Algebra A (CompletedTensorProduct A B C) :=
 instance : IsScalarTower A (B ⊗[A] C) (CompletedTensorProduct A B C) :=
   inferInstanceAs (IsScalarTower A (B ⊗[A] C) (AdicCompletion (tensorIdeal A B C) (B ⊗[A] C)))
 
-/-- The algebraic carrier comparison with the adic completion of the ordinary tensor product.
-This identifies its inverse-limit projections without exposing the completed tensor carrier. -/
+/-- The identity `B ⊗[A] C`-algebra equivalence between the completed tensor product and its
+defining `tensorIdeal A B C`-adic completion of `B ⊗[A] C`. It transports completion-level maps,
+such as `AdicCompletion.toQuotient`, to the completed tensor product. -/
 noncomputable def adicCompletionEquiv :
     CompletedTensorProduct A B C ≃ₐ[B ⊗[A] C]
       AdicCompletion (tensorIdeal A B C) (B ⊗[A] C) :=

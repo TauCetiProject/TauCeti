@@ -26,6 +26,19 @@ public section
 
 open CategoryTheory Limits Opposite
 
+namespace Ideal
+
+variable {R : Type u} [CommRing R] (K : ℕ → Ideal R) (hK : Antitone K)
+
+/-- The inverse system of quotients by a decreasing sequence of ideals. -/
+noncomputable abbrev quotientDiagram : ℕᵒᵖ ⥤ CommRingCat.{u} where
+  obj n := CommRingCat.of (R ⧸ K n.unop)
+  map f := CommRingCat.ofHom (Ideal.Quotient.factor (hK (leOfHom f.unop)))
+  map_id _ := by ext x; rfl
+  map_comp _ _ := by ext x; rfl
+
+end Ideal
+
 namespace AdicCompletion
 
 variable {R : Type u} [CommRing R] (I : Ideal R)
@@ -69,17 +82,10 @@ theorem toQuotient_pow (n : ℕ) (h : ∃ k : ℕ, I ^ k ≤ I ^ n) :
 
 variable (K : ℕ → Ideal R) (hK : Antitone K)
 
-/-- The inverse system of quotients by a decreasing sequence of ideals. -/
-noncomputable abbrev quotientDiagram : ℕᵒᵖ ⥤ CommRingCat.{u} where
-  obj n := CommRingCat.of (R ⧸ K n.unop)
-  map f := CommRingCat.ofHom (Ideal.Quotient.factor (hK (leOfHom f.unop)))
-  map_id _ := by ext x; rfl
-  map_comp _ _ := by ext x; rfl
-
 variable (hopen : ∀ n, ∃ k : ℕ, I ^ k ≤ K n)
 
 /-- The cone from the adic completion to a decreasing system of open ideal quotients. -/
-noncomputable abbrev quotientCone : Cone (quotientDiagram K hK) where
+noncomputable abbrev quotientCone : Cone (Ideal.quotientDiagram K hK) where
   pt := CommRingCat.of (AdicCompletion I R)
   π.app n := CommRingCat.ofHom (toQuotient I (hopen n.unop))
   π.naturality _ _ f := by
@@ -92,12 +98,12 @@ variable (hle : ∀ n, K n ≤ I ^ n)
 as its limit in commutative rings. -/
 noncomputable def isLimitQuotientCone : IsLimit (quotientCone I K hK hopen) := by
   -- First reduce a compatible cone to the usual power quotients and lift to the completion.
-  let f (s : Cone (quotientDiagram K hK)) (n : ℕ) : s.pt →+* R ⧸ I ^ n :=
+  let f (s : Cone (Ideal.quotientDiagram K hK)) (n : ℕ) : s.pt →+* R ⧸ I ^ n :=
     (Ideal.Quotient.factor (hle n)).comp (s.π.app (op n)).hom
-  have hf (s : Cone (quotientDiagram K hK)) {m n : ℕ} (hmn : m ≤ n) :
+  have hf (s : Cone (Ideal.quotientDiagram K hK)) {m n : ℕ} (hmn : m ≤ n) :
       (Ideal.Quotient.factorPow I hmn).comp (f s n) = f s m := by
     have hs := congrArg CommRingCat.Hom.hom (s.w (homOfLE hmn).op)
-    simp only [CommRingCat.hom_comp, quotientDiagram, CommRingCat.hom_ofHom] at hs
+    simp only [CommRingCat.hom_comp, Ideal.quotientDiagram, CommRingCat.hom_ofHom] at hs
     ext x
     -- Expose the ring maps beneath the categorical cone and the local family `f`.
     change Ideal.Quotient.factorPow I hmn

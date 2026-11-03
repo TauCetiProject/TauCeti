@@ -76,7 +76,7 @@ noncomputable abbrev thickeningDiagram : ℕᵒᵖ ⥤ CommRingCat.{u} where
 
 /-- Levelwise, the tensor products of reductions are quotients by the separate-power ideals. -/
 noncomputable def thickeningDiagramIso : thickeningDiagram A B C ≅
-    AdicCompletion.quotientDiagram (truncationIdeal A B C) (truncationIdeal_antitone A B C) :=
+    Ideal.quotientDiagram (truncationIdeal A B C) (truncationIdeal_antitone A B C) :=
   NatIso.ofComponents
     (fun n ↦ (Algebra.TensorProduct.quotientTensorQuotientEquiv (A := A)
       (IsAdicRing.ideal B ^ (n.unop + 1))
@@ -84,7 +84,7 @@ noncomputable def thickeningDiagramIso : thickeningDiagram A B C ≅
     (by
       intro n m f
       apply CommRingCat.hom_ext
-      dsimp only [thickeningDiagram, AdicCompletion.quotientDiagram,
+      dsimp only [thickeningDiagram, Ideal.quotientDiagram,
         RingEquiv.toCommRingCatIso, CommRingCat.hom_comp, CommRingCat.hom_ofHom]
       ext b <;> simp)
 
@@ -116,20 +116,45 @@ theorem thickeningCone_π (n : ℕ) :
     (thickeningCone A B C).π.app (op n) = CommRingCat.ofHom (thickeningProjection A B C n) :=
   (rfl)
 
+/-- Projection is reduction to the separate-power quotient followed by the tensor comparison. -/
+theorem thickeningProjection_eq (n : ℕ) :
+    thickeningProjection A B C n =
+      (Algebra.TensorProduct.quotientTensorQuotientEquiv (A := A)
+        (IsAdicRing.ideal B ^ (n + 1)) (IsAdicRing.ideal C ^ (n + 1))).symm.toRingHom.comp
+          ((AdicCompletion.toQuotient (tensorIdeal A B C)
+            ⟨_, pow_le_truncationIdeal A B C n⟩).comp (adicCompletionEquiv A B C).toRingHom) := by
+  simp [thickeningProjection, thickeningCone, thickeningDiagramIso, NatIso.ofComponents,
+    RingEquiv.toCommRingCatIso, AdicCompletion.quotientCone, RingHom.comp_assoc]
+
+/-- Reduction from a deeper simultaneous thickening commutes with projection. -/
+@[simp]
+theorem thickeningProjection_comp_map {m n : ℕ} (h : m ≤ n) :
+    (Algebra.TensorProduct.map
+      (Ideal.Quotient.factorₐ A
+        (Ideal.pow_le_pow_right (I := IsAdicRing.ideal B) (Nat.succ_le_succ h)))
+      (Ideal.Quotient.factorₐ A
+        (Ideal.pow_le_pow_right (I := IsAdicRing.ideal C) (Nat.succ_le_succ h))) : _ →+* _).comp
+        (thickeningProjection A B C n) = thickeningProjection A B C m := by
+  have hw := (thickeningCone A B C).w (homOfLE h).op
+  rw [thickeningCone_π, thickeningCone_π] at hw
+  exact congrArg CommRingCat.Hom.hom hw
+
+/-- Maps into the completed tensor product are determined by their thickening projections. -/
+theorem thickeningProjection_ext {D : Type*} [NonAssocSemiring D]
+    {f g : D →+* CompletedTensorProduct A B C}
+    (h : ∀ n, (thickeningProjection A B C n).comp f =
+      (thickeningProjection A B C n).comp g) : f = g := by
+  ext x
+  apply Concrete.isLimit_ext _ (isLimitThickeningCone A B C)
+  intro n
+  exact RingHom.congr_fun (h n.unop) x
+
 /-- A represented ordinary tensor projects to the tensor of its two residue classes. -/
 @[simp]
 theorem thickeningProjection_algebraMap_tmul (n : ℕ) (b : B) (c : C) :
     thickeningProjection A B C n
       (algebraMap (B ⊗[A] C) (CompletedTensorProduct A B C) (b ⊗ₜ[A] c)) =
         Ideal.Quotient.mk _ b ⊗ₜ[A] Ideal.Quotient.mk _ c := by
-  -- Postcomposition conjugates the open-ideal projection by the levelwise quotient comparison.
-  change (Algebra.TensorProduct.quotientTensorQuotientEquiv (A := A)
-    (IsAdicRing.ideal B ^ (n + 1)) (IsAdicRing.ideal C ^ (n + 1))).symm
-      (AdicCompletion.toQuotient (tensorIdeal A B C) ⟨_, pow_le_truncationIdeal A B C n⟩
-        (adicCompletionEquiv A B C
-          (algebraMap (B ⊗[A] C) (CompletedTensorProduct A B C) (b ⊗ₜ[A] c)))) = _
-  rw [(adicCompletionEquiv A B C).commutes]
-  exact (congrArg _ (AdicCompletion.toQuotient_of _ _ _)).trans
-    (Algebra.TensorProduct.quotientTensorQuotientEquiv_symm_tmul _ _ b c)
+  simp [thickeningProjection_eq, AdicCompletion.algebraMap_apply]
 
 end TauCeti.AdicRing.CompletedTensorProduct
