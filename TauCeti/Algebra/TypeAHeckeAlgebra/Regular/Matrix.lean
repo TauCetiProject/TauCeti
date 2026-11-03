@@ -98,13 +98,11 @@ theorem heckeLeftMatrix_braid {i j : Fin (n - 1)}
     heckeLeftMatrix cs s i * heckeLeftMatrix cs s j * heckeLeftMatrix cs s i =
       heckeLeftMatrix cs s j * heckeLeftMatrix cs s i * heckeLeftMatrix cs s j := by
   classical
-  refine Matrix.identity_of_units
-    (fun _ _ t ↦ heckeLeftMatrix cs t i * heckeLeftMatrix cs t j * heckeLeftMatrix cs t i)
-    (fun _ _ t ↦ heckeLeftMatrix cs t j * heckeLeftMatrix cs t i * heckeLeftMatrix cs t j)
-    (by intros; simp [Matrix.map_mul, map_heckeLeftMatrix])
-    (by intros; simp [Matrix.map_mul, map_heckeLeftMatrix]) ?_ s
-  intro q
-  simp only [heckeLeftMatrix_eq_leftMulMatrix, ← map_mul, smul_mul_smul, T_braid h]
+  have hij : i ≠ j := by rintro rfl; omega
+  have hm : CoxeterMatrix.A (n - 1) i j = 3 := by
+    simp [CoxeterMatrix.A, hij, or_comm, h]
+  simpa [braidWord, ← (CoxeterMatrix.A (n - 1)).symmetric i j, hm,
+    alternatingWord, mul_assoc] using (cs.prod_map_heckeLeftMatrix_braidWord s i j).symm
 
 /-- The right regular Hecke matrices satisfy the adjacent braid relation. -/
 theorem heckeRightMatrix_braid {i j : Fin (n - 1)}
@@ -112,56 +110,35 @@ theorem heckeRightMatrix_braid {i j : Fin (n - 1)}
     heckeRightMatrix cs s i * heckeRightMatrix cs s j * heckeRightMatrix cs s i =
       heckeRightMatrix cs s j * heckeRightMatrix cs s i * heckeRightMatrix cs s j := by
   classical
-  refine Matrix.identity_of_units
-    (fun _ _ t ↦ heckeRightMatrix cs t i * heckeRightMatrix cs t j * heckeRightMatrix cs t i)
-    (fun _ _ t ↦ heckeRightMatrix cs t j * heckeRightMatrix cs t i * heckeRightMatrix cs t j)
-    (by intros; simp [Matrix.map_mul, map_heckeRightMatrix])
-    (by intros; simp [Matrix.map_mul, map_heckeRightMatrix]) ?_ s
-  intro q
-  simp only [heckeRightMatrix_eq_toMatrix, ← LinearMap.toMatrix_mul]
-  congr 1
-  ext x
-  simp only [mul_apply_eq_comp, LinearMap.mulRight_apply]
-  have hb : ((q : LaurentPolynomial R) • T q i) * ((q : LaurentPolynomial R) • T q j) *
-      ((q : LaurentPolynomial R) • T q i) =
-      ((q : LaurentPolynomial R) • T q j) * ((q : LaurentPolynomial R) • T q i) *
-        ((q : LaurentPolynomial R) • T q j) := by
-    simp only [smul_mul_smul, T_braid h]
-  simpa only [mul_assoc] using congrArg (fun a ↦ x * a) hb
+  have hij : i ≠ j := by rintro rfl; omega
+  have hm : CoxeterMatrix.A (n - 1) i j = 3 := by
+    simp [CoxeterMatrix.A, hij, or_comm, h]
+  simpa [braidWord, ← (CoxeterMatrix.A (n - 1)).symmetric i j, hm,
+    alternatingWord, mul_assoc] using (cs.prod_map_heckeRightMatrix_braidWord s i j).symm
 
 /-- Distant left regular Hecke matrices commute. -/
 theorem commute_heckeLeftMatrix {i j : Fin (n - 1)}
     (h : (i : ℕ) + 2 ≤ j ∨ (j : ℕ) + 2 ≤ i) :
     Commute (heckeLeftMatrix cs s i) (heckeLeftMatrix cs s j) := by
   classical
-  rw [commute_iff_eq]
-  refine Matrix.identity_of_units
-    (fun _ _ t ↦ heckeLeftMatrix cs t i * heckeLeftMatrix cs t j)
-    (fun _ _ t ↦ heckeLeftMatrix cs t j * heckeLeftMatrix cs t i)
-    (by intros; simp [Matrix.map_mul, map_heckeLeftMatrix])
-    (by intros; simp [Matrix.map_mul, map_heckeLeftMatrix]) ?_ s
-  intro q
-  rw [← commute_iff_eq, heckeLeftMatrix_eq_leftMulMatrix, heckeLeftMatrix_eq_leftMulMatrix]
-  exact (((commute_T h).smul_left (q : LaurentPolynomial R)).smul_right
-    (q : LaurentPolynomial R)).map _
+  have hij : i ≠ j := by rintro rfl; omega
+  have hm : CoxeterMatrix.A (n - 1) i j = 2 := by
+    simp only [CoxeterMatrix.A, Matrix.of_apply, ite_eq_right hij]
+    split_ifs <;> omega
+  simpa [commute_iff_eq, braidWord, ← (CoxeterMatrix.A (n - 1)).symmetric i j,
+    hm, alternatingWord] using cs.prod_map_heckeLeftMatrix_braidWord s i j
 
 /-- Distant right regular Hecke matrices commute. -/
 theorem commute_heckeRightMatrix {i j : Fin (n - 1)}
     (h : (i : ℕ) + 2 ≤ j ∨ (j : ℕ) + 2 ≤ i) :
     Commute (heckeRightMatrix cs s i) (heckeRightMatrix cs s j) := by
   classical
-  rw [commute_iff_eq]
-  refine Matrix.identity_of_units
-    (fun _ _ t ↦ heckeRightMatrix cs t i * heckeRightMatrix cs t j)
-    (fun _ _ t ↦ heckeRightMatrix cs t j * heckeRightMatrix cs t i)
-    (by intros; simp [Matrix.map_mul, map_heckeRightMatrix])
-    (by intros; simp [Matrix.map_mul, map_heckeRightMatrix]) ?_ s
-  intro q
-  rw [heckeRightMatrix_eq_toMatrix, heckeRightMatrix_eq_toMatrix,
-    ← LinearMap.toMatrix_mul, ← LinearMap.toMatrix_mul]
-  congr 1
-  ext x
-  simp [smul_smul, mul_assoc, (commute_T (q := q) h).eq]
+  have hij : i ≠ j := by rintro rfl; omega
+  have hm : CoxeterMatrix.A (n - 1) i j = 2 := by
+    simp only [CoxeterMatrix.A, Matrix.of_apply, ite_eq_right hij]
+    split_ifs <;> omega
+  simpa [commute_iff_eq, braidWord, ← (CoxeterMatrix.A (n - 1)).symmetric i j,
+    hm, alternatingWord] using cs.prod_map_heckeRightMatrix_braidWord s i j
 
 end TypeARelations
 

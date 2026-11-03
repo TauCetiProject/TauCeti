@@ -18,7 +18,7 @@ For any Coxeter system, we define the matrices of the rescaled regular Hecke gen
 without using a parameter-dependent quotient as their carrier. Their off-diagonal entries
 are `s`, their descent diagonal entries are `s² - 1`, and all other entries are zero.
 Both matrices are symmetric, commute with the opposite action, and satisfy the quadratic
-relation, even at nonunit parameters. The relations follow from the regular operators in
+and braid relations, even at nonunit parameters. The relations follow from the regular operators in
 `TauCeti.GroupTheory.Coxeter.Hecke.Operator` by polynomial specialization.
 
 At `s = √Q` their entries depend continuously on `Q`, including at `Q = 1`. For positive
@@ -141,6 +141,15 @@ theorem heckeRightMatrix_eq_toMatrix_heckeRightMul [DecidableEq W] (i : B) :
 
 end Operators
 
+/-- Inverting both carrier indices turns the left regular Hecke matrix into the right one. -/
+theorem heckeRightMatrix_eq_submatrix (s : R) (i : B) :
+    heckeRightMatrix cs s i = (heckeLeftMatrix cs s i).submatrix (·⁻¹) (·⁻¹) := by
+  classical
+  ext v w
+  have h : v⁻¹ = cs.simple i * w⁻¹ ↔ v = w * cs.simple i := by
+    rw [inv_eq_iff_eq_inv, _root_.mul_inv_rev, inv_inv, cs.inv_simple]
+  simp [Matrix.submatrix_apply, h, cs.isLeftDescent_inv_iff]
+
 section Relations
 
 variable [Fintype W] (s : R)
@@ -196,6 +205,53 @@ theorem heckeRightMatrix_mul_self [DecidableEq W] (i : B) :
   simp only [heckeRightMatrix_eq_toMatrix_heckeRightMul, ← LinearMap.toMatrix_mul,
     ← map_smul]
   simp [cs.heckeRightMul_mul_self, smul_add, smul_smul, mul_sub, sub_mul, sq, mul_assoc]
+
+open Classical in
+/-- Products of left regular Hecke matrices satisfy every Coxeter braid relation,
+including at nonunit parameters. -/
+theorem prod_map_heckeLeftMatrix_braidWord (i j : B) :
+    ((braidWord M i j).map (heckeLeftMatrix cs s)).prod =
+      ((braidWord M j i).map (heckeLeftMatrix cs s)).prod := by
+  classical
+  refine Matrix.identity_of_units
+    (fun _ _ t ↦ ((braidWord M i j).map (heckeLeftMatrix cs t)).prod)
+    (fun _ _ t ↦ ((braidWord M j i).map (heckeLeftMatrix cs t)).prod)
+    (by
+      intros
+      rw [← RingHom.mapMatrix_apply, map_list_prod]
+      simp only [List.map_map, Function.comp_def, RingHom.mapMatrix_apply,
+        map_heckeLeftMatrix])
+    (by
+      intros
+      rw [← RingHom.mapMatrix_apply, map_list_prod]
+      simp only [List.map_map, Function.comp_def, RingHom.mapMatrix_apply,
+        map_heckeLeftMatrix]) ?_ s
+  intro q
+  have hp (ω : List B) :
+      (ω.map (heckeLeftMatrix cs (q : LaurentPolynomial R))).prod =
+        LinearMap.toMatrix Finsupp.basisSingleOne Finsupp.basisSingleOne
+          ((q : LaurentPolynomial R) ^ ω.length •
+            (ω.map (cs.heckeLeftMul ((q : LaurentPolynomial R) - ↑q⁻¹))).prod) := by
+    induction ω with
+    | nil => simp
+    | cons k ω ih =>
+      simp [ih, heckeLeftMatrix_eq_toMatrix_heckeLeftMul, ← LinearMap.toMatrix_mul,
+        smul_smul, mul_comm, pow_succ']
+  rw [hp, hp, length_alternatingWord, length_alternatingWord, M.symmetric i j,
+    cs.prod_map_heckeLeftMul_braidWord]
+
+open Classical in
+/-- Products of right regular Hecke matrices satisfy every Coxeter braid relation,
+including at nonunit parameters. -/
+theorem prod_map_heckeRightMatrix_braidWord (i j : B) :
+    ((braidWord M i j).map (heckeRightMatrix cs s)).prod =
+      ((braidWord M j i).map (heckeRightMatrix cs s)).prod := by
+  classical
+  simpa only [map_list_prod, List.map_map, Matrix.coe_reindexAlgEquiv,
+    Function.comp_def, Matrix.reindex_apply, Equiv.inv_symm, Equiv.inv_apply,
+    ← heckeRightMatrix_eq_submatrix] using
+    congrArg (Matrix.reindexAlgEquiv R R (Equiv.inv W))
+      (prod_map_heckeLeftMatrix_braidWord cs s i j)
 
 end Relations
 
