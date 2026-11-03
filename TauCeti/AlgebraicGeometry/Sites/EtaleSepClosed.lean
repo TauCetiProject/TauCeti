@@ -256,16 +256,10 @@ equivalence from `A` to the sheaves on the small étale site of `Spec Ω` with v
 instance isEquivalence_constantSheaf :
     (constantSheaf (smallEtaleTopology (Spec (.of Ω))) A).IsEquivalence := by
   let adj := constantSheafΓAdj (smallEtaleTopology (Spec (.of Ω))) A
-  have (F : Sheaf (smallEtaleTopology (Spec (.of Ω))) A) : IsIso (adj.counit.app F) := by
-    -- The global sections of the counit are inverse to the unit, an isomorphism because the
-    -- constant sheaf functor is fully faithful on a local site.
-    have :
-        IsIso (adj.unit.app ((Sheaf.Γ _ A).obj F) ≫ (Sheaf.Γ _ A).map (adj.counit.app F)) := by
-      rw [adj.right_triangle_components F]
-      exact IsIso.id _
-    have := IsIso.of_isIso_comp_left (adj.unit.app ((Sheaf.Γ _ A).obj F))
-      ((Sheaf.Γ _ A).map (adj.counit.app F))
-    exact isIso_of_reflects_iso _ (Sheaf.Γ _ A)
+  -- The constant sheaf functor is fully faithful on a local site, so `Γ` maps the counit to an
+  -- isomorphism, and `Γ` reflects isomorphisms.
+  have (F : Sheaf (smallEtaleTopology (Spec (.of Ω))) A) : IsIso (adj.counit.app F) :=
+    isIso_of_reflects_iso (adj.counit.app F) (Sheaf.Γ _ A)
   exact adj.toEquivalence.isEquivalence_functor
 
 include FC CC in
