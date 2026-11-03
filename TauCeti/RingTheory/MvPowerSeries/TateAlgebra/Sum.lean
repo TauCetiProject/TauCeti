@@ -316,30 +316,14 @@ section Rename
 
 variable {σ' τ' υ : Type*} {ρ : υ → ℝ} [∀ k, Fact (0 < ρ k)]
 
-/-- Renaming along `e : α ≃ β`, from restricted series at polyradii `a` to restricted series at
-polyradii `b` with `b ∘ e = a`. -/
-private noncomputable def restrictedRenameOfEq {α β : Type*} (e : α ≃ β) {a : α → ℝ} {b : β → ℝ}
-    (h : b ∘ e = a) : IsRestricted.subring (R := R) a ≃ₐ[R] IsRestricted.subring (R := R) b :=
-  AlgEquiv.ofRingEquiv (f := (renameEquiv R e).toRingEquiv.restrict _ _ fun _ ↦ by
-    subst h; exact (isRestricted_renameEquiv_iff e).symm) fun r ↦ Subtype.ext (rename_C _ r)
-
-omit [∀ k, Fact (0 < ρ k)] in
-private theorem norm_restrictedRenameOfEq {α β : Type*} (e : α ≃ β) {a : α → ℝ} {b : β → ℝ}
-    [∀ i, Fact (0 < a i)] [∀ j, Fact (0 < b j)] (h : b ∘ e = a)
-    (f : IsRestricted.subring (R := R) a) : ‖restrictedRenameOfEq e h f‖ = ‖f‖ := by
-  subst h
-  -- both maps are `renameEquiv R e` on the underlying series
-  rw [show restrictedRenameOfEq e rfl f = IsRestricted.renameAlgEquiv e b f from Subtype.ext
-    (IsRestricted.coe_renameAlgEquiv e b f).symm,
-    IsRestricted.norm_renameAlgEquiv]
-
 /-- **Reassociating three families of variables.** Renaming along `Equiv.sumAssoc` is an
 `R`-algebra isomorphism `R{(X, Y)/(c, d), Z/ρ} ≃ R{X/c, (Y, Z)/(d, ρ)}`, preserving the Gauss
 norms. -/
 noncomputable def restrictedSumAssoc :
     IsRestricted.subring (R := R) (Sum.elim (Sum.elim c d) ρ) ≃ₐ[R]
       IsRestricted.subring (R := R) (Sum.elim c (Sum.elim d ρ)) :=
-  restrictedRenameOfEq (Equiv.sumAssoc σ τ υ) (by funext x; rcases x with (i | j) | k <;> rfl)
+  IsRestricted.renameAlgEquivOfEq (Equiv.sumAssoc σ τ υ) _
+    (by funext x; rcases x with (i | j) | k <;> rfl)
 
 omit [∀ i, Fact (0 < c i)] [∀ j, Fact (0 < d j)] [∀ k, Fact (0 < ρ k)] in
 /-- `restrictedSumAssoc` renames the underlying series along `Equiv.sumAssoc`. -/
@@ -347,13 +331,13 @@ omit [∀ i, Fact (0 < c i)] [∀ j, Fact (0 < d j)] [∀ k, Fact (0 < ρ k)] in
 theorem coe_restrictedSumAssoc (f : IsRestricted.subring (R := R) (Sum.elim (Sum.elim c d) ρ)) :
     (restrictedSumAssoc f : MvPowerSeries (σ ⊕ (τ ⊕ υ)) R) =
       rename (Equiv.sumAssoc σ τ υ) (f : MvPowerSeries ((σ ⊕ τ) ⊕ υ) R) :=
-  (rfl)
+  IsRestricted.coe_renameAlgEquivOfEq _ _ _ f
 
 /-- `restrictedSumAssoc` preserves the Gauss norms. -/
 @[simp]
 theorem norm_restrictedSumAssoc (f : IsRestricted.subring (R := R) (Sum.elim (Sum.elim c d) ρ)) :
     ‖restrictedSumAssoc f‖ = ‖f‖ :=
-  norm_restrictedRenameOfEq _ _ f
+  IsRestricted.norm_renameAlgEquivOfEq _ _ _ f
 
 /-- `restrictedSumAssoc` is an isometry for the Gauss norms. -/
 theorem isometry_restrictedSumAssoc :
@@ -361,8 +345,9 @@ theorem isometry_restrictedSumAssoc :
   AddMonoidHomClass.isometry_iff_norm _ |>.mpr norm_restrictedSumAssoc
 
 /-- **Iteration is associative.** Separating the last family `Z` from `R{X/c, Y/d, Z/ρ}` and then
-`Y` from the coefficients gives the same series in `X` over `R{Z/ρ}{Y/d}` as reassociating,
-separating `(Y, Z)` and then separating `Z` coefficientwise. -/
+`Y` from the remaining outer family `(X, Y)`, over the coefficient ring `R{Z/ρ}`, gives the same
+series in `X` over `R{Z/ρ}{Y/d}` as reassociating, separating `(Y, Z)` and then separating `Z`
+coefficientwise. -/
 theorem map_restrictedSumEquiv_restrictedSumAssoc
     (f : IsRestricted.subring (R := R) (Sum.elim (Sum.elim c d) ρ)) :
     map (restrictedSumEquiv (R := R) (c := d) (d := ρ) :
@@ -388,7 +373,8 @@ variable (e₁ : σ' ≃ σ) (e₂ : τ' ≃ τ)
 preserving the Gauss norms. -/
 noncomputable def restrictedSumCongr :
     IsRestricted.subring (R := R) (Sum.elim (c ∘ e₁) (d ∘ e₂)) ≃ₐ[R] Flat :=
-  restrictedRenameOfEq (Equiv.sumCongr e₁ e₂) (by funext x; rcases x with i | j <;> rfl)
+  IsRestricted.renameAlgEquivOfEq (Equiv.sumCongr e₁ e₂) _
+    (by funext x; rcases x with i | j <;> rfl)
 
 omit [∀ i, Fact (0 < c i)] [∀ j, Fact (0 < d j)] in
 /-- `restrictedSumCongr` renames the underlying series along `Equiv.sumCongr`. -/
@@ -396,13 +382,13 @@ omit [∀ i, Fact (0 < c i)] [∀ j, Fact (0 < d j)] in
 theorem coe_restrictedSumCongr (f : IsRestricted.subring (R := R) (Sum.elim (c ∘ e₁) (d ∘ e₂))) :
     (restrictedSumCongr e₁ e₂ f : MvPowerSeries (σ ⊕ τ) R) =
       rename (Equiv.sumCongr e₁ e₂) (f : MvPowerSeries (σ' ⊕ τ') R) :=
-  (rfl)
+  IsRestricted.coe_renameAlgEquivOfEq _ _ _ f
 
 /-- `restrictedSumCongr` preserves the Gauss norms. -/
 @[simp]
 theorem norm_restrictedSumCongr (f : IsRestricted.subring (R := R) (Sum.elim (c ∘ e₁) (d ∘ e₂))) :
     ‖restrictedSumCongr e₁ e₂ f‖ = ‖f‖ :=
-  norm_restrictedRenameOfEq _ _ f
+  IsRestricted.norm_renameAlgEquivOfEq _ _ _ f
 
 /-- `restrictedSumCongr` is an isometry for the Gauss norms. -/
 theorem isometry_restrictedSumCongr :
