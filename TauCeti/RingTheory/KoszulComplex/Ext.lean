@@ -64,6 +64,16 @@ def extToCohomology :
   (ChainComplex.extToHomology R (koszulComplex φ) N 1 0).comp
     (extLinearEquivOfIso R (homologyZeroEquiv φ).symm.toModuleIso (Iso.refl N) 1).toLinearMap
 
+/-- The Ext-to-Koszul comparison is the universal-coefficient map transported along the
+identification of zeroth Koszul homology with the quotient by the image ideal. -/
+theorem extToCohomology_def :
+    letI : Projective ((koszulComplex φ).cycles 0) := by infer_instance
+    letI : IsSplitMono ((koszulComplex φ).iCycles 0) := by infer_instance
+    extToCohomology φ N =
+      (ChainComplex.extToHomology R (koszulComplex φ) N 1 0).comp
+        (extLinearEquivOfIso R (homologyZeroEquiv φ).symm.toModuleIso (Iso.refl N) 1).toLinearMap :=
+  (rfl)
+
 /-- The Ext-to-Koszul comparison is injective; no exactness of the Koszul complex is needed. -/
 @[stacks 05EE "injectivity, with the image ideal of an arbitrary functional"]
 theorem extToCohomology_injective : Function.Injective (extToCohomology φ N) :=
