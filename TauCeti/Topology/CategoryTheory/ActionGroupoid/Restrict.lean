@@ -47,13 +47,6 @@ section Monoid
 variable {M X : Type*} [Monoid M] [MulAction M X] (U : SubMulAction M X)
   [TopologicalSpace M] [TopologicalSpace X]
 
-/-- The inclusion of the action groupoid on an invariant subset is an embedding on total arrows.
-In label-source coordinates it is the product of the identity of `M` and the inclusion of the
-subset. -/
-theorem isEmbedding_mapTotal_restrict : IsEmbedding (restrict U).toPrefunctor.mapTotal := by
-  rw [restrict_eq_map]
-  exact isEmbedding_mapTotal_map _ _ IsEmbedding.id IsEmbedding.subtypeVal
-
 /-- For an open invariant subset `U`, the nerve of `M ⋉ U` is levelwise an open subspace of the
 nerve of `M ⋉ X`. -/
 theorem isOpenEmbedding_topologicalNerveMap_restrict (hU : IsOpen (U : Set X))

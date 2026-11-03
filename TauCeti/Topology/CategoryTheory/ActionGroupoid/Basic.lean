@@ -28,7 +28,9 @@ composition and source charts are also available for monoid actions.
 In these coordinates, the functor `CategoryTheory.ActionCategory.map φ f` induced by a map `f`
 equivariant along a homomorphism `φ` acts on total arrows as `Prod.map φ f`
 (`TauCeti.ActionGroupoid.mapTotal_map_eq`), so it is continuous, an embedding, or an open
-embedding on total arrows when `φ` and `f` both are.
+embedding on total arrows when `φ` and `f` both are. In particular, the inclusion
+`CategoryTheory.ActionCategory.restrict U` of the action groupoid on an invariant subset is an
+embedding on total arrows (`TauCeti.ActionGroupoid.isEmbedding_mapTotal_restrict`).
 
 ## References
 
@@ -262,6 +264,20 @@ theorem isOpenEmbedding_mapTotal_map (hφ : IsOpenEmbedding φ) (hf : IsOpenEmbe
     ((hφ.prodMap hf).comp (arrowHomeomorph G X).isOpenEmbedding)
 
 end Map
+
+section Restrict
+
+variable {M X : Type*} [Monoid M] [MulAction M X] (U : SubMulAction M X)
+  [TopologicalSpace M] [TopologicalSpace X]
+
+/-- The inclusion of the action groupoid on an invariant subset is an embedding on total arrows.
+In label-source coordinates it is the product of the identity of `M` and the inclusion of the
+subset. -/
+theorem isEmbedding_mapTotal_restrict : IsEmbedding (restrict U).toPrefunctor.mapTotal := by
+  rw [restrict_eq_map]
+  exact isEmbedding_mapTotal_map _ _ IsEmbedding.id IsEmbedding.subtypeVal
+
+end Restrict
 
 section Group
 
