@@ -309,6 +309,7 @@ theorem rSeries_zero : rSeries φ (0 : A) = 0 := by
 
 /-- For a normalised `φ`, the R-series of the scalar `c • 1` is the constant `c`: its only nonzero
 free cumulant is its mean. -/
+@[simp]
 theorem rSeries_algebraMap (hφ : φ 1 = 1) (c : R) :
     rSeries φ (algebraMap R A c) = PowerSeries.C c := by
   simpa using rSeries_add_algebraMap hφ 0 c
