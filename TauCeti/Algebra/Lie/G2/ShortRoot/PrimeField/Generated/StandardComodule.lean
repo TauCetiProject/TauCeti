@@ -202,12 +202,8 @@ private theorem coe_rootSubgroupPoints_one : ∀ j : Fin 2 ⊕ Fin 2,
     simp [unitRootMatrix, Matrix.map_add]
 
 private theorem weightCharacter_weight_injective :
-    Function.Injective fun a : Fin 7 ↦ SplitTorus.weightCharacter (weight a) := by
-  intro a b h
-  apply weight_injective
-  funext i
-  simpa only [SplitTorus.toAdd_weightCharacter] using
-    congrArg (fun χ : Multiplicative (Fin 2 →₀ ℤ) ↦ Multiplicative.toAdd χ i) h
+    Function.Injective fun a : Fin 7 ↦ SplitTorus.weightCharacter (weight a) :=
+  SplitTorus.weightCharacter_injective.comp weight_injective
 
 /-- The torus separates the weight lines, so a subcomodule contains the coordinate vector at every
 index where one of its vectors is nonzero. -/
