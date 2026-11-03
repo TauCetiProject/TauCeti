@@ -63,7 +63,7 @@ noncomputable section
 variable (n : ℕ) (hn : 4 ≤ n) (R : Type u) [CommRing R]
 
 /-- The spin representation of the positive subgroup generated over `R`. -/
-@[instance_reducible]
+@[expose, instance_reducible]
 def standardComodule : Comodule R (coordinateHopfAlgebra n hn R) (Fin (dimension n) → R) :=
   GeneralLinear.corestrictStandardComodule R (dimension n)
     (CommHopfAlgCat.mkQuotient _ (definingIdeal n hn R)).hom

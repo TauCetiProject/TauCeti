@@ -13,7 +13,7 @@ import TauCeti.Algebra.AlgebraicGroup.Solvable.LieKolchin
 import TauCeti.Algebra.Coalgebra.Comodule.Flag.Basic
 import TauCeti.Algebra.Coalgebra.Subcomodule.Coordinate
 import TauCeti.Algebra.Coalgebra.Subcomodule.Corestrict
-import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.StandardComodule.Quotient
+import TauCeti.Algebra.Lie.Orthogonal.TypeD.SpinCarrier.Generated.Positive.StandardComodule
 
 /-!
 # Solvable overgroups of the positive type-D spin subgroup
@@ -51,18 +51,6 @@ noncomputable section
 
 variable (n : ℕ) (hn : 4 ≤ n) {k : Type u} [Field k]
 
-private theorem rootPoint_matrix (i : Fin n) (A : CommAlgCat.{u} k)
-    (p : HopfAlgebra.points (R := k) (H := AdditiveGroup.coordinateHopfAlgebra k) A) :
-    GeneralLinear.pointToGeneralLinear (dimension n)
-        (toConv (p.ofConv.comp (generatorCoordinateMap n hn k (.inl (.inl i))).hom.toAlgHom)) =
-      (rootSubgroupPoints n hn (.inl i) A (AdditiveGroup.gaPointsMulEquiv p) :
-        Matrix.GeneralLinearGroup (Fin (dimension n)) A) := by
-  have h := pointToGeneralLinear_mapDomain_generatedCoordinateLift_inl_eq_rootSubgroupPoints
-    n hn k (.inl i) A p
-  rw [← generatedCoordinateMap_comp_generatedCoordinateLift]
-  simpa only [BialgHom.mapDomain_apply, _root_.CommHopfAlgCat.hom_comp,
-    BialgHom.comp_toAlgHom, AlgHom.comp_assoc] using h
-
 private theorem single_mem_of_raising_step
     (J : HopfIdeal k (GeneralLinear.coordinateHopfAlgebra k (dimension n)))
     (hJ : J ≤ definingIdeal n hn k) :
@@ -76,17 +64,28 @@ private theorem single_mem_of_raising_step
     (Bialgebra.Quotient.mkBialgHom (R := k) J.toIdeal)
   dsimp only
   intro N i a ha hv
-  let p := (AdditiveGroup.gaPointsMulEquiv (R := k) (A := k)).symm
-    (Multiplicative.ofAdd (1 : k))
-  have hmem := GeneralLinear.quotientStandardComodule_mulVec_mem k (dimension n) J
-    (generatorCoordinateMap n hn k (.inl (.inl i)))
-    (((le_definingIdeal_iff n hn k J).mp hJ).1 i) N p hv
-  rw [rootPoint_matrix n hn i (CommAlgCat.of k k) p, MulEquiv.apply_symm_apply] at hmem
-  obtain ⟨c, hc⟩ := exists_rootSubgroupPoints_inl_mulVec_single_sub n hn i ha
-    (signSet_basisReflection n i a).symm k
-  have hmove := N.toSubmodule.sub_mem hmem hv
-  rw [hc, toAdd_ofAdd, one_mul] at hmove
-  exact (Submodule.smul_mem_iff_of_isUnit _ (c.isUnit.map (Int.castRingHom k))).mp hmove
+  let f := CommHopfAlgCat.quotientMapOfLe
+    (GeneralLinear.coordinateHopfAlgebra k (dimension n)) hJ
+  have hcomodule : Comodule.Corestrict f.hom.toCoalgHom = standardComodule n hn k := by
+    let _ := GeneralLinear.standardComodule k (dimension n)
+    apply Comodule.ext
+    rw [Comodule.corestrict_coact, ← Comodule.corestrictCoact_comp (M := Fin (dimension n) → k)
+      (Bialgebra.Quotient.mkBialgHom (R := k) J.toIdeal).toCoalgHom f.hom.toCoalgHom]
+    have hcomp := congrArg (fun g : _root_.CommHopfAlgCat.Hom _ _ ↦ g.hom.toCoalgHom)
+      (CommHopfAlgCat.mkQuotient_comp_quotientMapOfLe
+        (GeneralLinear.coordinateHopfAlgebra k (dimension n)) hJ)
+    rw [show f.hom.toCoalgHom.comp
+        (Bialgebra.Quotient.mkBialgHom (R := k) J.toIdeal).toCoalgHom =
+        (CommHopfAlgCat.mkQuotient _ (definingIdeal n hn k)).hom.toCoalgHom from hcomp]
+    rfl
+  have hraise : let _ := Comodule.Corestrict (M := Fin (dimension n) → k) f.hom.toCoalgHom
+      ∀ W : Subcomodule k (coordinateHopfAlgebra n hn k) (Fin (dimension n) → k),
+        Pi.single a (1 : k) ∈ W → Pi.single (basisReflection n i a) (1 : k) ∈ W := by
+    rw [hcomodule]
+    exact fun W ↦ single_basisReflection_mem n hn k W i a ha
+  exact (Subcomodule.mem_corestrict f.hom.toCoalgHom N _).mp
+    (hraise (N.corestrict f.hom.toCoalgHom)
+      ((Subcomodule.mem_corestrict f.hom.toCoalgHom N _).mpr hv))
 
 variable [IsAlgClosed k]
 
