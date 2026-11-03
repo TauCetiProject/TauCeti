@@ -91,6 +91,7 @@ theorem killingForm_cartan_cartan [Fintype B.normTwoShell] (hB : B.PosDef)
   simp [LinearMap.toMatrix_apply, hr, mul_comm]
 
 /-- **Cartan vectors are Killing orthogonal to root vectors**: `κ(H_h, x_a) = 0`. -/
+@[simp]
 theorem killingForm_cartan_root_eq_zero (hB : B.PosDef)
     (hev : ∀ i, Even (B i i)) (h : I → ℤ) (a : B.normTwoShell) :
     letI := lieRing hB hev
@@ -105,6 +106,7 @@ theorem killingForm_cartan_root_eq_zero (hB : B.PosDef)
   omega
 
 /-- **Root vectors are Killing orthogonal to Cartan vectors**: `κ(x_a, H_h) = 0`. -/
+@[simp]
 theorem killingForm_root_cartan_eq_zero (hB : B.PosDef)
     (hev : ∀ i, Even (B i i)) (a : B.normTwoShell) (h : I → ℤ) :
     letI := lieRing hB hev
@@ -114,6 +116,7 @@ theorem killingForm_root_cartan_eq_zero (hB : B.PosDef)
 
 /-- **Root vectors of non-opposite roots are Killing orthogonal**: `κ(x_a, x_b) = 0` for
 `a + b ≠ 0`. -/
+@[simp]
 theorem killingForm_root_root_eq_zero_of_add_ne_zero (hB : B.PosDef)
     (hev : ∀ i, Even (B i i)) {a b : B.normTwoShell} (hab : (a : I → ℤ) + b ≠ 0) :
     letI := lieRing hB hev
