@@ -36,6 +36,12 @@ def HasValidLabel (r : PassportRecord n) : Prop :=
   ∃ L : PassportLabel n, parsePassportLabel n r.plabel = some L ∧
     L.groupNumber = r.group ∧ (L.lam0, L.lam1, L.laminf) = r.lambdas
 
+/-- A full-label certificate supplies a successful parse whose group and partitions agree
+with the stored fields. -/
+theorem hasValidLabel_iff :
+    r.HasValidLabel ↔ ∃ L : PassportLabel n, parsePassportLabel n r.plabel = some L ∧
+      L.groupNumber = r.group ∧ (L.lam0, L.lam1, L.laminf) = r.lambdas := (Iff.rfl)
+
 /-- The full-label certificate is decidable by parsing and comparing finite data. -/
 instance : Decidable r.HasValidLabel :=
   match h : parsePassportLabel n r.plabel with
