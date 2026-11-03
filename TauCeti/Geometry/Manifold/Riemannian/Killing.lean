@@ -142,8 +142,8 @@ theorem _root_.CovariantDerivative.IsMetricCompatible.isKillingField_iff
     IsKillingField I X ↔ CMDiff ∞ (T% X) ∧
       ∀ (x : M) (u v : TangentSpace I x), inner ℝ (cov X x u) v = -inner ℝ u (cov X x v) := by
   refine ⟨fun h ↦ ⟨h.contMDiff, fun x u v ↦ ?_⟩, fun ⟨hX, h⟩ ↦ ⟨hX, fun Y Z hY hZ x ↦ ?_⟩⟩
-  · obtain ⟨Y, hY, rfl⟩ := FiberBundle.exists_contMDiff_section_eq I E u
-    obtain ⟨Z, hZ, rfl⟩ := FiberBundle.exists_contMDiff_section_eq I E v
+  · obtain ⟨Y, hY, rfl⟩ := FiberBundle.exists_contMDiff_section_eq I E ∞ u
+    obtain ⟨Z, hZ, rfl⟩ := FiberBundle.exists_contMDiff_section_eq I E ∞ v
     have hLie := hcov.mvfderiv_inner_sub_inner_mlieBracket ht
       (h.contMDiff.mdifferentiable (by simp) x) (hY.mdifferentiable (by simp) x)
       (hZ.mdifferentiable (by simp) x)
@@ -182,8 +182,8 @@ theorem IsKillingField.inner_secondCovariantDerivative_eq_neg (h : IsKillingFiel
       -inner ℝ v (cov.secondCovariantDerivative cov X x u w) := by
   have hX := h.contMDiff
   have hskew := h.inner_covariantDerivative_eq_neg hcov ht
-  obtain ⟨V, hV, rfl⟩ := FiberBundle.exists_contMDiff_section_eq I E v
-  obtain ⟨W, hW, rfl⟩ := FiberBundle.exists_contMDiff_section_eq I E w
+  obtain ⟨V, hV, rfl⟩ := FiberBundle.exists_contMDiff_section_eq I E ∞ v
+  obtain ⟨W, hW, rfl⟩ := FiberBundle.exists_contMDiff_section_eq I E ∞ w
   -- The fields `A = ∇_V X` and `B = ∇_W X` satisfy `⟪A, W⟫ + ⟪V, B⟫ = 0` identically.
   set A : Π y : M, TangentSpace I y := fun y ↦ cov X y (V y)
   set B : Π y : M, TangentSpace I y := fun y ↦ cov X y (W y)
@@ -346,7 +346,7 @@ theorem IsKillingField.alongCurveWithin_alongCurveWithin_eq (h : IsKillingField 
     -(leviCivitaConnection I M).curvatureTensor (γ t) ξ u u
   rw [← sub_eq_zero, ← inner_self_eq_zero (𝕜 := ℝ)]
   -- Test the Jacobi defect `q` against a smooth field `Z` with `Z (γ t) = q`.
-  obtain ⟨Z, hZ, hZt⟩ := FiberBundle.exists_contMDiff_section_eq I E q
+  obtain ⟨Z, hZ, hZt⟩ := FiberBundle.exists_contMDiff_section_eq I E ∞ q
   have hD := h.inner_alongCurveWithin_alongCurveWithin_eq hγ ht hZ
   rw [h.secondCovariantDerivative_eq_curvatureTensor hcov htor, hZt] at hD
   rw [inner_sub_left, hD, inner_neg_left]

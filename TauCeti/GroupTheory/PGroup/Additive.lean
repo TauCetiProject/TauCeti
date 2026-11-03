@@ -12,25 +12,19 @@ public import Mathlib.NumberTheory.Padics.PadicVal.Basic
 /-!
 # Additive groups in which every element has `p`-power order
 
-Mathlib's `IsPGroup` is stated for multiplicative groups. This file records the facts about a
-`p`-primary *additive* group `A`, one in which every element `a` satisfies `p ^ k • a = 0` for
-some `k`, that the theory of pro-`p` actions on finite discrete coefficient modules needs, in
-additive notation: the order of a finite such group is a power of `p`, namely
-`p ^ padicValNat p (Nat.card A)`, and is divisible by `p` when the group is nontrivial; a monoid
-additively equivalent to `ZMod p` is `p`-primary; a subgroup of a `p`-primary group is
-`p`-primary; and adjoining to a subgroup `N` an element `x ∉ N` with `p • x ∈ N` multiplies the
-order of `N` by `p`.
+Mathlib's `IsAddPGroup p A` says that every element `a` satisfies `p ^ k • a = 0` for some
+`k`. This file records the additional facts that the theory of pro-`p` actions on finite discrete
+coefficient modules needs: the normalized formula
+`Nat.card A = p ^ padicValNat p (Nat.card A)`; the `AddMonoid`-level construction from an additive
+equivalence with `ZMod p`; and the effect on cardinality of adjoining to a subgroup `N` an element
+`x ∉ N` with `p • x ∈ N`.
 
 ## Main results
 
-* `TauCeti.prime_dvd_natCard_of_forall_exists_nsmul_eq_zero`: `p ∣ Nat.card A` for a nontrivial
-  finite `p`-primary additive group `A`.
-* `TauCeti.natCard_eq_pow_padicValNat_of_forall_exists_nsmul_eq_zero`:
+* `IsAddPGroup.natCard_eq_pow_padicValNat_of_forall_exists_nsmul_eq_zero`:
   `Nat.card A = p ^ padicValNat p (Nat.card A)` for a finite `p`-primary additive group `A`.
 * `TauCeti.forall_exists_nsmul_eq_zero_of_addEquiv_zmod`: an additive monoid additively
   equivalent to `ZMod p` is `p`-primary.
-* `AddSubgroup.forall_exists_nsmul_eq_zero`: an additive subgroup of a `p`-primary additive group
-  is `p`-primary.
 * `TauCeti.subquotientEquivZModOfEqSupZmultiples`: adjoining `x ∉ N` with `p • x ∈ N`
   gives a quotient additively equivalent to `ZMod p`, sending the class of `x` to `1`.
 * `TauCeti.natCard_sup_zmultiples_of_nsmul_mem`: `|N ⊔ zmultiples x| = p * |N|` when `x ∉ N` and
@@ -55,47 +49,31 @@ theorem forall_exists_nsmul_eq_zero_of_addEquiv_zmod (e : A ≃+ ZMod p) :
 
 end AddMonoid
 
-section AddSubgroup
+end TauCeti
 
-variable {A : Type*} [AddGroup A]
+namespace IsAddPGroup
 
-/-- An additive subgroup of a `p`-primary additive group is `p`-primary: every element of `N` has
-`p`-power order when every element of the ambient group `A` does. -/
-theorem _root_.AddSubgroup.forall_exists_nsmul_eq_zero (N : AddSubgroup A)
-    (h : ∀ a : A, ∃ k : ℕ, p ^ k • a = 0) : ∀ x : N, ∃ k : ℕ, p ^ k • x = 0 := fun x ↦
-  let ⟨k, hk⟩ := h x
-  ⟨k, Subtype.ext hk⟩
-
-end AddSubgroup
+variable {p : ℕ}
 
 section AddGroup
 
 variable [hp : Fact p.Prime] {A : Type*} [AddGroup A]
 
-/-- A nontrivial finite additive group in which every element has `p`-power order has order
-divisible by `p`. -/
-theorem prime_dvd_natCard_of_forall_exists_nsmul_eq_zero [Finite A] [Nontrivial A]
-    (htors : ∀ a : A, ∃ k : ℕ, p ^ k • a = 0) : p ∣ Nat.card A := by
-  have hA : IsPGroup p (Multiplicative A) := fun a ↦ by
-    obtain ⟨k, hk⟩ := htors a.toAdd
-    exact ⟨k, by rw [← ofAdd_toAdd a, ← ofAdd_nsmul, hk, ofAdd_zero]⟩
-  obtain ⟨n, hn, hcard⟩ := hA.nontrivial_iff_card.mp inferInstance
-  rw [← Nat.card_congr (Multiplicative.toAdd (α := A)), hcard]
-  exact dvd_pow_self p hn.ne'
-
 /-- A finite additive group in which every element has `p`-power order has order the power of
 `p` given by the `p`-adic valuation of its order. -/
 theorem natCard_eq_pow_padicValNat_of_forall_exists_nsmul_eq_zero [Finite A]
-    (htors : ∀ a : A, ∃ k : ℕ, p ^ k • a = 0) :
+    (htors : IsAddPGroup p A) :
     Nat.card A = p ^ padicValNat p (Nat.card A) := by
-  have hA : IsPGroup p (Multiplicative A) := fun a ↦ by
-    obtain ⟨k, hk⟩ := htors a.toAdd
-    exact ⟨k, by rw [← ofAdd_toAdd a, ← ofAdd_nsmul, hk, ofAdd_zero]⟩
-  obtain ⟨n, hcard⟩ := IsPGroup.iff_card.mp hA
-  rw [← Nat.card_congr (Multiplicative.toAdd (α := A)), hcard, Nat.padicValNat_def,
-    Nat.multiplicity_prime_pow]
+  obtain ⟨n, hcard⟩ := IsAddPGroup.iff_card.mp htors
+  rw [hcard, Nat.padicValNat_def, Nat.multiplicity_prime_pow]
 
 end AddGroup
+
+end IsAddPGroup
+
+namespace TauCeti
+
+variable {p : ℕ}
 
 section AddCommGroup
 
