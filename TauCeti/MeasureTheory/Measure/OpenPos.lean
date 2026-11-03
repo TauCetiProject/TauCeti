@@ -8,7 +8,7 @@ module
 public import Mathlib.MeasureTheory.Measure.OpenPos
 
 /-!
-# Measures positive on open sets: balls and almost-everywhere inclusions
+# Consequences of positivity on open sets
 
 Mathlib's `Metric.measure_ball_pos` says that a measure positive on nonempty open sets gives
 positive measure to every ball of positive radius. In a proper space, where balls are bounded and
@@ -21,6 +21,9 @@ An almost-everywhere inclusion of an open set in another set implies inclusion i
 In particular, two almost-everywhere equal open sets have the same closure. Taking interiors
 then shows that regular open sets are determined by their almost-everywhere classes.
 
+On a discrete space, such a measure charges every point, so the only null set is empty and
+almost everywhere means everywhere.
+
 ## Main results
 
 * `IsOpen.subset_closure_of_ae_le`: an open set lies in the closure of any set containing it a.e.
@@ -30,6 +33,8 @@ then shows that regular open sets are determined by their almost-everywhere clas
   measure.
 * `Metric.eventually_measure_closedBall_ne_zero_ne_top`: closed balls of small positive radius
   have positive finite measure.
+* `MeasureTheory.ae_eq_top_of_discreteTopology`: on a discrete space, for a measure positive on
+  open sets, almost everywhere means everywhere.
 -/
 
 public section
@@ -97,6 +102,13 @@ theorem _root_.Metric.eventually_measure_closedBall_ne_zero_ne_top {X : Type*}
   filter_upwards [Ioo_mem_nhdsGT hε] with r hr
   exact ⟨(Metric.measure_closedBall_pos μ x hr.1).ne',
     ((measure_mono ((Metric.closedBall_subset_ball hr.2).trans hεU)).trans_lt hUμ).ne⟩
+
+/-- On a discrete space, a measure positive on nonempty open sets charges every point, so
+almost everywhere means everywhere. -/
+theorem _root_.MeasureTheory.ae_eq_top_of_discreteTopology {α : Type*} [TopologicalSpace α]
+    [DiscreteTopology α] [MeasurableSpace α] (μ : Measure α) [μ.IsOpenPosMeasure] :
+    ae μ = ⊤ :=
+  ae_eq_top.2 fun x => (isOpen_discrete {x}).measure_ne_zero μ (Set.singleton_nonempty x)
 
 end TauCeti
 

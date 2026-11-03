@@ -99,7 +99,7 @@ noncomputable def stabilizeXConeMap :
     homotopyCofiber (G.stabilizeXConnectingHom s R) ⟶
       homotopyCofiber ((MvPolynomial.X s.succ + MvPolynomial.X s.castSucc : S) •
         𝟙 (G.stabilizeXCenterComplex s R)) :=
-  homotopyCofiber.mapArrowHom _ _ (fun j => ⟨j, ComplexShape.refl_rel j⟩)
+  homotopyCofiber.mapArrowHom _ _ (fun j => ⟨j, ComplexShape.refl_rel_self j⟩)
     (G.stabilizeXConeArrowHom s R)
 
 /-- On the off-center summand of the cone, `stabilizeXConeMap` is `H_I^N` followed by the
@@ -115,10 +115,10 @@ the target cone. -/
 @[reassoc (attr := simp)]
 theorem inlX_stabilizeXConeMap :
     homotopyCofiber.inlX (G.stabilizeXConnectingHom s R) () ()
-        (ComplexShape.refl_rel ()) ≫ (G.stabilizeXConeMap s R).f () =
+        (ComplexShape.refl_rel_self ()) ≫ (G.stabilizeXConeMap s R).f () =
       homotopyCofiber.inlX
         ((MvPolynomial.X s.succ + MvPolynomial.X s.castSucc : S) •
-          𝟙 (G.stabilizeXCenterComplex s R)) () () (ComplexShape.refl_rel ()) := by
+          𝟙 (G.stabilizeXCenterComplex s R)) () () (ComplexShape.refl_rel_self ()) := by
   simp [stabilizeXConeMap, stabilizeXConeArrowHom]
 
 /-- The map of cones `stabilizeXConeMap` is a quasi-isomorphism if `H_I^N` is. -/
@@ -195,7 +195,8 @@ of the cone into `GC⁻(G')`, with scalars restricted to `A`. -/
         (eqToHom ((G.stabilizeX s.castSucc (G.X s).castSucc s).unblockedComplex_X R ()).symm) ≫
         (G.stabilizeXMap s R).f () = 0 := by
   have h : homotopyCofiber.inlX (G.stabilizeXConnectingHom s R) () ()
-      (ComplexShape.refl_rel ()) ≫ (G.unblockedComplexStabilizeXIsoHomotopyCofiber s R).inv.f () =
+      (ComplexShape.refl_rel_self ()) ≫
+        (G.unblockedComplexStabilizeXIsoHomotopyCofiber s R).inv.f () =
       eqToHom (G.stabilizeXCenterComplex_X s R ()) ≫
         ModuleCat.ofHom (G.stabilizeXCenterInclusion s R) ≫
           eqToHom ((G.stabilizeX s.castSucc (G.X s).castSucc s).unblockedComplex_X R ()).symm := by

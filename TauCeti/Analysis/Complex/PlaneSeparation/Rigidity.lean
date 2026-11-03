@@ -8,7 +8,6 @@ module
 public import TauCeti.Analysis.Complex.PlaneSeparation.Inside
 public import TauCeti.MeasureTheory.Measure.OpenPos
 public import Mathlib.MeasureTheory.Constructions.BorelSpace.Complex
-import TauCeti.Analysis.Normed.Module.FilledHull
 
 /-!
 # From almost-everywhere disk equality to a circular Jordan curve
