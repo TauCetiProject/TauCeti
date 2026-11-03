@@ -99,7 +99,7 @@ theorem neg_norm_fst_sq_add_norm_smul_snd_sq_le_of_norm_sq_sub
 
 end ContinuousLinearMap
 
-namespace ContDiffAt
+namespace DifferentiableAt
 
 variable {E F : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
   [NormedAddCommGroup F] [InnerProductSpace ℝ F]
@@ -107,7 +107,7 @@ variable {E F : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
 
 /-- The derivative of a local change of indefinite quadratic coordinates at the origin
 preserves the same quadratic form. The normal-form identity is needed only near zero. -/
-theorem norm_sq_sub_fderiv (hT : ContDiffAt ℝ 2 T 0) (hT0 : T 0 = 0)
+theorem norm_sq_sub_fderiv (hT : DifferentiableAt ℝ T 0) (hT0 : T 0 = 0)
     (hQ : ∀ᶠ z in 𝓝 0, ‖(T z).1‖ ^ 2 - ‖(T z).2‖ ^ 2 = ‖z.1‖ ^ 2 - ‖z.2‖ ^ 2)
     (z : E × F) :
     ‖(fderiv ℝ T 0 z).1‖ ^ 2 - ‖(fderiv ℝ T 0 z).2‖ ^ 2 =
@@ -125,7 +125,7 @@ theorem norm_sq_sub_fderiv (hT : ContDiffAt ℝ 2 T 0) (hT0 : T 0 = 0)
 /-- The negative block of a local indefinite-quadratic coordinate change is invertible.
 Finite dimensionality is required only for the negative factor. -/
 theorem isInvertible_fst_fderiv_inl [FiniteDimensional ℝ E]
-    (hT : ContDiffAt ℝ 2 T 0) (hT0 : T 0 = 0)
+    (hT : DifferentiableAt ℝ T 0) (hT0 : T 0 = 0)
     (hQ : ∀ᶠ z in 𝓝 0, ‖(T z).1‖ ^ 2 - ‖(T z).2‖ ^ 2 = ‖z.1‖ ^ 2 - ‖z.2‖ ^ 2) :
     ((ContinuousLinearMap.fst ℝ E F).comp
       ((fderiv ℝ T 0).comp (ContinuousLinearMap.inl ℝ E F))).IsInvertible := by
@@ -133,4 +133,4 @@ theorem isInvertible_fst_fderiv_inl [FiniteDimensional ℝ E]
   intro u
   simpa using hT.norm_sq_sub_fderiv hT0 hQ (u, 0)
 
-end ContDiffAt
+end DifferentiableAt

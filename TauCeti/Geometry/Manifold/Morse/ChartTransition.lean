@@ -37,7 +37,7 @@ variable {V H M E F : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V] [Topolog
   {I : ModelWithCorners ℝ V H} [TopologicalSpace M] [ChartedSpace H M]
   [NormedAddCommGroup E] [InnerProductSpace ℝ E]
   [NormedAddCommGroup F] [InnerProductSpace ℝ F]
-  {n : ℕ∞ω} (ψ₀ ψ₁ : PartialDiffeomorph I 𝓘(ℝ, E × F) M (E × F) n) (hn : 2 ≤ n)
+  {n : ℕ∞ω} (ψ₀ ψ₁ : PartialDiffeomorph I 𝓘(ℝ, E × F) M (E × F) n) (hn : 1 ≤ n)
   {f : M → ℝ} {x : M}
   (hx₀ : x ∈ ψ₀.source) (hx₁ : x ∈ ψ₁.source) (hψ₀ : ψ₀ x = 0) (hψ₁ : ψ₁ x = 0)
   (hf₀ : ∀ y ∈ ψ₀.source, f y = f x - ‖(ψ₀ y).1‖ ^ 2 + ‖(ψ₀ y).2‖ ^ 2)
@@ -46,7 +46,7 @@ variable {V H M E F : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V] [Topolog
 include hn hx₀ hx₁ hψ₀ hψ₁ hf₀ hf₁
 
 private theorem split_transition_data :
-    ContDiffAt ℝ 2 (fun z ↦ ψ₀ (ψ₁.symm z)) 0 ∧ ψ₀ (ψ₁.symm 0) = 0 ∧
+    DifferentiableAt ℝ (fun z ↦ ψ₀ (ψ₁.symm z)) 0 ∧ ψ₀ (ψ₁.symm 0) = 0 ∧
       ∀ᶠ z in 𝓝 0,
         ‖(ψ₀ (ψ₁.symm z)).1‖ ^ 2 - ‖(ψ₀ (ψ₁.symm z)).2‖ ^ 2 =
           ‖z.1‖ ^ 2 - ‖z.2‖ ^ 2 := by
@@ -56,10 +56,10 @@ private theorem split_transition_data :
     exact ψ₁.left_inv hx₁
   have hreg₀ := (ψ₀.contMDiffOn.contMDiffAt (ψ₀.open_source.mem_nhds hx₀)).of_le hn
   have hreg₁ := (ψ₁.symm.contMDiffOn.contMDiffAt (ψ₁.open_target.mem_nhds htarget)).of_le hn
-  have hreg : ContMDiffAt 𝓘(ℝ, E × F) 𝓘(ℝ, E × F) 2
+  have hreg : ContMDiffAt 𝓘(ℝ, E × F) 𝓘(ℝ, E × F) 1
       (fun z ↦ ψ₀ (ψ₁.symm z)) 0 :=
     hreg₀.comp_of_eq hreg₁ hinv
-  refine ⟨contMDiffAt_iff_contDiffAt.mp hreg, hinv ▸ hψ₀, ?_⟩
+  refine ⟨(contMDiffAt_iff_contDiffAt.mp hreg).differentiableAt one_ne_zero, hinv ▸ hψ₀, ?_⟩
   have hsource : ∀ᶠ z in 𝓝 0, ψ₁.symm z ∈ ψ₀.source :=
     hreg₁.continuousAt.preimage_mem_nhds (hinv ▸ ψ₀.open_source.mem_nhds hx₀)
   filter_upwards [hsource, ψ₁.open_target.mem_nhds htarget] with z hz₀ hz₁
