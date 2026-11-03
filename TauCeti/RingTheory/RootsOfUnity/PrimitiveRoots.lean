@@ -26,6 +26,10 @@ Over a normal extension of `ℚ`, every coprime power of a primitive root is att
 automorphism. Indeed the two primitive roots have the same cyclotomic minimal polynomial, and
 normality extends that conjugacy to the ambient field.
 
+Every character of a group of prime order `p` sends each element outside its kernel to a primitive
+`p`-th root of unity, and a primitive `p`-th root of unity `ζ` yields a nontrivial character sending
+a generator to `ζ`.
+
 Multiplying one `n`-th root of a nonzero `a` by the powers of a primitive `n`-th root of unity gives
 `n` distinct `n`-th roots of `a`, and these are all of them.
 
@@ -43,6 +47,11 @@ Multiplying one `n`-th root of a nonzero `a` by the powers of a primitive `n`-th
   abelianization agree on every root of unity.
 * `IsPrimitiveRoot.exists_algEquiv_apply_eq_pow_of_coprime`: every coprime power of a primitive
   root in a normal extension of `ℚ` is realized by an automorphism.
+* `MonoidHom.isPrimitiveRoot_apply_of_card_eq_prime`: a character of a group of prime order `p`
+  sends every element outside its kernel to a primitive `p`-th root of unity.
+* `TauCeti.exists_monoidHom_ne_one_of_isPrimitiveRoot`: a group of prime order `p` has a
+  nontrivial character with values in any commutative monoid containing a primitive `p`-th root
+  of unity.
 * `IsPrimitiveRoot.card_nthRootsFinset_of_pow_eq`: in the presence of a primitive `n`-th root of
   unity, a nonzero element with one `n`-th root has exactly `n` of them.
 
@@ -83,6 +92,28 @@ theorem _root_.IsPrimitiveRoot.exists_algEquiv_apply_eq_pow_of_coprime
       (hζ.minpoly_eq_cyclotomic_of_irreducible
         (Polynomial.cyclotomic.irreducible_rat (NeZero.pos n))).symm]
   exact hconj.exists_algEquiv
+
+/-- A character of a group of prime order `p` sends every element outside its kernel to a
+primitive `p`-th root of unity. -/
+theorem _root_.MonoidHom.isPrimitiveRoot_apply_of_card_eq_prime {p : ℕ} [Fact p.Prime]
+    {G M : Type*} [CommGroup G] [CommMonoid M] (χ : G →* M) (hG : Nat.card G = p) {g : G}
+    (hg : χ g ≠ 1) : IsPrimitiveRoot (χ g) p :=
+  IsPrimitiveRoot.iff_orderOf.2 <| orderOf_eq_prime (by
+    rw [← map_pow, ← hG, pow_card_eq_one', map_one]) hg
+
+/-- A group of prime order `p` has a nontrivial character with values in any commutative monoid
+containing a primitive `p`-th root of unity. -/
+theorem exists_monoidHom_ne_one_of_isPrimitiveRoot {p : ℕ} [hp : Fact p.Prime] {G : Type*}
+    [CommGroup G] (hG : Nat.card G = p) {M : Type*} [CommMonoid M] {ζ : M}
+    (hζ : IsPrimitiveRoot ζ p) : ∃ χ : G →* M, χ ≠ 1 := by
+  have := isCyclic_of_prime_card hG
+  obtain ⟨g, hg⟩ := IsCyclic.exists_generator (α := G)
+  have hdvd : orderOf (hζ.isUnit hp.out.ne_zero).unit ∣ orderOf g := by
+    rw [← orderOf_units, IsUnit.unit_spec, ← hζ.eq_orderOf,
+      orderOf_eq_card_of_forall_mem_zpowers hg, hG]
+  refine ⟨(Units.coeHom M).comp (monoidHomOfForallMemZpowers hg hdvd),
+    fun h => hζ.ne_one hp.out.one_lt ?_⟩
+  simpa using DFunLike.congr_fun h g
 
 open Polynomial in
 /-- If `R` has a primitive `n`-th root of unity, then a nonzero `a` with one `n`-th root `α` has

@@ -6,20 +6,16 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.NumberTheory.Cyclotomic.PrimitiveRoots
-public import Mathlib.RingTheory.IntegralDomain
 public import TauCeti.RepresentationTheory.GroupAlgebra.Average
+public import TauCeti.RingTheory.RootsOfUnity.PrimitiveRoots
 
 /-!
 # The rational group algebra of a group of prime order
 
-Let `p` be a prime and `G` a group of order `p`. Every character of `G` sends each element outside
-its kernel to a primitive `p`-th root of unity, and a primitive `p`-th root of unity `ζ` yields a
-nontrivial character `G →* M` sending a generator to `ζ`.
-
-Let `K` be a `p`-th cyclotomic field and `χ : G →* K` a nontrivial character. The map
-`x ↦ (ε(x), χ(x))`, where `ε` is the augmentation, is an isomorphism of `ℚ`-algebras
-`ℚ[G] ≃ ℚ × K`: it is surjective since the averaging idempotent `e₁ = p⁻¹ ∑_g g` maps to `(1, 0)`
-and `χ(g)` generates `K`, and both sides have dimension `p`.
+Let `p` be a prime, `G` a group of order `p`, `K` a `p`-th cyclotomic field and `χ : G →* K` a
+nontrivial character. The map `x ↦ (ε(x), χ(x))`, where `ε` is the augmentation, is an isomorphism
+of `ℚ`-algebras `ℚ[G] ≃ ℚ × K`: it is surjective since the averaging idempotent `e₁ = p⁻¹ ∑_g g`
+maps to `(1, 0)` and `χ(g)` generates `K`, and both sides have dimension `p`.
 
 ## Main definitions
 
@@ -27,11 +23,6 @@ and `χ(g)` generates `K`, and both sides have dimension `p`.
 
 ## Main results
 
-* `MonoidHom.isPrimitiveRoot_apply_of_card_eq_prime`: a character of a group of prime order `p`
-  sends every element outside its kernel to a primitive `p`-th root of unity.
-* `TauCeti.exists_monoidHom_ne_one_of_isPrimitiveRoot`: a group of prime order `p` has a
-  nontrivial character with values in any commutative monoid containing a primitive `p`-th root
-  of unity.
 * `TauCeti.groupAlgebraEquivProd_single`, `TauCeti.groupAlgebraEquivProd_average`: the
   isomorphism sends `g` to `(1, χ g)` and `e₁` to `(1, 0)`.
 
@@ -46,27 +37,7 @@ open Module Polynomial MonoidAlgebra
 
 variable {p : ℕ} [hp : Fact p.Prime] {G : Type*} [CommGroup G]
 
-/-- A character of a group of prime order `p` sends every element outside its kernel to a
-primitive `p`-th root of unity. -/
-theorem MonoidHom.isPrimitiveRoot_apply_of_card_eq_prime {M : Type*} [CommMonoid M]
-    (χ : G →* M) (hG : Nat.card G = p) {g : G} (hg : χ g ≠ 1) : IsPrimitiveRoot (χ g) p :=
-  IsPrimitiveRoot.iff_orderOf.2 <| orderOf_eq_prime (by
-    rw [← map_pow, ← hG, pow_card_eq_one', map_one]) hg
-
 namespace TauCeti
-
-/-- A group of prime order `p` has a nontrivial character with values in any commutative monoid
-containing a primitive `p`-th root of unity. -/
-theorem exists_monoidHom_ne_one_of_isPrimitiveRoot (hG : Nat.card G = p) {M : Type*}
-    [CommMonoid M] {ζ : M} (hζ : IsPrimitiveRoot ζ p) : ∃ χ : G →* M, χ ≠ 1 := by
-  have := isCyclic_of_prime_card hG
-  obtain ⟨g, hg⟩ := IsCyclic.exists_generator (α := G)
-  have hdvd : orderOf (hζ.isUnit hp.out.ne_zero).unit ∣ orderOf g := by
-    rw [← orderOf_units, IsUnit.unit_spec, ← hζ.eq_orderOf,
-      orderOf_eq_card_of_forall_mem_zpowers hg, hG]
-  refine ⟨(Units.coeHom M).comp (monoidHomOfForallMemZpowers hg hdvd),
-    fun h => hζ.ne_one hp.out.one_lt ?_⟩
-  simpa using DFunLike.congr_fun h g
 
 variable {K : Type*} [Field K] [CharZero K] [IsCyclotomicExtension {p} ℚ K] {χ : G →* K}
 
@@ -78,8 +49,7 @@ private theorem prod_lift_single (g : G) :
 omit [IsCyclotomicExtension {p} ℚ K] in
 private theorem prod_lift_average [Fintype G] (hχ : χ ≠ 1) :
     (lift ℚ ℚ G 1).prod (lift ℚ K G χ) (GroupAlgebra.average ℚ G) = (1, 0) := by
-  have hG : (Fintype.card G : ℚ) ≠ 0 := Nat.cast_ne_zero.2 Fintype.card_ne_zero
-  ext <;> simp [GroupAlgebra.average, Prod.fst_sum, Prod.snd_sum, sum_hom_units_eq_zero χ hχ, hG]
+  ext <;> simp [GroupAlgebra.lift_average_of_ne_one hχ]
 
 private theorem bijective_prod_lift [Finite G] (hG : Nat.card G = p) (hχ : χ ≠ 1) :
     Function.Bijective ((lift ℚ ℚ G 1).prod (lift ℚ K G χ)) := by
