@@ -32,6 +32,10 @@ contractions are the approximating operators for the metric approximation proper
 ## Main results
 
 * `MeasureTheory.coeFn_condExpLpCLM`: `condExpLpCLM 𝕜 p m μ f` is a.e. equal to `μ[f | m]`.
+* `MeasureTheory.aestronglyMeasurable_condExpLpCLM`,
+  `MeasureTheory.condExpLpCLM_of_aestronglyMeasurable'` and
+  `MeasureTheory.condExpLpCLM_comp_self`: the conditional expectation is a projection onto the
+  classes of `m`-measurable functions.
 * `MeasureTheory.norm_condExpLpCLM_le`: the conditional expectation is a contraction of `Lᵖ`.
 * `MeasureTheory.hasFiniteRange_condExpLpCLM`: conditioning on a σ-algebra pulled back from a
   finite discrete space gives a finite-rank operator.
@@ -87,6 +91,42 @@ variable {𝕜 p m μ}
 /-- The conditional expectation on `Lᵖ` is represented by `μ[f | m]`. -/
 theorem coeFn_condExpLpCLM (f : Lp F p μ) : condExpLpCLM 𝕜 p m μ f =ᵐ[μ] μ[f | m] :=
   MemLp.coeFn_toLp ((Lp.memLp f).condExp Fact.out)
+
+/-- The conditional expectation of the class of `f ∈ Lᵖ` is the class of `μ[f | m]`. -/
+theorem condExpLpCLM_toLp {f : α → F} (hf : MemLp f p μ) :
+    condExpLpCLM 𝕜 p m μ (hf.toLp f) = (hf.condExp Fact.out).toLp (μ[f | m]) :=
+  Lp.ext <| (coeFn_condExpLpCLM _).trans <|
+    (condExp_congr_ae hf.coeFn_toLp).trans (MemLp.coeFn_toLp _).symm
+
+/-- The conditional expectation on `Lᵖ` takes values in `m`-measurable classes. -/
+theorem aestronglyMeasurable_condExpLpCLM (f : Lp F p μ) :
+    AEStronglyMeasurable[m] (condExpLpCLM 𝕜 p m μ f) μ :=
+  ⟨μ[f | m], stronglyMeasurable_condExp, coeFn_condExpLpCLM f⟩
+
+/-- The conditional expectation on `Lᵖ` fixes the classes of `m`-measurable functions. -/
+theorem condExpLpCLM_of_aestronglyMeasurable' (hm : m ≤ m0) {f : Lp F p μ}
+    (hf : AEStronglyMeasurable[m] f μ) : condExpLpCLM 𝕜 p m μ f = f :=
+  Lp.ext <| (coeFn_condExpLpCLM f).trans <|
+    condExp_of_aestronglyMeasurable' hm hf ((Lp.memLp f).integrable Fact.out)
+
+/-- The conditional expectation on `Lᵖ` is idempotent. -/
+@[simp]
+theorem condExpLpCLM_condExpLpCLM (f : Lp F p μ) :
+    condExpLpCLM 𝕜 p m μ (condExpLpCLM 𝕜 p m μ f) = condExpLpCLM 𝕜 p m μ f := by
+  by_cases hm : m ≤ m0
+  · exact condExpLpCLM_of_aestronglyMeasurable' hm (aestronglyMeasurable_condExpLpCLM f)
+  · -- If `m` is not a sub-σ-algebra, the conditional expectation vanishes.
+    have h0 : condExpLpCLM 𝕜 p m μ f = 0 := by
+      refine Lp.ext <| (coeFn_condExpLpCLM f).trans ?_
+      rw [condExp_of_not_le hm]
+      exact (Lp.coeFn_zero ..).symm
+    rw [h0, map_zero]
+
+/-- The conditional expectation on `Lᵖ` is a projection. -/
+theorem condExpLpCLM_comp_self :
+    (condExpLpCLM 𝕜 p m μ : Lp F p μ →L[𝕜] Lp F p μ).comp (condExpLpCLM 𝕜 p m μ) =
+      condExpLpCLM 𝕜 p m μ :=
+  ContinuousLinearMap.ext condExpLpCLM_condExpLpCLM
 
 /-- The conditional expectation is a contraction of `Lᵖ`. -/
 theorem norm_condExpLpCLM_le : ‖(condExpLpCLM 𝕜 p m μ : Lp F p μ →L[𝕜] Lp F p μ)‖ ≤ 1 :=
