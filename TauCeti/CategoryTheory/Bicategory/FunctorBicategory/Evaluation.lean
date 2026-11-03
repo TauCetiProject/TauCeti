@@ -32,8 +32,9 @@ public section
 
 universe w₁ w₂ v₁ v₂ u₁ u₂
 
-namespace CategoryTheory.Pseudofunctor
+namespace TauCeti.CategoryTheory.Pseudofunctor
 
+open _root_.CategoryTheory _root_.CategoryTheory.Pseudofunctor
 open Bicategory StrongTrans
 
 variable {B : Type u₁} [Bicategory.{w₁, v₁} B]
@@ -206,4 +207,4 @@ modifications are the original pseudofunctors' unit and composition comparisons.
 @[simp] lemma evaluation_mapComp {a b c : B} (f : a ⟶ b) (g : b ⟶ c) :
     (evaluation B C).mapComp f g = evaluationMapComp f g := (rfl)
 
-end CategoryTheory.Pseudofunctor
+end TauCeti.CategoryTheory.Pseudofunctor
