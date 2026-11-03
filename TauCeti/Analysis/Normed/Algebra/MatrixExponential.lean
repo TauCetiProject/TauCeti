@@ -57,8 +57,10 @@ constant `1`. Evaluating at `t = 1` gives the identity.
 * `Matrix.IsHermitian.trace_exp_mul_nonneg` and `Matrix.IsHermitian.trace_exp_pos`: positivity of
   the trace of the exponential of a Hermitian matrix and of the functional `x ↦ Tr (exp K * x)`.
 * `Matrix.IsHermitian.exp_posDef`: the exponential of a Hermitian matrix is positive definite.
-* `Matrix.IsHermitian.trace_exp_half_mul_exp_half_sq_le`: the first dyadic trace-power bound for
-  half-sized exponential weights.
+* `Matrix.IsHermitian.trace_exp_smul_mul_exp_smul_sq_le`: the first dyadic trace-power bound for
+  exponential weights at arbitrary real scale.
+* `Matrix.IsHermitian.trace_exp_half_mul_exp_half_sq_le`: the half-scale specialization of this
+  bound.
 * `Matrix.trace_exp_add_of_commute`: the commuting-matrix case of Golden–Thompson, as an equality.
 
 ## References
