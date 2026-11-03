@@ -15,7 +15,7 @@ public import Mathlib.CategoryTheory.Abelian.Exact
 Let `C` be a category with cokernels, `G : C ⥤ C` a functor and `ι : 𝟭 C ⟶ G` a natural
 transformation. Iterating `ι` on cokernels gives a cochain complex, functorial in `X : C`,
 `G X ⟶ G (Z¹ X) ⟶ G (Z² X) ⟶ ⋯`, augmented by `ι_X : X ⟶ G X`. Here `Z⁰ X = X`,
-`Zⁿ⁺¹ X = coker (ι : Zⁿ X ⟶ G (Zⁿ X))` (`CategoryTheory.NatTrans.syzygyFunctor`), and the
+`Zⁿ⁺¹ X = coker (ι : Zⁿ X ⟶ G (Zⁿ X))` (`CategoryTheory.NatTrans.cosyzygyFunctor`), and the
 differential `G (Zⁿ X) ⟶ G (Zⁿ⁺¹ X)` is the cokernel projection followed by `ι`.
 
 When `C` is abelian and every component of `ι` is a monomorphism, this complex is a resolution of
@@ -29,7 +29,7 @@ cokernel, it is a functor `C ⥤ CochainComplex C ℕ` on the nose.
 ## Main definitions
 
 * `CategoryTheory.NatTrans.cokernelFunctor ι`: the functor `X ↦ coker (ι_X)`.
-* `CategoryTheory.NatTrans.syzygyFunctor ι n`: its `n`-th iterate `X ↦ Zⁿ X`.
+* `CategoryTheory.NatTrans.cosyzygyFunctor ι n`: its `n`-th iterate `X ↦ Zⁿ X`, the cosyzygies.
 * `CategoryTheory.NatTrans.resolution ι`: the complex `G X ⟶ G (Z¹ X) ⟶ G (Z² X) ⟶ ⋯`.
 * `CategoryTheory.NatTrans.toResolution ι`: its augmentation, from `X` placed in degree `0`.
 
@@ -72,47 +72,47 @@ theorem toCokernelFunctor_app (X : C) : ι.toCokernelFunctor.app X = cokernel.π
   simp [toCokernelFunctor]
 
 /-- The `n`-th iterate `X ↦ Zⁿ X` of `cokernelFunctor ι`, with `Z⁰ X = X` and
-`Zⁿ⁺¹ X = coker (ι : Zⁿ X ⟶ G (Zⁿ X))`. -/
+`Zⁿ⁺¹ X = coker (ι : Zⁿ X ⟶ G (Zⁿ X))`: the cosyzygies of the resolution `ι.resolution`. -/
 @[expose, implicit_reducible]
-noncomputable def syzygyFunctor : ℕ → C ⥤ C
+noncomputable def cosyzygyFunctor : ℕ → C ⥤ C
   | 0 => 𝟭 C
-  | n + 1 => syzygyFunctor n ⋙ ι.cokernelFunctor
+  | n + 1 => cosyzygyFunctor n ⋙ ι.cokernelFunctor
 
-theorem syzygyFunctor_zero : ι.syzygyFunctor 0 = 𝟭 C :=
+theorem cosyzygyFunctor_zero : ι.cosyzygyFunctor 0 = 𝟭 C :=
   (rfl)
 
 @[simp]
-theorem syzygyFunctor_zero_obj (X : C) : (ι.syzygyFunctor 0).obj X = X :=
+theorem cosyzygyFunctor_zero_obj (X : C) : (ι.cosyzygyFunctor 0).obj X = X :=
   (rfl)
 
 @[simp]
-theorem syzygyFunctor_zero_map {X Y : C} (f : X ⟶ Y) : (ι.syzygyFunctor 0).map f = f :=
+theorem cosyzygyFunctor_zero_map {X Y : C} (f : X ⟶ Y) : (ι.cosyzygyFunctor 0).map f = f :=
   (rfl)
 
-theorem syzygyFunctor_succ (n : ℕ) :
-    ι.syzygyFunctor (n + 1) = ι.syzygyFunctor n ⋙ ι.cokernelFunctor :=
+theorem cosyzygyFunctor_succ (n : ℕ) :
+    ι.cosyzygyFunctor (n + 1) = ι.cosyzygyFunctor n ⋙ ι.cokernelFunctor :=
   (rfl)
 
-theorem syzygyFunctor_succ_obj (n : ℕ) (X : C) :
-    (ι.syzygyFunctor (n + 1)).obj X = cokernel (ι.app ((ι.syzygyFunctor n).obj X)) :=
+theorem cosyzygyFunctor_succ_obj (n : ℕ) (X : C) :
+    (ι.cosyzygyFunctor (n + 1)).obj X = cokernel (ι.app ((ι.cosyzygyFunctor n).obj X)) :=
   (rfl)
 
-theorem syzygyFunctor_succ_map (n : ℕ) {X Y : C} (f : X ⟶ Y) :
-    (ι.syzygyFunctor (n + 1)).map f = ι.cokernelFunctor.map ((ι.syzygyFunctor n).map f) :=
+theorem cosyzygyFunctor_succ_map (n : ℕ) {X Y : C} (f : X ⟶ Y) :
+    (ι.cosyzygyFunctor (n + 1)).map f = ι.cokernelFunctor.map ((ι.cosyzygyFunctor n).map f) :=
   (rfl)
 
 /-- The differential `G (Zⁿ X) ⟶ G (Zⁿ⁺¹ X)` of `resolution ι`, natural in `X`: the cokernel
 projection `G (Zⁿ X) ⟶ Zⁿ⁺¹ X` followed by `ι`. -/
 noncomputable def resolutionD (n : ℕ) :
-    ι.syzygyFunctor n ⋙ G ⟶ ι.syzygyFunctor (n + 1) ⋙ G :=
-  Functor.whiskerLeft (ι.syzygyFunctor n)
+    ι.cosyzygyFunctor n ⋙ G ⟶ ι.cosyzygyFunctor (n + 1) ⋙ G :=
+  Functor.whiskerLeft (ι.cosyzygyFunctor n)
     (ι.toCokernelFunctor ≫ Functor.whiskerLeft ι.cokernelFunctor ι)
 
 @[simp]
 theorem resolutionD_app (n : ℕ) (X : C) :
     (ι.resolutionD n).app X =
-      cokernel.π (ι.app ((ι.syzygyFunctor n).obj X)) ≫
-        ι.app ((ι.syzygyFunctor (n + 1)).obj X) := by
+      cokernel.π (ι.app ((ι.cosyzygyFunctor n).obj X)) ≫
+        ι.app ((ι.cosyzygyFunctor (n + 1)).obj X) := by
   unfold resolutionD
   rfl
 
@@ -126,14 +126,14 @@ cokernels, as a functor of `X`. Its degree `n` term is `G (Zⁿ X)` (`resolution
 differentials are the cokernel projections followed by `ι` (`resolution_obj_d`). -/
 @[expose, implicit_reducible]
 noncomputable def resolution : C ⥤ CochainComplex C ℕ where
-  obj X := CochainComplex.of (fun n ↦ G.obj ((ι.syzygyFunctor n).obj X))
+  obj X := CochainComplex.of (fun n ↦ G.obj ((ι.cosyzygyFunctor n).obj X))
     (fun n ↦ (ι.resolutionD n).app X) (fun n ↦ ι.resolutionD_app_comp_resolutionD_app n X)
-  map f := CochainComplex.ofHom (fun n ↦ G.map ((ι.syzygyFunctor n).map f))
+  map f := CochainComplex.ofHom (fun n ↦ G.map ((ι.cosyzygyFunctor n).map f))
     (fun n ↦ by simpa using (ι.resolutionD n).naturality f)
 
 @[simp]
 theorem resolution_obj_X (X : C) (n : ℕ) :
-    (ι.resolution.obj X).X n = G.obj ((ι.syzygyFunctor n).obj X) :=
+    (ι.resolution.obj X).X n = G.obj ((ι.cosyzygyFunctor n).obj X) :=
   (rfl)
 
 @[simp]
@@ -143,7 +143,7 @@ theorem resolution_obj_d (X : C) (n : ℕ) :
 
 @[simp]
 theorem resolution_map_f {X Y : C} (f : X ⟶ Y) (n : ℕ) :
-    (ι.resolution.map f).f n = G.map ((ι.syzygyFunctor n).map f) :=
+    (ι.resolution.map f).f n = G.map ((ι.cosyzygyFunctor n).map f) :=
   (rfl)
 
 /-- The augmentation `ι_X : X ⟶ G X` composes to zero with the first differential of
@@ -180,7 +180,7 @@ theorem resolution_obj_exactAt_succ (X : C) (n : ℕ) :
   -- The complex `G (Zⁿ X) ⟶ G (Zⁿ⁺¹ X) ⟶ G (Zⁿ⁺² X)` has the same kernel at the middle as
   -- `G (Zⁿ X) ⟶ G (Zⁿ⁺¹ X) ⟶ Zⁿ⁺² X`, because `ι` is a monomorphism, and the second map of the
   -- latter is a cokernel of the first, because `G (Zⁿ X) ⟶ Zⁿ⁺¹ X` is an epimorphism.
-  let Y := (ι.syzygyFunctor (n + 1)).obj X
+  let Y := (ι.cosyzygyFunctor (n + 1)).obj X
   let α : ShortComplex.mk ((ι.resolutionD n).app X) (cokernel.π (ι.app Y))
         (by simp [Y, resolutionD_app]) ⟶ (ι.resolution.obj X).sc' n (n + 1) (n + 1 + 1) :=
     { τ₁ := 𝟙 _, τ₂ := 𝟙 _, τ₃ := ι.app (cokernel (ι.app Y))
