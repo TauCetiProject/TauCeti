@@ -104,7 +104,8 @@ theorem rescale_mul (a b : σ → R) : rescale (a * b) = (rescale b).comp (resca
 /-- Rescaling by `a` and then by `b` is the identity when `a i * b i = 1` for every `i`. -/
 theorem rescale_rescale_of_mul_eq_one {a b : σ → R} (h : ∀ i, a i * b i = 1)
     (p : MvPolynomial σ R) : rescale b (rescale a p) = p := by
-  rw [rescale_rescale, show a * b = 1 from funext h, rescale_one, AlgHom.id_apply]
+  have hab : a * b = 1 := funext fun i ↦ by rw [Pi.mul_apply, Pi.one_apply, h]
+  rw [rescale_rescale, hab, rescale_one, AlgHom.id_apply]
 
 /-- Rescaling by a family of units is an algebra automorphism, whose inverse rescales by the
 inverse units. -/
