@@ -8,7 +8,7 @@ module
 public import TauCeti.Topology.Homotopy.LusternikSchnirelmann
 
 /-!
-# Normalized Lusternik–Schnirelmann category and compactness
+# Normalized Lusternik–Schnirelmann category
 
 `TauCeti.normalizedLSCategory X` is the unnormalized categorical-cover count minus one.
 On nonempty spaces its cover characterization uses `n + 1` categorical opens; in particular a
@@ -16,10 +16,8 @@ contractible space has normalized category zero. Homotopy equivalences preserve 
 The definition is totalized to zero on empty spaces, whose unnormalized count remains zero:
 the formula recovering the unnormalized count by adding one requires nonemptiness.
 
-Compact subsets of locally contractible spaces have finite categorical-cover count, even on
-an open neighborhood. Here local contractibility has Mathlib's meaning: small neighborhoods
-contract inside larger neighborhoods, not necessarily inside themselves. The finite count and
-its attainment give actual finite categorical covers of compact locally contractible spaces.
+Compact locally contractible spaces have finite normalized category, by finiteness of the
+categorical-cover count established in `TauCeti.Topology.Homotopy.LusternikSchnirelmann`.
 
 ## References
 
@@ -34,35 +32,6 @@ open Set ContinuousMap TopologicalSpace
 namespace TauCeti
 
 variable {X Y : Type*} [TopologicalSpace X] [TopologicalSpace Y]
-
-/-- A compact subset of a locally contractible space has an open neighborhood with finite
-categorical-cover count. -/
-theorem exists_isOpen_superset_lsCategoryCount_lt_top {K : Set X} (hK : IsCompact K)
-    (hX : LocallyContractibleSpace X) :
-    ∃ U, IsOpen U ∧ K ⊆ U ∧ lsCategoryCount X U < ⊤ := by
-  classical
-  choose U hU hxU hcat using exists_isOpen_mem_lsCategoryCount_le_one hX
-  obtain ⟨s, hs⟩ := hK.elim_finite_subcover U hU fun x _ ↦
-    mem_iUnion.mpr ⟨x, hxU x⟩
-  refine ⟨⋃ x ∈ s, U x, isOpen_biUnion fun x _ ↦ hU x, hs, ?_⟩
-  calc
-    lsCategoryCount X (⋃ x ∈ s, U x) ≤ ∑ x ∈ s, lsCategoryCount X (U x) :=
-      lsCategoryCount_biUnion_le _ _
-    _ ≤ ∑ _x ∈ s, (1 : ℕ∞) := Finset.sum_le_sum fun x _ ↦ hcat x
-    _ = (s.card : ℕ∞) := by simp
-    _ < ⊤ := ENat.natCast_lt_top _
-
-/-- Compact subsets of locally contractible spaces have finite categorical-cover count. -/
-theorem _root_.IsCompact.lsCategoryCount_lt_top {K : Set X} (hK : IsCompact K)
-    (hX : LocallyContractibleSpace X) : lsCategoryCount X K < ⊤ := by
-  obtain ⟨U, _, hKU, hU⟩ := exists_isOpen_superset_lsCategoryCount_lt_top hK hX
-  exact (lsCategoryCount_mono hKU).trans_lt hU
-
-/-- A compact locally contractible space has finite categorical-cover count, including when
-it is empty. -/
-theorem lsCategoryCount_univ_lt_top [CompactSpace X] (hX : LocallyContractibleSpace X) :
-    lsCategoryCount X univ < ⊤ :=
-  isCompact_univ.lsCategoryCount_lt_top hX
 
 variable (X)
 
@@ -118,27 +87,6 @@ theorem normalizedLSCategory_lt_top [CompactSpace X] (hX : LocallyContractibleSp
     normalizedLSCategory X < ⊤ := by
   rw [lt_top_iff_ne_top, ne_eq, normalizedLSCategory_eq_top_iff]
   exact (lsCategoryCount_univ_lt_top hX).ne
-
-/-- On a nonempty space, a cover by one categorical open exists exactly when the space
-is contractible. -/
-theorem lsCategoryCount_univ_le_one_iff [Nonempty X] :
-    lsCategoryCount X univ ≤ 1 ↔ ContractibleSpace X := by
-  refine ⟨fun h ↦ ?_, fun h ↦ @lsCategoryCount_le_one X _ h univ⟩
-  obtain ⟨c⟩ := (nonempty_lsCategoricalCover_iff (n := 1)).mpr h
-  have hU : (c.opens 0 : Set X) = univ := by
-    apply eq_univ_of_forall
-    intro x
-    obtain ⟨i, hi⟩ := mem_iUnion.mp (c.subset_iUnion (mem_univ x))
-    simpa only [Fin.eq_zero i] using hi
-  have hnull := c.nullhomotopic 0
-  rw [hU] at hnull
-  -- The inclusion of the whole-space subtype, composed with its canonical inverse,
-  -- is the identity of X.
-  have hid : (subtypeVal (univ : Set X)).comp
-      ((Homeomorph.Set.univ X).symm : C(X, (univ : Set X))) = ContinuousMap.id X :=
-    ContinuousMap.ext fun _ ↦ rfl
-  exact (contractible_iff_id_nullhomotopic X).mpr
-    (hid ▸ hnull.comp_left ((Homeomorph.Set.univ X).symm : C(X, (univ : Set X))))
 
 /-- Normalized category zero characterizes contractibility of nonempty spaces. -/
 @[simp]
