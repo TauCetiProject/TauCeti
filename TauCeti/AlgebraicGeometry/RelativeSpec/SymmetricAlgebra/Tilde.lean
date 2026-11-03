@@ -152,6 +152,55 @@ lemma specSymmetricAlgebraOverIso_hom_left {N : ModuleCat.{u} R} (e : M ≃ₗ[R
       Spec.map (CommRingCat.ofHom (SymmetricAlgebra.mapEquiv R e).symm.toRingEquiv.toRingHom) :=
   (rfl)
 
+variable {M} in
+/-- The inverse of `specSymmetricAlgebraOverIso e` is the spectrum of the algebra equivalence of
+symmetric algebras induced by `e`. -/
+@[simp]
+lemma specSymmetricAlgebraOverIso_inv_left {N : ModuleCat.{u} R} (e : M ≃ₗ[R] N) :
+    (specSymmetricAlgebraOverIso e).inv.left =
+      Spec.map (CommRingCat.ofHom (SymmetricAlgebra.mapEquiv R e).toRingEquiv.toRingHom) :=
+  (rfl)
+
+/-- The identity linear equivalence induces the identity of `Spec (Sym_R M)`. -/
+@[simp]
+lemma specSymmetricAlgebraOverIso_refl :
+    specSymmetricAlgebraOverIso (LinearEquiv.refl R M) = Iso.refl _ := by
+  ext : 1
+  apply MorphismProperty.Over.Hom.ext
+  rw [specSymmetricAlgebraOverIso_hom_left, SymmetricAlgebra.mapEquiv_refl]
+  exact Spec.map_id _
+
+variable {M} in
+/-- Composition of linear equivalences becomes composition of the induced isomorphisms of
+spectra of symmetric algebras. -/
+@[simp]
+lemma specSymmetricAlgebraOverIso_trans {N P : ModuleCat.{u} R} (e : M ≃ₗ[R] N)
+    (d : N ≃ₗ[R] P) :
+    specSymmetricAlgebraOverIso e ≪≫ specSymmetricAlgebraOverIso d =
+      specSymmetricAlgebraOverIso (e.trans d) := by
+  ext : 1
+  apply MorphismProperty.Over.Hom.ext
+  -- The underlying morphism of a composite in `AffineSchemeOver` is the composite of the
+  -- underlying morphisms by definition; `Comma.comp_left` does not rewrite through this
+  -- specialization of the morphism-property comma category.
+  exact ((Spec.map_comp
+      (CommRingCat.ofHom (SymmetricAlgebra.mapEquiv R d).symm.toRingEquiv.toRingHom)
+      (CommRingCat.ofHom (SymmetricAlgebra.mapEquiv R e).symm.toRingEquiv.toRingHom)).symm.trans
+    (congrArg (fun φ : SymmetricAlgebra R M ≃ₐ[R] SymmetricAlgebra R P ↦
+      Spec.map (CommRingCat.ofHom φ.symm.toRingEquiv.toRingHom))
+        (SymmetricAlgebra.mapEquiv_trans R e d)))
+
+variable {M} in
+/-- The inverse of the isomorphism induced by `e` is induced by the inverse linear
+equivalence. -/
+@[simp]
+lemma specSymmetricAlgebraOverIso_symm {N : ModuleCat.{u} R} (e : M ≃ₗ[R] N) :
+    (specSymmetricAlgebraOverIso e).symm = specSymmetricAlgebraOverIso e.symm := by
+  ext : 1
+  apply MorphismProperty.Over.Hom.ext
+  rw [Iso.symm_hom, specSymmetricAlgebraOverIso_hom_left, specSymmetricAlgebraOverIso_inv_left,
+    ← SymmetricAlgebra.mapEquiv_symm, AlgEquiv.symm_symm]
+
 /-- The relative spectrum `Spec_{Spec R} (Sym M~)`. -/
 private abbrev relSpec : AffineSchemeOver (Spec R) :=
   (relativeSpec (Spec R)).obj
