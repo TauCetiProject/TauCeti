@@ -26,10 +26,10 @@ covering group, not a smooth structure on the central quotient `Spinᶜ(4)`.
 
 ## Main results
 
-* `CliffordAlgebra.realHalfSpinSmoothHom`: the smooth action on a chirality eigenspace.
-* `CliffordAlgebra.realHalfSpinSmoothHom_apply`: comparison with `halfSpinRep` in the frame.
-* `CliffordAlgebra.unitsLieAlgebraLieEquiv_lieMap_realHalfSpinSmoothHom`: its differential.
-* `CliffordAlgebra.contMDiff_realSpinCHalfSpinRep_apply`: joint smoothness of the weight-one
+* `Orientation.realHalfSpinSmoothHom`: the smooth action on a chirality eigenspace.
+* `Orientation.realHalfSpinSmoothHom_apply`: comparison with `halfSpinRep` in the frame.
+* `Orientation.unitsLieAlgebraLieEquiv_lieMap_realHalfSpinSmoothHom`: its differential.
+* `Orientation.contMDiff_realSpinCHalfSpinRep_apply`: joint smoothness of the weight-one
   action on the product with the circle.
 
 ## References
@@ -45,9 +45,9 @@ public section
 
 noncomputable section
 
-namespace CliffordAlgebra
+namespace Orientation
 
-open Module Module.End Manifold TauCeti TauCeti.CliffordAlgebra
+open Module Module.End Manifold TauCeti CliffordAlgebra TauCeti.CliffordAlgebra
 open scoped ContDiff Manifold Matrix.Norms.Operator
 
 attribute [local instance 100] LieRing.ofAssociativeRing
@@ -177,4 +177,4 @@ theorem contMDiff_realSpinCHalfSpinRep_apply :
   (((ContinuousLinearMap.restrictScalarsL ℂ S S ℝ ℝ).contDiff.contMDiff.comp
     (contMDiff_realSpinCHalfSpinRep o hQ b ρ ε)).comp contMDiff_fst).clm_apply contMDiff_snd
 
-end CliffordAlgebra
+end Orientation
