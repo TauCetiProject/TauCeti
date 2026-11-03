@@ -48,16 +48,11 @@ theorem smul_cohomology_eq_zero (m : M) (n : ℕ)
     (z : ((koszulComplex φ).linearYonedaObj R N).homology n) : φ m • z = 0 := by
   have hco : Homotopy (φ m • 𝟙 ((koszulComplex φ).linearYonedaObj R N)) 0 := by
     have h := (smulHomotopy φ m).linearYonedaFunctorMap R N
-    -- Reuse the components on the definitionally equal `linearYonedaObj`. Transport the
-    -- endpoint identities componentwise, avoiding casts of the entire homotopy structure.
-    refine { hom := h.hom, zero := h.zero, comm := fun i ↦ ?_ }
-    convert! h.comm i using 1
-    · exact (congrArg (fun f ↦ f.f i)
-        (_root_.ChainComplex.linearYonedaFunctor_map_smul_id N (koszulComplex φ) (φ m))).symm
-    · simp only [dNext, prevD, op_zero, Functor.map_zero, zero_f, add_zero]
-      -- `dNext` and `prevD` use the same differentials on the functorial Hom complex
-      -- and `linearYonedaObj`; only their definitionally equal object presentations differ.
-      rfl
+    exact (Homotopy.ofEq
+      (_root_.ChainComplex.linearYonedaFunctor_map_smul_id N (koszulComplex φ) (φ m)).symm).trans
+        (h.trans (Homotopy.ofEq (by
+          rw [op_zero]
+          exact (ChainComplex.linearYonedaFunctor (α := ℕ) R N).map_zero _ _)))
   have h := hco.homologyMap_eq n
   rw [HomologicalComplex.homologyMap_smul, homologyMap_id, homologyMap_zero] at h
   simpa using congr(($h).hom z)
@@ -77,6 +72,31 @@ theorem span_le_annihilator_cohomology {ι : Type v} [Fintype ι] (x : ι → R)
       (((koszulComplex (Fintype.linearCombination R x)).linearYonedaObj R N).homology n) := by
   simpa only [Fintype.range_linearCombination, Ideal.submodule_span_eq] using
     range_le_annihilator_cohomology (Fintype.linearCombination R x) N n
+
+/-- The underlying cochain of a Koszul coboundary is precomposition with the Koszul
+differential, in the exterior-power presentation. -/
+theorem iCycles_toCycles (n : ℕ) (a : ModuleCat.of R (⋀[R]^n M) ⟶ N) :
+    ((koszulComplex φ).linearYonedaObj R N).iCycles (n + 1)
+        (((koszulComplex φ).linearYonedaObj R N).toCycles n (n + 1) a) =
+      ModuleCat.ofHom (koszulDifferential φ n) ≫ a := by
+  -- `exact` uses the defining identification of Koszul cochains with morphisms from
+  -- exterior powers; the differential itself is transported by the named formula.
+  exact (ChainComplex.linearYonedaObj_iCycles_toCycles_apply
+    (X := koszulComplex φ) (k := R) (Y := N) n (n + 1) a).trans
+    (congrArg (fun d ↦ d ≫ a) (koszulComplex_d φ n))
+
+/-- A Koszul cocycle vanishes on the Koszul differential, in the exterior-power
+presentation. -/
+theorem iCycles_comp_koszulDifferential (n : ℕ)
+    (c : ((koszulComplex φ).linearYonedaObj R N).cycles n) :
+    (((koszulComplex φ).linearYonedaObj R N).iCycles n c :
+      ModuleCat.of R (⋀[R]^n M) ⟶ N).hom.comp (koszulDifferential φ n) = 0 := by
+  -- The cochain/morphism identification and `ModuleCat` composition are definitional;
+  -- the named differential formula accounts for the Koszul-specific identification.
+  exact congrArg ModuleCat.Hom.hom
+    ((congrArg (fun d ↦ d ≫ ((koszulComplex φ).linearYonedaObj R N).iCycles n c)
+      (koszulComplex_d φ n)).symm.trans
+        (ChainComplex.d_comp_linearYonedaObj_iCycles n (n + 1) c))
 
 end koszulComplex
 
@@ -130,10 +150,9 @@ theorem iCycles_koszulCocycleOne (g : M →ₗ[R] N) {φ : Module.Dual R M}
       ModuleCat.ofHom (X := ⋀[R]^1 M)
         (g.comp (exteriorPower.oneEquiv R M).toLinearMap) := by
   dsimp only [koszulCocycleOne]
-  -- `koszulComplex.X` is definitionally `ModuleCat.of R (⋀ M)`; `erw` also unfolds the
-  -- cochain module to its morphism type, which `rw` does not match syntactically.
-  erw [ChainComplex.iCycles_cocycleOfComp]
-  exact Category.comp_id _
+  -- The general formula is typed over `koszulComplex.X`; `exact` instantiates it at
+  -- the defining exterior-power presentation without asking the rewriter to unfold it.
+  exact (ChainComplex.iCycles_cocycleOfComp _ _ (𝟙 N)).trans (Category.comp_id _)
 
 /-- A degree-zero cochain has the given degree-one coboundary exactly when the values of
 its associated linear map are multiples of its value at `1 ∈ ⋀⁰ M`. -/
@@ -143,15 +162,7 @@ theorem toCycles_eq_koszulCocycleOne_iff (g : M →ₗ[R] N) {φ : Module.Dual R
       ∀ m, g m = φ m • a.hom ((exteriorPower.zeroEquiv R M).symm 1) := by
   rw [← (HomologicalComplex.moduleCat_iCycles_injective
     ((koszulComplex φ).linearYonedaObj R N) 1).eq_iff]
-  -- The Hom-complex API uses cochain-module elements, whereas `a` is a morphism out of
-  -- `ModuleCat.of R (⋀⁰ M)`. These types agree by unfolding `linearYonedaObj` and
-  -- `koszulComplex.X`.
-  erw [ChainComplex.linearYonedaObj_iCycles_toCycles_apply, iCycles_koszulCocycleOne]
-  rw [koszulComplex_d]
-  -- Rewriting the differential retains the hom-type over `koszulComplex.X`; expose its
-  -- exterior-power presentation so `ModuleCat.hom_comp` can match the composite.
-  change (ModuleCat.ofHom (koszulDifferential φ 0) ≫ a =
-    ModuleCat.ofHom (g.comp (exteriorPower.oneEquiv R M).toLinearMap)) ↔ _
+  rw [koszulComplex.iCycles_toCycles, iCycles_koszulCocycleOne]
   constructor
   · intro h m
     have he := congr(($h).hom ((exteriorPower.oneEquiv R M).symm m))
@@ -197,21 +208,15 @@ theorem exists_koszulCocycleOne_eq (c : ((koszulComplex φ).linearYonedaObj R N)
   let f : ModuleCat.of R (⋀[R]^1 M) ⟶ N :=
     ((koszulComplex φ).linearYonedaObj R N).iCycles 1 c
   let g : M →ₗ[R] N := f.hom.comp (exteriorPower.oneEquiv R M).symm.toLinearMap
-  have hclosed : (koszulComplex φ).d 2 1 ≫ f = 0 :=
-    ChainComplex.d_comp_linearYonedaObj_iCycles (k := R) (Y := N) 1 2 c
-  rw [koszulComplex_d] at hclosed
   have hg : ∀ m n, φ m • g n = φ n • g m := by
     apply (LinearMap.comp_koszulDifferential_one_eq_zero_iff g).mp
-    -- `koszulComplex_d` leaves the hom-type over `(koszulComplex φ).X 1` in `hclosed`.
-    -- Present it over the definitionally equal `ModuleCat.of R (⋀¹ M)` so `Hom.hom` simplifies.
-    have hclosed' : ModuleCat.ofHom (koszulDifferential φ 1) ≫ f = 0 := hclosed
-    have he := congrArg ModuleCat.Hom.hom hclosed'
-    simpa [g, LinearMap.comp_assoc] using he
+    have hgf : g.comp (exteriorPower.oneEquiv R M).toLinearMap = f.hom := by
+      simp [g, LinearMap.comp_assoc]
+    rw [← LinearMap.comp_assoc, hgf]
+    exact iCycles_comp_koszulDifferential φ N 1 c
   refine ⟨g, hg, ?_⟩
   apply HomologicalComplex.moduleCat_iCycles_injective
-  -- Here `iCycles` has codomain the cochain module; the lemma's right side has the
-  -- definitionally equal morphism type out of `ModuleCat.of R (⋀¹ M)`.
-  erw [LinearMap.iCycles_koszulCocycleOne]
+  rw [LinearMap.iCycles_koszulCocycleOne]
   apply ModuleCat.hom_ext
   simp [g, LinearMap.comp_assoc, f]
 
