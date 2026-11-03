@@ -113,7 +113,7 @@ theorem spinVectorAction_spinGroupProd (x : spinGroup Q₁ × spinGroup Q₂) (m
   have h₁ := (IsometryEquiv.refl (Q₁.prod Q₂)).spinGroupMap_spinVectorAction_prod x.1 a
     (spinVectorAction Q₂ x.2 b)
   have h₂ := (IsometryEquiv.prodComm Q₁ Q₂).spinGroupMap_spinVectorAction_prod x.2 b a
-  rw [spinGroupProd_apply, spinVectorAction_mul, LinearEquiv.mul_apply]
+  rw [spinGroupProd_apply, spinVectorAction_mul, mul_apply_eq_comp]
   exact (congrArg _ h₂).trans h₁
 
 /-- **The projection of `spinGroupProd` to the special orthogonal group** is the product of the
