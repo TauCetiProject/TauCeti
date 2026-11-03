@@ -22,10 +22,13 @@ The set of primes dividing `I` is passed as a `Finset` `S` together with the cha
 `∀ v, v ∈ S ↔ v.asIdeal ∣ I`, so that any concrete description of the prime divisors of `I` can
 be used directly.
 
+The computation is local: by the Chinese remainder theorem `(R ⧸ I)ˣ` splits into the units of the
+quotients `R ⧸ 𝔭 ^ e`, which are counted for a maximal ideal of an arbitrary commutative ring.
+
 ## Main results
 
-* `Ideal.card_units_quotient_pow_mul_absNorm`: `#(R ⧸ P ^ e)ˣ · N P = N (P ^ e) · (N P - 1)` for a
-  maximal ideal `P` and `e ≠ 0`.
+* `Ideal.card_units_quotient_pow_mul_card_quotient`: `#(R ⧸ P ^ e)ˣ · #(R ⧸ P) =
+  #(R ⧸ P ^ e) · (#(R ⧸ P) - 1)` for a maximal ideal `P` of any commutative ring and `e ≠ 0`.
 * `Ideal.card_units_quotient_mul_prod_absNorm`: `#(R ⧸ I)ˣ · ∏_{𝔭 ∈ S} N 𝔭 = N I · ∏_{𝔭 ∈ S}
   (N 𝔭 - 1)` in `ℕ`, the analogue of `Nat.totient_mul_prod_primeFactors`.
 * `Ideal.card_units_quotient_eq_absNorm_mul_prod`: `#(R ⧸ I)ˣ = N I · ∏_{𝔭 ∈ S} (1 - (N 𝔭)⁻¹)`
@@ -38,14 +41,18 @@ open IsDedekindDomain
 
 namespace Ideal
 
-variable {R : Type*} [CommRing R] [IsDedekindDomain R] [Infinite R]
+section CommRing
 
-/-- **Units of the quotient by a prime power.** For a maximal ideal `P` and `e ≠ 0`,
-`#(R ⧸ P ^ e)ˣ · N P = N (P ^ e) · (N P - 1)` in `ℕ`: the non-units of the local ring `R ⧸ P ^ e`
-are the residues lying in `P`, which make up `1 / N P` of the quotient. -/
-theorem card_units_quotient_pow_mul_absNorm (P : Ideal R) [P.IsMaximal] {e : ℕ} (he : e ≠ 0)
-    [Finite (R ⧸ P ^ e)] :
-    Nat.card (R ⧸ P ^ e)ˣ * absNorm P = absNorm (P ^ e) * (absNorm P - 1) := by
+variable {R : Type*} [CommRing R]
+
+/-- **Units of the quotient by a prime power.** For a maximal ideal `P` of a commutative ring and
+`e ≠ 0`, `#(R ⧸ P ^ e)ˣ · #(R ⧸ P) = #(R ⧸ P ^ e) · (#(R ⧸ P) - 1)`: the units of the local ring
+`R ⧸ P ^ e` are the residues outside `P`, which make up `1 - 1 / #(R ⧸ P)` of the quotient. When
+`R ⧸ P ^ e` is infinite both sides are `0`. -/
+theorem card_units_quotient_pow_mul_card_quotient (P : Ideal R) [P.IsMaximal] {e : ℕ}
+    (he : e ≠ 0) :
+    Nat.card (R ⧸ P ^ e)ˣ * Nat.card (R ⧸ P) =
+      Nat.card (R ⧸ P ^ e) * (Nat.card (R ⧸ P) - 1) := by
   classical
   let f : R ⧸ P ^ e →+* R ⧸ P := Ideal.Quotient.factor (Ideal.pow_le_self he)
   have hunit (x : R ⧸ P ^ e) : IsUnit x ↔ ¬ f x = 0 := by
@@ -56,16 +63,34 @@ theorem card_units_quotient_pow_mul_absNorm (P : Ideal R) [P.IsMaximal] {e : ℕ
     rw [AddSubgroup.card_eq_card_quotient_mul_card_addSubgroup f.toAddMonoidHom.ker]
     exact congrArg (· * _) (Nat.card_congr (QuotientAddGroup.quotientKerEquivOfSurjective
       f.toAddMonoidHom (Ideal.Quotient.factor_surjective (pow_le_self he))).toEquiv)
-  have hU : Nat.card (R ⧸ P ^ e)ˣ + Nat.card f.toAddMonoidHom.ker = Nat.card (R ⧸ P ^ e) := by
-    rw [Nat.card_congr (Equiv.sumCompl fun x : R ⧸ P ^ e ↦ IsUnit x).symm, Nat.card_sum,
-      Nat.card_congr (Submonoid.unitsTypeEquivIsUnitSubmonoid (M := R ⧸ P ^ e)).toEquiv]
-    congr 1
-    exact Nat.card_congr (Equiv.subtypeEquivRight (p := (· ∈ f.toAddMonoidHom.ker))
-      (q := fun x ↦ ¬ IsUnit x) fun x ↦ by simp [hunit])
-  simp only [absNorm_apply, Submodule.cardQuot_apply, Nat.mul_sub_one]
-  exact Nat.eq_sub_of_add_eq (by nth_rw 2 [← hU]; rw [hA]; ring)
+  obtain hfin | hinf := finite_or_infinite (R ⧸ P ^ e)
+  · have hU : Nat.card (R ⧸ P ^ e)ˣ + Nat.card f.toAddMonoidHom.ker = Nat.card (R ⧸ P ^ e) := by
+      rw [Nat.card_congr (Equiv.sumCompl fun x : R ⧸ P ^ e ↦ IsUnit x).symm, Nat.card_sum,
+        Nat.card_congr (Submonoid.unitsTypeEquivIsUnitSubmonoid (M := R ⧸ P ^ e)).toEquiv]
+      congr 1
+      exact Nat.card_congr (Equiv.subtypeEquivRight (p := (· ∈ f.toAddMonoidHom.ker))
+        (q := fun x ↦ ¬ IsUnit x) fun x ↦ by simp [hunit])
+    rw [Nat.mul_sub_one]
+    exact Nat.eq_sub_of_add_eq (by nth_rw 2 [← hU]; rw [hA]; ring)
+  -- If `R ⧸ P ^ e` is infinite, then so is `R ⧸ P` or the kernel `P / P ^ e`, and in the latter
+  -- case `x ↦ 1 + x` embeds the kernel into the units.
+  rw [Nat.card_eq_zero_of_infinite (α := R ⧸ P ^ e), zero_mul, mul_eq_zero]
+  obtain h | h := mul_eq_zero.mp (hA.symm.trans Nat.card_eq_zero_of_infinite)
+  · exact .inr h
+  have : Infinite f.toAddMonoidHom.ker :=
+    (Nat.card_eq_zero.mp h).resolve_left (not_isEmpty_of_nonempty _)
+  have h1 (x : f.toAddMonoidHom.ker) : IsUnit (1 + (x : R ⧸ P ^ e)) := by
+    have hx : f x = 0 := by simpa using AddMonoidHom.mem_ker.mp x.2
+    simp [hunit, hx]
+  have : Infinite (R ⧸ P ^ e)ˣ := Infinite.of_injective (fun x ↦ (h1 x).unit)
+    fun x y hxy ↦ by simpa using congrArg Units.val hxy
+  exact .inl Nat.card_eq_zero_of_infinite
 
-private theorem card_units_quotient_mul_prod_absNorm_of_prod_eq (I : Ideal R) [Finite (R ⧸ I)]
+end CommRing
+
+variable {R : Type*} [CommRing R] [IsDedekindDomain R] [Infinite R]
+
+private theorem card_units_quotient_mul_prod_absNorm_of_prod_eq (I : Ideal R)
     {S : Finset (HeightOneSpectrum R)} {e : HeightOneSpectrum R → ℕ} (he : ∀ v ∈ S, e v ≠ 0)
     (hprod : ∏ v ∈ S, v.asIdeal ^ e v = I) : Nat.card (R ⧸ I)ˣ * ∏ v ∈ S, absNorm v.asIdeal =
       absNorm I * ∏ v ∈ S, (absNorm v.asIdeal - 1) := by
@@ -75,9 +100,8 @@ private theorem card_units_quotient_mul_prod_absNorm_of_prod_eq (I : Ideal R) [F
     Finset.prod_coe_sort S fun v ↦ Nat.card (R ⧸ v.asIdeal ^ e v)ˣ, ← hprod, map_prod,
     ← Finset.prod_mul_distrib, ← Finset.prod_mul_distrib]
   refine Finset.prod_congr rfl fun v hv ↦ ?_
-  have : Finite (R ⧸ v.asIdeal ^ e v) :=
-    Finite.of_surjective _ ((Function.surjective_eval (⟨v, hv⟩ : S)).comp φ.surjective)
-  exact card_units_quotient_pow_mul_absNorm v.asIdeal (he v hv)
+  simpa only [absNorm_eq_natCard] using
+    card_units_quotient_pow_mul_card_quotient v.asIdeal (he v hv)
 
 /-- **Euler's totient for ideals**, multiplicative form: if `S` is the set of height-one primes
 dividing `I` and `R ⧸ I` is finite, then `#(R ⧸ I)ˣ · ∏_{𝔭 ∈ S} N 𝔭 = N I · ∏_{𝔭 ∈ S} (N 𝔭 - 1)`.
