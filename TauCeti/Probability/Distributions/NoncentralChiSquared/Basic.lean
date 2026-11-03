@@ -71,14 +71,14 @@ theorem noncentralChiSquaredMeasure_eq_sum (hk : 0 ≤ k) (l : ℝ≥0) :
   ext s hs
   rw [noncentralChiSquaredMeasure_of_nonneg hk, Measure.bind_apply hs (.of_discrete),
     lintegral_countable', Measure.sum_apply _ hs]
-  simp only [Measure.smul_apply, smul_eq_mul, mul_comm]
+  simp only [_root_.smul_apply, smul_eq_mul, mul_comm]
 
 /-- Set evaluation as an extended-real Poisson series; the formula holds for every set. -/
 theorem noncentralChiSquaredMeasure_apply (hk : 0 ≤ k) (l : ℝ≥0) (s : Set ℝ) :
     noncentralChiSquaredMeasure k l s = ∑' n : ℕ,
       poissonMeasure (l / 2) {n} * chiSquaredMeasure (k + 2 * n) s := by
   rw [noncentralChiSquaredMeasure_eq_sum hk, Measure.sum_apply_of_countable]
-  simp only [Measure.smul_apply, smul_eq_mul]
+  simp only [_root_.smul_apply, smul_eq_mul]
 
 /-- Nonnegative integration can be performed component by component, without finiteness or
 integrability assumptions on the observable. -/
@@ -110,7 +110,7 @@ theorem measurable_noncentralChiSquaredMeasure :
       poissonMeasure (p.2 / 2) {n} • chiSquaredMeasure (p.1 + 2 * n) := by
     apply Measure.measurable_measure.2
     intro s hs
-    simp only [Measure.sum_apply _ hs, Measure.smul_apply, smul_eq_mul]
+    simp only [Measure.sum_apply _ hs, _root_.smul_apply, smul_eq_mul]
     exact Measurable.tsum fun n ↦
       ((Measure.measurable_coe (measurableSet_singleton n)).comp
         (measurable_poissonMeasure.comp (measurable_snd.div_const 2))).mul
@@ -147,7 +147,7 @@ theorem nullSingletonClass_noncentralChiSquaredMeasure (hk : 0 < k) (l : ℝ≥0
   constructor
   intro x
   rw [noncentralChiSquaredMeasure_apply hk.le]
-  apply ENNReal.tsum_eq_zero.2
+  apply tsum_eq_zero_iff.2
   intro n
   rw [chiSquaredMeasure_singleton (by positivity), mul_zero]
 
@@ -159,9 +159,9 @@ theorem noncentralChiSquaredMeasure_zero_degree (l : ℝ≥0) :
         Measure.sum (fun n : ℕ ↦ poissonMeasure (l / 2) {n + 1} •
           chiSquaredMeasure (2 * (n + 1))) := by
   ext s hs
-  rw [noncentralChiSquaredMeasure_apply (by norm_num), Measure.add_apply,
-    Measure.sum_apply _ hs, tsum_eq_zero_add' ENNReal.summable]
-  simp only [Measure.smul_apply, smul_eq_mul, Nat.cast_zero, mul_zero, zero_add,
+  rw [noncentralChiSquaredMeasure_apply (by norm_num), _root_.add_apply,
+    Measure.sum_apply _ hs, tsum_eq_zero_add' CompleteLattice.summable]
+  simp only [_root_.smul_apply, smul_eq_mul, Nat.cast_zero, mul_zero, zero_add,
     chiSquaredMeasure_zero, Nat.cast_add, Nat.cast_one]
   congr 1
   simp [poissonMeasure_singleton, NNReal.coe_div, neg_div]
@@ -170,11 +170,11 @@ theorem noncentralChiSquaredMeasure_zero_degree (l : ℝ≥0) :
 @[simp]
 theorem noncentralChiSquaredMeasure_zero_degree_mass (l : ℝ≥0) :
     noncentralChiSquaredMeasure 0 l {0} = ENNReal.ofReal (exp (-(l : ℝ) / 2)) := by
-  rw [noncentralChiSquaredMeasure_zero_degree, Measure.add_apply,
+  rw [noncentralChiSquaredMeasure_zero_degree, _root_.add_apply,
     Measure.sum_apply _ (measurableSet_singleton 0)]
   have hzero (n : ℕ) : chiSquaredMeasure (2 * ((n : ℝ) + 1)) {0} = 0 :=
     chiSquaredMeasure_singleton (by positivity) 0
-  simp [Measure.smul_apply, hzero]
+  simp [_root_.smul_apply, hzero]
 
 /-- Zero is the only possible atom, for every degree and noncentrality. -/
 @[simp]
@@ -182,7 +182,7 @@ theorem noncentralChiSquaredMeasure_singleton_of_ne_zero (hx : x ≠ 0) (k : ℝ
     noncentralChiSquaredMeasure k l {x} = 0 := by
   by_cases hk : 0 ≤ k
   · rw [noncentralChiSquaredMeasure_apply hk]
-    apply ENNReal.tsum_eq_zero.2
+    apply tsum_eq_zero_iff.2
     intro n
     by_cases hdeg : k + 2 * n = 0
     · simp [hdeg, chiSquaredMeasure_zero, hx]

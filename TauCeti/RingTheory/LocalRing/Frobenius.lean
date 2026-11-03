@@ -25,7 +25,7 @@ Neither perfection nor algebraic closedness of the residue field is needed.
 ## References
 
 * N. M. Katz and B. Mazur, *Arithmetic Moduli of Elliptic Curves*, proof of 5.3.6.
-* Mathlib's `IsArtinianRing.isNilpotent_jacobson_bot` supplies the uniform nilpotence bound.
+* Mathlib's `IsArtinianRing.isNilpotent_jacobson` supplies the uniform nilpotence bound.
 -/
 
 public section
@@ -59,7 +59,7 @@ theorem exists_iterateFrobenius_eq_algebraMap_comp
     (RingHom.ker_comp_of_injective (residue R) e.symm.injective).trans ker_residue
   have hnil : IsNilpotent (RingHom.ker f) := by
     rw [hker, ← jacobson_eq_maximalIdeal (⊥ : Ideal R) bot_ne_top]
-    exact IsArtinianRing.isNilpotent_jacobson_bot
+    simpa only [Ideal.jacobson_bot] using IsArtinianRing.isNilpotent_jacobson R
   exact f.exists_iterateFrobenius_eq_of_isNilpotent_ker p (algebraMap k R) hs
     (Fact.out : p.Prime).one_lt hnil
 

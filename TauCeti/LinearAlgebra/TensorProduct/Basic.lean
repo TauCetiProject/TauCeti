@@ -129,6 +129,19 @@ theorem tensorComponent_assoc_symm (phi : P →ₗ[R] R) (u : M ⊗[R] (N ⊗[R]
       simp only [TensorProduct.assoc_symm_tmul, LinearMap.tensorComponent_tmul,
         LinearMap.lTensor_tmul, TensorProduct.tmul_smul]
 
+/-- Contracting the middle factor after reassociation is contraction of the left factor of the
+second tensor factor, followed by the left unitor. -/
+@[simp]
+theorem rTensor_tensorComponent_assoc_symm (phi : N →ₗ[R] R) (u : M ⊗[R] (N ⊗[R] P)) :
+    (LinearMap.tensorComponent phi).rTensor P ((TensorProduct.assoc R M N P).symm u) =
+      (TensorProduct.lid R P ∘ₗ phi.rTensor P).lTensor M u := by
+  induction u using TensorProduct.inductionOn with
+  | add u v hu hv => simp only [map_add, hu, hv]
+  | tmul m v =>
+    induction v using TensorProduct.inductionOn with
+    | add v w hv hw => simp only [tmul_add, map_add, hv, hw]
+    | tmul n p => simp [TensorProduct.smul_tmul]
+
 /-- Applying two tensor components successively is contraction by the composed functional
 on the last two factors, after reassociation. -/
 theorem tensorComponent_comp_tensorComponent (phi : N →ₗ[R] R) (psi : P →ₗ[R] R) :

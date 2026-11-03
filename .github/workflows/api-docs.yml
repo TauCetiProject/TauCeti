@@ -25,7 +25,7 @@ on:
       - 'docbuild/**'
       - '.github/workflows/api-docs.yml'
   schedule:
-    - cron: "53 * * * *"   # Hourly (UTC); a run with nothing new to analyze takes a few minutes
+    - cron: "49 * * * *"   # Hourly (UTC); a run with nothing new to analyze takes a few minutes
   workflow_dispatch:
 
 permissions:
@@ -47,7 +47,7 @@ jobs:
   build-docs:
     # Keep hourly docs builds independent of the hosted-runner backlog.
     runs-on:
-      - nscloud-ubuntu-24.04-amd64-8x16-with-features
+      - nscloud-ubuntu-24.04-amd64-16x32-with-features
       - namespace-features:github.run-id=${{ github.run_id }}
     # A full rebuild (after a pin bump) analyzes all of TauCeti; everything else is far quicker.
     timeout-minutes: 300
@@ -123,13 +123,14 @@ jobs:
       # entry, so a prefix fallback across pins would restore nothing useful. The rendered tree has
       # to come along: some of its files (the bibliography) are written by steps whose markers
       # live outside it, so Lake would not recreate them if the tree alone were missing.
+      # The v2 prefix also separates the policy that omits generated definition equations.
       - name: Restore the doc-gen4 build state
         uses: actions/cache/restore@v4
         with:
           path: docbuild/.lake/build
-          key: docs-build-v1-${{ hashFiles('lean-toolchain', 'lake-manifest.json', 'docbuild/lake-manifest.json') }}-${{ github.run_id }}-${{ github.run_attempt }}
+          key: docs-build-v2-no-equations-${{ hashFiles('lean-toolchain', 'lake-manifest.json', 'docbuild/lake-manifest.json') }}-${{ github.run_id }}-${{ github.run_attempt }}
           restore-keys: |
-            docs-build-v1-${{ hashFiles('lean-toolchain', 'lake-manifest.json', 'docbuild/lake-manifest.json') }}-
+            docs-build-v2-no-equations-${{ hashFiles('lean-toolchain', 'lake-manifest.json', 'docbuild/lake-manifest.json') }}-
 
       # doc-gen4 needs TauCeti's oleans. ci.yml publishes them, and ci.yml and pr-build.yml
       # already restore them. Restore into the root project rather than docbuild: a path
@@ -189,6 +190,11 @@ jobs:
       # so does the previous facts file, which describes the previous marker's commit.
       - name: Build the API documentation (doc-gen4)
         env:
+          # Give doc-gen4 more memory without doubling Lake's runtime worker count.
+          LEAN_NUM_THREADS: "8"
+          # Expanding large definition bodies into equations can exhaust memory.
+          # Generate every declaration's signature and docstring without those equations.
+          DISABLE_EQUATIONS: "1"
           DOCGEN_LOCAL_MODULE_ROOTS: TauCeti
           DOCGEN_DEPS_DOCS_URL: https://leanprover-community.github.io/mathlib4_docs
           # The restore above placed what this needs, so do not reach for a remote cache.
@@ -278,7 +284,7 @@ jobs:
         uses: actions/cache/save@v4
         with:
           path: docbuild/.lake/build
-          key: docs-build-v1-${{ hashFiles('lean-toolchain', 'lake-manifest.json', 'docbuild/lake-manifest.json') }}-${{ github.run_id }}-${{ github.run_attempt }}
+          key: docs-build-v2-no-equations-${{ hashFiles('lean-toolchain', 'lake-manifest.json', 'docbuild/lake-manifest.json') }}-${{ github.run_id }}-${{ github.run_attempt }}
 
       # Every run saves new entries, and the repository's cache is shared with the Mathlib olean
       # caches that pr-build.yml depends on, so left alone these would push those out under the
@@ -292,7 +298,7 @@ jobs:
           REPO: ${{ github.repository }}
         run: |
           set -euo pipefail
-          for prefix in docs-build-v1- docs-html-v2-; do
+          for prefix in docs-build-v2-no-equations- docs-html-v2-; do
             # Newest first; keep three so a Pages run that restored one just now still finds it.
             gh cache list -R "$REPO" --ref "$GITHUB_REF" --key "$prefix" --sort created_at --order desc --limit 100 --json id \
               --jq '.[3:][].id' |
