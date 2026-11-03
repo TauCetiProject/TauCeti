@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Lie.E6.DoubledMinuscule.CrossProduct
-public import TauCeti.Algebra.Lie.E6.DoubledMinuscule.TorusCentralizer
+public import TauCeti.Algebra.Lie.E6.DoubledMinuscule.TorusCentralizer.Basic
 
 /-!
 # The doubled type-E6 weight torus and its maximality on field-valued points
