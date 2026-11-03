@@ -86,7 +86,7 @@ include hQ
 /-- For `Q v = -‖v‖²`, the element `Γ` acts on every module as an involution. -/
 private theorem involutive_complexVolume :
     Function.Involutive (ρ (complexVolume Q o)) := fun s ↦ by
-  rw [← Module.End.mul_apply, ← map_mul, complexVolume_mul_self o hQ, map_one, Module.End.one_apply]
+  rw [← mul_apply_eq_comp, ← map_mul, complexVolume_mul_self o hQ, map_one, one_apply_eq_self]
 
 /-- The `±1`-eigenspaces of `Γ` on a module are complementary. -/
 private theorem isCompl_eigenspace_complexVolume_neg {μ : ℂ} (hμ : μ = 1 ∨ μ = -1) :
