@@ -8,9 +8,10 @@ module
 public import TauCeti.Probability.Kernel.Reachability
 public import TauCeti.Probability.Kernel.Composition.Power
 public import Mathlib.Probability.Kernel.Composition.CompMap
+public import Mathlib.Order.Preorder.Finite
 
 /-!
-# Restriction of a kernel to a closed set of states
+# Closed sets of states and communicating classes
 
 `Kernel.subtype κ hs` restricts both the starting and destination states to a measurable
 set `s`. It is a Markov kernel exactly when `κ x s = 1` for every `x ∈ s`.
@@ -26,6 +27,13 @@ Markov kernel, with the same transition probabilities as the original chain.
 
 The construction uses Mathlib's `Kernel.comapRight` and `Kernel.comap`, rather than
 choosing a retraction onto the set of states. Empty sets are allowed.
+
+Every state with only finitely many reachable states reaches a closed communicating class.
+In particular, every nonempty finite closed set contains a closed communicating class, and
+on a finite nonempty state space such a class always exists. Only the relevant reachable
+set, or the closed set trapping the chain, has to be finite; no Markov or finiteness
+assumption on the kernel is needed. These structural results do not assert almost-sure
+entrance into a class.
 
 ## References
 
@@ -184,13 +192,12 @@ theorem isIrreducible_subtype_iff [MeasurableSingletonClass S] (hs : MeasurableS
     communicates_subtype_iff hs hclosed]
   exact ⟨fun h x hx y hy => h ⟨x, hx⟩ ⟨y, hy⟩, fun h x y => h x x.property y y.property⟩
 
-/-- The communicating class of `x` supports a Markov restriction exactly when every
-state reachable from `x` can reach `x` again. This is the closed-class criterion. -/
-theorem isMarkovKernel_subtype_communicatingClass_iff [Countable S]
-    [MeasurableSingletonClass S] [IsMarkovKernel κ] (x : S) :
-    IsMarkovKernel (κ.subtype (κ.measurableSet_communicatingClass x)) ↔
-      ∀ y, κ.Reaches x y → κ.Reaches y x := by
-  rw [isMarkovKernel_subtype_iff_isClosedSet, isClosedSet_iff_forall_reaches_mem]
+/-- A communicating class is closed exactly when every state reachable from its
+representative can reach the representative again. No Markov assumption is needed. -/
+theorem isClosedSet_communicatingClass_iff [Countable S]
+    [MeasurableSingletonClass S] (x : S) :
+    κ.IsClosedSet (κ.communicatingClass x) ↔ ∀ y, κ.Reaches x y → κ.Reaches y x := by
+  rw [isClosedSet_iff_forall_reaches_mem]
   simp only [mem_communicatingClass_iff]
   constructor
   · intro h y hxy
@@ -198,6 +205,14 @@ theorem isMarkovKernel_subtype_communicatingClass_iff [Countable S]
   · intro h y hxy z hyz
     have hxy' := (communicates_def x y).mp hxy
     exact (communicates_def x z).mpr ⟨hxy'.1.trans hyz, h z (hxy'.1.trans hyz)⟩
+
+/-- The communicating class of `x` supports a Markov restriction exactly when every
+state reachable from `x` can reach `x` again. This is the closed-class criterion. -/
+theorem isMarkovKernel_subtype_communicatingClass_iff [Countable S]
+    [MeasurableSingletonClass S] [IsMarkovKernel κ] (x : S) :
+    IsMarkovKernel (κ.subtype (κ.measurableSet_communicatingClass x)) ↔
+      ∀ y, κ.Reaches x y → κ.Reaches y x := by
+  rw [isMarkovKernel_subtype_iff_isClosedSet, isClosedSet_communicatingClass_iff]
 
 /-- Restriction to a closed communicating class is irreducible for counting measure. -/
 theorem isIrreducible_subtype_communicatingClass [Countable S]
@@ -207,5 +222,51 @@ theorem isIrreducible_subtype_communicatingClass [Countable S]
   intro y hy z hz
   exact ((mem_communicatingClass_iff x y).mp hy).symm.trans
     ((mem_communicatingClass_iff x z).mp hz)
+
+section Finite
+
+variable [Countable S] [MeasurableSingletonClass S]
+
+/-- A state with finitely many reachable states reaches a closed communicating class.
+The representative of the class is itself reachable from the initial state. -/
+theorem exists_reaches_isClosedSet_communicatingClass_of_finite (κ : Kernel S S) (x : S)
+    (hfinite : {y | κ.Reaches x y}.Finite) :
+    ∃ y, κ.Reaches x y ∧ κ.IsClosedSet (κ.communicatingClass y) := by
+  -- Choose a minimal reachable set using the finite-order minimal-element theorem.
+  obtain ⟨y, hxy, hmin⟩ := hfinite.exists_minimalFor
+    (fun y => {z | κ.Reaches y z}) _ ⟨x, Reaches.refl x⟩
+  refine ⟨y, hxy, (isClosedSet_communicatingClass_iff y).mpr ?_⟩
+  intro z hyz
+  have hsub : {w | κ.Reaches z w} ⊆ {w | κ.Reaches y w} :=
+    fun w hzw => hyz.trans hzw
+  exact hmin (hxy.trans hyz) hsub (Reaches.refl y)
+
+/-- Every state of a finite state space reaches a closed communicating class. This does not
+say that the class is entered almost surely, or that the entrance time has finite mean. -/
+theorem exists_reaches_isClosedSet_communicatingClass [Finite S] (κ : Kernel S S) (x : S) :
+    ∃ y, κ.Reaches x y ∧ κ.IsClosedSet (κ.communicatingClass y) :=
+  exists_reaches_isClosedSet_communicatingClass_of_finite κ x (Set.toFinite _)
+
+/-- A finite nonempty state space has a closed communicating class. -/
+theorem exists_isClosedSet_communicatingClass [Finite S] [Nonempty S] (κ : Kernel S S) :
+    ∃ y, κ.IsClosedSet (κ.communicatingClass y) := by
+  obtain ⟨y, _, hy⟩ := exists_reaches_isClosedSet_communicatingClass κ
+    (Classical.arbitrary S)
+  exact ⟨y, hy⟩
+
+/-- From each state of a finite closed set one can reach a closed communicating class
+contained in that set, even when the ambient state space is infinite. -/
+theorem IsClosedSet.exists_reaches_communicatingClass_subset (hclosed : κ.IsClosedSet s)
+    (hfinite : s.Finite) {x : S} (hx : x ∈ s) :
+    ∃ y ∈ s, κ.Reaches x y ∧ κ.IsClosedSet (κ.communicatingClass y) ∧
+      κ.communicatingClass y ⊆ s := by
+  have hstay := isClosedSet_iff_forall_reaches_mem.mp hclosed
+  obtain ⟨y, hxy, hy⟩ := exists_reaches_isClosedSet_communicatingClass_of_finite κ x
+    (hfinite.subset fun z hz => hstay x hx z hz)
+  have hys := hstay x hx y hxy
+  exact ⟨y, hys, hxy, hy, fun z hz =>
+    hstay y hys z ((communicates_def y z).mp ((mem_communicatingClass_iff y z).mp hz)).1⟩
+
+end Finite
 
 end ProbabilityTheory.Kernel
