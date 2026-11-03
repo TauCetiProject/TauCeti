@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.MeasureTheory.Function.Lp.GroupConvolution
-public import TauCeti.MeasureTheory.Function.Lp.RightTranslation
 import TauCeti.MeasureTheory.Function.Lp.Norm
 import TauCeti.MeasureTheory.Integral.PeakFunction
 
