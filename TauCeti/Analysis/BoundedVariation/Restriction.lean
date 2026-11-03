@@ -32,12 +32,6 @@ open MeasureTheory TopologicalSpace
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
   [MeasurableSpace E] {μ : Measure E} {Ω U V : Opens E}
 
-/-- Restriction to an open subset preserves BV membership. -/
-theorem MemBV.mono {u : E → ℝ} (hu : MemBV μ Ω u) (hU : U ≤ Ω) :
-    MemBV μ U u :=
-  memBV_iff.mpr ⟨(memBV_iff.mp hu).1.mono_set hU,
-    (totalVariationOn_mono hU).trans_lt (memBV_iff.mp hu).2⟩
-
 variable [OpensMeasurableSpace E]
 
 namespace BV
