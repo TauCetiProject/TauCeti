@@ -420,7 +420,7 @@ private theorem mul_renyiEntropy_add_eq [IsFiniteMeasure μ] [μ.HaveLebesgueDec
   have hρint : ∫ x, ρ x ∂m = μ.real univ - (μ.singularPart m).real univ := by
     have h : μ univ = μ.singularPart m univ + ∫⁻ x, μ.rnDeriv m x ∂m := by
       conv_lhs => rw [μ.haveLebesgueDecomposition_add m]
-      rw [Measure.add_apply, withDensity_apply _ MeasurableSet.univ, Measure.restrict_univ]
+      rw [_root_.add_apply, withDensity_apply _ MeasurableSet.univ, Measure.restrict_univ]
     rw [integral_toReal (Measure.measurable_rnDeriv μ m).aemeasurable (μ.rnDeriv_lt_top m),
       measureReal_def, measureReal_def, h, ENNReal.toReal_add (measure_ne_top _ _) hρl]
     ring

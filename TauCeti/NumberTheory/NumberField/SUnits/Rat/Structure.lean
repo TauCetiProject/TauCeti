@@ -101,7 +101,7 @@ private theorem natCast_mem_sUnits_rat {p : ℕ} (hp : p.Prime) (hpS : p ∈ S) 
   have : Fact p.Prime := ⟨hp⟩
   have : Fact q.Prime := ⟨hq⟩
   rw [Units.val_mk0, padicValRat.of_nat, Nat.cast_eq_zero]
-  exact padicValNat_primes fun h ↦ hqS (h ▸ hpS)
+  exact multiplicity_primes fun h ↦ hqS (h ▸ hpS)
 
 variable (hS : ∀ p ∈ S, p.Prime)
 
@@ -160,7 +160,7 @@ private theorem signExponents_ofSignExponents (w : ℤˣ × Multiplicative (S �
       · simp [padicValRat.self (hS q q.2).one_lt]
       · simp only [Units.val_mk0, padicValRat.of_nat, toAdd_ofAdd, Pi.single_eq_of_ne hqp,
           Nat.cast_eq_zero]
-        exact padicValNat_primes fun h ↦ hqp (Subtype.ext h)
+        exact multiplicity_primes fun h ↦ hqp (Subtype.ext h)
   rw [ofSignExponents, map_mul, map_prod]
   simp only [map_zpow, hε, hp]
   refine Prod.ext (by simp [Prod.fst_prod]) ?_
@@ -186,7 +186,7 @@ private theorem signExponents_injective : Function.Injective (signExponents hS) 
   have hpos : 0 < ((x : ℚˣ) : ℚ).num := Rat.num_pos.2 (sign_eq_one_iff.1 hsign)
   have hone : ((x : ℚˣ) : ℚ).num = 1 := by omega
   ext
-  rw [← Rat.coe_int_num_of_den_eq_one hden, hone]
+  rw [← Rat.intCast_num_of_den_eq_one hden, hone]
   simp
 
 /-- **The structure of the rational `S`-units.** If `S` consists of primes, the map
@@ -266,7 +266,7 @@ theorem mulHeight₁_sUnits_rat {x : ℚˣ}
     intro p hp
     rw [padicValRat_def]
     rcases Rat.num_or_den_zero_padicVal (x : ℚ) (hS p hp) with h | h <;>
-      simp only [padicValInt] at h ⊢ <;> omega
+      simp only [padicValInt, Nat.padicValNat_def] at h ⊢ <;> omega
   have hnum' : ((x : ℚ).num.natAbs : ℝ) = ∏ p ∈ S, (p : ℝ) ^ (padicValRat p (x : ℚ)).toNat := by
     conv_lhs => rw [← prod_pow_padicValNat_eq_self_of_mem_factoredNumbers hS hnum]
     push_cast

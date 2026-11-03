@@ -70,7 +70,7 @@ staging_order = ["tauchonki", "chris", "yael", "brett", "namespace", "github"]
 
 [services.fleet.machines.chris]
 enrollment_name = "chris-server"
-max_jobs = 2
+max_jobs = 3
 kinds = ["pr", "staging"]
 
 [services.fleet.machines.tauchonki]
@@ -80,12 +80,12 @@ kinds = ["pr", "staging"]
 
 [services.fleet.machines.yael]
 enrollment_name = "yael-server"
-max_jobs = 4
+max_jobs = 12
 kinds = ["pr", "staging"]
 
 [services.fleet.machines.brett]
 enrollment_name = "brett-server"
-max_jobs = 5
+max_jobs = 24
 kinds = ["pr", "staging"]
 
 [services.cache]
@@ -107,7 +107,7 @@ zulip_topic = "Progress logs"
 
 [tools.tools]
 repo="TauCetiProject/TauCetiTools"
-ref="a8b16c3dd0c0730a1963052cb520808e161222ef"
+ref="ac879910a87ec1605cbb52191cee551fafeddb0c"
 [tools.review]
 repo="TauCetiProject/TauCetiReview"
 ref="32ce2069308080df4e08df14c2160012a51c8152"

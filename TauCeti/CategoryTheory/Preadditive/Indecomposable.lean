@@ -247,7 +247,7 @@ theorem indecomposable_of_finrank_end_eq_one {k : Type*} [DivisionRing k] [Linea
   have hid := id_ne_zero_of_finrank_end_eq_one h
   refine indecomposable_of_idempotent_eq_zero_or_id (not_isZero_of_finrank_end_eq_one h)
     fun e he ↦ ?_
-  obtain ⟨c, rfl⟩ := (finrank_eq_one_iff_of_nonzero' (𝟙 X) hid).mp h e
+  obtain ⟨c, rfl⟩ := (finrank_eq_one_iff_of_ne_zero' (𝟙 X) hid).mp h e
   rw [Linear.smul_comp, Linear.comp_smul, Category.comp_id, smul_smul] at he
   rcases IsIdempotentElem.iff_eq_zero_or_one.mp (smul_left_injective k hid he) with rfl | rfl
   · exact Or.inl (zero_smul k (𝟙 X))
