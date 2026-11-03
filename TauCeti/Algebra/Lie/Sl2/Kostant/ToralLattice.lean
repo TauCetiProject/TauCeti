@@ -101,7 +101,7 @@ private theorem toAddSubgroup_subringClosure_kostantGenerators_adjoint
     (Subring.closure (kostantGenerators T E F)).toAddSubgroup =
       orderedKostantSpan T E F := by
   rw [orderedKostantSpan_def]
-  apply Subring.toAddSubgroup_closure_eq_of_one_mem_of_mul_mem
+  apply Subring.toAddSubgroup_closure_eq_of_one_mem_of_subset_of_left_mul_mem
   · rw [← orderedKostantSpan_def]
     exact one_mem_orderedKostantSpan T E F
   · rw [subringClosure_kostantGenerators_eq_subringClosure_orderedKostantMonomials]
