@@ -52,7 +52,7 @@ instance : Decidable r.HasValidLabel :=
 
 /-- After a successful parse, certifying the label means precisely checking its two stored
 data components; in particular the parsed output is not an additional choice. -/
-@[simp] theorem hasValidLabel_iff_of_parse {L : PassportLabel n}
+theorem hasValidLabel_iff_of_parse {L : PassportLabel n}
     (hL : parsePassportLabel n r.plabel = some L) :
     r.HasValidLabel ↔
       L.groupNumber = r.group ∧ (L.lam0, L.lam1, L.laminf) = r.lambdas := by
