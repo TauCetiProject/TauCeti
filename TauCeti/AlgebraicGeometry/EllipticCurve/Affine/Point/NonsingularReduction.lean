@@ -9,6 +9,7 @@ public import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.Henselian
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.Point.Reduction
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.Point.VariableChange
 public import TauCeti.AlgebraicGeometry.EllipticCurve.IntegralModel
+public import TauCeti.RingTheory.Valuation.ValuativeRel.Extension
 -- Proof-only: one Bosma–Lenstra law computes a sum over a local ring and all its residue fields.
 import TauCeti.AlgebraicGeometry.EllipticCurve.Projective.AdditionLaw.LocalRing
 
@@ -48,6 +49,9 @@ whichever variable has a nonvanishing partial derivative at the point of `W_k`
   reduction is a nonsingular point of the reduced curve.
 * `WeierstrassCurve.Affine.nonsingularReductionHom`: the reduction homomorphism
   `E₀(F) →+ W_k,ns(k)`.
+* `WeierstrassCurve.isIntegral_valuationSubring_baseChange`: along a compatible extension `L/K` of
+  valued fields, an equation integral over the valuation ring of `K` stays integral over that of
+  `L`, so its points over `L` have a reduction and a subgroup `E₀(L)`.
 
 ## Main results
 
@@ -362,5 +366,24 @@ theorem nonsingularReductionHom_surjective [HenselianLocalRing v.valuationSubrin
   simp only [hx, hy]
 
 end WeierstrassCurve.Affine
+
+/-! ### Base change along an extension of valued fields -/
+
+namespace WeierstrassCurve
+
+open ValuativeRel
+
+/-- **Integrality along an extension of valued fields.** If `L/K` is a compatible extension of
+valued fields, the base change to `L` of an equation with coefficients in the valuation ring of `K`
+has coefficients in the valuation ring of `L`, so its points over `L` have a reduction and a
+subgroup `E₀(L)` of points with nonsingular reduction. -/
+instance isIntegral_valuationSubring_baseChange {K L : Type*} [Field K] [ValuativeRel K] [Field L]
+    [ValuativeRel L] [Algebra K L] [ValuativeExtension K L] (W : WeierstrassCurve K)
+    [IsIntegral (valuation K).integer W] :
+    IsIntegral (valuation L).valuationSubring (W.baseChange L) :=
+  IsIntegral.baseChange (R := (valuation K).integer) (S := (valuation L).integer)
+    (RingHom.ext fun x ↦ TauCeti.coe_algebraMap_integerRing x) W
+
+end WeierstrassCurve
 
 end
