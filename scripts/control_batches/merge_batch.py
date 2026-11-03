@@ -27,6 +27,31 @@ def install():
     original_candidates = sweep.candidates
     original_remember = sweep.remember_sweep_attempt
     original_open_prs = sweep.open_prs
+    original_begin = sweep.api_budget.begin_pr
+    original_run = sweep.api_budget.run
+    original_diff = sweep.pr_diff
+    attempt = dict(failed=False, failures_before=0)
+
+    def begin_pr():
+        attempt.update(failed=False, failures_before=sweep.api_budget.failures)
+        return original_begin()
+
+    def run(*args, **kwargs):
+        try:
+            result = original_run(*args, **kwargs)
+        except Exception:
+            attempt["failed"] = True
+            raise
+        if result.returncode:
+            attempt["failed"] = True
+        return result
+
+    def pr_diff(*args, **kwargs):
+        try:
+            return original_diff(*args, **kwargs)
+        except Exception:
+            attempt["failed"] = True
+            raise
 
     def open_prs():
         prs = original_open_prs()
@@ -66,13 +91,14 @@ def install():
         # Include changed PRs even without pr-status's readiness hint. Do not
         # lose approvals/revocations when their individual pending runs collapse.
         fresh = [p for p in prs if changed(p, sweep._sweep_progress.get(str(p["number"])))]
+        active = set(queue_prs) | set(bors_prs)
         def latest_change(pr):
             comments = (pr.get("batch_comments") or {}).get("latest", [])
             previous = sweep._sweep_progress.get(str(pr["number"]))
             comment_change = isinstance(previous, dict) and pr.get("batch_comments") != previous.get("batch_observed_comments")
             stamp = max([sweep.parse_ts(pr.get("updated_at"))] +
                         [sweep.parse_ts(c.get("updatedAt")) for c in comments])
-            return comment_change, stamp
+            return pr["number"] in active, comment_change, stamp
         fresh.sort(key=latest_change, reverse=True)
         numbers = {p["number"] for p in fresh}
         return fresh + [p for p in ordered if p["number"] not in numbers]
@@ -82,6 +108,8 @@ def install():
         path = os.environ.get("SWEEP_PROGRESS_FILE")
         if not path or sweep.DRY_RUN:
             return
+        if attempt["failed"] or sweep.api_budget.rate_limited or sweep.api_budget.failures > attempt["failures_before"]:
+            return  # Attempt ordering advances; input versions remain unacknowledged.
         # Save the metadata version discovered BEFORE the policy ran, not the
         # completion time: a concurrent edit must remain fresh on the next pass.
         entry = sweep._sweep_progress.setdefault(str(pr["number"]), {})
@@ -96,6 +124,7 @@ def install():
             print("merge-batch: scheduling checkpoint unavailable; current policy checks still apply", file=sys.stderr)
 
     sweep.candidates, sweep.remember_sweep_attempt, sweep.open_prs = candidates, remember, open_prs
+    sweep.api_budget.begin_pr, sweep.api_budget.run, sweep.pr_diff = begin_pr, run, pr_diff
 
 
 def main():

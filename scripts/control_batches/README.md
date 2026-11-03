@@ -21,7 +21,9 @@ hourly label timer resumes work even after events cease.
 The policy supplies all review, head, base, hold, backend, withdrawal and quota
 checks. The wrapper only orders candidates and records discovery versions.
 Changed PR/head metadata or a changed comment-version snapshot goes ahead of
-unchanged queue rechecks. A paginated GraphQL query reads each open PR's comment
+unchanged queue rechecks, with active queue members first within the changed
+set. Failed policy checks retain fresh inputs rather than acknowledging them.
+A paginated GraphQL query reads each open PR's comment
 count and most recently updated comment ID/timestamp, without bodies, so edits
 and deletions are detected even when the PR's own `updated_at` does not change,
 including changed PRs without readiness labels. Thus coalescing individual event

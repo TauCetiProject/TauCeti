@@ -126,14 +126,16 @@ Per-PR failures move to the artifact's retry queue while healthy work advances.
 After five failed recovery attempts for the same inputs, the PR is reported in
 warnings and the step summary. Transient server failures and non-capped incomplete
 file listings pause for six hours, then start another bounded retry cycle without
-requiring a PR edit. Non-transient failures remain exhausted until their
-inputs/policy change or a manual full scan resets the state.
+requiring a PR edit. In the batch wrapper, every exhausted failure receives
+this timed retry, including permission or validation failures whose external
+conditions may change without a contributor edit.
 Rate limits, transport outages, listing errors,
 and failed artifact uploads fail the workflow and retain the previous successful
 window. Completed progress is saved even on a deferred run, so the next pass can
-skip its successful prefix. State restoration accepts only scheduled or manually
-dispatched runs from this repository's main branch, excluding fork PR runs even
-when their head branch is named main. Saved retry timestamps must be finite,
+skip its successful prefix. State restoration accepts trusted scheduled/manual
+main runs and `pull_request_target` runs executing main's workflow definition.
+Untrusted fork `pull_request` runs cannot supply state, even if their head branch
+is named main. Saved retry timestamps must be finite,
 nonnegative numbers. Closed PRs are pruned after a complete listing.
 
 Without a state handoff, local recovery uses the previous successful run's start,
@@ -160,7 +162,7 @@ independent of that label opt-in.
 
 This mitigation does not guarantee capacity for ten times the event rate. Each
 meaningful event run still needs a snapshot query; large diffs need more pages.
-The debounce coalesces rapid events only on the same PR. Recovery caches avoid
+The debounce coalesces rapid events across all PRs. Recovery caches avoid
 repeated snapshots for unchanged PRs, but every sweep still lists all open PR
 metadata. Cold state must inspect every open PR and can need multiple quota
 windows to finish. The default reconciliation safety limit is 5,000 open PRs;

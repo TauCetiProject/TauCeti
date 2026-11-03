@@ -31,6 +31,9 @@ class MergeBatch(unittest.TestCase):
         self.original_candidates = sweep.candidates
         self.original_remember = sweep.remember_sweep_attempt
         self.original_open_prs = sweep.open_prs
+        self.addCleanup(setattr, sweep.api_budget, "begin_pr", sweep.api_budget.begin_pr)
+        self.addCleanup(setattr, sweep.api_budget, "run", sweep.api_budget.run)
+        self.addCleanup(setattr, sweep, "pr_diff", sweep.pr_diff)
         self.addCleanup(setattr, sweep, "open_prs", self.original_open_prs)
         self.addCleanup(setattr, sweep, "candidates", self.original_candidates)
         self.addCleanup(setattr, sweep, "remember_sweep_attempt", self.original_remember)
@@ -91,6 +94,36 @@ class MergeBatch(unittest.TestCase):
         with patch.object(sweep, "gh_json", return_value=[page]):
             with self.assertRaisesRegex(RuntimeError, "before the final page"):
                 sweep.open_prs()
+
+    def test_active_revocation_precedes_many_newer_unqueued_comment_changes(self):
+        queued = pr(1)
+        queued["batch_comments"] = dict(count=2, latest=[dict(id="revoked", updatedAt="2026-11-03T02:01:00Z")])
+        old = observed(queued) | dict(batch_observed_comments=dict(count=1, latest=[]))
+        others = [pr(n, "2026-11-03T03:00:00Z") for n in range(2, 22)]
+        for other in others:
+            other["batch_comments"] = dict(count=1, latest=[dict(id="new", updatedAt="2026-11-03T03:00:00Z")])
+        with patch.object(sweep, "read_sweep_progress", return_value={"1": old}):
+            selected = sweep.candidates(others + [queued], {1}, set())
+        self.assertEqual(selected[0]["number"], 1)
+        self.assertEqual(len(selected), 21)
+
+    def test_failed_policy_attempt_does_not_acknowledge_changed_comments(self):
+        p = pr(1)
+        p["batch_comments"] = dict(count=1, latest=[])
+        with tempfile.TemporaryDirectory() as directory, \
+             patch.dict(os.environ, SWEEP_PROGRESS_FILE=str(Path(directory) / "progress.json")), \
+             patch.object(sweep, "DRY_RUN", False), \
+             patch.object(sweep.api_budget, "limit", None), \
+             patch.object(sweep.api_budget, "rate_limited", False):
+            sweep._sweep_progress = {}
+            sweep.api_budget.begin_pr()
+            import pr_diff as policy_diff
+            with patch.object(policy_diff, "resolve_shas", side_effect=RuntimeError("offline fixture fetch failure")):
+                with self.assertRaises(RuntimeError):
+                    sweep.pr_diff("o/r", 1, "a"*40, "b"*40)
+            sweep.remember_sweep_attempt(p)
+            self.assertTrue(batch.changed(p, sweep._sweep_progress["1"]))
+            self.assertNotIn("batch_observed_comments", sweep._sweep_progress["1"])
 
     def test_coalesced_revocation_on_recently_checked_pr_precedes_unchanged_queue(self):
         queued = [pr(n) for n in range(1, 31)]
