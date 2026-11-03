@@ -173,7 +173,7 @@ theorem ne_zero_of_eqOn_LSeries (χ : UnitaryIdealWeight K) {s : ℂ} (hs : s.re
     ring
   rw [hs'] at hf ⊢
   rw [hs₂] at hf₂
-  refine LSeries.ne_zero_of_threeFourOne (f₀ := dedekindZeta K) ?_ ?_ hf hf₂
+  refine LSeries.ne_zero_of_threeFourOne (f₀ := dedekindZeta K) ?_ ?_ (hf.restrictScalars ℝ) hf₂
   · filter_upwards [self_mem_nhdsWithin] with σ (hσ : 1 < σ)
     rw [hfL (by simpa using hσ), hf₂L (by simpa using hσ)]
     exact χ.norm_dedekindZeta_threeFourOne_ge_one hσ s.im
