@@ -27,6 +27,15 @@ bounded. Over Tate scalars (`TauCeti.NormedRing.IsTate`), in particular over eve
 normed field, it is approximation in the operator norm `ContinuousLinearMap.ringOpNorm`
 (`ContinuousLinearMap.isCompletelyContinuous_iff_ringOpNorm`).
 
+Over Tate scalars complete continuity is also a condition on lattices rather than norms: for a
+bounded neighbourhood `M₀` of zero in the source, such as a bounded open lattice, `u` is
+completely continuous exactly when for every neighbourhood `V` of zero in the target some
+continuous map `g` of finite rank satisfies `(u - g)(M₀) ⊆ V`. This is the form in which complete
+continuity is stated for Banach modules given by lattices rather than by norms. The condition
+involves only the set `M₀` and the neighbourhoods of zero in the target, so different bounded open
+lattices give the same notion, and so do equivalent norms (complete continuity is invariant under
+continuous linear equivalences).
+
 Completely continuous maps are closed under addition, scalar multiplication and uniform
 approximation, under composition on either side with bounded continuous linear maps, and over
 Tate scalars under composition on either side with arbitrary continuous linear maps. The
@@ -50,8 +59,15 @@ the module to be finitely generated.
   `ContinuousLinearMap.isClosed_setOf_isCompletelyContinuous`: complete continuity is closed under
   uniform approximation, under operator-norm limits over Tate scalars, and is a closed condition
   over a nontrivially normed field.
+* `ContinuousLinearMap.isCompletelyContinuous_iff_forall_mapsTo`,
+  `Filter.HasBasis.isCompletelyContinuous_iff_forall_mapsTo`: the lattice
+  criterion over Tate scalars, for a bounded neighbourhood of zero in the source and all (or a
+  basis of) neighbourhoods of zero in the target.
 * `ContinuousLinearMap.IsCompletelyContinuous.clm_comp`,
-  `ContinuousLinearMap.IsCompletelyContinuous.comp_clm`: the ideal property over Tate scalars.
+  `ContinuousLinearMap.IsCompletelyContinuous.comp_clm`: the ideal property over Tate scalars,
+  and `ContinuousLinearEquiv.comp_isCompletelyContinuous_iff`,
+  `ContinuousLinearEquiv.isCompletelyContinuous_comp_iff`: invariance under continuous
+  linear equivalences, hence under equivalent norms.
 * `ContinuousLinearMap.IsCompletelyContinuous.clm_comp_of_bound`,
   `ContinuousLinearMap.IsCompletelyContinuous.comp_clm_of_bound`: composition on either side with
   a bounded continuous linear map, over any ring.
@@ -166,6 +182,25 @@ theorem IsCompletelyContinuous.smul {S : Type*} [SeminormedRing S] [DistribMulAc
         mul_le_mul (by linarith) (huv x) (norm_nonneg _) (by positivity)
     _ = ε * ‖x‖ := by field_simp
 
+/-- A completely continuous map is approximated on every bounded set `M₀` by continuous maps of
+finite rank, up to an arbitrary neighbourhood `V` of zero: some `g` of finite rank maps `M₀` into
+`V` after subtraction from `u`. -/
+theorem IsCompletelyContinuous.exists_isFiniteRank_mapsTo {u : M →L[R] N}
+    (hu : u.IsCompletelyContinuous) {M₀ : Set M} (hM₀ : Bornology.IsBounded M₀) {V : Set N}
+    (hV : V ∈ 𝓝 0) :
+    ∃ g : M →L[R] N, (g : M →ₗ[R] N).IsFiniteRank ∧ Set.MapsTo (u - g) M₀ V := by
+  obtain ⟨C, hC⟩ := hM₀.exists_norm_le
+  obtain ⟨δ, hδ, hδV⟩ := Metric.mem_nhds_iff.mp hV
+  have hD : 0 < |C| + 1 := by positivity
+  obtain ⟨g, hg, hug⟩ := hu (δ / (|C| + 1)) (div_pos hδ hD)
+  refine ⟨g, hg, fun x hx ↦ hδV ?_⟩
+  rw [mem_ball_zero_iff, sub_apply]
+  calc ‖u x - g x‖ ≤ δ / (|C| + 1) * ‖x‖ := hug x
+    _ < δ / (|C| + 1) * (|C| + 1) := by
+        gcongr
+        exact (hC x hx).trans_lt ((le_abs_self C).trans_lt (lt_add_one _))
+    _ = δ := div_mul_cancel₀ δ hD.ne'
+
 /-- Postcomposing a completely continuous map with a continuous linear map bounded by `C`, that is
 with `‖g y‖ ≤ C * ‖y‖`, gives a completely continuous map. Over Tate scalars every continuous
 linear map is bounded (`ContinuousLinearMap.IsCompletelyContinuous.clm_comp`). -/
@@ -226,6 +261,43 @@ theorem isCompletelyContinuous_of_tendsto {ι : Type*} {l : Filter ι} [l.NeBot]
     have ⟨i, hvi, hi⟩ := (hv.and (h.eventually (gt_mem_nhds hε))).exists
     ⟨v i, hvi, fun x ↦ by simpa using le_of_ringOpNorm_le _ hi.le x⟩
 
+/-- **The lattice criterion for complete continuity.** Over Tate scalars, let `M₀` be a bounded
+neighbourhood of zero in `M`, such as a bounded open lattice. A continuous linear map `u` is
+completely continuous if and only if for every neighbourhood `V` of zero in `N` some continuous
+map `g` of finite rank satisfies `(u - g)(M₀) ⊆ V`.
+
+The condition only involves the neighbourhoods of zero in `N` and the set `M₀`, so replacing `M₀`
+by another bounded neighbourhood of zero does not change it. -/
+theorem isCompletelyContinuous_iff_forall_mapsTo {u : M →L[R] N} {M₀ : Set M} (hM₀ : M₀ ∈ 𝓝 0)
+    (hbdd : Bornology.IsBounded M₀) :
+    u.IsCompletelyContinuous ↔ ∀ V ∈ 𝓝 (0 : N),
+      ∃ g : M →L[R] N, (g : M →ₗ[R] N).IsFiniteRank ∧ Set.MapsTo (u - g) M₀ V := by
+  refine ⟨fun hu V hV ↦ hu.exists_isFiniteRank_mapsTo hbdd hV, fun h ↦ ?_⟩
+  obtain ⟨ϖ⟩ := TauCeti.NormedRing.IsTate.nonempty_pseudoUniformizer (R := R)
+  obtain ⟨r, hr, hrM₀⟩ := Metric.mem_nhds_iff.mp hM₀
+  obtain ⟨k, hk⟩ := exists_pow_lt_of_lt_one hr ϖ.norm_lt_one
+  have hϖ : 0 < ‖(ϖ.unit : R)‖ ^ ((k : ℤ) + 1) := zpow_pos ϖ.norm_pos _
+  refine isCompletelyContinuous_iff_ringOpNorm.mpr fun ε hε ↦ ?_
+  -- Approximate `u` within `ε / 2 * ‖ϖ‖ ^ (k + 1)` on the ball of radius `r > ‖ϖ‖ ^ k`; rescaling
+  -- by powers of `ϖ` turns this into the operator-norm bound `‖u - g‖ ≤ ε / 2`.
+  obtain ⟨g, hg, hug⟩ := h _ (Metric.ball_mem_nhds 0 (mul_pos (half_pos hε) hϖ))
+  refine ⟨g, hg, ?_⟩
+  have hle := ϖ.ringOpNorm_le_of_forall_norm_lt (u - g) k (by rwa [zpow_natCast])
+    (mul_pos (half_pos hε) hϖ).le fun x hx ↦
+      (mem_ball_zero_iff.mp (hug (hrM₀ (mem_ball_zero_iff.mpr hx)))).le
+  rw [mul_inv_cancel_right₀ hϖ.ne'] at hle
+  exact hle.trans_lt (half_lt_self hε)
+
+/-- The lattice criterion `ContinuousLinearMap.isCompletelyContinuous_iff_forall_mapsTo` with the
+neighbourhoods of zero in `N` restricted to a basis, such as a basis of open lattices. -/
+theorem _root_.Filter.HasBasis.isCompletelyContinuous_iff_forall_mapsTo {ι : Sort*} {p : ι → Prop}
+    {V : ι → Set N} (hV : (𝓝 (0 : N)).HasBasis p V) {u : M →L[R] N} {M₀ : Set M}
+    (hM₀ : M₀ ∈ 𝓝 0) (hbdd : Bornology.IsBounded M₀) :
+    u.IsCompletelyContinuous ↔ ∀ i, p i →
+      ∃ g : M →L[R] N, (g : M →ₗ[R] N).IsFiniteRank ∧ Set.MapsTo (u - g) M₀ (V i) := by
+  rw [ContinuousLinearMap.isCompletelyContinuous_iff_forall_mapsTo hM₀ hbdd]
+  exact hV.forall_iff fun _ _ hst ⟨g, hg, hug⟩ ↦ ⟨g, hg, hug.mono_right hst⟩
+
 omit [IsBoundedSMul R M] in
 /-- Over Tate scalars, postcomposing a completely continuous map with a continuous linear map
 gives a completely continuous map. -/
@@ -241,6 +313,26 @@ theorem IsCompletelyContinuous.comp_clm {u : M →L[R] N} (hu : u.IsCompletelyCo
     (f : L →L[R] M) : (u.comp f).IsCompletelyContinuous :=
   have ⟨_, hC, hf⟩ := ringOpNorm_bound f
   hu.comp_clm_of_bound f hC hf
+
+omit [IsBoundedSMul R M] in
+/-- Over Tate scalars, complete continuity is unchanged by postcomposition with a continuous linear
+equivalence; in particular it does not depend on the choice of an equivalent norm on the
+target. -/
+@[simp]
+theorem _root_.ContinuousLinearEquiv.comp_isCompletelyContinuous_iff (e : N ≃L[R] P)
+    {u : M →L[R] N} :
+    ((e : N →L[R] P).comp u).IsCompletelyContinuous ↔ u.IsCompletelyContinuous :=
+  ⟨fun h ↦ by simpa [← comp_assoc] using h.clm_comp (e.symm : P →L[R] N), fun h ↦ h.clm_comp _⟩
+
+omit [IsBoundedSMul R N] in
+/-- Over Tate scalars, complete continuity is unchanged by precomposition with a continuous linear
+equivalence; in particular it does not depend on the choice of an equivalent norm on the
+source. -/
+@[simp]
+theorem _root_.ContinuousLinearEquiv.isCompletelyContinuous_comp_iff (e : L ≃L[R] M)
+    {u : M →L[R] N} :
+    (u.comp (e : L →L[R] M)).IsCompletelyContinuous ↔ u.IsCompletelyContinuous :=
+  ⟨fun h ↦ by simpa [comp_assoc] using h.comp_clm (e.symm : M →L[R] L), fun h ↦ h.comp_clm _⟩
 
 end Tate
 
