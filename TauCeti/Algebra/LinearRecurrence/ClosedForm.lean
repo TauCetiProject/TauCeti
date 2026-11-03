@@ -68,7 +68,7 @@ theorem isSolution_iff_aeval_charPoly_apply {u : ℕ → R} :
     induction k generalizing n with
     | zero => simp
     | succ k ih =>
-      rw [pow_succ', Module.End.mul_apply, LinearMap.funLeft_apply, ih]
+      rw [pow_succ', mul_apply_eq_comp, LinearMap.funLeft_apply, ih]
       congr 1
       omega
   have h (n : ℕ) : aeval (LinearMap.funLeft R R Nat.succ) E.charPoly u n =
@@ -86,7 +86,7 @@ theorem isSolution_eval_mul_pow {p : R[X]} {θ : R}
   obtain ⟨q, hq⟩ := E.charPoly.pow_rootMultiplicity_dvd θ
   have hker := Module.End.mem_genEigenspace_nat.mp (eval_mul_pow_mem_genEigenspace θ hp)
   rw [LinearMap.mem_ker] at hker
-  rw [isSolution_iff_aeval_charPoly_apply, hq, mul_comm, map_mul, Module.End.mul_apply,
+  rw [isSolution_iff_aeval_charPoly_apply, hq, mul_comm, map_mul, mul_apply_eq_comp,
     map_pow, map_sub, aeval_X, aeval_C, Algebra.algebraMap_eq_smul_one, hker, map_zero]
 
 end CommRing

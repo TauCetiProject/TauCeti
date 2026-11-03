@@ -7,7 +7,7 @@ module
 
 public import Mathlib.RingTheory.Teichmuller
 public import TauCeti.RingTheory.Huber.Pair
-public import TauCeti.RingTheory.Perfectoid.UniformTilt
+public import TauCeti.RingTheory.Perfectoid.UniformTilt.Basic
 
 /-!
 # The integral tilt of a complete uniform Tate ring
@@ -104,6 +104,37 @@ theorem mem_plusSubring_iff_coeff_zero {h : IsRingOfIntegralElements Bplus}
   have hn := coeff_pow_p_pow x 0 n
   rw [zero_add] at hn
   rwa [hn]
+
+/-- The integral tilt is an open subring: membership is tested on the zeroth coordinate. -/
+theorem isOpen_plusSubring {Bplus : Subring B} (h : IsRingOfIntegralElements Bplus) :
+    IsOpen (plusSubring p h : Set (uniformTilt p B)) := by
+  have he : (plusSubring p h : Set (uniformTilt p B)) = coeff p B 0 ⁻¹' Bplus :=
+    Set.ext fun _ ↦ mem_plusSubring_iff_coeff_zero
+  rw [he]
+  exact h.isOpen.preimage (continuous_coeff 0)
+
+/-- The integral tilt is bounded, because each coordinate lies in the bounded ring `B°`. -/
+theorem isBounded_plusSubring {Bplus : Subring B} (h : IsRingOfIntegralElements Bplus) :
+    IsBounded (plusSubring p h : Set (uniformTilt p B)) := by
+  rw [Huber.isBounded_iff]
+  intro U hU
+  rw [isEmbedding_coeff.isInducing.nhds_eq_comap] at hU
+  obtain ⟨W, hW, hWU⟩ := Filter.mem_comap.mp hU
+  simp only [coeff_zero, nhds_pi] at hW
+  obtain ⟨s, hs, V, hV, hVW⟩ := Filter.mem_pi.mp hW
+  choose T hT hTV using fun n ↦
+    Huber.isBounded_iff.mp IsUniform.isBounded_powerBoundedSubring (V n) (hV n)
+  refine ⟨⋂ n ∈ s, coeff p B n ⁻¹' T n, ?_, ?_⟩
+  · exact (Filter.biInter_mem hs).mpr fun n _ ↦
+      (continuous_coeff n).continuousAt.preimage_mem_nhds (by simpa using hT n)
+  · rintro _ ⟨x, hx, y, hy, rfl⟩
+    apply hWU
+    apply hVW
+    intro n hn
+    dsimp only
+    rw [map_mul]
+    exact hTV n (Set.mul_mem_mul (Set.mem_iInter₂.mp hx n hn)
+      (h.le_powerBoundedSubring (mem_plusSubring_iff.mp hy n)))
 
 /-- The integral tilt is multiplicatively the perfection of the monoid `B⁺`. -/
 private noncomputable def plusMulEquiv (h : IsRingOfIntegralElements Bplus) :

@@ -38,9 +38,14 @@ shrinking neighbourhoods of `K`, which gives `|∫_K h| ≤ ∫⁻_K k`. Inner r
 compact set, and the scalar case follows by comparing set integrals. The
 vector case tests the scalar components `⟪h, w⟫` for `w` in a countable dense subset of `F`.
 
+The same scalar argument, with `k` the positive part of `h`, shows that a scalar density whose
+pairings with nonnegative test functions are nonnegative is itself nonnegative almost everywhere
+(`TauCeti.ae_nonneg_of_forall_integral_mul_nonneg`).
+
 ## Main declarations
 
 * `TauCeti.ae_enorm_le_of_forall_enorm_integral_inner_le`: the pointwise bound `‖h‖ ≤ k`.
+* `TauCeti.ae_nonneg_of_forall_integral_mul_nonneg`: nonnegativity from nonnegative pairings.
 
 ## References
 
@@ -173,6 +178,50 @@ private theorem ae_enorm_le_of_forall_nonneg (hh : LocallyIntegrable h ρ) (hkm 
     linarith
   · simp only [Pi.sub_apply, Pi.zero_apply] at h₁
     linarith
+
+/-- **A density with nonnegative pairings is nonnegative.** If `h : Ω → ℝ` is locally integrable
+for a measure `ρ` on `Ω` and `0 ≤ ∫ ψ x * h x ∂ρ` for every nonnegative test function `ψ` on `Ω`,
+then `0 ≤ h x` for `ρ`-almost every `x`. -/
+theorem ae_nonneg_of_forall_integral_mul_nonneg (hh : LocallyIntegrable h ρ)
+    (H : ∀ ψ : 𝓓(Ω, ℝ), (∀ x, 0 ≤ ψ x) → 0 ≤ ∫ x, ψ x * h x ∂ρ) :
+    ∀ᵐ x ∂ρ, 0 ≤ h x := by
+  have := Ω.isOpen.locallyCompactSpace
+  -- Bound `|h|` by the positive part of a measurable representative `g` of `h`.
+  set g := hh.aestronglyMeasurable.mk h
+  have hg : h =ᵐ[ρ] g := hh.aestronglyMeasurable.ae_eq_mk
+  have hgm : Measurable g := hh.aestronglyMeasurable.stronglyMeasurable_mk.measurable
+  have hle : ∀ᵐ x ∂ρ, ‖h x‖ₑ ≤ ENNReal.ofReal (g x) := by
+    refine ae_enorm_le_of_forall_nonneg hh (ENNReal.measurable_ofReal.comp hgm)
+      (fun K hK => ne_top_of_le_ne_top ((hh.congr hg).integrableOn_isCompact hK).2.ne
+        (lintegral_mono fun x => ?_)) fun ψ hψ0 hψ1 W hW hψW => ?_
+    · rw [Real.enorm_eq_ofReal_abs]
+      exact ENNReal.ofReal_le_ofReal (le_abs_self _)
+    have hψ (x : Ω) (hx : x ∉ W) : ψ x = 0 := image_eq_zero_of_notMem_tsupport fun hx' => hx <| by
+      obtain ⟨y, hy, hyx⟩ := hψW hx'
+      rwa [← Subtype.val_injective hyx]
+    -- `ψ h ≤ (h⁺ on W)`, and the integral of a function is at most that of its positive part.
+    have hpt : ∀ᵐ x : Ω ∂ρ,
+        ENNReal.ofReal (ψ x * h x) ≤ W.indicator (fun x => ENNReal.ofReal (g x)) x := by
+      filter_upwards [hg] with x hx
+      by_cases hxW : x ∈ W
+      · rw [indicator_of_mem hxW, ← hx]
+        refine ENNReal.ofReal_le_ofReal_iff'.2 ?_
+        rcases le_or_gt (h x) 0 with h0 | h0
+        · exact Or.inr (mul_nonpos_of_nonneg_of_nonpos (hψ0 x) h0)
+        · exact Or.inl (mul_le_of_le_one_left h0.le (hψ1 x))
+      · simp [hψ x hxW]
+    rw [Real.enorm_eq_ofReal_abs, abs_of_nonneg (H ψ hψ0), ← lintegral_indicator hW.measurableSet]
+    refine le_trans ?_ (lintegral_mono_ae hpt)
+    by_cases hint : Integrable (fun x : Ω => ψ x * h x) ρ
+    · rw [integral_eq_lintegral_pos_part_sub_lintegral_neg_part hint]
+      exact (ENNReal.ofReal_le_ofReal (sub_le_self _ ENNReal.toReal_nonneg)).trans
+        ENNReal.ofReal_toReal_le
+    · simp [integral_undef hint]
+  filter_upwards [hle, hg] with x hx hxg
+  rw [← hxg, Real.enorm_eq_ofReal_abs] at hx
+  rcases ENNReal.ofReal_le_ofReal_iff'.1 hx with h' | h'
+  · exact (abs_nonneg _).trans h'
+  · exact (abs_nonpos_iff.1 h').ge
 
 variable {F : Type*} [NormedAddCommGroup F] [InnerProductSpace ℝ F] [SeparableSpace F]
 

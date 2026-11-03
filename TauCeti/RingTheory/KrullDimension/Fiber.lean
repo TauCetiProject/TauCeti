@@ -243,7 +243,8 @@ theorem ringKrullDim_eq_of_hasGoingDown_of_map_maximalIdeal_eq [IsLocalRing R] [
     [IsNoetherianRing R] [IsNoetherianRing S] [Algebra.HasGoingDown R S]
     (h : (maximalIdeal R).map (algebraMap R S) = maximalIdeal S) :
     ringKrullDim S = ringKrullDim R := by
-  have : IsLocalHom (algebraMap R S) := ((local_hom_TFAE (algebraMap R S)).out 1 3).mpr h.le
+  have : IsLocalHom (algebraMap R S) :=
+    ((IsLocalRing.local_hom_tfae (algebraMap R S)).out 1 3).mpr h.le
   rw [ringKrullDim_eq_ringKrullDim_add_ringKrullDim_quotient_map_maximalIdeal R, h,
     ringKrullDim_eq_zero_of_isField ((Ideal.Quotient.maximal_ideal_iff_isField_quotient _).mp
       (maximalIdeal.isMaximal S)), add_zero]

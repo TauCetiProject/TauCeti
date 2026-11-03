@@ -255,6 +255,37 @@ theorem time_straight (k : Fin ((straight lam : LSPath P b lam).length + 2)) :
     (straight lam : LSPath P b lam).time k = k.val := by
   fin_cases k <;> rfl
 
+/-- An LS encoding is straight exactly when its initial minimal coset representative is the
+identity. This uses the decreasing directions, not dominance of the shape. -/
+theorem eq_straight_iff_dir_zero_eq_one (π : LSPath P b lam) :
+    π = straight lam ↔ (π.dir 0).1 = 1 := by
+  constructor
+  · rintro rfl
+    simp
+  · intro h
+    have hlen : π.length = 0 := by
+      by_contra hlen
+      -- Explicit indices avoid choosing a successor in the dependent direction type.
+      have hlt := π.strictAnti_length_dir
+        (show (0 : Fin (π.length + 1)) < ⟨1, by omega⟩ by
+          simpa only [Fin.lt_def, Fin.val_zero, Fin.val_mk] using Nat.zero_lt_one)
+      dsimp only at hlt
+      rw [h, CoxeterSystem.length_one] at hlt
+      omega
+    obtain ⟨n, dir, time, hzero, hlast, hmono, hne, hchain⟩ := π
+    dsimp only at hlen
+    subst n
+    apply ext
+    · simp only [length_straight, List.ofFn_succ, List.ofFn_zero, List.cons.injEq,
+        and_true]
+      apply Subtype.ext
+      simpa only [dir_straight] using h
+    · simp only [length_straight, List.ofFn_succ, List.ofFn_zero, List.cons.injEq,
+        and_true]
+      constructor
+      · simpa using hzero
+      · simpa using hlast
+
 /-- The path of the straight Lakshmibai–Seshadri path is the straight path along `λ`. -/
 @[simp]
 theorem toPLPath_straight :

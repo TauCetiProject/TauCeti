@@ -107,7 +107,8 @@ Jacobson radical of `B`, and let `I` be a finitely generated ideal of `B` with `
 theorem eq_of_le_sup {I J : Ideal B} [Flat R (B ⧸ I)] (hI : I.FG)
     (hjac : 𝔪.map (algebraMap R B) ≤ (⊥ : Ideal B).jacobson) (hJI : J ≤ I)
     (hle : I ≤ J ⊔ 𝔪.map (algebraMap R B)) : I = J := by
-  refine le_antisymm (Submodule.le_of_le_smul_of_le_jacobson_bot hI hjac fun x hx ↦ ?_) hJI
+  refine le_antisymm (Submodule.le_of_le_smul_of_le_jacobson hI
+    (by simpa only [Ideal.jacobson_bot] using hjac) fun x hx ↦ ?_) hJI
   obtain ⟨y, hy, z, hz, rfl⟩ := Submodule.mem_sup.mp (hle hx)
   have hzI : z ∈ I := by simpa using I.sub_mem hx (hJI hy)
   refine Submodule.mem_sup.mpr ⟨y, hy, z, ?_, rfl⟩
@@ -140,8 +141,8 @@ theorem isSMulRegular_of_isSMulRegular_quotient_mk [IsNoetherianRing B] [Flat R 
       (fun y ↦ by simp [Ideal.Quotient.eq_zero_iff_mem]) Subtype.val_injective
       Ideal.Quotient.mk_surjective
   have hker : LinearMap.ker g = ⊥ := by
-    refine Submodule.eq_bot_of_le_smul_of_le_jacobson_bot _ _ (IsNoetherian.noetherian _)
-      (fun x hx ↦ ?_) hjac
+    refine Submodule.eq_bot_of_le_smul_of_le_jacobson _ _ (IsNoetherian.noetherian _)
+      (fun x hx ↦ ?_) (by simpa only [Ideal.jacobson_bot] using hjac)
     have hfx : f * x = 0 := congrArg Subtype.val (LinearMap.mem_ker.mp hx)
     have hxJ : x ∈ 𝔪.map (algebraMap R B) := by
       rw [← Ideal.Quotient.eq_zero_iff_mem]

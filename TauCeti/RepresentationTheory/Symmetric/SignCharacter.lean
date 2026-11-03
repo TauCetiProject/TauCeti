@@ -17,10 +17,10 @@ character tables and of the induction examples -- the one-dimensional representa
 `FDRep.ofLinearCharacter (signLinearCharacter k α)`, and restricting it along a subgroup inclusion
 is precomposition, so a subgroup meets it as `(signLinearCharacter k α).comp H.subtype`.
 
-Only two facts are needed to compute with it, and both are recorded here: its value in `k` is the
-sign cast into `k`, and it sends a transposition to `-1`. In characteristic two those two values
-coincide and the character is trivial; every statement that needs it to be nontrivial has to say so
-by excluding that characteristic.
+The facts needed to compute with it are recorded here: its value in `k` is the sign cast into `k`,
+it sends a transposition to `-1`, and over a commutative ring it squares to the trivial character.
+In characteristic two `-1 = 1`, so the character is trivial; every statement that needs it to be
+nontrivial has to say so by excluding that characteristic.
 
 ## Main definitions
 
@@ -30,6 +30,7 @@ by excluding that characteristic.
 
 * `TauCeti.coe_signLinearCharacter_apply`: its value in `k` is the sign of the permutation, cast.
 * `TauCeti.signLinearCharacter_swap`: it sends a transposition to `-1`.
+* `TauCeti.signLinearCharacter_mul_self`: its square is the trivial character.
 -/
 
 public section
@@ -62,8 +63,14 @@ characteristic. -/
 @[simp]
 theorem signLinearCharacter_swap {i j : α} (h : i ≠ j) :
     signLinearCharacter k α (Equiv.swap i j) = -1 := by
-  refine Units.ext ?_
-  rw [coe_signLinearCharacter_apply, Equiv.Perm.sign_swap h]
-  simp
+  ext
+  simp [h]
+
+/-- **The sign character squares to the trivial character.** -/
+@[simp]
+theorem signLinearCharacter_mul_self {k : Type u} [CommRing k] :
+    signLinearCharacter k α * signLinearCharacter k α = 1 := by
+  ext
+  simp [← Int.cast_mul]
 
 end TauCeti
