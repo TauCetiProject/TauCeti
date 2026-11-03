@@ -151,8 +151,9 @@ noncomputable def kerEquivProdTorsionOfDiagonalization (M : Matrix ι ι R)
       (LinearMap.ker (M.map f).mulVecLin).comap e.toLinearMap := by
     have hd : (GeneralLinearGroup.map f L : Matrix ι ι A) * M.map f *
         (GeneralLinearGroup.map f Q : Matrix ι ι A) = diagonal (f ∘ d) := by
+      change (L : Matrix ι ι R).map f * M.map f * (Q : Matrix ι ι R).map f = _
       simpa only [Matrix.map_mul, diagonal_map f.map_zero, Function.comp_def] using
-        congrArg (fun N ↦ N.map f) h
+        congrArg (fun N : Matrix ι ι R ↦ N.map f) h
     ext x
     simp only [Submodule.mem_comap, LinearMap.mem_ker, LinearEquiv.coe_toLinearMap, e,
       toLinearEquiv_basisFun_apply, mulVecLin_apply]
