@@ -392,6 +392,17 @@ theorem boundaryHomologyMap_def (h : IsSolidTorusNeighborhood f Φ) :
       (TopCat.ofHom (ContinuousMap.inclusion h.frontier_subset_compl_range))) 1).hom :=
   (rfl)
 
+/-- The boundary longitude is the image of the `(0, 1)` curve under the boundary torus of the
+exterior, parametrized by the framing and read in the knot complement. -/
+private theorem boundaryHomologyMap_basis_one (h : IsSolidTorusNeighborhood f Φ) :
+    h.boundaryHomologyMap (h.framedBoundaryTorus.basis 1) =
+      singularHomologyMap ℤ 1
+        (h.frontierToComplement.comp (h.exteriorFrontierHomeomorph : C(Circle × Circle, _)))
+        (torusClass 0 1) := by
+  rw [singularHomologyMap_comp, FramedBoundaryTorus.ofHomeomorph_basis_one,
+    FramedBoundaryTorus.torusCurveClass_eq_singularHomologyMap]
+  rfl
+
 /-- A null-homologous longitude stays null-homologous under a reparametrization of the core
 circle followed by a map of knot complements. Let `Φ'` be a solid torus neighbourhood of a loop
 `f'` in a Hausdorff space `Y`, `g` a self-map of the circle and `m` a map from the complement of
@@ -415,17 +426,9 @@ theorem boundaryHomologyMap_basis_one_eq_zero_of_map {Y : Type} [TopologicalSpac
     exact (h'.coe_exteriorFrontierHomeomorph_apply q).trans
       (hm _ q (h.coe_exteriorFrontierHomeomorph_apply (q.1, g q.2))).symm
   obtain ⟨n, hn⟩ := g.exists_singularHomologyMap_prodMap_torusClass_zero_one
-  -- The boundary homology map is induced by the inclusion of the frontier of the exterior, the
-  -- torus parametrized by the framing, so after the parametrization it is induced by the composite.
-  have hmap (x) : h.boundaryHomologyMap x = singularHomologyMap ℤ 1 h.frontierToComplement x :=
-    (rfl)
-  have hmap' (x) : h'.boundaryHomologyMap x = singularHomologyMap ℤ 1 h'.frontierToComplement x :=
-    (rfl)
-  rw [hmap, FramedBoundaryTorus.ofHomeomorph_basis_one,
-    FramedBoundaryTorus.torusCurveClass_eq_singularHomologyMap, ← singularHomologyMap_comp] at hΦ
-  rw [hmap', FramedBoundaryTorus.ofHomeomorph_basis_one,
-    FramedBoundaryTorus.torusCurveClass_eq_singularHomologyMap, ← singularHomologyMap_comp, hcomp,
-    singularHomologyMap_comp, singularHomologyMap_comp, hn, torusClass_eq]
+  rw [h.boundaryHomologyMap_basis_one] at hΦ
+  rw [h'.boundaryHomologyMap_basis_one, hcomp, singularHomologyMap_comp, singularHomologyMap_comp,
+    hn, torusClass_eq]
   simp only [zero_smul, zero_add, map_zsmul, hΦ, zsmul_zero, map_zero]
 
 /-- On the boundary torus, the `(p, q)` curve is homologous in the knot complement to the
