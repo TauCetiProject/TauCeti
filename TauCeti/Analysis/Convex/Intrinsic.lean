@@ -344,6 +344,15 @@ noncomputable def convexClosedBallHomeomorph (hconv : Convex ℝ C) (hcl : IsClo
       continuous_toFun := by fun_prop
       continuous_invFun := by fun_prop }
 
+/-- The convex-ball homeomorphism is gauge rescaling followed by translation by `c`. -/
+theorem coe_convexClosedBallHomeomorph_apply_eq_gaugeRescale (hconv : Convex ℝ C)
+    (hcl : IsClosed C) (hb : IsBounded C) (hc : c ∈ intrinsicInterior ℝ C)
+    (v : closedBall (0 : (affineSpan ℝ C).direction) 1) :
+    (convexClosedBallHomeomorph hconv hcl hb hc v : E) =
+      c + ((gaugeRescale (closedBall 0 1)
+        {w : (affineSpan ℝ C).direction | c + (w : E) ∈ C} v :
+          (affineSpan ℝ C).direction) : E) := (rfl)
+
 /-- `TauCeti.convexClosedBallHomeomorph` in explicit coordinates: `v` is sent to
 `c + (‖v‖ / gauge (-c +ᵥ C) v) • v`. -/
 theorem coe_convexClosedBallHomeomorph_apply (hconv : Convex ℝ C) (hcl : IsClosed C)
@@ -351,10 +360,8 @@ theorem coe_convexClosedBallHomeomorph_apply (hconv : Convex ℝ C) (hcl : IsClo
     (v : closedBall (0 : (affineSpan ℝ C).direction) 1) :
     (convexClosedBallHomeomorph hconv hcl hb hc v : E) =
       c + (‖(v : E)‖ / gauge ((-c) +ᵥ C) (v : E)) • (v : E) := by
-  -- By definition the homeomorphism is the gauge rescaling followed by translation by `c`.
-  change c + ((gaugeRescale (closedBall 0 1) {w : (affineSpan ℝ C).direction | c + (w : E) ∈ C}
-    v : (affineSpan ℝ C).direction) : E) = _
-  rw [gaugeRescale_def, gauge_closedBall zero_le_one, gauge_setOf_add_mem, div_one,
+  rw [coe_convexClosedBallHomeomorph_apply_eq_gaugeRescale,
+    gaugeRescale_def, gauge_closedBall zero_le_one, gauge_setOf_add_mem, div_one,
     Submodule.coe_smul, ← Submodule.norm_coe]
 
 /-- `TauCeti.convexClosedBallHomeomorph` sends the centre of the ball to `c`. -/
@@ -364,19 +371,24 @@ theorem coe_convexClosedBallHomeomorph_zero (hconv : Convex ℝ C) (hcl : IsClos
     (convexClosedBallHomeomorph hconv hcl hb hc ⟨0, mem_closedBall_self zero_le_one⟩ : E) = c := by
   simp [coe_convexClosedBallHomeomorph_apply]
 
+/-- The inverse convex-ball homeomorphism translates by `-c`, then rescales by the gauge. -/
+theorem coe_convexClosedBallHomeomorph_symm_apply_eq_gaugeRescale (hconv : Convex ℝ C)
+    (hcl : IsClosed C) (hb : IsBounded C) (hc : c ∈ intrinsicInterior ℝ C) (x : C) :
+    (((convexClosedBallHomeomorph hconv hcl hb hc).symm x : (affineSpan ℝ C).direction) : E) =
+      ((gaugeRescale {w : (affineSpan ℝ C).direction | c + (w : E) ∈ C} (closedBall 0 1)
+        ⟨(x : E) - c, by
+          simpa using AffineSubspace.vsub_mem_direction (subset_affineSpan ℝ C x.2)
+            (subset_affineSpan ℝ C (intrinsicInterior_subset hc))⟩ :
+              (affineSpan ℝ C).direction) : E) := (rfl)
+
 /-- The inverse of `TauCeti.convexClosedBallHomeomorph` in explicit coordinates: `x` is sent to
 `(gauge (-c +ᵥ C) (x - c) / ‖x - c‖) • (x - c)`. -/
 theorem coe_convexClosedBallHomeomorph_symm_apply (hconv : Convex ℝ C) (hcl : IsClosed C)
     (hb : IsBounded C) (hc : c ∈ intrinsicInterior ℝ C) (x : C) :
     (((convexClosedBallHomeomorph hconv hcl hb hc).symm x : (affineSpan ℝ C).direction) : E) =
       (gauge ((-c) +ᵥ C) ((x : E) - c) / ‖(x : E) - c‖) • ((x : E) - c) := by
-  set w : (affineSpan ℝ C).direction := ⟨(x : E) - c, by
-    simpa using AffineSubspace.vsub_mem_direction (subset_affineSpan ℝ C x.2)
-      (subset_affineSpan ℝ C (intrinsicInterior_subset hc))⟩
-  -- By definition the inverse is translation by `-c` followed by the inverse gauge rescaling.
-  change ((gaugeRescale {w : (affineSpan ℝ C).direction | c + (w : E) ∈ C} (closedBall 0 1)
-    w : (affineSpan ℝ C).direction) : E) = _
-  rw [gaugeRescale_def, gauge_closedBall zero_le_one, gauge_setOf_add_mem, div_one,
+  rw [coe_convexClosedBallHomeomorph_symm_apply_eq_gaugeRescale,
+    gaugeRescale_def, gauge_closedBall zero_le_one, gauge_setOf_add_mem, div_one,
     Submodule.coe_smul, ← Submodule.norm_coe]
 
 /-- The unit sphere corresponds exactly to the intrinsic frontier under the convex-ball
@@ -387,11 +399,8 @@ theorem coe_convexClosedBallHomeomorph_mem_intrinsicFrontier_iff (hconv : Convex
     (v : closedBall (0 : (affineSpan ℝ C).direction) 1) :
     (convexClosedBallHomeomorph hconv hcl hb hc v : E) ∈ intrinsicFrontier ℝ C ↔
       ‖v.1‖ = 1 := by
-  -- Unfold the homeomorphism's translation so the native gauge-rescaling identity applies.
-  change c + ((gaugeRescale (closedBall 0 1)
-    {w : (affineSpan ℝ C).direction | c + (w : E) ∈ C} v :
-      (affineSpan ℝ C).direction) : E) ∈ intrinsicFrontier ℝ C ↔ _
-  rw [add_mem_intrinsicFrontier_iff (subset_affineSpan ℝ C (intrinsicInterior_subset hc)),
+  rw [coe_convexClosedBallHomeomorph_apply_eq_gaugeRescale,
+    add_mem_intrinsicFrontier_iff (subset_affineSpan ℝ C (intrinsicInterior_subset hc)),
     ← gauge_eq_one_iff_mem_frontier (convex_setOf_add_mem hconv)
       (setOf_add_mem_mem_nhds_of_mem_intrinsicInterior hc),
     gauge_gaugeRescale _

@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Convex.Intrinsic
-public import TauCeti.Analysis.Convex.Gauge
 
 /-!
 # Radial reach of a convex set
