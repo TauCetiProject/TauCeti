@@ -179,12 +179,15 @@ lemma isUnit_one_add_cayleyCoord (h2 : IsUnit (2 : A)) (hj : j * j = -1)
   exact (Units.isUnit_mul_units _ u).1
     (by rw [h]; exact isUnit_two_mul_of_mul_self_eq_neg_one h2 hj)
 
-/-- For square roots `j`, `J` of `-1`, conjugation by `j + J` carries `j` to `J`. -/
+/-- For square roots `j`, `J` of `-1`, `j + J` intertwines `j` and `J`. When `j + J` is
+invertible, this says that conjugation by `j + J` carries `j` to `J`. -/
 lemma add_mul_eq_mul_add_of_mul_self_eq_neg_one (hj : j * j = -1) (hJJ : J * J = -1) :
     (j + J) * j = J * (j + J) := by
   rw [add_mul, mul_add, hj, hJJ, add_comm]
 
-/-- For square roots `j`, `J` of `-1`, conjugation by `(j + J)⁻¹` carries `j` to `J`. -/
+/-- For square roots `j`, `J` of `-1`, `(j + J)⁻¹` intertwines `j` and `J`. When `j + J` is
+invertible, this says that conjugation by `(j + J)⁻¹` carries `j` to `J`; otherwise both sides
+are `0`. -/
 lemma inverse_add_mul_eq_mul_inverse_add_of_mul_self_eq_neg_one (hj : j * j = -1)
     (hJJ : J * J = -1) : Ring.inverse (j + J) * j = J * Ring.inverse (j + J) := by
   by_cases hJ : IsUnit (j + J)
