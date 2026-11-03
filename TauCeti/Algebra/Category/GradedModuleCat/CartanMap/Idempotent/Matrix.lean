@@ -8,8 +8,6 @@ module
 public import TauCeti.Algebra.Category.GradedModuleCat.CartanMap.Idempotent.Head
 public import TauCeti.Algebra.Category.GradedModuleCat.CartanMap.Idempotent.Projective
 public import TauCeti.Algebra.Category.GradedModuleCat.CartanMap.EulerAdmissible
-public import TauCeti.Algebra.Category.GradedModuleCat.CartanMap.ExtEuler.Matrix
-public import TauCeti.Algebra.Homology.EulerCharacteristic.ExtEuler.Graded.FiniteLength
 import TauCeti.RingTheory.GradedAlgebra.Semisimple
 
 /-!
