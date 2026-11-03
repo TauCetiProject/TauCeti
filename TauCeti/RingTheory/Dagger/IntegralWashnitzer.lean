@@ -9,6 +9,8 @@ public import Mathlib.RingTheory.MvPowerSeries.PiTopology
 public import Mathlib.RingTheory.Polynomial.Quotient
 public import TauCeti.Analysis.Normed.Ring.Ultra
 public import TauCeti.RingTheory.Dagger.GaussNorm
+public import TauCeti.RingTheory.AdicCompletion.AlgHom
+public import TauCeti.Analysis.Normed.Ring.PseudoUniformizer
 
 /-!
 # The integral Monsky–Washnitzer algebra
@@ -32,6 +34,12 @@ tend to zero, so all but finitely many of them lie in `ϖ K°`. Taking `ϖ = π�
 isomorphisms `O_K⟨X⟩† ⧸ πᵐ ≃ (O_K ⧸ πᵐ)[X]` through which weak completions are compared with
 `π`-adic completions.
 
+The same reductions identify the `ϖ`-adic completion of `K°⟨X⟩†`, for `0 < ‖ϖ‖ < 1` over a complete
+field, with the ring `K°⟨X⟩ = T°` of restricted series with coefficients in `K°`, the closed unit
+ball of the Tate algebra `T = K⟨X⟩`. Overconvergent series are dense in `T°`, so `K°⟨X⟩† ⧸ ϖⁿ` and
+`T° ⧸ ϖⁿ` agree, and `T°` is `ϖ`-adically complete. For a uniformiser `π` of a discretely valued
+`K` this says that the `π`-adic completion of `O_K⟨X⟩†` is `O_K⟨X⟩`.
+
 ## Main definitions
 
 * `TauCeti.Dagger.intWashnitzerAlgebra σ R`: the subring `R°⟨X⟩†` of overconvergent series with
@@ -43,6 +51,10 @@ isomorphisms `O_K⟨X⟩† ⧸ πᵐ ≃ (O_K ⧸ πᵐ)[X]` through which weak
   polynomials, an `R°`-algebra map for the structure of `R°⟨X⟩†` given by the constant series.
 * `TauCeti.Dagger.intWashnitzerAlgebra.quotientSpanEquivMvPolynomial`: the reduction
   `K°⟨X⟩† ⧸ ϖ ≃ₐ[K°] (K° ⧸ ϖ)[X]` for a nonzero `ϖ ∈ K°`.
+* `TauCeti.Dagger.intWashnitzerAlgebra.toTate`: the inclusion `R°⟨X⟩† → T°` into the closed unit
+  ball of the Tate algebra.
+* `TauCeti.Dagger.intWashnitzerAlgebra.adicCompletionEquiv`: the ring isomorphism between the
+  `ϖ`-adic completion of `K°⟨X⟩†` and `T° = K°⟨X⟩`.
 
 ## Main results
 
@@ -72,6 +84,13 @@ isomorphisms `O_K⟨X⟩† ⧸ πᵐ ≃ (O_K ⧸ πᵐ)[X]` through which weak
   series in `K°⟨X⟩†` is a polynomial over `K°` plus `ϖ` times a series in `K°⟨X⟩†`, and
   `TauCeti.Dagger.intWashnitzerAlgebra.ker_mkₐ_comp_ofMvPolynomial`: for any `ϖ ∈ R°`, a
   polynomial over `R°` is divisible by `ϖ` in `R°⟨X⟩†` only if it is divisible by `ϖ` in `R°[X]`.
+* `TauCeti.Dagger.intWashnitzerAlgebra.mem_span_algebraMap_pow_iff`: a series lies in `ϖⁿ K°⟨X⟩†`
+  iff all its coefficients have norm at most `‖ϖ‖ ^ n`.
+* `TauCeti.Dagger.intWashnitzerAlgebra.quotientMap_toTate_bijective`: `K°⟨X⟩† ⧸ ϖⁿ ≃ T° ⧸ ϖⁿ`.
+* `TauCeti.Dagger.intWashnitzerAlgebra.isAdicComplete_span_toTate_algebraMap`: `T°` is
+  `ϖ`-adically complete over a complete field.
+* `TauCeti.Dagger.intWashnitzerAlgebra.adicCompletionEquiv_of`: the completion comparison extends
+  the inclusion `K°⟨X⟩† → T°`.
 
 ## References
 
@@ -682,5 +701,164 @@ end intWashnitzerAlgebra
 end NormedField
 
 end Reduction
+
+section AdicCompletion
+
+/-! ### The `ϖ`-adic completion -/
+
+section NormedCommRing
+
+variable {σ R : Type*} [NormedCommRing R] [IsUltrametricDist R] [NormOneClass R]
+
+local notation "R°" => Subring.unitClosedBall R
+local notation "T" => IsRestricted.subring (R := R) (fun _ : σ ↦ (1 : ℝ))
+
+namespace intWashnitzerAlgebra
+
+variable (σ R) in
+/-- The inclusion `R°⟨X⟩† → T°` of the integral Monsky–Washnitzer algebra into the closed unit
+ball `T°` of the unit-radius Tate algebra `T = R⟨X⟩`. The ring `T°` consists of the restricted
+series with coefficients in `R°`. -/
+noncomputable def toTate : intWashnitzerAlgebra σ R →+* Subring.unitClosedBall T :=
+  ((washnitzerAlgebra.toTate σ R).toRingHom.comp (toWashnitzerAlgebra σ R)).codRestrict _
+    fun f ↦ Subring.mem_unitClosedBall.2 (mem_intWashnitzerAlgebra_iff_norm_le_one.1 f.2)
+
+/-- The inclusion into `T°` does not change the underlying series. -/
+@[simp]
+theorem coe_toTate (f : intWashnitzerAlgebra σ R) :
+    ((toTate σ R f : T) : MvPowerSeries σ R) = f :=
+  washnitzerAlgebra.coe_toTate (toWashnitzerAlgebra σ R f)
+
+/-- The inclusion into `T°` is injective. -/
+theorem toTate_injective : Function.Injective (toTate σ R) :=
+  fun f g h ↦ Subtype.ext (by simpa using congrArg (fun x : Subring.unitClosedBall T ↦
+    ((x : T) : MvPowerSeries σ R)) h)
+
+/-- The inclusion into `T°` sends a scalar `a ∈ R°` to the scalar `a` of the Tate algebra. -/
+@[simp]
+theorem coe_toTate_algebraMap (a : R°) :
+    (toTate σ R (algebraMap R° _ a) : T) = algebraMap R T a :=
+  Subtype.ext (by simp)
+
+end intWashnitzerAlgebra
+
+end NormedCommRing
+
+section NormedField
+
+variable {σ K : Type*} [NormedField K] [IsUltrametricDist K]
+
+local notation "K°" => Subring.unitClosedBall K
+local notation "T" => IsRestricted.subring (R := K) (fun _ : σ ↦ (1 : ℝ))
+
+namespace intWashnitzerAlgebra
+
+/-- **The powers of `ϖ K°⟨X⟩†`**: a series in `K°⟨X⟩†` lies in `(ϖ) ^ n` iff all its coefficients
+have norm at most `‖ϖ‖ ^ n`. -/
+theorem mem_span_algebraMap_pow_iff {ϖ : K°} (hϖ : ϖ ≠ 0) (n : ℕ)
+    {f : intWashnitzerAlgebra σ K} :
+    f ∈ Ideal.span {algebraMap K° (intWashnitzerAlgebra σ K) ϖ} ^ n ↔
+      ∀ t, ‖coeff t (f : MvPowerSeries σ K)‖ ≤ ‖(ϖ : K)‖ ^ n := by
+  have hϖ0 : (ϖ : K) ≠ 0 := by simpa using hϖ
+  rw [Ideal.span_singleton_pow, ← map_pow, Ideal.mem_span_singleton']
+  constructor
+  · rintro ⟨g, rfl⟩ t
+    simpa [← map_pow, coeff_mul_C, mul_comm] using
+      mul_le_mul_of_nonneg_left (norm_coeff_le_one g t) (pow_nonneg (norm_nonneg (ϖ : K)) n)
+  · intro h
+    -- `ϖ⁻ⁿ f` is overconvergent with coefficients of norm at most one.
+    refine ⟨⟨C ((ϖ : K) ^ n)⁻¹ * (f : MvPowerSeries σ K), mem_intWashnitzerAlgebra_iff.2
+      ⟨mul_mem (C_mem_washnitzerAlgebra _) (intWashnitzerAlgebra_le f.2), fun t ↦ ?_⟩⟩,
+      Subtype.ext ?_⟩
+    · rw [coeff_C_mul, norm_mul, norm_inv, norm_pow]
+      exact inv_mul_le_one_of_le₀ (h t) (by positivity)
+    · simp only [MulMemClass.coe_mul, coe_algebraMap, SubmonoidClass.coe_pow]
+      rw [mul_right_comm, ← map_mul, inv_mul_cancel₀ (pow_ne_zero n hϖ0), map_one, one_mul]
+
+/-- The multiplicative pseudo-uniformiser `ϖ` of the Tate algebra. -/
+private noncomputable def tatePseudoUniformizer {ϖ : K°} (hϖ : ϖ ≠ 0) (hϖ1 : ‖(ϖ : K)‖ < 1) :
+    NormedRing.PseudoUniformizer T :=
+  .ofAlgebraMap (c := (ϖ : K)) (by simpa using hϖ) hϖ1
+
+private theorem toUnitClosedBall_tatePseudoUniformizer {ϖ : K°} (hϖ : ϖ ≠ 0) (hϖ1 : ‖(ϖ : K)‖ < 1) :
+    (tatePseudoUniformizer (σ := σ) hϖ hϖ1).toUnitClosedBall = toTate σ K (algebraMap K° _ ϖ) :=
+  Subtype.ext (by simp [tatePseudoUniformizer])
+
+private theorem mem_span_toTate_algebraMap_pow_iff {ϖ : K°} (hϖ : ϖ ≠ 0) (hϖ1 : ‖(ϖ : K)‖ < 1)
+    (n : ℕ) {x : Subring.unitClosedBall T} :
+    x ∈ Ideal.span {toTate σ K (algebraMap K° _ ϖ)} ^ n ↔ ‖(x : T)‖ ≤ ‖(ϖ : K)‖ ^ n := by
+  rw [← toUnitClosedBall_tatePseudoUniformizer hϖ hϖ1,
+    NormedRing.PseudoUniformizer.mem_span_toUnitClosedBall_pow_iff, tatePseudoUniformizer,
+    NormedRing.PseudoUniformizer.coe_unit_ofAlgebraMap, norm_algebraMap']
+
+/-- The ideal `ϖ K°⟨X⟩†` is carried into the ideal `ϖ T°`. -/
+theorem span_algebraMap_le_comap_toTate {ϖ : K°} :
+    Ideal.span {algebraMap K° (intWashnitzerAlgebra σ K) ϖ} ≤
+      (Ideal.span {toTate σ K (algebraMap K° _ ϖ)}).comap (toTate σ K) :=
+  Ideal.span_le.2 (Set.singleton_subset_iff.2 (Ideal.mem_span_singleton_self _))
+
+/-- **`K°⟨X⟩† ⧸ ϖⁿ ≃ T° ⧸ ϖⁿ`.** Reduction modulo `ϖⁿ` identifies the integral Monsky–Washnitzer
+algebra with the closed unit ball `T°` of the Tate algebra: the overconvergent series are dense
+in `T°`, and an overconvergent series divisible by `ϖⁿ` in `T°` is divisible by `ϖⁿ` in
+`K°⟨X⟩†`. -/
+theorem quotientMap_toTate_bijective {ϖ : K°} (hϖ : ϖ ≠ 0) (hϖ1 : ‖(ϖ : K)‖ < 1) (n : ℕ) :
+    Function.Bijective (Ideal.quotientMap (Ideal.span {toTate σ K (algebraMap K° _ ϖ)} ^ n)
+      (toTate σ K) ((Ideal.pow_right_mono span_algebraMap_le_comap_toTate n).trans
+        (Ideal.le_comap_pow _ n))) := by
+  have hr : 0 < ‖(ϖ : K)‖ ^ n := pow_pos (norm_pos_iff.2 (by simpa using hϖ)) n
+  refine ⟨Ideal.quotientMap_injective' fun f hf ↦ ?_, fun y ↦ ?_⟩
+  · rw [Ideal.mem_comap, mem_span_toTate_algebraMap_pow_iff hϖ hϖ1] at hf
+    exact (mem_span_algebraMap_pow_iff hϖ n).2 fun t ↦
+      (washnitzerAlgebra.norm_coeff_le (toWashnitzerAlgebra σ K f) t).trans hf
+  · -- Approximate a representative `s ∈ T°` by an overconvergent series to within `‖ϖ‖ ^ n`.
+    obtain ⟨s, rfl⟩ := Ideal.Quotient.mk_surjective y
+    obtain ⟨w, hw⟩ := Metric.denseRange_iff.1 washnitzerAlgebra.denseRange_toTate (s : T) _ hr
+    rw [dist_eq_norm'] at hw
+    have hw1 : ‖w‖ ≤ 1 := by
+      have h := IsUltrametricDist.norm_add_le_max (s : T) (washnitzerAlgebra.toTate σ K w - s)
+      rw [add_sub_cancel] at h
+      exact h.trans (max_le (Subring.mem_unitClosedBall.1 s.2)
+        (hw.le.trans (pow_le_one₀ (norm_nonneg _) hϖ1.le)))
+    refine ⟨Ideal.Quotient.mk _ ⟨w, mem_intWashnitzerAlgebra_iff_norm_le_one.2 hw1⟩, ?_⟩
+    rw [Ideal.quotientMap_mk, Ideal.Quotient.eq, mem_span_toTate_algebraMap_pow_iff hϖ hϖ1]
+    exact hw.le
+
+variable [CompleteSpace K]
+
+/-- **`K°⟨X⟩` is `ϖ`-adically complete**: over a complete field, the closed unit ball `T°` of the
+Tate algebra is complete for the `ϖ`-adic topology. -/
+theorem isAdicComplete_span_toTate_algebraMap {ϖ : K°} (hϖ : ϖ ≠ 0) (hϖ1 : ‖(ϖ : K)‖ < 1) :
+    IsAdicComplete (Ideal.span {toTate σ K (algebraMap K° _ ϖ)}) (Subring.unitClosedBall T) := by
+  rw [← toUnitClosedBall_tatePseudoUniformizer hϖ hϖ1]
+  exact NormedRing.PseudoUniformizer.isAdicComplete_span_toUnitClosedBall _
+
+variable (σ) in
+/-- **The `ϖ`-adic completion of `K°⟨X⟩†` is `K°⟨X⟩`.** Over a complete ultrametric normed field,
+for `ϖ ∈ K°` with `0 < ‖ϖ‖ < 1`, the `ϖ`-adic completion of the integral Monsky–Washnitzer algebra
+is the closed unit ball `T°` of the Tate algebra, the restricted series with coefficients in
+`K°`. The isomorphism extends `intWashnitzerAlgebra.toTate` (`adicCompletionEquiv_of`). -/
+noncomputable def adicCompletionEquiv {ϖ : K°} (hϖ : ϖ ≠ 0) (hϖ1 : ‖(ϖ : K)‖ < 1) :
+    AdicCompletion (Ideal.span {algebraMap K° (intWashnitzerAlgebra σ K) ϖ})
+      (intWashnitzerAlgebra σ K) ≃+* Subring.unitClosedBall T :=
+  haveI := isAdicComplete_span_toTate_algebraMap (σ := σ) hϖ hϖ1
+  (RingEquiv.ofBijective _ (AdicCompletion.mapₐ_bijective (toTate σ K).toIntAlgHom
+    span_algebraMap_le_comap_toTate (quotientMap_toTate_bijective hϖ hϖ1))).trans
+    (AdicCompletion.ofAlgEquiv _).symm.toRingEquiv
+
+/-- The completion comparison extends the inclusion `K°⟨X⟩† → T°`. -/
+@[simp]
+theorem adicCompletionEquiv_of {ϖ : K°} (hϖ : ϖ ≠ 0) (hϖ1 : ‖(ϖ : K)‖ < 1)
+    (f : intWashnitzerAlgebra σ K) :
+    adicCompletionEquiv σ hϖ hϖ1 (AdicCompletion.of _ _ f) = toTate σ K f := by
+  have := isAdicComplete_span_toTate_algebraMap (σ := σ) hϖ hϖ1
+  rw [adicCompletionEquiv, RingEquiv.trans_apply, RingEquiv.ofBijective_apply]
+  exact (congrArg (AdicCompletion.ofAlgEquiv _).symm (AdicCompletion.mapₐ_of _ _ f)).trans
+    (AdicCompletion.ofAlgEquiv_symm_of _ _)
+
+end intWashnitzerAlgebra
+
+end NormedField
+
+end AdicCompletion
 
 end TauCeti.Dagger
