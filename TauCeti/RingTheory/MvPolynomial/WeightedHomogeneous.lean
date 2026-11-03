@@ -365,7 +365,11 @@ theorem map_mem_iff {M A S ι : Type*} [AddCommMonoid M] [CommRing A]
   have hpr : p.IsWeightedHomogeneous (r ∘ w) (r n) := fun d hd ↦ by
     simp only [← hp hd, Finsupp.weight_apply, map_finsuppSum, map_nsmul, Function.comp_apply]
   have hp' := hpr.aeval_mem (𝒜 := 𝒜) h
-  exact DFunLike.congr_fun (aeval_unique f.toIntAlgHom) p ▸ hp'
+  have he : f.toIntAlgHom p = aeval (f.toIntAlgHom ∘ X) p :=
+    DFunLike.congr_fun (aeval_unique f.toIntAlgHom) p
+  simp only [Function.comp_def, RingHom.toIntAlgHom_apply] at he
+  rw [he]
+  exact hp'
 
 end WeightedHomogeneousSubmodule
 

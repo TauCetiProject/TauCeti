@@ -272,7 +272,8 @@ theorem C_mem_coordinateTensorGrading {n : ℕ} {x : MvPolynomial ℕ+ LazardRin
             coordinatePolynomialEquiv.toAlgHom := by
       ext i
       rcases i with i | i <;> simp [coordinateTensorPolynomialEquiv_X, coordinatePolynomialEquiv_X]
-    exact DFunLike.congr_fun he p
+    simpa only [AlgHom.comp_apply, AlgEquiv.coe_toAlgHom, IsScalarTower.toAlgHom_apply,
+      MvPolynomial.algebraMap_eq] using DFunLike.congr_fun he p
 
 private theorem coordinateTensorPolynomialEquiv_apply
     (p : MvPolynomial (ℕ+ ⊕ (ℕ+ ⊕ ℕ+)) ℤ) :
