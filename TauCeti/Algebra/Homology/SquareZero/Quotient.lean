@@ -38,6 +38,7 @@ by a linear equivalence intertwining two square-zero endomorphisms (`LinearEquiv
 * `LinearMap.quotientHomologyClass`: the class in it of an element `m` with `d m ∈ N`.
 * `LinearMap.quotientHomologyEquivOfSurjective`: its identification with the homology of `d'`
   along a surjection with kernel `N`.
+* `LinearMap.quotientHomologyMapOfLE`: the map `H(M ⧸ N) → H(M ⧸ N')` induced by `N ≤ N'`.
 * `LinearMap.quotientHomologyProdEquiv`: the equivalence
   `H(M ⧸ N) × H(M ⧸ N) ≃ H(M ⧸ (N ⊔ range v))`.
 
@@ -163,6 +164,37 @@ theorem quotientHomologyEquivOfSurjective_mk (π : M →ₗ[S] M') (hπ : Functi
 
 end Transfer
 
+section OfLE
+
+variable {d : M →ₗ[S] M} (hd : d ∘ₗ d = 0) {N N' : Submodule S M} (hN : N ≤ N.comap d)
+  (hN' : N' ≤ N'.comap d) (hNN' : N ≤ N')
+
+/-- The map `H(M ⧸ N) → H(M ⧸ N')` induced by the quotient map `M ⧸ N → M ⧸ N'`, for `d`-stable
+submodules `N ≤ N'`. -/
+noncomputable def quotientHomologyMapOfLE :
+    d.quotientHomology hd N hN →ₗ[S] d.quotientHomology hd N' hN' :=
+  homologyMap (N.mapQ N' LinearMap.id hNN') (d.mapQ_comp_mapQ_eq_zero hd N hN)
+    (d.mapQ_comp_mapQ_eq_zero hd N' hN') (Submodule.linearMap_qext _ rfl)
+
+/-- The map induced by `N ≤ N'` sends the class of `m` modulo `N` to its class modulo `N'`. -/
+@[simp]
+theorem quotientHomologyMapOfLE_mk (m : M) (hm : d m ∈ N) :
+    quotientHomologyMapOfLE hd hN hN' hNN'
+        (Submodule.Quotient.mk
+          ⟨Submodule.Quotient.mk m, (Submodule.mk_mem_ker_mapQ_iff m).mpr hm⟩) =
+      Submodule.Quotient.mk
+        ⟨Submodule.Quotient.mk m, (Submodule.mk_mem_ker_mapQ_iff m).mpr (hNN' hm)⟩ :=
+  homologyMap_mk _ _ _ _ _
+
+/-- `quotientHomologyMapOfLE_mk` stated with `quotientHomologyClass`, for rewriting; `simp` unfolds
+`quotientHomologyClass` and uses `quotientHomologyMapOfLE_mk` instead. -/
+theorem quotientHomologyMapOfLE_quotientHomologyClass (m : M) (hm : d m ∈ N) :
+    quotientHomologyMapOfLE hd hN hN' hNN' (quotientHomologyClass hd hN m hm) =
+      quotientHomologyClass hd hN' m (hNN' hm) :=
+  homologyMap_mk _ _ _ _ _
+
+end OfLE
+
 section Splitting
 
 variable {d : M →ₗ[S] M} (hd : d ∘ₗ d = 0) {h v : M →ₗ[S] M} {N N' : Submodule S M}
@@ -240,12 +272,6 @@ private theorem exists_eq_add_h {c : M} (hc : d c ∈ N') :
   rw [this]
   exact N.add_mem (N.sub_mem hu (hhom u)) (hh _ hdu)
 
-/-- The map `H(M ⧸ N) → H(M ⧸ N')` induced by the quotient map `M ⧸ N → M ⧸ N'`. -/
-private noncomputable def inclHomology :
-    d.quotientHomology hd N hN →ₗ[S] d.quotientHomology hd N' hN' :=
-  homologyMap (N.mapQ N' LinearMap.id hNN') (d.mapQ_comp_mapQ_eq_zero hd N hN)
-    (d.mapQ_comp_mapQ_eq_zero hd N' hN') (Submodule.linearMap_qext _ rfl)
-
 include hvN' hhom hh in
 /-- The map `H(M ⧸ N) → H(M ⧸ N')` induced by `h`. -/
 private noncomputable def hHomology :
@@ -259,25 +285,20 @@ private noncomputable def hHomology :
     obtain ⟨w, hw⟩ := (Submodule.mk_mem_range_mapQ_iff m).mp hqb
     exact (Submodule.mk_mem_range_mapQ_iff (h m)).mpr ⟨-h w, h_boundary hNN' hvN' hh hhom hw⟩
 
-private theorem inclHomology_cls (m : M) (hm : d m ∈ N) :
-    inclHomology hd hN hN' hNN' (quotientHomologyClass hd hN m hm) =
-      quotientHomologyClass hd hN' m (hNN' hm) :=
-  homologyMap_mk _ _ _ _ _
-
 private theorem hHomology_cls (m : M) (hm : d m ∈ N) :
     hHomology hd hN hN' hNN' hvN' hh hhom (quotientHomologyClass hd hN m hm) =
       quotientHomologyClass hd hN' (h m) (d_h_mem hNN' hvN' hh hhom hm) :=
   (rfl)
 
 include hd hN hN'N hh hvd hreg hhom in
-private theorem bijective_coprod_inclHomology_hHomology :
-    Function.Bijective ((inclHomology hd hN hN' hNN').coprod
+private theorem bijective_coprod_quotientHomologyMapOfLE_hHomology :
+    Function.Bijective ((quotientHomologyMapOfLE hd hN hN' hNN').coprod
       (hHomology hd hN hN' hNN' hvN' hh hhom)) := by
   refine ⟨(injective_iff_map_eq_zero _).mpr fun ⟨x, y⟩ hxy => ?_, fun z => ?_⟩
   · obtain ⟨a, ha, rfl⟩ := exists_quotientHomologyClass_eq hd x
     obtain ⟨b, hb, rfl⟩ := exists_quotientHomologyClass_eq hd y
-    rw [coprod_apply, inclHomology_cls, hHomology_cls, quotientHomologyClass_add,
-      quotientHomologyClass_eq_zero_iff] at hxy
+    rw [coprod_apply, quotientHomologyMapOfLE_quotientHomologyClass, hHomology_cls,
+      quotientHomologyClass_add, quotientHomologyClass_eq_zero_iff] at hxy
     obtain ⟨w, hw⟩ := hxy
     obtain ⟨u, hu⟩ := boundary_of_add_h hd hN hN'N hh hvd hreg hhom ha hb hw
     have hy : quotientHomologyClass hd hN b hb = 0 :=
@@ -295,7 +316,8 @@ private theorem bijective_coprod_inclHomology_hHomology :
   · obtain ⟨c, hc, rfl⟩ := exists_quotientHomologyClass_eq hd z
     obtain ⟨u, hu, hcu⟩ := exists_eq_add_h hd hN hN'N hh hvd hreg hhom hc
     refine ⟨(quotientHomologyClass hd hN (c - h u) hcu, quotientHomologyClass hd hN u hu), ?_⟩
-    rw [coprod_apply, inclHomology_cls, hHomology_cls, quotientHomologyClass_add]
+    rw [coprod_apply, quotientHomologyMapOfLE_quotientHomologyClass, hHomology_cls,
+      quotientHomologyClass_add]
     congr 1
     exact sub_add_cancel c (h u)
 
@@ -309,7 +331,7 @@ noncomputable def quotientHomologyProdEquiv :
     (d.quotientHomology hd N hN × d.quotientHomology hd N hN) ≃ₗ[S]
       d.quotientHomology hd N' hN' :=
   LinearEquiv.ofBijective _
-    (bijective_coprod_inclHomology_hHomology hd hN hN' hNN' hvN' hN'N hh hvd hreg hhom)
+    (bijective_coprod_quotientHomologyMapOfLE_hHomology hd hN hN' hNN' hvN' hN'N hh hvd hreg hhom)
 
 include hN'N hvd hreg in
 /-- The splitting sends the classes of cycles `a` and `b` modulo `N` to the class of `a + h b`
@@ -325,7 +347,8 @@ theorem quotientHomologyProdEquiv_mk (a b : M) (ha : d a ∈ N) (hb : d b ∈ N)
         (Submodule.mk_mem_ker_mapQ_iff _).mpr (by
         rw [map_add]
         exact N'.add_mem (hNN' ha) (d_h_mem hNN' hvN' hh hhom hb))⟩ :=
-  congr($(inclHomology_cls hd hN hN' hNN' a ha) + $(hHomology_cls hd hN hN' hNN' hvN' hh hhom b hb))
+  congr($(quotientHomologyMapOfLE_quotientHomologyClass hd hN hN' hNN' a ha) +
+    $(hHomology_cls hd hN hN' hNN' hvN' hh hhom b hb))
 
 end Splitting
 
