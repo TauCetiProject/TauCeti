@@ -103,13 +103,12 @@ theorem dividedPower_mul_orderedMonomial
     sum_mul, sum_mul, sum_mul]
   refine sum_congr rfl fun p _ => ?_
   -- The remaining crossing has central commutator `2w`, accounting for `2 ^ k`.
-  have hmove := dividedPower_mul_dividedPower_of_commutator_eq hxz
-    (hxw.smul_right 2) (hzw.smul_right 2) (n - p.1 - 2 * p.2) b
+  have hmove := dividedPower_mul_dividedPower_of_commutator_eq_nsmul hxz hxw hzw
+    (n - p.1 - 2 * p.2) b
   simp only [mul_assoc] at ⊢
   rw [← mul_assoc (dividedPower (n - p.1 - 2 * p.2) x), hmove]
   simp only [mul_sum, sum_mul]
   refine sum_congr rfl fun k _ => ?_
-  rw [dividedPower_nsmul]
   simp only [mul_smul_comm, smul_mul_assoc]
   have hzw' := commute_dividedPower_dividedPower hzw.symm p.2 (b - k)
   have hxw' := commute_dividedPower_dividedPower hxw (n - p.1 - 2 * p.2 - k) c

@@ -56,8 +56,7 @@ private theorem collect_tails (hwz : w * z = z * w + 3 • s)
         (dividedPower (b + (B - t)) z * dividedPower (c - t + C) w *
           dividedPower (d + D) v * dividedPower (t + e + E) s * dividedPower f x) := by
   classical
-  have hmove := dividedPower_mul_dividedPower_of_commutator_eq hwz
-    (hws.smul_right 3) (hzs.smul_right 3) c B
+  have hmove := dividedPower_mul_dividedPower_of_commutator_eq_nsmul hwz hws hzs c B
   simp only [mul_assoc]
   rw [(commute_dividedPower_dividedPower hzs.symm e B).left_comm,
     (commute_dividedPower_dividedPower hzv.symm d B).left_comm,
@@ -67,7 +66,6 @@ private theorem collect_tails (hwz : w * z = z * w + 3 • s)
     ← mul_assoc (dividedPower c w), hmove]
   simp only [mul_sum, sum_mul]
   refine sum_congr rfl fun t _ => ?_
-  rw [dividedPower_nsmul]
   simp only [mul_smul_comm, smul_mul_assoc, mul_assoc]
   rw [(commute_dividedPower_dividedPower hws.symm t (c - t)).left_comm,
     (commute_dividedPower_dividedPower hws.symm t C).left_comm,
@@ -107,13 +105,12 @@ private theorem insert_tail (hxz : x * z = z * x + 2 • w)
     dividedPower_mul_dividedPower_of_g2_short_pair hxz hxw hwz hxv hxs hzs hwv hws hvs]
   simp only [sum_mul, smul_mul_assoc]
   refine sum_congr rfl fun q _ => ?_
-  have hmove := dividedPower_mul_dividedPower_of_commutator_eq hxw
-    (hxv.smul_right 3) (hwv.smul_right 3) (n - q.1 - 2 * q.2.1 - q.2.2) c
+  have hmove := dividedPower_mul_dividedPower_of_commutator_eq_nsmul hxw hxv hwv
+    (n - q.1 - 2 * q.2.1 - q.2.2) c
   simp only [mul_assoc]
   rw [← mul_assoc (dividedPower (n - q.1 - 2 * q.2.1 - q.2.2) x), hmove]
   simp only [mul_sum, sum_mul, Finset.smul_sum]
   refine sum_congr rfl fun r _ => ?_
-  rw [dividedPower_nsmul]
   simp only [mul_smul_comm, smul_mul_assoc, mul_assoc]
   rw [(commute_dividedPower_dividedPower hws.symm q.2.2 (c - r)).left_comm,
     (commute_dividedPower_dividedPower hwv.symm q.2.1 (c - r)).left_comm,
