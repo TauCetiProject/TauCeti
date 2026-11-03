@@ -127,14 +127,13 @@ private def embeddingComplexHomotopy : Homotopy (𝟙 (embeddingComplex K)) 0 :=
   (Homotopy.ofEq (by
     refine HomologicalComplex.hom_ext _ _ fun n ↦ ?_
     rcases n with _ | n
-    · rw [Homotopy.nullHomotopicMap'_f_of_not_rel_right (show (ComplexShape.up ℕ).Rel 0 1 by simp)
-        (by simp), embeddingComplex_d]
+    · rw [Homotopy.nullHomotopicMap'_f_of_not_rel_right (ComplexShape.up_mk 0 1 rfl) (by simp),
+        embeddingComplex_d]
       refine biprod.hom_ext _ _ ?_ ?_
       · simp [embeddingComplexHomotopyHom_succ]
       · exact (isZero_zero C).eq_of_tgt _ _
-    · rw [Homotopy.nullHomotopicMap'_f (show (ComplexShape.up ℕ).Rel n (n + 1) by simp)
-        (show (ComplexShape.up ℕ).Rel (n + 1) (n + 1 + 1) by simp), embeddingComplex_d,
-        embeddingComplex_d]
+    · rw [Homotopy.nullHomotopicMap'_f (ComplexShape.up_mk n (n + 1) rfl)
+        (ComplexShape.up_mk (n + 1) (n + 1 + 1) rfl), embeddingComplex_d, embeddingComplex_d]
       simp only [embeddingComplexHomotopyHom_succ, HomologicalComplex.id_f]
       refine biprod.hom_ext _ _ ?_ ?_
       · simp only [Category.id_comp, Preadditive.add_comp, Category.assoc, biprod.inl_fst,
@@ -161,10 +160,13 @@ private def toEmbeddingComplex : K ⟶ embeddingComplex K where
 private instance (n : ℕ) : Mono (toEmbeddingTerm K (n + 1)) :=
   Injective.ι_mono _
 
+private lemma toEmbeddingComplex_f_snd (n : ℕ) :
+    (toEmbeddingComplex K).f n ≫ biprod.snd = toEmbeddingTerm K n :=
+  biprod.lift_snd _ _
+
 private instance (n : ℕ) : Mono ((toEmbeddingComplex K).f (n + 1)) := by
   have : Mono ((toEmbeddingComplex K).f (n + 1) ≫ biprod.snd) := by
-    rw [show (toEmbeddingComplex K).f (n + 1) ≫ biprod.snd = toEmbeddingTerm K (n + 1) from
-      biprod.lift_snd _ _]
+    rw [toEmbeddingComplex_f_snd]
     infer_instance
   exact mono_of_mono _ biprod.snd
 
