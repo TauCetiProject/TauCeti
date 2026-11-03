@@ -13,7 +13,7 @@ import TauCeti.RingTheory.Huber.Completion.Basic
 import TauCeti.RingTheory.Huber.AdicHom.Completion
 import TauCeti.Topology.Algebra.UniformRing
 import TauCeti.Topology.Algebra.Nonarchimedean.Completion.Surjective
-import Mathlib.RingTheory.TensorProduct.Maps
+public import Mathlib.RingTheory.TensorProduct.Maps
 
 /-!
 # The separated completed tensor ring
@@ -28,6 +28,10 @@ elements are additional data and are not part of this ring-level construction; t
 the image of a ring of integral elements of `B ⊗[A] C` is again one
 (`TauCeti.Huber.CompletedTensor.isRingOfIntegralElements_topologicalClosure_map_toCompletion`),
 which is what the completed tensor product of Huber pairs uses.
+
+When `B` is complete and Hausdorff, the universal property gives the multiplication map
+`TauCeti.Huber.CompletedTensor.mulRingHom : B ⊗̂_A B → B`, the continuous extension of
+`b ⊗ b' ↦ b * b'`.
 
 ## References
 
@@ -189,6 +193,12 @@ instance [IsTateRing B] : IsTateRing (CompletedTensor A B C) :=
 /-- A Tate right factor makes the completed tensor ring Tate. -/
 instance [IsTateRing C] : IsTateRing (CompletedTensor A B C) :=
   IsTateRing.of_continuous (φ := inr A B C) (continuous_inr A B C)
+
+/-- A Tate base makes the completed tensor ring Tate: the image of a pseudouniformiser of `A`
+under the continuous structure map is one (Wedhorn, *Adic Spaces*, Proposition 6.25). -/
+instance [IsTateRing A] : IsTateRing (CompletedTensor A B C) :=
+  IsTateRing.of_continuous (φ := algebraMap A (CompletedTensor A B C))
+    (IsAdicHom.continuous inferInstance)
 
 /-- Exactly the closure of zero dies in the separated completion. -/
 theorem ker_toCompletion : RingHom.ker (toCompletion A B C) = (⊥ : Ideal (B ⊗[A] C)).closure :=
@@ -379,5 +389,64 @@ theorem isAdicHom_lift (φ : B →+* R) (ψ : C →+* R)
     (continuous_lift φ ψ h hφ hψ)
 
 end CompletedTensor
+
+end TauCeti.Huber
+
+namespace TauCeti.Huber
+
+section Multiplication
+
+variable (A B : Type*) [CommRing A] [CommRing B] [Algebra A B] [TopologicalSpace A]
+  [IsTopologicalRing A] [UniformSpace B] [IsUniformAddGroup B] [NonarchimedeanRing B]
+  [CompleteSpace B] [T0Space B] [IsAdicHom (algebraMap A B)]
+
+namespace CompletedTensor
+
+/-- The multiplication map `B ⊗̂_A B → B` of a complete Hausdorff algebra: the continuous extension
+of `b ⊗ b' ↦ b * b'` to the completed tensor ring. -/
+noncomputable def mulRingHom : CompletedTensor A B B →+* B :=
+  lift (RingHom.id B) (RingHom.id B) rfl continuous_id continuous_id
+
+/-- Multiplication is continuous. -/
+@[fun_prop] theorem continuous_mulRingHom : Continuous (mulRingHom A B) :=
+  continuous_lift ..
+
+/-- Multiplication is the identity on the left factor. -/
+@[simp] theorem mulRingHom_inl (b : B) : mulRingHom A B (inl A B B b) = b :=
+  lift_inl ..
+
+/-- Multiplication is the identity on the right factor. -/
+@[simp] theorem mulRingHom_inr (b : B) : mulRingHom A B (inr A B B b) = b :=
+  lift_inr ..
+
+/-- On algebraic tensors, multiplication is Mathlib's multiplication map
+`Algebra.TensorProduct.lmul'`. -/
+@[simp] theorem mulRingHom_toCompletion (x : B ⊗[A] B) :
+    mulRingHom A B (toCompletion A B B x) = Algebra.TensorProduct.lmul' A x := by
+  induction x using TensorProduct.inductionOn with
+  | tmul b c => simp
+  | add x y hx hy => simp [hx, hy]
+
+/-- Multiplication preserves the base algebra map. -/
+@[simp] theorem mulRingHom_algebraMap (a : A) :
+    mulRingHom A B (algebraMap A (CompletedTensor A B B) a) = algebraMap A B a := by
+  rw [← inl_algebraMap, mulRingHom_inl]
+
+variable {A B} in
+/-- If `A → B` is surjective, the left coprojection `B → B ⊗̂_A B` is inverse to multiplication:
+both coprojections agree, since every element of `B` comes from `A`. -/
+theorem inl_mulRingHom_of_surjective (h : Function.Surjective (algebraMap A B))
+    (x : CompletedTensor A B B) : inl A B B (mulRingHom A B x) = x := by
+  have : (inl A B B).comp (mulRingHom A B) = RingHom.id _ := by
+    refine hom_ext ((continuous_inl A B B).comp (continuous_mulRingHom A B)) continuous_id
+      (by ext; simp) ?_
+    ext b
+    obtain ⟨a, rfl⟩ := h b
+    simp
+  exact RingHom.congr_fun this x
+
+end CompletedTensor
+
+end Multiplication
 
 end TauCeti.Huber

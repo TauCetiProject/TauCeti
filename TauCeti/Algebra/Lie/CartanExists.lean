@@ -80,7 +80,7 @@ theorem exists_isCartanSubalgebra_mem_of_isSemisimple_ad [Infinite K] [FiniteDim
       obtain ⟨w, -, hw⟩ := (C.mem_map E.incl _).mp hxz
       obtain ⟨n, hn⟩ := (mem_engel_iff K x w).mp w.2
       refine (mem_engel_iff K x z).mpr ⟨n + 1, ?_⟩
-      rw [pow_succ, Module.End.mul_apply, ad_apply, ← hw]
+      rw [pow_succ, mul_apply_eq_comp, ad_apply, ← hw]
       simpa using hn
     -- and it normalizes `C` inside `E`
     refine (hmemC (w := ⟨z, hzE⟩)).mpr ?_

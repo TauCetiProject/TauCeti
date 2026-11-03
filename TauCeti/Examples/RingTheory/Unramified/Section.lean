@@ -56,7 +56,8 @@ example : ∃ e : Fin 2 → ZMod 1, IsIdempotentElem e ∧
 example (J : Ideal R) [HenselianRing R J] {S : Type*} [CommRing S] [Algebra R S]
     [Algebra.Etale R S] (f g : S →ₐ[R] R)
     (h : (Ideal.Quotient.mkₐ R J).comp f = (Ideal.Quotient.mkₐ R J).comp g) : f = g :=
-  ext_of_quotient_eq R S J HenselianRing.jac h
+  ext_of_quotient_eq R S J
+    (by simpa only [Ideal.jacobson_bot] using (HenselianRing.jac (R := R) (I := J))) h
 
 -- A proper ideal is not enough: the second sheet can still move.
 example [Nontrivial R] :

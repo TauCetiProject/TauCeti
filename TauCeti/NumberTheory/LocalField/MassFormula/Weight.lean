@@ -119,7 +119,7 @@ theorem hasSum_one_div_natCard_residueField_pow_wildExponent_iff {s : ℝ≥0} :
     HasSum (fun L : totallyRamifiedOfDegree K n ↦
       1 / (Nat.card 𝓀[K] : ℝ) ^ L.1.wildExponent) s ↔
       ∑' L : totallyRamifiedOfDegree K n, 1 / (Nat.card 𝓀[K] : ℝ≥0∞) ^ L.1.wildExponent = s := by
-  simp only [← coe_one_div_natCard_residueField_pow, ← ENNReal.summable.hasSum_iff,
+  simp only [← coe_one_div_natCard_residueField_pow, ← CompleteLattice.summable.hasSum_iff,
     ENNReal.hasSum_coe, ← NNReal.hasSum_coe, NNReal.coe_div, NNReal.coe_one, NNReal.coe_pow,
     NNReal.coe_natCast]
 

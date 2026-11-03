@@ -10,6 +10,7 @@ public import TauCeti.Algebra.Category.GradedModuleCat.Shift
 public import TauCeti.Algebra.Homology.EulerCharacteristic.ExtEuler.Graded.Basic
 public import TauCeti.Algebra.Homology.Ext.Equivalence
 public import TauCeti.CategoryTheory.Equivalence.Pow
+public import TauCeti.CategoryTheory.Preadditive.Equivalence
 
 /-!
 # The shift identities of the graded Ext-Euler characteristic
@@ -237,7 +238,7 @@ noncomputable def shiftSourceObjIso (Y : C) (j : ℤ) :
 
 section CommRingSource
 
-variable [CommRing k] [Linear k C] [e.functor.Additive] [e.functor.Linear k]
+variable [CommRing k] [Linear k C] [e.functor.Linear k]
 
 /-- Shifting the source of a bigraded `Ext` group lowers its internal degree by one:
 `Ext^{n,j}(X{1}, Y) ≅ Ext^{n,j-1}(X, Y)`. -/
@@ -279,7 +280,7 @@ end CommRingSource
 
 section FieldSource
 
-variable [Field k] [Linear k C] [e.functor.Additive] [e.functor.Linear k]
+variable [Field k] [Linear k C] [e.functor.Linear k]
 variable {k e}
 variable {X Y : C}
 

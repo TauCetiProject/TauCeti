@@ -87,12 +87,12 @@ theorem two_mul_finrank_iInf_fixedSubmodule_insert
   have hS {f : Module.End K V} (hf : ∀ i ∈ s, Commute (p i) f) : ∀ x ∈ S, f x ∈ S :=
     LinearMap.iInf_invariant f fun i => LinearMap.iInf_invariant f fun hi x hx => by
       have hfi : Function.Semiconj f (p i) (p i) := fun y => by
-        simpa only [Module.End.mul_apply] using LinearMap.congr_fun (hf i hi).eq.symm y
+        simpa only [mul_apply_eq_comp] using LinearMap.congr_fun (hf i hi).eq.symm y
       rw [LinearMap.mem_fixedSubmodule_iff, ← Function.mem_fixedPoints_iff] at hx ⊢
       exact hfi.mapsTo_fixedPoints hx
   let q : Module.End K S := (p a).restrict (hS hcomm)
   have hq : IsIdempotentElem q := LinearMap.ext fun x => Subtype.ext <| by
-    simpa only [q, Module.End.mul_apply, LinearMap.coe_restrict_apply] using
+    simpa only [q, mul_apply_eq_comp, LinearMap.coe_restrict_apply] using
       LinearMap.congr_fun hpa.eq (x : V)
   -- Membership in the fixed submodule and in the kernel of `q` is read off in `V`.
   have hf {x : S} : x ∈ q.fixedSubmodule ↔ p a x = x := by

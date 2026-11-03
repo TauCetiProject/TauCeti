@@ -250,8 +250,11 @@ theorem eulerChar_Icc_add_one [HasZeroObject C] {a b : ℤ} (hab : a ≤ b + 1) 
   congr 1
   -- In degrees `≤ b` the truncation has the terms of `K`.
   refine Finset.sum_congr rfl fun n hn ↦ ?_
-  have := K.isIso_πStupidTruncLE_f b (Finset.mem_Icc.1 hn).2
-  rw [of_congr (asIso ((K.πStupidTruncLE b).f n))]
+  have hn' := (Finset.mem_Icc.1 hn).2
+  have := K.isIso_πStupidTrunc_f (ComplexShape.embeddingUpIntLE b)
+    (i := (b - n).natAbs) (i' := n)
+    (by simp [Int.natAbs_of_nonneg (sub_nonneg.mpr hn')])
+  rw [of_congr (asIso ((K.πStupidTrunc (ComplexShape.embeddingUpIntLE b)).f n))]
 
 end Range
 

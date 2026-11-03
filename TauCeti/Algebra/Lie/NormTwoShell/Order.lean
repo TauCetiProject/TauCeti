@@ -53,7 +53,7 @@ theorem reindex_eq_one_iff : reindex σ hσ = 1 ↔ σ = 1 := by
     have hi := congrArg (fun e : ShellLieAlgebra B ≃ₗ[ℤ] ShellLieAlgebra B ↦
       (equivProd B (e (cartan B (Pi.single i 1)))).1) h
     simp only [reindex_cartan, Pi.single_comp_equiv, Equiv.symm_symm,
-      LinearEquiv.coe_one, id_eq, equivProd_cartan] at hi
+      FunLike.coe_one_eq_id, id_eq, equivProd_cartan] at hi
     exact Pi.single_left_injective (by norm_num : (1 : ℤ) ≠ 0) hi
   · rintro rfl
     exact reindex_refl
@@ -70,7 +70,8 @@ This also states the exact period of the underlying map of the pinned Lie equiva
 @[simp]
 theorem reindex_iterate_eq_id_iff (hB : B.IsSymm) (n : ℕ) :
     (reindex σ hσ)^[n] = id ↔ σ ^ n = 1 := by
-  rw [← LinearEquiv.coe_pow, ← (LinearEquiv.coe_one (R := ℤ) (M := ShellLieAlgebra B)),
+  rw [← FunLike.coe_pow_eq_iterate,
+    ← (FunLike.coe_one_eq_id (F' := ShellLieAlgebra B ≃ₗ[ℤ] ShellLieAlgebra B)),
     DFunLike.coe_fn_eq, reindex_pow σ hσ hB, reindex_eq_one_iff]
 
 end Matrix.ShellLieAlgebra
