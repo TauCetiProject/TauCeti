@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.BigOperators.Group.Finset.Basic
+public import Mathlib.Algebra.BigOperators.Ring.Finset
 public import Mathlib.Algebra.Ring.Defs
 public import Mathlib.Data.Finset.NoncommProd
 public import Mathlib.Data.Finset.Powerset
@@ -35,6 +36,10 @@ which commutes pairwise everywhere.
   the `n + 1`-element subsets of `insert a s`.
 * `Finset.sum_noncommProd_powersetCard_eq_indicator`: sums of noncommutative products over
   `n`-element subsets, rewritten with the family extended by zero.
+* `Finset.sum_noncommProd_powersetCard_succ_insert`: the recursion for the sum of the products
+  over the `n + 1`-element subsets when an index is added to `s`, and
+  `Finset.sum_noncommProd_powersetCard_succ_insert_of_pairwise_commute`, the same recursion as
+  sums over `powersetCard` for a family commuting pairwise everywhere.
 -/
 
 public section
@@ -71,6 +76,38 @@ theorem sum_noncommProd_powersetCard_eq_indicator {ι R : Type*} [Semiring R] {s
   rw [← sum_coe_sort (u.powersetCard n)]
   exact sum_congr rfl fun (t : u.powersetCard n) _ ↦ noncommProd_congr rfl (fun i hi ↦
     (Set.indicator_of_mem (mem_coe.2 ((mem_powersetCard.1 t.2).1.trans hu hi)) x).symm) _
+
+/-- With `a ∉ s`, the sum of the products over the `n + 1`-element subsets of `insert a s` of a
+family commuting pairwise everywhere is the corresponding sum over `s` plus `x a` times the sum of
+the products over the `n`-element subsets of `s`. -/
+theorem sum_noncommProd_powersetCard_succ_insert_of_pairwise_commute {ι R : Type*} [Semiring R]
+    [DecidableEq ι] {s : Finset ι} {a : ι} (ha : a ∉ s) (x : ι → R) (hc : Pairwise (Commute on x))
+    (n : ℕ) :
+    ∑ t ∈ (insert a s).powersetCard (n + 1), t.noncommProd x (hc.set_pairwise _) =
+      ∑ t ∈ s.powersetCard (n + 1), t.noncommProd x (hc.set_pairwise _) +
+        x a * ∑ t ∈ s.powersetCard n, t.noncommProd x (hc.set_pairwise _) := by
+  rw [sum_powersetCard_succ_insert ha, mul_sum]
+  exact congrArg _ (sum_congr rfl fun t ht ↦
+    noncommProd_insert_of_notMem _ _ _ _ fun h ↦ ha ((mem_powersetCard.1 ht).1 h))
+
+/-- With `a ∉ s`, the sum of the products over the `n + 1`-element subsets of `insert a s` of a
+family commuting pairwise on `insert a s` is the corresponding sum over `s` plus `x a` times the
+sum of the products over the `n`-element subsets of `s`. -/
+theorem sum_noncommProd_powersetCard_succ_insert {ι R : Type*} [Semiring R] [DecidableEq ι]
+    {s : Finset ι} {a : ι} (ha : a ∉ s) (x : ι → R)
+    (hc : ((insert a s : Finset ι) : Set ι).Pairwise (Commute on x)) (n : ℕ) :
+    ∑ t : (insert a s).powersetCard (n + 1),
+        t.1.noncommProd x (hc.mono (coe_subset.2 (mem_powersetCard.1 t.2).1)) =
+      ∑ t : s.powersetCard (n + 1), t.1.noncommProd x
+          (hc.mono (coe_subset.2 ((mem_powersetCard.1 t.2).1.trans (subset_insert a s)))) +
+        x a * ∑ t : s.powersetCard n, t.1.noncommProd x
+          (hc.mono (coe_subset.2 ((mem_powersetCard.1 t.2).1.trans (subset_insert a s)))) := by
+  rw [sum_noncommProd_powersetCard_eq_indicator subset_rfl x hc,
+    sum_noncommProd_powersetCard_eq_indicator (subset_insert a s) x hc,
+    sum_noncommProd_powersetCard_eq_indicator (subset_insert a s) x hc,
+    ← Set.indicator_of_mem (mem_coe.2 (mem_insert_self a s)) x]
+  exact sum_noncommProd_powersetCard_succ_insert_of_pairwise_commute ha _
+    hc.pairwise_commute_indicator n
 
 end Finset
 
