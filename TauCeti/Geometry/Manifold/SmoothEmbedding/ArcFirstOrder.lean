@@ -5,30 +5,30 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.InnerProductSpace.Sphere.Boost
-public import TauCeti.Geometry.Manifold.Immersion.Differential
 public import TauCeti.Geometry.Manifold.Instances.Sphere
 public import TauCeti.Geometry.Manifold.SmoothEmbedding.Concordance
-public import TauCeti.Geometry.Manifold.SmoothEmbedding.Diffeomorph
-import TauCeti.Analysis.InnerProductSpace.LinearIsometry
 import TauCeti.Analysis.InnerProductSpace.Reflection
+import TauCeti.Analysis.InnerProductSpace.Sphere.Boost
+import TauCeti.Geometry.Manifold.Diffeomorph.Sphere
+import TauCeti.Geometry.Manifold.Immersion.Differential
+import TauCeti.Geometry.Manifold.SmoothEmbedding.Diffeomorph
+import TauCeti.Geometry.Manifold.TimeShear
 import Mathlib.Analysis.Calculus.Deriv.Prod
 import Mathlib.Analysis.InnerProductSpace.Projection.FiniteDimensional
 import Mathlib.Analysis.SpecialFunctions.Log.Deriv
-import Mathlib.Analysis.SpecialFunctions.Trigonometric.ArctanDeriv
 
 /-!
 # Making a concordance standard to first order along an arc
 
 Let `F : S¹ × ℝ → Sⁿ × ℝ` be a smooth concordance between circle embeddings `K` and `K'` into the
 unit sphere `Sⁿ` of a real inner product space, with `n ≥ 3`, and let `L : S¹ → Sⁿ` be a loop with
-which `K` and `K'` agree to first order at a point `z₀`. If `F` maps the line `{z₀} × ℝ` onto the
-straight line `{L z₀} × ℝ`, then `F` can be replaced by a concordance `G` from `K` to `K'` which
-still maps that line onto the straight line, and agrees with the strip `L × id` to first order
-along it (`TauCeti.SmoothEmbedding.Concordance.exists_mfderiv_eq_prodMap`). For knots in
-connected-sum position and `L` the great circle, this is the first-order normalization of a
-concordance along the arc `{-i} × ℝ`, after which the concordance can be made the standard strip
-near that arc.
+which `K` and `K'` agree to first order at a point `z₀`. If `F` is the straight line over `z₀`
+level by level, that is `F (z₀, t) = (L z₀, t)` for every `t`, then `F` can be replaced by a
+concordance `G` from `K` to `K'` which still satisfies `G (z₀, t) = (L z₀, t)` for every `t`, and
+agrees with the strip `L × id` to first order along that line
+(`TauCeti.SmoothEmbedding.Concordance.exists_mfderiv_eq_prodMap`). For knots in connected-sum
+position and `L` the great circle, this is the first-order normalization of a concordance along the
+arc `{-i} × ℝ`, after which the concordance can be made the standard strip near that arc.
 
 Along the line, the derivative of `F` sends the time direction to the time direction, and the
 circle direction to a vector `(A t, b t)` of `T_v Sⁿ × ℝ`, where `v = L z₀`, while the strip sends
@@ -43,34 +43,17 @@ it to `(W, 0)`. Three moves correct this, and none of them changes `F` near its 
   tangent vectors at `v` by `‖W‖ / ‖A t‖`. Applying `Q t` and then this boost at level `t` is a
   diffeomorphism of `Sⁿ × ℝ` preserving the levels (`TauCeti.boostRotateDiffeomorph`).
 * The time shear `(z, t) ↦ (z, t - b t * h z)` of the source (`TauCeti.timeShear`), where `h` is a
-  small function on the circle vanishing at `z₀` with velocity `1` there, cancels the time
-  component `b t`.
+  small function on the circle vanishing at `z₀` with velocity `1` there
+  (`TauCeti.exists_shear_circle`), cancels the time component `b t`.
 
 The derivatives of the result and of `L × id` along the line are compared slice by slice along
 `Circle.exp` (`TauCeti.mfderiv_eq_of_deriv_comp_circleExp_eq_prod`).
 
-## Main definitions
-
-* `TauCeti.timeShear β h`: the time shear `(x, t) ↦ (x, t + β t * h x)` of a cylinder `M × ℝ`.
-* `TauCeti.boostRotate u α Q`: at level `s`, the linear isometry `Q s` followed by the boost of
-  rapidity `α s` toward `u`.
-* `TauCeti.boostRotateDiffeomorph`: the level-preserving diffeomorphism of `Sⁿ × ℝ` which
-  `boostRotate` defines.
-
 ## Main results
 
-* `TauCeti.SmoothEmbedding.Concordance.exists_mfderiv_eq_prodMap`: a concordance which maps the
-  line over `z₀` onto the straight line can be made to agree with `L × id` to first order along
-  it.
-* `TauCeti.injective_timeShear`, `TauCeti.isProperMap_timeShear`, `TauCeti.isImmersion_timeShear`:
-  a time shear with positive time derivative and bounded displacement is an injective proper
-  immersion.
-* `TauCeti.fderiv_boostRotate_apply_zero`: the derivative of `boostRotate` at its fixed point.
-* `TauCeti.mfderiv_eq_of_deriv_comp_circleExp_eq_prod`: two maps of `S¹ × ℝ` into `Sⁿ × ℝ` which
-  agree on a line `{z₀} × ℝ` have the same derivative at `(z₀, t)` when their slices at time `t`
-  have the same velocity at `z₀` along `Circle.exp`.
-* `TauCeti.deriv_coe_fst_comp_circleExp_ne_zero`: for such a map with injective derivative, the
-  sphere component of the slice has nonzero velocity.
+* `TauCeti.SmoothEmbedding.Concordance.exists_mfderiv_eq_prodMap`: a concordance with
+  `F (z₀, t) = (L z₀, t)` for every `t` can be made to agree with `L × id` to first order along
+  the line `{z₀} × ℝ`, keeping `G (z₀, t) = (L z₀, t)` for every `t`.
 
 ## References
 
@@ -90,338 +73,6 @@ open scoped Manifold ContDiff
 
 namespace TauCeti
 
-/-! ### Time shears of a cylinder -/
-
-section TimeShear
-
-/-- The **time shear** `(x, t) ↦ (x, t + β t * h x)` of the cylinder `M × ℝ`. -/
-def timeShear {M : Type*} (β : ℝ → ℝ) (h : M → ℝ) (p : M × ℝ) : M × ℝ :=
-  (p.1, p.2 + β p.2 * h p.1)
-
-/-- A time shear moves `(x, t)` to `(x, t + β t * h x)`. -/
-@[simp]
-theorem timeShear_apply {M : Type*} (β : ℝ → ℝ) (h : M → ℝ) (x : M) (t : ℝ) :
-    timeShear β h (x, t) = (x, t + β t * h x) :=
-  (rfl)
-
-/-- For a fixed point `x`, the time coordinate of a time shear is strictly increasing in time when
-its derivative `1 + β' t * h x` is positive. -/
-theorem strictMono_timeShear_snd {M : Type*} {β : ℝ → ℝ} {h : M → ℝ} (hβ : Differentiable ℝ β)
-    (hpos : ∀ x t, 0 < 1 + deriv β t * h x) (x : M) :
-    StrictMono fun t => (timeShear β h (x, t)).2 := by
-  refine strictMono_of_deriv_pos fun t => ?_
-  have hd : HasDerivAt (fun t => t + β t * h x) (1 + deriv β t * h x) t :=
-    (hasDerivAt_id t).add ((hβ t).hasDerivAt.mul_const (h x))
-  simpa only [timeShear_apply] using hd.deriv ▸ hpos x t
-
-/-- A time shear whose time derivative is positive is injective. -/
-theorem injective_timeShear {M : Type*} {β : ℝ → ℝ} {h : M → ℝ} (hβ : Differentiable ℝ β)
-    (hpos : ∀ x t, 0 < 1 + deriv β t * h x) : Injective (timeShear β h) := by
-  rintro ⟨x, t⟩ ⟨x', t'⟩ he
-  simp only [timeShear_apply, Prod.mk.injEq] at he
-  obtain ⟨rfl, he⟩ := he
-  exact Prod.ext rfl ((strictMono_timeShear_snd hβ hpos x).injective he)
-
-variable {EM HM M : Type*} [NormedAddCommGroup EM] [NormedSpace ℝ EM] [TopologicalSpace HM]
-  {IM : ModelWithCorners ℝ EM HM} [TopologicalSpace M] [ChartedSpace HM M]
-
-/-- A time shear of a cylinder over a compact space, with bounded displacement, is proper. -/
-theorem isProperMap_timeShear [CompactSpace M] [T2Space M] {β : ℝ → ℝ} {h : M → ℝ}
-    (hβ : Continuous β) (hh : Continuous h) {C : ℝ} (hC : ∀ x t, |β t * h x| ≤ C) :
-    IsProperMap (timeShear β h) := by
-  have hc : Continuous (timeShear β h) :=
-    continuous_fst.prodMk (continuous_snd.add ((hβ.comp continuous_snd).mul (hh.comp
-      continuous_fst)))
-  refine isProperMap_iff_isCompact_preimage.2 ⟨hc, fun K hK => ?_⟩
-  obtain ⟨a, ha⟩ := (hK.image continuous_snd).bddBelow
-  obtain ⟨b, hb⟩ := (hK.image continuous_snd).bddAbove
-  refine (isCompact_univ.prod (isCompact_Icc (a := a - C) (b := b + C))).of_isClosed_subset
-    (hK.isClosed.preimage hc) ?_
-  rintro ⟨x, t⟩ hp
-  have hlo : a ≤ t + β t * h x := ha ⟨_, hp, rfl⟩
-  have hhi : t + β t * h x ≤ b := hb ⟨_, hp, rfl⟩
-  have := abs_le.1 (hC x t)
-  exact ⟨mem_univ x, by linarith, by linarith⟩
-
-/-- The time coordinate `(x, t) ↦ t + β t * h x` of a time shear by smooth `β` and `h` is
-smooth. -/
-private theorem contMDiff_timeShear_snd {β : ℝ → ℝ} {h : M → ℝ} (hβ : ContDiff ℝ ∞ β)
-    (hh : ContMDiff IM 𝓘(ℝ) ∞ h) :
-    ContMDiff (IM.prod 𝓘(ℝ)) 𝓘(ℝ) ∞ fun q : M × ℝ => q.2 + β q.2 * h q.1 := by
-  have hm : ContMDiff (IM.prod 𝓘(ℝ)) 𝓘(ℝ) ∞ fun q : M × ℝ => β q.2 • h q.1 :=
-    (hβ.contMDiff.comp contMDiff_snd).smul (hh.comp contMDiff_fst)
-  simp only [smul_eq_mul] at hm
-  exact contMDiff_snd.add hm
-
-/-- A time shear by smooth `β` and `h` is smooth. -/
-theorem contMDiff_timeShear {β : ℝ → ℝ} {h : M → ℝ} (hβ : ContDiff ℝ ∞ β)
-    (hh : ContMDiff IM 𝓘(ℝ) ∞ h) :
-    ContMDiff (IM.prod 𝓘(ℝ)) (IM.prod 𝓘(ℝ)) ∞ (timeShear β h) :=
-  contMDiff_fst.prodMk (contMDiff_timeShear_snd hβ hh)
-
-variable [IM.Boundaryless] [IsManifold IM ∞ M] in
-/-- A smooth time shear whose time derivative `1 + β' t * h x` never vanishes is an immersion. -/
-theorem isImmersion_timeShear [FiniteDimensional ℝ EM] {β : ℝ → ℝ} {h : M → ℝ}
-    (hβ : ContDiff ℝ ∞ β) (hh : ContMDiff IM 𝓘(ℝ) ∞ h) (hpos : ∀ x t, 1 + deriv β t * h x ≠ 0) :
-    IsImmersion (IM.prod 𝓘(ℝ)) (IM.prod 𝓘(ℝ)) ∞ (timeShear β h) := by
-  refine isImmersion_iff_forall_isImmersionAt.2 fun q => ?_
-  refine (contMDiff_timeShear_snd hβ hh).isImmersionAt_fst_prod (by simp) ?_
-  refine IsDiffImmersionAt.of_injective_of_finiteDimensional ?_
-  have hd : HasDerivAt (fun t => t + β t * h q.1) (1 + deriv β q.2 * h q.1) q.2 :=
-    (hasDerivAt_id q.2).add ((hβ.differentiable (by simp) q.2).hasDerivAt.mul_const (h q.1))
-  rw [mfderiv_eq_fderiv, hd.hasFDerivAt.fderiv]
-  intro r r' hr
-  simpa [hpos q.1 q.2] using hr
-
-end TimeShear
-
-/-! ### Rotations followed by boosts, level by level -/
-
-section BoostRotate
-
-open Module Real
-open scoped RealInnerProductSpace
-
-variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] {n : ℕ}
-  [Fact (finrank ℝ E = n + 1)] {u : E} {α : ℝ → ℝ} {Q : ℝ → E ≃ₗᵢ[ℝ] E}
-
-/-- The linear isometry `Q s` followed by the boost of rapidity `α s` toward `u`, applied at level
-`s` to the vector `x`. -/
-def boostRotate (u : E) (α : ℝ → ℝ) (Q : ℝ → E ≃ₗᵢ[ℝ] E) (p : ℝ × E) : E :=
-  sphereBoost u (α p.1) (Q p.1 p.2)
-
-/-- At level `s`, `boostRotate` applies `Q s` and then the boost of rapidity `α s`. -/
-@[simp]
-theorem boostRotate_apply (s : ℝ) (x : E) :
-    boostRotate u α Q (s, x) = sphereBoost u (α s) (Q s x) :=
-  (rfl)
-
-/-- `boostRotate` maps the unit sphere to itself. -/
-theorem norm_boostRotate (hu : ‖u‖ = 1) (s : ℝ) {x : E} (hx : ‖x‖ = 1) :
-    ‖boostRotate u α Q (s, x)‖ = 1 :=
-  norm_sphereBoost hu (by rwa [LinearIsometryEquiv.norm_map]) _
-
-/-- The map `boostRotate` is smooth at every point of `ℝ × Sⁿ`. -/
-theorem contDiffAt_boostRotate (hu : ‖u‖ = 1) (hα : ContDiff ℝ ∞ α)
-    (hQ : ContDiff ℝ ∞ fun p : ℝ × E => Q p.1 p.2) (s : ℝ) {x : E} (hx : ‖x‖ = 1) :
-    ContDiffAt ℝ ∞ (boostRotate u α Q) (s, x) := by
-  have hx' : ‖Q s x‖ = 1 := by rwa [LinearIsometryEquiv.norm_map]
-  exact (contDiffAt_sphereBoost (cosh_add_sinh_mul_inner_pos hu hx' _).ne').comp (s, x)
-    ((hα.comp contDiff_fst).prodMk hQ).contDiffAt
-
-/-- Level by level, the rotation `Q s` followed by the boost of rapidity `α s` toward the unit
-vector `u` is a diffeomorphism of `Sⁿ × ℝ` preserving the level `s`: its inverse at level `s` is
-the boost of rapidity `-α s` followed by `(Q s)⁻¹`. -/
-def boostRotateDiffeomorph (hu : ‖u‖ = 1) (hα : ContDiff ℝ ∞ α)
-    (hQ : ContDiff ℝ ∞ fun p : ℝ × E => Q p.1 p.2) :
-    (sphere (0 : E) 1 × ℝ) ≃ₘ^∞⟮(𝓡 n).prod 𝓘(ℝ), (𝓡 n).prod 𝓘(ℝ)⟯ (sphere (0 : E) 1 × ℝ) where
-  toFun p := (⟨boostRotate u α Q (p.2, p.1), mem_sphere_zero_iff_norm.2
-    (norm_boostRotate hu _ (norm_eq_of_mem_sphere p.1))⟩, p.2)
-  invFun p := (⟨(Q p.2).symm (sphereBoost u (-α p.2) p.1), mem_sphere_zero_iff_norm.2 (by
-    rw [LinearIsometryEquiv.norm_map]; exact norm_sphereBoost hu (norm_eq_of_mem_sphere p.1) _)⟩,
-    p.2)
-  left_inv p := by
-    have hx : ‖Q p.2 p.1‖ = 1 := by rw [LinearIsometryEquiv.norm_map]; exact norm_eq_of_mem_sphere _
-    refine Prod.ext (Subtype.ext ?_) rfl
-    simp only [boostRotate_apply]
-    rw [sphereBoost_sphereBoost hu hx, neg_add_cancel, sphereBoost_zero, id,
-      LinearIsometryEquiv.symm_apply_apply]
-  right_inv p := by
-    refine Prod.ext (Subtype.ext ?_) rfl
-    simp only [boostRotate_apply, LinearIsometryEquiv.apply_symm_apply]
-    rw [sphereBoost_sphereBoost hu (norm_eq_of_mem_sphere p.1), add_neg_cancel, sphereBoost_zero,
-      id]
-  contMDiff_toFun := by
-    refine ContMDiff.prodMk ?_ contMDiff_snd
-    refine ContMDiff.codRestrict_sphere (fun p => ?_) _
-    have hin : ContMDiff ((𝓡 n).prod 𝓘(ℝ)) 𝓘(ℝ, ℝ × E) ∞
-        fun p : sphere (0 : E) 1 × ℝ => (p.2, (p.1 : E)) :=
-      contMDiff_snd.prodMk_space (contMDiff_coe_sphere.comp contMDiff_fst)
-    exact (contDiffAt_boostRotate hu hα hQ p.2 (norm_eq_of_mem_sphere p.1)).contMDiffAt.comp p
-      (hin p)
-  contMDiff_invFun := by
-    refine ContMDiff.prodMk ?_ contMDiff_snd
-    refine ContMDiff.codRestrict_sphere (fun p => ?_) _
-    have hb : ContMDiffAt ((𝓡 n).prod 𝓘(ℝ)) 𝓘(ℝ, E) ∞
-        (fun p : sphere (0 : E) 1 × ℝ => sphereBoost u (-α p.2) p.1) p := by
-      have hin : ContMDiff ((𝓡 n).prod 𝓘(ℝ)) 𝓘(ℝ, ℝ × E) ∞
-          fun p : sphere (0 : E) 1 × ℝ => (-α p.2, (p.1 : E)) :=
-        ((hα.contMDiff.comp contMDiff_snd).neg).prodMk_space
-          (contMDiff_coe_sphere.comp contMDiff_fst)
-      exact (contDiffAt_sphereBoost (cosh_add_sinh_mul_inner_pos hu
-        (norm_eq_of_mem_sphere p.1) _).ne').contMDiffAt.comp p (hin p)
-    have : FiniteDimensional ℝ E := .of_fact_finrank_eq_succ n
-    exact (ContDiff.linearIsometryEquiv_symm_apply hQ).contMDiff.contMDiffAt.comp p
-      ((contMDiff_snd p).prodMk_space hb)
-
-/-- The sphere component of `boostRotateDiffeomorph` is `boostRotate` at the level of the
-point. -/
-@[simp]
-theorem coe_boostRotateDiffeomorph_apply_fst (hu : ‖u‖ = 1) (hα : ContDiff ℝ ∞ α)
-    (hQ : ContDiff ℝ ∞ fun p : ℝ × E => Q p.1 p.2) (p : sphere (0 : E) 1 × ℝ) :
-    ((boostRotateDiffeomorph (n := n) hu hα hQ p).1 : E) = boostRotate u α Q (p.2, p.1) :=
-  (rfl)
-
-/-- `boostRotateDiffeomorph` preserves the levels. -/
-@[simp]
-theorem boostRotateDiffeomorph_apply_snd (hu : ‖u‖ = 1) (hα : ContDiff ℝ ∞ α)
-    (hQ : ContDiff ℝ ∞ fun p : ℝ × E => Q p.1 p.2) (p : sphere (0 : E) 1 × ℝ) :
-    (boostRotateDiffeomorph (n := n) hu hα hQ p).2 = p.2 :=
-  (rfl)
-
-/-- At a point `-u` fixed by every `Q s`, the derivative of `boostRotate` in a direction `(0, ξ)`
-with `Q s ξ` tangent to the sphere at `-u` is `Q s ξ` stretched by `exp (α s)`. -/
-theorem fderiv_boostRotate_apply_zero (hu : ‖u‖ = 1) (hα : ContDiff ℝ ∞ α)
-    (hQ : ContDiff ℝ ∞ fun p : ℝ × E => Q p.1 p.2) (s : ℝ) (hQu : Q s (-u) = -u) {ξ : E}
-    (hξ : ⟪Q s ξ, u⟫ = 0) :
-    fderiv ℝ (boostRotate u α Q) (s, -u) (0, ξ) = exp (α s) • Q s ξ := by
-  have hD := ((contDiffAt_boostRotate hu hα hQ s (by rw [norm_neg, hu])).differentiableAt
-    (by simp)).hasFDerivAt
-  -- The slice `x ↦ boostRotate u α Q (s, x)` is the boost after the linear isometry `Q s`.
-  have h₁ := hD.comp (-u) (hasFDerivAt_prodMk_right s (-u))
-  have hB : HasFDerivAt (sphereBoost u (α s)) (fderiv ℝ (sphereBoost u (α s)) (-u)) (Q s (-u)) := by
-    rw [hQu]
-    exact (differentiableAt_sphereBoost (cosh_add_sinh_mul_inner_pos hu
-      (by rw [norm_neg, hu]) _).ne').hasFDerivAt
-  have h₂ := hB.comp (-u) (Q s).toContinuousLinearEquiv.hasFDerivAt
-  have h := congrArg (fun L : E →L[ℝ] E => L ξ) (h₁.unique h₂)
-  simp only [ContinuousLinearMap.coe_comp, Function.comp_apply,
-    ContinuousLinearMap.inr_apply] at h
-  rw [h]
-  exact fderiv_sphereBoost_neg_self_apply hu _ hξ
-
-end BoostRotate
-
-/-! ### Maps of the cylinder over the circle, read along `Circle.exp` -/
-
-section CircleCylinder
-
-open Module
-open scoped RealInnerProductSpace
-
-attribute [local instance] finrank_real_complex_fact'
-
-variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] {n : ℕ}
-  [Fact (finrank ℝ E = n + 1)]
-
-/-- **The first order of a map of the cylinder along a line.** Two maps `f` and `g` of the
-cylinder `S¹ × ℝ` into `Sⁿ × ℝ`, differentiable at `(exp (θ i), t)`, which agree on the whole line
-`{exp (θ i)} × ℝ`, and whose slices `θ' ↦ f (exp (θ' i), t)` and `θ' ↦ g (exp (θ' i), t)` have the
-same velocity at `θ` in `E × ℝ`, have the same derivative at `(exp (θ i), t)`. -/
-theorem mfderiv_eq_of_deriv_comp_circleExp_eq_prod {f g : Circle × ℝ → sphere (0 : E) 1 × ℝ}
-    {θ t : ℝ} (hf : MDifferentiableAt ((𝓡 1).prod 𝓘(ℝ)) ((𝓡 n).prod 𝓘(ℝ)) f (Circle.exp θ, t))
-    (hg : MDifferentiableAt ((𝓡 1).prod 𝓘(ℝ)) ((𝓡 n).prod 𝓘(ℝ)) g (Circle.exp θ, t))
-    (hline : ∀ s, f (Circle.exp θ, s) = g (Circle.exp θ, s))
-    (h₁ : deriv (fun θ' => ((f (Circle.exp θ', t)).1 : E)) θ =
-      deriv (fun θ' => ((g (Circle.exp θ', t)).1 : E)) θ)
-    (h₂ : deriv (fun θ' => (f (Circle.exp θ', t)).2) θ =
-      deriv (fun θ' => (g (Circle.exp θ', t)).2) θ) :
-    mfderiv ((𝓡 1).prod 𝓘(ℝ)) ((𝓡 n).prod 𝓘(ℝ)) f (Circle.exp θ, t) =
-      mfderiv ((𝓡 1).prod 𝓘(ℝ)) ((𝓡 n).prod 𝓘(ℝ)) g (Circle.exp θ, t) := by
-  have hslice {k : Circle × ℝ → sphere (0 : E) 1 × ℝ}
-      (hk : MDifferentiableAt ((𝓡 1).prod 𝓘(ℝ)) ((𝓡 n).prod 𝓘(ℝ)) k (Circle.exp θ, t)) :
-      MDifferentiableAt (𝓡 1) ((𝓡 n).prod 𝓘(ℝ)) (fun z => k (z, t)) (Circle.exp θ) :=
-    hk.comp (Circle.exp θ) (mdifferentiableAt_id.prodMk mdifferentiableAt_const)
-  have hf₁ := hslice hf
-  have hg₁ := hslice hg
-  rw [mfderiv_prod_eq_add_comp hf, mfderiv_prod_eq_add_comp hg]
-  congr 2
-  · -- The slices at time `t` agree to first order: compare their two components.
-    change mfderiv (𝓡 1) ((𝓡 n).prod 𝓘(ℝ)) (fun z => ((f (z, t)).1, (f (z, t)).2)) _ =
-      mfderiv (𝓡 1) ((𝓡 n).prod 𝓘(ℝ)) (fun z => ((g (z, t)).1, (g (z, t)).2)) _
-    rw [mfderiv_prodMk hf₁.fst hf₁.snd, mfderiv_prodMk hg₁.fst hg₁.snd]
-    congr 1
-    · exact mfderiv_eq_of_deriv_coe_comp_circleExp_eq hf₁.fst hg₁.fst
-        (congrArg Prod.fst (hline t)) h₁
-    · exact mfderiv_eq_of_deriv_comp_circleExp_eq hf₁.snd hg₁.snd h₂
-  · -- On the line `{exp (θ i)} × ℝ` the two maps agree.
-    rw [show (fun z : ℝ => f (Circle.exp θ, z)) = fun z => g (Circle.exp θ, z) from funext hline]
-
-/-- A map `Γ` of the cylinder `S¹ × ℝ` into `Sⁿ × ℝ` which is the line `s ↦ (y, s)` over
-`exp (θ i)`, and has injective derivative at `(exp (θ i), t)`, has a slice
-`θ' ↦ Γ (exp (θ' i), t)` whose sphere component has nonzero velocity at `θ`. Otherwise the
-derivative of `Γ` would kill a vector `(u, -c)`, with `u` tangent to the circle and `c` the time
-component of the slice velocity. -/
-theorem deriv_coe_fst_comp_circleExp_ne_zero {Γ : Circle × ℝ → sphere (0 : E) 1 × ℝ}
-    {θ t : ℝ} {y : sphere (0 : E) 1}
-    (hΓ : MDifferentiableAt ((𝓡 1).prod 𝓘(ℝ)) ((𝓡 n).prod 𝓘(ℝ)) Γ (Circle.exp θ, t))
-    (hinj : Injective (mfderiv ((𝓡 1).prod 𝓘(ℝ)) ((𝓡 n).prod 𝓘(ℝ)) Γ (Circle.exp θ, t)))
-    (hline : ∀ s, Γ (Circle.exp θ, s) = (y, s)) :
-    deriv (fun θ' => ((Γ (Circle.exp θ', t)).1 : E)) θ ≠ 0 := by
-  intro h0
-  set u : EuclideanSpace ℝ (Fin 1) := mfderiv 𝓘(ℝ, ℝ) (𝓡 1) Circle.exp θ 1
-  have hu : u ≠ 0 := fun h =>
-    one_ne_zero (show (1 : ℝ) = 0 from injective_mfderiv_circleExp θ (h.trans (map_zero _).symm))
-  have hΓ₁ : MDifferentiableAt (𝓡 1) ((𝓡 n).prod 𝓘(ℝ)) (fun z => Γ (z, t)) (Circle.exp θ) :=
-    hΓ.comp (Circle.exp θ) (mdifferentiableAt_id.prodMk mdifferentiableAt_const)
-  -- The sphere component of the slice has zero derivative in the direction `u`.
-  have h₁ : mfderiv (𝓡 1) (𝓡 n) (fun z => (Γ (z, t)).1) (Circle.exp θ) u = 0 := by
-    have h := smul_deriv_coe_comp_circleExp hΓ₁.fst 1
-    rw [h0, smul_zero] at h
-    exact injective_mvfderiv_subtypeVal_sphere _ (h.symm.trans (map_zero _).symm)
-  set c : ℝ := mfderiv (𝓡 1) 𝓘(ℝ) (fun z => (Γ (z, t)).2) (Circle.exp θ) u
-  set w : TangentSpace ((𝓡 1).prod 𝓘(ℝ)) (Circle.exp θ, t) := (u, -c)
-  -- The two components of the derivative of `Γ` in the direction `w` vanish.
-  have ha : mfderiv ((𝓡 1).prod 𝓘(ℝ)) (𝓡 n) (fun q => (Γ q).1) (Circle.exp θ, t) w = 0 := by
-    rw [mfderiv_prod_eq_add_apply hΓ.fst]
-    have hs : (fun s : ℝ => (Γ (Circle.exp θ, s)).1) = fun _ => y :=
-      funext fun s => by rw [hline]
-    rw [hs, mfderiv_const]
-    exact (add_zero _).trans h₁
-  have hb : mfderiv ((𝓡 1).prod 𝓘(ℝ)) 𝓘(ℝ) (fun q => (Γ q).2) (Circle.exp θ, t) w = 0 := by
-    rw [mfderiv_prod_eq_add_apply hΓ.snd]
-    have hs : (fun s : ℝ => (Γ (Circle.exp θ, s)).2) = fun s => s :=
-      funext fun s => by rw [hline]
-    have hid : mfderiv 𝓘(ℝ) 𝓘(ℝ) (fun s : ℝ => (Γ (Circle.exp θ, s)).2) t =
-        ContinuousLinearMap.id ℝ ℝ := by
-      rw [hs]
-      exact mfderiv_id
-    rw [hid]
-    exact add_neg_cancel c
-  have hkey : mfderiv ((𝓡 1).prod 𝓘(ℝ)) ((𝓡 n).prod 𝓘(ℝ)) Γ (Circle.exp θ, t) w = 0 := by
-    have hdecomp := mfderiv_prodMk hΓ.fst hΓ.snd
-    rw [hdecomp]
-    exact Prod.ext ha hb
-  exact hu (congrArg Prod.fst (hinj (hkey.trans (map_zero _).symm)) :)
-
-/-- A smooth real function on the circle, of absolute value at most `δ`, which vanishes at
-`exp (θ₀ i)` and has velocity `1` there along `Circle.exp`: `κ arctan (sin (θ - θ₀) / κ)` with
-`κ = δ / 2`. -/
-private theorem exists_contMDiff_circle_hasDerivAt (θ₀ : ℝ) {δ : ℝ} (hδ : 0 < δ) :
-    ∃ h : Circle → ℝ, ContMDiff (𝓡 1) 𝓘(ℝ) ∞ h ∧ h (Circle.exp θ₀) = 0 ∧
-      HasDerivAt (fun θ => h (Circle.exp θ)) 1 θ₀ ∧ ∀ z, |h z| ≤ δ := by
-  set κ := δ / 2
-  have hκ : 0 < κ := half_pos hδ
-  set g : ℂ → ℝ := fun w => κ * Real.arctan (w.im / κ)
-  have hg : ContDiff ℝ ∞ g :=
-    contDiff_const.mul (Real.contDiff_arctan.comp (Complex.imCLM.contDiff.div_const κ))
-  have hc : ContMDiff (𝓡 1) 𝓘(ℝ, ℂ) ∞ fun z : Circle => (((Circle.exp θ₀)⁻¹ * z : Circle) : ℂ) :=
-    contMDiff_coe_sphere.comp contMDiff_mul_left
-  have he (θ : ℝ) : g (((Circle.exp θ₀)⁻¹ * Circle.exp θ : Circle) : ℂ) =
-      κ * Real.arctan (Real.sin (θ - θ₀) / κ) := by
-    simp only [g, inv_mul_eq_div, ← Circle.exp_sub, Circle.coe_exp, Complex.exp_ofReal_mul_I_im]
-  refine ⟨fun z => g (((Circle.exp θ₀)⁻¹ * z : Circle) : ℂ), hg.contMDiff.comp hc, ?_, ?_,
-    fun z => ?_⟩
-  · simp [g]
-  · have hs : HasDerivAt (fun θ => Real.sin (θ - θ₀) / κ) (Real.cos (θ₀ - θ₀) * 1 / κ) θ₀ :=
-      ((Real.hasDerivAt_sin _).comp θ₀ ((hasDerivAt_id θ₀).sub_const θ₀)).div_const κ
-    have hd : HasDerivAt (fun θ => κ * Real.arctan (Real.sin (θ - θ₀) / κ)) 1 θ₀ := by
-      convert ((Real.hasDerivAt_arctan _).comp θ₀ hs).const_mul κ using 1
-      · rfl
-      · rw [sub_self, Real.sin_zero, Real.cos_zero]
-        field_simp
-        ring
-    exact hd.congr_of_eventuallyEq (Filter.Eventually.of_forall he)
-  · set x := (((Circle.exp θ₀)⁻¹ * z : Circle) : ℂ).im / κ
-    have hx : |Real.arctan x| ≤ 2 := (abs_lt.2 ⟨Real.neg_pi_div_two_lt_arctan x,
-      Real.arctan_lt_pi_div_two x⟩).le.trans (by linarith [Real.pi_le_four])
-    calc |g (((Circle.exp θ₀)⁻¹ * z : Circle) : ℂ)| = κ * |Real.arctan x| := by
-          simp only [g, abs_mul, abs_of_pos hκ, x]
-      _ ≤ κ * 2 := mul_le_mul_of_nonneg_left hx hκ.le
-      _ = δ := by simp only [κ]; ring
-
-end CircleCylinder
-
 /-! ### Making a concordance standard to first order along an arc -/
 
 section FirstOrder
@@ -438,47 +89,14 @@ namespace SmoothEmbedding.Concordance
 
 variable {K K' : SmoothEmbedding (𝓡 1) (𝓡 n) ∞ Circle (sphere (0 : E) 1)}
 
-/-- **Choosing the shear.** For a smooth `β : ℝ → ℝ` with compact support and `ε > 0`, some
-smooth `h` on the circle vanishes at `exp (θ₀ i)`, has velocity `1` there along `Circle.exp`, and
-is so small that the time shear `(x, t) ↦ (x, t + β t * h x)` moves times by less than `ε` and has
-positive time derivative `1 + β' t * h x`. -/
-private theorem exists_shear_circle (θ₀ : ℝ) {β : ℝ → ℝ} (hβ : ContDiff ℝ ∞ β)
-    (hcs : HasCompactSupport β) {ε : ℝ} (hε : 0 < ε) :
-    ∃ h : Circle → ℝ, ContMDiff (𝓡 1) 𝓘(ℝ) ∞ h ∧ h (Circle.exp θ₀) = 0 ∧
-      HasDerivAt (fun θ => h (Circle.exp θ)) 1 θ₀ ∧
-        ∀ x t, |β t * h x| < ε ∧ 0 < 1 + deriv β t * h x := by
-  obtain ⟨C₁, hC₁⟩ := hβ.continuous.bounded_above_of_compact_support hcs
-  obtain ⟨C₂, hC₂⟩ := (hβ.continuous_deriv (by simp)).bounded_above_of_compact_support hcs.deriv
-  set C := max (max C₁ C₂) 0
-  have hC0 : 0 ≤ C := le_max_right _ _
-  have hβC (t : ℝ) : |β t| ≤ C :=
-    (hC₁ t).trans ((le_max_left _ _).trans (le_max_left _ _))
-  have hβ'C (t : ℝ) : |deriv β t| ≤ C :=
-    (hC₂ t).trans ((le_max_right _ _).trans (le_max_left _ _))
-  -- With `|h| ≤ δ`, both displacements are at most `C δ < min ε 1 / 2`.
-  have hm : 0 < min ε 1 := lt_min hε one_pos
-  set δ := min ε 1 / (2 * (C + 1))
-  have hδ : 0 < δ := div_pos hm (by positivity)
-  have hCδ : C * δ < min ε 1 / 2 := by
-    calc C * δ = min ε 1 / 2 * (C / (C + 1)) := by simp only [δ]; field_simp
-      _ < min ε 1 / 2 * 1 :=
-        mul_lt_mul_of_pos_left ((div_lt_one (by positivity)).2 (by linarith)) (by positivity)
-      _ = min ε 1 / 2 := mul_one _
-  obtain ⟨h, hh, hh0, hhd, hhδ⟩ := exists_contMDiff_circle_hasDerivAt θ₀ hδ
-  refine ⟨h, hh, hh0, hhd, fun x t => ?_⟩
-  have hε1 := min_le_left ε 1
-  have h11 := min_le_right ε 1
-  have h₁ : |deriv β t * h x| < 1 := by
-    rw [abs_mul]
-    exact (mul_le_mul (hβ'C t) (hhδ x) (abs_nonneg _) hC0).trans_lt (by linarith)
-  refine ⟨?_, by linarith [neg_abs_le (deriv β t * h x)]⟩
-  rw [abs_mul]
-  exact (mul_le_mul (hβC t) (hhδ x) (abs_nonneg _) hC0).trans_lt (by linarith)
-
 /-- A concordance between circle embeddings into `Sⁿ`, read in the coordinates
 `(θ, t) ↦ (exp (θ i), t)` of the cylinder and in `E × ℝ`. -/
 private def track (F : Concordance K K') (q : ℝ × ℝ) : E × ℝ :=
   (((F (Circle.exp q.1, q.2)).1 : E), (F (Circle.exp q.1, q.2)).2)
+
+private theorem track_apply (F : Concordance K K') (θ s : ℝ) :
+    track F (θ, s) = (((F (Circle.exp θ, s)).1 : E), (F (Circle.exp θ, s)).2) :=
+  (rfl)
 
 private theorem contDiff_track (F : Concordance K K') : ContDiff ℝ ∞ (track F) := by
   have hc : ContMDiff 𝓘(ℝ, ℝ × ℝ) ((𝓡 1).prod 𝓘(ℝ)) ∞ fun q : ℝ × ℝ => (Circle.exp q.1, q.2) :=
@@ -502,11 +120,23 @@ private theorem hasDerivAt_track_right (F : Concordance K K') (θ t : ℝ) :
     ((hasDerivAt_const t θ).prodMk (hasDerivAt_id' t))
   exact h
 
+/-- **Correcting the speed by a boost.** If `x` has the direction of `w` and the length of `a`,
+that is `‖a‖⁻¹ • x = ‖w‖⁻¹ • w`, then stretching `x` by `exp (log (‖w‖ / ‖a‖))` gives `w`. -/
+private theorem exp_log_div_norm_smul_eq {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V]
+    {a w x : V} (ha : a ≠ 0) (hw : w ≠ 0) (hx : ‖a‖⁻¹ • x = ‖w‖⁻¹ • w) :
+    exp (log (‖w‖ / ‖a‖)) • x = w := by
+  have ha' := norm_ne_zero_iff.2 ha
+  have hw' := norm_ne_zero_iff.2 hw
+  have hx' : x = ‖a‖ • ‖w‖⁻¹ • w := by rw [← hx, smul_inv_smul₀ ha']
+  rw [Real.exp_log (div_pos (norm_pos_iff.2 hw) (norm_pos_iff.2 ha)), hx', smul_smul, smul_smul,
+    show ‖w‖ / ‖a‖ * ‖a‖ * ‖w‖⁻¹ = 1 by field_simp, one_smul]
+
 /-- **Making a concordance standard to first order along an arc.** Let `F` be a concordance
-between smooth circle embeddings `K` and `K'` into the unit sphere `Sⁿ`, `n ≥ 3`, which maps the
-line `{z₀} × ℝ` onto the straight line `{L z₀} × ℝ`, where `K` and `K'` have the same derivative
-at `z₀` as the loop `L`. Then some concordance `G` from `K` to `K'` maps that line onto the same
-straight line and has the same derivative as the strip `L × id` at every point `(z₀, t)`. -/
+between smooth circle embeddings `K` and `K'` into the unit sphere `Sⁿ`, `n ≥ 3`, which is the
+straight line over `z₀` level by level, `F (z₀, t) = (L z₀, t)` for every `t`, where `K` and `K'`
+have the same derivative at `z₀` as the loop `L`. Then some concordance `G` from `K` to `K'` also
+satisfies `G (z₀, t) = (L z₀, t)` for every `t`, and has the same derivative as the strip `L × id`
+at every point `(z₀, t)`. -/
 theorem exists_mfderiv_eq_prodMap (hn : 3 ≤ n) (F : Concordance K K')
     {L : Circle → sphere (0 : E) 1} {z₀ : Circle}
     (hK : mfderiv (𝓡 1) (𝓡 n) K z₀ = mfderiv (𝓡 1) (𝓡 n) L z₀)
@@ -621,17 +251,18 @@ theorem exists_mfderiv_eq_prodMap (hn : 3 ≤ n) (F : Concordance K K')
       (div_pos (norm_pos_iff.2 hW) (norm_pos_iff.2 (hA0 t))).ne'
   have hv' : ‖-v‖ = 1 := by rw [norm_neg, hv]
   set Ψ := boostRotateDiffeomorph (n := n) hv' hα hQ
-  have hΨ (y : sphere (0 : E) 1) (s : ℝ) :
-      Ψ (y, s) = (⟨boostRotate (-v) α Q (s, y), (Ψ (y, s)).1.2⟩, s) := rfl
+  have hΨ₁ (p : sphere (0 : E) 1 × ℝ) : ((Ψ p).1 : E) = boostRotate (-v) α Q (p.2, p.1) :=
+    coe_boostRotateDiffeomorph_apply_fst hv' hα hQ p
+  have hΨ₂ (p : sphere (0 : E) 1 × ℝ) : (Ψ p).2 = p.2 :=
+    boostRotateDiffeomorph_apply_snd hv' hα hQ p
   have hΨid (t : ℝ) (hAt : A t = W) (y : sphere (0 : E) 1) : Ψ (y, t) = (y, t) := by
     have hut : u t = u 0 := by simp only [hu_def, hAt, hAl 0 hεl.le]
-    refine Prod.ext (Subtype.ext ?_) rfl
-    rw [hΨ]
-    simp only [boostRotate_apply, hQ1 t hut, hα_def, hAt, div_self (norm_ne_zero_iff.2 hW),
+    refine Prod.ext (Subtype.ext ?_) (hΨ₂ _)
+    simp only [hΨ₁, boostRotate_apply, hQ1 t hut, hα_def, hAt, div_self (norm_ne_zero_iff.2 hW),
       Real.log_one, sphereBoost_zero, _root_.id]
   have hΨv (t : ℝ) : Ψ (L (Circle.exp θ₀), t) = (L (Circle.exp θ₀), t) := by
-    refine Prod.ext (Subtype.ext ?_) rfl
-    rw [hΨ]
+    refine Prod.ext (Subtype.ext ?_) (hΨ₂ _)
+    rw [hΨ₁]
     have h := sphereBoost_neg_self hv' (α t)
     rw [neg_neg] at h
     simp only [boostRotate_apply]
@@ -646,7 +277,7 @@ theorem exists_mfderiv_eq_prodMap (hn : 3 ≤ n) (F : Concordance K K')
   have hcs : HasCompactSupport β := HasCompactSupport.intro isCompact_Icc hβ0
   set ε := min εl εr
   have hε : 0 < ε := lt_min hεl hεr
-  obtain ⟨h, hh, hh0, hhd, hsmall⟩ := exists_shear_circle θ₀ hβ hcs hε
+  obtain ⟨h, hh, hh0, hhd, hsmall⟩ := TauCeti.exists_shear_circle θ₀ hβ hcs hε
   have hpos (x : Circle) (t : ℝ) : 0 < 1 + deriv β t * h x := (hsmall x t).2
   -- The sheared track `F ∘ φ` is a smooth embedding.
   set φ := timeShear β h with hφ_def
@@ -679,7 +310,7 @@ theorem exists_mfderiv_eq_prodMap (hn : 3 ≤ n) (F : Concordance K K')
       rw [hG₀, hφ_def, timeShear_apply,
         show β t = 0 by simp only [hβ_def, hbr t htr, neg_zero], zero_mul, add_zero,
         hFr x t htr, hΨid t (hAr t htr)]
-    · rw [hG₀, show (Ψ (F (φ (x, t)))).2 = (F (φ (x, t))).2 from rfl, hφ_def, timeShear_apply]
+    · rw [hG₀, hΨ₂, hφ_def, timeShear_apply]
       refine F.isCollaredTrack.snd_apply_mem_Ioo x _ ?_
       by_cases hβt : β t = 0
       · rw [hβt, zero_mul, add_zero]
@@ -729,20 +360,21 @@ theorem exists_mfderiv_eq_prodMap (hn : 3 ≤ n) (F : Concordance K K')
       (ξ := A t) (by rw [inner_neg_right, ← hQv t, LinearIsometryEquiv.inner_map_map, hAv,
         neg_zero])
     rw [neg_neg] at hval
-    have hAu : A t = ‖A t‖ • u t := by
-      rw [hu_def, smul_smul, mul_inv_cancel₀ (norm_ne_zero_iff.2 (hA0 t)), one_smul]
-    rw [show (fun θ => ((G (Circle.exp θ, t)).1 : E)) =
-        fun θ => boostRotate (-v) α Q ((track F (θ, σ θ)).2, (track F (θ, σ θ)).1) from
-          funext fun θ => by rw [hG]; rfl,
-      hD.deriv, hval, hAu, map_smul, hQu, hu0, hα_def,
-      Real.exp_log (div_pos (norm_pos_iff.2 hW) (norm_pos_iff.2 (hA0 t))), smul_smul, smul_smul,
-      show ‖W‖ / ‖A t‖ * ‖A t‖ * ‖W‖⁻¹ = 1 by
-        field_simp [norm_ne_zero_iff.2 (hA0 t), norm_ne_zero_iff.2 hW], one_smul]
-    rfl
+    -- `Q t` turns the direction `u t` of `A t` into the direction `u 0` of `W`.
+    have hdir : ‖A t‖⁻¹ • Q t (A t) = ‖W‖⁻¹ • W := by
+      rw [← map_smul, show ‖A t‖⁻¹ • A t = u t by rw [hu_def], hQu, hu0]
+    have hslice : (fun θ => ((G (Circle.exp θ, t)).1 : E)) =
+        fun θ => boostRotate (-v) α Q ((track F (θ, σ θ)).2, (track F (θ, σ θ)).1) :=
+      funext fun θ => by simp only [hG, hΨ₁, hφ_def, timeShear_apply, track_apply, hσ_def]
+    have hLslice : (fun θ => ((Prod.map L _root_.id (Circle.exp θ, t)).1 : E)) =
+        fun θ => (L (Circle.exp θ) : E) :=
+      funext fun θ => by rw [Prod.map_apply]
+    rw [hslice, hD.deriv, hval, hLslice, ← hW_def]
+    simpa only [hα_def] using exp_log_div_norm_smul_eq (hA0 t) hW hdir
   · -- The time component: the shear cancels the time velocity `b t`.
-    rw [show (fun θ => (G (Circle.exp θ, t)).2) = fun θ => (track F (θ, σ θ)).2 from
-        funext fun θ => by rw [hG]; rfl,
-      hsnd.deriv]
+    have hslice : (fun θ => (G (Circle.exp θ, t)).2) = fun θ => (track F (θ, σ θ)).2 :=
+      funext fun θ => by simp only [hG, hΨ₂, hφ_def, timeShear_apply, track_apply, hσ_def]
+    rw [hslice, hsnd.deriv]
     simp
 
 end SmoothEmbedding.Concordance

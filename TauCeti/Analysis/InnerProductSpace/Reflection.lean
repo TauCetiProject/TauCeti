@@ -369,23 +369,14 @@ open scoped RealInnerProductSpace ContDiff
 
 variable {F : Type*} [NormedAddCommGroup F] [InnerProductSpace ℝ F]
 
-/-- Reflecting in the hyperplane orthogonal to `a + b`, for unit vectors `a` and `b` with
-`a + b ≠ 0`, sends `-a` to `b`. -/
-theorem reflection_orthogonal_singleton_add_apply_neg {a b : F} (ha : ‖a‖ = 1) (hb : ‖b‖ = 1)
-    (hab : a + b ≠ 0) :
+/-- Reflecting in the hyperplane orthogonal to `a + b`, for vectors `a` and `b` of the same norm,
+sends `-a` to `b`. This is `Submodule.reflection_sub` for `-a` and `b`. -/
+theorem reflection_orthogonal_singleton_add_apply_neg {a b : F} (h : ‖a‖ = ‖b‖) :
     (ℝ ∙ (a + b))ᗮ.reflection (-a) = b := by
-  have hn : ‖a + b‖ ^ 2 = 2 * (1 + ⟪a, b⟫) := by
-    rw [@norm_add_sq_real, ha, hb]
-    ring
-  have hc : 1 + ⟪a, b⟫ ≠ 0 := fun h => by
-    have h0 : ‖a + b‖ ^ 2 = 0 := by rw [hn, h, mul_zero]
-    exact hab (norm_eq_zero.1 ((pow_eq_zero_iff two_ne_zero).1 h0))
-  have hi : ⟪a + b, -a⟫ = -(1 + ⟪a, b⟫) := by
-    rw [inner_neg_right, inner_add_left, real_inner_self_eq_norm_sq, ha, real_inner_comm]
-    ring
-  rw [reflection_orthogonal_singleton_apply_div_norm_sq, hn, hi,
-    show 2 * (-(1 + ⟪a, b⟫) / (2 * (1 + ⟪a, b⟫))) = -1 by field_simp]
-  module
+  have hspan : (ℝ ∙ (-a - b)) = ℝ ∙ (a + b) := by
+    rw [← neg_add', ← Set.neg_singleton, Submodule.span_neg]
+  have h' := Submodule.reflection_sub (v := -a) (w := b) (by rw [norm_neg, h])
+  simpa only [hspan] using h'
 
 /-- Reflection in the hyperplane orthogonal to a nonvanishing `C^k` normal `c p`, applied to a
 `C^k` vector `y p`, depends `C^k` on the parameter `p`. -/
@@ -435,8 +426,7 @@ theorem exists_contDiff_path_apply_eq {a b : F} (ha : ‖a‖ = 1) (hb : ‖b‖
   · rw [pairRotation, LinearIsometryEquiv.trans_apply,
       Submodule.reflection_orthogonalComplement_singleton_eq_neg]
     simpa only [one_pow, one_smul] using
-      reflection_orthogonal_singleton_add_apply_neg ha hb fun h =>
-        hab (eq_neg_of_add_eq_zero_left h)
+      reflection_orthogonal_singleton_add_apply_neg (ha.trans hb.symm)
   · rw [pairRotation, LinearIsometryEquiv.trans_apply,
       reflection_orthogonal_singleton_eq_self_of_inner_eq_zero hax,
       reflection_orthogonal_singleton_eq_self_of_inner_eq_zero]
@@ -508,9 +498,8 @@ theorem exists_contDiff_linearIsometryEquiv_apply_eq {k : ℕ∞ω}
       hfix (hv s₀)]
   · simp only [LinearIsometryEquiv.trans_apply, ρ,
       Submodule.reflection_orthogonalComplement_singleton_eq_neg,
-      reflection_orthogonal_singleton_add_apply_neg (hu₁ s) hp₁ (hup s)]
-    have h₃ := reflection_orthogonal_singleton_add_apply_neg hp₁ (hu₁ s₀)
-      (by rw [add_comm]; exact hup s₀)
+      reflection_orthogonal_singleton_add_apply_neg ((hu₁ s).trans hp₁.symm)]
+    have h₃ := reflection_orthogonal_singleton_add_apply_neg (hp₁.trans (hu₁ s₀).symm)
     rw [add_comm p, map_neg] at h₃
     rw [neg_eq_iff_eq_neg.1 h₃, map_neg,
       Submodule.reflection_orthogonalComplement_singleton_eq_neg, neg_neg]
