@@ -16,7 +16,8 @@ public import TauCeti.CategoryTheory.Simple.Classes
 
 Let `S` be a simple object of a `k`-linear category over an algebraically closed field `k`, with
 finite-dimensional endomorphisms. By Schur's lemma every endomorphism of `S` is a scalar, so for
-every object `X` composition defines a bilinear pairing
+every object `X` composition defines a bilinear pairing (see
+`TauCeti.CategoryTheory.Preadditive.Schur`)
 
 `TauCeti.homPairing k S X : (S ⟶ X) × (X ⟶ S) → k`,  `f ≫ g = homPairing k S X f g • 𝟙 S`.
 
@@ -45,7 +46,6 @@ factorization through simple constituents gives compatibility with tensor produc
 
 ## Main declarations
 
-* `TauCeti.homPairing`: the composition pairing, with `TauCeti.homPairing_smul_id`;
 * `TauCeti.isPerfPair_homPairing`: in a finite semisimple category the pairing is perfect;
 * `Module.Basis.homDual`: the dual basis of `X ⟶ S` of a basis of `S ⟶ X`, characterized by
   `Module.Basis.apply_comp_homDual` and `Module.Basis.eq_homDual_iff`, with coordinates computed
@@ -70,42 +70,6 @@ open CategoryTheory CategoryTheory.Limits Module
 universe w v u v' u'
 
 namespace TauCeti
-
-section Pairing
-
-variable (k : Type w) [Field k] [IsAlgClosed k]
-variable {C : Type u} [Category.{v} C] [Preadditive C] [Linear k C] [HasKernels C]
-
-/-- The composition pairing between morphisms out of and into a simple object `S`: the scalar
-`homPairing k S X f g` is the one with `f ≫ g = homPairing k S X f g • 𝟙 S`, which exists by
-Schur's lemma. -/
-def homPairing (S X : C) [Simple S] [FiniteDimensional k (S ⟶ S)] :
-    (S ⟶ X) →ₗ[k] (X ⟶ S) →ₗ[k] k :=
-  LinearMap.mk₂ k (fun f g ↦ endAlgEquivOfSimple k S (End.of (f ≫ g)))
-    (fun f f' g ↦ by simp) (fun c f g ↦ by simp) (fun f g g' ↦ by simp) (fun c f g ↦ by simp)
-
-variable {k} {S X : C} [Simple S] [FiniteDimensional k (S ⟶ S)]
-
-/-- The composition pairing is the scalar of the composite given by Schur's lemma. -/
-theorem homPairing_apply (f : S ⟶ X) (g : X ⟶ S) :
-    homPairing k S X f g = endAlgEquivOfSimple k S (End.of (f ≫ g)) := (rfl)
-
-/-- The composite of a morphism out of a simple object with a morphism back is the scalar given
-by the composition pairing. -/
-theorem homPairing_smul_id (f : S ⟶ X) (g : X ⟶ S) : homPairing k S X f g • 𝟙 S = f ≫ g :=
-  endAlgEquivOfSimple_smul_id (End.of (f ≫ g))
-
-/-- The composition pairing takes the value `c` exactly when the composite is `c • 𝟙 S`. -/
-theorem homPairing_eq_iff (f : S ⟶ X) (g : X ⟶ S) (c : k) :
-    homPairing k S X f g = c ↔ f ≫ g = c • 𝟙 S :=
-  endAlgEquivOfSimple_apply_eq_iff (End.of (f ≫ g)) c
-
-/-- A morphism between the two objects can be moved across the composition pairing. -/
-theorem homPairing_comp (f : S ⟶ X) {Y : C} (h : X ⟶ Y) (g : Y ⟶ S) :
-    homPairing k S Y (f ≫ h) g = homPairing k S X f (h ≫ g) := by
-  rw [homPairing_apply, homPairing_apply, Category.assoc]
-
-end Pairing
 
 section Perfect
 
