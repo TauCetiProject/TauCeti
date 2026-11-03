@@ -10,6 +10,8 @@ module
 public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Symplectic.Diagonal.WeylGroup
 -- The long-root Weyl representatives and their action on the diagonal torus.
 public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Symplectic.Weyl
+-- The rationality of the entries of the Levi embedding.
+public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.PolynomialFunctions.SymplecticLevi
 -- The weight-space decomposition of a rational representation of `GL m ℂ`.
 public import TauCeti.RepresentationTheory.ClassicalGroups.Weight.Decomposition
 -- The permutation symmetry of the weight spaces of `GL m`.
@@ -36,7 +38,7 @@ theory of the general linear group (`TauCeti.symplecticWeightSpace_eq_weightSpac
 The work is to show that this restriction is rational when `ρ` is
 (`TauCeti.IsRationalSpRep.isRationalRep_comp_leviHom`): each entry of the Levi matrix is an entry
 of `A`, an entry of `A⁻¹`, or zero, and the entries of `A⁻¹` are rational functions of `A`
-(`TauCeti.Matrix.GeneralLinearGroup.entry_inv_mem_rationalFunctions`). The weight-space
+(`TauCeti.GLSymplecticFin.entry_leviHom_mem_rationalFunctions`). The weight-space
 decomposition of rational representations of `GL m ℂ` then applies.
 
 A **rational representation** of `Sp₂ₘ(ℂ)` (`TauCeti.IsRationalSpRep`) is one whose matrix entries,
@@ -144,22 +146,6 @@ theorem IsRationalRep.isRationalSpRep_comp_subtype {ρ : Representation ℂ (GL 
   rw [MonoidHom.comp_apply, hP, Subgroup.coe_subtype, GLSymplecticFin.det_eq_one, one_pow,
     inv_one, one_mul]
 
-/-- Every matrix entry of the Levi embedding `A ↦ diag(A, (A⁻¹)ᵀ)` is a rational function of `A`:
-it is an entry of `A`, an entry of `A⁻¹`, or zero. -/
-private theorem entry_leviHom_mem_rationalFunctions (p : Fin (m + m) × Fin (m + m)) :
-    (fun A : GL (Fin m) ℂ => (((GLSymplecticFin.leviHom A : GLSymplecticFin m ℂ) :
-      GL (Fin (m + m)) ℂ) : Matrix (Fin (m + m)) (Fin (m + m)) ℂ) p.1 p.2)
-      ∈ rationalFunctions ℂ m := by
-  obtain ⟨a, b⟩ := p
-  obtain ⟨x, rfl⟩ := finSumFinEquiv.surjective a
-  obtain ⟨y, rfl⟩ := finSumFinEquiv.surjective b
-  simp only [GLSymplecticFin.coe_leviHom, Matrix.submatrix_apply, Equiv.symm_apply_apply]
-  rcases x with i | i <;> rcases y with j | j
-  · exact polynomialFunctions_le_rationalFunctions (entry_mem_polynomialFunctions i j)
-  · exact zero_mem _
-  · exact zero_mem _
-  · exact entry_inv_mem_rationalFunctions j i
-
 /-- **The restriction of a rational representation of `Sp₂ₘ(ℂ)` to its Levi subgroup `GL m ℂ` is
 rational.** The matrix entries of `ρ (leviHom A)` are polynomials in the entries of the Levi matrix
 `diag(A, (A⁻¹)ᵀ)`, and these are rational functions of `A`. -/
@@ -172,7 +158,8 @@ theorem IsRationalSpRep.isRationalRep_comp_leviHom {ρ : Representation ℂ (GLS
       Matrix (Fin (m + m)) (Fin (m + m)) ℂ) p.1 p.2 with hx
   have hrange : (MvPolynomial.aeval x).range ≤ rationalFunctions ℂ m := by
     rw [MvPolynomial.aeval_range]
-    exact Algebra.adjoin_le (Set.range_subset_iff.mpr entry_leviHom_mem_rationalFunctions)
+    exact Algebra.adjoin_le
+      (Set.range_subset_iff.mpr GLSymplecticFin.entry_leviHom_mem_rationalFunctions)
   refine (isRationalRep_iff_forall_mem_rationalFunctions b).mpr fun i j => ?_
   have hfun : (fun A : GL (Fin m) ℂ =>
       LinearMap.toMatrix b b ((ρ.comp GLSymplecticFin.leviHom) A) i j) =
@@ -247,7 +234,9 @@ theorem isInternal_symplecticWeightSpace_of_iSup_eq_top
     DirectSum.IsInternal fun l : Fin m → ℤ ↦ symplecticWeightSpace ρ l :=
   isInternal_weightSpace_of_iSup_eq_top hchar h
 
-/-- **A finite-dimensional representation of `Sp₂ₘ` has only finitely many weights.** -/
+/-- **A finite-dimensional representation of `Sp₂ₘ` has only finitely many weights**, as soon as
+distinct weights give distinct characters of the torus. Without that condition the statement can
+fail: over `𝔽₂` the torus is trivial and every weight space is the whole representation. -/
 theorem finite_setOf_symplecticWeightSpace_ne_bot [Module.Finite k W]
     (hchar : Function.Injective (weightChar k (κ := Fin m)))
     (ρ : Representation k (GLSymplecticFin m k) W) :
@@ -341,8 +330,8 @@ theorem basisFun_mem_symplecticWeightSpace_stdRep (x : Fin m × Bool) :
   rw [MonoidHom.comp_apply, Subgroup.coe_subtype, GLSymplecticFin.coe_diagonal,
     stdRep_diagGL_apply_basisFun, weightChar_symplecticCoordinateWeight]
 
-/-- The weight spaces of the standard representation of `Sp₂ₘ` span it, being its coordinate
-lines. -/
+/-- The weight spaces of the standard representation of `Sp₂ₘ` span it, because the weight space
+of each weight `±eᵢ` contains the corresponding standard basis vector. -/
 theorem iSup_symplecticWeightSpace_stdRep_eq_top :
     ⨆ l : Fin m → ℤ,
       symplecticWeightSpace ((stdRep k (m + m)).comp (GLSymplecticFin m k).subtype) l = ⊤ := by
@@ -434,17 +423,6 @@ section Weyl
 
 variable {k : Type u} [CommRing k]
 
-/-- Negating one coordinate of a weight is inverting that coordinate of the torus point. -/
-theorem weightChar_update_neg (l : Fin m → ℤ) (i : Fin m) (t : Fin m → kˣ) :
-    weightChar k (Function.update l i (-l i)) t =
-      weightChar k l (Function.update t i (t i)⁻¹) := by
-  rw [weightChar_apply, weightChar_apply, torusCharacter_def, torusCharacter_def]
-  refine Finset.prod_congr rfl fun j _ ↦ ?_
-  by_cases hji : j = i
-  · subst hji
-    simp [_root_.zpow_neg]
-  · simp [Function.update_of_ne hji]
-
 variable {W : Type v} [AddCommGroup W] [Module k W] (ρ : Representation k (GLSymplecticFin m k) W)
 
 /-- The action of a group element is injective, being invertible. -/
@@ -479,22 +457,6 @@ private theorem apply_mem_symplecticWeightSpace_update_neg {g : GLSymplecticFin 
   rw [← mul_apply_eq_comp, ← map_mul, hconj, map_mul, mul_apply_eq_comp,
     apply_of_mem_symplecticWeightSpace hw, map_smul, weightChar_update_neg]
 
-/-- Both long-root Weyl representatives conjugate the torus by the sign change of their
-coordinate. -/
-private theorem positiveLongRootWeylElement_inv_mul_diagonal_mul (i : Fin m) (t : Fin m → kˣ) :
-    (GLSymplecticFin.positiveLongRootWeylElement i)⁻¹ * GLSymplecticFin.diagonal t *
-        GLSymplecticFin.positiveLongRootWeylElement i =
-      GLSymplecticFin.diagonal (Function.update t i (t i)⁻¹) := by
-  rw [GLSymplecticFin.positiveLongRootWeylElement_inv,
-    GLSymplecticFin.negativeLongRootWeylElement_mul_diagonal_mul_inv]
-
-private theorem negativeLongRootWeylElement_inv_mul_diagonal_mul (i : Fin m) (t : Fin m → kˣ) :
-    (GLSymplecticFin.negativeLongRootWeylElement i)⁻¹ * GLSymplecticFin.diagonal t *
-        GLSymplecticFin.negativeLongRootWeylElement i =
-      GLSymplecticFin.diagonal (Function.update t i (t i)⁻¹) := by
-  rw [GLSymplecticFin.negativeLongRootWeylElement_inv,
-    GLSymplecticFin.positiveLongRootWeylElement_mul_diagonal_mul_inv]
-
 /-- **The long-root Weyl representative `n_{2eᵢ}` carries the weight space of `l` onto the weight
 space of `l` with its `i`-th coordinate negated.** -/
 theorem symplecticWeightSpace_map_positiveLongRootWeylElement (i : Fin m) (l : Fin m → ℤ) :
@@ -503,10 +465,10 @@ theorem symplecticWeightSpace_map_positiveLongRootWeylElement (i : Fin m) (l : F
   refine le_antisymm ?_ fun v hv ↦ ?_
   · rintro _ ⟨w, hw, rfl⟩
     exact apply_mem_symplecticWeightSpace_update_neg ρ
-      (positiveLongRootWeylElement_inv_mul_diagonal_mul i) hw
+      (GLSymplecticFin.positiveLongRootWeylElement_inv_mul_diagonal_mul i) hw
   · refine ⟨ρ (GLSymplecticFin.negativeLongRootWeylElement i) v, ?_, ?_⟩
     · simpa using apply_mem_symplecticWeightSpace_update_neg ρ
-        (negativeLongRootWeylElement_inv_mul_diagonal_mul i) hv
+        (GLSymplecticFin.negativeLongRootWeylElement_inv_mul_diagonal_mul i) hv
     · rw [← GLSymplecticFin.positiveLongRootWeylElement_inv]
       exact ρ.self_inv_apply _ v
 
