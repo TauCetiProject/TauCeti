@@ -58,8 +58,9 @@ private theorem lift_orderedPolynomialEvaluation_monomials (a : Fin n → ℕ) :
         ((Basis.piTensorProduct fun _ : Fin n => Polynomial.basisMonomials R) a) =
       b.pbwBasis (Finsupp.equivFunOnFinite.symm a) := by
   rw [Basis.piTensorProduct_apply, PiTensorProduct.lift.tprod,
-    orderedPolynomialEvaluation_apply, pbwBasis_eq_prod_ofFn_pow]
-  simp [Polynomial.coe_basisMonomials, Polynomial.monomial_one_right_eq_X_pow]
+    orderedPolynomialEvaluation_apply, pbwBasis_eq_prod_pow_fin]
+  simp [Polynomial.coe_basisMonomials, Polynomial.monomial_one_right_eq_X_pow,
+    List.ofFn_eq_map]
 
 /-- Ordered polynomial evaluation is bijective by the ordinary PBW basis. -/
 private theorem lift_orderedPolynomialEvaluation_bijective :

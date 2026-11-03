@@ -25,11 +25,11 @@ natural transformations. This file records them on components, in the forms used
 iterated pullbacks of a single module, and shows that pullback preserves the structure sheaf
 `𝒪` compatibly with identities and composition.
 
-For a scheme morphism `f : X ⟶ Y` and an open `V ⊆ Y`, restricting the pullback `f^* M` to
-`f⁻¹ V` agrees with pulling back the restriction `M|_V` along `f ∣_ V`. This compatibility lets
-local properties of modules, expressed on open covers, be transported along scheme morphisms.
-Being an isomorphism is such a local property: a morphism of modules is an isomorphism exactly
-when its pullbacks to the members of an open cover are.
+For a scheme morphism `f : X ⟶ Y` and an open `V ⊆ Y`, restricting the pullback `f^* M` to an
+open `W ⊆ f⁻¹ V` agrees with pulling back the restriction `M|_V` along `f.resLE V W e`. This
+compatibility lets local properties of modules, expressed on open covers, be transported along
+scheme morphisms. Being an isomorphism is such a local property: a morphism of modules is an
+isomorphism exactly when its pullbacks to the members of an open cover are.
 
 Identifying modules on the slice site at an open `U` with modules on the open subscheme `U`, and
 pulling back along an isomorphism of schemes, preserve free modules, so trivializations of a
@@ -66,8 +66,8 @@ local data on the preimage cover.
 * `TauCeti.AlgebraicGeometry.pullbackComp_hom_app_comp_δ`: the tensor compatibility of
   `AlgebraicGeometry.Scheme.Modules.pullbackComp` with the composition isomorphism on the left,
   without its inverse;
-* `AlgebraicGeometry.Scheme.Modules.restrictPullbackObjIso` identifies these two restricted
-  pullbacks;
+* `AlgebraicGeometry.Scheme.Modules.restrictPullbackIso` identifies the restriction of `f^* M` to
+  an open `W ⊆ f⁻¹ V` with the pullback of `M|_V` along `f.resLE V W e`, naturally in `M`;
 * `AlgebraicGeometry.Scheme.Modules.isIso_iff_of_isOpenCover`: a morphism of modules is an
   isomorphism exactly when its pullbacks to the members of an open cover are;
 * `AlgebraicGeometry.Scheme.Modules.pullbackOver`: pullback read on the slice sites over `V` and
@@ -408,14 +408,25 @@ section Over
 
 variable (f : X ⟶ Y)
 
-/-- Pullback commutes with restriction to opens: for an open `V ⊆ Y`, the restriction of
-`f^* M` to the preimage `f⁻¹ V` is the pullback of `M|_V` along `f ∣_ V : f⁻¹ V ⟶ V`. -/
-def restrictPullbackObjIso (V : Y.Opens) (M : Y.Modules) :
-    ((pullback f).obj M).restrict (f ⁻¹ᵁ V).ι ≅ (pullback (f ∣_ V)).obj (M.restrict V.ι) :=
-  (restrictFunctorIsoPullback (f ⁻¹ᵁ V).ι).app _ ≪≫ (pullbackComp (f ⁻¹ᵁ V).ι f).app M ≪≫
-    (pullbackCongr (morphismRestrict_ι f V).symm).app M ≪≫
-    ((pullbackComp (f ∣_ V) V.ι).app M).symm ≪≫
-    (pullback (f ∣_ V)).mapIso ((restrictFunctorIsoPullback V.ι).app M).symm
+/-- Pullback commutes with restriction to opens, naturally in the module: for opens `V ⊆ Y` and
+`W ⊆ f⁻¹ V`, the restriction of `f^* M` to `W` is the pullback of `M|_V` along
+`f.resLE V W e : W ⟶ V`. -/
+def restrictPullbackIso (V : Y.Opens) (W : X.Opens) (e : W ≤ f ⁻¹ᵁ V) :
+    pullback f ⋙ restrictFunctor W.ι ≅ restrictFunctor V.ι ⋙ pullback (f.resLE V W e) :=
+  Functor.isoWhiskerLeft (pullback f) (restrictFunctorIsoPullback W.ι) ≪≫
+    pullbackComp W.ι f ≪≫ pullbackCongr (f.resLE_comp_ι e).symm ≪≫
+    (pullbackComp (f.resLE V W e) V.ι).symm ≪≫
+    Functor.isoWhiskerRight (restrictFunctorIsoPullback V.ι).symm (pullback (f.resLE V W e))
+
+/-- The components of `restrictPullbackIso`: both restrictions are identified with pullbacks along
+the open immersions, and `W.ι ≫ f = f.resLE V W e ≫ V.ι`. -/
+lemma restrictPullbackIso_hom_app (V : Y.Opens) (W : X.Opens) (e : W ≤ f ⁻¹ᵁ V) (M : Y.Modules) :
+    (restrictPullbackIso f V W e).hom.app M =
+      (restrictFunctorIsoPullback W.ι).hom.app ((pullback f).obj M) ≫
+        (pullbackComp W.ι f).hom.app M ≫ (pullbackCongr (f.resLE_comp_ι e).symm).hom.app M ≫
+        (pullbackComp (f.resLE V W e) V.ι).inv.app M ≫
+        (pullback (f.resLE V W e)).map ((restrictFunctorIsoPullback V.ι).inv.app M) :=
+  (rfl)
 
 variable (V : Y.Opens)
 
@@ -440,10 +451,18 @@ def pullbackOverUnitIso :
 
 /-- Pullback read on slice sites computes the restriction of the pullback: it sends `M.over V`
 to `(f^* M).over (f⁻¹ V)`. -/
+-- The middle composite is the component of `restrictPullbackIso f V (f ⁻¹ᵁ V) le_rfl` at `M`,
+-- spelled out along `f ∣_ V` rather than transported along `Scheme.Hom.resLE_eq_morphismRestrict`:
+-- with that transport, elaborating the finiteness instance for `QuasicoherentData.pullback` below
+-- exceeds the maximum recursion depth.
 def pullbackOverObjIso (M : Y.Modules) :
     (pullbackOver f V).obj (M.over V) ≅ ((pullback f).obj M).over (f ⁻¹ᵁ V) :=
   ((overEquiv (f ⁻¹ᵁ V)).inverse.mapIso
-      ((overFunctorEquiv (f ⁻¹ᵁ V)).app _ ≪≫ restrictPullbackObjIso f V M ≪≫
+      ((overFunctorEquiv (f ⁻¹ᵁ V)).app _ ≪≫
+        ((restrictFunctorIsoPullback (f ⁻¹ᵁ V).ι).app _ ≪≫ (pullbackComp (f ⁻¹ᵁ V).ι f).app M ≪≫
+          (pullbackCongr (morphismRestrict_ι f V).symm).app M ≪≫
+          ((pullbackComp (f ∣_ V) V.ι).app M).symm ≪≫
+          (pullback (f ∣_ V)).mapIso ((restrictFunctorIsoPullback V.ι).app M).symm) ≪≫
         (pullback (f ∣_ V)).mapIso ((overFunctorEquiv V).app M).symm)).symm ≪≫
     ((overEquiv (f ⁻¹ᵁ V)).unitIso.app _).symm
 
