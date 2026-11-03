@@ -148,8 +148,9 @@ theorem hasFDerivAt_legendreHamiltonian {L : E × E → ℝ} {w : E × StrongDua
   have hsplit : fderiv ℝ L (z.1, w z) (δ.1, fderiv ℝ w z δ) =
       fderiv ℝ L (z.1, w z) (δ.1, 0) + fderiv ℝ L (z.1, w z) (0, fderiv ℝ w z δ) := by
     rw [← map_add, Prod.mk_add_mk, add_zero, zero_add]
-  simp only [sub_apply, add_apply, coe_comp, Function.comp_apply, prod_apply, coe_fst',
-    flip_apply, coe_snd', apply_apply, coprod_apply, neg_apply, hsplit, ← hr, hl]
+  simp only [sub_apply, add_apply, coe_comp, Function.comp_apply,
+    ContinuousLinearMap.prod_apply, coe_fst', flip_apply, coe_snd', apply_apply, coprod_apply,
+    neg_apply, hsplit, ← hr, hl]
   ring
 
 /-! ### Conservation of energy -/
