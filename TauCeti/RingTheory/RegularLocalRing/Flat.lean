@@ -11,7 +11,6 @@ public import TauCeti.RingTheory.KrullDimension.Fiber
 public import TauCeti.RingTheory.LocalRing.MaximalIdeal.Flat
 
 import Mathlib.RingTheory.Flat.Localization
-import TauCeti.RingTheory.LocalRing.ResidueField.Fiber
 import TauCeti.RingTheory.RegularLocalRing.OfQuotient
 
 /-!
