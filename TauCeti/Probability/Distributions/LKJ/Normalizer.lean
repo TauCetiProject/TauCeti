@@ -6,7 +6,7 @@ Authors: Codex
 module
 
 public import TauCeti.Analysis.SpecialFunctions.Beta
-import TauCeti.Analysis.SpecialFunctions.Gamma
+import TauCeti.Probability.Distributions.Beta.Measurability
 
 /-!
 # The LKJ normalizing constant
@@ -57,6 +57,13 @@ def lkjNormalizer (p : ℕ) (η : ℝ) : ℝ :=
   ∏ k ∈ Finset.Ico 1 p,
     ProbabilityTheory.beta (1 / 2) (η + ((k : ℝ) - 1) / 2) ^ k
 
+/-- The defining row-indexed beta product for the LKJ normalizing constant. -/
+theorem lkjNormalizer_def (p : ℕ) (η : ℝ) :
+    lkjNormalizer p η =
+      ∏ k ∈ Finset.Ico 1 p,
+        ProbabilityTheory.beta (1 / 2) (η + ((k : ℝ) - 1) / 2) ^ k := by
+  rw [lkjNormalizer]
+
 /-- The LKJ normalizer in the conventional one-based column indexing.  The column `j` contributes
 `p - j` partial correlations, each with second beta parameter
 `η + (p - j - 1) / 2`. -/
@@ -85,8 +92,8 @@ theorem lkjNormalizer_two (η : ℝ) :
     lkjNormalizer 2 η = ProbabilityTheory.beta (1 / 2) η := by
   norm_num [lkjNormalizer]
 
-/-- Increasing the matrix dimension appends the beta factor belonging to the new final row of
-partial correlations. -/
+/-- Increasing the matrix dimension appends the `k = p` product factor, corresponding after
+reindexing to the first column in dimension `p + 1`. -/
 theorem lkjNormalizer_succ (p : ℕ) (η : ℝ) :
     lkjNormalizer (p + 1) η = lkjNormalizer p η *
       ProbabilityTheory.beta (1 / 2) (η + ((p : ℝ) - 1) / 2) ^ p := by
@@ -115,12 +122,10 @@ theorem lkjNormalizer_ne_zero {p : ℕ} {η : ℝ} (hη : 0 < η) :
 /-- The LKJ normalizer is Borel measurable as a function of its shape parameter. -/
 @[fun_prop]
 theorem measurable_lkjNormalizer (p : ℕ) : Measurable (lkjNormalizer p) := by
-  unfold lkjNormalizer ProbabilityTheory.beta
+  unfold lkjNormalizer
   refine Finset.measurable_prod _ fun k _ ↦ ?_
   have hk : Measurable fun η : ℝ ↦ η + ((k : ℝ) - 1) / 2 := by fun_prop
-  exact
-    ((measurable_const.mul (Real.measurable_Gamma.comp hk)).div
-      (Real.measurable_Gamma.comp (measurable_const.add hk))).pow_const k
+  exact (measurable_beta.comp (measurable_const.prodMk hk)).pow_const k
 
 /-- Legendre's duplication formula rewrites the LKJ normalizer as a product of symmetric-beta
 normalizers.  This is the factorization used when partial correlations are constructed from
