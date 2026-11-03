@@ -8,11 +8,14 @@ module
 public import Mathlib.Topology.Algebra.InfiniteSum.ENNReal
 
 /-!
-# Series in `ℝ≥0∞`
+# Sums of extended nonnegative series
 
 A series in `ℝ≥0∞` with a finite sum has a convergent real-valued series obtained by applying
 `ENNReal.toReal` termwise. The real sum is the `toReal` of the original sum. This converts
 nonnegative mass series into real probability formulas without repeating the finiteness argument.
+
+Summing the indicator of a set `s` with value one counts its elements: the sum is `s.encard`.
+This is the indicator form of `ENNReal.tsum_set_one`.
 
 Every `y : ℝ≥0∞` is bounded by the dyadic series `1 + ∑ₖ 2^(k+1) 1{2^k < y}`. Applied pointwise to
 a nonnegative function and integrated, this bounds its integral by a weighted sum of the measures
@@ -21,6 +24,7 @@ of its dyadic level sets.
 ## Main declarations
 
 * `HasSum.toReal`: a series in `ℝ≥0∞` with finite sum has the termwise `toReal` sum.
+* `ENNReal.tsum_indicator_one`: summing the indicator of `s` with value one gives `s.encard`.
 * `ENNReal.le_one_add_tsum_pow_indicator`: `y ≤ 1 + ∑ₖ 2^(k+1) 1{2^k < y}`.
 -/
 
@@ -34,6 +38,11 @@ theorem HasSum.toReal {ι : Type*} {f : ι → ℝ≥0∞} {s : ℝ≥0∞}
   have hfin : ∑' i, f i ≠ ∞ := by rwa [h.tsum_eq]
   simpa only [← ENNReal.tsum_toReal_eq (_root_.ne_top_of_tsum_ne_top hfin), h.tsum_eq]
     using ENNReal.hasSum_toReal hfin
+
+/-- Summing the indicator of a set with value one counts its elements. -/
+theorem ENNReal.tsum_indicator_one {β : Type*} (s : Set β) :
+    ∑' b, s.indicator (fun _ => (1 : ℝ≥0∞)) b = s.encard := by
+  rw [← ENNReal.tsum_set_one, tsum_subtype _ fun _ => (1 : ℝ≥0∞)]
 
 /-- A nonnegative extended real is at most `1 + ∑ₖ 2^(k+1) 1{2^k < y}`. -/
 theorem ENNReal.le_one_add_tsum_pow_indicator (y : ℝ≥0∞) :
