@@ -71,8 +71,8 @@ theorem integral_inv_semicircleReal {a : ℝ} {v : ℝ≥0} (hv : 0 < v) (h : 2 
   rw [semicircleReal_def, integral_map (by fun_prop) measurable_inv.aestronglyMeasurable,
     integral_semicircleMeasure_eq_intervalIntegral]
   simp only [smul_eq_mul]
-  rw [integral_sqrt_one_sub_sq_mul_inv hr h, mul_pow, sq_sqrt v.coe_nonneg,
-    show (2 : ℝ) ^ 2 = 4 by norm_num]
+  have h4 : (2 : ℝ) ^ 2 = 4 := by norm_num
+  rw [integral_sqrt_one_sub_sq_mul_inv hr h, mul_pow, sq_sqrt v.coe_nonneg, h4]
   field_simp
   ring
 

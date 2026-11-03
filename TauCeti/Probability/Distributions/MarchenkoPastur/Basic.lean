@@ -88,8 +88,9 @@ theorem marchenkoPastur_eq_withDensity {y : ℝ≥0} (hy : 0 < y) :
   rw [Pi.mul_apply, ← ENNReal.ofReal_mul (by positivity)]
   congr 1
   have hs := sq_sqrt y.coe_nonneg
-  rw [show 4 * (y : ℝ) - (x - (1 + y)) ^ 2 = ((1 + √y) ^ 2 - x) * (x - (1 - √y) ^ 2) by
-    linear_combination (y + √(y : ℝ) ^ 2 - 2 - 2 * x) * hs]
+  have hq : 4 * (y : ℝ) - (x - (1 + y)) ^ 2 = ((1 + √y) ^ 2 - x) * (x - (1 - √y) ^ 2) := by
+    linear_combination (y + √(y : ℝ) ^ 2 - 2 - 2 * x) * hs
+  rw [hq]
   ring
 
 /-- Every Marchenko–Pastur law is a probability measure: for `y > 0` the continuous part has
@@ -102,8 +103,9 @@ instance isProbabilityMeasure_marchenkoPastur (y : ℝ≥0) :
   have hy' : (0 : ℝ) < y := hy
   have h2 : 2 * √(y : ℝ) ≤ 1 + y := by
     nlinarith [sq_nonneg (1 - √(y : ℝ)), sq_sqrt y.coe_nonneg]
+  have hd : (1 + (y : ℝ)) ^ 2 - 4 * y = (1 - y) ^ 2 := by ring
   have hsq : √((1 + (y : ℝ)) ^ 2 - 4 * y) = |1 - (y : ℝ)| := by
-    rw [show (1 + (y : ℝ)) ^ 2 - 4 * y = (1 - y) ^ 2 by ring, sqrt_sq_eq_abs]
+    rw [hd, sqrt_sq_eq_abs]
   constructor
   simp only [marchenkoPastur_def, FunLike.coe_add, FunLike.coe_smul, Pi.add_apply,
     Pi.smul_apply, measure_univ, smul_eq_mul, mul_one, withDensity_apply _ MeasurableSet.univ,
