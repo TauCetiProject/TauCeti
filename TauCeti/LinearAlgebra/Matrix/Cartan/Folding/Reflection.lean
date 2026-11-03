@@ -171,6 +171,7 @@ theorem foldedReflection_apply_self (O : Quotient (Equiv.Perm.SameCycle.setoid �
   Module.reflection_apply_self _
 
 /-- Folded simple reflections preserve the ambient integral Gram pairing on fixed vectors. -/
+@[simp]
 theorem foldedReflection_dotProduct_mulVec
     (O : Quotient (Equiv.Perm.SameCycle.setoid σ))
     (v w : (funCongrLeft ℤ ℤ σ).toLinearMap.fixedSubmodule) :
