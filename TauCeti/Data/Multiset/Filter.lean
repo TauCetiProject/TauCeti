@@ -29,18 +29,13 @@ variable {α ι : Type*} (p : α → Prop) [DecidablePred p]
 /-- Filtering distributes over a finite sum of multisets. -/
 @[simp]
 theorem filter_sum (s : Finset ι) (f : ι → Multiset α) :
-    filter p (∑ i ∈ s, f i) = ∑ i ∈ s, filter p (f i) := by
-  classical
-  induction s using Finset.induction_on with
-  | empty => simp
-  | insert a s ha ih => rw [Finset.sum_insert ha, filter_add, ih, Finset.sum_insert ha]
+    filter p (∑ i ∈ s, f i) = ∑ i ∈ s, filter p (f i) :=
+  map_sum (⟨⟨filter p, filter_zero p⟩, filter_add p⟩ : Multiset α →+ Multiset α) f s
 
 /-- The product of `if p x then a else 1` over a multiset is `a` raised to the number of its
 elements satisfying `p`, counted with multiplicity. -/
 theorem prod_map_ite_one {M : Type*} [CommMonoid M] (s : Multiset α) (a : M) :
-    (s.map fun x ↦ if p x then a else 1).prod = a ^ (s.filter p).card := by
-  induction s using Multiset.induction_on with
-  | empty => simp
-  | cons x s ih => by_cases hx : p x <;> simp [hx, ih, pow_succ, mul_comm]
+    (s.map fun x ↦ if p x then a else 1).prod = a ^ (s.filter p).card :=
+  Quot.inductionOn s fun l ↦ by simp [List.prod_map_ite]
 
 end Multiset
