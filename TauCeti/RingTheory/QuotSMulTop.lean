@@ -177,14 +177,6 @@ theorem mapQ_mkQ_surjective (I : Ideal S) (y : S) :
 
 end QuotSMulTop
 
-/-- Multiplying an `A`-module `N` by the image of `r : R` in `A` is multiplying by `r`, so the two
-reductions of `N` have the same underlying `R`-submodule. -/
-theorem Submodule.restrictScalars_algebraMap_smul_top {R A N : Type*} [CommRing R] [CommRing A]
-    [Algebra R A] [AddCommGroup N] [Module A N] [Module R N] [IsScalarTower R A N] (r : R) :
-    (algebraMap R A r • ⊤ : Submodule A N).restrictScalars R = r • (⊤ : Submodule R N) := by
-  ext x
-  simp [Submodule.mem_smul_pointwise_iff_exists, algebraMap_smul]
-
 namespace QuotSMulTop
 
 variable {R : Type*} [CommRing R]
@@ -209,7 +201,8 @@ variable {A N : Type*} [CommRing A] [Algebra R A] [AddCommGroup N] [Module A N] 
 noncomputable def restrictScalarsEquiv (r : R) :
     QuotSMulTop (algebraMap R A r) N ≃ₗ[R] QuotSMulTop r N :=
   (Submodule.Quotient.restrictScalarsEquiv R _).symm ≪≫ₗ
-    Submodule.quotEquivOfEq _ _ (Submodule.restrictScalars_algebraMap_smul_top r)
+    Submodule.quotEquivOfEq _ _
+      (by rw [element_smul_restrictScalars, Submodule.restrictScalars_top])
 
 /-- `restrictScalarsEquiv` sends the class of `x` to the class of `x`. -/
 @[simp]

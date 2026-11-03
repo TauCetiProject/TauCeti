@@ -12,7 +12,6 @@ import TauCeti.NumberTheory.Padics.RingHoms
 import TauCeti.RingTheory.DiscreteValuationRing.Basic
 import TauCeti.RingTheory.Polynomial.Distinguished
 import TauCeti.RingTheory.PowerSeries.Ideal
-import TauCeti.RingTheory.PowerSeries.OneAddXPow
 
 /-!
 # The vertical blocks of an elementary Iwasawa module
