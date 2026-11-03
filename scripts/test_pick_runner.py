@@ -19,7 +19,7 @@ MODERN = any(step.get("run") == "python3 scripts/fleet_runner.py --route"
              for job in PICKER["jobs"].values() for step in job.get("steps", []))
 
 
-def expression(source, *, attempt=1, picker_attempt="1", target='"ubuntu-24.04"', event="pull_request_target", action="opened", staging=False, maintenance=False, author_type="User", head_repo="TauCetiProject/TauCeti", head_ref="feature"):
+def expression(source, *, attempt=1, picker_attempt="1", target='"ubuntu-24.04"', event="pull_request_target", action="opened", staging=False, maintenance=False, author_type="User", head_repo="TauCetiProject/TauCeti", head_ref="feature", hosted_picker=False):
     """Evaluate the actual YAML expression's boolean/format/JSON subset."""
     source = source.removeprefix("${{").removesuffix("}}").strip()
     source = source.replace("\n", " ").replace("&&", " and ").replace("||", " or ")
@@ -32,7 +32,8 @@ def expression(source, *, attempt=1, picker_attempt="1", target='"ubuntu-24.04"'
     source = source.replace("needs.pick-runner", "needs.picker").replace("inputs.fleet-staging", "inputs.staging")
     return eval(source, {"__builtins__": {}, "github": github, "needs": needs,
                          "inputs": SimpleNamespace(pr="7", staging=staging, maintenance=maintenance), "fromJSON": json.loads,
-                         "format": lambda s, *args: s.format(*args), "startsWith": lambda s, p: s.startswith(p)})
+                         "format": lambda s, *args: s.format(*args), "startsWith": lambda s, p: s.startswith(p),
+                         "vars": SimpleNamespace(PICKER_GITHUB_FALLBACK="true" if hosted_picker else "")})
 
 
 @unittest.skipUnless(MODERN, "project uses the standard GitHub-only picker")
@@ -74,13 +75,21 @@ class PickerWorkflow(unittest.TestCase):
         self.assertEqual(expression(BUILD["run-name"], event="repository_dispatch", action="tauceti-bors-pr-approved"), "pr-build pr=7 head=" + "a" * 40)
         self.assertEqual(expression(BUILD["run-name"], event="repository_dispatch", action="tauceti-bors-staging"), "bors branch=main batch=12 head=" + "a" * 40 + " base=" + "b" * 40)
 
+    def test_maintenance_build_keeps_its_explicit_namespace_runner(self):
+        source = BUILD["jobs"]["sandboxed-build"]["runs-on"]
+        expected = ["nscloud-ubuntu-24.04-amd64-8x16-with-features;job.priority=1",
+                    "namespace-features:container.privileged=true;github.run-id=42"]
+        self.assertEqual(expression(source, maintenance=True), expected)
+        self.assertEqual(expression(source, maintenance=True, hosted_picker=True, attempt=2), expected)
+
     def test_picker_is_small_control_job_and_calls_the_existing_selector(self):
         pick = PICKER["jobs"]["pick"]
-        self.assertIn(expression(pick["runs-on"]), ("ubuntu-latest", "ubuntu-24.04"))
         priority_control = [
             "nscloud-ubuntu-24.04-amd64-2x4-with-features;job.priority=0",
             "namespace-features:github.run-id=42",
         ]
+        self.assertEqual(expression(pick["runs-on"]), priority_control)
+        self.assertEqual(expression(pick["runs-on"], hosted_picker=True), "ubuntu-24.04")
         self.assertEqual(expression(pick["runs-on"], staging=True), priority_control)
         self.assertEqual(expression(pick["runs-on"], maintenance=True), priority_control)
         self.assertFalse(any("create-github-app-token" in step.get("uses", "") for step in pick["steps"]))
