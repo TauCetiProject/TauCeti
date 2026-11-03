@@ -34,6 +34,29 @@ public section
 /-- The balanced cut function on four vertices. -/
 def balancedCut (S : Finset (Fin 4)) : ℕ := min #S (4 - #S)
 
+/-- The value of the balanced cut function in terms of the cardinality of the cut. -/
+theorem balancedCut_def (S : Finset (Fin 4)) : balancedCut S = min #S (4 - #S) := (rfl)
+
+/-- The balanced cut function vanishes on the empty cut. -/
+@[simp]
+theorem balancedCut_empty : balancedCut ∅ = 0 := by
+  simp [balancedCut_def]
+
+/-- The balanced cut function has value one on a singleton. -/
+@[simp]
+theorem balancedCut_singleton (x : Fin 4) : balancedCut {x} = 1 := by
+  simp [balancedCut_def]
+
+/-- The balanced cut function has value two on a pair of distinct vertices. -/
+@[simp]
+theorem balancedCut_pair {x y : Fin 4} (hxy : x ≠ y) : balancedCut {x, y} = 2 := by
+  simp [balancedCut_def, hxy]
+
+/-- The balanced cut function vanishes on the universal cut. -/
+@[simp]
+theorem balancedCut_univ : balancedCut (univ : Finset (Fin 4)) = 0 := by
+  simp [balancedCut_def]
+
 /-- The balanced cut function is unchanged by exchanging the two sides. -/
 @[simp]
 theorem balancedCut_compl (S : Finset (Fin 4)) : balancedCut Sᶜ = balancedCut S := by
