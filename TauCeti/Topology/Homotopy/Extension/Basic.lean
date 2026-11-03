@@ -108,6 +108,11 @@ theorem hasHomotopyExtensionProperty_iff :
           ∃ G : C(I × X, Y), (∀ x, G (0, x) = f x) ∧ ∀ (t : I) (a : A), G (t, a) = H (t, a) :=
   Iff.rfl
 
+/-- The empty subset has the homotopy extension property: a homotopy out of `∅` imposes nothing,
+and the constant homotopy extends the initial map. -/
+theorem hasHomotopyExtensionProperty_empty : HasHomotopyExtensionProperty (∅ : Set X) :=
+  fun f _ _ ↦ ⟨f.comp ContinuousMap.snd, fun _ ↦ rfl, fun _ a ↦ a.2.elim⟩
+
 /-- The defining consequence of the homotopy extension property: a homotopy out of `A` whose
 initial map extends to `X` extends to a homotopy out of `X`. -/
 theorem HasHomotopyExtensionProperty.exists_extension (h : HasHomotopyExtensionProperty A)
