@@ -74,7 +74,7 @@ theorem absNorm_map_of_ringEquiv_eq_natCard {A : Type*} [CommRing A] [Infinite R
 
 /-- A natural number prime to the absolute norm of a proper ideal `I` does not lie in `I`, since
 `I` contains its norm (`Ideal.absNorm_mem`). -/
-theorem natCast_notMem_of_coprime_absNorm [Infinite R] {I : Ideal R} (hI : I ≠ ⊤) {a : ℕ}
+theorem natCast_notMem_of_coprime_absNorm {I : Ideal R} (hI : I ≠ ⊤) {a : ℕ}
     (ha : a.Coprime (absNorm I)) : (a : R) ∉ I := fun h ↦ hI <| by
   obtain ⟨u, v, huv⟩ := (Nat.isCoprime_iff_coprime.mpr ha).map (Int.castRingHom R)
   rw [eq_top_iff_one, ← huv]

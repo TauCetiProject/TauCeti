@@ -114,6 +114,11 @@ noncomputable abbrev ideal : Ideal (washnitzerAlgebra (Fin P.n) K) :=
 noncomputable def proj : washnitzerAlgebra (Fin P.n) K →ₐ[K] A :=
   P.equiv.toAlgHom.comp (Ideal.Quotient.mkₐ K P.ideal)
 
+/-- The presentation map sends a series to its quotient class under the specified equivalence. -/
+theorem proj_apply (f : washnitzerAlgebra (Fin P.n) K) :
+    P.proj f = P.equiv (Ideal.Quotient.mk _ f) :=
+  (rfl)
+
 theorem proj_surjective : Function.Surjective P.proj :=
   P.equiv.surjective.comp (Ideal.Quotient.mkₐ_surjective K _)
 

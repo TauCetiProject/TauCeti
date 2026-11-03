@@ -246,7 +246,7 @@ theorem analyticConeOrbitTorusHomeomorph_analyticDistinguishedPoint (σ : Φ.con
       ⟨Φ.analyticAffineChartι hΦ σ (distinguishedPoint Φ.lattice (⊤ : σ.1.Face)),
         (Φ.analyticAffineChartι_mem_analyticConeOrbit_iff hΦ hd).2 rfl⟩ :=
     Subtype.ext (Φ.analyticDistinguishedPoint_def hΦ σ)
-  rw [hx₀, h, AddChar.one_apply, Units.val_one]
+  rw [hx₀, h, _root_.one_apply, Units.val_one]
 
 /-- The identification of the orbit of `σ` with the quotient torus is equivariant: translating by
 a torus point `T` multiplies by the image of `T` in the quotient torus. -/
@@ -266,7 +266,7 @@ theorem analyticConeOrbitTorusHomeomorph_smul (σ : Φ.cones) (T : ComplexTorus 
         (Φ.analyticAffineChartι_mem_analyticConeOrbit_iff hΦ hTy).2 rfl⟩ :=
     Subtype.ext (Φ.smul_analyticAffineChartι hΦ T σ y)
   refine DFunLike.ext _ _ fun m ↦ Units.ext ?_
-  rw [hι, AddChar.mul_apply, Units.val_mul, Φ.val_analyticConeOrbitTorusHomeomorph_apply hΦ σ hy,
+  rw [hι, _root_.mul_apply, Units.val_mul, Φ.val_analyticConeOrbitTorusHomeomorph_apply hΦ σ hy,
     Φ.val_analyticConeOrbitTorusHomeomorph_apply hΦ σ hTy,
     AffineSemigroupComplexPoint.ambient_smul_apply_single, complexTorusMap_apply,
     characterEvaluation_apply, compHom'_mk'_coneSublattice]

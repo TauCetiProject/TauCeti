@@ -239,7 +239,7 @@ theorem SpecialLinearGroup.trace_commutatorElement_fin_two {R : Type*} [CommRing
   have hB := B.det_coe
   rw [det_fin_two] at hA hB
   simp only [commutatorElement_def, SpecialLinearGroup.coe_mul, SpecialLinearGroup.coe_inv,
-    adjugate_fin_two, trace_fin_two, mul_apply, Fin.sum_univ_two, of_apply, cons_val',
+    adjugate_fin_two, trace_fin_two, Matrix.mul_apply, Fin.sum_univ_two, of_apply, cons_val',
     cons_val_zero, cons_val_one, empty_val', cons_val_fin_one]
   linear_combination ((B 0 0 + B 1 1) ^ 2 - 2) * hA +
     (A 0 0 ^ 2 + 2 * A 0 1 * A 1 0 + A 1 1 ^ 2) * hB
@@ -255,7 +255,8 @@ theorem SpecialLinearGroup.trace_commutatorElement_sub_two_fin_two {R : Type*} [
   have hB := B.det_coe
   rw [det_fin_two] at hA hB
   simp only [commutatorElement_def, SpecialLinearGroup.coe_mul, SpecialLinearGroup.coe_inv,
-    adjugate_fin_two, trace_fin_two, det_fin_two, sub_apply, mul_apply, Fin.sum_univ_two, of_apply,
+    adjugate_fin_two, trace_fin_two, det_fin_two, Matrix.sub_apply, Matrix.mul_apply,
+      Fin.sum_univ_two, of_apply,
     cons_val', cons_val_zero, cons_val_one, empty_val', cons_val_fin_one]
   linear_combination 2 * (A 0 0 * A 1 1 - A 0 1 * A 1 0) * hB + 2 * hA
 
