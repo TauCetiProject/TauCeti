@@ -28,6 +28,8 @@ for set and probability integrals.
 
 * `ofReal_integral_le_lintegral_ofReal` bounds the positive part of a real-valued
   function's integral by the integral of its pointwise positive part.
+* `lintegral_ofReal_eq_one` gives a probability density (almost everywhere nonnegative, with
+  integral one) total extended mass one.
 
 ## Exponentials
 
@@ -259,6 +261,14 @@ theorem ofReal_integral_le_lintegral_ofReal {Ω : Type*} [MeasurableSpace Ω]
       _ = ∫⁻ x, ENNReal.ofReal (f x) ∂μ := by simp
   · rw [integral_undef hf]
     simp
+
+/-- A probability density `ρ`, almost everywhere nonnegative with `∫ ρ = 1`, has total extended
+mass one: `∫⁻ ofReal (ρ t) dμ = 1`. -/
+theorem lintegral_ofReal_eq_one {α : Type*} [MeasurableSpace α] {μ : Measure α}
+    {ρ : α → ℝ} (hρ0 : 0 ≤ᵐ[μ] ρ) (hρ1 : ∫ t, ρ t ∂μ = 1) :
+    ∫⁻ t, ENNReal.ofReal (ρ t) ∂μ = 1 := by
+  rw [← ofReal_integral_eq_lintegral_ofReal (integrable_of_integral_eq_one hρ1) hρ0, hρ1,
+    ENNReal.ofReal_one]
 
 /-- **`L¹` convergence in Bochner form is `eLpNorm _ 1` convergence.** If `∫ ‖f i - g‖ → 0` along
 `l` and the differences `f i - g` are eventually integrable, then `eLpNorm (f i - g) 1 μ → 0`. -/
