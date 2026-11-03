@@ -91,12 +91,12 @@ private lemma exists_measurable_of_cover (hf : LipschitzOnWith K f A) (ht : 0 �
       (fun n ↦ (ediam_mono (inter_subset_left.trans inter_subset_left)).trans (hr n)) ?_
     · obtain ⟨n, hn⟩ := mem_iUnion.1 (hc hx.1)
       exact mem_iUnion.2 ⟨n, ⟨hn, hx.1⟩, hx.2⟩
-    · refine ENNReal.tsum_le_tsum fun n ↦ iSup_le fun hne ↦ ?_
+    · refine tsum_le_tsum fun n ↦ iSup_le fun hne ↦ ?_
       obtain ⟨x, hx, hfx⟩ := hne
       rw [indicator_of_mem (subset_closure (show y ∈ f '' (c n ∩ A) from ⟨x, hx, hfx⟩))]
       exact ENNReal.rpow_le_rpow (ediam_mono inter_subset_left) ht
   · rw [lintegral_tsum fun n ↦ (hmeas n).aemeasurable, ← ENNReal.tsum_mul_left]
-    refine ENNReal.tsum_le_tsum fun n ↦ ?_
+    refine tsum_le_tsum fun n ↦ ?_
     rw [lintegral_indicator_const isClosed_closure.measurableSet]
     rcases (c n ∩ A).eq_empty_or_nonempty with h | h
     · simp [h]

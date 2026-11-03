@@ -625,25 +625,20 @@ class Recovery(unittest.TestCase):
                         self.assertTrue(restored.select(info(), {"PDE"}))
                     self.assertNotIn(1, restored.records)
 
-    def test_restore_only_selects_trusted_main_schedule_and_dispatch_runs(self):
+    def test_restore_finds_saved_state_even_when_cancelled_runs_crowd_run_history(self):
         root = Path(__file__).resolve().parents[1]
         workflow = (root / ".github/workflows/roadmap-label-reconcile.yml").read_text()
-        step = workflow.split("      - name: Restore recovery state\n", 1)[1].split("\n      - ", 1)[0]
+        step = workflow.split("      - name: Restore label progress\n", 1)[1].split("\n      - ", 1)[0]
         selector = re.search(r"--jq '([^']+)'", step).group(1)
-        self.assertIn("status=completed&branch=main", step)
-        trusted = {"head_branch": "main", "head_repository": {"full_name": "TauCetiProject/TauCeti"}}
-        runs = [dict(trusted, id=1, event="pull_request"),
-                dict(trusted, id=2, event="pull_request_target"),
-                dict(trusted, id=3, event="push"),
-                dict(trusted, id=4, event="schedule", head_repository={"full_name": "fork/TauCeti"}),
-                dict(trusted, id=5, event="workflow_dispatch", head_repository={"full_name": "fork/TauCeti"}),
-                dict(trusted, id=6, event="workflow_dispatch", head_branch="feature"),
-                dict(trusted, id=7, event="schedule", head_repository=None),
-                dict(trusted, id=8, event="schedule"),
-                dict(trusted, id=9, event="workflow_dispatch")]
-        result = subprocess.run(["jq", "-r", selector], input=json.dumps({"workflow_runs": runs}),
+        self.assertIn("actions/artifacts?name=roadmap-label-state", step)
+        artifacts = [dict(created_at="2026-10-01", expired=False, workflow_run=dict(id=8)),
+                     dict(created_at="2026-10-02", expired=True, workflow_run=dict(id=9)),
+                     dict(created_at="2026-10-03", expired=False, workflow_run=dict(id=10))]
+        data = dict(artifacts=artifacts, workflow_runs=[dict(id=n, conclusion="cancelled") for n in range(11, 111)])
+        result = subprocess.run(["jq", "-r", selector], input=json.dumps(data),
                                 capture_output=True, text=True, check=True)
-        self.assertEqual(result.stdout.splitlines(), ["8", "9"])
+        self.assertEqual(result.stdout.splitlines(), ["10", "8"])
+        self.assertLess(step.index('if [[ "$trusted" == true ]]'), step.index("gh run download"))
 
     def test_bad_pr_does_not_fail_recovery_window_when_retry_handoff_is_saved(self):
         api = Mock()
@@ -691,24 +686,32 @@ class Recovery(unittest.TestCase):
         since.assert_not_called()
         self.assertIn("sort=created", api.pages.call_args.args[0])
 
+    def test_batch_recovers_many_prs_after_their_individual_events_were_coalesced(self):
+        state = rl.RecoveryState()
+        unchanged = info(1)
+        changed = info(2)
+        state.success(1, "roadmap/PDE", rl.input_key(unchanged, {"PDE"}))
+        state.success(2, "roadmap/PDE", rl.input_key(changed, {"PDE"}))
+        changed = dict(changed, body="Roadmap: none")
+        new = info(3)
+        api = Mock()
+        api.pages.return_value = [[unchanged, changed, new]]
+        # The wake-up may concern just PR #3. Discovery owns the complete input
+        # set, including PR #2 whose event was replaced before getting a runner.
+        args = self.args(_state=state)
+        self.assertEqual(list(rl.candidates(api, args, {"PDE"})), [2, 3])
+
     def test_workflow_preserves_app_writes_and_filters_title_edits(self):
         root = Path(__file__).resolve().parents[1]
-        event = (root / ".github/workflows/roadmap-label.yml").read_text()
-        recovery = (root / ".github/workflows/roadmap-label-reconcile.yml").read_text()
-        for workflow in (event, recovery):
-            self.assertIn("GH_READ_TOKEN: ${{ github.token }}", workflow)
-            self.assertIn("GH_TOKEN: ${{ steps.app-token.outputs.token }}", workflow)
-            self.assertIn("--structure-nudge", workflow)
-            self.assertNotIn("github.event.pull_request.head.sha", workflow)
-        self.assertIn("github.event.changes.body != null", event)
-        self.assertIn("roadmap-label-ignored-{0}", event)
-        self.assertIn("github.run_id", event)
-        self.assertLess(event.index("run: sleep 20"), event.index("actions/create-github-app-token"))
-        self.assertIn("actions: read", recovery)
-        self.assertIn("ref: main", recovery)
-        self.assertIn("cancel-in-progress: false", recovery)
-        self.assertIn("--state-out", recovery)
-        self.assertIn("if: always()", recovery)
+        workflow = (root / ".github/workflows/roadmap-label-reconcile.yml").read_text()
+        self.assertFalse((root / ".github/workflows/roadmap-label.yml").exists())
+        for text in ("GH_READ_TOKEN: ${{ github.token }}", "GH_TOKEN: ${{ steps.app-token.outputs.token }}",
+                     "--structure-nudge", "github.event.changes.body != null", "actions: read", "ref: main",
+                     "cancel-in-progress: false", "--state-out", "if: always()", "--limit \"$limit\""):
+            self.assertIn(text, workflow)
+        self.assertNotIn("github.event.pull_request.head.sha", workflow)
+        self.assertNotIn("run: sleep", workflow)
+        self.assertIn("control-batch-debounce", workflow)
 
 
 if __name__ == "__main__":

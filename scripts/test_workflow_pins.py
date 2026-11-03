@@ -1,7 +1,7 @@
 """Ensure TauCeti runs and reads one TauCetiReview commit everywhere.
 
-The policy commit appears in the three reusable-workflow `uses:` lines and their required
-`review_ref` inputs, and in the checkout-merge-policy composite action. Other policy readers
+The policy commit appears in reusable-workflow `uses:` lines and their required
+`review_ref` inputs, and in the checkout-merge-policy action used by the merge batch. Other policy readers
 go through that action; every explicit reference must agree.
 
 Run with: python3 scripts/test_workflow_pins.py
@@ -16,11 +16,12 @@ import yaml
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 WORKFLOW_DIR = ROOT / ".github/workflows"
-CALLERS = ("auto-merge.yml", "merge-sweep.yml", "review.yml")
+CALLERS = ("merge-sweep.yml", "review.yml")
 ACTION = ROOT / ".github/actions/checkout-merge-policy/action.yml"
 LOCAL_ACTION = "./.github/actions/checkout-merge-policy"
 # Each job that reads the merge policy, with how many times it does so.
 POLICY_READERS = {
+    ("auto-merge.yml", "sweep"): 1,
     ("infrastructure-tests.yml", "python-tests"): 1,
     ("pages.yml", "build-data"): 1,
     ("pr-labels.yml", "label-resolved"): 1,
@@ -163,6 +164,26 @@ class ContentWorkflowCompleteness(unittest.TestCase):
         self.assertIn("gate/scripts/ci_status.py resume", report["run"])
         self.assertIn("publish-merge-group-cache", jobs)
         self.assertIn("finalize-merge-group-build", jobs)
+
+    def test_long_build_refreshes_credentials_before_terminal_reporting(self):
+        steps = workflow_jobs("pr-build.yml")["sandboxed-build"]["steps"]
+        by_id = {step.get("id"): i for i, step in enumerate(steps) if step.get("id")}
+        self.assertLess(by_id["build"], by_id["report-ci-api"])
+        self.assertLess(by_id["report-ci-api"], by_id["report"])
+        original, refreshed = steps[by_id["ci-api"]], steps[by_id["report-ci-api"]]
+        self.assertEqual(refreshed["if"], "always()")
+        self.assertEqual(refreshed["uses"], original["uses"])
+        self.assertEqual(refreshed["with"], original["with"])
+        report = steps[by_id["report"]]
+        self.assertEqual(report["if"], "always()")
+        for variable, output in [("GH_TOKEN", "status-token"), ("GH_READ_TOKEN", "read-token"),
+                                 ("TAUCETI_GITHUB_READ_ROLE", "read-role"),
+                                 ("TAUCETI_GITHUB_WRITE_ROLE", "status-role")]:
+            self.assertEqual(report["env"][variable],
+                             "${{ steps.report-ci-api.outputs." + output +
+                             " || steps.ci-api.outputs." + output + " }}")
+        # Retained reporting still runs when refreshing credentials itself fails.
+        self.assertIn("ci_status.py resume", report["run"])
 
     def test_status_retry_retains_intent_discovery_and_guarded_resumption(self):
         steps = workflow_jobs("retry-ci-status.yml")["publish"]["steps"]

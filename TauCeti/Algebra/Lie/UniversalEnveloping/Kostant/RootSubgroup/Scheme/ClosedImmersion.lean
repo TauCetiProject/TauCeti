@@ -130,7 +130,7 @@ private theorem integralDividedPower_apply_eq_zero_of_two_le {k : ℕ}
   rw [coe_integralDividedPower_apply, Associative.dividedPower_def,
     ZeroMemClass.coe_zero, smul_assoc]
   have hpow : (x ^ (m + 2)) (v : V) = 0 := by
-    rw [pow_add, Module.End.mul_apply, pow_two, Module.End.mul_apply, hsq, map_zero]
+    rw [pow_add, mul_apply_eq_comp, pow_two, mul_apply_eq_comp, hsq, map_zero]
   rw [Module.End.smul_def, hpow, smul_zero]
 
 /-- A root step forces the operator to have nilpotency class at least two, so the linear term of

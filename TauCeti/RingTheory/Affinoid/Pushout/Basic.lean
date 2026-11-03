@@ -94,6 +94,14 @@ theorem pushoutIdeal_def (I : Ideal (IsRestricted.subring (R := A) (fun _ : Fin 
       I.map (restrictedRename (Fin.castAdd n)) ⊔ J.map (restrictedRename (Fin.natAdd m)) :=
   (rfl)
 
+/-- The relations defining an affinoid pushout are monotone in both factor ideals. -/
+theorem pushoutIdeal_mono
+    {I I' : Ideal (IsRestricted.subring (R := A) (fun _ : Fin m ↦ 1))}
+    {J J' : Ideal (IsRestricted.subring (R := A) (fun _ : Fin n ↦ 1))}
+    (hI : I ≤ I') (hJ : J ≤ J') : pushoutIdeal I J ≤ pushoutIdeal I' J' := by
+  simp only [pushoutIdeal_def]
+  exact sup_le_sup (Ideal.map_mono hI) (Ideal.map_mono hJ)
+
 /-- **The affinoid pushout** `A⟨X, Y⟩ ⧸ (I, J)` of `A⟨X₁, …, Xₘ⟩ ⧸ I` and `A⟨Y₁, …, Yₙ⟩ ⧸ J`
 over `A`. It carries the quotient ring, `K`-algebra and `A`-algebra structures, and the quotient
 topology. -/
