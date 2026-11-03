@@ -144,6 +144,20 @@ theorem coe_pbwDividedPowerLatticeBasis_apply (n : ι →₀ ℕ) :
     (b.pbwDividedPowerLatticeBasis n : U) = b.pbwDividedPowerBasis n :=
   Basis.coe_span_apply b.linearIndependent_pbwDividedPowerBasis_int n
 
+/-- Integral lattice coordinates cast to the corresponding rational divided-power coordinates. -/
+@[simp]
+theorem pbwDividedPowerLatticeBasis_repr (x : b.pbwDividedPowerLattice) (n : ι →₀ ℕ) :
+    ((b.pbwDividedPowerLatticeBasis.repr x n : ℤ) : ℚ) =
+      b.pbwDividedPowerBasis.repr (x : U) n := by
+  exact b.pbwDividedPowerBasis.restrictScalars_repr_apply ℤ x n
+
+/-- An element belongs to the integral lattice exactly when all its rational divided-power
+coordinates are integers. -/
+theorem mem_pbwDividedPowerLattice_iff_repr (x : U) :
+    x ∈ b.pbwDividedPowerLattice ↔
+      ∀ n, b.pbwDividedPowerBasis.repr x n ∈ Set.range (Int.cast : ℤ → ℚ) := by
+  exact b.pbwDividedPowerBasis.mem_span_iff_repr_mem ℤ x
+
 /-- Membership in the integral lattice is equivalent to a unique finite integral expansion in
 ordered divided-power monomials. -/
 theorem mem_pbwDividedPowerLattice_iff_existsUnique (x : U) :
