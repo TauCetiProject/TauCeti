@@ -39,7 +39,7 @@ seminorm of every presentation. In particular its values at classical points are
 * `TauCeti.Dagger.washnitzerAlgebra.isPowerBounded_iff_norm_le_one` and
   `TauCeti.Dagger.washnitzerAlgebra.isPowerBounded_iff_supSeminorm_le_one`: the power-bounded
   elements of `W` are its Gauss unit ball, equivalently the elements with `|f|sup ≤ 1`.
-* `TauCeti.Dagger.washnitzerAlgebra.mem_intWashnitzerAlgebra_iff_isPowerBounded`: an
+* `TauCeti.Dagger.mem_intWashnitzerAlgebra_iff_isPowerBounded`: an
   overconvergent series has coefficients in `K°` iff it is power-bounded.
 * `TauCeti.Dagger.washnitzerAlgebra.supSeminorm_map_le_norm`: `|φ f|sup ≤ ‖f‖` for every
   surjection `φ : W ↠ A`.
@@ -75,12 +75,6 @@ theorem isPowerBounded_iff_norm_le_one {f : W σ} : Huber.IsPowerBounded f ↔ �
   obtain ⟨ϖ, hϖ⟩ := (Huber.IsTateRing.of_normedAlgebra K (W σ)).exists_isPseudoUniformizer
   exact hϖ.isPowerBounded_iff_norm_le_one fun x n _ ↦ norm_pow x n
 
-/-- **The integral Monsky–Washnitzer algebra is the ring of power-bounded elements**: an
-overconvergent series has all its coefficients in `K°` iff it is power-bounded. -/
-theorem mem_intWashnitzerAlgebra_iff_isPowerBounded {f : W σ} :
-    (f : MvPowerSeries σ K) ∈ intWashnitzerAlgebra σ K ↔ Huber.IsPowerBounded f := by
-  rw [mem_intWashnitzerAlgebra_iff_norm_le_one, isPowerBounded_iff_norm_le_one]
-
 variable [CompleteSpace K] [Finite σ]
 
 /-- The absolute value of an overconvergent series at a classical point is at most its Gauss
@@ -110,8 +104,9 @@ theorem exists_pointNorm_eq_norm (f : W σ) :
 theorem supSeminorm_eq_norm (f : W σ) : supSeminorm K f = ‖f‖ := by
   obtain ⟨x, hx⟩ := exists_pointNorm_eq_norm f
   refine le_antisymm (supSeminorm_le (norm_nonneg f) fun y ↦ pointNorm_le_norm y f) ?_
-  rw [← hx, supSeminorm_eq_iSup]
-  exact le_ciSup ⟨‖f‖, Set.forall_mem_range.mpr fun y ↦ pointNorm_le_norm y f⟩ x
+  rw [← hx]
+  exact pointNorm_le_supSeminorm_of_bddAbove
+    ⟨‖f‖, Set.forall_mem_range.mpr fun y ↦ pointNorm_le_norm y f⟩ x
 
 /-- An overconvergent series is power-bounded iff its supremum seminorm is at most one. -/
 theorem isPowerBounded_iff_supSeminorm_le_one {f : W σ} :
@@ -138,6 +133,12 @@ theorem supSeminorm_map_le_norm {φ : W σ →ₐ[K] A} (hφ : Function.Surjecti
 
 end washnitzerAlgebra
 
+/-- **The integral Monsky–Washnitzer algebra is the ring of power-bounded elements**: an
+overconvergent series has all its coefficients in `K°` iff it is power-bounded. -/
+theorem mem_intWashnitzerAlgebra_iff_isPowerBounded {f : W σ} :
+    (f : MvPowerSeries σ K) ∈ intWashnitzerAlgebra σ K ↔ Huber.IsPowerBounded f := by
+  rw [mem_intWashnitzerAlgebra_iff_norm_le_one, washnitzerAlgebra.isPowerBounded_iff_norm_le_one]
+
 namespace IsDaggerAlgebra
 
 variable [CompleteSpace K] {A : Type*} [CommRing A] [Algebra K A] [IsDaggerAlgebra K A]
@@ -152,9 +153,8 @@ theorem bddAbove_range_pointNorm (a : A) :
 /-- On a dagger algebra the supremum seminorm bounds the absolute value at every classical
 point: `|a(x)| ≤ |a|sup`. -/
 theorem pointNorm_le_supSeminorm (x : MaximalSpectrum A) (a : A) :
-    pointNorm K x a ≤ supSeminorm K a := by
-  rw [supSeminorm_eq_iSup]
-  exact le_ciSup (bddAbove_range_pointNorm a) x
+    pointNorm K x a ≤ supSeminorm K a :=
+  pointNorm_le_supSeminorm_of_bddAbove (bddAbove_range_pointNorm a) x
 
 /-- **Perturbations of `1` by elements of supremum seminorm `< 1` are units.** In a dagger
 algebra, `1 - a` is a unit whenever `|a|sup < 1`. -/

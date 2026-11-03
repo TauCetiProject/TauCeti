@@ -288,6 +288,14 @@ theorem supSeminorm_le {f : A} {r : ℝ} (hr : 0 ≤ r) (h : ∀ x, pointNorm K 
     supSeminorm K f ≤ r :=
   Real.iSup_le h hr
 
+/-- If the absolute values of `f` at the classical points are bounded, then each of them is at
+most the supremum seminorm: `|f(x)| ≤ |f|sup`. -/
+theorem pointNorm_le_supSeminorm_of_bddAbove {f : A}
+    (hb : BddAbove (Set.range fun x : MaximalSpectrum A ↦ pointNorm K x f))
+    (x : MaximalSpectrum A) : pointNorm K x f ≤ supSeminorm K f := by
+  rw [supSeminorm_eq_iSup]
+  exact le_ciSup hb x
+
 /-- The supremum seminorm vanishes on the zero algebra, which has no maximal ideals. -/
 theorem supSeminorm_eq_zero_of_subsingleton [Subsingleton A] (f : A) : supSeminorm K f = 0 := by
   have : IsEmpty (MaximalSpectrum A) := ⟨fun x ↦ x.isMaximal.ne_top (Subsingleton.elim _ _)⟩
@@ -319,7 +327,7 @@ theorem isUnit_one_sub_of_supSeminorm_lt_one {a : A}
     refine pointNorm_eq_of_sub_mem ?_
     rw [← neg_sub]
     exact M.neg_mem (hM' (Ideal.mem_span_singleton_self _))
-  exact ((hx ▸ le_ciSup hb ⟨M, hM⟩).trans_lt ha).false
+  exact ((hx ▸ pointNorm_le_supSeminorm_of_bddAbove hb ⟨M, hM⟩).trans_lt ha).false
 
 namespace IsAffinoidAlgebra
 
@@ -341,7 +349,7 @@ theorem bddAbove_range_pointNorm (hA : IsAffinoidAlgebra K A) (f : A) :
 /-- Each absolute value `|f(x)|` is bounded by the supremum seminorm `|f|sup`. -/
 theorem pointNorm_le_supSeminorm (hA : IsAffinoidAlgebra K A) (x : MaximalSpectrum A) (f : A) :
     pointNorm K x f ≤ supSeminorm K f :=
-  le_ciSup (hA.bddAbove_range_pointNorm f) x
+  pointNorm_le_supSeminorm_of_bddAbove (hA.bddAbove_range_pointNorm f) x
 
 theorem supSeminorm_le_iff (hA : IsAffinoidAlgebra K A) {f : A} {r : ℝ} (hr : 0 ≤ r) :
     supSeminorm K f ≤ r ↔ ∀ x, pointNorm K x f ≤ r :=
