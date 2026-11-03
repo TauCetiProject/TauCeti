@@ -53,11 +53,7 @@ private abbrev Mat (n : ℕ) :=
 private abbrev difference (i j : Fin (n + 1)) : Mat n :=
   TypeDStd.differenceRootMatrix i j
 
-private theorem difference_eq (i j : Fin (n + 1)) :
-    difference i j = single (.inl i) (.inl j) 1 - single (.inr j) (.inr i) 1 := by
-  ext a b
-  rcases a with a | a <;> rcases b with b | b <;>
-    simp [difference, TypeDStd.differenceRootMatrix_def, single_apply]
+open TypeDStd (differenceRootMatrix_eq_single_sub_single)
 
 -- File-local shorthand for the existing normalized long-root tangent matrices.
 private abbrev upper (i : Fin (n + 1)) : Mat n :=
@@ -74,53 +70,29 @@ private def lowerPair (i j : Fin (n + 1)) : Mat n :=
 
 private theorem lie_difference_upper (i j : Fin (n + 1)) :
     ⁅difference i j, upper j⁆ = upperPair i j := by
-  simp [difference_eq, upper, upperPair, Ring.lie_def, sub_mul, mul_sub]
+  simp [difference, differenceRootMatrix_eq_single_sub_single, upper, upperPair,
+    Ring.lie_def, sub_mul, mul_sub]
 
 private theorem lie_difference_upperPair (i j : Fin (n + 1)) (hij : i ≠ j) :
     ⁅difference i j, upperPair i j⁆ = (2 : ℚ) • upper i := by
-  simp [difference_eq, upper, upperPair, Ring.lie_def, sub_mul, mul_sub, mul_add, add_mul,
+  simp [difference, differenceRootMatrix_eq_single_sub_single, upper, upperPair,
+    Ring.lie_def, sub_mul, mul_sub, mul_add, add_mul,
     hij, Ne.symm hij, two_smul]
 
 private theorem lie_lower_difference (i j : Fin (n + 1)) :
     ⁅lower j, difference j i⁆ = lowerPair i j := by
-  simp [difference_eq, lower, lowerPair, Ring.lie_def, sub_mul, mul_sub, add_comm]
+  simp [difference, differenceRootMatrix_eq_single_sub_single, lower, lowerPair,
+    Ring.lie_def, sub_mul, mul_sub, add_comm]
 
 private theorem lie_lowerPair_difference (i j : Fin (n + 1)) (hij : i ≠ j) :
     ⁅lowerPair i j, difference j i⁆ = (2 : ℚ) • lower i := by
-  simp [difference_eq, lower, lowerPair, Ring.lie_def, sub_mul, mul_sub, mul_add, add_mul,
+  simp [difference, differenceRootMatrix_eq_single_sub_single, lower, lowerPair,
+    Ring.lie_def, sub_mul, mul_sub, mul_add, add_mul,
     hij, Ne.symm hij, two_smul]
 
 private theorem lie_upper_lower (i : Fin (n + 1)) :
     ⁅upper i, lower i⁆ = difference i i := by
-  simp [upper, lower, difference_eq, Ring.lie_def]
-
-private theorem difference_mem_of_lt (S : LieSubalgebra ℚ (Mat n))
-    (hpos : ∀ i : Fin n, difference i.castSucc i.succ ∈ S)
-    (hneg : ∀ i : Fin n, difference i.succ i.castSucc ∈ S)
-    (i j : Fin (n + 1)) (hij : i < j) :
-    difference i j ∈ S ∧ difference j i ∈ S := by
-  let k : Fin (n + 1) := ⟨i + 1, by omega⟩
-  have hkval : (k : ℕ) = (i : ℕ) + 1 := rfl
-  let a : Fin n := ⟨i, by omega⟩
-  have hai : a.castSucc = i := Fin.ext rfl
-  have hak : a.succ = k := Fin.ext rfl
-  have hforward : difference i k ∈ S := by simpa only [hai, hak] using hpos a
-  have hbackward : difference k i ∈ S := by simpa only [hai, hak] using hneg a
-  by_cases hkj : k = j
-  · simpa only [hkj] using And.intro hforward hbackward
-  · have hkj' : k < j := by omega
-    obtain ⟨h₁, h₂⟩ := difference_mem_of_lt S hpos hneg k j hkj'
-    constructor
-    · convert S.lie_mem hforward h₁ using 1
-      simpa only [LieSubalgebra.coe_bracket, TypeDStd.val_differenceRootGenerator] using
-        (congrArg (fun x : LieAlgebra.Orthogonal.typeD (Fin (n + 1)) ℚ ↦ (x : Mat n))
-          (TypeDStd.lie_differenceRootGenerator_differenceRootGenerator i k j hij.ne)).symm
-    · convert S.lie_mem h₂ hbackward using 1
-      simpa only [LieSubalgebra.coe_bracket, TypeDStd.val_differenceRootGenerator] using
-        (congrArg (fun x : LieAlgebra.Orthogonal.typeD (Fin (n + 1)) ℚ ↦ (x : Mat n))
-          (TypeDStd.lie_differenceRootGenerator_differenceRootGenerator j k i hij.ne')).symm
-termination_by (j : ℕ) - (i : ℕ)
-decreasing_by omega
+  simp [upper, lower, difference, differenceRootMatrix_eq_single_sub_single, Ring.lie_def]
 
 private theorem symplectic_le_of_simple_mem (S : LieSubalgebra ℚ (Mat n))
     (hpos : ∀ i : Fin n, difference i.castSucc i.succ ∈ S)
@@ -129,8 +101,8 @@ private theorem symplectic_le_of_simple_mem (S : LieSubalgebra ℚ (Mat n))
     LieAlgebra.Symplectic.sp (Fin (n + 1)) ℚ ≤ S := by
   have hd (i j : Fin (n + 1)) (hij : i ≠ j) : difference i j ∈ S := by
     rcases lt_or_gt_of_ne hij with h | h
-    · exact (difference_mem_of_lt S hpos hneg i j h).1
-    · exact (difference_mem_of_lt S hpos hneg j i h).2
+    · exact (TypeDStd.differenceRootMatrix_mem_of_lt S hpos hneg i j h).1
+    · exact (TypeDStd.differenceRootMatrix_mem_of_lt S hpos hneg j i h).2
   -- The second bracket has coefficient two; over the rationals it recovers each long root.
   have hul (i : Fin (n + 1)) : upper i ∈ S ∧ lower i ∈ S := by
     by_cases hi : i = Fin.last n
@@ -173,7 +145,8 @@ private theorem symplectic_le_of_simple_mem (S : LieSubalgebra ℚ (Mat n))
       (∑ i, ∑ j, (X (.inr i) (.inl j) / 2) • lowerPair i j) := by
     ext a b
     rcases a with a | a <;> rcases b with b | b <;>
-      simp [difference_eq, upperPair, lowerPair, Matrix.sum_apply, Matrix.smul_apply,
+      simp [difference, differenceRootMatrix_eq_single_sub_single, upperPair, lowerPair,
+        Matrix.sum_apply, Matrix.smul_apply,
         single_apply, ite_and, Finset.sum_add_distrib, hQ a b, hT a b, hD a b]
   rw [hexpand]
   refine S.add_mem (S.add_mem ?_ ?_) ?_
@@ -203,14 +176,16 @@ theorem lieSpan_range_rootGenerator_eq_top (n : ℕ) :
       Fin.orderSucc_castSucc] at h
     convert h using 1
     ext a b
-    rcases a with a | a <;> rcases b with b | b <;> simp [difference_eq, single_apply]
+    rcases a with a | a <;> rcases b with b | b <;>
+      simp [difference, differenceRootMatrix_eq_single_sub_single, single_apply]
   have hchain' (i : Fin n) : difference i.succ i.castSucc ∈ T := by
     have h := hneg i.castSucc
     rw [negativeRootMatrix_of_ne_last n i.castSucc (Fin.castSucc_ne_last i),
       Fin.orderSucc_castSucc] at h
     convert h using 1
     ext a b
-    rcases a with a | a <;> rcases b with b | b <;> simp [difference_eq, single_apply]
+    rcases a with a | a <;> rcases b with b | b <;>
+      simp [difference, differenceRootMatrix_eq_single_sub_single, single_apply]
   have hu : upper (Fin.last n) ∈ T := by
     have h := hpos (Fin.last n)
     rw [positiveRootMatrix_last] at h
