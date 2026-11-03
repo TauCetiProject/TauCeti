@@ -73,13 +73,8 @@ theorem IsAdmissible.exists_hilbertSymbol_eq_of_rank_eq_two
       rwa [he]
     exact (hS v).mp hv (hI.finiteHasse_eq_one_of_rank_eq_two hn v heq)
   have hreal (w) (hw : w ∈ T) : embedding_of_isReal w.2 (-d : Kˣ) < 0 := by
-    have hp : I.realPositiveIndex w ≤ 2 := hn ▸ hI.realPositiveIndex_le_rank w
-    have hne := (hT w).mp hw
-    have hzero : I.realPositiveIndex w = 0 := by
-      interval_cases h : I.realPositiveIndex w
-      · rfl
-      · norm_num [realHasse_def, realNegativeIndex_def, hn, h] at hne
-      · norm_num [realHasse_def, realNegativeIndex_def, hn, h] at hne
+    have hzero := (I.realHasse_ne_one_iff_realPositiveIndex_eq_zero_of_rank_eq_two hn w).mp
+      ((hT w).mp hw)
     have hdisc := hI.discrAtRealPlace_eq w
     have hdpos : squareClass (Units.map (embedding_of_isReal w.2).toMonoidHom d) = 0 := by
       simpa [discrAtRealPlace_def, ← hd, realNegativeIndex_def, hn, hzero,
@@ -105,39 +100,19 @@ theorem IsAdmissible.exists_form_globalInvariants_eq_of_rank_eq_two
     _root_.QuadraticForm.nondegenerate_weightedSumSquares_neg_self_mul a (-d)
   -- The scaled norm plane has the prescribed discriminant and finite Hasse signs.
   have hdiscr : (Q.globalInvariants hQ).discr = I.discr := by
-    have hplane := _root_.QuadraticForm.discr_formClass_weightedSumSquares_neg_self_mul a (-d)
-    simp only [Units.val_neg] at hplane
-    rw [_root_.QuadraticForm.globalInvariants_discr, hplane]
-    have hc : ![1, -((-d : Kˣ) : K)] = fun i => ((![1, d] : Fin 2 → Kˣ) i : K) := by
-      ext i
-      fin_cases i <;> simp
-    have hequiv : (weightedSumSquares K ![1, -((-d : Kˣ) : K)]).Equivalent
-        (presentedForm ⟨2, ![1, d]⟩) := by
-      rw [presentedForm_eq_weightedSumSquares_coe, ← hc]
-    simp only [Units.val_neg] at hequiv
-    rw [discr_formClass _ _ ⟨2, ![1, d]⟩ hequiv, Fin.prod_univ_two]
-    simpa using hd
+    rw [_root_.QuadraticForm.globalInvariants_discr]
+    simpa only [Units.val_neg, neg_neg, hd] using
+      (_root_.QuadraticForm.discr_formClass_weightedSumSquares_neg_self_mul a (-d)).trans
+        (_root_.QuadraticForm.discr_formClass_weightedSumSquares_one_neg (-d))
   refine ⟨Q, hQ, GlobalFormInvariants.ext (by simp [hn]) hdiscr (funext fun v => ?_)
     (funext fun w => ?_)⟩
   · rw [_root_.QuadraticForm.globalInvariants_finiteHasse]
     exact (_root_.QuadraticForm.finiteHasse_weightedSumSquares_neg_self_mul a (-d) hQ v).trans
       (haS v)
-  · have hdiag : Q.Equivalent
-        (weightedSumSquares K fun i => ((![(a : Kˣ), -(a * (-d))] : Fin 2 → Kˣ) i : K)) := by
-      have hc : (fun i => ((![(a : Kˣ), -(a * (-d))] : Fin 2 → Kˣ) i : K)) =
-          ![(a : K), -(a * (-d) : K)] := by
-        ext i
-        fin_cases i <;> simp
-      rw [hc]
-    have hhasse := Q.globalInvariants_realHasse_eq_prod_hilbertSymbol hQ hdiag w
-    have hneg : unitAtRealPlace w (-(a * (-d))) =
-        -(unitAtRealPlace w a) * unitAtRealPlace w (-d) := Units.ext (by simp)
-    have hIoi0 : Finset.Ioi (0 : Fin 2) = {1} := by decide
-    have hIoi1 : Finset.Ioi (1 : Fin 2) = ∅ := by decide
-    rw [Fin.prod_univ_two, hIoi0, hIoi1] at hhasse
-    simp only [Finset.prod_singleton, Finset.prod_empty, mul_one,
-      Matrix.cons_val_zero, Matrix.cons_val_one, hneg, hilbertSymbol_real_mul_right,
-      hilbertSymbol_neg_self, one_mul, haT w] at hhasse
+  · have hhasse : (Q.globalInvariants hQ).realHasse w = I.realHasse w := by
+      simpa only [Units.val_neg] using
+        (_root_.QuadraticForm.globalInvariants_realHasse_weightedSumSquares_neg_self_mul
+          a (-d) hQ w).trans (haT w)
     have hJ := Q.isAdmissible_globalInvariants hQ (by simp)
     have hdisc := hJ.discrAtRealPlace_eq w
     rw [discrAtRealPlace_def, hdiscr, ← discrAtRealPlace_def,
@@ -146,12 +121,16 @@ theorem IsAdmissible.exists_form_globalInvariants_eq_of_rank_eq_two
     have hq : (Q.globalInvariants hQ).realPositiveIndex w ≤ 2 := by
       simpa using hJ.realPositiveIndex_le_rank w
     have hnr : (Q.globalInvariants hQ).rank = 2 := by simp
-    simp only [realHasse_def, realNegativeIndex_def, hn, hnr] at hhasse hdisc
+    have hzero : (Q.globalInvariants hQ).realPositiveIndex w = 0 ↔
+        I.realPositiveIndex w = 0 := by
+      rw [← realHasse_ne_one_iff_realPositiveIndex_eq_zero_of_rank_eq_two _ hnr w,
+        ← realHasse_ne_one_iff_realPositiveIndex_eq_zero_of_rank_eq_two _ hn w, hhasse]
+    simp only [realNegativeIndex_def, hn, hnr] at hdisc
     -- In rank two the Hasse sign separates index zero, and the discriminant separates one and two.
     interval_cases I.realPositiveIndex w <;>
       interval_cases (Q.globalInvariants hQ).realPositiveIndex w <;> solve
       | rfl
-      | norm_num at hhasse
+      | norm_num at hzero
       | norm_num [← squareClass_pow, eq_comm] at hdisc
 
 /-- In rank two, admissibility is equivalent to global realization with the prescribed local
