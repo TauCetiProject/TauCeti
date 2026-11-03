@@ -204,6 +204,7 @@ lemma homotopyLimitMapOfHomotopies_comp_fst
 
 /-- In relative coordinates, the second component contains the specified adjacent-square
 homotopy evaluated on the next level of the first component. -/
+@[simp↓]
 lemma relativeCoordinates_homotopyLimitMapOfHomotopies
     (f : ∀ n, (ev n).obj K ⟶ (ev n).obj L)
     (h : ∀ n, Homotopy ((tr n).app K ≫ f n) (f (n + 1) ≫ (tr n).app L))
