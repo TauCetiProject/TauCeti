@@ -26,7 +26,7 @@ restricted to `a ∣ m`, as a sum over the divisors of `gcd(m, n)`.
 integers.
 
 `Nat.sum_divisorsAntidiagonal_filter_sub` evaluates differences over the factor pairs with
-strictly increasing factors. `Nat.injOn_add_divisorsAntidiagonal` and
+strictly increasing factors. `Nat.injOn_add_divisorsAntidiagonal_filter_lt` and
 `Int.isSquare_sq_sub_four_mul_iff_exists_mem_divisorsAntidiagonal` identify those factor pairs
 by their sum and by a positive square discriminant.
 
@@ -113,12 +113,12 @@ theorem sum_divisorsAntidiagonal_filter_sub {A : Type*} [AddCommGroup A]
   · simp [h, min_eq_right (by omega : p.2 ≤ p.1)]
 
 /-- A factor pair with strictly increasing factors is determined by its sum. -/
-theorem injOn_add_divisorsAntidiagonal (n : ℕ) :
+theorem injOn_add_divisorsAntidiagonal_filter_lt (n : ℕ) :
     Set.InjOn (fun p : ℕ × ℕ ↦ p.1 + p.2)
-      {p | p ∈ n.divisorsAntidiagonal ∧ p.1 < p.2} := by
+      ↑(n.divisorsAntidiagonal.filter (fun p ↦ p.1 < p.2)) := by
   intro p hp q hq hsum
-  obtain ⟨hp, hplt⟩ := hp
-  obtain ⟨hq, hqlt⟩ := hq
+  obtain ⟨hp, hplt⟩ := Finset.mem_filter.mp hp
+  obtain ⟨hq, hqlt⟩ := Finset.mem_filter.mp hq
   dsimp only at hsum
   have hmul : (p.1 : ℤ) * p.2 = (q.1 : ℤ) * q.2 := by
     exact_mod_cast (mem_divisorsAntidiagonal.mp hp).1.trans
@@ -166,18 +166,10 @@ theorem isSquare_sq_sub_four_mul_iff_exists_mem_divisorsAntidiagonal
     have hu' : t ^ 2 - 4 * (n : ℤ) = |u| ^ 2 := by nlinarith [sq_abs u]
     -- The trace and the square root have the same parity, so both roots are integral.
     have hpar : (|t| - |u|) % 2 = 0 := by
-      have hmod := congrArg (fun x : ℤ ↦ x % 2) hu'
-      have htmod : t % 2 = 0 ∨ t % 2 = 1 := by omega
-      have humod : |u| % 2 = 0 ∨ |u| % 2 = 1 := by omega
-      simp only [pow_two] at hmod
-      rw [Int.sub_emod, Int.mul_emod t t, Int.mul_emod 4 (n : ℤ),
-        Int.mul_emod |u| |u|] at hmod
-      have heq : t % 2 = |u| % 2 := by
-        rcases htmod with htmod | htmod <;> rcases humod with humod | humod <;>
-          norm_num [htmod, humod] at hmod <;> omega
-      rcases le_or_gt 0 t with ht | ht
-      · rw [abs_of_nonneg ht]; omega
-      · rw [abs_of_neg ht]; omega
+      have he : Even (|t| ^ 2 - |u| ^ 2) := ⟨2 * n, by nlinarith [sq_abs t]⟩
+      have heq : Even |t| ↔ Even |u| := by
+        simpa only [Int.even_pow' (by decide : (2 : ℕ) ≠ 0)] using Int.even_sub.mp he
+      exact Int.even_iff.mp (Int.even_sub.mpr heq)
     let a := (|t| - |u|) / 2
     let d := (|t| + |u|) / 2
     have hprod : (|t| - |u|) * (|t| + |u|) = 4 * n := by nlinarith [sq_abs t]

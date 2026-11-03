@@ -19,7 +19,8 @@ space `W_w`. For positive even `w` and `n > 0`, it is
 
 `σ_{w+1}(n) - ∑_{ad=n} min(a,d)^{w+1} - ∑_{t²≤4n} H(4n-t²) P_{w+2}(t,n)`.
 
-Here `P` is Mathlib's second-kind Dickson polynomial, and `H(0) = -1/12` absorbs the
+Here Popa–Zagier's `P_{w+2}(t,n)` is `(dickson 2 n w).eval t`, the degree-`w`
+second-kind Dickson polynomial evaluated at `t`. The convention `H(0) = -1/12` absorbs the
 repeated-root contribution. The trace is on `W_w`, not on cusp forms: the latter requires the
 Hecke-equivariant Eichler–Shimura comparison and subtraction of the Eisenstein eigenvalue,
 followed by division by two.
@@ -52,114 +53,171 @@ private lemma fibreWeight_cast (t n : ℤ) :
     fibreWeight t n = (∑ᶠ A : traceDetFiber (Fin 2) t n, PopaZagier.weight A.1 : ℤ) := by
   exact (map_finsum (Int.castAddHom ℚ) (PopaZagier.finite_support_weight_traceDetFiber t n)).symm
 
+private lemma fibreWeight_pair_of_sq_le (n : ℕ) (hn : 0 < n) (t : ℤ)
+    (hD : t ^ 2 ≤ 4 * n) :
+    fibreWeight t n + fibreWeight (-t) n =
+      -24 * hurwitzClassNumber (4 * n - t ^ 2).toNat := by
+  rcases hD.lt_or_eq with hD | hD
+  · have : NeZero (4 * (n : ℤ) - t ^ 2).toNat := ⟨by omega⟩
+    have heq : t ^ 2 - 4 * (n : ℤ) = -((4 * (n : ℤ) - t ^ 2).toNat : ℤ) := by omega
+    rw [fibreWeight, fibreWeight,
+      PopaZagier.finsum_weight_traceDetFiber_eq_neg_twelve_mul_hurwitzClassNumber heq,
+      PopaZagier.finsum_weight_traceDetFiber_eq_neg_twelve_mul_hurwitzClassNumber
+        (t := -t) (by nlinarith : (-t) ^ 2 - 4 * (n : ℤ) =
+          -((4 * (n : ℤ) - t ^ 2).toNat : ℤ))]
+    ring
+  · -- At the boundary the two fibre weights sum to 2 = -24 H(0).
+    have hnp : (0 : ℤ) < n := by exact_mod_cast hn
+    have ht : t ≠ 0 := by rintro rfl; omega
+    have hzero : 4 * (n : ℤ) - t ^ 2 = 0 := by omega
+    rw [fibreWeight_cast, fibreWeight_cast,
+      PopaZagier.finsum_weight_traceDetFiber_of_discrim_eq_zero hnp (by omega),
+      PopaZagier.finsum_weight_traceDetFiber_of_discrim_eq_zero hnp (by nlinarith), hzero]
+    by_cases htpos : 0 < t
+    · simp only [htpos, ite_true, Int.toNat_zero, hurwitzClassNumber_zero,
+        ite_eq_right (by omega : ¬0 < -t)]
+      norm_num
+    · simp only [htpos, ite_false, Int.toNat_zero, hurwitzClassNumber_zero,
+        ite_eq_left (by omega : 0 < -t)]
+      norm_num
+
+private lemma fibreWeight_pair_of_factorPair (n : ℕ) (hn : 0 < n) (p : ℕ × ℕ)
+    (hp : p ∈ n.divisorsAntidiagonal) (hlt : p.1 < p.2) :
+    fibreWeight ((p.1 : ℤ) + p.2) n + fibreWeight (-((p.1 : ℤ) + p.2)) n =
+      12 * ((p.2 : ℚ) - p.1) := by
+  have hnp : (0 : ℤ) < n := by exact_mod_cast hn
+  obtain ⟨ha, hd, hmul⟩ := Int.pos_pos_mul_eq_of_mem_divisorsAntidiagonal_toNat
+    (n := (n : ℤ)) (by simpa only [Int.toNat_natCast] using hp)
+  have hspos : (0 : ℤ) < (p.1 : ℤ) + p.2 := by omega
+  have hdisc : ((p.1 : ℤ) + p.2) ^ 2 - 4 * n = ((p.2 : ℤ) - p.1) ^ 2 := by nlinarith
+  rw [fibreWeight_cast, fibreWeight_cast,
+    PopaZagier.finsum_weight_traceDetFiber_of_discrim_eq_sq hnp (by omega) hdisc,
+    PopaZagier.finsum_weight_traceDetFiber_of_discrim_eq_sq hnp (by omega)
+      (u := (p.2 : ℤ) - p.1) (t := -((p.1 : ℤ) + p.2)) (by nlinarith)]
+  simp [hspos]
+
+private lemma fibreWeight_pair_of_not_isSquare (n : ℕ) (t : ℤ)
+    (hD : 4 * (n : ℤ) < t ^ 2) (hnsq : ¬IsSquare (t ^ 2 - 4 * (n : ℤ))) :
+    fibreWeight t n + fibreWeight (-t) n = 0 := by
+  rw [fibreWeight_cast, fibreWeight_cast,
+    PopaZagier.finsum_weight_traceDetFiber_of_not_isSquare (by omega) hnsq,
+    PopaZagier.finsum_weight_traceDetFiber_of_not_isSquare (by nlinarith)
+      (by simpa using hnsq)]
+  norm_num
+
+private lemma fibreWeight_pair_eq_sum_of_factorPair (n : ℕ) (hn : 0 < n) (t : ℤ)
+    (p : ℕ × ℕ) (hp : p ∈ n.divisorsAntidiagonal.filter (fun p ↦ p.1 < p.2))
+    (ht : t = (p.1 : ℤ) + p.2 ∨ -t = (p.1 : ℤ) + p.2) :
+    fibreWeight t n + fibreWeight (-t) n =
+      12 * ∑ q ∈ n.divisorsAntidiagonal with q.1 < q.2,
+        if t = (q.1 : ℤ) + q.2 ∨ -t = (q.1 : ℤ) + q.2 then (q.2 : ℚ) - q.1 else 0 := by
+  classical
+  -- The increasing factor pair with this absolute trace is unique.
+  rw [Finset.sum_eq_single p]
+  · rw [ite_eq_left ht]
+    obtain ⟨hpmem, hlt⟩ := Finset.mem_filter.mp hp
+    have heval := fibreWeight_pair_of_factorPair n hn p hpmem hlt
+    rcases ht with ht | ht
+    · simpa only [ht] using heval
+    · have ht' : t = -((p.1 : ℤ) + p.2) := by omega
+      simpa only [ht', neg_neg, add_comm] using heval
+  · intro q hq hqp
+    apply ite_eq_right
+    intro hqt
+    have hplt := (Finset.mem_filter.mp hp).2
+    have hqlt := (Finset.mem_filter.mp hq).2
+    apply hqp
+    apply Nat.injOn_add_divisorsAntidiagonal_filter_lt n hq hp
+    dsimp only
+    rcases ht with ht | ht <;> rcases hqt with hqt | hqt <;> omega
+  · exact fun h ↦ (h hp).elim
+
 private lemma fibreWeight_pair (n : ℕ) (hn : 0 < n) (t : ℤ) :
     fibreWeight t n + fibreWeight (-t) n =
       -24 * (if t ^ 2 ≤ 4 * n then hurwitzClassNumber (4 * n - t ^ 2).toNat else 0) +
       12 * ∑ p ∈ n.divisorsAntidiagonal with p.1 < p.2,
         if t = (p.1 : ℤ) + p.2 ∨ -t = (p.1 : ℤ) + p.2 then (p.2 : ℚ) - p.1 else 0 := by
   classical
-  have hnp : (0 : ℤ) < n := by exact_mod_cast hn
-  let s := n.divisorsAntidiagonal.filter (fun p ↦ p.1 < p.2)
-  have hpair (p : ℕ × ℕ) (hp : p ∈ s) :
-      4 * (n : ℤ) < ((p.1 : ℤ) + p.2) ^ 2 := by
-    obtain ⟨hp, hlt⟩ := Finset.mem_filter.mp hp
-    have hmul : (p.1 : ℤ) * p.2 = n := by
-      exact_mod_cast (Nat.mem_divisorsAntidiagonal.mp hp).1
-    nlinarith [sq_pos_of_pos (show (0 : ℤ) < (p.2 : ℤ) - p.1 by omega)]
-  -- In the elliptic range no positive unequal factor pair can have trace ±t.
+  set s := n.divisorsAntidiagonal.filter (fun p ↦ p.1 < p.2) with hs
+  -- In the elliptic range no increasing factor pair can have trace ±t.
   by_cases hD : t ^ 2 ≤ 4 * n
   · have hz : ∑ p ∈ s,
         (if t = (p.1 : ℤ) + p.2 ∨ -t = (p.1 : ℤ) + p.2 then (p.2 : ℚ) - p.1 else 0) = 0 := by
       apply Finset.sum_eq_zero
       intro p hp
-      have := hpair p hp
-      split_ifs with ht
-      · rcases ht with ht | ht <;> nlinarith
-      · rfl
-    rw [show (n.divisorsAntidiagonal.filter (fun p ↦ p.1 < p.2)) = s from rfl, hz,
-      ite_eq_left hD, mul_zero, add_zero]
-    rcases hD.lt_or_eq with hD | hD
-    · have : NeZero (4 * (n : ℤ) - t ^ 2).toNat := ⟨by omega⟩
-      have heq : t ^ 2 - 4 * (n : ℤ) = -((4 * (n : ℤ) - t ^ 2).toNat : ℤ) := by omega
-      rw [fibreWeight, fibreWeight,
-        PopaZagier.finsum_weight_traceDetFiber_eq_neg_twelve_mul_hurwitzClassNumber heq,
-        PopaZagier.finsum_weight_traceDetFiber_eq_neg_twelve_mul_hurwitzClassNumber
-          (t := -t) (by nlinarith : (-t) ^ 2 - 4 * (n : ℤ) =
-            -((4 * (n : ℤ) - t ^ 2).toNat : ℤ))]
-      ring
-    · -- At the boundary the two fibre weights sum to 2 = -24 H(0).
-      have ht : t ≠ 0 := by rintro rfl; omega
-      rw [fibreWeight_cast, fibreWeight_cast,
-        PopaZagier.finsum_weight_traceDetFiber_of_discrim_eq_zero hnp (by omega),
-        PopaZagier.finsum_weight_traceDetFiber_of_discrim_eq_zero hnp (by nlinarith)]
-      rw [show 4 * (n : ℤ) - t ^ 2 = 0 by omega]
-      simp only [Int.toNat_zero, hurwitzClassNumber_zero]
-      split_ifs <;> norm_num at * <;> omega
+      obtain ⟨hpmem, hlt⟩ := Finset.mem_filter.mp hp
+      have hmul := (Int.pos_pos_mul_eq_of_mem_divisorsAntidiagonal_toNat
+        (n := (n : ℤ)) (by simpa only [Int.toNat_natCast] using hpmem)).2.2
+      apply ite_eq_right
+      intro ht
+      have hdiff : (0 : ℤ) < (p.2 : ℤ) - p.1 := by omega
+      rcases ht with ht | ht <;> nlinarith [sq_pos_of_pos hdiff]
+    rw [hz, ite_eq_left hD, mul_zero, add_zero]
+    exact fibreWeight_pair_of_sq_le n hn t hD
   · rw [ite_eq_right hD, mul_zero, zero_add]
-    -- A split hyperbolic pair is unique; its weight is twelve times the root difference.
+    -- Split traces have one increasing factor pair; nonsplit traces have none.
     by_cases hex : ∃ p ∈ s, t = (p.1 : ℤ) + p.2 ∨ -t = (p.1 : ℤ) + p.2
     · obtain ⟨p, hp, ht⟩ := hex
-      obtain ⟨hpmem, hlt⟩ := Finset.mem_filter.mp hp
-      obtain ⟨hmul, _⟩ := Nat.mem_divisorsAntidiagonal.mp hpmem
-      have ha : 0 < p.1 := Nat.pos_of_ne_zero (by intro h; simp [h] at hmul; omega)
-      have hd : 0 < p.2 := by omega
-      have hsum : ∑ q ∈ s,
-          (if t = (q.1 : ℤ) + q.2 ∨ -t = (q.1 : ℤ) + q.2 then (q.2 : ℚ) - q.1 else 0) =
-            (p.2 : ℚ) - p.1 := by
-        rw [Finset.sum_eq_single p]
-        · exact ite_eq_left ht
-        · intro q hq hqp
-          apply ite_eq_right
-          intro hqt
-          obtain ⟨hqmem, hq'⟩ := Finset.mem_filter.mp hq
-          have hp0 : (0 : ℤ) < (p.1 : ℤ) + p.2 := by positivity
-          have hq0 : (0 : ℤ) < (q.1 : ℤ) + q.2 := by omega
-          rcases ht with ht | ht <;> rcases hqt with hqt | hqt
-          · exact hqp (Nat.injOn_add_divisorsAntidiagonal n ⟨hqmem, hq'⟩ ⟨hpmem, hlt⟩
-              (by dsimp only; omega))
-          · omega
-          · omega
-          · exact hqp (Nat.injOn_add_divisorsAntidiagonal n ⟨hqmem, hq'⟩ ⟨hpmem, hlt⟩
-              (by dsimp only; omega))
-        · exact fun h ↦ (h hp).elim
-      rw [show (n.divisorsAntidiagonal.filter (fun p ↦ p.1 < p.2)) = s from rfl, hsum]
-      have hspos : (0 : ℤ) < (p.1 : ℤ) + p.2 := by positivity
-      have hdisc : ((p.1 : ℤ) + p.2) ^ 2 - 4 * n = ((p.2 : ℤ) - p.1) ^ 2 := by
-        have : (p.1 : ℤ) * p.2 = n := by exact_mod_cast hmul
-        nlinarith
-      have heval : fibreWeight ((p.1 : ℤ) + p.2) n +
-          fibreWeight (-((p.1 : ℤ) + p.2)) n = 12 * ((p.2 : ℚ) - p.1) := by
-        rw [fibreWeight_cast, fibreWeight_cast,
-          PopaZagier.finsum_weight_traceDetFiber_of_discrim_eq_sq hnp (by omega) hdisc,
-          PopaZagier.finsum_weight_traceDetFiber_of_discrim_eq_sq hnp (by omega)
-            (u := (p.2 : ℤ) - p.1) (t := -((p.1 : ℤ) + p.2)) (by nlinarith)]
-        simp [hspos]
-      rcases ht with ht | ht
-      · simpa [ht] using heval
-      · have ht' : t = -((p.1 : ℤ) + p.2) := by omega
-        simpa [ht', add_comm] using heval
+      exact fibreWeight_pair_eq_sum_of_factorPair n hn t p hp ht
     · have hsum : ∑ p ∈ s,
           (if t = (p.1 : ℤ) + p.2 ∨ -t = (p.1 : ℤ) + p.2 then (p.2 : ℚ) - p.1 else 0) = 0 := by
         apply Finset.sum_eq_zero
         intro p hp
         exact ite_eq_right (fun ht ↦ hex ⟨p, hp, ht⟩)
-      rw [show (n.divisorsAntidiagonal.filter (fun p ↦ p.1 < p.2)) = s from rfl, hsum, mul_zero]
-      -- With no factor pair the discriminant is nonsquare, so both fibres vanish.
-      have hnsq : ¬IsSquare (t ^ 2 - 4 * (n : ℤ)) := by
-        intro hsquare
-        obtain ⟨p, hp, hlt, ht⟩ :=
-          (Int.isSquare_sq_sub_four_mul_iff_exists_mem_divisorsAntidiagonal n hn t
-            (by omega)).mp hsquare
-        apply hex
-        refine ⟨p, Finset.mem_filter.mpr ⟨hp, hlt⟩, ?_⟩
-        rcases le_or_gt 0 t with ht0 | ht0
-        · left; simpa only [abs_of_nonneg ht0] using ht
-        · right; simpa only [abs_of_neg ht0] using ht
-      rw [fibreWeight_cast, fibreWeight_cast,
-        PopaZagier.finsum_weight_traceDetFiber_of_not_isSquare (by omega) hnsq,
-        PopaZagier.finsum_weight_traceDetFiber_of_not_isSquare (by nlinarith)
-          (by simpa using hnsq)]
-      norm_num
+      rw [hsum, mul_zero]
+      apply fibreWeight_pair_of_not_isSquare n t (by omega)
+      intro hsquare
+      obtain ⟨p, hp, hlt, ht⟩ :=
+        (Int.isSquare_sq_sub_four_mul_iff_exists_mem_divisorsAntidiagonal n hn t
+          (by omega)).mp hsquare
+      apply hex
+      refine ⟨p, Finset.mem_filter.mpr ⟨hp, hlt⟩, ?_⟩
+      rcases le_or_gt 0 t with ht0 | ht0
+      · left; simpa only [abs_of_nonneg ht0] using ht
+      · right; simpa only [abs_of_neg ht0] using ht
+
+-- This is the split contribution in the paired-fibre formula, summed over its trace window.
+private lemma sum_split_trace_mul_dickson (n w : ℕ) (hw : Even w) (p : ℕ × ℕ)
+    (hp : p ∈ n.divisorsAntidiagonal.filter (fun p ↦ p.1 < p.2)) :
+    ∑ t ∈ Finset.Icc (-4 * (n : ℤ)) (4 * n),
+      (if t = (p.1 : ℤ) + p.2 ∨ -t = (p.1 : ℤ) + p.2 then (p.2 : ℚ) - p.1 else 0) *
+        (dickson 2 (n : ℚ) w).eval (t : ℚ) =
+      2 * ((p.2 : ℚ) ^ (w + 1) - (p.1 : ℚ) ^ (w + 1)) := by
+  classical
+  set I := Finset.Icc (-4 * (n : ℤ)) (4 * n)
+  let P (t : ℤ) : ℚ := (dickson 2 (n : ℚ) w).eval t
+  obtain ⟨hp, hlt⟩ := Finset.mem_filter.mp hp
+  obtain ⟨ha, hd, hm⟩ := Int.pos_pos_mul_eq_of_mem_divisorsAntidiagonal_toNat
+    (n := (n : ℤ)) (by simpa only [Int.toNat_natCast] using hp)
+  have hs : (0 : ℤ) < (p.1 : ℤ) + p.2 := by omega
+  have ha_le := Nat.divisor_le (Nat.fst_mem_divisors_of_mem_antidiagonal hp)
+  have hd_le := Nat.divisor_le (Nat.snd_mem_divisors_of_mem_antidiagonal hp)
+  have hmem : (p.1 : ℤ) + p.2 ∈ I := by simp only [I, Finset.mem_Icc]; omega
+  have hmem' : -((p.1 : ℤ) + p.2) ∈ I := by simp only [I, Finset.mem_Icc]; omega
+  -- The two traces are distinct, so the indicator splits without a trace-zero correction.
+  have hind (t : ℤ) :
+      (if t = (p.1 : ℤ) + p.2 ∨ -t = (p.1 : ℤ) + p.2 then (p.2 : ℚ) - p.1 else 0) * P t =
+        (if t = (p.1 : ℤ) + p.2 then ((p.2 : ℚ) - p.1) * P t else 0) +
+        (if t = -((p.1 : ℤ) + p.2) then ((p.2 : ℚ) - p.1) * P t else 0) := by
+    by_cases ht : t = (p.1 : ℤ) + p.2
+    · have hneg : t ≠ -((p.1 : ℤ) + p.2) := by omega
+      rw [ite_eq_left (Or.inl ht), ite_eq_left ht, ite_eq_right hneg, add_zero]
+    · by_cases htneg : t = -((p.1 : ℤ) + p.2)
+      · have heq : -t = (p.1 : ℤ) + p.2 := by omega
+        rw [ite_eq_left (Or.inr heq), ite_eq_right ht, ite_eq_left htneg, zero_add]
+      · have hne : -t ≠ (p.1 : ℤ) + p.2 := by omega
+        simp only [ht, htneg, hne, or_self, ite_false, zero_mul, add_zero]
+  rw [Finset.sum_congr rfl (fun t _ ↦ hind t), Finset.sum_add_distrib]
+  simp only [Finset.sum_ite_eq', hmem, hmem', ite_true]
+  have hPneg (t : ℤ) : P (-t) = P t := by
+    simpa only [P, Int.cast_neg] using dickson_eval_neg_of_even 2 (n : ℚ) (t : ℚ) hw
+  rw [hPneg]
+  have hm' : (p.2 : ℚ) * p.1 = n := by exact_mod_cast (mul_comm _ _).trans hm
+  have hroot := dickson_two_eval_add_mul_sub hm' w
+  have heval : P ((p.1 : ℤ) + p.2) = (dickson 2 (n : ℚ) w).eval ((p.2 : ℚ) + p.1) := by
+    simp [P, add_comm]
+  rw [heval]
+  linarith
 
 private lemma sum_fibreWeight (n : ℕ) (hn : 0 < n) (w : ℕ) (hw : Even w) :
     (12 : ℚ)⁻¹ * ∑ t ∈ Finset.Icc (-4 * (n : ℤ)) (4 * n),
@@ -172,8 +230,7 @@ private lemma sum_fibreWeight (n : ℕ) (hn : 0 < n) (w : ℕ) (hw : Even w) :
   let I := Finset.Icc (-4 * (n : ℤ)) (4 * n)
   let P (t : ℤ) : ℚ := (dickson 2 (n : ℚ) w).eval t
   have hPneg (t : ℤ) : P (-t) = P t := by
-    have h := dickson_sq_mul_eval_mul 2 (-1 : ℚ) (t : ℚ) n w
-    simpa [P, hw.neg_one_pow] using h
+    simpa only [P, Int.cast_neg] using dickson_eval_neg_of_even 2 (n : ℚ) (t : ℚ) hw
   let s := n.divisorsAntidiagonal.filter (fun p ↦ p.1 < p.2)
   have hneg : ∑ t ∈ I, fibreWeight (-t) n * P t = ∑ t ∈ I, fibreWeight t n * P t := by
     apply Finset.sum_bij (fun t _ ↦ -t)
@@ -181,36 +238,6 @@ private lemma sum_fibreWeight (n : ℕ) (hn : 0 < n) (w : ℕ) (hw : Even w) :
     · intro t _ u _ h; omega
     · intro t ht; exact ⟨-t, by simp only [I, Finset.mem_Icc] at ht ⊢; omega, neg_neg t⟩
     · intro t _; rw [hPneg]
-  -- Summing one factor pair over the two traces turns its Dickson value into a power difference.
-  have hp (p : ℕ × ℕ) (hp : p ∈ s) :
-      ∑ t ∈ I,
-        (if t = (p.1 : ℤ) + p.2 ∨ -t = (p.1 : ℤ) + p.2 then (p.2 : ℚ) - p.1 else 0) * P t =
-        2 * ((p.2 : ℚ) ^ (w + 1) - (p.1 : ℚ) ^ (w + 1)) := by
-    obtain ⟨hp, hlt⟩ := Finset.mem_filter.mp hp
-    have hm : p.1 * p.2 = n := (Nat.mem_divisorsAntidiagonal.mp hp).1
-    have ha : 0 < p.1 := Nat.pos_of_ne_zero (by intro h; simp [h] at hm; omega)
-    have hd : 0 < p.2 := by omega
-    have hs : (0 : ℤ) < (p.1 : ℤ) + p.2 := by positivity
-    have hbd : (p.1 : ℤ) + p.2 ≤ 4 * n := by
-      have hm' : (p.1 : ℤ) * p.2 = n := by exact_mod_cast hm
-      nlinarith [mul_nonneg (show (0 : ℤ) ≤ (p.1 : ℤ) - 1 by omega)
-        (show (0 : ℤ) ≤ (p.2 : ℤ) - 1 by omega)]
-    have hmem : (p.1 : ℤ) + p.2 ∈ I := by simp only [I, Finset.mem_Icc]; omega
-    have hmem' : -((p.1 : ℤ) + p.2) ∈ I := by simp only [I, Finset.mem_Icc]; omega
-    have hind (t : ℤ) :
-        (if t = (p.1 : ℤ) + p.2 ∨ -t = (p.1 : ℤ) + p.2 then (p.2 : ℚ) - p.1 else 0) * P t =
-          (if t = (p.1 : ℤ) + p.2 then ((p.2 : ℚ) - p.1) * P t else 0) +
-          (if t = -((p.1 : ℤ) + p.2) then ((p.2 : ℚ) - p.1) * P t else 0) := by
-      split_ifs <;> simp_all <;> omega
-    rw [Finset.sum_congr rfl (fun t _ ↦ hind t), Finset.sum_add_distrib]
-    simp only [Finset.sum_ite_eq', hmem, hmem', ite_true]
-    rw [hPneg]
-    have hroot := dickson_two_eval_add_mul_sub
-      (show (p.2 : ℚ) * p.1 = n by exact_mod_cast (mul_comm p.2 p.1).trans hm) w
-    have heval : P ((p.1 : ℤ) + p.2) = (dickson 2 (n : ℚ) w).eval ((p.2 : ℚ) + p.1) := by
-      simp [P, add_comm]
-    rw [heval]
-    linarith
   -- Sum the paired-fibre identity and exchange the two finite sums in the split part.
   have hsym := Finset.sum_congr rfl fun t (_ : t ∈ I) ↦
     congrArg (fun x : ℚ ↦ x * P t) (fibreWeight_pair n hn t)
@@ -220,7 +247,7 @@ private lemma sum_fibreWeight (n : ℕ) (hn : 0 < n) (w : ℕ) (hw : Even w) :
       (if t = (p.1 : ℤ) + p.2 ∨ -t = (p.1 : ℤ) + p.2 then (p.2 : ℚ) - p.1 else 0) * P t) =
       2 * ∑ p ∈ s, ((p.2 : ℚ) ^ (w + 1) - (p.1 : ℚ) ^ (w + 1)) := by
     rw [Finset.sum_comm, Finset.mul_sum]
-    exact Finset.sum_congr rfl hp
+    exact Finset.sum_congr rfl (fun p hp ↦ sum_split_trace_mul_dickson n w hw p hp)
   have hclass : (∑ t ∈ I, (if t ^ 2 ≤ 4 * n then
       hurwitzClassNumber (4 * (n : ℤ) - t ^ 2).toNat else 0) * P t) =
       ∑ t ∈ I.filter (fun t ↦ t ^ 2 ≤ 4 * (n : ℤ)),
@@ -249,9 +276,10 @@ private lemma sum_fibreWeight (n : ℕ) (hn : 0 < n) (w : ℕ) (hw : Even w) :
 
 /-- **The class-number trace formula on period polynomials.** For positive even degree `w`,
 Popa–Zagier's explicit Hecke element has trace `σ_{w+1}(n)` minus the divisor-minimum sum and
-the Hurwitz-class-number sum. The discriminant-zero terms use `H(0) = -1/12`. This is the trace
+the Hurwitz-class-number sum, whose weight `P_{w+2}(t,n)` in Popa–Zagier's indexing is
+`(dickson 2 n w).eval t`. The discriminant-zero terms use `H(0) = -1/12`. This is the trace
 on the full space `W_w`, before the Eichler–Shimura transfer to cusp forms. -/
-theorem trace_periodActionRestrict_popaZagierElement_eq_classNumber_sum
+theorem trace_periodActionRestrict_popaZagierElement_eq_sigma_sub_min_sub_hurwitzClassNumber
     {K : Type*} [Field K] [CharZero K] (n : ℕ) (hn : 0 < n)
     (w : ℕ) (hw : Even w) (hw₀ : w ≠ 0) :
     LinearMap.trace K (periodPolynomials K w)
