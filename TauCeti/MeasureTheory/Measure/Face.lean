@@ -42,7 +42,7 @@ theorem isExtreme_setOf_measure_eq_zero (C : Set (Measure α)) (t : Set α) :
   refine ⟨fun μ hμ => hμ.1, ?_⟩
   rintro μ₁ hμ₁ μ₂ _ μ ⟨-, hμ0⟩ ⟨a, b, ha, _, -, rfl⟩
   have h : a * μ₁ t + b * μ₂ t = 0 := by
-    simpa [Measure.add_apply, Measure.smul_apply] using hμ0
+    simpa [_root_.add_apply, _root_.smul_apply] using hμ0
   rw [add_eq_zero, mul_eq_zero, mul_eq_zero] at h
   exact ⟨hμ₁, h.1.resolve_left ha.ne'⟩
 
@@ -56,6 +56,6 @@ theorem extremePoints_setOf_measure_eq_zero (C : Set (Measure α)) (t : Set α) 
 theorem _root_.Convex.setOf_measure_eq_zero {C : Set (Measure α)} (hC : Convex ℝ≥0∞ C)
     (t : Set α) : Convex ℝ≥0∞ {μ ∈ C | μ t = 0} := by
   rintro μ₁ ⟨hμ₁, h₁⟩ μ₂ ⟨hμ₂, h₂⟩ a b ha hb hab
-  exact ⟨hC hμ₁ hμ₂ ha hb hab, by simp [Measure.add_apply, Measure.smul_apply, h₁, h₂]⟩
+  exact ⟨hC hμ₁ hμ₂ ha hb hab, by simp [_root_.add_apply, _root_.smul_apply, h₁, h₂]⟩
 
 end TauCeti.MeasureTheory

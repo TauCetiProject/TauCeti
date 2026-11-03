@@ -100,4 +100,5 @@ Jacobson radical. -/
 theorem IsAdicComplete.not_isUnit_of_mem [Nontrivial R] [IsAdicComplete I R] {x : R}
     (hx : x ∈ I) : ¬IsUnit x := fun h ↦
   bot_ne_top <| Ideal.jacobson_eq_top_iff.mp <|
-    Ideal.eq_top_of_isUnit_mem _ (IsAdicComplete.le_jacobson_bot I hx) h
+    Ideal.eq_top_of_isUnit_mem _ (by
+      simpa only [Ideal.jacobson_bot] using IsAdicComplete.le_jacobson I hx) h

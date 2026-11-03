@@ -53,12 +53,12 @@ theorem exists_common_density_sub {X ι : Type*} [TopologicalSpace X] [SigmaComp
   have := Fintype.ofFinite ι
   set ρ : Measure X := lam + ∑ i, (ν₁ i + ν₂ i) with hρ
   have hρc : IsFiniteMeasureOnCompacts ρ := ⟨fun K hK => by
-    simp only [hρ, Measure.coe_add, Measure.coe_finsetSum, Pi.add_apply, Finset.sum_apply]
+    simp only [hρ, FunLike.coe_add, FunLike.coe_sum, Pi.add_apply, Finset.sum_apply]
     exact ENNReal.add_lt_top.2 ⟨hK.measure_lt_top, ENNReal.sum_lt_top.2 fun i _ =>
       ENNReal.add_lt_top.2 ⟨hK.measure_lt_top, hK.measure_lt_top⟩⟩⟩
   -- Each `ν₁ i` and `ν₂ i` is dominated by `ρ`.
   have hac {i} {ν : Measure X} (hν : ν = ν₁ i ∨ ν = ν₂ i) : ν ≪ ρ := fun s hs => by
-    simp only [hρ, Measure.coe_add, Measure.coe_finsetSum, Pi.add_apply, Finset.sum_apply,
+    simp only [hρ, FunLike.coe_add, FunLike.coe_sum, Pi.add_apply, Finset.sum_apply,
       add_eq_zero, Finset.sum_eq_zero_iff, Finset.mem_univ, true_implies] at hs
     rcases hν with rfl | rfl
     exacts [(hs.2 i).1, (hs.2 i).2]

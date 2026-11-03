@@ -237,7 +237,7 @@ critical points of a map into such a space are the points where its derivative v
   simp only [mem_ofPred_eq, not_iff_comm]
   constructor
   · intro hx
-    exact surjective_of_nonzero_of_finrank_eq_one (f := (fderiv ℝ f x : E →ₗ[ℝ] F)) hF
+    exact _root_.surjective_of_ne_zero_of_finrank_eq_one (f := (fderiv ℝ f x : E →ₗ[ℝ] F)) hF
       fun hzero ↦ hx (ContinuousLinearMap.coe_injective hzero)
   · rintro hsurj h
     have h1 : iteratedFDeriv ℝ 1 f x = 0 := by
