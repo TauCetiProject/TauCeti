@@ -79,8 +79,6 @@ contradiction on an infinite reduction sequence is replaced by the well-founded 
 * `Ideal.exists_finset_eq_sum_mul_isRestricted_subring` and
   `Ideal.exists_finset_norm_eq_one_isRestricted_subring`: the same for Tate algebras over a
   complete nonarchimedean division ring, with generators of Gauss norm one at unit polyradius.
-* `TauCeti.MvPowerSeries.exists_isUnit_and_norm_eq`: at unit polyradius over a division ring,
-  the Gauss norm of a nonzero series is the norm of a unit, a constant series.
 * `TauCeti.MvPowerSeries.isNoetherianRing_isRestricted_subring_of_division`: restricted power
   series at arbitrary positive radii in finitely many variables over a complete ring with a
   multiplicative ultrametric norm and a compatible Euclidean degree form a left noetherian ring.
@@ -442,23 +440,6 @@ theorem _root_.Ideal.exists_finset_eq_sum_mul_isRestricted_subring
         y = ∑ x ∈ F, a x * x ∧ ∀ x ∈ F, ‖a x‖ * ‖x‖ ≤ ‖y‖ :=
   exists_finset_eq_sum_mul_isRestricted_subring_of_division (fun _ ↦ 0) (fun _ _ _ ↦ rfl)
     exists_eq_mul_add_of_divisionRing H
-
-omit [CompleteSpace K] [Finite σ] in
-/-- At unit polyradius over a division ring, the Gauss norm of a nonzero restricted series is the
-norm of a unit: the constant series at a coefficient of maximal norm. -/
-theorem exists_isUnit_and_norm_eq {f : IsRestricted.subring (R := K) (fun _ : σ ↦ 1)}
-    (hf : f ≠ 0) :
-    ∃ u : IsRestricted.subring (R := K) (fun _ : σ ↦ 1), IsUnit u ∧ ‖u‖ = ‖f‖ := by
-  obtain ⟨t, ht⟩ := exists_norm_coeff_eq_norm f
-  have hu : coeff t (f : MvPowerSeries σ K) ≠ 0 := by
-    rwa [← norm_pos_iff, ht, norm_pos_iff]
-  let C' := (C (σ := σ) (R := K)).codRestrict (IsRestricted.subring (R := K) (fun _ : σ ↦ 1))
-    (isRestricted_C _)
-  have hC' : C' (coeff t (f : MvPowerSeries σ K)) = ⟨C (coeff t (f : MvPowerSeries σ K)),
-      isRestricted_C _ _⟩ :=
-    Subtype.ext (RingHom.codRestrict_apply _ _ _ _)
-  refine ⟨C' (coeff t (f : MvPowerSeries σ K)), (Units.mk0 _ hu).isUnit.map C', ?_⟩
-  rw [hC', norm_C, ht]
 
 /-- **Strict generators of norm one.** Over a complete nonarchimedean division ring `K`, every
 left ideal `H` of the Tate algebra `K⟨X⟩` at unit polyradius in finitely many variables has a

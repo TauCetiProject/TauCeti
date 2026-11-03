@@ -73,9 +73,6 @@ private theorem linearCoeff_mul (a z : TY) (hz : constantCoeff (z : MvPowerSerie
 private theorem norm_linearCoeff_le [Fintype ι] (z : TY) : ‖linearCoeff z‖ ≤ ‖z‖ :=
   (pi_norm_le_iff_of_nonneg (norm_nonneg z)).mpr fun _ ↦ norm_coeff_le_norm z _
 
-private theorem norm_constantCoeff_le (z : TY) : ‖constantCoeff (z : MvPowerSeries ι T)‖ ≤ ‖z‖ := by
-  simpa [coeff_zero_eq_constantCoeff_apply] using norm_coeff_le_norm z 0
-
 /-- The series over `T` in the variables `Y` without constant term whose linear part
 `∑ᵢ xᵢ Yᵢ` has `x ∈ N`. -/
 private noncomputable def linearIdeal (N : Submodule T (ι → T)) : Ideal TY where

@@ -22,7 +22,8 @@ and the norm of every nonzero element of `N` is the norm of a unit of `A`, each 
 divided by such a unit. This gives a strict generating system of elements of norm one, with
 coefficients bounded by `‖y‖` (`Submodule.exists_finset_norm_eq_one_of_exists_finset_eq_sum_smul`).
 For ideals and submodules of finite free modules over a Tate algebra at unit polyradius the units
-are the nonzero constants, whose norms are all the values of the Gauss norm.
+used for this normalisation can be chosen to be nonzero constants, whose norms are all the values
+of the Gauss norm.
 -/
 
 public section
