@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.Normed.Field.UnitBall
 public import Mathlib.Geometry.Manifold.Instances.Sphere
 public import TauCeti.LowDimTopology.SeifertFibration
+public import TauCeti.Topology.Category.TopCat.DisjointOpens
 
 import Mathlib.Analysis.Calculus.ContDiff.Deriv
 import Mathlib.Analysis.Calculus.Deriv.Shift
@@ -48,6 +49,8 @@ onto the normal plane, and `n₂ z` is the cross product of the unit tangent wit
 
 ## Main results
 
+* `TauCeti.SolidTorus.extendsDisjointOpens_boundaryInclusion`: the inclusion of the boundary torus
+  into the solid torus extends disjoint open sets, through open collars.
 * `TauCeti.IsSolidTorusNeighborhood.frontier_image`: the frontier of the image of the open solid
   torus, which is also the frontier of the knot exterior, is the image of the boundary torus
   when the ambient space is Hausdorff.
@@ -102,6 +105,27 @@ theorem SolidTorus.boundaryInclusion_snd (q : Circle × Circle) :
 theorem SolidTorus.isEmbedding_boundaryInclusion : IsEmbedding SolidTorus.boundaryInclusion :=
   (IsEmbedding.subtypeVal.codRestrict (closedBall (0 : ℂ) 1)
     fun z : Circle => mem_closedBall_zero_iff.mpr (Circle.norm_coe z).le).prodMap IsEmbedding.id
+
+/-- The inclusion of the boundary torus into the solid torus extends disjoint open sets: an open
+subset `U` of `S¹ × S¹` is the trace of the open collar of points `(w, z)` with `1 / 2 < ‖w‖` and
+`(w / ‖w‖, z) ∈ U`, and the collars over disjoint sets are disjoint
+(`TauCeti.TopCat.extendsDisjointOpens_of_continuousOn` with the radial projection). -/
+theorem SolidTorus.extendsDisjointOpens_boundaryInclusion :
+    TopCat.extendsDisjointOpens (TopCat.ofHom
+      ⟨SolidTorus.boundaryInclusion, SolidTorus.isEmbedding_boundaryInclusion.continuous⟩) := by
+  have hw : Continuous fun p : SolidTorus ↦ (p.1 : ℂ) := continuous_subtype_val.comp continuous_fst
+  refine TopCat.extendsDisjointOpens_of_continuousOn _
+    (μ := fun q : Circle × Circle ↦ ((q.1 : ℂ), q.2)) (IsInducing.subtypeVal.prodMap .id)
+    (N := {p | 1 / 2 < ‖(p.1 : ℂ)‖}) (ρ := fun p ↦ (‖(p.1 : ℂ)‖⁻¹ • (p.1 : ℂ), p.2))
+    (isOpen_lt continuous_const hw.norm)
+    (((ContinuousOn.inv₀ hw.norm.continuousOn fun p hp ↦ (lt_trans (by norm_num) hp).ne').smul
+      hw.continuousOn).prodMk continuous_snd.continuousOn) (fun q ↦ ?_) (fun p hp ↦ ?_)
+    (fun q ↦ ?_)
+  · simp [show (2⁻¹ : ℝ) < 1 by norm_num]
+  · have h₁ : ‖‖(p.1 : ℂ)‖⁻¹ • (p.1 : ℂ)‖ = 1 :=
+      norm_smul_inv_norm (𝕜 := ℝ) (norm_pos_iff.1 (lt_trans (by norm_num) hp))
+    exact ⟨(⟨_, mem_sphere_zero_iff_norm.2 h₁⟩, p.2), rfl⟩
+  · simp
 
 /-- The boundary torus is the set of points `(w, z)` of the solid torus with `‖w‖ = 1`. -/
 theorem SolidTorus.range_boundaryInclusion :

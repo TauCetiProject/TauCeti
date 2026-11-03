@@ -52,6 +52,8 @@ the action formula `AbsolutelyContinuousOnInterval.tendsto_lintegral_edist_div_r
   constant interpolants with bounded discrete `p`-actions is absolutely continuous.
 * `TauCeti.curveAction_le_liminf_sum_edist_rpow`: its `p`-action is at most the lower limit of
   the discrete `p`-actions.
+* `TauCeti.curveAction_div_two_le_liminf_sum_edist_sq_div`: half its quadratic action is at
+  most the lower limit of the accumulated squared-distance penalties.
 
 ## References
 
@@ -380,6 +382,34 @@ theorem curveAction_le_liminf_sum_edist_rpow [PseudoMetricSpace Y] [l.IsCountabl
   refine le_of_tendsto (hac.tendsto_lintegral_edist_div_rpow hp.le hT) ?_
   filter_upwards [self_mem_nhdsWithin] with h (hh : 0 < h)
   exact lintegral_edist_div_rpow_le_liminf hp.le hτ hτ0 hu hh
+
+/-- **Action bound by accumulated penalties.** Along eventually positive time steps tending
+to zero, half the quadratic action of a limit curve is bounded by the lower limit of the
+accumulated penalties of the piecewise constant interpolants. Only the lower-limit bound
+on pairwise distances is required, not the minimizing movement property. -/
+theorem curveAction_div_two_le_liminf_sum_edist_sq_div [PseudoMetricSpace Y]
+    [l.IsCountablyGenerated]
+    (hτ : ∀ᶠ i in l, 0 < τ i) (hτ0 : Tendsto τ l (𝓝 0)) (hT : 0 ≤ T)
+    (hu : ∀ s ∈ Icc 0 T, ∀ t ∈ Icc 0 T,
+      edist (u s) (u t) ≤ liminf (fun i ↦ edist (U i ⌈s / τ i⌉₊) (U i ⌈t / τ i⌉₊)) l) :
+    curveAction 2 u 0 T / 2 ≤ liminf (fun i ↦ ∑ n ∈ Finset.range ⌈T / τ i⌉₊,
+      edist (U i n) (U i (n + 1)) ^ 2 / (2 * τ i)) l := by
+  rcases l.eq_or_neBot with rfl | _
+  · simp
+  have h := curveAction_le_liminf_sum_edist_rpow one_lt_two hτ hτ0 hT hu
+  simp only [ENNReal.rpow_two, (by norm_num : (2 : ℝ) - 1 = 1), ENNReal.rpow_one] at h
+  calc curveAction 2 u 0 T / 2
+      ≤ (liminf (fun i ↦ ∑ n ∈ Finset.range ⌈T / τ i⌉₊,
+          edist (U i n) (U i (n + 1)) ^ 2 / (τ i : ℝ≥0∞)) l) / 2 := by gcongr
+    _ = _ := by
+      simp only [div_eq_mul_inv]
+      rw [mul_comm _ (2⁻¹),
+        ← ENNReal.liminf_mul_const_of_ne_top (by norm_num : (2 : ℝ≥0∞)⁻¹ ≠ ∞)]
+      congr 1
+      funext i
+      simp only [Finset.sum_mul, ENNReal.mul_inv (a := 2) (b := (τ i : ℝ≥0∞))
+        (Or.inl two_ne_zero) (Or.inl ENNReal.ofNat_ne_top)]
+      exact Finset.sum_congr rfl fun _ _ ↦ by simp [mul_assoc, mul_left_comm, mul_comm]
 
 end WeakPseudoEMetricSpace
 

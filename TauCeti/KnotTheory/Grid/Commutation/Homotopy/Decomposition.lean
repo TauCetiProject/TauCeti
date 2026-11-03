@@ -454,6 +454,29 @@ theorem cutColumn_X_mem_toGridRectangle_coveredSquares {x y : GridState n}
   | inl P => exact G.column_mem_toGridRectangle_coveredSquares P C.X_column_below
   | inr P => exact G.next_mem_toGridRectangle_coveredSquares P C.X_next_above
 
+/-- A commutation hexagon is counted exactly when its underlying rectangle is empty and carries
+exactly one `X`-marking, that of the column the hexagon cuts away. -/
+theorem mem_commutationHexagons_iff_XSet_inter_eq {x y : GridState n}
+    (P : GridCommutationHexagonBetween C.column C.turnRow C.oppositeTurnRow x y) :
+    P ∈ G.commutationHexagons C x y ↔
+      P.toGridRectangleBetween.IsEmpty ∧
+        G.XSet ∩ P.toGridRectangleBetween.toGridRectangle.coveredSquares =
+          {(P.cutColumn, G.X P.cutColumn)} := by
+  refine ⟨fun hP => ⟨((G.mem_commutationHexagons C P).mp hP).1,
+    G.XSet_inter_coveredSquares_of_mem_commutationHexagons C hP⟩,
+    fun ⟨hempty, hinter⟩ => (G.mem_commutationHexagons C P).mpr
+      ⟨hempty, Finset.disjoint_left.mpr fun {p} hp hX => ?_⟩⟩
+  obtain ⟨d, r⟩ := p
+  -- A covered square lies outside both columns next to the replaced line, so in the rectangle.
+  have hda : d ≠ C.column := fun h => P.mk_notMem_coveredSquares_left_column r (h ▸ hp)
+  have hdb : d ≠ b := fun h => P.mk_notMem_coveredSquares_right_column r (h ▸ hp)
+  have hmem := Finset.mem_inter.mpr ⟨hX, (P.mem_coveredSquares_iff_of_ne hda hdb).mp hp⟩
+  rw [hinter, Finset.mem_singleton] at hmem
+  have hcol : d = P.cutColumn := (Prod.mk.inj hmem).1
+  cases P with
+  | inl P => exact hda (by rwa [GridCommutationHexagonBetween.cutColumn_inl] at hcol)
+  | inr P => exact hdb (by rwa [GridCommutationHexagonBetween.cutColumn_inr] at hcol)
+
 /-- The counted commutation pentagons of either turn-side kind. -/
 noncomputable def commutationPentagons (x y : GridState n) :
     Finset (GridCommutationPentagonBetween C.column C.turnRow x y) :=

@@ -76,10 +76,7 @@ theorem tilted_mul_eval_inter_preimage (hW : IsFilteredPreBrownianReal ℱ W P) 
   have hAB : MeasurableSet (A ∩ X ⁻¹' B) :=
     (ℱ.le t _ (ℱ.mono hst _ hA)).inter (hB.preimage (hX.mono (ℱ.le t) le_rfl))
   rw [hprod, integral_indicator hAB, integral_indicator (ℱ.le s _ hA)] at hfactor
-  have hlaw : HasLaw X (gaussianReal 0 (t - s)) P := by
-    convert (hW.shift s).hasLaw_eval (t - s) using 1
-    ext ω
-    simp [X, add_tsub_cancel_of_le hst]
+  have hlaw : HasLaw X (gaussianReal 0 (t - s)) P := hW.hasLaw_sub_of_le hst
   have hgint : ∫ ω, (g ∘ X) ω ∂P =
       (gaussianReal (θ * ((t : ℝ) - s)) (t - s)).real B := by
     rw [hlaw.integral_comp hg.aestronglyMeasurable, integral_indicator hB]

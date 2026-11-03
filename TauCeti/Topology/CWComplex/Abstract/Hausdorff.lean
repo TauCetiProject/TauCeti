@@ -61,7 +61,8 @@ namespace TauCeti.TopCat
 
 /-- The inclusion `∂𝔻 n ⟶ 𝔻 n` of the boundary sphere of the disk extends disjoint open sets: an
 open subset `U` of the sphere is the trace of the open cone `{x | 1 / 2 < ‖x‖ ∧ x / ‖x‖ ∈ U}`,
-and the cones over disjoint sets are disjoint. -/
+and the cones over disjoint sets are disjoint (`TauCeti.TopCat.extendsDisjointOpens_of_continuousOn`
+with the radial projection). -/
 theorem extendsDisjointOpens_diskBoundaryInclusion (n : ℕ) :
     extendsDisjointOpens (TopCat.diskBoundaryInclusion.{u} n) := by
   -- The points of the disk and of its boundary as vectors of `E`. The carriers of `TopCat.disk n`
@@ -78,34 +79,17 @@ theorem extendsDisjointOpens_diskBoundaryInclusion (n : ℕ) :
     coe_diskBoundaryInclusion_apply_down n s
   have hμ₁ (s : TopCat.diskBoundary.{u} n) : ‖μ s‖ = 1 := mem_sphere_zero_iff_norm.1
     (s : ULift.{u} (Metric.sphere (0 : EuclideanSpace ℝ (Fin n)) 1)).down.2
-  -- The radial projection, continuous away from the centre.
-  let N : Set (TopCat.disk.{u} n) := {z | 1 / 2 < ‖ν z‖}
-  have hN : IsOpen N :=
-    isOpen_lt continuous_const (continuous_subtype_val.comp continuous_uliftDown).norm
-  have hρ : ContinuousOn (fun z ↦ ‖ν z‖⁻¹ • ν z) N := by
-    have hν : Continuous ν := continuous_subtype_val.comp continuous_uliftDown
-    refine (ContinuousOn.inv₀ hν.norm.continuousOn fun z hz ↦ ?_).smul hν.continuousOn
-    exact (lt_trans (by norm_num) hz).ne'
-  -- An open subset `U` of the sphere extends to an open cone whose points project into `U`.
-  have cone (U : Set (TopCat.diskBoundary.{u} n)) (hU : IsOpen U) :
-      ∃ U' : Set (TopCat.disk.{u} n), IsOpen U' ∧ TopCat.diskBoundaryInclusion n ⁻¹' U' = U ∧
-        ∀ z ∈ U', ∃ s ∈ U, μ s = ‖ν z‖⁻¹ • ν z := by
-    obtain ⟨W, hW, rfl⟩ := hμ.isInducing.isOpen_iff.1 hU
-    refine ⟨N ∩ (fun z ↦ ‖ν z‖⁻¹ • ν z) ⁻¹' W, hρ.isOpen_inter_preimage hN hW, ?_, ?_⟩
-    · ext s
-      simp [N, hνμ, hμ₁, show (2 : ℝ)⁻¹ < 1 by norm_num]
-    · rintro z ⟨hz, hzW⟩
-      have h₁ : ‖‖ν z‖⁻¹ • ν z‖ = 1 := by
-        rw [norm_smul, norm_inv, norm_norm, inv_mul_cancel₀ (lt_trans (by norm_num) hz).ne']
-      exact ⟨ULift.up ⟨_, mem_sphere_zero_iff_norm.2 h₁⟩, hzW, rfl⟩
-  rw [extendsDisjointOpens_iff]
-  intro U V hU hV hUV
-  obtain ⟨U', hU', hU'U, hU'₁⟩ := cone U hU
-  obtain ⟨V', hV', hV'V, hV'₁⟩ := cone V hV
-  refine ⟨U', V', hU', hV', Set.disjoint_left.2 fun z hzU hzV ↦ ?_, hU'U, hV'V⟩
-  obtain ⟨s, hs, hsz⟩ := hU'₁ z hzU
-  obtain ⟨s', hs', hs'z⟩ := hV'₁ z hzV
-  exact Set.disjoint_left.1 hUV hs (hμ.injective (hsz.trans hs'z.symm) ▸ hs')
+  -- The radial projection, continuous away from the centre, retracts the disk onto the sphere.
+  have hν : Continuous ν := continuous_subtype_val.comp continuous_uliftDown
+  refine extendsDisjointOpens_of_continuousOn _ hμ.isInducing (N := {z | 1 / 2 < ‖ν z‖})
+    (ρ := fun z ↦ ‖ν z‖⁻¹ • ν z) (isOpen_lt continuous_const hν.norm)
+    ((ContinuousOn.inv₀ hν.norm.continuousOn fun z hz ↦ (lt_trans (by norm_num) hz).ne').smul
+      hν.continuousOn) (fun s ↦ ?_) (fun z hz ↦ ?_) (fun s ↦ ?_)
+  · simp [hνμ, hμ₁, show (2 : ℝ)⁻¹ < 1 by norm_num]
+  · have h₁ : ‖‖ν z‖⁻¹ • ν z‖ = 1 :=
+      norm_smul_inv_norm (𝕜 := ℝ) (norm_pos_iff.1 (lt_trans (by norm_num) hz))
+    exact ⟨ULift.up ⟨_, mem_sphere_zero_iff_norm.2 h₁⟩, rfl⟩
+  · simp [hνμ, hμ₁]
 
 end TauCeti.TopCat
 

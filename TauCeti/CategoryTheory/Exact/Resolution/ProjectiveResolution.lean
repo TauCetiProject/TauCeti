@@ -146,6 +146,12 @@ noncomputable def toProjectiveResolutionXIso {X : C}
     (r.toProjectiveResolution hP).complex.X n ≅ r.term n :=
   Iso.refl _
 
+/-- The projective resolution vanishes above the length of the finite resolution. -/
+theorem isZero_toProjectiveResolution_X_of_length_lt {X : C}
+    (r : (ExactStructure.abelian C).FiniteResolution P X) {n : ℕ} (hn : r.length < n) :
+    IsZero ((r.toProjectiveResolution hP).complex.X n) :=
+  (r.isZero_term_of_length_lt hn).of_iso (r.toProjectiveResolutionXIso hP n)
+
 /-- The differentials of the projective resolution are those of the finite resolution, through
 the identifications of the terms. -/
 @[simp]

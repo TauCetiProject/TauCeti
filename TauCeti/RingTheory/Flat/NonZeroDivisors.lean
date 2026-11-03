@@ -24,6 +24,8 @@ becomes a nonzerodivisor.
 * `Module.Flat.flat_iff_algebraMap_mem_nonZeroDivisors_of_isBezout`: over a Bezout domain, a
   commutative algebra is flat exactly when the structure map sends nonzero elements to
   nonzerodivisors.
+* `Module.Flat.of_algebraMap_injective_of_isBezout`: a domain is flat over a Bezout domain mapping
+  injectively into it.
 -/
 
 public section
@@ -50,5 +52,13 @@ theorem flat_iff_algebraMap_mem_nonZeroDivisors_of_isBezout [IsDomain R] [IsBezo
   rintro a ⟨⟨r, hr⟩, hra⟩
   rw [Submonoid.smul_def, Algebra.smul_def] at hra
   exact (h r (nonZeroDivisors.ne_zero hr)).2 a (by rw [mul_comm]; exact hra)
+
+omit [Flat R A] in
+/-- A domain is flat over a Bezout domain mapping injectively into it: over a Bezout domain,
+torsion-free modules are flat. -/
+theorem of_algebraMap_injective_of_isBezout [IsDomain R] [IsBezout R] [IsDomain A]
+    (h : Function.Injective (algebraMap R A)) : Flat R A := by
+  rwa [flat_iff_torsion_eq_bot_of_isBezout, ← Submodule.isTorsionFree_iff_torsion_eq_bot,
+    isTorsionFree_iff_algebraMap_injective]
 
 end Module.Flat

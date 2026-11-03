@@ -30,6 +30,9 @@ bigraded Ext Poincaré matrix is diagonal.
 
 * `TauCeti.GradedProjectiveResolution.IsMinimal.isLinear_iff_isDiagonal_bigradedExtPoincareSeries`:
   diagonal support of the bigraded Ext Poincaré series detects linearity.
+* `TauCeti.GradedProjectiveResolution.IsMinimal.coeff_bigradedExtPoincareSeries_eq_zero_of_lt`:
+  for a minimal resolution of a module starting in degree zero, the series has no coefficients
+  below the diagonal.
 * `TauCeti.forall_isLinear_iff_bigradedExtPoincareMatrix_isDiagonal`: simultaneous linearity of
   chosen minimal resolutions is equivalent to diagonal support of every matrix entry.
 * `TauCeti.forall_exists_isLinear_iff_bigradedExtPoincareMatrix_isDiagonal`: over a semisimple
@@ -93,6 +96,39 @@ theorem IsMinimal.isLinear_iff_isDiagonal_bigradedExtPoincareSeries (hr : r.IsMi
     rw [← GradedModuleCat.shiftFunctor_obj]
     exact (extLinearEquivOfIso k (Iso.refl M)
       ((GradedModuleCat.shiftPowIso 𝒜 j).app N) n).symm.injective.subsingleton
+
+/-- **The bigraded Ext Poincaré series of a minimally resolved module vanishes below a
+diagonal.** If `M` has no nonzero homogeneous elements below degree `c` and its minimal resolution
+has finite-dimensional terms, then the coefficient `dim_k Extᵐ(M,N{j})` vanishes for `j < c + m`
+whenever `N` is concentrated in degree zero. For `c = 0` there are no coefficients below the
+diagonal. -/
+theorem IsMinimal.coeff_bigradedExtPoincareSeries_eq_zero_of_lt (hr : r.IsMinimal) {c : ℤ}
+    (hM : ∀ p < c, M.grading.piece p = ⊥) {N : GradedModuleCat.{v} 𝒜}
+    (hN : ∀ q, q ≠ 0 → N.grading.piece q = ⊥)
+    (h : IsGradedExtInternallyFinite.{w} k (GradedModuleCat.shift 𝒜) M N) (b : ℕ) {m j : ℤ}
+    (hjm : j < c + m) :
+    (bigradedExtPoincareSeries.{w} k (GradedModuleCat.shift 𝒜) h b).coeff (m, j) = 0 := by
+  classical
+  cases m with
+  | negSucc n => exact coeff_bigradedExtPoincareSeries_negSucc _ _ h b n j
+  | ofNat n =>
+    rw [Int.ofNat_eq_natCast] at hjm ⊢
+    rw [coeff_bigradedExtPoincareSeries]
+    split_ifs
+    · choose lb hlb using fun n ↦ (r.grading n).finite_piece_ne_bot.bddBelow
+      have hshift : Subsingleton (Ext.{w} M (N.shiftObj j) n) :=
+        hr.subsingleton_ext_of_lt hM lb
+          (fun n p hp ↦ by
+            by_contra hne
+            have := hlb n hne
+            omega)
+          (p := j) (by omega) _ fun q hq ↦ by
+            simpa [sub_eq_add_neg] using hN (q - j) (sub_ne_zero.mpr hq)
+      rw [← GradedModuleCat.shiftFunctor_obj] at hshift
+      have := (extLinearEquivOfIso k (Iso.refl M)
+        ((GradedModuleCat.shiftPowIso 𝒜 j).app N) n).injective.subsingleton
+      exact Module.finrank_zero_of_subsingleton
+    · rfl
 
 end TauCeti.GradedProjectiveResolution
 

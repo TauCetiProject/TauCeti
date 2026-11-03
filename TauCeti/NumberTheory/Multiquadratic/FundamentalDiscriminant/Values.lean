@@ -16,8 +16,8 @@ The primitive character `fundamentalDiscriminantChar D hD` is the Kronecker char
 zero when `n` is not coprime to `D`. At even arguments the Jacobi symbol need not agree with the
 character.
 
-This file also identifies the characters of prime discriminants, including `-4`, `8`, and
-`-8`, and proves multiplicativity in coprime fundamental discriminants.
+This file also identifies the characters of prime discriminants, including `-4`, `-3`, `8`,
+and `-8`, and proves multiplicativity in coprime fundamental discriminants.
 
 For the classical Kronecker convention, see K. Ireland and M. Rosen, *A Classical Introduction
 to Modern Number Theory*, Chapter 6, and J. Voight, *Quaternion Algebras*, §24.3.3.
@@ -86,6 +86,13 @@ theorem fundamentalDiscriminantChar_neg_four (n : ℤ) :
       ZMod.χ₄ (n : ZMod 4) := by
   rw [fundamentalDiscriminantChar_apply_primeDiscriminant isPrimeDiscriminant_neg_four,
     primeDiscriminantCharFun_neg_four]
+
+/-- The character of `-3` is the Legendre symbol modulo `3` at every integer. -/
+@[simp↓ high]
+theorem fundamentalDiscriminantChar_neg_three (hD : Int.IsFundamentalDiscr (-3)) (n : ℤ) :
+    fundamentalDiscriminantChar (-3) hD n = legendreSym 3 n :=
+  have : Fact (Nat.Prime 3) := ⟨Nat.prime_three⟩
+  fundamentalDiscriminantChar_oddPrimeDiscriminant (p := 3) (by decide) n
 
 /-- The character of `8` is `χ₈` at every integer. -/
 @[simp↓ high]

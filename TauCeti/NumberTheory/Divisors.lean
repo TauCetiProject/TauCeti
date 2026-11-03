@@ -17,6 +17,11 @@ These lemmas evaluate the corresponding indicator sums over `N.divisors`.
 `Nat.sum_divisorsAntidiagonal_ite_dvd` regroups a sum over the factor pairs `(a, b)` of `n`,
 restricted to `a ∣ m`, as a sum over the divisors of `gcd(m, n)`.
 
+`Int.pos_pos_mul_eq_of_mem_divisorsAntidiagonal_toNat` and
+`Int.prodMk_toNat_mem_divisorsAntidiagonal_toNat` identify the pairs of
+`n.toNat.divisorsAntidiagonal`, for an integer `n`, with the factorisations of `n` into two positive
+integers.
+
 `TauCeti.nontrivialDivisorEquiv` identifies divisors greater than one with the subtype of
 `N.divisors` omitting the unit divisor.
 -/
@@ -86,6 +91,33 @@ theorem sum_divisorsAntidiagonal_ite_dvd {n : ℕ} (hn : n ≠ 0) (m : ℕ) (f :
   rw [Nat.div_mul_div_comm ha'.2 ha'.1, ← sq, mul_comm n m]
 
 end Nat
+
+namespace Int
+
+variable {n : ℤ}
+
+/-- The factors of a pair in `n.toNat.divisorsAntidiagonal` are positive integers with product
+`n`. -/
+theorem pos_pos_mul_eq_of_mem_divisorsAntidiagonal_toNat {p : ℕ × ℕ}
+    (hp : p ∈ n.toNat.divisorsAntidiagonal) :
+    0 < (p.1 : ℤ) ∧ 0 < (p.2 : ℤ) ∧ (p.1 : ℤ) * p.2 = n := by
+  obtain ⟨h, h0⟩ := Nat.mem_divisorsAntidiagonal.mp hp
+  obtain ⟨h1, h2⟩ := Nat.ne_zero_of_mem_divisorsAntidiagonal hp
+  refine ⟨by omega, by omega, ?_⟩
+  rw [← Nat.cast_mul, h]
+  omega
+
+/-- A factorisation `n = u v` into positive integers is the pair `(u.toNat, v.toNat)` of
+`n.toNat.divisorsAntidiagonal`. -/
+theorem prodMk_toNat_mem_divisorsAntidiagonal_toNat {u v : ℤ} (hu : 0 < u) (hv : 0 < v)
+    (h : u * v = n) : (u.toNat, v.toNat) ∈ n.toNat.divisorsAntidiagonal := by
+  have hn : 0 < n := h ▸ mul_pos hu hv
+  have h' : ((u.toNat * v.toNat : ℕ) : ℤ) = (n.toNat : ℤ) := by
+    push_cast
+    rw [Int.toNat_of_nonneg hu.le, Int.toNat_of_nonneg hv.le, Int.toNat_of_nonneg hn.le, h]
+  exact Nat.mem_divisorsAntidiagonal.mpr ⟨by exact_mod_cast h', by omega⟩
+
+end Int
 
 namespace TauCeti
 

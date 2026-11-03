@@ -252,6 +252,7 @@ theorem casimirScalar_eq_of_coeff_formalCharacter_mul_weylDenominator_ne_zero {c
       2 * (∑ i ∈ P, str i (chi + σ T) + ∑ i ∈ T, F i T) -
         casimirScalar b (-σ T) * m (chi + σ T) := fun T ↦ by
     have hfreud := freudenthal_multiplicity_formula hv hgen (chi + σ T)
+    rw [freudenthalRHS_def] at hfreud
     have htrans := casimirScalar_add_sub_casimirScalar (base := b) chi (σ T)
     have hsum : invForm (chi + σ T) (σ T) = ∑ i ∈ T, invForm (chi + σ T) ((i : Weight K H L) :
         Dual K H) := map_sum _ _ _
