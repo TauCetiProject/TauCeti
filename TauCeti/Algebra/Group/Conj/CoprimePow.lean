@@ -5,40 +5,28 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.GroupTheory.Exponent
 public import TauCeti.Algebra.Group.Conj
+public import TauCeti.Algebra.Group.Exponent
 
 /-!
 # Powers coprime to the exponent permute the conjugacy classes
 
 If `n` is coprime to the exponent of a monoid `M`, then `g ↦ g ^ n` has an inverse of the same
-form, since `n` is invertible modulo the exponent. Hence powering by `n` permutes the conjugacy
-classes of `M`. In a group this permutation also fixes the class sizes.
+form, since `n` is invertible modulo the exponent (`Monoid.exists_forall_pow_mul_eq_self`). Hence
+powering by `n` permutes the conjugacy classes of `M`. In a group this permutation also fixes the
+class sizes.
 
 These are the class permutations through which the Galois group of a cyclotomic field acts on the
 columns of a character table: see J.-P. Serre, *Linear Representations of Finite Groups*, §12.4.
 
 ## Main statements
 
-* `Monoid.exists_forall_pow_mul_eq_self`: an inverse of `n` modulo the exponent of `M`.
 * `ConjClasses.powEquiv`: the permutation `C ↦ C ^ n` of the conjugacy classes.
 * `ConjClasses.powEquiv_one`: this permutation fixes the class of the identity.
 * `ConjClasses.card_carrier_pow`: a power coprime to the exponent preserves class sizes.
 -/
 
 public section
-
-/-- A natural number coprime to the exponent of a monoid is invertible modulo the exponent, so
-that `g ^ (n * m) = g` for all `g`. -/
-theorem Monoid.exists_forall_pow_mul_eq_self {M : Type*} [Monoid M] {n : ℕ}
-    (hn : (Monoid.exponent M).Coprime n) : ∃ m : ℕ, ∀ g : M, g ^ (n * m) = g := by
-  by_cases he : Monoid.exponent M = 0
-  · rw [he, Nat.coprime_zero_left] at hn
-    exact ⟨1, by simp [hn]⟩
-  · obtain ⟨m, -, hm⟩ := Nat.exists_mul_mod_eq_of_coprime 1 hn.symm he
-    refine ⟨m, fun g ↦ ?_⟩
-    have hg := Monoid.pow_exponent_eq_one g
-    rw [pow_eq_pow_mod _ hg, hm, ← pow_eq_pow_mod _ hg, pow_one]
 
 namespace ConjClasses
 
