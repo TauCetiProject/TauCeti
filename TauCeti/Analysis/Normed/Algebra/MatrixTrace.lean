@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.InnerProductSpace.PiL2
 public import Mathlib.Analysis.Matrix.Normed
 public import Mathlib.LinearAlgebra.Matrix.Trace
+public import TauCeti.Analysis.Matrix.Frobenius
 
 /-!
 # Frobenius trace inequalities
@@ -70,5 +71,28 @@ theorem norm_trace_mul_self_le (A : Matrix m m 𝕜) :
   simpa only [Matrix.conjTranspose_conjTranspose, Matrix.frobenius_norm_conjTranspose,
     pow_two] using
     (norm_trace_conjTranspose_mul_le (A := Aᴴ) (B := A))
+
+/-- The first nontrivial dyadic trace-power inequality for Hermitian matrices. -/
+theorem norm_trace_mul_mul_sq_le (A B : Matrix m m 𝕜)
+    (hA : A.IsHermitian) (hB : B.IsHermitian) :
+    ‖((A * B) ^ 2).trace‖ ≤ ‖(A ^ 2 * B ^ 2).trace‖ := by
+  have htrace : (A ^ 2 * B ^ 2).trace = ((A * B)ᴴ * (A * B)).trace := by
+    rw [Matrix.conjTranspose_mul, hA.eq, hB.eq]
+    simp only [pow_two]
+    change ((A * A) * (B * B)).trace = ((B * A) * (A * B)).trace
+    calc
+      (A * A * (B * B)).trace = ((B * B) * (A * A)).trace :=
+        Matrix.trace_mul_comm _ _
+      _ = (B * (B * (A * A))).trace := by rw [Matrix.mul_assoc]
+      _ = ((B * (A * A)) * B).trace := Matrix.trace_mul_comm _ _
+      _ = ((B * A) * (A * B)).trace := by congr 1; noncomm_ring
+  have hnorm : ‖(A * B)‖ ^ 2 = ‖(A ^ 2 * B ^ 2).trace‖ := by
+    rw [htrace, ← Matrix.frobenius_inner_eq_trace_conjTranspose_mul]
+    rw [inner_self_eq_norm_sq_to_K]
+    simp
+  calc
+    ‖((A * B) ^ 2).trace‖ ≤ ‖A * B‖ ^ 2 := by
+      simpa only [pow_two] using norm_trace_mul_self_le (A * B)
+    _ = ‖(A ^ 2 * B ^ 2).trace‖ := hnorm
 
 end Matrix
