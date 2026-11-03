@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Combinatorics.Graph.Connectivity.Bond
 public import TauCeti.Combinatorics.Graph.Connectivity.Bridge.Basic
 public import TauCeti.Combinatorics.Graph.Isomorphism
 
@@ -35,110 +34,6 @@ variable {α : Type u} {β : Type v} {α' : Type u'} {β' : Type v'}
 variable {G : Graph α β} {H : Graph α' β'}
 
 namespace Iso
-
-/-- Transport a set of ambient vertices along a graph isomorphism, discarding points outside the
-actual vertex set. -/
-def mapVertexSet (f : Iso G H) (S : Set α) : Set α' :=
-  {y | ∃ hy : y ∈ V(H), (f.vertexEquiv.symm ⟨y, hy⟩ : G.vertexSet).1 ∈ S}
-
-/-- Transport a set of ambient edges along a graph isomorphism, discarding edges outside the
-actual edge set. -/
-def mapEdgeSet (f : Iso G H) (F : Set β) : Set β' :=
-  {e | ∃ he : e ∈ E(H), (f.edgeEquiv.symm ⟨e, he⟩ : G.edgeSet).1 ∈ F}
-
-/-- A transported vertex set contains only actual vertices of the target graph. -/
-theorem mapVertexSet_subset_vertexSet (f : Iso G H) (S : Set α) :
-    f.mapVertexSet S ⊆ V(H) := by
-  rintro y ⟨hy, -⟩
-  exact hy
-
-/-- A transported edge set contains only actual edges of the target graph. -/
-theorem mapEdgeSet_subset_edgeSet (f : Iso G H) (F : Set β) :
-    f.mapEdgeSet F ⊆ E(H) := by
-  rintro e ⟨he, -⟩
-  exact he
-
-/-- Membership of an actual target vertex in a transported set is membership of its inverse
-image in the original set. -/
-@[simp]
-theorem mem_mapVertexSet_iff (f : Iso G H) (S : Set α) (y : H.vertexSet) :
-    (y : α') ∈ f.mapVertexSet S ↔ (f.vertexEquiv.symm y : α) ∈ S := by
-  constructor
-  · rintro ⟨hy, h⟩
-    simpa only [Subtype.coe_eta] using h
-  · intro h
-    exact ⟨y.2, by simpa only [Subtype.coe_eta] using h⟩
-
-/-- Membership of an actual target edge in a transported set is membership of its inverse image
-in the original set. -/
-@[simp]
-theorem mem_mapEdgeSet_iff (f : Iso G H) (F : Set β) (e : H.edgeSet) :
-    (e : β') ∈ f.mapEdgeSet F ↔ (f.edgeEquiv.symm e : β) ∈ F := by
-  constructor
-  · rintro ⟨he, h⟩
-    simpa only [Subtype.coe_eta] using h
-  · intro h
-    exact ⟨e.2, by simpa only [Subtype.coe_eta] using h⟩
-
-/-- Vertex-set transport is monotone. -/
-theorem mapVertexSet_mono (f : Iso G H) {S T : Set α} (hST : S ⊆ T) :
-    f.mapVertexSet S ⊆ f.mapVertexSet T := by
-  rintro y ⟨hy, hS⟩
-  exact ⟨hy, hST hS⟩
-
-/-- Edge-set transport is monotone. -/
-theorem mapEdgeSet_mono (f : Iso G H) {F F' : Set β} (hFF' : F ⊆ F') :
-    f.mapEdgeSet F ⊆ f.mapEdgeSet F' := by
-  rintro e ⟨he, hF⟩
-  exact ⟨he, hFF' hF⟩
-
-/-- Transport along an isomorphism and its inverse recovers a set of actual vertices. -/
-@[simp]
-theorem symm_mapVertexSet_mapVertexSet (f : Iso G H) {S : Set α} (hS : S ⊆ V(G)) :
-    f.symm.mapVertexSet (f.mapVertexSet S) = S := by
-  ext x
-  by_cases hx : x ∈ V(G)
-  · let x' : G.vertexSet := ⟨x, hx⟩
-    have heq : f.symm.vertexEquiv.symm x' = f.vertexEquiv x' := by
-      apply f.symm.vertexEquiv.injective
-      simp
-    have hx' : (x' : α) = x := rfl
-    rw [← hx', f.symm.mem_mapVertexSet_iff, heq, f.mem_mapVertexSet_iff]
-    simp
-  · have hxS : x ∉ S := fun h ↦ hx (hS h)
-    constructor
-    · rintro ⟨h, -⟩
-      exact (hx h).elim
-    · exact fun h ↦ (hxS h).elim
-
-/-- Transport along an isomorphism and its inverse recovers a set of actual edges. -/
-@[simp]
-theorem symm_mapEdgeSet_mapEdgeSet (f : Iso G H) {F : Set β} (hF : F ⊆ E(G)) :
-    f.symm.mapEdgeSet (f.mapEdgeSet F) = F := by
-  ext e
-  by_cases he : e ∈ E(G)
-  · let e' : G.edgeSet := ⟨e, he⟩
-    have heq : f.symm.edgeEquiv.symm e' = f.edgeEquiv e' := by
-      apply f.symm.edgeEquiv.injective
-      simp
-    have he' : (e' : β) = e := rfl
-    rw [← he', f.symm.mem_mapEdgeSet_iff, heq, f.mem_mapEdgeSet_iff]
-    simp
-  · have heF : e ∉ F := fun h ↦ he (hF h)
-    constructor
-    · rintro ⟨h, -⟩
-      exact (he h).elim
-    · exact fun h ↦ (heF h).elim
-
-/-- Transport preserves and reflects nonemptiness for sets of actual edges. -/
-theorem mapEdgeSet_nonempty_iff (f : Iso G H) {F : Set β} (hF : F ⊆ E(G)) :
-    (f.mapEdgeSet F).Nonempty ↔ F.Nonempty := by
-  constructor
-  · rintro ⟨e, he⟩
-    let e' : H.edgeSet := ⟨e, f.mapEdgeSet_subset_edgeSet F he⟩
-    exact ⟨f.edgeEquiv.symm e', by simpa [e'] using (f.mem_mapEdgeSet_iff F e').mp he⟩
-  · rintro ⟨e, he⟩
-    exact ⟨f.edgeEquiv ⟨e, hF he⟩, by simpa using he⟩
 
 /-- An edge crosses a transported vertex side exactly when its inverse image crosses the original
 side. -/
@@ -181,29 +76,8 @@ theorem isEdgeCut_mapEdgeSet_iff (f : Iso G H) {F : Set β} (hF : F ⊆ E(G)) :
 /-- Bridge status is invariant under graph isomorphism. -/
 theorem isBridge_edgeEquiv_iff (f : Iso G H) (e : G.edgeSet) :
     H.IsBridge (f.edgeEquiv e) ↔ G.IsBridge e := by
-  have hsingleton : f.mapEdgeSet ({(e : β)} : Set β) = {(f.edgeEquiv e : β')} := by
-    ext e'
-    by_cases he' : e' ∈ E(H)
-    · let e'' : H.edgeSet := ⟨e', he'⟩
-      have he'' : (e'' : β') = e' := rfl
-      rw [← he'', f.mem_mapEdgeSet_iff]
-      simp only [mem_singleton_iff]
-      constructor
-      · intro h
-        have hpre : f.edgeEquiv.symm e'' = e := Subtype.ext h
-        have himage := congrArg f.edgeEquiv hpre
-        exact congrArg Subtype.val (by simpa using himage)
-      · intro h
-        have himage : e'' = f.edgeEquiv e := Subtype.ext h
-        have hpre := congrArg f.edgeEquiv.symm himage
-        exact congrArg Subtype.val (by simpa using hpre)
-    · have hleft : e' ∉ f.mapEdgeSet ({(e : β)} : Set β) := fun h ↦
-        he' (f.mapEdgeSet_subset_edgeSet _ h)
-      have hright : e' ∉ ({(f.edgeEquiv e : β')} : Set β') := fun h ↦
-        he' (h ▸ (f.edgeEquiv e).2)
-      exact iff_of_false hleft hright
   have hcut := f.isEdgeCut_mapEdgeSet_iff (singleton_subset_iff.mpr e.2)
-  simpa only [Graph.IsBridge, hsingleton] using hcut
+  simpa only [Graph.IsBridge, f.mapEdgeSet_singleton e] using hcut
 
 /-- A graph isomorphism sends bonds to bonds. -/
 theorem map_isBond (f : Iso G H) {B : Set β} (hB : G.IsBond B) :
