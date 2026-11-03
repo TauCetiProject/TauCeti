@@ -16,7 +16,8 @@ import all Mathlib.RingTheory.Grassmannian
 Let `M` be a module over a commutative ring `R`. Mathlib's `Module.Grassmannian R M k`, written
 `G(k, M; R)`, is the set of submodules `N ≤ M` whose quotient `M ⧸ N` is finite projective of
 constant rank `k`. This file adds general facts about it: the kernel of a surjection onto a
-finite projective module of constant rank `k` is a point of `G(k, M; R)`, and the behaviour of
+finite projective module of constant rank `k` is a point of `G(k, M; R)`, a point of the
+Grassmannian of a finite module is finitely generated, and the behaviour of
 `Module.Grassmannian.baseChangeMkQ`, the map underlying base change of points, on pure tensors and
 on vectors coming from `A ⊗[R] M`. In particular a vector of a point maps into each of its base
 changes, and, when `B` is an `A`-algebra, the base change of `N` along the structure map is the
@@ -30,6 +31,7 @@ injective map is injective on points.
 
 ## Main results
 
+* `Module.Grassmannian.fg_toSubmodule`: over a finite module, every point is finitely generated.
 * `Module.Grassmannian.baseChangeMkQ_tmul`: `baseChangeMkQ B N` sends `b ⊗ₜ m` to
   `b ⊗ₜ [1 ⊗ₜ m]`.
 * `Module.Grassmannian.baseChangeMkQ_rTensor`: `baseChangeMkQ B N` sends the image of
@@ -82,6 +84,13 @@ theorem toSubmodule_ofSurjective (φ : M →ₗ[R] P) (hφ : Function.Surjective
   (rfl)
 
 end OfSurjective
+
+/-- For `M` finite over `R`, a point `N` of `G(k, M; R)` is a finitely generated submodule: its
+quotient is finite projective, hence finitely presented. -/
+theorem fg_toSubmodule [Module.Finite R M] (N : G(k, M; R)) : N.toSubmodule.FG := by
+  have : Module.FinitePresentation R (M ⧸ N.toSubmodule) :=
+    Module.finitePresentation_of_projective _ _
+  simpa using Module.FinitePresentation.fg_ker N.toSubmodule.mkQ N.toSubmodule.mkQ_surjective
 
 @[simp]
 theorem baseChangeMkQ_tmul {A B : Type w} [CommRing A] [Algebra R A] [CommRing B] [Algebra R B]
