@@ -24,6 +24,9 @@ are standard syntomic with the same relative dimension.
 
 Use `TauCeti.IsStandardSyntomicOfRelativeDimension n f` for the ring-map predicate;
 given a proof `hf`, its consequences are available as `hf.flat` and `hf.finitePresentation`.
+Locally standard syntomic ring maps are also flat and finitely presented
+(`TauCeti.flat_of_locally_isStandardSyntomicOfRelativeDimension`,
+`TauCeti.finitePresentation_of_locally_isStandardSyntomicOfRelativeDimension`).
 The theorem `TauCeti.isStandardSyntomicOfRelativeDimension_iff n f` relates an arbitrary
 ring map to its induced algebra structure. With `hf` as above, both conversions use the
 public bridge:
@@ -164,5 +167,24 @@ theorem locally_isStandardSyntomicOfRelativeDimension_propertyIsLocal (n : ℕ) 
   RingHom.locally_propertyIsLocal
     (isStandardSyntomicOfRelativeDimension_isStableUnderBaseChange n).localizationPreserves.away
     (isStandardSyntomicOfRelativeDimension_stableUnderCompositionWithLocalizationAway n)
+
+section Locally
+
+variable {R S : Type u} [CommRing R] [CommRing S] {f : R →+* S}
+
+/-- Locally standard syntomic ring maps are flat. -/
+theorem flat_of_locally_isStandardSyntomicOfRelativeDimension
+    (hf : RingHom.Locally (IsStandardSyntomicOfRelativeDimension n) f) : f.Flat :=
+  (RingHom.locally_iff_of_localizationSpanTarget RingHom.Flat.respectsIso
+    RingHom.Flat.ofLocalizationSpanTarget f).mp <| RingHom.locally_of_locally (·.flat) hf
+
+/-- Locally standard syntomic ring maps are finitely presented. -/
+theorem finitePresentation_of_locally_isStandardSyntomicOfRelativeDimension
+    (hf : RingHom.Locally (IsStandardSyntomicOfRelativeDimension n) f) : f.FinitePresentation :=
+  (RingHom.locally_iff_of_localizationSpanTarget RingHom.finitePresentation_respectsIso
+    RingHom.finitePresentation_ofLocalizationSpanTarget f).mp <|
+      RingHom.locally_of_locally (·.finitePresentation) hf
+
+end Locally
 
 end TauCeti

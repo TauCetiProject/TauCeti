@@ -5,8 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.NumberTheory.IntegralLattice.LMFDB.StoredGenusCertificate
+public import TauCeti.NumberTheory.IntegralLattice.LMFDB.StoredClassNumberCertificate
 public import TauCeti.LinearAlgebra.IntegralLattice.RootLattice.TypeE.WeylGroup
+import TauCeti.NumberTheory.IntegralLattice.E8Genus
 
 /-!
 # The stored columns of the LMFDB record of `E₈`
@@ -16,12 +17,19 @@ minimum `2`, kissing number `240`, automorphism group order `696729600`, and a s
 representative. This file certifies these columns as a
 `TauCeti.IntegralLattice.StoredGenusCertificate` whose Gram matrix, and whose one genus
 representative, is the Cartan matrix of type `E₈`, with the theta series prefix `1, 0, 240`.
-The certificate does not assert that the genus has a single class.
+That certificate does not assert that the genus has a single class.
+
+The genus of `E₈` does have a single class, because `E₈` is the only positive definite even
+unimodular lattice of rank eight. So the mass of the genus is `1 / 696729600`
+(`TauCeti.IntegralLattice.mass_typeE₈RootLattice`), and the record extends to a
+`TauCeti.IntegralLattice.StoredClassNumberCertificate` with class number `1`.
 
 ## Main definitions
 
 * `TauCeti.IntegralLattice.typeE₈StoredGenusCertificate`: the certificate of the stored columns
   of the LMFDB record of `E₈`.
+* `TauCeti.IntegralLattice.typeE₈StoredClassNumberCertificate`: the certificate of its class
+  number column.
 
 ## References
 
@@ -95,6 +103,39 @@ type `E₈`. -/
 @[simp]
 theorem reps_typeE₈StoredGenusCertificate :
     typeE₈StoredGenusCertificate.reps = [⟨CartanMatrix.E 8, CartanMatrix.E_isSymm 8⟩] :=
+  (rfl)
+
+/-- **The certificate of the class number column of the LMFDB record of `E₈`.** It extends
+`TauCeti.IntegralLattice.typeE₈StoredGenusCertificate` by the mass `1 / 696729600` of the genus
+and the class number `1`. -/
+noncomputable def typeE₈StoredClassNumberCertificate : StoredClassNumberCertificate 8 where
+  toStoredGenusCertificate := typeE₈StoredGenusCertificate
+  mass := 696729600⁻¹
+  mass_eq :=
+    (congrArg mass lattice_typeE₈StoredGenusCertificate).trans mass_typeE₈RootLattice |>.symm
+  sum_inv_natCard_isometry_reps_eq_mass := by
+    rw [reps_typeE₈StoredGenusCertificate, List.map_singleton, List.sum_singleton,
+      ← typeE₈RootLattice_def, card_isometry_typeE₈RootLattice, Nat.cast_ofNat]
+  classNumber := 1
+  classNumber_eq_length_reps := by rw [reps_typeE₈StoredGenusCertificate, List.length_singleton]
+
+/-- The certificate of the class number column of the `E₈` record extends the certificate of its
+stored columns. -/
+@[simp]
+theorem toStoredGenusCertificate_typeE₈StoredClassNumberCertificate :
+    typeE₈StoredClassNumberCertificate.toStoredGenusCertificate = typeE₈StoredGenusCertificate :=
+  (rfl)
+
+/-- The mass stored in the certificate of the `E₈` record is `1 / 696729600`. -/
+@[simp]
+theorem mass_typeE₈StoredClassNumberCertificate :
+    typeE₈StoredClassNumberCertificate.mass = 696729600⁻¹ :=
+  (rfl)
+
+/-- The stored class number of the `E₈` record is `1`. -/
+@[simp]
+theorem classNumber_typeE₈StoredClassNumberCertificate :
+    typeE₈StoredClassNumberCertificate.classNumber = 1 :=
   (rfl)
 
 end TauCeti.IntegralLattice

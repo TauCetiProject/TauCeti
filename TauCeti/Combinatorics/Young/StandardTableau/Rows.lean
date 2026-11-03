@@ -118,6 +118,26 @@ theorem flatten_toRows_perm (T : StandardYoungTableau μ) :
   exact ((subperm_of_subset (nodup_finRange μ.card) (fun x _ => hmem x)).perm_of_length_le
     (by simp [hlen])).symm
 
+/-- The first row of the row representation containing a label is the row of that label. -/
+@[simp]
+theorem findIdx?_mem_toRows (T : StandardYoungTableau μ) (l : Fin μ.card) :
+    T.toRows.findIdx? (fun row => l ∈ row) = some (YoungTableau.rowIndex T.toTableau l) := by
+  obtain ⟨c, rfl⟩ := T.surjective l
+  have hmem (i : ℕ) (hi : i < T.toRows.length) : T c ∈ T.toRows[i] ↔ i = c.1.1 := by
+    rw [getElem_toRows, mem_ofFn]
+    constructor
+    · rintro ⟨j, hj⟩
+      exact congrArg (fun d : ↥μ.cells => d.1.1) (T.injective hj)
+    · rintro rfl
+      exact ⟨⟨c.1.2, YoungDiagram.mem_iff_lt_rowLen.mp c.2⟩, rfl⟩
+  have hlt : c.1.1 < T.toRows.length := by simpa using μ.lt_colLen_zero_of_mem c.2
+  rw [findIdx?_eq_some_iff_getElem, show YoungTableau.rowIndex T.toTableau (T c) = c.1.1 from
+    YoungTableau.rowIndex_apply T.toTableau c]
+  exact ⟨hlt, by simpa using (hmem _ hlt).mpr rfl,
+    fun j hj => by
+      rw [decide_eq_true_iff, hmem j (hj.trans hlt)]
+      omega⟩
+
 /-- The row representation determines a standard tableau. -/
 theorem toRows_injective : Function.Injective (toRows (μ := μ)) := by
   intro T U h

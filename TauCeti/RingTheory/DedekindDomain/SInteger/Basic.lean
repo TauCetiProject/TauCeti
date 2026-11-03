@@ -188,7 +188,7 @@ factors lie in `S`, and each of those extends to the unit ideal by `integer_map_
   have h𝔭le : Algebra.denIdeal K x ≤ M.comap (algebraMap R (S.integer K)) :=
     (Ideal.le_comap_map).trans (Ideal.comap_mono hle)
   have h𝔭ne : M.comap (algebraMap R (S.integer K)) ≠ ⊥ :=
-    fun h0 ↦ Algebra.denIdeal_ne_bot K x (le_bot_iff.mp (h0 ▸ h𝔭le))
+    fun h0 ↦ Algebra.denIdeal_ne_bot K R⁰ x (le_bot_iff.mp (h0 ▸ h𝔭le))
   have hprime : (M.comap (algebraMap R (S.integer K))).IsPrime := hM.isPrime.comap _
   have hwS : (⟨_, hprime, h𝔭ne⟩ : HeightOneSpectrum R) ∈ S :=
     by_contra fun hwn ↦ denIdeal_not_le K (hx _ hwn) h𝔭le

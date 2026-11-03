@@ -19,9 +19,10 @@ norm of a positive functional, from a C⋆-algebra to its quotients.
 
 Since an increasing approximate unit eventually lies in the closed unit ball, the convergence
 `e * a → a` is uniform for `a` in a compact set,
-`Filter.IsIncreasingApproximateUnit.tendstoUniformlyOn_mul_right`. This controls
+`Filter.IsIncreasingApproximateUnit.tendstoUniformlyOn_mul_right`, and so is the convergence
+`a * e → a`, `Filter.IsIncreasingApproximateUnit.tendstoUniformlyOn_mul_left`. This controls
 `e * α_r(b) → α_r(b)` uniformly along a compact set of group elements `r` for a continuous action
-`α`.
+`α`, as needed for approximate units of twisted convolution algebras.
 -/
 
 public section
@@ -51,6 +52,30 @@ theorem tendstoUniformlyOn_mul_right {l : Filter A} (hl : l.IsIncreasingApproxim
     rw [dist_eq_norm, dist_eq_norm, ← mul_sub]
     exact (norm_mul_le _ _).trans (mul_le_of_le_one_left (norm_nonneg _) he)
   calc dist (id a) (e * a) ≤ dist a c + dist c (e * c) + dist (e * c) (e * a) :=
+        dist_triangle4 _ _ _ _
+    _ < ε / 3 + ε / 3 + ε / 3 := by
+        gcongr
+        · exact Metric.mem_ball.1 hac
+        · exact hc c hct
+        · exact hmul.trans_lt (by rw [dist_comm]; exact Metric.mem_ball.1 hac)
+    _ = ε := by ring
+
+/-- Along an increasing approximate unit, `a * e → a` uniformly for `a` in a compact set. -/
+theorem tendstoUniformlyOn_mul_left {l : Filter A} (hl : l.IsIncreasingApproximateUnit)
+    {K : Set A} (hK : IsCompact K) : TendstoUniformlyOn (fun e a => a * e) id l K := by
+  rw [Metric.tendstoUniformlyOn_iff]
+  intro ε hε
+  -- Cover `K` by finitely many balls of radius `ε / 3`, and use the eventual bound `‖e‖ ≤ 1`.
+  obtain ⟨t, -, ht, hKt⟩ := hK.finite_cover_balls (e := ε / 3) (by positivity)
+  have hconv : ∀ᶠ e in l, ∀ c ∈ t, dist c (c * e) < ε / 3 := (eventually_all_finite ht).2
+    fun c _ => (Metric.tendsto_nhds.1 (hl.tendsto_mul_left c) (ε / 3) (by positivity)).mono
+      fun _ h => by rwa [dist_comm]
+  filter_upwards [hl.eventually_norm, hconv] with e he hc a ha
+  obtain ⟨c, hct, hac⟩ := Set.mem_iUnion₂.1 (hKt ha)
+  have hmul : dist (c * e) (a * e) ≤ dist c a := by
+    rw [dist_eq_norm, dist_eq_norm, ← sub_mul]
+    exact (norm_mul_le _ _).trans (mul_le_of_le_one_right (norm_nonneg _) he)
+  calc dist (id a) (a * e) ≤ dist a c + dist c (c * e) + dist (c * e) (a * e) :=
         dist_triangle4 _ _ _ _
     _ < ε / 3 + ε / 3 + ε / 3 := by
         gcongr

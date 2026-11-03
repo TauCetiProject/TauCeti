@@ -133,6 +133,11 @@ theorem single_pow (q : ℚ) (a : K) (n : ℕ) : single K q a ^ n = single K (n 
   apply Subtype.ext
   simp [HahnSeries.single_pow, nsmul_eq_mul]
 
+/-- The inverse of a monomial `a t ^ q` is the monomial `a⁻¹ t ^ (-q)`. -/
+@[simp]
+theorem inv_single (q : ℚ) (a : K) : (single K q a)⁻¹ = single K (-q) a⁻¹ :=
+  Subtype.ext <| by rw [IntermediateField.coe_inv, coe_single, coe_single, HahnSeries.inv_single]
+
 /-- Multiplying a monomial by a constant multiplies its coefficient. -/
 @[simp]
 theorem algebraMap_mul_single (c : K) (q : ℚ) (a : K) :
@@ -175,6 +180,13 @@ noncomputable def levelEmbedding (n : ℕ+) : K⸨X⸩ →ₐ[K] puiseuxField K 
 theorem coe_levelEmbedding (n : ℕ+) (f : K⸨X⸩) :
     (levelEmbedding K n f : HahnSeries ℚ K) = ramifiedEmbedding K n f :=
   (rfl)
+
+/-- The parameter `t` is the level-`n` image of `u ^ n`. -/
+theorem levelEmbedding_single_self (n : ℕ+) :
+    levelEmbedding K n (HahnSeries.single (n : ℤ) 1) = single K 1 1 :=
+  Subtype.ext <| by
+    rw [coe_levelEmbedding, ramifiedEmbedding_single, coe_single, Int.cast_natCast,
+      div_self (by exact_mod_cast n.ne_zero)]
 
 /-- The transition map `X ↦ X ^ d` from level `n` to level `n * d` commutes with the level
 embeddings into the Puiseux field. -/

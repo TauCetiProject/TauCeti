@@ -308,13 +308,15 @@ lemma orthogonal_orthogonal (ω : SymplecticForm V) (L : Submodule ℝ V) :
     ω.orthogonal (ω.orthogonal L) = L :=
   ω.toBilinForm.orthogonal_orthogonal ω.nondegenerate ω.isRefl L
 
+/-- The complement of an intersection is the sum of the complements. -/
+lemma orthogonal_inf (ω : SymplecticForm V) (L L' : Submodule ℝ V) :
+    ω.orthogonal (L ⊓ L') = ω.orthogonal L ⊔ ω.orthogonal L' :=
+  ω.toBilinForm.orthogonal_inf ω.nondegenerate ω.isRefl L L'
+
 /-- An isotropic subspace has at most half the dimension of the ambient space. -/
 lemma IsIsotropic.two_mul_finrank_le (h : ω.IsIsotropic L) :
-    2 * finrank ℝ L ≤ finrank ℝ V := by
-  have hle : finrank ℝ L ≤ finrank ℝ (ω.orthogonal L) := Submodule.finrank_mono h
-  rw [finrank_orthogonal] at hle
-  have := L.finrank_le
-  omega
+    2 * finrank ℝ L ≤ finrank ℝ V :=
+  ω.toBilinForm.two_mul_finrank_le_finrank_of_le_orthogonal ω.nondegenerate h
 
 /-- A Lagrangian subspace is exactly half-dimensional: `2 · dim L = dim V`. -/
 lemma IsLagrangian.two_mul_finrank (h : ω.IsLagrangian L) :

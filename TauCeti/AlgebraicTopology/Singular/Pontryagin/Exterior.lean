@@ -5,10 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.LinearAlgebra.ExteriorPower.Basic
 public import TauCeti.AlgebraicTopology.Singular.ModuleChains.Basic
 public import TauCeti.AlgebraicTopology.Singular.Pontryagin.Basic
 public import TauCeti.AlgebraicTopology.Singular.Reduced
+public import TauCeti.LinearAlgebra.ExteriorPower.Basic
 
 /-!
 # Exterior powers of the first homology of a commutative topological monoid
@@ -57,6 +57,8 @@ isomorphisms in every degree, the description of the homology of a torus as an e
 * `TopCat.surjective_pontryaginExteriorPower_of_comp_eq_id`,
   `TopCat.map_mem_range_pontryaginExteriorPower`: surjectivity of the exterior power map passes to
   retracts, and the image of a morphism of monoid objects lies in its range.
+* `TopCat.bijective_pontryaginExteriorPower_of_isIso`: bijectivity of the exterior power map is
+  invariant under isomorphisms of commutative monoid objects.
 * `TopCat.pontryaginMul_mem_range_pontryaginExteriorPower`: the range of the exterior power map is
   closed under the Pontryagin product with classes of degree one.
 
@@ -166,18 +168,25 @@ private lemma pontryaginChainMap_self [IsCommMonObj G]
       abel
   -- and it vanishes on the diagonal of each simplex, hence on the whole diagonal
   have hdiag (d : ((TauCeti.singularChains k).obj G).X 1) : B d d = 0 := by
-    obtain ⟨f, rfl⟩ := (TauCeti.singularChainsLinearEquivFinsupp k G 1).symm.surjective d
+    -- the singular `1`-chains are the finitely supported functions on singular `1`-simplices
+    let e : ((TauCeti.singularChains k).obj G).X 1 ≃ₗ[k] ((toSSet.obj G) _⦋1⦌ →₀ k) :=
+      (toSSet.obj G).chainsLinearEquivFinsupp k 1
+    obtain ⟨f, rfl⟩ := e.symm.surjective d
     induction f using Finsupp.induction_linear with
     | zero => simp
     | add f g hf hg =>
-      have h := LinearMap.congr_fun₂ hanti
-        ((TauCeti.singularChainsLinearEquivFinsupp k G 1).symm f)
-        ((TauCeti.singularChainsLinearEquivFinsupp k G 1).symm g)
+      have h := LinearMap.congr_fun₂ hanti (e.symm f) (e.symm g)
       simp only [LinearMap.add_apply, LinearMap.flip_apply, LinearMap.zero_apply] at h
       simp only [map_add, LinearMap.add_apply, hf, hg, zero_add, add_zero]
       rw [add_comm, h]
     | single σ a =>
-      rw [TauCeti.singularChainsLinearEquivFinsupp_symm_single, TauCeti.simplexChain_eq_smul,
+      -- `SSet.chainsLinearEquivFinsupp_symm_single` holds as stated here only up to unfolding the
+      -- local abbreviation `e` and the `abbrev` `TauCeti.simplexChain σ a`, which is
+      -- `(toSSet.obj G).ιChainComplex σ a` with coefficients `ModuleCat.of k k`; stating it in the
+      -- abbreviated form lets the rewrites below see `simplexChain` and `B`
+      have hsingle : e.symm (Finsupp.single σ a) = TauCeti.simplexChain σ a :=
+        SSet.chainsLinearEquivFinsupp_symm_single _ σ a
+      rw [hsingle, TauCeti.simplexChain_eq_smul,
         map_smul, map_smul, LinearMap.smul_apply, hB, simplexMul_comm ((toSSet.obj G).σ 1 σ),
         sub_self, smul_zero, smul_zero]
   exact hdiag c
@@ -428,6 +437,20 @@ theorem surjective_pontryaginExteriorPower_of_comp_eq_id {G' : TopCat.{u}} [MonO
   calc _ = ((singularHomologyFunctor (ModuleCat.{u} k) n).obj (𝟙_ _)).map (g ≫ f) y := by
         rw [Functor.map_comp, CategoryTheory.comp_apply]
     _ = y := by rw [hgf, CategoryTheory.Functor.map_id, CategoryTheory.id_apply]
+
+/-- An isomorphism of commutative monoid objects carries bijectivity of the exterior power map
+`⋀ⁿ H₁ → Hₙ` from its target to its source. -/
+theorem bijective_pontryaginExteriorPower_of_isIso {G' : TopCat.{u}} [MonObj G'] [IsCommMonObj G']
+    (f : G ⟶ G') [IsMonHom f] [IsIso f] {n : ℕ}
+    (h : Function.Bijective (pontryaginExteriorPower k G' n)) :
+    Function.Bijective (pontryaginExteriorPower k G n) := by
+  have hf (m : ℕ) : Function.Bijective
+      (((singularHomologyFunctor (ModuleCat.{u} k) m).obj (𝟙_ _)).map f) :=
+    ConcreteCategory.bijective_of_isIso _
+  rw [← (hf n).of_comp_iff', ← LinearMap.coe_comp, pontryaginExteriorPower_naturality,
+    LinearMap.coe_comp]
+  -- `f` induces an isomorphism on first homology, hence on its exterior powers
+  exact h.comp (exteriorPower.map_bijective (hf 1))
 
 /-- The image of a class under a morphism of commutative monoid objects whose source has a
 surjective exterior power map `⋀ⁿ H₁ → Hₙ` lies in the image of the exterior power map of the

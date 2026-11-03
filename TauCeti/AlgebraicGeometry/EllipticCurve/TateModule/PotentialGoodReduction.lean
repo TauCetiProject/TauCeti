@@ -186,7 +186,7 @@ theorem tateModuleGaloisRepresentation_eq_one_of_mem_inertiaSubgroup_of_mem_fixi
     (hσL : σ ∈ ι.fieldRange.fixingSubgroup) :
     W.tateModuleGaloisRepresentation ℓ σ = 1 := by
   refine LinearMap.ext fun x ↦ TateModule.ext fun n ↦ Subtype.ext ?_
-  rw [coe_proj_tateModuleGaloisRepresentation, Module.End.one_apply]
+  rw [coe_proj_tateModuleGaloisRepresentation, one_apply_eq_self]
   refine Affine.Point.map_eq_self_of_mem_inertiaSubgroup_of_mem_fixingSubgroup ι C (n := ℓ ^ n)
     ?_ hσ hσL ?_
   · rw [Nat.cast_pow]
@@ -223,7 +223,7 @@ theorem HasPotentialGoodReduction.exists_tateModuleGaloisRepresentation_eq_one
   let : Algebra S 𝒪[L] := ((algebraMap S L).codRestrict 𝒪[L]
     (valuation_algebraMap_le_one_of_isLocalHom hS)).toAlgebra
   have hgood' : (C • W⁄L).HasGoodReduction 𝒪[L] := by
-    have h := HasGoodReduction.baseChange S 𝒪[L] (L := L) (RingHom.ext fun _ ↦ rfl) hgood
+    have h := HasGoodReduction.baseChange S 𝒪[L] (L := L) (by ext; rfl) hgood
     rwa [baseChange, Algebra.algebraMap_self, map_id] at h
   have := hgood'.toIsMinimal
   have : (integralModel 𝒪[L] (C • W⁄L)).IsElliptic :=

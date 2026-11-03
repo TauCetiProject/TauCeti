@@ -60,15 +60,10 @@ theorem natCard_cycleType_eq_and_mem_range_permutationRepresentation [Fintype α
       Nat.card {g : G //
         (Multiset.replicate (Nat.card α / orderOf g) (orderOf g)).filter (2 ≤ ·) = m} := by
   classical
-  have : Fintype G := Fintype.ofEquiv α e.symm
   have hcyc (g : G) : (permutationRepresentation e g).cycleType =
       (Multiset.replicate (Nat.card α / orderOf g) (orderOf g)).filter (2 ≤ ·) := by
-    have hg : permutationRepresentation e g = e.permCongr (toPerm g) := by
-      ext
-      simp [Equiv.permCongr_apply]
-    -- Transport keeps the full cycle type, which for the regular action is read off `orderOf g`.
-    rw [← Perm.filter_fullCycleType_eq_cycleType, hg, Perm.fullCycleType_permCongr,
-      fullCycleType_toPerm_eq_replicate, Nat.card_congr e]
+    rw [← Perm.filter_fullCycleType_eq_cycleType, fullCycleType_permutationRepresentation,
+      Nat.card_eq_fintype_card]
   refine (Nat.card_congr ?_).symm
   exact ((Equiv.ofInjective _ (permutationRepresentation_injective e)).subtypeEquiv fun g ↦ by
       rw [Equiv.ofInjective_apply, hcyc]).trans <|

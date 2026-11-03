@@ -7,6 +7,9 @@ module
 
 public import TauCeti.LinearAlgebra.TensorProduct.Balanced.Actions
 public import TauCeti.LinearAlgebra.TensorProduct.Balanced.Pi
+public import TauCeti.Algebra.Module.Projective.Semilinear
+public import TauCeti.LinearAlgebra.Matrix.Idempotent
+public import Mathlib.RingTheory.Finiteness.Cardinality
 
 /-!
 # Extension of scalars along a ring homomorphism of noncommutative rings
@@ -32,19 +35,31 @@ commutativity is assumed.
 * `TauCeti.BalancedExtension.lift` and `TauCeti.BalancedExtension.liftEquiv`: the universal
   property. `S`-linear maps `S ⊗_R P → Q` correspond to `f`-semilinear maps `P → Q`, that is, to
   additive maps that are `R`-linear for the action on `Q` restricted along `f`.
-* `TauCeti.BalancedExtension.map`: functoriality in `R`-linear maps.
+* `TauCeti.BalancedExtension.map`: functoriality in `R`-linear maps, and
+  `TauCeti.BalancedExtension.congr` for `R`-linear equivalences.
 * `TauCeti.BalancedExtension.lid`: extension along the identity, `R ⊗_R P ≃ P`.
 * `TauCeti.BalancedExtension.cancelBaseChange`: extension along a composite,
   `T ⊗_S (S ⊗_R P) ≃ T ⊗_R P`.
 * `TauCeti.BalancedExtension.piScalarRight`: extension of a finite free module,
   `S ⊗_R Rⁿ ≃ Sⁿ`.
+* `TauCeti.BalancedExtension.rangeVecMulLinearEquiv`: extension of the image of an idempotent
+  matrix, `S ⊗_R (Rⁿ e) ≃ Sⁿ f(e)`.
 
 The extension of the zero module is zero by the `Subsingleton` instances of
 `TauCeti.BalancedTensorProduct`, since `TauCeti.BalancedExtension` is an `abbrev`.
 
+## Main results
+
+* `TauCeti.BalancedExtension.map_surjective`: extension of scalars preserves surjections.
+* Extension of scalars along any `f` sends finitely generated `R`-modules to finitely generated
+  `S`-modules and projective `R`-modules to projective `S`-modules (instances), hence finitely
+  generated projective modules to finitely generated projective modules. No flatness or
+  finiteness hypothesis on `f` is needed.
+
 ## References
 
-* C. A. Weibel, *The K-book*, Chapter I, §2, pp. 7–8, and Chapter II, §2.8.
+* C. A. Weibel, *The K-book*, Chapter I, §2, pp. 7–8, and Chapter II, §2.8 and
+  Example 2.8.1, pp. 12–13.
 -/
 
 public section
@@ -251,6 +266,22 @@ theorem map_comp (g : P →ₗ[R] P') (g' : P' →ₗ[R] P'') :
 theorem map_add (g g' : P →ₗ[R] P') : map f (g + g') = map f g + map f g' :=
   hom_ext fun p ↦ by simp [tmul_add]
 
+variable (f) in
+/-- The `S`-linear equivalence `S ⊗_R P ≃ S ⊗_R P'`, `s ⊗ p ↦ s ⊗ θ p`, induced by an `R`-linear
+equivalence `θ`. This is the `S`-linear form of the additive equivalence
+`TauCeti.BalancedTensorProduct.congr`. -/
+def congr (θ : P ≃ₗ[R] P') : BalancedExtension f P ≃ₗ[S] BalancedExtension f P' :=
+  LinearEquiv.ofLinearMap (map f θ.toLinearMap) (map f θ.symm.toLinearMap)
+    (hom_ext fun p ↦ by simp) (hom_ext fun p ↦ by simp)
+
+@[simp]
+theorem congr_tmul (θ : P ≃ₗ[R] P') (s : S) (p : P) :
+    congr f θ (tmul f s p) = tmul f s (θ p) :=
+  map_tmul _ s p
+
+@[simp]
+theorem congr_symm (θ : P ≃ₗ[R] P') : (congr f θ).symm = congr f θ.symm := (rfl)
+
 end Map
 
 section Identity
@@ -370,6 +401,93 @@ theorem piScalarRight_symm_apply [DecidableEq ι] (v : ι → S) :
   simp [Pi.single_apply]
 
 end Pi
+
+section FiniteProjective
+
+variable {P' : Type*} [AddCommGroup P'] [Module R P']
+
+/-- Extension of scalars preserves surjections: if `g : P → P'` is surjective, so is
+`S ⊗_R g`. -/
+theorem map_surjective {g : P →ₗ[R] P'} (hg : Function.Surjective g) :
+    Function.Surjective (map f g) := by
+  intro x
+  induction x using induction_on with
+  | tmul s p =>
+    obtain ⟨q, rfl⟩ := hg p
+    exact ⟨tmul f s q, map_tmul g s q⟩
+  | add x y hx hy =>
+    obtain ⟨x, rfl⟩ := hx
+    obtain ⟨y, rfl⟩ := hy
+    exact ⟨x + y, _root_.map_add _ x y⟩
+
+/-- The extension of scalars of a finitely generated module is finitely generated: a surjection
+`Rⁿ → P` extends to a surjection `Sⁿ ≃ S ⊗_R Rⁿ → S ⊗_R P`. -/
+instance [Module.Finite R P] : Module.Finite S (BalancedExtension f P) := by
+  obtain ⟨n, g, hg⟩ := Module.Finite.exists_fin' R P
+  exact .of_surjective ((map f g).comp (piScalarRight f (Fin n)).symm.toLinearMap)
+    ((map_surjective hg).comp (piScalarRight f (Fin n)).symm.surjective)
+
+/-- The extension of scalars of a projective module is projective: an `S`-linear map out of
+`S ⊗_R P` is an `f`-semilinear map out of `P`, and these lift along surjections because `P` is
+projective. -/
+instance [Module.Projective R P] : Module.Projective S (BalancedExtension f P) := by
+  refine .of_lifting_property'' fun F hF ↦ ?_
+  obtain ⟨h, hh⟩ := Module.projective_lifting_property_semilinear F hF (includeRight f P)
+  exact ⟨lift h, hom_ext fun p ↦ by simpa using LinearMap.congr_fun hh p⟩
+
+end FiniteProjective
+
+section Idempotent
+
+open Matrix
+
+variable (f) {ι : Type*} [Fintype ι] {e : Matrix ι ι R}
+
+/-- The `S`-linear map `Sⁿ f(e) → S ⊗_R (Rⁿ e)`, `w ↦ ∑ i, wᵢ ⊗ eᵢ`, through the rows `eᵢ`
+of `e`. -/
+private def rangeVecMulLinearInv (he : IsIdempotentElem e) :
+    LinearMap.range (e.map f).vecMulLinear →ₗ[S]
+      BalancedExtension f (LinearMap.range e.vecMulLinear) :=
+  Fintype.linearCombination S (fun i ↦ tmul f 1 ⟨e i, he.row_mem_range_vecMulLinear i⟩) ∘ₗ
+    (LinearMap.range _).subtype
+
+/-- **Extension of the image of an idempotent matrix.** For an idempotent matrix `e` over `R`,
+whose image `Rⁿ e` under right multiplication of row vectors is a finitely generated projective
+module, the extension of scalars along `f` is the image `Sⁿ f(e)` of the matrix `f(e)`:
+`S ⊗_R (Rⁿ e) ≃ Sⁿ f(e)`, sending `s ⊗ v` to `i ↦ s * f (v i)`
+(`coe_rangeVecMulLinearEquiv_tmul`). Its inverse sends `w` to `∑ i, wᵢ ⊗ eᵢ`, through the rows
+`eᵢ` of `e` (`rangeVecMulLinearEquiv_symm_apply`). -/
+noncomputable def rangeVecMulLinearEquiv (he : IsIdempotentElem e) :
+    BalancedExtension f (LinearMap.range e.vecMulLinear) ≃ₗ[S]
+      LinearMap.range (e.map f).vecMulLinear :=
+  LinearEquiv.ofLinearMap (lift (e.rangeVecMulLinearMap f)) (rangeVecMulLinearInv f he)
+    (LinearMap.ext fun w ↦ by
+      conv_rhs => rw [LinearMap.id_apply, (he.matrix_map f).eq_sum_smul_row w]
+      simp only [rangeVecMulLinearInv, LinearMap.comp_apply, Fintype.linearCombination_apply,
+        map_sum, map_smul, lift_tmul, one_smul, Submodule.subtype_apply]
+      exact Finset.sum_congr rfl fun i _ ↦ congrArg _ <| Subtype.ext <|
+        coe_rangeVecMulLinearMap_apply e f _)
+    (hom_ext fun v ↦ by
+      conv_rhs => rw [LinearMap.id_apply, he.eq_sum_smul_row v, ← includeRight_apply, map_sum]
+      simp only [LinearMap.comp_apply, lift_tmul, one_smul, rangeVecMulLinearInv,
+        Fintype.linearCombination_apply, map_smulₛₗ, includeRight_apply, smul_tmul, mul_one,
+        Submodule.subtype_apply, coe_rangeVecMulLinearMap_apply, Function.comp_apply])
+
+@[simp]
+theorem coe_rangeVecMulLinearEquiv_tmul (he : IsIdempotentElem e) (s : S)
+    (v : LinearMap.range e.vecMulLinear) :
+    (rangeVecMulLinearEquiv f he (tmul f s v) : ι → S) = fun i ↦ s * f ((v : ι → R) i) := by
+  ext i
+  simp [rangeVecMulLinearEquiv]
+
+@[simp]
+theorem rangeVecMulLinearEquiv_symm_apply (he : IsIdempotentElem e)
+    (w : LinearMap.range (e.map f).vecMulLinear) :
+    (rangeVecMulLinearEquiv f he).symm w =
+      ∑ i, tmul f ((w : ι → S) i) ⟨e i, he.row_mem_range_vecMulLinear i⟩ := by
+  simp [rangeVecMulLinearEquiv, rangeVecMulLinearInv, Fintype.linearCombination_apply, smul_tmul]
+
+end Idempotent
 
 end BalancedExtension
 

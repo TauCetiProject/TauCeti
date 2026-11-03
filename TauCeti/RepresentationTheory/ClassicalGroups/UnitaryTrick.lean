@@ -7,9 +7,11 @@ module
 
 public import Mathlib.Topology.Algebra.MvPolynomial
 public import Mathlib.Topology.Instances.Matrix
+public import TauCeti.Analysis.Matrix.UnitaryGroup.Torus
 public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.PolynomialFunctions.Unitary
 public import TauCeti.RepresentationTheory.ClassicalGroups.Rational
 public import TauCeti.RepresentationTheory.Compact.Semisimple
+public import TauCeti.RepresentationTheory.Semisimple
 public import TauCeti.Topology.Algebra.UnitaryGroup
 
 /-!
@@ -52,6 +54,8 @@ constituents rather than by a composition series alone.
   representation to `U(n)` has continuous matrix coefficients.
 * `TauCeti.IsRationalRep.isSemisimpleRepresentation`: **every rational representation of
   `GL n ℂ` is completely reducible.**
+* `TauCeti.IsRationalRep.nonempty_equiv_of_forall_character_diagGL_eq`: rational representations
+  whose characters agree on the diagonal torus are equivalent.
 
 ## References
 
@@ -206,6 +210,43 @@ theorem isSemisimpleRepresentation (h : IsRationalRep ρ) : ρ.IsSemisimpleRepre
   have := h.finite
   exact h.subrepresentationOrderIso.complementedLattice_iff.mp
     (Representation.isSemisimpleRepresentation_of_continuous _ h.continuous_dual_apply_toUnits)
+
+section Character
+
+variable {W' : Type*} [AddCommGroup W'] [Module ℂ W'] {σ : Representation ℂ (GL (Fin n) ℂ) W'}
+
+/-- **Rational representations are determined by their characters on the diagonal torus.** Two
+rational representations of `GL n ℂ` whose characters agree at every invertible diagonal matrix
+are equivalent.
+
+Every unitary matrix is unitarily conjugate to a diagonal one
+(`TauCeti.exists_isConj_unitaryTorusHom`), so the restrictions to `U(n)` have the same character.
+They are semisimple, hence equivalent
+(`Representation.nonempty_equiv_of_character_eq_of_isSemisimpleRepresentation`), and an
+equivalence of the restrictions intertwines `GL n ℂ`
+(`TauCeti.IsRationalRep.intertwiningMapEquiv`). -/
+theorem nonempty_equiv_of_forall_character_diagGL_eq (hρ : IsRationalRep ρ)
+    (hσ : IsRationalRep σ)
+    (h : ∀ t : Fin n → ℂˣ, ρ.character (diagGL t) = σ.character (diagGL t)) :
+    Nonempty (ρ.Equiv σ) := by
+  have := hρ.finite
+  have := hσ.finite
+  let ρu : Representation ℂ (Matrix.unitaryGroup (Fin n) ℂ) W := ρ.comp Unitary.toUnits
+  let σu : Representation ℂ (Matrix.unitaryGroup (Fin n) ℂ) W' := σ.comp Unitary.toUnits
+  have : ρu.IsSemisimpleRepresentation :=
+    Representation.isSemisimpleRepresentation_of_continuous _ hρ.continuous_dual_apply_toUnits
+  have : σu.IsSemisimpleRepresentation :=
+    Representation.isSemisimpleRepresentation_of_continuous _ hσ.continuous_dual_apply_toUnits
+  have hchar : ρu.character = σu.character := funext fun u => by
+    obtain ⟨z, hz⟩ := exists_isConj_unitaryTorusHom u
+    obtain ⟨c, hc⟩ := isConj_iff.mp hz
+    rw [← Representation.char_conj ρu u c, hc, ← Representation.char_conj σu u c, hc]
+    simpa [ρu, σu, Representation.character, toUnits_unitaryTorusHom] using h _
+  obtain ⟨e⟩ :=
+    Representation.nonempty_equiv_of_character_eq_of_isSemisimpleRepresentation ρu σu hchar
+  exact ⟨.mk e.toLinearEquiv (hρ.intertwiningMapEquiv hσ e.toIntertwiningMap).isIntertwining'⟩
+
+end Character
 
 end IsRationalRep
 

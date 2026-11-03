@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.InnerProductSpace.PiL2
 public import Mathlib.Analysis.SpecialFunctions.Complex.Circle
 public import Mathlib.Geometry.Manifold.ChartedSpace
+public import TauCeti.Analysis.Complex.Circle
 public import TauCeti.Analysis.Normed.Module.Ball.Homeomorph
 
 /-!
@@ -77,6 +78,22 @@ namespace TauCeti
 abbrev SolidTorus : Type := closedBall (0 : ℂ) 1 × Circle
 
 namespace SolidTorus
+
+/-- The solid torus identified with the product of the closed unit disc and the unit sphere
+of `ℂ`, for use with APIs stated in terms of metric balls and spheres. -/
+noncomputable def homeomorphBallSphere :
+    SolidTorus ≃ₜ closedBall (0 : ℂ) 1 × sphere (0 : ℂ) 1 :=
+  (Homeomorph.refl _).prodCongr Circle.homeomorphSphere
+
+@[simp]
+theorem homeomorphBallSphere_apply (p : SolidTorus) :
+    homeomorphBallSphere p = (p.1, Circle.homeomorphSphere p.2) :=
+  (rfl)
+
+@[simp]
+theorem homeomorphBallSphere_symm_apply (p : closedBall (0 : ℂ) 1 × sphere (0 : ℂ) 1) :
+    homeomorphBallSphere.symm p = (p.1, Circle.homeomorphSphere.symm p.2) :=
+  (rfl)
 
 /-- The fibres of the model fibred solid torus `V(p, q)`: two points of `D² × S¹` lie in the same
 fibre when they lie in the same orbit of the circle action `t • (z, w) = (t ^ p * z, t ^ q * w)`.

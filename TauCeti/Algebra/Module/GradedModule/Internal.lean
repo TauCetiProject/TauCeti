@@ -548,6 +548,15 @@ theorem InternalGrading.koszulTwist_koszulTwist (G : InternalGrading R M) (q : �
   have h := LinearMap.congr_fun (koszulTwist_comp_self G q) x
   rwa [LinearMap.comp_apply, LinearMap.id_apply] at h
 
+/-- The Koszul twist only depends on the parity of its parameter; in particular, negating the
+parameter does not change it. -/
+@[simp]
+theorem InternalGrading.koszulTwist_neg (G : InternalGrading R M) (q : ℤ) :
+    koszulTwist G (-q) = koszulTwist G q := by
+  rw [← LinearMap.comp_id (koszulTwist G (-q)), ← koszulTwist_comp_self G q,
+    ← LinearMap.comp_assoc, koszulTwist_comp, neg_add_cancel, koszulTwist_zero,
+    LinearMap.id_comp]
+
 namespace LinearMap.IsHomogeneous
 
 variable {N : Type w} [AddCommMonoid N] [Module R N]

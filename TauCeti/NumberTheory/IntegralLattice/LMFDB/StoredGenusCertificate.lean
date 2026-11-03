@@ -36,7 +36,7 @@ classes in one genus need not be all of them, so the class number is not a field
 the number of stored representatives, and
 `TauCeti.IntegralLattice.StoredGenusCertificate.length_reps_eq_classNumber_iff` identifies
 equality with completeness of the list. Proving completeness needs an input such as an exact mass
-formula, which is outside the scope of this file.
+formula, which `TauCeti.IntegralLattice.StoredClassNumberCertificate` takes as a hypothesis.
 
 The theorems below also derive the consistency conditions between the stored columns: the
 determinant and level are positive and the level divides twice the determinant, the minimum and
@@ -242,16 +242,18 @@ theorem det_of_mem_reps {H : {H : Matrix (Fin n) (Fin n) ℤ // H.IsSymm}} (hH :
   rw [c.determinant_eq, (c.sameGenus_reps H hH).determinant_eq, determinant_ofGramMatrix]
 
 /-- The lattice of the `i`-th stored representative. -/
-private noncomputable def repLattice (i : Fin c.reps.length) : IntegralLattice (Fin n → ℚ) :=
+-- This is reducible for the same reason as `lattice`: statements about the stored
+-- representatives name their lattices through `ofGramMatrix`.
+noncomputable abbrev repLattice (i : Fin c.reps.length) : IntegralLattice (Fin n → ℚ) :=
   ofGramMatrix (Pi.basisFun ℚ (Fin n)) c.reps[i].1 c.reps[i].2
 
 /-- The lattice of each stored representative lies in the genus of the stored lattice. -/
-private theorem sameGenus_repLattice (i : Fin c.reps.length) :
+theorem sameGenus_repLattice (i : Fin c.reps.length) :
     c.lattice.SameGenus (c.repLattice i) :=
   c.sameGenus_reps _ (List.getElem_mem _)
 
 /-- Distinct positions of the list of stored representatives carry non-isometric lattices. -/
-private theorem pairwise_isEmpty_isometry_repLattice :
+theorem pairwise_isEmpty_isometry_repLattice :
     Pairwise fun i j ↦ IsEmpty (Isometry (c.repLattice i) (c.repLattice j)) := by
   have h := List.pairwise_iff_getElem.mp c.pairwise_isEmpty_isometry_reps
   intro i j hij

@@ -116,6 +116,17 @@ theorem HasSectionalCurvatureAt.curvatureTensor_eq_smul_inner_sub
   simp only [hz, inner_smul_left, inner_sub_left, RCLike.conj_to_real]
   ring
 
+/-- At a point where every tangent two-plane has sectional curvature `κ`, the Jacobi operator
+`w ↦ R(w, u)u` of a metric-compatible torsion-free connection acts on the orthogonal complement of
+`u` as multiplication by `κ ‖u‖²`. -/
+theorem HasSectionalCurvatureAt.curvatureTensor_apply_self_of_inner_eq_zero
+    {hcov : CovariantDerivative.IsMetricCompatible (V := fun x : M ↦ TangentSpace I x) cov}
+    {x : M} {κ : ℝ} (h : cov.HasSectionalCurvatureAt hcov x κ) (ht : cov.torsion = 0)
+    {w u : TangentSpace I x} (hwu : ⟪w, u⟫_ℝ = 0) :
+    curvature x w u u = (κ * ‖u‖ ^ 2) • w := by
+  rw [h.curvatureTensor_eq_smul_inner_sub ht, hwu, real_inner_self_eq_norm_sq, zero_smul,
+    sub_zero, smul_smul]
+
 variable (cov) in
 /-- For a metric-compatible torsion-free connection, every tangent two-plane at `x` has sectional
 curvature `κ` if and only if the curvature tensor at `x` has the constant-curvature form

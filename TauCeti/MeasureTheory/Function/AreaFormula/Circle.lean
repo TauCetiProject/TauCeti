@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.SpecialFunctions.Complex.CircleMap
 public import TauCeti.MeasureTheory.Function.AreaFormula.Curve
 import Mathlib.MeasureTheory.Integral.CircleIntegral
+import TauCeti.Geometry.Euclidean.Volume.Sphere
 import TauCeti.Topology.EMetricSpace.CurveLength
 
 /-!
@@ -18,12 +19,18 @@ twice on `[0, 4π]`; both traces are the whole circle. On `[0, 4π]` every point
 other than the base point `circleMap c R 0` has exactly two parameters. The Banach indicatrix
 formula `ContinuousOn.eVariationOn_eq_lintegral_encard` therefore gives the double traversal
 twice the length of the single one, although the two traces have the same one-dimensional
-Hausdorff measure. Length counts multiplicity; trace measure does not.
+Hausdorff measure. Length counts multiplicity; trace measure does not. That measure is the
+circumference: a circle of radius `r` has one-dimensional Hausdorff measure `2 π r`, the planar
+case of the measure `n ω_n r ^ (n - 1)` of spheres.
 
 ## Main results
 
 * `TauCeti.encard_Icc_zero_four_pi_inter_preimage_circleMap`: away from the base point, the
   fibers of `circleMap c R` on `[0, 4π]` have exactly two points.
+* `Complex.euclideanHausdorffMeasure_sphere`: a circle of radius `r` has one-dimensional
+  Hausdorff measure `2 π r`.
+* `ContinuousOn.eVariationOn_eq_of_image_eq_sphere`: a simple parametrization of a circle of
+  radius `r` has length `2 π r`.
 * `TauCeti.eVariationOn_circleMap_Icc_zero_two_pi`: the single traversal has length
   `μHE[1] (sphere c |R|)`.
 * `TauCeti.eVariationOn_circleMap_Icc_zero_four_pi`: the double traversal has length
@@ -75,6 +82,27 @@ private theorem hausdorffMeasure_sphere_zero (c : ℂ) : μHE[1] (sphere c |(0 :
   rw [abs_zero, sphere_zero, Measure.euclideanHausdorffMeasure_one]
   have := Measure.nullSingletonClass_hausdorff ℂ (show (0 : ℝ) < 1 by norm_num)
   exact measure_singleton c
+
+/-- **The circumference of a circle.** A circle of radius `r ≥ 0` in `ℂ` has one-dimensional
+Hausdorff measure `2 π r`. -/
+theorem _root_.Complex.euclideanHausdorffMeasure_sphere (c : ℂ) {r : ℝ} (hr : 0 ≤ r) :
+    μHE[1] (sphere c r) = ENNReal.ofReal (2 * π * r) := by
+  rcases hr.eq_or_lt with rfl | hr
+  · simpa using hausdorffMeasure_sphere_zero c
+  have h := TauCeti.euclideanHausdorffMeasure_sphere c hr
+  rw [Complex.finrank_real_complex] at h
+  rw [h, Complex.volume_ball, ENNReal.ofReal_mul (by positivity), ENNReal.ofReal_mul zero_le_two,
+    ← ENNReal.ofReal_coe_nnreal, NNReal.coe_real_pi]
+  simp
+
+/-- A continuous curve on `[a, b]` that is injective on `(a, b)` and traces the circle
+`sphere c r` has length `2 π r`. In particular such a parametrization is rectifiable. -/
+theorem _root_.ContinuousOn.eVariationOn_eq_of_image_eq_sphere {γ : ℝ → ℂ} {a b : ℝ} {c : ℂ}
+    {r : ℝ} (hcont : ContinuousOn γ (Icc a b)) (hinj : InjOn γ (Ioo a b))
+    (himage : γ '' Icc a b = sphere c r) (hr : 0 ≤ r) :
+    eVariationOn γ (Icc a b) = ENNReal.ofReal (2 * π * r) := by
+  rw [hcont.eVariationOn_eq_euclideanHausdorffMeasure_image hinj, himage,
+    _root_.Complex.euclideanHausdorffMeasure_sphere c hr]
 
 /-- The parametrization of a circle of radius zero is constant, so it has zero variation. -/
 private theorem eVariationOn_circleMap_zero (c : ℂ) (s : Set ℝ) :

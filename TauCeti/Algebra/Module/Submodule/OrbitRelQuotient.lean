@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Exact.Basic
 public import Mathlib.Algebra.Group.TransferInstance
 public import Mathlib.Algebra.Module.Submodule.Basic
 public import Mathlib.LinearAlgebra.Quotient.Basic
@@ -31,7 +32,12 @@ the orbit space contains the image of `ker f`, and the quotient of the former by
 `(q ∩ range f) / (q ∩ f(p))`, which is `(q ∩ range f) / f(p)` when `f(p) ⊆ q`. For lattices
 `L ⊆ E`, `L' ⊆ E'` in complex vector spaces and a complex linear map `f` with `f(L) ⊆ L'`, this is
 the component group of `f⁻¹(L') / L`, the kernel of the induced homomorphism of complex tori
-`E / L → E' / L'`.
+`E / L → E' / L'`: when `f(p) ⊆ q`, the subgroup `f⁻¹(q) / p` is exactly the kernel of the map
+of orbit spaces induced by `f`.
+
+The orbit space of translation by a product `p.prod q` on `M × M₂` is additively equivalent to
+the product of the orbit spaces of `p` and `q`, compatibly with the maps induced by products of
+linear maps.
 
 ## Main declarations
 
@@ -41,19 +47,29 @@ the component group of `f⁻¹(L') / L`, the kernel of the induced homomorphism 
 * `Submodule.orbitRelQuotient_mk_add`, `Submodule.orbitRelQuotient_mk_zero`,
   `Submodule.orbitRelQuotient_mk_neg`, `Submodule.orbitRelQuotient_mk_sub`: the orbit projection
   is additive.
+* `Submodule.orbitRelQuotient_mk_eq_mk_iff`: two points have the same orbit exactly when their
+  difference lies in `p`.
 * `Submodule.orbitRelQuotient_mk_eq_zero_iff`: its kernel is `p`.
 * `Submodule.orbitRelQuotientMkHom`: the orbit projection as an additive map.
+* `LinearMap.exact_orbitRelQuotientMkHom_range`: for a linear map `f`, the sequence
+  `N → M → M / range f` is exact.
 * `Submodule.orbitRelQuotientMap`: the additive map of orbit spaces induced by a semilinear map
   `f` carrying `p` into `q`, functorial in `f` (`Submodule.orbitRelQuotientMap_id`,
   `Submodule.orbitRelQuotientMap_comp`).
 * `Submodule.orbitRelQuotientMap_injective_iff`: the induced map is injective exactly when
   `f⁻¹(q) ≤ p`.
+* `Submodule.ker_orbitRelQuotientMap`: the kernel of the induced map is the image `f⁻¹(q) / p` of
+  `f⁻¹(q)`.
 * `Submodule.orbitRelQuotientCongr`: the additive equivalence of orbit spaces induced by a
   semilinear equivalence `e` with `p.map e = q`.
 * `Submodule.orbitRelQuotientMap_bijective_iff`: for a semilinear equivalence `e` carrying `p` into
   `q`, the induced map is bijective exactly when `e` carries `p` onto `q`.
 * `Submodule.orbitRelQuotientComapQuotientEquiv`: the quotient of `f⁻¹(q) / p` by the image of
   `ker f` is additively equivalent to `(q ∩ range f) / (q ∩ f(p))`.
+* `Submodule.orbitRelQuotientProdAddEquiv`: the orbit space of translation by `p.prod q` is
+  additively equivalent to the product of the orbit spaces of `p` and `q`.
+* `Submodule.orbitRelQuotientProdAddEquiv_orbitRelQuotientMap_prodMap`: through this
+  equivalence, the map induced by `f.prodMap g` is the product of the maps induced by `f` and `g`.
 
 ## References
 
@@ -127,6 +143,13 @@ theorem Submodule.coe_orbitRelQuotientMkHom :
     ⇑p.orbitRelQuotientMkHom = _root_.Quotient.mk (AddAction.orbitRel p M) :=
   (rfl)
 
+/-- Two points of `M` have the same image in the orbit space of translation by `p` exactly when
+their difference lies in `p`. -/
+theorem Submodule.orbitRelQuotient_mk_eq_mk_iff {x y : M} :
+    _root_.Quotient.mk (AddAction.orbitRel p M) x = _root_.Quotient.mk (AddAction.orbitRel p M) y ↔
+      x - y ∈ p :=
+  _root_.Quotient.eq.trans p.orbitRel_apply_iff_sub_mem
+
 /-- A point of `M` projects to `0` in the orbit space of translation by `p` exactly when it lies
 in `p`. -/
 @[simp]
@@ -138,6 +161,13 @@ theorem Submodule.orbitRelQuotient_mk_eq_zero_iff {x : M} :
 @[simp]
 theorem Submodule.ker_orbitRelQuotientMkHom : p.orbitRelQuotientMkHom.ker = p.toAddSubgroup := by
   ext x
+  simp
+
+/-- **The period sequence is exact**: for a linear map `f : N → M`, the orbit projection for
+translation by the range of `f` is exact after `f`, in `N → M → M / range f`. Read through
+`Submodule.orbitRelQuotientAddEquiv`, this is `LinearMap.exact_map_mkQ_range`. -/
+theorem LinearMap.exact_orbitRelQuotientMkHom_range {N : Type*} [AddCommGroup N] [Module R N]
+    (f : N →ₗ[R] M) : Function.Exact f (LinearMap.range f).orbitRelQuotientMkHom := fun x ↦ by
   simp
 
 /-- The orbit projection for translation by `p` commutes with negation. -/
@@ -222,6 +252,25 @@ theorem Submodule.orbitRelQuotientMap_surjective {f : M →ₛₗ[τ₁₂] M₂
   induction y using _root_.Quotient.inductionOn with | h y => ?_
   obtain ⟨x, rfl⟩ := hf y
   exact ⟨_, p.orbitRelQuotientMap_mk q f h x⟩
+
+/-- The kernel of the map of orbit spaces induced by `f` is the image `f⁻¹(q) / p` of `f⁻¹(q)` in
+the orbit space of translation by `p`. For lattices and a complex linear map, it is the kernel of
+the induced homomorphism of complex tori. -/
+theorem Submodule.ker_orbitRelQuotientMap (f : M →ₛₗ[τ₁₂] M₂) (h : p ≤ q.comap f) :
+    (p.orbitRelQuotientMap q f h).ker = (q.comap f).toAddSubgroup.map p.orbitRelQuotientMkHom := by
+  ext y
+  induction y using _root_.Quotient.inductionOn with | h x => ?_
+  simp only [AddMonoidHom.mem_ker, orbitRelQuotientMap_mk, orbitRelQuotient_mk_eq_zero_iff,
+    AddSubgroup.mem_map, coe_orbitRelQuotientMkHom, _root_.Quotient.eq, orbitRel_apply_iff_sub_mem]
+  refine ⟨fun hx ↦ ⟨x, hx, by simp⟩, fun ⟨z, hz, hzx⟩ ↦ ?_⟩
+  simpa using q.sub_mem (mem_comap.1 hz) (h hzx)
+
+/-- The range of the map of orbit spaces induced by `f` is the image of the range of `f`. -/
+theorem Submodule.range_orbitRelQuotientMap (f : M →ₛₗ[τ₁₂] M₂) (h : p ≤ q.comap f) :
+    Set.range (p.orbitRelQuotientMap q f h) =
+      _root_.Quotient.mk (AddAction.orbitRel q M₂) '' Set.range f := by
+  rw [← _root_.Quotient.mk_surjective.range_comp, ← Set.range_comp]
+  exact congrArg Set.range (funext <| p.orbitRelQuotientMap_mk q f h)
 
 variable {σ₁₂ : R →+* R₂} {σ₂₁ : R₂ →+* R} [RingHomInvPair σ₁₂ σ₂₁] [RingHomInvPair σ₂₁ σ₁₂]
 
@@ -345,3 +394,72 @@ theorem Submodule.orbitRelQuotientComapQuotientEquiv_mk {x : M} (hx : x ∈ q.co
   exact congrArg _ (AddEquiv.symm_apply_apply _ (QuotientAddGroup.mk (⟨x, hx⟩ : q.comap f)))
 
 end Preimage
+
+section Prod
+
+variable {M₂ : Type*} [AddCommGroup M₂] [Module R M₂] (q : Submodule R M₂)
+
+/-- The orbit relation of translation by `p.prod q` on `M × M₂` is the product of the orbit
+relations of translation by `p` on `M` and by `q` on `M₂`. -/
+theorem Submodule.orbitRel_prod :
+    AddAction.orbitRel (p.prod q) (M × M₂) =
+      (AddAction.orbitRel p M).prod (AddAction.orbitRel q M₂) :=
+  Setoid.ext fun x y ↦ by
+    rw [orbitRel_apply_iff_sub_mem, Setoid.prod_apply, orbitRel_apply_iff_sub_mem,
+      orbitRel_apply_iff_sub_mem]
+    exact Submodule.mem_prod
+
+/-- The orbit space of translation by `p.prod q` on `M × M₂` is additively equivalent to the
+product of the orbit spaces of translation by `p` on `M` and by `q` on `M₂`, by the equivalence
+sending the orbit of `(x, y)` to the pair of orbits of `x` and `y`. For lattices `L ⊆ E` and
+`L' ⊆ E'` in complex vector spaces, this identifies the complex torus `(E × E') / (L × L')` with the
+product of the complex tori `E / L` and `E' / L'`. -/
+def Submodule.orbitRelQuotientProdAddEquiv :
+    AddAction.orbitRel.Quotient (p.prod q) (M × M₂) ≃+
+      AddAction.orbitRel.Quotient p M × AddAction.orbitRel.Quotient q M₂ where
+  toEquiv := (Quotient.congrRight fun x y ↦ by rw [p.orbitRel_prod q]).trans
+    (Setoid.prodQuotientEquiv _ _).symm
+  map_add' x y := by
+    induction x, y using _root_.Quotient.inductionOn₂ with | h x y => ?_
+    rw [← (p.prod q).orbitRelQuotient_mk_add]
+    exact Prod.ext (p.orbitRelQuotient_mk_add _ _) (q.orbitRelQuotient_mk_add _ _)
+
+/-- `Submodule.orbitRelQuotientProdAddEquiv` sends the orbit of `x` to the pair of orbits of its
+components. -/
+@[simp]
+theorem Submodule.orbitRelQuotientProdAddEquiv_mk (x : M × M₂) :
+    p.orbitRelQuotientProdAddEquiv q (_root_.Quotient.mk (AddAction.orbitRel (p.prod q) _) x) =
+      (_root_.Quotient.mk (AddAction.orbitRel p M) x.1,
+        _root_.Quotient.mk (AddAction.orbitRel q M₂) x.2) :=
+  (rfl)
+
+/-- The inverse of `Submodule.orbitRelQuotientProdAddEquiv` sends a pair of orbits of `x` and `y`
+to the orbit of `(x, y)`. -/
+@[simp]
+theorem Submodule.orbitRelQuotientProdAddEquiv_symm_mk (x : M) (y : M₂) :
+    (p.orbitRelQuotientProdAddEquiv q).symm
+        (_root_.Quotient.mk (AddAction.orbitRel p M) x,
+          _root_.Quotient.mk (AddAction.orbitRel q M₂) y) =
+      _root_.Quotient.mk (AddAction.orbitRel (p.prod q) (M × M₂)) (x, y) :=
+  (rfl)
+
+/-- The map of orbit spaces induced by a product `f.prodMap g` is, through
+`Submodule.orbitRelQuotientProdAddEquiv`, the product of the maps induced by `f` and by `g`. For
+lattices and complex linear maps, the homomorphism of complex tori induced by `f × g` is the
+product of the homomorphisms induced by `f` and `g`. -/
+@[simp]
+theorem Submodule.orbitRelQuotientProdAddEquiv_orbitRelQuotientMap_prodMap {N N₂ : Type*}
+    [AddCommGroup N] [Module R N] [AddCommGroup N₂] [Module R N₂] (r : Submodule R N)
+    (r₂ : Submodule R N₂) (f : M →ₗ[R] N) (g : M₂ →ₗ[R] N₂) (hf : p ≤ r.comap f)
+    (hg : q ≤ r₂.comap g)
+    (h : p.prod q ≤ (r.prod r₂).comap (f.prodMap g) :=
+      (LinearMap.prodMap_comap_prod f g r r₂).symm ▸ Submodule.prod_mono hf hg)
+    (x : AddAction.orbitRel.Quotient (p.prod q) (M × M₂)) :
+    r.orbitRelQuotientProdAddEquiv r₂
+        ((p.prod q).orbitRelQuotientMap (r.prod r₂) (f.prodMap g) h x) =
+      Prod.map (p.orbitRelQuotientMap r f hf) (q.orbitRelQuotientMap r₂ g hg)
+        (p.orbitRelQuotientProdAddEquiv q x) := by
+  induction x using _root_.Quotient.inductionOn
+  simp
+
+end Prod

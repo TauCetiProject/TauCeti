@@ -5,9 +5,12 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.GroupTheory.FreeGroup.BigPowers
 public import TauCeti.GroupTheory.FreeGroup.CSA
 public import TauCeti.GroupTheory.FreeGroup.Discrimination
 public import TauCeti.GroupTheory.GroupAlgGeom.Discrimination
+public import TauCeti.GroupTheory.GroupAlgGeom.Domain
+import TauCeti.GroupTheory.FreeGroup.MaximalExponent
 
 /-!
 # Residually free and fully residually free groups
@@ -25,13 +28,21 @@ both properties are separation, respectively discrimination, by `FreeGroup (Fin 
 coefficients in the sense of `TauCeti.GroupAlgGeom`. This makes both properties independent of
 universes and gives their inheritance by subgroups.
 
-Free groups are fully residually free, and residually free groups are torsion-free; in particular
-a nontrivial finite group is not residually free. Fully residually free groups are commutative
-transitive, since one homomorphism to a free group can keep both a nonidentity element and a
-commutator nontrivial, and commutation is transitive on the nontrivial elements of a free group.
+Free groups are fully residually free, and residually free groups have unique roots, hence are
+torsion-free; in particular a nontrivial finite group is not residually free. Every nonidentity
+element of a residually free group is a positive power of an element that is not a proper power,
+because its root exponents are bounded by those of a nonidentity image in a free group. With unique
+roots, that root has the same centralizer as the element (`Subgroup.centralizer_pow_eq`), so an
+extension of the centralizer of a nonidentity element is also one of a non-proper-power.
+Fully residually free groups are CSA, hence commutative transitive with abelian centralizers of
+nonidentity elements: one homomorphism to a free group can keep any two nonidentity elements
+nontrivial, and the CSA property is witnessed by pairs of elements. Consequently a nonabelian
+fully residually free group is a domain in the sense of algebraic geometry over groups.
 Residual freeness passes to products, so `FreeGroup (Fin 2) × Multiplicative ℤ` is residually
 free; it is not commutative transitive, hence not fully residually free. Thus the two notions
-differ.
+differ. Fully residually free groups also inherit the big powers property from free groups,
+since one homomorphism to a free group can keep every entry of a tuple and every commutator of
+consecutive entries nontrivial.
 
 ## Main definitions
 
@@ -44,10 +55,22 @@ differ.
   discrimination by `FreeGroup (Fin 2)` with trivial coefficients.
 * `TauCeti.LimitGroup.IsFullyResiduallyFree.of_injective`: subgroups of fully residually free
   groups are fully residually free.
+* `TauCeti.LimitGroup.IsResiduallyFree.hasUniqueRoots`: residually free groups have unique roots.
 * `TauCeti.LimitGroup.IsResiduallyFree.isMulTorsionFree`: residually free groups are
   torsion-free.
+* `TauCeti.LimitGroup.IsResiduallyFree.exists_maximalRoot`: in a residually free group every
+  nonidentity element is `r ^ k` with `k ≠ 0`, `r` not a proper power, and `k` the greatest root
+  exponent of the element.
+* `TauCeti.LimitGroup.IsResiduallyFree.centralizerExt_root_reduction`: in a residually free group
+  every nonidentity element `u` is `r ^ d` with `d ≠ 0`, `r` not a proper power, and
+  `C_G(u) = C_G(r)`.
+* `TauCeti.LimitGroup.IsFullyResiduallyFree.isCSA`: fully residually free groups are CSA.
 * `TauCeti.LimitGroup.IsFullyResiduallyFree.isCommTransitive`: fully residually free groups are
   commutative transitive.
+* `TauCeti.LimitGroup.IsFullyResiduallyFree.isGDomain_id`: nonabelian fully residually free
+  groups are domains.
+* `TauCeti.LimitGroup.IsFullyResiduallyFree.isBP`: fully residually free groups have the big
+  powers property.
 * `TauCeti.LimitGroup.not_isFullyResiduallyFree_freeGroup_prod_int`: `F₂ × ℤ` is residually free
   but not fully residually free.
 
@@ -57,6 +80,8 @@ differ.
   (2005), §2.3 (Definition 2.5) and Proposition 3.1.
 * O. Kharlampovich, A. Myasnikov, *Implicit function theorem over free groups*, J. Algebra 290
   (2005), §2.6.
+* G. Baumslag, A. Myasnikov, V. Remeslennikov, *Algebraic geometry over groups I. Algebraic sets
+  and ideal theory*, J. Algebra 219 (1999), §2.1.
 -/
 
 public section
@@ -183,12 +208,43 @@ theorem IsResiduallyFree.prod (hG : IsResiduallyFree G) (hH : IsResiduallyFree H
   · obtain ⟨φ, hφ⟩ := hG g hg
     exact ⟨φ.comp (MonoidHom.fst G H), hφ⟩
 
-/-- A residually free group is torsion-free, since free groups are. -/
-theorem IsResiduallyFree.isMulTorsionFree (h : IsResiduallyFree G) : IsMulTorsionFree G := by
-  rw [isMulTorsionFree_iff_not_isOfFinOrder]
-  intro g hg hfin
-  obtain ⟨ι, φ, hφ⟩ := h g hg
-  exact not_isOfFinOrder_of_isMulTorsionFree hφ (φ.isOfFinOrder hfin)
+/-- A residually free group has unique roots: if `x ^ n = y ^ n` with `n ≠ 0` and `x ≠ y`, then
+`x * y⁻¹ ≠ 1` survives in some free group, where roots are unique. -/
+theorem IsResiduallyFree.hasUniqueRoots (h : IsResiduallyFree G) : HasUniqueRoots G where
+  pow_left_injective n hn x y hxy := by
+    by_contra hne
+    obtain ⟨ι, φ, hφ⟩ := h (x * y⁻¹) (mul_inv_eq_one.not.mpr hne)
+    refine hφ ((map_mul_inv φ x y).trans (mul_inv_eq_one.mpr (pow_left_injective hn ?_)))
+    simpa only [map_pow] using congrArg φ hxy
+
+/-- A residually free group is torsion-free, since it has unique roots. -/
+theorem IsResiduallyFree.isMulTorsionFree (h : IsResiduallyFree G) : IsMulTorsionFree G :=
+  have := h.hasUniqueRoots
+  inferInstance
+
+/-- Every nonidentity element `u` of a residually free group is `r ^ k` for some `k ≠ 0` and some
+`r` that is not a proper power, with `k` the greatest exponent of a root of `u`: root exponents of
+`u` are bounded by the reduced-word length of a nonidentity image of `u` in a free group. -/
+theorem IsResiduallyFree.exists_maximalRoot (h : IsResiduallyFree G) {u : G} (hu : u ≠ 1) :
+    ∃ (r : G) (k : ℕ), k ≠ 0 ∧ r ^ k = u ∧ ¬IsProperPower r ∧
+      ∀ (y : G) (n : ℕ), y ^ n = u → n ≤ k := by
+  refine exists_maximalRoot_of_bddAbove hu ?_
+  obtain ⟨ι, φ, hφ⟩ := h u hu
+  classical
+  exact ⟨FreeGroup.norm (φ u), fun n ⟨y, hy⟩ =>
+    FreeGroup.le_norm_of_pow_eq (y := φ y) hφ (by rw [← map_pow, hy])⟩
+
+/-- Root reduction for extensions of centralizers: every nonidentity element `u` of a residually
+free group is `r ^ d` for some `d ≠ 0` and some `r` that is not a proper power with
+`C_G(u) = C_G(r)`. Hence an extension of the centralizer of `u` is one of the centralizer of `r`
+(`CentralizerExt.congr`), an admissible step when the rank is positive. -/
+theorem IsResiduallyFree.centralizerExt_root_reduction (h : IsResiduallyFree G) {u : G}
+    (hu : u ≠ 1) :
+    ∃ (r : G) (d : ℕ), d ≠ 0 ∧ r ^ d = u ∧ ¬IsProperPower r ∧
+      Subgroup.centralizer {u} = Subgroup.centralizer {r} := by
+  obtain ⟨r, d, hd, rfl, hr, -⟩ := h.exists_maximalRoot hu
+  have := h.hasUniqueRoots
+  exact ⟨r, d, hd, rfl, hr, Subgroup.centralizer_pow_eq r hd⟩
 
 /-- A nontrivial finite group, such as `ℤ/2`, is not residually free. -/
 theorem not_isResiduallyFree_of_finite [Finite G] [Nontrivial G] : ¬IsResiduallyFree G := by
@@ -197,22 +253,31 @@ theorem not_isResiduallyFree_of_finite [Finite G] [Nontrivial G] : ¬IsResiduall
   obtain ⟨g, hg⟩ := exists_ne (1 : G)
   exact not_isOfFinOrder_of_isMulTorsionFree hg (isOfFinOrder_of_finite g)
 
+/-- A fully residually free group is CSA: its maximal abelian subgroups are malnormal. -/
+theorem IsFullyResiduallyFree.isCSA (h : IsFullyResiduallyFree G) : IsCSA G := by
+  classical
+  refine IsFreeGroup.isCSA.of_forall_exists_monoidHom (H := FreeGroup (Fin 2))
+    fun a b ha hb => ?_
+  obtain ⟨φ, hφ⟩ := isFullyResiduallyFree_iff_fin_two.1 h {a, b} (by simp [ha, hb])
+  exact ⟨φ, hφ a (by simp), hφ b (by simp)⟩
+
 /-- A fully residually free group is commutative transitive: if `y ≠ 1`, `Commute x y`, and
 `Commute y z`, then `Commute x z`. -/
 theorem IsFullyResiduallyFree.isCommTransitive (h : IsFullyResiduallyFree G) :
-    IsCommTransitive G := by
-  classical
-  rw [isCommTransitive_iff]
-  intro x y z hy hxy hyz
-  rw [← commutatorElement_eq_one_iff_commute]
-  -- Otherwise one homomorphism to a free group keeps both `y` and `⁅x, z⁆` nontrivial, which
-  -- contradicts commutative transitivity of the free group.
-  by_contra hxz
-  obtain ⟨ι, φ, hφ⟩ := h ({y, ⁅x, z⁆} : Finset G) (by simp [hy, hxz])
-  have hφxz : Commute (φ x) (φ z) := (isCommTransitive_iff _).1 IsFreeGroup.isCommTransitive
-    _ _ _ (hφ y (by simp)) (hxy.map φ) (hyz.map φ)
-  apply hφ ⁅x, z⁆ (by simp)
-  rwa [map_commutatorElement, commutatorElement_eq_one_iff_commute]
+    IsCommTransitive G :=
+  h.isCSA.isCommTransitive
+
+/-- A nonabelian fully residually free group is a domain: for any two nonidentity elements `x`
+and `y`, some conjugate of `y` does not commute with `x`. -/
+theorem IsFullyResiduallyFree.isGDomain_id (h : IsFullyResiduallyFree G)
+    (hG : ¬IsMulCommutative G) : IsGDomain (MonoidHom.id G) :=
+  IsGDomain.of_isCSA_of_injective h.isCSA Function.injective_id hG
+
+/-- A fully residually free group has the big powers property, inherited from the free group of
+rank two through one homomorphism keeping the entries of a tuple and the commutators of
+consecutive entries nontrivial. -/
+theorem IsFullyResiduallyFree.isBP (h : IsFullyResiduallyFree G) : IsBP G :=
+  FreeGroup.isBP.of_forall_finset_exists_monoidHom (isFullyResiduallyFree_iff_fin_two.1 h)
 
 /-- `F₂ × ℤ` is residually free, through its projections to the factors. -/
 theorem isResiduallyFree_freeGroup_prod_int :

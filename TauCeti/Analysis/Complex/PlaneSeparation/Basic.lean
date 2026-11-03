@@ -64,22 +64,21 @@ shifted by `2 * π * I`. That contradiction is the theorem.
 Nothing in the argument looks at curves inside `K`, or asks `K` to be connected, locally connected,
 or to contain an arc; `K` enters only through the frontier of one component of its complement.
 
-## Roadmap role
+## Relation to the Carathéodory correspondence
 
-**Plane separation for Jordan curves** was the open frontier item of layer **L5** of
-`TauCetiRoadmap/ConformalMapping/README.md`, the Carathéodory boundary correspondence.
+The crosscut argument for the Carathéodory boundary correspondence does not depend on plane
+separation:
 `TauCeti.image_inter_ball_subset_filledHull_of_diam_lt_of_isPreconnected_sdiff_singleton` of
-`TauCeti/Analysis/Complex/Conformal/Crosscut/Inside.lean` avoids the plane-separation hypothesis
-entirely by taking `IsPreconnected (K \ {f z₀})` instead, which
-`IsJordanCurve.isPathConnected_sdiff_singleton` discharges; `Caratheodory.lean` is now
-unconditional. `TauCeti/Analysis/Complex/ContinuousLog/Basic.lean` names the remaining open
-statement on the classical route through Janiszewski's theorem — the converse direction — and
-this file supplies it, so `TauCeti.janiszewski` is available to that route as well.
+`TauCeti/Analysis/Complex/Conformal/Crosscut/Inside.lean` avoids a plane-separation hypothesis by
+taking `IsPreconnected (K \ {f z₀})` instead, which
+`IsJordanCurve.isPathConnected_sdiff_singleton` discharges. The classical route through
+Janiszewski's theorem, set up in `TauCeti/Analysis/Complex/ContinuousLog/Basic.lean`, needs the
+converse direction of its Borsuk-map criterion; this file supplies it, so
+`TauCeti.janiszewski` is available to that route as well.
 
-Mathlib has no separation theory for the plane and no Jordan curve theorem, and layer L5 is absent
-from [mathlib4#33505](https://github.com/leanprover-community/mathlib4/pull/33505), the in-progress
-human-curated Riemann-mapping-theorem effort. The lifting of a zero-free continuous function
-through `Complex.exp` is supplied by Mathlib's `Complex.exists_continuousOn_eqOn_exp_comp`.
+Mathlib has no separation theory for the plane and no Jordan curve theorem. The lifting of a
+zero-free continuous function through `Complex.exp` is supplied by Mathlib's
+`Complex.exists_continuousOn_eqOn_exp_comp`.
 
 ## Janiszewski's second theorem
 

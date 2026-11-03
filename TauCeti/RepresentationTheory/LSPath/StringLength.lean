@@ -5,7 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.RepresentationTheory.LSPath.PartialInverse
+public import TauCeti.Data.Option.Iterate
+public import TauCeti.RepresentationTheory.LSPath.RootOperator
 
 /-!
 # String lengths of the root operators on piecewise-linear paths
@@ -13,7 +14,8 @@ public import TauCeti.RepresentationTheory.LSPath.PartialInverse
 Fix a vector `x : V` and a linear form `f : V → 𝕜` with `f x = 2`; in Littelmann's path model
 `x` is a simple root `α` and `f` the pairing with its coroot. Write `H(t) = f (π t)` for the
 running height of a path `π` and `h = min H` for its minimal height
-(`TauCeti.PLPath.minHeight`). This file proves that the root operators
+(`TauCeti.PLPath.minHeight`). The single-step formulas in
+`TauCeti.RepresentationTheory.LSPath.RootOperator` show that the root operators
 `f_α = TauCeti.PLPath.lower f x` and `e_α = TauCeti.PLPath.raise f x` move the minimal height by
 exactly one step: `min H(f_α π) = h - 1` and `min H(e_α π) = h + 1`. Since `f_α` lowers the final
 height by `f x = 2`, it shortens `H(1) - h` by one.
@@ -32,13 +34,12 @@ height is at most `c` and at most every later height lowers the minimal height b
 
 ## Main results
 
-* `TauCeti.PLPath.listMinHeight_reflectRecords`: the minimal height of capped reflection.
-* `TauCeti.PLPath.minHeight_of_lower_eq_some`, `TauCeti.PLPath.minHeight_of_raise_eq_some`:
-  `f_α` lowers and `e_α` raises the minimal height by one.
-* `TauCeti.PLPath.isSome_iterate_bind_lower_iff`, `TauCeti.PLPath.isSome_iterate_bind_raise_iff`:
+* `TauCeti.PLPath.lowerIter`, `TauCeti.PLPath.raiseIter`: iterated partial root operators,
+  with composition, reversal, endpoint and minimum-height formulas.
+* `TauCeti.PLPath.isSome_lowerIter_iff`, `TauCeti.PLPath.isSome_raiseIter_iff`:
   the lengths of the root strings through a path.
-* `TauCeti.PLPath.isSome_iterate_bind_lower_iff_of_eq_natCast`,
-  `TauCeti.PLPath.isSome_iterate_bind_raise_iff_of_eq_natCast`: the string-length identities
+* `TauCeti.PLPath.isSome_lowerIter_iff_of_eq_natCast`,
+  `TauCeti.PLPath.isSome_raiseIter_iff_of_eq_natCast`: the string-length identities
   `φ_α = H(1) - h` and `ε_α = -h` when these are natural numbers.
 
 ## References
@@ -58,134 +59,169 @@ open Module
 variable {𝕜 : Type*} {V : Type*} [Field 𝕜] [LinearOrder 𝕜] [IsStrictOrderedRing 𝕜]
   [AddCommGroup V] [Module 𝕜 V] {f : Dual 𝕜 V} {x : V}
 
-/-! ### The minimal height of capped reflection -/
-
-/-- Reflecting the records up to height `c` lowers the minimal height by the increase, along the
-path, of the minimum of `c` and the later minimal height. Compare
-`TauCeti.PLPath.sum_reflectRecords`, by which the final height drops by twice this amount. -/
-theorem listMinHeight_reflectRecords (hx : f x = 2) (c : 𝕜) (l : List V) :
-    listMinHeight f (reflectRecords f x c l) =
-      listMinHeight f l - (min (f l.sum) c - min (listMinHeight f l) c) := by
-  induction l generalizing c with
-  | nil => simp
-  | cons v l ih =>
-    have hl := listMinHeight_nonpos (f := f) l
-    have hls := listMinHeight_le_apply_sum (f := f) l
-    by_cases h : 0 < min (f v + listMinHeight f l) c
-    · set r := min (f v + listMinHeight f l) c with hr
-      have hfv : f v ≠ 0 := (h.trans_le ((min_le_left _ _).trans (by linarith))).ne'
-      -- The reflected initial piece of `v` descends by `r`; the kept piece climbs by `f v - r`.
-      have h₁ : f (preReflection x f ((r / f v) • v)) = -r := by
-        rw [preReflection_apply, map_sub, map_smul, map_smul, hx, smul_eq_mul, smul_eq_mul,
-          div_mul_cancel₀ _ hfv]
-        ring
-      have h₂ : f ((1 - r / f v) • v) = f v - r := by
-        rw [map_smul, smul_eq_mul, sub_mul, one_mul, div_mul_cancel₀ _ hfv]
-      have hr₁ : r ≤ f v + listMinHeight f l := min_le_left _ _
-      have hr₂ : r ≤ c := min_le_right _ _
-      have hpos : 0 < f v + listMinHeight f l := h.trans_le hr₁
-      have hc : 0 < c := h.trans_le hr₂
-      rw [reflectRecords_cons_of_pos h, ← hr]
-      simp only [listMinHeight_cons, ih, h₁, h₂, List.sum_cons, map_add, min_eq_left hpos.le,
-        min_eq_left hc.le]
-      rcases min_choice (f v + listMinHeight f l) c with hr₃ | hr₃ <;> rw [← hr] at hr₃
-      · -- The whole of `v` lies below the cap, so the cap on `l` is above its minimal height.
-        rw [min_eq_left (show listMinHeight f l ≤ c - f v by linarith)]
-        simp only [min_def]
-        split_ifs <;> linarith
-      · -- The cap is reached inside `v`, so it stays below every later height.
-        rw [min_eq_right (show c - f v ≤ f l.sum by linarith),
-          min_eq_right (show c - f v ≤ listMinHeight f l by linarith)]
-        simp only [min_def]
-        split_ifs <;> linarith
-    · rw [reflectRecords_cons_of_nonpos (not_lt.1 h)]
-      simp only [listMinHeight_cons, ih, List.sum_cons, map_add]
-      simp only [min_def] at h ⊢
-      split_ifs at h ⊢ <;> linarith
-
-/-! ### The root operators move the minimal height by one -/
-
 variable {p q : PLPath 𝕜 V}
 
-/-- **Lowering lowers the minimal height by one**: `min H(f_α π) = min H(π) - 1`. -/
-theorem minHeight_of_lower_eq_some (hx : f x = 2) (h : lower f x p = some q) :
-    q.minHeight f = p.minHeight f - 1 := by
-  rw [← ofSegments_segments p, lower_ofSegments] at h
-  obtain ⟨l, hl, rfl⟩ := Option.map_eq_some_iff.1 h
-  rw [listLower_def] at hl
-  split_ifs at hl with hdef
-  obtain rfl := Option.some.inj hl
-  rw [minHeight_ofSegments, listMinHeight_reflectRecords hx, minHeight_def,
-    min_eq_right (by linarith), min_eq_left (by linarith)]
-  ring
+/-! ### Iterated root operators -/
 
-/-- **Raising raises the minimal height by one**: `min H(e_α π) = min H(π) + 1`. -/
-theorem minHeight_of_raise_eq_some (hx : f x = 2) (h : raise f x p = some q) :
-    q.minHeight f = p.minHeight f + 1 := by
-  rw [minHeight_of_lower_eq_some hx ((raise_eq_some_iff hx).1 h)]
-  ring
+variable (f x) in
+/-- Apply lowering `n` times, returning `none` as soon as an application is undefined. -/
+noncomputable def lowerIter : ℕ → PLPath 𝕜 V → Option (PLPath 𝕜 V) :=
+  Option.iterate (lower f x)
 
-/-- Lowering shortens the lowering string by one: `H(1) - min H` drops by one under `f_α`. -/
-theorem apply_endpoint_sub_minHeight_of_lower_eq_some (hx : f x = 2) (h : lower f x p = some q) :
-    f q.endpoint - q.minHeight f + 1 = f p.endpoint - p.minHeight f := by
-  rw [endpoint_of_lower_eq_some h, minHeight_of_lower_eq_some hx h, map_sub, hx]
+variable (f x) in
+/-- Apply raising `n` times, returning `none` as soon as an application is undefined. -/
+noncomputable def raiseIter : ℕ → PLPath 𝕜 V → Option (PLPath 𝕜 V) :=
+  Option.iterate (raise f x)
+
+@[simp]
+theorem lowerIter_zero (p : PLPath 𝕜 V) : lowerIter f x 0 p = some p :=
+  Option.iterate_zero (lower f x) p
+
+@[simp]
+theorem raiseIter_zero (p : PLPath 𝕜 V) : raiseIter f x 0 p = some p :=
+  Option.iterate_zero (raise f x) p
+
+theorem lowerIter_succ (n : ℕ) (p : PLPath 𝕜 V) :
+    lowerIter f x (n + 1) p = (lower f x p).bind (lowerIter f x n) :=
+  Option.iterate_succ (lower f x) n p
+
+theorem raiseIter_succ (n : ℕ) (p : PLPath 𝕜 V) :
+    raiseIter f x (n + 1) p = (raise f x p).bind (raiseIter f x n) :=
+  Option.iterate_succ (raise f x) n p
+
+@[simp]
+theorem lowerIter_one (p : PLPath 𝕜 V) : lowerIter f x 1 p = lower f x p :=
+  Option.iterate_one (lower f x) p
+
+@[simp]
+theorem raiseIter_one (p : PLPath 𝕜 V) : raiseIter f x 1 p = raise f x p :=
+  Option.iterate_one (raise f x) p
+
+/-- Iterated raising is iterated lowering conjugated by reversal. -/
+theorem raiseIter_eq_map_lowerIter_reverse (n : ℕ) (p : PLPath 𝕜 V) :
+    raiseIter f x n p = (lowerIter f x n p.reverse).map reverse := by
+  induction n generalizing p with
+  | zero => simp
+  | succ n ih =>
+    simp only [raiseIter_succ, lowerIter_succ, raise_def, Option.bind_map,
+      Option.map_bind, ih, Function.comp_def, reverse_reverse]
+
+/-- Concatenating two runs of the lowering operator. -/
+theorem lowerIter_add (m n : ℕ) (p : PLPath 𝕜 V) :
+    lowerIter f x (m + n) p = (lowerIter f x m p).bind (lowerIter f x n) :=
+  Option.iterate_add (lower f x) m n p
+
+/-- Concatenating two runs of the raising operator. -/
+theorem raiseIter_add (m n : ℕ) (p : PLPath 𝕜 V) :
+    raiseIter f x (m + n) p = (raiseIter f x m p).bind (raiseIter f x n) :=
+  Option.iterate_add (raise f x) m n p
+
+variable {n : ℕ}
+
+/-- Lowering `n` times subtracts `n` copies of the root from the endpoint. -/
+theorem endpoint_of_lowerIter_eq_some (h : lowerIter f x n p = some q) :
+    q.endpoint = p.endpoint - n • x := by
+  induction n generalizing p with
+  | zero =>
+    simp only [lowerIter_zero, Option.some.injEq] at h
+    subst q
+    simp
+  | succ n ih =>
+    rw [lowerIter_succ, Option.bind_eq_some_iff] at h
+    obtain ⟨r, hr, hq⟩ := h
+    rw [ih hq, endpoint_of_lower_eq_some hr, add_nsmul, one_nsmul]
+    abel
+
+/-- Lowering `n` times decreases the minimum height by `n`. -/
+theorem minHeight_of_lowerIter_eq_some (hx : f x = 2)
+    (h : lowerIter f x n p = some q) : q.minHeight f = p.minHeight f - n := by
+  induction n generalizing p with
+  | zero =>
+    simp only [lowerIter_zero, Option.some.injEq] at h
+    subst q
+    simp
+  | succ n ih =>
+    rw [lowerIter_succ, Option.bind_eq_some_iff] at h
+    obtain ⟨r, hr, hq⟩ := h
+    rw [ih hq, minHeight_of_lower_eq_some hx hr, Nat.cast_add, Nat.cast_one]
+    ring
+
+/-- Raising `n` times adds `n` copies of the root to the endpoint. -/
+theorem endpoint_of_raiseIter_eq_some (h : raiseIter f x n p = some q) :
+    q.endpoint = p.endpoint + n • x := by
+  rw [raiseIter_eq_map_lowerIter_reverse] at h
+  obtain ⟨r, hr, rfl⟩ := Option.map_eq_some_iff.1 h
+  rw [endpoint_reverse, endpoint_of_lowerIter_eq_some hr, endpoint_reverse]
+  abel
+
+/-- Raising `n` times increases the minimum height by `n`. -/
+theorem minHeight_of_raiseIter_eq_some (hx : f x = 2)
+    (h : raiseIter f x n p = some q) : q.minHeight f = p.minHeight f + n := by
+  rw [raiseIter_eq_map_lowerIter_reverse] at h
+  obtain ⟨r, hr, rfl⟩ := Option.map_eq_some_iff.1 h
+  rw [minHeight_reverse, minHeight_of_lowerIter_eq_some hx hr,
+    endpoint_of_lowerIter_eq_some hr, map_sub, endpoint_reverse, map_neg, map_nsmul, hx,
+    minHeight_reverse]
+  simp only [nsmul_eq_mul]
   ring
 
 /-! ### Lengths of the root strings -/
 
-/-- **The lowering string through a path**: `f_α ^ n π` is defined exactly when
-`n ≤ H(1) - min H`. -/
-theorem isSome_iterate_bind_lower_iff (hx : f x = 2) (n : ℕ) (p : PLPath 𝕜 V) :
-    ((fun o ↦ o.bind (lower f x))^[n] (some p)).isSome ↔
-      (n : 𝕜) ≤ f p.endpoint - p.minHeight f := by
+/-- The exact bound for iterated lowering. No integrality hypothesis on the path is needed. -/
+@[simp]
+theorem isSome_lowerIter_iff (hx : f x = 2) :
+    (lowerIter f x n p).isSome ↔ (n : 𝕜) ≤ f p.endpoint - p.minHeight f := by
   induction n generalizing p with
-  | zero => simpa using sub_nonneg.2 (minHeight_le_apply_endpoint p)
+  | zero => simp [sub_nonneg.2 (minHeight_le_apply_endpoint p)]
   | succ n ih =>
-    rw [Function.iterate_succ_apply, Option.bind_some]
+    rw [lowerIter_succ]
     cases h : lower f x p with
     | none =>
-      rw [lower_eq_none_iff] at h
-      rw [Function.iterate_fixed (Option.bind_none _), Option.isSome_none, Bool.false_eq_true,
-        false_iff, not_le]
-      push_cast
-      linarith [(Nat.cast_nonneg n : (0 : 𝕜) ≤ n)]
-    | some q =>
-      rw [ih, ← apply_endpoint_sub_minHeight_of_lower_eq_some hx h]
-      push_cast
-      constructor <;> intro <;> linarith
+      have hp := lower_eq_none_iff.1 h
+      simp only [Option.bind_none, Option.isSome_none, Bool.false_eq_true, false_iff,
+        Nat.cast_add, Nat.cast_one, not_le]
+      have hn : (0 : 𝕜) ≤ n := Nat.cast_nonneg n
+      linarith
+    | some r =>
+      have he := endpoint_of_lower_eq_some h
+      have hm := minHeight_of_lower_eq_some hx h
+      simp only [Option.bind_some, ih, he, hm, map_sub, hx, Nat.cast_add, Nat.cast_one]
+      constructor <;> intro hn <;> linarith
 
-/-- **The raising string through a path**: `e_α ^ n π` is defined exactly when `n ≤ -min H`. -/
-theorem isSome_iterate_bind_raise_iff (hx : f x = 2) (n : ℕ) (p : PLPath 𝕜 V) :
-    ((fun o ↦ o.bind (raise f x))^[n] (some p)).isSome ↔ (n : 𝕜) ≤ -p.minHeight f := by
-  induction n generalizing p with
-  | zero => simpa using minHeight_nonpos p
-  | succ n ih =>
-    rw [Function.iterate_succ_apply, Option.bind_some]
-    cases h : raise f x p with
-    | none =>
-      rw [raise_eq_none_iff] at h
-      rw [Function.iterate_fixed (Option.bind_none _), Option.isSome_none, Bool.false_eq_true,
-        false_iff, not_le]
-      push_cast
-      linarith [(Nat.cast_nonneg n : (0 : 𝕜) ≤ n)]
-    | some q =>
-      rw [ih, minHeight_of_raise_eq_some hx h]
-      push_cast
-      constructor <;> intro <;> linarith
+/-- The exact bound for iterated raising. Integral negative minimum height is therefore the
+usual raising-string length. -/
+@[simp]
+theorem isSome_raiseIter_iff (hx : f x = 2) :
+    (raiseIter f x n p).isSome ↔ (n : 𝕜) ≤ -p.minHeight f := by
+  rw [raiseIter_eq_map_lowerIter_reverse, Option.isSome_map, isSome_lowerIter_iff hx,
+    endpoint_reverse, map_neg, minHeight_reverse]
+  constructor <;> intro h <;> linarith
+
+/-- Iterated lowering is undefined precisely beyond its height bound. -/
+@[simp]
+theorem lowerIter_eq_none_iff (hx : f x = 2) :
+    lowerIter f x n p = none ↔ f p.endpoint - p.minHeight f < n := by
+  simpa using not_congr (isSome_lowerIter_iff (n := n) (p := p) hx)
+
+/-- Iterated raising is undefined precisely beyond its height bound. -/
+@[simp]
+theorem raiseIter_eq_none_iff (hx : f x = 2) :
+    raiseIter f x n p = none ↔ -p.minHeight f < n := by
+  simpa using not_congr (isSome_raiseIter_iff (n := n) (p := p) hx)
 
 /-- **The string-length identity `φ_α = H(1) - min H`**: when `H(1) - min H` is a natural number
 `φ`, the lowering string through the path has length exactly `φ`. -/
-theorem isSome_iterate_bind_lower_iff_of_eq_natCast (hx : f x = 2) {φ : ℕ}
+theorem isSome_lowerIter_iff_of_eq_natCast (hx : f x = 2) {φ : ℕ}
     (hφ : f p.endpoint - p.minHeight f = φ) (n : ℕ) :
-    ((fun o ↦ o.bind (lower f x))^[n] (some p)).isSome ↔ n ≤ φ := by
-  rw [isSome_iterate_bind_lower_iff hx, hφ, Nat.cast_le]
+    (lowerIter f x n p).isSome ↔ n ≤ φ := by
+  rw [isSome_lowerIter_iff hx, hφ, Nat.cast_le]
 
 /-- **The string-length identity `ε_α = -min H`**: when `-min H` is a natural number `ε`, the
 raising string through the path has length exactly `ε`. -/
-theorem isSome_iterate_bind_raise_iff_of_eq_natCast (hx : f x = 2) {ε : ℕ}
+theorem isSome_raiseIter_iff_of_eq_natCast (hx : f x = 2) {ε : ℕ}
     (hε : -p.minHeight f = ε) (n : ℕ) :
-    ((fun o ↦ o.bind (raise f x))^[n] (some p)).isSome ↔ n ≤ ε := by
-  rw [isSome_iterate_bind_raise_iff hx, hε, Nat.cast_le]
+    (raiseIter f x n p).isSome ↔ n ≤ ε := by
+  rw [isSome_raiseIter_iff hx, hε, Nat.cast_le]
 
 end PLPath
 

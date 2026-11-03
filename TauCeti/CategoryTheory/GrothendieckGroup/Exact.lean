@@ -61,6 +61,10 @@ biproduct, and degreewise-conflation formulas.
   functor towards an exact structure with more conflations, and its instance out of the split
   Grothendieck group; `TauCeti.ExactK0.ofLEEquiv` is the comparison isomorphism between exact
   structures with the same conflations.
+* `TauCeti.exactObjectRelations E`: the conflation relations as integral combinations of objects,
+  and `TauCeti.ExactK0.isoClassModelEquiv m`: the canonical isomorphism from `ExactK0 E` to the
+  group they present over a model `m` of the isomorphism classes of `C`
+  (`TauCeti.IsoClassModel`), such as a chosen skeleton.
 
 ## Main results
 
@@ -135,10 +139,11 @@ lemma freeMap_conflationRelation {D : Type u'} [Category.{v'} D] [HasZeroMorphis
 
 end Relations
 
+variable {C : Type u} [Category.{v} C] [Preadditive C] [HasZeroObject C] [HasBinaryBiproducts C]
+
 section ExactRelations
 
-variable {C : Type u} [Category.{v} C] [Preadditive C] [HasZeroObject C] [HasBinaryBiproducts C]
-  [EssentiallySmall.{w} C]
+variable [EssentiallySmall.{w} C]
 
 /-- The family of conflation relations presenting the exact `K₀` of an exact structure. -/
 def exactRelations (E : ExactStructure C) : Set (FreeAbelianGroup (ObjectCode C)) :=
@@ -164,10 +169,9 @@ lemma exactRelations_mono (h : ∀ S : ShortComplex C, E.Conflation S → E'.Con
 
 end ExactRelations
 
-variable {C : Type u} [Category.{v} C] [Preadditive C] [HasZeroObject C] [HasBinaryBiproducts C]
-  [EssentiallySmall.{w} C]
-variable {D : Type u'} [Category.{v'} D] [Preadditive D] [HasZeroObject D]
-  [HasBinaryBiproducts D] [EssentiallySmall.{w'} D]
+section ExactK0
+
+variable [EssentiallySmall.{w} C]
 
 /-- The Grothendieck group of a Quillen exact structure `E` on an essentially small additive
 category: the free abelian group on the isomorphism classes of objects, modulo
@@ -177,9 +181,15 @@ def ExactK0 (E : ExactStructure C) : Type w := PresentedK0 (exactRelations E)
 instance (E : ExactStructure C) : AddCommGroup (ExactK0 E) :=
   inferInstanceAs (AddCommGroup (PresentedK0 (exactRelations E)))
 
+end ExactK0
+
 namespace ExactK0
 
-variable {E : ExactStructure C} {E' : ExactStructure D}
+variable {E : ExactStructure C}
+
+section Basic
+
+variable [EssentiallySmall.{w} C]
 
 /-- The class of an object in exact `K₀`. -/
 noncomputable def of (X : C) : ExactK0 E := PresentedK0.of X
@@ -200,25 +210,6 @@ theorem of_eq_add_of_conflation {X Y Z : C} {i : X ⟶ Y} {p : Y ⟶ Z} (zero : 
     (hS : E.Conflation (ShortComplex.mk i p zero)) : (of Y : ExactK0 E) = of X + of Z :=
   of_conflation hS
 
-omit [EssentiallySmall.{w} C] in
-/-- An ambient conflation whose outer terms satisfy an extension-closed property gives the
-defining relation in the exact `K₀` of the induced full subcategory. -/
-theorem of_conflation_fullSubcategory {P : ObjectProperty C}
-    [EssentiallySmall.{w} P.FullSubcategory] [P.ContainsZero]
-    [P.IsClosedUnderBinaryProducts] (hP : E.IsExtensionClosed P)
-    {S : ShortComplex C} (hS : E.Conflation S)
-    (h₁ : P S.X₁) (h₃ : P S.X₃) :
-    (of ⟨S.X₂, hP.prop_X₂ hS h₁ h₃⟩ : ExactK0 (E.fullSubcategory P hP)) =
-      of ⟨S.X₁, h₁⟩ + of ⟨S.X₃, h₃⟩ := by
-  have hzero : (ObjectProperty.homMk S.f :
-        (⟨S.X₁, h₁⟩ : P.FullSubcategory) ⟶ ⟨S.X₂, hP.prop_X₂ hS h₁ h₃⟩) ≫
-      (ObjectProperty.homMk S.g :
-        (⟨S.X₂, hP.prop_X₂ hS h₁ h₃⟩ : P.FullSubcategory) ⟶ ⟨S.X₃, h₃⟩) = 0 :=
-    ObjectProperty.hom_ext _ S.zero
-  refine of_eq_add_of_conflation hzero ?_
-  rw [ExactStructure.fullSubcategory_conflation_iff]
-  exact hS
-
 /-- The class of the subobject of a conflation is the difference of the other two classes. -/
 theorem of_eq_sub_of_conflation {S : ShortComplex C} (hS : E.Conflation S) :
     (of S.X₁ : ExactK0 E) = of S.X₂ - of S.X₃ := by
@@ -229,25 +220,6 @@ biproduct conflations. -/
 @[simp]
 theorem of_biprod (X Z : C) : (of (X ⊞ Z) : ExactK0 E) = of X + of Z :=
   of_conflation (E.conflation_biprodShortComplex X Z)
-
-section FullSubcategory
-
-variable {P : ObjectProperty C} [P.ContainsZero] [P.IsClosedUnderBinaryProducts]
-
-omit [EssentiallySmall.{w} C] in
-/-- The class of an explicitly presented ambient biproduct in the exact `K₀` of an induced full
-subcategory is the sum of the classes of its summands. The middle object is the one supplied by
-closure under binary products; by proof irrelevance the statement applies to any presentation of
-it. -/
-theorem of_biprod_fullSubcategory [EssentiallySmall.{w} P.FullSubcategory]
-    (hP : E.IsExtensionClosed P) {X Y : C}
-    (hX : P X) (hY : P Y) :
-    (of ⟨X ⊞ Y, P.prop_biprod_of_isClosedUnderBinaryProducts hX hY⟩ :
-        ExactK0 (E.fullSubcategory P hP)) =
-      of ⟨X, hX⟩ + of ⟨Y, hY⟩ :=
-  of_conflation_fullSubcategory hP (E.conflation_biprodShortComplex X Y) hX hY
-
-end FullSubcategory
 
 /-- The class of an object which is zero vanishes. -/
 @[simp]
@@ -272,21 +244,50 @@ theorem induction_on {motive : ExactK0 E → Prop} (x : ExactK0 E) (zero : motiv
     (neg : ∀ a, motive a → motive (-a)) : motive x :=
   PresentedK0.induction_on x zero of add neg
 
-section HomExt
-
-variable {G : Type*} [AddMonoid G]
-
 /-- Two homomorphisms out of exact `K₀` agreeing on the classes of objects are equal. -/
 @[ext]
-theorem hom_ext {f g : ExactK0 E →+ G} (h : ∀ X : C, f (of X) = g (of X)) : f = g :=
+theorem hom_ext {G : Type*} [AddMonoid G] {f g : ExactK0 E →+ G}
+    (h : ∀ X : C, f (of X) = g (of X)) : f = g :=
   PresentedK0.hom_ext h
-
-end HomExt
 
 /-- A homomorphism into exact `K₀` whose range contains the class of every object is surjective. -/
 theorem surjective_of_forall_of_mem_range {G : Type*} [AddGroup G] {f : G →+ ExactK0 E}
     (h : ∀ X : C, of X ∈ f.range) : Function.Surjective f :=
   PresentedK0.surjective_of_forall_of_mem_range h
+
+end Basic
+
+section FullSubcategory
+
+variable {P : ObjectProperty C} [EssentiallySmall.{w} P.FullSubcategory] [P.ContainsZero]
+  [P.IsClosedUnderBinaryProducts] (hP : E.IsExtensionClosed P)
+
+/-- An ambient conflation whose outer terms satisfy an extension-closed property gives the
+defining relation in the exact `K₀` of the induced full subcategory. -/
+theorem of_conflation_fullSubcategory {S : ShortComplex C} (hS : E.Conflation S)
+    (h₁ : P S.X₁) (h₃ : P S.X₃) :
+    (of ⟨S.X₂, hP.prop_X₂ hS h₁ h₃⟩ : ExactK0 (E.fullSubcategory P hP)) =
+      of ⟨S.X₁, h₁⟩ + of ⟨S.X₃, h₃⟩ := by
+  have hzero : (ObjectProperty.homMk S.f :
+        (⟨S.X₁, h₁⟩ : P.FullSubcategory) ⟶ ⟨S.X₂, hP.prop_X₂ hS h₁ h₃⟩) ≫
+      (ObjectProperty.homMk S.g :
+        (⟨S.X₂, hP.prop_X₂ hS h₁ h₃⟩ : P.FullSubcategory) ⟶ ⟨S.X₃, h₃⟩) = 0 :=
+    ObjectProperty.hom_ext _ S.zero
+  refine of_eq_add_of_conflation hzero ?_
+  rw [ExactStructure.fullSubcategory_conflation_iff]
+  exact hS
+
+/-- The class of an explicitly presented ambient biproduct in the exact `K₀` of an induced full
+subcategory is the sum of the classes of its summands. The middle object is the one supplied by
+closure under binary products; by proof irrelevance the statement applies to any presentation of
+it. -/
+theorem of_biprod_fullSubcategory {X Y : C} (hX : P X) (hY : P Y) :
+    (of ⟨X ⊞ Y, P.prop_biprod_of_isClosedUnderBinaryProducts hX hY⟩ :
+        ExactK0 (E.fullSubcategory P hP)) =
+      of ⟨X, hX⟩ + of ⟨Y, hY⟩ :=
+  of_conflation_fullSubcategory hP (E.conflation_biprodShortComplex X Y) hX hY
+
+end FullSubcategory
 
 variable {G : Type*} [AddCommGroup G]
 
@@ -302,7 +303,6 @@ structure AdditiveInvariant (G : Type*) [AddCommGroup G] where
   /-- The value on the middle term of a conflation is the sum of the outer values. -/
   map_conflation : ∀ ⦃S : ShortComplex C⦄, E.Conflation S → obj S.X₂ = obj S.X₁ + obj S.X₃
 
-omit [EssentiallySmall.{w} C] in
 /-- **An additive invariant takes equal values on isomorphic objects.** Additivity on conflations
 alone forces invariance under isomorphisms of objects, which is the invariance the presentation of
 exact `K₀` requires. -/
@@ -315,12 +315,15 @@ theorem AdditiveInvariant.map_iso (a : AdditiveInvariant E G) ⦃X Y : C⦄ (e :
     (ShortComplex.Splitting.ofIsIsoOfIsZero _ inferInstance (isZero_zero C)))
   simpa [h0] using hY.symm
 
-omit [EssentiallySmall.{w} C] in
 /-- An additive invariant vanishes on zero objects. -/
 theorem AdditiveInvariant.obj_eq_zero_of_isZero (a : AdditiveInvariant E G) {X : C}
     (hX : IsZero X) : a.obj X = 0 := by
   rw [a.map_iso (hX.iso (isZero_zero C))]
   simpa using a.map_conflation (E.conflation_id_zero (0 : C))
+
+section Lift
+
+variable [EssentiallySmall.{w} C]
 
 private def AdditiveInvariant.toPresented (a : AdditiveInvariant E G) :
     PresentedK0.AdditiveInvariant (exactRelations E) G where
@@ -363,6 +366,8 @@ lemma liftEquiv_apply (a : AdditiveInvariant E G) : liftEquiv a = lift a := (rfl
 lemma liftEquiv_symm_apply_obj (f : ExactK0 E →+ G) (X : C) :
     ((liftEquiv (E := E) (G := G)).symm f).obj X = f (of X) := (rfl)
 
+end Lift
+
 /-! ### Finite Euler sums of exact-additive invariants -/
 
 namespace AdditiveInvariant
@@ -374,18 +379,15 @@ explicit finite set of degrees. -/
 def finiteEulerSum (X : ℤ → C) (s : Finset ℤ) : G :=
   TauCeti.finiteEulerSum (fun n ↦ a.obj (X n)) s
 
-omit [EssentiallySmall.{w} C] in
 /-- The object-family Euler sum is its defining finite alternating sum. -/
 theorem finiteEulerSum_def (X : ℤ → C) (s : Finset ℤ) :
     a.finiteEulerSum X s = ∑ n ∈ s, (n.negOnePow : ℤ) • a.obj (X n) :=
   by rw [AdditiveInvariant.finiteEulerSum, TauCeti.finiteEulerSum_def]
 
-omit [EssentiallySmall.{w} C] in
 @[simp]
 theorem finiteEulerSum_empty (X : ℤ → C) : a.finiteEulerSum X ∅ = 0 :=
   TauCeti.finiteEulerSum_empty _
 
-omit [EssentiallySmall.{w} C] in
 /-- Adjoining a new degree adds its signed value to an object-family Euler sum. -/
 @[simp]
 theorem finiteEulerSum_insert (X : ℤ → C) {s : Finset ℤ} {n : ℤ} (hn : n ∉ s) :
@@ -393,7 +395,6 @@ theorem finiteEulerSum_insert (X : ℤ → C) {s : Finset ℤ} {n : ℤ} (hn : n
       (n.negOnePow : ℤ) • a.obj (X n) + a.finiteEulerSum X s :=
   TauCeti.finiteEulerSum_insert _ hn
 
-omit [EssentiallySmall.{w} C] in
 /-- If the object family is zero outside each of two finite sets, both sets compute the same
 Euler sum. -/
 theorem finiteEulerSum_eq_of_isZero (X : ℤ → C) {s t : Finset ℤ}
@@ -403,13 +404,11 @@ theorem finiteEulerSum_eq_of_isZero (X : ℤ → C) {s t : Finset ℤ}
     (fun n hn ↦ a.obj_eq_zero_of_isZero (hs n hn))
     (fun n hn ↦ a.obj_eq_zero_of_isZero (ht n hn))
 
-omit [EssentiallySmall.{w} C] in
 /-- Pointwise isomorphic object families have the same Euler sum. -/
 theorem finiteEulerSum_iso {X Y : ℤ → C} {s : Finset ℤ}
     (e : ∀ n ∈ s, X n ≅ Y n) : a.finiteEulerSum X s = a.finiteEulerSum Y s :=
   TauCeti.finiteEulerSum_congr fun n hn ↦ a.map_iso (e n hn)
 
-omit [EssentiallySmall.{w} C] in
 /-- Translating the degrees of an object family changes its Euler sum by the parity sign of the
 translation. -/
 theorem finiteEulerSum_reindex_add (X : ℤ → C) (m : ℤ) (s : Finset ℤ) :
@@ -420,7 +419,6 @@ theorem finiteEulerSum_reindex_add (X : ℤ → C) (m : ℤ) (s : Finset ℤ) :
     rw [finiteEulerSum, finiteEulerSum]
     exact TauCeti.finiteEulerSum_reindex_add (G := G) (fun n ↦ a.obj (X n)) m s
 
-omit [EssentiallySmall.{w} C] in
 /-- The Euler sum of pointwise biproducts is the sum of the two Euler sums. -/
 @[simp]
 theorem finiteEulerSum_biprod (X Y : ℤ → C) (s : Finset ℤ) :
@@ -431,7 +429,6 @@ theorem finiteEulerSum_biprod (X Y : ℤ → C) (s : Finset ℤ) :
   intro n _
   exact a.map_conflation (E.conflation_biprodShortComplex (X n) (Y n))
 
-omit [EssentiallySmall.{w} C] in
 /-- A degreewise family of conflations gives an additive identity of Euler sums. Only the
 degrees in the stated finite range need to be conflations. -/
 theorem finiteEulerSum_conflation (S : ℤ → ShortComplex C) (s : Finset ℤ)
@@ -447,6 +444,9 @@ theorem finiteEulerSum_conflation (S : ℤ → ShortComplex C) (s : Finset ℤ)
 end AdditiveInvariant
 
 /-! ### Biadditive invariants -/
+
+variable {D : Type u'} [Category.{v'} D] [Preadditive D] [HasZeroObject D]
+  [HasBinaryBiproducts D] {E' : ExactStructure D}
 
 /-- An object-level invariant on an indexing category and an exact category which is invariant
 under isomorphisms in the first variable and additive on conflations in the second variable.
@@ -471,11 +471,12 @@ private def additiveInvariant (X : I) : AdditiveInvariant E' G where
   obj := a.obj X
   map_conflation := fun {_} hS ↦ a.map_conflation₂ X hS
 
-omit [EssentiallySmall.{w'} D] in
 /-- A right-additive invariant takes equal values on isomorphic objects in its second variable,
 since it is additive on conflations there. -/
 theorem map_iso₂ (X : I) {Y Y' : D} (e : Y ≅ Y') : a.obj X Y = a.obj X Y' :=
   (a.additiveInvariant X).map_iso e
+
+variable [EssentiallySmall.{w'} D]
 
 /-- A right-additive invariant with its first argument fixed, descended through the exact
 Grothendieck group in its second variable. -/
@@ -512,7 +513,7 @@ structure BiadditiveInvariant (E : ExactStructure C) (E' : ExactStructure D)
 
 namespace BiadditiveInvariant
 
-variable (a : BiadditiveInvariant E E' G)
+variable [EssentiallySmall.{w} C] [EssentiallySmall.{w'} D] (a : BiadditiveInvariant E E' G)
 
 private noncomputable def leftInvariant : AdditiveInvariant E (ExactK0 E' →+ G) where
   obj := a.toRightAdditiveInvariant.rightLift
@@ -544,6 +545,8 @@ theorem bilift_unique (b : ExactK0 E →+ ExactK0 E' →+ G)
   rw [hb, bilift_of_of]
 
 end BiadditiveInvariant
+
+variable [EssentiallySmall.{w} C] [EssentiallySmall.{w'} D]
 
 section Functoriality
 
@@ -791,5 +794,69 @@ theorem map_comp_fromSplit (F : C ⥤ D) [F.Additive] (hF : E.IsConflationExact 
 end Comparison
 
 end ExactK0
+
+section IsoClassModel
+
+variable {C : Type u} [Category.{v} C] [Preadditive C] [HasZeroObject C] [HasBinaryBiproducts C]
+
+/-- The conflation relations `[X₂] - [X₁] - [X₃]` of an exact structure `E` as integral
+combinations of objects of `C`, before passing to isomorphism classes. Their codes are the
+relations `TauCeti.exactRelations E`, so they present exact `K₀` over every model of the
+isomorphism classes of `C`. -/
+def exactObjectRelations (E : ExactStructure C) : Set (FreeAbelianGroup C) :=
+  {r | ∃ S : ShortComplex C, E.Conflation S ∧ r = .of S.X₂ - .of S.X₁ - .of S.X₃}
+
+variable {E : ExactStructure C}
+
+/-- Membership in the family of object-level conflation relations. -/
+@[simp]
+lemma mem_exactObjectRelations_iff {r : FreeAbelianGroup C} :
+    r ∈ exactObjectRelations E ↔
+      ∃ S : ShortComplex C, E.Conflation S ∧ r = .of S.X₂ - .of S.X₁ - .of S.X₃ :=
+  (Iff.rfl)
+
+variable [EssentiallySmall.{w} C]
+
+/-- The codes of the object-level conflation relations are the conflation relations presenting
+exact `K₀`. -/
+lemma image_exactObjectRelations :
+    FreeAbelianGroup.map objectCode '' exactObjectRelations E = exactRelations E := by
+  ext r
+  simp [conflationRelation_def, freeOf_def, eq_comm]
+
+namespace ExactK0
+
+variable {I J : Type*}
+
+/-- Exact `K₀` presented over a model `m` of the isomorphism classes of `C`: the canonical
+isomorphism from `ExactK0 E` to the free abelian group on the index type of `m` modulo the codes
+of the conflation relations. It preserves the class of every object, so exact `K₀` does not
+depend on the skeleton used to build it. -/
+noncomputable def isoClassModelEquiv (m : IsoClassModel C I) :
+    ExactK0 E ≃+ m.K0 (exactObjectRelations E) :=
+  IsoClassModel.K0.presentedK0Equiv m image_exactObjectRelations
+
+@[simp]
+lemma isoClassModelEquiv_of (m : IsoClassModel C I) (X : C) :
+    isoClassModelEquiv m (of X : ExactK0 E) = IsoClassModel.K0.of X :=
+  IsoClassModel.K0.presentedK0Equiv_of _ X
+
+@[simp]
+lemma isoClassModelEquiv_symm_of (m : IsoClassModel C I) (X : C) :
+    (isoClassModelEquiv m).symm (IsoClassModel.K0.of X) = (of X : ExactK0 E) :=
+  IsoClassModel.K0.presentedK0Equiv_symm_of _ X
+
+/-- The presentations of exact `K₀` over two models differ by the canonical isomorphism
+`TauCeti.IsoClassModel.K0.equiv` between them. -/
+@[simp]
+lemma isoClassModelEquiv_trans_equiv (m : IsoClassModel C I) (m' : IsoClassModel C J) :
+    (isoClassModelEquiv (E := E) m).trans
+        (IsoClassModel.K0.equiv m m' (exactObjectRelations E)) =
+      isoClassModelEquiv m' :=
+  AddEquiv.toAddMonoidHom_injective (hom_ext fun X => by simp)
+
+end ExactK0
+
+end IsoClassModel
 
 end TauCeti

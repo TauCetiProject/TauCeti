@@ -8,7 +8,7 @@ module
 public import Mathlib.Topology.Maps.Proper.Basic
 
 /-!
-# Proper maps: composition with homeomorphisms and products
+# Proper maps: compact domains, composition with homeomorphisms, products and pullbacks
 
 Composing with a homeomorphism on either side neither creates nor destroys properness, in the
 pattern of Mathlib's `Homeomorph.comp_isOpenMap_iff`.
@@ -24,12 +24,16 @@ The nonemptiness hypotheses cannot be dropped: a map out of an empty space is pr
 
 ## Main declarations
 
+* `IsProperMap.compactSpace`: the domain of a proper map to a compact space is compact.
 * `Homeomorph.comp_isProperMap_iff` and `Homeomorph.comp_isProperMap_iff'`: properness is
   invariant under composition with a homeomorphism.
 * `IsProperMap.of_prodMap_left` and `IsProperMap.of_prodMap_right`: the factors of a proper
   product map with nonempty sources are proper.
 * `isProperMap_prodMap_iff`: for nonempty sources, `Prod.map f g` is proper exactly when `f` and
   `g` are.
+* `IsProperMap.of_isEmbedding_of_range_eq`: the pullback of a proper map along an embedding of its
+  codomain is proper. This is Mathlib's `IsProperMap.restrictPreimage`, stated for a square of
+  embeddings rather than for subtypes.
 * `Continuous.isClosedEmbedding_fst_prod`: a parameter-preserving map `(p, x) ↦ (p, G (p, x))`
   with injective slices, compact second factor and Hausdorff target is a closed embedding.
 -/
@@ -60,6 +64,12 @@ theorem comp_isProperMap_iff' (h : X ≃ₜ Y) {f : Y → Z} : IsProperMap (f �
 end Homeomorph
 
 variable {f : X → Y} {g : Z → W}
+
+/-- The domain of a proper map to a compact space is compact. No separation axiom is needed. -/
+theorem IsProperMap.compactSpace [CompactSpace Y] (hf : IsProperMap f) : CompactSpace X := by
+  refine ⟨?_⟩
+  simpa only [Set.preimage_univ] using
+    hf.isCompact_preimage (isCompact_univ : IsCompact (Set.univ : Set Y))
 
 /-- If a product map `Prod.map f g` is proper and the source of `g` is nonempty, then `f` is
 proper. -/
@@ -97,6 +107,27 @@ are proper. -/
 theorem isProperMap_prodMap_iff [Nonempty X] [Nonempty Z] :
     IsProperMap (Prod.map f g) ↔ IsProperMap f ∧ IsProperMap g :=
   ⟨fun h ↦ ⟨h.of_prodMap_left, h.of_prodMap_right⟩, fun h ↦ h.1.prodMap h.2⟩
+
+/-- **The pullback of a proper map along an embedding is proper.** If `f ∘ i = j ∘ f'`, where
+`i` and `j` are embeddings and the range of `i` is the preimage under `f` of the range of `j`,
+then `f'` is proper. -/
+theorem IsProperMap.of_isEmbedding_of_range_eq {X' Y' : Type*} [TopologicalSpace X']
+    [TopologicalSpace Y'] {f' : X' → Y'} {i : X' → X} {j : Y' → Y} (hf : IsProperMap f)
+    (hi : IsEmbedding i) (hj : IsEmbedding j) (hcomm : f ∘ i = j ∘ f')
+    (hrange : Set.range i = f ⁻¹' Set.range j) : IsProperMap f' := by
+  refine isProperMap_iff_ultrafilter.mpr ⟨hj.continuous_iff.mpr
+    (hcomm ▸ hf.continuous.comp hi.continuous), fun 𝒰 y' h ↦ ?_⟩
+  -- Push `𝒰` forward along `i`, take a limit for `f`, and pull it back along `i`.
+  have hmap : Tendsto f (𝒰.map i) (𝓝 (j y')) := by
+    rw [Ultrafilter.coe_map, tendsto_map'_iff, hcomm]
+    exact hj.continuous.continuousAt.tendsto.comp h
+  obtain ⟨x, hx, hle⟩ := hf.ultrafilter_le_nhds_of_tendsto hmap
+  obtain ⟨x', rfl⟩ : x ∈ Set.range i := hrange ▸ ⟨y', hx.symm⟩
+  refine ⟨x', hj.injective ?_, ?_⟩
+  · rw [← hx]
+    exact (congrFun hcomm x').symm
+  · rw [hi.nhds_eq_comap, ← map_le_iff_le_comap]
+    exact hle
 
 /-- A parameter-preserving map `(p, x) ↦ (p, G (p, x))` whose slices are injective, from a
 product with a compact second factor to a Hausdorff space, is a closed embedding. Its image is the

@@ -24,6 +24,7 @@ finitely many coordinates of a tuple.
   where it agrees with `g` away from `S`.
 * `Function.forall_notMem_update_eq_iff_of_notMem`: updating `f` at a point `a ∉ S` to `b` agrees
   with `g` away from `S` iff `f` agrees with `g` away from `insert a S` and `b = g a`.
+* `Set.eqOn_update_of_notMem`: updating a function outside a set preserves its values on the set.
 -/
 
 public section
@@ -61,3 +62,8 @@ away from `insert a S` and `b = g a`. -/
     forall_notMem_update_eq_iff_of_mem (Finset.mem_insert_self a S), update_self]
 
 end Function
+
+/-- Updating a function at a point outside `s` preserves its values on `s`. -/
+theorem Set.eqOn_update_of_notMem {β : Type*} {f : α → β} {a : α} {s : Set α}
+    (ha : a ∉ s) (b : β) : Set.EqOn f (Function.update f a b) s :=
+  fun _ hx ↦ (Function.update_of_ne (ne_of_mem_of_not_mem hx ha) _ _).symm

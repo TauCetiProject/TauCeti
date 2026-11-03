@@ -7,6 +7,7 @@ module
 
 public import Mathlib.RingTheory.Jacobson.Ideal
 public import TauCeti.Algebra.Ring.Units
+import Mathlib.RingTheory.Nilpotent.Basic
 import Mathlib.Tactic.NoncommRing
 
 /-!
@@ -16,7 +17,7 @@ import Mathlib.Tactic.NoncommRing
 elementwise description of that ideal over a ring that is not assumed commutative: `x` lies in the
 radical exactly when `1 + y * x` is a unit for every `y`, equivalently when `1 + x * y` is a unit
 for every `y`. Mathlib proves the statement only over a commutative ring
-(`Ideal.mem_jacobson_bot`); the content of the noncommutative version is that membership in the
+(`Ring.mem_jacobson_iff`); the content of the noncommutative version is that membership in the
 radical only supplies a *left* inverse for `1 + y * x`, so the argument has to promote that left
 inverse to a two-sided one.
 
@@ -29,6 +30,8 @@ mechanism behind the left-right symmetry of the radical, proved in
 * `TauCeti.Ring.mem_jacobson_iff_isUnit_one_add_mul_left` and
   `TauCeti.Ring.mem_jacobson_iff_isUnit_one_add_mul_right`: the two elementwise descriptions of
   the Jacobson radical of a ring.
+* `TauCeti.Ring.mem_jacobson_of_forall_isNilpotent_mul`: an element all of whose left multiples
+  are nilpotent lies in the radical.
 * `TauCeti.Ring.instNontrivialQuotientJacobson`: the quotient of a nontrivial ring by its Jacobson
   radical is nontrivial.
 
@@ -60,7 +63,7 @@ private theorem mem_jacobson_iff_forall_exists_mul_one_add_mul_eq_one {x : R} :
 
 /-- The Jacobson radical of a ring is `{x | ∀ y, IsUnit (1 + y * x)}`.
 
-Mathlib's `Ideal.mem_jacobson_bot` is this statement over a commutative ring. -/
+Mathlib's `Ring.mem_jacobson_iff` is this statement over a commutative ring. -/
 theorem mem_jacobson_iff_isUnit_one_add_mul_left {x : R} :
     x ∈ Ring.jacobson R ↔ ∀ y : R, IsUnit (1 + y * x) := by
   rw [mem_jacobson_iff_forall_exists_mul_one_add_mul_eq_one]
@@ -92,6 +95,12 @@ theorem mem_jacobson_iff_isUnit_one_add_mul_right {x : R} :
     x ∈ Ring.jacobson R ↔ ∀ y : R, IsUnit (1 + x * y) :=
   mem_jacobson_iff_isUnit_one_add_mul_left.trans
     (forall_congr' fun _ => isUnit_one_add_mul_comm)
+
+/-- An element all of whose left multiples are nilpotent lies in the Jacobson radical. In
+particular, a left ideal consisting of nilpotent elements lies in the radical. -/
+theorem mem_jacobson_of_forall_isNilpotent_mul {x : R} (h : ∀ y : R, IsNilpotent (y * x)) :
+    x ∈ Ring.jacobson R :=
+  mem_jacobson_iff_isUnit_one_add_mul_left.2 fun y => (h y).isUnit_one_add
 
 variable (R) in
 /-- The quotient of a nontrivial ring by its Jacobson radical is nontrivial, the radical being

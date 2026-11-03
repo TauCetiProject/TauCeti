@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicGeometry.Compactification.Basic
+public import TauCeti.AlgebraicGeometry.Compactification.SourceIso
 
 /-!
 # Base change of scheme compactifications
@@ -16,6 +16,13 @@ maps of compactifications pull back functorially, as pullbacks of the original m
 schemes; in particular closed immersions of compactifications pull back to closed immersions.
 Scheme-theoretic density of the interior is preserved when the base change is flat, using
 Mathlib's `AlgebraicGeometry.IsSchemeTheoreticallyDominant.of_isPullback`.
+
+Base change comes with identity and composition isomorphisms in the map of bases: along the
+identity it returns the original compactification, and along a composite `g' ≫ g` it is the
+iterated base change. Both sources are only canonically isomorphic to the expected ones, so
+these identifications (`baseChangeFunctorIdIso`, `baseChangeFunctorCompIso`) relabel the source
+along that isomorphism with `Compactification.precompFunctor`. Their coherence laws are not
+proved here.
 
 ## References
 
@@ -35,6 +42,25 @@ variable {X S T : Scheme.{u}} {f : X ⟶ S}
 namespace Compactification
 
 noncomputable section
+
+/-- The special fibre of a principal open is empty along a ring map that kills its defining
+element. -/
+theorem isEmpty_pullback_localizationAway {R A : CommRingCat.{u}}
+    (r : R) (φ : R →+* A) (hφ : φ r = 0) :
+    IsEmpty ↑(pullback (localizationAway r).j (Spec.map (CommRingCat.ofHom φ))) := by
+  -- Normalize the dependent endpoints of the compactification before using the affine API.
+  dsimp only [localizationAway, j, Xbar, ofHom]
+  apply Scheme.isEmpty_pullback
+  rw [Set.disjoint_left]
+  rintro _ ⟨x, rfl⟩ ⟨y, hy⟩
+  have hx : r ∉ (PrimeSpectrum.comap (algebraMap R (Localization.Away r)) x).asIdeal := by
+    have : x.asIdeal.IsPrime := x.isPrime
+    exact x.asIdeal.notMem_of_isUnit (IsLocalization.Away.algebraMap_isUnit r)
+  have hy' := congrArg (fun p : Spec (CommRingCat.of R) ↦ p.asIdeal) hy
+  simp only [Spec.map_apply, CommRingCat.hom_ofHom] at hy'
+  have hy0 : r ∈ (PrimeSpectrum.comap φ y).asIdeal :=
+    (PrimeSpectrum.comap_asIdeal φ y).symm ▸ Ideal.mem_comap.mpr (hφ ▸ y.asIdeal.zero_mem)
+  exact hx (hy' ▸ hy0)
 
 /-- The open interior map induced on the pullbacks of a compactification. -/
 private def baseChangeJ (C : Compactification f) (g : T ⟶ S) :
@@ -97,6 +123,13 @@ theorem baseChange_j_fst (C : Compactification f) (g : T ⟶ S) :
     (C.baseChange g).j ≫ pullback.fst C.p g = pullback.fst f g ≫ C.j :=
   baseChangeJ_fst C g
 
+/-- The projection from the base-changed ambient scheme to the new base restricts to the
+projection of the base-changed source. -/
+@[reassoc (attr := simp)]
+theorem baseChange_j_snd (C : Compactification f) (g : T ⟶ S) :
+    (C.baseChange g).j ≫ pullback.snd C.p g = pullback.snd f g :=
+  baseChangeJ_snd C g
+
 /-- The square relating the original and pulled-back interiors is cartesian. -/
 theorem isPullback_baseChange (C : Compactification f) (g : T ⟶ S) :
     IsPullback (pullback.fst f g) (C.baseChange g).j C.j (pullback.fst C.p g) :=
@@ -116,8 +149,6 @@ def baseChangeMap {C D : Compactification f} (h : C ⟶ D) (g : T ⟶ S) :
         (by simp) (by simp)
       ι_h := by
         apply pullback.hom_ext <;> simp [Category.assoc]
-        simpa only [baseChange_p] using
-          ((C.baseChange g).obj.ι_π.trans (D.baseChange g).obj.ι_π.symm)
       h_π := by simp }
 
 @[simp]
@@ -157,6 +188,90 @@ def baseChangeFunctor (g : T ⟶ S) :
     apply Factorisation.Hom.ext
     apply pullback.hom_ext <;> simp [Category.assoc]
 
+/-- Base change along the identity is the original compactification, with source relabelled
+along the isomorphism `pullback.fst f (𝟙 S)`. -/
+def baseChangeIdIso (C : Compactification f) :
+    C.baseChange (𝟙 S) ≅
+      C.precomp (pullback.fst f (𝟙 S)) (by simp [pullback.condition]) :=
+  isoMk (asIso (pullback.fst C.p (𝟙 S))) (by simp) (by simp [pullback.condition])
+
+@[simp]
+theorem baseChangeIdIso_hom_hom_h (C : Compactification f) :
+    C.baseChangeIdIso.hom.hom.h = pullback.fst C.p (𝟙 S) :=
+  isoMk_hom_hom_h _ _ _
+
+@[simp]
+theorem baseChangeIdIso_inv_hom_h (C : Compactification f) :
+    C.baseChangeIdIso.inv.hom.h = inv (pullback.fst C.p (𝟙 S)) :=
+  isoMk_inv_hom_h _ _ _
+
+variable (f) in
+/-- Base change along the identity is naturally isomorphic to relabelling the source along
+the isomorphism `pullback.fst f (𝟙 S)`. -/
+def baseChangeFunctorIdIso :
+    baseChangeFunctor (f := f) (𝟙 S) ≅
+      precompFunctor (pullback.fst f (𝟙 S)) (by simp [pullback.condition]) :=
+  NatIso.ofComponents baseChangeIdIso fun h ↦ by
+    apply ObjectProperty.hom_ext
+    apply Factorisation.Hom.ext
+    simp
+
+@[simp]
+theorem baseChangeFunctorIdIso_hom_app (C : Compactification f) :
+    (baseChangeFunctorIdIso f).hom.app C = C.baseChangeIdIso.hom :=
+  (rfl)
+
+@[simp]
+theorem baseChangeFunctorIdIso_inv_app (C : Compactification f) :
+    (baseChangeFunctorIdIso f).inv.app C = C.baseChangeIdIso.inv :=
+  (rfl)
+
+/-- Base change along a composite `g' ≫ g` is the iterated base change, with source relabelled
+along the canonical isomorphism of iterated fibre products. -/
+def baseChangeCompIso (C : Compactification f) {T' : Scheme.{u}} (g : T ⟶ S) (g' : T' ⟶ T) :
+    C.baseChange (g' ≫ g) ≅
+      ((C.baseChange g).baseChange g').precomp (pullbackLeftPullbackSndIso f g g').inv
+        (by simp) :=
+  isoMk (pullbackLeftPullbackSndIso C.p g g').symm
+    -- The fibre-product lemmas need `(C.baseChange g).p` unfolded to `pullback.snd C.p g`.
+    (by apply pullback.hom_ext <;> [apply pullback.hom_ext; skip] <;> simp [baseChange, precomp])
+    (by simp [baseChange])
+
+@[simp]
+theorem baseChangeCompIso_hom_hom_h (C : Compactification f) {T' : Scheme.{u}} (g : T ⟶ S)
+    (g' : T' ⟶ T) :
+    (C.baseChangeCompIso g g').hom.hom.h = (pullbackLeftPullbackSndIso C.p g g').inv :=
+  isoMk_hom_hom_h _ _ _
+
+@[simp]
+theorem baseChangeCompIso_inv_hom_h (C : Compactification f) {T' : Scheme.{u}} (g : T ⟶ S)
+    (g' : T' ⟶ T) :
+    (C.baseChangeCompIso g g').inv.hom.h = (pullbackLeftPullbackSndIso C.p g g').hom :=
+  isoMk_inv_hom_h _ _ _
+
+/-- Base change along a composite `g' ≫ g` is naturally isomorphic to the iterated base
+change, followed by relabelling the source along the canonical isomorphism of iterated fibre
+products. -/
+def baseChangeFunctorCompIso {T' : Scheme.{u}} (g : T ⟶ S) (g' : T' ⟶ T) :
+    baseChangeFunctor (f := f) (g' ≫ g) ≅
+      baseChangeFunctor g ⋙ baseChangeFunctor g' ⋙
+        precompFunctor (pullbackLeftPullbackSndIso f g g').inv (by simp) :=
+  NatIso.ofComponents (fun C ↦ C.baseChangeCompIso g g') fun h ↦ by
+    apply ObjectProperty.hom_ext
+    apply Factorisation.Hom.ext
+    apply pullback.hom_ext <;> [apply pullback.hom_ext; skip] <;> simp [baseChange]
+
+@[simp]
+theorem baseChangeFunctorCompIso_hom_app {T' : Scheme.{u}} (g : T ⟶ S) (g' : T' ⟶ T)
+    (C : Compactification f) :
+    (baseChangeFunctorCompIso g g').hom.app C = (C.baseChangeCompIso g g').hom :=
+  (rfl)
+
+@[simp]
+theorem baseChangeFunctorCompIso_inv_app {T' : Scheme.{u}} (g : T ⟶ S) (g' : T' ⟶ T)
+    (C : Compactification f) :
+    (baseChangeFunctorCompIso g g').inv.app C = (C.baseChangeCompIso g g').inv :=
+  (rfl)
 
 end
 

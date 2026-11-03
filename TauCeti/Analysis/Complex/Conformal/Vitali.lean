@@ -65,6 +65,8 @@ target, complete where holomorphy of the limit is concluded.
 
 ## References
 
+* [Mathlib PR #33505](https://github.com/leanprover-community/mathlib4/pull/33505), the preceding
+  human-curated Riemann-mapping development and its local analytic prerequisites.
 * L. Ahlfors, *Complex Analysis*, Ch. 5 §5.
 * J. B. Conway, *Functions of One Complex Variable I* (GTM 11), Ch. VII §2.
 -/

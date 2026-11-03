@@ -35,6 +35,9 @@ This is the algebraic normalisation used to study residue fields and morphisms o
   `K⟨X⟩†` has residue fields at its maximal ideals finite-dimensional over `K`.
 * `TauCeti.Dagger.washnitzerAlgebra.finite_quotient_of_isMaximal_radical`: its quotients by ideals
   with maximal radical are finite-dimensional over `K`.
+* `TauCeti.Dagger.IsDaggerAlgebra.finite_quotient_of_isMaximal` and
+  `TauCeti.Dagger.IsDaggerAlgebra.finite_quotient_of_isMaximal_radical`: the same finiteness for
+  dagger algebras, which are finite over a Monsky–Washnitzer algebra through a presentation.
 
 ## References
 
@@ -173,5 +176,27 @@ theorem washnitzerAlgebra.finite_quotient_of_isMaximal_radical {σ : Type*} [Fin
   have : IsNoetherianRing A := IsNoetherianRing.of_finite (W σ) A
   have : Module.Finite K (A ⧸ q.radical) := finite_quotient_of_isMaximal hπ q.radical
   exact q.moduleFinite_quotient_of_radical (IsNoetherian.noetherian _)
+
+namespace IsDaggerAlgebra
+
+variable {A : Type*} [CommRing A] [Algebra K A] [IsDaggerAlgebra K A]
+
+variable (K) in
+/-- **Residue fields of dagger algebras are finite.** Every maximal-ideal quotient of a
+`K`-dagger algebra is finite-dimensional over `K`. -/
+theorem finite_quotient_of_isMaximal (m : Ideal A) [m.IsMaximal] : Module.Finite K (A ⧸ m) := by
+  obtain ⟨n, π, hπ⟩ := exists_surjective (K := K) (A := A)
+  exact washnitzerAlgebra.finite_quotient_of_isMaximal (AlgHom.Finite.of_surjective π hπ) m
+
+variable (K) in
+/-- If the radical of an ideal `q` of a `K`-dagger algebra `A` is maximal, then `A ⧸ q` is
+finite-dimensional over `K`. -/
+theorem finite_quotient_of_isMaximal_radical (q : Ideal A) [q.radical.IsMaximal] :
+    Module.Finite K (A ⧸ q) := by
+  obtain ⟨n, π, hπ⟩ := exists_surjective (K := K) (A := A)
+  exact washnitzerAlgebra.finite_quotient_of_isMaximal_radical
+    (AlgHom.Finite.of_surjective π hπ) q
+
+end IsDaggerAlgebra
 
 end TauCeti.Dagger

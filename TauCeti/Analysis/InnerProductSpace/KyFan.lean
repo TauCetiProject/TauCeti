@@ -1,7 +1,7 @@
 /-
-Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
+Copyright (c) 2026 The Tau Ceti contributors and Kitware, Inc. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
-Authors: The Tau Ceti contributors
+Authors: The Tau Ceti contributors, Jon Crall, GPT-6
 -/
 module
 
@@ -9,6 +9,8 @@ public import Mathlib.Analysis.InnerProductSpace.Trace
 public import TauCeti.Analysis.Convex.Majorization
 public import TauCeti.Analysis.InnerProductSpace.CourantFischer
 public import TauCeti.Analysis.InnerProductSpace.SingularValues
+public import TauCeti.Analysis.InnerProductSpace.Projection.Basic
+public import TauCeti.Analysis.InnerProductSpace.Positive.Basic
 import TauCeti.Algebra.Order.BigOperators.Sum.ByParts
 
 /-!
@@ -39,7 +41,13 @@ of singular values give at most the sum of its first `k` terms
 
 * `LinearMap.kyFanSum`: the Ky Fan `k`-sum of singular values.
 * `LinearMap.norm_sum_inner_le_kyFanSum`: Ky Fan's maximum principle, the upper bound.
+* `LinearMap.sum_re_inner_apply_le_kyFanSum`: the corresponding upper bound for the real parts
+  of the diagonal pairings.
+* `LinearMap.sum_antitone_mul_re_inner_le_sum_mul_singularValues`: the same bound with the
+  diagonal pairings weighted by an antitone nonnegative sequence.
 * `LinearMap.exists_orthonormal_sum_inner_eq_kyFanSum`: the leading singular pairs attain it.
+* `LinearMap.IsPositive.exists_orthonormal_sum_re_inner_eq_kyFanSum`: for a positive endomorphism
+  a single orthonormal family attains it on the diagonal, `∑ᵢ re ⟪vᵢ, A vᵢ⟫ = σ₀(A) + ⋯ + σₖ₋₁(A)`.
 * `LinearMap.norm_sum_inner_add_inner_le_kyFanSum`: the upper bound for families transformed by two
   pairs of symmetric operators whose squared norms add up to at most the identity.
 * `LinearMap.norm_trace_comp_linearIsometryEquiv_le_kyFanSum`,
@@ -53,7 +61,15 @@ of singular values give at most the sum of its first `k` terms
 * `LinearMap.kyFanSum_smul`, `LinearMap.kyFanSum_adjoint`,
   `LinearMap.kyFanSum_linearIsometryEquiv_comp`, `LinearMap.kyFanSum_comp_linearIsometryEquiv`:
   homogeneity, and invariance under adjoints and isometric changes of coordinates.
+* `LinearMap.kyFanSum_subtype_comp_comp_orthogonalProjectionOnto`: extending a map by zero
+  between source and target ambient spaces preserves its Ky Fan sums.
 * `LinearMap.IsSymmetric.sum_re_inner_apply_self_le_sum_eigenvalues`: Ky Fan's trace inequality.
+
+## Provenance
+
+The zero-extension Ky Fan identity is adapted from
+`ForTauCeti/Analysis/InnerProductSpace/SinTheta/Perturbation.lean` in the
+AIQ-Kitware DKPS formalization (Apache-2.0; Jon Crall and GPT-6).
 
 ## References
 
@@ -237,6 +253,52 @@ theorem norm_sum_inner_le_kyFanSum {ι : Type*} [Fintype ι] (A : E →ₗ[𝕜]
   simpa using A.norm_sum_inner_add_inner_le_kyFanSum IsSymmetric.one IsSymmetric.zero
     IsSymmetric.one IsSymmetric.zero (fun y ↦ by simp) (fun x ↦ by simp) hu hv
 
+/-- The real diagonal pairing of two orthonormal families under `A` is bounded by the Ky Fan sum
+of its singular values. -/
+theorem sum_re_inner_apply_le_kyFanSum {ι : Type*} [Fintype ι] (A : E →ₗ[𝕜] F)
+    (u : ι → F) (v : ι → E) (hu : Orthonormal 𝕜 u) (hv : Orthonormal 𝕜 v) :
+    ∑ i : ι, RCLike.re (inner 𝕜 (u i) (A (v i))) ≤ A.kyFanSum (Fintype.card ι) := by
+  calc
+    ∑ i : ι, RCLike.re (inner 𝕜 (u i) (A (v i))) =
+        RCLike.re (∑ i : ι, inner 𝕜 (u i) (A (v i))) := by rw [← map_sum]
+    _ ≤ ‖∑ i : ι, inner 𝕜 (u i) (A (v i))‖ := RCLike.re_le_norm _
+    _ ≤ A.kyFanSum (Fintype.card ι) := A.norm_sum_inner_le_kyFanSum hu hv
+
+/-- **Weighted Ky Fan trace core.** If the partial real diagonal pairings of two orthonormal
+families are bounded by the Ky Fan sums, pairing them with weights that are antitone on the first
+`n` indices and nonnegative at the last one is bounded by the same weighted pairing with the
+singular values. -/
+theorem sum_antitone_mul_re_inner_le_sum_mul_singularValues (B : E →ₗ[𝕜] F) {n : ℕ}
+    (u : Fin n → F) (v : Fin n → E) (hu : Orthonormal 𝕜 u) (hv : Orthonormal 𝕜 v)
+    {w : ℕ → ℝ} (hw : ∀ i, i + 1 < n → w (i + 1) ≤ w i) (hw0 : 0 ≤ w (n - 1)) :
+    ∑ i : Fin n, w i * RCLike.re ⟪u i, B (v i)⟫ ≤
+      ∑ i : Fin n, w i * B.singularValues i := by
+  let f : ℕ → ℝ := fun i ↦
+    if hi : i < n then RCLike.re ⟪u ⟨i, hi⟩, B (v ⟨i, hi⟩)⟫ else 0
+  let g : ℕ → ℝ := fun i ↦ B.singularValues i
+  have hfg : ∀ k ≤ n, ∑ i ∈ Finset.range k, f i ≤ ∑ i ∈ Finset.range k, g i := by
+    intro k hk
+    have hsum : ∑ i : Fin k, f i =
+        ∑ i : Fin k, RCLike.re ⟪u (Fin.castLE hk i), B (v (Fin.castLE hk i))⟫ := by
+      refine Finset.sum_congr rfl fun i _ ↦ ?_
+      have hcast : (⟨(i : ℕ), lt_of_lt_of_le i.isLt hk⟩ : Fin n) = Fin.castLE hk i := by
+        exact Fin.ext rfl
+      simp [f, hcast, lt_of_lt_of_le i.isLt hk]
+    have hreal : ∑ i ∈ Finset.range k, f i ≤ B.kyFanSum k := by
+      calc
+        _ = ∑ i : Fin k, f i := by rw [Fin.sum_univ_eq_sum_range]
+        _ = ∑ i : Fin k,
+            RCLike.re ⟪u (Fin.castLE hk i), B (v (Fin.castLE hk i))⟫ := hsum
+        _ ≤ B.kyFanSum k := by
+          simpa only [Fintype.card_fin] using B.sum_re_inner_apply_le_kyFanSum
+            (fun i ↦ u (Fin.castLE hk i)) (fun i ↦ v (Fin.castLE hk i))
+            (hu.comp _ (Fin.castLE_injective hk)) (hv.comp _ (Fin.castLE_injective hk))
+    simpa [LinearMap.kyFanSum_def, g] using hreal
+  have hcross := TauCeti.sum_range_mul_le_sum_range_mul (w := w) hfg hw hw0
+  rw [← Fin.sum_univ_eq_sum_range (fun i ↦ w i * f i),
+    ← Fin.sum_univ_eq_sum_range (fun i ↦ w i * g i)] at hcross
+  simpa [f, g] using hcross
+
 /-- **Ky Fan's maximum principle**, attainment: the first `k` right singular vectors and the
 corresponding unit left singular vectors, completed where the singular value vanishes, are
 orthonormal families with `∑ᵢ ⟪uᵢ, A vᵢ⟫ = σ₀(A) + ⋯ + σₖ₋₁(A)`. -/
@@ -257,6 +319,25 @@ theorem exists_orthonormal_sum_inner_eq_kyFanSum (A : E →ₗ[𝕜] F) {k : ℕ
     rw [hw (Fin.castLE hkE i) (Fin.castLE hkF i) (by simp) (by simpa using hσ),
       inner_leftSingularVector]
     simp [hσ]
+
+/-- **Ky Fan's maximum principle for positive endomorphisms**, attainment: for a positive
+endomorphism `A` of a finite-dimensional space and `k ≤ dim E`, some orthonormal family of `k`
+vectors has `∑ᵢ re ⟪vᵢ, A vᵢ⟫ = σ₀(A) + ⋯ + σₖ₋₁(A)`. -/
+theorem IsPositive.exists_orthonormal_sum_re_inner_eq_kyFanSum {A : E →ₗ[𝕜] E}
+    (hA : A.IsPositive) {k : ℕ} (hk : k ≤ finrank 𝕜 E) :
+    ∃ v : Fin k → E, Orthonormal 𝕜 v ∧ ∑ i, RCLike.re ⟪v i, A (v i)⟫ = A.kyFanSum k := by
+  obtain ⟨u, v, hu, hv, huv⟩ := A.exists_orthonormal_sum_inner_eq_kyFanSum hk hk
+  refine ⟨v, hv, le_antisymm ?_ ?_⟩
+  · simpa using (RCLike.re_le_norm _).trans (A.norm_sum_inner_le_kyFanSum hv hv)
+  · have hu' : ∑ i, RCLike.re ⟪u i, A (u i)⟫ ≤ A.kyFanSum k := by
+      simpa [map_sum] using (RCLike.re_le_norm _).trans (A.norm_sum_inner_le_kyFanSum hu hu)
+    have hre : 2 * A.kyFanSum k ≤
+        ∑ i, RCLike.re ⟪u i, A (u i)⟫ + ∑ i, RCLike.re ⟪v i, A (v i)⟫ := by
+      have := congrArg (fun z : 𝕜 ↦ 2 * RCLike.re z) huv
+      simp only [map_sum, RCLike.ofReal_re, Finset.mul_sum] at this
+      rw [← this, ← Finset.sum_add_distrib]
+      exact Finset.sum_le_sum fun i _ ↦ hA.two_mul_re_inner_le _ _
+    linarith
 
 /-- For an endomorphism `A` of an `n`-dimensional inner product space and an isometric automorphism
 `Q`, `‖tr (A Q)‖ ≤ σ₀(A) + ⋯ + σₙ₋₁(A)`, the sum of all singular values of `A`. -/
@@ -309,7 +390,7 @@ theorem kyFanSum_add_le (A B : E →ₗ[𝕜] F) (k : ℕ) :
   have hA := A.norm_sum_inner_le_kyFanSum hu hv
   have hB := B.norm_sum_inner_le_kyFanSum hu hv
   rw [Fintype.card_fin] at hA hB
-  simp only [add_apply, inner_add_right, sum_add_distrib]
+  simp only [LinearMap.add_apply, inner_add_right, sum_add_distrib]
   exact (norm_add_le _ _).trans
     (add_le_add (hA.trans (A.kyFanSum_mono hm)) (hB.trans (B.kyFanSum_mono hm)))
 
@@ -337,7 +418,7 @@ theorem kyFanSum_smul (c : 𝕜) (A : E →ₗ[𝕜] F) (k : ℕ) :
     refine (kyFanSum_le_iff _).mpr fun m hm u v hu hv ↦ ?_
     have hA := A.norm_sum_inner_le_kyFanSum hu hv
     rw [Fintype.card_fin] at hA
-    simp only [smul_apply, inner_smul_right, ← mul_sum, norm_mul]
+    simp only [LinearMap.smul_apply, inner_smul_right, ← mul_sum, norm_mul]
     exact mul_le_mul_of_nonneg_left (hA.trans (A.kyFanSum_mono hm)) (norm_nonneg c)
   rcases eq_or_ne c 0 with rfl | hc
   · simp
@@ -376,6 +457,27 @@ theorem kyFanSum_comp_linearIsometryEquiv (A : E →ₗ[𝕜] F) (V : E' ≃ₗ�
       (hv.comp_linearIsometryEquiv V.symm)
     rw [Fintype.card_fin] at h
     simpa using h.trans (kyFanSum_mono _ hm)
+
+/-- Extending a map `T : U → W` by zero on `Uᗮ`, then including the image
+in the target ambient space, does not change its Ky Fan singular-value sums. -/
+@[simp]
+theorem kyFanSum_subtype_comp_comp_orthogonalProjectionOnto
+    (U : Submodule 𝕜 E) (W : Submodule 𝕜 F) [U.HasOrthogonalProjection]
+    (T : U →ₗ[𝕜] W) (k : ℕ) :
+    (W.subtype ∘ₗ T ∘ₗ U.orthogonalProjectionOnto.toLinearMap).kyFanSum k =
+      T.kyFanSum k := by
+  have hU : LinearMap.adjoint U.subtypeₗᵢ.toLinearMap =
+      U.orthogonalProjectionOnto.toLinearMap := by
+    simpa only [Submodule.subtypeₗᵢ_toLinearMap] using U.adjoint_subtype
+  have hcomp :
+      W.subtype ∘ₗ T ∘ₗ U.orthogonalProjectionOnto.toLinearMap =
+        (W.subtypeₗᵢ.toLinearMap ∘ₗ T) ∘ₗ
+          LinearMap.adjoint U.subtypeₗᵢ.toLinearMap := by
+    simp only [← hU, Submodule.subtypeₗᵢ_toLinearMap, LinearMap.comp_assoc]
+  rw [hcomp]
+  simp only [LinearMap.kyFanSum_def,
+    LinearMap.singularValues_comp_adjoint_linearIsometry,
+    LinearMap.singularValues_linearIsometry_comp]
 
 namespace IsSymmetric
 

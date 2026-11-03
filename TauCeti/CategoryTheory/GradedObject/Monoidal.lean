@@ -5,6 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Homology.ShortComplex.Abelian
+public import Mathlib.CategoryTheory.Abelian.FunctorCategory
+
 public import Mathlib.CategoryTheory.Abelian.Basic
 public import Mathlib.CategoryTheory.Abelian.GrothendieckAxioms.Colim
 public import Mathlib.CategoryTheory.Functor.ReflectsIso.Exact
@@ -71,7 +74,7 @@ lemma mono_mapMap {X Y : GradedObject I C} (φ : X ⟶ Y) (p : I → J) [X.HasMa
   have : ∀ i, Mono (α.app i) := fun i ↦ inferInstanceAs (Mono (φ i.as.1))
   have : Mono α := NatTrans.mono_of_mono_app _
   rw [mapMap_eq_colimMap, ← colim_map]
-  exact Functor.map_mono colim α
+  exact CategoryTheory.Functor.map_mono colim α
 
 /-- A morphism of graded objects which is an epimorphism in each degree induces an epimorphism on
 the coproducts over the fibre of `p : I → J` over `j`. -/
@@ -149,7 +152,7 @@ lemma id_tensorHom_eq_mapMap [AddMonoid I] [MonoidalCategory C] (X : GradedObjec
     tensorHom (𝟙 X) g n =
       mapMap (((mapBifunctor (curriedTensor C) I I).obj X).map g) (fun x ↦ x.1 + x.2) n := by
   dsimp [tensorHom, mapBifunctorMapMap]
-  simp only [Functor.map_id, NatTrans.id_app, Category.id_comp]
+  simp only [CategoryTheory.Functor.map_id, NatTrans.id_app, Category.id_comp]
   rfl
 
 variable [HasZeroMorphisms C] [MonoidalCategory C] (X Y : GradedObject ℕ C)

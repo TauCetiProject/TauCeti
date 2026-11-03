@@ -48,7 +48,9 @@ two-step domains thus reduces to comparing the multisets of squares they cover.
   `TauCeti.GridDiagram.commutationMap_withTurnRow_commutationMap_single_apply`, for a return map
   turning in an arbitrary row.
 * `TauCeti.GridDiagram.reverse_commutationMap_commutationMap_smul`: the round trip `Ψ ∘ Φ` is
-  linear over the polynomial ring.
+  linear over the polynomial ring. It is the case of
+  `TauCeti.GridDiagram.commutationMap_withTurnRow_commutationMap_smul`, for a return map turning
+  in an arbitrary row.
 * `TauCeti.GridDiagram.unblockedDifferential_commutationHomotopy_add_eq_iff`: the homotopy
   equation holds on every chain exactly when, for all grid states `x` and `z`, the rectangle and
   hexagon coefficient products from `x` to `z` sum to `δ_{xz}` plus the pentagon coefficient
@@ -125,6 +127,21 @@ theorem reverse_commutationMap_commutationMap_single_apply (x z : GridState n) :
   exact G.commutationMap_withTurnRow_commutationMap_single_apply R C.toColumnTurn
     C.oppositeTurnRow x z
 
+/-- The round trip through the commuted diagram, first the commutation map of a turn `T` and then
+that of the commuted diagram at the same columns turning in row `t`, is linear over the
+polynomial ring: both maps are semilinear over the renaming of the variables by the swap of the
+two commuted columns, and that renaming is an involution. -/
+theorem commutationMap_withTurnRow_commutationMap_smul (T : ColumnTurn n) (t : Fin n)
+    (p : MvPolynomial (Fin n) R) (c : GridChainMinus R n) :
+    (G.swapColumns T.column (finRotate n T.column)).commutationMap R (T.withTurnRow t)
+        (G.commutationMap R T (p • c)) =
+      p • (G.swapColumns T.column (finRotate n T.column)).commutationMap R (T.withTurnRow t)
+        (G.commutationMap R T c) := by
+  rw [LinearMap.map_smulₛₗ, LinearMap.map_smulₛₗ]
+  congr 1
+  simp only [AlgEquiv.toRingEquiv_toRingHom, RingHom.coe_coe, renameEquiv_apply, rename_rename]
+  rw [← Equiv.coe_trans, Equiv.swap_swap, Equiv.coe_refl, rename_id_apply]
+
 /-- The round trip `Ψ ∘ Φ` through the commuted diagram is linear over the polynomial ring: the
 commutation map and its reverse are semilinear over the same renaming of the variables by the
 swap of the two commuted columns, and that renaming is an involution. -/
@@ -132,11 +149,10 @@ theorem reverse_commutationMap_commutationMap_smul (p : MvPolynomial (Fin n) R)
     (c : GridChainMinus R n) :
     (G.swapColumns C.column b).commutationMap R C.reverse (G.commutationMap R C (p • c)) =
       p • (G.swapColumns C.column b).commutationMap R C.reverse (G.commutationMap R C c) := by
-  rw [LinearMap.map_smulₛₗ, LinearMap.map_smulₛₗ]
-  congr 1
-  simp only [AlgEquiv.toRingEquiv_toRingHom, RingHom.coe_coe, renameEquiv_apply, rename_rename,
-    ColumnCommutationData.reverse_column]
-  rw [← Equiv.coe_trans, Equiv.swap_swap, Equiv.coe_refl, rename_id_apply]
+  -- The turn of `C.reverse` is the turn of `C` in its opposite turn row.
+  rw [show C.reverse.toColumnTurn = C.toColumnTurn.withTurnRow C.oppositeTurnRow from
+    ColumnTurn.ext C.reverse_column C.reverse_turnRow]
+  exact G.commutationMap_withTurnRow_commutationMap_smul R C.toColumnTurn C.oppositeTurnRow p c
 
 /-- The homotopy equation `∂ ∘ H + H ∘ ∂ = 1 + Ψ ∘ Φ` of a column commutation holds on every
 chain exactly when, for all grid states `x` and `z`, the products of rectangle and hexagon

@@ -44,6 +44,7 @@ are only real-linear.
 * `norm_quadraticTwoForm`, `norm_quadraticTwoForm_sq`: `‖q(ψ)‖ = ‖ψ‖² / (2 √2)`, that is
   `‖q(ψ)‖² = ‖ψ‖⁴ / 8`; in particular `q(ψ) = 0` only for `ψ = 0`
   (`quadraticTwoForm_eq_zero_iff`).
+* `inner_quadraticTwoForm_eq_re_inner`: `⟪q(ψ), ω⟫ = Re⟪ψ, C(iω) ψ⟫ / 4` for self-dual `ω`.
 * `cliffordRestriction_quadraticTwoFormPolar`: `C(i q'(ψ, φ)) = φψ* + ψφ* - Re⟪ψ, φ⟫ Id`.
 * `quadraticTwoForm_add`: `q(ψ + φ) = q(ψ) + q(φ) + q'(ψ, φ)`.
 * `quadraticTwoFormPolar_smul_self`: `q'(ψ, c ψ) = 2 Re(c) q(ψ)`, so the derivative of `q` kills
@@ -185,6 +186,21 @@ theorem quadraticTwoForm_eq_zero_iff (hρ : ∀ v, LinearMap.adjoint (ρ (ι Q v
     quadraticTwoForm o ρ hkl ψ = 0 ↔ ψ = 0 := by
   rw [← norm_eq_zero, norm_quadraticTwoForm o hQ hkl hρ h₂]
   simp
+
+include hQ in
+/-- The pairing of `q` with a self-dual form: `⟪q(ψ), ω⟫ = Re⟪ψ, C(iω) ψ⟫ / 4`. -/
+theorem inner_quadraticTwoForm_eq_re_inner {ω : ⋀[ℝ]^2 V} (hω : o.hodgeStar hkl ω = ω)
+    (ψ : positiveHalfSpinors o ρ) :
+    ⟪(quadraticTwoForm o ρ hkl ψ : ⋀[ℝ]^2 V), ω⟫ =
+      (⟪ψ, cliffordRestriction o ρ ω ψ⟫_ℂ).re / 4 := by
+  have hmem : ω ∈ Module.End.eigenspace (o.hodgeStar hkl : Module.End ℝ (⋀[ℝ]^2 V)) 1 :=
+    Module.End.mem_eigenspace_iff.2 (by simpa using hω)
+  have h := inner_cliffordRestrictionAdjoint_left o ρ hkl (quadraticEnd ψ) ⟨ω, hmem⟩
+  rw [trace_quadraticEnd_mul_of_trace_eq_zero (trace_cliffordRestriction o ρ hQ ω)] at h
+  rw [quadraticTwoForm_def, Submodule.coe_smul, real_inner_smul_left]
+  simp only [Submodule.coe_inner] at h ⊢
+  rw [h]
+  ring
 
 /-! ### Polarization and derivative -/
 

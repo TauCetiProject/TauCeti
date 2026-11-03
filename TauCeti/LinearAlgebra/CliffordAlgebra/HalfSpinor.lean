@@ -11,7 +11,7 @@ public import Mathlib.LinearAlgebra.Determinant
 public import Mathlib.LinearAlgebra.Eigenspace.Basic
 public import Mathlib.LinearAlgebra.Trace
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Chirality
-public import TauCeti.LinearAlgebra.CliffordAlgebra.Hermitian
+public import TauCeti.LinearAlgebra.CliffordAlgebra.Hermitian.Basic
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Reversal.Basic
 -- Private: the orthogonal vector, even relation, conjugation and adjugate facts are proof-only.
 import TauCeti.Analysis.InnerProductSpace.Projection.Basic
@@ -58,6 +58,8 @@ products. Consequently `ρ(x* x) = det(ρ x)` on `W^ε`.
   `Γ`, the real-linear isomorphism `v ↦ c(v) ψ` from `V` onto the opposite eigenspace.
 * `CliffordAlgebra.evenHalfSpinAction o ρ ε`: the even Clifford subalgebra acting on the
   `ε`-eigenspace of `Γ`.
+* `CliffordAlgebra.halfSpinCliffordMul o ρ ε`: Clifford multiplication `v ↦ c(v)` from the
+  `ε`-eigenspace of `Γ` to the `-ε`-eigenspace, the odd Clifford action `W^± → W^∓`.
 
 ## Main results
 
@@ -279,8 +281,27 @@ theorem map_ι_apply_mem_eigenspace_chirality_neg {ε : ℂ} {ψ : W}
     (hψ : ψ ∈ eigenspace (ρ (chirality Q o)) ε) (v : V) :
     ρ (ι Q v) ψ ∈ eigenspace (ρ (chirality Q o)) (-ε) := by
   rw [mem_eigenspace_iff] at hψ ⊢
-  rw [← Module.End.mul_apply, ← map_mul, chirality_mul_ι o, map_neg, map_mul,
-    LinearMap.neg_apply, Module.End.mul_apply, hψ, map_smul, neg_smul]
+  rw [← mul_apply_eq_comp, ← map_mul, chirality_mul_ι o, map_neg, map_mul,
+    LinearMap.neg_apply, mul_apply_eq_comp, hψ, map_smul, neg_smul]
+
+variable (ρ) in
+omit hQ in
+/-- **Clifford multiplication between the eigenspaces of `Γ`**: `c(v)` restricted to the
+`ε`-eigenspace, as a complex-linear map to the `-ε`-eigenspace, depending real-linearly on `v`.
+For `ε = 1` this is the odd Clifford action `W⁺ → W⁻`, and for `ε = -1` it is `W⁻ → W⁺`. -/
+def halfSpinCliffordMul (ε : ℂ) :
+    V →ₗ[ℝ] eigenspace (ρ (chirality Q o)) ε →ₗ[ℂ] eigenspace (ρ (chirality Q o)) (-ε) where
+  toFun v := (ρ (ι Q v)).restrict fun _ hψ ↦ map_ι_apply_mem_eigenspace_chirality_neg o hψ v
+  map_add' v w := by ext; simp
+  map_smul' r v := by ext; simp
+
+omit hQ in
+/-- `halfSpinCliffordMul` is the restriction of Clifford multiplication. -/
+@[simp]
+theorem coe_halfSpinCliffordMul_apply_apply (ε : ℂ) (v : V)
+    (ψ : eigenspace (ρ (chirality Q o)) ε) :
+    (halfSpinCliffordMul o ρ ε v ψ : W) = ρ (ι Q v) ψ :=
+  (rfl)
 
 variable [FiniteDimensional ℂ W]
 
@@ -293,8 +314,7 @@ private theorem finrank_eigenspace_chirality_le_neg (ρ : CliffordAlgebra Q →�
   have : Nontrivial V := Module.nontrivial_of_finrank_eq_succ (Fact.out : finrank ℝ V = 4)
   obtain ⟨v, hv⟩ := exists_ne (0 : V)
   have hinj := map_ι_injective ρ (v := v) (by simpa [hQ] using hv)
-  exact LinearMap.finrank_le_finrank_of_injective
-    (f := (ρ (ι Q v)).restrict fun _ hξ ↦ map_ι_apply_mem_eigenspace_chirality_neg o hξ v)
+  exact LinearMap.finrank_le_finrank_of_injective (f := halfSpinCliffordMul o ρ ε v)
     fun ψ φ h ↦ Subtype.ext (hinj (congrArg Subtype.val h))
 
 variable (ρ) in

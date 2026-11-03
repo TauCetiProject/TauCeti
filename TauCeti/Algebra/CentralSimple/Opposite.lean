@@ -8,7 +8,7 @@ module
 -- `TauCeti.Algebra.CentralSimple.Degree` is imported publicly: it supplies the dimension count
 -- `TauCeti.Algebra.finrank_tensorProduct_mulOpposite` that the surjectivity proof below runs on,
 -- and it re-exports `TauCeti.Algebra.CentralSimple.TensorProduct`, and with it the simplicity
--- instance `TauCeti.IsSimpleRing.tensorProduct` that makes `A ⊗[K] Aᵐᵒᵖ` simple -- the fact the
+-- instance `IsSimpleRing.tensorProduct` that makes `A ⊗[K] Aᵐᵒᵖ` simple -- the fact the
 -- whole file rests on -- as well as `Mathlib.RingTheory.TensorProduct.Basic` (the `⊗[K]` notation
 -- and the algebra structure on `A ⊗[K] Aᵐᵒᵖ`, both of which occur in the statements below) and
 -- `Mathlib.Algebra.Central.Basic`, which is why none of those is imported again here.
@@ -52,10 +52,10 @@ Both halves of bijectivity are cheap once the right facts are in place, and neit
 computation with the map.
 
 *Injectivity* is simplicity: `Aᵐᵒᵖ` is simple because `A` is, so `A ⊗[K] Aᵐᵒᵖ` is simple by
-`TauCeti.IsSimpleRing.tensorProduct` (this is where centrality of `A` enters), and a ring
+`IsSimpleRing.tensorProduct` (this is where centrality of `A` enters), and a ring
 homomorphism out of a simple ring into a nontrivial ring is injective (`RingHom.injective`).
 No finite-dimensionality is used here, and the half is stated on its own as
-`TauCeti.IsSimpleRing.mulLeftRight_injective`.
+`IsSimpleRing.mulLeftRight_injective`.
 
 *Surjectivity* is a dimension count: `A ⊗[K] Aᵐᵒᵖ` and `Module.End K A` both have dimension `n ^ 2`
 over `K`, so an injective `K`-linear map between them is surjective. This is the only place
@@ -71,10 +71,10 @@ subalgebra of the `4`-dimensional `Module.End ℝ ℂ`.
 
 ## Main results
 
-* `TauCeti.IsSimpleRing.mulLeftRight_injective`: **the Azumaya map of a central simple algebra is
+* `IsSimpleRing.mulLeftRight_injective`: **the Azumaya map of a central simple algebra is
   injective**, with no finiteness hypothesis, and
-  `TauCeti.IsSimpleRing.mulLeftRight_bijective`: **for a finite-dimensional one it is bijective**,
-  with its packaging `TauCeti.IsSimpleRing.isAzumaya`: such an algebra is an Azumaya algebra over
+  `IsSimpleRing.mulLeftRight_bijective`: **for a finite-dimensional one it is bijective**,
+  with its packaging `IsSimpleRing.isAzumaya`: such an algebra is an Azumaya algebra over
   its base field.
 * `TauCeti.Algebra.tensorOpAlgEquivEnd`: the resulting isomorphism
   `A ⊗[K] Aᵐᵒᵖ ≃ₐ[K] Module.End K A`.
@@ -87,7 +87,7 @@ the Azumaya map is the field `IsAzumaya.bij`, and the finiteness the matrix half
 `K`-algebra is exactly a finite-dimensional central simple one -- but it is the hypothesis the
 construction actually reads, and the one already carried by an algebra known to be Azumaya for some
 other reason (Mathlib's `IsAzumaya.matrix`, `IsAzumaya.of_AlgEquiv`). For a central simple `A` the
-way in is `TauCeti.IsSimpleRing.isAzumaya`, installed with `haveI`.
+way in is `IsSimpleRing.isAzumaya`, installed with `haveI`.
 
 `TauCeti.Algebra.tensorOpAlgEquivEnd` uses nothing else, so it is stated over the commutative
 semiring `K` and semiring `A` that `IsAzumaya` itself is defined over. Only the matrix half needs a
@@ -98,14 +98,14 @@ The real quaternions run all of this concretely in
 
 ## Implementation notes
 
-`TauCeti.IsSimpleRing.isAzumaya` is deliberately **not** an instance. Mathlib's
+`IsSimpleRing.isAzumaya` is deliberately **not** an instance. Mathlib's
 `Algebra.IsCentral.instIsAzumaya` goes the other way, deducing `Algebra.IsCentral K A` from
 `IsAzumaya K A`; registering the converse as an instance would let typeclass search cycle between
 the two. Apply it with `haveI` where an `IsAzumaya` hypothesis is wanted, as the worked example at
 the end of this file does:
 
 ```lean
-haveI := TauCeti.IsSimpleRing.isAzumaya K A
+haveI := IsSimpleRing.isAzumaya K A
 TauCeti.Algebra.tensorOpAlgEquivMatrix K A hn
 ```
 
@@ -129,8 +129,6 @@ T. Szamuely, *Central Simple Algebras and Galois Cohomology*, Section 2.4, and R
 
 public section
 
-namespace TauCeti
-
 open scoped TensorProduct
 
 /-! ### The Azumaya map is bijective -/
@@ -141,11 +139,11 @@ variable (K : Type*) [Field K] (A : Type*) [Ring A] [Algebra K A] [Algebra.IsCen
   [IsSimpleRing A]
 
 /-- **The Azumaya map of a central simple algebra is injective**: `A ⊗[K] Aᵐᵒᵖ` is a simple ring
-(`TauCeti.IsSimpleRing.tensorProduct`, which is where centrality of `A` enters), and a ring
+(`IsSimpleRing.tensorProduct`, which is where centrality of `A` enters), and a ring
 homomorphism out of a simple ring into a nontrivial ring is injective.
 
 No finite-dimensionality is used, and none should be added: this half of
-`TauCeti.IsSimpleRing.mulLeftRight_bijective` holds for an infinite-dimensional central simple
+`IsSimpleRing.mulLeftRight_bijective` holds for an infinite-dimensional central simple
 algebra too, where the Azumaya map is injective but need not be surjective. -/
 theorem mulLeftRight_injective : Function.Injective (AlgHom.mulLeftRight K A) :=
   RingHom.injective (AlgHom.mulLeftRight K A : (A ⊗[K] Aᵐᵒᵖ) →+* Module.End K A)
@@ -159,12 +157,12 @@ simple and finite-dimensional over a field `K`, the map
 
 is a bijection.
 
-Injectivity is `TauCeti.IsSimpleRing.mulLeftRight_injective`, which holds for any central simple
+Injectivity is `IsSimpleRing.mulLeftRight_injective`, which holds for any central simple
 `A`, finite-dimensional or not. Finite-dimensionality is used only for surjectivity, where it makes
 the two sides equidimensional `K`-vector spaces. -/
 theorem mulLeftRight_bijective : Function.Bijective (AlgHom.mulLeftRight K A) := by
   have hdim : Module.finrank K (A ⊗[K] Aᵐᵒᵖ) = Module.finrank K (Module.End K A) := by
-    rw [Algebra.finrank_tensorProduct_mulOpposite, Module.finrank_linearMap, sq]
+    rw [TauCeti.Algebra.finrank_tensorProduct_mulOpposite, Module.finrank_linearMap, sq]
   exact ⟨mulLeftRight_injective K A, (LinearMap.injective_iff_surjective_of_finrank_eq_finrank hdim
     (f := (AlgHom.mulLeftRight K A).toLinearMap)).mp (mulLeftRight_injective K A)⟩
 
@@ -172,12 +170,14 @@ theorem mulLeftRight_bijective : Function.Bijective (AlgHom.mulLeftRight K A) :=
 
 This is not an instance. Mathlib's `Algebra.IsCentral.instIsAzumaya` deduces `Algebra.IsCentral K A`
 from `IsAzumaya K A`, so making the converse an instance would let typeclass search cycle between
-the two; use `haveI := TauCeti.IsSimpleRing.isAzumaya K A` where an `IsAzumaya` hypothesis is
+the two; use `haveI := IsSimpleRing.isAzumaya K A` where an `IsAzumaya` hypothesis is
 wanted. -/
 theorem isAzumaya : IsAzumaya K A where
   bij := mulLeftRight_bijective K A
 
 end IsSimpleRing
+
+namespace TauCeti
 
 /-! ### The opposite isomorphism -/
 
@@ -194,8 +194,8 @@ variable (K : Type*) [CommSemiring K] (A : Type*) [Semiring A] [Algebra K A] [Is
 Bijectivity is the field `IsAzumaya.bij`, so this needs no hypothesis beyond `IsAzumaya K A`, and in
 particular no field and no finiteness: it is stated over the commutative semiring `K` that
 `IsAzumaya` itself is defined over. For a finite-dimensional central simple `A` over a field the
-hypothesis is `TauCeti.IsSimpleRing.isAzumaya K A`, which is not an instance and has to be installed
-by hand: `haveI := TauCeti.IsSimpleRing.isAzumaya K A`. -/
+hypothesis is `IsSimpleRing.isAzumaya K A`, which is not an instance and has to be installed
+by hand: `haveI := IsSimpleRing.isAzumaya K A`. -/
 noncomputable def tensorOpAlgEquivEnd : A ⊗[K] Aᵐᵒᵖ ≃ₐ[K] Module.End K A :=
   AlgEquiv.ofBijective (AlgHom.mulLeftRight K A) IsAzumaya.bij
 
@@ -217,7 +217,7 @@ finite-dimensional central simple algebra -- satisfies `A ⊗[K] Aᵐᵒᵖ ≃�
 the tensor product of a central simple algebra with its opposite is a full matrix algebra, which is
 what makes the Brauer class of `Aᵐᵒᵖ` the inverse of that of `A`. The finiteness needed to read a
 matrix off is the `Module.Finite K A` that `IsAzumaya` extends; for a central simple `A`, install
-the hypothesis with `haveI := TauCeti.IsSimpleRing.isAzumaya K A`.
+the hypothesis with `haveI := IsSimpleRing.isAzumaya K A`.
 
 The size is the **dimension** `n = Module.finrank K A`, not the degree `TauCeti.Algebra.deg K A`;
 the two are related by `TauCeti.Algebra.deg_sq`, and the resulting degree count is
@@ -251,7 +251,7 @@ variable (K : Type*) [Field K]
 
 /-- The base field itself: `K ⊗[K] Kᵐᵒᵖ` is `1 × 1` matrices over `K`. This is also how a central
 simple algebra reaches `TauCeti.Algebra.tensorOpAlgEquivMatrix` in general -- by installing
-`TauCeti.IsSimpleRing.isAzumaya`, which is not an instance. -/
+`IsSimpleRing.isAzumaya`, which is not an instance. -/
 noncomputable example : K ⊗[K] Kᵐᵒᵖ ≃ₐ[K] Matrix (Fin 1) (Fin 1) K :=
   haveI := IsSimpleRing.isAzumaya K K
   Algebra.tensorOpAlgEquivMatrix K K (Module.finrank_self K)

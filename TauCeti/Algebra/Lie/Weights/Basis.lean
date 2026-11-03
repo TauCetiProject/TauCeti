@@ -12,7 +12,9 @@ import TauCeti.LinearAlgebra.Eigenspace.DiagonalBasis
 # Formal characters from a weight basis
 
 For a nilpotent Lie algebra over a reduced commutative ring, a basis of simultaneous
-eigenvectors makes honest and generalized weight spaces agree. Over a field, a finite such
+eigenvectors makes honest and generalized weight spaces agree. Over a field, such a basis makes
+the module triangularizable, and its weights are exactly the weights of the basis vectors
+(`Module.Basis.genWeightSpace_ne_bot_iff_of_weight_basis`). A finite such
 basis expresses the formal character as the sum of the corresponding group-algebra basis
 elements, counting repeated weights with their multiplicities. If these weights are pairwise
 distinct, each occurring weight space is a line and each weight has coefficient one.
@@ -55,7 +57,7 @@ theorem genWeightSpace_eq_weightSpace_of_weight_basis (χ : L → R) :
     induction n with
     | zero => simp
     | succ n ih =>
-      rw [pow_succ', Module.End.mul_apply, b.repr_apply_of_apply_basis hf, ih,
+      rw [pow_succ', mul_apply_eq_comp, b.repr_apply_of_apply_basis hf, ih,
         pow_succ', mul_assoc]
   obtain ⟨n, hn⟩ := hm x
   have hcoord (i : ι) : (μ i x - χ x) * b.repr m i = 0 := by
@@ -128,6 +130,35 @@ theorem linearWeights_of_weight_basis : LinearWeights K L M := by
     apply smul_left_injective K hm
     simpa only [hw, lie_smul, smul_smul, mul_comm, sub_self, zero_smul] using (lie_lie x y m)
 
+omit [LieRing.IsNilpotent L] in
+/-- A module with a basis of weight vectors is triangularizable: every basis vector is an
+eigenvector of each element of `L`. -/
+theorem isTriangularizable_of_weight_basis : IsTriangularizable K L M where
+  maxGenEigenspace_eq_top x := by
+    rw [eq_top_iff, ← b.span_eq, Submodule.span_le]
+    rintro _ ⟨i, rfl⟩
+    exact Submodule.mem_iSup_of_mem (μ i x) (Module.End.eigenspace_le_maxGenEigenspace
+      (Module.End.mem_eigenspace_iff.mpr (by simpa using hb i x)))
+
+/-- **The weights of a module with a basis of weight vectors are the basis weights.** The
+generalized weight space at `χ` is nonzero exactly when `χ` is the weight of some basis vector. -/
+theorem genWeightSpace_ne_bot_iff_of_weight_basis (χ : L → K) :
+    genWeightSpace M χ ≠ ⊥ ↔ ∃ i, (μ i : L → K) = χ := by
+  constructor
+  · intro hχ
+    obtain ⟨m, hm, hm₀⟩ := (⟨χ, hχ⟩ : Weight K L M).exists_ne_zero
+    rw [b.genWeightSpace_eq_weightSpace_of_weight_basis hb] at hm
+    obtain ⟨i, hi⟩ : ∃ i, b.repr m i ≠ 0 := by
+      by_contra! h
+      exact hm₀ (b.repr.injective (Finsupp.ext fun i => by simp [h i]))
+    by_contra! hne
+    exact hi (b.repr_eq_zero_of_weight_ne (f := toEnd K L M) (a := fun i => (μ i : L → K)) hb
+      ((mem_weightSpace _ _).mp hm) (hne i))
+  · rintro ⟨i, rfl⟩
+    rw [ne_eq, LieSubmodule.eq_bot_iff, not_forall]
+    exact ⟨b i, fun h => b.ne_zero i (h (weightSpace_le_genWeightSpace M _
+      ((mem_weightSpace _ _).mpr (hb i))))⟩
+
 variable [Fintype ι]
 
 /-- The formal character of a module with a finite basis of weight vectors is the sum of
@@ -141,7 +172,7 @@ theorem formalCharacter_eq_sum_single_of_weight_basis :
   classical
   refine AddMonoidAlgebra.ext (Finsupp.ext fun χ => ?_)
   rw [TauCeti.formalCharacter_coeff,
-    b.genWeightSpace_eq_weightSpace_of_weight_basis hb, ← TauCeti.finrank_toSubmodule]
+    b.genWeightSpace_eq_weightSpace_of_weight_basis hb, ← LieSubmodule.finrank_toSubmodule]
   have hspace : (weightSpace M (χ : L → K)).toSubmodule =
       Submodule.span K (b '' {i | μ i = χ}) := by
     refine le_antisymm (fun m hm => ?_) (Submodule.span_le.mpr ?_)

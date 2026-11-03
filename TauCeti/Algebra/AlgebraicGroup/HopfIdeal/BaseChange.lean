@@ -840,7 +840,7 @@ theorem mem_quotientPointsSubgroup_baseChangeHopfIdeal_iff (J : HopfIdeal k H)
     g ∈ quotientPointsSubgroup (baseChange (K := K) H) (baseChangeHopfIdeal (K := K) J) A ↔
       baseChangePointsMulEquiv (K := K) A H g ∈
         quotientPointsSubgroup H J
-          (_root_.TauCeti.CommAlgCat.restrictScalarsObj (algebraMap k K) A) := by
+          (CommAlgCat.restrictScalarsObj (algebraMap k K) A) := by
   rw [mem_quotientPointsSubgroup_iff, mem_quotientPointsSubgroup_iff]
   constructor
   · intro hg h hh

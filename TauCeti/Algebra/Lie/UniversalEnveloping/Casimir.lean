@@ -142,7 +142,7 @@ theorem representation_casimirElement_apply_eq_zero_of_isTrivial
   classical
   rw [casimirElement_eq_sum (Module.finBasis K L), map_sum, LinearMap.sum_apply]
   refine Finset.sum_eq_zero fun i _ ↦ ?_
-  rw [map_mul, Module.End.mul_apply, UniversalEnvelopingAlgebra.representation_ι,
+  rw [map_mul, mul_apply_eq_comp, UniversalEnvelopingAlgebra.representation_ι,
     UniversalEnvelopingAlgebra.representation_ι]
   simp [trivial_lie_zero]
 

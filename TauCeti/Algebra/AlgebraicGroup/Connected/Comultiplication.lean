@@ -128,11 +128,11 @@ private theorem map_tensorSquare_quotient_comul_connectedComponentIdempotent_eq_
     let h : WithConv (H →ₐ[k] k) := WithConv.toConv (f₂.comp q)
     have hg : AlgHom.kernelPoint g.ofConv ∈
         connectedComponent (Bialgebra.augmentationPoint k H) := by
-      exact AlgHom.kernelPoint_comp_connectedComponentQuotient_mem
+      exact PrimeSpectrum.kernelPoint_comp_mkₐ_mem_connectedComponent
         (Bialgebra.augmentationPoint k H) f₁
     have hh : AlgHom.kernelPoint h.ofConv ∈
         connectedComponent (Bialgebra.augmentationPoint k H) := by
-      exact AlgHom.kernelPoint_comp_connectedComponentQuotient_mem
+      exact PrimeSpectrum.kernelPoint_comp_mkₐ_mem_connectedComponent
         (Bialgebra.augmentationPoint k H) f₂
     have hmul := kernelPoint_mul_mem_connectedComponent_augmentationPoint g h hg hh
     have heval :=
@@ -219,7 +219,7 @@ noncomputable def identityComponentHopfIdeal : HopfIdeal k H := by
       (fun x hx ↦ by
         have hx' : x ∈ RingHom.ker
             (_root_.Bialgebra.counitAlgHom k H).toRingHom :=
-          TauCeti.AlgHom.connectedComponentIdeal_kernelPoint_le_ker
+          AlgHom.connectedComponentIdeal_kernelPoint_le_ker
             (_root_.Bialgebra.counitAlgHom k H) hx
         rw [← Bialgebra.counitAlgHom_apply]
         exact RingHom.mem_ker.mp hx')

@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+import TauCeti.Algebra.Group.End
 public import TauCeti.Algebra.AlgebraicGroup.Frobenius.GeneralLinear
 public import TauCeti.Algebra.CharP.Frobenius.Basic
 public import TauCeti.Algebra.Lie.E7.Minuscule.PointsFunctor
@@ -42,7 +43,8 @@ any finiteness or simplicity statement.
 * `TauCeti.E7Minuscule.frobenius`: the `p ^ k`-power Frobenius on the carrier's points.
 * `TauCeti.E7Minuscule.coe_frobenius` and `coe_frobenius_apply`: its matrix and entrywise actions.
 * `TauCeti.E7Minuscule.frobenius_rootSubgroupPoints`: its action on every numbered simple-root
-  subgroup.
+  subgroup, and `TauCeti.E7Minuscule.rootSubgroupPoints_mem_fixedSubgroup_frobenius`: the
+  simple-root points with Frobenius-fixed parameter are fixed.
 * `TauCeti.E7Minuscule.frobenius_weightTorusPoints`: its action on the split weight torus.
 * `TauCeti.E7Minuscule.frobenius_zero`, `frobenius_add` and `frobenius_pow`: its iteration laws.
 * `TauCeti.E7Minuscule.frobenius_eq_self_iff` and
@@ -108,6 +110,14 @@ theorem frobenius_rootSubgroupPoints (i : Fin 7 ⊕ Fin 7) (u : Multiplicative A
   rw [frobenius, map_rootSubgroupPoints]
   exact Subtype.ext (by rw [iterateFrobenius_def])
 
+/-- A numbered simple-root point whose parameter lies in the Frobenius-fixed subring is fixed by
+Frobenius. -/
+theorem rootSubgroupPoints_mem_fixedSubgroup_frobenius (i : Fin 7 ⊕ Fin 7) (u : A)
+    (hu : u ∈ frobeniusFixedSubring A p k) :
+    rootSubgroupPoints i A (Multiplicative.ofAdd u) ∈ fixedSubgroup (frobenius p k A) := by
+  rw [mem_fixedSubgroup, frobenius_rootSubgroupPoints, toAdd_ofAdd,
+    mem_frobeniusFixedSubring.mp hu]
+
 /-- **Frobenius raises every coordinate of the pinned split weight torus to its `p ^ k`-th
 power.** -/
 @[simp]
@@ -133,10 +143,9 @@ Frobenius of the type-`E₇` minuscule carrier, in the endomorphism monoid of it
 -- `Monoid.End` is definitionally a bundled `MonoidHom`; the `show` picks its composition monoid
 -- structure before the power is elaborated.
 theorem frobenius_pow (m : ℕ) :
-    (show Monoid.End _ from frobenius p k A) ^ m = frobenius p (k * m) A := by
-  induction m with
-  | zero => rw [pow_zero, Nat.mul_zero, frobenius_zero]; rfl
-  | succ m ih => rw [pow_succ, ih, Nat.mul_succ, frobenius_add p (k * m) A k]; rfl
+    (show Monoid.End _ from frobenius p k A) ^ m = frobenius p (k * m) A :=
+  Monoid.End.pow_eq_of_add_eq_comp (fun j => frobenius p j A) (frobenius_zero p A)
+    (fun a b => frobenius_add p a A b) k m
 
 /-- A type-`E₇` minuscule carrier point is fixed by Frobenius exactly when all of its matrix
 entries lie in the Frobenius-fixed subring. -/

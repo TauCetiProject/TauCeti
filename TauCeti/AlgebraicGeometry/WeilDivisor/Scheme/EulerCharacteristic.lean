@@ -7,7 +7,7 @@ module
 
 public import TauCeti.AlgebraicGeometry.LineBundle.Degree
 public import TauCeti.AlgebraicGeometry.WeilDivisor.Scheme.Degree
-public import TauCeti.AlgebraicGeometry.WeilDivisor.Scheme.ResidueSequence
+public import TauCeti.AlgebraicGeometry.WeilDivisor.Scheme.ResidueSequence.Basic
 public import TauCeti.AlgebraicGeometry.WeilDivisor.Scheme.RiemannRoch.Space
 
 /-!

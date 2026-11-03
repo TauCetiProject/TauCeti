@@ -6,6 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.MeasureTheory.Measure.Lebesgue.EqHaar
+public import Mathlib.Analysis.Calculus.Deriv.Basic
+import Mathlib.Analysis.Calculus.Deriv.Mul
+import Mathlib.Analysis.Calculus.Deriv.Pow
 import Mathlib.MeasureTheory.Measure.Real
 
 /-!
@@ -14,7 +17,8 @@ import Mathlib.MeasureTheory.Measure.Real
 In a finite-dimensional real normed space, the real measure of a positive-radius ball is its radius
 raised to the dimension times the real measure of the unit ball, independently of its centre;
 equivalently, `n / r` times the measure of the ball of radius `r` is `n rⁿ⁻¹` times the measure of
-the unit ball, where `n` is the dimension. It agrees with the measure of the closed ball, which
+the unit ball, where `n` is the dimension, and this is the derivative in `r` of the measure of the
+ball. It agrees with the measure of the closed ball, which
 therefore differs from the open ball by a null set. A set inside a closed ball with the measure of a
 ball of the same radius likewise agrees with it up to a null set. In a nontrivial space, concentric
 balls are ordered by measure as by radius, so the points `x` whose centered ball of radius `‖x‖` has
@@ -32,8 +36,13 @@ closed ball of radius `‖f‖` bounds `|det f|` by `‖f‖` raised to the dime
 * `MeasureTheory.Measure.addHaar_real_ball_of_pos`: the real measure of a positive-radius ball.
 * `MeasureTheory.Measure.finrank_div_mul_addHaar_real_ball`:
   `(n / r) μ (ball x r) = n rⁿ⁻¹ μ (ball 0 1)` in dimension `n`.
+* `MeasureTheory.Measure.hasDerivAt_measureReal_ball`: `ρ ↦ μ (ball x ρ)` has derivative
+  `n rⁿ⁻¹ μ (ball 0 1)` at every `r > 0`.
 * `MeasureTheory.Measure.addHaar_real_ball_mul_diam_ball_pow_div_le`:
   `μ (ball 0 1) (diam (ball x r))ⁿ⁺¹ / μ (ball x r) ≤ 2ⁿ⁺¹ r` in dimension `n`.
+* `MeasureTheory.Measure.addHaar_real_ball_rpow_mul_diam_ball_pow_div_le`:
+  `μ (ball 0 1) ^ (1 - 1/n) (diam (ball x r))ⁿ / μ (ball x r) ≤ 2ⁿ μ (ball 0 1) ^ (-1/n)` in
+  dimension `n`.
 * `MeasureTheory.Measure.addHaar_closedBall_ae_eq_ball`: closed and open balls agree up to a null
   set in a nontrivial space.
 * `MeasureTheory.Measure.addHaar_closedBall_ae_eq_ball_of_ne_zero`: the same agreement at nonzero
@@ -92,6 +101,18 @@ theorem _root_.MeasureTheory.Measure.finrank_div_mul_addHaar_real_ball
     field_simp
     ring
 
+/-- The real measure of the ball of radius `ρ` about `x`, as a function of `ρ`, has derivative
+`n rⁿ⁻¹` times the real measure of the unit ball at every `r > 0`, where `n` is the dimension. -/
+theorem _root_.MeasureTheory.Measure.hasDerivAt_measureReal_ball
+    {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+    [MeasurableSpace E] [BorelSpace E] (mu : Measure E) [mu.IsAddHaarMeasure]
+    (x : E) {r : ℝ} (hr : 0 < r) :
+    HasDerivAt (fun ρ => mu.real (ball x ρ))
+      (finrank ℝ E * r ^ (finrank ℝ E - 1) * mu.real (ball 0 1)) r := by
+  refine ((hasDerivAt_pow (finrank ℝ E) r).mul_const (mu.real (ball 0 1))).congr_of_eventuallyEq ?_
+  filter_upwards [Ioi_mem_nhds hr] with ρ hρ
+  exact mu.addHaar_real_ball_of_pos x hρ
+
 /-- For a ball of radius `r > 0` in dimension `n`, the ratio
 `μ (ball 0 1) * (diam (ball x r)) ^ (n + 1) / μ (ball x r)` of real measures is at most
 `2 ^ (n + 1) * r`. This is the constant of the Poincaré–Wirtinger inequality on a convex domain,
@@ -110,6 +131,31 @@ theorem _root_.MeasureTheory.Measure.addHaar_real_ball_mul_diam_ball_pow_div_le
         gcongr
         exact diam_ball hr.le
     _ = 2 ^ (finrank ℝ E + 1) * r * (r ^ finrank ℝ E * mu.real (ball (0 : E) 1)) := by ring
+
+/-- For a ball of radius `r > 0` in dimension `n`, the ratio
+`μ (ball 0 1) ^ (1 - 1/n) * (diam (ball x r)) ^ n / μ (ball x r)` of real measures is at most
+`2 ^ n / μ (ball 0 1) ^ (1/n)`, whatever the radius. This is the constant of the localized
+Poincaré–Wirtinger inequality on a convex domain, evaluated on a ball. -/
+theorem _root_.MeasureTheory.Measure.addHaar_real_ball_rpow_mul_diam_ball_pow_div_le
+    {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+    [MeasurableSpace E] [BorelSpace E] (mu : Measure E) [mu.IsAddHaarMeasure]
+    (x : E) {r : ℝ} (hr : 0 < r) :
+    mu.real (ball 0 1) ^ (1 - (finrank ℝ E : ℝ)⁻¹) * diam (ball x r) ^ finrank ℝ E /
+        mu.real (ball x r) ≤
+      2 ^ finrank ℝ E / mu.real (ball 0 1) ^ (finrank ℝ E : ℝ)⁻¹ := by
+  set n := finrank ℝ E
+  set ω := mu.real (ball (0 : E) 1)
+  have homega : 0 < ω :=
+    ENNReal.toReal_pos (measure_ball_pos mu 0 one_pos).ne' measure_ball_lt_top.ne
+  rw [mu.addHaar_real_ball_of_pos x hr]
+  calc ω ^ (1 - (n : ℝ)⁻¹) * diam (ball x r) ^ n / (r ^ n * ω)
+      ≤ ω ^ (1 - (n : ℝ)⁻¹) * (2 * r) ^ n / (r ^ n * ω) := by
+        gcongr
+        exact diam_ball hr.le
+    _ = 2 ^ n / ω ^ (n : ℝ)⁻¹ := by
+        rw [Real.rpow_sub homega, Real.rpow_one]
+        field_simp
+        ring
 
 /-- Closed and open balls agree up to a null set in a nontrivial finite-dimensional space. -/
 theorem _root_.MeasureTheory.Measure.addHaar_closedBall_ae_eq_ball

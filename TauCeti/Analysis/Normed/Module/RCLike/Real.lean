@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.Normed.Module.RCLike.Real
 import Mathlib.Tactic.Linarith
+import Mathlib.Tactic.NormNum
 
 /-!
 # Norms of combinations with coefficients in `[0, 1]`
@@ -15,6 +16,8 @@ For `x, y ∈ [0, 1]` and vectors `a`, `b` in a real normed space,
 `‖x • b + y • a‖ + ‖(1 - y) • a + (1 - x) • b‖ ≤ ‖a‖ + ‖b‖`. The two vectors on the left are the
 derivatives of the product `u v` and of `u + v - u v` at a point where `u = x`, `v = y`, `Du = a`
 and `Dv = b`, so this is the pointwise inequality behind the submodularity of the perimeter.
+
+Half the difference of two vectors has at most half their distance as its norm.
 -/
 
 public section
@@ -24,6 +27,12 @@ namespace TauCeti
 open Set
 
 variable {E : Type*} [SeminormedAddCommGroup E] [NormedSpace ℝ E]
+
+/-- Half the difference of two points at distance at most `d` has norm at most `d / 2`. -/
+theorem norm_half_smul_sub_le {a b : E} {d : ℝ} (h : ‖a - b‖ ≤ d) :
+    ‖(1 / 2 : ℝ) • (a - b)‖ ≤ d / 2 := by
+  rw [norm_smul, Real.norm_of_nonneg (by norm_num)]
+  linarith
 
 /-- For `x, y ∈ [0, 1]`, the vectors `x • b + y • a` and `(1 - y) • a + (1 - x) • b` have total
 norm at most `‖a‖ + ‖b‖`. -/

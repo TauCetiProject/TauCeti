@@ -21,6 +21,9 @@ the Casimir element of a trace commute with multiplication.
 ## Main declarations
 
 * `LinearMap.assoc_rTensor_lTensor_comp`: reassociation commutes with tensoring a composite map.
+* `LinearMap.lTensor_rTensor_comm`: tensoring maps on the two factors commutes elementwise.
+* `LinearMap.injective_rTensor_congr`: injectivity of `f ⊗ 𝟙 M` is invariant under isomorphisms
+  of `M`.
 * `LinearMap.tensorComponent`: contraction against the right factor of a tensor product.
 * `LinearMap.tensorComponent_map`: naturality of contraction under `TensorProduct.map`.
 * `LinearMap.tensorComponent_assoc_symm`: contraction commutes with reassociation.
@@ -64,6 +67,19 @@ theorem assoc_rTensor_lTensor_comp (f : N →ₗ[R] P) (g : Q →ₗ[R] S)
         (TensorProduct.assoc R T N Q (ρ.rTensor Q t)) := by
   simp only [lTensor_def, rTensor_map, comp_id]
   rw [← map_rTensor, ← TensorProduct.map_map_assoc]
+
+/-- Tensoring maps on the two factors commutes, elementwise: `(𝟙 ⊗ g) ∘ (f ⊗ 𝟙)` and
+`(f ⊗ 𝟙) ∘ (𝟙 ⊗ g)` agree on every element. -/
+theorem lTensor_rTensor_comm (f : M →ₗ[R] P) (g : N →ₗ[R] Q) (x : M ⊗[R] N) :
+    g.lTensor P (f.rTensor N x) = f.rTensor Q (g.lTensor M x) := by
+  rw [← comp_apply, lTensor_comp_rTensor, ← rTensor_comp_lTensor, comp_apply]
+
+/-- Injectivity of `f ⊗ 𝟙 M` only depends on `M` up to isomorphism. -/
+theorem injective_rTensor_congr (f : N →ₗ[R] P) (e : M ≃ₗ[R] Q) :
+    Function.Injective (f.rTensor M) ↔ Function.Injective (f.rTensor Q) := by
+  have h : e.lTensor P ∘ f.rTensor M = f.rTensor Q ∘ e.lTensor N :=
+    funext fun x ↦ lTensor_rTensor_comm f e.toLinearMap x
+  rw [← EquivLike.comp_injective _ (e.lTensor P), h, EquivLike.injective_comp]
 
 end Naturality
 
@@ -112,6 +128,19 @@ theorem tensorComponent_assoc_symm (phi : P →ₗ[R] R) (u : M ⊗[R] (N ⊗[R]
     | tmul n p =>
       simp only [TensorProduct.assoc_symm_tmul, LinearMap.tensorComponent_tmul,
         LinearMap.lTensor_tmul, TensorProduct.tmul_smul]
+
+/-- Contracting the middle factor after reassociation is contraction of the left factor of the
+second tensor factor, followed by the left unitor. -/
+@[simp]
+theorem rTensor_tensorComponent_assoc_symm (phi : N →ₗ[R] R) (u : M ⊗[R] (N ⊗[R] P)) :
+    (LinearMap.tensorComponent phi).rTensor P ((TensorProduct.assoc R M N P).symm u) =
+      (TensorProduct.lid R P ∘ₗ phi.rTensor P).lTensor M u := by
+  induction u using TensorProduct.inductionOn with
+  | add u v hu hv => simp only [map_add, hu, hv]
+  | tmul m v =>
+    induction v using TensorProduct.inductionOn with
+    | add v w hv hw => simp only [tmul_add, map_add, hv, hw]
+    | tmul n p => simp [TensorProduct.smul_tmul]
 
 /-- Applying two tensor components successively is contraction by the composed functional
 on the last two factors, after reassociation. -/

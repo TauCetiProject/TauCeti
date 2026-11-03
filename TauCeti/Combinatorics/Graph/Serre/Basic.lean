@@ -17,6 +17,12 @@ still has two distinct directions, and parallel edges remain distinct. The quive
 a Serre graph keeps those directed edge identities, so its paths can be used for reduced paths,
 graph groups, and labelled-graph arguments.
 
+The geometric edges of a Serre graph are the reversal pairs `{e, rev e}`; data attached to an
+unoriented edge, such as the edge groups of a graph of groups, is indexed by them.
+
+For a reversal-closed set `S` of darts, the subgraph `Γ.restrict S hS` keeps every vertex of `Γ`
+and the darts in `S`.
+
 The simple-graph construction takes its edge set from Mathlib's darts. It provides the familiar
 loopless example while retaining the reversal structure used for general graphs.
 
@@ -51,8 +57,9 @@ namespace SerreGraph
 
 variable (Γ : SerreGraph.{u, v})
 
-/-- Terminal vertex of a dart. -/
-def tgt (e : Γ.E) : Γ.V := Γ.src (Γ.rev e)
+/-- Terminal vertex of a dart. The body is exposed so that families indexed by vertices, such as
+the vertex groups of a graph of groups, can be evaluated at `Γ.tgt e` without a cast. -/
+@[expose] def tgt (e : Γ.E) : Γ.V := Γ.src (Γ.rev e)
 
 /-- A dart ends where its reverse starts. -/
 theorem tgt_def (e : Γ.E) : Γ.tgt e = Γ.src (Γ.rev e) := (rfl)
@@ -66,6 +73,50 @@ theorem tgt_def (e : Γ.E) : Γ.tgt e = Γ.src (Γ.rev e) := (rfl)
 theorem rev_injective : Function.Injective Γ.rev := by
   intro e f h
   simpa only [Γ.rev_rev] using congrArg Γ.rev h
+
+/-- The geometric edges of a Serre graph: the pairs `{e, rev e}` of mutually reverse darts. -/
+def GeomEdge : Type v := Quot fun e f : Γ.E => f = Γ.rev e
+
+/-- The geometric edge underlying a dart. -/
+def toGeomEdge (e : Γ.E) : Γ.GeomEdge := Quot.mk _ e
+
+/-- A dart and its reverse have the same underlying geometric edge. -/
+@[simp] theorem toGeomEdge_rev (e : Γ.E) : Γ.toGeomEdge (Γ.rev e) = Γ.toGeomEdge e :=
+  Quot.sound (Γ.rev_rev e).symm
+
+theorem toGeomEdge_surjective : Function.Surjective Γ.toGeomEdge :=
+  Quot.mk_surjective
+
+/-- Two darts have the same geometric edge exactly when they are equal or mutually reverse. -/
+theorem toGeomEdge_eq_toGeomEdge_iff {e f : Γ.E} :
+    Γ.toGeomEdge e = Γ.toGeomEdge f ↔ f = e ∨ f = Γ.rev e := by
+  refine ⟨fun h => ?_, ?_⟩
+  · have hequiv : Equivalence fun e f : Γ.E => f = e ∨ f = Γ.rev e :=
+      { refl := fun _ => Or.inl rfl
+        symm := by
+          rintro e f (rfl | rfl)
+          · exact Or.inl rfl
+          · exact Or.inr (Γ.rev_rev e).symm
+        trans := by
+          rintro e f g (rfl | rfl) (rfl | rfl)
+          · exact Or.inl rfl
+          · exact Or.inr rfl
+          · exact Or.inr rfl
+          · exact Or.inl (Γ.rev_rev e) }
+    exact hequiv.eqvGen_iff.mp ((Quot.eqvGen_exact h).mono fun _ _ => Or.inr)
+  · rintro (rfl | rfl)
+    · rfl
+    · exact (Γ.toGeomEdge_rev e).symm
+
+/-- A function on darts taking the same value on mutually reverse darts descends to geometric
+edges. -/
+def GeomEdge.lift {β : Sort*} (f : Γ.E → β) (hf : ∀ e, f (Γ.rev e) = f e) :
+    Γ.GeomEdge → β :=
+  Quot.lift f fun e _ h => h ▸ (hf e).symm
+
+@[simp] theorem GeomEdge.lift_toGeomEdge {β : Sort*} (f : Γ.E → β)
+    (hf : ∀ e, f (Γ.rev e) = f e) (e : Γ.E) : GeomEdge.lift Γ f hf (Γ.toGeomEdge e) = f e :=
+  (rfl)
 
 /-- An orientation chooses one dart from each reverse pair. -/
 def IsOrientation (O : Set Γ.E) : Prop := ∀ e, e ∈ O ↔ Γ.rev e ∉ O
@@ -169,6 +220,24 @@ attribute [simp] Hom.map_src Hom.map_rev
     (f : Γ.Hom Δ) {a b : Γ.V} (e : Quiver.Hom a b) :
     (f.toPrefunctor.map e).1 = f.mapE e.1 := rfl
 
+/-- A vertex-surjective graph morphism carries preconnectedness to its target. -/
+theorem Hom.preconnected_of_surjective {Γ : SerreGraph.{u, v}} {Δ : SerreGraph.{w, x}}
+    (f : Γ.Hom Δ) (hf : Function.Surjective f.mapV)
+    (hΓ : Γ.Preconnected) : Δ.Preconnected := by
+  apply (preconnected_iff Δ).2
+  intro a b
+  obtain ⟨x, rfl⟩ := hf a
+  obtain ⟨y, rfl⟩ := hf b
+  obtain ⟨p⟩ := (preconnected_iff Γ).1 hΓ x y
+  exact ⟨f.toPrefunctor.mapPath p⟩
+
+/-- A vertex-surjective graph morphism carries connectedness to its target. -/
+theorem Hom.connected_of_surjective {Γ : SerreGraph.{u, v}} {Δ : SerreGraph.{w, x}}
+    (f : Γ.Hom Δ) (hf : Function.Surjective f.mapV)
+    (hΓ : Γ.Connected) : Δ.Connected := by
+  obtain ⟨⟨x⟩, hpre⟩ := (connected_iff Γ).1 hΓ
+  exact (connected_iff Δ).2 ⟨⟨f.mapV x⟩, f.preconnected_of_surjective hf hpre⟩
+
 /-- Identity morphism of a Serre graph. -/
 def Hom.id : Γ.Hom Γ where
   mapV := _root_.id
@@ -227,6 +296,44 @@ instance Hom.toPrefunctor_mapReverse {Δ : SerreGraph.{w, x}} (f : Γ.Hom Δ) :
     apply Subtype.ext
     simp only [Hom.toPrefunctor_map_val, Γ.reverse_val, Δ.reverse_val, f.map_rev]
 
+section Restrict
+
+variable (S : Set Γ.E) (hS : ∀ e ∈ S, Γ.rev e ∈ S)
+
+/-- The subgraph of `Γ` with all vertices of `Γ` and the darts of a reversal-closed set `S`. The
+vertex type reduces to that of `Γ`, so vertices of `Γ` are vertices of the subgraph. -/
+abbrev restrict : SerreGraph.{u, v} where
+  V := Γ.V
+  E := S
+  src e := Γ.src e.1
+  rev e := ⟨Γ.rev e.1, hS e.1 e.2⟩
+  rev_rev e := Subtype.ext (Γ.rev_rev e.1)
+  rev_ne e he := Γ.rev_ne e.1 (congrArg Subtype.val he)
+
+@[simp] theorem restrict_src (e : (Γ.restrict S hS).E) :
+    (Γ.restrict S hS).src e = Γ.src e.1 := (rfl)
+
+@[simp] theorem restrict_rev_val (e : (Γ.restrict S hS).E) :
+    ((Γ.restrict S hS).rev e).1 = Γ.rev e.1 := (rfl)
+
+@[simp] theorem restrict_tgt (e : (Γ.restrict S hS).E) :
+    (Γ.restrict S hS).tgt e = Γ.tgt e.1 := (rfl)
+
+/-- The inclusion of a restriction into the ambient graph. -/
+@[expose] def restrictInclusion : (Γ.restrict S hS).Hom Γ where
+  mapV := id
+  mapE := Subtype.val
+  map_src _ := rfl
+  map_rev _ := rfl
+
+@[simp] theorem restrictInclusion_mapV (a : (Γ.restrict S hS).V) :
+    (Γ.restrictInclusion S hS).mapV a = a := (rfl)
+
+@[simp] theorem restrictInclusion_mapE (e : (Γ.restrict S hS).E) :
+    (Γ.restrictInclusion S hS).mapE e = e.1 := (rfl)
+
+end Restrict
+
 /-- The rose on a type of petals. Each petal is a loop with two distinct darts. -/
 @[expose] def rose (α : Type w) : SerreGraph.{0, w} where
   V := PUnit
@@ -272,6 +379,22 @@ theorem rose_isOrientation (α : Type w) :
   -- The carrier `(rose α).E` reduces definitionally to `α × Bool` here.
   change (b = true) ↔ ¬(!b = true)
   cases b <;> decide
+
+/-- The segment: two vertices joined by a single pair of darts. The dart `b` runs from the
+vertex `b` to the vertex `!b`. -/
+@[expose] def segment : SerreGraph.{0, 0} where
+  V := Bool
+  E := Bool
+  src := id
+  rev := not
+  rev_rev := Bool.not_not
+  rev_ne := Bool.not_ne_self
+
+@[simp] theorem segment_src (b : Bool) : segment.src b = b := rfl
+
+@[simp] theorem segment_rev (b : Bool) : segment.rev b = !b := rfl
+
+@[simp] theorem segment_tgt (b : Bool) : segment.tgt b = !b := rfl
 
 end SerreGraph
 

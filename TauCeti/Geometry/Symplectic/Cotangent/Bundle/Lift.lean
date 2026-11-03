@@ -72,19 +72,8 @@ theorem mpullback_cotangent_liouvilleForm (h : M ≃ₘ⟮I, J⟯ N) :
   apply Subtype.ext
   funext z
   ext v
-  rw [SmoothForm.mpullback_apply, liouvilleForm_apply, liouvilleForm_apply]
-  -- The lift covers `h`, so `dπ_N ∘ d(T*h) = d(π_N ∘ T*h) = d(h ∘ π_M) = dh ∘ dπ_M`.
-  have hproj : π (F →L[ℝ] ℝ) (fun y : N ↦ TangentSpace J y →L[ℝ] ℝ) ∘ h.cotangent =
-      h ∘ π (E →L[ℝ] ℝ) (fun x : M ↦ TangentSpace I x →L[ℝ] ℝ) :=
-    funext (proj_cotangent h)
-  have hN := mfderiv_comp_apply z
-    ((contMDiff_proj (fun y : N ↦ TangentSpace J y →L[ℝ] ℝ) _).mdifferentiableAt one_ne_zero)
-    (h.cotangent.mdifferentiable (by simp) z) (v 0)
-  have hM := mfderiv_comp_apply z (h.mdifferentiable (by simp) z.proj)
-    ((contMDiff_proj (fun x : M ↦ TangentSpace I x →L[ℝ] ℝ) _).mdifferentiableAt one_ne_zero)
-    (v 0)
-  rw [hproj, hM] at hN
-  rw [← hN]
+  rw [mpullback_liouvilleForm_apply_of_proj_apply_eq h.cotangent.contMDiff
+    (proj_cotangent h) z (h.mdifferentiable (by simp) z.proj), liouvilleForm_apply]
   exact cotangent_snd_apply_mfderiv h z _
 
 end Liouville

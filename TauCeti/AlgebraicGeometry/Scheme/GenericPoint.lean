@@ -8,6 +8,7 @@ module
 public import Mathlib.AlgebraicGeometry.FunctionField
 public import Mathlib.AlgebraicGeometry.Morphisms.QuasiCompact
 public import Mathlib.AlgebraicGeometry.Stalk
+public import TauCeti.Topology.NoetherianSpace.ClosedPoints
 
 import TauCeti.Topology.KrullDimension.Basic
 
@@ -36,9 +37,15 @@ in its function field is computed on affine opens.
   which is maximal for the specialization order is the generic point;
 * `TauCeti.AlgebraicGeometry.Scheme.isMax_iff_eq_genericPoint`: the maximal points for the
   specialization order on an irreducible scheme are exactly the generic point;
+* `TauCeti.AlgebraicGeometry.Scheme.eq_of_specializes_of_notMem`: on an irreducible scheme, a
+  generization of a codimension-one point outside a nonempty open is the point itself;
 * `TauCeti.AlgebraicGeometry.Scheme.coheight_eq_one_iff_ne_genericPoint`: on an irreducible
   scheme of dimension at most one, the points of codimension one are exactly the points other
   than the generic point.
+* `TauCeti.AlgebraicGeometry.Scheme.isClosed_of_isLocallyClosed_of_genericPoint_notMem`: on a
+  Noetherian irreducible scheme of dimension at most one, a locally closed set missing the generic
+  point is closed, since all its points are closed. For instance, the zero locus of a function on
+  an open subset which does not vanish at the generic point is closed in the whole scheme.
 * `TauCeti.AlgebraicGeometry.Scheme.eq_bot_of_genericPoint_notMem`: on an irreducible scheme, an
   open missing the generic point is empty.
 * `TauCeti.AlgebraicGeometry.Scheme.subsingleton_of_genericPoint_notMem` and
@@ -51,6 +58,9 @@ in its function field is computed on affine opens.
 * `TauCeti.AlgebraicGeometry.Scheme.isFractionRing_app_fromSpecStalk_genericPoint`: on an integral
   scheme, the sections of `Spec k(X)` over the preimage of a nonempty affine open `U` are a
   fraction field of `Γ(X, U)`.
+* `TauCeti.AlgebraicGeometry.Scheme.algEquivAppPreimageSpecExtension`: on an integral scheme, for
+  a field extension `L` of `k(X)`, the sections of `Spec L` over the preimage of a nonempty open `U`
+  along `Spec L ⟶ Spec k(X) ⟶ X` are `L`, as a `Γ(X, U)`-algebra.
 -/
 
 public section
@@ -81,6 +91,20 @@ exactly the generic point. -/
 theorem isMax_iff_eq_genericPoint {y : X} : IsMax y ↔ y = genericPoint X :=
   ⟨eq_genericPoint_of_isMax, fun h ↦ h ▸ isMax_genericPoint⟩
 
+/-- On an irreducible scheme, a generization `y` of a codimension-one point `x` which lies outside a
+nonempty open `U` is `x` itself: a strict generization of `x` is maximal, hence the generic point,
+and the generic point lies in every nonempty open. -/
+theorem eq_of_specializes_of_notMem {U : X.Opens} (hU : (U : Set X).Nonempty) {x y : X}
+    (hx : Order.coheight x = 1) (hyx : y ⤳ x) (hy : y ∉ U) : y = x := by
+  by_contra hne
+  have hlt : x < y := ⟨hyx, fun hxy ↦ hne (Specializes.antisymm hyx hxy).eq⟩
+  have hfin : Order.coheight y < ⊤ :=
+    (Order.coheight_anti hlt.le).trans_lt (hx ▸ ENat.one_lt_top)
+  have hmax : IsMax y := Order.coheight_eq_zero.mp <| Order.lt_one_iff.mp <|
+    hx ▸ Order.coheight_strictAnti hlt hfin
+  obtain ⟨u, hu⟩ := hU
+  exact hy (eq_genericPoint_of_isMax hmax ▸ (genericPoint_specializes u).mem_open U.isOpen hu)
+
 /-- On an irreducible scheme of dimension at most one, the points of codimension one are exactly
 the points other than the generic point. -/
 theorem coheight_eq_one_iff_ne_genericPoint
@@ -89,6 +113,18 @@ theorem coheight_eq_one_iff_ne_genericPoint
     exact_mod_cast (TauCeti.coheight_le_topologicalKrullDim y).trans hX
   rw [← hle.ge_iff_eq, Order.one_le_iff_pos, Order.coheight_pos, not_iff_not,
     isMax_iff_eq_genericPoint]
+
+/-- On a Noetherian irreducible scheme of dimension at most one, a locally closed set which does
+not contain the generic point is closed: all of its points have codimension one, so they are
+closed points. -/
+theorem isClosed_of_isLocallyClosed_of_genericPoint_notMem [TopologicalSpace.NoetherianSpace X]
+    (hX : topologicalKrullDim X ≤ 1) {s : Set X} (hs : IsLocallyClosed s)
+    (hgs : genericPoint X ∉ s) : IsClosed s := by
+  refine hs.isClosed_of_subset_closedPoints fun z hz ↦ ?_
+  have hdim (y : X) : Order.coheight y ≤ 1 := by
+    exact_mod_cast (TauCeti.coheight_le_topologicalKrullDim y).trans hX
+  exact TauCeti.isClosed_singleton_of_forall_coheight_le_one_of_coheight_eq_one hdim
+    ((coheight_eq_one_iff_ne_genericPoint hX).mpr fun h ↦ hgs (h ▸ hz))
 
 /-- On an irreducible scheme, an open which does not contain the generic point is empty: the
 generic point generizes every point, so it lies in every nonempty open. -/
@@ -158,6 +194,79 @@ theorem isFractionRing_app_fromSpecStalk_genericPoint {X : Scheme.{u}} [IsIntegr
   have := functionField_isFractionRing_of_isAffineOpen X U hU
   exact IsLocalization.isLocalization_of_algEquiv _ <|
     AlgEquiv.ofBijective ⟨ι.hom, fun a ↦ (ConcreteCategory.congr_hom key a).symm⟩ hι
+
+open CategoryTheory in
+/-- Let `L` be a field extension of the function field `k(X)` of an integral scheme `X`. Over a
+nonempty open `U` of `X`, the sections of `Spec L` over the preimage of `U` along
+`Spec L ⟶ Spec k(X) ⟶ X` are `L`, as a `Γ(X, U)`-algebra through `k(X)`: the preimage is all of
+`Spec L`, whose ring of global sections is `L`. -/
+noncomputable def algEquivAppPreimageSpecExtension {X : Scheme.{u}} [IsIntegral X] (L : Type u)
+    [Field L] [Algebra X.functionField L] {U : X.Opens} [Nonempty U] [Algebra Γ(X, U) L]
+    [IsScalarTower Γ(X, U) X.functionField L] :
+    letI := ((Spec.map (CommRingCat.ofHom (algebraMap X.functionField L)) ≫
+      X.fromSpecStalk (genericPoint X)).app U).hom.toAlgebra
+    L ≃ₐ[Γ(X, U)] Γ(Spec (.of L), (Spec.map (CommRingCat.ofHom (algebraMap X.functionField L)) ≫
+      X.fromSpecStalk (genericPoint X)) ⁻¹ᵁ U) :=
+  letI f := Spec.map (CommRingCat.ofHom (algebraMap X.functionField L)) ≫
+    X.fromSpecStalk (genericPoint X)
+  letI := (f.app U).hom.toAlgebra
+  have hη : genericPoint X ∈ U :=
+    ((genericPoint_spec X).mem_open_set_iff U.isOpen).mpr (by simpa using ‹Nonempty U›)
+  -- The preimage of `U` is all of `Spec L`, so restriction from `⊤` is an isomorphism.
+  have htop : f ⁻¹ᵁ U = ⊤ := by
+    rw [Scheme.Hom.comp_preimage, Scheme.fromSpecStalk_preimage_eq_top hη,
+      Scheme.Hom.preimage_top]
+  have : IsIso ((Spec (.of L)).presheaf.map (homOfLE (le_top : f ⁻¹ᵁ U ≤ ⊤)).op) := by
+    rw [show homOfLE (le_top : f ⁻¹ᵁ U ≤ ⊤) = eqToHom htop from Subsingleton.elim _ _,
+      eqToHom_op, eqToHom_map]
+    infer_instance
+  let ι := (Scheme.ΓSpecIso (.of L)).inv ≫
+    (Spec (.of L)).presheaf.map (homOfLE (le_top : f ⁻¹ᵁ U ≤ ⊤)).op
+  have key : f.app U =
+      X.germToFunctionField U ≫ CommRingCat.ofHom (algebraMap X.functionField L) ≫ ι := by
+    have hnat : (Scheme.ΓSpecIso X.functionField).inv ≫
+        (Spec.map (CommRingCat.ofHom (algebraMap X.functionField L))).app ⊤ =
+          CommRingCat.ofHom (algebraMap X.functionField L) ≫ (Scheme.ΓSpecIso (.of L)).inv :=
+      (Scheme.ΓSpecIso_inv_naturality _).symm
+    rw [Scheme.Hom.comp_app, Scheme.fromSpecStalk_app hη, Category.assoc, Category.assoc,
+      Scheme.Hom.naturality, reassoc_of% hnat]
+    -- The two restriction maps are along the same inclusion of opens of `Spec L`.
+    rfl
+  .ofBijective ⟨ι.hom, fun a ↦ by
+    rw [IsScalarTower.algebraMap_apply Γ(X, U) X.functionField L, RingHom.algebraMap_toAlgebra,
+      key]
+    rfl⟩ (ConcreteCategory.bijective_of_isIso ι)
+
+open CategoryTheory in
+/-- The underlying ring homomorphism of `algEquivAppPreimageSpecExtension` identifies `L` with the
+global sections of `Spec L` and then restricts them to the preimage of `U`. -/
+theorem algEquivAppPreimageSpecExtension_toRingHom {X : Scheme.{u}} [IsIntegral X] (L : Type u)
+    [Field L] [Algebra X.functionField L] {U : X.Opens} [Nonempty U] [Algebra Γ(X, U) L]
+    [IsScalarTower Γ(X, U) X.functionField L] :
+    letI := ((Spec.map (CommRingCat.ofHom (algebraMap X.functionField L)) ≫
+      X.fromSpecStalk (genericPoint X)).app U).hom.toAlgebra
+    (algEquivAppPreimageSpecExtension L (U := U) : L →+* _) =
+      ((Scheme.ΓSpecIso (.of L)).inv ≫ (Spec (.of L)).presheaf.map (homOfLE (le_top :
+        (Spec.map (CommRingCat.ofHom (algebraMap X.functionField L)) ≫
+          X.fromSpecStalk (genericPoint X)) ⁻¹ᵁ U ≤ ⊤)).op).hom := by
+  unfold algEquivAppPreimageSpecExtension
+  rfl
+
+open CategoryTheory in
+/-- `algEquivAppPreimageSpecExtension` sends `a : L` to the restriction of the corresponding global
+section of `Spec L` to the preimage of `U`. This is not a `simp` lemma: `simp` rewrites the
+preimage `(f ≫ g) ⁻¹ᵁ U` occurring in the type of its left-hand side. -/
+theorem algEquivAppPreimageSpecExtension_apply {X : Scheme.{u}} [IsIntegral X] (L : Type u)
+    [Field L] [Algebra X.functionField L] {U : X.Opens} [Nonempty U] [Algebra Γ(X, U) L]
+    [IsScalarTower Γ(X, U) X.functionField L] (a : L) :
+    letI := ((Spec.map (CommRingCat.ofHom (algebraMap X.functionField L)) ≫
+      X.fromSpecStalk (genericPoint X)).app U).hom.toAlgebra
+    algEquivAppPreimageSpecExtension L (U := U) a =
+      (Spec (.of L)).presheaf.map (homOfLE (le_top :
+        (Spec.map (CommRingCat.ofHom (algebraMap X.functionField L)) ≫
+          X.fromSpecStalk (genericPoint X)) ⁻¹ᵁ U ≤ ⊤)).op
+        ((Scheme.ΓSpecIso (.of L)).inv a) :=
+  RingHom.congr_fun (algEquivAppPreimageSpecExtension_toRingHom L) a
 
 end Scheme
 

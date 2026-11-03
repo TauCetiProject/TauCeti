@@ -9,7 +9,7 @@ public import Mathlib.Topology.Connected.Basic
 public import Mathlib.Topology.Separation.Hausdorff
 
 /-!
-# Preconnected sets covered by disjoint open sets
+# Preconnected sets: disjoint open covers and compact injective images
 
 A preconnected set covered by a family of pairwise disjoint open sets lies in each member of the
 family that it meets. This is the form in which connectedness is used to show that a region
@@ -20,6 +20,10 @@ space along a filter in which arbitrarily small sets have preconnected images te
 point of that subset (`Filter.Tendsto.exists_mem_tendsto_nhds`). For instance, near a point
 whose punctured neighbourhoods are connected, a continuous function approaching a finite set
 chooses one of its points.
+
+A continuous injection on a compact set into a Hausdorff space is a closed embedding of that set,
+so preconnectedness of the image is equivalent to preconnectedness of the set
+(`IsCompact.isPreconnected_image_iff_of_injOn`).
 -/
 
 public section
@@ -77,3 +81,15 @@ theorem Filter.Tendsto.exists_mem_tendsto_nhds {β : Type*} [T2Space α] {f : β
   · exact hz.1
   · obtain ⟨y, hy⟩ := mem_iUnion.1 hz
     exact absurd (hdisj' y.2 |>.ne_of_mem hy hz₀) (by simp)
+
+/-- **Preconnectedness pulls back along a continuous injection on a compact set.** If `f` is
+continuous and injective on a compact `K` with values in a Hausdorff space, then `f '' K` is
+preconnected exactly when `K` is. -/
+theorem IsCompact.isPreconnected_image_iff_of_injOn {β : Type*} [TopologicalSpace β] [T2Space β]
+    {f : α → β} {K : Set α} (hK : IsCompact K) (hf : ContinuousOn f K) (hinj : InjOn f K) :
+    IsPreconnected (f '' K) ↔ IsPreconnected K := by
+  -- On the subtype the restriction is a closed embedding, so it reflects preconnectedness.
+  have : CompactSpace K := isCompact_iff_compactSpace.mp hK
+  rw [isPreconnected_iff_preconnectedSpace (s := K), preconnectedSpace_iff_univ,
+    ← (hf.domRestrict.isClosedEmbedding hinj.injective).isInducing.isPreconnected_image, image_univ,
+    range_domRestrict]

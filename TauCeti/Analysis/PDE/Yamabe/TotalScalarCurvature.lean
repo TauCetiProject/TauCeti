@@ -31,6 +31,13 @@ does not perform that integration by parts. When `u` is a positive solution of t
 equation `L_g u = λ u ^ (pₙ - 1)`, the numerator is `∫ u L_g u dV_g = λ ∫ u ^ pₙ dV_g`, so the
 quotient equals `λ` when `u` has unit `L^pₙ` norm.
 
+The same density computation applies to the conformal covariance
+`L_ĝ v = u ^ (-(n + 2) / (n - 2)) L_g (u v)` of the conformal Laplacian: for every `C²` function
+`v`, `v L_ĝ v dV_ĝ = (u v) L_g (u v) dV_g`, so `∫ v L_ĝ v dV_ĝ = ∫ (u v) L_g (u v) dV_g`. Together
+with `TauCeti.WithMetric.integral_abs_rpow_rescale_rpow` for the denominator, this is the
+invariance of the quotient `(∫ v L v dV) / (∫ |v| ^ pₙ dV) ^ (2 / pₙ)` under `(ĝ, v) ↦ (g, u v)`
+for `C²` functions, before integration by parts.
+
 The integrals are Bochner integrals and the identities need no integrability hypothesis: the two
 integrands agree pointwise once the volume of `ĝ` is written as a density against that of `g`.
 As in `TauCeti.WithMetric.integral_riemannianVolume_rescale`, the two volumes live on the
@@ -44,6 +51,8 @@ conformal Laplacian of `g` is taken with `g` installed as the `RiemannianBundle`
 * `TauCeti.Yamabe.integral_scalarCurvature_rescale`: `∫ Scal_ĝ dV_ĝ = ∫ u L_g u dV_g`.
 * `TauCeti.Yamabe.integral_scalarCurvature_rescale_div_riemannianTotalVolume_rpow`: on a compact
   manifold, `(∫ Scal_ĝ dV_ĝ) / Vol(ĝ) ^ (2 / pₙ) = (∫ u L_g u dV_g) / (∫ u ^ pₙ dV_g) ^ (2 / pₙ)`.
+* `TauCeti.Yamabe.integral_mul_conformalLaplacian_rescale`:
+  `∫ v L_ĝ v dV_ĝ = ∫ (u v) L_g (u v) dV_g`.
 * `TauCeti.Yamabe.integral_mul_conformalLaplacian_eq_mul_integral_rpow`: a positive solution of
   `L_g u = c u ^ (pₙ - 1)` has `∫ u L_g u dV_g = c ∫ u ^ pₙ dV_g`.
 
@@ -89,6 +98,43 @@ theorem rpow_criticalExponent_mul_scalarCurvature_rescale
     ← Real.rpow_add (hu_pos x), hexp, Real.rpow_one]
 
 variable [LindelofSpace M]
+
+/-- **The conformal Laplacian energy of a conformal metric.** In dimension `n ≠ 2`, let `u` be a
+positive function such that `ĝ = u ^ (4 / (n - 2)) g` is a smooth metric. Then for every `C²`
+function `v`, `∫ v L_ĝ v dV_ĝ = ∫ (u v) L_g (u v) dV_g`, where `L_ĝ` and `L_g` are the conformal
+Laplacians. No integrability hypothesis is needed: the two integrands agree once `dV_ĝ` is
+written as a density against `dV_g`. -/
+theorem integral_mul_conformalLaplacian_rescale
+    (g : ContMDiffRiemannianMetric I ∞ E (fun x : M ↦ TangentSpace I x))
+    (hn : finrank ℝ E ≠ 2) {u : M → ℝ} (hu_pos : ∀ x, 0 < u x)
+    {hf : ContMDiff I 𝓘(ℝ) ∞ fun x ↦ u x ^ (4 / ((finrank ℝ E : ℝ) - 2))}
+    {hf_pos : ∀ x, 0 < u x ^ (4 / ((finrank ℝ E : ℝ) - 2))} {v : M → ℝ}
+    (hv : ContMDiff I 𝓘(ℝ) 2 v) :
+    ∫ x, v x.ofWithMetric *
+        (letI : RiemannianBundle (fun x : M ↦ TangentSpace I x) :=
+          ⟨(g.rescale (fun x ↦ u x ^ (4 / ((finrank ℝ E : ℝ) - 2))) hf
+            hf_pos).toRiemannianMetric⟩;
+          conformalLaplacian I v x.ofWithMetric)
+        ∂riemannianVolume I (WithMetric (g.rescale _ hf hf_pos)) =
+      ∫ x, (u * v) x.ofWithMetric *
+        (letI : RiemannianBundle (fun x : M ↦ TangentSpace I x) := ⟨g.toRiemannianMetric⟩;
+          conformalLaplacian I (u * v) x.ofWithMetric) ∂riemannianVolume I (WithMetric g) := by
+  have hn' : (finrank ℝ E : ℝ) - 2 ≠ 0 := sub_ne_zero.2 (by exact_mod_cast hn)
+  rw [WithMetric.integral_riemannianVolume_rescale fun y ↦ v y *
+    (letI : RiemannianBundle (fun x : M ↦ TangentSpace I x) :=
+      ⟨(g.rescale _ hf hf_pos).toRiemannianMetric⟩; conformalLaplacian I v y)]
+  congr 1
+  funext x
+  have hux := hu_pos x.ofWithMetric
+  -- The volume density `u ^ pₙ` and the factor `u ^ (-(n + 2) / (n - 2))` multiply to `u`.
+  have hu : u x.ofWithMetric ^ (4 / ((finrank ℝ E : ℝ) - 2) * ((finrank ℝ E : ℝ) / 2)) *
+      u x.ofWithMetric ^ (-((finrank ℝ E : ℝ) + 2) / ((finrank ℝ E : ℝ) - 2)) =
+      u x.ofWithMetric := by
+    rw [← Real.rpow_add hux, show 4 / ((finrank ℝ E : ℝ) - 2) * ((finrank ℝ E : ℝ) / 2) +
+      -((finrank ℝ E : ℝ) + 2) / ((finrank ℝ E : ℝ) - 2) = 1 by field_simp; ring, Real.rpow_one]
+  rw [conformalLaplacian_rescale g hn hu_pos hv, smul_eq_mul, ← Real.rpow_mul hux.le,
+    mul_left_comm, ← mul_assoc (u x.ofWithMetric ^ _), hu, Pi.mul_apply]
+  ring
 
 /-- **Total scalar curvature of a conformal metric.** In dimension `n ≠ 2`, let `u` be a positive
 function such that `ĝ = u ^ (4 / (n - 2)) g` is a smooth metric. Then

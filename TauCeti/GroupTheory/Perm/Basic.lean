@@ -32,8 +32,9 @@ permutations transported along injections with disjoint ranges, a fiber-preservi
 carrying one finite family to another with the same equality pattern
 (`TauCeti.exists_perm_apply_eq_of_eq_iff`), the fact that a permutation
 is a single cycle on each of its own orbits, the transport of its cycles along an equivalence of
-types, transport of cycle quotients along conjugating equivalences, and the factorization of an
-invariant function
+types, the relabelling of a two-argument family invariant under a permutation of its first argument
+paired with a map on its second (`Equiv.Perm.apply_inv_eq_comp_of_apply_apply_eq`), transport of
+cycle quotients along conjugating equivalences, and the factorization of an invariant function
 through a map on whose fibres the permutation is a single cycle, and a correction by a power of
 a cycle for a permutation commuting with it. Points over distinct classes of the cycle quotient are
 distinct (`Equiv.Perm.ne_of_sameCycle_out`), and precomposing with `σ` does not change a sum over a
@@ -53,7 +54,8 @@ front or to any other slot (`TauCeti.sum_sign_smul_comp_eq_sum_cons_removeNth`,
 involution `σ` by left multiplication with `Equiv.swap a (σ a)` leaves an involution that agrees
 with `σ` off the pair (`Function.Involutive.swap_mul`,
 `Function.Involutive.swap_mul_apply_eq_self_or`), and multiplying back on the right recovers `σ`
-(`Function.Involutive.swap_mul_mul_swap`).
+(`Function.Involutive.swap_mul_mul_swap`). A permutation of a finite type sends as many points
+into a set as out of it (`Equiv.Perm.card_filter_not_and_apply_eq`).
 -/
 
 public section
@@ -91,7 +93,7 @@ theorem apply_eq_of_apply_eq (hσ : σ.SameCycle x y) (hf : ∀ z, f (σ z) = f 
   obtain ⟨k, rfl⟩ := hσ
   have hmap := Function.Semiconj.perm_zpow_right (τ := 1) (g := fun z => PLift.up (f z))
     (fun z => congrArg PLift.up (hf z)) k x
-  exact congrArg PLift.down (by simpa only [one_zpow, Equiv.Perm.one_apply] using hmap.symm)
+  exact congrArg PLift.down (by simpa only [_root_.one_zpow, Equiv.Perm.one_apply] using hmap.symm)
 
 /-- A map intertwining two permutations carries orbits of the first permutation into orbits of
 the second. -/
@@ -153,7 +155,7 @@ namespace TauCeti
 /-- The transposition of `Fin 2` is one cycle on every fibre of a map to `Fin 1`. -/
 theorem isCycleOn_swap_fin_two_fiber (f : Fin 2 → Fin 1) (i : Fin 1) :
     (Equiv.swap (0 : Fin 2) 1).IsCycleOn {p | f p = i} := by
-  convert Equiv.Perm.isCycleOn_swap (a := (0 : Fin 2)) (b := 1) (by decide) using 1
+  convert Equiv.Perm.isCycleOn_swap (a := (0 : Fin 2)) (b := 1) using 1
   ext p
   fin_cases p <;> simp [Subsingleton.elim (f _) i]
 
@@ -224,11 +226,11 @@ theorem IsCycle.exists_mul_zpow_inv_apply_eq_of_commute [Fintype α] [DecidableE
   obtain ⟨hts, j, hj⟩ := hgc.commute_iff.1 htg
   refine ⟨j, ?_, ?_⟩
   · intro z hz
-    have hw : (g ^ j)⁻¹ z ∈ g.support := by rwa [← zpow_neg, zpow_apply_mem_support]
-    rw [Perm.mul_apply, ← ofSubtype_subtypePerm_of_mem hts hw, ← hj, ← Perm.mul_apply,
-      mul_inv_cancel, Perm.one_apply]
+    have hw : (g ^ j)⁻¹ z ∈ g.support := by rwa [← _root_.zpow_neg, zpow_apply_mem_support]
+    rw [Equiv.Perm.mul_apply, ← ofSubtype_subtypePerm_of_mem hts hw, ← hj, ← Equiv.Perm.mul_apply,
+      mul_inv_cancel, Equiv.Perm.one_apply]
   · intro z hz
-    rw [Perm.mul_apply, Perm.inv_eq_iff_eq.2 (zpow_apply_eq_self_of_apply_eq_self
+    rw [Equiv.Perm.mul_apply, Perm.inv_eq_iff_eq.2 (zpow_apply_eq_self_of_apply_eq_self
       (notMem_support.1 hz) j).symm]
 
 /-- Transporting a permutation along an equivalence transports its cycles. -/
@@ -257,6 +259,28 @@ theorem IsCycleOn.permCongr {σ : Perm α} {β : Type*} (e : α ≃ β) {s : Set
     exact ⟨e y, ⟨y, hy, rfl⟩, by simp⟩
   · rintro _ ⟨x, hx, rfl⟩ _ ⟨y, hy, rfl⟩
     exact (sameCycle_permCongr σ e).2 (h.2 hx hy)
+
+/-- If a two-argument family `F` is invariant under applying `σ` to its first argument together
+with `f` to its second, then relabelling the first argument by `σ⁻¹` is the same as precomposing
+every member of the family with `f`. -/
+theorem apply_inv_eq_comp_of_apply_apply_eq {β γ : Sort*} (F : α → β → γ) (f : β → β)
+    (hF : ∀ a b, F (σ a) (f b) = F a b) : (fun a => F (σ⁻¹ a)) = fun a => F a ∘ f := by
+  funext a b
+  simpa using (hF (σ⁻¹ a) b).symm
+
+open _root_.Finset in
+/-- A permutation of a finite type sends as many points from outside `p` into `p` as from
+inside `p` out of it. -/
+theorem card_filter_not_and_apply_eq [Fintype α] (p : α → Prop) [DecidablePred p] :
+    #{x | ¬p x ∧ p (σ x)} = #{x | ¬p (σ x) ∧ p x} := by
+  have hσ : #{x | p (σ x)} = #{x | p x} := card_equiv σ fun x ↦ by simp
+  have h₁ := card_filter_add_card_filter_not (s := {x | p x}) fun x ↦ p (σ x)
+  have h₂ := card_filter_add_card_filter_not (s := {x | p (σ x)}) p
+  simp only [filter_filter] at h₁ h₂
+  have h₃ : #{x | p (σ x) ∧ p x} = #{x | p x ∧ p (σ x)} := by simp only [and_comm]
+  have h₄ : #{x | p x ∧ ¬p (σ x)} = #{x | ¬p (σ x) ∧ p x} := by simp only [and_comm]
+  have h₅ : #{x | p (σ x) ∧ ¬p x} = #{x | ¬p x ∧ p (σ x)} := by simp only [and_comm]
+  omega
 
 end Equiv.Perm
 
@@ -366,7 +390,7 @@ theorem apply_eq_of_mem_closure {β : Type*} {S : Set (Perm α)} {f : α → β}
   induction hg using Subgroup.closure_induction generalizing a with
   | mem g hg => exact hS g hg a
   | one => rfl
-  | mul g g' _ _ ih ih' => rw [Perm.mul_apply, ih, ih']
+  | mul g g' _ _ ih ih' => rw [Equiv.Perm.mul_apply, ih, ih']
   | inv g _ ih => rw [← ih (g⁻¹ a), Perm.inv_def, apply_symm_apply]
 
 /-- A function invariant under every permutation in a set `S` takes a single value when the
@@ -436,6 +460,14 @@ theorem sameCycle_toPerm_iff {α : Type*} (f : α → α) (hf : Function.Involut
           f a = f (f b) := congrArg f h
           _ = b := hf b
       simpa using this
+
+/-- Two points of an involutive permutation lie in one cycle exactly when they coincide or
+one is the image of the other. -/
+theorem _root_.Function.Involutive.sameCycle_iff {α : Type*} {f : Equiv.Perm α}
+    (hf : Function.Involutive f) (x y : α) :
+    f.SameCycle x y ↔ x = y ∨ x = f y := by
+  have he : Function.Involutive.toPerm f hf = f := Equiv.ext fun _ ↦ rfl
+  exact he ▸ sameCycle_toPerm_iff _ hf x y
 
 variable {α : Type*} [Fintype α] [DecidableEq α]
 

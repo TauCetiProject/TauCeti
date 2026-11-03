@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.Category.ModuleCat.Basic
 public import Mathlib.CategoryTheory.Linear.LinearFunctor
 public import TauCeti.Algebra.Homology.DG.Module.Right.Hom.Basic
+public import TauCeti.Algebra.Homology.GradedCochainComplex
 
 /-!
 # The category of differential graded right modules
@@ -26,7 +27,9 @@ This is the ordinary category of DG modules, before taking chain-homotopy classe
 inverting quasi-isomorphisms.
 
 `forgetToRightModuleCat` retains the right algebra action and forgets the grading and
-differential.
+differential. `DGRightModuleCat.toCochainComplex` is the underlying cochain complex of a DG module,
+with the homogeneous pieces as terms, and `DGRightModuleCat.toCochainMap` is the chain map of
+underlying complexes induced by a morphism.
 
 The bundling constructor `of` and the forgetful functor expose their bodies so that their
 underlying carriers remain definitionally the supplied module types.
@@ -274,6 +277,59 @@ instance : (forgetToRightModuleCat.{uR, uA, uM} (h := h)).Faithful where
 
 instance : (forgetToRightModuleCat.{uR, uA, uM} (h := h)).Additive where
   map_add := ModuleCat.hom_ext (LinearMap.ext fun x ↦ add_apply _ _ x)
+
+section CochainComplex
+
+/-- The underlying cochain complex of a DG right module: its degree-`p` term is the homogeneous
+piece of degree `p`, and its differential is the module differential. -/
+noncomputable abbrev toCochainComplex (M : DGRightModuleCat.{uR, uA, uM} h) :
+    CochainComplex (ModuleCat.{uM} R) ℤ :=
+  gradedCochainComplex M.grading M.differential M.isDGRightModule.isHomogeneous
+    fun _ x ↦ M.isDGRightModule.sq_zero x
+
+/-- The chain map of underlying complexes of a morphism of DG right modules. -/
+noncomputable def toCochainMap (φ : M ⟶ N) : M.toCochainComplex ⟶ N.toCochainComplex where
+  f p := ModuleCat.ofHom <| (gradedCochainComplexXEquiv p).symm.toLinearMap ∘ₗ
+    ((φ.toLinearMap.restrictScalars R ∘ₗ (M.grading p).subtype).codRestrict (N.grading p)
+      fun x ↦ by
+        simpa only [LinearMap.comp_apply, Submodule.coe_subtype,
+          LinearMap.restrictScalars_apply] using φ.map_mem' x.2) ∘ₗ
+      (gradedCochainComplexXEquiv p).toLinearMap
+  comm' p q hpq := by
+    obtain rfl : p + 1 = q := hpq
+    ext x
+    apply (gradedCochainComplexXEquiv (p + 1)).injective
+    apply Subtype.ext
+    simp only [ModuleCat.hom_comp, ModuleCat.hom_ofHom, LinearMap.comp_apply,
+      LinearEquiv.coe_coe, LinearEquiv.apply_symm_apply, gradedCochainComplexXEquiv_d,
+      LinearMap.codRestrict_apply, LinearMap.restrictScalars_apply, Submodule.coe_subtype]
+    exact φ.map_d' _
+
+/-- The chain map of a morphism `φ` acts by `φ` on the homogeneous pieces. -/
+@[simp]
+theorem toCochainMap_f_apply (φ : M ⟶ N) (p : ℤ) (x : M.toCochainComplex.X p) :
+    (gradedCochainComplexXEquiv p (((toCochainMap φ).f p).hom x) : N) =
+      φ (gradedCochainComplexXEquiv p x) := by
+  simp [toCochainMap]
+
+/-- The identity morphism induces the identity chain map. -/
+@[simp]
+theorem toCochainMap_id (M : DGRightModuleCat.{uR, uA, uM} h) :
+    toCochainMap (𝟙 M) = 𝟙 M.toCochainComplex := by
+  ext p x
+  apply (gradedCochainComplexXEquiv p).injective
+  apply Subtype.ext
+  simp
+
+/-- Composition of morphisms induces composition of chain maps. -/
+theorem toCochainMap_comp (φ : M ⟶ N) (ψ : N ⟶ P) :
+    toCochainMap (φ ≫ ψ) = toCochainMap φ ≫ toCochainMap ψ := by
+  ext p x
+  apply (gradedCochainComplexXEquiv p).injective
+  apply Subtype.ext
+  simp
+
+end CochainComplex
 
 section DegreeZero
 

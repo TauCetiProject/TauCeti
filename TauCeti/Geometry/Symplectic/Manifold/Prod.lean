@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.DifferentialForm.Naturality
-public import TauCeti.Geometry.Manifold.VectorBundle.Tangent
+public import TauCeti.Geometry.Manifold.VectorBundle.Tangent.Basic
 public import TauCeti.Geometry.Symplectic.Manifold.TwoForm
 public import TauCeti.Geometry.Symplectic.Prod.Basic
 
@@ -86,7 +86,7 @@ theorem eval₂_prod (σ : SmoothTwoForm I M) (τ : SmoothTwoForm J N) (p : M ×
       σ.eval₂ p.1 (Manifold.tangentSpaceProdEquiv p v).1 (Manifold.tangentSpaceProdEquiv p w).1 +
         τ.eval₂ p.2 (Manifold.tangentSpaceProdEquiv p v).2
           (Manifold.tangentSpaceProdEquiv p w).2 := by
-  rw [prod_def, SmoothForm.eval₂_add, SmoothForm.eval₂_mpullback_fst,
+  rw [prod_def, SmoothBundleForm.eval₂_add, SmoothForm.eval₂_mpullback_fst,
     SmoothForm.eval₂_mpullback_snd]
 
 variable {σ : SmoothTwoForm I M} {τ : SmoothTwoForm J N}

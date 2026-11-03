@@ -7,8 +7,11 @@ module
 
 public import TauCeti.Geometry.Symplectic.Hamiltonian.Standard
 public import TauCeti.Analysis.InnerProductSpace.NormPow
+public import TauCeti.Analysis.InnerProductSpace.GramPair
 public import Mathlib.Analysis.Calculus.Deriv.Inv
 public import Mathlib.Analysis.Calculus.Deriv.Mul
+public import Mathlib.Geometry.Euclidean.Angle.Unoriented.Basic
+import Mathlib.Analysis.Calculus.MeanValue
 
 /-!
 # Central forces and the Kepler problem
@@ -33,8 +36,17 @@ energy and the angular momentum, `‖A‖² = (m κ)² + 2 m H (‖q‖² ‖p�
 plane this is `L²`, and the components of `A` in an orthonormal basis are
 `(p₂ L - m κ q₁ / ‖q‖, -p₁ L - m κ q₂ / ‖q‖)`.
 
-All statements are pointwise on the punctured phase space `q ≠ 0`, the cotangent bundle of the
-punctured configuration space; the Poisson bracket at a point only depends on germs there.
+The radial component `⟪A, q⟫ = ℓ² - m κ ‖q‖`, with `ℓ² = ‖q‖² ‖p‖² - ⟪q, p⟫²`, gives the orbit
+equation: if `φ` is the angle between `A` and `q`, then `‖q‖ (m κ + ‖A‖ cos φ) = ℓ²`. For an
+attractive potential and `ℓ ≠ 0` this is the conic `‖q‖ = ℓ² / (m κ (1 + e cos φ))` with
+eccentricity `e = ‖A‖ / (m κ) = √(1 + 2 H ℓ² / (m κ²))`. The same identity bounds the distance from
+the origin between `ℓ² / (m κ + ‖A‖)` and, when `‖A‖ < m κ`, `ℓ² / (m κ - ‖A‖)`; for `ℓ ≠ 0` the
+inequality `‖A‖ < m κ` holds exactly when `H < 0`. On the collision set `ℓ = 0`,
+`A = -(m κ / ‖q‖) q`.
+
+The statements about Hamiltonian vector fields and Poisson brackets are pointwise on the punctured
+phase space `q ≠ 0`, the cotangent bundle of the punctured configuration space; the Poisson
+bracket at a point only depends on germs there.
 
 ## Main declarations
 
@@ -44,10 +56,20 @@ punctured configuration space; the Poisson bracket at a point only depends on ge
   rotations.
 * `TauCeti.stdSymplecticForm_poissonBracket_centralForceHamiltonian_angularMomentum`:
   conservation of angular momentum, `{H, L} = 0`.
+* `TauCeti.stdSymplecticForm_poissonBracket_sq_sub_inner_sq_centralForceHamiltonian`:
+  conservation of the squared angular momentum in every dimension, `{ℓ², H} = 0`.
+* `TauCeti.sq_sub_inner_sq_eq_of_hasDerivAt`: `ℓ²` is constant along integral curves of `H`.
 * `TauCeti.stdSymplecticForm_poissonBracket_inner_rungeLenz`: conservation of the Runge–Lenz
   vector, `{⟪A, e⟫, H} = 0`.
 * `TauCeti.norm_rungeLenz_sq`: `‖A‖² = (m κ)² + 2 m H (‖q‖² ‖p‖² - ⟪q, p⟫²)`.
 * `TauCeti.norm_rungeLenz_sq_of_orthonormalBasis`: in the plane, `‖A‖² = (m κ)² + 2 m H L²`.
+* `TauCeti.norm_fst_mul_add_norm_rungeLenz_mul_cos_angle`: the orbit equation
+  `‖q‖ (m κ + ‖A‖ cos φ) = ℓ²`.
+* `TauCeti.norm_rungeLenz_eq_abs_mul_sqrt`: `‖A‖ = |m κ| √(1 + 2 H ℓ² / (m κ²))`.
+* `TauCeti.norm_fst_eq_div_one_add_sqrt_mul_cos_angle`: Kepler orbits are conics,
+  `‖q‖ = ℓ² / (m κ (1 + e cos φ))`.
+* `TauCeti.norm_rungeLenz_lt_iff_centralForceHamiltonian_neg`: the eccentricity is less than one
+  exactly when the energy is negative.
 
 ## References
 
@@ -214,6 +236,129 @@ theorem inner_rungeLenz_orthonormalBasis_one (m κ : ℝ) (x : V × V) :
 
 end Plane
 
+section KeplerOrbit
+
+open InnerProductGeometry
+
+/-- The radial component of the Runge–Lenz vector:
+`⟪A, q⟫ = ‖q‖² ‖p‖² - ⟪q, p⟫² - m κ ‖q‖`. This holds everywhere, including on the collision set
+`q = 0`, where both sides vanish. -/
+theorem inner_rungeLenz_fst (m κ : ℝ) (x : V × V) :
+    ⟪rungeLenz m κ x, x.1⟫_ℝ =
+      ‖x.1‖ ^ 2 * ‖x.2‖ ^ 2 - ⟪x.1, x.2⟫_ℝ ^ 2 - m * κ * ‖x.1‖ := by
+  rcases eq_or_ne x.1 0 with hq | hq
+  · simp [rungeLenz, hq]
+  · have hr : ‖x.1‖ ≠ 0 := norm_ne_zero_iff.2 hq
+    simp only [rungeLenz, inner_sub_left, real_inner_smul_left, real_inner_self_eq_norm_sq,
+      real_inner_comm x.2 x.1]
+    field_simp
+
+/-- **The Kepler orbit equation.** With `φ` the angle between the Runge–Lenz vector `A` and the
+position `q`, `‖q‖ (m κ + ‖A‖ cos φ) = ‖q‖² ‖p‖² - ⟪q, p⟫²`. Since `A` and the angular momentum
+are conserved, this is the equation of a conic with a focus at the origin and axis along `A`.
+When `A = 0` it reads `m κ ‖q‖ = ℓ²`. -/
+theorem norm_fst_mul_add_norm_rungeLenz_mul_cos_angle (m κ : ℝ) (x : V × V) :
+    ‖x.1‖ * (m * κ + ‖rungeLenz m κ x‖ * Real.cos (angle (rungeLenz m κ x) x.1)) =
+      ‖x.1‖ ^ 2 * ‖x.2‖ ^ 2 - ⟪x.1, x.2⟫_ℝ ^ 2 := by
+  linear_combination (cos_angle_mul_norm_mul_norm (rungeLenz m κ x) x.1).trans
+    (inner_rungeLenz_fst m κ x)
+
+/-- **The eccentricity of a Kepler orbit.** Away from the collision set, the length of the
+Runge–Lenz vector is `|m κ| e` for the eccentricity `e = √(1 + 2 H ℓ² / (m κ²))`, where
+`ℓ² = ‖q‖² ‖p‖² - ⟪q, p⟫²` is the squared angular momentum and `H` the Kepler Hamiltonian. -/
+theorem norm_rungeLenz_eq_abs_mul_sqrt {m κ : ℝ} (hm : m ≠ 0) (hκ : κ ≠ 0) {x : V × V}
+    (hq : x.1 ≠ 0) :
+    ‖rungeLenz m κ x‖ = |m * κ| * √(1 + 2 * centralForceHamiltonian m (fun r ↦ -κ / r) x *
+      (‖x.1‖ ^ 2 * ‖x.2‖ ^ 2 - ⟪x.1, x.2⟫_ℝ ^ 2) / (m * κ ^ 2)) := by
+  have h : (m * κ) ^ 2 * (1 + 2 * centralForceHamiltonian m (fun r ↦ -κ / r) x *
+      (‖x.1‖ ^ 2 * ‖x.2‖ ^ 2 - ⟪x.1, x.2⟫_ℝ ^ 2) / (m * κ ^ 2)) = ‖rungeLenz m κ x‖ ^ 2 := by
+    rw [norm_rungeLenz_sq hm κ hq]
+    field_simp
+  rw [← Real.sqrt_sq_eq_abs, ← Real.sqrt_mul (sq_nonneg _), h, Real.sqrt_sq (norm_nonneg _)]
+
+/-- **Kepler orbits are conics.** For an attractive potential (`m, κ > 0`) and nonzero angular
+momentum, `‖q‖ = ℓ² / (m κ (1 + e cos φ))`, where `ℓ² = ‖q‖² ‖p‖² - ⟪q, p⟫²`,
+`e = √(1 + 2 H ℓ² / (m κ²))` is the eccentricity and `φ` is the angle between the position and
+the Runge–Lenz vector. The hypothesis `ℓ² ≠ 0` excludes the collision set `q = 0`. -/
+theorem norm_fst_eq_div_one_add_sqrt_mul_cos_angle {m κ : ℝ} (hm : 0 < m) (hκ : 0 < κ)
+    {x : V × V} (hℓ : ‖x.1‖ ^ 2 * ‖x.2‖ ^ 2 - ⟪x.1, x.2⟫_ℝ ^ 2 ≠ 0) :
+    ‖x.1‖ = (‖x.1‖ ^ 2 * ‖x.2‖ ^ 2 - ⟪x.1, x.2⟫_ℝ ^ 2) /
+      (m * κ * (1 + √(1 + 2 * centralForceHamiltonian m (fun r ↦ -κ / r) x *
+        (‖x.1‖ ^ 2 * ‖x.2‖ ^ 2 - ⟪x.1, x.2⟫_ℝ ^ 2) / (m * κ ^ 2)) *
+          Real.cos (angle (rungeLenz m κ x) x.1))) := by
+  have hq : x.1 ≠ 0 := by
+    rintro hq
+    simp [hq] at hℓ
+  have h := norm_fst_mul_add_norm_rungeLenz_mul_cos_angle m κ x
+  rw [norm_rungeLenz_eq_abs_mul_sqrt hm.ne' hκ.ne' hq, abs_of_pos (mul_pos hm hκ)] at h
+  rw [eq_div_iff fun h0 ↦ hℓ (by rw [← h]; linear_combination ‖x.1‖ * h0)]
+  linear_combination h
+
+/-- **The collision set.** When the angular momentum vanishes, that is `⟪q, p⟫² = ‖q‖² ‖p‖²`,
+the Runge–Lenz vector reduces to its radial term `-(m κ / ‖q‖) q`. -/
+theorem rungeLenz_eq_neg_smul_of_inner_sq_eq (m κ : ℝ) {x : V × V}
+    (hℓ : ⟪x.1, x.2⟫_ℝ ^ 2 = ‖x.1‖ ^ 2 * ‖x.2‖ ^ 2) :
+    rungeLenz m κ x = -((m * κ / ‖x.1‖) • x.1) := by
+  have h : ‖‖x.2‖ ^ 2 • x.1 - ⟪x.1, x.2⟫_ℝ • x.2‖ ^ 2 =
+      ‖x.2‖ ^ 2 * (‖x.1‖ ^ 2 * ‖x.2‖ ^ 2 - ⟪x.1, x.2⟫_ℝ ^ 2) := by
+    rw [← real_inner_self_eq_norm_sq]
+    simp only [inner_sub_left, inner_sub_right, real_inner_smul_left, real_inner_smul_right]
+    rw [real_inner_self_eq_norm_sq x.1, real_inner_self_eq_norm_sq x.2, real_inner_comm x.2 x.1]
+    ring
+  rw [hℓ, sub_self, mul_zero, sq_eq_zero_iff, norm_eq_zero] at h
+  rw [rungeLenz, h, zero_sub]
+
+/-- **Perihelion bound.** `‖q‖² ‖p‖² - ⟪q, p⟫² ≤ ‖q‖ (m κ + ‖A‖)`. Hence at a point with
+nonzero angular momentum `ℓ`, the distance `‖q‖` is at least `ℓ² / (m κ + ‖A‖) > 0`; as `ℓ` and
+`A` are conserved, such orbits stay away from the collision set. -/
+theorem sq_sub_inner_sq_le_norm_fst_mul_add_norm_rungeLenz (m κ : ℝ) (x : V × V) :
+    ‖x.1‖ ^ 2 * ‖x.2‖ ^ 2 - ⟪x.1, x.2⟫_ℝ ^ 2 ≤ ‖x.1‖ * (m * κ + ‖rungeLenz m κ x‖) := by
+  have h := (abs_le.1 (abs_real_inner_le_norm (rungeLenz m κ x) x.1)).2
+  rw [inner_rungeLenz_fst] at h
+  linear_combination h
+
+/-- **Aphelion bound.** `‖q‖ (m κ - ‖A‖) ≤ ‖q‖² ‖p‖² - ⟪q, p⟫²`. When `‖A‖ < m κ`, an orbit
+stays at distance at most `ℓ² / (m κ - ‖A‖)` from the origin. -/
+theorem norm_fst_mul_sub_norm_rungeLenz_le_sq_sub_inner_sq (m κ : ℝ) (x : V × V) :
+    ‖x.1‖ * (m * κ - ‖rungeLenz m κ x‖) ≤ ‖x.1‖ ^ 2 * ‖x.2‖ ^ 2 - ⟪x.1, x.2⟫_ℝ ^ 2 := by
+  have h := (abs_le.1 (abs_real_inner_le_norm (rungeLenz m κ x) x.1)).1
+  rw [inner_rungeLenz_fst] at h
+  linear_combination h
+
+/-- **Bound states are ellipses.** For an attractive potential and nonzero angular momentum, the
+eccentricity `‖A‖ / (m κ)` is less than one exactly when the energy is negative. -/
+theorem norm_rungeLenz_lt_iff_centralForceHamiltonian_neg {m κ : ℝ} (hm : 0 < m) (hκ : 0 < κ)
+    {x : V × V} (hℓ : ‖x.1‖ ^ 2 * ‖x.2‖ ^ 2 - ⟪x.1, x.2⟫_ℝ ^ 2 ≠ 0) :
+    ‖rungeLenz m κ x‖ < m * κ ↔ centralForceHamiltonian m (fun r ↦ -κ / r) x < 0 := by
+  have hq : x.1 ≠ 0 := by
+    rintro hq
+    simp [hq] at hℓ
+  have hpos : 0 < ‖x.1‖ ^ 2 * ‖x.2‖ ^ 2 - ⟪x.1, x.2⟫_ℝ ^ 2 := by
+    refine lt_of_le_of_ne ?_ hℓ.symm
+    have := real_inner_mul_inner_self_le x.1 x.2
+    rw [real_inner_self_eq_norm_sq, real_inner_self_eq_norm_sq] at this
+    linear_combination this
+  rw [← sq_lt_sq₀ (norm_nonneg _) (mul_pos hm hκ).le, norm_rungeLenz_sq hm.ne' κ hq]
+  constructor <;> intro h <;> nlinarith [mul_pos hm hpos]
+
+omit [InnerProductSpace ℝ V] in
+/-- **Negative-energy orbits are bounded.** If the Kepler energy `H` is negative, then
+`‖q‖ ≤ κ / (-H)`. This includes the collision orbits with zero angular momentum. -/
+theorem norm_fst_le_div_neg_centralForceHamiltonian {m κ : ℝ} (hm : 0 ≤ m) {x : V × V}
+    (hH : centralForceHamiltonian m (fun r ↦ -κ / r) x < 0) :
+    ‖x.1‖ ≤ κ / -centralForceHamiltonian m (fun r ↦ -κ / r) x := by
+  have hp : 0 ≤ ‖x.2‖ ^ 2 / (2 * m) := by positivity
+  have hr : 0 < ‖x.1‖ := by
+    refine (norm_nonneg _).lt_of_ne fun h ↦ ?_
+    rw [centralForceHamiltonian, ← h, div_zero, add_zero] at hH
+    linarith
+  rw [le_div_iff₀ (neg_pos.2 hH), centralForceHamiltonian]
+  rw [centralForceHamiltonian] at hH
+  have hk : -κ / ‖x.1‖ * ‖x.1‖ = -κ := div_mul_cancel₀ _ hr.ne'
+  nlinarith
+
+end KeplerOrbit
+
 variable [FiniteDimensional ℝ V]
 
 /-- **Hamilton's equations for a central force.** Away from the collision set, the Hamiltonian
@@ -242,6 +387,46 @@ theorem stdSymplecticForm_poissonBracket_centralForceHamiltonian_angularMomentum
     (hasFDerivAt_angularMomentum u w x)]
   simp [inner_sub_right, real_inner_smul_right, real_inner_comm]
   ring
+
+/-- **Conservation of the squared angular momentum.** Away from the collision set, the squared
+length `ℓ² = ‖q‖² ‖p‖² - ⟪q, p⟫²` of the angular momentum bivector Poisson-commutes with every
+central-force Hamiltonian, in every dimension. -/
+theorem stdSymplecticForm_poissonBracket_sq_sub_inner_sq_centralForceHamiltonian {m : ℝ}
+    {U : ℝ → ℝ} {U' : ℝ} {x : V × V} (hU : HasDerivAt U U' ‖x.1‖) (hq : x.1 ≠ 0) :
+    (stdSymplecticForm (V := V)).poissonBracket
+      (fun y : V × V ↦ ‖y.1‖ ^ 2 * ‖y.2‖ ^ 2 - ⟪y.1, y.2⟫_ℝ ^ 2)
+      (centralForceHamiltonian m U) x = 0 := by
+  rw [stdSymplecticForm_poissonBracket (hasFDerivAt_sq_sub_inner_sq x)
+    (hasFDerivAt_centralForceHamiltonian hU hq)]
+  have hr : ‖x.1‖ ≠ 0 := norm_ne_zero_iff.2 hq
+  simp only [inner_sub_left, real_inner_smul_left, real_inner_smul_right,
+    real_inner_self_eq_norm_sq, real_inner_comm x.1 x.2]
+  field_simp
+  ring
+
+/-- **Conservation of the squared angular momentum along the motion.** Let `γ` be an integral
+curve of the Hamiltonian vector field of a central-force Hamiltonian on a preconnected open set `s`
+of times, avoiding the collision set, with `U` differentiable along it. Then the squared angular
+momentum `ℓ² = ‖q‖² ‖p‖² - ⟪q, p⟫²` of `γ` takes the same value at all times `t₀, t ∈ s`. -/
+theorem sq_sub_inner_sq_eq_of_hasDerivAt {m : ℝ} {U : ℝ → ℝ} {γ : ℝ → V × V} {s : Set ℝ}
+    (hs : IsOpen s) (hs' : IsPreconnected s)
+    (hγ : ∀ t ∈ s, HasDerivAt γ
+      ((stdSymplecticForm (V := V)).hamiltonianVectorField (centralForceHamiltonian m U) (γ t)) t)
+    (hq : ∀ t ∈ s, (γ t).1 ≠ 0) (hU : ∀ t ∈ s, DifferentiableAt ℝ U ‖(γ t).1‖) {t₀ t : ℝ}
+    (ht₀ : t₀ ∈ s) (ht : t ∈ s) :
+    ‖(γ t).1‖ ^ 2 * ‖(γ t).2‖ ^ 2 - ⟪(γ t).1, (γ t).2⟫_ℝ ^ 2 =
+      ‖(γ t₀).1‖ ^ 2 * ‖(γ t₀).2‖ ^ 2 - ⟪(γ t₀).1, (γ t₀).2⟫_ℝ ^ 2 := by
+  -- The derivative of `ℓ²` along `γ` is the Poisson bracket `{ℓ², H} = 0`.
+  have hderiv (t : ℝ) (ht : t ∈ s) : HasDerivAt
+      ((fun y : V × V ↦ ‖y.1‖ ^ 2 * ‖y.2‖ ^ 2 - ⟪y.1, y.2⟫_ℝ ^ 2) ∘ γ) 0 t := by
+    have h := (hasFDerivAt_sq_sub_inner_sq (γ t)).comp_hasDerivAt t (hγ t ht)
+    rwa [← (hasFDerivAt_sq_sub_inner_sq (γ t)).fderiv,
+      ← SymplecticForm.poissonBracket_eq_fderiv,
+      stdSymplecticForm_poissonBracket_sq_sub_inner_sq_centralForceHamiltonian
+        (hU t ht).hasDerivAt (hq t ht)] at h
+  exact hs.is_const_of_deriv_eq_zero hs'
+    (fun t ht ↦ (hderiv t ht).differentiableAt.differentiableWithinAt)
+    (fun t ht ↦ (hderiv t ht).deriv) ht ht₀
 
 /-- **Conservation of the Runge–Lenz vector.** Away from the collision set, every component of the
 Runge–Lenz vector Poisson-commutes with the Kepler Hamiltonian `‖p‖² / (2m) - κ / ‖q‖`. -/

@@ -44,10 +44,16 @@ specialisation of `SymplecticGroup.fromBlocks_mem_iff`.
   the latter, `tr (J * Jᵀ) = 2 * card l`.
 * `Matrix.sum_J_mul_J_eq_ite`: the columns of `J` are orthonormal, `Jᵀ * J = 1` read entrywise.
 * `Matrix.eq_J_conj_iff_mul_J_eq`: cancelling a conjugation by `J`.
+* `Matrix.J_mul_mul_J_mul_J`: sandwiching twice by `J` is the identity.
 * `SymplecticGroup.transpose_eq_J_conj_inv`: the transpose of a symplectic matrix is the
   `J`-conjugate of its inverse.
 * `SymplecticGroup.mem_iff_neg_J_mul_transpose_mul_J_mul_eq_one`: the symplectic matrices are the
   unitary elements for the symplectic adjoint `A ↦ -(J * Aᵀ * J)`.
+* `SymplecticGroup.mem_iff_mem_orthogonalGroup_of_commute` and
+  `SymplecticGroup.commute_J_of_mem_orthogonalGroup`: among the matrices commuting with `J`, the
+  symplectic ones are exactly the orthogonal ones, and an orthogonal symplectic matrix commutes
+  with `J`. Any two of the three conditions symplectic, orthogonal and commuting with `J` imply the
+  third.
 * `SymplecticGroup.fromBlocks_upper_mem`: `fromBlocks 1 B 0 1` for symmetric `B`;
 * `SymplecticGroup.fromBlocks_lower_mem`: `fromBlocks 1 0 C 1` for symmetric `C`;
 * `SymplecticGroup.fromBlocks_diagonal_mem`: `fromBlocks A 0 0 D` when `Aᵀ * D = 1`.
@@ -101,7 +107,7 @@ omit [Fintype l] in
 /-- `J` is antisymmetric, entrywise: `Jᵀ = -J` read at a pair of indices. -/
 theorem J_apply_swap (x y : l ⊕ l) : J l R y x = -J l R x y := by
   have h := congrFun (congrFun (J_transpose l R) x) y
-  simpa only [transpose_apply, neg_apply] using h
+  simpa only [transpose_apply, Matrix.neg_apply] using h
 
 /-- Each row of `J` pairs with itself to `1`, because `J * Jᵀ = 1`. -/
 theorem sum_J_mul_J (x : l ⊕ l) : ∑ y : l ⊕ l, J l R x y * J l R x y = 1 := by
@@ -109,7 +115,7 @@ theorem sum_J_mul_J (x : l ⊕ l) : ∑ y : l ⊕ l, J l R x y * J l R x y = 1 :
     rw [J_transpose]
     exact J_mul_neg_J l R
   have h := congrFun (congrFun hJ x) x
-  simpa only [mul_apply, one_apply_eq, transpose_apply] using h
+  simpa only [Matrix.mul_apply, one_apply_eq, transpose_apply] using h
 
 /-- The columns of `J` are orthonormal for the standard coordinate dot product, because
 `Jᵀ * J = 1`. -/
@@ -119,7 +125,7 @@ theorem sum_J_mul_J_eq_ite (y p : l ⊕ l) :
     rw [J_transpose]
     exact neg_J_mul_J l R
   have h := congrFun (congrFun hJ y) p
-  simpa only [mul_apply, one_apply, transpose_apply] using h
+  simpa only [Matrix.mul_apply, Matrix.one_apply, transpose_apply] using h
 
 /-- **`J` contracted against itself** is `tr (J * Jᵀ) = tr 1 = 2 * card l`: the double sum of
 `Matrix.sum_J_mul_J` over the `2 * card l` rows. -/
@@ -138,6 +144,14 @@ theorem eq_J_conj_iff_mul_J_eq (X Y : Matrix (l ⊕ l) (l ⊕ l) R) :
     X = J l R * Y * (J l R)⁻¹ ↔ X * J l R = J l R * Y := by
   have : Invertible (J l R) := ⟨-J l R, neg_J_mul_J l R, J_mul_neg_J l R⟩
   rw [eq_comm, mul_inv_eq_iff_eq_mul_of_invertible, eq_comm]
+
+/-- Sandwiching twice by the standard symplectic matrix is the identity:
+`J * (J * M * J) * J = M`, since `J * J = -1`. -/
+theorem J_mul_mul_J_mul_J (M : Matrix (l ⊕ l) (l ⊕ l) R) :
+    J l R * (J l R * M * J l R) * J l R = M := by
+  calc J l R * (J l R * M * J l R) * J l R = (J l R * J l R) * M * (J l R * J l R) := by
+        noncomm_ring
+    _ = M := by simp [J_squared]
 
 end Matrix
 
@@ -163,6 +177,22 @@ theorem mem_iff_neg_J_mul_transpose_mul_J_mul_eq_one {A : Matrix (l ⊕ l) (l �
   calc Aᵀ * J l R * A = -J l R * J l R * (Aᵀ * J l R * A) := by rw [neg_J_mul_J, one_mul]
     _ = J l R * -(J l R * Aᵀ * J l R * A) := by noncomm_ring
     _ = J l R := by rw [h, mul_one]
+
+/-- **For a matrix commuting with `J`, symplectic means orthogonal**: if `A * J = J * A` then
+`A * J * Aᵀ = J * (A * Aᵀ)`, which is `J` exactly when `A * Aᵀ = 1`, since `J` is a unit. -/
+theorem mem_iff_mem_orthogonalGroup_of_commute {A : Matrix (l ⊕ l) (l ⊕ l) R}
+    (h : Commute (J l R) A) : A ∈ symplecticGroup l R ↔ A ∈ orthogonalGroup (l ⊕ l) R := by
+  rw [mem_iff, mem_orthogonalGroup_iff, ← h.eq, Matrix.mul_assoc, (isUnit_J l R).mul_eq_left]
+
+/-- **An orthogonal symplectic matrix commutes with `J`**: from `A * J * Aᵀ = J` and
+`Aᵀ * A = 1`, multiplying on the right by `A` gives `A * J = J * A`. -/
+theorem commute_J_of_mem_orthogonalGroup {A : Matrix (l ⊕ l) (l ⊕ l) R}
+    (hS : A ∈ symplecticGroup l R) (hO : A ∈ orthogonalGroup (l ⊕ l) R) :
+    Commute (J l R) A := by
+  rw [mem_iff] at hS
+  rw [mem_orthogonalGroup_iff'] at hO
+  calc J l R * A = A * J l R * Aᵀ * A := by rw [hS]
+    _ = A * J l R := by rw [Matrix.mul_assoc, hO, Matrix.mul_one]
 
 /-- An upper unitriangular block matrix is symplectic when its upper-right block is symmetric. -/
 theorem fromBlocks_upper_mem {B : Matrix l l R} (hB : Bᵀ = B) :

@@ -43,6 +43,7 @@ application is in `TauCeti.InformationTheory.Coding.Hexacode.D4`.
 * `TauCeti.typeD4QuaternaryQuadraticModule_pairing`: its polar pairing is `Tr(x y²) / 2`.
 * `TauCeti.typeD4QuaternaryDiscriminantQuadraticIsometry`: its isometry onto the discriminant
   quadratic module of `D₄`, sending `1, ω, ω²` to the vector, spinor and cospinor classes.
+* `TauCeti.typeD4QuaternaryMulLeftIsometry`: multiplication by a nonzero scalar is an isometry.
 * `TauCeti.coordinatePower_typeD4QuaternaryQuadraticModule_quadratic` and
   `TauCeti.coordinatePower_typeD4QuaternaryQuadraticModule_pairing`: the coordinate formulas
   `q(x) = wt(x) / 2` and `b(x, y) = Tr(∑ᵢ xᵢ yᵢ²) / 2`.
@@ -285,6 +286,23 @@ theorem isNondegenerate_typeD4QuaternaryQuadraticModule (hF : Nat.card F = 4) :
   (typeD4QuaternaryDiscriminantQuadraticIsometry hF
       (exists_sq_add_self_add_one_eq_zero_of_card_eq_four hF).choose_spec).isNondegenerate_iff.mpr
     (isNondegenerate_discriminantQuadraticModule _ _)
+
+/-- **Multiplication by a nonzero scalar is an isometry of the quaternary `D₄` alphabet**, since
+the quadratic value of an element only records whether it is zero. In particular it preserves the
+pairing `Tr(x y²) / 2`, as `u³ = 1` for every nonzero `u` in a field of order four. -/
+noncomputable def typeD4QuaternaryMulLeftIsometry (hF : Nat.card F = 4) (u : F) (hu : u ≠ 0) :
+    FiniteQuadraticModule.Isometry (typeD4QuaternaryQuadraticModule hF)
+      (typeD4QuaternaryQuadraticModule hF) where
+  toLinearEquiv := (LinearEquiv.smulOfNeZero F F u hu).toAddEquiv.toIntLinearEquiv
+  map_app' x := by
+    classical
+    simp [hu]
+
+/-- The scaling isometry of the quaternary `D₄` alphabet multiplies by its scalar. -/
+@[simp]
+theorem typeD4QuaternaryMulLeftIsometry_apply (hF : Nat.card F = 4) (u : F) (hu : u ≠ 0)
+    (x : F) : typeD4QuaternaryMulLeftIsometry hF u hu x = u * x :=
+  (rfl)
 
 /-! ## Coordinate powers -/
 

@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Algebra.Polynomial.Degree.IsMonicOfDegree
 public import TauCeti.RingTheory.Dagger.Distinguished
 public import TauCeti.RingTheory.Dagger.OptionSeries
 public import TauCeti.RingTheory.PowerSeries.Weierstrass.Preparation
@@ -24,7 +25,9 @@ variables can be smaller than the radius in `Y`, as is necessary for `Y + X²`.
 Uniqueness is detected at unit radius and needs no completeness hypothesis.
 `washnitzerAlgebra.exists_isUnit_isMonicOfDegree_mul_polynomialToOption_eq` restates existence
 in the overconvergent algebra itself, evaluating the monic polynomial at `Y` by
-`washnitzerAlgebra.polynomialToOption`.
+`washnitzerAlgebra.polynomialToOption`. After a triangular change of variables, every nonzero
+series is associated to such an evaluation
+(`washnitzerAlgebra.exists_associated_polynomialToOption`).
 
 ## References
 
@@ -66,15 +69,10 @@ theorem eq_and_eq_of_isUnit_isMonicOfDegree_mul_eq {g e e' : W} {s : ℕ}
     (h' : (restrictedOptionEquiv (toTate _ K e') : PowerSeries Tate) *
       (ω'.map (toTate σ K).toRingHom : PowerSeries Tate) =
         restrictedOptionEquiv (toTate _ K g)) : e = e' ∧ ω = ω' := by
-  have hm : (ω.map (toTate σ K).toRingHom).IsMonicOfDegree s :=
-    ⟨(Polynomial.natDegree_map_eq_of_injective toTate_injective ω).trans hω.natDegree_eq,
-      hω.monic.map _⟩
-  have hm' : (ω'.map (toTate σ K).toRingHom).IsMonicOfDegree s :=
-    ⟨(Polynomial.natDegree_map_eq_of_injective toTate_injective ω').trans hω'.natDegree_eq,
-      hω'.monic.map _⟩
+  have : Nontrivial Tate := nontrivial_of_ne _ _ hg.coeff_ne_zero
   obtain ⟨heq, hωeq⟩ := hg.eq_and_eq_of_mul_eq_mul one_pos
     ((he.map (toTate _ K)).map restrictedOptionEquiv.toRingHom)
-    ((he'.map (toTate _ K)).map restrictedOptionEquiv.toRingHom) hm hm' h h'
+    ((he'.map (toTate _ K)).map restrictedOptionEquiv.toRingHom) (hω.map _) (hω'.map _) h h'
   exact ⟨toTate_injective (restrictedOptionEquiv.injective heq),
     Polynomial.map_injective _ toTate_injective hωeq⟩
 
@@ -164,24 +162,14 @@ theorem exists_isUnit_isMonicOfDegree_mul_eq [CompleteSpace K] {g : W} {s : ℕ}
   obtain ⟨ρ, hρpos, r, hρ, hρr, -, hgr, G, hG, hd, hunit⟩ :=
     exists_isDistinguished_isUnit_of_isDistinguished_one hg hu (ρ₀ := 2) one_lt_two
   let : Fact (0 < ρ) := hρpos
-  have hr : 1 < r := hρ.trans_le hρr
-  let c : Option σ → ℝ := splitRadius r ρ
-  let : ∀ i, Fact (0 < c i) := fun i ↦ ⟨splitRadius_pos hρpos.out hρr i⟩
-  -- Shrink the common convergence radius `r` to `c`; flattening later shrinks `c` to `ρ`.
-  let gflat : IsRestricted.subring (R := K) c := ⟨g, MvPowerSeries.isRestricted_of_le hgr
-    (fun i ↦ (Fact.out (p := 0 < c i)).le) (splitRadius_le hρr)⟩
-  have hGflat : ((restrictedOptionEquiv (c := c) gflat).1 :
-      PowerSeries (IsRestricted.subring (R := K) (fun _ : σ ↦ ρ))) = G := by
-    ext m : 1
-    apply Subtype.ext
-    simpa [gflat] using (hG m).symm
-  obtain ⟨e, ω, he, hm, heq⟩ := hd.exists_isUnit_isMonicOfDegree_mul_eq hunit
-    (zero_lt_one.trans hr) (hGflat ▸ (restrictedOptionEquiv (c := c) gflat).2)
-  apply lift_preparation hρ hρr e ω he hm
   have hgG : PowerSeries.map (IsRestricted.subring (R := K) (fun _ : σ ↦ ρ)).subtype G =
       optionEquivLeft σ K (g : MvPowerSeries (Option σ) K) := by
     ext m : 1
     simpa using hG m
+  obtain ⟨e, ω, he, hm, heq⟩ := hd.exists_isUnit_isMonicOfDegree_mul_eq hunit
+    (zero_lt_one.trans (hρ.trans_le hρr))
+    (isRestricted_of_map_subtype_eq_optionEquivLeft hρr hgr hgG)
+  apply lift_preparation hρ hρr e ω he hm
   simpa only [map_mul, hgG] using congrArg
     (PowerSeries.map (IsRestricted.subring (R := K) (fun _ : σ ↦ ρ)).subtype) heq
 
@@ -218,6 +206,25 @@ theorem existsUnique_isUnit_isMonicOfDegree_mul_eq [CompleteSpace K] {g : W} {s 
   refine ⟨(e, ω), ⟨he, hm, heq⟩, fun p ⟨he', hm', heq'⟩ ↦ ?_⟩
   obtain ⟨h1, h2⟩ := eq_and_eq_of_isUnit_isMonicOfDegree_mul_eq hg he' he hm' hm heq' heq
   exact Prod.ext h1 h2
+
+/-- After a change of variables, every nonzero series `f` of `K⟨X, Y⟩†` is associated to the
+evaluation at `Y` of a monic polynomial `ω ∈ K⟨X⟩†[Y]` which is distinguished at unit radius.
+The change of variables is the inverse of a triangular automorphism making `f` distinguished in
+`Y` (`exists_triangularEquiv_isDistinguished_isUnit`), followed by Weierstrass preparation. -/
+theorem exists_associated_polynomialToOption [CompleteSpace K] [Finite σ] (f : W) (hf : f ≠ 0) :
+    ∃ (E : W ≃+* W) (s : ℕ) (ω : Polynomial W₀),
+      PowerSeries.IsDistinguished 1 s (ω.map (toTate σ K).toRingHom : PowerSeries Tate) ∧
+        ω.IsMonicOfDegree s ∧ Associated f (E (polynomialToOption ω)) := by
+  obtain ⟨α, hα, s, hd, hu⟩ := exists_triangularEquiv_isDistinguished_isUnit f hf
+  let e := triangularEquiv (R := K) α hα
+  obtain ⟨u, ω, hu', hm, hfac⟩ := exists_isUnit_isMonicOfDegree_mul_polynomialToOption_eq hd hu
+  rw [← hfac, map_mul, map_mul, Subring.coe_mul,
+    restrictedOptionEquiv_toTate_polynomialToOption] at hd
+  refine ⟨e.toRingEquiv.symm, s, ω, hd.of_isUnit_mul one_pos
+    ((hu'.map (toTate _ K)).map restrictedOptionEquiv.toRingHom), hm,
+    .symm ⟨Units.map (e.toRingEquiv.symm : W →* W) hu'.unit, ?_⟩⟩
+  rw [Units.coe_map, IsUnit.unit_spec, MonoidHom.coe_ofClass, ← map_mul, mul_comm, hfac,
+    AlgEquiv.toRingEquiv_symm, AlgEquiv.coe_toRingEquiv, e.symm_apply_apply]
 
 end Field
 

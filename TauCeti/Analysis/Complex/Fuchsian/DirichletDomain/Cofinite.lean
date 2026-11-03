@@ -32,6 +32,10 @@ a point with trivial stabilizer is such a polygon. Its translates are locally fi
 interiors, so its side pairing satisfies the hypotheses of Poincaré's polygon theorem, generates
 `Γ`, and presents it.
 
+The bounded truncation also gives compactness of the cusp compactification of `Γ`: the polygon
+minus cusp horodiscs is a compact set meeting every orbit outside the corresponding cusp
+neighbourhoods, and there are finitely many cusp orbits.
+
 Fix `δ > 0` so that every element of `Γ` moving some point less than `δ` fixes a point of `ℍ` or
 is parabolic (`Subgroup.IsCofinite.exists_pos_exists_smul_eq_or_isParabolic_of_dist_smul_lt`).
 A point of the Dirichlet domain lies in one of three parts.
@@ -62,6 +66,8 @@ the side pairing and the characterization of cofiniteness are concerned.
   a cofinite group is bounded outside finitely many cusp horodiscs.
 * `Subgroup.IsCofinite.exists_convexPolygon_carrier_eq_dirichletDomain`: a Dirichlet domain of a
   cofinite group is a finite-sided convex polygon whose ideal vertices are cusp points.
+* `Subgroup.IsCofinite.compactSpace_compactifiedQuotient`: the cusp compactification of a
+  cofinite group is compact.
 * `Subgroup.IsCofinite.exists_sidePairing_of_mem_freeLocus`: for a centre with trivial
   stabilizer this polygon has a side pairing by elements of `Γ`.
 * `Subgroup.isCofinite_iff_exists_convexPolygon_carrier_eq_dirichletDomain`: a discrete group is
@@ -147,6 +153,18 @@ theorem IsCofinite.exists_isBounded_dirichletDomain_diff_iUnion_horodisc (hΓ : 
   simp only [Function.comp_apply, Equiv.symm_apply_apply]
   rw [hE]
   exact hzk
+
+/-- **Compactness for cofinite groups.** For a cofinite `Γ ≤ PSL(2, ℝ)`, the quotient `Γ \ ℍ`
+with its finitely many cusp orbits adjoined is compact. Together with
+`Subgroup.CompactifiedQuotient.instT2Space` and
+`Subgroup.CompactifiedQuotient.instSecondCountableTopology`, it is a compact Hausdorff
+second-countable space. The discreteness instance is part of `Γ.IsCofinite`; it is assumed
+separately only because the topology on `Γ.CompactifiedQuotient` is defined from it. -/
+theorem IsCofinite.compactSpace_compactifiedQuotient [DiscreteTopology Γ] (hΓ : Γ.IsCofinite) :
+    CompactSpace Γ.CompactifiedQuotient := by
+  have := hΓ.finite_cuspOrbit
+  obtain ⟨n, D, A, hA, hb⟩ := hΓ.exists_isBounded_dirichletDomain_diff_iUnion_horodisc I
+  exact Γ.compactSpace_compactifiedQuotient_of_isBounded_truncation I D hA hb
 
 /-- **Dirichlet polygons of cofinite groups.** For a cofinite `Γ ≤ PSL(2, ℝ)` and any centre `p`,
 the Dirichlet domain of `Γ` centred at `p` is the carrier of a convex polygon with finitely many

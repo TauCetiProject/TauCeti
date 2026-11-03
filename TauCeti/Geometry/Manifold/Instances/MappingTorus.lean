@@ -9,7 +9,7 @@ public import Mathlib.Dynamics.Flow
 public import TauCeti.Geometry.Diffeomorphism.Action
 public import TauCeti.Geometry.Manifold.Instances.AddCircle
 public import TauCeti.Geometry.Manifold.Quotient.Descent
-public import TauCeti.Geometry.Manifold.VectorBundle.Tangent
+public import TauCeti.Geometry.Manifold.VectorBundle.Tangent.Basic
 public import TauCeti.Topology.MappingTorus.Basic
 
 /-!
@@ -290,6 +290,13 @@ theorem mk_eq_mk_iff {t s : ℝ} {x y : M} :
 @[simp]
 theorem mk_add_intCast (t : ℝ) (k : ℤ) (x : M) : mk φ (t + k) x = mk φ t ((φ ^ k) x) :=
   (mk_eq_mk_iff φ).2 ⟨k, rfl, by simp⟩
+
+/-- Moving the real coordinate by a natural number `j` changes the fibre coordinate by the iterate
+`φ^[j]`. -/
+@[simp]
+theorem mk_add_natCast (t : ℝ) (j : ℕ) (y : M) : mk φ (t + j) y = mk φ t ((⇑φ)^[j] y) := by
+  have h := mk_add_intCast φ t j y
+  rwa [Int.cast_natCast, zpow_natCast, Diffeomorph.coe_pow] at h
 
 /-- Moving the real coordinate once around the circle changes the fibre coordinate by `φ`. -/
 @[simp]

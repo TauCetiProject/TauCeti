@@ -42,6 +42,8 @@ of amenable groups.
 ## Main results
 
 * `TauCeti.Equidecomposable.equivalence`: equidecomposability is an equivalence relation.
+* `Equidecomp.IsDecompOn.equidecomposable_image`: a map injective on `A` that moves each point of
+  `A` by one of finitely many group elements makes `A` equidecomposable with its image.
 * `TauCeti.Equidecomposable.biUnion_finset`: finite disjoint unions of equidecomposable families
   are equidecomposable.
 * `TauCeti.Equidecomposable.exists_subset_and_sdiff`: restricting an equidecomposition to a subset
@@ -159,6 +161,19 @@ theorem _root_.Equidecomp.equidecomposable_image (f : Equidecomp X G) (hA : A �
 @[simp]
 theorem equidecomposable_empty : Equidecomposable G (∅ : Set X) ∅ :=
   ⟨⟨(PartialEquiv.refl X).restr ∅, ∅, fun _ ha => by simp at ha⟩, by simp, by simp⟩
+
+/-- A map that is injective on `A` and moves each point of `A` by one of finitely many elements
+of `G` makes `A` equidecomposable with its image. -/
+theorem _root_.Equidecomp.IsDecompOn.equidecomposable_image {f : X → X} {S : Finset G}
+    (hfS : Equidecomp.IsDecompOn f A S) (hf : InjOn f A) : Equidecomposable G A (f '' A) := by
+  obtain hX | hX := isEmpty_or_nonempty X
+  · simp [eq_empty_of_isEmpty]
+  exact ⟨⟨hf.toPartialEquiv f A, S, hfS⟩, rfl, rfl⟩
+
+/-- Equidecomposable sets are simultaneously empty or nonempty. -/
+theorem Equidecomposable.nonempty_iff (h : Equidecomposable G A B) : A.Nonempty ↔ B.Nonempty := by
+  obtain ⟨f, rfl, rfl⟩ := h
+  rw [← f.image_source_eq_target, image_nonempty]
 
 /-- Restricting an equidecomposition of `A` with `B` to `A' ⊆ A` makes `A'` equidecomposable with
 some `B' ⊆ B`, and the remaining pieces `A \ A'` and `B \ B'` equidecomposable too. -/

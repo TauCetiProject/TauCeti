@@ -105,7 +105,7 @@ theorem isSmoothForm_circleAngularForm : IsSmoothForm (𝓡 1) ∞ circleAngular
 /-- The angular form `dθ` as a smooth closed form on the circle. It is closed because the circle
 is `1`-dimensional. -/
 def circleAngularClosedForm : closedForms (𝓡 1) Circle 1 :=
-  ⟨⟨circleAngularForm, isSmoothForm_circleAngularForm.mem_smoothForms⟩,
+  ⟨⟨circleAngularForm, isSmoothForm_circleAngularForm.mem_smoothBundleForms⟩,
     mem_closedForms_of_finrank_le (𝓡 1) (by simp) _⟩
 
 /-- The underlying rough form of `circleAngularClosedForm` is `circleAngularForm`. -/
@@ -291,8 +291,7 @@ private theorem image_circleParam :
       {Circle.exp (-Real.pi)}ᶜ := by
   have hsurj : Function.Surjective (EuclideanSpace.proj (𝕜 := ℝ) (0 : Fin 1)) := fun t ↦
     ⟨(EuclideanSpace.equiv (Fin 1) ℝ).symm (fun _ ↦ t), rfl⟩
-  have h := compl_circleExp_image_Icc (a := -Real.pi) (b := -Real.pi) le_rfl
-    (by linarith [Real.pi_pos])
+  have h := compl_circleExp_image_Icc (-Real.pi) (-Real.pi)
   rw [Set.Icc_self, Set.image_singleton, show -Real.pi + 2 * Real.pi = Real.pi by ring] at h
   -- The parametrization factors through the coordinate projection, which is surjective.
   rw [h, show (fun z : EuclideanSpace ℝ (Fin 1) ↦ Circle.exp (z 0)) =
