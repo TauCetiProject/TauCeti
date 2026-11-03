@@ -9,6 +9,7 @@ public import Mathlib.AlgebraicTopology.SimplicialSet.AnodyneExtensions.PushoutP
 public import Mathlib.AlgebraicTopology.SimplicialSet.Homotopy
 public import Mathlib.AlgebraicTopology.SimplicialSet.Nonempty
 public import TauCeti.AlgebraicTopology.SimplicialSet.Discrete
+public import TauCeti.AlgebraicTopology.SimplicialSet.PiZero
 public import TauCeti.AlgebraicTopology.SimplicialSet.StdSimplex
 public import TauCeti.CategoryTheory.Monoidal.Closed.Cartesian
 
@@ -227,27 +228,12 @@ instance isConnected : K.IsConnected where
   nonempty := nonempty
   allEq := π₀.rec fun x ↦ π₀.rec fun y ↦ by
     obtain ⟨z, ⟨H⟩⟩ := exists_homotopy_const (toπ₀ K)
-    obtain ⟨h, h₀, h₁⟩ : ∃ h : K ⊗ Δ[1] ⟶ _, ι₀ ≫ h = const z ∧ ι₁ ≫ h = toπ₀ K :=
-      ⟨H.h, H.h₀, H.h₁⟩
+    -- The homotopy induces equal maps on connected components, and the connected components of
+    -- the discrete target are its vertices.
     suffices key : ∀ x : K _⦋0⦌, π₀.mk x = z from (key x).trans (key y).symm
     intro x
-    -- The homotopy is constant along the edge `(σ₀ x, 𝟙)` of `K ⊗ Δ[1]`, because its target is
-    -- discrete: the faces of a discrete simplicial set, and its constant maps in degree `0`, are
-    -- identities by definition.
-    let e : (K ⊗ Δ[1] : SSet.{u}) _⦋1⦌ := ⟨K.σ 0 x, stdSimplex.objEquiv.symm (𝟙 _)⟩
-    have e₀ : (K ⊗ Δ[1]).δ 1 e = ι₀.app _ x :=
-      Prod.ext (K.δ_comp_σ_succ_apply 0 x) (stdSimplex.ext _ _ fun i ↦ by fin_cases i; rfl)
-    have e₁ : (K ⊗ Δ[1]).δ 0 e = ι₁.app _ x :=
-      Prod.ext (K.δ_comp_σ_self_apply 0 x) (stdSimplex.ext _ _ fun i ↦ by fin_cases i; rfl)
-    calc π₀.mk x = (ι₁ ≫ h).app _ x := by
-          rw [h₁, toπ₀_app_zero]
-      _ = h.app _ e := by
-          rw [comp_app, types_comp_apply, ← e₁]
-          exact NatTrans.naturality_apply h _ e
-      _ = (ι₀ ≫ h).app _ x := by
-          rw [comp_app, types_comp_apply, ← e₀]
-          exact (NatTrans.naturality_apply h _ e).symm
-      _ = z := by rw [h₀]; rfl
+    have := congrArg (constπ₀Equiv _) (congrFun H.mapπ₀_eq (π₀.mk x))
+    simpa [mapπ₀_mk, toπ₀_app_zero] using this.symm
 
 end IsWeaklyContractible
 
