@@ -23,7 +23,7 @@ The count is what makes such factorizations a source of many ideals with a presc
 product: taking `S` to be a set of primes above rational primes that split into conjugate pairs,
 the theorem produces exactly `2 ^ (#S / 2)` ideals `A` with `A · σA` the prescribed ideal. The
 argument is the interplay of two facts: a divisor of a product of distinct primes is the product
-of a subset of them (`TauCeti.exists_subset_finset_prod_eq_of_dvd`), and the
+of a subset of them (`TauCeti.dvd_finset_prod_iff_of_prime`), and the
 transversals of a fixed-point-free involution are counted by
 `TauCeti.ncard_setOf_isInvolutionTransversal`.
 
@@ -67,8 +67,7 @@ theorem mul_map_eq_prod_iff (hprime : ∀ p ∈ S, p.IsPrime) (hbot : ∀ p ∈ 
   have hmapprod : ∀ T : Finset (Ideal R), Ideal.map σ (∏ p ∈ T, p) = ∏ p ∈ T, Ideal.map σ p :=
     fun T => map_prod (Ideal.mapHom σ) (fun p : Ideal R => p) T
   refine ⟨fun h => ?_, ?_⟩
-  · obtain ⟨T, hTS, rfl⟩ :=
-      exists_subset_finset_prod_eq_of_dvd hp ⟨Ideal.map σ A, h.symm⟩
+  · obtain ⟨T, hTS, rfl⟩ := (dvd_finset_prod_iff_of_prime hp).1 ⟨Ideal.map σ A, h.symm⟩
     refine ⟨T, ?_, rfl⟩
     -- The conjugates of `T` form a second subset `T'` of `S`, and `T` and `T'` partition `S`.
     set T' := T.image (Ideal.map σ)
