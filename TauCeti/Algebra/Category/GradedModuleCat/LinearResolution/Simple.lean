@@ -50,14 +50,14 @@ variable {k : Type uk} [Field k] {A : Type uA} [Ring A] [Algebra k A]
   {𝒜 : ℤ → Submodule k A} [GradedAlgebra 𝒜]
   {M : GradedModuleCat.{v} 𝒜}
   {r : GradedProjectiveResolution.{uk, uA, v, v} 𝒜 M.grading}
-  [HasExt.{w} (GradedModuleCat.{v} 𝒜)] [∀ n, Module.Finite k (r.X n)]
+  [HasExt.{w} (GradedModuleCat.{v} 𝒜)]
 
-/-- **Simple targets detect one piece of a term modulo `A₊`.** For a minimal resolution with
-finite-dimensional terms, if `Extⁿ(M,N)` vanishes for every finite simple graded module `N`
-concentrated in degree `p`, then the degree-`p` piece of the term in homological degree `n` lies
+/-- **Simple targets detect one piece of a term modulo `A₊`.** For a minimal resolution whose
+term `Xₙ` in homological degree `n` is finite-dimensional, if `Extⁿ(M,N)` vanishes for every
+finite simple graded module `N` concentrated in degree `p`, then the degree-`p` piece of `Xₙ` lies
 in `A₊ Xₙ`. -/
 theorem IsMinimal.piece_le_positive_smul_top_of_subsingleton_ext_simple (hr : r.IsMinimal)
-    (hneg : ∀ i < 0, 𝒜 i = ⊥) (n : ℕ) (p : ℤ)
+    (hneg : ∀ i < 0, 𝒜 i = ⊥) (n : ℕ) [Module.Finite k (r.X n)] (p : ℤ)
     (hExt : ∀ N : GradedModuleCat.{v} 𝒜, Module.Finite k N → Simple N →
       (∀ q, q ≠ p → N.grading.piece q = ⊥) → Subsingleton (Ext.{w} M N n)) :
     (r.grading n).piece p ≤ (⨆ (i : ℤ) (_ : 0 < i), 𝒜 i) • (⊤ : Submodule k (r.X n)) := by
@@ -89,8 +89,8 @@ theorem IsMinimal.piece_le_positive_smul_top_of_subsingleton_ext_simple (hr : r.
 /-- A minimal resolution with finite-dimensional terms is linear exactly when Ext against every
 finite simple graded module concentrated in degree `p` vanishes in cohomological degrees
 different from `p`. This includes degree zero and works over arbitrary fields. -/
-theorem IsMinimal.isLinear_iff_subsingleton_ext_simple (hr : r.IsMinimal)
-    (hneg : ∀ i < 0, 𝒜 i = ⊥) :
+theorem IsMinimal.isLinear_iff_subsingleton_ext_simple [∀ n, Module.Finite k (r.X n)]
+    (hr : r.IsMinimal) (hneg : ∀ i < 0, 𝒜 i = ⊥) :
     r.IsLinear ↔ ∀ (n : ℕ) (p : ℤ), (n : ℤ) ≠ p →
       ∀ N : GradedModuleCat.{v} 𝒜, Module.Finite k N → Simple N →
         (∀ q, q ≠ p → N.grading.piece q = ⊥) →
@@ -103,10 +103,11 @@ theorem IsMinimal.isLinear_iff_subsingleton_ext_simple (hr : r.IsMinimal)
       hr.piece_le_positive_smul_top_of_subsingleton_ext_simple hneg n p (hExt n p hpn.symm)
 
 /-- **Simple targets detect vanishing terms of a minimal resolution.** For a minimal resolution
-with finite-dimensional terms over a nonnegatively graded algebra, if `Extⁿ(M,N)` vanishes for
-every finite simple graded module `N`, then the term in homological degree `n` is zero. -/
+over a nonnegatively graded algebra whose term `Xₙ` in homological degree `n` is
+finite-dimensional, if `Extⁿ(M,N)` vanishes for every finite simple graded module `N`, then
+`Xₙ` is zero. -/
 theorem IsMinimal.subsingleton_of_subsingleton_ext_simple (hr : r.IsMinimal)
-    (hneg : ∀ i < 0, 𝒜 i = ⊥) (n : ℕ)
+    (hneg : ∀ i < 0, 𝒜 i = ⊥) (n : ℕ) [Module.Finite k (r.X n)]
     (hExt : ∀ N : GradedModuleCat.{v} 𝒜, Module.Finite k N → Simple N →
       Subsingleton (Ext.{w} M N n)) :
     Subsingleton (r.X n) := by
@@ -122,8 +123,8 @@ theorem IsMinimal.subsingleton_of_subsingleton_ext_simple (hr : r.IsMinimal)
 
 /-- Equivalently, test internal shifts of finite simple modules concentrated in degree zero.
 The shift convention is `Extⁿ(M,S{p}) = 0` for `n ≠ p`. -/
-theorem IsMinimal.isLinear_iff_subsingleton_ext_shiftObj_simple (hr : r.IsMinimal)
-    (hneg : ∀ i < 0, 𝒜 i = ⊥) :
+theorem IsMinimal.isLinear_iff_subsingleton_ext_shiftObj_simple
+    [∀ n, Module.Finite k (r.X n)] (hr : r.IsMinimal) (hneg : ∀ i < 0, 𝒜 i = ⊥) :
     r.IsLinear ↔ ∀ N : GradedModuleCat.{v} 𝒜, Module.Finite k N → Simple N →
       (∀ q, q ≠ 0 → N.grading.piece q = ⊥) →
         ∀ (n : ℕ) (p : ℤ), (n : ℤ) ≠ p →
