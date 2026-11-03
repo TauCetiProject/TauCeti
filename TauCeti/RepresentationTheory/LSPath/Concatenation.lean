@@ -153,28 +153,6 @@ theorem raise_mul (h : ∃ n : ℤ,
     have : (n : 𝕜) ≤ -1 := by exact_mod_cast hnint
     exact raise_mul_of_add_one_le (by linarith)
 
-/-- Capped reflection of a path with nonnegative segment heights, up to its final height, reflects
-the whole path. -/
-theorem ofSegments_reflectRecords_of_forall_nonneg {l : List V} (h : ∀ v ∈ l, 0 ≤ f v) :
-    ofSegments 𝕜 (reflectRecords f x (f l.sum) l) = ofSegments 𝕜 (l.map (preReflection x f)) := by
-  induction l with
-  | nil => simp
-  | cons v l ih =>
-    have hv := h v List.mem_cons_self
-    have hl : ∀ w ∈ l, 0 ≤ f w := fun w hw ↦ h w (List.mem_cons_of_mem v hw)
-    have hcap : min (f v + listMinHeight f l) (f (v :: l).sum) = f v := by
-      rw [listMinHeight_eq_zero_of_forall_nonneg hl, add_zero, List.sum_cons, map_add]
-      exact min_eq_left (le_add_of_nonneg_right
-        (listMinHeight_eq_zero_of_forall_nonneg hl ▸ listMinHeight_le_apply_sum l))
-    have hrest : f (v :: l).sum - f v = f l.sum := by
-      rw [List.sum_cons, map_add, add_sub_cancel_left]
-    rcases hv.eq_or_lt with hv0 | hvpos
-    · rw [reflectRecords_cons_of_nonpos (by rw [hcap]; exact hv0.ge), hrest, List.map_cons,
-        ofSegments_cons, ofSegments_cons, ih hl, preReflection_apply, ← hv0, zero_smul, sub_zero]
-    · rw [reflectRecords_cons_of_pos (by rw [hcap]; exact hvpos), hcap, hrest,
-        div_self hvpos.ne', one_smul, sub_self, zero_smul, List.map_cons, ofSegments_cons,
-        ofSegments_cons, ofSegments_cons, straight_zero, one_mul, ih hl]
-
 /-- **Lowering a path that rises from a minimum to the next level.** Suppose the path presented by
 `l₁ ++ l₂ ++ l₃` attains its minimal height at the end of `l₁`, rises monotonically along `l₂` by
 exactly one, and stays at least that high along `l₃`. Then lowering reflects `l₂` and keeps `l₁`
@@ -193,14 +171,23 @@ theorem lower_ofSegments_append_append {l₁ l₂ l₃ : List V}
     have := listMinHeight_le_apply_sum (f := f) l₃
     simp only [hmin, List.sum_append, map_add, h₂₁]
     linarith
-  have hrefl := ofSegments_reflectRecords_of_forall_nonneg (x := x) h₂
-  rw [h₂₁] at hrefl
-  rw [List.append_assoc, lower_ofSegments, listLower_def, ite_eq_left hguard,
-    hmin, reflectRecords_append, hmin₂₃, add_zero, min_eq_right (by linarith),
-    reflectRecords_of_le_listMinHeight h₁, add_sub_cancel_left, reflectRecords_append, h₂₁,
-    min_eq_left (by linarith), sub_self, reflectRecords_of_le_listMinHeight h₃, Option.map_some,
-    ofSegments_append, ofSegments_append, hrefl, List.append_assoc, ofSegments_append,
-    ofSegments_append]
+  rw [List.append_assoc, lower_ofSegments, listLower_def, ite_eq_left hguard, hmin,
+    reflectRecords_append, reflectRecords_append, Option.map_some]
+  -- The three pieces under the caps that capped reflection induces on them.
+  have hr₁ : reflectRecords f x (min (f l₁.sum + 1) (f l₁.sum + listMinHeight f (l₂ ++ l₃))) l₁ =
+      l₁ :=
+    reflectRecords_of_le_listMinHeight (by rw [hmin₂₃, add_zero]; exact (min_le_right _ _).trans h₁)
+  have hr₂ : ofSegments 𝕜
+      (reflectRecords f x (min (f l₁.sum + 1 - f l₁.sum) (f l₂.sum + listMinHeight f l₃)) l₂) =
+      ofSegments 𝕜 (l₂.map (preReflection x f)) := by
+    have hcap : min (f l₁.sum + 1 - f l₁.sum) (f l₂.sum + listMinHeight f l₃) = f l₂.sum := by
+      rw [add_sub_cancel_left, h₂₁]
+      exact min_eq_left (by linarith)
+    rw [hcap, ofSegments_reflectRecords_of_forall_nonneg h₂]
+  have hr₃ : reflectRecords f x (f l₁.sum + 1 - f l₁.sum - f l₂.sum) l₃ = l₃ :=
+    reflectRecords_of_le_listMinHeight (by rw [h₂₁]; linarith)
+  rw [hr₁, hr₃]
+  simp only [ofSegments_append, hr₂, mul_assoc]
 
 /-- **Lowering a path whose height rises strictly from a minimum.** Let `h` be the minimal height of
 the path presented by `l`, attained at the vertex `k₀`. Suppose the height rises strictly from the

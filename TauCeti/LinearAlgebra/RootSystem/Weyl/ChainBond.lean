@@ -75,8 +75,6 @@ construction and their gcd is defined.
   minimum is an integer**.
 * `TauCeti.exists_isLeast_sum_coroot'_Icc_of_isAChain`: the least height on a final piece of such a
   path is the height at its start or an integer.
-* `TauCeti.exists_sum_sub_mul_eq_intCast_of_isAChain'`: the height is an integer along a segment on
-  which it is constant.
 * `TauCeti.sum_coroot'_lt_sum_coroot'_succ_of_isAChain`,
   `TauCeti.add_one_le_sum_coroot'_of_isAChain` and `TauCeti.exists_strictly_rising_of_isAChain`:
   **after its last minimum `h`, the height of such a path rises strictly until it reaches `h + 1`,
@@ -553,33 +551,6 @@ strictly from `t₀` to `t₁`, and it stays at least the minimum plus one after
 hold more generally after any vertex at which the height is an integer, provided the height stays
 strictly above that integer afterwards. -/
 
-/-- **A stationary height of a Lakshmibai–Seshadri path is integral.** With the chains of
-`TauCeti.exists_sum_sub_mul_eq_intCast_of_isAChain`, for `j < s` the height
-`∑_{k < j} (t_{k+1} - t_k) f (τ_k λ)` at the start of the `j`-th segment differs from
-`t_j f (τ_j λ)` by an integer, for every integral linear form `f`. In particular the height is an
-integer along every segment on which it is constant, that is with `f (τ_j λ) = 0`. -/
-theorem exists_sum_sub_mul_eq_intCast_of_isAChain' (hlam : lam ∈ dominantChamber P b)
-    {s : ℕ} {τ : ℕ → P.weylGroup} {t : ℕ → ℚ} (ht : t 0 = 0)
-    (hchain : ∀ k, k + 1 < s → ∃ C : (weylCoxeterSystem P b).MinimalCosetRepChain
-      (P.wallIndices b lam), C.head.1 = τ k ∧ C.last.1 = τ (k + 1) ∧ IsAChain (t (k + 1)) lam C)
-    (f : Module.Dual ℤ M) {j : ℕ} (hj : j < s) :
-    ∃ z : ℤ, ∑ k ∈ Finset.range j, (t (k + 1) - t k) * f (τ k • lam) - t j * f (τ j • lam) = z := by
-  obtain _ | j := j
-  · exact ⟨0, by simp [ht]⟩
-  obtain ⟨z₁, hz₁⟩ := exists_sum_sub_mul_eq_intCast_of_isAChain hlam ht hchain f (by omega : j < s)
-  obtain ⟨C, hhead, hlast, hC⟩ := hchain j hj
-  obtain ⟨z₂, hz₂⟩ := hC.exists_mul_sub_eq_intCast hlam f
-  rw [hhead, hlast, Int.cast_sub] at hz₂
-  exact ⟨z₁ + z₂, by push_cast; linear_combination hz₁ + hz₂⟩
-
-/-- No integer lies strictly between `z` and `z + 1`. -/
-private theorem not_intCast_lt_lt_add_one {z n : ℤ} {q : ℚ} (hzq : (z : ℚ) < q) (hq : q = n)
-    (hqz : q < z + 1) : False := by
-  subst hq
-  have h₁ : z < n := by exact_mod_cast hzq
-  have h₂ : n < z + 1 := by exact_mod_cast hqz
-  omega
-
 /-- **The height of a Lakshmibai–Seshadri path rises strictly after a minimum, up to the next
 integer.** With the chains of `TauCeti.exists_sum_sub_mul_eq_intCast_of_isAChain`, strictly
 increasing times and an integral final time, write
@@ -616,11 +587,14 @@ theorem sum_coroot'_lt_sum_coroot'_succ_of_isAChain (hlam : lam ∈ dominantCham
       have hpos : 0 < t (j + 1) - t j := sub_pos.mpr (hmono j hjs)
       have : (t (j + 1) - t j) * (P.coroot' i (τ j • lam) : ℚ) = 0 := by linarith
       exact_mod_cast (mul_eq_zero.mp this).resolve_left hpos.ne'
-    obtain ⟨n, hn⟩ := exists_sum_sub_mul_eq_intCast_of_isAChain' hlam ht hchain (P.coroot' i) hjs
+    obtain ⟨n, hn⟩ := exists_sum_sub_mul_eq_intCast_of_isAChain hlam ht hchain (P.coroot' i) hjs
     rw [hzero, Int.cast_zero, mul_zero, sub_zero] at hn
-    have hHn : H j = n := hn
-    exact not_intCast_lt_lt_add_one (q := H j) (by rw [← hz]; exact hjabove) hHn
-      (by rw [← hz]; exact hj)
+    have hHn : H j = n := heq.symm.trans hn
+    have h₁ : (z : ℚ) < n := by rw [← hz, ← hHn]; exact hjabove
+    have h₂ : (n : ℚ) < z + 1 := by rw [← hz, ← hHn]; exact hj
+    have : z < n := by exact_mod_cast h₁
+    have : n < z + 1 := by exact_mod_cast h₂
+    omega
   · -- A decreasing segment: the least height after `j` is an integer strictly between `H k₀` and
     -- `H k₀ + 1`.
     obtain ⟨q, hq, hqj | ⟨n, hn⟩⟩ :=
@@ -632,8 +606,11 @@ theorem sum_coroot'_lt_sum_coroot'_succ_of_isAChain (hlam : lam ∈ dominantCham
       have hqle : q ≤ H (j + 1) := hq.2 ⟨j + 1, ⟨by omega, by omega⟩, rfl⟩
       have hkq' : H k = q := hkq
       have hk := habove k (by omega) hks
-      exact not_intCast_lt_lt_add_one (q := q) (by rw [← hz, ← hkq']; exact hk) hn
-        (by rw [← hz]; linarith)
+      have h₁ : (z : ℚ) < n := by rw [← hz, ← hn, ← hkq']; exact hk
+      have h₂ : (n : ℚ) < z + 1 := by rw [← hz, ← hn]; linarith
+      have : z < n := by exact_mod_cast h₁
+      have : n < z + 1 := by exact_mod_cast h₂
+      omega
 
 /-- **The height of a Lakshmibai–Seshadri path stays up after rising by one from a minimum.** With
 the chains of `TauCeti.exists_sum_sub_mul_eq_intCast_of_isAChain`, strictly increasing times and an
