@@ -66,6 +66,8 @@ theorem mem_normTwoShell_iff {a : Fin 6 → ℤ} :
     exact hn.trans (by exact_mod_cast ha')
   obtain ⟨i, hi⟩ := (E6.norm_rootLattice_eq_two_iff isSimplyLaced_E6 valid_E6 x).mp hx
   refine ⟨i, funext fun j ↦ ?_⟩
+  -- The generic coordinate lemma expects Fin E6.rank. The explicit type guides elaboration
+  -- from our Fin 6 index, since E6.rank reduces to 6.
   have hj := (E6.coe_rootLatticeRoot_apply isSimplyLaced_E6 valid_E6 i
     (show Fin E6.rank from j)).symm.trans
       (congrArg (fun y : E6.rootLattice isSimplyLaced_E6 ↦ y.val j) hi)
@@ -204,6 +206,13 @@ theorem coroot_nonneg_iff (i : Fin 72) : (∀ j, 0 ≤ e6Coroot i j) ↔ i.val <
 def rootSign (i : Fin 72) : ℤˣ :=
   if i ∈ ({6, 7, 8, 10, 13, 14, 16, 19, 21, 24, 25, 27, 31, 32,
     42, 43, 44, 46, 49, 50, 52, 55, 57, 60, 61, 63, 67, 68} : Finset (Fin 72)) then -1 else 1
+
+/-- Evaluate the lift sign from membership in the explicit negative-root-index table. -/
+theorem rootSign_def (i : Fin 72) :
+    rootSign i =
+      if i ∈ ({6, 7, 8, 10, 13, 14, 16, 19, 21, 24, 25, 27, 31, 32,
+        42, 43, 44, 46, 49, 50, 52, 55, 57, 60, 61, 63, 67, 68} : Finset (Fin 72))
+      then -1 else 1 := (rfl)
 
 /-- The recorded signs are the signs of the pinned ordered-cover lift. -/
 theorem inversionSign_coroot (i : Fin 72) :
