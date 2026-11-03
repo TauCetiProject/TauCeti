@@ -718,7 +718,7 @@ theorem ShuffleMask.IsShufflePath.shuffleRep_prod_val_inv_unitT_single_initial
   induction h with
   | nil => simp
   | cons _ ha hb ih =>
-    rw [List.map_cons, List.prod_cons, map_mul, Module.End.mul_apply, ih, map_smul,
+    rw [List.map_cons, List.prod_cons, map_mul, mul_apply_eq_comp, ih, map_smul,
       shuffleRep_val_inv_unitT_single_of_mem_of_notMem ρ ha hb,
       ShuffleMask.length_swap_of_mem_of_notMem (by simp) ha hb, pow_succ, mul_neg_one, neg_smul,
       smul_neg]
@@ -742,7 +742,7 @@ private theorem ShuffleMask.IsShufflePath.shuffleRep_prod_T_single_initial
     obtain ⟨ih₁, ih₂⟩ := ih
     have hab : (BraidGroup.strandSucc i : ℕ) = BraidGroup.strand i + 1 := by simp
     have hlen := ShuffleMask.length_swap_of_mem_of_notMem hab ha hb
-    simp only [List.map_cons, List.prod_cons, map_mul, Module.End.mul_apply, hlen]
+    simp only [List.map_cons, List.prod_cons, map_mul, mul_apply_eq_comp, hlen]
     refine ⟨?_, fun M hM hne ↦ ?_⟩
     · rw [shuffleRep_T_apply_of_notMem_of_mem ρ (by simpa using hb) (by simpa using ha),
         ShuffleMask.swap_swap, ih₁, pow_succ, mul_neg_one, neg_smul]
