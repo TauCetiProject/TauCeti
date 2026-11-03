@@ -10,6 +10,7 @@ public import Mathlib.GroupTheory.Abelianization.Defs
 public import Mathlib.GroupTheory.SemidirectProduct
 public import TauCeti.GroupTheory.Presentation.GroupPresentation
 public import TauCeti.GroupTheory.PresentedGroup
+import TauCeti.GroupTheory.FreeGroup.Basic
 
 /-!
 # Index-two Reidemeister--Schreier rewriting for presentations by involutions
