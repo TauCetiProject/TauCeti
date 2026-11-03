@@ -1,11 +1,18 @@
 # Roadmap label automation
 
-`roadmap-label.yml` classifies open, reopened, pushed, and body/base-edited PRs.
-Title-only edits are ignored because the title supplies no classification
-evidence. A 20-second delay before token creation lets rapid events on one PR
-collapse through its cancellation group. Ignored title edits use a separate
-group, so they cannot cancel a meaningful run before their job is skipped. Only trusted default-branch code runs;
-the PR body and changed file paths remain API data.
+`roadmap-label-reconcile.yml` handles open, reopened, pushed, and body/base-edited
+PRs in one batch. Title-only edits are filtered before the shared concurrency
+group, so they cannot displace meaningful pending work. There is one active and
+one replaceable pending job across all PRs. The `control-batch-debounce` environment
+has a five-minute wait timer and no secrets or reviewers; `deployment: false`
+applies the wait without recording a deployment or occupying a runner. New events
+coalesce while it waits, bounding runner starts to about twelve per hour.
+
+Each pass discovers every open PR whose saved classification inputs changed,
+rather than limiting itself to the PR that happened to wake it. Completed input
+hashes and bounded retries survive in the state artifact. The listing guard grows
+with the repository's open-PR count instead of fixing a project-size ceiling.
+Only trusted default-branch code runs; PR bodies and file paths remain API data.
 
 ## Credentials and API usage
 
@@ -83,7 +90,7 @@ Mutations are spaced by at least one second within a process.
 
 ## Recovery and maintenance
 
-`roadmap-label-reconcile.yml` runs hourly at minute 17. It scans open PR metadata
+`roadmap-label-reconcile.yml` also wakes hourly at minute 17 after events cease. It scans open PR metadata
 in creation order before mutations. This keeps comment activity from moving
 PRs between pages and resetting retries. The state artifact contains hashes of
 the actual processed head, body, base branch name, state, canonical area set, and
