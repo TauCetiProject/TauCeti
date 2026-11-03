@@ -17,7 +17,9 @@ matrices. On even-degree forms it descends to the projective determinant-matrix 
 
 The linear extension expresses the ambient trace of any finite determinant-matrix sum as the
 sum of its coefficients times these weight polynomials. This permits grouping the trace by
-conjugacy classes, without a rational diagonalization assumption.
+conjugacy classes, without a rational diagonalization assumption. In degree zero (`P_2 = 1`),
+`TauCeti.TraceFormulaMatrixModule.trace_periodAction_zero` reduces the trace to the sum of the
+coefficients.
 
 ## References
 
@@ -64,6 +66,22 @@ theorem trace_periodAction_sum_eq_dickson_eval {K : Type*} [CommRing K]
         (periodAction hw (∑ A ∈ s, single (mk A) (c A))) =
       ∑ A ∈ s, c A * (Polynomial.dickson 2 (n : K) w).eval (A.1.trace : K) := by
   simp only [map_sum, trace_periodAction_single_eq_dickson_eval w hw _]
+
+/-- In degree zero every matrix acts trivially, so the trace of `ξ ∈ K[ℳₙ]` on constant binary
+forms is the sum of its coefficients. -/
+theorem trace_periodAction_zero {K : Type*} [CommRing K]
+    (ξ : K[TraceFormulaMatrixModule n]) :
+    LinearMap.trace K (homogeneousSubmodule (Fin 2) K 0) (periodAction .zero ξ) =
+      ξ.coeff.sum fun _ c ↦ c := by
+  induction ξ using MonoidAlgebra.induction_linear with
+  | zero => simp
+  | add _ _ h₁ h₂ =>
+    rw [map_add, map_add, h₁, h₂, coeff_add,
+      Finsupp.sum_add_index' (fun _ ↦ rfl) (fun _ _ _ ↦ rfl)]
+  | single x c =>
+    induction x using TraceFormulaMatrixModule.induction with | h A => ?_
+    rw [trace_periodAction_single_eq_dickson_eval 0 .zero A c, Polynomial.dickson_zero]
+    norm_num
 
 end TraceFormulaMatrixModule
 

@@ -28,6 +28,8 @@ period polynomials.
 
 * `TauCeti.TraceFormulaMatrixModule.periodRelation_popaZagierElement`: Popa–Zagier's explicit
   element satisfies the period relation (A), for `n > 0` over a field in which `12 ≠ 0`.
+* `TauCeti.TraceFormulaMatrixModule.sum_coeff_popaZagierElement`: for `n > 0`, the coefficients of
+  Popa–Zagier's explicit element sum to `-σ₁(n)`.
 
 ## References
 
@@ -40,13 +42,13 @@ public section
 
 namespace TauCeti.TraceFormulaMatrixModule
 
-variable {k : Type*} [Field k] {n : ℤ}
+variable {k : Type*} {n : ℤ}
 
 /-- **Popa–Zagier's explicit element satisfies the period relation (A)**: for `n > 0`,
 `(1 - S) Tₙ - Tₙ^∞ (1 - S) ∈ (1 - T) k[ℳₙ]`. It follows from the exchange relations (B) and the
 coset identity `⟨Tₙ, K⟩ = -1` by Popa–Zagier's §3 Theorem 2(b). This needs `12 ≠ 0` in `k`, as
 `Tₙ` is defined with denominators dividing `12`. -/
-theorem periodRelation_popaZagierElement (h12 : (12 : k) ≠ 0) (hn : 0 < n) :
+theorem periodRelation_popaZagierElement [Field k] (h12 : (12 : k) ≠ 0) (hn : 0 < n) :
     PeriodRelation k n (popaZagierElement k n) := by
   have h2 : (2 : k) ≠ 0 := fun h ↦ h12 (by rw [show (12 : k) = 6 * 2 by norm_num, h, mul_zero])
   have h3 : (3 : k) ≠ 0 := fun h ↦ h12 (by rw [show (12 : k) = 4 * 3 by norm_num, h, mul_zero])
@@ -55,5 +57,14 @@ theorem periodRelation_popaZagierElement (h12 : (12 : k) ≠ 0) (hn : 0 < n) :
   exact (ExchangeRelations.periodRelation_iff_mapDomain_orbitRel_mk_coeff_eq_neg_one
     (exchangeRelations_popaZagierElement k n) hn).2
     (mapDomain_orbitRel_mk_coeff_popaZagierElement h12 hn)
+
+/-- For `n > 0` and `12 ≠ 0` in `k`, the coefficients of Popa–Zagier's explicit element `Tₙ` sum
+to `-σ₁(n)` in total: `ℳₙ` decomposes into `σ₁(n)` right cosets of `PSL(2, ℤ)` and each right
+coset sum is `-1`. -/
+theorem sum_coeff_popaZagierElement [DivisionRing k] (h12 : (12 : k) ≠ 0) (hn : 0 < n) :
+    ((popaZagierElement k n).coeff.sum fun _ a ↦ a) =
+      -(ArithmeticFunction.sigma 1 n.natAbs : k) := by
+  rw [sum_coeff_of_mapDomain_orbitRel_mk_eq hn.ne'
+    (mapDomain_orbitRel_mk_coeff_popaZagierElement h12 hn), smul_neg, nsmul_one]
 
 end TauCeti.TraceFormulaMatrixModule
