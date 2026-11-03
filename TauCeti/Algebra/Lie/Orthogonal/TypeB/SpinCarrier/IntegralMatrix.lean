@@ -150,7 +150,8 @@ theorem lie_rootIntMatrix_inl_inr (i : Fin (n + 1)) :
     ext v
     have h := congrArg (fun f ↦ f (v : ExteriorAlgebra ℚ (polarization n).W))
       (isSl2Triple_rep_rootGenerator n i).lie_e_f
-    simpa only [E, H, Ring.lie_def, LinearMap.sub_apply, Module.End.mul_apply,
+    simpa only [E, H, Ring.lie_def, LinearMap.sub_apply, Module.End.mul_eq_comp,
+      LinearMap.comp_apply,
       AddSubgroup.coe_sub, coe_kostantRootOperator_apply, coe_kostantCartanOperator_apply]
       using h
   have hm := congrArg (LinearMap.toMatrix (latticeBasis n) (latticeBasis n)) hEF
