@@ -9,6 +9,7 @@ public import TauCeti.ModelTheory.Term.Symbols
 public import TauCeti.ModelTheory.Infinitary.LanguageMap
 public import TauCeti.ModelTheory.Infinitary.Reindex
 public import TauCeti.ModelTheory.Infinitary.Operations
+public import TauCeti.ModelTheory.Infinitary.Substitution
 public import Mathlib.Data.Set.Countable
 
 /-!
@@ -22,13 +23,14 @@ a countable sublanguage.
 
 `BoundedFormulaInf.realize_congr_of_agreeOn` is symbol locality: two interpretations on one
 carrier which agree on the occurring symbols give the formula the same truth value. Language
-maps take occurrence sets to their exact images; bound-variable relabelling and carrier coding
-preserve them.
+maps take occurrence sets to their exact images; bound-variable and free-variable relabelling
+and carrier coding preserve them, and free-variable substitution preserves relation symbols and
+adds at most the function symbols of the substituted terms.
 -/
 
 public section
 
-universe u v u' v' uα uι uκ w
+universe u v u' v' uα uβ uι uκ w
 
 namespace FirstOrder.Language
 
@@ -425,3 +427,108 @@ theorem relationsIn_onBoundedFormulaInf (g : L →ᴸ L') (φ : L.BoundedFormula
 end LHom
 
 end FirstOrder.Language
+
+namespace TauCeti.BoundedFormulaInf
+
+open FirstOrder Language
+
+variable {L : Language.{u, v}} {ι : Type uι} {α : Type uα} {β : Type uβ} {m n : ℕ}
+
+/-- Free-variable relabelling preserves the occurring function symbols. -/
+@[simp]
+theorem functionsIn_relabel (g : α → β ⊕ Fin m) (φ : L.BoundedFormulaInf ι α n) :
+    (relabel g φ).functionsIn = φ.functionsIn := by
+  induction φ with
+  | falsum => simp
+  | equal t₁ t₂ => simp
+  | rel R ts => simp
+  | imp φ ψ ihφ ihψ => simp [ihφ, ihψ]
+  | all φ ih => simp [ih]
+  | iSup φs ih => simp [ih]
+  | iInf φs ih => simp [ih]
+
+/-- Free-variable relabelling preserves the occurring relation symbols. -/
+@[simp]
+theorem relationsIn_relabel (g : α → β ⊕ Fin m) (φ : L.BoundedFormulaInf ι α n) :
+    (relabel g φ).relationsIn = φ.relationsIn := by
+  induction φ with
+  | falsum => simp
+  | equal t₁ t₂ => simp
+  | rel R ts => simp
+  | imp φ ψ ihφ ihψ => simp [ihφ, ihψ]
+  | all φ ih => simp [ih]
+  | iSup φs ih => simp [ih]
+  | iInf φs ih => simp [ih]
+
+/-- Free-variable substitution keeps every function symbol of the formula. -/
+theorem functionsIn_subset_functionsIn_subst (φ : L.BoundedFormulaInf ι α n)
+    (f : α → L.Term β) : φ.functionsIn ⊆ (subst φ f).functionsIn := by
+  induction φ with
+  | falsum => simp
+  | equal t₁ t₂ =>
+    simp only [subst_equal, Language.BoundedFormulaInf.functionsIn_equal]
+    exact Set.union_subset_union (t₁.functionsIn_subset_functionsIn_subst _)
+      (t₂.functionsIn_subset_functionsIn_subst _)
+  | rel R ts =>
+    simp only [subst_rel, Language.BoundedFormulaInf.functionsIn_rel]
+    exact Set.iUnion_mono fun i => (ts i).functionsIn_subset_functionsIn_subst _
+  | imp φ ψ ihφ ihψ =>
+    simp only [subst_imp, Language.BoundedFormulaInf.functionsIn_imp]
+    exact Set.union_subset_union ihφ ihψ
+  | all φ ih => simpa using ih
+  | iSup φs ih =>
+    simp only [subst_iSup, Language.BoundedFormulaInf.functionsIn_iSup]
+    exact Set.iUnion_mono ih
+  | iInf φs ih =>
+    simp only [subst_iInf, Language.BoundedFormulaInf.functionsIn_iInf]
+    exact Set.iUnion_mono ih
+
+/-- Free-variable substitution adds at most the function symbols of the substituted terms. -/
+theorem functionsIn_subst_subset (φ : L.BoundedFormulaInf ι α n) (f : α → L.Term β) :
+    (subst φ f).functionsIn ⊆ φ.functionsIn ∪ ⋃ a, (f a).functionsIn := by
+  have hatom {k : ℕ} (t : L.Term (α ⊕ Fin k)) :
+      (t.subst (Sum.elim (Term.relabel Sum.inl ∘ f) (Term.var ∘ Sum.inr))).functionsIn ⊆
+        t.functionsIn ∪ ⋃ a, (f a).functionsIn := by
+    refine (t.functionsIn_subst_subset _).trans (Set.union_subset_union_right _ ?_)
+    refine Set.iUnion_subset fun x => ?_
+    cases x with
+    | inl a => simpa using Set.subset_iUnion (fun a => (f a).functionsIn) a
+    | inr i => simp
+  induction φ with
+  | falsum => simp
+  | equal t₁ t₂ =>
+    simp only [subst_equal, Language.BoundedFormulaInf.functionsIn_equal]
+    refine Set.union_subset ((hatom t₁).trans ?_) ((hatom t₂).trans ?_) <;>
+      exact Set.union_subset_union_left _ (by simp)
+  | rel R ts =>
+    simp only [subst_rel, Language.BoundedFormulaInf.functionsIn_rel]
+    refine Set.iUnion_subset fun i => (hatom (ts i)).trans ?_
+    exact Set.union_subset_union_left _ (Set.subset_iUnion (fun i => (ts i).functionsIn) i)
+  | imp φ ψ ihφ ihψ =>
+    simp only [subst_imp, Language.BoundedFormulaInf.functionsIn_imp]
+    refine Set.union_subset (ihφ.trans ?_) (ihψ.trans ?_) <;>
+      exact Set.union_subset_union_left _ (by simp)
+  | all φ ih => simpa using ih
+  | iSup φs ih =>
+    simp only [subst_iSup, Language.BoundedFormulaInf.functionsIn_iSup]
+    refine Set.iUnion_subset fun i => (ih i).trans ?_
+    exact Set.union_subset_union_left _ (Set.subset_iUnion (fun i => (φs i).functionsIn) i)
+  | iInf φs ih =>
+    simp only [subst_iInf, Language.BoundedFormulaInf.functionsIn_iInf]
+    refine Set.iUnion_subset fun i => (ih i).trans ?_
+    exact Set.union_subset_union_left _ (Set.subset_iUnion (fun i => (φs i).functionsIn) i)
+
+/-- Free-variable substitution preserves the occurring relation symbols. -/
+@[simp]
+theorem relationsIn_subst (φ : L.BoundedFormulaInf ι α n) (f : α → L.Term β) :
+    (subst φ f).relationsIn = φ.relationsIn := by
+  induction φ with
+  | falsum => simp
+  | equal t₁ t₂ => simp
+  | rel R ts => simp
+  | imp φ ψ ihφ ihψ => simp [ihφ, ihψ]
+  | all φ ih => simp [ih]
+  | iSup φs ih => simp [ih]
+  | iInf φs ih => simp [ih]
+
+end TauCeti.BoundedFormulaInf

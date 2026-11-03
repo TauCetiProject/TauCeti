@@ -7,6 +7,7 @@ module
 
 public import TauCeti.ModelTheory.Infinitary.LanguageMap
 public import TauCeti.ModelTheory.Infinitary.SubstBounds
+import TauCeti.ModelTheory.Infinitary.Sublanguage
 
 /-!
 # The constant support of a formula of `L[[γ]]`
@@ -32,8 +33,9 @@ constants. A term mentions only finitely many (`Term.finite_constantSupport`).
   agreeing on the support of a formula give it the same truth value.
 * `FirstOrder.Language.BoundedFormulaInf.constantSupport_inst_subset`: instantiating at a term adds
   at most the constants of the term.
-* `FirstOrder.Language.BoundedFormulaInf.constantSupport_onBoundedFormulaInf`: a formula of `L`
-  has empty support in `L[[γ]]`.
+* `FirstOrder.Language.BoundedFormulaInf.constantSupport_onBoundedFormulaInf`,
+  `FirstOrder.Language.BoundedFormulaInf.constantSupport_eq_empty_iff`: a formula of `L[[γ]]` has
+  empty support precisely when it comes from `L`.
 
 ## References
 
@@ -45,7 +47,7 @@ constants. A term mentions only finitely many (`Term.finite_constantSupport`).
 
 public section
 
-universe u v uγ uι uα w
+universe u v uγ uι uκ uα w
 
 namespace FirstOrder.Language
 
@@ -65,6 +67,25 @@ private theorem funMap_withConstants_eq {M : Type w} [L.Structure M] {e e' : γ 
   · cases k with
     | zero => exact h c hf
     | succ k => exact c.elim
+
+private theorem subset_range_lhomWithConstants_onFunction
+    {X : Set (Σ k, L[[γ]].Functions k)}
+    (hX : ∀ c, (⟨0, L.con c⟩ : Σ k, L[[γ]].Functions k) ∉ X) :
+    X ⊆ Set.range fun s : Σ k, L.Functions k =>
+      (⟨s.1, (L.lhomWithConstants γ).onFunction s.2⟩ : Σ k, L[[γ]].Functions k) := by
+  rintro ⟨k, f | c⟩ hf
+  · exact ⟨⟨k, f⟩, rfl⟩
+  · cases k with
+    | zero => exact (hX c hf).elim
+    | succ k => exact c.elim
+
+private theorem subset_range_lhomWithConstants_onRelation
+    (Y : Set (Σ k, L[[γ]].Relations k)) :
+    Y ⊆ Set.range fun s : Σ k, L.Relations k =>
+      (⟨s.1, (L.lhomWithConstants γ).onRelation s.2⟩ : Σ k, L[[γ]].Relations k) := by
+  rintro ⟨k, R | R⟩ -
+  · exact ⟨⟨k, R⟩, rfl⟩
+  · exact R.elim
 
 namespace Term
 
@@ -116,6 +137,20 @@ theorem constantSupport_con (c : γ) :
   simp only [mem_constantSupport, Constants.term, functionsIn_func, Set.iUnion_of_empty,
     Set.union_empty, Set.mem_singleton_iff, Sigma.mk.injEq, heq_eq_eq, true_and]
   exact ⟨fun h => Sum.inr_injective h, fun h => h ▸ rfl⟩
+
+/-- A term of `L[[γ]]` has empty constant support precisely when it comes from `L`. -/
+theorem constantSupport_eq_empty_iff {t : L[[γ]].Term α} :
+    t.constantSupport = ∅ ↔ ∃ t₀ : L.Term α, (L.lhomWithConstants γ).onTerm t₀ = t := by
+  refine ⟨fun ht => ?_, ?_⟩
+  · obtain ⟨h, hh⟩ := (L.lhomWithConstants γ).exists_comp_eq_symbSublangIncl
+      (subset_range_lhomWithConstants_onFunction
+        (fun c hc => Set.eq_empty_iff_forall_notMem.1 ht c hc))
+      (subset_range_lhomWithConstants_onRelation ∅)
+    refine ⟨h.onTerm (t.restrictSymbols subset_rfl), ?_⟩
+    rw [← Function.comp_apply (f := (L.lhomWithConstants γ).onTerm), ← LHom.comp_onTerm, hh,
+      onTerm_restrictSymbols]
+  · rintro ⟨t₀, rfl⟩
+    exact constantSupport_onTerm t₀
 
 /-- Expansions agreeing on the constants of a term give it the same value. -/
 theorem realize_congr_of_eqOn_constantSupport {M : Type w} [L.Structure M] {e e' : γ → M}
@@ -174,8 +209,51 @@ theorem constantSupport_not (φ : L[[γ]].BoundedFormulaInf ι α n) :
   simp [BoundedFormulaInf.not]
 
 @[simp]
+theorem constantSupport_top : (⊤ : L[[γ]].BoundedFormulaInf ι α n).constantSupport = ∅ := by
+  rw [top_def, constantSupport_not, constantSupport_falsum]
+
+@[simp]
+theorem constantSupport_inf (φ ψ : L[[γ]].BoundedFormulaInf ι α n) :
+    (φ ⊓ ψ).constantSupport = φ.constantSupport ∪ ψ.constantSupport := by
+  simp [inf_def]
+
+@[simp]
+theorem constantSupport_sup (φ ψ : L[[γ]].BoundedFormulaInf ι α n) :
+    (φ ⊔ ψ).constantSupport = φ.constantSupport ∪ ψ.constantSupport := by
+  simp [sup_def]
+
+@[simp]
+theorem constantSupport_iff (φ ψ : L[[γ]].BoundedFormulaInf ι α n) :
+    (φ.iff ψ).constantSupport = φ.constantSupport ∪ ψ.constantSupport := by
+  simp [iff_def, Set.union_comm]
+
+@[simp]
 theorem constantSupport_all (φ : L[[γ]].BoundedFormulaInf ι α (n + 1)) :
     φ.all.constantSupport = φ.constantSupport := by
+  simp [constantSupport]
+
+@[simp]
+theorem constantSupport_ex (φ : L[[γ]].BoundedFormulaInf ι α (n + 1)) :
+    φ.ex.constantSupport = φ.constantSupport := by
+  simp [BoundedFormulaInf.ex]
+
+@[simp]
+theorem constantSupport_alls (φ : L[[γ]].BoundedFormulaInf ι α n) :
+    φ.alls.constantSupport = φ.constantSupport := by
+  induction n with
+  | zero => simp
+  | succ n ih => rw [alls_succ, ih, constantSupport_all]
+
+@[simp]
+theorem constantSupport_exs (φ : L[[γ]].BoundedFormulaInf ι α n) :
+    φ.exs.constantSupport = φ.constantSupport := by
+  induction n with
+  | zero => simp
+  | succ n ih => rw [exs_succ, ih, constantSupport_ex]
+
+@[simp]
+theorem constantSupport_exsLast {k : ℕ} (φ : L[[γ]].BoundedFormulaInf ι α (n + k)) :
+    (exsLast φ).constantSupport = φ.constantSupport := by
   simp [constantSupport]
 
 @[simp]
@@ -190,6 +268,37 @@ theorem constantSupport_iInf (φs : ι → L[[γ]].BoundedFormulaInf ι α n) :
   ext c
   simp [constantSupport]
 
+@[simp]
+theorem constantSupport_iInfAlong (c : TauCeti.IndexCoding ι κ)
+    (φs : ι → L[[γ]].BoundedFormulaInf κ α n) :
+    (iInfAlong c φs).constantSupport = ⋃ i, (φs i).constantSupport := by
+  ext d
+  simp [constantSupport]
+
+@[simp]
+theorem constantSupport_iSupAlong (c : TauCeti.IndexCoding ι κ)
+    (φs : ι → L[[γ]].BoundedFormulaInf κ α n) :
+    (iSupAlong c φs).constantSupport = ⋃ i, (φs i).constantSupport := by
+  ext d
+  simp [constantSupport]
+
+@[simp]
+theorem constantSupport_reindex (c : TauCeti.IndexCoding ι κ)
+    (φ : L[[γ]].BoundedFormulaInf ι α n) :
+    (reindex c φ).constantSupport = φ.constantSupport := by
+  simp [constantSupport]
+
+@[simp]
+theorem constantSupport_mapBound {m : ℕ} (f : Fin m → Fin n)
+    (φ : L[[γ]].BoundedFormulaInf ι α m) :
+    (mapBound f φ).constantSupport = φ.constantSupport := by
+  simp [constantSupport]
+
+@[simp]
+theorem constantSupport_castLE {m : ℕ} (h : m ≤ n) (φ : L[[γ]].BoundedFormulaInf ι α m) :
+    (castLE h φ).constantSupport = φ.constantSupport := by
+  rw [castLE_def, constantSupport_mapBound]
+
 /-- A formula of `L` mentions no constant of `L[[γ]]`. -/
 @[simp]
 theorem constantSupport_onBoundedFormulaInf (φ : L.BoundedFormulaInf ι α n) :
@@ -198,6 +307,18 @@ theorem constantSupport_onBoundedFormulaInf (φ : L.BoundedFormulaInf ι α n) :
   obtain ⟨⟨k, f⟩, -, h⟩ := (LHom.functionsIn_onBoundedFormulaInf _ φ).subset hc
   obtain ⟨rfl, h⟩ := Sigma.mk.inj_iff.1 h
   exact Sum.inl_ne_inr (eq_of_heq h)
+
+/-- An infinitary formula of `L[[γ]]` has empty constant support precisely when it is the image of
+a formula of `L` along `lhomWithConstants`. -/
+theorem constantSupport_eq_empty_iff {φ : L[[γ]].BoundedFormulaInf ι α n} :
+    φ.constantSupport = ∅ ↔
+      ∃ φ₀ : L.BoundedFormulaInf ι α n, (L.lhomWithConstants γ).onBoundedFormulaInf φ₀ = φ := by
+  refine ⟨fun hφ => (L.lhomWithConstants γ).exists_eq_onBoundedFormulaInf_of_subset_range φ
+    (subset_range_lhomWithConstants_onFunction
+      (fun c hc => Set.eq_empty_iff_forall_notMem.1 hφ c hc))
+    (subset_range_lhomWithConstants_onRelation _), ?_⟩
+  rintro ⟨φ₀, rfl⟩
+  exact constantSupport_onBoundedFormulaInf φ₀
 
 /-- Instantiating a formula at a term adds at most the constants of the term. -/
 theorem constantSupport_inst_subset (φ : L[[γ]].BoundedFormulaInf ι α 1)

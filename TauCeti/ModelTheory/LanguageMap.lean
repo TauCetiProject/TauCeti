@@ -29,7 +29,9 @@ the `L`-structure along `g`; the `L'`-structure can be taken to be the reduct.
 
 The relation map of `lhomWithConstants` inverts the elimination of the empty summand of
 `L[[γ]].Relations n` by `Equiv.sumEmpty`
-(`FirstOrder.Language.lhomWithConstants_onRelation_sumEmpty`).
+(`FirstOrder.Language.lhomWithConstants_onRelation_sumEmpty`), and every `L[[γ]]`-structure is the
+expansion of its `L`-reduct by the interpretations of the added constants
+(`FirstOrder.Language.withConstantsStructure_reduct_eq`).
 -/
 
 public section
@@ -100,5 +102,23 @@ theorem lhomWithConstants_onRelation_sumEmpty {l : ℕ} (R : L[[γ]].Relations l
   cases R with
   | inl R => rfl
   | inr R => exact R.elim
+
+/-- Every `L[[γ]]`-structure on `M` is the expansion of its `L`-reduct interpreting each `c : γ`
+as `(L.con c : M)`. -/
+theorem withConstantsStructure_reduct_eq (M : Type*) [S : L[[γ]].Structure M] :
+    @withConstantsStructure L M ((L.lhomWithConstants γ).reduct M) γ
+      (constantsOn.structure fun c => (L.con c : M)) = S := by
+  refine Structure.ext (funext fun k => funext fun f => funext fun xs => ?_)
+    (funext fun k => funext fun R => funext fun xs => propext ?_)
+  · rcases f with f | c
+    · rfl
+    · cases k with
+      | zero =>
+        rw [Unique.eq_default xs]
+        rfl
+      | succ k => exact c.elim
+  · rcases R with R | R
+    · rfl
+    · exact R.elim
 
 end FirstOrder.Language
