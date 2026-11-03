@@ -156,6 +156,7 @@ theorem cotangentSecondKindRelated_iff_fderiv {F : V × StrongDual ℝ W → ℝ
 
 /-- **The pairing generates the identity.** The function `F(q, P) = P(q)` relates `(q, p)` to
 `(Q, P)` exactly when `(Q, P) = (q, p)`. -/
+@[simp]
 theorem cotangentSecondKindRelated_pairing_iff {x y : V × StrongDual ℝ V} :
     CotangentSecondKindRelated (fun z : V × StrongDual ℝ V ↦ z.2 z.1) x y ↔ y = x := by
   have hd := hasFDerivAt_pairing (x.1, y.2)

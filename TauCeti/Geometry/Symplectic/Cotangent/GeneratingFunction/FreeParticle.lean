@@ -220,6 +220,7 @@ theorem hasFDerivAt_freeParticleSecondKindGeneratingFunction (m t : ℝ) (y : E 
 /-- **The free particle, second kind.** For every time `t`, including `t = 0`, the function
 `F₂(q, P) = P(q) + t ‖P‖² / (2m)` relates `(q, p)` to `(Q, P)` exactly when `(Q, P)` is the
 free motion `(q + (t / m) p♯, p)` of `(q, p)`. -/
+@[simp]
 theorem cotangentSecondKindRelated_freeParticleSecondKindGeneratingFunction_iff (m t : ℝ)
     (x y : E × StrongDual ℝ E) :
     CotangentSecondKindRelated (freeParticleSecondKindGeneratingFunction m t) x y ↔
