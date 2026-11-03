@@ -56,6 +56,14 @@ noncomputable def symmetricAlgebra : ComoduleAlgebra R H (SymmetricAlgebra R M) 
 
 attribute [local instance] symmetricAlgebra
 
+/-- The coaction of the symmetric-algebra comodule algebra is
+`TauCeti.Comodule.symmetricAlgebraCoact`. Unlike `TauCeti.Comodule.symmetricAlgebra_coact`, it
+rewrites with the comodule structure underlying this comodule algebra. -/
+theorem symmetricAlgebra_coact :
+    Comodule.coact (R := R) (C := H) (M := SymmetricAlgebra R M) =
+      (Comodule.symmetricAlgebraCoact R H M).toLinearMap :=
+  Comodule.symmetricAlgebra_coact
+
 /-- The homogeneous components of an invariant of the symmetric algebra of a comodule are
 invariant. -/
 theorem decompose_mem_coinvariants_symmetricAlgebra {x : SymmetricAlgebra R M}

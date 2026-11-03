@@ -21,6 +21,8 @@ identity does, `d (a * b) = d a * ε b + ε a * d b`.
 
 * `TauCeti.Comodule.tensorComponent_tensorCombine`: contracting against a functional which splits
   on products as `θ (a * b) = φ a * ψ b + φ' a * ψ' b` splits the contraction accordingly.
+* `TauCeti.Comodule.tensorComponent_mul`: the same splitting for the coefficient of a product in an
+  algebra tensor product `A ⊗ C`, as for the coaction of a product in a comodule algebra.
 -/
 
 public section
@@ -52,5 +54,27 @@ theorem tensorComponent_tensorCombine {θ φ ψ φ' ψ' : C →ₗ[R] R}
     | tmul w b =>
       simp only [tensorCombine_tmul_tmul, LinearMap.tensorComponent_tmul, hθ, add_smul,
         TensorProduct.smul_tmul_smul]
+
+/-- Contracting the coefficient of a product in an algebra tensor product `A ⊗ C` against a
+functional which splits on products as `θ (a * b) = φ a * ψ b + φ' a * ψ' b` splits the
+contraction accordingly. -/
+theorem tensorComponent_mul {R A C : Type*} [CommSemiring R] [Semiring A] [Algebra R A]
+    [Semiring C] [Algebra R C] {θ φ ψ φ' ψ' : C →ₗ[R] R}
+    (hθ : ∀ a b, θ (a * b) = φ a * ψ b + φ' a * ψ' b) (x y : A ⊗[R] C) :
+    LinearMap.tensorComponent θ (x * y) =
+      LinearMap.tensorComponent φ x * LinearMap.tensorComponent ψ y +
+        LinearMap.tensorComponent φ' x * LinearMap.tensorComponent ψ' y := by
+  induction x using TensorProduct.inductionOn with
+  | add x x' hx hx' =>
+    simp only [add_mul, map_add, hx, hx']
+    abel
+  | tmul a c =>
+    induction y using TensorProduct.inductionOn with
+    | add y y' hy hy' =>
+      simp only [mul_add, map_add, hy, hy']
+      abel
+    | tmul b c' =>
+      simp only [Algebra.TensorProduct.tmul_mul_tmul, LinearMap.tensorComponent_tmul, hθ,
+        add_smul, smul_mul_smul_comm]
 
 end TauCeti.Comodule
