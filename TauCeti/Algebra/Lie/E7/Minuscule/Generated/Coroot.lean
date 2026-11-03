@@ -176,7 +176,7 @@ theorem linearIndependent_generatedCartanVector :
     LinearIndependent R (generatedCartanVector R) := by
   simpa only [derivationCompLieHom_apply, ← generatedCorootCocharacter_def R,
     ← generatedCartanVector_eq_derivationComp_generatedCorootCocharacter R] using
-    SplitTorus.linearIndependent_derivationComp_cocharacter
+    SplitTorus.linearIndependent_derivationCompLieHom_cocharacter
       (B := R) (generatedWeightTorusCoordinateMap R).hom
       (derivationCompLieHom_generatedWeightTorusCoordinateMap_injective R R)
 

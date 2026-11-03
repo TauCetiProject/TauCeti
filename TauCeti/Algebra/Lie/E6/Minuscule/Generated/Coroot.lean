@@ -11,6 +11,7 @@ public import TauCeti.Algebra.AlgebraicGroup.SplitTorus.Tangent
 public import TauCeti.Algebra.Lie.E6.Minuscule.Generated.Serre
 public import TauCeti.Algebra.Lie.E6.Minuscule.WeightTorus
 public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.Assembly
+import TauCeti.Algebra.Lie.E6.Minuscule.Generated.WeightTorus
 
 /-!
 # Simple-coroot differentials in the generated E₆ group
@@ -173,19 +174,13 @@ theorem derivationCompLieHom_generatedWeightTorusCoordinateMap_injective
     Function.Injective
       (derivationCompLieHom (B := B) (generatedWeightTorusCoordinateMap R).hom) := by
   apply derivationCompLieHom_injective_of_surjective
-  have h : Function.Surjective
-      (coordinateMap R ≫ weightTorusToBaseChangeCoordinateMap R).hom := by
-    simpa only [_root_.CommHopfAlgCat.hom_comp, BialgHom.coe_comp] using
-      (weightTorusToBaseChangeCoordinateMap_surjective R).comp (coordinateMap_surjective R)
-  rw [coordinateMap_comp_weightTorusToBaseChangeCoordinateMap,
-    ← generatedCoordinateMap_comp_generatedWeightTorusCoordinateMap] at h
-  exact Function.Surjective.of_comp
-    (by simpa only [_root_.CommHopfAlgCat.hom_comp, BialgHom.coe_comp] using h)
+  simpa only [generatedWeightTorusCoordinateMap_def] using
+    Generated.generatedCoordinateLift_torus_surjective R
 
 /-- The six Cartan vectors are independent over every commutative ring. -/
 theorem linearIndependent_generatedCartanVector :
     LinearIndependent R (generatedCartanVector R) := by
-  have h := SplitTorus.linearIndependent_derivationComp_cocharacter
+  have h := SplitTorus.linearIndependent_derivationCompLieHom_cocharacter
     (generatedWeightTorusCoordinateMap R).hom
     (derivationCompLieHom_generatedWeightTorusCoordinateMap_injective R R)
   convert h using 1
