@@ -80,6 +80,23 @@ variable {K L M I : CurvedDGRightModuleCat.{u, u, u} h}
     ForgetEnrichment.of (CochainComplex (ModuleCat R) ℤ) M)
   (hfg : f ≫ g = 0)
 
+/-- Cochains are homogeneous maps between the underlying graded right modules. -/
+private theorem cochain_mem_iff_isHomogeneous {p : ℤ} (a : K →ₗ[Aᵐᵒᵖ] I) :
+    a ∈ dgRightModuleCochains (R := R) (A := A) (ℳ := K.grading) (ℳN := I.grading) p ↔
+      LinearMap.IsHomogeneous a (toGradedModuleCat K).grading.piece
+        (toGradedModuleCat I).grading.piece p := by
+  rw [dgRightModuleCochains.mem_iff]
+  simp only [LinearMap.isHomogeneous_def, toGradedModuleCat_piece,
+    LinearMap.restrictScalars_apply]
+
+/-- A degree-p cochain is a degree-zero map into the grading shift by -p. -/
+private theorem cochain_mem_iff_isHomogeneous_shift {p : ℤ} (a : K →ₗ[Aᵐᵒᵖ] I) :
+    a ∈ dgRightModuleCochains (R := R) (A := A) (ℳ := K.grading) (ℳN := I.grading) p ↔
+      LinearMap.IsHomogeneous a (toGradedModuleCat K).grading.piece
+        ((toGradedModuleCat I).shiftObj (-p)).grading.piece 0 := by
+  rw [cochain_mem_iff_isHomogeneous]
+  simp only [LinearMap.isHomogeneous_def, InternalGrading.shift_piece, neg_neg, add_zero]
+
 /-- The differential on the three components of a totalization. -/
 private theorem totalization_differential (x : K) (y : L) (z : M) :
     (cone (coneDesc f g hfg)).differential ((x, y), z) =
@@ -158,24 +175,13 @@ private theorem descend_cochain {p : ℤ}
   let T := (ShortComplex.mk f g hfg).map (forgetDifferential (h := h))
   have hT : T.ShortExact := hS.map_of_exact _
   have := hT.epi_g
-  -- A degree-p map is a degree-zero map into the grading shift by -p. The computation
-  -- lemmas below also identify the carriers of the forgetful and shift constructions.
   let b' : toGradedModuleCat L ⟶ (toGradedModuleCat I).shiftObj (-p) :=
-    GradedModuleCat.ofHom b.1 (by
-      simpa only [LinearMap.isHomogeneous_def, InternalGrading.shift_piece, neg_neg,
-        toGradedModuleCat_piece, add_zero, LinearMap.restrictScalars_apply,
-        toGradedModuleCat, InternalGrading.ofDecomposition_piece]
-        using dgRightModuleCochains.mem_iff.1 b.2)
+    GradedModuleCat.ofHom b.1 ((cochain_mem_iff_isHomogeneous_shift b.1).1 b.2)
   have hz : T.f ≫ b' = 0 := GradedModuleCat.hom_ext (LinearMap.ext hb)
   let c := hT.exact.desc b' hz
   refine ⟨⟨c.hom, ?_⟩, fun x ↦ congrArg (fun a : T.X₂ ⟶ _ ↦ a.hom x)
     (hT.exact.g_desc b' hz)⟩
-  simpa only [dgRightModuleCochains.mem_iff, LinearMap.isHomogeneous_def,
-    InternalGrading.shift_piece, neg_neg, T, ShortComplex.map_X₃, forgetDifferential,
-    ForgetEnrichment.to_of,
-    toGradedModuleCat_piece, add_zero,
-    LinearMap.restrictScalars_apply, toGradedModuleCat, InternalGrading.ofDecomposition_piece]
-    using c.isHomogeneous
+  exact (cochain_mem_iff_isHomogeneous_shift c.hom).2 c.isHomogeneous
 
 variable [Injective (toGradedModuleCat I)]
 
@@ -187,16 +193,10 @@ private theorem extend_cochain {p : ℤ}
   have : Mono ((forgetDifferential (h := h)).map f) :=
     (hS.map_of_exact (forgetDifferential (h := h))).mono_f
   obtain ⟨b, hb, hba⟩ := GradedModuleCat.exists_isHomogeneous_comp_eq_of_mono
-    (toGradedModuleCat I) ((forgetDifferential (h := h)).map f) (p := p) a.1 (by
-      simpa only [LinearMap.isHomogeneous_def, forgetDifferential, ForgetEnrichment.to_of,
-        toGradedModuleCat_piece,
-        LinearMap.restrictScalars_apply, toGradedModuleCat, InternalGrading.ofDecomposition_piece]
-        using dgRightModuleCochains.mem_iff.1 a.2)
+    (toGradedModuleCat I) ((forgetDifferential (h := h)).map f) (p := p) a.1
+    ((cochain_mem_iff_isHomogeneous a.1).1 a.2)
   refine ⟨⟨b, ?_⟩, fun x ↦ congrArg (fun l ↦ l x) hba⟩
-  simpa only [dgRightModuleCochains.mem_iff, LinearMap.isHomogeneous_def,
-    forgetDifferential, ForgetEnrichment.to_of, toGradedModuleCat_piece,
-    LinearMap.restrictScalars_apply,
-    toGradedModuleCat, InternalGrading.ofDecomposition_piece] using hb
+  exact (cochain_mem_iff_isHomogeneous b).2 hb
 
 /-- Maps from a short-exact totalization to a graded-injective module are null-homotopic. -/
 private theorem totalization_map_eq_zero
