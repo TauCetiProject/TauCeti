@@ -50,6 +50,9 @@ act on a lattice glued from copies of `D₄`.
 * `TauCeti.DynkinType.discriminantGroupEquiv_typeD4Triality_glueAlphabetIsometry`: on the `D₄` glue
   alphabet, read in `F₄`, it is multiplication by `ω²`; its powers give every nonzero scaling
   (`discriminantGroupEquiv_typeD4Triality_pow_glueAlphabetIsometry`).
+* `TauCeti.DynkinType.typeD4ScalarIsometry`: the power of triality realizing a given unit of
+  `F₄` on the glue alphabet (`typeD4ScalarIsometry_eq_pow`). It sends `1` to the identity and
+  products to composites (`typeD4ScalarIsometry_one`, `typeD4ScalarIsometry_mul`).
 
 ## References
 
@@ -318,6 +321,58 @@ theorem discriminantGroupEquiv_typeD4Triality_pow_glueAlphabetIsometry (k : ℕ)
     refine (congrArg _ (discriminantGroupEquiv_typeD4Triality_glueAlphabetIsometry ht hv hF hω
       x)).trans ((ih _).trans ?_)
     rw [QuadraticMap.IsometryEquiv.apply_symm_apply, pow_succ (ω ^ 2) k, mul_assoc]
+
+/-- **Triality realizes every nonzero scalar of `F₄` on the `D₄` glue alphabet.** For a unit `a`
+of a field `F` of four elements, this is the power of `typeD4Triality` acting on the glue
+alphabet, read in `F` through `typeD4GlueAlphabetQuaternaryIsometry`, as multiplication by `a`
+(`discriminantGroupEquiv_typeD4ScalarIsometry_glueAlphabetIsometry`). For `a = 1, ω, ω²` it is
+the power `0, 2, 1` of triality. -/
+noncomputable def typeD4ScalarIsometry (a : Fˣ) :
+    Isometry ((D 4).rootLattice ht) ((D 4).rootLattice ht) :=
+  typeD4Triality ht ^ ![0, 0, 2, 1] ((finFourEquiv hF hω).symm a)
+
+/-- **`typeD4ScalarIsometry a` acts on the `D₄` glue alphabet as multiplication by `a`**, read
+through `typeD4GlueAlphabetQuaternaryIsometry`. -/
+theorem discriminantGroupEquiv_typeD4ScalarIsometry_glueAlphabetIsometry (a : Fˣ)
+    (x : (D 4).glueAlphabet ht) :
+    (typeD4ScalarIsometry ht hF hω a).discriminantGroupEquiv
+        ((D 4).glueAlphabetIsometry hv ht x) =
+      (D 4).glueAlphabetIsometry hv ht ((typeD4GlueAlphabetQuaternaryIsometry hF hω).symm
+        (a * typeD4GlueAlphabetQuaternaryIsometry hF hω x)) := by
+  rw [typeD4ScalarIsometry,
+    discriminantGroupEquiv_typeD4Triality_pow_glueAlphabetIsometry ht hv hF hω,
+    sq_pow_finFourEquiv_symm]
+
+/-- **`typeD4ScalarIsometry a` is the power of triality realizing `a`**: if `(ω²)ᵏ = a`, then it
+is `typeD4Triality ^ k`. -/
+theorem typeD4ScalarIsometry_eq_pow (a : Fˣ) {k : ℕ} (hk : (ω ^ 2) ^ k = a) :
+    typeD4ScalarIsometry ht hF hω a = typeD4Triality ht ^ k := by
+  -- Both `ω²` and triality have order three, so only the exponent modulo three matters.
+  have h3 : (ω ^ 2) ^ 3 = 1 := by
+    rw [← pow_mul, mul_comm, pow_mul, pow_three_eq_one_of_sq_add_self_add_one_eq_zero hω,
+      one_pow]
+  have h1 : ω ^ 2 ≠ 1 := fun h ↦ one_ne_zero (α := F) <| by
+    linear_combination ω * hω - (ω + 1) * h - ω * two_eq_zero_of_natCard_eq_four hF
+  have hmod := (isOfFinOrder_iff_pow_eq_one.mpr ⟨3, by norm_num, h3⟩).pow_inj_mod.mp
+    ((sq_pow_finFourEquiv_symm hF hω a).trans hk.symm)
+  rw [orderOf_eq_prime h3 h1] at hmod
+  exact (pow_eq_pow_mod _ (typeD4Triality_pow_three ht)).trans
+    ((congrArg _ hmod).trans (pow_eq_pow_mod k (typeD4Triality_pow_three ht)).symm)
+
+/-- The scalar `1` is realized by the identity isometry. -/
+@[simp]
+theorem typeD4ScalarIsometry_one : typeD4ScalarIsometry ht hF hω 1 = 1 :=
+  (typeD4ScalarIsometry_eq_pow ht hF hω 1 (k := 0) (by rw [pow_zero, Units.val_one])).trans
+    (pow_zero _)
+
+/-- The isometries realizing two scalars compose to the isometry realizing their product. -/
+theorem typeD4ScalarIsometry_mul (a b : Fˣ) :
+    typeD4ScalarIsometry ht hF hω (a * b) =
+      typeD4ScalarIsometry ht hF hω a * typeD4ScalarIsometry ht hF hω b := by
+  rw [typeD4ScalarIsometry_eq_pow ht hF hω a (sq_pow_finFourEquiv_symm hF hω a),
+    typeD4ScalarIsometry_eq_pow ht hF hω b (sq_pow_finFourEquiv_symm hF hω b), ← pow_add]
+  refine typeD4ScalarIsometry_eq_pow ht hF hω _ ?_
+  rw [pow_add, sq_pow_finFourEquiv_symm, sq_pow_finFourEquiv_symm, Units.val_mul]
 
 end DynkinType
 
