@@ -53,6 +53,8 @@ here allows radii that are not norms of elements of `R`, which no weight family 
   `TauCeti.MvPowerSeries.restrictedAnalyticSubst_comp`: the identity and composition laws.
 * `TauCeti.MvPowerSeries.restrictedEval₂_restrictedAnalyticSubst`: evaluating `f(g)` at `b` is
   evaluating `f` at `g(b)`.
+* `TauCeti.MvPowerSeries.restrictedAnalyticSubst_zero`: substituting zero gives the constant
+  coefficient.
 * `TauCeti.MvPowerSeries.restrictedMap_restrictedAnalyticSubst`: compatibility with bounded
   coefficient maps.
 * `TauCeti.MvPowerSeries.coe_restrictedAnalyticSubst_eq_subst`: agreement with Mathlib's formal
@@ -129,6 +131,23 @@ theorem coeff_restrictedAnalyticSubst (f : IsRestricted.subring (R := R) r) (e :
 theorem restrictedAnalyticSubst_X (i : Fin k) :
     restrictedAnalyticSubst g hg ⟨X i, isRestricted_monomial r (Finsupp.single i 1) 1⟩ = g i :=
   restrictedEval₂_X _ g _ hg i
+
+/-- **Substitution at the origin**: substituting zero for every variable gives the constant
+coefficient. -/
+@[simp]
+theorem restrictedAnalyticSubst_zero
+    (hh₀ : ∀ i, ‖(0 : Fin k → IsRestricted.subring (R := R) s) i‖ ≤ r i)
+    (f : IsRestricted.subring (R := R) r) :
+    restrictedAnalyticSubst 0 hh₀ f =
+      algebraMap R _ (constantCoeff (f : MvPowerSeries (Fin k) R)) := by
+  refine (hasSum_restrictedAnalyticSubst 0 hh₀ f).unique ?_
+  have hs := hasSum_single (f := fun t : Fin k →₀ ℕ ↦
+      algebraMap R (IsRestricted.subring (R := R) s) (coeff t (f : MvPowerSeries (Fin k) R)) *
+        ∏ i, (0 : Fin k → IsRestricted.subring (R := R) s) i ^ t i) 0 fun t ht ↦ by
+    obtain ⟨i, hi⟩ := Finsupp.ne_iff.1 ht
+    rw [Finset.prod_eq_zero (Finset.mem_univ i)
+      (by rw [Pi.zero_apply]; exact zero_pow (by simpa using hi)), mul_zero]
+  simpa using hs
 
 /-- **Coefficient maps commute with analytic substitution.** For a bounded ring homomorphism
 `φ : R →+* S` such that the mapped series `φ(gᵢ)` still satisfy `‖φ(gᵢ)‖ ≤ rᵢ`, mapping the
