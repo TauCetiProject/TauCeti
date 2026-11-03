@@ -109,10 +109,7 @@ theorem indHomMackeyLinearEquiv_indMap_apply (A B : Rep.{u} k H) (f : A ⟶ B)
   rw [Rep.resCoindHomEquiv_symm_hom_apply, Rep.hom_comp,
     IntertwiningMap.comp_apply, Rep.homDirectSumLinearEquiv_apply,
     Rep.hom_comp, IntertwiningMap.comp_apply, Rep.indResHomEquiv_hom_apply]
-  have hmap : (Rep.indMap H.subtype f).hom (IndV.mk H.subtype A.ρ 1 a) =
-      IndV.mk H.subtype B.ρ 1 (f.hom a) := by
-    simp [Rep.indMap]
-  rw [hmap]
+  rw [Rep.indMap_hom_mk]
   have hdecomp := Rep.mackeyDecomposition_hom_hom_apply_mk B D (⟨D.out, hs⟩ : H) 1
     (f.hom a)
   simp only [Subgroup.coe_one, mul_inv_cancel, one_mul] at hdecomp
