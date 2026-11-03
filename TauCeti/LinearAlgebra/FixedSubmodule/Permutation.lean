@@ -69,6 +69,13 @@ theorem permutationFixedEquiv_symm_apply (σ : Perm I)
     (permutationFixedEquiv (R := R) (M := M) σ).symm v (Quotient.mk _ i) = v.val i :=
   TauCeti.invariantColouringEquiv_symm_apply σ _ i
 
+/-- Fixed-vector coordinates agree whenever their permutation cycles agree. -/
+theorem permutationFixed_apply_eq_of_quotient_eq (σ : Perm I)
+    (v : (funCongrLeft R M σ).toLinearMap.fixedSubmodule) {i j : I}
+    (h : Quotient.mk (Perm.SameCycle.setoid σ) i = Quotient.mk _ j) :
+    v.val i = v.val j := by
+  rw [← permutationFixedEquiv_symm_apply σ v i, h, permutationFixedEquiv_symm_apply]
+
 /-- The orbit indicator vectors form a basis of the fixed submodule. -/
 def permutationFixedBasis (σ : Perm I)
     [Finite (Quotient (Perm.SameCycle.setoid σ))] :

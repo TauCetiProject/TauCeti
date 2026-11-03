@@ -6,17 +6,19 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.LinearAlgebra.FixedSubmodule.Permutation
+public import Mathlib.Algebra.BigOperators.Finprod
 public import Mathlib.Data.ZMod.QuotientGroup
 public import Mathlib.GroupTheory.Index
 
 /-!
 # The lattice of orbit averages
 
-Averaging rational coordinates along the cycles of a finite permutation projects onto its
-fixed space. The image of the integral coordinate lattice is generally larger than the integral
-fixed lattice: on a cycle of length `n`, its constant coordinate may be any element of `n⁻¹ ℤ`.
-We characterize this image and compute the index of the integral fixed lattice in it as the
-product of the cycle lengths. In particular, averaging is not an integral retraction.
+Averaging coordinates in a characteristic-zero field along the cycles of a finite permutation
+projects onto its fixed space. The image of the integral coordinate lattice is generally larger
+than the integral fixed lattice: on a cycle of length `n`, its constant coordinate may be any
+element of `n⁻¹ ℤ`. We characterize this image and compute the index of the integral fixed lattice
+in it as the product of the cycle lengths. In particular, averaging need not be an integral
+retraction: it is one exactly when every cycle has length one.
 
 This is the lattice comparison between projected simple roots and distinct-orbit sums in diagram
 folding. It does not identify either lattice with a character or cocharacter lattice.
@@ -34,110 +36,126 @@ open Finset
 
 namespace Equiv.Perm
 
-variable {I : Type*} [Fintype I] (σ : Equiv.Perm I)
+variable {I : Type*} (σ : Equiv.Perm I)
 
 private abbrev Cycles := Quotient (SameCycle.setoid σ)
 
-open Classical in
-private def cycleSize (c : Cycles σ) : ℕ :=
-  Fintype.card {i : I // Quotient.mk (SameCycle.setoid σ) i = c}
+/-- The number of coordinates in a permutation cycle, independent of decidability instances. -/
+def cycleSize (c : Quotient (SameCycle.setoid σ)) : ℕ :=
+  Nat.card {i : I // Quotient.mk (SameCycle.setoid σ) i = c}
 
-private theorem cycleSize_pos (c : Cycles σ) : 0 < cycleSize σ c := by
-  classical
+/-- The size of the cycle containing `i` counts the coordinates in the same cycle as `i`. -/
+@[simp]
+theorem cycleSize_mk (i : I) :
+    cycleSize σ (Quotient.mk _ i) = Nat.card {j : I // σ.SameCycle j i} := by
+  simp only [cycleSize, Quotient.eq, SameCycle.setoid]
+
+variable [Finite I]
+
+/-- Every permutation cycle contains at least one coordinate. -/
+theorem cycleSize_pos (c : Quotient (SameCycle.setoid σ)) : 0 < cycleSize σ c := by
   have : Nonempty {i : I // Quotient.mk (SameCycle.setoid σ) i = c} :=
     ⟨⟨c.out, Quotient.out_eq c⟩⟩
-  exact Fintype.card_pos_iff.mpr this
+  exact Nat.card_pos
 
-private def averageCoordinates : (Cycles σ → ℚ) ≃ₗ[ℚ] (Cycles σ → ℚ) :=
-  LinearEquiv.piCongrRight fun c ↦ LinearEquiv.smulOfNeZero ℚ ℚ
-    (cycleSize σ c : ℚ)⁻¹ (inv_ne_zero (Nat.cast_ne_zero.mpr (cycleSize_pos σ c).ne'))
+variable {K : Type*} [Field K] [CharZero K]
 
-private theorem averageCoordinates_apply (a : Cycles σ → ℚ) (c : Cycles σ) :
+private theorem cycleSize_cast_ne_zero (c : Cycles σ) : (cycleSize σ c : K) ≠ 0 :=
+  Nat.cast_ne_zero.mpr (cycleSize_pos σ c).ne'
+
+private def averageCoordinates : (Cycles σ → K) ≃ₗ[K] (Cycles σ → K) :=
+  LinearEquiv.piCongrRight fun c ↦ LinearEquiv.smulOfNeZero K K
+    (cycleSize σ c : K)⁻¹ (inv_ne_zero (cycleSize_cast_ne_zero σ c))
+
+private theorem averageCoordinates_apply (a : Cycles σ → K) (c : Cycles σ) :
     averageCoordinates σ a c = a c / cycleSize σ c := by
   simp [averageCoordinates, div_eq_mul_inv, mul_comm]
 
 open Classical in
-/-- Average each coordinate over its permutation cycle. This is a rational linear projection,
+/-- Average each coordinate over its permutation cycle. This is a linear projection over `K`,
 not the section-dependent integral retraction `permutationFixedProjection`. -/
-def permutationAverage : (I → ℚ) →ₗ[ℚ]
-    (LinearEquiv.funCongrLeft ℚ ℚ σ).toLinearMap.fixedSubmodule :=
-  (permutationFixedEquiv (R := ℚ) σ).toLinearMap.comp
+def permutationAverage : (I → K) →ₗ[K]
+    (LinearEquiv.funCongrLeft K K σ).toLinearMap.fixedSubmodule :=
+  letI := Fintype.ofFinite I
+  (permutationFixedEquiv (R := K) σ).toLinearMap.comp
     ((averageCoordinates σ).toLinearMap.comp
       (LinearMap.pi fun c ↦ ∑ i : {i : I // Quotient.mk (SameCycle.setoid σ) i = c},
         LinearMap.proj i.val))
 
-open Classical in
-/-- Every output coordinate is the mean over its cycle. -/
+/-- Every output coordinate is the mean over its cycle. The finite sum is expressed without
+choosing decidability or enumeration instances on that cycle. -/
 @[simp]
-theorem permutationAverage_apply (v : I → ℚ) (i : I) :
+theorem permutationAverage_apply (v : I → K) (i : I) :
     (permutationAverage σ v).val i =
-      (∑ j : {j : I // Quotient.mk (SameCycle.setoid σ) j = Quotient.mk _ i}, v j.val) /
-        Fintype.card {j : I // Quotient.mk (SameCycle.setoid σ) j = Quotient.mk _ i} := by
-  simp [permutationAverage, averageCoordinates_apply, cycleSize]
+      (∑ᶠ j : {j : I // Quotient.mk (SameCycle.setoid σ) j = Quotient.mk _ i}, v j.val) /
+        cycleSize σ (Quotient.mk _ i) := by
+  classical
+  let := Fintype.ofFinite I
+  simp [permutationAverage, averageCoordinates_apply, finsum_eq_sum_of_fintype]
 
-/-- Averaging fixes every rational fixed vector. -/
+/-- Averaging fixes every fixed vector over `K`. -/
 @[simp]
 theorem permutationAverage_fixed
-    (v : (LinearEquiv.funCongrLeft ℚ ℚ σ).toLinearMap.fixedSubmodule) :
+    (v : (LinearEquiv.funCongrLeft K K σ).toLinearMap.fixedSubmodule) :
     permutationAverage σ v.val = v := by
   classical
+  let := Fintype.ofFinite I
   apply Subtype.ext
   funext i
-  rw [permutationAverage_apply]
+  rw [permutationAverage_apply, finsum_eq_sum_of_fintype]
   have hv (j : {j : I // Quotient.mk (SameCycle.setoid σ) j = Quotient.mk _ i}) :
-      v.val j.val = v.val i := by
-    rw [← permutationFixedEquiv_symm_apply σ v j.val, j.property,
-      permutationFixedEquiv_symm_apply]
-  simp only [hv, sum_const, card_univ, nsmul_eq_mul]
-  exact mul_div_cancel_left₀ _ (Nat.cast_ne_zero.mpr (cycleSize_pos σ _).ne')
+      v.val j.val = v.val i :=
+    permutationFixed_apply_eq_of_quotient_eq σ v j.property
+  simp only [hv, sum_const, card_univ, nsmul_eq_mul, ← Nat.card_eq_fintype_card]
+  exact mul_div_cancel_left₀ _ (cycleSize_cast_ne_zero σ _)
 
 private def integralCoordinates : (Cycles σ → ℤ) →ₗ[ℤ]
-    (LinearEquiv.funCongrLeft ℚ ℚ σ).toLinearMap.fixedSubmodule :=
-  ((permutationFixedEquiv (R := ℚ) σ).toLinearMap.restrictScalars ℤ).comp
-    (LinearMap.pi fun c ↦ (Int.castAddHom ℚ).toIntLinearMap.comp (LinearMap.proj c))
+    (LinearEquiv.funCongrLeft K K σ).toLinearMap.fixedSubmodule :=
+  ((permutationFixedEquiv (R := K) σ).toLinearMap.restrictScalars ℤ).comp
+    (LinearMap.pi fun c ↦ (Int.castAddHom K).toIntLinearMap.comp (LinearMap.proj c))
 
 private def projectedCoordinates : (Cycles σ → ℤ) →ₗ[ℤ]
-    (LinearEquiv.funCongrLeft ℚ ℚ σ).toLinearMap.fixedSubmodule :=
-  ((permutationFixedEquiv (R := ℚ) σ).toLinearMap.restrictScalars ℤ).comp
+    (LinearEquiv.funCongrLeft K K σ).toLinearMap.fixedSubmodule :=
+  ((permutationFixedEquiv (R := K) σ).toLinearMap.restrictScalars ℤ).comp
     (((averageCoordinates σ).toLinearMap.restrictScalars ℤ).comp
-      (LinearMap.pi fun c ↦ (Int.castAddHom ℚ).toIntLinearMap.comp (LinearMap.proj c)))
+      (LinearMap.pi fun c ↦ (Int.castAddHom K).toIntLinearMap.comp (LinearMap.proj c)))
 
-omit [Fintype I] in
+omit [Finite I] [CharZero K] in
 private theorem integralCoordinates_apply (a : Cycles σ → ℤ) (i : I) :
-    (integralCoordinates σ a).val i = a (Quotient.mk _ i) := by
+    (integralCoordinates (K := K) σ a).val i = a (Quotient.mk _ i) := by
   simp [integralCoordinates]
 
 private theorem projectedCoordinates_apply (a : Cycles σ → ℤ) (i : I) :
-    (projectedCoordinates σ a).val i = (a (Quotient.mk _ i) : ℚ) /
+    (projectedCoordinates (K := K) σ a).val i = (a (Quotient.mk _ i) : K) /
       cycleSize σ (Quotient.mk _ i) := by
   simp [projectedCoordinates, averageCoordinates_apply]
 
-private theorem projectedCoordinates_injective : Function.Injective (projectedCoordinates σ) := by
+private theorem projectedCoordinates_injective :
+    Function.Injective (projectedCoordinates (K := K) σ) := by
   classical
   intro a b hab
   funext c
   have h := congrArg (fun v ↦ v.val c.out) hab
   simp only [projectedCoordinates_apply, Quotient.out_eq] at h
-  exact Int.cast_injective ((div_left_inj'
-    (Nat.cast_ne_zero (R := ℚ) |>.mpr (cycleSize_pos σ c).ne')).mp h)
+  exact Int.cast_injective ((div_left_inj' (cycleSize_cast_ne_zero σ c)).mp h)
 
-/-- The integral vectors in the rational permutation-fixed space. -/
+/-- The integral vectors in the permutation-fixed space over `K`. -/
 def permutationIntegralLattice : Submodule ℤ
-    (LinearEquiv.funCongrLeft ℚ ℚ σ).toLinearMap.fixedSubmodule :=
+    (LinearEquiv.funCongrLeft K K σ).toLinearMap.fixedSubmodule :=
   LinearMap.range (integralCoordinates σ)
 
 /-- The lattice of cycle averages of integral coordinate vectors. Its coordinate on a cycle
 of length `n` lies in `n⁻¹ ℤ`. -/
 def permutationProjectedLattice : Submodule ℤ
-    (LinearEquiv.funCongrLeft ℚ ℚ σ).toLinearMap.fixedSubmodule :=
+    (LinearEquiv.funCongrLeft K K σ).toLinearMap.fixedSubmodule :=
   LinearMap.range (projectedCoordinates σ)
 
-omit [Fintype I] in
-/-- A rational fixed vector is integral exactly when all its coordinates are integers. -/
+omit [Finite I] [CharZero K] in
+/-- A fixed vector is integral exactly when all its coordinates are integers. -/
 @[simp]
 theorem mem_permutationIntegralLattice_iff
-    (v : (LinearEquiv.funCongrLeft ℚ ℚ σ).toLinearMap.fixedSubmodule) :
-    v ∈ permutationIntegralLattice σ ↔ ∀ i, ∃ z : ℤ, v.val i = z := by
+    (v : (LinearEquiv.funCongrLeft K K σ).toLinearMap.fixedSubmodule) :
+    v ∈ permutationIntegralLattice (K := K) σ ↔ ∀ i, ∃ z : ℤ, v.val i = z := by
   classical
   constructor
   · rintro ⟨a, rfl⟩ i
@@ -145,45 +163,40 @@ theorem mem_permutationIntegralLattice_iff
   · intro h
     choose a ha using fun c : Cycles σ ↦ h c.out
     refine ⟨a, ?_⟩
-    apply (permutationFixedEquiv (R := ℚ) σ).symm.injective
-    funext c
-    induction c using Quotient.inductionOn with | _ i =>
-      simp only [permutationFixedEquiv_symm_apply, integralCoordinates_apply]
-      rw [← ha (Quotient.mk _ i)]
-      rw [← permutationFixedEquiv_symm_apply σ v, Quotient.out_eq,
-        permutationFixedEquiv_symm_apply]
+    apply Subtype.ext
+    funext i
+    rw [integralCoordinates_apply, ← ha]
+    exact permutationFixed_apply_eq_of_quotient_eq σ v (Quotient.out_eq _)
 
-open Classical in
 /-- A fixed vector belongs to the projected integral lattice exactly when its coordinate on
 each cycle of length `n` is an integer divided by `n`. -/
 @[simp]
 theorem mem_permutationProjectedLattice_iff
-    (v : (LinearEquiv.funCongrLeft ℚ ℚ σ).toLinearMap.fixedSubmodule) :
-    v ∈ permutationProjectedLattice σ ↔ ∀ i, ∃ z : ℤ,
-      v.val i = (z : ℚ) /
-        Fintype.card {j : I // Quotient.mk (SameCycle.setoid σ) j = Quotient.mk _ i} := by
+    (v : (LinearEquiv.funCongrLeft K K σ).toLinearMap.fixedSubmodule) :
+    v ∈ permutationProjectedLattice (K := K) σ ↔ ∀ i, ∃ z : ℤ,
+      v.val i = (z : K) / cycleSize σ (Quotient.mk _ i) := by
+  classical
   constructor
   · rintro ⟨a, rfl⟩ i
     exact ⟨a (Quotient.mk _ i), projectedCoordinates_apply σ a i⟩
   · intro h
     choose a ha using fun c : Cycles σ ↦ h c.out
     refine ⟨a, ?_⟩
-    apply (permutationFixedEquiv (R := ℚ) σ).symm.injective
-    funext c
-    induction c using Quotient.inductionOn with | _ i =>
-      simp only [permutationFixedEquiv_symm_apply, projectedCoordinates_apply]
-      rw [← permutationFixedEquiv_symm_apply σ v i]
-      have hc := ha (Quotient.mk _ i)
-      simpa only [← permutationFixedEquiv_symm_apply σ v, Quotient.out_eq,
-        cycleSize] using hc.symm
+    apply Subtype.ext
+    funext i
+    rw [projectedCoordinates_apply]
+    have hc := ha (Quotient.mk _ i)
+    rw [Quotient.out_eq] at hc
+    exact hc.symm.trans (permutationFixed_apply_eq_of_quotient_eq σ v (Quotient.out_eq _))
 
 /-- The lattice described by cycle denominators is precisely the image of the integral
-coordinate lattice under rational averaging. -/
+coordinate lattice under averaging over `K`. -/
 theorem mem_permutationProjectedLattice_iff_exists_average
-    (v : (LinearEquiv.funCongrLeft ℚ ℚ σ).toLinearMap.fixedSubmodule) :
-    v ∈ permutationProjectedLattice σ ↔
-      ∃ a : I → ℤ, permutationAverage σ (fun i ↦ (a i : ℚ)) = v := by
+    (v : (LinearEquiv.funCongrLeft K K σ).toLinearMap.fixedSubmodule) :
+    v ∈ permutationProjectedLattice (K := K) σ ↔
+      ∃ a : I → ℤ, permutationAverage σ (fun i ↦ (a i : K)) = v := by
   classical
+  let := Fintype.ofFinite I
   constructor
   · rintro ⟨a, rfl⟩
     let b : I → ℤ := fun i ↦ if i = (Quotient.mk (SameCycle.setoid σ) i).out
@@ -191,13 +204,13 @@ theorem mem_permutationProjectedLattice_iff_exists_average
     refine ⟨b, ?_⟩
     apply Subtype.ext
     funext i
-    rw [permutationAverage_apply, projectedCoordinates_apply]
+    rw [permutationAverage_apply, finsum_eq_sum_of_fintype, projectedCoordinates_apply]
     congr 1
     let c : Cycles σ := Quotient.mk _ i
     let j₀ : {j : I // Quotient.mk (SameCycle.setoid σ) j = c} :=
       ⟨c.out, Quotient.out_eq c⟩
     have hsum : (∑ j : {j : I // Quotient.mk (SameCycle.setoid σ) j = c},
-        (b j.val : ℚ)) = a c := by
+        (b j.val : K)) = a c := by
       rw [Fintype.sum_eq_single j₀]
       · simp [b, j₀, Quotient.out_eq]
       · intro j hj
@@ -209,13 +222,13 @@ theorem mem_permutationProjectedLattice_iff_exists_average
     intro i
     refine ⟨∑ j : {j : I // Quotient.mk (SameCycle.setoid σ) j = Quotient.mk _ i},
       a j.val, ?_⟩
-    simp [permutationAverage_apply]
+    simp [permutationAverage_apply, finsum_eq_sum_of_fintype]
 
 private def cycleMultiples : AddSubgroup (Cycles σ → ℤ) :=
   AddSubgroup.pi _root_.Set.univ fun c ↦ AddSubgroup.zmultiples (cycleSize σ c : ℤ)
 
 private theorem integralLattice_eq_map :
-    (permutationIntegralLattice σ).toAddSubgroup =
+    (permutationIntegralLattice (K := K) σ).toAddSubgroup =
       (cycleMultiples σ).map (projectedCoordinates σ).toAddMonoidHom := by
   classical
   ext v
@@ -227,7 +240,7 @@ private theorem integralLattice_eq_map :
       funext i
       rw [LinearMap.toAddMonoidHom_coe, projectedCoordinates_apply,
         integralCoordinates_apply, Int.cast_mul, Int.cast_natCast]
-      exact mul_div_cancel_left₀ _ (Nat.cast_ne_zero.mpr (cycleSize_pos σ _).ne')
+      exact mul_div_cancel_left₀ _ (cycleSize_cast_ne_zero σ _)
   · rintro ⟨a, ha, rfl⟩
     have hd : ∀ c, (cycleSize σ c : ℤ) ∣ a c := by
       simpa [cycleMultiples, AddSubgroup.mem_pi, Int.mem_zmultiples_iff] using ha
@@ -237,11 +250,11 @@ private theorem integralLattice_eq_map :
     funext i
     rw [LinearMap.toAddMonoidHom_coe, integralCoordinates_apply, projectedCoordinates_apply, hb,
       Int.cast_mul, Int.cast_natCast]
-    exact (mul_div_cancel_left₀ _ (Nat.cast_ne_zero.mpr (cycleSize_pos σ _).ne')).symm
+    exact (mul_div_cancel_left₀ _ (cycleSize_cast_ne_zero σ _)).symm
 
 /-- Integral fixed vectors are averages of integral vectors, but the converse need not hold. -/
 theorem permutationIntegralLattice_le_projectedLattice :
-    permutationIntegralLattice σ ≤ permutationProjectedLattice σ := by
+    permutationIntegralLattice (K := K) σ ≤ permutationProjectedLattice σ := by
   intro v hv
   -- Forgetting the scalar action does not change lattice membership.
   have hmem : v ∈ (permutationIntegralLattice σ).toAddSubgroup := hv
@@ -249,20 +262,21 @@ theorem permutationIntegralLattice_le_projectedLattice :
   obtain ⟨a, _, rfl⟩ := hmem
   exact LinearMap.mem_range_self _ a
 
-open Classical in
 /-- The index of the integral fixed lattice in the projected lattice is the product of the
 cycle lengths. This includes the empty coordinate set, for which the index is one. -/
 theorem relIndex_permutationIntegralLattice_projectedLattice :
-    (permutationIntegralLattice σ).toAddSubgroup.relIndex
+    (permutationIntegralLattice (K := K) σ).toAddSubgroup.relIndex
       (permutationProjectedLattice σ).toAddSubgroup =
-        ∏ c : Quotient (SameCycle.setoid σ),
-          Fintype.card {i : I // Quotient.mk (SameCycle.setoid σ) i = c} := by
-  have hrange : (permutationProjectedLattice σ).toAddSubgroup =
+        ∏ᶠ c : Quotient (SameCycle.setoid σ), cycleSize σ c := by
+  classical
+  let := Fintype.ofFinite I
+  have hrange : (permutationProjectedLattice (K := K) σ).toAddSubgroup =
       (⊤ : AddSubgroup (Cycles σ → ℤ)).map (projectedCoordinates σ).toAddMonoidHom := by
     simp [permutationProjectedLattice, LinearMap.range_toAddSubgroup, AddSubgroup.map_top]
   rw [integralLattice_eq_map, hrange,
     AddSubgroup.relIndex_map_map_of_injective _ _ (projectedCoordinates_injective σ),
     AddSubgroup.relIndex_top_right]
-  simp [cycleMultiples, AddSubgroup.index_pi, Int.index_zmultiples, cycleSize]
+  simp [cycleMultiples, AddSubgroup.index_pi, Int.index_zmultiples,
+    finprod_eq_prod_of_fintype]
 
 end Equiv.Perm
