@@ -50,8 +50,9 @@ point in the blowup of `Spec A` at the closed point is finite étale of degree t
 
 ## Main results
 
-* `TauCeti.toSubmodule_affineBlowup_eq_span`: `A[𝔪/x]` is spanned over `A` by `1` and `y/x`.
-* `TauCeti.finite_affineBlowup`: `A[𝔪/x]` is a finite `A`-module.
+* `TauCeti.toSubmodule_affineBlowup_eq_span`: for any ideal `I = (x, y)` with this relation,
+  `A[I/x]` is spanned over `A` by `1` and `y/x`.
+* `TauCeti.finite_affineBlowup`: `A[I/x]` is a finite `A`-module.
 * `TauCeti.adjoinRootEquivTensorAffineBlowup`: the fibre `κ ⊗[A] A[𝔪/x]` is
   `κ[W] ⧸ (W² + b W + a)`, with `W` corresponding to `1 ⊗ y/x`.
 * `TauCeti.finrank_tensor_affineBlowup`: this fibre has dimension two over `κ`.
@@ -88,49 +89,40 @@ theorem divBy_sq_add_mul_add_eq_zero (hrel : a * x ^ 2 + b * x * y + y ^ 2 = 0) 
   linear_combination (algebraMap A S x * divBy y x + algebraMap A S y +
     algebraMap A S b * algebraMap A S x) * hxy + h
 
-variable {S} [IsLocalRing A]
+variable {S} {I : Ideal A}
+
+/-- **The chart of the blowup is spanned by `1` and `y/x`.** If `I = (x, y)` and
+`a x² + b x y + y² = 0`, the affine blowup algebra `A[I/x]` is the `A`-submodule of the localization
+spanned by `1` and `y/x`. -/
+theorem toSubmodule_affineBlowup_eq_span (hI : I = Ideal.span {x, y})
+    (hrel : a * x ^ 2 + b * x * y + y ^ 2 = 0) :
+    Subalgebra.toSubmodule (I.affineBlowup x S) = Submodule.span A {1, divBy y x} := by
+  nontriviality S
+  have := (algebraMap A S).domain_nontrivial
+  -- `A[I/x]` is generated as an algebra by `x/x = 1` and `w = y/x`, a root of the monic
+  -- quadratic `W² + b W + a`, so it is spanned by `1` and `w`.
+  have hmon : (X ^ 2 + C b * X + C a : A[X]).Monic := by monicity!
+  have hdeg : (X ^ 2 + C b * X + C a : A[X]).natDegree = 2 := by compute_degree!
+  have hB := Ideal.affineBlowup_eq_adjoin_of_span_eq (a := x) (S := S) hI.symm
+  rw [Set.image_pair, divBy_self, Algebra.adjoin_insert_one] at hB
+  rw [hB, ← Submodule.span_range_natDegree_eq_adjoin hmon
+    (by simpa using divBy_sq_add_mul_add_eq_zero S hrel), hdeg,
+    show Finset.range 2 = {0, 1} from rfl]
+  simp [Set.pair_comm]
+
+/-- **The chart of the blowup is finite.** If `I = (x, y)` and `a x² + b x y + y² = 0`, the affine
+blowup algebra `A[I/x]` is a finite `A`-module. -/
+theorem finite_affineBlowup (hI : I = Ideal.span {x, y})
+    (hrel : a * x ^ 2 + b * x * y + y ^ 2 = 0) :
+    Module.Finite A (I.affineBlowup x S) := by
+  exact (Module.Finite.iff_fg (N := Subalgebra.toSubmodule (I.affineBlowup x S))).mpr
+    (toSubmodule_affineBlowup_eq_span (S := S) hI hrel ▸ Submodule.fg_span (Set.toFinite _))
+
+variable [IsLocalRing A]
 
 private theorem mem_maximalIdeal_right (hm : maximalIdeal A = Ideal.span {x, y}) :
     y ∈ maximalIdeal A :=
   hm ▸ Ideal.subset_span (Set.mem_insert_of_mem _ rfl)
-
-/-- **The chart of the blowup is spanned by `1` and `y/x`.** If `𝔪 = (x, y)` and
-`a x² + b x y + y² = 0`, the affine blowup algebra `A[𝔪/x]` is the `A`-submodule of the localization
-spanned by `1` and `y/x`. -/
-theorem toSubmodule_affineBlowup_eq_span (hm : maximalIdeal A = Ideal.span {x, y})
-    (hrel : a * x ^ 2 + b * x * y + y ^ 2 = 0) :
-    Subalgebra.toSubmodule ((maximalIdeal A).affineBlowup x S) =
-      Submodule.span A {1, divBy y x} := by
-  have hw := divBy_sq_add_mul_add_eq_zero S hrel
-  -- The span of `1` and `w = y/x` is closed under multiplication, since `w² = -b w - a`.
-  let M : Subalgebra A S := (Submodule.span A {1, (divBy y x : S)}).toSubalgebra
-    (Submodule.subset_span (Set.mem_insert _ _)) fun u v hu hv ↦ by
-      obtain ⟨p, q, rfl⟩ := Submodule.mem_span_pair.mp hu
-      obtain ⟨p', q', rfl⟩ := Submodule.mem_span_pair.mp hv
-      refine Submodule.mem_span_pair.mpr ⟨p * p' - q * q' * a, p * q' + q * p' - q * q' * b, ?_⟩
-      simp only [Algebra.smul_def, map_sub, map_mul, map_add, mul_one]
-      linear_combination -(algebraMap A S q * algebraMap A S q') * hw
-  refine le_antisymm ?_ (Submodule.span_le.mpr ?_)
-  · -- `A[𝔪/x]` is generated as an algebra by `x/x = 1` and `y/x`.
-    have hB := Ideal.affineBlowup_eq_adjoin_of_span_eq (a := x) (S := S) hm.symm
-    rw [Set.image_pair, divBy_self] at hB
-    have hBM : (maximalIdeal A).affineBlowup x S ≤ M := by
-      rw [hB, Algebra.adjoin_le_iff]
-      exact Submodule.subset_span
-    exact (Subalgebra.toSubmodule.le_iff_le.mpr hBM).trans_eq
-      (Submodule.toSubalgebra_toSubmodule _ _ _)
-  · rintro _ (rfl | rfl)
-    · exact Subalgebra.one_mem _
-    · exact Ideal.divBy_mem_affineBlowup (mem_maximalIdeal_right hm)
-
-/-- **The chart of the blowup is finite.** If `𝔪 = (x, y)` and `a x² + b x y + y² = 0`, the affine
-blowup algebra `A[𝔪/x]` is a finite `A`-module. -/
-theorem finite_affineBlowup (hm : maximalIdeal A = Ideal.span {x, y})
-    (hrel : a * x ^ 2 + b * x * y + y ^ 2 = 0) :
-    Module.Finite A ((maximalIdeal A).affineBlowup x S) := by
-  exact (Module.Finite.iff_fg (N := Subalgebra.toSubmodule
-    ((maximalIdeal A).affineBlowup x S))).mpr
-      (toSubmodule_affineBlowup_eq_span (S := S) hm hrel ▸ Submodule.fg_span (Set.toFinite _))
 
 /-- The quadratic polynomial `W² + b W + a` over the residue field is monic. -/
 private theorem monic_quadratic (a b : A) :
@@ -254,11 +246,13 @@ def adjoinRootEquivTensorAffineBlowup (hx : x ∈ nonZeroDivisors A)
         compute_degree!
 
 /-- The isomorphism `adjoinRootEquivTensorAffineBlowup` sends the root `W` to `1 ⊗ y/x`. -/
+@[simp]
 theorem adjoinRootEquivTensorAffineBlowup_root (hx : x ∈ nonZeroDivisors A)
-    (hprin : ¬ (maximalIdeal A).IsPrincipal) {w : (maximalIdeal A).affineBlowup x S}
-    (hw : (w : S) = divBy y x) :
-    adjoinRootEquivTensorAffineBlowup (S := S) hm hrel hx hprin (AdjoinRoot.root _) = 1 ⊗ₜ w :=
-  (fiberHom_root hm hrel).trans (congrArg _ (Subtype.ext hw.symm))
+    (hprin : ¬ (maximalIdeal A).IsPrincipal) :
+    adjoinRootEquivTensorAffineBlowup (S := S) hm hrel hx hprin (AdjoinRoot.root _) =
+      1 ⊗ₜ ⟨divBy y x,
+        Ideal.divBy_mem_affineBlowup (hm ▸ Ideal.subset_span (Set.mem_insert_of_mem x rfl))⟩ :=
+  fiberHom_root hm hrel
 
 /-- **The exceptional fibre of blowing up a node is étale.** Let `𝔪 = (x, y)` with
 `a x² + b x y + y² = 0`. If the discriminant `b² - 4a` is a unit, the fibre `κ ⊗[A] A[𝔪/x]` of the
