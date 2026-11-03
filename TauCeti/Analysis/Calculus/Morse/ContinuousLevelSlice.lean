@@ -85,6 +85,72 @@ theorem IsNegativeGradient.exists_continuous_levelCrossingTime
     rw [ht y] at hmono
     exact (not_lt_of_ge hmono) hy
 
+namespace IsNegativeGradient
+
+noncomputable section
+
+variable (hφ : IsNegativeGradient φ f)
+  (hf : ∀ x ∈ unstableSet φ p ∩ stableSet φ q, DifferentiableAt ℝ f x)
+  (hfp : ContinuousAt f p) (hfq : ContinuousAt f q)
+  {c : ℝ} (hc : f q < c ∧ c < f p)
+
+/-- The time needed for a connecting point to reach the intermediate level `c`. -/
+def levelCrossingTime (x : ↥(unstableSet φ p ∩ stableSet φ q)) : ℝ :=
+  Classical.choose (hφ.exists_continuous_levelCrossingTime hf hfp hfq hc) x
+
+/-- The crossing time depends continuously on the connecting point. -/
+theorem continuous_levelCrossingTime :
+    Continuous (hφ.levelCrossingTime hf hfp hfq hc) :=
+  (Classical.choose_spec (hφ.exists_continuous_levelCrossingTime hf hfp hfq hc)).1
+
+theorem apply_flow_levelCrossingTime (x : ↥(unstableSet φ p ∩ stableSet φ q)) :
+    f (φ (hφ.levelCrossingTime hf hfp hfq hc x) x.1) = c :=
+  (Classical.choose_spec (hφ.exists_continuous_levelCrossingTime hf hfp hfq hc)).2 x
+
+/-- A time reaches the chosen level exactly when it is the crossing time. -/
+theorem eq_levelCrossingTime_iff (x : ↥(unstableSet φ p ∩ stableSet φ q)) (t : ℝ) :
+    t = hφ.levelCrossingTime hf hfp hfq hc x ↔ f (φ t x.1) = c := by
+  have huniq := hφ.existsUnique_time_value_of_mem_unstableSet_inter_stableSet
+    (fun s ↦ hf _ ⟨isInvariant_unstableSet φ p s x.2.1,
+      isInvariant_stableSet φ q s x.2.2⟩) hfp hfq x.2 hc
+  constructor
+  · rintro rfl
+    exact hφ.apply_flow_levelCrossingTime hf hfp hfq hc x
+  · intro ht
+    exact huniq.unique ht (hφ.apply_flow_levelCrossingTime hf hfp hfq hc x)
+
+/-- A point lies on the selected level exactly when its crossing time is zero. -/
+@[simp]
+theorem levelCrossingTime_eq_zero_iff (x : ↥(unstableSet φ p ∩ stableSet φ q)) :
+    hφ.levelCrossingTime hf hfp hfq hc x = 0 ↔ f x.1 = c := by
+  simpa only [eq_comm, Flow.map_zero_apply] using
+    hφ.eq_levelCrossingTime_iff hf hfp hfq hc x 0
+
+/-- Translating a trajectory by `t` subtracts `t` from the time still needed to reach
+an intermediate level. -/
+@[simp]
+theorem levelCrossingTime_flow (t : ℝ) (x : ↥(unstableSet φ p ∩ stableSet φ q)) :
+    hφ.levelCrossingTime hf hfp hfq hc
+      ((φ.restrict (isInvariant_unstableSet_inter_stableSet φ p q)) t x) =
+      hφ.levelCrossingTime hf hfp hfq hc x - t := by
+  apply Eq.symm
+  rw [hφ.eq_levelCrossingTime_iff hf hfp hfq hc, Flow.coe_restrict_apply,
+    ← φ.map_add, sub_add_cancel]
+  exact hφ.apply_flow_levelCrossingTime hf hfp hfq hc x
+
+/-- The negative crossing time is a coordinate in which forward flow adds time. -/
+theorem neg_levelCrossingTime_flow (t : ℝ)
+    (x : ↥(unstableSet φ p ∩ stableSet φ q)) :
+    -hφ.levelCrossingTime hf hfp hfq hc
+      ((φ.restrict (isInvariant_unstableSet_inter_stableSet φ p q)) t x) =
+      t + -hφ.levelCrossingTime hf hfp hfq hc x := by
+  rw [hφ.levelCrossingTime_flow hf hfp hfq hc]
+  ring
+
+end
+
+end IsNegativeGradient
+
 /-- Moving each connecting point to its unique intersection with an intermediate level is
 continuous, fixes points already on that level, and is invariant under time translation. -/
 theorem IsNegativeGradient.exists_continuous_levelSlice
