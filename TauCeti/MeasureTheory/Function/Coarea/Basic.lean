@@ -391,7 +391,7 @@ private theorem lintegral_le_and_setLIntegral_le_of_one_lt (hs : MeasurableSet s
     exact lintegral_tsum fun p ↦ (hK p).aemeasurable_euclideanHausdorffMeasure_inter_preimage
       volume (hPm p).nullMeasurableSet le_add_tsub
   rw [hint, ← hPU, lintegral_iUnion hPm hPd, ← ENNReal.tsum_mul_left, ← ENNReal.tsum_mul_left]
-  exact ⟨ENNReal.tsum_le_tsum fun p ↦ (hpiece p).1, ENNReal.tsum_le_tsum fun p ↦ (hpiece p).2⟩
+  exact ⟨tsum_le_tsum fun p ↦ (hpiece p).1, tsum_le_tsum fun p ↦ (hpiece p).2⟩
 
 /-- The coarea formula for maps with surjective derivative on a measurable set: both
 inequalities hold up to the factor `τ²` for every `τ > 1`; let `τ → 1`. -/
