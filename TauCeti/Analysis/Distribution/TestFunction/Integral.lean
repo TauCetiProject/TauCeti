@@ -150,14 +150,14 @@ theorem exists_nonneg_integral_eq_one {U : Set E} (hU : IsOpen U) (hne : U.Nonem
   have hfi : Integrable f μ := hfd.continuous.integrable_of_hasCompactSupport hfc
   have hf0 : ∀ y, 0 ≤ f y := fun y ↦ (hf01 (mem_range_self y)).1
   have hpos : 0 < ∫ y, f y ∂μ :=
-    integral_pos_of_integrable_nonneg_nonzero (x := x) hfd.continuous hfi hf0
+    MeasureTheory.integral_pos_of_integrable_nonneg_ne_zero (x := x) hfd.continuous hfi hf0
       (by rw [hfx]; exact one_ne_zero)
   let φ : 𝓓^{n}(Ω, ℝ) := ⟨f, hfd, hfc, hfs.trans hUΩ⟩
   refine ⟨(∫ y, f y ∂μ)⁻¹ • φ, ?_, ?_, ?_⟩
   · simpa only [FunLike.coe_smul, Pi.smul_def, φ, coe_mk] using
       (tsupport_smul_subset_right (fun _ : E ↦ (∫ y, f y ∂μ)⁻¹) f).trans hfs
   · exact fun y ↦ mul_nonneg (inv_nonneg.mpr hpos.le) (hf0 y)
-  · simp only [smul_apply, smul_eq_mul, φ, coe_mk, integral_const_mul]
+  · simp only [_root_.smul_apply, smul_eq_mul, φ, coe_mk, integral_const_mul]
     exact inv_mul_cancel₀ hpos.ne'
 
 end IntegralOne

@@ -210,6 +210,27 @@ theorem hamiltonianVectorField_const_smul (c : ℝ) (x : M) :
     σ.hamiltonianVectorField (c • f) x = c • σ.hamiltonianVectorField f x := by
   rw [hamiltonianVectorField_def, hamiltonianVectorField_def, mvfderiv_const_smul_field, map_smul]
 
+/-- Adding a real multiple of a differentiable Hamiltonian changes its vector field affinely. -/
+theorem hamiltonianVectorField_add_smul {x : M} (hf : MDifferentiableAt I 𝓘(ℝ) f x)
+    (hg : MDifferentiableAt I 𝓘(ℝ) g x) (r : ℝ) :
+    σ.hamiltonianVectorField (f + r • g) x =
+      σ.hamiltonianVectorField f x + r • σ.hamiltonianVectorField g x := by
+  rw [hamiltonianVectorField_add hf (hg.const_smul r), hamiltonianVectorField_const_smul]
+
+/-- At fixed `x`, the derivative in the real coefficient of `f + t • g`, read in the model
+space of the tangent fiber, is the Hamiltonian vector of `g` at `x`. -/
+theorem hasDerivAt_hamiltonianVectorField_add_smul {x : M}
+    (hf : MDifferentiableAt I 𝓘(ℝ) f x) (hg : MDifferentiableAt I 𝓘(ℝ) g x) (r : ℝ) :
+    HasDerivAt (fun t : ℝ => (σ.hamiltonianVectorField (f + t • g) x : E))
+      (σ.hamiltonianVectorField g x : E) r := by
+  -- Work in the model explicitly: instance search does not put a norm on the fiber synonym.
+  let w : E := σ.hamiltonianVectorField f x
+  let v : E := σ.hamiltonianVectorField g x
+  have hd : HasDerivAt (fun t : ℝ => w + t • v) v r := by
+    simpa only [one_smul, id_eq] using ((hasDerivAt_id r).smul_const v).const_add w
+  exact hd.congr_of_eventuallyEq
+    (Filter.Eventually.of_forall (hamiltonianVectorField_add_smul hf hg))
+
 /-- **The chain rule for Hamiltonian vector fields.** Post-composing the Hamiltonian with a real
 function `φ` differentiable at `f x` rescales the Hamiltonian vector field at `x` by `φ'(f x)`:
 `X_{φ ∘ f}(x) = φ'(f x) X_f(x)`. -/

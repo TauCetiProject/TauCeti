@@ -112,14 +112,14 @@ variable {R M n : Type*} [CommSemiring R] [AddCommMonoid M] [Module R M] [Fintyp
 `toLinearMapₛₗ₂ σ b b 1 x y = ∑ i, σ (x i) * y i`, the form for which `b` is orthonormal. -/
 theorem toLinearMapₛₗ₂_one_apply (σ : R →+* R) (x y : M) :
     toLinearMapₛₗ₂ σ b b (1 : Matrix n n R) x y = ∑ i, σ (b.repr x i) * b.repr y i := by
-  simp [toLinearMapₛₗ₂_apply, one_apply, smul_eq_mul]
+  simp [toLinearMapₛₗ₂_apply, Matrix.one_apply, smul_eq_mul]
 
 /-- For the form making a basis orthonormal, the functional attached to a basis vector is its
 coordinate functional. -/
 theorem toLinearMapₛₗ₂_one_basis_eq_coord (σ : R →+* R) (i : n) :
     toLinearMapₛₗ₂ σ b b (1 : Matrix n n R) (b i) = b.coord i := by
   refine b.ext fun j ↦ ?_
-  simp [one_apply, Finsupp.single_apply, eq_comm]
+  simp [Matrix.one_apply, Finsupp.single_apply, eq_comm]
 
 variable [StarRing R]
 
