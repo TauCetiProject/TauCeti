@@ -18,8 +18,8 @@ Let `V` be a finite-dimensional real inner product space with inner product `g`,
 (`TauCeti.twoVectorContraction`); it is skew-adjoint. For an almost complex structure `J`, the
 identity `g(u, v) = ω(u, J v)` says that `J` is compatible with `ω` and that `g` is the metric
 `ω(·, J ·)` of the compatible pair. It holds exactly when `J = A` and `A² = -1`; in particular
-such a `J` is unique (`TauCeti.AlmostComplexStructure.toLinearMap_eq_twoVectorContraction`). It
-is then orthogonal, and `F` is the Kähler two-vector of `J`.
+such a `J` is unique (`TauCeti.AlmostComplexStructure.toLinearMap_eq_twoVectorContraction`, in
+`HodgeStar/Kahler.lean`). It is then orthogonal, and `F` is the Kähler two-vector of `J`.
 
 In dimension four, for an orientation `o` with Hodge star `⋆`, a self-dual or anti-self-dual
 two-vector, `⋆F = ±F`, satisfies `‖u ⌟ F‖² = (‖F‖² / 2) ‖u‖²`, hence
@@ -41,10 +41,9 @@ a four-manifold.
 
 ## Main results
 
-* `TauCeti.AlmostComplexStructure.toLinearMap_eq_twoVectorContraction`: an almost complex
-  structure with `⟪u, v⟫ = ⟪F, u ∧ J v⟫` is the contraction by `F`; it is orthogonal
-  (`TauCeti.AlmostComplexStructure.inner_apply_apply_of_inner_eq`) and `F` is its Kähler
-  two-vector (`TauCeti.AlmostComplexStructure.kahlerForm_eq_of_inner_eq`).
+* `TauCeti.AlmostComplexStructure.norm_sq_eq_two_of_inner_eq` and
+  `TauCeti.AlmostComplexStructure.hodgeStar_eq_or_eq_neg_of_inner_eq`: in dimension four, a
+  `J` with `⟪u, v⟫ = ⟪F, u ∧ J v⟫` forces `‖F‖² = 2` and `⋆F = ±F`.
 * `TauCeti.norm_twoVectorContraction_apply_sq`: for `⋆F = ±F` in dimension four,
   `‖u ⌟ F‖² = (‖F‖² / 2) ‖u‖²`.
 * `TauCeti.twoVectorContraction_comp_self`: for `⋆F = ±F`, `A² = -(‖F‖² / 2)`.
@@ -70,39 +69,13 @@ variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V] [FiniteDim
 
 namespace TauCeti
 
-/-! ### Almost complex structures represented by a two-vector -/
+/-! ### Compatible complex structures in dimension four -/
 
 namespace AlmostComplexStructure
 
 variable {F : ⋀[ℝ]^2 V} {J : AlmostComplexStructure V}
   (hJ : ∀ u v, ⟪u, v⟫ = ⟪F, ιMulti ℝ 2 ![u, J v]⟫)
 include hJ
-
-/-- **Uniqueness of the compatible complex structure.** An almost complex structure `J` with
-`g(u, v) = ω(u, J v)`, where `ω(u, w) = ⟪F, u ∧ w⟫`, is the contraction by `F`. -/
-theorem toLinearMap_eq_twoVectorContraction : J.toLinearMap = twoVectorContraction F := by
-  -- Taking `v = -J w` gives `⟪u ⌟ F, w⟫ = -⟪u, J w⟫`.
-  have hA (u w : V) : ⟪twoVectorContraction F u, w⟫ = -⟪u, J w⟫ := by
-    have h := hJ u (-J w)
-    rw [map_neg, J.apply_apply, neg_neg, inner_neg_right] at h
-    rw [inner_twoVectorContraction_apply, ← h]
-  refine LinearMap.ext fun u ↦ ext_inner_right ℝ fun w ↦ ?_
-  rw [inner_twoVectorContraction_apply_left, real_inner_comm (twoVectorContraction F w) u, hA,
-    neg_neg, real_inner_comm]
-
-/-- An almost complex structure with `g(u, v) = ω(u, J v)` is orthogonal. -/
-theorem inner_apply_apply_of_inner_eq (u v : V) : ⟪J u, J v⟫ = ⟪u, v⟫ := by
-  have h : J u = twoVectorContraction F u :=
-    LinearMap.congr_fun (toLinearMap_eq_twoVectorContraction hJ) u
-  rw [h, inner_twoVectorContraction_apply, hJ]
-
-/-- A two-vector `F` with `g(u, v) = ω(u, J v)` is the Kähler two-vector of `J`. -/
-theorem kahlerForm_eq_of_inner_eq : J.kahlerForm = F := by
-  refine ext_inner_ιMulti_two fun u w ↦ ?_
-  have h : J u = twoVectorContraction F u :=
-    LinearMap.congr_fun (toLinearMap_eq_twoVectorContraction hJ) u
-  rw [inner_kahlerForm_ιMulti (inner_apply_apply_of_inner_eq hJ), h,
-    inner_twoVectorContraction_apply]
 
 variable [Fact (finrank ℝ V = 4)]
 
