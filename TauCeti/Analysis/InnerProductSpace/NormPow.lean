@@ -122,8 +122,8 @@ theorem norm_gradient_comp_log_norm_sub_log_norm [CompleteSpace E] {w : ℝ → 
     Real.norm_eq_abs]
 
 /-- For a smooth `w` and every `c`, there is a smooth function on `E` equal to the radial function
-`w(log ‖z‖) - log ‖z‖` where `‖z‖ > e^c`. The radial function itself is singular at the origin; it
-is cut off below `log ‖z‖ = c - 1`. -/
+`w(log ‖z‖) - log ‖z‖` where `‖z‖ > e^c`. The radial function itself may be singular at the origin;
+it is cut off below `log ‖z‖ = c - 1`. -/
 theorem exists_contDiff_eq_comp_log_norm_sub_log_norm {w : ℝ → ℝ} (hw : ContDiff ℝ ∞ w) (c : ℝ) :
     ∃ φ : E → ℝ, ContDiff ℝ ∞ φ ∧
       ∀ z : E, Real.exp c < ‖z‖ → φ z = w (Real.log ‖z‖) - Real.log ‖z‖ := by
