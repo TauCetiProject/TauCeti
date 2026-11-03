@@ -111,6 +111,7 @@ theorem connectedSpace_iff_isPretransitive [PreconnectedSpace S] (x : Spec (.of 
     ConnectedSpace X.obj.left ↔ MulAction.IsPretransitive (Aut (fiber x)) ((fiber x).obj X) := by
   have : ConnectedSpace S := { toNonempty := ⟨X.obj.hom (Classical.arbitrary _)⟩ }
   have : Nonempty ((fiber x).obj X) := (nonempty_fiber_obj_iff_nonempty x X).mpr inferInstance
-  rw [← isConnected_iff_connectedSpace, FiberFunctor.isConnected_iff_isPretransitive (fiber x)]
+  rw [← isConnected_iff_connectedSpace,
+    FiberFunctor.isConnected_iff_isPretransitive (fiber x) (Aut (fiber x))]
 
 end TauCeti.FiniteEtaleScheme

@@ -10,7 +10,7 @@ public import Mathlib.Topology.Maps.Basic
 public import Mathlib.Topology.Separation.Hausdorff
 
 /-!
-# Local connectedness of continuous images of compact spaces
+# Local connectedness of continuous images of compact spaces, and its local nature
 
 Local connectedness is not preserved by continuous images in general — every metric space is a
 continuous image of a discrete one — but it *is* preserved by quotient maps, and hence by the
@@ -30,6 +30,11 @@ locally connected image boundary. The extension maps the compact source boundary
 boundary, so the set-level result applies. This application is in
 `TauCeti/Analysis/Complex/Conformal/LocallyConnectedBoundary.lean`.
 
+Local connectedness is also a local property: a space is locally connected as soon as every point
+has an open neighbourhood which is locally connected in the subspace topology
+(`TauCeti.locallyConnectedSpace_of_forall_exists_isOpen`). For instance a locally Noetherian
+scheme is locally connected because its Noetherian affine opens are.
+
 ## Main results
 
 * `TauCeti.locallyConnectedSpace_of_continuous_surjective` — the continuous image of a compact
@@ -38,6 +43,8 @@ boundary, so the set-level result applies. This application is in
   connected for a compact, locally connected `s` on which `f` is continuous.
 * `TauCeti.locallyConnectedSpace_iUnion_image_of_isCompact` — a finite union of such images is
   locally connected; for instance a finite union of arcs.
+* `TauCeti.locallyConnectedSpace_of_forall_exists_isOpen` — a space covered by open, locally
+  connected subspaces is locally connected.
 
 ## References
 
@@ -89,5 +96,19 @@ theorem locallyConnectedSpace_iUnion_image_of_isCompact [T2Space Y] {ι : Type*}
   · rintro ⟨y, hy⟩
     obtain ⟨i, x, hx, rfl⟩ := mem_iUnion.mp hy
     exact ⟨(i, ⟨x, hx⟩), rfl⟩
+
+/-- **Local connectedness is a local property.** A space in which every point has an open
+neighbourhood that is locally connected in the subspace topology is locally connected. -/
+theorem locallyConnectedSpace_of_forall_exists_isOpen
+    (h : ∀ x : X, ∃ U : Set X, IsOpen U ∧ x ∈ U ∧ LocallyConnectedSpace U) :
+    LocallyConnectedSpace X := by
+  rw [locallyConnectedSpace_iff_subsets_isOpen_isConnected]
+  intro x V hV
+  obtain ⟨U, hU, hxU, _⟩ := h x
+  -- An open connected neighbourhood of `x` inside `U ∩ V` in the subspace `U` is also one in `X`.
+  obtain ⟨W, hWV, hW, hxW, hWc⟩ := locallyConnectedSpace_iff_subsets_isOpen_isConnected.mp
+    inferInstance (⟨x, hxU⟩ : U) _ (continuous_subtype_val.continuousAt.preimage_mem_nhds hV)
+  exact ⟨Subtype.val '' W, image_subset_iff.mpr hWV, hU.isOpenMap_subtype_val _ hW,
+    ⟨_, hxW, rfl⟩, hWc.image _ continuous_subtype_val.continuousOn⟩
 
 end TauCeti

@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.AlgebraicGeometry.Noetherian
+public import TauCeti.Topology.LocallyConnected
 public import TauCeti.Topology.NoetherianSpace.ConnectedComponents
 
 /-!
@@ -38,22 +39,14 @@ theorem isNoetherian_of_finiteType {X Y : Scheme.{u}} (f : X ⟶ Y) [LocallyOfFi
 /-- A locally Noetherian scheme is locally connected. In particular its connected components are
 open and closed. -/
 instance locallyConnectedSpace_of_isLocallyNoetherian {X : Scheme.{u}} [IsLocallyNoetherian X] :
-    LocallyConnectedSpace X := by
-  rw [locallyConnectedSpace_iff_subsets_isOpen_isConnected]
-  intro x U hU
-  -- A Noetherian affine open neighbourhood `W ⊆ U` of `x` is locally connected, so the connected
-  -- component of `x` in `W` is an open connected neighbourhood of `x` inside `U`.
-  obtain ⟨_, ⟨W, hW, rfl⟩, hxW, hWU⟩ :=
-    X.isBasis_affineOpens.exists_subset_of_mem_open (mem_interior_iff_mem_nhds.mpr hU)
-      isOpen_interior
-  have := IsLocallyNoetherian.component_noetherian ⟨W, hW⟩
-  have := noetherianSpace_of_isAffineOpen W hW
-  have : LocallyConnectedSpace (W : Set X) := inferInstanceAs (LocallyConnectedSpace W)
-  refine ⟨Subtype.val '' connectedComponent (⟨x, hxW⟩ : W), ?_,
-    W.isOpen.isOpenMap_subtype_val _ isOpen_connectedComponent, ⟨⟨x, hxW⟩,
-      mem_connectedComponent, rfl⟩, isConnected_connectedComponent.image _
-        continuous_subtype_val.continuousOn⟩
-  rintro _ ⟨y, -, rfl⟩
-  exact interior_subset (hWU y.2)
+    LocallyConnectedSpace X :=
+  -- Every point has a Noetherian affine open neighbourhood, and Noetherian spaces are locally
+  -- connected.
+  TauCeti.locallyConnectedSpace_of_forall_exists_isOpen fun x ↦ by
+    obtain ⟨_, ⟨W, hW, rfl⟩, hxW, -⟩ :=
+      X.isBasis_affineOpens.exists_subset_of_mem_open (Set.mem_univ x) isOpen_univ
+    have := IsLocallyNoetherian.component_noetherian ⟨W, hW⟩
+    have := noetherianSpace_of_isAffineOpen W hW
+    exact ⟨W, W.isOpen, hxW, inferInstanceAs (LocallyConnectedSpace W)⟩
 
 end TauCeti.AlgebraicGeometry

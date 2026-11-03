@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.FiniteEtale.Galois.Category
-public import TauCeti.AlgebraicGeometry.Noetherian
 
 /-!
 # Étale paths over a disconnected base
