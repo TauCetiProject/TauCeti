@@ -42,7 +42,7 @@ theorem withDensity_natCast_poissonMeasure (r : ℝ≥0) :
   apply Measure.ext_of_singleton
   intro n
   rw [withDensity_apply _ (measurableSet_singleton n), lintegral_singleton,
-    Measure.smul_apply, smul_eq_mul, Measure.map_apply (by fun_prop) (measurableSet_singleton n)]
+    _root_.smul_apply, smul_eq_mul, Measure.map_apply (by fun_prop) (measurableSet_singleton n)]
   cases n with
   | zero =>
     have hpre : Nat.succ ⁻¹' {0} = ∅ := by ext k; simp

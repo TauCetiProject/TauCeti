@@ -91,7 +91,7 @@ private theorem toLinearMapₛₗ₂_ι_basis_mul (i : I) (s t : _root_.Exterior
     -- Both sides are the shuffle sign when `T = insert i S` with `i ∉ S`, and zero otherwise.
     split_ifs with hiS hiT hiT <;>
       simp only [H, Units.smul_def, map_zsmul, map_zero, LinearMap.zero_apply,
-        LinearMap.smul_apply, toLinearMapₛₗ₂_apply_basis, one_apply]
+        LinearMap.smul_apply, toLinearMapₛₗ₂_apply_basis, Matrix.one_apply]
     · simp [show S ≠ T.erase i by rintro rfl; simp at hiS]
     · by_cases hST : insert i S = T
       · subst hST
@@ -176,7 +176,7 @@ theorem toLinearMapₛₗ₂_degreeScaling_left (r : Rˣ) (s t : _root_.Exterior
     refine LinearMap.ext_basis b.ExteriorAlgebra b.ExteriorAlgebra fun S T ↦ ?_
     simp only [H, LinearMap.comp_apply, LinearMap.compl₂_apply, AlgEquiv.toLinearMap_apply,
       degreeScaling_basis, map_smulₛₗ, LinearMap.smul_apply, toLinearMapₛₗ₂_apply_basis,
-      one_apply, Units.coe_star, smul_eq_mul, starRingEnd_apply, star_pow, RingHom.id_apply]
+      Matrix.one_apply, Units.coe_star, smul_eq_mul, starRingEnd_apply, star_pow, RingHom.id_apply]
     split_ifs with hST
     · rw [hST]
     · simp only [mul_zero]

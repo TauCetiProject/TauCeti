@@ -173,7 +173,7 @@ private theorem barToPeriodic₁_comm :
     Representation.IntertwiningMap.comp_apply, Rep.barComplex.d_single]
   simp only [barToPeriodic₁, barToPeriodic₀, sub_hom, Representation.IntertwiningMap.coe_sub,
     Pi.sub_apply, Rep.hom_id, Rep.hom_ofHom, Representation.IntertwiningMap.id_apply, map_add,
-    map_sum, Representation.freeLift_single_single, one_smul, map_one, Module.End.one_apply,
+    map_sum, Representation.freeLift_single_single, one_smul, map_one, one_apply_eq_self,
     Representation.ofMulAction_single, smul_eq_mul, mul_one]
   -- Equality of the two instance paths is definitional, so the action formula is applied as a
   -- proof term rather than used as a rewrite rule.
@@ -210,7 +210,7 @@ private theorem barToPeriodic₂_comm :
   rw [Rep.hom_comp, Rep.hom_comp, Representation.IntertwiningMap.comp_apply,
     Representation.IntertwiningMap.comp_apply, Rep.barComplex.d_single]
   simp only [barToPeriodic₁, barToPeriodic₂, Rep.hom_ofHom, map_add, map_sum,
-    Representation.freeLift_single_single, one_smul, map_one, Module.End.one_apply,
+    Representation.freeLift_single_single, one_smul, map_one, one_apply_eq_self,
     Fin.sum_univ_succ, Fin.sum_univ_zero, Fin.succ_zero_eq_one]
   -- The two faces of `[x₀ | x₁]` other than `x₀ • [x₁]` are `[x₀ x₁]` and `[x₀]`.
   have h₀ : Fin.contractNth 0 (· * ·) x 0 = x 0 * x 1 := rfl
@@ -269,14 +269,14 @@ private theorem barToPeriodic₁_single (v : Fin 1 → G) :
     (barToPeriodic₁ k g hg).hom (single v (MonoidAlgebra.single 1 1)) =
       geomSum k g (cyclicLog g hg (v 0)) := by
   simp only [barToPeriodic₁, Rep.hom_ofHom, Representation.freeLift_single_single, one_smul,
-    map_one, Module.End.one_apply]
+    map_one, one_apply_eq_self]
 
 omit [Fintype G] in
 private theorem barToPeriodic₀_single (x : Fin 0 → G) :
     (barToPeriodic₀ k).hom (single x (MonoidAlgebra.single 1 1)) =
       MonoidAlgebra.single (1 : G) (1 : k) := by
   simp only [barToPeriodic₀, Rep.hom_ofHom, Representation.freeLift_single_single, one_smul,
-    map_one, Module.End.one_apply]
+    map_one, one_apply_eq_self]
 
 private theorem barToPeriodic₂_single (v : Fin 2 → G) :
     (barToPeriodic₂ k g hg).hom (single v (MonoidAlgebra.single 1 1)) =
@@ -284,7 +284,7 @@ private theorem barToPeriodic₂_single (v : Fin 2 → G) :
         MonoidAlgebra.single (1 : G) (1 : k)
       else 0 := by
   simp only [barToPeriodic₂, Rep.hom_ofHom, Representation.freeLift_single_single, one_smul,
-    map_one, Module.End.one_apply]
+    map_one, one_apply_eq_self]
 
 /-- The comparison map lies over the identity of `k`: both augmentations send a basis element to
 its coefficient. -/
@@ -412,7 +412,7 @@ private theorem partialNormCochain_mul (a : A) {i j : ℕ} (hi : i < orderOf g)
         partialNormCochain A g hg a (g ^ i * g ^ j) + partialNormCochain A g hg a (g ^ i) =
       if orderOf g ≤ i + j then A.ρ.norm a else 0 := by
   simp only [partialNormCochain_apply, ← pow_add, cyclicLog_pow, Nat.mod_eq_of_lt hi,
-    Nat.mod_eq_of_lt hj, map_sum, ← Module.End.mul_apply, ← map_mul]
+    Nat.mod_eq_of_lt hj, map_sum, ← mul_apply_eq_comp, ← map_mul]
   have h := sum_range_add_mod_orderOf A g hg a i j hi hj
   rw [Finset.sum_range_add] at h
   rw [eq_sub_of_add_eq' h]

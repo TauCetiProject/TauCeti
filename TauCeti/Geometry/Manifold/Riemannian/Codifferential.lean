@@ -10,6 +10,7 @@ public import TauCeti.Geometry.Manifold.DifferentialForm.Integration.TopForm
 public import TauCeti.Geometry.Manifold.DifferentialForm.Regularity
 public import TauCeti.Geometry.Manifold.DeRham.CompactSupport
 import TauCeti.Geometry.Manifold.DifferentialForm.Integration.BoundarylessStokes
+import TauCeti.Geometry.Manifold.DifferentialForm.Integration.Positivity
 import TauCeti.Geometry.Manifold.DifferentialForm.Integration.Regularity
 import TauCeti.Geometry.Manifold.DifferentialForm.Squared
 import TauCeti.Geometry.Manifold.DifferentialForm.Wedge.Leibniz
@@ -51,6 +52,10 @@ it squares to zero, and it does not enlarge supports.
 * `TauCeti.SmoothForm.integralTopForm_inner_mextDeriv_eq_inner_codifferential`: `d*` is the
   formal adjoint of `d`,
   `∫_M ⟨dα, β⟩ vol = ∫_M ⟨α, d*β⟩ vol`.
+* `TauCeti.RoughForm.integralTopForm_inner_self_smul_riemannianVolumeForm_nonneg`,
+  `TauCeti.SmoothForm.integralTopForm_inner_self_smul_riemannianVolumeForm_eq_zero_iff`: the
+  pairing is positive definite, `∫_M |α|² vol ≥ 0` with equality only for `α = 0` when `α` is
+  smooth and compactly supported.
 
 ## References
 
@@ -183,6 +188,60 @@ theorem mextDeriv_wedge_hodgeStar (o : Manifold.Orientation I M (Fin (k + l + 1)
     finCongr_apply, Fin.cast_cast, Fin.cast_eq_self]
   linear_combination (alternatingFormInner (TangentSpace I x) k (α.1 x)
     ((codifferential o _ β).1 x) * riemannianVolumeForm o x v) * hsign
+
+/-! ### Positivity of the `L²` pairing -/
+
+omit [IsContMDiffRiemannianBundle I ∞ E (fun x : M ↦ TangentSpace I x)] in
+/-- On a positively oriented tangent basis, the top form `|α|² vol` takes a nonnegative value. -/
+private theorem inner_self_smul_riemannianVolumeForm_apply_nonneg
+    (o : Manifold.Orientation I M (Fin m)) (α : RoughForm I M ℝ k) (x : M)
+    (c : Module.Basis (Fin m) ℝ (TangentSpace I x))
+    (hc : c.orientation = o.orientationAt x) :
+    0 ≤ (alternatingFormInner (TangentSpace I x) k (α x) (α x) • riemannianVolumeForm o x) c := by
+  let := o.fact_finrank_tangentSpace x
+  rw [ContinuousAlternatingMap.smul_apply, smul_eq_mul, riemannianVolumeForm_apply]
+  exact mul_nonneg (alternatingFormInner_self_nonneg _)
+    (Orientation.volumeForm_apply_pos_iff.2 hc).le
+
+omit [IsContMDiffRiemannianBundle I ∞ E (fun x : M ↦ TangentSpace I x)] in
+/-- **The `L²` pairing of forms is nonnegative**: on an oriented Riemannian manifold of positive
+dimension, `0 ≤ ∫_M |α|² vol` for every form `α`, where `|α|²` is the pointwise inner product of
+`α` with itself and `vol` the Riemannian volume form. -/
+theorem _root_.TauCeti.RoughForm.integralTopForm_inner_self_smul_riemannianVolumeForm_nonneg
+    [NeZero m] (o : Manifold.Orientation I M (Fin m)) (α : RoughForm I M ℝ k) :
+    0 ≤ integralTopForm o (fun x ↦ alternatingFormInner (TangentSpace I x) k (α x) (α x) •
+      riemannianVolumeForm o x) :=
+  integralTopForm_nonneg o (inner_self_smul_riemannianVolumeForm_apply_nonneg o α)
+
+/-- **The `L²` pairing of forms is definite**: on an oriented Riemannian manifold of positive
+dimension `m = k + l`, a compactly supported smooth `k`-form `α` satisfies `∫_M |α|² vol = 0`
+exactly when `α = 0`. -/
+theorem integralTopForm_inner_self_smul_riemannianVolumeForm_eq_zero_iff [NeZero m]
+    (o : Manifold.Orientation I M (Fin m)) (hkl : k + l = m) {α : SmoothForm I M ℝ k}
+    (hα : α ∈ compactlySupportedForms I M k) :
+    integralTopForm o (fun x ↦ alternatingFormInner (TangentSpace I x) k (α.1 x) (α.1 x) •
+      riemannianVolumeForm o x) = 0 ↔ α = 0 := by
+  refine ⟨fun h ↦ ?_, fun h ↦ ?_⟩
+  · by_contra hne
+    obtain ⟨x, hx⟩ : ∃ x, α.1 x ≠ 0 := by
+      by_contra! h'
+      exact hne (Subtype.ext (funext h'))
+    -- A positively oriented orthonormal basis at `x`, on which `|α|² vol` is `|α x|² > 0`.
+    let := o.fact_finrank_tangentSpace x
+    let b := (o.orientationAt x).finOrthonormalBasis (NeZero.pos m) Fact.out
+    have hb : b.toBasis.orientation = o.orientationAt x := by simp [b]
+    refine (integralTopForm_pos o
+      ((isSmoothForm_inner_smul_riemannianVolumeForm o hkl α α).of_le bot_le)
+      (RoughForm.isCompact_tsupport_inner_smul_riemannianVolumeForm o α.1 α.1
+        ((mem_compactlySupportedForms I).mp hα))
+      (inner_self_smul_riemannianVolumeForm_apply_nonneg o α.1) ⟨x, b.toBasis, hb, ?_⟩).ne' h
+    rw [ContinuousAlternatingMap.smul_apply, smul_eq_mul, OrthonormalBasis.coe_toBasis,
+      riemannianVolumeForm_apply_orthonormal o x b hb, mul_one]
+    exact (alternatingFormInner_self_nonneg _).lt_of_ne
+      (Ne.symm (mt alternatingFormInner_self_eq_zero.1 hx))
+  · subst h
+    simp only [ZeroMemClass.coe_zero, Pi.zero_apply, LinearMap.map_zero₂, zero_smul]
+    exact integralTopForm_zero o
 
 variable [BoundarylessManifold I M] [T2Space M] [SigmaCompactSpace M]
 

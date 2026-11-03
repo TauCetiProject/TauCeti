@@ -116,6 +116,13 @@ def IsAChain (a : ℚ) (lam : M)
 
 variable {a : ℚ} {lam : M}
 
+/-- The `a`-chain condition is integrality of `a` times each reflection bond. -/
+theorem isAChain_iff_forall_reflectionBond
+    {C : (weylCoxeterSystem P b).MinimalCosetRepChain (P.wallIndices b lam)} :
+    IsAChain a lam C ↔ ∀ i : Fin C.length,
+      ∃ z : ℤ, a * P.reflectionBond b ((C i.castSucc).1 • lam) ((C i.succ).1 • lam) = z :=
+  Iff.rfl
+
 /-- A natural number divides the bond gcd `d(C)` of a saturated chain exactly when it divides the
 bond of every cover of the chain. -/
 theorem dvd_bondGcd_iff {n : ℕ}
@@ -243,6 +250,23 @@ theorem IsAChain.take
     {C : (weylCoxeterSystem P b).MinimalCosetRepChain (P.wallIndices b lam)}
     (hC : IsAChain a lam C) (k : Fin (C.length + 1)) : IsAChain a lam (C.take k) :=
   fun j ↦ hC ⟨j, Nat.lt_of_lt_of_le j.2 (Nat.lt_succ_iff.mp k.2)⟩
+
+/-- A final segment `x_k ⋗ ⋯ ⋗ x_l` of an `a`-chain is an `a`-chain. -/
+theorem IsAChain.drop
+    {C : (weylCoxeterSystem P b).MinimalCosetRepChain (P.wallIndices b lam)}
+    (hC : IsAChain a lam C) (k : Fin (C.length + 1)) : IsAChain a lam (C.drop k) := fun j ↦ by
+  have hj : (j : ℕ) + k < C.length := by
+    have : (j : ℕ) < C.length - k := j.2
+    omega
+  obtain ⟨z, hz⟩ := hC ⟨j + k, hj⟩
+  refine ⟨z, ?_⟩
+  convert hz using 6
+  · rfl
+  · -- The entries of `C.drop k` are those of `C`, shifted by `k`, by definition.
+    change C.toFun _ = C.toFun _
+    congr 1
+    simp only [Fin.ext_iff, Fin.val_succ]
+    omega
 
 /-- **The bond gcd of the chain `sᵢ ⋗ 1`.** For a simple root `αᵢ` with `⟨λ, αᵢ^∨⟩ ≠ 0`, the
 simple reflection `sᵢ` covers the identity in `W / W_λ`, and the saturated chain `sᵢ ⋗ 1` has bond
