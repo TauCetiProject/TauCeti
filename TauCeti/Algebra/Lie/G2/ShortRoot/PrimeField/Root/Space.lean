@@ -112,6 +112,56 @@ theorem tangentMatrix_apply
         (Derivation.cotangentLinearEquiv (B := ZMod 3) x)) :=
   (rfl)
 
+/-- Conjugation by a carrier point on the dual of the augmentation cotangent space. -/
+def conjugateTangent (g : points (ZMod 3))
+    (x : Module.Dual (ZMod 3) (Bialgebra.CotangentSpace (ZMod 3) carrierAlgebra)) :
+    Module.Dual (ZMod 3) (Bialgebra.CotangentSpace (ZMod 3) carrierAlgebra) :=
+  (Derivation.cotangentLinearEquiv (B := ZMod 3)).symm
+    (Derivation.adDerivation (ZMod 3)
+      ((Bialgebra.CounitAlgebra.pointsMulEquiv (ZMod 3) carrierAlgebra (ZMod 3)).symm
+        ((pointsMulEquiv (CommAlgCat.of (ZMod 3) (ZMod 3))).symm g))
+      (Derivation.cotangentLinearEquiv (B := ZMod 3) x))
+
+/-- Transporting a carrier point to counit coefficients and then along the closed embedding
+recovers its matrix in `GL₇`. -/
+theorem counitPointsMulEquiv_map_carrierPoint (g : points (ZMod 3)) :
+    GeneralLinear.counitPointsMulEquiv 7
+      (BialgHom.mapDomain (A := Bialgebra.CounitAlgebra (ZMod 3)
+        (GeneralLinear.coordinateHopfAlgebra (ZMod 3) 7) (ZMod 3))
+        (Bialgebra.Quotient.mkBialgHom
+          (CommHopfAlgCat.commonKernelHopfIdeal generator).toIdeal)
+        ((Bialgebra.CounitAlgebra.pointsMulEquiv (ZMod 3) carrierAlgebra (ZMod 3)).symm
+          ((pointsMulEquiv (CommAlgCat.of (ZMod 3) (ZMod 3))).symm g))) =
+      (g : Matrix.GeneralLinearGroup (Fin 7) (ZMod 3)) := by
+  apply Units.ext
+  have hg := coe_pointsMulEquiv_eq_map_carrierGenericMatrix
+    ((pointsMulEquiv (CommAlgCat.of (ZMod 3) (ZMod 3))).symm g)
+  rw [MulEquiv.apply_symm_apply] at hg
+  rw [hg]
+  ext a b
+  rw [GeneralLinear.counitPointsMulEquiv_apply]
+  -- The two counit coefficient algebras have different ambient Hopf-algebra indices.
+  erw [BialgHom.mapDomain_apply_apply]
+  simp only [Bialgebra.CounitAlgebra.algEquivSelf_apply]
+  -- Counit transport changes only the coefficient-algebra presentation.
+  erw [Bialgebra.CounitAlgebra.pointsMulEquiv_symm_apply]
+  rw [Bialgebra.CounitAlgebra.algEquivSelf_symm_apply, carrierGenericMatrix_def]
+  simp [GeneralLinear.genericMatrix_apply, carrierQuotient]
+
+/-- Conjugation by any carrier point acts on tangent matrices as `X ↦ g X g⁻¹`. -/
+theorem tangentMatrix_conjugateTangent (g : points (ZMod 3))
+    (x : Module.Dual (ZMod 3) (Bialgebra.CotangentSpace (ZMod 3) carrierAlgebra)) :
+    tangentMatrix (conjugateTangent g x) =
+      ((g : Matrix.GeneralLinearGroup (Fin 7) (ZMod 3)) : Matrix (Fin 7) (Fin 7) (ZMod 3)) *
+        tangentMatrix x *
+        (((g⁻¹ : points (ZMod 3)) : Matrix.GeneralLinearGroup (Fin 7) (ZMod 3)) :
+          Matrix (Fin 7) (Fin 7) (ZMod 3)) := by
+  rw [conjugateTangent, tangentMatrix_apply, LinearEquiv.apply_symm_apply,
+    HopfIdeal.quotientLieHom_adDerivation, GeneralLinear.tangentMatrix_adDerivation,
+    counitPointsMulEquiv_map_carrierPoint, ← tangentMatrix_apply]
+  -- The subgroup inclusion preserves inverse by definition.
+  rfl
+
 /-- A tangent vector of the carrier is determined by its matrix. -/
 theorem tangentMatrix_injective : Function.Injective tangentMatrix := by
   intro x y h

@@ -38,9 +38,6 @@ open CategoryTheory
 
 noncomputable section
 
-private abbrev Tangent :=
-  Module.Dual (ZMod 3) (Bialgebra.CotangentSpace (ZMod 3) carrierAlgebra)
-
 private def rankOneWord (i : Fin 2) : points (ZMod 3) :=
   rootSubgroupPoints (.inr i) (ZMod 3) (Multiplicative.ofAdd 1) *
     rootSubgroupPoints (.inl i) (ZMod 3) (Multiplicative.ofAdd (-1)) *
@@ -49,72 +46,48 @@ private def rankOneWord (i : Fin 2) : points (ZMod 3) :=
 private def conjugator (i : Fin 2) : points (ZMod 3) :=
   if i = 0 then rankOneWord 0 else rankOneWord 1 * rankOneWord 0
 
-private def conjugateTangent (g : points (ZMod 3)) (x : Tangent) : Tangent :=
-  (Derivation.cotangentLinearEquiv (B := ZMod 3)).symm
-    (Derivation.adDerivation (ZMod 3)
-      ((Bialgebra.CounitAlgebra.pointsMulEquiv (ZMod 3) carrierAlgebra (ZMod 3)).symm
-        ((pointsMulEquiv (CommAlgCat.of (ZMod 3) (ZMod 3))).symm g))
-      (Derivation.cotangentLinearEquiv (B := ZMod 3) x))
-
-private theorem tangentMatrix_conjugateTangent (g : points (ZMod 3)) (x : Tangent) :
-    tangentMatrix (conjugateTangent g x) =
-      ((g : Matrix.GeneralLinearGroup (Fin 7) (ZMod 3)) : Matrix (Fin 7) (Fin 7) (ZMod 3)) *
-        tangentMatrix x *
-        (((g⁻¹ : points (ZMod 3)) : Matrix.GeneralLinearGroup (Fin 7) (ZMod 3)) :
-          Matrix (Fin 7) (Fin 7) (ZMod 3)) := by
-  let q := ((Bialgebra.CounitAlgebra.pointsMulEquiv (ZMod 3) carrierAlgebra (ZMod 3)).symm
-    ((pointsMulEquiv (CommAlgCat.of (ZMod 3) (ZMod 3))).symm g))
-  have hq : GeneralLinear.counitPointsMulEquiv 7
-      (BialgHom.mapDomain (A := Bialgebra.CounitAlgebra (ZMod 3)
-        (GeneralLinear.coordinateHopfAlgebra (ZMod 3) 7) (ZMod 3))
-        (Bialgebra.Quotient.mkBialgHom
-          (CommHopfAlgCat.commonKernelHopfIdeal generator).toIdeal) q) =
-      (g : Matrix.GeneralLinearGroup (Fin 7) (ZMod 3)) := by
-    apply Units.ext
-    have hg := coe_pointsMulEquiv_eq_map_carrierGenericMatrix
-      ((pointsMulEquiv (CommAlgCat.of (ZMod 3) (ZMod 3))).symm g)
-    rw [MulEquiv.apply_symm_apply] at hg
-    rw [hg]
-    ext a b
-    rw [GeneralLinear.counitPointsMulEquiv_apply]
-    -- The two counit coefficient algebras have different ambient Hopf-algebra indices.
-    erw [BialgHom.mapDomain_apply_apply]
-    simp only [q, Bialgebra.CounitAlgebra.algEquivSelf_apply]
-    -- Counit transport changes only the coefficient-algebra presentation.
-    erw [Bialgebra.CounitAlgebra.pointsMulEquiv_symm_apply]
-    rw [Bialgebra.CounitAlgebra.algEquivSelf_symm_apply, carrierGenericMatrix_def]
-    simp [GeneralLinear.genericMatrix_apply, carrierQuotient]
-  rw [conjugateTangent, tangentMatrix_apply, LinearEquiv.apply_symm_apply,
-    HopfIdeal.quotientLieHom_adDerivation, GeneralLinear.tangentMatrix_adDerivation,
-    hq, ← tangentMatrix_apply]
-  rfl
-
 /-- The tangent vector at `-(3α₁ + α₂)` (index zero) or `-(3α₁ + 2α₂)` (index one),
 obtained by conjugating the negative simple long-root vector by explicit rank-one root words. -/
 def negativeLongRootVector (i : Fin 2) :
     Module.Dual (ZMod 3) (Bialgebra.CotangentSpace (ZMod 3) carrierAlgebra) :=
   conjugateTangent (conjugator i) (rootVector (.inr 1))
 
+/-- The negative long-root vectors are conjugates of the negative simple long-root vector
+by the indicated products of rank-one root words. -/
+theorem negativeLongRootVector_eq_conjugateTangent (i : Fin 2) :
+    let w := fun j : Fin 2 =>
+      rootSubgroupPoints (.inr j) (ZMod 3) (Multiplicative.ofAdd 1) *
+        rootSubgroupPoints (.inl j) (ZMod 3) (Multiplicative.ofAdd (-1)) *
+          rootSubgroupPoints (.inr j) (ZMod 3) (Multiplicative.ofAdd 1)
+    negativeLongRootVector i =
+      conjugateTangent (if i = 0 then w 0 else w 1 * w 0) (rootVector (.inr 1)) := by
+  simp only [negativeLongRootVector, conjugator, rankOneWord]
+
 /-- The two negative nonsimple long roots, in fundamental-weight coordinates. -/
 def negativeLongRootWeight (i : Fin 2) : Fin 2 → ℤ :=
   if i = 0 then ![-3, 1] else ![0, -1]
 
-/-- The coordinates of the negative nonsimple long roots. -/
-@[simp] theorem negativeLongRootWeight_apply (i : Fin 2) (j : Fin 2) :
-    negativeLongRootWeight i j = (if i = 0 then ![-3, 1] else ![0, -1]) j := by
-  rw [negativeLongRootWeight]
+/-- In terms of the numbered simple roots, the two weights are `-(3α₁ + α₂)` and
+`-(3α₁ + 2α₂)`, respectively. -/
+theorem negativeLongRootWeight_eq_neg_simpleRoots (i : Fin 2) :
+    negativeLongRootWeight i =
+      -(3 • DynkinType.G2.rootGeneratorWeight DynkinType.valid_G2 (.inl (0 : Fin 2)) +
+        (if i = 0 then 1 else 2) •
+          DynkinType.G2.rootGeneratorWeight DynkinType.valid_G2 (.inl (1 : Fin 2))) := by
+  funext j
+  -- The root characters use `Fin G2.rank`; the coordinate family uses `Fin 2`.
+  erw [Pi.neg_apply, Pi.add_apply, Pi.smul_apply, Pi.smul_apply,
+    DynkinType.rootGeneratorWeight_inl, DynkinType.rootGeneratorWeight_inl,
+    DynkinType.cartanMatrix_G2_eq]
+  fin_cases i <;> fin_cases j <;> norm_num [negativeLongRootWeight]
 
 private def negativeLongMatrix (i : Fin 2) : Matrix (Fin 7) (Fin 7) (ZMod 3) :=
   if i = 0 then Matrix.single 4 0 (-1) + Matrix.single 6 2 1
   else Matrix.single 5 0 (-1) + Matrix.single 6 1 (-1)
 
-/-- The matrices of the two conjugate tangent vectors, with their exact root normalization. -/
--- Match the named tangent matrix before its quotient presentation is simplified.
-@[simp↓]
-theorem tangentMatrix_negativeLongRootVector (i : Fin 2) :
-    tangentMatrix (negativeLongRootVector i) =
-      if i = 0 then Matrix.single 4 0 (-1) + Matrix.single 6 2 1
-      else Matrix.single 5 0 (-1) + Matrix.single 6 1 (-1) := by
+private theorem tangentMatrix_negativeLongRootVector_eq (i : Fin 2) :
+    tangentMatrix (negativeLongRootVector i) = negativeLongMatrix i := by
+  unfold negativeLongMatrix
   rw [negativeLongRootVector, tangentMatrix_conjugateTangent, tangentMatrix_rootVector]
   unfold conjugator
   split_ifs <;>
@@ -125,6 +98,15 @@ theorem tangentMatrix_negativeLongRootVector (i : Fin 2) :
       toAdd_ofAdd, rootMatrix_inr, rootMatrix_inl,
       rootDividedSquareMatrix_inl, rootDividedSquareMatrix_inr] <;>
     decide +kernel
+
+/-- The matrices of the two conjugate tangent vectors, with their exact root normalization. -/
+-- Match the named tangent matrix before its quotient presentation is simplified.
+@[simp↓]
+theorem tangentMatrix_negativeLongRootVector (i : Fin 2) :
+    tangentMatrix (negativeLongRootVector i) =
+      if i = 0 then Matrix.single 4 0 (-1) + Matrix.single 6 2 1
+      else Matrix.single 5 0 (-1) + Matrix.single 6 1 (-1) := by
+  rw [tangentMatrix_negativeLongRootVector_eq, negativeLongMatrix]
 
 /-- Both negative long-root vectors are nonzero. -/
 theorem negativeLongRootVector_ne_zero (i : Fin 2) : negativeLongRootVector i ≠ 0 := by
@@ -148,7 +130,7 @@ theorem negativeLongRootVector_mem_adjointWeightSpace (i : Fin 2) :
       (SplitTorus.weightCharacter (negativeLongRootWeight i)) := by
   rw [mem_adjointWeightSpace_iff]
   intro a b h
-  rw [tangentMatrix_negativeLongRootVector]
+  rw [tangentMatrix_negativeLongRootVector_eq]
   exact negativeLongMatrix_support i a b (fun he => h (congrArg _ he))
 
 private theorem exists_eq_smul_negativeLongMatrix (i : Fin 2)
@@ -158,35 +140,26 @@ private theorem exists_eq_smul_negativeLongMatrix (i : Fin 2)
         crossOperatorPrime c * X)
     (hsupp : ∀ a b, weight a - weight b ≠ negativeLongRootWeight i → X a b = 0) :
     ∃ t : ZMod 3, X = t • negativeLongMatrix i := by
-  fin_cases i
-  · have hXe : X = Matrix.single 4 0 (X 4 0) + Matrix.single 6 2 (X 6 2) := by
-      ext a b
-      fin_cases a <;> fin_cases b <;>
-        first | (solve | simp) | (simpa using hsupp _ _ (by decide))
-    have h62 : X 6 2 = -X 4 0 := by
-      have h := congrFun (congrFun (hX 0) 3) 2
-      rw [hXe] at h
-      simp [Matrix.mul_apply, Fin.sum_univ_succ,
-        ConstantMultiplication.imageStructureMatrix_def, crossOperator_def] at h
+  -- Both weights have two possible matrix entries. Only their positions and relative sign vary.
+  let a : Fin 7 := if i = 0 then 4 else 5
+  let b : Fin 7 := if i = 0 then 2 else 1
+  let ε : ZMod 3 := if i = 0 then 1 else -1
+  have hXe : X = Matrix.single a 0 (X a 0) + Matrix.single 6 b (X 6 b) := by
+    fin_cases i <;> dsimp [a, b] <;> ext r s <;> fin_cases r <;> fin_cases s <;>
+      first | (solve | simp) | (simpa using hsupp _ _ (by decide))
+  have hrel : X 6 b = -ε * X a 0 := by
+    have h := congrFun (congrFun (hX 0) 3) b
+    rw [hXe] at h
+    fin_cases i <;>
+      simp [a, b, ε, Matrix.mul_apply, Fin.sum_univ_succ,
+        ConstantMultiplication.imageStructureMatrix_def, crossOperator_def] at h ⊢ <;>
       linear_combination h
-    refine ⟨-X 4 0, ?_⟩
-    conv_lhs => rw [hXe]
-    ext a b
-    fin_cases a <;> fin_cases b <;> simp [negativeLongMatrix, h62]
-  · have hXe : X = Matrix.single 5 0 (X 5 0) + Matrix.single 6 1 (X 6 1) := by
-      ext a b
-      fin_cases a <;> fin_cases b <;>
-        first | (solve | simp) | (simpa using hsupp _ _ (by decide))
-    have h61 : X 6 1 = X 5 0 := by
-      have h := congrFun (congrFun (hX 0) 3) 1
-      rw [hXe] at h
-      simp [Matrix.mul_apply, Fin.sum_univ_succ,
-        ConstantMultiplication.imageStructureMatrix_def, crossOperator_def] at h
-      linear_combination h
-    refine ⟨-X 5 0, ?_⟩
-    conv_lhs => rw [hXe]
-    ext a b
-    fin_cases a <;> fin_cases b <;> simp [negativeLongMatrix, h61]
+  have hM : negativeLongMatrix i = Matrix.single a 0 (-1) + Matrix.single 6 b ε := by
+    fin_cases i <;> simp [negativeLongMatrix, a, b, ε]
+  refine ⟨-X a 0, ?_⟩
+  rw [hM, smul_add, Matrix.smul_single, Matrix.smul_single]
+  conv_lhs => rw [hXe, hrel]
+  congr 1 <;> congr 1 <;> simp [smul_eq_mul]; ring
 
 /-- Each negative nonsimple long-root space is exactly the line generated by its conjugate
 negative simple-root vector. -/
@@ -210,8 +183,7 @@ theorem adjointWeightSpace_negativeLongRootWeight_eq_span (i : Fin 2) :
     obtain ⟨t, ht⟩ := exists_eq_smul_negativeLongMatrix i (tangentMatrix x)
       (tangentMatrix_mul_crossOperatorPrime x) hsupp
     refine Submodule.mem_span_singleton.mpr ⟨t, tangentMatrix_injective ?_⟩
-    rw [map_smul, tangentMatrix_negativeLongRootVector, ht]
-    rfl
+    rw [map_smul, tangentMatrix_negativeLongRootVector_eq, ht]
   · rw [Submodule.span_singleton_le_iff_mem]
     exact negativeLongRootVector_mem_adjointWeightSpace i
 
@@ -222,9 +194,7 @@ theorem negativeLongRootWeight_mem_nontrivialAdjointWeights (i : Fin 2) :
       Derivation.nontrivialAdjointWeights weightTorusCoordinateMap.hom := by
   rw [Derivation.mem_nontrivialAdjointWeights, adjointWeightSpace_negativeLongRootWeight_eq_span]
   refine ⟨?_, ?_⟩
-  · intro h
-    have he := congrArg (fun χ : Multiplicative (Fin 2 →₀ ℤ) => Multiplicative.toAdd χ 1) h
-    fin_cases i <;> norm_num [SplitTorus.toAdd_weightCharacter, negativeLongRootWeight] at he
+  · exact SplitTorus.weightCharacter_eq_one_iff.not.mpr (by fin_cases i <;> decide)
   · exact Submodule.span_singleton_eq_bot.not.mpr (negativeLongRootVector_ne_zero i)
 
 /-- In the coordinates of the chosen split maximal torus, the negative nonsimple long-root
