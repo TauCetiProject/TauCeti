@@ -66,14 +66,14 @@ open scoped Manifold ContDiff
 namespace TauCeti.ConnectedSum
 
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
-  {M : Type*} [TopologicalSpace M] [T2Space M] [SigmaCompactSpace M] [PreconnectedSpace M]
+  {M : Type*} [TopologicalSpace M] [T2Space M] [PreconnectedSpace M]
   [ChartedSpace E M] [IsManifold 𝓘(ℝ, E) ∞ M]
-  {N : Type*} [TopologicalSpace N] [T2Space N] [SigmaCompactSpace N] [PreconnectedSpace N]
+  {N : Type*} [TopologicalSpace N] [T2Space N] [PreconnectedSpace N]
   [ChartedSpace E N] [IsManifold 𝓘(ℝ, E) ∞ N]
   {ι : Type*} [Fintype ι]
 
-/-- **The connected sum does not depend on its balls.** Let `M` and `N` be connected, Hausdorff,
-σ-compact smooth manifolds without boundary modelled on a finite-dimensional real inner product
+/-- **The connected sum does not depend on its balls.** Let `M` and `N` be connected Hausdorff
+smooth manifolds without boundary modelled on a finite-dimensional real inner product
 space `E`, with orientations `oM` and `oN`. Let `e₁, e₁' : E → M` be coordinate balls which
 preserve the orientations `o₁` of `E` and `oM` at `0`, and `e₂, e₂' : E → N` coordinate balls which
 preserve the orientations `o₂` of `E` and `oN` at `0`, all of them open embeddings and smooth local
