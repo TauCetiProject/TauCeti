@@ -164,18 +164,27 @@ theorem isIdempotentElem_comp_comp_of_retract {e : M →L[R] M} (he : IsIdempote
 endomorphism `e` of `M` with the range of its extension `i ∘ e ∘ r`. -/
 noncomputable def rangeEquivOfRetract (e : M →L[R] M) (hri : r.comp i = .id R M) :
     LinearMap.range (e : M →ₗ[R] M) ≃ₗ[R]
-      LinearMap.range ((i.comp (e.comp r) : N →L[R] N) : N →ₗ[R] N) :=
+      LinearMap.range ((i : M →ₗ[R] N) ∘ₗ (e : M →ₗ[R] M) ∘ₗ (r : N →ₗ[R] M)) :=
   have hri' (x : M) : r (i x) = x := by simpa using DFunLike.congr_fun hri x
   (Submodule.equivMapOfInjective (i : M →ₗ[R] N) (Function.LeftInverse.injective hri') _).trans
     (LinearEquiv.ofEq _ _ (by
-      rw [toLinearMap_comp, toLinearMap_comp, LinearMap.range_comp,
-        LinearMap.range_comp_of_range_eq_top]
+      rw [LinearMap.range_comp, LinearMap.range_comp_of_range_eq_top]
       exact LinearMap.range_eq_top.2 (Function.LeftInverse.surjective hri')))
 
 /-- The identification of ranges along a retract applies the inclusion `i`. -/
+@[simp]
 theorem coe_rangeEquivOfRetract_apply (e : M →L[R] M) (hri : r.comp i = .id R M)
     (x : LinearMap.range (e : M →ₗ[R] M)) : (rangeEquivOfRetract e hri x : N) = i x :=
   (rfl)
+
+/-- The inverse identification of ranges along a retract applies the retraction `r`. -/
+@[simp]
+theorem coe_rangeEquivOfRetract_symm_apply (e : M →L[R] M) (hri : r.comp i = .id R M)
+    (y : LinearMap.range ((i : M →ₗ[R] N) ∘ₗ (e : M →ₗ[R] M) ∘ₗ (r : N →ₗ[R] M))) :
+    ((rangeEquivOfRetract e hri).symm y : M) = r y := by
+  obtain ⟨x, rfl⟩ := (rangeEquivOfRetract e hri).surjective y
+  rw [LinearEquiv.symm_apply_apply, coe_rangeEquivOfRetract_apply]
+  exact (DFunLike.congr_fun hri (x : M)).symm
 
 end Retract
 

@@ -426,7 +426,8 @@ theorem IsPrCompact.finite_range_of_isIdempotentElem {e : M →L[R] M} (hu : e.I
   classical
   obtain ⟨J, _, _, i, r, hri⟩ := (hasPr_def R M).1 hu.hasPr_source
   have hc : (i.comp (e.comp r)).IsRowCompact := hu.isRowCompact_comp i r
-  have := hc.finite_range_of_isIdempotentElem (isIdempotentElem_comp_comp_of_retract he hri)
+  have : Module.Finite R (LinearMap.range (i.toLinearMap ∘ₗ e.toLinearMap ∘ₗ r.toLinearMap)) :=
+    hc.finite_range_of_isIdempotentElem (isIdempotentElem_comp_comp_of_retract he hri)
   exact .equiv (rangeEquivOfRetract e hri).symm
 
 /-- **A row-compact idempotent of a (Pr) module has projective range.** -/
@@ -435,7 +436,8 @@ theorem IsPrCompact.projective_range_of_isIdempotentElem {e : M →L[R] M} (hu :
   classical
   obtain ⟨J, _, _, i, r, hri⟩ := (hasPr_def R M).1 hu.hasPr_source
   have hc : (i.comp (e.comp r)).IsRowCompact := hu.isRowCompact_comp i r
-  have := hc.projective_range_of_isIdempotentElem (isIdempotentElem_comp_comp_of_retract he hri)
+  have : Module.Projective R (LinearMap.range (i.toLinearMap ∘ₗ e.toLinearMap ∘ₗ r.toLinearMap)) :=
+    hc.projective_range_of_isIdempotentElem (isIdempotentElem_comp_comp_of_retract he hri)
   exact .of_equiv (rangeEquivOfRetract e hri).symm
 
 end Idempotent
