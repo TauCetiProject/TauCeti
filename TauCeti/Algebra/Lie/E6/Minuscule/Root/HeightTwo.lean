@@ -47,9 +47,7 @@ theorem exists_lie_raisingMatrix_apply_eq_one {i j : Fin 6}
   have hji : CartanMatrix.E 6 j i = -1 :=
     ((CartanMatrix.E_isSymm 6).apply i j).trans hij
   have hstep : DynkinType.e6MinusculeWeight (DynkinType.e6MinusculeReflection j b) i = -1 := by
-    have h := congrFun (DynkinType.e6MinusculeWeight_reflection j b) i
-    rw [DynkinType.root_e6SimpleIndex] at h
-    simpa [hbi, hbj, hji] using h
+    simpa [hbi, hbj, hji] using weightTable.weight_reflection j b i
   refine ⟨DynkinType.e6MinusculeReflection i (DynkinType.e6MinusculeReflection j b), b, ?_⟩
   simp [Ring.lie_def, Matrix.mul_apply, raisingMatrix_apply, hbi, hbj, hstep]
 
