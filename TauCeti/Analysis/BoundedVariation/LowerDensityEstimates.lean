@@ -14,6 +14,7 @@ import TauCeti.Analysis.BoundedVariation.DensityEstimates
 import TauCeti.Analysis.BoundedVariation.RelativeIsoperimetric
 import TauCeti.Analysis.BoundedVariation.Sobolev
 import TauCeti.Analysis.Calculus.PowerGrowth
+import TauCeti.Basic.Real.ConjExponents
 import TauCeti.MeasureTheory.Measure.InterBall
 import TauCeti.MeasureTheory.Measure.OpenPos
 
@@ -78,13 +79,6 @@ variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDim
   [MeasurableSpace E] [BorelSpace E] {μ : Measure E} [μ.IsAddHaarMeasure] {Ω : Opens E}
   {s : Set E} {x : E} {p : ℝ≥0}
 
-omit [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] in
-/-- The dimension of `E` is at least two when it has a Hölder conjugate exponent. -/
-private theorem two_le_finrank (hp : NNReal.HolderConjugate (finrank ℝ E) p) :
-    2 ≤ finrank ℝ E := by
-  have := hp.lt
-  exact_mod_cast this
-
 /-- **The differential inequality at the reduced boundary.** For a null-measurable `s`, a point
 `x` of its reduced boundary in `Ω` and `t > 1`, the function `m(ρ) = μ(s ∩ ball x ρ)` satisfies
 `m(ρ) ^ (1 - 1/n) ≤ (1 + t) C m'(ρ)` at almost every small radius `ρ`. -/
@@ -144,7 +138,7 @@ private theorem eventually_ofReal_le_mul_measure_inter_ball_rpow_of_nullMeasurab
         μ (s ∩ ball x r) ^ (finrank ℝ E : ℝ)⁻¹ := by
   obtain ⟨ε, hε, h⟩ := exists_ae_measureReal_inter_ball_rpow_le hp hs hx ht
   have hn : (0 : ℝ) < finrank ℝ E := by
-    exact_mod_cast zero_lt_two.trans_le (two_le_finrank hp)
+    exact_mod_cast zero_lt_two.trans_le hp.two_le_of_natCast
   filter_upwards [Ioo_mem_nhdsGT hε] with r hr
   have hfin : μ (s ∩ ball x r) ≠ ∞ :=
     measure_ne_top_of_subset inter_subset_right measure_ball_lt_top.ne
@@ -191,7 +185,7 @@ theorem eventually_ofReal_pow_le_mul_measure_inter_ball
     ∀ᶠ r in 𝓝[>] 0, ENNReal.ofReal (r ^ finrank ℝ E) ≤
       ((1 + t) * finrank ℝ E * eLpNormLESNormFDerivOneConst μ p : ℝ≥0) ^ finrank ℝ E *
         μ (s ∩ ball x r) := by
-  have hn : finrank ℝ E ≠ 0 := (zero_lt_two.trans_le (two_le_finrank hp)).ne'
+  have hn : finrank ℝ E ≠ 0 := (zero_lt_two.trans_le hp.two_le_of_natCast).ne'
   filter_upwards [eventually_ofReal_le_mul_measure_inter_ball_rpow hp hx ht,
     self_mem_nhdsWithin] with r h (hr : 0 < r)
   rw [ENNReal.ofReal_pow hr.le]
@@ -231,7 +225,7 @@ theorem eventually_ofReal_pow_le_mul_perimeter_ball
       ((1 + t) * finrank ℝ E * eLpNormLESNormFDerivOneConst μ p : ℝ≥0) ^ (finrank ℝ E - 1) *
         ENNReal.ofReal (2 ^ (finrank ℝ E + 1) / μ.real (ball 0 1) ^ (finrank ℝ E : ℝ)⁻¹) *
           perimeter μ ⟨ball x r, isOpen_ball⟩ s := by
-  have hn := two_le_finrank hp
+  have hn := hp.two_le_of_natCast
   have hs := nullMeasurableSet_restrict_of_mem_reducedBoundary hx
   obtain ⟨ε, hε, hεΩ⟩ := Metric.mem_nhds_iff.1 (Ω.isOpen.mem_nhds (reducedBoundary_subset hx))
   have hxc : x ∈ reducedBoundary μ Ω sᶜ := by rwa [reducedBoundary_compl]
