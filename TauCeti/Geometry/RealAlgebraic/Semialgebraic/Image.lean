@@ -58,7 +58,8 @@ All results assume projection closure, `[TauCeti.HasSemialgebraicProjections R]`
   intermediate space has finitely many coordinates.
 * `TauCeti.IsSemialgebraicOn.eval_comp`: applying a polynomial map to the values;
   `TauCeti.isSemialgebraicOn_sumElim_iff`: a pair is semialgebraic exactly when its components
-  are; `TauCeti.IsSemialgebraicOn.add`, `TauCeti.IsSemialgebraicOn.mul`,
+  are, and `TauCeti.isSemialgebraicOn_pi_iff`: so is a function with finitely many output
+  coordinates; `TauCeti.IsSemialgebraicOn.add`, `TauCeti.IsSemialgebraicOn.mul`,
   `TauCeti.IsSemialgebraicOn.sub`: pointwise arithmetic.  Negation needs no projection and is
   proved in `TauCeti.Geometry.RealAlgebraic.Semialgebraic.Function`.
 * `TauCeti.IsSemialgebraicOn.isSemialgebraic_inter_setOf_eq`,
@@ -271,6 +272,15 @@ theorem isSemialgebraicOn_sumElim_iff [Finite τ] [Finite τ'] {g : (σ → R) �
   refine ⟨fun h => ⟨?_, ?_⟩, fun h => h.1.sumElim h.2⟩
   · simpa using h.eval_comp fun i : τ => X (Sum.inl i)
   · simpa using h.eval_comp fun i : τ' => X (Sum.inr i)
+
+/-- Given projection closure, a function with finitely many output coordinates is semialgebraic on
+`s` exactly when `s` is semialgebraic and each coordinate of the function is semialgebraic on
+`s`. -/
+theorem isSemialgebraicOn_pi_iff [Finite τ] :
+    IsSemialgebraicOn f s ↔
+      IsSemialgebraic s ∧ ∀ i, IsSemialgebraicOn (fun x (_ : Unit) => f x i) s := by
+  refine ⟨fun h => ⟨h.isSemialgebraic, fun i => ?_⟩, fun h => .pi h.1 h.2⟩
+  simpa using h.eval_comp fun _ : Unit => X i
 
 variable [Finite τ] {g : (σ → R) → (τ → R)}
 
