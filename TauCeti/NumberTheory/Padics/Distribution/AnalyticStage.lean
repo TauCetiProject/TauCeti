@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.Normed.Operator.Basic
 public import Mathlib.Order.DirectedInverseSystem
 public import Mathlib.Topology.Algebra.InfiniteSum.Nonarchimedean
 public import Mathlib.Topology.MetricSpace.Ultra.ContinuousMaps
@@ -62,7 +63,8 @@ The disc decomposition itself is the homeomorphism `PadicInt.discHomeomorph` of
 
 * `TauCeti.AnalyticStage.eval_natCast_val_add_mul`: on the disc of `a`, the evaluation of `c` is
   `∑ₙ wⁿ • c(a, n)`.
-* `TauCeti.AnalyticStage.norm_eval_le`: evaluation does not increase norms.
+* `TauCeti.AnalyticStage.norm_eval_le`, `TauCeti.AnalyticStage.opNorm_eval_le_one`: evaluation
+  does not increase norms.
 * `TauCeti.AnalyticStage.eval_injective`: evaluation is injective when multiplication by `p`
   on the coefficient module is injective.
 * `TauCeti.AnalyticStage.transition_apply`: the re-expansion formula for the transition.
@@ -77,7 +79,8 @@ The disc decomposition itself is the homeomorphism `PadicInt.discHomeomorph` of
   transition is compatible with evaluation.
 * `TauCeti.AnalyticStage.transitionLE_comp`: re-expansion through an intermediate level is
   re-expansion to the final level.
-* `TauCeti.AnalyticStage.norm_transitionLE_le`: every multi-level transition decreases norms.
+* `TauCeti.AnalyticStage.norm_transitionLE_le`,
+  `TauCeti.AnalyticStage.opNorm_transitionLE_le_one`: every multi-level transition decreases norms.
 * `TauCeti.AnalyticStage.eval_transitionLE`, `TauCeti.AnalyticStage.eval_comp_transitionLE`:
   every multi-level transition preserves evaluation.
 * `TauCeti.AnalyticStage.transitionLE_injective`: multi-level transitions are injective under
@@ -247,6 +250,12 @@ theorem eval_natCast_val_add_mul (c : AnalyticStage p h E) (a : ZMod (p ^ h)) (w
 /-- Evaluation does not increase norms. -/
 theorem norm_eval_le (c : AnalyticStage p h E) : ‖eval S c‖ ≤ ‖c‖ :=
   norm_discSeries_comp_le c
+
+/-- Evaluation has operator norm at most `1`. -/
+theorem opNorm_eval_le_one {𝕜 : Type*} [NontriviallyNormedField 𝕜] [NormedSpace 𝕜 E]
+    [SMulCommClass ℤ_[p] 𝕜 E] : ‖eval (p := p) (h := h) (E := E) 𝕜‖ ≤ 1 :=
+  ContinuousLinearMap.opNorm_le_bound _ zero_le_one fun c ↦ by
+    simpa using norm_eval_le 𝕜 c
 
 private theorem summable_smul_apply_add (c : AnalyticStage p h E) (a : ZMod (p ^ h))
     (n : ℕ) {r : ℕ → ℤ_[p]} (hr : ∀ k, ‖r k‖ ≤ 1) :
@@ -594,6 +603,12 @@ theorem norm_transitionLE_le (hhk : h ≤ k) (c : AnalyticStage p h E) :
   | succ k hhk ih =>
     rw [transitionLE_succ S hhk, ContinuousLinearMap.comp_apply]
     exact (norm_transition_le S _).trans ih
+
+/-- Re-expansion between any two analytic levels has operator norm at most `1`. -/
+theorem opNorm_transitionLE_le_one {𝕜 : Type*} [NontriviallyNormedField 𝕜] [NormedSpace 𝕜 E]
+    [SMulCommClass ℤ_[p] 𝕜 E] (hhk : h ≤ k) : ‖transitionLE (p := p) (E := E) 𝕜 hhk‖ ≤ 1 :=
+  ContinuousLinearMap.opNorm_le_bound _ zero_le_one fun c ↦ by
+    simpa using norm_transitionLE_le 𝕜 hhk c
 
 /-- Re-expansion between any two analytic levels preserves the evaluated function. -/
 @[simp]

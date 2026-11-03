@@ -173,10 +173,7 @@ which is the evaluation of a coefficient vector of degree zero at level `h`. -/
 theorem denseRange_eval : DenseRange (eval (p := p) (E := E) S) := by
   refine Metric.denseRange_iff.mpr fun f ε hε ↦ ?_
   obtain ⟨δ, hδ, hf⟩ := f.uniform_continuity ε hε
-  have hp : ‖(p : ℤ_[p])‖ < 1 := by
-    rw [PadicInt.norm_p]
-    exact inv_lt_one_of_one_lt₀ (by exact_mod_cast (Fact.out : p.Prime).one_lt)
-  obtain ⟨h, hh⟩ := exists_pow_lt_of_lt_one hδ hp
+  obtain ⟨h, hh⟩ := exists_pow_lt_of_lt_one hδ (PadicInt.norm_p_lt_one (p := p))
   let c := (AnalyticStage.polynomialEquiv (p := p) (h := h) (E := E) S 0).symm
     fun i ↦ f (i.1.val : ℤ_[p])
   refine ⟨ofStage S h c.val, ?_⟩
