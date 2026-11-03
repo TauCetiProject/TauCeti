@@ -73,7 +73,7 @@ theorem pow_sub_smul_one_apply_lie (D : LieDerivation R L L) (a b : R) (n : ℕ)
   set B := (D : Module.End R L) - b • 1
   have key (u v : L) :
       ((D : Module.End R L) - (a + b) • 1) ⁅u, v⁆ = ⁅A u, v⁆ + ⁅u, B v⁆ := by
-    simp only [A, B, LinearMap.sub_apply, LinearMap.smul_apply, Module.End.one_apply,
+    simp only [A, B, LinearMap.sub_apply, LinearMap.smul_apply, one_apply_eq_self,
       LieDerivation.coeFn_coe, apply_lie_eq_add, sub_lie, lie_sub, smul_lie, lie_smul, add_smul,
       LinearMap.add_apply]
     abel
@@ -81,8 +81,8 @@ theorem pow_sub_smul_one_apply_lie (D : LieDerivation R L L) (a b : R) (n : ℕ)
   | zero => simp
   | succ n ih =>
     rw [sum_antidiagonal_choose_succ_nsmul (M := L) (fun i j => ⁅(A ^ i) x, (B ^ j) y⁆) n,
-      pow_succ', Module.End.mul_apply, ih]
-    simp only [map_sum, map_nsmul, key, smul_add, sum_add_distrib, pow_succ', Module.End.mul_apply]
+      pow_succ', mul_apply_eq_comp, ih]
+    simp only [map_sum, map_nsmul, key, smul_add, sum_add_distrib, pow_succ', mul_apply_eq_comp]
     rw [add_comm]
     congr 1
     refine sum_congr rfl fun ⟨i, j⟩ hij ↦ ?_

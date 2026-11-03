@@ -7,9 +7,11 @@ module
 
 public import TauCeti.Geometry.Symplectic.Hamiltonian.Standard
 public import TauCeti.Analysis.InnerProductSpace.NormPow
+public import TauCeti.Analysis.InnerProductSpace.GramPair
 public import Mathlib.Analysis.Calculus.Deriv.Inv
 public import Mathlib.Analysis.Calculus.Deriv.Mul
 public import Mathlib.Geometry.Euclidean.Angle.Unoriented.Basic
+import Mathlib.Analysis.Calculus.MeanValue
 
 /-!
 # Central forces and the Kepler problem
@@ -54,6 +56,9 @@ bracket at a point only depends on germs there.
   rotations.
 * `TauCeti.stdSymplecticForm_poissonBracket_centralForceHamiltonian_angularMomentum`:
   conservation of angular momentum, `{H, L} = 0`.
+* `TauCeti.stdSymplecticForm_poissonBracket_sq_sub_inner_sq_centralForceHamiltonian`:
+  conservation of the squared angular momentum in every dimension, `{ℓ², H} = 0`.
+* `TauCeti.sq_sub_inner_sq_eq_of_hasDerivAt`: `ℓ²` is constant along integral curves of `H`.
 * `TauCeti.stdSymplecticForm_poissonBracket_inner_rungeLenz`: conservation of the Runge–Lenz
   vector, `{⟪A, e⟫, H} = 0`.
 * `TauCeti.norm_rungeLenz_sq`: `‖A‖² = (m κ)² + 2 m H (‖q‖² ‖p‖² - ⟪q, p⟫²)`.
@@ -382,6 +387,46 @@ theorem stdSymplecticForm_poissonBracket_centralForceHamiltonian_angularMomentum
     (hasFDerivAt_angularMomentum u w x)]
   simp [inner_sub_right, real_inner_smul_right, real_inner_comm]
   ring
+
+/-- **Conservation of the squared angular momentum.** Away from the collision set, the squared
+length `ℓ² = ‖q‖² ‖p‖² - ⟪q, p⟫²` of the angular momentum bivector Poisson-commutes with every
+central-force Hamiltonian, in every dimension. -/
+theorem stdSymplecticForm_poissonBracket_sq_sub_inner_sq_centralForceHamiltonian {m : ℝ}
+    {U : ℝ → ℝ} {U' : ℝ} {x : V × V} (hU : HasDerivAt U U' ‖x.1‖) (hq : x.1 ≠ 0) :
+    (stdSymplecticForm (V := V)).poissonBracket
+      (fun y : V × V ↦ ‖y.1‖ ^ 2 * ‖y.2‖ ^ 2 - ⟪y.1, y.2⟫_ℝ ^ 2)
+      (centralForceHamiltonian m U) x = 0 := by
+  rw [stdSymplecticForm_poissonBracket (hasFDerivAt_sq_sub_inner_sq x)
+    (hasFDerivAt_centralForceHamiltonian hU hq)]
+  have hr : ‖x.1‖ ≠ 0 := norm_ne_zero_iff.2 hq
+  simp only [inner_sub_left, real_inner_smul_left, real_inner_smul_right,
+    real_inner_self_eq_norm_sq, real_inner_comm x.1 x.2]
+  field_simp
+  ring
+
+/-- **Conservation of the squared angular momentum along the motion.** Let `γ` be an integral
+curve of the Hamiltonian vector field of a central-force Hamiltonian on a preconnected open set `s`
+of times, avoiding the collision set, with `U` differentiable along it. Then the squared angular
+momentum `ℓ² = ‖q‖² ‖p‖² - ⟪q, p⟫²` of `γ` takes the same value at all times `t₀, t ∈ s`. -/
+theorem sq_sub_inner_sq_eq_of_hasDerivAt {m : ℝ} {U : ℝ → ℝ} {γ : ℝ → V × V} {s : Set ℝ}
+    (hs : IsOpen s) (hs' : IsPreconnected s)
+    (hγ : ∀ t ∈ s, HasDerivAt γ
+      ((stdSymplecticForm (V := V)).hamiltonianVectorField (centralForceHamiltonian m U) (γ t)) t)
+    (hq : ∀ t ∈ s, (γ t).1 ≠ 0) (hU : ∀ t ∈ s, DifferentiableAt ℝ U ‖(γ t).1‖) {t₀ t : ℝ}
+    (ht₀ : t₀ ∈ s) (ht : t ∈ s) :
+    ‖(γ t).1‖ ^ 2 * ‖(γ t).2‖ ^ 2 - ⟪(γ t).1, (γ t).2⟫_ℝ ^ 2 =
+      ‖(γ t₀).1‖ ^ 2 * ‖(γ t₀).2‖ ^ 2 - ⟪(γ t₀).1, (γ t₀).2⟫_ℝ ^ 2 := by
+  -- The derivative of `ℓ²` along `γ` is the Poisson bracket `{ℓ², H} = 0`.
+  have hderiv (t : ℝ) (ht : t ∈ s) : HasDerivAt
+      ((fun y : V × V ↦ ‖y.1‖ ^ 2 * ‖y.2‖ ^ 2 - ⟪y.1, y.2⟫_ℝ ^ 2) ∘ γ) 0 t := by
+    have h := (hasFDerivAt_sq_sub_inner_sq (γ t)).comp_hasDerivAt t (hγ t ht)
+    rwa [← (hasFDerivAt_sq_sub_inner_sq (γ t)).fderiv,
+      ← SymplecticForm.poissonBracket_eq_fderiv,
+      stdSymplecticForm_poissonBracket_sq_sub_inner_sq_centralForceHamiltonian
+        (hU t ht).hasDerivAt (hq t ht)] at h
+  exact hs.is_const_of_deriv_eq_zero hs'
+    (fun t ht ↦ (hderiv t ht).differentiableAt.differentiableWithinAt)
+    (fun t ht ↦ (hderiv t ht).deriv) ht ht₀
 
 /-- **Conservation of the Runge–Lenz vector.** Away from the collision set, every component of the
 Runge–Lenz vector Poisson-commutes with the Kepler Hamiltonian `‖p‖² / (2m) - κ / ‖q‖`. -/

@@ -70,7 +70,7 @@ theorem weighted_eq_withDensity (μ : Measure α) {w : α → ℝ≥0} (hw : AEM
 /-- The mass assigned by a weighted measure to a measurable set. -/
 theorem weighted_apply (μ : Measure α) (w : α → ℝ≥0) {s : Set α} (hs : MeasurableSet s) :
     μ.weighted w s = (∫⁻ x, (w x : ℝ≥0∞) ∂μ)⁻¹ * ∫⁻ x in s, (w x : ℝ≥0∞) ∂μ := by
-  rw [weighted_def, Measure.smul_apply, smul_eq_mul, withDensity_apply _ hs]
+  rw [weighted_def, _root_.smul_apply, smul_eq_mul, withDensity_apply _ hs]
 
 /-- A zero total weight gives the zero measure. -/
 @[simp]

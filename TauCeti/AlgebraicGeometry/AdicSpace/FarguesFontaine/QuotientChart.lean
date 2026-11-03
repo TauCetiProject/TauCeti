@@ -362,8 +362,9 @@ theorem quotientMap_image_window_mem_affinoidOpens (hq : q ≠ 0) (hqq' : q ≤ 
       ⟨_, Pair.powerBounded_plus (A := IntervalRing p hv hϖ hϖ' (hρ hq) (hρ hq')) ▸
         (Pair.powerBounded _).isRingOfIntegralElements⟩ P'
       P'.le_powerBoundedSubring)
-  have hmem := (PreAdicSpace.mem_affinoidOpens_restrict_iff _ f.isOpenEmbedding ⊤).mp
-    ((PreAdicSpace.top_mem_affinoidOpens_iff _).mpr hA)
+  have hmem := (PreAdicSpace.mem_propOpens_restrict_iff _ f.isOpenEmbedding
+    PreAdicSpace.isAffinoid ⊤).mp
+    ((PreAdicSpace.top_mem_propOpens_iff _ PreAdicSpace.isAffinoid).mpr hA)
   -- the image of the chart is `q(W)`
   have hU : f.isOpenEmbedding.isOpenMap.functor.obj ⊤ = ⟨quotientMap hI '' (Subtype.val ⁻¹'
       {v | v ∈ spaY p ϖ ∧ IsRadiusLowerBound p ϖ q v ∧ IsRadiusUpperBound p ϖ q' v}),

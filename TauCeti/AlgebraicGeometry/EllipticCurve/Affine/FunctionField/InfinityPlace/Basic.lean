@@ -205,8 +205,8 @@ private theorem infinityPlace_add_le_max (x y : W.FunctionField) :
   · simp [hxy]
   have hN {f : W.FunctionField} (hf : f ≠ 0) : Algebra.norm (RatFunc F) f ≠ 0 :=
     (Algebra.norm_ne_zero_iff (R := RatFunc F)).mpr hf
-  simp only [RatFunc.inftyValuation_apply, RatFunc.inftyValuation_of_nonzero F (hN hx),
-    RatFunc.inftyValuation_of_nonzero F (hN hy), RatFunc.inftyValuation_of_nonzero F (hN hxy)]
+  simp only [RatFunc.inftyValuation_apply, RatFunc.inftyValuation_of_ne_zero F (hN hx),
+    RatFunc.inftyValuation_of_ne_zero F (hN hy), RatFunc.inftyValuation_of_ne_zero F (hN hxy)]
   exact le_max_iff.2 <| (le_max_iff.1 <| intDegree_norm_add_le W hx hy hxy).imp
     WithZero.exp_le_exp.2 WithZero.exp_le_exp.2
 
@@ -281,7 +281,7 @@ theorem infinityPlace_algebraMap_ratFunc {r : RatFunc F} (hr : r ≠ 0) :
     infinityPlace W (algebraMap (RatFunc F) W.FunctionField r) =
       WithZero.exp (2 * r.intDegree) := by
   rw [infinityPlace.algebraMap_eq_sq, RatFunc.inftyValuation_apply,
-    RatFunc.inftyValuation_of_nonzero F hr, ← WithZero.exp_nsmul]
+    RatFunc.inftyValuation_of_ne_zero F hr, ← WithZero.exp_nsmul]
   ring_nf
 
 open scoped Classical in

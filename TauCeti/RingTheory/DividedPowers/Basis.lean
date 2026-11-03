@@ -8,6 +8,8 @@ module
 public import TauCeti.RingTheory.DividedPowers.Associative
 public import Mathlib.LinearAlgebra.Basis.Submodule
 public import TauCeti.LinearAlgebra.Finsupp.LinearCombination
+public import Mathlib.Algebra.Polynomial.Basis
+import Mathlib.LinearAlgebra.Basis.SMul
 
 /-!
 # Bases of divided powers
@@ -37,6 +39,8 @@ polynomials `(X choose n)`.
   combination.
 * `TauCeti.Associative.mem_dividedPowerLattice_iff_existsUnique_sum_dividedPower_eq`: unique finite
   expansion in divided powers for elements of the integral lattice.
+* `TauCeti.dividedPowerPolynomialBasis`: the rational basis `X ^ n / n!` of `ℚ[X]`, used for
+  the outer factors of the rank-one Kostant PBW basis.
 
 ## References
 
@@ -212,3 +216,20 @@ theorem mem_dividedPowerLattice_iff_existsUnique_sum_dividedPower_eq_of_pow {x y
 end Ring
 
 end TauCeti.Associative
+
+namespace TauCeti
+
+open Polynomial Associative
+
+/-- The rational polynomial basis consisting of the divided powers `X ^ n / n!`. -/
+noncomputable def dividedPowerPolynomialBasis : Module.Basis ℕ ℚ ℚ[X] :=
+  (basisMonomials ℚ).unitsSMul invFactorialUnit
+
+/-- The divided-power polynomial basis evaluates to the corresponding divided power of `X`. -/
+@[simp]
+theorem dividedPowerPolynomialBasis_apply (n : ℕ) :
+    dividedPowerPolynomialBasis n = dividedPower n (X : ℚ[X]) := by
+  simpa [dividedPowerPolynomialBasis, Module.Basis.unitsSMul_apply, coe_basisMonomials,
+    ← C_mul_X_pow_eq_monomial] using invFactorialUnit_smul_pow (X : ℚ[X]) n
+
+end TauCeti
