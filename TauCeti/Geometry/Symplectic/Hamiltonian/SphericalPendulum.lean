@@ -149,9 +149,6 @@ theorem sphericalPendulumEffectivePotential_def (j z : ℝ) :
 
 /-! ### The phase space in coordinates -/
 
-private theorem sq_lt_one_iff_mem_Ioo {z : ℝ} : z ^ 2 < 1 ↔ z ∈ Ioo (-1) 1 :=
-  (sq_lt_one_iff_abs_lt_one z).trans abs_lt
-
 /-- At a pole `z² = 1`, the condition `j² ≤ 2 (h - z) (1 - z²)` forces `j = 0`. -/
 private theorem eq_zero_of_sq_le_of_sq_eq_one {j z h : ℝ} (hz : z ^ 2 = 1)
     (hj : j ^ 2 ≤ 2 * (h - z) * (1 - z ^ 2)) : j = 0 := by
@@ -377,7 +374,7 @@ private theorem sphericalPendulumEffectivePotential_sub_eq {j z₀ z : ℝ} (hz�
 theorem sphericalPendulumEffectivePotential_lt_of_eq_zero {j z₀ z : ℝ} (hz₀ : z₀ ∈ Ioo (-1) 0)
     (hcrit : j ^ 2 * z₀ + (1 - z₀ ^ 2) ^ 2 = 0) (hz : z ∈ Ioo (-1) 1) (hne : z ≠ z₀) :
     sphericalPendulumEffectivePotential j z₀ < sphericalPendulumEffectivePotential j z := by
-  have h1z : 0 < 1 - z ^ 2 := sub_pos.2 (sq_lt_one_iff_mem_Ioo.2 hz)
+  have h1z : 0 < 1 - z ^ 2 := sub_pos.2 (((sq_lt_one_iff_abs_lt_one _).trans abs_lt).2 hz)
   obtain ⟨hz₀₁, hz₀₂⟩ := hz₀
   rw [← sub_pos, sphericalPendulumEffectivePotential_sub_eq hz₀₂.ne h1z.ne' hcrit]
   have hnum : 0 < 1 + z₀ ^ 2 + 2 * z₀ * z := by
@@ -389,7 +386,8 @@ theorem sphericalPendulumEffectivePotential_lt_of_eq_zero {j z₀ z : ℝ} (hz�
 /-- A root `z ∈ (-1, 1)` of `j² z + (1 - z²)²` is negative, since `j² z = -(1 - z²)² < 0`. -/
 private theorem neg_of_sq_mul_add_sq_eq_zero {j z : ℝ} (hz : z ∈ Ioo (-1) 1)
     (hcrit : j ^ 2 * z + (1 - z ^ 2) ^ 2 = 0) : z < 0 := by
-  have : 0 < (1 - z ^ 2) ^ 2 := pow_pos (sub_pos.2 (sq_lt_one_iff_mem_Ioo.2 hz)) 2
+  have : 0 < (1 - z ^ 2) ^ 2 :=
+    pow_pos (sub_pos.2 (((sq_lt_one_iff_abs_lt_one _).trans abs_lt).2 hz)) 2
   nlinarith [sq_nonneg j]
 
 /-- For `j ≠ 0` the polynomial `j² z + (1 - z²)²` has a root in `(-1, 0)`: it is `-j² < 0` at
@@ -468,10 +466,10 @@ theorem mk_mem_image_sphericalPendulumEnergyMomentum_iff_of_isMinOn {j z₀ : �
     -- The endpoints `z = ±1` would force `j = 0`.
     have hz : z ^ 2 < 1 := lt_of_le_of_ne (by nlinarith) fun hz ↦
       hj (eq_zero_of_sq_le_of_sq_eq_one hz hjz)
-    have hzI : z ∈ Ioo (-1) 1 := sq_lt_one_iff_mem_Ioo.1 hz
+    have hzI : z ∈ Ioo (-1) 1 := ((sq_lt_one_iff_abs_lt_one _).trans abs_lt).1 hz
     exact (hmin hzI).trans ((sphericalPendulumEffectivePotential_le_iff hz).2 hjz)
   · intro hh
-    have hz : z₀ ^ 2 < 1 := sq_lt_one_iff_mem_Ioo.2 hz₀
+    have hz : z₀ ^ 2 < 1 := ((sq_lt_one_iff_abs_lt_one _).trans abs_lt).2 hz₀
     have hjz := (sphericalPendulumEffectivePotential_le_iff hz).1 hh
     refine ⟨z₀, ⟨hz₀.1.le, hz₀.2.le⟩, ?_, hjz⟩
     nlinarith [sq_nonneg j]
@@ -498,7 +496,7 @@ theorem sphericalPendulumEnergyMomentum_eq_iff_of_isMinOn {j z₀ : ℝ} (hj : j
     have hH : (sphericalPendulumEnergyMomentum x).1 = sphericalPendulumEffectivePotential j z₀ :=
       congrArg Prod.fst hF
     have hz := hpole hJ
-    have hzI : x.1 2 ∈ Ioo (-1) 1 := sq_lt_one_iff_mem_Ioo.1 hz
+    have hzI : x.1 2 ∈ Ioo (-1) 1 := ((sq_lt_one_iff_abs_lt_one _).trans abs_lt).1 hz
     have hE := fst_sphericalPendulumEnergyMomentum_eq hx hz
     rw [hJ, hH] at hE
     have hd : 0 < 2 * (1 - x.1 2 ^ 2) := by linarith
