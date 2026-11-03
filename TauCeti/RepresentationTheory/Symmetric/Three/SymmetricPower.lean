@@ -15,6 +15,7 @@ public import TauCeti.RepresentationTheory.LinearCharacter.Basic
 public import TauCeti.RepresentationTheory.Symmetric.SignCharacter
 public import TauCeti.RepresentationTheory.Symmetric.Standard
 public import TauCeti.RepresentationTheory.SymmetricPower
+import TauCeti.LinearAlgebra.SymmetricPower.Coordinates
 import TauCeti.RepresentationTheory.Intertwining
 
 /-!
@@ -40,8 +41,10 @@ On the symmetric powers this gives the monomial bases `α², αβ, β²` of `Sym
 
 The second needs `2 ≠ 0` in `k`, to recover `α³` and `β³` from `α³ ± β³`. Both maps are
 checked to commute with `σ` and `τ`, which generate `S₃`. In the class order identity,
-transposition, `3`-cycle, the characters are `χ_{V₃} = (2, 0, -1)` over every field, and
-`χ_{Sym² V₃} = (3, 1, 0)` and `χ_{Sym³ V₃} = (4, 0, 1)`. Finally, through the isomorphism
+transposition, `3`-cycle, the characters are `χ_{V₃} = (2, 0, -1)`, `χ_{Sym² V₃} = (3, 1, 0)` and
+`χ_{Sym³ V₃} = (4, 0, 1)`, the characters of `1 ⊕ V₃` and `1 ⊕ sgn ⊕ V₃`. These hold over every
+field, with no cube root of unity: the traces are computed in the monomial bases built from the
+basis `e₀ - e₂`, `e₁ - e₂` of `V₃`. Finally, through the isomorphism
 `TauCeti.dihedralGroupThreeMulEquivPerm : DihedralGroup 3 ≃* S₃` sending the rotation `r 1` to `τ`
 and the reflection `sr 0` to `σ`, the three rows of the displayed integral character table
 `TauCeti.dihedralGroupThreeCharacterTable`, whose columns are the identity, a rotation and a
@@ -68,8 +71,8 @@ reflection, are the characters of the trivial, sign and standard representations
   and `TauCeti.character_standardRepresentation_finRotate`: `χ_{V₃} = (2, 0, -1)`.
 * `TauCeti.trace_symmetricPower_two_standardRepresentation` and
   `TauCeti.trace_symmetricPower_three_standardRepresentation`: the characters of `Sym² V₃` and
-  `Sym³ V₃` are `1 + χ_{V₃}` and `1 + sgn + χ_{V₃}`, with the values `(3, 1, 0)` and `(4, 0, 1)`
-  recorded separately.
+  `Sym³ V₃` are `1 + χ_{V₃}` and `1 + sgn + χ_{V₃}` over every field, with the values `(3, 1, 0)`
+  and `(4, 0, 1)` recorded separately.
 * `TauCeti.dihedralGroupThreeCharacterTable_eq_character`: the rows of the displayed character
   table are the characters of the trivial, sign and standard representations.
 
@@ -771,21 +774,123 @@ theorem symmetricGroupThreeSymCubeEquiv_symm_tprod_alpha_beta_beta (h2 : (2 : k)
 The characters of `Sym² V₃` and `Sym³ V₃` are stated as traces, `LinearMap.trace` of the action:
 `Representation.character` asks for an additive group structure on the carrier, and the
 representation `Representation.symmetricPower` is built on the additive monoid structure of the
-symmetric power. -/
+symmetric power.
 
-include hω in
-/-- **The character of `Sym² V₃` is `1 + χ_{V₃}`**, read off `Sym² V₃ ≃ 1 ⊕ V₃`. -/
-theorem trace_symmetricPower_two_standardRepresentation (g : Equiv.Perm (Fin 3)) :
-    LinearMap.trace k _ ((standardRepresentation k (Fin 3)).symmetricPower 2 g) =
-      1 + (standardRepresentation k (Fin 3)).character g := by
-  -- The additive group structure of the symmetric power is supplied explicitly, as explained
-  -- in the section docstring.
-  have h := congrFun (@Representation.char_iso _ _ _ _ _ _ _ _
-    (SymmetricPower.instAddCommGroup (Fin 2) k _) _ _ _ (symmetricGroupThreeSymSqEquiv hω)) g
-  rw [Representation.char_prod, Representation.char_trivial, finrank_self, Nat.cast_one] at h
-  exact h.symm
+They are computed over every field, without a cube root of unity, in the monomial bases built
+from the basis `x = e₀ - e₂`, `y = e₁ - e₂` of `V₃`. There `σ = (0 1)` exchanges `x` and `y`, so
+it permutes the monomials, and `τ = (0 1 2)` acts by `τ x = y - x`, `τ y = -x`, so the diagonal
+coefficients of its action on a monomial are read off by expanding the product. -/
 
-/-- **`χ_{Sym² V₃}(1) = 3`**, over every field: `Sym² V₃` has dimension `3`. -/
+/-- The vectors `x = e₀ - e₂` and `y = e₁ - e₂` of the standard module of `S₃`. -/
+private noncomputable def symmetricGroupThreeDiffVec (i : Fin 2) :
+    (augmentationSubrepresentation k (Equiv.Perm (Fin 3)) (Fin 3)).toSubmodule :=
+  ⟨single i.castSucc 1 - single 2 1, by
+    rw [toSubmodule_augmentationSubrepresentation, LinearMap.mem_ker]
+    simp only [← MonoidAlgebra.basis_apply, map_sub, Basis.sumCoords_self_apply, sub_self]⟩
+
+/-- The vectors `x` and `y` are linearly independent. -/
+private theorem linearIndependent_symmetricGroupThreeDiffVec :
+    LinearIndependent k (symmetricGroupThreeDiffVec (k := k)) := by
+  rw [Fintype.linearIndependent_iff]
+  intro c hc i
+  have hcoeff : ∀ j : Fin 3, ∑ i, c i * ((symmetricGroupThreeDiffVec i :
+      (augmentationSubrepresentation k (Equiv.Perm (Fin 3)) (Fin 3)).toSubmodule) :
+        MonoidAlgebra k (Fin 3)).coeff j = 0 := fun j => by
+    simpa [Finset.sum_apply'] using
+      congrArg (fun v : MonoidAlgebra k (Fin 3) => v.coeff j) (congrArg Subtype.val hc)
+  have h0 := hcoeff 0
+  have h1 := hcoeff 1
+  simp [symmetricGroupThreeDiffVec, Fin.sum_univ_two, Finsupp.single_apply] at h0 h1
+  fin_cases i <;> simpa
+
+/-- The basis `x = e₀ - e₂`, `y = e₁ - e₂` of the standard module of `S₃`, over every field. -/
+private noncomputable def symmetricGroupThreeDiffBasis :
+    Basis (Fin 2) k (augmentationSubrepresentation k (Equiv.Perm (Fin 3)) (Fin 3)).toSubmodule :=
+  basisOfLinearIndependentOfCardEqFinrank linearIndependent_symmetricGroupThreeDiffVec
+    (by rw [finrank_augmentationSubrepresentation]; simp)
+
+/-- The basis vectors are `x` and `y`. -/
+private theorem symmetricGroupThreeDiffBasis_apply (i : Fin 2) :
+    symmetricGroupThreeDiffBasis (k := k) i = symmetricGroupThreeDiffVec i := by
+  simp [symmetricGroupThreeDiffBasis]
+
+/-- `σ` exchanges `x` and `y`. -/
+private theorem standardRepresentation_swap_symmetricGroupThreeDiffBasis (i : Fin 2) :
+    standardRepresentation k (Fin 3) (Equiv.swap 0 1) (symmetricGroupThreeDiffBasis i) =
+      symmetricGroupThreeDiffBasis (Equiv.swap 0 1 i) := by
+  rw [symmetricGroupThreeDiffBasis_apply, symmetricGroupThreeDiffBasis_apply,
+    ← toRepresentation_augmentationSubrepresentation, Subrepresentation.toRepresentation_apply_coe]
+  obtain ⟨h0, h1, h2⟩ := swap_zero_one_smul
+  fin_cases i <;>
+    simp [symmetricGroupThreeDiffVec, Representation.ofMulAction_single, h0, h1, h2]
+
+/-- `τ x = y - x` and `τ y = -x`, as the matrix of `τ` in the basis `x, y`. -/
+private theorem repr_standardRepresentation_finRotate_symmetricGroupThreeDiffBasis (i j : Fin 2) :
+    symmetricGroupThreeDiffBasis.repr
+        (standardRepresentation k (Fin 3) (finRotate 3) (symmetricGroupThreeDiffBasis j)) i =
+      !![-1, -1; 1, 0] i j := by
+  have hx : standardRepresentation k (Fin 3) (finRotate 3) (symmetricGroupThreeDiffBasis 0) =
+      symmetricGroupThreeDiffBasis 1 - symmetricGroupThreeDiffBasis 0 := by
+    rw [symmetricGroupThreeDiffBasis_apply, symmetricGroupThreeDiffBasis_apply,
+      ← toRepresentation_augmentationSubrepresentation,
+      Subrepresentation.toRepresentation_apply_coe]
+    obtain ⟨h0, -, h2⟩ := finRotate_three_smul
+    simp [symmetricGroupThreeDiffVec, Representation.ofMulAction_single, h0, h2]
+  have hy : standardRepresentation k (Fin 3) (finRotate 3) (symmetricGroupThreeDiffBasis 1) =
+      -symmetricGroupThreeDiffBasis 0 := by
+    rw [symmetricGroupThreeDiffBasis_apply, symmetricGroupThreeDiffBasis_apply,
+      ← toRepresentation_augmentationSubrepresentation,
+      Subrepresentation.toRepresentation_apply_coe]
+    obtain ⟨-, h1, h2⟩ := finRotate_three_smul
+    simp [symmetricGroupThreeDiffVec, Representation.ofMulAction_single, h1, h2]
+  fin_cases j <;> fin_cases i <;> simp [hx, hy]
+
+/-- The trace of `σ` on `Symⁿ V₃` counts the monomials in `x, y` fixed by exchanging `x` and `y`. -/
+private theorem trace_symmetricPower_standardRepresentation_swap (n : ℕ) :
+    LinearMap.trace k _ ((standardRepresentation k (Fin 3)).symmetricPower n (Equiv.swap 0 1)) =
+      (Finset.univ.filter fun s : Sym (Fin 2) n => s.map (Equiv.swap 0 1) = s).card := by
+  classical
+  rw [LinearMap.trace_eq_matrix_trace k (symmetricGroupThreeDiffBasis.symmetricPower n),
+    Matrix.trace, ← Finset.sum_boole]
+  refine Finset.sum_congr rfl fun s _ => ?_
+  rw [Matrix.diag_apply, LinearMap.toMatrix_apply, Representation.symmetricPower_apply,
+    symmetricGroupThreeDiffBasis.map_symmetricPower_apply_eq_symmetricPower_map _ _ _
+      standardRepresentation_swap_symmetricGroupThreeDiffBasis, Basis.repr_self,
+    Finsupp.single_apply]
+
+/-- The diagonal coefficient of `τ` on `Symⁿ V₃` at the monomial indexed by `Sym.ofFn p` is the
+sum, over the orderings `q` of `p`, of the products of the matrix coefficients of `τ` at `q, p`. -/
+private theorem symmetricPower_repr_finRotate_symmetricGroupThreeDiffBasis {n : ℕ}
+    (p : Fin n → Fin 2) (S : Finset (Fin n → Fin 2))
+    (hS : ∀ q, q ∈ S ↔ TauCeti.Sym.ofFn q = TauCeti.Sym.ofFn p) :
+    (symmetricGroupThreeDiffBasis.symmetricPower n).repr
+        ((standardRepresentation k (Fin 3)).symmetricPower n (finRotate 3)
+          (symmetricGroupThreeDiffBasis.symmetricPower n (TauCeti.Sym.ofFn p)))
+        (TauCeti.Sym.ofFn p) =
+      ∑ q ∈ S, ∏ i, !![(-1 : k), -1; 1, 0] (q i) (p i) := by
+  simp_rw [Basis.symmetricPower_apply, SymmetricPower.tprodOfSym_ofFn,
+    Representation.symmetricPower_apply_tprod, Basis.symmetricPower_repr_tprod_apply,
+    repr_standardRepresentation_finRotate_symmetricGroupThreeDiffBasis]
+  exact finsum_cond_eq_sum_of_cond_iff _ fun {q} _ => (hS q).symm
+
+/-- Traces of the symmetric powers are invariant under conjugation. -/
+private theorem trace_symmetricPower_standardRepresentation_conj (n : ℕ)
+    (x h : Equiv.Perm (Fin 3)) :
+    LinearMap.trace k _ ((standardRepresentation k (Fin 3)).symmetricPower n (h * x * h⁻¹)) =
+      LinearMap.trace k _ ((standardRepresentation k (Fin 3)).symmetricPower n x) := by
+  rw [map_mul ((standardRepresentation k (Fin 3)).symmetricPower n),
+    map_mul ((standardRepresentation k (Fin 3)).symmetricPower n), LinearMap.trace_mul_comm,
+    ← mul_assoc, ← map_mul ((standardRepresentation k (Fin 3)).symmetricPower n), inv_mul_cancel,
+    map_one, one_mul]
+
+/-- Every element of `S₃` is the identity or conjugate to `σ = (0 1)` or to `τ = (0 1 2)`. -/
+private theorem exists_eq_one_or_conj_swap_or_conj_finRotate (g : Equiv.Perm (Fin 3)) :
+    ∃ h : Equiv.Perm (Fin 3),
+      g = 1 ∨ g = h * Equiv.swap 0 1 * h⁻¹ ∨ g = h * finRotate 3 * h⁻¹ := by
+  revert g
+  decide
+
+/-- **`χ_{Sym² V₃}(1) = 3`**: `Sym² V₃` has dimension `3`. -/
 theorem trace_symmetricPower_two_standardRepresentation_one :
     LinearMap.trace k _ ((standardRepresentation k (Fin 3)).symmetricPower 2 1) = 3 := by
   -- The trace of the identity is stated for an additive group, so it is applied up to the
@@ -796,23 +901,60 @@ theorem trace_symmetricPower_two_standardRepresentation_one :
   rw [SymmetricPower.finrank_eq, finrank_augmentationSubrepresentation]
   simp [Nat.multichoose_eq]
 
-include hω in
-/-- **`χ_{Sym² V₃}(σ) = 1`** for the transposition `σ = (0 1)`. -/
+/-- **`χ_{Sym² V₃}(σ) = 1`** for the transposition `σ = (0 1)`, which fixes the monomial `xy` and
+exchanges `x²` and `y²`. -/
 theorem trace_symmetricPower_two_standardRepresentation_swap :
     LinearMap.trace k _
       ((standardRepresentation k (Fin 3)).symmetricPower 2 (Equiv.swap 0 1)) = 1 := by
-  rw [trace_symmetricPower_two_standardRepresentation hω, character_standardRepresentation_swap,
-    add_zero]
+  rw [trace_symmetricPower_standardRepresentation_swap, show (Finset.univ.filter
+    fun s : Sym (Fin 2) 2 => s.map (Equiv.swap 0 1) = s).card = 1 by decide, Nat.cast_one]
 
-include hω in
-/-- **`χ_{Sym² V₃}(τ) = 0`** for the cycle `τ = (0 1 2)`. -/
+/-- **`χ_{Sym² V₃}(τ) = 0`** for the cycle `τ = (0 1 2)`, whose diagonal coefficients on the
+monomials `x², xy, y²` are `1, -1, 0`. -/
 theorem trace_symmetricPower_two_standardRepresentation_finRotate :
     LinearMap.trace k _
       ((standardRepresentation k (Fin 3)).symmetricPower 2 (finRotate 3)) = 0 := by
-  rw [trace_symmetricPower_two_standardRepresentation hω,
-    character_standardRepresentation_finRotate, add_neg_cancel]
+  have huniv : (Finset.univ : Finset (Sym (Fin 2) 2)) =
+      {TauCeti.Sym.ofFn ![0, 0], TauCeti.Sym.ofFn ![0, 1], TauCeti.Sym.ofFn ![1, 1]} := by
+    refine (Finset.eq_univ_of_forall fun s => ?_).symm
+    obtain ⟨p, rfl⟩ := TauCeti.Sym.ofFn_surjective s
+    simp only [Finset.mem_insert, Finset.mem_singleton, ← Sym.coe_inj, TauCeti.Sym.coe_ofFn]
+    revert p
+    decide
+  rw [LinearMap.trace_eq_matrix_trace k (symmetricGroupThreeDiffBasis.symmetricPower 2),
+    Matrix.trace, huniv, Finset.sum_insert ?_, Finset.sum_insert ?_, Finset.sum_singleton]
+  · simp only [Matrix.diag_apply, LinearMap.toMatrix_apply]
+    rw [symmetricPower_repr_finRotate_symmetricGroupThreeDiffBasis _ {![0, 0]} ?_,
+      symmetricPower_repr_finRotate_symmetricGroupThreeDiffBasis _ {![0, 1], ![1, 0]} ?_,
+      symmetricPower_repr_finRotate_symmetricGroupThreeDiffBasis _ {![1, 1]} ?_]
+    · simp [Fin.prod_univ_two]
+    -- The orderings of each monomial.
+    all_goals
+      simp only [Finset.mem_insert, Finset.mem_singleton, ← Sym.coe_inj, TauCeti.Sym.coe_ofFn]
+      decide
+  -- The three monomials are distinct.
+  all_goals
+    simp only [Finset.mem_insert, Finset.mem_singleton, ← Sym.coe_inj, TauCeti.Sym.coe_ofFn]
+    decide
 
-/-- **`χ_{Sym³ V₃}(1) = 4`**, over every field: `Sym³ V₃` has dimension `4`. -/
+/-- **The character of `Sym² V₃` is `1 + χ_{V₃}`**, the character of `1 ⊕ V₃`
+(compare `TauCeti.symmetricGroupThreeSymSqEquiv`). Both sides are class functions, so it suffices
+to compare them at the identity, at `σ = (0 1)` and at `τ = (0 1 2)`. This holds over every
+field. -/
+theorem trace_symmetricPower_two_standardRepresentation (g : Equiv.Perm (Fin 3)) :
+    LinearMap.trace k _ ((standardRepresentation k (Fin 3)).symmetricPower 2 g) =
+      1 + (standardRepresentation k (Fin 3)).character g := by
+  obtain ⟨h, rfl | rfl | rfl⟩ := exists_eq_one_or_conj_swap_or_conj_finRotate g
+  · rw [trace_symmetricPower_two_standardRepresentation_one, character_standardRepresentation_one]
+    norm_num
+  · rw [trace_symmetricPower_standardRepresentation_conj, Representation.char_conj,
+      trace_symmetricPower_two_standardRepresentation_swap, character_standardRepresentation_swap,
+      add_zero]
+  · rw [trace_symmetricPower_standardRepresentation_conj, Representation.char_conj,
+      trace_symmetricPower_two_standardRepresentation_finRotate,
+      character_standardRepresentation_finRotate, add_neg_cancel]
+
+/-- **`χ_{Sym³ V₃}(1) = 4`**: `Sym³ V₃` has dimension `4`. -/
 theorem trace_symmetricPower_three_standardRepresentation_one :
     LinearMap.trace k _ ((standardRepresentation k (Fin 3)).symmetricPower 3 1) = 4 := by
   -- The trace of the identity is stated for an additive group, so it is applied up to the
@@ -823,81 +965,66 @@ theorem trace_symmetricPower_three_standardRepresentation_one :
   rw [SymmetricPower.finrank_eq, finrank_augmentationSubrepresentation]
   simp [Nat.multichoose_eq]
 
-include hω in
-/-- **`χ_{Sym³ V₃}(σ) = 0`** for the transposition `σ = (0 1)`, which permutes the monomial basis
-`α³, α²β, αβ², β³` without fixed points. -/
+/-- **`χ_{Sym³ V₃}(σ) = 0`** for the transposition `σ = (0 1)`, which permutes the monomials
+`x³, x²y, xy², y³` without fixed points. -/
 theorem trace_symmetricPower_three_standardRepresentation_swap :
     LinearMap.trace k _
       ((standardRepresentation k (Fin 3)).symmetricPower 3 (Equiv.swap 0 1)) = 0 := by
-  classical
-  have hfree : ∀ s : Sym (Fin 2) 3, s.map (Equiv.swap 0 1) ≠ s := by decide
-  rw [LinearMap.trace_eq_matrix_trace k ((symmetricGroupThreeBasis hω).symmetricPower 3),
-    Matrix.trace]
-  refine Finset.sum_eq_zero fun s _ => ?_
-  rw [Matrix.diag_apply, LinearMap.toMatrix_apply, Representation.symmetricPower_apply,
-    (symmetricGroupThreeBasis hω).map_symmetricPower_apply_eq_symmetricPower_map _ _ _
-      (standardRepresentation_swap_symmetricGroupThreeBasis hω), Basis.repr_self,
-    Finsupp.single_eq_of_ne (hfree s).symm]
+  rw [trace_symmetricPower_standardRepresentation_swap, show (Finset.univ.filter
+    fun s : Sym (Fin 2) 3 => s.map (Equiv.swap 0 1) = s).card = 0 by decide, Nat.cast_zero]
 
-include hω in
-/-- **`χ_{Sym³ V₃}(τ) = 1`** for the cycle `τ = (0 1 2)`, which is diagonal in the monomial basis
-`α³, α²β, αβ², β³` with eigenvalues `1, ω², ω, 1`. -/
+/-- **`χ_{Sym³ V₃}(τ) = 1`** for the cycle `τ = (0 1 2)`, whose diagonal coefficients on the
+monomials `x³, x²y, xy², y³` are `-1, 2, 0, 0`. -/
 theorem trace_symmetricPower_three_standardRepresentation_finRotate :
     LinearMap.trace k _
       ((standardRepresentation k (Fin 3)).symmetricPower 3 (finRotate 3)) = 1 := by
-  have huniv : (Finset.univ : Finset (Sym (Fin 2) 3)) = {Sym.ofFn ![0, 0, 0],
-      Sym.ofFn ![0, 0, 1], Sym.ofFn ![0, 1, 1], Sym.ofFn ![1, 1, 1]} := by
+  have huniv : (Finset.univ : Finset (Sym (Fin 2) 3)) = {TauCeti.Sym.ofFn ![0, 0, 0],
+      TauCeti.Sym.ofFn ![0, 0, 1], TauCeti.Sym.ofFn ![0, 1, 1], TauCeti.Sym.ofFn ![1, 1, 1]} := by
     refine (Finset.eq_univ_of_forall fun s => ?_).symm
     obtain ⟨p, rfl⟩ := TauCeti.Sym.ofFn_surjective s
     simp only [Finset.mem_insert, Finset.mem_singleton, ← Sym.coe_inj, TauCeti.Sym.coe_ofFn]
     revert p
     decide
-  rw [Representation.symmetricPower_apply,
-    (symmetricGroupThreeBasis hω).trace_map_symmetricPower_of_apply _ ![ω ^ 2, ω] 3
-      (standardRepresentation_finRotate_symmetricGroupThreeBasis hω), huniv,
-    Finset.sum_insert, Finset.sum_insert, Finset.sum_insert, Finset.sum_singleton]
-  · simp only [TauCeti.Sym.coe_ofFn, Multiset.map_coe, Multiset.prod_coe, List.map_ofFn,
-      List.prod_ofFn, Function.comp_def, Fin.prod_univ_three, Matrix.cons_val_zero,
-      Matrix.cons_val_one, Matrix.cons_val_two, Matrix.head_cons, Matrix.tail_cons]
-    have hsum : 1 + ω + ω ^ 2 = 0 := by
-      simpa [Finset.sum_range_succ] using hω.geom_sum_eq_zero (by norm_num)
-    linear_combination (ω ^ 3 + ω ^ 2 + ω + 2) * hω.pow_eq_one + hsum
+  rw [LinearMap.trace_eq_matrix_trace k (symmetricGroupThreeDiffBasis.symmetricPower 3),
+    Matrix.trace, huniv, Finset.sum_insert ?_, Finset.sum_insert ?_, Finset.sum_insert ?_,
+    Finset.sum_singleton]
+  · simp only [Matrix.diag_apply, LinearMap.toMatrix_apply]
+    rw [symmetricPower_repr_finRotate_symmetricGroupThreeDiffBasis _ {![0, 0, 0]} ?_,
+      symmetricPower_repr_finRotate_symmetricGroupThreeDiffBasis _
+        {![0, 0, 1], ![0, 1, 0], ![1, 0, 0]} ?_,
+      symmetricPower_repr_finRotate_symmetricGroupThreeDiffBasis _
+        {![0, 1, 1], ![1, 0, 1], ![1, 1, 0]} ?_,
+      symmetricPower_repr_finRotate_symmetricGroupThreeDiffBasis _ {![1, 1, 1]} ?_]
+    · simp [Fin.prod_univ_three]
+    -- The orderings of each monomial.
+    all_goals
+      simp only [Finset.mem_insert, Finset.mem_singleton, ← Sym.coe_inj, TauCeti.Sym.coe_ofFn]
+      decide
   -- The four monomials are distinct.
   all_goals
     simp only [Finset.mem_insert, Finset.mem_singleton, ← Sym.coe_inj, TauCeti.Sym.coe_ofFn]
     decide
 
-include hω in
-/-- **The character of `Sym³ V₃` is `1 + sgn + χ_{V₃}`.** Both sides are class functions, so it
+/-- **The character of `Sym³ V₃` is `1 + sgn + χ_{V₃}`**, the character of `1 ⊕ sgn ⊕ V₃`
+(compare `TauCeti.symmetricGroupThreeSymCubeEquiv`). Both sides are class functions, so it
 suffices to compare them at the identity, at `σ = (0 1)` and at `τ = (0 1 2)`. Unlike the
-isomorphism `Sym³ V₃ ≃ 1 ⊕ sgn ⊕ V₃`, this needs no assumption on the characteristic. -/
+isomorphism `Sym³ V₃ ≃ 1 ⊕ sgn ⊕ V₃`, this holds over every field. -/
 theorem trace_symmetricPower_three_standardRepresentation (g : Equiv.Perm (Fin 3)) :
     LinearMap.trace k _ ((standardRepresentation k (Fin 3)).symmetricPower 3 g) =
       1 + (Equiv.Perm.sign g : ℤ) + (standardRepresentation k (Fin 3)).character g := by
-  have hconj : ∀ x h : Equiv.Perm (Fin 3),
-      LinearMap.trace k _ ((standardRepresentation k (Fin 3)).symmetricPower 3 (h * x * h⁻¹)) =
-        LinearMap.trace k _ ((standardRepresentation k (Fin 3)).symmetricPower 3 x) := by
-    intro x h
-    rw [map_mul ((standardRepresentation k (Fin 3)).symmetricPower 3),
-      map_mul ((standardRepresentation k (Fin 3)).symmetricPower 3), LinearMap.trace_mul_comm,
-      ← mul_assoc, ← map_mul ((standardRepresentation k (Fin 3)).symmetricPower 3), inv_mul_cancel,
-      map_one, one_mul]
   have hsign : ∀ x h : Equiv.Perm (Fin 3), Equiv.Perm.sign (h * x * h⁻¹) = Equiv.Perm.sign x := by
     intro x h
     rw [map_mul, map_mul, Equiv.Perm.sign_inv, mul_right_comm, Int.units_mul_self, one_mul]
-  obtain ⟨h, rfl | rfl | rfl⟩ : ∃ h : Equiv.Perm (Fin 3),
-      g = 1 ∨ g = h * Equiv.swap 0 1 * h⁻¹ ∨ g = h * finRotate 3 * h⁻¹ := by
-    revert g
-    decide
+  obtain ⟨h, rfl | rfl | rfl⟩ := exists_eq_one_or_conj_swap_or_conj_finRotate g
   · rw [trace_symmetricPower_three_standardRepresentation_one, map_one,
       character_standardRepresentation_one]
     norm_num
-  · rw [hconj, hsign, Representation.char_conj,
-      trace_symmetricPower_three_standardRepresentation_swap hω,
+  · rw [trace_symmetricPower_standardRepresentation_conj, hsign, Representation.char_conj,
+      trace_symmetricPower_three_standardRepresentation_swap,
       character_standardRepresentation_swap, Equiv.Perm.sign_swap (by decide)]
     norm_num
-  · rw [hconj, hsign, Representation.char_conj,
-      trace_symmetricPower_three_standardRepresentation_finRotate hω,
+  · rw [trace_symmetricPower_standardRepresentation_conj, hsign, Representation.char_conj,
+      trace_symmetricPower_three_standardRepresentation_finRotate,
       character_standardRepresentation_finRotate, sign_finRotate]
     norm_num
 
