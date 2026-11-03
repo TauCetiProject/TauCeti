@@ -13,7 +13,8 @@ public import Mathlib.ModelTheory.Syntax
 Mathlib's `FirstOrder.Language.Term.varFinsetLeft` collects the variables of a term over `α ⊕ β`
 that come from the left summand `α`. This file characterizes it through the full variable set
 `Term.varFinset`, and computes it after `Term.relabel` and `Term.subst`. It also records that a
-language map commutes with relabelling the variables of a term.
+language map commutes with relabelling the variables of a term. Constructor equations for
+`BoundedFormula.constantsVarsEquiv` describe abstraction of constants in finitary formulas.
 
 ## Main results
 
@@ -101,6 +102,36 @@ theorem onTerm_relabel {β γ : Type*} (g : L →ᴸ L') (h : β → γ) (t : L.
   | func f ts ih => simp [Term.relabel, ih]
 
 end LHom
+
+namespace BoundedFormula
+
+variable {L : Language} {α γ : Type*} {n : ℕ}
+
+@[simp]
+theorem constantsVarsEquiv_falsum :
+    constantsVarsEquiv (.falsum : L[[γ]].BoundedFormula α n) = .falsum := (rfl)
+
+@[simp]
+theorem constantsVarsEquiv_equal (t₁ t₂ : L[[γ]].Term (α ⊕ Fin n)) :
+    constantsVarsEquiv (.equal t₁ t₂ : L[[γ]].BoundedFormula α n) =
+      .equal (Term.constantsVarsEquivLeft t₁) (Term.constantsVarsEquivLeft t₂) := (rfl)
+
+@[simp]
+theorem constantsVarsEquiv_rel {l : ℕ} (R : L[[γ]].Relations l)
+    (ts : Fin l → L[[γ]].Term (α ⊕ Fin n)) :
+    constantsVarsEquiv (.rel R ts : L[[γ]].BoundedFormula α n) =
+      .rel ((Equiv.sumEmpty _ _) R) (fun i => Term.constantsVarsEquivLeft (ts i)) := (rfl)
+
+@[simp]
+theorem constantsVarsEquiv_imp (φ ψ : L[[γ]].BoundedFormula α n) :
+    constantsVarsEquiv (φ.imp ψ) =
+      (constantsVarsEquiv φ).imp (constantsVarsEquiv ψ) := (rfl)
+
+@[simp]
+theorem constantsVarsEquiv_all (φ : L[[γ]].BoundedFormula α (n + 1)) :
+    constantsVarsEquiv φ.all = (constantsVarsEquiv φ).all := (rfl)
+
+end BoundedFormula
 
 end Language
 

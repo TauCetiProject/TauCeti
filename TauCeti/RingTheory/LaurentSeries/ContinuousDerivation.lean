@@ -248,7 +248,7 @@ noncomputable def powerSeriesPreservingDerivations :
     refine ⟨?_, fun f ↦ ?_⟩
     · exact (continuousDerivationsLieSubalgebra K).smul_mem c hδ
     · obtain ⟨g, hg⟩ := hδp f
-      exact ⟨c • g, by simp only [Derivation.smul_apply, hg, PowerSeries.coe_smul]⟩
+      exact ⟨c • g, by simp only [_root_.smul_apply, hg, PowerSeries.coe_smul]⟩
   lie_mem' := by
     rintro δ ε ⟨hδ, hδp⟩ ⟨hε, hεp⟩
     refine ⟨?_, fun f ↦ ?_⟩
@@ -281,7 +281,7 @@ theorem mem_powerSeriesPreservingDerivations_iff {δ : Derivation K K⸨X⸩ K�
   · rintro ⟨a, rfl⟩
     refine ⟨continuous_smul_laurentSeriesDerivation _, fun f ↦ ?_⟩
     exact ⟨a * PowerSeries.derivative f, by
-      simp only [Derivation.smul_apply, smul_eq_mul, laurentSeriesDerivation_apply,
+      simp only [_root_.smul_apply, smul_eq_mul, laurentSeriesDerivation_apply,
         PowerSeries.coe_mul, PowerSeries.coe_derivative]⟩
 
 variable (K) in
@@ -297,14 +297,14 @@ noncomputable def maximalIdealPreservingDerivations :
     refine ⟨hδ.add hε, fun f ↦ ?_⟩
     obtain ⟨g, hg⟩ := hδp f
     obtain ⟨h, hh⟩ := hεp f
-    exact ⟨g + h, by simp only [Derivation.add_apply, hg, hh, mul_add, PowerSeries.coe_add]⟩
+    exact ⟨g + h, by simp only [_root_.add_apply, hg, hh, mul_add, PowerSeries.coe_add]⟩
   smul_mem' := by
     rintro c δ ⟨hδ, hδp⟩
     refine ⟨?_, fun f ↦ ?_⟩
     · exact (continuousDerivationsLieSubalgebra K).smul_mem c hδ
     · obtain ⟨g, hg⟩ := hδp f
       exact ⟨c • g, by
-        simp only [Derivation.smul_apply, hg, mul_smul_comm, PowerSeries.coe_smul]⟩
+        simp only [_root_.smul_apply, hg, mul_smul_comm, PowerSeries.coe_smul]⟩
   lie_mem' := by
     rintro δ ε ⟨hδ, hδp⟩ ⟨hε, hεp⟩
     refine ⟨?_, fun f ↦ ?_⟩
@@ -343,7 +343,7 @@ theorem mem_maximalIdealPreservingDerivations_iff {δ : Derivation K K⸨X⸩ K�
   · rintro ⟨a, rfl⟩
     refine ⟨continuous_smul_laurentSeriesDerivation _, fun f ↦ ?_⟩
     refine ⟨a * PowerSeries.derivative (PowerSeries.X * f), ?_⟩
-    simp only [Derivation.smul_apply, smul_eq_mul, laurentSeriesDerivation_apply,
+    simp only [_root_.smul_apply, smul_eq_mul, laurentSeriesDerivation_apply,
       PowerSeries.coe_mul, PowerSeries.coe_derivative, mul_assoc]
 
 /-- Maximal-ideal-preserving continuous Laurent vector fields preserve power series. -/

@@ -73,7 +73,6 @@ theorem isSubmodular_pairCutCapacity [Fintype V] [DecidableEq V] [AddCommMonoid 
   classical
   rw [isSubmodular_def]
   intro S T
-  simp only [sup_eq_union, inf_eq_inter]
   simp_rw [pairCutCapacity_def]
   rw [← sum_add_distrib, ← sum_add_distrib]
   apply sum_le_sum

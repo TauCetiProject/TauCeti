@@ -101,8 +101,7 @@ theorem hasDerivAt_exp_mul_const_mul_exp_neg (x c : A) :
   have h := ((hasDerivAt_exp_smul_const x (0 : ℝ)).mul_const c).mul
     (hasDerivAt_exp_smul_const (-x) (0 : ℝ))
   convert h using 1
-  all_goals
-    simp only [zero_smul, exp_zero, one_mul, mul_one, mul_neg, sub_eq_add_neg]
+  simp only [zero_smul, exp_zero, one_mul, mul_one, mul_neg, sub_eq_add_neg]
 
 end Duhamel
 
@@ -214,7 +213,7 @@ theorem expFDerivTerm_eq_derivSeries (x : R) (n : ℕ) :
   rw [continuousMultilinearCurryFin1_apply, _root_.sum_apply, Fin.snoc_zero]
   simp_rw [FormalMultilinearSeries.changeOriginSeriesTerm_apply]
   rw [sum_piecewise_eq_sum_update_of_card_eq_succ (by rw [Fintype.card_fin]; omega)]
-  simp only [mul_assoc, expSeries, smul_apply,
+  simp only [mul_assoc, expSeries, _root_.smul_apply,
     ContinuousMultilinearMap.mkPiAlgebraFin_apply, List.ofFn_eq_map,
     (List.nodup_finRange (1 + n)).map_update, List.mem_finRange, ↓reduceIte,
     List.map_const', List.length_finRange, List.idxOf_finRange, List.prod_set,

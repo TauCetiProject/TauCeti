@@ -226,12 +226,12 @@ theorem exists_character_eq_of_commute [Field k] [IsAlgClosed k] [Group G] (W : 
   have hW := FDRep.isIrreducible_of_simple W
   have : Nontrivial W := hW.nontrivial
   choose c hc using fun g => hW.exists_forall_apply_eq_smul (W.ρ g) fun h v => by
-    rw [← Module.End.mul_apply, (hcomm g h).eq, Module.End.mul_apply]
+    rw [← mul_apply_eq_comp, (hcomm g h).eq, mul_apply_eq_comp]
   obtain ⟨v, hv⟩ := exists_ne (0 : W)
   have hmul (g h : G) : c (g * h) = c g * c h := by
     refine smul_left_injective k hv ?_
     dsimp only
-    rw [← hc, map_mul, Module.End.mul_apply, hc h, map_smul, hc g, smul_smul, mul_comm]
+    rw [← hc, map_mul, mul_apply_eq_comp, hc h, map_smul, hc g, smul_smul, mul_comm]
   have hone : c 1 = 1 := smul_left_injective k hv (by simp [← hc])
   -- The line through `v` is stable, hence everything: `W` is one-dimensional.
   let line : Subrepresentation W.ρ :=
@@ -244,7 +244,7 @@ theorem exists_character_eq_of_commute [Field k] [IsAlgClosed k] [Group G] (W : 
     rw [h] at hmem
     exact hmem
   have hfin : Module.finrank k W = 1 :=
-    (finrank_eq_one_iff_of_nonzero v hv).mpr (congrArg Subrepresentation.toSubmodule hline)
+    (finrank_eq_one_iff_of_ne_zero v hv).mpr (congrArg Subrepresentation.toSubmodule hline)
   let χ : G →* k := { toFun := c, map_one' := hone, map_mul' := hmul }
   refine ⟨χ.toHomUnits, funext fun g => ?_⟩
   have hρ : W.ρ g = c g • LinearMap.id := LinearMap.ext (hc g)

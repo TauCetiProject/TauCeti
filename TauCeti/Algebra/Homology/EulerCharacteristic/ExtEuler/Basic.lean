@@ -141,6 +141,13 @@ theorem isExtBounded {X Y : C} {N : ℕ} (h : IsExtBoundedBy.{w} X Y N) : IsExtB
 
 end IsExtBoundedBy
 
+/-- Finitely many pairs with eventually vanishing `Ext` have a common vanishing bound. -/
+theorem exists_forall_isExtBoundedBy {ι : Type*} [Finite ι] {X Y : ι → C}
+    (h : ∀ i, IsExtBounded.{w} (X i) (Y i)) : ∃ N, ∀ i, IsExtBoundedBy.{w} (X i) (Y i) N := by
+  choose N hN using fun i ↦ (h i).exists_bound
+  obtain ⟨M, hM⟩ := (Set.finite_range N).bddAbove
+  exact ⟨M, fun i ↦ (hN i).mono (hM ⟨i, rfl⟩)⟩
+
 /-- Hom-finiteness is the degree-zero part of `Ext`-finiteness, and is kept as a separate, weaker
 predicate: it says nothing about the higher `Ext` groups. -/
 theorem IsExtFinite.finiteDimensional_hom {X Y : C} (h : IsExtFinite.{w} k X Y) :

@@ -65,7 +65,7 @@ theorem commute_iff_exists_common_zpow (x y : G) :
       Set.pairwise_pair_of_symm_of_refl.mpr hxy
     have : IsMulCommutative H := Subgroup.isMulCommutative_closure hp
     have hcyc : IsCyclic H := H.isCyclic_of_isMulCommutative
-    obtain ⟨r, hr⟩ := (H.isCyclic_iff_exists_zpowers_eq_top).mp hcyc
+    obtain ⟨r, hr⟩ := (H.isCyclic_iff_exists_zpowers_eq).mp hcyc
     have hx : x ∈ Subgroup.zpowers r := hr.symm ▸ Subgroup.subset_closure (by simp)
     have hy : y ∈ Subgroup.zpowers r := hr.symm ▸ Subgroup.subset_closure (by simp)
     obtain ⟨m, hm⟩ := Subgroup.mem_zpowers_iff.mp hx

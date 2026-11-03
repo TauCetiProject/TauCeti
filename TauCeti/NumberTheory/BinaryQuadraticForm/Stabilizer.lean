@@ -253,7 +253,7 @@ private theorem unitaryToStabilizer_surjective (hfD : f.discrim = D) (hf : f.IsP
   have h₀₀ := congrFun₂ hcomm 0 0
   have h₀₁ := congrFun₂ hcomm 0 1
   have h₁₀ := congrFun₂ hcomm 1 0
-  simp only [mul_apply, Fin.sum_univ_two, of_apply, cons_val', cons_val_zero, cons_val_one,
+  simp only [Matrix.mul_apply, Fin.sum_univ_two, of_apply, cons_val', cons_val_zero, cons_val_one,
     empty_val', cons_val_fin_one] at h₀₀ h₀₁ h₁₀
   push_cast at h₀₀ h₀₁ h₁₀ he'
   set p := γ 0 0
