@@ -263,8 +263,9 @@ theorem unique (hf : IsFiniteFace h σ l u) {l' u' : ℕ}
   subst d
   exact (Set.Icc_eq_Icc_iff hf.left_le_right).mp (hface.symm.trans hface')
 
-/-- Raising a convex sequence while fixing both endpoints of a finite face preserves that
-face. In particular, no new contacts can appear outside its interval. -/
+/-- If a convex sequence `g` lies above `h` and agrees with it at both endpoints of a finite
+face of `h`, then that is also a finite face of `g`. No new contacts appear outside its
+interval. -/
 theorem of_le_of_eq_endpoints (hf : IsFiniteFace h σ l u) {g : ℕ → WithTop ℝ}
     (hg : IsConvexSeq g) (hhg : h ≤ g) (hl : g l = h l) (hu : g u = h u) :
     IsFiniteFace g σ l u := by
