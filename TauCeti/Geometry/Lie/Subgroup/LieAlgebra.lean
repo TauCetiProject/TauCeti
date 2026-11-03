@@ -88,6 +88,8 @@ target — the closed-subgroup theorem, promoting `K` to an embedded Lie subgrou
   `Ad g - 1` maps `Lie(K)` into itself, in the form that `Submodule.mapQ` consumes.
 * `TauCeti.Lie.lieSubalgebraOfSubgroup_inf`: for closed subgroups, the Lie algebra of an
   intersection is the intersection of the Lie algebras.
+* `TauCeti.Lie.lieSubalgebraOfSubgroup_map_conj`: the Lie algebra of a conjugate of a subgroup is
+  the adjoint image of its Lie algebra.
 
 ## References
 
@@ -408,5 +410,26 @@ theorem lieSubalgebraOfSubgroup_le_comap_Ad_sub_id {K : Subgroup G} {g : G}
       Submodule.comap ((Ad (I := I) g).toLinearEquiv.toLinearMap - LinearMap.id)
         (lieSubalgebraOfSubgroup (I := I) K).toSubmodule :=
   fun _ hX => sub_mem (Ad_mem_lieSubalgebraOfSubgroup hg hX) hX
+
+/-- **The Lie algebra of a conjugate of a subgroup** is the adjoint image of its Lie algebra. -/
+theorem lieSubalgebraOfSubgroup_map_conj {K : Subgroup G} (g : G) :
+    lieSubalgebraOfSubgroup (I := I) (K.map (MulAut.conj g).toMonoidHom) =
+      (lieSubalgebraOfSubgroup (I := I) K).map (Ad (I := I) g : _ →ₗ⁅ℝ⁆ _) := by
+  rw [lieSubalgebraOfSubgroup, lieSubalgebraOfSubgroup, LieSubalgebra.map_lieSpan]
+  congr 1
+  ext X
+  constructor
+  · intro h
+    refine ⟨Ad (I := I) g⁻¹ X, fun t ↦ ?_, by simp⟩
+    have hmem := Subgroup.mem_map_equiv.mp (h t)
+    rw [MulAut.conj_symm_apply] at hmem
+    have hconj : g⁻¹ * lieExp (I := I) (t • X) * g = lieExp (Ad (I := I) g⁻¹ (t • X)) := by
+      simpa only [inv_inv] using conj_lieExp (I := I) g⁻¹ (t • X)
+    rw [← map_smul, ← hconj]
+    exact hmem
+  · rintro ⟨Y, hY, rfl⟩ t
+    refine ⟨lieExp (I := I) (t • Y), hY t, ?_⟩
+    rw [MulEquiv.coe_toMonoidHom, MulAut.conj_apply, conj_lieExp, map_smul,
+      LieEquiv.coe_toLieHom]
 
 end TauCeti.Lie
