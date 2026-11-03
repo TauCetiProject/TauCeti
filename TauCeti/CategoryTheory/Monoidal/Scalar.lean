@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.CategoryTheory.Monoidal.Free.ObjectProperty
+public import Mathlib.CategoryTheory.Monoidal.Subcategory
 public import Mathlib.CategoryTheory.Monoidal.CoherenceLemmas
 public import Mathlib.CategoryTheory.Monoidal.Linear
 public import TauCeti.CategoryTheory.Preadditive.Schur
@@ -173,13 +173,6 @@ theorem circlesCommuteAt_smul_id {R : Type*} [Semiring R] [Preadditive C] [Linea
     [MonoidalPreadditive C] [MonoidalLinear R C] (r : R) (X : C) :
     CirclesCommuteAt (r • 𝟙 (𝟙_ C)) X := by
   simp [circlesCommuteAt_iff]
-
-/-- Centrality at one generating object suffices for every tensor word in that object; the
-ambient category need not be braided and centrality is not assumed at its other objects. -/
-example {d : 𝟙_ C ⟶ 𝟙_ C} {V : C} (h : CirclesCommuteAt d V)
-    (W : FreeMonoidalCategory Unit) :
-    CirclesCommuteAt d (FreeMonoidalCategory.projectObj (fun _ : Unit ↦ V) W) :=
-  ObjectProperty.prop_projectObj (CirclesCommuteAt d) (fun _ ↦ h) W
 
 /-- In a braided target, the existing scalar-action identity supplies local centrality. -/
 example [BraidedCategory C] (d : 𝟙_ C ⟶ 𝟙_ C) (X : C) : CirclesCommuteAt d X :=
