@@ -21,6 +21,8 @@ monotone along the vertices of every simplex.
 * `SSet.map_const_map`: the vertices of the image of a simplex under a simplicial operator.
 * `SSet.monotone_map_const`: a map on vertices that is monotone along edges is monotone along the
   vertices of each simplex.
+* `SSet.map_const_castSucc_of_δ_last`: the first `n + 1` vertices of an `(n + 1)`-simplex whose
+  last face is constant at `x` are `x`.
 -/
 
 public section
@@ -54,5 +56,16 @@ lemma monotone_map_const {P : Type*} [Preorder P] (g : X _⦋0⦌ → P)
     ext a
     fin_cases a
     rfl
+
+/-- If the face of an `(n + 1)`-simplex `σ` opposite to its last vertex is the constant simplex
+at a vertex `x`, then the vertex `j.castSucc` of `σ` is `x`, since it is the vertex `j` of that
+face. -/
+lemma map_const_castSucc_of_δ_last {n : ℕ} {σ : X _⦋n + 1⦌} {x : X _⦋0⦌}
+    (hσ : X.δ (Fin.last (n + 1)) σ = X.map (SimplexCategory.const ⦋n⦌ ⦋0⦌ 0).op x)
+    (j : Fin (n + 1)) :
+    X.map (SimplexCategory.const ⦋0⦌ ⦋n + 1⦌ j.castSucc).op σ = x := by
+  have h := congrArg (X.map (SimplexCategory.const ⦋0⦌ ⦋n⦌ j).op) hσ
+  rw [SimplicialObject.δ_def, map_const_map, map_const_map] at h
+  simpa [SimplexCategory.δ, Fin.succAbove_last] using h
 
 end SSet

@@ -12,6 +12,7 @@ public import TauCeti.AlgebraicTopology.SimplexCategory.JoinVertex
 public import TauCeti.AlgebraicTopology.SimplicialSet.Discrete
 public import TauCeti.AlgebraicTopology.SimplicialSet.StrictSegal
 import Mathlib.AlgebraicTopology.SimplicialSet.HornColimits
+import TauCeti.AlgebraicTopology.SimplicialSet.Vertex
 
 /-!
 # Right mapping spaces of simplicial sets
@@ -165,21 +166,6 @@ theorem coe_σ {n : ℕ} (j : Fin (n + 1)) (s : (X.rightMappingSpace x y : SSet.
     (SimplicialObject.σ (X.rightMappingSpace x y : SSet.{u}) j s).1 =
       X.σ j.castSucc (s.1 : X _⦋n + 1⦌) :=
   (ConcreteCategory.congr_hom (X.joinVertex_op_comp_σ j) s.1 :)
-
-/-- The vertex `j.castSucc` of an `(n + 1)`-simplex of `X` whose face opposite to the last vertex
-is the constant simplex at `x` is `x`. -/
-private theorem map_const_castSucc_of_δ_last {n : ℕ} {σ : X _⦋n + 1⦌}
-    (hσ : X.δ (Fin.last (n + 1)) σ = X.map (SimplexCategory.const ⦋n⦌ ⦋0⦌ 0).op x)
-    (j : Fin (n + 1)) :
-    X.map (SimplexCategory.const ⦋0⦌ ⦋n + 1⦌ j.castSucc).op σ = x := by
-  -- The vertex `j.castSucc` is the vertex `j` of the face opposite to the last vertex.
-  have h : SimplexCategory.const ⦋0⦌ ⦋n + 1⦌ j.castSucc =
-      SimplexCategory.const ⦋0⦌ ⦋n⦌ j ≫ SimplexCategory.δ (Fin.last (n + 1)) := by
-    ext
-    simp [SimplexCategory.δ, Fin.succAbove_last]
-  rw [h, op_comp, Functor.map_comp_apply, ← SimplicialObject.δ_def, hσ, map_map_const_zero,
-    SimplexCategory.const_eq_id]
-  simp
 
 /-- The first `n + 1` vertices of an `n`-simplex of `Hom^R_X(x, y)`, an `(n + 1)`-simplex of `X`,
 are `x`. -/
