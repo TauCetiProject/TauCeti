@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Lie.G2.ShortRoot.IntegralToralClosure.RankOneWord
+public import TauCeti.Algebra.Lie.G2.ShortRoot.IntegralToralClosure.SimpleWeylPoint
 import TauCeti.Algebra.Ring.Commutator
 
 /-!
@@ -50,14 +50,14 @@ private def L : Fin 3 → Matrix (Fin 7) (Fin 7) ℤ :=
   ![raisingMatrix 1, Matrix.single 0 4 1 - Matrix.single 2 6 1,
     -Matrix.single 0 5 1 - Matrix.single 1 6 1]
 
-private theorem rankOneWordMatrix_conj_L_zero :
-    rankOneWordMatrix 0 * L 0 * (rankOneWordMatrix 0).transpose = L 1 := by
-  simp only [rankOneWordMatrix_zero]
+private theorem simpleWeylPointMatrix_conj_L_zero :
+    simpleWeylPointMatrix 0 * L 0 * (simpleWeylPointMatrix 0).transpose = L 1 := by
+  simp only [simpleWeylPointMatrix_zero]
   decide +kernel
 
-private theorem rankOneWordMatrix_conj_L_one :
-    rankOneWordMatrix 1 * L 1 * (rankOneWordMatrix 1).transpose = L 2 := by
-  simp only [rankOneWordMatrix_one]
+private theorem simpleWeylPointMatrix_conj_L_one :
+    simpleWeylPointMatrix 1 * L 1 * (simpleWeylPointMatrix 1).transpose = L 2 := by
+  simp only [simpleWeylPointMatrix_one]
   decide +kernel
 
 private theorem L_square (i : Fin 3) : L i * L i = 0 := by
@@ -75,42 +75,42 @@ private theorem coe_long (A : Type v) [CommRing A] (a : A) :
   simp [coe_rootSubgroupPoints, rootMatrix_inl, rootDividedSquareMatrix_inl, L]
 
 private theorem coe_conj_long (A : Type v) [CommRing A] (a : A) :
-    (((rankOneWord 0 A * rootSubgroupPoints (.inl 1) A (Multiplicative.ofAdd a) *
-      (rankOneWord 0 A)⁻¹ : points A) : Matrix.GeneralLinearGroup (Fin 7) A) :
+    (((simpleWeylPoint 0 A * rootSubgroupPoints (.inl 1) A (Multiplicative.ofAdd a) *
+      (simpleWeylPoint 0 A)⁻¹ : points A) : Matrix.GeneralLinearGroup (Fin 7) A) :
       Matrix (Fin 7) (Fin 7) A) = 1 + a • (L 1).map (Int.castRingHom A) := by
-  simp only [Subgroup.coe_mul, Subgroup.coe_inv, Units.val_mul, coe_rankOneWord_inv,
-    coe_rankOneWord, ← Matrix.transpose_map, coe_long, Matrix.mul_add, Matrix.add_mul,
+  simp only [Subgroup.coe_mul, Subgroup.coe_inv, Units.val_mul, coe_simpleWeylPoint_inv,
+    coe_simpleWeylPoint, ← Matrix.transpose_map, coe_long, Matrix.mul_add, Matrix.add_mul,
     Matrix.mul_one, Matrix.mul_smul, Matrix.smul_mul, ← Matrix.map_mul,
-    rankOneWordMatrix_mul_transpose, rankOneWordMatrix_conj_L_zero,
+    simpleWeylPointMatrix_mul_transpose, simpleWeylPointMatrix_conj_L_zero,
     Matrix.map_one _ (map_zero _) (map_one _)]
 
 private theorem coe_conj_conj_long (A : Type v) [CommRing A] (a : A) :
-    (((rankOneWord 1 A * (rankOneWord 0 A *
-      rootSubgroupPoints (.inl 1) A (Multiplicative.ofAdd a) * (rankOneWord 0 A)⁻¹) *
-      (rankOneWord 1 A)⁻¹ : points A) : Matrix.GeneralLinearGroup (Fin 7) A) :
+    (((simpleWeylPoint 1 A * (simpleWeylPoint 0 A *
+      rootSubgroupPoints (.inl 1) A (Multiplicative.ofAdd a) * (simpleWeylPoint 0 A)⁻¹) *
+      (simpleWeylPoint 1 A)⁻¹ : points A) : Matrix.GeneralLinearGroup (Fin 7) A) :
       Matrix (Fin 7) (Fin 7) A) = 1 + a • (L 2).map (Int.castRingHom A) := by
-  simp only [Subgroup.coe_mul, Subgroup.coe_inv, Units.val_mul, coe_rankOneWord_inv,
-    coe_rankOneWord, ← Matrix.transpose_map, coe_long, Matrix.mul_add, Matrix.add_mul,
+  simp only [Subgroup.coe_mul, Subgroup.coe_inv, Units.val_mul, coe_simpleWeylPoint_inv,
+    coe_simpleWeylPoint, ← Matrix.transpose_map, coe_long, Matrix.mul_add, Matrix.add_mul,
     Matrix.mul_one, Matrix.mul_smul, Matrix.smul_mul, ← Matrix.map_mul,
-    rankOneWordMatrix_mul_transpose, rankOneWordMatrix_conj_L_zero,
-    rankOneWordMatrix_conj_L_one, Matrix.map_one _ (map_zero _) (map_one _)]
+    simpleWeylPointMatrix_mul_transpose, simpleWeylPointMatrix_conj_L_zero,
+    simpleWeylPointMatrix_conj_L_one, Matrix.map_one _ (map_zero _) (map_one _)]
 
 /-- The long-root A₂ Chevalley commutator, with the nonsimple root parameters normalized by
 pinned rank-one words. The first node is short and the second long (Bourbaki numbering). -/
-theorem commutatorElement_rootSubgroupPoints_rankOneWord_conj_rootSubgroupPoints
+theorem commutatorElement_rootSubgroupPoints_simpleWeylPoint_conj_rootSubgroupPoints
     (A : Type v) [CommRing A] (a b : A) :
     ⁅rootSubgroupPoints (.inl 1) A (Multiplicative.ofAdd a),
-      rankOneWord 0 A * rootSubgroupPoints (.inl 1) A (Multiplicative.ofAdd b) *
-        (rankOneWord 0 A)⁻¹⁆ =
-      (rankOneWord 1 A * rankOneWord 0 A) *
+      simpleWeylPoint 0 A * rootSubgroupPoints (.inl 1) A (Multiplicative.ofAdd b) *
+        (simpleWeylPoint 0 A)⁻¹⁆ =
+      (simpleWeylPoint 1 A * simpleWeylPoint 0 A) *
         rootSubgroupPoints (.inl 1) A (Multiplicative.ofAdd (a * b)) *
-        (rankOneWord 1 A * rankOneWord 0 A)⁻¹ := by
+        (simpleWeylPoint 1 A * simpleWeylPoint 0 A)⁻¹ := by
   apply Subtype.ext
   apply Units.ext
   have hcomm := map_commutatorElement (points A).subtype
     (rootSubgroupPoints (.inl 1) A (Multiplicative.ofAdd a))
-    (rankOneWord 0 A * rootSubgroupPoints (.inl 1) A (Multiplicative.ofAdd b) *
-      (rankOneWord 0 A)⁻¹)
+    (simpleWeylPoint 0 A * rootSubgroupPoints (.inl 1) A (Multiplicative.ofAdd b) *
+      (simpleWeylPoint 0 A)⁻¹)
   simp only [Subgroup.subtype_apply] at hcomm
   rw [hcomm]
   rw [Units.val_commutatorElement_eq_one_add_lie _ _

@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Lie.G2.ShortRoot.IntegralToralClosure.RootRelations.LongPair
-public import TauCeti.Algebra.Lie.G2.ShortRoot.PrimeField.RankOneWord
+public import TauCeti.Algebra.Lie.G2.ShortRoot.PrimeField.SimpleWeylPoint
 
 /-!
 # The long-root A₂ commutator in the characteristic-three G₂ carrier
@@ -36,19 +36,19 @@ universe v
 
 /-- The long-root A₂ Chevalley commutator in the carrier generated over `𝔽₃`, with its
 nonsimple root parametrizations normalized by the numbered rank-one words. -/
-theorem commutatorElement_rootSubgroupPoints_rankOneWord_conj_rootSubgroupPoints
+theorem commutatorElement_rootSubgroupPoints_simpleWeylPoint_conj_rootSubgroupPoints
     (A : Type v) [CommRing A] [Algebra (ZMod 3) A] (a b : A) :
     ⁅rootSubgroupPoints (.inl 1) A (Multiplicative.ofAdd a),
-      rankOneWord 0 A * rootSubgroupPoints (.inl 1) A (Multiplicative.ofAdd b) *
-        (rankOneWord 0 A)⁻¹⁆ =
-      (rankOneWord 1 A * rankOneWord 0 A) *
+      simpleWeylPoint 0 A * rootSubgroupPoints (.inl 1) A (Multiplicative.ofAdd b) *
+        (simpleWeylPoint 0 A)⁻¹⁆ =
+      (simpleWeylPoint 1 A * simpleWeylPoint 0 A) *
         rootSubgroupPoints (.inl 1) A (Multiplicative.ofAdd (a * b)) *
-        (rankOneWord 1 A * rankOneWord 0 A)⁻¹ := by
+        (simpleWeylPoint 1 A * simpleWeylPoint 0 A)⁻¹ := by
   apply Subtype.ext
-  have h := congrArg Subtype.val
-    (IntegralToralClosure.commutatorElement_rootSubgroupPoints_rankOneWord_conj_rootSubgroupPoints
-      A a b)
+  have h := congrArg Subtype.val <|
+  IntegralToralClosure.commutatorElement_rootSubgroupPoints_simpleWeylPoint_conj_rootSubgroupPoints
+    A a b
   simpa only [commutatorElement_def, Subgroup.coe_mul, Subgroup.coe_inv,
-    coe_rootSubgroupPoints, coe_rankOneWord] using h
+    coe_rootSubgroupPoints, coe_simpleWeylPoint] using h
 
 end TauCeti.G2ShortRoot.PrimeField
