@@ -342,17 +342,9 @@ theorem isOpen_cycle {s : α} (walk : G.Walk s s) (isCycle : walk.IsCycle) :
     (cycle walk isCycle).IsOpen :=
   ⟨trivial, fun i ↦ Fin.elim0 i⟩
 
-private theorem zero_eq_castSucc_zero (n : ℕ) :
-    (0 : Fin (n + 2)) = (0 : Fin (n + 1)).castSucc :=
-  rfl
-
-private theorem castSucc_succ_eq_succ_castSucc {n : ℕ} (i : Fin n) :
-    i.castSucc.succ = i.succ.castSucc :=
-  rfl
-
 private theorem snoc_graphAfter_zero (d : G.EarDecomposition H) (ear : G.Ear H) :
     Fin.lastCases ear.add d.graphAfter (0 : Fin (d.length + 2)) = d.graphAfter 0 := by
-  rw [zero_eq_castSucc_zero, Fin.lastCases_castSucc]
+  rw [← Fin.castSucc_zero, Fin.lastCases_castSucc]
 
 /-- Adjoin one ear at the end of a decomposition. -/
 def snoc (d : G.EarDecomposition H) (ear : G.Ear H) : G.EarDecomposition ear.add where
@@ -368,7 +360,7 @@ def snoc (d : G.EarDecomposition H) (ear : G.Ear H) : G.EarDecomposition ear.add
   graphAfter_succ i := by
     refine Fin.lastCases ?_ (fun j ↦ ?_) i
     · rw [Fin.succ_last, Fin.lastCases_last, Fin.lastCases_last]
-    · rw [castSucc_succ_eq_succ_castSucc, Fin.lastCases_castSucc,
+    · rw [Fin.succ_castSucc, Fin.lastCases_castSucc,
         d.graphAfter_succ, Fin.lastCases_castSucc]
   graphAfter_last := Fin.lastCases_last
 
