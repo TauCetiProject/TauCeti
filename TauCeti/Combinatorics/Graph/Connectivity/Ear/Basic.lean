@@ -7,6 +7,8 @@ module
 
 public import TauCeti.Combinatorics.Graph.Connectivity.Walk.Trace
 
+import TauCeti.Data.Fin.Basic
+
 /-!
 # Ear decompositions of multigraphs
 
@@ -453,18 +455,6 @@ theorem graphAfter_castSucc_le_succ (d : G.EarDecomposition H) (i : Fin d.length
   rw [← d.earAt_fst i]
   exact (d.earAt i).2.base_le_add
 
-private theorem prefix_castLE_castSucc (d : G.EarDecomposition H)
-    (i : Fin (d.length + 1)) (j : Fin i.val) :
-    (Fin.castLE (Nat.le_of_lt_succ i.isLt) j).castSucc =
-      Fin.castLE (Nat.succ_le_iff.mpr i.isLt) j.castSucc := by
-  ext
-  rfl
-
-private theorem prefix_castLE_last (d : G.EarDecomposition H) (i : Fin (d.length + 1)) :
-    Fin.castLE (Nat.succ_le_iff.mpr i.isLt) (Fin.last i.val) = i := by
-  ext
-  rfl
-
 /-- The decomposition formed by the first `i` ears. -/
 def «prefix» (d : G.EarDecomposition H) (i : Fin (d.length + 1)) :
     G.EarDecomposition (d.graphAfter i) where
@@ -473,12 +463,12 @@ def «prefix» (d : G.EarDecomposition H) (i : Fin (d.length + 1)) :
   start := (congrArg d.graphAfter (Fin.castLE_zero _)).symm ▸ d.start
   earAt j := d.earAt (Fin.castLE (Nat.le_of_lt_succ i.isLt) j)
   earAt_fst j := by
-    rw [d.earAt_fst, prefix_castLE_castSucc]
+    rw [d.earAt_fst, Fin.castSucc_castLE, Fin.castLE_castSucc]
   graphAfter_succ j := by
     rw [Fin.castLE_succ]
     exact d.graphAfter_succ (Fin.castLE (Nat.le_of_lt_succ i.isLt) j)
   graphAfter_last := by
-    rw [prefix_castLE_last]
+    rw [Fin.castLE_last]
 
 private theorem start_isCycle_prefix (d : G.EarDecomposition H)
     (i : Fin (d.length + 1)) :
