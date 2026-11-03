@@ -114,8 +114,7 @@ private def quotientCokernelDesc (hf : Function.Injective f.hom.hom)
           Adjunction.homEquiv_unit, Functor.map_zero, Limits.comp_zero]
       -- The reduction of `ofInjective f` has even differential the scalar extension of its
       -- even differential, which is `f` by `ofInjective_obj_d₀`.
-      rw [← FGModuleCat.forget₂_map (((baseChangeFunctor _).obj _).obj.d₀),
-        baseChangeFunctor_obj_d₀, FGModuleCat.forget₂_map]
+      rw [baseChangeFunctor_obj_d₀, FGModuleCat.forget₂_map]
       exact h))
 
 private theorem cokernelπ_quotientCokernelDesc (hf : Function.Injective f.hom.hom)
