@@ -5,15 +5,13 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.Category.ModuleCat.Abelian
-public import Mathlib.Algebra.Category.ModuleCat.Colimits
-public import Mathlib.AlgebraicTopology.SingularHomology.Basic
 public import Mathlib.Data.ENat.Lattice
+public import TauCeti.AlgebraicTopology.Singular.SurfaceGenus
+public import TauCeti.Analysis.InnerProductSpace.Projection.Basic
 public import TauCeti.Geometry.Manifold.Instances.ClosedBall.Hemisphere
 public import TauCeti.Geometry.Manifold.Orientation.ClosedBall
 public import TauCeti.KnotTheory.SmoothCircle
 import Mathlib.Analysis.Convex.Contractible
-import TauCeti.AlgebraicTopology.Singular.Contractible
 
 /-!
 # Seifert surfaces and the Seifert genus of a knot
@@ -61,7 +59,8 @@ Schoenflies theorem, and is not proved here.
 ## Main definitions
 
 * `TauCeti.SeifertSurface K`: a smooth Seifert surface for `K`.
-* `TauCeti.SeifertSurface.genus`: the genus `dim H₁(S; ℚ) / 2` of a Seifert surface.
+* `TauCeti.SeifertSurface.genus`: the genus `dim H₁(S; ℚ) / 2` of a Seifert surface
+  (`TauCeti.surfaceGenus`).
 * `TauCeti.seifertGenus K`: the Seifert genus of `K`, in `ℕ∞`.
 * `TauCeti.SeifertSurface.congrRange`, `TauCeti.SeifertSurface.transDiffeomorph`: a Seifert surface
   for a knot with the same image, and for the image of the knot under an ambient diffeomorphism.
@@ -134,19 +133,15 @@ attribute [instance] topologicalSpace chartedSpace isManifold compactSpace conne
 
 variable {K K' : SmoothCircleEmbedding (𝓡 n) (sphere (0 : E) 1)}
 
-/-- The first singular homology `H₁(S; ℚ)` of a Seifert surface, with rational coefficients. -/
-abbrev firstHomology (S : SeifertSurface K) : Type :=
-  ((singularHomologyFunctor (ModuleCat ℚ) 1).obj (ModuleCat.of ℚ ℚ)).obj (TopCat.of S.carrier)
-
-/-- The **genus** of a Seifert surface: half the dimension of its first rational homology. A
-compact, connected, orientable surface of genus `g` with one boundary circle has `H₁(S; ℚ) ≅ ℚ²ᵍ`,
-so this is the genus of `S`: since `S.toFun` is an embedding, the boundary of `S` is homeomorphic to
-the image of `K`, a single circle. -/
+/-- The **genus** of a Seifert surface: half the dimension of its first rational homology
+(`TauCeti.surfaceGenus`). A compact, connected, orientable surface of genus `g` with one boundary
+circle has `H₁(S; ℚ) ≅ ℚ²ᵍ`, so this is the genus of `S`: since `S.toFun` is an embedding, the
+boundary of `S` is homeomorphic to the image of `K`, a single circle. -/
 def genus (S : SeifertSurface K) : ℕ :=
-  finrank ℚ S.firstHomology / 2
+  surfaceGenus S.carrier
 
-/-- The genus of a Seifert surface is half the dimension of its first rational homology. -/
-theorem genus_def (S : SeifertSurface K) : S.genus = finrank ℚ S.firstHomology / 2 :=
+/-- The genus of a Seifert surface is the genus `TauCeti.surfaceGenus` of its carrier. -/
+theorem genus_def (S : SeifertSurface K) : S.genus = surfaceGenus S.carrier :=
   (rfl)
 
 /-- A Seifert surface for `K` is a Seifert surface for every knot `K'` with the same image. -/
@@ -281,10 +276,7 @@ theorem genus_hemisphere (hv : ∀ z, ⟪(v : E), ι z⟫_ℝ = 0) :
     (hemisphere (n := n) hv).genus = 0 := by
   have : ContractibleSpace (hemisphere (n := n) hv).carrier :=
     (convex_closedBall (0 : ℂ) 1).contractibleSpace (nonempty_closedBall.2 zero_le_one)
-  have := ModuleCat.isZero_iff_subsingleton.1 <|
-    isZero_singularHomologyFunctor_of_contractibleSpace (ModuleCat.of ℚ ℚ)
-      (TopCat.of (hemisphere (n := n) hv).carrier) one_ne_zero
-  rw [genus_def, finrank_zero_of_subsingleton, Nat.zero_div]
+  rw [genus_def, surfaceGenus_eq_zero_of_contractibleSpace]
 
 end SeifertSurface
 

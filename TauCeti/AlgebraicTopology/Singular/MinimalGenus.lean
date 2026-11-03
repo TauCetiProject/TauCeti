@@ -9,6 +9,7 @@ public import Mathlib.Algebra.Category.ModuleCat.Abelian
 public import Mathlib.Algebra.Category.ModuleCat.Colimits
 public import Mathlib.Data.ENat.Lattice
 public import TauCeti.AlgebraicTopology.Singular.LocalHomology.FundamentalClass
+public import TauCeti.AlgebraicTopology.Singular.SurfaceGenus
 
 /-!
 # The minimal genus of a degree-two homology class
@@ -42,7 +43,7 @@ minimal genus (`TauCeti.minimalGenus_neg`). In particular the two generators of 
 
 * `TauCeti.RepresentingSurface c`: a closed, connected, oriented surface embedded in `Y`
   representing `c ∈ H₂(Y; ℤ)`.
-* `TauCeti.RepresentingSurface.genus`: its genus `dim H₁(S; ℚ) / 2`.
+* `TauCeti.RepresentingSurface.genus`: its genus `dim H₁(S; ℚ) / 2` (`TauCeti.surfaceGenus`).
 * `TauCeti.RepresentingSurface.neg`: the same surface with the reversed orientation, representing
   `-c`.
 * `TauCeti.minimalGenus c`: the least genus of a surface representing `c`, in `ℕ∞`.
@@ -110,17 +111,14 @@ attribute [instance] topologicalSpace t2Space chartedSpace compactSpace connecte
 
 variable {c : secondHomology Y}
 
-/-- The first singular homology `H₁(S; ℚ)` of a representing surface, with rational coefficients. -/
-abbrev firstHomology (S : RepresentingSurface c) : Type :=
-  ((singularHomologyFunctor (ModuleCat.{0} ℚ) 1).obj (ModuleCat.of ℚ ℚ)).obj (TopCat.of S.carrier)
-
-/-- The **genus** of a representing surface: half the dimension of its first rational homology,
-which is `ℚ²ᵍ` for a closed, connected, orientable surface of genus `g`. -/
+/-- The **genus** of a representing surface: half the dimension of its first rational homology
+(`TauCeti.surfaceGenus`), which is `ℚ²ᵍ` for a closed, connected, orientable surface of genus
+`g`. -/
 def genus (S : RepresentingSurface c) : ℕ :=
-  finrank ℚ S.firstHomology / 2
+  surfaceGenus S.carrier
 
-/-- The genus of a representing surface is half the dimension of its first rational homology. -/
-theorem genus_def (S : RepresentingSurface c) : S.genus = finrank ℚ S.firstHomology / 2 :=
+/-- The genus of a representing surface is the genus `TauCeti.surfaceGenus` of its carrier. -/
+theorem genus_def (S : RepresentingSurface c) : S.genus = surfaceGenus S.carrier :=
   (rfl)
 
 /-- A surface representing `c`, with its orientation reversed, represents `-c`. -/

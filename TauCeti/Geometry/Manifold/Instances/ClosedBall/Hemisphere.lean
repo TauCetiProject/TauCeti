@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Geometry.Manifold.Instances.Sphere
 public import TauCeti.Geometry.Manifold.Instances.ClosedBall.Basic
+import TauCeti.Geometry.Manifold.MFDeriv.ModelChart
 
 /-!
 # Closed balls as hemispheres of great spheres
@@ -14,7 +15,7 @@ public import TauCeti.Geometry.Manifold.Instances.ClosedBall.Basic
 Let `ι : F →ₗᵢ[ℝ] E` be a linear isometry of real inner product spaces and `v` a unit vector of
 `E` orthogonal to the range of `ι`. Inverse stereographic projection from `v` (Mathlib's
 `stereoInvFun`) carries the orthogonal complement `vᗮ` onto the unit sphere minus `v`, and the
-sphere of radius `2` in `vᗮ` onto the great sphere `vᗮ ∩ Sⁿ`, identically. So
+sphere of radius `2` in `vᗮ` onto the great sphere `vᗮ ∩ Sⁿ`, by `w ↦ w / 2`. So
 
 `LinearIsometry.closedBallHemisphereMap ι v x = stereoInvFun (2 ι x)`,
 
@@ -46,8 +47,6 @@ rescaled inversion `z ↦ inversion (-e₀) √2 (z / 2)` on the first factor of
 
 ## Main results
 
-* `LinearIsometry.exists_mem_sphere_inner_eq_zero`: a unit vector orthogonal to the range of `ι`
-  exists when the dimension of `F` is smaller than that of `E`.
 * `LinearIsometry.coe_closedBallHemisphereMap_apply`: the formula of the hemisphere map.
 * `LinearIsometry.closedBallHemisphereMap_apply_of_norm_eq_one`: on the unit sphere of `F` it is
   `ι`.
@@ -185,19 +184,6 @@ variable {E F : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] {n : ℕ
   [Fact (finrank ℝ E = n + 1)] [NormedAddCommGroup F] [InnerProductSpace ℝ F] {m : ℕ} [NeZero m]
   [Fact (finrank ℝ F = m)] (ι : F →ₗᵢ[ℝ] E) {v : sphere (0 : E) 1}
 
-/-- A linear isometry into a finite-dimensional space of larger dimension has a unit vector
-orthogonal to its range. -/
-theorem exists_mem_sphere_inner_eq_zero [FiniteDimensional ℝ E] (h : finrank ℝ F < finrank ℝ E) :
-    ∃ v : sphere (0 : E) 1, ∀ x, ⟪(v : E), ι x⟫_ℝ = 0 := by
-  have hW : LinearMap.range ι.toLinearMap ≠ ⊤ := fun hW ↦ by
-    have := LinearMap.finrank_range_of_inj ι.injective
-    rw [hW, finrank_top] at this
-    omega
-  obtain ⟨w, hw, hw0⟩ :=
-    Submodule.exists_mem_ne_zero_of_ne_bot (Submodule.orthogonal_eq_bot_iff.not.2 hW)
-  refine ⟨⟨‖w‖⁻¹ • w, by simp [norm_smul, norm_ne_zero_iff.2 hw0]⟩, fun x ↦ ?_⟩
-  rw [inner_smul_left, (Submodule.mem_orthogonal' _ w).1 hw (ι x) ⟨x, rfl⟩, mul_zero]
-
 /-- The vector `2 ι x` lies in the orthogonal complement of a unit vector orthogonal to the range
 of `ι`. -/
 private theorem two_smul_mem_orthogonal (hv : ∀ x, ⟪(v : E), ι x⟫_ℝ = 0) (x : F) :
@@ -239,7 +225,7 @@ theorem continuous_closedBallHemisphereMap : Continuous (ι.closedBallHemisphere
   (continuous_stereoInvFun _).comp <| Continuous.subtype_mk
     (continuous_const.smul (ι.continuous.comp continuous_subtype_val)) _
 
-theorem injective_closedBallHemisphereMap : Injective (ι.closedBallHemisphereMap v hv) := by
+theorem closedBallHemisphereMap_injective : Injective (ι.closedBallHemisphereMap v hv) := by
   intro x y h
   have h' := congrArg Subtype.val
     (((stereo_right_inv (norm_eq_of_mem_sphere v) _).symm.trans
@@ -254,7 +240,7 @@ theorem isEmbedding_closedBallHemisphereMap [FiniteDimensional ℝ F] :
   have : CompactSpace (closedBall (0 : F) 1) :=
     isCompact_iff_compactSpace.1 (isCompact_closedBall _ _)
   ((ι.continuous_closedBallHemisphereMap hv).isClosedEmbedding
-    (ι.injective_closedBallHemisphereMap hv)).isEmbedding
+    (ι.closedBallHemisphereMap_injective hv)).isEmbedding
 
 
 /-! ### The hemisphere map is an immersion -/
@@ -321,15 +307,12 @@ theorem isImmersionAt_closedBallHemisphereMap {k : ℕ∞ω} (x : closedBall (0 
         ContinuousLinearEquiv.symm_apply_apply, mem_prod, rescaledInversion_source]
       exact ⟨by simpa [smul_smul] using hy, mem_univ _⟩
   -- `ψ` is a chart of the maximal analytic atlas of the sphere.
-  have hψ : ψ ∈ IsManifold.maximalAtlas (𝓡 n) ω (sphere (0 : E) 1) := by
-    have hs : stereographic' n v ∈ IsManifold.maximalAtlas (𝓡 n) ω (sphere (0 : E) 1) :=
-      IsManifold.subset_maximalAtlas ⟨v, rfl⟩
-    refine ψ.mem_maximalAtlas_of_contMDiffOn ?_ ?_
-    · exact (contMDiffOn_iff_contDiffOn.2 (contDiffOn_conjRescaledInversion Q)).comp
-        ((contMDiffOn_of_mem_maximalAtlas hs).mono fun _ hz ↦ hz.1) fun _ hz ↦ hz.2
-    · exact (contMDiffOn_symm_of_mem_maximalAtlas hs).comp
-        ((contMDiffOn_iff_contDiffOn.2 (contDiffOn_conjRescaledInversion_symm Q)).mono
-          fun _ hz ↦ hz.1) fun _ hz ↦ hz.2
+  have hψ : ψ ∈ IsManifold.maximalAtlas (𝓡 n) ω (sphere (0 : E) 1) :=
+    TauCeti.trans_mem_maximalAtlas_of_contDiffAt (IsManifold.subset_maximalAtlas ⟨v, rfl⟩)
+      (fun z hz ↦ (contDiffOn_conjRescaledInversion Q).contDiffAt
+        ((conjRescaledInversion Q).open_source.mem_nhds hz))
+      (fun z hz ↦ (contDiffOn_conjRescaledInversion_symm Q).contDiffAt
+        ((conjRescaledInversion Q).open_target.mem_nhds hz))
   have hx : x ∈ (TauCeti.closedBallChart φ).source := by
     rwa [TauCeti.closedBallChart_source, mem_ofPred_eq]
   refine (IsImmersionAtOfComplement.mk_of_charts Q (TauCeti.closedBallChart φ) ψ hx
