@@ -128,14 +128,10 @@ theorem diagGL_mem_map_weightTorusPoints_iff {A : Type*} [CommRing A] (t : Fin 2
   rw [htriad, ← existsUnique_torusCharacter_iff_cubicForm]
   constructor
   · rintro ⟨_, ⟨s, rfl⟩, hs⟩
-    have he : ∀ a, torusCharacter s (e6MinusculeWeight a) = t a := by
-      have hm := congrArg Units.val hs
-      simp only [Subgroup.coe_subtype] at hm
-      rw [coe_weightTorusPoints, UniversalEnvelopingAlgebra.kostantTorusMatrix_apply,
-        weightTable_weight, diagGL_coe, diagGL_coe] at hm
-      intro a
-      apply Units.ext
-      simpa only [Matrix.diagonal_apply_eq] using congrArg (fun M => M a a) hm
+    rw [Subgroup.coe_subtype, coe_weightTorusPoints,
+      UniversalEnvelopingAlgebra.kostantTorusMatrix_apply, weightTable_weight] at hs
+    have he : ∀ a, torusCharacter s (e6MinusculeWeight a) = t a :=
+      fun a => congrFun (diagGL_injective hs) a
     refine ⟨s, he, fun u hu => ?_⟩
     exact torusCharacterHom_injective span_range_e6MinusculeWeight_eq_top
       (by ext a; simp only [torusCharacterHom_apply, he, hu])
