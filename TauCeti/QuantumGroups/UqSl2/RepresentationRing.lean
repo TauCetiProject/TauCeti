@@ -49,6 +49,8 @@ multiplication rule
 
 * `TauCeti.UqSl2.repRingCharacter_of`: the character homomorphism sends the class of a module to
   its formal character.
+* `TauCeti.UqSl2.repRingCharacter_of_of`: the same evaluation for the class of an unbundled
+  module, in terms of its original instances.
 * `TauCeti.UqSl2.repRingCharacter_injective`: the character homomorphism is injective.
 * `TauCeti.UqSl2.repRing_mul_comm`: the representation ring is commutative.
 * `TauCeti.UqSl2.repRingBasis_apply`: the basis vectors are the classes `[L_m^ε]`, and
@@ -148,6 +150,17 @@ theorem repRingCharacter_of (hq : IsGenericQuantumParameter q)
     repRingCharacter hq (SplitK0.of M) = formalCharacter q M :=
   SplitK0.liftRingHom_of _ _ _ M
 
+/-- The character homomorphism sends the class of a finite-dimensional module `V`, bundled as an
+object of the category, to the formal character of `V` computed with its original instances.
+It has high simp priority so that it fires before `repRingCharacter_of`, which would leave the
+character of `V` stated with the instances of the category. -/
+@[simp high]
+theorem repRingCharacter_of_of (hq : IsGenericQuantumParameter q) (V : Type)
+    [AddCommGroup V] [Module ℂ V] [Module (UqSl2 q) V] [IsScalarTower ℂ (UqSl2 q) V]
+    [FiniteDimensional ℂ V] :
+    repRingCharacter hq (SplitK0.of (.of V)) = formalCharacter q V :=
+  (repRingCharacter_of hq _).trans (formalCharacter_of_linearEquiv (.refl (UqSl2 q) V))
+
 /-- **The character homomorphism is injective**: at a generic parameter, an element of the
 representation ring is determined by its character. -/
 theorem repRingCharacter_injective (hq : IsGenericQuantumParameter q) :
@@ -166,14 +179,6 @@ theorem repRing_mul_comm (hq : IsGenericQuantumParameter q) (x y : repRing q) :
   repRingCharacter_injective hq (by rw [map_mul, map_mul, mul_comm])
 
 /-! ### The basis of signed ladder modules -/
-
-/-- The character homomorphism sends the class of a module, bundled as an object of the
-category, to its formal character. -/
-private theorem repRingCharacter_of_of (hq : IsGenericQuantumParameter q) (V : Type)
-    [AddCommGroup V] [Module ℂ V] [Module (UqSl2 q) V] [IsScalarTower ℂ (UqSl2 q) V]
-    [FiniteDimensional ℂ V] :
-    repRingCharacter hq (SplitK0.of (.of V)) = formalCharacter q V :=
-  (repRingCharacter_of hq _).trans (formalCharacter_of_linearEquiv (.refl (UqSl2 q) V))
 
 /-- The class of a finite product of signed ladder modules is the sum of their classes. -/
 private theorem repRing_of_pi_ladderModule (hq : IsGenericQuantumParameter q) {n : ℕ}
