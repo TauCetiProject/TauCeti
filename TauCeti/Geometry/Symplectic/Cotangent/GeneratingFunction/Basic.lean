@@ -11,6 +11,7 @@ public import Mathlib.Analysis.InnerProductSpace.Calculus
 public import Mathlib.Analysis.InnerProductSpace.Dual
 public import TauCeti.Analysis.Calculus.DifferentialForm.Exact
 public import TauCeti.Geometry.Symplectic.Cotangent.Liouville
+import TauCeti.Analysis.Calculus.SecondDerivative
 import TauCeti.Analysis.Normed.Module.FiniteDimension
 
 /-!
@@ -72,7 +73,7 @@ where `p♯` is the Riesz representative of `p`: the motion of a free particle o
 public section
 
 open ContinuousAlternatingMap ContinuousLinearMap Filter
-open scoped ContDiff Topology
+open scoped Topology
 
 noncomputable section
 
@@ -305,18 +306,13 @@ the two factors transposes the mixed Hessian: `∂_q ∂_Q (S ∘ swap) = ∂_Q 
 the second derivative. -/
 theorem cotangentMixedHessian_comp_swap_apply (hS : ContDiffAt ℝ 2 S x) (a : V) (b : W) :
     cotangentMixedHessian (S ∘ Prod.swap) x.swap a b = cotangentMixedHessian S x b a := by
-  set e := ContinuousLinearEquiv.prodComm ℝ W V
-  have h2 : DifferentiableAt ℝ (fderiv ℝ S) x :=
-    (hS.fderiv_right (by norm_num : (1 : ℕ∞ω) + 1 ≤ 2)).differentiableAt one_ne_zero
-  have hD : fderiv ℝ (S ∘ e) = precomp ℝ (e : W × V →L[ℝ] V × W) ∘ fderiv ℝ S ∘ e :=
-    funext fun _ ↦ e.comp_right_fderiv
-  have hex : e x.swap = x := by simp [e]
-  have hD2 := ((precomp ℝ (e : W × V →L[ℝ] V × W)).hasFDerivAt.comp x.swap
-    ((hex ▸ h2).hasFDerivAt.comp x.swap e.hasFDerivAt)).fderiv
+  -- `Prod.swap` is the continuous linear map `(snd, fst)`, so its derivative is constant.
+  have hd (y : W × V) : fderiv ℝ Prod.swap y = (snd ℝ W V).prod (fst ℝ W V) :=
+    (hasFDerivAt_snd.prodMk hasFDerivAt_fst).fderiv
   rw [cotangentMixedHessian_apply_apply, cotangentMixedHessian_apply_apply,
-    show S ∘ Prod.swap = S ∘ e from rfl, hD, hD2]
-  simp only [comp_apply, precomp_apply, ContinuousLinearEquiv.coe_coe, hex]
-  simpa [e] using hS.isSymmSndFDerivAt (by simp) (a, 0) (0, b)
+    fderiv_fderiv_comp_apply (φ := Prod.swap) (by simpa using hS)
+      (contDiff_snd.prodMk contDiff_fst).contDiffAt, funext hd]
+  simpa using hS.isSymmSndFDerivAt (by simp) (a, 0) (0, b)
 
 /-! ### The generated map -/
 

@@ -8,6 +8,7 @@ module
 public import TauCeti.Geometry.Symplectic.Cotangent.GeneratingFunction.Basic
 public import TauCeti.Geometry.Manifold.MFDeriv.Chart
 public import TauCeti.Geometry.Manifold.MFDeriv.Parametric
+import TauCeti.Analysis.Calculus.FDeriv.Prod
 import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
 
 /-!
@@ -98,11 +99,8 @@ theorem mixedHessian_modelSpace {S : E × E' → ℝ} {x : E × E'} (hS : ContDi
       fun Q' ↦ mvfderiv 𝓘(ℝ, E) (fun q' ↦ S (q', Q')) q := by
     have hc : ContinuousAt (fun Q' : E' ↦ (q, Q')) Q := by fun_prop
     filter_upwards [hc.eventually h1] with Q' hQ'
-    have hd := (hQ'.hasFDerivAt.comp q (hasFDerivAt_prodMk_left (𝕜 := ℝ) q Q')).fderiv
-    ext v
-    simp only [mvfderiv_eq_fderiv, precomp_apply]
-    -- `erw` sees through the tangent space of `E` at `q`, which is `E` itself.
-    erw [hd]
+    rw [mvfderiv_eq_fderiv, fderiv_slice_left hQ']
+    -- `NormedSpace.fromTangentSpace q` is the identity of `E`, the tangent space of `E` at `q`.
     rfl
   have hD := ((precomp ℝ (inl ℝ E E')).hasFDerivAt.comp Q
     (h2.hasFDerivAt.comp Q (hasFDerivAt_prodMk_right (𝕜 := ℝ) q Q))).fderiv
@@ -150,13 +148,12 @@ theorem mixedHessian_comp_prodMap_apply [IsManifold I 1 M] [IsManifold J 1 N]
   -- Precomposition with `df`; by the chain rule in the first factor, the differential of the
   -- first slices of `S ∘ (f × g)` is `L ∘ σ ∘ g` near `Q`.
   let L : (E →L[ℝ] ℝ) →L[ℝ] E₁ →L[ℝ] ℝ := (compL ℝ E₁ E ℝ).flip (mfderiv I₁ I f q)
-  have heq : (fun Q' ↦ L (σ (g Q'))) =ᶠ[𝓝 Q] fun Q' ↦
+  have heq : L ∘ σ ∘ g =ᶠ[𝓝 Q] fun Q' ↦
       mvfderiv I₁ (fun q' ↦ (S ∘ Prod.map f g) (q', Q')) q := by
     filter_upwards [hnear] with Q' hQ'
     exact (mvfderiv_comp q hQ' hf).symm
   simp only [mixedHessian_def]
-  rw [← heq.mvfderiv_eq, show (fun Q' ↦ L (σ (g Q'))) = L ∘ σ ∘ g from rfl,
-    mvfderiv_comp_apply_of_differentiableAt L.differentiableAt (hσ.comp Q hg),
+  rw [← heq.mvfderiv_eq, mvfderiv_comp_apply_of_differentiableAt L.differentiableAt (hσ.comp Q hg),
     ContinuousLinearMap.fderiv, mvfderiv_comp_apply Q hσ hg]
   -- `L φ v` unfolds to `φ (df v)`.
   rfl
