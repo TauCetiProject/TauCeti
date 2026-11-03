@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Algebra.Order.BigOperators.Sum.Filter
 public import TauCeti.Probability.Distributions.Dirichlet.Marginal
 public import TauCeti.Probability.Moments.Covariance
 public import TauCeti.Geometry.Convex.ConvexSpace.NNReal
@@ -124,15 +125,15 @@ theorem integral_eval_dirichletMeasure (ha : ∀ i, 0 < a i) (i : ι) :
     ∫ x, x i ∂dirichletMeasure a = a i / ∑ j, a j := by
   classical
   rcases subsingleton_or_nontrivial ι with _ | _
-  · have hcard : Fintype.card ι = 1 := Fintype.card_eq_one_iff.2 ⟨i, fun j ↦ Subsingleton.elim j i⟩
+  · let : Unique ι := uniqueOfSubsingleton i
+    have hcard : Fintype.card ι = 1 := Fintype.card_unique
     rw [dirichletMeasure_eq_dirac_of_card_eq_one ha hcard, integral_dirac,
       Fintype.sum_subsingleton a i, div_self (ha i).ne']
     simp
-  · have hβ : 0 < ∑ j with j ≠ i, a j := by
-      obtain ⟨j, hj⟩ := exists_ne i
-      exact Finset.sum_pos (fun k _ ↦ ha k) ⟨j, by simpa using hj⟩
-    rw [← integral_map (f := fun x : ℝ ↦ x) (by fun_prop) aestronglyMeasurable_id,
-      map_eval_dirichletMeasure ha i, integral_id_betaMeasure (ha i) hβ, Finset.filter_ne',
+  · rw [← integral_map (f := fun x : ℝ ↦ x) (by fun_prop) aestronglyMeasurable_id,
+      map_eval_dirichletMeasure ha i,
+      integral_id_betaMeasure (ha i) (Finset.sum_filter_ne_pos ha i),
+      Finset.filter_ne',
       Finset.add_sum_erase _ a (Finset.mem_univ i)]
 
 omit [Nonempty ι] in
