@@ -15,7 +15,7 @@ public import Mathlib.RingTheory.PowerBasis
 An `R`-algebra `S` with a power basis `1, x, …, x ^ (d - 1)` retracts onto `R`: the coordinate
 along `x ^ 0 = 1` is an `R`-linear map `S → R` sending `1` to `1`. So `R · 1` is a direct summand of
 `S`, which is what it takes to descend a span over `S` back to a span over `R`
-(`TauCeti.mem_of_mem_span_of_mem_closure`).
+(`TauCeti.mem_of_mem_span_of_mem_span_range`).
 
 ## Main statements
 
