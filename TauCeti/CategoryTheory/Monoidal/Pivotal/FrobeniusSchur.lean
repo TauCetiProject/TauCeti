@@ -250,8 +250,11 @@ theorem pivotalRotate_smul {k : Type*} [Semiring k] [Preadditive C] [Linear k C]
     pivotalRotate (c • f) = c • pivotalRotate f := by
   simp [pivotalRotate_def, monoidalComp]
 
-variable (k : Type*) [CommRing k] [Preadditive C] [Linear k C] [MonoidalPreadditive C]
-  [MonoidalLinear k C] (V : C)
+variable (k : Type*) [Preadditive C] [MonoidalPreadditive C] (V : C)
+
+section Semiring
+
+variable [Semiring k] [Linear k C] [MonoidalLinear k C]
 
 /-- The operator `E_V^{(n+1)}` as a `k`-linear endomorphism of `𝟙_ C ⟶ V^⊗(n+1)`. -/
 noncomputable def frobeniusSchurEnd (n : ℕ) : Module.End k (𝟙_ C ⟶ tensorPow V (n + 1)) where
@@ -268,6 +271,12 @@ theorem frobeniusSchurEnd_pow_eq_one (n : ℕ) : frobeniusSchurEnd k V n ^ (n + 
   ext f
   rw [pow_apply_eq_iterate, one_apply_eq_self, coe_frobeniusSchurEnd,
     iterate_frobeniusSchurRotate_eq_id, id]
+
+end Semiring
+
+section CommRing
+
+variable [CommRing k] [Linear k C] [MonoidalLinear k C]
 
 /-- The `n`-th *Frobenius–Schur indicator* `ν_n(V)` of an object `V` of a `k`-linear pivotal
 category, for a positive integer `n`: the trace of the operator `E_V^{(n)}` on `𝟙_ C ⟶ V^⊗n`.
@@ -309,6 +318,8 @@ theorem frobeniusSchurIndicator_congr {W : C} (e : V ≅ W) (n : ℕ+) :
       ← frobeniusSchurRotate_comp_tensorPowMap, Category.assoc, ← tensorPowMap_comp, Iso.inv_hom_id,
       tensorPowMap_id, Category.comp_id]
   rw [frobeniusSchurIndicator, frobeniusSchurIndicator, ← hL, LinearMap.trace_conj']
+
+end CommRing
 
 end Linear
 
