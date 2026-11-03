@@ -37,6 +37,8 @@ direction `w`; its derivative involves the second derivative of `u`.
   `y ↦ B (u y) (∂_w u y)` at a point where `u` is `C²`.
 * `ContinuousLinearMap.contDiff_precomp_comp`: the pullback `(v, w) ↦ B (L v) (L w)` of a
   continuous bilinear map `B` along a continuous linear map `L` depends smoothly on `(B, L)`.
+* `ContinuousLinearMap.apply_self_fderiv_eq_of_eventuallyEq`: a local map fixing zero and
+  preserving quadratic functions has a derivative preserving those quadratic functions.
 -/
 
 public section
@@ -117,5 +119,28 @@ theorem _root_.ContinuousLinearMap.contDiff_precomp_comp :
     (contDiff_fst.clm_comp contDiff_snd)
 
 end TauCeti
+
+namespace ContinuousLinearMap
+
+variable {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+  [NormedAddCommGroup F] [NormedSpace ℝ F]
+
+/-- The derivative at the origin of a local map preserving quadratic functions also preserves
+those quadratic functions. The bilinear forms need not be symmetric or nondegenerate. -/
+theorem apply_self_fderiv_eq_of_eventuallyEq (B : F →L[ℝ] F →L[ℝ] ℝ)
+    (C : E →L[ℝ] E →L[ℝ] ℝ) {φ : E → F} (hφ : ContDiffAt ℝ 2 φ 0) (hφ0 : φ 0 = 0)
+    (h : (fun y ↦ B (φ y) (φ y)) =ᶠ[nhds 0] (fun y ↦ C y y)) (v : E) :
+    B (fderiv ℝ φ 0 v) (fderiv ℝ φ 0 v) = C v v := by
+  have hzero : fderiv ℝ (fun y ↦ B y y) (φ 0) = 0 := by
+    simp [hφ0]
+  have hchain := TauCeti.fderiv_fderiv_comp_apply_of_fderiv_eq_zero
+    (B.contDiff_apply_self.contDiffAt : ContDiffAt ℝ 2 (fun y ↦ B y y) (φ 0))
+    hφ hzero v v
+  have hcomp : (fun y ↦ B y y) ∘ φ =ᶠ[nhds 0] (fun y ↦ C y y) := h
+  rw [hcomp.fderiv.fderiv_eq] at hchain
+  simp only [fderiv_fderiv_apply_self, add_apply, flip_apply] at hchain
+  linarith
+
+end ContinuousLinearMap
 
 end
