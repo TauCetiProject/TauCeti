@@ -95,7 +95,7 @@ theorem dividedPower_normalizedRoot_mul_of_add_mem (hB : B.PosDef)
 /-- Normalized root divided powers commute when the sum of the roots is neither a root nor
 zero. Together with `dividedPower_normalizedRoot_mul_of_add_mem`, this covers every
 non-opposite root pair. -/
-theorem dividedPower_normalizedRoot_mul_of_add_notMem (hB : B.PosDef)
+theorem dividedPower_normalizedRoot_mul_of_add_notMem_of_add_ne_zero (hB : B.PosDef)
     (hev : ∀ i, Even (B i i)) {a b : B.normTwoShell}
     (hab : (a : I → ℤ) + b ∉ B.normTwoShell) (hne : (a : I → ℤ) + b ≠ 0) :
     letI := lieRing hB hev
@@ -107,6 +107,6 @@ theorem dividedPower_normalizedRoot_mul_of_add_notMem (hB : B.PosDef)
   have hcomm : Commute (ρ (normalizedRoot B a)) (ρ (normalizedRoot B b)) := by
     rw [commute_iff_lie_eq, ← ρ.map_lie,
       normalizedRoot_lie_normalizedRoot_of_notMem_of_add_ne_zero hab hne, map_zero]
-  exact ((hcomm.dividedPower_right n).symm.dividedPower_right m).symm.eq
+  exact (commute_dividedPower_dividedPower hcomm m n).eq
 
 end Matrix.ShellLieAlgebra
