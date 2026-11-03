@@ -9,6 +9,8 @@ public import TauCeti.Geometry.Manifold.DifferentialForm.ExtDeriv
 public import TauCeti.Topology.Algebra.Module.Alternating.Curry
 public import Mathlib.Analysis.Normed.Module.Alternating.Curry
 public import Mathlib.Geometry.Manifold.VectorField.Pullback
+public import TauCeti.Geometry.Manifold.DifferentialForm.Regularity
+import TauCeti.Geometry.Manifold.VectorField.Regularity
 
 /-!
 # Interior products of rough differential forms
@@ -23,6 +25,8 @@ We use Mathlib's `AlternatingMap.curryLeft` and retain continuity of the remaini
 This works for arbitrary topological coefficient fibres without choosing fibre norms. For fixed
 normed coefficients on the model space it agrees with `ContinuousAlternatingMap.curryLeft`, and
 in the chart at a point it is `curryLeft` of the coordinate expressions of the form and the field.
+Consequently the interior product of a differentiable field and a differentiable form is a
+differentiable form.
 
 ## References
 
@@ -345,6 +349,28 @@ theorem RoughForm.inChartAt_interior {F : Type*} [NormedAddCommGroup F] [NormedS
     simp only [Matrix.cons_val_zero, VectorField.mpullbackWithin_apply]
     exact ((isInvertible_mfderivWithin_extChartAt_symm hz).self_apply_inverse _).symm
   | succ i => rfl
+
+/-- The interior product of a vector field and a fixed-coefficient form, both differentiable at a
+point, is a section of the alternating bundle differentiable at that point. -/
+theorem RoughForm.mdifferentiableAt_interior {F : Type*} [NormedAddCommGroup F]
+    [NormedSpace ℝ F] [IsManifold I 1 M] {X : (x : M) → TangentSpace I x}
+    {ω : RoughForm I M F (k + 1)} {x : M}
+    (hX : MDifferentiableAt I I.tangent (fun y ↦ (X y : TangentBundle I M)) x)
+    (hω : MDifferentiableAt I (I.prod 𝓘(ℝ, E [⋀^Fin (k + 1)]→L[ℝ] F))
+      (fun y ↦ Bundle.TotalSpace.mk' (E [⋀^Fin (k + 1)]→L[ℝ] F) y (ω y)) x) :
+    MDifferentiableAt I (I.prod 𝓘(ℝ, E [⋀^Fin k]→L[ℝ] F))
+      (fun y ↦ Bundle.TotalSpace.mk' (E [⋀^Fin k]→L[ℝ] F) y (ω.interior X y)) x := by
+  refine mdifferentiableAt_form_of_differentiableWithinAt_inChartAt_self ?_
+  -- In the chart at `x`, the interior product is `curryLeft` of the two coordinate expressions.
+  have hω' := ω.differentiableWithinAt_inChartAt (s := Set.univ) hω.mdifferentiableWithinAt
+  have hX' := (hX.mdifferentiableWithinAt (s := Set.univ)
+    ).differentiableWithinAt_mpullbackWithin_extChartAt_symm
+  simp only [Set.preimage_univ, Set.univ_inter] at hω' hX'
+  refine (((ContinuousAlternatingMap.curryLeftLI (𝕜 := ℝ) (E := E) (F := F) (n := k)
+    ).toContinuousLinearMap.differentiableAt.comp_differentiableWithinAt _ hω').clm_apply
+      hX').congr_of_eventuallyEq ?_ (RoughForm.inChartAt_interior X ω (mem_extChartAt_target x))
+  filter_upwards [extChartAt_target_mem_nhdsWithin (I := I) x] with z hz
+  exact RoughForm.inChartAt_interior X ω hz
 
 end FixedCoefficients
 
