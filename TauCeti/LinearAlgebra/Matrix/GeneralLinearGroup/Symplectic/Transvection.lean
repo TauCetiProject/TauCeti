@@ -5,10 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.LinearAlgebra.Matrix.BilinearForm
-public import Mathlib.LinearAlgebra.Transvection.Basic
 public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Symplectic.TorusGeneration
-public import TauCeti.LinearAlgebra.Matrix.OneSubVecMulVec
+public import TauCeti.LinearAlgebra.Matrix.UnitaryTransvection
 import TauCeti.Data.Matrix.Basis
 
 /-!
@@ -24,7 +22,10 @@ transported form `TauCeti.JFin`. For a vector `v` and a scalar `c`, the **symple
 preserves `ω`, because `ω(v, v) = 0`. This file constructs `τ_{v,c}` in the standard symplectic
 group `TauCeti.GLSymplecticFin m R` over an arbitrary commutative ring and proves its basic laws:
 `τ_{v,a} τ_{v,b} = τ_{v,a+b}`, `τ_{a v,c} = τ_{v,a²c}`, and `g τ_{v,c} g⁻¹ = τ_{g v,c}` for a
-symplectic `g`.
+symplectic `g`. Its matrix is the transvection
+`Matrix.unitaryTransvection (JFin m R) (RingHom.id R) v c` of the alternating form, so these
+matrix laws specialize the general ones of `Matrix.unitaryTransvection` with `σ = id` and
+`ε = -1`.
 
 The standard root elements are products of symplectic transvections. A long-root element is a
 single transvection along a coordinate vector. For a short root, if `u` and `w` span a totally
@@ -84,19 +85,11 @@ private theorem vecMul_JFin_dotProduct_neg_smul (v : Fin (m + m) → R) (c : R) 
 private theorem one_add_smul_vecMulVec_JFin_mem (v : Fin (m + m) → R) (c : R) :
     (1 + c • vecMulVec v (v ᵥ* JFin m R))ᵀ * JFin m R * (1 + c • vecMulVec v (v ᵥ* JFin m R)) =
       JFin m R := by
-  have hJv : JFin m R *ᵥ v = -(v ᵥ* JFin m R) := by
-    rw [← vecMul_transpose, JFin_transpose m R, vecMul_neg]
-  have hzero : vecMulVec (v ᵥ* JFin m R) (v ᵥ* JFin m R) * vecMulVec v (v ᵥ* JFin m R) = 0 :=
-    vecMulVec_mul_vecMulVec_JFin (dotProduct_JFin_mulVec_self v)
-  have hNJ : vecMulVec (v ᵥ* JFin m R) v * JFin m R =
-      vecMulVec (v ᵥ* JFin m R) (v ᵥ* JFin m R) := vecMulVec_mul _ _ _
-  have hJN : JFin m R * vecMulVec v (v ᵥ* JFin m R) =
-      -vecMulVec (v ᵥ* JFin m R) (v ᵥ* JFin m R) := by
-    rw [mul_vecMulVec, hJv, neg_vecMulVec]
-  rw [transpose_add, transpose_one, transpose_smul, transpose_vecMulVec]
-  simp only [Matrix.add_mul, Matrix.mul_add, Matrix.one_mul, Matrix.mul_one, smul_mul_assoc,
-    mul_smul_comm, hNJ, hJN, hzero, smul_zero, add_zero, smul_neg]
-  abel
+  have h := transpose_map_unitaryTransvection_mul_mul_self (σ := RingHom.id R) (fun _ ↦ rfl)
+    (ε := -1) (by rw [RingHom.coe_id, map_id, JFin_transpose, neg_one_smul])
+    (dotProduct_JFin_mulVec_self v) (a := c) (by rw [RingHom.id_apply, neg_one_mul,
+      add_neg_cancel])
+  rwa [RingHom.coe_id, map_id, unitaryTransvection_def, RingHom.coe_id, Function.id_comp] at h
 
 /-- **The symplectic transvection** `τ_{v,c} : x ↦ x + c ω(v, x) v` along the vector `v`, where
 `ω(x, y) = xᵀ J y` is the standard alternating form. Its matrix is `1 + c v (vᵀ J)`
@@ -123,14 +116,22 @@ theorem coe_symplecticTransvection (v : Fin (m + m) → R) (c : R) :
       1 + c • vecMulVec v (v ᵥ* JFin m R) := by
   rw [coe_symplecticTransvection_eq_one_sub, smul_vecMulVec, neg_smul, sub_neg_eq_add]
 
+/-- The matrix of `τ_{v,c}` is the transvection `Matrix.unitaryTransvection` of the alternating
+form, read as a sesquilinear form for the identity ring homomorphism. -/
+private theorem coe_symplecticTransvection_eq_unitaryTransvection (v : Fin (m + m) → R) (c : R) :
+    (((symplecticTransvection v c : GLSymplecticFin m R) : GL (Fin (m + m)) R) :
+        Matrix (Fin (m + m)) (Fin (m + m)) R) =
+      (JFin m R).unitaryTransvection (RingHom.id R) v c := by
+  rw [coe_symplecticTransvection, unitaryTransvection_def, RingHom.coe_id, Function.id_comp]
+
 /-- The symplectic transvection `τ_{v,c}` sends `x` to `x + c ω(v, x) v`. -/
 theorem coe_symplecticTransvection_mulVec (v : Fin (m + m) → R) (c : R)
     (x : Fin (m + m) → R) :
     (((symplecticTransvection v c : GLSymplecticFin m R) : GL (Fin (m + m)) R) :
         Matrix (Fin (m + m)) (Fin (m + m)) R) *ᵥ x =
       x + (c * (v ⬝ᵥ (JFin m R *ᵥ x))) • v := by
-  rw [coe_symplecticTransvection, add_mulVec, one_mulVec, smul_mulVec, vecMulVec_mulVec,
-    op_smul_eq_smul, ← dotProduct_mulVec, smul_smul]
+  rw [coe_symplecticTransvection_eq_unitaryTransvection, unitaryTransvection_mulVec,
+    RingHom.coe_id, Function.id_comp]
 
 /-- As a linear map, the symplectic transvection `τ_{v,c}` is Mathlib's transvection
 `x ↦ x + f x • v` for the linear form `f = c ω(v, ·)`. -/
@@ -138,9 +139,8 @@ theorem toLin'_symplecticTransvection (v : Fin (m + m) → R) (c : R) :
     toLin' (((symplecticTransvection v c : GLSymplecticFin m R) : GL (Fin (m + m)) R) :
         Matrix (Fin (m + m)) (Fin (m + m)) R) =
       LinearMap.transvection (c • toBilin' (JFin m R) v) v := by
-  refine LinearMap.ext fun x ↦ ?_
-  rw [toLin'_apply, coe_symplecticTransvection_mulVec, LinearMap.transvection.apply,
-    LinearMap.smul_apply, toBilin'_apply', smul_eq_mul]
+  rw [coe_symplecticTransvection_eq_unitaryTransvection, toLin'_unitaryTransvection,
+    RingHom.coe_id, Function.id_comp]
 
 /-- The transvection with parameter zero is the identity. -/
 @[simp]
@@ -159,11 +159,11 @@ theorem symplecticTransvection_zero_left (c : R) :
 theorem symplecticTransvection_add (v : Fin (m + m) → R) (a b : R) :
     symplecticTransvection v (a + b) = symplecticTransvection v a * symplecticTransvection v b :=
   Subtype.ext <| Units.ext <| by
-    rw [Subgroup.coe_mul, Units.val_mul, coe_symplecticTransvection_eq_one_sub,
-      coe_symplecticTransvection_eq_one_sub, coe_symplecticTransvection_eq_one_sub,
-      one_sub_vecMulVec_mul_one_sub_vecMulVec, dotProduct_smul, ← dotProduct_mulVec,
-      dotProduct_JFin_mulVec_self, smul_zero, zero_smul, add_zero, neg_add, add_smul,
-      add_vecMulVec, sub_add_eq_sub_sub]
+    rw [Subgroup.coe_mul, Units.val_mul, coe_symplecticTransvection_eq_unitaryTransvection,
+      coe_symplecticTransvection_eq_unitaryTransvection,
+      coe_symplecticTransvection_eq_unitaryTransvection,
+      unitaryTransvection_mul_unitaryTransvection (σ := RingHom.id R)
+        (dotProduct_JFin_mulVec_self v)]
 
 /-- Inverting a transvection negates its parameter. -/
 @[simp]
@@ -177,8 +177,9 @@ scalar: `τ_{a v,c} = τ_{v,a²c}`. -/
 theorem symplecticTransvection_smul (a : R) (v : Fin (m + m) → R) (c : R) :
     symplecticTransvection (a • v) c = symplecticTransvection v (a ^ 2 * c) := by
   refine Subtype.ext (Units.ext ?_)
-  rw [coe_symplecticTransvection, coe_symplecticTransvection, smul_vecMul, smul_vecMulVec,
-    vecMulVec_smul, smul_smul, smul_smul, sq, mul_comm (a * a) c, mul_assoc]
+  rw [coe_symplecticTransvection_eq_unitaryTransvection,
+    coe_symplecticTransvection_eq_unitaryTransvection, unitaryTransvection_smul, RingHom.id_apply,
+    sq, mul_comm (a * a) c, mul_assoc]
 
 /-- The symplectic transvections along a vector form a one-parameter subgroup. -/
 def symplecticTransvectionHom (v : Fin (m + m) → R) : Multiplicative R →* GLSymplecticFin m R where
@@ -213,20 +214,14 @@ theorem mul_symplecticTransvection_mul_inv (g : GLSymplecticFin m R) (v : Fin (m
       symplecticTransvection (((g : GL (Fin (m + m)) R) : Matrix (Fin (m + m)) (Fin (m + m)) R) *ᵥ
         v) c := by
   obtain ⟨G, hg⟩ := g
-  -- The symplectic condition `Gᵀ J G = J` rewrites `Gᵀ J` as `J G⁻¹`.
-  have hG : (G : Matrix (Fin (m + m)) (Fin (m + m)) R)ᵀ * JFin m R =
-      JFin m R * ((G⁻¹ : GL (Fin (m + m)) R) : Matrix (Fin (m + m)) (Fin (m + m)) R) := by
-    conv_rhs => rw [← mem_iff'.mp hg]
-    rw [Matrix.mul_assoc, Matrix.mul_assoc, ← Units.val_mul, mul_inv_cancel, Units.val_one,
-      Matrix.mul_one]
-  have hrow : (v ᵥ* JFin m R) ᵥ* ((G⁻¹ : GL (Fin (m + m)) R) :
-      Matrix (Fin (m + m)) (Fin (m + m)) R) =
-      ((G : Matrix (Fin (m + m)) (Fin (m + m)) R) *ᵥ v) ᵥ* JFin m R := by
-    rw [vecMul_vecMul, ← hG, ← vecMul_vecMul, vecMul_transpose]
+  have hG : (((G : Matrix (Fin (m + m)) (Fin (m + m)) R)).map (RingHom.id R))ᵀ * JFin m R *
+      (G : Matrix (Fin (m + m)) (Fin (m + m)) R) = JFin m R := by
+    rw [RingHom.coe_id, map_id, mem_iff'.mp hg]
   refine Subtype.ext (Units.ext ?_)
-  simp only [Subgroup.coe_mul, Subgroup.coe_inv, Units.val_mul, coe_symplecticTransvection]
-  rw [Matrix.mul_add, Matrix.mul_one, Matrix.add_mul, ← Units.val_mul, mul_inv_cancel,
-    Units.val_one, mul_smul_comm, smul_mul_assoc, mul_vecMulVec, vecMulVec_mul, hrow]
+  simp only [Subgroup.coe_mul, Subgroup.coe_inv, Units.val_mul,
+    coe_symplecticTransvection_eq_unitaryTransvection]
+  rw [mul_unitaryTransvection hG, Matrix.mul_assoc, ← Units.val_mul, mul_inv_cancel,
+    Units.val_one, Matrix.mul_one]
 
 /-! ### Root elements as products of transvections -/
 
