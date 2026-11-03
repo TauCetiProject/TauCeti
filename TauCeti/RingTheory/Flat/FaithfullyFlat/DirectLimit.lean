@@ -9,10 +9,9 @@ public import Mathlib.Algebra.Colimit.DirectLimit
 public import Mathlib.RingTheory.FinitePresentation
 public import Mathlib.RingTheory.Flat.FaithfullyFlat.Basic
 import Mathlib.RingTheory.Ideal.GoingDown
-import Mathlib.RingTheory.RingHom.FaithfullyFlat
 import Mathlib.RingTheory.Spectrum.Prime.Chevalley
 import TauCeti.Algebra.Colimit.Ring
-public import TauCeti.RingTheory.Spectrum.Prime.TensorProduct
+public import TauCeti.RingTheory.RingHom.FaithfullyFlat
 
 /-!
 # Faithful flatness at a finite stage
@@ -35,28 +34,6 @@ ideal descends to a finite stage.
 public section
 
 open scoped TensorProduct
-
-namespace Ideal
-
-/-- If the complement of the spectral image of a flat algebra is `V(I)`, its base change is
-faithfully flat exactly when the extension of `I` is the unit ideal. -/
-theorem faithfullyFlat_baseChange_iff_map_eq_top
-    {A S T : Type*} [CommRing A] [CommRing S] [CommRing T]
-    [Algebra A S] [Algebra A T] [Module.Flat A S] (I : Ideal A)
-    (hI : (Set.range (PrimeSpectrum.comap (algebraMap A S)))ᶜ =
-      PrimeSpectrum.zeroLocus (I : Set A)) :
-    Module.FaithfullyFlat T (T ⊗[A] S) ↔ I.map (algebraMap A T) = ⊤ := by
-  rw [← RingHom.faithfullyFlat_algebraMap_iff,
-    RingHom.FaithfullyFlat.iff_flat_and_comap_surjective]
-  have hflat : (algebraMap T (T ⊗[A] S)).Flat :=
-    RingHom.flat_algebraMap_iff.mpr inferInstance
-  simp only [hflat, true_and, ← Set.range_eq_univ,
-    PrimeSpectrum.range_comap_algebraMap_tensorProduct]
-  rw [← Set.compl_empty_iff, ← Set.preimage_compl, hI,
-    PrimeSpectrum.preimage_comap_zeroLocus, ← PrimeSpectrum.zeroLocus_span,
-    ← Ideal.map_span, Ideal.span_eq, PrimeSpectrum.zeroLocus_empty_iff_eq_top]
-
-end Ideal
 
 namespace TauCeti.DirectLimit.Algebra
 
