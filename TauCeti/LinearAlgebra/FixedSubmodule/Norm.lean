@@ -38,34 +38,7 @@ namespace Equiv.Perm
 
 variable {I : Type*} [Fintype I] (σ : Perm I)
 
-open Classical in
-/-- A sum over complete periods repeats the distinct-cycle sum with multiplicity `k / l`. -/
-theorem sum_range_pow_eq_nsmul_sum_cycle {M : Type*} [AddCommMonoid M]
-    (v : I → M) {k : ℕ} (hk : σ ^ k = 1) (i : I) :
-    ∑ r ∈ range k, v ((σ ^ r) i) =
-      (k / minimalPeriod σ i) • ∑ j with σ.SameCycle i j, v j := by
-  classical
-  have hp : IsPeriodicPt σ k i := by
-    simp only [IsPeriodicPt, IsFixedPt, ← coe_pow, hk, Perm.one_apply]
-  have hd := hp.minimalPeriod_dvd
-  have hblock (n : ℕ) :
-      ∑ r ∈ range (minimalPeriod σ i * n), v ((σ ^ r) i) =
-        n • ∑ r ∈ range (minimalPeriod σ i), v ((σ ^ r) i) := by
-    induction n with
-    | zero => simp
-    | succ n ih =>
-      rw [Nat.mul_succ, sum_range_add, ih, succ_nsmul]
-      congr 1
-      apply sum_congr rfl
-      intro r hr
-      congr 1
-      simp only [coe_pow]
-      rw [Nat.add_comm, iterate_add_apply, iterate_mul,
-        (isPeriodicPt_minimalPeriod σ i).isFixedPt.iterate n]
-  conv_lhs => rw [← Nat.mul_div_cancel' hd]
-  rw [hblock, σ.sum_range_minimalPeriod]
-
-variable {R M : Type*} [Semiring R] [AddCancelCommMonoid M] [Module R M]
+variable {R M : Type*} [Semiring R] [AddCommMonoid M] [Module R M]
 
 /-- The full cyclic sum, valued in the actual fixed submodule of the coordinate permutation.
 The exponent may be any multiple of the permutation order, including zero. -/
@@ -79,13 +52,15 @@ def permutationNorm (k : ℕ) (hk : σ ^ k = 1) :
         ∑ r ∈ range k, v ((σ ^ r) i) by
       simpa only [LinearEquiv.coe_coe, LinearEquiv.funCongrLeft_apply,
         LinearMap.funLeft_apply, LinearMap.sum_apply, Finset.sum_apply] using h
-    have hshift := sum_range_succ' (fun r ↦ v ((σ ^ r) i)) k
-    rw [sum_range_succ, hk] at hshift
-    simp only [pow_zero, Perm.one_apply] at hshift
     have hstep (r : ℕ) : (σ ^ (r + 1)) i = (σ ^ r) (σ i) := by
       rw [pow_succ, Perm.mul_apply]
-    simp only [hstep] at hshift
-    exact (add_right_cancel hshift).symm
+    simp only [← hstep]
+    cases k with
+    | zero => simp
+    | succ n =>
+      rw [sum_range_succ' (fun r ↦ v ((σ ^ r) i)),
+        sum_range_succ (fun r ↦ v ((σ ^ (r + 1)) i)), hk]
+      simp
 
 omit [Fintype I] in
 /-- The ambient coordinates of the full cyclic sum are the literal sums over `k` iterates. -/
@@ -97,11 +72,22 @@ theorem permutationNorm_apply (k : ℕ) (hk : σ ^ k = 1) (v : I → M) (i : I) 
 
 open Classical in
 /-- Each fixed coordinate is the distinct-cycle sum multiplied by the stabilizer multiplicity. -/
-theorem permutationNorm_apply_eq_sum_cycle (k : ℕ) (hk : σ ^ k = 1) (v : I → M) (i : I) :
+theorem permutationNorm_apply_eq_nsmul_sum_cycle (k : ℕ) (hk : σ ^ k = 1) (v : I → M) (i : I) :
     (σ.permutationNorm (R := R) k hk v).val i =
       (k / minimalPeriod σ i) • ∑ j with σ.SameCycle i j, v j :=
   (σ.permutationNorm_apply k hk v i).trans
-    (σ.sum_range_pow_eq_nsmul_sum_cycle v hk i)
+    (σ.sum_range_pow_eq_nsmul_sum_cycle v i (by
+      simp only [IsPeriodicPt, IsFixedPt, ← coe_pow, hk, Perm.one_apply]))
+
+open Classical in
+/-- In cycle coordinates, the full cyclic sum is the distinct-cycle sum multiplied by
+its stabilizer multiplicity. -/
+@[simp]
+theorem permutationFixedEquiv_symm_permutationNorm (k : ℕ) (hk : σ ^ k = 1)
+    (v : I → M) (c : Quotient (SameCycle.setoid σ)) :
+    (permutationFixedEquiv (R := R) (M := M) σ).symm (σ.permutationNorm k hk v) c =
+      (k / minimalPeriod σ c.out) • ∑ j with σ.SameCycle c.out j, v j := by
+  rw [permutationFixedEquiv_symm_apply_out, permutationNorm_apply_eq_nsmul_sum_cycle]
 
 omit [Fintype I] in
 /-- The full-sum image in the integral fixed lattice is given by cyclewise divisibility.
@@ -110,12 +96,13 @@ theorem mem_range_permutationNorm_iff [Finite I] (k : ℕ) (hk : σ ^ k = 1)
     (v : (LinearEquiv.funCongrLeft ℤ ℤ σ).toLinearMap.fixedSubmodule) :
     v ∈ LinearMap.range (σ.permutationNorm (R := ℤ) (M := ℤ) k hk) ↔
       ∀ c : Quotient (SameCycle.setoid σ),
-        ((k / minimalPeriod σ c.out : ℕ) : ℤ) ∣ v.val c.out := by
+        ((k / minimalPeriod σ c.out : ℕ) : ℤ) ∣
+          (permutationFixedEquiv (R := ℤ) (M := ℤ) σ).symm v c := by
   classical
   let _ := Fintype.ofFinite I
   constructor
   · rintro ⟨x, rfl⟩ c
-    rw [permutationNorm_apply_eq_sum_cycle, nsmul_eq_mul]
+    rw [permutationFixedEquiv_symm_permutationNorm, nsmul_eq_mul]
     exact dvd_mul_right _ _
   · intro hv
     choose w hw using hv
@@ -125,8 +112,6 @@ theorem mem_range_permutationNorm_iff [Finite I] (k : ℕ) (hk : σ ^ k = 1)
     refine ⟨x, ?_⟩
     apply (permutationFixedEquiv (R := ℤ) (M := ℤ) σ).symm.injective
     funext c
-    suffices h : (σ.permutationNorm k hk x).val c.out = v.val c.out by
-      simpa only [← permutationFixedEquiv_symm_apply σ _ c.out, Quotient.out_eq] using h
     have hsum : ∑ j with σ.SameCycle c.out j, x j = w c := by
       rw [sum_eq_single c.out]
       · simp only [x, Quotient.out_eq, ite_true]
@@ -136,7 +121,7 @@ theorem mem_range_permutationNorm_iff [Finite I] (k : ℕ) (hk : σ ^ k = 1)
         simp only [x, hjc, ite_eq_right hne]
       · intro hnot
         exact False.elim (hnot (mem_filter.mpr ⟨mem_univ _, SameCycle.refl σ _⟩))
-    rw [permutationNorm_apply_eq_sum_cycle, hsum, nsmul_eq_mul, ← hw c]
+    rw [permutationFixedEquiv_symm_permutationNorm, hsum, nsmul_eq_mul, ← hw c]
 
 open Classical in
 /-- The index of the full-sum image in the integral fixed lattice is the product of the
@@ -153,14 +138,7 @@ theorem index_range_permutationNorm (k : ℕ) (hk : σ ^ k = 1) :
     ext v
     rw [Submodule.mem_toAddSubgroup, mem_range_permutationNorm_iff]
     simp only [AddSubgroup.mem_comap, H, AddSubgroup.mem_pi, _root_.Set.mem_univ, forall_const,
-      Int.mem_zmultiples_iff]
-    apply forall_congr'
-    intro c
-    -- Forgetting linearity does not change the inverse coordinate map.
-    have he : e.symm.toAddMonoidHom v c = v.val c.out := by
-      rw [LinearMap.toAddMonoidHom_coe, LinearEquiv.coe_coe]
-      simpa only [Quotient.out_eq] using permutationFixedEquiv_symm_apply σ v c.out
-    rw [he]
+      Int.mem_zmultiples_iff, LinearMap.toAddMonoidHom_coe, LinearEquiv.coe_coe, e]
   rw [hrange, AddSubgroup.index_comap_of_surjective H e.symm.surjective,
     AddSubgroup.index_pi]
   simp only [Int.index_zmultiples, Int.natAbs_natCast]
