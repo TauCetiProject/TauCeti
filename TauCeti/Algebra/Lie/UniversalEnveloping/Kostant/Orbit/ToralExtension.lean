@@ -67,7 +67,7 @@ theorem isCartanWeightVector_map_loweringMonomial
         wt + (l.map fun p => (p.2 + 1) • α p.1).sum + (p.2 + 1) • α p.1 := by abel
     rw [List.map_cons, List.sum_cons, hw]
     simpa [loweringMonomial_cons, TauCeti.Associative.map_dividedPower,
-      Module.End.smul_def, Module.End.mul_apply] using h
+      Module.End.smul_def, mul_apply_eq_comp] using h
 
 /-- Binomial coefficients of an additional integral toral direction preserve the highest-weight
 Kostant orbit. Only its weights on the lowering generators and on the highest vector are needed;
