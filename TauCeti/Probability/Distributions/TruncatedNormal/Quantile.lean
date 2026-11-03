@@ -16,7 +16,7 @@ truncated cdf at its level. The quantile is continuous and strictly increasing o
 Its one-sided limits are `l` and `r` in `EReal`, including infinite bounds.
 
 All endpoint conventions are covered. At zero variance, a truncation retaining the Gaussian
-location has constant interior quantile equal to that location, with the same limit at both
+location has constant quantile on `(0, 1]` equal to that location, with the same limit at both
 ends. A truncation removing the location has zero mass and is not a probability boundary.
 
 ## References
@@ -112,13 +112,13 @@ theorem tendsto_quantile_truncatedNormalMeasure_nhdsLT_one (hv : v ≠ 0) (hlr :
   · filter_upwards [Ioo_mem_nhdsLT zero_lt_one] with u hu
     exact (quantile_truncatedNormalMeasure_mem_Ioo hv hlr hs₁ hs₂ hu).2.trans hb
 
-/-- At zero variance, truncation retaining the location has constant interior quantile equal
+/-- At zero variance, truncation retaining the location has constant quantile on `(0, 1]` equal
 to that location, including when it is a retained interval endpoint. -/
 @[simp]
-theorem quantile_truncatedNormalMeasure_zero_var (hm : m ∈ s) (hu : u ∈ Ioo 0 1) :
+theorem quantile_truncatedNormalMeasure_zero_var (hm : m ∈ s) (hu : u ∈ Ioc 0 1) :
     (truncatedNormalMeasure m 0 s).quantile u = m := by
   classical
-  rw [truncatedNormalMeasure_zero_var, ite_eq_left hm, Measure.quantile_dirac _ hu.1 hu.2.le]
+  rw [truncatedNormalMeasure_zero_var, ite_eq_left hm, Measure.quantile_dirac _ hu.1 hu.2]
 
 /-- The lower endpoint limit of a surviving zero-variance truncated normal is its location. -/
 theorem tendsto_quantile_truncatedNormalMeasure_zero_var_nhdsGT_zero (hm : m ∈ s) :
@@ -127,7 +127,7 @@ theorem tendsto_quantile_truncatedNormalMeasure_zero_var_nhdsGT_zero (hm : m ∈
   apply tendsto_const_nhds.congr'
   filter_upwards [Ioo_mem_nhdsGT zero_lt_one] with u hu
   exact congrArg (fun x : ℝ ↦ (x : EReal))
-    (quantile_truncatedNormalMeasure_zero_var hm hu).symm
+    (quantile_truncatedNormalMeasure_zero_var hm ⟨hu.1, hu.2.le⟩).symm
 
 /-- The upper endpoint limit of a surviving zero-variance truncated normal is its location. -/
 theorem tendsto_quantile_truncatedNormalMeasure_zero_var_nhdsLT_one (hm : m ∈ s) :
@@ -136,6 +136,6 @@ theorem tendsto_quantile_truncatedNormalMeasure_zero_var_nhdsLT_one (hm : m ∈ 
   apply tendsto_const_nhds.congr'
   filter_upwards [Ioo_mem_nhdsLT zero_lt_one] with u hu
   exact congrArg (fun x : ℝ ↦ (x : EReal))
-    (quantile_truncatedNormalMeasure_zero_var hm hu).symm
+    (quantile_truncatedNormalMeasure_zero_var hm ⟨hu.1, hu.2.le⟩).symm
 
 end TauCeti.Probability
