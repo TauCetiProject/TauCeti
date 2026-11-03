@@ -40,31 +40,6 @@ namespace AlgebraicGeometry.Scheme.Hom
 
 variable {X Y X' Y' : Scheme.{u}}
 
-/-- In a commutative square with flat, formally unramified source map and formally
-unramified target map, formal unramifiedness of the horizontal stalk maps is equivalent at
-corresponding points. The source map and bottom horizontal map are locally of finite type;
-no finite-type assumption is needed on the top horizontal map or the target map. -/
-theorem formallyUnramified_stalkMap_iff_of_flat_square
-    (f : X ⟶ Y) (f' : X' ⟶ Y') (e : X' ⟶ X) (b : Y' ⟶ Y)
-    [LocallyOfFiniteType f] [LocallyOfFiniteType e] [Flat e]
-    [FormallyUnramified e] [FormallyUnramified b]
-    (w : e ≫ f = f' ≫ b) (x' : X') :
-    (f'.stalkMap x').hom.FormallyUnramified ↔
-      (f.stalkMap (e x')).hom.FormallyUnramified := by
-  -- Transport the predicate, including its source stalk, along the equality of composites.
-  have hw := congrArg (fun k : X' ⟶ Y ↦ (k.stalkMap x').hom.FormallyUnramified) w
-  constructor
-  · intro h
-    have hc := (FormallyUnramified.stalkMap b (f' x')).comp h
-    rw [← CommRingCat.hom_comp, ← Scheme.Hom.stalkMap_comp] at hc
-    exact formallyUnramified_stalkMap_of_comp e f x' (Flat.stalkMap e x') (hw.mpr hc)
-  · intro h
-    have hc := h.comp (FormallyUnramified.stalkMap e x')
-    rw [← CommRingCat.hom_comp, ← Scheme.Hom.stalkMap_comp] at hc
-    have hc' := hw.mp hc
-    rw [Scheme.Hom.stalkMap_comp] at hc'
-    exact RingHom.FormallyUnramified.of_comp hc'
-
 /-- Unramifiedness at every codimension-one generization of a point is invariant under an
 étale change of the source in a commutative square whose target map is formally unramified.
 This applies to open parts of étale base changes, not just to the whole fibre product. -/
