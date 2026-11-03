@@ -158,7 +158,7 @@ private lemma coeff_eq_zero
     have h : Δ[n].ιChainComplex (R := ModuleCat.of R R) (SSet.stdSimplex.objEquiv.symm θ) ≫
         (((SimplicialObject.whiskering _ _).obj (sigmaConst.obj (ModuleCat.of R R))).obj
           Δ[n]).σ i = Δ[n].ιChainComplex (Δ[n].σ i (SSet.stdSimplex.objEquiv.symm θ)) :=
-      TauCeti.SSet.ιChainComplex_map _ _
+      SSet.ιChainComplex_map _ _
     have h' := h =≫ (f.f (m + 1) ≫ K.truncLE'ToX (m + 1))
     rw [Category.assoc, (hf (m + 1)).σ_comp_assoc, zero_comp, comp_zero] at h'
     simpa [coeff] using (congrArg (fun g ↦ g.hom (1 : R)) h').symm
@@ -291,7 +291,7 @@ private lemma degeneraciesVanish_toChainComplexHom (g : K.SimplexChainMap n) (m 
     have h : Δ[n].ιChainComplex (R := ModuleCat.of R R) β ≫
         (((SimplicialObject.whiskering _ _).obj (sigmaConst.obj (ModuleCat.of R R))).obj
           Δ[n]).σ i = Δ[n].ιChainComplex (Δ[n].σ i β) :=
-      TauCeti.SSet.ιChainComplex_map _ _
+      SSet.ιChainComplex_map _ _
     rw [reassoc_of% h, comp_zero]
     ext
     refine (g.ι_toX_comp_apply _ _).trans ?_
@@ -401,8 +401,7 @@ noncomputable def chainComplexHomEquiv :
       · rw [g.val_eq_zero_of_ne _ _ hd]
   right_inv f := by
     refine Subtype.ext (coeff_injective fun m α ↦ ?_)
-    rw [coeff_toChainComplexHom, simplexVal, map_val,
-      show ⇑(SSet.stdSimplex.asOrderHom α) = ⇑α from rfl]
+    rw [coeff_toChainComplexHom, simplexVal, map_val, SSet.stdSimplex.coe_asOrderHom]
     by_cases hα : #(univ.image α) = m + 1
     · rw [ite_eq_left (hα.trans (by simp))]
       exact (ofChainComplexHomVal_of_card f.1 hα).trans
@@ -486,16 +485,22 @@ noncomputable def simplexChainMapsIso :
 
 /-- The isomorphism `CochainComplex.simplexChainMapsIso` sends an `n`-simplex to its image under
 `CochainComplex.simplexChainMapEquiv`. -/
+@[simp]
 lemma simplexChainMapsIso_hom_app_apply (Δ : SimplexCategoryᵒᵖ)
     (g : K.simplexChainMaps.obj Δ) :
-    K.simplexChainMapsIso.hom.app Δ g = K.simplexChainMapEquiv Δ.unop.len g :=
+    ConcreteCategory.hom (Y := ToType ((Idempotents.DoldKan.Γ.obj
+      (K.truncLE' embeddingDownNat)).obj Δ)) (K.simplexChainMapsIso.hom.app Δ) g =
+        K.simplexChainMapEquiv Δ.unop.len g :=
   (rfl)
 
 /-- The inverse of `CochainComplex.simplexChainMapsIso` is the inverse of
 `CochainComplex.simplexChainMapEquiv`. -/
+@[simp]
 lemma simplexChainMapsIso_inv_app_apply (Δ : SimplexCategoryᵒᵖ)
-    (x : (Idempotents.DoldKan.Γ.obj (K.truncLE' embeddingDownNat) ⋙ forget (ModuleCat R)).obj Δ) :
-    K.simplexChainMapsIso.inv.app Δ x = (K.simplexChainMapEquiv Δ.unop.len).symm x :=
+    (x : ToType ((Idempotents.DoldKan.Γ.obj (K.truncLE' embeddingDownNat)).obj Δ)) :
+    ConcreteCategory.hom (X := ToType ((Idempotents.DoldKan.Γ.obj
+      (K.truncLE' embeddingDownNat)).obj Δ)) (K.simplexChainMapsIso.inv.app Δ) x =
+        (K.simplexChainMapEquiv Δ.unop.len).symm x :=
   (rfl)
 
 end CochainComplex

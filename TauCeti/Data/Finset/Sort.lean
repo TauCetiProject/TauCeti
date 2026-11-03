@@ -186,6 +186,7 @@ theorem isRotated_sort_map_finRotate {n : ℕ} (B : Finset (Fin n)) :
     · rw [hsort hB]
 
 /-- Exactly `i` elements of `s` lie below the `i`-th smallest element `s.orderEmbOfFin h i`. -/
+@[simp]
 theorem card_filter_lt_orderEmbOfFin (s : Finset α) {k : ℕ} (h : #s = k) (i : Fin k) :
     #{x ∈ s | x < s.orderEmbOfFin h i} = i := by
   have : {x ∈ s | x < s.orderEmbOfFin h i} = (Iio i).map (s.orderEmbOfFin h).toEmbedding := by

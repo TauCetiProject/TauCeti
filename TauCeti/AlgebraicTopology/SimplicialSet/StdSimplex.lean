@@ -56,6 +56,12 @@ lemma const_app_apply {X : SSet.{u}} {n d : ℕ} (e : Fin (n + 1)) (x : X _⦋d�
     (j : Fin (d + 1)) : (SSet.const (stdSimplex.const n e _) : X ⟶ Δ[n]).app _ x j = e :=
   (rfl)
 
+/-- The vertex map `asOrderHom x` of a simplex `x` of `Δ[n]` evaluates like `x` itself: both are
+the vertex function of the morphism `objEquiv x : ⦋d⦌ ⟶ ⦋n⦌` of the simplex category. -/
+@[simp]
+lemma coe_asOrderHom {n d : ℕ} (x : (Δ[n] : SSet.{u}) _⦋d⦌) : ⇑(asOrderHom x) = ⇑x :=
+  rfl
+
 /-- The `i`-th face of the simplex of `Δ[n]` enumerating a set `J` of vertices in increasing order
 enumerates `J` with its `i`-th smallest element removed. -/
 lemma δ_objMk_orderEmbOfFin {n m : ℕ} (J : Finset (Fin (n + 1))) (h : #J = m + 2)

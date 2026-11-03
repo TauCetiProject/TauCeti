@@ -49,16 +49,6 @@ lemma ιChainComplex_chainComplexFunctor_map_app_f (f : R ⟶ R') {n : ℕ} (x :
     _root_.SSet.chainComplex]
   simp
 
-/-- The summand inclusion of a simplex `x`, followed by a simplicial operator of the simplicial
-object `[n] ↦ ∐_{X _⦋n⦌} R` whose chain complex is `X.chainComplex R`, is the summand inclusion of
-the image of `x`. -/
-@[reassoc]
-lemma ιChainComplex_map {m n : ℕ} (x : X _⦋n⦌) (f : ⦋m⦌ ⟶ ⦋n⦌) :
-    X.ιChainComplex (R := R) x ≫
-        (((SimplicialObject.whiskering _ _).obj (sigmaConst.obj R)).obj X).map f.op =
-      X.ιChainComplex (X.map f.op x) := by
-  simp [_root_.SSet.ιChainComplex]
-
 /-- The degreewise components of the chain maps induced by maps of simplicial sets compose like
 the maps themselves. -/
 @[reassoc]
@@ -81,6 +71,17 @@ lemma chainComplexMap_f_chainComplexFunctor_map_app_f {X Y : _root_.SSet.{w}} (f
 end TauCeti.SSet
 
 namespace SSet
+
+/-- The summand inclusion of a simplex `x`, followed by a simplicial operator of the simplicial
+object `[n] ↦ ∐_{X _⦋n⦌} R` whose chain complex is `X.chainComplex R`, is the summand inclusion of
+the image of `x`. -/
+@[reassoc]
+lemma ιChainComplex_map {C : Type u} [Category.{v} C] [HasCoproducts.{w} C] [Preadditive C]
+    {X : SSet.{w}} {R : C} {m n : ℕ} (x : X _⦋n⦌) (f : ⦋m⦌ ⟶ ⦋n⦌) :
+    X.ιChainComplex (R := R) x ≫
+        (((SimplicialObject.whiskering _ _).obj (sigmaConst.obj R)).obj X).map f.op =
+      X.ιChainComplex (X.map f.op x) := by
+  simp [ιChainComplex]
 
 /-- The simplicial chain modules `Cₙ(X; M) = ⨁ M` with semisimple coefficients `M` are
 semisimple. -/
