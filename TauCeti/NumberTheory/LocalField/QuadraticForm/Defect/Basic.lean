@@ -9,10 +9,9 @@ import Mathlib.FieldTheory.Finite.Basic
 public import TauCeti.Algebra.Group.Units.Basic
 public import TauCeti.NumberTheory.LocalField.FractionalIdeal
 public import TauCeti.NumberTheory.LocalField.NatCastValuation
+public import TauCeti.NumberTheory.LocalField.Squares
 public import TauCeti.NumberTheory.LocalField.UnitFiltration.Basic
 public import TauCeti.RingTheory.Valuation.ValuativeRel.Basic
-
-import TauCeti.NumberTheory.LocalField.Squares
 
 /-!
 # The quadratic defect
@@ -68,6 +67,8 @@ attained: sharpness supplies the value `2e`, and `1 + π^(2k+1)` has defect expo
   an element of odd valuation.
 * `TauCeti.defectExponent_le_two_mul_natCastValuation`: the defect exponent of a nonsquare unit
   is at most `2 v_K(2)`.
+* `TauCeti.dyadicLevel_ne_zero_of_defectExponent_eq`: a unit of positive defect exponent forces
+  `v_K(2) ≠ 0`.
 * `TauCeti.defectExponent_eq_two_mul_natCastValuation_or_odd` and
   `TauCeti.quadraticDefect_eq_maximalIdeal_zpow_or_odd`: the possible defects of a unit.
 * `TauCeti.exists_unit_defectExponent_eq_two_mul_natCastValuation` and
@@ -508,6 +509,15 @@ theorem defectExponent_le_two_mul_natCastValuation (h2 : (2 : K) ≠ 0) {u : Kˣ
   refine hsq ⟨z * ξu, ?_⟩
   rw [← sq, mul_pow, hz, hw]
   group
+
+/-- **A unit of positive defect exponent forces `v_K(2) ≠ 0`.** Its defect exponent is at most
+`2 v_K(2)`; in odd residue characteristic every nonsquare unit has defect exponent `0`. -/
+theorem dyadicLevel_ne_zero_of_defectExponent_eq (h2 : (2 : K) ≠ 0) {a : Kˣ}
+    (ha : valuation K (a : K) = 1) {d : ℤ} (hd : defectExponent a = d) (hd0 : 0 < d) :
+    dyadicLevel K h2 ≠ 0 := by
+  have h := defectExponent_le_two_mul_natCastValuation h2 ha (not_isSquare_of_defectExponent_eq hd)
+  rw [hd, ← dyadicLevel_def, WithTop.coe_le_coe] at h
+  omega
 
 /-- **The possible defects of a unit** (O'Meara 63:2). For a unit of `𝒪[K]` which is not a square,
 the defect exponent is either `2 v_K(2)` or an odd number below `2 v_K(2)`; equivalently, by

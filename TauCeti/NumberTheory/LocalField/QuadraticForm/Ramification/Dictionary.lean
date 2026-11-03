@@ -148,15 +148,6 @@ theorem isSquare_mul_of_defectExponent_eq_two_mul (h2 : (2 : K) ≠ 0) {u w : K�
       (by rw [map_add, map_add, map_mul, map_mul, h4]; simpa using hsum)
     simpa using h.mul (IsSquare.sq (ξ * η))
 
-/-- **A unit of positive defect exponent forces `v_K(2) ≠ 0`.** Its defect exponent is at most
-`2 v_K(2)`; in odd residue characteristic every nonsquare unit has defect exponent `0`. -/
-theorem dyadicLevel_ne_zero_of_defectExponent_eq (h2 : (2 : K) ≠ 0) {a : Kˣ}
-    (ha : valuation K (a : K) = 1) {d : ℤ} (hd : defectExponent a = d) (hd0 : 0 < d) :
-    dyadicLevel K h2 ≠ 0 := by
-  have h := defectExponent_le_two_mul_natCastValuation h2 ha (not_isSquare_of_defectExponent_eq hd)
-  rw [hd, ← dyadicLevel_def, WithTop.coe_le_coe] at h
-  omega
-
 /-- **The nonsquares of `U(K, 2 v_K(2))` form one square class.** Both have the maximal defect
 exponent `2 v_K(2)`, so they differ by a square. -/
 theorem isSquare_mul_of_mem_unitFiltration_two_mul_dyadicLevel (h2 : (2 : K) ≠ 0) {u w : Kˣ}
