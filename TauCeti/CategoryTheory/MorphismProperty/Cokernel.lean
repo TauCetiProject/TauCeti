@@ -37,6 +37,7 @@ def monoWithCokernel : MorphismProperty C :=
   fun _ _ g ↦ Mono g ∧ S (cokernel g)
 
 variable {S} in
+@[simp]
 lemma mem_monoWithCokernel_iff {X Y : C} (g : X ⟶ Y) :
     S.monoWithCokernel g ↔ Mono g ∧ S (cokernel g) :=
   Iff.rfl

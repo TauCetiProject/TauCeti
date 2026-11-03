@@ -5,16 +5,21 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Homology.QuasiIso
 public import Mathlib.Algebra.Homology.ShortComplex.HomologicalComplex
 public import Mathlib.CategoryTheory.Subobject.Lattice
 
 /-!
-# Homology of extremal subcomplexes
+# Homology of subcomplexes
 
 The bottom subobject of a homological complex and the quotient by its top subobject have
 vanishing homology. These facts apply to any complex shape, assuming only that the homology
 in the requested degree exists. They supply the vanishing conditions at the ends of a finite
 filtration.
+
+We also record how quasi-isomorphisms interact with subobjects: the inclusion of
+`Subobject.mk f` is a quasi-isomorphism exactly when `f` is, and the inclusion of a subcomplex
+`A ≤ B` is a quasi-isomorphism when the inclusions of `A` and `B` are.
 -/
 
 public section
@@ -41,5 +46,25 @@ lemma isZero_homology_cokernel_of_eq_top (S : Subobject K) (hS : S = ⊤)
     IsZero ((cokernel S.arrow).homology i) := by
   have : IsIso S.arrow := by rw [hS]; infer_instance
   exact (HomologicalComplex.acyclic_of_isZero _ (isZero_cokernel_of_epi _) i).isZero_homology
+
+section QuasiIso
+
+variable [CategoryWithHomology C]
+
+/-- The inclusion of `Subobject.mk f` is a quasi-isomorphism exactly when `f` is. -/
+lemma quasiIso_mk_arrow_iff {A : HomologicalComplex C c} (f : A ⟶ K) [Mono f] :
+    QuasiIso (Subobject.mk f).arrow ↔ QuasiIso f := by
+  rw [← underlyingIso_hom_comp_eq_mk, quasiIso_iff_comp_left]
+
+/-- If the inclusions of subcomplexes `A ≤ B` are quasi-isomorphisms, then so is the inclusion
+`A ⟶ B`. -/
+lemma quasiIso_ofLE {A B : Subobject K} (h : A ≤ B) (hA : QuasiIso A.arrow)
+    (hB : QuasiIso B.arrow) : QuasiIso (ofLE A B h) := by
+  have : QuasiIso (ofLE A B h ≫ B.arrow) := by
+    rw [ofLE_arrow]
+    infer_instance
+  exact quasiIso_of_comp_right _ B.arrow
+
+end QuasiIso
 
 end CategoryTheory.Subobject
