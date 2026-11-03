@@ -185,7 +185,7 @@ theorem exists_tateUniformizationX_eq_and_tateUniformizationY_eq (q : Kˣ)
     ∃ u : Kˣ, ‖(u : K)‖ = 1 ∧ ‖1 - (u : K)‖ = 1 ∧
       tateUniformizationX q u = x ∧ tateUniformizationY q u = y := by
   have hA₄ := (norm_tateCurveA₄_le (q : K) hq).trans_lt hq
-  have hA₆ := (norm_tateCurveA₆_le (q : K) hq).trans_lt hq
+  have hA₆ := (norm_tateCurveA₆ (q : K) hq).trans_lt hq
   have heq {a b : K} (h : (tateCurveAt q hq).toAffine.Equation a b) :
       b ^ 2 + a * b = a ^ 3 + tateCurveA₄ (q : K) hq * a + tateCurveA₆ (q : K) hq := by
     rw [equation_iff] at h
