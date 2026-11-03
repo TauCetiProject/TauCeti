@@ -71,15 +71,10 @@ theorem degree_sum_ringChoose_X_le_iff (a : ℕ →₀ ℤ) (n : ℕ) :
   have hrepr (i : ℕ) :
       b.repr (a.sum (fun j z => z • Ring.choose (X : K[X]) j)) i = (a i : K) := by
     have hb (j : ℕ) : b j = Ring.choose (X : K[X]) j := binomialPolynomialBasis_apply K j
-    simp only [Finsupp.sum, ← Int.cast_smul_eq_zsmul K, ← hb, map_sum, map_smul,
-      Module.Basis.repr_self, Finset.sum_apply', Finsupp.smul_apply,
-      Finsupp.single_apply, smul_eq_mul, mul_ite, mul_one, mul_zero]
-    rw [Finset.sum_eq_single i]
-    · simp
-    · intro j _ hji
-      simp [hji]
-    · intro hi
-      simp [Finsupp.notMem_support_iff.mp hi]
+    simpa [Finsupp.linearCombination_apply, Finsupp.sum_mapRange_index, hb,
+      Int.cast_smul_eq_zsmul] using
+      congrArg (fun c : ℕ →₀ K => c i)
+        (b.repr_linearCombination (a.mapRange (Int.cast : ℤ → K) (Int.cast_zero)))
   rw [← mem_degreeLE, ← hspan, b.mem_span_image]
   simp only [Set.subset_def, Finset.mem_coe, Finsupp.mem_support_iff,
     Set.mem_Iic, hrepr, Int.cast_ne_zero]
