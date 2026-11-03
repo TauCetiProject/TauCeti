@@ -187,14 +187,13 @@ variable {N : Type*} [TopologicalSpace N] [ChartedSpace H N] {π : N → M} {g :
 
 omit [IsManifold I 1 M] in
 /-- **Critical points of a lifted potential.** If `π` is a local diffeomorphism and `g` is a
-differentiable function with `dg = π^* α`, the critical points of `g` are the preimages of the
-zeros of `α`. -/
+function with `dg = π^* α`, the critical points of `g` are the preimages of the zeros of `α`. -/
 theorem _root_.IsLocalDiffeomorph.criticalPoints_eq_preimage_of_mextDeriv_eq_mpullback
-    {n : WithTop ℕ∞} (hπ : IsLocalDiffeomorph I I n π) (hn : n ≠ 0) (hg : MDifferentiable I 𝓘(ℝ) g)
+    {n : WithTop ℕ∞} (hπ : IsLocalDiffeomorph I I n π) (hn : n ≠ 0)
     (hdg : mextDeriv (RoughForm.ofFunction I g) = mpullback I I π α) :
     criticalPoints I g = π ⁻¹' {y | α y = 0} := by
   ext x
-  rw [← (isPrimitiveOn_univ_of_mextDeriv_eq hg hdg).eq_zero_iff_mem_criticalPoints (mem_univ x),
+  rw [mem_criticalPoints_iff_mfderiv_eq_zero, ← mextDeriv_ofFunction_apply_eq_zero_iff, hdg,
     (hπ x).mpullback_apply_eq_zero_iff hn, mem_preimage, mem_ofPred_eq]
 
 variable [IsManifold I ∞ M] [IsManifold I ∞ N] [I.Boundaryless]
