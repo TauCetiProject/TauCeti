@@ -17,26 +17,26 @@ Let `A : V →ₗ[ℝ] W` be a linear map, and let `e_A : V × W ≃ₗ[ℝ] V �
 `J₁ ⊕ J₂` and the direct-sum form `ω₁ ⊕ ω₂` of `TauCeti.Geometry.Symplectic.Prod.Basic` along
 `e_A` gives the *skew products*
 
-* `J̃(v, w) = (J₁ v, J₂ (w - A v) + A (J₁ v))`, and
-* `ω̃((v, w), (v', w')) = ω₁(v, v') + ω₂(w - A v, w' - A v')`.
+* `J_A(v, w) = (J₁ v, J₂ (w - A v) + A (J₁ v))`, and
+* `ω_A((v, w), (v', w')) = ω₁(v, v') + ω₂(w - A v, w' - A v')`.
 
 Since `e_A` is a linear equivalence, a skew product of tame (respectively compatible) pairs is
-again tame (respectively compatible). The first projection is complex linear from `J̃` to `J₁`,
-and the inclusion of the second factor is complex linear from `J₂` to `J̃`: the fibres
-`{v} × W` are `J̃`-complex with the structure `J₂`.
+again tame (respectively compatible). The first projection is complex linear from `J_A` to `J₁`,
+and the inclusion of the second factor is complex linear from `J₂` to `J_A`: the fibres
+`{v} × W` are `J_A`-complex with the structure `J₂`.
 
 This is the pointwise linear algebra of Gromov's graph construction. For a map `L : V →ₗ[ℝ] W`,
-the graph map `v ↦ (v, L v)` is complex linear from `J₁` to `J̃` exactly when `L - A` is complex
+the graph map `v ↦ (v, L v)` is complex linear from `J₁` to `J_A` exactly when `L - A` is complex
 linear from `J₁` to `J₂` (`TauCeti.AlmostComplexStructure.isComplexLinearMap_id_prod_skewProd_iff`).
 For `A` the Hamiltonian vector field one-form of an inhomogeneous Cauchy–Riemann equation, this
 turns its solutions into holomorphic graphs.
 
 ## Main declarations
 
-* `TauCeti.AlmostComplexStructure.skewProd`: the skew product `J̃` of `J₁` and `J₂` along `A`.
-* `TauCeti.SymplecticForm.skewProd`: the skew product `ω̃` of `ω₁` and `ω₂` along `A`.
+* `TauCeti.AlmostComplexStructure.skewProd`: the skew product `J_A` of `J₁` and `J₂` along `A`.
+* `TauCeti.SymplecticForm.skewProd`: the skew product `ω_A` of `ω₁` and `ω₂` along `A`.
 * `TauCeti.AlmostComplexStructure.isComplexLinearMap_skewProd_iff`: a linear map `f` into `V × W`
-  is complex linear for `J̃` exactly when its first component and `f.2 - A ∘ f.1` are.
+  is complex linear for `J_A` exactly when its first component and `f.2 - A ∘ f.1` are.
 * `TauCeti.SymplecticForm.skewProd_tames`, `TauCeti.SymplecticForm.skewProd_compatible`: skew
   products of tame (compatible) pairs are tame (compatible).
 

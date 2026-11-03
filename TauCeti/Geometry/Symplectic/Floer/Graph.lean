@@ -23,17 +23,17 @@ Hamiltonian perturbation. Write `X_K = ds ⊗ X_{K_s} + dt ⊗ X_{K_t}`
 (`TauCeti.SymplecticForm.hamiltonianOneForm`) and `j` for the standard complex structure on
 `ℝ × ℝ`. Following Gromov, put on `(ℝ × ℝ) × V` the almost complex structure
 
-`J̃(z, x)(ξ, v) = (j ξ, J(z, x) (v - X_K ξ) + X_K (j ξ))`,
+`J_K(z, x)(ξ, v) = (j ξ, J(z, x) (v - X_K ξ) + X_K (j ξ))`,
 
 the skew product of `j` and `J(z, x)` along `X_K(z, x)`
 (`TauCeti.SymplecticForm.floerGraphAlmostComplex`). Then:
 
 * a map `u` solves the Floer equation `(du - X_K)^{0,1} = 0` at `z` exactly when its graph
-  `w ↦ (w, u w)` is `J̃`-holomorphic at `z`
+  `w ↦ (w, u w)` is `J_K`-holomorphic at `z`
   (`TauCeti.SymplecticForm.isJHolomorphicAt_graph_floerGraphAlmostComplex_iff`);
-* the projection of a `J̃`-holomorphic map to `ℝ × ℝ` is `j`-holomorphic
+* the projection of a `J_K`-holomorphic map to `ℝ × ℝ` is `j`-holomorphic
   (`TauCeti.IsJHolomorphicAt.fst_of_floerGraphAlmostComplex`), and a map into a
-  single fibre `{z} × V` is `J̃`-holomorphic exactly when it is holomorphic for the frozen
+  single fibre `{z} × V` is `J_K`-holomorphic exactly when it is holomorphic for the frozen
   structure `J(z, ·)`
   (`TauCeti.SymplecticForm.isJHolomorphicAt_prodMk_floerGraphAlmostComplex_iff`).
 
@@ -52,9 +52,9 @@ are recorded by `TauCeti.SymplecticForm.floerGraphForm`, and the curvature `R_K`
 `Ω_c((ξ, v), (ξ', v')) = ω(v - X_K ξ, v' - X_K ξ') + (c + R_K) (ds ∧ dt)(ξ, ξ')`
 
 (`TauCeti.SymplecticForm.floerGraphForm_eq`). Consequently `Ω_c` is the skew product of
-`(c + R_K) ds ∧ dt` and `ω` along `X_K`, and it tames `J̃` wherever `c + R_K > 0` and `ω` tames
+`(c + R_K) ds ∧ dt` and `ω` along `X_K`, and it tames `J_K` wherever `c + R_K > 0` and `ω` tames
 `J` (`TauCeti.SymplecticForm.floerGraphForm_floerGraphAlmostComplex_pos`). On a graph,
-`Ω_c(∂_s ũ, ∂_t ũ)` is the Floer energy density plus `c + R_K`
+`Ω_c(∂_s Γ_u, ∂_t Γ_u)` is the Floer energy density plus `c + R_K`
 (`TauCeti.SymplecticForm.floerGraphForm_graph`). On a domain of finite area and with bounded
 curvature, a large constant `c` therefore makes the `Ω_c`-energy of the graph the Floer energy
 plus a bounded term. This is how compactness for pseudoholomorphic curves applies to solutions
@@ -108,7 +108,7 @@ variable {ω J Ks Kt}
 
 /-- **Gromov's graph construction.** A map `u` solves the Floer equation
 `(du - X_K)^{0,1} = 0` at `z` exactly when its graph `w ↦ (w, u w)` is holomorphic at `z` from
-the standard structure of `ℝ × ℝ` to Gromov's structure `J̃`. -/
+the standard structure of `ℝ × ℝ` to Gromov's structure `J_K`. -/
 theorem isJHolomorphicAt_graph_floerGraphAlmostComplex_iff {u : ℝ × ℝ → V} {z : ℝ × ℝ} :
     IsJHolomorphicAt (fun _ ↦ AlmostComplexStructure.product ℝ)
         (ω.floerGraphAlmostComplex J Ks Kt) (fun w ↦ (w, u w)) z ↔
@@ -136,7 +136,7 @@ theorem isJHolomorphicAt_graph_floerGraphAlmostComplex_iff {u : ℝ × ℝ → V
     exact ⟨_, hgraph hu, hlin.mpr hulin⟩
 
 /-- **Gromov's graph construction, globally.** A map `u` solves the Floer equation everywhere
-exactly when its graph is `J̃`-holomorphic. -/
+exactly when its graph is `J_K`-holomorphic. -/
 theorem isJHolomorphic_graph_floerGraphAlmostComplex_iff {u : ℝ × ℝ → V} :
     IsJHolomorphic (fun _ ↦ AlmostComplexStructure.product ℝ)
         (ω.floerGraphAlmostComplex J Ks Kt) (fun w ↦ (w, u w)) ↔
@@ -148,7 +148,7 @@ theorem isJHolomorphic_graph_floerGraphAlmostComplex_iff {u : ℝ × ℝ → V} 
 
 variable {U : Type*} [NormedAddCommGroup U] [NormedSpace ℝ U] {J' : U → AlmostComplexStructure U}
 
-/-- The projection to `ℝ × ℝ` of a `J̃`-holomorphic map is holomorphic for the standard structure
+/-- The projection to `ℝ × ℝ` of a `J_K`-holomorphic map is holomorphic for the standard structure
 of `ℝ × ℝ`. -/
 theorem _root_.TauCeti.IsJHolomorphicAt.fst_of_floerGraphAlmostComplex {f : U → (ℝ × ℝ) × V}
     {y : U} (hf : IsJHolomorphicAt J' (ω.floerGraphAlmostComplex J Ks Kt) f y) :
@@ -160,7 +160,7 @@ theorem _root_.TauCeti.IsJHolomorphicAt.fst_of_floerGraphAlmostComplex {f : U �
   exact hlin.1
 
 /-- **Vertical maps.** A map `y ↦ (z, g y)` into the fibre over a fixed domain point `z` is
-`J̃`-holomorphic exactly when `g` is holomorphic for the structure `J(z, ·)` frozen at `z`. -/
+`J_K`-holomorphic exactly when `g` is holomorphic for the structure `J(z, ·)` frozen at `z`. -/
 theorem isJHolomorphicAt_prodMk_floerGraphAlmostComplex_iff {g : U → V} {z : ℝ × ℝ} {y : U} :
     IsJHolomorphicAt J' (ω.floerGraphAlmostComplex J Ks Kt) (fun y ↦ (z, g y)) y ↔
       IsJHolomorphicAt J' (J z) g y := by
@@ -344,8 +344,8 @@ theorem floerGraphForm_floerGraphAlmostComplex_pos (ω : SymplecticForm V)
   rw [floerGraphForm_eq_skewProd ω hKs hKt hc.ne', floerGraphAlmostComplex_def]
   exact skewProd_tames (stdSymplecticForm_tames_product.rescale_of_pos hc) hJ _ ζ hζ
 
-/-- **The energy of a graph.** On the coordinate derivatives `∂_s ũ = (1, ∂_s u)` and
-`∂_t ũ = (i, ∂_t u)` of the graph `ũ(w) = (w, u w)`, Gromov's taming form evaluates to the Floer
+/-- **The energy of a graph.** On the coordinate derivatives `∂_s Γ_u = (1, ∂_s u)` and
+`∂_t Γ_u = (i, ∂_t u)` of the graph `Γ_u(w) = (w, u w)`, Gromov's taming form evaluates to the Floer
 energy density of `u` plus `c + R_K(z, u z)`. -/
 theorem floerGraphForm_graph (ω : SymplecticForm V) {u : ℝ × ℝ → V} {z : ℝ × ℝ}
     (hKs : DifferentiableAt ℝ (uncurry Ks) (z, u z))
