@@ -187,6 +187,14 @@ def IsometryEquiv.piCongrLeft {ι ι' : Type*} [Fintype ι] [Fintype ι'] {M : �
     exact (Fintype.sum_equiv e (fun i' ↦ Q (e i') (x i')) _ fun i' ↦
       congrArg (Q (e i')) (Equiv.piCongrLeft_apply_apply M e x i').symm).symm
 
+/-- Reindexing an orthogonal sum has `LinearEquiv.piCongrLeft` as its underlying linear map. -/
+@[simp]
+theorem IsometryEquiv.toLinearEquiv_piCongrLeft {ι ι' : Type*} [Fintype ι] [Fintype ι']
+    {M : ι → Type*} [∀ i, AddCommMonoid (M i)] [∀ i, Module R (M i)]
+    (Q : ∀ i, QuadraticMap R (M i) P) (e : ι' ≃ ι) :
+    (IsometryEquiv.piCongrLeft Q e).toLinearEquiv = LinearEquiv.piCongrLeft R M e :=
+  (rfl)
+
 /-- The forward map of `QuadraticMap.IsometryEquiv.piCongrLeft` at a reindexed coordinate. -/
 @[simp]
 theorem IsometryEquiv.piCongrLeft_apply_apply {ι ι' : Type*} [Fintype ι] [Fintype ι']

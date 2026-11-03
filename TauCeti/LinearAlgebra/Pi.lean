@@ -89,6 +89,14 @@ end Submodule
 
 namespace LinearEquiv
 
+/-- Forgetting the linear and additive structure of reindexing gives equivalence reindexing.
+Use this bridge explicitly for additive subgroup maps: its additive coercion is not a simp
+normal form. -/
+public theorem coe_toAddEquiv_piCongrLeft (R : Type*) {ι ι' : Type*} [Semiring R]
+    (M : ι → Type*) [∀ i, AddCommMonoid (M i)] [∀ i, Module R (M i)] (e : ι' ≃ ι) :
+    ⇑(piCongrLeft R M e).toAddEquiv = Equiv.piCongrLeft M e :=
+  (rfl)
+
 section FinSnoc
 
 variable (R : Type*) [Semiring R] {n : ℕ} (M : Fin (n + 1) → Type*)
