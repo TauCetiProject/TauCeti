@@ -43,6 +43,7 @@ theorem quantile_map_cast_eval_dirichletMultinomialMeasure [DecidableEq ι] [Non
     ((dirichletMultinomialMeasure n a).map (fun k ↦ (k i : ℝ))).quantile u =
       ((betaBinomialMeasure n (a i) (∑ j with j ≠ i, a j)).map
         (Nat.cast : ℕ → ℝ)).quantile u := by
+  -- Expose the cast as a composition for the reverse `Measure.map_map` rewrite.
   rw [show (fun k : ι → ℕ ↦ (k i : ℝ)) =
       (Nat.cast : ℕ → ℝ) ∘ fun k ↦ k i by rfl,
     ← Measure.map_map (by fun_prop) (by fun_prop),
@@ -75,7 +76,8 @@ theorem tendsto_quantile_map_cast_eval_dirichletMultinomialMeasure_nhdsGT_zero
     rw [quantile_map_cast_eval_dirichletMultinomialMeasure_of_card_eq_one ha hcard n i
       ⟨hu.1, hu.2.le⟩]
     norm_cast
-  · rw [ite_eq_right (ne_of_gt Fintype.one_lt_card),
+  · -- Expose the cast as a composition for the reverse `Measure.map_map` rewrite.
+    rw [ite_eq_right (ne_of_gt Fintype.one_lt_card),
       show (fun k : ι → ℕ ↦ (k i : ℝ)) =
         (Nat.cast : ℕ → ℝ) ∘ fun k ↦ k i by rfl,
       ← Measure.map_map (by fun_prop) (by fun_prop),
@@ -99,7 +101,8 @@ theorem tendsto_quantile_map_cast_eval_dirichletMultinomialMeasure_nhdsLT_one
     rw [quantile_map_cast_eval_dirichletMultinomialMeasure_of_card_eq_one ha hcard n i
       ⟨hu.1, hu.2.le⟩]
     norm_cast
-  · rw [show (fun k : ι → ℕ ↦ (k i : ℝ)) =
+  · -- Expose the cast as a composition for the reverse `Measure.map_map` rewrite.
+    rw [show (fun k : ι → ℕ ↦ (k i : ℝ)) =
         (Nat.cast : ℕ → ℝ) ∘ fun k ↦ k i by rfl,
       ← Measure.map_map (by fun_prop) (by fun_prop),
       map_eval_dirichletMultinomialMeasure ha n i]

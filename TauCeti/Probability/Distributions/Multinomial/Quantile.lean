@@ -38,6 +38,7 @@ theorem quantile_map_cast_eval_multinomialMeasure (n : ℕ) (p : StdSimplex NNRe
     ((multinomialMeasure n p).map (fun k ↦ (k i : ℝ))).quantile u =
       ((ProbabilityTheory.binomial n (p.multinomialCellProbability i)).map
         (Nat.cast : ℕ → ℝ)).quantile u := by
+  -- Expose the cast as a composition for the reverse `Measure.map_map` rewrite.
   rw [show (fun k : ι → ℕ ↦ (k i : ℝ)) =
       (Nat.cast : ℕ → ℝ) ∘ fun k ↦ k i by rfl,
     ← Measure.map_map (by fun_prop) (by fun_prop),
@@ -51,6 +52,7 @@ theorem tendsto_quantile_map_cast_eval_multinomialMeasure_nhdsGT_zero
       (((multinomialMeasure n p).map (fun k ↦ (k i : ℝ))).quantile u : EReal))
       (𝓝[>] 0)
       (𝓝 (if p.multinomialCellProbability i = 1 then (n : EReal) else 0)) := by
+  -- Expose the cast as a composition for the reverse `Measure.map_map` rewrite.
   rw [show (fun k : ι → ℕ ↦ (k i : ℝ)) =
       (Nat.cast : ℕ → ℝ) ∘ fun k ↦ k i by rfl,
     ← Measure.map_map (by fun_prop) (by fun_prop),
@@ -65,6 +67,7 @@ theorem tendsto_quantile_map_cast_eval_multinomialMeasure_nhdsLT_one
       (((multinomialMeasure n p).map (fun k ↦ (k i : ℝ))).quantile u : EReal))
       (𝓝[<] 1)
       (𝓝 (if p.multinomialCellProbability i = 0 then 0 else (n : EReal))) := by
+  -- Expose the cast as a composition for the reverse `Measure.map_map` rewrite.
   rw [show (fun k : ι → ℕ ↦ (k i : ℝ)) =
       (Nat.cast : ℕ → ℝ) ∘ fun k ↦ k i by rfl,
     ← Measure.map_map (by fun_prop) (by fun_prop),

@@ -42,6 +42,7 @@ theorem quantile_map_cast_eval_multivariateHypergeometricMeasure
     ((multivariateHypergeometricMeasure K n).map (fun k ↦ (k i : ℝ))).quantile u =
       ((hypergeometricMeasure (∑ j, K j) (K i) n).map
         (Nat.cast : ℕ → ℝ)).quantile u := by
+  -- Expose the cast as a composition for the reverse `Measure.map_map` rewrite.
   rw [show (fun k : ι → ℕ ↦ (k i : ℝ)) =
       (Nat.cast : ℕ → ℝ) ∘ fun k ↦ k i by rfl,
     ← Measure.map_map (by fun_prop) (by fun_prop),
@@ -57,6 +58,7 @@ theorem tendsto_quantile_map_cast_eval_multivariateHypergeometricMeasure_nhdsGT_
       (𝓝[>] 0) (𝓝 (n - ((∑ j, K j) - K i) : ℕ)) := by
   have hKi : K i ≤ ∑ j, K j :=
     Finset.single_le_sum (fun j _ ↦ Nat.zero_le (K j)) (Finset.mem_univ i)
+  -- Expose the cast as a composition for the reverse `Measure.map_map` rewrite.
   rw [show (fun k : ι → ℕ ↦ (k i : ℝ)) =
       (Nat.cast : ℕ → ℝ) ∘ fun k ↦ k i by rfl,
     ← Measure.map_map (by fun_prop) (by fun_prop),
@@ -73,6 +75,7 @@ theorem tendsto_quantile_map_cast_eval_multivariateHypergeometricMeasure_nhdsLT_
       (𝓝[<] 1) (𝓝 (min (K i) n : ℕ)) := by
   have hKi : K i ≤ ∑ j, K j :=
     Finset.single_le_sum (fun j _ ↦ Nat.zero_le (K j)) (Finset.mem_univ i)
+  -- Expose the cast as a composition for the reverse `Measure.map_map` rewrite.
   rw [show (fun k : ι → ℕ ↦ (k i : ℝ)) =
       (Nat.cast : ℕ → ℝ) ∘ fun k ↦ k i by rfl,
     ← Measure.map_map (by fun_prop) (by fun_prop),
