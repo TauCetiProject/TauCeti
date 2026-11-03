@@ -71,23 +71,6 @@ private def rayTransport {z : ℕ → X} (q : ∀ k, Path (z k) (z (k + 1))) (k 
   | 0 => 𝟙 _
   | k + 1 => rayTransport q k ≫ Path.Homotopic.Quotient.mk (q k)
 
-/-- A finitely supported family indexed by rays `S × ℕ` telescopes along each ray to its value at
-the start of the ray. -/
-private lemma finsum_sub_add_one_prod {S M : Type*} [AddCommGroup M] {f : S × ℕ → M}
-    (hf : (Function.support f).Finite) :
-    ∑ᶠ ik, (f ik - f (ik.1, ik.2 + 1)) = ∑ᶠ i, f (i, 0) := by
-  have hf' : (Function.support fun ik : S × ℕ ↦ f (ik.1, ik.2 + 1)).Finite :=
-    hf.preimage (f := fun ik : S × ℕ ↦ (ik.1, ik.2 + 1)) fun a _ b _ h ↦ by
-      simpa [Prod.ext_iff] using h
-  rw [finsum_curry _ ((hf.union hf').subset (Function.support_sub _ _))]
-  exact finsum_congr fun i ↦ finsum_sub_add_one (hf.preimage (Prod.mk_right_injective i).injOn)
-
-/-- A chain supported on a single simplex `τ` only has a nonzero coefficient on `τ`. -/
-private lemma eq_of_twistedChainComplexCoeff_ιTwistedChainComplex_ne_zero {k : ℕ}
-    {σ τ : (TopCat.toSSet.obj X) _⦋k⦌} {m : L.obj (initialVertex τ)}
-    (h : (twistedChainComplexCoeff L σ).hom ((ιTwistedChainComplex L k τ).hom m) ≠ 0) : τ = σ :=
-  by_contra fun hne ↦ h (twistedChainComplexCoeff_ιTwistedChainComplex_apply_of_ne L hne _)
-
 variable [T2Space X] [WeaklyLocallyCompactSpace X] [LocallyPathConnectedSpace X]
   [SigmaCompactSpace X]
 

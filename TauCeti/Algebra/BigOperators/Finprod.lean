@@ -18,7 +18,8 @@ both index types to be finite.  This file records the `finprod` analogue, which 
 restricted families to have finite multiplicative support. Regrouping by the fibers of an
 arbitrary map is also available, without finiteness assumptions on the fibers, as is cancelling a
 finitely supported factor whose product is `1`. A finitely supported telescoping product
-`∏ᶠ i : ℕ, f i / f (i + 1)` equals `f 0`. Shifting the index of an alternating product over
+`∏ᶠ i : ℕ, f i / f (i + 1)` equals `f 0`, and a family indexed by `S × ℕ` telescopes along each
+ray `{i} × ℕ` to its starting values. Shifting the index of an alternating product over
 `ℤ` by one inverts it, so multiplying each factor `f j` by `δ (j + 1) * δ j` does not change the
 product; this is how changes of boundary bases cancel in Reidemeister torsion.
 A sum weighted by a finitely supported family of scalars, such as the translates of a cutoff
@@ -40,6 +41,8 @@ whose factors off the finset are all at least `1`, or all at most `1`.
   supported in a finset `t` is the product over the elements of `t` that lie in `s`.
 * `TauCeti.finprod_div_add_one` and `TauCeti.finsum_sub_add_one`: a finitely supported
   telescoping product `∏ᶠ i : ℕ, f i / f (i + 1)` is `f 0`, and likewise for sums.
+  `TauCeti.finprod_div_add_one_prod` and `TauCeti.finsum_sub_add_one_prod` telescope a family
+  indexed by `S × ℕ` along each ray `{i} × ℕ`.
 * `TauCeti.finprod_zpow_negOnePow_add_one`: `∏ᶠ j, f (j + 1) ^ (-1) ^ j` is the inverse of
   `∏ᶠ j, f j ^ (-1) ^ j`.
 * `TauCeti.finprod_mul_mul_add_one_zpow_negOnePow`: multiplying each factor `f j` of
@@ -173,6 +176,20 @@ theorem finprod_div_add_one {G : Type*} [CommGroup G] {f : ℕ → G} (hf : HasF
     Finset.prod_range_div', hf₁ (Nat.lt_succ_self N), div_one]
   exact Finset.mem_range.2 (lt_of_not_ge fun h ↦ hi <| by
     simp [hf₁ (show N < i by omega), hf₁ (show N < i + 1 by omega)])
+
+/-- A finitely supported family indexed by `S × ℕ` telescopes along each ray `{i} × ℕ`: the factors
+`f (i, k) / f (i, k + 1)` multiply to the product of the starting values `f (i, 0)`. -/
+@[to_additive finsum_sub_add_one_prod /-- A finitely supported family indexed by `S × ℕ`
+telescopes along each ray `{i} × ℕ`: the terms `f (i, k) - f (i, k + 1)` add up to the sum of the
+starting values `f (i, 0)`. -/]
+theorem finprod_div_add_one_prod {S G : Type*} [CommGroup G] {f : S × ℕ → G}
+    (hf : HasFiniteMulSupport f) :
+    ∏ᶠ ik, f ik / f (ik.1, ik.2 + 1) = ∏ᶠ i, f (i, 0) := by
+  have hf' : HasFiniteMulSupport fun ik : S × ℕ ↦ f (ik.1, ik.2 + 1) :=
+    hf.preimage (f := fun ik : S × ℕ ↦ (ik.1, ik.2 + 1)) fun a _ b _ h ↦ by
+      simpa [Prod.ext_iff] using h
+  rw [finprod_curry _ ((hf.union hf').subset (mulSupport_div _ _))]
+  exact finprod_congr fun i ↦ finprod_div_add_one (hf.preimage (Prod.mk_right_injective i).injOn)
 
 /-- Shifting the index of an alternating product over `ℤ` by one inverts it: the factor `f (j + 1)`
 enters `∏ᶠ j, f (j + 1) ^ (-1) ^ j` with the exponent opposite to its exponent `(-1) ^ (j + 1)` in

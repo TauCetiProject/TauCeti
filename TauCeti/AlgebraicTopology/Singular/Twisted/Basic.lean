@@ -514,6 +514,12 @@ lemma twistedChainComplexCoeff_ιTwistedChainComplex_apply_of_ne
     (twistedChainComplexCoeff L ρ).hom ((ιTwistedChainComplex L k σ).hom x) = 0 :=
   congrArg (fun f ↦ f.hom x) (ιTwistedChainComplex_twistedChainComplexCoeff_of_ne L h)
 
+/-- A chain supported on a single simplex `τ` only has a nonzero coefficient on `τ`. -/
+lemma eq_of_twistedChainComplexCoeff_ιTwistedChainComplex_ne_zero
+    {σ τ : (TopCat.toSSet.obj X) _⦋k⦌} {x : L.obj (initialVertex τ)}
+    (h : (twistedChainComplexCoeff L σ).hom ((ιTwistedChainComplex L k τ).hom x) ≠ 0) : τ = σ :=
+  by_contra fun hne ↦ h (twistedChainComplexCoeff_ιTwistedChainComplex_apply_of_ne L hne _)
+
 /-- Summing a family of additive maps out of the simplex fibres against the coefficients of a
 finite sum of chains, each supported on one simplex, applies the maps summand by summand. -/
 lemma finsum_twistedChainComplexCoeff_sum {M : Type*} [AddCommMonoid M]

@@ -237,12 +237,23 @@ lemma d_ιTwistedChainComplex_simplex₁_apply {x y : X} (γ : Path x y)
   have hmap {a b c : FundamentalGroupoid X} (f : a ⟶ b) (g : b ⟶ c) (v : L.obj a) :
       (L.map g).hom ((L.map f).hom v) = (L.map (f ≫ g)).hom v := by
     simp
+  -- The coefficients at the two endpoints, transported to the point simplices.
+  have hc₀ : (L.map (eqToHom
+      ((initialVertex_zero _).trans (congrArg FundamentalGroupoid.mk h₀)))).hom
+      ((L.map (vertexTransport (δ 0).op (simplex₁ γ.toContinuousMap))).hom
+        ((L.map (eqToHom (initialVertex_simplex₁ γ).symm)).hom m)) =
+      (L.map (Path.Homotopic.Quotient.mk γ)).hom m := by
+    rw [← eqToHom_trans (initialVertex_zero _) (congrArg FundamentalGroupoid.mk h₀)]
+    simp only [hmap, Category.assoc, he₀]
+  have hc₁ : (L.map (eqToHom
+      ((initialVertex_zero _).trans (congrArg FundamentalGroupoid.mk h₁)))).hom
+      ((L.map (vertexTransport (δ 1).op (simplex₁ γ.toContinuousMap))).hom
+        ((L.map (eqToHom (initialVertex_simplex₁ γ).symm)).hom m)) = m := by
+    rw [← eqToHom_trans (initialVertex_zero _) (congrArg FundamentalGroupoid.mk h₁)]
+    simp only [hmap, Category.assoc, he₁, L.map_id, ModuleCat.id_apply]
   rw [d_ιTwistedChainComplex_apply, Fin.sum_univ_two,
     ιTwistedChainComplex_zero_apply_eq_toSSetObj₀Equiv_symm L _ h₀,
-    ιTwistedChainComplex_zero_apply_eq_toSSetObj₀Equiv_symm L _ h₁, hmap, hmap, hmap, hmap,
-    ← eqToHom_trans (initialVertex_zero _) (congrArg FundamentalGroupoid.mk h₀),
-    ← eqToHom_trans (initialVertex_zero _) (congrArg FundamentalGroupoid.mk h₁), he₀, he₁,
-    L.map_id]
+    ιTwistedChainComplex_zero_apply_eq_toSSetObj₀Equiv_symm L _ h₁, hc₀, hc₁]
   simp [sub_eq_add_neg]
 
 /-- Parallel transport along a path identifies the corresponding fibre classes in zeroth
@@ -253,16 +264,16 @@ lemma map_ιTwistedHomology₀ {x y : FundamentalGroupoid X} (p : x ⟶ y) :
   induction p using Path.Homotopic.Quotient.ind with
   | mk γ =>
     refine ModuleCat.hom_ext (LinearMap.ext fun m ↦ ?_)
-    have h := congrArg ((twistedChainComplex L).pOpcycles 0 ≫
-      (twistedChainComplex L).isoHomologyι₀.inv).hom (d_ιTwistedChainComplex_simplex₁_apply L γ m)
-    have hd : (twistedChainComplex L).d 1 0 ≫ (twistedChainComplex L).pOpcycles 0 ≫
-        (twistedChainComplex L).isoHomologyι₀.inv = 0 := by
-      simp
-    rw [← LinearMap.comp_apply, ← ModuleCat.hom_comp, hd, map_sub, ModuleCat.hom_zero,
-      LinearMap.zero_apply, eq_comm, sub_eq_zero] at h
-    rw [ModuleCat.hom_comp, LinearMap.comp_apply, ιTwistedHomology₀_apply,
-      ιTwistedHomology₀_apply]
-    simpa only [ModuleCat.hom_comp, LinearMap.comp_apply] using h
+    -- The boundary of the path simplex identifies the two endpoint classes.
+    have hd (c : (twistedChainComplex L).X 1) :
+        ((twistedChainComplex L).pOpcycles 0).hom (((twistedChainComplex L).d 1 0).hom c) = 0 := by
+      rw [← LinearMap.comp_apply, ← ModuleCat.hom_comp, HomologicalComplex.d_pOpcycles,
+        ModuleCat.hom_zero, LinearMap.zero_apply]
+    have h := hd ((ιTwistedChainComplex L 1 (simplex₁ γ.toContinuousMap)).hom
+      ((L.map (eqToHom (initialVertex_simplex₁ γ).symm)).hom m))
+    rw [d_ιTwistedChainComplex_simplex₁_apply, map_sub, sub_eq_zero] at h
+    rw [ModuleCat.hom_comp, LinearMap.comp_apply, ιTwistedHomology₀_apply, ιTwistedHomology₀_apply,
+      h]
 
 /-- On a path-connected space, every twisted zeroth-homology class comes from any chosen fibre. -/
 instance epi_ιTwistedHomology₀ [PathConnectedSpace X] (x : X) :
