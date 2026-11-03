@@ -91,8 +91,7 @@ theorem tangentMatrix_derivationComp_weylRootSubgroupCoordinateMap
   simp only [weylRootSubgroupPoints_apply, Subgroup.coe_mul, Subgroup.coe_inv,
     Units.val_mul] at hentry
   rw [hn, ← map_inv] at hentry
-  simp only [Matrix.GeneralLinearGroup.map, Units.coe_map, RingHom.toMonoidHom_eq_coe,
-    MonoidHom.coe_ofClass, RingHom.mapMatrix_apply, Algebra.toRingHom_ofId] at hentry
+  simp only [Matrix.GeneralLinearGroup.val_map_apply, Algebra.toRingHom_ofId] at hentry
   rw [← map_genericMatrix_generator_inl (.inl i)] at hentry
   rw [GeneralLinear.tangentMatrix_derivationComp_eq_mul_mul_of_map_genericMatrix
     ((weylRootSubgroupCoordinateMap l i).hom.comp
@@ -101,8 +100,7 @@ theorem tangentMatrix_derivationComp_weylRootSubgroupCoordinateMap
     tangentMatrix_derivationComp_generator_inl]
   rw [hnB, ← map_inv]
   rw [Matrix.mul_smul, Matrix.smul_mul]
-  simp only [Matrix.GeneralLinearGroup.map, Units.coe_map, RingHom.toMonoidHom_eq_coe,
-    MonoidHom.coe_ofClass, RingHom.mapMatrix_apply, Algebra.toRingHom_ofId]
+  simp only [Matrix.GeneralLinearGroup.val_map_apply, Algebra.toRingHom_ofId]
 
 /-- The unit tangent vector of the selected root subgroup, with values in a coefficient
 algebra. Its normalization is fixed by the selected root parametrization. -/

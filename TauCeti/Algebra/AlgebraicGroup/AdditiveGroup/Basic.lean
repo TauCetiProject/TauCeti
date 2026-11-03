@@ -172,7 +172,7 @@ theorem gaPointsMulEquiv_toConv_id :
     gaPointsMulEquiv (toConv (AlgHom.id R (SymmetricAlgebra R R))) =
       Multiplicative.ofAdd (ι R R 1) := by
   rw [← ofAdd_toAdd (gaPointsMulEquiv _), toAdd_gaPointsMulEquiv]
-  rfl
+  simp
 
 /-- The inverse equivalence sends an element of the value algebra to the corresponding
 `A`-valued point of `𝔾ₐ`. -/
