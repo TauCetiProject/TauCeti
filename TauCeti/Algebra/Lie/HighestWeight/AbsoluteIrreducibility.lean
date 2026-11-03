@@ -54,15 +54,9 @@ theorem IsHighestWeightVector.existsUnique_endomorphism_eq_smul
     Submodule.mem_span_singleton] at hmem
   obtain ⟨c, hc⟩ := hmem
   have hf : f = c • LieModuleHom.id := by
-    have htop : (f - c • LieModuleHom.id).ker = ⊤ := by
-      rw [← top_le_iff, ← hgen]
-      refine LieSubmodule.lieSpan_le.mpr (Set.singleton_subset_iff.mpr ?_)
-      simpa using sub_eq_zero.mpr hc.symm
-    ext m
-    have hm : m ∈ (f - c • LieModuleHom.id).ker := by
-      rw [htop]
-      exact LieSubmodule.mem_top m
-    simpa using sub_eq_zero.mp hm
+    have hlin := LinearMap.ext_on_of_lieSpan_eq_top hgen id
+      f.map_lie (c • LieModuleHom.id : M →ₗ⁅K,L⁆ M).map_lie (by simpa using hc.symm)
+    exact LieModuleHom.ext (fun m => LinearMap.congr_fun hlin m)
   refine ⟨c, hf, fun d hd => ?_⟩
   exact smul_left_injective K hv.ne_zero
     ((congrArg (fun g : M →ₗ⁅K,L⁆ M => g v) hd).symm.trans hc.symm)
