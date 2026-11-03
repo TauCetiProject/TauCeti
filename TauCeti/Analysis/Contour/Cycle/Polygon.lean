@@ -87,6 +87,26 @@ private theorem boundaryParam_eq_of_mem_cell (i : Fin n) (t : ℝ)
     poly.boundaryParam_natCast, boundaryParam_natCast_add_one]
   simp [Polygon.edgePath, AffineMap.lineMap_apply_module', add_comm]
 
+/-- On the cell `[i, i + 1]` the boundary parametrization runs along edge `i`. -/
+private theorem boundaryParam_eq_edgePath_sub (i : Fin n) {t : ℝ}
+    (ht : t ∈ Icc ((i : ℕ) : ℝ) ((i : ℕ) + 1)) :
+    poly.boundaryParam t = poly.edgePath ℝ i (t - (i : ℕ)) := by
+  rw [← poly.boundaryParam_natCast_add i ⟨by linarith [ht.1], by linarith [ht.2]⟩,
+    add_sub_cancel]
+
+/-- On the open cell `(i, i + 1)` the boundary parametrization has the edge vector of edge `i`
+as its derivative. -/
+private theorem hasDerivAt_boundaryParam (i : Fin n) {t : ℝ}
+    (ht : t ∈ Ioo ((i : ℕ) : ℝ) ((i : ℕ) + 1)) :
+    HasDerivAt poly.boundaryParam (poly (finRotate n i) - poly i) t := by
+  have hderiv : HasDerivAt (fun u : ℝ ↦ (u - (i : ℕ)) • (poly (finRotate n i) - poly i) + poly i)
+      (poly (finRotate n i) - poly i) t := by
+    simpa using (((hasDerivAt_id t).sub_const ((i : ℕ) : ℝ)).smul_const
+      (poly (finRotate n i) - poly i)).add_const (poly i)
+  refine hderiv.congr_of_eventuallyEq ?_
+  filter_upwards [Icc_mem_nhds ht.1 ht.2] with u hu
+  rw [boundaryParam_eq_edgePath_sub poly i hu, Polygon.edgePath, AffineMap.lineMap_apply_module']
+
 /-- The boundary parametrization is polygonal on `[0, n]`, with the integers as vertices. -/
 private theorem isPolygonalOnInterval_boundaryParam :
     IsPolygonalOnInterval poly.boundaryParam 0 n :=
@@ -161,26 +181,15 @@ theorem _root_.Polygon.integral_contourCycle {E : Type*} [NormedAddCommGroup E] 
   rw [← hsplit, ← Fin.sum_univ_eq_sum_range]
   refine Finset.sum_congr rfl fun i _ ↦ ?_
   -- On the open cell, the curve is the affine edge `i`, with constant derivative.
-  have hcell : ∀ t ∈ Icc ((i : ℕ) : ℝ) ((i : ℕ) + 1),
-      poly.boundaryParam t = poly.edgePath ℝ i (t - (i : ℕ)) := fun t ht ↦ by
-    rw [← poly.boundaryParam_natCast_add i ⟨by linarith [ht.1], by linarith [ht.2]⟩,
-      add_sub_cancel]
   rw [Nat.cast_succ, intervalIntegral.integral_congr_uIoo (g := fun t ↦
     (poly (finRotate n i) - poly i) • f (poly.edgePath ℝ i (t - (i : ℕ)))) fun t ht ↦ ?_,
     intervalIntegral.integral_smul,
     intervalIntegral.integral_comp_sub_right (fun t ↦ f (poly.edgePath ℝ i t)), sub_self,
     add_sub_cancel_left]
   rw [uIoo_of_le (by linarith)] at ht
-  have hnhds : poly.boundaryParam =ᶠ[nhds t]
-      fun u ↦ (u - (i : ℕ)) • (poly (finRotate n i) - poly i) + poly i := by
-    filter_upwards [Icc_mem_nhds ht.1 ht.2] with u hu
-    rw [hcell u hu, Polygon.edgePath, AffineMap.lineMap_apply_module']
-  have hderiv : HasDerivAt (fun u : ℝ ↦ (u - (i : ℕ)) • (poly (finRotate n i) - poly i) + poly i)
-      (poly (finRotate n i) - poly i) t := by
-    simpa using (((hasDerivAt_id t).sub_const ((i : ℕ) : ℝ)).smul_const
-      (poly (finRotate n i) - poly i)).add_const (poly i)
   simp only
-  rw [hnhds.deriv_eq, hderiv.deriv, hcell t (Ioo_subset_Icc_self ht)]
+  rw [(hasDerivAt_boundaryParam poly i ht).deriv,
+    boundaryParam_eq_edgePath_sub poly i (Ioo_subset_Icc_self ht)]
 
 /-- **The winding number of a polygon** about a point off its boundary is the sum of the winding
 numbers of its edges. -/
