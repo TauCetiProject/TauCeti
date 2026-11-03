@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Lie.D4.Tripled.GroupScheme
-import TauCeti.LinearAlgebra.Matrix.UnipotentCommutator
+import TauCeti.Algebra.Lie.Presentation.MinusculeWeightTable.NestedCommutator
 
 /-!
 # Adjacent-root nested commutators in the tripled D₄ carrier
@@ -46,24 +46,9 @@ namespace TauCeti.D4Tripled
 
 open scoped commutatorElement
 
-attribute [local instance 100] LieRing.ofAssociativeRing
-
 universe u
 
 local notation "CM" => CartanMatrix.D 4
-
-private theorem adjacent_ne {i j : Fin 4} (hij : CM i j = -1) : i ≠ j := by
-  rintro rfl
-  rw [CartanMatrix.D_diag] at hij
-  norm_num at hij
-
-private theorem raising_lie_lie_eq_zero {i j : Fin 4} (hij : CM i j = -1) :
-    ⁅raisingMatrix i, ⁅raisingMatrix i, raisingMatrix j⁆⁆ = 0 := by
-  simpa [hij] using isSerreSystem.ad_pow_lie_E_E i j
-
-private theorem lowering_lie_lie_eq_zero {i j : Fin 4} (hij : CM i j = -1) :
-    ⁅loweringMatrix i, ⁅loweringMatrix i, loweringMatrix j⁆⁆ = 0 := by
-  simpa [hij] using isSerreSystem.ad_pow_lie_F_F i j
 
 /-- At adjacent nodes, the commutator of two positive simple-root points, followed by the
 commutator with the matching negative simple-root point, recovers the first positive root at the
@@ -76,22 +61,16 @@ theorem commutatorElement_commutatorElement_rootSubgroupPoints_inl {i j : Fin 4}
         rootSubgroupPoints (.inl i) A (Multiplicative.ofAdd (t * s * r)) := by
   have hji : CM j i = -1 := by
     rw [(CartanMatrix.D_isSymm 4).apply, hij]
-  have hAC := isSerreSystem.lie_E_F_of_ne i j (adjacent_ne hij)
-  have hABC : ⁅⁅raisingMatrix i, raisingMatrix j⁆, loweringMatrix j⁆ = raisingMatrix i := by
-    rw [isSerreSystem.lie_lie_E_E_F_of_ne (adjacent_ne hij), hji, neg_one_zsmul, neg_neg]
   apply (points A).subtype_injective
   simp only [map_commutatorElement, Subgroup.subtype_apply]
   apply Units.ext
-  rw [coe_rootSubgroupPoints_inl, toAdd_ofAdd]
-  exact Matrix.coe_commutatorElement_commutatorElement_eq_one_add_smul (raisingMatrix i)
-    (raisingMatrix j) (loweringMatrix j)
-    (by simpa only [pow_two] using raisingMatrix_pow_two i)
-    (by simpa only [pow_two] using raisingMatrix_pow_two j)
-    (by simpa only [pow_two] using loweringMatrix_pow_two j)
-    hAC hABC (raising_lie_lie_eq_zero hij) (raising_lie_lie_eq_zero hji) t s r _ _ _
-    (by rw [coe_rootSubgroupPoints_inl, toAdd_ofAdd])
-    (by rw [coe_rootSubgroupPoints_inl, toAdd_ofAdd])
-    (by rw [coe_rootSubgroupPoints_inr, toAdd_ofAdd])
+  rw [coe_rootSubgroupPoints_inl, toAdd_ofAdd, raisingMatrix_def]
+  exact weightTable.coe_commutatorElement_commutatorElement_raisingMatrix
+    (by simpa only [weightTable_cartanMatrix] using hij)
+    (by simpa only [weightTable_cartanMatrix] using hji) t s r _ _ _
+    (by rw [coe_rootSubgroupPoints_inl, toAdd_ofAdd, raisingMatrix_def])
+    (by rw [coe_rootSubgroupPoints_inl, toAdd_ofAdd, raisingMatrix_def])
+    (by rw [coe_rootSubgroupPoints_inr, toAdd_ofAdd, loweringMatrix_def])
 
 /-- At adjacent nodes, the commutator of two negative simple-root points, followed by the
 commutator with the matching positive simple-root point, recovers the first negative root at the
@@ -104,22 +83,15 @@ theorem commutatorElement_commutatorElement_rootSubgroupPoints_inr {i j : Fin 4}
         rootSubgroupPoints (.inr i) A (Multiplicative.ofAdd (t * s * r)) := by
   have hji : CM j i = -1 := by
     rw [(CartanMatrix.D_isSymm 4).apply, hij]
-  have hAC : ⁅loweringMatrix i, raisingMatrix j⁆ = 0 := by
-    rw [← lie_skew, isSerreSystem.lie_E_F_of_ne j i (adjacent_ne hji), neg_zero]
-  have hABC : ⁅⁅loweringMatrix i, loweringMatrix j⁆, raisingMatrix j⁆ = loweringMatrix i := by
-    rw [isSerreSystem.lie_lie_F_F_E_of_ne (adjacent_ne hij), hji, neg_one_zsmul, neg_neg]
   apply (points A).subtype_injective
   simp only [map_commutatorElement, Subgroup.subtype_apply]
   apply Units.ext
-  rw [coe_rootSubgroupPoints_inr, toAdd_ofAdd]
-  exact Matrix.coe_commutatorElement_commutatorElement_eq_one_add_smul (loweringMatrix i)
-    (loweringMatrix j) (raisingMatrix j)
-    (by simpa only [pow_two] using loweringMatrix_pow_two i)
-    (by simpa only [pow_two] using loweringMatrix_pow_two j)
-    (by simpa only [pow_two] using raisingMatrix_pow_two j)
-    hAC hABC (lowering_lie_lie_eq_zero hij) (lowering_lie_lie_eq_zero hji) t s r _ _ _
-    (by rw [coe_rootSubgroupPoints_inr, toAdd_ofAdd])
-    (by rw [coe_rootSubgroupPoints_inr, toAdd_ofAdd])
-    (by rw [coe_rootSubgroupPoints_inl, toAdd_ofAdd])
+  rw [coe_rootSubgroupPoints_inr, toAdd_ofAdd, loweringMatrix_def]
+  exact weightTable.coe_commutatorElement_commutatorElement_loweringMatrix
+    (by simpa only [weightTable_cartanMatrix] using hij)
+    (by simpa only [weightTable_cartanMatrix] using hji) t s r _ _ _
+    (by rw [coe_rootSubgroupPoints_inr, toAdd_ofAdd, loweringMatrix_def])
+    (by rw [coe_rootSubgroupPoints_inr, toAdd_ofAdd, loweringMatrix_def])
+    (by rw [coe_rootSubgroupPoints_inl, toAdd_ofAdd, raisingMatrix_def])
 
 end TauCeti.D4Tripled
