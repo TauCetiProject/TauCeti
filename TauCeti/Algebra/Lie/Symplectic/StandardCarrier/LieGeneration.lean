@@ -101,8 +101,8 @@ private theorem symplectic_le_of_simple_mem (S : LieSubalgebra ℚ (Mat n))
     LieAlgebra.Symplectic.sp (Fin (n + 1)) ℚ ≤ S := by
   have hd (i j : Fin (n + 1)) (hij : i ≠ j) : difference i j ∈ S := by
     rcases lt_or_gt_of_ne hij with h | h
-    · exact (TypeDStd.differenceRootMatrix_mem_of_lt S hpos hneg i j h).1
-    · exact (TypeDStd.differenceRootMatrix_mem_of_lt S hpos hneg j i h).2
+    · exact (S.differenceRootMatrix_mem_of_lt hpos hneg i j h).1
+    · exact (S.differenceRootMatrix_mem_of_lt hpos hneg j i h).2
   -- The second bracket has coefficient two; over the rationals it recovers each long root.
   have hul (i : Fin (n + 1)) : upper i ∈ S ∧ lower i ∈ S := by
     by_cases hi : i = Fin.last n

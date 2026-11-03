@@ -364,7 +364,7 @@ theorem lie_differenceRootGenerator_differenceRootGenerator (i j k : ι) (hik : 
 
 /-- A Lie subalgebra containing both orientations of the adjacent difference-root matrices
 contains both orientations of every off-diagonal difference-root matrix. -/
-theorem differenceRootMatrix_mem_of_lt {n : ℕ}
+theorem _root_.LieSubalgebra.differenceRootMatrix_mem_of_lt {n : ℕ}
     (S : LieSubalgebra K
       (Matrix (Fin (n + 1) ⊕ Fin (n + 1)) (Fin (n + 1) ⊕ Fin (n + 1)) K))
     (hpos : ∀ i : Fin n, differenceRootMatrix i.castSucc i.succ ∈ S)
@@ -381,7 +381,7 @@ theorem differenceRootMatrix_mem_of_lt {n : ℕ}
   by_cases hkj : k = j
   · simpa only [hkj] using And.intro hforward hbackward
   · have hkj' : k < j := by omega
-    obtain ⟨h₁, h₂⟩ := differenceRootMatrix_mem_of_lt S hpos hneg k j hkj'
+    obtain ⟨h₁, h₂⟩ := S.differenceRootMatrix_mem_of_lt hpos hneg k j hkj'
     constructor
     · convert S.lie_mem hforward h₁ using 1
       simpa only [LieSubalgebra.coe_bracket, val_differenceRootGenerator] using
