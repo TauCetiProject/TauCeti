@@ -100,26 +100,16 @@ private theorem toAddSubgroup_subringClosure_kostantGenerators_adjoint
     (htf : T * F - F * T = -F) :
     (Subring.closure (kostantGenerators T E F)).toAddSubgroup =
       orderedKostantSpan T E F := by
-  have hstable {r s : A} (hr : r ∈ kostantGenerators T E F)
-      (hs : s ∈ orderedKostantSpan T E F) : r * s ∈ orderedKostantSpan T E F := by
-    rw [orderedKostantSpan_def] at hs
-    induction hs using AddSubgroup.closure_induction with
-    | mem s hs =>
-        obtain ⟨a, b, c, rfl⟩ := mem_orderedKostantMonomials_iff.mp hs
-        exact adjoint_generator_mul_monomial_mem hef hte htf hr a b c
-    | zero => simp
-    | add s t _ _ hs ht => simpa only [mul_add] using add_mem hs ht
-    | neg s _ hs => simpa only [mul_neg] using neg_mem hs
-  apply le_antisymm
-  · intro r hr
-    have hle : Subring.closure (kostantGenerators T E F) ≤
-        (orderedKostantSpan T E F).multiplierRing :=
-      Subring.closure_le.2 fun _ hr => AddSubgroup.mem_multiplierRing.2 fun _ hs => hstable hr hs
-    simpa only [mul_one] using
-      AddSubgroup.mem_multiplierRing.mp (hle hr) 1 (one_mem_orderedKostantSpan T E F)
-  · rw [subringClosure_kostantGenerators_eq_subringClosure_orderedKostantMonomials,
-      orderedKostantSpan_def]
-    exact (AddSubgroup.closure_le _).2 fun _ hx => Subring.subset_closure hx
+  rw [orderedKostantSpan_def]
+  apply Subring.toAddSubgroup_closure_eq_of_one_mem_of_mul_mem
+  · rw [← orderedKostantSpan_def]
+    exact one_mem_orderedKostantSpan T E F
+  · rw [subringClosure_kostantGenerators_eq_subringClosure_orderedKostantMonomials]
+    exact Subring.subset_closure
+  · intro r hr s hs
+    obtain ⟨a, b, c, rfl⟩ := mem_orderedKostantMonomials_iff.mp hs
+    rw [← orderedKostantSpan_def]
+    exact adjoint_generator_mul_monomial_mem hef hte htf hr a b c
 
 /-- **Integral ordered spanning with a rank-one toral lattice.** For coroot `dT` and
 integral root weight `w` with `dw = 2`, the generated integral form has ordered span
