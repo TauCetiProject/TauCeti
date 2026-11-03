@@ -179,6 +179,13 @@ noncomputable def a2TwelfthGlueIsometry :
   piGlueAlphabetCongr _ _ (finCongr length_components_a2Twelfth.symm)
     fun _ ↦ componentType_a2Twelfth _
 
+/-- The glue isometry of the row `A₂¹²` is the reindexing of glue words from the positions of the
+row's components to `Fin 12`. -/
+theorem a2TwelfthGlueIsometry_def :
+    a2TwelfthGlueIsometry = piGlueAlphabetCongr _ _
+      (finCongr length_components_a2Twelfth.symm) fun _ ↦ componentType_a2Twelfth _ :=
+  (rfl)
+
 /-- The glue isometry of the row `A₂¹²` keeps every Conway--Sloane digit. -/
 @[simp]
 theorem encodeGlueWord_a2TwelfthGlueIsometry (w : a2Twelfth.glueModule) :

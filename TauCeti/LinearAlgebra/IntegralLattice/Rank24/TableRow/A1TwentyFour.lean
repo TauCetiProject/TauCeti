@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.LinearAlgebra.IntegralLattice.Rank24.Glue.GolayRows
 public import TauCeti.LinearAlgebra.IntegralLattice.Rank24.Niemeier
 
 /-!

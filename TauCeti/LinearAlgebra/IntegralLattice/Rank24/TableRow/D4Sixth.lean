@@ -60,6 +60,13 @@ noncomputable def d4SixthGlueIsometry :
   piGlueAlphabetCongr _ _ (finCongr length_components_d4Sixth.symm)
     fun _ ↦ componentType_d4Sixth _
 
+/-- The glue isometry of the row `D₄⁶` is the reindexing of glue words from the positions of the
+row's components to `Fin 6`. -/
+theorem d4SixthGlueIsometry_def :
+    d4SixthGlueIsometry = piGlueAlphabetCongr _ _
+      (finCongr length_components_d4Sixth.symm) fun _ ↦ componentType_d4Sixth _ :=
+  (rfl)
+
 /-- The glue isometry of the row `D₄⁶` keeps every Conway--Sloane digit. -/
 @[simp]
 theorem encodeGlueWord_d4SixthGlueIsometry (w : d4Sixth.glueModule) :

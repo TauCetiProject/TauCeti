@@ -39,7 +39,7 @@ two digit words label by label (`encodeGlueWord_add`), and `glueWordMinimum` sum
 norms of the printed labels, giving the shortest norm `μ(w)` of the coset named by the word
 (`glueWordMinimum_encodeGlueWord`). Finite checks on printed glue words therefore evaluate by
 `decide`. Like digit lists, shortest norms are unchanged by passing to an equal family of
-components (`sum_glueMinimum_piGlueAlphabetCongr`).
+components, here reindexed along any equivalence (`sum_glueMinimum_piGlueAlphabetCongr`).
 
 For a constant type-`A` family, `typeAGlueWordOfDigits` reads digits modulo the alphabet size.
 `encodeGlueWord_typeA_eq` gives the encoder's residue formula, and
@@ -274,18 +274,26 @@ theorem glueWordMinimum_encodeGlueWord (w : ∀ i, (t i).glueAlphabet (ht i)) :
   refine Finset.sum_congr rfl fun i _ ↦ ?_
   rw [getD_encodeGlueWord, ← DynkinType.glueMinimum_glueLabelEquiv, Equiv.apply_symm_apply]
 
-/-- **Shortest norms are unchanged by passing to an equal family of components**: a glue word and
-its image under `TauCeti.DynkinType.piGlueAlphabetCongr` have the same shortest norm `μ(w)`. -/
-theorem sum_glueMinimum_piGlueAlphabetCongr {m : ℕ} {s : Fin m → DynkinType}
-    (hs : ∀ k, (s k).IsSimplyLaced) (hmn : m = n) (h : ∀ k, t (finCongr hmn k) = s k)
+/-- **Shortest norms are unchanged by passing to an equal family of components**: if the
+components `s k` are the components `t (σ k)` for an equivalence `σ : κ ≃ ι`, a glue word and its
+image under `TauCeti.DynkinType.piGlueAlphabetCongr` have the same shortest norm `μ(w)`. -/
+theorem sum_glueMinimum_piGlueAlphabetCongr {ι κ : Type*} [Fintype ι] [Fintype κ]
+    (t : ι → DynkinType) (ht : ∀ i, (t i).IsSimplyLaced) {s : κ → DynkinType}
+    (hs : ∀ k, (s k).IsSimplyLaced) (σ : κ ≃ ι) (h : ∀ k, t (σ k) = s k)
     (w : ∀ i, (t i).glueAlphabet (ht i)) :
-    ∑ k, (s k).glueMinimum (hs k) (DynkinType.piGlueAlphabetCongr t ht (finCongr hmn) h w k) =
+    ∑ k, (s k).glueMinimum (hs k) (DynkinType.piGlueAlphabetCongr t ht σ h w k) =
       ∑ i, (t i).glueMinimum (ht i) (w i) := by
-  rw [← glueWordMinimum_encodeGlueWord, ← glueWordMinimum_encodeGlueWord,
-    encodeGlueWord_piGlueAlphabetCongr]
-  subst hmn
-  obtain rfl : t = s := funext fun k ↦ by simpa using h k
-  rfl
+  have hofEq {a b : DynkinType} (hab : a = b) (ha : a.IsSimplyLaced) (hb : b.IsSimplyLaced)
+      (x : a.glueAlphabet ha) :
+      b.glueMinimum hb
+          (FiniteQuadraticModule.Isometry.ofEq (DynkinType.glueAlphabet_congr hab ha hb) x) =
+        a.glueMinimum ha x := by
+    subst hab
+    rw [FiniteQuadraticModule.Isometry.ofEq_rfl]
+    rfl
+  refine (Finset.sum_congr rfl fun k _ ↦ ?_).trans
+    (σ.sum_comp fun i ↦ (t i).glueMinimum (ht i) (w i))
+  rw [DynkinType.piGlueAlphabetCongr_apply, hofEq (h k)]
 
 /-! ### Constant type-`A` families -/
 
