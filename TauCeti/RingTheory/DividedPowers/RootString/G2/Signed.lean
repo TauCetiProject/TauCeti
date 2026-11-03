@@ -17,10 +17,8 @@ inversion of a structure constant. In particular it tracks the sign of the highe
 which comes from the bracket between the middle two root vectors, not just the simple-root
 string.
 
-The proof uses `TauCeti.Associative.dividedPower_mul_dividedPower_of_commutator_eq_three_nsmul`
-on rescaled vectors and the existing integer homogeneity of divided powers. The identity is in
-an associative rational algebra; specialization to other characteristics requires an integral
-form containing the displayed divided powers.
+The identity is in an associative rational algebra; specialization to other characteristics
+requires an integral form containing the displayed divided powers.
 
 ## References
 
@@ -37,8 +35,10 @@ variable {A : Type*} [Ring A] [Algebra ℚ A] {x y z w v s : A}
 
 /-- G₂ divided-power straightening with the four integer structure constants retained.
 If the brackets of `(x,y)`, `(x,z)`, `(x,w)`, and `(w,z)` are respectively
-`a • z`, `2 • (b • w)`, `3 • (c • v)`, and `3 • (d • s)`, the coefficient of the term
-with nonsimple-root exponents `(i,j,k,l)` is
+`a • z`, `2 • (b • w)`, `3 • (c • v)`, and `3 • (d • s)`, and if `x` commutes with
+`v` and `s`, `y` with `z`, `w` with `v`, and `s` with `z`, `w`, and `v`, then
+`dividedPower m x * dividedPower n y` expands over `chainG2Index m n`. The coefficient
+of the term with nonsimple-root exponents `(i,j,k,l)` is
 `a^i (a*b)^j (a*b*c)^k (a^2*b*d)^l`.
 The constants may be negative or zero; no independence or nilpotence is required. -/
 theorem dividedPower_mul_dividedPower_of_g2_zsmul (a b c d : ℤ)
@@ -53,6 +53,8 @@ theorem dividedPower_mul_dividedPower_of_g2_zsmul (a b c d : ℤ)
         (dividedPower (n - p.1 - p.2.1 - p.2.2.1 - 2 * p.2.2.2) y * dividedPower p.1 z *
           dividedPower p.2.1 w * dividedPower p.2.2.1 v * dividedPower p.2.2.2 s *
           dividedPower (m - p.1 - 2 * p.2.1 - 3 * p.2.2.1 - 3 * p.2.2.2) x) := by
+  -- Apply dividedPower_mul_dividedPower_of_commutator_eq_three_nsmul to rescaled vectors,
+  -- using integer homogeneity of divided powers.
   have hxz' : x * (a • z) = (a • z) * x + 2 • ((a * b) • w) := by
     simp only [mul_smul_comm, smul_mul_assoc, hxz, smul_add,
       ← Nat.cast_smul_eq_nsmul ℤ, smul_smul]
