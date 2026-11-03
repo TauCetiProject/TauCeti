@@ -9,6 +9,7 @@ public import TauCeti.Probability.Distributions.Gaussian.Density
 public import TauCeti.Probability.Distributions.MatrixNormal.Basic
 public import TauCeti.MeasureTheory.Measure.Lebesgue.Matrix
 
+import TauCeti.MeasureTheory.Measure.Atom
 import TauCeti.MeasureTheory.Measure.Dirac
 
 /-!
@@ -52,6 +53,7 @@ theorem support_matrixNormalMeasure (M : Matrix ι κ ℝ) {U : Matrix ι ι ℝ
   let e : EuclideanSpace ℝ (κ × ι) ≃ₜ Matrix ι κ ℝ :=
     { toFun := fun x ↦ Matrix.of fun i j ↦ x.ofLp (j, i)
       invFun := fun X ↦ WithLp.toLp 2 X.vec
+      -- The inverse laws reduce entrywise to `Matrix.of` and `Matrix.vec` by definition.
       left_inv := fun x ↦ by ext ⟨j, i⟩; rfl
       right_inv := fun X ↦ by ext i j; rfl
       continuous_toFun := by fun_prop
@@ -67,12 +69,13 @@ theorem support_matrixNormalMeasure (M : Matrix ι κ ℝ) {U : Matrix ι ι ℝ
   rw [Measure.support_map_homeomorph,
     support_multivariateGaussian (hV.kronecker hU)]
   rw [e.image_eq_preimage_symm]
+  -- The inverse of `e` is definitionally column-stacking vectorization.
   rfl
 
-/-- A matrix normal law with positive semidefinite covariances is almost surely in the inverse
-vectorization of the affine range of its Kronecker covariance. -/
+/-- A matrix normal law is almost surely in the inverse vectorization of the affine range of its
+Kronecker covariance, including at invalid parameters where the law is the Dirac fallback. -/
 theorem ae_mem_affineRange_matrixNormalMeasure (M : Matrix ι κ ℝ) {U : Matrix ι ι ℝ}
-    {V : Matrix κ κ ℝ} (hU : U.PosSemidef) (hV : V.PosSemidef) :
+    {V : Matrix κ κ ℝ} :
     ∀ᵐ X ∂matrixNormalMeasure M U V,
       WithLp.toLp 2 X.vec ∈
         (AffineSubspace.mk' (WithLp.toLp 2 M.vec)
@@ -82,15 +85,24 @@ theorem ae_mem_affineRange_matrixNormalMeasure (M : Matrix ι κ ℝ) {U : Matri
     AffineSubspace.mk' (WithLp.toLp 2 M.vec)
       (LinearMap.range (Matrix.toEuclideanLin (V ⊗ₖ U)))
   have hA : MeasurableSet A := AffineSubspace.closed_of_finiteDimensional _ |>.measurableSet
-  have h : ∀ᵐ X ∂matrixNormalMeasure M U V, (matrixVecMeasurableEquiv 2) X ∈ A := by
-    apply (ae_map_iff (MeasurableEquiv.measurable (matrixVecMeasurableEquiv 2)).aemeasurable hA).1
-    -- `map_vec_matrixNormalMeasure` is stated for the explicit vectorization function.
-    have he : (matrixVecMeasurableEquiv 2 : Matrix ι κ ℝ → EuclideanSpace ℝ (κ × ι)) =
-        (fun X ↦ WithLp.toLp 2 X.vec) :=
-      funext fun X ↦ matrixVecMeasurableEquiv_apply 2 X
-    rw [he, map_vec_matrixNormalMeasure M hU hV]
-    exact ae_mem_affineRange_multivariateGaussian (hV.kronecker hU) (WithLp.toLp 2 M.vec)
-  simpa only [A, matrixVecMeasurableEquiv_apply] using h
+  have hp : Measurable fun X : Matrix ι κ ℝ ↦ WithLp.toLp 2 X.vec ∈ A := by
+    simpa only [matrixVecMeasurableEquiv_apply] using measurableSet_setOfPred.mp
+      (hA.preimage (matrixVecMeasurableEquiv 2).measurable)
+  by_cases h : U.PosSemidef ∧ V.PosSemidef
+  · have hcarrier : ∀ᵐ X ∂matrixNormalMeasure M U V,
+        (matrixVecMeasurableEquiv 2) X ∈ A := by
+      apply (ae_map_iff (matrixVecMeasurableEquiv 2).measurable.aemeasurable hA).1
+      -- `map_vec_matrixNormalMeasure` is stated for the explicit vectorization function.
+      have he : (matrixVecMeasurableEquiv 2 : Matrix ι κ ℝ → EuclideanSpace ℝ (κ × ι)) =
+          (fun X ↦ WithLp.toLp 2 X.vec) :=
+        funext fun X ↦ matrixVecMeasurableEquiv_apply 2 X
+      rw [he, map_vec_matrixNormalMeasure M h.1 h.2]
+      exact ae_mem_affineRange_multivariateGaussian (h.2.kronecker h.1)
+        (WithLp.toLp 2 M.vec)
+    simpa only [A, matrixVecMeasurableEquiv_apply] using hcarrier
+  · rw [matrixNormalMeasure_of_not_posSemidef M h]
+    apply (ae_dirac_iff (measurableSet_setOfPred.mpr hp)).2
+    exact AffineSubspace.self_mem_mk' _ _
 
 /-- Invalid row or column covariance parameters give singleton support at the mean. -/
 @[simp]
@@ -118,18 +130,11 @@ theorem mutuallySingular_matrixNormalMeasure_volume (M : Matrix ι κ ℝ)
       exact ⟨Subsingleton.elim _ _, fun x hx ↦ absurd (Subsingleton.elim x 0) hx⟩
     let _ : Nonempty κ := ⟨hne.some.1⟩
     let _ : Nonempty ι := ⟨hne.some.2⟩
-    have hnull : NullSingletonClass (volume : Measure (Matrix ι κ ℝ)) := ⟨fun X ↦ by
-      have hx : (volume : Measure (EuclideanSpace ℝ (κ × ι)))
-          {(matrixVecMeasurableEquiv 2) X} = 0 := measure_singleton _
-      rw [← (volume_preserving_matrixVecMeasurableEquiv (m := ι) (n := κ)).map_eq,
-        (matrixVecMeasurableEquiv 2).map_apply] at hx
-      have hpre : (matrixVecMeasurableEquiv 2) ⁻¹' {(matrixVecMeasurableEquiv 2) X} = {X} := by
-        ext Y
-        simp only [Set.mem_preimage, Set.mem_singleton_iff]
-        exact (matrixVecMeasurableEquiv 2).injective.eq_iff
-      rwa [hpre] at hx⟩
-    let _ := hnull
-    exact mutuallySingular_dirac M volume
+    have hnull : NullSingletonClass (volume : Measure (Matrix ι κ ℝ)) := by
+      rw [← (volume_preserving_matrixVecMeasurableEquiv (m := ι) (n := κ)).symm.map_eq]
+      exact Measure.nullSingletonClass_map_of_injective
+        (matrixVecMeasurableEquiv 2).symm.measurable (matrixVecMeasurableEquiv 2).symm.injective
+    exact @mutuallySingular_dirac _ _ _ M volume hnull
 
 /-- At a singular Kronecker covariance, the ambient Radon--Nikodym derivative of a matrix normal
 law vanishes almost everywhere. -/
@@ -151,26 +156,18 @@ variable {ι κ Ω : Type*} [Fintype ι] [Fintype κ] [DecidableEq ι] [Decidabl
 /-- A random matrix with a matrix normal law lies almost surely in the affine range of its
 Kronecker covariance after vectorization. -/
 theorem HasLaw.ae_mem_affineRange_matrixNormalMeasure
-    (hX : HasLaw X (matrixNormalMeasure M U V) P)
-    (hU : U.PosSemidef) (hV : V.PosSemidef) :
+    (hX : HasLaw X (matrixNormalMeasure M U V) P) :
     ∀ᵐ ω ∂P, WithLp.toLp 2 (X ω).vec ∈
       (AffineSubspace.mk' (WithLp.toLp 2 M.vec)
         (LinearMap.range (Matrix.toEuclideanLin (V ⊗ₖ U))) :
           Set (EuclideanSpace ℝ (κ × ι))) := by
-  have hA : MeasurableSet
-      (AffineSubspace.mk' (WithLp.toLp 2 M.vec)
-        (LinearMap.range (Matrix.toEuclideanLin (V ⊗ₖ U))) :
-          Set (EuclideanSpace ℝ (κ × ι))) :=
-    AffineSubspace.closed_of_finiteDimensional _ |>.measurableSet
-  have hsource : ∀ᵐ Y ∂matrixNormalMeasure M U V,
-      (matrixVecMeasurableEquiv 2) Y ∈
-        (AffineSubspace.mk' (WithLp.toLp 2 M.vec)
-          (LinearMap.range (Matrix.toEuclideanLin (V ⊗ₖ U))) :
-            Set (EuclideanSpace ℝ (κ × ι))) := by
-    simpa only [matrixVecMeasurableEquiv_apply] using
-      TauCeti.Probability.ae_mem_affineRange_matrixNormalMeasure M hU hV
-  have hout := (hX.ae_iff (measurableSet_setOfPred.mp <|
-    hA.preimage (matrixVecMeasurableEquiv 2).measurable)).2 hsource
-  simpa only [matrixVecMeasurableEquiv_apply] using hout
+  let A : Set (EuclideanSpace ℝ (κ × ι)) :=
+    AffineSubspace.mk' (WithLp.toLp 2 M.vec)
+      (LinearMap.range (Matrix.toEuclideanLin (V ⊗ₖ U)))
+  have hA : MeasurableSet A := AffineSubspace.closed_of_finiteDimensional _ |>.measurableSet
+  have hp : Measurable fun Y : Matrix ι κ ℝ ↦ WithLp.toLp 2 Y.vec ∈ A := by
+    simpa only [matrixVecMeasurableEquiv_apply] using measurableSet_setOfPred.mp
+      (hA.preimage (matrixVecMeasurableEquiv 2).measurable)
+  exact (hX.ae_iff hp).2 (TauCeti.Probability.ae_mem_affineRange_matrixNormalMeasure M)
 
 end ProbabilityTheory
