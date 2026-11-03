@@ -170,7 +170,6 @@ theorem finite_specialIsogenyCoordinateMap : specialIsogenyCoordinateMap.hom.toA
 /-- The exceptional morphism is finite and faithfully flat, hence an isogeny. -/
 theorem isIsogeny_specialIsogenyCoordinateMap :
     CommHopfAlgCat.IsIsogeny specialIsogenyCoordinateMap := by
-  let _ : Algebra.IsGeometricallyReduced 𝔽₂ S := isGeometricallyReduced_of_smooth 𝔽₂ S
   have hinv := RingHom.comap_involutive_of_comp_self_eq_pow
     specialIsogenyCoordinateMap.hom.toAlgHom.toRingHom (by decide : 0 < 2)
       specialIsogenyCoordinateMap_apply_apply

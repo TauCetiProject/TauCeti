@@ -43,8 +43,6 @@ variable (t : DynkinType) (ht : t.Valid) (k : Type v) [Field k]
 
 private theorem isGeometricallyReduced_geckGeneratorCoordinateAlgebra :
     ∀ j, Algebra.IsGeometricallyReduced k (t.geckGeneratorCoordinateAlgebra k j) := by
-  let : Algebra.IsGeometricallyReduced k (AdditiveGroup.coordinateHopfAlgebra k) :=
-    isGeometricallyReduced_of_smooth k _
   let : Algebra.IsGeometricallyReduced k (DiagonalizableGroup.coordinateRing k
       (SplitTorus.characterGroup (Fin t.rank))).obj := by
     rw [Algebra.isGeometricallyReduced_field_iff]

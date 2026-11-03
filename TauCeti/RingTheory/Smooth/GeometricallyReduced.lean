@@ -31,8 +31,8 @@ reducedness of geometric fibres used in the study of smooth affine group schemes
 ## Main declarations
 
 * `TauCeti.isReduced_of_smooth`: a smooth algebra over a reduced commutative ring is reduced.
-* `TauCeti.isGeometricallyReduced_of_smooth`: a smooth algebra over any commutative ring is
-  geometrically reduced.
+* `TauCeti.isGeometricallyReduced_of_smooth`: the instance making a smooth algebra over any
+  commutative ring geometrically reduced.
 
 ## References
 
@@ -116,7 +116,7 @@ theorem isReduced_of_smooth
     (e.toRingEquiv.trans (Algebra.TensorProduct.comm R₀ R A₀).toRingEquiv).injective
 
 /-- A smooth algebra over a commutative ring is geometrically reduced. -/
-theorem isGeometricallyReduced_of_smooth
+instance isGeometricallyReduced_of_smooth
     (R : Type u) (A : Type v) [CommRing R] [CommRing A] [Algebra R A]
     [Algebra.Smooth R A] : Algebra.IsGeometricallyReduced R A :=
   ⟨fun p _ ↦ isReduced_of_smooth (AlgebraicClosure p.ResidueField) _⟩
