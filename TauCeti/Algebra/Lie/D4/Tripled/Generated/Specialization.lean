@@ -106,9 +106,6 @@ theorem generatedCoordinateHopfAlgebraBaseChangeMap_unique
       (GeneralLinear.coordinateHopfAlgebraBaseChangeIso R S 24).hom ≫
         generatedCoordinateMap S) :
     f = generatedCoordinateHopfAlgebraBaseChangeMap R S := by
-  let _ : Epi (CommHopfAlgCat.baseChangeMap (K := S) (generatedCoordinateMap R)) :=
-    ConcreteCategory.epi_of_surjective _ (CommHopfAlgCat.baseChangeMap_surjective
-      (generatedCoordinateMap R) (generatedCoordinateMap_surjective R))
   apply (cancel_epi (CommHopfAlgCat.baseChangeMap (K := S) (generatedCoordinateMap R))).mp
   exact hf.trans
     (baseChangeMap_generatedCoordinateMap_comp_generatedCoordinateHopfAlgebraBaseChangeMap
@@ -134,9 +131,6 @@ theorem generatedCoordinateHopfAlgebraBaseChangeMap_comp_generatedCoordinateLift
     generatedCoordinateHopfAlgebraBaseChangeMap R S ≫ generatedCoordinateLift S j =
       CommHopfAlgCat.baseChangeMap (K := S) (generatedCoordinateLift R j) ≫
         (generatorCoordinateAlgebraBaseChangeIso R S j).hom := by
-  let _ : Epi (CommHopfAlgCat.baseChangeMap (K := S) (generatedCoordinateMap R)) :=
-    ConcreteCategory.epi_of_surjective _ (CommHopfAlgCat.baseChangeMap_surjective
-      (generatedCoordinateMap R) (generatedCoordinateMap_surjective R))
   apply (cancel_epi (CommHopfAlgCat.baseChangeMap (K := S) (generatedCoordinateMap R))).mp
   rw [← Category.assoc,
     baseChangeMap_generatedCoordinateMap_comp_generatedCoordinateHopfAlgebraBaseChangeMap,
@@ -155,6 +149,17 @@ theorem generatedCoordinateHopfAlgebraBaseChangeMap_eq_iso_hom [Module.Free R S]
   exact (generatedCoordinateHopfAlgebraBaseChangeMap_unique R S _
     (baseChangeMap_generatedCoordinateMap_comp_generatedCoordinateHopfAlgebraBaseChangeIso_hom
       R S)).symm
+
+/-- The full generated-carrier comparison intertwines each factored root or torus generator
+with its scalar extension. -/
+@[reassoc (attr := simp)]
+theorem baseChangeMap_generatedCoordinateLift_comp_generatorCoordinateAlgebraBaseChangeIso_hom
+    [Module.Free R S] (j : Sum (Fin 4 ⊕ Fin 4) Unit) :
+    CommHopfAlgCat.baseChangeMap (K := S) (generatedCoordinateLift R j) ≫
+        (generatorCoordinateAlgebraBaseChangeIso R S j).hom =
+      (generatedCoordinateHopfAlgebraBaseChangeIso R S).hom ≫ generatedCoordinateLift S j := by
+  rw [← generatedCoordinateHopfAlgebraBaseChangeMap_eq_iso_hom]
+  exact (generatedCoordinateHopfAlgebraBaseChangeMap_comp_generatedCoordinateLift R S j).symm
 
 end
 

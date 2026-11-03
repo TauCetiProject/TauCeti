@@ -6,7 +6,7 @@ Authors: Codex
 module
 
 public import TauCeti.Algebra.Lie.D4.Tripled.Generated.Positive.Basic
-public import TauCeti.Algebra.Lie.D4.Tripled.Generated.BaseChange
+public import TauCeti.Algebra.Lie.D4.Tripled.Generated.Specialization
 
 /-!
 # Free base change of the generated positive tripled D₄ subgroup
@@ -29,7 +29,7 @@ toral closure and Borel maximality are separate assertions.
 
 The construction follows
 `TauCeti.Algebra.Lie.Orthogonal.TypeB.SpinCarrier.Generated.Positive.BaseChange`, using
-the full tripled-carrier generator comparisons in `Generated.BaseChange` and the
+the full tripled-carrier generator comparisons in `Generated.Specialization` and the
 common-kernel and quotient-transport constructions in
 `TauCeti.Algebra.AlgebraicGroup.HopfIdeal.BaseChange`. Here the positive subgroup is
 defined directly inside the full generated carrier, so no ambient ideal or second
