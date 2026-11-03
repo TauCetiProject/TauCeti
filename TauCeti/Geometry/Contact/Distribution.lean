@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Contact.Levi
-public import TauCeti.Geometry.Contact.Standard
 import TauCeti.Geometry.Manifold.DifferentialForm.DegreeOne
 import TauCeti.Geometry.Manifold.Distribution.Annihilator
 import TauCeti.LinearAlgebra.BilinearForm.SymplecticBasis
@@ -37,7 +36,8 @@ comparison `α_x (L_ξ (u, v)) = dα_x (u, v)` for a local defining form `α`
 one-form `α`, the kernel `ker α` is a contact structure exactly when `α` is a contact form
 (`TauCeti.SmoothForm.isContactForm_iff_isContactDistribution_kerDistribution`); for instance the
 standard distribution `ker (dz - x dy)` on `ℝ³` is a contact structure
-(`TauCeti.isContactDistribution_standardContactDistribution`).
+(`TauCeti.isContactDistribution_standardContactDistribution`, in
+`TauCeti.Geometry.Contact.Standard`).
 
 The Levi form of a contact structure is a nondegenerate alternating form with values in a line, so
 the contact hyperplanes have even dimension and `M` has odd dimension `2 m + 1`
@@ -237,12 +237,5 @@ theorem SmoothForm.IsContactForm.isContactDistribution_kerDistribution [ENat.LEI
     [IsManifold I (n + 1) M] {α : SmoothForm I M ℝ 1} (hα : α.IsContactForm) :
     IsContactDistribution I n α.kerDistribution :=
   isContactForm_iff_isContactDistribution_kerDistribution.1 hα
-
-/-- **The standard contact structure.** The distribution `ker (dz - x dy)` on `ℝ³`, spanned at
-`(x, y, z)` by `(1, 0, 0)` and `(0, 1, x)`, is a contact structure of every class `C^n`. -/
-theorem isContactDistribution_standardContactDistribution [ENat.LEInfty n] :
-    IsContactDistribution 𝓘(ℝ, ℝ × ℝ × ℝ) n (standardContactDistribution ℝ) :=
-  kerDistribution_standardContactForm ▸
-    isContactForm_standardContactForm.isContactDistribution_kerDistribution
 
 end TauCeti
