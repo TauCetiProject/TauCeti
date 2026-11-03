@@ -36,8 +36,7 @@ that do not descend to the original coefficient ring.
 * N. Bourbaki, *Lie Groups and Lie Algebras*, Chapters VII–IX, Chapter VII, §1.
 * J. E. Humphreys, *Introduction to Lie Algebras and Representation Theory*, §20.
 
-The finite spanning-family kernel argument generalizes the earlier invariant-vector proof of
-`LieModule.maxTrivSubmodule_baseChange`, which is now derived as the zero-weight case.
+The invariant-vector comparison `LieModule.maxTrivSubmodule_baseChange` is the zero-weight case.
 -/
 
 public section
