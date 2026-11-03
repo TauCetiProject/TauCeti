@@ -306,36 +306,6 @@ section IdComp
 
 variable {Z : Scheme.{u}}
 
-/-- An isomorphism of graded quasicoherent algebras from componentwise isomorphisms between
-families identified with the homogeneous components, preserving units and multiplications. -/
-private def isoMkOfEq {P Q : GradedQuasicoherentAlgebra X} {M N : ℕ → X.Modules}
-    (hP : P.obj.X = M) (hQ : Q.obj.X = N) {oneM : 𝟙_ X.Modules ⟶ M 0}
-    {oneN : 𝟙_ X.Modules ⟶ N 0} {mulM : ∀ i j, M i ⊗ M j ⟶ M (i + j)}
-    {mulN : ∀ i j, N i ⊗ N j ⟶ N (i + j)}
-    (hoP : P.obj.toMon.one = oneM ≫ eqToHom (congrFun hP 0).symm)
-    (hoQ : Q.obj.toMon.one = oneN ≫ eqToHom (congrFun hQ 0).symm)
-    (hmP : ∀ i j, P.obj.toMon.mul i j =
-      (eqToHom (by rw [hP]) : P.obj.X i ⊗ P.obj.X j ⟶ M i ⊗ M j) ≫ mulM i j ≫
-        eqToHom (congrFun hP (i + j)).symm)
-    (hmQ : ∀ i j, Q.obj.toMon.mul i j =
-      (eqToHom (by rw [hQ]) : Q.obj.X i ⊗ Q.obj.X j ⟶ N i ⊗ N j) ≫ mulN i j ≫
-        eqToHom (congrFun hQ (i + j)).symm)
-    (e : ∀ n, M n ≅ N n) (one_e : oneM ≫ (e 0).hom = oneN)
-    (mul_e : ∀ i j, ((e i).hom ⊗ₘ (e j).hom) ≫ mulN i j = mulM i j ≫ (e (i + j)).hom) :
-    P ≅ Q where
-  hom := homMkOfEq hP hQ hoP hoQ hmP hmQ (fun n ↦ (e n).hom) one_e mul_e
-  inv := homMkOfEq hQ hP hoQ hoP hmQ hmP (fun n ↦ (e n).inv)
-    (by rw [← one_e, Category.assoc, Iso.hom_inv_id, Category.comp_id])
-    (fun i j ↦ by
-      rw [Iso.eq_comp_inv, Category.assoc, ← mul_e, ← tensorIso_hom, ← tensorIso_inv,
-        Iso.inv_hom_id_assoc])
-  hom_inv_id := (homMkOfEq_comp hP hQ hP hoP hoQ hoP hmP hmQ hmP _ one_e mul_e _ _ _
-    (fun n ↦ 𝟙 (M n)) (Category.comp_id _) (fun i j ↦ by simp)
-      fun n ↦ (e n).hom_inv_id).symm.trans (homMkOfEq_id hP hoP hmP _ _ _ fun _ ↦ rfl)
-  inv_hom_id := (homMkOfEq_comp hQ hP hQ hoQ hoP hoQ hmQ hmP hmQ _ _ _ _ one_e mul_e
-    (fun n ↦ 𝟙 (N n)) (Category.comp_id _) (fun i j ↦ by simp)
-      fun n ↦ (e n).inv_hom_id).symm.trans (homMkOfEq_id hQ hoQ hmQ _ _ _ fun _ ↦ rfl)
-
 /-- The unit of a graded algebra, in the form required by `isoMkOfEq` for the trivial
 identification of its components. -/
 private lemma one_eq_comp_eqToHom (P : GradedQuasicoherentAlgebra X) :
@@ -386,14 +356,14 @@ private lemma pullbackIdApp_hom_hom_hom (P : GradedQuasicoherentAlgebra X) (n : 
       eqToHom (congrFun (pullback_obj_obj_X (𝟙 X) P) n) ≫
         (Scheme.Modules.pullbackId X).hom.app (P.obj.X n) :=
   -- The transport on the target is along `rfl`.
-  (homMkOfEq_hom_hom_hom ..).trans (congrArg _ (Category.comp_id _))
+  (isoMkOfEq_hom_hom_hom_hom ..).trans (congrArg _ (Category.comp_id _))
 
 private lemma pullbackIdApp_inv_hom_hom (P : GradedQuasicoherentAlgebra X) (n : ℕ) :
     (pullbackIdApp P).inv.hom.hom.hom n =
       (Scheme.Modules.pullbackId X).inv.app (P.obj.X n) ≫
         eqToHom (congrFun (pullback_obj_obj_X (𝟙 X) P) n).symm :=
   -- The transport on the source is along `rfl`.
-  (homMkOfEq_hom_hom_hom ..).trans (Category.id_comp _)
+  (isoMkOfEq_inv_hom_hom_hom ..).trans (Category.id_comp _)
 
 variable (X) in
 /-- Pullback of graded quasicoherent algebras along the identity is naturally the identity. -/
@@ -452,7 +422,7 @@ private def pullbackCompApp (g : Y ⟶ Z) (P : GradedQuasicoherentAlgebra Z) :
       rw [eqToHom_map]
       -- The remaining transport is typed through `CommMon.toMon`, so it is matched up to
       -- unfolding.
-      erw [inv_δ_comp_map_eqToHom_assoc _ (congrFun (pullback_obj_obj_X g P) i)
+      erw [Functor.inv_δ_comp_map_eqToHom_assoc _ (congrFun (pullback_obj_obj_X g P) i)
         (congrFun (pullback_obj_obj_X g P) j), eqToHom_trans_assoc]
       rw [eqToHom_trans])
     (pullback_obj_mul_eq (f ≫ g) P)
@@ -474,7 +444,7 @@ private lemma pullbackCompApp_hom_hom_hom (g : Y ⟶ Z) (P : GradedQuasicoherent
         (congrArg _ (congrFun (pullback_obj_obj_X g P) n))) ≫
         (Scheme.Modules.pullbackComp f g).hom.app (P.obj.X n) ≫
           eqToHom (congrFun (pullback_obj_obj_X (f ≫ g) P) n).symm :=
-  homMkOfEq_hom_hom_hom ..
+  isoMkOfEq_hom_hom_hom_hom ..
 
 private lemma pullbackCompApp_inv_hom_hom (g : Y ⟶ Z) (P : GradedQuasicoherentAlgebra Z)
     (n : ℕ) :
@@ -483,7 +453,7 @@ private lemma pullbackCompApp_inv_hom_hom (g : Y ⟶ Z) (P : GradedQuasicoherent
         (Scheme.Modules.pullbackComp f g).inv.app (P.obj.X n) ≫
           eqToHom ((congrFun (pullback_obj_obj_X f _) n).trans
             (congrArg _ (congrFun (pullback_obj_obj_X g P) n))).symm :=
-  homMkOfEq_hom_hom_hom ..
+  isoMkOfEq_inv_hom_hom_hom ..
 
 /-- Pullback of graded quasicoherent algebras respects composition. -/
 def pullbackComp (g : Y ⟶ Z) : pullback g ⋙ pullback f ≅ pullback (f ≫ g) :=

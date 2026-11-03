@@ -21,7 +21,8 @@ inverse tensor comparison at the transported factors.
 ## Main results
 
 * `TauCeti.eqToHom_tensorHom_eqToHom`: `eqToHom h ⊗ₘ eqToHom h' = eqToHom _`.
-* `TauCeti.inv_δ_comp_map_eqToHom`: transporting `inv (δ F a b)` along `a = a'` and `b = b'`.
+* `CategoryTheory.Functor.inv_δ_comp_map_eqToHom`: transporting `inv (δ F a b)` along `a = a'`
+  and `b = b'`.
 -/
 
 public section
@@ -42,15 +43,21 @@ theorem eqToHom_tensorHom_eqToHom {X X' Y Y' : C} (h : X = X') (h' : Y = Y') :
   subst h h'
   simp
 
+end TauCeti
+
+namespace CategoryTheory.Functor
+
+variable {C : Type u} [Category.{v} C] [MonoidalCategory C]
+
 /-- The inverse tensor comparison of an oplax monoidal functor commutes with transports along
 identifications of the factors. -/
 @[reassoc]
 theorem inv_δ_comp_map_eqToHom {D : Type*} [Category D] [MonoidalCategory D] (F : C ⥤ D)
-    [F.OplaxMonoidal] {a a' b b' : C} [IsIso (Functor.OplaxMonoidal.δ F a b)]
-    [IsIso (Functor.OplaxMonoidal.δ F a' b')] (ha : a = a') (hb : b = b') (h : a ⊗ b = a' ⊗ b') :
-    inv (Functor.OplaxMonoidal.δ F a b) ≫ F.map (eqToHom h) =
-      eqToHom (by rw [ha, hb]) ≫ inv (Functor.OplaxMonoidal.δ F a' b') := by
+    [F.OplaxMonoidal] {a a' b b' : C} [IsIso (OplaxMonoidal.δ F a b)]
+    [IsIso (OplaxMonoidal.δ F a' b')] (ha : a = a') (hb : b = b') (h : a ⊗ b = a' ⊗ b') :
+    CategoryTheory.inv (OplaxMonoidal.δ F a b) ≫ F.map (eqToHom h) =
+      eqToHom (by rw [ha, hb]) ≫ CategoryTheory.inv (OplaxMonoidal.δ F a' b') := by
   subst ha hb
   simp
 
-end TauCeti
+end CategoryTheory.Functor
