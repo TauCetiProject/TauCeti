@@ -26,19 +26,6 @@ public section
 
 open CategoryTheory Limits Opposite
 
-namespace Ideal
-
-variable {R : Type u} [CommRing R] (K : ℕ → Ideal R) (hK : Antitone K)
-
-/-- The inverse system of quotients by a decreasing sequence of ideals. -/
-noncomputable abbrev quotientDiagram : ℕᵒᵖ ⥤ CommRingCat.{u} where
-  obj n := CommRingCat.of (R ⧸ K n.unop)
-  map f := CommRingCat.ofHom (Ideal.Quotient.factor (hK (leOfHom f.unop)))
-  map_id _ := by ext x; rfl
-  map_comp _ _ := by ext x; rfl
-
-end Ideal
-
 namespace AdicCompletion
 
 variable {R : Type u} [CommRing R] (I : Ideal R)
@@ -77,15 +64,15 @@ theorem factor_toQuotient {K L : Ideal R} (hK : ∃ n : ℕ, I ^ n ≤ K)
 /-- The projection onto a power quotient is the usual evaluation map. -/
 @[simp]
 theorem toQuotient_pow (n : ℕ) (h : ∃ k : ℕ, I ^ k ≤ I ^ n) :
-    toQuotient I h = (evalₐ I n).toRingHom := by
-  rw [toQuotient_eq I h le_rfl, Ideal.Quotient.factor_eq, RingHom.id_comp]
+    toQuotient I h = (evalₐ I n : AdicCompletion I R →+* R ⧸ I ^ n) := by
+  simp [toQuotient_eq I h le_rfl]
 
 variable (K : ℕ → Ideal R) (hK : Antitone K)
 
 variable (hopen : ∀ n, ∃ k : ℕ, I ^ k ≤ K n)
 
 /-- The cone from the adic completion to a decreasing system of open ideal quotients. -/
-noncomputable abbrev quotientCone : Cone (Ideal.quotientDiagram K hK) where
+noncomputable abbrev quotientCone : Cone (TauCeti.antitoneQuotientDiagram K hK) where
   pt := CommRingCat.of (AdicCompletion I R)
   π.app n := CommRingCat.ofHom (toQuotient I (hopen n.unop))
   π.naturality _ _ f := by
@@ -94,63 +81,71 @@ noncomputable abbrev quotientCone : Cone (Ideal.quotientDiagram K hK) where
 
 variable (hle : ∀ n, K n ≤ I ^ n)
 
+/-- A compatible family of maps to ideal quotients finer than the power quotients induces
+a map to the adic completion. The source may lie in any universe. -/
+noncomputable def liftQuotientRingHom {D : Type*} [NonAssocSemiring D]
+    (f : ∀ n, D →+* R ⧸ K n)
+    (hf : ∀ {m n} (h : m ≤ n), (Ideal.Quotient.factor (hK h)).comp (f n) = f m) :
+    D →+* AdicCompletion I R :=
+  liftRingHom I (fun n ↦ (Ideal.Quotient.factor (hle n)).comp (f n)) (by
+    intro m n h
+    ext x
+    have hx := congrArg (fun g : D →+* R ⧸ K m ↦ Ideal.Quotient.factor (hle m) (g x))
+      (hf h)
+    simpa only [Ideal.Quotient.factorPow, RingHom.comp_apply,
+      Ideal.Quotient.factor_comp_apply] using hx)
+
+/-- The induced map recovers each member of the compatible family under projection. -/
+@[simp]
+theorem toQuotient_comp_liftQuotientRingHom {D : Type*} [NonAssocSemiring D]
+    (f : ∀ n, D →+* R ⧸ K n)
+    (hf : ∀ {m n} (h : m ≤ n), (Ideal.Quotient.factor (hK h)).comp (f n) = f m)
+    (n : ℕ) :
+    (toQuotient I (hopen n)).comp (liftQuotientRingHom I K hK hle f hf) = f n := by
+  ext x
+  obtain ⟨k, hk⟩ := hopen n
+  have hl : I ^ max k n ≤ K n := (Ideal.pow_le_pow_right (le_max_left k n)).trans hk
+  rw [RingHom.comp_apply, toQuotient_eq I (hopen n) hl]
+  dsimp only [liftQuotientRingHom]
+  -- Abstract the compatibility proof so rewriting does not try to synthesize it again.
+  generalize_proofs
+  simp only [RingHom.comp_apply, AlgHom.toRingHom_eq_coe, AlgHom.coe_toRingHom]
+  rw [evalₐ_liftRingHom I _ (by assumption)]
+  simpa only [RingHom.comp_apply, Ideal.Quotient.factor_comp_apply] using
+      RingHom.congr_fun (hf (le_max_right k n)) x
+
+include hle in
+/-- Maps to an adic completion are determined by their projections to a cofinal quotient
+system. -/
+theorem toQuotient_ext {D : Type*} [NonAssocSemiring D]
+    {f g : D →+* AdicCompletion I R}
+    (h : ∀ n, (toQuotient I (hopen n)).comp f = (toQuotient I (hopen n)).comp g) :
+    f = g := by
+  apply RingHom.ext
+  intro x
+  apply ext_evalₐ
+  intro n
+  have hx := congrArg (fun z ↦ Ideal.Quotient.factor (hle n) z) (RingHom.congr_fun (h n) x)
+  simpa only [RingHom.comp_apply,
+    factor_toQuotient I (hopen n) ⟨n, le_rfl⟩ (hle n), toQuotient_pow,
+    AlgHom.coe_toRingHom] using hx
+
 /-- A decreasing quotient system between cofinal powers of `I` has the `I`-adic completion
 as its limit in commutative rings. -/
 noncomputable def isLimitQuotientCone : IsLimit (quotientCone I K hK hopen) := by
-  -- First reduce a compatible cone to the usual power quotients and lift to the completion.
-  let f (s : Cone (Ideal.quotientDiagram K hK)) (n : ℕ) : s.pt →+* R ⧸ I ^ n :=
-    (Ideal.Quotient.factor (hle n)).comp (s.π.app (op n)).hom
-  have hf (s : Cone (Ideal.quotientDiagram K hK)) {m n : ℕ} (hmn : m ≤ n) :
-      (Ideal.Quotient.factorPow I hmn).comp (f s n) = f s m := by
-    have hs := congrArg CommRingCat.Hom.hom (s.w (homOfLE hmn).op)
-    simp only [CommRingCat.hom_comp, Ideal.quotientDiagram, CommRingCat.hom_ofHom] at hs
-    ext x
-    -- Expose the ring maps beneath the categorical cone and the local family `f`.
-    change Ideal.Quotient.factorPow I hmn
-      (Ideal.Quotient.factor (hle n) ((s.π.app (op n)).hom x)) =
-        Ideal.Quotient.factor (hle m) ((s.π.app (op m)).hom x)
-    have hx := congrArg (fun g : s.pt →+* R ⧸ K m ↦
-      Ideal.Quotient.factor (hle m) (g x)) hs
-    simpa only [Ideal.Quotient.factorPow, RingHom.comp_apply,
-      Ideal.Quotient.factor_comp_apply] using hx
+  let hf (s : Cone (TauCeti.antitoneQuotientDiagram K hK)) {m n : ℕ} (h : m ≤ n) :=
+    congrArg CommRingCat.Hom.hom (s.w (homOfLE h).op)
   refine
-    { lift := fun s ↦ CommRingCat.ofHom (liftRingHom I (f s) (hf s))
-      fac := ?_
+    { lift := fun s ↦ CommRingCat.ofHom
+        (liftQuotientRingHom I K hK hle (fun n ↦ (s.π.app (op n)).hom) (hf s))
+      fac := fun s n ↦ CommRingCat.hom_ext
+        (toQuotient_comp_liftQuotientRingHom I K hK hopen hle _ (hf s) n.unop)
       uniq := ?_ }
-  · intro s n
-    apply CommRingCat.hom_ext
-    ext x
-    -- The cone projection and the categorical lift are the displayed ring homomorphisms.
-    change toQuotient I (hopen n.unop) (liftRingHom I (f s) (hf s) x) =
-      (s.π.app n).hom x
-    -- A common deeper level compares this lift with the original cone component.
-    obtain ⟨k, hk⟩ := hopen n.unop
-    let l := max k n.unop
-    have hl : I ^ l ≤ K n.unop := (Ideal.pow_le_pow_right (le_max_left k n.unop)).trans hk
-    rw [toQuotient_eq I (hopen n.unop) hl]
-    simp only [RingHom.comp_apply, AlgHom.toRingHom_eq_coe, AlgHom.coe_toRingHom,
-      evalₐ_liftRingHom]
-    have hs := congrArg CommRingCat.Hom.hom
-      (s.w (homOfLE (le_max_right k n.unop)).op)
-    -- Normalize the categorical compatibility equation before evaluating it.
-    change (Ideal.Quotient.factor (hK (le_max_right k n.unop))).comp
-      (s.π.app (op l)).hom = (s.π.app n).hom at hs
-    simpa only [f, RingHom.comp_apply, Ideal.Quotient.factor_comp_apply] using
-      RingHom.congr_fun hs x
-  · intro s m hm
-    apply CommRingCat.hom_ext
-    apply RingHom.ext
-    intro x
-    -- Reduction from `K n` detects the `n`-th power component, hence detects equality.
-    apply ext_evalₐ
-    intro n
-    -- Strip the bundled category morphisms to use the completion's evaluation API.
-    change evalₐ I n (m.hom x) = evalₐ I n (liftRingHom I (f s) (hf s) x)
-    have hproj := RingHom.congr_fun (congrArg CommRingCat.Hom.hom (hm (op n))) x
-    change toQuotient I (hopen n) (m.hom x) = (s.π.app (op n)).hom x at hproj
-    have hfactor := factor_toQuotient I (hopen n) ⟨n, le_rfl⟩ (hle n) (m.hom x)
-    rw [toQuotient_pow] at hfactor
-    simpa only [evalₐ_liftRingHom, f, RingHom.comp_apply, AlgHom.toRingHom_eq_coe,
-      AlgHom.coe_toRingHom, ← hproj] using hfactor.symm
+  intro s m hm
+  apply CommRingCat.hom_ext
+  apply toQuotient_ext I K hopen hle
+  intro n
+  exact (congrArg CommRingCat.Hom.hom (hm (op n))).trans
+    (toQuotient_comp_liftQuotientRingHom I K hK hopen hle _ (hf s) n).symm
 
 end AdicCompletion
