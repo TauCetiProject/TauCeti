@@ -30,12 +30,10 @@ surjective because `v` acts by zero on homology.
 A surjection `π : M → M'` with kernel `N` intertwining `d` with a square-zero `d'` identifies
 `d.quotientHomology hd N hN` with the homology of `d'`
 (`LinearMap.quotientHomologyEquivOfSurjective`). It rests on the equivalence of homologies induced
-by a linear equivalence intertwining two square-zero endomorphisms (`LinearMap.homologyEquiv`).
+by a linear equivalence intertwining two square-zero endomorphisms (`LinearEquiv.homologyEquiv`).
 
 ## Main definitions
 
-* `LinearMap.homologyEquiv`: the equivalence of homologies induced by an intertwining linear
-  equivalence.
 * `LinearMap.quotientHomology`: the homology of the endomorphism of `M ⧸ N` induced by `d`.
 * `LinearMap.quotientHomologyEquivOfSurjective`: its identification with the homology of `d'`
   along a surjection with kernel `N`.
@@ -81,32 +79,6 @@ end Submodule
 namespace LinearMap
 
 variable {S M : Type*} [Ring S] [AddCommGroup M] [Module S M]
-
-section Equiv
-
-variable {M' : Type*} [AddCommGroup M'] [Module S M'] {d : M →ₗ[S] M} {e : M' →ₗ[S] M'}
-
-/-- A linear equivalence `f` with `f ∘ d = e ∘ f` induces an equivalence of the homologies of the
-square-zero endomorphisms `d` and `e`. -/
-noncomputable def homologyEquiv (f : M ≃ₗ[S] M') (hd : d ∘ₗ d = 0) (he : e ∘ₗ e = 0)
-    (hf : f.toLinearMap ∘ₗ d = e ∘ₗ f.toLinearMap) : d.homology hd ≃ₗ[S] e.homology he :=
-  have hf' : f.symm.toLinearMap ∘ₗ e = d ∘ₗ f.symm.toLinearMap := by
-    ext m'
-    apply f.injective
-    simpa using (congr($hf (f.symm m'))).symm
-  LinearEquiv.ofLinearMap (homologyMap f.toLinearMap hd he hf)
-    (homologyMap f.symm.toLinearMap he hd hf')
-    (by ext z; simp) (by ext z; simp)
-
-/-- The equivalence of homologies sends the class of a cycle `z` to the class of `f z`. -/
-@[simp]
-theorem homologyEquiv_mk (f : M ≃ₗ[S] M') (hd : d ∘ₗ d = 0) (he : e ∘ₗ e = 0)
-    (hf : f.toLinearMap ∘ₗ d = e ∘ₗ f.toLinearMap) (z : ker d) :
-    homologyEquiv f hd he hf (Submodule.Quotient.mk z) =
-      Submodule.Quotient.mk ⟨f z, map_mem_ker_of_comp_eq (d := d) (e := e) f.toLinearMap hf z.2⟩ :=
-  homologyMap_mk f.toLinearMap hd he hf z
-
-end Equiv
 
 section Quotient
 
@@ -159,7 +131,7 @@ modulo `N` is the homology of `d'`. -/
 noncomputable def quotientHomologyEquivOfSurjective (π : M →ₗ[S] M') (hπ : Function.Surjective π)
     (hker : ker π = N) (hπd : π ∘ₗ d = d' ∘ₗ π) :
     d.quotientHomology hd N hN ≃ₗ[S] d'.homology hd' :=
-  homologyEquiv
+  LinearEquiv.homologyEquiv
     ((Submodule.quotEquivOfEq N (ker π) hker.symm).trans (π.quotKerEquivOfSurjective hπ))
     _ hd' (by
       ext m
