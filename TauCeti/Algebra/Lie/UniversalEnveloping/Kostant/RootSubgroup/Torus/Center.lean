@@ -24,7 +24,8 @@ t(s) ∈ Z(B_S(A))   if   (α i)(s) = 1 for every i ∈ S.
 ```
 
 Conversely, if `t(s)` commutes with `xᵢ(1)`, the pinning equation gives `xᵢ((α i)(s)) = xᵢ(1)`, so
-`(α i)(s) = 1` once the root subgroup `xᵢ` is a faithful copy of the additive group over `A`.
+`(α i)(s) = 1` once the root subgroup `xᵢ` is a faithful copy of the additive group over `A`
+(`torusCharacter_eq_one_of_commute_kostantRootSubgroupParam`).
 Faithfulness holds, for instance, when `eᵢ` carries a basis vector to a unit multiple of another
 and squares to zero on it (`kostantRootSubgroupPoints_injective`); it fails when the root operator
 vanishes on `A ⊗[ℤ] M`, and then `xᵢ` is trivial and imposes no condition.
@@ -50,8 +51,6 @@ All declarations are in the namespace `TauCeti.UniversalEnvelopingAlgebra`.
 
 * `kostantTorusPoints_mem_centralizer_kostantTorusSubsystemSubgroup`: a torus point killed by the
   roots in `S` centralizes `B_S(A)`.
-* `torusCharacter_eq_one_of_commute_kostantRootSubgroupParam`: a torus point commuting with
-  `xᵢ(1)` is killed by `α i`, when `xᵢ` is injective.
 * `kostantTorusPoints_mem_centralizer_kostantTorusSubsystemSubgroup_iff`: the resulting
   characterization of the central torus points.
 * `comap_kostantTorusPoints_centralizer_kostantTorusSubsystemSubgroup_eq_iInf_ker`: its subgroup
@@ -112,23 +111,6 @@ theorem kostantTorusPoints_mem_centralizer_kostantTorusSubsystemSubgroup {s : κ
     simp
   · rw [Subgroup.mem_centralizer_singleton_iff, ← map_mul, ← map_mul, mul_comm]
 
-include hwt in
-/-- **A torus point commuting with a faithful root subgroup is killed by its root.** If the root
-vector `eᵢ` has weight `α i`, the root subgroup `xᵢ` is injective over `A`, and `t(s)` commutes
-with `xᵢ(1)`, then the root character `α i` takes the value one at `s`. -/
-theorem torusCharacter_eq_one_of_commute_kostantRootSubgroupParam {i : ι}
-    (hαi : ∀ j, ⁅h j, e i⁆ = (α i j : ℚ) • e i)
-    (hinj : Function.Injective (kostantRootSubgroupParam e h ρ M hM i (hnil i) A)) {s : κ → Aˣ}
-    (hcomm : Commute (kostantTorusPoints M b wt A s)
-      (kostantRootSubgroupParam e h ρ M hM i (hnil i) A (Multiplicative.ofAdd 1))) :
-    torusCharacter s (α i) = 1 := by
-  have hconj := kostantTorusPoints_conj_kostantRootSubgroupParam e h ρ M hM b wt hwt hαi (hnil i)
-    A s (Multiplicative.ofAdd 1)
-  rw [hcomm.eq, mul_inv_cancel_right] at hconj
-  have hval := congrArg Multiplicative.toAdd (hinj hconj)
-  rw [toAdd_ofAdd, toAdd_ofAdd, mul_one] at hval
-  exact Units.ext hval.symm
-
 include hwt hα in
 /-- **The central torus points of `B_S(A)`.** When every root subgroup indexed by `S` is a faithful
 copy of the additive group over `A`, a torus point centralizes `B_S(A)` exactly when every root
@@ -139,8 +121,8 @@ theorem kostantTorusPoints_mem_centralizer_kostantTorusSubsystemSubgroup_iff
     kostantTorusPoints M b wt A s ∈
         Subgroup.centralizer (kostantTorusSubsystemSubgroup e h ρ M hM hnil b wt S A : Set _) ↔
       ∀ i ∈ S, torusCharacter s (α i) = 1 :=
-  ⟨fun hc i hi => torusCharacter_eq_one_of_commute_kostantRootSubgroupParam e h ρ M hM hnil b wt
-      hwt α A (hα i hi) (hinj i hi)
+  ⟨fun hc i hi => torusCharacter_eq_one_of_commute_kostantRootSubgroupParam e h ρ M hM b wt hwt
+      (hα i hi) (hnil i) A (hinj i hi)
       (Subgroup.mem_centralizer_iff.1 hc _
         (kostantRootSubgroupParam_mem_kostantTorusSubsystemSubgroup e h ρ M hM hnil b wt hi A
           _)).symm,
