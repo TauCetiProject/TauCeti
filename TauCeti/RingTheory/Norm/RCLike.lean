@@ -12,9 +12,13 @@ public import Mathlib.RingTheory.Norm.Basic
 # The real field norm of an `RCLike` field
 
 For `z` in an `RCLike` field `𝕜`, the field norm `Algebra.norm ℝ z` has absolute value
-`‖z‖ ^ finrank ℝ 𝕜`. This is the `RCLike` counterpart of Mathlib's `Algebra.norm_complex_apply`,
-and is proved uniformly: conjugation is an `ℝ`-algebra automorphism, so `N z ^ 2 = N (z * conj z)`,
-which is the norm of the real number `‖z‖ ^ 2`.
+`‖z‖ ^ finrank ℝ 𝕜`. This is the `RCLike` counterpart of Mathlib's `Algebra.norm_complex_apply`.
+
+Its purpose is to move determinant estimates between `𝕜` and `ℝ`. By
+`LinearMap.det_restrictScalars`, the real determinant of a `𝕜`-linear map, viewed as an
+`ℝ`-linear map, is the field norm of its `𝕜`-determinant. This identity turns that field norm into
+a power of the scalar norm, so real determinant bounds (for instance in terms of operator norms)
+give the corresponding bounds over any `RCLike` field.
 
 ## Main results
 
@@ -30,6 +34,8 @@ namespace TauCeti
 /-- The real field norm of `z` in an `RCLike` field `𝕜` has absolute value `‖z‖ ^ finrank ℝ 𝕜`. -/
 theorem RCLike.abs_algebraNorm_eq_norm_pow {𝕜 : Type*} [RCLike 𝕜] (z : 𝕜) :
     |Algebra.norm ℝ z| = ‖z‖ ^ finrank ℝ 𝕜 := by
+  -- Conjugation is an `ℝ`-algebra automorphism, so `N z ^ 2 = N (z * conj z)`, which is the
+  -- norm of the real number `‖z‖ ^ 2`.
   have h : Algebra.norm ℝ z ^ 2 = (‖z‖ ^ finrank ℝ 𝕜) ^ 2 := by
     calc Algebra.norm ℝ z ^ 2
         = Algebra.norm ℝ z * Algebra.norm ℝ (RCLike.conjAe z) := by
