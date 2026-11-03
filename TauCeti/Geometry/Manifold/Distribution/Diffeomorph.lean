@@ -98,7 +98,7 @@ theorem IsDistributionFrameOn.comap_mfderivWithin {m : ℕ∞ω} {ι : Type*}
     simp at hmn
   have hΦinv (x : M) (hx : x ∈ Φ.source) :
       (mfderivWithin I J Φ Φ.source x).IsInvertible := by
-    rw [Φ.mfderivWithin_source hn0 hx]
+    rw [Φ.mfderivWithin_source hx]
     exact (_root_.PartialDiffeomorph.isLocalDiffeomorphAt I J n Φ hx).isInvertible_mfderiv hn0
   exact isDistributionFrameOn_comap_mfderivWithin_of_isInvertible hX Φ Φ.source
     Φ.contMDiffOn hΦinv Φ.open_source.uniqueMDiffOn hmn
@@ -149,7 +149,7 @@ theorem map_mfderiv_eq_comap_mfderivWithin_symm (Φ : PartialDiffeomorph I J M N
     (D x).map (mfderiv I J Φ x).toLinearMap =
       (D (Φ.symm (Φ x))).comap (mfderivWithin J I Φ.symm Φ.symm.source (Φ x)).toLinearMap := by
   have hleft : Φ.symm (Φ x) = x := Φ.left_inv hx
-  rw [Φ.symm.mfderivWithin_source hn (Φ.map_source hx), hleft]
+  rw [Φ.symm.mfderivWithin_source (Φ.map_source hx), hleft]
   ext v
   constructor
   · rintro ⟨u, hu, rfl⟩
@@ -236,7 +236,7 @@ theorem isInvolutiveDistributionOn_comap_mfderivWithin [CompleteSpace F]
   have hmem : mfderiv J I Φ.symm y v ∈ (D' (Φ (Φ.symm y))).comap
       (mfderivWithin I J Φ Φ.source (Φ.symm y)).toLinearMap ↔ v ∈ D' y := by
     have hright : Φ (Φ.symm y) = y := Φ.right_inv hy
-    rw [Submodule.mem_comap, Φ.mfderivWithin_source hn0 hx, ContinuousLinearMap.coe_coe,
+    rw [Submodule.mem_comap, Φ.mfderivWithin_source hx, ContinuousLinearMap.coe_coe,
       Φ.mfderiv_apply_mfderiv_symm_apply hn0 hy, hright]
   exact hmem.symm
 

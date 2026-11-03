@@ -45,9 +45,9 @@ namespace PartialDiffeomorph
 
 /-- On the open source of a partial diffeomorphism the differential within the source is the
 differential. -/
-theorem mfderivWithin_source (Φ : PartialDiffeomorph I J M N n) (hn : n ≠ 0)
+theorem mfderivWithin_source (Φ : PartialDiffeomorph I J M N n)
     {x : M} (hx : x ∈ Φ.source) : mfderivWithin I J Φ Φ.source x = mfderiv I J Φ x :=
-  mfderivWithin_eq_mfderiv (Φ.open_source.uniqueMDiffOn x hx) (Φ.mdifferentiableAt hn hx)
+  mfderivWithin_of_isOpen Φ.open_source hx
 
 /-- The differential of the inverse of a partial diffeomorphism undoes its differential. -/
 theorem mfderiv_symm_apply_mfderiv_apply (Φ : PartialDiffeomorph I J M N n) (hn : n ≠ 0) {x : M}

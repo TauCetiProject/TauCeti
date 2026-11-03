@@ -40,13 +40,18 @@ variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
 namespace PartialDiffeomorph
 
 /-- A `C^n` partial diffeomorphism as a `C^m` one, for `m ≤ n`. -/
-@[expose, simps toPartialEquiv]
 def ofLE (Φ : PartialDiffeomorph I J M N n) (hmn : m ≤ n) : PartialDiffeomorph I J M N m where
   toPartialEquiv := Φ.toPartialEquiv
   open_source := Φ.open_source
   open_target := Φ.open_target
   contMDiffOn_toFun := Φ.contMDiffOn.of_le hmn
   contMDiffOn_invFun := Φ.symm.contMDiffOn.of_le hmn
+
+/-- Lowering the regularity keeps the underlying partial equivalence. -/
+@[simp]
+theorem ofLE_toPartialEquiv (Φ : PartialDiffeomorph I J M N n) (hmn : m ≤ n) :
+    (Φ.ofLE hmn).toPartialEquiv = Φ.toPartialEquiv :=
+  (rfl)
 
 end PartialDiffeomorph
 
@@ -55,12 +60,18 @@ namespace ContinuousLinearEquiv
 /-- A continuous linear equivalence as a `C^n` partial diffeomorphism defined everywhere, for any
 regularity `n`, including the analytic regularity `ω` not reached by
 `ContinuousLinearEquiv.toDiffeomorph`. -/
-@[expose, simps toPartialEquiv]
 def toPartialDiffeomorph (A : E ≃L[𝕜] F) : PartialDiffeomorph 𝓘(𝕜, E) 𝓘(𝕜, F) E F n where
   toPartialEquiv := A.toEquiv.toPartialEquiv
   open_source := isOpen_univ
   open_target := isOpen_univ
   contMDiffOn_toFun := A.contDiff.contMDiff.contMDiffOn
   contMDiffOn_invFun := A.symm.contDiff.contMDiff.contMDiffOn
+
+/-- The partial equivalence underlying `ContinuousLinearEquiv.toPartialDiffeomorph` is the
+underlying equivalence, on the whole space. -/
+@[simp]
+theorem toPartialDiffeomorph_toPartialEquiv (A : E ≃L[𝕜] F) :
+    (A.toPartialDiffeomorph (n := n)).toPartialEquiv = A.toEquiv.toPartialEquiv :=
+  (rfl)
 
 end ContinuousLinearEquiv
