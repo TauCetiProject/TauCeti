@@ -123,6 +123,22 @@ theorem unitRestriction_eq_weight :
     unitRestriction (p := p) (R := R) = weight (1 - pMultiplesIndicator p R) :=
   (rfl)
 
+/-- Dilation by a unit commutes with restriction to the units. -/
+theorem unitRestriction_map_mulLeft_unit (μ : D(ℤ_[p], R)) (a : ℤ_[p]ˣ) :
+    unitRestriction (map (ContinuousMap.mulLeft (a : ℤ_[p])) μ) =
+      map (ContinuousMap.mulLeft (a : ℤ_[p])) (unitRestriction μ) := by
+  have h : (1 - pMultiplesIndicator p R).comp (ContinuousMap.mulLeft (a : ℤ_[p])) =
+      1 - pMultiplesIndicator p R := by
+    ext x
+    have hd : (p : ℤ_[p]) ∣ (a : ℤ_[p]) * x ↔ (p : ℤ_[p]) ∣ x :=
+      a.isUnit.dvd_mul_left
+    by_cases hx : (p : ℤ_[p]) ∣ x
+    · simp [ContinuousMap.comp_apply, pMultiplesIndicator_eq_one hx,
+        pMultiplesIndicator_eq_one (hd.mpr hx)]
+    · simp [ContinuousMap.comp_apply, pMultiplesIndicator_eq_zero hx,
+        pMultiplesIndicator_eq_zero (mt hd.mp hx)]
+  rw [unitRestriction_eq_weight, ← map_weight, h]
+
 /-- The unit restriction integrates a test function after multiplying it by the characteristic
 function `1 - χ` of `ℤ_pˣ`. -/
 @[simp]

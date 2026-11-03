@@ -64,10 +64,11 @@ of `K` in the concordance group, is a turned-over copy of the reverse of `K` mov
 Concordances in connected-sum position can themselves be summed, giving a concordance between
 the connected sums (`TauCeti.KnotTheory.ConnectedSum.Concordance`), and in a sphere of dimension
 at least two every knot is concordant to one in connected-sum position
-(`TauCeti.KnotTheory.ConnectedSum.Position`). Not formalized here: that every knot is ambient
-isotopic to one in connected-sum position, and that the resulting operation on isotopy or
-concordance classes does not depend on the choices. The latter is the remaining step from this
-construction to the knot concordance group.
+(`TauCeti.KnotTheory.ConnectedSum.Position`). In fact every knot in a sphere of dimension at
+least two is smoothly ambient isotopic to one in that position
+(`TauCeti.KnotTheory.ConnectedSum.Isotopy`). Not formalized here: that the resulting operation on
+isotopy or concordance classes does not depend on the choices. The latter is the remaining step
+from this construction to the knot concordance group.
 
 ## Main definitions
 
