@@ -44,6 +44,8 @@ permutations.
 
 * `Equiv.Perm.fin_three_cases`: every permutation of three points is the identity, one of the
   three transpositions, or one of the two rotations.
+* `Equiv.Perm.fin_three_conj_cases`: every permutation of three points is the identity or a
+  conjugate of the transposition `(0 1)` or of the rotation `(0 1 2)`.
 * `TauCeti.mem_stabilizer_perm_fin_three_iff`: a permutation of three points fixes `a` exactly
   when it is the identity or the transposition of the other two points.
 * `TauCeti.coe_stabilizer_perm_fin_three`: the same, as an equality of sets.
@@ -85,6 +87,15 @@ theorem fin_three_cases (ρ : Equiv.Perm (Fin 3)) :
     ρ = 1 ∨ ρ = Equiv.swap 0 1 ∨ ρ = Equiv.swap 1 2 ∨ ρ = Equiv.swap 0 2 ∨
       ρ = finRotate 3 ∨ ρ = (finRotate 3)⁻¹ := by
   revert ρ
+  decide
+
+/-- **The conjugacy classes of `S₃`**: every permutation of three points is the identity or a
+conjugate of the transposition `(0 1)` or of the rotation `(0 1 2) = finRotate 3`. A class
+function on `S₃` is therefore determined by its values at these three permutations. -/
+theorem fin_three_conj_cases (g : Equiv.Perm (Fin 3)) :
+    ∃ h : Equiv.Perm (Fin 3),
+      g = 1 ∨ g = h * Equiv.swap 0 1 * h⁻¹ ∨ g = h * finRotate 3 * h⁻¹ := by
+  revert g
   decide
 
 end Equiv.Perm

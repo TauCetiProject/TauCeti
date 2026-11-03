@@ -15,6 +15,7 @@ public import TauCeti.RepresentationTheory.LinearCharacter.Basic
 public import TauCeti.RepresentationTheory.Symmetric.SignCharacter
 public import TauCeti.RepresentationTheory.Symmetric.Standard
 public import TauCeti.RepresentationTheory.SymmetricPower
+import TauCeti.GroupTheory.Perm.FinThree.Basic
 import TauCeti.LinearAlgebra.SymmetricPower.Coordinates
 import TauCeti.RepresentationTheory.Intertwining
 
@@ -883,13 +884,6 @@ private theorem trace_symmetricPower_standardRepresentation_conj (n : ℕ)
     ← mul_assoc, ← map_mul ((standardRepresentation k (Fin 3)).symmetricPower n), inv_mul_cancel,
     map_one, one_mul]
 
-/-- Every element of `S₃` is the identity or conjugate to `σ = (0 1)` or to `τ = (0 1 2)`. -/
-private theorem exists_eq_one_or_conj_swap_or_conj_finRotate (g : Equiv.Perm (Fin 3)) :
-    ∃ h : Equiv.Perm (Fin 3),
-      g = 1 ∨ g = h * Equiv.swap 0 1 * h⁻¹ ∨ g = h * finRotate 3 * h⁻¹ := by
-  revert g
-  decide
-
 /-- **`χ_{Sym² V₃}(1) = 3`**: `Sym² V₃` has dimension `3`. -/
 theorem trace_symmetricPower_two_standardRepresentation_one :
     LinearMap.trace k _ ((standardRepresentation k (Fin 3)).symmetricPower 2 1) = 3 := by
@@ -944,7 +938,7 @@ field. -/
 theorem trace_symmetricPower_two_standardRepresentation (g : Equiv.Perm (Fin 3)) :
     LinearMap.trace k _ ((standardRepresentation k (Fin 3)).symmetricPower 2 g) =
       1 + (standardRepresentation k (Fin 3)).character g := by
-  obtain ⟨h, rfl | rfl | rfl⟩ := exists_eq_one_or_conj_swap_or_conj_finRotate g
+  obtain ⟨h, rfl | rfl | rfl⟩ := Equiv.Perm.fin_three_conj_cases g
   · rw [trace_symmetricPower_two_standardRepresentation_one, character_standardRepresentation_one]
     norm_num
   · rw [trace_symmetricPower_standardRepresentation_conj, Representation.char_conj,
@@ -1015,7 +1009,7 @@ theorem trace_symmetricPower_three_standardRepresentation (g : Equiv.Perm (Fin 3
   have hsign : ∀ x h : Equiv.Perm (Fin 3), Equiv.Perm.sign (h * x * h⁻¹) = Equiv.Perm.sign x := by
     intro x h
     rw [map_mul, map_mul, Equiv.Perm.sign_inv, mul_right_comm, Int.units_mul_self, one_mul]
-  obtain ⟨h, rfl | rfl | rfl⟩ := exists_eq_one_or_conj_swap_or_conj_finRotate g
+  obtain ⟨h, rfl | rfl | rfl⟩ := Equiv.Perm.fin_three_conj_cases g
   · rw [trace_symmetricPower_three_standardRepresentation_one, map_one,
       character_standardRepresentation_one]
     norm_num
