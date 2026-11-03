@@ -17,13 +17,16 @@ of these words recover the numbered coroot in the full weight torus:
 These identities normalize the group-level coroot parameters, not just their differentials.
 They hold inside the explicit 27-dimensional carrier over every commutative value ring.
 
-The proof transports
-`TauCeti.UniversalEnvelopingAlgebra.kostantWeylParam_mul_kostantWeylParam`
-through the existing minuscule coordinate-lattice basis and faithful matrix inclusion.
-No identification with an independently pinned simply connected group scheme is asserted.
+Taking `v = 1` in the quotient identity recovers `hᵢ(u) = nᵢ(u)nᵢ(1)⁻¹`, fixing
+which unit parameter in the numbered weight torus corresponds to the simple coroot.
+Thus the coroot values can be expressed using only the corresponding positive and negative
+simple-root subgroups. No identification with an independently pinned simply connected
+group scheme is asserted.
 
 ## References
 
+* Formal rank-one product identity:
+  `TauCeti.UniversalEnvelopingAlgebra.kostantWeylParam_mul_kostantWeylParam`.
 * R. Steinberg, *Lectures on Chevalley Groups*, Chapter 3, Lemma 19.
 * R. W. Carter, *Simple Groups of Lie Type*, §6.4.
 -/
