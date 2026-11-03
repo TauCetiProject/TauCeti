@@ -64,10 +64,42 @@ def kind : G.Ear H → EarKind
   | .open .. => .open
   | .closed .. => .closed
 
+@[simp]
+theorem kind_open {s t : α} (hHG : H ≤ G) (walk : G.Walk s t) (isPath : walk.IsPath)
+    (start_mem : s ∈ V(H)) (end_mem : t ∈ V(H)) (endpoints_ne : s ≠ t)
+    (internal_new : ∀ x ∈ walk.support, x ≠ s → x ≠ t → x ∉ V(H))
+    (edges_new : ∀ e ∈ walk.edges, e ∉ E(H)) :
+    (Ear.open hHG walk isPath start_mem end_mem endpoints_ne internal_new edges_new).kind =
+      .open := by
+  rw [kind]
+
+@[simp]
+theorem kind_closed {s : α} (hHG : H ≤ G) (walk : G.Walk s s) (isCycle : walk.IsCycle)
+    (base_mem : s ∈ V(H)) (internal_new : ∀ x ∈ walk.support, x ≠ s → x ∉ V(H))
+    (edges_new : ∀ e ∈ walk.edges, e ∉ E(H)) :
+    (Ear.closed hHG walk isCycle base_mem internal_new edges_new).kind = .closed := by
+  rw [kind]
+
 /-- The underlying walk of an ear, including its endpoints. -/
 def toWalk : G.Ear H → Σ s t : α, G.Walk s t
   | .open _ walk .. => ⟨_, _, walk⟩
   | .closed _ walk .. => ⟨_, _, walk⟩
+
+@[simp]
+theorem toWalk_open {s t : α} (hHG : H ≤ G) (walk : G.Walk s t) (isPath : walk.IsPath)
+    (start_mem : s ∈ V(H)) (end_mem : t ∈ V(H)) (endpoints_ne : s ≠ t)
+    (internal_new : ∀ x ∈ walk.support, x ≠ s → x ≠ t → x ∉ V(H))
+    (edges_new : ∀ e ∈ walk.edges, e ∉ E(H)) :
+    (Ear.open hHG walk isPath start_mem end_mem endpoints_ne internal_new edges_new).toWalk =
+      ⟨s, t, walk⟩ := by
+  rw [toWalk]
+
+@[simp]
+theorem toWalk_closed {s : α} (hHG : H ≤ G) (walk : G.Walk s s) (isCycle : walk.IsCycle)
+    (base_mem : s ∈ V(H)) (internal_new : ∀ x ∈ walk.support, x ≠ s → x ∉ V(H))
+    (edges_new : ∀ e ∈ walk.edges, e ∉ E(H)) :
+    (Ear.closed hHG walk isCycle base_mem internal_new edges_new).toWalk = ⟨s, s, walk⟩ := by
+  rw [toWalk]
 
 /-- Ears are equal when they have the same kind and the same endpoint-indexed walk. -/
 @[ext]
@@ -170,6 +202,20 @@ def IsCycle : G.EarStart H → Prop
   | .vertex _ => False
   | .cycle _ _ => True
 
+@[simp]
+theorem isCycle_vertex (v : V(G)) : (EarStart.vertex v).IsCycle ↔ False :=
+  Iff.rfl
+
+@[simp]
+theorem isCycle_cycle {s : α} (walk : G.Walk s s) (isCycle : walk.IsCycle) :
+    (EarStart.cycle walk isCycle).IsCycle ↔ True :=
+  Iff.rfl
+
+private theorem isCycle_transport {K L : Graph α β} (h : K = L) (start : G.EarStart K) :
+    (h ▸ start).IsCycle ↔ start.IsCycle := by
+  subst h
+  rfl
+
 /-- Every allowed initial graph is a subgraph of its ambient graph. -/
 theorem le : ∀ _start : G.EarStart H, H ≤ G
   | .vertex v => Graph.noEdge_le_iff.mpr (by simp [v.property])
@@ -221,18 +267,37 @@ theorem ext (d e : G.EarDecomposition H) (hlength : d.length = e.length)
 def initial (d : G.EarDecomposition H) : Graph α β :=
   d.graphAfter 0
 
+@[simp]
+theorem initial_eq_graphAfter (d : G.EarDecomposition H) : d.initial = d.graphAfter 0 :=
+  by rw [initial]
+
 /-- The kind of the ear added at a specified step. -/
 def kindAt (d : G.EarDecomposition H) (i : Fin d.length) : EarKind :=
   (d.earAt i).2.kind
+
+@[simp]
+theorem kindAt_eq (d : G.EarDecomposition H) (i : Fin d.length) :
+    d.kindAt i = (d.earAt i).2.kind :=
+  by rw [kindAt]
 
 /-- The underlying walk of the ear added at a specified step. -/
 def walkAt (d : G.EarDecomposition H) (i : Fin d.length) :
     Σ s t : α, G.Walk s t :=
   (d.earAt i).2.toWalk
 
+@[simp]
+theorem walkAt_eq (d : G.EarDecomposition H) (i : Fin d.length) :
+    d.walkAt i = (d.earAt i).2.toWalk :=
+  by rw [walkAt]
+
 /-- An open ear decomposition starts from a cycle and adds only open ears. -/
 def IsOpen (d : G.EarDecomposition H) : Prop :=
   d.start.IsCycle ∧ ∀ i, d.kindAt i = .open
+
+/-- Characterization of an open ear decomposition by its initial data and ear kinds. -/
+theorem isOpen_iff (d : G.EarDecomposition H) :
+    d.IsOpen ↔ d.start.IsCycle ∧ ∀ i, d.kindAt i = .open :=
+  Iff.rfl
 
 /-- An open ear decomposition starts from a cycle. -/
 theorem IsOpen.start_isCycle {d : G.EarDecomposition H} (hd : d.IsOpen) :
@@ -277,14 +342,23 @@ theorem isOpen_cycle {s : α} (walk : G.Walk s s) (isCycle : walk.IsCycle) :
     (cycle walk isCycle).IsOpen :=
   ⟨trivial, fun i ↦ Fin.elim0 i⟩
 
+private theorem zero_eq_castSucc_zero (n : ℕ) :
+    (0 : Fin (n + 2)) = (0 : Fin (n + 1)).castSucc :=
+  rfl
+
+private theorem castSucc_succ_eq_succ_castSucc {n : ℕ} (i : Fin n) :
+    i.castSucc.succ = i.succ.castSucc :=
+  rfl
+
+private theorem snoc_graphAfter_zero (d : G.EarDecomposition H) (ear : G.Ear H) :
+    Fin.lastCases ear.add d.graphAfter (0 : Fin (d.length + 2)) = d.graphAfter 0 := by
+  rw [zero_eq_castSucc_zero, Fin.lastCases_castSucc]
+
 /-- Adjoin one ear at the end of a decomposition. -/
 def snoc (d : G.EarDecomposition H) (ear : G.Ear H) : G.EarDecomposition ear.add where
   length := d.length + 1
   graphAfter i := Fin.lastCases ear.add d.graphAfter i
-  start := by
-    rw [show (0 : Fin (d.length + 2)) = (0 : Fin (d.length + 1)).castSucc by rfl,
-      Fin.lastCases_castSucc]
-    exact d.start
+  start := (snoc_graphAfter_zero d ear).symm ▸ d.start
   earAt i := by
     exact Fin.lastCases ⟨H, ear⟩ d.earAt i
   earAt_fst i := by
@@ -294,7 +368,7 @@ def snoc (d : G.EarDecomposition H) (ear : G.Ear H) : G.EarDecomposition ear.add
   graphAfter_succ i := by
     refine Fin.lastCases ?_ (fun j ↦ ?_) i
     · rw [Fin.succ_last, Fin.lastCases_last, Fin.lastCases_last]
-    · rw [show j.castSucc.succ = j.succ.castSucc by rfl, Fin.lastCases_castSucc,
+    · rw [castSucc_succ_eq_succ_castSucc, Fin.lastCases_castSucc,
         d.graphAfter_succ, Fin.lastCases_castSucc]
   graphAfter_last := Fin.lastCases_last
 
@@ -302,36 +376,87 @@ def snoc (d : G.EarDecomposition H) (ear : G.Ear H) : G.EarDecomposition ear.add
 theorem length_snoc (d : G.EarDecomposition H) (ear : G.Ear H) :
     (d.snoc ear).length = d.length + 1 := (rfl)
 
+private theorem cast_length_snoc_castSucc (d : G.EarDecomposition H) (ear : G.Ear H)
+    (i : Fin (d.length + 1)) :
+    (Fin.cast (length_snoc d ear).symm i).castSucc = i.castSucc := by
+  ext
+  rfl
+
+private theorem cast_length_snoc_ear (d : G.EarDecomposition H) (ear : G.Ear H)
+    (i : Fin d.length) :
+    Fin.cast (length_snoc d ear).symm i.castSucc = i.castSucc := by
+  ext
+  rfl
+
+private theorem cast_length_snoc_last (d : G.EarDecomposition H) (ear : G.Ear H) :
+    Fin.cast (length_snoc d ear).symm (Fin.last d.length) = Fin.last d.length := by
+  ext
+  rfl
+
 @[simp]
 theorem graphAfter_snoc_castSucc (d : G.EarDecomposition H) (ear : G.Ear H)
     (i : Fin (d.length + 1)) :
     (d.snoc ear).graphAfter
       (Fin.cast (length_snoc d ear).symm i).castSucc = d.graphAfter i :=
   by
+    -- Projection reduction exposes `Fin.lastCases`; rewriting cannot unfold the opaque `snoc` body.
     change Fin.lastCases ear.add d.graphAfter _ = d.graphAfter i
-    rw [show (Fin.cast (length_snoc d ear).symm i).castSucc = i.castSucc by
-      apply Fin.ext; rfl]
-    exact Fin.lastCases_castSucc i
+    rw [cast_length_snoc_castSucc, Fin.lastCases_castSucc]
 
 @[simp]
 theorem earAt_snoc_castSucc (d : G.EarDecomposition H) (ear : G.Ear H)
     (i : Fin d.length) :
     (d.snoc ear).earAt (Fin.cast (length_snoc d ear).symm i.castSucc) = d.earAt i :=
   by
+    -- Projection reduction exposes `Fin.lastCases`; rewriting cannot unfold the opaque `snoc` body.
     change Fin.lastCases ⟨H, ear⟩ d.earAt _ = d.earAt i
-    rw [show Fin.cast (length_snoc d ear).symm i.castSucc = i.castSucc by apply Fin.ext; rfl]
-    exact Fin.lastCases_castSucc i
+    rw [cast_length_snoc_ear, Fin.lastCases_castSucc]
 
 @[simp]
 theorem earAt_snoc_last (d : G.EarDecomposition H) (ear : G.Ear H) :
     (d.snoc ear).earAt (Fin.cast (length_snoc d ear).symm (Fin.last d.length)) =
       ⟨H, ear⟩ :=
   by
+    -- Projection reduction exposes `Fin.lastCases`; rewriting cannot unfold the opaque `snoc` body.
     change Fin.lastCases (⟨H, ear⟩ : Σ K, G.Ear K) d.earAt _ =
       (⟨H, ear⟩ : Σ K, G.Ear K)
-    rw [show Fin.cast (length_snoc d ear).symm (Fin.last d.length) = Fin.last d.length by
-      apply Fin.ext; rfl]
-    exact Fin.lastCases_last
+    rw [cast_length_snoc_last, Fin.lastCases_last]
+
+private theorem start_isCycle_snoc (d : G.EarDecomposition H) (ear : G.Ear H) :
+    (d.snoc ear).start.IsCycle ↔ d.start.IsCycle := by
+  exact EarStart.isCycle_transport (snoc_graphAfter_zero d ear).symm d.start
+
+private theorem kindAt_snoc_castSucc (d : G.EarDecomposition H) (ear : G.Ear H)
+    (i : Fin d.length) :
+    (d.snoc ear).kindAt (Fin.cast (length_snoc d ear).symm i.castSucc) = d.kindAt i := by
+  rw [kindAt_eq, earAt_snoc_castSucc, ← kindAt_eq]
+
+private theorem kindAt_snoc_last (d : G.EarDecomposition H) (ear : G.Ear H) :
+    (d.snoc ear).kindAt (Fin.cast (length_snoc d ear).symm (Fin.last d.length)) =
+      ear.kind := by
+  rw [kindAt_eq, earAt_snoc_last]
+
+/-- Adjoining an open ear preserves and reflects openness of a decomposition. -/
+@[simp]
+theorem isOpen_snoc (d : G.EarDecomposition H) (ear : G.Ear H) :
+    (d.snoc ear).IsOpen ↔ d.IsOpen ∧ ear.kind = .open := by
+  rw [isOpen_iff, isOpen_iff, start_isCycle_snoc]
+  constructor
+  · rintro ⟨hstart, hkinds⟩
+    refine ⟨⟨hstart, fun i ↦ ?_⟩, ?_⟩
+    · simpa only [kindAt_snoc_castSucc] using
+        hkinds (Fin.cast (length_snoc d ear).symm i.castSucc)
+    · simpa only [kindAt_snoc_last] using
+        hkinds (Fin.cast (length_snoc d ear).symm (Fin.last d.length))
+  · rintro ⟨⟨hstart, hkinds⟩, hear⟩
+    refine ⟨hstart, fun i ↦ ?_⟩
+    have hkind : ∀ j : Fin (d.length + 1),
+        (d.snoc ear).kindAt (Fin.cast (length_snoc d ear).symm j) = .open := by
+      intro j
+      refine Fin.lastCases ?_ (fun k ↦ ?_) j
+      · exact kindAt_snoc_last d ear |>.trans hear
+      · exact kindAt_snoc_castSucc d ear k |>.trans (hkinds k)
+    simpa using hkind (Fin.cast (length_snoc d ear) i)
 
 /-- Every stage of an ear decomposition is a subgraph of the ambient graph. -/
 theorem graphAfter_le (d : G.EarDecomposition H) (i : Fin (d.length + 1)) :
@@ -352,32 +477,70 @@ theorem graphAfter_castSucc_le_succ (d : G.EarDecomposition H) (i : Fin d.length
   rw [← d.earAt_fst i]
   exact (d.earAt i).2.base_le_add
 
-private def prefixStageIndex (d : G.EarDecomposition H) (i : Fin (d.length + 1))
-    (j : Fin (i.val + 1)) : Fin (d.length + 1) :=
-  ⟨j, lt_of_le_of_lt (Nat.le_of_lt_succ j.isLt) i.isLt⟩
+private theorem prefix_castLE_zero (d : G.EarDecomposition H) (i : Fin (d.length + 1)) :
+    Fin.castLE (Nat.succ_le_iff.mpr i.isLt) 0 = (0 : Fin (d.length + 1)) := by
+  ext
+  rfl
 
-private def prefixEarIndex (d : G.EarDecomposition H) (i : Fin (d.length + 1))
-    (j : Fin i.val) : Fin d.length :=
-  ⟨j, lt_of_lt_of_le j.isLt (Nat.le_of_lt_succ i.isLt)⟩
+private theorem prefix_castLE_castSucc (d : G.EarDecomposition H)
+    (i : Fin (d.length + 1)) (j : Fin i.val) :
+    (Fin.castLE (Nat.le_of_lt_succ i.isLt) j).castSucc =
+      Fin.castLE (Nat.succ_le_iff.mpr i.isLt) j.castSucc := by
+  ext
+  rfl
+
+private theorem prefix_castLE_succ (d : G.EarDecomposition H) (i : Fin (d.length + 1))
+    (j : Fin i.val) :
+    Fin.castLE (Nat.succ_le_iff.mpr i.isLt) j.succ =
+      (Fin.castLE (Nat.le_of_lt_succ i.isLt) j).succ := by
+  ext
+  rfl
+
+private theorem prefix_castLE_last (d : G.EarDecomposition H) (i : Fin (d.length + 1)) :
+    Fin.castLE (Nat.succ_le_iff.mpr i.isLt) (Fin.last i.val) = i := by
+  ext
+  rfl
 
 /-- The decomposition formed by the first `i` ears. -/
 def «prefix» (d : G.EarDecomposition H) (i : Fin (d.length + 1)) :
     G.EarDecomposition (d.graphAfter i) where
   length := i.val
-  graphAfter j := d.graphAfter (prefixStageIndex d i j)
-  start := by
-    rw [show prefixStageIndex d i 0 = (0 : Fin (d.length + 1)) by apply Fin.ext; rfl]
-    exact d.start
-  earAt j := d.earAt (prefixEarIndex d i j)
+  graphAfter j := d.graphAfter (Fin.castLE (Nat.succ_le_iff.mpr i.isLt) j)
+  start := (congrArg d.graphAfter (prefix_castLE_zero d i)).symm ▸ d.start
+  earAt j := d.earAt (Fin.castLE (Nat.le_of_lt_succ i.isLt) j)
   earAt_fst j := by
-    rw [d.earAt_fst (prefixEarIndex d i j)]
-    congr 1
+    rw [d.earAt_fst, prefix_castLE_castSucc]
   graphAfter_succ j := by
-    rw [show prefixStageIndex d i j.succ = (prefixEarIndex d i j).succ by
-      apply Fin.ext; rfl]
-    exact d.graphAfter_succ (prefixEarIndex d i j)
+    rw [prefix_castLE_succ]
+    exact d.graphAfter_succ (Fin.castLE (Nat.le_of_lt_succ i.isLt) j)
   graphAfter_last := by
-    rw [show prefixStageIndex d i (Fin.last i.val) = i by apply Fin.ext; rfl]
+    rw [prefix_castLE_last]
+
+private theorem start_isCycle_prefix (d : G.EarDecomposition H)
+    (i : Fin (d.length + 1)) :
+    (d.prefix i).start.IsCycle ↔ d.start.IsCycle := by
+  exact EarStart.isCycle_transport
+    (congrArg d.graphAfter (prefix_castLE_zero d i)).symm d.start
+
+/-- Induction over prefix decompositions in construction order. The zero prefix carries the
+initial vertex or cycle, and the successor case adds the next displayed ear. -/
+theorem prefix_induction (d : G.EarDecomposition H)
+    {P : ∀ {K : Graph α β}, G.EarDecomposition K → Prop}
+    (initial : P (d.prefix 0))
+    (snoc : ∀ i : Fin d.length, P (d.prefix i.castSucc) → P (d.prefix i.succ))
+    (i : Fin (d.length + 1)) : P (d.prefix i) := by
+  exact Fin.induction initial snoc i
+
+/-- Induction over stage graphs from the initial vertex or cycle through the displayed ears. -/
+theorem graphAfter_induction (d : G.EarDecomposition H) {P : Graph α β → Prop}
+    (initial : P d.initial)
+    (snoc : ∀ i, P (d.graphAfter i.castSucc) → P (d.earAt i).2.add)
+    (i : Fin (d.length + 1)) : P (d.graphAfter i) := by
+  apply d.prefix_induction (P := fun {K} _ ↦ P K)
+  · simpa only [initial_eq_graphAfter] using initial
+  · intro j ih
+    rw [d.graphAfter_succ]
+    exact snoc j ih
 
 /-- A prefix decomposition contains exactly as many ears as its index. -/
 @[simp]
@@ -391,6 +554,7 @@ theorem graphAfter_prefix (d : G.EarDecomposition H) (i : Fin (d.length + 1))
     (d.prefix i).graphAfter
       (Fin.cast (congrArg (· + 1) (length_prefix d i).symm) j) =
         d.graphAfter (Fin.castLE (Nat.succ_le_iff.mpr i.isLt) j) := by
+  -- Projection reduction exposes the `Fin.castLE` index hidden by the opaque `prefix` body.
   change d.graphAfter _ = d.graphAfter _
   congr 1
 
@@ -400,8 +564,26 @@ theorem earAt_prefix (d : G.EarDecomposition H) (i : Fin (d.length + 1))
     (j : Fin i.val) :
     (d.prefix i).earAt (Fin.cast (length_prefix d i).symm j) =
       d.earAt (Fin.castLE (Nat.le_of_lt_succ i.isLt) j) := by
+  -- Projection reduction exposes the `Fin.castLE` index hidden by the opaque `prefix` body.
   change d.earAt _ = d.earAt _
   congr 1
+
+private theorem kindAt_prefix (d : G.EarDecomposition H) (i : Fin (d.length + 1))
+    (j : Fin i.val) :
+    (d.prefix i).kindAt (Fin.cast (length_prefix d i).symm j) =
+      d.kindAt (Fin.castLE (Nat.le_of_lt_succ i.isLt) j) := by
+  rw [kindAt_eq, earAt_prefix, ← kindAt_eq]
+
+/-- Every prefix of an open ear decomposition is open. -/
+theorem IsOpen.prefix {d : G.EarDecomposition H} (hd : d.IsOpen)
+    (i : Fin (d.length + 1)) : (d.prefix i).IsOpen := by
+  rw [isOpen_iff, start_isCycle_prefix]
+  refine ⟨hd.start_isCycle, fun j ↦ ?_⟩
+  have hkind : ∀ k : Fin i.val,
+      (d.prefix i).kindAt (Fin.cast (length_prefix d i).symm k) = .open := by
+    intro k
+    exact kindAt_prefix d i k |>.trans (hd.kindAt_eq_open _)
+  simpa using hkind (Fin.cast (length_prefix d i) j)
 
 end EarDecomposition
 
