@@ -273,10 +273,6 @@ theorem map_symmetricCongruenceLinearMap_submatrix_one_nonsingularWishartMeasure
 private def coordinateRow (i : Fin p) : Matrix (Fin 1) (Fin p) ℝ :=
   (1 : Matrix (Fin p) (Fin p) ℝ).submatrix (fun _ ↦ i) id
 
-private theorem coordinateRow_injective (i : Fin p) :
-    Function.Injective (fun _ : Fin 1 ↦ i) :=
-  fun _ _ _ ↦ Subsingleton.elim _ _
-
 private theorem coordinateRow_mul_mul_transpose (i : Fin p) :
     coordinateRow i * S * (coordinateRow i)ᵀ = S.submatrix (fun _ ↦ i) (fun _ ↦ i) := by
   rw [coordinateRow, Matrix.transpose_submatrix, Matrix.transpose_one,
@@ -326,7 +322,7 @@ theorem map_coe_apply_nonsingularWishartMeasure (hS : S.PosDef)
           (A : Matrix (Fin p) (Fin p) ℝ) i i) =
       (chiSquaredMeasure n).map (S i i * ·) := by
   let f : Fin 1 → Fin p := fun _ ↦ i
-  have hf : Function.Injective f := coordinateRow_injective i
+  have hf : Function.Injective f := Function.injective_of_subsingleton f
   have hp : 1 ≤ p := Nat.one_le_iff_ne_zero.2 fun hp ↦ by
     simpa [hp] using i.isLt
   have hp' : (1 : ℝ) ≤ p := by exact_mod_cast hp
