@@ -37,6 +37,26 @@ namespace TauCeti.IsFreelyIndependentElements
 variable {A : Type*} [CStarAlgebra A] [PartialOrder A] [StarOrderedRing A]
   {φ : A →ₚ[ℂ] ℂ} {a : ℕ → A}
 
+private theorem tendsto_law_inv_sqrt_smul_sum_of_tendsto_moments
+    (hφ : φ 1 = 1) (ha : ∀ j, IsSelfAdjoint (a j)) {v : ℝ≥0}
+    (hmom : ∀ n : ℕ,
+      Tendsto (fun N : ℕ => φ (((Real.sqrt N : ℂ)⁻¹ • ∑ j ∈ range N, a j) ^ n)) atTop
+        (𝓝 ((∫ x, x ^ n ∂Probability.semicircleReal 0 v : ℝ) : ℂ))) :
+    Tendsto (β := ProbabilityMeasure ℝ) (fun N : ℕ =>
+      ⟨φ.law ((Real.sqrt N)⁻¹ • ∑ j ∈ range N, a j),
+        φ.isProbabilityMeasure_law hφ
+          ((IsSelfAdjoint.all _).smul (isSelfAdjoint_sum _ fun j _ => ha j))⟩) atTop
+      (𝓝 (Probability.semicircleReal 0 v).toProbabilityMeasure) := by
+  apply PositiveLinearMap.tendsto_law_of_tendsto_apply_pow (fun _ => φ) (fun _ => hφ)
+    (fun N : ℕ => (Real.sqrt N)⁻¹ • ∑ j ∈ range N, a j)
+    (fun _ => (IsSelfAdjoint.all _).smul (isSelfAdjoint_sum _ fun j _ => ha j))
+    (K := Set.Icc (0 - 2 * Real.sqrt v) (0 + 2 * Real.sqrt v)) isCompact_Icc
+  · exact ae_iff.mp (Probability.ae_mem_Icc_semicircleReal 0 v)
+  · intro n
+    simpa only [RCLike.real_smul_eq_coe_smul (K := ℂ), RCLike.ofReal_eq_complex_ofReal,
+      Complex.ofReal_inv, Measure.coe_toProbabilityMeasure, PositiveLinearMap.coe_toLinearMap] using
+      hmom n
+
 /-- **The weak free central limit theorem.** Centered free selfadjoint elements whose moments
 are uniformly bounded in each degree and whose average variance tends to `v ≥ 0` have
 normalized-sum laws converging weakly to `semicircleReal 0 v`. No common compact support of the
@@ -52,15 +72,8 @@ theorem tendsto_law_inv_sqrt_smul_sum_semicircleReal
         φ.isProbabilityMeasure_law hφ
           ((IsSelfAdjoint.all _).smul (isSelfAdjoint_sum _ fun j _ => ha j))⟩) atTop
       (𝓝 (Probability.semicircleReal 0 v).toProbabilityMeasure) := by
-  apply PositiveLinearMap.tendsto_law_of_tendsto_apply_pow (fun _ => φ) (fun _ => hφ)
-    (fun N : ℕ => (Real.sqrt N)⁻¹ • ∑ j ∈ range N, a j)
-    (fun _ => (IsSelfAdjoint.all _).smul (isSelfAdjoint_sum _ fun j _ => ha j))
-    (K := Set.Icc (0 - 2 * Real.sqrt v) (0 + 2 * Real.sqrt v)) isCompact_Icc
-  · exact ae_iff.mp (Probability.ae_mem_Icc_semicircleReal 0 v)
-  · intro n
-    simpa only [RCLike.real_smul_eq_coe_smul (K := ℂ), RCLike.ofReal_eq_complex_ofReal,
-      Complex.ofReal_inv, Measure.coe_toProbabilityMeasure, PositiveLinearMap.coe_toLinearMap] using
-      h.tendsto_apply_inv_sqrt_smul_sum_pow_semicircleReal hφ hcen hbdd hvar n
+  exact tendsto_law_inv_sqrt_smul_sum_of_tendsto_moments hφ ha
+    (h.tendsto_apply_inv_sqrt_smul_sum_pow_semicircleReal hφ hcen hbdd hvar)
 
 /-- **The weak free central limit theorem for identically distributed elements.** If centered
 free selfadjoint elements have the same scalar moments and variance `v ≥ 0`, the laws of their
@@ -76,14 +89,7 @@ theorem tendsto_law_inv_sqrt_smul_sum_of_apply_pow_eq
         φ.isProbabilityMeasure_law hφ
           ((IsSelfAdjoint.all _).smul (isSelfAdjoint_sum _ fun j _ => ha j))⟩) atTop
       (𝓝 (Probability.semicircleReal 0 v).toProbabilityMeasure) := by
-  apply PositiveLinearMap.tendsto_law_of_tendsto_apply_pow (fun _ => φ) (fun _ => hφ)
-    (fun N : ℕ => (Real.sqrt N)⁻¹ • ∑ j ∈ range N, a j)
-    (fun _ => (IsSelfAdjoint.all _).smul (isSelfAdjoint_sum _ fun j _ => ha j))
-    (K := Set.Icc (0 - 2 * Real.sqrt v) (0 + 2 * Real.sqrt v)) isCompact_Icc
-  · exact ae_iff.mp (Probability.ae_mem_Icc_semicircleReal 0 v)
-  · intro n
-    simpa only [RCLike.real_smul_eq_coe_smul (K := ℂ), RCLike.ofReal_eq_complex_ofReal,
-      Complex.ofReal_inv, Measure.coe_toProbabilityMeasure, PositiveLinearMap.coe_toLinearMap] using
-      h.tendsto_apply_inv_sqrt_smul_sum_pow_of_apply_pow_eq hφ hid hcen hv n
+  exact tendsto_law_inv_sqrt_smul_sum_of_tendsto_moments hφ ha
+    (h.tendsto_apply_inv_sqrt_smul_sum_pow_of_apply_pow_eq hφ hid hcen hv)
 
 end TauCeti.IsFreelyIndependentElements
