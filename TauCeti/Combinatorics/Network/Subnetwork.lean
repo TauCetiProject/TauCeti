@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Data.Set.Lattice.Bounded
 public import TauCeti.Combinatorics.Network.Basic
+public import TauCeti.Combinatorics.Network.Walk
 
 /-!
 # Subnetworks
@@ -17,8 +18,8 @@ vertex subtype, and its bounds are inherited from the ambient network.
 
 This file supplies the elementary set operations used to build subnetworks: induced subnetworks,
 restriction and deletion of vertices or arrows, singleton and empty subnetworks, and unions inside
-a fixed ambient network. In particular, isolated selected vertices remain visible under every
-operation that does not delete them.
+a fixed ambient network. It also defines the subnetwork traced by a directed walk. In particular,
+isolated selected vertices remain visible under every operation that does not delete them.
 -/
 
 public section
@@ -431,3 +432,39 @@ theorem singleton_le_induced {x : V} {W : Set V} (hx : x ∈ W) :
 end Subnetwork
 
 end TauCeti.Network
+
+namespace TauCeti.ArrowWalk
+
+variable {K : Type w} {V : Type u} [LE K] {N : Network K V}
+
+/-- The subnetwork traced by a directed walk: exactly its visited vertices and traversed arrows. -/
+def toSubnetwork {s t : V} (p : ArrowWalk N.Hom s t) : N.Subnetwork where
+  vertexSet := {x | x ∈ p.vertices}
+  arrowSet := {a | a ∈ p.arrows}
+  source_mem := by
+    rintro ⟨x, y, e⟩ he
+    exact p.source_mem_vertices_of_mem_arrows he
+  target_mem := by
+    rintro ⟨x, y, e⟩ he
+    rw [vertices_eq_cons_map_target_arrows]
+    exact List.mem_cons_of_mem _ (List.mem_map_of_mem (f := fun a ↦ a.2.1) he)
+
+@[simp]
+theorem toSubnetwork_vertexSet {s t : V} (p : ArrowWalk N.Hom s t) :
+    p.toSubnetwork.vertexSet = {x | x ∈ p.vertices} :=
+  (rfl)
+
+@[simp]
+theorem toSubnetwork_arrowSet {s t : V} (p : ArrowWalk N.Hom s t) :
+    p.toSubnetwork.arrowSet = {a | a ∈ p.arrows} :=
+  (rfl)
+
+theorem source_mem_toSubnetwork {s t : V} (p : ArrowWalk N.Hom s t) :
+    s ∈ p.toSubnetwork.vertexSet :=
+  @Quiver.Path.start_mem_vertices V ⟨N.Hom⟩ s t p
+
+theorem target_mem_toSubnetwork {s t : V} (p : ArrowWalk N.Hom s t) :
+    t ∈ p.toSubnetwork.vertexSet :=
+  @Quiver.Path.end_mem_vertices V ⟨N.Hom⟩ s t p
+
+end TauCeti.ArrowWalk

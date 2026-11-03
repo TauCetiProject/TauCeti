@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Combinatorics.Network.Subnetwork
-public import TauCeti.Combinatorics.Network.Walk
 
 /-!
 # Directed ear decompositions
@@ -17,11 +16,10 @@ its internal vertices and all its arrows are new. A closed directed ear is a dir
 meets the current subnetwork only at its base vertex and likewise uses only new arrows. Loops are
 therefore closed ears of length one.
 
-The trace of a walk is the subnetwork consisting of exactly its visited vertices and traversed
-arrows. Adjoining an ear takes the union of its trace with the current subnetwork. A directed ear
-decomposition records every prefix subnetwork, the ear adjoined at each successor stage, and its
-initial and final subnetworks. Prefixes are again decompositions, which lets arguments follow the
-construction order.
+The subnetwork of a walk consists of exactly its visited vertices and traversed arrows. Adjoining
+an ear takes its union with the current subnetwork. A directed ear decomposition records every
+prefix subnetwork, the ear adjoined at each successor stage, and its initial and final subnetworks.
+Prefixes are again decompositions, which lets arguments follow the construction order.
 
 ## References
 
@@ -35,47 +33,6 @@ namespace TauCeti
 universe u v w
 
 variable {K : Type w} {V : Type u} [LE K] {N : Network K V}
-
-namespace ArrowWalk
-
-/-- The subnetwork traced by a directed walk: exactly its visited vertices and traversed arrows. -/
-def trace {s t : V} (p : ArrowWalk N.Hom s t) : N.Subnetwork where
-  vertexSet := {x | x ∈ p.vertices}
-  arrowSet := {a | a ∈ p.arrows}
-  source_mem := by
-    rintro ⟨x, y, e⟩ he
-    induction p with
-    | nil => simp at he
-    | @cons z _ p e' ih =>
-      change ⟨x, y, e⟩ ∈ ArrowWalk.arrows (ArrowWalk.cons p e') at he
-      change x ∈ ArrowWalk.vertices (ArrowWalk.cons p e')
-      rw [arrows_cons, List.mem_append, List.mem_singleton] at he
-      rw [vertices_cons, List.concat_eq_append, List.mem_append, List.mem_singleton]
-      exact he.elim (fun h ↦ Or.inl (ih h)) fun h ↦ by
-        obtain rfl : x = z := (Sigma.mk.inj_iff.1 h).1
-        exact Or.inl (@Quiver.Path.end_mem_vertices V ⟨N.Hom⟩ _ _ p)
-  target_mem := by
-    rintro ⟨x, y, e⟩ he
-    rw [vertices_eq_cons_map_target_arrows]
-    exact List.mem_cons_of_mem _ (List.mem_map_of_mem (f := fun a ↦ a.2.1) he)
-
-@[simp]
-theorem trace_vertexSet {s t : V} (p : ArrowWalk N.Hom s t) :
-    p.trace.vertexSet = {x | x ∈ p.vertices} :=
-  (rfl)
-
-@[simp]
-theorem trace_arrowSet {s t : V} (p : ArrowWalk N.Hom s t) :
-    p.trace.arrowSet = {a | a ∈ p.arrows} :=
-  (rfl)
-
-theorem source_mem_trace {s t : V} (p : ArrowWalk N.Hom s t) : s ∈ p.trace.vertexSet :=
-  @Quiver.Path.start_mem_vertices V ⟨N.Hom⟩ s t p
-
-theorem target_mem_trace {s t : V} (p : ArrowWalk N.Hom s t) : t ∈ p.trace.vertexSet :=
-  @Quiver.Path.end_mem_vertices V ⟨N.Hom⟩ s t p
-
-end ArrowWalk
 
 namespace Network
 
@@ -116,53 +73,17 @@ theorem ext {P Q : OpenEar S} (hsource : P.source = Q.source)
   cases hwalk
   rfl
 
-/-- The trace subnetwork of an open ear. -/
-def trace (P : OpenEar S) : N.Subnetwork :=
-  P.walk.trace
-
-@[simp]
-theorem trace_vertexSet (P : OpenEar S) : P.trace.vertexSet = {x | x ∈ P.walk.vertices} :=
-  ArrowWalk.trace_vertexSet P.walk
-
-@[simp]
-theorem trace_arrowSet (P : OpenEar S) : P.trace.arrowSet = {a | a ∈ P.walk.arrows} :=
-  ArrowWalk.trace_arrowSet P.walk
-
-/-- The trace of an open ear meets the old vertex set exactly at its two endpoints. -/
-theorem mem_trace_vertexSet_and_mem_iff (P : OpenEar S) (x : V) :
-    x ∈ P.trace.vertexSet ∧ x ∈ S.vertexSet ↔ x = P.source ∨ x = P.target := by
+/-- The subnetwork of an open ear meets the old vertex set exactly at its two endpoints. -/
+theorem mem_toSubnetwork_vertexSet_and_mem_iff (P : OpenEar S) (x : V) :
+    x ∈ P.walk.toSubnetwork.vertexSet ∧ x ∈ S.vertexSet ↔ x = P.source ∨ x = P.target := by
   constructor
   · rintro ⟨hx, hxS⟩
     by_contra h
     simp only [not_or] at h
-    exact P.internal_notMem x hx h.1 h.2 hxS
+    exact P.internal_notMem x (by simpa using hx) h.1 h.2 hxS
   · rintro (rfl | rfl)
-    · exact ⟨P.walk.source_mem_trace, P.source_mem⟩
-    · exact ⟨P.walk.target_mem_trace, P.target_mem⟩
-
-/-- No arrow of an open ear belongs to the old subnetwork. -/
-theorem disjoint_arrowSet (P : OpenEar S) : Disjoint P.trace.arrowSet S.arrowSet := by
-  rw [Set.disjoint_left]
-  exact fun a ha hS ↦ P.arrows_notMem a ha hS
-
-/-- Adjoin an open ear to the current subnetwork. -/
-def adjoin (P : OpenEar S) : N.Subnetwork :=
-  S ⊔ P.trace
-
-theorem le_adjoin (P : OpenEar S) : S ≤ P.adjoin :=
-  Network.Subnetwork.le_union_left _ _
-
-@[simp]
-theorem adjoin_vertexSet (P : OpenEar S) :
-    P.adjoin.vertexSet = S.vertexSet ∪ {x | x ∈ P.walk.vertices} :=
-  (Network.Subnetwork.vertexSet_union S P.trace).trans <|
-    congrArg (S.vertexSet ∪ ·) P.trace_vertexSet
-
-@[simp]
-theorem adjoin_arrowSet (P : OpenEar S) :
-    P.adjoin.arrowSet = S.arrowSet ∪ {a | a ∈ P.walk.arrows} :=
-  (Network.Subnetwork.arrowSet_union S P.trace).trans <|
-    congrArg (S.arrowSet ∪ ·) P.trace_arrowSet
+    · exact ⟨P.walk.source_mem_toSubnetwork, P.source_mem⟩
+    · exact ⟨P.walk.target_mem_toSubnetwork, P.target_mem⟩
 
 end OpenEar
 
@@ -178,7 +99,7 @@ structure ClosedEar (S : N.Subnetwork) where
   /-- The base already belongs to the current subnetwork. -/
   base_mem : base ∈ S.vertexSet
   /-- The cycle meets the current subnetwork only at its base. -/
-  vertex_mem_of_mem : ∀ x ∈ walk.vertices, x ∈ S.vertexSet → x = base
+  eq_base_of_mem : ∀ x ∈ walk.vertices, x ∈ S.vertexSet → x = base
   /-- Every arrow of the ear is new. -/
   arrows_notMem : ∀ a ∈ walk.arrows, a ∉ S.arrowSet
 
@@ -196,49 +117,13 @@ theorem ext {P Q : ClosedEar S} (hbase : P.base = Q.base) (hwalk : HEq P.walk Q.
   cases hwalk
   rfl
 
-/-- The trace subnetwork of a closed ear. -/
-def trace (P : ClosedEar S) : N.Subnetwork :=
-  P.walk.trace
-
-@[simp]
-theorem trace_vertexSet (P : ClosedEar S) : P.trace.vertexSet = {x | x ∈ P.walk.vertices} :=
-  ArrowWalk.trace_vertexSet P.walk
-
-@[simp]
-theorem trace_arrowSet (P : ClosedEar S) : P.trace.arrowSet = {a | a ∈ P.walk.arrows} :=
-  ArrowWalk.trace_arrowSet P.walk
-
-/-- The trace of a closed ear meets the old vertex set exactly at its base. -/
-theorem mem_trace_vertexSet_and_mem_iff (P : ClosedEar S) (x : V) :
-    x ∈ P.trace.vertexSet ∧ x ∈ S.vertexSet ↔ x = P.base := by
+/-- The subnetwork of a closed ear meets the old vertex set exactly at its base. -/
+theorem mem_toSubnetwork_vertexSet_and_mem_iff (P : ClosedEar S) (x : V) :
+    x ∈ P.walk.toSubnetwork.vertexSet ∧ x ∈ S.vertexSet ↔ x = P.base := by
   constructor
-  · exact fun h ↦ P.vertex_mem_of_mem x h.1 h.2
+  · exact fun h ↦ P.eq_base_of_mem x (by simpa using h.1) h.2
   · rintro rfl
-    exact ⟨P.walk.source_mem_trace, P.base_mem⟩
-
-/-- No arrow of a closed ear belongs to the old subnetwork. -/
-theorem disjoint_arrowSet (P : ClosedEar S) : Disjoint P.trace.arrowSet S.arrowSet := by
-  rw [Set.disjoint_left]
-  exact fun a ha hS ↦ P.arrows_notMem a ha hS
-
-/-- Adjoin a closed ear to the current subnetwork. -/
-def adjoin (P : ClosedEar S) : N.Subnetwork :=
-  S ⊔ P.trace
-
-theorem le_adjoin (P : ClosedEar S) : S ≤ P.adjoin :=
-  Network.Subnetwork.le_union_left _ _
-
-@[simp]
-theorem adjoin_vertexSet (P : ClosedEar S) :
-    P.adjoin.vertexSet = S.vertexSet ∪ {x | x ∈ P.walk.vertices} :=
-  (Network.Subnetwork.vertexSet_union S P.trace).trans <|
-    congrArg (S.vertexSet ∪ ·) P.trace_vertexSet
-
-@[simp]
-theorem adjoin_arrowSet (P : ClosedEar S) :
-    P.adjoin.arrowSet = S.arrowSet ∪ {a | a ∈ P.walk.arrows} :=
-  (Network.Subnetwork.arrowSet_union S P.trace).trans <|
-    congrArg (S.arrowSet ∪ ·) P.trace_arrowSet
+    exact ⟨P.walk.source_mem_toSubnetwork, P.base_mem⟩
 
 end ClosedEar
 
@@ -253,43 +138,48 @@ namespace Ear
 
 variable {S : N.Subnetwork}
 
-/-- The trace subnetwork of an ear. -/
-def trace : Ear S → N.Subnetwork
-  | .open P => P.trace
-  | .closed P => P.trace
+/-- The subnetwork consisting of the vertices and arrows traversed by an ear. -/
+def toSubnetwork : Ear S → N.Subnetwork
+  | .open P => P.walk.toSubnetwork
+  | .closed P => P.walk.toSubnetwork
 
 /-- Adjoin an ear to the current subnetwork. -/
-def adjoin : Ear S → N.Subnetwork
-  | .open P => P.adjoin
-  | .closed P => P.adjoin
+def adjoin (P : Ear S) : N.Subnetwork :=
+  S ⊔ P.toSubnetwork
 
 @[simp]
-theorem trace_open (P : OpenEar S) : (Ear.open P).trace = P.trace :=
+theorem toSubnetwork_open (P : OpenEar S) : (Ear.open P).toSubnetwork = P.walk.toSubnetwork :=
   Eq.refl _
 
 @[simp]
-theorem trace_closed (P : ClosedEar S) : (Ear.closed P).trace = P.trace :=
-  Eq.refl _
-
-@[simp]
-theorem adjoin_open (P : OpenEar S) : (Ear.open P).adjoin = P.adjoin :=
-  Eq.refl _
-
-@[simp]
-theorem adjoin_closed (P : ClosedEar S) : (Ear.closed P).adjoin = P.adjoin :=
+theorem toSubnetwork_closed (P : ClosedEar S) :
+    (Ear.closed P).toSubnetwork = P.walk.toSubnetwork :=
   Eq.refl _
 
 /-- Adjoining an ear retains the current subnetwork. -/
-theorem le_adjoin (P : Ear S) : S ≤ P.adjoin := by
-  cases P with
-  | «open» P => exact P.le_adjoin
-  | closed P => exact P.le_adjoin
+theorem le_adjoin (P : Ear S) : S ≤ P.adjoin :=
+  Network.Subnetwork.le_union_left _ _
 
-/-- The trace subnetwork of an ear is contained in the subnetwork obtained by adjoining it. -/
-theorem trace_le_adjoin (P : Ear S) : P.trace ≤ P.adjoin := by
+/-- The subnetwork of an ear is contained in the subnetwork obtained by adjoining it. -/
+theorem toSubnetwork_le_adjoin (P : Ear S) : P.toSubnetwork ≤ P.adjoin :=
+  Network.Subnetwork.le_union_right _ _
+
+/-- No arrow of an ear belongs to the old subnetwork. -/
+theorem disjoint_arrowSet (P : Ear S) : Disjoint P.toSubnetwork.arrowSet S.arrowSet := by
+  rw [Set.disjoint_left]
   cases P with
-  | «open» P => exact Network.Subnetwork.le_union_right _ _
-  | closed P => exact Network.Subnetwork.le_union_right _ _
+  | «open» P => exact fun a ha hS ↦ P.arrows_notMem a (by simpa using ha) hS
+  | closed P => exact fun a ha hS ↦ P.arrows_notMem a (by simpa using ha) hS
+
+@[simp]
+theorem adjoin_vertexSet (P : Ear S) :
+    P.adjoin.vertexSet = S.vertexSet ∪ P.toSubnetwork.vertexSet :=
+  Network.Subnetwork.sup_vertexSet _ _
+
+@[simp]
+theorem adjoin_arrowSet (P : Ear S) :
+    P.adjoin.arrowSet = S.arrowSet ∪ P.toSubnetwork.arrowSet :=
+  Network.Subnetwork.sup_arrowSet _ _
 
 end Ear
 
@@ -360,11 +250,11 @@ theorem stage_le_succ (D : EarDecomposition T) (i : Fin D.length) :
 theorem monotone_stage (D : EarDecomposition T) : Monotone D.stage :=
   Fin.monotone_iff_le_succ.2 D.stage_le_succ
 
-/-- The trace of the displayed ear is contained in its successor stage. -/
-theorem ear_trace_le_stage_succ (D : EarDecomposition T) (i : Fin D.length) :
-    (D.ear i).trace ≤ D.stage i.succ := by
+/-- The subnetwork of the displayed ear is contained in its successor stage. -/
+theorem ear_toSubnetwork_le_stage_succ (D : EarDecomposition T) (i : Fin D.length) :
+    (D.ear i).toSubnetwork ≤ D.stage i.succ := by
   rw [D.stage_succ]
-  exact (D.ear i).trace_le_adjoin
+  exact (D.ear i).toSubnetwork_le_adjoin
 
 /-- Induction over the stages of an ear decomposition, following the order in which the ears are
 adjoined. -/
@@ -372,16 +262,11 @@ theorem stage_induction (D : EarDecomposition T) (P : N.Subnetwork → Prop)
     (hzero : P (N.singletonSubnetwork D.initialVertex))
     (hsucc : ∀ i : Fin D.length, P (D.stage i.castSucc) → P ((D.ear i).adjoin))
     (j : Fin (D.length + 1)) : P (D.stage j) := by
-  have h : ∀ m (hm : m ≤ D.length), P (D.stage ⟨m, Nat.lt_succ_of_le hm⟩) := by
-    intro m hm
-    induction m with
-    | zero => simpa [D.stage_zero] using hzero
-    | succ m ih =>
-      have hm' : m < D.length := Nat.lt_of_succ_le hm
-      rw [show (⟨m + 1, Nat.lt_succ_of_le hm⟩ : Fin (D.length + 1)) =
-        (⟨m, hm'⟩ : Fin D.length).succ by ext; rfl, D.stage_succ]
-      exact hsucc ⟨m, hm'⟩ (ih hm'.le)
-  exact h j (Nat.le_of_lt_succ j.isLt)
+  induction j using Fin.induction with
+  | zero => simpa [D.stage_zero] using hzero
+  | succ i ih =>
+    rw [D.stage_succ]
+    exact hsucc i ih
 
 /-- The first `k` ears, as an ear decomposition of the `k`-th stage. -/
 @[expose]
@@ -398,24 +283,26 @@ def prefixDecomposition (D : EarDecomposition T) (k : Fin (D.length + 1)) :
     exact Fin.ext rfl
 
 @[simp]
-theorem prefix_length (D : EarDecomposition T) (k : Fin (D.length + 1)) :
+theorem prefixDecomposition_length (D : EarDecomposition T) (k : Fin (D.length + 1)) :
     (D.prefixDecomposition k).length = k :=
   rfl
 
 @[simp]
-theorem prefix_initialVertex (D : EarDecomposition T) (k : Fin (D.length + 1)) :
+theorem prefixDecomposition_initialVertex (D : EarDecomposition T)
+    (k : Fin (D.length + 1)) :
     (D.prefixDecomposition k).initialVertex = D.initialVertex :=
   rfl
 
 @[simp]
-theorem prefix_stage (D : EarDecomposition T) (k : Fin (D.length + 1))
+theorem prefixDecomposition_stage (D : EarDecomposition T) (k : Fin (D.length + 1))
     (i : Fin (k + 1)) :
     (D.prefixDecomposition k).stage i =
       D.stage ⟨i, i.isLt.trans_le (Nat.succ_le_succ (Nat.le_of_lt_succ k.isLt))⟩ :=
   rfl
 
 @[simp]
-theorem prefix_ear (D : EarDecomposition T) (k : Fin (D.length + 1)) (i : Fin k) :
+theorem prefixDecomposition_ear (D : EarDecomposition T) (k : Fin (D.length + 1))
+    (i : Fin k) :
     (D.prefixDecomposition k).ear i =
       D.ear ⟨i, i.isLt.trans_le (Nat.le_of_lt_succ k.isLt)⟩ :=
   rfl
