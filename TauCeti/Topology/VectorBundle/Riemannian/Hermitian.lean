@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Topology.VectorBundle.Pullback
 public import TauCeti.Topology.VectorBundle.Riemannian.Basic
 
 /-!
@@ -19,7 +20,7 @@ vector bundle over `𝕜` with such a norm is then continuous
 (`ContinuousWithinAt.inner_bundle_of_continuousFiberNorm`), as it is for Mathlib's continuous
 Riemannian bundles. A continuous Riemannian bundle has a continuous fibre norm, so the real case
 is an instance of this class; so is every trivial bundle, whose fibre is any normed space, in
-particular a complex inner product space.
+particular a complex inner product space. The class passes to pullback bundles.
 
 This is the continuity hypothesis under which the Gram–Schmidt process is continuous in
 `TauCeti.Topology.VectorBundle.GramSchmidt`, and under which the orthonormal frame bundle over
@@ -32,6 +33,8 @@ vector bundle.
 
 ## Main results
 
+* `ContinuousWithinAt.norm_bundle_of_continuousFiberNorm`: the fibre norm of a continuous map
+  into the fibres is continuous, with `ContinuousAt`, `ContinuousOn` and `Continuous` versions.
 * `ContinuousWithinAt.inner_bundle_of_continuousFiberNorm`: inner products of continuous maps into
   the fibres are continuous, with `ContinuousAt`, `ContinuousOn` and `Continuous` versions.
 -/
@@ -64,9 +67,52 @@ instance (B : Type*) [TopologicalSpace B] (F : Type*) [NormedAddCommGroup F] :
     ContinuousFiberNorm F (Trivial B F) :=
   ⟨continuous_norm.comp (continuous_snd.comp (Trivial.isInducing_toProd B F).continuous)⟩
 
+/-- The fibre norm of a pullback bundle is the fibre norm of the original bundle composed with
+the canonical lift of total spaces, which is continuous. -/
+instance [ContinuousFiberNorm F E] {B' : Type*} [TopologicalSpace B'] (f : B' → B) :
+    ContinuousFiberNorm F (f *ᵖ E) :=
+  ⟨(ContinuousFiberNorm.continuous_norm (F := F) (E := E)).comp (Pullback.continuous_lift F E f)⟩
+
 end TauCeti
 
 open TauCeti
+
+section Norm
+
+omit [TopologicalSpace B] [NormedAddCommGroup F]
+
+variable [ContinuousFiberNorm F E] {X : Type*} [TopologicalSpace X] {b : X → B}
+  {v : ∀ y, E (b y)} {s : Set X} {x : X}
+
+/-- Given a map into the fibres of a bundle with a continuous fibre norm, continuous within `s`
+at `x`, its fibre norm is continuous within `s` at `x`. -/
+theorem ContinuousWithinAt.norm_bundle_of_continuousFiberNorm
+    (hv : ContinuousWithinAt (fun y ↦ (v y : TotalSpace F E)) s x) :
+    ContinuousWithinAt (fun y ↦ ‖v y‖) s x :=
+  ContinuousFiberNorm.continuous_norm.continuousAt.comp_continuousWithinAt hv
+
+/-- Given a map into the fibres of a bundle with a continuous fibre norm, continuous at `x`, its
+fibre norm is continuous at `x`. -/
+theorem ContinuousAt.norm_bundle_of_continuousFiberNorm
+    (hv : ContinuousAt (fun y ↦ (v y : TotalSpace F E)) x) :
+    ContinuousAt (fun y ↦ ‖v y‖) x :=
+  ContinuousFiberNorm.continuous_norm.continuousAt.comp hv
+
+/-- Given a map into the fibres of a bundle with a continuous fibre norm, continuous on `s`, its
+fibre norm is continuous on `s`. -/
+theorem ContinuousOn.norm_bundle_of_continuousFiberNorm
+    (hv : ContinuousOn (fun y ↦ (v y : TotalSpace F E)) s) :
+    ContinuousOn (fun y ↦ ‖v y‖) s :=
+  ContinuousFiberNorm.continuous_norm.comp_continuousOn hv
+
+/-- Given a continuous map into the fibres of a bundle with a continuous fibre norm, its fibre
+norm is continuous. -/
+theorem Continuous.norm_bundle_of_continuousFiberNorm
+    (hv : Continuous fun y ↦ (v y : TotalSpace F E)) :
+    Continuous fun y ↦ ‖v y‖ :=
+  ContinuousFiberNorm.continuous_norm.comp hv
+
+end Norm
 
 variable {𝕜 : Type*} [RCLike 𝕜] [NormedSpace 𝕜 F] [∀ x, InnerProductSpace 𝕜 (E x)]
   [FiberBundle F E] [VectorBundle 𝕜 F E] [ContinuousFiberNorm F E]
@@ -94,7 +140,7 @@ theorem ContinuousWithinAt.inner_bundle_of_continuousFiberNorm
       (FiberBundle.continuousWithinAt_totalSpace F _).2 ⟨hb, (hv'.add (hw'.const_smul c))
         |>.congr_of_eventuallyEq (hmem.mono (hformula c)) (hformula c x hx)⟩
     exact RCLike.continuous_ofReal.continuousAt.comp_continuousWithinAt
-      (ContinuousFiberNorm.continuous_norm.continuousAt.comp_continuousWithinAt hvw)
+      hvw.norm_bundle_of_continuousFiberNorm
   have h1 := hn 1
   have h2 := hn (-1)
   have h3 := hn (-RCLike.I)

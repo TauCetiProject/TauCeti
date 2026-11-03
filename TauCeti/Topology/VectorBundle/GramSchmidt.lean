@@ -61,8 +61,7 @@ theorem ContinuousWithinAt.gramSchmidt_bundle
     have hnorm (i : ι) (hi : i < n) :
         ContinuousWithinAt (fun y ↦ ((‖gramSchmidt 𝕜 (fun j ↦ v j y) i‖ : ℝ) : 𝕜)) s x :=
       RCLike.continuous_ofReal.continuousAt.comp_continuousWithinAt
-        (TauCeti.ContinuousFiberNorm.continuous_norm.continuousAt.comp_continuousWithinAt
-          (ih i hi))
+        (ih i hi).norm_bundle_of_continuousFiberNorm
     have hcont := (hc n).sub <| tendsto_finsetSum (Finset.Iio n) fun i hi ↦
       let hi' := Finset.mem_Iio.mp hi
       (((ih i hi').inner_bundle_of_continuousFiberNorm (hv n)).div ((hnorm i hi').pow 2)
@@ -91,7 +90,7 @@ theorem ContinuousWithinAt.gramSchmidtNormed_bundle
   have hg := ContinuousWithinAt.gramSchmidt_bundle hv hli n
   have hn : ContinuousWithinAt (fun y ↦ ((‖gramSchmidt 𝕜 (fun i ↦ v i y) n‖ : ℝ) : 𝕜)) s x :=
     RCLike.continuous_ofReal.continuousAt.comp_continuousWithinAt
-      (TauCeti.ContinuousFiberNorm.continuous_norm.continuousAt.comp_continuousWithinAt hg)
+      hg.norm_bundle_of_continuousFiberNorm
   let e := trivializationAt F E (b x)
   obtain ⟨hb, hc⟩ := (FiberBundle.continuousWithinAt_totalSpace F _).1 hg
   have hmem : ∀ᶠ y in 𝓝[s] x, b y ∈ e.baseSet :=
