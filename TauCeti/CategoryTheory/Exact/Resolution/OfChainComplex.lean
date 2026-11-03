@@ -6,8 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.BigOperators.Fin
-public import Mathlib.CategoryTheory.Abelian.Projective.Resolution
-public import TauCeti.CategoryTheory.Preadditive.Projective.Basic
 public import TauCeti.CategoryTheory.Exact.Abelian
 public import TauCeti.CategoryTheory.Exact.Resolution.ChainComplex
 
@@ -36,19 +34,14 @@ under isomorphisms. The result is a finite `P`-resolution of `X` of length `n`.
 
 When `K` vanishes in all degrees above `n`, the complex of this resolution is isomorphic to `K`,
 compatibly with the augmentations, so passing from the complex to the recursive presentation loses
-nothing. Alternating sums along the resolution are alternating sums of the terms `K₀, …, Kₙ`. In
-particular, a projective resolution in Mathlib's sense whose term in degree `n + 1` vanishes is a
-finite resolution by projective objects of length `n`, so the Euler-class and resolution-theorem
-API of finite resolutions applies to it.
+nothing. Alternating sums along the resolution are alternating sums of the terms `K₀, …, Kₙ`.
 
 ## Main definitions
 
-* `TauCeti.ExactStructure.FiniteResolution.ofChainComplex`: the finite resolution obtained from a
-  bounded exact augmented complex.
+* `TauCeti.ExactStructure.FiniteResolution.ofChainComplex`: the finite resolution obtained from an
+  augmented complex exact in degrees `0, …, n` with `Kₙ₊₁ = 0`.
 * `TauCeti.ExactStructure.FiniteResolution.toChainComplexOfChainComplexIso`: the complex of that
   resolution is the original complex, when the latter vanishes above the length.
-* `CategoryTheory.ProjectiveResolution.toFiniteResolution`: a bounded projective resolution as a
-  finite resolution by projectives.
 
 ## Main results
 
@@ -57,9 +50,6 @@ API of finite resolutions applies to it.
   the identification of complexes carries the augmentation of the resolution to `ε`.
 * `TauCeti.ExactStructure.FiniteResolution.foldAlternating_ofChainComplex`: an alternating fold
   along the resolution is the alternating sum over the terms `K₀, …, Kₙ`.
-* `CategoryTheory.ProjectiveResolution.length_toFiniteResolution` and
-  `CategoryTheory.ProjectiveResolution.foldAlternating_toFiniteResolution`: the same for a bounded
-  projective resolution.
 
 ## Implementation notes
 
@@ -200,7 +190,8 @@ private theorem length_go (m i : ℕ) (h : i + m = n) : (go h₀ hK hn hP m i h)
   | zero => rw [go, length_base]
   | succ m ih => rw [go, length_step, ih]
 
-/-- The resolution of a bounded exact augmented complex has the length of the complex. -/
+/-- The resolution of an exact augmented complex with `Kₙ₊₁ = 0` has length `n`, the truncation
+degree; the terms of the complex above `n + 1` play no role. -/
 @[simp]
 theorem length_ofChainComplex : (ofChainComplex h₀ hK hn hP).length = n :=
   length_go h₀ hK hn hP n 0 (zero_add n)
@@ -322,41 +313,3 @@ end Complex
 end Exactness
 
 end TauCeti.ExactStructure.FiniteResolution
-
-namespace CategoryTheory.ProjectiveResolution
-
-open TauCeti TauCeti.ExactStructure
-
-variable {C : Type u} [Category.{v} C] [Abelian C] {X : C}
-
-/-- The augmentation of a projective resolution, as a morphism to `X`, is an epimorphism. -/
-private instance epi_toSingle₀Equiv (R : ProjectiveResolution X) :
-    Epi (ChainComplex.toSingle₀Equiv _ X R.π).1 :=
-  inferInstanceAs (Epi (R.π.f 0))
-
-/-- A projective resolution whose terms vanish from degree `n + 1` on, as a finite resolution of
-length `n` by projective objects for the canonical exact structure. -/
-noncomputable def toFiniteResolution (R : ProjectiveResolution X) {n : ℕ}
-    (hn : IsZero (R.complex.X (n + 1))) :
-    (ExactStructure.abelian C).FiniteResolution (isProjective C) X :=
-  FiniteResolution.ofChainComplex (hε := (ChainComplex.toSingle₀Equiv _ X R.π).2) R.exact₀
-    (fun i _ => R.exact_succ i) hn (fun i _ => R.projective i)
-
-/-- The finite resolution of a bounded projective resolution has the length of the bound. -/
-@[simp]
-theorem length_toFiniteResolution (R : ProjectiveResolution X) {n : ℕ}
-    (hn : IsZero (R.complex.X (n + 1))) : (R.toFiniteResolution hn).length = n :=
-  FiniteResolution.length_ofChainComplex _ _ _ _
-
-/-- Alternating sums along the finite resolution of a bounded projective resolution are the
-alternating sums over its terms. -/
-theorem foldAlternating_toFiniteResolution (R : ProjectiveResolution X) {n : ℕ}
-    (hn : IsZero (R.complex.X (n + 1))) {A : Type*} [AddCommGroup A]
-    (f : ∀ Z : C, isProjective C Z → A)
-    (hf : ∀ {Y Z : C} (_ : Y ≅ Z) (hY : isProjective C Y) (hZ : isProjective C Z),
-      f Y hY = f Z hZ) :
-    (R.toFiniteResolution hn).foldAlternating f =
-      ∑ i : Fin (n + 1), (-1 : ℤ) ^ (i : ℕ) • f (R.complex.X i) (R.projective i) :=
-  FiniteResolution.foldAlternating_ofChainComplex _ _ _ _ f hf
-
-end CategoryTheory.ProjectiveResolution
