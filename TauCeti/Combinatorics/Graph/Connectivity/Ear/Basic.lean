@@ -161,6 +161,12 @@ theorem vertexSet_add (e : G.Ear H) : V(e.add) = V(H) ∪ V(e.toGraph) :=
 theorem edgeSet_add (e : G.Ear H) : E(e.add) = E(H) ∪ E(e.toGraph) :=
   e.compatible.edgeSet_union
 
+/-- Adjoining an ear is the least graph containing its base and traced graph. -/
+@[simp]
+theorem add_le_iff (e : G.Ear H) {K : Graph α β} :
+    e.add ≤ K ↔ H ≤ K ∧ e.toGraph ≤ K :=
+  e.compatible.union_le_iff
+
 /-- The base is a subgraph of the result of adjoining an ear. -/
 theorem base_le_add (e : G.Ear H) : H ≤ e.add :=
   e.compatible.left_le_union
