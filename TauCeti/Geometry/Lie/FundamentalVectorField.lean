@@ -48,6 +48,8 @@ constructions, such as the defining equation `d⟨μ, ξ⟩ = ι_{ξ_M} ω` of a
   `ξ_M(x) = 0`.
 * `TauCeti.mlieBracket_fundamentalVectorField`: `[ξ_M, η_M] = -⁅ξ, η⁆_M`, so `ξ ↦ ξ_M` is an
   antihomomorphism of Lie algebras.
+* `TauCeti.adjointContinuousLinearMap_mem_isotropy_smul_iff`: the isotropy algebras along an orbit
+  are conjugate, `Ad_g ξ ∈ 𝔤_{g • x}` exactly when `ξ ∈ 𝔤_x`.
 
 ## References
 
@@ -436,6 +438,33 @@ theorem InfinitesimalAction.fundamental_prod
   ext ξ
   simp only [InfinitesimalAction.fundamental_apply, InfinitesimalAction.prod_apply,
     fundamentalVectorField_prod]
+
+/-- The tangent adjoint maps only need a `C¹` Lie group. -/
+local instance lieGroupOne : LieGroup I 1 G :=
+  LieGroup.of_le (I := I) (G := G) (m := 1) (n := minSmoothness ℝ 3)
+    ((by norm_num : (1 : ℕ∞ω) ≤ 3).trans le_minSmoothness)
+
+/-- **Isotropy algebras along an orbit are conjugate.** `Ad_g ξ` lies in the isotropy algebra of
+`g • x` exactly when `ξ` lies in that of `x`, matching the conjugation `G_{g • x} = g G_x g⁻¹` of
+the stabilizers. This follows from the equivariance `g_* ξ_M = (Ad_g ξ)_M` of fundamental vector
+fields (`TauCeti.mfderiv_smul_fundamentalVectorField`). -/
+theorem adjointContinuousLinearMap_mem_isotropy_smul_iff {g : G} {ξ : GroupLieAlgebra I G}
+    {x : M} :
+    Lie.adjointContinuousLinearMap (I := I) g ξ ∈
+        (InfinitesimalAction.fundamental I G I' M).isotropy (g • x) ↔
+      ξ ∈ (InfinitesimalAction.fundamental I G I' M).isotropy x := by
+  have : ContMDiffSMul I I' 1 G M := ContMDiffSMul.of_le (M := M) ENat.LEInfty.out
+  -- The forward implication for every `g`, pushing `ξ_M(x) = 0` forward along `y ↦ g • y`.
+  have key (g : G) (ξ : GroupLieAlgebra I G) (x : M)
+      (h : ξ ∈ (InfinitesimalAction.fundamental I G I' M).isotropy x) :
+      Lie.adjointContinuousLinearMap (I := I) g ξ ∈
+        (InfinitesimalAction.fundamental I G I' M).isotropy (g • x) := by
+    rw [InfinitesimalAction.mem_isotropy_iff, InfinitesimalAction.fundamental_apply] at h ⊢
+    rw [← mfderiv_smul_fundamentalVectorField, h, map_zero]
+  refine ⟨fun h ↦ ?_, key g ξ x⟩
+  have := key g⁻¹ _ _ h
+  rwa [inv_smul_smul, ← ContinuousLinearMap.comp_apply, ← Lie.adjointContinuousLinearMap_mul,
+    inv_mul_cancel, Lie.adjointContinuousLinearMap_one, ContinuousLinearMap.id_apply] at this
 
 end InfinitesimalAction
 

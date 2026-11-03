@@ -9,7 +9,6 @@ public import TauCeti.Geometry.Lie.FundamentalVectorField
 public import TauCeti.Geometry.Lie.Subgroup.Embedded
 public import TauCeti.Geometry.Lie.Tangent.LieEquiv
 
-import TauCeti.Geometry.Lie.Adjoint.Exponential.Basic
 import TauCeti.Topology.Algebra.ConstMulAction
 
 /-!
@@ -28,7 +27,8 @@ exactly when `ξ_M(x) = 0`: the curve `t ↦ exp (t ξ) • x` is an integral cu
 `x`, which is the constant curve exactly when `ξ_M(x) = 0`, by uniqueness of integral curves
 (`TauCeti.mulInvariantExp_smul_smul_eq_iff`).
 Consequently **the Lie algebra of `G_x` is `𝔤_x`**. Along an orbit, the isotropy algebras are
-conjugate, `𝔤_{g • x} = Ad_g 𝔤_x`, as the stabilizers are.
+conjugate, `𝔤_{g • x} = Ad_g 𝔤_x`, as the stabilizers are
+(`TauCeti.adjointContinuousLinearMap_mem_isotropy_smul_iff`).
 
 The action is **locally free** at `x` when `G_x` is discrete. Since `G_x` is an embedded Lie
 subgroup modelled on its Lie algebra `𝔤_x`, this happens exactly when `𝔤_x = 0`, that is, when
@@ -42,8 +42,6 @@ with discrete stabilizer, at which the form is nondegenerate, a regular point of
   continuous action of a finite-dimensional real Lie group is an embedded Lie subgroup.
 * `TauCeti.Lie.lieSubalgebraOfSubgroup_stabilizer`: **the Lie algebra of `G_x` is the isotropy
   algebra `𝔤_x`**, transported to left-invariant derivations by evaluation at the identity.
-* `TauCeti.Lie.adjointContinuousLinearMap_mem_isotropy_smul_iff`: `Ad_g ξ ∈ 𝔤_{g • x}` exactly
-  when `ξ ∈ 𝔤_x`.
 * `TauCeti.Lie.discreteTopology_stabilizer_iff_isotropy_eq_bot`: the stabilizer is discrete
   exactly when the isotropy algebra is trivial.
 
@@ -76,28 +74,6 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   {E' : Type*} [NormedAddCommGroup E'] [NormedSpace ℝ E']
   {H' : Type*} [TopologicalSpace H'] {I' : ModelWithCorners ℝ E' H'}
   {M : Type*} [TopologicalSpace M] [ChartedSpace H' M] [MulAction G M]
-
-/-- **Isotropy algebras along an orbit are conjugate.** `Ad_g ξ` lies in the isotropy algebra of
-`g • x` exactly when `ξ` lies in that of `x`, matching the conjugation `G_{g • x} = g G_x g⁻¹` of
-the stabilizers. This follows from the equivariance `g_* ξ_M = (Ad_g ξ)_M` of fundamental vector
-fields (`TauCeti.mfderiv_smul_fundamentalVectorField`). -/
-theorem adjointContinuousLinearMap_mem_isotropy_smul_iff [CompleteSpace E] [CompleteSpace E']
-    [IsManifold I' ∞ M] [ContMDiffSMul I I' ∞ G M] {g : G} {ξ : GroupLieAlgebra I G} {x : M} :
-    adjointContinuousLinearMap (I := I) g ξ ∈
-        (InfinitesimalAction.fundamental I G I' M).isotropy (g • x) ↔
-      ξ ∈ (InfinitesimalAction.fundamental I G I' M).isotropy x := by
-  have : ContMDiffSMul I I' 1 G M := ContMDiffSMul.of_le (M := M) ENat.LEInfty.out
-  -- The forward implication for every `g`, pushing `ξ_M(x) = 0` forward along `y ↦ g • y`.
-  have key (g : G) (ξ : GroupLieAlgebra I G) (x : M)
-      (h : ξ ∈ (InfinitesimalAction.fundamental I G I' M).isotropy x) :
-      adjointContinuousLinearMap (I := I) g ξ ∈
-        (InfinitesimalAction.fundamental I G I' M).isotropy (g • x) := by
-    rw [InfinitesimalAction.mem_isotropy_iff, InfinitesimalAction.fundamental_apply] at h ⊢
-    rw [← mfderiv_smul_fundamentalVectorField, h, map_zero]
-  refine ⟨fun h ↦ ?_, key g ξ x⟩
-  have := key g⁻¹ _ _ h
-  rwa [inv_smul_smul, ← ContinuousLinearMap.comp_apply, ← adjointContinuousLinearMap_mul,
-    inv_mul_cancel, adjointContinuousLinearMap_one, ContinuousLinearMap.id_apply] at this
 
 variable [FiniteDimensional ℝ E]
 
