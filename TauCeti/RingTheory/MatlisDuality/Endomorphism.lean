@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Module.Torsion.QuotientLinearMap
 public import TauCeti.Algebra.Module.Torsion.ResidueField
 public import TauCeti.RingTheory.AdicCompletion.Torsion
 public import TauCeti.RingTheory.Length
@@ -28,12 +27,8 @@ therefore a compatible system of residues modulo `𝔪ⁿ`, that is, an element 
 
 ## Main declarations
 
-* `TauCeti.annihilator_torsionBySet_of_injective`: if `E` is injective and contains a copy of
-  `κ`, then the annihilator of `E[J]` is `J`, for every ideal `J`.
 * `TauCeti.IsInjectiveEnvelope.mem_primaryComponent`: every element of `E` is killed by a power
   of `𝔪`, the hypothesis of `TauCeti.AdicCompletion.torsionModule`.
-* `TauCeti.IsInjectiveEnvelope.exists_eq_smul_subtype`: for an ideal `J` with `R ⧸ J` of finite
-  length, every linear map `E[J] → E` is the inclusion multiplied by a scalar.
 * `TauCeti.IsInjectiveEnvelope.adicCompletionEquivEnd`: the `R`-algebra isomorphism
   `R̂ ≃ End_R(E)` given by the completion action, with `adicCompletionEquivEnd_apply_of_mem` and
   `evalₐ_adicCompletionEquivEnd_symm` computing it and its inverse through residues modulo `𝔪ⁿ`.
@@ -56,34 +51,6 @@ universe u v
 
 variable {R : Type u} [CommRing R] [IsLocalRing R] {E : Type v} [AddCommGroup E] [Module R E]
   {ι : ResidueField R →ₗ[R] E}
-
-/-- If `E` is injective and contains a copy of the residue field, then the elements of `E`
-killed by an ideal `J` have annihilator exactly `J`. -/
-theorem annihilator_torsionBySet_of_injective [Small.{v} R] [Module.Injective R E]
-    (hι : Function.Injective ι) (J : Ideal R) : (torsionBySet R E J).annihilator = J := by
-  refine le_antisymm (fun r hr => ?_) fun r hr => mem_annihilator.mpr fun x hx =>
-    (mem_torsionBySet_iff _ _).mp hx ⟨r, hr⟩
-  -- `E` cogenerates `R ⧸ J`, so the class of `r` is detected by a map `R ⧸ J → E`; that map
-  -- sends `1` into `E[J]`, which `r` kills.
-  rw [← Ideal.Quotient.eq_zero_iff_mem]
-  refine (injective_iff_map_eq_zero _).mp
-    (injective_applyₗ_of_injective (M := R ⧸ J) hι) _ (LinearMap.ext fun f => ?_)
-  simpa [f.apply_quotient_mk_eq_smul_apply_one] using
-    mem_annihilator.mp hr _ (J.quotientLinearMapEquivTorsionBySet E f).prop
-
-/-- **Linear maps out of a layer of the hull are scalar.** Let `E` be an injective envelope of the
-residue field and `J` an ideal with `R ⧸ J` of finite length. Every linear map `E[J] → E` is the
-inclusion multiplied by a scalar. -/
-theorem IsInjectiveEnvelope.exists_eq_smul_subtype [Small.{v} R] (hι : IsInjectiveEnvelope ι)
-    {J : Ideal R} (hJ : IsFiniteLength R (R ⧸ J)) (g : torsionBySet R E J →ₗ[R] E) :
-    ∃ r : R, g = r • (torsionBySet R E J).subtype := by
-  -- `E[J]` is the Matlis dual of `R ⧸ J` through evaluation at `1`, and the composite of `g` with
-  -- this identification is evaluation at some class `[r]`, by finite-length biduality.
-  obtain ⟨m, hm⟩ := (hι.bijective_applyₗ hJ).2
-    (g ∘ₗ (J.quotientLinearMapEquivTorsionBySet E).toLinearMap)
-  obtain ⟨r, rfl⟩ := Ideal.Quotient.mk_surjective m
-  refine ⟨r, LinearMap.ext fun x => ?_⟩
-  simpa using (LinearMap.congr_fun hm ((J.quotientLinearMapEquivTorsionBySet E).symm x)).symm
 
 variable [IsNoetherianRing R]
 
