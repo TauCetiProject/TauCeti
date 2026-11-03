@@ -388,7 +388,7 @@ private def pt : ℕ → G
       letter x (parents.getD p 0 % (2 * n)) * pt (parents.getD p 0 / (2 * n))
     else 1
 termination_by p => p
-decreasing_by all_goals (simp_wf; simp_all)
+decreasing_by simp_wf; simp_all
 
 private theorem pt_zero : pt x parents 0 = 1 := by
   rw [pt.eq_1]
