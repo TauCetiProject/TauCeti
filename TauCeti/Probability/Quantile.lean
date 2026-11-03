@@ -642,13 +642,8 @@ theorem tendsto_upperQuantile_nhdsGT_zero (μ : Measure ℝ) [IsProbabilityMeasu
       (hq.trans_le (quantile_le_upperQuantile μ hu.1 hu.2)))
   · obtain ⟨y, hy⟩ := iInf_lt_iff.mp hb
     obtain ⟨c, hyc, hcb⟩ := EReal.exists_between_coe_real hy
-    have hcdf : 0 < cdf μ c := by
-      rw [cdf_eq_real, measureReal_def]
-      apply ENNReal.toReal_pos
-      · exact ((mem_support_iff_forall y.1).mp y.2 (Iic c)
-          (mem_of_superset (Iio_mem_nhds (EReal.coe_lt_coe_iff.mp hyc))
-            Iio_subset_Iic_self)).ne'
-      · finiteness
+    have hcdf : 0 < cdf μ c :=
+      cdf_pos_of_mem_support_of_lt μ y.2 (EReal.coe_lt_coe_iff.mp hyc)
     filter_upwards [Ioo_mem_nhdsGT hcdf] with u hu
     exact EReal.coe_le_coe_iff.2 (upperQuantile_le_of_lt_cdf μ hu.1 hu.2) |>.trans_lt hcb
 
@@ -660,16 +655,8 @@ theorem tendsto_upperQuantile_nhdsLT_one (μ : Measure ℝ) [IsProbabilityMeasur
   refine tendsto_order.2 ⟨fun a ha ↦ ?_, fun b hb ↦ ?_⟩
   · obtain ⟨y, hy⟩ := lt_iSup_iff.mp ha
     obtain ⟨c, hac, hcy⟩ := EReal.exists_between_coe_real hy
-    have hcdf : cdf μ c < 1 := by
-      have htail : 0 < μ.real (Ioi c) := by
-        rw [measureReal_def]
-        apply ENNReal.toReal_pos
-        · exact ((mem_support_iff_forall y.1).mp y.2 (Ioi c)
-            (Ioi_mem_nhds (EReal.coe_lt_coe_iff.mp hcy))).ne'
-        · finiteness
-      rw [← compl_Iic, probReal_compl_eq_one_sub measurableSet_Iic] at htail
-      rw [cdf_eq_real]
-      linarith
+    have hcdf : cdf μ c < 1 :=
+      cdf_lt_one_of_mem_support_of_lt μ y.2 (EReal.coe_lt_coe_iff.mp hcy)
     filter_upwards [Ioo_mem_nhdsLT hcdf] with u hu
     have hq : c < μ.quantile u :=
       (lt_quantile_iff μ ((cdf_nonneg μ c).trans_lt hu.1) hu.2).2 hu.1
