@@ -424,6 +424,26 @@ lemma twistedChainComplex_X (k : ℕ) :
     (twistedChainComplex L).X k =
       ∐ fun σ : (TopCat.toSSet.obj X) _⦋k⦌ ↦ L.obj (initialVertex σ) := (rfl)
 
+/-- A term of the twisted chain complex is the corresponding simplicial module of chains. -/
+lemma twistedChainComplex_X_eq_twistedChains_obj (k : ℕ) :
+    (twistedChainComplex L).X k = (twistedChains L).obj (Opposite.op ⦋k⦌) := (rfl)
+
+/-- The differential, transported to the simplicial modules, is the native alternating
+face-map differential. -/
+lemma twistedChainComplex_d_eq_objD (k : ℕ) :
+    (twistedChainComplex L).d (k + 1) k =
+      eqToHom (twistedChainComplex_X_eq_twistedChains_obj L (k + 1)) ≫
+        AlgebraicTopology.AlternatingFaceMapComplex.objD (twistedChains L) k ≫
+          eqToHom (twistedChainComplex_X_eq_twistedChains_obj L k).symm := by
+  exact AlgebraicTopology.alternatingFaceMapComplex_obj_d (twistedChains L) k
+
+/-- The simplex inclusions agree under the identification with the simplicial module. -/
+@[reassoc (attr := simp)]
+lemma ιTwistedChainComplex_eqToHom_twistedChains (k : ℕ)
+    (σ : (TopCat.toSSet.obj X) _⦋k⦌) :
+    ιTwistedChainComplex L k σ ≫ eqToHom (twistedChainComplex_X_eq_twistedChains_obj L k) =
+      ιTwistedChains L σ := Category.comp_id _
+
 /-- Under the coproduct identification, a simplex inclusion is the coproduct inclusion. -/
 @[reassoc (attr := simp)]
 lemma ιTwistedChainComplex_eqToHom (k : ℕ)
