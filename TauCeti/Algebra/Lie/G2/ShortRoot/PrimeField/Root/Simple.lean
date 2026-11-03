@@ -118,6 +118,15 @@ theorem simpleRootCharacter_injective : Function.Injective simpleRootCharacter :
   revert h0
   fin_cases i <;> fin_cases j <;> decide
 
+private theorem adjointWeightSpace_liftCharacter_eq_weightTorus (μ : Fin 2 → ℤ) :
+    Derivation.adjointWeightSpace splitMaximalTorus.coordinateMap.hom
+        (Multiplicative.ofAdd (liftCharacter μ)) =
+      Derivation.adjointWeightSpace weightTorusCoordinateMap.hom
+        (SplitTorus.weightCharacter μ) :=
+  (congrArg (Derivation.adjointWeightSpace splitMaximalTorus.coordinateMap.hom)
+    (ofAdd_liftCharacter μ)).trans
+      (adjointWeightSpace_splitMaximalTorus_weightCharacter_eq_weightTorus μ)
+
 /-- **The weight-space criterion in fundamental-weight coordinates.** A tangent vector of the
 carrier lies in the root space of the chosen torus at the character with coordinates `μ` exactly
 when the entries of its matrix vanish off the weight differences equal to `μ`. -/
@@ -126,14 +135,8 @@ private theorem mem_adjointWeightSpace_liftCharacter_iff (μ : Fin 2 → ℤ)
     x ∈ Derivation.adjointWeightSpace splitMaximalTorus.coordinateMap.hom
         (Multiplicative.ofAdd (liftCharacter μ)) ↔
       ∀ i j, weight i - weight j ≠ μ → tangentMatrix x i j = 0 := by
-  have hspace : Derivation.adjointWeightSpace splitMaximalTorus.coordinateMap.hom
-      (Multiplicative.ofAdd (liftCharacter μ)) =
-        Derivation.adjointWeightSpace weightTorusCoordinateMap.hom
-          (SplitTorus.weightCharacter μ) :=
-    (congrArg (Derivation.adjointWeightSpace splitMaximalTorus.coordinateMap.hom)
-      (ofAdd_liftCharacter μ)).trans
-        (adjointWeightSpace_splitMaximalTorus_weightCharacter_eq_weightTorus μ)
-  rw [hspace, mem_adjointWeightSpace_weightCharacter_iff]
+  rw [adjointWeightSpace_liftCharacter_eq_weightTorus,
+    mem_adjointWeightSpace_weightCharacter_iff]
 
 /-! ## Cross-product derivations of a positive weight -/
 
@@ -401,9 +404,7 @@ private theorem adjointWeightSpace_shortSum_eq_span :
   calc
     _ = Derivation.adjointWeightSpace weightTorusCoordinateMap.hom
         (SplitTorus.weightCharacter ![-1, 1]) :=
-      (congrArg (Derivation.adjointWeightSpace splitMaximalTorus.coordinateMap.hom)
-        (ofAdd_liftCharacter ![-1, 1])).trans
-          (adjointWeightSpace_splitMaximalTorus_weightCharacter_eq_weightTorus _)
+      adjointWeightSpace_liftCharacter_eq_weightTorus _
     _ = _ := by
       apply adjointWeightSpace_weightCharacter_eq_span_of
       · rw [tangentMatrix_shortSumVector]
@@ -421,9 +422,7 @@ private theorem adjointWeightSpace_highestShort_eq_span :
   calc
     _ = Derivation.adjointWeightSpace weightTorusCoordinateMap.hom
         (SplitTorus.weightCharacter ![1, 0]) :=
-      (congrArg (Derivation.adjointWeightSpace splitMaximalTorus.coordinateMap.hom)
-        (ofAdd_liftCharacter ![1, 0])).trans
-          (adjointWeightSpace_splitMaximalTorus_weightCharacter_eq_weightTorus _)
+      adjointWeightSpace_liftCharacter_eq_weightTorus _
     _ = _ := by
       apply adjointWeightSpace_weightCharacter_eq_span_of
       · rw [tangentMatrix_highestShortVector]

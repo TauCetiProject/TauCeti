@@ -150,6 +150,7 @@ private theorem counitPointsMulEquiv_map_carrierPoint (g : points (ZMod 3)) :
   simp [GeneralLinear.genericMatrix_apply, carrierQuotient]
 
 /-- Conjugation by any carrier point acts on tangent matrices as `X ↦ g X g⁻¹`. -/
+@[simp]
 theorem tangentMatrix_conjugateTangent (g : points (ZMod 3))
     (x : Module.Dual (ZMod 3) (Bialgebra.CotangentSpace (ZMod 3) carrierAlgebra)) :
     tangentMatrix (conjugateTangent g x) =
@@ -176,23 +177,21 @@ theorem tangentMatrix_injective : Function.Injective tangentMatrix := by
 /-- The identity carrier point acts trivially on tangent vectors. -/
 @[simp]
 theorem conjugateTangent_one : conjugateTangent 1 = LinearMap.id := by
-  apply LinearMap.ext
-  intro x
-  apply tangentMatrix_injective
-  rw [tangentMatrix_conjugateTangent]
-  simp
+  ext x
+  simp [conjugateTangent]
 
 /-- Conjugation by a product is the composite of the two tangent conjugations. -/
 theorem conjugateTangent_mul (g h : points (ZMod 3)) :
     conjugateTangent (g * h) = (conjugateTangent g).comp (conjugateTangent h) := by
-  apply LinearMap.ext
-  intro x
-  apply tangentMatrix_injective
-  change tangentMatrix (conjugateTangent (g * h) x) =
-    tangentMatrix (conjugateTangent g (conjugateTangent h x))
-  rw [tangentMatrix_conjugateTangent, tangentMatrix_conjugateTangent,
-    tangentMatrix_conjugateTangent]
-  simp [Matrix.mul_assoc]
+  ext x
+  simp [conjugateTangent, map_mul, Module.End.mul_apply]
+
+/-- Conjugation by a product acts by the two successive tangent conjugations. -/
+@[simp]
+theorem conjugateTangent_mul_apply (g h : points (ZMod 3))
+    (x : Module.Dual (ZMod 3) (Bialgebra.CotangentSpace (ZMod 3) carrierAlgebra)) :
+    conjugateTangent (g * h) x = conjugateTangent g (conjugateTangent h x) := by
+  rw [conjugateTangent_mul, LinearMap.comp_apply]
 
 /-- **The carrier tangent matrix carries brackets to commutators.** The matrix in `𝔤𝔩₇(𝔽₃)` of the
 bracket of two tangent vectors of the carrier, read as counit-valued derivations, is the
@@ -525,25 +524,12 @@ theorem adjointWeightSpace_splitMaximalTorus_weightCharacter_eq_weightTorus (μ 
         (SplitTorus.weightCharacter μ) := by
   ext x
   rw [mem_adjointWeightSpace_splitMaximalTorus_iff, mem_adjointWeightSpace_iff]
+  simp only [ne_eq, SplitTorus.weightCharacter_injective.eq_iff]
   congr! 2
-  constructor
-  · intro h hne
-    apply h
-    intro heq
-    apply hne
-    apply Multiplicative.toAdd.injective
-    ext j
-    have hj := congrArg (fun χ : Multiplicative (ULift.{0} (Fin 2) →₀ ℤ) =>
-      Multiplicative.toAdd χ (ULift.up j)) heq
-    simpa only [SplitTorus.toAdd_weightCharacter, Pi.sub_apply] using hj
-  · intro h hne
-    apply h
-    intro heq
-    apply hne
-    apply Multiplicative.toAdd.injective
-    ext j
-    have hj := congrArg (fun χ : Multiplicative (Fin 2 →₀ ℤ) => Multiplicative.toAdd χ j.down) heq
-    simpa only [SplitTorus.toAdd_weightCharacter, Pi.sub_apply] using hj
+  apply imp_congr_left
+  apply not_congr
+  exact ⟨fun h => funext fun j => congrFun h (ULift.up j),
+    fun h => funext fun j => congrFun h j.down⟩
 
 /-- The tangent vector of a numbered simple root subgroup has the weight of its root. -/
 theorem rootVector_mem_adjointWeightSpace (k : Fin 2 ⊕ Fin 2) :

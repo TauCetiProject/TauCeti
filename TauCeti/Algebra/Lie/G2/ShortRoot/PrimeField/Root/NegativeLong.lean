@@ -137,9 +137,8 @@ theorem negativeLongRootVector_mem_adjointWeightSpace (i : Fin 2) :
       (SplitTorus.weightCharacter (negativeLongRootWeight i)) := by
   rw [mem_adjointWeightSpace_iff]
   intro a b h
-  rw [tangentMatrix_negativeLongRootVector]
-  exact (show negativeLongMatrix i a b = 0 from
-    negativeLongMatrix_support i a b (fun he => h (congrArg _ he)))
+  rw [tangentMatrix_negativeLongRootVector, ← negativeLongMatrix]
+  exact negativeLongMatrix_support i a b (fun he => h (congrArg _ he))
 
 private theorem exists_eq_smul_negativeLongMatrix (i : Fin 2)
     (X : Matrix (Fin 7) (Fin 7) (ZMod 3))
