@@ -131,7 +131,7 @@ theorem RaisesDegree.of_shift {G : Type*} [AddCommGroup G] {wt : η → G} (degr
 theorem RaisesDegree.mul [Fintype η] (hX : RaisesDegree deg d X) (hY : RaisesDegree deg d' Y) :
     RaisesDegree deg (d + d') (X * Y) := by
   intro r s h
-  rw [mul_apply] at h
+  rw [Matrix.mul_apply] at h
   obtain ⟨t, -, hne⟩ := Finset.exists_ne_zero_of_sum_ne_zero h
   have hr := hX r t (left_ne_zero_of_mul hne)
   have hs := hY t s (right_ne_zero_of_mul hne)
@@ -309,7 +309,7 @@ theorem list_prod_map_inj_of_raisesDegree (wt : η → G) (degree : G →+ ℤ) 
   · simp [hXrs]
   have hwt := hX i hi.1 r s hXrs
   have hzero := hS.apply_eq_zero (r := r) (s := s) (by simp [hwt, n])
-  rw [sum_apply, Finset.sum_eq_single i] at hzero
+  rw [_root_.Matrix.sum_apply, Finset.sum_eq_single i] at hzero
   · simpa [sub_mul] using hzero
   · intro j hj hji
     simp only [List.mem_toFinset, List.mem_filter, decide_eq_true_iff] at hj

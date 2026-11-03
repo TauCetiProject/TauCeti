@@ -77,7 +77,7 @@ private theorem eq_add_nsmul_of_toMatrix_integralDividedPower_ne_zero [Fintype �
   by_contra hne
   apply hrs
   rw [LinearMap.toMatrix_apply]
-  apply repr_eq_zero_of_isCartanWeightVector e h ρ M hM b wt hwt _ hne
+  apply repr_eq_zero_of_isCartanWeightVector h ρ M b wt hwt _ hne
   rw [coe_integralDividedPower_apply]
   exact IsCartanWeightVector.integralDividedPower e hα (hwt s) n
 
