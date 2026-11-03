@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Geometry.RealAlgebraic.Semialgebraic.Topology
 public import Mathlib.Analysis.Calculus.LineDeriv.Basic
-import TauCeti.Geometry.RealAlgebraic.Semialgebraic.QuantifierElimination
 import TauCeti.ModelTheory.Order
 
 /-!
