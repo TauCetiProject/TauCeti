@@ -28,7 +28,7 @@ file shows that such a `C` descends to its subalgebra of fixed points `Cᴳ`:
   to a `B`-algebra map `C → C'`, and the extension is `G`-equivariant
   (`TauCeti.MulSemiringAction.existsUnique_algHom_extend_fixedPoints`); conversely a
   `G`-equivariant `B`-algebra map restricts to the fixed points
-  (`TauCeti.MulSemiringAction.fixedPointsAlgHom`).
+  (`AlgHom.fixedPointsAlgHom`).
 
 So passing to fixed points is effective on objects and fully faithful on `G`-equivariant maps:
 an affine scheme over `Spec B` with a compatible action of `G` is the base change of an affine
@@ -106,8 +106,8 @@ theorem algHom_ext_fixedPoints
 /-- **Descent of morphisms.** For a free action of a finite group `G` on `B` with ring of
 invariants `A`, and `B`-algebras `C`, `C'` with semilinear actions of `G`, every `A`-algebra map
 `φ : Cᴳ →ₐ[A] C'ᴳ` extends to a unique `B`-algebra map `f : C →ₐ[B] C'`, and this extension is
-`G`-equivariant. Together with `fixedPointsAlgHom`, this identifies `G`-equivariant `B`-algebra
-maps `C → C'` with `A`-algebra maps `Cᴳ → C'ᴳ`. -/
+`G`-equivariant. Together with `AlgHom.fixedPointsAlgHom`, this identifies `G`-equivariant
+`B`-algebra maps `C → C'` with `A`-algebra maps `Cᴳ → C'ᴳ`. -/
 theorem existsUnique_algHom_extend_fixedPoints
     (hG : ∀ g : G, g ≠ 1 → Ideal.span (Set.range fun b : B ↦ g • b - b) = ⊤)
     (φ : FixedPoints.subalgebra A C G →ₐ[A] FixedPoints.subalgebra A C' G) :
