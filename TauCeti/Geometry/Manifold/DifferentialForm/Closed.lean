@@ -141,6 +141,17 @@ theorem isClosed_const {V F : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V]
   rw [hconst]
   exact mextDeriv_const A
 
+/-- The coordinate one-form `dz` of the real line is closed. -/
+theorem isClosed_realLineCoordForm : realLineCoordForm.IsClosed := by
+  -- `dz` agrees pointwise with a constant form, which is closed.
+  have h : realLineCoordForm = SmoothForm.const
+      (ContinuousAlternatingMap.ofSubsingleton ℝ ℝ ℝ 0 (ContinuousLinearMap.id ℝ ℝ)) := by
+    ext z v
+    rw [realLineCoordForm_apply, const_apply]
+    rfl
+  rw [h]
+  exact isClosed_const _
+
 section Pullback
 
 variable {E' H' M' : Type*} [NormedAddCommGroup E'] [NormedSpace ℝ E'] [TopologicalSpace H']

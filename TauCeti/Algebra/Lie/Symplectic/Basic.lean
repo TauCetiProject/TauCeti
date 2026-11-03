@@ -30,6 +30,10 @@ matrix past `J`.
   `Aᵀ = J * (-A) * J⁻¹`.
 * `LieAlgebra.Symplectic.mul_J_add_J_mul_transpose_eq_zero`: the additive form
   `A * J + J * Aᵀ = 0`.
+* `LieAlgebra.Symplectic.transpose_mem_sp`: the symplectic Lie algebra is stable under
+  transpose.
+* `LieAlgebra.Symplectic.J_conj_eq_neg_transpose`: on symplectic Lie matrices, conjugation by `J`
+  is negative transpose.
 * `Matrix.mem_symplecticLieAlgebra_iff`: the entrywise block criterion, with symmetric
   off-diagonal blocks and opposite transposed diagonal blocks.
 * `Matrix.J_mulVec`: the action of the standard symplectic matrix on a vector.
@@ -84,6 +88,18 @@ theorem mem_sp_iff_mul_J_add_J_mul_transpose_eq_zero (A : Matrix (l ⊕ l) (l �
     rw [← sub_eq_zero.mp h']
     noncomm_ring
 
+/-- Transpose preserves the symplectic Lie algebra. -/
+theorem transpose_mem_sp {X : Matrix (l ⊕ l) (l ⊕ l) R} (hX : X ∈ sp l R) :
+    Xᵀ ∈ sp l R := by
+  rw [mem_sp, transpose_transpose, eq_neg_iff_add_eq_zero]
+  exact mul_J_add_J_mul_transpose_eq_zero hX
+
+/-- On the symplectic Lie algebra, conjugation by `J` is negative transpose. -/
+theorem J_conj_eq_neg_transpose {X : Matrix (l ⊕ l) (l ⊕ l) R} (hX : X ∈ sp l R) :
+    J l R * X * (J l R)⁻¹ = -Xᵀ := by
+  rw [(mem_sp_iff_transpose_eq_J_conj_neg X).mp hX]
+  simp
+
 end LieAlgebra.Symplectic
 
 namespace Matrix
@@ -106,7 +122,8 @@ theorem mem_symplecticLieAlgebra_iff (A : Matrix (l ⊕ l) (l ⊕ l) R) :
     mul_zero, zero_mul, mul_one, one_mul, mul_neg, neg_mul, add_zero, zero_add,
     fromBlocks_inj, neg_inj, neg_neg]
   simp only [← Matrix.ext_iff, transpose_apply, toBlocks₁₁, toBlocks₁₂,
-    toBlocks₂₁, toBlocks₂₂, neg_apply, Matrix.of_apply, fromBlocks_apply₁₁, fromBlocks_apply₁₂,
+    toBlocks₂₁, toBlocks₂₂, Matrix.neg_apply, Matrix.of_apply, fromBlocks_apply₁₁,
+      fromBlocks_apply₁₂,
     fromBlocks_apply₂₁, fromBlocks_apply₂₂]
   grind
 

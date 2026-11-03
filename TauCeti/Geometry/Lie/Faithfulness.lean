@@ -59,6 +59,4 @@ theorem lieMap_injective
   have hnear : φ =ᶠ[𝓝 (1 : G)] ψ :=
     (eventually_lieExp_lieLog (I := I) (G := G)).mono fun g hg => by
       rw [← hg, map_lieExp, map_lieExp, h]
-  apply DFunLike.coe_injective
-  exact congrArg (fun f : G →* G' => (f : G → G'))
-    (MonoidHom.eq_of_eventuallyEq_one hnear)
+  exact MonoidHomClass.eq_of_eventuallyEq_one hnear

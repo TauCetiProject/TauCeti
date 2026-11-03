@@ -51,6 +51,8 @@ of the arrows, so these preprojective algebras are self-injective as well.
   `28`.
 * `TauCeti.isFrobeniusFunctional_signlessPreprojectiveD4FrobeniusFunctional`: the functional is a
   Frobenius functional.
+* `TauCeti.isSymmetricFrobeniusFunctional_signlessPreprojectiveD4FrobeniusFunctional`: the
+  functional is symmetric when `2 = 0`.
 * `TauCeti.moduleInjective_signlessPreprojectiveAlgebra_D4` and
   `TauCeti.moduleInjective_op_signlessPreprojectiveAlgebra_D4`: the signless algebra of `D₄` is
   left and right self-injective.
@@ -648,6 +650,33 @@ theorem isFrobeniusFunctional_signlessPreprojectiveD4FrobeniusFunctional :
   · refine b.repr.injective (Finsupp.ext fun u => ?_)
     rw [map_zero, Finsupp.coe_zero, Pi.zero_apply]
     exact eq_zero_of_forall_sum_d4Gram_mul k (fun s => (hright y s).symm.trans (hy _)) u
+
+private theorem d4Gram_eq_or_neg :
+    ∀ s ∈ T, ∀ t ∈ T, d4Gram s t = d4Gram t s ∨ d4Gram s t = -d4Gram t s := by
+  decide
+
+/-- When `2 = 0`, the Frobenius functional of `D₄` is symmetric. In particular it can detect
+nonzero classes modulo additive commutators. -/
+theorem isSymmetricFrobeniusFunctional_signlessPreprojectiveD4FrobeniusFunctional
+    (h2 : (2 : k) = 0) : (φ).IsSymmetricFrobeniusFunctional := by
+  refine ⟨isFrobeniusFunctional_signlessPreprojectiveD4FrobeniusFunctional k, ?_⟩
+  have hneg (a : k) : -a = a := by
+    apply neg_eq_iff_add_eq_zero.mpr
+    rw [← two_mul, h2, zero_mul]
+  have hgram (s t : T) : (d4Gram s t : k) = d4Gram t s := by
+    rcases d4Gram_eq_or_neg s s.2 t t.2 with h | h
+    · rw [h]
+    · rw [h, Int.cast_neg, hneg]
+  have hpair : (LinearMap.mul k Π).compr₂ (φ) = ((LinearMap.mul k Π).compr₂ (φ)).flip := by
+    apply (signlessPreprojectiveD4Basis k).ext
+    intro s
+    apply (signlessPreprojectiveD4Basis k).ext
+    intro t
+    simpa only [LinearMap.compr₂_apply, LinearMap.mul_apply', LinearMap.flip_apply,
+      signlessPreprojectiveD4Basis_apply,
+      signlessPreprojectiveD4FrobeniusFunctional_mul k s.2 t.2,
+      signlessPreprojectiveD4FrobeniusFunctional_mul k t.2 s.2] using hgram s t
+  exact LinearMap.congr_fun₂ hpair
 
 end CommRing
 

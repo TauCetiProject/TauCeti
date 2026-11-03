@@ -5,11 +5,15 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Data.Finsupp.Weight
 public import Mathlib.Algebra.Module.Submodule.Bilinear
+public import Mathlib.Algebra.MvPolynomial.Funext
 public import Mathlib.Algebra.Order.Interval.Set.SuccPred
 public import Mathlib.Algebra.Polynomial.Sequence
 public import Mathlib.Data.Finsupp.Weight
 public import Mathlib.RingTheory.MvPolynomial.Basic
+public import TauCeti.RingTheory.MvPolynomial.Finrank
+public import TauCeti.LinearAlgebra.Basis.Pi
 
 /-!
 # The submodules of polynomials of bounded total degree
@@ -17,9 +21,15 @@ public import Mathlib.RingTheory.MvPolynomial.Basic
 Mathlib's `MvPolynomial.restrictTotalDegree σ R m` is the submodule of polynomials of total degree
 at most `m`. This file records that these submodules increase with `m`, that a monomial of degree
 at most `m` lies in the `m`-th one, and that the `m`-th one is spanned by those monomials, so that
-a linear statement about polynomials of bounded degree reduces to monomials. The monomials may be
-replaced by products `∏ᵢ Sₖᵢ(Xᵢ)` of the members of a polynomial sequence `S` in the separate
-variables, for instance the integer-valued binomial polynomials.
+a linear statement about polynomials of bounded degree reduces to monomials. These monomials form
+a basis whose coordinates are the coefficients, giving finite coordinates on tuples of
+bounded-degree polynomials; evaluating such tuples is faithful over an infinite integral domain,
+by Mathlib's `MvPolynomial.funext`. Raising the degree bound leaves the evaluation unchanged and
+zero-pads the coordinates. The homogeneous polynomials of degree `d` have the analogous
+coordinates, from `TauCeti.homogeneousMonomialBasis`, and evaluation, and their inclusion among
+the polynomials of total degree at most `d` again zero-pads the coordinates. As a spanning family,
+the monomials may be replaced by products `∏ᵢ Sₖᵢ(Xᵢ)` of the members of a polynomial sequence
+`S` in the separate variables, for instance the integer-valued binomial polynomials.
 
 ## Main results
 
@@ -28,6 +38,20 @@ variables, for instance the integer-valued binomial polynomials.
   degree at most `m`.
 * `MvPolynomial.restrictTotalDegree_eq_span`: the monomials of degree at most `m` span the
   polynomials of total degree at most `m`.
+* `MvPolynomial.basisRestrictTotalDegree`: the monomial basis of the polynomials of total degree
+  at most `m`, whose coordinates are the coefficients.
+* `MvPolynomial.boundedCoefficientEquiv`: monomial coefficients as finite coordinates on tuples of
+  bounded-degree polynomials.
+* `MvPolynomial.tupleEvaluation`, `MvPolynomial.tupleEvaluation_injective`: evaluation of tuples
+  of polynomials from a submodule as vector-valued functions is linear, and injective over an
+  infinite integral domain, for instance for the polynomials of bounded total degree.
+* `MvPolynomial.boundedCoefficientEquiv_inclusion_comp_eq_extendByZero`: including a submodule of
+  polynomials supported on a set of exponents of degree at most `e` among the polynomials of total
+  degree at most `e` extends the coefficients by zero.
+* `MvPolynomial.boundedCoefficientEquiv_inclusion_comp`: raising the degree bound extends the
+  finite coefficient coordinates by zero.
+* `MvPolynomial.boundedCoefficientEquiv_inclusion_comp_homogeneous`: including homogeneous
+  polynomials in a bounded-degree space extends their coordinates by zero.
 * `MvPolynomial.aeval_mem_restrictTotalDegree`: substituting linear forms for the variables does
   not raise the total degree.
 * `MvPolynomial.span_prod_aeval_X_le`: products of a triangular family of one-variable polynomials
@@ -52,6 +76,15 @@ theorem restrictTotalDegree_mono : Monotone (restrictTotalDegree σ R) :=
   fun _ _ h p hp ↦
     (mem_restrictTotalDegree σ _ p).2 (((mem_restrictTotalDegree σ _ p).1 hp).trans h)
 
+/-- A polynomial of total degree at most `d` has zero coefficients at exponents of degree
+above `d`. -/
+theorem coeff_eq_zero_of_mem_restrictTotalDegree {d : ℕ} {p : MvPolynomial σ R}
+    (hp : p ∈ restrictTotalDegree σ R d) {a : σ →₀ ℕ} (ha : d < a.degree) :
+    p.coeff a = 0 := by
+  apply coeff_eq_zero_of_totalDegree_lt
+  rw [← Finsupp.degree_apply]
+  exact ((mem_restrictTotalDegree σ d p).mp hp).trans_lt ha
+
 /-- A monomial whose exponent has degree at most `m` has total degree at most `m`. -/
 theorem monomial_mem_restrictTotalDegree {s : σ →₀ ℕ} {m : ℕ} (h : s.degree ≤ m) (r : R) :
     monomial s r ∈ restrictTotalDegree σ R m :=
@@ -59,15 +92,182 @@ theorem monomial_mem_restrictTotalDegree {s : σ →₀ ℕ} {m : ℕ} (h : s.de
     simpa [Finsupp.sum, Finsupp.degree_apply] using h
 
 variable (σ R) in
+/-- The polynomials of total degree at most `m` are those supported on exponents of degree at
+most `m`. -/
+theorem restrictTotalDegree_eq_restrictSupport (m : ℕ) :
+    restrictTotalDegree σ R m = restrictSupport R {s : σ →₀ ℕ | s.degree ≤ m} := by
+  have hs : {s : σ →₀ ℕ | (s.sum fun _ e ↦ e) ≤ m} = {s | s.degree ≤ m} := by
+    ext s
+    simp [Finsupp.sum, Finsupp.degree_apply]
+  rw [restrictTotalDegree, hs]
+
+variable (σ R) in
 /-- The polynomials of total degree at most `m` are spanned by the monomials of degree at most
 `m`. -/
 theorem restrictTotalDegree_eq_span (m : ℕ) :
     restrictTotalDegree σ R m =
       Submodule.span R ((monomial · 1) '' {s : σ →₀ ℕ | s.degree ≤ m}) := by
-  have hs : {s : σ →₀ ℕ | (s.sum fun _ e ↦ e) ≤ m} = {s | s.degree ≤ m} := by
-    ext s
-    simp [Finsupp.sum, Finsupp.degree_apply]
-  rw [restrictTotalDegree, restrictSupport_eq_span, hs]
+  rw [restrictTotalDegree_eq_restrictSupport, restrictSupport_eq_span]
+
+variable (σ R) in
+/-- The monomial basis of the polynomials of total degree at most `m`, indexed by exponents of
+degree at most `m`. -/
+noncomputable def basisRestrictTotalDegree (m : ℕ) :
+    Module.Basis {s : σ →₀ ℕ // s.degree ≤ m} R (restrictTotalDegree σ R m) :=
+  (basisRestrictSupport R {s : σ →₀ ℕ | s.degree ≤ m}).map
+    (LinearEquiv.ofEq _ _ (restrictTotalDegree_eq_restrictSupport σ R m).symm)
+
+/-- The coordinate of a bounded-degree polynomial in the monomial basis is its coefficient. -/
+@[simp]
+theorem basisRestrictTotalDegree_repr_apply (m : ℕ) (p : restrictTotalDegree σ R m)
+    (s : {s : σ →₀ ℕ // s.degree ≤ m}) :
+    (basisRestrictTotalDegree σ R m).repr p s = (p : MvPolynomial σ R).coeff s := (rfl)
+
+/-- A monomial basis vector of the bounded-degree polynomials is the corresponding monomial. -/
+@[simp]
+theorem coe_basisRestrictTotalDegree (m : ℕ) (s : {s : σ →₀ ℕ // s.degree ≤ m}) :
+    (basisRestrictTotalDegree σ R m s : MvPolynomial σ R) = monomial s.1 1 := by
+  classical
+  have h : basisRestrictTotalDegree σ R m s =
+      ⟨monomial s.1 1, monomial_mem_restrictTotalDegree s.2 1⟩ := by
+    refine (basisRestrictTotalDegree σ R m).repr.injective (Finsupp.ext fun t ↦ ?_)
+    simp [Finsupp.single_apply, coeff_monomial, Subtype.ext_iff]
+  rw [h]
+
+section Coordinates
+
+variable {J : Type*}
+
+variable (σ R J) in
+/-- Monomial coefficients identify `J`-indexed tuples of polynomials of total degree at most `d`
+with functions on the pairs of an index and an exponent of degree at most `d`. For finitely many
+variables and indices this index type is finite, so these are finite coordinates. -/
+noncomputable def boundedCoefficientEquiv [Finite σ] (d : ℕ) :
+    (J → restrictTotalDegree σ R d) ≃ₗ[R] (J × {s : σ →₀ ℕ // s.degree ≤ d} → R) :=
+  (basisRestrictTotalDegree σ R d).piEquivFun J
+
+/-- A finite coefficient coordinate is the corresponding monomial coefficient of an entry. -/
+@[simp] theorem boundedCoefficientEquiv_apply [Finite σ] {d : ℕ}
+    (v : J → restrictTotalDegree σ R d) (i : J × {s : σ →₀ ℕ // s.degree ≤ d}) :
+    boundedCoefficientEquiv σ R J d v i = (v i.1 : MvPolynomial σ R).coeff i.2 := by
+  simp [boundedCoefficientEquiv]
+
+/-- The tuple with prescribed finite coefficient coordinates has those monomial coefficients. -/
+@[simp] theorem coeff_boundedCoefficientEquiv_symm_apply [Finite σ] {d : ℕ}
+    (a : J × {s : σ →₀ ℕ // s.degree ≤ d} → R) (j : J) (s : {s : σ →₀ ℕ // s.degree ≤ d}) :
+    (((boundedCoefficientEquiv σ R J d).symm a j : restrictTotalDegree σ R d) :
+      MvPolynomial σ R).coeff s = a (j, s) :=
+  (basisRestrictTotalDegree σ R d).repr_piEquivFun_symm_apply a j s
+
+variable (J) in
+/-- Evaluation of a tuple of polynomials from a submodule `S` as a vector-valued function on
+points. It is linear in the tuple. -/
+noncomputable def tupleEvaluation (S : Submodule R (MvPolynomial σ R)) :
+    (J → S) →ₗ[R] (σ → R) → J → R where
+  toFun v x j := eval x (v j : MvPolynomial σ R)
+  map_add' v w := by
+    funext x j
+    simp
+  map_smul' a v := by
+    funext x j
+    simp
+
+/-- Coordinate evaluation of a tuple of polynomials from a submodule. -/
+@[simp] theorem tupleEvaluation_apply {S : Submodule R (MvPolynomial σ R)} (v : J → S)
+    (x : σ → R) (j : J) :
+    tupleEvaluation J S v x j = eval x (v j : MvPolynomial σ R) := (rfl)
+
+/-- Over an infinite integral domain, tuples of polynomials from a submodule are determined by
+the functions they define: the evaluation map is faithful. -/
+theorem tupleEvaluation_injective {R : Type*} [CommRing R] [IsDomain R] [Infinite R]
+    (S : Submodule R (MvPolynomial σ R)) : Function.Injective (tupleEvaluation J S) :=
+  fun _ _ h =>
+    _root_.funext fun j => Subtype.ext <| MvPolynomial.funext fun x => congrFun (congrFun h x) j
+
+/-- Including a tuple of polynomials into a larger submodule does not change the function it
+defines. -/
+@[simp] theorem tupleEvaluation_inclusion_comp {S T : Submodule R (MvPolynomial σ R)}
+    (h : S ≤ T) (v : J → S) :
+    tupleEvaluation J T (Submodule.inclusion h ∘ v) = tupleEvaluation J S v := (rfl)
+
+/-- Let `p` be a submodule of the polynomials of total degree at most `e` whose members have zero
+coefficients at the exponents outside `Q`, all exponents in `Q` having degree at most `e`.
+Including a tuple from `p` among the polynomials of total degree at most `e` extends its
+coefficients at the exponents in `Q` by zero. -/
+theorem boundedCoefficientEquiv_inclusion_comp_eq_extendByZero [Finite σ]
+    {p : Submodule R (MvPolynomial σ R)} {e : ℕ} (hp : p ≤ restrictTotalDegree σ R e)
+    {Q : (σ →₀ ℕ) → Prop} (hQ : ∀ s, Q s → s.degree ≤ e)
+    (h0 : ∀ x ∈ p, ∀ s, ¬Q s → x.coeff s = 0) (v : J → p) :
+    boundedCoefficientEquiv σ R J e (Submodule.inclusion hp ∘ v) =
+      Function.ExtendByZero.linearMap R R
+        (Prod.map (id : J → J) (Subtype.impEmbedding Q (fun s => s.degree ≤ e) hQ))
+        (fun i : J × Subtype Q => (v i.1 : MvPolynomial σ R).coeff i.2) := by
+  have hinj : Function.Injective
+      (Prod.map (id : J → J) (Subtype.impEmbedding Q (fun s => s.degree ≤ e) hQ)) :=
+    Function.injective_id.prodMap (Subtype.impEmbedding _ _ _).injective
+  ext ⟨j, s, hs'⟩
+  rw [Function.ExtendByZero.linearMap_apply]
+  by_cases hs : Q s
+  · -- The index `(j, ⟨s, hs'⟩)` is the image of `(j, ⟨s, hs⟩)` by definition.
+    rw [show ((j, ⟨s, hs'⟩) : J × {s : σ →₀ ℕ // s.degree ≤ e}) =
+      Prod.map id (Subtype.impEmbedding Q _ hQ) (j, ⟨s, hs⟩) from rfl, hinj.extend_apply]
+    simp
+  · rw [Function.extend_apply' _ _ _ ?_, Pi.zero_apply, boundedCoefficientEquiv_apply,
+      Function.comp_apply, Submodule.coe_inclusion]
+    · exact h0 _ (v j).2 s hs
+    · rintro ⟨⟨j', s', hs''⟩, he⟩
+      exact hs (by cases he; exact hs'')
+
+/-- Raising the degree bound from `d` to `d'` zero-pads the finite coefficient coordinates: they
+are extended by zero along the inclusion of index types, so the new coordinates at exponents of
+degree above `d` vanish. -/
+theorem boundedCoefficientEquiv_inclusion_comp [Finite σ] {d d' : ℕ} (h : d ≤ d')
+    (v : J → restrictTotalDegree σ R d) :
+    boundedCoefficientEquiv σ R J d' (Submodule.inclusion (restrictTotalDegree_mono σ R h) ∘ v) =
+      Function.ExtendByZero.linearMap R R (Prod.map (id : J → J)
+          (Subtype.impEmbedding (fun s : σ →₀ ℕ => s.degree ≤ d) (fun s => s.degree ≤ d')
+            fun _ hs => hs.trans h))
+        (boundedCoefficientEquiv σ R J d v) := by
+  rw [boundedCoefficientEquiv_inclusion_comp_eq_extendByZero _ (Q := fun s => s.degree ≤ d)
+    (fun _ hs => hs.trans h)
+    (fun _ hx _ hs => coeff_eq_zero_of_mem_restrictTotalDegree hx (not_le.1 hs)) v]
+  congr 1
+  ext i
+  exact (boundedCoefficientEquiv_apply v i).symm
+
+/-! ### Homogeneous coordinates
+
+The homogeneous polynomials of degree `d` lie among those of total degree at most `d`. Their
+monomial coordinates `(homogeneousMonomialBasis d).piEquivFun J` are indexed by the exponents of
+degree exactly `d`, their evaluation is `tupleEvaluation`, and including them in a bounded-degree
+space extends these coordinates by zero. -/
+
+variable (σ R) in
+/-- A homogeneous polynomial of degree `d` has total degree at most every `e ≥ d`. -/
+theorem homogeneousSubmodule_le_restrictTotalDegree {d e : ℕ} (h : d ≤ e) :
+    homogeneousSubmodule σ R d ≤ restrictTotalDegree σ R e := fun p hp =>
+  (mem_restrictTotalDegree σ e p).2 <|
+    ((mem_homogeneousSubmodule d p).1 hp).totalDegree_le.trans h
+
+/-- Including homogeneous polynomials of degree `d` in the polynomials of total degree at most
+`e ≥ d` extends their coefficient coordinates by zero along the inclusion of exponents of degree
+`d` among those of degree at most `e`. -/
+theorem boundedCoefficientEquiv_inclusion_comp_homogeneous [Finite σ] {d e : ℕ} (h : d ≤ e)
+    (v : J → homogeneousSubmodule σ R d) :
+    boundedCoefficientEquiv σ R J e
+        (Submodule.inclusion (homogeneousSubmodule_le_restrictTotalDegree σ R h) ∘ v) =
+      Function.ExtendByZero.linearMap R R (Prod.map (id : J → J)
+          (Subtype.impEmbedding (fun s : σ →₀ ℕ => s.degree = d) (fun s => s.degree ≤ e)
+            fun _ hs => hs.le.trans h))
+        ((TauCeti.homogeneousMonomialBasis d).piEquivFun J v) := by
+  rw [boundedCoefficientEquiv_inclusion_comp_eq_extendByZero _ (Q := fun s => s.degree = d)
+    (fun _ hs => hs.le.trans h)
+    (fun x hx _ hs => ((mem_homogeneousSubmodule d x).1 hx).coeff_eq_zero hs) v]
+  congr 1
+  ext i
+  simp
+
+end Coordinates
 
 /-- Substituting polynomials of total degree at most one, for instance linear forms, for the
 variables does not raise the total degree. -/

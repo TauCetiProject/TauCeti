@@ -23,6 +23,11 @@ continuous. For each central element, evaluation is also continuous in the outer
 its quotient topology. No separation assumption on the quotient is needed: the construction
 uses the actual image of inner derivations, not its closure.
 
+This anchor is linear over the center and satisfies the Lie–Rinehart coefficient identity
+`⁅D, z • E⁆ = z • ⁅D, E⁆ + restrictCenter R A D z • E`.
+These identities allow central coefficients in infinitesimal module deformations; they do
+not assert that derivations are linear over the center.
+
 The construction combines `derivationLieAlgebra.restrictCenter`, the quotient by the actual
 inner image, and the universal property `LieIdeal.liftQ`.
 
@@ -31,6 +36,8 @@ inner image, and the universal property `LieIdeal.liftQ`.
 * N. Jacobson, *Lie Algebras* (1962), Chapter I, §2, for restriction to the center.
 * E. Frenkel, *Langlands Correspondence for Loop Groups* (2007), for the action of outer
   derivations on central characters in the critical-level setting.
+* G. S. Rinehart, *Differential forms on general commutative algebras*, Transactions of the
+  American Mathematical Society 108 (1963), 195–222.
 -/
 
 public section
@@ -114,6 +121,28 @@ theorem continuous_restrictCenter_apply (z : Subalgebra.center R A) :
       ).isQuotientMap.continuous_iff.mpr
   simpa only [Function.comp_def, restrictCenter_mkQ] using
     continuousDerivationLieAlgebra.continuous_restrictCenter_apply (R := R) z
+
+/-- The anchor on outer derivations is linear over the center. -/
+@[simp]
+theorem restrictCenter_center_smul (z : Subalgebra.center R A)
+    (D : ContinuousOuterDerivation R A) :
+    restrictCenter R A (z • D) = z • restrictCenter R A D := by
+  obtain ⟨D, rfl⟩ := LieIdeal.surjective_mkQ
+    (continuousInnerDerivation R : A →ₗ⁅R⁆ continuousDerivationLieAlgebra R A).idealRange D
+  rw [← mkQ_center_smul, restrictCenter_mkQ, restrictCenter_mkQ]
+  exact derivationLieAlgebra.restrictCenter_center_smul z _
+
+/-- The Lie–Rinehart identity descends to the quotient by the actual inner image. -/
+theorem lie_center_smul (D E : ContinuousOuterDerivation R A) (z : Subalgebra.center R A) :
+    ⁅D, z • E⁆ = z • ⁅D, E⁆ + restrictCenter R A D z • E := by
+  obtain ⟨D, rfl⟩ := LieIdeal.surjective_mkQ
+    (continuousInnerDerivation R : A →ₗ⁅R⁆ continuousDerivationLieAlgebra R A).idealRange D
+  obtain ⟨E, rfl⟩ := LieIdeal.surjective_mkQ
+    (continuousInnerDerivation R : A →ₗ⁅R⁆ continuousDerivationLieAlgebra R A).idealRange E
+  simpa only [map_add, mkQ_center_smul, LieHom.map_lie, restrictCenter_mkQ] using
+    congrArg (LieIdeal.mkQ (continuousInnerDerivation R :
+      A →ₗ⁅R⁆ continuousDerivationLieAlgebra R A).idealRange)
+      (continuousDerivationLieAlgebra.lie_center_smul D E z)
 
 end ContinuousOuterDerivation
 

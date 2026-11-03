@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.DifferentialForm.Basic
-public import TauCeti.LinearAlgebra.BilinearForm.Multilinear
+public import TauCeti.LinearAlgebra.BilinearMap.Multilinear
 public import Mathlib.Geometry.Manifold.VectorBundle.ContMDiffSection
 public import TauCeti.Geometry.Manifold.VectorBundle.ContinuousAlternatingMap
 import TauCeti.Geometry.Manifold.ContMDiff.ContinuousAlternatingMap
@@ -693,6 +693,19 @@ theorem const_apply {V F : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V]
   rw [const_toRoughForm, ContinuousAlternatingMap.compContinuousLinearMap_apply]
   rfl
 
+/-- The coordinate one-form `dz` of the real line. -/
+def realLineCoordForm : SmoothForm 𝓘(ℝ) ℝ ℝ 1 :=
+  const (ContinuousAlternatingMap.ofSubsingleton ℝ ℝ ℝ 0 (ContinuousLinearMap.id ℝ ℝ))
+
+/-- The coordinate one-form `dz` of the real line sends a tangent vector to itself. -/
+@[simp]
+theorem realLineCoordForm_apply (z : ℝ) (v : Fin 1 → TangentSpace 𝓘(ℝ) z) :
+    realLineCoordForm.1 z v = v 0 := by
+  rw [realLineCoordForm, const_apply]
+  -- Tangent vectors of `ℝ` are real numbers, on which `NormedSpace.fromTangentSpace` is the
+  -- identity.
+  rfl
+
 section Evaluation
 
 variable {E' H' N : Type*} [NormedAddCommGroup E'] [NormedSpace ℝ E'] [TopologicalSpace H']
@@ -723,7 +736,7 @@ This generalizes `SmoothTwoForm.bilinFormAt` from
 `LinearMap.BilinForm`, including the symplectic constructions. -/
 def bilinFormAt (φ : SmoothForm I M ℝ 2) (x : M) :
     LinearMap.BilinForm ℝ (TangentSpace I x) :=
-  MultilinearMap.toBilinForm (φ.1 x).toMultilinearMap
+  MultilinearMap.toBilinMap (φ.1 x).toMultilinearMap
 
 @[simp]
 theorem bilinFormAt_apply (φ : SmoothForm I M ℝ 2) (x : M) (v w : TangentSpace I x) :
@@ -733,7 +746,7 @@ theorem bilinFormAt_apply (φ : SmoothForm I M ℝ 2) (x : M) (v w : TangentSpac
 /-- The bilinear form represented by a degree-two smooth form is alternating. -/
 theorem isAlt_bilinFormAt (φ : SmoothForm I M ℝ 2) (x : M) :
     (φ.bilinFormAt x).IsAlt := by
-  apply MultilinearMap.isAlt_toBilinForm
+  apply MultilinearMap.isAlt_toBilinMap
   intro v
   exact (φ.1 x).map_eq_zero_of_eq _ (by simp) Fin.zero_ne_one
 

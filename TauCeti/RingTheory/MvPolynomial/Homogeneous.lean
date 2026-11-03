@@ -8,8 +8,11 @@ module
 public import Mathlib.Algebra.Order.Antidiag.Finsupp
 public import Mathlib.Algebra.Polynomial.Degree.Operations
 public import Mathlib.RingTheory.MvPolynomial.Homogeneous
+public import Mathlib.RingTheory.RootsOfUnity.PrimitiveRoots
 import Mathlib.Algebra.MvPolynomial.NoZeroDivisors
 import Mathlib.RingTheory.MvPowerSeries.NoZeroDivisors
+-- `IsPrimitiveRoot.sum_zpow_pow_eq`, the orthogonality of the characters of `ℤ ⧸ n`.
+import TauCeti.RingTheory.RootsOfUnity.Basic
 
 /-!
 # Scaling the variables of a homogeneous polynomial
@@ -37,6 +40,9 @@ product of linear factors `X - C Ψ` with homogeneous `Ψ` of degree `m` are hom
 homogeneous of degree `n`. Conversely, `MvPolynomial.homogeneousComponent_one_eq_sum` writes the
 degree-one component of a polynomial in finitely many variables as the linear form
 `∑ i, c i • X i` whose coefficients `c i` are the coefficients of the variables `X i`.
+Finally, `MvPolynomial.eval_eq_sum_homogeneousComponent_of_eval_smul` averages over the `n`-th
+roots of unity: if scaling the point by every `n`-th root of unity `ζ ^ j` scales the value by
+`(ζ ^ j) ^ a`, only the homogeneous components of degree congruent to `a` modulo `n` contribute.
 -/
 
 public section
@@ -263,6 +269,48 @@ theorem homogeneousComponent_one_eq_sum [Fintype σ] (φ : MvPolynomial σ R) :
     simp at hd
 
 end CommSemiring
+
+section Field
+
+/-- **Averaging over the `n`-th roots of unity.** If scaling the point `x` by every `n`-th root of
+unity `ζ ^ j` scales the value of `P` by `(ζ ^ j) ^ a`, then the value of `P` at `x` is the sum of
+the values of its homogeneous components of degree congruent to `a` modulo `n`. -/
+theorem eval_eq_sum_homogeneousComponent_of_eval_smul {K : Type*} [Field K]
+    (P : MvPolynomial σ K) {n : ℕ} [NeZero (n : K)] {ζ : K} (hζ : IsPrimitiveRoot ζ n) (a : ℤ)
+    (x : σ → K) (hx : ∀ j : ℕ, eval ((ζ ^ j) • x) P = (ζ ^ j) ^ a * eval x P) :
+    eval x P = ∑ d ∈ (Finset.range (P.totalDegree + 1)).filter (fun d : ℕ => (n : ℤ) ∣ d - a),
+      eval x (homogeneousComponent d P) := by
+  have : NeZero n := .of_neZero_natCast K
+  have hζ0 : ζ ≠ 0 := hζ.ne_zero (NeZero.ne n)
+  have hn : (n : K) ≠ 0 := NeZero.ne _
+  set E : ℕ → K := fun d => eval x (homogeneousComponent d P)
+  -- The value at `ζ ^ j • x`, expanded by homogeneous components.
+  have hexp : ∀ j : ℕ, eval ((ζ ^ j) • x) P =
+      ∑ d ∈ Finset.range (P.totalDegree + 1), (ζ ^ j) ^ (d : ℤ) * E d := fun j => by
+    conv_lhs => rw [← sum_homogeneousComponent P]
+    rw [map_sum]
+    refine Finset.sum_congr rfl fun d _ => ?_
+    rw [(homogeneousComponent_isHomogeneous d P).eval_smul, smul_eq_mul, zpow_natCast]
+  -- Weighting by `(ζ ^ j) ^ (-a)` and summing over `j` keeps exactly the degrees `d ≡ a`.
+  have hweight : ∀ (j : ℕ) (d : ℕ), (ζ ^ j) ^ (-a) * (ζ ^ j) ^ (d : ℤ) = (ζ ^ ((d : ℤ) - a)) ^ j :=
+    fun j d => by
+      rw [← zpow_add₀ (pow_ne_zero _ hζ0), neg_add_eq_sub, ← zpow_natCast, ← zpow_mul,
+        ← zpow_natCast, ← zpow_mul, mul_comm]
+  refine mul_left_cancel₀ hn ?_
+  calc (n : K) * eval x P
+      = ∑ j : Fin n, (ζ ^ (j : ℕ)) ^ (-a) * eval ((ζ ^ (j : ℕ)) • x) P := by
+        simp_rw [hx, ← mul_assoc, ← zpow_add₀ (pow_ne_zero _ hζ0), neg_add_cancel, zpow_zero,
+          one_mul, Finset.sum_const, Finset.card_univ, Fintype.card_fin, nsmul_eq_mul]
+    _ = ∑ d ∈ Finset.range (P.totalDegree + 1),
+          (∑ j : Fin n, (ζ ^ ((d : ℤ) - a)) ^ (j : ℕ)) * E d := by
+        simp_rw [hexp, Finset.mul_sum, ← mul_assoc, hweight, Finset.sum_mul]
+        exact Finset.sum_comm
+    _ = (n : K) * ∑ d ∈ (Finset.range (P.totalDegree + 1)).filter
+          (fun d : ℕ => (n : ℤ) ∣ d - a), E d := by
+        simp_rw [hζ.sum_zpow_pow_eq, Finset.sum_filter, Finset.mul_sum, ite_mul, zero_mul,
+          mul_ite, mul_zero]
+
+end Field
 
 section CommRing
 

@@ -46,14 +46,14 @@ theorem evaluationIso_naturality
     (f : H ⟶ K) :
     (evaluationIso hH).hom ≫ f =
       _root_.CommHopfAlgCat.ofHom
-        (_root_.MonoidAlgebra.mapDomainBialgHom k (TauCeti.GroupLike.map f.hom)) ≫
+        (_root_.MonoidAlgebra.mapDomainBialgHom k f.hom.mapGroupLike) ≫
           (evaluationIso hK).hom := by
   apply _root_.CommHopfAlgCat.hom_ext
   apply _root_.MonoidAlgebra.bialgHom_ext
   · intro x
     simp only [_root_.CommHopfAlgCat.hom_comp, _root_.BialgHom.comp_apply,
       _root_.CommHopfAlgCat.hom_ofHom, _root_.MonoidAlgebra.mapDomainBialgHom_single]
-    simp [evaluationIso, TauCeti.GroupLike.val_map]
+    simp [evaluationIso, BialgHom.val_mapGroupLike]
   · apply AlgHom.ext
     intro r
     simp [evaluationIso, MonoidAlgebra.singleOneAlgHom_apply]

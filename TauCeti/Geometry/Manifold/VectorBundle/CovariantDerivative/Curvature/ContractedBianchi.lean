@@ -7,12 +7,13 @@ module
 
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.BilinearTensor
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvature.Derivative
-public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvature.Ricci
+public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvature.Scalar
 import Mathlib.Geometry.Manifold.BumpFunction
 import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
 import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvature.SecondBianchi
 import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.LocalFrame
 import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Regularity
+import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Trace
 import TauCeti.Geometry.Manifold.VectorBundle.Section.Extension
 
 /-!
@@ -45,7 +46,13 @@ gives the Riemannian divergence formula
 
 `∑ᵢ (∇_{eᵢ} Rm)(eᵢ, u, v, w) = (∇_w Ric)(u, v) - (∇_v Ric)(u, w)`,
 
-with `Rm(u, v, w, z) = ⟨R(u, v)w, z⟩`. These differential contractions underlie the divergence
+with `Rm(u, v, w, z) = ⟨R(u, v)w, z⟩`. Contracting once more, and using that the metric trace
+commutes with covariant differentiation for a metric-compatible connection, gives the twice
+contracted second Bianchi identity
+
+`2 ∑ᵢ (∇_{eᵢ} Ric)(eᵢ, v) = d Scal(v)`,
+
+that is `2 div Ric = d Scal`. These differential contractions underlie the divergence
 of the Weyl tensor and the Cotton tensor. The tensor construction uses the covariant derivative
 of bilinear tensors and transfers `exists_frame_sum_derivCurvature` to `derivCurvatureTensor`.
 
@@ -70,6 +77,10 @@ of bilinear tensors and transfers `exists_frame_sum_derivCurvature` to `derivCur
   interchange for the metric-lowered tensor `∇R`.
 * `CovariantDerivative.IsMetricCompatible.sum_inner_derivCurvatureTensor_self_eq_sub`: the
   Riemannian divergence formula.
+* `CovariantDerivative.IsMetricCompatible.sum_derivRicciTensor_self_eq_mvfderiv_scalarCurvature`:
+  the trace of `∇Ric` is the derivative of scalar curvature.
+* `CovariantDerivative.IsMetricCompatible.two_mul_sum_derivRicciTensor_eq_mvfderiv_scalarCurvature`:
+  the twice contracted second Bianchi identity `2 div Ric = d Scal`.
 
 ## References
 
@@ -498,5 +509,51 @@ theorem IsMetricCompatible.sum_inner_derivCurvatureTensor_self_eq_sub {ι : Type
   rw [Finset.sum_neg_distrib, cov.sum_inner_derivCurvatureTensor_eq_sub ht,
     hcov.derivRicciTensor_comm ht x w u, hcov.derivRicciTensor_comm ht x v u]
   ring
+
+/-- For a metric-compatible connection, the metric trace of the covariant derivative of Ricci
+curvature is the derivative of scalar curvature: `∑ᵢ (∇_v Ric)(eᵢ, eᵢ) = d Scal(v)` in any
+orthonormal basis. -/
+theorem IsMetricCompatible.sum_derivRicciTensor_self_eq_mvfderiv_scalarCurvature
+    {ι : Type*} [Fintype ι]
+    (hcov : CovariantDerivative.IsMetricCompatible
+      (V := fun y : M ↦ TangentSpace I y) cov)
+    (x : M) (b : OrthonormalBasis ι ℝ (TangentSpace I x)) (v : TangentSpace I x) :
+    ∑ i, cov.derivRicciTensor x (b i) (b i) v = mvfderiv I cov.scalarCurvature x v := by
+  have hRic (y : M) :
+      ContinuousLinearMap.toLinearMap₁₂ (cov.ricciTensor y).toContinuousBilinearMap =
+        cov.ricciTensor y := by
+    ext u w
+    simp [LinearMap.toContinuousBilinearMap_apply]
+  have hScal : cov.scalarCurvature = fun y ↦ TauCeti.bilinFormTrace
+      (ContinuousLinearMap.toLinearMap₁₂ (cov.ricciTensor y).toContinuousBilinearMap) := by
+    funext y
+    rw [hRic, scalarCurvature_apply]
+  simp only [derivRicciTensor_def]
+  rw [hScal, hcov.mvfderiv_bilinFormTrace (fun _ _ h₁ h₂ ↦ by
+    simpa only [LinearMap.toContinuousBilinearMap_apply] using
+      cov.mdifferentiableAt_ricciTensor_apply h₁ h₂) b v]
+
+/-- **The twice contracted second Bianchi identity** `2 div Ric = d Scal`: for a metric-compatible
+torsion-free connection, `2 ∑ᵢ (∇_{eᵢ} Ric)(eᵢ, v) = d Scal(v)` in any orthonormal basis. -/
+theorem IsMetricCompatible.two_mul_sum_derivRicciTensor_eq_mvfderiv_scalarCurvature
+    {ι : Type*} [Fintype ι]
+    (hcov : CovariantDerivative.IsMetricCompatible
+      (V := fun y : M ↦ TangentSpace I y) cov) (ht : cov.torsion = 0)
+    (x : M) (b : OrthonormalBasis ι ℝ (TangentSpace I x)) (v : TangentSpace I x) :
+    2 * ∑ i, cov.derivRicciTensor x (b i) v (b i) = mvfderiv I cov.scalarCurvature x v := by
+  -- Contract `∑ᵢ (∇_{bᵢ} Rm)(bᵢ, u, w, v) = (∇_v Ric)(u, w) - (∇_w Ric)(u, v)` over `u = w = bⱼ`.
+  have h₁ : ∑ j, ∑ i, inner ℝ (cov.derivCurvatureTensor cov x (b i) (b i) (b j) (b j)) v =
+      mvfderiv I cov.scalarCurvature x v - ∑ i, cov.derivRicciTensor x (b i) v (b i) := by
+    simp only [hcov.sum_inner_derivCurvatureTensor_self_eq_sub ht, Finset.sum_sub_distrib,
+      hcov.sum_derivRicciTensor_self_eq_mvfderiv_scalarCurvature]
+  -- After pair interchange, the left side is the divergence of Ricci curvature.
+  have h₂ : ∑ j, ∑ i, inner ℝ (cov.derivCurvatureTensor cov x (b i) (b i) (b j) (b j)) v =
+      ∑ i, cov.derivRicciTensor x (b i) v (b i) := by
+    simp only [hcov.inner_derivCurvatureTensor_swap_pairs ht x (b _) (b _) (b _) (b _) v,
+      real_inner_comm (b _)]
+    rw [Finset.sum_comm]
+    simp only [cov.sum_inner_derivCurvatureTensor_eq_derivRicciTensor,
+      hcov.derivRicciTensor_comm ht x v]
+  linarith
 
 end CovariantDerivative

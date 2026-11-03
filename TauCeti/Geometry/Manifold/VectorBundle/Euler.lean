@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.SpecialFunctions.ExpDeriv
 public import Mathlib.Geometry.Manifold.ContMDiffMFDeriv
 public import Mathlib.Geometry.Manifold.IntegralCurve.Basic
+public import TauCeti.Geometry.Manifold.Flow.Complete
 public import TauCeti.Geometry.Manifold.VectorBundle.CurveInTotalSpace
 public import TauCeti.Geometry.Manifold.VectorBundle.Scalar
 import Mathlib.Analysis.Calculus.Deriv.Mul
@@ -27,9 +28,10 @@ the zero section (`TauCeti.vectorBundleEulerField_zero`), and it is smooth
 
 It is the infinitesimal generator of the fibre dilations `z ↦ c • z`
 (`TauCeti.vectorBundleScalarDiffeomorph`): on a real vector bundle, the curve `t ↦ e^t • z` is an
-integral curve of the Euler vector field (`TauCeti.isMIntegralCurve_vectorBundleEulerField`). On
-a cotangent bundle it is the field `p ∂_p`, the Liouville vector field of the canonical symplectic
-structure.
+integral curve of the Euler vector field (`TauCeti.isMIntegralCurve_vectorBundleEulerField`). These
+curves are defined for all time, so the Euler vector field is complete
+(`TauCeti.isCompleteVectorField_vectorBundleEulerField`). On a cotangent bundle it is the field
+`p ∂_p`, the Liouville vector field of the canonical symplectic structure.
 
 ## Main declarations
 
@@ -41,6 +43,7 @@ structure.
   total space.
 * `TauCeti.isMIntegralCurve_vectorBundleEulerField`: on a real vector bundle, the curves
   `t ↦ e^t • z` are integral curves of it.
+* `TauCeti.isCompleteVectorField_vectorBundleEulerField`: it is complete.
 
 ## References
 
@@ -181,6 +184,15 @@ theorem isMIntegralCurve_vectorBundleEulerField (z : TotalSpace F V) :
   rw [vectorBundleEulerField_eq_trivializationAt]
   have h := z.hasMFDerivAt_smul_curve (IB := I) (Real.hasDerivAt_exp t)
   rwa [← TotalSpace.trivializationAt_smul_snd] at h
+
+/-- **The Euler vector field is complete**: through every vector `z` of a real vector bundle, the
+fibre dilation `t ↦ e^t • z` is an integral curve defined for all time. -/
+theorem isCompleteVectorField_vectorBundleEulerField [T2Space (TotalSpace F V)]
+    [IsManifold (I.prod 𝓘(ℝ, F)) 1 (TotalSpace F V)]
+    [BoundarylessManifold (I.prod 𝓘(ℝ, F)) (TotalSpace F V)] :
+    IsCompleteVectorField (vectorBundleEulerField (F := F) (V := V) I) :=
+  (isCompleteVectorField_iff_exists_isMIntegralCurve contMDiff_vectorBundleEulerField).2 fun z ↦
+    ⟨_, by simp, isMIntegralCurve_vectorBundleEulerField z⟩
 
 end Real
 

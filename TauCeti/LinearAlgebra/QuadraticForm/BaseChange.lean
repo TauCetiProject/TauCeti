@@ -30,7 +30,8 @@ the diagonal form obtained by mapping its coefficients into the target algebra, 
 orthogonal and special orthogonal automorphisms so a quadratic space's rational symmetries act on
 each scalar extension, and shows that extending scalars carries the reflection in a vector `v` to
 the reflection in `1 ⊗ₜ v`, so that a reflection factorization `τ_{v₀} ⋯ τ_{vₙ₋₁}` extends to the
-factorization `τ_{1 ⊗ v₀} ⋯ τ_{1 ⊗ vₙ₋₁}`.
+factorization `τ_{1 ⊗ v₀} ⋯ τ_{1 ⊗ vₙ₋₁}`. Base change also distributes over orthogonal sums,
+so an isometric equivalence with an orthogonal sum extends to one between the base changes.
 
 These results complement Mathlib's construction `QuadraticForm.baseChange` and its pure-tensor
 evaluation theorem.  They allow localizations of a quadratic space to inherit maps, injective
@@ -229,6 +230,13 @@ theorem baseChange_one_tmul (Q : QuadraticForm R M) (v : M) :
     Q.baseChange A (1 ⊗ₜ v) = algebraMap R A (Q v) := by
   rw [baseChange_tmul, mul_one, Algebra.smul_def, mul_one]
 
+/-- Extending scalars evaluates a quadratic form at the base change `1 ⊗ₜ b i` of a basis vector
+by applying the algebra map to its value at `b i`. -/
+theorem baseChange_apply_basis_baseChange (Q : QuadraticForm R M) {ι : Type*}
+    (b : Module.Basis ι R M) (i : ι) :
+    Q.baseChange A (b.baseChange A i) = algebraMap R A (Q (b i)) := by
+  rw [Module.Basis.baseChange_apply, baseChange_one_tmul]
+
 /-- Polarization after base change, evaluated on pure tensors. -/
 @[simp]
 theorem polar_baseChange_tmul (Q : _root_.QuadraticForm R M) (a b : A) (x y : M) :
@@ -238,6 +246,15 @@ theorem polar_baseChange_tmul (Q : _root_.QuadraticForm R M) (a b : A) (x y : M)
     (map_ofNat _ _).symm
   rw [← QuadraticMap.polarBilin_apply_apply, _root_.QuadraticForm.polarBilin_baseChange,
     LinearMap.BilinForm.baseChange_tmul, QuadraticMap.polarBilin_apply_apply]
+
+/-- Extending scalars carries a basis orthogonal for a quadratic form to a basis orthogonal for
+the extended form. -/
+theorem isOrthoᵢ_associated_baseChange [Invertible (2 : A)] {Q : _root_.QuadraticForm R M}
+    {ι : Type*} {b : Module.Basis ι R M} (hb : (QuadraticMap.associated Q).IsOrthoᵢ b) :
+    (QuadraticMap.associated (Q.baseChange A)).IsOrthoᵢ (b.baseChange A) := by
+  intro i j hij
+  simp only [Function.onFun, associated_baseChange, Module.Basis.baseChange_apply,
+    LinearMap.BilinForm.baseChange_tmul, hb hij, zero_smul]
 
 section Diagonal
 
@@ -306,6 +323,22 @@ theorem baseChangeProd_symm_tmul (Q : _root_.QuadraticForm R M)
     (Q' : _root_.QuadraticForm R N) (a : A) (m : M) (n : N) :
     (baseChangeProd (A := A) Q Q').symm (a ⊗ₜ m, a ⊗ₜ n) = a ⊗ₜ (m, n) :=
   TensorProduct.prodRight_symm_tmul R A A M N a m n
+
+/-- An isometric equivalence of `Q₃` with an orthogonal sum `Q₁.prod Q₂` extends to an isometric
+equivalence of the base change of `Q₃` with the orthogonal sum of the base changes: the base
+change of the equivalence, followed by `QuadraticForm.baseChangeProd`. -/
+def _root_.QuadraticMap.IsometryEquiv.baseChangeProd (f : Q₃.IsometryEquiv (Q₁.prod Q₂))
+    (A : Type uA) [CommRing A] [Algebra R A] :
+    (Q₃.baseChange A).IsometryEquiv ((Q₁.baseChange A).prod (Q₂.baseChange A)) :=
+  (f.baseChange A).trans (_root_.QuadraticForm.baseChangeProd Q₁ Q₂)
+
+/-- On pure tensors, the base change of an isometric equivalence with an orthogonal sum applies
+the equivalence and separates the two components. -/
+@[simp]
+theorem _root_.QuadraticMap.IsometryEquiv.baseChangeProd_tmul
+    (f : Q₃.IsometryEquiv (Q₁.prod Q₂)) (a : A) (x : P) :
+    f.baseChangeProd A (a ⊗ₜ x) = (a ⊗ₜ (f x).1, a ⊗ₜ (f x).2) := by
+  simp [QuadraticMap.IsometryEquiv.baseChangeProd, ← QuadraticMap.IsometryEquiv.coe_toLinearEquiv]
 
 /-- Base change sends the zero quadratic form to the zero quadratic form. -/
 @[simp]

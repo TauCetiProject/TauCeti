@@ -5,9 +5,13 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Algebra.Tower
 public import Mathlib.LinearAlgebra.Span.Basic
+public import Mathlib.RingTheory.Ideal.Defs
+import Mathlib.Algebra.Algebra.Basic
 import Mathlib.Algebra.Field.Basic
 import Mathlib.Algebra.Module.Torsion.Field
+import Mathlib.Data.Fintype.BigOperators
 
 /-!
 # Finite spans and singleton spans
@@ -16,7 +20,11 @@ A generator with a unit coefficient in a linear combination can be replaced by t
 without changing the span. Over a division semiring, a nonzero vector in a singleton span can be
 used to recover the generator's membership in any submodule. Acting on a line gives the line
 through the image of its generator, so a group element stabilizes the line through a vector
-exactly when it sends that vector to a multiple of itself.
+exactly when it sends that vector to a multiple of itself. Finally, a submodule over a
+subring that is a direct sum `⊕ i, J i • y i` with nonzero ideal coefficients spans the same
+subspace over the larger field as the family `y`. A unitriangular change of a family indexed by a
+well-founded order, where each `z j` is `x j` plus a combination of the earlier `x l`, preserves
+the spans of initial segments.
 -/
 
 public section
@@ -90,5 +98,62 @@ theorem smul_span_singleton_eq_iff {g : G} {v : W} :
     exact ⟨(Units.mk0 c hc0)⁻¹, by simp [hc, Units.smul_def, smul_smul, hc0]⟩
 
 end GroupAction
+
+section IdealCoefficients
+
+variable {R K V : Type*} [CommRing R] [Field K] [Algebra R K] [AddCommGroup V] [Module K V]
+  [Module R V] [IsScalarTower R K V]
+
+/-- If `Λ = ⊕ i, J i • y i` with every `J i` nonzero, then `y` spans the same `K`-subspace as
+`Λ`. -/
+theorem span_range_eq_span_of_forall_mem_iff [FaithfulSMul R K] {ι : Type*} [Fintype ι]
+    {Λ : Submodule R V} {y : ι → V} {J : ι → Ideal R} (hJ : ∀ i, J i ≠ ⊥)
+    (hmem : ∀ x, x ∈ Λ ↔ ∃ c : ι → R, (∀ i, c i ∈ J i) ∧ ∑ i, c i • y i = x) :
+    span K (Set.range y) = span K (Λ : Set V) := by
+  classical
+  refine le_antisymm (span_le.2 <| Set.range_subset_iff.2 fun i ↦ ?_) (span_le.2 fun x hx ↦ ?_)
+  · obtain ⟨b, hb, hb0⟩ := Submodule.exists_mem_ne_zero_of_ne_bot (hJ i)
+    have hsum : ∑ k, (Pi.single i b : ι → R) k • y k = b • y i := by
+      rw [Fintype.sum_eq_single i fun k hk ↦ by simp [hk]]
+      simp
+    have hbΛ : b • y i ∈ Λ := hsum ▸ (hmem _).2 ⟨_, fun k ↦ by
+      by_cases hk : k = i
+      · subst hk
+        simpa using hb
+      · simp [hk], rfl⟩
+    have hb' : algebraMap R K b ≠ 0 :=
+      (map_ne_zero_iff _ (FaithfulSMul.algebraMap_injective R K)).2 hb0
+    rw [← inv_smul_smul₀ hb' (y i), algebraMap_smul]
+    exact smul_mem _ _ (subset_span hbΛ)
+  · obtain ⟨c, -, rfl⟩ := (hmem x).1 hx
+    exact sum_mem fun i _ ↦ by
+      rw [← algebraMap_smul K]
+      exact smul_mem _ _ (subset_span ⟨i, rfl⟩)
+
+end IdealCoefficients
+
+section Unitriangular
+
+variable {R M ι : Type*} [Ring R] [AddCommGroup M] [Module R M] [Preorder ι] [WellFoundedLT ι]
+
+/-- Initial segments of `x` and `z` span the same submodule when every `z j` is `x j` plus a
+combination of the earlier `x l`. -/
+theorem span_image_Iio_eq_span_image_Iio {x z : ι → M}
+    (h : ∀ j, z j - x j ∈ span R (x '' Set.Iio j)) (j : ι) :
+    span R (z '' Set.Iio j) = span R (x '' Set.Iio j) := by
+  refine le_antisymm (span_le.2 ?_) ?_
+  · rintro _ ⟨l, hl, rfl⟩
+    have hmem := add_mem (span_mono (Set.image_mono (Set.Iio_subset_Iio hl.le)) (h l))
+      (subset_span (R := R) ⟨l, hl, rfl⟩)
+    rwa [sub_add_cancel] at hmem
+  induction j using WellFoundedLT.induction with
+  | _ j ih =>
+    rw [span_le]
+    rintro _ ⟨l, hl, rfl⟩
+    have hmem := sub_mem (subset_span (R := R) (Set.mem_image_of_mem z hl)) <|
+      span_mono (Set.image_mono (Set.Iio_subset_Iio hl.le)) (ih l hl (h l))
+    rwa [sub_sub_cancel] at hmem
+
+end Unitriangular
 
 end Submodule

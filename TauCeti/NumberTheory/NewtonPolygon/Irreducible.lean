@@ -27,6 +27,12 @@ generally a pure polynomial of degree `d` with nonzero constant coefficient whos
 denominator `e` has at most `d / e` irreducible factors, counted with multiplicity. Purity alone
 does not imply irreducibility, nor does a polygon with a single segment.
 
+An Eisenstein polynomial of degree `d` is pure of slope `-1 / d`, by
+`Polynomial.newtonSlopes_eq_replicate_of_eisenstein`, and `-1` is coprime to `d`, so the
+criterion recovers the Eisenstein criterion over the field. Mathlib's
+`Polynomial.irreducible_of_eisenstein_criterion` is the corresponding statement over a ring for
+a prime ideal, for primitive polynomials.
+
 ## Main results
 
 * `Polynomial.den_dvd_natDegree_of_dvd`: the denominator of the slope of a pure polynomial with
@@ -37,11 +43,15 @@ does not imply irreducibility, nor does a polygon with a single segment.
 * `Polynomial.card_normalizedFactors_mul_den_le_natDegree`: a pure polynomial of degree `d` with
   nonzero constant coefficient whose slope has denominator `e` has at most `d / e` irreducible
   factors, counted with multiplicity.
+* `Polynomial.irreducible_of_eisenstein`: the Eisenstein criterion over a field with a valuation
+  taking integer values on nonzero elements, as a consequence of the Newton polygon
+  irreducibility criterion.
 
 ## References
 
 * J. Neukirch, *Algebraic Number Theory*, Grundlehren 322, Springer, 1999, Chapter II §6, for
-  Newton polygons over discretely valued fields.
+  Newton polygons over discretely valued fields, and Proposition 6.3 and its corollary for
+  Eisenstein polynomials.
 * N. Koblitz, *p-adic Numbers, p-adic Analysis, and Zeta-Functions*, second edition,
   Graduate Texts in Mathematics 58, Springer, 1984, Chapter IV §3.
 -/
@@ -124,6 +134,24 @@ theorem card_normalizedFactors_mul_den_le_natDegree [DecidableEq K]
   refine Multiset.sum_map_le_sum_map _ _ fun p hp => Nat.le_of_dvd ?_ ?_
   · exact (irreducible_of_normalized_factor p hp).natDegree_pos
   · exact den_dvd_natDegree_of_dvd hint hf hq (dvd_of_mem_normalizedFactors hp)
+
+/-- **Eisenstein criterion.** If the valuation takes integer values on nonzero elements, a
+polynomial whose leading coefficient has valuation zero, whose constant coefficient has
+valuation one, and whose other coefficients below the degree have valuation at least one, is
+irreducible. This is the Newton polygon irreducibility criterion for the single slope `-1 / d`. -/
+theorem irreducible_of_eisenstein (hint : ∀ x, x ≠ 0 → ∃ n : ℤ, v x = ((n : ℝ) : WithTop ℝ))
+    {f : K[X]} (hlead : v f.leadingCoeff = 0) (h0 : v (f.coeff 0) = 1)
+    (hmem : ∀ n, 0 < n → n < f.natDegree → 1 ≤ v (f.coeff n)) : Irreducible f := by
+  have hc0 : f.coeff 0 ≠ 0 := fun h => by simp [h] at h0
+  have hd : 0 < f.natDegree := Nat.pos_of_ne_zero fun hd => by
+    rw [leadingCoeff, hd, h0] at hlead
+    exact one_ne_zero hlead
+  refine irreducible_of_forall_mem_newtonSlopes_eq_div hint hc0 hd (a := -1) (by simp)
+    fun m hm => ?_
+  rw [newtonSlopes_eq_replicate_of_eisenstein hlead h0 hmem] at hm
+  rw [Multiset.eq_of_mem_replicate hm]
+  push_cast
+  ring
 
 end Field
 

@@ -13,8 +13,9 @@ public import Mathlib.SetTheory.Cardinal.Continuum
 # Topology of relational configurations
 
 The product topology on relational configurations is compact Hausdorff, and relabelling by a
-permutation of the carrier is continuous. Specifying an atom's truth value gives a clopen,
-measurable cylinder. On countable carriers in countable relational
+permutation of the carrier is continuous. Restriction along a vertex map is continuous, and
+jointly continuous in the vertex map when the target carrier is discrete. Specifying an atom's
+truth value gives a clopen, measurable cylinder. On countable carriers in countable relational
 vocabularies the topology is Polish and its Borel σ-algebra is the existing product σ-algebra.
 The same construction handles finite and empty carriers.
 
@@ -63,6 +64,22 @@ theorem continuous_mk : Continuous (mk : (Atom L V → Bool) → RelationalConfi
 theorem continuous_restrict {W : Type*} (f : V → W) :
     Continuous (restrict (L := L) f) :=
   continuous_iff.2 fun a => by simpa using continuous_eval (a.map f)
+
+/-- Restriction is jointly continuous in the vertex map and the configuration when the target
+carrier is discrete. -/
+theorem continuous_uncurry_restrict {W : Type*} [TopologicalSpace W] [DiscreteTopology W] :
+    Continuous (Function.uncurry (restrict (L := L) (V := V) (W := W))) := by
+  refine continuous_iff.2 fun a => ?_
+  induction a using Atom.induction_atom with
+  | h R x =>
+    simp only [Function.uncurry_def, eval_restrict, Atom.map_atom]
+    -- Reading the atom `R(y)` is continuous in the configuration and, trivially, in the tuple
+    -- `y`, which ranges over a discrete space.
+    have h : Continuous fun q : RelationalConfiguration L W × (Fin _ → W) =>
+        q.1.eval (atom R q.2) :=
+      continuous_prod_of_discrete_right.2 fun y => continuous_eval (atom R y)
+    exact h.comp (continuous_snd.prodMk (continuous_pi fun i => (continuous_apply (x i)).comp
+      continuous_fst))
 
 /-- Each relabelling by a permutation of the carrier is continuous. -/
 instance : ContinuousConstSMul (Equiv.Perm V) (RelationalConfiguration L V) :=

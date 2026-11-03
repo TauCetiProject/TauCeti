@@ -59,6 +59,11 @@ theorem mem_evenSubgroup_iff (χ : DirichletCharacter R n) :
     χ ∈ TauCeti.DirichletCharacter.evenSubgroup R n ↔ χ.Even :=
   Iff.rfl
 
+/-- The parity of an inverse character is unchanged. -/
+@[simp]
+theorem even_inv_iff (χ : DirichletCharacter R n) : χ⁻¹.Even ↔ χ.Even :=
+  (TauCeti.DirichletCharacter.evenSubgroup R n).inv_mem_iff
+
 /-- Above level two there is an odd Dirichlet character: since `-1 ≠ 1` modulo `n`, some
 character separates them, and its value at `-1` is then `-1`. -/
 theorem exists_odd [IsDomain R] [HasEnoughRootsOfUnity R (Monoid.exponent (ZMod n)ˣ)]

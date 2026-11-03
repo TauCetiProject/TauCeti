@@ -81,7 +81,7 @@ theorem jimbo_strandIncl_lmapDomain_snoc (q : Rˣ) (b : BraidGroup (n + 1)) (a :
     exact DFunLike.congr_fun (jimboGenerator_comp_lmapDomain_snoc q _ _ a) v
   | one => simp
   | mul b c hb hc =>
-    simp only [map_mul, Units.val_mul, Module.End.mul_apply, hc, hb]
+    simp only [map_mul, Units.val_mul, mul_apply_eq_comp, hc, hb]
   | inv b hb =>
     have h := congrArg
       (fun x ↦ (((jimbo ι q (BraidGroup.strandIncl b))⁻¹ :
@@ -89,8 +89,8 @@ theorem jimbo_strandIncl_lmapDomain_snoc (q : Rˣ) (b : BraidGroup (n + 1)) (a :
           Module.End R ((Fin (n + 2) → ι) →₀ R)) x)
       (hb ((((jimbo ι q b)⁻¹ : (Module.End R ((Fin (n + 1) → ι) →₀ R))ˣ) :
         Module.End R ((Fin (n + 1) → ι) →₀ R)) v))
-    simpa only [map_inv, ← Module.End.mul_apply, ← Units.val_mul, inv_mul_cancel,
-      mul_inv_cancel, Units.val_one, Module.End.one_apply] using h.symm
+    simpa only [map_inv, ← mul_apply_eq_comp, ← Units.val_mul, inv_mul_cancel,
+      mul_inv_cancel, Units.val_one, one_apply_eq_self] using h.symm
 
 /-- Basis-vector form of compatibility with adding an uncrossed strand. -/
 @[simp]

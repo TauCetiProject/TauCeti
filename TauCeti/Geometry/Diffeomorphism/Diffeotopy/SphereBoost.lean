@@ -9,6 +9,7 @@ public import Mathlib.Analysis.InnerProductSpace.Calculus
 public import Mathlib.Geometry.Manifold.Instances.Sphere
 public import TauCeti.Analysis.InnerProductSpace.Sphere.Boost
 public import TauCeti.Geometry.Diffeomorphism.Diffeotopy.Basic
+import TauCeti.Analysis.Complex.Inner
 
 /-!
 # The boost diffeotopy of a unit sphere
@@ -38,13 +39,18 @@ great circle cut out by a linear isometry `ι : ℂ →ₗᵢ[ℝ] E` to the boo
   rapidity `a`.
 * `TauCeti.coe_circleBoostDiffeotopy_apply`, `TauCeti.coe_circleBoostDiffeotopy_final_apply`: the
   same for the circle boost diffeotopy.
+* `TauCeti.sphereBoost_circleBoostDiffeotopy_neg`,
+  `TauCeti.sphereBoost_circleBoostDiffeotopy_final_neg`: the boost toward `i` undoes the circle
+  boost diffeotopy of the opposite rapidity.
+* `TauCeti.eventually_forall_im_pos_of_circleBoostDiffeotopy_final_notMem`: a large boost of the
+  circle toward `i` carries the complement of a neighbourhood of `-i` into the open upper half.
 -/
 
 public section
 
 noncomputable section
 
-open Metric Module Real
+open Metric Module Real Filter Topology
 open scoped Manifold ContDiff RealInnerProductSpace unitInterval
 
 namespace TauCeti
@@ -154,6 +160,34 @@ theorem coe_circleBoostDiffeotopy_apply (a : ℝ) (p : I × Circle) :
 theorem coe_circleBoostDiffeotopy_final_apply (a : ℝ) (z : Circle) :
     ((circleBoostDiffeotopy (m := m) a).final z : ℂ) = sphereBoost Complex.I a z :=
   coe_sphereBoostDiffeotopy_final_apply (E := ℂ) (v := Complex.I) (by simp) a z
+
+/-- At time `s`, the boost of rapidity `a * s` toward `i` undoes the circle boost diffeotopy of
+rapidity `-a`. -/
+theorem sphereBoost_circleBoostDiffeotopy_neg (a : ℝ) (s : I) (z : Circle) :
+    sphereBoost Complex.I (a * s) (circleBoostDiffeotopy (m := m) (-a) (s, z) : ℂ) = z := by
+  rw [coe_circleBoostDiffeotopy_apply, sphereBoost_sphereBoost (by simp) (Circle.norm_coe z),
+    neg_mul, add_neg_cancel, sphereBoost_zero, id]
+
+/-- The boost of rapidity `a` toward `i` undoes the final circle boost of rapidity `-a`. -/
+theorem sphereBoost_circleBoostDiffeotopy_final_neg (a : ℝ) (z : Circle) :
+    sphereBoost Complex.I a ((circleBoostDiffeotopy (m := m) (-a)).final z : ℂ) = z := by
+  simpa using sphereBoost_circleBoostDiffeotopy_neg (m := m) a 1 z
+
+/-- **Boosting the circle away from a neighbourhood of `-i`.** For a neighbourhood `U` of the bottom
+point `-i` of the circle, once the rapidity `a` is large enough every parameter `w` whose boost
+back by rapidity `-a` lies outside `U` is in the open upper half of the circle. -/
+theorem eventually_forall_im_pos_of_circleBoostDiffeotopy_final_notMem {z₀ : Circle}
+    {U : Set Circle} (hU : U ∈ 𝓝 z₀) (hz₀ : (z₀ : ℂ) = -Complex.I) :
+    ∀ᶠ a in atTop, ∀ w : Circle, (circleBoostDiffeotopy (m := m) (-a)).final w ∉ U →
+      0 < (w : ℂ).im := by
+  obtain ⟨V, hVU, hVo, hz₀V⟩ := _root_.mem_nhds_iff.1 hU
+  have h := (hVo.isClosed_compl.isCompact.image continuous_subtype_val
+    ).eventually_forall_inner_sphereBoost_pos (v := Complex.I) (by simp)
+      (by rintro _ ⟨z, -, rfl⟩; exact Circle.norm_coe z) fun ⟨z, hz, hz'⟩ =>
+        hz ((Subtype.ext (hz'.trans hz₀.symm) : z = z₀) ▸ hz₀V)
+  filter_upwards [h] with a ha w hw
+  have hpos := ha _ ⟨_, fun h => hw (hVU h), rfl⟩
+  rwa [sphereBoost_circleBoostDiffeotopy_final_neg, Complex.real_inner_I_right] at hpos
 
 end Circle
 

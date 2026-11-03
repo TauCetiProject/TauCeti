@@ -30,6 +30,8 @@ series evaluated at arguments of `I ^ n` is confined to `I ^ n`, in
 * `IsAdic.comap` : an adic topology transports along an inducing ring equivalence, without
   separate assumptions that either ring has continuous operations.
 * `IsAdic.isOpen_pow` : in a ring whose topology is `I`-adic, every power of `I` is open.
+* `IsAdic.isOpen_iff_le_of_isRadical` : in a ring whose topology is `I`-adic, a radical ideal is
+  open if and only if it contains `I`.
 * `IsAdic.isClosed_pow` : in a ring whose topology is `I`-adic, every power of `I` is closed —
   an open additive subgroup of a topological group being closed.
 * `IsAdic.tendsto_zero_of_mem_pow` : a family whose members lie in growing powers of `I` tends to
@@ -53,6 +55,8 @@ series evaluated at arguments of `I ^ n` is confined to `I ^ n`, in
   with the same radical define the same adic topology.
 * `IsAdic.isAdic_iff_isOpen_and_exists_pow_le` : an ideal of definition is characterized by
   openness and containment of one of its powers in a fixed ideal of definition.
+* `IsAdic.exists_pow_succ_le` : some positive power of an ideal of definition lies in any open
+  ideal.
 * `IsAdic.radical_eq`, `IsAdic.le_radical`, and `IsAdic.radical` : ideals of definition have
   the same radical, and a finitely generated radical is the largest ideal of definition.
 
@@ -106,6 +110,18 @@ additive subgroup, and an open subgroup of a topological group is closed. -/
 theorem isClosed_pow (hI : IsAdic I) (n : ℕ) : IsClosed ((I ^ n : Ideal R) : Set R) :=
   have : NonarchimedeanRing R := hI ▸ I.nonarchimedean
   AddSubgroup.isClosed_of_isOpen (I ^ n).toAddSubgroup (hI.isOpen_pow n)
+
+/-- In a ring whose topology is the `I`-adic one, a radical ideal (for instance a prime ideal) is
+open if and only if it contains `I`: an open radical ideal contains a power of `I`, hence `I`
+itself. -/
+theorem isOpen_iff_le_of_isRadical (hI : IsAdic I) {P : Ideal R} (hP : P.IsRadical) :
+    IsOpen (P : Set R) ↔ I ≤ P := by
+  have : IsTopologicalRing R := hI ▸ I.nonarchimedean.toIsTopologicalRing
+  refine ⟨fun h ↦ ?_, fun h ↦ ?_⟩
+  · obtain ⟨n, -, hn⟩ := hI.hasBasis_nhds_zero.mem_iff.mp (h.mem_nhds P.zero_mem)
+    exact fun x hx ↦ hP ⟨n, hn (Ideal.pow_mem_pow hx n)⟩
+  · exact AddSubgroup.isOpen_mono (H₁ := I.toAddSubgroup) (H₂ := P.toAddSubgroup) h
+      (by simpa using hI.isOpen_pow 1)
 
 open Filter Topology in
 /-- In a ring whose topology is the `I`-adic one, a family whose members lie in growing powers of
@@ -177,6 +193,12 @@ theorem isAdic_iff_isOpen_and_exists_pow_le {J : Ideal R} (hI : IsAdic I) :
       refine ⟨k * n, subset_trans ?_ hn⟩
       rw [pow_mul]
       exact Ideal.pow_right_mono hk n
+
+/-- Some positive power of an ideal of definition lies in any open ideal. -/
+theorem exists_pow_succ_le {J : Ideal R} (hI : IsAdic I) (hJ : IsOpen (J : Set R)) :
+    ∃ n : ℕ, I ^ (n + 1) ≤ J := by
+  obtain ⟨n, -, hn⟩ := hI.hasBasis_nhds_zero.mem_iff.mp (hJ.mem_nhds J.zero_mem)
+  exact ⟨n, (Ideal.pow_le_pow_right n.le_succ).trans hn⟩
 
 /-- The radical of an ideal of definition is again an ideal of definition whenever that
 radical is finitely generated, in particular over a noetherian ring (EGA I, Ch. 0, 7.1.7). -/

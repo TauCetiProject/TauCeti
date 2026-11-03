@@ -15,6 +15,9 @@ Filtering a multiset is additive, so it distributes over a finite sum of multise
 records the binary case as `Multiset.filter_add`; this file records the finite-sum case, used to
 recover the part of a concatenated unordered tuple lying in a given set from the parts of its
 summands.
+
+It also counts the factors of a product of `if p x then a else 1` over a multiset: the product is
+`a` raised to the number of elements satisfying `p`.
 -/
 
 public section
@@ -31,5 +34,13 @@ theorem filter_sum (s : Finset ι) (f : ι → Multiset α) :
   induction s using Finset.induction_on with
   | empty => simp
   | insert a s ha ih => rw [Finset.sum_insert ha, filter_add, ih, Finset.sum_insert ha]
+
+/-- The product of `if p x then a else 1` over a multiset is `a` raised to the number of its
+elements satisfying `p`, counted with multiplicity. -/
+theorem prod_map_ite_one {M : Type*} [CommMonoid M] (s : Multiset α) (a : M) :
+    (s.map fun x ↦ if p x then a else 1).prod = a ^ (s.filter p).card := by
+  induction s using Multiset.induction_on with
+  | empty => simp
+  | cons x s ih => by_cases hx : p x <;> simp [hx, ih, pow_succ, mul_comm]
 
 end Multiset

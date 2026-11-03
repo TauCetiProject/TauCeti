@@ -27,12 +27,11 @@ then the open and closed arcs are the images under `circleMap ζ ρ` of `(α - �
 unimodal about any one of its points; that is what makes a crosscut *locally connected at its own
 endpoints*, the last statement below.
 
-This is the source-side endpoint interface needed by layer **L5** of
-`TauCetiRoadmap/ConformalMapping/README.md`, the Jordan-domain case of Carathéodory boundary
-correspondence. `Conformal/ShortCrosscut.lean` makes the image of the *open* arc arbitrarily short,
-and `Conformal/CutDiameter.lean` asks local connectedness of the image boundary to join the two
-ends by a small boundary set. The results here name those two ends and package the open arc together
-with its closure; they do not assert the continuous boundary extension itself.
+This is the source-side endpoint interface needed by the Jordan-domain case of the Carathéodory
+boundary correspondence. `Conformal/ShortCrosscut.lean` makes the image of the *open* arc
+arbitrarily short, and `Conformal/CutDiameter.lean` asks local connectedness of the image boundary
+to join the two ends by a small boundary set. The results here name those two ends and package the
+open arc together with its closure; they do not assert the continuous boundary extension itself.
 
 ## Main results
 
@@ -63,15 +62,9 @@ with its closure; they do not assert the continuous boundary extension itself.
 The half-width `arccos (ρ / (2 * r))` is read off the cosine criterion of
 `TauCeti/Topology/Circle/Metric.lean` through `Real.lt_cos_iff_mem_Ioo` and
 `Real.le_cos_iff_mem_Icc`, the arccosine description of the angles at which the cosine exceeds a
-threshold, in `TauCeti/Analysis/SpecialFunctions/Trigonometric/Arccos.lean`.
-
-## Coordination with upstream Mathlib
-
-Layer L5 is absent from
-[mathlib4#33505](https://github.com/leanprover-community/mathlib4/pull/33505), the in-progress
-human-curated Riemann-mapping-theorem effort. Mathlib supplies `circleMap`, its periodicity and
-injectivity on one period, inverse trigonometric functions, and the generic fact that two circles in
-the plane meet in at most two points; none of the crosscut descriptions below is present there.
+threshold, in `TauCeti/Analysis/SpecialFunctions/Trigonometric/Arccos.lean`. The remaining inputs
+are Mathlib's: `circleMap` with its periodicity and injectivity on one period, the inverse
+trigonometric functions, and the fact that two circles in the plane meet in at most two points.
 
 ## References
 

@@ -9,7 +9,7 @@ public import TauCeti.RingTheory.Affinoid.FiniteQuotient
 public import Mathlib.Analysis.Normed.Operator.Banach
 public import TauCeti.RingTheory.Huber.PowerBounded
 
-import TauCeti.Analysis.Normed.Algebra.AutomaticContinuity
+import TauCeti.Analysis.Normed.Algebra.AutomaticContinuity.Basic
 import TauCeti.RingTheory.Ideal.KrullIntersection
 import TauCeti.RingTheory.Huber.ClosedSubmodule
 import TauCeti.RingTheory.Huber.Normed

@@ -215,7 +215,7 @@ theorem isCoisotropicMap_of_forall_eq (hg : ∀ p, F (g p) = c)
     (hinj : ∀ p, Function.Injective (mfderiv J I g p))
     (hdim : finrank ℝ E' + Fintype.card ι = finrank ℝ E) :
     hσ.IsCoisotropicMap J g := isCoisotropicMap_iff.2 fun p ↦ by
-  have hrange := (hreg p).range_mfderiv_eq_ker_mfderiv hg (hinj p)
+  have hrange := (hreg p).range_mfderiv_eq_ker_mfderiv (.of_forall hg) (hinj p)
     (by rwa [Module.finrank_fintype_fun_eq_card])
   rw [hrange]
   exact (hσ.isCoisotropic_ker_mfderiv_iff (hreg p).mdifferentiableAt).2 (hcomm p)
@@ -230,7 +230,7 @@ theorem isLagrangianMap_of_forall_eq (hg : ∀ p, F (g p) = c)
     (hinj : ∀ p, Function.Injective (mfderiv J I g p))
     (hdimN : finrank ℝ E' = Fintype.card ι) (hdim : 2 * Fintype.card ι = finrank ℝ E) :
     hσ.IsLagrangianMap J g := isLagrangianMap_iff_forall.2 fun p ↦ by
-  have hrange := (hreg p).range_mfderiv_eq_ker_mfderiv hg (hinj p)
+  have hrange := (hreg p).range_mfderiv_eq_ker_mfderiv (.of_forall hg) (hinj p)
     (by rw [Module.finrank_fintype_fun_eq_card]; omega)
   rw [hrange]
   exact (hσ.isLagrangian_ker_mfderiv_iff (hreg p) (hcomm p)).2 hdim

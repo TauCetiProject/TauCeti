@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Field.Basic
+import Mathlib.Tactic.FieldSimp
 import Mathlib.Tactic.LinearCombination
 import Mathlib.Tactic.Ring
 
@@ -29,6 +30,13 @@ rotation of the disc coordinate centred there, in
   transformation at a fixed point.
 * `TauCeti.crossRatio_comp_eq_of_sub_eq_div`: maps with factorized differences preserve
   cross-ratios.
+* `TauCeti.siegel_identity`: Siegel's three-term identity for linear factors `x - θᵢ y`,
+  divided by `(θ₁ - θ₀) (x - θ₂ y)`.
+* `TauCeti.ne_one_of_mul_sub_mul_eq`, `TauCeti.div_eq_sub_mul_div_one_sub_of_mul_sub_mul_eq`:
+  the quotient `t = (x - θ₀ y) / (x - θ₂ y)`, a linear fractional function of `x / y`, is not
+  `1` when `θ₀ ≠ θ₂` and `y ≠ 0`, and the inverse transformation recovers
+  `x / y = (θ₀ - t θ₂) / (1 - t)`. These are used in the reduction of Thue equations to unit
+  equations, in `TauCeti/NumberTheory/UnitEquation/Thue.lean`.
 -/
 
 public section
@@ -63,5 +71,32 @@ theorem crossRatio_comp_eq_of_sub_eq_div {𝕜 : Type*} [Field 𝕜] {φ d : �
       (p - s) * (q - r) * (κ ^ 2 / (d p * d q * d r * d s)) := by ring
   rw [hφ p hp r hr, hφ q hq s hs, hφ p hp s hs, hφ q hq r hr,
     hnum, hden, mul_div_mul_right _ _ hL]
+
+/-- **Siegel's identity.** For `θ₁ ≠ θ₀` and `x - θ₂ y ≠ 0` in a field,
+`(θ₁ - θ₂) / (θ₁ - θ₀) · (x - θ₀ y) / (x - θ₂ y) + (θ₂ - θ₀) / (θ₁ - θ₀) · (x - θ₁ y) / (x - θ₂ y)`
+equals `1`. Applied to the linear factors of a binary form, it turns a Thue equation into unit
+equations. -/
+theorem siegel_identity {F : Type*} [Field F] {θ₀ θ₁ θ₂ x y : F} (h : θ₁ ≠ θ₀)
+    (hxy : x - θ₂ * y ≠ 0) :
+    (θ₁ - θ₂) / (θ₁ - θ₀) * ((x - θ₀ * y) / (x - θ₂ * y)) +
+      (θ₂ - θ₀) / (θ₁ - θ₀) * ((x - θ₁ * y) / (x - θ₂ * y)) = 1 := by
+  have h' : θ₁ - θ₀ ≠ 0 := sub_ne_zero.2 h
+  field_simp
+  ring
+
+/-- If `t (x - θ₂ y) = x - θ₀ y` with `θ₀ ≠ θ₂` and `y ≠ 0` in a commutative ring without zero
+divisors, then `t ≠ 1`. -/
+theorem ne_one_of_mul_sub_mul_eq {R : Type*} [CommRing R] [NoZeroDivisors R] {θ₀ θ₂ x y t : R}
+    (h : θ₀ ≠ θ₂) (hy : y ≠ 0) (ht : t * (x - θ₂ * y) = x - θ₀ * y) : t ≠ 1 := by
+  rintro rfl
+  exact mul_ne_zero (sub_ne_zero.2 h) hy (by linear_combination ht)
+
+/-- If `t (x - θ₂ y) = x - θ₀ y` with `θ₀ ≠ θ₂` and `y ≠ 0`, then `x / y = (θ₀ - t θ₂) / (1 - t)`.
+Thus the quotient of two linear factors at `(x, y)` determines the ratio `x / y`. -/
+theorem div_eq_sub_mul_div_one_sub_of_mul_sub_mul_eq {F : Type*} [Field F] {θ₀ θ₂ x y t : F}
+    (h : θ₀ ≠ θ₂) (hy : y ≠ 0) (ht : t * (x - θ₂ * y) = x - θ₀ * y) :
+    x / y = (θ₀ - t * θ₂) / (1 - t) := by
+  rw [div_eq_div_iff hy (sub_ne_zero.2 (ne_one_of_mul_sub_mul_eq h hy ht).symm)]
+  linear_combination -ht
 
 end TauCeti

@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.LinearAlgebra.RootSystem.LongestElement
-public import TauCeti.LinearAlgebra.RootSystem.Weyl.Orbit
+public import TauCeti.LinearAlgebra.RootSystem.Weyl.Orbit.Basic
 
 /-!
 # The sign character of a Weyl group

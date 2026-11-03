@@ -34,6 +34,11 @@ domain with a first finite index, a finite face's left and right endpoints count
 slopes respectively below and at most the face slope. These absolute endpoints are the
 geometric interface later used to identify extremal coefficients and count slope multiplicities.
 
+A supporting line of a point set also supports its lower convex envelope, and every contact
+point with the points is a contact point with the envelope. The envelope touches the line no
+earlier than the points do, so both have the same least contact index. Their greatest contact
+indices can differ: the envelope may follow a ray that the points approach only in the limit.
+
 ## References
 
 * N. Koblitz, *p-adic Numbers, p-adic Analysis, and Zeta-Functions*, second edition,
@@ -60,6 +65,11 @@ supporting value. -/
 theorem isSupportingLine_iff {h : ℕ → WithTop ℝ} {σ c : ℝ} :
     IsSupportingLine h σ c ↔ (c : EReal) ≤ supportingValue h σ :=
   coe_le_supportingValue_iff.symm
+
+/-- A height sequence with a supporting line is admissible. -/
+theorem IsSupportingLine.isAdmissible {h : ℕ → WithTop ℝ} {σ c : ℝ}
+    (hc : IsSupportingLine h σ c) : IsAdmissible h :=
+  isAdmissible_iff.mpr ⟨c, σ, hc⟩
 
 /-- A line through a finite height supports a convex sequence exactly when its slope
 lies between the adjacent finite unit slopes. A missing adjacent edge imposes no bound. -/
@@ -270,6 +280,22 @@ theorem right_ne_top (hf : IsFiniteFace h σ l u) : h u ≠ ⊤ := by
   rw [mem_supportingFace] at hu
   rw [hu]
   exact WithTop.coe_ne_top
+
+/-- The slope times the width of a finite face is the difference of its endpoint heights.
+This includes the zero-width singleton case. -/
+theorem mul_width_eq_sub (hf : IsFiniteFace h σ l u) :
+    σ * (u - l : ℕ) = (h u).untop₀ - (h l).untop₀ := by
+  obtain ⟨c, _, hface⟩ := hf.exists_intercept
+  have hl := mem_supportingFace.mp (hface.symm.subset ⟨le_rfl, hf.left_le_right⟩)
+  have hu := mem_supportingFace.mp (hface.symm.subset ⟨hf.left_le_right, le_rfl⟩)
+  rw [hl, hu, WithTop.untop₀_coe, WithTop.untop₀_coe, Nat.cast_sub hf.left_le_right]
+  ring
+
+/-- A finite face of positive width has slope equal to its rise divided by its width. -/
+theorem slope_eq_div (hf : IsFiniteFace h σ l u) (hlu : l < u) :
+    σ = ((h u).untop₀ - (h l).untop₀) / (u - l : ℕ) := by
+  exact (eq_div_iff (by exact_mod_cast (Nat.sub_pos_of_lt hlu).ne' :
+    ((u - l : ℕ) : ℝ) ≠ 0)).mpr hf.mul_width_eq_sub
 
 /-- A finite unit edge strictly before a finite face has slope strictly less than the
 face slope. -/
@@ -546,5 +572,76 @@ theorem IsConvexSeq.exists_isFiniteFace_of_unbounded_unitSlope {h : ℕ → With
   obtain ⟨s, ⟨m, hm, rfl⟩, hσ⟩ := not_bddAbove_iff.mp hunbounded σ
   obtain ⟨l, u, hf, _⟩ := hh.exists_isFiniteFace_of_lt_unitSlope hm hσ
   exact ⟨l, u, hf⟩
+
+/-! ### Supporting faces of lower convex envelopes -/
+
+namespace IsLowerConvexEnvelope
+
+variable {a h : ℕ → WithTop ℝ} {σ c : ℝ}
+
+/-- Every contact point of a supporting line with the point heights is a contact point with
+their lower convex envelope. -/
+theorem supportingFace_subset (hh : IsLowerConvexEnvelope a h) (hc : IsSupportingLine a σ c) :
+    supportingFace a σ c ⊆ supportingFace h σ c := fun n hn =>
+  le_antisymm ((hh.le n).trans_eq hn)
+    (hh.greatest (isConvexSeq_affine c σ) (isSupportingLine_iff_forall.mp hc) n)
+
+/-- If a lower convex envelope touches a supporting line of its point heights at `n`, then the
+point heights touch that line at some index at most `n`. The envelope may touch the line at
+indices beyond every contact point, along a ray approached by the points only in the limit. -/
+theorem exists_le_mem_supportingFace (hh : IsLowerConvexEnvelope a h)
+    (hc : IsSupportingLine a σ c) {n : ℕ} (hn : n ∈ supportingFace h σ c) :
+    ∃ k ≤ n, k ∈ supportingFace a σ c := by
+  rw [isSupportingLine_iff_forall] at hc
+  by_contra hne
+  push Not at hne
+  -- Every point up to `n` lies strictly above the line, hence above it by a uniform margin.
+  let gap : ℕ → ℝ := fun k => if a k = ⊤ then 1 else (a k).untop₀ - (c + σ * k)
+  have hgap (k : ℕ) (hk : k ≤ n) : 0 < gap k := by
+    by_cases hak : a k = ⊤
+    · simp [gap, hak]
+    have hlt := (hc k).lt_of_ne (fun h => hne k hk h.symm)
+    rw [← WithTop.coe_untop₀_of_ne_top hak, WithTop.coe_lt_coe] at hlt
+    simp only [gap, hak, ↓reduceIte]
+    linarith
+  set ε := (Finset.range (n + 1)).inf' Finset.nonempty_range_add_one gap with hε
+  have hεpos : 0 < ε := (Finset.lt_inf'_iff _).mpr fun k hk =>
+    hgap k (Nat.lt_succ_iff.mp (Finset.mem_range.mp hk))
+  -- Tilting the line about the abscissa `n + 1 / 2` gives a convex minorant of the points
+  -- lying strictly above the envelope at `n`.
+  set δ := ε / (2 * n + 2) with hδ
+  have hδpos : 0 < δ := div_pos hεpos (by positivity)
+  have hδε : δ * (2 * n + 2) = ε := div_mul_cancel₀ ε (by positivity)
+  have hminor : (fun k : ℕ => ((c + δ * (2 * n + 1) + (σ - 2 * δ) * k : ℝ) : WithTop ℝ)) ≤ a := by
+    intro k
+    rcases le_or_gt k n with hk | hk
+    · by_cases hak : a k = ⊤
+      · simp [hak]
+      have hεk : ε ≤ gap k := Finset.inf'_le _ (Finset.mem_range.mpr (Nat.lt_succ_of_le hk))
+      simp only [gap, hak, ↓reduceIte] at hεk
+      rw [← WithTop.coe_untop₀_of_ne_top hak, WithTop.coe_le_coe]
+      have hk' : (k : ℝ) ≤ n := Nat.cast_le.mpr hk
+      nlinarith
+    · refine le_trans ?_ (hc k)
+      rw [WithTop.coe_le_coe]
+      have hk' : (n : ℝ) + 1 ≤ k := by exact_mod_cast hk
+      nlinarith
+  have hle := hh.greatest (isConvexSeq_affine _ _) hminor n
+  rw [hn, WithTop.coe_le_coe] at hle
+  nlinarith
+
+/-- A lower convex envelope and its point heights have the same least contact index with a
+supporting line of the points. No analogous statement holds for greatest contact indices. -/
+theorem isLeast_supportingFace_iff (hh : IsLowerConvexEnvelope a h)
+    (hc : IsSupportingLine a σ c) {l : ℕ} :
+    IsLeast (supportingFace h σ c) l ↔ IsLeast (supportingFace a σ c) l := by
+  refine ⟨fun ⟨hl, hmin⟩ => ?_, fun ⟨hl, hmin⟩ => ⟨hh.supportingFace_subset hc hl, fun m hm => ?_⟩⟩
+  · obtain ⟨k, hkl, hk⟩ := hh.exists_le_mem_supportingFace hc hl
+    obtain rfl := le_antisymm hkl (hmin (hh.supportingFace_subset hc hk))
+    exact ⟨hk, fun m hm => hmin (hh.supportingFace_subset hc hm)⟩
+  · obtain ⟨k, hkm, hk⟩ := hh.exists_le_mem_supportingFace hc hm
+    exact (hmin hk).trans hkm
+
+end IsLowerConvexEnvelope
 
 end TauCeti

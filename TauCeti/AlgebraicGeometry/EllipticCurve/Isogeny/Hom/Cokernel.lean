@@ -8,6 +8,7 @@ module
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.Dual.Basic
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.Hom.Ring
 public import Mathlib.GroupTheory.FiniteAbelian.Basic
+import TauCeti.GroupTheory.Index.Comp
 import TauCeti.GroupTheory.Index.Quotient
 
 /-!
@@ -28,6 +29,15 @@ when the source is finitely generated), division gives the rational cokernel/ker
 `#coker(f) / #ker(f)`. When the target is finitely generated, the cokernel is finite too:
 its image contains `deg(f) · E₂(F)`.
 
+Since `f̂ ∘ f` is multiplication by `deg f`, the cokernel/kernel ratios of `f` and `f̂` multiply to
+that of `[deg f]` on `E₁(F)`. In cross-multiplied form,
+
+`#coker([deg f]) · #ker(f) · #ker(f̂) = #coker(f̂) · #coker(f) · #E₁(F)[deg f]`.
+
+This holds over every field, again with no finiteness hypothesis; when the six quantities are
+finite it is the ratio identity. Over a local field, at a place prime to `deg f`, the ratio for
+`[deg f]` is `1`, so the ratios of `f` and `f̂` are inverse.
+
 This is the torsion factor in the kernel/cokernel proof of Cassels' isogeny invariance of the
 BSD quotient. The regulator, period, local, and Tate–Shafarevich factors are not treated here.
 No characteristic-zero or separability hypothesis is needed.
@@ -43,6 +53,8 @@ No characteristic-zero or separability hypothesis is needed.
 * `TauCeti.Isogeny.Hom.index_range_mul_card_torsion`: the cross-multiplied correction formula.
 * `TauCeti.Isogeny.Hom.index_range_div_card_ker`: the cokernel/kernel ratio
   `#coker(f) / #ker(f)`, in `ℚ`.
+* `TauCeti.Isogeny.Hom.index_range_nsmul_mul_card_ker_mul_card_ker_dual`: the cokernel/kernel
+  ratios of `f` and `f̂` multiply to that of multiplication by `deg f`.
 
 ## References
 
@@ -122,5 +134,18 @@ theorem index_range_div_card_ker [Finite (AddCommGroup.torsion W₁.Point)] (hf 
   have hK : (Nat.card f.pointMapHom.ker : ℚ) ≠ 0 := Nat.cast_ne_zero.mpr Nat.card_pos.ne'
   apply (div_eq_div_iff hK hT).mpr
   exact_mod_cast f.index_range_mul_card_torsion hf
+
+/-- **The cokernel/kernel ratios of a morphism and of its dual multiply to that of multiplication
+by the degree**: on the points over any field,
+`#coker([deg f]) · #ker(f) · #ker(f̂) = #coker(f̂) · #coker(f) · #E₁(F)[deg f]`. No finiteness is
+required: infinite orders and indices are read as `0`. When all of them are finite, dividing out
+gives the identity of ratios. -/
+theorem index_range_nsmul_mul_card_ker_mul_card_ker_dual :
+    (nsmulAddMonoidHom (α := W₁.Point) f.degree).range.index *
+        (Nat.card f.pointMapHom.ker * Nat.card f.dual.pointMapHom.ker) =
+      f.dual.pointMapHom.range.index * f.pointMapHom.range.index *
+        Nat.card (nsmulAddMonoidHom (α := W₁.Point) f.degree).ker := by
+  simpa only [dual_pointMapHom_comp_pointMapHom] using
+    AddMonoidHom.index_range_comp_mul_card_ker_mul_card_ker f.pointMapHom f.dual.pointMapHom
 
 end TauCeti.Isogeny.Hom

@@ -57,12 +57,14 @@ noncomputable def arTranslate (M : QuiverRep.{u, v, w, max u v w t} k Q)
   have := module_finite_pathAlgebra_quiverRepEquivalenceFunctorObj_of_isFinDim k Q M hM
   (F).obj (ModuleCat.arTranslate.{u, max u v w, t} k ((E).functor.obj M))
 
-private theorem arTranslate_eq (M : QuiverRep.{u, v, w, max u v w t} k Q)
+/-- The quiver translate is the module translate transported through the path-algebra
+equivalence. -/
+theorem arTranslate_eq_quiverRepFunctor_obj (M : QuiverRep.{u, v, w, max u v w t} k Q)
     (hM : IsFinDim k Q M) :
     have := module_finite_pathAlgebra_quiverRepEquivalenceFunctorObj_of_isFinDim k Q M hM
     arTranslate.{u, v, w, t} k Q M hM =
       (F).obj (ModuleCat.arTranslate.{u, max u v w, t} k ((E).functor.obj M)) :=
-  rfl
+  (rfl)
 
 /-- Any finite minimal projective presentation computes the same translate up to isomorphism.
 This characterizes `arTranslate` without referring to its chosen presentation. -/
@@ -74,7 +76,7 @@ theorem nonempty_iso_arTranslate (M : QuiverRep.{u, v, w, max u v w t} k Q)
       (F).obj (ModuleCat.of kQ (AuslanderReitenTranslate k P.p))) := by
   have := module_finite_pathAlgebra_quiverRepEquivalenceFunctorObj_of_isFinDim k Q M hM
   obtain ⟨e⟩ := ModuleCat.nonempty_iso_arTranslate.{u, max u v w, t} k ((E).functor.obj M) P hP
-  rw [arTranslate_eq]
+  rw [arTranslate_eq_quiverRepFunctor_obj]
   exact ⟨(F).mapIso e⟩
 
 /-- Isomorphic representations have isomorphic Auslander–Reiten translates. -/
@@ -85,7 +87,7 @@ theorem nonempty_iso_arTranslate_of_iso {M N : QuiverRep.{u, v, w, max u v w t} 
   have := module_finite_pathAlgebra_quiverRepEquivalenceFunctorObj_of_isFinDim k Q M hM
   have := module_finite_pathAlgebra_quiverRepEquivalenceFunctorObj_of_isFinDim k Q N hN
   obtain ⟨f⟩ := ModuleCat.nonempty_iso_arTranslate_of_iso.{u, max u v w, t} k ((E).functor.mapIso e)
-  rw [arTranslate_eq, arTranslate_eq]
+  rw [arTranslate_eq_quiverRepFunctor_obj, arTranslate_eq_quiverRepFunctor_obj]
   exact ⟨(F).mapIso f⟩
 
 /-- The Auslander–Reiten translate stays within the pointwise finite-dimensional
@@ -93,7 +95,7 @@ representations. -/
 theorem isFinDim_arTranslate (M : QuiverRep.{u, v, w, max u v w t} k Q)
     (hM : IsFinDim k Q M) : IsFinDim k Q (arTranslate.{u, v, w, t} k Q M hM) := by
   have := module_finite_pathAlgebra_quiverRepEquivalenceFunctorObj_of_isFinDim k Q M hM
-  rw [arTranslate_eq]
+  rw [arTranslate_eq_quiverRepFunctor_obj]
   exact isFinDim_quiverRepFunctor_obj k Q _ (Module.Finite.trans kQ _)
 
 /-- The translate vanishes precisely on the projective representations. -/
@@ -104,7 +106,7 @@ theorem isZero_arTranslate_iff (M : QuiverRep.{u, v, w, max u v w t} k Q)
   let T := ModuleCat.arTranslate.{u, max u v w, t} k ((E).functor.obj M)
   have hzero : IsZero ((F).obj T) ↔ IsZero T :=
     ⟨fun h ↦ IsZero.of_full_of_faithful_of_isZero (F) T h, (F).map_isZero⟩
-  rw [arTranslate_eq]
+  rw [arTranslate_eq_quiverRepFunctor_obj]
   exact hzero.trans ((ModuleCat.isZero_arTranslate_iff.{u, max u v w, t} k _).trans
     ((E).map_projective_iff M))
 
@@ -123,7 +125,7 @@ theorem indecomposable_arTranslate_iff (M : QuiverRep.{u, v, w, max u v w t} k Q
       ((E).fullyFaithfulFunctor.map_bijective _ _)
     have hT := (ModuleCat.indecomposable_arTranslate_iff.{u, max u v w, t} k _ hi).mpr
       (fun h ↦ hp (((E).map_projective_iff M).mp h))
-    rw [arTranslate_eq]
+    rw [arTranslate_eq_quiverRepFunctor_obj]
     exact (F).indecomposable_obj_of_map_bijective hT
       ((Functor.FullyFaithful.ofFullyFaithful (F)).map_bijective _ _)
 
@@ -140,7 +142,7 @@ theorem injective_arTranslate_iff (M : QuiverRep.{u, v, w, max u v w t} k Q)
   have hinj : Injective (fRep.obj T) ↔ Injective T := by
     simpa only [eRep, fRep, Equivalence.symm_functor, quiverRepEquivalence_inverse] using
       eRep.symm.map_injective_iff T
-  rw [arTranslate_eq]
+  rw [arTranslate_eq_quiverRepFunctor_obj]
   exact hinj.trans ((ModuleCat.injective_arTranslate_iff.{u, max u v w, t} k _).trans
     (eRep.map_projective_iff M))
 
@@ -154,7 +156,7 @@ theorem nonempty_iso_arTranslate_iff {M N : QuiverRep.{u, v, w, max u v w t} k Q
   refine ⟨fun ⟨e⟩ ↦ ?_, fun ⟨e⟩ ↦ nonempty_iso_arTranslate_of_iso.{u, v, w, t} k Q hM hN e⟩
   have := module_finite_pathAlgebra_quiverRepEquivalenceFunctorObj_of_isFinDim k Q M hM
   have := module_finite_pathAlgebra_quiverRepEquivalenceFunctorObj_of_isFinDim k Q N hN
-  rw [arTranslate_eq, arTranslate_eq] at e
+  rw [arTranslate_eq_quiverRepFunctor_obj, arTranslate_eq_quiverRepFunctor_obj] at e
   have hiM' := (E).functor.indecomposable_obj_of_map_bijective hiM
     ((E).fullyFaithfulFunctor.map_bijective _ _)
   have hiN' := (E).functor.indecomposable_obj_of_map_bijective hiN
@@ -188,7 +190,7 @@ theorem exists_nonempty_iso_arTranslate
     ((E).fullyFaithfulInverse.map_bijective _ _)
   have hpM : ¬ Projective M := fun h ↦ hpL (((E).symm.map_projective_iff L).mp h)
   refine ⟨M, hM, hiM, hpM, ⟨?_⟩⟩
-  rw [arTranslate_eq, ← quiverRepEquivalence_inverse]
+  rw [arTranslate_eq_quiverRepFunctor_obj, ← quiverRepEquivalence_inverse]
   exact (E).inverse.mapIso (f ≪≫ e) ≪≫ ((E).unitIso.app N).symm
 
 end TauCeti

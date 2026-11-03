@@ -62,14 +62,21 @@ traciality are never assumed. For `s = ∅` the cumulant
   all noncrossing partitions.
 * `TauCeti.freeCumulant_eq_sum_mu_mul_partitionMoment` — the cumulant is the sum of the block
   moments weighted by `μ(π, 1_s)`.
+* `TauCeti.partitionCumulant_eq_of_orderIso` and `TauCeti.freeCumulant_eq_of_orderIso` — free
+  cumulants transport along order isomorphisms of noncrossing partition lattices that match block
+  moments.
 * `TauCeti.partitionCumulant_eq_prod_freeCumulant` — the cumulants are multiplicative,
   `κ_π(a) = ∏_{B ∈ π} κ_B(a)`; hence `TauCeti.apply_prod_eq_sum_prod_freeCumulant` and
   `TauCeti.apply_prod_ofFn_eq_sum_prod_freeCumulant` — a moment is the sum over all noncrossing
   partitions of the products of the cumulants along their parts.
 * `TauCeti.freeCumulant_singleton` and `TauCeti.freeCumulant_pair` — the first two cumulants are
   the mean `φ a_i` and the covariance `φ (a_i * a_j) - φ a_i * φ a_j`.
+* `TauCeti.freeCumulant_const_of_card_eq_two` — the second free cumulant of a constant word is
+  the variance `φ (x ^ 2) - φ x ^ 2`.
 * `TauCeti.freeCumulant_eq_zero_of_apply_eq_one` — if `φ 1 = 1`, the free cumulant of a word of
   length at least two with a unit argument vanishes.
+* `TauCeti.partitionMoment_const` — the block moment of a constant word `(x, …, x)` is the
+  product of the moments `φ (x ^ #B)` over the parts `B`.
 * `TauCeti.partitionMoment_congr`, `TauCeti.partitionCumulant_congr` and
   `TauCeti.freeCumulant_congr` — block moments and cumulants depend only on the letters at the
   positions of `s`.
@@ -111,6 +118,13 @@ theorem partitionMoment_congr (φ : A → R) {a b : α → A} (h : Set.EqOn a b 
   rw [partitionMoment_def, partitionMoment_def]
   refine prod_congr rfl fun B hB => ?_
   rw [List.map_congr_left fun x hx => h (P.le hB ((mem_sort _).1 hx))]
+
+/-- The block moment of a constant word `(x, …, x)` is the product over the parts `B` of the
+moments `φ (x ^ #B)`. -/
+@[simp]
+theorem partitionMoment_const (φ : A → R) (x : A) (P : Finpartition s) :
+    partitionMoment φ (fun _ => x) P = ∏ B ∈ P.parts, φ (x ^ #B) := by
+  simp [partitionMoment_def, List.map_const', List.prod_replicate]
 
 /-- The block moment of the partition into singletons is the product of the individual
 moments. -/
@@ -234,6 +248,15 @@ theorem freeCumulant_pair {i j : α} (hij : i < j) :
   simp only [List.map_cons, List.map_nil, List.prod_cons, List.prod_nil, mul_one] at this
   rw [freeCumulant_def, this, add_sub_cancel_left]
 
+/-- The second free cumulant of a constant word is the variance of its letter,
+`κ₂(x, x) = φ (x ^ 2) - φ x ^ 2`. -/
+theorem freeCumulant_const_of_card_eq_two (x : A) {B : Finset α} (hB : #B = 2) :
+    freeCumulant φ (fun _ => x) B = φ (x ^ 2) - φ x ^ 2 := by
+  obtain ⟨i, j, hij, rfl⟩ := card_eq_two.1 hB
+  rcases hij.lt_or_gt with h | h
+  · rw [freeCumulant_pair _ _ h, sq, sq]
+  · rw [pair_comm, freeCumulant_pair _ _ h, sq, sq]
+
 /-- The free cumulants are *multiplicative*: the free cumulant of a noncrossing partition is the
 product of the free cumulants of the words read along its parts, `κ_π(a) = ∏_{B ∈ π} κ_B(a)`. -/
 theorem partitionCumulant_eq_prod_freeCumulant (π : NoncrossingPartition s) :
@@ -349,5 +372,30 @@ theorem freeCumulant_eq_zero_of_apply_eq_one (h1 : φ 1 = 1) {i : α} (hai : a i
   exact add_eq_left.1 h.symm
 
 end Cumulant
+
+section OrderIso
+
+variable [CommRing R] [Monoid A] (φ : A → R) {β : Type*} [LinearOrder β] {t : Finset β}
+  {a : α → A} {b : β → A}
+
+/-- Free cumulants transport along an order isomorphism `e : NC(s) ≃o NC(t)` that matches the
+block moments of two words: if `φ_π(a) = φ_{e π}(b)` for every `π`, then
+`κ_π(a) = κ_{e π}(b)`. -/
+theorem partitionCumulant_eq_of_orderIso (e : NoncrossingPartition s ≃o NoncrossingPartition t)
+    (h : ∀ π, partitionMoment φ a π.1 = partitionMoment φ b (e π).1)
+    (π : NoncrossingPartition s) : partitionCumulant φ a π = partitionCumulant φ b (e π) := by
+  refine (congrFun (eq_partitionCumulant_of_forall_sum_Iic φ a
+    (fun π => partitionCumulant φ b (e π)) fun π => ?_) π).symm
+  rw [h, ← sum_Iic_partitionCumulant φ b (e π)]
+  exact Finset.sum_equiv e.toEquiv (fun σ => by simp) fun _ _ => rfl
+
+/-- Free cumulants of two words agree when an order isomorphism `NC(s) ≃o NC(t)` matches their
+block moments. -/
+theorem freeCumulant_eq_of_orderIso (e : NoncrossingPartition s ≃o NoncrossingPartition t)
+    (h : ∀ π, partitionMoment φ a π.1 = partitionMoment φ b (e π).1) :
+    freeCumulant φ a s = freeCumulant φ b t := by
+  rw [freeCumulant_def, partitionCumulant_eq_of_orderIso φ e h, e.map_top, freeCumulant_def]
+
+end OrderIso
 
 end TauCeti

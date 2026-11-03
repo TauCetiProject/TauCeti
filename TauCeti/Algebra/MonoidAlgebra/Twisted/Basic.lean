@@ -270,7 +270,7 @@ theorem twistedTranslation_mul (g h : G) :
   refine Finsupp.lhom_ext fun a b ↦ ?_
   have hcoef : α g (h * a) * α h a = α g h * α (g * h) a := by
     rw [mul_comm (α g (h * a)), ← IsFactorSet.cocycle (α := α) g h a, mul_comm]
-  simp only [Module.End.mul_apply, twistedTranslation_single, LinearMap.smul_apply,
+  simp only [mul_apply_eq_comp, twistedTranslation_single, LinearMap.smul_apply,
     Finsupp.smul_single, smul_eq_mul, ← mul_assoc]
   congr 1
   rw [← Units.val_mul, ← Units.val_mul, hcoef]

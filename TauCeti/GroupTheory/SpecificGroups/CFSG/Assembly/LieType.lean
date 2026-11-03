@@ -36,6 +36,8 @@ The construction follows the family modules it imports.
 * `TauCeti.ValidLieTypeIndex.steinberg_suzuki`, `TauCeti.ValidLieTypeIndex.steinberg_reeG2`,
   `TauCeti.ValidLieTypeIndex.steinberg_reeF4` and `TauCeti.ValidLieTypeIndex.steinberg_tits`: on
   the four half-Frobenius constructors the Steinberg endomorphism is that of the family.
+* `TauCeti.ValidLieTypeIndex.steinberg_A`: on `Aₙ(q)` the Steinberg endomorphism is that of the
+  graph-twisted assembly.
 * `TauCeti.ValidLieTypeIndex.steinberg_simpleRootSubgroup_of_not_usesHalfFrobenius`: on ordinary
   and graph-twisted indices, the action on simple root subgroups permutes by the diagram
   automorphism and raises the parameter to the `q`-th power.
@@ -99,6 +101,13 @@ theorem steinberg_reeF4 (hv : (LieTypeIndex.reeF4 m).Valid) :
 /-- On the Tits index the Steinberg endomorphism is that of the Tits construction. -/
 theorem steinberg_tits (hv : LieTypeIndex.tits.Valid) :
     steinberg ⟨_, hv⟩ = TitsLieIndex.steinberg ⟨⟨_, hv⟩, by simp⟩ :=
+  (rfl)
+
+/-- On `Aₙ(q)` the Steinberg endomorphism is that of the graph-twisted assembly, which is in turn
+that of the type-`A` family by `TauCeti.GraphTwistedIndex.steinberg_A`. -/
+theorem steinberg_A {n : ℕ} {q : PrimePower} (hv : (LieTypeIndex.A n q).Valid) :
+    steinberg ⟨_, hv⟩ =
+      GraphTwistedIndex.steinberg ⟨⟨_, hv⟩, by simp [LieTypeIndex.usesHalfFrobenius_iff]⟩ :=
   (rfl)
 
 end Branches

@@ -57,6 +57,9 @@ the Tate algebra `T = R{X/1}` and carries the restricted Gauss norm.
   proper subring as soon as there is a variable, while `W` is everything when there is none
   (`TauCeti.Dagger.washnitzerAlgebra_eq_top`), and then every series is a constant
   (`TauCeti.Dagger.algebraMap_washnitzerAlgebra_surjective`).
+* `TauCeti.Dagger.eventually_isRestricted_of_mem_washnitzerAlgebra`: an overconvergent series is
+  restricted at every radius `ρ > 1` close enough to `1`, so finitely many overconvergent series
+  share such a radius.
 * `TauCeti.Dagger.exists_isRestricted_forall_norm_coeff_mul_pow_lt`: strict coefficient bounds
   on an overconvergent series persist to some radius `ρ > 1`; by
   `TauCeti.Dagger.exists_isRestricted_forall_mem_norm_coeff_mul_pow_lt` this holds for the
@@ -66,7 +69,8 @@ the Tate algebra `T = R{X/1}` and carries the restricted Gauss norm.
 * `TauCeti.Dagger.isUnit_washnitzerAlgebra_iff` and
   `TauCeti.Dagger.washnitzerAlgebra.isUnit_toTate_iff`: over a complete ultrametric field an
   overconvergent series is a unit of `W` iff it is a unit of the Tate algebra, iff its constant
-  coefficient is nonzero and strictly dominates all others. In Gauss norm form,
+  coefficient is nonzero and strictly dominates all others, so `toTate` is a local homomorphism
+  (`TauCeti.Dagger.washnitzerAlgebra.isLocalHom_toTate`). In Gauss norm form,
   `TauCeti.Dagger.isUnit_washnitzerAlgebra_iff_norm_sub_lt` reads `|f - f(0)| < |f(0)|`.
   Consequently `1 + c • f` is a unit for all scalars `c` near `0`
   (`TauCeti.Dagger.washnitzerAlgebra.eventually_isUnit_one_add_smul`).
@@ -135,6 +139,19 @@ theorem isRestricted_of_mem_washnitzerAlgebra {f : MvPowerSeries σ R}
     IsRestricted (fun _ : σ ↦ ρ) f := by
   obtain ⟨ρ', hρ', hf⟩ := hf
   exact isRestricted_of_le hf (fun _ ↦ h0) fun _ ↦ h1.trans hρ'.le
+
+/-- Constant series are overconvergent. -/
+theorem C_mem_washnitzerAlgebra (a : R) : C a ∈ washnitzerAlgebra σ R :=
+  ⟨2, one_lt_two, isRestricted_C _ a⟩
+
+/-- An overconvergent series is restricted at every constant radius `ρ > 1` close enough to `1`.
+This allows one radius to be chosen for finitely many overconvergent series at once. -/
+theorem eventually_isRestricted_of_mem_washnitzerAlgebra {f : MvPowerSeries σ R}
+    (hf : f ∈ washnitzerAlgebra σ R) :
+    ∀ᶠ ρ in 𝓝[>] (1 : ℝ), IsRestricted (fun _ : σ ↦ ρ) f := by
+  obtain ⟨ρ₀, hρ₀, hf⟩ := hf
+  filter_upwards [Ioc_mem_nhdsGT hρ₀] with ρ ⟨hρ, hρρ₀⟩
+  exact isRestricted_of_le hf (fun _ ↦ zero_le_one.trans hρ.le) fun _ ↦ hρρ₀
 
 /-- Polynomials are overconvergent. -/
 theorem coe_mem_washnitzerAlgebra (p : MvPolynomial σ R) :
@@ -347,6 +364,13 @@ theorem coe_renameEquiv {τ : Type*} (e : σ ≃ τ) (f : washnitzerAlgebra σ R
       _root_.MvPowerSeries.renameEquiv R e f :=
   (rfl)
 
+/-- Renaming the variables commutes with the inclusion of the polynomials. -/
+@[simp]
+theorem renameEquiv_ofMvPolynomial {τ : Type*} (e : σ ≃ τ) (p : MvPolynomial σ R) :
+    washnitzerAlgebra.renameEquiv e (ofMvPolynomial σ R p) =
+      ofMvPolynomial τ R (MvPolynomial.rename e p) :=
+  Subtype.ext (by simp [_root_.MvPowerSeries.rename_coe])
+
 variable (σ R) in
 /-- **Overconvergent series in no variables.** With no variables every series is a constant, so
 the constant coefficient is an `R`-algebra isomorphism `R⟨⟩† ≃ R`. -/
@@ -546,8 +570,7 @@ theorem isUnit_washnitzerAlgebra_iff (f : washnitzerAlgebra σ K) :
   obtain ⟨h0, -⟩ := hf0
   set a := constantCoeff (f : MvPowerSeries σ K)
   have hmem : (f : MvPowerSeries σ K) - C a ∈ washnitzerAlgebra σ K :=
-    sub_mem f.2 (by simpa [MvPowerSeries.algebraMap_apply] using
-      (washnitzerAlgebra σ K).algebraMap_mem a)
+    sub_mem f.2 (C_mem_washnitzerAlgebra a)
   obtain ⟨ρ, hρ, hsubρ, hρt⟩ := exists_isRestricted_forall_norm_coeff_mul_pow_lt hmem hsub
   obtain ⟨ρ', hρ', hf⟩ := f.2
   -- At the radius `min ρ ρ' > 1`, `f` is a unit of the restricted series by the Tate-algebra
@@ -577,6 +600,11 @@ theorem washnitzerAlgebra.isUnit_toTate_iff (f : washnitzerAlgebra σ K) :
     IsUnit (washnitzerAlgebra.toTate σ K f) ↔ IsUnit f :=
   ⟨fun hf ↦ (isUnit_washnitzerAlgebra_iff f).2 ⟨constantCoeff_ne_zero_of_isUnit_toTate hf,
     fun _ ht ↦ norm_coeff_lt_of_isUnit_toTate hf ht⟩, fun hf ↦ hf.map _⟩
+
+/-- The inclusion of the Monsky–Washnitzer algebra into the Tate algebra is a local
+homomorphism. -/
+instance washnitzerAlgebra.isLocalHom_toTate : IsLocalHom (washnitzerAlgebra.toTate σ K) :=
+  ⟨fun f ↦ (washnitzerAlgebra.isUnit_toTate_iff f).1⟩
 
 /-- **The unit criterion in Gauss norm form.** An overconvergent series `f` is a unit of `W` iff
 `|f - f(0)| < |f(0)|` for the Gauss norm of the Tate algebra. -/

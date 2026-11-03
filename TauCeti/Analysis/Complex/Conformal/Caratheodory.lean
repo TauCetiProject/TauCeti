@@ -12,8 +12,10 @@ public import TauCeti.Topology.JordanCurve.Basic
 import TauCeti.Analysis.Complex.Conformal.Area
 import TauCeti.Analysis.Complex.Conformal.Crosscut.Basic
 import TauCeti.Analysis.Complex.Conformal.Crosscut.SmallEnclosure
+import TauCeti.Analysis.Complex.Conformal.Inverse.Function
 import TauCeti.Analysis.Complex.Conformal.Jordan.Domain
 import TauCeti.Analysis.Complex.Conformal.LocallyConnectedBoundary
+import TauCeti.Analysis.Complex.Conformal.RiemannMapping.Normalization
 import TauCeti.Analysis.Normed.Module.Ball.Cut
 import TauCeti.Topology.MetricSpace.Cut
 import TauCeti.Topology.UniformlyLocallyConnected
@@ -39,9 +41,9 @@ length–area method:
   below any prescribed bound, a compact set `K` of diameter at most `ε` consisting of the closed
   image crosscut and a small connected piece of the image boundary joining its two ends;
 * **the far side stays wide.** `TauCeti.exists_pos_forall_le_diam_image_sdiff_closedBall`, applied
-  at the point `ζ` off the disc, gives a `d > 0` below which the image of the far side
-  `ball c r \ closedBall ζ ρ` never shrinks, for every small `ρ`; taking `K` narrower than `d` makes
-  it narrower than the far side;
+  at the point `ζ` off the disc (so that the far side at radius `0` is the whole disc), gives a
+  `d > 0` below which the image of the far side `ball c r \ closedBall ζ ρ` never shrinks, for every
+  small `ρ`; taking `K` narrower than `d` makes it narrower than the far side;
 * **both sides of the cut are connected.** The near side `ball c r ∩ ball ζ ρ` is an intersection of
   two discs, hence convex (`TauCeti.isConnected_ball_inter_ball`); the far side
   `ball c r \ closedBall ζ ρ` is connected by the Möbius reduction
@@ -88,7 +90,9 @@ which arc of the image boundary the near side clings to.
   continuity theorem as a characterization of local connectedness of the boundary.
 * `TauCeti.exists_continuousOn_closedBall_bijOn_ball_of_locallyConnectedSpace_frontier` — a
   bounded simply connected domain with locally connected boundary is the image of the disc under a
-  holomorphic bijection continuous up to the closed disc.
+  holomorphic bijection continuous up to the closed disc;
+  `TauCeti.exists_continuousOn_closedBall_bijOn_ball_of_locallyConnectedSpace_frontier_of_mem`
+  sends the centre of the disc to a prescribed point of the domain.
 * `TauCeti.exists_continuousOn_closedBall_bijOn_ball_of_isJordanCurve_frontier` — the same for a
   bounded domain with Jordan-curve boundary, the form the Jordan-domain correspondence starts from.
 
@@ -102,9 +106,9 @@ which arc of the image boundary the near side clings to.
 
 public section
 
-namespace TauCeti
-
 open Bornology Complex Filter Metric Set Topology
+
+namespace TauCeti
 
 variable {f : ℂ → ℂ} {c ζ : ℂ} {r : ℝ}
 
@@ -133,11 +137,11 @@ theorem exists_diam_image_ball_inter_ball_le_of_locallyConnectedSpace_frontier
       abs_of_pos hhalf]
     linarith
   have hne : c ≠ c + ((r / 2 : ℝ) : ℂ) := by simp [hr.ne']
-  have hnotsub : ¬ (f '' ball c r).Subsingleton := fun h =>
-    hne (hinj hc hc' (h (mem_image_of_mem f hc) (mem_image_of_mem f hc')))
   have hζball : ζ ∉ ball c r := by simp [mem_ball, hζ]
-  obtain ⟨d, hd, ρ₀, hρ₀, hfar⟩ :=
-    exists_pos_forall_le_diam_image_sdiff_closedBall hnotsub hζball hb
+  have hnontriv : (f '' (ball c r \ closedBall ζ 0)).Nontrivial := by
+    rw [closedBall_zero, sdiff_singleton_eq_self hζball]
+    exact ⟨_, mem_image_of_mem f hc, _, mem_image_of_mem f hc', fun h => hne (hinj hc hc' h)⟩
+  obtain ⟨d, hd, ρ₀, hρ₀, hfar⟩ := exists_pos_forall_le_diam_image_sdiff_closedBall hnontriv hb
   -- a small enclosing set along the image crosscut, narrower than half the far-side width
   have hulc : IsUniformlyLocallyConnected (frontier (f '' ball c r)) :=
     (isCompact_of_isClosed_isBounded isClosed_frontier
@@ -230,22 +234,28 @@ theorem exists_continuousOn_closedBall_eqOn_iff_locallyConnectedSpace_frontier
 /-! ## The Riemann-map form -/
 
 /-- **A bounded simply connected domain with locally connected boundary is the image of the disc
-under a holomorphic bijection continuous up to the closed disc.** No hypothesis that `Ω ≠ ℂ` is
-needed, `ℂ` being unbounded. -/
-theorem exists_continuousOn_closedBall_bijOn_ball_of_locallyConnectedSpace_frontier {Ω : Set ℂ}
-    (hΩo : IsOpen Ω) (hΩs : IsSimplyConnected Ω) (hΩb : IsBounded Ω)
-    [LocallyConnectedSpace (frontier Ω)] :
+under a holomorphic bijection continuous up to the closed disc, sending the centre to any
+prescribed point of the domain.** No hypothesis that `Ω ≠ ℂ` is needed, `ℂ` being unbounded. -/
+theorem exists_continuousOn_closedBall_bijOn_ball_of_locallyConnectedSpace_frontier_of_mem
+    {Ω : Set ℂ} (hΩo : IsOpen Ω) (hΩs : IsSimplyConnected Ω) (hΩb : IsBounded Ω)
+    [LocallyConnectedSpace (frontier Ω)] {p : ℂ} (hp : p ∈ Ω) :
     ∃ g : ℂ → ℂ, ContinuousOn g (closedBall 0 1) ∧ DifferentiableOn ℂ g (ball 0 1) ∧
-      BijOn g (ball 0 1) Ω := by
-  -- Extend the inverse of a Riemann map `Ω → ball 0 1`; the extension agrees with it on the open
-  -- disc, so it keeps the holomorphy and the bijectivity onto `Ω`.
+      BijOn g (ball 0 1) Ω ∧ g 0 = p := by
+  -- Extend the inverse of the Riemann map `Ω → ball 0 1` normalized at `p`; the extension agrees
+  -- with it on the open disc, so it keeps the holomorphy, the bijectivity onto `Ω` and the value
+  -- `p` at the centre.
   have hΩne : Ω ≠ univ := by
     rintro rfl
     exact NormedSpace.unbounded_univ ℝ ℂ hΩb
-  obtain ⟨φ, hφ, -, hgd, -, -⟩ :=
-    exists_bijOn_ball_differentiableOn_invFunOn hΩo hΩs hΩne
+  obtain ⟨φ, hφ⟩ := exists_isNormalizedRiemannMapOn hΩo hΩs hΩne hp
+  -- Dot notation would resolve to `Function.invFunOn`; name the lemma explicitly.
+  have hgd := DifferentiableOn.invFunOn hφ.differentiableOn hΩo hφ.injOn
+  rw [hφ.image_eq] at hgd
   have hgbij : BijOn (Function.invFunOn φ Ω) (ball 0 1) Ω :=
-    BijOn.symm hφ.invOn_invFunOn.symm hφ
+    BijOn.symm hφ.bijOn.invOn_invFunOn.symm hφ.bijOn
+  have hg0 : Function.invFunOn φ Ω 0 = p :=
+    hφ.injOn (hgbij.mapsTo (mem_ball_self one_pos)) hp
+      (by rw [hφ.map_base]; exact hφ.bijOn.surjOn.rightInvOn_invFunOn (mem_ball_self one_pos))
   have himg : Function.invFunOn φ Ω '' ball 0 1 = Ω := hgbij.image_eq
   have hb : IsBounded (Function.invFunOn φ Ω '' ball 0 1) := by rw [himg]; exact hΩb
   have : LocallyConnectedSpace (frontier (Function.invFunOn φ Ω '' ball 0 1)) := by
@@ -253,7 +263,22 @@ theorem exists_continuousOn_closedBall_bijOn_ball_of_locallyConnectedSpace_front
   obtain ⟨G, hGc, hGeq⟩ :=
     exists_continuousOn_closedBall_eqOn_of_locallyConnectedSpace_frontier one_pos hgd
       hgbij.injOn hb
-  exact ⟨G, hGc, hgd.congr fun _ hz => hGeq hz, hgbij.congr fun _ hz => (hGeq hz).symm⟩
+  exact ⟨G, hGc, hgd.congr fun _ hz => hGeq hz, hgbij.congr fun _ hz => (hGeq hz).symm,
+    (hGeq (mem_ball_self one_pos)).trans hg0⟩
+
+/-- **A bounded simply connected domain with locally connected boundary is the image of the disc
+under a holomorphic bijection continuous up to the closed disc.** No hypothesis that `Ω ≠ ℂ` is
+needed, `ℂ` being unbounded. -/
+theorem exists_continuousOn_closedBall_bijOn_ball_of_locallyConnectedSpace_frontier {Ω : Set ℂ}
+    (hΩo : IsOpen Ω) (hΩs : IsSimplyConnected Ω) (hΩb : IsBounded Ω)
+    [LocallyConnectedSpace (frontier Ω)] :
+    ∃ g : ℂ → ℂ, ContinuousOn g (closedBall 0 1) ∧ DifferentiableOn ℂ g (ball 0 1) ∧
+      BijOn g (ball 0 1) Ω :=
+  have ⟨_, hp⟩ := hΩs.isPathConnected.nonempty
+  have ⟨g, hgc, hgd, hgbij, _⟩ :=
+    exists_continuousOn_closedBall_bijOn_ball_of_locallyConnectedSpace_frontier_of_mem hΩo hΩs
+      hΩb hp
+  ⟨g, hgc, hgd, hgbij⟩
 
 /-- **A bounded Jordan domain is the image of the disc under a holomorphic bijection continuous up
 to the closed disc.** This is the form the Carathéodory boundary correspondence for Jordan domains

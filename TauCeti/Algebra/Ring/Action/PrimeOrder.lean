@@ -12,7 +12,7 @@ public import Mathlib.SetTheory.Cardinal.Finite
 import Mathlib.Algebra.BigOperators.Ring.Finset
 import TauCeti.Algebra.BigOperators.Finset.Powerset
 import TauCeti.GroupTheory.GroupAction.Orbit.Sum
-import TauCeti.GroupTheory.GroupAction.Stabilizer
+import TauCeti.GroupTheory.GroupAction.Stabilizer.Basic
 
 /-!
 # The norm of `1 + x` under an action of a group of prime order
