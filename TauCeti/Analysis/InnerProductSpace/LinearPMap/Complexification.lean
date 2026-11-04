@@ -15,8 +15,8 @@ A real partially defined operator `T` extends to `T.complexifyL2` on the Hilbert
 complexifications, with domain consisting exactly of vectors whose real and imaginary
 parts lie in `T.domain`. No boundedness of `T` is required. Complexification preserves
 and reflects density of the domain and closedness of the graph, and commutes with
-the adjoint of a densely defined operator, including its domain. In particular it preserves
-and reflects self-adjointness.
+the adjoint, including its domain (also for Mathlib's non-dense zero-value convention).
+In particular it preserves and reflects self-adjointness.
 
 The carrier is the existing `WithLp 2 (TauCeti.Complexification E)`, not the Taylor-norm
 complexification. These comparisons allow real unbounded operators to be treated by
@@ -120,6 +120,7 @@ theorem mem_graph_complexifyL2_iff (T : E →ₗ.[ℝ] F)
 
 /-- Complexification preserves and reflects closedness, for operators between arbitrary
 real normed spaces. -/
+@[simp]
 theorem isClosed_complexifyL2_iff (T : E →ₗ.[ℝ] F) :
     T.complexifyL2.IsClosed ↔ T.IsClosed := by
   let eE := (complexificationEquivProd E).toHomeomorph.trans
@@ -180,54 +181,76 @@ theorem IsFormalAdjoint.complexifyL2 {T : E →ₗ.[ℝ] F} {S : F →ₗ.[ℝ] 
 
 variable [CompleteSpace E]
 
-/-- The adjoint domain of a densely defined complexification is exactly the complexification
-of the real adjoint domain. This includes equality of the actual domains, not just a formal
-adjoint identity. -/
+/-- The adjoint domain of a complexification is exactly the complexification of the real
+adjoint domain, without any density assumption. -/
 theorem mem_adjoint_complexifyL2_domain_iff (T : E →ₗ.[ℝ] F)
-    (hT : Dense (T.domain : Set E)) (z : WithLp 2 (Complexification F)) :
+    (z : WithLp 2 (Complexification F)) :
     z ∈ T.complexifyL2†.domain ↔ z.ofLp.re ∈ T†.domain ∧ z.ofLp.im ∈ T†.domain := by
+  let e := (complexificationEquivProd E).toHomeomorph.trans
+    (prodContinuousLinearEquiv 2 ℝ E E).toHomeomorph
+  let j (x : T.domain) : T.complexifyL2.domain :=
+    ⟨toLp 2 (Complexification.ofReal (x : E)), by simp [x.property]⟩
+  have hj : Continuous j := by
+    apply Continuous.subtype_mk
+    convert e.symm.continuous.comp
+      (continuous_subtype_val.prodMk (continuous_const (y := (0 : E)))) using 1
+    ext x
+    apply ofLp_injective 2
+    apply Complexification.ext <;> simp [e]
+  let r (x : T.complexifyL2.domain) : T.domain :=
+    ⟨x.val.ofLp.re, ((T.mem_complexifyL2_domain _).1 x.property).1⟩
+  let i (x : T.complexifyL2.domain) : T.domain :=
+    ⟨x.val.ofLp.im, ((T.mem_complexifyL2_domain _).1 x.property).2⟩
+  have hr : Continuous r := by
+    apply Continuous.subtype_mk
+    simpa [e] using (e.continuous.comp continuous_subtype_val).fst
+  have hi : Continuous i := by
+    apply Continuous.subtype_mk
+    simpa [e] using (e.continuous.comp continuous_subtype_val).snd
+  simp only [mem_adjoint_domain_iff]
   constructor
-  · intro hz
-    let w := T.complexifyL2† ⟨z, hz⟩
-    have hw := adjoint_isFormalAdjoint ((T.dense_domain_complexifyL2_iff).2 hT) ⟨z, hz⟩
+  · intro h
+    have h' := h.comp hj
     constructor
-    · refine mem_adjoint_domain_of_exists _ ⟨w.ofLp.re, fun x ↦ ?_⟩
-      have hx := congrArg Complex.re (hw
-        ⟨toLp 2 (Complexification.ofReal (x : E)), by simp [x.property]⟩)
-      simpa [w] using hx
-    · refine mem_adjoint_domain_of_exists _ ⟨w.ofLp.im, fun x ↦ ?_⟩
-      have hx := congrArg Complex.im (hw
-        ⟨toLp 2 (Complexification.ofReal (x : E)), by simp [x.property]⟩)
-      simpa [w] using congrArg Neg.neg hx
+    · simpa [j, Function.comp_def] using Complex.continuous_re.comp h'
+    · simpa [j, Function.comp_def] using (Complex.continuous_im.comp h').neg
   · rintro ⟨hre, him⟩
-    refine mem_adjoint_domain_of_exists _
-      ⟨toLp 2 ⟨T† ⟨z.ofLp.re, hre⟩, T† ⟨z.ofLp.im, him⟩⟩, fun x ↦ ?_⟩
-    exact (adjoint_isFormalAdjoint hT).complexifyL2
-      ⟨z, (T†.mem_complexifyL2_domain _).2 ⟨hre, him⟩⟩ x
+    have hreal := (hre.comp hr).add (him.comp hi)
+    have himag := (hre.comp hi).sub (him.comp hr)
+    convert (Complex.continuous_ofReal.comp hreal).add
+      ((Complex.continuous_ofReal.comp himag).mul (continuous_const (y := Complex.I))) using 1
+    ext x
+    apply Complex.ext <;> simp [r, i, Function.comp_def]
 
-/-- Adjoint and Hilbert complexification commute for densely defined real operators. -/
-theorem adjoint_complexifyL2 (T : E →ₗ.[ℝ] F) (hT : Dense (T.domain : Set E)) :
+/-- Adjoint and Hilbert complexification commute, including Mathlib's zero-value convention
+for operators with non-dense domain. -/
+theorem adjoint_complexifyL2 (T : E →ₗ.[ℝ] F) :
     T.complexifyL2† = T†.complexifyL2 := by
+  classical
   apply LinearPMap.ext
   · ext z
-    simpa only [mem_complexifyL2_domain] using T.mem_adjoint_complexifyL2_domain_iff hT z
+    simpa only [mem_complexifyL2_domain] using T.mem_adjoint_complexifyL2_domain_iff z
   · intro z hz hz'
-    apply adjoint_apply_eq ((T.dense_domain_complexifyL2_iff).2 hT)
-    exact (adjoint_isFormalAdjoint hT).complexifyL2 ⟨z, hz'⟩
+    by_cases hT : Dense (T.domain : Set E)
+    · apply adjoint_apply_eq ((T.dense_domain_complexifyL2_iff).2 hT)
+      exact (adjoint_isFormalAdjoint hT).complexifyL2 ⟨z, hz'⟩
+    · rw [adjoint_apply_of_not_dense (T.dense_domain_complexifyL2_iff.not.mpr hT)]
+      apply ofLp_injective 2
+      ext <;> simp [adjoint_apply_of_not_dense hT]
 
 /-- A real operator on a Hilbert space is self-adjoint exactly when its Hilbert
 complexification is self-adjoint. No closedness or density hypothesis is assumed. -/
+@[simp]
 theorem isSelfAdjoint_complexifyL2_iff (T : E →ₗ.[ℝ] E) :
     IsSelfAdjoint T.complexifyL2 ↔ IsSelfAdjoint T := by
   constructor
   · intro h
-    have hd := T.dense_domain_complexifyL2_iff.mp h.dense_domain
     rw [isSelfAdjoint_def] at h ⊢
     apply complexifyL2_injective
-    rw [← T.adjoint_complexifyL2 hd]
+    rw [← T.adjoint_complexifyL2]
     exact h
   · intro h
-    rw [isSelfAdjoint_def, T.adjoint_complexifyL2 h.dense_domain]
+    rw [isSelfAdjoint_def, T.adjoint_complexifyL2]
     exact congrArg complexifyL2 h
 
 end LinearPMap

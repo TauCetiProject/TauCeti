@@ -207,6 +207,7 @@ theorem mem_complexifyL2 (S : Submodule ℝ E) (z : WithLp 2 (Complexification E
     z ∈ S.complexifyL2 ↔ z.ofLp.re ∈ S ∧ z.ofLp.im ∈ S := Iff.rfl
 
 /-- Complexifying a real subspace preserves and reflects density. -/
+@[simp]
 theorem dense_complexifyL2_iff (S : Submodule ℝ E) :
     Dense (S.complexifyL2 : Set (WithLp 2 (Complexification E))) ↔ Dense (S : Set E) := by
   let e := (complexificationEquivProd E).toHomeomorph.trans
