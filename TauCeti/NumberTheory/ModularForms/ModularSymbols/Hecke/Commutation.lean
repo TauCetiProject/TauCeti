@@ -65,7 +65,7 @@ theorem commute_heckeSymbol_diamondSymbol {Δ : Submonoid (GL (Fin 2) ℚ)}
     (mapGL_mem_intEntries 2 g) hnorm hnorm hconj _ hu
   rw [commute_iff_eq]
   refine Coinvariants.hom_ext (LinearMap.ext fun x ↦ ?_)
-  simp only [LinearMap.comp_apply, Module.End.mul_apply]
+  simp only [LinearMap.comp_apply, mul_apply_eq_comp]
   rw [diamondSymbol_mk g rfl, heckeSymbol_mk_eq_heckeSum, heckeSymbol_mk_eq_heckeSum]
   exact LinearMap.congr_fun h x
 

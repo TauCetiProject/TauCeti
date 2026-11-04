@@ -223,6 +223,33 @@ theorem Hom.id_comp {S : Pair A} {T : Pair B} (f : Hom S T) : (Hom.id T).comp f 
 theorem Hom.comp_id {S : Pair A} {T : Pair B} (f : Hom S T) : f.comp (Hom.id S) = f := by
   ext; simp
 
+/-- An element integral over the image of the source plus ring lies in the target plus ring,
+which is integrally closed and contains that image. -/
+theorem Hom.mem_plus_of_isIntegral {S : Pair A} {T : Pair B} (f : Hom S T) {b : B}
+    (hb : IsIntegral (S.plus.map f.toRingHom) b) : b ∈ T.plus := by
+  let := T.isRingOfIntegralElements.isIntegrallyClosedIn
+  refine Subring.integralClosure_subring_le_iff.mpr ?_ ((mem_integralClosure_iff _ _).mpr hb)
+  rintro _ ⟨a, ha, rfl⟩
+  exact f.map_mem_plus a ha
+
+/-- Integrality over plus-ring images is transitive: if every element of `T⁺` is integral over
+the image of `S⁺`, then an element integral over the image of `T⁺` is integral over the image of
+`S⁺` under the composite, because the integral closure of the latter image contains the former. -/
+theorem Hom.isIntegral_plus_map_comp {S : Pair A} {T : Pair B} {U : Pair C}
+    {f : Hom S T} {g : Hom T U}
+    (hf : ∀ b ∈ T.plus, IsIntegral (S.plus.map f.toRingHom) b) {c : C}
+    (hc : IsIntegral (T.plus.map g.toRingHom) c) :
+    IsIntegral (S.plus.map (g.comp f).toRingHom) c := by
+  let R := S.plus.map (g.comp f).toRingHom
+  have hmap : T.plus.map g.toRingHom ≤ (integralClosure R C).toSubring := by
+    rintro _ ⟨b, hb, rfl⟩
+    have hR : (S.plus.map f.toRingHom).map g.toRingHom = R := by
+      simp only [R, toRingHom_comp, Subring.map_map]
+    let φ : S.plus.map f.toRingHom →+* R :=
+      g.toRingHom.restrict _ R fun b hb ↦ hR ▸ Subring.mem_map.mpr ⟨b, hb, rfl⟩
+    exact (hf b hb).map_of_comp_eq φ g.toRingHom (by ext; rfl)
+  exact Subring.integralClosure_subring_le_iff.mpr hmap hc
+
 variable (A) in
 /-- A discrete ring is a Huber pair with `A⁺ = A`: every element is power-bounded, the whole
 ring is open, and `⊤` is trivially integrally closed. This is the witness that the definitions

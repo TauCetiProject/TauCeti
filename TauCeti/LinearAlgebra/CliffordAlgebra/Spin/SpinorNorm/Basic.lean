@@ -147,7 +147,7 @@ theorem orthogonalSpinorNorm_eq_one_of_isSquare_apply
   refine QuadraticMap.orthogonalGroup_hom_ext Q hQ fun v _ ↦ ?_
   rw [orthogonalSpinorNorm_reflectionOrthogonal, MonoidHom.one_apply]
   have hsquareUnit : IsSquare (unitOfInvertible (Q v)) := by
-    apply isSquare_units_val_iff.mp
+    apply Units.isSquare_coe_iff.mp
     simpa only [val_unitOfInvertible] using hsq v
   simpa using hsquareUnit
 
@@ -287,7 +287,7 @@ theorem spinToSpecialOrthogonal_surjective_of_square_eq_top
   have hv : IsSquare (unitOfInvertible (Q v)) := by
     rw [← Subgroup.mem_square, hsquare]
     exact Subgroup.mem_top _
-  simpa only [val_unitOfInvertible] using isSquare_units_val_iff.mpr hv
+  simpa only [val_unitOfInvertible] using Units.isSquare_coe_iff.mpr hv
 
 end CliffordAlgebra
 

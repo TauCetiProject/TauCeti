@@ -38,8 +38,10 @@ theorem Ideal.IsPrime.isPrincipal_of_isPrincipal_map_quotient_span_singleton {q 
   obtain ⟨g, hg⟩ := h
   obtain ⟨f, hfq, rfl⟩ := (mem_map_iff_of_surjective _ Quotient.mk_surjective).mp
     (hg ▸ Submodule.mem_span_singleton_self _ : _ ∈ q.map (Quotient.mk (span {x})))
-  refine ⟨f, le_antisymm (Submodule.le_of_le_smul_of_le_jacobson_bot hfg
-    ((span_singleton_le_iff_mem _).mpr hx) fun a ha ↦ ?_) ((span_singleton_le_iff_mem _).mpr hfq)⟩
+  refine ⟨f, le_antisymm (Submodule.le_of_le_smul_of_le_jacobson hfg
+    ((span_singleton_le_iff_mem _).mpr
+      (by simpa only [Ideal.jacobson_bot] using
+        hx)) fun a ha ↦ ?_) ((span_singleton_le_iff_mem _).mpr hfq)⟩
   -- The image of `a` is a multiple `r f` of the generator, so `a - r f = x b`, and `b ∈ q`.
   have hma := mem_map_of_mem (Quotient.mk (span {x})) ha
   rw [hg] at hma

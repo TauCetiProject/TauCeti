@@ -108,7 +108,7 @@ theorem vertexPreReflectionList_cons (i : Q) (l : List Q) :
 theorem vertexPreReflectionList_apply_cons (i : Q) (l : List Q) (d : Q → ℤ) :
     vertexPreReflectionList Q (i :: l) d
       = vertexPreReflectionList Q l (vertexPreReflection Q i d) := by
-  rw [vertexPreReflectionList_cons, Module.End.mul_apply]
+  rw [vertexPreReflectionList_cons, mul_apply_eq_comp]
 
 omit [Quiver Q] [∀ a b : Q, Fintype (a ⟶ b)] in
 /-- The composite of the simple reflections along a word is unchanged by reflecting the quiver
@@ -164,10 +164,10 @@ theorem nonneg_vertexPreReflectionList_take_append {d : Q → ℤ} {l₁ l₂ : 
       0 ≤ vertexPreReflectionList Q (l₂.take r) (vertexPreReflectionList Q l₁ d)) :
     ∀ r ≤ (l₁ ++ l₂).length, 0 ≤ vertexPreReflectionList Q ((l₁ ++ l₂).take r) d := by
   intro r hr
-  rw [List.take_append, vertexPreReflectionList_append, Module.End.mul_apply]
+  rw [List.take_append, vertexPreReflectionList_append, mul_apply_eq_comp]
   rcases le_or_gt r l₁.length with h | h
   · rw [Nat.sub_eq_zero_of_le h, List.take_zero, vertexPreReflectionList_nil,
-      Module.End.one_apply]
+      one_apply_eq_self]
     exact h₁ r h
   · rw [List.take_of_length_le h.le]
     refine h₂ (r - l₁.length) ?_
@@ -321,7 +321,7 @@ theorem vertexPreReflectionList_reverse_mul {l : List Q}
     vertexPreReflectionList Q l.reverse * vertexPreReflectionList Q l = 1 := by
   apply LinearMap.ext
   intro d
-  rw [Module.End.mul_apply, Module.End.one_apply, ← coe_vertexReflectionList_symm Q hl,
+  rw [mul_apply_eq_comp, one_apply_eq_self, ← coe_vertexReflectionList_symm Q hl,
     ← coe_vertexReflectionList Q hl]
   exact (vertexReflectionList Q hl).symm_apply_apply d
 
@@ -338,8 +338,8 @@ theorem vertexPreReflectionList_reverse_apply_append {l₂ : List Q}
     (hl₂ : ∀ i ∈ l₂, IsEmpty (i ⟶ i)) (l₁ : List Q) (d : Q → ℤ) :
     vertexPreReflectionList Q l₂.reverse (vertexPreReflectionList Q (l₁ ++ l₂) d)
       = vertexPreReflectionList Q l₁ d := by
-  rw [vertexPreReflectionList_append, Module.End.mul_apply, ← Module.End.mul_apply,
-    vertexPreReflectionList_reverse_mul Q hl₂, Module.End.one_apply]
+  rw [vertexPreReflectionList_append, mul_apply_eq_comp, ← mul_apply_eq_comp,
+    vertexPreReflectionList_reverse_mul Q hl₂, one_apply_eq_self]
 
 /-- **Reading a nonnegative reflection word backwards stays nonnegative.** If every intermediate
 vector of the word `l` applied to `d` is nonnegative, then every intermediate vector of the

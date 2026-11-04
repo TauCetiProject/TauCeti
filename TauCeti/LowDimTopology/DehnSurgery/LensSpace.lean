@@ -276,7 +276,7 @@ theorem nonempty_homeomorph_lensSpace_of_unknot_slopeValue (hℓ : (ℓ 1 : ZMod
   -- `q = -ℓ₁ ℓ₀⁻¹` is a unit modulo `p`, so `s p + t q = 1` for some integers `s`, `t`.
   have hq : (q : ZMod p) = ↑(-(ℓ 1 * (ℓ 0)⁻¹)) := by
     rw [Units.val_neg, Units.val_mul, hℓ, mul_assoc, Units.mul_inv, mul_one, neg_neg]
-  obtain ⟨s, t, hst⟩ := (ZMod.coe_int_isUnit_iff_isCoprime q p).1 (hq ▸ Units.isUnit _)
+  obtain ⟨s, t, hst⟩ := (ZMod.isUnit_intCast_iff_isCoprime q p).1 (hq ▸ Units.isUnit _)
   obtain ⟨B, -, hB⟩ := exists_torusHomeomorph_eq_torusGluing p q s t hst
   have hB' : Isotopic ((unknotLensSpaceDehnFilling p ℓ hst hℓ).gluing :
       C(Circle × Circle, Circle × Circle)) B.torusHomeomorph := by

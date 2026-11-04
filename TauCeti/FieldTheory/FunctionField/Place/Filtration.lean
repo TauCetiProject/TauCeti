@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.FieldTheory.FunctionField.Place.Basic
+public import TauCeti.FieldTheory.FunctionField.Place.Equiv
 public import TauCeti.LinearAlgebra.Dimension.Tower
 
 /-!
@@ -53,6 +53,8 @@ these local quotients, and so computes `dim_k (A_F(E) / A_F(D)) = deg E - deg D`
 * `TauCeti.Place.finiteDimensional_quotient_filtration`: those quotients are finite-dimensional
   as soon as the residue field is, which for a function field is
   `TauCeti.Place.finiteDimensional_residueField`.
+* `TauCeti.Place.apply_mem_filtration_equivOfRingEquiv_iff`: a semilinear field isomorphism
+  identifies the order filtrations at a place and at its transport.
 
 ## Implementation notes
 
@@ -385,6 +387,21 @@ theorem finiteDimensional_quotient_filtration [Module.Finite k P.ResidueField] (
       Submodule.submoduleOf_eq_top.mpr (P.filtration_antitone hab.le)
     rw [this]
     infer_instance
+
+/-! ### Transport along semilinear isomorphisms -/
+
+section Equiv
+
+variable {k' F' : Type*} [Field k'] [Field F'] [Algebra k' F'] (σ : k ≃+* k') (τ : F ≃+* F')
+  (h : ∀ c, τ (algebraMap k F c) = algebraMap k' F' (σ c))
+
+/-- A semilinear field isomorphism identifies the order filtrations at a place and at its
+transport. -/
+theorem apply_mem_filtration_equivOfRingEquiv_iff {m : ℤ} {z : F} :
+    τ z ∈ (equivOfRingEquiv σ τ h P).filtration m ↔ z ∈ P.filtration m := by
+  simp only [mem_filtration_iff, valuation_equivOfRingEquiv, RingEquiv.symm_apply_apply]
+
+end Equiv
 
 end Place
 

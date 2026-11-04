@@ -7,7 +7,9 @@ module
 
 public import Mathlib.Analysis.Normed.Field.Basic
 public import Mathlib.GroupTheory.QuotientGroup.Defs
+public import Mathlib.Topology.MetricSpace.Ultra.Basic
 import Mathlib.Algebra.Order.Archimedean.Basic
+import TauCeti.Analysis.Normed.Ring.Ultra
 
 /-!
 # A fundamental annulus for the quotient by powers of a contracting unit
@@ -25,8 +27,12 @@ norm nor discreteness of the value group is required. This is the multiplicative
 normalisation used for Tate uniformisation.
 
 A nonzero integer power of an element of norm less than one has norm different from one; in
-particular `1 - qᵏ ≠ 0`, a unit of norm one other than `1` is not a power of `q`, and neither is a
-square root of `q`.
+particular `1 - qᵏ ≠ 0`. Neither a unit of norm one other than `1`, nor a unit in the open annulus
+`‖q‖ < ‖u‖ < 1`, nor a square root of `q` is a power of `q`.
+
+Over an ultrametric field the quotient `Kˣ ⧸ q^ℤ` has infinitely many squares
+(`infinite_range_sq_quotient_zpowers`), as the classes of the norm-one units `1 - qᵏ` show. This
+is the room needed to move a triple of points of the Tate curve into general position.
 -/
 
 public section
@@ -67,6 +73,15 @@ theorem eq_of_norm_mem_Ioc_of_quotient_zpowers_eq (q : Kˣ) (hq : ‖(q : K)‖ 
   have hn0 : n = 0 := (hm_unique n (by simpa [hnu] using hu)).trans
     (hm_unique 0 (by simpa using hv)).symm
   simpa [hn0] using hnu.symm
+
+/-- A unit in the open annulus `‖q‖ < ‖u‖ < 1` is not a power of `q`. -/
+theorem notMem_zpowers_of_norm_lt_of_norm_lt_one {q u : Kˣ} (hqu : ‖(q : K)‖ < ‖(u : K)‖)
+    (hu : ‖(u : K)‖ < 1) : u ∉ Subgroup.zpowers q := by
+  intro hmem
+  have hq := hqu.trans hu
+  have h := eq_of_norm_mem_Ioc_of_quotient_zpowers_eq q hq (v := 1) ⟨hqu, hu.le⟩
+    (by simpa using hq) (by rw [(QuotientGroup.eq_one_iff u).mpr hmem, QuotientGroup.mk_one])
+  simp [h] at hu
 
 /-- A nonzero power of an element of norm less than one does not have norm one. -/
 theorem norm_zpow_ne_one {q : K} (hq : ‖q‖ < 1) {k : ℤ} (hk : k ≠ 0) : ‖q ^ k‖ ≠ 1 := by
@@ -140,5 +155,36 @@ theorem unitsQuotientZPowersEquivAnnulus_apply_mk (q : Kˣ) (hq : ‖(q : K)‖ 
     (u : Kˣ) (hu : ‖(q : K)‖ < ‖(u : K)‖ ∧ ‖(u : K)‖ ≤ 1) :
     unitsQuotientZPowersEquivAnnulus q hq (u : Kˣ ⧸ Subgroup.zpowers q) = ⟨u, hu⟩ :=
   (unitsQuotientZPowersEquivAnnulus q hq).apply_symm_apply ⟨u, hu⟩
+
+/-- Over an ultrametric field, the quotient `Kˣ ⧸ q^ℤ` by the powers of a unit with `‖q‖ < 1` has
+infinitely many squares. -/
+theorem infinite_range_sq_quotient_zpowers [IsUltrametricDist K] (q : Kˣ)
+    (hq : ‖(q : K)‖ < 1) : (Set.range fun x : Kˣ ⧸ Subgroup.zpowers q ↦ x ^ 2).Infinite := by
+  -- The units `u k = 1 - qᵏ⁺¹` have norm one, so their classes and those of their squares are
+  -- represented in the fundamental annulus.
+  have hq₀ : 0 < ‖(q : K)‖ := norm_pos_iff.mpr q.ne_zero
+  have hpow (k : ℕ) : ‖(q : K) ^ (k + 1)‖ < 1 := by
+    rw [norm_pow]
+    exact pow_lt_one₀ hq₀.le hq k.succ_ne_zero
+  have hnorm (k : ℕ) : ‖1 - (q : K) ^ (k + 1)‖ = 1 := norm_one_sub_of_norm_lt_one (hpow k)
+  let u (k : ℕ) : Kˣ := Units.mk0 (1 - (q : K) ^ (k + 1)) (norm_ne_zero_iff.mp (by simp [hnorm]))
+  have hu : Function.Injective u := fun j k h ↦ by
+    have h' : ‖(q : K)‖ ^ (j + 1) = ‖(q : K)‖ ^ (k + 1) := by
+      rw [← norm_pow, ← norm_pow, sub_right_injective (congrArg Units.val h)]
+    exact Nat.succ_injective (pow_right_injective₀ hq₀ hq.ne h')
+  have hmem (k : ℕ) : ‖(q : K)‖ < ‖((u k ^ 2 : Kˣ) : K)‖ ∧ ‖((u k ^ 2 : Kˣ) : K)‖ ≤ 1 := by
+    simp [u, hnorm, hq]
+  refine Set.Infinite.mono (Set.range_comp_subset_range (fun k ↦ (u k : Kˣ ⧸ Subgroup.zpowers q))
+    (· ^ 2)) fun hfin ↦ Set.infinite_univ (α := ℕ) ?_
+  refine (hfin.preimage' fun y ⟨j, hj⟩ ↦ ?_).subset fun k _ ↦ Set.mem_range_self k
+  subst hj
+  -- The squares of `u k` and `u j` agree, so `u k = ± u j`.
+  refine ((Set.toFinite {u j, -u j}).preimage hu.injOn).subset fun k hk ↦ ?_
+  have h : u k ^ 2 = u j ^ 2 := eq_of_norm_mem_Ioc_of_quotient_zpowers_eq q hq (hmem k) (hmem j)
+    (by simpa only [QuotientGroup.mk_pow, Set.mem_preimage, Set.mem_singleton_iff,
+      Function.comp_apply] using hk)
+  rcases sq_eq_sq_iff_eq_or_eq_neg.mp (congrArg Units.val h) with h' | h'
+  · exact Or.inl (Units.ext h')
+  · exact Or.inr (Units.ext h')
 
 end TauCeti

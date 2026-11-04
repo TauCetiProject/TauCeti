@@ -267,7 +267,7 @@ loop. -/
 theorem orthogonalCupCap_mul_self :
     orthogonalCupCap k n * orthogonalCupCap k n = (n : k) • orthogonalCupCap k n := by
   refine LinearMap.ext fun x => ?_
-  rw [Module.End.mul_apply, LinearMap.smul_apply, orthogonalCupCap_apply, orthogonalCupCap_apply,
+  rw [mul_apply_eq_comp, LinearMap.smul_apply, orthogonalCupCap_apply, orthogonalCupCap_apply,
     orthogonalCap_comp_orthogonalCup_apply, ← smul_eq_mul, map_smul]
 
 /-- **The relation `s² = 1`**: the crossing is an involution.
@@ -301,7 +301,7 @@ theorem orthogonalCap_comp_permTensorAction_swap :
 theorem permTensorAction_swap_mul_orthogonalCupCap :
     permTensorAction k n 2 (Equiv.swap 0 1) * orthogonalCupCap k n = orthogonalCupCap k n := by
   refine LinearMap.ext fun x => ?_
-  simpa only [Module.End.mul_apply, orthogonalCupCap_apply, LinearMap.coe_comp,
+  simpa only [mul_apply_eq_comp, orthogonalCupCap_apply, LinearMap.coe_comp,
     Function.comp_apply] using
     LinearMap.congr_fun (permTensorAction_swap_comp_orthogonalCup k n) (orthogonalCap k n x)
 
@@ -309,7 +309,7 @@ theorem permTensorAction_swap_mul_orthogonalCupCap :
 theorem orthogonalCupCap_mul_permTensorAction_swap :
     orthogonalCupCap k n * permTensorAction k n 2 (Equiv.swap 0 1) = orthogonalCupCap k n := by
   refine LinearMap.ext fun x => ?_
-  simpa only [Module.End.mul_apply, orthogonalCupCap_apply, LinearMap.coe_comp,
+  simpa only [mul_apply_eq_comp, orthogonalCupCap_apply, LinearMap.coe_comp,
     Function.comp_apply] using
     congrArg (orthogonalCup k n)
       (LinearMap.congr_fun (orthogonalCap_comp_permTensorAction_swap k n) x)
@@ -433,7 +433,7 @@ theorem commute_orthogonalCupCap_tensorPower (g : Matrix.orthogonalGroup (Fin n)
   have hcup := LinearMap.congr_fun (tensorPower_comp_orthogonalCup k n g)
   simp only [LinearMap.coe_comp, Function.comp_apply] at hcap hcup
   refine LinearMap.ext fun x => ?_
-  rw [Module.End.mul_apply, Module.End.mul_apply, orthogonalCupCap_apply, orthogonalCupCap_apply,
+  rw [mul_apply_eq_comp, mul_apply_eq_comp, orthogonalCupCap_apply, orthogonalCupCap_apply,
     hcap x, hcup (orthogonalCap k n x)]
 
 end CommRing

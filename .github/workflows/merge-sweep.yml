@@ -1,7 +1,7 @@
 name: Merge sweep
 
 # Re-drive green PRs that the merge queue evicted, so an eviction is never terminal. auto-merge.yml
-# enqueues a green PR once per triggering event (a push, a /review comment, or a fresh pr-build); if the
+# reconciles approvals and readiness in event-coalesced batches; if the
 # merge queue then evicts it — a merge group that could not form, or a rebuild against a moved main that
 # failed — nothing re-drives an otherwise-idle green PR and it strands: green on every rubric, never
 # merged. housekeeping.yml only CLOSES PRs (and only blocking ones), so a wedged-but-green PR is closed
@@ -15,7 +15,7 @@ name: Merge sweep
 
 on:
   schedule:
-    - cron: "40 * * * *"   # hourly, offset from housekeeping (:20) and the daily bump
+    - cron: "37 * * * *"   # hourly, offset from housekeeping (:20) and the daily bump
   repository_dispatch:
     types: [tauceti-merge-reconcile]
   workflow_dispatch:
@@ -40,12 +40,12 @@ jobs:
   sweep:
     # Pinned to a TauCetiReview commit; bump deliberately. The reusable workflow receives the App
     # secrets, so a floating @main would be a supply-chain risk.
-    # Re-pin together with the other two callers and .github/actions/checkout-merge-policy
+    # Re-pin with review.yml and .github/actions/checkout-merge-policy
     # (scripts/test_workflow_pins.py checks they agree). The called workflow checks out its own
     # commit, supplied explicitly as review_ref.
-    uses: TauCetiProject/TauCetiReview/.github/workflows/merge-sweep.yml@32ce2069308080df4e08df14c2160012a51c8152
+    uses: TauCetiProject/TauCetiReview/.github/workflows/merge-sweep.yml@2b4a9560bfc197a6e7b24c19d6da62b88addf4d3
     with:
-      review_ref: 32ce2069308080df4e08df14c2160012a51c8152
+      review_ref: 2b4a9560bfc197a6e7b24c19d6da62b88addf4d3
       tools_repository: TauCetiProject/TauCetiTools
       tools_ref: a8b16c3dd0c0730a1963052cb520808e161222ef
       dry_run: ${{ inputs.dry-run || false }}

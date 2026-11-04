@@ -183,8 +183,11 @@ private lemma of_bounded_quotient_obj_aux (K : CochainComplex C ℤ)
     -- The truncation has the terms of `K` in degrees `≤ b` and zero terms above.
     have hs₃ : ∀ n ∉ s, IsZero (X₃.X n) := fun n hn ↦ by
       by_cases hnb : n ≤ b
-      · have := K.isIso_πStupidTruncLE_f b hnb
-        exact (hs n hn).of_iso (asIso ((K.πStupidTruncLE b).f n)).symm
+      · have := K.isIso_πStupidTrunc_f (ComplexShape.embeddingUpIntLE b)
+          (i := (b - n).natAbs) (i' := n) (by
+            simp [Int.natAbs_of_nonneg (sub_nonneg.mpr hnb)])
+        exact (hs n hn).of_iso
+          (asIso ((K.πStupidTrunc (ComplexShape.embeddingUpIntLE b)).f n)).symm
       · exact K.isZero_stupidTrunc_embeddingUpIntLE_X b (by omega)
     -- The distinguished triangle splitting off the top term gives the relation in `K₀`.
     have htri : (of ((HomotopyCategory.Bounded.quotient C).obj ⟨K, hK'⟩) :

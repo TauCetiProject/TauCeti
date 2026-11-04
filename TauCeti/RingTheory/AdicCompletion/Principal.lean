@@ -14,6 +14,8 @@ An `I`-adically complete module is `(r)`-adically complete whenever `r ∈ I`. N
 finiteness or torsion hypothesis is needed. In particular, completeness for a parameter `π`
 implies completeness for any multiple of `π`, even when their powers are not cofinal.
 This allows the passage from pseudouniformiser-adic to `p`-adic completeness in integral rings.
+Every ring is complete for the zero ideal `(0)`, and in a nonzero `I`-adically complete ring no
+element of `I` is a unit.
 
 The key point is to sum every tail of a series `∑ rⁿ • cₙ` in the `I`-adic filtration.
 Factoring out `rᴺ` from the tail proves divisibility of the remainder; this does not assume
@@ -87,3 +89,16 @@ theorem IsAdicComplete.span_singleton_of_dvd {π r : R}
     [IsAdicComplete (Ideal.span {π}) M] (h : π ∣ r) :
     IsAdicComplete (Ideal.span {r}) M :=
   .span_singleton_of_mem (Ideal.mem_span_singleton.mpr h)
+
+/-- Every module is complete for the principal ideal `(0)`. -/
+instance IsAdicComplete.span_singleton_zero : IsAdicComplete (Ideal.span {(0 : R)}) M := by
+  rw [Ideal.span_singleton_eq_bot.mpr rfl]
+  infer_instance
+
+/-- In a nonzero `I`-adically complete ring, no element of `I` is a unit, because `I` lies in the
+Jacobson radical. -/
+theorem IsAdicComplete.not_isUnit_of_mem [Nontrivial R] [IsAdicComplete I R] {x : R}
+    (hx : x ∈ I) : ¬IsUnit x := fun h ↦
+  bot_ne_top <| Ideal.jacobson_eq_top_iff.mp <|
+    Ideal.eq_top_of_isUnit_mem _ (by
+      simpa only [Ideal.jacobson_bot] using IsAdicComplete.le_jacobson I hx) h

@@ -50,7 +50,7 @@ theorem exists_ker_pow_succ_eq_one_sub (hK : IsCompactOperator K) :
   have hclosed (n : ℕ) : IsClosed (V n : Set X) := by
     simpa only [ContinuousLinearMap.toLinearMap_pow] using (A ^ n).isClosed_ker
   have hstep (n : ℕ) (x : X) (hx : x ∈ V (n + 1)) : A x ∈ V n := by
-    simpa only [V, LinearMap.mem_ker, pow_succ, Module.End.mul_apply,
+    simpa only [V, LinearMap.mem_ker, pow_succ, _root_.mul_apply_eq_comp,
       ContinuousLinearMap.coe_coe] using hx
   by_contra! hcon
   obtain ⟨c, hc⟩ := NormedField.exists_one_lt_norm 𝕜
@@ -62,7 +62,7 @@ theorem exists_ker_pow_succ_eq_one_sub (hK : IsCompactOperator K) :
       (V n).sub_mem ((V n).add_mem (hstep n _ (hfmem n))
         (hmono hmn (hfmem m))) (hmono hmn.le (hstep m _ (hfmem m)))
     have heq : K (f n) - K (f m) = f n - (A (f n) + f m - A (f m)) := by
-      simp only [A, sub_apply, one_apply_eq_self]
+      simp only [A, _root_.sub_apply, one_apply_eq_self]
       abel
     rw [heq]
     exact hfsep n _ hy
@@ -108,7 +108,7 @@ theorem exists_stable_ker_range_pow_one_sub (hK : IsCompactOperator K) :
     rw [Submodule.disjoint_def]
     rintro x hx ⟨y, rfl⟩
     have hy : y ∈ LinearMap.ker (f ^ (p + p)) := by
-      simpa only [LinearMap.mem_ker, pow_add, End.mul_apply] using hx
+      simpa only [LinearMap.mem_ker, pow_add, _root_.mul_apply_eq_comp] using hx
     rw [(hstable (p + p) (Nat.le_add_right p p)).1] at hy
     exact LinearMap.mem_ker.mp hy
   have hcod : Codisjoint (LinearMap.ker (f ^ p)) (LinearMap.range (f ^ p)) :=

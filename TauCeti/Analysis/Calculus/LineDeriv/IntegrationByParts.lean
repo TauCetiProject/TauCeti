@@ -50,6 +50,8 @@ Lipschitz test function.
   the integral vanishes.
 * `TauCeti.integral_fderiv_apply_eq_zero_of_hasCompactSupport`: the integral of a directional
   derivative of a compactly supported `C¹` map vanishes.
+  `TauCeti.integral_fderiv_eq_zero_of_hasCompactSupport` is the same statement for the whole
+  derivative.
 * `TauCeti.integral_lineDeriv_mul_eq_neg_of_contDiffOn`: integration by parts between a function
   `C¹` on an open set and a Lipschitz function with compact support in it.
 
@@ -134,6 +136,14 @@ theorem integral_fderiv_apply_eq_zero_of_hasCompactSupport (hu : ContDiff ℝ 1 
     (fun _ _ ↦ (hu.differentiable one_ne_zero).differentiableAt)
   simpa using h
 
+/-- The integral of the derivative of a compactly supported `C¹` map vanishes. -/
+theorem integral_fderiv_eq_zero_of_hasCompactSupport (hu : ContDiff ℝ 1 u)
+    (hsupp : HasCompactSupport u) : ∫ x, fderiv ℝ u x ∂μ = 0 := by
+  ext v
+  rw [ContinuousLinearMap.integral_apply ((hu.continuous_fderiv one_ne_zero)
+    |>.integrable_of_hasCompactSupport (hsupp.fderiv (𝕜 := ℝ))) v,
+    integral_fderiv_apply_eq_zero_of_hasCompactSupport hu hsupp v, zero_apply]
+
 variable [FiniteDimensional ℝ V]
 
 /-- Exchanging the two differentiation directions does not change the integral of a bilinear form
@@ -152,7 +162,7 @@ theorem integral_bilinForm_fderiv_apply_eq_zero_of_isAlt {b : LinearMap.BilinFor
     (hb : b.IsAlt) (hu : ContDiff ℝ 2 u) (hsupp : HasCompactSupport u) (v w : E) :
     ∫ x, b (fderiv ℝ u x v) (fderiv ℝ u x w) ∂μ = 0 := by
   have hneg : ∀ x : E, b (fderiv ℝ u x w) (fderiv ℝ u x v) =
-      -b (fderiv ℝ u x v) (fderiv ℝ u x w) := fun x ↦ (hb.neg _ _).symm
+      -b (fderiv ℝ u x v) (fderiv ℝ u x w) := fun x ↦ (hb.neg_eq _ _).symm
   have h := integral_bilinForm_fderiv_apply_comm (μ := μ) b hu hsupp v w
   simp only [hneg, integral_neg] at h
   linarith

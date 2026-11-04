@@ -154,7 +154,6 @@ theorem integral_continuousLinearMap_convolutionPower (μ : Measure E) [IsProbab
 
 /-- Covariances of linear observables add under convolution powers. Only the two observed
 second moments need be finite. -/
-@[simp]
 theorem covariance_convolutionPower (μ : Measure E) [IsProbabilityMeasure μ]
     (L M : E →L[ℝ] ℝ) (hL : MemLp L 2 μ) (hM : MemLp M 2 μ) (n : ℕ) :
     covariance L M (μ.convolutionPower n) = (n : ℝ) * covariance L M μ := by

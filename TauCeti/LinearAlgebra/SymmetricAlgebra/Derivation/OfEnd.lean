@@ -79,7 +79,7 @@ theorem iterate_derivationOfEnd_ι (f : Module.End R M) (n : ℕ) (x : M) :
   induction n generalizing x with
   | zero => simp
   | succ n ih => rw [Function.iterate_succ_apply, derivationOfEnd_ι, ih, pow_succ,
-      Module.End.mul_apply]
+      mul_apply_eq_comp]
 
 section Naturality
 

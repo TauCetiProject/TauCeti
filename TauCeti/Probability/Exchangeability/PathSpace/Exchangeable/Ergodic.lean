@@ -162,7 +162,7 @@ theorem ergodicSMul_of_exchangeableSigma_trivial {ρ : Measure (ℕ → α)} [Is
     (htrivial : ∀ s, MeasurableSet[exchangeableSigma α] s → ρ s = 0 ∨ ρ s = 1) :
     ErgodicSMul FinitaryPerm (ℕ → α) ρ := by
   have := hρ.smulInvariantMeasure
-  refine TauCeti.MeasureTheory.ergodicSMul_of_forall_smul_invariant fun t ht ht_inv => ?_
+  refine TauCeti.MeasureTheory.ergodicSMul_iff_forall_smul_invariant.2 fun t ht ht_inv => ?_
   have ht_exch : MeasurableSet[exchangeableSigma α] t :=
     measurableSet_exchangeableSigma_of_forall_permReindex ht fun π hπ => by
       have hg := ht_inv (FinitaryPerm.ofPerm π⁻¹ (by simpa only [MulAction.fixedBy_inv ℕ] using hπ))

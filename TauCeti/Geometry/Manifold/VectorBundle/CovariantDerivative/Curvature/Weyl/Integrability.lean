@@ -9,6 +9,7 @@ public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvatu
 import TauCeti.Geometry.Manifold.IsManifold.Basic
 import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvature.Hessian
 import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
+import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Regularity
 import TauCeti.Geometry.Manifold.VectorBundle.Section.Extension
 
 /-!
@@ -48,6 +49,12 @@ then `C = 0` and `W = 0` at `x`. The first statement is the involutivity conditi
 vanishing Weyl tensor (dimension at least `4`) or vanishing Cotton tensor (dimension `3`) implies
 local conformal flatness.
 
+The same computation applies to an arbitrary smooth `φ` that solves the equation only at the single
+point `x`: writing `ψ = Hess φ - Φ_(grad φ)` for the defect of the equation, the derivatives of `ψ`
+at `x` satisfy `Z (ψ(X, Y)) - Y (ψ(X, Z)) = -(C(X, Y, Z) + W(Z, Y, X, grad φ))`
+(`TauCeti.Manifold.mvfderiv_hessian_sub_conformalFlatteningForm_sub_swap`). This is the form in
+which the Frobenius integrability condition of the equation is verified.
+
 ## Main declarations
 
 * `CovariantDerivative.conformalFlatteningForm`: the right side `Φ_ξ` of the conformal flattening
@@ -55,6 +62,10 @@ local conformal flatness.
 * `CovariantDerivative.conformalFlatteningDeriv`: its derivative `D_ξ` along a solution.
 * `CovariantDerivative.IsMetricCompatible.conformalFlatteningDeriv_sub_swap`:
   `D_ξ(u, v, w) - D_ξ(u, w, v) = ⟪R(w, v) ξ, u⟫ + C(u, v, w) + W(w, v, u, ξ)`.
+* `TauCeti.Manifold.mvfderiv_conformalFlatteningForm_sub_eq_conformalFlatteningDeriv`: where
+  `Hess φ = Φ_(grad φ)` at `x`, the covariant derivative of `Φ_(grad φ)` at `x` is `D_(grad φ x)`.
+* `TauCeti.Manifold.mvfderiv_hessian_sub_conformalFlatteningForm_sub_swap`: the antisymmetrized
+  derivative of the defect `Hess φ - Φ_(grad φ)` at a point where it vanishes is `-(C + W)`.
 * `TauCeti.Manifold.cottonTensor_add_weylTensor_eq_zero_of_eventually_hessian_eq`: along a solution
   `φ`, `C(u, v, w) + W(w, v, u, grad φ) = 0`.
 * `TauCeti.Manifold.cottonTensor_eq_zero_of_eventually_hessian_eq` and
@@ -239,6 +250,69 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimension
   [RiemannianBundle (fun x : M ↦ TangentSpace I x)]
   [IsContMDiffRiemannianBundle I ∞ E (fun x : M ↦ TangentSpace I x)]
 
+/-- If the Hessian of `φ` at `x` is the right side `Φ_(grad φ x)` of the conformal flattening
+equation, then the covariant derivative at `x` of the field of bilinear forms
+`y ↦ Φ_(grad φ y)` is `D_(grad φ x)`:
+`(∇_w Φ_(grad φ))(X, Y) = D_(grad φ x)(X, Y, w)`, where
+`(∇_w Φ_(grad φ))(X, Y) = w (Φ_(grad φ)(X, Y)) - Φ_(grad φ)(∇_w X, Y) - Φ_(grad φ)(X, ∇_w Y)` and
+`D` is `CovariantDerivative.conformalFlatteningDeriv` for the Levi-Civita connection. Only the
+equation at the single point `x` is used: it replaces the Hessian of `φ`, which appears in the
+derivative of `grad φ`, by `Φ_(grad φ x)`. -/
+theorem mvfderiv_conformalFlatteningForm_sub_eq_conformalFlatteningDeriv {φ : M → ℝ} {x : M}
+    (hφ : ContMDiffAt I 𝓘(ℝ) 2 φ x)
+    (hHx : ∀ u v : TangentSpace I x, hessian I φ x u v =
+      (CovariantDerivative.leviCivitaConnection I M).conformalFlatteningForm x
+        (mgradient I φ x) u v)
+    {X Y : Π x : M, TangentSpace I x} (hX : MDiffAt (T% X) x) (hY : MDiffAt (T% Y) x)
+    (w : TangentSpace I x) :
+    letI cov := CovariantDerivative.leviCivitaConnection I M
+    mvfderiv I (fun y ↦ cov.conformalFlatteningForm y (mgradient I φ y) (X y) (Y y)) x w -
+        cov.conformalFlatteningForm x (mgradient I φ x) (cov X x w) (Y x) -
+        cov.conformalFlatteningForm x (mgradient I φ x) (X x) (cov Y x w) =
+      cov.conformalFlatteningDeriv x (mgradient I φ x) (X x) (Y x) w := by
+  let _ : IsManifold I (1 + 1) M := by
+    simpa only [one_add_one_eq_two] using (inferInstance : IsManifold I 2 M)
+  have hcov := CovariantDerivative.isMetricCompatible_leviCivitaConnection (I := I) (M := M)
+  have hG : MDiffAt (T% (mgradient I φ)) x :=
+    (contMDiffAt_mgradient (n := 1) (by simpa only [one_add_one_eq_two] using hφ)).mdifferentiableAt
+      one_ne_zero
+  have hGX := mdifferentiableAt_inner hG hX
+  have hGY := mdifferentiableAt_inner hG hY
+  have hGG := mdifferentiableAt_inner hG hG
+  have hXY := mdifferentiableAt_inner hX hY
+  have hPXY := (CovariantDerivative.leviCivitaConnection I M).mdifferentiableAt_schoutenTensor_apply
+    hX hY
+  -- Write the right side of the equation as a sum of products of differentiable functions.
+  have hfun : (fun y ↦ (CovariantDerivative.leviCivitaConnection I M).conformalFlatteningForm y
+        (mgradient I φ y) (X y) (Y y)) =
+      (fun y ↦ (CovariantDerivative.leviCivitaConnection I M).schoutenTensor y (X y) (Y y)) +
+        (fun y ↦ ⟪mgradient I φ y, X y⟫_ℝ) * (fun y ↦ ⟪mgradient I φ y, Y y⟫_ℝ) -
+        ((fun y ↦ ⟪mgradient I φ y, mgradient I φ y⟫_ℝ) * fun _ ↦ (2 : ℝ)⁻¹) *
+          fun y ↦ ⟪X y, Y y⟫_ℝ := by
+    funext y
+    simp only [CovariantDerivative.conformalFlatteningForm_apply, Pi.add_apply, Pi.sub_apply,
+      Pi.mul_apply, real_inner_self_eq_norm_sq]
+    ring
+  -- At `x`, the Hessian, also in the form `⟪∇_a grad φ, b⟫`, is the right side of the equation.
+  have hH (a b : TangentSpace I x) :
+      ⟪CovariantDerivative.leviCivitaConnection I M (mgradient I φ) x a, b⟫_ℝ =
+        hessian I φ x a b :=
+    (hessian_def I φ x a b).symm
+  rw [hfun, mvfderiv_sub (hPXY.add (hGX.mul hGY))
+      ((hGG.mul mdifferentiableAt_const).mul hXY), mvfderiv_add hPXY (hGX.mul hGY),
+    mvfderiv_mul hGX hGY, mvfderiv_mul (hGG.mul mdifferentiableAt_const) hXY,
+    mvfderiv_mul hGG mdifferentiableAt_const]
+  simp only [mvfderiv_const, _root_.add_apply, _root_.sub_apply, _root_.smul_apply, smul_eq_mul,
+    _root_.zero_apply, Pi.mul_apply]
+  rw [hcov.mvfderiv_inner_eq (fun _ ↦ w) hG hX, hcov.mvfderiv_inner_eq (fun _ ↦ w) hG hY,
+    hcov.mvfderiv_inner_eq (fun _ ↦ w) hG hG, hcov.mvfderiv_inner_eq (fun _ ↦ w) hX hY,
+    CovariantDerivative.conformalFlatteningDeriv_apply,
+    (CovariantDerivative.leviCivitaConnection I M).derivSchoutenTensor_apply hX hY w]
+  simp only [real_inner_comm (CovariantDerivative.leviCivitaConnection I M (mgradient I φ) x w),
+    real_inner_comm (mgradient I φ x) w, hH, hHx,
+    CovariantDerivative.conformalFlatteningForm_apply, real_inner_self_eq_norm_sq]
+  ring
+
 /-- Along a solution `φ` of the conformal flattening equation `Hess φ = Φ_(grad φ)` near `x`, the
 covariant derivative of the Hessian is `D_(grad φ)`:
 `(∇_w Hess φ)(X, Y) = D_(grad φ)(X, Y, w)`, where
@@ -255,48 +329,76 @@ theorem mvfderiv_hessian_sub_eq_conformalFlatteningDeriv {φ : M → ℝ} {x : M
     mvfderiv I (fun y ↦ hessian I φ y (X y) (Y y)) x w -
         hessian I φ x (cov X x w) (Y x) - hessian I φ x (X x) (cov Y x w) =
       cov.conformalFlatteningDeriv x (mgradient I φ x) (X x) (Y x) w := by
+  have hfun : (fun y ↦ hessian I φ y (X y) (Y y)) =ᶠ[𝓝 x]
+      fun y ↦ (CovariantDerivative.leviCivitaConnection I M).conformalFlatteningForm y
+        (mgradient I φ y) (X y) (Y y) :=
+    hsol.mono fun y hy ↦ hy (X y) (Y y)
+  rw [hfun.mvfderiv_eq, hsol.self_of_nhds, hsol.self_of_nhds]
+  exact mvfderiv_conformalFlatteningForm_sub_eq_conformalFlatteningDeriv hφ hsol.self_of_nhds hX
+    hY w
+
+/-- **The integrability defect of the conformal flattening equation along a function.** Let `φ` be
+smooth, with `Hess φ = Φ_(grad φ)` at the single point `x`, and write
+`ψ(X, Y) = Hess φ(X, Y) - Φ_(grad φ)(X, Y)` for the defect of the equation. For smooth vector fields
+`X`, `Y`, `Z`, the derivatives of `ψ` at `x` satisfy
+`Z (ψ(X, Y)) - Y (ψ(X, Z)) = -(C(X, Y, Z) + W(Z, Y, X, grad φ))`, with `C` the Cotton tensor and
+`W` the Weyl tensor of the Levi-Civita connection. Thus where `C` and `W` vanish, the first
+derivatives at `x` of the defect are symmetric in this sense: this is the Frobenius integrability
+condition of the equation, written invariantly. -/
+theorem mvfderiv_hessian_sub_conformalFlatteningForm_sub_swap {φ : M → ℝ}
+    (hφ : ContMDiff I 𝓘(ℝ) ∞ φ) {x : M}
+    (hHx : ∀ u v : TangentSpace I x, hessian I φ x u v =
+      (CovariantDerivative.leviCivitaConnection I M).conformalFlatteningForm x
+        (mgradient I φ x) u v)
+    {X Y Z : Π x : M, TangentSpace I x}
+    (hX : CMDiff ∞ (T% X)) (hY : CMDiff ∞ (T% Y)) (hZ : CMDiff ∞ (T% Z)) :
+    letI cov := CovariantDerivative.leviCivitaConnection I M
+    mvfderiv I (fun y ↦ hessian I φ y (X y) (Y y) -
+          cov.conformalFlatteningForm y (mgradient I φ y) (X y) (Y y)) x (Z x) -
+        mvfderiv I (fun y ↦ hessian I φ y (X y) (Z y) -
+          cov.conformalFlatteningForm y (mgradient I φ y) (X y) (Z y)) x (Y x) =
+      -(cov.cottonTensor x (X x) (Y x) (Z x) + cov.weylTensor x (Z x) (Y x) (X x)
+        (mgradient I φ x)) := by
   let _ : IsManifold I (1 + 1) M := by
     simpa only [one_add_one_eq_two] using (inferInstance : IsManifold I 2 M)
-  have hcov := CovariantDerivative.isMetricCompatible_leviCivitaConnection (I := I) (M := M)
-  have hG : MDiffAt (T% (mgradient I φ)) x :=
-    (contMDiffAt_mgradient (n := 1) (by simpa only [one_add_one_eq_two] using hφ)).mdifferentiableAt
-      one_ne_zero
-  have hGX := mdifferentiableAt_inner hG hX
-  have hGY := mdifferentiableAt_inner hG hY
-  have hGG := mdifferentiableAt_inner hG hG
-  have hXY := mdifferentiableAt_inner hX hY
-  have hPXY := (CovariantDerivative.leviCivitaConnection I M).mdifferentiableAt_schoutenTensor_apply
-    hX hY
-  -- Near `x`, replace the Hessian by the right side of the equation, written as a sum of products.
-  have hfun : (fun y ↦ hessian I φ y (X y) (Y y)) =ᶠ[𝓝 x]
-      (fun y ↦ (CovariantDerivative.leviCivitaConnection I M).schoutenTensor y (X y) (Y y)) +
-        (fun y ↦ ⟪mgradient I φ y, X y⟫_ℝ) * (fun y ↦ ⟪mgradient I φ y, Y y⟫_ℝ) -
-        ((fun y ↦ ⟪mgradient I φ y, mgradient I φ y⟫_ℝ) * fun _ ↦ (2 : ℝ)⁻¹) *
-          fun y ↦ ⟪X y, Y y⟫_ℝ :=
-    hsol.mono fun y hy ↦ by
-      simp only [hy, CovariantDerivative.conformalFlatteningForm_apply, Pi.add_apply,
-        Pi.sub_apply, Pi.mul_apply, real_inner_self_eq_norm_sq]
-      ring
-  -- At `x`, the Hessian, also in the form `⟪∇_a grad φ, b⟫`, is the right side of the equation.
-  have hHx := hsol.self_of_nhds
-  have hH (a b : TangentSpace I x) :
-      ⟪CovariantDerivative.leviCivitaConnection I M (mgradient I φ) x a, b⟫_ℝ =
-        hessian I φ x a b :=
-    (hessian_def I φ x a b).symm
-  rw [hfun.mvfderiv_eq, mvfderiv_sub (hPXY.add (hGX.mul hGY))
-      ((hGG.mul mdifferentiableAt_const).mul hXY), mvfderiv_add hPXY (hGX.mul hGY),
-    mvfderiv_mul hGX hGY, mvfderiv_mul (hGG.mul mdifferentiableAt_const) hXY,
-    mvfderiv_mul hGG mdifferentiableAt_const]
-  simp only [mvfderiv_const, _root_.add_apply, _root_.sub_apply, _root_.smul_apply, smul_eq_mul,
-    _root_.zero_apply, Pi.mul_apply]
-  rw [hcov.mvfderiv_inner_eq (fun _ ↦ w) hG hX, hcov.mvfderiv_inner_eq (fun _ ↦ w) hG hY,
-    hcov.mvfderiv_inner_eq (fun _ ↦ w) hG hG, hcov.mvfderiv_inner_eq (fun _ ↦ w) hX hY,
-    CovariantDerivative.conformalFlatteningDeriv_apply,
-    (CovariantDerivative.leviCivitaConnection I M).derivSchoutenTensor_apply hX hY w]
-  simp only [real_inner_comm (CovariantDerivative.leviCivitaConnection I M (mgradient I φ) x w),
-    real_inner_comm (mgradient I φ x) w, hH, hHx,
-    CovariantDerivative.conformalFlatteningForm_apply, real_inner_self_eq_norm_sq]
-  ring
+  let _ : IsManifold I (∞ + 1) M := by simpa using (inferInstance : IsManifold I ∞ M)
+  set cov := CovariantDerivative.leviCivitaConnection I M
+  have hφx : ContMDiffAt I 𝓘(ℝ) 2 φ x := hφ.contMDiffAt.of_le (by simp)
+  have hXx : MDiffAt (T% X) x := hX.mdifferentiableAt (by simp)
+  have hYx : MDiffAt (T% Y) x := hY.mdifferentiableAt (by simp)
+  have hZx : MDiffAt (T% Z) x := hZ.mdifferentiableAt (by simp)
+  have hG : CMDiff ∞ (T% (mgradient I φ)) := contMDiff_mgradient hφ
+  have hGx : MDiffAt (T% (mgradient I φ)) x := hG.mdifferentiableAt (by simp)
+  -- The Hessian paired with two differentiable fields is differentiable, being `⟪∇_X grad φ, W⟫`.
+  have hHess {W : Π x : M, TangentSpace I x} (hW : MDiffAt (T% W) x) :
+      MDiffAt (fun y ↦ hessian I φ y (X y) (W y)) x := by
+    simp only [hessian_def]
+    exact mdifferentiableAt_inner ((cov.contMDiff_apply hX hG).mdifferentiableAt (by simp)) hW
+  -- So is the right side of the equation, a sum of products of differentiable functions.
+  have hΦ {W : Π x : M, TangentSpace I x} (hW : MDiffAt (T% W) x) :
+      MDiffAt (fun y ↦ cov.conformalFlatteningForm y (mgradient I φ y) (X y) (W y)) x := by
+    have h := (((cov.mdifferentiableAt_schoutenTensor_apply hXx hW).add
+      ((mdifferentiableAt_inner hGx hXx).mul (mdifferentiableAt_inner hGx hW))).sub
+      (((mdifferentiableAt_inner hGx hGx).mul (mdifferentiableAt_const (c := (2 : ℝ)⁻¹))).mul
+        (mdifferentiableAt_inner hXx hW)))
+    convert h using 1
+    funext y
+    simp only [CovariantDerivative.conformalFlatteningForm_apply, real_inner_self_eq_norm_sq,
+      Pi.add_apply, Pi.sub_apply, Pi.mul_apply]
+    ring
+  rw [mvfderiv_fun_sub (hHess hYx) (hΦ hYx), mvfderiv_fun_sub (hHess hZx) (hΦ hZx)]
+  simp only [_root_.sub_apply]
+  -- The Ricci identity for `Hess φ`, the covariant derivative of `Φ_(grad φ)` computed from the
+  -- equation at `x`, and the integrability obstruction combine.
+  have hRicci := mvfderiv_hessian_sub_swap hφ hX hY hZ x
+  have hYZ := mvfderiv_conformalFlatteningForm_sub_eq_conformalFlatteningDeriv hφx hHx hXx hYx (Z x)
+  have hZY := mvfderiv_conformalFlatteningForm_sub_eq_conformalFlatteningDeriv hφx hHx hXx hZx (Y x)
+  have hobs := CovariantDerivative.IsMetricCompatible.conformalFlatteningDeriv_sub_swap
+    (CovariantDerivative.isMetricCompatible_leviCivitaConnection (I := I) (M := M))
+    (CovariantDerivative.torsion_leviCivitaConnection_eq_zero I) x (mgradient I φ x)
+    (X x) (Y x) (Z x)
+  simp only [hHx] at hRicci
+  linarith
 
 /-- **The integrability condition of the conformal flattening equation.** If a smooth `φ` solves
 `Hess φ = P + dφ ⊗ dφ - (|dφ|² / 2) g` near `x`, then the Cotton and Weyl tensors of the
@@ -309,22 +411,18 @@ theorem cottonTensor_add_weylTensor_eq_zero_of_eventually_hessian_eq {φ : M →
     (u v w : TangentSpace I x) :
     letI cov := CovariantDerivative.leviCivitaConnection I M
     cov.cottonTensor x u v w + cov.weylTensor x w v u (mgradient I φ x) = 0 := by
-  set cov := CovariantDerivative.leviCivitaConnection I M
-  obtain ⟨X, hX, rfl⟩ := FiberBundle.exists_contMDiff_section_eq I E u
-  obtain ⟨Y, hY, rfl⟩ := FiberBundle.exists_contMDiff_section_eq I E v
-  obtain ⟨Z, hZ, rfl⟩ := FiberBundle.exists_contMDiff_section_eq I E w
-  have hXx : MDiffAt (T% X) x := hX.mdifferentiableAt (by simp)
-  have hYx : MDiffAt (T% Y) x := hY.mdifferentiableAt (by simp)
-  have hZx : MDiffAt (T% Z) x := hZ.mdifferentiableAt (by simp)
-  -- The Ricci identity for `Hess φ`, with both covariant derivatives computed from the equation.
-  have hRicci := mvfderiv_hessian_sub_swap hφ hX hY hZ x
-  have hφx : ContMDiffAt I 𝓘(ℝ) 2 φ x := hφ.contMDiffAt.of_le (by simp)
-  have hYZ := mvfderiv_hessian_sub_eq_conformalFlatteningDeriv hφx hsol hXx hYx (Z x)
-  have hZY := mvfderiv_hessian_sub_eq_conformalFlatteningDeriv hφx hsol hXx hZx (Y x)
-  have hobs := CovariantDerivative.IsMetricCompatible.conformalFlatteningDeriv_sub_swap
-    (CovariantDerivative.isMetricCompatible_leviCivitaConnection (I := I) (M := M))
-    (CovariantDerivative.torsion_leviCivitaConnection_eq_zero I) x (mgradient I φ x)
-    (X x) (Y x) (Z x)
+  obtain ⟨X, hX, rfl⟩ := FiberBundle.exists_contMDiff_section_eq I E ∞ u
+  obtain ⟨Y, hY, rfl⟩ := FiberBundle.exists_contMDiff_section_eq I E ∞ v
+  obtain ⟨Z, hZ, rfl⟩ := FiberBundle.exists_contMDiff_section_eq I E ∞ w
+  -- The defect of the equation vanishes near `x`, so its derivatives at `x` vanish.
+  have hzero {V : Π x : M, TangentSpace I x} :
+      (fun y ↦ hessian I φ y (X y) (V y) -
+        (CovariantDerivative.leviCivitaConnection I M).conformalFlatteningForm y
+          (mgradient I φ y) (X y) (V y)) =ᶠ[𝓝 x] fun _ ↦ 0 :=
+    hsol.mono fun y hy ↦ by simp [hy]
+  have h := mvfderiv_hessian_sub_conformalFlatteningForm_sub_swap hφ hsol.self_of_nhds hX hY hZ
+  rw [hzero.mvfderiv_eq, hzero.mvfderiv_eq, mvfderiv_const] at h
+  simp only [_root_.zero_apply, sub_zero] at h
   linarith
 
 /-- If the conformal flattening equation has a smooth solution near `x` whose gradient vanishes at

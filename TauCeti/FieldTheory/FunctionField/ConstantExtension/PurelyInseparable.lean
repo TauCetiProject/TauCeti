@@ -33,7 +33,8 @@ of `k` containing a root `α` of `X ^ p - a`. Embed `k(t)` in `K(t)` by `t ↦ t
   `TauCeti.Place.conorm_ofPoint_adicOfIrreducible_X_sub_C`), and `deg Q₀ = deg P₀ = 1`
   (`TauCeti.Place.degree_adicOfIrreducible_X_sub_C`). Yet the residue extension is `K / k`, which
   contains the purely inseparable `α`, so **`P₀` is not unramified**
-  (`TauCeti.Place.not_isUnramified_of_degree_eq_one`).
+  (`TauCeti.Place.not_isUnramified_of_degree_eq_one`). In general `P₀` is unramified exactly when
+  `K / k` is separable (`TauCeti.Place.isUnramified_adicOfIrreducible_X_sub_C_iff`).
 
 The two places separate the two ways a constant extension can fail to be unramified: a
 ramification index above one, and an inseparable residue extension with index one. The underlying
@@ -99,7 +100,7 @@ theorem restrict_adicOfIrreducible_X_sub_C_of_pow_eq
     (hX : algebraMap (RatFunc k) (RatFunc K) RatFunc.X = RatFunc.X) (ha : ∀ c : k, c ^ p ≠ a)
     (hα : α ^ p = algebraMap k K a) :
     (adicOfIrreducible (irreducible_X_sub_C α)).restrict k (RatFunc k) =
-      adicOfIrreducible (X_pow_sub_C_irreducible_of_prime Fact.out ha) := by
+      adicOfIrreducible (irreducible_X_pow_sub_C_of_prime Fact.out ha) := by
   have := expChar_of_injective_algebraMap (algebraMap k K).injective p
   rw [restrict_adicOfIrreducible_eq_iff hX, map_X_pow_sub_C_eq_X_sub_C_pow p hα]
   exact dvd_pow_self _ (Fact.out : p.Prime).ne_zero
@@ -108,7 +109,7 @@ theorem restrict_adicOfIrreducible_X_sub_C_of_pow_eq
 theorem restrict_eq_adicOfIrreducible_X_pow_sub_C_iff
     (hX : algebraMap (RatFunc k) (RatFunc K) RatFunc.X = RatFunc.X) (ha : ∀ c : k, c ^ p ≠ a)
     (hα : α ^ p = algebraMap k K a) (Q : Place K (RatFunc K)) :
-    Q.restrict k (RatFunc k) = adicOfIrreducible (X_pow_sub_C_irreducible_of_prime Fact.out ha) ↔
+    Q.restrict k (RatFunc k) = adicOfIrreducible (irreducible_X_pow_sub_C_of_prime Fact.out ha) ↔
       Q = adicOfIrreducible (irreducible_X_sub_C α) := by
   have := expChar_of_injective_algebraMap (algebraMap k K).injective p
   rw [restrict_eq_adicOfIrreducible_iff hX, map_X_pow_sub_C_eq_X_sub_C_pow p hα]
@@ -128,7 +129,7 @@ theorem ramificationIdx_adicOfIrreducible_X_sub_C_of_pow_eq
   have := expChar_of_injective_algebraMap (algebraMap k K).injective p
   have hmap := map_X_pow_sub_C_eq_X_sub_C_pow p hα
   rw [ramificationIdx_adicOfIrreducible_eq_multiplicity hX (irreducible_X_sub_C α)
-    (X_pow_sub_C_irreducible_of_prime Fact.out ha)
+    (irreducible_X_pow_sub_C_of_prime Fact.out ha)
     (hmap ▸ dvd_pow_self _ (Fact.out : p.Prime).ne_zero),
     hmap, multiplicity_pow_self (X_sub_C_ne_zero α) (not_isUnit_X_sub_C α)]
 
@@ -138,7 +139,7 @@ theorem conorm_ofPoint_adicOfIrreducible_X_pow_sub_C
     (hX : algebraMap (RatFunc k) (RatFunc K) RatFunc.X = RatFunc.X) (ha : ∀ c : k, c ^ p ≠ a)
     (hα : α ^ p = algebraMap k K a) :
     Divisor.conorm K (RatFunc K) (AlgebraicGeometry.WeilDivisor.ofPoint
-        (adicOfIrreducible (X_pow_sub_C_irreducible_of_prime Fact.out ha))) =
+        (adicOfIrreducible (irreducible_X_pow_sub_C_of_prime Fact.out ha))) =
       (p : ℤ) •
         AlgebraicGeometry.WeilDivisor.ofPoint (adicOfIrreducible (irreducible_X_sub_C α)) := by
   refine AlgebraicGeometry.WeilDivisor.ext fun Q ↦ ?_

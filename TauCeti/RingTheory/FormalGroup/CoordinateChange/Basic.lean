@@ -10,6 +10,7 @@ public import TauCeti.RingTheory.FormalGroup.Hom
 public import TauCeti.RingTheory.FormalGroup.NSMul.Basic
 public import TauCeti.RingTheory.PowerSeries.Coordinate.Basic
 import TauCeti.Algebra.Ring.GeomSum
+import TauCeti.RingTheory.FormalGroup.BaseChange
 import TauCeti.RingTheory.FormalGroup.AddInv
 import TauCeti.RingTheory.FormalGroup.ZSMul
 import TauCeti.RingTheory.MvPowerSeries.Substitution
@@ -51,6 +52,9 @@ representable by a polynomial ring over the Lazard ring.
 * `TauCeti.FormalGroupHom.smul_eq`: if `φ` is a homomorphism from `F` to `G`, then `φ • F = G`.
 * `FormalGroup.instIsCommSMul`: changing coordinates preserves commutativity.
 * `FormalGroup.map_smul`: changing coordinates commutes with base change.
+* `FormalGroup.map_ofStrictCoeffs_smul_𝔾ₐ`: the base change of the additive law transported along
+  `X + ∑ bᵢ X^(i + 1)` is transported along `X + ∑ f(bᵢ) X^(i + 1)`.
+* `FormalGroup.nsmulSeries_smul_eq_zero_iff`: changing coordinates preserves `[n](X) = 0`.
 * `FormalGroup.nsmulSeries_smul_𝔾ₐ_eq_zero`: if `n = 0` in `R`, then `[n](X) = 0` for every
   transport `φ • 𝔾ₐ` of the additive formal group law.
 * `FormalGroup.ofStrictCoeffs_single_smul_𝔾ₐ_toPowerSeries`: if `e² = 0`, transporting the
@@ -236,6 +240,14 @@ theorem map_smul (f : R →+* S) (φ : FormalCoordinate R) (F : FormalGroup R) :
   funext s
   fin_cases s <;> simp [PowerSeries.map_subst (hX _)]
 
+/-- The base change along `f : R →+* S` of the additive formal group law transported along the
+strict coordinate `X + ∑ bᵢ X^(i + 1)` is the additive law transported along
+`X + ∑ f(bᵢ) X^(i + 1)`. -/
+theorem map_ofStrictCoeffs_smul_𝔾ₐ (f : R →+* S) (b : ℕ+ → R) :
+    (FormalCoordinate.ofStrictCoeffs b • 𝔾ₐ).map f =
+      FormalCoordinate.ofStrictCoeffs (f ∘ b) • 𝔾ₐ := by
+  rw [map_smul, map_𝔾ₐ, FormalCoordinate.map_ofStrictCoeffs]
+
 /-- **Changing coordinates gives an isomorphic formal group law**: the formal coordinate `φ` is
 an isomorphism of formal group laws from `F` to `φ • F`, with inverse `φ⁻¹`. -/
 noncomputable def smulIso (φ : FormalCoordinate R) (F : FormalGroup R) :
@@ -285,17 +297,19 @@ theorem isStrict_smulIso_iff (φ : FormalCoordinate R) (F : FormalGroup R) :
   rw [← Units.val_eq_one, FormalCoordinate.val_linearCoeff, ← smulIso_toHom_toPowerSeries φ F]
   exact ⟨fun h ↦ h.coeff_one, fun h ↦ ⟨h⟩⟩
 
+/-- **Changing coordinates preserves exponents**: `φ • F` is killed by `n` exactly when `F` is. -/
+@[simp]
+theorem nsmulSeries_smul_eq_zero_iff (φ : FormalCoordinate R) (F : FormalGroup R) {n : ℕ} :
+    (φ • F).nsmulSeries n = 0 ↔ F.nsmulSeries n = 0 :=
+  ((smulIso φ F).nsmulSeries_eq_zero_iff n).symm
+
 /-- **Transporting the additive formal group law kills `n` when `n = 0`**: if `n = 0` in `R`, then
 `[n](X) = 0` for the formal group law `φ • 𝔾ₐ = φ(φ⁻¹(X) + φ⁻¹(Y))`. This is a converse of
 `FormalGroup.natCast_eq_zero_of_nsmulSeries_eq_zero`. -/
 theorem nsmulSeries_smul_𝔾ₐ_eq_zero (φ : FormalCoordinate R) {n : ℕ} (hn : (n : R) = 0) :
     (φ • (𝔾ₐ : FormalGroup R)).nsmulSeries n = 0 := by
-  -- Transport `[n]_{𝔾ₐ}(X) = n X = 0` along the isomorphism `φ : 𝔾ₐ → φ • 𝔾ₐ`.
-  have h := (smulIso φ (𝔾ₐ (R := R))).zsmulSeries_eq_subst n
-  have hn' : (n : PowerSeries R) = 0 := by rw [← map_natCast PowerSeries.C, hn, map_zero]
-  rw [zsmulSeries_natCast, zsmulSeries_natCast, nsmulSeries_𝔾ₐ, hn', zero_mul] at h
-  rw [h, PowerSeries.subst_zero_of_constantCoeff_zero (smulIso φ 𝔾ₐ).toHom.zero_constantCoeff,
-    PowerSeries.subst_zero]
+  rw [nsmulSeries_smul_eq_zero_iff, nsmulSeries_𝔾ₐ, ← map_natCast PowerSeries.C, hn, map_zero,
+    zero_mul]
 
 /-- If `e² = 0`, transporting the additive formal group law along `X + e X^(n + 1)` gives
 `X + Y + e ((X + Y)^(n + 1) - X^(n + 1) - Y^(n + 1))`. For instance, over the dual numbers this is
