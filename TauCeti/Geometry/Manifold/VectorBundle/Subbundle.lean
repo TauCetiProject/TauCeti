@@ -16,6 +16,7 @@ import TauCeti.Geometry.Manifold.ContMDiff.FiniteDimension
 import TauCeti.Geometry.Manifold.ContMDiff.LeftInverse
 import TauCeti.Geometry.Manifold.ContMDiff.NormedSpace
 import TauCeti.Geometry.Manifold.Immersion.LocalDiffeomorph
+import TauCeti.Geometry.Manifold.LocalDiffeomorph.FiberwiseLinear
 import TauCeti.Geometry.Manifold.SmoothEmbedding.Extension
 import TauCeti.Geometry.Manifold.VectorBundle.Trivialization
 
@@ -201,44 +202,6 @@ variable {𝕜 : Type*} [NontriviallyNormedField 𝕜] [CompleteSpace 𝕜]
   [FiberBundle F E] [VectorBundle 𝕜 F E]
   {n : ℕ∞ω} [ContMDiffVectorBundle n F E IB]
 
-/-- A `C^n` family of operators `A y : F' →L[𝕜] F` on an open set `W ⊆ B` whose coproduct with a
-subspace `Q ⊆ F` is invertible at every point of `W` defines, after precomposing with a fixed
-equivalence `e₀⁻¹ : F ≃L[𝕜] F' × Q`, a `C^n` partial diffeomorphism of `W ×ˢ univ ⊆ B × F`. -/
-private def partialDiffeomorphOfCoprod
-    {W : Set B} (hW : IsOpen W) {A : B → F' →L[𝕜] F}
-    (hA : ContMDiffOn IB 𝓘(𝕜, F' →L[𝕜] F) n A W)
-    (Q : Submodule 𝕜 F) [CompleteSpace (F' × Q)]
-    (e₀ : (F' × Q) ≃L[𝕜] F)
-    (hInv : ∀ y ∈ W, ((A y).coprod Q.subtypeL).IsInvertible) :
-    PartialDiffeomorph (IB.prod 𝓘(𝕜, F)) (IB.prod 𝓘(𝕜, F)) (B × F) (B × F) n where
-  toFun p := (p.1, ((A p.1).coprod Q.subtypeL) (e₀.symm p.2))
-  invFun p := (p.1, e₀ (((A p.1).coprod Q.subtypeL).inverse p.2))
-  source := W ×ˢ univ
-  target := W ×ˢ univ
-  map_source' _ hp := ⟨hp.1, mem_univ _⟩
-  map_target' _ hp := ⟨hp.1, mem_univ _⟩
-  left_inv' p hp := Prod.ext rfl (by
-    rw [(hInv p.1 hp.1).inverse_apply_self, e₀.apply_symm_apply])
-  right_inv' p hp := Prod.ext rfl (by
-    rw [e₀.symm_apply_apply, (hInv p.1 hp.1).self_apply_inverse])
-  open_source := hW.prod isOpen_univ
-  open_target := hW.prod isOpen_univ
-  contMDiffOn_toFun :=
-    contMDiffOn_fst.prodMk
-      (((hA.comp (s := W ×ˢ univ) contMDiffOn_fst fun _ hq ↦ hq.1).clm_coprod
-        contMDiffOn_const).clm_apply
-        (e₀.symm.contDiff.contMDiff.comp_contMDiffOn contMDiffOn_snd))
-  contMDiffOn_invFun := by
-    have hcop : ContMDiffOn (IB.prod 𝓘(𝕜, F)) 𝓘(𝕜, (F' × Q) →L[𝕜] F) n
-        (fun p : B × F ↦ (A p.1).coprod Q.subtypeL) (W ×ˢ univ) :=
-      (hA.comp (s := W ×ˢ univ) contMDiffOn_fst fun _ hq ↦ hq.1).clm_coprod contMDiffOn_const
-    have hinv : ContMDiffOn (IB.prod 𝓘(𝕜, F)) 𝓘(𝕜, F →L[𝕜] F' × Q) n
-        (fun p : B × F ↦ ((A p.1).coprod Q.subtypeL).inverse) (W ×ˢ univ) :=
-      fun p hp ↦ (hInv p.1 hp.1).contDiffAt_map_inverse.contMDiffAt.comp_contMDiffWithinAt p
-        (hcop p hp)
-    exact contMDiffOn_fst.prodMk
-      (e₀.contDiff.contMDiff.comp_contMDiffOn (hinv.clm_apply contMDiffOn_snd))
-
 omit [CompleteSpace 𝕜] in
 /-- For a fixed vector `w : F'`, reading `x ↦ (f x, eV.symm x w)` in the ambient trivialization `eE`
 at `f x₀` gives a `C^n` map on `eV.baseSet ∩ f ⁻¹' eE.baseSet`. -/
@@ -310,10 +273,12 @@ private theorem exists_contMDiffOn_subbundleCoord [FiniteDimensional 𝕜 F']
   exact (eE.continuousLinearEquivAt 𝕜 (f x₀) hx₀E).injective.comp
     (Subtype.val_injective.comp (eV.continuousLinearEquivAt 𝕜 x₀ hx₀V).symm.injective)
 
-omit [CompleteSpace 𝕜] [VectorBundle 𝕜 F E] [ContMDiffVectorBundle n F E IB] in
-/-- Over `eV.source ∩ proj ⁻¹' (f ⁻¹' W)`, composing `eV`, `Prod.map f (fun w ↦ e₀ (w, 0))`,
-`partialDiffeomorphOfCoprod`, and `eE.symm` recovers the canonical lift `q ↦ (f q.proj, ↑q.2)`. -/
-private theorem symm_partialDiffeomorphOfCoprod_subbundle_eventuallyEq
+omit [CompleteSpace 𝕜] [ChartedSpace HB' B'] [VectorBundle 𝕜 F E]
+  [ContMDiffVectorBundle n F E IB] in
+/-- Over `eV.source ∩ proj ⁻¹' (f ⁻¹' W)`, composing `eV`, `Prod.map f inl₀`,
+`fiberwiseLinearPartialDiffeomorph L hW hL hL_inv`, and `eE.symm` recovers the canonical lift
+`q ↦ (f q.proj, ↑q.2)` whenever `L y (inl₀ w) = A (r y) w` on `W`. -/
+private theorem symm_fiberwiseLinearPartialDiffeomorph_subbundle_eventuallyEq [CompleteSpace F]
     {f : B' → B} {V : Π x : B', Submodule 𝕜 (E (f x))}
     [TopologicalSpace (TotalSpace F' (fun x ↦ V x))] [∀ x, TopologicalSpace (V x)]
     [FiberBundle F' (fun x ↦ V x)]
@@ -322,18 +287,19 @@ private theorem symm_partialDiffeomorphOfCoprod_subbundle_eventuallyEq
     (hWE : ∀ y ∈ W, y ∈ (trivializationAt F E (f p.proj)).baseSet)
     (hrW : ∀ q : B', f q ∈ W → r (f q) = q)
     {A : B' → F' →L[𝕜] F}
-    (hAr : ContMDiffOn IB 𝓘(𝕜, F' →L[𝕜] F) n (fun y ↦ A (r y)) W)
     (hAeq : ∀ x ∈ (trivializationAt F' (fun x ↦ V x) p.proj).baseSet ∩
         f ⁻¹' (trivializationAt F E (f p.proj)).baseSet, ∀ w : F',
       (trivializationAt F E (f p.proj)
         ⟨f x, (((trivializationAt F' (fun x ↦ V x) p.proj).symm x w : V x) : E (f x))⟩).2 =
         A x w)
-    (Q : Submodule 𝕜 F) [CompleteSpace (F' × Q)] (e₀ : (F' × Q) ≃L[𝕜] F)
-    (hInv : ∀ y ∈ W, ((A (r y)).coprod Q.subtypeL).IsInvertible) :
+    {inl₀ : F' → F} {L : B → F →L[𝕜] F}
+    (hL : ContMDiffOn IB 𝓘(𝕜, F →L[𝕜] F) n L W)
+    (hL_inv : ∀ y ∈ W, (L y).IsInvertible)
+    (hL_inl : ∀ y ∈ W, ∀ w : F', L y (inl₀ w) = A (r y) w) :
     let eV := trivializationAt F' (fun x ↦ V x) p.proj
     let eE := trivializationAt F E (f p.proj)
-    let Φ := partialDiffeomorphOfCoprod (n := n) hW hAr Q e₀ hInv
-    (⇑eE.toOpenPartialHomeomorph.symm ∘ ⇑Φ ∘ Prod.map f (fun w ↦ e₀ (w, 0))) ∘ ⇑eV =ᶠ[𝓝 p]
+    let Φ := fiberwiseLinearPartialDiffeomorph L hW hL hL_inv
+    (⇑eE.toOpenPartialHomeomorph.symm ∘ ⇑Φ ∘ Prod.map f inl₀) ∘ ⇑eV =ᶠ[𝓝 p]
       fun q : TotalSpace F' (fun x ↦ V x) ↦ (⟨f q.proj, q.2⟩ : TotalSpace F E) := by
   intro eV eE Φ
   have hp_eV : p ∈ eV.source :=
@@ -345,10 +311,9 @@ private theorem symm_partialDiffeomorphOfCoprod_subbundle_eventuallyEq
   have hq_base : q.proj ∈ eV.baseSet := eV.mem_source.mp hqV
   have hfq_base : f q.proj ∈ eE.baseSet := hWE _ hfqW
   dsimp only [Function.comp_apply, Prod.map]
-  have hΦq : Φ (f (eV q).1, e₀ ((eV q).2, 0)) = (f q.proj, A q.proj (eV q).2) := by
-    dsimp only [Φ, partialDiffeomorphOfCoprod]
-    rw [eV.coe_fst' hq_base, hrW q.proj hfqW, e₀.symm_apply_apply,
-      ContinuousLinearMap.coprod_apply, map_zero, add_zero]
+  have hΦq : Φ (f (eV q).1, inl₀ (eV q).2) = (f q.proj, A q.proj (eV q).2) := by
+    rw [eV.coe_fst' hq_base, fiberwiseLinearPartialDiffeomorph_apply, hL_inl _ hfqW,
+      hrW q.proj hfqW]
   rw [hΦq, ← hAeq q.proj ⟨hq_base, hfq_base⟩ (eV q).2]
   have hsymmV : (⟨q.proj, eV.symm q.proj (eV q).2⟩ : TotalSpace F' (fun x ↦ V x)) = q := by
     have hmk : (q.proj, (eV q).2) = eV q := Prod.ext (eV.coe_fst' hq_base).symm rfl
@@ -402,11 +367,14 @@ private theorem exists_isImmersionAtOfComplement_subbundle_of_retraction
   have hW : IsOpen (VQ ∩ W₀) := hVQ.inter hW₀
   have hfx₀W : f p.proj ∈ VQ ∩ W₀ := ⟨hfx₀VQ, hfx₀W₀⟩
   have hInv : ∀ y ∈ VQ ∩ W₀, ((A (r y)).coprod Q.subtypeL).IsInvertible := fun y hy ↦ hInv0 y hy.1
-  have : CompleteSpace (F' × Q) :=
-    ContinuousLinearMap.completeSpace_of_isInvertible (hInv (f p.proj) hfx₀W)
   obtain ⟨e₀, _⟩ := hInv (f p.proj) hfx₀W
   refine ⟨Q, ⟨e₀⟩, ?_⟩
-  let Φ := partialDiffeomorphOfCoprod (n := n) hW (hAr.mono inter_subset_right) Q e₀ hInv
+  let L : B → F →L[𝕜] F := fun y ↦ ((A (r y)).coprod Q.subtypeL) ∘L (e₀.symm : F →L[𝕜] F' × Q)
+  have hL : ContMDiffOn IB 𝓘(𝕜, F →L[𝕜] F) n L (VQ ∩ W₀) :=
+    ((hAr.mono inter_subset_right).clm_coprod contMDiffOn_const).clm_comp contMDiffOn_const
+  have hL_inv : ∀ y ∈ VQ ∩ W₀, (L y).IsInvertible :=
+    fun y hy ↦ ContinuousLinearMap.isInvertible_comp_equiv.mpr (hInv y hy)
+  let Φ := fiberwiseLinearPartialDiffeomorph L hW hL hL_inv
   let inl₀ : F' → F := fun w ↦ e₀ (w, 0)
   have hpV : eV p = (p.proj, (eV p).2) := Prod.ext (eV.coe_fst' hx₀V) rfl
   have hprod : IsImmersionAtOfComplement (P × Q) (IB'.prod 𝓘(𝕜, F')) (IB.prod 𝓘(𝕜, F)) n
@@ -417,20 +385,17 @@ private theorem exists_isImmersionAtOfComplement_subbundle_of_retraction
   have hΦ : IsLocalDiffeomorphAt (IB.prod 𝓘(𝕜, F)) (IB.prod 𝓘(𝕜, F)) n Φ
       (Prod.map f inl₀ (eV p)) :=
     PartialDiffeomorph.isLocalDiffeomorphAt (IB.prod 𝓘(𝕜, F)) (IB.prod 𝓘(𝕜, F)) n Φ
-      (by rw [Prod.map_apply, eV.coe_fst' hx₀V]; exact ⟨hfx₀W, mem_univ _⟩)
+      (by simp [Φ, eV.coe_fst' hx₀V, hfx₀W])
   have heEsymm : IsLocalDiffeomorphAt (IB.prod 𝓘(𝕜, F)) (IB.prod 𝓘(𝕜, F)) n
       eE.toOpenPartialHomeomorph.symm (Φ (Prod.map f inl₀ (eV p))) :=
-    eE.isLocalDiffeomorphAt_symm (by
-      have hfst : (Φ (Prod.map f inl₀ (eV p))).1 = f p.proj := by
-        dsimp only [Φ, partialDiffeomorphOfCoprod]; rw [Prod.map_apply, eV.coe_fst' hx₀V]
-      exact eE.mem_target.mpr (hfst ▸ hx₀E))
+    eE.isLocalDiffeomorphAt_symm (eE.mem_target.mpr (by simp [Φ, eV.coe_fst' hx₀V, hx₀E]))
   exact (isImmersionAtOfComplement_comp_isLocalDiffeomorphAt
     (eV.isLocalDiffeomorphAt (eV.mem_source.mpr hx₀V))
     (isImmersionAtOfComplement_isLocalDiffeomorphAt_comp heEsymm
       (isImmersionAtOfComplement_isLocalDiffeomorphAt_comp hΦ hprod))).congr_of_eventuallyEq
-    (symm_partialDiffeomorphOfCoprod_subbundle_eventuallyEq hf_cont hW hfx₀W
-      (fun _ hy ↦ hy.2.2) (fun q hfq ↦ hr_inv q hfq.2.1.1) (hAr.mono inter_subset_right)
-      hAeq Q e₀ hInv)
+    (symm_fiberwiseLinearPartialDiffeomorph_subbundle_eventuallyEq hf_cont hW hfx₀W
+      (fun _ hy ↦ hy.2.2) (fun q hfq ↦ hr_inv q hfq.2.1.1) hAeq hL hL_inv fun _ _ _ ↦ by
+        simp [L, inl₀])
 
 section SameBase
 
