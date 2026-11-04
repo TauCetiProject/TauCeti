@@ -125,7 +125,7 @@ include hs in
 lies in the cyclotomic subfield of level `m` exactly when the least common multiple of the `|P|`
 divides `m`. -/
 theorem adjoin_range_le_iff_lcm_dvd (r : s → K) (hr : ∀ P, r P ^ 2 = (P : K))
-    {m : ℕ} (F : IntermediateField ℚ K) [IsGalois ℚ F] [IsCyclotomicExtension {m} ℚ F]
+    {m : ℕ} (F : IntermediateField ℚ K) [IsCyclotomicExtension {m} ℚ F]
     (hmN : m ∣ (∏ P ∈ s, P).natAbs) :
     adjoin ℚ (Set.range r) ≤ F ↔ s.lcm Int.natAbs ∣ m := by
   let _ := neZero_natAbs_prod_of_forall_isPrimeDiscriminant hs
@@ -144,7 +144,7 @@ theorem adjoin_range_le_iff_eq_natAbs_prod
     (heven : ∀ P ∈ s, ∀ Q ∈ s,
       IsEvenPrimeDiscriminant P → IsEvenPrimeDiscriminant Q → P = Q)
     (r : s → K) (hr : ∀ P, r P ^ 2 = (P : K))
-    {m : ℕ} (F : IntermediateField ℚ K) [IsGalois ℚ F] [IsCyclotomicExtension {m} ℚ F]
+    {m : ℕ} (F : IntermediateField ℚ K) [IsCyclotomicExtension {m} ℚ F]
     (hmN : m ∣ (∏ P ∈ s, P).natAbs) :
     adjoin ℚ (Set.range r) ≤ F ↔ m = (∏ P ∈ s, P).natAbs := by
   rw [adjoin_range_le_iff_lcm_dvd s hs r hr F hmN,

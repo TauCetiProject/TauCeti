@@ -67,7 +67,7 @@ theorem IsPrecomplete.of_finite [IsPrecomplete I R] [Module.Finite R M] : IsPrec
 /-- A finite module over an `I`-adically complete Noetherian ring is `I`-adically complete. -/
 theorem IsAdicComplete.of_finite [IsNoetherianRing R] [IsAdicComplete I R] [Module.Finite R M] :
     IsAdicComplete I M where
-  toIsHausdorff := IsHausdorff.of_le_jacobson I M (IsAdicComplete.le_jacobson_bot I)
+  toIsHausdorff := IsHausdorff.of_le_jacobson I M (IsAdicComplete.le_jacobson I)
   toIsPrecomplete := IsPrecomplete.of_finite I M
 
 variable {M} in

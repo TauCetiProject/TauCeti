@@ -5,11 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.InnerProductSpace.ExteriorPower
+public import TauCeti.Analysis.InnerProductSpace.ExteriorPower.Basic
 public import TauCeti.Analysis.InnerProductSpace.HodgeStar.Basic
 import TauCeti.LinearAlgebra.ExteriorPower.WedgePairing
-import TauCeti.LinearAlgebra.Matrix.Determinant.FinFour
 import Mathlib.Analysis.InnerProductSpace.PiL2
+import TauCeti.Analysis.InnerProductSpace.Trace.Free
 
 /-!
 # Metric and functorial properties of the Hodge star
@@ -24,11 +24,15 @@ Reversing the orientation negates the Hodge star, and transporting the orientati
 linear isometric equivalence commutes with it. These statements hold also in dimension zero, for
 either orientation.
 
+The derivation action `D_A` of a skew-adjoint endomorphism `A`, which applies `A` to one factor of
+a wedge at a time, commutes with the Hodge star in every degree (`Orientation.hodgeStar_lieMap`):
+`D_A` is skew-adjoint and acts on the top exterior power by `tr A = 0`, so it preserves the
+characterization `⟪⋆x, y⟫ = vol (x ∧ y)`. This is the infinitesimal form of the invariance of the
+star under rotations.
+
 In dimension four, the Hodge star of a wedge of two vectors pairs with another such wedge to the
 volume of the four vectors, `⟪⋆(a ∧ b), u ∧ w⟫ = vol(a, b, u, w)`
-(`Orientation.inner_hodgeStar_ιMulti_two`), and the derivation action
-`D_A (u ∧ w) = A u ∧ w + u ∧ A w` of a skew-adjoint endomorphism `A` commutes with the Hodge star
-on two-forms (`Orientation.hodgeStar_lieMap_two`).
+(`Orientation.inner_hodgeStar_ιMulti_two`).
 
 ## References
 
@@ -183,6 +187,18 @@ theorem hodgeStar_map (φ : V ≃ₗᵢ[ℝ] W) {k l : ℕ}
   rw [hb, hodgeStar_orthonormalBasis, hodgeStar_orthonormalBasis, hvol,
     map_smul, map_zsmul_unit, hb]
 
+/-- **Skew-adjoint endomorphisms commute with the Hodge star**: `⋆ (D_A x) = D_A (⋆ x)` for the
+derivation action `D_A` of a skew-adjoint endomorphism `A` on forms of every degree. This is the
+infinitesimal form of the invariance of `⋆` under rotations. -/
+theorem hodgeStar_lieMap {k l : ℕ} (hkl : k + l = finrank ℝ V) {A : V →ₗ[ℝ] V}
+    (hA : ∀ u w, ⟪A u, w⟫ = -⟪u, A w⟫) (x : ⋀[ℝ]^k V) :
+    o.hodgeStar hkl (lieMap k A x) = lieMap l A (o.hodgeStar hkl x) := by
+  -- `D_A` is skew-adjoint, and it acts on the top exterior power by `tr A = 0`.
+  refine ext_inner_right ℝ fun y ↦ ?_
+  rw [inner_hodgeStar_apply, inner_lieMap_left hA, inner_hodgeStar_apply, eq_neg_iff_add_eq_zero,
+    wedgePairing_lieMap_add_wedgePairing_lieMap, LinearMap.trace_eq_zero_of_inner_left_eq_neg hA,
+    zero_mul]
+
 end Orientation
 
 /-! ### Two-forms in dimension four -/
@@ -207,44 +223,5 @@ theorem inner_hodgeStar_ιMulti_two (hkl : 2 + 2 = finrank ℝ V) (a b u w : V) 
     congr 1
     ext i
     fin_cases i <;> rfl
-
-/-- **Skew-adjoint endomorphisms commute with the Hodge star on two-forms** in dimension four:
-`⋆ (D_A x) = D_A (⋆ x)` for the derivation action `D_A` of a skew-adjoint `A`. This is the
-infinitesimal form of the invariance of `⋆` under rotations; it holds because `D_A` acts on
-`⋀⁴ V` by `tr A = 0`. -/
-theorem hodgeStar_lieMap_two (hkl : 2 + 2 = finrank ℝ V) {A : V →ₗ[ℝ] V}
-    (hA : ∀ u w, ⟪A u, w⟫ = -⟪u, A w⟫) (x : ⋀[ℝ]^2 V) :
-    o.hodgeStar hkl (exteriorPower.lieMap 2 A x) =
-      exteriorPower.lieMap 2 A (o.hodgeStar hkl x) := by
-  set e := (stdOrthonormalBasis ℝ V).reindex (finCongr (Fact.out : finrank ℝ V = 4))
-    |>.adjustToOrientation o
-  have he : e.toBasis.orientation = o := OrthonormalBasis.orientation_adjustToOrientation _ _
-  -- The coordinates of `A v` in terms of the six entries `⟪eᵢ, A eⱼ⟫`, `i < j`, of its matrix.
-  have hm (i j : Fin 4) : ⟪e i, A (e j)⟫ = -⟪e j, A (e i)⟫ := by
-    rw [← hA, real_inner_comm]
-  have hd (i : Fin 4) : ⟪e i, A (e i)⟫ = 0 := by linarith [hm i i]
-  have hAe (v : V) (i : Fin 4) : e.repr (A v) i =
-      ![⟪e 0, A (e 1)⟫ * e.repr v 1 + ⟪e 0, A (e 2)⟫ * e.repr v 2 + ⟪e 0, A (e 3)⟫ * e.repr v 3,
-        -⟪e 0, A (e 1)⟫ * e.repr v 0 + ⟪e 1, A (e 2)⟫ * e.repr v 2 + ⟪e 1, A (e 3)⟫ * e.repr v 3,
-        -⟪e 0, A (e 2)⟫ * e.repr v 0 - ⟪e 1, A (e 2)⟫ * e.repr v 1 + ⟪e 2, A (e 3)⟫ * e.repr v 3,
-        -⟪e 0, A (e 3)⟫ * e.repr v 0 - ⟪e 1, A (e 3)⟫ * e.repr v 1 -
-          ⟪e 2, A (e 3)⟫ * e.repr v 2] i := by
-    have hv : e.repr (A v) i = ∑ j, e.repr v j * ⟪e i, A (e j)⟫ := by
-      conv_lhs => rw [← e.sum_repr v]
-      simp [OrthonormalBasis.repr_apply_apply]
-    rw [hv, Fin.sum_univ_four]
-    fin_cases i <;>
-      simp [hd, hm 1 0, hm 2 0, hm 3 0, hm 2 1, hm 3 1, hm 3 2] <;> ring
-  refine LinearMap.congr_fun (linearMap_ext_inner_ιMulti_two (f := (o.hodgeStar hkl).toLinearMap ∘ₗ
-    exteriorPower.lieMap 2 A) (g := exteriorPower.lieMap 2 A ∘ₗ
-    (o.hodgeStar hkl).toLinearMap) fun a b u w ↦ ?_) x
-  simp only [LinearMap.comp_apply, LinearEquiv.coe_coe, inner_lieMap_two_left hA,
-    exteriorPower.lieMap_two_apply_ιMulti, map_add, inner_add_left, inner_add_right,
-    o.inner_hodgeStar_ιMulti_two hkl, o.volumeForm_robust e he, Basis.det_apply,
-    Matrix.det_fin_four]
-  simp only [Basis.toMatrix_apply, OrthonormalBasis.coe_toBasis_repr_apply, Matrix.cons_val_zero,
-    Matrix.cons_val_one, Matrix.cons_val_two, Matrix.cons_val_three, Matrix.head_cons,
-    Matrix.tail_cons, hAe]
-  ring
 
 end Orientation

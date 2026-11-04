@@ -38,17 +38,17 @@ variable {ι : Type*} {R : ι → Type*} [∀ i, CommRing (R i)] (I : ∀ i, Ide
 /-- Products of henselian pairs are henselian, including infinite and empty products. -/
 instance henselianRing_pi [∀ i, HenselianRing (R i) (I i)] :
     HenselianRing (∀ i, R i) (pi I) := by
-  have hjac : pi I ≤ jacobson ⊥ := by
+  have hjac : pi I ≤ Ring.jacobson (∀ i, R i) := by
     intro x hx
-    rw [mem_jacobson_bot]
+    rw [Ring.mem_jacobson_iff]
     intro y
     rw [Pi.isUnit_iff]
     intro i
-    exact mem_jacobson_bot.1 (HenselianRing.jac (hx i)) (y i)
+    exact Ring.mem_jacobson_iff.1 (HenselianRing.jac (hx i)) (y i)
   refine ⟨hjac, ?_⟩
   intro f hf a₀ ha hu
   classical
-  have := isLocalHom_of_le_jacobson_bot (pi I) hjac
+  have := _root_.isLocalHom_of_le_jacobson hjac
   have hunit : IsUnit (f.derivative.eval a₀) := isUnit_of_map_unit _ _ hu
   have hcoord (i : ι) :
       ∃ a : R i, (f.map (Pi.evalRingHom R i)).IsRoot a ∧ a - a₀ i ∈ I i := by
@@ -66,16 +66,16 @@ since the converse instance `henselianRing_pi` would create an instance-search l
 theorem henselianRing_of_pi [HenselianRing (∀ i, R i) (pi I)] (i : ι) :
     HenselianRing (R i) (I i) := by
   classical
-  have hjac : I i ≤ jacobson ⊥ := by
+  have hjac : I i ≤ Ring.jacobson (R i) := by
     intro x hx
-    rw [mem_jacobson_bot]
+    rw [Ring.mem_jacobson_iff]
     intro y
     have hsingle : Pi.single i x ∈ pi I := single_mem_pi hx
-    have hu := (mem_jacobson_bot.1 (HenselianRing.jac hsingle)
+    have hu := (Ring.mem_jacobson_iff.1 (HenselianRing.jac hsingle)
       (Pi.single i y)).map (Pi.evalRingHom R i)
     simpa using hu
   refine ⟨hjac, fun f _ a₀ ha hu ↦ ?_⟩
-  have := isLocalHom_of_le_jacobson_bot (I i) hjac
+  have := _root_.isLocalHom_of_le_jacobson hjac
   have hunit : IsUnit (f.derivative.eval a₀) := isUnit_of_map_unit _ _ hu
   -- Lift the coefficients, then use the coordinate idempotent to replace every other
   -- coordinate polynomial by X. There is no bound on the number of other coordinates.

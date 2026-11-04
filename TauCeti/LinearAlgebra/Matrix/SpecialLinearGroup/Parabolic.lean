@@ -63,7 +63,7 @@ theorem infinite_stabilizer_of_isParabolic {R : Type*} [CommRing R] [IsAddTorsio
   have hcomm (r : ℤ) : (U r : Matrix (Fin 2) (Fin 2) R) * M = M * U r := by
     ext i j
     fin_cases i <;> fin_cases j <;>
-      simp [U, H, mul_apply, Fin.sum_univ_two, zsmul_eq_mul] <;> ring
+      simp [U, H, Matrix.mul_apply, Fin.sum_univ_two, zsmul_eq_mul] <;> ring
   have hfix (r : ℤ) : toConjAct (U r) ∈ stabilizer (ConjAct SL(2, R)) M := by
     rw [mem_stabilizer_iff, specialLinearGroup_smul_def, ofConjAct_toConjAct, hcomm]
     simp [Matrix.mul_assoc, Matrix.mul_adjugate]
@@ -76,7 +76,7 @@ theorem infinite_stabilizer_of_isParabolic {R : Type*} [CommRing R] [IsAddTorsio
     ext i j
     exact hH i j
   apply IsAddTorsionFree.zsmul_left_injective hij
-  simpa only [smul_apply] using congrArg (fun A ↦ A i j) hsmul
+  simpa only [Matrix.smul_apply] using congrArg (fun A ↦ A i j) hsmul
 
 end Matrix
 

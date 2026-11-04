@@ -9,7 +9,8 @@ public import TauCeti.NumberTheory.NumberField.QuadraticAlgebra
 public import Mathlib.Algebra.Squarefree.Basic
 public import Mathlib.NumberTheory.FundamentalDiscriminant
 public import Mathlib.NumberTheory.NumberField.ClassNumber
-import TauCeti.NumberTheory.BinaryQuadraticForm.Ideal.ClassNumber
+public import TauCeti.NumberTheory.BinaryQuadraticForm.Ideal.ClassNumber
+import TauCeti.NumberTheory.FundamentalDiscriminant
 import TauCeti.NumberTheory.NumberField.Quadratic.ClassNumber
 
 /-!
@@ -28,7 +29,10 @@ primitive reduced binary quadratic forms of discriminant `-n`
 that the principal form is the only one. Since `ℚ(√(-n))` is `ℚ(√(-d))` for the Heegner numbers
 `d ≡ 3 (mod 4)`, this covers seven of the nine radicands; for `d = 1, 2` the model `ℚ(√(-d))` is
 handled by Minkowski's bound
-(`QuadraticAlgebra.classNumber_eq_one_of_mod_four_ne_one_of_natAbs_le_two`).
+(`QuadraticAlgebra.classNumber_eq_one_of_mod_four_ne_one_of_natAbs_le_two`). Every quadratic field
+of discriminant `-n` has the same class number as `ℚ(√(-n))`
+(`TauCeti.BinaryQuadraticForm.classNumber_eq_card_primitiveReducedForms_of_discr_eq`), so the nine
+discriminants have class number one in any quadratic field.
 
 ## Main definitions and results
 
@@ -39,10 +43,14 @@ handled by Minkowski's bound
   nine field discriminants.
 * `TauCeti.isFundamentalDiscr_neg_of_mem_heegnerDiscriminants`: `-3, -4, -7, -8, -11, -19, -43,
   -67, -163` are fundamental discriminants.
+* `TauCeti.card_primitiveReducedForms_eq_one_of_mem_heegnerDiscriminants`: for these nine
+  discriminants `-n`, the principal form is the only primitive reduced form.
 * `TauCeti.classNumber_neg_eq_one_of_mem_heegnerDiscriminants`: the fields `ℚ(√(-n))` of these nine
   discriminants `-n` have class number one.
 * `TauCeti.classNumber_eq_one_of_mem_heegnerNumbers`: for every Heegner number `d`, the field
   `ℚ(√(-d))` has class number one.
+* `TauCeti.NumberField.classNumber_eq_one_of_mem_heegnerDiscriminants`: every quadratic field of
+  discriminant `-n`, for `n` in `heegnerDiscriminants`, has class number one.
 
 ## References
 
@@ -87,9 +95,15 @@ def heegnerDiscriminants : Finset ℕ := {3, 4, 7, 8, 11, 19, 43, 67, 163}
 /-- `-3, -4, -7, -8, -11, -19, -43, -67, -163` are fundamental discriminants. -/
 theorem isFundamentalDiscr_neg_of_mem_heegnerDiscriminants {n : ℕ}
     (hn : n ∈ heegnerDiscriminants) : Int.IsFundamentalDiscr (-n) := by
-  rw [Int.isFundamentalDiscr_iff_squarefree, ← Int.squarefree_natAbs, ← Int.squarefree_natAbs]
   revert n
   decide +kernel
+
+/-- For `-n` one of the discriminants `-3, -4, -7, -8, -11, -19, -43, -67, -163`, the principal
+form is the only primitive reduced form of discriminant `-n`. -/
+theorem card_primitiveReducedForms_eq_one_of_mem_heegnerDiscriminants {n : ℕ}
+    (hn : n ∈ heegnerDiscriminants) : #(primitiveReducedForms n) = 1 := by
+  rw [mem_heegnerDiscriminants] at hn
+  rcases hn with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> decide +kernel
 
 /-- **Class number one for the nine discriminants.** For `-n` one of the fundamental discriminants
 `-3, -4, -7, -8, -11, -19, -43, -67, -163`, the imaginary quadratic field `ℚ(√(-n))` has class
@@ -98,9 +112,8 @@ theorem classNumber_neg_eq_one_of_mem_heegnerDiscriminants {n : ℕ} [NeZero n]
     (hn : n ∈ heegnerDiscriminants) :
     NumberField.classNumber (QuadraticAlgebra ℚ ((-n : ℤ) : ℚ) 0) = 1 := by
   rw [BinaryQuadraticForm.classNumber_eq_card_primitiveReducedForms n
-    (isFundamentalDiscr_neg_of_mem_heegnerDiscriminants hn)]
-  rw [mem_heegnerDiscriminants] at hn
-  rcases hn with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> decide +kernel
+    (isFundamentalDiscr_neg_of_mem_heegnerDiscriminants hn),
+    card_primitiveReducedForms_eq_one_of_mem_heegnerDiscriminants hn]
 
 /-- **Class number one for the Heegner numbers.** For each Heegner number
 `d ∈ {1, 2, 3, 7, 11, 19, 43, 67, 163}`, the imaginary quadratic field `ℚ(√(-d))` has class
@@ -115,5 +128,14 @@ theorem classNumber_eq_one_of_mem_heegnerNumbers {d : ℕ} [NeZero d] (hd : d �
     simp only [mem_heegnerNumbers] at hd
     simp only [mem_heegnerDiscriminants]
     omega
+
+/-- **The nine imaginary quadratic fields of class number one.** A quadratic field of
+discriminant `-n`, for `n` one of `3, 4, 7, 8, 11, 19, 43, 67, 163`, has class number one: the
+principal form is the only primitive reduced form of discriminant `-n`. -/
+theorem NumberField.classNumber_eq_one_of_mem_heegnerDiscriminants {K : Type*} [Field K]
+    [NumberField K] (hK : Module.finrank ℚ K = 2) {n : ℕ} (hn : NumberField.discr K = -n)
+    (hmem : n ∈ heegnerDiscriminants) : NumberField.classNumber K = 1 := by
+  rw [BinaryQuadraticForm.classNumber_eq_card_primitiveReducedForms_of_discr_eq hK hn,
+    card_primitiveReducedForms_eq_one_of_mem_heegnerDiscriminants hmem]
 
 end TauCeti

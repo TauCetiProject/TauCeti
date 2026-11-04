@@ -95,9 +95,9 @@ def cellularChainRepresentation (n : ℕ) :
       (ModuleCat.of R R) n).hom
     map_one' := (cellularChainBasis (p ⁻¹' C) R n).ext fun c ↦ by
       simp only [cellularChainGroupMap_preimageSMul_cellularChainBasis, one_smul,
-        Module.End.one_apply]
+        one_apply_eq_self]
     map_mul' g h := (cellularChainBasis (p ⁻¹' C) R n).ext fun c ↦ by
-      simp only [Module.End.mul_apply, cellularChainGroupMap_preimageSMul_cellularChainBasis,
+      simp only [mul_apply_eq_comp, cellularChainGroupMap_preimageSMul_cellularChainBasis,
         mul_smul] }
 
 /-- An element `g` acts on the cellular chains of the lift by the chain map of translation by

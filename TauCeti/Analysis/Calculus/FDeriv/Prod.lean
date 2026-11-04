@@ -5,8 +5,14 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.Calculus.Deriv.Basic
 public import Mathlib.Analysis.Calculus.FDeriv.Add
 public import Mathlib.Analysis.Calculus.FDeriv.Prod
+
+import Mathlib.Analysis.Calculus.Deriv.Comp
+import Mathlib.Analysis.Calculus.Deriv.Prod
+import Mathlib.Analysis.Calculus.FDeriv.CompCLM
+import Mathlib.Analysis.Calculus.MeanValue
 
 /-!
 # Derivative lemmas on products
@@ -22,10 +28,21 @@ The derivative of a graph map `(x, y) ↦ (x, u (x, y))` can likewise be reconst
 derivatives of its two coordinate slices. When the vertical slice has identity derivative, the
 result is the canonical linear graph shear.
 
+For a function of a scalar first variable, the partial derivatives along the coordinate lines
+`s ↦ (s, b)` and `t ↦ (a, t)` are its derivative applied to `(1, 0)` and `(0, 1)`. The same holds
+one order higher for the first derivative, and a function whose partial derivative in the first
+variable vanishes everywhere is constant along every horizontal line.
+
 ## Main declarations
 
 * `HasFDerivAt.comp_fst_add_comp_snd`: the derivative of a separated sum is the coproduct of the
   derivatives of its summands.
+* `TauCeti.hasDerivAt_prodMk_left`, `TauCeti.hasDerivAt_prodMk_right`: the coordinate lines
+  through a point have velocities `(1, 0)` and `(0, 1)`.
+* `TauCeti.hasDerivAt_fderiv_apply_fst`, `TauCeti.hasDerivAt_fderiv_apply_snd`: the partial
+  derivatives of a first partial derivative.
+* `TauCeti.apply_eq_apply_zero_of_fderiv_fst_eq_zero`: a function with vanishing partial
+  derivative in its real first variable is constant along horizontal lines.
 * `TauCeti.fderiv_comp_fst_add_comp_snd`: the same for the totalized derivative.
 * `TauCeti.fderiv_comp_fst_add_comp_snd_eq_zero_iff`: a separated sum of differentiable functions
   is critical at `(a, b)` exactly when both summands are critical at `a` and `b`.
@@ -154,6 +171,51 @@ theorem _root_.DifferentiableAt.hasFDerivAt_fst_prodMk_of_slices
   apply ContinuousLinearMap.ext
   intro q
   simpa [add_comm] using congrArg (fun z : F ↦ (q.1, z)) (htotal q).symm
+
+section CoordinateLines
+
+variable {u : 𝕜 × F → G}
+
+/-- The horizontal line `s ↦ (s, b)` has velocity `(1, 0)`. -/
+theorem hasDerivAt_prodMk_left (s : 𝕜) (b : F) :
+    HasDerivAt (fun s : 𝕜 ↦ (s, b)) ((1 : 𝕜), (0 : F)) s :=
+  (hasDerivAt_id s).prodMk (hasDerivAt_const s b)
+
+/-- The vertical line `t ↦ (a, t)` has velocity `(0, 1)`. -/
+theorem hasDerivAt_prodMk_right (a : E) (t : 𝕜) :
+    HasDerivAt (fun t : 𝕜 ↦ (a, t)) ((0 : E), (1 : 𝕜)) t :=
+  (hasDerivAt_const t a).prodMk (hasDerivAt_id t)
+
+/-- The derivative in the first variable of a first partial derivative `fderiv 𝕜 u · v` is the
+second derivative of `u` in the direction `(1, 0)`. -/
+theorem hasDerivAt_fderiv_apply_fst {s : 𝕜} {b : F} (hu : DifferentiableAt 𝕜 (fderiv 𝕜 u) (s, b))
+    (v : 𝕜 × F) :
+    HasDerivAt (fun s ↦ fderiv 𝕜 u (s, b) v) (fderiv 𝕜 (fderiv 𝕜 u) (s, b) (1, 0) v) s := by
+  simpa [Function.comp_def] using
+    (hu.hasFDerivAt.clm_apply (hasFDerivAt_const v _)).comp_hasDerivAt s
+      (hasDerivAt_prodMk_left s b)
+
+end CoordinateLines
+
+/-- The derivative in the second variable of a first partial derivative `fderiv 𝕜 u · v` is the
+second derivative of `u` in the direction `(0, 1)`. -/
+theorem hasDerivAt_fderiv_apply_snd {u : E × 𝕜 → G} {a : E} {t : 𝕜}
+    (hu : DifferentiableAt 𝕜 (fderiv 𝕜 u) (a, t)) (v : E × 𝕜) :
+    HasDerivAt (fun t ↦ fderiv 𝕜 u (a, t) v) (fderiv 𝕜 (fderiv 𝕜 u) (a, t) (0, 1) v) t := by
+  simpa [Function.comp_def] using
+    (hu.hasFDerivAt.clm_apply (hasFDerivAt_const v _)).comp_hasDerivAt t
+      (hasDerivAt_prodMk_right a t)
+
+/-- A differentiable function on `ℝ × F` whose partial derivative in the first variable vanishes
+everywhere is constant along every horizontal line. -/
+theorem apply_eq_apply_zero_of_fderiv_fst_eq_zero {F G : Type*} [NormedAddCommGroup F]
+    [NormedSpace ℝ F] [NormedAddCommGroup G] [NormedSpace ℝ G] {u : ℝ × F → G}
+    (hu : Differentiable ℝ u) (h : ∀ z, fderiv ℝ u z (1, 0) = 0) (s : ℝ) (b : F) :
+    u (s, b) = u (0, b) := by
+  have hl (s : ℝ) : HasDerivAt (fun s ↦ u (s, b)) 0 s := by
+    simpa [h, Function.comp_def] using
+      (hu _).hasFDerivAt.comp_hasDerivAt s (hasDerivAt_prodMk_left s b)
+  exact is_const_of_deriv_eq_zero (fun s ↦ (hl s).differentiableAt) (fun s ↦ (hl s).deriv) s 0
 
 end TauCeti
 

@@ -79,9 +79,9 @@ theorem IsIrreducible.isPrimitive_one_add [DecidableEq n] (hA : A.IsIrreducible)
       (Finset.le_sup (f := fun p : n × n => k p.1 p.2) (Finset.mem_univ (i, j))).trans
         (Nat.le_succ _)⟩
   refine ⟨fun i j => add_nonneg ?_ (hA.nonneg i j), N, hN, fun i j => ?_⟩
-  · rw [one_apply]
+  · rw [Matrix.one_apply]
     split_ifs <;> simp
-  rw [add_comm, (Commute.one_right A).add_pow', sum_apply]
+  rw [add_comm, (Commute.one_right A).add_pow', Matrix.sum_apply]
   refine Finset.sum_pos' (fun p _ => ?_) ⟨(k i j, N - k i j), ?_, ?_⟩
   · simpa using nsmul_nonneg (pow_apply_nonneg hA.nonneg p.1 i j) _
   · simpa using Nat.add_sub_cancel' (hkN i j)
@@ -254,7 +254,7 @@ theorem IsIrreducible.rootMultiplicity_charpoly_eq_one [DecidableEq n] [Nonempty
     induction k generalizing x with
     | zero => simp_all
     | succ k ih =>
-      rw [pow_succ, Module.End.mul_apply] at hx
+      rw [pow_succ, _root_.mul_apply_eq_comp] at hx
       have h := ih _ hx
       rw [hsub, hsub, sub_eq_zero] at h
       rw [hsub]

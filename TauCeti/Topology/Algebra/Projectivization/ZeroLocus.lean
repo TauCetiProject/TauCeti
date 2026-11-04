@@ -194,7 +194,7 @@ theorem mk_mem_complexProjectiveBadRankLocus_iff [Finite ι]
         ¬(jacobiMatrixAt (fun i ↦ (c i : MvPolynomial (Fin N) ℂ)) v).mulVec.Surjective := by
   rw [mem_complexProjectiveBadRankLocus, mk_mem_complexProjectiveIncidence_iff,
     mulVec_surjective_jacobiMatrixAt_iff_of_mk_eq_mk
-      (fun i ↦ (mem_homogeneousSubmodule _ _).mp (c i).2) (Projectivization.rep_nonzero _) hv
+      (fun i ↦ (mem_homogeneousSubmodule _ _).mp (c i).2) (Projectivization.rep_ne_zero _) hv
       (Projectivization.mk_rep _)]
 
 /-- The bad-rank locus is closed: the cone Jacobian depends continuously on the coefficients and
@@ -235,7 +235,7 @@ theorem isOpen_setOfPred_forall_mulVec_surjective_jacobiMatrixAt [Finite ι] (d 
       ⟨hz, hS⟩) rfl⟩
   obtain rfl : c' = c := hc
   rw [← L.mk_rep, mk_mem_complexProjectiveBadRankLocus_iff] at hL
-  exact hL.2 (h _ L.rep_nonzero hL.1)
+  exact hL.2 (h _ L.rep_ne_zero hL.1)
 
 /-! ### The affine part of a zero locus -/
 

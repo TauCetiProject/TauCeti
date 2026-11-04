@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.FiniteEtale.Basic
+public import TauCeti.AlgebraicGeometry.Pullback.SpecMap
 public import TauCeti.RingTheory.Etale.Splitting
 
 /-!
@@ -44,40 +45,16 @@ theorem exists_split_of_isFinite_of_etale {K : Type u} [Field K] {X : Scheme.{u}
       Module.finrank K L ∣ n.factorial ∧
         Nonempty (Over.mk (pullback.snd f (Spec.algebraMap K L)) ≅
           Over.mk (Spec.algebraMap L (Fin n → L))) := by
-  have : (TauCeti.FiniteEtaleScheme.spec.{u} (.of K)).EssSurj := by
-    rw [← TauCeti.FiniteEtaleScheme.finiteEtaleCommAlgCatOpEquivFiniteEtaleScheme_functor]
-    infer_instance
-  obtain ⟨A, ⟨e⟩⟩ := Functor.EssSurj.mem_essImage
-    (TauCeti.FiniteEtaleScheme.spec (.of K)) (TauCeti.FiniteEtaleScheme.ofHom f)
-  let eSpec : (algSpec (.of K)).obj (.op A.unop.obj) ≅
-      Over.mk (Spec.algebraMap K A.unop.obj) :=
-    Over.isoMk (Iso.refl _) (by
-      -- The spectrum functor's object wrapper hides the source of its structure map.
-      erw [Category.id_comp, algSpec_obj_hom]
-      rfl)
-  have e' := (TauCeti.finiteEtaleSchemeProperty (Spec (.of K))).ι.mapIso e
-  rw [ObjectProperty.ι_obj, ObjectProperty.ι_obj, TauCeti.FiniteEtaleScheme.spec_obj_obj,
-    TauCeti.FiniteEtaleScheme.ofHom_obj] at e'
-  let e₀ : Over.mk (Spec.algebraMap K A.unop.obj) ≅ Over.mk f := eSpec.symm ≪≫ e'
+  obtain ⟨A, ⟨e₀⟩⟩ := f.exists_finiteEtale_algebra
   obtain ⟨L, _, _, _, _, hdeg, hL⟩ :=
-    TauCeti.Algebra.Etale.exists_isFiniteSplit_tensorProduct K A.unop.obj
+    TauCeti.Algebra.Etale.exists_isFiniteSplit_tensorProduct K A.obj
   obtain ⟨n, ⟨a⟩⟩ := hL.nonempty_algEquiv_fun
-  have hn : Module.finrank K A.unop.obj = n := by
+  have hn : Module.finrank K A.obj = n := by
     rw [← Module.finrank_baseChange (R := L), a.toLinearEquiv.finrank_eq]
     simp
-  let e₁ : Over.mk (pullback.snd (Spec.algebraMap K A.unop.obj) (Spec.algebraMap K L)) ≅
-      Over.mk (Spec.algebraMap L (L ⊗[K] A.unop.obj)) :=
-    Over.isoMk (pullbackSymmetry _ _ ≪≫ pullbackSpecIso K L A.unop.obj) (by
-      simp [Spec.algebraMap, pullbackSpecIso_hom_fst'])
-  let e₂ : Over.mk (Spec.algebraMap L (L ⊗[K] A.unop.obj)) ≅
-      Over.mk (Spec.algebraMap L (Fin n → L)) :=
-    Over.isoMk (Scheme.Spec.mapIso a.toRingEquiv.toCommRingCatIso.symm.op) (by
-      -- Read the contravariant spectrum map as the ring homomorphism of `a.symm`.
-      erw [← Spec.map_comp]
-      apply congrArg Spec.map
-      ext r
-      exact a.symm.commutes r)
+  let e₁ :=
+    TauCeti.AlgebraicGeometry.pullbackSpecIsoOfAlgEquiv K A.obj L (Fin n → L) a
   exact ⟨L, inferInstance, inferInstance, inferInstance, inferInstance, n, hn ▸ hdeg,
-    ⟨((Over.pullback (Spec.algebraMap K L)).mapIso e₀).symm ≪≫ e₁ ≪≫ e₂⟩⟩
+    ⟨((Over.pullback (Spec.algebraMap K L)).mapIso e₀).symm ≪≫ e₁⟩⟩
 
 end AlgebraicGeometry.Scheme.Hom

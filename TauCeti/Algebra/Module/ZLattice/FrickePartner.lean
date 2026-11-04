@@ -28,7 +28,10 @@ In particular the level of the partner divides `N`, and it equals `N` exactly wh
 dividing `N` divides every half-norm of `L`. Equality fails in general: the lattice `2 ℤ ⊆ ℝ` has
 level `8` and content `2`, and its Fricke partner `√8 • ½ ℤ = √2 ℤ` has level `4`
 (`ZLattice.level_sqrt_level_smul_dual_span_two`). Similarly `√2 • E₈` has level `2` and content
-`2`, while its Fricke partner is `E₈`, of level `1`.
+`2`, while its Fricke partner is `E₈`, of level `1`. More generally, in positive dimension an even
+unimodular lattice `L` scaled by `√m` has level exactly `m` and Fricke partner `L`: the level
+divides `m` because `(√m • L)^∨ = (√m)⁻¹ • L`, and it is at least `m` because the Fricke partner
+`√N • (√m)⁻¹ • L`, being integral, has determinant `(N / m)ⁿ ≥ 1`.
 
 The content and its basic API live in `TauCeti.Algebra.Module.ZLattice.Content`.
 
@@ -42,6 +45,9 @@ The content and its basic API live in `TauCeti.Algebra.Module.ZLattice.Content`.
 * `ZLattice.IsEven.level_sqrt_level_smul_dual_dvd`: the level of the Fricke partner divides `N`.
 * `ZLattice.IsEven.level_sqrt_level_smul_dual_eq_level_iff`: it equals `N` exactly when `N` is
   coprime to the content.
+* `ZLattice.IsEven.level_sqrt_smul_of_isUnimodular`,
+  `ZLattice.IsEven.sqrt_level_smul_dual_sqrt_smul_of_isUnimodular`: in positive dimension, for an
+  even unimodular `L` and `m > 0`, the lattice `√m • L` has level `m` and Fricke partner `L`.
 
 ## References
 
@@ -146,6 +152,56 @@ theorem IsEven.level_sqrt_level_smul_dual_eq_level_iff (h : IsEven L) :
     level (√(level L : ℝ) • dual L) = level L ↔ (level L).Coprime (content L) := by
   rw [h.level_sqrt_level_smul_dual, Nat.div_eq_self, or_iff_right h.isIntegral.level_pos.ne',
     Nat.Coprime]
+
+/-! ### Scaled even unimodular lattices -/
+
+/-- **Scaled even unimodular lattices.** In positive dimension, scaling an even unimodular full
+lattice `L` by `√m`, for a positive integer `m`, gives an even lattice of level exactly `m`.
+For instance `√2 • E₈` has level `2`. -/
+theorem IsEven.level_sqrt_smul_of_isUnimodular [Nontrivial E] (h : IsEven L)
+    (hU : IsUnimodular L) {m : ℕ} (hm : m ≠ 0) : level (√(m : ℝ) • L) = m := by
+  borelize E
+  have hm₀ : (0 : ℝ) < m := Nat.cast_pos.mpr (Nat.pos_of_ne_zero hm)
+  have hs : 0 < √(m : ℝ) := Real.sqrt_pos.mpr hm₀
+  have : NeZero √(m : ℝ) := ⟨hs.ne'⟩
+  have hdual : dual (√(m : ℝ) • L) = (√(m : ℝ))⁻¹ • L := by rw [dual_smul _ hs.ne', hU.dual_eq]
+  set N := level (√(m : ℝ) • L)
+  -- `N ∣ m`: the dual `(√m)⁻¹ • L` has squared norms `‖y‖² / m` with `‖y‖² ∈ 2ℤ`.
+  have hNm : N ∣ m := level_dvd_iff.mpr fun x hx ↦ by
+    rw [hdual, mem_smul_pointwise_iff_exists] at hx
+    obtain ⟨y, hy, rfl⟩ := hx
+    obtain ⟨k, hk⟩ := isEven_iff.mp h y hy
+    refine ⟨k, ?_⟩
+    rw [norm_smul, mul_pow, norm_inv, Real.norm_of_nonneg hs.le, inv_pow, Real.sq_sqrt hm₀.le, hk]
+    field_simp
+  -- `m ≤ N`: the Fricke partner `√N • (√m)⁻¹ • L` is integral, so its determinant
+  -- `(N / m)ⁿ det L = (N / m)ⁿ` is at least `1`.
+  have hN₀ : (0 : ℝ) < N := Nat.cast_pos.mpr ((h.sqrt_smul m).isIntegral.level_pos)
+  have hc : √(N : ℝ) * (√(m : ℝ))⁻¹ ≠ 0 :=
+    mul_ne_zero (Real.sqrt_pos.mpr hN₀).ne' (inv_ne_zero hs.ne')
+  have : NeZero (√(N : ℝ) * (√(m : ℝ))⁻¹) := ⟨hc⟩
+  have hint : IsIntegral ((√(N : ℝ) * (√(m : ℝ))⁻¹) • L) := by
+    simpa only [hdual, smul_smul] using isIntegral_sqrt_level_smul_dual (L := √(m : ℝ) • L)
+  have hdet := hint.one_le_det
+  rw [det_smul L hc, hU.det_eq_one, mul_one, pow_mul, mul_pow, inv_pow, Real.sq_sqrt hN₀.le,
+    Real.sq_sqrt hm₀.le] at hdet
+  have hmN : (m : ℝ) ≤ N := by
+    by_contra hlt
+    have hlt' : (N : ℝ) * (m : ℝ)⁻¹ < 1 := by
+      rw [← div_eq_mul_inv, div_lt_one hm₀]
+      exact not_le.mp hlt
+    exact (pow_lt_one₀ (by positivity) hlt' finrank_pos.ne').not_ge hdet
+  exact Nat.le_antisymm (Nat.le_of_dvd (Nat.pos_of_ne_zero hm) hNm) (by exact_mod_cast hmN)
+
+/-- In positive dimension, the Fricke partner of `√m • L`, for an even unimodular full lattice `L`
+and a positive integer `m`, is `L` itself: `√m • (√m • L)^∨ = L`. For instance the Fricke partner
+of `√2 • E₈` is `E₈`, of level `1`. -/
+theorem IsEven.sqrt_level_smul_dual_sqrt_smul_of_isUnimodular [Nontrivial E] (h : IsEven L)
+    (hU : IsUnimodular L) {m : ℕ} (hm : m ≠ 0) :
+    √(level (√(m : ℝ) • L) : ℝ) • dual (√(m : ℝ) • L) = L := by
+  have hs : √(m : ℝ) ≠ 0 := Real.sqrt_ne_zero'.mpr (Nat.cast_pos.mpr (Nat.pos_of_ne_zero hm))
+  rw [h.level_sqrt_smul_of_isUnimodular hU hm, dual_smul _ hs, hU.dual_eq, smul_smul,
+    mul_inv_cancel₀ hs, one_smul]
 
 end FiniteDimensional
 

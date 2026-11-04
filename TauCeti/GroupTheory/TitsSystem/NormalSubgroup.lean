@@ -9,6 +9,7 @@ public import TauCeti.GroupTheory.TitsSystem.Parabolic.Classification
 public import TauCeti.GroupTheory.TitsSystem.Coxeter
 public import Mathlib.GroupTheory.IsPerfect
 import Mathlib.Algebra.Group.Subgroup.Pointwise
+import TauCeti.GroupTheory.QuotientGroup.Simple
 import TauCeti.GroupTheory.Solvable
 
 /-!
@@ -132,19 +133,10 @@ theorem isSimpleGroup_quotient_normalCore (hS : T.simple.Nonempty) (hirr : T.IsI
     [Group.IsPerfect G] {U : Subgroup G} [Group.IsSolvable U]
     (hBU : T.subgroupB ≤ Subgroup.normalizer (U : Set G))
     (hU : Subgroup.normalClosure (U : Set G) = ⊤) :
-    IsSimpleGroup (G ⧸ T.subgroupB.normalCore) := by
-  have hπ := QuotientGroup.mk'_surjective T.subgroupB.normalCore
-  have : Nontrivial (G ⧸ T.subgroupB.normalCore) := QuotientGroup.nontrivial_iff.mpr
-    fun h ↦ (T.subgroupB_eq_top_iff.not.mpr hS.ne_empty)
-      (top_le_iff.mp (h ▸ T.subgroupB.normalCore_le))
-  refine { eq_bot_or_eq_top_of_normal := fun K hK ↦ ?_ }
-  have := hK.comap (QuotientGroup.mk' T.subgroupB.normalCore)
-  rcases T.le_normalCore_or_eq_top_of_normal hirr hBU hU
-    (K.comap (QuotientGroup.mk' T.subgroupB.normalCore)) with h | h
-  · refine Or.inl (eq_bot_iff.mpr fun x hx ↦ ?_)
-    obtain ⟨g, rfl⟩ := hπ x
-    exact (QuotientGroup.eq_one_iff g).mpr (h hx)
-  · rw [← Subgroup.map_comap_eq_self_of_surjective hπ K, h, Subgroup.map_top_of_surjective _ hπ]
-    exact Or.inr rfl
+    IsSimpleGroup (G ⧸ T.subgroupB.normalCore) :=
+  QuotientGroup.isSimpleGroup_of_forall_normal
+    (fun h ↦ (T.subgroupB_eq_top_iff.not.mpr hS.ne_empty)
+      (top_le_iff.mp (h ▸ T.subgroupB.normalCore_le)))
+    (T.le_normalCore_or_eq_top_of_normal hirr hBU hU)
 
 end TauCeti.TitsSystem

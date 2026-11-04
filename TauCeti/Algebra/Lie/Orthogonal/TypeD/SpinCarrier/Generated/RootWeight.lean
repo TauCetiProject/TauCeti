@@ -192,7 +192,7 @@ theorem mem_adjointWeightSpace_generatedWeightTorusCoordinateMap_iff
   exact HopfIdeal.mem_adjointWeightSpace_iff_of_weightTorus_of_eq
     (generatedDefiningIdeal n hn R) (basisWeight n)
     (generatedCoordinateHopfAlgebra_def n hn R) (generatedCoordinateMap n hn R)
-    (generatedCoordinateMap_comp_eqToIso_hom n hn R) _ hπ α x
+    (generatedCoordinateMap_comp_eqToHom n hn R) _ hπ α x
 
 /-- The normalized numbered root differential has its integral signed simple-root character
 under the weight torus of the generated spin group. -/

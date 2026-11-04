@@ -67,7 +67,7 @@ noncomputable def reindexRepresentation :
   map_mul' σ τ := by
     apply LinearMap.ext
     intro x
-    simp only [Module.End.mul_apply, LinearEquiv.coe_toLinearMap]
+    simp only [mul_apply_eq_comp, LinearEquiv.coe_toLinearMap]
     simpa only [Equiv.Perm.mul_def] using
       (reindex_reindex (R := R) (s := fun _ : ι => M) τ σ x).symm
 
@@ -82,7 +82,7 @@ theorem commute_reindexRepresentation_map (σ : Equiv.Perm ι) (f : M →ₗ[R] 
     Commute (reindexRepresentation R M ι σ) (map fun _ : ι => f) := by
   apply LinearMap.ext
   intro x
-  simpa only [Module.End.mul_apply, reindexRepresentation_apply,
+  simpa only [mul_apply_eq_comp, reindexRepresentation_apply,
     LinearEquiv.coe_toLinearMap] using
     (map_reindex (f := fun _ : ι => f) σ x).symm
 

@@ -81,7 +81,7 @@ theorem coe_invariantRestrict_pow_apply (θ : V ≃+ V) (M : S)
   induction n generalizing v with
   | zero => simp
   | succ n ih =>
-      rw [pow_succ, LinearEquiv.mul_apply, ih, pow_succ, LinearEquiv.mul_apply,
+      rw [pow_succ, mul_apply_eq_comp, ih, pow_succ, mul_apply_eq_comp,
         coe_invariantRestrict_apply]
       simp only [AddEquiv.coe_toIntLinearEquiv]
 

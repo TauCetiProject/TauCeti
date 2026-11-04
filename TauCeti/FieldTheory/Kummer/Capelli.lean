@@ -38,7 +38,7 @@ satisfies `γ² = ±β`, which forces `x² + ay² = 0` and `2xy = ±1`, hence `a
 characteristic `2` the equation `2xy = ±1` has no solution, so no case split is needed. For a
 general `n = 2ᵏm` with `m` odd one adjoins a root `α` of `Xᵐ - a` and transports the
 hypotheses to `α` with the norm, whose value at `α` is `a` because `m` is odd; this reduction
-follows the proof of Mathlib's `X_pow_sub_C_irreducible_of_odd`.
+follows the proof of Mathlib's `irreducible_X_pow_sub_C_of_odd`.
 
 ## References
 
@@ -111,13 +111,13 @@ theorem X_pow_two_pow_sub_C_irreducible (k : ℕ) {a : K} (ha : ∀ b : K, b ^ 2
   induction k generalizing K a with
   | zero => simpa using irreducible_X_sub_C a
   | succ k ih =>
-    have h₂ := X_pow_sub_C_irreducible_of_prime Nat.prime_two ha
+    have h₂ := _root_.irreducible_X_pow_sub_C_of_prime Nat.prime_two ha
     obtain _ | k := k
     · simpa using h₂
     have := Fact.mk h₂
     have ha'' := ha' (by lia)
     rw [pow_succ]
-    refine X_pow_mul_sub_C_irreducible h₂ (ih (fun γ hγ ↦ ?_) (fun _ δ hδ ↦ ?_))
+    refine _root_.irreducible_X_pow_mul_sub_C h₂ (ih (fun γ hγ ↦ ?_) (fun _ δ hδ ↦ ?_))
     · -- A square root `γ` of `√a` is a fourth root of `a`.
       obtain ⟨x, hx⟩ := exists_neg_four_mul_pow_four_eq_of_pow_four_eq (γ := γ) (by
         rw [AdjoinRoot.algebraMap_eq, ← root_X_pow_sub_C_pow 2 a, ← hγ]; ring)
@@ -160,13 +160,13 @@ theorem X_pow_sub_C_irreducible_of_forall_prime {n : ℕ} (hn : n ≠ 0) {a : K}
   obtain ⟨k, m, hm, rfl⟩ := Nat.exists_eq_two_pow_mul_odd hn
   have hm₀ : m ≠ 0 := hm.pos.ne'
   have hirr : Irreducible (X ^ m - C a) :=
-    X_pow_sub_C_irreducible_of_odd hm fun p hp hpm ↦ ha p hp (Dvd.dvd.mul_left hpm _)
+    _root_.irreducible_X_pow_sub_C_of_odd hm fun p hp hpm ↦ ha p hp (Dvd.dvd.mul_left hpm _)
   obtain rfl | hk := Nat.eq_zero_or_pos k
   · simpa using hirr
   have := Fact.mk hirr
   have hnorm : Algebra.norm K (root (X ^ m - C a)) = a := by
     rw [norm_root_X_pow_sub_C hm₀, hm.neg_one_pow, neg_one_mul, neg_neg]
-  refine X_pow_mul_sub_C_irreducible hirr (X_pow_two_pow_sub_C_irreducible k (fun γ hγ ↦ ?_)
+  refine _root_.irreducible_X_pow_mul_sub_C hirr (X_pow_two_pow_sub_C_irreducible k (fun γ hγ ↦ ?_)
     fun hk₂ δ hδ ↦ ?_)
   · -- The norm of a square root of `α` is a square root of `a`.
     refine ha 2 Nat.prime_two (Dvd.dvd.mul_right (dvd_pow_self 2 hk.ne') _) (Algebra.norm K γ) ?_

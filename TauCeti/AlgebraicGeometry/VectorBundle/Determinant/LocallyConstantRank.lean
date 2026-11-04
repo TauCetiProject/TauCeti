@@ -86,27 +86,38 @@ private lemma locallyConstantExteriorPower_map_comp_comp_eqToHom
   subst h h'
   simp
 
+/-- The morphism of determinants induced by an isomorphism `E ≅ F` in the core: `⋀^{rank E}` of
+it, followed by the identification `⋀^{rank E} F = ⋀^{rank F} F` given by `rank E = rank F`. This
+is the action of `determinantCore` on morphisms. -/
+private def determinantCoreMap {E F : Core (FiniteLocallyFreeSheaf X)} (e : E ⟶ F) :
+    det E.of ⟶ det F.of :=
+  ObjectProperty.homMk <|
+    (AlgebraicGeometry.locallyConstantExteriorPower E.of.rank).map e.iso.hom.hom ≫
+      eqToHom (congrArg (fun r ↦ (AlgebraicGeometry.locallyConstantExteriorPower r).obj F.of.obj)
+        (rank_eq_of_iso ((Scheme.Modules.isFiniteLocallyFree X).ι.mapIso e.iso)))
+
 variable (X) in
 /-- The determinant is functorial on the core of the category of finite locally free sheaves:
 an isomorphism `E ≅ F` preserves the rank and induces the isomorphism
 `⋀^{rank E} E ≅ ⋀^{rank E} F = ⋀^{rank F} F` of determinants. -/
 def determinantCore : Core (FiniteLocallyFreeSheaf X) ⥤ InvertibleSheaf X where
   obj E := det E.of
-  map {E F} e := ObjectProperty.homMk <|
-    (AlgebraicGeometry.locallyConstantExteriorPower E.of.rank).map e.iso.hom.hom ≫
-      eqToHom (congrArg (fun r ↦ (AlgebraicGeometry.locallyConstantExteriorPower r).obj F.of.obj)
-        (rank_eq_of_iso ((Scheme.Modules.isFiniteLocallyFree X).ι.mapIso e.iso)))
+  -- A named map keeps the transport proof out of the statements of the functor laws: inlined, it
+  -- appears there as a separate auxiliary proof, and the kernel then needs far too long to check
+  -- the equation lemma `determinantCore.eq_1` (which doc-gen4 asks for) outside the module system.
+  map := determinantCoreMap
   map_id E := by
     ext1
-    simp only [coreCategory_id_iso, Iso.refl_hom, ObjectProperty.FullSubcategory.id_hom,
-      CategoryTheory.Functor.map_id, ObjectProperty.homMk_hom]
+    simp only [determinantCoreMap, coreCategory_id_iso, Iso.refl_hom,
+      ObjectProperty.FullSubcategory.id_hom, CategoryTheory.Functor.map_id,
+      ObjectProperty.homMk_hom]
     -- What remains is the transport along a proof of `rank E = rank E`, which is trivial.
     refine (Category.id_comp _).trans ?_
     exact eqToHom_refl _ _
   map_comp {E F G} e f := by
     ext1
-    simp only [ObjectProperty.homMk_hom, coreCategory_comp_iso, Iso.trans_hom,
-      ObjectProperty.FullSubcategory.comp_hom]
+    simp only [determinantCoreMap, ObjectProperty.homMk_hom, coreCategory_comp_iso,
+      Iso.trans_hom, ObjectProperty.FullSubcategory.comp_hom]
     exact locallyConstantExteriorPower_map_comp_comp_eqToHom
       (rank_eq_of_iso ((Scheme.Modules.isFiniteLocallyFree X).ι.mapIso e.iso))
       (rank_eq_of_iso ((Scheme.Modules.isFiniteLocallyFree X).ι.mapIso f.iso))

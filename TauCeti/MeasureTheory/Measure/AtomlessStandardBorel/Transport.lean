@@ -69,11 +69,11 @@ theorem exists_measurePreserving_of_nullSingleton_of_measure_univ_eq
   have hμ0 : μ Set.univ ≠ 0 := Measure.measure_univ_ne_zero.mpr hμ
   have hμtop : μ Set.univ ≠ ⊤ := measure_ne_top μ Set.univ
   have : IsProbabilityMeasure ((μ Set.univ)⁻¹ • μ) :=
-    ⟨by simp [Measure.smul_apply, ENNReal.inv_mul_cancel hμ0 hμtop]⟩
+    ⟨by simp [_root_.smul_apply, ENNReal.inv_mul_cancel hμ0 hμtop]⟩
   have : IsProbabilityMeasure ((μ Set.univ)⁻¹ • ν) :=
-    ⟨by simp [Measure.smul_apply, ← h, ENNReal.inv_mul_cancel hμ0 hμtop]⟩
+    ⟨by simp [_root_.smul_apply, ← h, ENNReal.inv_mul_cancel hμ0 hμtop]⟩
   have : NullSingletonClass ((μ Set.univ)⁻¹ • μ) :=
-    ⟨fun x ↦ by simp [Measure.smul_apply]⟩
+    ⟨fun x ↦ by simp [_root_.smul_apply]⟩
   obtain ⟨T, hT⟩ := exists_measurePreserving_of_nullSingleton
     ((μ Set.univ)⁻¹ • μ) ((μ Set.univ)⁻¹ • ν)
   exact ⟨T, by simpa [smul_smul, ENNReal.mul_inv_cancel hμ0 hμtop] using
@@ -129,7 +129,7 @@ theorem exists_subset_measure_eq_of_nullSingleton {X : Type*} [MeasurableSpace X
   calc μ (s ∩ T ⁻¹' Set.Iic ⟨_, hr⟩) = μ.restrict s (T ⁻¹' Set.Iic ⟨_, hr⟩) := by
         rw [Measure.restrict_apply' hs, Set.inter_comm]
     _ = μ s * ENNReal.ofReal (a / μ s).toReal := by
-        rw [hT.measure_preimage measurableSet_Iic.nullMeasurableSet, Measure.smul_apply,
+        rw [hT.measure_preimage measurableSet_Iic.nullMeasurableSet, _root_.smul_apply,
           unitInterval.volume_Iic, smul_eq_mul]
     _ = a := by
         rw [ENNReal.ofReal_toReal (ENNReal.div_ne_top (ne_top_of_le_ne_top hμs ha) h0),

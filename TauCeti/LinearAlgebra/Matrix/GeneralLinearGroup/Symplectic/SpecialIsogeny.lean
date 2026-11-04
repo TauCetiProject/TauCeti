@@ -210,7 +210,7 @@ theorem symplecticSpecialIsogeny_neg_jFin_mul_transpose_mul_jFin [CharP R 2]
       symplecticSpecialIsogeny_apply, specialIsogenyPair_zero, specialIsogenyPair_one,
       specialIsogenyPair_two, specialIsogenyPair_three, pairMinor_eq, of_apply, cons_val',
       cons_val, cons_val_zero, cons_val_one, cons_val_fin_one] <;>
-    (try simp only [CharTwo.neg_eq, CharTwo.sub_eq_add]) <;> ring
+    (simp only [CharTwo.neg_eq, CharTwo.sub_eq_add]) <;> ring
 
 /-- The special isogeny of a symplectic matrix is symplectic. -/
 theorem symplecticSpecialIsogeny_mul_jFin_mul_transpose [CharP R 2]
