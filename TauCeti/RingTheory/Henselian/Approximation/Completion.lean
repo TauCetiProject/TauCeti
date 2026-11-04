@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.RingTheory.Ideal.Quotient.Defs
+public import Mathlib.RingTheory.Ideal.Quotient.Operations
 public import Mathlib.Topology.Algebra.Nonarchimedean.AdicTopology
 public import Mathlib.Topology.Algebra.UniformRing
 import Mathlib.Topology.UniformSpace.DiscreteUniformity
@@ -218,16 +218,9 @@ theorem eval_surjective (t : R) (I : Ideal R) (n : ℕ) :
 /-- Exactly the elements divisible into every filtration ideal die in the completion. -/
 theorem ker_completionMap (t : R) (I : Ideal R) :
     RingHom.ker (completionMap t I) = ⨅ n, filtrationIdeal t I n := by
-  ext a
-  simp only [RingHom.mem_ker, Ideal.mem_iInf]
-  constructor
-  · intro h n
-    have := congrArg (eval t I n) h
-    exact Ideal.Quotient.eq_zero_iff_mem.mp this
-  · intro h
-    apply completion_ext
-    intro n
-    exact Ideal.Quotient.eq_zero_iff_mem.mpr (h n)
+  rw [← RingHom.ker_comp_of_injective (completionMap t I)
+    (completionSubring t I).subtype_injective]
+  exact Ideal.ker_Pi_Quotient_mk (filtrationIdeal t I)
 
 /-- The compatibility equations cut out a closed subring of the product of residues. -/
 private theorem isClosed_completionSubring (t : R) (I : Ideal R) :
@@ -302,8 +295,16 @@ private theorem eval_injective_of_constant (t : R) (I : Ideal R)
   apply completion_ext
   intro n
   apply (Ideal.quotEquivOfEq ((hc n).trans (hc 0).symm)).injective
-  exact (transition_eval t I (Nat.zero_le n) x).trans
-    (hxy.trans (transition_eval t I (Nat.zero_le n) y).symm)
+  calc
+    _ = transition t I (Nat.zero_le n) (eval t I n x) := by
+      unfold transition
+      exact Ideal.quotEquivOfEq_eq_factor _ _
+    _ = transition t I (Nat.zero_le n) (eval t I n y) :=
+      (transition_eval t I (Nat.zero_le n) x).trans
+        (hxy.trans (transition_eval t I (Nat.zero_le n) y).symm)
+    _ = _ := by
+      unfold transition
+      exact (Ideal.quotEquivOfEq_eq_factor _ _).symm
 
 /-- With unit parameter `1`, the completion is the quotient `R / I`, not the `I`-adic
 completion. The comparison is given by the zeroth residue coordinate. -/
