@@ -6,9 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.InnerProductSpace.HodgeStar.Kahler
--- Private: orthonormal coordinates and the `4 × 4` determinant are used only in proofs.
-import TauCeti.Analysis.InnerProductSpace.Orthonormal.Sum
-import TauCeti.LinearAlgebra.Matrix.Determinant.FinFour
 import Mathlib.Analysis.InnerProductSpace.PiL2
 
 /-!
@@ -51,7 +48,7 @@ is attained is an explicit computation in the coordinates of such a frame.
 
 In the namespace `TauCeti.AlmostComplexStructure`:
 
-* `inner_kahlerForm_of_hodgeStar_eq_neg`: `ω` is orthogonal to every anti-self-dual form.
+* `inner_kahlerForm_eq_zero_of_hodgeStar_eq_neg`: `ω` is orthogonal to every anti-self-dual form.
 * `inner_ιMulti_add_inner_ιMulti_of_hodgeStar_eq_self`: for self-dual `η`,
   `η(v, J w) + η(w, J v) = ⟪ω, η⟫ ⟪v, w⟫`.
 * `inner_ιMulti_of_hodgeStar_eq_self`: for self-dual `η`, `η(v, J v) = ⟪ω, η⟫ / 2 · ‖v‖²`.
@@ -105,7 +102,7 @@ private theorem norm_ιMulti_sq (v : V) : ‖ιMulti ℝ 2 ![v, J v]‖ ^ 2 = �
 
 /-- **The Hermitian part of a form orthogonal to `ω` is bounded by `‖μ‖ / √2`**: if
 `⟪ω, μ⟫ = 0`, then `|μ(v, J v)| ≤ ‖μ‖ / √2 · ‖v‖²`. This applies to every anti-self-dual `μ`
-(`inner_kahlerForm_of_hodgeStar_eq_neg`), for which the bound is sharp
+(`inner_kahlerForm_eq_zero_of_hodgeStar_eq_neg`), for which the bound is sharp
 (`exists_inner_ιMulti_eq_neg_of_hodgeStar_eq_neg`). -/
 theorem abs_inner_ιMulti_le_of_inner_kahlerForm_eq_zero {μ : ⋀[ℝ]^2 V}
     (hμ : ⟪J.kahlerForm, μ⟫ = 0) (v : V) :
@@ -119,14 +116,13 @@ theorem abs_inner_ιMulti_le_of_inner_kahlerForm_eq_zero {μ : ⋀[ℝ]^2 V}
   have hω : ‖J.kahlerForm‖ ^ 2 = 2 := by
     rw [norm_kahlerForm_sq hJ, (Fact.out : finrank ℝ V = 4)]
     norm_num
-  have hy : ‖y‖ ^ 2 = 2 * ‖v‖ ^ 4 := by
-    rw [norm_sub_sq_real, norm_smul, norm_smul, real_inner_smul_left, real_inner_smul_right, hxω,
-      mul_pow, mul_pow, norm_ιMulti_sq hJ, hω]
-    simp only [Real.norm_eq_abs, abs_two, sq_abs, abs_pow]
+  have hx : ‖x‖ ^ 2 = ‖v‖ ^ 4 := norm_ιMulti_sq hJ v
+  have hy : ‖y‖ ^ 2 = (√2 * ‖v‖ ^ 2) ^ 2 := by
+    simp only [y, norm_sub_sq_real, norm_smul, real_inner_smul_left, real_inner_smul_right,
+      Real.norm_eq_abs, abs_two, abs_pow, sq_abs, mul_pow, hxω, hx, hω, Real.sq_sqrt zero_le_two]
     ring
-  have hy' : ‖y‖ = √2 * ‖v‖ ^ 2 := by
-    rw [← Real.sqrt_sq (norm_nonneg y), hy, Real.sqrt_mul zero_le_two,
-      show ‖v‖ ^ 4 = (‖v‖ ^ 2) ^ 2 by ring, Real.sqrt_sq (by positivity)]
+  have hy' : ‖y‖ = √2 * ‖v‖ ^ 2 :=
+    (pow_left_inj₀ (norm_nonneg y) (by positivity) two_ne_zero).1 hy
   have hμy : ⟪μ, y⟫ = 2 * ⟪μ, x⟫ := by
     have hμω : ⟪μ, J.kahlerForm⟫ = 0 := by rw [real_inner_comm]; exact hμ
     rw [inner_sub_right, real_inner_smul_right, real_inner_smul_right, hμω]
@@ -154,10 +150,10 @@ variable {J : AlmostComplexStructure V} (h₀ : J (e 0) = e 1) (h₂ : J (e 2) =
 include h₀ h₂ in
 /-- **The Kähler form is orthogonal to the anti-self-dual forms**: `⟪ω, μ⟫ = 0` when
 `⋆μ = -μ`, since `ω` is self-dual for the complex orientation. -/
-theorem inner_kahlerForm_of_hodgeStar_eq_neg {μ : ⋀[ℝ]^2 V} (hμ : o.hodgeStar hkl μ = -μ) :
+theorem inner_kahlerForm_eq_zero_of_hodgeStar_eq_neg {μ : ⋀[ℝ]^2 V} (hμ : o.hodgeStar hkl μ = -μ) :
     ⟪J.kahlerForm, μ⟫ = 0 := by
-  have h := o.isSymmetric_hodgeStar_of_even even_two hkl J.kahlerForm μ
-  simp only [LinearEquiv.coe_coe, hodgeStar_kahlerForm h₀ h₂ hkl he, hμ, inner_neg_right] at h
+  have h := o.inner_hodgeStar_right_of_hodgeStar_eq_neg even_two hkl hμ J.kahlerForm
+  rw [hodgeStar_kahlerForm h₀ h₂ hkl he, real_inner_comm] at h
   linarith
 
 include h₀ h₂ in
@@ -171,8 +167,7 @@ theorem inner_ιMulti_add_inner_ιMulti_of_hodgeStar_eq_self {η : ⋀[ℝ]^2 V}
   set z := ιMulti ℝ 2 ![v, J w] - ιMulti ℝ 2 ![J v, w]
   have hswap : ιMulti ℝ 2 ![J v, w] = -ιMulti ℝ 2 ![w, J v] := by
     rw [← (ιMulti ℝ 2).map_swap ![w, J v] zero_ne_one, Matrix.cons_cons_comp_swap_zero_one]
-  have hstar := o.isSymmetric_hodgeStar_of_even even_two hkl η z
-  simp only [LinearEquiv.coe_coe, hη] at hstar
+  have hstar := o.inner_hodgeStar_right_of_hodgeStar_eq_self even_two hkl hη z
   have h := congrArg (⟪η, ·⟫) (ιMulti_sub_ιMulti_add_hodgeStar h₀ h₂ hkl he v w)
   simp only [inner_add_right, real_inner_smul_right] at h
   have hz : ⟪η, z⟫ = ⟪η, ιMulti ℝ 2 ![v, J w]⟫ + ⟪η, ιMulti ℝ 2 ![w, J v]⟫ := by
@@ -189,82 +184,47 @@ theorem inner_ιMulti_of_hodgeStar_eq_self {η : ⋀[ℝ]^2 V} (hη : o.hodgeSta
   rw [real_inner_self_eq_norm_sq] at h
   linarith
 
-/-! #### Coordinates of two-vectors in an oriented orthonormal frame -/
+/-! #### Anti-self-dual forms in a unitary frame -/
 
-omit [Fact (finrank ℝ V = 4)] hkl he in
-/-- A wedge of two vectors in the basis `eᵢ ∧ eⱼ`, `i < j`, of `⋀² V`. -/
-private theorem ιMulti_eq_sum (u w : V) :
-    ιMulti ℝ 2 ![u, w] =
-      (e.repr u 0 * e.repr w 1 - e.repr u 1 * e.repr w 0) • ιMulti ℝ 2 ![e 0, e 1] +
-      (e.repr u 0 * e.repr w 2 - e.repr u 2 * e.repr w 0) • ιMulti ℝ 2 ![e 0, e 2] +
-      (e.repr u 0 * e.repr w 3 - e.repr u 3 * e.repr w 0) • ιMulti ℝ 2 ![e 0, e 3] +
-      (e.repr u 1 * e.repr w 2 - e.repr u 2 * e.repr w 1) • ιMulti ℝ 2 ![e 1, e 2] +
-      (e.repr u 1 * e.repr w 3 - e.repr u 3 * e.repr w 1) • ιMulti ℝ 2 ![e 1, e 3] +
-      (e.repr u 2 * e.repr w 3 - e.repr u 3 * e.repr w 2) • ιMulti ℝ 2 ![e 2, e 3] := by
-  refine ext_inner_ιMulti_two fun a b ↦ ?_
-  simp only [inner_add_left, real_inner_smul_left, inner_ιMulti_two, ← e.repr_apply_apply]
-  simp only [e.inner_eq_sum_repr, conj_trivial, Fin.sum_univ_four]
+/-- The coordinates of an anti-self-dual form in the basis `eᵢ ∧ eⱼ` are determined by the three
+coordinates along `e₀ ∧ e₁`, `e₀ ∧ e₂` and `e₀ ∧ e₃`. -/
+private theorem inner_ιMulti_two_of_hodgeStar_eq_neg {μ : ⋀[ℝ]^2 V}
+    (hμ : o.hodgeStar hkl μ = -μ) :
+    ⟪μ, ιMulti ℝ 2 ![e 2, e 3]⟫ = -⟪μ, ιMulti ℝ 2 ![e 0, e 1]⟫ ∧
+      ⟪μ, ιMulti ℝ 2 ![e 1, e 3]⟫ = ⟪μ, ιMulti ℝ 2 ![e 0, e 2]⟫ ∧
+      ⟪μ, ιMulti ℝ 2 ![e 1, e 2]⟫ = -⟪μ, ιMulti ℝ 2 ![e 0, e 3]⟫ := by
+  have hneg := o.inner_hodgeStar_right_of_hodgeStar_eq_neg even_two hkl hμ
+  refine ⟨?_, ?_, ?_⟩
+  · rw [← o.hodgeStar_ιMulti_zero_one hkl he, hneg]
+  · rw [← neg_neg (ιMulti ℝ 2 ![e 1, e 3]), ← o.hodgeStar_ιMulti_zero_two hkl he,
+      inner_neg_right, hneg, neg_neg]
+  · rw [← o.hodgeStar_ιMulti_zero_three hkl he, hneg]
+
+/-- The squared norm of an anti-self-dual form `μ` is twice the sum of the squares of its
+coordinates `A, B, C` along `e₀ ∧ e₁`, `e₀ ∧ e₂` and `e₀ ∧ e₃`. -/
+private theorem norm_sq_of_hodgeStar_eq_neg {μ : ⋀[ℝ]^2 V} (hμ : o.hodgeStar hkl μ = -μ) :
+    ‖μ‖ ^ 2 = 2 * (⟪μ, ιMulti ℝ 2 ![e 0, e 1]⟫ ^ 2 + ⟪μ, ιMulti ℝ 2 ![e 0, e 2]⟫ ^ 2 +
+      ⟪μ, ιMulti ℝ 2 ![e 0, e 3]⟫ ^ 2) := by
+  obtain ⟨h23, h13, h12⟩ := inner_ιMulti_two_of_hodgeStar_eq_neg hkl he hμ
+  rw [e.norm_sq_eq_sum_sq_inner_ιMulti_two, h23, h13, h12]
   ring
 
-omit [Fact (finrank ℝ V = 4)] hkl he in
-/-- The pairing of a two-vector with a wedge of two vectors, in the coordinates of a frame. -/
-private theorem inner_ιMulti_eq_sum (x : ⋀[ℝ]^2 V) (u w : V) :
-    ⟪x, ιMulti ℝ 2 ![u, w]⟫ =
-      (e.repr u 0 * e.repr w 1 - e.repr u 1 * e.repr w 0) * ⟪x, ιMulti ℝ 2 ![e 0, e 1]⟫ +
-      (e.repr u 0 * e.repr w 2 - e.repr u 2 * e.repr w 0) * ⟪x, ιMulti ℝ 2 ![e 0, e 2]⟫ +
-      (e.repr u 0 * e.repr w 3 - e.repr u 3 * e.repr w 0) * ⟪x, ιMulti ℝ 2 ![e 0, e 3]⟫ +
-      (e.repr u 1 * e.repr w 2 - e.repr u 2 * e.repr w 1) * ⟪x, ιMulti ℝ 2 ![e 1, e 2]⟫ +
-      (e.repr u 1 * e.repr w 3 - e.repr u 3 * e.repr w 1) * ⟪x, ιMulti ℝ 2 ![e 1, e 3]⟫ +
-      (e.repr u 2 * e.repr w 3 - e.repr u 3 * e.repr w 2) * ⟪x, ιMulti ℝ 2 ![e 2, e 3]⟫ := by
-  conv_lhs => rw [ιMulti_eq_sum (e := e) u w]
-  simp only [inner_add_right, real_inner_smul_right]
-
-omit [Fact (finrank ℝ V = 4)] hkl he in
-/-- The squared norm of a two-vector is the sum of the squares of its frame coordinates. -/
-private theorem norm_sq_eq_sum (x : ⋀[ℝ]^2 V) :
-    ‖x‖ ^ 2 = ⟪x, ιMulti ℝ 2 ![e 0, e 1]⟫ ^ 2 + ⟪x, ιMulti ℝ 2 ![e 0, e 2]⟫ ^ 2 +
-      ⟪x, ιMulti ℝ 2 ![e 0, e 3]⟫ ^ 2 + ⟪x, ιMulti ℝ 2 ![e 1, e 2]⟫ ^ 2 +
-      ⟪x, ιMulti ℝ 2 ![e 1, e 3]⟫ ^ 2 + ⟪x, ιMulti ℝ 2 ![e 2, e 3]⟫ ^ 2 := by
-  -- Expand the second factor of `⟪x, x⟫` in the frame basis.
-  have hx : x = ⟪x, ιMulti ℝ 2 ![e 0, e 1]⟫ • ιMulti ℝ 2 ![e 0, e 1] +
-      ⟪x, ιMulti ℝ 2 ![e 0, e 2]⟫ • ιMulti ℝ 2 ![e 0, e 2] +
-      ⟪x, ιMulti ℝ 2 ![e 0, e 3]⟫ • ιMulti ℝ 2 ![e 0, e 3] +
-      ⟪x, ιMulti ℝ 2 ![e 1, e 2]⟫ • ιMulti ℝ 2 ![e 1, e 2] +
-      ⟪x, ιMulti ℝ 2 ![e 1, e 3]⟫ • ιMulti ℝ 2 ![e 1, e 3] +
-      ⟪x, ιMulti ℝ 2 ![e 2, e 3]⟫ • ιMulti ℝ 2 ![e 2, e 3] := by
-    refine ext_inner_ιMulti_two fun u w ↦ ?_
-    rw [inner_ιMulti_eq_sum (e := e) x u w]
-    simp only [inner_add_left, real_inner_smul_left, inner_ιMulti_two, ← e.repr_apply_apply]
-    ring
-  have h := congrArg (fun y ↦ ⟪x, y⟫) hx
-  simp only [inner_add_right, real_inner_smul_right] at h
-  rw [← real_inner_self_eq_norm_sq, h]
-  ring
-
-/-- The Hodge star of `e₀ ∧ e₁` is `e₂ ∧ e₃`. -/
-private theorem hodgeStar_ιMulti_zero_one :
-    o.hodgeStar hkl (ιMulti ℝ 2 ![e 0, e 1]) = ιMulti ℝ 2 ![e 2, e 3] := by
-  refine ext_inner_ιMulti_two fun u w ↦ ?_
-  rw [o.inner_hodgeStar_ιMulti_two hkl, inner_ιMulti_two]
-  simp [o.volumeForm_robust e he, Basis.det_apply, Matrix.det_fin_four, Basis.toMatrix_apply,
-    ← e.repr_apply_apply, OrthonormalBasis.repr_self]
-
-/-- The Hodge star of `e₀ ∧ e₂` is `-(e₁ ∧ e₃)`. -/
-private theorem hodgeStar_ιMulti_zero_two :
-    o.hodgeStar hkl (ιMulti ℝ 2 ![e 0, e 2]) = -ιMulti ℝ 2 ![e 1, e 3] := by
-  refine ext_inner_ιMulti_two fun u w ↦ ?_
-  rw [o.inner_hodgeStar_ιMulti_two hkl, inner_neg_left, inner_ιMulti_two]
-  simp [o.volumeForm_robust e he, Basis.det_apply, Matrix.det_fin_four, Basis.toMatrix_apply,
-    ← e.repr_apply_apply, OrthonormalBasis.repr_self]
-  ring
-
-/-- The Hodge star of `e₀ ∧ e₃` is `e₁ ∧ e₂`. -/
-private theorem hodgeStar_ιMulti_zero_three :
-    o.hodgeStar hkl (ιMulti ℝ 2 ![e 0, e 3]) = ιMulti ℝ 2 ![e 1, e 2] := by
-  refine ext_inner_ιMulti_two fun u w ↦ ?_
-  rw [o.inner_hodgeStar_ιMulti_two hkl, inner_ιMulti_two]
-  simp [o.volumeForm_robust e he, Basis.det_apply, Matrix.det_fin_four, Basis.toMatrix_apply,
-    ← e.repr_apply_apply, OrthonormalBasis.repr_self]
+include h₀ h₂ in
+/-- The quadratic form `μ(v, J v)` of an anti-self-dual form `μ` with coordinates `A, B, C` along
+`e₀ ∧ e₁`, `e₀ ∧ e₂` and `e₀ ∧ e₃` is
+`A (x₀² + x₁² - x₂² - x₃²) + 2 B (x₁ x₂ - x₀ x₃) + 2 C (x₀ x₂ + x₁ x₃)` in the coordinates `x`
+of `v`. -/
+private theorem inner_ιMulti_eq_of_hodgeStar_eq_neg {μ : ⋀[ℝ]^2 V}
+    (hμ : o.hodgeStar hkl μ = -μ) (v : V) :
+    ⟪μ, ιMulti ℝ 2 ![v, J v]⟫ =
+      ⟪μ, ιMulti ℝ 2 ![e 0, e 1]⟫ *
+          (e.repr v 0 ^ 2 + e.repr v 1 ^ 2 - e.repr v 2 ^ 2 - e.repr v 3 ^ 2) +
+        2 * ⟪μ, ιMulti ℝ 2 ![e 0, e 2]⟫ * (e.repr v 1 * e.repr v 2 - e.repr v 0 * e.repr v 3) +
+        2 * ⟪μ, ιMulti ℝ 2 ![e 0, e 3]⟫ * (e.repr v 0 * e.repr v 2 + e.repr v 1 * e.repr v 3) := by
+  obtain ⟨h23, h13, h12⟩ := inner_ιMulti_two_of_hodgeStar_eq_neg hkl he hμ
+  rw [e.inner_ιMulti_two_eq_sum, h23, h13, h12]
+  simp only [repr_apply h₀ h₂, Matrix.cons_val_zero, Matrix.cons_val_one, Matrix.cons_val_two,
+    Matrix.cons_val_three, Matrix.head_cons, Matrix.tail_cons]
   ring
 
 include h₀ h₂ in
@@ -273,40 +233,17 @@ vector `v` with `μ(v, J v) = -‖μ‖ / √2`. -/
 theorem exists_inner_ιMulti_eq_neg_of_hodgeStar_eq_neg {μ : ⋀[ℝ]^2 V}
     (hμ : o.hodgeStar hkl μ = -μ) :
     ∃ v : V, ‖v‖ = 1 ∧ ⟪μ, ιMulti ℝ 2 ![v, J v]⟫ = -(‖μ‖ / √2) := by
-  -- In the frame, `μ` has three independent coordinates `A, B, C`, and `μ(v, J v)` is the
-  -- quadratic form `A (x₀² + x₁² - x₂² - x₃²) + 2 B (x₁ x₂ - x₀ x₃) + 2 C (x₀ x₂ + x₁ x₃)` in the
-  -- coordinates `x` of `v`, whose smallest eigenvalue is `-s`, `s = √(A² + B² + C²)`.
+  -- In the frame, `μ(v, J v)` is a quadratic form in the coordinates of `v` whose smallest
+  -- eigenvalue is `-s`, `s = √(A² + B² + C²)`, for the coordinates `A, B, C` of `μ`.
+  have hval := inner_ιMulti_eq_of_hodgeStar_eq_neg hkl he h₀ h₂ hμ
+  have hnorm := norm_sq_of_hodgeStar_eq_neg hkl he hμ
   set A := ⟪μ, ιMulti ℝ 2 ![e 0, e 1]⟫
   set B := ⟪μ, ιMulti ℝ 2 ![e 0, e 2]⟫
   set C := ⟪μ, ιMulti ℝ 2 ![e 0, e 3]⟫
-  have hneg (y : ⋀[ℝ]^2 V) : ⟪μ, o.hodgeStar hkl y⟫ = -⟪μ, y⟫ := by
-    have h := o.isSymmetric_hodgeStar_of_even even_two hkl μ y
-    simp only [LinearEquiv.coe_coe, hμ, inner_neg_left] at h
-    exact h.symm
-  have h23 : ⟪μ, ιMulti ℝ 2 ![e 2, e 3]⟫ = -A := by
-    rw [← hodgeStar_ιMulti_zero_one hkl he, hneg]
-  have h13 : ⟪μ, ιMulti ℝ 2 ![e 1, e 3]⟫ = B := by
-    rw [← neg_neg (ιMulti ℝ 2 ![e 1, e 3]), ← hodgeStar_ιMulti_zero_two hkl he, inner_neg_right,
-      hneg, neg_neg]
-  have h12 : ⟪μ, ιMulti ℝ 2 ![e 1, e 2]⟫ = -C := by
-    rw [← hodgeStar_ιMulti_zero_three hkl he, hneg]
-  have hval (v : V) : ⟪μ, ιMulti ℝ 2 ![v, J v]⟫ =
-      A * (e.repr v 0 ^ 2 + e.repr v 1 ^ 2 - e.repr v 2 ^ 2 - e.repr v 3 ^ 2) +
-        2 * B * (e.repr v 1 * e.repr v 2 - e.repr v 0 * e.repr v 3) +
-        2 * C * (e.repr v 0 * e.repr v 2 + e.repr v 1 * e.repr v 3) := by
-    rw [inner_ιMulti_eq_sum (e := e), h23, h13, h12]
-    simp only [repr_apply h₀ h₂, Matrix.cons_val_zero, Matrix.cons_val_one, Matrix.cons_val_two,
-      Matrix.cons_val_three, Matrix.head_cons, Matrix.tail_cons]
-    ring
-  have hnormv (v : V) : ‖v‖ ^ 2 =
-      e.repr v 0 ^ 2 + e.repr v 1 ^ 2 + e.repr v 2 ^ 2 + e.repr v 3 ^ 2 := by
-    rw [← real_inner_self_eq_norm_sq, e.inner_eq_sum_repr, Fin.sum_univ_four]
-    simp only [conj_trivial]
-    ring
   set s := ‖μ‖ / √2
   have hs₀ : 0 ≤ s := by positivity
   have hs : s ^ 2 = A ^ 2 + B ^ 2 + C ^ 2 := by
-    rw [div_pow, Real.sq_sqrt zero_le_two, norm_sq_eq_sum (e := e), h23, h13, h12]
+    rw [div_pow, Real.sq_sqrt zero_le_two, hnorm]
     ring
   have hAs : A ≤ s := by
     rw [← Real.sqrt_sq hs₀, hs]
@@ -318,9 +255,9 @@ theorem exists_inner_ιMulti_eq_neg_of_hodgeStar_eq_neg {μ : ⋀[ℝ]^2 V}
     have hw (i : Fin 4) : e.repr w i = ![s - A, 0, -C, B] i := by
       fin_cases i <;> simp [w, OrthonormalBasis.repr_self]
     have hw₂ : ‖w‖ ^ 2 = 2 * s * (s - A) := by
-      rw [hnormv, hw, hw, hw, hw]
-      simp only [Matrix.cons_val_zero, Matrix.cons_val_one, Matrix.cons_val_two,
-        Matrix.cons_val_three, Matrix.head_cons, Matrix.tail_cons]
+      rw [← e.repr.norm_map, EuclideanSpace.norm_sq_eq, Fin.sum_univ_four]
+      simp only [hw, Real.norm_eq_abs, sq_abs, Matrix.cons_val_zero, Matrix.cons_val_one,
+        Matrix.cons_val_two, Matrix.cons_val_three, Matrix.head_cons, Matrix.tail_cons]
       linear_combination -hs
     have hspos : 0 < s := by
       rcases hs₀.lt_or_eq with h | h
@@ -351,7 +288,7 @@ theorem inner_ιMulti_eq_mul_add_inner_ιMulti {F μ : ⋀[ℝ]^2 V} (hμ : o.ho
     (hF : o.hodgeStar hkl (F - μ) = F - μ) (v : V) :
     ⟪F, ιMulti ℝ 2 ![v, J v]⟫ = ⟪J.kahlerForm, F⟫ / 2 * ‖v‖ ^ 2 + ⟪μ, ιMulti ℝ 2 ![v, J v]⟫ := by
   have h := inner_ιMulti_of_hodgeStar_eq_self hkl he h₀ h₂ hF v
-  rw [inner_sub_left, inner_sub_right, inner_kahlerForm_of_hodgeStar_eq_neg hkl he h₀ h₂ hμ,
+  rw [inner_sub_left, inner_sub_right, inner_kahlerForm_eq_zero_of_hodgeStar_eq_neg hkl he h₀ h₂ hμ,
     sub_zero] at h
   linarith
 
@@ -364,7 +301,7 @@ theorem abs_inner_ιMulti_sub_le {F μ : ⋀[ℝ]^2 V} (hμ : o.hodgeStar hkl μ
   rw [inner_ιMulti_eq_mul_add_inner_ιMulti hkl he h₀ h₂ hμ hF, add_sub_cancel_left]
   exact abs_inner_ιMulti_le_of_inner_kahlerForm_eq_zero
     (inner_apply_apply_of_orthonormalBasis h₀ h₂)
-    (inner_kahlerForm_of_hodgeStar_eq_neg hkl he h₀ h₂ hμ) v
+    (inner_kahlerForm_eq_zero_of_hodgeStar_eq_neg hkl he h₀ h₂ hμ) v
 
 include h₀ h₂ in
 /-- **The smallest eigenvalue of the Hermitian part of a two-form**: with `F⁻ = μ` the
