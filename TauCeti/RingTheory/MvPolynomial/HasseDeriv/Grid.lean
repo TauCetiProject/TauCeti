@@ -16,6 +16,7 @@ import Mathlib.Data.Fin.VecNotation
 import Mathlib.Data.Int.Interval
 import Mathlib.Data.Rat.Floor
 import Mathlib.RingTheory.MvPolynomial.Basic
+import TauCeti.Algebra.MvPolynomial.Equiv
 
 /-!
 # Nonvanishing of multivariate Hasse jets on rectangular grids
@@ -43,9 +44,8 @@ integer-grid jet nonvanishing lemma (`MvPolynomial.exists_int_eval_hasseDeriv_ne
 * `MvPolynomial.hasseDeriv_eval_C_finSuccEquiv_hasseDeriv_single_zero`,
   `MvPolynomial.eval_cons_hasseDeriv_cons`: evaluating `X₀` at `a` after `∂^(k e₀)` commutes with
   `hasseDeriv d` in the remaining variables.
-* `MvPolynomial.degreeOf_eval_C_finSuccEquiv_le`,
-  `MvPolynomial.degreeOf_eval_C_finSuccEquiv_hasseDeriv_single_zero_le`: partial evaluation in `X₀`
-  bounds the residual degree in `Xⱼ` by `P.degreeOf j.succ`.
+* `MvPolynomial.degreeOf_eval_C_finSuccEquiv_hasseDeriv_single_zero_le`: applying `∂^(k e₀)` and
+  evaluating `X₀` at `a` bounds the residual degree in `Xⱼ` by `P.degreeOf j.succ`.
 * `MvPolynomial.exists_eval_C_finSuccEquiv_hasseDeriv_single_zero_ne_zero`,
   `MvPolynomial.exists_int_eval_C_finSuccEquiv_hasseDeriv_single_zero_ne_zero`: the single-variable
   finite-grid and integer-grid reduction steps in `X₀`.
@@ -126,19 +126,6 @@ theorem eval_cons_hasseDeriv_cons (a : R) (x : Fin n → R) (k : ℕ) (d : Fin n
   congr 2
   funext i
   cases i using Fin.cases <;> simp
-
-/-- Specializing `X₀ = a` via `finSuccEquiv` bounds the degree in `Xⱼ` by `P.degreeOf j.succ`. -/
-theorem degreeOf_eval_C_finSuccEquiv_le (a : R) (P : MvPolynomial (Fin (n + 1)) R) (j : Fin n) :
-    ((finSuccEquiv R n P).eval (C a)).degreeOf j ≤ P.degreeOf j.succ := by
-  classical
-  refine degreeOf_le_iff.2 fun m hm ↦ ?_
-  rw [mem_support_iff, Polynomial.eval_eq_sum_range, coeff_sum] at hm
-  obtain ⟨i, _, hne⟩ := Finset.exists_ne_zero_of_sum_ne_zero hm
-  rw [← map_pow, mul_comm, coeff_C_mul] at hne
-  have hm' : Finsupp.cons i m ∈ P.support := by
-    rw [mem_support_iff, ← finSuccEquiv_coeff_coeff]
-    exact right_ne_zero_of_mul hne
-  simpa using monomial_le_degreeOf j.succ hm'
 
 /-- Applying `∂^(k e₀)` and specializing `X₀ = a` bounds the residual degree in `Xⱼ` by
 `P.degreeOf j.succ`. -/
