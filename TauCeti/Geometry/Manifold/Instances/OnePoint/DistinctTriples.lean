@@ -18,12 +18,14 @@ import TauCeti.Topology.Constructions.Pi
 
 Over an algebraically closed field `𝕜`, exactly one element of `PSL(2, 𝕜)` carries `0`, `1`, `∞`
 to three given pairwise distinct points of the projective line `OnePoint 𝕜`
-(`OnePoint.existsUnique_psl_smul_zero_one_infty_eq`). So for every ordered triple `b` of distinct
-points, the orbit map `g ↦ (g • b 0, g • b 1, g • b 2)` is a bijection from `PSL(2, 𝕜)` onto the
-ordered triples of distinct points, the injective maps `Fin 3 → OnePoint 𝕜`. This file shows that
-when `𝕜` is moreover a proper normed field, such as `ℂ`, this bijection is a homeomorphism, for
-the quotient topology of `PSL(2, 𝕜) = SL(2, 𝕜) ⧸ {±1}` and the subspace topology of the triples in
-`Fin 3 → OnePoint 𝕜` (`OnePoint.pslHomeomorphDistinctTriples`).
+(`OnePoint.existsUnique_psl_smul_zero_one_infty_eq`), and exactly one carries a given ordered
+triple of distinct points to another (`OnePoint.existsUnique_psl_smul_eq_of_injective`). So for
+every ordered triple `b` of distinct points, the orbit map `g ↦ (g • b 0, g • b 1, g • b 2)` is a
+bijection from `PSL(2, 𝕜)` onto the ordered triples of distinct points, the injective maps
+`Fin 3 → OnePoint 𝕜`. This file shows that when `𝕜` is moreover a proper normed field, such as
+`ℂ`, this bijection is a homeomorphism, for the quotient topology of
+`PSL(2, 𝕜) = SL(2, 𝕜) ⧸ {±1}` and the subspace topology of the triples in `Fin 3 → OnePoint 𝕜`
+(`OnePoint.pslHomeomorphDistinctTriples`).
 
 For the Riemann sphere this identifies the automorphism group `PSL(2, ℂ)` with the space of ordered
 triples of distinct points, the identification through which automorphisms of a genus-zero domain
@@ -39,7 +41,6 @@ Baire, space on which the group acts transitively.
 
 ## Main definitions
 
-* `OnePoint.zeroOneInftyTriple`: the ordered triple `(0, 1, ∞)`.
 * `OnePoint.pslHomeomorphDistinctTriples`: for an ordered triple `b` of distinct points, the
   homeomorphism `g ↦ (g • b 0, g • b 1, g • b 2)` from `PSL(2, 𝕜)` onto the ordered triples of
   distinct points.
@@ -70,20 +71,6 @@ open Matrix
 
 variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
 
-variable (𝕜) in
-/-- The ordered triple `(0, 1, ∞)` of distinct points of the projective line. -/
-def zeroOneInftyTriple : {p : Fin 3 → OnePoint 𝕜 // Injective p} :=
-  ⟨![((0 : 𝕜) : OnePoint 𝕜), ((1 : 𝕜) : OnePoint 𝕜), ∞], by
-    intro i j hij
-    fin_cases i <;> fin_cases j <;> simp_all⟩
-
-/-- The points of the ordered triple `(0, 1, ∞)`. -/
-@[simp]
-theorem coe_zeroOneInftyTriple :
-    ((zeroOneInftyTriple 𝕜 : {p : Fin 3 → OnePoint 𝕜 // Injective p}) : Fin 3 → OnePoint 𝕜) =
-      ![((0 : 𝕜) : OnePoint 𝕜), ((1 : 𝕜) : OnePoint 𝕜), ∞] :=
-  (rfl)
-
 variable [DecidableEq 𝕜]
 
 /-- `PSL(2, 𝕜)` acts on the ordered triples of distinct points by moving each point. This is the
@@ -105,35 +92,16 @@ private theorem coe_smul_distinctTriple (g : PSL(2, 𝕜))
 
 variable [IsAlgClosed 𝕜]
 
-/-- Over an algebraically closed field, some element of `PSL(2, 𝕜)` carries the ordered triple
-`(0, 1, ∞)` to any given ordered triple of distinct points, and it is unique. -/
-private theorem existsUnique_smul_zeroOneInftyTriple_eq
-    (p : {p : Fin 3 → OnePoint 𝕜 // Injective p}) :
-    ∃! g : PSL(2, 𝕜), g • zeroOneInftyTriple 𝕜 = p := by
-  have hp (i j : Fin 3) (hij : i ≠ j) : p.1 i ≠ p.1 j := p.2.ne hij
-  obtain ⟨g, hg, hu⟩ := existsUnique_psl_smul_zero_one_infty_eq
-    (hp 0 1 (by decide)) (hp 0 2 (by decide)) (hp 1 2 (by decide))
-  -- An equality of triples is the equality of their three points.
-  have key (h : PSL(2, 𝕜)) : h • zeroOneInftyTriple 𝕜 = p ↔
-      h • ((0 : 𝕜) : OnePoint 𝕜) = p.1 0 ∧ h • ((1 : 𝕜) : OnePoint 𝕜) = p.1 1 ∧
-        h • (∞ : OnePoint 𝕜) = p.1 2 := by
-    rw [Subtype.ext_iff, coe_smul_distinctTriple, funext_iff]
-    refine ⟨fun hh ↦ ⟨by simpa using hh 0, by simpa using hh 1, by simpa using hh 2⟩, ?_⟩
-    rintro ⟨h0, h1, h2⟩ i
-    fin_cases i <;> simpa
-  exact ⟨g, (key g).2 hg, fun h hh ↦ hu h ((key h).1 hh)⟩
-
 /-- The orbit map of an ordered triple of distinct points is bijective. -/
 private theorem bijective_smul_distinctTriple (b : {p : Fin 3 → OnePoint 𝕜 // Injective p}) :
     Bijective fun g : PSL(2, 𝕜) ↦ g • b := by
-  obtain ⟨k, hk, -⟩ := existsUnique_smul_zeroOneInftyTriple_eq b
   refine ⟨fun g h hgh ↦ ?_, fun p ↦ ?_⟩
-  · -- Both `g * k` and `h * k` carry `(0, 1, ∞)` to the same triple.
-    have := (existsUnique_smul_zeroOneInftyTriple_eq (g • b)).unique (y₁ := g * k) (y₂ := h * k)
-      (by rw [mul_smul, hk]) (by rw [mul_smul, hk]; exact hgh.symm)
-    exact mul_right_cancel this
-  · obtain ⟨l, hl, -⟩ := existsUnique_smul_zeroOneInftyTriple_eq p
-    exact ⟨l * k⁻¹, by simp only [mul_smul, ← hk, inv_smul_smul, hl]⟩
+  · -- Both `g` and `h` carry `b` to the same triple.
+    have hgh' := congrArg Subtype.val hgh
+    simp only [coe_smul_distinctTriple] at hgh'
+    exact (existsUnique_psl_smul_eq_of_injective b.2 (g • b).2).unique rfl hgh'.symm
+  · obtain ⟨g, hg, -⟩ := existsUnique_psl_smul_eq_of_injective b.2 p.2
+    exact ⟨g, Subtype.ext hg⟩
 
 variable [ProperSpace 𝕜]
 
