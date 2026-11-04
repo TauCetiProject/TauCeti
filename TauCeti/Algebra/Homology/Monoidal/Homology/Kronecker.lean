@@ -23,9 +23,9 @@ products is the product of the Kronecker pairings:
 
 `⟨a × b, x × y⟩ = μ (⟨a, x⟩ ⊗ ⟨b, y⟩)`,
 
-with no sign (`TauCeti.ChainComplex.homologyCross_comp_kronecker_cup`), and
+with no sign (`ChainComplex.homologyCross_comp_kronecker_cup`), and
 `⟨a × b, x × y⟩ = 0` when `x` has degree `p' ≠ p`
-(`TauCeti.ChainComplex.homologyCross_comp_kronecker_cup_of_ne`): the tensor product of cocycles
+(`ChainComplex.homologyCross_comp_kronecker_cup_of_ne`): the tensor product of cocycles
 vanishes on the summands `A_{p'} ⊗ B_{q'}` with `p' ≠ p`.  These two identities say that, under
 the Kronecker maps, the cohomology cross product is the dual of the homology Künneth map, which is
 how the Künneth theorem for cohomology over a field is deduced from the Künneth theorem for
@@ -41,13 +41,13 @@ public section
 
 noncomputable section
 
-open CategoryTheory Limits MonoidalCategory HomologicalComplex
+open CategoryTheory Limits MonoidalCategory HomologicalComplex TauCeti.ChainComplex
 
-namespace TauCeti.ChainComplex
+namespace ChainComplex
 
 variable {C : Type*} [Category* C] [Abelian C] [MonoidalCategory C] [MonoidalPreadditive C]
   {k : Type*} [CommRing k] [Linear k C] [MonoidalLinear k C]
-  (A B : _root_.ChainComplex C ℕ) [A.HasTensor B] {M N P : C} (μ : M ⊗ N ⟶ P)
+  (A B : ChainComplex C ℕ) [A.HasTensor B] {M N P : C} (μ : M ⊗ N ⟶ P)
 
 /-- The cross product of cohomology classes of `Hom(A, M)` and `Hom(B, N)` is represented by the
 tensor product of cocycles: the Kronecker image of the cup product along the identity diagonal,
@@ -104,4 +104,4 @@ lemma homologyCross_comp_kronecker_cup_of_ne {p' q' n : ℕ} (h : p + q = n) (h'
     comp_zero]
   exact (congrArg (_ ≫ ·) (ιTensorObj_tensorCochain_of_ne_left μ _ _ h hp)).trans comp_zero
 
-end TauCeti.ChainComplex
+end ChainComplex

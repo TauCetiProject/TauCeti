@@ -31,7 +31,7 @@ degrees of `a` and `x` differ
 (`TopCat.singularHomologyCross_comp_singularKronecker_singularCross_of_ne`).  Under
 Eilenberg–Zilber both cross products are represented by tensor products, of cocycles and of
 cycles, so this is the algebraic identity
-`TauCeti.ChainComplex.homologyCross_comp_kronecker_cup`.
+`ChainComplex.homologyCross_comp_kronecker_cup`.
 
 Over a field `k`, or more generally a commutative semisimple ring, with coefficients in `k`
 itself, cohomology is the dual of homology: every module is projective, so the Kronecker map
@@ -132,7 +132,7 @@ theorem singularHomologyCross_comp_singularKronecker_singularCross (n : ℕ) (h 
   -- the homology cross product is the algebraic one followed by the shuffle map
   exact (Category.assoc _ _ _).trans
     ((_ ≫= homologyMap_shuffle_comp_singularKronecker_singularCross μ X Y p q n h a b).trans
-      (TauCeti.ChainComplex.homologyCross_comp_kronecker_cup _ _ μ p q n h a b))
+      (ChainComplex.homologyCross_comp_kronecker_cup _ _ μ p q n h a b))
 
 /-- **The Kronecker pairing of cross products of different degrees vanishes**: for `p ≠ p'`, the
 cohomology cross product of classes of degrees `p'` and `q'` evaluates to zero on the image of the
@@ -146,7 +146,7 @@ theorem singularHomologyCross_comp_singularKronecker_singularCross_of_ne {p' q' 
   -- the homology cross product is the algebraic one followed by the shuffle map
   exact (Category.assoc _ _ _).trans
     ((_ ≫= homologyMap_shuffle_comp_singularKronecker_singularCross μ X Y p' q' n h' a b).trans
-      (TauCeti.ChainComplex.homologyCross_comp_kronecker_cup_of_ne _ _ μ p q h h' hp a b))
+      (ChainComplex.homologyCross_comp_kronecker_cup_of_ne _ _ μ p q h h' hp a b))
 
 end General
 
