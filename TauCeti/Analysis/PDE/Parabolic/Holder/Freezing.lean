@@ -64,9 +64,11 @@ variable {α : ℝ≥0} {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
 
 /-- A local shortcut for the norm on Hessians, needed for the coefficient space of the
 second-order term for the reason explained in `TauCeti.Analysis.PDE.Parabolic.Holder.Operator`. -/
-local instance : NormedAddCommGroup (E →L[ℝ] E →L[ℝ] F) := inferInstance
+local instance instNormedAddCommGroupHessian :
+    NormedAddCommGroup (E →L[ℝ] E →L[ℝ] F) := inferInstance
 /-- A local shortcut for scalar operations on Hessians, needed for the same reason. -/
-local instance : NormedSpace ℝ (E →L[ℝ] E →L[ℝ] F) := inferInstance
+local instance instNormedSpaceHessian :
+    NormedSpace ℝ (E →L[ℝ] E →L[ℝ] F) := inferInstance
 
 /-- **The freezing estimate.** Freeze the principal part of `P = ∂ₜ - A·D_x² - B·D_x - C` at
 `z₀`. If `‖A p - A(z₀)‖ ≤ δ` wherever the Hessian `D_x²u (p)` is nonzero, then
