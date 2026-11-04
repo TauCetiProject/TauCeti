@@ -135,16 +135,10 @@ theorem splitTorusCommHopfAlgProperty_quotient_geckGeneratedWeightTorusDefiningI
     splitTorusCommHopfAlgProperty R
       (FiniteTypeCommHopfAlgCat.quotient
         (FiniteTypeCommHopfAlgCat.of R (t.geckGeneratedCoordinateHopfAlgebra ht R))
-        (t.geckGeneratedWeightTorusDefiningIdeal ht R hwt)) := by
-  rw [splitTorusCommHopfAlgProperty_iff]
-  let e : Multiplicative (Fin t.rank →₀ ℤ) ≃*
-      Multiplicative (ULift.{u} (Fin t.rank) →₀ ℤ) :=
-    AddEquiv.toMultiplicative (Finsupp.domCongr Equiv.ulift.symm)
-  let i : DiagonalizableGroup.coordinateRing R (SplitTorus.characterGroup (Fin t.rank)) ≅
-      DiagonalizableGroup.coordinateRing R (SplitTorus.characterGroup (ULift.{u} (Fin t.rank))) :=
-    ObjectProperty.isoMk _
-      (_root_.CommHopfAlgCat.isoMk (MonoidAlgebra.domCongrBialgEquiv R R e))
-  exact ⟨t.rank, ⟨(t.geckGeneratedWeightTorusCoordinateIso ht R hwt ≪≫ i).symm⟩⟩
+        (t.geckGeneratedWeightTorusDefiningIdeal ht R hwt)) :=
+  (splitTorusCommHopfAlgProperty R).prop_of_iso
+    (t.geckGeneratedWeightTorusCoordinateIso ht R hwt).symm
+    (SplitTorus.splitTorus_coordinateRing R (Fin t.rank))
 
 grind_pattern splitTorusCommHopfAlgProperty_quotient_geckGeneratedWeightTorusDefiningIdeal =>
   t.geckGeneratedWeightTorusDefiningIdeal ht R hwt
