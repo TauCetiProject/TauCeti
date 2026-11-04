@@ -330,6 +330,12 @@ def arithmeticGenus : ℕ :=
 lemma arithmeticGenus_def : G.arithmeticGenus = ∑ v, G.genus v + G.firstBetti :=
   (rfl)
 
+/-- A component's genus is at most the arithmetic genus of the whole graph. -/
+theorem genus_le_arithmeticGenus (v : G.Vertex) : G.genus v ≤ G.arithmeticGenus := by
+  rw [arithmeticGenus_def]
+  exact (Finset.single_le_sum (fun x _ ↦ Nat.zero_le (G.genus x)) (Finset.mem_univ v)).trans
+    (Nat.le_add_right _ _)
+
 /-- The arithmetic genus in terms of the numbers of vertices and edges. -/
 theorem arithmeticGenus_add_card_vertex :
     G.arithmeticGenus + Fintype.card G.Vertex = ∑ v, G.genus v + Fintype.card G.Edge + 1 := by
