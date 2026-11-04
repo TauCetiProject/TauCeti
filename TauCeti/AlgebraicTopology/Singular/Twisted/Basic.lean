@@ -203,6 +203,16 @@ lemma vertexTransport_def (α : m ⟶ n) (σ : (TopCat.toSSet.obj X).obj m) :
     vertexTransport α σ = pathTransport σ (toTopInitialVertex m.unop)
       (toTop.map α.unop (toTopInitialVertex n.unop)) := (rfl)
 
+/-- Inverse vertex transport runs inside the original simplex from the reindexed initial
+vertex back to the original initial vertex. -/
+lemma inv_vertexTransport (α : m ⟶ n) (σ : (TopCat.toSSet.obj X).obj m) :
+    inv (vertexTransport α σ) =
+      pathTransport σ (toTop.map α.unop (toTopInitialVertex n.unop))
+        (toTopInitialVertex m.unop) := by
+  apply IsIso.inv_eq_of_hom_inv_id
+  simp only [vertexTransport_def]
+  exact (pathTransport_comp σ _ _ _).trans (pathTransport_self σ _)
+
 /-- Vertex transport is represented by the image of any path to the reindexed initial vertex. -/
 lemma vertexTransport_eq_mk (α : m ⟶ n) (σ : (TopCat.toSSet.obj X).obj m)
     (q : Path (toTopInitialVertex m.unop)
