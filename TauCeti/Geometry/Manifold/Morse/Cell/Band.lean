@@ -191,13 +191,8 @@ theorem IsMorse.isZero_singularHomology_sublevel_of_manifoldMorseIndex_le [HasCo
     (hcompact.of_isClosed_subset (isClosed_Icc.preimage hcont) fun x hx ↦ hx.2)
     (isRegularValue_iff_notMem_image_criticalPoints.2 fun ⟨p, _, hp⟩ ↦ hempty p hp.le)
     hb (fun p hp ↦ hd p hp.1 hp.2.2) R hn
-  -- Relative homology modulo the empty sublevel is the homology of `{f ≤ b}`: the quotient map
-  -- from the chains of `{f ≤ b}` to the relative chains is an isomorphism.
-  have : IsIso ((TopPair.toSSetPair.obj (sublevelPair f hab)).chainComplexπ R) :=
-    SSetPair.isIso_chainComplexπ _ R
-  have hπ : IsIso ((sublevelPair f hab).singularHomologyπ R n) :=
-    inferInstanceAs (IsIso (HomologicalComplex.homologyMap
-      ((TopPair.toSSetPair.obj (sublevelPair f hab)).chainComplexπ R) n))
+  -- Relative homology modulo the empty sublevel is the homology of `{f ≤ b}`.
+  have hπ : IsIso ((sublevelPair f hab).singularHomologyπ R n) := inferInstance
   exact hzero.of_iso (@asIso _ _ _ _ _ hπ)
 
 /-- **A manifold with a proper Morse function whose indices are at most `d` has no homology above
