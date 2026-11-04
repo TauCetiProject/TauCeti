@@ -54,6 +54,14 @@ lemma toSSetObjEquiv_toSSet_map_app {X Y : TopCat.{u}} (f : X ⟶ Y) {n : Simple
     Y.toSSetObjEquiv n ((TopCat.toSSet.map f).app n σ) =
       (ConcreteCategory.hom f).comp (X.toSSetObjEquiv n σ) := rfl
 
+/-- Reindexing a singular simplex along a morphism of `SimplexCategoryᵒᵖ` precomposes its
+continuous map with the induced affine map of standard simplices. -/
+lemma toSSetObjEquiv_map (X : TopCat.{u}) {n m : SimplexCategoryᵒᵖ} (θ : n ⟶ m)
+    (σ : (TopCat.toSSet.obj X).obj n) :
+    X.toSSetObjEquiv m ((TopCat.toSSet.obj X).map θ σ) =
+      (X.toSSetObjEquiv n σ).comp ⟨StdSimplex.map θ.unop, StdSimplex.continuous_map ℝ _⟩ :=
+  rfl
+
 /-- The map of singular simplicial sets induced by a continuous map sends the singular simplex
 of a continuous map `g` from a standard simplex to that of its composite with the map. -/
 @[simp]
