@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Lie.Sl2.Weyl.WeightTwo
+public import TauCeti.Algebra.Lie.Presentation.Serre.DoubleBond
 public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.GeckLattice.Weyl.Basic
 public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.SerrePresentation
 
@@ -60,37 +60,17 @@ theorem weylUnit_geckRepresentation_conj_of_cartan_eq_neg_two (i j : Fin t.rank)
           t.geckRepresentation ht
             (_root_.UniversalEnvelopingAlgebra.ι ℚ ((t.lieBasis ht).e j))⁆⁆ := by
   let ρ := (t.geckRepresentation ht).toLieHom.comp (_root_.UniversalEnvelopingAlgebra.ι ℚ)
-  have hs := (t.isSerreSystem_lieBasis ht).map ρ
-  have hij : i ≠ j := by
-    intro h
-    subst j
-    have hd := t.cartanMatrix_apply_same i
-    omega
-  have hweight : ⁅ρ ((t.lieBasis ht).h i), ρ ((t.lieBasis ht).e j)⁆ =
-      (-2 : ℚ) • ρ ((t.lieBasis ht).e j) := by
-    have hw := hs.lie_H_E i j
-    simp only [Function.comp_apply, Matrix.transpose_apply, hji] at hw
-    rw [← Int.cast_smul_eq_zsmul ℚ] at hw
-    norm_num at hw
-    exact hw.trans (by module)
-  have hlower : ⁅ρ ((t.lieBasis ht).f i), ρ ((t.lieBasis ht).e j)⁆ = 0 := by
-    have hz := hs.lie_E_F_of_ne j i hij.symm
-    simp only [Function.comp_apply] at hz
-    rw [← lie_skew, hz, neg_zero]
-  have hthird : ⁅ρ ((t.lieBasis ht).e i),
-      ⁅ρ ((t.lieBasis ht).e i), ⁅ρ ((t.lieBasis ht).e i), ρ ((t.lieBasis ht).e j)⁆⁆⁆ = 0 := by
-    have hz := hs.ad_pow_lie_E_E i j
-    norm_num [Function.comp_apply, Matrix.transpose_apply, hji] at hz
-    simpa only [pow_succ, pow_zero, one_mul, mul_apply_eq_comp, LieAlgebra.ad_apply] using hz
-  have h := (t.isSl2Triple_geckRepresentation ht i).weylUnit_conj_of_lie_eq_neg_two_smul
-    (Y := ρ ((t.lieBasis ht).e j))
-    (t.isNilpotent_geckRepresentation_rootGenerator ht (.inl i))
-    (t.isNilpotent_geckRepresentation_rootGenerator ht (.inr i))
-  simp only [LieAlgebra.Basis.rootGenerator_inl, LieAlgebra.Basis.rootGenerator_inr] at h
-  -- Expand the local representation composite and the signed-simple generator adapters.
-  simpa only [ρ, LieHom.comp_apply, AlgHom.toLieHom_apply,
+  -- Expand the representation composite and signed generators; the Serre matrix is transposed.
+  simpa only [Function.comp_apply, ρ, LieHom.comp_apply, AlgHom.toLieHom_apply,
     LieAlgebra.Basis.rootGenerator_inl, LieAlgebra.Basis.rootGenerator_inr] using
-    h hweight hlower hthird
+    ((t.isSerreSystem_lieBasis ht).map ρ).weylUnit_conj_of_cartan_eq_neg_two
+      (t.cartanMatrix_apply_same i) hji
+      (by simpa only [Function.comp_apply, ρ, LieHom.comp_apply, AlgHom.toLieHom_apply,
+          LieAlgebra.Basis.rootGenerator_inl] using
+        t.isNilpotent_geckRepresentation_rootGenerator ht (.inl i))
+      (by simpa only [Function.comp_apply, ρ, LieHom.comp_apply, AlgHom.toLieHom_apply,
+          LieAlgebra.Basis.rootGenerator_inr] using
+        t.isNilpotent_geckRepresentation_rootGenerator ht (.inr i))
 
 end
 
