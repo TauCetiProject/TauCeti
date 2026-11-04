@@ -860,6 +860,32 @@ theorem baseChangeMap_comp_baseChangeIsoOfEqQuotient_hom {A : _root_.CommHopfAlg
   subst hf hf'
   simp [baseChangeIsoOfEqQuotient]
 
+/-- Transport the base change of a quotient to a target quotient whose defining ideal contains
+the image of the base-changed ideal. The quotient presentations may be propositional. -/
+noncomputable def baseChangeMapOfLeQuotient {A : _root_.CommHopfAlgCat.{v} k}
+    {H' A' : _root_.CommHopfAlgCat.{max w v} K} (J : HopfIdeal k H) (J' : HopfIdeal K H')
+    (hA : A = quotient H J) (hA' : A' = quotient H' J') (e : baseChange (K := K) H ≅ H')
+    (hJ : (baseChangeHopfIdeal (K := K) J).map e.hom.hom ≤ J') :
+    baseChange (K := K) A ⟶ A' :=
+  eqToHom (congrArg (baseChange (K := K)) hA) ≫
+    (quotientBaseChangeIsoOfMapEq J ((baseChangeHopfIdeal (K := K) J).map e.hom.hom)
+      e rfl).hom ≫ quotientMapOfLe H' hJ ≫ eqToHom hA'.symm
+
+/-- The transported base-change map commutes with maps that become the quotient morphisms
+under the two presentations. -/
+theorem baseChangeMap_comp_baseChangeMapOfLeQuotient {A : _root_.CommHopfAlgCat.{v} k}
+    {H' A' : _root_.CommHopfAlgCat.{max w v} K} (J : HopfIdeal k H) (J' : HopfIdeal K H')
+    (hA : A = quotient H J) (hA' : A' = quotient H' J') (e : baseChange (K := K) H ≅ H')
+    (hJ : (baseChangeHopfIdeal (K := K) J).map e.hom.hom ≤ J') (f : H ⟶ A) (f' : H' ⟶ A')
+    (hf : f ≫ eqToHom hA = mkQuotient H J) (hf' : f' ≫ eqToHom hA' = mkQuotient H' J') :
+    baseChangeMap (K := K) f ≫ baseChangeMapOfLeQuotient J J' hA hA' e hJ = e.hom ≫ f' := by
+  subst hA hA'
+  simp only [eqToHom_refl, Category.comp_id] at hf hf'
+  subst hf hf'
+  simp only [baseChangeMapOfLeQuotient, eqToHom_refl, Category.id_comp, Category.comp_id]
+  rw [← Category.assoc, baseChangeMap_mkQuotient_comp_quotientBaseChangeIsoOfMapEq_hom]
+  simp [Category.assoc]
+
 variable (A : CommAlgCat.{x} K)
 
 /-- A point of the base change lies in the closed subgroup cut out by the base-changed Hopf
