@@ -39,6 +39,8 @@ frame.
 
 ## Main definitions
 
+* `TauCeti.CliffordAlgebra.realCliffordEvenToNeg p q`: the even-algebra comparison into
+  the Clifford algebra of the negated signature.
 * `OrthonormalBasis.realSpinGroupEquiv b hQ`: the comparison of the compact Spin group
   `spinGroup (realCliffordForm n 0)` with `spinGroup Q` along `b`.
 
@@ -63,9 +65,39 @@ frame.
 
 public section
 
+namespace TauCeti.CliffordAlgebra
+
+open _root_.CliffordAlgebra
+
+/-- The even Clifford algebra of signature `(p, q)` mapped into the Clifford algebra of
+signature `(q, p)`, through negation and the signature-coordinate isometry. -/
+noncomputable def realCliffordEvenToNeg (p q : ℕ) :
+    even (realCliffordForm p q) →ₐ[ℝ] CliffordAlgebra (realCliffordForm q p) :=
+  (map (realCliffordFormNegIsometry p q).toIsometry).comp
+    ((even (-realCliffordForm p q)).val.comp (evenEquivEvenNeg _).toAlgHom)
+
+/-- The even comparison applies negation followed by the signature-coordinate isometry. -/
+theorem realCliffordEvenToNeg_apply (p q : ℕ) (x : even (realCliffordForm p q)) :
+    realCliffordEvenToNeg p q x =
+      map (realCliffordFormNegIsometry p q).toIsometry
+        (evenEquivEvenNeg (realCliffordForm p q) x) :=
+  (rfl)
+
+/-- An even generator maps to minus the product of the transported vectors. -/
+@[simp]
+theorem realCliffordEvenToNeg_ι (p q : ℕ) (a b : Fin (p + q) → ℝ) :
+    realCliffordEvenToNeg p q ((even.ι (realCliffordForm p q)).bilin a b) =
+      -(ι (realCliffordForm q p) (realCliffordFormNegIsometry p q a) *
+        ι (realCliffordForm q p) (realCliffordFormNegIsometry p q b)) := by
+  rw [realCliffordEvenToNeg_apply, evenEquivEvenNeg_apply, evenToNeg_ι]
+  simp only [Subalgebra.coe_neg, even.ι, LinearMap.mk₂_apply, map_neg, map_mul,
+    map_apply_ι, QuadraticMap.IsometryEquiv.toIsometry_apply]
+
+end TauCeti.CliffordAlgebra
+
 namespace CliffordAlgebra
 
-open TauCeti
+open TauCeti TauCeti.CliffordAlgebra
 
 variable (p q : ℕ)
 
@@ -77,13 +109,12 @@ noncomputable def realCliffordSpinGroupEquivNeg :
   (spinGroupEquivNeg (realCliffordForm p q)).trans
     (realCliffordFormNegIsometry p q).spinGroupEquiv
 
-/-- The Clifford value of `realCliffordSpinGroupEquivNeg p q x` is obtained by applying
-`evenEquivEvenNeg` and then the coordinate isometry. -/
+/-- The Clifford value of `realCliffordSpinGroupEquivNeg p q x` is the even comparison
+`TauCeti.CliffordAlgebra.realCliffordEvenToNeg p q` applied to its even Clifford value. -/
 theorem coe_realCliffordSpinGroupEquivNeg_apply (x : realCliffordSpinGroup p q) :
     (realCliffordSpinGroupEquivNeg p q x : CliffordAlgebra (realCliffordForm q p)) =
-      map (realCliffordFormNegIsometry p q).toIsometry
-        (evenEquivEvenNeg (realCliffordForm p q) (spinGroupToEven (realCliffordForm p q) x)) := by
-  rw [realCliffordSpinGroupEquivNeg, MulEquiv.trans_apply,
+      realCliffordEvenToNeg p q (spinGroupToEven (realCliffordForm p q) x) := by
+  rw [realCliffordEvenToNeg_apply, realCliffordSpinGroupEquivNeg, MulEquiv.trans_apply,
     QuadraticMap.IsometryEquiv.spinGroupEquiv_apply, QuadraticMap.Isometry.coe_spinGroupMap_apply,
     coe_spinGroupEquivNeg_apply]
 
