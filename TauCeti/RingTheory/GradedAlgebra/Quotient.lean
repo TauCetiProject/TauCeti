@@ -147,6 +147,8 @@ theorem map_quotientPiece_quotientPiece (𝒜 : ι → Submodule k A) (I J : Ide
         (DoubleQuot.quotQuotEquivQuotSupₐ k I J).toLinearMap =
       quotientPiece 𝒜 (I ⊔ J) n := by
   simp only [quotientPiece_def, ← Submodule.map_comp]
-  congr 1
+  apply congrArg (fun f : A →ₗ[k] A ⧸ (I ⊔ J) ↦ (𝒜 n).map f)
+  ext x
+  exact DoubleQuot.quotQuotEquivQuotSup_quotQuotMk I J x
 
 end TauCeti.GradedAlgebra
