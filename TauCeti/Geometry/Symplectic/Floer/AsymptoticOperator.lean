@@ -276,17 +276,16 @@ theorem stationaryCylinderOperator_eq_add_asymptoticOperator (hξ : Differentiab
     stationaryCylinderOperator J S ξ z =
       fderiv ℝ ξ z stdComplexLineReal + asymptoticOperator J S (fun t ↦ ξ (z.1, t)) z.2 := by
   obtain ⟨s, t⟩ := z
-  have hξt : deriv (fun t ↦ ξ (s, t)) t = fderiv ℝ ξ (s, t) stdComplexLineImag :=
-    (hξ.hasFDerivAt.comp_hasDerivAt t (hasDerivAt_prodMk_right s t)).deriv
+  have hξt : deriv (fun t ↦ ξ (s, t)) t = fderiv ℝ ξ (s, t) stdComplexLineImag := by
+    rw [stdComplexLineImag_eq]
+    exact (hξ.hasFDerivAt.comp_hasDerivAt t (hasDerivAt_prodMk_right s t)).deriv
   rw [stationaryCylinderOperator_def, asymptoticOperator_def, hξt]
 
 /-- A map of period one in the second coordinate has a derivative of period one in it. -/
 private theorem fderiv_add_one_snd (hper : ∀ s t, ξ (s, t + 1) = ξ (s, t)) (s t : ℝ) :
     fderiv ℝ ξ (s, t + 1) = fderiv ℝ ξ (s, t) := by
-  have h := fderiv_add_eq_smul (c := ((0 : ℝ), (1 : ℝ))) (a := (1 : ℝ))
-    (fun ⟨p, q⟩ ↦ by simpa using hper p q) (s, t)
-  simp only [Prod.mk_add_mk, add_zero, one_smul] at h
-  exact h
+  have hp : Periodic ξ ((0 : ℝ), (1 : ℝ)) := fun ⟨p, q⟩ ↦ by simpa using hper p q
+  simpa using hp.fderiv (s, t)
 
 variable [FiniteDimensional ℝ V] {ω : SymplecticForm V}
 
