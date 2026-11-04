@@ -114,14 +114,18 @@ theorem cgf_id_map_cast_geometricMeasure (hp : p ≠ 0)
       log ((p : ℝ) / (1 - (1 - (p : ℝ)) * exp t)) := by
   rw [cgf, mgf_id_map_cast_geometricMeasure hp ht]
 
+/-- At success probability zero, Mathlib's totalized geometric law is Dirac at zero. -/
+theorem geometricMeasure_zero : geometricMeasure (0 : unitInterval) = Measure.dirac 0 := by
+  simp [geometricMeasure]
+
 /-- The real cast of a geometric random variable is integrable, including at the totalized
 zero parameter. -/
 theorem integrable_cast_geometricMeasure :
     Integrable (Nat.cast : ℕ → ℝ) (geometricMeasure p) := by
   by_cases hp : p = 0
   · subst p
-    simpa [geometricMeasure] using
-      (integrable_dirac (a := (0 : ℕ)) (f := (Nat.cast : ℕ → ℝ)) (by simp))
+    rw [geometricMeasure_zero]
+    exact integrable_dirac (by simp)
   · have hgeom : Integrable id ((geometricMeasure p).map (Nat.cast : ℕ → ℝ)) := by
       rw [geometricMeasure_eq_negativeBinomialMeasure_one p hp]
       have hp0 := unitInterval.coe_pos.mpr (unitInterval.pos_iff_ne_zero.mpr hp)
@@ -227,10 +231,6 @@ theorem geometricMeasure_cond_Ici (p : unitInterval) (n m : ℕ)
       rw [← geometricMeasure_real_Ici hp]
       exact (measureReal_ne_zero_iff (μ := geometricMeasure p) (s := {k | n ≤ k})).2 hn
     field_simp
-
-/-- At success probability zero, Mathlib's totalized geometric law is Dirac at zero. -/
-theorem geometricMeasure_zero : geometricMeasure (0 : unitInterval) = Measure.dirac 0 := by
-  simp [geometricMeasure]
 
 /-- At the zero parameter, Mathlib's geometric distribution is a Dirac mass at zero, so its
 probability-generating function is identically one. -/
