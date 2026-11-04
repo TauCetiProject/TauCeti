@@ -59,6 +59,8 @@ Lie-algebra theory.
 * `Matrix.IsUpperUnitriangular.submatrix` — selecting rows and columns by a strictly increasing
   map preserves upper unitriangularity.
 * `Matrix.IsUpperUnitriangular.det_eq_one` — an upper-unitriangular matrix has determinant one.
+* `Matrix.IsUpperUnitriangular.mul` and `Matrix.IsUpperUnitriangular.pow` — upper-unitriangular
+  matrices are closed under products and natural powers.
 * `Matrix.isNilpotent_of_isUpperTriangular_of_diag_eq_zero` — strict upper triangularity implies
   nilpotence.
 * `Matrix.updateCol_mul_updateCol_apply_of_lt` — replacing the same column of both factors of a
@@ -408,6 +410,14 @@ theorem IsUpperUnitriangular.mul {T p : Type*} [NonAssocSemiring T] [Fintype p]
     (hN : N.IsUpperUnitriangular) : (M * N).IsUpperUnitriangular := by
   refine ⟨hM.1.mul hN.1, fun i ↦ ?_⟩
   rw [mul_apply_diag_of_isUpperTriangular hM.1 hN.1, hM.2 i, hN.2 i, one_mul]
+
+/-- Every natural power of an upper-unitriangular matrix is upper unitriangular. -/
+theorem IsUpperUnitriangular.pow {T p : Type*} [Semiring T] [Fintype p] [LinearOrder p]
+    {M : Matrix p p T} (hM : M.IsUpperUnitriangular) (k : ℕ) :
+    (M ^ k).IsUpperUnitriangular := by
+  induction k with
+  | zero => exact isUpperUnitriangular_one
+  | succ k ih => rw [pow_succ]; exact ih.mul hM
 
 /-- The inverse of an invertible upper-unitriangular matrix is upper unitriangular. -/
 theorem IsUpperUnitriangular.inv {T p : Type*} [CommRing T] [Fintype p] [LinearOrder p]
