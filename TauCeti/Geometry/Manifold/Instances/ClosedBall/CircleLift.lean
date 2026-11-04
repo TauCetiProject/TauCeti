@@ -111,17 +111,13 @@ private def circleLiftMap (F : ℝ → ℝ) (z : ℂ) : ℂ :=
 variable (hper : ∀ x, F (x + 2 * π) = F x + 2 * π)
 include hper
 
-private theorem periodic_sub : Periodic (fun x ↦ F x - x) (2 * π) := fun x ↦ by
-  simp only [hper]
-  ring
-
 /-- The angle at `r * exp (x * I)`, `r > 0`, is computed from `x` itself, whatever the argument. -/
 private theorem angle_mul_exp {r : ℝ} (hr : 0 < r) (x : ℝ) :
     angle F (r * exp (x * I)) = weight r * (F x - x) := by
   have hnorm : ‖(r : ℂ) * exp (x * I)‖ = r := by
     rw [norm_mul, norm_exp_ofReal_mul_I, mul_one, norm_real, Real.norm_of_nonneg hr.le]
   rw [angle, hnorm, arg_real_mul _ hr, arg_exp_mul_I, ← self_sub_toIocDiv_zsmul]
-  exact congrArg (weight r * ·) ((periodic_sub hper).sub_zsmul_eq _)
+  exact congrArg (weight r * ·) ((AddCircle.periodic_sub_of_lift hper).sub_zsmul_eq _)
 
 /-- The plane map on the circle of radius `r` is the circle map with lift
 `x ↦ x + weight r * (F x - x)`. -/
@@ -154,7 +150,7 @@ private theorem contDiff_angle (hF : ContDiff ℝ ∞ F) : ContDiff ℝ ∞ (ang
       rintro rfl
       norm_num at hz
     exact (contDiff_weight.contDiffAt.comp z (contDiffAt_norm ℝ hz0)).mul
-      ((hF.sub contDiff_id).contDiffAt_comp_arg (periodic_sub hper) hz0)
+      ((hF.sub contDiff_id).contDiffAt_comp_arg (AddCircle.periodic_sub_of_lift hper) hz0)
 
 private theorem contDiff_circleLiftMap (hF : ContDiff ℝ ∞ F) : ContDiff ℝ ∞ (circleLiftMap F) :=
   contDiff_id.mul ((Complex.contDiff_exp (𝕜 := ℝ)).comp
