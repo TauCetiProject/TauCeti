@@ -36,6 +36,20 @@ public section
 open MeasureTheory
 open scoped ENNReal
 
+namespace MeasureTheory.SignedMeasure
+
+variable {X : Type*} [MeasurableSpace X]
+
+/-- A signed measure is reconstructed by its Radon–Nikodym density when its variation is
+absolutely continuous with respect to the sigma-finite reference measure. -/
+theorem withDensityᵥ_rnDeriv_eq_of_variation (s : SignedMeasure X) (ν : Measure X)
+    [SigmaFinite ν] (h : s.variation ≪ ν) : ν.withDensityᵥ (s.rnDeriv ν) = s := by
+  apply withDensityᵥ_rnDeriv_eq
+  rwa [absolutelyContinuous_ennreal_iff,
+    VectorMeasure.ennrealToMeasure_toENNRealVectorMeasure, totalVariation_eq_variation]
+
+end MeasureTheory.SignedMeasure
+
 namespace MeasureTheory.VectorMeasure
 
 variable {X 𝕜 : Type*} [MeasurableSpace X] [RCLike 𝕜]
@@ -90,18 +104,10 @@ theorem scalarRNDeriv_complex (μ : ComplexMeasure X) (ν : Measure X) :
 continuous with respect to a sigma-finite measure, its scalar density reconstructs it. -/
 theorem withDensityᵥ_scalarRNDeriv (μ : VectorMeasure X 𝕜) (ν : Measure X) [SigmaFinite ν]
     (hμν : μ.variation ≪ ν) : ν.withDensityᵥ (scalarRNDeriv μ ν) = μ := by
-  have hre : ν.withDensityᵥ ((scalarMeasureRealPart μ).rnDeriv ν) =
-      scalarMeasureRealPart μ := by
-    apply SignedMeasure.withDensityᵥ_rnDeriv_eq
-    rw [SignedMeasure.absolutelyContinuous_ennreal_iff,
-      ennrealToMeasure_toENNRealVectorMeasure, SignedMeasure.totalVariation_eq_variation]
-    exact (Measure.absolutelyContinuous_of_le (variation_scalarMeasureRealPart_le μ)).trans hμν
-  have him : ν.withDensityᵥ ((scalarMeasureImagPart μ).rnDeriv ν) =
-      scalarMeasureImagPart μ := by
-    apply SignedMeasure.withDensityᵥ_rnDeriv_eq
-    rw [SignedMeasure.absolutelyContinuous_ennreal_iff,
-      ennrealToMeasure_toENNRealVectorMeasure, SignedMeasure.totalVariation_eq_variation]
-    exact (Measure.absolutelyContinuous_of_le (variation_scalarMeasureImagPart_le μ)).trans hμν
+  have hre := SignedMeasure.withDensityᵥ_rnDeriv_eq_of_variation (scalarMeasureRealPart μ) ν
+    ((Measure.absolutelyContinuous_of_le (variation_scalarMeasureRealPart_le μ)).trans hμν)
+  have him := SignedMeasure.withDensityᵥ_rnDeriv_eq_of_variation (scalarMeasureImagPart μ) ν
+    ((Measure.absolutelyContinuous_of_le (variation_scalarMeasureImagPart_le μ)).trans hμν)
   have hreal := SignedMeasure.integrable_rnDeriv (scalarMeasureRealPart μ) ν
   have himag := SignedMeasure.integrable_rnDeriv (scalarMeasureImagPart μ) ν
   calc
@@ -133,7 +139,7 @@ theorem withDensityᵥ_eq_iff_ae_eq_scalarRNDeriv (μ : VectorMeasure X 𝕜) (�
 
 /-- The density of a scalar measure relative to its own variation has norm one almost
 everywhere. This includes the zero measure, whose almost-everywhere assertion is vacuous. -/
-theorem ae_norm_scalarRNDeriv_variation (μ : VectorMeasure X 𝕜) :
+theorem ae_norm_scalarRNDeriv_variation_eq_one (μ : VectorMeasure X 𝕜) :
     ∀ᵐ x ∂μ.variation, ‖scalarRNDeriv μ μ.variation x‖ = 1 := by
   have h := variation_eq_withDensity_enorm_scalarRNDeriv μ μ.variation
     Measure.AbsolutelyContinuous.rfl
