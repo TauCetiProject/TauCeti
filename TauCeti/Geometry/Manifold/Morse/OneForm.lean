@@ -234,22 +234,8 @@ theorem _root_.IsLocalDiffeomorph.isMorseOneForm_mpullback_iff
   obtain ⟨g, V, hxV, hg, -⟩ := h.exists_nondegenerate_primitive x hx
   set s := (hπ x).localInverse
   have hsx : s (π x) = x := (hπ x).localInverse_left_inv (hπ x).localInverse_mem_target
-  have hs (z : M) (hz : z ∈ s.source) : MDifferentiableAt I I s z :=
-    ((hπ x).contMDiffOn_localInverse.contMDiffAt
-      ((hπ x).localInverse_open_source.mem_nhds hz)).mdifferentiableAt (by simp)
-  have hgs (z : M) (hz : s z ∈ V) : MDifferentiableAt I 𝓘(ℝ) g (s z) :=
-    (hg.mdifferentiableOn _ hz).mdifferentiableAt (hg.isOpen.mem_nhds hz)
-  have hf : IsPrimitiveOn α (g ∘ s) (s.source ∩ s ⁻¹' V) := by
-    refine ⟨(hπ x).contMDiffOn_localInverse.continuousOn.isOpen_inter_preimage
-      (hπ x).localInverse_open_source hg.isOpen,
-      fun z hz ↦ ((hgs z hz.2).comp z (hs z hz.1)).mdifferentiableWithinAt,
-      fun z ⟨hzs, hzV⟩ ↦ ?_⟩
-    have hid : π ∘ s =ᶠ[𝓝 z] id := eventuallyEq_of_mem
-      ((hπ x).localInverse_open_source.mem_nhds hzs) (hπ x).localInverse_eqOn_right
-    rw [← mpullback_mextDeriv_ofFunction_apply (hs z hzs) (hgs z hzV), ← mpullback_id α,
-      ← hid.mpullback_eq, mpullback_comp_at (hs z hzs) (hπ.mdifferentiable (by simp) _)]
-    ext v
-    rw [mpullback_apply, mpullback_apply, hg.mextDeriv_eq (s z) hzV]
+  have hf : IsPrimitiveOn α (g ∘ s) (s.source ∩ s ⁻¹' V) :=
+    (hπ x).isPrimitiveOn_comp_localInverse (by simp) hg
   have hxU : π x ∈ s.source ∩ s ⁻¹' V :=
     ⟨(hπ x).localInverse_mem_source, by rwa [mem_preimage, hsx]⟩
   refine ⟨g ∘ s, _, hxU, hf, ((hπ x).isManifoldNondegenerateCriticalPoint_comp_iff (by simp)).1 ?_⟩
