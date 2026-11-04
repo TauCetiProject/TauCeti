@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Topology.Algebra.Module.FiniteDimensionBilinear
 public import TauCeti.Geometry.Manifold.Diffeomorph.Basic
-public import TauCeti.Geometry.Manifold.DifferentialForm.Pullback.Smooth
+public import TauCeti.Geometry.Manifold.DifferentialForm.Pullback.LocalDiffeomorph
 public import TauCeti.Geometry.Manifold.TwoForm.Closed
 public import TauCeti.Geometry.Symplectic.Manifold.AlmostComplex.Basic
 public import TauCeti.Geometry.Symplectic.SymplecticTransport
@@ -49,6 +49,10 @@ example.
   characterized by pullback kernels along a surjective smooth map with surjective derivatives.
 * `TauCeti.SmoothTwoForm.isSymplectic_iff_of_mpullback_eq`: a form on the base of such a map is
   symplectic exactly when its pullback is closed and has kernel equal to the derivative’s kernel.
+* `IsLocalDiffeomorph.isNondegenerate_mpullback_iff`: for a surjective
+  local diffeomorphism the converse holds as well.
+* `IsLocalDiffeomorph.isSymplectic_mpullback_iff`: a surjective local diffeomorphism pulls a
+  two-form back to a symplectic form exactly when the form is symplectic.
 * `TauCeti.SmoothTwoForm.Tames` and `TauCeti.SmoothTwoForm.Compatible`: the unbundled pointwise
   relations to a smooth almost complex structure.
 * `TauCeti.SmoothTwoForm.IsNondegenerate.tames_iff`, `invariant_iff`, and `compatible_iff`: these
@@ -179,6 +183,30 @@ theorem IsNondegenerate.isNondegenerate_mpullback_of_isLocalDiffeomorph {f : M�
   refine (injective_iff_map_eq_zero _).1 hinv.injective v (hσ (f x) _ fun w ↦ ?_)
   obtain ⟨u, rfl⟩ := hinv.surjective w
   simpa only [SmoothForm.eval₂_mpullback] using hv u
+
+/-- A surjective local diffeomorphism, such as the projection of a covering space, pulls a two-form
+back to a nondegenerate form exactly when the form is nondegenerate. -/
+theorem _root_.IsLocalDiffeomorph.isNondegenerate_mpullback_iff {f : M₂ → M}
+    (hf : IsLocalDiffeomorph I₂ I ∞ f) (hsurj : Function.Surjective f) :
+    SmoothTwoForm.IsNondegenerate (SmoothForm.mpullback f hf.contMDiff σ) ↔
+      σ.IsNondegenerate := by
+  refine ⟨fun h ↦ ?_, fun h ↦ h.isNondegenerate_mpullback_of_isLocalDiffeomorph hf⟩
+  rw [isNondegenerate_iff_separatingLeft] at h ⊢
+  intro y v hv
+  obtain ⟨x, rfl⟩ := hsurj y
+  -- The differential at `x` is onto, so `v = df u`, and `u` pairs to zero with every vector.
+  obtain ⟨u, rfl⟩ := (hf.isInvertible_mfderiv (by simp) x).surjective v
+  rw [h x u fun w ↦ by rw [SmoothForm.eval₂_mpullback]; exact hv _, map_zero]
+
+/-- A surjective local diffeomorphism, such as the projection of a covering space, pulls a two-form
+back to a symplectic form exactly when the form is symplectic. -/
+theorem _root_.IsLocalDiffeomorph.isSymplectic_mpullback_iff {f : M₂ → M}
+    (hf : IsLocalDiffeomorph I₂ I ∞ f) (hsurj : Function.Surjective f) :
+    SmoothTwoForm.IsSymplectic (SmoothForm.mpullback f hf.contMDiff σ) ↔ σ.IsSymplectic := by
+  refine ⟨fun h ↦ ⟨(hf.isClosed_mpullback_iff hsurj).1 h.isClosed,
+      (hf.isNondegenerate_mpullback_iff hsurj).1 h.isNondegenerate⟩,
+    fun h ↦ ⟨(hf.isClosed_mpullback_iff hsurj).2 h.isClosed,
+      (hf.isNondegenerate_mpullback_iff hsurj).2 h.isNondegenerate⟩⟩
 
 end Transport
 
