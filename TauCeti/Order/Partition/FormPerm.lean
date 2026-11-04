@@ -11,6 +11,7 @@ public import TauCeti.GroupTheory.Perm.Fin
 public import TauCeti.GroupTheory.Perm.OrbitCount.Basic
 public import TauCeti.GroupTheory.Perm.Partition
 import Mathlib.Data.Finset.Sort
+import TauCeti.GroupTheory.Perm.SwapFactors
 import TauCeti.Order.Partition.Finpartition
 
 /-!
@@ -47,6 +48,8 @@ The cycle of each part is Mathlib's `List.formPerm` of the increasing enumeratio
   `finRotate n`.
 * `Finpartition.formPerm_top_insert`: adjoining a new largest point `m` to `t` inserts it into the
   cycle through `t` after the largest point `m'` of `t`, multiplying by `swap m' m` on the right.
+* `Finpartition.orbitCount_formPerm_top_insert_add_one`: adjoining a new largest point to `t`
+  merges its cycle into the cycle through `t`, lowering the number of cycles by one.
 * `Finpartition.formPerm_apply_eq_self_iff`: the fixed points are the singleton parts and the
   points outside `s`.
 * `Finpartition.sameCycle_formPerm_iff`: two points of `s` lie on a common cycle exactly when
@@ -336,6 +339,19 @@ theorem formPerm_top_insert {t : Finset α} {m m' : α} (hm : ∀ x ∈ t, x < m
     refine ⟨mem_insert_of_mem hy, fun _ w hw hxw => ?_, fun h => absurd hxy (not_lt.2 h)⟩
     rcases mem_insert.1 hw with rfl | hw
     exacts [(hm _ hy).le, hylt hxy w hw hxw]
+
+/-- Adjoining to a nonempty `t` a point `m` above all of its points merges the fixed point `m`
+into the increasing cycle through `t`, so the number of cycles, fixed points included, drops by
+one. -/
+theorem orbitCount_formPerm_top_insert_add_one [Finite α] {t : Finset α} {m m' : α}
+    (hm : ∀ x ∈ t, x < m) (hm' : m' ∈ t) (hm't : ∀ x ∈ t, x ≤ m') :
+    TauCeti.orbitCount (⊤ : Finpartition (insert m t)).formPerm + 1 =
+      TauCeti.orbitCount (⊤ : Finpartition t).formPerm := by
+  have hγm : (⊤ : Finpartition t).formPerm m = m :=
+    formPerm_apply_of_notMem _ fun h => (hm m h).false
+  rw [formPerm_top_insert hm hm' hm't]
+  exact TauCeti.orbitCount_mul_swap_add_one_of_not_sameCycle fun hc =>
+    (hm m' hm').ne (hc.eq_of_right hγm)
 
 /-- A finite partition is determined by its permutation. -/
 theorem formPerm_injective : Function.Injective (formPerm : Finpartition s → Perm α) := by

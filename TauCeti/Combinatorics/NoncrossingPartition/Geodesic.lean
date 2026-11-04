@@ -121,14 +121,13 @@ private theorem exists_isNoncrossing_formPerm_eq_of_isNoncrossingPerm {σ : Perm
 noncrossing cycles, and the points above `p` form a union of cycles of `σ'`, then `σ` has
 increasing noncrossing cycles: it inserts `m` after the last point `p` of its cycle. -/
 private theorem isNoncrossingPerm_of_isNoncrossingPerm_mul_swap {σ σ' : Perm α} {p m : α}
-    (hσp : σ p = m) (hσm : σ m ≠ m) (hσ' : σ' = σ * swap p m) (hle : ∀ x, σ x ≠ x → x ≤ m)
+    (hσp : σ p = m) (hpm : p ≠ m) (hσm : σ m ≠ m) (hσ' : σ' = σ * swap p m) (hσ'm : σ' m = m)
+    (hle : ∀ x, σ x ≠ x → x ≤ m)
     (hσ'nc : IsNoncrossingPerm σ') (hK : ∀ u v, σ'.SameCycle u v → p < u → p < v) :
     IsNoncrossingPerm σ := by
   -- After comparing the cycles of `σ` and `σ'`, the increasing order is checked at `m`, at `p`
   -- and elsewhere, and then a crossing is ruled out according to whether it passes through `m`.
   obtain ⟨hinc', hnc'⟩ := hσ'nc
-  have hpm : p ≠ m := fun h => hσm (by rw [← h] at hσp ⊢; rw [hσp, h])
-  have hσ'm : σ' m = m := by rw [hσ', mul_apply, swap_apply_right, hσp]
   have hσ'p : σ' p = σ m := by rw [hσ', mul_apply, swap_apply_left]
   have hσ'x {x : α} (hxp : x ≠ p) (hxm : x ≠ m) : σ' x = σ x := by
     rw [hσ', mul_apply, swap_apply_of_ne_of_ne hxp hxm]
@@ -243,28 +242,26 @@ private theorem IsNoncrossing.lt_of_sameCycle_of_sameCycle {t : Finset α} {P : 
   · exact absurd h.1 (not_lt.2 (h.2.trans (hpu.le.trans (hm' u hut))))
 
 /-- **Removing a largest point keeps a permutation geodesic.** Let `γ` and `γ'` be the cycles
-through `insert m t` and `t`, so that `γ = γ' * swap m' m`, and let `σ` be geodesic for `γ` with
-`σ p = m ≠ p`. Then `σ' = σ * swap p m`, which removes `m` from its cycle, is geodesic for `γ'`,
-and `p` lies in the cycle of `m'` in `σ'⁻¹ * γ'`. -/
+through `insert m t` and `t`, so that `γ = γ' * swap m' m` and `#γ + 1 = #γ'`, and let `σ` be
+geodesic for `γ` with `σ p = m ≠ p`, that is, `σ' = σ * swap p m` fixes `m`. Then `σ'`, which
+removes `m` from its cycle, is geodesic for `γ'`, and `p` lies in the cycle of `m'` in
+`σ'⁻¹ * γ'`. -/
 private theorem orbitCount_add_orbitCount_mul_swap_eq [Finite α] {t : Finset α}
     {σ σ' : Perm α} {p m m' : α}
     (hγ : (⊤ : Finpartition (insert m t)).formPerm = (⊤ : Finpartition t).formPerm * swap m' m)
-    (hmt : m ∉ t) (hm'm : m' ≠ m) (hσp : σ p = m) (hpm : p ≠ m) (hσ' : σ' = σ * swap p m)
+    (hcγ : orbitCount (⊤ : Finpartition (insert m t)).formPerm + 1 =
+      orbitCount (⊤ : Finpartition t).formPerm)
+    (hmt : m ∉ t) (hm'm : m' ≠ m) (hpm : p ≠ m) (hσ' : σ' = σ * swap p m) (hσ'm : σ' m = m)
     (h : orbitCount σ + orbitCount (σ⁻¹ * (⊤ : Finpartition (insert m t)).formPerm) =
       orbitCount (⊤ : Finpartition (insert m t)).formPerm + Nat.card α) :
     orbitCount σ' + orbitCount (σ'⁻¹ * (⊤ : Finpartition t).formPerm) =
         orbitCount (⊤ : Finpartition t).formPerm + Nat.card α ∧
       (σ'⁻¹ * (⊤ : Finpartition t).formPerm).SameCycle p m' := by
   have hγm : (⊤ : Finpartition t).formPerm m = m := formPerm_apply_of_notMem _ hmt
-  have hσ'm : σ' m = m := by rw [hσ', mul_apply, swap_apply_right, hσp]
   have hσσ' : σ' * swap p m = σ := by rw [hσ', mul_assoc, swap_mul_self, mul_one]
   have hXm : (σ'⁻¹ * (⊤ : Finpartition t).formPerm) m = m := by
     rw [mul_apply, hγm, Perm.inv_eq_iff_eq, hσ'm]
-  -- Each of `γ`, `σ` and `σ⁻¹ * γ` differs from its counterpart by one transposition.
-  have hcγ : orbitCount (⊤ : Finpartition (insert m t)).formPerm + 1 =
-      orbitCount (⊤ : Finpartition t).formPerm := by
-    rw [hγ]
-    exact orbitCount_mul_swap_add_one_of_not_sameCycle fun hc => hm'm (hc.eq_of_right hγm)
+  -- Each of `σ` and `σ⁻¹ * γ` differs from its counterpart by one transposition, as `γ` does.
   have hc₁ : orbitCount σ + 1 = orbitCount σ' := by
     rw [← hσσ']
     exact orbitCount_mul_swap_add_one_of_not_sameCycle fun hc => hpm (hc.eq_of_right hσ'm)
@@ -334,6 +331,7 @@ private theorem isNoncrossingPerm_of_orbitCount_add_orbitCount_eq [Finite α] (s
   have hm' := t.max'_mem ht
   have hγ := formPerm_top_insert hm hm' fun x hx => t.le_max' x hx
   have hm'm : t.max' ht ≠ m := (hm _ hm').ne
+  have hcγ := orbitCount_formPerm_top_insert_add_one hm hm' fun x hx => t.le_max' x hx
   by_cases hσm : σ m = m
   · -- If `σ` fixes `m`, it is a geodesic permutation supported on `t`.
     have hγm : (⊤ : Finpartition t).formPerm m = m := formPerm_apply_of_notMem _ hmt
@@ -343,10 +341,6 @@ private theorem isNoncrossingPerm_of_orbitCount_add_orbitCount_eq [Finite α] (s
       · exact hσ x (by simp [hxm, hx])
     have hfix : (σ⁻¹ * (⊤ : Finpartition t).formPerm) m = m := by
       rw [mul_apply, hγm, Perm.inv_eq_iff_eq, hσm]
-    have hcγ : orbitCount (⊤ : Finpartition (insert m t)).formPerm + 1 =
-        orbitCount (⊤ : Finpartition t).formPerm := by
-      rw [hγ]
-      exact orbitCount_mul_swap_add_one_of_not_sameCycle fun hc => hm'm (hc.eq_of_right hγm)
     have hX : orbitCount (σ⁻¹ * (⊤ : Finpartition (insert m t)).formPerm) + 1 =
         orbitCount (σ⁻¹ * (⊤ : Finpartition t).formPerm) := by
       rw [hγ, ← mul_assoc]
@@ -361,17 +355,18 @@ private theorem isNoncrossingPerm_of_orbitCount_add_orbitCount_eq [Finite α] (s
       exact hpm ((hσ p hps).symm.trans hσp)
     exact (mem_insert.1 hps).resolve_left hpm
   obtain ⟨σ', hσ'⟩ : ∃ σ', σ' = σ * swap p m := ⟨_, rfl⟩
+  have hσ'm : σ' m = m := by rw [hσ', mul_apply, swap_apply_right, hσp]
   have hσ't : ∀ x ∉ t, σ' x = x := fun x hx => by
     by_cases hxm : x = m
-    · rw [hxm, hσ', mul_apply, swap_apply_right, hσp]
+    · rw [hxm, hσ'm]
     · have hxp : x ≠ p := fun h => hx (h ▸ hpt)
       rw [hσ', mul_apply, swap_apply_of_ne_of_ne hxp hxm, hσ x (by simp [hxm, hx])]
   -- By induction `σ'` is the permutation of a noncrossing partition `P'` of `t`, and the points
   -- above `p` form a union of parts of `P'`, because of the Kreweras complement of `P'`.
-  obtain ⟨hgeo, hpm'⟩ := orbitCount_add_orbitCount_mul_swap_eq hγ hmt hm'm hσp hpm hσ' h
+  obtain ⟨hgeo, hpm'⟩ := orbitCount_add_orbitCount_mul_swap_eq hγ hcγ hmt hm'm hpm hσ' hσ'm h
   have hσ'nc := ih σ' hσ't hgeo
   obtain ⟨P', hP', rfl⟩ := exists_isNoncrossing_formPerm_eq_of_isNoncrossingPerm hσ't hσ'nc
-  exact isNoncrossingPerm_of_isNoncrossingPerm_mul_swap hσp hσm hσ' hle hσ'nc
+  exact isNoncrossingPerm_of_isNoncrossingPerm_mul_swap hσp hpm hσm hσ' hσ'm hle hσ'nc
     fun _ _ huv hpu => hP'.lt_of_sameCycle_of_sameCycle hpt (fun x hx => t.le_max' x hx) hpm' huv
       hpu
 
