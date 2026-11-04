@@ -67,6 +67,14 @@ theorem extDeriv_apply_pair_of_differentiableAt {ω : E → E [⋀^Fin 1]→L[�
       fderiv 𝕜 (fun y ↦ ω y (fun _ ↦ v)) x w := by
   simp [extDeriv_apply_pair, fderiv_continuousAlternatingMap_apply_const_apply hω]
 
+/-- The exterior derivative of a difference of two forms differentiable at `x` is the difference of
+their exterior derivatives. -/
+theorem extDeriv_sub {ω₁ ω₂ : E → E [⋀^Fin n]→L[𝕜] F} (hω₁ : DifferentiableAt 𝕜 ω₁ x)
+    (hω₂ : DifferentiableAt 𝕜 ω₂ x) : extDeriv (ω₁ - ω₂) x = extDeriv ω₁ x - extDeriv ω₂ x := by
+  have h : ω₁ - ω₂ = ω₁ + (-1 : 𝕜) • ω₂ := by
+    rw [neg_one_smul, sub_eq_add_neg]
+  rw [h, extDeriv_add hω₁ (hω₂.const_smul _), extDeriv_smul, neg_one_smul, sub_eq_add_neg]
+
 /-- The exterior derivative within a set does not change when the set is modified away from a
 point `y`, as long as it is unchanged near the base point (punctured at `y`). -/
 theorem extDerivWithin_congr_set' (y : E) (h : s =ᶠ[𝓝[{y}ᶜ] x] t) :
