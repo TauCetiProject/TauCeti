@@ -29,14 +29,15 @@ all maximal ideals detect exactness, so do the completions `R → 𝒪_v`: for a
 `𝒪_v ⊗[R] M → 𝒪_v ⊗[R] N → 𝒪_v ⊗[R] P` is exact for every `v`; likewise for injectivity,
 surjectivity and the vanishing of a module. This is how lattices over orders are compared with
 their completions. As an application, projectivity of a finitely presented module over an
-`R`-algebra that is finite over `R` can be checked after every completion.
+`R`-algebra can be checked after every completion.
 
 If `R` is a field there are no height-one primes, so the family detects nothing; this is why the
 hypothesis `¬ IsField R` appears.
 
 ## Main results
 
-All declarations are in the namespace `IsDedekindDomain.HeightOneSpectrum`.
+The algebra structure and its instances are in the namespace
+`IsDedekindDomain.HeightOneSpectrum`; the detection results are in the namespace `TauCeti`.
 
 * The instance
   `Module.FaithfullyFlat (Localization.AtPrime v.asIdeal) (v.adicCompletionIntegers K)`:
@@ -97,6 +98,15 @@ instance : Module.Flat (Localization.AtPrime v.asIdeal) (v.adicCompletionInteger
 /-- `𝒪_v` is faithfully flat over `R_v`, being a flat local algebra over a local ring. -/
 instance : Module.FaithfullyFlat (Localization.AtPrime v.asIdeal) (v.adicCompletionIntegers K) :=
   .of_flat_of_isLocalHom
+
+end IsDedekindDomain.HeightOneSpectrum
+
+namespace TauCeti
+
+open IsDedekindDomain
+
+variable {R : Type*} [CommRing R] [IsDedekindDomain R]
+  {K : Type*} [Field K] [Algebra R K] [IsFractionRing R K]
 
 variable {M N P : Type*} [AddCommGroup M] [Module R M] [AddCommGroup N] [Module R N]
   [AddCommGroup P] [Module R P]
@@ -178,17 +188,17 @@ theorem subsingleton_iff_forall_subsingleton_adicCompletionIntegers_tensor (hR :
 attribute [local instance low] TauCeti.CentralBaseChange.module in
 variable (K) in
 /-- **Projectivity descends from the completions.** Let `R` be a Dedekind domain that is not a
-field and `Λ` an `R`-algebra. A finitely presented `Λ`-module `M` that is finite over `R` is
-projective if, for every height-one prime `v`, the module `𝒪_v ⊗[R] M` is projective over
-`𝒪_v ⊗[R] Λ`, with the module structure `TauCeti.CentralBaseChange.module`. -/
+field and `Λ` an `R`-algebra. A finitely presented `Λ`-module `M` is projective if, for every
+height-one prime `v`, the module `𝒪_v ⊗[R] M` is projective over `𝒪_v ⊗[R] Λ`, with the module
+structure `TauCeti.CentralBaseChange.module`. -/
 theorem projective_of_forall_projective_adicCompletionIntegers (hR : ¬IsField R)
-    {Λ : Type*} [Ring Λ] [Algebra R Λ] [Module Λ M] [IsScalarTower R Λ M] [Module.Finite R M]
+    {Λ : Type*} [Ring Λ] [Algebra R Λ] [Module Λ M] [IsScalarTower R Λ M]
     [Module.FinitePresentation Λ M]
     [∀ v : HeightOneSpectrum R, Module.Projective (v.adicCompletionIntegers K ⊗[R] Λ)
       (v.adicCompletionIntegers K ⊗[R] M)] :
     Module.Projective Λ M :=
-  TauCeti.CentralBaseChange.projective_of_forall_projective
+  CentralBaseChange.projective_of_forall_projective_of_forall_subsingleton
     (fun v : HeightOneSpectrum R ↦ v.adicCompletionIntegers K)
-    fun C _ _ _ ↦ (subsingleton_iff_forall_subsingleton_adicCompletionIntegers_tensor K C hR).mpr
+    fun C _ _ ↦ (subsingleton_iff_forall_subsingleton_adicCompletionIntegers_tensor K C hR).mpr
 
-end IsDedekindDomain.HeightOneSpectrum
+end TauCeti
