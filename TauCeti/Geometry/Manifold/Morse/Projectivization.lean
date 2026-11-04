@@ -191,6 +191,7 @@ theorem fderiv_model_eq_zero_iff {a : ℝ} {ν : Fin n → ℝ} (hν : ∀ j, ν
     simp only [map_zero, smul_zero, add_zero] at h
     exact (smul_eq_zero.mp h.symm).resolve_left hD
 
+@[simp]
 theorem fderiv_model_zero (a : ℝ) (ν : Fin n → ℝ) : fderiv ℝ (model 𝕜 a ν) 0 = 0 := by
   have h := two_smul_weightedInner_eq (𝕜 := 𝕜) a ν 0
   simp only [map_zero, smul_zero, add_zero] at h
