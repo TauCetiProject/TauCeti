@@ -197,34 +197,22 @@ theorem exists_mul_mem_scalarSubmonoid_eq (z : RationalHeckeRing n) :
     obtain ⟨c, hc, hcg⟩ := exists_pos_natDiagGL_mul_mem_posDetInt n g.2
     have hgc : (g : GL (Fin n) ℚ) * natDiagGL n (fun _ ↦ c) ∈ posDetInt n :=
       natDiagGL_const_comm n c g ▸ hcg
-    have hmul_coeff {D₁ D₂ D₃ : HeckeCoset (Matrix.GLPos (Fin n) ℚ).toSubmonoid (SLnZ n) (SLnZ n)}
-        (h1 : HeckeCosetModule.single ℤ D₁ 1 * HeckeCosetModule.single ℤ D₂ 1 =
-          HeckeCosetModule.single ℤ D₃ 1) :
-        HeckeCosetModule.single ℤ D₁ m * HeckeCosetModule.single ℤ D₂ 1 =
-          HeckeCosetModule.single ℤ D₃ m := by
-      have hsc1 : HeckeCosetModule.single ℤ D₁ 1 * HeckeCosetModule.single ℤ D₂ 1 =
-          HeckeCosetModule.structureConstants ℤ (SLnZ n) (SLnZ n) (SLnZ n) D₁.rep D₂.rep := by
-        rw [HeckeCosetModule.single_mul_single]
-        exact (one_smul ℤ _).trans (one_smul ℤ _)
-      rw [HeckeCosetModule.single_mul_single]
-      exact (congrArg _ ((one_smul ℤ _).trans (hsc1.symm.trans h1))).trans
-        (HeckeCosetModule.smul_single_one ℤ D₃ m)
     refine ⟨HeckeCosetModule.single ℤ (HeckeCoset.mk (SLnZ n) (SLnZ n) ⟨_, hgc⟩) m,
       diagElem (fun _ ↦ c), diagElem_const_mem_scalarSubmonoid n hc, ?_⟩
-    rw [integralToRational_diagElem, hmul_coeff (single_mul_natDiagGL_const n g c),
+    have h1 := single_mul_natDiagGL_const n g c
+    rw [HeckeCosetModule.single_mul_single] at h1
+    rw [integralToRational_diagElem, HeckeCosetModule.single_mul_single,
       integralToRational, integralToRationalRingHom_single, HeckeCoset.map_mk]
-    rfl
+    exact (congrArg (m • ·) ((one_smul ℤ _).symm.trans h1)).trans
+      (HeckeCosetModule.smul_single_one ℤ _ m)
   | hadd z₁ z₂ ih₁ ih₂ =>
     obtain ⟨x₁, s₁, hs₁, hx₁⟩ := ih₁
     obtain ⟨x₂, s₂, hs₂, hx₂⟩ := ih₂
     refine ⟨x₁ * s₂ + x₂ * s₁, s₁ * s₂, (scalarSubmonoid n).mul_mem hs₁ hs₂, ?_⟩
     calc (z₁ + z₂) * integralToRational n (s₁ * s₂)
         = (z₁ * integralToRational n s₁) * integralToRational n s₂ +
-            (z₂ * integralToRational n s₂) * integralToRational n s₁ := by
-              rw [map_mul]
-              ring
-      _ = integralToRational n (x₁ * s₂ + x₂ * s₁) := by
-            rw [hx₁, hx₂, map_add, map_mul, map_mul]
+            (z₂ * integralToRational n s₂) * integralToRational n s₁ := by rw [map_mul]; ring
+      _ = integralToRational n (x₁ * s₂ + x₂ * s₁) := by rw [hx₁, hx₂, map_add, map_mul, map_mul]
 
 end ScalarUnits
 
@@ -235,8 +223,7 @@ section PLocalRational
 @[simp]
 theorem heckeGenDiag_rev_zero [NeZero n] (p : ℕ) :
     heckeGenDiag n p (Fin.rev 0) = fun _ ↦ p := by
-  funext i
-  rw [heckeGenDiag_apply, Fin.val_rev, Fin.val_zero, ite_eq_right (by omega)]
+  funext i; rw [heckeGenDiag_apply, Fin.val_rev, Fin.val_zero, ite_eq_right (by omega)]
 
 /-- The last Shimura generator `heckeGen n p (Fin.rev 0)` is the scalar operator `T(p, …, p)`. -/
 @[simp]
@@ -261,9 +248,7 @@ theorem intPowDiagGL_of_pos {p : ℕ} (hp : 0 < p) (e : Fin n → ℤ) :
 theorem intPowDiagGL_coe {p : ℕ} (hp : 0 < p) (e : Fin n → ℤ) :
     (↑(intPowDiagGL n p e) : Matrix (Fin n) (Fin n) ℚ) =
       Matrix.diagonal fun i ↦ (p : ℚ) ^ e i := by
-  rw [intPowDiagGL_of_pos n hp, TauCeti.diagGL_coe]
-  congr 1
-  funext i
+  rw [intPowDiagGL_of_pos n hp, TauCeti.diagGL_coe]; congr 1; funext i
   rw [Units.val_zpow_eq_zpow_val, Units.val_mk0]
 
 /-- `intPowDiagGL` at the zero exponent vector is `1`. -/
@@ -279,9 +264,8 @@ theorem intPowDiagGL_add (p : ℕ) (e f : Fin n → ℤ) :
     intPowDiagGL n p (e + f) = intPowDiagGL n p e * intPowDiagGL n p f := by
   rcases Nat.eq_zero_or_pos p with rfl | hp
   · simp [intPowDiagGL]
-  · refine Units.ext ?_
-    have hp0 : (p : ℚ) ≠ 0 := Nat.cast_ne_zero.mpr hp.ne'
-    simp [intPowDiagGL_coe n hp, zpow_add₀ hp0]
+  · exact Units.ext (by
+      simp [intPowDiagGL_coe n hp, zpow_add₀ (Nat.cast_ne_zero.mpr hp.ne' : (p : ℚ) ≠ 0)])
 
 /-- `intPowDiagGL` converts negation of exponent vectors into group inversion. -/
 @[simp]
@@ -306,20 +290,17 @@ theorem intPowDiagGL_natCast {p : ℕ} (hp : 0 < p) (e : Fin n → ℕ) :
 /-- At the constant exponent `-1`, `intPowDiagGL` is the inverse of `diag(p, …, p)`. -/
 theorem intPowDiagGL_const_neg_one {p : ℕ} (hp : 0 < p) :
     intPowDiagGL n p (fun _ ↦ -1) = (natDiagGL n (fun _ ↦ p))⁻¹ := by
-  -- Express `fun _ ↦ -1` as `-(fun _ ↦ 1)` so `intPowDiagGL_neg` and `intPowDiagGL_natCast` apply.
   change intPowDiagGL n p (-(fun _ ↦ ((1 : ℕ) : ℤ))) = _
   rw [intPowDiagGL_neg, intPowDiagGL_natCast n hp]
-  congr 1
-  exact congrArg (natDiagGL n) (funext fun _ ↦ by simp)
+  exact congrArg Inv.inv (congrArg (natDiagGL n) (funext fun _ ↦ by simp))
 
 /-- Multiplying `intPowDiagGL n p e` by `diag(p ^ k, …, p ^ k)` shifts every exponent by `k`. -/
 theorem intPowDiagGL_mul_natDiagGL_const {p : ℕ} (hp : 0 < p) (e : Fin n → ℤ) (k : ℕ) :
     intPowDiagGL n p e * natDiagGL n (fun _ ↦ p ^ k) =
       intPowDiagGL n p (fun i ↦ e i + (k : ℤ)) := by
-  have hpow : (fun _ : Fin n ↦ p ^ k) = primePowDiag n p (fun _ ↦ k) :=
-    funext fun i ↦ (primePowDiag_apply n p (fun _ ↦ k) i).symm
-  rw [hpow, ← intPowDiagGL_natCast n hp (fun _ ↦ k), ← intPowDiagGL_add]
-  rfl
+  rw [show (fun _ : Fin n ↦ p ^ k) = primePowDiag n p (fun _ ↦ k) from
+      funext fun i ↦ (primePowDiag_apply n p (fun _ ↦ k) i).symm,
+    ← intPowDiagGL_natCast n hp (fun _ ↦ k), ← intPowDiagGL_add]; rfl
 
 /-- The `SL_n(ℤ)`-double coset in `GL_n^+(ℚ)` of `intPowDiagGL n p e`. -/
 noncomputable def intPowDiagCoset (p : ℕ) (e : Fin n → ℤ) :
@@ -373,15 +354,13 @@ theorem pLocalRationalSubring_le_iff (p : ℕ) (S : Subring (RationalHeckeRing n
 theorem intPowDiagElem_const_neg_one {p : ℕ} (hp : 0 < p) :
     intPowDiagElem n p (fun _ ↦ -1) = ↑(scalarUnit n hp)⁻¹ := by
   rw [intPowDiagElem_def, intPowDiagCoset_def, val_inv_scalarUnit]
-  exact congrArg (fun D ↦ HeckeCosetModule.single ℤ D 1)
-    (congrArg (HeckeCoset.mk (SLnZ n) (SLnZ n))
-      (Subtype.ext (intPowDiagGL_const_neg_one n hp)))
+  exact congrArg (HeckeCosetModule.single ℤ · 1) (congrArg (HeckeCoset.mk (SLnZ n) (SLnZ n))
+    (Subtype.ext (intPowDiagGL_const_neg_one n hp)))
 
 /-- The inverse of `T(p, …, p)` belongs to `pLocalRationalSubring n p`. -/
 theorem inv_scalarUnit_mem_pLocalRationalSubring {p : ℕ} (hp : 0 < p) :
-    (↑(scalarUnit n hp)⁻¹ : RationalHeckeRing n) ∈ pLocalRationalSubring n p := by
-  rw [← intPowDiagElem_const_neg_one n hp]
-  exact intPowDiagElem_mem_pLocalRationalSubring n p _ monotone_const
+    (↑(scalarUnit n hp)⁻¹ : RationalHeckeRing n) ∈ pLocalRationalSubring n p :=
+  intPowDiagElem_const_neg_one n hp ▸ intPowDiagElem_mem_pLocalRationalSubring n p _ monotone_const
 
 section NeZero
 
@@ -393,9 +372,8 @@ theorem intPowDiagElem_natCast {p : ℕ} (hp : 0 < p) (e : Fin n → ℕ) :
     intPowDiagElem n p (fun i ↦ (e i : ℤ)) =
       integralToRational n (diagElem (primePowDiag n p e)) := by
   rw [intPowDiagElem_def, intPowDiagCoset_def, integralToRational_diagElem]
-  exact congrArg (fun D ↦ HeckeCosetModule.single ℤ D 1)
-    (congrArg (HeckeCoset.mk (SLnZ n) (SLnZ n))
-      (Subtype.ext (intPowDiagGL_natCast n hp e)))
+  exact congrArg (HeckeCosetModule.single ℤ · 1) (congrArg (HeckeCoset.mk (SLnZ n) (SLnZ n))
+    (Subtype.ext (intPowDiagGL_natCast n hp e)))
 
 /-- Multiplying `intPowDiagElem n p e` by `T(p, …, p) ^ k` shifts every exponent upward by `k`. -/
 theorem intPowDiagElem_mul_scalarUnit_pow {p : ℕ} (hp : 0 < p) (e : Fin n → ℤ) (k : ℕ) :
@@ -404,57 +382,38 @@ theorem intPowDiagElem_mul_scalarUnit_pow {p : ℕ} (hp : 0 < p) (e : Fin n → 
   rw [← Units.val_pow_eq_pow_val, scalarUnit_pow n hp k, val_scalarUnit,
     integralToRational_diagElem, intPowDiagElem_def, intPowDiagElem_def, intPowDiagCoset_def,
     intPowDiagCoset_def, single_mul_natDiagGL_const n _ (p ^ k)]
-  exact congrArg (fun D ↦ HeckeCosetModule.single ℤ D 1)
-    (congrArg (HeckeCoset.mk (SLnZ n) (SLnZ n))
-      (Subtype.ext (intPowDiagGL_mul_natDiagGL_const n hp e k)))
+  exact congrArg (HeckeCosetModule.single ℤ · 1) (congrArg (HeckeCoset.mk (SLnZ n) (SLnZ n))
+    (Subtype.ext (intPowDiagGL_mul_natDiagGL_const n hp e k)))
 
 /-- The integral `p`-local subring maps into `pLocalRationalSubring n p` under
 `integralToRational`. -/
 theorem integralToRational_mem_pLocalRationalSubring {p : ℕ} (hp : 0 < p)
     {x : IntegralHeckeRing n} (hx : x ∈ pLocalSubring n p) :
     integralToRational n x ∈ pLocalRationalSubring n p := by
-  refine Subring.closure_induction
-    (s := {f | ∃ (e : Fin n → ℕ) (_ : Monotone e), f = diagElem (primePowDiag n p e)})
-    (p := fun y _ ↦ integralToRational n y ∈ pLocalRationalSubring n p)
-    (fun y hy ↦ ?_)
-    (by rw [map_zero]; exact (pLocalRationalSubring n p).zero_mem)
-    (by rw [map_one]; exact (pLocalRationalSubring n p).one_mem)
-    (fun _ _ _ _ ih₁ ih₂ ↦ by rw [map_add]; exact (pLocalRationalSubring n p).add_mem ih₁ ih₂)
-    (fun _ _ ih ↦ by rw [map_neg]; exact (pLocalRationalSubring n p).neg_mem ih)
-    (fun _ _ _ _ ih₁ ih₂ ↦ by rw [map_mul]; exact (pLocalRationalSubring n p).mul_mem ih₁ ih₂)
-    (by rwa [← pLocalSubring_def])
-  obtain ⟨e, he, rfl⟩ := hy
-  rw [← intPowDiagElem_natCast n hp e]
-  exact intPowDiagElem_mem_pLocalRationalSubring n p _ fun i j hij ↦ Int.ofNat_le.mpr (he hij)
+  suffices pLocalSubring n p ≤ (pLocalRationalSubring n p).comap (integralToRational n) from this hx
+  rw [pLocalSubring_def, Subring.closure_le]
+  rintro _ ⟨e, he, rfl⟩
+  rw [SetLike.mem_coe, Subring.mem_comap, ← intPowDiagElem_natCast n hp e]
+  exact intPowDiagElem_mem_pLocalRationalSubring n p _ fun _ _ hij ↦ Int.ofNat_le.mpr (he hij)
 
 /-- **Subring presentation of `pLocalRationalSubring`**: for `0 < p`, `pLocalRationalSubring n p` is
 generated as a subring of `RationalHeckeRing n` by the image of `pLocalSubring n p` together with
 the inverse of `T(p, …, p)`. -/
 theorem pLocalRationalSubring_eq_closure_image_insert_inv {p : ℕ} (hp : 0 < p) :
-    pLocalRationalSubring n p =
-      Subring.closure
-        (insert (↑(scalarUnit n hp)⁻¹ : RationalHeckeRing n)
-          (integralToRational n '' (pLocalSubring n p : Set (IntegralHeckeRing n)))) := by
+    pLocalRationalSubring n p = Subring.closure
+      (insert (↑(scalarUnit n hp)⁻¹ : RationalHeckeRing n)
+        (integralToRational n '' (pLocalSubring n p : Set (IntegralHeckeRing n)))) := by
   apply le_antisymm
   · refine (pLocalRationalSubring_le_iff n p _).mpr fun e he ↦ ?_
     let k : ℕ := (-e 0).toNat
-    have hnonneg : ∀ i : Fin n, 0 ≤ e i + (k : ℤ) := fun i ↦ by
-      have h0 : e 0 ≤ e i := he (Fin.zero_le i)
-      omega
     let e' : Fin n → ℕ := fun i ↦ (e i + (k : ℤ)).toNat
-    have he'_mono : Monotone e' := fun i j hij ↦ by
-      have hij' : e i ≤ e j := he hij
-      dsimp only [e']
-      omega
-    have he'_cast : (fun i ↦ (e' i : ℤ)) = fun i ↦ e i + (k : ℤ) := by
-      funext i
-      exact Int.toNat_of_nonneg (hnonneg i)
-    have hshift : intPowDiagElem n p e =
-        integralToRational n (diagElem (primePowDiag n p e')) *
-          (↑(scalarUnit n hp)⁻¹ : RationalHeckeRing n) ^ k := by
+    have he'_mono : Monotone e' := fun i j hij ↦ by have := he hij; dsimp only [e']; omega
+    have he'_cast : (fun i ↦ (e' i : ℤ)) = fun i ↦ e i + (k : ℤ) :=
+      funext fun i ↦ Int.toNat_of_nonneg (by have := he (Fin.zero_le i); omega)
+    rw [show intPowDiagElem n p e = integralToRational n (diagElem (primePowDiag n p e')) *
+          (↑(scalarUnit n hp)⁻¹ : RationalHeckeRing n) ^ k by
       rw [← intPowDiagElem_natCast n hp e', he'_cast, ← intPowDiagElem_mul_scalarUnit_pow n hp e k,
-        mul_assoc, ← mul_pow, Units.mul_inv, one_pow, mul_one]
-    rw [hshift]
+        mul_assoc, ← mul_pow, Units.mul_inv, one_pow, mul_one]]
     exact Subring.mul_mem _
       (Subring.subset_closure (Set.mem_insert_of_mem _
         ⟨_, diagElem_primePowDiag_mem_pLocalSubring n p e' he'_mono, rfl⟩))
@@ -524,22 +483,21 @@ theorem exists_mul_scalarLocalUnit_pow_eq {p : ℕ} (hp : 0 < p) (z : pLocalRati
   suffices ∃ (k : ℕ) (a : pLocalSubring n p),
       x * (scalarUnit n hp : RationalHeckeRing n) ^ k = integralToRational n a by
     obtain ⟨k, a, hk⟩ := this
-    refine ⟨k, a, Subtype.ext ?_⟩
-    rw [Subring.coe_mul, Subring.coe_pow, val_scalarLocalUnit, integralToRationalLocal_coe,
-      integralToRationalLocal_coe, Subtype.coe_mk, Subtype.coe_mk, heckeGen_rev_zero,
-      ← val_scalarUnit n hp]
-    exact hk
+    exact ⟨k, a, Subtype.ext (by
+      rw [Subring.coe_mul, Subring.coe_pow, val_scalarLocalUnit, integralToRationalLocal_coe,
+        integralToRationalLocal_coe]
+      dsimp only
+      rw [heckeGen_rev_zero, ← val_scalarUnit n hp, hk])⟩
   refine Subring.closure_induction
-    (s := insert (↑(scalarUnit n hp)⁻¹ : RationalHeckeRing n)
-      (integralToRational n '' (pLocalSubring n p : Set (IntegralHeckeRing n))))
     (p := fun y _ ↦ ∃ (k : ℕ) (a : pLocalSubring n p),
       y * (scalarUnit n hp : RationalHeckeRing n) ^ k = integralToRational n a)
-    (fun y hy ↦ ?_)
-    ⟨0, 0, by simp⟩
-    ⟨0, 1, by simp⟩
+    (fun y hy ↦ ?_) ⟨0, 0, by simp⟩ ⟨0, 1, by simp⟩
     (fun x₁ x₂ _ _ ⟨k₁, a₁, h₁⟩ ⟨k₂, a₂, h₂⟩ ↦ ?_)
     (fun y _ ⟨k, a, h⟩ ↦ ⟨k, -a, by rw [neg_mul, h, Subring.coe_neg, map_neg]⟩)
-    (fun x₁ x₂ _ _ ⟨k₁, a₁, h₁⟩ ⟨k₂, a₂, h₂⟩ ↦ ?_)
+    (fun x₁ x₂ _ _ ⟨k₁, a₁, h₁⟩ ⟨k₂, a₂, h₂⟩ ↦ ⟨k₁ + k₂, a₁ * a₂, by
+      rw [show (x₁ * x₂) * (scalarUnit n hp : RationalHeckeRing n) ^ (k₁ + k₂) =
+            (x₁ * ↑(scalarUnit n hp) ^ k₁) * (x₂ * ↑(scalarUnit n hp) ^ k₂) by rw [pow_add]; ring,
+        h₁, h₂, Subring.coe_mul, map_mul]⟩)
     (by rwa [← pLocalRationalSubring_eq_closure_image_insert_inv n hp])
   · rcases hy with rfl | ⟨w, hw, rfl⟩
     · exact ⟨1, 1, by simp⟩
@@ -547,24 +505,11 @@ theorem exists_mul_scalarLocalUnit_pow_eq {p : ℕ} (hp : 0 < p) (z : pLocalRati
   · refine ⟨k₁ + k₂, a₁ * g₀ ^ k₂ + a₂ * g₀ ^ k₁, ?_⟩
     have hg₀ : integralToRational n (g₀ : IntegralHeckeRing n) = scalarUnit n hp := by
       rw [val_scalarUnit, ← heckeGen_rev_zero]
-    calc (x₁ + x₂) * (scalarUnit n hp : RationalHeckeRing n) ^ (k₁ + k₂)
-        = (x₁ * (scalarUnit n hp : RationalHeckeRing n) ^ k₁) *
-              (scalarUnit n hp : RationalHeckeRing n) ^ k₂ +
-            (x₂ * (scalarUnit n hp : RationalHeckeRing n) ^ k₂) *
-              (scalarUnit n hp : RationalHeckeRing n) ^ k₁ := by
-              rw [pow_add]
-              ring
-      _ = integralToRational n (a₁ * g₀ ^ k₂ + a₂ * g₀ ^ k₁ : pLocalSubring n p) := by
-            rw [h₁, h₂, Subring.coe_add, Subring.coe_mul, Subring.coe_mul, Subring.coe_pow,
-              Subring.coe_pow, map_add, map_mul, map_mul, map_pow, map_pow, hg₀]
-  · refine ⟨k₁ + k₂, a₁ * a₂, ?_⟩
-    calc (x₁ * x₂) * (scalarUnit n hp : RationalHeckeRing n) ^ (k₁ + k₂)
-        = (x₁ * (scalarUnit n hp : RationalHeckeRing n) ^ k₁) *
-            (x₂ * (scalarUnit n hp : RationalHeckeRing n) ^ k₂) := by
-              rw [pow_add]
-              ring
-      _ = integralToRational n (a₁ * a₂ : pLocalSubring n p) := by
-            rw [h₁, h₂, Subring.coe_mul, map_mul]
+    rw [show (x₁ + x₂) * (scalarUnit n hp : RationalHeckeRing n) ^ (k₁ + k₂) =
+          (x₁ * ↑(scalarUnit n hp) ^ k₁) * ↑(scalarUnit n hp) ^ k₂ +
+            (x₂ * ↑(scalarUnit n hp) ^ k₂) * ↑(scalarUnit n hp) ^ k₁ by rw [pow_add]; ring,
+      h₁, h₂, Subring.coe_add, Subring.coe_mul, Subring.coe_mul, Subring.coe_pow,
+      Subring.coe_pow, map_add, map_mul, map_mul, map_pow, map_pow, hg₀]
 
 end NeZero
 
@@ -608,44 +553,34 @@ theorem laurentEvalHomLocal_invSelf (p : ℕ) (hp : 0 < p) :
           (S := Localization.Away (MvPolynomial.X (Fin.rev (0 : Fin n)) : MvPolynomial (Fin n) ℤ))
           (MvPolynomial.X (Fin.rev (0 : Fin n)) : MvPolynomial (Fin n) ℤ)) =
       ↑(scalarLocalUnit n hp)⁻¹ := by
+  let X₀ : MvPolynomial (Fin n) ℤ := MvPolynomial.X (Fin.rev 0)
   apply (scalarLocalUnit n hp).mul_right_inj.mp
   have hX : (scalarLocalUnit n hp : pLocalRationalSubring n p) =
-      laurentEvalHomLocal n p hp
-        (algebraMap (MvPolynomial (Fin n) ℤ)
-          (Localization.Away (MvPolynomial.X (Fin.rev (0 : Fin n)) : MvPolynomial (Fin n) ℤ))
-          (MvPolynomial.X (Fin.rev (0 : Fin n)))) := by
+      laurentEvalHomLocal n p hp (algebraMap _ (Localization.Away X₀) X₀) := by
     rw [laurentEvalHomLocal_algebraMap, evalHomLocal_X, val_scalarLocalUnit]
   rw [Units.mul_inv, hX, ← map_mul, IsLocalization.Away.mul_invSelf, map_one]
 
 /-- For `p` prime, the localized presentation map `laurentEvalHomLocal` is injective. -/
 theorem laurentEvalHomLocal_injective {p : ℕ} (hp : p.Prime) :
     Function.Injective (laurentEvalHomLocal n p hp.pos) := by
+  let X₀ : MvPolynomial (Fin n) ℤ := MvPolynomial.X (Fin.rev 0)
   refine (injective_iff_map_eq_zero _).mpr fun z hz ↦ ?_
-  obtain ⟨k, P, hk⟩ :=
-    IsLocalization.Away.surj
-      (S := Localization.Away (MvPolynomial.X (Fin.rev (0 : Fin n)) : MvPolynomial (Fin n) ℤ))
-      (MvPolynomial.X (Fin.rev (0 : Fin n)) : MvPolynomial (Fin n) ℤ) z
-  have hP0 : P = 0 := by
-    apply evalHomLocal_injective n hp
-    apply integralToRationalLocal_injective n p hp.pos
-    rw [← laurentEvalHomLocal_algebraMap, ← hk, map_mul, hz, zero_mul, map_zero, map_zero]
+  obtain ⟨k, P, hk⟩ := IsLocalization.Away.surj (S := Localization.Away X₀) X₀ z
+  have hP0 : P = 0 := evalHomLocal_injective n hp (integralToRationalLocal_injective n p hp.pos
+    (by rw [← laurentEvalHomLocal_algebraMap, ← hk, map_mul, hz, zero_mul, map_zero, map_zero]))
   rw [hP0, map_zero] at hk
   exact (IsUnit.mul_left_eq_zero
-    (IsLocalization.Away.algebraMap_pow_isUnit
-      (S := Localization.Away (MvPolynomial.X (Fin.rev (0 : Fin n)) : MvPolynomial (Fin n) ℤ))
-      (MvPolynomial.X (Fin.rev (0 : Fin n)) : MvPolynomial (Fin n) ℤ) k)).mp hk
+    (IsLocalization.Away.algebraMap_pow_isUnit (S := Localization.Away X₀) X₀ k)).mp hk
 
 /-- For `p` prime, the localized presentation map `laurentEvalHomLocal` is surjective. -/
 theorem laurentEvalHomLocal_surjective {p : ℕ} (hp : p.Prime) :
     Function.Surjective (laurentEvalHomLocal n p hp.pos) := by
+  let X₀ : MvPolynomial (Fin n) ℤ := MvPolynomial.X (Fin.rev 0)
   intro z
   obtain ⟨k, a, hk⟩ := exists_mul_scalarLocalUnit_pow_eq n hp.pos z
   obtain ⟨P, rfl⟩ := evalHomLocal_surjective n hp a
-  refine ⟨algebraMap (MvPolynomial (Fin n) ℤ)
-      (Localization.Away (MvPolynomial.X (Fin.rev (0 : Fin n)) : MvPolynomial (Fin n) ℤ)) P *
-    IsLocalization.Away.invSelf
-      (S := Localization.Away (MvPolynomial.X (Fin.rev (0 : Fin n)) : MvPolynomial (Fin n) ℤ))
-      (MvPolynomial.X (Fin.rev (0 : Fin n)) : MvPolynomial (Fin n) ℤ) ^ k, ?_⟩
+  refine ⟨algebraMap _ (Localization.Away X₀) P *
+    IsLocalization.Away.invSelf (S := Localization.Away X₀) X₀ ^ k, ?_⟩
   rw [map_mul, map_pow, laurentEvalHomLocal_algebraMap, laurentEvalHomLocal_invSelf, ← hk,
     mul_assoc, ← mul_pow, Units.mul_inv, one_pow, mul_one]
 

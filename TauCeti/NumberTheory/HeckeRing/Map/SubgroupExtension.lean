@@ -120,38 +120,21 @@ theorem multiplicity_eq_of_inf (hHP : H = H' ⊓ P) {g h d : G}
   let q : DecompQuotient H' H' h := c i • eh j
   have hq : (QuotientGroup.mk q.out : DecompQuotient H' H' h) =
       QuotientGroup.mk (c i * Subgroup.inclusion hle j.out) := by
-    calc
-      _ = q := QuotientGroup.out_eq' q
-      _ = c i • eh (QuotientGroup.mk j.out) := by
-        dsimp only [q]
-        rw [QuotientGroup.out_eq']
-      _ = c i • QuotientGroup.mk (Subgroup.inclusion hle j.out) := by
-        dsimp only [eh]
-        rw [decompQuotientEquivOfInf_mk]
-      _ = _ := by rw [MulAction.Quotient.smul_mk, smul_eq_mul]
-  have he : h⁻¹ * ((q.out : G)⁻¹ * ((c i : G) * (j.out : G))) * h ∈ H' :=
-    conj_mem_of_mk_eq h hq
-  have hprodH' :
-      (((eg i).out : G) * g * ((q.out : G) * h) : G ⧸ H') =
-        ((i.out : G) * g * ((j.out : G) * h) : G ⧸ H') := by
-    rw [QuotientGroup.eq]
-    have hword : (((eg i).out : G) * g * ((q.out : G) * h))⁻¹ *
-        ((i.out : G) * g * ((j.out : G) * h)) =
-        h⁻¹ * ((q.out : G)⁻¹ * ((c i : G) * (j.out : G))) * h := by
-      dsimp only [c]
-      group
-    rw [hword]
-    exact he
+    rw [QuotientGroup.out_eq', show q = c i • eh (QuotientGroup.mk j.out) by
+      dsimp only [q]; rw [QuotientGroup.out_eq'], decompQuotientEquivOfInf_mk,
+      MulAction.Quotient.smul_mk, smul_eq_mul]
+  have hprodH' : (((eg i).out : G) * g * ((q.out : G) * h) : G ⧸ H') =
+      ((i.out : G) * g * ((j.out : G) * h) : G ⧸ H') :=
+    QuotientGroup.eq.mpr (by
+      convert conj_mem_of_mk_eq h hq using 1
+      simp only [c, Subgroup.coe_mul, Subgroup.coe_inclusion]; group)
   have hzP : ((i.out : G) * g * ((j.out : G) * h))⁻¹ * d ∈ P :=
     P.mul_mem (P.inv_mem (P.mul_mem (P.mul_mem (hleP i.out.2) hgP)
       (P.mul_mem (hleP j.out.2) hhP))) hdP
   dsimp only [epairs, Equiv.trans_apply, Equiv.prodCongr_apply, Equiv.prodShear_apply,
     Equiv.refl_apply, MulAction.toPerm_apply]
-  -- Expose the subtype membership predicates on both sides as coset equalities so `hprodH'` and
-  -- `QuotientGroup.eq` apply.
-  change
-    (((i.out : G) * g * ((j.out : G) * h) : G ⧸ H) = (d : G ⧸ H)) ↔
-      ((((eg i).out : G) * g * ((q.out : G) * h) : G ⧸ H') = (d : G ⧸ H'))
+  change (((i.out : G) * g * ((j.out : G) * h) : G ⧸ H) = (d : G ⧸ H)) ↔
+    ((((eg i).out : G) * g * ((q.out : G) * h) : G ⧸ H') = (d : G ⧸ H'))
   rw [hprodH', QuotientGroup.eq, QuotientGroup.eq, hmem_iff]
   exact and_iff_left hzP
 
@@ -162,13 +145,15 @@ namespace HeckeCoset
 open DoubleCoset
 
 variable {G : Type*} [Group G] {Δ Δ' : Submonoid G} {H H' P : Subgroup G}
+  (hHP : H = H' ⊓ P) (hΔ : Δ ≤ Δ') (hΔP : Δ ≤ P.toSubmonoid)
+  (hsurj : ∀ δ' : Δ', ∃ u ∈ H', u * (δ' : G) ∈ Δ)
+  (hstab : ∀ g : Δ, ∀ u ∈ H', ∃ x ∈ H, x⁻¹ * u ∈ ConjAct.toConjAct (g : G) • H')
 
+include hΔP hsurj hstab in
 /-- Under `H = H' ⊓ P`, `Δ ≤ Δ'`, `Δ ≤ P`, left-coset surjectivity of `Δ` in `Δ'` modulo `H'`, and
 the stabilizer condition `hstab`, the natural map `HeckeCoset Δ H H → HeckeCoset Δ' H' H'` is
 bijective. -/
-theorem map_bijective_of_inf (hHP : H = H' ⊓ P) (hΔ : Δ ≤ Δ') (hΔP : Δ ≤ P.toSubmonoid)
-    (hsurj : ∀ δ' : Δ', ∃ u ∈ H', u * (δ' : G) ∈ Δ)
-    (hstab : ∀ g : Δ, ∀ u ∈ H', ∃ x ∈ H, x⁻¹ * u ∈ ConjAct.toConjAct (g : G) • H') :
+theorem map_bijective_of_inf :
     Function.Bijective
       (HeckeCoset.map hΔ (hHP ▸ inf_le_left : H ≤ H') (hHP ▸ inf_le_left : H ≤ H')) := by
   have hmem_iff (w : G) : w ∈ H ↔ w ∈ H' ∧ w ∈ P := by rw [hHP, Subgroup.mem_inf]
@@ -179,50 +164,33 @@ theorem map_bijective_of_inf (hHP : H = H' ⊓ P) (hΔ : Δ ≤ Δ') (hΔP : Δ 
     induction D₂ using HeckeCoset.induction with | h g₂ =>
     rw [map_mk, map_mk, eq_iff] at hEq
     have hmem : (g₁ : G) ∈ doubleCoset (g₂ : G) H' H' := by
-      -- Re-type `(g₂ : G)` as `((Submonoid.inclusion hΔ g₂ : Δ') : G)` so `hEq` rewrites the
-      -- double coset.
       change (g₁ : G) ∈ doubleCoset ((Submonoid.inclusion hΔ g₂ : Δ') : G) H' H'
-      rw [← hEq]
-      exact mem_doubleCoset_self H' H' _
+      rw [← hEq]; exact mem_doubleCoset_self H' H' _
     obtain ⟨u₁, hu₁, u₂, hu₂, hg₁⟩ := mem_doubleCoset.mp hmem
     obtain ⟨x, hxH, hxu₁⟩ := hstab g₂ u₁ hu₁
     rw [Subgroup.mem_pointwise_smul_iff_inv_smul_mem, ConjAct.smul_def, ConjAct.ofConjAct_inv,
       ConjAct.ofConjAct_toConjAct, inv_inv] at hxu₁
     set v : G := (g₂ : G)⁻¹ * (x⁻¹ * u₁) * (g₂ : G)
-    have hvu₂H' : v * u₂ ∈ H' := H'.mul_mem hxu₁ hu₂
-    have hfact : x * (g₂ : G) * (v * u₂) = (g₁ : G) := by
-      rw [hg₁]
-      dsimp only [v]
-      group
+    have hfact : x * (g₂ : G) * (v * u₂) = (g₁ : G) := by rw [hg₁]; dsimp only [v]; group
     have hvu₂P : v * u₂ ∈ P := by
-      have hvEq : v * u₂ = (g₂ : G)⁻¹ * x⁻¹ * (g₁ : G) := by
-        rw [← hfact]
-        group
-      rw [hvEq]
+      rw [show v * u₂ = (g₂ : G)⁻¹ * x⁻¹ * (g₁ : G) by rw [← hfact]; group]
       exact P.mul_mem (P.mul_mem (P.inv_mem (hΔP g₂.2)) (P.inv_mem (hleP hxH))) (hΔP g₁.2)
-    have hvu₂H : v * u₂ ∈ H := (hmem_iff (v * u₂)).mpr ⟨hvu₂H', hvu₂P⟩
-    exact mk_eq_mk_of_mem (mem_doubleCoset.mpr ⟨x, hxH, v * u₂, hvu₂H, hfact.symm⟩)
+    exact mk_eq_mk_of_mem (mem_doubleCoset.mpr
+      ⟨x, hxH, v * u₂, (hmem_iff _).mpr ⟨H'.mul_mem hxu₁ hu₂, hvu₂P⟩, hfact.symm⟩)
   · intro E
     induction E using HeckeCoset.induction with | h δ' =>
     obtain ⟨u, huH', huΔ⟩ := hsurj δ'
-    refine ⟨mk H H ⟨u * (δ' : G), huΔ⟩, ?_⟩
-    rw [map_mk]
-    refine mk_eq_mk_of_mem (mem_doubleCoset.mpr ⟨u, huH', 1, H'.one_mem, ?_⟩)
-    simp
+    exact ⟨mk H H ⟨u * (δ' : G), huΔ⟩, by
+      rw [map_mk]; exact mk_eq_mk_of_mem (mem_doubleCoset.mpr ⟨u, huH', 1, H'.one_mem, by simp⟩)⟩
 
+include hHP hΔ hΔP hsurj hstab in
 /-- The bijection `HeckeCoset Δ H H ≃ HeckeCoset Δ' H' H'` bundled as an `Equiv`. -/
-noncomputable def mapEquivOfInf (hHP : H = H' ⊓ P) (hΔ : Δ ≤ Δ') (hΔP : Δ ≤ P.toSubmonoid)
-    (hsurj : ∀ δ' : Δ', ∃ u ∈ H', u * (δ' : G) ∈ Δ)
-    (hstab : ∀ g : Δ, ∀ u ∈ H', ∃ x ∈ H, x⁻¹ * u ∈ ConjAct.toConjAct (g : G) • H') :
-    HeckeCoset Δ H H ≃ HeckeCoset Δ' H' H' :=
+noncomputable def mapEquivOfInf : HeckeCoset Δ H H ≃ HeckeCoset Δ' H' H' :=
   Equiv.ofBijective _ (map_bijective_of_inf hHP hΔ hΔP hsurj hstab)
 
 /-- `mapEquivOfInf` acts via `HeckeCoset.map`. -/
 @[simp]
-theorem mapEquivOfInf_apply (hHP : H = H' ⊓ P) (hΔ : Δ ≤ Δ') (hΔP : Δ ≤ P.toSubmonoid)
-    (hsurj : ∀ δ' : Δ', ∃ u ∈ H', u * (δ' : G) ∈ Δ)
-    (hstab : ∀ g : Δ, ∀ u ∈ H', ∃ x ∈ H, x⁻¹ * u ∈ ConjAct.toConjAct (g : G) • H')
-    (D : HeckeCoset Δ H H) :
+theorem mapEquivOfInf_apply (D : HeckeCoset Δ H H) :
     mapEquivOfInf hHP hΔ hΔP hsurj hstab D =
       D.map hΔ (hHP ▸ inf_le_left) (hHP ▸ inf_le_left) :=
   (rfl)
@@ -236,23 +204,20 @@ open scoped HeckeCosetModule
 
 variable {G : Type*} [Group G] {Δ Δ' : Submonoid G} {H H' P : Subgroup G}
 
-section Equiv
+section LinearEquiv
 
-variable (R : Type*) [Semiring R]
+variable (R : Type*) [Semiring R] (hHP : H = H' ⊓ P) (hΔ : Δ ≤ Δ') (hΔP : Δ ≤ P.toSubmonoid)
+  (hsurj : ∀ δ' : Δ', ∃ u ∈ H', u * (δ' : G) ∈ Δ)
+  (hstab : ∀ g : Δ, ∀ u ∈ H', ∃ x ∈ H, x⁻¹ * u ∈ ConjAct.toConjAct (g : G) • H')
 
+include hHP hΔ hΔP hsurj hstab in
 /-- The `R`-linear equivalence `𝕋 Δ H R ≃ₗ[R] 𝕋 Δ' H' R` induced by `HeckeCoset.mapEquivOfInf`. -/
-noncomputable def mapSubgroupLinearEquiv (hHP : H = H' ⊓ P) (hΔ : Δ ≤ Δ')
-    (hΔP : Δ ≤ P.toSubmonoid) (hsurj : ∀ δ' : Δ', ∃ u ∈ H', u * (δ' : G) ∈ Δ)
-    (hstab : ∀ g : Δ, ∀ u ∈ H', ∃ x ∈ H, x⁻¹ * u ∈ ConjAct.toConjAct (g : G) • H') :
-    𝕋 Δ H R ≃ₗ[R] 𝕋 Δ' H' R :=
+noncomputable def mapSubgroupLinearEquiv : 𝕋 Δ H R ≃ₗ[R] 𝕋 Δ' H' R :=
   Finsupp.mapDomain.linearEquiv R R (HeckeCoset.mapEquivOfInf hHP hΔ hΔP hsurj hstab)
 
 /-- Evaluating `mapSubgroupLinearEquiv` at a mapped coset recovers the source coefficient. -/
 @[simp]
-theorem mapSubgroupLinearEquiv_apply_map (hHP : H = H' ⊓ P) (hΔ : Δ ≤ Δ')
-    (hΔP : Δ ≤ P.toSubmonoid) (hsurj : ∀ δ' : Δ', ∃ u ∈ H', u * (δ' : G) ∈ Δ)
-    (hstab : ∀ g : Δ, ∀ u ∈ H', ∃ x ∈ H, x⁻¹ * u ∈ ConjAct.toConjAct (g : G) • H')
-    (f : 𝕋 Δ H R) (D : HeckeCoset Δ H H) :
+theorem mapSubgroupLinearEquiv_apply_map (f : 𝕋 Δ H R) (D : HeckeCoset Δ H H) :
     mapSubgroupLinearEquiv R hHP hΔ hΔP hsurj hstab f
         (D.map hΔ (hHP ▸ inf_le_left) (hHP ▸ inf_le_left)) = f D :=
   Finsupp.mapDomain_apply_of_injective
@@ -260,10 +225,7 @@ theorem mapSubgroupLinearEquiv_apply_map (hHP : H = H' ⊓ P) (hΔ : Δ ≤ Δ')
 
 /-- `mapSubgroupLinearEquiv` sends each basis element `single R D b` to the mapped basis element. -/
 @[simp]
-theorem mapSubgroupLinearEquiv_single (hHP : H = H' ⊓ P) (hΔ : Δ ≤ Δ')
-    (hΔP : Δ ≤ P.toSubmonoid) (hsurj : ∀ δ' : Δ', ∃ u ∈ H', u * (δ' : G) ∈ Δ)
-    (hstab : ∀ g : Δ, ∀ u ∈ H', ∃ x ∈ H, x⁻¹ * u ∈ ConjAct.toConjAct (g : G) • H')
-    (D : HeckeCoset Δ H H) (b : R) :
+theorem mapSubgroupLinearEquiv_single (D : HeckeCoset Δ H H) (b : R) :
     mapSubgroupLinearEquiv R hHP hΔ hΔP hsurj hstab (single R D b) =
       single R (D.map hΔ (hHP ▸ inf_le_left) (hHP ▸ inf_le_left)) b := by
   classical
@@ -272,26 +234,28 @@ theorem mapSubgroupLinearEquiv_single (hHP : H = H' ⊓ P) (hΔ : Δ ≤ Δ')
   rw [mapSubgroupLinearEquiv_apply_map, single_apply, single_apply,
     (HeckeCoset.map_bijective_of_inf hHP hΔ hΔP hsurj hstab).1.eq_iff]
 
+end LinearEquiv
+
+section RingEquiv
+
+variable (R : Type*) [Semiring R] [IsHeckeTriple Δ H H] [IsHeckeTriple Δ' H' H']
+  (hHP : H = H' ⊓ P) (hΔ : Δ ≤ Δ') (hΔP : Δ ≤ P.toSubmonoid)
+  (hsurj : ∀ δ' : Δ', ∃ u ∈ H', u * (δ' : G) ∈ Δ)
+  (hstab : ∀ g : Δ, ∀ u ∈ H', ∃ x ∈ H, x⁻¹ * u ∈ ConjAct.toConjAct (g : G) • H')
+
 /-- `mapSubgroupLinearEquiv` sends structure constants on `H` to structure constants on `H'`. -/
-theorem mapSubgroupLinearEquiv_structureConstants [IsHeckeTriple Δ H H] [IsHeckeTriple Δ' H' H']
-    (hHP : H = H' ⊓ P) (hΔ : Δ ≤ Δ') (hΔP : Δ ≤ P.toSubmonoid)
-    (hsurj : ∀ δ' : Δ', ∃ u ∈ H', u * (δ' : G) ∈ Δ)
-    (hstab : ∀ g : Δ, ∀ u ∈ H', ∃ x ∈ H, x⁻¹ * u ∈ ConjAct.toConjAct (g : G) • H')
-    (D₁ D₂ : HeckeCoset Δ H H) :
+theorem mapSubgroupLinearEquiv_structureConstants (D₁ D₂ : HeckeCoset Δ H H) :
     mapSubgroupLinearEquiv R hHP hΔ hΔP hsurj hstab
         (structureConstants R H H H D₁.rep D₂.rep) =
       structureConstants R H' H' H'
         (D₁.map hΔ (hHP ▸ inf_le_left) (hHP ▸ inf_le_left)).rep
         (D₂.map hΔ (hHP ▸ inf_le_left) (hHP ▸ inf_le_left)).rep := by
   have hle : H ≤ H' := hHP ▸ inf_le_left
-  have hrep_mem : ∀ D : HeckeCoset Δ H H,
+  have hrep_mem (D : HeckeCoset Δ H H) :
       (((D.map hΔ hle hle).rep : Δ') : G) ∈ doubleCoset (D.rep : G) H' H' := by
-    intro D
-    have hEq : D.map hΔ hle hle = HeckeCoset.mk H' H' (Submonoid.inclusion hΔ D.rep) := by
-      conv_lhs => rw [← HeckeCoset.mk_rep D, HeckeCoset.map_mk]
-    rw [hEq]
-    exact HeckeCoset.rep_mk_mem_doubleCoset (H₁ := H') (H₂ := H')
-      (Submonoid.inclusion hΔ D.rep)
+    rw [show D.map hΔ hle hle = HeckeCoset.mk H' H' (Submonoid.inclusion hΔ D.rep) by
+      conv_lhs => rw [← HeckeCoset.mk_rep D, HeckeCoset.map_mk]]
+    exact HeckeCoset.rep_mk_mem_doubleCoset (Submonoid.inclusion hΔ D.rep)
   ext E
   obtain ⟨D, rfl⟩ := (HeckeCoset.map_bijective_of_inf hHP hΔ hΔP hsurj hstab).2 E
   rw [mapSubgroupLinearEquiv_apply_map, structureConstants_apply, structureConstants_apply,
@@ -302,73 +266,54 @@ theorem mapSubgroupLinearEquiv_structureConstants [IsHeckeTriple Δ H H] [IsHeck
       (hstab D₁.rep) (hstab D₂.rep)]
 
 /-- `mapSubgroupLinearEquiv` preserves the Hecke product. -/
-theorem mapSubgroupLinearEquiv_mul [IsHeckeTriple Δ H H] [IsHeckeTriple Δ' H' H']
-    (hHP : H = H' ⊓ P) (hΔ : Δ ≤ Δ') (hΔP : Δ ≤ P.toSubmonoid)
-    (hsurj : ∀ δ' : Δ', ∃ u ∈ H', u * (δ' : G) ∈ Δ)
-    (hstab : ∀ g : Δ, ∀ u ∈ H', ∃ x ∈ H, x⁻¹ * u ∈ ConjAct.toConjAct (g : G) • H')
-    (f g : 𝕋 Δ H R) :
+theorem mapSubgroupLinearEquiv_mul (f g : 𝕋 Δ H R) :
     mapSubgroupLinearEquiv R hHP hΔ hΔP hsurj hstab (f * g) =
       mapSubgroupLinearEquiv R hHP hΔ hΔP hsurj hstab f *
         mapSubgroupLinearEquiv R hHP hΔ hΔP hsurj hstab g := by
   induction f using HeckeCosetModule.induction_linear with
   | h0 => simp
-  | hadd f₁ f₂ h₁ h₂ => rw [_root_.add_mul, map_add, map_add, h₁, h₂, _root_.add_mul]
+  | hadd _ _ h₁ h₂ => simp only [_root_.add_mul, map_add, h₁, h₂]
   | hsingle D₁ a =>
     induction g using HeckeCosetModule.induction_linear with
     | h0 => simp
-    | hadd g₁ g₂ h₁ h₂ => rw [_root_.mul_add, map_add, map_add, h₁, h₂, _root_.mul_add]
+    | hadd _ _ h₁ h₂ => simp only [_root_.mul_add, map_add, h₁, h₂]
     | hsingle D₂ b =>
       rw [single_mul_single, map_smul, map_smul,
         mapSubgroupLinearEquiv_structureConstants R hHP hΔ hΔP hsurj hstab,
         mapSubgroupLinearEquiv_single, mapSubgroupLinearEquiv_single, single_mul_single]
 
+include hHP hΔ hΔP hsurj hstab in
 /-- **Subgroup-extension isomorphism for Hecke rings** (Shimura Proposition 3.16 /
 Rhodes–Shemanske §2): when `H = H' ⊓ P` and `Δ ≤ P` satisfy left-coset surjectivity in `Δ'` and the
 stabilizer condition in `H'`, `HeckeCoset.map` induces a ring isomorphism `𝕋 Δ H R ≃+* 𝕋 Δ' H' R`
 over any coefficient semiring `R`. -/
-noncomputable def mapSubgroupRingEquiv [IsHeckeTriple Δ H H] [IsHeckeTriple Δ' H' H']
-    (hHP : H = H' ⊓ P) (hΔ : Δ ≤ Δ') (hΔP : Δ ≤ P.toSubmonoid)
-    (hsurj : ∀ δ' : Δ', ∃ u ∈ H', u * (δ' : G) ∈ Δ)
-    (hstab : ∀ g : Δ, ∀ u ∈ H', ∃ x ∈ H, x⁻¹ * u ∈ ConjAct.toConjAct (g : G) • H') :
-    𝕋 Δ H R ≃+* 𝕋 Δ' H' R :=
+noncomputable def mapSubgroupRingEquiv : 𝕋 Δ H R ≃+* 𝕋 Δ' H' R :=
   { mapSubgroupLinearEquiv R hHP hΔ hΔP hsurj hstab with
     map_mul' := mapSubgroupLinearEquiv_mul R hHP hΔ hΔP hsurj hstab }
 
 /-- `mapSubgroupRingEquiv` coerces to `mapSubgroupLinearEquiv`. -/
 @[simp]
-theorem coe_mapSubgroupRingEquiv [IsHeckeTriple Δ H H] [IsHeckeTriple Δ' H' H']
-    (hHP : H = H' ⊓ P) (hΔ : Δ ≤ Δ') (hΔP : Δ ≤ P.toSubmonoid)
-    (hsurj : ∀ δ' : Δ', ∃ u ∈ H', u * (δ' : G) ∈ Δ)
-    (hstab : ∀ g : Δ, ∀ u ∈ H', ∃ x ∈ H, x⁻¹ * u ∈ ConjAct.toConjAct (g : G) • H') :
+theorem coe_mapSubgroupRingEquiv :
     ⇑(mapSubgroupRingEquiv R hHP hΔ hΔP hsurj hstab) =
       mapSubgroupLinearEquiv R hHP hΔ hΔP hsurj hstab :=
   (rfl)
 
 /-- `mapSubgroupRingEquiv` sends a basis element `single R D b` to the mapped basis element. -/
 @[simp]
-theorem mapSubgroupRingEquiv_single [IsHeckeTriple Δ H H] [IsHeckeTriple Δ' H' H']
-    (hHP : H = H' ⊓ P) (hΔ : Δ ≤ Δ') (hΔP : Δ ≤ P.toSubmonoid)
-    (hsurj : ∀ δ' : Δ', ∃ u ∈ H', u * (δ' : G) ∈ Δ)
-    (hstab : ∀ g : Δ, ∀ u ∈ H', ∃ x ∈ H, x⁻¹ * u ∈ ConjAct.toConjAct (g : G) • H')
-    (D : HeckeCoset Δ H H) (b : R) :
+theorem mapSubgroupRingEquiv_single (D : HeckeCoset Δ H H) (b : R) :
     mapSubgroupRingEquiv R hHP hΔ hΔP hsurj hstab (single R D b) =
       single R (D.map hΔ (hHP ▸ inf_le_left) (hHP ▸ inf_le_left)) b :=
   mapSubgroupLinearEquiv_single R hHP hΔ hΔP hsurj hstab D b
 
 /-- The inverse of `mapSubgroupRingEquiv` sends a mapped basis element back to `single R D b`. -/
 @[simp]
-theorem mapSubgroupRingEquiv_symm_single_map [IsHeckeTriple Δ H H] [IsHeckeTriple Δ' H' H']
-    (hHP : H = H' ⊓ P) (hΔ : Δ ≤ Δ') (hΔP : Δ ≤ P.toSubmonoid)
-    (hsurj : ∀ δ' : Δ', ∃ u ∈ H', u * (δ' : G) ∈ Δ)
-    (hstab : ∀ g : Δ, ∀ u ∈ H', ∃ x ∈ H, x⁻¹ * u ∈ ConjAct.toConjAct (g : G) • H')
-    (D : HeckeCoset Δ H H) (b : R) :
+theorem mapSubgroupRingEquiv_symm_single_map (D : HeckeCoset Δ H H) (b : R) :
     (mapSubgroupRingEquiv R hHP hΔ hΔP hsurj hstab).symm
         (single R (D.map hΔ (hHP ▸ inf_le_left) (hHP ▸ inf_le_left)) b) =
-      single R D b := by
-  apply (mapSubgroupRingEquiv R hHP hΔ hΔP hsurj hstab).injective
-  simp
+      single R D b :=
+  (mapSubgroupRingEquiv R hHP hΔ hΔP hsurj hstab).injective (by simp)
 
-end Equiv
+end RingEquiv
 
 end HeckeCosetModule
 

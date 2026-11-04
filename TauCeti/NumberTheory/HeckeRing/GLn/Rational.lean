@@ -116,45 +116,35 @@ theorem GLnZ_le_intEntries : (GLnZ n).toSubmonoid ≤ intEntries n :=
 
 /-- Every element of `GL_n(ℤ)` has rational determinant `1` or `-1`. -/
 theorem det_eq_one_or_neg_one_of_mem_GLnZ {g : GL (Fin n) ℚ} (hg : g ∈ GLnZ n) :
-    (↑g : Matrix (Fin n) (Fin n) ℚ).det = 1 ∨
-      (↑g : Matrix (Fin n) (Fin n) ℚ).det = -1 := by
+    (↑g : Matrix (Fin n) (Fin n) ℚ).det = 1 ∨ (↑g : Matrix (Fin n) (Fin n) ℚ).det = -1 := by
   obtain ⟨γ, rfl⟩ := (mem_GLnZ_iff n).mp hg
-  have hdet :
-      ((Matrix.GeneralLinearGroup.map (Int.castRingHom ℚ) γ : GL (Fin n) ℚ) :
-          Matrix (Fin n) (Fin n) ℚ).det =
-        ((Matrix.GeneralLinearGroup.det γ : ℤˣ) : ℤ) := by
-    rw [← Matrix.GeneralLinearGroup.val_det_apply, Matrix.GeneralLinearGroup.map_det]
-    rfl
+  have hdet : ((Matrix.GeneralLinearGroup.map (Int.castRingHom ℚ) γ : GL (Fin n) ℚ) :
+      Matrix (Fin n) (Fin n) ℚ).det = ((Matrix.GeneralLinearGroup.det γ : ℤˣ) : ℤ) := by
+    rw [← Matrix.GeneralLinearGroup.val_det_apply, Matrix.GeneralLinearGroup.map_det]; rfl
   rw [hdet]
   rcases Int.units_eq_one_or (Matrix.GeneralLinearGroup.det γ) with h | h <;> simp [h]
 
 /-- Entrywise and determinant characterization of `GL_n(ℤ)` inside `GL_n(ℚ)`: an invertible rational
 matrix belongs to `GL_n(ℤ)` if and only if it has integer entries and determinant `±1`. -/
 theorem mem_GLnZ_iff_hasIntEntries_and_det {g : GL (Fin n) ℚ} :
-    g ∈ GLnZ n ↔
-      HasIntEntries n g ∧
-        ((↑g : Matrix (Fin n) (Fin n) ℚ).det = 1 ∨
-          (↑g : Matrix (Fin n) (Fin n) ℚ).det = -1) := by
+    g ∈ GLnZ n ↔ HasIntEntries n g ∧
+      ((↑g : Matrix (Fin n) (Fin n) ℚ).det = 1 ∨ (↑g : Matrix (Fin n) (Fin n) ℚ).det = -1) := by
   refine ⟨fun hg ↦ ⟨hasIntEntries_of_mem_GLnZ n hg, det_eq_one_or_neg_one_of_mem_GLnZ n hg⟩, ?_⟩
   rintro ⟨hint, hdet⟩
   obtain ⟨A, hA⟩ := (hasIntEntries_iff n).mp hint
   have hAdet_cast : (A.det : ℚ) = (↑g : Matrix (Fin n) (Fin n) ℚ).det := by
-    rw [hA]
-    simpa [RingHom.mapMatrix_apply] using RingHom.map_det (Int.castRingHom ℚ) A
+    rw [hA]; simpa [RingHom.mapMatrix_apply] using RingHom.map_det (Int.castRingHom ℚ) A
   have hAunit : IsUnit A.det := by
     rcases hdet with h1 | h1
-    · have hA1 : A.det = 1 := by exact_mod_cast hAdet_cast.trans h1
-      exact hA1 ▸ isUnit_one
-    · have hA1 : A.det = -1 := by exact_mod_cast hAdet_cast.trans h1
-      exact hA1 ▸ IsUnit.neg isUnit_one
+    · exact (show A.det = 1 by exact_mod_cast hAdet_cast.trans h1) ▸ isUnit_one
+    · exact (show A.det = -1 by exact_mod_cast hAdet_cast.trans h1) ▸ IsUnit.neg isUnit_one
   refine (mem_GLnZ_iff n).mpr ⟨Matrix.nonsingInvUnit A hAunit, Units.ext ?_⟩
   ext i j
   simpa [Matrix.GeneralLinearGroup.map_apply, Matrix.nonsingInvUnit] using
     (congrFun (congrFun hA i) j).symm
 
 /-- `SL_n(ℤ)` is the positive-determinant part of `GL_n(ℤ)`: `SL_n(ℤ) = GL_n(ℤ) ⊓ GL_n^+(ℚ)`. -/
-theorem SLnZ_eq_GLnZ_inf_glpos :
-    SLnZ n = GLnZ n ⊓ Matrix.GLPos (Fin n) ℚ := by
+theorem SLnZ_eq_GLnZ_inf_glpos : SLnZ n = GLnZ n ⊓ Matrix.GLPos (Fin n) ℚ := by
   ext g
   rw [Subgroup.mem_inf]
   constructor
@@ -162,25 +152,26 @@ theorem SLnZ_eq_GLnZ_inf_glpos :
     refine ⟨?_, SLnZ_le_glpos n hg⟩
     obtain ⟨σ, rfl⟩ := (mem_SLnZ_iff n).mp hg
     refine (mem_GLnZ_iff n).mpr ⟨σ.toGL, Units.ext ?_⟩
-    rw [mapGL_coe_matrix]
-    ext i j
-    simp [algebraMap_int_eq, Matrix.GeneralLinearGroup.map_apply]
+    rw [mapGL_coe_matrix]; ext i j; simp [algebraMap_int_eq, Matrix.GeneralLinearGroup.map_apply]
   · rintro ⟨hgZ, hgPos⟩
     rw [Matrix.mem_glpos, Matrix.GeneralLinearGroup.val_det_apply] at hgPos
-    have hdet1 : (↑g : Matrix (Fin n) (Fin n) ℚ).det = 1 := by
-      rcases det_eq_one_or_neg_one_of_mem_GLnZ n hgZ with h1 | h1
-      · exact h1
-      · linarith
+    have hdet1 : (↑g : Matrix (Fin n) (Fin n) ℚ).det = 1 :=
+      (det_eq_one_or_neg_one_of_mem_GLnZ n hgZ).resolve_right (by linarith)
     obtain ⟨A, hA⟩ := (hasIntEntries_iff n).mp (hasIntEntries_of_mem_GLnZ n hgZ)
     have hAdet : A.det = 1 := by
       have hcast : (A.det : ℚ) = (↑g : Matrix (Fin n) (Fin n) ℚ).det := by
-        rw [hA]
-        simpa [RingHom.mapMatrix_apply] using RingHom.map_det (Int.castRingHom ℚ) A
+        rw [hA]; simpa [RingHom.mapMatrix_apply] using RingHom.map_det (Int.castRingHom ℚ) A
       exact_mod_cast hcast.trans hdet1
-    let σ : SpecialLinearGroup (Fin n) ℤ := ⟨A, hAdet⟩
+    let σ : Matrix.SpecialLinearGroup (Fin n) ℤ := ⟨A, hAdet⟩
     refine (mem_SLnZ_iff n).mpr ⟨σ, Units.ext ?_⟩
     rw [hA, mapGL_coe_matrix, algebraMap_int_eq, map_apply_coe, RingHom.mapMatrix_apply]
     simp [σ]
+
+private lemma mem_SLnZ_of_mem_GLnZ_of_det_eq_one {g : GL (Fin n) ℚ} (hg : g ∈ GLnZ n)
+    (hdet : (↑g : Matrix (Fin n) (Fin n) ℚ).det = 1) : g ∈ SLnZ n := by
+  rw [SLnZ_eq_GLnZ_inf_glpos, Subgroup.mem_inf, Matrix.mem_glpos,
+    Matrix.GeneralLinearGroup.val_det_apply, hdet]
+  exact ⟨hg, one_pos⟩
 
 /-- `SL_n(ℤ)` is a subgroup of `GL_n(ℤ)`. -/
 theorem SLnZ_le_GLnZ : SLnZ n ≤ GLnZ n :=
@@ -193,10 +184,7 @@ section ParityAndSign
 /-- `-I_n` belongs to `GL_n(ℤ)` in every rank `n`. -/
 theorem neg_one_mem_GLnZ : (-1 : GL (Fin n) ℚ) ∈ GLnZ n := by
   refine (mem_GLnZ_iff n).mpr ⟨-1, Units.ext ?_⟩
-  ext i j
-  rcases eq_or_ne i j with rfl | hij
-  · simp [Matrix.GeneralLinearGroup.map_apply]
-  · simp [Matrix.GeneralLinearGroup.map_apply, hij]
+  ext i j; by_cases hij : i = j <;> simp [Matrix.GeneralLinearGroup.map_apply, hij]
 
 /-- Whenever `-I_n` belongs to the left subgroup `H₁`, negating a matrix leaves its
 `(H₁, H₂)`-double coset unchanged. -/
@@ -213,35 +201,25 @@ theorem doubleCoset_neg_GLnZ (g : GL (Fin n) ℚ) :
 
 /-- `-I_n` belongs to `SL_n(ℤ)` if and only if `n` is even. -/
 theorem neg_one_mem_SLnZ_iff : (-1 : GL (Fin n) ℚ) ∈ SLnZ n ↔ Even n := by
-  constructor
-  · intro h
-    have hdet := det_eq_one_of_mem_SLnZ n h
-    have hneg : ((-1 : GL (Fin n) ℚ) : Matrix (Fin n) (Fin n) ℚ) = (-1 : ℚ) • 1 := by
-      ext i j
-      simp
-    rw [hneg, Matrix.det_smul, Fintype.card_fin, Matrix.det_one, mul_one] at hdet
+  refine ⟨fun h ↦ ?_, fun hn ↦ ?_⟩
+  · have hdet := det_eq_one_of_mem_SLnZ n h
+    rw [show ((-1 : GL (Fin n) ℚ) : Matrix (Fin n) (Fin n) ℚ) = (-1 : ℚ) • 1 by ext; simp,
+      Matrix.det_smul, Fintype.card_fin, Matrix.det_one, mul_one] at hdet
     exact (neg_one_pow_eq_one_iff_even (by norm_num : (-1 : ℚ) ≠ 1)).mp hdet
-  · intro hn
-    have : Fact (Even (Fintype.card (Fin n))) := ⟨by simpa using hn⟩
+  · have : Fact (Even (Fintype.card (Fin n))) := ⟨by simpa using hn⟩
     exact (mem_SLnZ_iff n).mpr ⟨-1, mapGL_neg_one⟩
 
 /-- `-g` lies in the `SL_n(ℤ)`-double coset of `g ∈ GL_n(ℚ)` if and only if `n` is even
 (`Rhodes–Shemanske`, §2). -/
 theorem neg_mem_doubleCoset_SLnZ_iff (g : GL (Fin n) ℚ) :
     -g ∈ doubleCoset g (SLnZ n) (SLnZ n) ↔ Even n := by
-  constructor
-  · intro hmem
-    have hdet := det_eq_of_mem_doubleCoset_SLnZ n hmem
-    have hneg : ((-g : GL (Fin n) ℚ) : Matrix (Fin n) (Fin n) ℚ) =
-        (-1 : ℚ) • (↑g : Matrix (Fin n) (Fin n) ℚ) := by
-      ext i j
-      simp
-    rw [hneg, Matrix.det_smul, Fintype.card_fin] at hdet
-    have hpow : (-1 : ℚ) ^ n = 1 :=
-      mul_right_cancel₀ g.det_ne_zero (hdet.trans (one_mul _).symm)
-    exact (neg_one_pow_eq_one_iff_even (by norm_num : (-1 : ℚ) ≠ 1)).mp hpow
-  · intro hn
-    rw [← doubleCoset_neg_of_neg_one_mem_left n ((neg_one_mem_SLnZ_iff n).mpr hn) g]
+  refine ⟨fun hmem ↦ ?_, fun hn ↦ ?_⟩
+  · have hdet := det_eq_of_mem_doubleCoset_SLnZ n hmem
+    rw [show ((-g : GL (Fin n) ℚ) : Matrix (Fin n) (Fin n) ℚ) = (-1 : ℚ) • ↑g by ext; simp,
+      Matrix.det_smul, Fintype.card_fin] at hdet
+    exact (neg_one_pow_eq_one_iff_even (by norm_num : (-1 : ℚ) ≠ 1)).mp
+      (mul_right_cancel₀ g.det_ne_zero (hdet.trans (one_mul _).symm))
+  · rw [← doubleCoset_neg_of_neg_one_mem_left n ((neg_one_mem_SLnZ_iff n).mpr hn) g]
     exact mem_doubleCoset_self _ _ _
 
 /-- In even rank `n`, negating a matrix leaves its `SL_n(ℤ)`-double coset unchanged. -/
@@ -255,21 +233,14 @@ noncomputable def signFlipGL [NeZero n] : GL (Fin n) ℚ :=
 
 /-- `signFlipGL` belongs to `GL_n(ℤ)`. -/
 theorem signFlipGL_mem_GLnZ [NeZero n] : signFlipGL n ∈ GLnZ n := by
-  refine (mem_GLnZ_iff n).mpr
-    ⟨TauCeti.diagGL fun i : Fin n ↦ if i = 0 then (-1 : ℤˣ) else 1, ?_⟩
-  rw [TauCeti.map_diagGL, signFlipGL]
-  congr 1
-  funext i
-  split_ifs <;> rfl
+  refine (mem_GLnZ_iff n).mpr ⟨TauCeti.diagGL fun i : Fin n ↦ if i = 0 then (-1 : ℤˣ) else 1, ?_⟩
+  rw [TauCeti.map_diagGL, signFlipGL]; congr 1; funext i; split_ifs <;> rfl
 
 /-- `signFlipGL` is an involution. -/
 @[simp]
 theorem signFlipGL_mul_self [NeZero n] : signFlipGL n * signFlipGL n = 1 := by
-  rw [signFlipGL, ← map_mul]
-  convert map_one TauCeti.diagGL
-  funext i
-  simp only [Pi.mul_apply, Pi.one_apply]
-  split_ifs <;> simp
+  rw [signFlipGL, ← map_mul]; convert map_one TauCeti.diagGL
+  funext i; simp only [Pi.mul_apply, Pi.one_apply]; split_ifs <;> simp
 
 /-- `signFlipGL` equals its own inverse. -/
 @[simp]
@@ -278,15 +249,12 @@ theorem signFlipGL_inv [NeZero n] : (signFlipGL n)⁻¹ = signFlipGL n :=
 
 /-- `signFlipGL` has determinant `-1`. -/
 @[simp]
-theorem det_signFlipGL [NeZero n] :
-    (↑(signFlipGL n) : Matrix (Fin n) (Fin n) ℚ).det = -1 := by
+theorem det_signFlipGL [NeZero n] : (↑(signFlipGL n) : Matrix (Fin n) (Fin n) ℚ).det = -1 := by
   rw [← Matrix.GeneralLinearGroup.val_det_apply, signFlipGL, TauCeti.det_diagGL,
     Finset.prod_eq_single (0 : Fin n)]
   · simp
-  · intro i _ hi
-    rw [ite_eq_right hi]
-  · intro h
-    exact absurd (Finset.mem_univ (0 : Fin n)) h
+  · exact fun i _ hi ↦ by rw [ite_eq_right hi]
+  · exact fun h ↦ absurd (Finset.mem_univ (0 : Fin n)) h
 
 /-- `signFlipGL` commutes with every diagonal matrix in `GL_n(ℚ)`. -/
 theorem signFlipGL_comm_diagGL [NeZero n] (t : Fin n → ℚˣ) :
@@ -311,35 +279,22 @@ section Commensurator
 such that `diag(c, …, c) * g` has integer entries. -/
 theorem exists_pos_natDiagGL_mul_mem_intEntries (g : GL (Fin n) ℚ) :
     ∃ c : ℕ, 0 < c ∧ natDiagGL n (fun _ ↦ c) * g ∈ intEntries n := by
-  let c : ℕ := ∏ i : Fin n, ∏ j : Fin n, ((g : Matrix (Fin n) (Fin n) ℚ) i j).den
-  have hc : 0 < c :=
-    Finset.prod_pos fun _ _ ↦ Finset.prod_pos fun _ _ ↦ Rat.den_pos _
-  refine ⟨c, hc, (mem_intEntries n).mpr ((hasIntEntries_iff n).mpr ?_)⟩
-  refine ⟨Matrix.of fun i j ↦
-      ((g : Matrix (Fin n) (Fin n) ℚ) i j).num *
-        ↑(c / ((g : Matrix (Fin n) (Fin n) ℚ) i j).den), ?_⟩
+  let A : Matrix (Fin n) (Fin n) ℚ := g
+  let c : ℕ := ∏ i : Fin n, ∏ j : Fin n, (A i j).den
+  have hc : 0 < c := Finset.prod_pos fun _ _ ↦ Finset.prod_pos fun _ _ ↦ Rat.den_pos _
+  refine ⟨c, hc, (mem_intEntries n).mpr ((hasIntEntries_iff n).mpr
+    ⟨Matrix.of fun i j ↦ (A i j).num * ↑(c / (A i j).den), ?_⟩)⟩
   ext i j
-  have hdvd : ((g : Matrix (Fin n) (Fin n) ℚ) i j).den ∣ c :=
-    dvd_trans
-      (Finset.dvd_prod_of_mem (fun j' ↦ ((g : Matrix (Fin n) (Fin n) ℚ) i j').den)
-        (Finset.mem_univ j))
-      (Finset.dvd_prod_of_mem (fun i' ↦ ∏ j' : Fin n, ((g : Matrix (Fin n) (Fin n) ℚ) i' j').den)
-        (Finset.mem_univ i))
-  have hmul : (c : ℚ) =
-      (((g : Matrix (Fin n) (Fin n) ℚ) i j).den : ℚ) *
-        ((c / ((g : Matrix (Fin n) (Fin n) ℚ) i j).den : ℕ) : ℚ) := by
+  have hdvd : (A i j).den ∣ c :=
+    dvd_trans (Finset.dvd_prod_of_mem (fun j' ↦ (A i j').den) (Finset.mem_univ j))
+      (Finset.dvd_prod_of_mem (fun i' ↦ ∏ j', (A i' j').den) (Finset.mem_univ i))
+  have hmul : (c : ℚ) = ((A i j).den : ℚ) * ((c / (A i j).den : ℕ) : ℚ) := by
     exact_mod_cast (Nat.mul_div_cancel' hdvd).symm
   simp only [Units.val_mul, natDiagGL_coe n _ fun _ ↦ hc, Matrix.diagonal_mul,
     Matrix.map_apply, Matrix.of_apply, Int.cast_mul, Int.cast_natCast]
-  calc (c : ℚ) * (g : Matrix (Fin n) (Fin n) ℚ) i j
-      = ((c / ((g : Matrix (Fin n) (Fin n) ℚ) i j).den : ℕ) : ℚ) *
-          ((g : Matrix (Fin n) (Fin n) ℚ) i j *
-            (((g : Matrix (Fin n) (Fin n) ℚ) i j).den : ℚ)) := by
-          rw [hmul]
-          ring
-    _ = (((g : Matrix (Fin n) (Fin n) ℚ) i j).num : ℚ) *
-          ((c / ((g : Matrix (Fin n) (Fin n) ℚ) i j).den : ℕ) : ℚ) := by
-          rw [Rat.mul_den_eq_num, mul_comm]
+  calc (c : ℚ) * A i j
+      = ((c / (A i j).den : ℕ) : ℚ) * (A i j * ((A i j).den : ℚ)) := by rw [hmul]; ring
+    _ = ((A i j).num : ℚ) * ((c / (A i j).den : ℕ) : ℚ) := by rw [Rat.mul_den_eq_num, mul_comm]
 
 /-- **Clearing denominators in `GL_n^+(ℚ)`**: for every `g ∈ GL_n^+(ℚ)` there is a positive natural
 `c` such that `diag(c, …, c) * g` lies in Shimura's integral submonoid `posDetInt n`. -/
@@ -347,61 +302,43 @@ theorem exists_pos_natDiagGL_mul_mem_posDetInt {g : GL (Fin n) ℚ}
     (hg : g ∈ Matrix.GLPos (Fin n) ℚ) :
     ∃ c : ℕ, 0 < c ∧ natDiagGL n (fun _ ↦ c) * g ∈ posDetInt n := by
   obtain ⟨c, hc, hint⟩ := exists_pos_natDiagGL_mul_mem_intEntries n g
-  have hc_pos : natDiagGL n (fun _ ↦ c) ∈ Matrix.GLPos (Fin n) ℚ :=
-    posDetInt_le_glpos n (natDiagGL_mem_posDetInt n _)
-  have hprod_pos : natDiagGL n (fun _ ↦ c) * g ∈ Matrix.GLPos (Fin n) ℚ :=
-    (Matrix.GLPos (Fin n) ℚ).mul_mem hc_pos hg
-  rw [Matrix.mem_glpos, Matrix.GeneralLinearGroup.val_det_apply] at hprod_pos
-  exact ⟨c, hc, (mem_posDetInt_iff n).mpr ⟨(mem_intEntries n).mp hint, hprod_pos⟩⟩
+  have hprod := (Matrix.GLPos (Fin n) ℚ).mul_mem
+    (posDetInt_le_glpos n (natDiagGL_mem_posDetInt n (fun _ ↦ c))) hg
+  rw [Matrix.mem_glpos, Matrix.GeneralLinearGroup.val_det_apply] at hprod
+  exact ⟨c, hc, (mem_posDetInt_iff n).mpr ⟨(mem_intEntries n).mp hint, hprod⟩⟩
 
 /-- **The commensurator of `SL_n(ℤ)` in `GL_n(ℚ)` is the whole group.** -/
 theorem commensurator_SLnZ_eq_top : commensurator (SLnZ n) = ⊤ := by
-  -- Clearing denominators writes `g = (diag(c, …, c))⁻¹ * h` with both factors in `intEntries n`,
-  -- each of which commensurates `SL_n(ℤ)` by Shimura's Lemma 3.10.
   rw [Subgroup.eq_top_iff']
   intro g
   rcases Nat.eq_zero_or_pos n with rfl | hn
-  · have : Subsingleton (GL (Fin 0) ℚ) := inferInstance
-    exact Subsingleton.elim g 1 ▸ (commensurator (SLnZ 0)).one_mem
+  · exact Subsingleton.elim g 1 ▸ (commensurator (SLnZ 0)).one_mem
   · have : NeZero n := ⟨hn.ne'⟩
     obtain ⟨c, -, hcg⟩ := exists_pos_natDiagGL_mul_mem_intEntries n g
-    have hc_comm : natDiagGL n (fun _ ↦ c) ∈ commensurator (SLnZ n) :=
-      mem_commensurator_of_hasIntEntries n (hasIntEntries_natDiagGL n _)
-    have hcg_comm : natDiagGL n (fun _ ↦ c) * g ∈ commensurator (SLnZ n) :=
-      mem_commensurator_of_hasIntEntries n ((mem_intEntries n).mp hcg)
-    simpa using
-      (commensurator (SLnZ n)).mul_mem ((commensurator (SLnZ n)).inv_mem hc_comm) hcg_comm
+    have h1 := mem_commensurator_of_hasIntEntries n (hasIntEntries_natDiagGL n (fun _ ↦ c))
+    have h2 := mem_commensurator_of_hasIntEntries n ((mem_intEntries n).mp hcg)
+    have hprod := (commensurator (SLnZ n)).mul_mem ((commensurator (SLnZ n)).inv_mem h1) h2
+    rwa [inv_mul_cancel_left] at hprod
 
 /-- `SL_n(ℤ)` has finite index (at most `2`) inside `GL_n(ℤ)`. -/
 instance finiteIndex_SLnZ_subgroupOf_GLnZ : ((SLnZ n).subgroupOf (GLnZ n)).FiniteIndex := by
-  have hinj : Function.Injective
-      (fun q : GLnZ n ⧸ (SLnZ n).subgroupOf (GLnZ n) ↦
-        decide (0 < ((q.out : GL (Fin n) ℚ) : Matrix (Fin n) (Fin n) ℚ).det)) := by
+  have hinj : Function.Injective (fun q : GLnZ n ⧸ (SLnZ n).subgroupOf (GLnZ n) ↦
+      decide (0 < ((q.out : GL (Fin n) ℚ) : Matrix (Fin n) (Fin n) ℚ).det)) := by
     intro q₁ q₂ hdec
-    have hiff : 0 < ((q₁.out : GL (Fin n) ℚ) : Matrix (Fin n) (Fin n) ℚ).det ↔
-        0 < ((q₂.out : GL (Fin n) ℚ) : Matrix (Fin n) (Fin n) ℚ).det :=
-      decide_eq_decide.mp hdec
+    have hiff := decide_eq_decide.mp hdec
     have hdet_eq : ((q₁.out : GL (Fin n) ℚ) : Matrix (Fin n) (Fin n) ℚ).det =
         ((q₂.out : GL (Fin n) ℚ) : Matrix (Fin n) (Fin n) ℚ).det := by
       rcases det_eq_one_or_neg_one_of_mem_GLnZ n q₁.out.2 with h1 | h1 <;>
-        rcases det_eq_one_or_neg_one_of_mem_GLnZ n q₂.out.2 with h2 | h2
-      · exact h1.trans h2.symm
-      · exfalso; have := hiff.mp (by linarith); linarith
-      · exfalso; have := hiff.mpr (by linarith); linarith
-      · exact h1.trans h2.symm
-    have hprod_pos : ((q₁.out : GL (Fin n) ℚ)⁻¹ * (q₂.out : GL (Fin n) ℚ)) ∈
-        Matrix.GLPos (Fin n) ℚ := by
-      rw [Matrix.mem_glpos, map_mul, map_inv, Units.val_mul, Units.val_inv_eq_inv_val,
-        Matrix.GeneralLinearGroup.val_det_apply, Matrix.GeneralLinearGroup.val_det_apply,
-        ← hdet_eq]
+        rcases det_eq_one_or_neg_one_of_mem_GLnZ n q₂.out.2 with h2 | h2 <;>
+        first | exact h1.trans h2.symm | exfalso; linarith [hiff.mp (by linarith)] |
+          exfalso; linarith [hiff.mpr (by linarith)]
+    have hSL : (q₁.out : GL (Fin n) ℚ)⁻¹ * (q₂.out : GL (Fin n) ℚ) ∈ SLnZ n := by
+      refine mem_SLnZ_of_mem_GLnZ_of_det_eq_one n
+        ((GLnZ n).mul_mem ((GLnZ n).inv_mem q₁.out.2) q₂.out.2) ?_
+      rw [Units.val_mul, Matrix.det_mul, ← Matrix.GeneralLinearGroup.val_det_apply, map_inv,
+        Units.val_inv_eq_inv_val, Matrix.GeneralLinearGroup.val_det_apply, ← hdet_eq]
       rcases det_eq_one_or_neg_one_of_mem_GLnZ n q₁.out.2 with h1 | h1 <;> simp [h1]
-    have hprod_SL : (q₁.out : GL (Fin n) ℚ)⁻¹ * (q₂.out : GL (Fin n) ℚ) ∈ SLnZ n :=
-      (Subgroup.ext_iff.mp (SLnZ_eq_GLnZ_inf_glpos n) _).mpr
-        (Subgroup.mem_inf.mpr ⟨(GLnZ n).mul_mem ((GLnZ n).inv_mem q₁.out.2) q₂.out.2, hprod_pos⟩)
-    have hmk : (QuotientGroup.mk q₁.out : GLnZ n ⧸ (SLnZ n).subgroupOf (GLnZ n)) =
-        QuotientGroup.mk q₂.out :=
-      QuotientGroup.eq.mpr (Subgroup.mem_subgroupOf.mpr hprod_SL)
-    simpa only [QuotientGroup.out_eq'] using hmk
+    simpa only [QuotientGroup.out_eq'] using QuotientGroup.eq.mpr (Subgroup.mem_subgroupOf.mpr hSL)
   have : Finite (GLnZ n ⧸ (SLnZ n).subgroupOf (GLnZ n)) := Finite.of_injective _ hinj
   exact Subgroup.finiteIndex_of_finite_quotient
 
@@ -418,14 +355,12 @@ theorem commensurator_GLnZ_eq_top : commensurator (GLnZ n) = ⊤ :=
 /-- The positive-determinant rational Hecke triple `(SL_n(ℤ), GL_n^+(ℚ))`. -/
 instance instIsHeckeTripleGLPosSLnZ :
     IsHeckeTriple (Matrix.GLPos (Fin n) ℚ).toSubmonoid (SLnZ n) (SLnZ n) :=
-  IsHeckeTriple.of_diagonal (SLnZ_le_glpos n)
-    (by rw [commensurator_SLnZ_eq_top]; exact le_top)
+  IsHeckeTriple.of_diagonal (SLnZ_le_glpos n) (by rw [commensurator_SLnZ_eq_top]; exact le_top)
 
 /-- The full rational Hecke triple `(GL_n(ℤ), GL_n(ℚ))`. -/
 instance instIsHeckeTripleTopGLnZ :
     IsHeckeTriple (⊤ : Submonoid (GL (Fin n) ℚ)) (GLnZ n) (GLnZ n) :=
-  IsHeckeTriple.of_diagonal le_top
-    (by rw [commensurator_GLnZ_eq_top]; exact le_top)
+  IsHeckeTriple.of_diagonal le_top (by rw [commensurator_GLnZ_eq_top]; exact le_top)
 
 /-- The positive-determinant rational Hecke ring `H(SL_n(ℤ), GL_n^+(ℚ))` over `ℤ`. -/
 abbrev RationalHeckeRing := 𝕋 (Matrix.GLPos (Fin n) ℚ).toSubmonoid (SLnZ n) ℤ
@@ -473,25 +408,21 @@ theorem integralToRational_diagElem [NeZero n] (a : Fin n → ℕ) :
       HeckeCosetModule.single ℤ
         (HeckeCoset.mk (SLnZ n) (SLnZ n)
           ⟨natDiagGL n a, posDetInt_le_glpos n (natDiagGL_mem_posDetInt n a)⟩) 1 := by
-  rw [diagElem_def, integralToRationalRingHom_single, diagCoset_def, HeckeCoset.map_mk]
-  rfl
+  rw [diagElem_def, integralToRationalRingHom_single, diagCoset_def, HeckeCoset.map_mk]; rfl
 
 /-- Every `g ∈ GL_n(ℚ)` can be translated on the left into `GL_n^+(ℚ)` by an element of
 `GL_n(ℤ)`. -/
 theorem exists_mem_GLnZ_mul_mem_glpos (g : GL (Fin n) ℚ) :
     ∃ u ∈ GLnZ n, u * g ∈ Matrix.GLPos (Fin n) ℚ := by
   rcases Nat.eq_zero_or_pos n with rfl | hn
-  · have : Subsingleton (GL (Fin 0) ℚ) := inferInstance
-    exact ⟨1, (GLnZ 0).one_mem, Subsingleton.elim (1 * g) 1 ▸ (Matrix.GLPos (Fin 0) ℚ).one_mem⟩
+  · exact ⟨1, (GLnZ 0).one_mem, Subsingleton.elim (1 * g) 1 ▸ (Matrix.GLPos (Fin 0) ℚ).one_mem⟩
   · have : NeZero n := ⟨hn.ne'⟩
     rcases lt_or_gt_of_ne g.det_ne_zero with hneg | hpos
     · refine ⟨signFlipGL n, signFlipGL_mem_GLnZ n, ?_⟩
       rw [Matrix.mem_glpos, Matrix.GeneralLinearGroup.val_det_apply, Units.val_mul,
-        Matrix.det_mul, det_signFlipGL]
-      linarith
+        Matrix.det_mul, det_signFlipGL]; linarith
     · refine ⟨1, (GLnZ n).one_mem, ?_⟩
-      rw [one_mul, Matrix.mem_glpos, Matrix.GeneralLinearGroup.val_det_apply]
-      exact hpos
+      rwa [one_mul, Matrix.mem_glpos, Matrix.GeneralLinearGroup.val_det_apply]
 
 /-- For every `g ∈ GL_n^+(ℚ)` in positive rank `n`, clearing denominators and putting
 `diag(c, …, c) * g = γ₁ * diag(a) * γ₂` in Smith normal form produces `s₁, s₂ ∈ GL_n(ℤ)` with
@@ -515,16 +446,15 @@ private lemma exists_mem_GLnZ_det_neg_one_mul_eq_mul [NeZero n] {g : GL (Fin n) 
     (GLnZ n).mul_mem ((GLnZ n).mul_mem ((GLnZ n).inv_mem (SLnZ_le_GLnZ n hγ₂))
       (signFlipGL_mem_GLnZ n)) (SLnZ_le_GLnZ n hγ₂), ?_, ?_⟩
   · simp only [Units.val_mul, Matrix.det_mul, det_signFlipGL,
-      det_eq_one_of_mem_SLnZ n hγ₁, det_eq_one_of_mem_SLnZ n ((SLnZ n).inv_mem hγ₁)]
-    ring
+      det_eq_one_of_mem_SLnZ n hγ₁, det_eq_one_of_mem_SLnZ n ((SLnZ n).inv_mem hγ₁)]; ring
   · apply mul_left_cancel (a := natDiagGL n (fun _ ↦ c))
     calc natDiagGL n (fun _ ↦ c) * ((γ₁ * signFlipGL n * γ₁⁻¹) * g)
         = (γ₁ * signFlipGL n * γ₁⁻¹) * (natDiagGL n (fun _ ↦ c) * g) := by
             rw [← mul_assoc, natDiagGL_const_comm n c, mul_assoc]
-      _ = γ₁ * (signFlipGL n * natDiagGL n a) * γ₂ := by rw [hsnf]; group
-      _ = γ₁ * (natDiagGL n a * signFlipGL n) * γ₂ := by rw [signFlipGL_comm_natDiagGL]
-      _ = (natDiagGL n (fun _ ↦ c) * g) * (γ₂⁻¹ * signFlipGL n * γ₂) := by rw [hsnf]; group
-      _ = natDiagGL n (fun _ ↦ c) * (g * (γ₂⁻¹ * signFlipGL n * γ₂)) := mul_assoc _ _ _
+      _ = γ₁ * (natDiagGL n a * signFlipGL n) * γ₂ := by
+            rw [hsnf, ← signFlipGL_comm_natDiagGL]; group
+      _ = natDiagGL n (fun _ ↦ c) * (g * (γ₂⁻¹ * signFlipGL n * γ₂)) := by
+            rw [← mul_assoc (natDiagGL n _), hsnf]; group
 
 /-- **Stabilizer coset condition for `(SL_n(ℤ), GL_n(ℤ))` along `GL_n^+(ℚ)`.** For every
 `g ∈ GL_n^+(ℚ)`, `SL_n(ℤ)` meets every left coset of `GL_n(ℤ) ∩ g · GL_n(ℤ) · g⁻¹` in `GL_n(ℤ)`. -/
@@ -532,33 +462,22 @@ theorem exists_mem_SLnZ_inv_mul_mem_conj_GLnZ {g : GL (Fin n) ℚ}
     (hg : g ∈ Matrix.GLPos (Fin n) ℚ) {u : GL (Fin n) ℚ} (hu : u ∈ GLnZ n) :
     ∃ x ∈ SLnZ n, x⁻¹ * u ∈ ConjAct.toConjAct g • GLnZ n := by
   rcases Nat.eq_zero_or_pos n with rfl | hn
-  · have : Subsingleton (GL (Fin 0) ℚ) := inferInstance
-    exact ⟨1, (SLnZ 0).one_mem,
-      Subsingleton.elim ((1 : GL (Fin 0) ℚ)⁻¹ * u) 1 ▸
-        (ConjAct.toConjAct g • GLnZ 0).one_mem⟩
+  · exact ⟨1, (SLnZ 0).one_mem,
+      Subsingleton.elim ((1 : GL (Fin 0) ℚ)⁻¹ * u) 1 ▸ (ConjAct.toConjAct g • GLnZ 0).one_mem⟩
   have : NeZero n := ⟨hn.ne'⟩
   rcases det_eq_one_or_neg_one_of_mem_GLnZ n hu with hu1 | hu1
-  · have huSL : u ∈ SLnZ n :=
-      (Subgroup.ext_iff.mp (SLnZ_eq_GLnZ_inf_glpos n) _).mpr
-        (Subgroup.mem_inf.mpr ⟨hu, by
-          rw [Matrix.mem_glpos, Matrix.GeneralLinearGroup.val_det_apply, hu1]; norm_num⟩)
-    exact ⟨u, huSL, by rw [inv_mul_cancel]; exact Subgroup.one_mem _⟩
-  · obtain ⟨s₁, hs₁_GLnZ, s₂, hs₂_GLnZ, hs₁_det, hintertwine⟩ :=
+  · exact ⟨u, mem_SLnZ_of_mem_GLnZ_of_det_eq_one n hu hu1,
+      by rw [inv_mul_cancel]; exact Subgroup.one_mem _⟩
+  · obtain ⟨s₁, hs₁, s₂, hs₂, hs₁_det, hintertwine⟩ :=
       exists_mem_GLnZ_det_neg_one_mul_eq_mul n hg
-    have hx_SL : u * s₁⁻¹ ∈ SLnZ n :=
-      (Subgroup.ext_iff.mp (SLnZ_eq_GLnZ_inf_glpos n) _).mpr
-        (Subgroup.mem_inf.mpr ⟨(GLnZ n).mul_mem hu ((GLnZ n).inv_mem hs₁_GLnZ), by
-          rw [Matrix.mem_glpos, map_mul, map_inv, Units.val_mul, Units.val_inv_eq_inv_val,
-            Matrix.GeneralLinearGroup.val_det_apply, Matrix.GeneralLinearGroup.val_det_apply,
-            hu1, hs₁_det]
-          norm_num⟩)
-    refine ⟨u * s₁⁻¹, hx_SL, ?_⟩
-    rw [Subgroup.mem_pointwise_smul_iff_inv_smul_mem, ConjAct.smul_def, ConjAct.ofConjAct_inv,
-      ConjAct.ofConjAct_toConjAct, inv_inv]
-    have hconj : g⁻¹ * ((u * s₁⁻¹)⁻¹ * u) * g = s₂ := by
-      have hsimp : (u * s₁⁻¹)⁻¹ * u = s₁ := by group
-      rw [hsimp, mul_assoc, hintertwine, inv_mul_cancel_left]
-    exact hconj ▸ hs₂_GLnZ
+    refine ⟨u * s₁⁻¹, mem_SLnZ_of_mem_GLnZ_of_det_eq_one n
+      ((GLnZ n).mul_mem hu ((GLnZ n).inv_mem hs₁)) ?_, ?_⟩
+    · rw [Units.val_mul, Matrix.det_mul, hu1, ← Matrix.GeneralLinearGroup.val_det_apply, map_inv,
+        Units.val_inv_eq_inv_val, Matrix.GeneralLinearGroup.val_det_apply, hs₁_det]; norm_num
+    · rw [Subgroup.mem_pointwise_smul_iff_inv_smul_mem, ConjAct.smul_def, ConjAct.ofConjAct_inv,
+        ConjAct.ofConjAct_toConjAct, inv_inv, show (u * s₁⁻¹)⁻¹ * u = s₁ by group,
+        mul_assoc, hintertwine, inv_mul_cancel_left]
+      exact hs₂
 
 /-- **Double-coset equivalence** `SL_n(ℤ) \ GL_n^+(ℚ) / SL_n(ℤ) ≃ GL_n(ℤ) \ GL_n(ℚ) / GL_n(ℤ)`
 (`Rhodes–Shemanske`, §2). -/
@@ -580,8 +499,7 @@ noncomputable def rationalToFullRingEquiv (R : Type*) [Semiring R] :
     (fun g _ hu ↦ exists_mem_SLnZ_inv_mul_mem_conj_GLnZ n g.2 hu)
 
 /-- The rational-to-full Hecke ring isomorphism over `ℤ`. -/
-noncomputable abbrev rationalToFullEquiv :
-    RationalHeckeRing n ≃+* FullHeckeRing n :=
+noncomputable abbrev rationalToFullEquiv : RationalHeckeRing n ≃+* FullHeckeRing n :=
   rationalToFullRingEquiv n ℤ
 
 /-- `rationalToFullRingEquiv` sends each basis element to the corresponding `GL_n(ℤ)`-coset basis
@@ -636,40 +554,26 @@ theorem transposeRationalAntiInvolution_bar {x : GL (Fin n) ℚ}
 theorem transposeRationalAntiInvolution_onHeckeCoset_eq_self
     (D : HeckeCoset (Matrix.GLPos (Fin n) ℚ).toSubmonoid (SLnZ n) (SLnZ n)) :
     (transposeRationalAntiInvolution n).onHeckeCoset D = D := by
-  -- Clearing denominators by a central scalar `diag(c, …, c)` reduces to the integral
-  -- Smith-normal-form theorem `transposeAntiInvolution_onHeckeCoset_eq_self`, after which
-  -- `diag(c, …, c)` cancels.
-  rcases Nat.eq_zero_or_pos n with rfl | hn
-  · induction D using HeckeCoset.induction with | h g =>
-    rw [(transposeRationalAntiInvolution 0).onHeckeCoset_mk]
-    have : Subsingleton (GL (Fin 0) ℚ) := inferInstance
-    exact congrArg (HeckeCoset.mk _ _) (Subtype.ext (Subsingleton.elim _ _))
-  have : NeZero n := ⟨hn.ne'⟩
   induction D using HeckeCoset.induction with | h g =>
   rw [(transposeRationalAntiInvolution n).onHeckeCoset_mk]
-  obtain ⟨c, hc, hcg⟩ := exists_pos_natDiagGL_mul_mem_posDetInt n g.2
+  rcases Nat.eq_zero_or_pos n with rfl | hn
+  · exact congrArg (HeckeCoset.mk _ _) (Subtype.ext (Subsingleton.elim _ _))
+  have : NeZero n := ⟨hn.ne'⟩
+  obtain ⟨c, -, hcg⟩ := exists_pos_natDiagGL_mul_mem_posDetInt n g.2
   have hbar_int := (transposeAntiInvolution n).bar_mem_doubleCoset_self
     (transposeAntiInvolution_onHeckeCoset_eq_self n) ⟨natDiagGL n (fun _ ↦ c) * g, hcg⟩
   rw [transposeAntiInvolution_bar] at hbar_int
   obtain ⟨γ₁, hγ₁, γ₂, hγ₂, hEq⟩ := mem_doubleCoset.mp hbar_int
-  have hbar_cg :
-      (Matrix.GeneralLinearGroup.transposeMulEquiv (Fin n)
-          (natDiagGL n (fun _ ↦ c) * (g : GL (Fin n) ℚ))).unop =
-        natDiagGL n (fun _ ↦ c) *
-          (Matrix.GeneralLinearGroup.transposeMulEquiv (Fin n) (g : GL (Fin n) ℚ)).unop := by
-    rw [map_mul, MulOpposite.unop_mul, transposeMulEquiv_natDiagGL, ← natDiagGL_const_comm]
   refine HeckeCoset.mk_eq_mk_of_mem (mem_doubleCoset.mpr ⟨γ₁, hγ₁, γ₂, hγ₂, ?_⟩)
-  dsimp only
-  rw [transposeRationalAntiInvolution_bar]
+  dsimp only; rw [transposeRationalAntiInvolution_bar]
   apply mul_left_cancel (a := natDiagGL n (fun _ ↦ c))
   calc natDiagGL n (fun _ ↦ c) *
         (Matrix.GeneralLinearGroup.transposeMulEquiv (Fin n) (g : GL (Fin n) ℚ)).unop
       = (Matrix.GeneralLinearGroup.transposeMulEquiv (Fin n)
-          (natDiagGL n (fun _ ↦ c) * (g : GL (Fin n) ℚ))).unop := hbar_cg.symm
-    _ = γ₁ * (natDiagGL n (fun _ ↦ c) * (g : GL (Fin n) ℚ)) * γ₂ := hEq
+          (natDiagGL n (fun _ ↦ c) * (g : GL (Fin n) ℚ))).unop := by
+        rw [map_mul, MulOpposite.unop_mul, transposeMulEquiv_natDiagGL, ← natDiagGL_const_comm]
     _ = natDiagGL n (fun _ ↦ c) * (γ₁ * (g : GL (Fin n) ℚ) * γ₂) := by
-        rw [← mul_assoc γ₁, ← natDiagGL_const_comm n c γ₁]
-        group
+        rw [hEq, ← mul_assoc γ₁, ← natDiagGL_const_comm n c γ₁]; group
 
 /-- The positive-determinant rational Hecke ring is commutative over any commutative semiring
 `R`. -/
@@ -691,11 +595,11 @@ noncomputable def commRingRationalHeckeRing (R : Type*) [CommRing R] :
 /-- Multiplication in the full rational Hecke ring `H_R(GL_n(ℤ), GL_n(ℚ))` is commutative over any
 commutative semiring `R`. -/
 theorem mul_comm_fullHeckeRing (R : Type*) [CommSemiring R]
-    (f g : 𝕋 (⊤ : Submonoid (GL (Fin n) ℚ)) (GLnZ n) R) : f * g = g * f := by
-  apply (rationalToFullRingEquiv n R).symm.injective
-  rw [map_mul, map_mul]
-  exact HeckeCosetModule.mul_comm_of_antiInvolution R (transposeRationalAntiInvolution n)
-    (transposeRationalAntiInvolution_onHeckeCoset_eq_self n) _ _
+    (f g : 𝕋 (⊤ : Submonoid (GL (Fin n) ℚ)) (GLnZ n) R) : f * g = g * f :=
+  (rationalToFullRingEquiv n R).symm.injective (by
+    rw [map_mul, map_mul]
+    exact HeckeCosetModule.mul_comm_of_antiInvolution R (transposeRationalAntiInvolution n)
+      (transposeRationalAntiInvolution_onHeckeCoset_eq_self n) _ _)
 
 /-- The full rational Hecke ring `H_R(GL_n(ℤ), GL_n(ℚ))` is a commutative semiring over any
 commutative semiring `R`. -/
