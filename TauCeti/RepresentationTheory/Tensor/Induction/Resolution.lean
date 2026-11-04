@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.RepresentationTheory.Homological.ContCohomology.Resolution.Graded.Contraction
+public import TauCeti.RepresentationTheory.Homological.ContCohomology.Resolution.Graded.Comparison
 public import TauCeti.RepresentationTheory.Tensor.Induction.Diagonal
 public import TauCeti.RepresentationTheory.Tensor.Induction.Smooth
 public import TauCeti.LinearAlgebra.PiTensorProduct.Decomposition
@@ -42,6 +42,12 @@ additive, but over a coefficient ring in which `2` generates a maximal ideal, su
 trivial `𝔽₂` coefficients, such an endomorphism moves a nonzero cocycle `z` to `z + d w` for any
 invariant `w`, so cohomologous cocycles have the same norm.
 
+The tensor-induced resolution and the total resolution of `Ind⊗ A` are both contracted onto
+`Ind⊗ A`, so the comparison theorem gives a morphism of degree zero between them over the identity
+(`TauCeti.smoothTensorInducedGradedResolutionComparison`). It carries the diagonal tensor of `z` to
+a cocycle of the total resolution whose class is the norm of `z`, which is the form in which a norm
+is the input of a further norm.
+
 ## Main definitions
 
 * `TauCeti.smoothTensorInducedGradedResolutionFunctor`: tensor induction of the total shifted
@@ -57,6 +63,8 @@ invariant `w`, so cohomologous cocycles have the same norm.
   induction of the coefficients, in characteristic two.
 * `TauCeti.smoothTensorInducedDiagonalClass`: the class in `H^{l n}(G, Ind⊗ A)` of the diagonal
   tensor of a `U`-invariant cocycle of degree `n`.
+* `TauCeti.smoothTensorInducedGradedResolutionComparison`: the comparison of the tensor-induced
+  resolution with the total resolution of the tensor-induced coefficients.
 
 ## Main results
 
@@ -65,6 +73,9 @@ invariant `w`, so cohomologous cocycles have the same norm.
 * `TauCeti.slotSum_smoothTensorInducedGradedResolutionHomotopy_add`: the contraction identity.
 * `TauCeti.smoothTensorInducedDiagonalClass_eq`: the class of the diagonal tensor does not depend
   on the order on the cosets: it equals the class computed through the contraction for any order.
+* `TauCeti.gradedCohomologyClass_smoothTensorInducedGradedResolutionComparison`: the comparison
+  carries the diagonal tensor of a cocycle to a cocycle of the total resolution representing its
+  norm.
 * `TauCeti.smoothTensorInducedDiagonalClass_eq_of_hom_apply_eq`: the norm is invariant under
   chain endomorphisms of the total resolution over the identity of the coefficients.
 * `TauCeti.smoothTensorInducedDiagonalClass_eq_of_sub_eq_d`: cohomologous cocycles have the same
@@ -846,5 +857,152 @@ theorem smoothTensorInducedDiagonalClass_eq_of_sub_eq_d [(Ideal.span {(2 : R)}).
     hdz' Φ hΦd hΦι hΦ (by rw [hΦz, map_neg, ← hzy, ← sub_eq_add_neg, sub_sub_cancel])).symm
 
 end Contraction
+
+/-! ### The comparison with the total resolution of the tensor-induced coefficients -/
+
+section Comparison
+
+-- Over a coefficient ring in `Type`, the tensor-induced coefficients live in the universe of `A`,
+-- so that the universes of their total resolution are determined by unification.
+variable {R : Type} [CommRing R] [TopologicalSpace R] [DiscreteTopology R] [CompactSpace G]
+  [Fintype (G ⧸ U)] [LinearOrder (G ⧸ U)] (A : SmoothDiscreteTopRep.{0, v, max v w} R U)
+  (hA : ∀ a : A.obj.V, a + a = 0)
+
+/-- **The comparison of the tensor-induced resolution with the total resolution** of the
+tensor-induced coefficients: both are contracted onto `Ind⊗_U^G A`, and this is the morphism of
+degree zero over the identity of `Ind⊗_U^G A` given by the comparison theorem
+(`TopRep.ResolutionContraction.gradedComparison`), for the contraction of the tensor-induced
+resolution through the order on `G ⧸ U`. -/
+noncomputable def smoothTensorInducedGradedResolutionComparison :
+    (smoothTensorInducedGradedResolutionFunctor U hU s).obj A ⟶
+      smoothGradedResolutionFunctor.obj
+        ((toSmoothDiscrete R G).obj
+          (DiscreteRep.tensorInduced U hU s ((ofSmoothDiscrete R U).obj A))) :=
+  ObjectProperty.homMk (smoothTensorInducedGradedResolutionContraction U hU s A hA).gradedComparison
+
+/-- The comparison is the comparison of the contraction of the tensor-induced resolution with the
+total resolution. -/
+theorem smoothTensorInducedGradedResolutionComparison_hom :
+    (smoothTensorInducedGradedResolutionComparison U hU s A hA).hom =
+      (smoothTensorInducedGradedResolutionContraction U hU s A hA).gradedComparison :=
+  (rfl)
+
+/-- The comparison carries the total degree of the tensor-induced resolution to the degree of the
+total resolution. -/
+theorem isHomogeneous_smoothTensorInducedGradedResolutionComparison :
+    LinearMap.IsHomogeneous
+      (smoothTensorInducedGradedResolutionComparison U hU s A hA).hom.hom.toLinearMap
+      (smoothTensorInducedGradedResolutionPiece U hU s A)
+      (TopRep.gradedResolutionPiece ((toSmoothDiscrete R G).obj
+          (DiscreteRep.tensorInduced U hU s ((ofSmoothDiscrete R U).obj A))).obj) 0 :=
+  TopRep.ResolutionContraction.isHomogeneous_gradedComparison _
+
+/-- The comparison commutes with the differentials: it carries the slot sum of the total
+differential of `A` to the total differential of the tensor-induced coefficients. -/
+theorem smoothTensorInducedGradedResolutionComparison_slotSum
+    (y : ⨂[R] _ : G ⧸ U, A.obj.gradedResolutionModule) :
+    (smoothTensorInducedGradedResolutionComparison U hU s A hA).hom.hom
+        (PiTensorProduct.slotSum (G ⧸ U) (fun _ ↦ A.obj.gradedResolutionDifferential) y) =
+      TopRep.gradedResolutionDifferential
+          ((toSmoothDiscrete R G).obj
+            (DiscreteRep.tensorInduced U hU s ((ofSmoothDiscrete R U).obj A))).obj
+          ((smoothTensorInducedGradedResolutionComparison U hU s A hA).hom.hom y) := by
+  -- The tensor-induced resolution has no pieces of negative total degree.
+  have hneg : ∀ v ∈ smoothTensorInducedGradedResolutionPiece U hU s A (-1),
+      (smoothTensorInducedGradedResolutionDifferential U hU s A).hom.hom v = 0 := by
+    intro v hv
+    have hbot : smoothTensorInducedGradedResolutionPiece U hU s A (-1) = ⊥ :=
+      PiTensorProduct.totalDegreePiece_eq_bot_of_neg
+        (fun _ _ hp ↦ A.obj.gradedResolutionPiece_of_neg hp) (by norm_num : (-1 : ℤ) < 0)
+    rw [hbot, Submodule.mem_bot] at hv
+    rw [hv, map_zero]
+  have h := congrArg (fun f ↦ f.hom y)
+    ((smoothTensorInducedGradedResolutionContraction U hU s A hA).gradedComparison_differential
+      hneg)
+  exact (congrArg _ (smoothTensorInducedGradedResolutionDifferential_apply U hU s A y).symm).trans
+    (h.trans (TopRep.gradedResolutionTopRepDifferential_apply _ _))
+
+/-- The comparison lies over the identity of the tensor-induced coefficients: it carries their
+augmentation into the tensor-induced resolution to their augmentation into the total
+resolution. -/
+@[simp]
+theorem smoothTensorInducedGradedResolutionComparison_augmentation
+    (x : ((toSmoothDiscrete R G).obj
+      (DiscreteRep.tensorInduced U hU s ((ofSmoothDiscrete R U).obj A))).obj.V) :
+    (smoothTensorInducedGradedResolutionComparison U hU s A hA).hom.hom
+        (PiTensorProduct.map (fun _ ↦ A.obj.gradedResolutionAugmentation) x) =
+      TopRep.gradedResolutionAugmentation
+        ((toSmoothDiscrete R G).obj
+          (DiscreteRep.tensorInduced U hU s ((ofSmoothDiscrete R U).obj A))).obj x :=
+  (congrArg _ (smoothTensorInducedGradedResolutionContraction_ι_apply U hU s A hA x).symm).trans
+    (TopRep.ResolutionContraction.gradedComparison_ι_apply _ x)
+
+/-- The comparison carries the diagonal tensor `z ⊗ ⋯ ⊗ z` of a homogeneous element of degree `n`
+into degree `l * n` of the total resolution, for `l` the number of cosets. -/
+theorem smoothTensorInducedGradedResolutionComparison_tprod_const_mem_gradedResolutionPiece
+    {n : ℕ} {z : A.obj.gradedResolutionModule} (hz : z ∈ A.obj.gradedResolutionPiece n) :
+    (smoothTensorInducedGradedResolutionComparison U hU s A hA).hom.hom
+        (PiTensorProduct.tprod R fun _ : G ⧸ U ↦ z) ∈
+      ((toSmoothDiscrete R G).obj (DiscreteRep.tensorInduced U hU s
+        ((ofSmoothDiscrete R U).obj A))).obj.gradedResolutionPiece (Fintype.card (G ⧸ U) * n : ℕ) :=
+  TopRep.ResolutionContraction.gradedComparison_mem_gradedResolutionPiece _
+    (tprod_const_mem_smoothTensorInducedGradedResolutionPiece U hU s A hz)
+
+/-- The comparison carries the diagonal tensor `z ⊗ ⋯ ⊗ z` of a `U`-invariant element to a
+`G`-invariant element of the total resolution. -/
+theorem gradedResolutionTopRep_ρ_smoothTensorInducedGradedResolutionComparison_tprod_const
+    {z : A.obj.gradedResolutionModule} (hinv : ∀ u, A.obj.gradedResolutionTopRep.ρ u z = z)
+    (g : G) :
+    ((toSmoothDiscrete R G).obj (DiscreteRep.tensorInduced U hU s
+        ((ofSmoothDiscrete R U).obj A))).obj.gradedResolutionTopRep.ρ g
+        ((smoothTensorInducedGradedResolutionComparison U hU s A hA).hom.hom
+          (PiTensorProduct.tprod R fun _ : G ⧸ U ↦ z)) =
+      (smoothTensorInducedGradedResolutionComparison U hU s A hA).hom.hom
+        (PiTensorProduct.tprod R fun _ : G ⧸ U ↦ z) :=
+  TopRep.ResolutionContraction.gradedResolutionTopRep_ρ_gradedComparison _
+    (smoothTensorInducedGradedResolutionFunctor_obj_ρ_tprod_const U hU s A hinv) g
+
+/-- The comparison carries the diagonal tensor `z ⊗ ⋯ ⊗ z` of a homogeneous cocycle to a cocycle
+of the total resolution. -/
+theorem gradedResolutionTopRepDifferential_smoothTensorInducedGradedResolutionComparison_eq_zero
+    {n : ℕ} {z : A.obj.gradedResolutionModule} (hz : z ∈ A.obj.gradedResolutionPiece n)
+    (hdz : A.obj.gradedResolutionDifferential z = 0) :
+    ((toSmoothDiscrete R G).obj (DiscreteRep.tensorInduced U hU s
+        ((ofSmoothDiscrete R U).obj A))).obj.gradedResolutionTopRepDifferential.hom
+        ((smoothTensorInducedGradedResolutionComparison U hU s A hA).hom.hom
+          (PiTensorProduct.tprod R fun _ : G ⧸ U ↦ z)) = 0 :=
+  TopRep.ResolutionContraction.gradedResolutionTopRepDifferential_gradedComparison_eq_zero _
+    (tprod_const_mem_smoothTensorInducedGradedResolutionPiece U hU s A hz)
+    (smoothTensorInducedGradedResolutionDifferential_tprod_const_eq_zero U hU s A hdz)
+
+/-- **The norm of a cocycle on the total resolution.** Let `z` be a `U`-invariant cocycle of degree
+`n` of the total resolution of `A`, and `y` the image under the comparison of its diagonal tensor
+`z ⊗ ⋯ ⊗ z`. Then `y` is a cocycle of degree `l * n` of the total resolution of `Ind⊗_U^G A`,
+fixed by `G` (`smoothTensorInducedGradedResolutionComparison_tprod_const_mem_gradedResolutionPiece`,
+`gradedResolutionTopRep_ρ_smoothTensorInducedGradedResolutionComparison_tprod_const`,
+`gradedResolutionTopRepDifferential_smoothTensorInducedGradedResolutionComparison_eq_zero`), and
+its class, for any such proofs `hy`, `hyinv` and `hdy`, is the norm of `z`. -/
+theorem gradedCohomologyClass_smoothTensorInducedGradedResolutionComparison {n : ℕ}
+    {z : A.obj.gradedResolutionModule} (hz : z ∈ A.obj.gradedResolutionPiece n)
+    (hinv : ∀ u, A.obj.gradedResolutionTopRep.ρ u z = z)
+    (hdz : A.obj.gradedResolutionDifferential z = 0)
+    {y : ((toSmoothDiscrete R G).obj
+      (DiscreteRep.tensorInduced U hU s ((ofSmoothDiscrete R U).obj A))).obj.gradedResolutionModule}
+    (hy : y ∈ ((toSmoothDiscrete R G).obj (DiscreteRep.tensorInduced U hU s
+      ((ofSmoothDiscrete R U).obj A))).obj.gradedResolutionPiece (Fintype.card (G ⧸ U) * n : ℕ))
+    (hyinv : ∀ g, ((toSmoothDiscrete R G).obj (DiscreteRep.tensorInduced U hU s
+      ((ofSmoothDiscrete R U).obj A))).obj.gradedResolutionTopRep.ρ g y = y)
+    (hdy : ((toSmoothDiscrete R G).obj (DiscreteRep.tensorInduced U hU s
+      ((ofSmoothDiscrete R U).obj A))).obj.gradedResolutionTopRepDifferential.hom y = 0)
+    (hyz : y = (smoothTensorInducedGradedResolutionComparison U hU s A hA).hom.hom
+      (PiTensorProduct.tprod R fun _ : G ⧸ U ↦ z)) :
+    (TopRep.gradedResolutionContraction ((toSmoothDiscrete R G).obj (DiscreteRep.tensorInduced U hU
+      s ((ofSmoothDiscrete R U).obj A))).property).gradedCohomologyClass y hy hyinv hdy =
+      smoothTensorInducedDiagonalClass.{0, v, w} U hU s A hA z hz hinv hdz := by
+  subst hyz
+  rw [smoothTensorInducedDiagonalClass_eq]
+  exact TopRep.ResolutionContraction.gradedCohomologyClass_gradedComparison _ _ _ _ _
+
+end Comparison
 
 end TauCeti
