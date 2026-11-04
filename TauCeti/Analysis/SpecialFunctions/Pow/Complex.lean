@@ -58,8 +58,8 @@ integrals such as Carlson's elliptic integrals near both endpoints of `(0, ∞)`
 * `TauCeti.continuousOn_ofReal_add_cpow`, `TauCeti.continuousOn_ofReal_add_cpow_Ici`,
   `TauCeti.continuousOn_ofReal_add_cpow_Ici_of_re_pos` -- continuity of `t ↦ (t + x) ^ s` on
   `(0, ∞)` and `[0, ∞)`.
-* `Complex.cpow_neg_half_mul_self`, `Complex.cpow_neg_half_mul_self'` -- multiplying `w ^ (-1/2)`
-  by itself or by `w` gives `w⁻¹` or `w ^ (1/2)`, including at `w = 0`.
+* `Complex.cpow_neg_half_mul_self`, `Complex.cpow_neg_half_mul_eq_cpow_half` -- multiplying
+  `w ^ (-1/2)` by itself or by `w` gives `w⁻¹` or `w ^ (1/2)`, including at `w = 0`.
 * `Complex.tendsto_ofReal_add_cpow_neg` -- for any complex `x` and real `s > 0`,
   `(t + x) ^ (-s)` tends to `0` as the real number `t` tends to `∞`.
 -/
@@ -321,7 +321,7 @@ theorem cpow_neg_half_mul_self (w : ℂ) : w ^ (-(1 / 2) : ℂ) * w ^ (-(1 / 2) 
 
 /-- Multiplying the principal power `w ^ (-1/2)` by `w` gives `w ^ (1/2)`, including at
 `w = 0`. -/
-theorem cpow_neg_half_mul_self' (w : ℂ) : w ^ (-(1 / 2) : ℂ) * w = w ^ (1 / 2 : ℂ) := by
+theorem cpow_neg_half_mul_eq_cpow_half (w : ℂ) : w ^ (-(1 / 2) : ℂ) * w = w ^ (1 / 2 : ℂ) := by
   rw [← TauCeti.cpow_add_one' (by norm_num)]
   norm_num
 

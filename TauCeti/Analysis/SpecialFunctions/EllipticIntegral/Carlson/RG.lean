@@ -337,7 +337,7 @@ theorem carlsonRG_zero_zero {z : ℂ} (hz : z ∈ slitPlane ∪ {0}) :
     carlsonRG 0 0 z = z ^ (1 / 2 : ℂ) / 2 := by
   rw [carlsonRG_zero_zero_eq_mul_carlsonRF]
   rcases hz with hz | hz
-  · rw [carlsonRF_self hz, ← Complex.cpow_neg_half_mul_self']
+  · rw [carlsonRF_self hz, ← Complex.cpow_neg_half_mul_eq_cpow_half]
     ring
   · simp [Set.mem_singleton_iff.mp hz]
 
@@ -363,8 +363,8 @@ private noncomputable def carlsonRGPrimitive (x y z : ℂ) (t : ℝ) : ℂ :=
 private theorem carlsonRGPrimitive_zero (x y z : ℂ) :
     carlsonRGPrimitive x y z 0 =
       -(x ^ (1 / 2 : ℂ) * y ^ (1 / 2 : ℂ) * z ^ (-(1 / 2) : ℂ)) := by
-  rw [carlsonRGPrimitive, ← Complex.cpow_neg_half_mul_self' x,
-    ← Complex.cpow_neg_half_mul_self' y]
+  rw [carlsonRGPrimitive, ← Complex.cpow_neg_half_mul_eq_cpow_half x,
+    ← Complex.cpow_neg_half_mul_eq_cpow_half y]
   simp only [Complex.ofReal_zero, mul_zero, zero_add]
   ring
 
@@ -377,7 +377,7 @@ private theorem continuousWithinAt_carlsonRGPrimitive {x y z : ℂ} (hx : x ∈ 
       -((y * ((t : ℂ) + x) ^ (1 / 2 : ℂ) + x * (t : ℂ) * ((t : ℂ) + x) ^ (-(1 / 2) : ℂ)) *
         ((t : ℂ) + y) ^ (-(1 / 2) : ℂ) * ((t : ℂ) + z) ^ (-(1 / 2) : ℂ)) := by
     funext t
-    rw [carlsonRGPrimitive, ← Complex.cpow_neg_half_mul_self' ((t : ℂ) + x)]
+    rw [carlsonRGPrimitive, ← Complex.cpow_neg_half_mul_eq_cpow_half ((t : ℂ) + x)]
     ring
   have hxt : ContinuousOn (fun t : ℝ => x * (t : ℂ) * ((t : ℂ) + x) ^ (-(1 / 2) : ℂ)) (Ici 0) := by
     rcases hx with hx | hx
