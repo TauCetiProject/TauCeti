@@ -43,6 +43,9 @@ drop under re-indexing.
 * `Height.mulHeightAff_eq`: for finite `ι`, the affine height as a product of the local factors
   `max (⨆ i, v (x i)) 1`; `Height.prod_mulHeightAff_eq` splits a finite product of affine heights
   into the products of these local factors place by place.
+* `Height.iSup_option_elim_eq_max`, `Height.iSup_option_elim_smul_le`: the local factor
+  `max (⨆ i, v (x i)) 1` for any nonnegative multiplicative `v`, and its bound for a scalar
+  multiple.
 * `Height.hasFiniteMulSupport_max_iSup_nonarchAbsVal`: the nonarchimedean local factors are `1`
   at all but finitely many places.
 * `Height.mulHeight_le_mulHeightAff`, `Height.mulHeight₁_le_mulHeightAff`: for finite `ι`, the
@@ -177,23 +180,54 @@ section Finite
 
 variable [Finite ι] [Finite ι']
 
+section LocalFactor
+
+omit [AdmissibleAbsValues K]
+
+variable {F : Type*} [FunLike F K ℝ] [MonoidWithZeroHomClass F K ℝ] [NonnegHomClass F K ℝ]
+
+/-- The local sup norm `⨆ i, v (x i)` of a nonzero finite tuple is positive. -/
+lemma iSup_apply_pos (v : F) {x : ι → K} (hx : x ≠ 0) : 0 < ⨆ i, v (x i) := by
+  obtain ⟨i, hi⟩ := Function.ne_iff.mp hx
+  exact ((apply_nonneg v _).lt_of_ne' ((map_ne_zero v).mpr hi)).trans_le
+    (Finite.le_ciSup_of_le i le_rfl)
+
+omit [NonnegHomClass F K ℝ] in
+/-- The local sup norm of a tuple with a coordinate `1` appended is at least `1`. -/
+lemma one_le_iSup_option_elim (v : F) (x : ι → K) : 1 ≤ ⨆ o : Option ι, v (o.elim 1 x) :=
+  Finite.le_ciSup_of_le none (by simp)
+
+/-- The local factor of the affine height: the local sup norm of a tuple with a coordinate `1`
+appended is `max (⨆ i, v (x i)) 1`. -/
+lemma iSup_option_elim_eq_max (v : F) (x : ι → K) :
+    ⨆ o : Option ι, v (o.elim 1 x) = max (⨆ i, v (x i)) 1 := by
+  refine le_antisymm (ciSup_le fun o ↦ ?_) (max_le ?_ (one_le_iSup_option_elim v x))
+  · cases o with
+    | none => simp
+    | some i => exact le_max_of_le_left (Finite.le_ciSup_of_le i le_rfl)
+  · exact Real.iSup_le (fun i ↦ Finite.le_ciSup_of_le (some i) le_rfl)
+      (Real.iSup_nonneg_of_nonnegHomClass v _)
+
+/-- The local factor of the affine height of a scalar multiple `c • x` is at most
+`max (v c * ⨆ i, v (x i)) 1`. -/
+lemma iSup_option_elim_smul_le (v : F) (c : K) (x : ι → K) :
+    ⨆ o : Option ι, v (o.elim 1 (c • x)) ≤ max (v c * ⨆ i, v (x i)) 1 := by
+  rw [iSup_option_elim_eq_max]
+  refine max_le_max (Real.iSup_le (fun i ↦ ?_) ?_) le_rfl
+  · simp only [Pi.smul_apply, smul_eq_mul, map_mul]
+    exact mul_le_mul_of_nonneg_left (Finite.le_ciSup_of_le i le_rfl) (apply_nonneg v c)
+  · exact mul_nonneg (apply_nonneg v c) (Real.iSup_nonneg_of_nonnegHomClass v _)
+
+end LocalFactor
+
 /-- The affine height as a product of local factors: at each place `v` the factor is
 `max (⨆ i, v (x i)) 1`, the tuple analogue of the local factor `max (v x) 1` of
 `Height.mulHeight₁`. -/
 lemma mulHeightAff_eq (x : ι → K) :
     mulHeightAff x = (archAbsVal.map fun v ↦ max (⨆ i, v (x i)) 1).prod *
       ∏ᶠ v : nonarchAbsVal, max (⨆ i, v.val (x i)) 1 := by
-  -- At each place, the supremum over the appended tuple is `max (⨆ i, v (x i)) 1`.
-  have key (v : AbsoluteValue K ℝ) : ⨆ o : Option ι, v (o.elim 1 x) = max (⨆ i, v (x i)) 1 := by
-    refine le_antisymm (ciSup_le fun o ↦ ?_) (max_le ?_ ?_)
-    · cases o with
-      | none => simp
-      | some i => exact le_max_of_le_left (Finite.le_ciSup_of_le i le_rfl)
-    · exact Real.iSup_le (fun i ↦ Finite.le_ciSup_of_le (some i) le_rfl)
-        (Real.iSup_nonneg_of_nonnegHomClass v _)
-    · exact Finite.le_ciSup_of_le none (by simp)
   have hx : (fun o : Option ι ↦ o.elim 1 x) ≠ 0 := fun h ↦ one_ne_zero (congrFun h none)
-  simp only [mulHeightAff_def, mulHeight_eq hx, key]
+  simp only [mulHeightAff_def, mulHeight_eq hx, iSup_option_elim_eq_max]
 
 /-- The nonarchimedean local factor `max (⨆ i, v (x i)) 1` of the affine height is `1` at all
 but finitely many places. -/

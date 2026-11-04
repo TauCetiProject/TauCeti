@@ -69,52 +69,43 @@ namespace TauCeti.NumberField
 
 variable {K : Type*} [Field K]
 
-section LocalFactor
-
-variable {F : Type*} [FunLike F K ℝ] [MonoidWithZeroHomClass F K ℝ] [NonnegHomClass F K ℝ]
-  {ι : Type*} [Finite ι]
-
-/-- The local sup norm of a nonzero finite tuple is positive. -/
-private lemma iSup_apply_pos (v : F) {x : ι → K} (hx : x ≠ 0) : 0 < ⨆ j, v (x j) := by
-  obtain ⟨j, hj⟩ := Function.ne_iff.mp hx
-  exact ((apply_nonneg v _).lt_of_ne' ((map_ne_zero v).mpr hj)).trans_le
-    (Finite.le_ciSup_of_le j le_rfl)
-
-omit [NonnegHomClass F K ℝ] in
-/-- The local sup norm of a tuple with a coordinate `1` appended is at least `1`. -/
-private lemma one_le_iSup_option_elim (v : F) (y : ι → K) :
-    1 ≤ ⨆ o : Option ι, v (o.elim 1 y) :=
-  Finite.le_ciSup_of_le none (by simp)
-
-/-- The local estimate behind `TauCeti.NumberField.exists_forall_logHeightAff_smul_le`: the local
-factor of the affine height of `c • x` is at most `max 1 (v c * s)`, with `s` the local sup norm
-of `x`, so a bound `m * log (v c * s) ≤ B` with `0 ≤ B` bounds `m` times its logarithm. -/
-private lemma mul_log_iSup_option_elim_smul_le (v : F) {x : ι → K} (hx : x ≠ 0) {c : K}
-    (hc : c ≠ 0) {m B : ℝ} (hm : 0 ≤ m) (hB : 0 ≤ B)
+/-- The local estimate behind `TauCeti.NumberField.exists_forall_logHeightAff_smul_le`: by
+`Height.iSup_option_elim_smul_le`, a bound `m * log (v c * s) ≤ B` with `0 ≤ B`, where `s` is the
+local sup norm of `x`, bounds `m` times the logarithm of the local factor of the affine height of
+`c • x`. -/
+private lemma mul_log_iSup_option_elim_smul_le {F : Type*} [FunLike F K ℝ]
+    [MonoidWithZeroHomClass F K ℝ] [NonnegHomClass F K ℝ] {ι : Type*} [Finite ι] (v : F)
+    {x : ι → K} (hx : x ≠ 0) {c : K} (hc : c ≠ 0) {m B : ℝ} (hm : 0 ≤ m) (hB : 0 ≤ B)
     (h : m * log (v c) + m * log (⨆ j, v (x j)) ≤ B) :
     m * log (⨆ o : Option ι, v (o.elim 1 (c • x))) ≤ B := by
   have hs := iSup_apply_pos v hx
   have hvc : 0 < v c := (apply_nonneg v c).lt_of_ne' ((map_ne_zero v).mpr hc)
-  have hle : ⨆ o : Option ι, v (o.elim 1 (c • x)) ≤ max 1 (v c * ⨆ j, v (x j)) := by
-    refine ciSup_le fun o ↦ ?_
-    cases o with
-    | none => simp
-    | some j =>
-      simp only [Option.elim_some, Pi.smul_apply, smul_eq_mul, map_mul]
-      exact le_max_of_le_right
-        (mul_le_mul_of_nonneg_left (Finite.le_ciSup_of_le j le_rfl) hvc.le)
   calc m * log (⨆ o : Option ι, v (o.elim 1 (c • x)))
-      ≤ m * log (max 1 (v c * ⨆ j, v (x j))) :=
-        mul_le_mul_of_nonneg_left
-          (log_le_log (zero_lt_one.trans_le (one_le_iSup_option_elim v _)) hle) hm
+      ≤ m * log (max (v c * ⨆ j, v (x j)) 1) :=
+        mul_le_mul_of_nonneg_left (log_le_log (zero_lt_one.trans_le
+          (one_le_iSup_option_elim v _)) (iSup_option_elim_smul_le v c x)) hm
     _ ≤ B := by
       rcases le_total (v c * ⨆ j, v (x j)) 1 with h1 | h1
-      · simpa [max_eq_left h1] using hB
-      · rwa [max_eq_right h1, log_mul hvc.ne' hs.ne', mul_add]
-
-end LocalFactor
+      · simpa [max_eq_right h1] using hB
+      · rwa [max_eq_left h1, log_mul hvc.ne' hs.ne', mul_add]
 
 variable [NumberField K]
+
+/-- The logarithm of the product of the local sup norms of `x` over the infinite places and the
+places of `S`, the form of the height in `NumberField.mulHeight_eq_prod_of_isPrimitive` and
+`NumberField.mulHeight_le_prod`, is the weighted sum of their logarithms when they are
+positive. -/
+private lemma log_prod_iSup_eq {ι : Type*} (S : Finset (HeightOneSpectrum (𝓞 K))) {x : ι → K}
+    (hI : ∀ w : InfinitePlace K, 0 < ⨆ j, w (x j))
+    (hF : ∀ v, 0 < ⨆ j, FinitePlace.mk v (x j)) :
+    log ((∏ w : InfinitePlace K, (⨆ j, w (x j)) ^ w.mult) *
+        ∏ v ∈ S, ⨆ j, FinitePlace.mk v (x j)) =
+      ∑ w : InfinitePlace K, (w.mult : ℝ) * log (⨆ j, w (x j)) +
+        ∑ v ∈ S, log (⨆ j, FinitePlace.mk v (x j)) := by
+  rw [log_mul (Finset.prod_ne_zero_iff.mpr fun w _ ↦ (pow_pos (hI w) _).ne')
+      (Finset.prod_ne_zero_iff.mpr fun v _ ↦ (hF v).ne'),
+    log_prod fun w _ ↦ (pow_pos (hI w) _).ne', log_prod fun v _ ↦ (hF v).ne']
+  simp only [log_pow]
 
 /-- **Every `S`-primitive tuple has an `S`-unit multiple of small affine height** (Bombieri and
 Gubler, Lemma 7.5.4). There is a constant `C`, depending only on `K` and `S` and chosen before
@@ -144,11 +135,7 @@ theorem exists_forall_logHeightAff_smul_le (S : Finset (HeightOneSpectrum (𝓞 
   have hh : h = ∑ w : InfinitePlace K, (w.mult : ℝ) * log (⨆ j, w (x j)) +
       ∑ v ∈ S, log (⨆ j, FinitePlace.mk v (x j)) := by
     rw [hh_def, logHeight_eq_log_mulHeight, NumberField.mulHeight_eq_prod_of_isPrimitive S hx,
-      log_mul (Finset.prod_ne_zero_iff.mpr fun w _ ↦ (pow_pos (iSup_apply_pos w hx0) _).ne')
-        (Finset.prod_ne_zero_iff.mpr fun v _ ↦ (iSup_apply_pos _ hx0).ne'),
-      log_prod fun w _ ↦ (pow_pos (iSup_apply_pos w hx0) _).ne',
-      log_prod fun v _ ↦ (iSup_apply_pos _ hx0).ne']
-    simp only [log_pow]
+      log_prod_iSup_eq S (fun w ↦ iSup_apply_pos w hx0) (fun v ↦ iSup_apply_pos _ hx0)]
   -- an `S`-unit whose logarithms are close to the share `mult v / D` of the height at each place
   obtain ⟨u, hu, hu'⟩ := happrox
     (fun w ↦ w.mult / D * h - w.mult * log (⨆ j, w (x j)))
@@ -176,21 +163,15 @@ theorem exists_forall_logHeightAff_smul_le (S : Finset (HeightOneSpectrum (𝓞 
       log (⨆ o, FinitePlace.mk v (y o)) ≤ h / D + R := by
     simpa using mul_log_iSup_option_elim_smul_le (FinitePlace.mk v) hx0 hc zero_le_one
       (by positivity) (by linarith [(abs_le.mp (hu' v hv)).2])
-  have hposI (w : InfinitePlace K) : 0 < ⨆ o, w (y o) :=
-    zero_lt_one.trans_le (one_le_iSup_option_elim w _)
-  have hposF (v : HeightOneSpectrum (𝓞 K)) : 0 < ⨆ o, FinitePlace.mk v (y o) :=
-    zero_lt_one.trans_le (one_le_iSup_option_elim (FinitePlace.mk v) _)
   rw [logHeightAff_eq_log_mulHeightAff, mulHeightAff_def]
   calc log (mulHeight y)
       ≤ log ((∏ w : InfinitePlace K, (⨆ o, w (y o)) ^ w.mult) *
           ∏ v ∈ S, ⨆ o, FinitePlace.mk v (y o)) :=
         log_le_log (mulHeight_pos y) (NumberField.mulHeight_le_prod S hy0 hyS)
     _ = ∑ w : InfinitePlace K, (w.mult : ℝ) * log (⨆ o, w (y o)) +
-          ∑ v ∈ S, log (⨆ o, FinitePlace.mk v (y o)) := by
-      rw [log_mul (Finset.prod_ne_zero_iff.mpr fun w _ ↦ (pow_pos (hposI w) _).ne')
-          (Finset.prod_ne_zero_iff.mpr fun v _ ↦ (hposF v).ne'),
-        log_prod fun w _ ↦ (pow_pos (hposI w) _).ne', log_prod fun v _ ↦ (hposF v).ne']
-      simp only [log_pow]
+          ∑ v ∈ S, log (⨆ o, FinitePlace.mk v (y o)) :=
+      log_prod_iSup_eq S (fun w ↦ zero_lt_one.trans_le (one_le_iSup_option_elim w _))
+        (fun v ↦ zero_lt_one.trans_le (one_le_iSup_option_elim (FinitePlace.mk v) _))
     _ ≤ ∑ w : InfinitePlace K, (w.mult / D * h + R) + ∑ v ∈ S, (h / D + R) :=
       add_le_add (Finset.sum_le_sum fun w _ ↦ hinf w) (Finset.sum_le_sum hfin)
     _ = h + (Fintype.card (InfinitePlace K) + #S) * R := by
@@ -219,10 +200,9 @@ theorem exists_forall_logHeight₁_apply_smul_le (S : Finset (HeightOneSpectrum 
   obtain ⟨C₀, hC₀⟩ := exists_forall_logHeightAff_smul_le (K := K) S
   -- the value of `L k` at `y` is the dot product of `y` with the coefficient vector of `L k`
   have hval (k : κ) (y : ι → K) : L k y = ∑ i, L k (Pi.single i 1) * y i := by
-    conv_lhs => rw [← Finset.univ_sum_single y]
-    rw [map_sum]
-    refine Finset.sum_congr rfl fun i _ ↦ ?_
-    rw [mul_comm, ← smul_eq_mul, ← map_smul, ← Pi.single_smul', smul_eq_mul, mul_one]
+    have hsingle (i : ι) : (fun j ↦ if i = j then (1 : K) else 0) = Pi.single i 1 :=
+      funext fun j ↦ by simp [Pi.single_apply, eq_comm]
+    simpa [hsingle, mul_comm] using LinearMap.pi_apply_eq_sum_univ (L k) y
   obtain ⟨A, hA⟩ :=
     (Set.finite_range fun k ↦ logHeightAff fun i ↦ L k (Pi.single i 1)).bddAbove
   have hA' (k : κ) : logHeightAff (fun i ↦ L k (Pi.single i 1)) ≤ A := hA ⟨k, rfl⟩
