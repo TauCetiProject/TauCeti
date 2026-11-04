@@ -21,8 +21,8 @@ that when `T` is Fredholm these actions are *genuine* continuous finite-dimensio
 representations, continuous for the operator norm and not only strongly continuous. These are the
 two representations whose difference `[ker T] - [coker T]` is the equivariant index of `T`.
 
-The continuity is the finite-dimensional upgrade of strong continuity,
-`ContRepresentation.continuous_iff_continuous_apply`, applied to the kernel and to the quotient by
+The continuity is the finite-dimensional upgrade of strong continuity, Mathlib's
+`continuous_clm_apply`, applied to the kernel and to the quotient by
 the closed range. It needs neither unitarity nor an inner product. When `ρ` is unitary the cokernel
 is moreover identified, equivariantly and isometrically, with the orthogonal complement of the
 closed range, a subrepresentation of `ρ` which is invariant because `ρ` is unitary. That complement
@@ -132,7 +132,7 @@ continuous representation has finite-dimensional kernel, then the kernel represe
 continuous for the operator norm. -/
 theorem continuous_kerRepresentation (hπ : ∀ v, Continuous fun g ↦ π g v)
     [FiniteDimensional 𝕜 T.toContinuousLinearMap.ker] : Continuous T.kerRepresentation :=
-  continuous_iff_continuous_apply.mpr (T.continuous_kerRepresentation_apply hπ)
+  continuous_clm_apply.mpr (T.continuous_kerRepresentation_apply hπ)
 
 /-- **The kernel of an equivariant Fredholm operator is a continuous representation.** For a
 Fredholm operator intertwining strongly continuous representations, the action on its
@@ -149,7 +149,7 @@ theorem continuous_cokerRepresentation (hρ : ∀ w, Continuous fun g ↦ ρ g w
     [IsClosed (T.toContinuousLinearMap.range : Set F)]
     [FiniteDimensional 𝕜 (F ⧸ T.toContinuousLinearMap.range)] :
     Continuous T.cokerRepresentation :=
-  continuous_iff_continuous_apply.mpr (T.continuous_cokerRepresentation_apply hρ)
+  continuous_clm_apply.mpr (T.continuous_cokerRepresentation_apply hρ)
 
 /-- **The cokernel of an equivariant Fredholm operator is a continuous representation.** For a
 Fredholm operator intertwining strongly continuous representations, the action on its
@@ -209,7 +209,7 @@ continuous unitary representation carries a continuous representation. -/
 theorem continuous_orthogonalRangeRepresentation (hρ : ρ.IsUnitary)
     (hρc : ∀ w, Continuous fun g ↦ ρ g w) [FiniteDimensional 𝕜 T.toContinuousLinearMap.rangeᗮ] :
     Continuous (T.orthogonalRangeRepresentation hρ) :=
-  continuous_iff_continuous_apply.mpr (continuous_subrepresentation_apply hρc)
+  continuous_clm_apply.mpr (continuous_subrepresentation_apply hρc)
 
 section OrthogonalProjection
 

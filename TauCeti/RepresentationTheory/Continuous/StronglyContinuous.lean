@@ -15,13 +15,12 @@ A continuous representation `π` of a topological monoid is *strongly continuous
 `g ↦ π g v` is continuous. This is weaker than continuity of `g ↦ π g` into the continuous linear
 endomorphisms, which carry the topology of uniform convergence on bounded sets (the operator norm
 topology on a normed space): translation by `ℝ` on `L²(ℝ)` is strongly continuous but not
-continuous. In finite dimensions the two notions agree, which is how finite-dimensional
-pieces of a strongly continuous representation become genuine continuous representations.
+continuous. In finite dimensions the two notions agree by Mathlib's `continuous_clm_apply`,
+which is how finite-dimensional pieces of a strongly continuous representation become genuine
+continuous representations.
 
 ## Main results
 
-* `ContRepresentation.continuous_iff_continuous_apply`: a representation on a finite-dimensional
-  normed space is continuous exactly when it is strongly continuous.
 * `ContRepresentation.continuous_subrepresentation_apply` and
   `ContRepresentation.continuous_quotient_apply`: restriction to an invariant submodule and descent
   to the quotient by it preserve strong continuity.
@@ -31,20 +30,6 @@ pieces of a strongly continuous representation become genuine continuous represe
 public section
 
 namespace ContRepresentation
-
-section FiniteDimensional
-
-variable {𝕜 G V : Type*} [NontriviallyNormedField 𝕜] [CompleteSpace 𝕜] [Monoid G]
-  [TopologicalSpace G] [NormedAddCommGroup V] [NormedSpace 𝕜 V] [FiniteDimensional 𝕜 V]
-
-/-- **Strong continuity is continuity in finite dimensions.** A representation on a
-finite-dimensional normed space is continuous for the operator norm exactly when every orbit
-`g ↦ π g v` is continuous. This is `continuous_clm_apply` for the action map. -/
-theorem continuous_iff_continuous_apply {π : ContRepresentation 𝕜 G V} :
-    Continuous π ↔ ∀ v, Continuous fun g ↦ π g v :=
-  continuous_clm_apply
-
-end FiniteDimensional
 
 section StrongContinuity
 
