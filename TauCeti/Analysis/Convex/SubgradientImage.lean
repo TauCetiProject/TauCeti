@@ -241,6 +241,29 @@ end OpenDomain
 
 section CompactClosure
 
+/-- A slope of an affine function through a graph point over the domain that lies below `u` on
+the frontier is a supporting slope on the closure at some point of the domain. -/
+theorem exists_forall_add_apply_le_of_forall_frontier
+    {E : Type*} [SeminormedAddCommGroup E] [NormedSpace ℝ E] {S : Set E} {u : E → ℝ}
+    (hS : IsCompact (closure S)) (hu : ContinuousOn u (closure S)) {x₀ : E} (hx₀ : x₀ ∈ S)
+    {p : E →L[ℝ] ℝ} (hp : ∀ y ∈ frontier S, u x₀ + p (y - x₀) ≤ u y) :
+    ∃ x ∈ S, ∀ y ∈ closure S, u x + p (y - x) ≤ u y := by
+  let φ := fun x => u x - p x
+  have hφ : ContinuousOn φ (closure S) := hu.sub p.continuous.continuousOn
+  obtain ⟨x, hx, hmin⟩ := hS.exists_isMinOn ⟨x₀, subset_closure hx₀⟩ hφ
+  by_cases hxs : x ∈ S
+  · refine ⟨x, hxs, fun y hy => ?_⟩
+    have h := isMinOn_iff.1 hmin y hy
+    simp only [φ] at h
+    rw [map_sub]
+    linarith
+  · refine ⟨x₀, hx₀, fun y hy => ?_⟩
+    have h := isMinOn_iff.1 hmin y hy
+    have hfront := hp x ⟨hx, fun hi => hxs (interior_subset hi)⟩
+    simp only [φ] at h
+    rw [map_sub] at hfront ⊢
+    linarith
+
 variable {E : Type*} [SeminormedAddCommGroup E] [InnerProductSpace ℝ E]
 
 /-- **Slopes below the boundary values are subgradients.** Let `Ω` have compact closure, let `u`
@@ -252,23 +275,11 @@ theorem exists_forall_add_inner_le_of_forall_frontier {Ω : Set E} {u : E → �
     (hΩ : IsCompact (closure Ω)) (hu : ContinuousOn u (closure Ω)) {x₀ : E} (hx₀ : x₀ ∈ Ω)
     {p : E} (hp : ∀ x ∈ frontier Ω, u x₀ + inner ℝ (x - x₀) p ≤ u x) :
     ∃ x₁ ∈ Ω, ∀ x ∈ Ω, u x₁ + inner ℝ (x - x₁) p ≤ u x := by
-  -- Minimize `u - ⟪·, p⟫` over the compact closure of `Ω`.
-  have hcont : ContinuousOn (fun x => u x - inner ℝ x p) (closure Ω) :=
-    hu.sub (continuous_id.inner continuous_const).continuousOn
-  obtain ⟨x₁, hx₁, hmin⟩ := hΩ.exists_isMinOn ⟨x₀, subset_closure hx₀⟩ hcont
-  have hmin' : ∀ x ∈ Ω, u x₁ - inner ℝ x₁ p ≤ u x - inner ℝ x p := fun x hx =>
-    isMinOn_iff.1 hmin x (subset_closure hx)
-  by_cases h₁ : x₁ ∈ Ω
-  · refine ⟨x₁, h₁, fun x hx => ?_⟩
-    have := hmin' x hx
-    rw [inner_sub_left]
-    linarith
-  · -- A minimum on the frontier is no smaller than the value at `x₀`, which is then a minimum.
-    refine ⟨x₀, hx₀, fun x hx => ?_⟩
-    have h₂ := hp x₁ ⟨hx₁, fun h => h₁ (interior_subset h)⟩
-    have h₃ := hmin' x hx
-    rw [inner_sub_left] at h₂ ⊢
-    linarith
+  obtain ⟨x, hx, h⟩ := exists_forall_add_apply_le_of_forall_frontier hΩ hu hx₀
+    (p := innerSL ℝ p) (fun y hy => by
+      simpa only [innerSL_apply_apply, real_inner_comm p (y - x₀)] using hp y hy)
+  refine ⟨x, hx, fun y hy => ?_⟩
+  simpa only [innerSL_apply_apply, real_inner_comm p (y - x)] using h y (subset_closure hy)
 
 /-- **Supporting slopes of a function lying above at `x₀` and below on the frontier.** Let `Ω` have
 compact closure, let `u` and `w` be continuous on its closure with `w ≤ u` on the frontier of `Ω`,
