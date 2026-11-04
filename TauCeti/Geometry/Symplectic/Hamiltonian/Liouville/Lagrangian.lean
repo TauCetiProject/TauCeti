@@ -7,11 +7,10 @@ module
 
 public import Mathlib.Algebra.Module.ZLattice.Basic
 public import TauCeti.Geometry.Manifold.Algebra.Quotient
-public import TauCeti.Geometry.Symplectic.Hamiltonian.LiouvilleArnold
+public import TauCeti.Geometry.Symplectic.Hamiltonian.Liouville.Torus
 public import TauCeti.Geometry.Symplectic.Lagrangian.Embedding.Basic
 
 import TauCeti.Geometry.Manifold.Immersion.Differential
-import TauCeti.Topology.Algebra.Module.CompactQuotient
 import TauCeti.Topology.Algebra.Module.Quotient
 
 /-!
@@ -42,8 +41,9 @@ The statements about smoothness take the discreteness of `Λ` as an instance arg
 manifold structure of `(ι → ℝ) / Λ` depends on it; at a regular point it is supplied by
 `TauCeti.SmoothTwoForm.IsSymplectic.discreteTopology_hamiltonianFlowStabilizer`.
 
-When `L` is moreover compact, as it is for a proper map `F`, the stabilizer has compact quotient,
-so it spans `ι → ℝ`: it is a full lattice, of rank `n`. Then `(ι → ℝ) / Λ` is a compact torus,
+When `L` is moreover compact, as it is for a proper map `F`, the stabilizer spans `ι → ℝ`
+(`TauCeti.SmoothTwoForm.IsSymplectic.span_hamiltonianFlowStabilizer_eq_top`): it is a full
+lattice, of rank `n`. Then `(ι → ℝ) / Λ` is a compact torus,
 and `L` is the image of a Lagrangian embedding of that torus. This is the smooth part of the
 Liouville–Arnold theorem on a single compact regular component; no symplectic coordinates near
 `L` are constructed here.
@@ -265,9 +265,8 @@ theorem isZLattice_hamiltonianFlowStabilizer (hdim : 2 * Fintype.card ι = finra
     [DiscreteTopology (hσ.hamiltonianFlowStabilizer hF hcomm hc x)] :
     IsZLattice ℝ (hσ.hamiltonianFlowStabilizer hF hcomm hc x).toIntSubmodule where
   span_top := by
-    have := hσ.compactSpace_quotient_hamiltonianFlowStabilizer hF hcomm hc hdim hreg hL
     rw [AddSubgroup.coe_toIntSubmodule]
-    exact AddSubgroup.span_eq_top_of_compactSpace_quotient _
+    exact hσ.span_hamiltonianFlowStabilizer_eq_top hF hcomm hc hreg hdim hL
 
 /-- **The period lattice of a compact regular component has rank `n`.** On a manifold of dimension
 `2 · |ι|`, if the connected component of `x` in its level is compact and consists of regular points

@@ -22,8 +22,10 @@ with the quotient of `ι → ℝ` by its discrete stabilizer `Λ`
 compact, this quotient is compact, so `Λ` spans `ι → ℝ` and is a full lattice. A lattice basis
 then identifies `L` with the torus `(ℝ / ℤ)ⁿ`.
 
-Other components of the level need not be regular. The smooth identification and action-angle
-coordinates near `L` are not treated here.
+Other components of the level need not be regular. The smooth identification of `L` with
+`(ι → ℝ) / Λ` as a Lagrangian embedding is in
+`TauCeti.Geometry.Symplectic.Hamiltonian.Liouville.Lagrangian`; action-angle coordinates near `L`
+are not treated here.
 
 ## Main results
 
