@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.LinearAlgebra.TensorProduct.Basic
-public import TauCeti.RingTheory.Ideal.Quotient.Operations
 public import TauCeti.RingTheory.Norm.FullSetOfSections.Basic
 public import TauCeti.RingTheory.Norm.Projective
 

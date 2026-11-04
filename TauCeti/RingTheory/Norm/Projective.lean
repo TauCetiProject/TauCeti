@@ -10,6 +10,8 @@ public import Mathlib.RingTheory.LocalRing.ResidueField.Ideal
 public import Mathlib.RingTheory.Norm.Transitivity
 public import TauCeti.LinearAlgebra.Determinant.Projective
 public import TauCeti.RingTheory.TensorProduct.Maps
+-- `baseChangeTowerAlgEquiv` is used only in the proof of `Algebra.projectiveNorm_rTensor`.
+import TauCeti.Algebra.TensorProduct.BaseChange
 
 /-!
 # The norm of a finite locally free algebra
@@ -129,20 +131,13 @@ theorem Algebra.projectiveNorm_rTensor {A A' : Type*} [CommRing A] [Algebra R A]
     projectiveNorm A' (Algebra.TensorProduct.rTensor S φ x) = φ (projectiveNorm A x) := by
   let := φ.toRingHom.toAlgebra
   have : IsScalarTower R A A' := .of_algebraMap_eq fun a ↦ (φ.commutes a).symm
-  -- `A' ⊗[R] S` is the base change of `A ⊗[R] S` along `φ`; Mathlib's
-  -- `Algebra.TensorProduct.cancelBaseChange` needs `S` commutative, so we build the algebra
-  -- equivalence from the linear one
-  let e : A' ⊗[R] S ≃ₐ[A'] A' ⊗[A] (A ⊗[R] S) := AlgEquiv.ofLinearEquiv
-    (AlgebraTensorModule.cancelBaseChange R A A' A' S).symm
-    (by simp [Algebra.TensorProduct.one_def]) <|
-      LinearMap.map_mul_of_map_mul_tmul fun _ _ _ _ ↦ by simp
-  have he (y : A' ⊗[R] S) : e y = (AlgebraTensorModule.cancelBaseChange R A A' A' S).symm y :=
-    AlgEquiv.ofLinearEquiv_apply _ _ _ y
+  -- `A' ⊗[R] S` is the base change of `A ⊗[R] S` along `φ`
+  let e := (TauCeti.Algebra.TensorProduct.baseChangeTowerAlgEquiv R A S A').symm
   have hx : e (Algebra.TensorProduct.rTensor S φ x) = (1 : A') ⊗ₜ[A] x := by
     induction x using TensorProduct.inductionOn with
     | tmul a b =>
       have : φ a = a • (1 : A') := by simp [Algebra.smul_def, RingHom.algebraMap_toAlgebra]
-      simp [this, he, TensorProduct.smul_tmul, TensorProduct.smul_tmul']
+      simp [e, this, TensorProduct.smul_tmul, TensorProduct.smul_tmul']
     | add x y hx hy => simp only [map_add, tmul_add, hx, hy]
   rw [← projectiveNorm_eq_of_algEquiv e, hx, projectiveNorm_baseChange_tmul,
     RingHom.algebraMap_toAlgebra, AlgHom.toRingHom_eq_coe, AlgHom.coe_toRingHom]
