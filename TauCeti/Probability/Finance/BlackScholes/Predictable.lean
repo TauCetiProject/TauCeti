@@ -23,8 +23,8 @@ The bond price may be any deterministic Borel function; continuous positive bond
 special case. These results supply predictable holdings for stochastic integration. They do
 not assert integrability or self-financing.
 
-The public theorems in `MeasureTheory.IsStronglyPredictable` are `deriv_callPrice`,
-`deriv_putPrice`, `hedgeBondHolding_callPrice`, and `hedgeBondHolding_putPrice`.
+The public theorems in `MeasureTheory.IsStronglyPredictable` are `deriv_callPrice_spot`,
+`deriv_putPrice_spot`, `hedgeBondHolding_callPrice`, and `hedgeBondHolding_putPrice`.
 
 ## References
 
@@ -77,7 +77,7 @@ private theorem isStronglyPredictable_before_maturity
 
 /-- The call delta along a predictable positive spot process, extended by zero at and
 after maturity, is predictable. -/
-theorem deriv_callPrice
+theorem deriv_callPrice_spot
     (hS : IsStronglyPredictable ℱ S)
     (hpos : ∀ (t : ℝ≥0) ω, (t : ℝ) < T → 0 < S t ω) (hK : 0 < K) (hσ : σ ≠ 0) :
     IsStronglyPredictable ℱ (fun t ω => if (t : ℝ) < T then
@@ -86,11 +86,12 @@ theorem deriv_callPrice
   refine isStronglyPredictable_before_maturity
     ((monotone_cdf (μ := gaussianReal 0 1)).measurable.comp hd) ?_
   intro t ω ht
-  exact deriv_callPrice_spot (r := r) (hpos t ω ht) hK hσ (sub_pos.mpr ht)
+  exact TauCeti.BlackScholes.deriv_callPrice_spot
+    (r := r) (hpos t ω ht) hK hσ (sub_pos.mpr ht)
 
 /-- The put delta along a predictable positive spot process, extended by zero at and
 after maturity, is predictable. -/
-theorem deriv_putPrice
+theorem deriv_putPrice_spot
     (hS : IsStronglyPredictable ℱ S)
     (hpos : ∀ (t : ℝ≥0) ω, (t : ℝ) < T → 0 < S t ω) (hK : 0 < K) (hσ : σ ≠ 0) :
     IsStronglyPredictable ℱ (fun t ω => if (t : ℝ) < T then
@@ -99,7 +100,8 @@ theorem deriv_putPrice
   refine isStronglyPredictable_before_maturity
     ((monotone_cdf (μ := gaussianReal 0 1)).measurable.comp hd.neg).neg ?_
   intro t ω ht
-  exact deriv_putPrice_spot (r := r) (hpos t ω ht) hK hσ (sub_pos.mpr ht)
+  exact TauCeti.BlackScholes.deriv_putPrice_spot
+    (r := r) (hpos t ω ht) hK hσ (sub_pos.mpr ht)
 
 /-- The call delta hedge bond holding along a predictable positive spot process, with
 a deterministic Borel bond price and zero extension at and after maturity, is predictable. -/
