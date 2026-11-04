@@ -205,9 +205,8 @@ theorem ofBaseChangeAux_chirality_mul_ι (A : Type*) [CommRing A] [Algebra ℝ A
       -(ι (Q.baseChange A) z * ofBaseChangeAux A Q (chirality Q o)) := by
   induction z using TensorProduct.inductionOn with
   | tmul a v =>
-    have h : ι (Q.baseChange A) (a ⊗ₜ v) = a • ofBaseChangeAux A Q (ι Q v) := by
-      simp [← map_smul, TensorProduct.smul_tmul']
-    simp only [h, mul_smul_comm, smul_mul_assoc, ← map_mul, chirality_mul_ι o, map_neg,
+    simp only [ι_baseChange_tmul_eq_smul_ofBaseChangeAux, mul_smul_comm, smul_mul_assoc,
+      ← map_mul, chirality_mul_ι o, map_neg,
       smul_neg]
   | add x y hx hy => rw [map_add, mul_add, add_mul, hx, hy, neg_add]
 
