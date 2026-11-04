@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.LinearAlgebra.Determinant
 public import Mathlib.LinearAlgebra.Dual.Lemmas
 
 /-!
@@ -44,8 +45,9 @@ and so separate points.
   independent family of functionals has a biorthogonal family of vectors.
 * `LinearIndependent.eq_zero_of_forall_apply_eq_zero`: linearly independent functionals, as many
   as the dimension, have no common zero but `0`.
-* `LinearIndependent.exists_sum_smul_eq_proj`: `#ι` linearly independent forms on `Kⁱ` express
-  every coordinate projection.
+* `LinearIndependent.exists_sum_smul_eq_proj`, `LinearIndependent.bijective_pi`,
+  `LinearIndependent.det_pi_ne_zero`: `#ι` linearly independent forms on `Kⁱ` express every
+  coordinate projection and assemble into a bijective endomorphism of nonzero determinant.
 -/
 
 public section
@@ -235,5 +237,24 @@ theorem exists_sum_smul_eq_proj {K ι : Type*} [Field K] [Fintype ι]
   choose a ha using fun j : ι ↦ (Submodule.mem_span_range_iff_exists_fun K).mp
     (hspan ▸ Submodule.mem_top : LinearMap.proj (φ := fun _ : ι ↦ K) j ∈ _)
   exact ⟨a, ha⟩
+
+/-- `#ι` linearly independent forms on `Kⁱ` assemble into a bijective endomorphism
+`LinearMap.pi l`. -/
+theorem bijective_pi {K ι : Type*} [Field K] [Finite ι]
+    {l : ι → Module.Dual K (ι → K)} (hl : LinearIndependent K l) :
+    Function.Bijective (LinearMap.pi l) := by
+  have := Fintype.ofFinite ι
+  have hinj : Function.Injective (LinearMap.pi l) :=
+    LinearMap.ker_eq_bot.mp <| eq_bot_iff.mpr fun x hx ↦
+      hl.eq_zero_of_forall_apply_eq_zero (by simp) fun i ↦ congr_fun hx i
+  exact ⟨hinj, LinearMap.injective_iff_surjective.mp hinj⟩
+
+/-- `#ι` linearly independent forms on `Kⁱ` have nonzero determinant
+`LinearMap.det (LinearMap.pi l)`. -/
+theorem det_pi_ne_zero {K ι : Type*} [Field K] [Finite ι]
+    {l : ι → Module.Dual K (ι → K)} (hl : LinearIndependent K l) :
+    LinearMap.det (LinearMap.pi l) ≠ 0 :=
+  (LinearMap.isUnit_iff_isUnit_det (LinearMap.pi l) |>.mp
+    (Module.End.isUnit_iff (LinearMap.pi l) |>.mpr hl.bijective_pi)).ne_zero
 
 end LinearIndependent

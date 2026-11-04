@@ -57,9 +57,11 @@ An algebraic integer is at most `1` at every finite place, `NumberField.FinitePl
 and `NumberField.FinitePlace.exists_ne_zero_forall_apply_le` produces a nonzero algebraic integer
 which is as small as prescribed at finitely many finite places. Its form
 `NumberField.FinitePlace.exists_ne_zero_forall_mul_apply_le` clears prescribed bounds `R v` at
-those places: `v d * R v ≤ 1`. These follow Ralf Stephan's
-`DiophantineApproximation/FinitePlaceValues.lean` in `rwst/Subspace-Theorems`, snapshot
-`c26d909dc48cf7fe` (Apache 2.0).
+those places: `v d * R v ≤ 1`. When a finite place `u` lies outside that finite set,
+`NumberField.FinitePlace.exists_apply_eq_one_forall_apply_le` and
+`NumberField.FinitePlace.exists_apply_eq_one_forall_mul_apply_le` choose `d` to have `u d = 1` as
+well. These follow Ralf Stephan's `DiophantineApproximation/FinitePlaceValues.lean` in
+`rwst/Subspace-Theorems`, snapshot `c26d909dc48cf7fe` (Apache 2.0).
 -/
 
 public section
@@ -206,6 +208,54 @@ theorem exists_ne_zero_forall_mul_apply_le (T : Finset (FinitePlace K)) {R : Fin
   obtain ⟨d, hd0, hd⟩ := exists_ne_zero_forall_apply_le T (ε := fun v ↦ (1 + R v)⁻¹)
     fun v hv ↦ by have := hR v hv; positivity
   refine ⟨d, hd0, fun v hv ↦ ?_⟩
+  have h1 : 0 < 1 + R v := by linarith [hR v hv]
+  calc v (d : K) * R v ≤ (1 + R v)⁻¹ * R v := by gcongr; exacts [hR v hv, hd v hv]
+    _ ≤ 1 := by rw [inv_mul_le_iff₀ h1]; linarith
+
+/-- Given a finite place `u` outside a finite set `T` of finite places, some algebraic integer has
+absolute value `1` at `u` and is as small as prescribed at every place of `T`. -/
+theorem exists_apply_eq_one_forall_apply_le (u : FinitePlace K) {T : Finset (FinitePlace K)}
+    (hu : u ∉ T) {ε : FinitePlace K → ℝ} (hε : ∀ v ∈ T, 0 < ε v) :
+    ∃ d : 𝓞 K, u (d : K) = 1 ∧ ∀ v ∈ T, v (d : K) ≤ ε v := by
+  -- For each `w ∈ T`, its prime is maximal and distinct from that of `u`, so it contains an
+  -- element outside the prime of `u`.
+  have hp (w : {w // w ∈ T}) :
+      ∃ x : 𝓞 K, x ∈ w.1.maximalIdeal.asIdeal ∧ x ∉ u.maximalIdeal.asIdeal := by
+    have hne : w.1.maximalIdeal ≠ u.maximalIdeal :=
+      (maximalIdeal_inj w.1 u).not.mpr (ne_of_mem_of_not_mem w.2 hu)
+    by_contra! H
+    exact hne <| HeightOneSpectrum.ext_iff.mpr <|
+      Ideal.IsMaximal.eq_of_le w.1.maximalIdeal.isMaximal Ideal.IsPrime.ne_top' H
+  choose p hp_mem hp_notMem using hp
+  set t : 𝓞 K := ∏ w ∈ T.attach, p w
+  have hut : u (t : K) = 1 := by
+    have hcoe : (t : K) = ∏ w ∈ T.attach, (p w : K) := by simp [t]
+    rw [hcoe, map_prod]
+    refine Finset.prod_eq_one fun w _ ↦ ?_
+    rw [← norm_embedding_eq, norm_eq_one_iff_notMem]
+    exact hp_notMem w
+  have ht (v : FinitePlace K) (hv : v ∈ T) : v (t : K) < 1 := by
+    rw [← norm_embedding_eq, norm_lt_one_iff_mem]
+    obtain ⟨c, hc⟩ : p ⟨v, hv⟩ ∣ t := Finset.dvd_prod_of_mem p (Finset.mem_attach T ⟨v, hv⟩)
+    rw [hc]
+    exact Ideal.mul_mem_right _ _ (hp_mem ⟨v, hv⟩)
+  have hpow (v : FinitePlace K) (hv : v ∈ T) :
+      ∀ᶠ m : ℕ in Filter.atTop, v ((t ^ m : 𝓞 K) : K) ≤ ε v := by
+    simp_rw [map_pow]
+    exact (tendsto_pow_atTop_nhds_zero_of_lt_one (apply_nonneg v _) (ht v hv)).eventually
+      (ge_mem_nhds (hε v hv))
+  obtain ⟨m, hm⟩ := ((Filter.eventually_all_finset T).2 hpow).exists
+  exact ⟨t ^ m, by simp [hut], hm⟩
+
+/-- Given a finite place `u` outside a finite set `T` of finite places, some algebraic integer has
+absolute value `1` at `u` and clears prescribed nonnegative bounds `R v` at every place of `T`:
+`v d * R v ≤ 1` there. -/
+theorem exists_apply_eq_one_forall_mul_apply_le (u : FinitePlace K) {T : Finset (FinitePlace K)}
+    (hu : u ∉ T) {R : FinitePlace K → ℝ} (hR : ∀ v ∈ T, 0 ≤ R v) :
+    ∃ d : 𝓞 K, u (d : K) = 1 ∧ ∀ v ∈ T, v (d : K) * R v ≤ 1 := by
+  obtain ⟨d, hdu, hd⟩ := u.exists_apply_eq_one_forall_apply_le hu (ε := fun v ↦ (1 + R v)⁻¹)
+    fun v hv ↦ by have := hR v hv; positivity
+  refine ⟨d, hdu, fun v hv ↦ ?_⟩
   have h1 : 0 < 1 + R v := by linarith [hR v hv]
   calc v (d : K) * R v ≤ (1 + R v)⁻¹ * R v := by gcongr; exacts [hR v hv, hd v hv]
     _ ≤ 1 := by rw [inv_mul_le_iff₀ h1]; linarith
