@@ -5,8 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.DualNumber
 public import Mathlib.NumberTheory.Padics.PadicNumbers
+public import TauCeti.Analysis.Normed.Ring.DualNumber
 public import TauCeti.RingTheory.PowerSeries.Weierstrass.DivMod
 public import TauCeti.RingTheory.PowerSeries.Weierstrass.Preparation
 
@@ -18,11 +18,9 @@ series in one variable over ultrametric Banach rings whose norm need not be mult
 at radii that are not norms of scalars.
 
 The coefficient ring with nilpotents is the ring of dual numbers `K[ε]`, `ε ^ 2 = 0`, with the
-maximum norm `‖a + b ε‖ = max ‖a‖ ‖b‖` (`TauCeti.Examples.MaxDualNumber`). Mathlib's
-`DualNumber K` carries the `ℓ¹` norm `‖a‖ + ‖b‖` instead, which is not ultrametric, so the
-maximum norm lives on a type synonym. Over a complete ultrametric normed ring `K` with `‖1‖ = 1`
-it is a complete ultrametric normed ring with `‖1‖ = 1` and `‖ε‖ = 1`, and its norm is not
-multiplicative since `ε * ε = 0`.
+maximum norm `‖a + b ε‖ = max ‖a‖ ‖b‖` (`TauCeti.MaxDualNumber`). Over a complete ultrametric
+normed ring `K` with `‖1‖ = 1` it is a complete ultrametric normed ring with `‖1‖ = 1` and
+`‖ε‖ = 1`, and its norm is not multiplicative since `ε * ε = 0`.
 
 * `1 + ε X` is a unit of the restricted series at every radius, with inverse `1 - ε X`. At radius
   one its coefficient `ε` has the same norm as its constant coefficient, so it is a unit that is
@@ -51,81 +49,9 @@ multiplicative since `ε * ε = 0`.
 
 public section
 
-open Polynomial TauCeti.PowerSeries
+open Polynomial TauCeti.PowerSeries TauCeti.MaxDualNumber
 
 namespace TauCeti.Examples
-
-/-- The dual numbers `K[ε]` with the maximum norm `‖a + b ε‖ = max ‖a‖ ‖b‖` of the two
-coefficients, in place of the `ℓ¹` norm Mathlib puts on `DualNumber K`. -/
-@[expose] def MaxDualNumber (K : Type*) : Type _ := DualNumber K
-
-namespace MaxDualNumber
-
-variable {K : Type*} [NormedCommRing K] [IsUltrametricDist K]
-
-/-- The maximum norm of the coefficients of dual numbers is submultiplicative, because the norm of
-`K` is ultrametric: `‖a * d + b * c‖ ≤ max ‖a * d‖ ‖b * c‖`. -/
-private theorem max_norm_mul_le (a b : DualNumber K) :
-    max ‖(a * b).fst‖ ‖(a * b).snd‖ ≤ max ‖a.fst‖ ‖a.snd‖ * max ‖b.fst‖ ‖b.snd‖ := by
-  rw [TrivSqZeroExt.fst_mul, DualNumber.snd_mul,
-    mul_max_of_nonneg _ _ ((norm_nonneg _).trans (le_max_left _ _)),
-    max_mul_of_nonneg _ _ (norm_nonneg _), max_mul_of_nonneg _ _ (norm_nonneg _)]
-  exact max_le (le_max_of_le_left (le_max_of_le_left (norm_mul_le _ _)))
-    ((IsUltrametricDist.norm_add_le_max _ _).trans (max_le
-      (le_max_of_le_right (le_max_of_le_left (norm_mul_le _ _)))
-      (le_max_of_le_left (le_max_of_le_right (norm_mul_le _ _)))))
-
-/-- The ring structure of the dual numbers with the maximum norm of the coefficient pair, which
-is the norm of `K × K`. -/
-noncomputable instance : NormedCommRing (MaxDualNumber K) where
-  __ : NormedAddCommGroup (K × K) := inferInstance
-  __ : CommRing (DualNumber K) := inferInstance
-  -- The norm of `x` is by definition the maximum norm of its coefficients.
-  norm_mul_le a b := by exact max_norm_mul_le a b
-
-/-- The identification of `MaxDualNumber K` with Mathlib's dual numbers, as rings. -/
-def ofDualNumber : DualNumber K ≃+* MaxDualNumber K := RingEquiv.refl _
-
-/-- The norm of a dual number is the maximum of the norms of its two coefficients. -/
-theorem norm_ofDualNumber (x : DualNumber K) :
-    ‖ofDualNumber x‖ = max ‖x.fst‖ ‖x.snd‖ := (rfl)
-
-/-- The square-zero generator `ε` of `MaxDualNumber K`. -/
-def eps : MaxDualNumber K := ofDualNumber DualNumber.eps
-
-/-- The generator `ε` squares to zero, so `MaxDualNumber K` has nilpotents. -/
-theorem eps_mul_eps : (eps * eps : MaxDualNumber K) = 0 := by
-  rw [eps, ← map_mul, DualNumber.eps_mul_eps, map_zero]
-
-instance : IsUltrametricDist (MaxDualNumber K) := by
-  refine IsUltrametricDist.isUltrametricDist_of_forall_norm_add_le_max_norm fun x y ↦ ?_
-  obtain ⟨a, rfl⟩ := ofDualNumber.surjective x
-  obtain ⟨b, rfl⟩ := ofDualNumber.surjective y
-  rw [← map_add, norm_ofDualNumber, norm_ofDualNumber, norm_ofDualNumber, TrivSqZeroExt.fst_add,
-    TrivSqZeroExt.snd_add, max_max_max_comm]
-  exact max_le_max (IsUltrametricDist.norm_add_le_max _ _) (IsUltrametricDist.norm_add_le_max _ _)
-
-instance [CompleteSpace K] : CompleteSpace (MaxDualNumber K) :=
-  inferInstanceAs (CompleteSpace (K × K))
-
-variable [NormOneClass K]
-
-instance : NormOneClass (MaxDualNumber K) :=
-  ⟨by rw [← map_one ofDualNumber, norm_ofDualNumber]; simp⟩
-
-/-- The generator `ε` has norm one, the norm of its only nonzero coefficient. -/
-@[simp]
-theorem norm_eps : ‖(eps : MaxDualNumber K)‖ = 1 := by
-  rw [eps, norm_ofDualNumber, DualNumber.fst_eps, DualNumber.snd_eps]
-  simp
-
-/-- The maximum norm on the dual numbers is not multiplicative: `‖ε * ε‖ = 0` while `‖ε‖ = 1`. -/
-theorem not_normMulClass : ¬NormMulClass (MaxDualNumber K) := fun _ ↦ by
-  simpa [eps_mul_eps] using norm_mul (eps : MaxDualNumber K) eps
-
-end MaxDualNumber
-
-open MaxDualNumber
 
 section Units
 
@@ -133,7 +59,7 @@ variable {R : Type*} [NormedCommRing R] [IsUltrametricDist R] {c : ℝ}
 
 /-- If `ε * ε = 0`, then `1 + ε X` and `1 - ε X` are inverse to each other among the series
 restricted at any radius, with no condition on the norm of `ε`. -/
-private theorem one_add_mul_one_sub_eq_one {ε : R} (hε : ε * ε = 0) :
+theorem one_add_mul_one_sub_eq_one {ε : R} (hε : ε * ε = 0) :
     polynomialToRestricted c (1 + C ε * X) * polynomialToRestricted c (1 - C ε * X) = 1 := by
   have h : C ε * C ε = (0 : R[X]) := by rw [← C_mul, hε, C_0]
   rw [← map_mul, ← map_one (polynomialToRestricted c)]
@@ -158,13 +84,14 @@ section Weierstrass
 variable {R : Type*} [NormedCommRing R] [IsUltrametricDist R] [NormOneClass R] {c : ℝ}
 
 omit [IsUltrametricDist R] in
-private theorem isMonicOfDegree_X_sq_sub_C (a : R) : (X ^ 2 - C a : R[X]).IsMonicOfDegree 2 :=
+/-- `X ^ 2 - a` is monic of degree two over a nontrivial ring. -/
+theorem isMonicOfDegree_X_sq_sub_C (a : R) : (X ^ 2 - C a : R[X]).IsMonicOfDegree 2 :=
   have := NormOneClass.nontrivial (G := R)
   (isMonicOfDegree_X_pow (R := R) 2).sub (by rw [natDegree_C]; norm_num)
 
 /-- `X ^ 2 - a` is multiplicatively distinguished of degree two at every radius `c > 0` with
 `‖a‖ ≤ c ^ 2`, including when the constant coefficient attains the Gauss norm. -/
-private theorem isMulDistinguished_X_sq_sub_C (hc : 0 < c) {a : R} (ha : ‖a‖ ≤ c ^ 2) :
+theorem isMulDistinguished_X_sq_sub_C (hc : 0 < c) {a : R} (ha : ‖a‖ ≤ c ^ 2) :
     IsMulDistinguished c 2 (polynomialToRestricted c (X ^ 2 - C a) : PowerSeries R) := by
   rw [coe_polynomialToRestricted]
   refine ⟨isDistinguished_of_isMonicOfDegree hc (isMonicOfDegree_X_sq_sub_C a) fun k hk ↦ ?_, ?_⟩
@@ -177,7 +104,7 @@ private theorem isMulDistinguished_X_sq_sub_C (hc : 0 < c) {a : R} (ha : ‖a‖
 
 /-- If `a` is a multiplicative unit and `c ^ 2 < ‖a‖`, then `X ^ 2 - a` is multiplicatively
 distinguished of degree zero at `c`: its constant coefficient strictly dominates. -/
-private theorem isMulDistinguished_zero_X_sq_sub_C {a : R} (ha : IsNormMulUnit a)
+theorem isMulDistinguished_zero_X_sq_sub_C {a : R} (ha : IsNormMulUnit a)
     (hca : c ^ 2 < ‖a‖) :
     IsMulDistinguished c 0 (polynomialToRestricted c (X ^ 2 - C a) : PowerSeries R) := by
   rw [coe_polynomialToRestricted]
@@ -200,7 +127,7 @@ private theorem isMulDistinguished_zero_X_sq_sub_C {a : R} (ha : IsNormMulUnit a
 
 /-- Weierstrass division of `X ^ 4` by `X ^ 2 - a`, at a radius `c > 0` with `‖a‖ ≤ c ^ 2`, has
 quotient `X ^ 2 + a` and remainder `a ^ 2`. -/
-private theorem weierstrassDiv_X_pow_four [CompleteSpace R] (hc : 0 < c) {a : R}
+theorem weierstrassDiv_X_pow_four [CompleteSpace R] (hc : 0 < c) {a : R}
     (ha : ‖a‖ ≤ c ^ 2) :
     (isMulDistinguished_X_sq_sub_C hc ha).weierstrassDiv hc (polynomialToRestricted c (X ^ 4)) =
         polynomialToRestricted c (X ^ 2 + C a) ∧
@@ -220,10 +147,10 @@ example (hc : 0 < c) {a : R} (ha : ‖a‖ ≤ c ^ 2) {e : PowerSeries.IsRestric
   (isMulDistinguished_X_sq_sub_C hc ha).eq_and_eq_of_mul_eq_of_mul_eq hc he isUnit_one hω
     (isMonicOfDegree_X_sq_sub_C a) (by simpa using h) (by simp)
 
--- Where the constant term of `X ^ 2 - a` strictly dominates, division by it is in degree zero:
--- every remainder vanishes, so `X ^ 2 - a` is a unit of the restricted series.
-example [CompleteSpace R] (hc : 0 < c) {a : R} (ha : IsNormMulUnit a) (hca : c ^ 2 < ‖a‖) :
-    IsUnit (polynomialToRestricted c (X ^ 2 - C a)) := by
+/-- Where the constant term of `X ^ 2 - a` strictly dominates, division by it is in degree zero:
+every remainder vanishes, so `X ^ 2 - a` is a unit of the restricted series. -/
+theorem isUnit_X_sq_sub_C [CompleteSpace R] (hc : 0 < c) {a : R} (ha : IsNormMulUnit a)
+    (hca : c ^ 2 < ‖a‖) : IsUnit (polynomialToRestricted c (X ^ 2 - C a)) := by
   have hg := isMulDistinguished_zero_X_sq_sub_C ha hca
   obtain ⟨q, hq⟩ := (hg.weierstrassMod_eq_zero_iff_dvd hc).mp (hg.weierstrassMod_eq_zero hc 1)
   exact IsUnit.of_mul_eq_one q hq.symm
@@ -265,13 +192,10 @@ private theorem norm_inv_p : ‖(p : ℚ_[p])⁻¹‖ = √(p : ℝ) ^ 2 := by
   rw [norm_inv, Padic.norm_p, inv_inv, Real.sq_sqrt (Nat.cast_nonneg _)]
 
 -- At radius one, the constant coefficient of `X ^ 2 - p⁻¹` dominates, so it is a unit of `ℚ_p⟨X⟩`.
-example : IsUnit (polynomialToRestricted 1 (X ^ 2 - C (p : ℚ_[p])⁻¹)) := by
-  have hg := isMulDistinguished_zero_X_sq_sub_C (c := 1) (a := (p : ℚ_[p])⁻¹)
+example : IsUnit (polynomialToRestricted 1 (X ^ 2 - C (p : ℚ_[p])⁻¹)) :=
+  isUnit_X_sq_sub_C one_pos
     ((isNormMulUnit_iff_isUnit _).mpr (isUnit_iff_ne_zero.mpr (by simp [hp.out.ne_zero])))
     (by rw [norm_inv_p, one_pow, Real.sq_sqrt (Nat.cast_nonneg _)]; exact_mod_cast hp.out.one_lt)
-  obtain ⟨q, hq⟩ := (hg.weierstrassMod_eq_zero_iff_dvd one_pos).mp
-    (hg.weierstrassMod_eq_zero one_pos 1)
-  exact IsUnit.of_mul_eq_one q hq.symm
 
 -- At the radius `√p`, which is not the norm of an element of `ℚ_p` (see
 -- `TauCeti/Examples/RingTheory/PowerSeries/Restricted.lean`), `X ^ 2 - p⁻¹` is distinguished of
