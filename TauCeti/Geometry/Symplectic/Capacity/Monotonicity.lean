@@ -25,8 +25,9 @@ the levels of `F` in `(a, b)`.
 function with `0 ≤ f ≤ A`, equal to `A` on `(-∞, s₁]` and to `0` on `[s₂, ∞)`. Then
 `H = G + f ∘ F` is a candidate for `c(s₃)`, `s₃ > s₂`, with maximum `max G + A`. The integral
 curves of `X_H` either stay in `{F < s₁}`, where `X_H = X_G`, or lie in a level `F⁻¹(c)`, `c ≥ s₁`,
-where `X_H = f'(c) X_F` (`TauCeti.SmoothTwoForm.IsNondegenerate.isMIntegralCurve_add_comp`). The
-first kind are constant when they are fast and contractible, because `G` is admissible. So if
+where `X_H = f'(c) X_F`
+(`TauCeti.SmoothTwoForm.IsNondegenerate.isMIntegralCurve_or_exists_of_isMIntegralCurve_add_comp`).
+The first kind are constant when they are fast and contractible, because `G` is admissible. So if
 `max G + A > c(s₃)`, then `H` is not admissible, and some level `F⁻¹(c)` with `s₁ ≤ c ≤ s₂` carries
 a closed characteristic, contractible in `M`, of period at most `sup |f'|`
 (`TauCeti.SmoothTwoForm.IsNondegenerate.exists_hasContractibleClosedCharacteristicOfPeriodLE`).
@@ -116,8 +117,9 @@ private theorem isRelContractibleHZAdmissible_add_comp (hσ : σ.IsNondegenerate
       exact add_le_add (isMaxOn_iff.1 (hG.isMaxOn z hz) y trivial) (hf_le _)
     eq_of_isMIntegralCurve := by
       intro T γ hT hT1 hγ hper hcontr t
-      rcases hσ.isMIntegralCurve_add_comp (ContMDiff.mdifferentiable hG.contMDiff (by simp))
-        (ContMDiff.mdifferentiable hF (by simp)) (hf.differentiable (by simp)) hGs
+      rcases hσ.isMIntegralCurve_or_exists_of_isMIntegralCurve_add_comp
+        (ContMDiff.mdifferentiable hG.contMDiff (by simp)) (ContMDiff.mdifferentiable hF (by simp))
+        (hf.differentiable (by simp)) hGs
         (fun r hr ↦ (hfA r hr).trans (hfA s₁ le_rfl).symm) hγ with ⟨-, hγG⟩ | ⟨c, hc₁, hlev, -, hγc⟩
       · exact hG.eq_of_isMIntegralCurve T γ hT hT1 hγG hper hcontr t
       by_cases hd : deriv f c = 0

@@ -46,9 +46,9 @@ Hamiltonian is constant along the integral curves of `X`, which is conservation 
 (`TauCeti.SmoothTwoForm.IsHamiltonianVectorField.apply_eq_of_isMIntegralCurveOn`). The orbits of
 `G + f ∘ F`, where `G` is supported in `{F < s}` and `f` is constant on `(-∞, s]`, either stay in
 `{F < s}` as orbits of `G` or lie in a level of `F` as orbits of `f'(c) X_F`
-(`TauCeti.SmoothTwoForm.IsNondegenerate.isMIntegralCurve_add_comp`). For a constant
-symplectic form on a vector space, the construction recovers the Hamiltonian vector field of the
-linear theory (`TauCeti.SymplecticForm.hamiltonianVectorField_constSmooth`).
+(`TauCeti.SmoothTwoForm.IsNondegenerate.isMIntegralCurve_or_exists_of_isMIntegralCurve_add_comp`).
+For a constant symplectic form on a vector space, the construction recovers the Hamiltonian vector
+field of the linear theory (`TauCeti.SymplecticForm.hamiltonianVectorField_constSmooth`).
 
 The **Poisson bracket** of two functions is `{f, g} = σ(X_f, X_g)`
 (`TauCeti.SmoothTwoForm.poissonBracket`), which is `df(X_g)` for a nondegenerate form on a
@@ -84,8 +84,8 @@ Hamiltonian vector field of `g ∘ φ` to integral curves of that of `g`
 * `TauCeti.SmoothTwoForm.IsHamiltonianVectorField.apply_eq_of_isMIntegralCurveOn`: conservation
   of energy along integral curves on open preconnected sets of times, with the global case
   `TauCeti.SmoothTwoForm.IsHamiltonianVectorField.apply_eq_of_isMIntegralCurve`.
-* `TauCeti.SmoothTwoForm.IsNondegenerate.isMIntegralCurve_add_comp`: the dichotomy for the
-  integral curves of `X_{G + f ∘ F}`.
+* `TauCeti.SmoothTwoForm.IsNondegenerate.isMIntegralCurve_or_exists_of_isMIntegralCurve_add_comp`:
+  the dichotomy for the integral curves of `X_{G + f ∘ F}`.
 * `TauCeti.SmoothTwoForm.IsHamiltonianVectorField.mpullback`,
   `TauCeti.SmoothTwoForm.IsHamiltonianVectorField.prod`: Hamiltonian vector fields under pullback
   along related fields and on products.
@@ -347,7 +347,8 @@ end IsNondegenerate
 vector field of `G + f ∘ F`. Either `γ` stays in `{F < s}` and is an integral curve of `X_G`, or it
 lies in a level `F⁻¹(c)` with `c ≥ s`, along which `X_G` vanishes, and is an integral curve of
 `f'(c) X_F`. -/
-theorem IsNondegenerate.isMIntegralCurve_add_comp [FiniteDimensional ℝ E]
+theorem IsNondegenerate.isMIntegralCurve_or_exists_of_isMIntegralCurve_add_comp
+    [FiniteDimensional ℝ E]
     (hσ : σ.IsNondegenerate) {F G : M → ℝ} {f : ℝ → ℝ} (hG : MDifferentiable I 𝓘(ℝ) G)
     (hF : MDifferentiable I 𝓘(ℝ) F) (hf : Differentiable ℝ f) {s : ℝ}
     (hGs : tsupport G ⊆ {x | F x < s}) (hfs : ∀ r ≤ s, f r = f s) {γ : ℝ → M}
