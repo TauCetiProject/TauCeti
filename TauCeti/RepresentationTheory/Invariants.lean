@@ -92,7 +92,8 @@ first variable: its invariants are `Tor'ₙ(N, M^G)`.
   equivariant additive map, possibly between representations over different coefficient rings,
   lifts invariant vectors when its target is projective over the target group algebra.
 * `Representation.Equiv.invariantsLinearEquiv`: equivalent representations have isomorphic
-  invariants.
+  invariants, and `Representation.Equiv.apply_mem_invariants_iff`: an equivalence detects
+  invariance of a vector.
 * `Representation.invariants_comp_of_surjective`: restriction along a surjective homomorphism
   does not change the invariants.
 * `Representation.tmul_mem_invariants_tprod`: the tensor product of invariant vectors is
@@ -383,6 +384,14 @@ def invariantsLinearEquiv (φ : ρ.Equiv σ) : ρ.invariants ≃ₗ[k] σ.invari
 theorem coe_invariantsLinearEquiv_apply (φ : ρ.Equiv σ) (x : ρ.invariants) :
     (φ.invariantsLinearEquiv x : W) = φ (x : V) :=
   (rfl)
+
+/-- An equivalence of representations maps a vector to an invariant vector exactly when the
+vector itself is invariant. -/
+theorem apply_mem_invariants_iff (φ : ρ.Equiv σ) {x : V} :
+    φ x ∈ σ.invariants ↔ x ∈ ρ.invariants :=
+  ⟨fun hx g ↦ φ.toLinearEquiv.injective <|
+      (IntertwiningMap.isIntertwining ρ σ φ.toIntertwiningMap g x).trans (hx g),
+    fun hx ↦ (φ.invariantsLinearEquiv ⟨x, hx⟩).property⟩
 
 end Representation.Equiv
 

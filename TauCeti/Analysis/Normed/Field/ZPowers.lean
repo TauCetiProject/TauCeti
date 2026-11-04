@@ -27,8 +27,8 @@ norm nor discreteness of the value group is required. This is the multiplicative
 normalisation used for Tate uniformisation.
 
 A nonzero integer power of an element of norm less than one has norm different from one; in
-particular `1 - qᵏ ≠ 0`, a unit of norm one other than `1` is not a power of `q`, and neither is a
-square root of `q`.
+particular `1 - qᵏ ≠ 0`. Neither a unit of norm one other than `1`, nor a unit in the open annulus
+`‖q‖ < ‖u‖ < 1`, nor a square root of `q` is a power of `q`.
 
 Over an ultrametric field the quotient `Kˣ ⧸ q^ℤ` has infinitely many squares
 (`infinite_range_sq_quotient_zpowers`), as the classes of the norm-one units `1 - qᵏ` show. This
@@ -73,6 +73,15 @@ theorem eq_of_norm_mem_Ioc_of_quotient_zpowers_eq (q : Kˣ) (hq : ‖(q : K)‖ 
   have hn0 : n = 0 := (hm_unique n (by simpa [hnu] using hu)).trans
     (hm_unique 0 (by simpa using hv)).symm
   simpa [hn0] using hnu.symm
+
+/-- A unit in the open annulus `‖q‖ < ‖u‖ < 1` is not a power of `q`. -/
+theorem notMem_zpowers_of_norm_lt_of_norm_lt_one {q u : Kˣ} (hqu : ‖(q : K)‖ < ‖(u : K)‖)
+    (hu : ‖(u : K)‖ < 1) : u ∉ Subgroup.zpowers q := by
+  intro hmem
+  have hq := hqu.trans hu
+  have h := eq_of_norm_mem_Ioc_of_quotient_zpowers_eq q hq (v := 1) ⟨hqu, hu.le⟩
+    (by simpa using hq) (by rw [(QuotientGroup.eq_one_iff u).mpr hmem, QuotientGroup.mk_one])
+  simp [h] at hu
 
 /-- A nonzero power of an element of norm less than one does not have norm one. -/
 theorem norm_zpow_ne_one {q : K} (hq : ‖q‖ < 1) {k : ℤ} (hk : k ≠ 0) : ‖q ^ k‖ ≠ 1 := by

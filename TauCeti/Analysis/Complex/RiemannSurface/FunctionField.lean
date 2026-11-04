@@ -13,6 +13,7 @@ import Mathlib.Geometry.Manifold.Complex
 import Mathlib.Order.Filter.Germ.Basic
 import TauCeti.Analysis.Complex.RiemannSurface.LocalNormalForm
 import TauCeti.Topology.OpenPartialHomeomorph.Continuity
+import TauCeti.Geometry.Manifold.Complex.Analytic
 
 /-!
 # The field of meromorphic functions on a connected Riemann surface
@@ -166,6 +167,14 @@ meromorphic function read in the affine chart of the sphere. -/
 theorem mdifferentiableAt_finitePart (h : f x ≠ ∞) :
     MDifferentiableAt 𝓘(ℂ) 𝓘(ℂ) f.finitePart x :=
   (mdifferentiableAt_atlas (Or.inl rfl) (by simpa using h)).comp x (f.mdifferentiable x)
+
+open scoped ContDiff in
+/-- Away from the poles, the finite part of a meromorphic function is complex analytic. -/
+theorem contMDiffAt_finitePart [IsManifold 𝓘(ℂ) 1 X] (h : f x ≠ (∞ : OnePoint ℂ)) :
+    ContMDiffAt 𝓘(ℂ) 𝓘(ℂ) ω f.finitePart x := by
+  apply (contMDiffAt_iff_eventually_mdifferentiableAt (by simp)).2
+  filter_upwards [f.continuous.continuousAt.eventually (isOpen_ne.mem_nhds h)] with y hy
+  exact f.mdifferentiableAt_finitePart hy
 
 /-- The value of a meromorphic function at `x` is the limit at `x`, along the punctured
 neighbourhoods of `x`, of any map to the sphere that agrees with it near `x`. -/
@@ -493,6 +502,20 @@ instance instAlgebra : Algebra ℂ (MeromorphicFunction X) :=
 theorem coe_algebraMap (c : ℂ) :
     ⇑(algebraMap ℂ (MeromorphicFunction X) c) = fun _ ↦ (c : OnePoint ℂ) :=
   sphereMap_const c
+
+/-- A meromorphic function outside the range of the constant functions takes two distinct
+values on the Riemann sphere. -/
+theorem exists_apply_ne_of_notMem_range_algebraMap
+    (hf : f ∉ Set.range (algebraMap ℂ (MeromorphicFunction X))) : ∃ x y, f x ≠ f y := by
+  by_contra! h
+  let x := Classical.arbitrary X
+  have heq : ⇑f = fun _ ↦ f x := funext fun y ↦ h y x
+  rcases eq_or_ne (f x) (∞ : OnePoint ℂ) with hx | hx
+  · exact f.coe_ne_infty (by simpa [hx] using heq)
+  · obtain ⟨c, hc⟩ := OnePoint.ne_infty_iff_exists.mp hx
+    apply hf
+    refine ⟨c, ext fun y ↦ ?_⟩
+    simpa only [coe_algebraMap] using ((h y x).trans hc.symm).symm
 
 @[simp]
 theorem finitePart_algebraMap (c : ℂ) :

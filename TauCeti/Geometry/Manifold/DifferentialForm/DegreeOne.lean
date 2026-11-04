@@ -28,8 +28,9 @@ derivative applies.
 
 ## Main declarations
 
-* `TauCeti.isSmoothBundleForm_ofSubsingleton_iff`: a family of linear maps has `C^n` graph in the
-  linear-map bundle exactly when the corresponding degree-one form is `C^n`.
+* `TauCeti.contMDiffAt_ofSubsingleton_iff`, `TauCeti.isSmoothBundleForm_ofSubsingleton_iff`: a
+  family of linear maps has `C^n` graph in the linear-map bundle, at a point or everywhere, exactly
+  when the corresponding degree-one form does.
 * `TauCeti.SmoothBundleForm.degreeOneEquiv`: the linear equivalence between smooth degree-one
   forms and smooth sections of the bundle of fibrewise linear maps.
 * `TauCeti.isSmoothForm_ofSubsingleton_iff`, `TauCeti.SmoothForm.degreeOneEquiv`: the same
@@ -59,6 +60,25 @@ variable {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [Topological
   [FiberBundle F V] [VectorBundle ℝ F V]
   [∀ x, IsTopologicalAddGroup (V x)] [∀ x, ContinuousSMul ℝ (V x)]
 
+/-- A family of fibrewise linear maps is `C^n` at `x₀` as a section of the bundle of linear maps
+`TangentSpace I x →L[ℝ] V x` exactly when the degree-one form it defines is `C^n` at `x₀`. -/
+theorem contMDiffAt_ofSubsingleton_iff {n : WithTop ℕ∞}
+    {α : (x : M) → TangentSpace I x →L[ℝ] V x} {x₀ : M} :
+    ContMDiffAt I (I.prod 𝓘(ℝ, E [⋀^Fin 1]→L[ℝ] F)) n (fun x ↦
+        TotalSpace.mk' (E [⋀^Fin 1]→L[ℝ] F) x
+          (ContinuousAlternatingMap.ofSubsingleton ℝ (TangentSpace I x) (V x) (0 : Fin 1) (α x)))
+        x₀ ↔
+      ContMDiffAt I (I.prod 𝓘(ℝ, E →L[ℝ] F)) n (fun x ↦ TotalSpace.mk' (E →L[ℝ] F) x (α x))
+        x₀ := by
+  let L := (ContinuousAlternatingMap.ofSubsingletonLIE (𝕜 := ℝ) (E := E) (F := F)
+    (ι := Fin 1) 0).toContinuousLinearEquiv
+  rw [contMDiffAt_continuousAlternatingMap_bundle, contMDiffAt_hom_bundle]
+  refine and_congr Iff.rfl ?_
+  simp only [ContinuousAlternatingMap.inCoordinates_ofSubsingleton]
+  refine ⟨fun h ↦ ?_, fun h ↦ L.contDiff.comp_contMDiffAt h⟩
+  exact (L.symm.contDiff.comp_contMDiffAt h).congr_of_eventuallyEq
+    (Filter.Eventually.of_forall fun x ↦ by simp [L])
+
 /-- A family of fibrewise linear maps is a `C^n` section of the bundle of linear maps
 `TangentSpace I x →L[ℝ] V x` exactly when the degree-one form it defines is `C^n`. -/
 theorem isSmoothBundleForm_ofSubsingleton_iff {n : WithTop ℕ∞}
@@ -66,16 +86,8 @@ theorem isSmoothBundleForm_ofSubsingleton_iff {n : WithTop ℕ∞}
     IsSmoothBundleForm I F V n (fun x ↦
         ContinuousAlternatingMap.ofSubsingleton ℝ (TangentSpace I x) (V x) (0 : Fin 1) (α x)) ↔
       ContMDiff I (I.prod 𝓘(ℝ, E →L[ℝ] F)) n (fun x ↦ TotalSpace.mk' (E →L[ℝ] F) x (α x)) := by
-  let L := (ContinuousAlternatingMap.ofSubsingletonLIE (𝕜 := ℝ) (E := E) (F := F)
-    (ι := Fin 1) 0).toContinuousLinearEquiv
   rw [isSmoothBundleForm_def]
-  refine forall_congr' fun x₀ ↦ ?_
-  rw [contMDiffAt_continuousAlternatingMap_bundle, contMDiffAt_hom_bundle]
-  refine and_congr Iff.rfl ?_
-  simp only [ContinuousAlternatingMap.inCoordinates_ofSubsingleton]
-  refine ⟨fun h ↦ ?_, fun h ↦ L.contDiff.comp_contMDiffAt h⟩
-  exact (L.symm.contDiff.comp_contMDiffAt h).congr_of_eventuallyEq
-    (Filter.Eventually.of_forall fun x ↦ by simp [L])
+  exact forall_congr' fun _ ↦ contMDiffAt_ofSubsingleton_iff
 
 namespace SmoothBundleForm
 
