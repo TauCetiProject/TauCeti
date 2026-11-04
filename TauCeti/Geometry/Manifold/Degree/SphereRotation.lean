@@ -10,7 +10,6 @@ public import TauCeti.Geometry.Manifold.Degree.Basic
 public import TauCeti.Geometry.Manifold.Instances.Sphere
 public import TauCeti.Geometry.Manifold.Orientation.Prod
 public import TauCeti.Geometry.Manifold.Orientation.Sphere
-import Mathlib.Analysis.InnerProductSpace.TwoDim
 import Mathlib.LinearAlgebra.Alternating.Uncurry.Fin
 import TauCeti.Analysis.InnerProductSpace.Projection.Basic
 import TauCeti.Geometry.Manifold.MFDeriv.Prod
@@ -88,10 +87,12 @@ private theorem inner_coe_coe_sphere (p : sphere (0 : E) 1)
     (v : sphere (0 : (ℝ ∙ (p : E))ᗮ) 1) : ⟪(p : E), ((v : (ℝ ∙ (p : E))ᗮ) : E)⟫ = 0 :=
   Submodule.mem_orthogonal_singleton_iff_inner_right.1 (v : (ℝ ∙ (p : E))ᗮ).2
 
-private theorem norm_coe_coe_sphere (p : sphere (0 : E) 1)
-    (v : sphere (0 : (ℝ ∙ (p : E))ᗮ) 1) : ‖((v : (ℝ ∙ (p : E))ᗮ) : E)‖ = 1 := by
-  -- The norm of a submodule is the norm of the coercion.
-  exact norm_eq_of_mem_sphere v
+/-- A point of the unit circle of `ℂ` satisfies `Re z ^ 2 + Im z ^ 2 = 1`. -/
+private theorem re_sq_add_im_sq_of_mem_sphere (z : sphere (0 : ℂ) 1) :
+    (z : ℂ).re ^ 2 + (z : ℂ).im ^ 2 = 1 := by
+  have hz := Complex.sq_norm_sub_sq_re (z : ℂ)
+  rw [norm_eq_of_mem_sphere z] at hz
+  linarith
 
 /-- The **rotation family** at a point `p` of the unit sphere `Sⁿ` of `E`: a unit vector `v` of
 `p^⊥`, that is a unit tangent vector of `Sⁿ` at `p`, and a point `z` of the unit circle of `ℂ` are
@@ -101,11 +102,10 @@ def sphereRotationFamily (p : sphere (0 : E) 1) :
     sphere (0 : (ℝ ∙ (p : E))ᗮ) 1 × sphere (0 : ℂ) 1 → sphere (0 : E) 1 := fun x ↦
   ⟨(x.2 : ℂ).re • (p : E) + (x.2 : ℂ).im • ((x.1 : (ℝ ∙ (p : E))ᗮ) : E), by
     -- `p` and `v` are orthonormal, and `Re z ^ 2 + Im z ^ 2 = ‖z‖ ^ 2 = 1`.
-    have hz := Complex.sq_norm_sub_sq_re (x.2 : ℂ)
-    rw [norm_eq_of_mem_sphere x.2] at hz
+    have hz := re_sq_add_im_sq_of_mem_sphere x.2
     rw [mem_sphere_zero_iff_norm, ← pow_eq_one_iff_of_nonneg (norm_nonneg _) two_ne_zero,
       norm_add_sq_real, norm_smul, norm_smul, real_inner_smul_left, real_inner_smul_right,
-      inner_coe_coe_sphere, norm_eq_of_mem_sphere p, norm_coe_coe_sphere p x.1]
+      inner_coe_coe_sphere, norm_eq_of_mem_sphere p, Submodule.norm_coe, norm_eq_of_mem_sphere x.1]
     simp only [Real.norm_eq_abs, mul_one, mul_zero, sq_abs]
     linarith⟩
 
@@ -244,8 +244,8 @@ theorem sphereRotationFamily_eq_sphereRotationFamily_iff (p : sphere (0 : E) 1)
       rw [hre] at hE
       exact add_left_cancel hE
     have hsq : (y.2 : ℂ).im ^ 2 = (x.2 : ℂ).im ^ 2 := by
-      linarith [norm_eq_of_mem_sphere y.2 ▸ Complex.sq_norm_sub_sq_re (y.2 : ℂ),
-        norm_eq_of_mem_sphere x.2 ▸ Complex.sq_norm_sub_sq_re (x.2 : ℂ), congrArg (· ^ 2) hre]
+      linarith [re_sq_add_im_sq_of_mem_sphere y.2, re_sq_add_im_sq_of_mem_sphere x.2,
+        congrArg (· ^ 2) hre]
     rcases sq_eq_sq_iff_eq_or_eq_neg.1 hsq with him' | him'
     · left
       rw [him'] at him
@@ -266,8 +266,7 @@ private theorem sphereRotationFamily_eq_or_eq_neg_of_im_eq_zero (p : sphere (0 :
     {x : sphere (0 : (ℝ ∙ (p : E))ᗮ) 1 × sphere (0 : ℂ) 1} (hx : (x.2 : ℂ).im = 0) :
     sphereRotationFamily p x = p ∨ sphereRotationFamily p x = -p := by
   have hre : (x.2 : ℂ).re ^ 2 = 1 ^ 2 := by
-    linarith [norm_eq_of_mem_sphere x.2 ▸ Complex.sq_norm_sub_sq_re (x.2 : ℂ),
-      sq_eq_zero_iff.2 hx]
+    linarith [re_sq_add_im_sq_of_mem_sphere x.2, sq_eq_zero_iff.2 hx]
   rcases sq_eq_sq_iff_eq_or_eq_neg.1 hre with h | h
   · exact .inl (Subtype.ext (by simp [h, hx]))
   · exact .inr (Subtype.ext (by simp [h, hx]))
@@ -356,30 +355,48 @@ private theorem volumeForm_cons_cons_mvfderiv (o : Orientation ℝ E (Fin (m + 1
       simp only [W, coe_basisOfLinearIndependentOfCardEqFinrank] <;> rfl
   refine ⟨?_, ?_⟩
   · rw [← hW]
+    -- Only the linear independence of `W` is used here; clearing its construction keeps
+    -- unification from unfolding it.
+    clear_value W
     exact Orientation.volumeForm_apply_ne_zero_iff.2
       (LinearIndependent.finCons_orthogonal_span_singleton (ne_zero_of_mem_unit_sphere p)
-        W.linearIndependent)
+        (W.linearIndependent.map' _ (Submodule.ker_subtype _)) fun i ↦ (W i).2)
   · rw [Orientation.orientation_eq_orientationAt_sphereOrientation_iff,
       show (Fin.cons ((v : (ℝ ∙ (p : E))ᗮ)) fun i ↦ mvfderiv (𝓡 m)
         ((↑) : sphere (0 : (ℝ ∙ (p : E))ᗮ) 1 → (ℝ ∙ (p : E))ᗮ) v (b i)) = ⇑W by simp [W],
       Orientation.volumeForm_apply_pos_iff, Orientation.orientation_eq_orthogonalSpanSingleton_iff,
       hW]
 
-/-- A positively oriented tangent vector `w` of the unit circle at `z`, read in `ℂ`, points
-counterclockwise: `Re z Im w - Im z Re w > 0`. -/
-private theorem re_mul_im_sub_im_mul_re_pos {z : sphere (0 : ℂ) 1}
-    (c : Basis (Fin 1) ℝ (TangentSpace (𝓡 1) z))
-    (hc : c.orientation = Complex.orientation.sphereOrientation.orientationAt z) :
-    0 < (z : ℂ).re * (mvfderiv (𝓡 1) ((↑) : sphere (0 : ℂ) 1 → ℂ) z (c 0)).im -
-      (z : ℂ).im * (mvfderiv (𝓡 1) ((↑) : sphere (0 : ℂ) 1 → ℂ) z (c 0)).re := by
-  have h := (Complex.orientation.orientation_eq_orientationAt_sphereOrientation_iff c).1 hc
-  have hcons : (Fin.cons (z : ℂ) fun i ↦ mvfderiv (𝓡 1) ((↑) : sphere (0 : ℂ) 1 → ℂ) z
-      (c i) : Fin 2 → ℂ) = ![(z : ℂ), mvfderiv (𝓡 1) ((↑) : sphere (0 : ℂ) 1 → ℂ) z (c 0)] := by
+/-- The volume of the image under the derivative of the rotation family of the basis
+`(Im z • a, β)` of a point with circle coordinate `z`: moving the last vector to the second place
+costs the sign `(-1)ᵐ` of a cycle, scaling `m` vectors by `Im z` costs `(Im z)ᵐ`, and the first two
+vectors span the plane of `p` and `v` with the factor `Re z Im β - Im z Re β`. -/
+private theorem volumeForm_cons_snoc (o : Orientation ℝ E (Fin (m + 1 + 1))) (p v : E)
+    (a : Fin m → E) (z β : ℂ) :
+    o.volumeForm (Fin.cons (z.re • p + z.im • v)
+        (Fin.snoc (fun j ↦ z.im • a j) (β.re • p + β.im • v))) =
+      (-1) ^ m * z.im ^ m * (z.re * β.im - z.im * β.re) *
+        o.volumeForm (Fin.cons p (Fin.cons v a)) := by
+  -- Moving the last vector to the second place costs the sign `(-1)ᵐ` of a cycle.
+  have hins := (o.volumeForm.curryLeft (z.re • p + z.im • v)).map_insertNth
+    (Fin.last m) (β.re • p + β.im • v) fun j ↦ z.im • a j
+  simp only [Fin.insertNth_last', Fin.val_last, AlternatingMap.curryLeft_apply_apply,
+    Matrix.vecCons] at hins
+  -- Scaling the last `m` vectors by `Im z` multiplies the volume by `(Im z)ᵐ`.
+  have hs := o.volumeForm.map_smul_univ (Fin.cons 1 (Fin.cons 1 fun _ ↦ z.im))
+    (Fin.cons p (Fin.cons v a))
+  rw [Fin.prod_univ_succ, Fin.prod_univ_succ] at hs
+  simp only [Fin.cons_zero, Fin.cons_succ, one_mul, Finset.prod_const, Finset.card_univ,
+    Fintype.card_fin, smul_eq_mul] at hs
+  have hcons : (fun i ↦ (Fin.cons 1 (Fin.cons 1 fun _ ↦ z.im) : Fin (m + 1 + 1) → ℝ) i •
+      (Fin.cons p (Fin.cons v a) : Fin (m + 1 + 1) → E) i) =
+      Fin.cons p (Fin.cons v fun j ↦ z.im • a j) := by
     ext i
-    fin_cases i <;> rfl
-  rw [hcons, ← Orientation.areaForm_to_volumeForm, Complex.areaForm] at h
-  generalize mvfderiv (𝓡 1) ((↑) : sphere (0 : ℂ) 1 → ℂ) z (c 0) = w at h ⊢
-  simpa [Complex.mul_im] using h
+    refine Fin.cases ?_ (fun i ↦ Fin.cases ?_ (fun j ↦ ?_) i) i <;> simp
+  rw [hcons] at hs
+  rw [hins, AlternatingMap.map_cons_cons_add_smul, hs]
+  simp only [smul_eq_mul, zsmul_eq_mul, Int.cast_pow, Int.cast_neg, Int.cast_one]
+  ring
 
 /-- At a point with `Im z ≠ 0`, the rotation family preserves the orientations when
 `(-1)ᵐ (Im z)ᵐ > 0` and reverses them when `(-1)ᵐ (Im z)ᵐ < 0`. -/
@@ -413,21 +430,11 @@ private theorem isOrientationPreservingAt_sphereRotationFamily_and
     (b.prod c).reindex finSumFinEquiv
   have hB : B.orientation = (op.sphereOrientation.prod
       Complex.orientation.sphereOrientation).orientationAt x ↔
-      b.orientation = op.sphereOrientation.orientationAt x.1 := by
-    -- `B` is the reindexed product basis, read as a basis of the tangent space of the product.
-    change ((b.prod c).reindex finSumFinEquiv).orientation = _ ↔ _
-    rw [Manifold.Orientation.orientationAt_prod, ← hc, ← Orientation.prod_basis_orientation b c
-      ((op.sphereOrientation.finrank_tangentSpace_eq x.1).trans (Fintype.card_fin m))
-      ((Complex.orientation.sphereOrientation.finrank_tangentSpace_eq x.2).trans
-        (Fintype.card_fin 1))]
-    rcases b.orientation.eq_or_eq_neg (op.sphereOrientation.orientationAt x.1)
-      (op.sphereOrientation.finrank_tangentSpace_eq x.1).symm with h | h
-    · simp only [h]
-    · rw [h, Orientation.prod_neg_left]
-      exact iff_of_false (Module.Ray.ne_neg_self _).symm (Module.Ray.ne_neg_self _).symm
+      b.orientation = op.sphereOrientation.orientationAt x.1 :=
+    (op.sphereOrientation.orientation_eq_orientationAt_prod_iff _ b c).trans (iff_true_right hc)
   -- The orientations of `b` and of `c`, read in `E` and in `ℂ`.
   obtain ⟨hD0, h₁⟩ := volumeForm_cons_cons_mvfderiv o p x.1 b
-  have h₂ := re_mul_im_sub_im_mul_re_pos c hc
+  have h₂ := (Complex.orientation_eq_orientationAt_sphereOrientation_iff c).1 hc
   set v : E := ((x.1 : (ℝ ∙ (p : E))ᗮ) : E)
   set a : Fin m → E := fun j ↦ ((mvfderiv (𝓡 m)
     ((↑) : sphere (0 : (ℝ ∙ (p : E))ᗮ) 1 → (ℝ ∙ (p : E))ᗮ) x.1 (b j) : (ℝ ∙ (p : E))ᗮ) : E)
@@ -455,26 +462,8 @@ private theorem isOrientationPreservingAt_sphereRotationFamily_and
         (mfderiv ((𝓡 m).prod (𝓡 1)) (𝓡 (m + 1)) (sphereRotationFamily p) x (B i))) =
       (-1) ^ m * (x.2 : ℂ).im ^ m * ((x.2 : ℂ).re * β.im - (x.2 : ℂ).im * β.re) *
         o.volumeForm (Fin.cons (p : E) (Fin.cons v a)) := by
-    -- Moving the last vector to the second place costs the sign `(-1)ᵐ` of a cycle.
-    have hins := (o.volumeForm.curryLeft (sphereRotationFamily p x : E)).map_insertNth
-      (Fin.last m) (β.re • (p : E) + β.im • v) fun j ↦ (x.2 : ℂ).im • a j
-    simp only [Fin.insertNth_last', Fin.val_last, AlternatingMap.curryLeft_apply_apply,
-      Matrix.vecCons] at hins
-    -- Scaling the last `m` vectors by `Im z` multiplies the volume by `(Im z)ᵐ`.
-    have hs := o.volumeForm.map_smul_univ (Fin.cons 1 (Fin.cons 1 fun _ ↦ (x.2 : ℂ).im))
-      (Fin.cons (p : E) (Fin.cons v a))
-    rw [Fin.prod_univ_succ, Fin.prod_univ_succ] at hs
-    simp only [Fin.cons_zero, Fin.cons_succ, one_mul, Finset.prod_const, Finset.card_univ,
-      Fintype.card_fin, smul_eq_mul] at hs
-    have hcons : (fun i ↦ (Fin.cons 1 (Fin.cons 1 fun _ ↦ (x.2 : ℂ).im) : Fin (m + 1 + 1) → ℝ) i •
-        (Fin.cons (p : E) (Fin.cons v a) : Fin (m + 1 + 1) → E) i) =
-        Fin.cons (p : E) (Fin.cons v fun j ↦ (x.2 : ℂ).im • a j) := by
-      ext i
-      refine Fin.cases ?_ (fun i ↦ Fin.cases ?_ (fun j ↦ ?_) i) i <;> simp
-    rw [hcons] at hs
-    rw [himage, hins, coe_sphereRotationFamily, AlternatingMap.map_cons_cons_add_smul, hs]
-    simp only [smul_eq_mul, zsmul_eq_mul, Int.cast_pow, Int.cast_neg, Int.cast_one]
-    ring
+    rw [himage, coe_sphereRotationFamily]
+    exact volumeForm_cons_snoc o p v a x.2 β
   set D := o.volumeForm (Fin.cons (p : E) (Fin.cons v a))
   have hκ0 : (-1 : ℝ) ^ m * (x.2 : ℂ).im ^ m ≠ 0 :=
     mul_ne_zero (pow_ne_zero _ (by norm_num)) (pow_ne_zero _ hx)

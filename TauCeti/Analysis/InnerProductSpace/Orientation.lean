@@ -25,10 +25,16 @@ dependent families, and on a basis its sign records whether the basis is positiv
 a coordinate frame of a Riemannian manifold this is the familiar formula
 `vol = ±√(det g) dx¹ ∧ ⋯ ∧ dxⁿ`.
 
-Finally, two oriented inner product spaces of the same positive finite dimension are related by an
+Two oriented inner product spaces of the same positive finite dimension are related by an
 orientation-preserving linear isometric equivalence
 (`Orientation.exists_linearIsometryEquiv_map_eq`). So every orientation of an inner product space
 is transported from a given orientation of a model space by some orthonormal frame.
+
+The orthogonal complement `(ℝ ∙ p)ᗮ` of a nonzero vector `p` is oriented with `p` as positive
+normal: a basis of `(ℝ ∙ p)ᗮ` is positive exactly when `p` followed by it is a positive basis of
+the whole space (`Orientation.orthogonalSpanSingleton`,
+`Orientation.orientation_eq_orthogonalSpanSingleton_iff`). This orients the tangent hyperplanes of
+spheres.
 -/
 
 public section
@@ -183,7 +189,8 @@ private theorem orthogonalSpanSingletonForm_apply_ne_zero (o : Orientation ℝ E
     orthogonalSpanSingletonForm o p b ≠ 0 := by
   rw [orthogonalSpanSingletonForm_apply]
   exact volumeForm_apply_ne_zero_iff.2
-    (LinearIndependent.finCons_orthogonal_span_singleton hp b.linearIndependent)
+    (LinearIndependent.finCons_orthogonal_span_singleton hp
+      (b.linearIndependent.map' _ (Submodule.ker_subtype _)) fun i ↦ (b i).2)
 
 /-- The orientation of the orthogonal complement `(ℝ ∙ p)ᗮ` of a nonzero vector `p` of an
 oriented space for which `p` is a positive normal: a basis `b` of `(ℝ ∙ p)ᗮ` is positive exactly

@@ -344,11 +344,12 @@ variable {𝕜 E : Type*} [RCLike 𝕜] [NormedAddCommGroup E] [InnerProductSpac
 
 /-- A nonzero vector followed by a linearly independent family in its orthogonal complement is
 linearly independent. -/
-theorem finCons_orthogonal_span_singleton {p : E} (hp : p ≠ 0) {w : Fin m → (𝕜 ∙ p)ᗮ}
-    (hw : LinearIndependent 𝕜 w) : LinearIndependent 𝕜 (Fin.cons p fun i ↦ (w i : E)) := by
-  refine linearIndependent_finCons.2 ⟨hw.map' _ (Submodule.ker_subtype _), fun h ↦ hp ?_⟩
-  have hle : Submodule.span 𝕜 (Set.range fun i ↦ (w i : E)) ≤ (𝕜 ∙ p)ᗮ :=
-    Submodule.span_le.2 (Set.range_subset_iff.2 fun i ↦ (w i).2)
+theorem finCons_orthogonal_span_singleton {p : E} (hp : p ≠ 0) {w : Fin m → E}
+    (hw : LinearIndependent 𝕜 w) (hwp : ∀ i, w i ∈ (𝕜 ∙ p)ᗮ) :
+    LinearIndependent 𝕜 (Fin.cons p w) := by
+  refine linearIndependent_finCons.2 ⟨hw, fun h ↦ hp ?_⟩
+  have hle : Submodule.span 𝕜 (Set.range w) ≤ (𝕜 ∙ p)ᗮ :=
+    Submodule.span_le.2 (Set.range_subset_iff.2 hwp)
   exact inner_self_eq_zero.1 (Submodule.mem_orthogonal_singleton_iff_inner_right.1 (hle h))
 
 end LinearIndependent

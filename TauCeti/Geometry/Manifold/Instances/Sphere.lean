@@ -20,6 +20,7 @@ import Mathlib.Analysis.SpecialFunctions.ExpDeriv
 import Mathlib.Analysis.SpecialFunctions.Complex.Circle
 import Mathlib.Analysis.SpecialFunctions.Complex.LogDeriv
 import Mathlib.Topology.MetricSpace.HausdorffDimension
+import TauCeti.Analysis.InnerProductSpace.Projection.Basic
 import TauCeti.Analysis.Normed.Group.BallSphere
 import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
 
@@ -181,14 +182,10 @@ range `u^⊥`, which does not contain `u`. -/
 theorem _root_.LinearIndependent.finCons_mvfderiv_coe_sphere (u : sphere (0 : E) 1)
     {v : Fin n → TangentSpace (𝓡 n) u} (hv : LinearIndependent ℝ v) :
     LinearIndependent ℝ
-      (Fin.cons (u : E) fun i ↦ mvfderiv (𝓡 n) ((↑) : sphere (0 : E) 1 → E) u (v i)) := by
-  refine linearIndependent_finCons.2 ⟨hv.map' _ (LinearMap.ker_eq_bot_of_injective
-    (injective_mvfderiv_subtypeVal_sphere (n := n) u)), fun h ↦ ne_zero_of_mem_unit_sphere u ?_⟩
-  have hle : Submodule.span ℝ (Set.range fun i ↦
-      mvfderiv (𝓡 n) ((↑) : sphere (0 : E) 1 → E) u (v i)) ≤ (ℝ ∙ (u : E))ᗮ := by
-    rw [← range_mvfderiv_subtypeVal (n := n) u]
-    exact Submodule.span_le.2 (Set.range_subset_iff.2 fun i ↦ LinearMap.mem_range_self _ _)
-  exact inner_self_eq_zero.1 (Submodule.mem_orthogonal_singleton_iff_inner_right.1 (hle h))
+      (Fin.cons (u : E) fun i ↦ mvfderiv (𝓡 n) ((↑) : sphere (0 : E) 1 → E) u (v i)) :=
+  LinearIndependent.finCons_orthogonal_span_singleton (ne_zero_of_mem_unit_sphere u)
+    (hv.map' _ (LinearMap.ker_eq_bot_of_injective (injective_mvfderiv_subtypeVal_sphere u)))
+    fun _ ↦ range_mvfderiv_subtypeVal (n := n) u ▸ LinearMap.mem_range_self _ _
 
 /-- The preferred chart of the sphere at `v` is the stereographic projection from `-v`. -/
 theorem chartAt_sphere (v : sphere (0 : E) 1) :

@@ -14,6 +14,9 @@ public import TauCeti.Geometry.Manifold.VectorBundle.Tangent.Basic
 
 The preferred transition derivative of a product is block diagonal. Products of source signs
 therefore give an orientation lift of the product, including manifolds with boundary and corners.
+The ordered product of tangent bases of the factors is positive for the product orientation exactly
+when the two bases are both positive or both negative
+(`TauCeti.Manifold.Orientation.orientation_eq_orientationAt_prod_iff`).
 -/
 
 public section
@@ -184,6 +187,36 @@ theorem prod_neg_right (o : Orientation I M (Fin m)) (o' : Orientation I' M' (Fi
 theorem prod_neg_neg (o : Orientation I M (Fin m)) (o' : Orientation I' M' (Fin n)) :
     (-o).prod (-o') = o.prod o' := by
   rw [prod_neg_left, prod_neg_right, neg_neg]
+
+/-- The ordered product of tangent bases `b` at `x.1` and `c` at `x.2` is positive for the product
+orientation exactly when `b` and `c` are both positive or both negative. -/
+theorem orientation_eq_orientationAt_prod_iff (o : Orientation I M (Fin m))
+    (o' : Orientation I' M' (Fin n)) {x : M × M'}
+    (b : Module.Basis (Fin m) ℝ (TangentSpace I x.1))
+    (c : Module.Basis (Fin n) ℝ (TangentSpace I' x.2)) :
+    ((b.prod c).reindex finSumFinEquiv :
+        Module.Basis (Fin (m + n)) ℝ (TangentSpace (I.prod I') x)).orientation =
+        (o.prod o').orientationAt x ↔
+      (b.orientation = o.orientationAt x.1 ↔ c.orientation = o'.orientationAt x.2) := by
+  have hm : Module.finrank ℝ (TangentSpace I x.1) = m := by
+    simpa using o.finrank_tangentSpace_eq x.1
+  have hn : Module.finrank ℝ (TangentSpace I' x.2) = n := by
+    simpa using o'.finrank_tangentSpace_eq x.2
+  -- The tangent space of the product is the product of the tangent spaces.
+  change ((b.prod c).reindex finSumFinEquiv).orientation = _ ↔ _
+  rw [orientationAt_prod, ← _root_.Orientation.prod_basis_orientation b c hm hn]
+  have h₁ := Module.Ray.ne_neg_self (o.orientationAt x.1)
+  have h₂ := Module.Ray.ne_neg_self (o'.orientationAt x.2)
+  have h₃ := Module.Ray.ne_neg_self
+    (_root_.Orientation.prod (o.orientationAt x.1) (o'.orientationAt x.2) hm hn)
+  rcases b.orientation.eq_or_eq_neg (o.orientationAt x.1) (by simpa using hm.symm) with h | h <;>
+    rcases c.orientation.eq_or_eq_neg (o'.orientationAt x.2) (by simpa using hn.symm) with
+      h' | h' <;>
+    simp only [h, h', _root_.Orientation.prod_neg_left, _root_.Orientation.prod_neg_right,
+      h₁.symm, h₂.symm, h₃.symm, iff_true, iff_false, not_true_eq_false]
+  -- When both factors are negative, the two negations of the product orientation cancel.
+  exact neg_neg (G := _root_.Orientation ℝ (TangentSpace I x.1 × TangentSpace I' x.2)
+    (Fin (m + n))) _
 
 end TauCeti.Manifold.Orientation
 

@@ -6,8 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Geometry.Manifold.Instances.Sphere
+public import Mathlib.LinearAlgebra.Complex.Orientation
 public import TauCeti.Analysis.InnerProductSpace.Orientation
 public import TauCeti.Geometry.Manifold.Orientation.TopForm
+import Mathlib.Analysis.InnerProductSpace.TwoDim
 import TauCeti.Geometry.Manifold.DifferentialForm.Pullback.Smooth
 import TauCeti.Geometry.Manifold.DifferentialForm.Regularity
 import TauCeti.Geometry.Manifold.Instances.Sphere
@@ -25,7 +27,8 @@ hyperplane `u^⊥` (`range_mvfderiv_subtypeVal`), and `u` itself is the outward 
 
 Putting the outward normal first is the usual convention for the boundary orientation of the
 closed unit ball. For the unit circle of `ℂ` with its standard orientation, the
-positive tangent direction at `z` is `i z`, the counterclockwise one. Mathlib's stereographic
+positive tangent direction at `z` is `i z`, the counterclockwise one
+(`Complex.orientation_eq_orientationAt_sphereOrientation_iff`). Mathlib's stereographic
 atlas of the sphere is not coherently oriented, so the orientation is constructed instead from the
 nowhere-vanishing top form `(v₁, …, vₙ) ↦ vol(u, v₁, …, vₙ)`, the pullback to `Sⁿ` of the
 contraction of the volume form of `E` with the position vector, through
@@ -36,6 +39,9 @@ contraction of the volume form of `E` with the position vector, through
 * `Orientation.sphereOrientation`: the outward-normal orientation of the unit sphere.
 * `Orientation.orientation_eq_orientationAt_sphereOrientation_iff`: a tangent basis at `u` is
   positive exactly when `u` followed by its image in `E` has positive volume.
+* `Complex.orientation_eq_orientationAt_sphereOrientation_iff`: a tangent vector `w` of the unit
+  circle of `ℂ` at `z` is positive exactly when it points counterclockwise,
+  `Re z Im w - Im z Re w > 0`.
 
 ## References
 
@@ -112,5 +118,28 @@ theorem _root_.Orientation.orientation_eq_orientationAt_sphereOrientation_iff
         (Fin.cons (u : E) fun i ↦ mvfderiv (𝓡 n) ((↑) : sphere (0 : E) 1 → E) u (v i)) := by
   rw [Orientation.sphereOrientation,
     Manifold.Orientation.orientation_eq_orientationAt_ofTopForm_iff, sphereTopForm_apply]
+
+section Circle
+
+attribute [local instance] finrank_real_complex_fact'
+
+/-- A tangent basis `c` of the unit circle of `ℂ` at `z` is positive for the outward-normal
+orientation exactly when its vector `w`, read in `ℂ`, points counterclockwise:
+`Re z Im w - Im z Re w > 0`. So the positive direction at `z` is that of `i z`. -/
+theorem _root_.Complex.orientation_eq_orientationAt_sphereOrientation_iff
+    {z : sphere (0 : ℂ) 1} (c : Basis (Fin 1) ℝ (TangentSpace (𝓡 1) z)) :
+    c.orientation = Complex.orientation.sphereOrientation.orientationAt z ↔
+      0 < (z : ℂ).re * (mvfderiv (𝓡 1) ((↑) : sphere (0 : ℂ) 1 → ℂ) z (c 0)).im -
+        (z : ℂ).im * (mvfderiv (𝓡 1) ((↑) : sphere (0 : ℂ) 1 → ℂ) z (c 0)).re := by
+  have hcons : (Fin.cons (z : ℂ) fun i ↦ mvfderiv (𝓡 1) ((↑) : sphere (0 : ℂ) 1 → ℂ) z
+      (c i) : Fin 2 → ℂ) = ![(z : ℂ), mvfderiv (𝓡 1) ((↑) : sphere (0 : ℂ) 1 → ℂ) z (c 0)] := by
+    ext i
+    fin_cases i <;> rfl
+  rw [Complex.orientation.orientation_eq_orientationAt_sphereOrientation_iff, hcons,
+    ← Orientation.areaForm_to_volumeForm, Complex.areaForm]
+  generalize mvfderiv (𝓡 1) ((↑) : sphere (0 : ℂ) 1 → ℂ) z (c 0) = w
+  simp [Complex.mul_im]
+
+end Circle
 
 end TauCeti
