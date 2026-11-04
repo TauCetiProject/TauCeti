@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Coalgebra.Comodule.MatrixCoefficient.ChangeBasis
-public import Mathlib.Analysis.InnerProductSpace.PiL2
+public import TauCeti.Analysis.InnerProductSpace.Orthonormal.ChangeBasis
 
 /-!
 # Finite-dimensional unitary comodules
@@ -45,26 +45,6 @@ variable {𝕜 A M ι κ : Type*} [RCLike 𝕜] [Semiring A] [StarRing A]
 
 namespace OrthonormalBasis
 
-omit [Coalgebra 𝕜 A] [Comodule 𝕜 A M] in
-private theorem toMatrix_map_conjTranspose_mul_self [DecidableEq κ]
-    (b : OrthonormalBasis ι 𝕜 M) (c : OrthonormalBasis κ 𝕜 M) :
-    ((b.toBasis.toMatrix c.toBasis).map (algebraMap 𝕜 A))ᴴ *
-      (b.toBasis.toMatrix c.toBasis).map (algebraMap 𝕜 A) = 1 := by
-  classical
-  rw [← Matrix.conjTranspose_map _ algebraMap_star_comm, ← Matrix.map_mul,
-    c.coe_toBasis, b.toMatrix_orthonormalBasis_conjTranspose_mul_self c]
-  simp
-
-omit [Coalgebra 𝕜 A] [Comodule 𝕜 A M] in
-private theorem toMatrix_map_self_mul_conjTranspose [DecidableEq ι]
-    (b : OrthonormalBasis ι 𝕜 M) (c : OrthonormalBasis κ 𝕜 M) :
-    (b.toBasis.toMatrix c.toBasis).map (algebraMap 𝕜 A) *
-      ((b.toBasis.toMatrix c.toBasis).map (algebraMap 𝕜 A))ᴴ = 1 := by
-  classical
-  rw [← Matrix.conjTranspose_map _ algebraMap_star_comm, ← Matrix.map_mul,
-    c.coe_toBasis, b.toMatrix_orthonormalBasis_self_mul_conjTranspose c]
-  simp
-
 /-- An orthonormal change of basis conjugates the coefficient matrix by the scalar
 change-of-basis matrix. The index types need not be the same. -/
 theorem coefficientMatrix_eq_conjTranspose_mul
@@ -75,7 +55,8 @@ theorem coefficientMatrix_eq_conjTranspose_mul
           (b.toBasis.toMatrix c.toBasis).map (algebraMap 𝕜 A) := by
   classical
   rw [Matrix.mul_assoc, b.toBasis.coefficientMatrix_mul_toMatrix c.toBasis,
-    ← Matrix.mul_assoc, b.toMatrix_map_conjTranspose_mul_self c, Matrix.one_mul]
+    ← Matrix.mul_assoc, c.coe_toBasis, b.toMatrix_map_conjTranspose_mul_self c,
+    Matrix.one_mul]
 
 /-- Transfer unitarity across an orthonormal change of coefficient basis. -/
 private theorem coefficientMatrix_mem_unitary [DecidableEq ι] [DecidableEq κ]
