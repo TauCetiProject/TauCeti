@@ -14,7 +14,7 @@ import TauCeti.Probability.Distributions.Beta.Reflection
 
 Replacing a beta-binomial success count `X` by its failure count `n - X` exchanges the
 two Beta shape parameters. The native pushforward identity follows by transporting
-the binomial components and reflecting the Beta mixing law. Real-cast reflection and
+the binomial components and reflecting the Beta mixing law. Cast reflection and
 random-variable corollaries make the identity usable without unfolding the mixture.
 
 The measure identities hold at every pair of real shape parameters, including the
@@ -42,22 +42,15 @@ theorem map_sub_betaBinomialMeasure (n : ℕ) (a b : ℝ) :
   · rw [betaBinomialMeasure_eq_zero_of_invalid h, Measure.map_zero,
       betaBinomialMeasure_eq_zero_of_invalid (by tauto)]
 
-/-- Real reflection about half the trial count exchanges the beta-binomial shapes. -/
+/-- Reflection by `x ↦ n - x` exchanges the cast beta-binomial shapes. -/
 @[simp]
-theorem map_sub_map_cast_betaBinomialMeasure (n : ℕ) (a b : ℝ) :
-    ((betaBinomialMeasure n a b).map (Nat.cast : ℕ → ℝ)).map
-        (fun x ↦ (n : ℝ) - x) =
-      (betaBinomialMeasure n b a).map (Nat.cast : ℕ → ℝ) := by
-  rw [← map_sub_betaBinomialMeasure n a b,
-    Measure.map_map (by fun_prop) Measurable.of_discrete,
-    Measure.map_map Measurable.of_discrete (by fun_prop)]
-  apply Measure.map_congr
-  by_cases h : 0 < a ∧ 0 < b
-  · apply ae_iff_of_countable.mpr
-    intro k hk
-    exact (Nat.cast_sub ((betaBinomialMeasure_singleton_ne_zero_iff h.1 h.2 n k).mp hk)).symm
-  · rw [betaBinomialMeasure_eq_zero_of_invalid h, ae_zero]
-    exact Filter.eventually_bot
+theorem map_sub_map_cast_betaBinomialMeasure {R : Type*} [AddGroupWithOne R]
+    [MeasurableSpace R] [MeasurableSub R] (n : ℕ) (a b : ℝ) :
+    ((betaBinomialMeasure n a b).map (Nat.cast : ℕ → R)).map
+        (fun x ↦ (n : R) - x) =
+      (betaBinomialMeasure n b a).map (Nat.cast : ℕ → R) := by
+  rw [Measure.map_sub_map_cast_of_ae_le _ (ae_le_betaBinomialMeasure n a b),
+    map_sub_betaBinomialMeasure]
 
 end TauCeti.Probability
 
@@ -72,15 +65,16 @@ theorem sub_betaBinomialMeasure {Ω : Type*} [MeasurableSpace Ω] {P : Measure �
   exact (⟨Measurable.of_discrete.aemeasurable, map_sub_betaBinomialMeasure n a b⟩ :
     HasLaw (fun k ↦ n - k) (betaBinomialMeasure n b a) (betaBinomialMeasure n a b)).comp hX
 
-/-- A reflected real-cast beta-binomial variable has the exchanged shape parameters. -/
-theorem sub_map_cast_betaBinomialMeasure {Ω : Type*} [MeasurableSpace Ω] {P : Measure Ω}
-    {X : Ω → ℝ} {n : ℕ} {a b : ℝ}
-    (hX : HasLaw X ((betaBinomialMeasure n a b).map (Nat.cast : ℕ → ℝ)) P) :
-    HasLaw (fun ω ↦ (n : ℝ) - X ω)
-      ((betaBinomialMeasure n b a).map (Nat.cast : ℕ → ℝ)) P := by
+/-- A reflected cast beta-binomial variable has the exchanged shape parameters. -/
+theorem sub_map_cast_betaBinomialMeasure {R : Type*} [AddGroupWithOne R]
+    [MeasurableSpace R] [MeasurableSub R] {Ω : Type*} [MeasurableSpace Ω] {P : Measure Ω}
+    {X : Ω → R} {n : ℕ} {a b : ℝ}
+    (hX : HasLaw X ((betaBinomialMeasure n a b).map (Nat.cast : ℕ → R)) P) :
+    HasLaw (fun ω ↦ (n : R) - X ω)
+      ((betaBinomialMeasure n b a).map (Nat.cast : ℕ → R)) P := by
   exact (⟨by fun_prop, map_sub_map_cast_betaBinomialMeasure n a b⟩ :
-    HasLaw (fun x : ℝ ↦ (n : ℝ) - x)
-      ((betaBinomialMeasure n b a).map (Nat.cast : ℕ → ℝ))
-      ((betaBinomialMeasure n a b).map (Nat.cast : ℕ → ℝ))).comp hX
+    HasLaw (fun x : R ↦ (n : R) - x)
+      ((betaBinomialMeasure n b a).map (Nat.cast : ℕ → R))
+      ((betaBinomialMeasure n a b).map (Nat.cast : ℕ → R))).comp hX
 
 end ProbabilityTheory.HasLaw

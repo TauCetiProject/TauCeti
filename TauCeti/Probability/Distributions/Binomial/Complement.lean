@@ -6,16 +6,17 @@ Authors: Codex
 module
 
 public import Mathlib.Probability.Distributions.Binomial
+public import TauCeti.MeasureTheory.Measure.NatCast
 
 /-!
 # Complementing binomial counts
 
 In `n` Bernoulli trials, replacing successes by failures sends the count `X` to `n - X`
 and the success probability `p` to `1 - p`. We prove the native pushforward identity,
-its real-cast reflection, and the corresponding random-variable laws. The identities
+its cast reflection, and the corresponding random-variable laws. The identities
 include zero trials and success probabilities zero and one.
 
-Natural subtraction agrees with real subtraction on the almost-sure support `X ≤ n`.
+Natural subtraction agrees with group subtraction on the almost-sure support `X ≤ n`.
 The finite-sum reflection argument uses Mathlib's binomial mass formula and
 `Finset.sum_range_reflect`, as in the hypergeometric complement API.
 -/
@@ -45,17 +46,14 @@ theorem map_sub_binomial (n : ℕ) (p : unitInterval) :
   congr 2
   ring
 
-/-- Reflection about half the number of trials complements the real-cast binomial law. -/
+/-- Reflection by `x ↦ n - x` complements the cast binomial law. -/
 @[simp]
-theorem map_sub_map_cast_binomial (n : ℕ) (p : unitInterval) :
-    (Bin(ℝ, n, p)).map (fun x ↦ (n : ℝ) - x) =
-      Bin(ℝ, n, unitInterval.symm p) := by
-  rw [← map_sub_binomial n p,
-    Measure.map_map (by fun_prop) Measurable.of_discrete,
-    Measure.map_map Measurable.of_discrete (by fun_prop)]
-  apply Measure.map_congr
-  filter_upwards [ae_le_of_hasLaw_binomial (HasLaw.id (μ := binomial n p))] with k hk
-  exact (Nat.cast_sub hk).symm
+theorem map_sub_map_cast_binomial {R : Type*} [AddGroupWithOne R] [MeasurableSpace R]
+    [MeasurableSub R] (n : ℕ) (p : unitInterval) :
+    (Bin(R, n, p)).map (fun x ↦ (n : R) - x) =
+      Bin(R, n, unitInterval.symm p) := by
+  rw [Measure.map_sub_map_cast_of_ae_le _
+    (ae_le_of_hasLaw_binomial (HasLaw.id (μ := binomial n p))), map_sub_binomial]
 
 end TauCeti.Probability
 
@@ -71,12 +69,12 @@ theorem sub_binomial {Ω : Type*} [MeasurableSpace Ω] {P : Measure Ω}
   exact (⟨Measurable.of_discrete.aemeasurable, map_sub_binomial n p⟩ :
     HasLaw (fun k ↦ n - k) (binomial n (unitInterval.symm p)) (binomial n p)).comp hX
 
-/-- Reflecting a real-valued binomial variable about half its trial count complements the
-success probability. -/
-theorem sub_map_cast_binomial {Ω : Type*} [MeasurableSpace Ω] {P : Measure Ω}
-    {X : Ω → ℝ} {n : ℕ} {p : unitInterval} (hX : HasLaw X Bin(ℝ, n, p) P) :
-    HasLaw (fun ω ↦ (n : ℝ) - X ω) Bin(ℝ, n, unitInterval.symm p) P := by
+/-- Reflecting a cast binomial variable by `x ↦ n - x` complements its success probability. -/
+theorem sub_map_cast_binomial {R : Type*} [AddGroupWithOne R] [MeasurableSpace R]
+    [MeasurableSub R] {Ω : Type*} [MeasurableSpace Ω] {P : Measure Ω}
+    {X : Ω → R} {n : ℕ} {p : unitInterval} (hX : HasLaw X Bin(R, n, p) P) :
+    HasLaw (fun ω ↦ (n : R) - X ω) Bin(R, n, unitInterval.symm p) P := by
   exact (⟨by fun_prop, map_sub_map_cast_binomial n p⟩ :
-    HasLaw (fun x : ℝ ↦ (n : ℝ) - x) Bin(ℝ, n, unitInterval.symm p) Bin(ℝ, n, p)).comp hX
+    HasLaw (fun x : R ↦ (n : R) - x) Bin(R, n, unitInterval.symm p) Bin(R, n, p)).comp hX
 
 end ProbabilityTheory.HasLaw
