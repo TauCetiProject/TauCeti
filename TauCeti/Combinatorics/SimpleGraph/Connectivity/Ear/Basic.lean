@@ -512,6 +512,10 @@ theorem initial_copy {H' : G.Subgraph} (d : G.EarDecomposition H) (h : H = H') :
     (d.copy h).initial = d.initial := (rfl)
 
 @[simp]
+theorem start_copy {H' : G.Subgraph} (d : G.EarDecomposition H) (h : H = H') :
+    (d.copy h).start = d.start := rfl
+
+@[simp]
 theorem earAt_copy {H' : G.Subgraph} (d : G.EarDecomposition H) (h : H = H') :
     (d.copy h).earAt = d.earAt := rfl
 
@@ -546,6 +550,12 @@ theorem subgraphAfter_vertex (v : V) (k : Fin ((vertex G v).length + 1)) :
 
 @[simp] theorem initial_vertex (v : V) : (vertex G v).initial = G.singletonSubgraph v := (rfl)
 
+@[simp]
+theorem start_vertex (v : V) :
+    (vertex G v).start =
+      (subgraphAfter_vertex (G := G) v 0).symm.rec
+        (motive := fun K _ ↦ G.EarStart K) (.vertex v) := (rfl)
+
 @[simp] theorem not_isOpen_vertex (v : V) : ¬(vertex G v).IsOpen := fun h ↦ h.1
 
 /-- The zero-ear decomposition starting at a cycle `c`. -/
@@ -568,6 +578,12 @@ theorem subgraphAfter_cycle {u : V} (c : G.Walk u u) (hc : c.IsCycle)
 @[simp]
 theorem initial_cycle {u : V} (c : G.Walk u u) (hc : c.IsCycle) :
     (cycle c hc).initial = c.toSubgraph := (rfl)
+
+@[simp]
+theorem start_cycle {u : V} (c : G.Walk u u) (hc : c.IsCycle) :
+    (cycle c hc).start =
+      (subgraphAfter_cycle c hc 0).symm.rec
+        (motive := fun K _ ↦ G.EarStart K) (.cycle c hc) := (rfl)
 
 @[simp]
 theorem isOpen_cycle {u : V} (c : G.Walk u u) (hc : c.IsCycle) : (cycle c hc).IsOpen :=
@@ -628,6 +644,18 @@ theorem initial_snoc (d : G.EarDecomposition H) (e : G.Ear H) :
   rwa [Fin.castSucc_zero] at h
 
 @[simp]
+theorem start_snoc (d : G.EarDecomposition H) (e : G.Ear H) :
+    (d.snoc e).start =
+      (d.subgraphAfter_zero.trans
+        ((d.initial_snoc e).symm.trans (d.snoc e).subgraphAfter_zero.symm)).rec
+        (motive := fun K _ ↦ G.EarStart K) d.start := by
+  apply eq_of_heq
+  rw [heq_eqRec_iff]
+  dsimp only [snoc]
+  have hrec : ∀ {α β : Type u} (h : α = β) (s : β), HEq (h.mpr s) s := by rintro _ _ rfl _; rfl
+  exact (hrec _ _).trans (hrec _ _)
+
+@[simp]
 theorem walkAt_snoc_castSucc (d : G.EarDecomposition H) (e : G.Ear H) (i : Fin d.length) :
     (d.snoc e).walkAt i.castSucc = d.walkAt i := by simp [walkAt_def, snoc]
 
@@ -683,6 +711,10 @@ theorem subgraphAfter_prefix (d : G.EarDecomposition H) (k : Fin (d.length + 1))
 @[simp]
 theorem initial_prefix (d : G.EarDecomposition H) (k : Fin (d.length + 1)) :
     (d.prefix k).initial = d.initial := (rfl)
+
+@[simp]
+theorem start_prefix (d : G.EarDecomposition H) (k : Fin (d.length + 1)) :
+    (d.prefix k).start = d.start := rfl
 
 @[simp]
 theorem earAt_prefix (d : G.EarDecomposition H) (k : Fin (d.length + 1)) (j : Fin k) :
