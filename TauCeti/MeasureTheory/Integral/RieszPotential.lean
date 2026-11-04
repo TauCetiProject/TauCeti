@@ -202,7 +202,7 @@ theorem eLpNorm_setLIntegral_enorm_sub_rpow_mul_le {p q : ℝ≥0} {κ δ : ℝ}
     exact setLIntegral_enorm_sub_rpow_le hκ'0 hκ'1 hΩ x
   have hk : Measurable (Function.uncurry fun x y : E => ‖x - y‖ₑ ^ ((n : ℝ) * (κ - 1))) := by
     fun_prop
-  have hyoung := lintegral_rpow_lintegral_mul_le_of_inv_add_inv_eq hk hf hp' hpq' hr
+  have hyoung := lintegral_rpow_lintegral_mul_le_of_inv_add_inv_eq hk.aemeasurable hf hp' hpq' hr
     (ae_of_all _ hA) (ae_of_all _ fun y => by simpa only [enorm_sub_rev y] using hA y)
   have hV : AEMeasurable
       (fun x => ∫⁻ y in Ω, ‖x - y‖ₑ ^ ((n : ℝ) * (κ - 1)) * f y ∂μ) (μ.restrict Ω) :=
