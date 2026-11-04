@@ -75,6 +75,16 @@ theorem basisTw_repr_parabolicEigenSum (a : R) (w : W) :
     · simp
   · simp [hw, show ∀ v : cs.parabolic J, (v : W) ≠ w from fun v h ↦ hw (h ▸ v.property)]
 
+variable {cs J} in
+/-- The identity PBW coefficient recovers the scalar multiplying a parabolic weighted sum.
+Thus this parametrization of the line is injective over every coefficient ring. -/
+theorem smul_parabolicEigenSum_injective (a : R) :
+    Function.Injective (fun r : R => r • parabolicEigenSum (q := q) cs J a) := by
+  intro r s h
+  have hc := congrArg (fun x => (basisTw q cs).repr x 1) h
+  simpa only [map_smul, Finsupp.smul_apply, basisTw_repr_parabolicEigenSum,
+    Subgroup.one_mem, ite_true, cs.length_one, pow_zero, smul_eq_mul, mul_one] using hc
+
 /-- A parabolic weighted sum is nonzero over every nontrivial coefficient ring. -/
 theorem parabolicEigenSum_ne_zero [Nontrivial R] (a : R) :
     parabolicEigenSum (q := q) cs J a ≠ 0 := by
