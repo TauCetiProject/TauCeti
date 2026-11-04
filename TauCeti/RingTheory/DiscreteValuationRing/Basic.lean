@@ -35,6 +35,8 @@ distinct, a discrete valuation ring is also infinite.
   has cardinality `Nat.card (ResidueField S) ^ n`.
 * `TauCeti.IsDiscreteValuationRing.hasFiniteQuotients`: if the residue field is finite, so is
   the quotient by any nonzero ideal.
+* `TauCeti.IsDiscreteValuationRing.relIndex_maximalIdeal_pow_add`: `𝔪 ^ (k + e)` has index
+  `Nat.card (ResidueField S) ^ e` in `𝔪 ^ k`.
 * `TauCeti.IsDiscreteValuationRing.natCard_map_maximalIdeal_pow`: the graded piece
   `𝔪 ^ n / 𝔪 ^ (n + 1)` has as many elements as the residue field.
 * `TauCeti.IsDiscreteValuationRing.quotient_mk_eq_iff_le_addVal`: equality modulo `𝔪 ^ n` is
@@ -94,6 +96,27 @@ instance hasFiniteQuotients [Finite (ResidueField S)] : Ring.HasFiniteQuotients 
     obtain ⟨n, hn⟩ := _root_.IsDiscreteValuationRing.ideal_eq_span_pow_irreducible hI hϖ
     rw [hn, ← Ideal.span_singleton_pow, ← hϖ.maximalIdeal_eq]
     infer_instance
+
+/-- The index of `𝔪 ^ (k + e)` in `𝔪 ^ k` is `Nat.card (ResidueField S) ^ e`: multiplication by
+the `k`-th power of a uniformizer carries `S ⊇ 𝔪 ^ e` isomorphically onto `𝔪 ^ k ⊇ 𝔪 ^ (k + e)`.
+No finiteness assumption on the residue field is needed. -/
+theorem relIndex_maximalIdeal_pow_add (k e : ℕ) :
+    (maximalIdeal S ^ (k + e)).toAddSubgroup.relIndex (maximalIdeal S ^ k).toAddSubgroup =
+      Nat.card (ResidueField S) ^ e := by
+  obtain ⟨ϖ, hϖ⟩ := _root_.IsDiscreteValuationRing.exists_irreducible S
+  have hpow (j : ℕ) : maximalIdeal S ^ j = Ideal.span {ϖ ^ j} := by
+    rw [hϖ.maximalIdeal_eq, Ideal.span_singleton_pow]
+  let μ : S →+ S := AddMonoidHom.mulLeft (ϖ ^ k)
+  have hrange : μ.range = (maximalIdeal S ^ k).toAddSubgroup := by
+    ext x
+    simp [μ, hpow, Ideal.mem_span_singleton, dvd_def, eq_comm]
+  have hcomap : (maximalIdeal S ^ (k + e)).toAddSubgroup.comap μ =
+      (maximalIdeal S ^ e).toAddSubgroup := by
+    ext x
+    simp [μ, hpow, Ideal.mem_span_singleton, pow_add,
+      mul_dvd_mul_iff_left (pow_ne_zero k hϖ.ne_zero)]
+  rw [← hrange, ← AddSubgroup.index_comap, hcomap, ← natCard_quotient_maximalIdeal_pow,
+    ← Submodule.cardQuot_apply, Submodule.cardQuot]
 
 /-- The graded piece `𝔪 ^ n / 𝔪 ^ (n + 1)` of a discrete valuation ring, viewed as an ideal of
 `S ⧸ 𝔪 ^ (n + 1)`, has as many elements as the residue field. -/
