@@ -78,8 +78,11 @@ open MeasureTheory FourierTransform
 open scoped ENNReal SchwartzMap BesselPotentialSpace
 
 variable {E F : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
-  [MeasurableSpace E] [BorelSpace E] [NormedAddCommGroup F] [InnerProductSpace ℂ F]
-  [CompleteSpace F]
+  [MeasurableSpace E] [BorelSpace E] [NormedAddCommGroup F]
+
+section NormedSpace
+
+variable [NormedSpace ℂ F] [CompleteSpace F]
 
 namespace SchwartzMap
 
@@ -193,6 +196,28 @@ theorem eLpNorm_rpow_smul_fourier_smulLeftCLM_le (s : ℝ) (φ : 𝓢(E, ℂ)) (
           ← ENNReal.rpow_mul]
         norm_num
 
+end SchwartzMap
+
+namespace TemperedDistribution
+
+/-- The Bessel potential of a Schwartz function is the Schwartz function given by the Fourier
+multiplier with the same symbol `⟨ξ⟩ ^ s`. -/
+theorem besselPotential_toTemperedDistributionCLM_eq (s : ℝ) (f : 𝓢(E, F)) :
+    besselPotential E F s (f : 𝓢'(E, F)) =
+      (SchwartzMap.fourierMultiplierCLM F
+        (fun x : E ↦ (((1 + ‖x‖ ^ 2) ^ (s / 2) : ℝ) : ℂ)) f : 𝓢'(E, F)) :=
+  fourierMultiplierCLM_toTemperedDistributionCLM_eq (by fun_prop) f
+
+end TemperedDistribution
+
+end NormedSpace
+
+section InnerProductSpace
+
+variable [InnerProductSpace ℂ F] [CompleteSpace F]
+
+namespace SchwartzMap
+
 /-- **Multiplication by a Schwartz function is bounded on `H^s`**, on Schwartz functions. With
 the Bessel-potential weight `⟨ξ⟩ ^ s` of order `s ∈ ℝ`, Mathlib's convention for `H^s`,
 
@@ -221,14 +246,6 @@ theorem norm_toLp_fourierMultiplierCLM_smulLeftCLM_le (s : ℝ) (φ : 𝓢(E, �
 end SchwartzMap
 
 namespace TemperedDistribution
-
-/-- The Bessel potential of a Schwartz function is the Schwartz function given by the Fourier
-multiplier with the same symbol `⟨ξ⟩ ^ s`. -/
-theorem besselPotential_toTemperedDistributionCLM_eq (s : ℝ) (f : 𝓢(E, F)) :
-    besselPotential E F s (f : 𝓢'(E, F)) =
-      (SchwartzMap.fourierMultiplierCLM F
-        (fun x : E ↦ (((1 + ‖x‖ ^ 2) ^ (s / 2) : ℝ) : ℂ)) f : 𝓢'(E, F)) :=
-  fourierMultiplierCLM_toTemperedDistributionCLM_eq (by fun_prop) f
 
 /-- **Multiplication by a Schwartz function is bounded on `H^s`**, for every real `s`. If the
 tempered distribution `u` lies in `H^s`, with `J^s u = v ∈ L²`, then `J^s (φ u) = v'` for some
@@ -321,3 +338,5 @@ theorem norm_smulLeftCLM_apply_le (u : H^{s, 2}(E, F)) :
   (smulLeftCLM s φ).le_of_opNorm_le (norm_smulLeftCLM_le s φ) u
 
 end BesselPotentialSpace
+
+end InnerProductSpace
