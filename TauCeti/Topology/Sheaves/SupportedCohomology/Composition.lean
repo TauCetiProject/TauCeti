@@ -40,16 +40,6 @@ variable {X : TopCat.{u}} {R : Type u} [CommRing R]
 
 noncomputable section
 
-/-- Applying supported sections to an inclusion leaves the ambient section unchanged. -/
-@[simp]
-lemma coe_supportedSubmoduleFunctor_map_ι_hom_app_apply (Z S : Closeds X)
-    (W : (Opens X)ᵒᵖ)
-    (s : (F.supportedSubmoduleSheaf S).supportedSubmodule Z W.unop) :
-    Subtype.val (p := (· ∈ F.supportedSubmodule Z W.unop))
-      (((supportedSubmoduleFunctor Z).map (F.supportedSubmoduleι S)).hom.app W s) = s.1.1 :=
-  (coe_supportedSubmoduleFunctor_map_hom_app_apply Z (F.supportedSubmoduleι S) W s).trans
-    (F.supportedSubmoduleι_hom_app_apply S W s.1)
-
 /-- If `Z ⊆ S`, the inclusion `Γ_S(F) ⟶ F` becomes an isomorphism after taking
 sections supported in `Z`. -/
 theorem isIso_supportedSubmoduleFunctor_map_ι (hZS : Z ≤ S) :
@@ -140,24 +130,12 @@ lemma coe_coe_supportedSubmoduleCompIso_inv_app_apply (hZS : Z ≤ S)
     Subtype.val (α := F.obj.obj W) (p := (· ∈ F.supportedSubmodule S W.unop))
       (((F.supportedSubmoduleCompIso hZS).inv.hom.app W s).1) =
         s.1 := by
-  have h := congr_arg (fun f ↦ f.hom.app W) (F.supportedSubmoduleCompIso_inv_ι hZS)
-  simp only [ObjectProperty.FullSubcategory.comp_hom, NatTrans.comp_app] at h
-  -- Instantiate the evaluation lemmas explicitly: the section subtypes and bundled
-  -- module carriers are definitionally equal, but generic simp matching does not see this.
-  have hcomp := ModuleCat.comp_apply ((F.supportedSubmoduleCompIso hZS).inv.hom.app W)
-    ((((F.supportedSubmoduleSheaf S).supportedSubmoduleι Z).hom.app W) ≫
-      (F.supportedSubmoduleι S).hom.app W) s
-  have hcomp' := ModuleCat.comp_apply
-    (((F.supportedSubmoduleSheaf S).supportedSubmoduleι Z).hom.app W)
-    ((F.supportedSubmoduleι S).hom.app W) ((F.supportedSubmoduleCompIso hZS).inv.hom.app W s)
-  have heval := hcomp'.symm.trans (hcomp.symm.trans (ConcreteCategory.congr_hom h s))
-  have hι := (F.supportedSubmoduleSheaf S).supportedSubmoduleι_hom_app_apply Z W
-    ((F.supportedSubmoduleCompIso hZS).inv.hom.app W s)
-  have hιS := F.supportedSubmoduleι_hom_app_apply S W
-    (((F.supportedSubmoduleSheaf S).supportedSubmoduleι Z).hom.app W
-      ((F.supportedSubmoduleCompIso hZS).inv.hom.app W s))
-  exact (congr_arg (fun t : F.supportedSubmodule S W.unop ↦ t.1) hι).symm.trans
-    (hιS.symm.trans (heval.trans (F.supportedSubmoduleι_hom_app_apply Z W s)))
+  have h := congr_arg (fun f ↦ (f.hom.app W).hom) (F.supportedSubmoduleCompIso hZS).inv_hom_id
+  simp only [ObjectProperty.FullSubcategory.comp_hom, NatTrans.comp_app,
+    ObjectProperty.FullSubcategory.id_hom, NatTrans.id_app,
+    ModuleCat.hom_comp, ModuleCat.hom_id] at h
+  exact (F.coe_supportedSubmoduleCompIso_hom_app_apply hZS W _).symm.trans
+    (congr_arg (fun t : F.supportedSubmodule Z W.unop ↦ t.1) (LinearMap.congr_fun h s))
 
 /-- Forgetting scalars commutes with flattening iterated supported sections. This formulation
 uses the canonical abelian inclusions, without choosing a second composition isomorphism. -/

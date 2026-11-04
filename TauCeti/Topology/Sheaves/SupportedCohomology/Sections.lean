@@ -242,6 +242,17 @@ lemma coe_supportedSubmoduleFunctor_map_hom_app_apply (f : F ⟶ G) (W : (Opens 
       (((supportedSubmoduleFunctor S).map f).hom.app W s) = f.hom.app W s :=
   (rfl)
 
+variable (F) in
+/-- Applying supported sections to an inclusion leaves the ambient section unchanged. -/
+@[simp]
+lemma coe_supportedSubmoduleFunctor_map_ι_hom_app_apply (Z S : Closeds X)
+    (W : (Opens X)ᵒᵖ)
+    (s : (F.supportedSubmoduleSheaf S).supportedSubmodule Z W.unop) :
+    Subtype.val (p := (· ∈ F.supportedSubmodule Z W.unop))
+      (((supportedSubmoduleFunctor Z).map (F.supportedSubmoduleι S)).hom.app W s) = s.1.1 :=
+  (coe_supportedSubmoduleFunctor_map_hom_app_apply Z (F.supportedSubmoduleι S) W s).trans
+    (F.supportedSubmoduleι_hom_app_apply S W s.1)
+
 /-- The supported-section functor is additive. -/
 instance additive_supportedSubmoduleFunctor : (supportedSubmoduleFunctor (R := R) S).Additive where
   map_add {F G f g} := (cancel_mono (G.supportedSubmoduleι S)).1 (by simp)
