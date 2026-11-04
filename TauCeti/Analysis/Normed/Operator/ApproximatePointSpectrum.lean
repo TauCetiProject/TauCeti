@@ -6,9 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Normed.Algebra.Spectrum
-public import Mathlib.Analysis.Normed.Module.RCLike.Basic
 public import Mathlib.Analysis.Normed.Ring.Units
 public import Mathlib.LinearAlgebra.Eigenspace.Basic
+public import TauCeti.Analysis.Normed.Module.Basic
+public import TauCeti.Analysis.Normed.Operator.Basic
 
 /-!
 # Approximate-point spectrum of bounded operators
@@ -66,7 +67,7 @@ theorem mem_approximatePointSpectrum_iff_forall_pos (T : E →L[𝕜] E) (z : �
 
 /-- Outside the approximate-point spectrum, the shifted operator is bounded below.
 There is no assertion of surjectivity. -/
-theorem not_mem_approximatePointSpectrum_iff (T : E →L[𝕜] E) (z : 𝕜) :
+theorem notMem_approximatePointSpectrum_iff (T : E →L[𝕜] E) (z : 𝕜) :
     z ∉ T.approximatePointSpectrum ↔
       ∃ c : ℝ, 0 < c ∧ ∀ x : E, c * ‖x‖ ≤ ‖T x - z • x‖ := by
   rw [mem_approximatePointSpectrum_iff_forall_pos]
@@ -89,8 +90,7 @@ theorem not_mem_approximatePointSpectrum_iff (T : E →L[𝕜] E) (z : 𝕜) :
   · rintro ⟨c, hc, hbound⟩
     exact ⟨c, hc, fun x hx ↦ by simpa only [hx, mul_one] using hbound x⟩
 
-/-- An eigenvalue belongs to the approximate-point spectrum, using the normalized eigenvector
-as a constant sequence. -/
+/-- Every eigenvalue of `T` lies in its approximate-point spectrum. -/
 theorem mem_approximatePointSpectrum_of_hasEigenvalue (T : E →L[𝕜] E) {z : 𝕜}
     (hz : Module.End.HasEigenvalue T.toLinearMap z) : z ∈ T.approximatePointSpectrum := by
   obtain ⟨x, hx, hx0⟩ := hz.exists_hasEigenvector
@@ -142,32 +142,20 @@ theorem isClosed_approximatePointSpectrum (T : E →L[𝕜] E) :
   obtain ⟨x, hx, hres⟩ :=
     (mem_approximatePointSpectrum_iff_forall_pos T w).mp hw (ε / 2) (by positivity)
   refine ⟨x, hx, ?_⟩
-  have h := norm_sub_le_norm_sub_add_norm_sub (T x) (w • x) (z • x)
-  rw [← sub_smul, norm_smul, norm_sub_rev w z, hx, mul_one] at h
+  have h := TauCeti.norm_sub_smul_le_norm_sub_smul_add (T x) x z w
+  rw [hx, mul_one] at h
   rw [dist_eq_norm] at hzw
   linarith
 
-/-- Every boundary point of the spectrum admits unit approximate eigenvectors. -/
-theorem frontier_spectrum_subset_approximatePointSpectrum [CompleteSpace E]
-    (T : E →L[𝕜] E) : frontier (spectrum 𝕜 T) ⊆ T.approximatePointSpectrum := by
-  rcases subsingleton_or_nontrivial E with hE | hE
-  · simp [spectrum.of_subsingleton]
-  intro z hz
-  by_contra hnot
-  obtain ⟨c, hc, hbound⟩ := (T.not_mem_approximatePointSpectrum_iff z).mp hnot
-  have hzcl : z ∈ closure (spectrum 𝕜 T)ᶜ := by
-    rw [closure_compl]
-    exact hz.2
-  obtain ⟨w, hw, hzw⟩ := Metric.mem_closure_iff.mp hzcl (c / 4) (by positivity)
-  have huw : IsUnit (algebraMap 𝕜 (E →L[𝕜] E) w - T) := by
-    have hnotw : w ∉ spectrum 𝕜 T := hw
-    simpa only [spectrum.mem_iff, not_not] using hnotw
-  obtain ⟨u, hu⟩ := huw
-  rw [dist_eq_norm] at hzw
+private lemma isUnit_sub_of_nearby_resolvent [CompleteSpace E] [Nontrivial E]
+    (T : E →L[𝕜] E) {z w : 𝕜} {c : ℝ} (hc : 0 < c)
+    (hbound : ∀ x : E, c * ‖x‖ ≤ ‖T x - z • x‖)
+    (hw : IsUnit (algebraMap 𝕜 (E →L[𝕜] E) w - T)) (hzw : ‖z - w‖ < c / 4) :
+    IsUnit (algebraMap 𝕜 (E →L[𝕜] E) z - T) := by
+  obtain ⟨u, hu⟩ := hw
   -- The lower bound at `z` remains at least `c / 2` at the nearby resolvent point `w`.
   have hlow (x : E) : c / 2 * ‖x‖ ≤ ‖(u : E →L[𝕜] E) x‖ := by
-    have h := norm_sub_le_norm_sub_add_norm_sub (T x) (w • x) (z • x)
-    rw [← sub_smul, norm_smul, norm_sub_rev w z] at h
+    have h := TauCeti.norm_sub_smul_le_norm_sub_smul_add (T x) x z w
     have hdist := mul_le_mul_of_nonneg_right hzw.le (norm_nonneg x)
     have heq : ‖T x - w • x‖ = ‖(u : E →L[𝕜] E) x‖ := by
       rw [hu, sub_apply, algebraMap_apply, norm_sub_rev]
@@ -175,14 +163,12 @@ theorem frontier_spectrum_subset_approximatePointSpectrum [CompleteSpace E]
     have hb := hbound x
     nlinarith
   have hinv : ‖(↑u⁻¹ : E →L[𝕜] E)‖ ≤ 2 / c := by
-    apply opNorm_le_bound _ (by positivity)
-    intro y
-    have h := hlow ((↑u⁻¹ : E →L[𝕜] E) y)
-    have hright : (u : E →L[𝕜] E) ((↑u⁻¹ : E →L[𝕜] E) y) = y := by
-      rw [← mul_apply_eq_comp, Units.mul_inv, one_apply_eq_self]
-    rw [hright] at h
+    rw [← Ring.inverse_unit]
+    apply norm_ringInverse_le_of_forall_norm_le u.isUnit (by positivity)
+    intro x
     rw [div_mul_eq_mul_div]
     apply (le_div_iff₀ hc).mpr
+    have h := hlow x
     nlinarith
   -- Mathlib's nearby-unit construction makes `z` a resolvent point as well.
   let v : E →L[𝕜] E := (u : E →L[𝕜] E) - (algebraMap 𝕜 _ z - T)
@@ -204,7 +190,25 @@ theorem frontier_spectrum_subset_approximatePointSpectrum [CompleteSpace E]
         have heq : (c / 4) * (2 / c) = 1 / 2 := by field_simp; norm_num
         rw [heq] at h
         linarith
-  have hzunit := (u.ofNearby (algebraMap 𝕜 _ z - T) hnear).isUnit
+  exact (u.ofNearby (algebraMap 𝕜 _ z - T) hnear).isUnit
+
+/-- Every boundary point of the spectrum admits unit approximate eigenvectors. -/
+theorem frontier_spectrum_subset_approximatePointSpectrum [CompleteSpace E]
+    (T : E →L[𝕜] E) : frontier (spectrum 𝕜 T) ⊆ T.approximatePointSpectrum := by
+  rcases subsingleton_or_nontrivial E with hE | hE
+  · simp [spectrum.of_subsingleton]
+  intro z hz
+  by_contra hnot
+  obtain ⟨c, hc, hbound⟩ := (T.notMem_approximatePointSpectrum_iff z).mp hnot
+  have hzcl : z ∈ closure (spectrum 𝕜 T)ᶜ := by
+    rw [closure_compl]
+    exact hz.2
+  obtain ⟨w, hw, hzw⟩ := Metric.mem_closure_iff.mp hzcl (c / 4) (by positivity)
+  have huw : IsUnit (algebraMap 𝕜 (E →L[𝕜] E) w - T) := by
+    have hnotw : w ∉ spectrum 𝕜 T := hw
+    simpa only [spectrum.mem_iff, not_not] using hnotw
+  have hzunit := isUnit_sub_of_nearby_resolvent T hc hbound huw
+    (by simpa only [dist_eq_norm] using hzw)
   exact (spectrum.mem_iff.mp ((spectrum.isClosed T).frontier_subset hz)) hzunit
 
 end ContinuousLinearMap
