@@ -301,8 +301,8 @@ lemma smallSingularSubcomplexPairToUnion_right :
   (rfl)
 
 /-- The chain map induced by the ambient component of `TopCat.smallSingularSubcomplexPairToUnion`
-is the identity. -/
-@[simp]
+is the identity. Not `@[simp]`: `TopCat.smallSingularSubcomplexPairToUnion_right` already
+rewrites its left-hand side. -/
 lemma chainComplexMap_smallSingularSubcomplexPairToUnion_right :
     SSet.chainComplexMap (smallSingularSubcomplexPairToUnion U V).right R = 𝟙 _ :=
   (congrArg (SSet.chainComplexMap · R) (smallSingularSubcomplexPairToUnion_right U V)).trans
