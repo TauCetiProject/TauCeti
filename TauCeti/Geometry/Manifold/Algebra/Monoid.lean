@@ -11,8 +11,9 @@ public import TauCeti.Geometry.Manifold.Algebra.SMul
 # Smooth monoid morphisms
 
 Identity, composition, and their laws for bundled smooth multiplicative and additive monoid
-morphisms. It also propagates the regularity of multiplicative and additive maps from a group
-at any one point to the whole group.
+morphisms, together with the equality between their function coercions and those of the
+underlying ordinary homomorphisms. It also propagates the regularity of multiplicative and
+additive maps from a group at any one point to the whole group.
 -/
 
 public section
@@ -29,6 +30,11 @@ variable {𝕜 : Type*} [NontriviallyNormedField 𝕜] {n : ℕ∞ω}
   {E' : Type*} [NormedAddCommGroup E'] [NormedSpace 𝕜 E']
   {H' : Type*} [TopologicalSpace H'] {I' : ModelWithCorners 𝕜 E' H'}
   {G' : Type*} [TopologicalSpace G'] [ChartedSpace H' G'] [Monoid G']
+
+/-- Forgetting smoothness preserves the underlying function. -/
+@[to_additive (attr := simp)]
+theorem coe_toMonoidHom (f : ContMDiffMonoidMorphism I I' n G G') :
+    ⇑f.toMonoidHom = ⇑f := rfl
 
 /-- The identity smooth monoid morphism. -/
 @[to_additive /-- The identity smooth additive monoid morphism. -/]

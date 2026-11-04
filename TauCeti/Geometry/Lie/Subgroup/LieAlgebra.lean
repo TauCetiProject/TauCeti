@@ -12,6 +12,7 @@ public import TauCeti.Geometry.Lie.Exponential.Trotter
 -- Non-public: the slope characterisation of a derivative and the module description of a slope
 -- are used only inside proofs, and no statement below mentions `slope`.
 import Mathlib.Analysis.Calculus.Deriv.Slope
+import TauCeti.Geometry.Lie.Exponential.Classification
 
 /-!
 # The Lie subalgebra of a subgroup
@@ -88,6 +89,8 @@ target — the closed-subgroup theorem, promoting `K` to an embedded Lie subgrou
   `Ad g - 1` maps `Lie(K)` into itself, in the form that `Submodule.mapQ` consumes.
 * `TauCeti.Lie.lieSubalgebraOfSubgroup_inf`: for closed subgroups, the Lie algebra of an
   intersection is the intersection of the Lie algebras.
+* `TauCeti.Lie.lieSubalgebraOfSubgroup_bot` and `TauCeti.Lie.lieSubalgebraOfSubgroup_top`:
+  the Lie algebras of the trivial subgroup and the whole group.
 
 ## References
 
@@ -378,6 +381,20 @@ theorem lieSubalgebraOfSubgroup_inf {K K' : Subgroup G} (hK : IsClosed (K : Set 
   rw [mem_lieSubalgebraOfSubgroup hinf, LieSubalgebra.mem_inf,
     mem_lieSubalgebraOfSubgroup hK, mem_lieSubalgebraOfSubgroup hK', ← forall_and]
   exact forall_congr' fun _ => Subgroup.mem_inf
+
+/-- The Lie algebra of the trivial subgroup is trivial. -/
+@[simp]
+theorem lieSubalgebraOfSubgroup_bot : lieSubalgebraOfSubgroup (I := I) (⊥ : Subgroup G) = ⊥ := by
+  apply le_antisymm _ bot_le
+  apply lieSubalgebraOfSubgroup_le_iff.mpr
+  intro X hX
+  rw [LieSubalgebra.mem_bot]
+  apply oneParameterSubgroup_injective (I := I) (G := G)
+  ext t
+  induction t using Multiplicative.rec with
+  | ofAdd t =>
+    simpa only [oneParameterSubgroup_apply, smul_zero, lieExp_zero] using
+      Subgroup.mem_bot.mp (hX t)
 
 /-- The Lie algebra of the whole group is the whole Lie algebra. -/
 @[simp]
