@@ -32,7 +32,7 @@ variable {V : Type*} [AddCommGroup V] [Module ℝ V]
 
 /-- A self-adjoint complex-linear map sends every vector to the orthogonal complement
 of its complex rotation. -/
-theorem bilinForm_apply_complex_rotation_eq_zero (hg : g.IsSymm)
+theorem bilinForm_apply_apply_eq_zero_of_isAdjointPair (hg : g.IsSymm)
     (hgJ : ∀ v w, g (J v) (J w) = g v w) {S : V →ₗ[ℝ] V}
     (hS : LinearMap.IsAdjointPair g g S S) (hSJ : IsComplexLinearMap J J S) (z : V) :
     g (S z) (J z) = 0 := by
@@ -58,7 +58,7 @@ theorem exists_isAdjointPair_isComplexLinearMap_apply_eq (hg : g.IsSymm)
     rw [isComplexLinearMap_iff_apply]
     intro x
     have hskew := J.bilinForm_apply_left_eq_neg_apply_right hgJ w x
-    simp only [hK, hgJ, J.toLinearMap.map_add, J.toLinearMap.map_smul,
+    simp only [hK, hgJ, J.apply_add, J.apply_smul,
       J.apply_apply, smul_neg]
     rw [hskew]
     module
@@ -79,15 +79,11 @@ theorem exists_isAdjointPair_isComplexLinearMap_apply_eq (hg : g.IsSymm)
     have hJzz : g (J z) z = 0 := by rw [hg.eq, hzz]
     have hJξz : g (J ξ) z = 0 := by
       rw [J.bilinForm_apply_left_eq_neg_apply_right hgJ, hξ, neg_zero]
-    have hc : c * g z z = 1 := inv_mul_cancel₀ hz
     simp only [S, LinearMap.sub_apply, LinearMap.smul_apply, LinearMap.add_apply,
       hK, hJzz, hJξz, zero_smul, add_zero]
-    rw [smul_add, smul_smul, hc, one_smul, smul_smul]
-    have heq : c * g ξ z = g ξ z * c ^ 2 * g z z := by
-      dsimp [c]
-      field_simp
-    rw [heq]
-    module
+    dsimp [c]
+    match_scalars <;> field_simp
+    ring
 
 /-- Characterization of the possible value at a nonisotropic vector of a self-adjoint
 endomorphism commuting with the complex structure. -/
@@ -98,7 +94,7 @@ theorem exists_isAdjointPair_isComplexLinearMap_apply_eq_iff (hg : g.IsSymm)
       IsComplexLinearMap J J S ∧ S z = ξ) ↔ g ξ (J z) = 0 := by
   constructor
   · rintro ⟨S, hS, hSJ, rfl⟩
-    exact J.bilinForm_apply_complex_rotation_eq_zero hg hgJ hS hSJ z
+    exact J.bilinForm_apply_apply_eq_zero_of_isAdjointPair hg hgJ hS hSJ z
   · exact J.exists_isAdjointPair_isComplexLinearMap_apply_eq hg hgJ hz
 
 end TauCeti.AlmostComplexStructure

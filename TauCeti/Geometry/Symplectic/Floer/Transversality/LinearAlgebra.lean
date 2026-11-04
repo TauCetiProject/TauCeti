@@ -43,32 +43,33 @@ theorem transversalityLinearMap_apply (J : AlmostComplexStructure V) (S : V →�
     transversalityLinearMap J S a b v = S (J v) - J (S v) - a • v - b • J v := (rfl)
 
 /-- The value of the shifted commutator on the complex rotation of a kernel vector. -/
-theorem transversalityLinearMap_apply_complex_rotation (J : AlmostComplexStructure V)
+theorem transversalityLinearMap_apply_apply_of_apply_eq_zero (J : AlmostComplexStructure V)
     (S : V →ₗ[ℝ] V) (a b : ℝ) {z : V}
     (hz : transversalityLinearMap J S a b z = 0) :
     transversalityLinearMap J S a b (J z) = (2 * b) • z - (2 * a) • J z := by
   have hJ := congrArg J hz
-  simp only [transversalityLinearMap_apply, J.toLinearMap.map_sub,
-    J.toLinearMap.map_smul, J.apply_apply, map_zero] at hJ
+  simp only [transversalityLinearMap_apply, J.apply_sub,
+    J.apply_smul, J.apply_apply, J.apply_zero] at hJ
   simp only [transversalityLinearMap_apply, J.apply_apply, map_neg, smul_neg]
   linear_combination (norm := module) -hJ
 
 /-- Moving a vector along the complex rotation of a kernel vector can be compensated by
 changing the two scalar variables, leaving the transversality expression unchanged. -/
-theorem transversalityLinearMap_correction (J : AlmostComplexStructure V)
+theorem transversalityLinearMap_sub_smul_apply_sub_eq (J : AlmostComplexStructure V)
     (S : V →ₗ[ℝ] V) (a b : ℝ) {z : V}
     (hz : transversalityLinearMap J S a b z = 0) (α β t : ℝ) (ξ : V) :
     transversalityLinearMap J S a b (ξ - t • J z) -
         ((α - 2 * t * b) • z + (β + 2 * t * a) • J z) =
       transversalityLinearMap J S a b ξ - (α • z + β • J z) := by
-  rw [map_sub, map_smul, transversalityLinearMap_apply_complex_rotation J S a b hz]
+  rw [map_sub, map_smul, transversalityLinearMap_apply_apply_of_apply_eq_zero J S a b hz]
   module
 
 /-- A transversality expression at a nonisotropic kernel vector can always be represented
 using the value of a self-adjoint complex-linear endomorphism. The scalar variables are
 corrected at the same time; no orthogonality assumption on the original vector is needed. -/
-theorem exists_symmetric_transversality_correction (J : AlmostComplexStructure V)
-    (S : V →ₗ[ℝ] V) (a b : ℝ) {g : LinearMap.BilinForm ℝ V} (hg : g.IsSymm)
+theorem exists_isAdjointPair_isComplexLinearMap_transversalityLinearMap_sub_eq
+    (J : AlmostComplexStructure V) (S : V →ₗ[ℝ] V) (a b : ℝ)
+    {g : LinearMap.BilinForm ℝ V} (hg : g.IsSymm)
     (hgJ : ∀ v w, g (J v) (J w) = g v w) {z : V} (hzz : g z z ≠ 0)
     (hz : transversalityLinearMap J S a b z = 0) (α β : ℝ) (ξ : V) :
     ∃ (α' β' : ℝ) (A : V →ₗ[ℝ] V), LinearMap.IsAdjointPair g g A A ∧
@@ -86,6 +87,6 @@ theorem exists_symmetric_transversality_correction (J : AlmostComplexStructure V
     J.exists_isAdjointPair_isComplexLinearMap_apply_eq hg hgJ hzz horth
   refine ⟨α - 2 * t * b, β + 2 * t * a, A, hA, hAJ, ?_⟩
   rw [hAz]
-  exact transversalityLinearMap_correction J S a b hz α β t ξ
+  exact transversalityLinearMap_sub_smul_apply_sub_eq J S a b hz α β t ξ
 
 end TauCeti.Floer
