@@ -143,7 +143,7 @@ Monge–Ampère measure with respect to additive Haar measure by `c ^ finrank �
 theorem mongeAmpereMeasure_mul_of_pos (f : E → EReal) {c : ℝ} (hc : 0 < c) :
     mongeAmpereMeasure μ (fun x ↦ (c : EReal) * f x) =
       ENNReal.ofReal (c ^ finrank ℝ E) • mongeAmpereMeasure μ f := by
-  let g : E → EReal := fun x ↦ (c : EReal) * f x
+  set g : E → EReal := fun x ↦ (c : EReal) * f x
   have hc' : 0 < (c : EReal) := EReal.coe_pos.2 hc
   have hle (a b : EReal) : (c : EReal) * a ≤ (c : EReal) * b ↔ a ≤ b := by
     rw [← EReal.div_le_iff_le_mul hc' (EReal.coe_ne_top c), ← EReal.mul_div,
@@ -158,20 +158,19 @@ theorem mongeAmpereMeasure_mul_of_pos (f : E → EReal) {c : ℝ} (hc : 0 < c) :
   let scaleHeight (a : ℝ) : E × ℝ →ₗ[ℝ] E × ℝ :=
     LinearMap.prodMap LinearMap.id (a • LinearMap.id)
   have hheight (x : E) (t : ℝ) : g x ≤ ((c * t : ℝ) : EReal) ↔ f x ≤ (t : EReal) := by
-    change (c : EReal) * f x ≤ ((c * t : ℝ) : EReal) ↔ f x ≤ (t : EReal)
-    rw [EReal.coe_mul, hle]
+    simp only [g, EReal.coe_mul, hle]
   have hpreimage : scaleHeight c ⁻¹' {p : E × ℝ | g p.1 ≤ p.2} =
       {p : E × ℝ | f p.1 ≤ p.2} :=
     Set.ext fun p ↦ hheight p.1 p.2
   have hpreimageInv : scaleHeight c⁻¹ ⁻¹' {p : E × ℝ | f p.1 ≤ p.2} =
       {p : E × ℝ | g p.1 ≤ p.2} := by
     ext p
-    change f p.1 ≤ ((c⁻¹ * p.2 : ℝ) : EReal) ↔ g p.1 ≤ (p.2 : EReal)
+    simp only [mem_preimage, mem_ofPred_eq, scaleHeight, LinearMap.prodMap_apply,
+      LinearMap.id_apply, LinearMap.smul_apply, smul_eq_mul]
     rw [← hheight, mul_inv_cancel_left₀ hc.ne']
   have hconv : Convex ℝ {p : E × ℝ | g p.1 ≤ p.2} ↔ Convex ℝ {p : E × ℝ | f p.1 ≤ p.2} :=
     ⟨fun h ↦ hpreimage ▸ h.linear_preimage (scaleHeight c),
       fun h ↦ hpreimageInv ▸ h.linear_preimage (scaleHeight c⁻¹)⟩
-  change mongeAmpereMeasure μ g = _
   by_cases hf : Convex ℝ {p : E × ℝ | f p.1 ≤ p.2}
   swap
   · rw [mongeAmpereMeasure_eq_zero_of_not_convex μ hf,
