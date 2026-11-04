@@ -33,7 +33,7 @@ and resolvent methods:
 * when the entries are independent, the minor `Hₙ` is independent of the off-diagonal entries of
   the row and column removed from `Hₙ₊₁` (`indepFun_wignerMatrix_column`), and the law of `Hₙ`
   depends only on the laws of the entries (`identDistrib_wignerMatrix`);
-* centred entries give centred matrix entries (`integral_wignerMatrix_apply`), `Lᵖ` entries
+* centred entries give centred matrix entries (`integral_wignerMatrix_apply_eq_zero`), `Lᵖ` entries
   give `Lᵖ` matrix entries (`memLp_wignerMatrix_apply`), and a product of `k` matrix entries is
   integrable when the entries of the array lie in `Lᵏ` (`integrable_prod_wignerMatrix_apply`);
 * the normalisation check `E trₙ Hₙ² = (σ² + (n - 1) s)/n` when the diagonal entries have second
@@ -172,7 +172,9 @@ private theorem wignerOfArray_comp (n : ℕ) :
   ext1 ω
   exact wignerMatrix_congr ω (fun _ _ ↦ rfl) (fun _ _ ↦ by simp)
 
-private theorem aemeasurable_array {P : Measure Ω} (hξ : ∀ ij, AEMeasurable (ξ ij) P)
+/-- The coordinates of the entry array `Sum.elim ξ (ofReal ∘ η)`, indexed by `StrictUpper ⊕ ℕ`,
+are a.e.-measurable when the entries `ξ` and `η` are. -/
+theorem aemeasurable_array {P : Measure Ω} (hξ : ∀ ij, AEMeasurable (ξ ij) P)
     (hη : ∀ i, AEMeasurable (η i) P) (k : StrictUpper ⊕ ℕ) :
     AEMeasurable (Sum.elim ξ (fun i ω ↦ (η i ω : ℂ)) k) P := by
   cases k with
@@ -279,7 +281,7 @@ variable [MeasurableSpace Ω] {P : Measure Ω} {ξ : StrictUpper → Ω → ℂ}
 
 /-- If the entries of the array are centred, every entry of the Wigner matrix has expectation
 zero. -/
-theorem integral_wignerMatrix_apply (hξ : ∀ ij, ∫ ω, ξ ij ω ∂P = 0)
+theorem integral_wignerMatrix_apply_eq_zero (hξ : ∀ ij, ∫ ω, ξ ij ω ∂P = 0)
     (hη : ∀ i, ∫ ω, η i ω ∂P = 0) {n : ℕ} (i j : Fin n) :
     ∫ ω, wignerMatrix ξ η n ω i j ∂P = 0 := by
   rcases lt_trichotomy i.val j.val with h | h | h
