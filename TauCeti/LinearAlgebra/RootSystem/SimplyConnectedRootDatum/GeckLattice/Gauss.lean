@@ -129,7 +129,6 @@ theorem geckRootSubgroupPoints_inl_mul_inr (i : Fin t.rank) (A : Type v) [CommRi
       t.geckRootSubgroupPoints ht (.inr i) A (Multiplicative.ofAdd (b * ↑u⁻¹)) *
         t.geckWeightTorusPoints ht A (Pi.mulSingle i u) *
         t.geckRootSubgroupPoints ht (.inl i) A (Multiplicative.ofAdd (a * ↑u⁻¹)) := by
-  apply Subtype.ext
   have h :=
     UniversalEnvelopingAlgebra.kostantToralRootSubgroupPoints_mul_kostantToralRootSubgroupPoints_e_f
       (i := Sum.inl i) (j := Sum.inr i) (c := i) (α := t.rootGeneratorWeight ht (.inl i))
@@ -143,10 +142,10 @@ theorem geckRootSubgroupPoints_inl_mul_inr (i : Fin t.rank) (A : Type v) [CommRi
       (fun q => t.lie_lieBasis_h_rootGenerator ht (.inl i) q)
       (fun q => t.lie_lieBasis_h_rootGenerator_inr_neg ht i q)
       A a b u hu
-  have hmatrix := congrArg Subtype.val h
-  simpa only [Subgroup.coe_mul, coe_geckRootSubgroupPoints, coe_geckWeightTorusPoints,
-    UniversalEnvelopingAlgebra.coe_kostantToralRootSubgroupPoints,
-    UniversalEnvelopingAlgebra.coe_kostantToralWeightTorusPoints] using hmatrix
+  rw [geckRootSubgroupPoints_def, geckRootSubgroupPoints_def, geckWeightTorusPoints_def]
+  simp only [MonoidHom.comp_apply, MulEquiv.coe_toMonoidHom, ← map_mul]
+  exact congrArg
+    (MulEquiv.subgroupCongr (t.geckPoints_eq_kostantToralPointsSubgroup ht A).symm) h
 
 /-- **Opposite-simple-root Gauss factorization in the Geck carrier point group (lowering times
 raising).** Over every commutative ring `A` and whenever `u = 1 + a b` is a unit of `A`, the

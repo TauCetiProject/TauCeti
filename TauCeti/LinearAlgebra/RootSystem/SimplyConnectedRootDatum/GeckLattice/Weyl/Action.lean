@@ -274,11 +274,34 @@ theorem geckWeylTorusAction_mulSingle (w : (t.simplyConnectedRootDatum ht).weylG
       fun k ↦ u ^ ((t.simplyConnectedRootDatum ht).coroot
         ((t.simplyConnectedRootDatum ht).weylGroupToPerm w (t.simpleIndex ht i)) k) := by
   funext k
-  rw [← TauCeti.weightChar_single A k (t.geckWeylTorusAction ht A w (Pi.mulSingle i u)),
-    TauCeti.weightChar_apply, t.torusCharacter_geckWeylTorusAction ht,
-    TauCeti.torusCharacter_mulSingle, ← t.coroot'_simpleIndex_apply ht i (w⁻¹ • Pi.single k 1),
-    ← (t.simplyConnectedRootDatum ht).coroot'_weylGroupToPerm_smul w, smul_inv_smul,
-    t.coroot'_simplyConnectedRootDatum_apply ht, single_dotProduct, one_mul]
+  -- Read off the `k`-th torus coordinate by evaluating the character `Pi.single k 1`, which the
+  -- contravariant Weyl action pulls back to `w⁻¹ • Pi.single k 1` on `Pi.mulSingle i u`.
+  have hcoord :
+      t.geckWeylTorusAction ht A w (Pi.mulSingle i u) k =
+        u ^ ((w⁻¹ • (Pi.single k 1 : Fin t.rank → ℤ)) i) := by
+    rw [← TauCeti.weightChar_single A k (t.geckWeylTorusAction ht A w (Pi.mulSingle i u))]
+    simp only [TauCeti.weightChar_apply, t.torusCharacter_geckWeylTorusAction ht,
+      TauCeti.torusCharacter_mulSingle]
+  -- Express the `i`-th coordinate of `w⁻¹ • Pi.single k 1` as pairing with the simple coroot
+  -- `simpleIndex i`, then transport both arguments by `w` so `w • (w⁻¹ • Pi.single k 1)` cancels
+  -- to `Pi.single k 1` and extracts the `k`-th coordinate of the translated coroot.
+  have hexp :
+      (w⁻¹ • (Pi.single k 1 : Fin t.rank → ℤ)) i =
+        (t.simplyConnectedRootDatum ht).coroot
+          ((t.simplyConnectedRootDatum ht).weylGroupToPerm w (t.simpleIndex ht i)) k := by
+    calc
+      (w⁻¹ • (Pi.single k 1 : Fin t.rank → ℤ)) i
+        = (t.simplyConnectedRootDatum ht).coroot' (t.simpleIndex ht i)
+            (w⁻¹ • Pi.single k 1) :=
+          (t.coroot'_simpleIndex_apply ht i _).symm
+      _ = (t.simplyConnectedRootDatum ht).coroot'
+            ((t.simplyConnectedRootDatum ht).weylGroupToPerm w (t.simpleIndex ht i))
+            (Pi.single k 1) := by
+          rw [← (t.simplyConnectedRootDatum ht).coroot'_weylGroupToPerm_smul w, smul_inv_smul]
+      _ = (t.simplyConnectedRootDatum ht).coroot
+            ((t.simplyConnectedRootDatum ht).weylGroupToPerm w (t.simpleIndex ht i)) k := by
+          simp [t.coroot'_simplyConnectedRootDatum_apply ht]
+  rw [hcoord, hexp]
 
 end
 
