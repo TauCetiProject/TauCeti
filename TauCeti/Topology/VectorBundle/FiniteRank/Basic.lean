@@ -114,6 +114,18 @@ variable {A D C : FiniteRankBundleCore 𝕜 B}
     (f ≫ g).fiberMap x = (g.fiberMap x).comp (f.fiberMap x) :=
   CoordinateHom.fiberMap_comp g f x
 
+/-- Each point lies in the chart labelled by itself. -/
+theorem mem_baseSet_self (A : FiniteRankBundleCore 𝕜 B) (x : B) : x ∈ A.core.baseSet x := by
+  simpa only [A.indexAt_eq] using A.core.mem_baseSet_at x
+
+/-- At the charts labelled by a point, the chart operator of a morphism is its fibre map. -/
+theorem operator_self (f : A ⟶ D) (x : B) :
+    f.operator x x ⟨x, A.mem_baseSet_self x, D.mem_baseSet_self x⟩ = f.fiberMap x := by
+  rw [CoordinateHom.operator_eq]
+  ext v
+  simp only [inChartCoordinates_apply, A.indexAt_eq, D.indexAt_eq, coordChange_self,
+    ContinuousLinearMap.id_apply]
+
 /-- Pointwise addition of coordinate bundle maps makes the category preadditive. -/
 instance : Preadditive (FiniteRankBundleCore 𝕜 B) where
   homGroup A D := inferInstanceAs (AddCommGroup (CoordinateHom A.core D.core))
