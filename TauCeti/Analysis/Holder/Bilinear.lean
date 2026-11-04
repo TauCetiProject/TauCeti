@@ -136,6 +136,52 @@ theorem norm_id_compHolder₂_apply_le (f : HolderSpace α X (F →L[ℝ] G)) (g
   (norm_compHolder₂_apply_le _ f g).trans (mul_le_mul_of_nonneg_right
     (mul_le_of_le_one_left (norm_nonneg f) ContinuousLinearMap.norm_id_le) (norm_nonneg g))
 
+/-- **The product bound with a small factor on the support.** If `f` is `α`-Hölder with constant
+`K` and `‖f x‖ ≤ δ` wherever `g x ≠ 0`, then `‖B (f, g)‖ ≤ ‖B‖ (δ ‖g‖ + K ‖g‖_∞)`. The size of `f`
+enters only on the support of `g`, and its Hölder constant only against the supremum of `g`.
+This is the estimate for freezing a Hölder coefficient at a point near which `g` is supported. -/
+theorem norm_compHolder₂_apply_le_of_norm_le (B : E →L[ℝ] F →L[ℝ] G) {f : HolderSpace α X E}
+    {g : HolderSpace α X F} {K : ℝ≥0} {δ : ℝ} (hfK : HolderWith K α f)
+    (hf : ∀ x, g x ≠ 0 → ‖f x‖ ≤ δ) :
+    ‖B.compHolder₂ f g‖ ≤ ‖B‖ * (δ * ‖g‖ + K * ‖g.toBoundedContinuousFunction‖) := by
+  by_cases hg : g = 0
+  · simp [hg]
+  obtain ⟨x₀, hx₀⟩ : ∃ x, g x ≠ 0 := by
+    by_contra! h
+    exact hg (HolderSpace.ext fun x ↦ by simpa using h x)
+  lift δ to ℝ≥0 using (norm_nonneg _).trans (hf x₀ hx₀)
+  have hgsup (x : X) : ‖g x‖ ≤ ‖g.toBoundedContinuousFunction‖ := by
+    simpa using g.toBoundedContinuousFunction.norm_coe_le_norm x
+  have hsup : ‖(B.compHolder₂ f g).toBoundedContinuousFunction‖ ≤
+      ‖B‖ * δ * ‖g.toBoundedContinuousFunction‖ := by
+    refine (BoundedContinuousFunction.norm_le (by positivity)).2 fun x ↦ ?_
+    rw [HolderSpace.toBoundedContinuousFunction_apply, compHolder₂_apply]
+    by_cases hx : g x = 0
+    · simp only [hx, map_zero, norm_zero]
+      positivity
+    exact (B.le_opNorm₂ _ _).trans (by gcongr; exacts [hf x hx, hgsup x])
+  -- Off the support of `g` the product vanishes, so only the bound of `f` on it enters.
+  have hgH : HolderWith (nnHolderNorm α (g : X → F)) α g := by
+    simpa using g.memHolder.holderWith
+  have hholder := B.flip.holderWith_comp₂_of_eq_zero (s := {x | g x ≠ 0})
+    (Mf := ‖g.toBoundedContinuousFunction‖₊) (Mg := δ) hgH (hfK.holderOnWith _)
+    (fun x ↦ by simpa using hgsup x) (fun x hx ↦ hf x hx) (fun x hx ↦ by simpa using hx)
+  have hsemi : (nnHolderNorm α ((B.compHolder₂ f g).toBoundedContinuousFunction : X → G) : ℝ) ≤
+      ‖B‖ * (‖g.toBoundedContinuousFunction‖ * K + δ * nnHolderNorm α (g : X → F)) := by
+    have heq : ((B.compHolder₂ f g).toBoundedContinuousFunction : X → G) =
+        fun x ↦ B.flip (g x) (f x) := by
+      funext x
+      simp
+    have h := hholder.nnholderNorm_le
+    rw [opNNNorm_flip] at h
+    rw [heq]
+    calc _ ≤ ((‖B‖₊ * (‖g.toBoundedContinuousFunction‖₊ * K + δ * nnHolderNorm α (g : X → F)) :
+          ℝ≥0) : ℝ) := NNReal.coe_le_coe.2 h
+      _ = _ := by push_cast; ring
+  rw [HolderSpace.norm_def, HolderSpace.norm_def]
+  simp only [HolderSpace.coe_toBoundedContinuousFunction] at hsemi ⊢
+  nlinarith [norm_nonneg B]
+
 /-- On a nonempty domain, pointwise lifting preserves the bilinear operator norm. -/
 @[simp]
 theorem norm_compHolder₂ [Nonempty X] (B : E →L[ℝ] F →L[ℝ] G) :

@@ -40,6 +40,10 @@ trace. This is the whole-space comparison principle applied to the Hölder class
   `TauCeti.ParabolicC2HolderSpace.euclideanFirstOrderCoeff` and
   `TauCeti.ParabolicC2HolderSpace.euclideanZerothOrderCoeff`: the coefficient fields assembled
   from scalar Hölder coefficients `aⁱʲ`, `bⁱ`, `c` on `ℝⁿ`.
+* `TauCeti.ParabolicC2HolderSpace.holderWith_euclideanSecondOrderCoeff`,
+  `TauCeti.ParabolicC2HolderSpace.norm_euclideanFirstOrderCoeff_le` and
+  `TauCeti.ParabolicC2HolderSpace.norm_euclideanZerothOrderCoeff_le`: bounds for the assembled
+  coefficient fields in terms of the scalar coefficients.
 * `TauCeti.ParabolicC2HolderSpace.euclideanParabolicOperatorL`: the operator with Hölder
   coefficients `aⁱʲ`, `bⁱ`, `c` on `ℝⁿ`.
 * `TauCeti.ParabolicC2HolderSpace.le_exp_mul_mul_add_mul_of_euclideanParabolicOperatorL_le`,
@@ -243,6 +247,63 @@ theorem euclideanZerothOrderCoeff_apply
     (p : slab (E := EuclideanSpace ℝ ι) t₀ t₁) (y : ℝ) :
     euclideanZerothOrderCoeff c p y = c p * y := by
   simp [euclideanZerothOrderCoeff]
+
+/-- The second-order coefficient field is Hölder with at most the sum of the Hölder seminorms of
+its scalar coefficients `aⁱʲ`. -/
+theorem holderWith_euclideanSecondOrderCoeff
+    (a : ι → ι → HolderSpace α (slab (E := EuclideanSpace ℝ ι) t₀ t₁) ℝ) :
+    HolderWith (∑ i, ∑ j, nnHolderNorm α ⇑(a i j)) α ⇑(euclideanSecondOrderCoeff a) := by
+  set Φ : ι → ι → (EuclideanSpace ℝ ι →L[ℝ] EuclideanSpace ℝ ι →L[ℝ] ℝ) →L[ℝ] ℝ :=
+    fun i j ↦ (ContinuousLinearMap.apply ℝ ℝ (EuclideanSpace.single j 1)).comp
+      (ContinuousLinearMap.apply ℝ _ (EuclideanSpace.single i 1))
+  have h : ⇑(euclideanSecondOrderCoeff a) = fun p ↦ ∑ i, ∑ j, a i j p • Φ i j := by
+    funext p
+    ext H
+    simp [Φ]
+  rw [h]
+  refine HolderWith.sum fun i _ ↦ HolderWith.sum fun j _ ↦ fun p q ↦ ?_
+  have ha : HolderWith (nnHolderNorm α ⇑(a i j)) α ⇑(a i j) := by
+    simpa using (a i j).memHolder.holderWith
+  -- The coordinate functional `H ↦ H(eᵢ, eⱼ)` has norm at most one.
+  have hΦ : ‖Φ i j‖₊ ≤ 1 := ContinuousLinearMap.opNorm_le_bound _ zero_le_one fun H ↦ by
+    simpa [Φ] using H.le_opNorm₂ (EuclideanSpace.single i 1) (EuclideanSpace.single j 1)
+  calc edist (a i j p • Φ i j) (a i j q • Φ i j) = ‖a i j p - a i j q‖₊ * ‖Φ i j‖₊ := by
+        rw [edist_nndist, nndist_eq_nnnorm, ← ENNReal.coe_mul, ← nnnorm_smul]
+        congr 2
+        exact (sub_smul _ _ _).symm
+    _ ≤ ‖a i j p - a i j q‖₊ := by exact_mod_cast mul_le_of_le_one_right (by positivity) hΦ
+    _ = edist (a i j p) (a i j q) := by rw [edist_nndist, nndist_eq_nnnorm]
+    _ ≤ _ := ha p q
+
+/-- The first-order coefficient field has norm at most the sum of the norms of its scalar
+coefficients `bⁱ`. -/
+theorem norm_euclideanFirstOrderCoeff_le
+    (b : ι → HolderSpace α (slab (E := EuclideanSpace ℝ ι) t₀ t₁) ℝ) :
+    ‖euclideanFirstOrderCoeff b‖ ≤ ∑ i, ‖b i‖ := by
+  rw [euclideanFirstOrderCoeff]
+  refine (norm_sum_le _ _).trans (Finset.sum_le_sum fun i _ ↦ ?_)
+  refine ((ContinuousLinearMap.lsmul ℝ ℝ).norm_compHolder₂_apply_le _ _).trans ?_
+  -- The coordinate functional `v ↦ v(eᵢ)` has norm at most one.
+  have hΨ := (HolderSpace.norm_const_le (α := α) (X := slab (E := EuclideanSpace ℝ ι) t₀ t₁)
+    (ContinuousLinearMap.apply ℝ ℝ (EuclideanSpace.single i (1 : ℝ)))).trans
+      (ContinuousLinearMap.opNorm_le_bound _ zero_le_one fun v ↦ by
+        simpa using v.le_opNorm (EuclideanSpace.single i 1))
+  calc _ ≤ 1 * ‖b i‖ * 1 := by gcongr; exact ContinuousLinearMap.opNorm_lsmul_le
+    _ = ‖b i‖ := by ring
+
+omit [DecidableEq ι] in
+/-- The zeroth-order coefficient field has norm at most the norm of its scalar coefficient. -/
+theorem norm_euclideanZerothOrderCoeff_le
+    (c : HolderSpace α (slab (E := EuclideanSpace ℝ ι) t₀ t₁) ℝ) :
+    ‖euclideanZerothOrderCoeff c‖ ≤ ‖c‖ := by
+  rw [euclideanZerothOrderCoeff]
+  refine ((ContinuousLinearMap.lsmul ℝ ℝ).norm_compHolder₂_apply_le _ _).trans ?_
+  have hid : ‖HolderSpace.const (α := α) (X := slab (E := EuclideanSpace ℝ ι) t₀ t₁)
+      (ContinuousLinearMap.id ℝ ℝ)‖ ≤ 1 :=
+    -- `by exact` lets the operator norm of `id` unify with the norm instance on `ℝ →L[ℝ] ℝ`.
+    (HolderSpace.norm_const_le _).trans (by exact ContinuousLinearMap.norm_id_le)
+  calc _ ≤ 1 * ‖c‖ * 1 := by gcongr; exact ContinuousLinearMap.opNorm_lsmul_le
+    _ = ‖c‖ := by ring
 
 /-- The parabolic operator `P u = ∂ₜu - aⁱʲ ∂ᵢ∂ⱼu - bⁱ ∂ᵢu - c u` on `ℝⁿ = EuclideanSpace ℝ ι`
 with scalar coefficients `aⁱʲ`, `bⁱ`, `c` in `C_b^{α,α/2}`, as a continuous linear map from

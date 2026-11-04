@@ -17,9 +17,9 @@ A continuous bilinear map sends two bounded Hölder functions of the same expone
 function. The estimate keeps the uniform bounds separate from the Hölder constants, so it also
 applies to restrictions and yields the product estimate for the supremum-plus-Hölder norm.
 
-For scalar multiplication by a factor vanishing off a set `s`, the second function need only be
-Hölder and bounded on `s` (`HolderWith.smul_of_eq_zero`): this is how a cutoff extends a function
-given on `s` to the whole space.
+When the first function vanishes off a set `s`, the second need only be Hölder and bounded on `s`
+(`ContinuousLinearMap.holderWith_comp₂_of_eq_zero`, and `HolderWith.smul_of_eq_zero` for scalar
+multiplication): this is how a cutoff extends a function given on `s` to the whole space.
 
 For a scalar-valued continuous multilinear map `L`, the map `L.smulRight (g x - g y)` has norm at
 most `‖L‖` times the Hölder bound on the increment of `g` (`HolderWith.norm_smulRight_sub_le`).
@@ -84,6 +84,43 @@ theorem holderWith_comp₂ (B : E →SL[σ₁₃] F →SL[σ₂₃] G)
   holderOnWith_univ.mp (B.holderOnWith_comp₂ (hf.holderOnWith univ)
     (hg.holderOnWith univ) (fun x _ ↦ hfnorm x) (fun x _ ↦ hgnorm x))
 
+/-- A bilinear map sends a function `f` that is Hölder on the whole space and vanishes off a set
+`s`, and a function `g` that is Hölder and bounded only on `s`, to a function that is Hölder on
+the whole space. Nothing is assumed about `g` off `s`: there the product vanishes, and across the
+boundary of `s` only the bound on `g` and the Hölder bound on `f` enter. The constant is the one
+of `ContinuousLinearMap.holderWith_comp₂`. -/
+theorem holderWith_comp₂_of_eq_zero (B : E →SL[σ₁₃] F →SL[σ₂₃] G)
+    {α Kf Kg Mf Mg : ℝ≥0} {f : X → E} {g : X → F} {s : Set X}
+    (hf : HolderWith Kf α f) (hg : HolderOnWith Kg α g s) (hfnorm : ∀ x, ‖f x‖ ≤ Mf)
+    (hgnorm : ∀ x ∈ s, ‖g x‖ ≤ Mg) (hf0 : ∀ x ∉ s, f x = 0) :
+    HolderWith (‖B‖₊ * (Mf * Kg + Mg * Kf)) α (fun x ↦ B (f x) (g x)) := by
+  -- Across the boundary of `s`, the product at `x ∈ s` is `B (f x - f y) (g x)`.
+  have hcross : ∀ x ∈ s, ∀ y ∉ s, edist (B (f x) (g x)) (B (f y) (g y)) ≤
+      ‖B‖₊ * (Mf * Kg + Mg * Kf) * edist x y ^ (α : ℝ) := by
+    intro x hx y hy
+    have hle : ‖B (f x - f y) (g x)‖ ≤ ‖B‖ * ‖f x - f y‖ * ‖g x‖ := B.le_opNorm₂ _ _
+    calc
+      edist (B (f x) (g x)) (B (f y) (g y)) = ‖B (f x - f y) (g x)‖₊ := by
+        rw [hf0 y hy, sub_zero, map_zero, zero_apply, edist_zero_right, enorm_eq_nnnorm]
+      _ ≤ ‖B‖₊ * ‖f x - f y‖₊ * ‖g x‖₊ := by exact_mod_cast hle
+      _ ≤ ‖B‖₊ * (Kf * edist x y ^ (α : ℝ)) * Mg := by
+        gcongr
+        · rw [← nndist_eq_nnnorm, ← edist_nndist]
+          exact hf.edist_le x y
+        · exact_mod_cast hgnorm x hx
+      _ = ‖B‖₊ * (Mg * Kf) * edist x y ^ (α : ℝ) := by ring
+      _ ≤ ‖B‖₊ * (Mf * Kg + Mg * Kf) * edist x y ^ (α : ℝ) := by
+        gcongr
+        exact le_add_self
+  have hboth := B.holderOnWith_comp₂ (hf.holderOnWith s) hg (fun x _ ↦ hfnorm x) hgnorm
+  intro x y
+  by_cases hx : x ∈ s <;> by_cases hy : y ∈ s
+  · exact hboth.edist_le hx hy
+  · exact hcross x hx y hy
+  · rw [edist_comm, edist_comm x]
+    exact hcross y hy x hx
+  · simp [hf0 x hx, hf0 y hy]
+
 end ContinuousLinearMap
 
 namespace HolderWith
@@ -99,41 +136,9 @@ on `s`. -/
 theorem smul_of_eq_zero {α Kc Kf Mc Mf : ℝ≥0} {c : X → 𝕜} {f : X → G} {s : Set X}
     (hc : HolderWith Kc α c) (hf : HolderOnWith Kf α f s) (hcnorm : ∀ x, ‖c x‖ ≤ Mc)
     (hfnorm : ∀ x ∈ s, ‖f x‖ ≤ Mf) (hc0 : ∀ x ∉ s, c x = 0) :
-    HolderWith (Mc * Kf + Mf * Kc) α (fun x ↦ c x • f x) := by
-  -- Across the boundary of `s`, the product at `x ∈ s` is `(c x - c y) • f x`.
-  have hcross : ∀ x ∈ s, ∀ y ∉ s, edist (c x • f x) (c y • f y) ≤
-      (Mc * Kf + Mf * Kc) * edist x y ^ (α : ℝ) := by
-    intro x hx y hy
-    calc
-      edist (c x • f x) (c y • f y) = ‖c x - c y‖₊ * ‖f x‖₊ := by
-        rw [hc0 y hy, sub_zero, zero_smul, edist_zero_right, enorm_eq_nnnorm, nnnorm_smul,
-          ENNReal.coe_mul]
-      _ ≤ (Kc * edist x y ^ (α : ℝ)) * Mf := by
-        gcongr
-        · rw [← nndist_eq_nnnorm, ← edist_nndist]
-          exact hc.edist_le x y
-        · exact_mod_cast hfnorm x hx
-      _ ≤ (Mc * Kf + Mf * Kc) * edist x y ^ (α : ℝ) := by
-        rw [mul_comm _ (Mf : ℝ≥0∞), ← mul_assoc]
-        gcongr
-        exact_mod_cast le_add_self
-  let B : 𝕜 →L[𝕜] G →L[𝕜] G := ContinuousLinearMap.lsmul 𝕜 𝕜
-  have hconst : ‖B‖₊ * (Mc * Kf + Mf * Kc) ≤ Mc * Kf + Mf * Kc := by
-    calc
-      _ ≤ 1 * (Mc * Kf + Mf * Kc) :=
-        by
-          gcongr
-          exact ContinuousLinearMap.opNNNorm_lsmul_le
-      _ = _ := one_mul _
-  have hboth := (B.holderOnWith_comp₂ (hc.holderOnWith s) hf
-    (fun x _ ↦ hcnorm x) hfnorm).mono_const hconst
-  intro x y
-  by_cases hx : x ∈ s <;> by_cases hy : y ∈ s
-  · simpa only [B, ContinuousLinearMap.lsmul_apply] using hboth.edist_le hx hy
-  · exact hcross x hx y hy
-  · rw [edist_comm, edist_comm x]
-    exact hcross y hy x hx
-  · simp [hc0 x hx, hc0 y hy]
+    HolderWith (Mc * Kf + Mf * Kc) α (fun x ↦ c x • f x) :=
+  ((ContinuousLinearMap.lsmul 𝕜 𝕜).holderWith_comp₂_of_eq_zero hc hf hcnorm hfnorm hc0).mono
+    (mul_le_of_le_one_left (zero_le) ContinuousLinearMap.opNNNorm_lsmul_le)
 
 /-- For a scalar-valued continuous multilinear map `L` and an `α`-Hölder function `g` with
 constant `H`, `‖L.smulRight (g x - g y)‖ ≤ H (‖L‖ dist(x, y)^α)`. -/
