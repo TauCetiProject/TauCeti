@@ -7,7 +7,7 @@ module
 
 public import Mathlib.AlgebraicTopology.FundamentalGroupoid.SimplyConnected
 public import Mathlib.CategoryTheory.ObjectProperty.FullSubcategory
-public import TauCeti.Algebra.Lie.Category
+public import TauCeti.Algebra.Category.LieAlgCat.Basic
 public import TauCeti.Geometry.Lie.Functor
 import TauCeti.Geometry.Lie.Faithfulness
 import TauCeti.Geometry.Lie.Interior
