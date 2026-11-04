@@ -67,8 +67,8 @@ theorem universalGSpaceCellularChainLinearEquiv_cellularChainBasis {n : ℕ}
           ((realizationCellEquiv _ n).symm c)) =
       MonoidAlgebra.single c (realizationChainScale k n : k) := by
   simp only [universalGSpaceCellularChainLinearEquiv, LinearEquiv.trans_apply,
-    cellularChainRealizationLinearEquiv_cellularChainBasis]
-  rfl
+    cellularChainRealizationLinearEquiv_cellularChainBasis,
+    MonoidAlgebra.coeffLinearEquiv_symm_apply, MonoidAlgebra.ofCoeff_single]
 
 /-- The inverse comparison sends a simplex with coefficient `r` to `r * sₙ⁻¹` times its
 cellular basis vector, where `sₙ = realizationChainScale k n`. -/
@@ -97,8 +97,10 @@ theorem universalGSpaceCellularChainComplexIso_hom_f (n : ℕ) :
     (universalGSpaceCellularChainComplexIso k G).hom.f n =
       eqToHom (cellularChainComplex_X _ _ n) ≫
         (universalGSpaceCellularChainLinearEquiv k G n).toModuleIso.hom ≫
-          eqToHom (by rw [Functor.mapHomologicalComplex_obj_X,
-            universalGSpaceChainComplex_X]; rfl) := by
+          eqToHom (by
+            rw [Functor.mapHomologicalComplex_obj_X, universalGSpaceChainComplex_X]
+            -- Forgetting `Rep.ofMulAction` retains its underlying permutation module.
+            rfl) := by
   simp only [universalGSpaceCellularChainComplexIso, Iso.trans_hom,
     HomologicalComplex.comp_f, cellularChainComplexRealizationIso_hom_f]
   -- Cancel the known coefficient comparison rather than unfolding its inverse.
@@ -190,6 +192,49 @@ theorem universalGSpaceCellularChainLinearEquiv_translation (g : G) (n : ℕ)
     ← realizationCellEquiv_symm_smul]
   rw [universalGSpaceCellularChainLinearEquiv_cellularChainBasis,
     universalGSpaceCellularChainLinearEquiv_cellularChainBasis]
-  simp [Representation.ofMulAction_def]
+  simp only [Representation.ofMulAction_single]
+
+/-- The permutation action on ordered chains, regarded as a chain map of the underlying
+complex of modules. For a noncommutative group this need not be a morphism in `Rep k G`. -/
+def universalGSpaceChainComplexTranslation (g : G) :
+    ((forget₂ (Rep k G) (ModuleCat k)).mapHomologicalComplex _).obj
+        (universalGSpaceChainComplex k G) ⟶
+      ((forget₂ (Rep k G) (ModuleCat k)).mapHomologicalComplex _).obj
+        (universalGSpaceChainComplex k G) where
+  f n := ModuleCat.ofHom (((universalGSpaceChainComplex k G).X n).ρ g)
+  comm' i j _ := ModuleCat.hom_ext (((universalGSpaceChainComplex k G).d i j).hom.isIntertwining' g)
+
+/-- In each degree the ordered-chain translation is the action of `g` on simplices. -/
+@[simp]
+theorem universalGSpaceChainComplexTranslation_f (g : G) (n : ℕ) :
+    (universalGSpaceChainComplexTranslation k g).f n =
+      ModuleCat.ofHom ((Rep.ofMulAction k G
+        ((indexedJoin fun _ : ℕ => G).RealizationCell n)).ρ g) := (rfl)
+
+/-- The chain comparison intertwines geometric translation with the permutation action on
+ordered chains. -/
+@[reassoc]
+theorem universalGSpaceCellularChainComplexIso_translation (g : G) :
+    cellularChainComplexMap univ univ (isCellular_universalGSpaceCellularTranslation g)
+        (ModuleCat.of k k) ≫ (universalGSpaceCellularChainComplexIso k G).hom =
+      (universalGSpaceCellularChainComplexIso k G).hom ≫
+        universalGSpaceChainComplexTranslation k g := by
+  apply HomologicalComplex.Hom.ext
+  funext n
+  simp only [HomologicalComplex.comp_f, cellularChainComplexMap_f,
+    universalGSpaceCellularChainComplexIso_hom_f, Category.assoc,
+    eqToHom_trans_assoc, eqToHom_refl, Category.id_comp]
+  apply (cancel_epi (eqToHom (cellularChainComplex_X univ (ModuleCat.of k k) n))).mpr
+  simp only [universalGSpaceChainComplexTranslation_f, Functor.mapHomologicalComplex_obj_X,
+    universalGSpaceChainComplex_X, Rep.forget₂_moduleCat_obj]
+  -- Both remaining transports identify the same underlying permutation module.
+  erw [eqToHom_refl]
+  simp only [Category.comp_id, Category.id_comp]
+  apply ModuleCat.hom_ext
+  apply LinearMap.ext
+  intro x
+  simp only [ModuleCat.hom_comp, LinearEquiv.toModuleIso_hom, ModuleCat.hom_ofHom,
+    LinearMap.comp_apply, LinearEquiv.coe_coe]
+  simpa using universalGSpaceCellularChainLinearEquiv_translation k g n x
 
 end TauCeti
