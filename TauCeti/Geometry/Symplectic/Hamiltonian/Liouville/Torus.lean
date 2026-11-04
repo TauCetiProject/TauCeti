@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Module.ZLattice.Quotient
-public import TauCeti.Geometry.Symplectic.Hamiltonian.LiouvilleArnold
+public import TauCeti.Geometry.Symplectic.Hamiltonian.Liouville.Arnold
 import TauCeti.Topology.Algebra.Module.CompactQuotient
 
 /-!
