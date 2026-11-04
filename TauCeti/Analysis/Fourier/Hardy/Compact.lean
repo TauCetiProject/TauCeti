@@ -95,8 +95,7 @@ theorem isCompactOperator_toeplitz_comp_sub_toeplitz_toLp
     (a : Lp ℂ ∞ (AddCircle.haarAddCircle (T := 1))) (b : C(UnitAddCircle, ℂ)) :
     IsCompactOperator (toeplitz a ∘L
         toeplitz (ContinuousMap.toLp ∞ (AddCircle.haarAddCircle (T := 1)) ℂ b) -
-      toeplitz (a • ContinuousMap.toLp ∞ (AddCircle.haarAddCircle (T := 1)) ℂ b :
-        Lp ℂ ∞ (AddCircle.haarAddCircle (T := 1)))) := by
+      toeplitz (a * ContinuousMap.toLp ∞ (AddCircle.haarAddCircle (T := 1)) ℂ b)) := by
   rw [toeplitz_comp_sub_toeplitz, FunLike.coe_neg, ContinuousLinearMap.coe_comp]
   exact ((isCompactOperator_hankel_toLp b).clm_comp _).neg
 

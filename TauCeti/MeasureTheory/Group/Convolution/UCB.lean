@@ -62,7 +62,7 @@ means on `UCB G` with invariant means on `L∞(G, μ)`.
 * `MeasureTheory.Lp.norm_convolutionUCB_le`: the operator norm is at most `‖h‖₁`.
 * `MeasureTheory.Lp.continuous_convolutionUCB`: `h ⋆ ·` depends continuously on `h ∈ L¹(G, μ)`.
 * `MeasureTheory.Lp.convolutionUCB_nonneg`: `h ⋆ φ ≥ 0` when `h ≥ 0` and `φ ≥ 0`.
-* `MeasureTheory.Lp.convolutionUCB_linftyOne`: `h ⋆ 1 = (∫ h dμ) • 1`.
+* `MeasureTheory.Lp.convolutionUCB_one`: `h ⋆ 1 = (∫ h dμ) • 1`.
 * `MeasureTheory.Lp.convolutionUCB_leftTranslation_apply`: `(L_g h) ⋆ φ = L_g (h ⋆ φ)`.
 * `MeasureTheory.Lp.convolutionUCB_apply_leftTranslation`: `h ⋆ (L_g φ) = (R_(g⁻¹) h) ⋆ φ`, where
   `R` is right translation on `L¹(G, μ)`, so `(R_(g⁻¹) h)(z) = c(g) * h (z * g⁻¹)` for the modular
@@ -312,10 +312,10 @@ theorem convolutionUCB_mono {h : Lp ℝ 1 μ} (hh : 0 ≤ h) {φ ψ : Lp ℝ ∞
 /-- Convolution with the constant one is the constant `∫ h dμ`. -/
 -- Evaluate convolution before simplifying its measure-Lp representatives.
 @[simp↓]
-theorem convolutionUCB_linftyOne (h : Lp ℝ 1 μ) :
-    convolutionUCB h linftyOne = (∫ y, h y ∂μ) • 1 := by
+theorem convolutionUCB_one (h : Lp ℝ 1 μ) :
+    convolutionUCB h 1 = (∫ y, h y ∂μ) • 1 := by
   refine UCB.ext fun x => ?_
-  rw [convolutionUCB_apply_of_ae_eq (ae_eq_refl _) coeFn_linftyOne x]
+  rw [convolutionUCB_apply_of_ae_eq (ae_eq_refl _) coeFn_one x]
   simp
 
 /-- Left translating the kernel left translates the convolution:

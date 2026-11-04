@@ -117,7 +117,7 @@ theorem toAddContentLpTop_of_not_measurableSet (m : Lp ℝ ∞ μ →ₗ[ℝ] �
 
 /-- The total mass of the content of `m` is its value at the constant one. -/
 @[simp]
-theorem toAddContentLpTop_univ (m : Lp ℝ ∞ μ →ₗ[ℝ] ℝ) : m.toAddContentLpTop univ = m linftyOne := by
+theorem toAddContentLpTop_univ (m : Lp ℝ ∞ μ →ₗ[ℝ] ℝ) : m.toAddContentLpTop univ = m 1 := by
   rw [toAddContentLpTop_apply m MeasurableSet.univ, linftyIndicator_univ]
 
 /-- The content of a functional on `L∞(μ)` vanishes on `μ`-null sets. -/
@@ -202,10 +202,10 @@ private theorem integral_linftyIndicator {s : Set α} (hs : MeasurableSet s) :
 
 /-- The integral against a nonnegative content vanishing on null sets is positive. -/
 private theorem integral_nonneg {φ : Lp ℝ ∞ μ} (hφ : 0 ≤ φ) : 0 ≤ integral μ ν φ := by
-  have h₁ : integral μ ν linftyOne = ν univ := by
+  have h₁ : integral μ ν 1 = ν univ := by
     simpa using integral_linftyIndicator hν₀ hνμ MeasurableSet.univ
   refine (integral μ ν).toLinearMap.apply_nonneg_of_abs_apply_le_mul_norm (fun ψ => ?_)
-    (Lp.norm_norm_smul_linftyOne_sub_le_of_nonneg hφ)
+    (Lp.norm_norm_smul_one_sub_le_of_nonneg hφ)
   rw [ContinuousLinearMap.coe_coe, h₁, ← Real.norm_eq_abs]
   exact norm_integral_apply_le hν₀ hνμ ψ
 
@@ -224,7 +224,7 @@ theorem ofAddContentLpTop_linftyIndicator {s : Set α} (hs : MeasurableSet s) :
 
 /-- The functional associated to a content takes its total mass at the constant one. -/
 @[simp]
-theorem ofAddContentLpTop_linftyOne : ofAddContentLpTop ν hν₀ hνμ linftyOne = ν univ := by
+theorem ofAddContentLpTop_one : ofAddContentLpTop ν hν₀ hνμ 1 = ν univ := by
   simpa using ofAddContentLpTop_linftyIndicator hν₀ hνμ MeasurableSet.univ
 
 /-- The content of the functional associated to `ν` is `ν`, on measurable sets. -/
