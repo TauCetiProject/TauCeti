@@ -12,11 +12,12 @@ public import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.Schem
 # Integral matrices of type-B spin generators
 
 The invariant spin lattice gives an integral matrix for each numbered simple root generator.
-Each generator squares to zero, so its root subgroup points are `1 + u X` over any commutative
-ring. Each matrix is supported on the pairs of basis vectors whose integral spin weights differ
-by the signed simple root of its generator. Double-bracket Serre relations between the rational
-generators transport to these integral matrices. The bracket of opposite integral root matrices
-is the diagonal matrix of the basis spin weights' simple-coroot coordinates.
+Each generator squares to zero (`rootIntMatrix_mul_self_eq_zero`), so its root subgroup points are
+`1 + u X` over any commutative ring. Each matrix is supported on the pairs of basis vectors whose
+integral spin weights differ by the signed simple root of its generator. Double-bracket Serre
+relations between the rational generators transport to these integral matrices. The bracket of
+opposite integral root matrices is the diagonal matrix of the basis spin weights' simple-coroot
+coordinates.
 
 ## References
 
@@ -62,21 +63,19 @@ theorem rootIntMatrix_eq_toMatrix (j : Fin (n + 1) ⊕ Fin (n + 1)) :
     (TauCeti.typeBSimpleCorootGenerator (K := ℚ)) (rep n) (lattice n).toAddSubgroup
     (rep_kostantForm_mem_lattice n) j (latticeBasis n)
 
-private noncomputable abbrev rootOperator (n : ℕ) (k : Fin (n + 1) ⊕ Fin (n + 1)) :
-    Module.End ℤ (lattice n).toAddSubgroup :=
-  kostantRootOperator (TauCeti.typeBSimpleRootGeneratorFamily (K := ℚ))
+/-- Each integral spin root matrix squares to zero, before changing the coefficient ring. -/
+@[simp]
+theorem rootIntMatrix_mul_self_eq_zero (j : Fin (n + 1) ⊕ Fin (n + 1)) :
+    rootIntMatrix n j * rootIntMatrix n j = 0 := by
+  let X := kostantRootOperator
+    (TauCeti.typeBSimpleRootGeneratorFamily (K := ℚ))
     (TauCeti.typeBSimpleCorootGenerator (K := ℚ)) (rep n) (lattice n).toAddSubgroup
-    (rep_kostantForm_mem_lattice n) k
-
-/-- The integral matrix of every numbered simple root generator squares to zero. -/
-@[simp] theorem rootIntMatrix_mul_self_eq_zero (k : Fin (n + 1) ⊕ Fin (n + 1)) :
-    rootIntMatrix n k * rootIntMatrix n k = 0 := by
-  have hop : rootOperator n k * rootOperator n k = 0 :=
+    (rep_kostantForm_mem_lattice n) j
+  have hXX : X * X = 0 :=
     kostantRootOperator_mul_eq_zero _ _ _ _ _
-      (by simpa only [pow_two] using pow_two_rep_rootGenerator_eq_zero n k)
-  have hmap := congrArg (LinearMap.toMatrix (latticeBasis n) (latticeBasis n)) hop
-  simpa only [rootOperator, LinearMap.toMatrix_mul, map_zero,
-    ← rootIntMatrix_eq_toMatrix] using hmap
+      (by simpa only [pow_two] using pow_two_rep_rootGenerator_eq_zero n j)
+  have h := congrArg (LinearMap.toMatrix (latticeBasis n) (latticeBasis n)) hXX
+  simpa only [X, LinearMap.toMatrix_mul, map_zero, ← rootIntMatrix_eq_toMatrix] using h
 
 section SerreTransport
 
@@ -87,6 +86,12 @@ attribute [local instance 100] LieRing.ofAssociativeRing
 local notation "rootGen" k => TauCeti.typeBSimpleRootGeneratorFamily (K := ℚ) k
 
 local notation "ratOp" k => rep n (_root_.UniversalEnvelopingAlgebra.ι ℚ (rootGen k))
+
+private noncomputable abbrev rootOperator (n : ℕ) (k : Fin (n + 1) ⊕ Fin (n + 1)) :
+    Module.End ℤ (lattice n).toAddSubgroup :=
+  kostantRootOperator (TauCeti.typeBSimpleRootGeneratorFamily (K := ℚ))
+    (TauCeti.typeBSimpleCorootGenerator (K := ℚ)) (rep n) (lattice n).toAddSubgroup
+    (rep_kostantForm_mem_lattice n) k
 
 private theorem rootOperator_lie_lie_eq_zero {i j : Fin (n + 1) ⊕ Fin (n + 1)}
     (hij : ⁅rootGen i, ⁅rootGen i, rootGen j⁆⁆ = 0) :

@@ -308,27 +308,94 @@ noncomputable def kostantRootOperator : Module.End ℤ M :=
       ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e i)) (v : V) := by
   rw [kostantRootOperator, coe_integralDividedPower_one_apply, Module.End.smul_def]
 
-/-- A vanishing product of ambient root operators also vanishes on the stable subgroup. -/
+/-- The integral root operators compute the ambient action on a product. -/
+theorem coe_kostantRootOperator_mul_apply (k l : ι) (v : M) :
+    (((kostantRootOperator e h ρ M hM k * kostantRootOperator e h ρ M hM l) v : M) : V) =
+      ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e k))
+        (ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e l)) (v : V)) := by
+  rw [mul_apply_eq_comp, coe_kostantRootOperator_apply, coe_kostantRootOperator_apply]
+
+/-- The integral root operators compute the ambient action on a triple product. -/
+theorem coe_kostantRootOperator_mul_mul_apply (k l n : ι) (v : M) :
+    (((kostantRootOperator e h ρ M hM k * kostantRootOperator e h ρ M hM l *
+        kostantRootOperator e h ρ M hM n) v : M) : V) =
+      ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e k))
+        (ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e l))
+          (ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e n)) (v : V))) := by
+  rw [mul_apply_eq_comp, coe_kostantRootOperator_mul_apply, coe_kostantRootOperator_apply]
+
+/-- A vanishing product of ambient root vectors makes the product of integral root operators
+vanish. -/
 theorem kostantRootOperator_mul_eq_zero {k l : ι}
     (hkl : ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e k)) *
       ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e l)) = 0) :
     kostantRootOperator e h ρ M hM k * kostantRootOperator e h ρ M hM l = 0 := by
   refine LinearMap.ext fun v => Subtype.ext ?_
-  simpa only [mul_apply_eq_comp, coe_kostantRootOperator_apply,
-    LinearMap.zero_apply, ZeroMemClass.coe_zero] using congrArg (fun f ↦ f (v : V)) hkl
+  rw [coe_kostantRootOperator_mul_apply, ← mul_apply_eq_comp, hkl]
+  simp
 
-/-- A vanishing double bracket of ambient root operators also vanishes on the stable subgroup. -/
-theorem kostantRootOperator_lie_lie_eq_zero {k l : ι}
-    (hkl : ⁅ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e k)),
-      ⁅ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e k)),
-        ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e l))⁆⁆ = 0) :
-    ⁅kostantRootOperator e h ρ M hM k,
-      ⁅kostantRootOperator e h ρ M hM k, kostantRootOperator e h ρ M hM l⁆⁆ = 0 := by
+/-- A triple-product identity of ambient root vectors transfers to the integral root
+operators. -/
+theorem kostantRootOperator_mul_mul_eq {k l n p : ι}
+    (hkl : ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e k)) *
+        ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e l)) *
+        ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e n)) =
+      ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e p))) :
+    kostantRootOperator e h ρ M hM k * kostantRootOperator e h ρ M hM l *
+        kostantRootOperator e h ρ M hM n = kostantRootOperator e h ρ M hM p := by
   refine LinearMap.ext fun v => Subtype.ext ?_
-  -- Expand the brackets to compare restrictions on each lattice vector.
-  simpa only [Ring.lie_def, LinearMap.sub_apply, mul_apply_eq_comp,
-    AddSubgroup.coe_sub, coe_kostantRootOperator_apply,
-    LinearMap.zero_apply, ZeroMemClass.coe_zero] using congrArg (fun f ↦ f (v : V)) hkl
+  rw [coe_kostantRootOperator_mul_mul_apply, coe_kostantRootOperator_apply,
+    ← mul_apply_eq_comp, ← mul_apply_eq_comp, hkl]
+
+/-- The bracket of integral root operators acts by the bracket of the ambient operators. -/
+theorem coe_kostantRootOperator_lie_apply (k l : ι) (v : M) :
+    ((⁅kostantRootOperator e h ρ M hM k, kostantRootOperator e h ρ M hM l⁆ v : M) : V) =
+      ⁅ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e k)),
+        ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e l))⁆ (v : V) := by
+  simp only [Ring.lie_def, LinearMap.sub_apply, AddSubgroup.coe_sub,
+    mul_apply_eq_comp, coe_kostantRootOperator_apply]
+
+/-- A nested bracket of integral root operators acts by the ambient nested bracket. -/
+theorem coe_kostantRootOperator_lie_lie_apply (k l n : ι) (v : M) :
+    ((⁅⁅kostantRootOperator e h ρ M hM k, kostantRootOperator e h ρ M hM l⁆,
+        kostantRootOperator e h ρ M hM n⁆ v : M) : V) =
+      ⁅⁅ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e k)),
+        ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e l))⁆,
+        ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e n))⁆ (v : V) := by
+  simp only [Ring.lie_def, LinearMap.sub_apply, mul_apply_eq_comp, AddSubgroup.coe_sub,
+    coe_kostantRootOperator_apply, map_sub]
+
+/-- A vanishing ambient bracket transfers to the integral root operators. -/
+theorem kostantRootOperator_lie_eq_zero {k l : ι}
+    (hkl : ⁅ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e k)),
+      ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e l))⁆ = 0) :
+    ⁅kostantRootOperator e h ρ M hM k, kostantRootOperator e h ρ M hM l⁆ = 0 := by
+  refine LinearMap.ext fun v => Subtype.ext ?_
+  simp only [coe_kostantRootOperator_lie_apply, hkl, LinearMap.zero_apply,
+    ZeroMemClass.coe_zero]
+
+/-- A vanishing right-nested ambient bracket transfers to the integral root operators. -/
+theorem kostantRootOperator_lie_lie_eq_zero {k l n : ι}
+    (hkln : ⁅ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e k)),
+      ⁅ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e l)),
+        ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e n))⁆⁆ = 0) :
+    ⁅kostantRootOperator e h ρ M hM k,
+      ⁅kostantRootOperator e h ρ M hM l, kostantRootOperator e h ρ M hM n⁆⁆ = 0 := by
+  rw [← lie_skew, neg_eq_zero]
+  refine LinearMap.ext fun v => Subtype.ext ?_
+  rw [coe_kostantRootOperator_lie_lie_apply, ← lie_skew, hkln, neg_zero]
+  simp
+
+/-- A nested ambient bracket equal to a root operator transfers to the integral operators. -/
+theorem kostantRootOperator_lie_lie_eq {k l n p : ι}
+    (hkln : ⁅⁅ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e k)),
+        ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e l))⁆,
+        ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e n))⁆ =
+      ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e p))) :
+    ⁅⁅kostantRootOperator e h ρ M hM k, kostantRootOperator e h ρ M hM l⁆,
+        kostantRootOperator e h ρ M hM n⁆ = kostantRootOperator e h ρ M hM p := by
+  refine LinearMap.ext fun v => Subtype.ext ?_
+  rw [coe_kostantRootOperator_lie_lie_apply, hkln, coe_kostantRootOperator_apply]
 
 /-- The public unfolding equation of the integral root operator: it is the first restricted
 divided power of `ρ(eᵢ)`, the linear coefficient of the divided-power exponential. -/

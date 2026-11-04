@@ -90,7 +90,7 @@ variable [CommRing R] [CharZero R] [AddCommGroup M] [Module R M] [AddCommGroup N
 /-- **Bonds between orbit weights do not change under translation by a weight on every wall.** If
 every simple coroot kills `χ`, as for a central weight, then `χ` is fixed by the Weyl group, so
 `x (λ + χ) = x λ + χ`, and the bond of `x λ + χ` and `y λ + χ` is that of `x λ` and `y λ`. -/
-theorem reflectionBond_smul_add [IsDomain R] [Finite ι] [P.IsCrystallographic] [P.IsReduced]
+theorem reflectionBond_smul_add [IsDomain R] [P.IsReduced]
     {χ : M} (hχ : ∀ i ∈ b.support, P.coroot' i χ = 0) (lam : M) (x y : P.weylGroup) :
     P.reflectionBond b (x • (lam + χ)) (y • (lam + χ)) =
       P.reflectionBond b (x • lam) (y • lam) := by

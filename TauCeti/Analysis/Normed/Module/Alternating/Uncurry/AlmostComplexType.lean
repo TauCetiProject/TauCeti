@@ -21,11 +21,13 @@ The derivation `J.alternatingDerivation` of `(k+1)`-forms corresponds under alte
 `k`-forms. The main theorem concerns a first-order variation `(η, A)` of a pair `(ω, J)`, where
 `ω` has type `(p,q)` and `J² = -1`: the endomorphisms `A v` anticommute with `J`, and `η`
 satisfies the derivative of the type equation. The alternation of `η` then has components of the
-types `(p+2,q-1)`, `(p+1,q)`, `(p,q+1)` and `(p-1,q+2)` only. When `J` does not vary, so that
+types `(p+2,q-1)`, `(p+1,q)`, `(p,q+1)` and `(p-1,q+2)` only, and its two outer components,
+of types `(p+2,q-1)` and `(p-1,q+2)`, are determined by `ω` and the bilinear map
+`N v w = A (J v) w + A v (J w) - A (J w) v - A w (J v)` alone. When `J` does not vary, so that
 every `η v` has type `(p,q)`, only the types `(p+1,q)` and `(p,q+1)` remain.
 
 On an almost complex manifold this is the pointwise reason why the exterior derivative of a form
-of type `(p,q)` has components of these four types only.
+of type `(p,q)` has components of these four types only, and `N` is the Nijenhuis tensor.
 
 ## Main declarations
 
@@ -35,6 +37,8 @@ of type `(p,q)` has components of these four types only.
   derivations.
 * `ContinuousAlternatingMap.IsOfType.typeProjection_alternatizeUncurryFin_eq_zero`: the four
   bidegrees.
+* `ContinuousAlternatingMap.IsOfType.typeProjection_alternatizeUncurryFin_eq_inv_eight_smul`: the
+  outer bidegrees through `N`.
 * `ContinuousAlternatingMap.typeProjection_alternatizeUncurryFin_eq_zero_of_forall_isOfType`: the
   two bidegrees for a constant `J`.
 
@@ -239,6 +243,93 @@ theorem IsOfType.typeProjection_alternatizeUncurryFin_eq_zero
     (by linear_combination (norm := module) e1) (by linear_combination (norm := module) e2)
     (by linear_combination (norm := module) e3) (by linear_combination (norm := module) e4)
     (by linear_combination (norm := module) e5) (by linear_combination (norm := module) e6)
+
+/-- **The outer bidegrees.** Let `ω` be a form of type `(p,q)` for `J` with `J² = -1`, let
+`(η, A)` be a first-order variation of the pair `(ω, J)` preserving this, as in
+`IsOfType.typeProjection_alternatizeUncurryFin_eq_zero`, and let
+`N v w = A (J v) w + A v (J w) - A (J w) v - A w (J v)`. Then the components of types
+`(p+2,q-1)` and `(p-1,q+2)` of the alternation of `η` are `1 / 8` times those of the alternation
+of `v ↦ (N v).alternatingDerivation ω`; these involve `ω` and `N`, but not `η`.
+
+Applied to the derivatives of a form and of an almost complex structure in a chart, `N` is the
+Nijenhuis tensor, and this computes the components of bidegrees `(2,-1)` and `(-1,2)` of the
+exterior derivative. -/
+theorem IsOfType.typeProjection_alternatizeUncurryFin_eq_inv_eight_smul
+    {J : E →L[ℝ] E} (hJ : ∀ v, J (J v) = -v) {ω : E [⋀^Fin k]→L[ℝ] F} {p q : ℕ}
+    (hω : ω.IsOfType J p q) {A : E →L[ℝ] E →L[ℝ] E} (hA : ∀ v w, A v (J w) = -J (A v w))
+    {η : E →L[ℝ] E [⋀^Fin k]→L[ℝ] F}
+    (hη : ∀ v, J.alternatingDerivation (η v) + (A v).alternatingDerivation ω =
+      (((p : ℂ) - q) * I) • η v)
+    {N : E →L[ℝ] E →L[ℝ] E}
+    (hN : ∀ v w, N v w = A (J v) w + A v (J w) - A (J w) v - A w (J v))
+    {P Q : ℕ} (hP : P = p + 2 ∨ P + 1 = p) :
+    J.typeProjection P Q (alternatizeUncurryFin η) =
+      (8 : ℂ)⁻¹ • J.typeProjection P Q
+        (alternatizeUncurryFin (ω.fderivCompContinuousLinearMap (.id ℝ E) ∘L N)) := by
+  by_cases hPQ : P + Q = k + 1
+  swap
+  · simp [typeProjection_eq_zero hJ hPQ]
+  set c : ℂ := ((p : ℂ) - q) * I
+  set D := ω.fderivCompContinuousLinearMap (.id ℝ E)
+  have hD (X : E →L[ℝ] E) : X.alternatingDerivation ω = D X :=
+    alternatingDerivation_eq_fderivCompContinuousLinearMap X ω
+  -- `S v = A (J v) + A v ∘ J`, so that `N v w = S v w - S w v`.
+  set S := A ∘L J + (compL ℝ E E E).flip J ∘L A
+  let β := D ∘L A
+  let γ := D ∘L ((compL ℝ E E E).flip J ∘L A)
+  have hβ (v : E) : J.alternatingDerivation (β v) = c • β v + (2 : ℂ) • γ v := by
+    simpa [β, γ, ← hD] using hω.alternatingDerivation_alternatingDerivation_of_anticomm (hA v)
+  have hη' (v : E) : J.alternatingDerivation (η v) = c • η v - β v := by
+    simp only [β, ContinuousLinearMap.comp_apply, ← hD]
+    exact eq_sub_of_add_eq (hη v)
+  have hJJ : (η ∘L J) ∘L J = -η := by ext v; simp [hJ]
+  -- The alternation of `D ∘ N` is twice that of `D ∘ S`, since the alternation of `D ∘ h`
+  -- vanishes for the symmetric bilinear map `h v w = S v w + S w v`.
+  have hsymm : alternatizeUncurryFin (D ∘L (S + S.flip)) = 0 :=
+    alternatizeUncurryFin_fderivCompContinuousLinearMap_eq_zero ω _ fun v w ↦ by
+      simp only [_root_.add_apply, flip_apply, add_comm]
+  have hNS : N = S - S.flip := by
+    ext v w
+    simp [S, hN, sub_sub]
+  have hDN : alternatizeUncurryFin (D ∘L N) =
+      alternatizeUncurryFin (β ∘L J) + alternatizeUncurryFin γ +
+        (alternatizeUncurryFin (β ∘L J) + alternatizeUncurryFin γ) := by
+    have hS : alternatizeUncurryFin (D ∘L S) =
+        alternatizeUncurryFin (β ∘L J) + alternatizeUncurryFin γ := by
+      rw [← alternatizeUncurryFin_add]
+      congr 1
+      ext v
+      simp [S, β, γ]
+    rw [comp_add, alternatizeUncurryFin_add] at hsymm
+    rw [hNS, comp_sub, alternatizeUncurryFin_sub, eq_neg_of_add_eq_zero_right hsymm, sub_neg_eq_add,
+      hS]
+  -- The type-`(P,Q)` components of the alternations of `η`, `η ∘ J` and `β` satisfy three linear
+  -- relations, from which `(t² + 1) x = -2 (y + z)` for the shift `t`, with `t² = -9` here.
+  have e1 := smul_typeProjection_alternatizeUncurryFin (P := P) (Q := Q) hJ (θ := η)
+    (θ' := c • η - β) fun v ↦ by simp [hη']
+  have e2 := smul_typeProjection_alternatizeUncurryFin (P := P) (Q := Q) hJ (θ := η ∘L J)
+    (θ' := c • (η ∘L J) - β ∘L J) fun v ↦ by simp [hη']
+  have e3 := smul_typeProjection_alternatizeUncurryFin (P := P) (Q := Q) hJ (θ := β)
+    (θ' := c • β + (2 : ℂ) • γ) fun v ↦ by simp [hβ]
+  simp only [alternatizeUncurryFin_sub, alternatizeUncurryFin_add, alternatizeUncurryFin_smul, hJJ,
+    alternatizeUncurryFin_neg, map_add, map_sub, map_smul, map_neg] at e1 e2 e3
+  have ht : (((P : ℂ) - Q) * I - c) ^ 2 = -9 := by
+    have hn : (2 * P - 2 * p - 1 : ℤ) ^ 2 = 9 := by rcases hP with rfl | rfl <;> push_cast <;> ring
+    rw [typeShift_eq (hPQ.trans (by rw [hω.add_eq])), mul_pow, I_sq, ← Int.cast_pow, hn]
+    norm_num
+  set t : ℂ := ((P : ℂ) - Q) * I - c
+  rw [hDN, map_add, map_add]
+  set x₁ := J.typeProjection P Q (alternatizeUncurryFin η)
+  set x₂ := J.typeProjection P Q (alternatizeUncurryFin (η ∘L J))
+  set y₁ := J.typeProjection P Q (alternatizeUncurryFin β)
+  set y₂ := J.typeProjection P Q (alternatizeUncurryFin (β ∘L J))
+  set z₁ := J.typeProjection P Q (alternatizeUncurryFin γ)
+  have f₁ : t • x₁ = x₂ - y₁ := by linear_combination (norm := module) e1
+  have f₂ : t • x₂ = -x₁ - y₂ := by linear_combination (norm := module) e2
+  have f₃ : t • y₁ = y₂ + (2 : ℂ) • z₁ := by linear_combination (norm := module) e3
+  have h8 : (8 : ℂ) • x₁ = y₂ + z₁ + (y₂ + z₁) := by
+    linear_combination (norm := module) ht • x₁ - t • f₁ - f₂ + f₃
+  rw [← h8, smul_smul, inv_mul_cancel₀ (by norm_num), one_smul]
 
 /-- **Two bidegrees for a constant structure.** If every form `η v` of a family has type `(p,q)`
 for `J` with `J² = -1`, the alternation of `η` has components of the types `(p+1,q)` and

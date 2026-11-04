@@ -109,35 +109,6 @@ theorem kostantRootSubgroupParam_val_of_sq_eq_zero (i : ι)
 
 variable {i j : ι} {c : κ}
 
-/-- The integral root operator computes the ambient action on a product. -/
-private theorem coe_kostantRootOperator_mul_apply (k l : ι) (v : M) :
-    (((kostantRootOperator e h ρ M hM k * kostantRootOperator e h ρ M hM l) v : M) : V) =
-      ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e k))
-        (ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e l)) (v : V)) := by
-  rw [mul_apply_eq_comp, coe_kostantRootOperator_apply, coe_kostantRootOperator_apply]
-
-/-- The integral root operator computes the ambient action on a triple product. -/
-private theorem coe_kostantRootOperator_mul_mul_apply (k l n : ι) (v : M) :
-    (((kostantRootOperator e h ρ M hM k * kostantRootOperator e h ρ M hM l *
-        kostantRootOperator e h ρ M hM n) v : M) : V) =
-      ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e k))
-        (ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e l))
-          (ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e n)) (v : V))) := by
-  rw [mul_apply_eq_comp, coe_kostantRootOperator_mul_apply, coe_kostantRootOperator_apply]
-
-/-- The triple-product identity of ambient root vectors transfers to the integral root
-operators. -/
-private theorem kostantRootOperator_mul_mul_eq {k l : ι}
-    (hkl : ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e k)) *
-        ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e l)) *
-        ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e k)) =
-      ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e k))) :
-    kostantRootOperator e h ρ M hM k * kostantRootOperator e h ρ M hM l *
-        kostantRootOperator e h ρ M hM k = kostantRootOperator e h ρ M hM k := by
-  refine LinearMap.ext fun v => Subtype.ext ?_
-  rw [coe_kostantRootOperator_mul_mul_apply, coe_kostantRootOperator_apply,
-    ← mul_apply_eq_comp, ← mul_apply_eq_comp, hkl]
-
 end SquareZero
 
 /-! ## The weight torus of a carrier with square-zero root operators -/
