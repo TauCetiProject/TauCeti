@@ -350,8 +350,10 @@ private lemma ι_koszulBraidingInv (X Y : CochainComplex C ℤ) (q p j : ℤ)
         HomologicalComplex.ιMapBifunctor X Y (curriedTensor C)
           (ComplexShape.up ℤ) p q j (by dsimp at h ⊢; omega)) := by
   dsimp only [koszulBraidingInv]
-  rw [ι_koszulBraidingHom]
-  rfl
+  rw [ι_koszulBraidingHom, koszulBraidingSummand_def]
+  -- Under `reverseBraiding C`, the braiding `β_ (Y.X q) (X.X p)` is `(β_ (X.X p) (Y.X q)).symm`.
+  -- It sits in an instance argument, which `dsimp` unfolds only with `+instances`.
+  dsimp +instances only [reverseBraiding, Iso.symm_hom]
 
 private lemma koszulBraidingHom_comp_inv (X Y : CochainComplex C ℤ) :
     koszulBraidingHom C X Y ≫ koszulBraidingInv C X Y = 𝟙 _ := by
