@@ -8,6 +8,8 @@ module
 public import Mathlib.Analysis.SpecialFunctions.SmoothTransition
 public import TauCeti.Geometry.Diffeomorphism.Diffeotopy.Basic
 public import TauCeti.Geometry.Manifold.Instances.AddCircle
+import TauCeti.Geometry.Manifold.Diffeomorph.Prod
+import Mathlib.Geometry.Manifold.Algebra.Structures
 import Mathlib.Analysis.Calculus.Deriv.Prod
 import Mathlib.Analysis.Calculus.InverseFunctionTheorem.FDeriv
 import Mathlib.Analysis.SpecialFunctions.Trigonometric.Deriv
@@ -51,6 +53,8 @@ reflection `θ ↦ -θ`.
   map with lift `x ↦ x + sin (π t / 2) ^ 2 (F x - x)`, from the identity to the map with lift `F`.
 * `AddCircle.collarDiffeomorphOfLift`: the level-preserving diffeomorphism of `N × AddCircle T`
   with lift `x ↦ x + smoothTransition (1 - depth r) (F x - x)` at parameter `r`.
+* `AddCircle.halfCylinderDiffeotopyOfLift`: a motion on an inward half-cylinder, fixed beyond
+  depth two and agreeing with the prescribed circle map through depth one at the final time.
 
 ## Main results
 
@@ -402,6 +406,74 @@ theorem collarDiffeomorphOfLift_symm_apply_of_one_le {r : N} (hr : 1 ≤ depth r
   exact Diffeomorph.symm_apply_apply _ _
 
 end Collar
+
+/-! ### Motion on an inward half-cylinder -/
+
+section HalfCylinder
+
+variable {T : ℝ} [Fact (0 < T)] {n : ℕ∞} {F : ℝ → ℝ}
+
+/-- A circle lift interpolated on an inward half-cylinder, stationary beyond depth two.
+At time one it agrees with the prescribed circle map through depth one. -/
+def halfCylinderDiffeotopyOfLift (hF : ContDiff ℝ n F) (hn : n ≠ 0)
+    (hper : ∀ x, F (x + T) = F x + T) (hpos : ∀ x, 0 < deriv F x) :
+    TauCeti.Diffeotopy ((𝓡∂ 1).prod 𝓘(ℝ)) n (EuclideanHalfSpace 1 × AddCircle T) := by
+  let depth (p : unitInterval × EuclideanHalfSpace 1) : ℝ :=
+    1 - (p.1 : ℝ) * Real.smoothTransition (2 - p.2.1 0)
+  have hd : ContMDiff ((𝓡∂ 1).prod (𝓡∂ 1)) 𝓘(ℝ) n depth := by
+    have ht : ContMDiff ((𝓡∂ 1).prod (𝓡∂ 1)) 𝓘(ℝ) n
+        (fun p : unitInterval × EuclideanHalfSpace 1 ↦ (p.1 : ℝ)) :=
+      contMDiff_subtypeVal_Icc.comp contMDiff_fst
+    have hr : ContMDiff ((𝓡∂ 1).prod (𝓡∂ 1)) 𝓘(ℝ) n
+        (fun p : unitInterval × EuclideanHalfSpace 1 ↦ p.2.1 0) :=
+      (EuclideanSpace.proj 0).contDiff.contMDiff.comp
+        ((𝓡∂ 1).contMDiff.comp contMDiff_snd)
+    exact contMDiff_const.sub (ht.mul
+      (Real.smoothTransition.contDiff.contMDiff.comp (contMDiff_const.sub hr)))
+  let Λ := collarDiffeomorphOfLift hF hn hper hpos depth hd
+  let e := Diffeomorph.prodAssocOfModels (𝓡∂ 1) (𝓡∂ 1) 𝓘(ℝ)
+    unitInterval (EuclideanHalfSpace 1) (AddCircle T) n
+  refine ⟨e.symm.trans (Λ.trans e), fun p ↦ ?_, fun p ↦ ?_⟩
+  · simpa only [e, Λ, Diffeomorph.coe_trans, Function.comp_apply,
+      Diffeomorph.prodAssocOfModels_apply, Diffeomorph.prodAssocOfModels_symm_apply] using
+      congrArg (fun q : unitInterval × EuclideanHalfSpace 1 ↦ q.1)
+        (fst_collarDiffeomorphOfLift hF hn hper hpos depth hd ((p.1, p.2.1), p.2.2))
+  · have hz := collarDiffeomorphOfLift_apply_of_one_le hF hn hper hpos depth hd
+      (r := (0, p.1)) (by simp [depth]) p.2
+    simpa only [e, Λ, Diffeomorph.coe_trans, Function.comp_apply,
+      Diffeomorph.prodAssocOfModels_apply, Diffeomorph.prodAssocOfModels_symm_apply] using
+      congrArg (fun q : (unitInterval × EuclideanHalfSpace 1) × AddCircle T ↦
+        (q.1.2, q.2)) hz
+
+/-- The half-cylinder motion in lifted circle coordinates. -/
+@[simp]
+theorem halfCylinderDiffeotopyOfLift_apply_coe (hF : ContDiff ℝ n F) (hn : n ≠ 0)
+    (hper : ∀ x, F (x + T) = F x + T) (hpos : ∀ x, 0 < deriv F x)
+    (t : unitInterval) (r : EuclideanHalfSpace 1) (x : ℝ) :
+    halfCylinderDiffeotopyOfLift hF hn hper hpos (t, r, (x : AddCircle T)) =
+      (r, ((x + Real.smoothTransition
+        ((t : ℝ) * Real.smoothTransition (2 - r.1 0)) *
+          (F x - x) : ℝ) : AddCircle T)) := by
+  simp [halfCylinderDiffeotopyOfLift, collarDiffeomorphOfLift_apply_coe]
+
+/-- The half-cylinder motion fixes every point at depth at least two, at every time. -/
+theorem halfCylinderDiffeotopyOfLift_apply_of_two_le (hF : ContDiff ℝ n F) (hn : n ≠ 0)
+    (hper : ∀ x, F (x + T) = F x + T) (hpos : ∀ x, 0 < deriv F x)
+    (t : unitInterval) {r : EuclideanHalfSpace 1} (hr : 2 ≤ r.1 0) (θ : AddCircle T) :
+    halfCylinderDiffeotopyOfLift hF hn hper hpos (t, r, θ) = (r, θ) := by
+  obtain ⟨x, rfl⟩ := QuotientAddGroup.mk_surjective θ
+  simp [Real.smoothTransition.zero_of_nonpos (by linarith : 2 - r.1 0 ≤ 0)]
+
+/-- Through depth one, the final half-cylinder map is the product map of the prescribed lift. -/
+theorem halfCylinderDiffeotopyOfLift_final_apply_coe_of_le_one
+    (hF : ContDiff ℝ n F) (hn : n ≠ 0) (hper : ∀ x, F (x + T) = F x + T)
+    (hpos : ∀ x, 0 < deriv F x) {r : EuclideanHalfSpace 1} (hr : r.1 0 ≤ 1) (x : ℝ) :
+    (halfCylinderDiffeotopyOfLift hF hn hper hpos).final (r, (x : AddCircle T)) =
+      (r, (F x : AddCircle T)) := by
+  simp [TauCeti.Diffeotopy.final_apply, Real.smoothTransition.one_of_one_le
+    (by linarith : 1 ≤ 2 - r.1 0)]
+
+end HalfCylinder
 
 end AddCircle
 
