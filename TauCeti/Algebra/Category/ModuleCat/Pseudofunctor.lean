@@ -1,0 +1,279 @@
+/-
+Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: The Tau Ceti contributors
+-/
+module
+
+public import Mathlib.Algebra.Category.CommAlgCat.Basic
+public import TauCeti.CategoryTheory.Bicategory.Functor.LocallyDiscrete
+public import TauCeti.RingTheory.TensorProduct.CoefficientBaseChange
+
+/-!
+# Module categories over varying coefficient rings
+
+Fix a commutative ring `k` and a `k`-algebra `Λ`, possibly noncommutative. To a commutative
+`k`-algebra `R` attach the category `ModuleCat (R ⊗[k] Λ)` of modules over `Λ` with
+coefficients in `R`. A morphism `f : R ⟶ S` of commutative `k`-algebras gives the base-change
+functor
+
+`CommAlgCat.moduleCatBaseChange Λ f : ModuleCat (R ⊗[k] Λ) ⥤ ModuleCat (S ⊗[k] Λ)`,
+`N ↦ S ⊗[R] N`,
+
+where `S` is an `R`-algebra through `f` and `s ⊗ l` acts by `s' ⊗ n ↦ (s * s') ⊗ ((1 ⊗ l) • n)`
+(`TauCeti.CoefficientBaseChange.module`). It is additive, and semilinear along `f` on morphisms:
+`(moduleCatBaseChange Λ f).map (r • φ) = f r • (moduleCatBaseChange Λ f).map φ`.
+
+The base change along `𝟙 R` is isomorphic to the identity by `r ⊗ n ↦ r • n`, and the base
+change along a composite is isomorphic to the composite of the base changes by
+`t ⊗ n ↦ t ⊗ (1 ⊗ n)`. These comparisons are associative and unital, so the module categories
+form a pseudofunctor
+
+`CommAlgCat.moduleCatBaseChangePseudofunctor k Λ : LocallyDiscrete (CommAlgCat k) ⥤ᵖ Cat`.
+
+For `Λ = k`, up to `R ⊗[k] k ≃ R`, this is base change of modules along maps of commutative
+`k`-algebras, the analogue of Mathlib's `CommRingCat.moduleCatExtendScalarsPseudofunctor`. In
+general it is the family of representation categories of `Λ` over all commutative coefficient
+algebras, with its base-change functors and their coherent comparisons. Restricting along a full
+subcategory of coefficient algebras, such as the local Artinian `k`-algebras with residue field
+`k`, gives the corresponding family over that subcategory.
+
+## Main definitions
+
+* `CommAlgCat.moduleCatBaseChange Λ f`: the base-change functor along `f : R ⟶ S`.
+* `CommAlgCat.moduleCatBaseChangeId Λ R`: the isomorphism of the base change along `𝟙 R` with
+  the identity functor, `r ⊗ n ↦ r • n`.
+* `CommAlgCat.moduleCatBaseChangeComp Λ f g fg h`: for `h : f ≫ g = fg`, the isomorphism of the
+  base change along `fg` with the composite of the base changes, `t ⊗ n ↦ t ⊗ (1 ⊗ n)`.
+* `CommAlgCat.moduleCatBaseChangePseudofunctor k Λ`: the pseudofunctor with these unit and
+  composition comparisons.
+
+## References
+
+* Edward Frenkel and Dennis Gaitsgory, *Local geometric Langlands correspondence and affine
+  Kac–Moody algebras*, in *Algebraic Geometry and Number Theory*, Progress in Mathematics 253,
+  Birkhäuser, 2006: categories of modules over a varying commutative base and their base change.
+* Mathlib's `CommRingCat.moduleCatExtendScalarsPseudofunctor`, the case `Λ = k` over all
+  commutative rings, whose comparisons are built from adjunctions rather than tensor formulas.
+-/
+
+@[expose] public section
+
+open CategoryTheory Bicategory TauCeti
+open scoped TensorProduct ModuleCat.Algebra
+
+universe w v u
+
+namespace CommAlgCat
+
+variable {k : Type w} [CommRing k] (Λ : Type v) [Ring Λ] [Algebra k Λ]
+
+attribute [local instance low] CoefficientBaseChange.module
+
+section Functor
+
+variable {R S : CommAlgCat.{u} k}
+
+/-- The scalar tower `k → R → S` of the `R`-algebra structure on `S` given by a morphism
+`f : R ⟶ S` of commutative `k`-algebras. -/
+lemma isScalarTower_toAlgebra (f : R ⟶ S) :
+    letI := f.hom.toRingHom.toAlgebra
+    IsScalarTower k R S :=
+  letI := f.hom.toRingHom.toAlgebra
+  IsScalarTower.of_algebraMap_eq' f.hom.comp_algebraMap.symm
+
+/-- Base change along a morphism `f : R ⟶ S` of commutative `k`-algebras, from modules over
+`R ⊗[k] Λ` to modules over `S ⊗[k] Λ`: `N ↦ S ⊗[R] N`, where `S` is an `R`-algebra through `f`. -/
+noncomputable def moduleCatBaseChange (f : R ⟶ S) :
+    ModuleCat.{u} (R ⊗[k] Λ) ⥤ ModuleCat.{u} (S ⊗[k] Λ) :=
+  letI := f.hom.toRingHom.toAlgebra
+  haveI := isScalarTower_toAlgebra f
+  { obj N := ModuleCat.of _ (S ⊗[R] N)
+    map φ := ModuleCat.ofHom (CoefficientBaseChange.map k Λ S φ.hom)
+    map_id _ := ModuleCat.hom_ext CoefficientBaseChange.map_id
+    map_comp _ _ := ModuleCat.hom_ext (CoefficientBaseChange.map_comp _ _) }
+
+lemma moduleCatBaseChange_obj (f : R ⟶ S) (N : ModuleCat.{u} (R ⊗[k] Λ)) :
+    letI := f.hom.toRingHom.toAlgebra
+    haveI := isScalarTower_toAlgebra f
+    (moduleCatBaseChange Λ f).obj N = ModuleCat.of (S ⊗[k] Λ) (S ⊗[R] N) :=
+  rfl
+
+lemma moduleCatBaseChange_map_hom (f : R ⟶ S) {N N' : ModuleCat.{u} (R ⊗[k] Λ)} (φ : N ⟶ N') :
+    letI := f.hom.toRingHom.toAlgebra
+    haveI := isScalarTower_toAlgebra f
+    ((moduleCatBaseChange Λ f).map φ).hom = CoefficientBaseChange.map k Λ S φ.hom :=
+  rfl
+
+@[simp]
+lemma moduleCatBaseChange_map_hom_tmul (f : R ⟶ S) {N N' : ModuleCat.{u} (R ⊗[k] Λ)}
+    (φ : N ⟶ N') (s : S) (n : N) :
+    letI := f.hom.toRingHom.toAlgebra
+    ((moduleCatBaseChange Λ f).map φ).hom (s ⊗ₜ[R] n : (moduleCatBaseChange Λ f).obj N) =
+      (s ⊗ₜ[R] φ.hom n : (moduleCatBaseChange Λ f).obj N') := by
+  let _ := f.hom.toRingHom.toAlgebra
+  have _ := isScalarTower_toAlgebra f
+  exact CoefficientBaseChange.map_tmul _ _ _
+
+/-- A morphism out of a base change is determined by its values on the tensors `1 ⊗ n`. -/
+lemma moduleCatBaseChange_hom_ext (f : R ⟶ S) {N : ModuleCat.{u} (R ⊗[k] Λ)}
+    {P : ModuleCat.{u} (S ⊗[k] Λ)} {φ ψ : (moduleCatBaseChange Λ f).obj N ⟶ P}
+    (h : letI := f.hom.toRingHom.toAlgebra
+      ∀ n : N, φ.hom ((1 : S) ⊗ₜ[R] n : (moduleCatBaseChange Λ f).obj N) =
+        ψ.hom ((1 : S) ⊗ₜ[R] n : (moduleCatBaseChange Λ f).obj N)) :
+    φ = ψ := by
+  let _ := f.hom.toRingHom.toAlgebra
+  have _ := isScalarTower_toAlgebra f
+  exact ModuleCat.hom_ext (CoefficientBaseChange.hom_ext h)
+
+/-- The base-change functor is additive. -/
+instance (f : R ⟶ S) : (moduleCatBaseChange Λ f).Additive where
+  map_add {_ _ _ _} := by
+    let _ := f.hom.toRingHom.toAlgebra
+    have _ := isScalarTower_toAlgebra f
+    exact ModuleCat.hom_ext (CoefficientBaseChange.map_add _ _)
+
+/-- Base change is semilinear along `f` on morphisms: it sends `r • φ` to `f r • ` its image of
+`φ`, for the `R`-linear structure of `ModuleCat (R ⊗[k] Λ)` and the `S`-linear structure of
+`ModuleCat (S ⊗[k] Λ)`. -/
+@[simp]
+lemma moduleCatBaseChange_map_smul (f : R ⟶ S) {N N' : ModuleCat.{u} (R ⊗[k] Λ)} (r : R)
+    (φ : N ⟶ N') :
+    (moduleCatBaseChange Λ f).map (r • φ) = f.hom r • (moduleCatBaseChange Λ f).map φ := by
+  let _ := f.hom.toRingHom.toAlgebra
+  have _ := isScalarTower_toAlgebra f
+  refine moduleCatBaseChange_hom_ext Λ f fun n ↦ ?_
+  simp only [ModuleCat.hom_smul, LinearMap.smul_apply, moduleCatBaseChange_map_hom_tmul]
+  -- The `S`-action on a module over `S ⊗[k] Λ` is the action of `algebraMap S (S ⊗[k] Λ)`.
+  exact CoefficientBaseChange.one_tmul_smul (k := k) (Λ := Λ) r (φ.hom n)
+
+end Functor
+
+section Comparison
+
+variable (R : CommAlgCat.{u} k)
+
+/-- The base change along `𝟙 R` is isomorphic to the identity functor, by `r ⊗ n ↦ r • n`
+(`TauCeti.CoefficientBaseChange.lid`). -/
+noncomputable def moduleCatBaseChangeId : moduleCatBaseChange Λ (𝟙 R) ≅ 𝟭 _ :=
+  -- The `R`-algebra structure on `R` given by `𝟙 R` unfolds to `Algebra.id`, so base change
+  -- along `𝟙 R` is `R ⊗[R] N` with its standard module structures.
+  NatIso.ofComponents (fun N ↦ (CoefficientBaseChange.lid k Λ R N).toModuleIso) fun φ ↦
+    moduleCatBaseChange_hom_ext Λ (𝟙 R) fun n ↦
+      -- Both sides are `1 • φ n`, as `φ` commutes with the action of `algebraMap R _ 1`.
+      (φ.hom.map_smul (algebraMap R (R ⊗[k] Λ) 1) n).symm
+
+lemma moduleCatBaseChangeId_hom_app_hom_tmul (N : ModuleCat.{u} (R ⊗[k] Λ)) (r : R) (n : N) :
+    ((moduleCatBaseChangeId Λ R).hom.app N).hom (r ⊗ₜ[R] n) = r • n :=
+  rfl
+
+lemma moduleCatBaseChangeId_inv_app_hom (N : ModuleCat.{u} (R ⊗[k] Λ)) (n : N) :
+    ((moduleCatBaseChangeId Λ R).inv.app N).hom n = (1 : R) ⊗ₜ[R] n :=
+  rfl
+
+variable {R} {S T : CommAlgCat.{u} k}
+
+/-- The scalar tower `R → S → T` of the algebra structures given by morphisms `f : R ⟶ S`,
+`g : S ⟶ T` and `fg : R ⟶ T` with `f ≫ g = fg`. -/
+lemma isScalarTower_toAlgebra_of_comp (f : R ⟶ S) (g : S ⟶ T) (fg : R ⟶ T) (h : f ≫ g = fg) :
+    letI := f.hom.toRingHom.toAlgebra
+    letI := g.hom.toRingHom.toAlgebra
+    letI := fg.hom.toRingHom.toAlgebra
+    IsScalarTower R S T :=
+  letI := f.hom.toRingHom.toAlgebra
+  letI := g.hom.toRingHom.toAlgebra
+  letI := fg.hom.toRingHom.toAlgebra
+  IsScalarTower.of_algebraMap_eq fun r ↦ by
+    subst h
+    simp only [RingHom.algebraMap_toAlgebra, AlgHom.toRingHom_eq_coe, RingHom.coe_coe,
+      CommAlgCat.hom_comp, AlgHom.comp_apply]
+
+/-- The base change along a composite `fg = f ≫ g` is isomorphic to the composite of the base
+changes, by `t ⊗ n ↦ t ⊗ (1 ⊗ n)` (`TauCeti.CoefficientBaseChange.cancelBaseChange`). The
+composite is given as an arbitrary `fg` with `f ≫ g = fg`, so that the comparison applies to
+composites that agree only propositionally. -/
+noncomputable def moduleCatBaseChangeComp (f : R ⟶ S) (g : S ⟶ T) (fg : R ⟶ T)
+    (h : f ≫ g = fg) :
+    moduleCatBaseChange Λ fg ≅ moduleCatBaseChange Λ f ⋙ moduleCatBaseChange Λ g :=
+  letI := f.hom.toRingHom.toAlgebra
+  letI := g.hom.toRingHom.toAlgebra
+  letI := fg.hom.toRingHom.toAlgebra
+  haveI := isScalarTower_toAlgebra f
+  haveI := isScalarTower_toAlgebra g
+  haveI := isScalarTower_toAlgebra fg
+  haveI := isScalarTower_toAlgebra_of_comp f g fg h
+  NatIso.ofComponents
+    (fun N ↦ (CoefficientBaseChange.cancelBaseChange k Λ T
+      (LinearEquiv.refl (S ⊗[k] Λ) ((moduleCatBaseChange Λ f).obj N))).toModuleIso)
+    fun _ ↦ moduleCatBaseChange_hom_ext Λ fg fun _ ↦ rfl
+
+lemma moduleCatBaseChangeComp_hom_app_hom_tmul (f : R ⟶ S) (g : S ⟶ T) (fg : R ⟶ T)
+    (h : f ≫ g = fg) (N : ModuleCat.{u} (R ⊗[k] Λ)) (t : T) (n : N) :
+    letI := f.hom.toRingHom.toAlgebra
+    letI := g.hom.toRingHom.toAlgebra
+    letI := fg.hom.toRingHom.toAlgebra
+    ((moduleCatBaseChangeComp Λ f g fg h).hom.app N).hom (t ⊗ₜ[R] n) =
+      (t ⊗ₜ[S] ((1 : S) ⊗ₜ[R] n : (moduleCatBaseChange Λ f).obj N) :
+        (moduleCatBaseChange Λ g).obj ((moduleCatBaseChange Λ f).obj N)) :=
+  rfl
+
+lemma moduleCatBaseChangeComp_inv_app_hom_tmul_tmul (f : R ⟶ S) (g : S ⟶ T) (fg : R ⟶ T)
+    (h : f ≫ g = fg) (N : ModuleCat.{u} (R ⊗[k] Λ)) (t : T) (s : S) (n : N) :
+    letI := f.hom.toRingHom.toAlgebra
+    letI := g.hom.toRingHom.toAlgebra
+    letI := fg.hom.toRingHom.toAlgebra
+    ((moduleCatBaseChangeComp Λ f g fg h).inv.app N).hom
+        (t ⊗ₜ[S] (s ⊗ₜ[R] n : (moduleCatBaseChange Λ f).obj N) :
+          (moduleCatBaseChange Λ g).obj ((moduleCatBaseChange Λ f).obj N)) =
+      ((g.hom s * t) ⊗ₜ[R] n : (moduleCatBaseChange Λ fg).obj N) :=
+  rfl
+
+end Comparison
+
+variable (k) in
+/-- The modules over `Λ` with coefficients in the commutative `k`-algebras, as a pseudofunctor
+`LocallyDiscrete (CommAlgCat k) ⥤ᵖ Cat`: `R ↦ ModuleCat (R ⊗[k] Λ)`, with the base-change
+functors `CommAlgCat.moduleCatBaseChange Λ f` and the comparisons
+`CommAlgCat.moduleCatBaseChangeId` and `CommAlgCat.moduleCatBaseChangeComp`. -/
+noncomputable def moduleCatBaseChangePseudofunctor :
+    LocallyDiscrete (CommAlgCat.{u} k) ⥤ᵖ Cat.{u, max (u + 1) v} :=
+  LocallyDiscrete.mkCatPseudofunctor (obj := fun R ↦ Cat.of (ModuleCat.{u} (R ⊗[k] Λ)))
+    (fun f ↦ moduleCatBaseChange Λ f) (moduleCatBaseChangeId Λ)
+    (fun f g fg h ↦ moduleCatBaseChangeComp Λ f g fg h)
+    (fun _ _ _ _ _ fgh _ _ _ _ _ ↦ moduleCatBaseChange_hom_ext Λ fgh fun _ ↦ rfl)
+    -- The unit laws are checked against the inverse of the unit comparison, which sends `n` to
+    -- `1 ⊗ n`, so that both sides send `1 ⊗ n` to `1 ⊗ (1 ⊗ n)`.
+    (fun f _ N ↦
+      ((moduleCatBaseChange Λ f).mapIso ((moduleCatBaseChangeId Λ _).app N)).comp_hom_eq_id.2
+        (moduleCatBaseChange_hom_ext Λ f fun _ ↦ rfl))
+    (fun f _ _ ↦ ((moduleCatBaseChangeId Λ _).app _).comp_hom_eq_id.2
+      (moduleCatBaseChange_hom_ext Λ f fun _ ↦ rfl))
+
+variable (k) in
+@[simp]
+lemma moduleCatBaseChangePseudofunctor_obj (R : LocallyDiscrete (CommAlgCat.{u} k)) :
+    (moduleCatBaseChangePseudofunctor k Λ).obj R = Cat.of (ModuleCat.{u} (R.as ⊗[k] Λ)) :=
+  rfl
+
+@[simp]
+lemma moduleCatBaseChangePseudofunctor_map_toFunctor {R S : LocallyDiscrete (CommAlgCat.{u} k)}
+    (f : R ⟶ S) :
+    ((moduleCatBaseChangePseudofunctor k Λ).map f).toFunctor = moduleCatBaseChange Λ f.as :=
+  rfl
+
+@[simp]
+lemma moduleCatBaseChangePseudofunctor_mapId_hom_toNatTrans_app
+    (R : LocallyDiscrete (CommAlgCat.{u} k)) (N : ModuleCat.{u} (R.as ⊗[k] Λ)) :
+    ((moduleCatBaseChangePseudofunctor k Λ).mapId R).hom.toNatTrans.app N =
+      (moduleCatBaseChangeId Λ R.as).hom.app N :=
+  rfl
+
+@[simp]
+lemma moduleCatBaseChangePseudofunctor_mapComp_hom_toNatTrans_app
+    {R S T : LocallyDiscrete (CommAlgCat.{u} k)} (f : R ⟶ S) (g : S ⟶ T)
+    (N : ModuleCat.{u} (R.as ⊗[k] Λ)) :
+    ((moduleCatBaseChangePseudofunctor k Λ).mapComp f g).hom.toNatTrans.app N =
+      (moduleCatBaseChangeComp Λ f.as g.as (f.as ≫ g.as) rfl).hom.app N :=
+  rfl
+
+end CommAlgCat
