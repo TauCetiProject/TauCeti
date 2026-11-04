@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicTopology.Homotopy.Hurewicz.Absolute
+public import TauCeti.AlgebraicTopology.Homotopy.Hurewicz.Cubical.Relative
 public import TauCeti.AlgebraicTopology.Singular.Cubical.Comparison.Relative.Basic
 
 /-!
@@ -31,7 +32,8 @@ The proof compares both classes in the homology of the sphere `Sⁿ⁺² = Iⁿ�
 Hurewicz class of the tautological loop, which generates `Hₙ₊₂(Sⁿ⁺²; ℤ)`
 (`TauCeti.isIso_hurewicz_sphereGenLoop`), so it induces an isomorphism on relative singular
 homology. It sends the fundamental cycle to the relative class of the tautological loop, which is
-the cubical Hurewicz class of that loop. The two Hurewicz maps differ by a universal sign
+the cubical Hurewicz class of that loop (`GenLoop.homologyMap_π_cubicalHurewicz`). The two
+Hurewicz maps differ by a universal sign
 (`HomotopyGroup.exists_hurewicz_eq_units_smul_cubicalHurewicz`), and the comparison isomorphisms
 of absolute and relative homology are compatible
 (`TopPair.homologyMap_π_comp_singularCubicalHomologyIso_inv`).
@@ -100,38 +102,6 @@ theorem homologyMap_cubeBoundaryPairHom_cubeBoundaryPairCycle {P : TopPair.{u}} 
 
 /-! ### The fundamental cycle generates -/
 
-/-- The cubical Hurewicz class of a generalized loop `p` at `x`, read in the relative cubical
-homology of `(X, {x})`, is the class of `p` as a relative cycle. -/
-private lemma homologyMap_π_cubicalHurewicz {X : Type} [TopologicalSpace X] {x : X} {m : ℕ}
-    (p : Ω^ (Fin (m + 1)) X x)
-    (hp : MapsTo (p.1 : SingularCube (TopPair.ofSubset ({x} : Set (TopCat.of X))).fst (m + 1))
-      (Cube.boundary (Fin (m + 1))) (range (TopPair.ofSubset ({x} : Set (TopCat.of X))).map)) :
-    HomologicalComplex.homologyMap (cokernel.π ((normalizedCubicalChainComplex ℤ).map
-        (TopPair.ofSubset ({x} : Set (TopCat.of X))).map)) (m + 1) (GenLoop.cubicalHurewicz ℤ p) =
-      ((TopPair.ofSubset ({x} : Set (TopCat.of X))).cubicalChainComplex ℤ).homologyπ (m + 1)
-        (TopPair.cubicalCycleOfCube ℤ _ hp) := by
-  let K := (normalizedCubicalChainComplex ℤ).obj (TopPair.ofSubset ({x} : Set (TopCat.of X))).fst
-  -- The loop as an absolute cycle.
-  let z : K.cycles (m + 1) := K.moduleCatCyclesMk
-    (NormalizedCubicalChain.ofCube (TopPair.ofSubset ({x} : Set (TopCat.of X))).fst ℤ p.1) m
-    (by simp)
-    (by rw [normalizedCubicalChainComplex_obj_d_apply]; exact GenLoop.boundary_ofCube_eq_zero ℤ p)
-  rw [← GenLoop.homologyπ_eq_cubicalHurewicz ℤ p (z := z)
-    (HomologicalComplex.iCycles_moduleCatCyclesMk ..)]
-  -- The ambient space of `TopPair.ofSubset {x}` is `X` only up to unfolding, so the naturality of
-  -- the class map is applied to `z` before it is matched with the goal.
-  have h := ConcreteCategory.congr_hom (HomologicalComplex.homologyπ_naturality (cokernel.π
-    ((normalizedCubicalChainComplex ℤ).map (TopPair.ofSubset ({x} : Set (TopCat.of X))).map))
-      (m + 1)) z
-  refine (ConcreteCategory.comp_apply _ _ z).symm.trans
-    (h.trans ((ConcreteCategory.comp_apply _ _ z).trans (congrArg _ ?_)))
-  apply HomologicalComplex.moduleCat_iCycles_injective
-  refine ((ConcreteCategory.comp_apply _ _ z).symm.trans ?_).trans
-    ((TopPair.iCycles_cubicalCycleOfCube ℤ _ hp).trans (TopPair.cubicalChainOfCube_def ℤ _)).symm
-  rw [HomologicalComplex.cyclesMap_i, ConcreteCategory.comp_apply]
-  exact congrArg _ ((HomologicalComplex.iCycles_moduleCatCyclesMk ..).trans
-    (normalizedCubicalChainComplexXEquiv_symm_apply _ _ _).symm)
-
 /-- The collapse `TauCeti.sphereGenLoop (n + 2) : (Iⁿ⁺², ∂Iⁿ⁺²) → (Sⁿ⁺², N)` carries the class of
 the fundamental cycle, read in relative singular homology, to the cubical Hurewicz class of the
 tautological loop, read in singular homology and then in the relative homology of `(Sⁿ⁺², N)`. -/
@@ -170,7 +140,7 @@ private lemma singularHomologyMap_sphereGenLoop_cubeBoundaryPairCycle (n : ℕ) 
         (n + 2) (GenLoop.cubicalHurewicz ℤ γ) := by
     rw [hf]
     exact (homologyMap_cubeBoundaryPairHom_cubeBoundaryPairCycle ℤ _ hc).trans
-      (homologyMap_π_cubicalHurewicz γ hc).symm
+      (GenLoop.homologyMap_π_cubicalHurewicz ℤ γ hc).symm
   have hd := ConcreteCategory.congr_hom
     (TopPair.homologyMap_π_comp_singularCubicalHomologyIso_inv ℤ Q (n + 2))
       (GenLoop.cubicalHurewicz ℤ γ)
