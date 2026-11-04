@@ -5,16 +5,18 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Polynomial.AlgebraMap
 public import Mathlib.Algebra.Polynomial.Monic
+public import Mathlib.RingTheory.Ideal.MinimalPrime.Basic
 public import Mathlib.RingTheory.Ideal.Quotient.Operations
 public import Mathlib.RingTheory.IntegralClosure.IsIntegral.Defs
 import Mathlib.Algebra.Polynomial.Lifts
-import Mathlib.RingTheory.Ideal.Maximal
 
 /-!
 # Integrality over an algebra, tested on quotients
 
-A failure of `x : R` to be integral over `A` is already a failure modulo a **prime** ideal of `R`.
+A failure of `x : R` to be integral over `A` is already a failure modulo a **minimal prime** ideal
+of `R`.
 That is what this file proves, together with the elementary description of integrality in a
 quotient that the argument runs on: `x` becomes integral over `A` in `R ⧸ J` exactly when some
 monic polynomial over `A` sends `x` into `J`.
@@ -29,11 +31,12 @@ hypothesis survives pulling back along `Ideal.Quotient.mk J`. The valuative crit
 
 * `TauCeti.isIntegral_quotient_iff` : integrality of `x` over `A` after passing to `R ⧸ J` is the
   statement that some monic polynomial over `A` sends `x` into `J`.
-* `TauCeti.isIntegral_of_forall_isPrime` : if `x` becomes integral over `A` in every prime
-  quotient of `R`, then it is integral over `A`.
-* `TauCeti.isIntegral_of_forall_isPrime_map` : the same for a subring `B ⊆ R`, phrased with the
-  image subring `B.map (Ideal.Quotient.mk J)` that a criterion quantifying over subrings of
-  `R ⧸ J` needs.
+* `TauCeti.isIntegral_of_forall_isMinimalPrime` : if `x` becomes integral over `A` in `R ⧸ J`
+  for every minimal prime `J` of `R`, then it is integral over `A`. In particular it suffices
+  that `x` becomes integral in every prime quotient.
+* `TauCeti.isIntegral_of_forall_isMinimalPrime_map` : the same for a subring `B ⊆ R`, phrased
+  with the image subring `B.map (Ideal.Quotient.mk J)` that a criterion quantifying over subrings
+  of `R ⧸ J` needs.
 
 The first of these needs only a ring and a two-sided ideal; commutativity enters with the prime,
 so the other two ask for it.
@@ -45,15 +48,15 @@ the monic witness, which is what the argument below consumes.
 
 ## Method
 
-The statement is the positive one — integral in every prime quotient implies integral — and the
-argument runs on its contrapositive, which is where the prime comes from.
+The statement is the positive one — integral in every minimal prime quotient implies integral —
+and the argument runs on its contrapositive, which is where the prime comes from.
 
 The values `f(x)` of monic polynomials `f` over `A` form a **submonoid** of `R`: monic
 polynomials are closed under multiplication and evaluation is multiplicative, and `f = 1` gives
 the unit. Non-integrality of `x` says exactly that `0` is not one of those values — that the zero
 ideal is disjoint from the submonoid. `Ideal.exists_le_prime_disjoint` then supplies a **prime**
-ideal still disjoint from it, and `isIntegral_quotient_iff` reads that disjointness back as
-non-integrality in the quotient.
+ideal still disjoint from it, `Ideal.exists_minimalPrimes_le` a minimal prime inside that one,
+and `isIntegral_quotient_iff` reads that disjointness back as non-integrality in the quotient.
 
 Packaging the monic values as a submonoid is the whole trick: the multiplicative closure Mathlib's
 Zorn argument needs is precisely "a product of monic polynomials is monic", so no bespoke
@@ -81,9 +84,9 @@ variable {A R : Type*} [CommRing A] [Ring R] [Algebra A R]
 is integral over `A` in `R ⧸ J` exactly when some monic polynomial over `A` sends `x` into `J`. -/
 theorem isIntegral_quotient_iff (x : R) (J : Ideal R) [J.IsTwoSided] :
     IsIntegral A (Ideal.Quotient.mk J x) ↔
-      ∃ f : A[X], f.Monic ∧ eval₂ (algebraMap A R) x f ∈ J := by
+      ∃ f : A[X], f.Monic ∧ aeval x f ∈ J := by
   refine exists_congr fun f ↦ and_congr_right fun _ ↦ ?_
-  rw [← Ideal.Quotient.mk_comp_algebraMap, ← hom_eval₂, Ideal.Quotient.eq_zero_iff_mem]
+  rw [aeval_def, ← Ideal.Quotient.mk_comp_algebraMap, ← hom_eval₂, Ideal.Quotient.eq_zero_iff_mem]
 
 end Quotient
 
@@ -100,31 +103,35 @@ monic.
 Packaging them this way is what lets `Ideal.exists_le_prime_disjoint` run the maximality argument
 instead of a bespoke one. -/
 private def monicValues (A : Type*) [CommRing A] [Algebra A R] (x : R) : Submonoid R where
-  carrier := {r | ∃ f : A[X], f.Monic ∧ eval₂ (algebraMap A R) x f = r}
+  carrier := {r | ∃ f : A[X], f.Monic ∧ aeval x f = r}
   mul_mem' := by
     rintro _ _ ⟨f, hf, rfl⟩ ⟨g, hg, rfl⟩
-    exact ⟨f * g, hf.mul hg, eval₂_mul _ _⟩
-  one_mem' := ⟨1, monic_one, eval₂_one _ _⟩
+    exact ⟨f * g, hf.mul hg, map_mul _ _ _⟩
+  one_mem' := ⟨1, monic_one, map_one _⟩
 
-/-- **Integrality is detected in the prime quotients.** If the reduction of `x` is integral over
-`A` in `R ⧸ J` for every prime ideal `J` of `R`, then `x` is integral over `A`.
+/-- **Integrality is detected in the minimal prime quotients.** If the reduction of `x` is
+integral over `A` in `R ⧸ J` for every minimal prime ideal `J` of `R`, then `x` is integral over
+`A`. In particular it is enough that `x` is integral in every prime quotient.
 
 This is what lets a criterion for integrality that has been proved only for domains be applied to
 an arbitrary commutative ring: every `R ⧸ J` here is a domain, so the criterion supplies exactly
 the hypotheses this lemma consumes. -/
-theorem isIntegral_of_forall_isPrime {x : R}
-    (h : ∀ J : Ideal R, J.IsPrime → IsIntegral A (Ideal.Quotient.mk J x)) : IsIntegral A x := by
+theorem isIntegral_of_forall_isMinimalPrime {x : R}
+    (h : ∀ J : Ideal R, IsMinimalPrime J → IsIntegral A (Ideal.Quotient.mk J x)) :
+    IsIntegral A x := by
   by_contra hni
   -- non-integrality says exactly that `0` is not the value of a monic polynomial
   have hdisj : Disjoint ((⊥ : Ideal R) : Set R) (monicValues A x) := by
     rw [Set.disjoint_left]
     rintro r hr ⟨f, hf, hfr⟩
-    exact hni ⟨f, hf, hfr.trans (Ideal.mem_bot.1 hr)⟩
+    exact hni ⟨f, hf, by rw [← aeval_def, hfr, Ideal.mem_bot.1 hr]⟩
   -- Mathlib's maximality argument turns that into a prime still avoiding every monic value
   obtain ⟨J, hJ, -, hJdisj⟩ := (⊥ : Ideal R).exists_le_prime_disjoint (monicValues A x) hdisj
-  -- but `x` is integral modulo that prime, so some monic value does lie in `J`
-  obtain ⟨f, hf, hfx⟩ := (isIntegral_quotient_iff x J).1 (h J hJ)
-  exact Set.disjoint_left.1 hJdisj hfx ⟨f, hf, rfl⟩
+  -- that prime contains a minimal prime, which avoids every monic value as well
+  obtain ⟨P, hP, hPJ⟩ := Ideal.exists_minimalPrimes_le (bot_le : ⊥ ≤ J)
+  -- but `x` is integral modulo that minimal prime, so some monic value does lie in `J`
+  obtain ⟨f, hf, hfx⟩ := (isIntegral_quotient_iff x P).1 (h P hP)
+  exact Set.disjoint_left.1 hJdisj (hPJ hfx) ⟨f, hf, rfl⟩
 
 end Prime
 
@@ -137,7 +144,7 @@ variable {R : Type*} [CommRing R]
 /-- The corestriction of `Ideal.Quotient.mk J` to a map onto the image subring `B.map (mk J)`. It
 is the surjection along which a monic polynomial over the image is lifted back to one over `B`. -/
 private def quotMap (B : Subring R) (J : Ideal R) : B →+* B.map (Ideal.Quotient.mk J) :=
-  ((Ideal.Quotient.mk J).comp B.subtype).codRestrict _ fun b ↦ Subring.mem_map.2 ⟨b, b.2, rfl⟩
+  (Ideal.Quotient.mk J).restrict B _ fun b hb ↦ Subring.mem_map.2 ⟨b, hb, rfl⟩
 
 /-- `quotMap` is surjective: the image subring consists exactly of the reductions of elements of
 `B`. -/
@@ -165,14 +172,14 @@ private theorem isIntegral_of_isIntegral_map (B : Subring R) (x : R) (J : Ideal 
   refine ⟨f, hfm, ?_⟩
   rw [← hgx, ← hfg, eval₂_map, algebraMap_comp_quotMap]
 
-/-- **The subring form of `isIntegral_of_forall_isPrime`.** If the reduction of `x` is integral
-over the image subring `B.map (Ideal.Quotient.mk J)` for every prime `J` of `R`, then `x` is
-integral over the subring `B` itself. The image subring is the shape a criterion that quantifies
-over subrings of `R ⧸ J` produces. -/
-theorem isIntegral_of_forall_isPrime_map {B : Subring R} {x : R}
-    (h : ∀ J : Ideal R, J.IsPrime →
+/-- **The subring form of `isIntegral_of_forall_isMinimalPrime`.** If the reduction of `x` is
+integral over the image subring `B.map (Ideal.Quotient.mk J)` for every minimal prime `J` of `R`,
+then `x` is integral over the subring `B` itself. The image subring is the shape a criterion that
+quantifies over subrings of `R ⧸ J` produces. -/
+theorem isIntegral_of_forall_isMinimalPrime_map {B : Subring R} {x : R}
+    (h : ∀ J : Ideal R, IsMinimalPrime J →
       IsIntegral (B.map (Ideal.Quotient.mk J)) (Ideal.Quotient.mk J x)) : IsIntegral B x :=
-  isIntegral_of_forall_isPrime fun J hJ ↦ isIntegral_of_isIntegral_map B x J (h J hJ)
+  isIntegral_of_forall_isMinimalPrime fun J hJ ↦ isIntegral_of_isIntegral_map B x J (h J hJ)
 
 end Subring
 

@@ -11,6 +11,7 @@ public import Mathlib.RingTheory.PowerSeries.Expand
 public import TauCeti.Data.Rat.NumDenDvd
 public import TauCeti.RingTheory.HahnSeries.EmbDomain
 public import TauCeti.RingTheory.LaurentSeries.Basic
+public import TauCeti.RingTheory.LaurentSeries.Convergence
 
 /-!
 # Ramified levels of Laurent series
@@ -255,6 +256,21 @@ noncomputable def contract {S : Type*} [Zero S] (d : ℕ+) (f : S⸨X⸩) (r : F
 @[simp]
 theorem coeff_contract {S : Type*} [Zero S] (d : ℕ+) (f : S⸨X⸩) (r : Fin d) (k : ℤ) :
     (contract d f r).coeff k = f.coeff ((d : ℤ) * k + r) := (rfl)
+
+/-- Extracting an exponent-congruence component is continuous for the valuation topology. -/
+theorem continuous_contract {K : Type*} [Field K] (d : ℕ+) (r : Fin d) :
+    Continuous (fun f : K⸨X⸩ ↦ contract d f r) := by
+  refine continuous_iff_continuousAt.mpr fun f ↦
+    (TauCeti.tendsto_laurentSeries_iff_orderTop_sub _ _).mpr fun a ↦ ?_
+  filter_upwards [(TauCeti.tendsto_laurentSeries_iff_orderTop_sub id f).mp
+    Filter.tendsto_id ((d : ℤ) * a + r)] with g hg
+  rw [le_orderTop_iff_forall] at hg ⊢
+  intro k hk
+  rw [coeff_sub, coeff_contract, coeff_contract]
+  have hd : (0 : ℤ) < d := by exact_mod_cast d.pos
+  have hk' : k < a := WithTop.coe_lt_coe.mp hk
+  have hi : (d : ℤ) * k + r < (d : ℤ) * a + r := by nlinarith
+  exact hg _ (WithTop.coe_lt_coe.mpr hi)
 
 /-- Contraction is additive. -/
 @[simp]

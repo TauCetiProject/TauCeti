@@ -430,17 +430,18 @@ variable {R M : Type*} [CommRing R] [AddCommGroup M] [Module R M] {B : BilinForm
   [IsDomain R] [IsLocalRing R]
 
 /-- A form on a finite free module which is the orthogonal internal direct sum of finitely many
-submodules `P i`, each `π ^ e i`-modular with `e i ≤ j`, those with `e i = j` being even at their
-own scale, has a Gram matrix `G` and a symmetric matrix `H` with even diagonal such that
-`G * H = π ^ j • 1`. -/
+submodules `P i`, each `π ^ e i`-modular with `e i ≤ j`, has a Gram matrix `G` and a symmetric
+matrix `H` such that `G * H = π ^ j • 1`. When `2 ∣ π` and the summands with `e i = j` are even at
+their own scale, `H` has even diagonal. -/
 theorem exists_basis_toMatrix_mul_eq_of_isInternal [Module.Free R M] [Module.Finite R M]
-    (hB : B.IsSymm) (hπ : π ≠ 0) (h2 : 2 ∣ π) {o : Type} [Finite o] [DecidableEq o]
+    (hB : B.IsSymm) (hπ : π ≠ 0) {o : Type} [Finite o] [DecidableEq o]
     {P : o → Submodule R M}
     (hP : DirectSum.IsInternal P) (horth : ∀ i i', i ≠ i' → ∀ x ∈ P i, ∀ y ∈ P i', B x y = 0)
-    {e : o → ℕ} (hmod : ∀ i, (B.restrict (P i)).IsModular (π ^ e i)) {j : ℕ} (hle : ∀ i, e i ≤ j)
-    (heven : ∀ i, e i = j → ∀ w ∈ P i, 2 * π ^ j ∣ B w w) :
+    {e : o → ℕ} (hmod : ∀ i, (B.restrict (P i)).IsModular (π ^ e i)) {j : ℕ}
+    (hle : ∀ i, e i ≤ j) :
     ∃ (ι : Type) (_ : Fintype ι) (_ : DecidableEq ι) (b : Basis ι R M) (H : Matrix ι ι R),
-      B.toMatrix b * H = π ^ j • 1 ∧ H.IsSymm ∧ ∀ i, 2 ∣ H i i := by
+      B.toMatrix b * H = π ^ j • 1 ∧ H.IsSymm ∧
+        (2 ∣ π → (∀ i, e i = j → ∀ w ∈ P i, 2 * π ^ j ∣ B w w) → ∀ i, 2 ∣ H i i) := by
   classical
   have : Fintype o := Fintype.ofFinite o
   have hπ' : π ∈ nonZeroDivisors R := mem_nonZeroDivisors_of_ne_zero hπ
@@ -479,7 +480,7 @@ theorem exists_basis_toMatrix_mul_eq_of_isInternal [Module.Free R M] [Module.Fin
     rwa [Matrix.blockDiagonal'_one] at this
   · rw [Matrix.IsSymm, Matrix.blockDiagonal'_transpose]
     simp only [Matrix.transpose_smul, Matrix.transpose_nonsing_inv, (hUs _).eq]
-  · rintro ⟨i, a⟩
+  · rintro h2 heven ⟨i, a⟩
     rw [Matrix.blockDiagonal'_apply_eq, Matrix.smul_apply, smul_eq_mul]
     rcases (hle i).lt_or_eq with hij | hij
     · exact ((h2.trans (dvd_pow_self π (by omega)))).mul_right _

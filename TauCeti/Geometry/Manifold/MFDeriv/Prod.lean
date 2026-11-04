@@ -27,6 +27,8 @@ fields on a product manifold.
   through a projection.
 * `TauCeti.mvfderiv_comp_fst_apply` and `TauCeti.mvfderiv_comp_snd_apply`: the same for
   vector-valued functions, applied to a tangent vector.
+* `TauCeti.mvfderiv_comp_snd_apply_eq_smul_deriv`: for a scalar second factor, the same in terms of
+  the one-variable derivative `deriv`.
 * `TauCeti.mvfderiv_curry_right`: the derivative of a slice with fixed first coordinate.
 * `HasDerivAt.mvfderiv_comp_fst_apply`: the derivative of a function of the scalar coordinate of
   `𝕜 × N`.
@@ -107,6 +109,15 @@ theorem mvfderiv_comp_snd_apply (g : N → F) (p : M × N) (v : TangentSpace (I.
   -- The identifications `NormedSpace.fromTangentSpace` at `(g ∘ Prod.snd) p` and at `g p.2` agree,
   -- as these points are equal by definition.
   rfl
+
+/-- The derivative of a vector-valued function of a scalar second factor, read on a product: the
+scalar component `v.2` of a tangent vector is sent to `v.2 • g'(p.2)`. -/
+theorem mvfderiv_comp_snd_apply_eq_smul_deriv (g : 𝕜 → F) (p : M × 𝕜)
+    (v : TangentSpace (I.prod 𝓘(𝕜)) p) :
+    mvfderiv (I.prod 𝓘(𝕜)) (g ∘ Prod.snd) p v = v.2 • deriv g p.2 := by
+  rw [mvfderiv_comp_snd_apply, mvfderiv_eq_fderiv]
+  -- `NormedSpace.fromTangentSpace` is the identity of `𝕜`.
+  exact fderiv_eq_smul_deriv (f := g) (x := p.2) (v.2 : 𝕜)
 
 /-- The derivative of a slice with fixed first coordinate is the product derivative composed
 with the inclusion of the second tangent factor. -/
