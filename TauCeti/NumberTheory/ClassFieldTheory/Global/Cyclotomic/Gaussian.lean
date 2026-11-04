@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.ClassFieldTheory.Global.Cyclotomic.Prime
+import TauCeti.GroupTheory.Abelianization.Basic
 import TauCeti.RingTheory.RootsOfUnity.Basic
 
 /-!
@@ -48,12 +49,8 @@ theorem globalArtinMap_Qi_prime (ι : E →ₐ[ℚ] SeparableClosure ℚ)
       if Ideal.absNorm v.asIdeal % 4 = 1 then 0
       else .ofMul (Abelianization.of ((Rat.galEquivZMod 4 E).symm (-1))) := by
   let _ := IsCyclotomicExtension.isAbelianGalois {4} ℚ E
-  obtain ⟨σ, hσ⟩ := Abelianization.equivOfComm.surjective
-    (globalArtinMap ℚ E ι (.ofMul (primeIdeleClass ℚ v))).toMul
-  have hs : globalArtinMap ℚ E ι (.ofMul (primeIdeleClass ℚ v)) =
-      .ofMul (Abelianization.of σ) := by
-    simpa only [Abelianization.equivOfComm_apply, ofMul_toMul] using
-      congrArg Additive.ofMul hσ.symm
+  obtain ⟨σ, hs⟩ := Abelianization.exists_eq_ofMul_of
+    (globalArtinMap ℚ E ι (.ofMul (primeIdeleClass ℚ v)))
   have hc := galEquivZMod_globalArtinMap_prime ι v hm hs
   have hval : ((Rat.galEquivZMod 4 E σ : ZMod 4)).val = Ideal.absNorm v.asIdeal % 4 := by
     rw [hc, ZMod.val_natCast]
