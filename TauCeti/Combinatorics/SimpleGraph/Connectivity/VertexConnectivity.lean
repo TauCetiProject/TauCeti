@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Combinatorics.SimpleGraph.Connectivity.EdgeConnectivity
+public import TauCeti.Combinatorics.SimpleGraph.Connectivity.CutVertex
 public import TauCeti.Combinatorics.SimpleGraph.Connectivity.Menger
 public import TauCeti.Data.ENat.Lattice
 
@@ -60,6 +61,8 @@ ed., Graduate Texts in Mathematics 173, Springer, 2017, Section 1.4.
 
 * `SimpleGraph.isVertexReachable_one`, `SimpleGraph.isVertexConnected_one`: the threshold `1` is
   reachability, respectively connectedness on at least two vertices.
+* `SimpleGraph.isVertexConnected_two_iff`: 2-vertex-connectivity is connectedness on at least
+  three vertices with no cut vertex.
 * `SimpleGraph.Iso.isVertexReachable_iff`, `SimpleGraph.Iso.isVertexConnected_iff`: vertex
   reachability and connectivity are invariant under graph isomorphism.
 * `SimpleGraph.isVertexConnected_iff`: `G` is `k`-vertex-connected exactly when it has at least
@@ -271,6 +274,38 @@ theorem isVertexConnected_one : G.IsVertexConnected 1 ↔ G.Connected ∧ Nontri
     connected_iff]
   simp only [isVertexReachable_one]
   exact ⟨fun ⟨_, h⟩ ↦ ⟨⟨h, inferInstance⟩, inferInstance⟩, fun ⟨⟨h, _⟩, _⟩ ↦ ⟨‹_›, h⟩⟩
+
+/-- A simple graph is 2-vertex-connected exactly when it has at least three vertices, is
+connected, and has no cut vertex. -/
+theorem isVertexConnected_two_iff : G.IsVertexConnected 2 ↔
+    3 ≤ ENat.card V ∧ G.Connected ∧ ∀ v, ¬G.IsCutVertex v := by
+  constructor
+  · intro h
+    have hcard := h.add_one_le_card
+    norm_num at hcard
+    refine ⟨hcard, (connected_iff G).2 ⟨fun u v ↦ (h.2 u v).reachable (by simp), h.nonempty⟩,
+      fun x hx ↦ ?_⟩
+    rw [isCutVertex_iff_exists_forall_walk_mem_support] at hx
+    obtain ⟨u, w, hux, hwx, -, hall⟩ := hx
+    obtain ⟨p, hp⟩ := isVertexReachable_iff_exists_walk.mp (h.isVertexReachable u w)
+      (s := {x}) (by simp) (by simpa) (by simpa)
+    exact hp x (hall p) (by simp)
+  · rintro ⟨hcard, hconn, hcut⟩
+    rw [isVertexConnected_iff]
+    refine ⟨by norm_num at hcard ⊢; exact hcard, fun {s} hs ↦ ?_⟩
+    have hsle : s.encard ≤ 1 := ENat.lt_two_iff.mp hs
+    have hsub : s.Subsingleton := Set.encard_le_one_iff_subsingleton.mp hsle
+    intro u v
+    by_cases hsempty : s = ∅
+    · obtain ⟨p⟩ := hconn.preconnected u.1 v.1
+      exact ⟨p.induce sᶜ fun _ _ ↦ by simp [hsempty]⟩
+    · obtain ⟨x, hxs⟩ := Set.nonempty_iff_ne_empty.mpr hsempty
+      have hu : u.1 ∉ s := u.2
+      have hv : v.1 ∉ s := v.2
+      obtain ⟨p, hp⟩ :=
+        (hconn.preconnected u.1 v.1).exists_walk_notMem_support_of_not_isCutVertex (hcut x)
+          (fun hux ↦ hu (hux ▸ hxs)) (fun hvx ↦ hv (hvx ▸ hxs))
+      exact ⟨p.induce sᶜ fun y hy hys ↦ hp (hsub hys hxs ▸ hy)⟩
 
 theorem IsVertexConnected.preconnected (hk : k ≠ 0) (h : G.IsVertexConnected k) :
     G.Preconnected :=

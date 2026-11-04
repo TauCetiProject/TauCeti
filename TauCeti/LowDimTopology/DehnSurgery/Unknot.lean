@@ -53,11 +53,10 @@ filling against the preferred framing.
 * `TauCeti.framingNumber_unknotSolidTorus`: the standard solid torus neighbourhood of the unknot
   has framing number `0`.
 * `TauCeti.preferredFramedBoundaryTorus_unknotSolidTorus`: its framing is the preferred framing.
-* `TauCeti.longitude_preferredFramedBoundaryTorus_unknotSolidTorus`: so the preferred longitude
-  is its longitude.
+* `TauCeti.preferredFramedBoundaryTorus_unknotSolidTorus_longitude`: the longitude of the
+  preferred framing is the longitude of `TauCeti.unknotSolidTorus`.
 * `TauCeti.nonempty_dehnFilling_preferredFramedBoundaryTorus_longitude_unknotSolidTorus`: the
   `0`-surgery on the unknot, read in the preferred framing, is `S¹ × S²`.
-
 * `TauCeti.DehnFilling.nonempty_homeomorph_circle_prod_sphere_of_unknot_longitude`: every filling
   along the longitude whose gluing is isotopic to a matrix gluing is homeomorphic to `S¹ × S²`.
 
@@ -146,14 +145,15 @@ theorem preferredFramedBoundaryTorus_unknotSolidTorus :
   rw [IsSolidTorusNeighborhood.preferredFramedBoundaryTorus, framingNumber_unknotSolidTorus,
     neg_zero, FramedBoundaryTorus.shiftLongitude_zero]
 
-/-- The preferred longitude of the unknot, the slope `0` of surgery, is the longitude `z ↦ Φ (1, z)`
-of the standard solid torus neighbourhood `Φ = TauCeti.unknotSolidTorus`. -/
-theorem longitude_preferredFramedBoundaryTorus_unknotSolidTorus :
+/-- The longitude of the preferred framing of the standard solid torus neighbourhood of the unknot
+is its longitude: the framing number is `0`. -/
+theorem preferredFramedBoundaryTorus_unknotSolidTorus_longitude :
     (isSolidTorusNeighborhood_unknotSolidTorus.preferredFramedBoundaryTorus h₁ h₂).longitude =
       isSolidTorusNeighborhood_unknotSolidTorus.framedBoundaryTorus.longitude :=
-  -- The two framings are equal and share their torus, so their longitudes agree.
-  eq_of_heq <| congr_arg_heq FramedBoundaryTorus.longitude
-    (preferredFramedBoundaryTorus_unknotSolidTorus h₁ h₂)
+  -- The two framings are equal, and `preferredFramedBoundaryTorus` is reducible to a framing of
+  -- the same torus, so their slope types agree and the heterogeneous equality is an equality.
+  eq_of_heq <| congr_arg_heq FramedBoundaryTorus.longitude <|
+    preferredFramedBoundaryTorus_unknotSolidTorus h₁ h₂
 
 end Framing
 
@@ -235,7 +235,7 @@ theorem unknotZeroDehnFilling_gluing :
 
 /-- **The `0`-surgery on the unknot is `S¹ × S²`**, read in the preferred framing: the Dehn filling
 `TauCeti.unknotZeroDehnFilling` is along the longitude of `TauCeti.unknotSolidTorus`, which is the
-preferred longitude (`TauCeti.longitude_preferredFramedBoundaryTorus_unknotSolidTorus`). -/
+preferred longitude (`TauCeti.preferredFramedBoundaryTorus_unknotSolidTorus_longitude`). -/
 theorem nonempty_dehnFilling_preferredFramedBoundaryTorus_longitude_unknotSolidTorus
     (h₁ : IsZero ((reducedSingularHomologyFunctor (ModuleCat.of ℤ ℤ) 1).obj
       (TopCat.of (sphere (0 : EuclideanSpace ℝ (Fin 4)) 1))))
@@ -244,7 +244,7 @@ theorem nonempty_dehnFilling_preferredFramedBoundaryTorus_longitude_unknotSolidT
     Nonempty (DehnFilling isSolidTorusNeighborhood_unknotSolidTorus
       (isSolidTorusNeighborhood_unknotSolidTorus.preferredFramedBoundaryTorus h₁ h₂).longitude
       (Circle × sphere (0 : EuclideanSpace ℝ (Fin 3)) 1)) := by
-  rw [longitude_preferredFramedBoundaryTorus_unknotSolidTorus]
+  rw [preferredFramedBoundaryTorus_unknotSolidTorus_longitude]
   exact ⟨unknotZeroDehnFilling⟩
 
 end ZeroSurgery

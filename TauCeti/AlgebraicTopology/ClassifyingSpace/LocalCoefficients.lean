@@ -209,6 +209,24 @@ abbrev classifyingSpaceLocalSystemFunctor :
 instance : (classifyingSpaceLocalSystemFunctor k G).Additive :=
   IsQuotientCoveringMap.additive_associatedLocalSystemFunctor _ k
 
+-- With the concrete Milnor source and target, instance search does not recover the bundled
+-- covering from its underlying map. Delegate to the generic construction with that data fixed.
+open _root_.IsQuotientCoveringMap in
+instance : Limits.PreservesFiniteLimits (classifyingSpaceLocalSystemFunctor k G) := by
+  have := instPreservesLimitsOfSizeRepLocalCoefficientSystemAssociatedLocalSystemFunctor
+    (E := TopCat.of (universalGSpace G))
+    (p := TopCat.ofHom ⟨classifyingSpaceProj G, continuous_classifyingSpaceProj G⟩)
+    (isQuotientCoveringMap_classifyingSpaceProj G) k
+  infer_instance
+
+open _root_.IsQuotientCoveringMap in
+instance : Limits.PreservesFiniteColimits (classifyingSpaceLocalSystemFunctor k G) := by
+  have := instPreservesColimitsOfSizeRepLocalCoefficientSystemAssociatedLocalSystemFunctor
+    (E := TopCat.of (universalGSpace G))
+    (p := TopCat.ofHom ⟨classifyingSpaceProj G, continuous_classifyingSpaceProj G⟩)
+    (isQuotientCoveringMap_classifyingSpaceProj G) k
+  infer_instance
+
 variable {X : ShortComplex (Rep.{u} k G)}
 
 /-- A short exact sequence of representations of `G` gives a short exact sequence of the

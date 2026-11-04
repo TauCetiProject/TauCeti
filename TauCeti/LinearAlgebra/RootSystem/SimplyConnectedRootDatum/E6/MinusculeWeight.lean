@@ -132,6 +132,17 @@ theorem exists_e6MinusculeWeight_apply_eq_neg_one (i : Fin 6) :
     ∃ a : Fin 27, e6MinusculeWeight a i = -1 :=
   ⟨e6MinusculeNegOneIndex i, e6MinusculeWeight_e6MinusculeNegOneIndex i⟩
 
+/-- At adjacent nodes `i`, `j`, a minuscule weight has coordinates `0`, `-1` respectively.
+Raising first at `j` and then at `i` gives a nonzero height-two root operator. -/
+theorem exists_e6MinusculeWeight_apply_eq_zero_and_eq_neg_one (i j : Fin 6)
+    (hij : CartanMatrix.E 6 i j = -1) :
+    ∃ b : Fin 27, e6MinusculeWeight b i = 0 ∧ e6MinusculeWeight b j = -1 := by
+  let b : Fin 27 := if i = 1 ∨ (i = 4 ∧ j = 3) then 8 else if i = 2 ∧ j = 0 then 12 else
+    if i = 3 ∧ j = 2 then 10 else if i = 5 ∧ j = 4 then 14 else e6MinusculeNegOneIndex j
+  refine ⟨b, ?_⟩
+  revert hij
+  fin_cases i <;> fin_cases j <;> decide
+
 /-! ## Simple reflections -/
 
 /-- **The permutation of the twenty-seven minuscule weights induced by the `i`-th simple
