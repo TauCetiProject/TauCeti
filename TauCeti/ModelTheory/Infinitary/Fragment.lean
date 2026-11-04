@@ -443,7 +443,7 @@ theorem ofTheory_countable {T : Set L.Sentenceω} (hT : T.Countable) :
 
 /-- The formulas of `A` with exactly `n` bound-variable slots. -/
 def slice (A : Fragment L) (n : ℕ) : Set (L.BoundedFormulaω Empty n) :=
-  {φ | (⟨n, φ⟩ : Σ n, L.BoundedFormulaω Empty n) ∈ A}
+  Sigma.mk n ⁻¹' (A : Set (Σ n, L.BoundedFormulaω Empty n))
 
 /-- Membership in an arity slice is membership of the tagged formula in the fragment. -/
 @[simp]
