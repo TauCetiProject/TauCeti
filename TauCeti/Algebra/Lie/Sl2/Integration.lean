@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.Diagonal.Basic
+import Mathlib.LinearAlgebra.Matrix.SpecialLinearGroup
 import Mathlib.Tactic.Module
 
 /-!
@@ -103,6 +104,25 @@ theorem coe_squareZeroSL2Hom_diagonal (u : Rˣ) :
       (Matrix.SpecialLinearGroup.diag2nUnit (by decide : (0 : Fin 2) ≠ 1) u) : A) =
       1 + ((u : R) - 1) • (E * F) + (((u⁻¹ : Rˣ) : R) - 1) • (F * E) := by
   simp [coe_squareZeroSL2Hom, Matrix.SpecialLinearGroup.diag2nUnit_coe]
+
+/-- Over a field, containment of the upper and lower root families suffices for containment of
+the integrated rank-one group in a subgroup of the units. -/
+theorem squareZeroSL2Hom_mem_of_upper_lower_mem {K : Type*} [Field K] [Algebra K A]
+    (E F : A) (hEE : E * E = 0) (hFF : F * F = 0)
+    (hEFE : E * F * E = E) (hFEF : F * E * F = F) {H : Subgroup Aˣ}
+    (hupper : ∀ t : K, squareZeroSL2Hom E F hEE hFF hEFE hFEF
+      (Matrix.SpecialLinearGroup.transvection (by decide : (0 : Fin 2) ≠ 1) t) ∈ H)
+    (hlower : ∀ t : K, squareZeroSL2Hom E F hEE hFF hEFE hFEF
+      (Matrix.SpecialLinearGroup.transvection (by decide : (1 : Fin 2) ≠ 0) t) ∈ H)
+    (g : SL(2, K)) : squareZeroSL2Hom E F hEE hFF hEFE hFEF g ∈ H := by
+  induction g using Matrix.SL2.transvection_induction with
+  | htransvec a b hab t =>
+    fin_cases a <;> fin_cases b
+    · exact (hab rfl).elim
+    · exact hupper t
+    · exact hlower t
+    · exact (hab rfl).elim
+  | hmul g h hg hh => simpa only [map_mul] using H.mul_mem hg hh
 
 include hEE hFF hEFE hFEF in
 /-- The rank-one Gauss factorization on the open set where `1 + a * b` is a unit.

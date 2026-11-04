@@ -110,7 +110,7 @@ theorem kostantRootSubgroupParam_val_of_sq_eq_zero (i : ι)
 variable {i j : ι} {c : κ}
 
 /-- The integral root operator computes the ambient action on a product. -/
-private theorem coe_kostantRootOperator_mul_apply (k l : ι) (v : M) :
+theorem coe_kostantRootOperator_mul_apply (k l : ι) (v : M) :
     (((kostantRootOperator e h ρ M hM k * kostantRootOperator e h ρ M hM l) v : M) : V) =
       ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e k))
         (ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e l)) (v : V)) := by
@@ -127,7 +127,7 @@ private theorem coe_kostantRootOperator_mul_mul_apply (k l n : ι) (v : M) :
 
 /-- A vanishing product of ambient root vectors makes the product of integral root operators
 vanish. -/
-private theorem kostantRootOperator_mul_eq_zero {k l : ι}
+theorem kostantRootOperator_mul_eq_zero {k l : ι}
     (hkl : ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e k)) *
       ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e l)) = 0) :
     kostantRootOperator e h ρ M hM k * kostantRootOperator e h ρ M hM l = 0 := by
@@ -137,7 +137,7 @@ private theorem kostantRootOperator_mul_eq_zero {k l : ι}
 
 /-- The triple-product identity of ambient root vectors transfers to the integral root
 operators. -/
-private theorem kostantRootOperator_mul_mul_eq {k l : ι}
+theorem kostantRootOperator_mul_mul_eq {k l : ι}
     (hkl : ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e k)) *
         ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e l)) *
         ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e k)) =
@@ -147,6 +147,96 @@ private theorem kostantRootOperator_mul_mul_eq {k l : ι}
   refine LinearMap.ext fun v => Subtype.ext ?_
   rw [coe_kostantRootOperator_mul_mul_apply, coe_kostantRootOperator_apply,
     ← mul_apply_eq_comp, ← mul_apply_eq_comp, hkl]
+
+/-- The represented operators of a square-zero `sl₂` pair satisfy the endpoint triple-product
+relations over the rational ambient module. -/
+theorem rootOperator_endpoint_relations_of_sq_eq_zero
+    (hT : IsSl2Triple (ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (h c)))
+      (ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e i)))
+      (ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e j))))
+    (hsqi : ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e i)) ^ 2 = 0)
+    (hsqj : ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e j)) ^ 2 = 0) :
+    ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e i)) *
+        ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e j)) *
+        ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e i)) =
+      ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e i)) ∧
+    ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e j)) *
+        ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e i)) *
+        ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e j)) =
+      ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e j)) := by
+  let := HasUniqueDiv.of_module_rat (Module.End ℚ V)
+  have h2 : IsSMulRegular (Module.End ℚ V) (2 : ℕ) :=
+    IsSMulRegular.nat_of_hasUniqueDiv (by decide)
+  constructor
+  · exact Sl2.e_mul_f_mul_e_of_mul_self_eq_zero h2
+      (by simpa only [pow_two] using hsqi)
+      (by simpa only [LieRing.of_associative_ring_bracket] using hT.lie_e_f)
+      (by simpa only [LieRing.of_associative_ring_bracket] using hT.lie_h_e_nsmul)
+  · exact Sl2.f_mul_e_mul_f_of_mul_self_eq_zero h2
+      (by simpa only [pow_two] using hsqj)
+      (by simpa only [LieRing.of_associative_ring_bracket] using hT.lie_e_f)
+      (by simpa only [LieRing.of_associative_ring_bracket] using hT.lie_h_f_nsmul)
+
+/-- On a nonzero integral weight vector, the two endpoint products select the weight `1`,
+`0`, or `-1` case of a square-zero `sl₂` pair. -/
+theorem kostantRootOperator_mul_apply_of_isCartanWeightVector
+    {wt : κ → ℤ} {v : M} (hwt : IsCartanWeightVector h ρ wt (v : V))
+    (hv : v ≠ 0)
+    (hT : IsSl2Triple (ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (h c)))
+      (ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e i)))
+      (ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e j))))
+    (hsqi : ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e i)) ^ 2 = 0)
+    (hsqj : ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e j)) ^ 2 = 0) :
+    (wt c = 1 ∧
+      (kostantRootOperator e h ρ M hM i * kostantRootOperator e h ρ M hM j) v = v ∧
+      (kostantRootOperator e h ρ M hM j * kostantRootOperator e h ρ M hM i) v = 0) ∨
+    (wt c = 0 ∧
+      (kostantRootOperator e h ρ M hM i * kostantRootOperator e h ρ M hM j) v = 0 ∧
+      (kostantRootOperator e h ρ M hM j * kostantRootOperator e h ρ M hM i) v = 0) ∨
+    (wt c = -1 ∧
+      (kostantRootOperator e h ρ M hM i * kostantRootOperator e h ρ M hM j) v = 0 ∧
+      (kostantRootOperator e h ρ M hM j * kostantRootOperator e h ρ M hM i) v = v) := by
+  let := HasUniqueDiv.of_module_rat V
+  obtain ⟨hEFE, hFEF⟩ := rootOperator_endpoint_relations_of_sq_eq_zero e h ρ hT hsqi hsqj
+  have hw := (isCartanWeightVector_iff h ρ).1 hwt c
+  rcases Sl2.mul_apply_of_eq_zsmul
+      (by simpa only [pow_two] using hsqi) (by simpa only [pow_two] using hsqj)
+      hEFE hFEF
+      (by simpa only [LieRing.of_associative_ring_bracket] using hT.lie_e_f)
+      (by simpa only [Int.cast_smul_eq_zsmul] using hw)
+      (by simpa only [ne_eq, ZeroMemClass.coe_eq_zero] using hv) with
+    ⟨hm, hP, hQ⟩ | ⟨hm, hP, hQ⟩ | ⟨hm, hP, hQ⟩
+  · exact Or.inl ⟨hm, Subtype.ext (by simpa only
+      [mul_apply_eq_comp, coe_kostantRootOperator_apply] using hP),
+      Subtype.ext (by simpa only [mul_apply_eq_comp,
+        coe_kostantRootOperator_apply, ZeroMemClass.coe_zero] using hQ)⟩
+  · exact Or.inr (Or.inl ⟨hm, Subtype.ext (by simpa only
+      [mul_apply_eq_comp, coe_kostantRootOperator_apply, ZeroMemClass.coe_zero] using hP),
+      Subtype.ext (by simpa only [mul_apply_eq_comp,
+        coe_kostantRootOperator_apply, ZeroMemClass.coe_zero] using hQ)⟩)
+  · exact Or.inr (Or.inr ⟨hm, Subtype.ext (by simpa only
+      [mul_apply_eq_comp, coe_kostantRootOperator_apply, ZeroMemClass.coe_zero] using hP),
+      Subtype.ext (by simpa only
+        [mul_apply_eq_comp, coe_kostantRootOperator_apply] using hQ)⟩)
+
+/-- The two integral endpoint products act on a weight vector by the indicators of weights
+`1` and `-1`, respectively. -/
+theorem kostantRootOperator_endpoint_projections_apply
+    {wt : κ → ℤ} {v : M} (hwt : IsCartanWeightVector h ρ wt (v : V))
+    (hT : IsSl2Triple (ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (h c)))
+      (ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e i)))
+      (ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e j))))
+    (hsqi : ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e i)) ^ 2 = 0)
+    (hsqj : ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e j)) ^ 2 = 0) :
+    (kostantRootOperator e h ρ M hM i * kostantRootOperator e h ρ M hM j) v =
+        (if wt c = 1 then v else 0) ∧
+      (kostantRootOperator e h ρ M hM j * kostantRootOperator e h ρ M hM i) v =
+        (if wt c = -1 then v else 0) := by
+  by_cases hv : v = 0
+  · simp [hv]
+  rcases kostantRootOperator_mul_apply_of_isCartanWeightVector e h ρ M hM hwt hv hT
+      hsqi hsqj with ⟨hm, hP, hQ⟩ | ⟨hm, hP, hQ⟩ | ⟨hm, hP, hQ⟩ <;>
+    simp [hm, hP, hQ]
 
 end SquareZero
 
@@ -170,37 +260,11 @@ theorem kostantCoordinateCocharacter_mem_kostantElementarySubgroup_of_sq_eq_zero
     (A : CommAlgCat.{w} ℤ) (u : Aˣ) :
     kostantCoordinateCocharacter M b wt A c u ∈
       kostantElementarySubgroup e h ρ M hM hnil A := by
-  let := HasUniqueDiv.of_module_rat V
-  let := HasUniqueDiv.of_module_rat (Module.End ℚ V)
   have hEE : ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e i)) *
       ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e i)) = 0 := by rw [← pow_two]; exact hsqi
   have hFF : ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e j)) *
       ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e j)) = 0 := by rw [← pow_two]; exact hsqj
-  have hef : ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e i)) *
-        ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e j)) -
-      ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e j)) *
-        ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e i)) =
-      ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (h c)) := by
-    have hb := hT.lie_e_f
-    rwa [LieRing.of_associative_ring_bracket] at hb
-  have hhe : ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (h c)) *
-        ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e i)) -
-      ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e i)) *
-        ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (h c)) =
-      2 • ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e i)) := by
-    have hb := hT.lie_h_e_nsmul
-    rwa [LieRing.of_associative_ring_bracket] at hb
-  have hhf : ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (h c)) *
-        ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e j)) -
-      ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e j)) *
-        ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (h c)) =
-      -(2 • ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e j))) := by
-    have hb := hT.lie_h_f_nsmul
-    rwa [LieRing.of_associative_ring_bracket] at hb
-  have h2 : IsSMulRegular (Module.End ℚ V) (2 : ℕ) :=
-    IsSMulRegular.nat_of_hasUniqueDiv (by decide)
-  have hEFE := Sl2.e_mul_f_mul_e_of_mul_self_eq_zero h2 hEE hef hhe
-  have hFEF := Sl2.f_mul_e_mul_f_of_mul_self_eq_zero h2 hFF hef hhf
+  obtain ⟨hEFE, hFEF⟩ := rootOperator_endpoint_relations_of_sq_eq_zero e h ρ hT hsqi hsqj
   -- the integral root operators and their base changes
   have hXX := kostantRootOperator_mul_eq_zero e h ρ M hM hEE
   have hYY := kostantRootOperator_mul_eq_zero e h ρ M hM hFF
@@ -240,41 +304,25 @@ theorem kostantCoordinateCocharacter_mem_kostantElementarySubgroup_of_sq_eq_zero
   have htorus : (kostantCoordinateCocharacter M b wt A c u).val =
       1 + ((u : A) - 1) • (E' * F') + ((((u⁻¹ : Aˣ) : A)) - 1) • (F' * E') := by
     refine (b.baseChange A).ext fun x => ?_
-    have hbx0 : ((b x : M) : V) ≠ 0 := by
-      simpa only [ne_eq, ZeroMemClass.coe_eq_zero] using b.ne_zero x
-    have hPcoe : (((X * Y) (b x) : M) : V) =
-        (ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e i)) *
-          ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e j))) ((b x : M) : V) := by
-      rw [hXdef, hYdef, coe_kostantRootOperator_mul_apply, mul_apply_eq_comp]
-    have hQcoe : (((Y * X) (b x) : M) : V) =
-        (ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e j)) *
-          ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e i))) ((b x : M) : V) := by
-      rw [hXdef, hYdef, coe_kostantRootOperator_mul_apply, mul_apply_eq_comp]
     have hEF : E' * F' = (X * Y).baseChange (A : Type w) := by
       rw [hE'def, hF'def, LinearMap.baseChange_mul]
     have hFE : F' * E' = (Y * X).baseChange (A : Type w) := by
       rw [hE'def, hF'def, LinearMap.baseChange_mul]
-    have hwtx := (isCartanWeightVector_iff h ρ).1 (hwt x) c
-    rcases Sl2.mul_apply_of_eq_zsmul hEE hFF hEFE hFEF hef
-        (by simpa only [Int.cast_smul_eq_zsmul] using hwtx) hbx0 with
-      ⟨hm, hP, hQ⟩ | ⟨hm, hP, hQ⟩ | ⟨hm, hP, hQ⟩
-    · have hPM : (X * Y) (b x) = b x := Subtype.ext (by rw [hPcoe, hP])
-      have hQM : (Y * X) (b x) = 0 := Subtype.ext (by rw [hQcoe, hQ, ZeroMemClass.coe_zero])
-      rw [Module.Basis.baseChange_apply, kostantCoordinateCocharacter_tmul_basis, hm, hEF, hFE]
+    rcases kostantRootOperator_mul_apply_of_isCartanWeightVector e h ρ M hM (hwt x)
+        (b.ne_zero x) hT hsqi hsqj with
+      ⟨hm, hPM, hQM⟩ | ⟨hm, hPM, hQM⟩ | ⟨hm, hPM, hQM⟩
+    all_goals rw [← hXdef, ← hYdef] at hPM hQM
+    · rw [Module.Basis.baseChange_apply, kostantCoordinateCocharacter_tmul_basis, hm, hEF, hFE]
       simp only [LinearMap.add_apply, one_apply_eq_self, LinearMap.smul_apply,
         LinearMap.baseChange_tmul, hPM, hQM, tmul_zero, smul_zero, add_zero, smul_tmul',
         smul_eq_mul, mul_one, zpow_one]
       rw [← add_tmul]
       ring_nf
-    · have hPM : (X * Y) (b x) = 0 := Subtype.ext (by rw [hPcoe, hP, ZeroMemClass.coe_zero])
-      have hQM : (Y * X) (b x) = 0 := Subtype.ext (by rw [hQcoe, hQ, ZeroMemClass.coe_zero])
-      rw [Module.Basis.baseChange_apply, kostantCoordinateCocharacter_tmul_basis, hm, hEF, hFE]
+    · rw [Module.Basis.baseChange_apply, kostantCoordinateCocharacter_tmul_basis, hm, hEF, hFE]
       simp only [LinearMap.add_apply, one_apply_eq_self, LinearMap.smul_apply,
         LinearMap.baseChange_tmul, hPM, hQM, tmul_zero, smul_zero, add_zero, zpow_zero,
         Units.val_one, mul_one]
-    · have hPM : (X * Y) (b x) = 0 := Subtype.ext (by rw [hPcoe, hP, ZeroMemClass.coe_zero])
-      have hQM : (Y * X) (b x) = b x := Subtype.ext (by rw [hQcoe, hQ])
-      rw [Module.Basis.baseChange_apply, kostantCoordinateCocharacter_tmul_basis, hm, hEF, hFE]
+    · rw [Module.Basis.baseChange_apply, kostantCoordinateCocharacter_tmul_basis, hm, hEF, hFE]
       simp only [LinearMap.add_apply, one_apply_eq_self, LinearMap.smul_apply,
         LinearMap.baseChange_tmul, hPM, hQM, tmul_zero, smul_zero, add_zero, smul_tmul',
         smul_eq_mul, mul_one, zpow_neg, zpow_one]

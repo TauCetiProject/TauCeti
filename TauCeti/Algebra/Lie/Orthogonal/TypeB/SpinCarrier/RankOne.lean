@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Algebra.Lie.Orthogonal.TypeB.SpinCarrier.IntegralMatrix
 public import TauCeti.Algebra.Lie.Sl2.Integration
-import TauCeti.Algebra.Lie.Sl2.SquareZero
 import Mathlib.LinearAlgebra.Matrix.Integer
 
 /-!
@@ -48,149 +47,9 @@ namespace TauCeti.TypeBSpinCarrier
 
 open TauCeti.UniversalEnvelopingAlgebra
 
-attribute [local instance 100] LieRing.ofAssociativeRing
-attribute [local instance high] Algebra.toModule
-
 noncomputable section
 
 variable (n : ℕ)
-
-private abbrev rootAction (j : Fin (n + 1) ⊕ Fin (n + 1)) :=
-  rep n (_root_.UniversalEnvelopingAlgebra.ι ℚ (TauCeti.typeBSimpleRootGeneratorFamily j))
-
--- Compute the endpoint identities over ℚ, then restrict to the invariant lattice before
--- reducing coefficients. In particular no division by two occurs in the value ring.
-private theorem rootAction_endpoint_relations (i : Fin (n + 1)) :
-    rootAction n (.inl i) * rootAction n (.inr i) * rootAction n (.inl i) =
-        rootAction n (.inl i) ∧
-      rootAction n (.inr i) * rootAction n (.inl i) * rootAction n (.inr i) =
-        rootAction n (.inr i) := by
-  let := HasUniqueDiv.of_module_rat
-    (Module.End ℚ (ExteriorAlgebra ℚ (polarization n).W))
-  have t := isSl2Triple_rep_rootGenerator n i
-  constructor
-  · exact Sl2.e_mul_f_mul_e_of_mul_self_eq_zero
-      (IsSMulRegular.nat_of_hasUniqueDiv (by decide : (2 : ℕ) ≠ 0))
-      (by simpa only [pow_two] using pow_two_rep_rootGenerator_eq_zero n (.inl i))
-      (by simpa only [LieRing.of_associative_ring_bracket] using t.lie_e_f)
-      (by simpa only [LieRing.of_associative_ring_bracket] using t.lie_h_e_nsmul)
-  · exact Sl2.f_mul_e_mul_f_of_mul_self_eq_zero
-      (IsSMulRegular.nat_of_hasUniqueDiv (by decide : (2 : ℕ) ≠ 0))
-      (by simpa only [pow_two] using pow_two_rep_rootGenerator_eq_zero n (.inr i))
-      (by simpa only [LieRing.of_associative_ring_bracket] using t.lie_e_f)
-      (by simpa only [LieRing.of_associative_ring_bracket] using t.lie_h_f_nsmul)
-
-private abbrev rootOp (j : Fin (n + 1) ⊕ Fin (n + 1)) :=
-  kostantRootOperator
-    (TauCeti.typeBSimpleRootGeneratorFamily (K := ℚ))
-    (TauCeti.typeBSimpleCorootGenerator (K := ℚ)) (rep n) (lattice n).toAddSubgroup
-    (rep_kostantForm_mem_lattice n) j
-
-private theorem rootOp_mul_self (j : Fin (n + 1) ⊕ Fin (n + 1)) :
-    rootOp n j * rootOp n j = 0 := by
-  have h := pow_two_rep_rootGenerator_eq_zero n j
-  rw [pow_two] at h
-  apply LinearMap.ext
-  intro v
-  apply Subtype.ext
-  simpa only [rootOp, mul_apply_eq_comp, coe_kostantRootOperator_apply,
-    LinearMap.zero_apply, ZeroMemClass.coe_zero] using congrArg (fun f ↦ f (v : _)) h
-
-private theorem rootIntMatrix_mul_self (j : Fin (n + 1) ⊕ Fin (n + 1)) :
-    rootIntMatrix n j * rootIntMatrix n j = 0 := by
-  simpa only [rootIntMatrix_eq_toMatrix, LinearMap.toMatrix_mul, rootOp,
-    map_zero] using
-    congrArg (LinearMap.toMatrix (latticeBasis n) (latticeBasis n)) (rootOp_mul_self n j)
-
-private theorem rootOp_inl_mul_inr_mul_inl (i : Fin (n + 1)) :
-    rootOp n (.inl i) * rootOp n (.inr i) * rootOp n (.inl i) = rootOp n (.inl i) := by
-  apply LinearMap.ext
-  intro v
-  apply Subtype.ext
-  simpa only [rootOp, rootAction, mul_apply_eq_comp, coe_kostantRootOperator_apply] using
-    congrArg (fun f ↦ f (v : ExteriorAlgebra ℚ (polarization n).W))
-      (rootAction_endpoint_relations n i).1
-
-private theorem rootOp_inr_mul_inl_mul_inr (i : Fin (n + 1)) :
-    rootOp n (.inr i) * rootOp n (.inl i) * rootOp n (.inr i) = rootOp n (.inr i) := by
-  apply LinearMap.ext
-  intro v
-  apply Subtype.ext
-  simpa only [rootOp, rootAction, mul_apply_eq_comp, coe_kostantRootOperator_apply] using
-    congrArg (fun f ↦ f (v : ExteriorAlgebra ℚ (polarization n).W))
-      (rootAction_endpoint_relations n i).2
-
-private theorem rootIntMatrix_inl_mul_inr_mul_inl (i : Fin (n + 1)) :
-    rootIntMatrix n (.inl i) * rootIntMatrix n (.inr i) * rootIntMatrix n (.inl i) =
-      rootIntMatrix n (.inl i) := by
-  simpa only [rootIntMatrix_eq_toMatrix, LinearMap.toMatrix_mul, rootOp] using
-    congrArg (LinearMap.toMatrix (latticeBasis n) (latticeBasis n))
-      (rootOp_inl_mul_inr_mul_inl n i)
-
-private theorem rootIntMatrix_inr_mul_inl_mul_inr (i : Fin (n + 1)) :
-    rootIntMatrix n (.inr i) * rootIntMatrix n (.inl i) * rootIntMatrix n (.inr i) =
-      rootIntMatrix n (.inr i) := by
-  simpa only [rootIntMatrix_eq_toMatrix, LinearMap.toMatrix_mul, rootOp] using
-    congrArg (LinearMap.toMatrix (latticeBasis n) (latticeBasis n))
-      (rootOp_inr_mul_inl_mul_inr n i)
-
-private theorem rootAction_endpoint_projections_apply (i : Fin (n + 1))
-    (a : Fin (dimension n)) :
-    (rootAction n (.inl i) * rootAction n (.inr i)) (latticeBasis n a :
-        ExteriorAlgebra ℚ (polarization n).W) =
-        (if basisWeight n a i = 1 then (latticeBasis n a :
-          ExteriorAlgebra ℚ (polarization n).W) else 0) ∧
-      (rootAction n (.inr i) * rootAction n (.inl i)) (latticeBasis n a :
-        ExteriorAlgebra ℚ (polarization n).W) =
-        (if basisWeight n a i = -1 then (latticeBasis n a :
-          ExteriorAlgebra ℚ (polarization n).W) else 0) := by
-  let := HasUniqueDiv.of_module_rat (ExteriorAlgebra ℚ (polarization n).W)
-  have t := isSl2Triple_rep_rootGenerator n i
-  have hw := (isCartanWeightVector_iff
-    (TauCeti.typeBSimpleCorootGenerator (K := ℚ)) (rep n)).1
-      (isCartanWeightVector_latticeBasis n a) i
-  have hv : ((latticeBasis n a : (lattice n).toAddSubgroup) :
-      ExteriorAlgebra ℚ (polarization n).W) ≠ 0 := by
-    simpa only [ne_eq, ZeroMemClass.coe_eq_zero] using (latticeBasis n).ne_zero a
-  rcases Sl2.mul_apply_of_eq_zsmul
-      (by simpa only [pow_two] using pow_two_rep_rootGenerator_eq_zero n (.inl i))
-      (by simpa only [pow_two] using pow_two_rep_rootGenerator_eq_zero n (.inr i))
-      (rootAction_endpoint_relations n i).1 (rootAction_endpoint_relations n i).2
-      (by simpa only [LieRing.of_associative_ring_bracket] using t.lie_e_f)
-      (by simpa only [Int.cast_smul_eq_zsmul] using hw) hv with
-    ⟨hm, hP, hQ⟩ | ⟨hm, hP, hQ⟩ | ⟨hm, hP, hQ⟩
-  all_goals
-    simp only [hm, Int.reduceEq, ↓reduceIte]
-    exact ⟨hP, hQ⟩
-
-private theorem rootOp_endpoint_projections_apply (i : Fin (n + 1))
-    (a : Fin (dimension n)) :
-    (rootOp n (.inl i) * rootOp n (.inr i)) (latticeBasis n a) =
-        (if basisWeight n a i = 1 then latticeBasis n a else 0) ∧
-      (rootOp n (.inr i) * rootOp n (.inl i)) (latticeBasis n a) =
-        (if basisWeight n a i = -1 then latticeBasis n a else 0) := by
-  constructor <;> apply Subtype.ext
-  · simpa only [rootOp, rootAction, mul_apply_eq_comp, coe_kostantRootOperator_apply,
-      apply_ite, ZeroMemClass.coe_zero] using (rootAction_endpoint_projections_apply n i a).1
-  · simpa only [rootOp, rootAction, mul_apply_eq_comp, coe_kostantRootOperator_apply,
-      apply_ite, ZeroMemClass.coe_zero] using (rootAction_endpoint_projections_apply n i a).2
-
-private theorem rootIntMatrix_endpoint_projections (i : Fin (n + 1)) :
-    rootIntMatrix n (.inl i) * rootIntMatrix n (.inr i) =
-        Matrix.diagonal (fun a ↦ if basisWeight n a i = 1 then 1 else 0) ∧
-      rootIntMatrix n (.inr i) * rootIntMatrix n (.inl i) =
-        Matrix.diagonal (fun a ↦ if basisWeight n a i = -1 then 1 else 0) := by
-  constructor
-  all_goals
-    simp only [rootIntMatrix_eq_toMatrix, ← LinearMap.toMatrix_mul]
-    ext a b
-    simp only [LinearMap.toMatrix_apply, Matrix.diagonal_apply]
-    have hP := (rootOp_endpoint_projections_apply n i b).1
-    have hQ := (rootOp_endpoint_projections_apply n i b).2
-    simp only [rootOp] at hP hQ
-    simp only [hP, hQ, apply_ite, map_zero, Module.Basis.repr_self]
-    clear hP hQ
-    split_ifs <;> simp_all
 
 variable (A : Type*) [CommRing A] (i : Fin (n + 1))
 
@@ -253,7 +112,7 @@ theorem rankOneMatrix_diag2nUnit (u : Aˣ) :
   apply Units.ext
   rw [rankOneMatrix, Sl2.coe_squareZeroSL2Hom_diagonal,
     ← Matrix.map_mul_intCast, ← Matrix.map_mul_intCast,
-    (rootIntMatrix_endpoint_projections n i).1, (rootIntMatrix_endpoint_projections n i).2,
+    rootIntMatrix_inl_mul_inr, rootIntMatrix_inr_mul_inl,
     coe_weightTorusPoints, kostantTorusMatrix_apply, diagGL_coe]
   ext a b
   simp only [Matrix.diagonal_apply, Matrix.add_apply, Matrix.smul_apply, smul_eq_mul,
@@ -274,14 +133,13 @@ private theorem rankOneMatrix_mem_of_root_mem {H : Subgroup (GL (Fin (dimension 
     (hinr : ∀ t : K, (rootSubgroupPoints n (.inr i) K (Multiplicative.ofAdd t) :
       GL (Fin (dimension n)) K) ∈ H)
     (g : SL(2, K)) : rankOneMatrix n K i g ∈ H := by
-  induction g using Matrix.SL2.transvection_induction with
-  | htransvec a b hab t =>
-    fin_cases a <;> fin_cases b
-    · exact (hab rfl).elim
-    · rw [rankOneMatrix_upper_transvection]; exact hinl t
-    · rw [rankOneMatrix_lower_transvection]; exact hinr t
-    · exact (hab rfl).elim
-  | hmul g h hg hh => simpa only [map_mul] using H.mul_mem hg hh
+  apply Sl2.squareZeroSL2Hom_mem_of_upper_lower_mem
+  · intro t
+    rw [← rankOneMatrix, rankOneMatrix_upper_transvection]
+    exact hinl t
+  · intro t
+    rw [← rankOneMatrix, rankOneMatrix_lower_transvection]
+    exact hinr t
 
 /-- Over a field, the rank-one action lands in the type-B spin carrier. -/
 def rankOnePoints : SL(2, K) →* points n K :=

@@ -60,34 +60,24 @@ private noncomputable abbrev rootOp (k : Fin (n + 1) ⊕ Fin (n + 1)) :=
 private noncomputable abbrev rootAction (k : Fin (n + 1) ⊕ Fin (n + 1)) :=
   rep n (_root_.UniversalEnvelopingAlgebra.ι ℚ (TauCeti.typeBSimpleRootGeneratorFamily k))
 
-private theorem operator_relations (k l : Fin (n + 1) ⊕ Fin (n + 1))
+private theorem operator_lie_lie_eq_zero (k l : Fin (n + 1) ⊕ Fin (n + 1))
     (hkl : ⁅TauCeti.typeBSimpleRootGeneratorFamily (K := ℚ) k,
       ⁅TauCeti.typeBSimpleRootGeneratorFamily (K := ℚ) k,
         TauCeti.typeBSimpleRootGeneratorFamily (K := ℚ) l⁆⁆ = 0) :
-    rootOp k * rootOp k = 0 ∧ rootOp l * rootOp l = 0 ∧
-      ⁅rootOp k, ⁅rootOp k, rootOp l⁆⁆ = 0 := by
-  -- Restriction to the invariant lattice preserves products and brackets, since its inclusion
-  -- into the rational spin module is injective.
-  have hsq (a : Fin (n + 1) ⊕ Fin (n + 1)) : rootOp a * rootOp a = 0 := by
-    apply LinearMap.ext
-    intro v
-    apply Subtype.ext
-    simpa only [pow_two, mul_apply_eq_comp, coe_kostantRootOperator_apply,
-      LinearMap.zero_apply, ZeroMemClass.coe_zero] using
-      LinearMap.congr_fun (pow_two_rep_rootGenerator_eq_zero n a) (v : _)
+    ⁅rootOp k, ⁅rootOp k, rootOp l⁆⁆ = 0 := by
+  -- Restriction to the invariant lattice preserves brackets, since its inclusion into the
+  -- rational spin module is injective.
   have hlie : ⁅rootAction k, ⁅rootAction k, rootAction l⁆⁆ = 0 := by
     have h := congrArg ((rep n).toLieHom.comp
       (_root_.UniversalEnvelopingAlgebra.ι ℚ)) hkl
     simpa only [LieHom.map_lie, map_zero, LieHom.comp_apply, AlgHom.toLieHom_apply] using h
-  have hop : ⁅rootOp k, ⁅rootOp k, rootOp l⁆⁆ = 0 := by
-    apply LinearMap.ext
-    intro v
-    apply Subtype.ext
-    simpa only [Ring.lie_def, LinearMap.sub_apply, mul_apply_eq_comp,
-      AddSubgroup.coe_sub, coe_kostantRootOperator_apply,
-      LinearMap.zero_apply, ZeroMemClass.coe_zero] using
-      LinearMap.congr_fun hlie (v : _)
-  exact ⟨hsq k, hsq l, hop⟩
+  apply LinearMap.ext
+  intro v
+  apply Subtype.ext
+  simpa only [Ring.lie_def, LinearMap.sub_apply, mul_apply_eq_comp,
+    AddSubgroup.coe_sub, coe_kostantRootOperator_apply,
+    LinearMap.zero_apply, ZeroMemClass.coe_zero] using
+    LinearMap.congr_fun hlie (v : _)
 
 private theorem integral_relations (k l : Fin (n + 1) ⊕ Fin (n + 1))
     (hkl : ⁅TauCeti.typeBSimpleRootGeneratorFamily (K := ℚ) k,
@@ -96,18 +86,15 @@ private theorem integral_relations (k l : Fin (n + 1) ⊕ Fin (n + 1))
     rootIntMatrix n k * rootIntMatrix n k = 0 ∧
       rootIntMatrix n l * rootIntMatrix n l = 0 ∧
       rootIntMatrix n k * rootIntMatrix n l * rootIntMatrix n k = 0 := by
-  obtain ⟨hk, hl, hbracket⟩ := operator_relations k l hkl
-  -- The basis matrix map preserves the integral operator products and brackets.
-  have hsq (a : Fin (n + 1) ⊕ Fin (n + 1)) (ha : rootOp a * rootOp a = 0) :
-      rootIntMatrix n a * rootIntMatrix n a = 0 := by
-    have h := congrArg (LinearMap.toMatrix (latticeBasis n) (latticeBasis n)) ha
-    simpa only [LinearMap.toMatrix_mul, map_zero, rootIntMatrix_eq_toMatrix] using h
+  have hbracket := operator_lie_lie_eq_zero k l hkl
+  -- The basis matrix map preserves the integral operator brackets.
   have hmat : ⁅rootIntMatrix n k, ⁅rootIntMatrix n k, rootIntMatrix n l⁆⁆ = 0 := by
     have h := congrArg (LinearMap.toMatrix (latticeBasis n) (latticeBasis n)) hbracket
     simp only [Ring.lie_def, map_sub, LinearMap.toMatrix_mul, map_zero] at h
     simpa only [rootIntMatrix_eq_toMatrix, Ring.lie_def] using h
-  exact ⟨hsq k hk, hsq l hl,
-    Matrix.mul_mul_eq_zero_of_mul_self_eq_zero_of_lie_lie_eq_zero _ _ (hsq k hk) hmat⟩
+  exact ⟨rootIntMatrix_mul_self n k, rootIntMatrix_mul_self n l,
+    Matrix.mul_mul_eq_zero_of_mul_self_eq_zero_of_lie_lie_eq_zero _ _
+      (rootIntMatrix_mul_self n k) hmat⟩
 
 private theorem commutator_matrix (k l : Fin (n + 1) ⊕ Fin (n + 1))
     (hkl : ⁅TauCeti.typeBSimpleRootGeneratorFamily (K := ℚ) k,
