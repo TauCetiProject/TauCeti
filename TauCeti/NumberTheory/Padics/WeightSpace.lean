@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.NumberTheory.Padics.AddChar
+public import Mathlib.RingTheory.RootsOfUnity.PrimitiveRoots
 public import TauCeti.NumberTheory.Padics.Basic
 public import TauCeti.NumberTheory.Padics.UnitsDecomposition.Logarithm
 import Mathlib.Analysis.Normed.Algebra.Ultra
@@ -61,6 +62,12 @@ division ring over `ℚ_p`, such as the field `ℂ_p`, this holds with no furthe
   part of a weight is the binomial character `s ↦ (1 + T_κ) ^ s`.
 * `TauCeti.WeightSpace.ofCoord_finiteChar_coord`, `TauCeti.WeightSpace.finiteChar_ofCoord`,
   `TauCeti.WeightSpace.coord_ofCoord`: the two constructions are mutually inverse.
+* `TauCeti.WeightSpace.coord_mul`: the coordinate of a product of weights.
+* `TauCeti.WeightSpace.unitsPrincipal_le_ker_iff`: `κ` is trivial on `1 + q pʲ ℤ_p` exactly when
+  `κ(γ) ^ (p ^ j) = 1`.
+* `TauCeti.WeightSpace.coord_eq_zero_iff`: `T_κ = 0` exactly when `κ` is trivial on `1 + qℤ_p`.
+* `TauCeti.WeightSpace.isPrimitiveRoot_apply_padicUnitsGenerator`: for exact conductor
+  `p ^ (k + j + 1)`, `κ(γ)` is a primitive `p ^ (j + 1)`-th root of unity.
 
 ## References
 
@@ -145,7 +152,41 @@ theorem apply_eq_finiteChar_mul_principalChar (κ : WeightSpace p R) (x : ℤ_[p
   rw [finiteChar_apply, principalChar_apply, ofAdd_toAdd, ← Units.val_mul, ← map_mul,
     ← padicIntUnitsEquivZModUnitsProd_symm_apply, ContinuousMulEquiv.symm_apply_apply]
 
+/-- A weight `κ` is trivial on `1 + q pʲ ℤ_p` exactly when `κ(γ) ^ (p ^ j) = 1`, where
+`γ = exp q`: the power `γ ^ (p ^ j)` topologically generates `1 + q pʲ ℤ_p`. -/
+theorem unitsPrincipal_le_ker_iff [T2Space R] (κ : WeightSpace p R) (j : ℕ) :
+    unitsPrincipal p (padicUnitsDepth p + j) ≤ κ.toMonoidHom.ker ↔
+      κ (padicUnitsGenerator p) ^ p ^ j = 1 := by
+  have hk := padicUnitsDepth_pos p
+  have hmem := pow_pow_mem_unitsPrincipal hk padicUnitsGenerator_mem_unitsPrincipal j
+  refine ⟨fun h ↦ by simpa using h hmem, fun h ↦ ?_⟩
+  rw [← topologicalClosure_zpowers_eq_unitsPrincipal (by omega)
+    (fun h ↦ (two_le_padicUnitsDepth h).trans (Nat.le_add_right _ _)) hmem
+    (pow_pow_notMem_unitsPrincipal hk two_le_padicUnitsDepth padicUnitsGenerator_mem_unitsPrincipal
+      padicUnitsGenerator_notMem_unitsPrincipal_succ j)]
+  refine Subgroup.topologicalClosure_minimal _ ?_ (isClosed_singleton.preimage κ.continuous)
+  rw [Subgroup.zpowers_le, MonoidHom.mem_ker]
+  simpa using h
+
 end Monoid
+
+section CommMonoid
+
+variable {R : Type*} [CommMonoid R] [TopologicalSpace R] [T2Space R]
+
+/-- If a weight `κ` has exact conductor `p ^ (k + j + 1)`, where `q = p ^ k`, that is, `κ` is
+trivial on `1 + p ^ (k + j + 1) ℤ_p` but not on `1 + p ^ (k + j) ℤ_p`, then `κ(γ)` is a primitive
+`p ^ (j + 1)`-th root of unity. -/
+theorem isPrimitiveRoot_apply_padicUnitsGenerator (κ : WeightSpace p R) {j : ℕ}
+    (h : unitsPrincipal p (padicUnitsDepth p + j + 1) ≤ κ.toMonoidHom.ker)
+    (h' : ¬unitsPrincipal p (padicUnitsDepth p + j) ≤ κ.toMonoidHom.ker) :
+    IsPrimitiveRoot (κ (padicUnitsGenerator p) : R) (p ^ (j + 1)) := by
+  rw [IsPrimitiveRoot.coe_units_iff]
+  rw [unitsPrincipal_le_ker_iff] at h'
+  rw [add_assoc, unitsPrincipal_le_ker_iff] at h
+  exact orderOf_eq_prime_pow h' h ▸ IsPrimitiveRoot.orderOf _
+
+end CommMonoid
 
 section Ring
 
@@ -163,7 +204,24 @@ theorem principalChar_one_eq_one_add_coord (κ : WeightSpace p R) :
     κ.principalChar 1 = 1 + κ.coord := by
   rw [principalChar_one, coord_def, add_sub_cancel]
 
+/-- The coordinate of a weight vanishes exactly when the weight is trivial on `1 + qℤ_p`, that is,
+when its conductor divides `q`. -/
+theorem coord_eq_zero_iff [T2Space R] (κ : WeightSpace p R) :
+    κ.coord = 0 ↔ unitsPrincipal p (padicUnitsDepth p) ≤ κ.toMonoidHom.ker := by
+  simpa [coord_def, sub_eq_zero, Units.val_eq_one] using (unitsPrincipal_le_ker_iff κ 0).symm
+
+/-- The trivial weight has coordinate zero. -/
+@[simp]
+theorem coord_one : (1 : WeightSpace p R).coord = 0 := by
+  simp [coord_def]
+
 end Ring
+
+/-- The coordinates of weights multiply after adding one: `1 + T_{κκ'} = (1 + T_κ)(1 + T_κ')`. -/
+theorem coord_mul {R : Type*} [CommRing R] [TopologicalSpace R] [ContinuousMul R]
+    (κ κ' : WeightSpace p R) : (κ * κ').coord = κ.coord * κ'.coord + κ.coord + κ'.coord := by
+  simp only [coord_def, ContinuousMonoidHom.mul_apply, Units.val_mul]
+  ring
 
 section Normed
 
@@ -215,6 +273,11 @@ variable {K}
 theorem coe_inclusion_apply (x : ℤ_[p]ˣ) :
     (inclusion K x : K) = padicIntAlgebraMap p K x :=
   (rfl)
+
+/-- Distinct units of `ℤ_p` give distinct values of the weight `x ↦ x` in a nontrivial `K`. -/
+theorem inclusion_injective [Nontrivial K] : Function.Injective (inclusion (p := p) K) :=
+  fun x y hxy ↦ Units.ext <| padicIntAlgebraMap_injective (K := K) <| by
+    rw [← coe_inclusion_apply, ← coe_inclusion_apply, hxy]
 
 end Inclusion
 
