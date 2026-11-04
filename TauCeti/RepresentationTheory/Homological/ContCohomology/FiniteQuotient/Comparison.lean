@@ -118,11 +118,11 @@ private noncomputable def finiteQuotientSystemIsoContinuous
     apply (cancel_mono (F.map (eqToHom (continuousFiniteQuotientSystem_obj G M n V.unop)))).1
     simp only [Iso.trans_hom, Iso.symm_hom, Functor.mapIso_inv, eqToIso.hom, eqToIso.inv,
       F, Category.assoc, Functor.comp_map, ← Functor.map_comp, eqToHom_trans_assoc,
-      eqToHom_trans, eqToHom_refl, Category.id_comp]
-    have ht := emap f
-    rw [← Category.assoc] at ht
-    rw [← Category.assoc, ← Category.assoc, ht, continuousFiniteQuotientSystem_map]
+      eqToHom_trans, eqToHom_refl, Category.id_comp, reassoc_of% (emap f)]
+    rw [continuousFiniteQuotientSystem_map]
     ext x
+    -- Both forgetful functors preserve the underlying function, and toAddCommGrpIso.hom
+    -- acts by the original additive equivalence, so this is precisely he in reverse.
     exact (he (leOfHom f.unop) x).symm)
 
 /-- The explicit and canonical degree-zero systems are naturally isomorphic after forgetting
