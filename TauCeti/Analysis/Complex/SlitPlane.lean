@@ -88,6 +88,14 @@ theorem div_mem_slitPlane_of_re_pos {z₁ z₂ : ℂ} (h₁ : 0 < z₁.re) (h₂
     z₂ / z₁ ∈ slitPlane :=
   div_mem_slitPlane_of_re_conj_mul_pos (a := 1) (by simpa) (by simpa)
 
+/-- The product of two points in the open right half-plane lies in the slit plane. -/
+theorem mul_mem_slitPlane_of_re_pos {z₁ z₂ : ℂ} (h₁ : 0 < z₁.re) (h₂ : 0 < z₂.re) :
+    z₁ * z₂ ∈ slitPlane := by
+  have hi : 0 < (z₂⁻¹).re := by
+    rw [inv_re]
+    exact div_pos h₂ (normSq_pos.mpr (by rintro rfl; simp at h₂))
+  simpa using div_mem_slitPlane_of_re_pos hi h₁
+
 /-- Two points in the left half-plane have their ratio in the slit plane. -/
 theorem div_mem_slitPlane_of_re_neg {z₁ z₂ : ℂ} (h₁ : z₁.re < 0) (h₂ : z₂.re < 0) :
     z₂ / z₁ ∈ slitPlane :=
