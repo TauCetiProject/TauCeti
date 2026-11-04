@@ -58,7 +58,9 @@ symmetric algebras of quasicoherent sheaves, enter this category.
   quasicoherent algebras given by componentwise maps preserving the unit and the homogeneous
   multiplications;
 * `TauCeti.AlgebraicGeometry.GradedQuasicoherentAlgebra.homMkOfEq`: the same, for componentwise
-  maps between families identified with the homogeneous components.
+  maps between families identified with the homogeneous components;
+* `TauCeti.AlgebraicGeometry.GradedQuasicoherentAlgebra.isoMkOfEq`: the isomorphism given by
+  componentwise isomorphisms between such families.
 -/
 
 public section
@@ -457,6 +459,80 @@ theorem homMkOfEq_comp {A B C : GradedQuasicoherentAlgebra X} {M N P : ℕ → X
     -- The composite of graded morphisms is displayed through the middle object
     -- `B.obj.toMon.X n`, which is `B.obj.X n` by definition of `CommMon.toMon`.
     rfl
+
+/-- An isomorphism of graded quasicoherent algebras whose homogeneous components are identified
+with families `M` and `N` carrying units and multiplications, given by componentwise isomorphisms
+`M n ≅ N n` preserving those units and multiplications. Both directions are built by
+`homMkOfEq`. -/
+def isoMkOfEq {P Q : GradedQuasicoherentAlgebra X} {M N : ℕ → X.Modules}
+    (hP : P.obj.X = M) (hQ : Q.obj.X = N) {oneM : 𝟙_ X.Modules ⟶ M 0}
+    {oneN : 𝟙_ X.Modules ⟶ N 0} {mulM : ∀ i j, M i ⊗ M j ⟶ M (i + j)}
+    {mulN : ∀ i j, N i ⊗ N j ⟶ N (i + j)}
+    (hoP : P.obj.toMon.one = oneM ≫ eqToHom (congrFun hP 0).symm)
+    (hoQ : Q.obj.toMon.one = oneN ≫ eqToHom (congrFun hQ 0).symm)
+    (hmP : ∀ i j, P.obj.toMon.mul i j =
+      (eqToHom (by rw [hP]) : P.obj.X i ⊗ P.obj.X j ⟶ M i ⊗ M j) ≫ mulM i j ≫
+        eqToHom (congrFun hP (i + j)).symm)
+    (hmQ : ∀ i j, Q.obj.toMon.mul i j =
+      (eqToHom (by rw [hQ]) : Q.obj.X i ⊗ Q.obj.X j ⟶ N i ⊗ N j) ≫ mulN i j ≫
+        eqToHom (congrFun hQ (i + j)).symm)
+    (e : ∀ n, M n ≅ N n) (one_e : oneM ≫ (e 0).hom = oneN)
+    (mul_e : ∀ i j, ((e i).hom ⊗ₘ (e j).hom) ≫ mulN i j = mulM i j ≫ (e (i + j)).hom) :
+    P ≅ Q where
+  hom := homMkOfEq hP hQ hoP hoQ hmP hmQ (fun n ↦ (e n).hom) one_e mul_e
+  inv := homMkOfEq hQ hP hoQ hoP hmQ hmP (fun n ↦ (e n).inv)
+    (by rw [← one_e, Category.assoc, Iso.hom_inv_id, Category.comp_id])
+    (fun i j ↦ by
+      rw [Iso.eq_comp_inv, Category.assoc, ← mul_e, ← tensorIso_hom, ← tensorIso_inv,
+        Iso.inv_hom_id_assoc])
+  hom_inv_id := (homMkOfEq_comp hP hQ hP hoP hoQ hoP hmP hmQ hmP _ one_e mul_e _ _ _
+    (fun n ↦ 𝟙 (M n)) (Category.comp_id _) (fun i j ↦ by simp)
+      fun n ↦ (e n).hom_inv_id).symm.trans (homMkOfEq_id hP hoP hmP _ _ _ fun _ ↦ rfl)
+  inv_hom_id := (homMkOfEq_comp hQ hP hQ hoQ hoP hoQ hmQ hmP hmQ _ _ _ _ one_e mul_e
+    (fun n ↦ 𝟙 (N n)) (Category.comp_id _) (fun i j ↦ by simp)
+      fun n ↦ (e n).inv_hom_id).symm.trans (homMkOfEq_id hQ hoQ hmQ _ _ _ fun _ ↦ rfl)
+
+/-- The components of `isoMkOfEq` are the given isomorphisms, transported along the
+identifications of the homogeneous components. -/
+@[simp]
+theorem isoMkOfEq_hom_hom_hom_hom {P Q : GradedQuasicoherentAlgebra X} {M N : ℕ → X.Modules}
+    (hP : P.obj.X = M) (hQ : Q.obj.X = N) {oneM : 𝟙_ X.Modules ⟶ M 0}
+    {oneN : 𝟙_ X.Modules ⟶ N 0} {mulM : ∀ i j, M i ⊗ M j ⟶ M (i + j)}
+    {mulN : ∀ i j, N i ⊗ N j ⟶ N (i + j)}
+    (hoP : P.obj.toMon.one = oneM ≫ eqToHom (congrFun hP 0).symm)
+    (hoQ : Q.obj.toMon.one = oneN ≫ eqToHom (congrFun hQ 0).symm)
+    (hmP : ∀ i j, P.obj.toMon.mul i j =
+      (eqToHom (by rw [hP]) : P.obj.X i ⊗ P.obj.X j ⟶ M i ⊗ M j) ≫ mulM i j ≫
+        eqToHom (congrFun hP (i + j)).symm)
+    (hmQ : ∀ i j, Q.obj.toMon.mul i j =
+      (eqToHom (by rw [hQ]) : Q.obj.X i ⊗ Q.obj.X j ⟶ N i ⊗ N j) ≫ mulN i j ≫
+        eqToHom (congrFun hQ (i + j)).symm)
+    (e : ∀ n, M n ≅ N n) (one_e : oneM ≫ (e 0).hom = oneN)
+    (mul_e : ∀ i j, ((e i).hom ⊗ₘ (e j).hom) ≫ mulN i j = mulM i j ≫ (e (i + j)).hom) (n : ℕ) :
+    (isoMkOfEq hP hQ hoP hoQ hmP hmQ e one_e mul_e).hom.hom.hom.hom n =
+      eqToHom (congrFun hP n) ≫ (e n).hom ≫ eqToHom (congrFun hQ n).symm :=
+  (rfl)
+
+/-- The components of the inverse of `isoMkOfEq` are the inverses of the given isomorphisms,
+transported along the identifications of the homogeneous components. -/
+@[simp]
+theorem isoMkOfEq_inv_hom_hom_hom {P Q : GradedQuasicoherentAlgebra X} {M N : ℕ → X.Modules}
+    (hP : P.obj.X = M) (hQ : Q.obj.X = N) {oneM : 𝟙_ X.Modules ⟶ M 0}
+    {oneN : 𝟙_ X.Modules ⟶ N 0} {mulM : ∀ i j, M i ⊗ M j ⟶ M (i + j)}
+    {mulN : ∀ i j, N i ⊗ N j ⟶ N (i + j)}
+    (hoP : P.obj.toMon.one = oneM ≫ eqToHom (congrFun hP 0).symm)
+    (hoQ : Q.obj.toMon.one = oneN ≫ eqToHom (congrFun hQ 0).symm)
+    (hmP : ∀ i j, P.obj.toMon.mul i j =
+      (eqToHom (by rw [hP]) : P.obj.X i ⊗ P.obj.X j ⟶ M i ⊗ M j) ≫ mulM i j ≫
+        eqToHom (congrFun hP (i + j)).symm)
+    (hmQ : ∀ i j, Q.obj.toMon.mul i j =
+      (eqToHom (by rw [hQ]) : Q.obj.X i ⊗ Q.obj.X j ⟶ N i ⊗ N j) ≫ mulN i j ≫
+        eqToHom (congrFun hQ (i + j)).symm)
+    (e : ∀ n, M n ≅ N n) (one_e : oneM ≫ (e 0).hom = oneN)
+    (mul_e : ∀ i j, ((e i).hom ⊗ₘ (e j).hom) ≫ mulN i j = mulM i j ≫ (e (i + j)).hom) (n : ℕ) :
+    (isoMkOfEq hP hQ hoP hoQ hmP hmQ e one_e mul_e).inv.hom.hom.hom n =
+      eqToHom (congrFun hQ n) ≫ (e n).inv ≫ eqToHom (congrFun hP n).symm :=
+  (rfl)
 
 end GradedQuasicoherentAlgebra
 
