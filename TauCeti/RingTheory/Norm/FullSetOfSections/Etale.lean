@@ -9,7 +9,7 @@ public import TauCeti.RingTheory.Norm.FullSetOfSections.Basic
 public import Mathlib.RingTheory.Discriminant
 public import Mathlib.RingTheory.Etale.Basic
 import TauCeti.RingTheory.Etale.Discriminant
-import Mathlib.LinearAlgebra.Matrix.ToLinearEquiv
+import TauCeti.Algebra.Algebra.Pi
 import Mathlib.RingTheory.LocalProperties.Exactness
 import Mathlib.RingTheory.Smooth.Flat
 
@@ -62,25 +62,6 @@ theorem IsFullSetOfSections.discr_eq_det_pi_sq (h : IsFullSetOfSections s)
 
 section Free
 
--- The square evaluation matrix is invertible because its Gram determinant is a unit.
-private theorem IsFullSetOfSections.bijective_pi_of_basis [Algebra.Etale A B]
-    (h : IsFullSetOfSections s) (b : Module.Basis ι A B) :
-    Function.Bijective (AlgHom.pi s) := by
-  classical
-  let M := Matrix.of fun i j ↦ s i (b j)
-  have hd : IsUnit M.det := by
-    have := (Algebra.etale_iff_isUnit_discr A B b).mp inferInstance
-    rw [h.discr_eq_det_pi_sq b] at this
-    exact (isUnit_pow_iff two_ne_zero).mp this
-  let e := b.equivFun.trans (Matrix.toLinearEquiv (Pi.basisFun A ι) M hd)
-  have he (x : B) : e x = AlgHom.pi s x := by
-    ext i
-    simp only [e, LinearEquiv.trans_apply, Matrix.toLinearEquiv_apply,
-      Matrix.toLin_eq_toLin', Matrix.toLin'_apply, Module.Basis.equivFun_apply,
-      Matrix.mulVec, dotProduct, M, Matrix.of_apply, AlgHom.pi_apply]
-    simpa [map_smul, Algebra.smul_def, mul_comm] using congrArg (s i) (b.sum_repr x)
-  exact (funext he : (e : B → ι → A) = AlgHom.pi s) ▸ e.bijective
-
 variable [Module.Free A B] [Module.Finite A B]
 
 -- Match the basis index with the cardinality of the full set.
@@ -92,7 +73,11 @@ private theorem IsFullSetOfSections.bijective_pi_of_free [Algebra.Etale A B]
     exact ⟨fun _ _ _ ↦ Subsingleton.elim _ _, fun x ↦ ⟨0, Subsingleton.elim _ _⟩⟩
   let b := (Module.Free.chooseBasis A B).reindex (Fintype.equivOfCardEq
     ((Module.finrank_eq_card_chooseBasisIndex A B).symm.trans h.card_eq_finrank.symm))
-  exact h.bijective_pi_of_basis b
+  -- The evaluation matrix is invertible because its Gram determinant is a unit.
+  apply _root_.AlgHom.pi_bijective_of_isUnit_det s b
+  have hd := (Algebra.etale_iff_isUnit_discr A B b).mp inferInstance
+  rw [h.discr_eq_det_pi_sq b] at hd
+  exact (isUnit_pow_iff two_ne_zero).mp hd
 
 end Free
 

@@ -9,6 +9,7 @@ module
 public import Mathlib.Algebra.Algebra.Pi
 public import Mathlib.LinearAlgebra.Dimension.Finrank
 public import Mathlib.LinearAlgebra.StdBasis
+public import Mathlib.LinearAlgebra.Matrix.ToLinearEquiv
 public import Mathlib.RingTheory.Finiteness.Defs
 public import Mathlib.RingTheory.TensorProduct.Maps
 public import Mathlib.SetTheory.Cardinal.Finite
@@ -30,6 +31,10 @@ The injectivity half, `Pi.evalAlgHom_injective`, is what Mathlib does not record
 makes the equivalence useful for counting: a split commutative algebra has exactly as many
 characters as it has factors. The Burnside--Dixon--Schneider algorithm consumes it in that form, to
 count the central characters of a group algebra whose centre has been split into coordinates.
+
+Over a commutative ring, `AlgHom.pi_bijective_of_isUnit_det` identifies evaluation at a
+basis-sized family of sections with the function algebra when the evaluation matrix has unit
+determinant. This gives a shared matrix criterion for splitting finite free algebras.
 
 For any algebra over a field, `AlgHom.surjective_pi_of_injective` supplies finite
 interpolation at distinct augmentations, without commutativity or finite generation. It follows
@@ -108,6 +113,29 @@ theorem evalAlgHomEquiv_apply (s : ι) :
 end Pi
 
 namespace AlgHom
+
+/-- Evaluation at a basis-sized family of sections is bijective if its evaluation
+matrix has unit determinant. -/
+theorem pi_bijective_of_isUnit_det {R B ι : Type*} [CommRing R] [Semiring B]
+    [Algebra R B] [Fintype ι] [DecidableEq ι] (s : ι → B →ₐ[R] R)
+    (b : Module.Basis ι R B) (hd : IsUnit (Matrix.of fun i j ↦ s i (b j)).det) :
+    Function.Bijective (AlgHom.pi s) := by
+  classical
+  let M := Matrix.of fun i j ↦ s i (b j)
+  have eval_eq_sum (x : B) (i : ι) :
+      s i x = ∑ j, b.repr x j * s i (b j) := by
+    conv_lhs => rw [← b.sum_repr x]
+    simp only [map_sum, map_smul, smul_eq_mul]
+  let e := b.equivFun.trans (Matrix.toLinearEquiv (Pi.basisFun R ι) M hd)
+  have he (x : B) : e x = AlgHom.pi s x := by
+    ext i
+    dsimp only [e, LinearEquiv.trans_apply]
+    rw [Matrix.toLinearEquiv_apply, Matrix.toLin_eq_toLin', Matrix.toLin'_apply]
+    simp only [Matrix.mulVec, dotProduct, M, Matrix.of_apply,
+      Module.Basis.equivFun_apply, AlgHom.pi_apply]
+    rw [eval_eq_sum]
+    exact Finset.sum_congr rfl (fun j _ ↦ mul_comm _ _)
+  exact congrArg Function.Bijective (funext he) ▸ e.bijective
 
 /-- Distinct finitely many augmentations to the ground field admit arbitrary simultaneous
 values: their product algebra homomorphism is surjective. -/
