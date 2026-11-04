@@ -9,7 +9,7 @@ public import Mathlib.Analysis.Distribution.FourierMultiplier
 public import Mathlib.Analysis.Distribution.SchwartzSpace.Basic
 public import TauCeti.Analysis.Calculus.BumpFunction.LittlewoodPaley
 import Mathlib.Analysis.Calculus.ContDiff.Bounds
-import Mathlib.Analysis.Distribution.SchwartzSpace.CompactSupport
+import TauCeti.Analysis.Distribution.SchwartzSpace.Cutoff
 
 /-!
 # Littlewood–Paley pieces of a Mihlin symbol
@@ -241,9 +241,11 @@ theorem tendsto_smulLeftCLM_contDiffBump_two_pow (φ : ContDiffBump (0 : E)) (f 
     Tendsto (fun N : ℕ ↦ smulLeftCLM F (fun ξ ↦ (φ (((2 : ℝ) ^ N)⁻¹ • ξ) : ℂ)) f) atTop
       (𝓝 f) := by
   have hφ : (⇑φ).HasTemperateGrowth := φ.hasCompactSupport.hasTemperateGrowth φ.contDiff
-  have h := (tendsto_smulLeftCLM_comp_smul φ.contDiff φ.hasCompactSupport φ.eventuallyEq_one
-    f).comp (tendsto_inv_atTop_zero.comp
-      (tendsto_pow_atTop_atTop_of_one_lt (one_lt_two (α := ℝ))))
+  have hbdd (i : ℕ) : ∃ B, ∀ x, ‖iteratedFDeriv ℝ i φ x‖ ≤ B :=
+    (φ.contDiff.continuous_iteratedFDeriv (mod_cast le_top)).bounded_above_of_compact_support
+      (φ.hasCompactSupport.iteratedFDeriv i)
+  have h := (tendsto_smulLeftCLM_comp_inv_smul_atTop φ.contDiff hbdd φ.eventuallyEq_one
+    f).comp (tendsto_pow_atTop_atTop_of_one_lt (one_lt_two (α := ℝ)))
   refine h.congr fun N ↦ ?_
   exact (smulLeftCLM_ofReal ℂ (hφ.comp
     (((2 : ℝ) ^ N)⁻¹ • ContinuousLinearMap.id ℝ E).hasTemperateGrowth) f).symm
