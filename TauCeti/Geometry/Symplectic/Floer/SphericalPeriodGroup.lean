@@ -14,7 +14,7 @@ public import TauCeti.Geometry.Symplectic.Floer.PeriodGroup
 Let `X` be a topological space and let `ω : H₂(X; ℤ) →+ ℝ` and `c : H₂(X; ℤ) →+ ℤ` be
 homomorphisms on its integral second singular homology: for a symplectic manifold, integration
 of the symplectic form and evaluation of the first Chern class. Capped Hamiltonian Floer theory
-takes its coefficients in the period group
+uses a Novikov coefficient ring whose exponents lie in the period group
 
 `Γ = S ⧸ (ker ω ⊓ ker c)`
 
