@@ -73,13 +73,14 @@ theorem existsUnique_formalGlueing_lift
         (hcompat g)
       simpa only [LinearMap.comp_apply, IsLocalizedModule.map_apply,
         LinearMap.restrictScalars_apply, TensorProduct.mk_apply] using h.symm)).exists
-  choose f hf using hex
-  -- Faithful flatness makes the pointwise lift linear.
-  let F : M →ₗ[R] N :=
-    { toFun := f
-      map_add' := fun x y ↦ hη (by simp [fun m ↦ (hf m).1, tmul_add])
-      map_smul' := fun r m ↦ hη (by simp [fun m ↦ (hf m).1, tmul_smul]) }
-  have hF (m : M) : (1 : S) ⊗ₜ[R] F m = fS (1 ⊗ₜ m) := (hf m).1
+  -- Restrict the codomain along the injective base-change map.
+  let F : M →ₗ[R] N := LinearMap.codRestrictOfInjective
+    ((fS.restrictScalars R).comp (TensorProduct.mk R S M 1))
+    (TensorProduct.mk R S N 1) hη (fun m ↦ (hex m).imp fun n hn ↦ hn.1)
+  have hF (m : M) : (1 : S) ⊗ₜ[R] F m = fS (1 ⊗ₜ m) :=
+    LinearMap.codRestrictOfInjective_comp_apply
+      ((fS.restrictScalars R).comp (TensorProduct.mk R S M 1))
+      (TensorProduct.mk R S N 1) hη _ m
   have hbase : F.baseChange S = fS := by
     ext m
     exact hF m
@@ -90,8 +91,9 @@ theorem existsUnique_formalGlueing_lift
       (LocalizedModule.mkLinearMap (.powers g.1) M)
       (LocalizedModule.mkLinearMap (.powers g.1) N)
     ext m
-    simpa only [LinearMap.comp_apply, IsLocalizedModule.map_apply, F,
-      LinearMap.coe_mk, AddHom.coe_mk] using (hf m).2 g
+    obtain ⟨n, hn⟩ := hex m
+    have hFm : F m = n := hη ((hF m).trans hn.1.symm)
+    simpa only [LinearMap.comp_apply, IsLocalizedModule.map_apply, hFm] using hn.2 g
   refine ⟨F, ⟨hbase, hloc⟩, fun F' hF' ↦ ?_⟩
   ext m
   apply hη
