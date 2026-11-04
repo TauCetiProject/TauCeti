@@ -73,7 +73,14 @@ with `‖x‖ ^ n = ‖ϖ‖ ^ m`. -/
 def IsCommensurable : Prop :=
   ∀ x : R, ‖x‖ ≠ 0 → ∃ m : ℤ, ∃ n : ℕ, n ≠ 0 ∧ ‖x‖ ^ n = ‖(ϖ.unit : R)‖ ^ m
 
-variable {ϖ} {x : R}
+variable {ϖ} {x y : R}
+
+/-- Unfolding commensurability: every element of nonzero norm has a witness
+`‖x‖ ^ n = ‖ϖ‖ ^ m` with `m : ℤ` and `n : ℕ`, `n ≠ 0`. -/
+theorem isCommensurable_iff :
+    ϖ.IsCommensurable ↔
+      ∀ x : R, ‖x‖ ≠ 0 → ∃ m : ℤ, ∃ n : ℕ, n ≠ 0 ∧ ‖x‖ ^ n = ‖(ϖ.unit : R)‖ ^ m :=
+  Iff.rfl
 
 /-- A commensurability witness `‖x‖ ^ n = ‖ϖ‖ ^ m` gives the rational value `m / n` of the
 logarithmic gauge. -/
@@ -114,6 +121,11 @@ variable (hϖ : ϖ.IsCommensurable)
 private theorem map_ratCast_injective : Function.Injective (WithTop.map ((↑) : ℚ → ℝ)) :=
   WithTop.map_injective Rat.cast_injective
 
+/-- The coercion `WithTop ℚ → WithTop ℝ` preserves and reflects the order. -/
+private theorem map_ratCast_le_map_ratCast {a b : WithTop ℚ} :
+    a.map ((↑) : ℚ → ℝ) ≤ b.map (↑) ↔ a ≤ b :=
+  WithTop.map_le_iff _ Rat.cast_le
+
 include hϖ in
 /-- For a commensurable `ϖ`, every value of the logarithmic gauge is the image of a value in
 `WithTop ℚ`. -/
@@ -142,9 +154,8 @@ variable [IsUltrametricDist R]
 
 private theorem min_ratLogGauge_le_add (x y : R) :
     min (ratLogGauge hϖ x) (ratLogGauge hϖ y) ≤ ratLogGauge hϖ (x + y) := by
-  have hle {a b : WithTop ℚ} : a.map ((↑) : ℚ → ℝ) ≤ b.map (↑) ↔ a ≤ b :=
-    WithTop.map_le_iff _ Rat.cast_le
-  rw [min_le_iff, ← hle, ← hle, map_ratLogGauge, map_ratLogGauge, map_ratLogGauge, ← min_le_iff]
+  rw [min_le_iff, ← map_ratCast_le_map_ratCast, ← map_ratCast_le_map_ratCast, map_ratLogGauge,
+    map_ratLogGauge, map_ratLogGauge, ← min_le_iff]
   exact ϖ.min_le_logGauge_add x y
 
 variable [NormMulClass R]
@@ -200,6 +211,25 @@ theorem ratAddValuation_eq_coe_iff {q : ℚ} :
     ϖ.ratAddValuation hϖ x = q ↔ ‖x‖ = ‖(ϖ.unit : R)‖ ^ (q : ℝ) := by
   rw [← map_ratCast_injective.eq_iff, map_ratAddValuation, WithTop.map_coe, logGauge_eq_coe_iff]
 
+/-- **The rational valuation reverses the order of the norm.** -/
+theorem ratAddValuation_le_ratAddValuation_iff :
+    ϖ.ratAddValuation hϖ x ≤ ϖ.ratAddValuation hϖ y ↔ ‖y‖ ≤ ‖x‖ := by
+  rw [← map_ratCast_le_map_ratCast, map_ratAddValuation, map_ratAddValuation,
+    logGauge_le_logGauge_iff]
+
+/-- The rational valuation strictly reverses the order of the norm. -/
+theorem ratAddValuation_lt_ratAddValuation_iff :
+    ϖ.ratAddValuation hϖ x < ϖ.ratAddValuation hϖ y ↔ ‖y‖ < ‖x‖ := by
+  rw [lt_iff_not_ge, ratAddValuation_le_ratAddValuation_iff, not_le]
+
+/-- The rational valuation is nonnegative exactly on the closed unit ball. -/
+theorem ratAddValuation_nonneg_iff : 0 ≤ ϖ.ratAddValuation hϖ x ↔ ‖x‖ ≤ 1 := by
+  rw [← (ϖ.ratAddValuation hϖ).map_one, ratAddValuation_le_ratAddValuation_iff, ϖ.norm_one]
+
+/-- The rational valuation is positive exactly on the open unit ball. -/
+theorem ratAddValuation_pos_iff : 0 < ϖ.ratAddValuation hϖ x ↔ ‖x‖ < 1 := by
+  rw [← (ϖ.ratAddValuation hϖ).map_one, ratAddValuation_lt_ratAddValuation_iff, ϖ.norm_one]
+
 /-- A commensurability witness `‖x‖ ^ n = ‖ϖ‖ ^ m` gives the rational valuation `m / n`. -/
 theorem ratAddValuation_eq_div {m : ℤ} {n : ℕ} (hn : n ≠ 0)
     (h : ‖x‖ ^ n = ‖(ϖ.unit : R)‖ ^ m) :
@@ -217,6 +247,11 @@ theorem ratAddValuation_zpow (n : ℤ) :
     ϖ.ratAddValuation hϖ ((ϖ.unit ^ n : Rˣ) : R) = ((n : ℚ) : WithTop ℚ) :=
   map_ratCast_injective (by rw [map_ratAddValuation, logGauge_zpow, WithTop.map_coe,
     Rat.cast_intCast])
+
+/-- The rational valuation of `ϖ ^ n` is `n`, for `n ∈ ℕ`. -/
+theorem ratAddValuation_unit_pow (n : ℕ) :
+    ϖ.ratAddValuation hϖ ((ϖ.unit : R) ^ n) = ((n : ℚ) : WithTop ℚ) := by
+  simpa using ratAddValuation_zpow hϖ n
 
 /-- The rational valuation of `ϖ` is one. -/
 @[simp]
