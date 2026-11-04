@@ -104,18 +104,18 @@ theorem convolutionExists_of_integrable_of_ae_norm_le (hf : Integrable f μ)
 
 section Assoc
 
-variable {G F : Type*} [AddCommGroup G] [MeasurableSpace G] [MeasurableAdd₂ G]
+variable {𝕜 G F : Type*} [RCLike 𝕜] [AddCommGroup G] [MeasurableSpace G] [MeasurableAdd₂ G]
   [MeasurableNeg G] {μ : Measure G} [SFinite μ] [μ.IsAddLeftInvariant] [μ.IsNegInvariant]
-  [NormedAddCommGroup F] [NormedSpace ℝ F] [CompleteSpace F]
-  {f g : G → ℝ} {h : G → F} {M : ℝ}
+  [NormedAddCommGroup F] [NormedSpace ℝ F] [NormedSpace 𝕜 F] [CompleteSpace F]
+  {f g : G → 𝕜} {h : G → F} {M : ℝ}
 
 /-- Convolution of two integrable scalar kernels with an essentially bounded function is
 associative at every point, not just almost everywhere. -/
 theorem convolution_lsmul_assoc_of_integrable_of_ae_norm_le
     (hf : Integrable f μ) (hg : Integrable g μ) (hh : AEStronglyMeasurable h μ)
     (hM : ∀ᵐ x ∂μ, ‖h x‖ ≤ M) :
-    (f ⋆[ContinuousLinearMap.lsmul ℝ ℝ, μ] g) ⋆[ContinuousLinearMap.lsmul ℝ ℝ, μ] h =
-      f ⋆[ContinuousLinearMap.lsmul ℝ ℝ, μ] (g ⋆[ContinuousLinearMap.lsmul ℝ ℝ, μ] h) := by
+    (f ⋆[ContinuousLinearMap.lsmul 𝕜 𝕜, μ] g) ⋆[ContinuousLinearMap.lsmul 𝕜 𝕜, μ] h =
+      f ⋆[ContinuousLinearMap.lsmul 𝕜 𝕜, μ] (g ⋆[ContinuousLinearMap.lsmul 𝕜 𝕜, μ] h) := by
   have hbdd : ∀ x, ‖((fun y ↦ ‖g y‖) ⋆[ContinuousLinearMap.mul ℝ ℝ, μ]
       (fun y ↦ ‖h y‖)) x‖ ≤ (∫ y, ‖g y‖ ∂μ) * M := by
     intro x
@@ -125,9 +125,9 @@ theorem convolution_lsmul_assoc_of_integrable_of_ae_norm_le
     simpa only [ContinuousLinearMap.mul_apply', norm_mul, norm_norm] using
       mul_le_mul_of_nonneg_left hy (norm_nonneg (g y))
   ext x
-  exact convolution_assoc (ContinuousLinearMap.lsmul ℝ ℝ)
-    (ContinuousLinearMap.lsmul ℝ ℝ) (ContinuousLinearMap.lsmul ℝ ℝ)
-    (ContinuousLinearMap.lsmul ℝ ℝ) (fun a b c ↦ mul_smul a b c)
+  exact convolution_assoc (ContinuousLinearMap.lsmul 𝕜 𝕜)
+    (ContinuousLinearMap.lsmul 𝕜 𝕜) (ContinuousLinearMap.lsmul 𝕜 𝕜)
+    (ContinuousLinearMap.lsmul 𝕜 𝕜) (fun a b c ↦ mul_smul a b c)
     hf.aestronglyMeasurable hg.aestronglyMeasurable hh
     (hf.ae_convolution_exists _ hg)
     (ae_of_all _ (convolutionExists_of_integrable_of_ae_norm_le _ hg.norm hh.norm
