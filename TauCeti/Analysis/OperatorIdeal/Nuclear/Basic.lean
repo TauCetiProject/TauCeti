@@ -114,6 +114,21 @@ theorem nuclearENorm_eq_kyFanGauge_of_rank_le (T : E →L[𝕜] F) {k : ℕ}
     have hkn : k ≤ n := by simpa using hn
     simp [singularValue_eq_zero_of_rank_le (hT.trans (Nat.cast_le.mpr hkn))]
 
+/-- The approximation-number gauge of a rank-one operator is the product of the norms
+of its functional and vector. No Hilbert-space hypothesis is needed for this formula. -/
+@[simp]
+theorem nuclearENorm_smulRight (f : StrongDual 𝕜 E) (y : F) :
+    (f.smulRight y).nuclearENorm = ‖f‖ₑ * ‖y‖ₑ := by
+  have hr : (f.smulRight y).rank ≤ 1 := by
+    calc
+      _ ≤ Module.rank 𝕜 (Submodule.span 𝕜 ({y} : Set F)) :=
+        Submodule.rank_mono (by
+          rintro z ⟨x, rfl⟩
+          exact Submodule.smul_mem _ _ (Submodule.subset_span (Set.mem_singleton y)))
+      _ ≤ 1 := by simpa using rank_span_le ({y} : Set F)
+  rw [nuclearENorm_eq_kyFanGauge_of_rank_le _ hr]
+  simp [enorm_eq_nnnorm, nnnorm_smulRight_apply]
+
 /-- Finite-rank operators have finite nuclear gauge. -/
 theorem nuclearENorm_ne_top_of_rank_le (T : E →L[𝕜] F) {k : ℕ} (hT : T.rank ≤ k) :
     T.nuclearENorm ≠ ∞ := by
@@ -187,6 +202,25 @@ theorem nuclearENorm_add_le (S T : E →L[𝕜] F) :
         exact_mod_cast kyFanGauge_add_le S T k
     _ ≤ S.nuclearENorm + T.nuclearENorm :=
       add_le_add (S.kyFanGauge_le_nuclearENorm k) (T.kyFanGauge_le_nuclearENorm k)
+
+/-- The trace-class gauge of a finite sum is bounded by the sum of the gauges. -/
+theorem nuclearENorm_sum_le {ι : Type*} (s : Finset ι) (T : ι → E →L[𝕜] F) :
+    (∑ i ∈ s, T i).nuclearENorm ≤ ∑ i ∈ s, (T i).nuclearENorm := by
+  classical
+  induction s using Finset.induction_on with
+  | empty => simp
+  | @insert i s hi ih =>
+    simpa only [Finset.sum_insert hi] using
+      (nuclearENorm_add_le (T i) (∑ j ∈ s, T j)).trans (add_le_add le_rfl ih)
+
+/-- **Fatou inequality for the trace-class gauge.** For a series converging in operator norm,
+the gauge of its sum is at most the sum of the gauges, even when that sum is infinite. -/
+theorem nuclearENorm_le_tsum_of_hasSum {ι : Type*} {T : ι → E →L[𝕜] F} {S : E →L[𝕜] F}
+    (hT : HasSum T S) : S.nuclearENorm ≤ ∑' i, (T i).nuclearENorm := by
+  apply (lowerSemicontinuous_nuclearENorm.isClosed_preimage
+    (∑' i, (T i).nuclearENorm)).mem_of_tendsto hT
+  exact Filter.Eventually.of_forall fun s ↦
+    (nuclearENorm_sum_le s T).trans (sum_le_tsum s)
 
 /-- Taking adjoints preserves the nuclear gauge. -/
 @[simp]
