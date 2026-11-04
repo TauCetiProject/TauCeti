@@ -337,6 +337,12 @@ namespace Puncture
 instance : Fintype Puncture :=
   ⟨{zero, one, inf}, fun q => by cases q <;> simp⟩
 
+/-- A sum over the three punctures. -/
+theorem sum_univ {M : Type*} [AddCommMonoid M] (f : Puncture → M) :
+    ∑ q, f q = f zero + f one + f inf := by
+  have h : (Finset.univ : Finset Puncture) = {zero, one, inf} := by ext q; cases q <;> simp
+  rw [h, Finset.sum_insert (by simp), Finset.sum_insert (by simp), Finset.sum_singleton, add_assoc]
+
 /-- The standard punctured neighborhood of a puncture: `puncturedNeighborhoodZero`,
 `puncturedNeighborhoodOne` or `puncturedNeighborhoodInf`. The body is exposed so that types over
 `p ⁻¹' zero.neighborhood` are those over `p ⁻¹' puncturedNeighborhoodZero`, and likewise at `1` and

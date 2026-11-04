@@ -9,6 +9,7 @@ public import TauCeti.Geometry.Symplectic.AlmostComplex
 public import TauCeti.Geometry.Symplectic.JHolomorphic.Line
 public import Mathlib.MeasureTheory.Integral.CircleIntegral
 import Mathlib.Analysis.Calculus.FDeriv.Measurable
+import Mathlib.MeasureTheory.Integral.IntervalIntegral.Periodic
 import Mathlib.Topology.Algebra.Module.FiniteDimensionBilinear
 import TauCeti.MeasureTheory.Integral.DivergenceTheorem
 
@@ -116,6 +117,40 @@ theorem loopArea_def (ω : SymplecticForm V) (x : ℝ → V) :
 @[simp]
 theorem loopArea_const (ω : SymplecticForm V) (v : V) : ω.loopArea (fun _ ↦ v) = 0 := by
   simp [loopArea_def]
+
+/-- **The loop area of a circle traversed clockwise.** If `v` is differentiable along the circle
+of center `c` and radius `s`, then the loop `t ↦ v(c + s exp (i (φ - 2π t)))`, which runs once
+clockwise around the circle starting at the angle `φ`, has loop area equal to minus the integral
+of the primitive `λₓ(v) = ½ ω(x, v)` along the counterclockwise parametrization of the circle on
+`[-π, π]`, the boundary term of `TauCeti.SymplecticForm.integral_fderiv_apply_annulus`. -/
+theorem loopArea_circleMap_sub_two_pi_mul (ω : SymplecticForm V) {v : ℂ → V} (c : ℂ) (s φ : ℝ)
+    (hv : ∀ θ, DifferentiableAt ℝ v (circleMap c s θ)) :
+    ω.loopArea (fun t ↦ v (circleMap c s (φ - 2 * π * t))) =
+      -(1 / 2 : ℝ) * ∫ θ in -π..π, ω (v (circleMap c s θ))
+        (deriv (fun θ ↦ v (circleMap c s θ)) θ) := by
+  have hd (θ : ℝ) : HasDerivAt (fun θ ↦ v (circleMap c s θ))
+      (fderiv ℝ v (circleMap c s θ) (circleMap 0 s θ * I)) θ :=
+    (hv θ).hasFDerivAt.comp_hasDerivAt θ (hasDerivAt_circleMap c s θ)
+  set g : ℝ → ℝ := fun θ ↦ ω (v (circleMap c s θ))
+    (fderiv ℝ v (circleMap c s θ) (circleMap 0 s θ * I))
+  have hg : Function.Periodic g (2 * π) := fun θ ↦ by
+    simp only [g, periodic_circleMap c s θ, periodic_circleMap 0 s θ]
+  have hdt (t : ℝ) : deriv (fun t ↦ v (circleMap c s (φ - 2 * π * t))) t =
+      (-(2 * π * 1)) • fderiv ℝ v (circleMap c s (φ - 2 * π * t))
+        (circleMap 0 s (φ - 2 * π * t) * I) :=
+    ((hd _).scomp t (((hasDerivAt_id t).const_mul (2 * π)).const_sub φ)).deriv
+  have hlhs : ∫ t in (0 : ℝ)..1, ω (v (circleMap c s (φ - 2 * π * t)))
+      (deriv (fun t ↦ v (circleMap c s (φ - 2 * π * t))) t) =
+      -(2 * π) * ∫ t in (0 : ℝ)..1, g (φ - 2 * π * t) := by
+    simp only [hdt, map_smul, smul_eq_mul, mul_one, g, intervalIntegral.integral_const_mul]
+  have hrhs : ∫ θ in -π..π, ω (v (circleMap c s θ)) (deriv (fun θ ↦ v (circleMap c s θ)) θ) =
+      ∫ θ in -π..π, g θ := by
+    simp only [g, (hd _).deriv]
+  have hper := hg.intervalIntegral_add_eq (φ - 2 * π) (-π)
+  rw [sub_add_cancel, show -π + 2 * π = π by ring] at hper
+  rw [loopArea_def, hlhs, hrhs, intervalIntegral.integral_comp_sub_mul g
+    (by positivity : (2 * π : ℝ) ≠ 0), mul_one, mul_zero, sub_zero, hper, smul_eq_mul]
+  field_simp
 
 variable [FiniteDimensional ℝ V] {u : ℝ × ℝ → V} {a b : ℝ}
 

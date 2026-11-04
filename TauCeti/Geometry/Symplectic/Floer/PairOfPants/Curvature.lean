@@ -378,7 +378,7 @@ private noncomputable def endPiece (q : Puncture) (R : ℝ) : Set (ℝ × ℝ) :
   {s | 1 ≤ q.endSign * s ∧ q.endSign * s ≤ R} ×ˢ Ico (-1 / 2) (1 / 2)
 
 /-- The points of `S`, in real coordinates, form an open set. -/
-private theorem isOpen_puncturedSphere :
+theorem isOpen_puncturedSphere :
     IsOpen {z : ℝ × ℝ | Complex.equivRealProdCLM.symm z ≠ 0 ∧
       Complex.equivRealProdCLM.symm z ≠ 1} :=
   (isOpen_ne_fun Complex.equivRealProdCLM.symm.continuous continuous_const).inter
@@ -456,7 +456,7 @@ private theorem disjoint_image_endPiece {R : ℝ} {q r : Puncture} (hqr : q ≠ 
 omit [FiniteDimensional ℝ V] in
 /-- The components of the perturbation in real coordinates are `C¹` jointly in the domain point
 of `S` and the target point. -/
-private theorem contDiffOn_pairOfPantsPerturbation (hH : ∀ q, Periodic (H q) 1)
+theorem contDiffOn_pairOfPantsPerturbation (hH : ∀ q, Periodic (H q) 1)
     (hHs : ∀ q, ContDiff ℝ 1 (uncurry (H q))) (v : ℂ) :
     ContDiffOn ℝ 1
       (uncurry fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x v)
@@ -618,8 +618,8 @@ private theorem integral_floerEnergyDensity_image_endPiece (ω : SymplecticForm 
 
 /-- The Floer energy density, the symplectic area density and the curvature of the pair-of-pants
 perturbation, along a map that is `C¹` on `S`, are integrable over every truncation. -/
-private theorem integrableOn_truncation (ω : SymplecticForm V) (hH : ∀ q, Periodic (H q) 1)
-    (hHs : ∀ q, ContDiff ℝ 1 (uncurry (H q))) {u : ℝ × ℝ → V}
+theorem integrableOn_truncation_pairOfPantsPerturbation (ω : SymplecticForm V)
+    (hH : ∀ q, Periodic (H q) 1) (hHs : ∀ q, ContDiff ℝ 1 (uncurry (H q))) {u : ℝ × ℝ → V}
     (hu : ContDiffOn ℝ 1 u {z : ℝ × ℝ | Complex.equivRealProdCLM.symm z ≠ 0 ∧
       Complex.equivRealProdCLM.symm z ≠ 1}) (R : ℝ) :
     IntegrableOn (ω.floerEnergyDensity
@@ -682,7 +682,7 @@ theorem integral_floerEnergyDensity_pairOfPantsPerturbation_truncation (ω : Sym
   set T := Complex.equivRealProdCLM.symm ⁻¹' truncation R
   set A : Puncture → Set (ℝ × ℝ) := fun q => endChart q '' endPiece q R
   set C := T \ ⋃ q, A q
-  obtain ⟨hE, harea, hcurv⟩ := integrableOn_truncation ω hH hHs hu R
+  obtain ⟨hE, harea, hcurv⟩ := integrableOn_truncation_pairOfPantsPerturbation ω hH hHs hu R
   -- The truncation is the disjoint union of its core `C`, where every `±s < 1`, and the three
   -- end pieces.
   have hTm : MeasurableSet T :=
