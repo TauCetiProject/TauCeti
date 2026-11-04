@@ -54,6 +54,8 @@ The structure follows the proof of the area formula in
 
 ## Main declarations
 
+* `ApproximatesLinearOn.exists_lipschitzOnWith_eq_image_inter_preimage`: near a linear map with a
+  right inverse, the fibres of `f` are Lipschitz images of slices of the linear fibres.
 * `ApproximatesLinearOn.lintegral_euclideanHausdorffMeasure_inter_preimage_le`,
   `ApproximatesLinearOn.ofReal_normDet_adjoint_mul_volume_le`: the coarea formula up to a
   controlled factor for a map approximated by a linear map with a right inverse.
@@ -74,13 +76,15 @@ public section
 open MeasureTheory Measure Set Filter Metric Module Function
 open scoped NNReal ENNReal Topology
 
-variable {E F : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
-  [NormedAddCommGroup F] [InnerProductSpace ℝ F] {f : E → F} {L : E →L[ℝ] F} {M : F →L[ℝ] E}
-  {s : Set E} {δ : ℝ≥0}
-
 namespace ApproximatesLinearOn
 
 /-! ### Straightening a map along a right inverse of its linear approximation -/
+
+section NormedSpace
+
+variable {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+  [NormedAddCommGroup F] [NormedSpace ℝ F] {f : E → F} {L : E →L[ℝ] F} {M : F →L[ℝ] E}
+  {s : Set E} {δ : ℝ≥0}
 
 /-- The map `x ↦ x + M (f x - L x)` is approximated on `s` by the identity up to `δ ‖M‖`. -/
 private theorem approximatesLinearOn_straighten (hf : ApproximatesLinearOn f L s δ) :
@@ -132,6 +136,29 @@ private theorem image_straighten_inter_preimage (hM : RightInverse M L) (y : F) 
   · rintro ⟨⟨x, hx, rfl⟩, hy⟩
     exact ⟨x, ⟨hx, (hL x).symm.trans hy⟩, rfl⟩
 
+/-- If `δ ‖M‖ < 1`, the straightening map `h x = x + M (f x - L x)` admits a
+`(1 - δ ‖M‖)⁻¹`-Lipschitz left inverse on `h '' s`. -/
+private theorem exists_lipschitzOnWith_leftInvOn_straighten (hf : ApproximatesLinearOn f L s δ)
+    (hδ : δ * ‖M‖₊ < 1) :
+    ∃ g : E → E, LipschitzOnWith (1 - δ * ‖M‖₊)⁻¹ g ((fun x ↦ x + M (f x - L x)) '' s) ∧
+      LeftInvOn g (fun x ↦ x + M (f x - L x)) s :=
+  ⟨invFunOn (fun x ↦ x + M (f x - L x)) s,
+    lipschitzOnWith_iff_restrict.2 ((antilipschitzWith_straighten hf hδ).to_rightInvOn'
+      (surjOn_image _ s).mapsTo_invFunOn (surjOn_image _ s).rightInvOn_invFunOn),
+    (injOn_straighten hf hδ).leftInvOn_invFunOn⟩
+
+/-- If `f` is approximated on `s` up to `δ` by a continuous linear map `L` with a continuous linear
+right inverse `M` satisfying `δ ‖M‖ < 1`, then there are a set `t` and a `(1 - δ ‖M‖)⁻¹`-Lipschitz
+map `g` on `t` that maps each linear slice `t ∩ L ⁻¹' {y}` onto the fibre `s ∩ f ⁻¹' {y}`. -/
+theorem exists_lipschitzOnWith_eq_image_inter_preimage (hf : ApproximatesLinearOn f L s δ)
+    (hM : RightInverse M L) (hδ : δ * ‖M‖₊ < 1) :
+    ∃ (t : Set E) (g : E → E), LipschitzOnWith (1 - δ * ‖M‖₊)⁻¹ g t ∧
+      ∀ y, s ∩ f ⁻¹' {y} = g '' (t ∩ L ⁻¹' {y}) := by
+  obtain ⟨g, hlip, hg⟩ := exists_lipschitzOnWith_leftInvOn_straighten hf hδ
+  refine ⟨(fun x ↦ x + M (f x - L x)) '' s, g, hlip, fun y ↦ ?_⟩
+  rw [← image_straighten_inter_preimage hM, image_image]
+  exact ((image_congr fun x (hx : x ∈ s ∩ f ⁻¹' {y}) ↦ hg hx.1).trans (image_id' _)).symm
+
 variable [MeasurableSpace E] [BorelSpace E]
 
 /-- If `δ ‖M‖ < 1`, then the map `x ↦ x + M (f x - L x)` shrinks the `d`-dimensional measure of
@@ -139,23 +166,22 @@ subsets of `s` by at most the factor `(1 - δ ‖M‖)ᵈ`. -/
 private theorem euclideanHausdorffMeasure_le_image_straighten
     (hf : ApproximatesLinearOn f L s δ) (hδ : δ * ‖M‖₊ < 1) {t : Set E} (ht : t ⊆ s) (d : ℕ) :
     μHE[d] t ≤ ((1 - δ * ‖M‖₊)⁻¹ ^ d : ℝ≥0) * μHE[d] ((fun x ↦ x + M (f x - L x)) '' t) := by
-  set h : E → E := fun x ↦ x + M (f x - L x)
-  -- The inverse `g` of `h` on `s` is `(1 - δ ‖M‖)⁻¹`-Lipschitz on `h '' s`.
-  set g := invFunOn h s
-  have hg (x : E) (hx : x ∈ s) : g (h x) = x := (injOn_straighten hf hδ).leftInvOn_invFunOn hx
-  have hlip : LipschitzOnWith (1 - δ * ‖M‖₊)⁻¹ g (h '' s) :=
-    lipschitzOnWith_iff_restrict.2 ((antilipschitzWith_straighten hf hδ).to_rightInvOn'
-      (surjOn_image h s).mapsTo_invFunOn (surjOn_image h s).rightInvOn_invFunOn)
-  have himage : t = g '' (h '' t) := by
+  obtain ⟨g, hlip, hg⟩ := exists_lipschitzOnWith_leftInvOn_straighten hf hδ
+  have himage : t = g '' ((fun x ↦ x + M (f x - L x)) '' t) := by
     rw [image_image]
-    exact ((image_congr fun x hx ↦ hg x (ht hx)).trans (image_id' t)).symm
+    exact ((image_congr fun x hx ↦ hg (ht hx)).trans (image_id' t)).symm
   rw [ENNReal.coe_pow]
   conv_lhs => rw [himage]
   exact (hlip.mono (image_mono ht)).euclideanHausdorffMeasure_image_le d
 
+end NormedSpace
+
 /-! ### The coarea formula near a linear map -/
 
-variable [FiniteDimensional ℝ E] [FiniteDimensional ℝ F] [MeasurableSpace F] [BorelSpace F]
+variable {E F : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
+  [NormedAddCommGroup F] [InnerProductSpace ℝ F] {f : E → F} {L : E →L[ℝ] F} {M : F →L[ℝ] E}
+  {s : Set E} {δ : ℝ≥0} [MeasurableSpace E] [BorelSpace E]
+  [FiniteDimensional ℝ E] [FiniteDimensional ℝ F] [MeasurableSpace F] [BorelSpace F]
 
 /-- **Upper coarea bound near a linear map.** If `f` is approximated on `s` up to `δ` by a linear
 map `L` with a right inverse `M`, and `δ ‖M‖ < 1`, then the integral of the
@@ -246,8 +272,10 @@ namespace MeasureTheory
 
 /-! ### Globalization -/
 
-variable [FiniteDimensional ℝ E] [FiniteDimensional ℝ F] [MeasurableSpace E] [BorelSpace E]
-  [MeasurableSpace F] [BorelSpace F]
+variable {E F : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
+  [NormedAddCommGroup F] [InnerProductSpace ℝ F] {f : E → F} {L : E →L[ℝ] F} {M : F →L[ℝ] E}
+  {s : Set E} {δ : ℝ≥0} [FiniteDimensional ℝ E] [FiniteDimensional ℝ F]
+  [MeasurableSpace E] [BorelSpace E] [MeasurableSpace F] [BorelSpace F]
 
 /-- The coarea formula on one piece, up to factors: if `f` is approximated on `Q` by a linear map
 `L` with a right inverse `M`, with a precision for which the factors of the two linear coarea
