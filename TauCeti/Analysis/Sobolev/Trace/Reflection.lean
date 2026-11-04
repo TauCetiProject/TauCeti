@@ -11,6 +11,7 @@ public import Mathlib.MeasureTheory.Measure.Haar.InnerProductSpace
 import TauCeti.Analysis.Sobolev.WeakDeriv.MeasurePreserving
 import TauCeti.Analysis.SpecialFunctions.SmoothTransition
 import TauCeti.MeasureTheory.Function.LocallyIntegrable
+import TauCeti.MeasureTheory.Measure.Haar.InnerProductSpace
 
 /-!
 # Even reflection across a hyperplane preserves weak differentiability
@@ -44,6 +45,10 @@ Dominated convergence then passes to the limit.
   `Submodule.reflection` in the hyperplane `{0} × E`.
 * `TauCeti.normalReflection`: the affine reflection `(t, y) ↦ (2a - t, y)` in `{a} × E`, with
   its measure preservation and derivative.
+* `TauCeti.integrableOn_of_integrableOn_inter_normalHalfSpace` and
+  `TauCeti.setIntegral_eq_two_mul_setIntegral_inter_normalHalfSpace`: a reflection-invariant
+  function on a reflection-invariant set is integrable there as soon as it is integrable on the
+  half in `H`, and its integral is twice the integral over that half.
 * `TauCeti.normalCutoff`: the smooth cutoff `σ(c (x.fst - a) - 1)` of the normal coordinate,
   supported a positive distance inside the half-space, with the common bound
   `TauCeti.exists_normalCutoff_bound` on it and its gradient.
@@ -190,6 +195,13 @@ theorem contDiff_normalReflection (a : ℝ) {n : WithTop ℕ∞} :
   rw [normalReflection_eq_add]
   exact (normalLinearReflection E).toContinuousLinearEquiv.contDiff.add contDiff_const
 
+/-- The normal reflection in `{a} × E` maps every ball centred on that hyperplane into itself. -/
+theorem mapsTo_normalReflection_ball {a : ℝ} {x₀ : WithLp 2 (ℝ × E)} (hx₀ : x₀.fst = a) (r : ℝ) :
+    MapsTo (normalReflection E a) (Metric.ball x₀ r) (Metric.ball x₀ r) := fun x hx => by
+  rw [Metric.mem_ball, ← (normalReflection_eq_self_iff a x₀).2 hx₀,
+    (normalReflection E a).dist_map]
+  exact hx
+
 variable [MeasurableSpace E] [BorelSpace E]
 
 /-- The normal reflection preserves Lebesgue measure. -/
@@ -213,6 +225,71 @@ theorem locallyIntegrable_comp_normalReflection (a : ℝ) {F : Type*}
     LocallyIntegrable fun x => g (normalReflection E a x) :=
   (locallyIntegrable_map_homeomorph (normalReflection E a).toHomeomorph).1 <| by
     rwa [AffineIsometryEquiv.coe_toHomeomorph, (measurePreserving_normalReflection a).map_eq]
+
+/-- On a set `U` mapped into itself by the normal reflection `ρ`, the indicator of `U` splits off
+the hyperplane `{a} × E` into the indicators of `U ∩ H` and of its mirror image
+`U ∩ ρ⁻¹ H`. The hyperplane is null, so the splitting holds almost everywhere. -/
+private theorem indicator_ae_eq_add_indicator_comp_normalReflection {a : ℝ}
+    {U : Set (WithLp 2 (ℝ × E))} (hU : MapsTo (normalReflection E a) U U)
+    {F : WithLp 2 (ℝ × E) → ℝ} (hF : ∀ x ∈ U, F (normalReflection E a x) = F x) :
+    U.indicator F =ᵐ[volume] fun x => (U ∩ (normalHalfSpace (E := E) a : Set _)).indicator F x +
+      (U ∩ (normalHalfSpace (E := E) a : Set _)).indicator F (normalReflection E a x) := by
+  set H : Set (WithLp 2 (ℝ × E)) := ↑(normalHalfSpace (E := E) a)
+  filter_upwards [measure_eq_zero_iff_ae_notMem.1
+    (Measure.addHaar_setOf_fst_eq (E := E) volume a)] with x hx
+  have hx' : x.fst ≠ a := hx
+  have hρU : normalReflection E a x ∈ U ↔ x ∈ U :=
+    ⟨fun h => normalReflection_normalReflection a x ▸ hU h, fun h => hU h⟩
+  by_cases hxU : x ∈ U
+  · rcases lt_or_gt_of_ne hx' with hlt | hgt
+    · have h1 : x ∉ U ∩ H := fun h => absurd hlt (not_lt.2 ((mem_normalHalfSpace a x).1 h.2).le)
+      have h2 : normalReflection E a x ∈ U ∩ H :=
+        ⟨hU hxU, (normalReflection_mem_normalHalfSpace_iff a x).2 hlt⟩
+      rw [indicator_of_mem hxU, indicator_of_notMem h1, indicator_of_mem h2, hF x hxU, zero_add]
+    · have h1 : x ∈ U ∩ H := ⟨hxU, (mem_normalHalfSpace a x).2 hgt⟩
+      have h2 : normalReflection E a x ∉ U ∩ H := fun h =>
+        absurd ((normalReflection_mem_normalHalfSpace_iff a x).1 h.2) (not_lt.2 hgt.le)
+      rw [indicator_of_mem hxU, indicator_of_mem h1, indicator_of_notMem h2, add_zero]
+  · have h1 : x ∉ U ∩ H := fun h => hxU h.1
+    have h2 : normalReflection E a x ∉ U ∩ H := fun h => hxU (hρU.1 h.1)
+    rw [indicator_of_notMem hxU, indicator_of_notMem h1, indicator_of_notMem h2, add_zero]
+
+/-- The two halves of the splitting `indicator_ae_eq_add_indicator_comp_normalReflection` are
+integrable when `F` is integrable on `U ∩ H`. -/
+private theorem integrable_indicator_inter_normalHalfSpace {a : ℝ} {U : Set (WithLp 2 (ℝ × E))}
+    (hUm : MeasurableSet U) {F : WithLp 2 (ℝ × E) → ℝ}
+    (hint : IntegrableOn F (U ∩ (normalHalfSpace (E := E) a : Set _))) :
+    Integrable ((U ∩ (normalHalfSpace (E := E) a : Set _)).indicator F) ∧
+      Integrable fun x =>
+        (U ∩ (normalHalfSpace (E := E) a : Set _)).indicator F (normalReflection E a x) := by
+  have h1 := (integrable_indicator_iff (hUm.inter (normalHalfSpace a).isOpen.measurableSet)).2 hint
+  exact ⟨h1, ((measurePreserving_normalReflection a).integrable_comp_emb
+    (normalReflection E a).toHomeomorph.measurableEmbedding).2 h1⟩
+
+/-- A function invariant under the normal reflection `ρ` on a measurable set `U` mapped into
+itself by `ρ` is integrable on `U` as soon as it is integrable on the half `U ∩ H`. -/
+theorem integrableOn_of_integrableOn_inter_normalHalfSpace {a : ℝ}
+    {U : Set (WithLp 2 (ℝ × E))} (hUm : MeasurableSet U) (hU : MapsTo (normalReflection E a) U U)
+    {F : WithLp 2 (ℝ × E) → ℝ} (hF : ∀ x ∈ U, F (normalReflection E a x) = F x)
+    (hint : IntegrableOn F (U ∩ (normalHalfSpace (E := E) a : Set _))) : IntegrableOn F U := by
+  obtain ⟨h1, h2⟩ := integrable_indicator_inter_normalHalfSpace hUm hint
+  exact (integrable_indicator_iff hUm).1 <|
+    (h1.add h2).congr (indicator_ae_eq_add_indicator_comp_normalReflection hU hF).symm
+
+/-- **Integrals of reflection-invariant functions.** If `U` is a measurable set mapped into
+itself by the normal reflection `ρ` in `{a} × E`, for instance a ball centred on that hyperplane,
+and `F` is integrable on `U ∩ H` and invariant under `ρ` on `U`, then the integral of `F` over `U`
+is twice its integral over `U ∩ H`. -/
+theorem setIntegral_eq_two_mul_setIntegral_inter_normalHalfSpace {a : ℝ}
+    {U : Set (WithLp 2 (ℝ × E))} (hUm : MeasurableSet U) (hU : MapsTo (normalReflection E a) U U)
+    {F : WithLp 2 (ℝ × E) → ℝ} (hF : ∀ x ∈ U, F (normalReflection E a x) = F x)
+    (hint : IntegrableOn F (U ∩ (normalHalfSpace (E := E) a : Set _))) :
+    ∫ x in U, F x = 2 * ∫ x in U ∩ (normalHalfSpace (E := E) a : Set _), F x := by
+  obtain ⟨h1, h2⟩ := integrable_indicator_inter_normalHalfSpace hUm hint
+  rw [← integral_indicator hUm,
+    integral_congr_ae (indicator_ae_eq_add_indicator_comp_normalReflection hU hF),
+    integral_add h1 h2, integral_comp_normalReflection a,
+    integral_indicator (hUm.inter (normalHalfSpace a).isOpen.measurableSet), two_mul]
 
 end Reflection
 

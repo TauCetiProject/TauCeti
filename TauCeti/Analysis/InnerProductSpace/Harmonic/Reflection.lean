@@ -56,6 +56,8 @@ Brezis, Lemma 9.2, used in `TauCeti.Analysis.Sobolev.Trace.Reflection` for the e
 * `TauCeti.WeaklyHarmonicOn.exists_harmonicOnNhd_ae_eq_of_inf_normalHalfSpace`: if such a function
   also vanishes off `H`, it agrees almost everywhere on `U ∩ H` with a harmonic function on `U`
   that is odd under `ρ`, and its weak gradient agrees there with the classical gradient.
+* `TauCeti.gradient_normalReflection_of_forall_eq_neg`: the gradient of a function odd under `ρ`
+  satisfies `∇h (ρ x) = -R (∇h x)`, where `R` is the linear part of `ρ`.
 
 ## References
 
@@ -278,5 +280,33 @@ theorem WeaklyHarmonicOn.exists_harmonicOnNhd_ae_eq_of_inf_normalHalfSpace
         ((hh.contDiffOn.of_le one_le_two).mono hUH)).congr_ae hwh.symm
     filter_upwards [hh'.ae_eq hG] with x hx
     exact innerSL_inj.1 hx
+
+omit [MeasurableSpace E] [BorelSpace E] in
+/-- **Gradients of odd functions.** Let `h` be odd under the reflection `ρ` in `{a} × E` on an
+open set `U` mapped into itself by `ρ`, that is `h (ρ x) = -h x` for `x ∈ U`. If `h` is
+differentiable at `ρ x`, then its gradient transforms by minus the linear part `R` of `ρ`:
+`∇h (ρ x) = -R (∇h x)`. The normal component of `∇h` is therefore even under `ρ` and its
+tangential components are odd. -/
+theorem gradient_normalReflection_of_forall_eq_neg {U : Set (WithLp 2 (ℝ × E))} (hU : IsOpen U)
+    {h : WithLp 2 (ℝ × E) → ℝ} (hodd : ∀ x ∈ U, h (normalReflection E a x) = -h x)
+    {x : WithLp 2 (ℝ × E)} (hx : x ∈ U) (hd : DifferentiableAt ℝ h (normalReflection E a x)) :
+    ∇ h (normalReflection E a x) = -normalLinearReflection E (∇ h x) := by
+  set R := normalLinearReflection E
+  have hcomp : HasFDerivAt (fun y => h (normalReflection E a y))
+      ((fderiv ℝ h (normalReflection E a x)).comp
+        (R.toContinuousLinearEquiv : WithLp 2 (ℝ × E) →L[ℝ] WithLp 2 (ℝ × E))) x :=
+    hd.hasFDerivAt.comp x (hasFDerivAt_normalReflection a x)
+  have heq : (fun y => h (normalReflection E a y)) =ᶠ[𝓝 x] -h :=
+    Filter.eventually_of_mem (hU.mem_nhds hx) hodd
+  have hD : -fderiv ℝ h x = (fderiv ℝ h (normalReflection E a x)).comp
+      (R.toContinuousLinearEquiv : WithLp 2 (ℝ × E) →L[ℝ] WithLp 2 (ℝ × E)) := by
+    rw [← fderiv_neg, ← (hcomp.congr_of_eventuallyEq heq.symm).fderiv]
+  refine ext_inner_right ℝ fun v => ?_
+  have hv := congrArg (fun L : WithLp 2 (ℝ × E) →L[ℝ] ℝ => L (R v)) hD
+  simp only [neg_apply, ContinuousLinearMap.comp_apply,
+    ContinuousLinearEquiv.coe_coe, LinearIsometryEquiv.coe_toContinuousLinearEquiv, R,
+    normalLinearReflection_normalLinearReflection] at hv
+  rw [inner_gradient_left, ← hv, ← inner_gradient_left, inner_neg_left,
+    inner_normalLinearReflection_left_eq_right]
 
 end TauCeti
