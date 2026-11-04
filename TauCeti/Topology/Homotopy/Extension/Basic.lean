@@ -45,6 +45,9 @@ with that property to one that extends homotopies with values in a space in any 
 * `TauCeti.HasHomotopyExtensionProperty.homotopicRel_of_retracing`: a homotopy followed by a
   homotopy which retraces it at the points of a subset with the homotopy extension property can
   be replaced by a homotopy relative to that subset.
+* `TauCeti.HasHomotopyExtensionProperty.exists_homotopy_apply_eq_of_trans_refl`: a homotopy which
+  at the points of such a subset runs through a given homotopy and then stays put can be replaced
+  by one which is exactly the given homotopy there.
 
 ## References
 
@@ -379,5 +382,63 @@ theorem HasHomotopyExtensionProperty.homotopicRel_of_retracing
   · simp [hE₁ _ ⟨x, hx⟩]
 
 end Retracing
+
+section StationaryTail
+
+variable {Y : Type u} [TopologicalSpace Y] {f₀ f₁ : C(X, Y)}
+
+/-- **Removing a stationary tail on `A`.** Let `F` be a homotopy from `f₀` to `f₁`, and `G` a
+homotopy between the restrictions of `f₀` and `f₁` to a subset `A` with the homotopy extension
+property. If at every point of `A` the homotopy `F` runs through `G` at double speed and then
+stays put, that is, `F` is `G.trans (Homotopy.refl _)` on `A`, then some homotopy from `f₀` to `f₁`
+is exactly `G` on `A`. -/
+theorem HasHomotopyExtensionProperty.exists_homotopy_apply_eq_of_trans_refl
+    (hA : HasHomotopyExtensionProperty A) (F : f₀.Homotopy f₁)
+    (G : (f₀.comp (ContinuousMap.subtypeVal A)).Homotopy (f₁.comp (ContinuousMap.subtypeVal A)))
+    (hF : ∀ t (a : A), F (t, a) = (G.trans (ContinuousMap.Homotopy.refl _)) (t, a)) :
+    ∃ F' : f₀.Homotopy f₁, ∀ t (a : A), F' (t, a) = G (t, a) := by
+  -- On `A`, `F` runs through `G` at double speed: `F (t, a) = G (min (2 t) 1, a)`.
+  have hF' (t : I) (a : A) :
+      F (t, a) = G (projIcc 0 1 zero_le_one (min (2 * (t : ℝ)) 1), a) := by
+    rw [hF, ContinuousMap.Homotopy.trans_apply]
+    split_ifs with h
+    · congr 2
+      rw [min_eq_left (by linarith), projIcc_of_mem]
+    · rw [ContinuousMap.Homotopy.refl_apply, min_eq_right (by linarith), projIcc_right]
+      exact (G.apply_one a).symm
+  -- Extend, as maps into the path space, the deformation of these paths which slows `G` down to
+  -- unit speed, from `A` to `X`: at time `u` the path is `t ↦ G (max t (min (2 t) 1 - u))`.
+  obtain ⟨E, hE₀, hE₁⟩ := hA.exists_extension
+    (ContinuousMap.curry ⟨fun p : X × I => F (p.2, p.1), by fun_prop⟩)
+    (ContinuousMap.curry ⟨fun p : (I × A) × I =>
+      G (projIcc 0 1 zero_le_one (max (p.2 : ℝ) (min (2 * (p.2 : ℝ)) 1 - p.1.1)), p.1.2), by
+        fun_prop⟩)
+    fun a => ContinuousMap.ext fun t => by
+      have : max (t : ℝ) (min (2 * (t : ℝ)) 1 - 0) = min (2 * (t : ℝ)) 1 := by
+        rw [sub_zero]
+        exact max_eq_right (le_min (by linarith [t.2.1]) t.2.2)
+      simp only [ContinuousMap.curry_apply, ContinuousMap.coe_mk, Icc.coe_zero, this, hF']
+  -- Read the extension off along the path `s ↦ (min s (1 - s), s)` in the square, which starts
+  -- and ends on the undeformed paths.
+  let F' : f₀.Homotopy f₁ :=
+    { toFun := fun p => E (projIcc 0 1 zero_le_one (min (p.1 : ℝ) (1 - p.1)), p.2) p.1
+      continuous_toFun := by fun_prop
+      map_zero_left := fun x => by simp [hE₀]
+      map_one_left := fun x => by simp [hE₀] }
+  have hF'_apply (p : I × X) :
+      F' p = E (projIcc 0 1 zero_le_one (min (p.1 : ℝ) (1 - p.1)), p.2) p.1 := rfl
+  refine ⟨F', fun t a => ?_⟩
+  -- Along that path the deformation has slowed `G` down exactly to unit speed:
+  -- `max t (min (2 t) 1 - min t (1 - t)) = t`.
+  have key : projIcc 0 1 zero_le_one (max (t : ℝ) (min (2 * (t : ℝ)) 1 -
+      (projIcc 0 1 zero_le_one (min (t : ℝ) (1 - t)) : ℝ))) = t := by
+    have ht := t.2.1
+    have ht' := t.2.2
+    ext
+    simp only [coe_projIcc, min_def, max_def]
+    split_ifs <;> linarith
+  rw [hF'_apply, hE₁, ContinuousMap.curry_apply, ContinuousMap.coe_mk, key]
+
+end StationaryTail
 
 end TauCeti
