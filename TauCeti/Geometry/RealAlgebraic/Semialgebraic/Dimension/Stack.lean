@@ -52,7 +52,8 @@ namespace IsCAD
 
 /-- Each cylindrical cell either has finite fibers and its base dimension, or has infinite
 fibers over its entire base and dimension one larger than that base. -/
-theorem semialgebraicDim_setOf_cons_mem_cases {𝒞 : Set (Set (Fin (n + 1) → ℝ))}
+theorem semialgebraicDim_eq_image_tail_or_eq_image_tail_add_one
+    {𝒞 : Set (Set (Fin (n + 1) → ℝ))}
     (h : IsCAD (n + 1) 𝒞) {E : Set (Fin (n + 1) → ℝ)} (hE : E ∈ 𝒞) :
     (semialgebraicDim E = semialgebraicDim (Fin.tail '' E) ∧
       ∀ x, {t : ℝ | Fin.cons t x ∈ E}.Finite) ∨
@@ -73,6 +74,19 @@ theorem semialgebraicDim_setOf_cons_mem_cases {𝒞 : Set (Set (Fin (n + 1) → 
           (hθ C hC).strictMono j, hbase, hdim, Nat.cast_add, Nat.cast_one]
       · rw [hbase]
         exact infinite_setOf_cons_mem_image_cylinder_sectorSet_iff (hθ C hC).strictMono j x
+
+/-- A cylindrical cell with an infinite fiber has dimension one larger than its base and
+infinite fibers at exactly the points of that base. -/
+theorem semialgebraicDim_eq_image_tail_add_one_of_infinite_setOf_cons_mem
+    {𝒞 : Set (Set (Fin (n + 1) → ℝ))} (h : IsCAD (n + 1) 𝒞)
+    {E : Set (Fin (n + 1) → ℝ)} (hE : E ∈ 𝒞)
+    (hinf : ∃ x, {t : ℝ | Fin.cons t x ∈ E}.Infinite) :
+    semialgebraicDim E = semialgebraicDim (Fin.tail '' E) + 1 ∧
+      ∀ x, {t : ℝ | Fin.cons t x ∈ E}.Infinite ↔ x ∈ Fin.tail '' E := by
+  rcases h.semialgebraicDim_eq_image_tail_or_eq_image_tail_add_one hE with hfinite | hinfinite
+  · obtain ⟨x, hx⟩ := hinf
+    exact (hx (hfinite.2 x)).elim
+  · exact hinfinite
 
 end IsCAD
 end TauCeti

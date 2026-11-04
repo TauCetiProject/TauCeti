@@ -487,7 +487,8 @@ theorem isOpenEmbedding_tail_image_cylinder_sectionSet {θ : Fin k → S → α}
   convert e.symm.isOpenEmbedding using 1
   funext y
   obtain ⟨x, rfl⟩ := e.surjective y
-  -- The graph homeomorphism sends `x` to the cylinder point at height `θ i x`.
+  -- Here `rfl` unfolds the forward maps of `toHomeomorph` and `homeomorphImage`;
+  -- `trans` composes them and `setCongr` changes only the membership proof.
   have hx : (e x : Fin (n + 1) → α) = cylinder S (x, θ i x) := rfl
   apply Subtype.ext
   simp [hx]
@@ -510,7 +511,8 @@ theorem isOpenEmbedding_cons_image_cylinder_sectorSet {S : Set (Fin n → ℝ)} 
   funext y
   obtain ⟨z, rfl⟩ := e.surjective y
   simp only [comp_apply, Homeomorph.symm_apply_apply]
-  -- The cylinder homeomorphism preserves both the base and height coordinates.
+  -- Here `rfl` unfolds the forward map of `homeomorphImage`, whose `toHomeomorph`
+  -- applies the cylinder map; its final `setCongr` changes only the membership proof.
   have hz : (e z : Fin (n + 1) → ℝ) = cylinder S z := rfl
   funext l
   cases l using Fin.cases <;> simp [hz, g]
