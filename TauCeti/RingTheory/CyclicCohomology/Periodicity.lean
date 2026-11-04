@@ -283,14 +283,14 @@ private theorem exists_eq_cyclicTotalPeriodicity_add_cyclicTotalDifferential {m 
       simp [c]
     have hb := LinearMap.congr_fun
       (one_sub_cyclicOperator_comp_hochschildCoboundary R A M (m + 1)) χ
-    simp only [LinearMap.comp_apply, LinearMap.sub_apply, Module.End.one_apply, hχ] at hb
+    simp only [LinearMap.comp_apply, LinearMap.sub_apply, one_apply_eq_self, hχ] at hb
     simp only [cyclicTotalDifferential_apply_succ, Submodule.coe_zero, Pi.zero_apply] at hx'
     -- the rows `m + 1` and `m + 2` of a total cochain of degree `m + 2` sit in columns one and zero
     have h₁ : m + 2 - (m + 1) = 1 := by omega
     have h₀ : m + 2 - (m + 1 + 1) = 0 := Nat.sub_self _
     rw [h₁, h₀, cyclicBicomplexVertical_of_odd odd_one,
       cyclicBicomplexHorizontal_of_even Even.zero] at hx'
-    simp only [LinearMap.neg_apply, LinearMap.sub_apply, Module.End.one_apply] at hx'
+    simp only [LinearMap.neg_apply, LinearMap.sub_apply, one_apply_eq_self] at hx'
     simp only [y, Submodule.coe_sub, Pi.sub_apply, map_sub, hc₁, ← hb]
     exact sub_eq_zero.2 (neg_add_eq_zero.1 hx')
   -- killing column one of `y` leaves a total cochain in the image of the periodicity map

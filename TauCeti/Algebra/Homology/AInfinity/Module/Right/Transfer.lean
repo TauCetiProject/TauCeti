@@ -266,7 +266,7 @@ private theorem pow_succ_higherBarDifferential_comp_rTensor_tmul_of_tprod (k : M
       (x ⊗ₜ[R] TensorWords.of R A n (PiTensorProduct.tprod R a)) = 0 := by
   induction n using Nat.strong_induction_on generalizing x with
   | _ n ih =>
-    rw [pow_succ, Module.End.mul_apply, LinearMap.comp_apply, LinearMap.rTensor_tmul,
+    rw [pow_succ, mul_apply_eq_comp, LinearMap.comp_apply, LinearMap.rTensor_tmul,
       higherBarDifferential_tmul_of_tprod, map_sum]
     refine Finset.sum_eq_zero fun j hj ↦ ?_
     have hj : j < n := Finset.mem_range.1 hj
@@ -440,7 +440,7 @@ theorem isHomogeneous_perturbationSeries :
 theorem perturbationSeries_tmul_one (x : M) :
     (MM.barContraction c hh hincl hproj).perturbationSeries MM.higherBarDifferential
       (x ⊗ₜ[R] (1 : TensorWords R A)) = 0 := by
-  rw [LinearSpecialContraction.perturbationSeries_def, Module.End.mul_apply,
+  rw [LinearSpecialContraction.perturbationSeries_def, mul_apply_eq_comp,
     higherBarDifferential_tmul_one, map_zero]
 
 /-! ### The transferred module -/

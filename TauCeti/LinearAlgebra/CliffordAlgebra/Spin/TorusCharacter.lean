@@ -133,7 +133,7 @@ theorem spinTorus_apply (w : Circle × Circle) :
 theorem spinVectorAction_spinTorus_zero (w : Circle × Circle) :
     spinVectorAction Q (b.spinTorus hQ w) (b 0) =
       ((w.1 : ℂ) ^ 2).re • b 0 + ((w.1 : ℂ) ^ 2).im • b 1 := by
-  rw [spinTorus_apply, spinVectorAction_mul, LinearEquiv.mul_apply,
+  rw [spinTorus_apply, spinVectorAction_mul, mul_apply_eq_comp,
     spinVectorAction_spinCircle_of_isOrtho _ _ (b.isOrtho_apply hQ (by decide))
       (b.isOrtho_apply hQ (by decide)),
     spinVectorAction_spinCircle_left]
@@ -143,7 +143,7 @@ theorem spinVectorAction_spinTorus_zero (w : Circle × Circle) :
 theorem spinVectorAction_spinTorus_one (w : Circle × Circle) :
     spinVectorAction Q (b.spinTorus hQ w) (b 1) =
       ((w.1 : ℂ) ^ 2).re • b 1 - ((w.1 : ℂ) ^ 2).im • b 0 := by
-  rw [spinTorus_apply, spinVectorAction_mul, LinearEquiv.mul_apply,
+  rw [spinTorus_apply, spinVectorAction_mul, mul_apply_eq_comp,
     spinVectorAction_spinCircle_of_isOrtho _ _ (b.isOrtho_apply hQ (by decide))
       (b.isOrtho_apply hQ (by decide)),
     spinVectorAction_spinCircle_right]
@@ -153,7 +153,7 @@ theorem spinVectorAction_spinTorus_one (w : Circle × Circle) :
 theorem spinVectorAction_spinTorus_two (w : Circle × Circle) :
     spinVectorAction Q (b.spinTorus hQ w) (b 2) =
       ((w.2 : ℂ) ^ 2).re • b 2 + ((w.2 : ℂ) ^ 2).im • b 3 := by
-  rw [spinTorus_apply, spinVectorAction_mul, LinearEquiv.mul_apply,
+  rw [spinTorus_apply, spinVectorAction_mul, mul_apply_eq_comp,
     spinVectorAction_spinCircle_left, map_sub, map_smul, map_smul,
     spinVectorAction_spinCircle_of_isOrtho _ _ (b.isOrtho_apply hQ (by decide))
       (b.isOrtho_apply hQ (by decide)),
@@ -165,7 +165,7 @@ theorem spinVectorAction_spinTorus_two (w : Circle × Circle) :
 theorem spinVectorAction_spinTorus_three (w : Circle × Circle) :
     spinVectorAction Q (b.spinTorus hQ w) (b 3) =
       ((w.2 : ℂ) ^ 2).re • b 3 - ((w.2 : ℂ) ^ 2).im • b 2 := by
-  rw [spinTorus_apply, spinVectorAction_mul, LinearEquiv.mul_apply,
+  rw [spinTorus_apply, spinVectorAction_mul, mul_apply_eq_comp,
     spinVectorAction_spinCircle_right, map_add, map_smul, map_smul,
     spinVectorAction_spinCircle_of_isOrtho _ _ (b.isOrtho_apply hQ (by decide))
       (b.isOrtho_apply hQ (by decide)),
@@ -192,7 +192,7 @@ private theorem map_spinTorus_mk_one_apply (w : Circle) (ψ : W) :
   rw [OrthonormalBasis.coe_spinTorus_apply]
   simp only [Circle.coe_one, Complex.one_re, Complex.one_im, map_one, zero_smul, add_zero,
     mul_one, map_add, map_smul, LinearMap.add_apply, LinearMap.smul_apply,
-    Algebra.algebraMap_eq_smul_one, Module.End.one_apply, ← Complex.coe_smul]
+    Algebra.algebraMap_eq_smul_one, one_apply_eq_self, ← Complex.coe_smul]
 
 variable {o} (hb : b.toBasis.orientation = o)
 include hb
@@ -203,10 +203,10 @@ private theorem map_ι_mul_ι_two_three_apply {ε : ℂ} {ψ : W}
     ρ (ι Q (b 2) * ι Q (b 3)) ψ = ε • ρ (ι Q (b 0) * ι Q (b 1)) ψ := by
   rw [mem_eigenspace_iff, chirality_eq o hQ b hb, mul_assoc (ι Q (b 0) * ι Q (b 1)), map_neg,
     map_mul] at hψ
-  simp only [LinearMap.neg_apply, Module.End.mul_apply] at hψ
+  simp only [LinearMap.neg_apply, mul_apply_eq_comp] at hψ
   -- `J₁² = -1`, so `J₂ ψ = -J₁ (J₁ (J₂ ψ)) = J₁ (ε ψ)`.
   have h₁ (x : W) : ρ (ι Q (b 0) * ι Q (b 1)) (ρ (ι Q (b 0) * ι Q (b 1)) x) = -x := by
-    rw [← Module.End.mul_apply, ← map_mul,
+    rw [← mul_apply_eq_comp, ← map_mul,
       ι_mul_ι_mul_self_of_isOrtho (b.isOrtho_apply hQ (by decide)), b.map_apply_mul_map_apply hQ]
     simp
   calc ρ (ι Q (b 2) * ι Q (b 3)) ψ
@@ -222,7 +222,7 @@ private theorem map_spinTorus_one_mk_apply {ε : ℂ} {ψ : W}
   rw [OrthonormalBasis.coe_spinTorus_apply]
   simp only [Circle.coe_one, Complex.one_re, Complex.one_im, map_one, zero_smul, add_zero,
     one_mul, map_add, map_smul, LinearMap.add_apply, LinearMap.smul_apply,
-    Algebra.algebraMap_eq_smul_one, Module.End.one_apply, ← Complex.coe_smul]
+    Algebra.algebraMap_eq_smul_one, one_apply_eq_self, ← Complex.coe_smul]
   rw [map_ι_mul_ι_two_three_apply b hQ ρ hb hψ, smul_smul, mul_comm]
 
 omit [Fact (finrank ℝ V = 4)] hb in
@@ -234,8 +234,8 @@ private theorem map_spinTorus_apply_eq {ψ : W} {w₁ w₂ w : Circle}
     rw [← map_mul, Prod.mk_mul_mk, mul_one, one_mul]
   have h₂ : b.spinTorus hQ (w₁ * w, 1) = b.spinTorus hQ (w₁, 1) * b.spinTorus hQ (w, 1) := by
     rw [← map_mul, Prod.mk_mul_mk, mul_one]
-  rw [h₁, h₂, Submonoid.coe_mul, Submonoid.coe_mul, map_mul, map_mul, Module.End.mul_apply,
-    Module.End.mul_apply, hw]
+  rw [h₁, h₂, Submonoid.coe_mul, Submonoid.coe_mul, map_mul, map_mul, mul_apply_eq_comp,
+    mul_apply_eq_comp, hw]
 
 /-- **The torus acts on `W⁺` through the product of its coordinates**: on the positive
 half-spinors, `(w₁, w₂)` acts as `(w₁ w₂, 1)`. -/

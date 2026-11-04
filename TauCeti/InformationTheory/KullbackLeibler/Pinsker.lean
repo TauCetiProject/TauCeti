@@ -86,7 +86,7 @@ theorem two_mul_sq_measureReal_sub_le_mul_klDiv [IsFiniteMeasure μ] [IsFiniteMe
   have hprob (ρ : Measure α) (hρ : ρ univ = μ univ) :
       IsProbabilityMeasure (c⁻¹ • ρ) := by
     constructor
-    rw [Measure.smul_apply, ENNReal.smul_def, smul_eq_mul, ENNReal.coe_inv hcN, hρ, ← hc]
+    rw [_root_.smul_apply, ENNReal.smul_def, smul_eq_mul, ENNReal.coe_inv hcN, hρ, ← hc]
     exact ENNReal.inv_mul_cancel hc0 ENNReal.coe_ne_top
   let := hprob μ rfl
   let := hprob ν hmass.symm

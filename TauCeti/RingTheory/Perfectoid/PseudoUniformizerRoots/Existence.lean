@@ -77,7 +77,8 @@ private theorem exists_coeffMonoidHom_zero_sub_dvd :
   -- `R° ⧸ (ϖ₁ ^ p)` is nonzero, as `ϖ₁ ^ p` lies in the Jacobson radical, and has
   -- characteristic `p`, as `ϖ₁ ^ p ∣ p`
   have hI : I ≠ ⊤ := fun h ↦ by
-    have h' := IsAdicComplete.le_jacobson_bot I
+    have h' := IsAdicComplete.le_jacobson I
+    rw [← Ideal.jacobson_bot] at h'
     rw [h, top_le_iff, Ideal.jacobson_eq_top_iff] at h'
     exact bot_ne_top h'
   have : Nontrivial (powerBoundedSubring R ⧸ I) := Ideal.Quotient.nontrivial_iff.mpr hI
@@ -121,7 +122,8 @@ theorem exists_pow_dvd_rootPB_zero_sub_and_associated [T0Space R] [IsHuberRing R
   have hp : p.Prime := Fact.out
   obtain ⟨u, hu⟩ : Associated ϖ₁ (Perfection.coeffMonoidHom _ p 0 ψ) := by
     have := IsUniform.isAdicComplete_span_singleton ϖ₁ hϖ₁
-    have hj := IsAdicComplete.le_jacobson_bot _ (Ideal.mem_span_singleton_self ϖ₁)
+    have hj := IsAdicComplete.le_jacobson _ (Ideal.mem_span_singleton_self ϖ₁)
+    rw [← Ideal.jacobson_bot] at hj
     refine associated_of_mul_dvd_sub_of_mem_jacobson
       (Ideal.pow_mem_of_mem _ hj (p - 1) (Nat.sub_pos_of_lt hp.one_lt)) ?_
     rwa [← pow_succ', Nat.sub_add_cancel hp.one_le]

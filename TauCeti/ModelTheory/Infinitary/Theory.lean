@@ -45,6 +45,8 @@ is a model of the image of a theory exactly when it is a model of the theory.
 * `FirstOrder.Language.LHom.onTheoryω_model`: along an expansion, a structure is a model of the
   image of a theory exactly when it is a model of the theory.
 * `Set.Countable.onTheoryω`: the image of a countable theory is countable.
+* `FirstOrder.Language.not_omitsType_of_realize`: a structure satisfying `φ.exs` and every
+  `(φ.imp ψ).alls` with `ψ ∈ p` does not omit `p`.
 
 ## References
 
@@ -162,6 +164,19 @@ def OmitsType (M : Type w) [L.Structure M] {n : ℕ} (p : Set (L.BoundedFormula�
 theorem omitsType_iff {M : Type w} [L.Structure M] {n : ℕ} {p : Set (L.BoundedFormulaω Empty n)} :
     OmitsType M p ↔ ∀ a : Fin n → M, ∃ φ ∈ p, ¬ φ.Realize Empty.elim a :=
   Iff.rfl
+
+/-- A structure satisfying `φ.exs` and every sentence `(φ.imp ψ).alls` with `ψ ∈ p` does not omit
+`p`: a tuple satisfying `φ` satisfies all of `p`. -/
+theorem not_omitsType_of_realize {M : Type w} [L.Structure M] {n : ℕ}
+    {p : Set (L.BoundedFormulaω Empty n)} {φ : L.BoundedFormulaω Empty n}
+    (hφ : SentenceInf.Realize φ.exs M) (hp : ∀ ψ ∈ p, SentenceInf.Realize (φ.imp ψ).alls M) :
+    ¬OmitsType M p := by
+  simp only [SentenceInf.realize_def, FormulaInf.realize_def, BoundedFormulaInf.realize_exs,
+    BoundedFormulaInf.realize_alls, BoundedFormulaInf.realize_imp] at hφ hp
+  obtain ⟨a, ha⟩ := hφ
+  intro hM
+  obtain ⟨ψ, hψ, hψa⟩ := omitsType_iff.1 hM a
+  exact hψa (hp ψ hψ a ha)
 
 namespace LHom
 

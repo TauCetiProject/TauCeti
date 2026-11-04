@@ -25,6 +25,8 @@ supplies, divided by `f` generate `(I : f)`.
 * `Ideal.inf_span_singleton_eq_span_singleton_mul_colon`: `I ∩ (f) = f · (I : f)`.
 * `Ideal.colon_singleton_eq_of_inf_span_singleton_eq`: for regular `f`, if `I ∩ (f) = f · J`
   then `(I : f) = J`.
+* `Ideal.exists_eq_span_pow_mul_colon_not_le`: an ideal not contained in every power of `(f)` is
+  `(f ^ k) · (I : f ^ k)` with `(I : f ^ k)` not contained in `(f)`.
 
 ## References
 
@@ -72,5 +74,25 @@ theorem colon_singleton_eq_of_inf_span_singleton_eq (hf : IsLeftRegular f)
     exact hf hxy ▸ hy
   · obtain ⟨x, hx, hxy⟩ := h.2 y hy
     exact hf hxy ▸ hx
+
+/-- **Extracting a power of a principal ideal.** If an ideal `I` does not lie in every power of
+`(f)`, then `I = (f ^ k) · (I : f ^ k)` for some `k`, where the colon ideal `(I : f ^ k)` does not
+lie in `(f)`. -/
+theorem exists_eq_span_pow_mul_colon_not_le (h : ∃ n, ¬ I ≤ span {f ^ n}) :
+    ∃ k, I = span {f ^ k} * I.colon {f ^ k} ∧ ¬ I.colon {f ^ k} ≤ span {f} := by
+  classical
+  have h' : ∃ k, ¬ I ≤ span {f ^ (k + 1)} := by
+    obtain ⟨n, hn⟩ := h
+    exact ⟨n, fun hle ↦ hn (hle.trans
+      (span_singleton_le_span_singleton.2 (pow_dvd_pow f n.le_succ)))⟩
+  have hIk : I ≤ span {f ^ Nat.find h'} := by
+    rcases hk : Nat.find h' with _ | j
+    · simp
+    · exact not_not.1 (Nat.find_min h' (by omega))
+  refine ⟨Nat.find h', ?_, fun hle ↦ Nat.find_spec h' fun x hx ↦ ?_⟩
+  · rw [← inf_span_singleton_eq_span_singleton_mul_colon, inf_eq_left.2 hIk]
+  · obtain ⟨a, rfl⟩ := mem_span_singleton'.1 (hIk hx)
+    obtain ⟨d, rfl⟩ := mem_span_singleton'.1 (hle (Submodule.mem_colon_singleton.2 hx))
+    exact mem_span_singleton'.2 ⟨d, by ring⟩
 
 end Ideal

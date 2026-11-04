@@ -75,9 +75,9 @@ theorem det_smul_eq_zero_of_sum_smul_eq_zero {ι M : Type*} [Fintype ι] [Decida
     [AddCommMonoid M] [Module K M] (A : Matrix ι ι K) {v : ι → M}
     (hv : ∀ i, ∑ j, A i j • v j = 0) (k : ι) : A.det • v k = 0 := by
   calc A.det • v k = ∑ j, (A.adjugate * A) k j • v j := by
-        simp [adjugate_mul, smul_apply, one_apply, ite_smul]
+        simp [adjugate_mul, Matrix.smul_apply, Matrix.one_apply, ite_smul]
     _ = ∑ i, A.adjugate k i • ∑ j, A i j • v j := by
-        simp only [mul_apply, Finset.sum_smul, Finset.smul_sum, mul_smul]
+        simp only [Matrix.mul_apply, Finset.sum_smul, Finset.smul_sum, mul_smul]
         exact Finset.sum_comm
     _ = 0 := by simp [hv]
 
@@ -103,7 +103,7 @@ direction `B`. -/
 theorem sum_det_updateRow_eq_trace_adjugate_mul {n : Type*} [Fintype n] [DecidableEq n]
     (A B : Matrix n n K) : ∑ i, (A.updateRow i (B i)).det = (adjugate A * B).trace := by
   simp only [← cramer_transpose_apply, cramer_eq_adjugate_mulVec, ← adjugate_transpose, trace,
-    diag_apply, mul_apply, mulVec, dotProduct, transpose_apply]
+    diag_apply, Matrix.mul_apply, mulVec, dotProduct, transpose_apply]
   exact Finset.sum_comm
 
 /-- **Jacobi's formula, by columns.** Replacing the `j`-th column of `A` by the `j`-th column of `B`
@@ -111,7 +111,7 @@ and summing the determinants over `j` gives `trace (adj A * B)`, the derivative 
 the direction `B`. -/
 theorem sum_det_updateCol_eq_trace_adjugate_mul {n : Type*} [Fintype n] [DecidableEq n]
     (A B : Matrix n n K) : ∑ j, (A.updateCol j fun i ↦ B i j).det = (adjugate A * B).trace := by
-  simp only [← cramer_apply, cramer_eq_adjugate_mulVec, trace, diag_apply, mul_apply, mulVec,
+  simp only [← cramer_apply, cramer_eq_adjugate_mulVec, trace, diag_apply, Matrix.mul_apply, mulVec,
     dotProduct]
 
 end Matrix

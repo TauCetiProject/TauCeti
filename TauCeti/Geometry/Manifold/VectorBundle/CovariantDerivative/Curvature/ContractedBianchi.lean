@@ -232,7 +232,7 @@ theorem exists_frame_sum_derivCurvature (x : M) :
   let c (k : Fin (Module.finrank ℝ E)) : TangentSpace I x →ₗ[ℝ] ℝ := e.localFrameCoeff I b k x
   have hc (k : Fin (Module.finrank ℝ E)) (w : TangentSpace I x) :
       c k w = (e.basisAt b hx).repr w k := by
-    obtain ⟨s, -, rfl⟩ := FiberBundle.exists_contMDiff_section_eq I E w
+    obtain ⟨s, -, rfl⟩ := FiberBundle.exists_contMDiff_section_eq I E ∞ w
     exact e.localFrameCoeff_apply_of_mem_baseSet b hx s k
   have hdual (i j : Fin (Module.finrank ℝ E)) : c i (F j x) = if i = j then 1 else 0 := by
     rw [hc, hFx, Module.Basis.repr_self, Finsupp.single_apply]
@@ -397,8 +397,8 @@ theorem derivRicciTensor_eq_trace (x : M) (u w v : TangentSpace I x) :
         (((cov.derivCurvatureTensor cov x v).flip u).flip w) := by
   classical
   obtain ⟨F, c, hF, -, hsum, htr⟩ := exists_frame_sum_derivCurvature (cov := cov) x
-  obtain ⟨B, hB, rfl⟩ := FiberBundle.exists_contMDiff_section_eq I E u
-  obtain ⟨C, hC, rfl⟩ := FiberBundle.exists_contMDiff_section_eq I E w
+  obtain ⟨B, hB, rfl⟩ := FiberBundle.exists_contMDiff_section_eq I E ∞ u
+  obtain ⟨C, hC, rfl⟩ := FiberBundle.exists_contMDiff_section_eq I E ∞ w
   let D := ((cov.derivCurvatureTensor cov x v).flip (B x)).flip (C x)
   -- The local frame resolves the identity; apply `D` to this resolution and take its trace.
   have hD : D = ∑ i, (c i).smulRight (D (F i x)) := by
@@ -481,11 +481,11 @@ theorem IsMetricCompatible.inner_derivCurvatureTensor_swap_pairs
     (x : M) (d u v w z : TangentSpace I x) :
     inner ℝ (cov.derivCurvatureTensor cov x d u v w) z =
       inner ℝ (cov.derivCurvatureTensor cov x d w z u) v := by
-  obtain ⟨D, -, rfl⟩ := FiberBundle.exists_contMDiff_section_eq I E d
-  obtain ⟨U, hU, rfl⟩ := FiberBundle.exists_contMDiff_section_eq I E u
-  obtain ⟨V, hV, rfl⟩ := FiberBundle.exists_contMDiff_section_eq I E v
-  obtain ⟨W, hW, rfl⟩ := FiberBundle.exists_contMDiff_section_eq I E w
-  obtain ⟨Z, hZ, rfl⟩ := FiberBundle.exists_contMDiff_section_eq I E z
+  obtain ⟨D, -, rfl⟩ := FiberBundle.exists_contMDiff_section_eq I E ∞ d
+  obtain ⟨U, hU, rfl⟩ := FiberBundle.exists_contMDiff_section_eq I E ∞ u
+  obtain ⟨V, hV, rfl⟩ := FiberBundle.exists_contMDiff_section_eq I E ∞ v
+  obtain ⟨W, hW, rfl⟩ := FiberBundle.exists_contMDiff_section_eq I E ∞ w
+  obtain ⟨Z, hZ, rfl⟩ := FiberBundle.exists_contMDiff_section_eq I E ∞ z
   rw [derivCurvatureTensor_apply cov cov x (D x) hU hV hW,
     derivCurvatureTensor_apply cov cov x (D x) hW hZ hU]
   simpa only [derivCurvature_apply] using

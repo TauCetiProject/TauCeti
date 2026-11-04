@@ -107,7 +107,8 @@ theorem lintegral_comp_add_smul_sub_mul_ite (μ : Measure E) [μ.IsAddHaarMeasur
   calc
     _ = ∫⁻ y, ENNReal.ofReal t⁻¹ * f (AffineMap.homothety x t y) ∂μ := lintegral_congr hKf
     _ = ENNReal.ofReal t⁻¹ * (ENNReal.ofReal |(t ^ finrank ℝ E)⁻¹| * ∫⁻ w, f w ∂μ) := by
-      rw [lintegral_const_mul' _ _ ENNReal.ofReal_ne_top, lintegral_comp_homothety μ f x ht.ne']
+      rw [lintegral_const_mul' _ _ ENNReal.ofReal_ne_top,
+        Measure.lintegral_comp_homothety μ f x ht.ne']
     _ = _ := by
       rw [lintegral_const_mul' _ _ ENNReal.ofReal_ne_top, ← mul_assoc,
         ← ENNReal.ofReal_mul (inv_nonneg.2 ht.le)]

@@ -121,7 +121,7 @@ theorem map₂_cupFp_absoluteGaloisGroup_eq_top_of_isPrimitiveRoot [Fact n.Prime
     exact ha ((cupFp_bijective_of_isPrimitiveRoot hζ).injective (LinearMap.ext fun b => by
       rw [h, map_zero, LinearMap.zero_apply]))
   -- a nonzero vector spans the one-dimensional space `H²(G_K, 𝔽_p)`
-  rw [eq_top_iff, ← (finrank_eq_one_iff_of_nonzero _ hb).1
+  rw [eq_top_iff, ← (finrank_eq_one_iff_of_ne_zero _ hb).1
     (finrank_cohomFp_two_absoluteGaloisGroup_of_isPrimitiveRoot hζ), Submodule.span_le,
     Set.singleton_subset_iff]
   exact Submodule.apply_mem_map₂ _ Submodule.mem_top Submodule.mem_top

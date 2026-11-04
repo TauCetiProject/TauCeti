@@ -34,4 +34,14 @@ theorem complexToRealEuclidean_mulVec (L : Matrix κ ι ℂ) (z : ι → ℂ) :
     simp [Matrix.mulVec, dotProduct, Fintype.sum_sum_type, Complex.mul_re, Complex.mul_im,
       Finset.sum_add_distrib, sub_eq_add_neg, add_comm]
 
+omit [DecidableEq ι] in
+/-- `TauCeti.complexToRealEuclidean_mulVec` with plain functions `ι ⊕ ι → ℝ` as real
+coordinates: the real and imaginary blocks of a complex matrix-vector product are the action of
+the realified matrix on the blocks of the vector. -/
+theorem complexToRealPi_mulVec (L : Matrix κ ι ℂ) (z : ι → ℂ) :
+    complexToRealPi κ (L *ᵥ z) = L.realify *ᵥ complexToRealPi ι z := by
+  classical
+  simpa [ofLp_complexToRealEuclidean] using
+    congrArg WithLp.ofLp (complexToRealEuclidean_mulVec L z)
+
 end TauCeti

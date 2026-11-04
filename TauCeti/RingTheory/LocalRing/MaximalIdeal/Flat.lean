@@ -46,7 +46,8 @@ theorem spanFinrank_maximalIdeal_eq_of_flat_of_map_maximalIdeal_eq [IsNoetherian
     (maximalIdeal S).spanFinrank = (maximalIdeal R).spanFinrank := by
   refine le_antisymm (h ▸ Ideal.spanFinrank_map_le_of_fg _ (maximalIdeal R).fg_of_isNoetherianRing)
     ?_
-  have : IsLocalHom (algebraMap R S) := ((local_hom_TFAE (algebraMap R S)).out 1 3).mpr h.le
+  have : IsLocalHom (algebraMap R S) :=
+    ((IsLocalRing.local_hom_tfae (algebraMap R S)).out 1 3).mpr h.le
   rw [spanFinrank_maximalIdeal_eq_finrank_cotangentSpace,
     spanFinrank_maximalIdeal_eq_finrank_cotangentSpace]
   -- Lift a basis of `𝔪_R / 𝔪_R²` to elements `xᵢ ∈ 𝔪_R`.

@@ -25,8 +25,12 @@ actually uses is the **weak maximum principle**, which relaxes `0 < Δ f` to the
 * `TauCeti.le_of_laplacian_nonneg_le_frontier`: **weak maximum principle**. A continuous function
   on a compact set that is `C²` and subharmonic (`0 ≤ Δ f`) on the interior is bounded on all of
   `K` by any bound it satisfies on `frontier K`.
+* `TauCeti.le_of_laplacian_nonneg_of_lt_le_frontier`: the same bound when `f` is only known to be
+  `C²` and subharmonic at the interior points where it exceeds the bound.
 * `TauCeti.ge_of_laplacian_nonpos_ge_frontier`: the dual weak minimum principle for superharmonic
   functions (`Δ f ≤ 0`).
+* `TauCeti.ge_of_laplacian_nonpos_of_lt_ge_frontier`: the dual of the bound above a level, for
+  `f` only known to be `C²` and superharmonic at the interior points where it is below the bound.
 * `TauCeti.exists_mem_frontier_isMaxOn_of_laplacian_nonneg` /
   `TauCeti.exists_mem_frontier_isMinOn_of_laplacian_nonpos`: on a nonempty compact set in a
   nontrivial finite-dimensional real inner product space, a subharmonic (resp. superharmonic)
@@ -96,6 +100,48 @@ theorem le_of_laplacian_nonneg_le_frontier {K : Set E} (hK : IsCompact K) {f : E
   exact ⟨z, hK.isClosed.frontier_subset hzfr,
     by simpa only [smul_eq_mul] using isMaxOn_iff.mp hzmax x hxK, hbdry hzfr⟩
 
+/-- **Weak maximum principle above a level.**
+
+Let `K` be compact and `f` continuous on `K`, with `f ≤ m` on `frontier K`. If `f` is `C²` and
+subharmonic (`0 ≤ Δ f`) at the interior points of `K` where `m < f`, then `f ≤ m` on all of `K`.
+Nothing is assumed about `f` at interior points where `f ≤ m`. -/
+theorem le_of_laplacian_nonneg_of_lt_le_frontier {K : Set E} (hK : IsCompact K) {f : E → ℝ}
+    {m : ℝ} (hcont : ContinuousOn f K)
+    (hcd : ∀ ⦃x⦄, x ∈ interior K → m < f x → ContDiffAt ℝ 2 f x)
+    (hlap : ∀ ⦃x⦄, x ∈ interior K → m < f x → 0 ≤ Δ f x)
+    (hbdry : ∀ ⦃x⦄, x ∈ frontier K → f x ≤ m) :
+    ∀ ⦃x⦄, x ∈ K → f x ≤ m := by
+  -- Apply the weak maximum principle to the compact superlevel set `K' = {f ≥ m + ε}`, on whose
+  -- interior `f > m`, and on whose frontier `f ≤ m + ε`.
+  intro x hx
+  refine le_of_forall_pos_le_add fun ε hε => ?_
+  set K' := K ∩ f ⁻¹' Set.Ici (m + ε) with hK'
+  have hK'c : IsClosed K' := hcont.preimage_isClosed_of_isClosed hK.isClosed isClosed_Ici
+  by_cases hxK' : x ∈ K'
+  swap
+  · simp only [hK', Set.mem_inter_iff, hx, Set.mem_preimage, Set.mem_Ici, true_and,
+      not_le] at hxK'
+    exact hxK'.le
+  -- Interior points of `K'` are interior points of `K` where `f > m`.
+  have hint : ∀ ⦃y⦄, y ∈ interior K' → y ∈ interior K ∧ m < f y := fun y hy => by
+    have h : m + ε ≤ f y := (interior_subset hy).2
+    exact ⟨interior_mono Set.inter_subset_left hy, by linarith⟩
+  refine le_of_laplacian_nonneg_le_frontier (hK.of_isClosed_subset hK'c Set.inter_subset_left)
+    (hcont.mono Set.inter_subset_left) (fun y hy => hcd (hint hy).1 (hint hy).2)
+    (fun y hy => hlap (hint hy).1 (hint hy).2) (fun y hy => ?_) hxK'
+  have hyK' : y ∈ K' := hK'c.frontier_subset hy
+  by_contra hlt
+  rw [not_le] at hlt
+  by_cases hyK : y ∈ frontier K
+  · linarith [hbdry hyK]
+  -- Otherwise `y` is an interior point of `K` with `f y > m + ε`, hence interior to `K'`.
+  have hyint : y ∈ interior K := by
+    by_contra hy'
+    exact hyK (hK.isClosed.frontier_eq ▸ ⟨hyK'.1, hy'⟩)
+  have hKy : K ∈ 𝓝 y := mem_interior_iff_mem_nhds.mp hyint
+  exact hy.2 (mem_interior_iff_mem_nhds.mpr (Filter.inter_mem hKy
+    ((hcont.continuousAt hKy).preimage_mem_nhds (Ici_mem_nhds hlt))))
+
 /-- **Weak minimum principle for superharmonic functions.**
 
 The dual of `le_of_laplacian_nonneg_le_frontier`: a continuous, `C²`, superharmonic (`Δ f ≤ 0`)
@@ -110,6 +156,26 @@ theorem ge_of_laplacian_nonpos_ge_frontier {K : Set E} (hK : IsCompact K) {f : E
     (fun y hy => (hcd hy).neg)
     (fun y hy => by
       rw [congrFun laplacian_neg y, Pi.neg_apply]; linarith [hlap hy])
+    (fun y hy => neg_le_neg (hbdry hy)) hxK
+  simp only [Pi.neg_apply] at hle
+  linarith
+
+/-- **Weak minimum principle below a level.**
+
+The dual of `le_of_laplacian_nonneg_of_lt_le_frontier`: let `K` be compact and `f` continuous on
+`K`, with `m ≤ f` on `frontier K`. If `f` is `C²` and superharmonic (`Δ f ≤ 0`) at the interior
+points of `K` where `f < m`, then `m ≤ f` on all of `K`. -/
+theorem ge_of_laplacian_nonpos_of_lt_ge_frontier {K : Set E} (hK : IsCompact K) {f : E → ℝ}
+    {m : ℝ} (hcont : ContinuousOn f K)
+    (hcd : ∀ ⦃x⦄, x ∈ interior K → f x < m → ContDiffAt ℝ 2 f x)
+    (hlap : ∀ ⦃x⦄, x ∈ interior K → f x < m → Δ f x ≤ 0)
+    (hbdry : ∀ ⦃x⦄, x ∈ frontier K → m ≤ f x) :
+    ∀ ⦃x⦄, x ∈ K → m ≤ f x := by
+  intro x hxK
+  have hle := le_of_laplacian_nonneg_of_lt_le_frontier (f := -f) (m := -m) hK hcont.neg
+    (fun y hy hlt => (hcd hy (by simpa using hlt)).neg)
+    (fun y hy hlt => by
+      rw [congrFun laplacian_neg y, Pi.neg_apply]; linarith [hlap hy (by simpa using hlt)])
     (fun y hy => neg_le_neg (hbdry hy)) hxK
   simp only [Pi.neg_apply] at hle
   linarith

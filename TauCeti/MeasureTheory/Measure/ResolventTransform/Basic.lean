@@ -33,6 +33,7 @@ public section
 noncomputable section
 
 open MeasureTheory Complex
+open scoped ComplexConjugate
 
 namespace Complex
 
@@ -51,6 +52,22 @@ theorem norm_resolvent_real_le (z : ℂ) (x : ℝ) (hz : z.im ≠ 0) :
 end Complex
 
 namespace MeasureTheory
+
+/-- Conjugating the spectral parameter conjugates the resolvent transform of a real measure.
+No finiteness assumption is needed, since the Bochner integral commutes with conjugation. -/
+@[simp]
+theorem Measure.resolventTransform_conj (μ : Measure ℝ) (z : ℂ) :
+    resolventTransform μ (conj z) = conj (resolventTransform μ z) := by
+  simp only [Complex.star_def.symm]
+  rw [resolventTransform_apply, resolventTransform_apply]
+  calc
+    (∫ x, resolvent (R := ℝ) (star z) x ∂μ) =
+        ∫ x, star (resolvent (R := ℝ) z x) ∂μ := by
+          apply integral_congr_ae
+          exact ae_of_all _ fun x => by
+            simp [resolvent, Ring.inverse_eq_inv']
+    _ = _ := by
+      simpa only [RCLike.star_def] using (integral_conj (f := resolvent (R := ℝ) z))
 
 variable {μ : Measure ℝ} [IsFiniteMeasure μ]
 

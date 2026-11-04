@@ -142,9 +142,11 @@ theorem prop_quotient_obj (K : CochainComplex.Bounded C)
     -- The truncation has the terms of `K` in degrees `≤ b` and zero terms above.
     have h₃ := ih (CochainComplex.bounded_stupidTrunc_embeddingUpIntLE hK' b) fun n ↦ by
       by_cases hn : n ≤ b
-      · have := K.isIso_πStupidTruncLE_f b hn
-        exact P.prop_of_iso ((singleFunctor C 0).mapIso (asIso ((K.πStupidTruncLE b).f n)))
-          (hP n)
+      · have := K.isIso_πStupidTrunc_f (ComplexShape.embeddingUpIntLE b)
+          (i := (b - n).natAbs) (i' := n) (by
+            simp [Int.natAbs_of_nonneg (sub_nonneg.mpr hn)])
+        exact P.prop_of_iso ((singleFunctor C 0).mapIso
+          (asIso ((K.πStupidTrunc (ComplexShape.embeddingUpIntLE b)).f n))) (hP n)
       · exact P.prop_of_isZero ((singleFunctor C 0).map_isZero
           (K.isZero_stupidTrunc_embeddingUpIntLE_X b (by omega)))
     exact P.prop_of_iso e₂ (P.ext_of_isTriangulatedClosed₂ _ hT

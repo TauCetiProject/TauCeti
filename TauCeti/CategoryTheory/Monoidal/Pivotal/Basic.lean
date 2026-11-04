@@ -43,8 +43,9 @@ for the resulting rigid structure.
 * `TauCeti.pivotalIsoApp_rightDual`: the Freyd–Yetter identity `φ_{Xᘁ} = (φ_X⁻¹)ᘁ`, with its
   inverse form `TauCeti.pivotalIsoApp_rightDual_inv`;
 * `TauCeti.pivotalExactPairing`: the exact pairing `ExactPairing Xᘁ X` obtained from `φ_X`, whose
-  evaluation is dinatural by
-  `TauCeti.whiskerLeft_rightAdjointMate_comp_pivotalIsoApp_hom_whiskerRight`;
+  evaluation and coevaluation are dinatural by
+  `TauCeti.whiskerLeft_rightAdjointMate_comp_pivotalIsoApp_hom_whiskerRight` and
+  `TauCeti.pivotalExactPairing_coevaluation_comp_rightAdjointMate_whiskerRight`;
 * `TauCeti.pivotalCategoryOfRightRigid`: a monoidal trivialization of the double right dual
   functor of a right rigid category is a pivotal structure for the rigid structure
   `TauCeti.rigidCategoryOfIsoDoubleRightDual`, whose left duals are the right duals.
@@ -212,6 +213,18 @@ theorem whiskerLeft_rightAdjointMate_comp_pivotalIsoApp_hom_whiskerRight {X Y : 
       f ▷ Yᘁ ≫ (pivotalIsoApp Y).hom ▷ Yᘁ ≫ ε_ (Yᘁ : C) ((Yᘁ : C)ᘁ : C) := by
   rw [whisker_exchange_assoc, ← rightAdjointMate_comp_evaluation, ← comp_whiskerRight_assoc,
     ← pivotalIsoApp_hom_naturality, comp_whiskerRight_assoc]
+
+/-- The coevaluation of the pivotal pairing is dinatural: for `f : X ⟶ Y`, pairing `Yᘁ` with `Y`
+and then applying `fᘁ`, or pairing `Xᘁ` with `X` and then applying `f`, gives the same morphism. -/
+@[reassoc]
+theorem pivotalExactPairing_coevaluation_comp_rightAdjointMate_whiskerRight {X Y : C}
+    (f : X ⟶ Y) :
+    @ExactPairing.coevaluation C _ _ Yᘁ Y (pivotalExactPairing Y) ≫ fᘁ ▷ Y =
+      @ExactPairing.coevaluation C _ _ Xᘁ X (pivotalExactPairing X) ≫ Xᘁ ◁ f := by
+  rw [pivotalExactPairing_coevaluation, pivotalExactPairing_coevaluation, Category.assoc,
+    whisker_exchange, ← coevaluation_comp_rightAdjointMate_assoc,
+    ← MonoidalCategory.whiskerLeft_comp, pivotalIsoApp_inv_naturality,
+    MonoidalCategory.whiskerLeft_comp, Category.assoc]
 
 end Pivotal
 

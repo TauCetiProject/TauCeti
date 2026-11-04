@@ -24,6 +24,9 @@ Mathlib's `IsLocalization.integralClosure` states this for the literal subalgebr
 
 * `TauCeti.isLocalization_algebraMapSubmonoid_of_isIntegralClosure`: an integral closure of a
   localization is the corresponding localization of an integral closure.
+* `TauCeti.IsIntegralClosure.isLocalization_of_isIntegral`: an integral algebra `L` over a
+  localization `M⁻¹R` is the localization at `M` of the integral closure of `R` in `L`; for a
+  domain `R` and its fraction field, `L` is the generic fibre of that integral closure.
 * `TauCeti.finite_integralClosure_of_isLocalization`: finiteness of the integral closure passes
   to localizations.
 * `TauCeti.finite_integralClosure_of_span_eq_top`: conversely, finiteness of the integral closure
@@ -97,6 +100,19 @@ theorem isLocalization_algebraMapSubmonoid_of_isIntegralClosure :
     apply IsIntegralClosure.algebraMap_injective S R L
     have h := congrArg (algebraMap Sₘ L) hxy
     simpa only [IsScalarTower.algebraMap_apply S Sₘ L] using h
+
+variable (Rₘ) in
+/-- **The generic fibre of an integral closure.** If `Rₘ` is a localization of `R` at `M` and `L`
+is an integral `Rₘ`-algebra, not necessarily a domain, then `L` is the localization at `M` of an
+integral closure of `R` in `L`. This is the case `Sₘ = L` of
+`isLocalization_algebraMapSubmonoid_of_isIntegralClosure`; Mathlib's
+`IsIntegralClosure.isLocalization` is the case of a domain `R` with fraction field `Rₘ` and a
+field `L`. -/
+theorem IsIntegralClosure.isLocalization_of_isIntegral [Algebra.IsIntegral Rₘ L] :
+    IsLocalization (Algebra.algebraMapSubmonoid S M) L :=
+  have : IsIntegralClosure L Rₘ L :=
+    ⟨Function.injective_id, fun {x} ↦ ⟨fun _ ↦ ⟨x, rfl⟩, fun _ ↦ Algebra.IsIntegral.isIntegral x⟩⟩
+  isLocalization_algebraMapSubmonoid_of_isIntegralClosure (Rₘ := Rₘ) (Sₘ := L) (L := L)
 
 end IsIntegralClosure
 

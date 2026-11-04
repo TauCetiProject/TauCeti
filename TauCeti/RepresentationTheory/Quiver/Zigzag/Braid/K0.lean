@@ -5,8 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Algebra.Module.Equiv.AutCongr
 public import TauCeti.GroupTheory.Coxeter.DeformedReflection
-public import TauCeti.LinearAlgebra.GeneralLinearGroup.Congr
 public import TauCeti.RepresentationTheory.Quiver.Zigzag.Braid.ProjectiveTensor
 public import TauCeti.RepresentationTheory.Quiver.Zigzag.Componentwise.K0
 

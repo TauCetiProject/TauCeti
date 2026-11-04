@@ -145,15 +145,15 @@ private theorem renewalMeasure_map_Icc_add_le (hT : ∀ n, Measurable (T n))
           ← inter_iUnion, inter_eq_left.2 (preimage_arrival_Icc_subset_iUnion_firstArrivalGE n)]
     -- only the indices `n = k + m` contribute
     _ = ∑' m, ∑' k, P (arrival T (k + m) ⁻¹' Icc t (t + h) ∩ E m) := by
-        rw [ENNReal.tsum_comm]
+        rw [_root_.tsum_comm]
         refine tsum_congr fun m ↦ ?_
-        rw [← ENNReal.summable.sum_add_tsum_nat_add' (k := m),
+        rw [← CompleteLattice.summable.sum_add_tsum_nat_add' (k := m),
           Finset.sum_eq_zero fun n hn ↦ by
             rw [preimage_arrival_Icc_inter_firstArrivalGE_of_lt (Finset.mem_range.1 hn),
               measure_empty],
           zero_add]
     _ ≤ ∑' m, ∑' k, P (E m ∩ arrival (fun i ↦ T (m + i)) k ⁻¹' Iic h) :=
-        ENNReal.tsum_le_tsum fun m ↦ ENNReal.tsum_le_tsum fun k ↦
+        _root_.tsum_le_tsum fun m ↦ _root_.tsum_le_tsum fun k ↦
           measure_mono (preimage_arrival_Icc_inter_firstArrivalGE_subset m k)
     _ = ∑' m, P (E m) * F.renewalMeasure (Iic h) := by
         refine tsum_congr fun m ↦ ?_
