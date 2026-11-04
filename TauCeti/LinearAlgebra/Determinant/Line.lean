@@ -7,6 +7,7 @@ module
 
 public import Mathlib.LinearAlgebra.Dual.Lemmas
 public import TauCeti.LinearAlgebra.ExteriorPower.Basic
+public import TauCeti.LinearAlgebra.ExteriorPower.Invertible
 public import TauCeti.LinearAlgebra.LinearMap.Ker
 public import TauCeti.LinearAlgebra.LinearMap.Range
 
@@ -44,6 +45,8 @@ carried out here. This file sets up the pointwise object:
 ## Main results
 
 * `TauCeti.finrank_detLine`: the determinant line of a finite free module has rank one.
+* `TauCeti.instInvertibleDetLine`: the determinant line of a finite free module is an invertible
+  module.
 * `LinearEquiv.detLineCongr_refl`, `LinearEquiv.detLineCongr_trans`,
   `LinearEquiv.detLineCongr_symm`: the induced isomorphisms are functorial.
 * `LinearMap.finrank_detLine`: the determinant line of a linear map between vector spaces with
@@ -77,6 +80,12 @@ abbrev detLine : Type _ := ⋀[R]^(finrank R V) V
 theorem finrank_detLine [Nontrivial R] [Module.Free R V] [Module.Finite R V] :
     finrank R (detLine R V) = 1 := by
   simp [detLine]
+
+/-- The determinant line of a finite free module is an invertible module, so that it cancels
+against its dual: `det V ⊗ (det V)^* ≃ R` (`Module.Invertible.linearEquiv`). -/
+instance instInvertibleDetLine [Module.Free R V] [Module.Finite R V] :
+    Module.Invertible R (detLine R V) :=
+  exteriorPower.invertible_of_rankAtStalk_eq fun p ↦ by simp
 
 end TauCeti
 
