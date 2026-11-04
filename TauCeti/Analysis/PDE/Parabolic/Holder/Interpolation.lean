@@ -22,7 +22,8 @@ The first two are the whole-space spatial interpolation inequalities applied to 
 using that at a common time the parabolic distance is the spatial distance. The third is the
 interpolation inequality on the interval `[a, b]` applied to each spatial position, with the
 temporal step `ε²`, using that at a common position the parabolic `α`-seminorm controls the
-temporal `α / 2`-seminorm.
+temporal `α / 2`-seminorm. A bounded time derivative also bounds every temporal seminorm of
+exponent `γ ≤ 1`: `[u]_{t,γ} ≤ ‖∂ₜ u‖_∞ + 2 ‖u‖_∞`.
 
 For `α ≤ 1`, the value `u` and the spatial gradient `D_x u` are parabolically `α`-Hölder, so they
 define bounded linear maps `valueHolderL` and `spatialFDerivHolderL` into the bounded parabolic
@@ -41,10 +42,13 @@ absorb lower-order terms in parabolic Schauder estimates.
   `TauCeti.ParabolicC2HolderSpace.norm_toBoundedContinuousFunction_spatialSecondFDerivL_le` and
   `TauCeti.ParabolicC2HolderSpace.norm_toBoundedContinuousFunction_timeDerivL_le`: the three
   interpolation inequalities.
+* `TauCeti.ParabolicC2HolderSpace.timeEHolderNorm_le`: for `γ ≤ 1`, the temporal
+  `γ`-seminorm is at most `‖∂ₜ u‖_∞ + 2 ‖u‖_∞`.
 * `TauCeti.ParabolicC2HolderSpace.valueHolderL` and
   `TauCeti.ParabolicC2HolderSpace.spatialFDerivHolderL`: the value and the spatial gradient as
   continuous linear maps into the bounded parabolic Hölder space.
-* `TauCeti.ParabolicC2HolderSpace.norm_valueHolderL_add_norm_spatialFDerivHolderL_le` and
+* `TauCeti.ParabolicC2HolderSpace.norm_valueHolderL_add_norm_spatialFDerivHolderL_le`,
+  `TauCeti.ParabolicC2HolderSpace.norm_valueHolderL_add_norm_spatialFDerivHolderL_le_mul` and
   `TauCeti.ParabolicC2HolderSpace.exists_norm_valueHolderL_add_norm_spatialFDerivHolderL_le`:
   the absorption of the lower-order parabolic Hölder norms.
 
@@ -101,8 +105,7 @@ theorem norm_toBoundedContinuousFunction_spatialSecondFDerivL_le
       ⟨fun y ↦ spatialFDerivL f (slabMk y t), ?_, f.hasSpatialFDerivAt t⟩
     refine (contDiff_succ_iff_hasFDerivAt (n := 0)).2
       ⟨fun y ↦ spatialSecondFDerivL f (slabMk y t), ?_, f.hasSpatialSecondFDerivAt t⟩
-    exact contDiff_zero.2 ((spatialSecondFDerivL f).continuous.comp
-      (continuous_slabMk.comp (continuous_id.prodMk continuous_const)))
+    exact contDiff_zero.2 ((spatialSecondFDerivL f).continuous.comp (by fun_prop))
   -- At a common time the parabolic distance is the spatial one, so the second iterated
   -- derivative of each slice is `α`-Hölder with the parabolic seminorm as constant.
   have hH : HolderWith (nnHolderNorm α
@@ -164,6 +167,25 @@ theorem norm_toBoundedContinuousFunction_timeDerivL_le (f : ParabolicC2HolderSpa
     push_cast
     ring
   rwa [hpow, timeExtension_of_mem, ← HolderSpace.toBoundedContinuousFunction_apply] at h
+
+/-- For `γ ≤ 1`, the temporal `γ`-seminorm of an order-two map is at most
+`‖∂ₜ u‖_∞ + 2 ‖u‖_∞`. -/
+theorem timeEHolderNorm_le {γ : ℝ≥0} (hγ : γ ≤ 1) (f : ParabolicC2HolderSpace α E F hab) :
+    timeEHolderNorm γ (f : slab (E := E) a b → F) ≤
+      ↑(‖(timeDerivL f).toBoundedContinuousFunction‖₊ + 2 * ‖valueL f‖₊) := by
+  have ht : ∀ x, ∀ s ∈ Icc a b, HasDerivWithinAt (timeExtension hab.le f x)
+      (timeExtension hab.le (timeDerivL f) x s) (Icc a b) s := fun x s hs ↦ by
+    simpa [timeExtension_def, projIcc_of_mem hab.le hs] using f.hasTimeDerivWithinAt x ⟨s, hs⟩
+  have hlip := timeEHolderNorm_one_le_of_hasDerivWithinAt
+    (C := ‖(timeDerivL f).toBoundedContinuousFunction‖₊) ht fun x s _ ↦ by
+    simpa only [timeExtension_def, HolderSpace.toBoundedContinuousFunction_apply, coe_nnnorm]
+      using (timeDerivL f).toBoundedContinuousFunction.norm_coe_le_norm _
+  rw [timeExtension_space_slabTime] at hlip
+  -- A bounded time derivative makes the time slices Lipschitz; at time differences larger than
+  -- one, the oscillation bound wins.
+  simpa only [NNReal.one_rpow, mul_one] using
+    timeEHolderNorm_le_of_timeEHolderNorm_le (D := 2 * ‖valueL f‖₊) hlip
+      (fun p q ↦ by simpa using (valueL f).dist_le_two_norm p q) hγ one_pos
 
 /-! ### Lower-order parabolic Hölder norms -/
 
@@ -352,6 +374,15 @@ theorem norm_valueHolderL_add_norm_spatialFDerivHolderL_le (hα : α ≤ 1)
   rw [HolderSpace.norm_def, HolderSpace.norm_def, toBoundedContinuousFunction_valueHolderL,
     toBoundedContinuousFunction_spatialFDerivHolderL, add_assoc]
   exact (add_assoc _ _ _).symm.trans_le (norm_valueL_add_nnHolderNorm_add_le hα f hε hε₁)
+
+/-- **Absorption into the order-two norm.** For `α ≤ 1`, the lower-order parabolic Hölder norms
+satisfy `‖u‖_{α,par} + ‖D_x u‖_{α,par} ≤ 24 ‖u‖`, uniformly over the spaces and the slab. -/
+theorem norm_valueHolderL_add_norm_spatialFDerivHolderL_le_mul (hα : α ≤ 1)
+    (f : ParabolicC2HolderSpace α E F hab) :
+    ‖valueHolderL hα f‖ + ‖spatialFDerivHolderL hα f‖ ≤ 24 * ‖f‖ := by
+  have h := norm_valueHolderL_add_norm_spatialFDerivHolderL_le hα f one_pos le_rfl
+  simp only [Real.one_rpow, mul_one] at h
+  linarith [norm_valueL_le f]
 
 /-- **Absorption with a prescribed small constant.** For `α < 1` and every `η > 0` there is a
 constant `C`, depending only on `α` and `η`, such that on every slab

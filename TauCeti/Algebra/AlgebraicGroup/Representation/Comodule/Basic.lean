@@ -330,7 +330,7 @@ private theorem scalarExtensionMap_counit_universalGenerator
       (toConv ULift.algEquiv.symm.toAlgHom) v
   rw [mapPoints_universal_counit,
     (Theta.action (CommAlgCat.of R (ULift.{max u v w} R))).hom.map_one] at h
-  simpa only [universalGenerator_apply, Units.val_one, Module.End.one_apply] using h.symm
+  simpa only [universalGenerator_apply, Units.val_one, one_apply_eq_self] using h.symm
 
 private theorem counit_rTensor_universalGeneratorDown
     (Theta : PointRepresentation (R := R) (H := H) (V := V)) (v : V) :
@@ -596,7 +596,7 @@ private theorem include_actions_eq_scalarExtensionMap_comul
               (mapPoints (H := H)
                 (CommAlgCat.ofHom (liftedIncludeRightAlgHom (R := R) (H := H) V))
                   (toConv ULift.algEquiv.symm.toAlgHom))).val (1 ⊗ₜ[R] v)) := by
-    simpa only [Units.val_mul, Module.End.mul_apply] using hvalue
+    simpa only [Units.val_mul, mul_apply_eq_comp] using hvalue
   rw [← hcompose, hnatural]
   rw [universalGenerator_apply]
 

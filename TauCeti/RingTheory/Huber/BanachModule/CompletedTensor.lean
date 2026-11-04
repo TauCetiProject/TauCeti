@@ -6,8 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.LinearAlgebra.TensorProduct.Basic
+public import Mathlib.RingTheory.Finiteness.Projective
 public import Mathlib.Topology.Algebra.LinearMapCompletion
 public import Mathlib.Topology.Algebra.Module.Equiv.Basic
+public import Mathlib.Topology.Algebra.Module.ModuleTopology
 public import Mathlib.Topology.Algebra.Nonarchimedean.Completion
 public import TauCeti.Topology.Algebra.Nonarchimedean.Lattice
 public import TauCeti.Topology.Algebra.UniformMulAction
@@ -38,6 +40,12 @@ description is not proved here. What the definition gives directly is the univer
 
 From the universal property, continuous linear maps `f : V → V'`, `g : W → W'` induce
 `f ⊗̂ g : V ⊗̂_A W → V' ⊗̂_A W'` (`TauCeti.Huber.BanachModule.CompletedTensor.map`), functorially.
+For a complete Hausdorff nonarchimedean topological `A`-module `M` with continuous action,
+`A ⊗̂_A M ≃ M` (`TauCeti.Huber.BanachModule.CompletedTensor.lid`), and for a finite projective
+`A`-module `P` with its natural topology no completion is needed: the canonical map
+`P ⊗[A] M → P ⊗̂_A M` is an isomorphism
+(`TauCeti.Huber.BanachModule.CompletedTensor.finiteProjectiveEquiv`), so completed tensor
+products with a finite projective factor can be computed with the algebraic tensor product.
 
 ## Main definitions
 
@@ -52,6 +60,9 @@ From the universal property, continuous linear maps `f : V → V'`, `g : W → W
   induced by a continuous bilinear map.
 * `TauCeti.Huber.BanachModule.CompletedTensor.map`: the completed tensor product of two continuous
   linear maps.
+* `TauCeti.Huber.BanachModule.CompletedTensor.lid`: the unit isomorphism `A ⊗̂_A M ≃ M`.
+* `TauCeti.Huber.BanachModule.CompletedTensor.finiteProjectiveEquiv`: the isomorphism
+  `P ⊗[A] M ≃ P ⊗̂_A M` for a finite projective `A`-module `P`.
 
 ## Main results
 
@@ -65,11 +76,15 @@ From the universal property, continuous linear maps `f : V → V'`, `g : W → W
   and `dense_span_range_tmul`: the elementary tensors span a dense submodule.
 * `TauCeti.Huber.BanachModule.CompletedTensor.lift_tmul` and `ext`: the universal property.
 * `TauCeti.Huber.BanachModule.CompletedTensor.map_tmul`, `map_id`, `map_comp`: functoriality.
+* `TauCeti.Huber.BanachModule.CompletedTensor.lid_tmul`: the unit isomorphism sends `a ⊗ m` to
+  `a • m`.
+* `TauCeti.Huber.BanachModule.CompletedTensor.toCompletion_bijective_of_finite_projective`:
+  tensoring with a finite projective module needs no completion.
 
 ## References
 
 * K. S. Kedlaya and R. Liu, *Relative p-adic Hodge theory: Foundations*, Astérisque 371 (2015),
-  Definitions 2.1.10 and 2.2.7.
+  Definitions 2.1.10 and 2.2.7, and Lemma 2.2.12(a).
 -/
 
 public section
@@ -287,6 +302,8 @@ theorem ext {M : Type*} [AddCommGroup M] [Module A M] [TopologicalSpace M] [T2Sp
   | tmul v w => simpa using h v w
   | add x y hx hy => simp only [map_add, hx, hy]
 
+section Lift
+
 variable {M : Type*} [AddCommGroup M] [Module A M] [UniformSpace M] [IsUniformAddGroup M]
   [NonarchimedeanAddGroup M] [ContinuousSMul A M] [CompleteSpace M] [T0Space M]
 
@@ -318,6 +335,40 @@ theorem lift_unique (β : V →ₗ[A] W →ₗ[A] M) (hβ : Continuous fun p : V
     (f : CompletedTensor A V W →L[A] M) (hf : ∀ v w, f (tmul A V W v w) = β v w) :
     f = lift β hβ :=
   ext fun v w ↦ by rw [hf, lift_tmul]
+
+section Lid
+
+variable (A M)
+
+/-- **The unit isomorphism** `A ⊗̂_A M ≃ M` of a complete Hausdorff nonarchimedean topological
+`A`-module `M` with continuous action: it sends `a ⊗ m` to `a • m` (`lid_tmul`), and its inverse
+sends `m` to `1 ⊗ m` (`lid_symm_apply`). -/
+noncomputable def lid : CompletedTensor A A M ≃L[A] M :=
+  .equivOfInverse' (lift (LinearMap.lsmul A M) (continuous_smul.congr fun _ ↦ by simp))
+    ⟨tmul A A M 1, (continuous_tmul A A M).comp (continuous_const.prodMk continuous_id)⟩
+    (by ext m; simp) (ext fun a m ↦ by simp [← LinearMap.map_smul₂])
+
+/-- The unit isomorphism sends `a ⊗ m` to `a • m`. -/
+@[simp]
+theorem lid_tmul (a : A) (m : M) : lid A M (tmul A A M a m) = a • m := by
+  simp [lid]
+
+/-- The inverse of the unit isomorphism sends `m` to `1 ⊗ m`. -/
+@[simp]
+theorem lid_symm_apply (m : M) : (lid A M).symm m = tmul A A M 1 m :=
+  (rfl)
+
+/-- The unit isomorphism extends Mathlib's algebraic unit map `A ⊗[A] M ≃ M`. -/
+@[simp]
+theorem lid_toCompletion (x : A ⊗[A] M) :
+    lid A M (toCompletion A A M x) = TensorProduct.lid A M x := by
+  induction x using TensorProduct.inductionOn with
+  | tmul a m => simp
+  | add x y hx hy => simp only [map_add, hx, hy]
+
+end Lid
+
+end Lift
 
 section Map
 
@@ -352,6 +403,82 @@ theorem map_comp (f₂ : V' →L[A] V'') (g₂ : W' →L[A] W'') (f₁ : V →L[
   ext fun v w ↦ by simp
 
 end Map
+
+section FiniteProjective
+
+variable [IsTopologicalRing A] (P : Type*) [AddCommGroup P] [Module A P] [TopologicalSpace P]
+  [IsModuleTopology A P] [Module.Finite A P] [Module.Projective A P]
+  (M : Type*) [AddCommGroup M] [Module A M] [UniformSpace M] [IsUniformAddGroup M]
+  [NonarchimedeanAddGroup M] [ContinuousSMul A M] [CompleteSpace M] [T0Space M]
+
+variable (A) in
+/-- For a finite projective `A`-module `P` with its natural topology, the map
+`P ⊗[A] M → P ⊗̂_A M` is bijective: tensoring with `P` needs no completion. -/
+theorem toCompletion_bijective_of_finite_projective :
+    Function.Bijective (toCompletion A P M) := by
+  classical
+  -- `P` is a retract `f ∘ g = id` of some `Aⁿ`; the coordinates of `g` are continuous
+  obtain ⟨n, f, g, -, -, hfg⟩ := Module.Finite.exists_comp_eq_id_of_projective A P
+  have hg : Continuous g := IsModuleTopology.continuous_of_linearMap g
+  -- `c i : P ⊗̂ M → M` extends `p ⊗ m ↦ (g p)ᵢ • m`
+  let c (i : Fin n) : CompletedTensor A P M →L[A] M :=
+    lift ((LinearMap.lsmul A M).comp ((LinearMap.proj i).comp g))
+      ((((continuous_apply i).comp (hg.comp continuous_fst)).smul continuous_snd).congr
+        fun _ ↦ by simp)
+  -- the inverse `x ↦ ∑ᵢ f(eᵢ) ⊗ c i x`
+  let ψ : CompletedTensor A P M →ₗ[A] P ⊗[A] M :=
+    ∑ i, (TensorProduct.mk A P M (f (Pi.single i 1))).comp (c i).toLinearMap
+  have hf (p : P) : ∑ i, g p i • f (Pi.single i 1) = p := by
+    have h : f (g p) = p := LinearMap.congr_fun hfg p
+    rw [pi_eq_sum_univ' (g p)] at h
+    simpa [map_sum, map_smul] using h
+  have hψ (x : P ⊗[A] M) : ψ (toCompletion A P M x) = x := by
+    induction x using TensorProduct.inductionOn with
+    | tmul p m =>
+      conv_rhs => rw [← hf p]
+      simp [ψ, c, LinearMap.sum_apply, TensorProduct.sum_tmul, TensorProduct.smul_tmul']
+    | add x y hx hy => rw [map_add, map_add, hx, hy]
+  have hcont : Continuous fun x ↦ toCompletion A P M (ψ x) := by
+    simp only [ψ, LinearMap.sum_apply, map_sum, LinearMap.comp_apply,
+      TensorProduct.mk_apply, toCompletion_tmul, ContinuousLinearMap.coe_coe]
+    exact continuous_finsetSum _ fun i _ ↦
+      (continuous_tmul A P M).comp (continuous_const.prodMk (c i).continuous)
+  -- `toCompletion ∘ ψ` is continuous and the identity on the dense image of `toCompletion`
+  refine ⟨Function.LeftInverse.injective hψ, fun x ↦ ⟨ψ x, ?_⟩⟩
+  refine (denseRange_toCompletion A P M).induction_on x (isClosed_eq hcont continuous_id) ?_
+  exact fun y ↦ by rw [hψ]
+
+variable (A) in
+/-- **The completed tensor product with a finite projective module**: for a finite projective
+`A`-module `P` with its natural topology, `P ⊗[A] M → P ⊗̂_A M` is an isomorphism. -/
+noncomputable def finiteProjectiveEquiv : P ⊗[A] M ≃ₗ[A] CompletedTensor A P M :=
+  .ofBijective (toCompletion A P M) (toCompletion_bijective_of_finite_projective A P M)
+
+/-- `finiteProjectiveEquiv` is the canonical map `P ⊗[A] M → P ⊗̂_A M`. -/
+@[simp]
+theorem finiteProjectiveEquiv_apply (x : P ⊗[A] M) :
+    finiteProjectiveEquiv A P M x = toCompletion A P M x :=
+  (rfl)
+
+/-- `finiteProjectiveEquiv` sends `p ⊗ m` to the elementary tensor `p ⊗ m` of `P ⊗̂_A M`. -/
+theorem finiteProjectiveEquiv_tmul (p : P) (m : M) :
+    finiteProjectiveEquiv A P M (p ⊗ₜ m) = tmul A P M p m := by
+  simp
+
+/-- The inverse of `finiteProjectiveEquiv` sends the elementary tensor `p ⊗ m` of `P ⊗̂_A M` to
+`p ⊗ₜ m`. -/
+@[simp]
+theorem finiteProjectiveEquiv_symm_tmul (p : P) (m : M) :
+    (finiteProjectiveEquiv A P M).symm (tmul A P M p m) = p ⊗ₜ m :=
+  (finiteProjectiveEquiv A P M).symm_apply_eq.mpr (finiteProjectiveEquiv_tmul P M p m).symm
+
+/-- The inverse of `finiteProjectiveEquiv` sends the image of `x : P ⊗[A] M` back to `x`. -/
+@[simp]
+theorem finiteProjectiveEquiv_symm_toCompletion (x : P ⊗[A] M) :
+    (finiteProjectiveEquiv A P M).symm (toCompletion A P M x) = x :=
+  (finiteProjectiveEquiv A P M).symm_apply_apply x
+
+end FiniteProjective
 
 end CompletedTensor
 

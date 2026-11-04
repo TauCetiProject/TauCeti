@@ -44,6 +44,7 @@ specialisation of `SymplecticGroup.fromBlocks_mem_iff`.
   the latter, `tr (J * Jᵀ) = 2 * card l`.
 * `Matrix.sum_J_mul_J_eq_ite`: the columns of `J` are orthonormal, `Jᵀ * J = 1` read entrywise.
 * `Matrix.eq_J_conj_iff_mul_J_eq`: cancelling a conjugation by `J`.
+* `Matrix.J_mul_mul_J_mul_J`: sandwiching twice by `J` is the identity.
 * `SymplecticGroup.transpose_eq_J_conj_inv`: the transpose of a symplectic matrix is the
   `J`-conjugate of its inverse.
 * `SymplecticGroup.mem_iff_neg_J_mul_transpose_mul_J_mul_eq_one`: the symplectic matrices are the
@@ -106,7 +107,7 @@ omit [Fintype l] in
 /-- `J` is antisymmetric, entrywise: `Jᵀ = -J` read at a pair of indices. -/
 theorem J_apply_swap (x y : l ⊕ l) : J l R y x = -J l R x y := by
   have h := congrFun (congrFun (J_transpose l R) x) y
-  simpa only [transpose_apply, neg_apply] using h
+  simpa only [transpose_apply, Matrix.neg_apply] using h
 
 /-- Each row of `J` pairs with itself to `1`, because `J * Jᵀ = 1`. -/
 theorem sum_J_mul_J (x : l ⊕ l) : ∑ y : l ⊕ l, J l R x y * J l R x y = 1 := by
@@ -114,7 +115,7 @@ theorem sum_J_mul_J (x : l ⊕ l) : ∑ y : l ⊕ l, J l R x y * J l R x y = 1 :
     rw [J_transpose]
     exact J_mul_neg_J l R
   have h := congrFun (congrFun hJ x) x
-  simpa only [mul_apply, one_apply_eq, transpose_apply] using h
+  simpa only [Matrix.mul_apply, one_apply_eq, transpose_apply] using h
 
 /-- The columns of `J` are orthonormal for the standard coordinate dot product, because
 `Jᵀ * J = 1`. -/
@@ -124,7 +125,7 @@ theorem sum_J_mul_J_eq_ite (y p : l ⊕ l) :
     rw [J_transpose]
     exact neg_J_mul_J l R
   have h := congrFun (congrFun hJ y) p
-  simpa only [mul_apply, one_apply, transpose_apply] using h
+  simpa only [Matrix.mul_apply, Matrix.one_apply, transpose_apply] using h
 
 /-- **`J` contracted against itself** is `tr (J * Jᵀ) = tr 1 = 2 * card l`: the double sum of
 `Matrix.sum_J_mul_J` over the `2 * card l` rows. -/
@@ -143,6 +144,14 @@ theorem eq_J_conj_iff_mul_J_eq (X Y : Matrix (l ⊕ l) (l ⊕ l) R) :
     X = J l R * Y * (J l R)⁻¹ ↔ X * J l R = J l R * Y := by
   have : Invertible (J l R) := ⟨-J l R, neg_J_mul_J l R, J_mul_neg_J l R⟩
   rw [eq_comm, mul_inv_eq_iff_eq_mul_of_invertible, eq_comm]
+
+/-- Sandwiching twice by the standard symplectic matrix is the identity:
+`J * (J * M * J) * J = M`, since `J * J = -1`. -/
+theorem J_mul_mul_J_mul_J (M : Matrix (l ⊕ l) (l ⊕ l) R) :
+    J l R * (J l R * M * J l R) * J l R = M := by
+  calc J l R * (J l R * M * J l R) * J l R = (J l R * J l R) * M * (J l R * J l R) := by
+        noncomm_ring
+    _ = M := by simp [J_squared]
 
 end Matrix
 

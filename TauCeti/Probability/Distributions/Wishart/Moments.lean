@@ -196,7 +196,8 @@ theorem integral_trace_mul_of_mgf_trace_mul_eq_det_rpow (hS : S.PosSemidef)
     _ = deriv (fun t => -n / 2 * ∑ j, Real.log (1 - 2 * t * hB.eigenvalues j)) 0 :=
       heq.deriv_eq
     _ = n * ∑ j, hB.eigenvalues j :=
-      (hasDerivAt_neg_half_mul_sum_log n hB.eigenvalues).deriv
+      (hasDerivAt_neg_half_mul_sum_log n Finset.univ hB.eigenvalues (t := 0) (by simp)).deriv.trans
+        (by simp)
     _ = n * (CFC.sqrt S * (Θ : Matrix (Fin p) (Fin p) ℝ) * CFC.sqrt S).trace := by
       rw [hB.trace_eq_sum_eigenvalues]
       simp
@@ -227,7 +228,8 @@ theorem variance_trace_mul_of_mgf_trace_mul_eq_det_rpow (hS : S.PosSemidef)
   have heq := cgf_trace_mul_eventuallyEq_sum_log_of_mgf_trace_mul_eq_det_rpow hmgf
   have hcumulant : iteratedDeriv 2 (cgf X μ) 0 = 2 * n * ∑ j, hB.eigenvalues j ^ 2 := by
     rw [heq.iteratedDeriv_eq 2]
-    exact iteratedDeriv_two_neg_half_mul_sum_log n hB.eigenvalues
+    simpa using
+      iteratedDeriv_two_neg_half_mul_sum_log n Finset.univ hB.eigenvalues (t := 0) (by simp)
   rw [variance_eq_integral (by fun_prop)]
   have hsecond := iteratedDeriv_two_cgf_eq_integral hzero
   have hfirst := deriv_cgf_zero hzero

@@ -19,6 +19,10 @@ ambient space.
 
 A map lifting every vector of norm less than `r` to a vector of norm less than `r` lifts each `y`
 to a vector of norm less than `‖y‖ + ε` (`TauCeti.exists_apply_eq_norm_lt_add`).
+
+Under an injective map, the image of `v` lies outside the image of the closed ball of radius `r`
+centred at zero exactly when `r < ‖v‖`
+(`Function.Injective.apply_notMem_image_closedBall_zero_iff`).
 -/
 
 public section
@@ -64,5 +68,12 @@ theorem exists_apply_eq_norm_lt_add {E F : Type*} [SeminormedAddCommGroup E]
     {ε : ℝ} (hε : 0 < ε) : ∃ x, f x = y ∧ ‖x‖ < ‖y‖ + ε := by
   obtain ⟨x, hx, rfl⟩ := hf _ (mem_ball_zero_iff.2 (lt_add_of_pos_right ‖y‖ hε))
   exact ⟨x, rfl, mem_ball_zero_iff.1 hx⟩
+
+/-- Under an injective map `e`, the image of `v` lies outside the image of the closed ball of
+radius `r` centred at zero exactly when `r < ‖v‖`. -/
+theorem _root_.Function.Injective.apply_notMem_image_closedBall_zero_iff {E X : Type*}
+    [SeminormedAddGroup E] {e : E → X} (he : Function.Injective e) {r : ℝ} {v : E} :
+    e v ∉ e '' closedBall 0 r ↔ r < ‖v‖ := by
+  rw [he.mem_set_image, mem_closedBall_zero_iff, not_le]
 
 end TauCeti

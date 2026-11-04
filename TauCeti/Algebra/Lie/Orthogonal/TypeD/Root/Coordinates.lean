@@ -136,10 +136,15 @@ theorem rootEntryBasis_repr (h2 : ∀ x : R, x + x = 0 → x = 0)
     (rootEntryBasis h2).repr X p = rootEntryEquiv h2 X p :=
   Module.Basis.ofEquivFun_repr_apply _ _ _
 
+/-- The matrix basis vectors are the inverse coordinates of the unit vectors. -/
+theorem rootEntryBasis_apply (h2 : ∀ x : R, x + x = 0 → x = 0) (p : RootEntryIndex ι) :
+    rootEntryBasis h2 p = (rootEntryEquiv h2).symm (Pi.single p 1) := by
+  rw [rootEntryBasis, Module.Basis.coe_ofEquivFun]
+
 private theorem rootEntryEquiv_basis (h2 : ∀ x : R, x + x = 0 → x = 0)
     (p : RootEntryIndex ι) :
     rootEntryEquiv h2 (rootEntryBasis h2 p) = Pi.single p 1 := by
-  rw [rootEntryBasis, Module.Basis.coe_ofEquivFun, LinearEquiv.apply_symm_apply]
+  rw [rootEntryBasis_apply, LinearEquiv.apply_symm_apply]
 
 /-- The first basis family consists of all difference-root matrices, including the diagonal. -/
 @[simp]

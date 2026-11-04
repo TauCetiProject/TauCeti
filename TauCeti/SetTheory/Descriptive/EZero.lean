@@ -235,10 +235,8 @@ theorem hasCantorAntichainOn_eZero : eZero.HasCantorAntichainOn univ := by
   simpa using hk
 
 /-- `E₀` has exactly continuum many classes. -/
-theorem mk_quotient_eZero : #(Quotient eZero) = 𝔠 := by
-  refine le_antisymm (mk_quotient_le.trans_eq ?_)
-    hasCantorAntichainOn_eZero.continuum_le_mk_quotient
-  rw [← power_def, mk_bool, mk_nat, two_power_aleph0]
+theorem mk_quotient_eZero : #(Quotient eZero) = 𝔠 :=
+  hasCantorAntichainOn_eZero.mk_quotient_eq_continuum
 
 /-- Equality on Cantor space is Borel reducible to `E₀`, through its Cantor antichain. Since `E₀`
 is not smooth (`TauCeti.not_isSmooth_eZero`), the converse reduction fails. -/
