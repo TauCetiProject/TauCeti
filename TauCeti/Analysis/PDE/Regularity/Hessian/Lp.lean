@@ -13,6 +13,7 @@ import TauCeti.Analysis.Distribution.SchwartzSpace.Prod
 import TauCeti.MeasureTheory.Function.Lp.Dilation
 import TauCeti.MeasureTheory.Function.Lp.Iterated
 import TauCeti.MeasureTheory.Measure.Haar.EuclideanSpace
+import TauCeti.Analysis.InnerProductSpace.Laplacian.Basic
 
 /-!
 # The Calderón–Zygmund estimate `‖D²u‖_p ≤ C ‖Δu‖_p`
@@ -30,6 +31,11 @@ estimate, and it is false at the endpoints `p = 1` and `p = ∞`. In dimension o
 elementary: `D²u` and `Δu` have the same pointwise norm `‖u''‖`, so it holds for every `p`. A
 corollary gives the same estimate for real Schwartz functions
 (`TauCeti.exists_eLpNorm_iteratedFDeriv_two_le_eLpNorm_laplacian_real`).
+
+Both estimates are stated on an arbitrary finite-dimensional real inner product space `V` with its
+volume measure. They are proved on `ℝⁿ` and transported to `V` along a linear isometry
+`V ≃ ℝⁿ`, which preserves volume, the pointwise norm of `D²u`, and the Laplacian
+(`TauCeti.laplacian_comp_linearIsometryEquiv_right`).
 
 ## The argument for `n ≥ 3`
 
@@ -75,7 +81,7 @@ The full Hessian is controlled through an orthonormal basis `(eᵢ)`: the norm o
   `‖∂_v ∂_w u‖_p ≤ C ‖Δu‖_p` for Schwartz functions `u`, in every dimension.
 * `TauCeti.exists_eLpNorm_iteratedFDeriv_two_le_eLpNorm_laplacian`: `‖D²u‖_p ≤ C ‖Δu‖_p` for
   Schwartz functions `u`, and `TauCeti.exists_eLpNorm_iteratedFDeriv_two_le_eLpNorm_laplacian_real`
-  for real ones, in every dimension.
+  for real ones, on every finite-dimensional real inner product space.
 
 ## References
 
@@ -396,15 +402,11 @@ theorem exists_eLpNorm_lineDerivOp_lineDerivOp_le_eLpNorm_laplacian
       (EuclideanSpace.consEquivL ℝ m (0, w)) (by omega)
     exact ⟨C, eLpNorm_lineDerivOp_lineDerivOp_le_of_succ v w hp.le hC⟩
 
-/-- **The Calderón–Zygmund estimate `‖D²u‖_p ≤ C ‖Δu‖_p`.** Let `1 < p < ∞`. There is
-a constant `C` with
-
-`‖D²u‖_{Lᵖ} ≤ C ‖Δu‖_{Lᵖ}`
-
-for every Schwartz function `u` on `ℝⁿ` with values in a complex Hilbert space, where `D²u` is the
-second Fréchet derivative of `u`. -/
-theorem exists_eLpNorm_iteratedFDeriv_two_le_eLpNorm_laplacian {p : ℝ≥0∞}
-    (hp : 1 < p) (hp_top : p ≠ ∞) :
+/-- The Calderón–Zygmund estimate `‖D²u‖_p ≤ C ‖Δu‖_p` on `ℝⁿ`, the case of
+`TauCeti.exists_eLpNorm_iteratedFDeriv_two_le_eLpNorm_laplacian` from which the general case is
+transported. -/
+private theorem exists_eLpNorm_iteratedFDeriv_two_le_eLpNorm_laplacian_euclideanSpace
+    {p : ℝ≥0∞} (hp : 1 < p) (hp_top : p ≠ ∞) :
     ∃ C : ℝ≥0, ∀ u : 𝓢(EuclideanSpace ℝ (Fin n), F), eLpNorm (iteratedFDeriv ℝ 2 ⇑u) p volume ≤
       C * eLpNorm (⇑(Δ u : 𝓢(EuclideanSpace ℝ (Fin n), F))) p volume := by
   set b := EuclideanSpace.basisFun (Fin n) ℝ
@@ -434,14 +436,59 @@ theorem exists_eLpNorm_iteratedFDeriv_two_le_eLpNorm_laplacian {p : ℝ≥0∞}
     _ = (∑ r, C r : ℝ≥0) * eLpNorm (⇑(Δ u : 𝓢(EuclideanSpace ℝ (Fin n), F))) p volume := by
         rw [ENNReal.ofNNReal_finsetSum, Finset.sum_mul]
 
+section InnerProductSpace
+
+variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V] [FiniteDimensional ℝ V]
+  [MeasurableSpace V] [BorelSpace V]
+
+/-- **The Calderón–Zygmund estimate `‖D²u‖_p ≤ C ‖Δu‖_p`.** Let `1 < p < ∞`, and let `V` be a
+finite-dimensional real inner product space with its volume measure. There is a constant `C` with
+
+`‖D²u‖_{Lᵖ} ≤ C ‖Δu‖_{Lᵖ}`
+
+for every Schwartz function `u` on `V` with values in a complex Hilbert space, where `D²u` is the
+second Fréchet derivative of `u`. -/
+theorem exists_eLpNorm_iteratedFDeriv_two_le_eLpNorm_laplacian {p : ℝ≥0∞}
+    (hp : 1 < p) (hp_top : p ≠ ∞) :
+    ∃ C : ℝ≥0, ∀ u : 𝓢(V, F), eLpNorm (iteratedFDeriv ℝ 2 ⇑u) p volume ≤
+      C * eLpNorm (⇑(Δ u : 𝓢(V, F))) p volume := by
+  obtain ⟨C, hC⟩ := exists_eLpNorm_iteratedFDeriv_two_le_eLpNorm_laplacian_euclideanSpace
+    (n := Module.finrank ℝ V) (F := F) hp hp_top
+  refine ⟨C, fun u => ?_⟩
+  -- Transport `u` to `ℝⁿ` along a linear isometry `e : V ≃ ℝⁿ`; `e` preserves volume.
+  set e := (stdOrthonormalBasis ℝ V).repr
+  set v := SchwartzMap.compCLMOfContinuousLinearEquiv ℝ e.symm.toContinuousLinearEquiv u
+  have hv : ⇑v = ⇑u ∘ e.symm := SchwartzMap.compCLMOfContinuousLinearEquiv_apply ℝ _ u
+  have hmp := e.symm.measurePreserving
+  have h₁ : eLpNorm (iteratedFDeriv ℝ 2 ⇑v) p volume =
+      eLpNorm (iteratedFDeriv ℝ 2 ⇑u) p volume := by
+    have hcont : Continuous (iteratedFDeriv ℝ 2 ⇑u) :=
+      (u.smooth ⊤).continuous_iteratedFDeriv (by simp)
+    rw [← eLpNorm_comp_measurePreserving hcont.aestronglyMeasurable hmp]
+    refine eLpNorm_congr_norm_ae
+      ((v.smooth ⊤).continuous_iteratedFDeriv (by simp)).aestronglyMeasurable
+      (hcont.comp e.symm.continuous).aestronglyMeasurable (ae_of_all _ fun x => ?_)
+    rw [hv, Function.comp_apply, e.symm.norm_iteratedFDeriv_comp_right]
+  have h₂ : eLpNorm (⇑(Δ v : 𝓢(EuclideanSpace ℝ (Fin (Module.finrank ℝ V)), F))) p volume =
+      eLpNorm (⇑(Δ u : 𝓢(V, F))) p volume := by
+    rw [← eLpNorm_comp_measurePreserving (Δ u : 𝓢(V, F)).continuous.aestronglyMeasurable hmp]
+    congr 1
+    funext x
+    rw [Function.comp_apply, SchwartzMap.laplacian_apply, SchwartzMap.laplacian_apply, hv,
+      laplacian_comp_linearIsometryEquiv_right, Function.comp_apply]
+  rw [← h₁, ← h₂]
+  exact hC v
+
 /-- **The Calderón–Zygmund estimate `‖D²u‖_p ≤ C ‖Δu‖_p` for real functions.** Let
-`1 < p < ∞`. There is a constant `C` with `‖D²u‖_{Lᵖ} ≤ C ‖Δu‖_{Lᵖ}` for every real Schwartz
-function `u` on `ℝⁿ`. -/
+`1 < p < ∞`, and let `V` be a finite-dimensional real inner product space with its volume measure.
+There is a constant `C` with `‖D²u‖_{Lᵖ} ≤ C ‖Δu‖_{Lᵖ}` for every real Schwartz function `u` on
+`V`. -/
 theorem exists_eLpNorm_iteratedFDeriv_two_le_eLpNorm_laplacian_real {p : ℝ≥0∞}
     (hp : 1 < p) (hp_top : p ≠ ∞) :
-    ∃ C : ℝ≥0, ∀ u : 𝓢(EuclideanSpace ℝ (Fin n), ℝ), eLpNorm (iteratedFDeriv ℝ 2 ⇑u) p volume ≤
-      C * eLpNorm (⇑(Δ u : 𝓢(EuclideanSpace ℝ (Fin n), ℝ))) p volume := by
-  obtain ⟨C, hC⟩ := exists_eLpNorm_iteratedFDeriv_two_le_eLpNorm_laplacian (F := ℂ) hp hp_top
+    ∃ C : ℝ≥0, ∀ u : 𝓢(V, ℝ), eLpNorm (iteratedFDeriv ℝ 2 ⇑u) p volume ≤
+      C * eLpNorm (⇑(Δ u : 𝓢(V, ℝ))) p volume := by
+  obtain ⟨C, hC⟩ :=
+    exists_eLpNorm_iteratedFDeriv_two_le_eLpNorm_laplacian (V := V) (F := ℂ) hp hp_top
   refine ⟨C, fun u => ?_⟩
   -- Embed `u` in the complex Schwartz space; both sides keep their norms pointwise.
   set ψ := u.postcompCLM Complex.ofRealCLM
@@ -458,16 +505,18 @@ theorem exists_eLpNorm_iteratedFDeriv_two_le_eLpNorm_laplacian_real {p : ℝ≥0
         Complex.ofRealLI_apply]
     rw [hψ']
     exact Complex.ofRealLI.norm_iteratedFDeriv_comp_left hu.contDiffAt le_rfl
-  have h₂ : eLpNorm (⇑(Δ ψ : 𝓢(EuclideanSpace ℝ (Fin n), ℂ))) p volume =
-      eLpNorm (⇑(Δ u : 𝓢(EuclideanSpace ℝ (Fin n), ℝ))) p volume := by
+  have h₂ : eLpNorm (⇑(Δ ψ : 𝓢(V, ℂ))) p volume =
+      eLpNorm (⇑(Δ u : 𝓢(V, ℝ))) p volume := by
     refine eLpNorm_congr_norm_ae
-      (Δ ψ : 𝓢(EuclideanSpace ℝ (Fin n), ℂ)).continuous.aestronglyMeasurable
-      (Δ u : 𝓢(EuclideanSpace ℝ (Fin n), ℝ)).continuous.aestronglyMeasurable
+      (Δ ψ : 𝓢(V, ℂ)).continuous.aestronglyMeasurable
+      (Δ u : 𝓢(V, ℝ)).continuous.aestronglyMeasurable
       (ae_of_all _ fun x => ?_)
     rw [SchwartzMap.laplacian_apply, SchwartzMap.laplacian_apply, hψ,
       hu.contDiffAt.laplacian_CLM_comp_left]
     simp
   rw [← h₁, ← h₂]
   exact hC ψ
+
+end InnerProductSpace
 
 end TauCeti

@@ -196,6 +196,20 @@ lemma linearYonedaFunctor_map_f_hom_apply {X X' : (ChainComplex C α)ᵒᵖ} (φ
       (Y := (X'.unop.linearYonedaObj k Y).X i) (((linearYonedaFunctor k Y).map φ).f i) g =
         φ.unop.f i ≫ g := rfl
 
+/-- Precomposition with a scalar multiple of the identity is scalar multiplication on
+`Hom(X, Y)`. -/
+lemma _root_.ChainComplex.linearYonedaFunctor_map_smul_id {S : Type*} [CommRing S] [Linear S C]
+    (X : ChainComplex C α) (r : S) :
+    (linearYonedaFunctor S Y).map (r • 𝟙 X).op = r • 𝟙 (X.linearYonedaObj S Y) := by
+  ext i : 1
+  apply ModuleCat.hom_ext
+  apply LinearMap.ext
+  intro g
+  -- The functor's object and `linearYonedaObj` are definitionally the same Hom complex.
+  -- Give `g` its morphism type explicitly: rewriting cannot unfold its cochain-module type.
+  exact (Linear.smul_comp _ _ _ r (𝟙 (X.X i)) (g : X.X i ⟶ Y)).trans
+    (congrArg (fun f : X.X i ⟶ Y ↦ r • f) (Category.id_comp (g : X.X i ⟶ Y)))
+
 /-- The cochain homotopy induced by a chain homotopy `h` is precomposition with `h`. -/
 @[simp]
 lemma _root_.Homotopy.linearYonedaFunctorMap_hom_apply {X X' : ChainComplex C α} {φ ψ : X ⟶ X'}

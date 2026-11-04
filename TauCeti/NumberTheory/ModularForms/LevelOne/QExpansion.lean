@@ -7,6 +7,7 @@ module
 
 public import Mathlib.NumberTheory.ModularForms.LevelOne.GradedRing
 public import Mathlib.RingTheory.PowerSeries.Expand
+public import TauCeti.NumberTheory.ArithmeticFunction.Sigma.Series
 public import TauCeti.NumberTheory.ModularForms.QExpansion.Basic
 
 import TauCeti.NumberTheory.ArithmeticFunction.Sigma.Congruence
@@ -32,6 +33,9 @@ The Eisenstein coefficients are `240 σ₃(n)` and `-504 σ₅(n)` (Mathlib's
 * `TauCeti.ModularForm.E_twelve_qExpansion_coeff`: `E₁₂ = 1 + (65520/691) ∑ σ₁₁(m) qᵐ`.
 * `ModularForm.qExpansion_add_smul_discriminant`: the `q`-expansion of `f + c Δ` in
   weight `12`.
+* `TauCeti.ModularForm.qExpansion_E₄_eq`, `TauCeti.ModularForm.qExpansion_E₆_eq`: the
+  `q`-expansions `E₄ = 1 + 240 ∑ σ₃(n) qⁿ` and `E₆ = 1 - 504 ∑ σ₅(n) qⁿ`, as images of integral
+  power series.
 * `TauCeti.ModularForm.qExpansion_E_mem_range_map`: the `q`-expansion of a normalised Eisenstein
   series has rational coefficients.
 * `TauCeti.ModularForm.E₄_qExpansion_coeff_of_ne_zero`,
@@ -67,6 +71,30 @@ private theorem bernoulli_four : bernoulli 4 = -1 / 30 := by decide +kernel
 private theorem bernoulli_six : bernoulli 6 = 1 / 42 := by decide +kernel
 
 private theorem bernoulli_twelve : bernoulli 12 = -691 / 2730 := by decide +kernel
+
+/-- The `q`-expansion of `E₄` is `1 + 240 ∑ σ₃(n) qⁿ`. -/
+theorem qExpansion_E₄_eq :
+    qExpansion 1 E₄ = (1 + 240 * TauCeti.divisorSumSeries 3).map (Int.castRingHom ℂ) := by
+  ext m
+  rw [E_qExpansion_coeff _ ⟨2, rfl⟩]
+  simp only [map_add, map_mul, map_one, map_ofNat, PowerSeries.coeff_one,
+    PowerSeries.coeff_ofNat_mul, PowerSeries.coeff_map, TauCeti.coeff_divisorSumSeries]
+  rcases eq_or_ne m 0 with rfl | hm
+  · simp
+  · simp [hm, bernoulli_four]
+    norm_num
+
+/-- The `q`-expansion of `E₆` is `1 - 504 ∑ σ₅(n) qⁿ`. -/
+theorem qExpansion_E₆_eq :
+    qExpansion 1 E₆ = (1 - 504 * TauCeti.divisorSumSeries 5).map (Int.castRingHom ℂ) := by
+  ext m
+  rw [E_qExpansion_coeff _ ⟨3, rfl⟩]
+  simp only [map_sub, map_mul, map_one, map_ofNat, PowerSeries.coeff_one,
+    PowerSeries.coeff_ofNat_mul, PowerSeries.coeff_map, TauCeti.coeff_divisorSumSeries]
+  rcases eq_or_ne m 0 with rfl | hm
+  · simp
+  · simp [hm, bernoulli_six]
+    norm_num
 
 /-- The `q²`-coefficient of `E₄` is `240 σ₃(2) = 2160`. -/
 theorem E₄_qExpansion_coeff_two : (qExpansion 1 E₄).coeff 2 = 2160 := by
@@ -199,33 +227,20 @@ theorem exists_discriminant_qExpansion_coeff_eq_intCast (n : ℕ) :
   -- `(E₄³ - E₆²) / 1728 = (5 A + 7 B) / 12 + 100 A² + 8000 A³ - 147 B²`, and `C = (5 A + 7 B) / 12`
   -- is integral by the congruence `12 ∣ 5 σ₃(n) + 7 σ₅(n)`
   -- (`TauCeti.twelve_dvd_five_mul_sigma_three_add_seven_mul_sigma_five`).
-  let A : PowerSeries ℤ := PowerSeries.mk fun n ↦ (σ 3 n : ℤ)
-  let B : PowerSeries ℤ := PowerSeries.mk fun n ↦ (σ 5 n : ℤ)
+  let A := TauCeti.divisorSumSeries 3
+  let B := TauCeti.divisorSumSeries 5
   let C : PowerSeries ℤ := PowerSeries.mk fun n ↦ ((5 * σ 3 n + 7 * σ 5 n) / 12 : ℕ)
   have hC : 12 * C = 5 * A + 7 * B := by
     ext n
     have := Nat.mul_div_cancel' (twelve_dvd_five_mul_sigma_three_add_seven_mul_sigma_five n)
-    simp only [PowerSeries.coeff_ofNat_mul, map_add, PowerSeries.coeff_mk, C, A, B]
+    simp only [PowerSeries.coeff_ofNat_mul, map_add, PowerSeries.coeff_mk,
+      TauCeti.coeff_divisorSumSeries, C, A, B]
     exact_mod_cast this
   let φ := PowerSeries.map (Int.castRingHom ℂ)
   have hE₄ : qExpansion 1 E₄ = 1 + 240 * φ A := by
-    ext m
-    rw [E_qExpansion_coeff _ ⟨2, rfl⟩]
-    simp only [map_add, PowerSeries.coeff_one, PowerSeries.coeff_ofNat_mul, PowerSeries.coeff_map,
-      PowerSeries.coeff_mk, φ, A]
-    rcases eq_or_ne m 0 with rfl | hm
-    · simp
-    · simp [hm, bernoulli_four]
-      norm_num
+    simp only [qExpansion_E₄_eq, map_add, map_mul, map_one, map_ofNat, φ, A]
   have hE₆ : qExpansion 1 E₆ = 1 - 504 * φ B := by
-    ext m
-    rw [E_qExpansion_coeff _ ⟨3, rfl⟩]
-    simp only [map_sub, PowerSeries.coeff_one, PowerSeries.coeff_ofNat_mul, PowerSeries.coeff_map,
-      PowerSeries.coeff_mk, φ, B]
-    rcases eq_or_ne m 0 with rfl | hm
-    · simp
-    · simp [hm, bernoulli_six]
-      norm_num
+    simp only [qExpansion_E₆_eq, map_sub, map_mul, map_one, map_ofNat, φ, B]
   set P := C + 100 * A ^ 2 + 8000 * A ^ 3 - 147 * B ^ 2
   have hP : (1 + 240 * φ A) ^ 3 - (1 - 504 * φ B) ^ 2 = 1728 * φ P := by
     have : (1 + 240 * A) ^ 3 - (1 - 504 * B) ^ 2 = 1728 * P := by

@@ -33,7 +33,9 @@ preserves smoothness of a hom-bundle section at every point where the section is
 (`ContMDiffWithinAt.clm_bundle_inverse` and its variants). The latter is the bundle form of the
 smoothness of inversion of continuous linear maps between Banach spaces. A constant bilinear
 pairing between trivial bundles is a smooth hom-bundle section
-(`TauCeti.contMDiff_const_bundlePairing`).
+(`TauCeti.contMDiff_const_bundlePairing`). A hom-bundle section whose coordinate expressions are
+constant on the common frame domains is smooth
+(`TauCeti.contMDiff_hom_bundle_of_inCoordinates_eq_const`).
 
 Finally, a family of fibrewise linear maps with finite-dimensional model source is a `C^n`
 section of the hom bundle exactly when the map of total spaces it induces is `C^n`
@@ -170,6 +172,45 @@ theorem contMDiffOn_trivializationAt_pullbackForm [ContMDiffVectorBundle n F E I
 end PullbackForm
 
 end TauCeti.Manifold
+
+namespace TauCeti
+
+section ConstantCoordinates
+
+variable {𝕜 M F₁ F₂ : Type*} [NontriviallyNormedField 𝕜]
+  [TopologicalSpace M] {E H : Type*} [NormedAddCommGroup E] [NormedSpace 𝕜 E]
+  [TopologicalSpace H] [ChartedSpace H M] {I : ModelWithCorners 𝕜 E H}
+  [NormedAddCommGroup F₁] [NormedSpace 𝕜 F₁]
+  [NormedAddCommGroup F₂] [NormedSpace 𝕜 F₂]
+  {V : M → Type*} {W : M → Type*}
+  [∀ x, AddCommGroup (V x)] [∀ x, Module 𝕜 (V x)] [∀ x, TopologicalSpace (V x)]
+  [∀ x, AddCommGroup (W x)] [∀ x, Module 𝕜 (W x)] [∀ x, TopologicalSpace (W x)]
+  [∀ x, IsTopologicalAddGroup (W x)] [∀ x, ContinuousSMul 𝕜 (W x)]
+  [TopologicalSpace (TotalSpace F₁ V)] [FiberBundle F₁ V] [VectorBundle 𝕜 F₁ V]
+  [TopologicalSpace (TotalSpace F₂ W)] [FiberBundle F₂ W] [VectorBundle 𝕜 F₂ W]
+  {n : WithTop ℕ∞}
+
+/-- A hom-bundle section is smooth if its expression in the preferred frames at each point
+is constant on their common base set. The constant may depend on the centre of the frames;
+no smoothness assumption on either vector bundle is needed. -/
+theorem contMDiff_hom_bundle_of_inCoordinates_eq_const
+    {ϕ : ∀ x, V x →L[𝕜] W x} {c : M → F₁ →L[𝕜] F₂}
+    (hϕ : ∀ a x, x ∈ (trivializationAt F₁ V a).baseSet →
+      x ∈ (trivializationAt F₂ W a).baseSet →
+      ContinuousLinearMap.inCoordinates F₁ V F₂ W a x a x (ϕ x) = c a) :
+    ContMDiff I (I.prod 𝓘(𝕜, F₁ →L[𝕜] F₂)) n
+      (fun x ↦ TotalSpace.mk' (F₁ →L[𝕜] F₂) x (ϕ x)) := by
+  intro a
+  rw [contMDiffAt_hom_bundle]
+  refine ⟨contMDiffAt_id, (contMDiffAt_const (c := c a)).congr_of_eventuallyEq ?_⟩
+  filter_upwards [(trivializationAt F₁ V a).open_baseSet.mem_nhds
+    (mem_baseSet_trivializationAt F₁ V a), (trivializationAt F₂ W a).open_baseSet.mem_nhds
+    (mem_baseSet_trivializationAt F₂ W a)] with x hx₁ hx₂
+  exact hϕ a x hx₁ hx₂
+
+end ConstantCoordinates
+
+end TauCeti
 
 section Inverse
 

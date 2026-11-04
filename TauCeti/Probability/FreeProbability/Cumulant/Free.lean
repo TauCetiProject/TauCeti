@@ -221,8 +221,7 @@ theorem isFreelyIndependent_of_freeCumulant_eq_zero
   set e := X.orderEmbOfFin rfl
   obtain ⟨k, hk⟩ : u ∈ Set.range e := by rwa [range_orderEmbOfFin]
   obtain ⟨k', hk'⟩ : v ∈ Set.range e := by rwa [range_orderEmbOfFin]
-  rw [← image_orderEmbOfFin_univ X rfl, ← freeCumulant_comp_of_strictMonoOn φ
-    (e.strictMono.strictMonoOn _) a]
+  rw [freeCumulant_eq_freeCumulant_comp_orderEmbOfFin φ a X]
   refine h _ (a ∘ e) (ℓ ∘ e) (fun k => hw _ (List.getElem_mem _)) k k' ?_
   simp only [comp_apply, hk, hk']
   exact isChain_map_sort_iff.1 halt' u (mem_univ u) v (mem_univ v) huv hadj
@@ -248,10 +247,7 @@ theorem IsFreelyIndependent.freeCumulant_sum (h : IsFreelyIndependent φ B) (hφ
   -- Relabel the positions by `Fin #s` and expand by multilinearity: the free cumulant of the sum
   -- is the sum over all label assignments `r` of the cumulants of the words `x ↦ a (r x) x`.
   have : Nonempty (Fin #s) := ⟨⟨0, card_pos.2 hs⟩⟩
-  have he : ∀ b : α → A, freeCumulant φ b s = freeCumulant φ (b ∘ s.orderEmbOfFin rfl) univ :=
-    fun b => by rw [freeCumulant_comp_of_strictMonoOn φ
-      ((s.orderEmbOfFin rfl).strictMono.strictMonoOn _), image_orderEmbOfFin_univ]
-  simp_rw [he, ← freeCumulantMultilinear_apply,
+  simp_rw [freeCumulant_eq_freeCumulant_comp_orderEmbOfFin φ _ s, ← freeCumulantMultilinear_apply,
     comp_def, MultilinearMap.map_sum_finset, freeCumulantMultilinear_apply]
   -- Only the constant assignments contribute: a non-constant one gives a mixed cumulant.
   refine (sum_subset (s₁ := T.image (const (Fin #s))) (fun r hr => ?_)
