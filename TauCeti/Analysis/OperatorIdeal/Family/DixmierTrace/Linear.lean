@@ -268,12 +268,12 @@ theorem complexDixmierTrace_conj_linearIsometryEquiv (ω : GeneralizedLimit) (e 
     dixmierTrace_comp_linearIsometryEquiv ω X e.symm e
   by_cases hTm : T ∈ ((logarithmic ℂ).operatorGauge E E).finiteSubmodule
   · rw [complexDixmierTrace_of_mem ω
-        ((conjStarAlgEquiv_mem_finiteSubmodule_logarithmic_iff e T).2 hTm),
+        ((e.conjStarAlgEquiv_mem_finiteSubmodule_logarithmic_iff T).2 hTm),
       complexDixmierTrace_of_mem ω hTm,
       ← map_realPart e.conjStarAlgEquiv T, ← map_imaginaryPart e.conjStarAlgEquiv T]
     simp only [e.posPart_conjStarAlgEquiv, e.negPart_conjStarAlgEquiv, hdix]
   · rw [complexDixmierTrace_of_notMem ω
-        (mt (conjStarAlgEquiv_mem_finiteSubmodule_logarithmic_iff e T).1 hTm),
+        (mt (e.conjStarAlgEquiv_mem_finiteSubmodule_logarithmic_iff T).1 hTm),
       complexDixmierTrace_of_notMem ω hTm]
 
 /-- **Unitary conjugation invariance.** `Tr_ω(U T U⋆) = Tr_ω(T)` for every unitary operator `U`. -/

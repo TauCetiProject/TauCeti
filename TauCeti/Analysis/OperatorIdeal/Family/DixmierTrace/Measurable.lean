@@ -168,7 +168,7 @@ theorem isDixmierMeasurable_of_rank_le {T : E →L[ℂ] E} {n : ℕ} (hT : T.ran
     rw [complexDixmierTrace_eq_zero_of_rank_le ω₁ hT, complexDixmierTrace_eq_zero_of_rank_le ω₂ hT]⟩
 
 /-- Every commutator `A T - T A` with `T ∈ L^(1,∞)` is Dixmier measurable (with trace `0`). -/
-theorem isDixmierMeasurable_comp_sub_comp (A : E →L[ℂ] E) {T : E →L[ℂ] E}
+theorem _root_.ContinuousLinearMap.isDixmierMeasurable_comp_sub_comp (A : E →L[ℂ] E) {T : E →L[ℂ] E}
     (hT : T ∈ ((logarithmic ℂ).operatorGauge E E).finiteSubmodule) :
     IsDixmierMeasurable (A ∘L T - T ∘L A) :=
   ⟨Submodule.sub_mem _ ((logarithmic ℂ).comp_left_mem_finiteSubmodule A hT)
@@ -238,17 +238,19 @@ theorem isDixmierMeasurable_of_parts {T : E →L[ℂ] E}
 
 /-- Conjugation by a linear isometric equivalence preserves Dixmier measurability. -/
 @[simp]
-theorem isDixmierMeasurable_conj_linearIsometryEquiv_iff (e : E ≃ₗᵢ[ℂ] F) (T : E →L[ℂ] E) :
+theorem _root_.LinearIsometryEquiv.isDixmierMeasurable_conj_linearIsometryEquiv_iff
+    (e : E ≃ₗᵢ[ℂ] F) (T : E →L[ℂ] E) :
     IsDixmierMeasurable (e.conjStarAlgEquiv T) ↔ IsDixmierMeasurable T := by
-  simp only [IsDixmierMeasurable, conjStarAlgEquiv_mem_finiteSubmodule_logarithmic_iff,
+  simp only [IsDixmierMeasurable, e.conjStarAlgEquiv_mem_finiteSubmodule_logarithmic_iff,
     complexDixmierTrace_conj_linearIsometryEquiv]
 
 /-- Unitary conjugation preserves Dixmier measurability. -/
 @[simp]
-theorem isDixmierMeasurable_unitary_conj_iff (u : unitary (E →L[ℂ] E)) (T : E →L[ℂ] E) :
+theorem _root_.Unitary.isDixmierMeasurable_unitary_conj_iff
+    (u : unitary (E →L[ℂ] E)) (T : E →L[ℂ] E) :
     IsDixmierMeasurable ((u : E →L[ℂ] E) ∘L T ∘L star (u : E →L[ℂ] E)) ↔
       IsDixmierMeasurable T :=
-  isDixmierMeasurable_conj_linearIsometryEquiv_iff (Unitary.linearIsometryEquiv u) T
+  (Unitary.linearIsometryEquiv u).isDixmierMeasurable_conj_linearIsometryEquiv_iff T
 
 /-- The `ℂ`-submodule of Dixmier-measurable operators in `E →L[ℂ] E`. -/
 def dixmierMeasurableSubmodule (E : Type*)

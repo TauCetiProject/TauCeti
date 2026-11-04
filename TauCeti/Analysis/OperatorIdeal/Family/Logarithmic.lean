@@ -310,7 +310,7 @@ theorem _root_.ContinuousLinearMap.SameSingularValues.mem_finiteSubmodule_logari
 
 /-- Conjugation by a linear isometric equivalence preserves membership in `L^(1,∞)`, even across
 different Hilbert-space universes. -/
-theorem conjStarAlgEquiv_mem_finiteSubmodule_logarithmic_iff
+theorem _root_.LinearIsometryEquiv.conjStarAlgEquiv_mem_finiteSubmodule_logarithmic_iff
     (e : E ≃ₗᵢ[𝕜] F) (T : E →L[𝕜] E) :
     e.conjStarAlgEquiv T ∈ ((logarithmic 𝕜).operatorGauge F F).finiteSubmodule ↔
       T ∈ ((logarithmic 𝕜).operatorGauge E E).finiteSubmodule :=
