@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Category.ModuleCat.DerivationExtension.Basic
+public import TauCeti.Algebra.Category.ModuleCat.DerivationExtension.Inner
 public import TauCeti.Algebra.Category.ModuleCat.Smooth.Coinduction
 
 /-!
@@ -79,20 +79,13 @@ theorem extClass_eq_of_inner (hδ : Continuous (δ : Module.End R A))
     (h : δ' = δ + innerDerivation R b)
     (M : (discreteModules.{max u w} A).FullSubcategory) :
     extClass hδ M = extClass hδ' M := by
-  let φ : discreteShortComplex hδ M ⟶ discreteShortComplex hδ' M :=
-    { τ₁ := 𝟙 M
-      τ₂ := ObjectProperty.homMk (ModuleCat.ofHom (innerEquiv M.obj h).toLinearMap)
-      τ₃ := 𝟙 M
-      comm₁₂ := by
-        apply InducedCategory.hom_ext
-        simpa using ModuleCat.hom_ext (innerEquiv_comp_inlHom M.obj h).symm
-      comm₂₃ := by
-        apply InducedCategory.hom_ext
-        simpa using ModuleCat.hom_ext (sndHom_comp_innerEquiv M.obj h) }
+  let φ := (discreteInnerIso hδ hδ' h M).hom
   have hn := (shortExact_discreteShortComplex hδ M).extClass_naturality
     (shortExact_discreteShortComplex hδ' M) φ
   -- Normalize the short-complex endpoint presentations before the native identity laws match.
-  dsimp only [φ, discreteShortComplex] at hn
+  dsimp only [φ] at hn
+  rw [discreteInnerIso_hom_τ₁, discreteInnerIso_hom_τ₃] at hn
+  dsimp only [discreteShortComplex] at hn
   simpa only [Ext.comp_mk₀_id, Ext.mk₀_id_comp, extClass] using! hn
 
 /-- The class vanishes exactly when the projection of the self-extension admits an
