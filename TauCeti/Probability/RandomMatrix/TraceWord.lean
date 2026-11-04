@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.MeasureTheory.Function.LpSeminorm.CompareExp
 public import Mathlib.Probability.Independence.Integration
 public import TauCeti.LinearAlgebra.Matrix.Trace.Pow
 public import TauCeti.Probability.RandomMatrix.Wigner
@@ -27,10 +26,6 @@ walks are then classified by their numbers of vertices and distinct edges.
 
 ## Main results
 
-* `TauCeti.integral_wignerMatrix_apply`: centred entries give a centred Wigner matrix.
-* `TauCeti.memLp_wignerMatrix_apply`: entries in `Lᵖ` give a Wigner matrix with entries in `Lᵖ`.
-* `TauCeti.integrable_prod_wignerMatrix_apply`: a product of `k` entries is integrable when the
-  entries of the array lie in `Lᵏ`.
 * `TauCeti.integral_prod_wignerMatrix_apply_eq_zero`: for independent centred entries, a product
   of entries reading some edge exactly once has expectation zero.
 * `TauCeti.integral_trace_pow_wignerMatrix`: for independent centred entries in `Lᵏ`, the
@@ -48,55 +43,11 @@ walks are then classified by their numbers of vertices and distinct edges.
 public section
 
 open MeasureTheory ProbabilityTheory Matrix
-open scoped ENNReal
 
 namespace TauCeti
 
 variable {Ω : Type*} [MeasurableSpace Ω] {P : Measure Ω} {ξ : StrictUpper → Ω → ℂ}
   {η : ℕ → Ω → ℝ}
-
-section Entries
-
-/-- If the entries of the array are centred, every entry of the Wigner matrix has expectation
-zero. -/
-theorem integral_wignerMatrix_apply (hξ : ∀ ij, ∫ ω, ξ ij ω ∂P = 0)
-    (hη : ∀ i, ∫ ω, η i ω ∂P = 0) {n : ℕ} (i j : Fin n) :
-    ∫ ω, wignerMatrix ξ η n ω i j ∂P = 0 := by
-  rcases lt_trichotomy i.val j.val with h | h | h
-  · simp [wignerMatrix_apply_of_lt _ _ _ h, integral_const_mul, hξ]
-  · obtain rfl := Fin.ext h
-    simp [integral_const_mul, integral_complex_ofReal, hη]
-  · simp [wignerMatrix_apply_of_gt _ _ _ h, integral_const_mul, integral_conj, hξ]
-
-/-- If the entries of the array lie in `Lᵖ`, so does every entry of the Wigner matrix. -/
-theorem memLp_wignerMatrix_apply {p : ℝ≥0∞} (hξ : ∀ ij, MemLp (ξ ij) p P)
-    (hη : ∀ i, MemLp (η i) p P) {n : ℕ} (i j : Fin n) :
-    MemLp (fun ω ↦ wignerMatrix ξ η n ω i j) p P := by
-  rcases lt_trichotomy i.val j.val with h | h | h
-  · simp only [wignerMatrix_apply_of_lt _ _ _ h]
-    exact (hξ _).const_mul _
-  · obtain rfl := Fin.ext h
-    simp only [wignerMatrix_apply_self]
-    exact (hη _).ofReal.const_mul _
-  · simp only [wignerMatrix_apply_of_gt _ _ _ h]
-    exact (hξ _).star.const_mul _
-
-/-- A product of `k` entries of a Wigner matrix, indexed by a finite type `ι` of cardinality `k`,
-is integrable when the entries of the array lie in `Lᵏ`. -/
-theorem integrable_prod_wignerMatrix_apply [IsFiniteMeasure P] {ι : Type*} [Fintype ι]
-    (hξ : ∀ ij, MemLp (ξ ij) (Fintype.card ι) P) (hη : ∀ i, MemLp (η i) (Fintype.card ι) P)
-    {n : ℕ} (u v : ι → Fin n) :
-    Integrable (fun ω ↦ ∏ s, wignerMatrix ξ η n ω (u s) (v s)) P := by
-  cases isEmpty_or_nonempty ι
-  · simp
-  have hcard : (Fintype.card ι : ℝ≥0∞) ≠ 0 := by simp [Fintype.card_ne_zero]
-  have h := MemLp.fun_prod (s := Finset.univ) (p := fun _ ↦ (Fintype.card ι : ℝ≥0∞))
-    fun s _ ↦ memLp_wignerMatrix_apply hξ hη (u s) (v s)
-  rwa [Finset.sum_const, Finset.card_univ, nsmul_eq_mul,
-    ENNReal.mul_inv_cancel hcard (ENNReal.natCast_ne_top _), inv_one, memLp_one_iff_integrable]
-    at h
-
-end Entries
 
 section SingleEdge
 
