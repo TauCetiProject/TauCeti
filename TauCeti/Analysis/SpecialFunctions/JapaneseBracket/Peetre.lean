@@ -54,9 +54,9 @@ variable {E : Type*} [SeminormedAddGroup E]
 `1 + ‖x + y‖ ^ 2 ≤ 2 (1 + ‖x‖ ^ 2) (1 + ‖y‖ ^ 2)`. -/
 theorem one_add_norm_add_sq_le (x y : E) :
     1 + ‖x + y‖ ^ 2 ≤ 2 * ((1 + ‖x‖ ^ 2) * (1 + ‖y‖ ^ 2)) := by
-  have h := norm_add_le x y
-  have h' : ‖x + y‖ ^ 2 ≤ (‖x‖ + ‖y‖) ^ 2 := by gcongr
-  nlinarith [sq_nonneg (‖x‖ - ‖y‖), sq_nonneg (‖x‖ * ‖y‖), norm_nonneg x, norm_nonneg y]
+  have h : ‖x + y‖ ^ 2 ≤ 2 * (‖x‖ ^ 2 + ‖y‖ ^ 2) :=
+    (pow_le_pow_left₀ (norm_nonneg _) (norm_add_le x y) 2).trans add_sq_le
+  nlinarith [mul_nonneg (sq_nonneg ‖x‖) (sq_nonneg ‖y‖)]
 
 /-- Peetre's inequality for nonnegative exponents. -/
 private theorem one_add_norm_add_sq_rpow_le_mul_of_nonneg {s : ℝ} (hs : 0 ≤ s) (x y : E) :

@@ -48,6 +48,8 @@ Plancherel's theorem `‖𝓕⁻ f‖_{L²} = ‖f‖_{L²}`.
 * `SchwartzMap.norm_fourierInv_iterate_lineDerivOp_sq`: its consequence for squared norms,
   `‖𝓕⁻ (∂_m^N σ) x‖² = (2π) ^ (2N) ⟪x, m⟫ ^ (2N) ‖𝓕⁻ σ x‖²`.
 * `SchwartzMap.norm_fourierInv_toL2_eq`: Plancherel's theorem for the inverse Fourier transform.
+* `SchwartzMap.norm_toLp_fourierMultiplierCLM_eq`: Plancherel's theorem for Fourier multipliers,
+  `‖𝓕⁻ (w • 𝓕 f)‖_{L²} = ‖w • 𝓕 f‖_{L²}`.
 * `SchwartzMap.sum_sum_norm_toLp_lineDerivOp_lineDerivOp_sq`: the squared `L²` norms of the
   second derivatives along an orthonormal basis sum to the squared `L²` norm of the Laplacian.
 
@@ -164,6 +166,16 @@ variable [InnerProductSpace ℂ F] [CompleteSpace F]
 @[simp]
 theorem norm_fourierInv_toL2_eq (f : 𝓢(E, F)) : ‖(𝓕⁻ f).toLp 2‖ = ‖f.toLp 2‖ := by
   rw [← norm_fourier_toL2_eq (𝓕⁻ f), FourierTransform.fourier_fourierInv_eq]
+
+/-- **Plancherel for Fourier multipliers.** For a symbol `w` of temperate growth, the `L²` norm
+of the Fourier multiplier `𝓕⁻ (w • 𝓕 f)` of a Schwartz function is the `L²` norm of `w • 𝓕 f`. -/
+theorem norm_toLp_fourierMultiplierCLM_eq {w : E → ℂ} (hw : w.HasTemperateGrowth)
+    (f : 𝓢(E, F)) :
+    ‖(fourierMultiplierCLM F w f).toLp 2‖ = (eLpNorm (fun ξ ↦ w ξ • 𝓕 f ξ) 2 volume).toReal := by
+  rw [← norm_fourier_toL2_eq, fourierMultiplierCLM_apply, fourier_fourierInv_eq, norm_toLp]
+  congr 2
+  ext ξ
+  rw [smulLeftCLM_apply_apply hw]
 
 /-- The Laplacian controls the Hessian in `L²`: for a Schwartz function `u` and an orthonormal
 basis `b`, `∑ᵢ ∑ⱼ ‖∂_{bᵢ} ∂_{bⱼ} u‖²_{L²} = ‖Δ u‖²_{L²}`. -/

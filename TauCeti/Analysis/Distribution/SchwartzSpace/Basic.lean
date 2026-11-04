@@ -19,6 +19,8 @@ Schwartz functions is integrable, which justifies splitting `L²` pairings of Sc
 
 * `SchwartzMap.integrable_norm_pow_mul_norm_sq`: `‖x‖ ^ k ‖f x‖²` is integrable.
 * `SchwartzMap.integrable_inner`: `⟪f x, g x⟫` is integrable.
+* `SchwartzMap.integrable_one_add_norm_sq_rpow_mul_norm`: `(1 + ‖x‖ ^ 2) ^ r ‖f x‖` is integrable
+  for every real `r`.
 * `SchwartzMap.integral_norm_sq_eq_zero_iff`: a Schwartz function vanishes exactly when the
   integral of its squared norm does, for a measure charging every nonempty open set.
 -/
@@ -63,5 +65,17 @@ theorem integrable_inner {H : Type*} [NormedAddCommGroup H] [InnerProductSpace �
   convert (pairing (innerSL ℝ) f g).integrable (μ := μ) using 1
   ext x
   rw [pairing_apply_apply, innerSL_apply_apply]
+
+/-- For a Schwartz function `f` and every real `r`, the function `(1 + ‖x‖ ^ 2) ^ r ‖f x‖` is
+integrable. With `r = s / 2` this is the Japanese bracket weight `⟨x⟩ ^ s ‖f x‖`. -/
+theorem integrable_one_add_norm_sq_rpow_mul_norm {V : Type*} [NormedAddCommGroup V]
+    [InnerProductSpace ℝ V] [MeasurableSpace V] [BorelSpace V] [SecondCountableTopology V]
+    {ν : Measure V} [ν.HasTemperateGrowth] (r : ℝ) (f : 𝓢(V, F)) :
+    Integrable (fun x ↦ (1 + ‖x‖ ^ 2) ^ r * ‖f x‖) ν := by
+  have hg := Function.hasTemperateGrowth_one_add_norm_sq_rpow V r
+  refine ((smulLeftCLM F (fun x : V ↦ (1 + ‖x‖ ^ 2) ^ r) f).integrable (μ := ν)).norm.congr
+    (.of_forall fun x ↦ ?_)
+  dsimp only
+  rw [smulLeftCLM_apply_apply hg, norm_smul, Real.norm_of_nonneg (by positivity)]
 
 end SchwartzMap

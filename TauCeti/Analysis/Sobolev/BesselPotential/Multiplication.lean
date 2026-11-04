@@ -6,7 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.FunctionalSpaces.BesselPotentialSpace
-import Mathlib.Analysis.Normed.Operator.Extend
+import TauCeti.Analysis.Distribution.SchwartzSpace.Basic
+import TauCeti.Analysis.Distribution.SchwartzSpace.Fourier
+import TauCeti.Analysis.Distribution.TemperedDistribution.Lp
 import TauCeti.Analysis.Distribution.SchwartzSpace.Convolution
 import TauCeti.Analysis.Distribution.TemperedDistribution.SmulLeft
 import TauCeti.Analysis.SpecialFunctions.JapaneseBracket.Peetre
@@ -42,16 +44,13 @@ integrals are both `‖k‖₁`, bounds the `H^s` norm of `φ u`
 
 To pass to all of `H^s`, conjugate by the Bessel potentials `J^s` (Mathlib's
 `TemperedDistribution.besselPotential`, the Fourier multiplier with symbol `⟨ξ⟩ ^ s`): on `L²` the
-operator
-`w ↦ J^s (φ J^{-s} w)`, with values in tempered distributions, is continuous, and on the dense
-subspace of Schwartz functions it takes values in `L²` with the bound above. Its bounded extension
-to `L²` (`LinearMap.extendOfNorm`) agrees with it everywhere, since both are continuous into the
-Hausdorff space of tempered distributions.
+operator `w ↦ J^s (φ J^{-s} w)`, with values in tempered distributions, is continuous, and on
+Schwartz functions it takes values in `L²` with the bound above. Since Schwartz functions are
+dense in `L²`, it takes values in `L²` everywhere, with the same bound
+(`ContinuousLinearMap.exists_apply_eq_toTemperedDistribution_and_norm_le`).
 
 ## Main declarations
 
-* `SchwartzMap.norm_toLp_fourierMultiplierCLM_eq`: Plancherel for Fourier multipliers of
-  Schwartz functions.
 * `SchwartzMap.fourierMultiplierCLM_one_add_norm_sq_rpow_fourierMultiplierCLM_neg`: the Bessel
   multipliers of orders `s` and `-s` are inverse on Schwartz functions.
 * `TemperedDistribution.besselPotential_toTemperedDistributionCLM_eq`: the Bessel potential of a
@@ -84,16 +83,6 @@ variable {E F : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteD
 
 namespace SchwartzMap
 
-/-- For every real `r`, `ζ ↦ (1 + ‖ζ‖ ^ 2) ^ r ‖𝓕 φ ζ‖` is integrable. With `r = |s| / 2` this is
-the Peetre weight `⟨ζ⟩ ^ |s| ‖𝓕 φ ζ‖` of the `H^s` multiplication bound. -/
-theorem integrable_one_add_norm_sq_rpow_mul_norm_fourier (r : ℝ) (φ : 𝓢(E, ℂ)) :
-    Integrable fun ζ : E ↦ (1 + ‖ζ‖ ^ 2) ^ r * ‖𝓕 φ ζ‖ := by
-  have hg := Function.hasTemperateGrowth_one_add_norm_sq_rpow E r
-  refine (smulLeftCLM ℂ (fun ζ : E ↦ (1 + ‖ζ‖ ^ 2) ^ r) (𝓕 φ)).integrable.norm.congr ?_
-  refine .of_forall fun ζ ↦ ?_
-  dsimp only
-  rw [smulLeftCLM_apply_apply hg, norm_smul, Real.norm_of_nonneg (by positivity)]
-
 /-- Composing the Fourier multipliers with symbols `⟨ξ⟩ ^ s` and `⟨ξ⟩ ^ (-s)` on Schwartz
 functions gives the identity. This is the Schwartz-space form of Mathlib's
 `TemperedDistribution.besselPotential_besselPotential_apply` at orders `-s` and `s`. -/
@@ -109,16 +98,6 @@ theorem fourierMultiplierCLM_one_add_norm_sq_rpow_fourierMultiplierCLM_neg (s : 
     simp [neg_div]
   rw [this, fourierMultiplierCLM_const]
   simp
-
-/-- **Plancherel for Fourier multipliers.** For a symbol `w` of temperate growth, the `L²` norm
-of the Fourier multiplier `𝓕⁻ (w • 𝓕 f)` of a Schwartz function is the `L²` norm of `w • 𝓕 f`. -/
-theorem norm_toLp_fourierMultiplierCLM_eq {w : E → ℂ} (hw : w.HasTemperateGrowth)
-    (f : 𝓢(E, F)) :
-    ‖(fourierMultiplierCLM F w f).toLp 2‖ = (eLpNorm (fun ξ ↦ w ξ • 𝓕 f ξ) 2 volume).toReal := by
-  rw [← norm_fourier_toL2_eq, fourierMultiplierCLM_apply, fourier_fourierInv_eq, norm_toLp]
-  congr 2
-  ext ξ
-  rw [smulLeftCLM_apply_apply hw]
 
 omit [CompleteSpace F] in
 /-- The `L²` norm of `⟨ξ⟩ ^ s 𝓕 f`, written as a lower Lebesgue integral of the real-valued
@@ -184,7 +163,7 @@ theorem eLpNorm_rpow_smul_fourier_smulLeftCLM_le (s : ℝ) (φ : 𝓢(E, ℂ)) (
   have hg : Measurable g := ENNReal.measurable_ofReal.comp
     ((((measurable_const.add (measurable_norm.pow_const 2)).pow_const (s / 2))).mul
       (𝓕 f).continuous.norm.measurable)
-  have hint := (integrable_one_add_norm_sq_rpow_mul_norm_fourier (|s| / 2) φ).const_mul
+  have hint := ((𝓕 φ).integrable_one_add_norm_sq_rpow_mul_norm (ν := volume) (|s| / 2)).const_mul
     (2 ^ (|s| / 2))
   have hk_int : ∫⁻ ζ, k ζ = ENNReal.ofReal
       (2 ^ (|s| / 2) * ∫ ζ, (1 + ‖ζ‖ ^ 2) ^ (|s| / 2) * ‖𝓕 φ ζ‖) := by
@@ -264,41 +243,29 @@ theorem exists_besselPotential_smulLeftCLM_eq_and_norm_le (s : ℝ) (φ : 𝓢(E
     SchwartzMap.fourierMultiplierCLM F (fun x : E ↦ (((1 + ‖x‖ ^ 2) ^ (t / 2) : ℝ) : ℂ))
   have hΛ (ψ : 𝓢(E, F)) : Λ s (Λ (-s) ψ) = ψ :=
     SchwartzMap.fourierMultiplierCLM_one_add_norm_sq_rpow_fourierMultiplierCLM_neg s ψ
-  -- The operator `w ↦ J^s (φ J^{-s} w)` on Schwartz functions, and its bound in `L²`.
+  -- The operator `w ↦ J^s (φ J^{-s} w)` on `L²`, with values in tempered distributions, is
+  -- given on Schwartz functions by `M`, which is bounded in `L²`.
   set M : 𝓢(E, F) →L[ℂ] 𝓢(E, F) :=
     Λ s ∘L SchwartzMap.smulLeftCLM F (φ : E → ℂ) ∘L Λ (-s)
-  set e : 𝓢(E, F) →ₗ[ℂ] Lp F 2 (volume : Measure E) :=
-    (SchwartzMap.toLpCLM ℂ F 2 volume).toLinearMap
-  set f₀ : 𝓢(E, F) →ₗ[ℂ] Lp F 2 (volume : Measure E) :=
-    (SchwartzMap.toLpCLM ℂ F 2 volume ∘L M).toLinearMap
-  have hbound (ψ : 𝓢(E, F)) : ‖f₀ ψ‖ ≤ C * ‖e ψ‖ := by
-    have h := SchwartzMap.norm_toLp_fourierMultiplierCLM_smulLeftCLM_le s φ (Λ (-s) ψ)
-    -- Fold the multipliers in `h` back into the local abbreviation `Λ`, so that `hΛ` applies.
-    change ‖(Λ s _).toLp 2 volume‖ ≤ C * ‖(Λ s (Λ (-s) ψ)).toLp 2 volume‖ at h
-    rw [hΛ] at h
-    exact h
-  have hdense : DenseRange e :=
-    SchwartzMap.denseRange_toLpCLM (F := F) (p := 2) (μ := volume) ENNReal.ofNat_ne_top
-  set K := f₀.extendOfNorm e
-  -- The same operator on `L²`, with values in tempered distributions.
   set T : Lp F 2 (volume : Measure E) →L[ℂ] 𝓢'(E, F) :=
     besselPotential E F s ∘L smulLeftCLM F (φ : E → ℂ) ∘L besselPotential E F (-s) ∘L
       Lp.toTemperedDistributionCLM F volume 2
-  have hT (w : Lp F 2 (volume : Measure E)) : T w = (K w : 𝓢'(E, F)) := by
-    refine congrFun (hdense.equalizer (g := T) (h := fun w ↦ (K w : 𝓢'(E, F))) T.continuous
-      ((Lp.toTemperedDistributionCLM F volume 2).continuous.comp K.continuous) ?_) w
-    ext1 ψ
-    simp only [Function.comp_apply]
-    rw [LinearMap.extendOfNorm_eq hdense ⟨C, hbound⟩]
-    simp only [T, f₀, e, M, ContinuousLinearMap.coe_coe, ContinuousLinearMap.comp_apply,
-      SchwartzMap.toLpCLM_apply, Lp.toTemperedDistributionCLM_apply,
+  have hM (ψ : 𝓢(E, F)) : ‖(M ψ).toLp 2 volume‖ ≤ C * ‖ψ.toLp 2 volume‖ := by
+    have h := SchwartzMap.norm_toLp_fourierMultiplierCLM_smulLeftCLM_le s φ (Λ (-s) ψ)
+    -- Fold the multipliers in `h` back into the local abbreviation `Λ`, so that `hΛ` applies.
+    change ‖(Λ s _).toLp 2 volume‖ ≤ C * ‖(Λ s (Λ (-s) ψ)).toLp 2 volume‖ at h
+    rwa [hΛ] at h
+  have hT (ψ : 𝓢(E, F)) : T (ψ.toLp 2 volume) = ((M ψ).toLp 2 volume : 𝓢'(E, F)) := by
+    simp only [T, M, ContinuousLinearMap.comp_apply, Lp.toTemperedDistributionCLM_apply,
       Lp.toTemperedDistribution_toLp_eq, besselPotential_toTemperedDistributionCLM_eq,
       smulLeftCLM_toTemperedDistributionCLM_eq φ.hasTemperateGrowth, Λ]
-  refine ⟨K v, ?_, LinearMap.norm_extendOfNorm_apply_le hdense C hbound v⟩
   have hu : u = besselPotential E F (-s) v := by
     rw [← hv, besselPotential_besselPotential_apply]
     simp
-  rw [← hT, hu]
+  obtain ⟨v', hv', hnorm⟩ := T.exists_apply_eq_toTemperedDistribution_and_norm_le
+    ENNReal.ofNat_ne_top M hT hM v
+  refine ⟨v', ?_, hnorm⟩
+  rw [← hv', hu]
   simp only [T, ContinuousLinearMap.comp_apply, Lp.toTemperedDistributionCLM_apply]
 
 /-- **Multiplication by a Schwartz function preserves `H^s`**, for every real `s`: if the tempered
