@@ -114,17 +114,10 @@ theorem singularValue_eq_decreasingRearrangement
   have hr0 : 0 ≤ r n := TauCeti.decreasingRearrangement_nonneg hbdd n
   refine le_antisymm ?_ (le_of_forall_lt_imp_le_of_dense fun a ha ↦ ?_)
   · -- At most `n` indices have `‖T bᵢ‖ > rₙ`, and `T` is bounded by `rₙ` on the others.
-    have hcard (t : Finset ι) (ht : ↑t ⊆ {i | r n < ‖T (b i)‖}) : t.card ≤ n := by
-      by_contra! h
-      obtain ⟨u, hu, hu'⟩ := Finset.exists_subset_card_eq (Nat.succ_le_of_lt h)
-      exact lt_irrefl _ ((TauCeti.lt_decreasingRearrangement_iff hbdd hr0 n).mpr
-        ⟨u, hu', fun i hi ↦ ht (hu hi)⟩)
-    have hfin : {i | r n < ‖T (b i)‖}.Finite := by
-      by_contra h
-      obtain ⟨t, ht, ht'⟩ := Set.Infinite.exists_subset_card_eq h (n + 1)
-      exact absurd (hcard t ht) (by omega)
+    have hfin := TauCeti.finite_setOf_decreasingRearrangement_lt hbdd n
     have := b.singularValue_le_of_pairwise_inner_eq_zero hT (s := hfin.toFinset)
-      (hcard _ (by simp)) (c := (r n).toNNReal) fun i hi ↦ by
+      (TauCeti.card_le_of_forall_decreasingRearrangement_lt hbdd fun i hi ↦ by simpa using hi)
+      (c := (r n).toNNReal) fun i hi ↦ by
         rw [Real.coe_toNNReal _ hr0]
         simpa using hi
     rwa [← NNReal.coe_le_coe, Real.coe_toNNReal _ hr0] at this

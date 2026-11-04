@@ -119,6 +119,22 @@ theorem lt_decreasingRearrangement_iff (hr : BddAbove (Set.range r)) {a : ℝ}
     refine ⟨s.inf' hne r, Set.mem_insert_of_mem _ ⟨s, hs, fun i hi ↦ inf'_le _ hi⟩, ?_⟩
     exact (lt_inf'_iff hne).mpr hsa
 
+/-- At most `n` entries exceed the `n`-th rearranged entry. -/
+theorem card_le_of_forall_decreasingRearrangement_lt (hr : BddAbove (Set.range r)) {n : ℕ}
+    {s : Finset ι} (hs : ∀ i ∈ s, decreasingRearrangement r n < r i) : s.card ≤ n := by
+  by_contra! h
+  obtain ⟨u, hu, hu'⟩ := exists_subset_card_eq (Nat.succ_le_of_lt h)
+  exact lt_irrefl _ ((lt_decreasingRearrangement_iff hr (decreasingRearrangement_nonneg hr n)
+    n).mpr ⟨u, hu', fun i hi ↦ hs i (hu hi)⟩)
+
+/-- Only finitely many entries exceed a given rearranged entry. -/
+theorem finite_setOf_decreasingRearrangement_lt (hr : BddAbove (Set.range r)) (n : ℕ) :
+    {i | decreasingRearrangement r n < r i}.Finite := by
+  by_contra h
+  obtain ⟨t, ht, ht'⟩ := Set.Infinite.exists_subset_card_eq h (n + 1)
+  have := card_le_of_forall_decreasingRearrangement_lt hr fun i hi ↦ ht hi
+  omega
+
 /-- A finite strict superlevel set becomes an initial segment of the same cardinality.
 Thus the rearrangement preserves multiplicities, including ties. -/
 theorem setOf_lt_decreasingRearrangement {a : ℝ}

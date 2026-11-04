@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.InnerProductSpace.Completion
 public import Mathlib.Analysis.InnerProductSpace.LinearMap
 public import Mathlib.Analysis.Normed.Operator.Compact.Basic
+public import TauCeti.Analysis.InnerProductSpace.HilbertBasis.Basic
 public import TauCeti.Analysis.InnerProductSpace.OrthogonalFamily
 public import TauCeti.Analysis.InnerProductSpace.Parseval
 public import TauCeti.Analysis.InnerProductSpace.Spectrum
@@ -42,7 +43,6 @@ are its right and left singular vectors.
 
 ## Main declarations
 
-* `HilbertBasis.hasSum_inner_smul_apply`: `T x = ∑ᵢ ⟪bᵢ, x⟫ T bᵢ`.
 * `HilbertBasis.hasSum_norm_sq_inner_mul_norm_sq_apply`: Pythagoras,
   `‖T x‖² = ∑ᵢ ‖⟪bᵢ, x⟫‖² ‖T bᵢ‖²`, for pairwise orthogonal images.
 * `HilbertBasis.norm_apply_le_of_forall_inner_eq_zero` and
@@ -82,26 +82,6 @@ namespace Orthonormal
 
 variable {v : ι → E} (hv : Orthonormal 𝕜 v) {T : E →L[𝕜] F}
 include hv
-
-/-- Bessel's inequality for a continuous linear functional: the values of `φ` on an orthonormal
-family are square summable. -/
-private theorem summable_norm_apply_sq (φ : StrongDual 𝕜 E) :
-    Summable fun i ↦ ‖φ (v i)‖ ^ 2 := by
-  refine summable_of_sum_le (c := ‖φ‖ ^ 2) (fun _ ↦ by positivity) fun s ↦ ?_
-  -- Test `φ` against `w = ∑ᵢ conj (φ vᵢ) vᵢ`, which has `φ w = ‖w‖² = ∑ᵢ ‖φ vᵢ‖²`.
-  set A := ∑ i ∈ s, ‖φ (v i)‖ ^ 2
-  set w := ∑ i ∈ s, (starRingEnd 𝕜) (φ (v i)) • v i
-  have hA0 : 0 ≤ A := Finset.sum_nonneg fun _ _ ↦ by positivity
-  have hφw : φ w = (A : 𝕜) := by
-    simp only [w, A, map_sum, map_smul, smul_eq_mul, RCLike.conj_mul, RCLike.ofReal_pow]
-  have hw : ‖w‖ ^ 2 = A := by
-    rw [@norm_sq_eq_re_inner 𝕜, sum_inner]
-    simp only [inner_smul_left, RCLike.conj_conj]
-    rw [Finset.sum_congr rfl fun i hi ↦ by rw [hv.inner_right_sum _ hi]]
-    simp only [A, RCLike.mul_conj, ← RCLike.ofReal_pow, ← RCLike.ofReal_sum, RCLike.ofReal_re]
-  have hA : A ≤ ‖φ‖ * ‖w‖ := by
-    simpa [hφw, abs_of_nonneg hA0] using φ.le_opNorm w
-  nlinarith [norm_nonneg φ, norm_nonneg w, sq_nonneg (‖φ‖ - ‖w‖)]
 
 /-- **Finitely many large images.** If `T` is compact and `(vᵢ)` is an orthonormal family, then
 only finitely many `‖T vᵢ‖` are at least a given `ε > 0`. -/
@@ -149,11 +129,6 @@ end Orthonormal
 namespace HilbertBasis
 
 variable (b : HilbertBasis ι 𝕜 E) {T : E →L[𝕜] F}
-
-/-- **Expansion of an operator in a Hilbert basis.** `T x = ∑ᵢ ⟪bᵢ, x⟫ T bᵢ`. -/
-theorem hasSum_inner_smul_apply (T : E →L[𝕜] F) (x : E) :
-    HasSum (fun i ↦ ⟪b i, x⟫_𝕜 • T (b i)) (T x) := by
-  simpa only [map_smul, b.repr_apply_apply] using T.hasSum (b.hasSum_repr x)
 
 /-- **Pythagoras for an operator with orthogonal basis images.** If `T` sends the Hilbert basis
 `(bᵢ)` to pairwise orthogonal vectors, then `‖T x‖² = ∑ᵢ ‖⟪bᵢ, x⟫‖² ‖T bᵢ‖²`. -/
