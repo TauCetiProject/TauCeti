@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.CStarAlgebra.Basic
 public import Mathlib.Analysis.SpecialFunctions.Complex.Circle
 public import Mathlib.LinearAlgebra.UnitaryGroup
+public import Mathlib.Topology.Instances.Matrix
 
 /-!
 # `U(n) = Circle · SU(n)`
@@ -26,6 +27,11 @@ unitary group. Rescaling by a scalar of modulus one keeps a matrix unitary, so n
   and all other entries `1` is unitary.
 * `Matrix.exists_circle_smul_mem_specialUnitaryGroup`: every complex unitary matrix becomes
   special unitary after multiplication by a suitable scalar of modulus one.
+
+## Main definitions
+
+* `Matrix.UnitaryGroup.detCircle`: the determinant of a complex unitary matrix, as a continuous
+  group morphism `U(n) →* Circle`.
 -/
 
 public section
@@ -90,3 +96,25 @@ theorem _root_.Matrix.exists_circle_smul_mem_specialUnitaryGroup (U : Matrix.uni
     ring
 
 end TauCeti
+
+namespace Matrix.UnitaryGroup
+
+variable {n : Type*} [Fintype n] [DecidableEq n]
+
+/-- The determinant of a complex unitary matrix, as a point of the unit circle. -/
+noncomputable def detCircle : unitaryGroup n ℂ →* Circle where
+  toFun U := ⟨(U : Matrix n n ℂ).det,
+    mem_sphere_zero_iff_norm.2 (CStarRing.norm_of_mem_unitary (det_of_mem_unitary U.2))⟩
+  map_one' := Circle.ext det_one
+  map_mul' U V := Circle.ext (det_mul (U : Matrix n n ℂ) V)
+
+/-- The point of the circle given by a unitary matrix is its determinant. -/
+@[simp]
+theorem coe_detCircle (U : unitaryGroup n ℂ) : (detCircle U : ℂ) = (U : Matrix n n ℂ).det :=
+  (rfl)
+
+/-- The determinant of a unitary matrix depends continuously on the matrix. -/
+theorem continuous_detCircle : Continuous (detCircle : unitaryGroup n ℂ → Circle) :=
+  Continuous.subtype_mk (continuous_subtype_val.matrix_det) _
+
+end Matrix.UnitaryGroup
