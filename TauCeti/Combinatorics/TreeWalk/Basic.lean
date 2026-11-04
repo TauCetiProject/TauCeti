@@ -384,7 +384,8 @@ theorem isTreeWalk_walkOf {k : ℕ} {s : ℕ → Bool} (hs : IsDyckPattern k s) 
   idem i _ := walkOf_walkOf s i
   card_vertices := hs.card_fixed
   card_edge i hi := by
-    have := hs.card_child_eq_two (c := IsDyckPattern.child s i) (hs.one_le_child hi) (IsDyckPattern.child_le hi)
+    have := hs.card_child_eq_two (c := IsDyckPattern.child s i) (hs.one_le_child hi)
+      (IsDyckPattern.child_le hi)
       (IsDyckPattern.walkOf_child i)
     refine Eq.trans ?_ this
     refine congrArg card (filter_congr fun j hj => ?_)
@@ -681,7 +682,7 @@ def treeWalkEquiv (k : ℕ) : ClosedTreeWalk k ≃ {p : DyckWord // p.semilength
   left_inv w := by
     refine Subtype.ext (funext fun i => ?_)
     have hs := w.2.1.isDyckPattern_upSteps
-    show walkOf (stepsOf (dyckWordOf hs).toList) i = w.1 i
+    change walkOf (stepsOf (dyckWordOf hs).toList) i = w.1 i
     rw [stepsOf_dyckWordOf hs]
     rcases le_or_gt i (2 * k) with hi | hi
     · exact w.2.1.walkOf_upSteps i hi
@@ -690,7 +691,7 @@ def treeWalkEquiv (k : ℕ) : ClosedTreeWalk k ≃ {p : DyckWord // p.semilength
     rintro ⟨p, rfl⟩
     refine Subtype.ext ?_
     have hs := isDyckPattern_stepsOf p
-    show dyckWordOf (isTreeWalk_walkOf hs).isDyckPattern_upSteps = p
+    change dyckWordOf (isTreeWalk_walkOf hs).isDyckPattern_upSteps = p
     rw [dyckWordOf_congr (upSteps_walkOf hs) _ hs]
     exact dyckWordOf_stepsOf p
 
