@@ -17,9 +17,10 @@ spaces in arbitrary universes.  Covering maps have it for every space
 (`IsCoveringMap.hasHomotopyLiftingProperty`), as do product projections
 (`TauCeti.hasHomotopyLiftingProperty_fst`) and homeomorphisms
 (`Homeomorph.hasHomotopyLiftingProperty`); it is closed under composition
-(`TauCeti.HasHomotopyLiftingProperty.comp`) and base change
-(`TauCeti.HasHomotopyLiftingProperty.pullback`); it depends on the space only up to homeomorphism
-(`Homeomorph.hasHomotopyLiftingProperty_iff`), and a map with it lifts paths
+(`TauCeti.HasHomotopyLiftingProperty.comp`), base change
+(`TauCeti.HasHomotopyLiftingProperty.pullback`) and restriction over a subset of the base
+(`TauCeti.HasHomotopyLiftingProperty.restrictPreimage`); it depends on the space only up to
+homeomorphism (`Homeomorph.hasHomotopyLiftingProperty_iff`), and a map with it lifts paths
 (`TauCeti.HasHomotopyLiftingProperty.exists_path_lift`).
 
 Serre fibrations, the maps with the homotopy lifting property with respect to every disk, are in
@@ -102,6 +103,19 @@ theorem HasHomotopyLiftingProperty.pullback {B' : Type*} [TopologicalSpace B']
     exact (f a).2
   refine ⟨⟨fun x ↦ ⟨(H x, G x), (congrFun hG x).symm⟩, by fun_prop⟩, funext fun x ↦ rfl, fun a ↦ ?_⟩
   exact Subtype.ext (Prod.ext (hH a) (hG₀ a))
+
+/-- The homotopy lifting property passes to the restriction `p⁻¹(t) → t` of `p` over any subset
+`t` of the base: a lift of a homotopy in `t` lies over `t`. -/
+theorem HasHomotopyLiftingProperty.restrictPreimage (hp : HasHomotopyLiftingProperty p A)
+    (t : Set B) : HasHomotopyLiftingProperty (t.restrictPreimage p) A := by
+  intro f H hH
+  obtain ⟨G, hG, hG₀⟩ := hp ((⟨Subtype.val, continuous_subtype_val⟩ : C(p ⁻¹' t, E)).comp f)
+    ((⟨Subtype.val, continuous_subtype_val⟩ : C(t, B)).comp H) fun a ↦ congrArg Subtype.val (hH a)
+  have hGt (x : I × A) : p (G x) ∈ t := by
+    rw [show p (G x) = H x from congrFun hG x]
+    exact (H x).2
+  exact ⟨⟨fun x ↦ ⟨G x, hGt x⟩, by fun_prop⟩, funext fun x ↦ Subtype.ext (congrFun hG x),
+    fun a ↦ Subtype.ext (hG₀ a)⟩
 
 /-- The homotopy lifting property with respect to a space passes to every space homeomorphic to
 it. -/
