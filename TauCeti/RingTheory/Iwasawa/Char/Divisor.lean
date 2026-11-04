@@ -10,7 +10,9 @@ public import Mathlib.RingTheory.Length
 public import TauCeti.RingTheory.Iwasawa.PseudoIsomorphism
 
 import Mathlib.Algebra.Module.LocalizedModule.Exact
+import Mathlib.RingTheory.Ideal.KrullsHeightTheorem
 import Mathlib.RingTheory.Localization.Finiteness
+import Mathlib.RingTheory.OrderOfVanishing.Basic
 import Mathlib.RingTheory.PowerSeries.Ideal
 import Mathlib.RingTheory.PowerSeries.NoZeroDivisors
 import TauCeti.Algebra.Module.Torsion.Basic
@@ -55,6 +57,9 @@ on the pseudo-null modules.
 * `TauCeti.Iwasawa.charDivisor_eq_zero_iff`: `div_A(M) = 0` iff `M` is pseudo-null.
 * `TauCeti.Iwasawa.charDivisor_quotient_of_height_eq_one`: for a prime `𝔭` of height one,
   `div_A(A ⧸ 𝔭) = [𝔭]`.
+* `TauCeti.Iwasawa.charDivisor_prod`: `div_A` is additive on products.
+* `TauCeti.Iwasawa.charDivisor_quotient_span_singleton_pow`: for a prime element `π` of a
+  noetherian domain, `div_A(A ⧸ (π ^ m)) = m [(π)]`.
 * `LinearEquiv.charDivisor_apply_comap`: along a ring isomorphism `σ : A → B`, a `σ`-semilinear
   equivalence `N ≃ M` gives `div_A(N)(σ⁻¹ 𝔮) = div_B(M)(𝔮)` at every prime `𝔮` of `B`.
 
@@ -124,6 +129,16 @@ theorem charDivisor_apply_of_height_ne_one {𝔭 : PrimeSpectrum A} (h : 𝔭.as
     charDivisor A M 𝔭 = 0 := by
   unfold charDivisor
   split_ifs <;> simp [Finsupp.ofSupportFinite_coe, localLength, h]
+
+/-- The characteristic divisor vanishes at primes outside the support of the module. -/
+theorem charDivisor_apply_eq_zero_of_notMem_support {𝔭 : PrimeSpectrum A}
+    (h : 𝔭 ∉ Module.support A M) : charDivisor A M 𝔭 = 0 := by
+  unfold charDivisor
+  split_ifs
+  · rw [Finsupp.ofSupportFinite_coe]
+    by_contra hne
+    exact h (localLength_ne_zero hne).1
+  · rfl
 
 /-- At a prime `𝔭` of height one, the characteristic divisor of a finitely generated torsion module
 `M` over a noetherian ring is the length of `M_𝔭` over `A_𝔭`, which is finite. -/
@@ -283,6 +298,56 @@ theorem LinearEquiv.charDivisor_apply_comap {A B N M : Type*} [CommRing A] [Comm
   · rfl
 
 namespace TauCeti.Iwasawa
+
+variable {A : Type*} [CommRing A] {M N : Type*} [AddCommGroup M] [Module A M] [AddCommGroup N]
+  [Module A N]
+
+/-- The characteristic divisor of a product of two finitely generated torsion modules over a
+noetherian ring is the sum of their characteristic divisors. -/
+theorem charDivisor_prod [IsNoetherianRing A] [Module.Finite A M] [Module.Finite A N]
+    (hM : Module.IsTorsion A M) (hN : Module.IsTorsion A N) :
+    charDivisor A (M × N) = charDivisor A M + charDivisor A N :=
+  charDivisor_eq_add_of_exact (hM.prod hN) .inl_snd LinearMap.inl_injective
+    LinearMap.snd_surjective
+
+open scoped Pointwise in
+/-- For non-zero-divisors `a` and `b` of a noetherian ring, the characteristic divisor of
+`A ⧸ (a b)` is the sum of those of `A ⧸ (a)` and `A ⧸ (b)`. -/
+theorem charDivisor_quotient_span_singleton_mul [IsNoetherianRing A] {a b : A}
+    (ha : a ∈ nonZeroDivisors A) (hb : b ∈ nonZeroDivisors A) :
+    charDivisor A (A ⧸ Ideal.span {a * b}) =
+      charDivisor A (A ⧸ Ideal.span {a}) + charDivisor A (A ⧸ Ideal.span {b}) := by
+  -- Multiplication by `a` gives the exact sequence `0 → A ⧸ (b) → A ⧸ (a b) → A ⧸ (a) → 0`.
+  have hab : a • Ideal.span {b} = Ideal.span {a * b} := by
+    rw [← Submodule.ideal_span_singleton_smul, smul_eq_mul,
+      Ideal.span_singleton_mul_span_singleton]
+  have hN : Module.IsTorsion A (A ⧸ a • Ideal.span {b}) :=
+    Ideal.isTorsion_quotient_of_mem
+      (Submodule.smul_mem_pointwise_smul _ _ _ (Ideal.mem_span_singleton_self b))
+      (mul_mem ha hb)
+  rw [← (Submodule.quotEquivOfEq _ _ hab).charDivisor_eq,
+    charDivisor_eq_add_of_exact hN (Ideal.exact_mulQuot_quotOfMul _)
+      (Ideal.mulQuot_injective _ ha) (Ideal.quotOfMul_surjective _), add_comm]
+
+/-- **The divisor of a prime power.** For a prime element `π` of a noetherian domain, the
+characteristic divisor of `A ⧸ (π ^ m)` is `m [(π)]`. -/
+theorem charDivisor_quotient_span_singleton_pow [IsDomain A] [IsNoetherianRing A] {π : A}
+    (hπ : Prime π) (m : ℕ) :
+    charDivisor A (A ⧸ Ideal.span {π ^ m}) =
+      m • Finsupp.single ⟨Ideal.span {π}, (Ideal.span_singleton_prime hπ.ne_zero).mpr hπ⟩ 1 := by
+  have hπ₀ : π ∈ nonZeroDivisors A := mem_nonZeroDivisors_of_ne_zero hπ.ne_zero
+  have := (Ideal.span_singleton_prime hπ.ne_zero).mpr hπ
+  induction m with
+  | zero =>
+    have : Subsingleton (A ⧸ Ideal.span {π ^ 0}) := by
+      rw [pow_zero, Ideal.span_singleton_one]
+      infer_instance
+    simp
+  | succ m ih =>
+    rw [pow_succ', charDivisor_quotient_span_singleton_mul hπ₀ (pow_mem hπ₀ m), ih,
+      charDivisor_quotient_of_height_eq_one
+        (Ideal.height_span_singleton_eq_one_of_mem_nonZeroDivisors hπ₀ hπ.not_isUnit),
+      succ_nsmul']
 
 open PowerSeries in
 -- Over `Λ = ℤ_p⟦T⟧`, the nonzero module `Λ ⧸ (p, T) = 𝔽_p` is pseudo-null, so its characteristic

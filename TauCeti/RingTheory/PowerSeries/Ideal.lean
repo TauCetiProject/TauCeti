@@ -24,11 +24,15 @@ Applied to the quotient map `R → R ⧸ (r)`, whose kernel is principal, this i
 exactly when `r` is a prime element of `R`, as for polynomials (`Polynomial.prime_C_iff`).
 
 A series whose coefficients lie in an ideal `J` has square zero modulo any ideal containing
-`J * J`.
+`J * J`. For a finitely generated ideal `I`, the same kernel computation describes `I.map C` by
+its coefficients and shows that it is prime when `I` is.
 
 ## Main results
 
 * `PowerSeries.ker_map_of_fg`: `ker (map f) = (ker f).map C` when `ker f` is finitely generated.
+* `PowerSeries.mem_map_C_iff_of_fg`, `PowerSeries.isPrime_map_C_of_fg`: for a finitely generated
+  ideal `I`, the series in `I.map C` are those with all coefficients in `I`, and `I.map C` is prime
+  when `I` is.
 * `PowerSeries.prime_C_iff`: `C r` is prime in `R⟦X⟧` if and only if `r` is prime in `R`.
 * `PowerSeries.sq_map_mk_eq_zero_of_coeff_mem`: a series with coefficients in `J` squares to zero
   in `(R ⧸ K)⟦X⟧` when `J * J ≤ K`.
@@ -47,6 +51,21 @@ theorem ker_map_of_fg (f : R →+* S) (hf : (RingHom.ker f).FG) :
   -- `PowerSeries.map` is `MvPowerSeries.map` over `Unit`, and `C` is `MvPowerSeries.C`.
   rw [map, MvPowerSeries.ker_map_of_fg _ hf]
   rfl
+
+/-- For a finitely generated ideal `I`, a power series lies in the extension `I.map C` iff all of
+its coefficients lie in `I`. -/
+theorem mem_map_C_iff_of_fg {I : Ideal R} (hI : I.FG) {f : R⟦X⟧} :
+    f ∈ I.map C ↔ ∀ n, coeff n f ∈ I := by
+  rw [← Ideal.mk_ker (I := I), ← ker_map_of_fg _ (by rwa [Ideal.mk_ker]), RingHom.mem_ker,
+    PowerSeries.ext_iff]
+  simp [Ideal.Quotient.eq_zero_iff_mem]
+
+/-- The extension `I.map C` of a finitely generated prime ideal `I` of `R` is a prime ideal of
+`R⟦X⟧`: it is the kernel of `R⟦X⟧ → (R ⧸ I)⟦X⟧`, whose target is a domain. -/
+theorem isPrime_map_C_of_fg {I : Ideal R} [I.IsPrime] (hI : I.FG) :
+    (I.map (C : R →+* R⟦X⟧)).IsPrime := by
+  rw [← Ideal.mk_ker (I := I), ← ker_map_of_fg _ (by rwa [Ideal.mk_ker])]
+  exact RingHom.ker_isPrime _
 
 /-- A constant power series `C r` is a prime element of `R⟦X⟧` if and only if `r` is a prime
 element of `R`. -/
