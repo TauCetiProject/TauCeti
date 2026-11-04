@@ -161,7 +161,8 @@ theorem IsStable.subsingleton_weightedLogCanonicalDegree_forgetMarking_eq_zero
     (hD.weightedLogCanonicalDegree_forgetMarking_eq_zero_iff.mp hx).1.symm.trans
       (hD.weightedLogCanonicalDegree_forgetMarking_eq_zero_iff.mp hy).1
 
-/-- Every other vertex has positive weighted degree after forgetting a marking. -/
+/-- If a vertex `x` has nonpositive weighted degree after forgetting a marking of a stable map,
+every vertex `y ≠ x` has positive weighted degree. -/
 theorem IsStable.weightedLogCanonicalDegree_forgetMarking_pos_of_ne (hD : D.IsStable)
     {x y : G.Vertex} (hx : D.forgetMarking.weightedLogCanonicalDegree x ≤ 0) (hy : y ≠ x) :
     0 < D.forgetMarking.weightedLogCanonicalDegree y := by
@@ -172,7 +173,7 @@ theorem IsStable.weightedLogCanonicalDegree_forgetMarking_pos_of_ne (hD : D.IsSt
   omega
 
 /-- Any stabilization step after forgetting one marking of a stable map gives a stable decorated
-graph. The weighted degrees of the remaining vertices do not decrease. -/
+graph. -/
 theorem IsStable.isStable_of_stabilizationStep_forgetMarking (hD : D.IsStable)
     {y : Σ H : DualGraph.{u} ι, H.DegreeDecoration}
     (h : StabilizationStep ⟨G.reindex some, D.forgetMarking⟩ y) : y.2.IsStable := by
