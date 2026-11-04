@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Group.ULift
 public import Mathlib.AlgebraicTopology.SimplicialSet.AnodyneExtensions.PushoutProduct
 public import TauCeti.AlgebraicTopology.SimplicialNerve.SimplicialThickening
 
@@ -39,6 +40,8 @@ is a quasicategory.
   `HornThickening.ι J c` into `SimplicialThickening J`.
 * `TauCeti.HornThickening.exists_extension`: simplicial functors from `C[Λ^J_c]` whose mapping
   simplicial set from `F ⊥` to `F ⊤` is a Kan complex extend to `C[Δ^J]`.
+* `TauCeti.HornThickening.δ`: for `J = Fin (n + 3)` and `j ≠ i`, the inclusion
+  `C[Δ^{n+1}] ⥤ C[Λ^{n+2}_i]` of the `j`-th face of the horn.
 
 ## Implementation notes
 
@@ -323,6 +326,19 @@ lemma hornHom_bot_top (c : J) : hornHom c (⊥ : J) ⊤ = hornPaths ⊥ ⊤ c :=
 lemma hornHom_eq_top (c : J) {x y : J} (h : ¬(x = ⊥ ∧ y = ⊤)) : hornHom c x y = ⊤ :=
   ite_eq_right h
 
+/-- A chain of paths from `x` to `y` which omits a vertex `k ≠ c` with `x < k < y` belongs to
+`hornHom c x y`. -/
+lemma mem_hornHom_of_notMem {c x y k : J} {n : SimplexCategoryᵒᵖ}
+    {s : (SimplicialThickening.mk x ⟶[SSet] SimplicialThickening.mk y).obj n} (hxk : x < k)
+    (hky : k < y) (hkc : k ≠ c) (hk : k ∉ (s.obj (Fin.last _)).I) :
+    s ∈ (hornHom c x y).obj n := by
+  by_cases hxy : x = ⊥ ∧ y = ⊤
+  · obtain ⟨rfl, rfl⟩ := hxy
+    rw [hornHom_bot_top]
+    exact (mem_hornPaths_iff c s).2 (Or.inl ⟨k, hxk, hky, hkc, hk⟩)
+  · rw [hornHom_eq_top c hxy]
+    trivial
+
 /-- Away from the pair `(⊥, ⊤)`, the inclusion `hornHom c x y ⟶ N(Path x y)` is an isomorphism. -/
 lemma isIso_hornHom_ι (c : J) {x y : J} (h : ¬(x = ⊥ ∧ y = ⊤)) : IsIso (hornHom c x y).ι := by
   rw [hornHom_eq_top c h, ← SSet.Subcomplex.topIso_hom]
@@ -511,6 +527,66 @@ theorem exists_extension :
   -- The objects agree definitionally, so `eqToHom` is the identity.
   refine EnrichedFunctor.ext _ (fun x ↦ by rfl) fun x y ↦ ?_
   exact (Category.comp_id _).trans (ι_extMap h₁ h₂ F x.as y.as)
+
+/-! ### The faces of `C[Λ^{n+2}_i]` -/
+
+section Faces
+
+variable {n : ℕ} {i : Fin (n + 3)}
+
+/-- The simplicial functor `C[Δ^{n+1}] ⥤ C[Δ^{n+2}]` induced by the coface map `δ j` lands in
+`C[Λ^{n+2}_i]` for `j ≠ i`. -/
+private lemma range_functor_δ_map_le_hornHom {j : Fin (n + 3)} (hj : j ≠ i)
+    (a b : SimplicialThickening (ULift.{u} (Fin (n + 2)))) :
+    SSet.Subcomplex.range
+        ((SimplicialThickening.functor (SimplexCategory.δ j).toOrderHom.uliftMap).map a b) ≤
+      hornHom (⟨i⟩ : ULift.{u} (Fin (n + 3))) ⟨j.succAbove a.as.down⟩ ⟨j.succAbove b.as.down⟩ := by
+  rintro q _ ⟨s, rfl⟩
+  have hj' (x : SimplicialThickening (ULift.{u} (Fin (n + 2)))) :
+      (⟨j.succAbove x.as.down⟩ : ULift.{u} (Fin (n + 3))) ≠ ⟨j⟩ :=
+    fun h ↦ Fin.succAbove_ne j x.as.down (congrArg ULift.down h)
+  by_cases hab : (⟨j.succAbove a.as.down⟩ : ULift.{u} (Fin (n + 3))) = ⊥ ∧
+      (⟨j.succAbove b.as.down⟩ : ULift.{u} (Fin (n + 3))) = ⊤
+  · refine mem_hornHom_of_notMem (lt_of_le_of_ne (hab.1 ▸ bot_le) (hj' a))
+      (lt_of_le_of_ne (hab.2 ▸ le_top) (hj' b).symm) (fun h ↦ hj (congrArg ULift.down h)) ?_
+    rintro ⟨y, -, hy⟩
+    exact Fin.succAbove_ne j y.down (congrArg ULift.down hy)
+  · rw [hornHom_eq_top _ hab]
+    trivial
+
+/-- The inclusion `C[Δ^{n+1}] ⥤ C[Λ^{n+2}_i]` of the `j`-th face of the horn, for `j ≠ i`: the
+simplicial functor `C[Δ^{n+1}] ⥤ C[Δ^{n+2}]` induced by the coface map `δ j`, which lands in the
+horn. -/
+def δ (j : Fin (n + 3)) (hj : j ≠ i) :
+    EnrichedFunctor SSet.{u} (SimplicialThickening (ULift.{u} (Fin (n + 2))))
+      (HornThickening (ULift.{u} (Fin (n + 3))) ⟨i⟩) where
+  obj a := ⟨⟨j.succAbove a.as.down⟩⟩
+  map a b := SSet.Subcomplex.lift _ (range_functor_δ_map_le_hornHom hj a b)
+  map_id a := by
+    ext q x
+    exact Subtype.ext (congrArg (fun φ ↦ φ.app q x)
+      ((SimplicialThickening.functor (SimplexCategory.δ j).toOrderHom.uliftMap).map_id a))
+  map_comp a b c := by
+    ext q x
+    exact Subtype.ext (congrArg (fun φ ↦ φ.app q x)
+      ((SimplicialThickening.functor (SimplexCategory.δ j).toOrderHom.uliftMap).map_comp a b c))
+
+@[simp]
+lemma δ_obj (j : Fin (n + 3)) (hj : j ≠ i) (a : SimplicialThickening (ULift.{u} (Fin (n + 2)))) :
+    (δ j hj).obj a = ⟨⟨j.succAbove a.as.down⟩⟩ :=
+  (rfl)
+
+/-- The face `δ j` of `C[Λ^{n+2}_i]` followed by the inclusion into `C[Δ^{n+2}]` is the simplicial
+functor induced by the coface map `δ j`. -/
+@[simp]
+lemma δ_comp_ι (j : Fin (n + 3)) (hj : j ≠ i) :
+    (δ j hj).comp SSet (ι _ _) =
+      SimplicialThickening.functor (SimplexCategory.δ j).toOrderHom.uliftMap :=
+  EnrichedFunctor.ext _ (fun _ ↦ rfl) fun _ _ ↦ by
+    ext
+    rfl
+
+end Faces
 
 end HornThickening
 
