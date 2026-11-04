@@ -416,7 +416,7 @@ theorem map_lift_differential_apply (hρ : IsRationalRep ρ) (hσ : IsRationalRe
   | ι X => simpa only [UniversalEnvelopingAlgebra.lift_ι_apply] using hd X w
   | algebraMap c => simp [Algebra.algebraMap_eq_smul_one]
   | add a b ha hb => simp only [map_add, LinearMap.add_apply, ha, hb]
-  | mul a b ha hb => simp only [map_mul, Module.End.mul_apply, ha, hb]
+  | mul a b ha hb => simp only [map_mul, mul_apply_eq_comp, ha, hb]
 
 end Intertwining
 

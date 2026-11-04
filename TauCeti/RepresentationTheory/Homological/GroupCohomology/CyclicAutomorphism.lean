@@ -202,7 +202,7 @@ theorem map_cyclicRepHom_groupCohomologyπOdd_one
   have h := map_groupCohomologyπOdd_one (B.cyclicRep hB) (.ofAdd 1) mem_zpowers_ofAdd_one
     (MonoidHom.id _) mem_zpowers_ofAdd_one 1 (pow_one _).symm (f.cyclicRepHom hA hB hf) x y
   refine h ?_
-  rw [Finset.sum_range_one, pow_zero, map_one, Module.End.one_apply, hy]
+  rw [Finset.sum_range_one, pow_zero, map_one, one_apply_eq_self, hy]
   exact (congrFun (coe_cyclicRepHom_hom f hA hB hf) x.1).symm
 
 /-- An additive map `f` with `f ∘ A = B ∘ f` sends the degree-`2` class of a fixed point `x` of

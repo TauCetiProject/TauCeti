@@ -45,10 +45,10 @@ steps of zero-variance components. -/
 theorem cdf_gaussianMixtureMeasure (p : StdSimplex ℝ≥0 ι) (m : ι → ℝ) (v : ι → ℝ≥0) (x : ℝ) :
     cdf (gaussianMixtureMeasure p m v) x =
       ∑ i, (p.weights i : ℝ) * cdf (gaussianReal (m i) (v i)) x := by
-  rw [cdf_eq_real, measureReal_def, gaussianMixtureMeasure_def, Measure.finsetSum_apply,
+  rw [cdf_eq_real, measureReal_def, gaussianMixtureMeasure_def, _root_.sum_apply,
     ENNReal.toReal_sum fun i _ ↦ by simp [ENNReal.mul_eq_top]]
   refine Finset.sum_congr rfl fun i _ ↦ ?_
-  rw [Measure.smul_apply, smul_eq_mul, ENNReal.toReal_mul, ENNReal.coe_toReal, cdf_eq_real,
+  rw [_root_.smul_apply, smul_eq_mul, ENNReal.toReal_mul, ENNReal.coe_toReal, cdf_eq_real,
     measureReal_def]
 
 /-- **Quantile adjunction.** At an interior level, the Gaussian-mixture quantile lies below `x`

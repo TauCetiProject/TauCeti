@@ -94,7 +94,7 @@ theorem twistedHeckeSlashSumCharEnd_diagCosetGamma0_const (c : ℕ) (hc : 0 < c)
         (diagCosetGamma0 N ![c, c] fun _ ↦ by simpa using hcN) =
       ((χ (ZMod.unitOfCoprime c hcN) : ℂ) * (c : ℂ) ^ (k - 2)) • 1 := by
   refine LinearMap.ext fun f ↦ Subtype.ext ?_
-  rw [coe_twistedHeckeSlashSumCharEnd, LinearMap.smul_apply, Module.End.one_apply]
+  rw [coe_twistedHeckeSlashSumCharEnd, LinearMap.smul_apply, one_apply_eq_self]
   exact twistedHeckeSlashSum_diagCosetGamma0_const k χ c hc hcN f f.2
 
 /-- The constant diagonal double coset acts on modular forms by

@@ -130,7 +130,7 @@ theorem cyclicBicomplexHorizontal_succ_mul_cyclicBicomplexHorizontal :
 theorem cyclicBicomplexHorizontal_cyclicBicomplexHorizontal
     (φ : MultilinearMap R (fun _ : Fin (q + 1) ↦ A) M) :
     cyclicBicomplexHorizontal R A M (p + 1) q (cyclicBicomplexHorizontal R A M p q φ) = 0 := by
-  rw [← Module.End.mul_apply, cyclicBicomplexHorizontal_succ_mul_cyclicBicomplexHorizontal,
+  rw [← mul_apply_eq_comp, cyclicBicomplexHorizontal_succ_mul_cyclicBicomplexHorizontal,
     LinearMap.zero_apply]
 
 variable (R A M p q) in

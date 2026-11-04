@@ -189,11 +189,11 @@ theorem rankOneHermitianProjector_col_eq_self {A : Matrix ι ι K}
   -- The idempotent `A` fixes its column `v`, and since `A` is self-adjoint, `v* v = A i i ≠ 0`.
   have hAv : A *ᵥ v = v := funext fun j ↦ by
     simp only [mulVec, dotProduct, v]
-    simpa only [mul_apply] using congr_fun₂ hI.eq j i
+    simpa only [Matrix.mul_apply] using congr_fun₂ hI.eq j i
   have hv : star v ⬝ᵥ v ≠ 0 := by
     have hS' : ∀ k, star (A k i) = A i k := fun k ↦ by
       simpa [star_eq_conjTranspose, conjTranspose_apply] using congr_fun₂ hS.star_eq i k
-    have : star v ⬝ᵥ v = (A * A) i i := by simp [v, dotProduct, mul_apply, hS']
+    have : star v ⬝ᵥ v = (A * A) i i := by simp [v, dotProduct, Matrix.mul_apply, hS']
     rwa [this, hI.eq]
   -- So `A` fixes the line of `P = rankOneHermitianProjector v`: `A * P = P`.
   have hAP : A * rankOneHermitianProjector v = rankOneHermitianProjector v := by

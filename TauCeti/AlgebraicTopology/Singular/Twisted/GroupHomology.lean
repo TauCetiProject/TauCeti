@@ -5,12 +5,15 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicTopology.LocalCoefficient.QuotientCovering
+public import TauCeti.AlgebraicTopology.LocalCoefficient.QuotientCovering.Exact
 public import TauCeti.AlgebraicTopology.Singular.Coinvariants
 public import TauCeti.AlgebraicTopology.Singular.ModuleChains.Resolution
 public import TauCeti.AlgebraicTopology.Singular.Transfer.PermutationLocalSystem
 public import Mathlib.RepresentationTheory.Homological.GroupHomology.Basic
 public import TauCeti.RepresentationTheory.Homological.GroupHomology.Naturality
+public import TauCeti.AlgebraicTopology.Singular.Twisted.Coefficients
+public import Mathlib.RepresentationTheory.Homological.GroupHomology.LongExactSequence
+import TauCeti.RepresentationTheory.Homological.GroupHomology.Resolution
 
 /-!
 # Twisted homology of the base of a contractible free cover is group homology
@@ -42,6 +45,16 @@ and the induced map on twisted homology corresponds to Mathlib's map
 `groupHomology.map (MonoidHom.id G) f`
 (`IsQuotientCoveringMap.twistedHomologyIsoGroupHomology_hom_naturality`).
 
+The identification also respects the coefficient long exact sequences. A short exact sequence
+`0 ⟶ A₁ ⟶ A₂ ⟶ A₃ ⟶ 0` of representations gives a short exact sequence of associated local
+systems (`IsQuotientCoveringMap.shortExact_associatedLocalSystem`), whose connecting map
+`Hₙ(B; A₃) ⟶ Hₘ(B; A₁)`, `m + 1 = n`, in twisted homology corresponds to Mathlib's connecting map
+`groupHomology.δ`
+(`IsQuotientCoveringMap.twistedHomologyδ_comp_twistedHomologyIsoGroupHomology_hom`).
+On chains the identification is induced by a chain map from the inhomogeneous chains of `A` to the
+twisted chains, natural in `A`, so it is a morphism between the two short exact sequences of chain
+complexes whose connecting maps these are.
+
 ## Main definitions
 
 * `IsQuotientCoveringMap.coinvariantsTensorSingularChainsRepIsoTwisted`: the chains of `B` with
@@ -55,6 +68,10 @@ and the induced map on twisted homology corresponds to Mathlib's map
   `IsQuotientCoveringMap.twistedHomologyIsoGroupHomology_hom_naturality`,
   `IsQuotientCoveringMap.twistedHomologyIsoGroupHomology_inv_naturality`: the comparisons of
   chains and of homology are natural in the coefficients.
+* `IsQuotientCoveringMap.twistedHomologyδ_comp_twistedHomologyIsoGroupHomology_hom`,
+  `IsQuotientCoveringMap.groupHomology_δ_comp_twistedHomologyIsoGroupHomology_inv`: the comparison
+  of homology carries the coefficient connecting map of twisted homology to the connecting map of
+  group homology.
 
 ## References
 
@@ -365,6 +382,17 @@ def twistedHomologyIsoGroupHomology [ContractibleSpace E] (n : ℕ) :
       (hG.coinvariantsTensorSingularChainsRepIsoTwisted k A)).symm ≪≫
     (groupHomologyIso A n (singularChainsResolution k E G)).symm
 
+/-- The homology comparison is the inverse chain identification followed by the inverse
+comparison from a projective resolution to group homology. -/
+theorem twistedHomologyIsoGroupHomology_hom_eq [ContractibleSpace E] (n : ℕ) :
+    haveI := hG.toContinuousConstSMul
+    haveI := hG.isCancelSMul
+    letI := Classical.decEq G
+    (hG.twistedHomologyIsoGroupHomology k A n).hom =
+      HomologicalComplex.homologyMap (hG.coinvariantsTensorSingularChainsRepIsoTwisted k A).inv n ≫
+        (groupHomologyIso A n (singularChainsResolution k E G)).inv :=
+  (rfl)
+
 variable {A' : Rep.{u} k G}
 
 /-- **The comparison of twisted chains with coinvariant chains is natural in the coefficients**:
@@ -420,11 +448,7 @@ theorem twistedHomologyIsoGroupHomology_hom_naturality [ContractibleSpace E] (f 
           (hG.coinvariantsTensorSingularChainsRepIsoTwisted k A').inv := by
     rw [Iso.inv_comp_eq, ← Category.assoc, Iso.eq_comp_inv,
       hG.coinvariantsTensorSingularChainsRepIsoTwisted_hom_naturality k f]
-  have e (C : Rep.{u} k G) : (hG.twistedHomologyIsoGroupHomology k C n).hom =
-      HomologicalComplex.homologyMap (hG.coinvariantsTensorSingularChainsRepIsoTwisted k C).inv n ≫
-        (groupHomologyIso C n (singularChainsResolution k E G)).inv :=
-    (rfl)
-  rw [e, e]
+  rw [twistedHomologyIsoGroupHomology_hom_eq, twistedHomologyIsoGroupHomology_hom_eq]
   -- `singularChainsResolution` and `singularChainsRep` agree only up to unfolding, so the
   -- remaining steps are explicit transitivity rather than rewriting.
   exact ((HomologicalComplex.homologyMap_comp_assoc _ _ _ _).symm.trans
@@ -442,5 +466,116 @@ theorem twistedHomologyIsoGroupHomology_inv_naturality [ContractibleSpace E] (f 
         twistedHomologyCoefficientMap.{u, u, u} (hG.associatedLocalSystemMap k f) n := by
   rw [Iso.comp_inv_eq, Category.assoc, hG.twistedHomologyIsoGroupHomology_hom_naturality k f n,
     Iso.inv_hom_id_assoc]
+
+section LongExactSequence
+
+variable [ContractibleSpace E]
+
+/-- A comparison map from the bar resolution to the singular chains of `E`. It is stated between
+`Rep.barComplex` and `singularChainsRep` rather than the complexes of the two resolutions, which
+agree with them only up to unfolding, so that composites with it can be rewritten. -/
+private def barToSingularChains :
+    haveI := hG.toContinuousConstSMul
+    haveI := hG.isCancelSMul
+    Rep.barComplex k G ⟶ singularChainsRep k E G :=
+  haveI := hG.toContinuousConstSMul
+  haveI := hG.isCancelSMul
+  ProjectiveResolution.lift (𝟙 _) (Rep.barResolution k G) (singularChainsResolution k E G)
+
+variable (A) in
+/-- The chain map from the inhomogeneous chains of `A` to the chains of `B` twisted by the
+associated local system inducing `(twistedHomologyIsoGroupHomology k A n).inv`: the identification
+of the inhomogeneous chains with `(A ⊗ bar)_G`, followed by a comparison map from the bar
+resolution to the singular chains of `E`, and the identification of `(A ⊗ C(E; k))_G` with the
+twisted chains. -/
+private def chainsToTwisted :
+    groupHomology.inhomogeneousChains A ⟶
+      twistedChainComplex.{u, u, u} (hG.associatedLocalSystem k A) :=
+  haveI := hG.toContinuousConstSMul
+  haveI := hG.isCancelSMul
+  letI := Classical.decEq G
+  (groupHomology.inhomogeneousChainsIso A).hom ≫
+    (((Rep.coinvariantsTensor k G).obj A).mapHomologicalComplex _).map (barToSingularChains hG k) ≫
+    (hG.coinvariantsTensorSingularChainsRepIsoTwisted k A).hom
+
+variable (A) in
+private lemma twistedHomologyIsoGroupHomology_inv_eq_homologyMap (n : ℕ) :
+    (hG.twistedHomologyIsoGroupHomology k A n).inv =
+      HomologicalComplex.homologyMap (chainsToTwisted hG k A) n := by
+  have := hG.toContinuousConstSMul
+  have := hG.isCancelSMul
+  let := Classical.decEq G
+  have hβ := (ProjectiveResolution.lift_commutes_zero (𝟙 _) (Rep.barResolution k G)
+    (singularChainsResolution k E G)).trans (Category.comp_id _)
+  have h₁ : (hG.twistedHomologyIsoGroupHomology k A n).inv = _ := Iso.trans_inv _ _
+  rw [h₁, Iso.symm_inv, Iso.symm_inv, Rep.groupHomologyIso_hom_eq_homologyMap A _ _ hβ]
+  -- The bar resolution and `singularChainsResolution` are the complexes `Rep.barComplex` and
+  -- `singularChainsRep` only up to unfolding, so the composite is assembled in term mode.
+  exact (HomologicalComplex.homologyMap_comp _ _ n).symm.trans
+    (congrArg (HomologicalComplex.homologyMap · n) (Category.assoc _ _ _))
+
+private lemma chainsToTwisted_naturality (f : A ⟶ A') :
+    groupHomology.chainsMap (MonoidHom.id G) f ≫ chainsToTwisted hG k A' =
+      chainsToTwisted hG k A ≫
+        twistedChainComplexCoefficientMap.{u, u, u} (hG.associatedLocalSystemMap k f) := by
+  have := hG.toContinuousConstSMul
+  have := hG.isCancelSMul
+  let := Classical.decEq G
+  -- Each of the three factors is natural in the coefficients: the inhomogeneous chain
+  -- identification, the comparison map tensored with `A`, and the twisted chain identification.
+  simp only [chainsToTwisted, Category.assoc]
+  rw [TauCeti.groupHomology.inhomogeneousChainsIso_hom_naturality_assoc,
+    ← NatTrans.naturality_assoc, coinvariantsTensorSingularChainsRepIsoTwisted_hom_naturality]
+
+variable {X : ShortComplex (Rep.{u} k G)} (hX : X.ShortExact)
+
+/-- **The identification of twisted homology with group homology respects the long exact
+sequences**, inverse form: for a short exact sequence `0 ⟶ X₁ ⟶ X₂ ⟶ X₃ ⟶ 0` of representations,
+the inverses of the identifications `Hₙ(B; Xᵢ) ≅ Hₙ(G, Xᵢ)` carry Mathlib's connecting map
+`groupHomology.δ` to the coefficient connecting map of twisted homology for the short exact
+sequence of associated local systems. -/
+@[reassoc]
+theorem groupHomology_δ_comp_twistedHomologyIsoGroupHomology_inv (n m : ℕ) (h : m + 1 = n) :
+    groupHomology.δ hX n m h ≫ (hG.twistedHomologyIsoGroupHomology k X.X₁ m).inv =
+      (hG.twistedHomologyIsoGroupHomology k X.X₃ n).inv ≫
+        (hG.shortExact_associatedLocalSystem k hX).twistedHomologyδ n m h := by
+  rw [twistedHomologyIsoGroupHomology_inv_eq_homologyMap,
+    twistedHomologyIsoGroupHomology_inv_eq_homologyMap,
+    ShortComplex.ShortExact.twistedHomologyδ_eq_δ]
+  -- The chain maps `chainsToTwisted` form a morphism from the short exact sequence of
+  -- inhomogeneous chains, whose connecting map is `groupHomology.δ`, to the short exact sequence
+  -- of twisted chains, whose connecting map is `twistedHomologyδ`.
+  let ψ : X.map (groupHomology.chainsFunctor k G) ⟶
+      (X.map (hG.associatedLocalSystemFunctor k)).map (twistedChainComplexFunctor k B) :=
+    { τ₁ := chainsToTwisted hG k X.X₁
+      τ₂ := chainsToTwisted hG k X.X₂
+      τ₃ := chainsToTwisted hG k X.X₃
+      comm₁₂ := by
+        rw [ShortComplex.map_f, ShortComplex.map_f, twistedChainComplexFunctor_map,
+          associatedLocalSystemFunctor_map]
+        exact (chainsToTwisted_naturality hG k X.f).symm
+      comm₂₃ := by
+        rw [ShortComplex.map_g, ShortComplex.map_g, twistedChainComplexFunctor_map,
+          associatedLocalSystemFunctor_map]
+        exact (chainsToTwisted_naturality hG k X.g).symm }
+  exact HomologicalComplex.HomologySequence.δ_naturality ψ
+    (groupHomology.map_chainsFunctor_shortExact hX)
+    ((hG.shortExact_associatedLocalSystem k hX).map_of_exact _) n m h
+
+/-- **The identification of twisted homology with group homology respects the long exact
+sequences**: for the quotient covering map `p : E ⟶ B` of an action of `G` with contractible total
+space and a short exact sequence `0 ⟶ X₁ ⟶ X₂ ⟶ X₃ ⟶ 0` of representations, the identifications
+`Hₙ(B; Xᵢ) ≅ Hₙ(G, Xᵢ)` carry the coefficient connecting map `Hₙ(B; X₃) ⟶ Hₘ(B; X₁)`, `m + 1 = n`,
+of the short exact sequence of associated local systems to Mathlib's connecting map
+`groupHomology.δ`. -/
+@[reassoc]
+theorem twistedHomologyδ_comp_twistedHomologyIsoGroupHomology_hom (n m : ℕ) (h : m + 1 = n) :
+    (hG.shortExact_associatedLocalSystem k hX).twistedHomologyδ n m h ≫
+        (hG.twistedHomologyIsoGroupHomology k X.X₁ m).hom =
+      (hG.twistedHomologyIsoGroupHomology k X.X₃ n).hom ≫ groupHomology.δ hX n m h := by
+  rw [← Iso.inv_comp_eq, ← Category.assoc, ← Iso.eq_comp_inv,
+    groupHomology_δ_comp_twistedHomologyIsoGroupHomology_inv]
+
+end LongExactSequence
 
 end IsQuotientCoveringMap

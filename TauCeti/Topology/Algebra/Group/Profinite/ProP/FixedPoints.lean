@@ -70,13 +70,13 @@ topology on `M`, only that the kernel of the action be open in `G`, and so appli
 `M ⧸ N` by `G`-stable subgroups. -/
 theorem exists_ne_zero_invariant_of_isProP_of_isOpen_ker (hG : IsProP p G) [Nontrivial M]
     (hK : IsOpen ((MulAction.toPermHom G M).ker : Set G))
-    (htors : ∀ m : M, ∃ k : ℕ, p ^ k • m = 0) : ∃ m : M, m ≠ 0 ∧ ∀ g : G, g • m = m := by
+    (htors : IsAddPGroup p M) : ∃ m : M, m ≠ 0 ∧ ∀ g : G, g • m = m := by
   have hQ := hG.isPGroup_range (MulAction.toPermHom G M) hK
   have h0 : (0 : M) ∈ MulAction.fixedPoints (MulAction.toPermHom G M).range M := by
     rintro ⟨_, g, rfl⟩
     simp [Subgroup.smul_def, Equiv.Perm.smul_def]
   obtain ⟨m, hm, hne⟩ := hQ.exists_fixed_point_of_prime_dvd_card_of_fixed_point M
-    (prime_dvd_natCard_of_forall_exists_nsmul_eq_zero htors) h0
+    (htors.card_eq_or_dvd.resolve_left Finite.one_lt_card.ne') h0
   refine ⟨m, hne.symm, fun g ↦ ?_⟩
   simpa [Subgroup.smul_def, Equiv.Perm.smul_def] using hm ⟨MulAction.toPermHom G M g, g, rfl⟩
 
@@ -84,7 +84,7 @@ theorem exists_ne_zero_invariant_of_isProP_of_isOpen_ker (hG : IsProP p G) [Nont
 have order `p`. -/
 theorem exists_ne_zero_nsmul_eq_zero_invariant_of_isProP_of_isOpen_ker (hG : IsProP p G)
     [Nontrivial M] (hK : IsOpen ((MulAction.toPermHom G M).ker : Set G))
-    (htors : ∀ m : M, ∃ k : ℕ, p ^ k • m = 0) :
+    (htors : IsAddPGroup p M) :
     ∃ m : M, m ≠ 0 ∧ p • m = 0 ∧ ∀ g : G, g • m = m := by
   obtain ⟨m, hm0, hm⟩ := exists_ne_zero_invariant_of_isProP_of_isOpen_ker hG hK htors
   obtain ⟨n, hn0, hn⟩ := exists_pow_smul_ne_zero_and_smul_eq_zero hm0 (htors m)
@@ -95,13 +95,13 @@ variable [TopologicalSpace M] [DiscreteTopology M] [ContinuousSMul G M]
 /-- **The trivial-filtration theorem, first form.** A pro-`p` group acting continuously on a
 nontrivial finite discrete `p`-primary additive group fixes a nonzero element. -/
 theorem exists_ne_zero_invariant_of_isProP (hG : IsProP p G) [Nontrivial M]
-    (htors : ∀ m : M, ∃ k : ℕ, p ^ k • m = 0) : ∃ m : M, m ≠ 0 ∧ ∀ g : G, g • m = m :=
+    (htors : IsAddPGroup p M) : ∃ m : M, m ≠ 0 ∧ ∀ g : G, g • m = m :=
   exists_ne_zero_invariant_of_isProP_of_isOpen_ker hG (isOpen_ker_toPermHom G M) htors
 
 /-- A pro-`p` group acting continuously on a nontrivial finite discrete `p`-primary additive
 group fixes a nonzero element of order `p`. -/
 theorem exists_ne_zero_nsmul_eq_zero_invariant_of_isProP (hG : IsProP p G) [Nontrivial M]
-    (htors : ∀ m : M, ∃ k : ℕ, p ^ k • m = 0) :
+    (htors : IsAddPGroup p M) :
     ∃ m : M, m ≠ 0 ∧ p • m = 0 ∧ ∀ g : G, g • m = m :=
   exists_ne_zero_nsmul_eq_zero_invariant_of_isProP_of_isOpen_ker hG
     (isOpen_ker_toPermHom G M) htors
@@ -110,7 +110,7 @@ theorem exists_ne_zero_nsmul_eq_zero_invariant_of_isProP (hG : IsProP p G) [Nont
 pro-`p` group contains a `G`-stable subgroup of order `p` on which `G` acts trivially: a copy of
 `𝔽_p` with trivial action. -/
 theorem exists_addSubgroup_natCard_eq_invariant_of_isProP (hG : IsProP p G) [Nontrivial M]
-    (htors : ∀ m : M, ∃ k : ℕ, p ^ k • m = 0) :
+    (htors : IsAddPGroup p M) :
     ∃ N : AddSubgroup M, Nat.card N = p ∧ ∀ g : G, ∀ x ∈ N, g • x = x := by
   obtain ⟨m, hm0, hpm, hm⟩ := exists_ne_zero_nsmul_eq_zero_invariant_of_isProP hG htors
   refine ⟨AddSubgroup.zmultiples m, ?_, fun g x hx ↦ ?_⟩
@@ -132,7 +132,7 @@ there is `x ∉ N` with `p • x ∈ N` whose class modulo `N` is fixed by `G`: 
 with the induced action `AddSubgroup.quotientDistribMulAction`, contains a copy of `𝔽_p` with
 trivial action. -/
 theorem exists_notMem_nsmul_mem_smul_sub_mem_of_isProP (hG : IsProP p G)
-    (htors : ∀ m : M, ∃ k : ℕ, p ^ k • m = 0) {N : AddSubgroup M}
+    (htors : IsAddPGroup p M) {N : AddSubgroup M}
     (hN : ∀ g : G, ∀ x ∈ N, g • x ∈ N) (hN' : N ≠ ⊤) :
     ∃ x : M, x ∉ N ∧ p • x ∈ N ∧ ∀ g : G, g • x - x ∈ N := by
   let _ := N.quotientDistribMulAction hN
@@ -150,10 +150,7 @@ theorem exists_notMem_nsmul_mem_smul_sub_mem_of_isProP (hG : IsProP p G)
       ((continuous_of_discreteTopology (f := fun m : M ↦ m - x)).comp
         (continuous_id.smul continuous_const))
   have : Nontrivial (M ⧸ N) := QuotientAddGroup.nontrivial_iff.mpr hN'
-  have htors' : ∀ y : M ⧸ N, ∃ k : ℕ, p ^ k • y = 0 := fun y ↦ by
-    obtain ⟨x, rfl⟩ := QuotientAddGroup.mk_surjective y
-    obtain ⟨k, hk⟩ := htors x
-    exact ⟨k, by rw [← QuotientAddGroup.mk_nsmul, hk, QuotientAddGroup.mk_zero]⟩
+  have htors' : IsAddPGroup p (M ⧸ N) := htors.to_quotient N
   obtain ⟨y, hy0, hpy, hy⟩ :=
     exists_ne_zero_nsmul_eq_zero_invariant_of_isProP_of_isOpen_ker hG hK htors'
   obtain ⟨x, rfl⟩ := QuotientAddGroup.mk_surjective y

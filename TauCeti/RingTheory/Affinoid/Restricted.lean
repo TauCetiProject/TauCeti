@@ -44,6 +44,9 @@ of the variables need only be power-bounded, not of norm at most one.
 * `TauCeti.IsAffinoidAlgebra.isRestricted_subring`: `A⟨X₁, …, Xₘ⟩` is affinoid.
 * `TauCeti.IsAffinoidAlgebra.algHom_ext_isRestricted_subring`: `K`-algebra maps
   `A⟨X₁, …, Xₘ⟩ → B` agreeing on `A` and on the variables are equal.
+* `TauCeti.IsAffinoidAlgebra.continuous_algHom_quotient`,
+  `TauCeti.IsAffinoidAlgebra.isPowerBounded_map_quotient_X`: `K`-algebra maps
+  `A⟨X₁, …, Xₘ⟩ ⧸ L → B` are continuous and send the variables to power-bounded elements.
 * `TauCeti.IsAffinoidAlgebra.existsUnique_algHom_isRestricted_subring`: a `K`-algebra map
   `φ : A → B` into an affinoid algebra and power-bounded `b₁, …, bₘ ∈ B` extend uniquely to a
   `K`-algebra map `A⟨X₁, …, Xₘ⟩ → B` sending `Xᵢ` to `bᵢ`.
@@ -112,6 +115,26 @@ theorem algHom_ext_isRestricted_subring
   have := (hA.isRestricted_subring (τ := Fin k)).isNoetherianRing
   AlgHom.toRingHom_injective <| isRestricted_subring_ringHom_ext_of_continuous
     (hB.continuous_algHom ψ₁) (hB.continuous_algHom ψ₂) hC hX
+
+include hA hB in
+/-- **`K`-algebra maps out of a quotient of `A⟨X₁, …, Xₖ⟩` are continuous.** Let `A` and `B` be
+affinoid algebras with complete ultrametric algebra norms. Every `K`-algebra map
+`A⟨X₁, …, Xₖ⟩ ⧸ L → B` is continuous for the quotient topology. -/
+theorem continuous_algHom_quotient {L : Ideal (IsRestricted.subring (R := A) (fun _ : Fin k ↦ 1))}
+    (ψ : IsRestricted.subring (R := A) (fun _ : Fin k ↦ 1) ⧸ L →ₐ[K] B) : Continuous ψ :=
+  have := (hA.isRestricted_subring (τ := Fin k)).isNoetherianRing
+  continuous_coinduced_dom.mpr (hB.continuous_algHom (ψ.comp (Ideal.Quotient.mkₐ K L)))
+
+include hA hB in
+/-- **`K`-algebra maps out of a quotient of `A⟨X₁, …, Xₖ⟩` send the variables to power-bounded
+elements.** Let `A` and `B` be affinoid algebras with complete ultrametric algebra norms. Every
+`K`-algebra map `A⟨X₁, …, Xₖ⟩ ⧸ L → B` sends the image of each `Xᵢ` to a power-bounded element. -/
+theorem isPowerBounded_map_quotient_X
+    {L : Ideal (IsRestricted.subring (R := A) (fun _ : Fin k ↦ 1))}
+    (ψ : IsRestricted.subring (R := A) (fun _ : Fin k ↦ 1) ⧸ L →ₐ[K] B) (i : Fin k) :
+    Huber.IsPowerBounded (ψ (Ideal.Quotient.mk L ⟨X i, isRestricted_X _ i⟩)) :=
+  have := (hA.isRestricted_subring (τ := Fin k)).isNoetherianRing
+  hB.isPowerBounded_map (ψ.comp (Ideal.Quotient.mkₐ K L)) (isPowerBounded_X i)
 
 /-- **The extension of a `K`-algebra map `φ : A → B` to `A⟨X₁, …, Xₖ⟩` sending each `Xᵢ` to
 `bᵢ`**, for affinoid algebras `A` and `B` with complete ultrametric algebra norms and

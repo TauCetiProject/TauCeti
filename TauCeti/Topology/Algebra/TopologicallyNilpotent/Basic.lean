@@ -167,7 +167,7 @@ section Jacobson
 variable {R : Type*} [CommRing R] [TopologicalSpace R]
 
 /-- **Topologically nilpotent elements lie in the Jacobson radical** as soon as some open ideal
-`I` does, for instance when `R` is `I`-adically complete (`IsAdicComplete.le_jacobson_bot`): a
+`I` does, for instance when `R` is `I`-adically complete (`IsAdicComplete.le_jacobson`): a
 power of a topologically nilpotent element lies in `I`, and the Jacobson radical is radical. -/
 theorem IsTopologicallyNilpotent.mem_jacobson_bot {I : Ideal R} (hI : IsOpen (I : Set R))
     (hIJ : I ≤ (⊥ : Ideal R).jacobson) {a : R} (ha : IsTopologicallyNilpotent a) :
@@ -189,8 +189,10 @@ theorem IsTopologicallyNilpotent.isUnit_add_left [IsLinearTopology R R]
     (hR : topologicalNilradical R ≤ (⊥ : Ideal R).jacobson) {t u : R}
     (ht : IsTopologicallyNilpotent t) (hu : IsUnit u) : IsUnit (u + t) := by
   obtain ⟨u, rfl⟩ := hu
-  have h := Ideal.mem_jacobson_bot.mp
-    (hR (IsTopologicallyNilpotent.mem_topologicalNilradical_iff.mpr ht)) ↑u⁻¹
+  have htj : t ∈ Ring.jacobson R := by
+    simpa only [Ideal.jacobson_bot] using
+      hR (IsTopologicallyNilpotent.mem_topologicalNilradical_iff.mpr ht)
+  have h := Ring.mem_jacobson_iff.mp htj ↑u⁻¹
   simpa [mul_add, mul_left_comm (u : R) t, add_comm] using u.isUnit.mul h
 
 end Jacobson

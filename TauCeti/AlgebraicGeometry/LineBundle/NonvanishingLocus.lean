@@ -41,7 +41,11 @@ of the restriction of `s`. In other words, `s` trivializes `M` over `X_s`.
 * `AlgebraicGeometry.Scheme.Modules.le_nonvanishingLocus_iff`: `s` is a basis of `M` exactly over
   open subsets of `X_s`;
 * `AlgebraicGeometry.Scheme.Modules.nonvanishingLocus_hom_app`: the nonvanishing locus is
-  invariant under isomorphisms of invertible sheaves.
+  invariant under isomorphisms of invertible sheaves;
+* `AlgebraicGeometry.Scheme.Modules.range_nonvanishingLocus_eq_of_iso`: isomorphic invertible
+  sheaves have the same nonvanishing loci of sections over each open;
+* `AlgebraicGeometry.Scheme.Modules.nonvanishingLocus_unit`: on the structure sheaf, `X_r` is the
+  basic open set of the regular function `r`.
 
 ## References
 
@@ -272,5 +276,34 @@ theorem nonvanishingLocus_hom_app {N : X.Modules}
   · refine (le_nonvanishingLocus_iff _ (homOfLE (nonvanishingLocus_le _))).mpr fun W' j ↦ ?_
     rw [hbij]
     exact (le_nonvanishingLocus_iff s (homOfLE (nonvanishingLocus_le _))).mp le_rfl W' j
+
+/-- Isomorphic invertible sheaves have the same nonvanishing loci of sections over `U`: the set of
+opens `X_s`, for `s` a section over `U`, is invariant under isomorphism. -/
+theorem range_nonvanishingLocus_eq_of_iso {N : X.Modules}
+    [TauCeti.AlgebraicGeometry.SheafOfModules.isInvertible X N] (φ : M ≅ N) (U : X.Opens) :
+    Set.range (M.nonvanishingLocus (U := U)) = Set.range (N.nonvanishingLocus (U := U)) := by
+  ext V
+  exact ⟨fun ⟨s, hs⟩ ↦ ⟨φ.hom.app U s, (nonvanishingLocus_hom_app φ s).trans hs⟩,
+    fun ⟨s, hs⟩ ↦ ⟨φ.symm.hom.app U s, (nonvanishingLocus_hom_app φ.symm s).trans hs⟩⟩
+
+/-- On the structure sheaf `𝒪_X`, regarded as an invertible sheaf, the nonvanishing locus of a
+regular function `r` is its basic open set `X_r`. -/
+@[simp]
+theorem nonvanishingLocus_unit {U : X.Opens} (r : Γ(X, U)) :
+    nonvanishingLocus (SheafOfModules.unit X.ringCatSheaf)
+      (show Γ(SheafOfModules.unit X.ringCatSheaf, U) from r) = X.basicOpen r := by
+  -- The sections of `𝒪_X` over an open `W` are, by definition, the regular functions on `W`,
+  -- on which `Γ(X, W)` acts by multiplication and restriction is restriction of functions;
+  -- the `show` in the statement and the term `h a` below use this identification.
+  let one : Γ(SheafOfModules.unit X.ringCatSheaf, U) := (1 : Γ(X, U))
+  have hone : nonvanishingLocus (SheafOfModules.unit X.ringCatSheaf) one = U := by
+    refine le_antisymm (nonvanishingLocus_le one) ((le_nonvanishingLocus_iff one (𝟙 U)).mpr ?_)
+    intro W j
+    have h (a : Γ(X, W)) : a * X.presheaf.map (j ≫ 𝟙 U).op 1 = a := by rw [map_one, mul_one]
+    exact ⟨fun a b hab ↦ (h a).symm.trans (hab.trans (h b)), fun a ↦ ⟨a, h a⟩⟩
+  convert nonvanishingLocus_smul (M := SheafOfModules.unit X.ringCatSheaf) r one using 1
+  · exact congrArg _ (mul_one r).symm
+  · rw [hone]
+    exact (inf_eq_left.mpr (X.basicOpen_le r)).symm
 
 end AlgebraicGeometry.Scheme.Modules

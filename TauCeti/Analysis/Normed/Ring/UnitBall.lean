@@ -31,12 +31,20 @@ ultrametric normed field `K` the ring `K⁰` is local with maximal ideal `K⁰�
 is the residue field. These are the facts about the unit ball that underlie reduction arguments
 for Banach modules over nonarchimedean Banach rings.
 
+Conversely, a ring homomorphism into the closed unit ball of a seminormed ring with `‖1‖ = 1`
+maps units to elements of norm one. If its source is a local ring and it maps the maximal ideal
+into the open unit ball, it maps exactly the units to elements of norm one, and the maximal ideal
+is the preimage of the open unit ball. This needs no ultrametric hypothesis; the model case is
+the valuation ring of a nonarchimedean field.
+
 ## Main definitions
 
 * `TauCeti.unitBallIdeal R`: the ideal of elements of norm less than one in the closed unit ball.
 
 ## Main results
 
+* `TauCeti.exists_norm_lt_one_forall_norm_le_of_fg`: if the open-ball ideal is finitely
+  generated, some element has the largest norm less than one.
 * `TauCeti.isTopologicallyNilpotent_iff_norm_lt_one_of_isPowMul`: for a power-multiplicative
   norm, topological nilpotence is equivalent to norm less than one.
 * `TauCeti.norm_inverse_one_sub` and `TauCeti.norm_inverse_one_sub_sub_one`: the ultrametric
@@ -51,6 +59,14 @@ for Banach modules over nonarchimedean Banach rings.
 * `TauCeti.isUnit_unitClosedBall_iff_norm_eq_one`, `TauCeti.isLocalRing_unitClosedBall` and
   `TauCeti.maximalIdeal_unitClosedBall`: over an ultrametric normed division ring the unit ball
   is a local ring, and over an ultrametric normed field its maximal ideal is the open-ball ideal.
+* `TauCeti.isPrincipalIdealRing_unitClosedBall_of_norm_eq_zpow`: if the nonzero norms of `K` are
+  the integer powers of `‖π‖` for some `0 < ‖π‖ < 1`, then `K⁰` is a principal ideal ring.
+* `TauCeti.norm_map_eq_one_of_isUnit`: a ring homomorphism into the closed unit ball maps units
+  to elements of norm one.
+* `TauCeti.norm_map_eq_one_iff_isUnit` and `TauCeti.norm_map_lt_one_iff_mem_maximalIdeal`: a
+  ring homomorphism from a local ring into the closed unit ball, mapping the maximal ideal into the
+  open unit ball, maps exactly the units to norm one and pulls the open unit ball back to the
+  maximal ideal.
 
 ## References
 
@@ -90,6 +106,31 @@ theorem mem_unitBallIdeal {x : Subring.unitClosedBall R} :
 theorem unitBallIdeal_ne_top : unitBallIdeal R ≠ ⊤ := by
   rw [Ne, Ideal.eq_top_iff_one, mem_unitBallIdeal]
   simp
+
+variable {R} in
+/-- **A largest norm below one.** If the open-ball ideal is finitely generated, for instance when
+the closed unit ball is noetherian, some `π` has the largest norm less than one: the generator of
+largest norm bounds every combination of the generators, by the ultrametric inequality. -/
+theorem exists_norm_lt_one_forall_norm_le_of_fg (h : (unitBallIdeal R).FG) :
+    ∃ π : R, ‖π‖ < 1 ∧ ∀ a : R, ‖a‖ < 1 → ‖a‖ ≤ ‖π‖ := by
+  classical
+  obtain ⟨S, hS⟩ : ∃ S : Finset (Subring.unitClosedBall R),
+      Submodule.span (Subring.unitClosedBall R) (S : Set _) = unitBallIdeal R := h
+  obtain ⟨π, hπ, hπS⟩ : ∃ π ∈ unitBallIdeal R, ∀ b ∈ S, ‖(b : R)‖ ≤ ‖(π : R)‖ := by
+    rcases S.eq_empty_or_nonempty with rfl | hne
+    · exact ⟨0, zero_mem _, by simp⟩
+    · obtain ⟨π, hπ, hmax⟩ := S.exists_max_image (fun b ↦ ‖(b : R)‖) hne
+      exact ⟨π, hS ▸ Ideal.subset_span hπ, hmax⟩
+  refine ⟨π, mem_unitBallIdeal.1 hπ, fun a ha ↦ ?_⟩
+  have haS : (⟨a, Subring.mem_unitClosedBall.2 ha.le⟩ : Subring.unitClosedBall R) ∈
+      Submodule.span (Subring.unitClosedBall R) (S : Set (Subring.unitClosedBall R)) :=
+    hS ▸ mem_unitBallIdeal.2 ha
+  refine Submodule.span_induction
+    (p := fun (x : Subring.unitClosedBall R) _ ↦ ‖(x : R)‖ ≤ ‖(π : R)‖) hπS (by simp)
+    (fun x y _ _ hx hy ↦ ?_) (fun b x _ hx ↦ ?_) haS
+  · simpa using (IsUltrametricDist.norm_add_le_max _ _).trans (max_le hx hy)
+  · simpa using (norm_mul_le _ _).trans
+      ((mul_le_of_le_one_left (norm_nonneg _) (Subring.mem_unitClosedBall.1 b.2)).trans hx)
 
 end UnitBallIdeal
 
@@ -163,7 +204,8 @@ normed ring with `‖1‖ = 1`, convergent geometric series and an ultrametric n
 `x` of norm less than one makes `x * y + 1` a unit of the unit ball for each `y` in it. -/
 theorem unitBallIdeal_le_jacobson_bot : unitBallIdeal R ≤ Ideal.jacobson ⊥ := by
   intro x hx
-  refine Ideal.mem_jacobson_bot.mpr fun y ↦ isUnit_unitClosedBall_of_norm_sub_one_lt ?_
+  rw [Ideal.jacobson_bot]
+  refine Ring.mem_jacobson_iff.mpr fun y ↦ isUnit_unitClosedBall_of_norm_sub_one_lt ?_
   rw [mem_unitBallIdeal] at hx
   simpa using (norm_mul_le (x : R) y).trans_lt
     ((mul_le_of_le_one_right (norm_nonneg _) (Subring.mem_unitClosedBall.mp y.2)).trans_lt hx)
@@ -173,7 +215,8 @@ is a local homomorphism: an element of the unit ball whose reduction is a unit i
 of the unit ball. -/
 instance isLocalHom_quotientMk_unitBallIdeal :
     IsLocalHom (Ideal.Quotient.mk (unitBallIdeal R)) :=
-  isLocalHom_of_le_jacobson_bot _ (unitBallIdeal_le_jacobson_bot R)
+  _root_.isLocalHom_of_le_jacobson (by
+    simpa only [Ideal.jacobson_bot] using unitBallIdeal_le_jacobson_bot R)
 
 end Jacobson
 
@@ -247,6 +290,80 @@ theorem maximalIdeal_unitClosedBall :
 instance isMaximal_unitBallIdeal : (unitBallIdeal K).IsMaximal :=
   maximalIdeal_unitClosedBall (K := K) ▸ IsLocalRing.maximalIdeal.isMaximal _
 
+/-- **Discretely valued fields.** If every nonzero norm of `K` is an integer power of `‖π‖` for
+some `0 < ‖π‖ < 1`, then the unit ball `K⁰` is a principal ideal ring, hence noetherian: a nonzero
+ideal is generated by any of its elements of largest norm. -/
+theorem isPrincipalIdealRing_unitClosedBall_of_norm_eq_zpow {π : K} (hπ0 : 0 < ‖π‖)
+    (hπ1 : ‖π‖ < 1) (hdisc : ∀ x : K, x ≠ 0 → ∃ k : ℤ, ‖x‖ = ‖π‖ ^ k) :
+    IsPrincipalIdealRing (Subring.unitClosedBall K) := by
+  -- Nonzero elements of `K⁰` have norm `‖π‖ ^ n` for a natural number `n`.
+  have hnat (x : Subring.unitClosedBall K) (hx : x ≠ 0) : ∃ n : ℕ, ‖(x : K)‖ = ‖π‖ ^ n := by
+    obtain ⟨k, hk⟩ := hdisc x fun h ↦ hx (Subtype.ext h)
+    have hk0 : 0 ≤ k := (zpow_le_one_iff_right_of_lt_one₀ hπ0 hπ1).1
+      (hk ▸ Subring.mem_unitClosedBall.1 x.2)
+    exact ⟨k.toNat, by rw [hk, ← zpow_natCast, Int.toNat_of_nonneg hk0]⟩
+  refine ⟨fun I ↦ ⟨?_⟩⟩
+  classical
+  by_cases hI : I = ⊥
+  · exact ⟨0, by rw [hI, Submodule.span_zero_singleton]⟩
+  have hex : ∃ n : ℕ, ∃ x ∈ I, x ≠ 0 ∧ ‖(x : K)‖ = ‖π‖ ^ n := by
+    obtain ⟨x, hxI, hx⟩ := Submodule.exists_mem_ne_zero_of_ne_bot hI
+    obtain ⟨n, hn⟩ := hnat x hx
+    exact ⟨n, x, hxI, hx, hn⟩
+  obtain ⟨x, hxI, hx, hxn⟩ := Nat.find_spec hex
+  refine ⟨x, le_antisymm (fun y hy ↦ ?_) ((Ideal.span_singleton_le_iff_mem _).2 hxI)⟩
+  rcases eq_or_ne y 0 with rfl | hy0
+  · exact zero_mem _
+  obtain ⟨m, hm⟩ := hnat y hy0
+  have hle : ‖(y : K)‖ ≤ ‖(x : K)‖ := by
+    rw [hm, hxn]
+    exact pow_le_pow_of_le_one hπ0.le hπ1.le (Nat.find_min' hex ⟨y, hy, hy0, hm⟩)
+  have hx0 : (x : K) ≠ 0 := fun h ↦ hx (Subtype.ext h)
+  refine Ideal.mem_span_singleton'.2 ⟨⟨y / x, Subring.mem_unitClosedBall.2 ?_⟩, Subtype.ext ?_⟩
+  · rw [norm_div]
+    exact div_le_one_of_le₀ hle (norm_nonneg _)
+  · simp [hx0]
+
 end Field
+
+section Map
+
+variable {O R : Type*} [Semiring O] [SeminormedRing R] [NormOneClass R] {φ : O →+* R}
+
+/-- A ring homomorphism into the closed unit ball of a normed ring maps units to elements of norm
+one. -/
+theorem norm_map_eq_one_of_isUnit (hφ : ∀ x, ‖φ x‖ ≤ 1) {x : O} (hx : IsUnit x) : ‖φ x‖ = 1 := by
+  obtain ⟨u, rfl⟩ := hx
+  refine le_antisymm (hφ _) ?_
+  calc (1 : ℝ) = ‖φ ↑u * φ ↑u⁻¹‖ := by rw [← map_mul, Units.mul_inv, map_one, norm_one]
+    _ ≤ ‖φ ↑u‖ * ‖φ ↑u⁻¹‖ := norm_mul_le _ _
+    _ ≤ ‖φ ↑u‖ * 1 := mul_le_mul_of_nonneg_left (hφ _) (norm_nonneg _)
+    _ = ‖φ ↑u‖ := mul_one _
+
+end Map
+
+section LocalRing
+
+open IsLocalRing
+
+variable {O R : Type*} [CommRing O] [IsLocalRing O] [SeminormedRing R] [NormOneClass R]
+  {φ : O →+* R}
+
+/-- A ring homomorphism from a local ring into the closed unit ball of a normed ring, mapping the
+maximal ideal into the open unit ball, maps exactly the units to elements of norm one. -/
+theorem norm_map_eq_one_iff_isUnit (hφ : ∀ x, ‖φ x‖ ≤ 1) (hm : ∀ x ∈ maximalIdeal O, ‖φ x‖ < 1)
+    {x : O} : ‖φ x‖ = 1 ↔ IsUnit x :=
+  ⟨fun h ↦ by_contra fun hx ↦ (hm x (by rwa [mem_maximalIdeal, mem_nonunits_iff])).ne h,
+    norm_map_eq_one_of_isUnit hφ⟩
+
+/-- A ring homomorphism from a local ring into the closed unit ball of a normed ring, mapping the
+maximal ideal into the open unit ball, pulls the open unit ball back to the maximal ideal. -/
+theorem norm_map_lt_one_iff_mem_maximalIdeal (hφ : ∀ x, ‖φ x‖ ≤ 1)
+    (hm : ∀ x ∈ maximalIdeal O, ‖φ x‖ < 1) {x : O} : ‖φ x‖ < 1 ↔ x ∈ maximalIdeal O := by
+  refine ⟨fun h ↦ ?_, hm x⟩
+  rw [mem_maximalIdeal, mem_nonunits_iff, ← norm_map_eq_one_iff_isUnit hφ hm]
+  exact h.ne
+
+end LocalRing
 
 end TauCeti

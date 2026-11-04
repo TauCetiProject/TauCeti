@@ -8,7 +8,7 @@ module
 public import Mathlib.MeasureTheory.MeasurableSpace.CountablyGenerated
 public import Mathlib.Order.Filter.Germ.Basic
 public import Mathlib.Topology.Baire.BaireMeasurable
-public import TauCeti.SetTheory.Descriptive.Antichain
+public import TauCeti.SetTheory.Descriptive.BorelReducibility
 public import TauCeti.Topology.Instances.CantorSpace
 import Mathlib.Topology.Baire.LocallyCompactRegular
 import TauCeti.Topology.Baire.KuratowskiUlam
@@ -36,9 +36,12 @@ make this so and that Borel reducibility arguments use:
   a time, it is comeagre;
 * the quotient `Quotient E₀`, with Mathlib's quotient σ-algebra, is not countably separated:
   countably many invariant Borel sets are, by generic ergodicity, simultaneously constant on one
-  comeagre set, which then lies in a single class, while classes are countable, hence meagre;
+  comeagre set, which then lies in a single class, while classes are countable, hence meagre.
+  So `E₀` is not smooth, and neither is any equivalence relation to which `E₀` is Borel reducible;
 * the continuous map `x ↦ (n ↦ x (Nat.unpair n).1)` repeats each coordinate infinitely often, so
-  it sends distinct points to `E₀`-inequivalent points; hence `E₀` has continuum many classes.
+  it sends distinct points to `E₀`-inequivalent points; hence `E₀` has continuum many classes,
+  and equality on Cantor space is Borel reducible to `E₀`. As `E₀` is not smooth, it lies strictly
+  above equality on Cantor space in the Borel reducibility order.
 
 ## Main definitions
 
@@ -52,9 +55,12 @@ make this so and that Borel reducibility arguments use:
 * `TauCeti.isMeagre_eZero`: the graph of `E₀` is meagre in the square.
 * `TauCeti.isMeagre_or_mem_residual_of_eZero_invariant`: generic ergodicity of `E₀`.
 * `TauCeti.not_countablySeparated_quotient_eZero`: no countable family of invariant Borel sets
-  separates the classes of `E₀`, so `E₀` is not smooth.
+  separates the classes of `E₀`.
+* `TauCeti.not_isSmooth_eZero`: `E₀` is not smooth, and
+  `TauCeti.not_isSmooth_of_borelReducible_eZero`: nor is any relation above it.
 * `TauCeti.hasCantorAntichainOn_eZero` and `TauCeti.mk_quotient_eZero`: a continuous Cantor
   antichain, and continuum many classes.
+* `TauCeti.borelReducible_bot_eZero`: equality on Cantor space is Borel reducible to `E₀`.
 
 ## References
 
@@ -203,6 +209,17 @@ theorem not_countablySeparated_quotient_eZero :
   exact Quotient.exact <| hS _ (mem_univ _) _ (mem_univ _) fun s hs =>
     (hx₀ s hs).trans (hx s hs).symm
 
+/-- **`E₀` is not smooth**: no Borel map into Cantor space has the classes of `E₀` as its
+fibres. -/
+theorem not_isSmooth_eZero : ¬ eZero.IsSmooth :=
+  Setoid.isSmooth_iff_countablySeparated.not.2 not_countablySeparated_quotient_eZero
+
+/-- **The easy half of the Glimm–Effros dichotomy.** An equivalence relation to which `E₀` is
+Borel reducible is not smooth. -/
+theorem not_isSmooth_of_borelReducible_eZero {X : Type*} [MeasurableSpace X] {E : Setoid X}
+    (h : eZero.BorelReducible E) : ¬ E.IsSmooth :=
+  fun hE => not_isSmooth_eZero (h.isSmooth hE)
+
 /-! ### A Cantor antichain -/
 
 /-- `E₀` has a continuous **Cantor antichain**: the map `x ↦ (n ↦ x (Nat.unpair n).1)` repeats
@@ -218,9 +235,12 @@ theorem hasCantorAntichainOn_eZero : eZero.HasCantorAntichainOn univ := by
   simpa using hk
 
 /-- `E₀` has exactly continuum many classes. -/
-theorem mk_quotient_eZero : #(Quotient eZero) = 𝔠 := by
-  refine le_antisymm (mk_quotient_le.trans_eq ?_)
-    hasCantorAntichainOn_eZero.continuum_le_mk_quotient
-  rw [← power_def, mk_bool, mk_nat, two_power_aleph0]
+theorem mk_quotient_eZero : #(Quotient eZero) = 𝔠 :=
+  hasCantorAntichainOn_eZero.mk_quotient_eq_continuum
+
+/-- Equality on Cantor space is Borel reducible to `E₀`, through its Cantor antichain. Since `E₀`
+is not smooth (`TauCeti.not_isSmooth_eZero`), the converse reduction fails. -/
+theorem borelReducible_bot_eZero : (⊥ : Setoid (ℕ → Bool)).BorelReducible eZero :=
+  hasCantorAntichainOn_eZero.borelReducible_bot
 
 end TauCeti

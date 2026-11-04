@@ -12,16 +12,17 @@ public import Mathlib.Analysis.SpecialFunctions.Trigonometric.Series
 import TauCeti.Data.Nat.Factorial.Basic
 
 /-!
-# Calculus of the hyperbolic tangent, and bounds on `sinh`
+# Hyperbolic tangent identities, regularity and calculus, and bounds on `sinh`
 
 Mathlib's `Analysis/Complex/Trigonometric.lean` defines `Real.sinh`, `Real.cosh` and `Real.tanh`
 and proves the two addition formulae `Real.sinh_add` and `Real.cosh_add`, but records none for
 `Real.tanh`; `Analysis/SpecialFunctions/Artanh.lean` inverts `Real.tanh` on `(-1, 1)` and proves
 that the inverse is strictly monotone, but does not state the monotonicity of `Real.tanh`
 itself, nor its continuity, smoothness, derivative or limits at `±∞`. This file supplies these,
-together with the square of `Real.sinh (r / 2)` in terms of the exponentials `exp (± r / 2)`,
-and the Gaussian bound `sinh x ≤ x * exp (x ^ 2 / 6)` for `0 ≤ x`, the odd companion of
-Mathlib's `Real.cosh_le_exp_half_sq`, with the bound it gives on `(1 - exp (-l)) / l`.
+together with the identity `√(1 - tanh x ^ 2) = (cosh x)⁻¹`, the square of `Real.sinh (r / 2)`
+in terms of the exponentials `exp (± r / 2)`, and the Gaussian bound
+`sinh x ≤ x * exp (x ^ 2 / 6)` for `0 ≤ x`, the odd companion of Mathlib's
+`Real.cosh_le_exp_half_sq`, with the bound it gives on `(1 - exp (-l)) / l`.
 
 ## Main declarations
 
@@ -31,6 +32,7 @@ Mathlib's `Real.cosh_le_exp_half_sq`, with the bound it gives on `(1 - exp (-l))
   compares two real numbers exactly as they compare, and is positive on the positive reals.
 * `Real.tanh_nonneg`, `Real.tanh_neg_iff`, `Real.continuous_tanh` and `Real.contDiff_tanh` —
   `Real.tanh` is nonnegative on `[0, ∞)`, negative exactly on `(-∞, 0)`, continuous and smooth.
+* `Real.sqrt_one_sub_tanh_sq` — `√(1 - tanh x ^ 2) = (cosh x)⁻¹`, the hyperbolic secant.
 * `Real.hasDerivAt_tanh`, `Real.deriv_tanh` and `Real.one_sub_tanh_sq` — the derivative of
   `Real.tanh` is `1 / cosh x ^ 2 = 1 - tanh x ^ 2`.
 * `Real.tendsto_tanh_atTop` and `Real.tendsto_tanh_atBot` — `Real.tanh` tends to `±1` at `±∞`.
@@ -81,6 +83,14 @@ theorem _root_.Real.tanh_add (a b : ℝ) :
     exact div_ne_zero hc (mul_ne_zero ha hb)
   rw [eq_div_iff hne, hnum, hden, Real.tanh_eq_sinh_div_cosh (a + b)]
   field_simp
+
+/-- The positive square root of `1 - tanh x ^ 2` is the hyperbolic secant. -/
+@[simp]
+theorem _root_.Real.sqrt_one_sub_tanh_sq (x : ℝ) :
+    √(1 - Real.tanh x ^ 2) = (Real.cosh x)⁻¹ := by
+  simpa only [Real.artanh_tanh, one_div, inv_inv] using
+    (congrArg (fun y : ℝ ↦ y⁻¹)
+      (Real.cosh_artanh ⟨Real.neg_one_lt_tanh x, Real.tanh_lt_one x⟩)).symm
 
 /-- **The hyperbolic tangent is strictly monotone.** It is inverted on its range `(-1, 1)` by
 the strictly monotone `Real.artanh`, so it cannot reverse a strict inequality. -/
