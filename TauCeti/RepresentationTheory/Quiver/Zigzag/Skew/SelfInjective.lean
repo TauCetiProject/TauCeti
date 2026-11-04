@@ -80,7 +80,7 @@ self-injective. No condition on the gauge class of its parameter is required. -/
 theorem moduleInjective_skewZigzagQuotient :
     Module.Injective (skewZigzagQuotient k G c) (skewZigzagQuotient k G c) := by
   let t := selfInjectiveIncidentEdges G hns
-  let _ := moduleFinite_skewZigzagQuotient k G c t
+  let _ := moduleFinite_skewZigzagQuotient k G c hns
   exact (isFrobeniusFunctional_skewZigzagTrace k G c t).moduleInjective_self
 
 /-- Every skew-zigzag relation quotient of a finite graph without isolated vertices is right
@@ -88,7 +88,7 @@ self-injective, expressed using its standard module structure over the opposite 
 theorem moduleInjective_op_skewZigzagQuotient :
     Module.Injective (skewZigzagQuotient k G c)ᵐᵒᵖ (skewZigzagQuotient k G c) := by
   let t := selfInjectiveIncidentEdges G hns
-  let _ := moduleFinite_skewZigzagQuotient k G c t
+  let _ := moduleFinite_skewZigzagQuotient k G c hns
   exact (isFrobeniusFunctional_skewZigzagTrace k G c t).moduleInjective_op_self
 
 end Field
