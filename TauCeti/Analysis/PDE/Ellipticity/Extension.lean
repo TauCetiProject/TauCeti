@@ -12,15 +12,22 @@ public import Mathlib.Analysis.Calculus.ContDiff.RCLike
 public import Mathlib.Topology.Algebra.MetricSpace.Lipschitz
 
 /-!
-# Extending a locally Lipschitz uniformly elliptic field to the whole space
+# Extending a Lipschitz uniformly elliptic field to the whole space
 
-Results about a divergence-form operator on the whole space, such as global `H²` regularity, ask
-for a coefficient field that is uniformly elliptic and Lipschitz everywhere. A field that is only
-uniformly elliptic and locally Lipschitz on an open set `Ω` can be brought into that form near any
-compact `S ⊆ Ω` without changing it there: for a smooth cutoff `χ` equal to one near `S` and
-supported in `Ω`, the field `χ a + (1 - χ) λ I` is uniformly elliptic on the whole space with the
-same constants `λ, Λ`, it is Lipschitz because `χ` vanishes off the compact set where `a` is
-Lipschitz and bounded, and it agrees with `a` where `χ = 1`.
+Results about a divergence-form operator on the whole space or on a half-space, such as global
+`H²` regularity, ask for a coefficient field that is uniformly elliptic and Lipschitz there. A field
+`a` that is uniformly elliptic and Lipschitz only on a set `S`, possibly up to part of its
+boundary, can be brought into that form near a compact set `C` without changing it on `S` near
+`C`. Extend `a` from `S` entrywise by McShane's extension to a Lipschitz field `ā` on the whole
+space, and take a smooth cutoff `χ` equal to one near `C` and supported in an open `U ⊇ C`. The
+field `χ ā + (1 - χ) λ I` is bounded and Lipschitz on the whole space, it agrees with `a` on
+`S ∩ W` for an open `W` with `C ⊆ W ⊆ U`, and it is uniformly elliptic with the same constants
+`λ, Λ` on any prescribed set `T` with `T ∩ U ⊆ S`, such as a half-space that coincides with `S`
+near `C`.
+
+The case of a field that is locally Lipschitz and uniformly elliptic on an open set `Ω`, with
+`C ⊆ Ω` and `T` the whole space, is a corollary: apply the construction with `S` a compact
+neighbourhood of `C` in `Ω`, on which `a` is Lipschitz.
 
 ## Main declarations
 
