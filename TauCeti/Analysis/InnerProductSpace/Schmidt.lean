@@ -46,10 +46,10 @@ vectors.
   on vectors whose coordinates vanish outside or inside a set of indices.
 * `HilbertBasis.inner_eq_zero_of_apply_eq_zero`: the basis vectors with nonzero image are
   orthogonal to the kernel of `T`.
-* `HilbertBasis.orthonormal_inv_norm_smul_apply`: the normalized nonzero images are orthonormal.
 * `HilbertBasis.norm_sub_sum_rankOne_le`: the error of a finite truncation of the Schmidt series.
-* `HilbertBasis.finite_setOf_le_norm_apply` and `HilbertBasis.tendsto_norm_apply_cofinite`: for
-  compact `T`, only finitely many `‖T bᵢ‖` exceed any positive threshold.
+* `Orthonormal.finite_setOf_le_norm_apply` and `Orthonormal.tendsto_norm_apply_cofinite`: for
+  compact `T` and an orthonormal family `(vᵢ)` with pairwise orthogonal images, only finitely many
+  `‖T vᵢ‖` exceed any positive threshold.
 * `HilbertBasis.hasSum_rankOne`: for compact `T`, the Schmidt series
   `∑ᵢ ⟪bᵢ, ·⟫ T bᵢ` converges to `T` in operator norm.
 * `IsCompactOperator.exists_hilbertBasis_pairwise_inner_eq_zero`: a compact operator between
@@ -73,6 +73,57 @@ open scoped InnerProductSpace
 
 variable {𝕜 E F ι : Type*} [RCLike 𝕜] [NormedAddCommGroup E] [InnerProductSpace 𝕜 E]
   [NormedAddCommGroup F] [InnerProductSpace 𝕜 F]
+
+namespace Orthonormal
+
+variable {v : ι → E} (hv : Orthonormal 𝕜 v) {T : E →L[𝕜] F}
+include hv
+
+/-- **Finitely many large singular values.** If `T` is compact and sends the orthonormal
+family `(vᵢ)` to pairwise orthogonal vectors, then only finitely many `‖T vᵢ‖` are at least a
+given `ε > 0`. -/
+theorem finite_setOf_le_norm_apply (hTc : IsCompactOperator T)
+    (hT : Pairwise fun i j ↦ ⟪T (v i), T (v j)⟫_𝕜 = 0) {ε : ℝ} (hε : 0 < ε) :
+    {i | ε ≤ ‖T (v i)‖}.Finite := by
+  -- The images lie in the totally bounded set `T (closedBall 0 1)`, which is covered by
+  -- finitely many balls of radius `ε / 2`.
+  obtain ⟨t, -, ht, hcover⟩ := Metric.finite_approx_of_totallyBounded
+    (hTc.isCompact_closure_image_closedBall 1).totallyBounded (ε / 2) (half_pos hε)
+  have hmem (i : ι) : ∃ y ∈ t, dist (T (v i)) y < ε / 2 := by
+    have : T (v i) ∈ closure (T '' Metric.closedBall 0 1) :=
+      subset_closure ⟨v i, mem_closedBall_zero_iff.mpr (hv.1 i).le, rfl⟩
+    simpa only [Set.mem_iUnion, Metric.mem_ball, exists_prop] using hcover this
+  choose g hgt hgd using hmem
+  refine Set.Finite.of_finite_image (ht.subset (Set.image_subset_iff.mpr fun i _ ↦ hgt i))
+    fun i hi j hj hij ↦ ?_
+  -- Two distinct large images are at distance at least `√2 ε > ε`, so they lie in different
+  -- balls of radius `ε / 2`.
+  by_contra hne
+  have hdist : dist (T (v i)) (T (v j)) < ε := by
+    calc dist (T (v i)) (T (v j)) ≤ dist (T (v i)) (g i) + dist (T (v j)) (g j) := by
+          rw [hij]
+          exact dist_triangle_right _ _ _
+      _ < ε / 2 + ε / 2 := add_lt_add (hgd i) (hgd j)
+      _ = ε := add_halves ε
+  have hsq : ‖T (v i) - T (v j)‖ ^ 2 = ‖T (v i)‖ ^ 2 + ‖T (v j)‖ ^ 2 := by
+    rw [@norm_sub_sq 𝕜, hT hne, map_zero, mul_zero, sub_zero]
+  have hi' : ε ^ 2 ≤ ‖T (v i)‖ ^ 2 := pow_le_pow_left₀ hε.le hi 2
+  have hj' : ε ^ 2 ≤ ‖T (v j)‖ ^ 2 := pow_le_pow_left₀ hε.le hj 2
+  have hlt : ε ^ 2 < ‖T (v i) - T (v j)‖ ^ 2 := by nlinarith
+  rw [dist_eq_norm] at hdist
+  exact hlt.not_ge (pow_le_pow_left₀ (norm_nonneg _) hdist.le 2)
+
+/-- **The singular values of a compact operator tend to zero.** If `T` is compact and sends the
+orthonormal family `(vᵢ)` to pairwise orthogonal vectors, then `‖T vᵢ‖ → 0` along the cofinite
+filter. -/
+theorem tendsto_norm_apply_cofinite (hTc : IsCompactOperator T)
+    (hT : Pairwise fun i j ↦ ⟪T (v i), T (v j)⟫_𝕜 = 0) :
+    Tendsto (fun i ↦ ‖T (v i)‖) cofinite (𝓝 0) :=
+  tendsto_order.2 ⟨fun _ ha ↦ Eventually.of_forall fun _ ↦ ha.trans_le (norm_nonneg _),
+    fun _ hε ↦ eventually_cofinite.2 (by
+      simpa only [not_lt] using hv.finite_setOf_le_norm_apply hTc hT hε)⟩
+
+end Orthonormal
 
 namespace HilbertBasis
 
@@ -148,16 +199,6 @@ theorem inner_eq_zero_of_apply_eq_zero (hT : Pairwise fun i j ↦ ⟪T (b i), T 
   rw [hx, norm_zero, zero_pow two_ne_zero, hasSum_zero_iff_of_nonneg fun _ ↦ by positivity] at h
   simpa [hi] using congrFun h i
 
-/-- **The left singular vectors are orthonormal.** If `T` sends the Hilbert basis `(bᵢ)` to
-pairwise orthogonal vectors, then the normalized nonzero images `‖T bᵢ‖⁻¹ T bᵢ` are
-orthonormal. -/
-theorem orthonormal_inv_norm_smul_apply (hT : Pairwise fun i j ↦ ⟪T (b i), T (b j)⟫_𝕜 = 0) :
-    Orthonormal 𝕜 fun i : {i // T (b i) ≠ 0} ↦ ((‖T (b i)‖⁻¹ : ℝ) : 𝕜) • T (b i) := by
-  refine ⟨fun i ↦ ?_, fun i j hij ↦ ?_⟩
-  · rw [norm_smul, RCLike.norm_ofReal, abs_inv, abs_norm,
-      inv_mul_cancel₀ (norm_ne_zero_iff.mpr i.2)]
-  · simp [inner_smul_left, inner_smul_right, hT (Subtype.coe_ne_coe.mpr hij)]
-
 /-- **Truncation error of the Schmidt series.** Let `T` send the Hilbert basis `(bᵢ)` to pairwise
 orthogonal vectors. If `‖T bᵢ‖ ≤ c` for every `i ∉ s`, then the truncation of the series
 `∑ᵢ ⟪bᵢ, ·⟫ T bᵢ` to `s` approximates `T` within `c` in operator norm. -/
@@ -177,63 +218,17 @@ theorem norm_sub_sum_rankOne_le (hT : Pairwise fun i j ↦ ⟪T (b i), T (b j)�
     · rw [inner_sum, Finset.sum_eq_zero fun j hj ↦ ?_, sub_zero]
       rw [inner_smul_right, b.orthonormal.inner_eq_zero (ne_of_mem_of_not_mem hj hi).symm,
         mul_zero]
-  have hsq : ‖T y‖ ^ 2 ≤ (c * ‖x‖) ^ 2 := by
-    rw [mul_pow]
-    refine hasSum_le (fun i ↦ ?_) (b.hasSum_norm_sq_inner_mul_norm_sq_apply hT y)
-      ((b.hasSum_norm_sq_inner x).mul_left (c ^ 2))
+  have hTy : ‖T y‖ ≤ c * ‖y‖ :=
+    b.norm_apply_le_of_forall_inner_eq_zero hT (s := ↑s) hc fun i hi ↦ by
+      simp [hcoord i, Finset.mem_coe.mp hi]
+  -- Dropping coordinates does not increase the norm.
+  have hyx : ‖y‖ ≤ ‖x‖ := by
+    refine (pow_le_pow_iff_left₀ (norm_nonneg _) (norm_nonneg _) two_ne_zero).mp
+      (hasSum_le (fun i ↦ ?_) (b.hasSum_norm_sq_inner y) (b.hasSum_norm_sq_inner x))
     rw [hcoord i]
-    split_ifs with hi
-    · rw [norm_zero, zero_pow two_ne_zero, zero_mul]
-      positivity
-    · rw [mul_comm]
-      gcongr
-      exact hc i hi
+    split_ifs <;> simp
   rw [hy]
-  exact (pow_le_pow_iff_left₀ (norm_nonneg _) (by positivity) two_ne_zero).mp hsq
-
-/-- **Finitely many large singular values.** If `T` is compact and sends the Hilbert basis
-`(bᵢ)` to pairwise orthogonal vectors, then only finitely many `‖T bᵢ‖` are at least a given
-`ε > 0`. -/
-theorem finite_setOf_le_norm_apply (hTc : IsCompactOperator T)
-    (hT : Pairwise fun i j ↦ ⟪T (b i), T (b j)⟫_𝕜 = 0) {ε : ℝ} (hε : 0 < ε) :
-    {i | ε ≤ ‖T (b i)‖}.Finite := by
-  -- The images lie in the totally bounded set `T (closedBall 0 1)`, which is covered by
-  -- finitely many balls of radius `ε / 2`.
-  obtain ⟨t, -, ht, hcover⟩ := Metric.finite_approx_of_totallyBounded
-    (hTc.isCompact_closure_image_closedBall 1).totallyBounded (ε / 2) (half_pos hε)
-  have hmem (i : ι) : ∃ y ∈ t, dist (T (b i)) y < ε / 2 := by
-    have : T (b i) ∈ closure (T '' Metric.closedBall 0 1) :=
-      subset_closure ⟨b i, mem_closedBall_zero_iff.mpr (b.orthonormal.1 i).le, rfl⟩
-    simpa only [Set.mem_iUnion, Metric.mem_ball, exists_prop] using hcover this
-  choose g hgt hgd using hmem
-  refine Set.Finite.of_finite_image (ht.subset (Set.image_subset_iff.mpr fun i _ ↦ hgt i))
-    fun i hi j hj hij ↦ ?_
-  -- Two distinct large images are at distance at least `√2 ε > ε`, so they lie in different
-  -- balls of radius `ε / 2`.
-  by_contra hne
-  have hdist : dist (T (b i)) (T (b j)) < ε := by
-    calc dist (T (b i)) (T (b j)) ≤ dist (T (b i)) (g i) + dist (T (b j)) (g j) := by
-          rw [hij]
-          exact dist_triangle_right _ _ _
-      _ < ε / 2 + ε / 2 := add_lt_add (hgd i) (hgd j)
-      _ = ε := add_halves ε
-  have hsq : ‖T (b i) - T (b j)‖ ^ 2 = ‖T (b i)‖ ^ 2 + ‖T (b j)‖ ^ 2 := by
-    rw [@norm_sub_sq 𝕜, hT hne, map_zero, mul_zero, sub_zero]
-  have hi' : ε ^ 2 ≤ ‖T (b i)‖ ^ 2 := pow_le_pow_left₀ hε.le hi 2
-  have hj' : ε ^ 2 ≤ ‖T (b j)‖ ^ 2 := pow_le_pow_left₀ hε.le hj 2
-  have hlt : ε ^ 2 < ‖T (b i) - T (b j)‖ ^ 2 := by nlinarith
-  rw [dist_eq_norm] at hdist
-  exact hlt.not_ge (pow_le_pow_left₀ (norm_nonneg _) hdist.le 2)
-
-/-- **The singular values of a compact operator tend to zero.** If `T` is compact and sends the
-Hilbert basis `(bᵢ)` to pairwise orthogonal vectors, then `‖T bᵢ‖ → 0` along the cofinite
-filter. -/
-theorem tendsto_norm_apply_cofinite (hTc : IsCompactOperator T)
-    (hT : Pairwise fun i j ↦ ⟪T (b i), T (b j)⟫_𝕜 = 0) :
-    Tendsto (fun i ↦ ‖T (b i)‖) cofinite (𝓝 0) :=
-  tendsto_order.2 ⟨fun _ ha ↦ Eventually.of_forall fun _ ↦ ha.trans_le (norm_nonneg _),
-    fun _ hε ↦ eventually_cofinite.2 (by
-      simpa only [not_lt] using b.finite_setOf_le_norm_apply hTc hT hε)⟩
+  exact hTy.trans (by gcongr)
 
 /-- **The Schmidt series converges in operator norm.** If `T` is compact and sends the Hilbert
 basis `(bᵢ)` to pairwise orthogonal vectors, then `T = ∑ᵢ ⟪bᵢ, ·⟫ T bᵢ`, the sum converging in
@@ -245,7 +240,8 @@ theorem hasSum_rankOne (hTc : IsCompactOperator T)
   rw [HasSum, SummationFilter.unconditional_filter]
   refine Metric.tendsto_atTop.2 fun ε hε ↦ ?_
   -- Once a truncation contains every index with `‖T bᵢ‖ ≥ ε / 2`, its error is at most `ε / 2`.
-  obtain ⟨N, hN⟩ := (b.finite_setOf_le_norm_apply hTc hT (half_pos hε)).exists_finset_coe
+  obtain ⟨N, hN⟩ :=
+    (b.orthonormal.finite_setOf_le_norm_apply hTc hT (half_pos hε)).exists_finset_coe
   refine ⟨N, fun s hs ↦ ?_⟩
   rw [dist_eq_norm']
   refine (b.norm_sub_sum_rankOne_le hT (half_pos hε).le fun i hi ↦ ?_).trans_lt (half_lt_self hε)

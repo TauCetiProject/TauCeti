@@ -155,7 +155,7 @@ theorem IsCompactOperator.exists_orthonormal_hasSum_rankOne {T : E →L[𝕜] F}
   obtain ⟨s, b, -, hT⟩ := hTc.exists_hilbertBasis_pairwise_inner_eq_zero
   -- Keep the basis vectors with nonzero image and normalize their images.
   set J : Set s := {i | T (b i) ≠ 0}
-  have hnull := b.tendsto_norm_apply_cofinite hTc hT
+  have hnull := b.orthonormal.tendsto_norm_apply_cofinite hTc hT
   have hJ : J.Countable := by
     have h := hnull.countable_compl_preimage_ker
     rw [ker_nhds] at h
@@ -164,15 +164,14 @@ theorem IsCompactOperator.exists_orthonormal_hasSum_rankOne {T : E →L[𝕜] F}
     hi (by simp [h])
   refine ⟨J, fun i ↦ b i, fun i ↦ ((‖T (b i)‖⁻¹ : ℝ) : 𝕜) • T (b i), fun i ↦ ‖T (b i)‖,
     hJ.to_subtype, b.orthonormal.comp _ Subtype.val_injective,
-    b.orthonormal_inv_norm_smul_apply hT, fun i ↦ norm_pos_iff.mpr i.2,
+    TauCeti.orthonormal_inv_norm_smul_of_pairwise_inner_eq_zero (v := T ∘ b) hT,
+    fun i ↦ norm_pos_iff.mpr i.2,
     hnull.comp Subtype.val_injective.tendsto_cofinite, ?_, fun n ↦ ?_⟩
   · have hterm (i : J) : ((‖T (b i)‖ : ℝ) : 𝕜) • rankOne 𝕜 (((‖T (b i)‖⁻¹ : ℝ) : 𝕜) • T (b i))
         (b i) = rankOne 𝕜 (T (b i)) (b i) := by
       have hσ : ‖T (b i)‖ ≠ 0 := norm_ne_zero_iff.mpr i.2
       ext x
-      simp only [smul_apply, rankOne_apply, smul_smul]
-      congr 1
-      rw [mul_left_comm, ← RCLike.ofReal_mul, mul_inv_cancel₀ hσ, RCLike.ofReal_one, mul_one]
+      simp [smul_smul, hσ]
     simp_rw [hterm]
     exact (hasSum_subtype_iff_of_support_subset hsupp).mpr (b.hasSum_rankOne hTc hT)
   · rw [b.singularValue_eq_decreasingRearrangement hT n]

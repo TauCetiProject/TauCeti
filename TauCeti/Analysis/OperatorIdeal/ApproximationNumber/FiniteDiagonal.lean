@@ -13,7 +13,7 @@ public import TauCeti.Analysis.OperatorIdeal.ApproximationNumber.Schmidt
 
 A bounded map `T : E →L[𝕜] F` is diagonal with respect to an orthonormal basis `(eᵢ)` of `E` when
 the images `T eᵢ` are pairwise orthogonal. Then `‖T x‖² = ∑ᵢ ‖⟪eᵢ, x⟫‖² ‖T eᵢ‖²`
-(`LinearMap.norm_apply_sq_eq_sum_of_pairwise_inner_eq_zero`), and the approximation numbers of
+(`HilbertBasis.hasSum_norm_sq_inner_mul_norm_sq_apply`), and the approximation numbers of
 `T` are the norms `‖T eᵢ‖` listed in nonincreasing order, followed by zeros. No relation between
 the dimensions of `E` and `F` is needed, and the target need be neither complete nor
 finite-dimensional.

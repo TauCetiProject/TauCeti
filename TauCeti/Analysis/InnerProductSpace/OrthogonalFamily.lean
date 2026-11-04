@@ -16,8 +16,8 @@ orthogonal-series results for subspaces to apply directly to a vector family, in
 zero terms: the span of a zero vector is the zero subspace. In particular, the Pythagorean
 identity `OrthogonalFamily.norm_sum` gives `‖∑ i ∈ s, v i‖² = ∑ i ∈ s, ‖v i‖²` for pairwise
 orthogonal vectors, and passing to the limit gives the same identity for a convergent series of
-pairwise orthogonal vectors. Applied to the images of an orthonormal basis under a linear map `T`,
-it gives `‖T x‖² = ∑ᵢ ‖⟪eᵢ, x⟫‖² ‖T eᵢ‖²` whenever these images are pairwise orthogonal.
+pairwise orthogonal vectors. Normalizing the nonzero vectors of a pairwise orthogonal family gives
+an orthonormal family.
 
 Orthogonality also gives linear independence: a nonzero vector followed by a linearly independent
 family of vectors orthogonal to it is linearly independent
@@ -59,28 +59,16 @@ theorem hasSum_norm_sq_of_pairwise_inner_eq_zero {v : ι → E}
   ((Filter.Tendsto.norm hy).pow 2).congr fun s ↦
     norm_sum_sq_eq_sum_norm_sq_of_pairwise_inner_eq_zero hv s
 
+/-- **Normalizing an orthogonal family.** If the vectors `vᵢ` are pairwise orthogonal, then the
+normalized nonzero vectors `‖vᵢ‖⁻¹ vᵢ` are orthonormal. -/
+theorem orthonormal_inv_norm_smul_of_pairwise_inner_eq_zero {v : ι → E}
+    (hv : Pairwise fun i j ↦ ⟪v i, v j⟫_𝕜 = 0) :
+    Orthonormal 𝕜 fun i : {i // v i ≠ 0} ↦ ((‖v i‖⁻¹ : ℝ) : 𝕜) • v i := by
+  refine ⟨fun i ↦ ?_, fun i j hij ↦ ?_⟩
+  · simp [norm_smul, i.2]
+  · simp [inner_smul_left, inner_smul_right, hv (Subtype.coe_ne_coe.mpr hij)]
+
 end TauCeti
-
-namespace LinearMap
-
-open scoped InnerProductSpace
-
-variable {𝕜 E F ι : Type*} [RCLike 𝕜] [NormedAddCommGroup E] [InnerProductSpace 𝕜 E]
-  [NormedAddCommGroup F] [InnerProductSpace 𝕜 F] [Fintype ι]
-
-/-- **Pythagoras for a diagonal map.** If `T` sends an orthonormal basis `(eᵢ)` to pairwise
-orthogonal vectors, then `‖T x‖² = ∑ᵢ ‖⟪eᵢ, x⟫‖² ‖T eᵢ‖²`. -/
-theorem norm_apply_sq_eq_sum_of_pairwise_inner_eq_zero (T : E →ₗ[𝕜] F)
-    (e : OrthonormalBasis ι 𝕜 E) (hT : Pairwise fun i j ↦ ⟪T (e i), T (e j)⟫_𝕜 = 0) (x : E) :
-    ‖T x‖ ^ 2 = ∑ i, ‖⟪e i, x⟫_𝕜‖ ^ 2 * ‖T (e i)‖ ^ 2 := by
-  have hv : Pairwise fun i j ↦ ⟪⟪e i, x⟫_𝕜 • T (e i), ⟪e j, x⟫_𝕜 • T (e j)⟫_𝕜 = 0 :=
-    fun i j hij ↦ by simp [inner_smul_left, inner_smul_right, hT hij]
-  conv_lhs => rw [← e.sum_repr' x, map_sum]
-  simp only [map_smul]
-  rw [TauCeti.norm_sum_sq_eq_sum_norm_sq_of_pairwise_inner_eq_zero hv]
-  simp [norm_smul, mul_pow]
-
-end LinearMap
 
 namespace LinearIndependent
 
