@@ -67,7 +67,7 @@ theorem sl2BlockSL_mem_hopfIdealPointsSubgroup
         commutes' := by intro z; simp }
     have hz := (GeneralLinear.mem_hopfIdealPointsSubgroup_iff n I K _).mp
       (hfield K (Matrix.SpecialLinearGroup.map f.toRingHom u)) x hx
-    rw [← map_sl2BlockSL, AlgHom.toRingHom_eq_coe,
+    simp only [← map_sl2BlockSL, AlgHom.toRingHom_eq_coe,
       ← GeneralLinear.mapValue_pointsMulEquiv_symm_apply,
       AlgHom.mapValue_apply, ofConv_toConv, AlgHom.comp_apply] at hz
     -- The prime quotient embeds in its fraction field, so zero evaluation means membership in p.
@@ -76,17 +76,8 @@ theorem sl2BlockSL_mem_hopfIdealPointsSubgroup
       (IsFractionRing.injective (U ⧸ p) K) (hz.trans (map_zero _).symm)
     exact (Ideal.Quotient.eq_zero_iff_mem).mp hquot
   let f := ((SpecialLinear.pointsMulEquiv (R := ℤ) (A := R) 2).symm g).ofConv
-  have hu : Matrix.SpecialLinearGroup.map f.toRingHom u = g := by
-    -- The universal point is the identity coordinate map; evaluation at f recovers g.
-    dsimp only [u]
-    rw [← SpecialLinear.pointsMulEquiv_mapValue ℤ 2 f]
-    rw [AlgHom.mapValue_apply]
-    have heval : toConv (f.comp (AlgHom.id ℤ U)) =
-        (SpecialLinear.pointsMulEquiv (A := R) ℤ 2).symm g := by
-      apply ofConv_injective
-      ext x
-      rfl
-    rw [heval, MulEquiv.apply_symm_apply]
+  have hu : Matrix.SpecialLinearGroup.map f.toRingHom u = g :=
+    SpecialLinear.map_pointsMulEquiv_id ℤ 2 g
   have h := GeneralLinear.map_mem_hopfIdealPointsSubgroup n I f huniv
   rw [map_sl2BlockSL] at h
   exact hu ▸ h
