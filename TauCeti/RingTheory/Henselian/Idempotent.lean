@@ -7,6 +7,7 @@ module
 
 public import Mathlib.RingTheory.Artinian.Module
 public import Mathlib.RingTheory.Henselian
+public import Mathlib.RingTheory.Idempotents
 public import TauCeti.RingTheory.Ideal.GoingUp
 public import TauCeti.RingTheory.Idempotents.Jacobson
 import Mathlib.RingTheory.Nakayama
@@ -142,6 +143,22 @@ theorem existsUnique_isIdempotentElem_mk_eq (J : Ideal S) [HenselianRing S J] {t
   exact Ideal.injOn_quotient_mk_isIdempotentElem
     (by simpa only [Ideal.jacobson_bot] using (HenselianRing.jac (R := S) (I := J))) he' he
     (h.trans (Ideal.Quotient.eq.mpr hea).symm)
+
+/-- A finite complete family of orthogonal idempotents lifts uniquely through a henselian
+quotient. In particular, a finite clopen decomposition of the closed fibre lifts to the ring. -/
+theorem _root_.CompleteOrthogonalIdempotents.existsUnique_lift_of_henselian
+    {ι : Type*} [Fintype ι] {J : Ideal S} [HenselianRing S J] {e : ι → S ⧸ J}
+    (he : CompleteOrthogonalIdempotents e) :
+    ∃! f : ι → S, CompleteOrthogonalIdempotents f ∧ ∀ i, Ideal.Quotient.mk J (f i) = e i := by
+  choose f hf hfe using fun i ↦ (existsUnique_isIdempotentElem_mk_eq J (he.idem i)).exists
+  have hinj := Ideal.injOn_quotient_mk_isIdempotentElem
+    (by simpa only [Ideal.jacobson_bot] using (HenselianRing.jac (R := S) (I := J)))
+  have hortho : OrthogonalIdempotents f := ⟨hf, fun i j hij ↦
+    hinj ((hf i).mul (hf j)) .zero (by simp [hfe, he.ortho hij])⟩
+  refine ⟨f, ⟨⟨hortho, ?_⟩, hfe⟩, ?_⟩
+  · exact hinj hortho.isIdempotentElem_sum .one (by simp [hfe, he.complete])
+  · rintro g ⟨hg, hge⟩
+    exact funext fun i ↦ hinj (hg.idem i) (hf i) ((hge i).trans (hfe i).symm)
 
 /-- **Locality from the idempotents.** A nontrivial commutative ring that is Henselian along an
 ideal `J` with `S ⧸ J` Artinian, and whose only idempotents are `0` and `1`, is local. -/
