@@ -83,7 +83,7 @@ theorem exists_surjective_localizationAway (f : R →+* S) (hf : f.FiniteType)
 
 /-- In a commuting square with injective bottom map and a localization on the left,
 a single denominator annihilates the finitely generated kernel of the top map. -/
-theorem exists_mul_ker_eq_zero_of_injective (f : R →+* S) (hker : (ker f).FG)
+theorem exists_mul_ker_eq_zero_of_injective_localization (f : R →+* S) (hker : (ker f).FG)
     (M : Submonoid R) {Rm T : Type*} [CommRing Rm] [CommRing T]
     [Algebra R Rm] [IsLocalization M Rm] (g : Rm →+* T) (k : S →+* T)
     (hcomm : g.comp (algebraMap R Rm) = k.comp f) (hg : Function.Injective g) :
@@ -108,7 +108,7 @@ theorem exists_injective_localizationAway (f : R →+* S) (hker : (ker f).FG)
     (h : Function.Injective (IsLocalization.map (S := Localization M)
       (Localization (M.map f)) f (Submonoid.le_comap_map M))) :
     ∃ r ∈ M, Function.Injective (Localization.awayMap f r) := by
-  obtain ⟨r, hr⟩ := f.exists_mul_ker_eq_zero_of_injective hker M
+  obtain ⟨r, hr⟩ := f.exists_mul_ker_eq_zero_of_injective_localization hker M
     (IsLocalization.map (Localization (M.map f)) f (Submonoid.le_comap_map M))
     (algebraMap S (Localization (M.map f))) (IsLocalization.map_comp _) h
   refine ⟨r, r.2, (IsLocalization.Away.map_injective_iff (S := Localization.Away (r : R))
@@ -174,9 +174,9 @@ theorem exists_bijective_localizationAway_of_finitePresentation (f : R →+* S)
     IsLocalization.localization_isScalarTower_of_submonoid_le Sa
       (Localization (M.map f)) _ _ hleS
   -- One further denominator kills this finite kernel.
-  obtain ⟨b, hb⟩ := fa.exists_mul_ker_eq_zero_of_injective hker
+  obtain ⟨b, hb⟩ := fa.exists_mul_ker_eq_zero_of_injective_localization hker
     (M.map (algebraMap R Ra)) g (algebraMap Sa (Localization (M.map f)))
-    (f.localizationMap_comp_algebraMap_away M a) h.1
+    (f.map_comp_algebraMap_eq_algebraMap_comp_awayMap M a) h.1
   obtain ⟨t, ht, hbt⟩ := b.2
   refine ⟨a * t, M.mul_mem ha ht, ?_,
     Localization.awayMap_surjective_of_dvd f (dvd_mul_right a t) hsurj⟩

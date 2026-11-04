@@ -64,7 +64,7 @@ Huber namespace, alongside `TauCeti/RingTheory/Localization/DenIdeal.lean`.
   `f` carries `R` into `R'` and `T` into `T'`.
 * `IsLocalization.Away.isSMulRegular_algebraMap`: an element whose annihilator is killed by `r`
   becomes a nonzerodivisor after inverting `r`.
-* `RingHom.localizationMap_comp_algebraMap_away`: localization maps commute with away maps
+* `RingHom.map_comp_algebraMap_eq_algebraMap_comp_awayMap`: localization maps commute with away maps
   through compatible algebra towers.
 
 ## Provenance
@@ -478,7 +478,7 @@ variable {R S : Type*} [CommRing R] [CommRing S]
 
 /-- Localization maps commute with `Localization.awayMap` through compatible algebra towers.
 Such towers arise, for example, when `Submonoid.powers a ≤ M`. -/
-theorem localizationMap_comp_algebraMap_away (f : R →+* S) (M : Submonoid R) (a : R)
+theorem map_comp_algebraMap_eq_algebraMap_comp_awayMap (f : R →+* S) (M : Submonoid R) (a : R)
     {Rm Sm : Type*} [CommRing Rm] [CommRing Sm]
     [Algebra R Rm] [IsLocalization M Rm] [Algebra S Sm] [IsLocalization (M.map f) Sm]
     [Algebra (Localization.Away a) Rm] [IsScalarTower R (Localization.Away a) Rm]
