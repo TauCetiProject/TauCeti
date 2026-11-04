@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.GroupTheory.FreeGroup.Reduce
+import Mathlib.GroupTheory.FreeGroup.CyclicallyReduced
 
 /-!
 # Reduced words in free groups
@@ -71,6 +72,18 @@ theorem IsReduced.append_append_invRev {w u : List (α × Bool)} (hw : IsReduced
     rw [Option.mem_def.mp hx] at this
     cases x; cases z
     simp_all [Bool.eq_not]
+
+/-- A nonempty reduced word is never its own formal inverse: otherwise it would represent an
+element of order at most two of the torsion-free group `FreeGroup α`. -/
+theorem IsReduced.invRev_ne_self {w : List (α × Bool)} (hw : IsReduced w) (hw₀ : w ≠ []) :
+    FreeGroup.invRev w ≠ w := by
+  intro h
+  have hsq : mk w ^ 2 = 1 := by
+    rw [pow_two]
+    nth_rw 1 [← h]
+    rw [← inv_mk, inv_mul_cancel]
+  rw [pow_eq_one_iff_left (Nat.succ_ne_zero 1), one_eq_mk] at hsq
+  exact hw₀ (hw.eq_of_mk_eq IsReduced.nil hsq)
 
 section Prefix
 
