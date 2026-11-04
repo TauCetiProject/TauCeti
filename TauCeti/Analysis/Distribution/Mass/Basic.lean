@@ -323,6 +323,12 @@ theorem mass_comp_monoCLM {Ω' : Opens E} (h : Ω' ≤ Ω) :
     have hψ : ι ψ = φ := TestFunction.ext fun x => by simp [hι, ψ]
     simpa [hψ] using enorm_le_mass (f := f ∘ ι) (φ := ψ) hφ
 
+/-- Restriction to an open subset does not increase mass. -/
+theorem mass_comp_monoCLM_le {Ω' : Opens E} (h : Ω' ≤ Ω) :
+    mass (f ∘ (TestFunction.monoCLM ℝ : 𝓓^{n}(Ω', F) →L[ℝ] 𝓓^{n}(Ω, F))) ≤ mass f := by
+  rw [mass_comp_monoCLM h]
+  exact localMass_le_mass
+
 /-- The local mass of an open restriction is the local mass on the intersection with its domain.
 The testing set `U` need not be open or measurable. -/
 theorem localMass_comp_monoCLM {Ω' : Opens E} (f : 𝓓^{n}(Ω, F) → V) (h : Ω' ≤ Ω) (U : Set E) :

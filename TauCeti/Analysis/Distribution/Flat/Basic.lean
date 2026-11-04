@@ -97,10 +97,11 @@ theorem normalFlatMass_eq_top_iff : normalFlatMass T = ⊤ ↔ ¬ IsNormal T := 
 
 /-- The triangle inequality, including infinite flat masses. -/
 theorem normalFlatMass_add_le : normalFlatMass (T + U) ≤ normalFlatMass T + normalFlatMass U := by
-  conv_rhs => simp only [normalFlatMass, ENNReal.iInf_add, ENNReal.add_iInf]
-  refine le_iInf fun R => le_iInf fun S => le_iInf fun hR => le_iInf fun hS =>
-    le_iInf fun hU => le_iInf fun R' => le_iInf fun S' => le_iInf fun hR' =>
-    le_iInf fun hS' => le_iInf fun hT => ?_
+  rw [← tsub_le_iff_right]
+  refine le_normalFlatMass_iff.mpr fun R S hR hS hT => ?_
+  rw [tsub_le_iff_right, ← tsub_le_iff_left]
+  refine le_normalFlatMass_iff.mpr fun R' S' hR' hS' hU => ?_
+  rw [tsub_le_iff_left]
   have hdecomp : T + U = (R + R') + (S + S') ∘L extDerivCLM := by
     rw [hT, hU, add_comp]
     abel
@@ -110,7 +111,7 @@ theorem normalFlatMass_add_le : normalFlatMass (T + U) ≤ normalFlatMass T + no
     normalFlatMass (T + U) ≤ mass (R + R') + mass (S + S') :=
       normalFlatMass_le _ _ (hR.add hR') (hS.add hS') hdecomp
     _ ≤ (mass R + mass R') + (mass S + mass S') := add_le_add hmassR hmassS
-    _ = (mass R' + mass S') + (mass R + mass S) := by ac_rfl
+    _ = (mass R + mass S) + (mass R' + mass S') := by ac_rfl
 
 /-- Scaling a normal decomposition bounds the scaled flat mass. -/
 private theorem normalFlatMass_smul_le (a : ℝ) :
@@ -118,9 +119,9 @@ private theorem normalFlatMass_smul_le (a : ℝ) :
   by_cases ha : a = 0
   · simp [ha]
   have ha0 : ‖a‖ₑ ≠ 0 := by simpa using ha
-  conv_rhs => simp only [normalFlatMass, ENNReal.mul_iInf_of_ne ha0 enorm_ne_top]
-  refine le_iInf fun R => le_iInf fun S => le_iInf fun hR => le_iInf fun hS =>
-    le_iInf fun hT => ?_
+  apply (ENNReal.div_le_iff' ha0 enorm_ne_top).mp
+  refine le_normalFlatMass_iff.mpr fun R S hR hS hT => ?_
+  apply (ENNReal.div_le_iff' ha0 enorm_ne_top).mpr
   have h := normalFlatMass_le (a • R) (a • S) (hR.smul a) (hS.smul a) (T := a • T)
     (by rw [hT, smul_add, smul_comp])
   simpa only [FunLike.coe_smul, mass_smul, mul_add] using h
@@ -161,10 +162,9 @@ theorem enorm_apply_le_normalFlatMass_mul (T : 𝓓(Ω, E [⋀^Fin k]→L[ℝ] F
       (enorm_eq_zero.mp (le_antisymm ((le_max_left _ _).trans hC.le) bot_le))
     simp [hω]
   have hCtop : C ≠ ⊤ := by simp [C]
-  dsimp only [C] at hC hCtop
-  conv_rhs => simp only [normalFlatMass, ENNReal.iInf_mul_of_ne hC hCtop]
-  refine le_iInf fun R => le_iInf fun S => le_iInf fun _ => le_iInf fun _ =>
-    le_iInf fun heq => ?_
+  apply (ENNReal.div_le_iff hC hCtop).mp
+  refine le_normalFlatMass_iff.mpr fun R S _ _ heq => ?_
+  apply (ENNReal.div_le_iff hC hCtop).mpr
   rw [heq, add_apply, comp_apply]
   calc
     ‖R ω + S (extDerivCLM ω)‖ₑ ≤ ‖R ω‖ₑ + ‖S (extDerivCLM ω)‖ₑ := enorm_add_le _ _
@@ -187,9 +187,7 @@ degree; degree-zero currents have zero boundary in the ordinary current complex.
 theorem normalFlatMass_comp_extDerivCLM_le
     (T : 𝓓(Ω, E [⋀^Fin (k + 1)]→L[ℝ] F) →L[ℝ] V) :
     normalFlatMass (T ∘L extDerivCLM) ≤ normalFlatMass T := by
-  rw [normalFlatMass]
-  refine le_iInf fun R => le_iInf fun S => le_iInf fun hR => le_iInf fun hS =>
-    le_iInf fun heq => ?_
+  refine le_normalFlatMass_iff.mpr fun R S hR _ heq => ?_
   have hb : T ∘L extDerivCLM = 0 + R ∘L extDerivCLM := by
     simp [heq, add_comp, comp_assoc, extDerivCLM_comp_extDerivCLM]
   exact (normalFlatMass_le 0 R isNormal_zero hR hb).trans (by simp)
@@ -199,18 +197,12 @@ as a distribution, not restriction to a Borel set, whose boundary may have infin
 theorem normalFlatMass_comp_monoCLM_le {Ω' : Opens E} (h : Ω' ≤ Ω) :
     normalFlatMass (T ∘L (monoCLM ℝ : 𝓓(Ω', E [⋀^Fin k]→L[ℝ] F) →L[ℝ] _)) ≤
       normalFlatMass T := by
-  rw [normalFlatMass]
-  refine le_iInf fun R => le_iInf fun S => le_iInf fun hR => le_iInf fun hS =>
-    le_iInf fun heq => ?_
+  refine le_normalFlatMass_iff.mpr fun R S hR hS heq => ?_
   have hdecomp : T ∘L (monoCLM ℝ : 𝓓(Ω', E [⋀^Fin k]→L[ℝ] F) →L[ℝ] _) =
       (R ∘L monoCLM ℝ) + (S ∘L monoCLM ℝ) ∘L extDerivCLM := by
     rw [comp_monoCLM_comp_extDerivCLM h, ← add_comp, heq]
-  have hmass (j : ℕ) (A : 𝓓(Ω, E [⋀^Fin j]→L[ℝ] F) →L[ℝ] V) :
-      mass (A ∘L (monoCLM ℝ : 𝓓(Ω', E [⋀^Fin j]→L[ℝ] F) →L[ℝ] _)) ≤ mass A := by
-    rw [coe_comp, mass_comp_monoCLM h]
-    exact localMass_le_mass
   exact (normalFlatMass_le _ _ (hR.comp_monoCLM h) (hS.comp_monoCLM h) hdecomp).trans
-    (add_le_add (hmass k R) (hmass (k + 1) S))
+    (add_le_add (mass_comp_monoCLM_le h) (mass_comp_monoCLM_le h))
 
 /-- Flat convergence implies convergence on each fixed test form. No operator topology on
 continuous linear maps is used for this weak-convergence statement. -/
