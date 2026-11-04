@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.CStarAlgebra.Hom
+public import TauCeti.Analysis.CStarAlgebra.Hom
 public import TauCeti.Analysis.CStarAlgebra.Ideal
 public import TauCeti.Analysis.Normed.Ring.TwoSidedIdeal
 import Mathlib.Algebra.Order.Interval.Set.Group
@@ -411,10 +411,6 @@ namespace NonUnitalStarAlgHom
 
 variable {A B : Type*} [NonUnitalCStarAlgebra A] [NonUnitalCStarAlgebra B] (φ : A →⋆ₙₐ[ℂ] B)
 
-/-- The two-sided ideal kernel of any `⋆`-homomorphism between C⋆-algebras is closed. -/
-instance isClosed_ker : IsClosed (TwoSidedIdeal.ker φ : Set A) :=
-  TwoSidedIdeal.isClosed_ker (map_continuous φ)
-
 /-- The injective `⋆`-homomorphism `A ⧸ ker φ →⋆ₙₐ[ℂ] B` factored from `φ : A →⋆ₙₐ[ℂ] B`. -/
 def quotientKerHom : A ⧸ TwoSidedIdeal.ker φ →⋆ₙₐ[ℂ] B :=
   TwoSidedIdeal.Quotient.liftStarAlgHom (TwoSidedIdeal.ker φ) φ fun _ ha =>
@@ -501,10 +497,6 @@ end NonUnitalStarAlgHom
 namespace StarAlgHom
 
 variable {A B : Type*} [CStarAlgebra A] [CStarAlgebra B] (φ : A →⋆ₐ[ℂ] B)
-
-/-- The two-sided ideal kernel of any unital `⋆`-homomorphism between C⋆-algebras is closed. -/
-instance isClosed_ker : IsClosed (TwoSidedIdeal.ker φ : Set A) :=
-  TwoSidedIdeal.isClosed_ker (map_continuous φ)
 
 /-- Every unital `⋆`-algebra homomorphism between C⋆-algebras has closed range as a subset of `B`.
 -/
