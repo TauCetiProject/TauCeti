@@ -21,7 +21,7 @@ measurable additive group with a measure invariant under left translations and n
 `MeasureTheory.convolutionExists_of_integrable_of_ae_norm_le`). No topology on the group or
 sigma-finiteness of the measure is required. For two integrable scalar kernels and an
 essentially bounded function, convolution is associative at every point; this associativity
-statement additionally assumes sigma-finiteness.
+statement additionally assumes s-finiteness.
 
 A continuous linear map `L : F →L[𝕜] F'` between real or complex Banach spaces commutes with
 convolution against a scalar kernel `ρ : G → 𝕜`: `ρ ⋆ (L ∘ f) = L (ρ ⋆ f)` at every point where
