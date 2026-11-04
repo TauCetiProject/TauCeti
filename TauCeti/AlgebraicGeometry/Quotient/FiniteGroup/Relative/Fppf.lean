@@ -126,7 +126,7 @@ theorem isPullback_invariantSubalgebraPresheaf_relativeSpecπ_of_free :
   have hchart : IsPullback ι (projection Γ(A.X, U.toOpens) G)
       (invariantSubalgebraPresheaf ρ).relativeSpecπ (e.hom ≫ ιQ) :=
     ((isPullback_projection_relativeSpecπ (ρ := ρ) U).of_iso (Iso.refl _) e.symm (Iso.refl _)
-      (Iso.refl _) (by simp [e]) ((Category.comp_id _).trans (Category.id_comp _).symm)
+      (Iso.refl _) (by simp [e]) (by cat_disch)
       (by rw [Iso.symm_hom, Iso.inv_hom_id_assoc]; exact Category.comp_id _) (by simp)).flip
   have hpaste :=
     (isPullback_of_free Γ(A.X, U.toOpens) G (free_sectionsMulSemiringAction hG U)).flip.paste_horiz
