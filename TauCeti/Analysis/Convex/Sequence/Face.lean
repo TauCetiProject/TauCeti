@@ -126,6 +126,20 @@ def supportingFace (h : ℕ → WithTop ℝ) (σ c : ℝ) : Set ℕ :=
     n ∈ supportingFace h σ c ↔ h n = ((c + σ * n : ℝ) : WithTop ℝ) :=
   Iff.rfl
 
+/-- A real affine lower bound of strictly larger slope makes every contact set at a smaller
+slope finite. Neither convexity nor attainment of the supporting value is required. -/
+theorem IsSupportingLine.finite_supportingFace {h : ℕ → WithTop ℝ} {τ d σ : ℝ}
+    (hd : IsSupportingLine h τ d) (hστ : σ < τ) (c : ℝ) :
+    (supportingFace h σ c).Finite := by
+  obtain ⟨N, hN⟩ := exists_nat_gt ((c - d) / (τ - σ))
+  apply (Set.finite_Iio N).subset
+  intro n hn
+  have hbound := isSupportingLine_iff_forall.mp hd n
+  rw [mem_supportingFace.mp hn, WithTop.coe_le_coe] at hbound
+  have hN' := (div_lt_iff₀ (sub_pos.mpr hστ)).mp hN
+  have hn' : (n : ℝ) < N := by nlinarith
+  exact_mod_cast hn'
+
 /-- The intercept of a line of slope `σ` through a point of a height sequence bounds its
 supporting value of slope `σ`. The line need not be a supporting line. -/
 theorem supportingValue_le_coe_of_mem_supportingFace {h : ℕ → WithTop ℝ} {σ c : ℝ} {n : ℕ}
@@ -618,6 +632,11 @@ theorem IsSupportingLine.finite_supportingFace {h : ℕ → WithTop ℝ} {τ d �
 namespace IsLowerConvexEnvelope
 
 variable {a h : ℕ → WithTop ℝ} {σ c : ℝ}
+
+/-- A height sequence and its lower convex envelope have the same supporting lines. -/
+theorem isSupportingLine_iff (hh : IsLowerConvexEnvelope a h) :
+    IsSupportingLine h σ c ↔ IsSupportingLine a σ c := by
+  rw [TauCeti.isSupportingLine_iff, TauCeti.isSupportingLine_iff, hh.supportingValue_eq]
 
 /-- Every contact point of a supporting line with the point heights is a contact point with
 their lower convex envelope. -/
