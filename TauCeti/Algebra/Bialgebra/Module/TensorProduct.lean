@@ -310,22 +310,6 @@ variable {M N} in
   simp
 
 variable {M N} in
-/-- Tensoring a composite intertwiner on the left with `LinearMap.id` on the right splits as a
-composite of `tensorMap`s. -/
-theorem tensorMap_comp_id (f : M →ₗ[H] M') (f' : M' →ₗ[H] M'') :
-    tensorMap R H (f'.comp f) (LinearMap.id : N →ₗ[H] N) =
-      (tensorMap R H f' LinearMap.id).comp (tensorMap R H f LinearMap.id) := by
-  rw [← tensorMap_comp, LinearMap.id_comp]
-
-variable {M N} in
-/-- Tensoring `LinearMap.id` on the left with a composite intertwiner on the right splits as a
-composite of `tensorMap`s. -/
-theorem tensorMap_id_comp (g : N →ₗ[H] N') (g' : N' →ₗ[H] N'') :
-    tensorMap R H (LinearMap.id : M →ₗ[H] M) (g'.comp g) =
-      (tensorMap R H LinearMap.id g').comp (tensorMap R H LinearMap.id g) := by
-  rw [← tensorMap_comp, LinearMap.id_comp]
-
-variable {M N} in
 /-- Tensor products of module isomorphisms, for the coproduct actions. -/
 noncomputable def tensorCongr (f : M ≃ₗ[H] M') (g : N ≃ₗ[H] N') :
     Tensor R H M N ≃ₗ[H] Tensor R H M' N' :=

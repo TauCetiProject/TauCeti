@@ -464,21 +464,9 @@ theorem IsClebschGordanChannel.val_index {m n k : ℕ} (h : IsClebschGordanChann
     (h.index : ℕ) = (m + n - k) / 2 := (rfl)
 
 /-- The constructive index of an admissible channel recovers its highest weight `k`. -/
-@[simp]
-theorem IsClebschGordanChannel.sub_two_mul_index {m n k : ℕ} (h : IsClebschGordanChannel m n k) :
-    m + n - 2 * (h.index : ℕ) = k := by
+@[simp] theorem IsClebschGordanChannel.sub_two_mul_index {m n k : ℕ}
+    (h : IsClebschGordanChannel m n k) : m + n - 2 * (h.index : ℕ) = k := by
   rcases h with ⟨j, rfl⟩; have := j.isLt; simp only [index]; omega
-
-/-- Cast `h.index` along equalities of the two input highest weights. -/
-def IsClebschGordanChannel.castIndex {m n m' n' k : ℕ} (h : IsClebschGordanChannel m n k)
-    (hm : m' = m) (hn : n' = n) : Fin (min m' n' + 1) :=
-  ⟨h.index, by subst hm hn; exact h.index.isLt⟩
-
-/-- Casting `h.index` preserves its underlying natural number. -/
-@[simp]
-theorem IsClebschGordanChannel.val_castIndex {m n m' n' k : ℕ} (h : IsClebschGordanChannel m n k)
-    (hm : m' = m) (hn : n' = n) :
-    (h.castIndex hm hn : ℕ) = (h.index : ℕ) := (rfl)
 
 /-- Uniqueness of the Clebsch–Gordan summand index for a given channel weight `k`. -/
 theorem IsClebschGordanChannel.index_eq_of_eq {m n k : ℕ} (h : IsClebschGordanChannel m n k)
@@ -486,8 +474,7 @@ theorem IsClebschGordanChannel.index_eq_of_eq {m n k : ℕ} (h : IsClebschGordan
   ext; have := j.isLt; simp only [index, ← hj]; omega
 
 /-- `h.index = j` holds exactly when `m + n - 2j = k`. -/
-@[simp]
-theorem IsClebschGordanChannel.index_eq_iff {m n k : ℕ} (h : IsClebschGordanChannel m n k)
+@[simp] theorem IsClebschGordanChannel.index_eq_iff {m n k : ℕ} (h : IsClebschGordanChannel m n k)
     (j : Fin (min m n + 1)) : h.index = j ↔ m + n - 2 * (j : ℕ) = k :=
   ⟨fun hj => hj ▸ h.sub_two_mul_index, h.index_eq_of_eq⟩
 
@@ -496,8 +483,7 @@ theorem isClebschGordanChannel_sub_two_mul {m n : ℕ} (j : Fin (min m n + 1)) :
     IsClebschGordanChannel m n (m + n - 2 * (j : ℕ)) := ⟨j, rfl⟩
 
 /-- The constructive index of `m + n - 2j` is `j`. -/
-@[simp]
-theorem IsClebschGordanChannel.index_sub_two_mul {m n : ℕ} (j : Fin (min m n + 1)) :
+@[simp] theorem IsClebschGordanChannel.index_sub_two_mul {m n : ℕ} (j : Fin (min m n + 1)) :
     (isClebschGordanChannel_sub_two_mul j).index = j :=
   (isClebschGordanChannel_sub_two_mul j).index_eq_of_eq rfl
 
@@ -505,14 +491,11 @@ theorem IsClebschGordanChannel.index_sub_two_mul {m n : ℕ} (j : Fin (min m n +
 theorem isClebschGordanChannel_add (m n : ℕ) : IsClebschGordanChannel m n (m + n) := ⟨0, by simp⟩
 
 /-- Tensoring with `L_0` on the left has `n` as its unique admissible channel. -/
-@[simp]
-theorem isClebschGordanChannel_zero_left {n k : ℕ} :
-    IsClebschGordanChannel 0 n k ↔ k = n :=
+@[simp] theorem isClebschGordanChannel_zero_left {n k : ℕ} : IsClebschGordanChannel 0 n k ↔ k = n :=
   ⟨by rintro ⟨j, rfl⟩; have := j.isLt; omega, fun h => h ▸ ⟨0, by simp⟩⟩
 
 /-- Tensoring with `L_0` on the right has `m` as its unique admissible channel. -/
-@[simp]
-theorem isClebschGordanChannel_zero_right {m k : ℕ} :
+@[simp] theorem isClebschGordanChannel_zero_right {m k : ℕ} :
     IsClebschGordanChannel m 0 k ↔ k = m :=
   ⟨by rintro ⟨j, rfl⟩; have := j.isLt; omega, fun h => h ▸ ⟨0, by simp⟩⟩
 
