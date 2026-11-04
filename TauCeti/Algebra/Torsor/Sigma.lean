@@ -6,9 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Torsor.Defs
-public import Mathlib.Algebra.Group.Subgroup.Basic
 public import Mathlib.Data.Set.Finite.Range
-public import Mathlib.GroupTheory.QuotientGroup.Defs
 
 /-!
 # Orbit-invariant functions on finite unions of torsors
@@ -23,8 +21,6 @@ then `d` modulo the range of `δ` is constant on orbits.
 
 * `TauCeti.AddTorsor.finite_range_sigma_of_forall_vadd_eq`: an orbit-invariant function on a
   finite union of torsors has finite range.
-* `TauCeti.AddTorsor.quotientMk_sigma_vadd`: the residue of an equivariant degree modulo the range
-  of its shift homomorphism is orbit-invariant.
 -/
 
 public section
@@ -43,13 +39,5 @@ theorem finite_range_sigma_of_forall_vadd_eq [Finite ι] {d : (Σ i, P i) → D}
   refine (finite_range fun i => d ⟨i, r i⟩).subset ?_
   rintro _ ⟨⟨i, p⟩, rfl⟩
   exact ⟨i, by rw [← vsub_vadd p (r i), hd]⟩
-
-/-- If translating by `h` shifts the degree by `δ h`, then the residue of the degree modulo the
-range of `δ` is constant on orbits. -/
-theorem quotientMk_sigma_vadd [AddCommGroup D] {δ : H →+ D} {d : (Σ i, P i) → D}
-    (hd : ∀ i h (p : P i), d ⟨i, h +ᵥ p⟩ = δ h + d ⟨i, p⟩) (i : ι) (h : H) (p : P i) :
-    (d ⟨i, h +ᵥ p⟩ : D ⧸ δ.range) = (d ⟨i, p⟩ : D ⧸ δ.range) := by
-  rw [hd, QuotientAddGroup.mk_add,
-    (QuotientAddGroup.eq_zero_iff _).2 (AddMonoidHom.mem_range.2 ⟨h, rfl⟩), zero_add]
 
 end TauCeti.AddTorsor

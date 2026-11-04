@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RingTheory.NovikovModule.Grading
-public import TauCeti.Algebra.Torsor.Sigma
 public import TauCeti.Geometry.Symplectic.Floer.PeriodGroup
 
 /-!
@@ -111,8 +110,8 @@ direct sum of its residue pieces as a module over the Floer Novikov ring
 (`TauCeti.NovikovModule.isInternal_novikovGradeBy`). -/
 theorem quotientMk_sub_vadd (n : ℤ) (i : ι) (γ : PeriodGroup ω c) (D : P i) :
     ((n - μ ⟨i, γ +ᵥ D⟩ : ℤ) : ℤ ⧸ (PeriodGroup.degree ω c).range) =
-      ((n - μ ⟨i, D⟩ : ℤ) : ℤ ⧸ (PeriodGroup.degree ω c).range) := by
-  rw [QuotientAddGroup.mk_sub, QuotientAddGroup.mk_sub, AddTorsor.quotientMk_sigma_vadd hμ]
+      ((n - μ ⟨i, D⟩ : ℤ) : ℤ ⧸ (PeriodGroup.degree ω c).range) :=
+  QuotientAddGroup.eq_iff_sub_mem.2 ⟨-γ, by rw [hμ, map_neg]; ring⟩
 
 /-- If the first Chern number vanishes on spherical classes, recapping does not change the
 grading of a generator. Hence the integer grading is constant on each orbit, and the completed

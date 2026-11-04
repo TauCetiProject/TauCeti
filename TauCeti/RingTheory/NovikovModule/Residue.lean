@@ -31,7 +31,7 @@ module over the Novikov ring (`NovikovModule.isInternal_novikovGradeBy`).
 
 The main example is the residue of an equivariant degree. If recapping by `h` shifts the degree
 by `δ h` for a homomorphism `δ : H →+ D`, then the degree modulo the range of `δ` is constant on
-orbits (`TauCeti.AddTorsor.quotientMk_sigma_vadd`). For capped Hamiltonian Floer generators this
+orbits. For capped Hamiltonian Floer generators this
 is the Conley–Zehnder grading modulo twice the first Chern numbers of spherical classes: modulo
 `2N` for minimal Chern number `N` in the monotone case, and the integer grading itself when the
 first Chern class vanishes on spheres. In contrast, the integer grading has infinite range as
