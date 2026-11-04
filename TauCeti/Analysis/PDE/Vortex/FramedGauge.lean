@@ -301,11 +301,7 @@ theorem covariantDerivative_gaugeTransform {u : ℂ → Circle} {z : ℂ}
     (hq : DifferentiableAt ℝ (fun w ↦ x w 3) z) (v : ℂ) :
     covariantDerivative (gaugeTransform u x) z v =
       (u z : ℂ) * covariantDerivative x z v := by
-  have hs : DifferentiableAt ℝ (sectionValue x) z := by
-    rw [funext (sectionValue_apply x)]
-    exact (differentiableAt_const (2 : ℂ)).mul
-      ((ofRealCLM.differentiableAt.comp z hp).add
-        ((ofRealCLM.differentiableAt.comp z hq).mul_const I))
+  have hs : DifferentiableAt ℝ (sectionValue x) z := differentiableAt_sectionValue hp hq
   have heq : sectionValue (gaugeTransform u x) =
       fun w ↦ (u w : ℂ) * sectionValue x w := funext (sectionValue_gaugeTransform u x)
   have hg : gaugeForm u z v = v.re * gaugeForm u z 1 + v.im * gaugeForm u z I := by

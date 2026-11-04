@@ -75,6 +75,23 @@ theorem sq_norm_sectionValue (x : ℂ → EuclideanSpace ℝ (Fin 4)) (z : ℂ) 
   simp only [mul_re, mul_im, add_re, add_im, ofReal_re, ofReal_im, I_re, I_im, re_ofNat, im_ofNat]
   ring
 
+/-- The section `α = 2 (p + i q)` has derivative `2 (dp + i dq)` wherever its real coordinates
+`p` and `q` are differentiable. -/
+theorem hasFDerivAt_sectionValue {x : ℂ → EuclideanSpace ℝ (Fin 4)} {z : ℂ}
+    (hp : DifferentiableAt ℝ (fun w ↦ x w 2) z) (hq : DifferentiableAt ℝ (fun w ↦ x w 3) z) :
+    HasFDerivAt (sectionValue x) ((2 : ℂ) • (ofRealCLM.comp (fderiv ℝ (fun w ↦ x w 2) z) +
+      I • ofRealCLM.comp (fderiv ℝ (fun w ↦ x w 3) z))) z := by
+  have h := ((ofRealCLM.hasFDerivAt.comp z hp.hasFDerivAt).add
+    ((ofRealCLM.hasFDerivAt.comp z hq.hasFDerivAt).mul_const I)).const_mul (2 : ℂ)
+  convert h using 1
+  ext w; simp [sectionValue_apply]
+
+/-- The section is differentiable wherever its real coordinates `p` and `q` are. -/
+theorem differentiableAt_sectionValue {x : ℂ → EuclideanSpace ℝ (Fin 4)} {z : ℂ}
+    (hp : DifferentiableAt ℝ (fun w ↦ x w 2) z) (hq : DifferentiableAt ℝ (fun w ↦ x w 3) z) :
+    DifferentiableAt ℝ (sectionValue x) z :=
+  (hasFDerivAt_sectionValue hp hq).differentiableAt
+
 /-- If a field tends to zero along a filter, then so does its section. -/
 theorem tendsto_sectionValue_zero {l : Filter ℂ} {x : ℂ → EuclideanSpace ℝ (Fin 4)}
     (hx : Filter.Tendsto x l (nhds 0)) : Filter.Tendsto (sectionValue x) l (nhds 0) := by

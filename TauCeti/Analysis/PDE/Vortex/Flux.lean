@@ -42,8 +42,8 @@ derivative is assumed, and the connection need only be differentiable.
 
 * `TauCeti.Vortex.integral_curvature_eq_neg_two_pi_mul`: `∫ (∂₁ b₂ - ∂₂ b₁) = -2π m`.
 * `TauCeti.Vortex.integral_one_sub_normSq_eq_sixteen_pi_mul`: `∫ (1 - |α|²) = 16 π m`.
-* `TauCeti.Vortex.integral_curvature_of_mem_framedFieldSpace`: the flux identity for vortices in
-  the affine field space `A_m^s`, `s > 1`.
+* `TauCeti.Vortex.integral_curvature_eq_neg_two_pi_mul_of_mem_framedFieldSpace`: the flux
+  identity for vortices in the affine field space `A_m^s`, `s > 1`.
 
 ## References
 
@@ -211,15 +211,6 @@ private theorem integral_fluxProfile {R : ℝ} (hR : 0 < R) :
 /-! ### The phase near infinity -/
 
 variable {x : ℂ → EuclideanSpace ℝ (Fin 4)}
-
-private theorem hasFDerivAt_sectionValue {z : ℂ}
-    (hp : DifferentiableAt ℝ (fun w ↦ x w 2) z) (hq : DifferentiableAt ℝ (fun w ↦ x w 3) z) :
-    HasFDerivAt (sectionValue x) ((2 : ℂ) • (ofRealCLM.comp (fderiv ℝ (fun w ↦ x w 2) z) +
-      I • ofRealCLM.comp (fderiv ℝ (fun w ↦ x w 3) z))) z := by
-  have h := ((ofRealCLM.hasFDerivAt.comp z hp.hasFDerivAt).add
-    ((ofRealCLM.hasFDerivAt.comp z hq.hasFDerivAt).mul_const I)).const_mul (2 : ℂ)
-  convert h using 1
-  ext w; simp [sectionValue_apply]
 
 /-- The phase `Im log (α z⁻ᵐ)` of the section relative to the winding `zᵐ` is differentiable
 where `α z⁻ᵐ` lies in the slit plane, and its derivative along `v` is the phase current
@@ -426,8 +417,7 @@ private theorem integral_fluxCutoff_mul_curvature {m : ℕ} {R₀ R : ℝ} (hR :
   have hI₂ : Integrable fun z ↦ Real.log (4 * (x z 2 ^ 2 + x z 3 ^ 2)) / 2 *
       Δ (fluxCutoff R) z := by
     refine Continuous.integrable_of_hasCompactSupport (continuous_iff_continuousAt.2 fun z ↦ ?_)
-      ((hasCompactSupport_fluxCutoff hR).mono'
-        ((subset_tsupport _).trans (TauCeti.tsupport_laplacian_subset _))).mul_left
+      (hasCompactSupport_fluxCutoff hR).laplacian.mul_left
     rcases lt_or_ge ‖z‖ R with hz | hz
     · refine continuousAt_const (y := (0 : ℝ)).congr ?_
       filter_upwards [laplacian_fluxCutoff_eventuallyEq_zero hR hz] with w hw
@@ -482,8 +472,7 @@ private theorem tendsto_integral_mul_laplacian_fluxCutoff {u : ℂ → ℝ}
   have hR₁ : 0 < R := zero_lt_one.trans_le ((le_max_right _ _).trans hR)
   have hΔi : Integrable fun z ↦ |Δ (fluxCutoff R) z| :=
     ((contDiff_fluxCutoff R).of_le (by simp)).continuous_laplacian.abs
-      |>.integrable_of_hasCompactSupport ((hasCompactSupport_fluxCutoff hR₁).mono'
-        ((subset_tsupport _).trans (TauCeti.tsupport_laplacian_subset _))).abs
+      |>.integrable_of_hasCompactSupport (hasCompactSupport_fluxCutoff hR₁).laplacian.abs
   rw [Real.dist_eq, sub_zero, ← Real.norm_eq_abs]
   refine (norm_integral_le_of_norm_le (hΔi.const_mul (ε / (A + 1)))
     (ae_of_all _ fun z ↦ ?_)).trans_lt ?_
@@ -567,7 +556,8 @@ theorem integral_one_sub_normSq_eq_sixteen_pi_mul {m : ℕ}
 
 /-- **The flux identity in the affine field space.** For `s > 1`, a vortex in `A_m^s` with
 differentiable connection and `C²` section has `∫ (∂₁ b₂ - ∂₂ b₁) = -2π m`. -/
-theorem integral_curvature_of_mem_framedFieldSpace {f : ContDiffBump (0 : ℝ)} {m : ℕ} {s : ℝ}
+theorem integral_curvature_eq_neg_two_pi_mul_of_mem_framedFieldSpace
+    {f : ContDiffBump (0 : ℝ)} {m : ℕ} {s : ℝ}
     (hs : 1 < s) (hx : x ∈ framedFieldSpace f m s)
     (hb₁ : Differentiable ℝ (fun w ↦ x w 0)) (hb₂ : Differentiable ℝ (fun w ↦ x w 1))
     (hp : ContDiff ℝ 2 (fun w ↦ x w 2)) (hq : ContDiff ℝ 2 (fun w ↦ x w 3))
