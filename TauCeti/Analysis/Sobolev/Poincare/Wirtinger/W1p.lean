@@ -182,7 +182,7 @@ theorem W1p.eLpNorm_value_sub_setAverage_le_of_convex (hp : p ≠ ∞)
     eLpNorm (fun x ↦ W1p.value u x - ⨍ y in S, W1p.value u y ∂mu) p (mu.restrict Omega) ≤
       ENNReal.ofReal (mu.real (ball 0 1) * diam (Omega : Set E) ^ (finrank ℝ E + 1) / mu.real S) *
         ‖W1p.gradient u‖ₑ := by
-  obtain ⟨V, hVmono, hVopen, hVconv, hVcompact, hVclosure, hVunion⟩ :=
+  obtain ⟨V, hVmono, hVopen, hVconv, hVcompact, -, hVclosure, hVunion⟩ :=
     exists_seq_isOpen_convex_isCompact_closure_subset_iUnion_eq Omega.isOpen hconv
   have hVsub : ∀ n, V n ⊆ (Omega : Set E) := fun n ↦ subset_closure.trans (hVclosure n)
   have hWle : ∀ n, (⟨V n, hVopen n⟩ : Opens E) ≤ Omega := fun n ↦
