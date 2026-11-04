@@ -34,6 +34,12 @@ therefore respects the function-module structure.
 * `ContMDiffSection.module'`: the `C^n⟮I, M; 𝕜⟯`-module structure on `Cₛ^n⟮I; F, V⟯`.
 * `ContMDiffSection.pullback`: the pullback of a section along a `C^n` map, as a `𝕜`-linear map;
   along `ContMDiffMap.subtypeVal U` it restricts sections to the open set `U`.
+
+## Implementation notes
+
+The construction follows Mathlib's `ContMDiffMap.module'` and `ContinuousMap.module'`, including
+the `instSMul'` / `coe_smul'` / `smul_apply'` naming of the latter, and takes smoothness of the
+product from Mathlib's `ContMDiff.smul_section`.
 -/
 
 public section
