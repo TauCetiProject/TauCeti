@@ -114,6 +114,13 @@ noncomputable def adjointWeightSpace (π : H →ₐc[R] MonoidAlgebra R M) (α :
   DiagonalizableGroup.weightSpace (Module.Dual R (Bialgebra.CotangentSpace R H))
     (π : H →ₗc[R] MonoidAlgebra R M) α
 
+/-- The adjoint weight submodule is the weight submodule of the adjoint representation. -/
+theorem adjointWeightSpace_eq_weightSpace (π : H →ₐc[R] MonoidAlgebra R M) (α : M) :
+    adjointWeightSpace π α =
+      DiagonalizableGroup.weightSpace (Module.Dual R (Bialgebra.CotangentSpace R H))
+        π.toCoalgHom α :=
+  (rfl)
+
 /-- Membership in the `α`-weight submodule, in terms of the adjoint coaction: pushing the adjoint
 coaction of `x` through `π` must give `x ⊗ α`. -/
 @[simp]
@@ -310,11 +317,7 @@ noncomputable def _root_.BialgHom.normalizerAdjointWeightSpaceEquiv
     (π : H →ₐc[R] MonoidAlgebra R M) (hπ : Function.Surjective π)
     (g : π.normalizerPoints hπ) (α : M) :
     adjointWeightSpace π α ≃ₗ[R] adjointWeightSpace π (π.normalizerCharacterHom hπ g α) :=
-  (Submodule.equivMapOfInjective _
-      (Representation.apply_bijective (Comodule.basePointsRepresentation (H := H)
-        (Module.Dual R (Bialgebra.CotangentSpace R H))) (g : WithConv (H →ₐ[R] R))).1 _).trans
-    (LinearEquiv.ofEq _ _ (map_adjointWeightSpace_basePointsRepresentation π g _
-      (π.normalizerCharacterHom_comp hπ g) α))
+  DiagonalizableGroup.weightSpaceEquivOfNormalizes π g _ (π.normalizerCharacterHom_comp hπ g) α
 
 @[simp]
 theorem _root_.BialgHom.coe_normalizerAdjointWeightSpaceEquiv_apply
@@ -324,7 +327,8 @@ theorem _root_.BialgHom.coe_normalizerAdjointWeightSpaceEquiv_apply
     (π.normalizerAdjointWeightSpaceEquiv hπ g α x : Module.Dual R (Bialgebra.CotangentSpace R H)) =
       Comodule.basePointsRepresentation (H := H) (Module.Dual R (Bialgebra.CotangentSpace R H))
         (g : WithConv (H →ₐ[R] R)) x :=
-  (rfl)
+  DiagonalizableGroup.coe_weightSpaceEquivOfNormalizes_apply π g _
+    (π.normalizerCharacterHom_comp hπ g) α x
 
 /-- Off the nontrivial adjoint weights and the trivial character the weight submodule vanishes. -/
 theorem adjointWeightSpace_eq_bot_of_notMem_nontrivialAdjointWeights
