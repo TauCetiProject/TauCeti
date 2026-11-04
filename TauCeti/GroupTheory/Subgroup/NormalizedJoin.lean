@@ -46,11 +46,9 @@ variable (hagree : ∀ a : ↥(H ⊓ K), f ⟨a, a.property.1⟩ = g ⟨a, a.pro
 noncomputable def liftSupOfRightLeNormalizer : ↥(H ⊔ K) →* D :=
   let m := SemidirectProduct.monoidHomSubgroup hLE
   let l := SemidirectProduct.lift f g hconj
-  let hk : m.rangeRestrict.ker ≤ l.ker := by
-    intro x hx
-    apply (SemidirectProduct.ker_monoidHomSubgroup_le_ker_lift_iff hLE f g hconj).mpr
-      hagree
-    exact MonoidHom.mem_ker.mpr (congrArg Subtype.val (MonoidHom.mem_ker.mp hx))
+  let hk : m.rangeRestrict.ker ≤ l.ker :=
+    (MonoidHom.ker_rangeRestrict m).le.trans
+      ((SemidirectProduct.ker_monoidHomSubgroup_le_ker_lift_iff hLE f g hconj).mpr hagree)
   (m.rangeRestrict.liftOfSurjective m.rangeRestrict_surjective ⟨l, hk⟩).comp
     (MulEquiv.subgroupCongr (SemidirectProduct.range_monoidHomSubgroup hLE)).symm.toMonoidHom
 
@@ -68,6 +66,8 @@ theorem liftSupOfRightLeNormalizer_mul (a : H) (b : K) :
       (SemidirectProduct.monoidHomSubgroup hLE).rangeRestrict x := by
     apply Subtype.ext
     exact (SemidirectProduct.monoidHomSubgroup_apply hLE x).symm
+  -- Intentionally unfold liftOfSurjective to apply the right-inverse evaluation lemma;
+  -- Mathlib provides no corresponding evaluation lemma for the surjective abbreviation.
   simp only [liftSupOfRightLeNormalizer, MonoidHom.comp_apply, MulEquiv.coe_toMonoidHom,
     htransport, MonoidHom.liftOfSurjective, MonoidHom.liftOfRightInverse_comp_apply]
   exact SemidirectProduct.lift_apply f g hconj x

@@ -82,10 +82,11 @@ theorem ker_monoidHomSubgroup_le_ker_lift_iff :
       rw [mem_ker_monoidHomSubgroup_iff]
       exact (inv_inv (a : G)).symm
     have heq := MonoidHom.mem_ker.mp (h hx)
-    -- The second component of x is the inverse of a as an element of K.
+    -- Identify the explicitly constructed second component with inversion in K.
+    have hr : x.right = (⟨a, a.property.2⟩ : K)⁻¹ :=
+      Subtype.ext (Subgroup.coe_inv _ _).symm
     have hval : lift f g hconj x = f ⟨a, a.property.1⟩ * (g ⟨a, a.property.2⟩)⁻¹ := by
-      rw [lift_apply]
-      exact congrArg (f ⟨a, a.property.1⟩ * ·) (map_inv g ⟨a, a.property.2⟩)
+      rw [lift_apply, hr, map_inv]
     rw [hval, mul_inv_eq_one] at heq
     exact heq
   · intro hagree x hx
@@ -95,7 +96,7 @@ theorem ker_monoidHomSubgroup_le_ker_lift_iff :
       exact H.inv_mem x.left.property
     have heq := hagree ⟨x.right, hright, x.right.property⟩
     have hleft : x.left = (⟨x.right, hright⟩ : H)⁻¹ :=
-      Subtype.ext hpair
+      Subtype.ext (hpair.trans (Subgroup.coe_inv _ _).symm)
     rw [MonoidHom.mem_ker, lift_apply, hleft, map_inv, heq, inv_mul_cancel]
 
 end SemidirectProduct
