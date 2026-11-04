@@ -10,7 +10,6 @@ public import TauCeti.Geometry.Manifold.Degree.Basic
 public import TauCeti.Geometry.Manifold.Instances.Sphere
 public import TauCeti.Geometry.Manifold.Orientation.Prod
 public import TauCeti.Geometry.Manifold.Orientation.Sphere
-import Mathlib.LinearAlgebra.Alternating.Uncurry.Fin
 import TauCeti.Analysis.Complex.Circle
 import TauCeti.Analysis.InnerProductSpace.Projection.Basic
 import TauCeti.Geometry.Manifold.MFDeriv.IsInvertible
@@ -369,18 +368,14 @@ private theorem volumeForm_cons_cons_mvfderiv (o : Orientation ℝ E (Fin (m + 1
 /-- The volume of the image under the derivative of the rotation family of the basis
 `(Im z • a, β)` of a point with circle coordinate `z`: moving the last vector to the second place
 costs the sign `(-1)ᵐ` of a cycle, scaling `m` vectors by `Im z` costs `(Im z)ᵐ`, and the first two
-vectors span the plane of `p` and `v` with the factor `Re z Im β - Im z Re β`. -/
+vectors span the plane of `p` and `v` with the factor `Re z Im β - Im z Re β`
+(`AlternatingMap.map_cons_snoc_add_smul`). -/
 private theorem volumeForm_cons_snoc (o : Orientation ℝ E (Fin (m + 1 + 1))) (p v : E)
     (a : Fin m → E) (z β : ℂ) :
     o.volumeForm (Fin.cons (z.re • p + z.im • v)
         (Fin.snoc (fun j ↦ z.im • a j) (β.re • p + β.im • v))) =
       (-1) ^ m * z.im ^ m * (z.re * β.im - z.im * β.re) *
         o.volumeForm (Fin.cons p (Fin.cons v a)) := by
-  -- Moving the last vector to the second place costs the sign `(-1)ᵐ` of a cycle.
-  have hins := (o.volumeForm.curryLeft (z.re • p + z.im • v)).map_insertNth
-    (Fin.last m) (β.re • p + β.im • v) fun j ↦ z.im • a j
-  simp only [Fin.insertNth_last', Fin.val_last, AlternatingMap.curryLeft_apply_apply,
-    Matrix.vecCons] at hins
   -- Scaling the last `m` vectors by `Im z` multiplies the volume by `(Im z)ᵐ`.
   have hs := o.volumeForm.map_smul_univ (Fin.cons 1 (Fin.cons 1 fun _ ↦ z.im))
     (Fin.cons p (Fin.cons v a))
@@ -393,8 +388,7 @@ private theorem volumeForm_cons_snoc (o : Orientation ℝ E (Fin (m + 1 + 1))) (
     ext i
     refine Fin.cases ?_ (fun i ↦ Fin.cases ?_ (fun j ↦ ?_) i) i <;> simp
   rw [hcons] at hs
-  rw [hins, AlternatingMap.map_cons_cons_add_smul, hs]
-  simp only [smul_eq_mul, zsmul_eq_mul, Int.cast_pow, Int.cast_neg, Int.cast_one]
+  rw [AlternatingMap.map_cons_snoc_add_smul, hs, smul_eq_mul]
   ring
 
 /-- A tangent basis of the unit sphere `Sᵐ` of `p^⊥` at `v`, positively or negatively oriented
