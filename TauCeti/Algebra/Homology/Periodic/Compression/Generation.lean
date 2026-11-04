@@ -54,7 +54,7 @@ private lemma mem_of_d_eq_zero
       ((HomotopyCategory.Bounded.quotient C).obj L) ≪≫
     (DerivedCategory.Qh C n).mapIso ((quotientCompHomotopyCompressionFunctorIso n).app L) ≪≫
     (DerivedCategory.Qh C n).mapIso ((HomotopyCategory.quotient C _).mapIso
-      (eqToIso (compressionFunctor_obj n L) ≪≫ compressionIsoOfDEqZero K hd))
+      (eqToIso (compressionFunctor_obj n L) ≪≫ K.compressionIsoOfDEqZero hd))
   exact P.prop_of_iso e (hP _ ((derivedCompressionFunctor n).obj_mem_essImage _))
 
 private lemma mem_of_hasProjectiveFlag

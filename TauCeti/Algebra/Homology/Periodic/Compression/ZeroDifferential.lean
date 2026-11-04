@@ -124,6 +124,15 @@ lemma compressionBoundedGradedLiftIso_inv_f (E : ZMod n → C) (r : ZMod n) :
       (boundedGradedLiftXIso E r).inv ≫
         ιCompression n (boundedGradedLift E).obj r.val r (by simp) := (rfl)
 
+end TauCeti.PeriodicComplex
+
+namespace CochainComplex
+
+open TauCeti.PeriodicComplex
+
+variable {C : Type u} [Category.{v} C] [HasZeroMorphisms C] [HasZeroObject C]
+  {n : ℕ} [NeZero n] [HasFiniteCoproducts C]
+
 /-- Every positive-period complex with zero differential is isomorphic to the compression of a
 bounded complex with zero differential. -/
 noncomputable def compressionIsoOfDEqZero (K : CochainComplex C (ZMod n))
@@ -131,4 +140,22 @@ noncomputable def compressionIsoOfDEqZero (K : CochainComplex C (ZMod n))
   compressionBoundedGradedLiftIso K.X ≪≫
     HomologicalComplex.Hom.isoOfComponents (fun _ ↦ Iso.refl _) (by simp [hd])
 
-end TauCeti.PeriodicComplex
+/-- On the representative summand, the zero-differential comparison is the original term
+identification. -/
+@[reassoc (attr := simp)]
+lemma ιCompression_compressionIsoOfDEqZero_hom_f (K : CochainComplex C (ZMod n))
+    (hd : ∀ i j, K.d i j = 0) (r : ZMod n) :
+    ιCompression n (boundedGradedLift K.X).obj r.val r (by simp) ≫
+        (K.compressionIsoOfDEqZero hd).hom.f r = (boundedGradedLiftXIso K.X r).hom := by
+  simp [compressionIsoOfDEqZero]
+
+/-- The inverse zero-differential comparison includes each term in its representative summand. -/
+@[simp]
+lemma compressionIsoOfDEqZero_inv_f (K : CochainComplex C (ZMod n))
+    (hd : ∀ i j, K.d i j = 0) (r : ZMod n) :
+    (K.compressionIsoOfDEqZero hd).inv.f r =
+      (boundedGradedLiftXIso K.X r).inv ≫
+        ιCompression n (boundedGradedLift K.X).obj r.val r (by simp) := by
+  simp [compressionIsoOfDEqZero]
+
+end CochainComplex
