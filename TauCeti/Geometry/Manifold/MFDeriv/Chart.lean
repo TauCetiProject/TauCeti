@@ -373,6 +373,19 @@ theorem ker_mvfderiv_eq_ker_fderiv_comp_chartAt_symm
 
 end MDifferentiableAt
 
+/-- On a manifold modelled on its model space, a map into a normed space whose coordinate
+expression in a chart of the `C¹` maximal atlas is differentiable at a coordinate is manifold
+differentiable at the corresponding point. -/
+theorem TauCeti.mdifferentiableAt_symm_of_differentiableAt_comp {e : OpenPartialHomeomorph N E}
+    (he : e ∈ IsManifold.maximalAtlas 𝓘(𝕜, E) 1 N) {w : E} (hw : w ∈ e.target)
+    (hg : DifferentiableAt 𝕜 (g ∘ e.symm) w) :
+    MDifferentiableAt 𝓘(𝕜, E) 𝓘(𝕜, F) g (e.symm w) := by
+  rw [← e.right_inv hw] at hg
+  refine (hg.mdifferentiableAt.comp _
+    (mdifferentiableAt_of_mem_maximalAtlas he (e.map_target hw))).congr_of_eventuallyEq ?_
+  filter_upwards [e.open_source.mem_nhds (e.map_target hw)] with y hy
+  simp [e.left_inv hy]
+
 end SelfModel
 
 omit [IsManifold I 1 M] in

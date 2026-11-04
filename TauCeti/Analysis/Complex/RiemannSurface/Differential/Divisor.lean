@@ -21,7 +21,8 @@ that set is finite, and the orders assemble into the **divisor**
 points (`TauCeti.AlgebraicGeometry.WeilDivisor`). The divisor of a holomorphic `1`-form is
 effective.
 
-Multiplying `ω` by a nonzero meromorphic function `f` adds the divisor of `f`:
+On a compact connected Riemann surface, multiplying a `1`-form `ω` which is meromorphic and of
+finite order at every point by a nonzero meromorphic function `f` adds the divisor of `f`:
 `div (f ω) = div f + div ω` (`TauCeti.RiemannSurface.OneForm.divisor_smul`), where `div f` is the
 principal divisor of the order system of meromorphic functions
 (`TauCeti.RiemannSurface.MeromorphicFunction.orderSystem`). Consequently two meromorphic `1`-forms
@@ -143,13 +144,12 @@ theorem divisor_smul (f : MeromorphicFunction X) (hf : f ≠ 0) (hω : ∀ x, ω
     rw [order_smul (f.meromorphicAt_finitePart x) (hω x), MeromorphicFunction.order_apply]
   have hf₀ (x : X) : MeromorphicFunction.order x f ≠ ⊤ :=
     (MeromorphicFunction.order x).ne_top_iff.2 hf
-  ext x
+  refine WeilDivisor.ext fun x ↦ ?_
   have := MeromorphicFunction.coe_coeff_principalDivisor_orderSystem
     (Additive.ofMul (Units.mk0 f hf)) x
   simp only [toMul_ofMul, Units.val_mk0] at this
-  change WeilDivisor.coeff _ x = WeilDivisor.coeff _ x + WeilDivisor.coeff _ x
-  rw [coeff_divisor hfω, hord, WithTop.untop₀_add (hf₀ x) (hω₀ x), coeff_divisor hω, ← this,
-    WithTop.untop₀_coe]
+  rw [WeilDivisor.coeff_add, coeff_divisor hfω, hord, WithTop.untop₀_add (hf₀ x) (hω₀ x),
+    coeff_divisor hω, ← this, WithTop.untop₀_coe]
 
 end Compact
 

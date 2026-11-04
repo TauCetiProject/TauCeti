@@ -10,6 +10,7 @@ public import Mathlib.Geometry.Manifold.MFDeriv.NormedSpace
 import Mathlib.Geometry.Manifold.MFDeriv.Atlas
 import Mathlib.Geometry.Manifold.MFDeriv.FDeriv
 import TauCeti.Geometry.Manifold.ChartedSpace
+import TauCeti.Geometry.Manifold.MFDeriv.Chart
 import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
 
 /-!
@@ -471,17 +472,6 @@ section Differential
 
 variable {f : X → ℂ} {x : X}
 
-/-- A function whose chart representative is differentiable at a coordinate is holomorphic at
-the corresponding point. -/
-theorem _root_.TauCeti.RiemannSurface.mdifferentiableAt_symm_of_differentiableAt_comp
-    (he : e ∈ maximalAtlas 𝓘(ℂ) 1 X) {z : ℂ} (hz : z ∈ e.target)
-    (hf : DifferentiableAt ℂ (f ∘ e.symm) z) : MDifferentiableAt 𝓘(ℂ) 𝓘(ℂ) f (e.symm z) := by
-  rw [← e.right_inv hz] at hf
-  refine (hf.mdifferentiableAt.comp _
-    (mdifferentiableAt_of_mem_maximalAtlas he (e.map_target hz))).congr_of_eventuallyEq ?_
-  filter_upwards [e.open_source.mem_nhds (e.map_target hz)] with y hy
-  simp [e.left_inv hy]
-
 /-- **The coefficient of `df`** in a chart is the derivative of the chart representative of `f`. -/
 theorem coeff_mvfderiv (he : e ∈ maximalAtlas 𝓘(ℂ) 1 X) {z : ℂ} (hz : z ∈ e.target)
     (hf : MDifferentiableAt 𝓘(ℂ) 𝓘(ℂ) f (e.symm z)) :
@@ -501,7 +491,7 @@ private theorem coeff_mvfderiv_eventuallyEq (hf : RiemannSurface.MeromorphicAt f
   filter_upwards [hf.eventually_analyticAt, nhdsWithin_le_nhds ((chartAt ℂ x).open_target.mem_nhds
     ((chartAt ℂ x).map_source (mem_chart_source ℂ x)))] with z hz hzt
   exact coeff_mvfderiv (chart_mem_maximalAtlas x) hzt
-    (mdifferentiableAt_symm_of_differentiableAt_comp (chart_mem_maximalAtlas x) hzt
+    (TauCeti.mdifferentiableAt_symm_of_differentiableAt_comp (chart_mem_maximalAtlas x) hzt
       hz.differentiableAt)
 
 /-- Near a point where `f` is holomorphic, the coefficient of `df` in the chart at that point is

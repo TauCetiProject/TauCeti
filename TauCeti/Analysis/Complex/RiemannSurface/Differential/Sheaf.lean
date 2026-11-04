@@ -118,13 +118,18 @@ theorem add (hω : IsDifferentialSectionAt D ω x) (hη : IsDifferentialSectionA
 theorem const_smul (hω : IsDifferentialSectionAt D ω x) (c : ℂ) :
     IsDifferentialSectionAt D (c • ω) x := by
   rcases eq_or_ne c 0 with rfl | hc
-  · exact (zero_smul ℂ ω).symm ▸ zero D x
+  · -- `rw [zero_smul]` does not match the scalar-action instance found through `TangentSpace`
+    -- (see below), but the term `zero_smul ℂ ω` elaborates against it.
+    exact (zero_smul ℂ ω).symm ▸ zero D x
   exact
   { meromorphicAt := hω.meromorphicAt.const_smul c
     neg_le_order := by simpa [OneForm.order_const_smul hc] using hω.neg_le_order
     holomorphicAt := fun hD ↦ (hω.holomorphicAt hD).const_smul c
     apply_eq_zero := fun hD ↦ by
       rw [Pi.smul_apply, hω.apply_eq_zero hD]
+      -- `simp` and `rw [smul_zero]` do not fire here: the scalar action on the fibre is found as
+      -- `ContinuousLinearMap.instSMul` through `TangentSpace`, which does not unify with the
+      -- `SMulZeroClass` path at reducible transparency, so the fibre type is supplied explicitly.
       exact smul_zero (A := TangentSpace 𝓘(ℂ) x →L[ℂ] ℂ) c }
 
 /-- **Increasing the divisor.** For `D ≤ E`, a local section of `Ω_D` gives a local section of
@@ -179,6 +184,7 @@ variable {D : WeilDivisor X}
 
 /-- Membership in `differentialSections D U`: near every point of `U` the covector field agrees
 with a local section of `Ω_D` on `X`. -/
+@[simp]
 theorem mem_differentialSections_iff {U : Opens X}
     {s : (x : U) → TangentSpace 𝓘(ℂ) (x : X) →L[ℂ] ℂ} :
     s ∈ differentialSections D U ↔
@@ -374,6 +380,7 @@ private def differentialSectionsMapOfLE {E : WeilDivisor X} (h : D ≤ E) (U : O
     by_cases hy : E y ≤ 0
     · simp [hy]
     · simp only [hy, ite_false, Submodule.coe_smul_of_tower, RingHom.id_apply, Pi.smul_apply]
+      -- As in `IsDifferentialSectionAt.const_smul`, `smul_zero` needs the fibre type explicitly.
       exact (smul_zero (A := TangentSpace 𝓘(ℂ) (y : X) →L[ℂ] ℂ) c).symm
 
 /-- **The inclusion `Ω_D ⟶ Ω_E` for `D ≤ E`.** On sections it is the identity on meromorphic
