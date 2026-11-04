@@ -237,7 +237,7 @@ theorem khovanovEnhancedComplexIso_inv_f (i : ℤ) :
 /-- In enhanced-state coordinates the differential on a homogeneous state vector is the
 sum over the missing crossings, with the original cube signs. Each cube edge in this formula
 is the actual merge or split by `resolutionCube_map_homOfLE_insert_comp_resolutionCubeι`. -/
-theorem khovanovEnhancedComplex_d_state {i : ℤ}
+theorem khovanovEnhancedComplex_d_repr_ι {i : ℤ}
     (S : {S : Finset (Fin n) // (#S : ℤ) = i + D.negativeCrossingCount})
     (x : (D.toPDCode.resolutionCube hD R
       (j - D.positiveCrossingCount + 2 * D.negativeCrossingCount)).obj S.1) :
