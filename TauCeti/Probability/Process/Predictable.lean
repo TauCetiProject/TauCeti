@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Probability.Process.Predictable
+public import Mathlib.Topology.Order.Cadlag
 import Mathlib.Analysis.SpecificLimits.Basic
 
 /-!
@@ -29,6 +30,9 @@ open scoped NNReal Topology
 -- time, including partition nodes. The cells are therefore predictable rectangles `(s, t]`.
 private noncomputable def leftSample (n : ℕ) (t : ℝ≥0) : ℝ≥0 :=
   ((⌈t * (n + 1)⌉₊ - 1 : ℕ) : ℝ≥0) / (n + 1)
+
+private lemma leftSample_eq_natCast_div (n : ℕ) (t : ℝ≥0) :
+    leftSample n t = ((⌈t * (n + 1)⌉₊ - 1 : ℕ) : ℝ≥0) / (n + 1) := rfl
 
 private lemma leftSample_mem (n : ℕ) {t : ℝ≥0} (ht : 0 < t) :
     t ∈ Ioc (leftSample n t) (leftSample n t + 1 / (n + 1)) := by
@@ -89,9 +93,11 @@ private lemma measurable_leftSample {ℱ : Filtration ℝ≥0 m} {u : ℝ≥0 �
     · intro hp
       by_cases ht : p.1 = 0
       · exact Or.inl ⟨ht, by simpa [ht, leftSample_zero] using hp⟩
-      · refine Or.inr ⟨⌈p.1 * (n + 1)⌉₊ - 1, ?_, hp⟩
-        have h := leftSample_mem n (pos_iff_ne_zero.mpr ht)
-        convert h using 1; simp only [leftSample, Nat.cast_add, Nat.cast_one, add_div, one_div]
+      · refine Or.inr ⟨⌈p.1 * (n + 1)⌉₊ - 1, ?_, ?_⟩
+        · have h := leftSample_mem n (pos_iff_ne_zero.mpr ht)
+          convert h using 1
+          simp only [leftSample_eq_natCast_div, Nat.cast_add, Nat.cast_one, add_div, one_div]
+        · simpa only [leftSample_eq_natCast_div] using hp
     · rintro (⟨ht, hp⟩ | ⟨k, ht, hp⟩)
       · simpa [ht, leftSample_zero] using hp
       · simpa only [leftSample_eq n k ht] using hp
@@ -101,9 +107,9 @@ private lemma measurable_leftSample {ℱ : Filtration ℝ≥0 m} {u : ℝ≥0 �
 
 omit [MeasurableSpace E] [BorelSpace E] in
 /-- An adapted process with left-continuous sample paths is predictable. -/
-theorem MeasureTheory.StronglyAdapted.isStronglyPredictable_of_leftContinuous
+theorem MeasureTheory.StronglyAdapted.isStronglyPredictable_of_isLeftContinuous
     {ℱ : Filtration ℝ≥0 m} {u : ℝ≥0 → Ω → E} (hu : StronglyAdapted ℱ u)
-    (hc : ∀ ω t, ContinuousWithinAt (fun s => u s ω) (Iic t) t) :
+    (hc : ∀ ω, IsLeftContinuous (fun s => u s ω)) :
     IsStronglyPredictable ℱ u := by
   borelize E
   have hm (n : ℕ) : StronglyMeasurable[ℱ.predictable]
@@ -112,11 +118,14 @@ theorem MeasureTheory.StronglyAdapted.isStronglyPredictable_of_leftContinuous
       .iUnion fun k => (hu (k / (n + 1))).isSeparable_range
     refine stronglyMeasurable_iff_measurable_separable.mpr ⟨measurable_leftSample hu n, hs.mono ?_⟩
     rintro _ ⟨p, rfl⟩
-    exact Set.mem_iUnion.mpr ⟨⌈p.1 * (n + 1)⌉₊ - 1, Set.mem_range_self p.2⟩
+    refine Set.mem_iUnion.mpr ⟨⌈p.1 * (n + 1)⌉₊ - 1, ?_⟩
+    dsimp only
+    rw [leftSample_eq_natCast_div]
+    exact Set.mem_range_self p.2
   apply stronglyMeasurable_of_tendsto atTop hm
   apply tendsto_pi_nhds.mpr
   intro p
-  apply (hc p.2 p.1).tendsto.comp
+  apply (continuousWithinAt_Iio_iff_Iic.mp (hc p.2 p.1)).tendsto.comp
   refine tendsto_nhdsWithin_iff.mpr ⟨tendsto_leftSample p.1, .of_forall fun n => ?_⟩
   by_cases ht : p.1 = 0
   · simp [ht, leftSample_zero]
@@ -127,8 +136,7 @@ omit [MeasurableSpace E] [BorelSpace E] in
 theorem MeasureTheory.StronglyAdapted.isStronglyPredictable_of_continuous
     {ℱ : Filtration ℝ≥0 m} {u : ℝ≥0 → Ω → E} (hu : StronglyAdapted ℱ u)
     (hc : ∀ ω, Continuous (fun t => u t ω)) : IsStronglyPredictable ℱ u :=
-  hu.isStronglyPredictable_of_leftContinuous fun ω _ =>
-    (hc ω).continuousAt.continuousWithinAt
+  hu.isStronglyPredictable_of_isLeftContinuous fun ω => (hc ω).isLeftContinuous
 
 /-- Calendar time is measurable for the predictable sigma-algebra. -/
 theorem MeasureTheory.Filtration.measurable_fst_predictable {ι Ω : Type*} {m : MeasurableSpace Ω}
