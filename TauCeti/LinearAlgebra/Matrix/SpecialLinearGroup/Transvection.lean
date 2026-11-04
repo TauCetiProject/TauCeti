@@ -58,6 +58,13 @@ Chris Birkbeck), toward the multiplicativity theory of the `GL_n` Hecke ring.
 
 public section
 
+/-- Transposition exchanges the two indices of an elementary transvection. -/
+@[simp]
+theorem Matrix.transpose_transvection {n A : Type*} [DecidableEq n] [CommRing A]
+    (i j : n) (c : A) :
+    (Matrix.transvection i j c).transpose = Matrix.transvection j i c := by
+  simp [Matrix.transvection, Matrix.transpose_add, Matrix.transpose_single]
+
 namespace Matrix.SpecialLinearGroup
 
 open Matrix (TransvectionStruct)
