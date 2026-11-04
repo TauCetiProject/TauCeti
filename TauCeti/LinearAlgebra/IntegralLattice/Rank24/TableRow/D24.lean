@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.LinearAlgebra.IntegralLattice.Rank24.Niemeier
-public import TauCeti.LinearAlgebra.IntegralLattice.Orthogonal.Unique
 public import TauCeti.LinearAlgebra.IntegralLattice.RootLattice.TypeD.Plus
 
 /-!
@@ -39,10 +38,6 @@ open IntegralLattice DynkinType
 local instance : Unique (Fin RootfulNiemeierType.d24.components.length) :=
   inferInstanceAs (Unique (Fin 1))
 
-/-- The D₂₄ component list is nonempty, so position zero is available. -/
-local instance : NeZero RootfulNiemeierType.d24.components.length :=
-  inferInstanceAs (NeZero 1)
-
 /-- The Niemeier lattice of the `D₂₄` row, using the table's isotropic gluing. -/
 noncomputable abbrev d24Lattice := RootfulNiemeierType.d24.lattice
 
@@ -59,10 +54,16 @@ simple-root coordinates to checkerboard coordinates. -/
 theorem d24RootIsometry_apply
     (x : ∀ i, Fin (RootfulNiemeierType.d24.componentType i).rank → ℚ) :
     d24RootIsometry x =
-      rootLatticeIsometryCheckerboard 24 (by decide) (isSimplyLaced_D 24) (x 0) := by
-  exact (IntegralLattice.Isometry.trans_apply _ _ x).trans
-    (congrArg (rootLatticeIsometryCheckerboard 24 (by decide) (isSimplyLaced_D 24))
-      (IntegralLattice.Isometry.piUnique_apply _ x))
+      rootLatticeIsometryCheckerboard 24 (by decide) (isSimplyLaced_D 24) (x ⟨0, by decide⟩) := by
+  -- The sole component is definitionally D₂₄. Applying the composition formula as
+  -- a term allows this conversion before simplification of the one-summand map.
+  have h := IntegralLattice.Isometry.trans_apply
+    (IntegralLattice.Isometry.piUnique fun i ↦
+      (RootfulNiemeierType.d24.componentType i).rootLattice
+        (RootfulNiemeierType.d24.isSimplyLaced_componentType i))
+    (rootLatticeIsometryCheckerboard 24 (by decide) (isSimplyLaced_D 24)) x
+  simp only [IntegralLattice.Isometry.piUnique_apply] at h
+  exact h
 
 /-- Inverting the root-coordinate map recovers the sole component. -/
 @[simp]
@@ -70,10 +71,8 @@ theorem d24RootIsometry_symm_apply_zero (y : Fin 24 → ℚ) :
     d24RootIsometry.symm y ⟨0, by decide⟩ =
       (rootLatticeIsometryCheckerboard 24 (by decide) (isSimplyLaced_D 24)).symm y := by
   apply EquivLike.injective (rootLatticeIsometryCheckerboard 24 (by decide) (isSimplyLaced_D 24))
-  exact (d24RootIsometry_apply (d24RootIsometry.symm y)).symm.trans
-    ((d24RootIsometry.apply_symm_apply y).trans
-      ((rootLatticeIsometryCheckerboard 24 (by decide)
-        (isSimplyLaced_D 24)).apply_symm_apply y).symm)
+  simpa only [IntegralLattice.Isometry.apply_symm_apply] using
+    (d24RootIsometry_apply (d24RootIsometry.symm y)).symm
 
 private noncomputable def spinorWord : RootfulNiemeierType.d24.glueModule :=
   fun i ↦ (RootfulNiemeierType.d24.componentType i).glueLabelEquiv
@@ -103,7 +102,7 @@ private theorem discriminantGroupEquiv_d24RootIsometry (w : RootfulNiemeierType.
         RootfulNiemeierType.d24.isSimplyLaced_componentType
         RootfulNiemeierType.d24.valid_componentType w) =
       (rootLatticeIsometryCheckerboard 24 (by decide) (isSimplyLaced_D 24)).discriminantGroupEquiv
-        ((D 24).glueAlphabetIsometry (by decide) (isSimplyLaced_D 24) (w 0)) := by
+        ((D 24).glueAlphabetIsometry (by decide) (isSimplyLaced_D 24) (w ⟨0, by decide⟩)) := by
   let L := fun i ↦ (RootfulNiemeierType.d24.componentType i).rootLattice
     (RootfulNiemeierType.d24.isSimplyLaced_componentType i)
   let c := glueWordIsometry RootfulNiemeierType.d24.componentType
@@ -113,7 +112,7 @@ private theorem discriminantGroupEquiv_d24RootIsometry (w : RootfulNiemeierType.
     (IntegralLattice.Isometry.piUnique L)
     (rootLatticeIsometryCheckerboard 24 (by decide) (isSimplyLaced_D 24))
   have hcoord := (IntegralLattice.Isometry.discriminantGroupEquiv_piUnique L c).trans
-    (discriminantGroupPiEquiv_glueWordIsometry _ _ _ w 0)
+    (discriminantGroupPiEquiv_glueWordIsometry _ _ _ w ⟨0, by decide⟩)
   exact (LinearEquiv.congr_fun hcomp c).trans
     (congrArg (rootLatticeIsometryCheckerboard 24 (by decide)
       (isSimplyLaced_D 24)).discriminantGroupEquiv hcoord)
@@ -128,18 +127,21 @@ private theorem spinorWord_class :
   -- The table's component at zero is D₂₄, so its label is read in the
   -- even-rank checkerboard model as the pair (0, 1).
   have hlabel := glueAlphabetIsometry_D_apply_of_even
-    24 (by decide) (isSimplyLaced_D 24) (by decide) (spinorWord 0)
+    24 (by decide) (isSimplyLaced_D 24) (by decide) (spinorWord ⟨0, by decide⟩)
   rw [hlabel, IntegralLattice.Isometry.discriminantGroupEquiv_symm,
     LinearEquiv.apply_symm_apply]
   have hdigit : FiniteQuadraticModule.Isometry.ofEq
-      (glueAlphabet_D_of_even 24 (isSimplyLaced_D 24) (by decide)) (spinorWord 0) = (0, 1) :=
-    glueLabelEquiv_D_of_even 24 (isSimplyLaced_D 24) (by decide) 1
+      (glueAlphabet_D_of_even 24 (isSimplyLaced_D 24) (by decide))
+        (spinorWord ⟨0, by decide⟩) = (0, 1) := by
+    -- At the sole component, `spinorWord` is the label 1 of D₂₄. The natural-number
+    -- quotient and remainder in the label formula reduce to the ZMod pair (0, 1).
+    exact glueLabelEquiv_D_of_even 24 (isSimplyLaced_D 24) (by decide) 1
   rw [hdigit]
   exact zmodTwoProdAddEquivCheckerboardDiscriminantGroup_apply_zero_one 24 (by decide)
 
 /-- The table subgroup generated by `[1]` maps to the spinor subgroup of the
 literal checkerboard discriminant group. -/
-theorem map_d24GlueSubgroup :
+theorem map_glueSubgroup_d24_eq_checkerboardSpinorSubgroup :
     (RootfulNiemeierType.d24.glueSubgroup.map
       (glueWordIsometry RootfulNiemeierType.d24.componentType
         RootfulNiemeierType.d24.isSimplyLaced_componentType
@@ -147,10 +149,12 @@ theorem map_d24GlueSubgroup :
         d24RootIsometry.discriminantGroupEquiv.toAddEquiv.toAddMonoidHom =
       checkerboardSpinorSubgroup 24 := by
   rw [glueSubgroup_d24, AddMonoidHom.map_zmultiples]
-  -- The finite quadratic module's carrier is the literal discriminant group.
-  erw [AddMonoidHom.map_zmultiples]
-  rw [checkerboardSpinorSubgroup_def]
-  exact congrArg AddSubgroup.zmultiples spinorWord_class
+  -- The alphabet isometry lands in the discriminant quadratic module, whose carrier
+  -- is definitionally the discriminant group used by the second homomorphism.
+  exact (AddMonoidHom.map_zmultiples
+    d24RootIsometry.discriminantGroupEquiv.toAddEquiv.toAddMonoidHom _).trans
+      ((congrArg AddSubgroup.zmultiples spinorWord_class).trans
+        (checkerboardSpinorSubgroup_def 24).symm)
 
 /-- The actual table-glued `D₂₄` lattice is isometric to `D₂₄⁺`, by the same
 coordinate map as its root lattice. -/
@@ -160,7 +164,7 @@ noncomputable def d24CheckerboardIsometry :
     (gluedLattice_def _ _ _ _ _))).trans
     ((d24RootIsometry.ofIsotropicSubgroups _ _ _
       ((isIsotropic_checkerboardSpinorSubgroup_iff 24).mpr (by decide))
-      map_d24GlueSubgroup).trans (IntegralLattice.Isometry.ofEq
+      map_glueSubgroup_d24_eq_checkerboardSpinorSubgroup).trans (IntegralLattice.Isometry.ofEq
         (ofIsotropicSubgroup_checkerboardSpinorSubgroup 24 (by decide))))
 
 /-- Passing to the overlattices does not change the ambient coordinate map. -/
@@ -169,7 +173,10 @@ theorem d24CheckerboardIsometry_apply
     (x : ∀ i, Fin (RootfulNiemeierType.d24.componentType i).rank → ℚ) :
     d24CheckerboardIsometry x = d24RootIsometry x := by
   unfold d24CheckerboardIsometry
-  -- The table's glued-lattice wrapper and isotropic gluing have the same carrier.
+  -- `lattice_def` followed by `gluedLattice_def` identifies the row lattice with
+  -- isotropic gluing in the same dependent-function ambient space. The image of
+  -- `glueWordIsometry` is in the discriminant quadratic module's carrier, which is
+  -- definitionally the discriminant group. `erw` permits exactly this conversion.
   erw [IntegralLattice.Isometry.trans_apply, IntegralLattice.Isometry.ofEq_apply,
     IntegralLattice.Isometry.trans_apply, IntegralLattice.Isometry.ofEq_apply,
     IntegralLattice.Isometry.ofIsotropicSubgroups_apply]
@@ -194,21 +201,9 @@ theorem mem_d24Lattice_carrier_iff
     checkerboardPlusLattice_carrier, mem_checkerboardPlusCarrier_iff 24 (by decide),
     d24CheckerboardIsometry_apply, checkerboardLattice_carrier]
 
-/-- The `D₂₄` table lattice is even. -/
-theorem isEven_d24Lattice : d24Lattice.IsEven :=
-  RootfulNiemeierType.d24.isEven_lattice
-
-/-- The `D₂₄` table lattice is positive definite. -/
-theorem isPosDef_d24Lattice : d24Lattice.IsPosDef :=
-  RootfulNiemeierType.d24.isPosDef_lattice
-
 /-- The `D₂₄` table lattice is unimodular. -/
 theorem isUnimodular_d24Lattice : d24Lattice.IsUnimodular :=
   RootfulNiemeierType.d24.isUnimodular_lattice_of_ne (by decide) (by decide) (by decide) (by decide)
-
-/-- The `D₂₄` table lattice has rank twenty-four. -/
-theorem finrank_d24Lattice : Module.finrank ℤ d24Lattice = 24 :=
-  RootfulNiemeierType.d24.finrank_lattice
 
 /-- The roots of the table-glued lattice span exactly its embedded `D₂₄` root lattice. -/
 theorem span_vectorsOfNorm_two_d24Lattice :
