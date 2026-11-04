@@ -47,6 +47,10 @@ for which both cancellation laws hold on either side.
 * `TauCeti.CayleyDickson.trace_surjective`: when `2` is invertible, the trace is onto.
 * `TauCeti.CayleyDickson.self_mul_star` and `TauCeti.CayleyDickson.self_add_star`: the norm and the
   trace are the scalars `x * star x` and `x + star x`.
+* `TauCeti.CayleyDickson.mul_self` and `TauCeti.CayleyDickson.mul_add_mul_comm`: the rank-two
+  equation and its polarization.
+* `TauCeti.CayleyDickson.star_mem_of_one_mem`: a submodule containing `1` is closed under
+  conjugation.
 * `TauCeti.CayleyDickson.normSq_mul`: the norm is **multiplicative**.
 * `TauCeti.CayleyDickson.star_mul_mul_left` and `TauCeti.CayleyDickson.mul_mul_star_right`: the
   inverse properties.
@@ -187,6 +191,21 @@ theorem star_eq_trace_smul_one_sub : star x = trace x • 1 - x := by
 of the quadratic polynomial `X ^ 2 - T x * X + N x`. -/
 theorem mul_self : x * x = trace x • x - normSq x • 1 := by
   ext <;> simp [normSq_def, Quaternion.normSq_def'] <;> ring
+
+/-- The polarization of the rank-two equation `a * a = T a • a - N a • 1` at `x` and `y`: the
+symmetrized product `x * y + y * x` lies in the span of `1`, `x` and `y`. -/
+theorem mul_add_mul_comm :
+    x * y + y * x = trace y • x + trace x • y +
+      (normSq x + normSq y - normSq (x + y)) • (1 : CayleyDickson ℍ[R]) := by
+  ext <;> simp [normSq_def, Quaternion.normSq_def'] <;> ring
+
+/-- A submodule of the double of the quaternions that contains `1` is closed under conjugation, as
+`star a = T a • 1 - a`. -/
+theorem star_mem_of_one_mem {S : Type*} [SetLike S (CayleyDickson ℍ[R])]
+    [AddSubgroupClass S (CayleyDickson ℍ[R])] [SMulMemClass S R (CayleyDickson ℍ[R])] {s : S}
+    {a : CayleyDickson ℍ[R]} (h₁ : 1 ∈ s) (ha : a ∈ s) : star a ∈ s := by
+  rw [star_eq_trace_smul_one_sub]
+  exact sub_mem (SMulMemClass.smul_mem _ h₁) ha
 
 /-! ### The inverse properties -/
 
