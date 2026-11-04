@@ -11,6 +11,7 @@ public import Mathlib.CategoryTheory.Bicategory.NaturalTransformation.Pseudo
 public import Mathlib.CategoryTheory.Bicategory.Strict.Pseudofunctor
 public import Mathlib.CategoryTheory.Products.Basic
 public import Mathlib.CategoryTheory.SingleObj
+public import TauCeti.CategoryTheory.Bicategory.Functor.LocallyDiscrete
 
 /-!
 # Equivariant groupoid lifts of categorical group actions
@@ -580,6 +581,17 @@ lemma actComp_inv_app (p : Γ) (a b ab : SingleObj.star H ⟶ SingleObj.star H)
   rw [actComp]
   rfl
 
+omit [Category.{v₁, u₁} Γ] in
+/-- At the composite `f ≫ g` itself, the composition comparison `actComp` of the action is the
+composition comparison `mapComp` of the pseudofunctor `actions p`. -/
+lemma actComp_hom_app_eq_mapComp (p : Γ)
+    (f g : (⟨SingleObj.star H⟩ : LocallyDiscrete (SingleObj H)) ⟶ ⟨SingleObj.star H⟩)
+    (X : fiber actions p) :
+    (actComp actions p f.as g.as (f ≫ g).as rfl).hom.app X =
+      ((actions p).mapComp f g).hom.toNatTrans.app X := by
+  rw [actComp_hom_app]
+  exact congrArg (fun e ↦ e.hom.toNatTrans.app X) ((actions p).mapComp'_eq_mapComp f g)
+
 /-- The unit comparison `T_1 ≅ 𝟭` of the prescribed action at `p`. -/
 noncomputable def actId (actions : Γ → LocallyDiscrete (SingleObj H) ⥤ᵖ Cat.{v, w}) (p : Γ) :
     act actions p (𝟙 (SingleObj.star H)) ≅ 𝟭 (fiber actions p) :=
@@ -598,6 +610,49 @@ lemma actId_inv_app (p : Γ) (X : fiber actions p) :
       ((actions p).mapId' (𝟙 (SingleObj.star H)).toLoc).inv.toNatTrans.app X := by
   rw [actId]
   rfl
+
+omit [Category.{v₁, u₁} Γ] in
+/-- Associativity of the composition comparisons of the prescribed action at `p`. -/
+@[reassoc]
+lemma actComp_associativity (p : Γ) (a b c ab bc abc : SingleObj.star H ⟶ SingleObj.star H)
+    (hab : a ≫ b = ab) (hbc : b ≫ c = bc) (habc : ab ≫ c = abc) (habc' : a ≫ bc = abc)
+    (X : fiber actions p) :
+    (actComp actions p ab c abc habc).hom.app X ≫
+        (act actions p c).map ((actComp actions p a b ab hab).hom.app X) =
+      (actComp actions p a bc abc habc').hom.app X ≫
+        (actComp actions p b c bc hbc).hom.app ((act actions p a).obj X) := by
+  have := (actions p).mapComp'₀₂₃_hom_comp_mapComp'_hom_whiskerRight_app a.toLoc b.toLoc c.toLoc
+    ab.toLoc bc.toLoc abc.toLoc (by rw [← Quiver.Hom.comp_toLoc, hab])
+    (by rw [← Quiver.Hom.comp_toLoc, hbc]) (by rw [← Quiver.Hom.comp_toLoc, habc]) X
+  simpa [actComp_hom_app] using this
+
+omit [Category.{v₁, u₁} Γ] in
+/-- Left unitality of the composition comparisons of the prescribed action at `p`. -/
+@[reassoc]
+lemma actComp_left_unitality (p : Γ) (a : SingleObj.star H ⟶ SingleObj.star H)
+    (ha : 𝟙 _ ≫ a = a) (X : fiber actions p) :
+    (actComp actions p (𝟙 _) a a ha).hom.app X ≫
+        (act actions p a).map ((actId actions p).hom.app X) = 𝟙 _ := by
+  have := (actions p).mapComp'_id_comp_hom_app a.toLoc X
+  simp only [actComp_hom_app, actId_hom_app, Quiver.Hom.id_toLoc,
+    Pseudofunctor.mapId'_eq_mapId] at this ⊢
+  rw [this]
+  dsimp only [act]
+  simp [← Functor.map_comp]
+
+omit [Category.{v₁, u₁} Γ] in
+/-- Right unitality of the composition comparisons of the prescribed action at `p`. -/
+@[reassoc]
+lemma actComp_right_unitality (p : Γ) (a : SingleObj.star H ⟶ SingleObj.star H)
+    (ha : a ≫ 𝟙 _ = a) (X : fiber actions p) :
+    (actComp actions p a (𝟙 _) a ha).hom.app X ≫
+        (actId actions p).hom.app ((act actions p a).obj X) = 𝟙 _ := by
+  have := (actions p).mapComp'_comp_id_hom_app a.toLoc X
+  simp only [actComp_hom_app, actId_hom_app, Quiver.Hom.id_toLoc,
+    Pseudofunctor.mapId'_eq_mapId] at this ⊢
+  rw [this]
+  dsimp only [act]
+  simp
 
 /-- Compatibility of the commuting isomorphisms of the joint functors with the composition
 comparisons along `Γ`. -/
@@ -911,116 +966,65 @@ lemma transportCommIso_actId {p q : Γ} (g : p ⟶ q) (X : fiber actions p) :
 
 /-! ### The transport pseudofunctor and the action of the endomorphism monoid of an object -/
 
--- The three lemmas below are the coherence conditions of `transportPseudofunctor`. In them the
--- composite arrows of `Γ` appear in two forms that agree only propositionally (for instance
--- `(f ≫ g) ≫ h` and `f ≫ g ≫ h`), so they are stated for arbitrary composites, related by
--- `eqToHom`.
-
-private lemma transportComp_inv_associativity_eqToHom {p q r s : Γ} (f : p ⟶ q) (g : q ⟶ r)
-    (h : r ⟶ s) (fg : p ⟶ r) (gh : q ⟶ s) (fgh fgh' : p ⟶ s) (hfg : f ≫ g = fg)
-    (hgh : g ≫ h = gh) (hfgh : fg ≫ h = fgh) (hfgh' : f ≫ gh = fgh') (X : fiber actions p)
-    (hX : (L.transport fgh).obj X = (L.transport fgh').obj X) :
-    (L.transportComp fg h fgh hfgh).inv.app X ≫
-        (L.transport h).map ((L.transportComp f g fg hfg).inv.app X) ≫
-          (L.transportComp g h gh hgh).hom.app ((L.transport f).obj X) ≫
-            (L.transportComp f gh fgh' hfgh').hom.app X = eqToHom hX := by
-  obtain rfl : fgh' = fgh := by rw [← hfgh', ← hfgh, ← hfg, ← hgh, Category.assoc]
-  rw [← L.transportComp_associativity f g h fg gh _ hfg hgh hfgh X]
-  simp only [← Functor.map_comp_assoc, Iso.inv_hom_id_app, CategoryTheory.Functor.map_id,
-    Category.id_comp, eqToHom_refl]
-
-private lemma transportComp_inv_left_unitality_eqToHom {p q : Γ} (g k : p ⟶ q)
-    (hk : 𝟙 p ≫ g = k) (X : fiber actions p)
-    (hX : (L.transport k).obj X = (L.transport g).obj X) :
-    (L.transportComp (𝟙 p) g k hk).inv.app X ≫ (L.transport g).map ((L.transportId p).hom.app X) =
-      eqToHom hX := by
-  obtain rfl : k = g := hk.symm.trans (Category.id_comp g)
-  rw [← L.transportComp_left_unitality _ hk X, Iso.inv_hom_id_app, eqToHom_refl]
-
-private lemma transportComp_inv_right_unitality_eqToHom {p q : Γ} (g k : p ⟶ q)
-    (hk : g ≫ 𝟙 q = k) (X : fiber actions p)
-    (hX : (L.transport k).obj X = (L.transport g).obj X) :
-    (L.transportComp g (𝟙 q) k hk).inv.app X ≫ (L.transportId q).hom.app ((L.transport g).obj X) =
-      eqToHom hX := by
-  obtain rfl : k = g := hk.symm.trans (Category.comp_id g)
-  rw [← L.transportComp_right_unitality _ hk X, Iso.inv_hom_id_app, eqToHom_refl]
-
 /-- The transport functors as a pseudofunctor `LocallyDiscrete Γ ⥤ᵖ Cat` with value `C p` at
 `p`. It sends `g` to `E_g`; its unit comparison is `transportId` and its composition comparison
 at `g ≫ h` is the inverse of `transportComp`, so that `E_(g ≫ h) ≅ E_g ⋙ E_h`. -/
 -- The body is exposed so that the value `L.transportPseudofunctor.obj b` is definitionally the
 -- fiber `C b.as`, as needed to state the component formulas below in terms of its objects.
 @[expose] noncomputable def transportPseudofunctor : LocallyDiscrete Γ ⥤ᵖ Cat.{v, w} :=
-  LocallyDiscrete.mkPseudofunctor (fun p ↦ fiber actions p)
-    (fun g ↦ (L.transport g).toCatHom)
-    (fun p ↦ Cat.Hom.isoMk (L.transportId p))
-    (fun g h ↦ Cat.Hom.isoMk (L.transportComp g h (g ≫ h) rfl).symm)
-    (fun f g h ↦ by
-      ext X
-      simp only [Cat.Hom.isoMk_hom, Cat.Hom.isoMk_inv, Iso.symm_hom, Iso.symm_inv,
-        Cat.Hom.toNatTrans_comp, Cat.whiskerRight_toNatTrans, Cat.associator_hom_toNatTrans,
-        Cat.whiskerLeft_toNatTrans, NatTrans.comp_app, Functor.whiskerRight_app,
-        Functor.whiskerLeft_app, Functor.associator_hom_app, Category.id_comp,
-        Cat.Hom₂.eqToHom_toNatTrans, eqToHom_app, NatTrans.toCatHom₂_toNatTrans,
-        Functor.toCatHom_toFunctor, Cat.Hom.comp_toFunctor, Functor.comp_obj]
-      exact L.transportComp_inv_associativity_eqToHom _ _ _ _ _ _ _ _ _ _ _ _ _)
-    (fun f ↦ by
-      ext X
-      simp only [Cat.Hom.isoMk_hom, Iso.symm_hom, Cat.Hom.toNatTrans_comp,
-        Cat.whiskerRight_toNatTrans, Cat.leftUnitor_hom_toNatTrans, NatTrans.comp_app,
-        Functor.whiskerRight_app, Functor.leftUnitor_hom_app, Cat.Hom₂.eqToHom_toNatTrans,
-        eqToHom_app, NatTrans.toCatHom₂_toNatTrans, Functor.toCatHom_toFunctor,
-        Cat.Hom.comp_toFunctor, Functor.comp_obj, Cat.Hom.id_toFunctor]
-      -- The left unitor of `Cat` contributes an identity whose object is only definitionally
-      -- that of the goal, so it is removed through `congrArg` rather than by `rw`.
-      exact (congrArg (_ ≫ ·) (Category.comp_id _)).trans
-        (L.transportComp_inv_left_unitality_eqToHom _ _ _ _ _))
-    (fun f ↦ by
-      ext X
-      simp only [Cat.Hom.isoMk_hom, Iso.symm_hom, Cat.Hom.toNatTrans_comp,
-        Cat.whiskerLeft_toNatTrans, Cat.rightUnitor_hom_toNatTrans, NatTrans.comp_app,
-        Functor.whiskerLeft_app, Functor.rightUnitor_hom_app, Cat.Hom₂.eqToHom_toNatTrans,
-        eqToHom_app, NatTrans.toCatHom₂_toNatTrans, Functor.toCatHom_toFunctor,
-        Cat.Hom.comp_toFunctor, Functor.comp_obj, Cat.Hom.id_toFunctor]
-      -- As for the left unitor.
-      exact (congrArg (_ ≫ ·) (Category.comp_id _)).trans
-        (L.transportComp_inv_right_unitality_eqToHom _ _ _ _ _))
+  LocallyDiscrete.mkCatPseudofunctor (obj := fun p ↦ fiber actions p) L.transport L.transportId
+    (fun g h gh hgh ↦ (L.transportComp g h gh hgh).symm)
+    (fun f g h fg gh fgh hfg hgh hfgh hfgh' X ↦ by
+      -- Proved against the stated goal rather than as a bare term of type `... .inv ...`, so
+      -- that the proof has the type of the constructor's hypothesis on the nose. Unification
+      -- compares proof arguments by proof irrelevance without assigning metavariables, so this
+      -- is what lets the `LocallyDiscrete.mkCatPseudofunctor_*` lemmas below apply.
+      simp only [Iso.symm_hom]
+      exact LocallyDiscrete.inv_associativity_of_hom_associativity
+        (fun g h gh hgh ↦ L.transportComp g h gh hgh)
+        (fun f g h fg gh fgh hfg hgh hfgh _ X ↦
+          L.transportComp_associativity f g h fg gh fgh hfg hgh hfgh X)
+        f g h fg gh fgh hfg hgh hfgh hfgh' X)
+    (fun g hg X ↦ by
+      rw [Iso.symm_hom, ← L.transportComp_left_unitality g hg X, Iso.inv_hom_id_app])
+    (fun g hg X ↦ by
+      rw [Iso.symm_hom, ← L.transportComp_right_unitality g hg X, Iso.inv_hom_id_app])
 
 @[simp]
 lemma transportPseudofunctor_obj (b : LocallyDiscrete Γ) :
     L.transportPseudofunctor.obj b = fiber actions b.as :=
-  rfl
+  LocallyDiscrete.mkCatPseudofunctor_obj ..
 
 @[simp]
 lemma transportPseudofunctor_map_toFunctor {b b' : LocallyDiscrete Γ} (g : b ⟶ b') :
     (L.transportPseudofunctor.map g).toFunctor = L.transport g.as :=
-  rfl
+  LocallyDiscrete.mkCatPseudofunctor_map_toFunctor ..
 
 @[simp]
 lemma transportPseudofunctor_mapId_hom_toNatTrans_app (b : LocallyDiscrete Γ)
     (X : fiber actions b.as) :
     (L.transportPseudofunctor.mapId b).hom.toNatTrans.app X = (L.transportId b.as).hom.app X :=
-  rfl
+  LocallyDiscrete.mkCatPseudofunctor_mapId_hom_toNatTrans_app ..
 
 @[simp]
 lemma transportPseudofunctor_mapId_inv_toNatTrans_app (b : LocallyDiscrete Γ)
     (X : fiber actions b.as) :
     (L.transportPseudofunctor.mapId b).inv.toNatTrans.app X = (L.transportId b.as).inv.app X :=
-  rfl
+  LocallyDiscrete.mkCatPseudofunctor_mapId_inv_toNatTrans_app ..
 
 @[simp]
 lemma transportPseudofunctor_mapComp_hom_toNatTrans_app {b₀ b₁ b₂ : LocallyDiscrete Γ}
     (g : b₀ ⟶ b₁) (h : b₁ ⟶ b₂) (X : fiber actions b₀.as) :
     (L.transportPseudofunctor.mapComp g h).hom.toNatTrans.app X =
       (L.transportComp g.as h.as (g.as ≫ h.as) rfl).inv.app X :=
-  rfl
+  LocallyDiscrete.mkCatPseudofunctor_mapComp_hom_toNatTrans_app ..
 
 @[simp]
 lemma transportPseudofunctor_mapComp_inv_toNatTrans_app {b₀ b₁ b₂ : LocallyDiscrete Γ}
     (g : b₀ ⟶ b₁) (h : b₁ ⟶ b₂) (X : fiber actions b₀.as) :
     (L.transportPseudofunctor.mapComp g h).inv.toNatTrans.app X =
       (L.transportComp g.as h.as (g.as ≫ h.as) rfl).hom.app X :=
-  rfl
+  LocallyDiscrete.mkCatPseudofunctor_mapComp_inv_toNatTrans_app ..
 
 /-- The action of the endomorphism monoid `End p` on the prescribed fiber `C p` by transport,
 as a pseudofunctor `LocallyDiscrete (SingleObj (End p)) ⥤ᵖ Cat` with value `C p`: the

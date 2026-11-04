@@ -89,7 +89,7 @@ private theorem eq_of_rank_le_two {x y : RegularFormClass K}
 private theorem eq_of_rank_eq_aux (n : ℕ) : ∀ x y : RegularFormClass K,
     x.rank = n → y.rank = n → discr x = discr y → localHasse x = localHasse y → x = y := by
   induction n using Nat.strong_induction_on with
-  | h n ih =>
+  | ind n ih =>
     intro x y hx hy hd hs
     by_cases hn : n ≤ 2
     · exact eq_of_rank_le_two (hx.trans hy.symm) (hx ▸ hn) hd hs

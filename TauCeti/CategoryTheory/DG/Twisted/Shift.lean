@@ -156,6 +156,13 @@ theorem dgHomEquiv_dgMap_shiftFunctor (n : ℤ)
   exact (EnrichedFunctor.dgHomEquiv_mapDGAdditiveClosureHom _ _ i j).trans
     (DGShiftClosure.dgMap_shiftFunctor R n _)
 
+/-- The shift of an object of the additive closure with the zero twist is the shifted object with
+the zero twist. -/
+theorem shiftFunctor_obj_ofObj (n : ℤ) (M : DGAdditiveClosure (DGShiftClosure C)) :
+    (shiftFunctor R n).obj (ofObj R M) =
+      ofObj R ⟨M.ι, fun i ↦ ⟨(M.X i).obj, (M.X i).shift + n⟩⟩ :=
+  eq_ofObj_of_twist_eq_zero R (map_zero _)
+
 /-! ### The comparison morphisms of twisted objects -/
 
 variable (P Q : DGTwistedObject R (DGAdditiveClosure (DGShiftClosure C))) (n : ℤ)

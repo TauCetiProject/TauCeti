@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RingTheory.LaurentSeries.Puiseux.Uniformizer
-public import TauCeti.RingTheory.LaurentSeries.Substitution
+public import TauCeti.RingTheory.LaurentSeries.Substitution.Basic
 
 /-!
 # Parameter changes act trivially on the Galois group of `K⸨X⸩`

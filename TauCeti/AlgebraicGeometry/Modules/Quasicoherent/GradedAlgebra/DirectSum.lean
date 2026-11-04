@@ -44,6 +44,10 @@ is quasicoherent because coproducts of quasicoherent sheaves are.
   `TauCeti.AlgebraicGeometry.GradedQuasicoherentAlgebra.one_toQuasicoherentAlgebra`: its
   multiplication restricts to the homogeneous multiplication on `Aᵢ ⊗ Aⱼ`, and its unit is the
   unit of `A₀`;
+* `TauCeti.AlgebraicGeometry.GradedQuasicoherentAlgebra.mul_ιTotal_comp` and
+  `TauCeti.AlgebraicGeometry.GradedQuasicoherentAlgebra.one_ιTotal_comp`: hence an algebra
+  morphism out of `⨁ₙ Aₙ` is multiplicative and unital on the homogeneous summands
+  (`mul_ιTotal` and `one_ιTotal` for the identity);
 * `TauCeti.AlgebraicGeometry.GradedQuasicoherentAlgebra.ιTotal_toQuasicoherentAlgebra_map`:
   the algebra morphism induced by a graded algebra morphism is its degree-`n` component on the
   summand `Aₙ`.
@@ -241,6 +245,44 @@ theorem one_toQuasicoherentAlgebra (A : GradedQuasicoherentAlgebra X) :
       (toQuasicoherentAlgebra_obj_obj_X A).symm).symm
   rw [ιTotal_def, hφX]
   exact hone.symm.trans ((congrArg (· ≫ φ) htotal).trans (Category.assoc _ _ _))
+
+/-- The homogeneous multiplication `Aᵢ ⊗ Aⱼ ⟶ Aᵢ₊ⱼ` followed by the inclusion of the summand
+`Aᵢ₊ⱼ` is the multiplication of the direct-sum algebra on the summand `Aᵢ ⊗ Aⱼ`. -/
+@[reassoc]
+theorem mul_ιTotal (A : GradedQuasicoherentAlgebra X) (i j : ℕ) :
+    A.obj.toMon.mul i j ≫ ιTotal A (i + j) =
+      (ιTotal A i ⊗ₘ ιTotal A j) ≫ μ[(toQuasicoherentAlgebra.obj A).obj.X] := by
+  rw [ιTotal_tensorHom_ιTotal_mul, Mon.mul_eq]
+  exact Category.assoc _ _ _
+
+/-- The unit of `A₀` followed by the inclusion of the summand `A₀` is the unit of the direct-sum
+algebra. -/
+@[reassoc]
+theorem one_ιTotal (A : GradedQuasicoherentAlgebra X) :
+    A.obj.toMon.one ≫ ιTotal A 0 = η[(toQuasicoherentAlgebra.obj A).obj.X] := by
+  rw [one_toQuasicoherentAlgebra, Mon.one_eq]
+  exact Category.assoc _ _ _
+
+/-- A morphism of commutative algebras `k` out of the direct-sum algebra `⨁ₙ Aₙ` sends the
+homogeneous multiplication `Aᵢ ⊗ Aⱼ ⟶ Aᵢ₊ⱼ` to the product of its restrictions to `Aᵢ` and
+`Aⱼ`. -/
+@[reassoc]
+theorem mul_ιTotal_comp {B : CommMon X.Modules} (A : GradedQuasicoherentAlgebra X)
+    (k : (toQuasicoherentAlgebra.obj A).obj ⟶ B) (i j : ℕ) :
+    A.obj.toMon.mul i j ≫ ιTotal A (i + j) ≫ k.hom.hom =
+      ((ιTotal A i ≫ k.hom.hom) ⊗ₘ (ιTotal A j ≫ k.hom.hom)) ≫ μ[B.X] :=
+  (Category.assoc _ _ _).symm.trans ((congrArg (· ≫ k.hom.hom) (mul_ιTotal A i j)).trans
+    ((Category.assoc _ _ _).trans ((congrArg (_ ≫ ·) (IsMonHom.mul_hom k.hom.hom)).trans
+      (tensorHom_comp_tensorHom_assoc _ _ _ _ _))))
+
+/-- A morphism of commutative algebras `k` out of the direct-sum algebra `⨁ₙ Aₙ` sends the unit
+of `A₀` to the unit of its target. -/
+@[reassoc]
+theorem one_ιTotal_comp {B : CommMon X.Modules} (A : GradedQuasicoherentAlgebra X)
+    (k : (toQuasicoherentAlgebra.obj A).obj ⟶ B) :
+    A.obj.toMon.one ≫ ιTotal A 0 ≫ k.hom.hom = η[B.X] :=
+  (Category.assoc _ _ _).symm.trans
+    ((congrArg (· ≫ k.hom.hom) (one_ιTotal A)).trans (IsMonHom.one_hom k.hom.hom))
 
 /-- On the summand `Aₙ`, the algebra morphism induced by a graded algebra morphism `f` is the
 degree-`n` component of `f`. -/

@@ -143,7 +143,7 @@ def halfExponent (e : SuzukiReeIndex) : ℕ :=
 theorem fieldExponent_eq_two_mul_halfExponent_add_one (e : SuzukiReeIndex) :
     e.1.fieldExponent = 2 * e.halfExponent + 1 := by
   obtain ⟨⟨d, hvalid⟩, hhalf⟩ := e
-  cases d <;> try simp at hhalf
+  cases d <;> simp at hhalf
   all_goals simp [halfExponent, ValidLieTypeIndex.fieldExponent]
 
 /-- The field exponent of a half-Frobenius index is odd. -/
@@ -159,7 +159,7 @@ theorem halfExponent_eq_zero_iff (e : SuzukiReeIndex) :
     e.halfExponent = 0 ↔ e.1.1 = .tits := by
   obtain ⟨⟨d, hvalid⟩, hhalf⟩ := e
   rw [LieTypeIndex.valid_iff, LieTypeIndex.inStandardRange_iff] at hvalid
-  cases d <;> try simp at hhalf
+  cases d <;> simp at hhalf
   case tits => simp [halfExponent]
   all_goals
     obtain ⟨hm, -⟩ := hvalid

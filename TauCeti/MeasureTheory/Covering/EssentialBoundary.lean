@@ -8,6 +8,7 @@ module
 public import TauCeti.MeasureTheory.Covering.Besicovitch
 public import TauCeti.MeasureTheory.Measure.OpenPos
 public import TauCeti.MeasureTheory.OuterMeasure.Basic
+public import Mathlib.MeasureTheory.Measure.Lebesgue.EqHaar
 
 /-!
 # Densities, essential interior and essential boundary
@@ -35,6 +36,10 @@ theorem shows that the essential interior of a null-measurable set `s` agrees wi
 everywhere and the essential boundary is null. The essential interior is
 thus a canonical representative of the a.e. class of `s`.
 
+For an additive Haar measure on a finite-dimensional real normed space of dimension `n`, a set
+filling a proportion `r ^ n ≤ c μ(s ∩ ball x r)` of every small ball around `x` does not have
+density zero at `x`.
+
 ## Main declarations
 
 * `TauCeti.HasDensityAt μ s x d`: the set `s` has density `d` at `x` with respect to `μ`.
@@ -42,10 +47,14 @@ thus a canonical representative of the a.e. class of `s`.
 * `TauCeti.essentialInterior_congr_ae` and its companions: invariance under null modification.
 * `TauCeti.essentialInterior_compl` and `TauCeti.essentialBoundary_compl`: complements.
 * `TauCeti.essentialBoundary_union_subset` and `TauCeti.essentialBoundary_inter_subset`.
+* `TauCeti.essentialInterior_preimage_add_right` and its companions: for a translation-invariant
+  measure, the three sets commute with translations.
 * `TauCeti.interior_subset_essentialInterior`, `TauCeti.essentialInterior_subset_closure` and
   `TauCeti.essentialBoundary_subset_frontier`: comparison with the topological notions.
 * `TauCeti.essentialInterior_ae_eq` and `TauCeti.measure_essentialBoundary`: Lebesgue's density
   theorem.
+* `TauCeti.not_hasDensityAt_zero_of_eventually_ofReal_pow_le_mul_measure_inter_ball`: a lower
+  volume density bound against a Haar measure rules out density zero.
 
 ## References
 
@@ -57,7 +66,7 @@ thus a canonical representative of the a.e. class of `s`.
 public section
 
 open Filter Metric MeasureTheory Set Topology
-open scoped ENNReal
+open scoped ENNReal NNReal
 
 namespace TauCeti
 
@@ -343,6 +352,43 @@ end OpenPos
 
 end PseudoMetricSpace
 
+/-! ### Translations -/
+
+section Translation
+
+variable {E : Type*} [SeminormedAddCommGroup E] [MeasurableSpace E] [MeasurableAdd E]
+  {μ : Measure E} [μ.IsAddRightInvariant] {s : Set E} {x h : E} {d : ℝ≥0∞}
+
+/-- For a translation-invariant measure, the density of the translate `(· + h) ⁻¹' s` at `x` is the
+density of `s` at `x + h`. -/
+@[simp]
+theorem hasDensityAt_preimage_add_right :
+    HasDensityAt μ ((· + h) ⁻¹' s) x d ↔ HasDensityAt μ s (x + h) d := by
+  have hball (r : ℝ) : closedBall x r = (· + h) ⁻¹' closedBall (x + h) r := by
+    rw [preimage_add_right_closedBall, add_sub_cancel_right]
+  simp only [hasDensityAt_iff, hball, ← preimage_inter, measure_preimage_add_right]
+
+/-- For a translation-invariant measure, the essential interior commutes with translations. -/
+@[simp]
+theorem essentialInterior_preimage_add_right :
+    essentialInterior μ ((· + h) ⁻¹' s) = (· + h) ⁻¹' essentialInterior μ s :=
+  ext fun _ => hasDensityAt_preimage_add_right
+
+/-- For a translation-invariant measure, the essential exterior commutes with translations. -/
+@[simp]
+theorem essentialExterior_preimage_add_right :
+    essentialExterior μ ((· + h) ⁻¹' s) = (· + h) ⁻¹' essentialExterior μ s :=
+  ext fun _ => hasDensityAt_preimage_add_right
+
+/-- For a translation-invariant measure, the essential boundary commutes with translations. -/
+@[simp]
+theorem essentialBoundary_preimage_add_right :
+    essentialBoundary μ ((· + h) ⁻¹' s) = (· + h) ⁻¹' essentialBoundary μ s := by
+  rw [essentialBoundary_def, essentialBoundary_def, essentialInterior_preimage_add_right,
+    essentialExterior_preimage_add_right, preimage_compl, preimage_union]
+
+end Translation
+
 /-! ### Lebesgue's density theorem -/
 
 section Lebesgue
@@ -394,5 +440,38 @@ theorem essentialInterior_essentialInterior (hs : NullMeasurableSet s μ) :
   essentialInterior_congr_ae (essentialInterior_ae_eq hs)
 
 end Lebesgue
+
+/-! ### Lower volume density bounds for Haar measures -/
+
+section AddHaar
+
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+  [MeasurableSpace E] [BorelSpace E] {μ : Measure E} [μ.IsAddHaarMeasure] {s : Set E} {x : E}
+
+/-- Against an additive Haar measure on a space of dimension `n`, a set filling a proportion
+`ofReal (r ^ n) ≤ c μ(s ∩ ball x r)`, `c ≠ ∞`, of every small ball around `x` does not have density
+zero at `x`. -/
+theorem not_hasDensityAt_zero_of_eventually_ofReal_pow_le_mul_measure_inter_ball {c : ℝ≥0∞}
+    (hc : c ≠ ∞)
+    (h : ∀ᶠ r in 𝓝[>] 0, ENNReal.ofReal (r ^ Module.finrank ℝ E) ≤ c * μ (s ∩ ball x r)) :
+    ¬HasDensityAt μ s x 0 := by
+  intro h0
+  have hB : μ (ball (0 : E) 1) ≠ ∞ := measure_ball_lt_top.ne
+  -- The proportions of `s` in the closed balls stay above `(c μ(ball 0 1))⁻¹`.
+  have hlim : Tendsto (fun r => c * μ (ball (0 : E) 1) *
+      (μ (s ∩ closedBall x r) / μ (closedBall x r))) (𝓝[>] 0) (𝓝 0) := by
+    simpa using ENNReal.Tendsto.const_mul (hasDensityAt_iff.1 h0)
+      (Or.inr (ENNReal.mul_ne_top hc hB))
+  refine absurd (ge_of_tendsto hlim ?_) (by simp : ¬(1 : ℝ≥0∞) ≤ 0)
+  filter_upwards [h, self_mem_nhdsWithin] with r hr (hr0 : 0 < r)
+  have h0' : μ (closedBall x r) ≠ 0 := (measure_closedBall_pos μ x hr0).ne'
+  have htop : μ (closedBall x r) ≠ ∞ := measure_closedBall_lt_top.ne
+  rw [← ENNReal.div_self h0' htop, ← mul_div_assoc]
+  refine ENNReal.div_le_div_right ?_ _
+  rw [Measure.addHaar_closedBall μ x hr0.le, mul_right_comm]
+  gcongr
+  exact hr.trans (by gcongr; exact ball_subset_closedBall)
+
+end AddHaar
 
 end TauCeti

@@ -118,4 +118,13 @@ theorem homDirectSumLinearEquiv_symm_apply (φ : ∀ i, A ⟶ B i) (x : A) (i : 
   exact congrFun ((DirectSum.linearEquivFunOnFintype k ι
     (fun i ↦ (B i : Type v))).apply_symm_apply (fun j ↦ (φ j).hom x)) i
 
+/-- Taking a component commutes with precomposition. -/
+@[simp]
+theorem homDirectSumLinearEquiv_comp {A' : Rep.{v} k G} (f : A' ⟶ A)
+    (φ : A ⟶ Rep.of (directSum fun i ↦ (B i).ρ)) (i : ι) :
+    homDirectSumLinearEquiv A' B (f ≫ φ) i =
+      f ≫ homDirectSumLinearEquiv A B φ i := by
+  ext x
+  simp
+
 end Rep

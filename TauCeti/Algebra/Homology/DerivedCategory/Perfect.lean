@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Algebra.Homology.CochainComplex.Opcycles
 public import TauCeti.Algebra.Homology.DerivedCategory.ProjectiveResolution
-public import TauCeti.Algebra.Homology.DerivedCategory.Singularity
+public import TauCeti.Algebra.Homology.DerivedCategory.Singularity.Basic
 public import Mathlib.Algebra.Homology.DerivedCategory.Ext.EnoughProjectives
 public import TauCeti.CategoryTheory.Exact.ExtOrthogonal
 public import TauCeti.CategoryTheory.Triangulated.EventuallyOrthogonal

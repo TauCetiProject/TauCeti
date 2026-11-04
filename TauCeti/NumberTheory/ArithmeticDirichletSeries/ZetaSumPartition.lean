@@ -96,7 +96,7 @@ theorem primeIdealZetaSum_union_le {S T : Set (HeightOneSpectrum (𝓞 K))} {s :
   have hdiff : Summable fun 𝔭 : ↥(T \ S) ↦ (Ideal.absNorm 𝔭.1.asIdeal : ℝ) ^ (-s) := by
     simpa only [Function.comp_def, Set.coe_inclusion] using
       hT.comp_injective (Set.inclusion_injective hsub)
-  have hsplit := hS.tsum_union_disjoint (f := fun 𝔭 : HeightOneSpectrum (𝓞 K) ↦
+  have hsplit := hS.tsum_union_of_disjoint (f := fun 𝔭 : HeightOneSpectrum (𝓞 K) ↦
     (Ideal.absNorm 𝔭.asIdeal : ℝ) ^ (-s)) Set.disjoint_sdiff_right hdiff
   have hle : ∑' 𝔭 : ↥(T \ S), (Ideal.absNorm 𝔭.1.asIdeal : ℝ) ^ (-s) ≤
       ∑' 𝔭 : T, (Ideal.absNorm 𝔭.1.asIdeal : ℝ) ^ (-s) :=

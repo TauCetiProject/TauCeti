@@ -307,7 +307,8 @@ theorem noncentralFMeasure_eq_withDensity (m n : ℝ) (l : ℝ≥0) :
     rw [← withDensity_tsum (fun j ↦ (hg j).const_smul (poissonMeasure (l / 2) {j}))]
     congr 1
     funext x
-    rw [Pi.tsum_apply (Pi.summable.2 fun _ ↦ ENNReal.summable), noncentralFPDF_eq_tsum h.1 h.2]
+    rw [Pi.tsum_apply (Pi.summable.2 fun _ ↦ CompleteLattice.summable),
+      noncentralFPDF_eq_tsum h.1 h.2]
     simp only [Pi.smul_apply, smul_eq_mul, mul_assoc]
   · have hpdf : noncentralFPDF m n l = 0 := funext (noncentralFPDF_of_not_pos h l)
     rw [noncentralFMeasure_of_not_pos h, hpdf, withDensity_zero]

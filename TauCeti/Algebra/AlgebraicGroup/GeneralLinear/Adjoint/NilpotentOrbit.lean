@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.Adjoint.Centralizer
+public import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.Adjoint.Centralizer.Basic
 public import TauCeti.LinearAlgebra.End.NilpotentCentralizer
 import TauCeti.Combinatorics.Enumerative.Partition.ColumnSquares
 

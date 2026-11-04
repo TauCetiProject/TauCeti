@@ -49,6 +49,11 @@ along by the left-multiplication forms of the lifting property.
   to `y` has length `ℓ x - ℓ y`.
 * `CoxeterSystem.exists_minimalCosetRepChain`: two comparable minimal coset representatives are
   joined by a saturated chain.
+* `CoxeterSystem.minimalCosetRepCovBy_simple_mul_of_isLeftDescent`,
+  `CoxeterSystem.MinimalCosetRepCovBy.isLeftDescent_of_ne` and
+  `CoxeterSystem.MinimalCosetRepCovBy.simple_mul_of_isLeftDescent`: for a left descent `s i` of
+  `x`, `s i * x ⋖ x`, and every other cover `z ⋖ x` has the left descent `s i` too, with
+  `s i * z ⋖ s i * x`.
 
 ## References
 
@@ -184,5 +189,41 @@ theorem exists_minimalCosetRepChain {y x : W} (hy : cs.IsMinimalCosetRep J y)
   have hcov : cs.MinimalCosetRepCovBy J z x :=
     minimalCosetRepCovBy_iff.mpr ⟨hz, hx, hzx.bruhatLE, hzlen⟩
   exact ⟨C.cons ⟨x, hx⟩ (hhead ▸ hcov), rfl, by rw [RelSeries.last_cons, hlast]⟩
+
+/-! ### Covers and left descents -/
+
+/-- **Removing a left descent gives a cover.** If `s i` is a left descent of a minimal coset
+representative `x`, then `s i * x` is covered by `x` in `W / W_J`. -/
+theorem minimalCosetRepCovBy_simple_mul_of_isLeftDescent {x : W} (hx : cs.IsMinimalCosetRep J x)
+    {i : B} (hi : cs.IsLeftDescent x i) : cs.MinimalCosetRepCovBy J (s i * x) x := by
+  have hlen := cs.isLeftDescent_iff.mp hi
+  refine minimalCosetRepCovBy_iff.mpr ⟨hx.simple_mul_of_isLeftDescent cs hi, hx, ?_, hlen⟩
+  simpa only [cs.simple_mul_simple_cancel_left] using
+    (cs.bruhatStep_simple_mul i (w := s i * x)
+      (by rw [cs.simple_mul_simple_cancel_left]; omega)).bruhatLE
+
+/-- **A left descent of the top of a cover is a left descent of the bottom**, unless the cover is
+`s i * x ⋖ x`. If `z ⋖ x` in `W / W_J` and `s i` is a left descent of `x`, then either
+`z = s i * x` or `s i` is a left descent of `z`: otherwise the lifting property gives
+`z ≤ s i * x`, and the two have the same length. -/
+theorem MinimalCosetRepCovBy.isLeftDescent_of_ne {z x : W} (h : cs.MinimalCosetRepCovBy J z x)
+    {i : B} (hi : cs.IsLeftDescent x i) (hne : z ≠ s i * x) : cs.IsLeftDescent z i := by
+  by_contra hz
+  have hlt := (h.bruhatLE.bruhatLE_simple_mul hz).length_lt_of_ne hne
+  have := cs.isLeftDescent_iff.mp hi
+  have := h.length_add_one_eq
+  omega
+
+/-- **A common left descent moves a cover down.** If `z ⋖ x` in `W / W_J` and `s i` is a left
+descent of both, then `s i * z ⋖ s i * x`. -/
+theorem MinimalCosetRepCovBy.simple_mul_of_isLeftDescent {z x : W}
+    (h : cs.MinimalCosetRepCovBy J z x) {i : B} (hz : cs.IsLeftDescent z i)
+    (hx : cs.IsLeftDescent x i) : cs.MinimalCosetRepCovBy J (s i * z) (s i * x) := by
+  have := cs.isLeftDescent_iff.mp hz
+  have := cs.isLeftDescent_iff.mp hx
+  have := h.length_add_one_eq
+  exact minimalCosetRepCovBy_iff.mpr ⟨h.isMinimalCosetRep_left.simple_mul_of_isLeftDescent cs hz,
+    h.isMinimalCosetRep_right.simple_mul_of_isLeftDescent cs hx,
+    h.bruhatLE.simple_mul_simple_mul_of_isLeftDescent hz hx, by omega⟩
 
 end CoxeterSystem

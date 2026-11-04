@@ -21,10 +21,9 @@ import Mathlib.Analysis.Complex.CauchyIntegral
 closed formula `hyperbolicDist z w = Real.artanh (pseudoHyperbolicExpr z w)`, and
 `Hyperbolic/Density.lean` shows that its infinitesimal density is `(1 - ‖z‖ ^ 2)⁻¹` and that the
 distance from the origin along a *radius* is the integral of that density along the radius. The
-latter file records, in so many words, what was still missing: "the density-weighted length of a
-general curve is not defined here, so this does not identify `hyperbolicDist` with the length
-metric of the density between arbitrary points". This file supplies the definition and the
-identification.
+density-weighted length of a general curve is not defined there, so that file does not identify
+`hyperbolicDist` with the length metric of the density between arbitrary points. This file supplies
+the definition and the identification.
 
 The definition is the obvious one: for a path `γ : ℝ → ℂ` in the disc,
 

@@ -9,7 +9,7 @@ public import TauCeti.Analysis.Green.FiniteSum
 public import TauCeti.Analysis.Contour.Cycle.Winding
 public import TauCeti.Analysis.Contour.Cycle.Trace
 import TauCeti.Analysis.Green.AbsolutelyContinuous
-import TauCeti.Analysis.Contour.AbsolutelyContinuous
+import TauCeti.Analysis.Calculus.ContDiff.PiecewiseC1On.AbsolutelyContinuous
 import TauCeti.Analysis.Contour.Winding.AbsolutelyContinuous.Reparam
 import Mathlib.Analysis.Convex.Segment
 import TauCeti.MeasureTheory.Function.AbsolutelyContinuous.Reparam

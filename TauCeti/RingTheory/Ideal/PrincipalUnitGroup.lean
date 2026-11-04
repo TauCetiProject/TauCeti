@@ -122,7 +122,7 @@ theorem principalUnitGroup_eq_ker_unitsMap (I : Ideal R) :
 theorem unitsMap_quotientMk_surjective {I : Ideal R} (hI : I ≤ jacobson ⊥) :
     Function.Surjective (Units.map (Quotient.mk I).toMonoidHom) :=
   IsLocalRing.surjective_units_map_of_local_ringHom _ Quotient.mk_surjective
-    (isLocalHom_of_le_jacobson_bot I hI)
+    (_root_.isLocalHom_of_le_jacobson (by simpa only [Ideal.jacobson_bot] using hI))
 
 /-- For an ideal `I` contained in the Jacobson radical, the units of `R` modulo the principal
 unit group of `I` are the units of `R ⧸ I`. -/
@@ -178,7 +178,8 @@ theorem principalUnitGroupToQuotient_surjective {J J' : Ideal R} (h : J * J ≤ 
     (hJ : J ≤ jacobson ⊥) : Function.Surjective (principalUnitGroupToQuotient J J' h) := by
   intro q
   obtain ⟨⟨x, hx⟩, hq⟩ := Submodule.Quotient.mk_surjective _ q.toAdd
-  have hunit : IsUnit (x * 1 + 1) := mem_jacobson_bot.mp (hJ hx) 1
+  have hunit : IsUnit (x * 1 + 1) := Ring.mem_jacobson_iff.mp ((Ideal.jacobson_bot (R :=
+    R)) ▸ hJ hx) 1
   refine ⟨⟨hunit.unit, ?_⟩, ?_⟩
   · simpa [mem_principalUnitGroup] using hx
   · apply Multiplicative.toAdd.injective

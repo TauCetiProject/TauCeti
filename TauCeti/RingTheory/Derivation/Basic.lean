@@ -70,8 +70,9 @@ theorem leibniz_prod {ι : Type*} [DecidableEq ι] (s : Finset ι) (f : ι → A
 theorem iterate_sum_smul {ι : Type*} (D : Derivation R A A) (m : ℕ) (s : Finset ι)
     (c : ι → R) (f : ι → A) :
     (D : A → A)^[m] (∑ i ∈ s, c i • f i) = ∑ i ∈ s, c i • (D : A → A)^[m] (f i) := by
-  simpa only [LinearMap.map_smul, Module.End.pow_apply, coeFn_coe] using
-    map_sum (D.toLinearMap ^ m) (fun i ↦ c i • f i) s
+  have h := map_sum (D.toLinearMap ^ m) (fun i ↦ c i • f i) s
+  simp only [LinearMap.map_smul] at h
+  simpa only [pow_apply_eq_iterate, coeFn_coe] using h
 
 /-- **General Leibniz rule** for iterates of a derivation of a commutative algebra.
 
@@ -93,7 +94,7 @@ theorem iterate_apply_mul (D : Derivation R A A) (n : ℕ) (a b : A) :
 /-- Iterating a scalar multiple of a derivation scales its iterates by the corresponding power. -/
 theorem iterate_smul_apply (D : Derivation R A A) (r : R) (n : ℕ) (a : A) :
     (r • D)^[n] a = r ^ n • D^[n] a := by
-  simpa [Module.End.pow_apply, coeFn_coe] using
+  simpa [_root_.pow_apply_eq_iterate, coeFn_coe] using
     LinearMap.congr_fun (smul_pow r D.toLinearMap n) a
 
 /-- Scalar multiples of a locally nilpotent derivation are locally nilpotent. -/

@@ -8,7 +8,7 @@ module
 public import Mathlib.Algebra.Group.Action.Opposite
 public import Mathlib.Algebra.Group.Action.Pretransitive
 public import Mathlib.Topology.Algebra.Group.Defs
-public import Mathlib.Topology.FiberBundle.Constructions
+public import TauCeti.Topology.FiberBundle.Pullback
 
 /-!
 # Principal bundles
@@ -43,7 +43,9 @@ Conversely to the local sections `b ↦ e⁻¹ (b, 1)` of an equivariant trivial
 `σ` continuous on an open set `U` determines the equivariant trivialization
 `p ↦ (p.proj, division G (σ p.proj) p)` over `U`
 (`TauCeti.PrincipalBundle.trivializationOfSection`). The trivial bundle `Bundle.Trivial B G`
-with `G` acting by right multiplication is principal, with division map `(p, q) ↦ p⁻¹ * q`.
+with `G` acting by right multiplication is principal, with division map `(p, q) ↦ p⁻¹ * q`, and
+the pullback `f *ᵖ P` along a continuous map `f` is principal for the same right action on its
+fibres, with the same division map (`TauCeti.PrincipalBundle.pullback`).
 
 The fibres are not given Mathlib's multiplicative `Torsor` structure: its acting group is an
 `outParam`, and a group `G` is already a torsor for its own left action (`Group.instTorsor`), so
@@ -61,6 +63,7 @@ the fibre `G` of the trivial bundle cannot also be a torsor for the right action
   division map.
 * `TauCeti.PrincipalBundle.trivializationOfSection`: the equivariant trivialization determined by a
   continuous local section.
+* `TauCeti.PrincipalBundle.pullback`: the pullback of a principal bundle is a principal bundle.
 
 ## References
 
@@ -400,3 +403,34 @@ instance isEquivariant_trivializationOfSection :
   ⟨fun _ _ _ _ ↦ by simp⟩
 
 end TauCeti.PrincipalBundle
+
+/-! ### Pullbacks -/
+
+section Pullback
+
+variable {B' : Type*} [TopologicalSpace B'] [∀ b, Nonempty (P b)] {K : Type*} [FunLike K B' B]
+  [ContinuousMapClass K B' B]
+
+/-- The pullback of an equivariant trivialization is equivariant. -/
+instance Bundle.Trivialization.isEquivariant_pullback (e : Trivialization G (π G P))
+    [e.IsEquivariant] (f : K) : (e.pullback f).IsEquivariant :=
+  ⟨fun _ hx p g ↦ e.snd_apply_smul (P := P) hx p g⟩
+
+/-- **The pullback of a principal bundle is a principal bundle.** For a continuous map
+`f : B' → B`, the pullback `f *ᵖ P` of a principal `G`-bundle `P` is a principal `G`-bundle: its
+fibre over `x` is the fibre of `P` over `f x` with the same right action, and every trivialization
+of its atlas is the pullback of an equivariant trivialization of `P`. -/
+instance TauCeti.PrincipalBundle.pullback (f : K) : PrincipalBundle G ((f : B' → B) *ᵖ P) where
+  isEquivariant_trivialization' e' he' := by
+    obtain ⟨e, he, rfl⟩ := he'.out
+    infer_instance
+
+/-- The division map of the pullback of a principal bundle is the division map of the bundle:
+both are characterized by the same equation `p • g = q` in the fibre of `P` over `f x`. -/
+-- Not `simp`: the generic division lemmas already apply to `f *ᵖ P`, whereas after this rewrite
+-- the action on the pullback fibre no longer matches the action on the fibres of `P` syntactically.
+theorem TauCeti.PrincipalBundle.division_pullback (f : K) {x : B'} (p q : ((f : B' → B) *ᵖ P) x) :
+    division G p q = division G (P := P) (b := f x) p q :=
+  division_eq_iff.2 (smul_division (P := P) p q)
+
+end Pullback

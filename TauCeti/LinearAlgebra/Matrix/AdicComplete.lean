@@ -105,7 +105,8 @@ theorem exists_transpose_mul_mul_eq_of_sub_eq (π : R) [IsAdicComplete (Ideal.sp
   obtain ⟨U, hU⟩ : ∃ U : Matrix n n R, ∀ m i i', π ^ m ∣ U i i' - (s m).1 i i' := by
     obtain ⟨L, hL⟩ := TauCeti.exists_forall_pow_dvd_sub π (fun m (p : n × n) ↦ (s m).1 p.1 p.2)
       fun m p ↦ ⟨((s m).1 * (H * (s m).2)) p.1 p.2, by
-        simp only [hs, Matrix.mul_add, Matrix.mul_one, Matrix.mul_smul, add_apply, smul_apply,
+        simp only [hs, Matrix.mul_add, Matrix.mul_one, Matrix.mul_smul, Matrix.add_apply,
+          Matrix.smul_apply,
           smul_eq_mul, add_sub_cancel_left]⟩
     exact ⟨Matrix.of fun i i' ↦ L (i, i'), fun m i i' ↦ hL m (i, i')⟩
   -- `U ≡ 1` modulo `π`, since `U ≡ (s 1).1 = 1 + π • (H * D)`.
@@ -118,7 +119,7 @@ theorem exists_transpose_mul_mul_eq_of_sub_eq (π : R) [IsAdicComplete (Ideal.sp
     ext i i'
     have := hV i i'
     rw [hs1] at this
-    simp only [add_apply, smul_apply, of_apply, smul_eq_mul, pow_one] at this ⊢
+    simp only [Matrix.add_apply, Matrix.smul_apply, of_apply, smul_eq_mul, pow_one] at this ⊢
     linear_combination this
   refine ⟨V, ?_⟩
   rw [← hV]

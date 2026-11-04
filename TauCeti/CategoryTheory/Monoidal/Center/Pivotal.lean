@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.CategoryTheory.Monoidal.Center.Rigid
-public import TauCeti.CategoryTheory.Monoidal.Pivotal.Basic
+public import TauCeti.CategoryTheory.Monoidal.Pivotal.Functor
 
 /-!
 # The Drinfeld centre of a pivotal category is pivotal
@@ -20,7 +20,8 @@ faithful and carries the unit and tensor comparisons of the double right dual fu
 centre to those of `C`, the lifted components form a monoidal natural isomorphism from the
 identity functor of `Center C` to its double right dual functor, that is, a pivotal structure on
 the centre. Together with the braiding of the centre, this makes `Center C` a braided pivotal
-category.
+category. The forgetful functor `Center C ⥤ C` is then a pivotal functor, so traces and dimensions
+in the centre are computed in `C`, and the centre of a spherical category is spherical.
 
 The intertwining property comes from naturality and monoidality of `φ`. Naturality at the
 half-braiding `β U : X ⊗ U ⟶ U ⊗ X` says that `β U` is conjugate under `φ` to its double mate,
@@ -36,7 +37,11 @@ the half-braiding induced on `Xᘁ` is, at `Uᘁ`, the mate of `β U`
   `Xᘁᘁ`;
 * `CategoryTheory.Center.pivotalCategory`: the pivotal structure on the centre of a pivotal
   category, whose components are those of `C` (`CategoryTheory.Center.pivotalIsoApp_hom_f` and
-  `CategoryTheory.Center.pivotalIsoApp_inv_f`).
+  `CategoryTheory.Center.pivotalIsoApp_inv_f`);
+* `CategoryTheory.Center.isPivotal_forget`: the forgetful functor from the centre is pivotal, so
+  that `CategoryTheory.Center.leftTrace_f` and `CategoryTheory.Center.rightTrace_f` compute the
+  traces of the centre in `C`;
+* `CategoryTheory.Center.sphericalCategory`: the centre of a spherical category is spherical.
 
 ## References
 
@@ -143,6 +148,54 @@ theorem pivotalIsoApp_inv_f (X : Center C) : (pivotalIsoApp X).inv.f = (pivotalI
   have h := congrArg Hom.f (pivotalIsoApp X).inv_hom_id
   simp only [comp_f, id_f, pivotalIsoApp_hom_f] at h
   exact (Iso.comp_hom_eq_id _).1 h
+
+/-- The forgetful functor from the centre of a pivotal category is a pivotal functor. -/
+instance isPivotal_forget : (forget C).IsPivotal :=
+  .mk' fun X => by
+    simp only [forget_map, pivotalIsoApp_hom_f, forget_mapRightDualIso, rightDual_fst,
+      Iso.refl_hom]
+    -- The remaining identity `(𝟙 _)ᘁ` is stated at the object `(Xᘁ).1ᘁ`, which is `X.1ᘁᘁ`
+    -- only up to unfolding, so `rightAdjointMate_id` is applied by unification.
+    congr 1
+    exact rightAdjointMate_id.symm
+
+omit [RigidCategory C] [PivotalCategory C] in
+/-- An endomorphism `a` of the unit of the centre has underlying endomorphism `b` as soon as `b` is
+the image of `a` under the forgetful functor, read through its unit comparisons. -/
+private theorem f_eq_of_eq_forget_map {a : 𝟙_ (Center C) ⟶ 𝟙_ (Center C)} {b : 𝟙_ C ⟶ 𝟙_ C}
+    (h : b = ε (forget C) ≫ (forget C).map a ≫ Functor.OplaxMonoidal.η (forget C)) : a.f = b := by
+  simp only [forget_ε, forget_η, forget_map] at h
+  exact (h.trans ((Category.id_comp _).trans (Category.comp_id _))).symm
+
+/-- The left trace of an endomorphism of the centre is its left trace in `C`. -/
+@[simp]
+theorem leftTrace_f {X : Center C} (f : X ⟶ X) : (leftTrace f).f = leftTrace f.f :=
+  f_eq_of_eq_forget_map ((forget C).leftTrace_map f)
+
+/-- The right trace of an endomorphism of the centre is its right trace in `C`. -/
+@[simp]
+theorem rightTrace_f {X : Center C} (f : X ⟶ X) : (rightTrace f).f = rightTrace f.f :=
+  f_eq_of_eq_forget_map ((forget C).rightTrace_map f)
+
+/-- The left dimension of an object of the centre is the left dimension of its underlying
+object. -/
+@[simp]
+theorem leftDim_f (X : Center C) : (leftDim X).f = leftDim X.1 :=
+  f_eq_of_eq_forget_map ((forget C).leftDim_map X)
+
+/-- The right dimension of an object of the centre is the right dimension of its underlying
+object. -/
+@[simp]
+theorem rightDim_f (X : Center C) : (rightDim X).f = rightDim X.1 :=
+  f_eq_of_eq_forget_map ((forget C).rightDim_map X)
+
+/-- The Drinfeld centre of a spherical category is spherical, for the induced pivotal
+structure. -/
+instance sphericalCategory [SphericalCategory C] : SphericalCategory (Center C) where
+  leftTrace_eq_rightTrace f := by
+    ext
+    exact (leftTrace_f f).trans
+      ((SphericalCategory.leftTrace_eq_rightTrace f.f).trans (rightTrace_f f).symm)
 
 end Center
 

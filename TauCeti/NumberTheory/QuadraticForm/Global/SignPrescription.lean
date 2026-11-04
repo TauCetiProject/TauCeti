@@ -162,7 +162,7 @@ theorem exists_hilbertSymbol_eq_ite (b : Kˣ)
         hilbertSymbol (unitAtRealPlace w a) (unitAtRealPlace w b) = if w ∈ T then -1 else 1 := by
   by_cases hsq : IsSquare (b : K)
   · -- A square of `K` is a square at every place, so no place can be prescribed.
-    have hsq' : IsSquare b := isSquare_units_val_iff.mp hsq
+    have hsq' : IsSquare b := Units.isSquare_coe_iff.mp hsq
     obtain rfl : S = ∅ := Finset.eq_empty_of_forall_notMem fun v hv ↦
       hS v hv (hsq'.map v.unitAtFinitePlace)
     obtain rfl : T = ∅ := Finset.eq_empty_of_forall_notMem fun w hw ↦

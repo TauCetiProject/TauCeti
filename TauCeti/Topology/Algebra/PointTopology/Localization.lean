@@ -36,6 +36,8 @@ point topology on the points of a scheme over a local topological ring.
   localization away from `f`, when `Units.val : Rˣ → R` is an embedding.
 * `TauCeti.PointTopology.isOpenEmbedding_localization`: it is an open embedding when moreover the
   units of `R` are open.
+* `TauCeti.PointTopology.localizationAwayXHomeomorph`: the points of the localization of `k[X]`
+  away from `X` are homeomorphic to the units of `R`.
 * `TauCeti.PointTopology.isEmbedding_localization_X_iff` and
   `TauCeti.PointTopology.isOpenEmbedding_localization_X_iff`: for the localization of `k[X]` away
   from `X`, these hypotheses are also necessary.
@@ -105,6 +107,52 @@ variable {k L R : Type*} [CommSemiring k] [CommSemiring L] [Algebra k L] [Algebr
   [IsScalarTower k k[X] L] [IsLocalization.Away (X : k[X]) L]
   [CommSemiring R] [Algebra k R] [TopologicalSpace R] [IsTopologicalSemiring R]
 
+variable (k L R) in
+/-- The points of the localization `L` of `k[X]` away from `X` are the units of `R`: a point is
+determined by its values at `X` and at `1 / X`, which are inverse units. This is a homeomorphism
+onto `Rˣ` with the topology induced by `Units.embedProduct`; the inverse sends `u` to the extension
+of `Polynomial.aeval u` to `L`. -/
+noncomputable def localizationAwayXHomeomorph : (L →ₐ[k] R) ≃ₜ Rˣ where
+  toFun x :=
+    { val := x (algebraMap k[X] L X)
+      inv := x (IsLocalization.Away.invSelf (X : k[X]))
+      val_inv := by rw [← map_mul, IsLocalization.Away.mul_invSelf, map_one]
+      inv_val := by rw [← map_mul, mul_comm, IsLocalization.Away.mul_invSelf, map_one] }
+  invFun u := IsLocalization.liftAlgHom (M := Submonoid.powers (X : k[X])) (S := L)
+    (f := aeval (u : R)) (by rintro ⟨_, n, rfl⟩; simpa using u.isUnit.pow n)
+  left_inv x := IsLocalization.algHom_ext (Submonoid.powers (X : k[X])) <|
+    Polynomial.algHom_ext <| (IsLocalization.lift_eq _ X).trans (aeval_X _)
+  right_inv u := Units.ext <| (IsLocalization.lift_eq _ X).trans (aeval_X _)
+  continuous_toFun := Units.continuous_iff.2
+    ⟨continuous_eval _, continuous_eval (IsLocalization.Away.invSelf (X : k[X]) : L)⟩
+  continuous_invFun := by
+    refine continuous_iff.2 fun b ↦ ?_
+    -- Writing `b` as a fraction `a / X ^ n`, its value at the point of `u` is `a(u) * u⁻¹ ^ n`.
+    obtain ⟨n, a, ha⟩ := IsLocalization.Away.surj (S := L) (X : k[X]) b
+    refine (((Polynomial.continuous_aeval a).comp Units.continuous_val).mul
+      (Units.continuous_coe_inv.pow n)).congr fun u ↦ ?_
+    have hu (y : Submonoid.powers (X : k[X])) : IsUnit (aeval (u : R) (y : k[X])) := by
+      obtain ⟨_, n, rfl⟩ := y
+      simpa using u.isUnit.pow n
+    have hb := congrArg (IsLocalization.lift (S := L) hu) ha
+    simp only [map_mul, map_pow, IsLocalization.lift_eq] at hb
+    simp only [Pi.mul_apply, Pi.pow_apply, Function.comp_apply, IsLocalization.coe_liftAlgHom]
+    rw [← Units.val_pow_eq_pow_val, inv_pow, Units.mul_inv_eq_iff_eq_mul]
+    simpa using hb.symm
+
+/-- The unit attached to a point of the localization of `k[X]` away from `X` is its value at
+`X`. -/
+@[simp]
+theorem val_localizationAwayXHomeomorph_apply (x : L →ₐ[k] R) :
+    (localizationAwayXHomeomorph k L R x : R) = x (algebraMap k[X] L X) :=
+  (rfl)
+
+/-- The point attached to a unit `u` restricts to `Polynomial.aeval u` on `k[X]`. -/
+@[simp]
+theorem localizationAwayXHomeomorph_symm_apply_algebraMap (u : Rˣ) (p : k[X]) :
+    (localizationAwayXHomeomorph k L R).symm u (algebraMap k[X] L p) = aeval (u : R) p :=
+  IsLocalization.lift_eq _ p
+
 /-- Restriction to `k[X]` embeds the points of the localization of `k[X]` away from `X` exactly
 when inversion is continuous on the units of `R`. Up to the identification of the points of
 `k[X]` with `R`, the restriction map is the inclusion of the units. -/
@@ -112,37 +160,10 @@ theorem isEmbedding_localization_X_iff :
     IsEmbedding (fun x : L →ₐ[k] R ↦ x.comp (IsScalarTower.toAlgHom k k[X] L)) ↔
       IsEmbedding (Units.val : Rˣ → R) := by
   refine ⟨fun h ↦ ?_, isEmbedding_localization X⟩
-  -- The point `e u` of `L` sends `X` to the unit `u`.
-  have hunit (u : Rˣ) (m : Submonoid.powers (X : k[X])) : IsUnit (aeval (u : R) (m : k[X])) := by
-    obtain ⟨_, n, rfl⟩ := m
-    simpa using u.isUnit.pow n
-  let e (u : Rˣ) : L →ₐ[k] R := IsLocalization.liftAlgHom (S := L) (hunit u)
-  have he (u : Rˣ) (p : k[X]) : e u (algebraMap k[X] L p) = aeval (u : R) p :=
-    IsLocalization.lift_eq _ p
-  have hval (u : Rˣ) : (u : R) = e u (algebraMap k[X] L X) := by rw [he, aeval_X]
-  have hcont : Continuous e := by
-    refine continuous_iff.2 fun b ↦ ?_
-    obtain ⟨n, a, ha⟩ := IsLocalization.Away.surj (S := L) (X : k[X]) b
-    have hb (u : Rˣ) : e u b = aeval (u : R) a * (↑u⁻¹ : R) ^ n := by
-      rw [← Units.val_pow_eq_pow_val, inv_pow, Units.eq_mul_inv_iff_mul_eq, ← he, ← ha]
-      simp [← hval]
-    simp only [hb]
-    exact ((Polynomial.continuous_aeval a).comp Units.continuous_val).mul
-      (Units.continuous_coe_inv.pow n)
-  -- The values of `e u` at `X` and `1 / X` recover `u` and `u⁻¹`, so `e` is an embedding.
-  have hinvSelf (u : Rˣ) : e u (IsLocalization.Away.invSelf (X : k[X])) = ↑u⁻¹ := by
-    refine Units.eq_inv_of_mul_eq_one_left ?_
-    rw [hval u, ← map_mul, IsLocalization.Away.mul_invSelf, map_one]
-  have hemb : IsEmbedding e := by
-    refine .of_comp hcont ((continuous_eval (algebraMap k[X] L X)).prodMk
-      (MulOpposite.continuous_op.comp
-        (continuous_eval (IsLocalization.Away.invSelf (X : k[X]) : L)))) ?_
-    convert Units.isEmbedding_embedProduct (M := R) using 1
-    funext u
-    simp [← hval, hinvSelf]
-  convert (polynomialHomeomorph k R).isEmbedding.comp (h.comp hemb) using 1
+  convert (polynomialHomeomorph k R).isEmbedding.comp
+    (h.comp (localizationAwayXHomeomorph k L R).symm.isEmbedding) using 1
   funext u
-  simp [he]
+  simp
 
 /-- Restriction to `k[X]` is an open embedding of the points of the localization of `k[X]` away
 from `X` exactly when inversion is continuous on the units of `R` and the units are open. -/

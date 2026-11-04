@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.Lie.BaseChange
 public import Mathlib.RingTheory.Flat.Equalizer
 public import TauCeti.LinearAlgebra.TensorProduct.Kernel
+public import TauCeti.RingTheory.TensorProduct.IsBaseChange
 
 /-!
 # Extension of scalars of a homomorphism of Lie algebras
@@ -26,18 +27,35 @@ preservation of surjectivity, that comparison is what lets a question about an i
 `A ⊗[R] L` be moved to one about `L`; its first use is the identification of a quotient of
 `A ⊗[R] L` with the extension of a quotient of `L`.
 
+A homomorphism `f : L →ₗ⁅R⁆ L'` into a Lie algebra `L'` that is already a Lie algebra over `A`
+also extends `A`-linearly to `A ⊗[R] L`, by `a ⊗ x ↦ a • f x`: this is the universal property of
+extension of scalars, and its underlying map is `LinearMap.liftBaseChange`.  When `f` exhibits
+`L'` as the base change of `L` in Mathlib's sense `IsBaseChange`, the extension is bijective, so
+`A ⊗[R] L` and `L'` are isomorphic as Lie algebras over `A`.  This is how a Lie subalgebra over
+`R` of a Lie algebra over `A` is recognised as an `R`-form of it, for instance a real form of a
+complex Lie algebra.
+
 ## Main definitions
 
 * `LieHom.baseChange`: the extension of scalars `A ⊗[R] L →ₗ⁅A⁆ A ⊗[R] L'` of a homomorphism of
   Lie algebras.
+* `LieEquiv.baseChange`: the extension of scalars `A ⊗[R] L ≃ₗ⁅A⁆ A ⊗[R] L'` of an isomorphism of
+  Lie algebras.
+* `LieHom.liftBaseChange`: the extension `A ⊗[R] L →ₗ⁅A⁆ L'` of a homomorphism into a Lie algebra
+  over `A`.
+* `IsBaseChange.lieEquiv`: if `f` is a base change, the Lie algebra equivalence
+  `A ⊗[R] L ≃ₗ⁅A⁆ L'` it induces.
 
 ## Main results
 
-* `LieHom.baseChange_id` and `LieHom.baseChange_comp`: extension of scalars is functorial.
+* `LieHom.baseChange_id` and `LieHom.baseChange_comp`: extension of scalars is functorial, and so
+  is its version `LieEquiv.baseChange_refl`, `LieEquiv.baseChange_trans` for isomorphisms.
 * `LieHom.baseChange_surjective`: extension of scalars preserves surjectivity.
 * `LieHom.ker_baseChange` and `LieHom.ker_baseChange_of_surjective`: **the kernel of an extended
   homomorphism is the extension of its kernel**, over a flat coefficient algebra, respectively for
   a surjective homomorphism over an arbitrary one.
+* `LieHom.baseChange_ext` and `LieHom.eq_liftBaseChange_iff`: a homomorphism out of `A ⊗[R] L` is
+  determined by its values on `1 ⊗ x`, so `LieHom.liftBaseChange` is the unique extension.
 -/
 
 public section
@@ -128,3 +146,134 @@ theorem ker_baseChange_of_surjective (hf : Function.Surjective f) :
   exact LinearMap.ker_baseChange_of_surjective A (f : L →ₗ[R] L') hf
 
 end LieHom
+
+namespace LieEquiv
+
+variable {R L L' L'' : Type*} [CommRing R] [LieRing L] [LieAlgebra R L] [LieRing L']
+  [LieAlgebra R L'] [LieRing L''] [LieAlgebra R L'']
+variable (A : Type*) [CommRing A] [Algebra R A]
+
+/-- **The extension of scalars of an isomorphism of Lie algebras**, as an isomorphism of Lie
+algebras over the extended coefficients.  Its forward map is `LieHom.baseChange`, and its
+underlying linear equivalence is `LinearEquiv.baseChange`. -/
+def baseChange (e : L ≃ₗ⁅R⁆ L') : A ⊗[R] L ≃ₗ⁅A⁆ A ⊗[R] L' where
+  __ := LieHom.baseChange A (e : L →ₗ⁅R⁆ L')
+  __ := e.toLinearEquiv.baseChange R A L L'
+
+@[simp]
+theorem baseChange_tmul (e : L ≃ₗ⁅R⁆ L') (a : A) (x : L) :
+    baseChange A e (a ⊗ₜ[R] x) = a ⊗ₜ[R] e x :=
+  (rfl)
+
+@[simp]
+theorem toLieHom_baseChange (e : L ≃ₗ⁅R⁆ L') :
+    (baseChange A e).toLieHom = LieHom.baseChange A (e : L →ₗ⁅R⁆ L') :=
+  (rfl)
+
+@[simp]
+theorem toLinearEquiv_baseChange (e : L ≃ₗ⁅R⁆ L') :
+    (baseChange A e).toLinearEquiv = e.toLinearEquiv.baseChange R A L L' :=
+  (rfl)
+
+@[simp]
+theorem baseChange_symm (e : L ≃ₗ⁅R⁆ L') : (baseChange A e).symm = baseChange A e.symm :=
+  (rfl)
+
+@[simp]
+theorem baseChange_refl : baseChange A (LieEquiv.refl : L ≃ₗ⁅R⁆ L) = LieEquiv.refl :=
+  toLinearEquiv_injective (LinearEquiv.baseChange_one R A L)
+
+theorem baseChange_trans (e : L ≃ₗ⁅R⁆ L') (e' : L' ≃ₗ⁅R⁆ L'') :
+    baseChange A (e.trans e') = (baseChange A e).trans (baseChange A e') :=
+  toLinearEquiv_injective (LinearEquiv.baseChange_trans R A L L' e.toLinearEquiv e'.toLinearEquiv)
+
+end LieEquiv
+
+section LiftBaseChange
+
+variable {R A L L' : Type*} [CommRing R] [CommRing A] [Algebra R A]
+  [LieRing L] [LieAlgebra R L] [LieRing L'] [LieAlgebra A L'] [LieAlgebra R L']
+  [IsScalarTower R A L']
+
+namespace LieHom
+
+variable (A) (f : L →ₗ⁅R⁆ L')
+
+/-- **Extension of scalars of a homomorphism into a Lie algebra over `A`.**  A homomorphism of Lie
+algebras over `R` from `L` into a Lie algebra `L'` over the `R`-algebra `A` extends to the
+homomorphism of Lie algebras over `A` sending `a ⊗ x` to `a • f x`.  Its underlying linear map is
+`LinearMap.liftBaseChange`. -/
+def liftBaseChange : A ⊗[R] L →ₗ⁅A⁆ L' where
+  __ := (f : L →ₗ[R] L').liftBaseChange A
+  map_lie' {x y} := by
+    simp only [AddHom.toFun_eq_coe, LinearMap.coe_toAddHom]
+    induction x with
+    | add x₁ x₂ h₁ h₂ => simp only [add_lie, map_add, h₁, h₂]
+    | tmul a x =>
+      induction y with
+      | add y₁ y₂ h₁ h₂ => simp only [lie_add, map_add, h₁, h₂]
+      | tmul b y =>
+        simp only [LieAlgebra.ExtendScalars.bracket_tmul, LinearMap.liftBaseChange_tmul,
+          LieHom.coe_toLinearMap, map_lie, smul_lie, lie_smul, mul_smul]
+        exact smul_comm a b _
+
+@[simp]
+theorem coe_liftBaseChange :
+    ((liftBaseChange A f : A ⊗[R] L →ₗ⁅A⁆ L') : A ⊗[R] L →ₗ[A] L') =
+      (f : L →ₗ[R] L').liftBaseChange A :=
+  (rfl)
+
+@[simp]
+theorem liftBaseChange_tmul (a : A) (x : L) : liftBaseChange A f (a ⊗ₜ[R] x) = a • f x :=
+  (rfl)
+
+omit [LieAlgebra R L'] [IsScalarTower R A L'] in
+variable {A} in
+/-- Homomorphisms of Lie algebras over `A` out of `A ⊗[R] L` are determined by their values on
+the elements `1 ⊗ x`, since `a ⊗ x = a • (1 ⊗ x)`. -/
+@[ext]
+theorem baseChange_ext ⦃g h : A ⊗[R] L →ₗ⁅A⁆ L'⦄ (H : ∀ x, g (1 ⊗ₜ[R] x) = h (1 ⊗ₜ[R] x)) :
+    g = h := by
+  ext u
+  induction u with
+  | tmul a x => rw [← mul_one a, ← smul_eq_mul, ← TensorProduct.smul_tmul', map_smul, map_smul, H]
+  | add u v hu hv => rw [map_add, map_add, hu, hv]
+
+/-- **Uniqueness in the universal property of extension of scalars**: `LieHom.liftBaseChange A f`
+is the only homomorphism of Lie algebras over `A` out of `A ⊗[R] L` sending `1 ⊗ x` to `f x`. -/
+theorem eq_liftBaseChange_iff {g : A ⊗[R] L →ₗ⁅A⁆ L'} :
+    g = liftBaseChange A f ↔ ∀ x, g (1 ⊗ₜ[R] x) = f x :=
+  ⟨fun h x ↦ by rw [h, liftBaseChange_tmul, one_smul], fun h ↦
+    baseChange_ext fun x ↦ by rw [h, liftBaseChange_tmul, one_smul]⟩
+
+end LieHom
+
+namespace IsBaseChange
+
+variable {f : L →ₗ⁅R⁆ L'} (h : IsBaseChange A (f : L →ₗ[R] L'))
+
+/-- **A base change of Lie algebras is an isomorphism from the extension of scalars.**  If `f`
+exhibits `L'` as the base change of `L` along `R → A`, then `a ⊗ x ↦ a • f x` is an isomorphism
+of Lie algebras over `A` from `A ⊗[R] L` onto `L'`.  Its underlying linear equivalence is
+`IsBaseChange.equiv`. -/
+noncomputable def lieEquiv : A ⊗[R] L ≃ₗ⁅A⁆ L' :=
+  LieEquiv.ofBijective (f.liftBaseChange A) h.liftBaseChange_bijective
+
+@[simp]
+theorem lieEquiv_tmul (a : A) (x : L) : h.lieEquiv (a ⊗ₜ[R] x) = a • f x :=
+  (rfl)
+
+@[simp]
+theorem lieEquiv_symm_apply (x : L) : h.lieEquiv.symm (f x) = 1 ⊗ₜ[R] x := by
+  rw [LieEquiv.symm_apply_eq, lieEquiv_tmul, one_smul]
+
+@[simp]
+theorem toLinearEquiv_lieEquiv : h.lieEquiv.toLinearEquiv = h.equiv := by
+  ext t
+  induction t with
+  | tmul a x => simp
+  | add t₁ t₂ h₁ h₂ => simp only [map_add, h₁, h₂]
+
+end IsBaseChange
+
+end LiftBaseChange

@@ -44,9 +44,7 @@ The formula `Real.tanh_add` is the quotient of the other two, both sides carryin
 
 Where it is used: `TauCeti/Analysis/SpecialFunctions/Artanh.lean` inverts it into the additive
 law of `Real.artanh`, which carries the Möbius addition of `(-1, 1)` to the addition of `ℝ`;
-that law is in turn what makes the hyperbolic distance of the complex unit disc a metric, the
-subject of layer L2 of the conformal-mapping roadmap
-(`TauCetiRoadmap/ConformalMapping/README.md`).
+that law is in turn what makes the hyperbolic distance of the complex unit disc a metric.
 -/
 
 public section

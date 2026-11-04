@@ -55,6 +55,8 @@ series evaluated at arguments of `I ^ n` is confined to `I ^ n`, in
   with the same radical define the same adic topology.
 * `IsAdic.isAdic_iff_isOpen_and_exists_pow_le` : an ideal of definition is characterized by
   openness and containment of one of its powers in a fixed ideal of definition.
+* `IsAdic.exists_pow_succ_le` : some positive power of an ideal of definition lies in any open
+  ideal.
 * `IsAdic.radical_eq`, `IsAdic.le_radical`, and `IsAdic.radical` : ideals of definition have
   the same radical, and a finitely generated radical is the largest ideal of definition.
 
@@ -191,6 +193,12 @@ theorem isAdic_iff_isOpen_and_exists_pow_le {J : Ideal R} (hI : IsAdic I) :
       refine ⟨k * n, subset_trans ?_ hn⟩
       rw [pow_mul]
       exact Ideal.pow_right_mono hk n
+
+/-- Some positive power of an ideal of definition lies in any open ideal. -/
+theorem exists_pow_succ_le {J : Ideal R} (hI : IsAdic I) (hJ : IsOpen (J : Set R)) :
+    ∃ n : ℕ, I ^ (n + 1) ≤ J := by
+  obtain ⟨n, -, hn⟩ := hI.hasBasis_nhds_zero.mem_iff.mp (hJ.mem_nhds J.zero_mem)
+  exact ⟨n, (Ideal.pow_le_pow_right n.le_succ).trans hn⟩
 
 /-- The radical of an ideal of definition is again an ideal of definition whenever that
 radical is finitely generated, in particular over a noetherian ring (EGA I, Ch. 0, 7.1.7). -/

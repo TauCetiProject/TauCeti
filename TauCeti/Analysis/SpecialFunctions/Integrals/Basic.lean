@@ -25,6 +25,8 @@ Interval integrals of elementary functions in closed form or as series, continui
   for `r < -1`.
 * `TauCeti.norm_integral_le_of_ae_norm_le_rpow`: an integral over `[0, t]` with two power-weight
   bounds near and away from `s = t`, split at `t - δ²`, is `O(δ^α)`.
+* `TauCeti.norm_integral_le_of_ae_norm_le_mul_sub_rpow`: an integral over `[0, t' - h]` of a
+  function bounded by `A h (t' - s)^((α - 4)/2)` is at most `2 / (2 - α) A h^(α/2)` for `α < 2`.
 * `TauCeti.integral_one_div_sqrt_one_sub_sq`: `∫ x in a..b, 1 / √(1 - x²) = arcsin b - arcsin a`
   for `a, b ∈ (-1, 1)`.
 * `TauCeti.integral_pow_add_two_mul_sqrt_one_sub_sq`: the moments
@@ -38,6 +40,8 @@ Interval integrals of elementary functions in closed form or as series, continui
 * `TauCeti.integral_sin_pow_even_eq_ascPochhammer`: the Wallis integral
   `∫ x in 0..π/2, sin²ⁿ x = (π/2) (1/2)ₙ / n!`, with the rising factorial `(1/2)ₙ`.
 * `TauCeti.integral_pow_mul_sub`: `∫ x in p..r, xⁿ (x - p)` as a binomial sum in powers of `r - p`.
+* `Real.integral_div_sub_sq_add_sq`: the integral of the Poisson kernel `η / ((t - x)² + η²)`
+  over an interval is a difference of arctangents.
 * `Real.hasSum_integral_exp_mul_cos_mul_cexp`: `∫ θ in -π..π, e^{κ cos θ} exp (n θ i)` as the
   sum of the termwise integrals of the exponential series of `e^{κ cos θ}`.
 * `TauCeti.integral_comp_sin_sq_neg`, `TauCeti.integral_comp_sin_sq_add_int_mul_pi`: the integral
@@ -156,6 +160,37 @@ theorem norm_integral_le_of_ae_norm_le_rpow {F : Type*} [NormedAddCommGroup F]
     _ = (2 / α * A + 2 / (1 - α) * B) * δ ^ α := by
         rw [hs₀_def, sub_sub_cancel, hsq]
         ring
+
+open MeasureTheory Real Set in
+open scoped Interval in
+/-- For `α < 2`, a function bounded by `A h (t' - s)^((α - 4)/2)` on `(0, t' - h]` has integral
+over `[0, t' - h]` of norm at most `2 / (2 - α) A h^(α/2)`. This is the time integration, away from
+the singular endpoint, behind temporal Hölder estimates with time step `h`. -/
+theorem norm_integral_le_of_ae_norm_le_mul_sub_rpow {G : Type*} [NormedAddCommGroup G]
+    [NormedSpace ℝ G] {g : ℝ → G} {A h t' α : ℝ} (hA : 0 ≤ A) (hh : 0 < h) (hht : h < t')
+    (hα : α < 2) (hg : ∀ᵐ s, s ∈ Ioc 0 (t' - h) → ‖g s‖ ≤ A * h * (t' - s) ^ ((α - 4) / 2)) :
+    ‖∫ s in 0..t' - h, g s‖ ≤ 2 / (2 - α) * A * h ^ (α / 2) := by
+  have h2α : 0 < 2 - α := by linarith
+  have hcont : ContinuousOn (fun s => (t' - s) ^ ((α - 4) / 2)) [[0, t' - h]] :=
+    fun s hs => by
+      rw [uIcc_of_le (by linarith)] at hs
+      have hst : s < t' := by linarith [hs.2]
+      exact ((continuousAt_const.sub continuousAt_id).rpow_const
+        (Or.inl (sub_pos.2 hst).ne')).continuousWithinAt
+  refine (intervalIntegral.norm_integral_le_of_norm_le (by linarith) hg
+    (hcont.intervalIntegrable.const_mul (A * h))).trans ?_
+  rw [intervalIntegral.integral_const_mul]
+  have hpow : h * h ^ ((α - 4) / 2 + 1) = h ^ (α / 2) := by
+    rw [mul_comm, ← rpow_add_one hh.ne']
+    congr 1
+    ring
+  calc A * h * ∫ s in 0..t' - h, (t' - s) ^ ((α - 4) / 2)
+      ≤ A * h * (h ^ ((α - 4) / 2 + 1) / -((α - 4) / 2 + 1)) := by
+        gcongr
+        exact integral_sub_rpow_le_of_lt_neg_one (by linarith) hh (by linarith)
+    _ = 2 / (2 - α) * A * h ^ (α / 2) := by
+        rw [← hpow, show -((α - 4) / 2 + 1) = (2 - α) / 2 by ring]
+        field_simp
 
 /-- The integral of `1 / √(1 - x²)` is `arcsin`, between any two points of `(-1, 1)`. -/
 theorem integral_one_div_sqrt_one_sub_sq {a b : ℝ} (ha : a ∈ Set.Ioo (-1) 1)
@@ -389,6 +424,14 @@ theorem integral_comp_sin_sq_add_int_mul_pi (G : ℝ → ℝ)
 end TauCeti
 
 namespace Real
+
+/-- The integral of the Poisson kernel `η / ((t - x)² + η²)` over `[a, b]` is a difference of
+arctangents: a translate of Mathlib's `integral_div_sq_add_sq`. For `η = 0` both sides vanish. -/
+theorem integral_div_sub_sq_add_sq (a b t η : ℝ) :
+    ∫ x in a..b, η / ((t - x) ^ 2 + η ^ 2) = arctan ((b - t) / η) - arctan ((a - t) / η) := by
+  simp_rw [← neg_sub _ t, neg_sq, add_comm _ (η ^ 2)]
+  rw [intervalIntegral.integral_comp_sub_right (fun x => η / (η ^ 2 + x ^ 2)),
+    integral_div_sq_add_sq]
 
 /-- Termwise integration of the exponential series `e^{κ cos θ} = ∑ₖ κᵏ cosᵏ θ / k!` against the
 Fourier character `exp (n θ i)` over `[-π, π]`. -/

@@ -306,7 +306,7 @@ theorem reducta_eq_eraseLeadOrbit (p : R[X]) :
     p.reducta = p.eraseLeadOrbit := by
   classical
   induction hn : p.support.card using Nat.strong_induction_on generalizing p with
-  | h n ih =>
+  | ind n ih =>
       by_cases hp : p = 0
       · subst p
         rw [reducta_zero, eraseLeadOrbit_zero]

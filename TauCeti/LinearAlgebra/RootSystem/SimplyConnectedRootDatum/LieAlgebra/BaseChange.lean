@@ -189,7 +189,7 @@ theorem e_baseChangeBase (i : (t.rationalBase ht).support) :
       chainBotCoeff_rootPairingBaseChange,
       ← map_add, hpi.eq_iff, apply_ite (algebraMap ℚ K),
       algebraMap_rat_abs_intCast]
-  all_goals split_ifs <;> simp
+  split_ifs <;> simp
 
 /-- The lowering generators of Geck's construction commute with scalar extension. -/
 @[simp]
