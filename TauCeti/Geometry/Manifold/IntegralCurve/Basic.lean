@@ -26,8 +26,8 @@ continuously differentiable.
 * `IsMIntegralCurveAt.map_of_mfderiv_eq`: the corresponding result for local integral curves.
 * `IsMIntegralCurveOn.congr`: being an integral curve on a set only depends on the values of the
   curve on that set.
-* `isMIntegralCurve_congr_vectorField`: being an integral curve only depends on the values of the
-  vector field along the curve.
+* `TauCeti.isMIntegralCurve_congr_vectorField`: being an integral curve only depends on the values
+  of the vector field along the curve.
 * `IsMIntegralCurveAt.of_extChartAt_symm`: a coordinate solution gives a manifold integral curve.
 * `IsMIntegralCurveOn.hasDerivAt_extChartAt`: conversely, an integral curve read in a fixed
   extended chart solves the coordinate equation there.
@@ -118,6 +118,8 @@ theorem map_of_mfderiv_eq {f : M → M'} {V : (x : M) → TangentSpace I x}
 
 end IsMIntegralCurveAt
 
+namespace TauCeti
+
 /-- **Being an integral curve only depends on the vector field along the curve.** If two vector
 fields agree at every point of a curve, it is an integral curve of one exactly when it is an
 integral curve of the other. -/
@@ -125,6 +127,8 @@ theorem isMIntegralCurve_congr_vectorField {M : Type*} [TopologicalSpace M] [Cha
     {γ : ℝ → M} {v w : (x : M) → TangentSpace I x} (hvw : ∀ t, v (γ t) = w (γ t)) :
     IsMIntegralCurve γ v ↔ IsMIntegralCurve γ w :=
   ⟨fun hγ t ↦ hvw t ▸ hγ t, fun hγ t ↦ (hvw t).symm ▸ hγ t⟩
+
+end TauCeti
 
 /-- Convert an ordinary derivative into the model-space derivative expected inside a manifold
 derivative. This is the single boundary where the tangent spaces of the self model on `ℝ` and of

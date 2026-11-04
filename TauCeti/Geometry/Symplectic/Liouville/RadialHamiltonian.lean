@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Geometry.Symplectic.Hamiltonian.Manifold
 public import TauCeti.Geometry.Symplectic.Liouville.CylindricalEnd
-public import TauCeti.Geometry.Symplectic.Liouville.LinearAtInfinity
 import Mathlib.Geometry.Manifold.IntegralCurve.Transform
 import Mathlib.Geometry.Manifold.LocalDiffeomorph
 import TauCeti.Geometry.Manifold.IntegralCurve.Basic
@@ -54,13 +53,13 @@ level `c` they are the integral curves of `X_r` run at the constant speed `φ'(c
 Liouville flow conjugates `X_r` on different levels, the periods of the closed orbits of `X_r` do
 not depend on the level
 (`IsLiouvilleCompletion.exists_periodic_hamiltonianVectorField_liouvilleRadialCoordinate_iff`).
-Hence `H` has a `1`-periodic orbit on the level `c > R` exactly when `X_r` has a closed orbit of
-period `φ'(c)`, on any level
+Hence, when `φ'(c) ≠ 0`, `H` has a `1`-periodic orbit on the level `c > R` exactly when `X_r` has
+a closed orbit of period `φ'(c)`, on any level
 (`TauCeti.IsLiouvilleCompletion.exists_periodic_hamiltonianVectorField_iff`). For a Hamiltonian
 linear at infinity with a slope `a ≠ 0` that is not such a period, all `1`-periodic orbits lie in
-a compact set (`TauCeti.IsLinearAtInfinity.exists_isCompact_forall_mem`): this is the condition on
-the slopes under which the Floer complexes of Hamiltonians linear at infinity are finitely
-generated, and whose direct limit over slopes is symplectic homology.
+a compact set (`TauCeti.IsLinearAtInfinity.exists_isCompact_forall_mem`). This is the condition on
+the slopes imposed in the construction of symplectic homology; finiteness of the generators of the
+Floer complexes additionally needs a nondegeneracy assumption on the orbits, not treated here.
 
 ## Main results
 
@@ -72,8 +71,9 @@ generated, and whose direct limit over slopes is symplectic homology.
   the Liouville flow preserves `X_r` on the cylindrical end.
 * `TauCeti.IsLiouvilleCompletion.liouvilleRadialCoordinate_eq_of_isMIntegralCurve`: the orbits
   of a radial Hamiltonian stay on the levels of `r`.
-* `TauCeti.IsLiouvilleCompletion.exists_periodic_hamiltonianVectorField_iff`: the `1`-periodic
-  orbits of `φ ∘ r` on the level `c` correspond to the closed orbits of `X_r` of period `φ'(c)`.
+* `TauCeti.IsLiouvilleCompletion.exists_periodic_hamiltonianVectorField_iff`: if `φ'(c) ≠ 0`, the
+  `1`-periodic orbits of `φ ∘ r` on the level `c` correspond to the closed orbits of `X_r` of period
+  `φ'(c)`.
 * `TauCeti.IsLinearAtInfinity.exists_isCompact_forall_mem`: the `1`-periodic orbits of a
   Hamiltonian linear at infinity whose slope is not a period of `X_r` lie in a compact set.
 
@@ -150,20 +150,6 @@ theorem apply_hamiltonianVectorField_of_eventuallyEq (h : IsLiouvilleCompletion 
     ← SmoothForm.degreeOneEquiv_coe_apply, map_smul, SmoothForm.degreeOneEquiv_coe_apply,
     h.apply_hamiltonianVectorField_liouvilleRadialCoordinate hZ hx, smul_eq_mul]
   ring
-
-/-- The Liouville flow multiplies the radial coordinate by `e^s` between two points of the
-cylindrical end, also for negative times. -/
-private theorem liouvilleRadialCoordinate_flowOf_of_notMem (h : IsLiouvilleCompletion ω α W)
-    (hZ : RoughForm.interior Z ω.1 = α.1) {s : ℝ} {y : M} (hy : y ∉ W) (hsy : flowOf Z s y ∉ W) :
-    liouvilleRadialCoordinate Z W (flowOf Z s y) =
-      Real.exp s * liouvilleRadialCoordinate Z W y := by
-  rcases le_or_gt 0 s with hs | hs
-  · exact h.liouvilleRadialCoordinate_flowOf_of_notMem_interior hZ
-      (fun hi ↦ hy (interior_subset hi)) hs
-  · have := h.liouvilleRadialCoordinate_flowOf_of_notMem_interior hZ
-      (fun hi ↦ hsy (interior_subset hi)) (neg_nonneg.2 hs.le)
-    rw [h.flowOf_flowOf hZ, neg_add_cancel, h.flowOf_zero hZ] at this
-    rw [this, ← mul_assoc, ← Real.exp_add, add_neg_cancel, Real.exp_zero, one_mul]
 
 /-- **The Liouville flow preserves the radial field.** On a completion, the time-`s` map `ψ_s` of
 the Liouville flow carries the Hamiltonian vector field of the radial coordinate at a point `x` of
