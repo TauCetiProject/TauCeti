@@ -25,6 +25,13 @@ The partial trace preserves the trace, `Matrix.trace_partialTraceRight`, sends a
 (`Matrix.partialTraceRight_kronecker_one_mul`, `Matrix.partialTraceRight_mul_kronecker_one`). It
 commutes with conjugate transposition and preserves positive semidefiniteness, since each
 diagonal block is a compression of `Y`.
+
+Symmetrically, the *partial trace over the first factor* is the `n × n` matrix
+`Matrix.partialTraceLeft Y` with entries `∑ k, Y (k, i) (k, j)`, the partial trace `Tr₁` that
+forgets the first subsystem. It has the mirror-image properties: it preserves the trace and
+positive semidefiniteness, sends `A ⊗ₖ B` to `Tr A • B`, and is a bimodule map over the second
+factor, `Tr₁ ((1 ⊗ₖ A) * Y * (1 ⊗ₖ B)) = A * Tr₁ Y * B`. Together, `Tr₂ ρ` and `Tr₁ ρ` are the two
+reduced density matrices of a state `ρ` of a bipartite system.
 -/
 
 public section
@@ -129,5 +136,104 @@ theorem PosSemidef.partialTraceRight [Ring R] [PartialOrder R] [StarRing R]
     ext
     simp [blockDiag_apply]
   exact posSemidef_sum _ fun k _ => hblock k ▸ hY.submatrix _
+
+section Left
+
+omit [Fintype n]
+
+variable [Fintype m]
+
+section AddCommMonoid
+
+variable [AddCommMonoid R]
+
+/-- The **partial trace** over the first factor of a square matrix indexed by `m × n`: the
+`n × n` matrix with entries `∑ k, Y (k, i) (k, j)`, the sum of the compressions of `Y` to the
+blocks `{k} × n`. -/
+def partialTraceLeft (Y : Matrix (m × n) (m × n) R) : Matrix n n R :=
+  ∑ k, Y.submatrix (k, ·) (k, ·)
+
+@[simp]
+theorem partialTraceLeft_apply (Y : Matrix (m × n) (m × n) R) (i j : n) :
+    partialTraceLeft Y i j = ∑ k, Y (k, i) (k, j) := by
+  simp [partialTraceLeft, Matrix.sum_apply]
+
+@[simp]
+theorem partialTraceLeft_zero : partialTraceLeft (0 : Matrix (m × n) (m × n) R) = 0 := by
+  ext
+  simp
+
+@[simp]
+theorem partialTraceLeft_add (Y Z : Matrix (m × n) (m × n) R) :
+    partialTraceLeft (Y + Z) = partialTraceLeft Y + partialTraceLeft Z := by
+  ext
+  simp [Finset.sum_add_distrib]
+
+@[simp]
+theorem partialTraceLeft_smul {α : Type*} [DistribSMul α R] (c : α)
+    (Y : Matrix (m × n) (m × n) R) :
+    partialTraceLeft (c • Y) = c • partialTraceLeft Y := by
+  ext
+  simp [Finset.smul_sum]
+
+/-- The partial trace over the first factor preserves the trace. -/
+@[simp]
+theorem trace_partialTraceLeft [Fintype n] (Y : Matrix (m × n) (m × n) R) :
+    trace (partialTraceLeft Y) = trace Y := by
+  simp [trace, Fintype.sum_prod_type, Finset.sum_comm (γ := n)]
+
+/-- The partial trace over the first factor commutes with conjugate transposition. -/
+@[simp]
+theorem partialTraceLeft_conjTranspose [StarAddMonoid R] (Y : Matrix (m × n) (m × n) R) :
+    partialTraceLeft Yᴴ = (partialTraceLeft Y)ᴴ := by
+  ext
+  simp [star_sum]
+
+end AddCommMonoid
+
+section Semiring
+
+/-- The partial trace over the first factor of a Kronecker product `A ⊗ₖ B` is `Tr A • B`. -/
+@[simp]
+theorem partialTraceLeft_kronecker [Semiring R] (A : Matrix m m R) (B : Matrix n n R) :
+    partialTraceLeft (A ⊗ₖ B) = trace A • B := by
+  ext
+  simp [trace, Finset.sum_mul]
+
+/-- The partial trace over the first factor of the identity is `card m • 1`. -/
+@[simp]
+theorem partialTraceLeft_one [NonAssocSemiring R] [DecidableEq m] [DecidableEq n] :
+    partialTraceLeft (1 : Matrix (m × n) (m × n) R) = (Fintype.card m : R) • 1 := by
+  ext i j
+  by_cases hij : i = j <;> simp [hij]
+
+variable [Semiring R] [Fintype n] [DecidableEq m]
+
+/-- The partial trace over the first factor is left linear over the second factor:
+`Tr₁ ((1 ⊗ₖ A) * Y) = A * Tr₁ Y`. -/
+theorem partialTraceLeft_one_kronecker_mul (A : Matrix n n R) (Y : Matrix (m × n) (m × n) R) :
+    partialTraceLeft (((1 : Matrix m m R) ⊗ₖ A) * Y) = A * partialTraceLeft Y := by
+  ext i j
+  simp only [partialTraceLeft_apply, Matrix.mul_apply, Fintype.sum_prod_type]
+  simpa [Matrix.one_apply, Finset.mul_sum] using Finset.sum_comm (β := R)
+
+/-- The partial trace over the first factor is right linear over the second factor:
+`Tr₁ (Y * (1 ⊗ₖ B)) = Tr₁ Y * B`. -/
+theorem partialTraceLeft_mul_one_kronecker (Y : Matrix (m × n) (m × n) R) (B : Matrix n n R) :
+    partialTraceLeft (Y * ((1 : Matrix m m R) ⊗ₖ B)) = partialTraceLeft Y * B := by
+  ext i j
+  simp only [partialTraceLeft_apply, Matrix.mul_apply, Fintype.sum_prod_type]
+  simpa [Matrix.one_apply, Finset.sum_mul] using Finset.sum_comm (β := R)
+
+end Semiring
+
+/-- The partial trace over the first factor of a positive semidefinite matrix is positive
+semidefinite: it is the sum of the compressions of `Y` to the blocks `{k} × n`. -/
+theorem PosSemidef.partialTraceLeft [Ring R] [PartialOrder R] [StarRing R]
+    [AddLeftMono R] {Y : Matrix (m × n) (m × n) R} (hY : Y.PosSemidef) :
+    Y.partialTraceLeft.PosSemidef :=
+  posSemidef_sum _ fun _ _ => hY.submatrix _
+
+end Left
 
 end Matrix
