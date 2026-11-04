@@ -29,6 +29,12 @@ none of the further theory built on it.
 * `TauCeti.MonoidAlgebra.mem_ideal_smul_top_iff`: an element of `R[M]` lies in `I • R[M]` exactly
   when its coefficients lie in `I`, and `TauCeti.MonoidAlgebra.mapRingHom_eq_zero_iff`: the kernel
   of the coefficientwise map along `f : R →+* S` is `ker f • R[M]`.
+* The `IsAddTorsionFree (MonoidAlgebra R M)` and `HasUniqueDiv (MonoidAlgebra R M)` instances:
+  `R[M]` inherits the absence of additive torsion from its coefficients, as `M →₀ R` does in
+  Mathlib.
+* `MonoidAlgebra.singleOneUnit`: in a group algebra, `single g 1` as a unit with inverse
+  `single g⁻¹ 1`, and `MonoidAlgebra.coeff_single_mul_mul_single_inv`: conjugating by it
+  conjugates the indices of the coefficients.
 
 ## References
 
@@ -156,5 +162,49 @@ theorem coeff_one_mul_of_coeff_mem {R M : Type*} [CommSemiring R] [Monoid M] {I 
     · exact hzero hm fun hn ↦ hm (by simpa [hn] using hmn)
     · rfl
   · simp
+
+section TorsionFree
+
+variable {R M : Type*} [Semiring R]
+
+/-- A monoid algebra over a semiring without additive torsion has no additive torsion. -/
+@[to_additive
+/-- An additive monoid algebra over a semiring without additive torsion has no additive
+torsion. -/]
+instance instIsAddTorsionFree [IsAddTorsionFree R] : IsAddTorsionFree (MonoidAlgebra R M) :=
+  Function.Injective.isAddTorsionFree (coeffAddEquiv : MonoidAlgebra R M ≃+ _).toAddMonoidHom
+    coeffAddEquiv.injective
+
+/-- A monoid algebra over a semiring with unique division by positive integers has unique
+division by positive integers. -/
+@[to_additive
+/-- An additive monoid algebra over a semiring with unique division by positive integers has
+unique division by positive integers. -/]
+instance instHasUniqueDiv [HasUniqueDiv R] : HasUniqueDiv (MonoidAlgebra R M) :=
+  Function.Injective.hasUniqueDiv (coeffAddEquiv : MonoidAlgebra R M ≃+ _).toAddMonoidHom
+    coeffAddEquiv.injective
+
+end TorsionFree
+
+/-- The basis element `single g 1` of a group algebra, as a unit with inverse `single g⁻¹ 1`. -/
+noncomputable def singleOneUnit (g : G) : (MonoidAlgebra R G)ˣ :=
+  Units.map (of R G) (toUnits g)
+
+@[simp]
+theorem coe_singleOneUnit (g : G) :
+    ((singleOneUnit (R := R) g : (MonoidAlgebra R G)ˣ) : MonoidAlgebra R G) = single g 1 := by
+  rfl
+
+@[simp]
+theorem coe_inv_singleOneUnit (g : G) :
+    (((singleOneUnit (R := R) g)⁻¹ : (MonoidAlgebra R G)ˣ) : MonoidAlgebra R G) =
+      single g⁻¹ 1 := by
+  rfl
+
+/-- Conjugating by a basis element conjugates the indices of the coefficients:
+`(g x g⁻¹)_h = x_{g⁻¹ h g}`. -/
+theorem coeff_single_mul_mul_single_inv (g h : G) (x : MonoidAlgebra R G) :
+    (single g (1 : R) * x * single g⁻¹ 1).coeff h = x.coeff (g⁻¹ * h * g) := by
+  simp [mul_assoc]
 
 end MonoidAlgebra

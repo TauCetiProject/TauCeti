@@ -32,8 +32,9 @@ monotone tuple with these counts, and is determined by `y` and `θ`. These inter
 be read off from `y`.
 
 The edgewise subdivision is how a smooth triangulation is refined into simplices that are both
-small and uniformly fat, which Whitehead's secant approximation needs. Surjectivity of the map
-and continuity of its inverse, which make it a homeomorphism, are not proved here.
+small and uniformly fat, which Whitehead's secant approximation needs. Surjectivity of the map,
+and the resulting homeomorphism, are proved in
+`TauCeti.AlgebraicTopology.SimplicialComplex.Subdivision.Edgewise.Homeomorph`.
 
 ## Main definitions
 

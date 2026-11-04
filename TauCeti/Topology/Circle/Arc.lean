@@ -49,6 +49,8 @@ open arc.
 * `TauCeti.compl_circleExp_image_Icc` — the complement of the closed arc
   `Circle.exp '' Set.Icc a b` is the open arc `Circle.exp '' Set.Ioo b (a + 2 * π)`, for any
   pair of angles.
+* `TauCeti.mem_circleExp_image_Icc_neg_iff` — the closed arc `Circle.exp '' Set.Icc (-a) a` is
+  where the argument is at most `a` in absolute value.
 -/
 
 public section
@@ -129,5 +131,22 @@ theorem compl_circleExp_image_Icc (a b : ℝ) :
   rw [← Circle.image_exp_Icc_add_two_pi a b, compl_eq_univ_sdiff,
     ← Circle.exp_surjective.range_eq, ← Circle.periodic_exp.image_Ioc two_pi_pos b,
     ← (Circle.exp_injOn_Ioc (by simp)).image_sdiff_subset hbsub, hdiff]
+
+/-- A closed arc of the circle is closed. -/
+theorem isClosed_circleExp_image_Icc (a b : ℝ) : IsClosed (Circle.exp '' Icc a b) :=
+  (isCompact_Icc.image Circle.exp.continuous).isClosed
+
+/-- **The closed arc symmetric about `1` is cut out by the argument.** A point lies on the closed
+arc `Circle.exp '' Set.Icc (-a) a` exactly when its argument is at most `a` in absolute value. No
+constraint on `a` is needed: for `π ≤ a` both sides hold everywhere, and for `a < 0` neither
+does. -/
+theorem mem_circleExp_image_Icc_neg_iff {a : ℝ} {z : Circle} :
+    z ∈ Circle.exp '' Icc (-a) a ↔ |Complex.arg z| ≤ a := by
+  refine ⟨?_, fun h => ⟨Complex.arg z, abs_le.1 h, Circle.exp_arg z⟩⟩
+  rintro ⟨t, ht, rfl⟩
+  rcases lt_or_ge a π with haπ | haπ
+  · rw [Circle.arg_exp (by linarith [ht.1]) (by linarith [ht.2])]
+    exact abs_le.2 ht
+  · exact (Complex.abs_arg_le_pi _).trans haπ
 
 end TauCeti

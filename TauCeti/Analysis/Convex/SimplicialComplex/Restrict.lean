@@ -75,8 +75,13 @@ theorem restrict_eq_self_of_space_subset (h : K.space ⊆ B) : K.restrict B = K 
   ext s
   exact ⟨fun hs => hs.1, fun hs => ⟨hs, (K.subset_space hs).trans h⟩⟩
 
+/-- A subcomplex has a smaller underlying space. -/
+@[gcongr]
+theorem space_mono {L : SimplicialComplex 𝕜 E} (h : K ≤ L) : K.space ⊆ L.space :=
+  biUnion_subset_biUnion_left h
+
 theorem space_restrict_subset_space : (K.restrict B).space ⊆ K.space :=
-  biUnion_subset_biUnion_left fun _ hs => hs.1
+  space_mono restrict_le
 
 /-- The underlying space of the restriction of `K` to a convex set `B` lies in `|K| ∩ B`. -/
 theorem space_restrict_subset (hB : Convex 𝕜 B) : (K.restrict B).space ⊆ K.space ∩ B := by

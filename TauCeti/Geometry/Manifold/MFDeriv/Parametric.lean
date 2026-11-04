@@ -8,6 +8,7 @@ module
 public import Mathlib.Geometry.Manifold.ContMDiffMFDeriv
 public import Mathlib.Analysis.Calculus.FDeriv.Symmetric
 public import Mathlib.Geometry.Manifold.MFDeriv.NormedSpace
+public import TauCeti.Geometry.Manifold.MFDeriv.Curve
 import TauCeti.Analysis.Calculus.ParametricFDeriv
 
 /-!
@@ -18,9 +19,15 @@ jointly smooth on `𝕜 × M`. This file proves the two facts needed to differen
 built from `F` and its manifold differentials in the parameter:
 
 * the parameter derivative `y ↦ ∂ᵣ F (t, y)` at a fixed parameter `t` loses one derivative of
-  joint regularity;
+  joint regularity, and so does the field of velocities of the curves of a two-parameter family
+  of points of `M`;
 * for a jointly `C²` family, the parameter derivative and the manifold differential commute:
   `∂ₜ (d (F t) x v) = d (∂ₜ F t) x v`.
+
+More generally, for a family `G : P → M → F'` parametrized by a manifold `P` and jointly `C^n`,
+the differential `d (G r) x` at a fixed point `x`, as a covector-valued function of the parameter
+`r`, loses one derivative of joint regularity. This is the regularity input for mixed second
+derivatives of functions on a product of manifolds.
 
 The second fact is the manifold form of the symmetry of mixed partial derivatives. It is read in
 the extended chart at `x`, within the range of the model with corners, so it also holds at
@@ -30,13 +37,18 @@ boundary points.
 
 * `TauCeti.Manifold.contMDiffAt_deriv_of_contMDiffAt_uncurry`: the parameter derivative of a
   jointly `C^n` family is `C^m` for `m + 1 ≤ n`.
+* `ContMDiffAt.contMDiffAt_curveVelocity_snd`: for a jointly `C^n` map `f : 𝕜 → 𝕜 → M`, the
+  velocities of the curves `f q`, as a map of both parameters to the tangent bundle, are `C^m`
+  for `m + 1 ≤ n`.
 * `TauCeti.Manifold.hasDerivAt_mvfderiv_apply`: the parameter derivative of the differential of a
   jointly `C²` family is the differential of its parameter derivative.
+* `TauCeti.Manifold.contMDiffAt_mvfderiv_of_contMDiffAt_uncurry`: the differential at a fixed point
+  of a jointly `C^n` family parametrized by a manifold is `C^m` in the parameter for `m + 1 ≤ n`.
 -/
 
 public section
 
-open Function Set
+open Bundle Function Set
 open scoped ContDiff Manifold Topology
 
 namespace TauCeti.Manifold
@@ -81,6 +93,30 @@ theorem contMDiffAt_deriv_of_contMDiffAt_uncurry
   rw [mfderiv_eq_fderiv, ← fderiv_apply_one_eq_deriv]
   rfl
 
+/-- **Regularity of the velocity field of a two-parameter family.** If `f : 𝕜 → 𝕜 → M` is jointly
+`C^n` at `(u, v)`, then the velocities of its curves `f q`, as a map of both parameters to the
+tangent bundle, are `C^m` at `(u, v)` for every `m` with `m + 1 ≤ n`. -/
+theorem _root_.ContMDiffAt.contMDiffAt_curveVelocity_snd {f : 𝕜 → 𝕜 → M} {u v : 𝕜}
+    (hf : ContMDiffAt 𝓘(𝕜, 𝕜 × 𝕜) I n (fun z : 𝕜 × 𝕜 ↦ f z.1 z.2) (u, v)) (hmn : m + 1 ≤ n) :
+    ContMDiffAt 𝓘(𝕜, 𝕜 × 𝕜) I.tangent m
+      (fun z : 𝕜 × 𝕜 ↦ TotalSpace.mk' E (f z.1 z.2) (curveVelocity I (f z.1) z.2)) (u, v) := by
+  let ι : 𝕜 × 𝕜 → TangentBundle 𝓘(𝕜, 𝕜 × 𝕜) (𝕜 × 𝕜) := fun z ↦ TotalSpace.mk' (𝕜 × 𝕜) z (0, 1)
+  have hι : ContMDiff 𝓘(𝕜, 𝕜 × 𝕜) 𝓘(𝕜, 𝕜 × 𝕜).tangent m ι := by
+    intro z
+    rw [contMDiffAt_totalSpace]
+    refine ⟨contMDiffAt_id, ?_⟩
+    refine (contMDiffAt_const (c := ((0 : 𝕜), (1 : 𝕜)))).congr_of_eventuallyEq ?_
+    filter_upwards with r
+    rw [trivializationAt_model_space_apply]
+  have htangent := (hf.contMDiffAt_tangentMap (X := ι (u, v)) hmn).comp (u, v) (hι (u, v))
+  have hone : (1 : WithTop ℕ∞) ≤ n := le_trans le_add_self hmn
+  have hnear : ∀ᶠ z in 𝓝 (u, v), MDifferentiableAt 𝓘(𝕜, 𝕜 × 𝕜) I (fun z : 𝕜 × 𝕜 ↦ f z.1 z.2) z :=
+    ((contMDiffAt_iff_contMDiffAt_nhds (by simp)).mp (hf.of_le hone)).mono fun z hz ↦
+      hz.mdifferentiableAt one_ne_zero
+  refine htangent.congr_of_eventuallyEq ?_
+  filter_upwards [hnear] with z hz
+  simp only [Function.comp_apply, ι, tangentMap, curveVelocity_eq_mfderiv_snd hz]
+
 /-- **Mixed derivatives on a manifold.** If a family `F : 𝕜 → M → F'` is jointly `C²` at `(t, x)`
 (analytic, over a field other than `ℝ` or `ℂ`), then the parameter derivative at `t` of the
 differential of `F r` at `x`, applied to `v`, is the differential at `x` of the parameter
@@ -115,5 +151,32 @@ theorem hasDerivAt_mvfderiv_apply
     Function.id_comp]
   -- `tangentSpaceCastModel I x` is the identity of `E`, the tangent space at `x`.
   rfl
+
+section ManifoldParameter
+
+variable {E' : Type*} [NormedAddCommGroup E'] [NormedSpace 𝕜 E'] {H' : Type*} [TopologicalSpace H']
+  {J : ModelWithCorners 𝕜 E' H'} {P : Type*} [TopologicalSpace P] [ChartedSpace H' P]
+  [IsManifold J 1 P] {G : P → M → F'} {p : P}
+
+/-- **Regularity of the differential in a manifold parameter.** If a family `G : P → M → F'` is
+jointly `C^n` at `(p, x)`, then the differential `d (G r) x`, as a function of `r` with values in
+the covectors `E →L[𝕜] F'` on the model space of `T_x M`, is `C^m` at `p` for every `m` with
+`m + 1 ≤ n`. -/
+theorem contMDiffAt_mvfderiv_of_contMDiffAt_uncurry
+    (hG : ContMDiffAt (J.prod I) 𝓘(𝕜, F') n (uncurry G) (p, x)) (hmn : m + 1 ≤ n) :
+    ContMDiffAt (M' := E →L[𝕜] F') J 𝓘(𝕜, E →L[𝕜] F') m (fun r ↦ mvfderiv I (G r) x) p := by
+  refine (hG.mfderiv G (fun _ ↦ x) contMDiffAt_const hmn).congr_of_eventuallyEq
+    (Filter.Eventually.of_forall fun r ↦ ?_)
+  ext v
+  simp only [inTangentCoordinates, ContinuousLinearMap.inCoordinates]
+  -- With the base point of `M` fixed, the source coordinate change is the derivative of the inverse
+  -- chart at its own centre, which is the identity, and the target coordinate change is that of the
+  -- model space `F'`. `erw` sees through the tangent spaces of `E` and `F'`, which are the model
+  -- spaces themselves.
+  erw [TangentBundle.symmL_trivializationAt (mem_chart_source H x),
+    mfderivWithin_range_extChartAt_symm, TangentBundle.continuousLinearMapAt_model_space]
+  rfl
+
+end ManifoldParameter
 
 end TauCeti.Manifold

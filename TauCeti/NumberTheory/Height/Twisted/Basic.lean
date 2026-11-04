@@ -80,6 +80,13 @@ def coordForms : Place K → Fin n → Fin n → K :=
 @[simp]
 theorem coordForms_apply (v : Place K) (i : Fin n) : coordForms K n v i = Pi.single i 1 := (rfl)
 
+/-- The coefficient matrix of the coordinate forms is the identity matrix. -/
+@[simp]
+theorem coordForms_eq_one (v : Place K) :
+    Matrix.of (coordForms K n v) = (1 : Matrix (Fin n) (Fin n) K) := by
+  ext i
+  simp only [Matrix.of_apply, coordForms_apply, Matrix.one_eq_pi_single]
+
 /-- The `i`-th coordinate form sends a point to its `i`-th coordinate. -/
 theorem coordForms_dotProduct (v : Place K) (i : Fin n) (x : Fin n → K) :
     coordForms K n v i ⬝ᵥ x = x i := by

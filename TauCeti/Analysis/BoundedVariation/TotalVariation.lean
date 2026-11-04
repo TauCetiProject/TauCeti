@@ -62,7 +62,8 @@ For `u` not locally integrable on `Ω` the integrals in the supremum may be Math
 * `TauCeti.totalVariationOn_le_of_tendsto_L1`: a total-variation bound holding frequently along
   a filter is preserved under convergence in `L¹(Ω)` along it.
 * `TauCeti.HasWeakFDerivOn.totalVariationOn_le_setLIntegral_enorm`: a weakly differentiable
-  function has total variation at most the integral of the norm of its weak derivative.
+  function has total variation at most the integral of the norm of its weak derivative, hence
+  locally finite variation (`TauCeti.HasWeakFDerivOn.exists_totalVariationOn_ne_top`).
 * `TauCeti.HasWeakFDerivOn.totalVariationOn_eq_setLIntegral_enorm`: against an additive Haar
   measure this is an equality, so a `W^{1,1}(Ω)` function has bounded variation on `Ω`, with
   variation the `L¹` norm of its weak derivative
@@ -134,13 +135,7 @@ theorem totalVariationOn_zero : totalVariationOn μ Ω 0 = 0 := by
 /-- **Locality.** The total variation on `Ω` only depends on `u` almost everywhere on `Ω`. -/
 theorem totalVariationOn_congr_ae (h : u =ᵐ[μ.restrict Ω] v) :
     totalVariationOn μ Ω u = totalVariationOn μ Ω v := by
-  simp_rw [totalVariationOn_def]
-  refine iSup_congr fun φ => iSup_congr fun _ => congrArg ENNReal.ofReal ?_
-  have hu := setIntegral_smul_eq_integral_smul (μ := μ) (w := u) (divergenceCLM φ)
-  have hv := setIntegral_smul_eq_integral_smul (μ := μ) (w := v) (divergenceCLM φ)
-  simp only [smul_eq_mul] at hu hv
-  rw [← hu, ← hv]
-  exact integral_congr_ae (h.mono fun x hx => by simp only [hx])
+  simp_rw [totalVariationOn_def, integral_divergenceCLM_mul_congr_ae h]
 
 /-- An admissible test vector field on `Ω` whose support lies in another open set `Ω'` is
 admissible on `Ω'`, so its pairing is bounded by the total variation on `Ω'`. -/
@@ -201,7 +196,7 @@ theorem totalVariationOn_iSup_le_tsum [OpensMeasurableSpace E] {ι : Type*} {Ω 
           (fun x => (hψφ i x).trans (hφ x)) (hψΩ i)
     _ ≤ ∑' i, totalVariationOn μ (Ω i) u := by
         rw [Finset.sum_coe_sort s fun i => totalVariationOn μ (Ω i) u]
-        exact ENNReal.sum_le_tsum s
+        exact _root_.sum_le_tsum s
 
 /-- **Subadditivity in the open set.** For `u` locally integrable on `Ω ∪ Ω'`,
 `|Du|(Ω ∪ Ω') ≤ |Du|(Ω) + |Du|(Ω')`. -/
@@ -238,7 +233,7 @@ theorem totalVariationOn_sup_of_disjoint [OpensMeasurableSpace E]
   let φ : 𝓓(Ω ⊔ Ω', E) := φ₁' + φ₂'
   have hφ (x : E) : φ x = φ₁ x + φ₂ x := by simp [φ, φ₁', φ₂']
   have hdiv (x : E) : divergenceCLM φ x = divergenceCLM φ₁ x + divergenceCLM φ₂ x := by
-    simp only [φ, φ₁', φ₂', map_add, add_apply, divergenceCLM_monoCLM le_sup_left,
+    simp only [φ, φ₁', φ₂', map_add, _root_.add_apply, divergenceCLM_monoCLM le_sup_left,
       divergenceCLM_monoCLM le_sup_right]
   have hφ1 (x : E) : ‖φ x‖ ≤ 1 := by
     rw [hφ]
@@ -300,7 +295,7 @@ theorem ofReal_abs_integral_le_ofReal_mul_totalVariationOn (φ : 𝓓(Ω, E)) {c
   rw [← totalVariationOn_smul_of_nonneg hc.le]
   convert ofReal_abs_integral_le_totalVariationOn (u := c • u) (c⁻¹ • φ) fun x => ?_ using 3
   · congr 1 with x
-    simp only [map_smul, smul_apply, Pi.smul_apply, smul_eq_mul]
+    simp only [map_smul, _root_.smul_apply, Pi.smul_apply, smul_eq_mul]
     field_simp
   · simpa [norm_smul, abs_of_pos hc, inv_mul_le_iff₀ hc] using hφ x
 
@@ -343,6 +338,14 @@ theorem totalVariationOn_add_const (c : ℝ) :
   · rw [integral_add hu hc, hc0, add_zero]
   · rw [integral_undef hu, integral_undef fun h => hu <| by
       simpa only [Pi.sub_def, add_sub_cancel_right] using h.sub hc]
+
+/-- Against an additive Haar measure, `c - u` has the same total variation as `u`. No
+integrability of `u` is needed. -/
+@[simp]
+theorem totalVariationOn_const_sub (c : ℝ) :
+    totalVariationOn μ Ω (fun x => c - u x) = totalVariationOn μ Ω u := by
+  rw [← totalVariationOn_neg (u := u), ← totalVariationOn_add_const (u := -u) c]
+  simp only [Pi.neg_apply, neg_add_eq_sub]
 
 /-- Against an additive Haar measure, a constant function has total variation zero. -/
 @[simp]
@@ -432,6 +435,18 @@ theorem HasWeakFDerivOn.totalVariationOn_le_setLIntegral_enorm [OpensMeasurableS
   refine (ENNReal.ofReal_le_ofReal (neg_le_abs _)).trans ?_
   rw [← Real.enorm_eq_ofReal_abs]
   exact φ.enorm_integral_apply_le_setLIntegral_enorm hφ U
+
+/-- **A weakly differentiable function has locally finite variation.** If `u` has a weak
+derivative on `Ω`, every compact `K ⊆ Ω` has an open neighbourhood on which the variation of `u`
+is finite. -/
+theorem HasWeakFDerivOn.exists_totalVariationOn_ne_top [OpensMeasurableSpace E]
+    {U : E → E →L[ℝ] ℝ} (h : HasWeakFDerivOn μ Ω u U) {K : Set E} (hK : IsCompact K) (hKΩ : K ⊆ Ω) :
+    ∃ V : Opens E, K ⊆ (V : Set E) ∧ totalVariationOn μ V u ≠ ∞ := by
+  obtain ⟨V, hVo, hKV, hVΩ, hVc⟩ := exists_open_between_and_isCompact_closure hK Ω.isOpen hKΩ
+  have hV : (⟨V, hVo⟩ : Opens E) ≤ Ω := subset_closure.trans hVΩ
+  refine ⟨⟨V, hVo⟩, hKV, ne_top_of_le_ne_top ?_
+    ((h.mono hV).totalVariationOn_le_setLIntegral_enorm.trans (lintegral_mono_set subset_closure))⟩
+  exact (h.locallyIntegrableOn_deriv.integrableOn_compact_subset hVΩ hVc).2.ne
 
 section Haar
 

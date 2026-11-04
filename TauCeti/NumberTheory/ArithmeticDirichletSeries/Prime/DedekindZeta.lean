@@ -7,6 +7,7 @@ module
 
 public import TauCeti.NumberTheory.ArithmeticDirichletSeries.EulerProduct.Logarithm.VonMangoldtCoeff
 public import TauCeti.NumberTheory.ArithmeticDirichletSeries.Prime.Boundary
+import Mathlib.NumberTheory.LSeries.Injectivity
 import TauCeti.NumberTheory.ArithmeticDirichletSeries.Estimates
 import TauCeti.NumberTheory.ArithmeticDirichletSeries.Trivial
 
@@ -41,6 +42,9 @@ function belongs to the analytic theory of the Dedekind zeta function.
 * `TauCeti.LSeriesHasSum_primeVonMangoldtCoeff_univ` and
   `TauCeti.LSeries_primeVonMangoldtCoeff_univ_eq_deriv_dedekindZeta_div`: the same for the
   norm-regrouped coefficients, in Mathlib's `LSeries` vocabulary.
+* `TauCeti.normCoeff_vonMangoldt_mul_normCoeff_one`: the coefficient identity
+  `Λ_K ⋆ ζ_K = log · ζ_K` behind it, the number-field analogue of Mathlib's
+  `ArithmeticFunction.vonMangoldt_mul_zeta`.
 * `TauCeti.PrimeBoundaryRemainder.ofDedekindZeta`: boundary data with residue one for all primes
   from a continuous extension of `-ζ_K'/ζ_K - 1/(s - 1)` to `Re s ≥ 1`.
 
@@ -91,6 +95,47 @@ theorem LSeries_primeVonMangoldtCoeff_univ_eq_deriv_dedekindZeta_div {s : ℂ} (
     LSeries (fun n ↦ (primeVonMangoldtCoeff K Set.univ n : ℂ)) s =
       -deriv (dedekindZeta K) s / dedekindZeta K s :=
   (LSeriesHasSum_primeVonMangoldtCoeff_univ hs).LSeries_eq
+
+/-- **The regrouped identity `Λ_K ⋆ ζ_K = log · ζ_K`.** The Dirichlet convolution of the
+norm-regrouped ideal von Mangoldt function with the Dedekind zeta coefficients is the logarithmic
+weighting of those coefficients: for every `n`,
+`∑_{a b = n} Λ_K(a) #{N𝔞 = b} = log n · #{N𝔞 = n}`.
+
+This is the number-field analogue of Mathlib's `ArithmeticFunction.vonMangoldt_mul_zeta`, read
+on norm coefficients. It is the coefficient form of `-ζ_K'/ζ_K · ζ_K = -ζ_K'`, from which it
+follows by the uniqueness of Dirichlet coefficients. -/
+theorem normCoeff_vonMangoldt_mul_normCoeff_one :
+    normCoeff K IdealArithmeticFunction.vonMangoldt * normCoeff K 1 =
+      normCoeff K (1 : IdealArithmeticFunction K).logMul := by
+  ext n
+  rcases eq_or_ne n 0 with rfl | hn
+  · simp
+  have hΛ : ⇑(normCoeff K IdealArithmeticFunction.vonMangoldt) =
+      fun n ↦ (primeVonMangoldtCoeff K Set.univ n : ℂ) := funext normCoeff_vonMangoldt
+  have hζ (s : ℂ) : dedekindZeta K s = LSeries (normCoeff K 1) s :=
+    dedekindZeta_eq_LSeries_normCoeff_one K s
+  have hsumΛ {s : ℂ} (hs : 1 < s.re) :
+      LSeriesSummable (normCoeff K IdealArithmeticFunction.vonMangoldt) s := by
+    rw [hΛ]
+    exact (LSeriesHasSum_primeVonMangoldtCoeff_univ hs).LSeriesSummable
+  have hsum1 {s : ℂ} (hs : 1 < s.re) :
+      LSeriesSummable (normCoeff K (1 : IdealArithmeticFunction K)) s :=
+    LSeriesSummable_of_abscissaOfAbsConv_lt_re
+      ((abscissaOfAbsConv_normCoeff_one_le K).trans_lt (by exact_mod_cast hs))
+  refine LSeries.eq_of_LSeries_eventually_eq ?_ ?_ ?_ hn
+  · exact (ArithmeticFunction.LSeriesSummable_mul (hsumΛ (s := 2) (by norm_num))
+      (hsum1 (by norm_num))).abscissaOfAbsConv_le.trans_lt (EReal.coe_lt_top _)
+  · rw [funext (normCoeff_logMul K 1), LSeries.abscissaOfAbsConv_logMul]
+    exact (abscissaOfAbsConv_normCoeff_one_le K).trans_lt (EReal.coe_lt_top 1)
+  · filter_upwards [Filter.eventually_gt_atTop (1 : ℝ)] with x hx
+    have hx' : 1 < (x : ℂ).re := by simpa using hx
+    have hne : LSeries (normCoeff K 1) x ≠ 0 := hζ x ▸ dedekindZeta_ne_zero_of_one_lt_re hx'
+    rw [ArithmeticFunction.LSeries_mul' (hsumΛ hx') (hsum1 hx'), hΛ,
+      LSeries_primeVonMangoldtCoeff_univ_eq_deriv_dedekindZeta_div hx', funext hζ,
+      LSeries_congr (fun {n} _ ↦ normCoeff_logMul K 1 n) (x : ℂ),
+      LSeries_deriv ((abscissaOfAbsConv_normCoeff_one_le K).trans_lt (by exact_mod_cast hx)),
+      neg_neg]
+    exact div_mul_cancel₀ _ hne
 
 namespace PrimeBoundaryRemainder
 

@@ -9,6 +9,7 @@ public import Mathlib.Analysis.Calculus.DifferentialForm.Basic
 public import Mathlib.MeasureTheory.Integral.IntervalIntegral.Basic
 import Mathlib.Analysis.Calculus.Deriv.Prod
 import Mathlib.MeasureTheory.Integral.IntervalIntegral.FundThmCalculus
+import TauCeti.Analysis.Calculus.DifferentialForm.Basic
 import TauCeti.Analysis.Calculus.ParametricIntegral
 import TauCeti.Analysis.Normed.Module.Alternating.Uncurry.Fin
 import TauCeti.MeasureTheory.Constructions.UnitInterval
@@ -52,12 +53,20 @@ proved directly, without Stokes' theorem on the manifold with corners `M × [0, 
 ## Main declarations
 
 * `TauCeti.cylinderHomotopy`: the cylinder homotopy operator.
-* `Convex.contDiffOn_cylinderHomotopy`: it preserves `C^r` regularity.
+* `Convex.contDiffOn_cylinderHomotopy`, `TauCeti.contDiff_cylinderHomotopy`: it preserves `C^r`
+  regularity.
 * `Convex.extDerivWithin_cylinderHomotopy_add_cylinderHomotopy_extDerivWithin`: the
   cochain-homotopy identity `d (h ω) + h (d ω) = ι₁^* ω - ι₀^* ω`.
 * `Convex.extDerivWithin_cylinderHomotopy`: for a closed form, `ι₁^* ω - ι₀^* ω = d (h ω)`.
 * `TauCeti.cylinderHomotopy_extDerivWithin_eq_sub`: the degree-zero case
   `h (d f) = ι₁^* f - ι₀^* f`.
+* `TauCeti.extDeriv_cylinderHomotopy_add_cylinderHomotopy_extDeriv`,
+  `TauCeti.cylinderHomotopy_extDeriv_eq_sub`: the same identities for forms `C¹` on all of
+  `E × ℝ`, with exterior derivatives on the whole spaces.
+* `TauCeti.support_cylinderHomotopy_subset`, `TauCeti.tsupport_cylinderHomotopy_subset`,
+  `TauCeti.norm_cylinderHomotopy_le`, `TauCeti.norm_iteratedFDeriv_cylinderHomotopy_le`: support
+  and sup-norm bounds for `h ω` and its derivatives, which make `h` continuous on compactly
+  supported smooth forms.
 
 ## References
 
@@ -72,7 +81,7 @@ public section
 noncomputable section
 
 open MeasureTheory Set
-open scoped unitInterval
+open scoped unitInterval Interval
 
 variable {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   [NormedAddCommGroup F] [NormedSpace ℝ F] {n : ℕ}
@@ -126,6 +135,20 @@ theorem cylinderHomotopy_congr {x : E} {ω₁ ω₂ : E × ℝ → (E × ℝ) [�
   refine intervalIntegral.integral_congr fun t ht ↦ ?_
   simp only [h t (by rwa [uIcc_of_le zero_le_one] at ht)]
 
+/-- Evaluated on vectors `v₁, …, vₙ` of `E`, the cylinder homotopy operator is the time integral
+`∫₀¹ ω(x, t)(∂ₜ, (v₁, 0), …, (vₙ, 0)) dt`, for a form integrable along the segment
+`{x} × [0, 1]`. -/
+theorem cylinderHomotopy_apply_apply [CompleteSpace F]
+    {ω : E × ℝ → (E × ℝ) [⋀^Fin (n + 1)]→L[ℝ] F} {x : E}
+    (hω : IntervalIntegrable (fun t ↦ ω (x, t)) volume 0 1) (v : Fin n → E) :
+    cylinderHomotopy ω x v = ∫ t in (0 : ℝ)..1, ω (x, t) (Fin.cons (0, 1) fun i ↦ (v i, 0)) := by
+  have h : cylinderHomotopy ω x = contractInl (∫ t in (0 : ℝ)..1, ω (x, t)) := by
+    rw [cylinderHomotopy_apply]
+    exact contractInl.intervalIntegral_comp_comm hω
+  rw [h, contractInl_apply, ContinuousAlternatingMap.compContinuousLinearMap_apply,
+    ContinuousAlternatingMap.curryLeft_apply_apply]
+  exact ((ContinuousAlternatingMap.apply ℝ (E × ℝ) F _).intervalIntegral_comp_comm hω).symm
+
 /-- The cylinder homotopy operator of the zero form is zero. -/
 @[simp]
 theorem cylinderHomotopy_zero :
@@ -154,6 +177,123 @@ theorem cylinderHomotopy_add_apply {x : E} {ω₁ ω₂ : E × ℝ → (E × ℝ
       (hω.comp (continuous_const.prodMk continuous_id).continuousOn fun t ht ↦ ⟨rfl, ht⟩)
   simp only [cylinderHomotopy_apply, Pi.add_apply, ← contractInl_apply, map_add]
   exact intervalIntegral.integral_add (hint h₁) (hint h₂)
+
+/-- The cylinder homotopy operator is supported over the part of the support of the form that lies
+in `E × [0, 1]`. -/
+theorem support_cylinderHomotopy_subset (ω : E × ℝ → (E × ℝ) [⋀^Fin (n + 1)]→L[ℝ] F) :
+    Function.support (cylinderHomotopy ω) ⊆
+      Prod.fst '' (Function.support ω ∩ univ ×ˢ Icc 0 1) := by
+  intro x hx
+  by_contra h
+  refine hx ?_
+  rw [cylinderHomotopy_congr (ω₂ := 0) fun t ht ↦ ?_, cylinderHomotopy_zero, Pi.zero_apply]
+  exact Function.notMem_support.1 fun hs ↦ h ⟨(x, t), ⟨hs, mem_univ _, ht⟩, rfl⟩
+
+/-- The cylinder homotopy operator of a compactly supported form is topologically supported over
+the part of the topological support of the form that lies in `E × [0, 1]`. -/
+theorem tsupport_cylinderHomotopy_subset {ω : E × ℝ → (E × ℝ) [⋀^Fin (n + 1)]→L[ℝ] F}
+    (hω : HasCompactSupport ω) :
+    tsupport (cylinderHomotopy ω) ⊆ Prod.fst '' (tsupport ω ∩ univ ×ˢ Icc 0 1) :=
+  closure_minimal ((support_cylinderHomotopy_subset _).trans
+      (image_mono (inter_subset_inter_left _ (subset_tsupport _))))
+    ((hω.inter_right (isClosed_univ.prod isClosed_Icc)).image continuous_fst).isClosed
+
+/-- The contraction with `(0, 1)` followed by the pullback along `inl` does not increase norms,
+for the sup norm on `E × ℝ`. -/
+private theorem norm_contractInl_le_one : ‖contractInl (E := E) (F := F) (n := n)‖ ≤ 1 := by
+  refine ContinuousLinearMap.opNorm_le_bound _ zero_le_one fun α ↦ ?_
+  rw [contractInl_apply, one_mul]
+  calc ‖(α.curryLeft (0, 1)).compContinuousLinearMap (.inl ℝ E ℝ)‖
+      ≤ ‖α.curryLeft (0, 1)‖ * ‖ContinuousLinearMap.inl ℝ E ℝ‖ ^ n :=
+        (ContinuousAlternatingMap.norm_compContinuousLinearMap_le _ _).trans_eq (by simp)
+    _ ≤ ‖α.curryLeft (0, 1)‖ * 1 := by
+        gcongr
+        exact pow_le_one₀ (norm_nonneg _) (ContinuousLinearMap.norm_inl_le_one ℝ E ℝ)
+    _ ≤ ‖α.curryLeft‖ * ‖((0 : E), (1 : ℝ))‖ := by
+        rw [mul_one]
+        exact α.curryLeft.le_opNorm _
+    _ = ‖α‖ := by simp [ContinuousAlternatingMap.norm_curryLeft]
+
+/-- The cylinder homotopy operator at `x` is bounded by any bound for the form along the segment
+`{x} × [0, 1]`, for the sup norm on `E × ℝ`. -/
+theorem norm_cylinderHomotopy_le {ω : E × ℝ → (E × ℝ) [⋀^Fin (n + 1)]→L[ℝ] F} {x : E} {B : ℝ}
+    (h : ∀ t ∈ Icc (0 : ℝ) 1, ‖ω (x, t)‖ ≤ B) : ‖cylinderHomotopy ω x‖ ≤ B := by
+  have hle : ∀ t ∈ Ι (0 : ℝ) 1, ‖contractInl (ω (x, t))‖ ≤ B := fun t ht ↦ by
+    rw [uIoc_of_le zero_le_one] at ht
+    exact ((contractInl (E := E) (F := F) (n := n)).le_of_opNorm_le norm_contractInl_le_one _).trans
+      ((one_mul _).trans_le (h t (Ioc_subset_Icc_self ht)))
+  have hI := intervalIntegral.norm_integral_le_of_norm_le_const hle
+  rw [sub_zero, abs_one, mul_one] at hI
+  rw [cylinderHomotopy_apply]
+  simp only [← contractInl_apply]
+  exact hI
+
+/-- The `i`-th derivative of a time slice of `x ↦ contractInl (ω (x, t))`, explicitly. -/
+private theorem iteratedFDeriv_contractInl_comp {r : WithTop ℕ∞}
+    {ω : E × ℝ → (E × ℝ) [⋀^Fin (n + 1)]→L[ℝ] F} (hω : ContDiff ℝ r ω) {i : ℕ} (hi : i ≤ r)
+    (t : ℝ) (x : E) :
+    iteratedFDeriv ℝ i (fun y ↦ contractInl (ω (y, t))) x =
+      contractInl.compContinuousMultilinearMap
+        ((iteratedFDeriv ℝ i ω (x, t)).compContinuousLinearMap fun _ ↦ .inl ℝ E ℝ) := by
+  have hshift : ContDiff ℝ r fun p : E × ℝ ↦ ω (p + (0, t)) :=
+    hω.comp (contDiff_id.add contDiff_const)
+  have hcomp : (fun y ↦ contractInl (ω (y, t))) =
+      contractInl ∘ ((fun p : E × ℝ ↦ ω (p + (0, t))) ∘ ContinuousLinearMap.inl ℝ E ℝ) := by
+    funext y
+    simp
+  rw [hcomp, contractInl.iteratedFDeriv_comp_left
+      (hshift.comp (ContinuousLinearMap.inl ℝ E ℝ).contDiff).contDiffAt hi,
+    (ContinuousLinearMap.inl ℝ E ℝ).iteratedFDeriv_comp_right hshift x hi,
+    iteratedFDeriv_comp_add_right]
+  simp
+
+/-- The derivatives of the cylinder homotopy operator of a compactly supported `C^r` form are
+bounded by those of the form: if `‖Dⁱ ω (x, t)‖ ≤ B` for `t ∈ [0, 1]` and `i ≤ r`, then
+`‖Dⁱ (h ω) x‖ ≤ B`, for the sup norm on `E × ℝ`. -/
+theorem norm_iteratedFDeriv_cylinderHomotopy_le [CompleteSpace F] {r : WithTop ℕ∞}
+    {ω : E × ℝ → (E × ℝ) [⋀^Fin (n + 1)]→L[ℝ] F} (hω : ContDiff ℝ r ω)
+    (hc : HasCompactSupport ω) {i : ℕ} (hi : i ≤ r) {x : E} {B : ℝ}
+    (hB : ∀ t ∈ Icc (0 : ℝ) 1, ‖iteratedFDeriv ℝ i ω (x, t)‖ ≤ B) :
+    ‖iteratedFDeriv ℝ i (cylinderHomotopy ω) x‖ ≤ B := by
+  have hki {k : ℕ} (hk : k ≤ i) : (k : WithTop ℕ∞) ≤ r := le_trans (by exact_mod_cast hk) hi
+  have hnorm {k : ℕ} (hk : k ≤ i) (t : ℝ) (y : E) :
+      ‖iteratedFDeriv ℝ k (fun y ↦ contractInl (ω (y, t))) y‖ ≤
+        ‖iteratedFDeriv ℝ k ω (y, t)‖ := by
+    rw [iteratedFDeriv_contractInl_comp hω (hki hk)]
+    refine ((contractInl (E := E) (F := F) (n := n)).norm_compContinuousMultilinearMap_le
+      _).trans ?_
+    refine (mul_le_of_le_one_left (norm_nonneg _) norm_contractInl_le_one).trans ?_
+    refine (ContinuousMultilinearMap.norm_compContinuousLinearMap_le _ _).trans ?_
+    exact mul_le_of_le_one_right (norm_nonneg _) (Finset.prod_le_one₀ (fun _ _ ↦ norm_nonneg _)
+      fun _ _ ↦ ContinuousLinearMap.norm_inl_le_one ℝ E ℝ)
+  -- uniform bounds for the derivatives of `ω` of order at most `i`
+  have hbd : ∀ k ≤ i, ∃ C, ∀ p, ‖iteratedFDeriv ℝ k ω p‖ ≤ C := fun k hk ↦
+    (hω.continuous_iteratedFDeriv (hki hk)).norm.bddAbove_range_of_hasCompactSupport
+      (hc.iteratedFDeriv k).norm |>.imp fun _ h p ↦ h ⟨p, rfl⟩
+  choose! C hC using hbd
+  -- the derivatives in `x` of the integrand are continuous in time
+  have hcont {k : ℕ} (hk : k ≤ i) (y : E) :
+      Continuous fun t : ℝ ↦ iteratedFDeriv ℝ k (fun y ↦ contractInl (ω (y, t))) y := by
+    simp_rw [iteratedFDeriv_contractInl_comp hω (hki hk)]
+    exact ((ContinuousLinearMap.compContinuousMultilinearMapL ℝ _ _ _ contractInl).comp
+      (ContinuousMultilinearMap.compContinuousLinearMapL fun _ ↦ .inl ℝ E ℝ)).continuous.comp
+        ((hω.continuous_iteratedFDeriv (hki hk)).comp (continuous_const.prodMk continuous_id))
+  have hderiv := iteratedFDeriv_intervalIntegral (μ := volume) (a := 0) (b := 1)
+    (u := fun t y ↦ contractInl (ω (y, t))) (N := i)
+    (Filter.Eventually.of_forall fun t ↦ (contractInl (E := E) (F := F) (n := n)).contDiff.comp
+      ((hω.comp (contDiff_id.prodMk (contDiff_const (c := t)))).of_le hi))
+    (fun k hk y ↦ (hcont hk y).aestronglyMeasurable)
+    (bound := fun k _ ↦ C k) (fun _ _ ↦ intervalIntegrable_const)
+    (fun k hk ↦ Filter.Eventually.of_forall fun t y ↦ (hnorm hk t y).trans (hC k hk _)) le_rfl
+  have heq : cylinderHomotopy ω = fun y ↦ ∫ t in (0 : ℝ)..1, contractInl (ω (y, t)) := by
+    funext y
+    simp only [cylinderHomotopy_apply, ← contractInl_apply]
+  have hle : ∀ t ∈ Ι (0 : ℝ) 1,
+      ‖iteratedFDeriv ℝ i (fun y ↦ contractInl (ω (y, t))) x‖ ≤ B := fun t ht ↦ by
+    rw [uIoc_of_le zero_le_one] at ht
+    exact (hnorm le_rfl t x).trans (hB t (Ioc_subset_Icc_self ht))
+  rw [heq, hderiv]
+  simpa using intervalIntegral.norm_integral_le_of_norm_le_const hle
 
 /-- The fundamental theorem of calculus along the segment `{x} × [0, 1]`: integrating the time
 derivative of the slice pullbacks `ιₜ^* ω` recovers `ι₁^* ω - ι₀^* ω`. -/
@@ -321,3 +461,39 @@ theorem extDerivWithin_cylinderHomotopy (hs : Convex ℝ s) (hsu : UniqueDiffOn 
     hs.extDerivWithin_cylinderHomotopy_add_cylinderHomotopy_extDerivWithin hsu hω hx
 
 end Convex
+
+namespace TauCeti
+
+/-- The cylinder homotopy operator of a form that is `C^r` on all of `E × ℝ` is `C^r`. -/
+theorem contDiff_cylinderHomotopy {r : ℕ∞} {ω : E × ℝ → (E × ℝ) [⋀^Fin (n + 1)]→L[ℝ] F}
+    (hω : ContDiff ℝ r ω) : ContDiff ℝ r (cylinderHomotopy ω) :=
+  contDiffOn_univ.1 (convex_univ.contDiffOn_cylinderHomotopy uniqueDiffOn_univ hω.contDiffOn)
+
+variable [CompleteSpace F]
+
+/-- **The cylinder homotopy identity** `d (h ω) + h (d ω) = ι₁^* ω - ι₀^* ω` for a form that is
+`C¹` on all of `E × ℝ`, with exterior derivatives on the whole spaces. Here `ιₜ^* ω` is the
+pullback of `ω` along the slice `x ↦ (x, t)`. -/
+theorem extDeriv_cylinderHomotopy_add_cylinderHomotopy_extDeriv
+    {ω : E × ℝ → (E × ℝ) [⋀^Fin (n + 1)]→L[ℝ] F} (hω : ContDiff ℝ 1 ω) (x : E) :
+    extDeriv (cylinderHomotopy ω) x + cylinderHomotopy (extDeriv ω) x =
+      (ω (x, 1)).compContinuousLinearMap (.inl ℝ E ℝ) -
+        (ω (x, 0)).compContinuousLinearMap (.inl ℝ E ℝ) := by
+  have h := convex_univ.extDerivWithin_cylinderHomotopy_add_cylinderHomotopy_extDerivWithin
+    uniqueDiffOn_univ hω.contDiffOn (mem_univ x)
+  rwa [extDerivWithin_univ, cylinderHomotopy_congr (ω₂ := extDeriv ω)
+    fun t ht ↦ (hω.differentiable one_ne_zero _).extDerivWithin
+      ((uniqueDiffOn_univ.prod uniqueDiffOn_Icc_zero_one) _ ⟨mem_univ x, ht⟩)] at h
+
+/-- **The cylinder homotopy identity in degree zero**, `h (d f) = ι₁^* f - ι₀^* f` for a function
+`f` that is `C¹` on all of `E × ℝ`, viewed as a `0`-form. -/
+theorem cylinderHomotopy_extDeriv_eq_sub {ω : E × ℝ → (E × ℝ) [⋀^Fin 0]→L[ℝ] F}
+    (hω : ContDiff ℝ 1 ω) (x : E) :
+    cylinderHomotopy (extDeriv ω) x =
+      (ω (x, 1)).compContinuousLinearMap (.inl ℝ E ℝ) -
+        (ω (x, 0)).compContinuousLinearMap (.inl ℝ E ℝ) := by
+  rw [← cylinderHomotopy_extDerivWithin_eq_sub uniqueDiffOn_univ hω.contDiffOn (mem_univ x)]
+  exact cylinderHomotopy_congr fun t ht ↦ ((hω.differentiable one_ne_zero _).extDerivWithin
+    ((uniqueDiffOn_univ.prod uniqueDiffOn_Icc_zero_one) _ ⟨mem_univ x, ht⟩)).symm
+
+end TauCeti

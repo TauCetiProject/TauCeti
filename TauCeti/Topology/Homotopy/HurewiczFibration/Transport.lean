@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Topology.Homotopy.FiberHomotopyEquiv
+public import TauCeti.Topology.Homotopy.HurewiczFibration.PathPullback
 public import TauCeti.Topology.Homotopy.MappingPath.LiftingFunction
 public import TauCeti.Topology.Homotopy.OpenBoxLifting
 
@@ -32,6 +33,9 @@ therefore a local coefficient system
 * `TauCeti.LiftingFunction.transport_refl_homotopic`,
   `TauCeti.LiftingFunction.transport_trans_homotopic`: transport along the constant path is
   homotopic to the identity, and transport along a concatenation is homotopic to the composite.
+* `TauCeti.LiftingFunction.transport_homotopic_fiberHomotopyEquiv`: transport along a path is
+  homotopic to the comparison `TauCeti.PathPullback.fiberHomotopyEquiv` of its endpoint fibres
+  through the pullback over the interval, so it is a homotopy equivalence.
 
 ## References
 
@@ -192,6 +196,39 @@ theorem transport_trans_homotopic (γ : Path b₀ b₁) (δ : Path b₁ b₂) :
   exact ContinuousMap.homotopic_of_fiber _ _ K
     (fun y ↦ (hK₀ y).trans (Λ.liftFamily_comp_snd_one f _ hz y y rfl))
     (fun y ↦ (hK₁ y).trans (hC₁ y)) fun y s ↦ (hK y s).trans (γ.trans δ).target
+
+/-- **Transport is the fibre comparison through the path pullback.** For a lifting function `Λ`
+of `p` and a path `α`, the transport along `α` is homotopic to the forward map of
+`TauCeti.PathPullback.fiberHomotopyEquiv`, which includes the fibre over `α 0` into the pullback
+of `p` along `α` and contracts it to the fibre over `α 1`. In particular the transport is a
+homotopy equivalence. -/
+theorem transport_homotopic_fiberHomotopyEquiv (α : C(I, B)) :
+    (Λ.transport { toContinuousMap := α, source' := rfl, target' := rfl }).Homotopic
+      (PathPullback.fiberHomotopyEquiv (α := α) Λ.isHurewiczFibration.{u} 0 1).toFun := by
+  obtain ⟨G, hG₀, hG, hG₁⟩ :=
+    PathPullback.exists_toFiber_eq_lift (α := α) Λ.isHurewiczFibration.{u} 1
+  -- Both maps are end points of lifts of `α` from each point of the fibre over `α 0`: the lifts
+  -- given by `Λ`, and the lifts traced in the pullback by the contraction to `1`.
+  let γ : Path (α 0) (α 1) := { toContinuousMap := α, source' := rfl, target' := rfl }
+  let f : C(p ⁻¹' {α 0}, E) := ⟨Subtype.val, continuous_subtype_val⟩
+  let Γ : C(p ⁻¹' {α 0} × I, B) := γ.toContinuousMap.comp ContinuousMap.snd
+  have hΓ : ∀ y, Γ (y, 0) = p (f y) := fun y ↦ (y.2 : p y.1 = α 0).symm
+  let α' : C(p ⁻¹' {α 0} × I, E) :=
+    ⟨fun z ↦ (G (z.2, PathPullback.inclusion 0 z.1)).val.2, by fun_prop⟩
+  have hα' : ∀ y t, p (α' (y, t)) = Γ (y, t) := fun y t ↦ by
+    have h := (G (t, PathPullback.inclusion 0 y)).property
+    rw [← PathPullback.projection_apply, hG, PathPullback.projection_apply,
+      PathPullback.inclusion_val, Set.Icc.convexComb_zero_one] at h
+    exact h.symm
+  obtain ⟨K, hK₀, hK₁, hK⟩ := Λ.isHurewiczFibration.{u}.exists_homotopy_endpoints Γ
+    (Λ.liftFamily f Γ hΓ) α' (Λ.apply_liftFamily f Γ hΓ) hα' fun y ↦ by
+      rw [Λ.liftFamily_zero]
+      simp only [f, α', ContinuousMap.coe_mk, hG₀, PathPullback.inclusion_val]
+  refine ContinuousMap.homotopic_of_fiber _ _ K
+    (fun y ↦ (hK₀ y).trans (Λ.liftFamily_comp_snd_one f γ hΓ y y rfl)) (fun y ↦ ?_) hK
+  rw [hK₁]
+  exact (hG₁ _).symm.trans
+    (congrArg Subtype.val (PathPullback.fiberHomotopyEquiv_apply _ 0 1 y)).symm
 
 end Transport
 

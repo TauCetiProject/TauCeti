@@ -18,11 +18,11 @@ component when the prime spectrum is locally connected.
 
 ## Main declarations
 
-* `TauCeti.AlgHom.map_connectedComponentIdempotent_kernelPoint_eq_one`: the augmentation maps the
+* `AlgHom.map_connectedComponentIdempotent_kernelPoint_eq_one`: the augmentation maps the
   component idempotent of its kernel point to one.
-* `TauCeti.AlgHom.kernelPointConnectedComponentAlgHom`: the augmentation factored through the
+* `AlgHom.kernelPointConnectedComponentAlgHom`: the augmentation factored through the
   quotient cutting out the connected component of its kernel point.
-* `TauCeti.AlgHom.kernelPoint_comp_connectedComponentQuotient_mem`: a point of the component
+* `PrimeSpectrum.kernelPoint_comp_mkₐ_mem_connectedComponent`: a point of the component
   quotient maps into the selected connected component.
 
 ## References
@@ -30,16 +30,16 @@ component when the prime spectrum is locally connected.
 * J. S. Milne, *Algebraic Groups* (2017), Section 2.a.
 * The Stacks Project, Tags 00EE and 022R.
 
-The connected-component factorization supplies a prerequisite for Layer 3, "Identity component
-`G°` and component group `π₀(G)`", of the ReductiveGroups roadmap. It concerns only the ordinary
-connected component over the ground field and asserts no compatibility with base change.
+The connected-component factorization is used to construct the identity component `G°` of an
+algebraic group and its component group `π₀(G)`. It concerns only the ordinary connected
+component over the ground field and asserts no compatibility with base change.
 -/
 
 public section
 
 open AlgebraicGeometry
 
-namespace TauCeti.AlgHom
+namespace AlgHom
 
 universe u v
 
@@ -93,26 +93,36 @@ theorem kernelPointConnectedComponentAlgHom_mk (h : H) :
         (Ideal.Quotient.mk (PrimeSpectrum.connectedComponentIdeal (kernelPoint f)) h) = f h :=
   DFunLike.congr_fun (kernelPointConnectedComponentAlgHom_comp_mk f) h
 
+end AlgHom
+
+namespace PrimeSpectrum
+
+universe u v
+
+variable {k : Type u} [Field k]
+variable {H : Type v} [CommRing H] [Algebra k H]
+variable [LocallyConnectedSpace (PrimeSpectrum H)]
+
 /-- A rational point of the quotient cutting out a connected component maps into that component
 under the quotient map. -/
-theorem kernelPoint_comp_connectedComponentQuotient_mem (z : PrimeSpectrum H)
-    (g : (H ⧸ PrimeSpectrum.connectedComponentIdeal z) →ₐ[k] k) :
-    kernelPoint
-        (g.comp (Ideal.Quotient.mkₐ k (PrimeSpectrum.connectedComponentIdeal z))) ∈
+theorem kernelPoint_comp_mkₐ_mem_connectedComponent (z : PrimeSpectrum H)
+    (g : (H ⧸ connectedComponentIdeal z) →ₐ[k] k) :
+    AlgHom.kernelPoint
+        (g.comp (Ideal.Quotient.mkₐ k (connectedComponentIdeal z))) ∈
       connectedComponent z := by
-  let y : PrimeSpectrum (H ⧸ PrimeSpectrum.connectedComponentIdeal z) := kernelPoint g
+  let y : PrimeSpectrum (H ⧸ connectedComponentIdeal z) := AlgHom.kernelPoint g
   have hy := (PrimeSpectrum.primeSpectrumQuotientHomeomorphConnectedComponent z y).property
   rw [PrimeSpectrum.primeSpectrumQuotientHomeomorphConnectedComponent_apply_coe] at hy
   dsimp only [y] at hy
   have hcomap :
       PrimeSpectrum.comap
-          (Ideal.Quotient.mk (PrimeSpectrum.connectedComponentIdeal z))
-          (kernelPoint g) =
-        kernelPoint
-          (g.comp (Ideal.Quotient.mkₐ k (PrimeSpectrum.connectedComponentIdeal z))) :=
+          (Ideal.Quotient.mk (connectedComponentIdeal z))
+          (AlgHom.kernelPoint g) =
+        AlgHom.kernelPoint
+          (g.comp (Ideal.Quotient.mkₐ k (connectedComponentIdeal z))) :=
     AlgHom.comap_kernelPoint g
-      (Ideal.Quotient.mkₐ k (PrimeSpectrum.connectedComponentIdeal z))
+      (Ideal.Quotient.mkₐ k (connectedComponentIdeal z))
   rw [hcomap] at hy
   exact hy
 
-end TauCeti.AlgHom
+end PrimeSpectrum

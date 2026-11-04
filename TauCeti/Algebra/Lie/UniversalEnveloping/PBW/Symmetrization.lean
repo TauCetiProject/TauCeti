@@ -6,7 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Lie.UniversalEnveloping.PBW.Injective
+public import TauCeti.LinearAlgebra.SymmetricAlgebra.LieModule
 public import TauCeti.LinearAlgebra.SymmetricPower.Algebra
+import TauCeti.Algebra.BigOperators.Ring.List
 
 /-!
 # Degreewise PBW symmetrization
@@ -18,10 +20,28 @@ as an `R`-module, this gives an injective map on every homogeneous symmetric-alg
 splitting its PBW symbol.
 
 This is the degreewise filtered comparison used to lift invariant symmetric polynomials to
-the enveloping algebra without changing their leading terms.
+the enveloping algebra without changing their leading terms. Symmetrization intertwines the
+adjoint action of `L` on `S(L)` with the commutator action `u ↦ ⁅ι x, u⁆` on `U(L)`: bracketing
+a symmetrized word with `ι x` symmetrizes the sum of the words in which one letter `y` is replaced
+by `⁅x, y⁆`. Hence the symmetrization of a homogeneous Lie invariant `p ∈ S(L)^L` is central in
+`U(L)`, and for free `L` the converse holds as well. These are the central elements whose leading
+symbols are the given invariants, in the proof of the Harish-Chandra isomorphism by Chevalley's
+restriction theorem.
 
 The scalar ring lies in `Type`, as required by Mathlib's `Fin n`-indexed symmetric power
 `Sym[R]^n L`. The Lie algebra module has an independent universe.
+
+## Main results
+
+* `TauCeti.UniversalEnvelopingAlgebra.lie_ι_pbwSymmetrization_tprod`: the commutator of `ι x`
+  with a symmetrized word.
+* `TauCeti.UniversalEnvelopingAlgebra.lie_ι_pbwHomogeneousSymmetrization`: symmetrization is
+  equivariant for the adjoint actions on `S(L)` and `U(L)`.
+* `TauCeti.UniversalEnvelopingAlgebra.pbwHomogeneousSymmetrization_mem_center`: the
+  symmetrization of a homogeneous Lie invariant is central.
+* `TauCeti.UniversalEnvelopingAlgebra.pbwHomogeneousSymmetrization_mem_center_iff` and
+  `TauCeti.UniversalEnvelopingAlgebra.pbwSymmetrization_mem_center_iff`: for free `L`, a
+  symmetrization is central exactly when the symmetric polynomial is a Lie invariant.
 
 ## References
 
@@ -207,6 +227,149 @@ theorem mk_pbwHomogeneousSymmetrization (n : ℕ) (hn : IsUnit (n.factorial : R)
     LinearEquiv.apply_symm_apply, pbwHomogeneousSymmetrization_apply] using
     mk_pbwSymmetrization R L n hn ((SymmetricPower.equivHomogeneous n).symm p)
 
+/-- Homogeneous symmetrization sends the `n`-th power of a generator of `S(L)` to the `n`-th power
+of the corresponding generator of `U(L)`. -/
+@[simp]
+theorem pbwHomogeneousSymmetrization_ι_pow (n : ℕ) (hn : IsUnit (n.factorial : R)) (x : L)
+    (h : SymmetricAlgebra.ι R L x ^ n ∈ homogeneousSubmodule R L n) :
+    pbwHomogeneousSymmetrization R L n hn ⟨SymmetricAlgebra.ι R L x ^ n, h⟩ = ι x ^ n := by
+  have hprod : ∏ _i : Fin n, SymmetricAlgebra.ι R L x ∈ homogeneousSubmodule R L n := by
+    simpa only [Finset.prod_const, Finset.card_univ, Fintype.card_fin] using h
+  have hp : (⟨SymmetricAlgebra.ι R L x ^ n, h⟩ : homogeneousSubmodule R L n) =
+      ⟨∏ _i : Fin n, SymmetricAlgebra.ι R L x, hprod⟩ :=
+    Subtype.ext (by simp only [Finset.prod_const, Finset.card_univ, Fintype.card_fin])
+  rw [hp, pbwHomogeneousSymmetrization_apply,
+    SymmetricPower.equivHomogeneous_symm_prod_ι n (fun _ ↦ x) hprod,
+    pbwSymmetrization_tprod_const]
+
+/-- Homogeneous and tensor symmetrization in degree `n` have the same range. -/
+theorem range_pbwHomogeneousSymmetrization (n : ℕ) (hn : IsUnit (n.factorial : R)) :
+    LinearMap.range (pbwHomogeneousSymmetrization R L n hn) =
+      LinearMap.range (pbwSymmetrization R L n hn) :=
+  LinearMap.range_comp_of_range_eq_top _ (LinearEquiv.range _)
+
+/-- **Symmetrization is onto.** When every factorial is a unit of `R`, the enveloping algebra is
+spanned by the symmetrizations of all degrees. A word of length `n` in the generators is its own
+symmetrization up to an element of PBW filtration degree `n - 1`, so this follows by induction on
+the length of words. No freeness of `L` is needed. -/
+theorem iSup_range_pbwSymmetrization_eq_top (hn : ∀ n : ℕ, IsUnit (n.factorial : R)) :
+    ⨆ n, LinearMap.range (pbwSymmetrization R L n (hn n)) = ⊤ := by
+  set S := ⨆ n, LinearMap.range (pbwSymmetrization R L n (hn n))
+  -- Every word in the generators lies in `S`, by strong induction on its length.
+  have hword : ∀ m, ∀ l : List L, l.length = m → (l.map ι).prod ∈ S := by
+    intro m
+    induction m using Nat.strong_induction_on with
+    | _ m ih =>
+      intro l hl
+      have hprev : pbwFiltrationPrevious R L m ≤ S := by
+        rcases m with _ | j
+        · simp
+        · rw [pbwFiltrationPrevious_succ, pbwFiltration_le_iff]
+          exact fun l' hl' ↦ ih l'.length (by omega) l' rfl
+      subst hl
+      have hsym := pbwSymmetrization_tprod_sub_mem_pbwFiltrationPrevious R L l.length (hn _) l.get
+      have hmem : pbwSymmetrization R L l.length (hn _) (⨂ₛ[R] i, l.get i) ∈ S :=
+        Submodule.mem_iSup_of_mem l.length (LinearMap.mem_range_self _ _)
+      have hword : (List.ofFn fun i ↦ ι (l.get i)).prod = (l.map ι).prod :=
+        congrArg List.prod <|
+          (List.map_ofFn (f := l.get) (g := ι)).symm.trans (by rw [List.ofFn_get])
+      simpa only [hword, sub_sub_cancel] using S.sub_mem hmem (hprev hsym)
+  rw [eq_top_iff, ← iSup_pbwFiltration_eq_top, iSup_le_iff]
+  exact fun k ↦ (pbwFiltration_le_iff R L).2 fun l _ ↦ hword _ l rfl
+
+/-! ### Equivariance and central elements -/
+
+section Center
+
+/-- **The commutator with a Lie generator, on a symmetrized word.** Bracketing the
+symmetrization of `m 0, …, m (n - 1)` with `ι x` gives the sum of the symmetrizations of the
+words in which one letter `m k` is replaced by `⁅x, m k⁆`. -/
+theorem lie_ι_pbwSymmetrization_tprod (n : ℕ) (hn : IsUnit (n.factorial : R)) (x : L)
+    (m : Fin n → L) :
+    ⁅ι x, pbwSymmetrization R L n hn (⨂ₛ[R] i, m i)⁆ =
+      ∑ k, pbwSymmetrization R L n hn (⨂ₛ[R] i, Function.update m k ⁅x, m k⁆ i) := by
+  have hleib (a b : U) : ⁅ι x, a * b⁆ = ⁅ι x, a⁆ * b + a * ⁅ι x, b⁆ := by
+    simp only [LieRing.of_associative_ring_bracket, mul_sub, sub_mul, mul_assoc]
+    abel
+  simp only [pbwSymmetrization_tprod, lie_smul, lie_sum, ← Finset.smul_sum]
+  rw [Finset.sum_comm]
+  congr 1
+  refine Finset.sum_congr rfl fun σ _ ↦ ?_
+  have h := (LieAlgebra.ad R U (ι x)).toAddMonoidHom.map_prod_ofFn_of_leibniz
+    (by simpa only [LinearMap.toAddMonoidHom_coe, LieAlgebra.ad_apply] using hleib)
+    (fun i ↦ ι (m (σ i)))
+  simp only [LinearMap.toAddMonoidHom_coe, LieAlgebra.ad_apply] at h
+  rw [h]
+  -- Reindex the replaced letter by its position `σ k` in the permuted word.
+  conv_rhs => rw [← Equiv.sum_comp σ]
+  refine Finset.sum_congr rfl fun k _ ↦ ?_
+  congr 2
+  funext i
+  rw [← LieHom.map_lie]
+  rcases eq_or_ne i k with rfl | hik
+  · simp
+  · simp [hik, σ.injective.ne hik]
+
+/-- **Symmetrization is equivariant for the adjoint actions.** If `q` is the image of the
+homogeneous symmetric polynomial `p` under the adjoint action of `x` on `S(L)`, then the
+symmetrization of `q` is the commutator of `ι x` with the symmetrization of `p`. -/
+theorem lie_ι_pbwHomogeneousSymmetrization (n : ℕ) (hn : IsUnit (n.factorial : R)) (x : L)
+    {p q : homogeneousSubmodule R L n}
+    (hpq : lieModuleDerivation R L L x (p : SymmetricAlgebra R L) = q) :
+    ⁅ι x, pbwHomogeneousSymmetrization R L n hn p⁆ = pbwHomogeneousSymmetrization R L n hn q := by
+  let e := SymmetricPower.equivHomogeneous (R := R) (M := L) n
+  let D : homogeneousSubmodule R L n →ₗ[R] homogeneousSubmodule R L n :=
+    (lieModuleDerivation R L L x).toLinearMap.restrict
+      fun _ hp ↦ lieModuleDerivation_mem_homogeneousSubmodule R L L x hp
+  have hD : (LieAlgebra.ad R U (ι x)) ∘ₗ pbwSymmetrization R L n hn =
+      pbwSymmetrization R L n hn ∘ₗ e.symm.toLinearMap ∘ₗ D ∘ₗ e.toLinearMap := by
+    refine SymmetricPower.ext fun m ↦ ?_
+    have hleib (a b : SymmetricAlgebra R L) :
+        lieModuleDerivation R L L x (a * b) =
+          lieModuleDerivation R L L x a * b + a * lieModuleDerivation R L L x b := by
+      rw [Derivation.leibniz, smul_eq_mul, smul_eq_mul, add_comm, mul_comm b]
+    have hprod := (lieModuleDerivation R L L x).toLinearMap.toAddMonoidHom.map_prod_ofFn_of_leibniz
+      (by simpa only [LinearMap.toAddMonoidHom_coe, Derivation.coeFn_coe] using hleib)
+      (fun i ↦ _root_.SymmetricAlgebra.ι R L (m i))
+    simp only [LinearMap.toAddMonoidHom_coe, Derivation.coeFn_coe, List.prod_ofFn] at hprod
+    have hDm : D (e (⨂ₛ[R] i, m i)) = ∑ k, e (⨂ₛ[R] i, Function.update m k ⁅x, m k⁆ i) := by
+      apply Subtype.ext
+      simp only [D, e, LinearMap.restrict_apply, Submodule.coe_sum,
+        SymmetricPower.coe_equivHomogeneous_apply, SymmetricPower.toSymmetricAlgebra_tprod,
+        Derivation.coeFn_coe, hprod]
+      refine Finset.sum_congr rfl fun k _ ↦ Finset.prod_congr rfl fun i _ ↦ ?_
+      rcases eq_or_ne i k with rfl | hik
+      · simp
+      · simp [hik]
+    simp only [LinearMap.comp_apply, LinearEquiv.coe_coe, LieAlgebra.ad_apply, hDm, map_sum,
+      LinearEquiv.symm_apply_apply, lie_ι_pbwSymmetrization_tprod]
+  have hq : q = D p := Subtype.ext hpq.symm
+  have h := LinearMap.congr_fun hD (e.symm p)
+  simp only [LinearMap.comp_apply, LinearEquiv.coe_coe, LieAlgebra.ad_apply,
+    LinearEquiv.apply_symm_apply] at h
+  rw [pbwHomogeneousSymmetrization_apply, pbwHomogeneousSymmetrization_apply, hq]
+  exact h
+
+/-- **Symmetrizing a Lie invariant gives a central element.** The symmetrization of a
+homogeneous element of `S(L)^L` commutes with every element of `U(L)`. -/
+theorem pbwHomogeneousSymmetrization_mem_center (n : ℕ) (hn : IsUnit (n.factorial : R))
+    {p : homogeneousSubmodule R L n} (hp : (p : SymmetricAlgebra R L) ∈ lieInvariants R L L) :
+    pbwHomogeneousSymmetrization R L n hn p ∈ Subalgebra.center R U := by
+  refine (mem_center_iff_forall_lie_ι R L).mpr fun x ↦ ?_
+  rw [← lie_skew, lie_ι_pbwHomogeneousSymmetrization R L n hn x (q := 0)
+    (by rw [mem_lieInvariants.mp hp x, Submodule.coe_zero]), map_zero, neg_zero]
+
+/-- **Symmetrizing a Lie-invariant symmetric tensor gives a central element.** -/
+theorem pbwSymmetrization_mem_center (n : ℕ) (hn : IsUnit (n.factorial : R)) {t : Sym[R]^n L}
+    (ht : SymmetricPower.toSymmetricAlgebra R L n t ∈ lieInvariants R L L) :
+    pbwSymmetrization R L n hn t ∈ Subalgebra.center R U := by
+  simpa only [pbwHomogeneousSymmetrization_equivHomogeneous] using
+    pbwHomogeneousSymmetrization_mem_center R L n hn
+      (p := SymmetricPower.equivHomogeneous n t)
+      (by rwa [SymmetricPower.coe_equivHomogeneous_apply])
+
+end Center
+
 variable [Module.Free R L]
 
 /-- Symmetrization of homogeneous symmetric polynomials is injective. -/
@@ -225,5 +388,33 @@ theorem pbwSymmetrization_injective (n : ℕ) (hn : IsUnit (n.factorial : R)) :
   apply (SymmetricPower.equivHomogeneous (R := R) (M := L) n).injective
   apply pbwHomogeneousSymmetrization_injective R L n hn
   simpa only [pbwHomogeneousSymmetrization_equivHomogeneous] using h
+
+/-- **The symmetrization of a homogeneous polynomial is central exactly when the polynomial is a
+Lie invariant**, for `L` free over `R`. Symmetrization intertwines the adjoint actions on `S(L)`
+and on `U(L)`, and it is injective on each homogeneous component. -/
+@[simp↓] -- Fire before `pbwHomogeneousSymmetrization_apply` unfolds the left-hand side.
+theorem pbwHomogeneousSymmetrization_mem_center_iff (n : ℕ) (hn : IsUnit (n.factorial : R))
+    {p : homogeneousSubmodule R L n} :
+    pbwHomogeneousSymmetrization R L n hn p ∈ Subalgebra.center R U ↔
+      (p : SymmetricAlgebra R L) ∈ lieInvariants R L L := by
+  refine ⟨fun h ↦ mem_lieInvariants.mpr fun x ↦ ?_,
+    pbwHomogeneousSymmetrization_mem_center R L n hn⟩
+  let q : homogeneousSubmodule R L n :=
+    ⟨lieModuleDerivation R L L x p, lieModuleDerivation_mem_homogeneousSubmodule R L L x p.2⟩
+  have hq : pbwHomogeneousSymmetrization R L n hn q = pbwHomogeneousSymmetrization R L n hn 0 := by
+    rw [← lie_ι_pbwHomogeneousSymmetrization R L n hn x rfl, ← lie_skew,
+      (mem_center_iff_forall_lie_ι R L).mp h x, neg_zero, map_zero]
+  exact congrArg Subtype.val (pbwHomogeneousSymmetrization_injective R L n hn hq)
+
+/-- **The symmetrization of a symmetric tensor is central exactly when the tensor is a Lie
+invariant**, read in `S(L)`, for `L` free over `R`. -/
+@[simp]
+theorem pbwSymmetrization_mem_center_iff (n : ℕ) (hn : IsUnit (n.factorial : R))
+    {t : Sym[R]^n L} :
+    pbwSymmetrization R L n hn t ∈ Subalgebra.center R U ↔
+      SymmetricPower.toSymmetricAlgebra R L n t ∈ lieInvariants R L L := by
+  simpa only [pbwHomogeneousSymmetrization_equivHomogeneous,
+    SymmetricPower.coe_equivHomogeneous_apply] using
+    pbwHomogeneousSymmetrization_mem_center_iff R L n hn (p := SymmetricPower.equivHomogeneous n t)
 
 end TauCeti.UniversalEnvelopingAlgebra

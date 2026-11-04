@@ -24,7 +24,8 @@ compact `K ⊆ D`, and the graph of the subdifferential over a closed `K ⊆ D` 
 generally, closedness of this graph only needs finiteness and continuity of the real representative
 on `K`. Hence
 the subgradient image `∂f(K) = ⋃ x ∈ K, ∂f(x)` of a compact subset of `D` is compact. The same
-compactness, with Rademacher's theorem, shows that `f` has a subgradient at every point of `D`.
+compactness, with Rademacher's theorem, shows that `f` has a subgradient at every point of `D`;
+in particular a real function convex on an open set has a supporting hyperplane at each point.
 
 For a real function `u` continuous on the compact closure of a set `Ω`, every slope of an affine
 function through a point of the graph over `Ω` that lies below `u` on the frontier of `Ω` is a
@@ -52,6 +53,8 @@ neighbourhood of the subgradient image of `K` under `u` eventually contains that
 * `TauCeti.nonempty_subdifferential_of_mem_interior` — the subdifferential is nonempty at every
   point of `D`, and `TauCeti.eventually_nonempty_subdifferential` at every point near a point
   around which `f` is finite;
+* `ConvexOn.exists_forall_add_inner_le` — a real function convex on an open set has a subgradient
+  relative to that set at each of its points;
 * `TauCeti.exists_forall_add_inner_le_of_forall_frontier` — slopes of affine functions through a
   point of the graph that lie below the boundary values are subgradients at points of `Ω`;
 * `TauCeti.exists_forall_add_inner_add_le_of_forall_frontier_le` — if `w ≤ u` on the frontier of
@@ -217,6 +220,24 @@ theorem eventually_nonempty_subdifferential {x : E} (hdom : ∀ᶠ x' in 𝓝 x,
     fun _ hx' => nonempty_subdifferential_of_mem_interior hf hbot hx'
 
 end FiniteDimensional
+
+section OpenDomain
+
+variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
+
+/-- **Supporting hyperplanes of convex functions.** A real function convex on an open subset `Ω`
+of a finite-dimensional real inner product space has a subgradient relative to `Ω` at every point
+`x ∈ Ω`: some `p` satisfies `u x + ⟪y - x, p⟫ ≤ u y` for every `y ∈ Ω`. -/
+theorem _root_.ConvexOn.exists_forall_add_inner_le {Ω : Set E} {u : E → ℝ} (hΩ : IsOpen Ω)
+    (hu : ConvexOn ℝ Ω u) {x : E} (hx : x ∈ Ω) :
+    ∃ p : E, ∀ y ∈ Ω, u x + inner ℝ (y - x) p ≤ u y := by
+  classical
+  obtain ⟨p, hp⟩ := nonempty_subdifferential_of_mem_interior (convex_epigraph_ite hu) ite_ne_bot
+    (by rwa [setOf_ite_ne_top, hΩ.interior_eq])
+  exact ⟨p, by simpa only [innerₗ_apply_apply] using
+    (mem_subdifferential_ite_iff (innerₗ E) hx).1 hp⟩
+
+end OpenDomain
 
 section CompactClosure
 

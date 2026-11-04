@@ -5,7 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.Normed.Lp.ProdLp
 public import TauCeti.Geometry.Manifold.Morse.Index
+public import TauCeti.LinearAlgebra.Pi
 import Mathlib.Geometry.Manifold.ContMDiff.Atlas
 import Mathlib.Geometry.Manifold.MFDeriv.Atlas
 import TauCeti.Analysis.Calculus.Morse.LocalNormalForm
@@ -31,6 +33,10 @@ stable and unstable manifolds are then studied.
   nondegenerate quadratic form.
 * `TauCeti.MorseChart.restr`: the restriction of a Morse chart to an open neighbourhood of its
   centre.
+* `TauCeti.MorseChart.splitCoord`: the coordinates of a Morse chart, split by the sign of the
+  weight.
+* `TauCeti.MorseChart.max_norm_fst_norm_snd_splitCoord`: the sup norm of the coordinates is the
+  larger of the norms of the two factors of the split coordinates.
 * `TauCeti.MorseChart.neg`: a Morse chart for `f` is a Morse chart for `-f`, with the opposite
   weights.
 * `TauCeti.IsManifoldNondegenerateCriticalPoint.nonempty_morseChart`: the Morse lemma on a
@@ -141,6 +147,49 @@ theorem mem_maximalAtlas_one : φ.toChart ∈ IsManifold.maximalAtlas 𝓘(ℝ, 
 theorem mdifferentiableAt_toChart {y : M} (hy : y ∈ φ.toChart.source) :
     MDifferentiableAt 𝓘(ℝ, E) 𝓘(ℝ, E) φ.toChart y :=
   mdifferentiableAt_of_mem_maximalAtlas φ.mem_maximalAtlas_one hy
+
+/-- The **split coordinates** of a Morse chart: the pair formed by the coordinates of positive
+weight and the remaining coordinates, of weight `-1`. Each factor carries the sup norm. -/
+noncomputable def splitCoord :
+    (Fin (Module.finrank ℝ E) → ℝ) ≃ₗ[ℝ]
+      WithLp 2 (({i // φ.weight i = 1} → ℝ) × ({i // ¬φ.weight i = 1} → ℝ)) :=
+  (LinearEquiv.piEquivPiSubtypeProd ℝ (fun i ↦ φ.weight i = 1) fun _ ↦ ℝ).trans
+    (WithLp.linearEquiv 2 ℝ _).symm
+
+/-- The first factor of the split coordinates consists of the coordinates of positive weight. -/
+@[simp]
+theorem splitCoord_fst_apply (z : Fin (Module.finrank ℝ E) → ℝ) (i : {i // φ.weight i = 1}) :
+    (φ.splitCoord z).fst i = z i := by
+  simp [splitCoord]
+
+/-- The second factor of the split coordinates consists of the coordinates of negative weight. -/
+@[simp]
+theorem splitCoord_snd_apply (z : Fin (Module.finrank ℝ E) → ℝ) (i : {i // ¬φ.weight i = 1}) :
+    (φ.splitCoord z).snd i = z i := by
+  simp [splitCoord]
+
+/-- The coordinates of a point given in split coordinates. -/
+@[simp]
+theorem splitCoord_symm_apply
+    (w : WithLp 2 (({i // φ.weight i = 1} → ℝ) × ({i // ¬φ.weight i = 1} → ℝ)))
+    (i : Fin (Module.finrank ℝ E)) :
+    φ.splitCoord.symm w i = if h : φ.weight i = 1 then w.fst ⟨i, h⟩ else w.snd ⟨i, h⟩ := by
+  simp [splitCoord]
+
+/-- The sup norm of the coordinates of a Morse chart is the larger of the norms of the two factors
+of the split coordinates. So the coordinate cube `‖z‖ ≤ ε` is the box `‖u‖ ≤ ε, ‖v‖ ≤ ε` of the
+split model. -/
+theorem max_norm_fst_norm_snd_splitCoord (z : Fin (Module.finrank ℝ E) → ℝ) :
+    max ‖(φ.splitCoord z).fst‖ ‖(φ.splitCoord z).snd‖ = ‖z‖ := by
+  refine le_antisymm (max_le ?_ ?_) ?_
+  · exact (pi_norm_le_iff_of_nonneg (norm_nonneg z)).2 fun i ↦ by
+      simpa using norm_le_pi_norm z i
+  · exact (pi_norm_le_iff_of_nonneg (norm_nonneg z)).2 fun i ↦ by
+      simpa using norm_le_pi_norm z i
+  · refine (pi_norm_le_iff_of_nonneg (le_max_of_le_left (norm_nonneg _))).2 fun i ↦ ?_
+    by_cases hi : φ.weight i = 1
+    · exact le_max_of_le_left (by simpa using norm_le_pi_norm (φ.splitCoord z).fst ⟨i, hi⟩)
+    · exact le_max_of_le_right (by simpa using norm_le_pi_norm (φ.splitCoord z).snd ⟨i, hi⟩)
 
 variable [FiniteDimensional ℝ E]
 

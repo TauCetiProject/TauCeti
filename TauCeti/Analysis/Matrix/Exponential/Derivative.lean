@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.CStarAlgebra.Matrix
 public import Mathlib.Analysis.Matrix.Spectrum
 import Mathlib.Analysis.Normed.Algebra.MatrixExponential
+import TauCeti.Analysis.Matrix.L2OpNorm
 import TauCeti.Analysis.Normed.Algebra.Basic
 public import TauCeti.Analysis.SpecialFunctions.Exponential.Map
 public import TauCeti.Analysis.SpecialFunctions.Exp.DividedDifference
@@ -45,11 +46,7 @@ theorem expFDeriv_diagonal (d : n → ℝ) (Y : Matrix n n 𝕜) :
       Matrix.of (fun i j ↦ ((dslope Real.exp (d i) (d j) : ℝ) : 𝕜) * Y i j) := by
   ext i j
   simp only [Matrix.of_apply]
-  let : NormedAlgebra ℝ (Matrix n n 𝕜) :=
-    { norm_smul_le r Z := by
-        simpa only [RCLike.real_smul_eq_coe_smul (K := 𝕜), RCLike.norm_ofReal,
-          Real.norm_eq_abs] using
-          norm_smul_le (r : 𝕜) Z }
+  let : NormedAlgebra ℝ (Matrix n n 𝕜) := Matrix.l2OpNormedAlgebraReal
   let : NormedAlgebra ℚ (Matrix n n 𝕜) := TauCeti.normedAlgebraRatOfReal
   rw [TauCeti.expFDeriv_apply_eq_integral]
   let D : Matrix n n 𝕜 := diagonal (fun k ↦ (d k : 𝕜))

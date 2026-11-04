@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.LinearAlgebra.BilinearForm.Orthogonal
+public import Mathlib.LinearAlgebra.Determinant
 public import Mathlib.LinearAlgebra.Matrix.BilinearForm
 public import Mathlib.LinearAlgebra.SymplecticGroup
 import Mathlib.LinearAlgebra.FiniteDimensional.Lemmas
@@ -49,10 +50,14 @@ hyperbolic pair `e, f` hold over any commutative ring and are stated at that lev
   alternating form on a compatibly graded space has a homogeneous symplectic basis.**
 * `LinearMap.BilinForm.IsAlt.exists_basis_toMatrix_eq_J`: **a nondegenerate alternating form has
   a symplectic basis.**
+* `LinearMap.BilinForm.basis_det_eq_one_of_toMatrix_eq_J`: two symplectic bases of the same form
+  have relative determinant `1`.
 * `LinearMap.BilinForm.IsAlt.even_finrank`: a space carrying a nondegenerate alternating form has
   even dimension.
 * `LinearMap.BilinForm.IsAlt.exists_basis_apply_eq_J_inl_zero_eq`: every nonzero vector is the
   vector at `inl 0` of some symplectic basis.
+* `LinearMap.IsAlt.even_finrank_of_injective`: a space carrying an injective alternating map into
+  a line has even dimension.
 
 ## References
 
@@ -189,6 +194,21 @@ private theorem IsAlt.apply_cons_cons_eq_J {m : ℕ}
       Matrix.one_apply, Fin.succ_inj, Fin.succ_ne_zero, fun a : Fin m => (Fin.succ_ne_zero a).symm]
 
 end CommRing
+
+section Determinant
+
+variable {R M : Type*} [CommRing R] [AddCommGroup M] [Module R M]
+
+/-- **Symplectic bases have unit relative determinant.** Two bases in which `B` has the standard
+symplectic matrix `Matrix.J` differ by a symplectic matrix, so `b.det c = 1`. -/
+theorem basis_det_eq_one_of_toMatrix_eq_J {l : Type*} [Fintype l] [DecidableEq l]
+    {B : BilinForm R M} {b c : Basis (l ⊕ l) R M} (hb : BilinForm.toMatrix b B = Matrix.J l R)
+    (hc : BilinForm.toMatrix c B = Matrix.J l R) : b.det c = 1 := by
+  have h := toMatrix_mul_basis_toMatrix b c B
+  rw [hb, hc, ← SymplecticGroup.mem_iff'] at h
+  rw [Basis.det_apply, SymplecticGroup.det_eq_one h]
+
+end Determinant
 
 section FinrankTwo
 
@@ -370,3 +390,24 @@ theorem IsAlt.exists_basis_apply_eq_J_inl_zero_eq {e : V} (he : e ≠ 0) :
   exact ⟨m, b, hb, by rw [hbd, Sum.elim_inl, Fin.cons_zero]⟩
 
 end LinearMap.BilinForm
+
+namespace LinearMap
+
+/-- **A finite-dimensional space carrying an injective alternating map into a line has even
+dimension.** If `L : V → Hom(V, Q)` is injective and alternating, and `Q` is one-dimensional, then
+identifying `Q` with the scalars turns `L` into a nondegenerate alternating form on `V`. This is
+the dimension count for a line-valued nondegenerate form, such as the Levi form of a contact
+structure. -/
+theorem IsAlt.even_finrank_of_injective {K V Q : Type*} [Field K] [AddCommGroup V] [Module K V]
+    [FiniteDimensional K V] [AddCommGroup Q] [Module K Q] {L : V →ₗ[K] V →ₗ[K] Q}
+    (hL : L.IsAlt) (hinj : Function.Injective L) (hQ : Module.finrank K Q = 1) :
+    Even (Module.finrank K V) := by
+  have : FiniteDimensional K Q := Module.finite_of_finrank_eq_succ hQ
+  let e : Q ≃ₗ[K] K := LinearEquiv.ofFinrankEq Q K (by rw [hQ, Module.finrank_self])
+  refine BilinForm.IsAlt.even_finrank (B := L.compr₂ e.toLinearMap)
+    (fun v ↦ by simp [hL.self_eq_zero v]) (.ofSeparatingLeft fun v hv ↦ hinj ?_)
+  rw [map_zero]
+  ext w
+  simpa using hv w
+
+end LinearMap

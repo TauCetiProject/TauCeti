@@ -6,8 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.LinearAlgebra.Matrix.Determinant.Basic
+public import Mathlib.Algebra.Polynomial.AlgebraMap
 public import Mathlib.Algebra.Polynomial.Degree.Defs
 public import Mathlib.Algebra.Polynomial.Reverse
+public import Mathlib.Algebra.Polynomial.Laurent
 import Mathlib.Tactic.ComputeDegree
 import TauCeti.Algebra.Polynomial.BigOperators
 import TauCeti.Algebra.Polynomial.Reverse
@@ -26,6 +28,10 @@ reciprocal variable `X ^ (∑ j, e j) * det A (1 / X)`, gives the determinant of
 `j`-th column is reflected at `e j` (`Matrix.reflect_det_sum_eq_of_natDegree_le`). For instance,
 when all entries have degree at most one, `det (X • Bᵀ + B)` is its own reflection at the
 dimension, being the determinant of the transpose (`Matrix.reflect_det_X_smul_transpose_add`).
+
+Evaluating a polynomial in a matrix commutes with applying a ring homomorphism to the coefficients
+and to the entries (`Matrix.aeval_map`). Natural matrix identities valid at unit parameters
+extend to all parameters by polynomial specialization (`Matrix.identity_of_units`).
 -/
 
 public section
@@ -34,7 +40,42 @@ namespace Matrix
 
 open Polynomial
 
-variable {n R : Type*} [Fintype n] [DecidableEq n] [CommRing R]
+/-- A matrix identity natural under coefficient homomorphisms holds at every parameter if
+it holds at every unit of the Laurent polynomial ring. Embed the indeterminate into Laurent
+polynomials, where it is a unit, then use injectivity and evaluate back in the original ring. -/
+theorem identity_of_units {R : Type u} [CommRing R] {m n : Type*}
+    (F G : (S : Type u) → [CommRing S] → S → Matrix m n S)
+    (hF : ∀ {S : Type u} [CommRing S] (f : Polynomial R →+* S),
+      (F (Polynomial R) X).map f = F S (f X))
+    (hG : ∀ {S : Type u} [CommRing S] (f : Polynomial R →+* S),
+      (G (Polynomial R) X).map f = G S (f X))
+    (hunit : ∀ q : (LaurentPolynomial R)ˣ,
+      F _ (q : LaurentPolynomial R) = G _ (q : LaurentPolynomial R))
+    (s : R) : F R s = G R s := by
+  have hpoly : F (Polynomial R) X = G (Polynomial R) X := by
+    apply Matrix.map_injective Polynomial.toLaurent_injective
+    obtain ⟨q, hq⟩ := LaurentPolynomial.isUnit_T (R := R) 1
+    simpa only [hF Polynomial.toLaurent, hG Polynomial.toLaurent,
+      Polynomial.toLaurent_X, ← hq] using hunit q
+  have h := congrArg (fun A ↦ A.map (Polynomial.evalRingHom s)) hpoly
+  have hX : (Polynomial.evalRingHom s) X = s := Polynomial.eval_X
+  rw [hF (Polynomial.evalRingHom s), hG (Polynomial.evalRingHom s), hX] at h
+  exact h
+
+variable {n R : Type*} [Fintype n] [DecidableEq n]
+
+/-- Evaluating a polynomial in a matrix commutes with applying a ring homomorphism to the
+coefficients of the polynomial and to the entries of the matrix. -/
+@[simp]
+theorem aeval_map {R S : Type*} [CommSemiring R] [CommSemiring S] (A : Matrix n n R)
+    (φ : R →+* S) (f : R[X]) :
+    aeval (A.map φ) (f.map φ) = (aeval A f).map φ := by
+  refine (map_aeval_eq_aeval_map (S := Matrix n n R) (U := Matrix n n S) (φ := φ)
+    (ψ := φ.mapMatrix) (RingHom.ext fun r ↦ ?_) f A).symm
+  ext i j
+  by_cases h : i = j <;> simp [algebraMap_matrix_apply, h]
+
+variable [CommRing R]
 
 /-- If the `j`-th column of a polynomial matrix `A` has degree at most `e j`, then the coefficient
 of `det A` in degree `∑ j, e j` is the determinant of the matrix of coefficients of the entries
@@ -78,7 +119,7 @@ theorem reflect_det_X_smul_transpose_add (S : Matrix n n R) :
     reflect (Fintype.card n) (det ((X : R[X]) • Sᵀ.map C + S.map C)) =
       det ((X : R[X]) • Sᵀ.map C + S.map C) := by
   have hP (i j : n) : ((X : R[X]) • Sᵀ.map C + S.map C) i j = C (S j i) * X + C (S i j) := by
-    simp only [add_apply, smul_apply, transpose_apply, map_apply, smul_eq_mul]
+    simp only [Matrix.add_apply, Matrix.smul_apply, transpose_apply, map_apply, smul_eq_mul]
     ring
   have h := reflect_det_sum_eq_of_natDegree_le ((X : R[X]) • Sᵀ.map C + S.map C) (fun _ ↦ 1)
     fun i j ↦ by rw [hP]; compute_degree

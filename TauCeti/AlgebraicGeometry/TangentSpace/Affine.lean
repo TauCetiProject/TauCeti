@@ -42,8 +42,6 @@ open AlgebraicGeometry IsLocalRing
 
 namespace AlgHom
 
-open TauCeti.AlgHom
-
 universe u v
 
 variable {k : Type u} [Field k]

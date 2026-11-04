@@ -33,6 +33,8 @@ operators over an `RCLike` field, with the structure an instance provides in a c
   `algebraMap S R` is a right inverse of `algebraMap R S`.
 * `Algebra.restrictScalars_eq`: an `R`-algebra structure on `A` compatible with the `S`-algebra
   structure is `Algebra.restrictScalars R S A`.
+* `AlgEquiv.toRingEquiv_algebraMap_of_tower`: an `S`-algebra isomorphism fixes the image of `R`,
+  stated as a compatibility of the underlying ring isomorphism along `RingEquiv.refl R`.
 -/
 
 public section
@@ -58,3 +60,11 @@ theorem IsScalarTower.of_algebraMap_rightInverse [Algebra S R]
 obtained by restricting scalars along `R → S`. -/
 theorem Algebra.restrictScalars_eq : Algebra.restrictScalars R S A = ‹Algebra R A› :=
   Algebra.algebra_ext _ _ fun r ↦ (IsScalarTower.algebraMap_apply R S A r).symm
+
+/-- **An isomorphism of `S`-algebras fixes the constants** of a scalar tower `R → S`, in the form
+`τ (algebraMap R A c) = algebraMap R B (σ c)` with `τ = e.toRingEquiv` and `σ = RingEquiv.refl R`.
+This is the compatibility hypothesis of semilinear transports such as
+`TauCeti.Place.equivOfRingEquiv`, which `AlgEquiv.commutes` matches only up to unfolding. -/
+theorem AlgEquiv.toRingEquiv_algebraMap_of_tower (e : A ≃ₐ[S] B) (c : R) :
+    e.toRingEquiv (algebraMap R A c) = algebraMap R B (RingEquiv.refl R c) :=
+  (e.restrictScalars R).commutes c

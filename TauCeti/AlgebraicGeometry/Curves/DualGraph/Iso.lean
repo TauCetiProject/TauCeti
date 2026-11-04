@@ -23,7 +23,8 @@ All numerical invariants of a dual graph are invariant under isomorphism: valenc
 markings, log-canonical degrees, the first Betti number and the arithmetic genus, hence stability,
 semistability, and being a rational tail or a rational bridge. Contraction of a tail or of a
 bridge is compatible with isomorphisms, so a stabilization step can be transported along an
-isomorphism: an isomorphic graph admits a corresponding step with an isomorphic result.
+isomorphism: an isomorphic graph admits a corresponding step with an isomorphic result. The same
+holds for labelled stabilization steps and isomorphisms preserving the labels.
 
 ## Main definitions
 
@@ -43,6 +44,11 @@ isomorphism: an isomorphic graph admits a corresponding step with an isomorphic 
   the arithmetic genus and stability.
 * `TauCeti.DualGraph.StabilizationStep.exists_iso`: a stabilization step transported along an
   isomorphism, and `TauCeti.DualGraph.exists_reflTransGen_iso`, its iterate.
+* `TauCeti.DualGraph.exists_iso_symm` and `TauCeti.DualGraph.exists_iso_trans`: isomorphisms
+  preserving the labels of labelled graphs are closed under inverses and composition.
+* `TauCeti.DualGraph.LabelledStabilizationStep.exists_iso` and
+  `TauCeti.DualGraph.exists_reflTransGen_labelledStabilizationStep_iso`: the same for labelled
+  stabilization steps and isomorphisms preserving the labels.
 
 ## References
 
@@ -394,36 +400,91 @@ end contractBridge
 
 end Iso
 
-variable [Fintype ι] {G G' H : DualGraph.{u} ι}
+section LabelledIso
+
+variable {α : Type w} {x y z : Σ G : DualGraph.{u} ι, G.Vertex → α}
+
+/-- The inverse of an isomorphism of labelled graphs preserves the labels. -/
+theorem exists_iso_symm (h : ∃ f : x.1.Iso y.1, ∀ w, y.2 (f.vertexEquiv w) = x.2 w) :
+    ∃ f : y.1.Iso x.1, ∀ w, x.2 (f.vertexEquiv w) = y.2 w := by
+  obtain ⟨f, hf⟩ := h
+  exact ⟨f.symm, fun w ↦ by simpa using (hf (f.vertexEquiv.symm w)).symm⟩
+
+/-- The composite of two isomorphisms of labelled graphs preserves the labels. -/
+theorem exists_iso_trans (h₁ : ∃ f : x.1.Iso y.1, ∀ w, y.2 (f.vertexEquiv w) = x.2 w)
+    (h₂ : ∃ g : y.1.Iso z.1, ∀ w, z.2 (g.vertexEquiv w) = y.2 w) :
+    ∃ f : x.1.Iso z.1, ∀ w, z.2 (f.vertexEquiv w) = x.2 w := by
+  obtain ⟨f, hf⟩ := h₁
+  obtain ⟨g, hg⟩ := h₂
+  exact ⟨f.trans g, fun w ↦ by simp [hf, hg]⟩
+
+end LabelledIso
+
+variable [Fintype ι]
+
+section Labelled
+
+variable {α : Type w} {P : α → Prop} {x y z : Σ G : DualGraph.{u} ι, G.Vertex → α}
+
+/-- A labelled stabilization step can be transported along an isomorphism preserving the labels:
+if `x` contracts to `y` and `x ≅ z`, then `z` contracts to a labelled graph isomorphic to `y`. -/
+theorem LabelledStabilizationStep.exists_iso (h : LabelledStabilizationStep P x y)
+    (f : x.1.Iso z.1) (hf : ∀ v, z.2 (f.vertexEquiv v) = x.2 v) :
+    ∃ z', LabelledStabilizationStep P z z' ∧
+      ∃ g : y.1.Iso z'.1, ∀ w, z'.2 (g.vertexEquiv w) = y.2 w := by
+  obtain ⟨H, d⟩ := z
+  cases h with
+  | contractTail c hv hm hc =>
+    dsimp only at f hf
+    have hv' : H.IsRationalTail (f.vertexEquiv _) := f.isRationalTail_vertexEquiv_iff.mpr hv
+    exact ⟨_, .contractTail d hv' (by rwa [f.numMarkings_vertexEquiv]) (by rwa [hf]),
+      f.contractTail _ (H.isRationalTail_iff.mp hv').2,
+      fun w ↦ (congrArg d (f.coe_contractTail_vertexEquiv_apply _ _ w)).trans (hf _)⟩
+  | @contractBridge G c v hv hm hc =>
+    dsimp only at f hf
+    have hv' : H.IsRationalBridge (f.vertexEquiv _) := f.isRationalBridge_vertexEquiv_iff.mpr hv
+    have hm' : ∀ i, H.marking i ≠ f.vertexEquiv _ := fun i ↦ by
+      rw [← f.vertexEquiv_marking, f.vertexEquiv.injective.ne_iff]
+      exact hm i
+    exact ⟨_, .contractBridge d hv' hm' (by rwa [hf]),
+      f.contractBridge (G.isRationalBridge_iff.mp hv).2.1 (G.isRationalBridge_iff.mp hv).2.2 hm
+        (H.isRationalBridge_iff.mp hv').2.1 (H.isRationalBridge_iff.mp hv').2.2 hm',
+      fun w ↦ (congrArg d (f.coe_contractBridge_vertexEquiv_apply _ _ _ _ _ _ w)).trans (hf _)⟩
+
+/-- Iterated labelled stabilization steps can be transported along an isomorphism preserving the
+labels. -/
+theorem exists_reflTransGen_labelledStabilizationStep_iso
+    (h : Relation.ReflTransGen (LabelledStabilizationStep P) x y) (f : x.1.Iso z.1)
+    (hf : ∀ v, z.2 (f.vertexEquiv v) = x.2 v) :
+    ∃ z', Relation.ReflTransGen (LabelledStabilizationStep P) z z' ∧
+      ∃ g : y.1.Iso z'.1, ∀ w, z'.2 (g.vertexEquiv w) = y.2 w := by
+  induction h with
+  | refl => exact ⟨z, .refl, f, hf⟩
+  | tail _ hstep ih =>
+    obtain ⟨z₁, h₁, f₁, hf₁⟩ := ih
+    obtain ⟨z₂, h₂, f₂⟩ := hstep.exists_iso f₁ hf₁
+    exact ⟨z₂, h₁.tail h₂, f₂⟩
+
+end Labelled
+
+variable {G G' H : DualGraph.{u} ι}
 
 /-- A stabilization step can be transported along an isomorphism: if `G` contracts to `G'` and
 `G ≅ H`, then `H` contracts to a graph isomorphic to `G'`. -/
 theorem StabilizationStep.exists_iso (h : StabilizationStep G G') (f : G.Iso H) :
     ∃ H', StabilizationStep H H' ∧ Nonempty (G'.Iso H') := by
-  cases h with
-  | contractTail hv hm =>
-    have hv' : H.IsRationalTail (f.vertexEquiv _) := f.isRationalTail_vertexEquiv_iff.mpr hv
-    exact ⟨_, .contractTail H hv' (by rwa [f.numMarkings_vertexEquiv]),
-      ⟨f.contractTail _ (H.isRationalTail_iff.mp hv').2⟩⟩
-  | contractBridge hv hm =>
-    have hv' : H.IsRationalBridge (f.vertexEquiv _) := f.isRationalBridge_vertexEquiv_iff.mpr hv
-    have hm' : ∀ i, H.marking i ≠ f.vertexEquiv _ := fun i ↦ by
-      rw [← f.vertexEquiv_marking, f.vertexEquiv.injective.ne_iff]
-      exact hm i
-    exact ⟨_, .contractBridge H hv' hm',
-      ⟨f.contractBridge _ _ _ (H.isRationalBridge_iff.mp hv').2.1
-        (H.isRationalBridge_iff.mp hv').2.2 hm'⟩⟩
+  obtain ⟨⟨H', _⟩, h', g, -⟩ :=
+    h.labelledStabilizationStep.exists_iso (z := ⟨H, fun _ ↦ ()⟩) f fun _ ↦ rfl
+  exact ⟨H', h'.fst, ⟨g⟩⟩
 
 /-- Iterated stabilization steps can be transported along an isomorphism. -/
 theorem exists_reflTransGen_iso (h : Relation.ReflTransGen StabilizationStep G G')
     (f : G.Iso H) :
     ∃ H', Relation.ReflTransGen StabilizationStep H H' ∧ Nonempty (G'.Iso H') := by
-  induction h with
-  | refl => exact ⟨H, .refl, ⟨f⟩⟩
-  | tail _ hstep ih =>
-    obtain ⟨H₁, h₁, ⟨f₁⟩⟩ := ih
-    obtain ⟨H₂, h₂, f₂⟩ := hstep.exists_iso f₁
-    exact ⟨H₂, h₁.tail h₂, f₂⟩
+  obtain ⟨⟨H', _⟩, h', g, -⟩ := exists_reflTransGen_labelledStabilizationStep_iso
+    (reflTransGen_labelledStabilizationStep_of_reflTransGen h) (z := ⟨H, fun _ ↦ ()⟩) f
+    fun _ ↦ rfl
+  exact ⟨H', h'.lift Sigma.fst fun _ _ ↦ LabelledStabilizationStep.fst, ⟨g⟩⟩
 
 end DualGraph
 

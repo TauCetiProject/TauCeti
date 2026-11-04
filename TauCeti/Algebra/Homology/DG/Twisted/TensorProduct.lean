@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Homology.DG.Twisted.LeftModule
-public import TauCeti.Algebra.Homology.DG.Module.TensorProduct.Complex
+public import TauCeti.Algebra.Homology.DG.Twisted.RowFinite.Coefficients
 public import TauCeti.LinearAlgebra.TensorProduct.Balanced.Pi
 
 /-!
@@ -114,18 +114,7 @@ theorem piRight_differential (hM : IsDGRightModule hA ℳ dM)
 
 section Grading
 
--- Use the characteristic piece equation, since `ofDecomposition` is opaque across modules.  The
--- instances are named: anonymous local instances get automatic names that clash across files.
-local instance instGradedSMulOppositeOfDecompositionTwisted :
-    SetLike.GradedSMul (InternalGrading.ofDecomposition 𝒜).opposite.piece
-      (InternalGrading.ofDecomposition ℳ).piece := by
-  rw [InternalGrading.ofDecomposition_piece]
-  infer_instance
-
-local instance instGradedSMulOfDecompositionTwistedTotalGrading [Finite P] : SetLike.GradedSMul 𝒜
-    (InternalGrading.ofDecomposition (twistedTotalGrading 𝒜 ind)).piece := by
-  rw [InternalGrading.ofDecomposition_piece]
-  infer_instance
+attribute [local instance] tensorGradedRight tensorGradedLeft
 
 variable [Fintype P]
 
@@ -133,45 +122,60 @@ variable [Fintype P]
 local notation "twistedGrading" => grading (𝒜 := 𝒜) (InternalGrading.ofDecomposition ℳ)
   (InternalGrading.ofDecomposition (twistedTotalGrading 𝒜 ind))
 
+local notation "coefficientGrading" => grading (𝒜 := 𝒜) (InternalGrading.ofDecomposition ℳ)
+  (InternalGrading.ofDecomposition (rowFiniteTotalGrading 𝒜 ind))
+
+-- This is the finite-support/function change of coordinates used in `piRight`.
+-- Its pure-tensor formulas use `erw` to reduce the identity in the equivariance proofs.
+local notation "finiteTensorEquiv" =>
+  congr (LinearEquiv.refl R M) (Finsupp.linearEquivFunOnFinite R A P)
+    (by intros; rfl) (by intros; rfl)
+
 /-- `piRight` carries a tensor of total degree `n` to a function of total degree `n`. -/
 theorem piRight_mem_twistedTotalGrading {n : ℤ} {z : BalancedTensorProduct R A M (P → A)}
     (hz : z ∈ (twistedGrading).piece n) :
     piRight R A M P z ∈ twistedTotalGrading ℳ ind n := by
-  rw [grading_piece_eq_iSup (𝒜 := 𝒜)] at hz
-  refine (iSup_le fun q ↦ Submodule.map₂_le.mpr fun β hβ g hg ↦ ?_ :
-    _ ≤ (twistedTotalGrading ℳ ind n).comap (piRight R A M P).toLinearMap) hz
-  rw [InternalGrading.ofDecomposition_piece] at hβ hg
-  rw [Submodule.mem_comap, LinearEquiv.coe_coe, mk_apply, piRight_tmul,
-    mem_twistedTotalGrading_iff]
-  intro y
-  rw [mem_twistedTotalGrading_iff] at hg
-  -- `op (g y) • β` has degree `q + (n - q + ind y)`, which is `n + ind y`.
-  have := op_smul_mem_of_mem_graded (hg y) hβ
-  convert this using 2
-  ring
+  have hz' : (finiteTensorEquiv).symm z ∈ (coefficientGrading).piece n := by
+    simpa only [add_zero, LinearEquiv.coe_coe] using
+      map_mem_of_tmul (𝒜 := 𝒜) (InternalGrading.ofDecomposition ℳ)
+        (InternalGrading.ofDecomposition (twistedTotalGrading 𝒜 ind))
+        (coefficientGrading).piece (finiteTensorEquiv).symm.toLinearMap 0
+        (fun hα hg ↦ by
+          erw [congr_symm_tmul]
+          simpa only [add_zero, LinearEquiv.refl_symm, LinearEquiv.refl_apply] using
+            tmul_mem_grading (𝒜 := 𝒜) (InternalGrading.ofDecomposition ℳ)
+              (InternalGrading.ofDecomposition (rowFiniteTotalGrading 𝒜 ind)) hα
+              (by simpa only [InternalGrading.ofDecomposition_piece,
+                mem_rowFiniteTotalGrading_iff, mem_twistedTotalGrading_iff,
+                Finsupp.linearEquivFunOnFinite_symm_apply] using hg)) hz
+  simpa only [piRight_eq_finsuppScalarRight, LinearEquiv.trans_apply,
+    Finsupp.linearEquivFunOnFinite_apply] using
+    (mem_rowFiniteTotalGrading_iff_twistedTotalGrading ℳ ind n _).mp
+      (finsuppScalarRight_mem_rowFiniteTotalGrading hz')
 
 /-- The inverse of `piRight` carries a function of total degree `n` to a tensor of total
 degree `n`. -/
 theorem piRight_symm_mem_grading {n : ℤ} {f : P → M} (hf : f ∈ twistedTotalGrading ℳ ind n) :
     (piRight R A M P).symm f ∈ (twistedGrading).piece n := by
-  classical
-  rw [piRight_symm_apply]
-  refine Submodule.sum_mem _ fun x _ ↦ ?_
-  rw [mem_twistedTotalGrading_iff] at hf
-  have hsingle : (Pi.single x (1 : A) : P → A) ∈ twistedTotalGrading 𝒜 ind (-ind x) := by
-    rw [mem_twistedTotalGrading_iff]
-    intro y
-    by_cases hy : y = x
-    · subst hy
-      rw [Pi.single_eq_same, neg_add_cancel]
-      exact SetLike.one_mem_graded 𝒜
-    · rw [Pi.single_eq_of_ne hy]
-      exact zero_mem _
-  have := tmul_mem_grading (𝒜 := 𝒜) (InternalGrading.ofDecomposition ℳ)
-    (InternalGrading.ofDecomposition (twistedTotalGrading 𝒜 ind))
-    (by simpa only [InternalGrading.ofDecomposition_piece] using hf x)
-    (by simpa only [InternalGrading.ofDecomposition_piece] using hsingle)
-  simpa only [add_neg_cancel_right] using this
+  have hf' : (Finsupp.linearEquivFunOnFinite R M P).symm f ∈
+      rowFiniteTotalGrading ℳ ind n := by
+    simpa only [mem_rowFiniteTotalGrading_iff, mem_twistedTotalGrading_iff,
+      Finsupp.linearEquivFunOnFinite_symm_apply] using hf
+  have hz := finsuppScalarRight_symm_mem_grading (𝒜 := 𝒜) hf'
+  have h := map_mem_of_tmul (𝒜 := 𝒜) (InternalGrading.ofDecomposition ℳ)
+    (InternalGrading.ofDecomposition (rowFiniteTotalGrading 𝒜 ind))
+    (twistedGrading).piece (finiteTensorEquiv).toLinearMap 0
+    (fun hα hg ↦ by
+      erw [congr_tmul]
+      simpa only [add_zero, LinearEquiv.refl_apply] using
+        tmul_mem_grading (𝒜 := 𝒜) (InternalGrading.ofDecomposition ℳ)
+          (InternalGrading.ofDecomposition (twistedTotalGrading 𝒜 ind)) hα
+          (by simpa only [InternalGrading.ofDecomposition_piece,
+            mem_rowFiniteTotalGrading_iff, mem_twistedTotalGrading_iff,
+            Finsupp.linearEquivFunOnFinite_apply] using hg)) hz
+  simpa only [add_zero, piRight_eq_finsuppScalarRight, LinearEquiv.trans_symm,
+    LinearEquiv.trans_apply,
+    LinearEquiv.symm_symm, LinearEquiv.coe_coe] using h
 
 /-- **`piRight` carries the total degree of `M ⊗_A K_m` onto the total grading of `P → M`.** -/
 theorem map_grading_piece_eq_twistedTotalGrading (n : ℤ) :

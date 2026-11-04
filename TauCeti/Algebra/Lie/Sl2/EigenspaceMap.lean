@@ -44,7 +44,8 @@ the identity of that orbit map is `x ↦ ⁅x, e⁆`.
 In a finite-dimensional module over a field of characteristic zero the
 eigenspaces of `h` at the integers span `M`, and `f` lowers weights by `2`, so the kernel of `f` is
 spanned by its homogeneous parts. By the injectivity of `f` these have weights `-n` with `n : ℕ`
-(`IsSl2Triple.ker_toEnd_f_eq_iSup_inf_eigenspace`).
+(`IsSl2Triple.ker_toEnd_f_eq_iSup_inf_eigenspace`). Dually, the kernel of `e` is spanned by the
+vectors it contains of weight `n` with `n : ℕ` (`IsSl2Triple.ker_toEnd_e_eq_iSup_inf_eigenspace`).
 
 ## Main results
 
@@ -58,6 +59,8 @@ spanned by its homogeneous parts. By the injectivity of `f` these have weights `
 * `IsSl2Triple.ker_toEnd_f_eq_iSup_inf_eigenspace`: in a finite-dimensional module over a
   field of characteristic zero, the kernel of `f` is spanned by the vectors it
   contains of weight `-n`, `n : ℕ`.
+* `IsSl2Triple.ker_toEnd_e_eq_iSup_inf_eigenspace`: dually, the kernel of `e` is spanned by the
+  vectors it contains of weight `n`, `n : ℕ`.
 
 ## References
 
@@ -215,7 +218,7 @@ theorem map_ad_e_eigenspace_zero (t : IsSl2Triple h e f) :
 
 end Field
 
-/-! ### The weights of `h` on the kernel of the lowering operator -/
+/-! ### The weights of `h` on the kernels of the lowering and raising operators -/
 
 section Weights
 
@@ -247,6 +250,15 @@ theorem ker_toEnd_f_eq_iSup_inf_eigenspace (t : IsSl2Triple h e f) :
     exact bot_le
   · obtain ⟨n, rfl⟩ := Int.exists_eq_neg_ofNat (not_lt.1 hz)
     exact le_iSup_of_le n (by simp)
+
+/-- **The kernel of the raising operator is graded by `ℕ`.** In a finite-dimensional module over a
+field of characteristic zero, the kernel of `e` is spanned by the vectors it contains of weight `n`
+for `h`, `n : ℕ`. This is `IsSl2Triple.ker_toEnd_f_eq_iSup_inf_eigenspace` for the triple
+`(-h, f, e)`. -/
+theorem ker_toEnd_e_eq_iSup_inf_eigenspace (t : IsSl2Triple h e f) :
+    LinearMap.ker (toEnd K L M e) =
+      ⨆ n : ℕ, LinearMap.ker (toEnd K L M e) ⊓ (toEnd K L M h).eigenspace (n : K) := by
+  simpa using t.symm.ker_toEnd_f_eq_iSup_inf_eigenspace (K := K) (M := M)
 
 end Weights
 

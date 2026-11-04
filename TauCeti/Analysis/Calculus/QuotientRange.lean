@@ -82,9 +82,8 @@ theorem ContDiffOn.exists_contDiffOn_quotientRangeCoordinate
         ContDiffOn 𝕜 n (fun y => (A y).quotientRangeCoordinate Q.subtypeL) U := by
   obtain ⟨Q, hQ, V, hV, hxV, hInv⟩ :=
     (hA.continuousOn.continuousAt (hs.mem_nhds hx)).exists_isInvertible_coprod_subtypeL h
-  obtain ⟨e, _⟩ := hInv x hxV
   have : CompleteSpace (E × Q) :=
-    (e.isUniformEmbedding.completeSpace_congr e.surjective).mpr inferInstance
+    ContinuousLinearMap.completeSpace_of_isInvertible (hInv x hxV)
   refine ⟨Q, hQ, V ∩ s, hV.inter hs, ⟨hxV, hx⟩, inter_subset_right,
     (fun y hy => hInv y hy.1), ?_⟩
   exact (hA.mono inter_subset_right).quotientRangeCoordinate Q.subtypeL

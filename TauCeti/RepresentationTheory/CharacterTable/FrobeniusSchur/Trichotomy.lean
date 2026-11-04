@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.LinearAlgebra.BilinearForm.Squares
-public import TauCeti.LinearAlgebra.Dimension.Sup
+public import TauCeti.LinearAlgebra.Dimension.Submodule
 public import TauCeti.RepresentationTheory.CharacterTable.FrobeniusSchur.Basic
 public import TauCeti.RepresentationTheory.Dual
 public import TauCeti.RepresentationTheory.InvariantForm
@@ -268,10 +268,10 @@ omit [Finite G] in
 private theorem finrank_symmetricInvariantForms_add_le (ρ : Representation k G V) :
     finrank k (symmetricInvariantForms ρ) + finrank k (alternatingInvariantForms ρ)
       ≤ finrank k (invariantForms ρ) :=
-  finrank_add_finrank_le_of_inf_eq_bot (K := k) (W := BilinForm k V) (symmetricInvariantForms_le ρ)
-    (alternatingInvariantForms_le ρ)
-    (symmetricInvariantForms_inf_alternatingInvariantForms
+  Submodule.finrank_add_finrank_le_of_disjoint_of_le (𝕜 := k) (E := BilinForm k V)
+    (disjoint_iff.mpr <| symmetricInvariantForms_inf_alternatingInvariantForms
       (IsRegular.of_ne_zero (two_ne_zero (α := k))).left ρ)
+    (symmetricInvariantForms_le ρ) (alternatingInvariantForms_le ρ)
 
 /- The two counts are squeezed together: each of the two injections gives one inequality, and the
 two subspaces meeting only in `0` inside a space of the total dimension gives the third, which

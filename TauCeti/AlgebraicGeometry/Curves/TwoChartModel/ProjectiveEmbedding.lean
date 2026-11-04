@@ -8,6 +8,7 @@ module
 public import TauCeti.AlgebraicGeometry.Curves.TwoChartModel.Classification
 public import TauCeti.AlgebraicGeometry.Curves.TwoChartModel.SectionRing
 public import TauCeti.AlgebraicGeometry.ProjectiveSpectrum.ClosedImmersion
+public import TauCeti.AlgebraicGeometry.ProjectiveSpectrum.ProjectiveOver
 public import TauCeti.AlgebraicGeometry.ProjectiveSpectrum.SymmetricAlgebra
 import TauCeti.FieldTheory.FunctionField.RiemannRoch.Pencil
 
@@ -41,10 +42,7 @@ Since the two-chart model does not depend on the transcendental function it is b
 projective**: it is a closed subscheme over `k` of a projective space `Proj (Sym_k V)` with `V`
 finite-dimensional. Every regular proper curve over `k` is the two-chart model of its function
 field (`AlgebraicGeometry.Scheme.isoTwoChartModel`), so every regular proper curve is projective
-as well. Mathlib has no
-class of projective morphisms, so projectivity is stated as the existence of such a closed
-immersion over `k`; properness of `Proj (Sym_k V)` over `k` is
-`TauCeti.SymmetricAlgebra.instIsProperProjToSpec`.
+as well: it is projective over `k` in the sense of `AlgebraicGeometry.Scheme.IsProjectiveOver`.
 
 ## Main definitions
 
@@ -61,8 +59,8 @@ immersion over `k`; properness of `Proj (Sym_k V)` over `k` is
   `Spec k`.
 * `TauCeti.AlgebraicGeometry.twoChartModel.exists_isClosedImmersion_proj`: **the two-chart
   model of a function field is projective**.
-* `AlgebraicGeometry.Scheme.exists_isClosedImmersion_proj`: **a regular proper curve is
-  projective**.
+* `AlgebraicGeometry.Scheme.isProjectiveOver_of_isCurveOver`: **a regular proper curve is
+  projective** over `k`, in the sense of `AlgebraicGeometry.Scheme.IsProjectiveOver`.
 
 ## References
 
@@ -184,13 +182,11 @@ variable {k : Type u} [Field k] (X : Scheme.{u}) [X.Over (Spec (.of k))] [X.IsCu
 local rings are discrete valuation rings, then `X` is a closed subscheme, over `k`, of the
 projective space `Proj (Sym_k V)` of a finite-dimensional `k`-vector space `V`. No hypothesis on
 the constants of the function field `k(X)` is needed. -/
-theorem exists_isClosedImmersion_proj :
-    ∃ (V : Submodule k X.functionField) (_ : FiniteDimensional k V)
-      (f : X ⟶ Proj (TauCeti.SymmetricAlgebra.homogeneousSubmodule k V)),
-      IsClosedImmersion f ∧ f.IsOver (Spec (.of k)) := by
+instance isProjectiveOver_of_isCurveOver : X.IsProjectiveOver k := by
   have hF := IsCurveOver.isFunctionField (k := k) (X := X)
   obtain ⟨x, hx⟩ := hF.exists_transcendental
   obtain ⟨V, hV, f, hf, hfk⟩ := twoChartModel.exists_isClosedImmersion_proj hF hx
-  exact ⟨V, hV, (X.isoTwoChartModel hx.ne_zero hx).hom ≫ f, inferInstance, inferInstance⟩
+  exact ⟨⟨V, inferInstance, inferInstance, hV, (X.isoTwoChartModel hx.ne_zero hx).hom ≫ f,
+    inferInstance, inferInstance⟩⟩
 
 end AlgebraicGeometry.Scheme

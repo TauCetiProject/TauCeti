@@ -21,8 +21,8 @@ into `L²(stdGaussian E)`.
 
 Clipping the observable at height `M > 0` gives a bounded `L²` function whose squared
 error is at most `3 ‖x‖⁴ / (16 M²)`. For vectors in the unit ball this is the
-`3 / (16 M²)` estimate used in the Gaussian truncation proof of Grothendieck's
-inequality. The construction also works in dimension zero.
+`3 / (16 M²)` estimate, or the norm bound `√3 / (4 M)`, used in the Gaussian truncation proof of
+Grothendieck's inequality. The construction also works in dimension zero.
 
 We use Mathlib's basis-independent `ProbabilityTheory.stdGaussian`,
 `IsGaussian.memLp_dual`, and the real Gaussian even-moment formula, rather than introducing
@@ -157,5 +157,13 @@ theorem norm_sub_clippedGaussianL2_sq_le_of_norm_le_one {x : E} (hx : ‖x‖ �
   refine (norm_sub_clippedGaussianL2_sq_le x hM).trans ?_
   have hx₄ : ‖x‖ ^ 4 ≤ 1 := by nlinarith [pow_le_pow_left₀ (norm_nonneg x) hx 4]
   exact div_le_div_of_nonneg_right (by linarith) (by positivity)
+
+/-- The clipping error of the Gaussian observable of a unit-ball vector has `L²` norm at most
+`√3 / (4 * M)`. -/
+theorem norm_sub_clippedGaussianL2_le_of_norm_le_one {x : E} (hx : ‖x‖ ≤ 1) {M : ℝ}
+    (hM : 0 < M) : ‖gaussianL2 x - clippedGaussianL2 x M‖ ≤ √3 / (4 * M) := by
+  refine (pow_le_pow_iff_left₀ (norm_nonneg _) (by positivity) two_ne_zero).1 ?_
+  rw [div_pow, Real.sq_sqrt (by norm_num), mul_pow]
+  exact (norm_sub_clippedGaussianL2_sq_le_of_norm_le_one hx hM).trans_eq (by ring)
 
 end TauCeti.Probability

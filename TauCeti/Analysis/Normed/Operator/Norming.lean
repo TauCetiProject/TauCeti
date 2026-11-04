@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.Normed.Operator.NNNorm
 public import Mathlib.Analysis.RCLike.Lemmas
 public import Mathlib.Topology.Order.IsLUB
+import TauCeti.Analysis.Normed.Operator.Basic
 
 /-!
 # Norming sets for continuous linear maps
@@ -15,6 +16,8 @@ public import Mathlib.Topology.Order.IsLUB
 Finite-dimensional subspaces of continuous linear maps admit finite norming sets in the
 domain unit ball, with any prescribed loss greater than one. Norm-separable sets
 of maps admit countable sets in that ball which recover their norms exactly.
+Tests uniformly norming an increasing sequence of operator subspaces separate points
+in the closure of their union.
 
 For scalar-valued maps these are predual norming sets. In particular, applying these
 results with a continuous dual as the domain gives
@@ -149,3 +152,31 @@ theorem TopologicalSpace.IsSeparable.exists_countable_norming
     exact f.unit_le_opNorm x (htunit x hx)))
 
 end Countable
+
+/-- Tests uniformly norming an increasing sequence of operator subspaces separate points
+in the closure of their union. -/
+theorem ContinuousLinearMap.eq_zero_of_mem_topologicalClosure_iSup_of_norming
+    {𝕜 E F : Type*} [NontriviallyNormedField 𝕜]
+    [SeminormedAddCommGroup E] [NormedSpace 𝕜 E]
+    [NormedAddCommGroup F] [NormedSpace 𝕜 F]
+    (ψ : E →L[𝕜] F) {M : ℕ → Submodule 𝕜 (E →L[𝕜] F)} (hM : Monotone M)
+    {t : ℕ → Set E} {A : ℝ} (hA : 0 ≤ A)
+    (ht : ∀ n x, x ∈ t n → ‖x‖ ≤ 1)
+    (hnorm : ∀ n g, g ∈ M n → ∃ x ∈ t n, ‖g‖ ≤ A * ‖g x‖)
+    (hψ : ψ ∈ (⨆ n, M n).topologicalClosure)
+    (hzero : ∀ n x, x ∈ t n → ψ x = 0) : ψ = 0 := by
+  have hclosed : IsClosed {g : E →L[𝕜] F | ‖g‖ ≤ A * ‖g - ψ‖} :=
+    isClosed_le continuous_norm (continuous_const.mul (continuous_id.sub continuous_const).norm)
+  have hbound : (⨆ n, M n : Submodule 𝕜 _) ≤
+      {g : E →L[𝕜] F | ‖g‖ ≤ A * ‖g - ψ‖} := by
+    intro g hg
+    obtain ⟨n, hn⟩ := (Submodule.mem_iSup_of_directed _ hM.directed_le).mp hg
+    obtain ⟨x, hx, hgx⟩ := hnorm n g hn
+    calc
+      ‖g‖ ≤ A * ‖g x‖ := hgx
+      _ = A * ‖(g - ψ) x‖ := by simp [hzero n x hx]
+      _ ≤ A * ‖g - ψ‖ := mul_le_mul_of_nonneg_left ((g - ψ).unit_le_opNorm x (ht n x hx)) hA
+  have hnorm : ‖ψ‖ ≤ 0 := by
+    simpa only [mem_ofPred_eq, sub_self, norm_zero, mul_zero] using
+      closure_minimal hbound hclosed hψ
+  exact ψ.opNorm_zero_iff'.mp (le_antisymm hnorm ψ.opNorm_nonneg)

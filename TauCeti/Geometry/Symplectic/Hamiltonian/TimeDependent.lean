@@ -126,7 +126,7 @@ theorem hamiltonianVectorField_eq_inverse_spatialFDeriv (omega : SymplecticForm 
     {H : ℝ → V → ℝ} {t : ℝ} {x : V} (hH : DifferentiableAt ℝ (Function.uncurry H) (t, x)) :
     omega.hamiltonianVectorField (H t) x =
       omega.toBilinForm.toContinuousBilinearMap.inverse
-        (spatialFDeriv (Function.uncurry H) x t) := by
+        (spatialFDeriv (𝕜 := ℝ) (Function.uncurry H) x t) := by
   rw [eq_comm, eq_hamiltonianVectorField_iff, ← fderiv_timeSlice hH]
   exact fun w ↦ congrArg (fun L : V →L[ℝ] ℝ ↦ L w)
     (omega.isInvertible_toContinuousBilinearMap.self_apply_inverse _)

@@ -431,7 +431,7 @@ theorem tendsto_sum_proj_of_pairwise_disjoint {P : ProjValMeasure X H} {f : ℕ 
     simpa [U, B] using h1
   -- The `n`-th diagonal partial sum is at most the mass of the union:
   have hUle (n : ℕ) : p n ≤ U := by
-    rw [hUeq, ENNReal.tsum_eq_iSup_sum]
+    rw [hUeq, tsum_eq_iSup_sum]
     exact le_iSup (fun (s : Finset ℕ) => (∑ k ∈ s, (μ (f k) : ℝ≥0∞))) (Finset.range n)
   -- (1) Diagonal inner products needed by the law of cosines.
   --

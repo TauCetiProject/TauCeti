@@ -18,7 +18,8 @@ import Mathlib.Tactic.LinearCombination
 
 A root `ω` of `X² + X + 1` labels the four elements as `0, 1, ω, ω²`.
 The explicit enumeration supports finite calculations over this alphabet without choosing
-another model of the field. Squaring exchanges the two roots in characteristic two.
+another model of the field. Such a root is a cube root of unity, a field of order four has
+characteristic two, and squaring exchanges the two roots in characteristic two.
 
 Additively, a field of four elements is the Klein four-group: `zmodTwoProdAddEquiv` sends
 `(a, b) : ZMod 2 × ZMod 2` to `a + bω`, so that the three nonzero elements `1, ω, ω²` correspond
@@ -28,12 +29,6 @@ to `(1, 0)`, `(0, 1)` and `(1, 1)`. The absolute trace to the prime field is `z 
 public section
 
 namespace TauCeti
-
-/-- The Galois field of order four has four elements, independently of its enumeration. -/
-theorem card_galoisField_two_two [Fintype (GaloisField 2 2)] :
-    Fintype.card (GaloisField 2 2) = 4 := by
-  rw [← Nat.card_eq_fintype_card, GaloisField.card 2 2 (by decide)]
-  decide
 
 variable {F : Type*} [Field F] [Finite F]
 
@@ -53,6 +48,17 @@ theorem sq_sq_add_sq_add_one_eq_zero {R : Type*} [CommSemiring R] [CharP R 2]
     {ω : R} (hω : ω ^ 2 + ω + 1 = 0) : (ω ^ 2) ^ 2 + ω ^ 2 + 1 = 0 := by
   simpa only [map_add, map_pow, map_one, map_zero, frobenius_def] using
     congrArg (frobenius R 2) hω
+
+/-- A root of `X² + X + 1` is a cube root of unity. -/
+theorem pow_three_eq_one_of_sq_add_self_add_one_eq_zero {R : Type*} [CommRing R] {ω : R}
+    (hω : ω ^ 2 + ω + 1 = 0) : ω ^ 3 = 1 := by
+  linear_combination (ω - 1) * hω
+
+/-- A field of order four has characteristic two. -/
+theorem two_eq_zero_of_natCard_eq_four (hF : Nat.card F = 4) : (2 : F) = 0 := by
+  let := Fintype.ofFinite F
+  let := charP_of_card_eq_prime_pow (Nat.card_eq_fintype_card.symm.trans hF : _ = 2 ^ 2)
+  exact CharTwo.two_eq_zero
 
 /-- Every field of order four contains a root of `X² + X + 1`. -/
 theorem exists_sq_add_self_add_one_eq_zero_of_card_eq_four (hF : Nat.card F = 4) :
@@ -170,6 +176,22 @@ theorem finFourEquiv_apply (hF : Nat.card F = 4) {ω : F}
     (hω : ω ^ 2 + ω + 1 = 0) (i : Fin 4) :
     finFourEquiv hF hω i = ![0, 1, ω, ω ^ 2] i := by
   fin_cases i <;> simp [finFourEquiv]
+
+/-- **Every unit of a field of four elements is a power of `ω²`.** Labelling the field as
+`0, 1, ω, ω²` by `finFourEquiv`, the unit with label `i` is `(ω²)ᵏ` for the exponent `k = 0, 2, 1`
+displayed at positions `1, 2, 3`. -/
+theorem sq_pow_finFourEquiv_symm (hF : Nat.card F = 4) {ω : F} (hω : ω ^ 2 + ω + 1 = 0)
+    (a : Fˣ) : (ω ^ 2) ^ ![0, 0, 2, 1] ((finFourEquiv hF hω).symm a) = a := by
+  have h3 := pow_three_eq_one_of_sq_add_self_add_one_eq_zero hω
+  obtain ⟨i, hi⟩ := (finFourEquiv hF hω).surjective a
+  rw [← hi, Equiv.symm_apply_apply, finFourEquiv_apply]
+  rw [finFourEquiv_apply] at hi
+  fin_cases i
+  · exact absurd hi.symm (by simp)
+  · simp
+  · simp only [Fin.reduceFinMk, Matrix.cons_val]
+    linear_combination ω * h3
+  · simp
 
 omit [Finite F] in
 /-- The four elements of a field of order four, labelled by a root of `X² + X + 1`. -/

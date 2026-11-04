@@ -66,6 +66,8 @@ Serre's vanishing theorem, before and after base change.
   change for `H⁰` and `H¹` of the structure sheaf.
 * `TauCeti.AlgebraicGeometry.nonempty_linearEquiv_tensor_cohomology_one_pullback`: base change
   for `H¹` of a quasicoherent sheaf on a two-affine cover, along any base-ring map.
+* `TauCeti.AlgebraicGeometry.subsingleton_cohomology_one_pullback`: on such a cover, vanishing
+  of `H¹` of a quasicoherent sheaf persists after any base change.
 * `TauCeti.AlgebraicGeometry.finrank_cohomology_zero_pullback_eq_of_isPullback`,
   `TauCeti.AlgebraicGeometry.finrank_cohomology_one_pullback_eq_of_isPullback` and
   `TauCeti.AlgebraicGeometry.finiteDimensional_cohomology_one_pullback_of_isPullback`: dimension
@@ -135,8 +137,8 @@ variable (g) in
 /-- Pulling back sections along `g` commutes with the Mayer–Vietoris difference of restrictions.
 The intersection of the preimages is definitionally the preimage of the intersection
 (`Scheme.Hom.preimage_inf`). -/
-private lemma pullbackSections_mayerVietorisSectionsDifference (M : X.Modules) (U V : X.Opens)
-    (s : Γ(M, U)) (t : Γ(M, V)) :
+lemma _root_.AlgebraicGeometry.Scheme.Hom.pullbackSections_mayerVietorisSectionsDifference
+    (M : X.Modules) (U V : X.Opens) (s : Γ(M, U)) (t : Γ(M, V)) :
     g.pullbackSections M (U ⊓ V) (mayerVietorisSectionsDifference M U V (s, t)) =
       mayerVietorisSectionsDifference ((Scheme.Modules.pullback g).obj M) (g ⁻¹ᵁ U) (g ⁻¹ᵁ V)
         (g.pullbackSections M U s, g.pullbackSections M V t) := by
@@ -285,7 +287,7 @@ private lemma nonempty_linearEquiv_tensor_cohomology_one_pullback_aux
     (g.pullbackSectionsBaseLinear M V H.toCommSq)
     (g.pullbackSectionsBaseLinear M (U ⊓ V) H.toCommSq)
     (fun s t ↦ (g.pullbackSectionsBaseLinear_apply M (U ⊓ V) H.toCommSq _).trans <|
-      (pullbackSections_mayerVietorisSectionsDifference g M U V s t).trans <| congrArg _ <|
+      (g.pullbackSections_mayerVietorisSectionsDifference M U V s t).trans <| congrArg _ <|
         Prod.ext (g.pullbackSectionsBaseLinear_apply M U H.toCommSq s).symm
           (g.pullbackSectionsBaseLinear_apply M V H.toCommSq t).symm)
     (g.isBaseChange_pullbackSections M U H hU) (g.isBaseChange_pullbackSections M V H hV)
@@ -318,6 +320,17 @@ theorem nonempty_linearEquiv_tensor_cohomology_one_pullback (M : X.Modules) [M.I
       (cohomologyOn ((Scheme.Modules.pullback g).obj M) 1 (g ⁻¹ᵁ V)) :=
     Scheme.Modules.subsingleton_cohomologyOn_succ_of_isAffineOpen _ hV' 0
   exact nonempty_linearEquiv_tensor_cohomology_one_pullback_aux H U V hUV M hU hV hInter hU₁ hV₁
+
+/-- **Vanishing of `H¹` persists under base change.** Let `X` be a scheme over `R` covered by
+affine opens `U` and `V` with affine intersection, and let `Y = X ×_R R'` be its base change along
+any ring map. If a quasi-coherent sheaf `M` on `X` has `H¹(X, M) = 0`, then
+`H¹(Y, g^* M) = 0`. -/
+theorem subsingleton_cohomology_one_pullback (M : X.Modules) [M.IsQuasicoherent] {U V : X.Opens}
+    (hU : IsAffineOpen U) (hV : IsAffineOpen V) (hInter : IsAffineOpen (U ⊓ V))
+    (hUV : U ⊔ V = ⊤) [Subsingleton (Cohomology M 1)] :
+    Subsingleton (Cohomology ((Scheme.Modules.pullback g).obj M) 1) := by
+  obtain ⟨e⟩ := nonempty_linearEquiv_tensor_cohomology_one_pullback H M hU hV hInter hUV
+  exact e.symm.toEquiv.subsingleton
 
 /-- **Flat base change for `H¹(X, 𝒪_X)` on a two-affine cover.** Let `X` be a quasi-separated
 scheme over `R` covered by two affine opens, and let `Y = X ×_R R'` be its base change along a

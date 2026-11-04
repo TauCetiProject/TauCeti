@@ -11,7 +11,7 @@ import Mathlib.Order.Interval.Set.Nat
 import TauCeti.Geometry.Manifold.Immersion.Differential
 
 /-!
-# Closed orbits of the suspension flow
+# Closed orbits of the suspension flow and their orbit tori
 
 Let `φ : M ≃ₘ^n⟮I, I⟯ M` be a diffeomorphism and `Y_φ = (ℝ × M) / ((t, x) ∼ (t + 1, φ⁻¹ x))` its
 smooth mapping torus. If `x` is a periodic point of `φ` with period `d`, so `φ^[d] x = x`, then
@@ -38,12 +38,17 @@ needed. For `d = 0`, the same definition parametrizes the whole trajectory on `�
 of `ℝ`; it need not close up. For positive periods, its velocity is the suspension vector field
 `T = ∂_t`, and it is a pointwise immersion for boundaryless Banach manifolds. When the first of
 two orbits has positive period, they have equal images exactly when their starting points lie on
-the same orbit of `φ`, and otherwise have disjoint images.
+the same orbit of `φ`, and otherwise have disjoint images. The product with a second circle
+gives the orbit torus `(ℝ / ℤ) × (ℝ / dℤ) → (ℝ / ℤ) × Y_φ`, `(s, θ) ↦ (s, γ θ)`. Its image is the
+product of the circle with the closed-orbit image, and it is a smooth embedding exactly when `d`
+is the least period of `x`.
 
 ## Main definitions
 
 * `TauCeti.SmoothMappingTorus.closedOrbit φ h`: for `h : Function.IsPeriodicPt φ d x`, the map
   `ℝ / dℤ → Y_φ`, `[t] ↦ [t, x]`.
+* `TauCeti.SmoothMappingTorus.orbitTorus φ h`: the orbit torus `(s, θ) ↦ (s, γ θ)` of the closed
+  orbit through a periodic point.
 
 ## Main results
 
@@ -62,7 +67,9 @@ the same orbit of `φ`, and otherwise have disjoint images.
 * `TauCeti.SmoothMappingTorus.isImmersion_closedOrbit`,
   `TauCeti.SmoothMappingTorus.isSmoothEmbedding_closedOrbit_iff`: `γ` is an immersion, and it is a
   smooth embedding exactly when `d` is the least period of `x`.
-
+* `TauCeti.SmoothMappingTorus.range_orbitTorus`,
+  `TauCeti.SmoothMappingTorus.isSmoothEmbedding_orbitTorus_iff`: the orbit torus has image
+  `(ℝ / ℤ) × range γ`, and it is a smooth embedding exactly when `d` is the least period of `x`.
 * `TauCeti.SmoothMappingTorus.hasMFDerivAt_closedOrbit`: the velocity is the suspension vector
   field, with pointwise Banach-manifold immersion in
   `TauCeti.SmoothMappingTorus.isImmersionAt_closedOrbit`.
@@ -388,6 +395,50 @@ theorem mfderiv_closedOrbit (θ : AddCircle (d : ℝ)) :
   (hasMFDerivAt_closedOrbit hx θ).mfderiv
 
 end VectorField
+
+/-! ### Orbit tori -/
+
+section OrbitTorus
+
+variable (φ) in
+/-- The orbit torus `(ℝ / ℤ) × (ℝ / dℤ) → (ℝ / ℤ) × Y_φ`, `(s, θ) ↦ (s, γ θ)`, of the closed orbit
+`γ` of the suspension flow through a point `x` of period `d`
+(`TauCeti.SmoothMappingTorus.closedOrbit`). It is a smooth embedding exactly when `d` is the least
+period of `x` (`TauCeti.SmoothMappingTorus.isSmoothEmbedding_orbitTorus_iff`). -/
+def orbitTorus : UnitAddCircle × AddCircle (d : ℝ) → UnitAddCircle × SmoothMappingTorus φ :=
+  Prod.map id (closedOrbit φ h)
+
+/-- The orbit torus sends `(s, θ)` to `(s, γ θ)`. -/
+@[simp]
+theorem orbitTorus_apply (p : UnitAddCircle × AddCircle (d : ℝ)) :
+    orbitTorus φ h p = (p.1, closedOrbit φ h p.2) :=
+  (rfl)
+
+/-- The image of the orbit torus is the product of the circle `ℝ / ℤ` with the image of the closed
+orbit. -/
+theorem range_orbitTorus : range (orbitTorus φ h) = univ ×ˢ range (closedOrbit φ h) := by
+  rw [orbitTorus, range_prodMap, range_id]
+
+/-- The orbit torus is injective exactly when `d` is the least period of `x`. -/
+theorem injective_orbitTorus_iff : Injective (orbitTorus φ h) ↔ minimalPeriod φ x = d := by
+  rw [← injective_closedOrbit_iff h, orbitTorus, Prod.map_injective]
+  exact and_iff_right injective_id
+
+variable [T2Space M] [LocallyCompactSpace M] [IsManifold I n M] [Fact (0 < (d : ℝ))]
+
+/-- The orbit torus is `C^n`. -/
+theorem contMDiff_orbitTorus :
+    ContMDiff (𝓘(ℝ).prod 𝓘(ℝ)) (𝓘(ℝ).prod (𝓘(ℝ).prod I)) n (orbitTorus φ h) :=
+  contMDiff_id.prodMap (contMDiff_closedOrbit h)
+
+/-- The orbit torus is a smooth embedding exactly when `d` is the least period of `x`. -/
+theorem isSmoothEmbedding_orbitTorus_iff [I.Boundaryless] [FiniteDimensional ℝ E] (hn : 1 ≤ n) :
+    Manifold.IsSmoothEmbedding (𝓘(ℝ).prod 𝓘(ℝ)) (𝓘(ℝ).prod (𝓘(ℝ).prod I)) n (orbitTorus φ h) ↔
+      minimalPeriod φ x = d := by
+  refine ⟨fun he ↦ (injective_orbitTorus_iff h).1 he.isEmbedding.injective, fun hd ↦ ?_⟩
+  exact Manifold.IsSmoothEmbedding.id.prodMap ((isSmoothEmbedding_closedOrbit_iff h hn).2 hd)
+
+end OrbitTorus
 
 end SmoothMappingTorus
 

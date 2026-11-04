@@ -12,6 +12,7 @@ public import TauCeti.Data.Sym.Basic
 public import TauCeti.RingTheory.MvPolynomial.Symmetric.Substitution
 public import TauCeti.RingTheory.Polynomial.Monic.OfCoeff
 import Mathlib.Data.Fin.VecNotation
+import Mathlib.RingTheory.MvPolynomial.Symmetric.FundamentalTheorem
 
 /-!
 # The symmetric power of a field, charted by elementary symmetric functions
@@ -412,8 +413,10 @@ theorem exists_map_eval_esymm_eq_eval (q : K[X]) :
   have hftsf : ∀ k : ℕ, ∃ W : MvPolynomial (Fin n) K,
       MvPolynomial.aeval (fun j : Fin n => esymm (Fin n) K ((j : ℕ) + 1)) W =
         MvPolynomial.bind₁ (fun i : Fin n => Polynomial.aeval (MvPolynomial.X i) q)
-          (esymm (Fin n) K k) := fun k =>
-    (esymm_isSymmetric (Fin n) K k).exists_aeval_esymm_eq_bind₁_aeval_X q
+          (esymm (Fin n) K k) := fun k => by
+    obtain ⟨W, hW⟩ := (esymmAlgHom_fin_bijective K n).surjective
+      ⟨_, (esymm_isSymmetric (Fin n) K k).bind₁_aeval_X q⟩
+    exact ⟨W, by rw [← esymmAlgHom_apply, hW]⟩
   choose W hW using hftsf
   refine ⟨W, fun s k => ?_⟩
   obtain ⟨v, hv⟩ := ofFn_surjective s

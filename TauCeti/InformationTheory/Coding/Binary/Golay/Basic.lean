@@ -150,11 +150,9 @@ theorem natCard_code : Nat.card code = 4096 := by
 
 /-- The extended binary Golay code is Euclidean self-dual. -/
 theorem isSelfDual_code : code.IsSelfDual := by
-  apply Submodule.IsSelfOrthogonal.isSelfDual_of_card_le_two_mul_finrank
-  · rw [Submodule.isSelfOrthogonal_iff_le, code_def,
-      ← Matrix.checkedBy_eq_euclideanDual_generatedBy, Matrix.generatedBy_le_checkedBy_iff]
-    exact generator_mul_transpose_eq_zero
-  · simp
+  rw [code_def]
+  exact Matrix.generatedBy_isSelfDual_of_mul_transpose_eq_zero_and_card_le generator
+    generator_mul_transpose_eq_zero (by simp)
 
 /-- The Euclidean dual of the extended binary Golay code is the code itself. -/
 @[simp]
@@ -674,6 +672,6 @@ theorem hammingMinDist_code : Set.hammingMinDist (code : Set (Fin 24 → ZMod 2)
 /-- Every nonzero codeword of the extended binary Golay code has weight at least eight. -/
 theorem eight_le_hammingNorm {x : Fin 24 → ZMod 2} (hx : x ∈ code) (hx0 : x ≠ 0) :
     8 ≤ hammingNorm x := by
-  simpa using Set.hammingMinDist_le_hammingNorm (E := code.toAddSubgroup) hx hx0
+  simpa using Set.hammingMinDist_le_hammingNorm code.zero_mem hx hx0
 
 end TauCeti.BinaryGolay

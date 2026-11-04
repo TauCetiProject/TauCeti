@@ -37,6 +37,8 @@ of complex projective space are built.
   its inverse in homogeneous coordinates.
 * `Projectivization.affineChart_symm_trans_source` and
   `Projectivization.affineChart_symm_trans_apply`: the domain and formula of the transition maps.
+* `Projectivization.affineChart_apply_affineChart_symm`: a map of projective spaces given in
+  homogeneous coordinates, read in standard affine charts.
 
 ## References
 
@@ -75,7 +77,7 @@ theorem mk_mem_affineOpen_iff (i : ι) (v : ι → K) (hv : v ≠ 0) :
 
 /-- Every point of projective space lies in some standard affine open. -/
 theorem exists_mem_affineOpen (x : ℙ K (ι → K)) : ∃ i, x ∈ affineOpen i :=
-  Function.ne_iff.1 x.rep_nonzero
+  Function.ne_iff.1 x.rep_ne_zero
 
 /-- The standard affine opens cover projective space. -/
 theorem iUnion_affineOpen : ⋃ i, affineOpen (K := K) (ι := ι) i = univ :=
@@ -156,5 +158,32 @@ theorem affineChart_symm_trans_apply (i j : Fin (n + 1)) (z : Fin n → K) :
       fun k ↦ Fin.insertNth (α := fun _ ↦ K) i 1 z (j.succAbove k) /
         Fin.insertNth (α := fun _ ↦ K) i 1 z j :=
   (rfl)
+
+
+/-- A map `f` of projective spaces sending `[w]` to `[F w]` for `w = Fin.insertNth i 1 z`, read in
+the standard affine charts at `i` and `j`: it sends `z` to the homogeneous ratios of `F w` with
+respect to its `j`-th coordinate. Outside the domain of the chart at `j` both sides are `0`. -/
+theorem affineChart_apply_affineChart_symm {m : ℕ}
+    {f : ℙ K (Fin (m + 1) → K) → ℙ K (Fin (n + 1) → K)} {F : (Fin (m + 1) → K) → Fin (n + 1) → K}
+    (i : Fin (m + 1)) (j : Fin (n + 1)) (z : Fin m → K)
+    (hF : F (Fin.insertNth (α := fun _ ↦ K) i 1 z) ≠ 0)
+    (hf : f (mk K (Fin.insertNth (α := fun _ ↦ K) i 1 z) (Fin.insertNth_one_ne_zero i z)) =
+      mk K (F (Fin.insertNth (α := fun _ ↦ K) i 1 z)) hF) :
+    affineChart j (f ((affineChart i).symm z)) = fun k ↦
+      F (Fin.insertNth (α := fun _ ↦ K) i 1 z) (j.succAbove k) /
+        F (Fin.insertNth (α := fun _ ↦ K) i 1 z) j := by
+  rw [affineChart_symm_apply, hf, affineChart_mk]
+
+/-- The image of the point `[w]`, for `w = Fin.insertNth i 1 z`, under a map `f` of projective
+spaces sending it to `[F w]` lies in the standard affine open at `j` exactly when the `j`-th
+coordinate of `F w` is nonzero. -/
+theorem apply_affineChart_symm_mem_affineOpen_iff {m : ℕ}
+    {f : ℙ K (Fin (m + 1) → K) → ℙ K (Fin (n + 1) → K)} {F : (Fin (m + 1) → K) → Fin (n + 1) → K}
+    (i : Fin (m + 1)) (j : Fin (n + 1)) (z : Fin m → K)
+    (hF : F (Fin.insertNth (α := fun _ ↦ K) i 1 z) ≠ 0)
+    (hf : f (mk K (Fin.insertNth (α := fun _ ↦ K) i 1 z) (Fin.insertNth_one_ne_zero i z)) =
+      mk K (F (Fin.insertNth (α := fun _ ↦ K) i 1 z)) hF) :
+    f ((affineChart i).symm z) ∈ affineOpen j ↔ F (Fin.insertNth (α := fun _ ↦ K) i 1 z) j ≠ 0 := by
+  rw [affineChart_symm_apply, hf, mk_mem_affineOpen_iff]
 
 end Projectivization

@@ -5,7 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.InnerProductSpace.Calculus
 public import Mathlib.Analysis.InnerProductSpace.ProdL2
+import Mathlib.Analysis.InnerProductSpace.PiL2
 public import Mathlib.Analysis.Normed.Module.Span
 public import Mathlib.Analysis.InnerProductSpace.Projection.Basic
 public import Mathlib.Analysis.Normed.Operator.LinearIsometry
@@ -35,6 +37,11 @@ the product of its orthogonal hyperplane and the scalar line. The `L²` product 
 isometric; the ordinary product version is a continuous linear equivalence used for line
 sections and product integration.
 
+Along a smooth family of linear isometries of a finite-dimensional real inner product space, the
+inverses again depend smoothly on the parameter: expanding in an orthonormal basis `bᵢ`,
+`(R p)⁻¹ x = ∑ i, ⟪R p bᵢ, x⟫ bᵢ`. So a smooth path of linear isometries moves the unit sphere by
+diffeomorphisms.
+
 ## Main definitions
 
 * `TauCeti.orthogonalLineIsometry` and `TauCeti.orthogonalLineEquiv`: orthogonal line coordinates.
@@ -57,6 +64,8 @@ sections and product integration.
   extension if it agrees on the unit vector and its orthogonal complement.
 * `LinearIsometryEquiv.eq_refl_or_eq_neg`: the only real linear isometry equivalences of `ℝ`
   are the identity and negation.
+* `ContDiff.linearIsometryEquiv_symm_apply`: the inverses along a smooth family of linear
+  isometries of a finite-dimensional space form a smooth family.
 -/
 
 public section
@@ -300,3 +309,23 @@ theorem inner_add_smul (e : E) (he : ‖e‖ = 1) (y : (ℝ ∙ e)ᗮ) (t : ℝ)
     ContinuousLinearEquiv.symm_apply_apply]
 
 end TauCeti
+
+/-! ### Smooth paths of linear isometries -/
+
+open scoped InnerProductSpace in
+/-- Along a smooth family of linear isometries of a finite-dimensional real inner product space,
+the inverses also depend smoothly on the parameter: expanding in an orthonormal basis `bᵢ`,
+`(R p)⁻¹ x = ∑ i, ⟪R p bᵢ, x⟫ bᵢ`. -/
+theorem ContDiff.linearIsometryEquiv_symm_apply {F G : Type*} [NormedAddCommGroup F]
+    [InnerProductSpace ℝ F] [FiniteDimensional ℝ F] [NormedAddCommGroup G] [NormedSpace ℝ G]
+    {m : WithTop ℕ∞} {R : G → F ≃ₗᵢ[ℝ] F} (hR : ContDiff ℝ m fun p : G × F => R p.1 p.2) :
+    ContDiff ℝ m fun p : G × F => (R p.1).symm p.2 := by
+  let b := stdOrthonormalBasis ℝ F
+  have hexp : (fun p : G × F => (R p.1).symm p.2) =
+      fun p => ∑ i, ⟪R p.1 (b i), p.2⟫_ℝ • b i := by
+    funext p
+    conv_lhs => rw [← b.sum_repr' ((R p.1).symm p.2)]
+    simp only [LinearIsometryEquiv.inner_map_eq_flip]
+  rw [hexp]
+  exact ContDiff.sum fun i _ =>
+    ((hR.comp (contDiff_fst.prodMk contDiff_const)).inner ℝ contDiff_snd).smul contDiff_const

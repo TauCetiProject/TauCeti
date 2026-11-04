@@ -31,8 +31,19 @@ gcd. The bond gcd of a concatenation of two chains is the gcd of their bond gcds
 
 In Littelmann's description of the Lakshmibai–Seshadri paths of shape `λ`, a pair of cosets
 `τ > σ` can follow each other at a rational break `a` exactly when there is an `a`-chain for
-`(τ, σ)`; the bond gcd turns that condition into a divisibility. The gcd turns out not to depend
-on the saturated chain from `τ` to `σ`; that independence is not proved here.
+`(τ, σ)`; the bond gcd turns that condition into a divisibility. The gcd does not depend on the
+saturated chain from `τ` to `σ`, by `TauCeti.bondGcd_eq_intervalBondGcd` in
+`TauCeti.LinearAlgebra.RootSystem.Weyl.IntervalBondGcd`.
+
+The `a`-chain condition makes the corresponding Lakshmibai–Seshadri paths integral where it
+matters. Along an `a`-chain from `x` to `y` every integral pairing changes by an `a`-integral
+amount: `a (f (x λ) - f (y λ)) ∈ ℤ`. If moreover the chain crosses a simple wall,
+`⟨x λ, αᵢ^∨⟩ < 0 ≤ ⟨y λ, αᵢ^∨⟩`, then its first crossing cover is the simple reflection `sᵢ`, by the
+lifting property, and so `a ⟨x λ, αᵢ^∨⟩ ∈ ℤ`. For a path running along orbit weights `τ_k λ`
+between breaks `t_k` linked by `t_{k+1}`-chains, this makes the running height
+`⟨π(t), αᵢ^∨⟩` integral at every break where it stops decreasing, and at the endpoint; hence its
+minimum is an integer. These are the integrality properties under which Littelmann's root
+operators on such paths have the string lengths `ε_i = -min H_i` and `φ_i = H_i(1) - min H_i`.
 
 The weights live in a root datum (a root pairing over `ℤ`) so that bonds are integers by
 construction and their gcd is defined.
@@ -50,10 +61,23 @@ construction and their gcd is defined.
   `a ⟨x_{h-1} λ, β_h^∨⟩ ∈ ℤ` for the positive root label `β_h` of each cover.
 * `TauCeti.dvd_bondGcd_iff` and `TauCeti.bondGcd_dvd`: the bond gcd is the gcd of the bonds, as a
   divisibility characterization.
-* `TauCeti.bondGcd_eq_zero_iff`: the bond gcd is positive exactly when the chain is nonempty.
+* `TauCeti.bondGcd_eq_zero_iff`: the bond gcd is positive exactly when the chain is nonempty;
+  `TauCeti.bondGcd_eq_zero_of_length_eq_zero` says a chain of length `0` has bond gcd `0`.
 * `TauCeti.bondGcd_smash` and `TauCeti.isAChain_smash_iff`: the bond gcd and the `a`-chain
   condition of a concatenation of two chains; `TauCeti.bondGcd_snoc` and
-  `TauCeti.isAChain_snoc_iff` for the extension of a chain by one cover.
+  `TauCeti.isAChain_snoc_iff` for the extension of a chain by one cover, and
+  `TauCeti.bondGcd_cons` and `TauCeti.bondGcd_eq_gcd_bondGcd_tail` at its start.
+* `TauCeti.bondGcd_dvd_sub`: the bond gcd of a chain from `x` to `y` divides
+  `f (x λ) - f (y λ)` for every integral linear form `f`.
+* `TauCeti.IsAChain.exists_mul_sub_eq_intCast`: along an `a`-chain from `x` to `y`,
+  `a (f (x λ) - f (y λ))` is an integer for every integral linear form `f`.
+* `TauCeti.IsAChain.exists_mul_coroot'_eq_intCast`: **an `a`-chain from `x` to `y` with
+  `⟨x λ, αᵢ^∨⟩ < 0 ≤ ⟨y λ, αᵢ^∨⟩` has `a ⟨x λ, αᵢ^∨⟩ ∈ ℤ`**.
+* `TauCeti.exists_sum_coroot'_eq_intCast_of_isAChain`,
+  `TauCeti.exists_sum_eq_intCast_of_isAChain` and
+  `TauCeti.exists_isLeast_sum_coroot'_eq_intCast_of_isAChain`: **the heights of a path along
+  `a`-chains are integral at the breaks where they stop decreasing and at the endpoint, and their
+  minimum is an integer**.
 
 ## References
 
@@ -96,6 +120,13 @@ def IsAChain (a : ℚ) (lam : M)
     ∃ z : ℤ, a * P.reflectionBond b ((C i.castSucc).1 • lam) ((C i.succ).1 • lam) = z
 
 variable {a : ℚ} {lam : M}
+
+/-- The `a`-chain condition is integrality of `a` times each reflection bond. -/
+theorem isAChain_iff_forall_reflectionBond
+    {C : (weylCoxeterSystem P b).MinimalCosetRepChain (P.wallIndices b lam)} :
+    IsAChain a lam C ↔ ∀ i : Fin C.length,
+      ∃ z : ℤ, a * P.reflectionBond b ((C i.castSucc).1 • lam) ((C i.succ).1 • lam) = z :=
+  Iff.rfl
 
 /-- A natural number divides the bond gcd `d(C)` of a saturated chain exactly when it divides the
 bond of every cover of the chain. -/
@@ -192,6 +223,47 @@ theorem bondGcd_snoc {C : (weylCoxeterSystem P b).MinimalCosetRepChain (P.wallIn
   · exact (Finset.gcd_dvd (Finset.mem_univ (i.castSucc : Fin (C.length + 1)))).trans (hC i).dvd
   · exact (Finset.gcd_dvd (Finset.mem_univ (Fin.last C.length))).trans hy.dvd
 
+/-- The bond gcd of a saturated chain extended by one more cover `x₀ ⋖ x` at its start is the gcd
+of the bond `b_λ(x, x₀)` of the new cover and the bond gcd of the chain. -/
+@[simp]
+theorem bondGcd_cons {C : (weylCoxeterSystem P b).MinimalCosetRepChain (P.wallIndices b lam)}
+    {x : {w // (weylCoxeterSystem P b).IsMinimalCosetRep (P.wallIndices b lam) w}}
+    (h : (weylCoxeterSystem P b).MinimalCosetRepCovBy (P.wallIndices b lam) C.head x) :
+    bondGcd lam (C.cons x h) =
+      (P.reflectionBond b (x.1 • lam) (C.head.1 • lam)).natAbs.gcd (bondGcd lam C) := by
+  -- The entries of the extended chain are `x`, followed by those of `C`.
+  have hlen : (C.cons x h).length = C.length + 1 := RelSeries.cons_length C x h
+  have h₀ (hk : 0 < (C.cons x h).length + 1) : C.cons x h ⟨0, hk⟩ = x :=
+    (congrArg (C.cons x h) (Fin.ext (by simp))).trans (RelSeries.head_cons C x h)
+  have hs (j : ℕ) (hj : j < C.length + 1) (hk : j + 1 < (C.cons x h).length + 1) :
+      C.cons x h ⟨j + 1, hk⟩ = C ⟨j, hj⟩ :=
+    (congrArg (C.cons x h) (Fin.ext (by simp))).trans (RelSeries.cons_cast_succ C x h ⟨j, hj⟩)
+  have hC₀ : C ⟨0, Nat.succ_pos _⟩ = C.head := congrArg C (Fin.ext (by simp))
+  refine Nat.dvd_antisymm (Nat.dvd_gcd ?_ (dvd_bondGcd_iff.mpr fun i ↦ ?_))
+    (dvd_bondGcd_iff.mpr fun ⟨k, hk⟩ ↦ ?_)
+  · have := bondGcd_dvd (C := C.cons x h) ⟨0, by omega⟩
+    rwa [Fin.castSucc_mk, Fin.succ_mk, h₀, hs 0 (Nat.succ_pos _), hC₀] at this
+  · have := bondGcd_dvd (C := C.cons x h) ⟨i + 1, by omega⟩
+    rwa [Fin.castSucc_mk, Fin.succ_mk, hs i (by omega), hs (i + 1) (by omega)] at this
+  · cases k with
+    | zero =>
+      rw [Fin.castSucc_mk, Fin.succ_mk, h₀, hs 0 (Nat.succ_pos _), hC₀]
+      exact Nat.gcd_dvd_left _ _
+    | succ j =>
+      rw [Fin.castSucc_mk, Fin.succ_mk, hs j (by omega), hs (j + 1) (by omega)]
+      exact (Nat.gcd_dvd_right _ _).trans (bondGcd_dvd ⟨j, by omega⟩)
+
+/-- The bond gcd of a saturated chain `x₀ ⋗ x₁ ⋗ ⋯ ⋗ x_l` of positive length is the gcd of the
+bond `b_λ(x₀, x₁)` of its first cover and the bond gcd of its tail `x₁ ⋗ ⋯ ⋗ x_l`. -/
+theorem bondGcd_eq_gcd_bondGcd_tail
+    (C : (weylCoxeterSystem P b).MinimalCosetRepChain (P.wallIndices b lam)) (h : C.length ≠ 0) :
+    bondGcd lam C = (P.reflectionBond b (C.head.1 • lam) ((C.tail h).head.1 • lam)).natAbs.gcd
+      (bondGcd lam (C.tail h)) := by
+  have hcov : (weylCoxeterSystem P b).MinimalCosetRepCovBy (P.wallIndices b lam)
+      (C.tail h).head C.head := C.step ⟨0, Nat.pos_of_ne_zero h⟩
+  have hC : (C.tail h).cons C.head hcov = C := RelSeries.cons_self_tail h
+  rw [← bondGcd_cons hcov, hC]
+
 /-- The concatenation of two saturated chains, the second starting where the first ends, is an
 `a`-chain exactly when both pieces are. -/
 @[simp]
@@ -218,6 +290,29 @@ theorem isAChain_snoc_iff
       ∃ z : ℤ, a * P.reflectionBond b (C.last.1 • lam) (y.1 • lam) = z := by
   simp only [isAChain_iff_den_dvd_bondGcd, bondGcd_snoc, Nat.dvd_gcd_iff, ← Int.natCast_dvd,
     Rat.den_dvd_iff_exists_mul_intCast_eq]
+
+/-- An initial segment `x₀ ⋗ ⋯ ⋗ x_k` of an `a`-chain is an `a`-chain. -/
+theorem IsAChain.take
+    {C : (weylCoxeterSystem P b).MinimalCosetRepChain (P.wallIndices b lam)}
+    (hC : IsAChain a lam C) (k : Fin (C.length + 1)) : IsAChain a lam (C.take k) :=
+  fun j ↦ hC ⟨j, Nat.lt_of_lt_of_le j.2 (Nat.lt_succ_iff.mp k.2)⟩
+
+/-- A final segment `x_k ⋗ ⋯ ⋗ x_l` of an `a`-chain is an `a`-chain. -/
+theorem IsAChain.drop
+    {C : (weylCoxeterSystem P b).MinimalCosetRepChain (P.wallIndices b lam)}
+    (hC : IsAChain a lam C) (k : Fin (C.length + 1)) : IsAChain a lam (C.drop k) := fun j ↦ by
+  have hj : (j : ℕ) + k < C.length := by
+    have : (j : ℕ) < C.length - k := j.2
+    omega
+  obtain ⟨z, hz⟩ := hC ⟨j + k, hj⟩
+  refine ⟨z, ?_⟩
+  convert hz using 6
+  · rfl
+  · -- The entries of `C.drop k` are those of `C`, shifted by `k`, by definition.
+    change C.toFun _ = C.toFun _
+    congr 1
+    simp only [Fin.ext_iff, Fin.val_succ]
+    omega
 
 /-- **The bond gcd of the chain `sᵢ ⋗ 1`.** For a simple root `αᵢ` with `⟨λ, αᵢ^∨⟩ ≠ 0`, the
 simple reflection `sᵢ` covers the identity in `W / W_λ`, and the saturated chain `sᵢ ⋗ 1` has bond
@@ -262,17 +357,217 @@ theorem isAChain_iff_forall_coroot' (hlam : lam ∈ dominantChamber P b)
     push_cast at hz ⊢
     linarith
 
+omit [P.flip.IsReduced] in
+/-- A saturated chain of `W / W_λ` of length `0` has bond gcd `0`, the gcd of no bonds. -/
+theorem bondGcd_eq_zero_of_length_eq_zero
+    {C : (weylCoxeterSystem P b).MinimalCosetRepChain (P.wallIndices b lam)} (h : C.length = 0) :
+    bondGcd lam C = 0 :=
+  Finset.gcd_eq_zero_iff.mpr fun i _ ↦ (Fin.cast h i).elim0
+
 /-- The bond gcd of a saturated chain of `W / W_λ` vanishes exactly when the chain has length `0`:
 the bonds of covers are positive. -/
 theorem bondGcd_eq_zero_iff (hlam : lam ∈ dominantChamber P b)
     {C : (weylCoxeterSystem P b).MinimalCosetRepChain (P.wallIndices b lam)} :
     bondGcd lam C = 0 ↔ C.length = 0 := by
-  rw [bondGcd, Finset.gcd_eq_zero_iff]
-  refine ⟨fun h ↦ ?_, fun h i ↦ (Fin.cast h i).elim0⟩
+  refine ⟨fun h ↦ ?_, bondGcd_eq_zero_of_length_eq_zero⟩
+  rw [bondGcd, Finset.gcd_eq_zero_iff] at h
   by_contra hC
   have hpos := reflectionBond_pos_of_minimalCosetRepCovBy hlam
     (C.minimalCosetRepCovBy ⟨0, Nat.pos_of_ne_zero hC⟩)
   have := h ⟨0, Nat.pos_of_ne_zero hC⟩ (Finset.mem_univ _)
   omega
+
+/-- **The bond gcd divides the change of every integral linear form along the chain.** If
+`C : x₀ ⋗ x₁ ⋗ ⋯ ⋗ x_l` is a saturated chain of `W / W_λ`, then `d(C)` divides
+`f (x₀ λ) - f (x_l λ)` for every integral linear form `f` on the weight lattice: each cover changes
+the weight by its bond times a root. -/
+theorem bondGcd_dvd_sub (hlam : lam ∈ dominantChamber P b)
+    (C : (weylCoxeterSystem P b).MinimalCosetRepChain (P.wallIndices b lam))
+    (f : Module.Dual ℤ M) : (bondGcd lam C : ℤ) ∣ f (C.head.1 • lam) - f (C.last.1 • lam) := by
+  induction C using RelSeries.inductionOn with
+  | singleton y => simp
+  | cons C x hx ih =>
+    rw [bondGcd_cons, RelSeries.head_cons, RelSeries.last_cons,
+      ← sub_add_sub_cancel _ (f (C.head.1 • lam))]
+    obtain ⟨β, ⟨hβ, hβx⟩, -⟩ :=
+      existsUnique_isPos_reflection_smul_eq_of_minimalCosetRepCovBy hlam hx
+    exact dvd_add ((Int.natCast_dvd_natCast.mpr (Nat.gcd_dvd_left _ _)).trans
+        (Int.natAbs_dvd.mpr (reflectionBond_dvd_sub hβ hβx f)))
+      ((Int.natCast_dvd_natCast.mpr (Nat.gcd_dvd_right _ _)).trans ih)
+
+/-! ### Integrality along `a`-chains -/
+
+/-- **Integral linear forms on the two ends of an `a`-chain differ by an `a`-integral amount.** If
+`C : x₀ ⋗ x₁ ⋗ ⋯ ⋗ x_l` is an `a`-chain of `W / W_λ`, then `a (f (x₀ λ) - f (x_l λ))` is an
+integer for every integral linear form `f` on the weight lattice, for instance for the pairing
+`⟨-, β^∨⟩` with any coroot. -/
+theorem IsAChain.exists_mul_sub_eq_intCast (hlam : lam ∈ dominantChamber P b)
+    {C : (weylCoxeterSystem P b).MinimalCosetRepChain (P.wallIndices b lam)}
+    (hC : IsAChain a lam C) (f : Module.Dual ℤ M) :
+    ∃ z : ℤ, a * (f (C.head.1 • lam) - f (C.last.1 • lam) : ℤ) = z :=
+  (Rat.den_dvd_iff_exists_mul_intCast_eq a _).mp
+    ((Int.natCast_dvd_natCast.mpr (isAChain_iff_den_dvd_bondGcd.mp hC)).trans
+      (bondGcd_dvd_sub hlam C f))
+
+/-- **Littelmann's integrality at a simple wall.** Let `C : x₀ ⋗ ⋯ ⋗ x_l` be an `a`-chain of
+`W / W_λ` and `αᵢ` a simple root with `⟨x₀ λ, αᵢ^∨⟩ < 0 ≤ ⟨x_l λ, αᵢ^∨⟩`. Then `a ⟨x₀ λ, αᵢ^∨⟩`
+is an integer. At the first cover `x_h ⋖ x_{h-1}` crossing the wall, the root label is `αᵢ`
+(`TauCeti.reflection_smul_eq_of_minimalCosetRepCovBy_of_coroot'_neg`), so `a ⟨x_{h-1} λ, αᵢ^∨⟩`
+is an integer, and the part of `C` before it changes the pairing by an `a`-integral amount. -/
+theorem IsAChain.exists_mul_coroot'_eq_intCast (hlam : lam ∈ dominantChamber P b)
+    {C : (weylCoxeterSystem P b).MinimalCosetRepChain (P.wallIndices b lam)}
+    (hC : IsAChain a lam C) (i : b.support) (hhead : P.coroot' i (C.head.1 • lam) < 0)
+    (hlast : 0 ≤ P.coroot' i (C.last.1 • lam)) :
+    ∃ z : ℤ, a * P.coroot' i (C.head.1 • lam) = z := by
+  -- The first index `h` at which the pairing is nonnegative.
+  have hex : ∃ k, ∃ hk : k ≤ C.length,
+      0 ≤ P.coroot' i ((C ⟨k, Nat.lt_succ_of_le hk⟩).1 • lam) := ⟨C.length, le_rfl, hlast⟩
+  classical
+  obtain ⟨hle, hnonneg⟩ := Nat.find_spec hex
+  obtain ⟨k, hk⟩ : ∃ k, Nat.find hex = k + 1 := Nat.exists_eq_succ_of_ne_zero fun h0 ↦ by
+    simp only [h0] at hnonneg
+    exact (hhead.trans_le hnonneg).false
+  simp only [hk] at hle hnonneg
+  have hneg : P.coroot' i ((C ⟨k, by omega⟩).1 • lam) < 0 :=
+    lt_of_not_ge fun hk' ↦ Nat.find_min hex (hk ▸ Nat.lt_succ_self k) ⟨by omega, hk'⟩
+  -- The cover `x_{k+1} ⋖ x_k` is the simple reflection, so its bond is `-⟨x_k λ, αᵢ^∨⟩`.
+  have hcov := C.minimalCosetRepCovBy ⟨k, hle⟩
+  have hrefl := reflection_smul_eq_of_minimalCosetRepCovBy_of_coroot'_neg hlam hcov i hneg
+    hnonneg
+  obtain ⟨z₁, hz₁⟩ := hC ⟨k, hle⟩
+  rw [reflectionBond_eq_neg_coroot' (b.isPos_of_mem_support i.2) hrefl
+    (smul_ne_smul_of_minimalCosetRepCovBy hlam hcov)] at hz₁
+  -- The initial segment `x₀ ⋗ ⋯ ⋗ x_k` of `C` is again an `a`-chain.
+  obtain ⟨z₂, hz₂⟩ := (hC.take ⟨k, by omega⟩).exists_mul_sub_eq_intCast hlam (P.coroot' i)
+  refine ⟨z₂ - z₁, ?_⟩
+  simp only [RelSeries.head_take, RelSeries.last_take] at hz₂
+  simp only [Fin.castSucc_mk] at hz₁
+  push_cast at hz₁ hz₂ ⊢
+  linear_combination hz₂ - hz₁
+
+/-! ### Heights of Lakshmibai–Seshadri paths at their breaks
+
+A Lakshmibai–Seshadri path of shape `λ` runs, for `0 ≤ k < s`, along the orbit weight `τ_k λ`
+during the time interval `[t_k, t_{k+1}]`, starting at time `t_0 = 0`, and each break `t_{k+1}`
+between `τ_k` and `τ_{k+1}` carries a `t_{k+1}`-chain from `τ_k` down to `τ_{k+1}`. Its value at
+the `j`-th break, paired with an integral linear form `f`, is the vertex height
+`∑_{k < j} (t_{k+1} - t_k) f (τ_k λ)`. The results below need only the chains, not the order of
+the cosets or of the times, except where stated. -/
+
+/-- **Heights at breaks, up to integers.** If consecutive orbit weights `τ_k λ` and `τ_{k+1} λ` are
+joined by `t_{k+1}`-chains for `k + 1 < s` and `t_0 = 0`, then for `j < s` the height
+`∑_{k ≤ j} (t_{k+1} - t_k) f (τ_k λ)` at the break `t_{j+1}` differs from `t_{j+1} f (τ_j λ)` by
+an integer, for every integral linear form `f`. -/
+theorem exists_sum_sub_mul_eq_intCast_of_isAChain (hlam : lam ∈ dominantChamber P b)
+    {s : ℕ} {τ : ℕ → P.weylGroup} {t : ℕ → ℚ} (ht : t 0 = 0)
+    (hchain : ∀ k, k + 1 < s → ∃ C : (weylCoxeterSystem P b).MinimalCosetRepChain
+      (P.wallIndices b lam), C.head.1 = τ k ∧ C.last.1 = τ (k + 1) ∧ IsAChain (t (k + 1)) lam C)
+    (f : Module.Dual ℤ M) {j : ℕ} (hj : j < s) :
+    ∃ z : ℤ, ∑ k ∈ Finset.range (j + 1), (t (k + 1) - t k) * f (τ k • lam) -
+      t (j + 1) * f (τ j • lam) = z := by
+  induction j with
+  | zero => exact ⟨0, by simp [ht]⟩
+  | succ j ih =>
+    obtain ⟨z₁, hz₁⟩ := ih (by omega)
+    obtain ⟨C, hhead, hlast, hC⟩ := hchain j hj
+    obtain ⟨z₂, hz₂⟩ := hC.exists_mul_sub_eq_intCast hlam f
+    rw [hhead, hlast] at hz₂
+    refine ⟨z₁ + z₂, ?_⟩
+    rw [Finset.sum_range_succ, Int.cast_add, ← hz₁, ← hz₂]
+    push_cast
+    ring
+
+/-- **Littelmann's integrality of Lakshmibai–Seshadri paths at local minima.** With the chains of
+`TauCeti.exists_sum_sub_mul_eq_intCast_of_isAChain`, let `αᵢ` be a simple root such that the
+height `⟨-, αᵢ^∨⟩` stops decreasing at the break `t_{j+1}`: `⟨τ_j λ, αᵢ^∨⟩ < 0 ≤
+⟨τ_{j+1} λ, αᵢ^∨⟩`. Then the height `∑_{k ≤ j} (t_{k+1} - t_k) ⟨τ_k λ, αᵢ^∨⟩` there is an
+integer. -/
+theorem exists_sum_coroot'_eq_intCast_of_isAChain (hlam : lam ∈ dominantChamber P b)
+    {s : ℕ} {τ : ℕ → P.weylGroup} {t : ℕ → ℚ} (ht : t 0 = 0)
+    (hchain : ∀ k, k + 1 < s → ∃ C : (weylCoxeterSystem P b).MinimalCosetRepChain
+      (P.wallIndices b lam), C.head.1 = τ k ∧ C.last.1 = τ (k + 1) ∧ IsAChain (t (k + 1)) lam C)
+    (i : b.support) {j : ℕ} (hj : j + 1 < s) (hneg : P.coroot' i (τ j • lam) < 0)
+    (hnonneg : 0 ≤ P.coroot' i (τ (j + 1) • lam)) :
+    ∃ z : ℤ, ∑ k ∈ Finset.range (j + 1), (t (k + 1) - t k) * P.coroot' i (τ k • lam) = z := by
+  obtain ⟨z₁, hz₁⟩ :=
+    exists_sum_sub_mul_eq_intCast_of_isAChain hlam ht hchain (P.coroot' i) (by omega : j < s)
+  obtain ⟨C, hhead, hlast, hC⟩ := hchain j hj
+  obtain ⟨z₂, hz₂⟩ := hC.exists_mul_coroot'_eq_intCast hlam i (hhead ▸ hneg) (hlast ▸ hnonneg)
+  rw [hhead] at hz₂
+  exact ⟨z₁ + z₂, by push_cast; linear_combination hz₁ + hz₂⟩
+
+/-- **The endpoint of a Lakshmibai–Seshadri path is integral.** With the chains of
+`TauCeti.exists_sum_sub_mul_eq_intCast_of_isAChain`, if the final time `t_s` is an integer (for a
+Lakshmibai–Seshadri path, `t_s = 1`), then the final height `∑_{k < s} (t_{k+1} - t_k) f (τ_k λ)`
+is an integer for every integral linear form `f`. -/
+theorem exists_sum_eq_intCast_of_isAChain (hlam : lam ∈ dominantChamber P b)
+    {s : ℕ} {τ : ℕ → P.weylGroup} {t : ℕ → ℚ} (ht : t 0 = 0)
+    (hchain : ∀ k, k + 1 < s → ∃ C : (weylCoxeterSystem P b).MinimalCosetRepChain
+      (P.wallIndices b lam), C.head.1 = τ k ∧ C.last.1 = τ (k + 1) ∧ IsAChain (t (k + 1)) lam C)
+    (hs : ∃ z : ℤ, t s = z) (f : Module.Dual ℤ M) :
+    ∃ z : ℤ, ∑ k ∈ Finset.range s, (t (k + 1) - t k) * f (τ k • lam) = z := by
+  obtain ⟨n, rfl | rfl⟩ : ∃ n, s = 0 ∨ s = n + 1 := ⟨s - 1, by omega⟩
+  · exact ⟨0, by simp⟩
+  obtain ⟨z₁, hz₁⟩ :=
+    exists_sum_sub_mul_eq_intCast_of_isAChain hlam ht hchain f (Nat.lt_succ_self n)
+  obtain ⟨z₂, hz₂⟩ := hs
+  exact ⟨z₁ + z₂ * f (τ n • lam), by rw [hz₂] at hz₁; push_cast; linear_combination hz₁⟩
+
+/-- **The minimal height of a Lakshmibai–Seshadri path is integral.** With the chains of
+`TauCeti.exists_sum_sub_mul_eq_intCast_of_isAChain`, suppose the times increase strictly,
+`t_0 < t_1 < ⋯ < t_s`, and the final time `t_s` is an integer. Then for each simple root `αᵢ`
+the least vertex height `∑_{k < j} (t_{k+1} - t_k) ⟨τ_k λ, αᵢ^∨⟩`, `j ≤ s`, is an integer. Since
+the height is affine between breaks, this least vertex height is the minimum of the height along
+the whole path. -/
+theorem exists_isLeast_sum_coroot'_eq_intCast_of_isAChain (hlam : lam ∈ dominantChamber P b)
+    {s : ℕ} {τ : ℕ → P.weylGroup} {t : ℕ → ℚ} (ht : t 0 = 0)
+    (hchain : ∀ k, k + 1 < s → ∃ C : (weylCoxeterSystem P b).MinimalCosetRepChain
+      (P.wallIndices b lam), C.head.1 = τ k ∧ C.last.1 = τ (k + 1) ∧ IsAChain (t (k + 1)) lam C)
+    (hmono : ∀ k < s, t k < t (k + 1)) (hs : ∃ z : ℤ, t s = z) (i : b.support) :
+    ∃ z : ℤ, IsLeast ((fun j ↦ ∑ k ∈ Finset.range j, (t (k + 1) - t k) *
+      (P.coroot' i (τ k • lam) : ℚ)) '' Set.Iic s) z := by
+  set H : ℕ → ℚ := fun j ↦ ∑ k ∈ Finset.range j, (t (k + 1) - t k) * (P.coroot' i (τ k • lam) : ℚ)
+  -- The least index `j ≤ s` at which `H` attains its minimum on `{0, …, s}`.
+  obtain ⟨m, hm, hmin⟩ := (Finset.range (s + 1)).exists_min_image H ⟨0, by simp⟩
+  have hex : ∃ j, j ≤ s ∧ H j = H m := ⟨m, Nat.lt_succ_iff.mp (Finset.mem_range.mp hm), rfl⟩
+  classical
+  obtain ⟨hjs, hjm⟩ := Nat.find_spec hex
+  have hleast : IsLeast (H '' Set.Iic s) (H (Nat.find hex)) := by
+    refine ⟨⟨_, hjs, rfl⟩, ?_⟩
+    rintro _ ⟨k, hk, rfl⟩
+    rw [hjm]
+    exact hmin k (Finset.mem_range.mpr (Nat.lt_succ_of_le hk))
+  suffices hint : ∃ z : ℤ, H (Nat.find hex) = z by
+    obtain ⟨z, hz⟩ := hint
+    exact ⟨z, hz ▸ hleast⟩
+  -- Either the minimum is attained at an end of the path, or the height stops decreasing there.
+  rcases Nat.eq_zero_or_pos (Nat.find hex) with h0 | hpos
+  · exact ⟨0, by rw [h0]; simp [H]⟩
+  obtain ⟨j, hj⟩ := Nat.exists_eq_add_one_of_ne_zero hpos.ne'
+  rcases hjs.lt_or_eq with hlt | heq
+  · rw [hj] at hjs hjm hlt ⊢
+    -- The height decreases strictly into `j + 1`, by minimality of the index.
+    have hdec : H (j + 1) < H j := lt_of_not_ge fun hge ↦
+      Nat.find_min hex (by omega : j < Nat.find hex)
+        ⟨by omega, le_antisymm (hge.trans hjm.le) (hmin j (Finset.mem_range.mpr (by omega)))⟩
+    have hinc : H (j + 1) ≤ H (j + 2) := by
+      rw [hjm]
+      exact hmin (j + 2) (Finset.mem_range.mpr (by omega))
+    simp only [H, Finset.sum_range_succ] at hdec hinc
+    have hneg : P.coroot' i (τ j • lam) < 0 := by
+      have := hmono j (by omega)
+      by_contra! hnn
+      have : 0 ≤ (t (j + 1) - t j) * (P.coroot' i (τ j • lam) : ℚ) :=
+        mul_nonneg (by linarith) (by exact_mod_cast hnn)
+      linarith
+    have hnonneg : 0 ≤ P.coroot' i (τ (j + 1) • lam) := by
+      have := hmono (j + 1) (by omega)
+      by_contra! hn
+      have : (t (j + 1 + 1) - t (j + 1)) * (P.coroot' i (τ (j + 1) • lam) : ℚ) < 0 :=
+        mul_neg_of_pos_of_neg (by linarith) (by exact_mod_cast hn)
+      linarith
+    exact exists_sum_coroot'_eq_intCast_of_isAChain hlam ht hchain i (by omega) hneg hnonneg
+  · rw [heq]
+    exact exists_sum_eq_intCast_of_isAChain hlam ht hchain hs (P.coroot' i)
 
 end TauCeti

@@ -14,7 +14,11 @@ Mathlib's `CochainComplex.HomComplex.Cochain.diff K` is the differential of a co
 read as a degree `1` cochain from `K` to itself, and `CochainComplex.HomComplex.δ` is the
 differential of the Hom complex.  This file records the elementary calculus relating the two:
 `δ` is composition with the differential cochains on either side, a morphism of cochain complexes
-commutes with them, and they square to zero.
+commutes with them, and they square to zero. It also reads off the components of the homotopy
+that Mathlib's `CochainComplex.HomComplex.Cochain.equivHomotopy` builds from a cochain, and records
+how the components of a cochain absorb the identifications `K.X p ≅ K.X p'` of
+`HomologicalComplex.XIsoOfEq` on the source side, complementing Mathlib's
+`CochainComplex.HomComplex.Cochain.v_comp_XIsoOfEq_hom` on the target side.
 
 These are general facts about Mathlib's Hom complex, independent of any particular use.
 
@@ -25,6 +29,11 @@ These are general facts about Mathlib's Hom complex, independent of any particul
 * `TauCeti.ofHom_comp_diff`: a morphism of cochain complexes commutes with the differential
   cochains.
 * `TauCeti.diff_comp_diff`: the differential cochain squares to zero.
+* `TauCeti.equivHomotopy_symm_hom`: the homotopy built by Mathlib's
+  `CochainComplex.HomComplex.Cochain.equivHomotopy` from a cochain `z` of degree `-1` has the
+  components of `z`.
+* `CochainComplex.HomComplex.Cochain.XIsoOfEq_hom_comp_v`: precomposing a component of a
+  cochain with an `XIsoOfEq` identification of its source.
 -/
 
 public section
@@ -70,4 +79,28 @@ theorem diff_comp_diff :
       p (p + 1) q (by lia) (by lia),
     Cochain.diff_v, Cochain.diff_v, Cochain.zero_v, HomologicalComplex.d_comp_d]
 
+/-- The homotopy built from a cochain `z` of degree `-1` by Mathlib's `Cochain.equivHomotopy` has
+the components of `z`. -/
+theorem equivHomotopy_symm_hom {φ₁ φ₂ : F ⟶ G}
+    (z : { z : Cochain F G (-1) // Cochain.ofHom φ₁ = δ (-1) 0 z + Cochain.ofHom φ₂ })
+    (p q : ℤ) (hpq : p + -1 = q) :
+    ((Cochain.equivHomotopy φ₁ φ₂).symm z).hom p q = z.1.v p q hpq :=
+  -- The components of `(Cochain.equivHomotopy φ₁ φ₂).symm z` are defined by cases on `p + -1 = q`.
+  dite_eq_left hpq
+
 end TauCeti
+
+namespace CochainComplex.HomComplex.Cochain
+
+variable {C : Type u} [Category.{v} C] [Preadditive C] {F G : CochainComplex C ℤ}
+
+/-- Precomposing a component of a cochain with an identification `K.X p₁ ≅ K.X p₂` along an
+equality `p₁ = p₂` gives the component at `p₁`. -/
+@[reassoc]
+lemma XIsoOfEq_hom_comp_v {n : ℤ} (z : Cochain F G n) {p₁ p₂ q : ℤ} (h : p₁ = p₂)
+    (hpq : p₂ + n = q) :
+    (F.XIsoOfEq h).hom ≫ z.v p₂ q hpq = z.v p₁ q (by rw [h, hpq]) := by
+  subst h
+  simp
+
+end CochainComplex.HomComplex.Cochain

@@ -12,6 +12,8 @@ public import TauCeti.Probability.Distributions.Gamma.Measurability
 public import TauCeti.Probability.Distributions.Gamma.PDF
 public import Mathlib.Probability.Distributions.Exponential
 
+import TauCeti.MeasureTheory.Integral.Pi
+
 /-!
 # The chi-squared distribution
 
@@ -357,6 +359,75 @@ theorem variance_id_chiSquaredMeasure (hk : 0 ≤ k) :
       variance_id_gammaMeasure (by positivity) one_half_pos]
     ring
 
+/-- A real power is integrable under a positive-degree chi-squared law exactly when its exponent
+is greater than minus half the number of degrees of freedom. -/
+@[simp]
+theorem integrable_rpow_chiSquaredMeasure_iff (hk : 0 < k) (q : ℝ) :
+    Integrable (fun x : ℝ ↦ x ^ q) (chiSquaredMeasure k) ↔ -(k / 2) < q := by
+  rw [chiSquaredMeasure_eq_gammaMeasure hk,
+    integrable_rpow_gammaMeasure_iff (half_pos hk) one_half_pos]
+
+/-- The real-power moment of a positive-degree chi-squared law, on its exact integrability
+domain. -/
+theorem integral_rpow_chiSquaredMeasure (hk : 0 < k) (hq : -(k / 2) < q) :
+    ∫ x : ℝ, x ^ q ∂chiSquaredMeasure k =
+      2 ^ q * Real.Gamma (k / 2 + q) / Real.Gamma (k / 2) := by
+  rw [chiSquaredMeasure_eq_gammaMeasure hk,
+    integral_rpow_gammaMeasure (half_pos hk) one_half_pos hq]
+  congr 2
+  rw [Real.div_rpow zero_le_one (by norm_num), Real.one_rpow, one_div,
+    Real.rpow_neg (by norm_num : (0 : ℝ) ≤ 2), inv_inv]
+
+/-- A product of real powers of independent positive-degree chi-squared coordinates is integrable
+exactly when the exponent is greater than minus half of every coordinate's degrees of freedom. -/
+theorem integrable_prod_rpow_pi_chiSquaredMeasure_iff {ι : Type*} [Fintype ι]
+    {k : ι → ℝ} (hk : ∀ i, 0 < k i) (q : ℝ) :
+    Integrable (fun x : ι → ℝ ↦ ∏ i, x i ^ q) (Measure.pi fun i ↦ chiSquaredMeasure (k i)) ↔
+      ∀ i, -(k i / 2) < q := by
+  have _ (i : ι) : IsProbabilityMeasure (chiSquaredMeasure (k i)) :=
+    isProbabilityMeasure_chiSquaredMeasure (hk i).le
+  let L : ι → ℝ≥0∞ := fun i ↦ ∫⁻ x, ENNReal.ofReal (x ^ q) ∂chiSquaredMeasure (k i)
+  have hae_pos : ∀ᵐ x ∂Measure.pi fun i ↦ chiSquaredMeasure (k i), ∀ i, 0 < x i :=
+    Filter.eventually_all.2 fun i ↦
+      Measure.tendsto_eval_ae_ae.eventually (ae_pos_chiSquaredMeasure (hk i))
+  have hae_nonneg : ∀ᵐ x ∂Measure.pi fun i ↦ chiSquaredMeasure (k i), 0 ≤ ∏ i, x i ^ q :=
+    hae_pos.mono fun x hx ↦ Finset.prod_nonneg fun i _ ↦ (rpow_pos_of_pos (hx i) q).le
+  have hlintegral : (∫⁻ x : ι → ℝ, ENNReal.ofReal (∏ i, x i ^ q)
+      ∂Measure.pi fun i ↦ chiSquaredMeasure (k i)) = ∏ i, L i := by
+    rw [lintegral_congr_ae (hae_pos.mono fun x hx ↦
+      ENNReal.ofReal_prod_of_nonneg fun i _ ↦ (rpow_pos_of_pos (hx i) q).le)]
+    exact TauCeti.lintegral_fintype_prod_eq_prod (fun i ↦ chiSquaredMeasure (k i))
+      (f := fun _ x ↦ ENNReal.ofReal (x ^ q)) fun _ ↦ by fun_prop
+  have hpos (i : ι) : 0 < L i := by
+    rw [lintegral_pos_iff_support (by fun_prop)]
+    calc
+      chiSquaredMeasure (k i) (Function.support fun x ↦ ENNReal.ofReal (x ^ q)) =
+          chiSquaredMeasure (k i) Set.univ :=
+        measure_congr ((ae_pos_chiSquaredMeasure (hk i)).mono fun x hx ↦ by
+          simp only [Function.mem_support, Set.mem_univ]
+          exact propext (iff_true_intro (ENNReal.ofReal_ne_zero_iff.mpr (rpow_pos_of_pos hx q))))
+      _ = 1 := measure_univ
+      _ > 0 := zero_lt_one
+  classical
+  constructor
+  · intro hint i
+    apply (integrable_rpow_chiSquaredMeasure_iff (hk i) q).mp
+    refine ⟨by fun_prop, ?_⟩
+    rw [hasFiniteIntegral_iff_ofReal
+      ((ae_pos_chiSquaredMeasure (hk i)).mono fun x hx ↦ (rpow_pos_of_pos hx q).le)]
+    have hfinite : (∏ j, L j) < ⊤ := by
+      rw [← hlintegral, ← hasFiniteIntegral_iff_ofReal hae_nonneg]
+      exact hint.hasFiniteIntegral
+    by_contra hi
+    have hitop : L i = ⊤ := top_unique (not_lt.mp hi)
+    have hrest : (∏ j ∈ Finset.univ.erase i, L j) ≠ 0 :=
+      Finset.prod_ne_zero_iff.mpr fun j _ ↦ (hpos j).ne'
+    rw [← Finset.mul_prod_erase _ _ (Finset.mem_univ i), hitop, ENNReal.top_mul hrest] at hfinite
+    exact hfinite.false
+  · intro hq
+    exact Integrable.fintype_prod (f := fun _ x ↦ x ^ q) fun i ↦
+      (integrable_rpow_chiSquaredMeasure_iff (hk i) q).2 (hq i)
+
 /-! ### Exponential moments and transforms -/
 
 /-- The exponential moments of a chi-squared law with positive degrees of freedom are exactly
@@ -378,7 +449,7 @@ theorem mgf_id_chiSquaredMeasure (hk : 0 ≤ k) {t : ℝ} (ht : t < 2⁻¹) :
   · rw [chiSquaredMeasure_eq_gammaMeasure hk,
       mgf_id_gammaMeasure (by positivity) one_half_pos (by rwa [one_div])]
     congr 1
-    all_goals ring
+    ring
 
 /-- The cumulant-generating function of a chi-squared law with nonnegative degrees of freedom on
 the half-line `t < 2⁻¹`. It is the real logarithm of
@@ -392,7 +463,7 @@ theorem cgf_id_chiSquaredMeasure (hk : 0 ≤ k) {t : ℝ} (ht : t < 2⁻¹) :
   · rw [chiSquaredMeasure_eq_gammaMeasure hk,
       cgf_id_gammaMeasure (by positivity) one_half_pos (by rwa [one_div])]
     congr 2
-    all_goals ring
+    ring
 
 /-- At zero degrees of freedom the characteristic function is identically `1`. -/
 theorem charFun_chiSquaredMeasure_zero (t : ℝ) : charFun (chiSquaredMeasure 0) t = 1 := by

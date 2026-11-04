@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Probability.Distributions.MultivariateHypergeometric.Marginal
 public import Mathlib.Topology.Algebra.Monoid.FunOnFinite
+public import Mathlib.Probability.HasLaw
 
 /-!
 # Aggregation of the multivariate hypergeometric distribution
@@ -26,6 +27,8 @@ drawn from `s` is hypergeometric.  These group totals determine the covariances 
   categories along a map.
 * `TauCeti.Probability.map_sum_multivariateHypergeometricMeasure`: the total count drawn from a
   set of categories is hypergeometric.
+* `ProbabilityTheory.HasLaw.funOnFinite_map_multivariateHypergeometricMeasure`: aggregation of
+  the count vector of a random sample.
 
 ## References
 
@@ -58,9 +61,9 @@ theorem map_funOnFinite_map_multivariateHypergeometricMeasure (f : ι → κ) (K
   apply Measure.ext_of_singleton
   intro m
   rw [Measure.map_apply (FunOnFinite.continuous_map ℕ f).measurable (MeasurableSet.singleton m),
-    multivariateHypergeometricMeasure_def, Measure.finsetSum_apply,
+    multivariateHypergeometricMeasure_def, _root_.sum_apply,
     multivariateHypergeometricMeasure_singleton]
-  simp only [Measure.smul_apply, Measure.dirac_apply, Set.indicator, Pi.one_apply,
+  simp only [_root_.smul_apply, Measure.dirac_apply, Set.indicator, Pi.one_apply,
     Set.mem_preimage, Set.mem_singleton_iff, smul_eq_mul, mul_ite, mul_one, mul_zero]
   rw [← Finset.sum_filter]
   split_ifs with hm
@@ -109,3 +112,20 @@ theorem map_sum_multivariateHypergeometricMeasure (K : ι → ℕ) (n : ℕ) (s 
         map_eval_multivariateHypergeometricMeasure, htotal, hg]
 
 end TauCeti.Probability
+
+namespace ProbabilityTheory
+
+open TauCeti.Probability
+
+/-- The category totals of a multivariate hypergeometric random vector have the law with
+the corresponding aggregated population sizes. -/
+theorem HasLaw.funOnFinite_map_multivariateHypergeometricMeasure {ι κ Ω : Type*}
+    [Fintype ι] [Fintype κ] [MeasurableSpace Ω] {P : Measure Ω} {X : Ω → ι → ℕ}
+    {K : ι → ℕ} {n : ℕ} (hX : HasLaw X (multivariateHypergeometricMeasure K n) P)
+    (f : ι → κ) :
+    HasLaw (fun ω ↦ FunOnFinite.map f (X ω))
+      (multivariateHypergeometricMeasure (FunOnFinite.map f K) n) P := by
+  rw [← map_funOnFinite_map_multivariateHypergeometricMeasure]
+  exact (hasLaw_map (measurable_of_countable (FunOnFinite.map (M := ℕ) f)).aemeasurable).comp hX
+
+end ProbabilityTheory

@@ -6,11 +6,14 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Homology.HomotopyCategory.Acyclic
+public import Mathlib.Algebra.Homology.HomologicalComplexBiprod
 public import Mathlib.Algebra.Homology.HomotopyCategory.SingleFunctors
 public import Mathlib.CategoryTheory.ObjectProperty.Orthogonal
+public import Mathlib.CategoryTheory.Preadditive.AdditiveFunctor
 public import Mathlib.CategoryTheory.Preadditive.Projective.Basic
 public import Mathlib.CategoryTheory.Triangulated.Orthogonal
 public import TauCeti.Algebra.Homology.Disk
+public import TauCeti.Algebra.Homology.HomologicalComplex.Basic
 public import TauCeti.Algebra.Homology.Homotopy
 public import TauCeti.Algebra.Homology.HomotopyCategory.ShiftSequence
 
@@ -49,11 +52,15 @@ over rings which are not noetherian, where they need not form an abelian categor
 
 ## Main results
 
-* `CochainComplex.IsTotallyAcyclicProjective.shift`: total acyclicity is stable under shifts.
+* `CochainComplex.IsTotallyAcyclicProjective.shift` and
+  `CochainComplex.IsTotallyAcyclicProjective.biprod`: total acyclicity is stable under shifts and
+  binary biproducts.
 * `CochainComplex.IsTotallyAcyclicProjective.isGorensteinProjective_cycles`: the cycles of a
   totally acyclic complex of projectives in any degree are Gorenstein-projective.
 * `CategoryTheory.isGorensteinProjective_of_projective`: projective objects are
   Gorenstein-projective, through the disk `Q --𝟙--> Q` (`CochainComplex.disk`).
+* `CategoryTheory.isGorensteinProjective.biprod`: binary biproducts of Gorenstein-projective
+  objects are Gorenstein-projective.
 
 ## References
 
@@ -65,7 +72,7 @@ over rings which are not noetherian, where they need not form an abelian categor
 
 public section
 
-open CategoryTheory CategoryTheory.Limits
+open CategoryTheory CategoryTheory.Limits ZeroObject
 
 universe v u
 
@@ -176,6 +183,23 @@ lemma of_iso {P' : CochainComplex C ℤ} (e : P ≅ P') : P'.IsTotallyAcyclicPro
       ((HomotopyCategory.quotient C _).mapIso e) hac
   · exact ObjectProperty.prop_of_iso _ ((HomotopyCategory.quotient C _).mapIso e) h
 
+/-- Binary biproducts preserve total acyclicity. -/
+lemma biprod {P' : CochainComplex C ℤ} (hP' : P'.IsTotallyAcyclicProjective) :
+    (P ⊞ P').IsTotallyAcyclicProjective := by
+  obtain ⟨hproj, hac, h⟩ := isTotallyAcyclicProjective_iff_leftOrthogonal.1 hP
+  obtain ⟨hproj', hac', h'⟩ := isTotallyAcyclicProjective_iff_leftOrthogonal.1 hP'
+  have := preservesBinaryBiproducts_of_preservesBiproducts (HomotopyCategory.quotient C (.up ℤ))
+  let e := (HomotopyCategory.quotient C (.up ℤ)).mapBiprod P P'
+  refine isTotallyAcyclicProjective_iff_leftOrthogonal.2 ⟨fun n ↦ ?_, ?_, ?_⟩
+  · exact Projective.of_iso (HomologicalComplex.biprodXIso P P' n).symm inferInstance
+  · rw [← HomotopyCategory.quotient_obj_mem_subcategoryAcyclic_iff_acyclic] at hac hac' ⊢
+    exact (HomotopyCategory.subcategoryAcyclic C).prop_of_iso e.symm
+      ((HomotopyCategory.subcategoryAcyclic C).ext_of_isTriangulatedClosed₂ _
+        (Pretriangulated.binaryBiproductTriangle_distinguished _ _) hac hac')
+  · exact ObjectProperty.prop_of_iso _ e.symm
+      ((HomotopyCategory.singleProjectives C).leftOrthogonal.ext_of_isTriangulatedClosed₂ _
+        (Pretriangulated.binaryBiproductTriangle_distinguished _ _) h h')
+
 /-- Total acyclicity is stable under shifts. -/
 lemma shift (n : ℤ) : (P⟦n⟧).IsTotallyAcyclicProjective := by
   obtain ⟨hproj, hac, h⟩ := isTotallyAcyclicProjective_iff_leftOrthogonal.1 hP
@@ -240,6 +264,19 @@ theorem isGorensteinProjective_of_projective [Projective Q] : isGorensteinProjec
   ⟨disk Q, isTotallyAcyclicProjective_disk Q, ⟨diskCyclesIso Q⟩⟩
 
 end Disk
+
+instance : (isGorensteinProjective C).ContainsZero where
+  exists_zero := ⟨0, isZero_zero C, isGorensteinProjective_of_projective 0⟩
+
+/-- **Binary biproducts of Gorenstein-projective objects are Gorenstein-projective**: the
+biproduct of complete resolutions is a complete resolution. -/
+theorem isGorensteinProjective.biprod {G G' : C} (hG : isGorensteinProjective C G)
+    (hG' : isGorensteinProjective C G') : isGorensteinProjective C (G ⊞ G') := by
+  obtain ⟨P, hP, ⟨e⟩⟩ := hG
+  obtain ⟨P', hP', ⟨e'⟩⟩ := hG'
+  let F := HomologicalComplex.cyclesFunctor C (.up ℤ) 0
+  have := preservesBinaryBiproducts_of_preservesBiproducts F
+  exact ⟨P ⊞ P', hP.biprod hP', ⟨F.mapBiprod P P' ≪≫ biprod.mapIso e e'⟩⟩
 
 end CategoryTheory
 

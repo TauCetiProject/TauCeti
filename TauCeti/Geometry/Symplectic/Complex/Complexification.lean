@@ -9,7 +9,8 @@ public import Mathlib.LinearAlgebra.BilinearForm.TensorProduct
 public import Mathlib.LinearAlgebra.Complex.Module
 public import TauCeti.Geometry.Symplectic.AlmostComplex
 public import TauCeti.LinearAlgebra.Complex.Conjugation
-public import TauCeti.LinearAlgebra.Complex.Eigenspace
+public import TauCeti.LinearAlgebra.Eigenspace.ComplexStructure
+public import TauCeti.LinearAlgebra.Eigenspace.TensorProduct.Basic
 
 import Mathlib.Tactic.LinearCombination
 import Mathlib.Tactic.Module
@@ -32,6 +33,11 @@ Hence it sends two vectors of type `(0,1)` to a vector of type `(1,0)`, two vect
 `(1,0)` to a vector of type `(0,1)`, and vanishes on a vector of type `(1,0)` and one of type
 `(0,1)`.
 
+A real-linear map `l : V → N` into a complex vector space extends complex-linearly to the
+complexification by `LinearMap.liftBaseChange`. It is complex-linear for `J` exactly when its
+extension vanishes on the vectors of type `(0,1)`, and conjugate-linear exactly when its extension
+vanishes on the vectors of type `(1,0)`.
+
 ## Main declarations
 
 * `TauCeti.AlmostComplexStructure.isCompl_eigenspace_baseChange_I_neg_I`: its `i`- and
@@ -44,6 +50,12 @@ Hence it sends two vectors of type `(0,1)` to a vector of type `(1,0)`, two vect
 * `TauCeti.AlmostComplexStructure.baseChange_holomorphicPart` and
   `TauCeti.AlmostComplexStructure.baseChange_antiholomorphicPart`: the complexified complex
   structure commutes with taking the `(1,0)`- and `(0,1)`-parts.
+* `TauCeti.AlmostComplexStructure.one_tmul_add_I_tmul_mem_eigenspace_baseChange_I_iff` and
+  `TauCeti.AlmostComplexStructure.one_tmul_add_I_tmul_mem_eigenspace_baseChange_neg_I_iff`: the
+  vector `1 ⊗ v + I ⊗ w` has type `(1,0)` exactly when `w = -J v`, and type `(0,1)` exactly when
+  `w = J v`.
+* `TauCeti.AlmostComplexStructure.eigenspace_neg_baseChange_I`: the vectors of type `(1,0)` for
+  `-J` are the vectors of type `(0,1)` for `J`.
 * `TauCeti.AlmostComplexStructure.tmulConj_holomorphicPart` and
   `TauCeti.AlmostComplexStructure.tmulConj_antiholomorphicPart`: conjugation of the
   complexification exchanges the `(1,0)`- and `(0,1)`-parts.
@@ -59,6 +71,9 @@ Hence it sends two vectors of type `(0,1)` to a vector of type `(1,0)`, two vect
 * `TauCeti.AlmostComplexStructure.bilinMap_baseChange_antiholomorphicPart_antiholomorphicPart`
   and `TauCeti.AlmostComplexStructure.bilinMap_baseChange_holomorphicPart_holomorphicPart`:
   `B(v^(0,1), w^(0,1)) = (B v w)^(1,0)` and `B(v^(1,0), w^(1,0)) = (B v w)^(0,1)`.
+* `TauCeti.AlmostComplexStructure.eigenspace_neg_I_le_ker_liftBaseChange_iff` and
+  `TauCeti.AlmostComplexStructure.eigenspace_I_le_ker_liftBaseChange_iff`: complex-linear and
+  conjugate-linear maps through their complex-linear extensions.
 -/
 
 public section
@@ -82,7 +97,8 @@ complementary. -/
 theorem isCompl_eigenspace_baseChange_I_neg_I (J : AlmostComplexStructure V) :
     IsCompl (Module.End.eigenspace (J.toLinearMap.baseChange ℂ) Complex.I)
       (Module.End.eigenspace (J.toLinearMap.baseChange ℂ) (-Complex.I)) :=
-  Module.End.isCompl_eigenspace_I_neg_I_of_sq_eq_neg_id _ J.baseChange_comp_self
+  Module.End.isCompl_eigenspace_eigenspace_neg_of_comp_self_eq_neg_id (Ne.isUnit two_ne_zero)
+    Complex.I_mul_I _ J.baseChange_comp_self
 
 /-! ## The `(1,0)` and `(0,1)` parts of a real vector -/
 
@@ -153,6 +169,40 @@ theorem antiholomorphicPart_mem_eigenspace_baseChange_neg_I (v : V) :
     J.antiholomorphicPart v ∈ Module.End.eigenspace (J.toLinearMap.baseChange ℂ) (-Complex.I) := by
   rw [Module.End.mem_eigenspace_iff, baseChange_antiholomorphicPart,
     antiholomorphicPart_apply_apply]
+
+/-! ## Vectors of type `(1,0)` and `(0,1)` in real coordinates -/
+
+/-- The vector `1 ⊗ v + I ⊗ w` of the complexification has type `(1,0)`, that is, lies in the
+`i`-eigenspace of the complexified complex structure, exactly when `w = -J v`. -/
+theorem one_tmul_add_I_tmul_mem_eigenspace_baseChange_I_iff (v w : V) :
+    (1 : ℂ) ⊗ₜ[ℝ] v + Complex.I ⊗ₜ[ℝ] w ∈
+        Module.End.eigenspace (J.toLinearMap.baseChange ℂ) Complex.I ↔ w = -J v := by
+  rw [Module.End.mem_eigenspace_iff, I_smul_one_tmul_add_I_tmul]
+  simp only [map_add, LinearMap.baseChange_tmul, one_tmul_add_I_tmul_inj]
+  refine ⟨fun h ↦ by rw [← neg_neg w, ← h.1], ?_⟩
+  rintro rfl
+  simp
+
+/-- The vector `1 ⊗ v + I ⊗ w` of the complexification has type `(0,1)`, that is, lies in the
+`-i`-eigenspace of the complexified complex structure, exactly when `w = J v`. -/
+theorem one_tmul_add_I_tmul_mem_eigenspace_baseChange_neg_I_iff (v w : V) :
+    (1 : ℂ) ⊗ₜ[ℝ] v + Complex.I ⊗ₜ[ℝ] w ∈
+        Module.End.eigenspace (J.toLinearMap.baseChange ℂ) (-Complex.I) ↔ w = J v := by
+  rw [Module.End.mem_eigenspace_iff, neg_smul, I_smul_one_tmul_add_I_tmul]
+  simp only [map_add, LinearMap.baseChange_tmul, neg_add, ← TensorProduct.tmul_neg, neg_neg,
+    one_tmul_add_I_tmul_inj]
+  refine ⟨fun h ↦ h.1.symm, ?_⟩
+  rintro rfl
+  simp
+
+/-- The vectors of type `(1,0)` for `-J` are the vectors of type `(0,1)` for `J`. -/
+theorem eigenspace_neg_baseChange_I :
+    Module.End.eigenspace ((-J).toLinearMap.baseChange ℂ) Complex.I =
+      Module.End.eigenspace (J.toLinearMap.baseChange ℂ) (-Complex.I) := by
+  ext u
+  rw [← one_tmul_realPart_add_I_tmul_imaginaryPart _ u,
+    one_tmul_add_I_tmul_mem_eigenspace_baseChange_I_iff,
+    one_tmul_add_I_tmul_mem_eigenspace_baseChange_neg_I_iff, neg_apply, neg_neg]
 
 /-! ## Conjugation of the `(1,0)` and `(0,1)` parts -/
 
@@ -295,5 +345,58 @@ theorem bilinMap_baseChange_holomorphicPart_holomorphicPart
   linear_combination (norm := module) Complex.I_mul_I • (-(4 : ℂ)⁻¹ • (1 : ℂ) ⊗ₜ[ℝ] B v w)
 
 end AntiCommuting
+
+/-! ## Complex-linear extensions of real-linear maps
+
+A real-linear map `l : V → N` into a complex vector space extends complex-linearly to the
+complexification by `LinearMap.liftBaseChange`. The map `l` is complex-linear for `J`,
+`l (J v) = i • l v`, exactly when its extension vanishes on the vectors of type `(0,1)`, and
+conjugate-linear, `l (J v) = -i • l v`, exactly when it vanishes on the vectors of type `(1,0)`. -/
+
+section LiftBaseChange
+
+open Module.End
+
+variable {N : Type*} [AddCommGroup N] [Module ℂ N] [Module ℝ N] [IsScalarTower ℝ ℂ N]
+  (l : V →ₗ[ℝ] N)
+
+/-- The complex-linear extension of `l` on the `(1,0)`-part of `v` is `(l v - i • l (J v)) / 2`. -/
+@[simp]
+theorem liftBaseChange_holomorphicPart (v : V) :
+    l.liftBaseChange ℂ (J.holomorphicPart v) = (2 : ℂ)⁻¹ • (l v - Complex.I • l (J v)) := by
+  simp [holomorphicPart_apply]
+
+/-- The complex-linear extension of `l` on the `(0,1)`-part of `v` is `(l v + i • l (J v)) / 2`. -/
+@[simp]
+theorem liftBaseChange_antiholomorphicPart (v : V) :
+    l.liftBaseChange ℂ (J.antiholomorphicPart v) = (2 : ℂ)⁻¹ • (l v + Complex.I • l (J v)) := by
+  simp [antiholomorphicPart_apply]
+
+/-- A real-linear map is complex-linear for `J` exactly when its complex-linear extension vanishes
+on the vectors of type `(0,1)`. -/
+theorem eigenspace_neg_I_le_ker_liftBaseChange_iff :
+    eigenspace (J.toLinearMap.baseChange ℂ) (-Complex.I) ≤ LinearMap.ker (l.liftBaseChange ℂ) ↔
+      ∀ v, l (J v) = Complex.I • l v := by
+  refine ⟨fun h v ↦ ?_, fun hl X hX ↦ l.liftBaseChange_eq_zero_of_mem_eigenspace_baseChange
+    J.toLinearMap hl (by norm_num [Complex.ext_iff]) hX⟩
+  have hv := h (J.antiholomorphicPart_mem_eigenspace_baseChange_neg_I v)
+  rw [LinearMap.mem_ker, liftBaseChange_antiholomorphicPart, smul_eq_zero] at hv
+  have hv' := congrArg (Complex.I • ·) (eq_neg_of_add_eq_zero_right (hv.resolve_left (by simp)))
+  simpa [smul_smul] using hv'
+
+/-- A real-linear map is conjugate-linear for `J` exactly when its complex-linear extension
+vanishes on the vectors of type `(1,0)`. -/
+theorem eigenspace_I_le_ker_liftBaseChange_iff :
+    eigenspace (J.toLinearMap.baseChange ℂ) Complex.I ≤ LinearMap.ker (l.liftBaseChange ℂ) ↔
+      ∀ v, l (J v) = -Complex.I • l v := by
+  refine ⟨fun h v ↦ ?_, fun hl X hX ↦ l.liftBaseChange_eq_zero_of_mem_eigenspace_baseChange
+    J.toLinearMap hl (by norm_num [Complex.ext_iff]) hX⟩
+  have hv := h (J.holomorphicPart_mem_eigenspace_baseChange_I v)
+  rw [LinearMap.mem_ker, liftBaseChange_holomorphicPart, smul_eq_zero] at hv
+  have hv' := congrArg (Complex.I • ·) (sub_eq_zero.1 (hv.resolve_left (by simp)))
+  rw [neg_smul]
+  exact neg_eq_iff_eq_neg.1 (by simpa [smul_smul] using hv'.symm)
+
+end LiftBaseChange
 
 end TauCeti.AlmostComplexStructure

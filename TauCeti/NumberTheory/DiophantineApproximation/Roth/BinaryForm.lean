@@ -55,6 +55,8 @@ complex zeros has such a divisor `G ∣ F` of degree at least `3`
 * `MvPolynomial.IsHomogeneous.finite_setOf_eval_ne_zero_and_abs_le_of_three_le_card_roots`,
   `MvPolynomial.IsHomogeneous.finite_setOf_eval_eq_of_three_le_card_roots`: the same for binary
   forms `F` such that `F(X, 1)` has at least three distinct complex zeros (Thue's theorem).
+* `TauCeti.finite_setOf_mul_pow_add_mul_pow_eq`: the binomial Thue equation `a x ^ n + c y ^ n = m`
+  with `n ≥ 3` and `a, c, m ≠ 0` has finitely many integer solutions.
 
 ## References
 
@@ -327,3 +329,33 @@ theorem finite_setOf_eval_eq_of_three_le_card_roots
     ⟨hp ▸ hm, hp ▸ le_rfl⟩
 
 end MvPolynomial.IsHomogeneous
+
+namespace TauCeti
+
+/-- **Binomial Thue equations.** For `n ≥ 3` and nonzero integers `a`, `c` and `m`, the equation
+`a x ^ n + c y ^ n = m` has only finitely many integer solutions: `a X ^ n + c` has `n` distinct
+complex zeros. Like Thue's theorem, the proof is ineffective. -/
+theorem finite_setOf_mul_pow_add_mul_pow_eq {n : ℕ} (hn : 3 ≤ n) {a c m : ℤ} (ha : a ≠ 0)
+    (hc : c ≠ 0) (hm : m ≠ 0) :
+    {p : ℤ × ℤ | a * p.1 ^ n + c * p.2 ^ n = m}.Finite := by
+  set F : MvPolynomial (Fin 2) ℤ :=
+    MvPolynomial.C a * MvPolynomial.X 0 ^ n + MvPolynomial.C c * MvPolynomial.X 1 ^ n
+  have hF : F.IsHomogeneous n :=
+    ((MvPolynomial.isHomogeneous_X_pow 0 n).C_mul a).add
+      ((MvPolynomial.isHomogeneous_X_pow 1 n).C_mul c)
+  have ha' : (a : ℂ) ≠ 0 := by exact_mod_cast ha
+  have hF1 : (MvPolynomial.aeval ![X, 1] F : ℤ[X]).map (Int.castRingHom ℂ) =
+      C (a : ℂ) * (X ^ n - C (-(c : ℂ) / a)) := by
+    rw [mul_sub, ← C_mul, mul_div_cancel₀ _ ha', C_neg, sub_neg_eq_add]
+    simp [F]
+  have hsep : (X ^ n - C (-(c : ℂ) / a)).Separable :=
+    separable_X_pow_sub_C _ (by exact_mod_cast (by omega : n ≠ 0))
+      (div_ne_zero (neg_ne_zero.mpr (by exact_mod_cast hc)) ha')
+  have hroots : 3 ≤ ((MvPolynomial.aeval ![X, 1] F : ℤ[X]).map
+      (Int.castRingHom ℂ)).roots.toFinset.card := by
+    rw [hF1, roots_C_mul _ ha', Multiset.toFinset_card_of_nodup (nodup_roots hsep),
+      IsAlgClosed.card_roots_eq_natDegree, natDegree_X_pow_sub_C]
+    exact hn
+  simpa [F] using hF.finite_setOf_eval_eq_of_three_le_card_roots hroots hm
+
+end TauCeti

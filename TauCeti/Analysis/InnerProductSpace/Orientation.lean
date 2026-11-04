@@ -17,9 +17,15 @@ This file packages Mathlib's oriented volume form as a continuous alternating ma
 construction is shared by the manifold Riemannian volume form and the planar complex area form.
 
 It also evaluates the volume form on an arbitrary, not necessarily orthonormal, family of vectors:
-its absolute value is the square root of the Gram determinant, and on a basis its sign records
-whether the basis is positively oriented. In a coordinate frame of a Riemannian manifold this is
-the familiar formula `vol = ±√(det g) dx¹ ∧ ⋯ ∧ dxⁿ`.
+its absolute value is the square root of the Gram determinant, it vanishes exactly on linearly
+dependent families, and on a basis its sign records whether the basis is positively oriented. In
+a coordinate frame of a Riemannian manifold this is the familiar formula
+`vol = ±√(det g) dx¹ ∧ ⋯ ∧ dxⁿ`.
+
+Finally, two oriented inner product spaces of the same positive finite dimension are related by an
+orientation-preserving linear isometric equivalence
+(`Orientation.exists_linearIsometryEquiv_map_eq`). So every orientation of an inner product space
+is transported from a given orientation of a model space by some orthonormal frame.
 -/
 
 public section
@@ -92,6 +98,22 @@ theorem volumeForm_apply_pos_iff {o : Orientation ℝ E (Fin n)} {b : Module.Bas
     ← Module.Basis.orientation_eq_iff_det_pos, OrthonormalBasis.orientation_adjustToOrientation,
     eq_comm]
 
+/-- The volume form is nonzero on a family of vectors exactly when the family is linearly
+independent. -/
+theorem volumeForm_apply_ne_zero_iff {o : Orientation ℝ E (Fin n)} {v : Fin n → E} :
+    o.volumeForm v ≠ 0 ↔ LinearIndependent ℝ v := by
+  rcases n with - | n
+  · refine iff_of_true ?_ linearIndependent_empty_type
+    refine o.eq_or_eq_neg_of_isEmpty.elim ?_ ?_ <;> rintro rfl <;> simp
+  have : FiniteDimensional ℝ E := .of_fact_finrank_eq_succ n
+  have hcard : Fintype.card (Fin (n + 1)) = Module.finrank ℝ E := by
+    simp [Fact.out (p := Module.finrank ℝ E = n + 1)]
+  let b : OrthonormalBasis (Fin (n + 1)) ℝ E :=
+    (stdOrthonormalBasis ℝ E).reindex (finCongr Fact.out)
+  rw [← abs_ne_zero, o.volumeForm_robust' b, abs_ne_zero, ← isUnit_iff_ne_zero,
+    ← b.toBasis.is_basis_iff_det]
+  exact ⟨And.left, fun h ↦ ⟨h, h.span_eq_top_of_card_eq_finrank hcard⟩⟩
+
 /-- The volume of a positively oriented basis is the square root of its Gram determinant. -/
 theorem volumeForm_apply_eq_sqrt_det_gram (o : Orientation ℝ E (Fin n))
     (b : Module.Basis (Fin n) ℝ E) (hb : b.orientation = o) :
@@ -107,5 +129,31 @@ theorem volumeForm_apply_eq_neg_sqrt_det_gram (o : Orientation ℝ E (Fin n))
     exact (neg_neg b.orientation).symm
   have h := (-o).volumeForm_apply_eq_sqrt_det_gram b hb'
   rwa [volumeForm_neg_orientation, neg_apply, neg_eq_iff_eq_neg] at h
+
+section LinearIsometryEquiv
+
+variable {V W : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V] [NormedAddCommGroup W]
+  [InnerProductSpace ℝ W] {ι : Type*} [Fintype ι] [Nonempty ι]
+
+/-- Two oriented real inner product spaces of the same positive finite dimension are related by an
+orientation-preserving linear isometric equivalence: it carries a positively oriented orthonormal
+basis of one to a positively oriented orthonormal basis of the other. -/
+theorem exists_linearIsometryEquiv_map_eq (hV : Module.finrank ℝ V = Fintype.card ι)
+    (hW : Module.finrank ℝ W = Fintype.card ι) (o : Orientation ℝ V ι) (o' : Orientation ℝ W ι) :
+    ∃ φ : V ≃ₗᵢ[ℝ] W, Orientation.map ι φ.toLinearEquiv o = o' := by
+  classical
+  have : FiniteDimensional ℝ V := Module.finite_of_finrank_pos (hV ▸ Fintype.card_pos)
+  have : FiniteDimensional ℝ W := Module.finite_of_finrank_pos (hW ▸ Fintype.card_pos)
+  let bV₀ := (stdOrthonormalBasis ℝ V).reindex (Fintype.equivFinOfCardEq hV.symm).symm
+  let bW₀ := (stdOrthonormalBasis ℝ W).reindex (Fintype.equivFinOfCardEq hW.symm).symm
+  let φ := (bV₀.adjustToOrientation o).equiv (bW₀.adjustToOrientation o') (Equiv.refl ι)
+  have hmap : (bV₀.adjustToOrientation o).toBasis.map φ.toLinearEquiv =
+      (bW₀.adjustToOrientation o').toBasis :=
+    Module.Basis.eq_of_apply_eq fun i ↦ by simp [φ]
+  refine ⟨φ, ?_⟩
+  rw [← bV₀.orientation_adjustToOrientation o, ← Module.Basis.orientation_map, hmap,
+    bW₀.orientation_adjustToOrientation]
+
+end LinearIsometryEquiv
 
 end Orientation

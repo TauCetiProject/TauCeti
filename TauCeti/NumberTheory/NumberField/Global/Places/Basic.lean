@@ -8,7 +8,7 @@ module
 public import Mathlib.NumberTheory.NumberField.ProductFormula
 public import TauCeti.Algebra.BigOperators.Finprod
 
-import TauCeti.NumberTheory.NumberField.FinitePlace
+import TauCeti.NumberTheory.NumberField.FinitePlace.Basic
 
 /-!
 # Places of a number field and their normalized absolute values
@@ -275,6 +275,13 @@ theorem normAbs_inr (w : InfinitePlace K) (x : K) :
     normAbs (Sum.inr w) x = w x ^ ((w.mult : ℝ) / Module.finrank ℚ K) := by
   rw [normAbs_apply, normalizedAbsValue_inr, ← Real.rpow_natCast,
     ← Real.rpow_mul (apply_nonneg w x), mul_one_div]
+
+/-- Negation does not change a degree-normalized absolute value. -/
+@[simp]
+theorem normAbs_neg (v : Place K) (x : K) : normAbs v (-x) = normAbs v x := by
+  cases v with
+  | inl v => simp
+  | inr w => simp [← InfinitePlace.norm_embedding_eq]
 
 theorem normAbs_nonneg (v : Place K) (x : K) : 0 ≤ normAbs v x :=
   Real.rpow_nonneg (normalizedAbsValue_nonneg v x) _
