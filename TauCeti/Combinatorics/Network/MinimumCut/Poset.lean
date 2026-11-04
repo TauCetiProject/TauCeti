@@ -155,16 +155,14 @@ component of the source. -/
 theorem mem_of_residualComponent_le (hf : f.IsMaximum) {S : Finset V}
     (hS : TerminalCut.IsMinimum (cutBound lo hi) {s} {t} S) {v : V}
     (hv : f.residualComponent s ≤ f.residualComponent v) : v ∈ S :=
-  have ⟨hs, ht⟩ := isAdmissible_singleton.1 hS.admissible
-  (hf.forall_isMinimum_mem_iff (ne_of_mem_of_not_mem hs ht)).2
+  (hf.forall_isMinimum_mem_iff hS.admissible.ne).2
     (residualComponent_le_residualComponent.1 hv) S hS
 
 /-- No minimum cut contains a vertex whose residual component reaches the component of the sink. -/
 theorem notMem_of_residualComponent_le (hf : f.IsMaximum) {S : Finset V}
     (hS : TerminalCut.IsMinimum (cutBound lo hi) {s} {t} S) {v : V}
     (hv : f.residualComponent v ≤ f.residualComponent t) : v ∉ S :=
-  have ⟨hs, ht⟩ := isAdmissible_singleton.1 hS.admissible
-  (hf.forall_isMinimum_notMem_iff (ne_of_mem_of_not_mem hs ht)).2
+  (hf.forall_isMinimum_notMem_iff hS.admissible.ne).2
     (residualComponent_le_residualComponent.1 hv) S hS
 
 /-- A minimum cut contains every vertex of a residual component above that of one of its members.
