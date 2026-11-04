@@ -5,7 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicTopology.Homotopy.Hurewicz.Cubical
+public import TauCeti.AlgebraicTopology.Homotopy.Hurewicz.Basic
+public import TauCeti.AlgebraicTopology.Homotopy.Hurewicz.Cubical.Basic
 public import TauCeti.AlgebraicTopology.Singular.Cubical.Comparison.Relative.Basic
 
 /-!
@@ -38,14 +39,11 @@ variable (k : Type u) [Ring k] {X : Type u} [TopologicalSpace X] {x : X} {m : �
 
 /-- The cubical Hurewicz class of a generalized loop `p` at `x`, read in the relative cubical
 homology of `(X, {x})`, is the class of `p` as a relative cycle. -/
-theorem homologyMap_π_cubicalHurewicz (p : Ω^ (Fin (m + 1)) X x)
-    (hp : Set.MapsTo
-      (p.1 : SingularCube (TopPair.ofSubset ({x} : Set (TopCat.of X))).fst (m + 1))
-      (Cube.boundary (Fin (m + 1))) (Set.range (TopPair.ofSubset ({x} : Set (TopCat.of X))).map)) :
+theorem homologyMap_π_cubicalHurewicz (p : Ω^ (Fin (m + 1)) X x) :
     HomologicalComplex.homologyMap (cokernel.π ((normalizedCubicalChainComplex k).map
         (TopPair.ofSubset ({x} : Set (TopCat.of X))).map)) (m + 1) (cubicalHurewicz k p) =
       ((TopPair.ofSubset ({x} : Set (TopCat.of X))).cubicalChainComplex k).homologyπ (m + 1)
-        (TopPair.cubicalCycleOfCube k _ hp) := by
+        (TopPair.cubicalCycleOfCube k _ (mapsTo_boundary_range_ofSubset p)) := by
   let K := (normalizedCubicalChainComplex k).obj (TopPair.ofSubset ({x} : Set (TopCat.of X))).fst
   -- The loop as an absolute cycle.
   let z : K.cycles (m + 1) := K.moduleCatCyclesMk
@@ -59,12 +57,13 @@ theorem homologyMap_π_cubicalHurewicz (p : Ω^ (Fin (m + 1)) X x)
   have h := ConcreteCategory.congr_hom (HomologicalComplex.homologyπ_naturality (cokernel.π
     ((normalizedCubicalChainComplex k).map (TopPair.ofSubset ({x} : Set (TopCat.of X))).map))
       (m + 1)) z
-  refine (ConcreteCategory.comp_apply _ _ z).symm.trans
-    (h.trans ((ConcreteCategory.comp_apply _ _ z).trans (congrArg _ ?_)))
+  simp only [ConcreteCategory.comp_apply] at h
+  refine h.trans (congrArg _ ?_)
   apply HomologicalComplex.moduleCat_iCycles_injective
-  refine ((ConcreteCategory.comp_apply _ _ z).symm.trans ?_).trans
-    ((TopPair.iCycles_cubicalCycleOfCube k _ hp).trans (TopPair.cubicalChainOfCube_def k _)).symm
-  rw [HomologicalComplex.cyclesMap_i, ConcreteCategory.comp_apply]
+  rw [← ConcreteCategory.comp_apply, HomologicalComplex.cyclesMap_i, ConcreteCategory.comp_apply]
+  -- Both sides are the image of the chain of `p` in the relative chains.
+  refine Eq.trans ?_ ((TopPair.iCycles_cubicalCycleOfCube k _ _).trans
+    (TopPair.cubicalChainOfCube_def k _)).symm
   exact congrArg _ ((HomologicalComplex.iCycles_moduleCatCyclesMk ..).trans
     (normalizedCubicalChainComplexXEquiv_symm_apply _ _ _).symm)
 

@@ -397,7 +397,9 @@ theorem homologyMap_π_comp_singularCubicalHomologyIso_inv (P : TopPair.{u}) (n 
         P.singularHomologyπ (ModuleCat.of k k) n := by
   rw [TopPair.singularCubicalHomologyIso_inv, TauCeti.singularCubicalHomologyIso_inv,
     ← HomologicalComplex.homologyMap_comp, π_cubicalToSingularRel,
-    HomologicalComplex.homologyMap_comp]
+    HomologicalComplex.homologyMap_comp, singularRelπ]
+  -- `P.singularHomologyπ` is, by definition, the map on homology induced by
+  -- `P.singularChainComplexπ`.
   rfl
 
 end TopPair

@@ -118,14 +118,6 @@ private lemma singularHomologyMap_sphereGenLoop_cubeBoundaryPairCycle (n : ℕ) 
   let γ := sphereGenLoop (n + 2)
   let Q := TopPair.ofSubset
     ({sphereNorthPole (n + 2)} : Set (TopCat.of (sphere (0 : EuclideanSpace ℝ (Fin (n + 3))) 1)))
-  -- The collapse `γ`, as a map of pairs out of the cube pair.
-  have hc : MapsTo (γ.1 : SingularCube Q.fst (n + 2)) (Cube.boundary (Fin (n + 2)))
-      (range Q.map) := fun y hy ↦ ⟨⟨_, _root_.GenLoop.boundary γ y hy⟩, rfl⟩
-  have hf : GenLoop.toCubeBoundaryPairHom γ = cubeBoundaryPairHom _ hc := by
-    apply TopPair.hom_ext_of_fst
-    ext z
-    exact (GenLoop.toCubeBoundaryPairHom_fst_apply γ z).trans
-      (cubeBoundaryPairHom_fst_apply _ hc z).symm
   have ha := ConcreteCategory.congr_hom (TopPair.singularCubicalHomologyIso_inv_naturality ℤ
     (GenLoop.toCubeBoundaryPairHom γ) (n + 2))
       (((cubeBoundaryPair.{0} (n + 2)).cubicalChainComplex ℤ).homologyπ (n + 2)
@@ -138,18 +130,17 @@ private lemma singularHomologyMap_sphereGenLoop_cubeBoundaryPairCycle (n : ℕ) 
           (cubeBoundaryPairCycle ℤ (n + 1))) =
       HomologicalComplex.homologyMap (cokernel.π ((normalizedCubicalChainComplex ℤ).map Q.map))
         (n + 2) (GenLoop.cubicalHurewicz ℤ γ) := by
-    rw [hf]
-    exact (homologyMap_cubeBoundaryPairHom_cubeBoundaryPairCycle ℤ _ hc).trans
-      (GenLoop.homologyMap_π_cubicalHurewicz ℤ γ hc).symm
+    rw [GenLoop.toCubeBoundaryPairHom_eq_cubeBoundaryPairHom]
+    exact (homologyMap_cubeBoundaryPairHom_cubeBoundaryPairCycle ℤ _ _).trans
+      (GenLoop.homologyMap_π_cubicalHurewicz ℤ γ).symm
   have hd := ConcreteCategory.congr_hom
     (TopPair.homologyMap_π_comp_singularCubicalHomologyIso_inv ℤ Q (n + 2))
       (GenLoop.cubicalHurewicz ℤ γ)
-  -- Chain the naturality square of the comparison, `hb` and the compatibility square `hd`,
-  -- matching the ambient spaces of the pairs up to unfolding.
-  exact (ConcreteCategory.comp_apply _ _ _).symm.trans (ha.symm.trans
-    ((ConcreteCategory.comp_apply _ _ _).trans ((congrArg _ hb).trans
-      ((ConcreteCategory.comp_apply _ _ _).symm.trans
-        (hd.trans (ConcreteCategory.comp_apply _ _ _))))))
+  simp only [ConcreteCategory.comp_apply] at ha hd
+  -- Chain the naturality square of the comparison, `hb` and the compatibility square `hd`; the
+  -- ambient spaces of the pairs agree only up to unfolding, so `hd` closes the goal by `exact`.
+  rw [← ha, hb]
+  exact hd
 
 /-- **The fundamental cycle of the cube pair is a generator, in singular homology.** There is a
 sign `ε` such that the class of the fundamental cycle `TauCeti.cubeBoundaryPairCycle` of
@@ -175,6 +166,8 @@ theorem exists_singularCubicalHomologyIso_inv_homologyπ_cubeBoundaryPairCycle_e
     rw [← ModuleCat.comp_apply,
       ← GenLoop.hurewicz_comp_singularHomologyIsoOfSubsetSingleton_hom, ModuleCat.comp_apply,
       singularHomologyIsoOfSubsetSingleton_hom]
+    -- The sides differ only in the spellings `ConcreteCategory.hom`/`ModuleCat.Hom.hom` of the
+    -- application, the degree `n + 1 + 1`/`n + 2` and the abbreviation `Q`.
     rfl
   -- The two Hurewicz classes of `γ` differ by the sign `ε`.
   have h : Q.singularHomologyπ (ModuleCat.of ℤ ℤ) (n + 2)
