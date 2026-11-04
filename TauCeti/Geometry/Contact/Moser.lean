@@ -145,7 +145,7 @@ theorem contMDiff_contactMoserVectorField (β : SmoothForm I M ℝ 1) :
     have h := (degreeOneEquiv β).contMDiff.clm_bundle_apply hα.contMDiff_reebVectorField
     intro x
     simpa [Trivial.eq_trivialization, degreeOneEquiv_apply_apply_vec] using
-      (contMDiffAt_totalSpace.1 (h x)).2
+      (contMDiffAt_totalSpace_iff.1 (h x)).2
   exact ((contMDiff_contactFlat α).clm_bundle_inverse hα.isInvertible_contactFlat).clm_bundle_apply
     ((hβR.smul_section (degreeOneEquiv α).contMDiff).sub_section (degreeOneEquiv β).contMDiff)
 
