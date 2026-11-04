@@ -8,10 +8,9 @@ The trusted `ci.yml` and `warm-dependencies.yml` workflows maintain a narrow sna
 `$MATHLIB_CACHE_DIR/*.ltar`. The `.ltar` files are content-addressed; cache-tool scratch files,
 executables, and the unpacked `.lake` tree are not included. The local
 `.github/actions/restore-mathlib-ltars` action sets `MATHLIB_CACHE_DIR` job-wide through
-`$GITHUB_ENV` to `$GITHUB_WORKSPACE/.mathlib-ltar-cache`. Restore and both publishers use the
-action's `cache-path` output verbatim: `.mathlib-ltar-cache/*.ltar`. Keeping this glob workspace-relative
-makes GitHub's cache version identical across hosted and fleet workspace paths; Mathlib itself
-continues to use the absolute directory. Main publishes only after a non-exact restore: an exact key is immutable
+`$GITHUB_ENV`, defaulting to `$GITHUB_WORKSPACE/.mathlib-ltar-cache`; its `cache-dir` input can
+override that location. The action's restore and both publishers cache that directory's `*.ltar`
+files; publishers read the directory from the action's `cache-dir` output. Main publishes only after a non-exact restore: an exact key is immutable
 and already contains this pin's snapshot. Before publishing, main runs `lake exe cache clean` so
 the snapshot contains only files needed by the current pin; if pruning fails, it skips publication
 instead of saving an unpruned snapshot. PR and merge-group jobs in `pr-build.yml` may restore this
