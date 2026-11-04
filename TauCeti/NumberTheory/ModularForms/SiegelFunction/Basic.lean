@@ -29,8 +29,9 @@ transforms by an explicit root of unity under integral translations of `r` and u
 The phases are exact: no root of unity is lost to a choice of branch. Finally it computes the three
 Siegel functions of level two, `g₀ = g_{(0, 1/2)}`, `g₁ = g_{(1/2, 0)}` and `g₂ = g_{(1/2, 1/2)}`,
 as explicit products (up to constant factors they are the squares `𝔣₂²`, `𝔣₁²` and `𝔣²` of
-Weber's modular functions), proves `g₀ g₁ g₂ = 2 ζ₈` with `ζ₈ = e^{2π i / 8}`, and records how
-`τ ↦ τ + 1` permutes them up to roots of unity.
+Weber's modular functions), proves `g₀ g₁ g₂ = 2 ζ₈` with `ζ₈ = e^{2π i / 8}`, expands their
+fourth powers in `q = e^{2π i τ}` and `s = e^{π i τ}`, and records how `τ ↦ τ + 1` permutes them
+up to roots of unity.
 
 ## Main definitions and results
 
@@ -54,6 +55,12 @@ Weber's modular functions), proves `g₀ g₁ g₂ = 2 ζ₈` with `ζ₈ = e^{2
   `TauCeti.ModularForm.siegelFunction_half_half`: the product expansions of `g₀`, `g₁` and `g₂`.
 * `TauCeti.ModularForm.siegelFunction_zero_half_mul_half_zero_mul_half_half`:
   `g₀ g₁ g₂ = 2 ζ₈` on the upper half-plane.
+* `TauCeti.ModularForm.siegelFunction_zero_half_pow_four`,
+  `TauCeti.ModularForm.siegelFunction_half_zero_pow_four`,
+  `TauCeti.ModularForm.siegelFunction_half_half_pow_four`: the product expansions
+  `g₀⁴ = 16 q^{1/3} / P(q)⁸`, `g₁⁴ = s^{-1/3} P(s)⁸` and `g₂⁴ = -s^{-1/3} P(-s)⁸` for
+  `s = e^{π i τ}`, `q = s²` and `P(s) = ∏_{n ≥ 0} (1 - s^{2n+1})`.
+* `TauCeti.ModularForm.siegelFunction_pow_four_mul_mul`: `g₀⁴ g₁⁴ g₂⁴ = -16`.
 * `TauCeti.ModularForm.siegelFunction_zero_half_apply_add_one`,
   `TauCeti.ModularForm.siegelFunction_half_zero_apply_add_one`,
   `TauCeti.ModularForm.siegelFunction_half_half_apply_add_one`: `τ ↦ τ + 1` sends `g₀, g₁, g₂` to
@@ -75,6 +82,8 @@ open UpperHalfPlane hiding I
 open scoped Real Manifold
 
 namespace TauCeti.ModularForm
+
+local notation "𝕢" => Function.Periodic.qParam
 
 /-- **The Siegel function** `g_r(τ)` attached to `r = (r₁, r₂) ∈ ℝ²`:
 `g_r(τ) = -e^{π i B₂(r₁) τ} e^{π i r₂ (r₁ - 1)} (1 - w) ∏_{n ≥ 1} (1 - qⁿ w) (1 - qⁿ w⁻¹)`
@@ -447,6 +456,80 @@ theorem siegelFunction_zero_half_mul_half_zero_mul_half_half {τ : ℂ} (hτ : 0
   -- Write the right-hand side as the prefactor times `(E O O⁺)² = 1`.
   conv_rhs => rw [← mul_one (2 * I * _ * _ * _ * _), ← (one_pow 2 : (1 : ℂ) ^ 2 = 1), ← heuler]
   ring
+
+private theorem exp_pi_I_mul_eq_qParam_two (τ : ℂ) : cexp (π * I * τ) = 𝕢 2 τ := by
+  rw [Function.Periodic.qParam]
+  congr 1
+  push_cast
+  ring
+
+private theorem exp_neg_pi_I_mul_div_twelve_pow_four (τ : ℂ) :
+    cexp (-(π * I * τ / 12)) ^ 4 = cexp (-(π * I * τ / 3)) := by
+  rw [← Complex.exp_nat_mul]
+  congr 1
+  push_cast
+  ring
+
+/-- `g₀⁴ = 16 q^{1/3} / (∏_{n ≥ 0} (1 - q^{2n+1}))⁸` for `q = e^{2π i τ}`, where
+`q^{1/3} = e^{2π i τ / 3}`. -/
+theorem siegelFunction_zero_half_pow_four {τ : ℂ} (hτ : 0 < τ.im) :
+    siegelFunction ![0, 1 / 2] τ ^ 4 =
+      16 * 𝕢 3 τ / (∏' n : ℕ, (1 - 𝕢 1 τ ^ (2 * n + 1))) ^ 8 := by
+  have hq : 𝕢 1 τ = cexp (2 * π * I * τ) := by simp [Function.Periodic.qParam]
+  have heuler :=
+    tprod_one_add_pow_mul_tprod_one_sub_pow_odd (norm_exp_two_pi_I_lt_one ⟨τ, hτ⟩)
+  have he : cexp (π * I * τ / 6) ^ 4 = 𝕢 3 τ := by
+    rw [Function.Periodic.qParam, ← Complex.exp_nat_mul]
+    congr 1
+    push_cast
+    ring
+  rw [eq_div_iff (pow_ne_zero 8
+      (tprod_one_sub_pow_odd_ne_zero (Function.Periodic.norm_qParam_lt_one one_pos hτ))), hq,
+    siegelFunction_zero_half hτ, ← he]
+  calc (2 * I * cexp (π * I * τ / 6) * (∏' n : ℕ, (1 + cexp (2 * π * I * τ) ^ (n + 1))) ^ 2) ^ 4 *
+        (∏' n : ℕ, (1 - cexp (2 * π * I * τ) ^ (2 * n + 1))) ^ 8
+      = 16 * I ^ 4 * cexp (π * I * τ / 6) ^ 4 *
+          ((∏' n : ℕ, (1 + cexp (2 * π * I * τ) ^ (n + 1))) *
+            ∏' n : ℕ, (1 - cexp (2 * π * I * τ) ^ (2 * n + 1))) ^ 8 := by ring
+    _ = 16 * cexp (π * I * τ / 6) ^ 4 := by rw [heuler, I_pow_four]; ring
+
+/-- `g₁⁴ = s^{-1/3} (∏_{n ≥ 0} (1 - s^{2n+1}))⁸` for `s = e^{π i τ}`, where
+`s^{-1/3} = e^{-π i τ / 3}`. -/
+theorem siegelFunction_half_zero_pow_four {τ : ℂ} (hτ : 0 < τ.im) :
+    siegelFunction ![1 / 2, 0] τ ^ 4 =
+      cexp (-(π * I * τ / 3)) * (∏' n : ℕ, (1 - 𝕢 2 τ ^ (2 * n + 1))) ^ 8 := by
+  rw [siegelFunction_half_zero hτ, exp_pi_I_mul_eq_qParam_two, mul_pow, neg_pow,
+    exp_neg_pi_I_mul_div_twelve_pow_four, ← pow_mul]
+  norm_num
+
+/-- `g₂⁴ = -s^{-1/3} (∏_{n ≥ 0} (1 - (-s)^{2n+1}))⁸` for `s = e^{π i τ}`, where
+`s^{-1/3} = e^{-π i τ / 3}`. -/
+theorem siegelFunction_half_half_pow_four {τ : ℂ} (hτ : 0 < τ.im) :
+    siegelFunction ![1 / 2, 1 / 2] τ ^ 4 =
+      -(cexp (-(π * I * τ / 3)) * (∏' n : ℕ, (1 - (-𝕢 2 τ) ^ (2 * n + 1))) ^ 8) := by
+  have h₄ : cexp (-(π * I / 4)) ^ 4 = -1 := by
+    rw [← Complex.exp_nat_mul, ← exp_neg_pi_mul_I]
+    congr 1
+    push_cast
+    ring
+  have hodd : ∏' n : ℕ, (1 + 𝕢 2 τ ^ (2 * n + 1)) = ∏' n : ℕ, (1 - (-𝕢 2 τ) ^ (2 * n + 1)) :=
+    tprod_congr fun n ↦ (one_sub_neg_pow_odd _ n).symm
+  rw [siegelFunction_half_half hτ, exp_pi_I_mul_eq_qParam_two, hodd, mul_pow, mul_pow, neg_pow,
+    exp_neg_pi_I_mul_div_twelve_pow_four, h₄, ← pow_mul]
+  norm_num
+
+/-- `g₀⁴ g₁⁴ g₂⁴ = -16`, the fourth power of `g₀ g₁ g₂ = 2 ζ₈`. -/
+theorem siegelFunction_pow_four_mul_mul (τ : ℍ) :
+    siegelFunction ![0, 1 / 2] τ ^ 4 * siegelFunction ![1 / 2, 0] τ ^ 4 *
+      siegelFunction ![1 / 2, 1 / 2] τ ^ 4 = -16 := by
+  have h₈ : cexp (2 * π * I / 8) ^ 4 = -1 := by
+    rw [← Complex.exp_nat_mul, ← exp_pi_mul_I]
+    congr 1
+    push_cast
+    ring
+  rw [← mul_pow, ← mul_pow, siegelFunction_zero_half_mul_half_zero_mul_half_half τ.im_pos,
+    mul_pow, h₈]
+  norm_num
 
 /-- `g₀(τ + 1) = e^{π i / 6} g₀(τ)` for `g₀ = g_{(0, 1/2)}`. -/
 theorem siegelFunction_zero_half_apply_add_one (τ : ℂ) :
