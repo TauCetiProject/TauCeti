@@ -163,20 +163,22 @@ homeomorphism from `MvPolynomial σ k →ₐ[k] R` onto `σ → R`, with inverse
 noncomputable def mvPolynomialHomeomorph (σ : Type*) :
     (MvPolynomial σ k →ₐ[k] R) ≃ₜ (σ → R) where
   toEquiv := (MvPolynomial.aevalEquiv σ k R).symm
-  continuous_toFun := continuous_pi fun i ↦ continuous_eval (MvPolynomial.X i)
-  continuous_invFun := continuous_iff.2 MvPolynomial.continuous_aeval
+  continuous_toFun := continuous_pi fun i ↦ by
+    simpa [Equiv.toFun_as_coe] using continuous_eval (MvPolynomial.X i)
+  continuous_invFun := continuous_iff.2 fun p ↦ by
+    simpa [Equiv.invFun_as_coe] using MvPolynomial.continuous_aeval p
 
 /-- The homeomorphism `mvPolynomialHomeomorph` evaluates a point at each variable. -/
 @[simp]
 theorem mvPolynomialHomeomorph_apply {σ : Type*} (x : MvPolynomial σ k →ₐ[k] R) (i : σ) :
     mvPolynomialHomeomorph k R σ x i = x (MvPolynomial.X i) :=
-  (rfl)
+  MvPolynomial.aevalEquiv_symm_apply x i
 
 /-- The inverse of `mvPolynomialHomeomorph` sends `v` to evaluation at `v`. -/
 @[simp]
 theorem mvPolynomialHomeomorph_symm_apply {σ : Type*} (v : σ → R) :
     (mvPolynomialHomeomorph k R σ).symm v = MvPolynomial.aeval v :=
-  (rfl)
+  MvPolynomial.aevalEquiv_apply v
 
 /-- If the family `a` generates `A` as a `k`-algebra, then evaluation at `a` embeds the points
 `A →ₐ[k] R` in `ι → R`. -/

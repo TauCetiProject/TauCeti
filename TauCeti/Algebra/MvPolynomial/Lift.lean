@@ -30,7 +30,7 @@ namespace MvPolynomial
 /-- **Maps out of a polynomial ring are their values on the variables**: `MvPolynomial.aeval` is a
 bijection from `σ → S` onto the `A`-algebra homomorphisms `A[X_σ] →ₐ[A] S`, with inverse
 evaluation at the variables. -/
-@[expose] noncomputable def aevalEquiv (σ A S : Type*) [CommSemiring A] [CommSemiring S]
+noncomputable def aevalEquiv (σ A S : Type*) [CommSemiring A] [CommSemiring S]
     [Algebra A S] :
     (σ → S) ≃ (MvPolynomial σ A →ₐ[A] S) where
   toFun := aeval

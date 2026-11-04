@@ -140,9 +140,9 @@ section Symplectic
 variable {r : ℕ} {κ : Type u'}
   (b : Basis ((Fin r ⊕ κ) ⊕ (Fin r ⊕ κ)) R M) (e : Fin k ≃ κ ⊕ (Fin r ⊕ κ))
 
-/-- A basis indexed by `(Fin r ⊕ κ) ⊕ (Fin r ⊕ κ)` reordered for the standard chart at the
-isotropic span of the first `r` vectors: first the vectors `b (inl (inl l))`, then, in the order
-given by `e`, the vectors `b (inl (inr q))` and `b (inr i)`. -/
+/-- A basis indexed by `(Fin r ⊕ κ) ⊕ (Fin r ⊕ κ)` reordered for the standard chart at the span of
+the first `r` vectors: first the vectors `b (inl (inl l))`, then, in the order given by `e`, the
+vectors `b (inl (inr q))` and `b (inr i)`. When `b` has Gram matrix `J`, that span is isotropic. -/
 noncomputable def symplecticChartBasis : Basis (Fin r ⊕ Fin k) R M :=
   b.reindex ((Equiv.sumAssoc _ _ _).trans (Equiv.sumCongr (Equiv.refl _) e.symm))
 
@@ -152,13 +152,13 @@ theorem symplecticChartBasis_inl (l : Fin r) :
     symplecticChartBasis b e (.inl l) = b (.inl (.inl l)) := by
   simp [symplecticChartBasis]
 
-/-- The chart vectors of `symplecticChartBasis b e` at `e.symm (inl q)` are isotropic. -/
+/-- The chart vector of `symplecticChartBasis b e` at `e.symm (inl q)` is `b (inl (inr q))`. -/
 @[simp]
 theorem symplecticChartBasis_inr_symm_inl (q : κ) :
     symplecticChartBasis b e (.inr (e.symm (.inl q))) = b (.inl (.inr q)) := by
   simp [symplecticChartBasis]
 
-/-- The chart vectors of `symplecticChartBasis b e` at `e.symm (inr i)` are the dual vectors. -/
+/-- The chart vector of `symplecticChartBasis b e` at `e.symm (inr i)` is `b (inr i)`. -/
 @[simp]
 theorem symplecticChartBasis_inr_symm_inr (i : Fin r ⊕ κ) :
     symplecticChartBasis b e (.inr (e.symm (.inr i))) = b (.inr i) := by
@@ -166,8 +166,8 @@ theorem symplecticChartBasis_inr_symm_inr (i : Fin r ⊕ κ) :
 
 variable {A : Type w}
 
-/-- The block of the chart matrix `Φ` on the vectors `b (inr (inl l'))` dual to the base point; the
-graph vectors have coefficients `-Φ`. -/
+/-- The block of the chart matrix `Φ` on the vectors `b (inr (inl l'))`, which are dual to the base
+point when `b` has Gram matrix `J`; the graph vectors have coefficients `-Φ`. -/
 def symplecticChartDualBlock (Φ : Matrix (Fin r) (Fin k) A) : Matrix (Fin r) (Fin r) A :=
   Matrix.of fun l l' ↦ Φ l (e.symm (.inr (.inl l')))
 
