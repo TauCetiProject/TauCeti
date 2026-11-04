@@ -42,6 +42,8 @@ specialisation of `SymplecticGroup.fromBlocks_mem_iff`.
 * `Matrix.J_apply_swap` and `Matrix.sum_J_mul_J`: the two entrywise identities for `J`, its
   antisymmetry and the pairing of a row with itself; `Matrix.sum_sum_J_mul_J` is the double sum of
   the latter, `tr (J * Jᵀ) = 2 * card l`.
+* `Matrix.J_apply_eq_zero_of_ne_swap` and `Matrix.J_apply_swap_ne_zero`: the nonzero entries of
+  `J` are exactly those at the pairs `(x, x.swap)`.
 * `Matrix.sum_J_mul_J_eq_ite`: the columns of `J` are orthonormal, `Jᵀ * J = 1` read entrywise.
 * `Matrix.eq_J_conj_iff_mul_J_eq`: cancelling a conjugation by `J`.
 * `Matrix.J_mul_mul_J_mul_J`: sandwiching twice by `J` is the identity.
@@ -109,6 +111,18 @@ omit [Fintype l] in
 theorem J_apply_swap (x y : l ⊕ l) : J l R y x = -J l R x y := by
   have h := congrFun (congrFun (J_transpose l R) x) y
   simpa only [transpose_apply, Matrix.neg_apply] using h
+
+omit [Fintype l] in
+/-- An entry of `J` vanishes unless its two indices are the two members `x` and `x.swap` of one
+pair. -/
+theorem J_apply_eq_zero_of_ne_swap {x y : l ⊕ l} (h : y ≠ x.swap) : J l R x y = 0 := by
+  rcases x with i | i <;> rcases y with j | j <;> simp_all [Matrix.J, eq_comm]
+
+omit [Fintype l] in
+/-- The entries of `J` at the two members `x` and `x.swap` of a pair are `-1` or `1`, in
+particular nonzero. -/
+theorem J_apply_swap_ne_zero [Nontrivial R] (x : l ⊕ l) : J l R x x.swap ≠ 0 := by
+  rcases x with i | i <;> simp [Matrix.J]
 
 /-- Each row of `J` pairs with itself to `1`, because `J * Jᵀ = 1`. -/
 theorem sum_J_mul_J (x : l ⊕ l) : ∑ y : l ⊕ l, J l R x y * J l R x y = 1 := by
