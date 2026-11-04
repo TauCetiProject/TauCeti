@@ -27,10 +27,10 @@ jobs:
         with:
           persist-credentials: false
       - name: Prepare pinned shared tools
-        uses: TauCetiProject/TauCetiTools/.github/actions/setup@ac879910a87ec1605cbb52191cee551fafeddb0c
+        uses: TauCetiProject/TauCetiTools/.github/actions/setup@2bac9bc93d54be82ded88d135445f164e82b9109
         with:
           tools-repository: TauCetiProject/TauCetiTools
-          tools-ref: ac879910a87ec1605cbb52191cee551fafeddb0c
+          tools-ref: 2bac9bc93d54be82ded88d135445f164e82b9109
           project-directory: .
       - name: Restore project-owned workflow tests after shared setup
         # The deployed shared overlay contains older copies of these workflow tests.
@@ -41,10 +41,16 @@ jobs:
             scripts/test_bors_scope_approval.py \
             scripts/test_check_expired_mathlib_shims.py \
             scripts/test_duplicate_audit_workflow.py \
+            scripts/test_dependency_warm.py \
             scripts/test_lake_cache_probe.py \
             scripts/test_lake_cache_reuse.py \
             scripts/test_pick_runner.py \
-            scripts/test_workflow_pins.py
+            scripts/test_workflow_pins.py \
+            scripts/test_roadmap_api.py \
+            scripts/test_control_batch_workflows.py \
+            scripts/test_control_batch_budget.py \
+            scripts/test_control_batch_merge.py \
+            scripts/run-infrastructure-tests.sh
       - name: Checkout the pinned merge policy (read-only)
         uses: ./.github/actions/checkout-merge-policy
       - name: Infrastructure policy unit tests
@@ -73,10 +79,10 @@ jobs:
         with:
           persist-credentials: false
       - name: Prepare pinned shared tools
-        uses: TauCetiProject/TauCetiTools/.github/actions/setup@ac879910a87ec1605cbb52191cee551fafeddb0c
+        uses: TauCetiProject/TauCetiTools/.github/actions/setup@2bac9bc93d54be82ded88d135445f164e82b9109
         with:
           tools-repository: TauCetiProject/TauCetiTools
-          tools-ref: ac879910a87ec1605cbb52191cee551fafeddb0c
+          tools-ref: 2bac9bc93d54be82ded88d135445f164e82b9109
           project-directory: .
       - name: Restore the project-owned Lake workflow test
         run: git restore --source=HEAD -- scripts/test_lake_cache_reuse.py
@@ -118,10 +124,10 @@ jobs:
         with:
           persist-credentials: false
       - name: Prepare pinned shared tools
-        uses: TauCetiProject/TauCetiTools/.github/actions/setup@ac879910a87ec1605cbb52191cee551fafeddb0c
+        uses: TauCetiProject/TauCetiTools/.github/actions/setup@2bac9bc93d54be82ded88d135445f164e82b9109
         with:
           tools-repository: TauCetiProject/TauCetiTools
-          tools-ref: ac879910a87ec1605cbb52191cee551fafeddb0c
+          tools-ref: 2bac9bc93d54be82ded88d135445f164e82b9109
           project-directory: .
       - name: Install elan (pinned + checksum) and the toolchain
         env:
@@ -144,3 +150,9 @@ jobs:
         run: lake exe cache get
       - name: Header audit equivalence tests
         run: lake env python3 scripts/test_header_style.py
+
+      - name: Downstream unused-argument lint regression
+        run: |
+          out="$RUNNER_TEMP/downstream-lint-driver"
+          bash scripts/build-lint-driver.sh . scripts/LintEnvDriver.lean "$out"
+          python3 scripts/test_downstream_unused_arguments.py . "$out/lint-env-driver"

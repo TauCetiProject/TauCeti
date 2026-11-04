@@ -243,17 +243,13 @@ theorem exists_pos_forall_isSimplexImmersion_sum_smul (h : IsSimplexImmersion �
   obtain ⟨F, F', hFg, hFd, hFc, hinj⟩ := h.exists_continuousOn_hasFDerivWithinAt hn
   obtain ⟨δ, hδ, hδF⟩ := exists_pos_forall_eq_zero_of_linearCombination_eq_zero hFd hFc hinj ht
   refine ⟨δ, hδ, fun {κ τ} p d hd hdδ hpd hfat m => ?_⟩
-  -- The coordinate vector of a point of the simplex lies in the standard simplex.
-  have hmem (x : StandardSimplex σ) :
-      (fun i : σ => x.1 i) ∈ range fun t : Convexity.StdSimplex ℝ σ => ⇑t.weights :=
-    ⟨Finset.standardSimplexHomeomorph σ x,
-      funext fun i => Finset.standardSimplexHomeomorph_weights σ x i⟩
   have hsecant : (fun x : StandardSimplex τ => ∑ a : τ, x.1 a • g (p a)) = fun x =>
       Fintype.linearCombination ℝ (fun a => F fun i : σ => (p a).1 i) fun a => x.1 a := by
     funext x
     simp only [Fintype.linearCombination_apply, hFg]
   rw [hsecant]
-  exact LinearMap.isSimplexImmersion _ (hδF (fun a i => (p a).1 i) d (fun a => hmem (p a)) hd
+  exact LinearMap.isSimplexImmersion _ (hδF (fun a i => (p a).1 i) d (fun a =>
+    Finset.range_standardSimplex_coordinates σ ▸ mem_range_self (p a)) hd
     hdδ hpd fun v hv => by simpa only [Fintype.linearCombination_apply] using hfat v hv)
 
 end TauCeti.IsSimplexImmersion

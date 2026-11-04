@@ -41,15 +41,7 @@ variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDim
 finite-dimensional real inner product space `E`, viewed as a manifold, the inversion in the sphere
 of centre `c` and nonzero radius `R` reverses `o` at every point `v ≠ c`. -/
 theorem isOrientationReversingAt_inversion (o : Manifold.Orientation 𝓘(ℝ, E) E ι) {c v : E}
-    {R : ℝ} (hR : R ≠ 0) (hv : v ≠ c) : IsOrientationReversingAt o o (inversion c R) v := by
-  have hdet := det_fderiv_inversion_neg hR hv
-  let D : E ≃L[ℝ] E := (LinearMap.equivOfDetNeZero _ hdet.ne).toContinuousLinearEquiv
-  refine (isOrientationReversingAt_iff_of_coe_eq o o _ v D ?_).mpr ?_
-  · ext w
-    simp only [D, mfderiv_eq_fderiv]
-    -- The identifications of the tangent spaces of `E` with `E` are the identity.
-    rfl
-  · rw [orientationAt_eq_orientationAt o (inversion c R v) v]
-    exact (_root_.Orientation.map_eq_neg_iff_det_neg _ _ o.card_eq).mpr hdet
+    {R : ℝ} (hR : R ≠ 0) (hv : v ≠ c) : IsOrientationReversingAt o o (inversion c R) v :=
+  isOrientationReversingAt_of_det_fderiv_neg o (det_fderiv_inversion_neg hR hv)
 
 end TauCeti.Manifold.Orientation
