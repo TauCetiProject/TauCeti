@@ -870,6 +870,14 @@ jobs:
             exit 1
           fi
 
+      - name: Hydrate optional trusted local dependency prefill
+        if: ${{ env.INFRA != '1' && env.IS_BATCH != 'true' && startsWith(runner.name, 'fleet-') }}
+        # Missing/mismatched payloads leave normal setup intact. Configuration has
+        # already passed the exact-head and integrated attestation above.
+        timeout-minutes: 2
+        continue-on-error: true
+        run: python3 gate/scripts/dependency_prefill.py pr
+
       # Restore only Mathlib's compressed, content-addressed `.ltar` download store from a
       # trusted main publisher. This workflow never writes that GitHub Actions cache. The keys
       # hash the exact candidate pins, so an exact historical or new-pin snapshot is preferred. A
