@@ -33,7 +33,8 @@ with the abstract Weyl group.
 * `TauCeti.DynkinType.geckWeylWordTorusAction_eq_of_geckWeylWordProd_eq`: two words spelling the
   same Weyl element induce the same torus action.
 * `TauCeti.DynkinType.geckWeylTorusAction`: the resulting action of an abstract Weyl-group element
-  on points of the split torus.
+  on points of the split torus, with `TauCeti.DynkinType.geckWeylTorusAction_mulSingle` computing
+  its value on simple-coroot torus points.
 
 ## References
 
@@ -263,6 +264,30 @@ theorem torusCharacter_geckWeylTorusAction
   obtain ⟨l, rfl⟩ := t.geckWeylWordProd_surjective ht w
   rw [t.geckWeylTorusAction_apply_eq_word ht (l := l) rfl]
   exact t.torusCharacter_geckWeylWordTorusAction ht l A s mu
+
+/-- **Weyl action on a simple-coroot torus point.** An abstract Weyl-group element `w` maps
+`Pi.mulSingle i u` to the cocharacter torus point of the translated coroot
+`weylGroupToPerm w (simpleIndex i)`. -/
+theorem geckWeylTorusAction_mulSingle (w : (t.simplyConnectedRootDatum ht).weylGroup)
+    (i : Fin t.rank) (A : Type v) [CommRing A] (u : Aˣ) :
+    t.geckWeylTorusAction ht A w (Pi.mulSingle i u) =
+      fun k ↦ u ^ ((t.simplyConnectedRootDatum ht).coroot
+        ((t.simplyConnectedRootDatum ht).weylGroupToPerm w (t.simpleIndex ht i)) k) := by
+  funext k
+  let eₖ : Fin t.rank → ℤ := Pi.single k 1
+  rw [← TauCeti.weightChar_single A k (t.geckWeylTorusAction ht A w (Pi.mulSingle i u)),
+    TauCeti.weightChar_apply, t.torusCharacter_geckWeylTorusAction ht,
+    TauCeti.torusCharacter_mulSingle]
+  congr 1
+  refine (t.coroot'_simpleIndex_apply ht i (w⁻¹ • eₖ)).symm.trans ?_
+  have hw := w.1.coroot'_weightEquiv (t.simpleIndex ht i) (w⁻¹ • eₖ)
+  have hsmul : w.1.weightEquiv (w⁻¹ • eₖ) = eₖ := smul_inv_smul w eₖ
+  rw [← hw, hsmul]
+  -- Unfold `coroot'` as `LinearMap.flip` of `toLinearMap` so the dot-product formula applies.
+  change (t.simplyConnectedRootDatum ht).toLinearMap (Pi.single k 1)
+    ((t.simplyConnectedRootDatum ht).coroot
+      ((t.simplyConnectedRootDatum ht).weylGroupToPerm w (t.simpleIndex ht i))) = _
+  rw [t.toLinearMap_simplyConnectedRootDatum ht, single_dotProduct, one_mul]
 
 end
 

@@ -44,9 +44,6 @@ root of `TauCeti.DynkinType.simplyConnectedRootDatum`. Over any commutative ring
 * `TauCeti.DynkinType.geckRootSubgroupPoints_inl_mul_inr` and
   `TauCeti.DynkinType.geckRootSubgroupPoints_inr_mul_inl`: opposite-simple-root Gauss factorizations
   inside the matrix point group `TauCeti.DynkinType.geckPoints`.
-* `TauCeti.DynkinType.geckWeylWordTorusAction_mulSingle` and
-  `TauCeti.DynkinType.geckWeylTorusAction_mulSingle`: Weyl transport carries `Pi.mulSingle i u` to
-  the coroot torus point `k ↦ u ^ (coroot (geckWeylRootIndex l i) k)`.
 * `TauCeti.DynkinType.geckWeylRootSubgroupPoints_mul_append_singleton_self` and
   `TauCeti.DynkinType.geckWeylRootSubgroupPoints_append_singleton_self_mul`: opposite-root Gauss
   factorizations at every Weyl-word root pair `(l, i)` and `(l ++ [i], i)`.
@@ -178,80 +175,6 @@ theorem geckRootSubgroupPoints_inr_mul_inl (i : Fin t.rank) (A : Type v) [CommRi
     mul_assoc] using hinv
 
 /-! ## Opposite-root Gauss factorizations at every Weyl-word root -/
-
-/-- Appending `[i]` to a Weyl word `l` negates the root attached at node `i`. -/
-@[simp]
-theorem root_geckWeylRootIndex_append_singleton_self (l : List (Fin t.rank)) (i : Fin t.rank) :
-    (t.simplyConnectedRootDatum ht).root (t.geckWeylRootIndex ht (l ++ [i]) i) =
-      -(t.simplyConnectedRootDatum ht).root (t.geckWeylRootIndex ht l i) := by
-  rw [root_geckWeylRootIndex, geckWeylWordProd_append, mul_smul, ← root_geckWeylRootIndex,
-    root_geckWeylRootIndex_singleton_self, smul_neg, ← root_geckWeylRootIndex]
-
-/-- Appending `[i]` to a Weyl word `l` conjugates the lowering root subgroup at node `i` with
-negated parameter. -/
-theorem geckWeylRootSubgroupPoints_append_singleton_self (l : List (Fin t.rank))
-    (i : Fin t.rank) (A : Type v) [CommRing A] (b : A) :
-    t.geckWeylRootSubgroupPoints ht (l ++ [i]) i A (Multiplicative.ofAdd b) =
-      t.geckWeylWordPoint ht l A *
-        t.geckRootSubgroupPoints ht (.inr i) A (Multiplicative.ofAdd (-b)) *
-        (t.geckWeylWordPoint ht l A)⁻¹ := by
-  calc
-    t.geckWeylRootSubgroupPoints ht (l ++ [i]) i A (Multiplicative.ofAdd b)
-      = t.geckWeylWordPoint ht l A *
-          t.geckWeylRootSubgroupPoints ht [i] i A (Multiplicative.ofAdd b) *
-          (t.geckWeylWordPoint ht l A)⁻¹ := by
-        simp only [geckWeylRootSubgroupPoints_apply, geckWeylWordPoint_append]
-        group
-    _ = t.geckWeylWordPoint ht l A *
-          t.geckRootSubgroupPoints ht (.inr i) A (Multiplicative.ofAdd (-b)) *
-          (t.geckWeylWordPoint ht l A)⁻¹ := by
-        rw [geckWeylRootSubgroupPoints_singleton_self]
-
-/-- **Weyl action on a simple-coroot torus point.** An abstract Weyl-group element `w` maps
-`Pi.mulSingle i u` to the cocharacter torus point of the translated coroot
-`weylGroupToPerm w (simpleIndex i)`. -/
-theorem geckWeylTorusAction_mulSingle (w : (t.simplyConnectedRootDatum ht).weylGroup)
-    (i : Fin t.rank) (A : Type v) [CommRing A] (u : Aˣ) :
-    t.geckWeylTorusAction ht A w (Pi.mulSingle i u) =
-      fun k ↦ u ^ ((t.simplyConnectedRootDatum ht).coroot
-        ((t.simplyConnectedRootDatum ht).weylGroupToPerm w (t.simpleIndex ht i)) k) := by
-  funext k
-  let eₖ : Fin t.rank → ℤ := Pi.single k 1
-  rw [← TauCeti.weightChar_single A k (t.geckWeylTorusAction ht A w (Pi.mulSingle i u)),
-    TauCeti.weightChar_apply, t.torusCharacter_geckWeylTorusAction ht,
-    TauCeti.torusCharacter_mulSingle]
-  congr 1
-  refine (t.coroot'_simpleIndex_apply ht i (w⁻¹ • eₖ)).symm.trans ?_
-  have hw := w.1.coroot'_weightEquiv (t.simpleIndex ht i) (w⁻¹ • eₖ)
-  have hsmul : w.1.weightEquiv (w⁻¹ • eₖ) = eₖ := smul_inv_smul w eₖ
-  rw [← hw, hsmul]
-  -- Unfold `coroot'` as `LinearMap.flip` of `toLinearMap` so the dot-product formula applies.
-  change (t.simplyConnectedRootDatum ht).toLinearMap (Pi.single k 1)
-    ((t.simplyConnectedRootDatum ht).coroot
-      ((t.simplyConnectedRootDatum ht).weylGroupToPerm w (t.simpleIndex ht i))) = _
-  rw [t.toLinearMap_simplyConnectedRootDatum ht, single_dotProduct, one_mul]
-
-/-- `geckWeylRootIndex l i` is the image of `simpleIndex i` under the permutation action of the
-Weyl-group element spelled by `l`. -/
-theorem geckWeylRootIndex_eq_weylGroupToPerm (l : List (Fin t.rank)) (i : Fin t.rank) :
-    t.geckWeylRootIndex ht l i =
-      (t.simplyConnectedRootDatum ht).weylGroupToPerm (t.geckWeylWordProd ht l)
-        (t.simpleIndex ht i) := by
-  induction l with
-  | nil => simp
-  | cons j l ih =>
-      rw [geckWeylRootIndex_cons, ih, geckWeylWordProd_cons,
-        RootPairing.weylGroupToPerm_ofIdx_mul_apply]
-
-/-- **Weyl-word transport of a simple-coroot torus point.** Acting on `Pi.mulSingle i u` by a Weyl
-word `l` yields the cocharacter torus point of the coroot at `geckWeylRootIndex l i`; in
-particular, it depends on `(l, i)` only through the attached root index. -/
-theorem geckWeylWordTorusAction_mulSingle (l : List (Fin t.rank)) (i : Fin t.rank)
-    (A : Type v) [CommRing A] (u : Aˣ) :
-    t.geckWeylWordTorusAction ht l A (Pi.mulSingle i u) =
-      fun k ↦ u ^ ((t.simplyConnectedRootDatum ht).coroot (t.geckWeylRootIndex ht l i) k) := by
-  rw [← t.geckWeylTorusAction_apply_eq_word ht rfl, geckWeylRootIndex_eq_weylGroupToPerm]
-  exact t.geckWeylTorusAction_mulSingle ht (t.geckWeylWordProd ht l) i A u
 
 /-- **Opposite-root Gauss factorization at any Weyl-word root pair (`(l, i)` times
 `(l ++ [i], i)`).** Because `x_{[i],i}(b) = x₋ᵢ(-b)`, whenever `u = 1 - a b` is a unit of `A`, the

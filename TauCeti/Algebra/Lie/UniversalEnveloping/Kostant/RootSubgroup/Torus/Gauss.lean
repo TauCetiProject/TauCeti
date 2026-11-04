@@ -70,13 +70,219 @@ attribute [local instance 100] LieRing.ofAssociativeRing
 -- Match tensor products to the `ℤ`-algebra instance stored by `CommAlgCat` objects.
 attribute [local instance high] Algebra.toModule
 
+/-- Package a ring homomorphism between `CommAlgCat ℤ` objects as a `CommAlgCat ℤ` morphism via
+preservation of integer casts, avoiding dependence on the specific `Algebra ℤ` instance stored on
+each object. -/
+private def commAlgHomOfRingHom (B C : CommAlgCat.{w} ℤ) (f : B →+* C) : B ⟶ C :=
+  CommAlgCat.ofHom { f with commutes' z := by simp [eq_intCast] }
+
+@[simp]
+private theorem commAlgHomOfRingHom_hom_apply (B C : CommAlgCat.{w} ℤ) (f : B →+* C) (x : B) :
+    (commAlgHomOfRingHom B C f).hom x = f x := by
+  simp [commAlgHomOfRingHom]
+
+@[simp]
+private theorem commAlgHomOfRingHom_hom_toRingHom (B C : CommAlgCat.{w} ℤ) (f : B →+* C) :
+    ((commAlgHomOfRingHom B C f).hom : B →+* C) = f := by
+  ext x
+  exact commAlgHomOfRingHom_hom_apply B C f x
+
+/-- If `p` and `q` are nonzero elements of an integral domain `P` such that `p` becomes a unit in
+`Localization.Away q`, then the localization lift `Localization.Away p →+* Localization.Away q` is
+injective. -/
+private theorem away_lift_injective_of_ne_zero {P : Type*} [CommRing P] [IsDomain P]
+    {p q : P} (hp : p ≠ 0) (hq : q ≠ 0)
+    (hpq : IsUnit (algebraMap P (Localization.Away q) p)) :
+    Function.Injective (IsLocalization.Away.lift (S := Localization.Away p) p hpq) := by
+  have hPp : Function.Injective (algebraMap P (Localization.Away p)) :=
+    IsLocalization.injective _ (Submonoid.powers_le.mpr (mem_nonZeroDivisors_of_ne_zero hp))
+  have hPq : Function.Injective (algebraMap P (Localization.Away q)) :=
+    IsLocalization.injective _ (Submonoid.powers_le.mpr (mem_nonZeroDivisors_of_ne_zero hq))
+  exact (IsLocalization.lift_injective_iff _).mpr fun _ _ => hPp.eq_iff.trans hPq.eq_iff.symm
+
+private abbrev GaussPoly := MvPolynomial (ULift.{w} (Fin 2)) ℤ
+
+private noncomputable def gaussPolyP₀ : GaussPoly.{w} :=
+  1 + MvPolynomial.X (.up 0) * MvPolynomial.X (.up 1)
+
+private theorem gaussPolyP₀_ne_zero : gaussPolyP₀.{w} ≠ 0 := by
+  intro hzero
+  have hcoeff := congrArg MvPolynomial.constantCoeff hzero
+  simp [gaussPolyP₀] at hcoeff
+
+private noncomputable abbrev gaussUnivObj : CommAlgCat.{w} ℤ :=
+  CommAlgCat.of ℤ (Localization.Away gaussPolyP₀.{w})
+
+private noncomputable def gaussUnivR : gaussUnivObj.{w} :=
+  algebraMap GaussPoly.{w} (Localization.Away gaussPolyP₀.{w}) (MvPolynomial.X (.up 0))
+
+private noncomputable def gaussUnivS : gaussUnivObj.{w} :=
+  algebraMap GaussPoly.{w} (Localization.Away gaussPolyP₀.{w}) (MvPolynomial.X (.up 1))
+
+private noncomputable def gaussUnivU : (gaussUnivObj.{w})ˣ :=
+  (IsLocalization.Away.algebraMap_isUnit
+    (S := Localization.Away gaussPolyP₀.{w}) gaussPolyP₀.{w}).unit
+
+private theorem gaussUnivU_val :
+    (gaussUnivU.{w} : gaussUnivObj.{w}) =
+      algebraMap GaussPoly.{w} (Localization.Away gaussPolyP₀.{w}) gaussPolyP₀.{w} :=
+  (IsLocalization.Away.algebraMap_isUnit
+    (S := Localization.Away gaussPolyP₀.{w}) gaussPolyP₀.{w}).unit_spec
+
+/-- Embed `gaussUnivObj = ℤ[x₀, x₁][(1 + x₀ x₁)⁻¹]` injectively into the principal localization
+`ℤ[x₀, x₁][(x₀ x₁ (1 + x₀ x₁))⁻¹]` where `x₀`, `x₁`, and `1 + x₀ x₁` are all units. -/
+private theorem exists_gaussUniv_embedding :
+    ∃ (B₁ : CommAlgCat.{w} ℤ) (ι : gaussUnivObj.{w} ⟶ B₁) (sK tK uK : B₁ˣ),
+      Function.Injective ι.hom ∧
+      (uK : B₁) = 1 + (sK : B₁) * (tK : B₁) ∧
+      ι.hom gaussUnivR.{w} = (sK : B₁) ∧
+      ι.hom gaussUnivS.{w} = (tK : B₁) ∧
+      Units.map ι.hom.toRingHom.toMonoidHom gaussUnivU.{w} = uK := by
+  let x₀ : GaussPoly.{w} := MvPolynomial.X (.up 0)
+  let x₁ : GaussPoly.{w} := MvPolynomial.X (.up 1)
+  let q₀ : GaussPoly.{w} := x₀ * x₁ * gaussPolyP₀.{w}
+  have hq₀ : q₀ ≠ 0 :=
+    mul_ne_zero (mul_ne_zero (MvPolynomial.X_ne_zero _) (MvPolynomial.X_ne_zero _))
+      gaussPolyP₀_ne_zero
+  let K := Localization.Away q₀
+  have hsK : IsUnit (algebraMap GaussPoly.{w} K x₀) :=
+    IsLocalization.Away.isUnit_of_dvd q₀ ⟨x₁ * gaussPolyP₀.{w}, by ring⟩
+  have htK : IsUnit (algebraMap GaussPoly.{w} K x₁) :=
+    IsLocalization.Away.isUnit_of_dvd q₀ ⟨x₀ * gaussPolyP₀.{w}, by ring⟩
+  have hp₀K : IsUnit (algebraMap GaussPoly.{w} K gaussPolyP₀.{w}) :=
+    IsLocalization.Away.isUnit_of_dvd q₀ ⟨x₀ * x₁, by ring⟩
+  let B₁ : CommAlgCat.{w} ℤ := CommAlgCat.of ℤ K
+  let ι₀ : Localization.Away gaussPolyP₀.{w} →+* K :=
+    IsLocalization.Away.lift (S := Localization.Away gaussPolyP₀.{w}) gaussPolyP₀.{w} hp₀K
+  have hι₀_inj : Function.Injective ι₀ :=
+    away_lift_injective_of_ne_zero gaussPolyP₀_ne_zero hq₀ hp₀K
+  refine ⟨B₁, commAlgHomOfRingHom gaussUnivObj.{w} B₁ ι₀, hsK.unit, htK.unit, hp₀K.unit,
+    ?_, ?_, ?_, ?_, ?_⟩
+  · intro a b hab
+    rw [commAlgHomOfRingHom_hom_apply, commAlgHomOfRingHom_hom_apply] at hab
+    exact hι₀_inj hab
+  · rw [IsUnit.unit_spec, IsUnit.unit_spec, IsUnit.unit_spec]
+    -- Expose the carrier `K` so `simp` expands `algebraMap` on `gaussPolyP₀`.
+    change algebraMap GaussPoly.{w} K gaussPolyP₀.{w} =
+      1 + algebraMap GaussPoly.{w} K x₀ * algebraMap GaussPoly.{w} K x₁
+    simp [gaussPolyP₀, x₀, x₁]
+  · rw [commAlgHomOfRingHom_hom_apply, gaussUnivR]
+    exact (IsLocalization.Away.lift_eq (S := Localization.Away gaussPolyP₀.{w})
+      gaussPolyP₀.{w} hp₀K x₀).trans hsK.unit_spec.symm
+  · rw [commAlgHomOfRingHom_hom_apply, gaussUnivS]
+    exact (IsLocalization.Away.lift_eq (S := Localization.Away gaussPolyP₀.{w})
+      gaussPolyP₀.{w} hp₀K x₁).trans htK.unit_spec.symm
+  · apply Units.ext
+    rw [Units.coe_map, AlgHom.toRingHom_eq_coe, RingHom.toMonoidHom_eq_coe,
+      commAlgHomOfRingHom_hom_toRingHom]
+    exact (congrArg ι₀ gaussUnivU_val).trans
+      ((IsLocalization.Away.lift_eq (S := Localization.Away gaussPolyP₀.{w})
+        gaussPolyP₀.{w} hp₀K gaussPolyP₀.{w}).trans hp₀K.unit_spec.symm)
+
+/-- Specialize `gaussUnivObj = ℤ[x₀, x₁][(1 + x₀ x₁)⁻¹]` to any `A : CommAlgCat ℤ` along
+`(x₀, x₁) ↦ (r, s)` whenever `u = 1 + r * s` is a unit of `A`. -/
+private theorem exists_gaussUniv_specialization (A : CommAlgCat.{w} ℤ) (r s : A) (u : Aˣ)
+    (hu : (u : A) = 1 + r * s) :
+    ∃ ψ : gaussUnivObj.{w} ⟶ A,
+      ψ.hom gaussUnivR.{w} = r ∧
+      ψ.hom gaussUnivS.{w} = s ∧
+      Units.map ψ.hom.toRingHom.toMonoidHom gaussUnivU.{w} = u := by
+  let evP : GaussPoly.{w} →+* A :=
+    MvPolynomial.eval₂Hom (algebraMap ℤ A) (fun k => if k.down = 0 then r else s)
+  have hevP_x₀ : evP (MvPolynomial.X (.up 0)) = r :=
+    MvPolynomial.eval₂Hom_X' (algebraMap ℤ A)
+      (fun k : ULift.{w} (Fin 2) => if k.down = 0 then r else s) ⟨0⟩
+  have hevP_x₁ : evP (MvPolynomial.X (.up 1)) = s :=
+    MvPolynomial.eval₂Hom_X' (algebraMap ℤ A)
+      (fun k : ULift.{w} (Fin 2) => if k.down = 0 then r else s) ⟨1⟩
+  have hevP_p₀ : evP gaussPolyP₀.{w} = (u : A) := by
+    rw [hu]
+    simp [gaussPolyP₀, hevP_x₀, hevP_x₁]
+  have hp₀_unit : IsUnit (evP gaussPolyP₀.{w}) := hevP_p₀ ▸ u.isUnit
+  let ψ₀ : Localization.Away gaussPolyP₀.{w} →+* A :=
+    IsLocalization.Away.lift (S := Localization.Away gaussPolyP₀.{w}) gaussPolyP₀.{w} hp₀_unit
+  refine ⟨commAlgHomOfRingHom gaussUnivObj.{w} A ψ₀, ?_, ?_, ?_⟩
+  · rw [commAlgHomOfRingHom_hom_apply, gaussUnivR]
+    exact (IsLocalization.Away.lift_eq (S := Localization.Away gaussPolyP₀.{w})
+      gaussPolyP₀.{w} hp₀_unit _).trans hevP_x₀
+  · rw [commAlgHomOfRingHom_hom_apply, gaussUnivS]
+    exact (IsLocalization.Away.lift_eq (S := Localization.Away gaussPolyP₀.{w})
+      gaussPolyP₀.{w} hp₀_unit _).trans hevP_x₁
+  · apply Units.ext
+    rw [Units.coe_map, AlgHom.toRingHom_eq_coe, RingHom.toMonoidHom_eq_coe,
+      commAlgHomOfRingHom_hom_toRingHom]
+    exact (congrArg ψ₀ gaussUnivU_val).trans
+      ((IsLocalization.Away.lift_eq (S := Localization.Away gaussPolyP₀.{w})
+        gaussPolyP₀.{w} hp₀_unit _).trans hevP_p₀)
+
 section Gauss
 
 variable {i j : ι}
 variable (hi : IsNilpotent (ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e i))))
 variable (hj : IsNilpotent (ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e j))))
+
+/-- Solve Steinberg's Weyl definition `n_α(-t⁻¹) = xᵢ(-t⁻¹) xⱼ(t) xᵢ(-t⁻¹)` for `xⱼ(t)`. -/
+private theorem kostantRootSubgroupParam_f_eq_mul_kostantWeylParam
+    (K : CommAlgCat.{w} ℤ) (t : Kˣ) :
+    kostantRootSubgroupParam e h ρ M hM j hj K (Multiplicative.ofAdd (t : K)) =
+      kostantRootSubgroupParam e h ρ M hM i hi K (Multiplicative.ofAdd ((t⁻¹ : Kˣ) : K)) *
+        kostantWeylParam e h ρ M hM hi hj K (-t⁻¹) *
+        kostantRootSubgroupParam e h ρ M hM i hi K (Multiplicative.ofAdd ((t⁻¹ : Kˣ) : K)) := by
+  have hn := kostantWeylParam_def e h ρ M hM hi hj K (-t⁻¹)
+  have hpar : -(((-t⁻¹)⁻¹ : Kˣ) : K) = (t : K) := by simp
+  rw [Units.val_neg, hpar, ofAdd_neg, map_inv] at hn
+  rw [hn]
+  group
+
+/-- Solve Steinberg's Weyl definition `n_α(v) = xᵢ(v) xⱼ(-v⁻¹) xᵢ(v)` for the left factor
+`xᵢ(v)`. -/
+private theorem kostantRootSubgroupParam_e_eq_kostantWeylParam_mul
+    (K : CommAlgCat.{w} ℤ) (v : Kˣ) :
+    kostantRootSubgroupParam e h ρ M hM i hi K (Multiplicative.ofAdd (v : K)) =
+      kostantWeylParam e h ρ M hM hi hj K v *
+        kostantRootSubgroupParam e h ρ M hM i hi K (Multiplicative.ofAdd (-(v : K))) *
+        kostantRootSubgroupParam e h ρ M hM j hj K (Multiplicative.ofAdd ((v⁻¹ : Kˣ) : K)) := by
+  have hn := kostantWeylParam_def e h ρ M hM hi hj K v
+  rw [ofAdd_neg, map_inv] at hn
+  rw [ofAdd_neg, map_inv, hn]
+  group
+
+private theorem gauss_group_rearrange {G : Type*} [Group G] {xj b' a w₁ xv w₂ d' f g h' : G}
+    (hxj : xj = a * w₁ * a) (hadd : a * b' = xv) (hxi : xv = w₂ * d' * f)
+    (hnn : w₁ * w₂ = g) (hconj : g * d' * g⁻¹ = h') :
+    xj * b' = (a * h') * g * f := by
+  have hab : b' = a⁻¹ * (w₂ * d' * f) := eq_inv_mul_of_mul_eq (hadd.trans hxi)
+  have hd : d' = g⁻¹ * h' * g := by rw [← hconj]; group
+  have hw₂ : w₂ = w₁⁻¹ * g := eq_inv_mul_of_mul_eq hnn
+  rw [hxj, hab, hd, hw₂]
+  group
+
 variable {η : Type*} (b : Module.Basis η ℤ M) (wt : η → κ → ℤ)
 variable [Fintype κ] [DecidableEq κ]
+
+private theorem mapScalarExtensionAutomorphisms_gauss_rhs
+    {c : κ} {B₀ B₁ : CommAlgCat.{w} ℤ} (φ : B₀ ⟶ B₁)
+    {r₀ s₀ : B₀} {u₀ : B₀ˣ} {r₁ s₁ : B₁} {u₁ : B₁ˣ}
+    (hr : φ.hom r₀ = r₁) (hs : φ.hom s₀ = s₁)
+    (hu : Units.map φ.hom.toRingHom.toMonoidHom u₀ = u₁) :
+    GeneralLinear.mapScalarExtensionAutomorphisms (V := M) φ
+        (kostantRootSubgroupParam e h ρ M hM i hi B₀ (Multiplicative.ofAdd (r₀ * ↑u₀⁻¹)) *
+          kostantCoordinateCocharacter M b wt B₀ c u₀⁻¹ *
+          kostantRootSubgroupParam e h ρ M hM j hj B₀ (Multiplicative.ofAdd (s₀ * ↑u₀⁻¹))) =
+      kostantRootSubgroupParam e h ρ M hM i hi B₁ (Multiplicative.ofAdd (r₁ * ↑u₁⁻¹)) *
+        kostantCoordinateCocharacter M b wt B₁ c u₁⁻¹ *
+        kostantRootSubgroupParam e h ρ M hM j hj B₁ (Multiplicative.ofAdd (s₁ * ↑u₁⁻¹)) := by
+  have : Module.Free ℤ M := Module.Free.of_basis b
+  have hu_inv : φ.hom ((u₀⁻¹ : B₀ˣ) : B₀) = ((u₁⁻¹ : B₁ˣ) : B₁) := by
+    rw [← hu, Units.coe_map_inv]
+    simp
+  rw [map_mul, map_mul,
+    mapScalarExtensionAutomorphisms_kostantRootSubgroupParam,
+    mapScalarExtensionAutomorphisms_kostantRootSubgroupParam,
+    mapScalarExtensionAutomorphisms_kostantCoordinateCocharacter,
+    toAdd_ofAdd, toAdd_ofAdd, map_mul φ.hom, map_mul φ.hom,
+    map_inv (Units.map φ.hom.toRingHom.toMonoidHom), hr, hs, hu, hu_inv]
+
 variable (hwt : ∀ x, IsCartanWeightVector h ρ (wt x) ((b x : M) : V))
 variable {c : κ} {α : κ → ℤ}
 variable (hT : IsSl2Triple (ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (h c)))
@@ -101,40 +307,12 @@ private theorem kostantRootSubgroupParam_mul_kostantRootSubgroupParam_f_e_of_uni
           (Multiplicative.ofAdd ((t : K) * ((u⁻¹ : Kˣ) : K))) := by
   let v : Kˣ := t⁻¹ * u
   have hv_val : (v : K) = ((t⁻¹ : Kˣ) : K) + (s : K) := by
-    rw [Units.val_mul, hu, mul_add, mul_one, ← mul_assoc, mul_comm ((t⁻¹ : Kˣ) : K) (s : K),
-      mul_assoc, Units.inv_mul, mul_one]
+    rw [Units.val_mul]
+    linear_combination ((t⁻¹ : Kˣ) : K) * hu + (s : K) * Units.inv_mul t
   have hv_inv_val : ((v⁻¹ : Kˣ) : K) = (t : K) * ((u⁻¹ : Kˣ) : K) := by
     simp [v, mul_inv_rev, mul_comm]
-  -- Solve `n_α(-t⁻¹) = xᵢ(-t⁻¹) xⱼ(t) xᵢ(-t⁻¹)` for `xⱼ(t)`.
-  have hxj :
-      kostantRootSubgroupParam e h ρ M hM j hj K (Multiplicative.ofAdd (t : K)) =
-        kostantRootSubgroupParam e h ρ M hM i hi K (Multiplicative.ofAdd ((t⁻¹ : Kˣ) : K)) *
-          kostantWeylParam e h ρ M hM hi hj K (-t⁻¹) *
-          kostantRootSubgroupParam e h ρ M hM i hi K (Multiplicative.ofAdd ((t⁻¹ : Kˣ) : K)) := by
-    have hcancel : ∀ {G : Type (max v w)} [Group G] {x w a : G},
-        w = a⁻¹ * x * a⁻¹ → x = a * w * a := by
-      intro G _ x w a hw
-      symm
-      rw [hw, ← mul_assoc a (a⁻¹ * x) a⁻¹, mul_inv_cancel_left, inv_mul_cancel_right]
-    have hn := kostantWeylParam_def e h ρ M hM hi hj K (-t⁻¹)
-    have hpar : -(((-t⁻¹)⁻¹ : Kˣ) : K) = (t : K) := by simp
-    rw [Units.val_neg, hpar, ofAdd_neg, map_inv] at hn
-    exact hcancel hn
-  -- Solve `n_α(v) = xᵢ(v) xⱼ(-v⁻¹) xᵢ(v)` for the left factor `xᵢ(v)`.
-  have hxi :
-      kostantRootSubgroupParam e h ρ M hM i hi K (Multiplicative.ofAdd (v : K)) =
-        kostantWeylParam e h ρ M hM hi hj K v *
-          kostantRootSubgroupParam e h ρ M hM i hi K (Multiplicative.ofAdd (-(v : K))) *
-          kostantRootSubgroupParam e h ρ M hM j hj K (Multiplicative.ofAdd ((v⁻¹ : Kˣ) : K)) := by
-    have hcancel : ∀ {G : Type (max v w)} [Group G] {a b' w : G},
-        w = a * b'⁻¹ * a → a = w * a⁻¹ * b' := by
-      intro G _ a b' w hw
-      symm
-      rw [hw, mul_inv_cancel_right, inv_mul_cancel_right]
-    have hn := kostantWeylParam_def e h ρ M hM hi hj K v
-    rw [ofAdd_neg, map_inv] at hn
-    rw [ofAdd_neg, map_inv]
-    exact hcancel hn
+  have hxj := kostantRootSubgroupParam_f_eq_mul_kostantWeylParam e h ρ M hM hi hj K t
+  have hxi := kostantRootSubgroupParam_e_eq_kostantWeylParam_mul e h ρ M hM hi hj K v
   -- Multiply the two Weyl elements into `h_c(u⁻¹)`.
   have hnn :
       kostantWeylParam e h ρ M hM hi hj K (-t⁻¹) * kostantWeylParam e h ρ M hM hi hj K v =
@@ -152,41 +330,18 @@ private theorem kostantRootSubgroupParam_mul_kostantRootSubgroupParam_f_e_of_uni
   have hparam :
       ((t⁻¹ : Kˣ) : K) + ((u⁻¹ ^ 2 : Kˣ) : K) * -(v : K) =
         (s : K) * ((u⁻¹ : Kˣ) : K) := by
-    calc
-      ((t⁻¹ : Kˣ) : K) + ((u⁻¹ ^ 2 : Kˣ) : K) * -(v : K)
-        = ((t⁻¹ : Kˣ) : K) * ((u : K) * ((u⁻¹ : Kˣ) : K)) -
-            ((u⁻¹ : Kˣ) : K) * (((u⁻¹ : Kˣ) : K) * (u : K)) * ((t⁻¹ : Kˣ) : K) := by
-          rw [Units.val_pow_eq_pow_val, sq, Units.val_mul t⁻¹ u, Units.mul_inv u, mul_one,
-            mul_neg, sub_eq_add_neg]
-          congr 2
-          rw [mul_assoc ((u⁻¹ : Kˣ) : K), mul_comm ((t⁻¹ : Kˣ) : K) (u : K),
-            ← mul_assoc ((u⁻¹ : Kˣ) : K) (u : K), ← mul_assoc]
-      _ = ((t⁻¹ : Kˣ) : K) * (1 + (s : K) * (t : K)) * ((u⁻¹ : Kˣ) : K) -
-            ((t⁻¹ : Kˣ) : K) * ((u⁻¹ : Kˣ) : K) := by
-          rw [Units.inv_mul u, mul_one, hu, ← mul_assoc,
-            mul_comm ((u⁻¹ : Kˣ) : K) ((t⁻¹ : Kˣ) : K)]
-      _ = (s : K) * ((u⁻¹ : Kˣ) : K) := by
-          rw [mul_add, mul_one, add_mul, add_sub_cancel_left, ← mul_assoc,
-            mul_comm ((t⁻¹ : Kˣ) : K) (s : K), mul_assoc (s : K), Units.inv_mul t, mul_one]
+    simp only [v, Units.val_pow_eq_pow_val, Units.val_mul]
+    linear_combination
+      -(((t⁻¹ : Kˣ) : K) * (1 + ((u⁻¹ : Kˣ) : K))) * Units.mul_inv u +
+        ((t⁻¹ : Kˣ) : K) * ((u⁻¹ : Kˣ) : K) * hu +
+        (s : K) * ((u⁻¹ : Kˣ) : K) * Units.inv_mul t
   have hadd_left :
       kostantRootSubgroupParam e h ρ M hM i hi K (Multiplicative.ofAdd ((t⁻¹ : Kˣ) : K)) *
           kostantRootSubgroupParam e h ρ M hM i hi K (Multiplicative.ofAdd (s : K)) =
         kostantRootSubgroupParam e h ρ M hM i hi K (Multiplicative.ofAdd (v : K)) := by
     rw [← map_mul, ← ofAdd_add, ← hv_val]
-  let a := kostantRootSubgroupParam e h ρ M hM i hi K (Multiplicative.ofAdd ((t⁻¹ : Kˣ) : K))
-  let w₁ := kostantWeylParam e h ρ M hM hi hj K (-t⁻¹)
-  let b' := kostantRootSubgroupParam e h ρ M hM i hi K (Multiplicative.ofAdd (s : K))
-  let w₂ := kostantWeylParam e h ρ M hM hi hj K v
-  let d' := kostantRootSubgroupParam e h ρ M hM i hi K (Multiplicative.ofAdd (-(v : K)))
-  let f := kostantRootSubgroupParam e h ρ M hM j hj K (Multiplicative.ofAdd ((v⁻¹ : Kˣ) : K))
-  let g := kostantCoordinateCocharacter M b wt K c u⁻¹
-  let h' := kostantRootSubgroupParam e h ρ M hM i hi K
-    (Multiplicative.ofAdd (((u⁻¹ ^ 2 : Kˣ) : K) * -(v : K)))
-  rw [hxj, mul_assoc (a * w₁) a b', hadd_left, hxi, ← mul_assoc (a * w₁) (w₂ * d') f,
-    mul_assoc a w₁ (w₂ * d'), ← mul_assoc w₁ w₂ d', hnn,
-    ← inv_mul_cancel_right (g * d') g, hconj, ← mul_assoc a h' g]
-  dsimp only [a, h', f]
-  rw [← map_mul, ← ofAdd_add, hparam, hv_inv_val]
+  rw [gauss_group_rearrange hxj hadd_left hxi hnn hconj, ← map_mul, ← ofAdd_add, hparam,
+    hv_inv_val]
 
 /-- Transport the unit-parameter Gauss factorization from `B₁` back along an injective scalar
 extension `ι : B₀ ⟶ B₁` and forward along a specialization `ψ : B₀ ⟶ A`. Keeping `B₀` and `B₁`
@@ -206,12 +361,6 @@ private theorem kostantRootSubgroupParam_mul_kostantRootSubgroupParam_f_e_of_uni
         kostantCoordinateCocharacter M b wt A c u⁻¹ *
         kostantRootSubgroupParam e h ρ M hM j hj A (Multiplicative.ofAdd (s * ↑u⁻¹)) := by
   have : Module.Free ℤ M := Module.Free.of_basis b
-  have hι_u₀_inv : ι.hom ((u₀⁻¹ : B₀ˣ) : B₀) = ((uK⁻¹ : B₁ˣ) : B₁) := by
-    rw [← hι_u₀, ← map_inv]
-    rfl
-  have hψ_u₀_inv : ψ.hom ((u₀⁻¹ : B₀ˣ) : B₀) = ((u⁻¹ : Aˣ) : A) := by
-    rw [← hψ_u₀, ← map_inv]
-    rfl
   have huniv :
       kostantRootSubgroupParam e h ρ M hM j hj B₀ (Multiplicative.ofAdd s₀) *
           kostantRootSubgroupParam e h ρ M hM i hi B₀ (Multiplicative.ofAdd r₀) =
@@ -222,28 +371,17 @@ private theorem kostantRootSubgroupParam_mul_kostantRootSubgroupParam_f_e_of_uni
             (Multiplicative.ofAdd (s₀ * ((u₀⁻¹ : B₀ˣ) : B₀))) := by
     apply GeneralLinear.mapScalarExtensionAutomorphisms_injective ι
       (GeneralLinear.scalarExtensionMap_injective ι hι_inj)
-    rw [map_mul, map_mul, map_mul,
-      mapScalarExtensionAutomorphisms_kostantRootSubgroupParam,
-      mapScalarExtensionAutomorphisms_kostantRootSubgroupParam,
-      mapScalarExtensionAutomorphisms_kostantRootSubgroupParam,
-      mapScalarExtensionAutomorphisms_kostantRootSubgroupParam,
-      mapScalarExtensionAutomorphisms_kostantCoordinateCocharacter,
-      toAdd_ofAdd, toAdd_ofAdd, toAdd_ofAdd, toAdd_ofAdd,
-      map_mul ι.hom, map_mul ι.hom, map_inv (Units.map ι.hom.toRingHom.toMonoidHom),
-      hι_r₀, hι_s₀, hι_u₀, hι_u₀_inv]
+    rw [map_mul, mapScalarExtensionAutomorphisms_kostantRootSubgroupParam,
+      mapScalarExtensionAutomorphisms_kostantRootSubgroupParam, toAdd_ofAdd, toAdd_ofAdd,
+      hι_s₀, hι_r₀,
+      mapScalarExtensionAutomorphisms_gauss_rhs e h ρ M hM hi hj b wt ι hι_r₀ hι_s₀ hι_u₀]
     exact kostantRootSubgroupParam_mul_kostantRootSubgroupParam_f_e_of_units
       e h ρ M hM hi hj b wt hwt hT hα hαneg B₁ sK tK uK huK
   have hspec := congrArg (GeneralLinear.mapScalarExtensionAutomorphisms (V := M) ψ) huniv
-  rw [map_mul, map_mul, map_mul,
-    mapScalarExtensionAutomorphisms_kostantRootSubgroupParam,
-    mapScalarExtensionAutomorphisms_kostantRootSubgroupParam,
-    mapScalarExtensionAutomorphisms_kostantRootSubgroupParam,
-    mapScalarExtensionAutomorphisms_kostantRootSubgroupParam,
-    mapScalarExtensionAutomorphisms_kostantCoordinateCocharacter,
-    toAdd_ofAdd, toAdd_ofAdd, toAdd_ofAdd, toAdd_ofAdd,
-    map_mul ψ.hom, map_mul ψ.hom, map_inv (Units.map ψ.hom.toRingHom.toMonoidHom),
-    hψ_r₀, hψ_s₀, hψ_u₀, hψ_u₀_inv] at hspec
-  exact hspec
+  rwa [map_mul, mapScalarExtensionAutomorphisms_kostantRootSubgroupParam,
+    mapScalarExtensionAutomorphisms_kostantRootSubgroupParam, toAdd_ofAdd, toAdd_ofAdd,
+    hψ_s₀, hψ_r₀,
+    mapScalarExtensionAutomorphisms_gauss_rhs e h ρ M hM hi hj b wt ψ hψ_r₀ hψ_s₀ hψ_u₀] at hspec
 
 /-- **Opposite-root Gauss factorization (lowering times raising).** Whenever `u = 1 + r s` is a
 unit of the value ring `A`, the product `xⱼ(s) xᵢ(r)` factors as
@@ -255,112 +393,12 @@ theorem kostantRootSubgroupParam_mul_kostantRootSubgroupParam_f_e
       kostantRootSubgroupParam e h ρ M hM i hi A (Multiplicative.ofAdd (r * ↑u⁻¹)) *
         kostantCoordinateCocharacter M b wt A c u⁻¹ *
         kostantRootSubgroupParam e h ρ M hM j hj A (Multiplicative.ofAdd (s * ↑u⁻¹)) := by
-  -- Construct the universal localization `R₀ = ℤ[x₀, x₁][(1 + x₀ x₁)⁻¹]`, embed it into the
-  -- principal localization `K = ℤ[x₀, x₁][(x₀ x₁ (1 + x₀ x₁))⁻¹]` where `x₀`, `x₁`, and
-  -- `1 + x₀ x₁` are all units, and specialize `R₀ → A` along `(x₀, x₁) ↦ (r, s)`.
-  let P := MvPolynomial (ULift.{w} (Fin 2)) ℤ
-  let x₀ : P := MvPolynomial.X (.up 0)
-  let x₁ : P := MvPolynomial.X (.up 1)
-  let p₀ : P := 1 + x₀ * x₁
-  have hp₀ : p₀ ≠ 0 := by
-    intro hzero
-    have hcoeff := congrArg MvPolynomial.constantCoeff hzero
-    simp [p₀, x₀, x₁] at hcoeff
-  let q₀ : P := x₀ * x₁ * p₀
-  have hq₀ : q₀ ≠ 0 :=
-    mul_ne_zero (mul_ne_zero (MvPolynomial.X_ne_zero _) (MvPolynomial.X_ne_zero _)) hp₀
-  let R₀ := Localization.Away p₀
-  let K := Localization.Away q₀
-  have hPK_inj : Function.Injective (algebraMap P K) :=
-    IsLocalization.injective K (Submonoid.powers_le.mpr (mem_nonZeroDivisors_of_ne_zero hq₀))
-  have hsK_unit : IsUnit (algebraMap P K x₀) :=
-    IsLocalization.Away.isUnit_of_dvd q₀ ⟨x₁ * p₀, by ring⟩
-  have htK_unit : IsUnit (algebraMap P K x₁) :=
-    IsLocalization.Away.isUnit_of_dvd q₀ ⟨x₀ * p₀, by ring⟩
-  have hp₀K_unit : IsUnit (algebraMap P K p₀) :=
-    IsLocalization.Away.isUnit_of_dvd q₀ ⟨x₀ * x₁, by ring⟩
-  let B₀ : CommAlgCat.{w} ℤ := CommAlgCat.of ℤ R₀
-  let B₁ : CommAlgCat.{w} ℤ := CommAlgCat.of ℤ K
-  let sK : B₁ˣ := hsK_unit.unit
-  let tK : B₁ˣ := htK_unit.unit
-  let uK : B₁ˣ := hp₀K_unit.unit
-  have hsK_val : (sK : B₁) = algebraMap P K x₀ := hsK_unit.unit_spec
-  have htK_val : (tK : B₁) = algebraMap P K x₁ := htK_unit.unit_spec
-  have huK_val : (uK : B₁) = algebraMap P K p₀ := hp₀K_unit.unit_spec
-  have huK : (uK : B₁) = 1 + (sK : B₁) * (tK : B₁) := by
-    rw [huK_val, hsK_val, htK_val]
-    -- Expose the carrier `K` so `simp` expands `algebraMap P K p₀` through `map_add` and `map_mul`.
-    change algebraMap P K p₀ = 1 + algebraMap P K x₀ * algebraMap P K x₁
-    simp [p₀]
-  let ι₀ : R₀ →+* K := IsLocalization.Away.lift p₀ hp₀K_unit
-  have hι₀_inj : Function.Injective ι₀ := by
-    rw [injective_iff_map_eq_zero]
-    intro z hz
-    obtain ⟨n, q, hq⟩ := IsLocalization.Away.surj p₀ z
-    have hqK : algebraMap P K q = 0 := by
-      rw [← IsLocalization.Away.lift_eq (S := R₀) p₀ hp₀K_unit q, ← hq, map_mul, hz, zero_mul]
-    rw [hPK_inj (hqK.trans (map_zero _).symm), map_zero] at hq
-    have hinv : algebraMap P R₀ p₀ ^ n * IsLocalization.Away.invSelf (S := R₀) p₀ ^ n = 1 := by
-      rw [← mul_pow, IsLocalization.Away.mul_invSelf (S := R₀) p₀, one_pow]
-    calc
-      z = z * (algebraMap P R₀ p₀ ^ n * IsLocalization.Away.invSelf (S := R₀) p₀ ^ n) := by
-        rw [hinv, mul_one]
-      _ = 0 := by rw [← mul_assoc, hq, zero_mul]
-  let ι : B₀ ⟶ B₁ := CommAlgCat.ofHom
-    { toRingHom := ι₀
-      commutes' := fun z => by
-        rw [RingHom.toMonoidHom_eq_coe, OneHom.toFun_eq_coe, MonoidHom.toOneHom_coe,
-          MonoidHom.coe_ofClass, eq_intCast (algebraMap ℤ R₀), eq_intCast (algebraMap ℤ K),
-          map_intCast] }
-  let r₀ : B₀ := algebraMap P R₀ x₀
-  let s₀ : B₀ := algebraMap P R₀ x₁
-  let u₀ : B₀ˣ := (IsLocalization.Away.algebraMap_isUnit (S := R₀) p₀).unit
-  have hu₀_val : (u₀ : B₀) = algebraMap P R₀ p₀ :=
-    (IsLocalization.Away.algebraMap_isUnit (S := R₀) p₀).unit_spec
-  have hι_r₀ : ι.hom r₀ = (sK : B₁) :=
-    (IsLocalization.Away.lift_eq (S := R₀) p₀ hp₀K_unit x₀).trans hsK_val.symm
-  have hι_s₀ : ι.hom s₀ = (tK : B₁) :=
-    (IsLocalization.Away.lift_eq (S := R₀) p₀ hp₀K_unit x₁).trans htK_val.symm
-  have hι_u₀ : Units.map ι.hom.toRingHom.toMonoidHom u₀ = uK := by
-    apply Units.ext
-    -- Compare the underlying elements in `K` so `IsLocalization.Away.lift_eq` rewrites directly.
-    change ι₀ u₀ = uK
-    rw [hu₀_val, IsLocalization.Away.lift_eq (S := R₀) p₀ hp₀K_unit p₀, ← huK_val]
-  let evP : P →+* A :=
-    MvPolynomial.eval₂Hom (algebraMap ℤ A) (fun k => if k.down = 0 then r else s)
-  have hevP_x₀ : evP x₀ = r :=
-    MvPolynomial.eval₂Hom_X' (algebraMap ℤ A)
-      (fun k : ULift.{w} (Fin 2) => if k.down = 0 then r else s) ⟨0⟩
-  have hevP_x₁ : evP x₁ = s :=
-    MvPolynomial.eval₂Hom_X' (algebraMap ℤ A)
-      (fun k : ULift.{w} (Fin 2) => if k.down = 0 then r else s) ⟨1⟩
-  have hevP_p₀ : evP p₀ = (u : A) := by
-    rw [hu]
-    simp [p₀, hevP_x₀, hevP_x₁]
-  have hp₀_unit : IsUnit (evP p₀) := hevP_p₀ ▸ u.isUnit
-  let ψ₀ : R₀ →+* A := IsLocalization.Away.lift p₀ hp₀_unit
-  let ψ : B₀ ⟶ A := CommAlgCat.ofHom
-    { toRingHom := ψ₀
-      commutes' := fun z => by
-        rw [RingHom.toMonoidHom_eq_coe, OneHom.toFun_eq_coe, MonoidHom.toOneHom_coe,
-          MonoidHom.coe_ofClass, eq_intCast (algebraMap ℤ R₀), eq_intCast (algebraMap ℤ A),
-          map_intCast] }
-  have hψ_r₀ : ψ.hom r₀ = r := by
-    -- Expose the underlying localization lift `ψ₀` on `r₀`.
-    change ψ₀ (algebraMap P R₀ x₀) = r
-    rw [IsLocalization.Away.lift_eq p₀ hp₀_unit x₀, hevP_x₀]
-  have hψ_s₀ : ψ.hom s₀ = s := by
-    -- Expose the underlying localization lift `ψ₀` on `s₀`.
-    change ψ₀ (algebraMap P R₀ x₁) = s
-    rw [IsLocalization.Away.lift_eq p₀ hp₀_unit x₁, hevP_x₁]
-  have hψ_u₀ : Units.map ψ.hom.toRingHom.toMonoidHom u₀ = u := by
-    apply Units.ext
-    -- Compare the underlying elements in `A` via `ψ₀`.
-    change ψ₀ u₀ = u
-    rw [hu₀_val, IsLocalization.Away.lift_eq p₀ hp₀_unit p₀, hevP_p₀]
+  obtain ⟨B₁, ι, sK, tK, uK, hι_inj, huK, hι_r₀, hι_s₀, hι_u₀⟩ := exists_gaussUniv_embedding.{w}
+  obtain ⟨ψ, hψ_r₀, hψ_s₀, hψ_u₀⟩ := exists_gaussUniv_specialization A r s u hu
   exact kostantRootSubgroupParam_mul_kostantRootSubgroupParam_f_e_of_universal
-    e h ρ M hM hi hj b wt hwt hT hα hαneg ι (fun _ _ hxy => hι₀_inj hxy) ψ r₀ s₀ u₀
-    sK tK uK huK hι_r₀ hι_s₀ hι_u₀ r s u hψ_r₀ hψ_s₀ hψ_u₀
+    e h ρ M hM hi hj b wt hwt hT hα hαneg ι hι_inj ψ
+    gaussUnivR gaussUnivS gaussUnivU sK tK uK huK hι_r₀ hι_s₀ hι_u₀
+    r s u hψ_r₀ hψ_s₀ hψ_u₀
 
 /-- **Opposite-root Gauss factorization (raising times lowering).** Whenever `u = 1 + r s` is a
 unit of the value ring `A`, the product `xᵢ(r) xⱼ(s)` factors as
