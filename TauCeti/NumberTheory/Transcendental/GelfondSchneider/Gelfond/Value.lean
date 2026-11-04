@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.NumberTheory.Transcendental.GelfondSchneider.GelfondAuxiliary
+public import TauCeti.NumberTheory.Transcendental.GelfondSchneider.Gelfond.Auxiliary
 
 import TauCeti.NumberTheory.Height.House
 
@@ -141,8 +141,10 @@ private theorem gelfond_value_bound_le {c H : ℝ} {m n q r : ℕ} (hm : 1 ≤ m
     _ ≤ (2 * m) ^ r * ((2 * m) ^ r * c' ^ r * (H ^ (1 + 4 * m ^ 2)) ^ r) *
           (4 ^ r * (r : ℝ) ^ r) := by gcongr
     _ = (16 * m ^ 2 * c' * H ^ (1 + 4 * m ^ 2)) ^ r * (r : ℝ) ^ r := by
-        rw [show (16 : ℝ) = 2 * 2 * 4 by norm_num]
-        simp only [mul_pow]
+        have h16 : (16 : ℝ) ^ r = 2 ^ r * 2 ^ r * 4 ^ r := by
+          rw [← mul_pow, ← mul_pow]
+          norm_num
+        simp only [mul_pow, h16]
         ring
 
 variable {K : Type*} [Field K] [NumberField K]

@@ -293,7 +293,8 @@ theorem exists_gelfond_auxiliary_algebraic (α β γ : K) {m : ℕ} (hm : 1 ≤ 
     by_cases he' : e' = 0
     · refine ⟨fun _ ↦ 1, fun h ↦ ?_, by rw [he', Matrix.zero_mulVec], fun _ ↦ ?_⟩
       · exact one_ne_zero (congr_fun h (⟨0, hq₀⟩, ⟨0, hq₀⟩))
-      · rw [show ((1 : 𝓞 K) : K) = ((1 : ℤ) : K) by simp, house_intCast, abs_one, Int.cast_one]
+      · have hone : house ((1 : 𝓞 K) : K) = 1 := by simpa using house_intCast (K := K) 1
+        rw [hone]
         have hn' : (1 : ℝ) ≤ n := by exact_mod_cast hn
         exact one_le_mul_of_one_le_of_one_le (one_le_pow₀ hc)
           (Real.one_le_rpow hn' (by positivity))
@@ -306,8 +307,7 @@ theorem exists_gelfond_auxiliary_algebraic (α β γ : K) {m : ℕ} (hm : 1 ≤ 
         rw [hq]
         push_cast
         ring
-      rw [this, show 2 * ((n * m : ℕ) : ℝ) - (n * m : ℕ) = (n * m : ℕ) by ring,
-        div_self (by positivity)]
+      rw [this, two_mul, add_sub_cancel_right, div_self (by positivity)]
     rw [hexp, Real.rpow_one]
     exact gelfond_siegel_bound_le hm hn hq hH
   refine ⟨fun a b ↦ ξ (a, b), fun h ↦ hξ0 (funext fun u ↦ congr_fun₂ h u.1 u.2),
