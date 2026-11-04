@@ -43,7 +43,7 @@ the dual.
   one (`MeasureTheory.VectorMeasure.regularSubmodule.norm_dirac`).
 * `MeasureTheory.VectorMeasure.regularSubmodule.toDual`: the integration map
   `M(X) →L[𝕜] StrongDual 𝕜 C(X, 𝕜)`, which is contractive (`norm_toDual_le`) and injective
-  (`injective_toDual`), and sends `δₓ` to evaluation at `x` (`toDual_dirac`).
+  (`toDual_injective`), and sends `δₓ` to evaluation at `x` (`toDual_dirac`).
 
 ## References
 
@@ -109,9 +109,17 @@ theorem integralContinuousMap_smul (c : 𝕜) (μ : VectorMeasure X 𝕜) :
   simp
 
 /-- The functional of the Dirac measure `δₓ` with weight `c` is `f ↦ f x * c`. -/
-theorem integralContinuousMap_dirac (x : X) (c : 𝕜) (f : C(X, 𝕜)) :
+theorem integralContinuousMap_dirac_apply (x : X) (c : 𝕜) (f : C(X, 𝕜)) :
     (dirac x c).integralContinuousMap f = f x * c := by
   rw [integralContinuousMap_apply, integral_dirac' f.continuous.stronglyMeasurable, mul_apply']
+
+/-- The functional of the Dirac measure `δₓ` with weight `c` is `c` times evaluation at `x`. -/
+@[simp]
+theorem integralContinuousMap_dirac (x : X) (c : 𝕜) :
+    (dirac x c).integralContinuousMap = c • ContinuousMap.evalCLM 𝕜 x := by
+  ext f
+  rw [integralContinuousMap_dirac_apply, smul_apply, ContinuousMap.evalCLM_apply, smul_eq_mul,
+    mul_comm]
 
 end Integral
 
@@ -226,21 +234,27 @@ theorem norm_toDual_le (μ : regularSubmodule X 𝕜) : ‖toDual X 𝕜 μ‖ �
 theorem norm_toDual_le_one : ‖toDual X 𝕜‖ ≤ 1 :=
   LinearMap.mkContinuous_norm_le _ zero_le_one _
 
+/-- The functional of the Dirac measure `δₓ` is evaluation at `x`. -/
+@[simp]
+theorem toDual_dirac (x : X) : toDual X 𝕜 (dirac x) = ContinuousMap.evalCLM 𝕜 x := by
+  ext f
+  rw [toDual_apply, coe_dirac, ← integralContinuousMap_apply, integralContinuousMap_dirac_apply,
+    mul_one, ContinuousMap.evalCLM_apply]
+
 /-- The Dirac measure `δₓ` integrates a continuous function to its value at `x`. -/
-theorem toDual_dirac (x : X) (f : C(X, 𝕜)) : toDual X 𝕜 (dirac x) f = f x := by
-  rw [toDual_apply, coe_dirac, ← integralContinuousMap_apply, integralContinuousMap_dirac,
-    mul_one]
+theorem toDual_dirac_apply (x : X) (f : C(X, 𝕜)) : toDual X 𝕜 (dirac x) f = f x := by
+  simp
 
 /-- The functional of a Dirac measure has norm one. -/
 theorem norm_toDual_dirac (x : X) : ‖toDual X 𝕜 (dirac x)‖ = 1 := by
   refine le_antisymm ((norm_toDual_le _).trans_eq (norm_dirac x)) ?_
   have : Nonempty X := ⟨x⟩
-  simpa only [toDual_dirac, ContinuousMap.one_apply, norm_one, mul_one] using
+  simpa only [toDual_dirac_apply, ContinuousMap.one_apply, norm_one, mul_one] using
     (toDual X 𝕜 (dirac x)).le_opNorm 1
 
 /-- On a compact Hausdorff space, a scalar measure of regular variation is determined by its
 integrals of continuous functions. -/
-theorem injective_toDual [T2Space X] : Function.Injective (toDual X 𝕜) := fun μ ν h ↦
+theorem toDual_injective [T2Space X] : Function.Injective (toDual X 𝕜) := fun μ ν h ↦
   Subtype.ext <| ext_of_integral_eq_on_continuousMap fun f ↦ by
     simpa using DFunLike.congr_fun h f
 
