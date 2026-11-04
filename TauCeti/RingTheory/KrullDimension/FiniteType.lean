@@ -21,6 +21,7 @@ public import TauCeti.Topology.KrullDimension.Local
 import Mathlib.RingTheory.Ideal.KrullsHeightTheorem
 import Mathlib.RingTheory.Ideal.UFD
 import Mathlib.RingTheory.KrullDimension.Regular
+import TauCeti.RingTheory.Ideal.Height
 import TauCeti.RingTheory.KrullDimension.Basic
 import TauCeti.RingTheory.KrullDimension.Fiber
 
@@ -308,24 +309,6 @@ theorem _root_.MvPolynomial.height_eq_natCard_of_isMaximal {ι : Type*} [Finite 
     rw [← e.height_map M, Polynomial.height_eq_height_add_one (P.under (MvPolynomial α k)) P,
       IH, Finite.card_option, Nat.cast_add, Nat.cast_one]
 
-/-- For an ideal `p` of `A` and `g ∈ A` with image `g'` in `A ⧸ p`, the spectrum of `(A ⧸ p)[1/g']`
-embeds into `Spec A` inside `V(p) ∩ D(g)`, so its Krull dimension is at most that of any set
-containing `V(p) ∩ D(g)`. -/
-private theorem ringKrullDim_localization_away_quotient_le {A : Type*} [CommRing A] (p : Ideal A)
-    (g : A) {S : Set (PrimeSpectrum A)} (hS : zeroLocus p ∩ basicOpen g ⊆ S) :
-    ringKrullDim (Localization.Away (Ideal.Quotient.mk p g)) ≤ topologicalKrullDim S := by
-  set g' := Ideal.Quotient.mk p g
-  let i := comap (Ideal.Quotient.mk p)
-  let j := comap (algebraMap (A ⧸ p) (Localization.Away g'))
-  -- A prime of `(A ⧸ p)[1/g']` contains `p` and misses the unit `g'`.
-  have hsub (y : PrimeSpectrum (Localization.Away g')) : i (j y) ∈ S :=
-    hS ⟨fun a ha ↦ by simp [i, j, Ideal.Quotient.eq_zero_iff_mem.mpr ha], fun h ↦
-      y.2.ne_top (Ideal.eq_top_of_isUnit_mem _ h (IsLocalization.Away.algebraMap_isUnit g'))⟩
-  rw [← PrimeSpectrum.topologicalKrullDim_eq_ringKrullDim]
-  exact (((isClosedEmbedding_comap_of_surjective _ _ Ideal.Quotient.mk_surjective).isEmbedding.comp
-    (localization_away_isOpenEmbedding _ g').isEmbedding).isInducing.codRestrict
-      hsub).topologicalKrullDim_le
-
 variable (k) in
 /-- In the spectrum of a finitely generated algebra over a field, a nonempty open part `Z ∩ U` of
 an irreducible closed subset `Z` has the Krull dimension of `Z`. -/
@@ -351,7 +334,7 @@ theorem topologicalKrullDim_inter_eq_of_finiteType {A : Type*} [CommRing A] [Alg
     _ = ringKrullDim (Localization.Away (Ideal.Quotient.mk p g)) :=
         (ringKrullDim_localization_away k hg _).symm
     _ ≤ topologicalKrullDim ↥(Z ∩ U) :=
-        ringKrullDim_localization_away_quotient_le p g (Set.inter_subset_inter hZp.le hgU)
+        p.ringKrullDim_localization_away_quotient_le g (Set.inter_subset_inter hZp.le hgU)
 
 
 variable (k) in
@@ -402,20 +385,6 @@ private theorem ringKrullDim_quotient_eq_of_height_eq_one {A : Type*} [CommRing 
   rw [ringKrullDim_eq_toNat_trdeg k (A ⧸ P)] at h ⊢
   exact_mod_cast Nat.succ_injective (by exact_mod_cast h)
 
-/-- A nonzero prime `p` of a Noetherian domain contains a prime of height one: any prime minimal
-over `(a)`, for a nonzero `a ∈ p`. -/
-private theorem exists_le_isPrime_height_eq_one {A : Type*} [CommRing A] [IsDomain A]
-    [IsNoetherianRing A] (p : Ideal A) [p.IsPrime] (hp : p ≠ ⊥) :
-    ∃ P ≤ p, P.IsPrime ∧ P.height = 1 := by
-  obtain ⟨a, hap, ha⟩ := Submodule.exists_mem_ne_zero_of_ne_bot hp
-  obtain ⟨P, hP, hPp⟩ :=
-    Ideal.exists_minimalPrimes_le ((Ideal.span_singleton_le_iff_mem p).mpr hap)
-  -- Krull's principal ideal theorem gives `ht P ≤ 1`, and `a` is a nonzerodivisor, so `ht P ≥ 1`.
-  exact ⟨P, hPp, hP.1.1, le_antisymm
-    (Ideal.height_le_one_of_isPrincipal_of_mem_minimalPrimes _ P hP)
-    ((Ideal.one_le_height_span_singleton_of_mem_nonZeroDivisors
-      (mem_nonZeroDivisors_of_ne_zero ha)).trans (Ideal.height_mono hP.1.2))⟩
-
 variable (k) in
 /-- The dimension formula `ht p + dim (A ⧸ p) = dim A` for a finitely generated domain `A` over a
 field. -/
@@ -434,7 +403,7 @@ private theorem height_add_ringKrullDim_quotient_of_isDomain {A : Type*} [CommRi
     rcases eq_or_ne p ⊥ with rfl | hp
     · simp [ringKrullDim_eq_of_ringEquiv (RingEquiv.quotientBot A)]
     have : IsNoetherianRing A := Algebra.FiniteType.isNoetherianRing k A
-    obtain ⟨P, hPp, _, hP1⟩ := exists_le_isPrime_height_eq_one p hp
+    obtain ⟨P, hPp, _, hP1⟩ := p.exists_le_isPrime_height_eq_one hp
     have hdimP := ringKrullDim_quotient_eq_of_height_eq_one k P hP1 hn
     have : (p.map (Ideal.Quotient.mk P)).IsPrime := Ideal.isPrime_map_quotientMk_of_isPrime hPp
     have hIH := ih (p.map (Ideal.Quotient.mk P)) hdimP
