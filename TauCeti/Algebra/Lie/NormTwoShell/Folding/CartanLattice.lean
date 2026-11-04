@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Algebra.Lie.NormTwoShell.Folding.Basic
 public import TauCeti.Algebra.Lie.NormTwoShell.FixedCartan
+public import TauCeti.LinearAlgebra.Matrix.Cartan.Folding.Reflection
 import Mathlib.LinearAlgebra.FreeModule.Finite.CardQuotient
 
 /-!
@@ -26,6 +27,7 @@ scales. No identification of the whole fixed Lie lattice with a normalized folde
 lattice is asserted.
 
 The construction uses the folded frame of `Matrix.ShellLieAlgebra.isSerreSystem_folded`,
+the normalized coordinate coroots `Matrix.foldedCoroot`,
 `Equiv.Perm.permutationFixedBasis` for the integral orbit basis, and Mathlib's lattice
 determinant formula `AddSubgroup.relIndex_eq_natAbs_det`.
 
@@ -42,15 +44,32 @@ namespace Matrix.ShellLieAlgebra
 
 variable {I : Type*} [Fintype I] {B : Matrix I I ℤ} (σ : Equiv.Perm I)
 
--- A bundled projection lets linearity do the coordinate calculations without unfolding the
--- additive-group instance on the shell carrier.
-private noncomputable def cartanProjection : ShellLieAlgebra B →ₗ[ℤ] (I → ℤ) :=
-  (LinearMap.fst ℤ _ _).comp (equivProd B).toLinearMap
-
-private theorem cartanProjection_apply (x : ShellLieAlgebra B) :
-    cartanProjection x = (equivProd B x).1 := (rfl)
-
 variable [LinearOrder I]
+
+/-- The folded Cartan generator is the image of the normalized folded coordinate coroot. -/
+theorem foldedH_eq_cartan_foldedCoroot (O : Quotient (Equiv.Perm.SameCycle.setoid σ)) :
+    foldedH B σ O = cartan B (B.foldedCoroot σ O) := by
+  rw [coe_foldedCoroot, map_smul, map_sum, foldedH_def]
+
+/-- A normalized folded Cartan generator scales the corresponding fixed Cartan basis vector. -/
+theorem foldedH_eq_smul_fixedCartanBasis (O : Quotient (Equiv.Perm.SameCycle.setoid σ)) :
+    foldedH B σ O =
+      B.foldingScale σ O • (fixedCartanBasis (B := B) σ O : ShellLieAlgebra B) := by
+  rw [foldedH_eq_cartan_foldedCoroot, coe_foldedCoroot, map_smul, map_sum,
+    coe_fixedCartanBasis]
+
+open Classical in
+private theorem cartanProjection_sum_foldedH
+    (f : Quotient (Equiv.Perm.SameCycle.setoid σ) → ℤ)
+    (O : Quotient (Equiv.Perm.SameCycle.setoid σ)) :
+    cartanProjection B (∑ P, f P • foldedH B σ P) O.out =
+      f O * B.foldingScale σ O := by
+  classical
+  simp only [foldedH_eq_smul_fixedCartanBasis, map_sum, map_smul,
+    Finset.sum_apply, Pi.smul_apply]
+  simp only [cartanProjection_apply, ← fixedCartanBasis_repr, Basis.repr_self,
+    Finsupp.single_apply, smul_eq_mul, mul_ite, mul_one, mul_zero,
+    sum_ite_eq', mem_univ, ite_true]
 
 variable (B) in
 /-- The integral lattice spanned by the normalized folded Cartan generators `H'_O`. -/
@@ -62,7 +81,7 @@ theorem foldedCartanLattice_le_fixedCartanLattice :
     foldedCartanLattice B σ ≤ fixedCartanLattice B σ := by
   apply Submodule.span_le.mpr
   rintro _ ⟨O, rfl⟩
-  rw [foldedH_def, ← coe_fixedCartanBasis]
+  rw [foldedH_eq_smul_fixedCartanBasis]
   exact (fixedCartanLattice B σ).smul_mem _ (SetLike.coe_mem _)
 
 /-- The normalized lattice consists of fixed Cartan vectors whose orbit coordinates are
@@ -77,14 +96,7 @@ theorem mem_foldedCartanLattice_iff (x : ShellLieAlgebra B) :
     refine ⟨foldedCartanLattice_le_fixedCartanLattice σ hx, ?_⟩
     obtain ⟨f, hf⟩ := (Submodule.mem_span_range_iff_exists_fun ℤ).mp hx
     intro O
-    have hcoord : cartanProjection (∑ P, f P • foldedH B σ P) O.out =
-        f O * B.foldingScale σ O := by
-      simp only [foldedH_def, ← coe_fixedCartanBasis, map_sum, map_smul,
-        Finset.sum_apply, Pi.smul_apply]
-      simp only [cartanProjection_apply, ← fixedCartanBasis_repr, Basis.repr_self,
-        Finsupp.single_apply, smul_eq_mul, mul_ite, mul_one, mul_zero,
-        sum_ite_eq', mem_univ, ite_true]
-    rw [← cartanProjection_apply, ← hf, hcoord]
+    rw [← cartanProjection_apply, ← hf, cartanProjection_sum_foldedH]
     exact dvd_mul_left _ _
   · rintro ⟨hfixed, hdiv⟩
     choose f hf using hdiv
@@ -94,8 +106,8 @@ theorem mem_foldedCartanLattice_iff (x : ShellLieAlgebra B) :
       apply (fixedCartanBasis (B := B) σ).repr.injective
       ext O
       simp [Finset.sum_apply', Finsupp.single_apply, hf, mul_comm]
-    simpa only [Submodule.coe_sum, SetLike.val_smul, coe_fixedCartanBasis,
-      ← foldedH_def] using congrArg Subtype.val heq
+    simpa only [Submodule.coe_sum, SetLike.val_smul,
+      ← foldedH_eq_smul_fixedCartanBasis] using congrArg Subtype.val heq
 
 section NonzeroScales
 
@@ -112,8 +124,8 @@ theorem linearIndependent_foldedH : LinearIndependent ℤ (foldedH B σ) := by
     (fixedCartanLattice B σ).subtype (Submodule.ker_subtype _)
   have heq : foldedH B σ = fun O ↦
       B.foldingScale σ O • (fixedCartanBasis (B := B) σ O : ShellLieAlgebra B) := by
-    ext O
-    rw [coe_fixedCartanBasis, foldedH_def]
+    funext O
+    exact foldedH_eq_smul_fixedCartanBasis σ O
   rw [heq]
   exact h.smul_of_isRightRegular hregular
 
@@ -136,14 +148,10 @@ theorem foldingScale_mul_foldedCartanBasis_repr (x : foldedCartanLattice B σ)
     B.foldingScale σ O * (foldedCartanBasis σ hscale).repr x O =
       (equivProd B x).1 O.out := by
   classical
-  have h := congrArg (fun y : foldedCartanLattice B σ ↦ cartanProjection (B := B) y O.out)
+  have h := congrArg (fun y : foldedCartanLattice B σ ↦ cartanProjection B y O.out)
     ((foldedCartanBasis σ hscale).sum_repr x)
-  rw [← cartanProjection_apply]
-  simp only [Submodule.coe_sum, SetLike.val_smul, coe_foldedCartanBasis, map_sum,
-    map_smul, Finset.sum_apply, Pi.smul_apply, foldedH_def, ← coe_fixedCartanBasis] at h
-  simp only [cartanProjection_apply, ← fixedCartanBasis_repr, Basis.repr_self,
-    Finsupp.single_apply, smul_eq_mul, mul_ite, mul_one, mul_zero,
-    sum_ite_eq', mem_univ, ite_true] at h
+  simp only [Submodule.coe_sum, SetLike.val_smul, coe_foldedCartanBasis,
+    cartanProjection_sum_foldedH] at h
   simpa only [cartanProjection_apply, mul_comm] using h
 
 open Classical in
@@ -160,7 +168,8 @@ theorem relIndex_foldedCartanLattice_fixedCartanLattice :
   have hinc (O : Quotient (Equiv.Perm.SameCycle.setoid σ)) :
       inc O = B.foldingScale σ O • fixedCartanBasis (B := B) σ O := by
     apply Subtype.ext
-    simp only [inc, coe_foldedCartanBasis, SetLike.val_smul, coe_fixedCartanBasis, foldedH_def]
+    simp only [inc, coe_foldedCartanBasis, SetLike.val_smul,
+      foldedH_eq_smul_fixedCartanBasis]
   have hmatrix : (fixedCartanBasis (B := B) σ).toMatrix inc =
       Matrix.diagonal (B.foldingScale σ) := by
     ext O P

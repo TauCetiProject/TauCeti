@@ -46,10 +46,6 @@ section Lattice
 
 variable (σ : Equiv.Perm I)
 
-private theorem cartan_injective : Function.Injective (cartan B) := by
-  intro v w h
-  simpa only [equivProd_cartan] using congrArg (fun x ↦ (equivProd B x).1) h
-
 variable (B) in
 /-- The Cartan lattice fixed by the vertex permutation: the image of its fixed coordinate
 module, equivalently the span of the distinct integral Cartan orbit sums. -/
@@ -60,7 +56,7 @@ noncomputable def fixedCartanLattice : Submodule ℤ (ShellLieAlgebra B) :=
 noncomputable def fixedCartanBasis :
     Module.Basis (Quotient (Equiv.Perm.SameCycle.setoid σ)) ℤ (fixedCartanLattice B σ) :=
   (σ.permutationFixedBasis (R := ℤ)).map
-    (Submodule.equivMapOfInjective (cartan B) cartan_injective _)
+    (Submodule.equivMapOfInjective (cartan B) (cartan_injective B) _)
 
 /-- Each fixed Cartan basis vector is the sum over one vertex orbit, with no multiplicity. -/
 @[simp]
@@ -85,10 +81,10 @@ theorem coe_fixedCartanBasis [DecidableEq I]
 theorem fixedCartanBasis_repr (x : fixedCartanLattice B σ)
     (O : Quotient (Equiv.Perm.SameCycle.setoid σ)) :
     (fixedCartanBasis (B := B) σ).repr x O = (equivProd B x).1 O.out := by
-  let e := Submodule.equivMapOfInjective (cartan B) cartan_injective
+  let e := Submodule.equivMapOfInjective (cartan B) (cartan_injective B)
     (LinearEquiv.funCongrLeft ℤ ℤ σ).toLinearMap.fixedSubmodule
   have hx := congrArg (fun y : ShellLieAlgebra B ↦ (equivProd B y).1)
-    (Submodule.map_equivMapOfInjective_symm_apply (cartan B) cartan_injective _ x)
+    (Submodule.map_equivMapOfInjective_symm_apply (cartan B) (cartan_injective B) _ x)
   simp only [equivProd_cartan] at hx
   -- The transported representation composes the original one with the inverse image map.
   change (σ.permutationFixedBasis (R := ℤ)).repr (e.symm x) O = _
