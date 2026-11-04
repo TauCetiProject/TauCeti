@@ -113,8 +113,9 @@ theorem geckRootSubgroupParam_inr_mul_inl (i : Fin t.rank) (A : CommAlgCat.{v} �
       t.geckRootSubgroupParam ht (.inl i) A (Multiplicative.ofAdd (a * ↑u⁻¹)) *
         t.geckTorusPoints ht A (Pi.mulSingle i u⁻¹) *
         t.geckRootSubgroupParam ht (.inr i) A (Multiplicative.ofAdd (b * ↑u⁻¹)) := by
-  simpa only [Pi.mulSingle_inv] using map_ofAdd_mul_map_ofAdd_of_neg
-    (t.geckRootSubgroupParam_inl_mul_inr ht i A (-a) (-b) u (by rwa [neg_mul_neg]))
+  simpa only [Pi.mulSingle_inv] using
+    map_ofAdd_mul_map_ofAdd_eq_of_map_ofAdd_neg_mul_map_ofAdd_neg_eq
+      (t.geckRootSubgroupParam_inl_mul_inr ht i A (-a) (-b) u (by rwa [neg_mul_neg]))
 
 /-! ## Point-group Gauss factorizations -/
 
@@ -158,8 +159,9 @@ theorem geckRootSubgroupPoints_inr_mul_inl (i : Fin t.rank) (A : Type v) [CommRi
       t.geckRootSubgroupPoints ht (.inl i) A (Multiplicative.ofAdd (a * ↑u⁻¹)) *
         t.geckWeightTorusPoints ht A (Pi.mulSingle i u⁻¹) *
         t.geckRootSubgroupPoints ht (.inr i) A (Multiplicative.ofAdd (b * ↑u⁻¹)) := by
-  simpa only [Pi.mulSingle_inv] using map_ofAdd_mul_map_ofAdd_of_neg
-    (t.geckRootSubgroupPoints_inl_mul_inr ht i A (-a) (-b) u (by rwa [neg_mul_neg]))
+  simpa only [Pi.mulSingle_inv] using
+    map_ofAdd_mul_map_ofAdd_eq_of_map_ofAdd_neg_mul_map_ofAdd_neg_eq
+      (t.geckRootSubgroupPoints_inl_mul_inr ht i A (-a) (-b) u (by rwa [neg_mul_neg]))
 
 end
 

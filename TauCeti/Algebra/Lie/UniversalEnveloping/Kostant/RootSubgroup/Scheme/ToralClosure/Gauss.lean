@@ -111,8 +111,9 @@ theorem kostantToralRootSubgroupPoints_mul_kostantToralRootSubgroupPoints_f_e
         kostantToralWeightTorusPoints e h ρ M hM hnil b wt A (Pi.mulSingle c u⁻¹) *
         kostantToralRootSubgroupPoints e h ρ M hM hnil b wt j A
           (Multiplicative.ofAdd (s * ↑u⁻¹)) := by
-  simpa only [Pi.mulSingle_inv] using map_ofAdd_mul_map_ofAdd_of_neg
-    (kostantToralRootSubgroupPoints_mul_kostantToralRootSubgroupPoints_e_f (c := c) (α := α)
-      e h ρ M hM hnil b wt hwt hT hα hαneg A (-r) (-s) u (by rwa [neg_mul_neg]))
+  simpa only [Pi.mulSingle_inv] using
+    map_ofAdd_mul_map_ofAdd_eq_of_map_ofAdd_neg_mul_map_ofAdd_neg_eq
+      (kostantToralRootSubgroupPoints_mul_kostantToralRootSubgroupPoints_e_f (c := c) (α := α)
+        e h ρ M hM hnil b wt hwt hT hα hαneg A (-r) (-s) u (by rwa [neg_mul_neg]))
 
 end TauCeti.UniversalEnvelopingAlgebra

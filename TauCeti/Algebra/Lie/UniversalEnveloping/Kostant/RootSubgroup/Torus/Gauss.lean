@@ -369,9 +369,10 @@ theorem kostantRootSubgroupParam_mul_kostantRootSubgroupParam_e_f
       kostantRootSubgroupParam e h ρ M hM j hj A (Multiplicative.ofAdd (s * ↑u⁻¹)) *
         kostantCoordinateCocharacter M b wt A c u *
         kostantRootSubgroupParam e h ρ M hM i hi A (Multiplicative.ofAdd (r * ↑u⁻¹)) := by
-  simpa only [inv_inv] using map_ofAdd_mul_map_ofAdd_of_neg
-    (kostantRootSubgroupParam_mul_kostantRootSubgroupParam_f_e (c := c) (α := α)
-      e h ρ M hM hi hj b wt hwt hT hα hαneg A (-r) (-s) u (by rwa [neg_mul_neg]))
+  simpa only [inv_inv] using
+    map_ofAdd_mul_map_ofAdd_eq_of_map_ofAdd_neg_mul_map_ofAdd_neg_eq
+      (kostantRootSubgroupParam_mul_kostantRootSubgroupParam_f_e (c := c) (α := α)
+        e h ρ M hM hi hj b wt hwt hT hα hαneg A (-r) (-s) u (by rwa [neg_mul_neg]))
 
 end Gauss
 

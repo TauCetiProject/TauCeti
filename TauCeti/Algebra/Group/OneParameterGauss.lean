@@ -37,8 +37,9 @@ convention on `1 ± r s`, and applies uniformly whether `t` is a single coroot c
 
 ## Main results
 
-* `TauCeti.map_ofAdd_mul_map_ofAdd_of_neg`: group inversion turns a triangular factorization of
-  `x(-r) y(-s)` into the opposite-order factorization of `y(s) x(r)` with inverted middle factor.
+* `TauCeti.map_ofAdd_mul_map_ofAdd_eq_of_map_ofAdd_neg_mul_map_ofAdd_neg_eq`: group inversion
+  turns a triangular factorization of `x(-r) y(-s)` into the opposite-order factorization of
+  `y(s) x(r)` with inverted middle factor.
 
 ## References
 
@@ -54,8 +55,8 @@ namespace TauCeti
 /-- **Reversing a triangular factorization of additive one-parameter homomorphisms.** Given
 `x, y : Multiplicative A →* G` and `t : M →* G`, inverting a factorization
 `x(-r) y(-s) = y(-s v) t(m) x(-r v)` yields `y(s) x(r) = x(r v) t(m⁻¹) y(s v)`. -/
-theorem map_ofAdd_mul_map_ofAdd_of_neg {A M G : Type*} [Ring A] [Group M] [Group G]
-    {x y : Multiplicative A →* G} {t : M →* G} {r s v : A} {m : M}
+theorem map_ofAdd_mul_map_ofAdd_eq_of_map_ofAdd_neg_mul_map_ofAdd_neg_eq {A M G : Type*}
+    [Ring A] [Group M] [Group G] {x y : Multiplicative A →* G} {t : M →* G} {r s v : A} {m : M}
     (h : x (Multiplicative.ofAdd (-r)) * y (Multiplicative.ofAdd (-s)) =
       y (Multiplicative.ofAdd (-s * v)) * t m * x (Multiplicative.ofAdd (-r * v))) :
     y (Multiplicative.ofAdd s) * x (Multiplicative.ofAdd r) =

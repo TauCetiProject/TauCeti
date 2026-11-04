@@ -125,9 +125,10 @@ theorem geckWeylRootSubgroupPoints_append_singleton_self_mul (l : List (Fin t.ra
         t.geckWeightTorusPoints ht A
           (fun k ↦ u⁻¹ ^ ((t.simplyConnectedRootDatum ht).coroot (t.geckWeylRootIndex ht l i) k)) *
         t.geckWeylRootSubgroupPoints ht (l ++ [i]) i A (Multiplicative.ofAdd (b * ↑u⁻¹)) := by
-  simpa only [Pi.inv_def, inv_zpow] using map_ofAdd_mul_map_ofAdd_of_neg
-    (t.geckWeylRootSubgroupPoints_mul_append_singleton_self ht l i A (-a) (-b) u
-      (by rwa [neg_mul_neg]))
+  simpa only [Pi.inv_def, inv_zpow] using
+    map_ofAdd_mul_map_ofAdd_eq_of_map_ofAdd_neg_mul_map_ofAdd_neg_eq
+      (t.geckWeylRootSubgroupPoints_mul_append_singleton_self ht l i A (-a) (-b) u
+        (by rwa [neg_mul_neg]))
 
 end
 
