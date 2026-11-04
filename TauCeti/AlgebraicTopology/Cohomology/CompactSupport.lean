@@ -183,10 +183,9 @@ lemma compactSupportCohomologyι_eq_zero_iff {n : ℕ} {K : Compacts X}
   constructor
   · intro hy
     rw [compactSupportCohomologyι_def] at hy
-    obtain ⟨L, i, j, hL⟩ := Concrete.colimit_exists_of_rep_eq
-      (X.compactSupportCohomologyDiagram R k M n) (i := K) (j := K) y 0
-      (hy.trans (map_zero _).symm)
-    exact ⟨L, i.le, hL.trans (map_zero _)⟩
+    obtain ⟨L, i, hL⟩ := Concrete.colimit_rep_eq_zero k
+      (X.compactSupportCohomologyDiagram R k M n) K y hy
+    exact ⟨L, i.le, hL⟩
   · rintro ⟨L, h, hL⟩
     rw [← singularCohomologyMap_comp_compactSupportCohomologyι_apply n h, hL, map_zero]
 
