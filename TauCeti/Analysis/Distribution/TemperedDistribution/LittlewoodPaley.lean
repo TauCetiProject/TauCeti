@@ -84,14 +84,6 @@ theorem littlewoodPaleyBlock_apply (j : ℕ) (u : 𝓢'(E, F)) :
       fourierMultiplierCLM F (fun ξ ↦ (φ.inhomogeneousLittlewoodPaley j ξ : ℂ)) u :=
   (rfl)
 
-omit [MeasurableSpace E] [BorelSpace E] in
-/-- The pieces of the inhomogeneous partition, viewed as complex-valued symbols, have temperate
-growth. -/
-private lemma hasTemperateGrowth_ofReal_inhomogeneousLittlewoodPaley (j : ℕ) :
-    (fun ξ ↦ (φ.inhomogeneousLittlewoodPaley j ξ : ℂ)).HasTemperateGrowth := by
-  have := φ.hasTemperateGrowth_inhomogeneousLittlewoodPaley j
-  fun_prop
-
 /-- The partial sums of the Littlewood–Paley blocks are the low-pass truncations:
 `∑_{j ≤ N} Δⱼ = 𝓕⁻ (φ (2^{-N} ·) • 𝓕 ·)`. -/
 theorem sum_littlewoodPaleyBlock_range (N : ℕ) :
@@ -99,7 +91,7 @@ theorem sum_littlewoodPaleyBlock_range (N : ℕ) :
       fourierMultiplierCLM F fun ξ ↦ (φ (((2 : ℝ) ^ N)⁻¹ • ξ) : ℂ) := by
   simp_rw [littlewoodPaleyBlock_eq]
   rw [← fourierMultiplierCLM_sum F
-    fun j _ ↦ hasTemperateGrowth_ofReal_inhomogeneousLittlewoodPaley φ j]
+    fun j _ ↦ φ.hasTemperateGrowth_ofReal_inhomogeneousLittlewoodPaley j]
   simp_rw [← Complex.ofReal_sum, φ.sum_inhomogeneousLittlewoodPaley_range]
 
 /-- **Littlewood–Paley reconstruction.** Every tempered distribution is the limit in `𝓢'(E, F)`
@@ -123,8 +115,8 @@ theorem littlewoodPaleyBlock_comp_littlewoodPaleyBlock (j k : ℕ) :
         ((φ.inhomogeneousLittlewoodPaley j ξ * φ.inhomogeneousLittlewoodPaley k ξ : ℝ) : ℂ) := by
   rw [littlewoodPaleyBlock_eq, littlewoodPaleyBlock_eq,
     fourierMultiplierCLM_compL_fourierMultiplierCLM
-      (hasTemperateGrowth_ofReal_inhomogeneousLittlewoodPaley φ k)
-      (hasTemperateGrowth_ofReal_inhomogeneousLittlewoodPaley φ j)]
+      (φ.hasTemperateGrowth_ofReal_inhomogeneousLittlewoodPaley k)
+      (φ.hasTemperateGrowth_ofReal_inhomogeneousLittlewoodPaley j)]
   congr 1
   funext ξ
   simp [mul_comm]
@@ -152,16 +144,16 @@ theorem littlewoodPaleyBlock_fourierMultiplierCLM {g : E → ℂ} (hg : g.HasTem
       fourierMultiplierCLM F g (littlewoodPaleyBlock F φ j u) := by
   rw [littlewoodPaleyBlock_apply, littlewoodPaleyBlock_apply,
     fourierMultiplierCLM_fourierMultiplierCLM_apply hg
-      (hasTemperateGrowth_ofReal_inhomogeneousLittlewoodPaley φ j),
+      (φ.hasTemperateGrowth_ofReal_inhomogeneousLittlewoodPaley j),
     fourierMultiplierCLM_fourierMultiplierCLM_apply
-      (hasTemperateGrowth_ofReal_inhomogeneousLittlewoodPaley φ j) hg, mul_comm]
+      (φ.hasTemperateGrowth_ofReal_inhomogeneousLittlewoodPaley j) hg, mul_comm]
 
 /-- The Littlewood–Paley blocks commute with each other. -/
 theorem littlewoodPaleyBlock_littlewoodPaleyBlock (j k : ℕ) (u : 𝓢'(E, F)) :
     littlewoodPaleyBlock F φ j (littlewoodPaleyBlock F φ k u) =
       littlewoodPaleyBlock F φ k (littlewoodPaleyBlock F φ j u) :=
   littlewoodPaleyBlock_fourierMultiplierCLM φ
-    (hasTemperateGrowth_ofReal_inhomogeneousLittlewoodPaley φ k) j u
+    (φ.hasTemperateGrowth_ofReal_inhomogeneousLittlewoodPaley k) j u
 
 /-- The Littlewood–Paley blocks commute with the Bessel potentials `J^s`. -/
 theorem littlewoodPaleyBlock_besselPotential (s : ℝ) (j : ℕ) (u : 𝓢'(E, F)) :
@@ -176,6 +168,6 @@ theorem littlewoodPaleyBlock_toTemperedDistribution [CompleteSpace F] (j : ℕ) 
       (SchwartzMap.fourierMultiplierCLM F (fun ξ ↦ (φ.inhomogeneousLittlewoodPaley j ξ : ℂ)) f :
         𝓢'(E, F)) :=
   fourierMultiplierCLM_toTemperedDistributionCLM_eq
-    (hasTemperateGrowth_ofReal_inhomogeneousLittlewoodPaley φ j) f
+    (φ.hasTemperateGrowth_ofReal_inhomogeneousLittlewoodPaley j) f
 
 end TemperedDistribution

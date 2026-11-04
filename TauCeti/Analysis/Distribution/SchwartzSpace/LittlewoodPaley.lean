@@ -223,6 +223,13 @@ theorem exists_norm_iteratedFDeriv_littlewoodPaleyPiece_le (N : ℕ) :
   gcongr
   exact Finset.single_le_sum (fun k _ ↦ hc0 k) (Finset.mem_range.2 (Nat.lt_succ_of_le hk))
 
+/-- The pieces of the inhomogeneous partition, viewed as complex-valued symbols, have temperate
+growth, so they are Fourier multipliers on Schwartz functions and on tempered distributions. -/
+theorem hasTemperateGrowth_ofReal_inhomogeneousLittlewoodPaley (j : ℕ) :
+    (fun ξ ↦ (φ.inhomogeneousLittlewoodPaley j ξ : ℂ)).HasTemperateGrowth := by
+  have := φ.hasTemperateGrowth_inhomogeneousLittlewoodPaley j
+  fun_prop
+
 end FiniteDimensional
 
 end ContDiffBump
@@ -242,8 +249,8 @@ theorem tendsto_smulLeftCLM_contDiffBump_two_pow (φ : ContDiffBump (0 : E)) (f 
       (𝓝 f) := by
   have hφ : (⇑φ).HasTemperateGrowth := φ.hasCompactSupport.hasTemperateGrowth φ.contDiff
   have hbdd (i : ℕ) : ∃ B, ∀ x, ‖iteratedFDeriv ℝ i φ x‖ ≤ B :=
-    (φ.contDiff.continuous_iteratedFDeriv (mod_cast le_top)).bounded_above_of_compact_support
-      (φ.hasCompactSupport.iteratedFDeriv i)
+    let ⟨C, _, hC⟩ := φ.hasCompactSupport.exists_bound_iteratedFDeriv φ.contDiff i
+    ⟨C, hC i le_rfl⟩
   have h := (tendsto_smulLeftCLM_comp_inv_smul_atTop φ.contDiff hbdd φ.eventuallyEq_one
     f).comp (tendsto_pow_atTop_atTop_of_one_lt (one_lt_two (α := ℝ)))
   refine h.congr fun N ↦ ?_
@@ -265,8 +272,7 @@ theorem tendsto_sum_fourierMultiplierCLM_inhomogeneousLittlewoodPaley
       fourierMultiplierCLM F (fun ξ ↦ (φ.inhomogeneousLittlewoodPaley j ξ : ℂ)) f =
         𝓕⁻ (smulLeftCLM F (fun ξ ↦ (φ (((2 : ℝ) ^ N)⁻¹ • ξ) : ℂ)) (𝓕 f)) := by
     rw [← _root_.sum_apply, ← fourierMultiplierCLM_sum F
-      fun j _ ↦ by
-        have := φ.hasTemperateGrowth_inhomogeneousLittlewoodPaley j; fun_prop]
+      fun j _ ↦ φ.hasTemperateGrowth_ofReal_inhomogeneousLittlewoodPaley j]
     simp_rw [← Complex.ofReal_sum, φ.sum_inhomogeneousLittlewoodPaley_range]
     rfl
   simp_rw [hsum]

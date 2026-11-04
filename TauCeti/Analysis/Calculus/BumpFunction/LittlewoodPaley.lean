@@ -368,13 +368,10 @@ theorem exists_norm_iteratedFDeriv_inhomogeneousLittlewoodPaley_le (k : ℕ) :
     ∃ B, 0 ≤ B ∧ ∀ (j : ℕ) (ξ : E),
       ‖iteratedFDeriv ℝ k (φ.inhomogeneousLittlewoodPaley j) ξ‖ ≤ B / (2 ^ j) ^ k := by
   obtain ⟨B, hB0, hB⟩ := φ.exists_norm_iteratedFDeriv_littlewoodPaley_le k
-  obtain ⟨M, hM⟩ := (φ.contDiff.continuous_iteratedFDeriv (m := k) (mod_cast le_top)
-    |>.norm).bounded_above_of_compact_support
-    (φ.hasCompactSupport.iteratedFDeriv k).norm
-  simp only [norm_norm] at hM
+  obtain ⟨M, -, hM⟩ := φ.hasCompactSupport.exists_bound_iteratedFDeriv φ.contDiff k
   refine ⟨max B M, le_max_of_le_left hB0, fun j ξ ↦ ?_⟩
   rcases j with _ | j
-  · simpa using (hM ξ).trans (le_max_right B M)
+  · simpa using (hM k le_rfl ξ).trans (le_max_right B M)
   · rw [inhomogeneousLittlewoodPaley_succ]
     refine (hB _ ξ).trans ?_
     rw [zpow_natCast]
