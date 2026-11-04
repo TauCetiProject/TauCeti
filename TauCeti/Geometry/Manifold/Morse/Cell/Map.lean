@@ -272,6 +272,14 @@ theorem coe_morseAttachingMap_apply (hk : k ≤ n) (hε : 0 ≤ ε) (w : TopCat.
     (morseAttachingMap ψ hk hε hball hf w : M) = morseCellMap ψ hk ε w.down :=
   (rfl)
 
+/-- On the boundary sphere, the characteristic map of the cell is its attaching map. This is the
+pointwise form of `OpenPartialHomeomorph.morseAttachingMap_comp_sublevelInclusion`. -/
+theorem coe_morseCharacteristicMap_diskBoundaryInclusion (hk : k ≤ n) (hε : 0 ≤ ε)
+    (s : TopCat.diskBoundary.{u} k) :
+    (morseCharacteristicMap ψ hk hε hball hf (TopCat.diskBoundaryInclusion k s) : M) =
+      morseAttachingMap ψ hk hε hball hf s :=
+  congrArg (morseCellMap ψ hk ε) (TauCeti.TopCat.coe_diskBoundaryInclusion_apply_down k s)
+
 /-- The attaching map is the restriction of the characteristic map to the boundary sphere: the
 square formed with the inclusions `∂D^k ⊆ D^k` and `M_{c-ε} ⊆ M_{c+ε}` commutes. This is the
 compatibility needed to glue the inclusion of `M_{c-ε}` and the characteristic map into a map
