@@ -92,9 +92,9 @@ private theorem integral_relations (k l : Fin (n + 1) ⊕ Fin (n + 1))
     have h := congrArg (LinearMap.toMatrix (latticeBasis n) (latticeBasis n)) hbracket
     simp only [Ring.lie_def, map_sub, LinearMap.toMatrix_mul, map_zero] at h
     simpa only [rootIntMatrix_eq_toMatrix, Ring.lie_def] using h
-  exact ⟨rootIntMatrix_mul_self n k, rootIntMatrix_mul_self n l,
+  exact ⟨rootIntMatrix_mul_self_eq_zero n k, rootIntMatrix_mul_self_eq_zero n l,
     Matrix.mul_mul_eq_zero_of_mul_self_eq_zero_of_lie_lie_eq_zero _ _
-      (rootIntMatrix_mul_self n k) hmat⟩
+      (rootIntMatrix_mul_self_eq_zero n k) hmat⟩
 
 private theorem commutator_matrix (k l : Fin (n + 1) ⊕ Fin (n + 1))
     (hkl : ⁅TauCeti.typeBSimpleRootGeneratorFamily (K := ℚ) k,

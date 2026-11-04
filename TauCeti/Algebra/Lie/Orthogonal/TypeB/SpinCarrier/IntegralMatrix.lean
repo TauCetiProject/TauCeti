@@ -13,10 +13,10 @@ public import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.Torus
 # Integral matrices of type-B spin generators
 
 The invariant spin lattice gives an integral matrix for each numbered simple root generator.
-Each generator squares to zero, so its root subgroup points are `1 + u X` over any commutative
-ring. Each matrix is supported on the pairs of basis vectors whose integral spin weights differ
-by the signed simple root of its generator. The bracket of opposite integral root matrices
-is the diagonal matrix of the basis spin weights' simple-coroot coordinates.
+Each generator squares to zero (`rootIntMatrix_mul_self_eq_zero`), so its root subgroup points are
+`1 + u X` over any commutative ring. Each matrix is supported on the pairs of basis vectors whose
+integral spin weights differ by the signed simple root of its generator. The bracket of opposite
+integral root matrices is the diagonal matrix of the basis spin weights' simple-coroot coordinates.
 
 ## References
 
@@ -61,6 +61,20 @@ theorem rootIntMatrix_eq_toMatrix (j : Fin (n + 1) ⊕ Fin (n + 1)) :
     (TauCeti.typeBSimpleRootGeneratorFamily (K := ℚ))
     (TauCeti.typeBSimpleCorootGenerator (K := ℚ)) (rep n) (lattice n).toAddSubgroup
     (rep_kostantForm_mem_lattice n) j (latticeBasis n)
+
+/-- Each integral spin root matrix squares to zero, before changing the coefficient ring. -/
+@[simp]
+theorem rootIntMatrix_mul_self_eq_zero (j : Fin (n + 1) ⊕ Fin (n + 1)) :
+    rootIntMatrix n j * rootIntMatrix n j = 0 := by
+  let X := kostantRootOperator
+    (TauCeti.typeBSimpleRootGeneratorFamily (K := ℚ))
+    (TauCeti.typeBSimpleCorootGenerator (K := ℚ)) (rep n) (lattice n).toAddSubgroup
+    (rep_kostantForm_mem_lattice n) j
+  have hXX : X * X = 0 :=
+    kostantRootOperator_mul_eq_zero _ _ _ _ _
+      (by simpa only [pow_two] using pow_two_rep_rootGenerator_eq_zero n j)
+  have h := congrArg (LinearMap.toMatrix (latticeBasis n) (latticeBasis n)) hXX
+  simpa only [X, LinearMap.toMatrix_mul, map_zero, ← rootIntMatrix_eq_toMatrix] using h
 
 /-- A represented root generator acts on a lattice basis vector by its integral matrix column. -/
 theorem rep_rootGenerator_latticeBasis_eq_sum (j : Fin (n + 1) ⊕ Fin (n + 1))
@@ -172,15 +186,6 @@ private noncomputable abbrev rootOp (j : Fin (n + 1) ⊕ Fin (n + 1)) :=
     (TauCeti.typeBSimpleRootGeneratorFamily (K := ℚ))
     (TauCeti.typeBSimpleCorootGenerator (K := ℚ)) (rep n) (lattice n).toAddSubgroup
     (rep_kostantForm_mem_lattice n) j
-
-/-- Every numbered integral spin root matrix squares to zero. -/
-theorem rootIntMatrix_mul_self (j : Fin (n + 1) ⊕ Fin (n + 1)) :
-    rootIntMatrix n j * rootIntMatrix n j = 0 := by
-  have h : rootOp n j * rootOp n j = 0 :=
-    kostantRootOperator_mul_eq_zero _ _ (rep n) _ (rep_kostantForm_mem_lattice n)
-    (by simpa only [pow_two] using pow_two_rep_rootGenerator_eq_zero n j)
-  simpa only [rootIntMatrix_eq_toMatrix, LinearMap.toMatrix_mul, rootOp, map_zero] using
-    congrArg (LinearMap.toMatrix (latticeBasis n) (latticeBasis n)) h
 
 -- Compute the endpoint identities over ℚ, then restrict to the invariant lattice before
 -- reducing coefficients. In particular no division by two occurs in the value ring.

@@ -59,8 +59,8 @@ def rankOneMatrix : SL(2, A) →* GL (Fin (dimension n)) A :=
   Sl2.squareZeroSL2Hom
     ((rootIntMatrix n (.inl i)).map (Int.cast : ℤ → A))
     ((rootIntMatrix n (.inr i)).map (Int.cast : ℤ → A))
-    (by rw [← Matrix.map_mul_intCast, rootIntMatrix_mul_self]; simp)
-    (by rw [← Matrix.map_mul_intCast, rootIntMatrix_mul_self]; simp)
+    (by rw [← Matrix.map_mul_intCast, rootIntMatrix_mul_self_eq_zero]; simp)
+    (by rw [← Matrix.map_mul_intCast, rootIntMatrix_mul_self_eq_zero]; simp)
     (by rw [← Matrix.map_mul_intCast, ← Matrix.map_mul_intCast,
       rootIntMatrix_inl_mul_inr_mul_inl])
     (by rw [← Matrix.map_mul_intCast, ← Matrix.map_mul_intCast,
