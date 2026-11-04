@@ -61,6 +61,14 @@ section map
 
 variable {R M} {N : Type*} [AddCommMonoid N] [Module R N]
 
+/-- The inverse length-one equivalence commutes with applying a linear map to its factor. -/
+theorem oneEquiv_symm_comp (f : M →ₗ[R] N) :
+    (oneEquiv R N).symm.toLinearMap ∘ₗ f =
+      PiTensorProduct.map (fun _ : Fin 1 ↦ f) ∘ₗ (oneEquiv R M).symm.toLinearMap := by
+  ext x
+  simp only [LinearMap.comp_apply, LinearEquiv.coe_coe, oneEquiv_symm_apply,
+    PiTensorProduct.map_tprod]
+
 /-- Concatenating tensor powers intertwines the tensor product of two tensor-power maps with the
 tensor-power map of the appended family of factors. -/
 theorem mulEquiv_comp_map {d e : ℕ} (f : Fin d → M →ₗ[R] N) (g : Fin e → M →ₗ[R] N) :

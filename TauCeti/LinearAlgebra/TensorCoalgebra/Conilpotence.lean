@@ -108,12 +108,11 @@ theorem map_letter_comp_iteratedDeconcatenation (n : ℕ) :
   have hletter : PiTensorProduct.map (fun _ : Fin 1 ↦ letter R M) ∘ₗ
       (TauCeti.TensorPower.oneEquiv R (ReducedTensorWords R M)).symm.toLinearMap =
         component R M 1 := by
+    rw [← TauCeti.TensorPower.oneEquiv_symm_comp]
     apply LinearMap.ext
     intro z
-    simp only [LinearMap.comp_apply, LinearEquiv.coe_coe,
-      TauCeti.TensorPower.oneEquiv_symm_apply, PiTensorProduct.map_tprod, letter_apply]
-    exact (TauCeti.TensorPower.oneEquiv R M).injective
-      (by simp only [TauCeti.TensorPower.oneEquiv_tprod])
+    simp only [LinearMap.comp_apply, LinearEquiv.coe_coe, letter_apply,
+      LinearEquiv.symm_apply_apply]
   induction n with
   | zero => exact hletter
   | succ n ih =>
@@ -183,11 +182,8 @@ theorem iteratedDeconcatenation_natural (f : M →ₗ[R] N) (n : ℕ) :
       (TauCeti.TensorPower.oneEquiv R (ReducedTensorWords R N)).symm.toLinearMap ∘ₗ
           ReducedTensorWords.map R f =
         PiTensorProduct.map (fun _ : Fin 1 ↦ ReducedTensorWords.map R f) ∘ₗ
-          (TauCeti.TensorPower.oneEquiv R (ReducedTensorWords R M)).symm.toLinearMap := by
-    apply LinearMap.ext
-    intro z
-    simp only [LinearMap.comp_apply, LinearEquiv.coe_coe,
-      TauCeti.TensorPower.oneEquiv_symm_apply, PiTensorProduct.map_tprod]
+          (TauCeti.TensorPower.oneEquiv R (ReducedTensorWords R M)).symm.toLinearMap :=
+    TauCeti.TensorPower.oneEquiv_symm_comp (ReducedTensorWords.map R f)
   induction n with
   | zero => simpa only [iteratedDeconcatenation_zero] using hone
   | succ n ih =>
