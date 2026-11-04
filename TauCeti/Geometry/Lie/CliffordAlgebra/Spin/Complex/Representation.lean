@@ -76,6 +76,7 @@ theorem complexSpinSmoothHom_apply :
   intro g
   simp only [complexSpinSmoothHom, ContMDiffMonoidMorphism.coe_comp, Function.comp_apply,
     TauCeti.Lie.EmbeddedLieSubgroupData.subtypeVal_apply, unitsSmoothHom_apply]
+  -- Restricting scalars preserves the underlying function, hence its induced map on units.
   rfl
 
 /-- In quadratic coordinates, the real differential of a complex Clifford action restricted
@@ -100,7 +101,7 @@ end AlgHom
 namespace TauCeti.SpinPolarizationData
 
 variable {n : ℕ} {Q : QuadraticForm ℂ (Fin n → ℂ)} (P : SpinPolarizationData Q)
-  (hQ : Q.Nondegenerate) {ι : Type*} [Fintype ι] [DecidableEq ι]
+  {ι : Type*} [Fintype ι] [DecidableEq ι]
   (b : Module.Basis ι ℂ (ExteriorAlgebra ℂ P.W))
 
 local notation "SpinUnitsRange" => MonoidHom.range (spinGroup.toUnits (Q := Q))
@@ -112,36 +113,56 @@ local notation "SpinLieModel" =>
 /-- The native Fock representation, in a chosen finite spinor basis, as a smooth homomorphism
 on the complex Spin range with its underlying real smooth structure. -/
 def complexSpinSmoothMatrixHom :
-    letI := (complexSpinEmbeddedLieSubgroupData hQ).chartedSpace
-    letI := (complexSpinEmbeddedLieSubgroupData hQ).lieGroup
+    letI := (complexSpinEmbeddedLieSubgroupData
+      (P.nondegenerate (.of_ne_zero two_ne_zero))).chartedSpace
+    letI := (complexSpinEmbeddedLieSubgroupData
+      (P.nondegenerate (.of_ne_zero two_ne_zero))).lieGroup
     ContMDiffMonoidMorphism 𝓘(ℝ, SpinLieModel) 𝓘(ℝ, Matrix ι ι ℂ) ∞
       SpinUnitsRange (Matrix ι ι ℂ)ˣ := by
-  letI := (complexSpinEmbeddedLieSubgroupData hQ).chartedSpace
-  letI := (complexSpinEmbeddedLieSubgroupData hQ).lieGroup
-  exact (((LinearMap.toMatrixAlgEquiv b).toAlgHom).comp (spinAction Q P)).complexSpinSmoothHom hQ
+  letI := (complexSpinEmbeddedLieSubgroupData
+    (P.nondegenerate (.of_ne_zero two_ne_zero))).chartedSpace
+  letI := (complexSpinEmbeddedLieSubgroupData
+    (P.nondegenerate (.of_ne_zero two_ne_zero))).lieGroup
+  exact (((LinearMap.toMatrixAlgEquiv b).toAlgHom).comp (spinAction Q P)).complexSpinSmoothHom
+    (P.nondegenerate (.of_ne_zero two_ne_zero))
+
+/-- The smooth matrix action on any element of the Spin range is the matrix of its Fock action. -/
+@[simp]
+theorem coe_complexSpinSmoothMatrixHom_apply (g : SpinUnitsRange) :
+    letI := (complexSpinEmbeddedLieSubgroupData
+      (P.nondegenerate (.of_ne_zero two_ne_zero))).chartedSpace
+    letI := (complexSpinEmbeddedLieSubgroupData
+      (P.nondegenerate (.of_ne_zero two_ne_zero))).lieGroup
+    (P.complexSpinSmoothMatrixHom b g : Matrix ι ι ℂ) =
+      LinearMap.toMatrix b b (spinAction Q P (g : (CliffordAlgebra Q)ˣ)) := by
+  ext i j
+  simp [complexSpinSmoothMatrixHom, LinearMap.toMatrixAlgEquiv_apply,
+    LinearMap.toMatrix_apply]
 
 /-- On the canonical unit of a native Spin element, the smooth matrix action is precisely
 `spinRep` expressed in the chosen spinor basis. -/
-@[simp]
-theorem coe_complexSpinSmoothMatrixHom_apply (g : spinGroup Q) :
-    letI := (complexSpinEmbeddedLieSubgroupData hQ).chartedSpace
-    letI := (complexSpinEmbeddedLieSubgroupData hQ).lieGroup
-    (P.complexSpinSmoothMatrixHom hQ b ⟨spinGroup.toUnits g, ⟨g, rfl⟩⟩ : Matrix ι ι ℂ) =
+theorem complexSpinSmoothMatrixHom_toUnits_eq_spinRep (g : spinGroup Q) :
+    letI := (complexSpinEmbeddedLieSubgroupData
+      (P.nondegenerate (.of_ne_zero two_ne_zero))).chartedSpace
+    letI := (complexSpinEmbeddedLieSubgroupData
+      (P.nondegenerate (.of_ne_zero two_ne_zero))).lieGroup
+    (P.complexSpinSmoothMatrixHom b ⟨spinGroup.toUnits g, ⟨g, rfl⟩⟩ : Matrix ι ι ℂ) =
       LinearMap.toMatrix b b (spinRep Q P g) := by
-  ext i j
-  simp [complexSpinSmoothMatrixHom, spinRep_apply, LinearMap.toMatrixAlgEquiv_apply,
-    LinearMap.toMatrix_apply]
+  simp only [coe_complexSpinSmoothMatrixHom_apply, spinGroup.val_toUnits_apply, spinRep_apply]
 
 /-- The real differential of the smooth Fock representation is the same quadratic Clifford
 operator in the chosen spinor basis. -/
+@[simp↓ high]
 theorem unitsLieAlgebraLieEquiv_lieMap_complexSpinSmoothMatrixHom :
-    letI := (complexSpinEmbeddedLieSubgroupData hQ).chartedSpace
-    letI := (complexSpinEmbeddedLieSubgroupData hQ).lieGroup
+    letI := (complexSpinEmbeddedLieSubgroupData
+      (P.nondegenerate (.of_ne_zero two_ne_zero))).chartedSpace
+    letI := (complexSpinEmbeddedLieSubgroupData
+      (P.nondegenerate (.of_ne_zero two_ne_zero))).lieGroup
     ∀ X : LeftInvariantDerivation 𝓘(ℝ, SpinLieModel) SpinUnitsRange,
-    TauCeti.Lie.unitsLieAlgebraLieEquiv (lieMap (P.complexSpinSmoothMatrixHom hQ b) X) =
+    TauCeti.Lie.unitsLieAlgebraLieEquiv (lieMap (P.complexSpinSmoothMatrixHom b) X) =
       LinearMap.toMatrix b b
         (spinAction Q P (RestrictScalars.addEquiv ℝ ℂ (quadraticLieSubalgebra Q)
-          (complexSpinLieEquivQuadratic hQ X))) := by
+          (complexSpinLieEquivQuadratic (P.nondegenerate (.of_ne_zero two_ne_zero)) X))) := by
   intro X
   simp only [complexSpinSmoothMatrixHom,
     AlgHom.unitsLieAlgebraLieEquiv_lieMap_complexSpinSmoothHom,
