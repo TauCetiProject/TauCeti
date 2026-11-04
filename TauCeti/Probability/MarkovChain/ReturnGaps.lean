@@ -22,8 +22,7 @@ any process with the Markov-chain path law. Together with
 `successiveVisit_eq_sum_returnGap`, these allow laws of large numbers for independent
 return cycles to be applied to occupation counts. No finite-mean assumption is made.
 
-The independence argument consumes `iIndepFun_excursionProcess` and
-`map_excursionProcess_eq_excursionLaw` from the existing excursion decomposition.
+These laws are derived from the i.i.d. excursion decomposition at a recurrent state.
 
 ## References
 
@@ -121,7 +120,7 @@ theorem natCast_returnGap_markovChainLaw
       markovChainLaw (Measure.dirac a) κ] hittingAfter (fun n x => x n) {a} 1 := by
     filter_upwards [hret, markovChainLaw_dirac_ae_apply_zero κ a] with x hx hx0
     rw [← successiveVisit_one_eq_hittingAfter_of_zero hx0,
-      successiveVisit_eq_sum_returnGap hx hx0 1]
+      successiveVisit_eq_sum_returnGap (exists_visitCount_of_infinite hx 1) hx0]
     simp
   have heq : (markovChainLaw (Measure.dirac a) κ).map
       (fun x => (returnGap (fun n x => x n) a 0 x : WithTop ℕ)) =

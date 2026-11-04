@@ -23,9 +23,9 @@ The finite-value characterization connects these stopping times to the combinato
 `hittingAfter` starting strictly after the current visit, including when there is no
 next visit. The natural-valued `returnGap` is the difference of consecutive
 combinatorial visit times; for realized consecutive visits it is the excursion length
-plus one. On an infinitely returning path, summing these gaps recovers the elapsed
-time since the first entrance. Missing visits leave only default gap values, not
-finite return durations. These identities connect stopping-time and excursion
+plus one. Up to any existing visit, summing these gaps recovers the elapsed time
+since the first entrance. Missing visits leave only default gap values, not finite
+return durations. These identities connect stopping-time and excursion
 arguments with sums of return cycles.
 
 ## References
@@ -294,19 +294,30 @@ theorem returnGap_const (a : α) (k : ℕ) (ω : Ω) :
     returnGap (fun _ (_ : Ω) => a) a k ω = 1 := by
   simp [returnGap_def, visitTime_def]
 
-/-- Summing return gaps recovers the elapsed time since the first entrance. -/
-theorem sum_returnGap (h : {n | X n ω = a}.Infinite) (n : ℕ) :
+/-- If visit `n` exists, the first `n` return gaps sum to the time from the first visit
+(index zero) to visit `n`. -/
+theorem sum_returnGap
+    (h : ∃ m, X m ω = a ∧ visitCount (fun i => X i ω) a m = n) :
     ∑ k ∈ Finset.range n, returnGap X a k ω =
       visitTime (fun i => X i ω) a n - visitTime (fun i => X i ω) a 0 := by
-  simp only [returnGap_def]
-  exact Finset.sum_range_tsub (visitTime_strictMono_of_infinite h).monotone n
+  induction n with
+  | zero => simp
+  | succ n ih =>
+    rw [Finset.sum_range_succ, ih (exists_visitCount_of_le h (Nat.le_succ n)), returnGap_def]
+    have hnext := visitTime_lt_visitTime_of_le h (Nat.lt_succ_self n) le_rfl
+    have hfirst : visitTime (fun i => X i ω) a 0 ≤ visitTime (fun i => X i ω) a n := by
+      cases n with
+      | zero => rfl
+      | succ n => exact (visitTime_lt_visitTime_of_le h (Nat.zero_lt_succ n)
+          (Nat.le_succ _)).le
+    exact (add_comm _ _).trans (tsub_add_tsub_cancel hnext.le hfirst)
 
-/-- Starting at `a`, the successive visits are partial sums of the return gaps. -/
-theorem successiveVisit_eq_sum_returnGap (h : {n | X n ω = a}.Infinite)
-    (h0 : X 0 ω = a) (n : ℕ) :
+/-- Starting at `a`, each existing successive visit is a partial sum of the return gaps. -/
+theorem successiveVisit_eq_sum_returnGap
+    (h : ∃ m, X m ω = a ∧ visitCount (fun i => X i ω) a m = n) (h0 : X 0 ω = a) :
     successiveVisit X a n ω = (∑ k ∈ Finset.range n, returnGap X a k ω : ℕ) := by
   rw [sum_returnGap h, visitTime_zero_of_eq h0, Nat.sub_zero]
-  exact successiveVisit_eq_visitTime (exists_visitCount_of_infinite h n)
+  exact successiveVisit_eq_visitTime h
 
 variable [MeasurableSpace Ω] [MeasurableSpace α]
 
