@@ -9,7 +9,7 @@ public import Mathlib.Geometry.Manifold.Algebra.SMul
 public import Mathlib.Geometry.Manifold.Algebra.Structures
 public import TauCeti.Analysis.LocallyConvex.Bounded
 public import TauCeti.Geometry.Manifold.Riemannian.Basic
-public import TauCeti.Geometry.Manifold.VectorBundle.Tangent
+public import TauCeti.Geometry.Manifold.VectorBundle.Tangent.Basic
 
 /-!
 # Warped products of Riemannian manifolds

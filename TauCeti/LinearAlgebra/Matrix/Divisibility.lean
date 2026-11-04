@@ -112,12 +112,12 @@ theorem forall_dvd_apply_iff_of_mul_eq_mul {R : Type*} [CommRing R] [Fintype n] 
   constructor
   · intro hA i j
     have hij := dvd_mul_mul_apply hA W.adjugate W i j
-    rw [mul_assoc, ← h, ← mul_assoc, adjugate_mul, smul_mul, one_mul, smul_apply,
+    rw [mul_assoc, ← h, ← mul_assoc, adjugate_mul, smul_mul, one_mul, Matrix.smul_apply,
       smul_eq_mul] at hij
     exact he.dvd_of_dvd_mul_left hij
   · intro hB i j
     have hij := dvd_mul_mul_apply hB W W.adjugate i j
-    rw [h, mul_assoc, mul_adjugate, Matrix.mul_smul, mul_one, smul_apply, smul_eq_mul] at hij
+    rw [h, mul_assoc, mul_adjugate, Matrix.mul_smul, mul_one, Matrix.smul_apply, smul_eq_mul] at hij
     exact he.dvd_of_dvd_mul_left hij
 
 /-- **Divisibility criterion for `diagonal a * W = v * diagonal a`.** Such a matrix `W` exists
@@ -170,7 +170,7 @@ theorem dvd_apply_mul_of_dvd_row {R : Type*} [CommRing R] [IsDomain R] [Fintype 
   have hj := h j
   have hrow : (σ * diagonal a * τ * diagonal b) i j =
       ((fun k ↦ σ i k * a k) ᵥ* τ) j * b j := by
-    rw [mul_diagonal, mul_apply]
+    rw [mul_diagonal, Matrix.mul_apply]
     simp only [mul_diagonal, vecMul, dotProduct]
   rw [hrow, he, ← mul_assoc, mul_right_comm] at hj
   exact (dvd_mul_right _ e).trans ((mul_dvd_mul_iff_right (hb₀ j)).1 hj)

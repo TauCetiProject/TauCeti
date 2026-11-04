@@ -22,7 +22,8 @@ Both coefficient cohomology dimensions and both structure-sheaf dimensions are p
 field extension, by flat base change of cohomology
 (`TauCeti.AlgebraicGeometry.finrank_cohomology_pullback_eq_of_isPullback`). This makes degree,
 and hence the subgroup of degree-zero line-bundle classes, compatible with extension of the base
-field.
+field. The trivial extension shows that pullback along an isomorphism of schemes over the field
+preserves degree (`TauCeti.AlgebraicGeometry.LineBundleClass.eulerDegree_pullback_of_isIso`).
 
 ## References
 
@@ -74,6 +75,20 @@ theorem eulerDegree_pullback [CompactSpace X] [IsAffineHom (pullback.diagonal (t
     eulerDegree K (pullback g a) = eulerDegree k a := by
   obtain ⟨L, rfl⟩ := mk_surjective a
   rw [pullback_mk, eulerDegree_mk, eulerDegree_mk, InvertibleSheaf.eulerDegree_pullback H]
+
+omit [Y.Over (Spec (.of K))] in
+/-- Pullback along an isomorphism of schemes over `k` preserves the Euler-characteristic degree
+of a line-bundle class on a quasi-compact scheme with affine diagonal. This is the case of the
+trivial field extension in `eulerDegree_pullback`. -/
+theorem eulerDegree_pullback_of_isIso [Y.Over (Spec (.of k))] [CompactSpace X]
+    [IsAffineHom (pullback.diagonal (terminal.from X))] (e : Y ⟶ X) [IsIso e]
+    (he : e ≫ (X ↘ Spec (.of k)) = Y ↘ Spec (.of k)) (a : LineBundleClass X) :
+    eulerDegree k (pullback e a) = eulerDegree k a := by
+  -- `e` is a pullback square along `Spec.map (algebraMap k k) = 𝟙 _`.
+  have hid : Spec.map (CommRingCat.ofHom (algebraMap k k)) = 𝟙 _ := by
+    rw [Algebra.algebraMap_self, CommRingCat.ofHom_id, Spec.map_id]
+  have : IsIso (Spec.map (CommRingCat.ofHom (algebraMap k k))) := hid ▸ inferInstance
+  exact eulerDegree_pullback (.of_horiz_isIso ⟨by rw [hid, Category.comp_id, he]⟩) a
 
 end LineBundleClass
 

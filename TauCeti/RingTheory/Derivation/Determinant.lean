@@ -59,7 +59,7 @@ theorem leibniz_det {n : Type*} [Fintype n] [DecidableEq n] (M : Matrix n n A) :
   have htrace : (M.adjugate * M.map D).trace =
       ∑ j, (M.updateCol j fun k => D (M k j)).det := by
     refine sum_congr rfl fun j _ => ?_
-    rw [diag_apply, mul_apply, ← cramer_apply, cramer_eq_adjugate_mulVec]
+    rw [diag_apply, Matrix.mul_apply, ← cramer_apply, cramer_eq_adjugate_mulVec]
     simp only [mulVec, dotProduct, map_apply]
   simp only [htrace, det_apply, map_sum, map_zsmul_unit, leibniz_prod, smul_eq_mul, hcol,
     smul_sum]

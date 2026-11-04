@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Analysis.PDE.SeibergWitten.QuadraticTwoForm
 public import TauCeti.Analysis.InnerProductSpace.HodgeStar.Isometry
-public import TauCeti.Analysis.InnerProductSpace.ExteriorPower
+public import TauCeti.Analysis.InnerProductSpace.ExteriorPower.Basic
 -- Private: the intertwining of the whole Clifford algebra and the quadratic isometry induced by
 -- `f` are used only inside proofs.
 import TauCeti.LinearAlgebra.CliffordAlgebra.Functoriality

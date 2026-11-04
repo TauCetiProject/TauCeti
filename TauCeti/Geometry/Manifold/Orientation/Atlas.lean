@@ -7,8 +7,9 @@ module
 
 public import TauCeti.Geometry.Manifold.Orientation.OrientedAtlas
 public import TauCeti.Geometry.Manifold.Orientation.Basic
+import Mathlib.Geometry.Manifold.MFDeriv.Tangent
 import TauCeti.Geometry.Manifold.MFDeriv.Chart
-import TauCeti.Geometry.Manifold.VectorBundle.Tangent
+import TauCeti.Geometry.Manifold.VectorBundle.Tangent.Basic
 public import TauCeti.Topology.VectorBundle.Orientation.Atlas
 public import Mathlib.Geometry.Manifold.MFDeriv.Atlas
 
@@ -18,6 +19,11 @@ public import Mathlib.Geometry.Manifold.MFDeriv.Atlas
 An oriented subatlas of the maximal atlas determines an actual orientation, also at boundary and
 corner points. The converse, existence of an oriented atlas for every orientation,
 is not proved here.
+
+When the given atlas is itself oriented, every model orientation is the model orientation of an
+orientation lift all of whose chart signs are `1` (`Manifold.OrientationLift.ofHasGroupoid`). It
+represents the orientation of that atlas (`Manifold.OrientationLift.mk_ofHasGroupoid`), and chart
+computations with it involve no signs.
 -/
 
 public section
@@ -154,6 +160,23 @@ theorem IsOrientedAtlas.orientation_spec {A : Set (OpenPartialHomeomorph M H)}
   rw [IsOrientedAtlas.orientation, Manifold.Orientation.orientationAt_mk]
   exact (hA.orientationData model hι).property e he x hx
 
+/-- At a point whose preferred chart belongs to the oriented atlas, the constructed tangent
+orientation, read in that chart, is the chosen model orientation. -/
+theorem IsOrientedAtlas.orientationAt_orientation {A : Set (OpenPartialHomeomorph M H)}
+    (hA : IsOrientedAtlas I n A) (model : Orientation ℝ E ι)
+    (hι : Fintype.card ι = Module.finrank ℝ E) {x : M} (hx : chartAt H x ∈ A) :
+    Manifold.Orientation.orientationAt (hA.orientation model hι) x = model := by
+  obtain ⟨L, hL, hmap⟩ := hA.orientation_spec model hι hx (mem_chart_source H x)
+  -- The derivative of the preferred chart at its own centre is the identity of the model.
+  have hLv (v : TangentSpace I x) : L v = v := by
+    have := congrArg (fun f : TangentSpace I x →L[ℝ] E ↦ f v) hL
+    simp only [ContinuousLinearEquiv.coe_coe] at this
+    rw [this, mfderiv_chartAt_eq_tangentCoordChange (mem_chart_source H x)]
+    exact tangentCoordChange_self (mem_extChartAt_source x)
+  have hrefl : L.toLinearEquiv = LinearEquiv.refl ℝ E := LinearEquiv.ext hLv
+  rw [hrefl] at hmap
+  exact (Equiv.ext_iff.mp (Orientation.map_refl (R := ℝ) (M := E) ι) _).symm.trans hmap
+
 /-- An oriented atlas gives orientability, including at boundary and corner points. -/
 theorem IsOrientedAtlas.orientable {n : ℕ∞ω} [NeZero n]
     {A : Set (OpenPartialHomeomorph M H)} (hA : IsOrientedAtlas I n A) : Orientable I M :=
@@ -163,4 +186,23 @@ theorem IsOrientedAtlas.orientable {n : ℕ∞ω} [NeZero n]
 theorem Orientable.of_hasGroupoid [HasGroupoid M (orientationPreservingGroupoid I)] :
     Orientable I M :=
   (isOrientedAtlas_atlas I 1 M).orientable
+
+/-! ### Lifts with trivial chart signs -/
+
+namespace Manifold.OrientationLift
+
+variable [HasGroupoid M (orientationPreservingGroupoid I)]
+  (model : _root_.Orientation ℝ E ι) (hι : Fintype.card ι = Module.finrank ℝ E)
+
+/-- The lift with trivial chart signs represents the orientation that the given atlas determines
+with the same model orientation. -/
+theorem mk_ofHasGroupoid :
+    Manifold.Orientation.mk (ofHasGroupoid (I := I) (M := M) model hι) =
+      (isOrientedAtlas_atlas I 1 M).orientation model hι := by
+  ext x
+  rw [Manifold.Orientation.orientationAt_mk, orientationAt_ofHasGroupoid,
+    IsOrientedAtlas.orientationAt_orientation _ _ _ (chart_mem_atlas H x)]
+
+end Manifold.OrientationLift
+
 end TauCeti

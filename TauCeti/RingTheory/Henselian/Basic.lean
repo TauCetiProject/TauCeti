@@ -150,7 +150,7 @@ private theorem exists_mem_eval_eq_zero {R : Type*} [CommRing R] {J : Ideal R}
     (hu₁ : IsUnit (g.coeff 1)) : ∃ b ∈ J, g.eval b = 0 := by
   rcases subsingleton_or_nontrivial R with _ | _
   · exact ⟨0, J.zero_mem, Subsingleton.elim _ _⟩
-  have := isLocalHom_of_le_jacobson_bot J HenselianRing.jac
+  have := _root_.isLocalHom_of_le_jacobson (HenselianRing.jac (R := R) (I := J))
   set c := g.coeff 0 with hc
   set u := g.coeff 1 with hu
   -- `g` is not constant, so its degree is `k + 1` for some `k`.
@@ -194,7 +194,7 @@ theorem exists_isRoot_sub_mem {R : Type*} [CommRing R] {J : Ideal R} [HenselianR
     (f : R[X]) {a₀ : R} (h₁ : f.eval a₀ ∈ J)
     (h₂ : IsUnit (Ideal.Quotient.mk J (f.derivative.eval a₀))) :
     ∃ a : R, f.IsRoot a ∧ a - a₀ ∈ J := by
-  have := isLocalHom_of_le_jacobson_bot J HenselianRing.jac
+  have := _root_.isLocalHom_of_le_jacobson (HenselianRing.jac (R := R) (I := J))
   -- Translate the approximate root to `0`.
   set g := f.comp (X + C a₀) with hg
   have hc : g.coeff 0 ∈ J := by simpa [hg, coeff_zero_eq_eval_zero] using h₁
@@ -285,7 +285,7 @@ theorem exists_pow_eq_and_sub_one_mem_of_sub_one_mem {I J : Ideal R} [HenselianR
   have ha_quot : Ideal.Quotient.mk J a = 1 := by
     rw [← map_one (Ideal.Quotient.mk J), Ideal.Quotient.eq]
     exact ha1
-  have := isLocalHom_of_le_jacobson_bot J HenselianRing.jac
+  have := _root_.isLocalHom_of_le_jacobson (HenselianRing.jac (R := R) (I := J))
   have hunit : IsUnit (∑ j ∈ Finset.range n, a ^ j) :=
     isUnit_of_map_unit (Ideal.Quotient.mk J) _
       (by simpa [ha_quot] using hn.map (Ideal.Quotient.mk J))

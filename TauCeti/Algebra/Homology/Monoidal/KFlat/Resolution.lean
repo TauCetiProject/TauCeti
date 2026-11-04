@@ -12,6 +12,7 @@ public import Mathlib.CategoryTheory.ObjectProperty.FiniteProducts
 import Mathlib.CategoryTheory.Abelian.Refinements
 import TauCeti.CategoryTheory.Abelian.GrothendieckAxioms.Colim
 import TauCeti.CategoryTheory.ObjectProperty.FunctorCategory.PreservesLimits
+import Mathlib.CategoryTheory.ObjectProperty.FunctorCategory.ExactColimits
 
 /-!
 # K-flat resolutions of unbounded complexes
@@ -166,9 +167,9 @@ image in `K`. -/
     (attachingMap (stage E p K k).2 fun n ↦ p (boundaryPairs (stage E p K k).2 n))
 
 /-- The morphisms from the stages of the resolution to `K`. -/
-@[expose] public def toComplex : sequence E p K ⟶ (Functor.const ℕ).obj K :=
+@[expose] public def toComplex : sequence E p K ⟶ (CategoryTheory.Functor.const ℕ).obj K :=
   NatTrans.ofSequence (fun k ↦ (stage E p K k).2) fun k ↦
-    (congrArg (· ≫ _) (Functor.ofSequence_map_homOfLE_succ _ k)).trans
+    (congrArg (· ≫ _) (CategoryTheory.Functor.ofSequence_map_homOfLE_succ _ k)).trans
       ((inr_attachDesc _ _).trans (Category.comp_id _).symm)
 
 /-- The initial stage of the resolution is the complex with zero differentials of the covers of
@@ -203,7 +204,7 @@ public lemma sequence_map_succ (k : ℕ) :
     (sequence E p K).map (homOfLE (k.le_add_right 1)) =
       mappingCone.inr (attachingMap ((toComplex E p K).app k)
         fun n ↦ p (boundaryPairs ((toComplex E p K).app k) n)) :=
-  Functor.ofSequence_map_homOfLE_succ _ k
+  CategoryTheory.Functor.ofSequence_map_homOfLE_succ _ k
 
 lemma quasiIso_colimit_desc [HasColimitsOfShape ℕ C] [HasExactColimitsOfShape ℕ C]
     [∀ X, Epi (p X)] :
@@ -226,7 +227,7 @@ lemma quasiIso_colimit_desc [HasColimitsOfShape ℕ C] [HasExactColimitsOfShape 
     hH.mono_of_comp_map_succ_eq_zero _ fun k X g hg ↦ by
       have := comp_homologyMap_inr_eq_zero (stage E p K k).2
         (fun n ↦ p (boundaryPairs (stage E p K k).2 n)) g (by rw [← hι k]; exact hg)
-      rw [Functor.comp_map, sequence_map_succ]
+      rw [CategoryTheory.Functor.comp_map, sequence_map_succ]
       exact this
   exact isIso_of_mono_of_epi _
 

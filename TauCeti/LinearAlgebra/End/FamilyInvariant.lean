@@ -106,9 +106,9 @@ theorem commute_baseChange_of_forall_tmul_eq_smul {A : Type*} [Semiring A] [Alge
   apply LinearMap.ext
   intro z
   induction z using TensorProduct.inductionOn with
-  | add x y hx hy => simpa only [Module.End.mul_apply, map_add] using congrArg₂ (· + ·) hx hy
+  | add x y hx hy => simpa only [_root_.mul_apply_eq_comp, map_add] using congrArg₂ (· + ·) hx hy
   | tmul a v =>
-      simp only [Module.End.mul_apply, LinearMap.baseChange_tmul]
+      simp only [_root_.mul_apply_eq_comp, LinearMap.baseChange_tmul]
       simpa only [← map_smul, TensorProduct.smul_tmul', smul_eq_mul, mul_one] using
         congrArg (a • ·) (hx v)
 

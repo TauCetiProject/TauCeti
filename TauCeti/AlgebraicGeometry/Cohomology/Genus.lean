@@ -94,7 +94,7 @@ theorem finrank_cohomology_zero_trivial_eq_one_of_surjective [Nonempty X]
   -- of asking a reflexive equivalence to identify the two section types implicitly.
   change finrank k Γ(X, ⊤) = 1
   have hv : (1 : Γ(X, ⊤)) ≠ 0 := one_ne_zero
-  refine (finrank_eq_one_iff_of_nonzero' 1 hv).mpr fun w ↦ ?_
+  refine (finrank_eq_one_iff_of_ne_zero' 1 hv).mpr fun w ↦ ?_
   obtain ⟨c, hc⟩ := hφ w
   refine ⟨c, ?_⟩
   calc

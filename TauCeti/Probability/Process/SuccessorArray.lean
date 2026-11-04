@@ -294,7 +294,7 @@ private theorem measurable_pathOfSuccessors_apply (n : ℕ) :
     Measurable fun q : α × (α → ℕ → α) => pathOfSuccessors q.1 q.2 n := by
   classical
   induction n using Nat.strong_induction_on with
-  | h n ih =>
+  | ind n ih =>
     cases n with
     | zero => simpa only [pathOfSuccessors_zero] using measurable_fst
     | succ n =>

@@ -112,31 +112,19 @@ private theorem cup_trace_norm (ε : Fin 2) (i : Fin 4) :
       Nat.cast_zero, Nat.cast_one, Matrix.cons_val_zero, Matrix.cons_val_one,
       Matrix.cons_val_two, Matrix.cons_val_three, zero_add, add_zero, one_add_one_eq_two,
       ZMod.natCast_self]
-    all_goals first
-      | (apply (serreEps_eq_zero_iff _).2
-         norm_num [traceUnitPart, IsUnit.unit_spec, map_ofNat]
-         all_goals decide)
-      | (apply (serreEps_eq_one_iff _).2
-         norm_num [traceUnitPart, IsUnit.unit_spec, map_ofNat]
-         all_goals decide)
+    all_goals first | apply (serreEps_eq_zero_iff _).2 | apply (serreEps_eq_one_iff _).2
+    all_goals norm_num [traceUnitPart, IsUnit.unit_spec, map_ofNat]
+    all_goals decide
   have hen : serreEps (cupUnitPart i) = (![1, 0, 1, 0] i : ZMod 2) := by
     fin_cases i <;> simp only [Matrix.cons_val_zero', Matrix.cons_val_succ']
-    all_goals first
-      | (apply (serreEps_eq_zero_iff _).2
-         norm_num [cupUnitPart, IsUnit.unit_spec, map_ofNat]
-         all_goals decide)
-      | (apply (serreEps_eq_one_iff _).2
-         norm_num [cupUnitPart, IsUnit.unit_spec, map_ofNat]
-         all_goals decide)
+    all_goals first | apply (serreEps_eq_zero_iff _).2 | apply (serreEps_eq_one_iff _).2
+    all_goals norm_num [cupUnitPart, IsUnit.unit_spec, map_ofNat]
+    all_goals decide
   have hon : serreOmega (cupUnitPart i) = (![1, 1, 0, 0] i : ZMod 2) := by
     fin_cases i <;> simp only [Matrix.cons_val_zero', Matrix.cons_val_succ']
-    all_goals first
-      | (apply (serreOmega_eq_zero_iff _).2
-         norm_num [cupUnitPart, IsUnit.unit_spec, map_ofNat]
-         all_goals decide)
-      | (apply (serreOmega_eq_one_iff _).2
-         norm_num [cupUnitPart, IsUnit.unit_spec, map_ofNat]
-         all_goals decide)
+    all_goals first | apply (serreOmega_eq_zero_iff _).2 | apply (serreOmega_eq_one_iff _).2
+    all_goals norm_num [cupUnitPart, IsUnit.unit_spec, map_ofNat]
+    all_goals decide
   rw [hilbertSymbol_padicTwo ht hn, het, hen, hon]
   congr 1
   fin_cases ε <;> fin_cases i <;> norm_num [additiveIntUnitsAddEquiv_apply] <;> decide
@@ -153,7 +141,7 @@ private theorem normEntry_squareClass (i : Fin 4) :
     rw [IsUnit.unit_spec] at h
     convert h using 1
     norm_cast
-  rw [squareClass_eq_iff_isSquare_mul, ← isSquare_units_val_iff]
+  rw [squareClass_eq_iff_isSquare_mul, ← Units.isSquare_coe_iff]
   fin_cases i <;> norm_num [normEntry] <;> exact hs
 
 private theorem kummerClass_normEntry (i : Fin 4) :

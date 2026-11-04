@@ -40,7 +40,7 @@ theorem apply_eq_apply_of_quotientGroup_mk_eq {x : V}
     (hab : (a : G ⧸ H) = (b : G ⧸ H)) : ρ a x = ρ b x := by
   obtain ⟨h, rfl⟩ : ∃ h : H, a * (h : G) = b :=
     ⟨⟨a⁻¹ * b, QuotientGroup.eq.mp hab⟩, by simp⟩
-  simp [map_mul, Module.End.mul_apply, hx]
+  simp [map_mul, mul_apply_eq_comp, hx]
 
 end FixedVectors
 

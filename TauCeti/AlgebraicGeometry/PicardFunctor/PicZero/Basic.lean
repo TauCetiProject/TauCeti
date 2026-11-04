@@ -67,8 +67,10 @@ families and representability are not treated here.
   geometrically connected family of curves, it is closed under products and inverses.
 * `TauCeti.AlgebraicGeometry.relativePicardDegreeZeroFunctor`: for such a family, `Pic⁰_{X/S}`
   as a presheaf of commutative groups, with inclusion
-  `TauCeti.AlgebraicGeometry.relativePicardDegreeZeroFunctorι` into the relative Picard presheaf
-  and sections built by `TauCeti.AlgebraicGeometry.relativePicardDegreeZeroFunctor.mk`.
+  `TauCeti.AlgebraicGeometry.relativePicardDegreeZeroFunctorι` into the relative Picard presheaf,
+  sections built by `TauCeti.AlgebraicGeometry.relativePicardDegreeZeroFunctor.mk`, and morphisms
+  into it lifted by `TauCeti.AlgebraicGeometry.relativePicardDegreeZeroFunctor.lift` and compared
+  by `TauCeti.AlgebraicGeometry.relativePicardDegreeZeroFunctor.hom_ext`.
 
 ## References
 
@@ -455,6 +457,81 @@ lemma relativePicardDegreeZeroFunctorι_app_injective (T : (Over S)ᵒᵖ) :
     Function.Injective ((relativePicardDegreeZeroFunctorι f).app T) := by
   unfold relativePicardDegreeZeroFunctorι relativePicardDegreeZeroFunctor
   exact Subtype.val_injective
+
+/-- Lift a morphism `α : F ⟶ H ⋙ relativePicardPresheaf f` of presheaves of commutative groups
+whose sections all have degree zero on every geometric fibre to a morphism into the degree-zero
+Picard functor `Pic⁰_{X/S}` (restricted along `H`). -/
+def relativePicardDegreeZeroFunctor.lift {C : Type*} [Category C] {H : C ⥤ (Over S)ᵒᵖ}
+    {F : C ⥤ CommGrpCat.{u + 1}} (α : F ⟶ H ⋙ relativePicardPresheaf f)
+    (hα : ∀ T c, α.app T c ∈ (relativePicardDegreeZeroSubfunctor f).obj (H.obj T)) :
+    F ⟶ H ⋙ relativePicardDegreeZeroFunctor f where
+  app T := CommGrpCat.ofHom (relativePicardDegreeZeroFunctor.mkHom f (α.app T).hom (hα T))
+  naturality T T' φ := by
+    ext c
+    apply relativePicardDegreeZeroFunctorι_app_injective f _
+    -- The restricted functor is opaque, so compare its sections through the inclusion.
+    change (relativePicardDegreeZeroFunctorι f).app _
+        (relativePicardDegreeZeroFunctor.mkHom f (α.app T').hom (hα T') (F.map φ c)) =
+      (relativePicardDegreeZeroFunctorι f).app _
+        ((relativePicardDegreeZeroFunctor f).map (H.map φ)
+          (relativePicardDegreeZeroFunctor.mkHom f (α.app T).hom (hα T) c))
+    rw [NatTrans.naturality_apply (relativePicardDegreeZeroFunctorι f),
+      relativePicardDegreeZeroFunctorι_app_mkHom, relativePicardDegreeZeroFunctorι_app_mkHom]
+    exact NatTrans.naturality_apply α φ c
+
+/-- The lift `relativePicardDegreeZeroFunctor.lift f α hα` sends a section `c` to a section of
+`Pic⁰_{X/S}` whose image under the inclusion is `α.app T c`. -/
+-- Not `@[simp]`: `simp` rewrites `(H ⋙ relativePicardDegreeZeroFunctor f).obj T` in the implicit
+-- type arguments of the left-hand side by `Functor.comp_obj`, so it is not in simp-normal form.
+lemma relativePicardDegreeZeroFunctorι_app_lift_app {C : Type*} [Category C]
+    {H : C ⥤ (Over S)ᵒᵖ} {F : C ⥤ CommGrpCat.{u + 1}} (α : F ⟶ H ⋙ relativePicardPresheaf f)
+    (hα : ∀ T c, α.app T c ∈ (relativePicardDegreeZeroSubfunctor f).obj (H.obj T)) (T : C)
+    (c : F.obj T) :
+    (relativePicardDegreeZeroFunctorι f).app (H.obj T)
+        ((relativePicardDegreeZeroFunctor.lift f α hα).app T c) = α.app T c :=
+  relativePicardDegreeZeroFunctorι_app_mkHom f _ _ c
+
+/-- The lift `relativePicardDegreeZeroFunctor.lift f α hα` followed by the inclusion of
+`Pic⁰_{X/S}` is `α`. -/
+@[reassoc (attr := simp)]
+lemma relativePicardDegreeZeroFunctor.lift_comp_ι {C : Type*} [Category C]
+    {H : C ⥤ (Over S)ᵒᵖ} {F : C ⥤ CommGrpCat.{u + 1}} (α : F ⟶ H ⋙ relativePicardPresheaf f)
+    (hα : ∀ T c, α.app T c ∈ (relativePicardDegreeZeroSubfunctor f).obj (H.obj T)) :
+    relativePicardDegreeZeroFunctor.lift f α hα ≫
+        Functor.whiskerLeft H (relativePicardDegreeZeroFunctorι f) = α := by
+  ext T c
+  exact relativePicardDegreeZeroFunctorι_app_lift_app f α hα T c
+
+/-- Two morphisms into `Pic⁰_{X/S}` (restricted along `H`) are equal once they agree after the
+inclusion into the relative Picard presheaf. -/
+@[ext]
+lemma relativePicardDegreeZeroFunctor.hom_ext {C : Type*} [Category C] {H : C ⥤ (Over S)ᵒᵖ}
+    {F : C ⥤ CommGrpCat.{u + 1}} {α β : F ⟶ H ⋙ relativePicardDegreeZeroFunctor f}
+    (h : α ≫ Functor.whiskerLeft H (relativePicardDegreeZeroFunctorι f) =
+      β ≫ Functor.whiskerLeft H (relativePicardDegreeZeroFunctorι f)) : α = β :=
+  NatTrans.ext <| funext fun T ↦ CommGrpCat.hom_ext <| MonoidHom.ext fun c ↦
+    relativePicardDegreeZeroFunctorι_app_injective f (H.obj T)
+      (ConcreteCategory.congr_hom (NatTrans.congr_app h T) c)
+
+/-- For a morphism `α : F ⟶ relativePicardPresheaf f` of presheaves on `(Over S)ᵒᵖ`, the lift
+`relativePicardDegreeZeroFunctor.lift f α hα` (along `H := 𝟭 _`) followed by the inclusion of
+`Pic⁰_{X/S}` is `α`. -/
+@[reassoc (attr := simp)]
+lemma relativePicardDegreeZeroFunctor.lift_comp_ι' {F : (Over S)ᵒᵖ ⥤ CommGrpCat.{u + 1}}
+    (α : F ⟶ relativePicardPresheaf f)
+    (hα : ∀ T c, α.app T c ∈ (relativePicardDegreeZeroSubfunctor f).obj T) :
+    (relativePicardDegreeZeroFunctor.lift f (H := 𝟭 _) α hα :
+        F ⟶ relativePicardDegreeZeroFunctor f) ≫ relativePicardDegreeZeroFunctorι f = α :=
+  relativePicardDegreeZeroFunctor.lift_comp_ι f (H := 𝟭 _) α hα
+
+/-- Two morphisms into `Pic⁰_{X/S}` are equal once they agree after the inclusion into the
+relative Picard presheaf. -/
+@[ext]
+lemma relativePicardDegreeZeroFunctor.hom_ext' {F : (Over S)ᵒᵖ ⥤ CommGrpCat.{u + 1}}
+    {α β : F ⟶ relativePicardDegreeZeroFunctor f}
+    (h : α ≫ relativePicardDegreeZeroFunctorι f = β ≫ relativePicardDegreeZeroFunctorι f) :
+    α = β :=
+  relativePicardDegreeZeroFunctor.hom_ext f (H := 𝟭 _) h
 
 /-- The set-valued degree-zero subfunctor and the underlying set-valued functor of its
 commutative-group structure have the same sections and pullback maps. -/

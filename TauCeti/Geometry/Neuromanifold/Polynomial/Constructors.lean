@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.MvPolynomial.Monad
+public import TauCeti.Algebra.MvPolynomial.Polynomial
 public import TauCeti.Geometry.Neuromanifold.Activation
 public import TauCeti.Geometry.Neuromanifold.Convolution.Basic
 public import TauCeti.Geometry.Neuromanifold.Dense
@@ -26,6 +27,10 @@ each construction realizes the expected map, as an equality of realization maps:
 * `polynomialCompose P Q` substitutes the outputs of `P` for the inputs of `Q`, and realizes
   `compose (polynomialRealization P) (polynomialRealization Q)` after splitting the parameters
   with `Equiv.sumArrowEquivProdArrow`.
+
+On collected input polynomials, reparametrization substitutes into the parameter coefficients
+(`inputPolynomial_polynomialReparametrize`) and composition substitutes the collected input
+polynomials of `P` for the inputs of `Q` (`inputPolynomial_polynomialCompose`).
 
 The concrete layers are polynomial models: `polynomialDense` and `polynomialLinear` realize
 the dense affine and linear layers after the identifications `denseParameterEquiv` and
@@ -102,6 +107,20 @@ theorem polynomialReparametrize_apply (R : W → MvPolynomial W' K)
     polynomialReparametrize R P j =
       bind₁ (Sum.elim (fun i => rename Sum.inl (R i)) (fun a => X (Sum.inr a))) (P j) := (rfl)
 
+/-- Substituting polynomials `R` for the parameters substitutes them into the parameter
+coefficients of each collected input polynomial. -/
+@[simp] theorem inputPolynomial_polynomialReparametrize (R : W → MvPolynomial W' K)
+    (P : J → MvPolynomial (W ⊕ I) K) (j : J) :
+    inputPolynomial (polynomialReparametrize R P) j =
+      map (bind₁ R : MvPolynomial W K →ₐ[K] MvPolynomial W' K) (inputPolynomial P j) := by
+  have hinr (q : MvPolynomial W' K) : sumAlgEquiv K I W' (rename Sum.inr q) = C q := by
+    simpa using AlgHom.congr_fun (sumAlgEquiv_comp_rename_inr K I W') q
+  simp only [inputPolynomial_def, polynomialReparametrize_apply]
+  induction P j using MvPolynomial.induction_on with
+  | C a => simp
+  | add p q hp hq => simp [hp, hq]
+  | mul_X p i hp => cases i <;> simp [hp, hinr, Function.comp_def]
+
 /-- A reparametrized polynomial model realizes the original model at the evaluated
 polynomial parameters. -/
 @[simp] theorem polynomialRealization_polynomialReparametrize (R : W → MvPolynomial W' K)
@@ -127,6 +146,30 @@ theorem polynomialCompose_apply (P : J → MvPolynomial (W ⊕ I) K)
     polynomialCompose P Q l =
       bind₁ (Sum.elim (fun v => X (Sum.inl (Sum.inr v)))
         (fun j => rename (Sum.map Sum.inl id) (P j))) (Q l) := (rfl)
+
+/-- Collecting the inputs of a composite model substitutes the collected input polynomials of
+`P`, with parameters renamed into the composite parameters, for the inputs of `Q`. -/
+theorem inputPolynomial_polynomialCompose (P : J → MvPolynomial (W ⊕ I) K)
+    (Q : L → MvPolynomial (V ⊕ J) K) (l : L) :
+    inputPolynomial (polynomialCompose P Q) l =
+      eval₂ (C.comp (rename Sum.inr : MvPolynomial V K →ₐ[K] MvPolynomial (W ⊕ V) K))
+        (fun j => map (rename Sum.inl : MvPolynomial W K →ₐ[K] MvPolynomial (W ⊕ V) K)
+          (inputPolynomial P j))
+        (inputPolynomial Q l) := by
+  -- Renaming the parameters of `P` into the composite parameters commutes with collecting inputs.
+  have hP (p : MvPolynomial (W ⊕ I) K) :
+      sumAlgEquiv K I (W ⊕ V) (rename (Sum.swap ∘ Sum.map Sum.inl id) p) =
+        map (rename Sum.inl : MvPolynomial W K →ₐ[K] MvPolynomial (W ⊕ V) K)
+          (sumAlgEquiv K I W (rename Sum.swap p)) := by
+    induction p using MvPolynomial.induction_on with
+    | C a => simp
+    | add p q hp hq => simp [hp, hq]
+    | mul_X p i hp => cases i <;> simp [hp]
+  simp only [inputPolynomial_def, polynomialCompose_apply]
+  induction Q l using MvPolynomial.induction_on with
+  | C a => simp
+  | add p q hp hq => simp [hp, hq]
+  | mul_X p i hp => cases i <;> simp [hp, hP]
 
 /-- Composition by polynomial substitution realizes the composite of the two realization
 maps, after splitting the parameters into those of `P` and those of `Q`. -/
@@ -169,6 +212,13 @@ def polynomialLinear : ο → MvPolynomial (ο × ι ⊕ ι) K :=
 theorem polynomialLinear_apply (o : ο) :
     (polynomialLinear o : MvPolynomial (ο × ι ⊕ ι) K) =
       ∑ i, X (Sum.inl (o, i)) * X (Sum.inr i) := (rfl)
+
+/-- The collected input polynomials of the linear layer are linear forms whose coefficients are
+the weight variables. -/
+@[simp] theorem inputPolynomial_polynomialLinear (o : ο) :
+    inputPolynomial (polynomialLinear : ο → MvPolynomial (ο × ι ⊕ ι) K) o =
+      ∑ i, C (X (o, i)) * X i := by
+  simp [inputPolynomial_def, polynomialLinear_apply]
 
 /-- The polynomial linear layer realizes matrix evaluation of its weight matrix. -/
 @[simp] theorem polynomialRealization_polynomialLinear :
@@ -230,10 +280,8 @@ theorem polynomialRealization_polynomialActivation (p : Polynomial K) (w : W →
     polynomialRealization (polynomialActivation (W := W) (ι := ι) p) w =
       activation (fun t => p.eval t) PUnit.unit := by
   funext x i
-  rw [polynomialRealization_apply, activation_apply, polynomialActivation]
-  have h := Polynomial.aeval_algHom_apply (aeval (Sum.elim w x)) (X (Sum.inr i)) p
-  rw [aeval_X, Polynomial.coe_aeval_eq_eval, aeval_eq_eval] at h
-  exact h.symm
+  rw [polynomialRealization_apply, activation_apply, polynomialActivation,
+    eval_polynomial_aeval, eval_X, Sum.elim_inr]
 
 /-- The identity activation is the input variable. -/
 @[simp] theorem polynomialActivation_X :

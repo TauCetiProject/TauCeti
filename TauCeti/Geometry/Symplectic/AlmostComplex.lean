@@ -12,6 +12,7 @@ public import Mathlib.LinearAlgebra.QuadraticForm.Basic
 public import TauCeti.LinearAlgebra.Complex.LinearPart
 public import TauCeti.LinearAlgebra.Determinant.Prod
 
+import Mathlib.Tactic.LinearCombination
 import Mathlib.Tactic.Linarith
 
 /-!
@@ -38,11 +39,17 @@ on tangent fibers rather than restating the linear algebra.
 * `TauCeti.SymplecticForm.Compatible`: `J`-invariance plus positivity of `ω(·, J ·)`.
 * `TauCeti.AlmostComplexStructure.product`: the standard almost complex structure on
   `V × V`, sending `(x, y)` to `(-y, x)`.
-* `TauCeti.AlmostComplexStructure.cayley`: the Cayley transform `-(1 + J₀ J)(1 - J₀ J)⁻¹` of `J`
-  relative to `J₀`.
+* `TauCeti.cayleyFormula`: the Cayley coordinate expression `-(1 + A B)(1 - A B)⁻¹` in any ring,
+  and `TauCeti.AlmostComplexStructure.cayley`: the Cayley transform
+  `-(1 + J₀ J)(1 - J₀ J)⁻¹` of `J` relative to `J₀`, which is this expression on endomorphisms.
 * `TauCeti.AlmostComplexStructure.bilinForm_apply_left_eq_neg_apply_right` and
   `TauCeti.AlmostComplexStructure.bilinForm_apply_apply_self_eq_zero`: a bilinear form preserved
   by `J` satisfies `g (J v, w) = -g (v, J w)`, and `g (v, J v) = 0` when it is symmetric.
+* `TauCeti.AlmostComplexStructure.restrict`: the restriction of `J` to a `J`-invariant subspace.
+* `TauCeti.IsComplexLinearMap.apply_apply_eq_of_apply_eq`: a complex-linear map acting on `v` by
+  `a + b i` acts on `J v` by the same number.
+* `TauCeti.SymplecticForm.sq_add_sq_eq_one_of_apply_eq`: complex-linear symplectic maps rotate
+  their complex eigenlines by complex numbers of modulus one.
 
 The definitions follow the standard conventions in McDuff--Salamon,
 *J-holomorphic Curves and Symplectic Topology*, Section 2.2, specialized here to the
@@ -56,6 +63,28 @@ namespace TauCeti
 open LinearMap
 
 variable {V W X : Type*}
+
+section CayleyFormula
+
+variable {R : Type*} [Ring R]
+
+/-- The Cayley coordinate `-(1 + A B)(1 - A B)⁻¹` of `B` relative to `A`, in any ring.
+The Cayley transform `TauCeti.AlmostComplexStructure.cayley` is this expression on linear
+endomorphisms. -/
+noncomputable def cayleyFormula (A B : R) : R :=
+  -((1 + A * B) * Ring.inverse (1 - A * B))
+
+/-- The defining formula of the Cayley coordinate expression. -/
+lemma cayleyFormula_def (A B : R) :
+    cayleyFormula A B = -((1 + A * B) * Ring.inverse (1 - A * B)) := (rfl)
+
+/-- Ring isomorphisms commute with the Cayley coordinate expression. -/
+theorem map_cayleyFormula {S F : Type*} [Ring S] [EquivLike F R S] [RingEquivClass F R S]
+    (f : F) (A B : R) :
+    f (cayleyFormula A B) = cayleyFormula (f A) (f B) := by
+  simp only [cayleyFormula_def, map_mul, map_add, map_one, map_neg, map_sub, map_ringInverse]
+
+end CayleyFormula
 
 /-- A pointwise almost complex structure is a real-linear endomorphism whose square is `-1`.
 
@@ -198,7 +227,11 @@ structures tamed by a form compatible with `J₀`, the endomorphism `1 - J₀ J`
 the transform is a
 bijection onto the Cayley ball (`TauCeti.SymplecticForm.Compatible.cayleyEquiv`). -/
 noncomputable def cayley (J₀ J : AlmostComplexStructure V) : Module.End ℝ V :=
-  -((1 + J₀.toLinearMap * J.toLinearMap) * Ring.inverse (1 - J₀.toLinearMap * J.toLinearMap))
+  cayleyFormula J₀.toLinearMap J.toLinearMap
+
+/-- The Cayley transform is the Cayley coordinate expression of the underlying endomorphisms. -/
+lemma cayley_eq_cayleyFormula (J₀ J : AlmostComplexStructure V) :
+    J₀.cayley J = cayleyFormula J₀.toLinearMap J.toLinearMap := (rfl)
 
 /-- The defining formula of the Cayley transform. -/
 lemma cayley_def (J₀ J : AlmostComplexStructure V) :
@@ -227,6 +260,19 @@ theorem bilinForm_apply_apply_self_eq_zero (J : AlmostComplexStructure V)
   have h := J.bilinForm_apply_left_eq_neg_apply_right hgJ v v
   rw [← hg.eq v (J v)] at h
   linarith
+
+/-- The restriction of an almost complex structure to a subspace it preserves. -/
+def restrict (J : AlmostComplexStructure V) (L : Submodule ℝ V) (hL : ∀ x ∈ L, J x ∈ L) :
+    AlmostComplexStructure L where
+  toLinearMap := J.toLinearMap.restrict hL
+  square_neg := by
+    ext x
+    simp [J.apply_apply]
+
+@[simp]
+lemma coe_restrict_apply (J : AlmostComplexStructure V) (L : Submodule ℝ V)
+    (hL : ∀ x ∈ L, J x ∈ L) (x : L) : (J.restrict L hL x : V) = J x :=
+  (rfl)
 
 end AlmostComplexStructure
 
@@ -385,6 +431,14 @@ lemma isComplexLinearMap_comp_almostComplexStructure_toLinearMap_iff
   ⟨fun hF => hF.of_comp_almostComplexStructure_toLinearMap,
     fun hF => hF.comp_almostComplexStructure_toLinearMap⟩
 
+/-- A complex-linear map acting on `v` by the complex number `a + b i`, that is
+`f v = a v + b J v`, acts on `J v` by the same number: `f (J v) = -b v + a J v`. -/
+lemma IsComplexLinearMap.apply_apply_eq_of_apply_eq {J : AlmostComplexStructure V}
+    {f : V →ₗ[ℝ] V} (hf : IsComplexLinearMap J J f) {v : V} {a b : ℝ}
+    (h : f v = a • v + b • J v) : f (J v) = (-b) • v + a • J v := by
+  rw [(isComplexLinearMap_iff_apply J J f).1 hf v, h, map_add, map_smul, map_smul,
+    J.apply_apply, smul_neg, neg_smul, add_comm]
+
 end ComplexLinearMap
 
 /-- The ordered pairing `B (F v) (F (J₀ v))` of an alternating bilinear form `B` is unchanged when
@@ -458,6 +512,16 @@ lemma apply_smul_add_smul_det (ω : SymplecticForm V) (B : (ℝ × ℝ) →ₗ[�
     ω ((B (1, 0)).1 • x + (B (1, 0)).2 • y) ((B (0, 1)).1 • x + (B (0, 1)).2 • y) =
       LinearMap.det B * ω x y := by
   rw [ω.apply_smul_add_smul, LinearMap.det_finTwoProd]
+
+/-- A `J`-complex-linear map `f` preserving `ω` which sends a vector `v` with `ω(v, J v) ≠ 0` to
+`a v + b J v` multiplies `v` by a complex number `a + b i` of modulus one. -/
+theorem sq_add_sq_eq_one_of_apply_eq {ω : SymplecticForm V} {J : AlmostComplexStructure V}
+    {f : V →ₗ[ℝ] V} (hf : ∀ x y, ω (f x) (f y) = ω x y) (hfJ : IsComplexLinearMap J J f) {v : V}
+    (hv : ω v (J v) ≠ 0) {a b : ℝ} (h : f v = a • v + b • J v) : a ^ 2 + b ^ 2 = 1 := by
+  have h₁ := hf v (J v)
+  rw [h, hfJ.apply_apply_eq_of_apply_eq h, ω.apply_smul_add_smul] at h₁
+  have h₂ : (a ^ 2 + b ^ 2 - 1) * ω v (J v) = 0 := by linear_combination h₁
+  linear_combination (mul_eq_zero.1 h₂).resolve_right hv
 
 /-- The ordered area density `ω (F v) (F (J₀ v))` is unchanged when both arguments are
 precomposed by a source almost complex structure `J₀`: rotating the source by `J₀` sends the
