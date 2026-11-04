@@ -126,6 +126,22 @@ theorem weightTorusCoordinateBialgHom_def [Fintype sigma] (wt : Fin N → sigma 
   ext j
   simp
 
+/-- On algebra-valued points, the direct weight-torus morphism is the diagonal matrix of
+its weight characters. The base ring, torus index, and value algebra may have different
+universes. -/
+theorem pointsMulEquiv_comp_weightTorusCoordinateBialgHom [Fintype sigma]
+    (wt : Fin N → sigma → ℤ) (A : CommAlgCat.{w} S)
+    (q : WithConv (MonoidAlgebra S (Multiplicative (sigma →₀ ℤ)) →ₐ[S] A)) :
+    pointsMulEquiv N (toConv (q.ofConv.comp (weightTorusCoordinateBialgHom wt).toAlgHom)) =
+      diagGL fun i ↦ torusCharacter (SplitTorus.pointsMulEquiv q) (wt i) := by
+  apply Units.ext
+  rw [pointsMulEquiv_apply, weightTorusCoordinateBialgHom_def,
+    DiagonalizableGroup.pointToGeneralLinear_comp_diagonalCoordinateMap, diagGL_coe]
+  congr 1
+  funext i
+  exact congrArg (fun s : Aˣ ↦ (s : A))
+    (SplitTorus.charOfPoint_weightCharacter q (wt i))
+
 /-- A generic matrix entry maps under the direct weight-torus bialgebra morphism to the
 prescribed character on the diagonal, and to zero off the diagonal. -/
 @[simp]

@@ -89,6 +89,46 @@ omit [NormedAddCommGroup E] [NormedSpace ℝ E] [NormedAddCommGroup F] [NormedSp
 theorem timeExtension_def (hab : a ≤ b) (f : slab (E := E) a b → F) (x : E) :
     timeExtension hab f x = fun t ↦ f (slabMk x (projIcc a b hab t)) := (rfl)
 
+omit [NormedAddCommGroup E] [NormedSpace ℝ E] [NormedSpace ℝ F] in
+/-- Clamped time extension preserves addition of slab maps. -/
+@[simp]
+theorem timeExtension_add (hab : a ≤ b) (f g : slab (E := E) a b → F) :
+    timeExtension hab (f + g) = timeExtension hab f + timeExtension hab g := by
+  funext x t
+  simp only [timeExtension_def, Pi.add_apply]
+
+omit [NormedAddCommGroup E] [NormedSpace ℝ E] in
+/-- Clamped time extension preserves scalar multiplication of slab maps. -/
+@[simp]
+theorem timeExtension_smul (hab : a ≤ b) (c : ℝ) (f : slab (E := E) a b → F) :
+    timeExtension hab (c • f) = c • timeExtension hab f := by
+  funext x t
+  simp only [timeExtension_def, Pi.smul_apply]
+
+omit [NormedSpace ℝ E] [NormedSpace ℝ F] in
+/-- The clamped time extension of a continuous slab map is jointly continuous. -/
+theorem continuous_timeExtension (hab : a ≤ b) {f : slab (E := E) a b → F}
+    (hf : Continuous f) : Continuous (fun p : ℝ × E => timeExtension hab f p.2 p.1) := by
+  simpa only [timeExtension_def, Function.comp_def] using hf.comp (continuous_slabMk.comp
+    (continuous_snd.prodMk ((continuous_projIcc (h := hab)).comp continuous_fst)))
+
+omit [NormedSpace ℝ E] in
+/-- Clamping time preserves the uniform bound supplied by the bounded Hölder norm. -/
+theorem norm_timeExtension_le (hab : a ≤ b) (f : HolderSpace α (slab (E := E) a b) F)
+    (s : ℝ) (x : E) : ‖timeExtension hab f x s‖ ≤ ‖f‖ := by
+  rw [timeExtension_def]
+  exact f.norm_apply_le _
+
+omit [NormedSpace ℝ E] [NormedSpace ℝ F] in
+/-- Every spatial slice of a clamped Hölder extension has the same Hölder constant. -/
+theorem holderWith_timeExtension (hab : a ≤ b) {C : ℝ≥0} {f : slab (E := E) a b → F}
+    (hf : HolderWith C α f) (s : ℝ) :
+    HolderWith C α (fun x => timeExtension hab f x s) := by
+  intro x y
+  simpa only [timeExtension_def, edist_slabMk, edist_self,
+    ENNReal.zero_rpow_of_pos (by norm_num : (0 : ℝ) < 1 / 2), add_zero] using
+    hf (slabMk x (projIcc a b hab s)) (slabMk y (projIcc a b hab s))
+
 omit [NormedAddCommGroup E] [NormedSpace ℝ E] [NormedAddCommGroup F] [NormedSpace ℝ F] in
 @[simp]
 theorem timeExtension_of_mem (hab : a ≤ b) (f : slab (E := E) a b → F)

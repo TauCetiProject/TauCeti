@@ -38,6 +38,8 @@ connected Lie subgroup.
 * `TauCeti.IsFrobeniusIntegrableAt f p`: the Frobenius integrability condition at `p`.
 * `TauCeti.isFrobeniusIntegrableAt_of_eventually_hasFDerivAt`: the condition holds along the
   graph of every solution.
+* `TauCeti.isFrobeniusIntegrableAt_of_fderiv_apply_snd_comm`: the condition for a second-order
+  equation written as a first-order system, tested along one function solving it at a point.
 * `TauCeti.exists_eventually_hasFDerivAt_of_isFrobeniusIntegrableAt`: **the local Frobenius
   theorem**, existence of a local solution through a point near which the condition holds.
 * `TauCeti.exists_contDiffOn_solution_family_of_isFrobeniusIntegrableAt`: nearby solutions can be
@@ -437,6 +439,72 @@ private theorem rayFamily_smul_apply_one {g : E × F → E →L[ℝ] F} {K : ℝ
       (((hasDerivAt_id s).const_mul t).hasDerivWithinAt (s := Ici s))
       (fun s' (hs' : s ≤ s') ↦ mul_le_mul_of_nonneg_left hs' ht.1)
     exact this.congr_deriv (by simp [Prod.smul_mk, map_smul])
+
+/-- **The Frobenius condition for a second-order system.** Let `f` describe a second-order
+equation `D²φ(y) = B(y, φ y, Dφ y)` as the first-order system `D(φ, α) = f(y, φ, α)` for the value
+and the differential, so that `(f p u).1 = α u` and `(f p u).2 v = B(p)(u, v)` is symmetric. Let
+`φ` be `C²` at `y` with value `c`, differential `α` and second derivative `B(y, c, α)` at `y`, and
+let `f` be differentiable at `(y, c, α)`. If, along `φ`, the derivatives at `y` of
+`z ↦ B(z, φ z, Dφ z)(u, v)` are symmetric in the direction of differentiation and the second slot,
+then `f` satisfies the Frobenius integrability condition at `(y, c, α)`. -/
+theorem isFrobeniusIntegrableAt_of_fderiv_apply_snd_comm
+    {f : E × F × (E →L[ℝ] F) → E →L[ℝ] F × (E →L[ℝ] F)}
+    (hfst : ∀ p u, (f p u).1 = p.2.2 u) (hsnd : ∀ p u v, (f p u).2 v = (f p v).2 u)
+    {y : E} {q : F × (E →L[ℝ] F)} (hf : DifferentiableAt ℝ f (y, q)) {φ : E → F}
+    (hφ : ContDiffAt ℝ 2 φ y) (hφy : φ y = q.1)
+    (hDφ : fderiv ℝ φ y = q.2) (hD2φ : ∀ u v, fderiv ℝ (fderiv ℝ φ) y u v = (f (y, q) u).2 v)
+    (h : ∀ u v w, fderiv ℝ (fun z ↦ (f (z, φ z, fderiv ℝ φ z) u).2 v) y w =
+      fderiv ℝ (fun z ↦ (f (z, φ z, fderiv ℝ φ z) u).2 w) y v) :
+    IsFrobeniusIntegrableAt f (y, q) := by
+  set p : E × F × (E →L[ℝ] F) := (y, q)
+  -- The components of the derivative of `f` are the derivatives of the components of `f`.
+  have hevfst (d : E × F × (E →L[ℝ] F)) (a : E) :
+      fderiv ℝ (fun p' ↦ (f p' a).1) p d = (fderiv ℝ f p d a).1 := by
+    rw [((hf.hasFDerivAt.clm_apply (hasFDerivAt_const a p)).fst).fderiv]
+    simp
+  have hevsnd (d : E × F × (E →L[ℝ] F)) (a b : E) :
+      fderiv ℝ (fun p' ↦ (f p' a).2 b) p d = (fderiv ℝ f p d a).2 b := by
+    rw [(((hf.hasFDerivAt.clm_apply (hasFDerivAt_const a p)).snd).clm_apply
+      (hasFDerivAt_const b p)).fderiv]
+    simp
+  -- The first component of `f` is linear in `p`, so its derivative is read off directly.
+  have hfst' (d : E × F × (E →L[ℝ] F)) (a : E) : (fderiv ℝ f p d a).1 = d.2.2 a := by
+    rw [← hevfst, funext fun p' ↦ hfst p' a,
+      ((hasFDerivAt_snd.snd).clm_apply (hasFDerivAt_const a p)).fderiv]
+    simp
+  -- The derivative of the symmetric second component is symmetric.
+  have hsnd' (d : E × F × (E →L[ℝ] F)) (a b : E) :
+      (fderiv ℝ f p d a).2 b = (fderiv ℝ f p d b).2 a := by
+    rw [← hevsnd, ← hevsnd]
+    simp only [hsnd _ a b]
+  -- Along `φ`, the jet `z ↦ (z, φ z, Dφ z)` has derivative `w ↦ (w, f p w)` at `y`.
+  have hjet : HasFDerivAt (fun z ↦ (z, φ z, fderiv ℝ φ z))
+      ((ContinuousLinearMap.id ℝ E).prod (f p)) y := by
+    have h₁ := (hasFDerivAt_id y).prodMk ((hφ.differentiableAt (by simp)).hasFDerivAt.prodMk
+      ((hφ.fderiv_right (m := 1) (by norm_num)).differentiableAt (by simp)).hasFDerivAt)
+    have hfp : (fderiv ℝ φ y).prod (fderiv ℝ (fderiv ℝ φ) y) = f p := by
+      refine ContinuousLinearMap.ext fun w ↦ Prod.ext ?_ (ContinuousLinearMap.ext fun v ↦ ?_)
+      · rw [ContinuousLinearMap.prod_apply, hfst, hDφ]
+      · simp [hD2φ]
+    rwa [hfp] at h₁
+  have hjy : (y, φ y, fderiv ℝ φ y) = p := by rw [hφy, hDφ]
+  have hchain (u v w : E) : fderiv ℝ (fun z ↦ (f (z, φ z, fderiv ℝ φ z) u).2 v) y w =
+      (fderiv ℝ f p (w, f p w) u).2 v := by
+    have hfp : HasFDerivAt f (fderiv ℝ f p) (y, φ y, fderiv ℝ φ y) := by
+      rw [hjy]
+      exact hf.hasFDerivAt
+    have hcomp : HasFDerivAt (fun z ↦ f (z, φ z, fderiv ℝ φ z))
+        (fderiv ℝ f p ∘L (ContinuousLinearMap.id ℝ E).prod (f p)) y :=
+      hfp.comp y hjet
+    rw [(((hcomp.clm_apply (hasFDerivAt_const u y)).snd).clm_apply
+      (hasFDerivAt_const v y)).fderiv]
+    simp
+  rw [isFrobeniusIntegrableAt_iff]
+  intro v w
+  refine Prod.ext ?_ (ContinuousLinearMap.ext fun u ↦ ?_)
+  · rw [hfst', hfst']
+    exact hsnd p v w
+  · rw [hsnd', ← hchain, ← h, hchain, hsnd']
 
 end Real
 
