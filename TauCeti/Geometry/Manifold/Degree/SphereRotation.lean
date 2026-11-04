@@ -13,6 +13,7 @@ public import TauCeti.Geometry.Manifold.Orientation.Sphere
 import Mathlib.LinearAlgebra.Alternating.Uncurry.Fin
 import TauCeti.Analysis.Complex.Circle
 import TauCeti.Analysis.InnerProductSpace.Projection.Basic
+import TauCeti.Geometry.Manifold.MFDeriv.IsInvertible
 import TauCeti.Geometry.Manifold.MFDeriv.Prod
 import TauCeti.LinearAlgebra.Alternating.ConsCons
 

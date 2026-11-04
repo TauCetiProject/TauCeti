@@ -10,6 +10,7 @@ public import TauCeti.Geometry.Manifold.IsManifold.Basic
 public import Mathlib.Geometry.Manifold.LocalDiffeomorph
 public import Mathlib.Geometry.Manifold.MFDeriv.SpecificFunctions
 import TauCeti.Geometry.Manifold.MFDeriv.Chart
+import TauCeti.Geometry.Manifold.MFDeriv.IsInvertible
 
 /-!
 # Orientation behavior of manifold maps
@@ -38,10 +39,10 @@ precomposing with an automorphism of negative determinant exchanges preservation
 More generally, a map with negative derivative determinant reverses orientations at that point
 (`isOrientationReversingAt_of_det_fderiv_neg`).
 
-If the derivative carries a tangent basis `b` onto a basis `b'`, it is invertible
-(`isInvertible_mfderiv_of_basis`), and, whether `b` is positively or negatively oriented,
-preservation (reversal) means that `b` and `b'` have equal (opposite) orientation signs
-(`isOrientationPreservingAt_iff_of_basis`, `isOrientationReversingAt_iff_of_basis`).
+If the derivative carries a tangent basis `b` onto a basis `b'`, then, whether `b` is positively
+or negatively oriented, preservation (reversal) means that `b` and `b'` have equal (opposite)
+orientation signs (`isOrientationPreservingAt_iff_of_basis`,
+`isOrientationReversingAt_iff_of_basis`).
 -/
 
 public section
@@ -132,29 +133,6 @@ theorem isOrientationReversingAt_iff_of_coe_eq [IsManifold I 1 M] [IsManifold I'
     simpa [heq] using h
   · intro h
     exact ⟨e, he, h⟩
-
-omit [FiniteDimensional ℝ E'] [Fintype ι] in
-/-- The derivative at `x`, as the continuous linear equivalence carrying a basis `b` of the
-tangent space at `x` to the basis `b'` of the tangent space at `f x` onto which it maps `b`. -/
-private theorem exists_coe_eq_mfderiv_of_basis
-    {f : M → M'} {x : M} (b : Module.Basis ι ℝ (TangentSpace I x))
-    (b' : Module.Basis ι ℝ (TangentSpace I' (f x))) (hbb' : ∀ i, mfderiv I I' f x (b i) = b' i) :
-    ∃ e : TangentSpace I x ≃L[ℝ] TangentSpace I' (f x),
-      (e : TangentSpace I x →L[ℝ] TangentSpace I' (f x)) = mfderiv I I' f x ∧
-        b.map e.toLinearEquiv = b' := by
-  refine ⟨(b.equiv b' (Equiv.refl ι)).toContinuousLinearEquiv,
-    ContinuousLinearMap.coe_injective <| b.ext fun i ↦ ?_, Module.Basis.eq_of_apply_eq fun i ↦ ?_⟩
-  · simp [Module.Basis.equiv_apply, hbb']
-  · simp
-
-omit [FiniteDimensional ℝ E'] [Fintype ι] in
-/-- If the derivative at `x` carries a basis `b` of the tangent space at `x` to a basis `b'` of the
-tangent space at `f x`, then it is invertible. -/
-theorem isInvertible_mfderiv_of_basis {f : M → M'} {x : M}
-    (b : Module.Basis ι ℝ (TangentSpace I x)) (b' : Module.Basis ι ℝ (TangentSpace I' (f x)))
-    (hbb' : ∀ i, mfderiv I I' f x (b i) = b' i) : (mfderiv I I' f x).IsInvertible :=
-  let ⟨e, he, _⟩ := exists_coe_eq_mfderiv_of_basis b b' hbb'
-  ⟨e, he⟩
 
 /-- If the derivative at `x` carries a basis `b` of the tangent space at `x` to the basis `b'` of
 the tangent space at `f x`, then `f` preserves orientations at `x` exactly when `b` and `b'` are
