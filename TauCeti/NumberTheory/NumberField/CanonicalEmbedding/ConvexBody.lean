@@ -20,10 +20,14 @@ domains, instead impose closed inequalities `normAtPlace w x ≤ f w` at the inf
 Because closed and open balls in `ℝ` and `ℂ` have the same Lebesgue measure at nonnegative radii,
 the closed box `{x : mixedSpace K | ∀ w, normAtPlace w x ≤ f w}` has the same volume formula
 `convexBodyLTFactor K * ∏ w, f w ^ mult w` whenever `f` is nonnegative, and is empty if `f` takes a
-negative value at some infinite place.
+negative value at some infinite place. The proof of `volume_setOf_forall_normAtPlace_le` is adapted
+from Mathlib's `NumberField.mixedEmbedding.convexBodyLT_volume` (Xavier Roblot, Apache 2.0),
+replacing `volume_ball` with `volume_closedBall`.
 
 ## Main results
 
+* `NumberField.mixedEmbedding.normAtPlace_congr`: `normAtPlace w x` depends only on the
+  `w`-coordinate of `x`.
 * `NumberField.mixedEmbedding.setOf_forall_normAtPlace_le_eq_prod`: the set
   `{x : mixedSpace K | ∀ w, normAtPlace w x ≤ f w}` is the product of the closed balls of radii
   `f w` at the real and complex places.
@@ -31,7 +35,7 @@ negative value at some infinite place.
   `NumberField.mixedEmbedding.volume_real_setOf_forall_normAtPlace_le`: its `ℝ≥0∞`-valued volume
   (unconditionally, since `ENNReal.ofReal` vanishes on negative radii) and its `ℝ`-valued volume for
   nonnegative `f`.
-* `NumberField.mixedEmbedding.setOf_forall_normAtPlace_le_eq_empty_of_lt_zero`: if `f w < 0` at
+* `NumberField.mixedEmbedding.setOf_forall_normAtPlace_le_eq_empty_of_neg`: if `f w < 0` at
   some infinite place `w`, the box is empty.
 -/
 
@@ -42,6 +46,16 @@ open ENNReal MeasureTheory Metric NNReal NumberField NumberField.InfinitePlace
 namespace NumberField.mixedEmbedding
 
 variable {K : Type*} [Field K]
+
+/-- `normAtPlace w` depends only on the `w`-coordinate of an element of `mixedSpace K`. -/
+theorem normAtPlace_congr (w : InfinitePlace K) {x y : mixedSpace K}
+    (h₁ : ∀ hw : IsReal w, x.1 ⟨w, hw⟩ = y.1 ⟨w, hw⟩)
+    (h₂ : ∀ hw : IsComplex w, x.2 ⟨w, hw⟩ = y.2 ⟨w, hw⟩) :
+    normAtPlace w x = normAtPlace w y := by
+  by_cases hw : IsReal w
+  · simp [normAtPlace_apply_of_isReal hw, h₁ hw]
+  · have hwc : IsComplex w := not_isReal_iff_isComplex.mp hw
+    simp [normAtPlace_apply_of_isComplex hwc, h₂ hwc]
 
 /-- The set of points of `mixedSpace K` bounded at every infinite place `w` by `f w` is the product
 of the closed balls of radii `f w` at the real and complex places. -/
@@ -62,7 +76,7 @@ theorem setOf_forall_normAtPlace_le_eq_prod (f : InfinitePlace K → ℝ) :
 
 /-- If `f w < 0` at some infinite place `w`, the closed-ball box `{x | ∀ w, normAtPlace w x ≤ f w}`
 is empty. -/
-theorem setOf_forall_normAtPlace_le_eq_empty_of_lt_zero {f : InfinitePlace K → ℝ}
+theorem setOf_forall_normAtPlace_le_eq_empty_of_neg {f : InfinitePlace K → ℝ}
     {w : InfinitePlace K} (hw : f w < 0) :
     {x : mixedSpace K | ∀ u : InfinitePlace K, normAtPlace u x ≤ f u} = ∅ :=
   Set.eq_empty_iff_forall_notMem.mpr fun x hx ↦
@@ -70,6 +84,7 @@ theorem setOf_forall_normAtPlace_le_eq_empty_of_lt_zero {f : InfinitePlace K →
 
 variable [NumberField K]
 
+-- Adapted from `NumberField.mixedEmbedding.convexBodyLT_volume` in Mathlib.
 open scoped Classical in
 /-- **Volume of a closed-ball box in the mixed space.** The set of points `x : mixedSpace K` with
 `normAtPlace w x ≤ f w` at every infinite place has volume

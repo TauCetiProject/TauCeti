@@ -45,9 +45,11 @@ and so separate points.
   independent family of functionals has a biorthogonal family of vectors.
 * `LinearIndependent.eq_zero_of_forall_apply_eq_zero`: linearly independent functionals, as many
   as the dimension, have no common zero but `0`.
-* `LinearIndependent.exists_sum_smul_eq_proj`, `LinearIndependent.bijective_pi`,
+* `LinearIndependent.exists_sum_smul_eq_proj`, `LinearIndependent.pi_bijective`,
   `LinearIndependent.det_pi_ne_zero`: `#ι` linearly independent forms on `Kⁱ` express every
   coordinate projection and assemble into a bijective endomorphism of nonzero determinant.
+* `Matrix.of_apply_eq_mul_transpose_toMatrix'_pi`: evaluating linear forms `l` on `ι → R` against
+  vectors `x` multiplies `Matrix.of x` on the right by `(LinearMap.toMatrix' (LinearMap.pi l))ᵀ`.
 -/
 
 public section
@@ -240,7 +242,7 @@ theorem exists_sum_smul_eq_proj {K ι : Type*} [Field K] [Fintype ι]
 
 /-- `#ι` linearly independent forms on `Kⁱ` assemble into a bijective endomorphism
 `LinearMap.pi l`. -/
-theorem bijective_pi {K ι : Type*} [Field K] [Finite ι]
+theorem pi_bijective {K ι : Type*} [Field K] [Finite ι]
     {l : ι → Module.Dual K (ι → K)} (hl : LinearIndependent K l) :
     Function.Bijective (LinearMap.pi l) := by
   have := Fintype.ofFinite ι
@@ -255,6 +257,19 @@ theorem det_pi_ne_zero {K ι : Type*} [Field K] [Finite ι]
     {l : ι → Module.Dual K (ι → K)} (hl : LinearIndependent K l) :
     LinearMap.det (LinearMap.pi l) ≠ 0 :=
   (LinearMap.isUnit_iff_isUnit_det (LinearMap.pi l) |>.mp
-    (Module.End.isUnit_iff (LinearMap.pi l) |>.mpr hl.bijective_pi)).ne_zero
+    (Module.End.isUnit_iff (LinearMap.pi l) |>.mpr hl.pi_bijective)).ne_zero
 
 end LinearIndependent
+
+namespace Matrix
+
+/-- Evaluating a family of linear forms `l` on `ι → R` against a family of vectors `x` multiplies
+`Matrix.of x` on the right by `(LinearMap.toMatrix' (LinearMap.pi l))ᵀ`. -/
+theorem of_apply_eq_mul_transpose_toMatrix'_pi {R κ ι μ : Type*} [CommSemiring R] [Fintype ι]
+    [DecidableEq ι] (l : μ → Module.Dual R (ι → R)) (x : κ → ι → R) :
+    Matrix.of (fun k i ↦ l i (x k)) = Matrix.of x * (LinearMap.toMatrix' (LinearMap.pi l))ᵀ := by
+  ext k i
+  conv_lhs => rw [of_apply, ← (Pi.basisFun R ι).sum_repr (x k), map_sum]
+  simp [Matrix.mul_apply, LinearMap.toMatrix'_apply]
+
+end Matrix

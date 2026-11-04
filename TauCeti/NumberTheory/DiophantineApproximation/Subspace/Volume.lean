@@ -14,6 +14,7 @@ public import TauCeti.NumberTheory.NumberField.FinitePlace.ValueFloor
 
 import TauCeti.Algebra.Module.ZLattice.Basic
 import TauCeti.LinearAlgebra.Dual.Lemmas
+import TauCeti.LinearAlgebra.Matrix.AbsoluteValue
 import TauCeti.NumberTheory.NumberField.CanonicalEmbedding.ConvexBody
 import TauCeti.NumberTheory.NumberField.CanonicalEmbedding.ModuleCovolume
 import TauCeti.NumberTheory.NumberField.CanonicalEmbedding.MulVolume
@@ -215,9 +216,11 @@ theorem approxAbsWeight_neg (S₀ : Finset (FinitePlace K)) (c : AbsoluteValue K
 theorem approxAbsWeight_smul (S₀ : Finset (FinitePlace K)) (r : ℝ)
     (c : AbsoluteValue K ℝ → ι → ℝ) :
     approxAbsWeight S₀ (r • c) = |r| * approxAbsWeight S₀ c := by
-  simp_rw [approxAbsWeight_eq_approxWeight_abs, Pi.smul_apply, smul_eq_mul, abs_mul,
+  rw [approxAbsWeight_eq_approxWeight_abs, approxAbsWeight_eq_approxWeight_abs,
     ← approxWeight_smul]
-  rfl
+  congr 1
+  ext v i
+  simp [abs_mul]
 
 /-- `approxWeight S₀` is monotone with respect to pointwise inequalities at the infinite places and
 `S₀`. -/
@@ -285,6 +288,68 @@ theorem discreteTopology_mixedImage_approxModule [Finite ι] {S₀ : Finset (Fin
     DiscreteTopology (approxModule S₀ L c Q).mixedImage :=
   Submodule.discreteTopology_mixedImage_iff.mpr (fg_approxModule hL c Q)
 
+/-- Given vectors `y k : ι → K` already satisfying the local bound of `approxModule S₀ L c Q` at a
+chosen finite place `v`, some algebraic integer `d` with `v d = 1` scales every `y k` into
+`approxModule S₀ L c Q`. -/
+private theorem exists_apply_eq_one_forall_smul_mem_approxModule [Finite ι]
+    {S₀ : Finset (FinitePlace K)} (L : AbsoluteValue K ℝ → ι → Dual K (ι → K))
+    (c : AbsoluteValue K ℝ → ι → ℝ) {Q : ℝ} (hQ : Q ≠ 0) (v : FinitePlace K)
+    (y : ι → ι → K)
+    (hy_mem : v ∈ S₀ → ∀ k i, v (L v.1 i (y k)) ≤ |Q| ^ c v.1 i)
+    (hy_notMem : v ∉ S₀ → ∀ k j, v (y k j) ≤ 1) :
+    ∃ d : 𝓞 K, v (d : K) = 1 ∧ ∀ k, (d : K) • y k ∈ approxModule S₀ L c Q := by
+  classical
+  have := Fintype.ofFinite ι
+  have hQc (w : FinitePlace K) (i : ι) : 0 < |Q| ^ c w.1 i :=
+    Real.rpow_pos_of_pos (abs_pos.mpr hQ) _
+  let T₁ : Finset (FinitePlace K) :=
+    Finset.univ.biUnion fun p : ι × ι ↦
+      (FinitePlace.hasFiniteMulSupport_max_one (y p.1 p.2)).toFinset
+  let T : Finset (FinitePlace K) := S₀.erase v ∪ T₁.erase v
+  have hvT : v ∉ T := by simp [T]
+  let R : FinitePlace K → ℝ := fun w ↦
+    (∑ p : ι × ι, w (L w.1 p.2 (y p.1)) / |Q| ^ c w.1 p.2) + ∑ p : ι × ι, w (y p.1 p.2)
+  have hR₁ (w : FinitePlace K) : 0 ≤ ∑ p : ι × ι, w (L w.1 p.2 (y p.1)) / |Q| ^ c w.1 p.2 :=
+    Finset.sum_nonneg fun p _ ↦ div_nonneg (apply_nonneg _ _) (hQc w p.2).le
+  have hR₂ (w : FinitePlace K) : 0 ≤ ∑ p : ι × ι, w (y p.1 p.2) :=
+    Finset.sum_nonneg fun _ _ ↦ apply_nonneg _ _
+  obtain ⟨d, hdv, hdR⟩ := v.exists_apply_eq_one_forall_mul_apply_le hvT
+    fun w _ ↦ add_nonneg (hR₁ w) (hR₂ w)
+  refine ⟨d, hdv, fun k ↦ mem_approxModule.mpr ⟨fun w hw i ↦ ?_, fun w hw j ↦ ?_⟩⟩
+  · rw [map_smul, smul_eq_mul, map_mul]
+    by_cases hwv : w = v
+    · subst hwv
+      simpa [hdv] using hy_mem hw k i
+    · have hwT : w ∈ T := Finset.mem_union_left _ (Finset.mem_erase.mpr ⟨hwv, hw⟩)
+      have hleR : w (L w.1 i (y k)) ≤ R w * |Q| ^ c w.1 i := by
+        rw [← div_le_iff₀ (hQc w i)]
+        exact (Finset.single_le_sum (f := fun p : ι × ι ↦ w (L w.1 p.2 (y p.1)) / |Q| ^ c w.1 p.2)
+          (fun p _ ↦ div_nonneg (apply_nonneg _ _) (hQc w p.2).le)
+          (Finset.mem_univ (k, i))).trans (le_add_of_nonneg_right (hR₂ w))
+      calc w (d : K) * w (L w.1 i (y k))
+          ≤ w (d : K) * (R w * |Q| ^ c w.1 i) :=
+            mul_le_mul_of_nonneg_left hleR (apply_nonneg _ _)
+        _ = w (d : K) * R w * |Q| ^ c w.1 i := (mul_assoc _ _ _).symm
+        _ ≤ |Q| ^ c w.1 i := mul_le_of_le_one_left (hQc w i).le (hdR w hwT)
+  · rw [Pi.smul_apply, smul_eq_mul, map_mul]
+    by_cases hwv : w = v
+    · subst hwv
+      simpa [hdv] using hy_notMem hw k j
+    · by_cases hwT₁ : w ∈ T₁
+      · have hwT : w ∈ T := Finset.mem_union_right _ (Finset.mem_erase.mpr ⟨hwv, hwT₁⟩)
+        have hleR : w (y k j) ≤ R w :=
+          (Finset.single_le_sum (f := fun p : ι × ι ↦ w (y p.1 p.2))
+            (fun _ _ ↦ apply_nonneg _ _) (Finset.mem_univ (k, j))).trans
+            (le_add_of_nonneg_left (hR₁ w))
+        exact (mul_le_mul_of_nonneg_left hleR (apply_nonneg _ _)).trans (hdR w hwT)
+      · have hy1 : w (y k j) ≤ 1 := by
+          by_contra! hgt
+          refine hwT₁ (Finset.mem_biUnion.mpr ⟨(k, j), Finset.mem_univ _, ?_⟩)
+          exact (Set.Finite.mem_toFinset _).mpr
+            (Function.mem_mulSupport.mpr (ne_of_gt (lt_max_of_lt_left hgt)))
+        exact (mul_le_mul (w.apply_le_one d) hy1 (apply_nonneg _ _) zero_le_one).trans_eq
+          (one_mul 1)
+
 variable [Fintype ι]
 
 open scoped Classical in
@@ -298,28 +363,6 @@ theorem isZLattice_mixedImage_approxModule {S₀ : Finset (FinitePlace K)}
   letI := discreteTopology_mixedImage_approxModule hL c Q
   Submodule.isZLattice_mixedImage (span_approxModule_eq_top S₀ L c hQ)
 
-/-- Ultrametric column-product bound on the determinant of a matrix at a finite place. -/
-private theorem apply_det_le_prod [DecidableEq ι] (v : FinitePlace K) (M : Matrix ι ι K)
-    {b : ι → ℝ} (hM : ∀ i j, v (M i j) ≤ b j) : v M.det ≤ ∏ j, b j := by
-  rw [Matrix.det_apply]
-  obtain ⟨σ, -, hσ⟩ := IsNonarchimedean.finset_image_add_of_nonempty _
-    (fun y z ↦ v.add_le y z) (Finset.univ_nonempty (α := Equiv.Perm ι))
-  refine hσ.trans ?_
-  have hsign (y : K) : v (Equiv.Perm.sign σ • y) = v y := by
-    rcases Int.units_eq_one_or (Equiv.Perm.sign σ) with h | h <;> simp [h]
-  rw [hsign, map_prod]
-  gcongr with j
-  exact hM (σ j) j
-
-omit [NumberField K] in
-/-- Matrix representation of `(L u i (x k))_{k, i}` as `Matrix.of x * (toMatrix' (pi (L u)))ᵀ`. -/
-private theorem matrix_apply_forms_eq_mul_transpose [DecidableEq ι]
-    (l : ι → Dual K (ι → K)) (x : ι → ι → K) :
-    Matrix.of (fun k i ↦ l i (x k)) = Matrix.of x * (LinearMap.toMatrix' (LinearMap.pi l))ᵀ := by
-  ext k i
-  conv_lhs => rw [Matrix.of_apply, ← (Pi.basisFun K ι).sum_repr (x k), map_sum]
-  simp [Matrix.mul_apply, LinearMap.toMatrix'_apply]
-
 /-- Outside `S₀`, the largest value of `v` on the determinants of `card ι` vectors of
 `approxModule S₀ L c Q` is `1`. -/
 private theorem isGreatest_apply_det_approxModule_of_notMem [DecidableEq ι]
@@ -327,34 +370,11 @@ private theorem isGreatest_apply_det_approxModule_of_notMem [DecidableEq ι]
     (c : AbsoluteValue K ℝ → ι → ℝ) {Q : ℝ} (hQ : Q ≠ 0) {v : FinitePlace K} (hv : v ∉ S₀) :
     IsGreatest ((fun x : ι → ι → K ↦ v (Matrix.of x).det) ''
       Set.univ.pi fun _ ↦ (approxModule S₀ L c Q : Set (ι → K))) 1 := by
-  have hQc (w : FinitePlace K) (i : ι) : 0 < |Q| ^ c w.1 i :=
-    Real.rpow_pos_of_pos (abs_pos.mpr hQ) _
-  set S : FinitePlace K → ℝ := fun w ↦ ∑ i, ∑ j, w (L w.1 i (Pi.basisFun K ι j)) / |Q| ^ c w.1 i
-  have hS0 (w : FinitePlace K) : 0 ≤ S w :=
-    Finset.sum_nonneg fun i _ ↦ Finset.sum_nonneg fun j _ ↦
-      div_nonneg (apply_nonneg _ _) (hQc w i).le
-  have hS (w : FinitePlace K) (i j : ι) :
-      w (L w.1 i (Pi.basisFun K ι j)) ≤ S w * |Q| ^ c w.1 i := by
-    rw [← div_le_iff₀ (hQc w i)]
-    refine (Finset.single_le_sum (f := fun j ↦ w (L w.1 i (Pi.basisFun K ι j)) / |Q| ^ c w.1 i)
-      (fun _ _ ↦ div_nonneg (apply_nonneg _ _) (hQc w i).le) (Finset.mem_univ j)).trans ?_
-    exact Finset.single_le_sum
-      (f := fun i ↦ ∑ j, w (L w.1 i (Pi.basisFun K ι j)) / |Q| ^ c w.1 i)
-      (fun i _ ↦ Finset.sum_nonneg fun j _ ↦ div_nonneg (apply_nonneg _ _) (hQc w i).le)
-      (Finset.mem_univ i)
-  obtain ⟨d, hdv, hdS⟩ := v.exists_apply_eq_one_forall_mul_apply_le hv fun w _ ↦ hS0 w
-  refine ⟨⟨fun k ↦ (d : K) • Pi.basisFun K ι k, fun k _ ↦ ?_, ?_⟩, ?_⟩
-  · refine mem_approxModule.mpr ⟨fun w hw i ↦ ?_, fun w _ j ↦ ?_⟩
-    · dsimp only
-      rw [map_smul, smul_eq_mul, map_mul]
-      calc w (d : K) * w (L w.1 i (Pi.basisFun K ι k))
-          ≤ w (d : K) * (S w * |Q| ^ c w.1 i) :=
-            mul_le_mul_of_nonneg_left (hS w i k) (apply_nonneg _ _)
-        _ = w (d : K) * S w * |Q| ^ c w.1 i := (mul_assoc _ _ _).symm
-        _ ≤ |Q| ^ c w.1 i := mul_le_of_le_one_left (hQc w i).le (hdS w hw)
-    · dsimp only
-      rw [Pi.smul_apply, smul_eq_mul, map_mul, Pi.basisFun_apply, Pi.single_apply]
-      split_ifs <;> simp [w.apply_le_one d]
+  obtain ⟨d, hdv, hd_mem⟩ := exists_apply_eq_one_forall_smul_mem_approxModule L c hQ v
+    (fun k ↦ Pi.basisFun K ι k) (fun h ↦ (hv h).elim) fun _ k j ↦ by
+      rw [Pi.basisFun_apply, Pi.single_apply]
+      split_ifs <;> simp
+  refine ⟨⟨fun k ↦ (d : K) • Pi.basisFun K ι k, fun k _ ↦ hd_mem k, ?_⟩, ?_⟩
   · dsimp only
     have hmat :
         Matrix.of (fun k : ι ↦ (d : K) • Pi.basisFun K ι k) = (d : K) • (1 : Matrix ι ι K) := by
@@ -362,8 +382,53 @@ private theorem isGreatest_apply_det_approxModule_of_notMem [DecidableEq ι]
       simp [Pi.basisFun_apply, Pi.single_apply, Matrix.one_apply, Algebra.smul_def, eq_comm]
     rw [hmat, Matrix.det_smul, Matrix.det_one, mul_one, map_pow, hdv, one_pow]
   · rintro _ ⟨x, hx, rfl⟩
-    refine (apply_det_le_prod v (Matrix.of x) fun k j ↦ ?_).trans_eq Finset.prod_const_one
-    exact (mem_approxModule.mp (hx k (Set.mem_univ k))).2 v hv j
+    exact ((Matrix.of x).abv_det_le_prod_of_le v.add_le fun k j ↦
+      (mem_approxModule.mp (hx k (Set.mem_univ k))).2 v hv j).trans_eq Finset.prod_const_one
+
+/-- At a place `v ∈ S₀` where `L v.1` is linearly independent, the value
+`(v (det (L v.1)))⁻¹ * ∏ i, v.floorValue (|Q| ^ c v.1 i)` is attained by `v (Matrix.of x).det` on
+`approxModule S₀ L c Q`. -/
+private theorem mem_image_apply_det_approxModule_of_mem [DecidableEq ι]
+    {S₀ : Finset (FinitePlace K)} {L : AbsoluteValue K ℝ → ι → Dual K (ι → K)}
+    (c : AbsoluteValue K ℝ → ι → ℝ) {Q : ℝ} (hQ : Q ≠ 0) {v : FinitePlace K} (hv : v ∈ S₀)
+    (hvL : LinearIndependent K (L v.1)) :
+    (v (LinearMap.det (LinearMap.pi (L v.1))))⁻¹ * ∏ i, v.floorValue (|Q| ^ c v.1 i) ∈
+      (fun x : ι → ι → K ↦ v (Matrix.of x).det) ''
+        Set.univ.pi fun _ ↦ (approxModule S₀ L c Q : Set (ι → K)) := by
+  have hQc (i : ι) : 0 < |Q| ^ c v.1 i := Real.rpow_pos_of_pos (abs_pos.mpr hQ) _
+  have hdet0 : v (LinearMap.det (LinearMap.pi (L v.1))) ≠ 0 :=
+    (FinitePlace.pos_iff.mpr hvL.det_pi_ne_zero).ne'
+  -- Invert `L v.1` on a diagonal realizing `v.floorValue (|Q| ^ c v.1 i)`, then scale by an
+  -- algebraic integer `d` with `v d = 1` clearing all other places.
+  choose u _ hu using fun i : ι ↦ v.exists_apply_eq_floorValue (hQc i)
+  let e : (ι → K) ≃ₗ[K] (ι → K) := LinearEquiv.ofBijective (LinearMap.pi (L v.1)) hvL.pi_bijective
+  let y : ι → ι → K := fun k ↦ e.symm (Pi.single (M := fun _ : ι ↦ K) k (u k))
+  have hLy (k i : ι) : L v.1 i (y k) = Pi.single (M := fun _ : ι ↦ K) k (u k) i :=
+    congrFun (e.apply_symm_apply (Pi.single (M := fun _ : ι ↦ K) k (u k))) i
+  obtain ⟨d, hdv, hd_mem⟩ := exists_apply_eq_one_forall_smul_mem_approxModule L c hQ v y
+    (fun _ k i ↦ by
+      rw [hLy, Pi.single_apply]
+      split_ifs with hki
+      · subst hki; exact (hu i).le.trans (v.floorValue_le (hQc i).le)
+      · simp [(hQc i).le])
+    fun h ↦ (h hv).elim
+  refine ⟨fun k ↦ (d : K) • y k, fun k _ ↦ hd_mem k, ?_⟩
+  dsimp only
+  have hdiag : Matrix.of (fun k i ↦ L v.1 i ((d : K) • y k)) =
+      Matrix.diagonal fun k ↦ (d : K) * u k := by
+    ext k i
+    rw [Matrix.of_apply, map_smul, smul_eq_mul, hLy, Pi.single_apply, Matrix.diagonal_apply]
+    by_cases hki : k = i
+    · subst hki; simp
+    · simp [hki, Ne.symm hki]
+  have hmul := congrArg (fun M ↦ v M.det) (Matrix.of_apply_eq_mul_transpose_toMatrix'_pi (L v.1)
+    fun k ↦ (d : K) • y k)
+  rw [hdiag, Matrix.det_diagonal, Matrix.det_mul, Matrix.det_transpose, LinearMap.det_toMatrix',
+    map_mul, map_prod] at hmul
+  apply mul_left_cancel₀ hdet0
+  rw [← mul_assoc, mul_inv_cancel₀ hdet0, one_mul, mul_comm, ← hmul]
+  refine Finset.prod_congr rfl fun k _ ↦ ?_
+  rw [map_mul, hdv, one_mul, hu k]
 
 /-- At a place `v ∈ S₀` where `L v.1` is linearly independent, the largest value of `v` on the
 determinants of `card ι` vectors of `approxModule S₀ L c Q` is
@@ -375,102 +440,18 @@ private theorem isGreatest_apply_det_approxModule_of_mem [DecidableEq ι]
     IsGreatest ((fun x : ι → ι → K ↦ v (Matrix.of x).det) ''
       Set.univ.pi fun _ ↦ (approxModule S₀ L c Q : Set (ι → K)))
       ((v (LinearMap.det (LinearMap.pi (L v.1))))⁻¹ * ∏ i, v.floorValue (|Q| ^ c v.1 i)) := by
-  have hQc (w : FinitePlace K) (i : ι) : 0 < |Q| ^ c w.1 i :=
-    Real.rpow_pos_of_pos (abs_pos.mpr hQ) _
-  have hdet_pos : 0 < v (LinearMap.det (LinearMap.pi (L v.1))) :=
-    FinitePlace.pos_iff.mpr hvL.det_pi_ne_zero
-  have hdet0 : v (LinearMap.det (LinearMap.pi (L v.1))) ≠ 0 := hdet_pos.ne'
-  -- Invert `L v.1` on a diagonal realizing `v.floorValue (|Q| ^ c v.1 i)`, then scale by an
-  -- algebraic integer that is a unit at `v` and clears all other bad places.
-  choose u _ hu using fun i : ι ↦ v.exists_apply_eq_floorValue (hQc v i)
-  let e : (ι → K) ≃ₗ[K] (ι → K) := LinearEquiv.ofBijective (LinearMap.pi (L v.1)) hvL.bijective_pi
-  let y : ι → ι → K := fun k ↦ e.symm (Pi.single (M := fun _ : ι ↦ K) k (u k))
-  have hLy (k i : ι) : L v.1 i (y k) = Pi.single (M := fun _ : ι ↦ K) k (u k) i :=
-    congrFun (e.apply_symm_apply (Pi.single (M := fun _ : ι ↦ K) k (u k))) i
-  classical
-  let T₁ : Finset (FinitePlace K) :=
-    Finset.univ.biUnion fun p : ι × ι ↦
-      (FinitePlace.hasFiniteMulSupport_max_one (y p.1 p.2)).toFinset
-  let T : Finset (FinitePlace K) := S₀.erase v ∪ (T₁ \ S₀)
-  have hvT : v ∉ T := by simp [T, hv]
-  let R : FinitePlace K → ℝ := fun w ↦
-    (∑ k, ∑ i, w (L w.1 i (y k)) / |Q| ^ c w.1 i) + ∑ k, ∑ j, w (y k j)
-  have hR0 (w : FinitePlace K) : 0 ≤ R w :=
-    add_nonneg (Finset.sum_nonneg fun _ _ ↦ Finset.sum_nonneg fun i _ ↦
-      div_nonneg (apply_nonneg _ _) (hQc w i).le)
-      (Finset.sum_nonneg fun _ _ ↦ Finset.sum_nonneg fun _ _ ↦ apply_nonneg _ _)
-  obtain ⟨d, hdv, hdR⟩ := v.exists_apply_eq_one_forall_mul_apply_le hvT fun w _ ↦ hR0 w
-  refine ⟨⟨fun k ↦ (d : K) • y k, fun k _ ↦ ?_, ?_⟩, ?_⟩
-  · refine mem_approxModule.mpr ⟨fun w hw i ↦ ?_, fun w hw j ↦ ?_⟩
-    · dsimp only
-      rw [map_smul, smul_eq_mul, map_mul]
-      by_cases hwv : w = v
-      · subst hwv
-        rw [hdv, one_mul, hLy, Pi.single_apply]
-        split_ifs with hki
-        · subst hki
-          exact (hu i).le.trans (w.floorValue_le (hQc w i).le)
-        · simp [(hQc w i).le]
-      · have hwT : w ∈ T := Finset.mem_union_left _ (Finset.mem_erase.mpr ⟨hwv, hw⟩)
-        have hleR : w (L w.1 i (y k)) ≤ R w * |Q| ^ c w.1 i := by
-          rw [← div_le_iff₀ (hQc w i)]
-          refine le_trans ?_ (le_add_of_nonneg_right
-            (Finset.sum_nonneg fun _ _ ↦ Finset.sum_nonneg fun _ _ ↦ apply_nonneg _ _))
-          refine (Finset.single_le_sum (f := fun i ↦ w (L w.1 i (y k)) / |Q| ^ c w.1 i)
-            (fun i _ ↦ div_nonneg (apply_nonneg _ _) (hQc w i).le) (Finset.mem_univ i)).trans ?_
-          exact Finset.single_le_sum (f := fun k ↦ ∑ i, w (L w.1 i (y k)) / |Q| ^ c w.1 i)
-            (fun _ _ ↦ Finset.sum_nonneg fun i _ ↦ div_nonneg (apply_nonneg _ _) (hQc w i).le)
-            (Finset.mem_univ k)
-        calc w (d : K) * w (L w.1 i (y k))
-            ≤ w (d : K) * (R w * |Q| ^ c w.1 i) :=
-              mul_le_mul_of_nonneg_left hleR (apply_nonneg _ _)
-          _ = w (d : K) * R w * |Q| ^ c w.1 i := (mul_assoc _ _ _).symm
-          _ ≤ |Q| ^ c w.1 i := mul_le_of_le_one_left (hQc w i).le (hdR w hwT)
-    · dsimp only
-      rw [Pi.smul_apply, smul_eq_mul, map_mul]
-      by_cases hwT₁ : w ∈ T₁
-      · have hwT : w ∈ T := Finset.mem_union_right _ (Finset.mem_sdiff.mpr ⟨hwT₁, hw⟩)
-        have hleR : w (y k j) ≤ R w := by
-          refine le_trans ?_ (le_add_of_nonneg_left
-            (Finset.sum_nonneg fun _ _ ↦ Finset.sum_nonneg fun i _ ↦
-              div_nonneg (apply_nonneg _ _) (hQc w i).le))
-          refine (Finset.single_le_sum (f := fun j ↦ w (y k j))
-            (fun _ _ ↦ apply_nonneg _ _) (Finset.mem_univ j)).trans ?_
-          exact Finset.single_le_sum (f := fun k ↦ ∑ j, w (y k j))
-            (fun _ _ ↦ Finset.sum_nonneg fun _ _ ↦ apply_nonneg _ _) (Finset.mem_univ k)
-        exact (mul_le_mul_of_nonneg_left hleR (apply_nonneg _ _)).trans (hdR w hwT)
-      · have hy1 : w (y k j) ≤ 1 := by
-          by_contra! hgt
-          refine hwT₁ (Finset.mem_biUnion.mpr ⟨(k, j), Finset.mem_univ _, ?_⟩)
-          exact (Set.Finite.mem_toFinset _).mpr
-            (Function.mem_mulSupport.mpr (ne_of_gt (lt_max_of_lt_left hgt)))
-        exact (mul_le_mul (w.apply_le_one d) hy1 (apply_nonneg _ _) zero_le_one).trans_eq
-          (one_mul 1)
-  · dsimp only
-    have hdiag : Matrix.of (fun k i ↦ L v.1 i ((d : K) • y k)) =
-        Matrix.diagonal fun k ↦ (d : K) * u k := by
-      ext k i
-      rw [Matrix.of_apply, map_smul, smul_eq_mul, hLy, Pi.single_apply, Matrix.diagonal_apply]
-      by_cases hki : k = i
-      · subst hki; simp
-      · simp [hki, Ne.symm hki]
-    have hmul := congrArg (fun M ↦ v M.det) (matrix_apply_forms_eq_mul_transpose (L v.1)
-      fun k ↦ (d : K) • y k)
-    rw [hdiag, Matrix.det_diagonal, Matrix.det_mul, Matrix.det_transpose, LinearMap.det_toMatrix',
-      map_mul, map_prod] at hmul
-    apply mul_left_cancel₀ hdet0
-    rw [← mul_assoc, mul_inv_cancel₀ hdet0, one_mul, mul_comm, ← hmul]
-    refine Finset.prod_congr rfl fun k _ ↦ ?_
-    rw [map_mul, hdv, one_mul, hu k]
-  · -- Upper bound: apply the ultrametric determinant inequality to `(L v.1 i (x k))_{k, i}`.
-    rintro _ ⟨x, hx, rfl⟩
-    dsimp only
-    refine (le_inv_mul_iff₀ hdet_pos).mpr ?_
-    have hmul := congrArg (fun M ↦ v M.det) (matrix_apply_forms_eq_mul_transpose (L v.1) x)
-    rw [Matrix.det_mul, Matrix.det_transpose, LinearMap.det_toMatrix', map_mul, mul_comm] at hmul
-    rw [← hmul]
-    refine apply_det_le_prod v _ fun k i ↦ (v.apply_le_iff_le_floorValue (hQc v i) _).mp ?_
-    exact (mem_approxModule.mp (hx k (Set.mem_univ k))).1 v hv i
+  refine ⟨mem_image_apply_det_approxModule_of_mem c hQ hv hvL, ?_⟩
+  -- Upper bound: apply the ultrametric determinant inequality to `(L v.1 i (x k))_{k, i}`.
+  rintro _ ⟨x, hx, rfl⟩
+  dsimp only
+  have hQc (i : ι) : 0 < |Q| ^ c v.1 i := Real.rpow_pos_of_pos (abs_pos.mpr hQ) _
+  refine (le_inv_mul_iff₀ (FinitePlace.pos_iff.mpr hvL.det_pi_ne_zero)).mpr ?_
+  have hmul := congrArg (fun M ↦ v M.det) (Matrix.of_apply_eq_mul_transpose_toMatrix'_pi (L v.1) x)
+  rw [Matrix.det_mul, Matrix.det_transpose, LinearMap.det_toMatrix', map_mul, mul_comm] at hmul
+  rw [← hmul]
+  exact Matrix.abv_det_le_prod_of_le' _ v.add_le fun k i ↦
+    (v.apply_le_iff_le_floorValue (hQc i) _).mp
+      ((mem_approxModule.mp (hx k (Set.mem_univ k))).1 v hv i)
 
 open scoped Classical in
 /-- **Covolume of the lattice of an approximation domain** (Bombieri–Gubler, Lemma 7.5.7, finite
@@ -524,17 +505,80 @@ end Covolume
 
 section Volume
 
-variable {K : Type*} [Field K] [NumberField K] {ι : Type*} [Fintype ι]
+variable {K : Type*} [Field K] {ι : Type*} [Fintype ι]
+
+/-- Ring homomorphism assembling a family of elements `(g w)_w` at the infinite places into an
+element of `mixedSpace K` whose `w`-coordinate agrees with `mixedEmbedding K (g w)`. -/
+private noncomputable def mixedDiag :
+    (InfinitePlace K → K) →+* mixedSpace K :=
+  RingHom.prod
+    (RingHom.pi fun w ↦ (Pi.evalRingHom _ w).comp <|
+      (RingHom.fst _ _).comp <| (mixedEmbedding K).comp (Pi.evalRingHom _ w.1))
+    (RingHom.pi fun w ↦ (Pi.evalRingHom _ w).comp <|
+      (RingHom.snd _ _).comp <| (mixedEmbedding K).comp (Pi.evalRingHom _ w.1))
+
+open scoped Classical in
+/-- The `ℝ`-linear endomorphism of `ι → mixedSpace K` obtained by restricting scalars from the
+`mixedSpace K`-linear map with matrix `(mixedDiag (fun w ↦ L w.1 i (e_j)))_{i, j}`. -/
+private noncomputable def approxBodyLin (L : AbsoluteValue K ℝ → ι → Dual K (ι → K)) :
+    (ι → mixedSpace K) →ₗ[ℝ] (ι → mixedSpace K) :=
+  (Matrix.toLin' ((Matrix.of fun i j (w : InfinitePlace K) ↦
+    L w.1 i (Pi.basisFun K ι j)).map mixedDiag)).restrictScalars ℝ
+
+open scoped Classical in
+/-- `approxBody L c Q` is the preimage under `approxBodyLin L` of the product of closed-ball boxes
+of radii `Q ^ c w.1 i`. -/
+private theorem approxBody_eq_preimage (L : AbsoluteValue K ℝ → ι → Dual K (ι → K))
+    (c : AbsoluteValue K ℝ → ι → ℝ) (Q : ℝ) :
+    approxBody L c Q =
+      approxBodyLin L ⁻¹'
+        (Set.univ.pi fun i ↦ {x : mixedSpace K | ∀ w, normAtPlace w x ≤ Q ^ c w.1 i}) := by
+  have hnorm_apply (w : InfinitePlace K) (i : ι) (z : ι → mixedSpace K) :
+      normAtPlace w (approxBodyLin L z i) =
+        normAtPlace w (∑ j, mixedEmbedding K (L w.1 i (Pi.basisFun K ι j)) * z j) := by
+    rw [show approxBodyLin L z i =
+        ∑ j, mixedDiag (fun u ↦ L u.1 i (Pi.basisFun K ι j)) * z j by
+      simp [approxBodyLin, Matrix.mulVec, dotProduct]]
+    exact normAtPlace_congr w
+      (fun hw ↦ by simp [mixedDiag, Prod.fst_sum])
+      (fun hwc ↦ by simp [mixedDiag, Prod.snd_sum])
+  ext z
+  simp only [mem_approxBody, Set.mem_preimage, Set.mem_pi, Set.mem_univ, forall_true_left,
+    Set.mem_ofPred_eq, hnorm_apply]
+  exact forall_comm
+
+variable [NumberField K]
+
+open scoped Classical in
+/-- The real determinant of `approxBodyLin L` has absolute value
+`∏ v : InfinitePlace K, v (det (pi (L v.1))) ^ v.mult`. -/
+private theorem abs_det_approxBodyLin (L : AbsoluteValue K ℝ → ι → Dual K (ι → K)) :
+    |LinearMap.det (approxBodyLin L)| =
+      ∏ v : InfinitePlace K, v (LinearMap.det (LinearMap.pi (L v.1))) ^ v.mult := by
+  let M : Matrix ι ι (InfinitePlace K → K) :=
+    Matrix.of fun i j w ↦ L w.1 i (Pi.basisFun K ι j)
+  have hnorm_det (w : InfinitePlace K) :
+      normAtPlace w (M.map mixedDiag).det = w (LinearMap.det (LinearMap.pi (L w.1))) := by
+    have hMdet : M.det w = LinearMap.det (LinearMap.pi (L w.1)) := by
+      have heval : M.det w = (M.map (Pi.evalRingHom _ w)).det := by
+        simpa only [Pi.evalRingHom_apply, RingHom.mapMatrix_apply] using
+          RingHom.map_det (Pi.evalRingHom _ w) M
+      rw [heval, ← LinearMap.det_toMatrix' (LinearMap.pi (L w.1))]
+      apply congrArg Matrix.det
+      ext i j
+      simp [M, LinearMap.toMatrix'_apply]
+    rw [← RingHom.mapMatrix_apply, ← RingHom.map_det, ← hMdet, ← normAtPlace_apply]
+    exact normAtPlace_congr w (fun hw ↦ by simp [mixedDiag]) (fun hwc ↦ by simp [mixedDiag])
+  rw [approxBodyLin, LinearMap.det_restrictScalars, LinearMap.det_toLin', abs_algebraNorm,
+    mixedEmbedding.norm_apply]
+  exact Finset.prod_congr rfl fun v _ ↦ by rw [hnorm_det]
 
 open scoped Classical in
 /-- **Volume of the body of an approximation domain** (Bombieri–Gubler, Lemma 7.5.7, archimedean
 part): when the linear forms `L w.1` are linearly independent at every infinite place `w`, the
 `ℝ≥0∞`-volume of `approxBody L c Q` in `ι → mixedSpace K` is `convexBodyLTFactor K ^ card ι` times
 the product over infinite places `v` of
-`(ENNReal.ofReal ((v (det (L v.1)))⁻¹) * ∏ i, ENNReal.ofReal (Q ^ c v.1 i)) ^ v.mult`.
-
-Proved by a single `mixedSpace K`-linear change of variables on `ι → mixedSpace K`, whose real
-determinant is computed at all infinite places at once via `LinearMap.det_restrictScalars`. -/
+`(ENNReal.ofReal ((v (det (L v.1)))⁻¹) * ∏ i, ENNReal.ofReal (Q ^ c v.1 i)) ^ v.mult`. -/
 theorem volume_approxBody {L : AbsoluteValue K ℝ → ι → Dual K (ι → K)}
     (hL : ∀ w : InfinitePlace K, LinearIndependent K (L w.1)) (c : AbsoluteValue K ℝ → ι → ℝ)
     (Q : ℝ) :
@@ -543,81 +587,14 @@ theorem volume_approxBody {L : AbsoluteValue K ℝ → ι → Dual K (ι → K)}
         ∏ v : InfinitePlace K,
           (ENNReal.ofReal ((v (LinearMap.det (LinearMap.pi (L v.1))))⁻¹) *
             ∏ i, ENNReal.ofReal (Q ^ c v.1 i)) ^ v.mult := by
-  -- Assemble the `w`-embeddings of the coefficients of `L w` into one matrix over `mixedSpace K`.
-  let a : ι → ι → mixedSpace K := fun i j ↦
-    (fun w ↦ (mixedEmbedding K (L w.1.1 i (Pi.basisFun K ι j))).1 w,
-     fun w ↦ (mixedEmbedding K (L w.1.1 i (Pi.basisFun K ι j))).2 w)
-  let A : Matrix ι ι (mixedSpace K) := Matrix.of a
-  let φ : (ι → mixedSpace K) →ₗ[ℝ] (ι → mixedSpace K) := (Matrix.toLin' A).restrictScalars ℝ
-  let evalReal (w : {w : InfinitePlace K // IsReal w}) : mixedSpace K →+* ℝ :=
-    (Pi.evalRingHom _ w).comp (RingHom.fst _ _)
-  let evalComplex (w : {w : InfinitePlace K // IsComplex w}) : mixedSpace K →+* ℂ :=
-    (Pi.evalRingHom _ w).comp (RingHom.snd _ _)
-  -- At each infinite place `w`, `(φ z) i` has the same `w`-norm as the action of `L w.1 i` on `z`.
-  have hnorm_apply (w : InfinitePlace K) (i : ι) (z : ι → mixedSpace K) :
-      normAtPlace w ((φ z) i) =
-        normAtPlace w (∑ j, mixedEmbedding K (L w.1 i (Pi.basisFun K ι j)) * z j) := by
-    have hφz : (φ z) i = ∑ j, a i j * z j := by
-      simp [φ, A, Matrix.mulVec, dotProduct]
-    rw [hφz]
-    by_cases hw : IsReal w
-    · simp only [normAtPlace_apply_of_isReal hw]
-      congr 1
-      change evalReal ⟨w, hw⟩ (∑ j, a i j * z j) =
-        evalReal ⟨w, hw⟩ (∑ j, mixedEmbedding K (L w.1 i (Pi.basisFun K ι j)) * z j)
-      simp only [map_sum, map_mul]
-      rfl
-    · have hwc : IsComplex w := not_isReal_iff_isComplex.mp hw
-      simp only [normAtPlace_apply_of_isComplex hwc]
-      congr 1
-      change evalComplex ⟨w, hwc⟩ (∑ j, a i j * z j) =
-        evalComplex ⟨w, hwc⟩ (∑ j, mixedEmbedding K (L w.1 i (Pi.basisFun K ι j)) * z j)
-      simp only [map_sum, map_mul]
-      rfl
-  -- Hence `approxBody L c Q` is the preimage under `φ` of a product of closed-ball boxes.
-  have hpre : approxBody L c Q =
-      φ ⁻¹' (Set.univ.pi fun i ↦ {x : mixedSpace K | ∀ w, normAtPlace w x ≤ Q ^ c w.1 i}) := by
-    ext z
-    simp only [mem_approxBody, Set.mem_preimage, Set.mem_pi, Set.mem_univ, forall_true_left,
-      Set.mem_ofPred_eq, hnorm_apply]
-    exact forall_comm
-  -- Likewise, the `w`-coordinate of `A.det` is the `w`-embedding of `det (pi (L w.1))`.
-  have hmat_det (u : AbsoluteValue K ℝ) :
-      (Matrix.of fun i j ↦ L u i (Pi.basisFun K ι j)).det = LinearMap.det (LinearMap.pi (L u)) := by
-    rw [← LinearMap.det_toMatrix' (LinearMap.pi (L u))]
-    rfl
-  have hnorm_det (w : InfinitePlace K) :
-      normAtPlace w A.det = w (LinearMap.det (LinearMap.pi (L w.1))) := by
-    rw [← normAtPlace_apply, ← hmat_det]
-    by_cases hw : IsReal w
-    · simp only [normAtPlace_apply_of_isReal hw]
-      congr 1
-      change evalReal ⟨w, hw⟩ A.det =
-        ((evalReal ⟨w, hw⟩).comp (mixedEmbedding K))
-          (Matrix.of fun i j ↦ L w.1 i (Pi.basisFun K ι j)).det
-      rw [RingHom.map_det, RingHom.map_det]
-      rfl
-    · have hwc : IsComplex w := not_isReal_iff_isComplex.mp hw
-      simp only [normAtPlace_apply_of_isComplex hwc]
-      congr 1
-      change evalComplex ⟨w, hwc⟩ A.det =
-        ((evalComplex ⟨w, hwc⟩).comp (mixedEmbedding K))
-          (Matrix.of fun i j ↦ L w.1 i (Pi.basisFun K ι j)).det
-      rw [RingHom.map_det, RingHom.map_det]
-      rfl
-  have habs_det : |LinearMap.det φ| =
-      ∏ v : InfinitePlace K, v (LinearMap.det (LinearMap.pi (L v.1))) ^ v.mult := by
-    rw [LinearMap.det_restrictScalars, LinearMap.det_toLin', abs_algebraNorm,
-      mixedEmbedding.norm_apply]
-    exact Finset.prod_congr rfl fun v _ ↦ by rw [hnorm_det]
   have hdet_pos : 0 < ∏ v : InfinitePlace K, v (LinearMap.det (LinearMap.pi (L v.1))) ^ v.mult :=
     Finset.prod_pos fun v _ ↦ pow_pos (InfinitePlace.pos_iff.mpr (hL v).det_pi_ne_zero) _
-  have hdet_ne : LinearMap.det φ ≠ 0 := by
-    rw [← abs_ne_zero, habs_det]
+  have hdet_ne : LinearMap.det (approxBodyLin L) ≠ 0 := by
+    rw [← abs_ne_zero, abs_det_approxBodyLin]
     exact hdet_pos.ne'
-  rw [hpre, Measure.addHaar_preimage_linearMap volume hdet_ne, abs_inv, habs_det,
-    ENNReal.ofReal_inv_of_pos hdet_pos, ENNReal.ofReal_prod_of_nonneg (fun _ _ ↦ by positivity),
-    volume_pi_pi]
+  rw [approxBody_eq_preimage, Measure.addHaar_preimage_linearMap volume hdet_ne, abs_inv,
+    abs_det_approxBodyLin, ENNReal.ofReal_inv_of_pos hdet_pos,
+    ENNReal.ofReal_prod_of_nonneg (fun _ _ ↦ by positivity), volume_pi_pi]
   simp_rw [volume_setOf_forall_normAtPlace_le, Finset.prod_mul_distrib, Finset.prod_const,
     Finset.card_univ]
   rw [mul_left_comm]
@@ -885,24 +862,29 @@ theorem le_volume_div_covolume {S₀ : Finset (FinitePlace K)}
 
 end Comparison
 
-/-! ### Discreteness of finite-place bounds and `DecidableEq`-freedom checks -/
+/-! ### `DecidableEq`-freedom check and a worked example over `ℚ` -/
 
--- Check that none of the public theorems in this file carry `[DecidableEq ι]`.
+-- Check that `le_volume_div_covolume` and `volume_div_covolume_le` (together with `approxConst`,
+-- `approxWeight`, `approxBody`, and `approxModule`) apply without `[DecidableEq ι]` (supplying
+-- classical decidability only on `IsReal` and `IsComplex` for the measure on `mixedSpace K`).
 section NoDecidableEqCheck
 
 variable {K : Type*} [Field K] [NumberField K] {ι : Type*} [Fintype ι]
 
-open scoped Classical in
 example (S₀ : Finset (FinitePlace K)) (L : AbsoluteValue K ℝ → ι → Dual K (ι → K))
     (hLInf : ∀ v : InfinitePlace K, LinearIndependent K (L v.1))
     (hLFin : ∀ v ∈ S₀, LinearIndependent K (L v.1))
     (c : AbsoluteValue K ℝ → ι → ℝ) {Q : ℝ} (hQ : 0 < Q) :
+    letI : DecidablePred (InfinitePlace.IsReal (K := K)) := Classical.decPred _
+    letI : DecidablePred (InfinitePlace.IsComplex (K := K)) := Classical.decPred _
     approxConst S₀ L / (∏ v ∈ S₀, (v.maximalIdeal.asIdeal.absNorm : ℝ) ^ Fintype.card ι) *
         Q ^ approxWeight S₀ c ≤
       volume.real (approxBody L c Q) / ZLattice.covolume (approxModule S₀ L c Q).mixedImage ∧
     volume.real (approxBody L c Q) / ZLattice.covolume (approxModule S₀ L c Q).mixedImage ≤
-      approxConst S₀ L * Q ^ approxWeight S₀ c :=
-  ⟨le_volume_div_covolume hLInf hLFin c hQ, volume_div_covolume_le hLInf hLFin c hQ⟩
+      approxConst S₀ L * Q ^ approxWeight S₀ c := by
+  let _ : DecidablePred (InfinitePlace.IsReal (K := K)) := Classical.decPred _
+  let _ : DecidablePred (InfinitePlace.IsComplex (K := K)) := Classical.decPred _
+  exact ⟨le_volume_div_covolume hLInf hLFin c hQ, volume_div_covolume_le hLInf hLFin c hQ⟩
 
 end NoDecidableEqCheck
 

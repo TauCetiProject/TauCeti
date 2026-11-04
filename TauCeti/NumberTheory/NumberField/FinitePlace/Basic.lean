@@ -180,26 +180,38 @@ theorem hasFiniteMulSupport_min_one {x : K} (hx : x ≠ 0) :
 theorem apply_le_one (v : FinitePlace K) (x : 𝓞 K) : v (x : K) ≤ 1 :=
   norm_embedding_eq v x ▸ norm_le_one K v.maximalIdeal x
 
-/-- Some nonzero algebraic integer is as small as prescribed at every place of a finite set of
-finite places. -/
-theorem exists_ne_zero_forall_apply_le (T : Finset (FinitePlace K)) {ε : FinitePlace K → ℝ}
-    (hε : ∀ v ∈ T, 0 < ε v) : ∃ d : 𝓞 K, d ≠ 0 ∧ ∀ v ∈ T, v (d : K) ≤ ε v := by
-  -- A nonzero element of every prime of `T`; their product `t` is less than `1` on `T`.
-  choose p hp hp0 using fun v : FinitePlace K ↦
-    Submodule.exists_mem_ne_zero_of_ne_bot v.maximalIdeal.ne_bot
-  set t : 𝓞 K := ∏ w ∈ T, p w
+/-- Given `p w ∈ 𝔭_w` for each `w ∈ T`, some power of `∏ w ∈ T.attach, p w` has absolute value at
+most `ε v` at every `v ∈ T`. -/
+private theorem exists_pow_prod_forall_apply_le {T : Finset (FinitePlace K)}
+    (p : {w // w ∈ T} → 𝓞 K) (hp : ∀ w, p w ∈ w.1.maximalIdeal.asIdeal)
+    {ε : FinitePlace K → ℝ} (hε : ∀ v ∈ T, 0 < ε v) :
+    ∃ m : ℕ, ∀ v ∈ T, v (((∏ w ∈ T.attach, p w) ^ m : 𝓞 K) : K) ≤ ε v := by
+  set t : 𝓞 K := ∏ w ∈ T.attach, p w
   have ht (v : FinitePlace K) (hv : v ∈ T) : v (t : K) < 1 := by
     rw [← norm_embedding_eq, norm_lt_one_iff_mem]
-    obtain ⟨c, hc⟩ : p v ∣ t := Finset.dvd_prod_of_mem p hv
+    obtain ⟨c, hc⟩ : p ⟨v, hv⟩ ∣ t := Finset.dvd_prod_of_mem p (Finset.mem_attach T ⟨v, hv⟩)
     rw [hc]
-    exact Ideal.mul_mem_right _ _ (hp v)
+    exact Ideal.mul_mem_right _ _ (hp ⟨v, hv⟩)
   have hpow (v : FinitePlace K) (hv : v ∈ T) :
       ∀ᶠ m : ℕ in Filter.atTop, v ((t ^ m : 𝓞 K) : K) ≤ ε v := by
     simp_rw [map_pow]
     exact (tendsto_pow_atTop_nhds_zero_of_lt_one (apply_nonneg v _) (ht v hv)).eventually
       (ge_mem_nhds (hε v hv))
-  obtain ⟨m, hm⟩ := ((Filter.eventually_all_finset T).2 hpow).exists
-  exact ⟨t ^ m, pow_ne_zero m (Finset.prod_ne_zero_iff.2 fun w _ ↦ hp0 w), hm⟩
+  exact ((Filter.eventually_all_finset T).2 hpow).exists
+
+private theorem mul_le_one_of_le_inv_one_add {x R : ℝ} (hR : 0 ≤ R) (hx : x ≤ (1 + R)⁻¹) :
+    x * R ≤ 1 :=
+  (mul_le_mul_of_nonneg_right hx hR).trans ((inv_mul_le_iff₀ (by positivity)).mpr (by linarith))
+
+/-- Some nonzero algebraic integer is as small as prescribed at every place of a finite set of
+finite places. -/
+theorem exists_ne_zero_forall_apply_le (T : Finset (FinitePlace K)) {ε : FinitePlace K → ℝ}
+    (hε : ∀ v ∈ T, 0 < ε v) : ∃ d : 𝓞 K, d ≠ 0 ∧ ∀ v ∈ T, v (d : K) ≤ ε v := by
+  choose p hp hp0 using fun w : {w : FinitePlace K // w ∈ T} ↦
+    Submodule.exists_mem_ne_zero_of_ne_bot w.1.maximalIdeal.ne_bot
+  obtain ⟨m, hm⟩ := exists_pow_prod_forall_apply_le p hp hε
+  exact ⟨(∏ w ∈ T.attach, p w) ^ m,
+    pow_ne_zero m (Finset.prod_ne_zero_iff.2 fun w _ ↦ hp0 w), hm⟩
 
 /-- Some nonzero algebraic integer clears prescribed nonnegative bounds at every place of a finite
 set of finite places: `v d * R v ≤ 1` there. -/
@@ -207,10 +219,7 @@ theorem exists_ne_zero_forall_mul_apply_le (T : Finset (FinitePlace K)) {R : Fin
     (hR : ∀ v ∈ T, 0 ≤ R v) : ∃ d : 𝓞 K, d ≠ 0 ∧ ∀ v ∈ T, v (d : K) * R v ≤ 1 := by
   obtain ⟨d, hd0, hd⟩ := exists_ne_zero_forall_apply_le T (ε := fun v ↦ (1 + R v)⁻¹)
     fun v hv ↦ by have := hR v hv; positivity
-  refine ⟨d, hd0, fun v hv ↦ ?_⟩
-  have h1 : 0 < 1 + R v := by linarith [hR v hv]
-  calc v (d : K) * R v ≤ (1 + R v)⁻¹ * R v := by gcongr; exacts [hR v hv, hd v hv]
-    _ ≤ 1 := by rw [inv_mul_le_iff₀ h1]; linarith
+  exact ⟨d, hd0, fun v hv ↦ mul_le_one_of_le_inv_one_add (hR v hv) (hd v hv)⟩
 
 /-- Given a finite place `u` outside a finite set `T` of finite places, some algebraic integer has
 absolute value `1` at `u` and is as small as prescribed at every place of `T`. -/
@@ -227,25 +236,14 @@ theorem exists_apply_eq_one_forall_apply_le (u : FinitePlace K) {T : Finset (Fin
     exact hne <| HeightOneSpectrum.ext_iff.mpr <|
       Ideal.IsMaximal.eq_of_le w.1.maximalIdeal.isMaximal Ideal.IsPrime.ne_top' H
   choose p hp_mem hp_notMem using hp
-  set t : 𝓞 K := ∏ w ∈ T.attach, p w
-  have hut : u (t : K) = 1 := by
-    have hcoe : (t : K) = ∏ w ∈ T.attach, (p w : K) := by simp [t]
-    rw [hcoe, map_prod]
-    refine Finset.prod_eq_one fun w _ ↦ ?_
-    rw [← norm_embedding_eq, norm_eq_one_iff_notMem]
+  obtain ⟨m, hm⟩ := exists_pow_prod_forall_apply_le p hp_mem hε
+  have hut : u (((∏ w ∈ T.attach, p w) ^ m : 𝓞 K) : K) = 1 := by
+    rw [RingOfIntegers.coe_eq_algebraMap, map_pow, map_pow, map_prod, map_prod,
+      Finset.prod_eq_one, one_pow]
+    intro w _
+    rw [← RingOfIntegers.coe_eq_algebraMap, ← norm_embedding_eq, norm_eq_one_iff_notMem]
     exact hp_notMem w
-  have ht (v : FinitePlace K) (hv : v ∈ T) : v (t : K) < 1 := by
-    rw [← norm_embedding_eq, norm_lt_one_iff_mem]
-    obtain ⟨c, hc⟩ : p ⟨v, hv⟩ ∣ t := Finset.dvd_prod_of_mem p (Finset.mem_attach T ⟨v, hv⟩)
-    rw [hc]
-    exact Ideal.mul_mem_right _ _ (hp_mem ⟨v, hv⟩)
-  have hpow (v : FinitePlace K) (hv : v ∈ T) :
-      ∀ᶠ m : ℕ in Filter.atTop, v ((t ^ m : 𝓞 K) : K) ≤ ε v := by
-    simp_rw [map_pow]
-    exact (tendsto_pow_atTop_nhds_zero_of_lt_one (apply_nonneg v _) (ht v hv)).eventually
-      (ge_mem_nhds (hε v hv))
-  obtain ⟨m, hm⟩ := ((Filter.eventually_all_finset T).2 hpow).exists
-  exact ⟨t ^ m, by simp [hut], hm⟩
+  exact ⟨(∏ w ∈ T.attach, p w) ^ m, hut, hm⟩
 
 /-- Given a finite place `u` outside a finite set `T` of finite places, some algebraic integer has
 absolute value `1` at `u` and clears prescribed nonnegative bounds `R v` at every place of `T`:
@@ -255,10 +253,7 @@ theorem exists_apply_eq_one_forall_mul_apply_le (u : FinitePlace K) {T : Finset 
     ∃ d : 𝓞 K, u (d : K) = 1 ∧ ∀ v ∈ T, v (d : K) * R v ≤ 1 := by
   obtain ⟨d, hdu, hd⟩ := u.exists_apply_eq_one_forall_apply_le hu (ε := fun v ↦ (1 + R v)⁻¹)
     fun v hv ↦ by have := hR v hv; positivity
-  refine ⟨d, hdu, fun v hv ↦ ?_⟩
-  have h1 : 0 < 1 + R v := by linarith [hR v hv]
-  calc v (d : K) * R v ≤ (1 + R v)⁻¹ * R v := by gcongr; exacts [hR v hv, hd v hv]
-    _ ≤ 1 := by rw [inv_mul_le_iff₀ h1]; linarith
+  exact ⟨d, hdu, fun v hv ↦ mul_le_one_of_le_inv_one_add (hR v hv) (hd v hv)⟩
 
 end NumberField.FinitePlace
 
