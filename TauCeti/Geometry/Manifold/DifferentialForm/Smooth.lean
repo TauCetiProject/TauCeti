@@ -313,6 +313,13 @@ theorem eval₂_neg_left (φ : SmoothBundleForm I F V 2) (x : M) (v w : TangentS
     ContinuousAlternatingMap.coe_toAlternatingMap] using
     (φ.1 x).toAlternatingMap.map_update_neg ![v, w] (0 : Fin 2) v
 
+/-- Negating the second tangent vector negates the evaluation of a degree-two form. -/
+theorem eval₂_neg_right (φ : SmoothBundleForm I F V 2) (x : M) (v w : TangentSpace I x) :
+    φ.eval₂ x v (-w) = -φ.eval₂ x v w := by
+  simpa only [eval₂, Matrix.vecCons, ← Fin.cons_update, Fin.update_cons_zero,
+    ContinuousAlternatingMap.coe_toAlternatingMap] using
+    (φ.1 x).toAlternatingMap.map_update_neg ![v, w] (0 : Fin 1).succ w
+
 /-- Two smooth bundle-valued two-forms are equal when their ordered-pair evaluations agree. -/
 theorem ext_eval₂ {φ ψ : SmoothBundleForm I F V 2}
     (h : ∀ x v w, φ.eval₂ x v w = ψ.eval₂ x v w) : φ = ψ := by
