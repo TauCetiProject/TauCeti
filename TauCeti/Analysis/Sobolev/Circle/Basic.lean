@@ -12,6 +12,7 @@ public import Mathlib.Analysis.PSeries
 
 import Mathlib.Analysis.Normed.Group.Tannery
 import Mathlib.Analysis.Normed.Operator.Banach
+import TauCeti.Analysis.Normed.Operator.Compact.Ehrling
 
 /-!
 # Fourier-coefficient Sobolev spaces on the circle
@@ -58,6 +59,8 @@ product when `E` has them.
   in `H^s` from convergence of the Fourier coefficients under a summable domination.
 * `TauCeti.CircleSobolev.isCompactOperator_inclusion`: for `t < s` and finite-dimensional `E`,
   the inclusion `H^s → H^t` is compact (Rellich's theorem).
+* `TauCeti.CircleSobolev.exists_norm_inclusion_le`: for `r ≤ t < s` and finite-dimensional `E`,
+  `‖a‖_{H^t} ≤ ε ‖a‖_{H^s} + C_ε ‖a‖_{H^r}` for every `ε > 0` (Ehrling's inequality).
 * `TauCeti.CircleSobolev.tsum_norm_coeff_le`: for `s > 1/2`, the Fourier coefficients are
   absolutely summable, with `∑ₙ ‖a.coeff n‖ ≤ (∑ₙ (1 + |n|) ^ (-2 s)) ^ (1/2) ‖a‖`.
 * `TauCeti.CircleSobolev.fourierCoeff_toContinuousMap`: for `s > 1/2`, the continuous function
@@ -744,6 +747,18 @@ theorem isCompactOperator_inclusion [FiniteDimensional ℂ E] (h : t < s) :
     · simpa using isCompactOperator_zero
     · rw [ContinuousLinearMap.coe_comp]
       exact (isCompactOperator_of_locallyCompactSpace_dom (coeffCLM n)).clm_comp (single n)
+
+/-- **Ehrling's inequality** on the circle: for `r ≤ t < s` and finite-dimensional `E`, the `H^t`
+norm is bounded by an arbitrarily small multiple of the `H^s` norm plus a multiple of the weaker
+`H^r` norm. -/
+theorem exists_norm_inclusion_le [FiniteDimensional ℂ E] {r : ℝ} (hrt : r ≤ t) (hts : t < s)
+    {ε : ℝ} (hε : 0 < ε) :
+    ∃ C, 0 ≤ C ∧ ∀ a : CircleSobolev s E,
+      ‖inclusion hts.le a‖ ≤ ε * ‖a‖ + C * ‖inclusion (hrt.trans hts.le) a‖ := by
+  obtain ⟨C, hC, h⟩ :=
+    (isCompactOperator_inclusion (E := E) hts).exists_norm_le_mul_norm_add_mul_norm
+      (inclusion_injective hrt) hε
+  exact ⟨C, hC, fun a ↦ by simpa using h a⟩
 
 /-! ### Absolute convergence and continuity for `s > 1/2` -/
 
