@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RingTheory.Polynomial.Cyclotomic.Separable
-public import Mathlib.Data.ZMod.Basic
 import TauCeti.RingTheory.AdjoinRoot.Splitting
 import TauCeti.RingTheory.AdjoinRoot.Basic
 
@@ -48,30 +47,37 @@ theorem isUnit_pow_sub_pow_of_isRoot_cyclotomic (hn : IsUnit (n : R))
   exact hij (hp.pow_inj hi hj he)
 
 /-- A power of a cyclotomic root with exponent coprime to `n` is again a cyclotomic
-root when `n` is invertible, including over nonreduced bases. -/
-theorem isRoot_cyclotomic_pow_of_coprime (hn : IsUnit (n : R))
+root over any commutative ring, including in ramified characteristics. -/
+theorem isRoot_cyclotomic_pow_of_coprime
     (hζ : (cyclotomic n R).IsRoot ζ) {a : ℕ} (ha : a.Coprime n) :
     (cyclotomic n R).IsRoot (ζ ^ a) := by
-  obtain ⟨hpow, hp⟩ := (isRoot_cyclotomic_iff_forall_isPrimitiveRoot hn).mp hζ
-  apply (isRoot_cyclotomic_iff_forall_isPrimitiveRoot hn).mpr
-  refine ⟨?_, fun m hm ↦ ?_⟩
-  · rw [← pow_mul, Nat.mul_comm, pow_mul, hpow, one_pow]
-  · simpa only [map_pow] using (hp m hm).pow_of_coprime a ha
+  rcases n.eq_zero_or_pos with rfl | hn
+  · simpa using hζ
+  have hp := Complex.isPrimitiveRoot_exp n hn.ne'
+  have hd := minpoly.isIntegrallyClosed_dvd (hp.isIntegral hn)
+    (p := (cyclotomic n ℤ).comp (X ^ a)) (by
+    rw [aeval_def, eval₂_comp, eval₂_pow, eval₂_X, eval₂_eq_eval_map, map_cyclotomic]
+    exact ((hp.pow_of_coprime a ha).isRoot_cyclotomic hn).eq_zero)
+  rw [← cyclotomic_eq_minpoly hp hn] at hd
+  have hdR : cyclotomic n R ∣ (cyclotomic n R).comp (X ^ a) := by
+    simpa only [map_comp, Polynomial.map_pow, map_X, map_cyclotomic_int] using
+      Polynomial.map_dvd (Int.castRingHom R) hd
+  simpa only [isRoot_comp, eval_pow, eval_X] using hζ.dvd hdR
 
 /-- Evaluation at the power of a chosen primitive root labelled by a unit modulo `n`. -/
-noncomputable def cyclotomicEval (hn : IsUnit (n : R))
+noncomputable def cyclotomicEval
     (hζ : (cyclotomic n R).IsRoot ζ) (a : (ZMod n)ˣ) :
     AdjoinRoot (cyclotomic n R) →ₐ[R] R :=
   AdjoinRoot.liftAlgHom _ (AlgHom.id R R) (ζ ^ (a : ZMod n).val)
     (by
       simpa only [AlgHom.id_toRingHom, eval₂_id] using
-        (isRoot_cyclotomic_pow_of_coprime hn hζ (ZMod.val_coe_unit_coprime a)).eq_zero)
+        (isRoot_cyclotomic_pow_of_coprime hζ (ZMod.val_coe_unit_coprime a)).eq_zero)
 
 /-- Evaluation sends the universal primitive root to the labelled power of `ζ`. -/
 @[simp]
-theorem cyclotomicEval_root (hn : IsUnit (n : R))
+theorem cyclotomicEval_root
     (hζ : (cyclotomic n R).IsRoot ζ) (a : (ZMod n)ˣ) :
-    cyclotomicEval hn hζ a (AdjoinRoot.root (cyclotomic n R)) = ζ ^ (a : ZMod n).val := by
+    cyclotomicEval hζ a (AdjoinRoot.root (cyclotomic n R)) = ζ ^ (a : ZMod n).val := by
   rw [cyclotomicEval, AdjoinRoot.liftAlgHom_root]
 
 variable [NeZero n]
@@ -80,7 +86,7 @@ variable [NeZero n]
 powers. The statement holds over arbitrary commutative rings with `n` invertible. -/
 theorem bijective_pi_cyclotomicEval (hn : IsUnit (n : R))
     (hζ : (cyclotomic n R).IsRoot ζ) :
-    Function.Bijective (AlgHom.pi (cyclotomicEval hn hζ)) := by
+    Function.Bijective (AlgHom.pi (cyclotomicEval hζ)) := by
   classical
   rcases subsingleton_or_nontrivial R with _ | _
   · have : Subsingleton (AdjoinRoot (cyclotomic n R)) := Module.subsingleton R _
@@ -88,11 +94,11 @@ theorem bijective_pi_cyclotomicEval (hn : IsUnit (n : R))
   let e : Fin (cyclotomic n R).natDegree ≃ (ZMod n)ˣ :=
     Fintype.equivOfCardEq (by simp [natDegree_cyclotomic, ZMod.card_units_eq_totient])
   have hb := AdjoinRoot.bijective_pi_of_isUnit_sub (cyclotomic.monic n R)
-    (fun i ↦ cyclotomicEval hn hζ (e i)) (fun i j hij ↦ ?_)
-  · have he : (AlgHom.pi (fun i ↦ cyclotomicEval hn hζ (e i)) :
+    (fun i ↦ cyclotomicEval hζ (e i)) (fun i j hij ↦ ?_)
+  · have he : (AlgHom.pi (fun i ↦ cyclotomicEval hζ (e i)) :
         AdjoinRoot (cyclotomic n R) → Fin (cyclotomic n R).natDegree → R) =
         (Equiv.piCongrLeft' (fun _ : (ZMod n)ˣ ↦ R) e.symm) ∘
-          AlgHom.pi (cyclotomicEval hn hζ) := by
+          AlgHom.pi (cyclotomicEval hζ) := by
       rfl
     rw [he] at hb
     exact (Equiv.comp_bijective _ _).mp hb
@@ -106,20 +112,20 @@ The factors are labelled by units modulo `n`, not by an arbitrary enumeration. -
 noncomputable def adjoinRootCyclotomicEquivPi (hn : IsUnit (n : R))
     (hζ : (cyclotomic n R).IsRoot ζ) :
     AdjoinRoot (cyclotomic n R) ≃ₐ[R] ((ZMod n)ˣ → R) :=
-  AlgEquiv.ofBijective (AlgHom.pi (cyclotomicEval hn hζ)) (bijective_pi_cyclotomicEval hn hζ)
+  AlgEquiv.ofBijective (AlgHom.pi (cyclotomicEval hζ)) (bijective_pi_cyclotomicEval hn hζ)
 
 /-- The splitting is evaluation in each labelled factor. -/
 @[simp]
 theorem adjoinRootCyclotomicEquivPi_apply (hn : IsUnit (n : R))
     (hζ : (cyclotomic n R).IsRoot ζ) (x : AdjoinRoot (cyclotomic n R)) (a : (ZMod n)ˣ) :
-    adjoinRootCyclotomicEquivPi hn hζ x a = cyclotomicEval hn hζ a x :=
+    adjoinRootCyclotomicEquivPi hn hζ x a = cyclotomicEval hζ a x :=
   (rfl)
 
 /-- Each coordinate of the inverse splitting recovers the prescribed value. -/
 @[simp]
 theorem cyclotomicEval_adjoinRootCyclotomicEquivPi_symm (hn : IsUnit (n : R))
     (hζ : (cyclotomic n R).IsRoot ζ) (x : (ZMod n)ˣ → R) (a : (ZMod n)ˣ) :
-    cyclotomicEval hn hζ a ((adjoinRootCyclotomicEquivPi hn hζ).symm x) = x a :=
+    cyclotomicEval hζ a ((adjoinRootCyclotomicEquivPi hn hζ).symm x) = x a :=
   congrFun ((adjoinRootCyclotomicEquivPi hn hζ).apply_symm_apply x) a
 
 section BaseChange

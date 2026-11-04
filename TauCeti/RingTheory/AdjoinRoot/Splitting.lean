@@ -38,6 +38,10 @@ theorem bijective_pi_of_isUnit_sub (hf : f.Monic)
   have hb (j : Fin f.natDegree) : b j = root f ^ (j : ℕ) :=
     (powerBasis' hf).basis_eq_pow j
   let v := fun i ↦ s i (root f)
+  have eval_eq_sum (x : AdjoinRoot f) (i : Fin f.natDegree) :
+      s i x = ∑ j, b.repr x j * v i ^ (j : ℕ) := by
+    conv_lhs => rw [← b.sum_repr x]
+    simp only [map_sum, map_smul, hb, map_pow, smul_eq_mul, v]
   have hd : IsUnit (Matrix.vandermonde v).det := by
     rw [Matrix.det_vandermonde]
     rw [IsUnit.prod_iff]
@@ -50,11 +54,10 @@ theorem bijective_pi_of_isUnit_sub (hf : f.Monic)
   have he (x : AdjoinRoot f) : e x = AlgHom.pi s x := by
     ext i
     dsimp only [e, LinearEquiv.trans_apply]
-    rw [Matrix.toLinearEquiv_apply]
-    have h := congrArg (s i) (b.sum_repr x)
-    simpa [Matrix.toLin_eq_toLin', Matrix.toLin'_apply,
-      Module.Basis.equivFun_apply, Matrix.mulVec, dotProduct, hb, v,
-      map_smul, Algebra.smul_def, mul_comm, ← AdjoinRoot.algebraMap_eq] using h
+    rw [Matrix.toLinearEquiv_apply, Matrix.toLin_eq_toLin', Matrix.toLin'_apply]
+    change (∑ j : Fin f.natDegree, v i ^ (j : ℕ) * b.repr x j) = s i x
+    rw [eval_eq_sum]
+    exact Finset.sum_congr rfl (fun j _ ↦ mul_comm _ _)
   exact (funext he : (e : AdjoinRoot f → Fin f.natDegree → R) = AlgHom.pi s) ▸ e.bijective
 
 end AdjoinRoot
