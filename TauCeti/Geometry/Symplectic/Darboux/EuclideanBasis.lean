@@ -41,11 +41,11 @@ Euclidean model.
   `EuclideanSpace ℝ ι × EuclideanSpace ℝ ι` in which `stdSymplecticForm` has matrix `Matrix.J`.
 * `TauCeti.stdDarbouxBasis`: the standard `Fin n × Fin 2`-indexed Darboux basis of
   `EuclideanSpace ℝ (Fin n) × EuclideanSpace ℝ (Fin n)`.
-* `TauCeti.SymplecticForm.euclideanBasisEquiv` /
-  `TauCeti.SymplecticForm.euclideanBasisContinuousLinearEquiv`: coordinate isomorphism from an
+* `Module.Basis.euclideanBasisEquiv` /
+  `Module.Basis.euclideanBasisContinuousLinearEquiv`: coordinate isomorphism from an
   `ι ⊕ ι`-indexed basis to `EuclideanSpace ℝ ι × EuclideanSpace ℝ ι`.
-* `TauCeti.SymplecticForm.darbouxBasisEquiv` /
-  `TauCeti.SymplecticForm.darbouxBasisContinuousLinearEquiv`: coordinate isomorphism from a
+* `Module.Basis.darbouxBasisEquiv` /
+  `Module.Basis.darbouxBasisContinuousLinearEquiv`: coordinate isomorphism from a
   `Fin n × Fin 2`-indexed basis to `EuclideanSpace ℝ (Fin n) × EuclideanSpace ℝ (Fin n)`.
 * `TauCeti.SymplecticForm.isSymplectomorphism_euclideanBasisEquiv_iff` and
   `TauCeti.SymplecticForm.isSymplectomorphism_darbouxBasisEquiv_iff`: necessary and sufficient
@@ -147,7 +147,11 @@ theorem isDarbouxBasis_stdDarbouxBasis (n : ℕ) :
 
 end StandardBasis
 
-namespace SymplecticForm
+end TauCeti
+
+namespace Module.Basis
+
+open TauCeti
 
 section Linear
 
@@ -163,47 +167,160 @@ noncomputable def euclideanBasisEquiv {ι : Type*} [Fintype ι] (b : Basis (ι �
 @[simp]
 theorem euclideanBasisEquiv_apply_inr {ι : Type*} [Fintype ι] [DecidableEq ι]
     (b : Basis (ι ⊕ ι) ℝ V) (a : ι) :
-    euclideanBasisEquiv b (b (Sum.inr a)) = (EuclideanSpace.single a 1, 0) := by
+    b.euclideanBasisEquiv (b (Sum.inr a)) = (EuclideanSpace.single a 1, 0) := by
   simp [euclideanBasisEquiv]
 
 @[simp]
 theorem euclideanBasisEquiv_apply_inl {ι : Type*} [Fintype ι] [DecidableEq ι]
     (b : Basis (ι ⊕ ι) ℝ V) (a : ι) :
-    euclideanBasisEquiv b (b (Sum.inl a)) = (0, EuclideanSpace.single a 1) := by
+    b.euclideanBasisEquiv (b (Sum.inl a)) = (0, EuclideanSpace.single a 1) := by
   simp [euclideanBasisEquiv]
 
 @[simp]
 theorem stdSymplecticBasis_repr_euclideanBasisEquiv {ι : Type*} [Fintype ι]
     (b : Basis (ι ⊕ ι) ℝ V) (v : V) :
-    (stdSymplecticBasis ι).repr (euclideanBasisEquiv b v) = b.repr v := by
+    (stdSymplecticBasis ι).repr (b.euclideanBasisEquiv v) = b.repr v := by
   simp [euclideanBasisEquiv, Basis.equiv]
 
 @[simp]
 theorem euclideanBasisEquiv_fst_apply {ι : Type*} [Fintype ι] (b : Basis (ι ⊕ ι) ℝ V)
-    (v : V) (a : ι) : (euclideanBasisEquiv b v).1 a = b.repr v (Sum.inr a) := by
+    (v : V) (a : ι) : (b.euclideanBasisEquiv v).1 a = b.repr v (Sum.inr a) := by
   rw [← stdSymplecticBasis_repr_inr, stdSymplecticBasis_repr_euclideanBasisEquiv]
 
 @[simp]
 theorem euclideanBasisEquiv_snd_apply {ι : Type*} [Fintype ι] (b : Basis (ι ⊕ ι) ℝ V)
-    (v : V) (a : ι) : (euclideanBasisEquiv b v).2 a = b.repr v (Sum.inl a) := by
+    (v : V) (a : ι) : (b.euclideanBasisEquiv v).2 a = b.repr v (Sum.inl a) := by
   rw [← stdSymplecticBasis_repr_inl, stdSymplecticBasis_repr_euclideanBasisEquiv]
 
-/-- The inverse of `euclideanBasisEquiv b` expands `(q, p)` as
+/-- The inverse of `b.euclideanBasisEquiv` expands `(q, p)` as
 `∑ a, q a • b (inr a) + ∑ a, p a • b (inl a)`. -/
 theorem euclideanBasisEquiv_symm_apply {ι : Type*} [Fintype ι] (b : Basis (ι ⊕ ι) ℝ V)
     (u : EuclideanSpace ℝ ι × EuclideanSpace ℝ ι) :
-    (euclideanBasisEquiv b).symm u =
+    b.euclideanBasisEquiv.symm u =
       (∑ a, u.1 a • b (Sum.inr a)) + ∑ a, u.2 a • b (Sum.inl a) := by
-  have hm := congrArg (euclideanBasisEquiv b).symm ((stdSymplecticBasis ι).sum_repr u).symm
+  have hm := congrArg b.euclideanBasisEquiv.symm ((stdSymplecticBasis ι).sum_repr u).symm
   rw [map_sum, Fintype.sum_sum_type, add_comm] at hm
   refine hm.trans ?_
   congr 1 <;> refine Finset.sum_congr rfl fun a _ ↦ ?_ <;> simp [euclideanBasisEquiv]
 
-/-- `euclideanBasisEquiv b` is a symplectomorphism from `ω` to `stdSymplecticForm` if and only if
+/-- The linear coordinate equivalence from a `Fin n × Fin 2`-indexed basis `b` of `V` to
+`EuclideanSpace ℝ (Fin n) × EuclideanSpace ℝ (Fin n)` sending `b (i, 0)` to `(single i 1, 0)` and
+`b (i, 1)` to `(0, single i 1)`. -/
+noncomputable def darbouxBasisEquiv {n : ℕ} (b : Basis (Fin n × Fin 2) ℝ V) :
+    V ≃ₗ[ℝ] EuclideanSpace ℝ (Fin n) × EuclideanSpace ℝ (Fin n) :=
+  b.equiv (stdDarbouxBasis n) (Equiv.refl (Fin n × Fin 2))
+
+/-- `b.darbouxBasisEquiv` agrees with `euclideanBasisEquiv` applied to `b` relabelled by
+`SymplecticForm.darbouxIndexEquiv n`. -/
+theorem darbouxBasisEquiv_eq_euclideanBasisEquiv_reindex {n : ℕ} (b : Basis (Fin n × Fin 2) ℝ V) :
+    b.darbouxBasisEquiv = (b.reindex (SymplecticForm.darbouxIndexEquiv n)).euclideanBasisEquiv := by
+  refine (b.reindex (SymplecticForm.darbouxIndexEquiv n)).ext' fun x ↦ ?_
+  rcases x with i | i
+  · rw [euclideanBasisEquiv_apply_inl]
+    simp [darbouxBasisEquiv]
+  · rw [euclideanBasisEquiv_apply_inr]
+    simp [darbouxBasisEquiv]
+
+@[simp]
+theorem darbouxBasisEquiv_apply_zero {n : ℕ} (b : Basis (Fin n × Fin 2) ℝ V) (i : Fin n) :
+    b.darbouxBasisEquiv (b (i, 0)) = (EuclideanSpace.single i 1, 0) := by
+  simp [darbouxBasisEquiv]
+
+@[simp]
+theorem darbouxBasisEquiv_apply_one {n : ℕ} (b : Basis (Fin n × Fin 2) ℝ V) (i : Fin n) :
+    b.darbouxBasisEquiv (b (i, 1)) = (0, EuclideanSpace.single i 1) := by
+  simp [darbouxBasisEquiv]
+
+@[simp]
+theorem darbouxBasisEquiv_fst_apply {n : ℕ} (b : Basis (Fin n × Fin 2) ℝ V)
+    (v : V) (i : Fin n) : (b.darbouxBasisEquiv v).1 i = b.repr v (i, 0) := by
+  rw [darbouxBasisEquiv_eq_euclideanBasisEquiv_reindex, euclideanBasisEquiv_fst_apply]
+  simp
+
+@[simp]
+theorem darbouxBasisEquiv_snd_apply {n : ℕ} (b : Basis (Fin n × Fin 2) ℝ V)
+    (v : V) (i : Fin n) : (b.darbouxBasisEquiv v).2 i = b.repr v (i, 1) := by
+  rw [darbouxBasisEquiv_eq_euclideanBasisEquiv_reindex, euclideanBasisEquiv_snd_apply]
+  simp
+
+/-- The inverse of `b.darbouxBasisEquiv` expands `(q, p)` as
+`∑ i, q i • b (i, 0) + ∑ i, p i • b (i, 1)`. -/
+theorem darbouxBasisEquiv_symm_apply {n : ℕ} (b : Basis (Fin n × Fin 2) ℝ V)
+    (u : EuclideanSpace ℝ (Fin n) × EuclideanSpace ℝ (Fin n)) :
+    b.darbouxBasisEquiv.symm u =
+      (∑ i, u.1 i • b (i, 0)) + ∑ i, u.2 i • b (i, 1) := by
+  rw [darbouxBasisEquiv_eq_euclideanBasisEquiv_reindex, euclideanBasisEquiv_symm_apply]
+  simp
+
+end Linear
+
+section Normed
+
+variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V]
+
+/-- The continuous-linear coordinate equivalence from an `ι ⊕ ι`-indexed basis `b` of a real
+normed space `V` to `EuclideanSpace ℝ ι × EuclideanSpace ℝ ι`. Finite-dimensionality of `V` is
+inferred from the finite basis `b`. -/
+noncomputable def euclideanBasisContinuousLinearEquiv {ι : Type*} [Fintype ι]
+    (b : Basis (ι ⊕ ι) ℝ V) : V ≃L[ℝ] EuclideanSpace ℝ ι × EuclideanSpace ℝ ι :=
+  haveI : FiniteDimensional ℝ V := Module.Finite.of_basis b
+  b.euclideanBasisEquiv.toContinuousLinearEquiv
+
+@[simp]
+theorem euclideanBasisContinuousLinearEquiv_toLinearEquiv {ι : Type*} [Fintype ι]
+    (b : Basis (ι ⊕ ι) ℝ V) :
+    b.euclideanBasisContinuousLinearEquiv.toLinearEquiv = b.euclideanBasisEquiv := by
+  rfl
+
+@[simp]
+theorem coe_euclideanBasisContinuousLinearEquiv {ι : Type*} [Fintype ι]
+    (b : Basis (ι ⊕ ι) ℝ V) :
+    ⇑b.euclideanBasisContinuousLinearEquiv = ⇑b.euclideanBasisEquiv := by
+  rfl
+
+@[simp]
+theorem coe_euclideanBasisContinuousLinearEquiv_symm {ι : Type*} [Fintype ι]
+    (b : Basis (ι ⊕ ι) ℝ V) :
+    ⇑b.euclideanBasisContinuousLinearEquiv.symm = ⇑b.euclideanBasisEquiv.symm := by
+  rfl
+
+/-- The continuous-linear coordinate equivalence from a `Fin n × Fin 2`-indexed basis `b` of a
+real normed space `V` to `EuclideanSpace ℝ (Fin n) × EuclideanSpace ℝ (Fin n)`. -/
+noncomputable def darbouxBasisContinuousLinearEquiv {n : ℕ} (b : Basis (Fin n × Fin 2) ℝ V) :
+    V ≃L[ℝ] EuclideanSpace ℝ (Fin n) × EuclideanSpace ℝ (Fin n) :=
+  haveI : FiniteDimensional ℝ V := Module.Finite.of_basis b
+  b.darbouxBasisEquiv.toContinuousLinearEquiv
+
+@[simp]
+theorem darbouxBasisContinuousLinearEquiv_toLinearEquiv {n : ℕ} (b : Basis (Fin n × Fin 2) ℝ V) :
+    b.darbouxBasisContinuousLinearEquiv.toLinearEquiv = b.darbouxBasisEquiv := by
+  rfl
+
+@[simp]
+theorem coe_darbouxBasisContinuousLinearEquiv {n : ℕ} (b : Basis (Fin n × Fin 2) ℝ V) :
+    ⇑b.darbouxBasisContinuousLinearEquiv = ⇑b.darbouxBasisEquiv := by
+  rfl
+
+@[simp]
+theorem coe_darbouxBasisContinuousLinearEquiv_symm {n : ℕ} (b : Basis (Fin n × Fin 2) ℝ V) :
+    ⇑b.darbouxBasisContinuousLinearEquiv.symm = ⇑b.darbouxBasisEquiv.symm := by
+  rfl
+
+end Normed
+
+end Module.Basis
+
+namespace TauCeti.SymplecticForm
+
+section Linear
+
+variable {V : Type*} [AddCommGroup V] [Module ℝ V]
+
+/-- `b.euclideanBasisEquiv` is a symplectomorphism from `ω` to `stdSymplecticForm` if and only if
 the matrix of `ω` in `b` is `Matrix.J ι ℝ`. -/
 theorem isSymplectomorphism_euclideanBasisEquiv_iff {ι : Type*} [Fintype ι] [DecidableEq ι]
     {ω : SymplecticForm V} {b : Basis (ι ⊕ ι) ℝ V} :
-    IsSymplectomorphism ω (stdSymplecticForm (V := EuclideanSpace ℝ ι)) (euclideanBasisEquiv b) ↔
+    IsSymplectomorphism ω (stdSymplecticForm (V := EuclideanSpace ℝ ι)) b.euclideanBasisEquiv ↔
       LinearMap.BilinForm.toMatrix b ω.toBilinForm = Matrix.J ι ℝ := by
   have hstd (x y : ι ⊕ ι) :
       stdSymplecticForm (stdSymplecticBasis ι x) (stdSymplecticBasis ι y) = Matrix.J ι ℝ x y := by
@@ -213,92 +330,43 @@ theorem isSymplectomorphism_euclideanBasisEquiv_iff {ι : Type*} [Fintype ι] [D
   · intro h
     ext x y
     rw [LinearMap.BilinForm.toMatrix_apply, ← hstd x y]
-    simpa [euclideanBasisEquiv] using (h (b x) (b y)).symm
+    simpa [Basis.euclideanBasisEquiv] using (h (b x) (b y)).symm
   · intro h
     have hxy (x y : ι ⊕ ι) :
-        stdSymplecticForm (euclideanBasisEquiv b (b x)) (euclideanBasisEquiv b (b y)) =
+        stdSymplecticForm (b.euclideanBasisEquiv (b x)) (b.euclideanBasisEquiv (b y)) =
           ω (b x) (b y) := by
-      simp only [euclideanBasisEquiv, Basis.equiv_apply, Equiv.refl_apply, hstd]
+      simp only [Basis.euclideanBasisEquiv, Basis.equiv_apply, Equiv.refl_apply, hstd]
       rw [← h, LinearMap.BilinForm.toMatrix_apply]
     intro u w
     have hl :
         ((stdSymplecticForm (V := EuclideanSpace ℝ ι)).toBilinForm.compl₁₂
-          (euclideanBasisEquiv b).toLinearMap (euclideanBasisEquiv b).toLinearMap) =
+          b.euclideanBasisEquiv.toLinearMap b.euclideanBasisEquiv.toLinearMap) =
           ω.toBilinForm :=
       b.ext fun x ↦ b.ext fun y ↦ hxy x y
     exact LinearMap.congr_fun₂ hl u w
 
-/-- The linear coordinate equivalence from a `Fin n × Fin 2`-indexed basis `b` of `V` to
-`EuclideanSpace ℝ (Fin n) × EuclideanSpace ℝ (Fin n)` sending `b (i, 0)` to `(single i 1, 0)` and
-`b (i, 1)` to `(0, single i 1)`. -/
-noncomputable def darbouxBasisEquiv {n : ℕ} (b : Basis (Fin n × Fin 2) ℝ V) :
-    V ≃ₗ[ℝ] EuclideanSpace ℝ (Fin n) × EuclideanSpace ℝ (Fin n) :=
-  b.equiv (stdDarbouxBasis n) (Equiv.refl (Fin n × Fin 2))
-
-/-- `darbouxBasisEquiv b` agrees with `euclideanBasisEquiv` applied to `b` relabelled by
-`darbouxIndexEquiv n`. -/
-theorem darbouxBasisEquiv_eq_euclideanBasisEquiv_reindex {n : ℕ} (b : Basis (Fin n × Fin 2) ℝ V) :
-    darbouxBasisEquiv b = euclideanBasisEquiv (b.reindex (darbouxIndexEquiv n)) := by
-  refine (b.reindex (darbouxIndexEquiv n)).ext' fun x ↦ ?_
-  rcases x with i | i
-  · rw [euclideanBasisEquiv_apply_inl]
-    simp [darbouxBasisEquiv]
-  · rw [euclideanBasisEquiv_apply_inr]
-    simp [darbouxBasisEquiv]
-
-@[simp]
-theorem darbouxBasisEquiv_apply_zero {n : ℕ} (b : Basis (Fin n × Fin 2) ℝ V) (i : Fin n) :
-    darbouxBasisEquiv b (b (i, 0)) = (EuclideanSpace.single i 1, 0) := by
-  simp [darbouxBasisEquiv]
-
-@[simp]
-theorem darbouxBasisEquiv_apply_one {n : ℕ} (b : Basis (Fin n × Fin 2) ℝ V) (i : Fin n) :
-    darbouxBasisEquiv b (b (i, 1)) = (0, EuclideanSpace.single i 1) := by
-  simp [darbouxBasisEquiv]
-
-@[simp]
-theorem darbouxBasisEquiv_fst_apply {n : ℕ} (b : Basis (Fin n × Fin 2) ℝ V)
-    (v : V) (i : Fin n) : (darbouxBasisEquiv b v).1 i = b.repr v (i, 0) := by
-  rw [darbouxBasisEquiv_eq_euclideanBasisEquiv_reindex, euclideanBasisEquiv_fst_apply]
-  simp
-
-@[simp]
-theorem darbouxBasisEquiv_snd_apply {n : ℕ} (b : Basis (Fin n × Fin 2) ℝ V)
-    (v : V) (i : Fin n) : (darbouxBasisEquiv b v).2 i = b.repr v (i, 1) := by
-  rw [darbouxBasisEquiv_eq_euclideanBasisEquiv_reindex, euclideanBasisEquiv_snd_apply]
-  simp
-
-/-- The inverse of `darbouxBasisEquiv b` expands `(q, p)` as
-`∑ i, q i • b (i, 0) + ∑ i, p i • b (i, 1)`. -/
-theorem darbouxBasisEquiv_symm_apply {n : ℕ} (b : Basis (Fin n × Fin 2) ℝ V)
-    (u : EuclideanSpace ℝ (Fin n) × EuclideanSpace ℝ (Fin n)) :
-    (darbouxBasisEquiv b).symm u =
-      (∑ i, u.1 i • b (i, 0)) + ∑ i, u.2 i • b (i, 1) := by
-  rw [darbouxBasisEquiv_eq_euclideanBasisEquiv_reindex, euclideanBasisEquiv_symm_apply]
-  simp
-
-/-- `darbouxBasisEquiv b` is a symplectomorphism from `ω` to `stdSymplecticForm` if and only if
+/-- `b.darbouxBasisEquiv` is a symplectomorphism from `ω` to `stdSymplecticForm` if and only if
 `b` is a Darboux basis of `ω`. -/
 theorem isSymplectomorphism_darbouxBasisEquiv_iff {n : ℕ} {ω : SymplecticForm V}
     {b : Basis (Fin n × Fin 2) ℝ V} :
     IsSymplectomorphism ω (stdSymplecticForm (V := EuclideanSpace ℝ (Fin n)))
-        (darbouxBasisEquiv b) ↔ ω.IsDarbouxBasis b := by
-  rw [darbouxBasisEquiv_eq_euclideanBasisEquiv_reindex, isSymplectomorphism_euclideanBasisEquiv_iff,
-    isDarbouxBasis_iff_toMatrix_reindex]
+        b.darbouxBasisEquiv ↔ ω.IsDarbouxBasis b := by
+  rw [b.darbouxBasisEquiv_eq_euclideanBasisEquiv_reindex,
+    isSymplectomorphism_euclideanBasisEquiv_iff, isDarbouxBasis_iff_toMatrix_reindex]
 
 /-- The coordinate equivalence of a Darboux basis is a linear symplectomorphism onto
 `stdSymplecticForm`. -/
 theorem IsDarbouxBasis.isSymplectomorphism_darbouxBasisEquiv {n : ℕ} {ω : SymplecticForm V}
     {b : Basis (Fin n × Fin 2) ℝ V} (hb : ω.IsDarbouxBasis b) :
     IsSymplectomorphism ω (stdSymplecticForm (V := EuclideanSpace ℝ (Fin n)))
-      (darbouxBasisEquiv b) :=
+      b.darbouxBasisEquiv :=
   isSymplectomorphism_darbouxBasisEquiv_iff.2 hb
 
 /-- Transporting `ω` along the coordinate equivalence of a Darboux basis yields
 `stdSymplecticForm`. -/
 theorem IsDarbouxBasis.transport_darbouxBasisEquiv {n : ℕ} {ω : SymplecticForm V}
     {b : Basis (Fin n × Fin 2) ℝ V} (hb : ω.IsDarbouxBasis b) :
-    ω.transport (darbouxBasisEquiv b) = stdSymplecticForm (V := EuclideanSpace ℝ (Fin n)) :=
+    ω.transport b.darbouxBasisEquiv = stdSymplecticForm (V := EuclideanSpace ℝ (Fin n)) :=
   isSymplectomorphism_iff_transport_eq.1 hb.isSymplectomorphism_darbouxBasisEquiv
 
 /-- Every finite-dimensional symplectic space is linearly symplectomorphic to
@@ -308,7 +376,7 @@ theorem exists_isSymplectomorphism_stdSymplecticForm [FiniteDimensional ℝ V]
     ∃ (n : ℕ) (e : V ≃ₗ[ℝ] EuclideanSpace ℝ (Fin n) × EuclideanSpace ℝ (Fin n)),
       IsSymplectomorphism ω (stdSymplecticForm (V := EuclideanSpace ℝ (Fin n))) e := by
   obtain ⟨n, b, hb⟩ := ω.exists_isDarbouxBasis
-  exact ⟨n, darbouxBasisEquiv b, hb.isSymplectomorphism_darbouxBasisEquiv⟩
+  exact ⟨n, b.darbouxBasisEquiv, hb.isSymplectomorphism_darbouxBasisEquiv⟩
 
 /-- A finite-dimensional symplectic space of dimension `2 * n` is linearly symplectomorphic to
 `EuclideanSpace ℝ (Fin n) × EuclideanSpace ℝ (Fin n)` with `stdSymplecticForm`. -/
@@ -317,7 +385,7 @@ theorem exists_isSymplectomorphism_stdSymplecticForm_of_finrank_eq [FiniteDimens
     ∃ e : V ≃ₗ[ℝ] EuclideanSpace ℝ (Fin n) × EuclideanSpace ℝ (Fin n),
       IsSymplectomorphism ω (stdSymplecticForm (V := EuclideanSpace ℝ (Fin n))) e := by
   obtain ⟨b, hb⟩ := ω.exists_isDarbouxBasis_of_finrank_eq (n := n) (hn.trans (Nat.mul_comm 2 n))
-  exact ⟨darbouxBasisEquiv b, hb.isSymplectomorphism_darbouxBasisEquiv⟩
+  exact ⟨b.darbouxBasisEquiv, hb.isSymplectomorphism_darbouxBasisEquiv⟩
 
 /-- Every nonzero vector in a finite-dimensional symplectic space is mapped to
 `(0, EuclideanSpace.single 0 1)` by a linear symplectomorphism onto the standard Euclidean model. -/
@@ -327,11 +395,11 @@ theorem exists_isSymplectomorphism_stdSymplecticForm_apply_eq_snd_single [Finite
       IsSymplectomorphism ω (stdSymplecticForm (V := EuclideanSpace ℝ (Fin (m + 1)))) e ∧
         e v = (0, EuclideanSpace.single 0 1) := by
   obtain ⟨m, b, hb, hbv⟩ := ω.isAlt.exists_basis_apply_eq_J_inl_zero_eq ω.nondegenerate hv
-  refine ⟨m, euclideanBasisEquiv b, isSymplectomorphism_euclideanBasisEquiv_iff.2 ?_, ?_⟩
+  refine ⟨m, b.euclideanBasisEquiv, isSymplectomorphism_euclideanBasisEquiv_iff.2 ?_, ?_⟩
   · ext x y
     rw [LinearMap.BilinForm.toMatrix_apply]
     exact hb x y
-  · rw [← hbv, euclideanBasisEquiv_apply_inl]
+  · rw [← hbv, b.euclideanBasisEquiv_apply_inl]
 
 /-- Every nonzero vector in a finite-dimensional symplectic space is mapped to
 `(EuclideanSpace.single 0 1, 0)` by a linear symplectomorphism onto the standard Euclidean model. -/
@@ -355,54 +423,6 @@ end Linear
 section Normed
 
 variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V]
-
-/-- The continuous-linear coordinate equivalence from an `ι ⊕ ι`-indexed basis `b` of a real
-normed space `V` to `EuclideanSpace ℝ ι × EuclideanSpace ℝ ι`. Finite-dimensionality of `V` is
-inferred from the finite basis `b`. -/
-noncomputable def euclideanBasisContinuousLinearEquiv {ι : Type*} [Fintype ι]
-    (b : Basis (ι ⊕ ι) ℝ V) : V ≃L[ℝ] EuclideanSpace ℝ ι × EuclideanSpace ℝ ι :=
-  haveI : FiniteDimensional ℝ V := Module.Finite.of_basis b
-  (euclideanBasisEquiv b).toContinuousLinearEquiv
-
-@[simp]
-theorem euclideanBasisContinuousLinearEquiv_toLinearEquiv {ι : Type*} [Fintype ι]
-    (b : Basis (ι ⊕ ι) ℝ V) :
-    (euclideanBasisContinuousLinearEquiv b).toLinearEquiv = euclideanBasisEquiv b := by
-  rfl
-
-@[simp]
-theorem coe_euclideanBasisContinuousLinearEquiv {ι : Type*} [Fintype ι]
-    (b : Basis (ι ⊕ ι) ℝ V) :
-    ⇑(euclideanBasisContinuousLinearEquiv b) = ⇑(euclideanBasisEquiv b) := by
-  rfl
-
-@[simp]
-theorem coe_euclideanBasisContinuousLinearEquiv_symm {ι : Type*} [Fintype ι]
-    (b : Basis (ι ⊕ ι) ℝ V) :
-    ⇑(euclideanBasisContinuousLinearEquiv b).symm = ⇑(euclideanBasisEquiv b).symm := by
-  rfl
-
-/-- The continuous-linear coordinate equivalence from a `Fin n × Fin 2`-indexed basis `b` of a
-real normed space `V` to `EuclideanSpace ℝ (Fin n) × EuclideanSpace ℝ (Fin n)`. -/
-noncomputable def darbouxBasisContinuousLinearEquiv {n : ℕ} (b : Basis (Fin n × Fin 2) ℝ V) :
-    V ≃L[ℝ] EuclideanSpace ℝ (Fin n) × EuclideanSpace ℝ (Fin n) :=
-  haveI : FiniteDimensional ℝ V := Module.Finite.of_basis b
-  (darbouxBasisEquiv b).toContinuousLinearEquiv
-
-@[simp]
-theorem darbouxBasisContinuousLinearEquiv_toLinearEquiv {n : ℕ} (b : Basis (Fin n × Fin 2) ℝ V) :
-    (darbouxBasisContinuousLinearEquiv b).toLinearEquiv = darbouxBasisEquiv b := by
-  rfl
-
-@[simp]
-theorem coe_darbouxBasisContinuousLinearEquiv {n : ℕ} (b : Basis (Fin n × Fin 2) ℝ V) :
-    ⇑(darbouxBasisContinuousLinearEquiv b) = ⇑(darbouxBasisEquiv b) := by
-  rfl
-
-@[simp]
-theorem coe_darbouxBasisContinuousLinearEquiv_symm {n : ℕ} (b : Basis (Fin n × Fin 2) ℝ V) :
-    ⇑(darbouxBasisContinuousLinearEquiv b).symm = ⇑(darbouxBasisEquiv b).symm := by
-  rfl
 
 /-- Every finite-dimensional normed symplectic space is continuous-linearly symplectomorphic to
 `EuclideanSpace ℝ (Fin n) × EuclideanSpace ℝ (Fin n)` with `stdSymplecticForm`. -/
@@ -449,6 +469,4 @@ theorem exists_continuousLinearEquiv_stdSymplecticForm_apply_eq_fst_single [Fini
 
 end Normed
 
-end SymplecticForm
-
-end TauCeti
+end TauCeti.SymplecticForm

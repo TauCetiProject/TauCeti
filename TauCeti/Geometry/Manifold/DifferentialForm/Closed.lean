@@ -13,7 +13,9 @@ public import TauCeti.Geometry.Manifold.DifferentialForm.Squared
 # Closed smooth differential forms
 
 Closedness is the vanishing of the generic manifold exterior derivative of a smooth form. This
-module also characterizes it by vanishing of the exterior derivatives of the chart expressions.
+module also characterizes it by vanishing of the exterior derivatives of the chart expressions
+(and hence of ordinary `extDeriv` on the interior of any chart target,
+`TauCeti.SmoothForm.IsClosed.extDeriv_inChartAt_eq_zero`).
 It also restates closedness through the bundled derivative `mextDerivₗ` and shows that
 exterior derivatives are closed.
 The degree-two specialization in `TwoForm.Closed` supplies a constant-form convenience theorem.
@@ -64,6 +66,16 @@ theorem isClosed_iff_forall_extDerivWithin_inChartAt_eq_zero [IsManifold I 2 M]
     funext x
     rw [mextDeriv_def]
     exact h x (extChartAt I x x) (mem_extChartAt_target x)
+
+/-- For a closed smooth form on a `C²` manifold, the ordinary flat exterior derivative `extDeriv`
+of its coordinate expression in any preferred chart vanishes on the interior of the chart
+target. -/
+theorem IsClosed.extDeriv_inChartAt_eq_zero [IsManifold I 2 M]
+    (h : form.IsClosed) (x₀ : M) {z : E} (hz : z ∈ interior (extChartAt I x₀).target) :
+    extDeriv (RoughForm.inChartAt form.1 x₀) z = 0 := by
+  have hform : IsSmoothForm I 1 form.1 := form.isSmoothForm.of_le (by norm_num)
+  rw [isClosed_def] at h
+  rw [← hform.inChartAt_mextDeriv_eq_extDeriv x₀ hz, h, RoughForm.inChartAt_zero, Pi.zero_apply]
 
 /-- On a manifold of finite dimension at most `k`, every smooth `k`-form is closed, since there are
 no nonzero `(k + 1)`-forms. In particular, top-degree forms are closed. -/

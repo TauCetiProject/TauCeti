@@ -12,7 +12,6 @@ public import TauCeti.Geometry.Symplectic.Manifold.TwoForm
 import TauCeti.Geometry.Manifold.Diffeomorph.NormedSpace
 import TauCeti.Geometry.Manifold.DifferentialForm.Pullback.Chart
 import TauCeti.Geometry.Manifold.DifferentialForm.Regularity
-import TauCeti.Geometry.Manifold.VectorBundle.Tangent.Basic
 import TauCeti.Geometry.Symplectic.Darboux.Basic
 import TauCeti.Geometry.Symplectic.WittExtension
 
@@ -49,10 +48,6 @@ linear symplectomorphisms.
 
 ## Main declarations
 
-* `TauCeti.SmoothTwoForm.eval₂_constSmooth_mfderiv_eq` and
-  `TauCeti.SmoothTwoForm.mpullback_constSmooth_eq_mpullback_subtype_val_iff`: equivalence between
-  the pointwise `mvfderiv` Darboux formula, evaluation of `constSmooth` on `mfderiv`, and smooth
-  pullback equality on the open submanifold `chart.source`.
 * `TauCeti.SmoothTwoForm.IsSymplectic.exists_darbouxChart_of_isInteriorPoint` and
   `TauCeti.SmoothTwoForm.IsSymplectic.exists_darbouxChart`: Darboux charts into the model space `E`.
 * `TauCeti.SmoothTwoForm.IsSymplectic.exists_darbouxChart_of_symplecticForm_of_isInteriorPoint` and
@@ -78,76 +73,19 @@ public section
 
 noncomputable section
 
-open Set Filter TopologicalSpace
+open Set Filter
 open scoped ContDiff Manifold Topology
 
 namespace TauCeti
 
 namespace SmoothTwoForm
 
-section PullbackCharacterization
+section Helpers
 
-variable {E H M F : Type*}
+variable {E H M : Type*}
   [NormedAddCommGroup E] [NormedSpace ℝ E]
   [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
-  [TopologicalSpace M] [ChartedSpace H M]
-  [NormedAddCommGroup F] [NormedSpace ℝ F] [FiniteDimensional ℝ F]
-
-/-- Evaluating the constant smooth two-form `form₀.constSmooth` on `mfderiv` of a model-valued map
-agrees with evaluating `form₀` directly on `mvfderiv`. -/
-theorem eval₂_constSmooth_mfderiv_eq (form₀ : SymplecticForm F) (f : M → F) (x : M)
-    (v w : TangentSpace I x) :
-    form₀.constSmooth.eval₂ (f x) (mfderiv I 𝓘(ℝ, F) f x v) (mfderiv I 𝓘(ℝ, F) f x w) =
-      form₀ (mvfderiv I f x v) (mvfderiv I f x w) := by
-  rw [SymplecticForm.fromTangentSpace_constSmooth_apply]
-  rfl
-
-variable [IsManifold I ∞ M]
-
-/-- A partial diffeomorphism `chart : M → F` pulls the constant smooth form `form₀.constSmooth`
-back to the restriction of `form` on the open submanifold `chart.source` if and only if `form`
-agrees pointwise on `chart.source` with `form₀` pulled back by `mvfderiv I chart`. -/
-theorem mpullback_constSmooth_eq_mpullback_subtype_val_iff (form : SmoothTwoForm I M)
-    (form₀ : SymplecticForm F) (chart : PartialDiffeomorph I 𝓘(ℝ, F) M F ∞) :
-    SmoothForm.mpullback (fun x : (⟨chart.source, chart.open_source⟩ : Opens M) ↦ chart x.1)
-        (chart.contMDiffOn_toFun.comp_contMDiff contMDiff_subtype_val fun x ↦ x.2)
-        form₀.constSmooth =
-      SmoothForm.mpullback (Subtype.val : (⟨chart.source, chart.open_source⟩ : Opens M) → M)
-        contMDiff_subtype_val form ↔
-      ∀ x ∈ chart.source, ∀ v w : TangentSpace I x,
-        form.eval₂ x v w = form₀ (mvfderiv I chart x v) (mvfderiv I chart x w) := by
-  have : IsManifold I 1 M := IsManifold.of_le (n := ∞) (by simp)
-  let U : Opens M := ⟨chart.source, chart.open_source⟩
-  have hpoint (x : U) (v w : TangentSpace I x) :
-      (SmoothForm.mpullback (fun y : U ↦ chart y.1)
-          (chart.contMDiffOn_toFun.comp_contMDiff contMDiff_subtype_val fun y ↦ y.2)
-          form₀.constSmooth).eval₂ x v w =
-        form₀ (mvfderiv I chart x.1 (Manifold.tangentSpaceOpenEquiv (I := I) x v))
-          (mvfderiv I chart x.1 (Manifold.tangentSpaceOpenEquiv (I := I) x w)) := by
-    have hmd : MDifferentiableAt I 𝓘(ℝ, F) chart x.1 :=
-      (chart.contMDiffOn_toFun.contMDiffAt (chart.open_source.mem_nhds x.2)).mdifferentiableAt
-        (by simp)
-    have hsub : MDifferentiableAt I I (Subtype.val : U → M) x :=
-      (contMDiff_subtype_val (n := ∞)).mdifferentiableAt (by simp)
-    rw [SmoothForm.eval₂_mpullback]
-    refine (eval₂_constSmooth_mfderiv_eq form₀ (chart ∘ Subtype.val) x v w).trans ?_
-    rw [mvfderiv_comp_apply x hmd hsub, mvfderiv_comp_apply x hmd hsub,
-      Manifold.mfderiv_subtype_val]
-    rfl
-  rw [SmoothBundleForm.ext_eval₂_iff]
-  constructor
-  · intro h x hx v w
-    let xU : U := ⟨x, hx⟩
-    let vU : TangentSpace I xU := (Manifold.tangentSpaceOpenEquiv (I := I) xU).symm v
-    let wU : TangentSpace I xU := (Manifold.tangentSpaceOpenEquiv (I := I) xU).symm w
-    have hvw := h xU vU wU
-    rw [hpoint, SmoothForm.eval₂_mpullback, Manifold.mfderiv_subtype_val] at hvw
-    dsimp only [vU, wU, ContinuousLinearEquiv.coe_coe] at hvw
-    rw [ContinuousLinearEquiv.apply_symm_apply, ContinuousLinearEquiv.apply_symm_apply] at hvw
-    exact hvw.symm
-  · intro h x v w
-    rw [hpoint, SmoothForm.eval₂_mpullback, Manifold.mfderiv_subtype_val]
-    exact (h x.1 x.2 _ _).symm
+  [TopologicalSpace M] [ChartedSpace H M] [IsManifold I ∞ M]
 
 /-- Transporting a Darboux chart along a continuous-linear symplectomorphism preserves its source,
 maps `0` to `0`, composes `mvfderiv` with the linear equivalence, and pulls back the target
@@ -185,64 +123,6 @@ private theorem trans_toDiffeomorph_darboux {F₁ F₂ : Type*}
     ContinuousLinearEquiv.coe_coe, ← ContinuousLinearEquiv.coe_toLinearEquiv,
     hL.apply, hchart x (hsrc ▸ hx) v w]
 
-end PullbackCharacterization
-
-section ChartCoordinateHelpers
-
-variable {E H M : Type*}
-  [NormedAddCommGroup E] [NormedSpace ℝ E]
-  [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
-  [TopologicalSpace M] [ChartedSpace H M] [IsManifold I ∞ M]
-
-/-- The coordinate expression of a smooth two-form in `extChartAt I x₀` is `C^∞` on the interior of
-the chart target. -/
-private theorem contDiffOn_inChartAt_interior_target (form : SmoothTwoForm I M) (x₀ : M) :
-    ContDiffOn ℝ (⊤ : ℕ∞) (RoughForm.inChartAt form.1 x₀) (interior (extChartAt I x₀).target) := by
-  have : IsManifold I ((∞ : WithTop ℕ∞) + 1) M := IsManifold.of_le (n := ∞) (by simp)
-  intro z hz
-  have hzt : z ∈ (extChartAt I x₀).target := interior_subset hz
-  have hrange : ContDiffWithinAt ℝ ∞ (RoughForm.inChartAt form.1 x₀) (range I) z :=
-    RoughForm.contDiffWithinAt_inChartAt_of_contDiffWithinAt_inChartAt form.1 hzt
-      (mem_extChartAt_source _) (form.isSmoothForm.contDiffWithinAt_inChartAt_self _)
-  have hnhds : range I ∈ 𝓝 z :=
-    Filter.mem_of_superset (isOpen_interior.mem_nhds hz)
-      (interior_subset.trans (extChartAt_target_subset_range x₀))
-  exact (hrange.contDiffAt hnhds).contDiffWithinAt
-
-/-- For a closed smooth two-form, the flat exterior derivative of its coordinate expression in
-`extChartAt I x₀` vanishes on the interior of the chart target. -/
-private theorem extDeriv_inChartAt_eq_zero_of_mem_interior_target {form : SmoothTwoForm I M}
-    (hc : form.IsClosed) (x₀ : M) {z : E} (hz : z ∈ interior (extChartAt I x₀).target) :
-    extDeriv (RoughForm.inChartAt form.1 x₀) z = 0 := by
-  have : IsManifold I 1 M := IsManifold.of_le (n := ∞) (by simp)
-  have : IsManifold I 2 M := IsManifold.of_le (n := ∞) (by simp)
-  have hnhds : range I ∈ 𝓝 z :=
-    Filter.mem_of_superset (isOpen_interior.mem_nhds hz)
-      (interior_subset.trans (extChartAt_target_subset_range x₀))
-  rw [← extDerivWithin_univ, ← extDerivWithin_congr_set (Filter.eventuallyEqSet_univ.2 hnhds)]
-  exact (SmoothForm.isClosed_iff_forall_extDerivWithin_inChartAt_eq_zero form).1 hc
-    x₀ z (interior_subset hz)
-
-/-- On `(extChartAt I x₀).source`, evaluating `form` on two tangent vectors agrees with evaluating
-`RoughForm.inChartAt form.1 x₀` on their `mvfderiv` images under `extChartAt I x₀`. -/
-private theorem eval₂_eq_inChartAt_mvfderiv (form : SmoothTwoForm I M) {x₀ x : M}
-    (hx : x ∈ (extChartAt I x₀).source) (v w : TangentSpace I x) :
-    form.eval₂ x v w =
-      RoughForm.inChartAt form.1 x₀ (extChartAt I x₀ x)
-        ![mvfderiv I (extChartAt I x₀) x v, mvfderiv I (extChartAt I x₀) x w] := by
-  have : IsManifold I 1 M := IsManifold.of_le (n := ∞) (by simp)
-  have hz : extChartAt I x₀ x ∈ (extChartAt I x₀).target := (extChartAt I x₀).map_source hx
-  let α : RoughForm 𝓘(ℝ, E) E ℝ 2 := RoughForm.inChartAt form.1 x₀
-  have heq : mpullback I 𝓘(ℝ, E) (extChartAt I x₀) α x = form.1 x :=
-    (RoughForm.inChartAt_chart_eq_iff hx).1
-      (RoughForm.inChartAt_mpullback_extChartAt α x₀ hz)
-  rw [SmoothBundleForm.eval₂_apply, ← heq, mpullback_apply]
-  congr 1
-  ext i
-  fin_cases i <;>
-    · simp
-      rfl
-
 /-- If `form` is fiberwise nondegenerate and equals `ω₁` pulled back by `mvfderiv I chart₁` at `x₀`,
 then `mvfderiv I chart₁ x₀` carries nonzero tangent vectors to nonzero vectors. -/
 private theorem mvfderiv_ne_zero_of_eval₂_eq {form : SmoothTwoForm I M}
@@ -255,7 +135,7 @@ private theorem mvfderiv_ne_zero_of_eval₂_eq {form : SmoothTwoForm I M}
     rw [hchart₁ w, hu]
     exact LinearMap.map_zero₂ ω₁.toBilinForm _)
 
-end ChartCoordinateHelpers
+end Helpers
 
 section Darboux
 
@@ -276,32 +156,28 @@ theorem IsSymplectic.exists_darbouxChart_of_isInteriorPoint
       ∀ x ∈ chart.source, ∀ v w : TangentSpace I x,
         form.eval₂ x v w = form₀ (mvfderiv I chart x v) (mvfderiv I chart x w) := by
   have : IsManifold I 1 M := IsManifold.of_le (n := ∞) (by simp)
+  have : IsManifold I 2 M := IsManifold.of_le (n := ∞) (by simp)
+  have : IsManifold I ((∞ : WithTop ℕ∞) + 1) M := IsManifold.of_le (n := ∞) (by simp)
   let η : E → E [⋀^Fin 2]→L[ℝ] ℝ := RoughForm.inChartAt form.1 x₀
   let W : Set E := interior (extChartAt I x₀).target
   let y₀ : E := extChartAt I x₀ x₀
   have hy₀W : y₀ ∈ W := (ModelWithCorners.isInteriorPoint_iff (I := I)).mp hx₀
   have hηy₀ : η y₀ = form.1 x₀ := RoughForm.inChartAt_extChartAt_self form.1 x₀
-  have hnd : ∀ v : E, (∀ w : E, η y₀ ![v, w] = 0) → v = 0 := by
-    intro v hv
-    let v' : TangentSpace I x₀ := v
-    exact isNondegenerate_iff_separatingLeft.1 hform.isNondegenerate x₀ v' fun w ↦
-      (SmoothBundleForm.eval₂_apply form x₀ v' w).trans
-        ((congrArg (fun A : E [⋀^Fin 2]→L[ℝ] ℝ ↦ A ![v, w]) hηy₀.symm).trans (hv w))
-  -- Build the constant algebraic symplectic form `form₀` from `η y₀`.
-  let B₀ : LinearMap.BilinForm ℝ E := MultilinearMap.toBilinMap (η y₀).toMultilinearMap
-  have hB₀_apply (u w : E) : B₀ u w = η y₀ ![u, w] := by simp [B₀]
-  have hB₀_alt : B₀.IsAlt :=
-    MultilinearMap.isAlt_toBilinMap fun v ↦ (η y₀).map_eq_zero_of_eq _ (by simp) Fin.zero_ne_one
-  let form₀ : SymplecticForm E :=
-    { toBilinForm := B₀
-      isAlt := hB₀_alt
-      nondegenerate := (LinearMap.IsRefl.nondegenerate_iff_separatingLeft hB₀_alt.isRefl).2
-        fun v hv ↦ hnd v fun w ↦ (hB₀_apply v w).symm.trans (hv w) }
+  -- `TangentSpace I x₀` carries the model vector-space structure of `E`.
+  let form₀ : SymplecticForm E := hform.isNondegenerate.symplecticFormAt x₀
+  have hform₀_apply (u w : E) : form₀ u w = η y₀ ![u, w] := by
+    let u' : TangentSpace I x₀ := u
+    let w' : TangentSpace I x₀ := w
+    exact (hform.isNondegenerate.symplecticFormAt_apply x₀ u' w').trans
+      ((SmoothBundleForm.eval₂_apply form x₀ u' w').trans
+        (congrArg (fun A : E [⋀^Fin 2]→L[ℝ] ℝ ↦ A ![u, w]) hηy₀.symm))
+  have hnd : ∀ v : E, (∀ w : E, η y₀ ![v, w] = 0) → v = 0 := fun v hv ↦
+    form₀.separatingLeft v fun w ↦ (hform₀_apply v w).trans (hv w)
   -- Apply the flat Moser–Darboux theorem to `η` on `W` around `y₀`.
   obtain ⟨ψ, hψy₀, hev⟩ :=
     exists_diffeomorph_eventually_compContinuousLinearMap_fderiv_eq (r := (⊤ : ℕ∞)) le_top
-      isOpen_interior hy₀W (contDiffOn_inChartAt_interior_target form x₀)
-      (fun z hz ↦ extDeriv_inChartAt_eq_zero_of_mem_interior_target hform.isClosed x₀ hz) hnd
+      isOpen_interior hy₀W (form.isSmoothForm.contDiffOn_inChartAt_interior_target x₀)
+      (fun z hz ↦ hform.isClosed.extDeriv_inChartAt_eq_zero x₀ hz) hnd
   have hψsymm_y₀ : ψ.symm y₀ = y₀ := ψ.symm_apply_eq.2 hψy₀.symm
   -- Pull the neighborhood where `ψ^* η = η y₀` back along `ψ.symm` and intersect with `W`.
   have hnhds_symm :
@@ -371,8 +247,13 @@ theorem IsSymplectic.exists_darbouxChart_of_isInteriorPoint
     have heq_fn : ⇑chart = ⇑Φ_flat ∘ ⇑(extChartAt I x₀) := funext hchart_coe
     rw [heq_fn, mvfderiv_comp_apply_of_differentiableAt (hΦ_diff _) hmd_ext, hΦ_coe,
       fderiv_sub_const]
-  rw [eval₂_eq_inChartAt_mvfderiv form hxS.1 v w, hmvf v, hmvf w]
-  exact (hη_inv (extChartAt I x₀ x) hxS.2 _ _).trans (hB₀_apply _ _).symm
+  have hvec : (fun i ↦ mvfderiv I (extChartAt I x₀) x (![v, w] i)) =
+      ![mvfderiv I (extChartAt I x₀) x v, mvfderiv I (extChartAt I x₀) x w] := by
+    ext i
+    fin_cases i <;> rfl
+  rw [SmoothBundleForm.eval₂_apply, RoughForm.apply_eq_inChartAt_mvfderiv form.1 hxS.1, hvec,
+    hmvf v, hmvf w]
+  exact (hη_inv (extChartAt I x₀ x) hxS.2 _ _).trans (hform₀_apply _ _).symm
 
 /-- **Darboux's theorem for a prescribed model symplectic form at an interior point.** Around any
 interior point `x₀` of `(M, form)` and for any chosen symplectic form `form₀` on `E`, there is a
