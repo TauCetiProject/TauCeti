@@ -23,11 +23,12 @@ In particular, it supplies the common continuity step for
 `StronglyContinuousGroup.tendsto_apply`.
 
 Finally, an operator bounded below is injective
-(`ContinuousLinearMap.injective_of_forall_norm_le`), an invertible operator `A` on a normed space
-cancels against its inverse (`ContinuousLinearMap.ringInverse_apply_apply`,
-`ContinuousLinearMap.apply_ringInverse_apply`) and is bounded below by `‖A⁻¹‖⁻¹`
-(`ContinuousLinearMap.norm_le_norm_ringInverse_mul_norm_apply`), and conversely a lower bound
-`‖x‖ ≤ M ‖A x‖` bounds the norm of the inverse by `M`
+(`ContinuousLinearMap.injective_of_forall_norm_le`) and stays nonzero under a sufficiently small
+perturbation (`ContinuousLinearMap.apply_add_ne_zero_of_forall_norm_le`), an invertible
+operator `A` on a normed space cancels against its inverse
+(`ContinuousLinearMap.ringInverse_apply_apply`, `ContinuousLinearMap.apply_ringInverse_apply`)
+and is bounded below by `‖A⁻¹‖⁻¹` (`ContinuousLinearMap.norm_le_norm_ringInverse_mul_norm_apply`),
+and conversely a lower bound `‖x‖ ≤ M ‖A x‖` bounds the norm of the inverse by `M`
 (`ContinuousLinearMap.norm_ringInverse_le_of_forall_norm_le`).
 
 The diagonal sum `∑ i ∈ s, A (v i) (v i)` of a continuous bilinear map along vectors of norm at
@@ -110,6 +111,17 @@ theorem injective_of_forall_norm_le {F : Type*} [SeminormedAddCommGroup F] [Norm
     {f : E →L[𝕜] F} {M : ℝ} (h : ∀ x, ‖x‖ ≤ M * ‖f x‖) : Function.Injective f := by
   refine (injective_iff_map_eq_zero f).mpr fun x hx ↦ norm_le_zero_iff.mp ?_
   simpa [hx] using h x
+
+/-- An operator bounded below, `‖x‖ ≤ M ‖f x‖`, stays nonzero at `x ≠ 0` under a perturbation `w`
+with `‖w‖ ≤ ε ‖x‖`, provided `M ε < 1`. -/
+theorem apply_add_ne_zero_of_forall_norm_le {F : Type*} [SeminormedAddCommGroup F]
+    [NormedSpace 𝕜 F] {f : E →L[𝕜] F} {M ε : ℝ} (h : ∀ x, ‖x‖ ≤ M * ‖f x‖) (hMε : M * ε < 1)
+    {x : E} (hx : x ≠ 0) {w : F} (hw : ‖w‖ ≤ ε * ‖x‖) : f x + w ≠ 0 := by
+  intro hsum
+  have hfx : ‖f x‖ ≤ ε * ‖x‖ := by rwa [eq_neg_of_add_eq_zero_left hsum, norm_neg]
+  have hpos : 0 < ‖x‖ := norm_pos_iff.2 hx
+  have hM : 0 < M := pos_of_mul_pos_left (hpos.trans_le (h x)) (norm_nonneg _)
+  nlinarith [h x, mul_le_mul_of_nonneg_left hfx hM.le]
 
 /-- The inverse of an invertible operator undoes the operator. -/
 @[simp]
