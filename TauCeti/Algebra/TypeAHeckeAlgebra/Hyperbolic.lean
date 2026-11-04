@@ -297,9 +297,13 @@ theorem IsMarkovTrace.map_mul_inv_hyperbolicGen (hτ : IsMarkovTrace z τ)
     {x : InfiniteTypeAHeckeAlgebra ℂ (hyperbolicHeckeParam θ)}
     (hx : x ∈ stage ℂ (hyperbolicHeckeParam θ) (n + 1)) :
     τ (x * ↑(hyperbolicGen α θ n)⁻¹) = hyperbolicStabilizationInv α θ η * τ x := by
-  rw [val_inv_hyperbolicGen, mul_smul_comm, map_smul, mul_sub, map_sub, hτ.map_mul_T hx,
-    ← Algebra.commutes, ← Algebra.smul_def, map_smul, hz, smul_eq_mul, smul_eq_mul,
-    hyperbolicStabilizationInv, exp_sub, exp_add, exp_neg]
+  have hγ : (↑(hyperbolicGen α θ n)⁻¹ : InfiniteTypeAHeckeAlgebra ℂ (hyperbolicHeckeParam θ)) =
+      (-I * exp α) • ↑(unitT (hyperbolicHeckeParam θ) n)⁻¹ := by
+    rw [val_inv_hyperbolicGen, val_inv_unitT, val_hyperbolicHeckeParam,
+      val_inv_hyperbolicHeckeParam]
+  rw [hγ, mul_smul_comm, map_smul, hτ.map_mul_val_inv_unitT hx, hz, smul_eq_mul,
+    val_hyperbolicHeckeParam, val_inv_hyperbolicHeckeParam, hyperbolicStabilizationInv, exp_sub,
+    exp_add, exp_neg]
   ring
 
 /-- **The stabilization constants of a Markov trace agree exactly at
