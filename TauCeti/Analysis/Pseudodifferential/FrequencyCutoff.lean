@@ -153,7 +153,7 @@ theorem hasCompactSupport_one_sub [ProperSpace E] : HasCompactSupport (1 - ⇑χ
   HasCompactSupport.intro (isCompact_closedBall (0 : E) 2) fun ξ hξ => by
     simp [χ.apply_eq_one (by simpa using hξ : 2 < ‖ξ‖).le]
 
-/-- Two cutoffs differ by a smooth compactly supported function. -/
+/-- Two cutoffs differ by a compactly supported function. -/
 theorem hasCompactSupport_sub [ProperSpace E] (χ₁ χ₂ : FrequencyCutoff E) :
     HasCompactSupport (⇑χ₁ - ⇑χ₂) :=
   HasCompactSupport.intro (isCompact_closedBall (0 : E) 2) fun ξ hξ => by

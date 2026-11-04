@@ -10,7 +10,11 @@ public import Mathlib.Analysis.SpecialFunctions.Pow.Real
 import TauCeti.Analysis.SpecialFunctions.Pow.Bounds
 
 /-!
-# Uniform derivative bounds for a linear change of variables
+# Uniform derivative bounds on compact sets
+
+This file collects bounds on iterated derivatives that follow from their continuity on compact
+sets: a uniform bound for a linear change of variables, and a bound by any power of the Japanese
+bracket near the zero frequency.
 
 Fix maps `τ : E → F` and `L : E → (G →L H)` that are `C^n` on `s`. The operator
 `φ ↦ (z ↦ L z (φ (τ z)))` is linear in `φ`, and by the Leibniz and Faà di Bruno bounds its
@@ -22,6 +26,11 @@ derivative of `z ↦ L z (φ i (τ z))`.
 This is the estimate behind continuity of such operators for topologies of uniform convergence of
 derivatives on compact sets: a bilinear form read in one chart is of this shape in any other
 chart, with `τ` the transition map and `L z` the pullback along its derivative.
+
+A `C^k` function of a position `x` and a frequency `ξ` has bounded derivatives for `x` in a compact
+set and `ξ` in a ball, and the Japanese bracket `(1 + ‖ξ‖ ^ 2) ^ (1 / 2)` is bounded above and
+below on a ball. So these derivatives are bounded by every power of the Japanese bracket, which is
+how symbol estimates are proved near the zero frequency, where no decay is needed.
 
 ## Main results
 

@@ -10,6 +10,7 @@ public import Mathlib.Analysis.InnerProductSpace.Calculus
 public import Mathlib.Analysis.Normed.Operator.Bilinear
 public import Mathlib.Analysis.SpecialFunctions.Pow.Deriv
 import TauCeti.Analysis.Calculus.ContDiff.Bounds
+import TauCeti.Analysis.Calculus.IteratedFDeriv.Homogeneous
 import TauCeti.Analysis.Normed.Module.Multilinear.Basic
 import TauCeti.Analysis.SpecialFunctions.Pow.Bounds
 
@@ -35,7 +36,9 @@ Differentiating the homogeneity relation shows that the derivatives of `a` in `j
 directions and `l` frequency directions are homogeneous of degree `m - l`. When `E` is a proper
 space (for instance finite-dimensional), the sets `K × {‖ξ‖ = 1}` with `K` compact are compact and
 the derivatives of `a` are continuous on them, so they satisfy the estimate `≤ C ‖ξ‖ ^ (m - l)`
-on `K × (E \ {0})` (`TauCeti.HomogeneousSymbol.exists_norm_iteratedFDeriv_le`). Multiplying `a`
+on `K × (E \ {0})` (`TauCeti.HomogeneousSymbol.exists_norm_iteratedFDeriv_le`), as the
+coefficient is a homogeneous map of `(x, ξ)`
+(`TauCeti.exists_norm_iteratedFDeriv_append_le_of_smul_snd_eq`). Multiplying `a`
 by a frequency cutoff `χ` gives a smooth function `χ(ξ) a(x, ξ)` on all of `E × E`. On a proper
 space it satisfies the symbol estimates of order `m` on `K × E`, with the weight
 `⟨ξ⟩ ^ (m - l) = (1 + ‖ξ‖ ^ 2) ^ ((m - l) / 2)`
@@ -353,28 +356,9 @@ together with the frequency components of the directions, multiplies the derivat
 theorem iteratedFDeriv_coefficient_smul_frequency {x ξ : E} (hξ : ξ ≠ 0) {t : ℝ} (ht : 0 < t)
     (k : ℕ) (v : Fin k → E × E) :
     iteratedFDeriv ℝ k a.coefficient (x, t • ξ) (fun i => ((v i).1, t • (v i).2)) =
-      t ^ m • iteratedFDeriv ℝ k a.coefficient (x, ξ) v := by
-  let S : E × E →L[ℝ] E × E := (ContinuousLinearMap.id ℝ E).prodMap (t • ContinuousLinearMap.id ℝ E)
-  have hU : IsOpen {p : E × E | p.2 ≠ 0} := isOpen_setOf_snd_ne_zero
-  have hSapply : ∀ p, S p = (p.1, t • p.2) := fun _ => rfl
-  have hS : S ⁻¹' {p : E × E | p.2 ≠ 0} = {p | p.2 ≠ 0} := by
-    ext p
-    simp [hSapply, ht.ne']
-  have hSξ : S (x, ξ) ∈ {p : E × E | p.2 ≠ 0} := by
-    rw [hSapply]
-    exact smul_ne_zero ht.ne' hξ
-  have hcomp : a.coefficient ∘ S = t ^ m • a.coefficient := by
-    ext1 p
-    exact a.coefficient_smul_frequency p.1 p.2 ht
-  have hξ' : (x, ξ) ∈ {p : E × E | p.2 ≠ 0} := hξ
-  have key := S.iteratedFDerivWithin_comp_right a.contDiffOn_coefficient
-    hU.uniqueDiffOn (by rw [hS]; exact hU.uniqueDiffOn)
-    (x := (x, ξ)) hSξ (i := k) (mod_cast le_top)
-  rw [hS, hcomp, iteratedFDerivWithin_of_isOpen k hU hξ', iteratedFDerivWithin_of_isOpen k hU hSξ,
-    iteratedFDeriv_const_smul_apply ((a.contDiffAt_coefficient hξ).of_le (mod_cast le_top))] at key
-  have := congr($key v)
-  simp only [ContinuousMultilinearMap.compContinuousLinearMap_apply, hSapply] at this
-  exact this.symm
+      t ^ m • iteratedFDeriv ℝ k a.coefficient (x, ξ) v :=
+  iteratedFDeriv_smul_snd_of_smul_snd_eq a.contDiffOn_coefficient
+    a.coefficient_smul_frequency_of_ne_zero (mod_cast le_top) hξ ht v
 
 /-- The derivative of a homogeneous symbol of degree `m` in `j` position directions and `l`
 frequency directions is homogeneous of degree `m - l` in the frequency. -/
@@ -384,21 +368,9 @@ theorem iteratedFDeriv_coefficient_smul_frequency_append {x ξ : E} (hξ : ξ �
         (Fin.append (fun i => (u i, 0)) (fun i => (0, w i))) =
       t ^ (m - l) •
         iteratedFDeriv ℝ (j + l) a.coefficient (x, ξ)
-          (Fin.append (fun i => (u i, 0)) (fun i => (0, w i))) := by
-  set D := iteratedFDeriv ℝ (j + l) a.coefficient (x, t • ξ)
-  set v : Fin (j + l) → E × E := Fin.append (fun i => (u i, 0)) (fun i => (0, w i))
-  have hscale : (fun i => ((v i).1, t • (v i).2)) =
-      fun i => (Fin.append (fun _ => (1 : ℝ)) (fun _ => t) i) • v i := by
-    ext1 i
-    refine Fin.addCases (fun i => ?_) (fun i => ?_) i <;> simp [v]
-  have h := a.iteratedFDeriv_coefficient_smul_frequency (x := x) hξ ht (j + l) v
-  rw [hscale, D.map_smul_univ, Fin.prod_univ_add] at h
-  simp only [Fin.append_left, Fin.append_right, Finset.prod_const_one, Finset.prod_const,
-    Finset.card_univ, Fintype.card_fin, one_mul] at h
-  have htl : (t ^ l : ℝ) ≠ 0 := pow_ne_zero _ ht.ne'
-  calc D v = (t ^ l)⁻¹ • (t ^ l • D v) := (inv_smul_smul₀ htl _).symm
-    _ = t ^ (m - l) • iteratedFDeriv ℝ (j + l) a.coefficient (x, ξ) v := by
-      rw [h, smul_smul, inv_mul_eq_div, Real.rpow_sub ht, Real.rpow_natCast]
+          (Fin.append (fun i => (u i, 0)) (fun i => (0, w i))) :=
+  iteratedFDeriv_append_smul_snd_of_smul_snd_eq a.contDiffOn_coefficient
+    a.coefficient_smul_frequency_of_ne_zero (mod_cast le_top) hξ ht u w
 
 /-- On a proper space, the derivatives of a homogeneous symbol of degree `m` in `j` position
 directions and `l` frequency directions are bounded by `C ‖ξ‖ ^ (m - l)` for positions in a
@@ -408,31 +380,9 @@ theorem exists_norm_iteratedFDeriv_le [ProperSpace E] {K : Set E} (hK : IsCompac
     ∃ C, 0 ≤ C ∧ ∀ x ∈ K, ∀ ξ, ξ ≠ 0 → ∀ (u : Fin j → E) (w : Fin l → E),
       ‖iteratedFDeriv ℝ (j + l) a.coefficient (x, ξ)
           (Fin.append (fun i => (u i, 0)) (fun i => (0, w i)))‖ ≤
-        C * ‖ξ‖ ^ (m - l) * (∏ i, ‖u i‖) * ∏ i, ‖w i‖ := by
-  have hsub : K ×ˢ sphere (0 : E) 1 ⊆ {p : E × E | p.2 ≠ 0} := fun p hp => by
-    have := hp.2
-    rw [mem_sphere_zero_iff_norm] at this
-    exact ne_zero_of_norm_ne_zero (by simp [this])
-  obtain ⟨C, hC⟩ := (hK.prod (isCompact_sphere 0 1)).exists_bound_of_continuousOn
-    ((a.continuousOn_iteratedFDeriv_coefficient (j + l)).mono hsub)
-  refine ⟨max C 0, le_max_right _ _, fun x hx ξ hξ u w => ?_⟩
-  have hnξ : 0 < ‖ξ‖ := norm_pos_iff.mpr hξ
-  set θ : E := ‖ξ‖⁻¹ • ξ
-  have hθ : θ ≠ 0 := smul_ne_zero (inv_ne_zero hnξ.ne') hξ
-  have hξθ : ξ = ‖ξ‖ • θ := by simp [θ, smul_smul, hnξ.ne']
-  have hbound : ‖iteratedFDeriv ℝ (j + l) a.coefficient (x, θ)‖ ≤ max C 0 :=
-    (hC (x, θ) ⟨hx, by simp [θ, norm_smul, hnξ.ne']⟩).trans (le_max_left _ _)
-  have hop := (iteratedFDeriv ℝ (j + l) a.coefficient (x, θ)).norm_apply_append_prod_le u w
-  rw [hξθ, a.iteratedFDeriv_coefficient_smul_frequency_append hθ hnξ, norm_smul,
-    Real.norm_of_nonneg (Real.rpow_nonneg hnξ.le _), ← hξθ]
-  calc ‖ξ‖ ^ (m - l) * ‖iteratedFDeriv ℝ (j + l) a.coefficient (x, θ)
-          (Fin.append (fun i => (u i, 0)) (fun i => (0, w i)))‖
-      ≤ ‖ξ‖ ^ (m - l) * (max C 0 * ((∏ i, ‖u i‖) * ∏ i, ‖w i‖)) := by
-        refine mul_le_mul_of_nonneg_left (hop.trans ?_) (Real.rpow_nonneg hnξ.le _)
-        rw [← mul_assoc, ← mul_assoc]
-        exact mul_le_mul_of_nonneg_right (mul_le_mul_of_nonneg_right hbound (by positivity))
-          (by positivity)
-    _ = max C 0 * ‖ξ‖ ^ (m - l) * (∏ i, ‖u i‖) * ∏ i, ‖w i‖ := by ring
+        C * ‖ξ‖ ^ (m - l) * (∏ i, ‖u i‖) * ∏ i, ‖w i‖ :=
+  exists_norm_iteratedFDeriv_append_le_of_smul_snd_eq hK a.contDiffOn_coefficient
+    a.coefficient_smul_frequency_of_ne_zero (mod_cast le_top)
 
 end Derivatives
 
