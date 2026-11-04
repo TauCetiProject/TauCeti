@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Analysis.PDE.Vortex.ExteriorEstimate
 public import TauCeti.Analysis.InnerProductSpace.RadialExponential
-import Mathlib.Analysis.InnerProductSpace.Dual
 
 /-!
 # Weighted energy estimates for the plane-vortex adjoint
@@ -38,63 +37,6 @@ open Complex MeasureTheory Filter
 open scoped Laplacian Topology RealInnerProductSpace
 
 variable {x η : ℂ → EuclideanSpace ℝ (Fin 4)} {w : ℂ → ℝ}
-
-/-- The principal symbol of the gauge-fixed vortex adjoint, acting on a real covector
-and a target field value. It is independent of the vortex coefficients. -/
-def gaugeFixedAdjointSymbol (d : ℂ →L[ℝ] ℝ) (v : EuclideanSpace ℝ (Fin 4)) :
-    EuclideanSpace ℝ (Fin 4) :=
-  !₂[-d 1 * v 0 - d I * v 1, -d I * v 0 + d 1 * v 1,
-    -d 1 * v 2 - d I * v 3, -d 1 * v 3 + d I * v 2]
-
-/-- Coordinate formula for the principal symbol of the adjoint. -/
-theorem gaugeFixedAdjointSymbol_def (d : ℂ →L[ℝ] ℝ) (v : EuclideanSpace ℝ (Fin 4)) :
-    gaugeFixedAdjointSymbol d v =
-      !₂[-d 1 * v 0 - d I * v 1, -d I * v 0 + d 1 * v 1,
-        -d 1 * v 2 - d I * v 3, -d 1 * v 3 + d I * v 2] := (rfl)
-
-/-- The adjoint symbol preserves squared norms up to the squared covector norm. -/
-theorem norm_sq_gaugeFixedAdjointSymbol (d : ℂ →L[ℝ] ℝ)
-    (v : EuclideanSpace ℝ (Fin 4)) :
-    ‖gaugeFixedAdjointSymbol d v‖ ^ 2 = ‖d‖ ^ 2 * ‖v‖ ^ 2 := by
-  rw [orthonormalBasisOneI.norm_dual]
-  simp [gaugeFixedAdjointSymbol_def, EuclideanSpace.real_norm_sq_eq, Fin.sum_univ_four,
-    Fin.sum_univ_two, coe_orthonormalBasisOneI]
-  ring
-
-/-- The adjoint symbol commutes with real scaling of the covector. -/
-@[simp]
-theorem gaugeFixedAdjointSymbol_smul_left (r : ℝ) (d : ℂ →L[ℝ] ℝ)
-    (v : EuclideanSpace ℝ (Fin 4)) :
-    gaugeFixedAdjointSymbol (r • d) v = r • gaugeFixedAdjointSymbol d v := by
-  ext i
-  fin_cases i <;> simp [gaugeFixedAdjointSymbol_def] <;> ring
-
-/-- The adjoint symbol commutes with real scaling of the field value. -/
-@[simp]
-theorem gaugeFixedAdjointSymbol_smul_right (d : ℂ →L[ℝ] ℝ) (r : ℝ)
-    (v : EuclideanSpace ℝ (Fin 4)) :
-    gaugeFixedAdjointSymbol d (r • v) = r • gaugeFixedAdjointSymbol d v := by
-  ext i
-  fin_cases i <;> simp [gaugeFixedAdjointSymbol_def] <;> ring
-
-/-- The adjoint's Leibniz rule for a real weight, with its exact symbol commutator. -/
-theorem gaugeFixedAdjoint_fun_smul (x : ℂ → EuclideanSpace ℝ (Fin 4)) {z : ℂ}
-    (hw : DifferentiableAt ℝ w z) (hη : DifferentiableAt ℝ η z) :
-    gaugeFixedAdjoint x (fun t ↦ w t • η t) z =
-      w z • gaugeFixedAdjoint x η z + gaugeFixedAdjointSymbol (fderiv ℝ w z) (η z) := by
-  have hηi (i : Fin 4) : DifferentiableAt ℝ (fun t ↦ η t i) z :=
-    (EuclideanSpace.proj (𝕜 := ℝ) i).differentiableAt.comp z hη
-  have hd (i : Fin 4) (v : ℂ) :
-      fderiv ℝ (fun t ↦ w t * η t i) z v =
-        fderiv ℝ w z v * η z i + w z * fderiv ℝ (fun t ↦ η t i) z v := by
-    rw [fderiv_fun_mul hw (hηi i)]
-    simp only [add_apply, smul_apply, smul_eq_mul]
-    ring
-  ext i
-  fin_cases i <;>
-    simp [gaugeFixedAdjoint_apply_zero, gaugeFixedAdjoint_apply_one,
-      gaugeFixedAdjoint_apply_two, gaugeFixedAdjoint_apply_three, hd,
-      gaugeFixedAdjointSymbol_def] <;> ring
 
 /-- Exact localization of the squared adjoint norm. The zeroth-order vortex coefficients
 cancel, and the principal symbol contributes precisely `|dw|² |η|²`. No equation for `x`
@@ -199,9 +141,7 @@ theorem exists_exterior_integral_exp_mul_norm_sq_le_integral_exp_mul_inner_gauge
   let a : ℝ := (c ^ 2 + 1 / 4) / 2
   have hc₂ : c ^ 2 < 1 / 4 := by nlinarith [sq_abs c, abs_nonneg c]
   have ha : a < 1 / 4 := by dsimp [a]; linarith
-  have he := hlim.eventually (lt_mem_nhds (by linarith : 4 * a < 1))
-  rw [← Metric.cobounded_eq_cocompact] at he
-  obtain ⟨R, _, hR⟩ := Filter.hasBasis_cobounded_norm.mem_iff.mp he
+  obtain ⟨R, hR₀, hR⟩ := exists_exterior_lt_mass hlim ha
   have hw : ContDiff ℝ 2 (fun z : ℂ ↦ Real.exp (c * √(1 + ‖z‖ ^ 2))) :=
     contDiff_exp_mul_sqrt_one_add_norm_sq c
   have hdw (z : ℂ) :
@@ -210,12 +150,9 @@ theorem exists_exterior_integral_exp_mul_norm_sq_le_integral_exp_mul_inner_gauge
     have hb := norm_fderiv_exp_mul_sqrt_one_add_norm_sq_le c z
     have hs := pow_le_pow_left₀ (norm_nonneg _) hb 2
     simpa only [mul_pow, sq_abs] using hs
-  refine ⟨max R 1, by positivity, fun η hη hηc hzero ↦ ?_⟩
-  have hP (z : ℂ) (hz : η z ≠ 0) : a ≤ x z 2 ^ 2 + x z 3 ^ 2 := by
-    have hnorm : max R 1 < ‖z‖ := lt_of_not_ge fun h ↦ hz (hzero z h)
-    have hv : 4 * a < 4 * (x z 2 ^ 2 + x z 3 ^ 2) :=
-      hR (le_trans (le_max_left R 1) hnorm.le)
-    linarith
+  refine ⟨R, hR₀, fun η hη hηc hzero ↦ ?_⟩
+  have hP (z : ℂ) (hz : η z ≠ 0) : a ≤ x z 2 ^ 2 + x z 3 ^ 2 :=
+    (hR z (lt_of_not_ge fun h ↦ hz (hzero z h))).le
   have hb := mul_integral_mul_norm_sq_le_integral_mul_inner_gaugeFixedOperator (μ := μ)
     hx hη hηc hw (fun z _ ↦ hsol z) ha.le hP (fun z _ ↦ hdw z)
   convert hb using 1
