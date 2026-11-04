@@ -136,18 +136,6 @@ private lemma spf_levelMap_eq (I : Ideal R) (n : ℕ) :
     ext x
     rfl
 
-private lemma isFirstOrderThickening_spfι (I : Ideal R) (n : ℕ) :
-    IsFirstOrderThickening
-      (Spec.map (CommRingCat.ofHom
-        (Ideal.Quotient.factor (Ideal.pow_le_pow_right (I := I) (Nat.le_succ (n + 1)))))) := by
-  have hle : I ^ (n + 2) ≤ I ^ (n + 1) := Ideal.pow_le_pow_right (Nat.le_succ (n + 1))
-  refine (IsFirstOrderThickening.SpecMap_iff
-    (CommRingCat.ofHom (Ideal.Quotient.factor hle))
-    (Ideal.Quotient.factor_surjective hle)).mpr ?_
-  rw [CommRingCat.hom_ofHom, Ideal.Quotient.factor_ker, ← Ideal.map_mul, ← pow_add,
-    Ideal.map_eq_bot_iff_le_ker, Ideal.mk_ker]
-  exact Ideal.pow_le_pow_right (by omega)
-
 /-- The tower of affine thickenings `Spec (R ⧸ I ^ (n + 1))` associated to any ideal `I` of a
 commutative ring `R`. Stacks, Definition 87.9.9 (0AIF). -/
 @[stacks 0AIF, expose, simps X ι]
@@ -155,9 +143,7 @@ noncomputable def spf (I : Ideal R) : AdicThickeningSystem.{u} where
   X n := Spec (CommRingCat.of (R ⧸ I ^ (n + 1)))
   ι n := Spec.map (CommRingCat.ofHom
     (Ideal.Quotient.factor (Ideal.pow_le_pow_right (Nat.le_succ (n + 1)))))
-  isThickening n := by
-    have := isFirstOrderThickening_spfι I n
-    infer_instance
+  isThickening n := (IsFirstOrderThickening.SpecMap_quotient_factor_pow_succ _).isThickening
   adic n := by
     rw [spf_levelMap_eq, Scheme.Hom.ker_Spec_map, Scheme.Hom.ker_Spec_map,
       CommRingCat.hom_ofHom, CommRingCat.hom_ofHom, Ideal.Quotient.factor_ker,
