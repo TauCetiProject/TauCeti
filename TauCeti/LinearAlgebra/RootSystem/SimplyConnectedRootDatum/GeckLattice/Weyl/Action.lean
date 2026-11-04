@@ -282,9 +282,16 @@ theorem geckWeylCharacterAut_ofAdd
     t.geckWeylCharacterAut ht w (Multiplicative.ofAdd μ) =
       Multiplicative.ofAdd (Finsupp.equivFunOnFinite.symm
         (w • Finsupp.equivFunOnFinite μ)) := by
-  simp [geckWeylCharacterAut, MulAut.congr]
-  -- The linear and ordinary finite-function equivalences have the same underlying maps.
-  rfl
+  have hμ : (Finsupp.linearEquivFunOnFinite ℤ ℤ (Fin t.rank)) μ =
+      Finsupp.equivFunOnFinite μ := by
+    ext i
+    simp only [Finsupp.linearEquivFunOnFinite_apply, Finsupp.equivFunOnFinite_apply]
+  suffices h : (Finsupp.linearEquivFunOnFinite ℤ ℤ (Fin t.rank)).symm
+      (w • (Finsupp.linearEquivFunOnFinite ℤ ℤ (Fin t.rank)) μ) =
+      Finsupp.equivFunOnFinite.symm (w • Finsupp.equivFunOnFinite μ) by
+    simpa [geckWeylCharacterAut, MulAut.congr] using h
+  ext i
+  simp only [Finsupp.linearEquivFunOnFinite_symm_apply, Finsupp.coe_equivFunOnFinite_symm, hμ]
 
 /-- On a weight written as an exponent vector, the character action is the usual Weyl action. -/
 @[simp↓]
