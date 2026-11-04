@@ -55,6 +55,7 @@ theorem exists_pos_odd_T_zpow_mul (A : SL(2, ℤ)) {m : ℕ}
   obtain ⟨j, hj, hjodd⟩ := Int.exists_nat_add_mul_pos_odd (A 0 0)
     (mul_pos (Int.natCast_pos.mpr hm) hc) hodd
   refine ⟨j, ?_⟩
-  simpa [coe_mul, coe_T_zpow, mul_apply, Fin.sum_univ_two, mul_assoc] using And.intro hj hjodd
+  simpa [coe_mul, coe_T_zpow, Matrix.mul_apply, Fin.sum_univ_two,
+    mul_assoc] using And.intro hj hjodd
 
 end Matrix.SpecialLinearGroup

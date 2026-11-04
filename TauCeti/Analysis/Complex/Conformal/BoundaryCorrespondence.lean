@@ -18,17 +18,17 @@ import TauCeti.Analysis.Complex.Conformal.ImageSimplyConnected
 A conformal map — a holomorphic injection `f` on an open set `U ⊆ ℂ` — is a *proper* map onto its
 image: the preimage of a compact subset of `f '' U` is a compact subset of `U`. Properness is the
 mechanism that forces the boundary to go to the boundary, and it is the first step of the
-Carathéodory boundary correspondence, layer **L5** of the conformal-mapping roadmap. This file
-proves it, deduces that a point approached from inside `U` is carried out of every compact subset
-of `f '' U`, and packages the consequences for a map that *does* extend continuously to `closure U`:
-such an extension carries `frontier U` into `frontier (f '' U)`, *onto* it once `U` is in addition
-bounded, and — when the extension is injective on `closure U` — is a homeomorphism of the closures.
+Carathéodory boundary correspondence. This file proves it, deduces that a point approached from
+inside `U` is carried out of every compact subset of `f '' U`, and packages the consequences for a
+map that *does* extend continuously to `closure U`: such an extension carries `frontier U` into
+`frontier (f '' U)`, *onto* it once `U` is in addition bounded, and — when the extension is
+injective on `closure U` — is a homeomorphism of the closures.
 
 The existence of the continuous extension is the hard, hypothesis-laden half of Carathéodory's
 theorem (it needs the boundary of the image to be a Jordan curve, or at least locally connected),
-and it is **not** proved here; the L5 milestone is that existence statement. What is proved here is
-everything that holds unconditionally, plus the packaging that turns the extension, once it is
-available, into the boundary homeomorphism the milestone asks for.
+and it is **not** proved here. What is proved here is everything that holds unconditionally, plus
+the packaging that turns the extension, once it is available, into the boundary homeomorphism of
+Carathéodory's theorem.
 
 ## The argument
 
@@ -50,9 +50,8 @@ is continuous on `closure U`; that is membership in `frontier (f '' U)`.
 The argument beyond the two holomorphic inputs — the open mapping theorem, through
 `TauCeti.isOpen_image_of_differentiableOn_of_injOn`, and its packaging as an open partial
 homeomorphism — is purely topological, and no continuity hypothesis on the inverse of `f` appears
-precisely because those two supply it. In accordance with the generality bar of
-`ConformalMapping/README.md`, which fixes scalar `ℂ` for every theorem added in layers L0–L6, the
-results are stated for conformal maps of `ℂ` rather than for an abstract proper map.
+precisely because those two supply it. The results are stated for conformal maps of `ℂ` rather
+than for an abstract proper map.
 
 ## Main results
 
@@ -218,9 +217,9 @@ continuous on `closure U` for a bounded `U`, agrees with `f` on `U`, and is inje
 of `f` nor openness of `U` is assumed; the intended instance is a conformal map `f` on an open `U`
 together with a continuous extension `F`.
 
-For a Riemann map of a Jordan domain this is the conclusion the Carathéodory correspondence
-(layer **L5**) asks for; what that milestone adds is the *existence* of such an `F`, which is not
-proved here. Continuity of the inverse is free: `closure U` is compact and `ℂ` is Hausdorff.
+For a Riemann map of a Jordan domain this is the conclusion of the Carathéodory correspondence; what
+that theorem adds is the *existence* of such an `F`, which is not proved here. Continuity of the
+inverse is free: `closure U` is compact and `ℂ` is Hausdorff.
 
 The definition is not exposed; `TauCeti.coe_closureHomeomorph_apply` and
 `TauCeti.coe_closureHomeomorph_symm_apply` are its characterizations. -/

@@ -6,8 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Computability.Priority.Injury.Basic
-import Mathlib.Data.Set.Card.Arithmetic
-import Mathlib.Data.Set.Finite.Lattice
+import TauCeti.Data.Set.Card
 
 /-!
 # Counting the causes of injury
@@ -47,17 +46,11 @@ theorem finite_injurySet_and_ncard_le_sum_of_causes (C : ℕ → Set ℕ) (b : �
     (hbudget : ∀ i < e, (C i).Finite ∧ (C i).ncard ≤ b i)
     (hcover : ∀ s x, x ∈ injuriesAt A r e s → ∃ i < e, x ∈ C i) :
     (injurySet A r e).Finite ∧ (injurySet A r e).ncard ≤ ∑ i ∈ Finset.range e, b i := by
-  have hsub : injurySet A r e ⊆ ⋃ i ∈ Finset.range e, C i := by
-    intro x hx
-    obtain ⟨s, hs⟩ := mem_injurySet.mp hx
-    obtain ⟨i, hi, hxi⟩ := hcover s x hs
-    exact mem_iUnion₂.mpr ⟨i, Finset.mem_range.mpr hi, hxi⟩
-  have hfin : (⋃ i ∈ Finset.range e, C i).Finite :=
-    (Finset.range e).finite_toSet.biUnion fun i hi =>
-      (hbudget i (Finset.mem_range.mp hi)).1
-  refine ⟨hfin.subset hsub, (ncard_le_ncard hsub hfin).trans ?_⟩
-  exact ((Finset.range e).set_ncard_biUnion_le C).trans
-    (Finset.sum_le_sum fun i hi => (hbudget i (Finset.mem_range.mp hi)).2)
+  refine finite_and_ncard_le_sum_of_subset_biUnion (fun x hx => ?_) fun i hi =>
+    hbudget i (Finset.mem_range.mp hi)
+  obtain ⟨s, hs⟩ := mem_injurySet.mp hx
+  obtain ⟨i, hi, hxi⟩ := hcover s x hs
+  exact mem_iUnion₂.mpr ⟨i, Finset.mem_range.mpr hi, hxi⟩
 
 /-- If every higher-priority contributor supplies at most one distinct number, there are at
 most `e` distinct numbers injuring `e`. Empty contribution sets are allowed. This counts

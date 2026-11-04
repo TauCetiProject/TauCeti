@@ -69,7 +69,7 @@ theorem exists_seq_isOpen_convex_isCompact_closure_subset_iUnion_eq
     have hs' : (0 : ℝ) < s' := hs.trans_le hss'
     have hcombo : h s' x = (s / s') • h s x + (1 - s / s') • c := by
       simp only [hh]
-      match_scalars <;> (field_simp [hs.ne', hs'.ne']; try ring)
+      match_scalars <;> field_simp [hs.ne', hs'.ne']; ring
     rw [hV, mem_preimage, hcombo]
     exact hconv hx hc (by positivity) (by rw [sub_nonneg]; exact (div_le_one hs').2 hss')
       (by ring)
@@ -82,7 +82,7 @@ theorem exists_seq_isOpen_convex_isCompact_closure_subset_iUnion_eq
     have hy : h s x ∈ closure Ω := hpre hx
     have hxc : x = (1 - s) • c + s • h s x := by
       simp only [hh]
-      match_scalars <;> (field_simp [hs.ne']; try ring)
+      match_scalars <;> field_simp [hs.ne']; ring
     rw [← hΩ.interior_eq, hxc]
     exact hconv.combo_interior_closure_mem_interior (by rwa [hΩ.interior_eq]) hy (by linarith)
       hs.le (by ring)

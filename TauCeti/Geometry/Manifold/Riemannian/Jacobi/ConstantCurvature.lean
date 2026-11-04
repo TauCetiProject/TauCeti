@@ -11,7 +11,6 @@ import TauCeti.Analysis.ODE.Wronskian
 import TauCeti.Geometry.Manifold.Riemannian.Geodesic.ConstantSpeed
 import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.AlongCurve.Metric
 import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvature.Polarization
-import Mathlib.Analysis.SpecialFunctions.Trigonometric.DerivHyp
 import Mathlib.Analysis.SpecialFunctions.Sqrt
 
 /-!
@@ -32,12 +31,10 @@ with `P` and `Q` parallel, `P(a) = J(a)` and `Q(a) = DJ(a)`. For `λ > 0`, `λ =
 pair is `(sin, cos)`, `(t, 1)` and `(sinh, cosh)` after rescaling. Since parallel fields keep their
 inner products, this determines `|J|` from the initial data.
 
-Two consequences describe conjugate points along geodesics in constant curvature.
-
-* For `κ > 0` and a geodesic of speed `c > 0`, a normal Jacobi field vanishing at `a` has
-  `|J(t)| = |sin(√κ c (t - a))| / (√κ c) · |DJ(a)|`. It vanishes again at `a + π / (√κ c)`, and a
-  nonzero one does not vanish strictly in between.
-* For `κ ≤ 0`, a normal Jacobi field vanishing at two distinct parameters vanishes identically.
+For `κ > 0` and a geodesic of speed `c > 0`, a normal Jacobi field vanishing at `a` has
+`|J(t)| = |sin(√κ c (t - a))| / (√κ c) · |DJ(a)|`. It vanishes again at `a + π / (√κ c)`, and a
+nonzero one does not vanish strictly in between. Absence of two zeros in nonpositive curvature,
+without constancy or normality assumptions, is proved in `Jacobi.Convexity`.
 
 ## Main results
 
@@ -53,8 +50,6 @@ Two consequences describe conjugate points along geodesics in constant curvature
   `TauCeti.Manifold.IsJacobiFieldOn.apply_add_pi_div_eq_zero` and
   `TauCeti.Manifold.IsJacobiFieldOn.apply_eq_zero_iff_of_abs_sub_lt`: conjugate points in positive
   curvature.
-* `TauCeti.Manifold.IsJacobiFieldOn.apply_eq_zero_of_nonpos`: absence of conjugate
-  points in nonpositive curvature.
 
 ## References
 
@@ -329,51 +324,5 @@ theorem IsJacobiFieldOn.apply_eq_zero_iff_of_abs_sub_lt
   rw [← norm_eq_zero, h.norm_eq_abs_sin_mul_norm hs ha hκ hV hκpos hγ' hVa ht, mul_eq_zero,
     div_eq_zero_iff, abs_eq_zero, norm_eq_zero]
   exact ⟨fun h' ↦ h'.resolve_left fun h0 ↦ h0.elim hsin hν.ne', Or.inr⟩
-
-/-- **No conjugate points in nonpositive constant curvature.** Along a geodesic through points of
-sectional curvature `κ ≤ 0`, on a preconnected parameter set, a normal Jacobi field vanishing at two
-distinct parameters vanishes identically. -/
-theorem IsJacobiFieldOn.apply_eq_zero_of_nonpos
-    (h : IsJacobiFieldOn I γ V s) (hs : IsPreconnected s) (ha : a ∈ s)
-    (hκ : ∀ t ∈ s, (leviCivitaConnection I M).HasSectionalCurvatureAt
-      (isMetricCompatible_leviCivitaConnection I) (γ t) κ)
-    (hV : ∀ t ∈ s, ⟪V t, curveVelocityWithin I γ s t⟫_ℝ = 0) (hκ0 : κ ≤ 0) {b : ℝ}
-    (hb : b ∈ s) (hba : b ≠ a) (hVa : V a = 0) (hVb : V b = 0) (ht : t ∈ s) : V t = 0 := by
-  set c := κ * ‖curveVelocityWithin I γ s a‖ ^ 2
-  have hc : c ≤ 0 := mul_nonpos_of_nonpos_of_nonneg hκ0 (by positivity)
-  -- A fundamental pair `φ, ψ` of solutions of `f'' = -c f` with `φ` vanishing only at `a`.
-  obtain ⟨φ, φ', ψ, ψ', hφ, hφ', hψ, hψ', hφa, hφ'a, hψa, hψ'a, hφb⟩ :
-      ∃ φ φ' ψ ψ' : ℝ → ℝ, (∀ t, HasDerivAt φ (φ' t) t) ∧
-        (∀ t, HasDerivAt φ' (-c * φ t) t) ∧ (∀ t, HasDerivAt ψ (ψ' t) t) ∧
-        (∀ t, HasDerivAt ψ' (-c * ψ t) t) ∧ φ a = 0 ∧ φ' a = 1 ∧ ψ a = 1 ∧ ψ' a = 0 ∧
-        φ b ≠ 0 := by
-    rcases hc.lt_or_eq with hc | hc
-    · -- `c < 0`: hyperbolic sine and cosine with frequency `μ = √(-c)`.
-      set μ := √(-c)
-      have hμ : 0 < μ := Real.sqrt_pos.2 (neg_pos.2 hc)
-      have hμ2 : μ ^ 2 = -c := Real.sq_sqrt (neg_nonneg.2 hc.le)
-      have hlin : ∀ t, HasDerivAt (fun r ↦ μ * (r - a)) μ t := fun t ↦
-        (((hasDerivAt_id t).sub_const a).const_mul μ).congr_deriv (by simp)
-      refine ⟨fun r ↦ Real.sinh (μ * (r - a)) / μ, fun r ↦ Real.cosh (μ * (r - a)),
-        fun r ↦ Real.cosh (μ * (r - a)), fun r ↦ μ * Real.sinh (μ * (r - a)),
-        fun t ↦ (((hlin t).sinh).div_const μ).congr_deriv (by field_simp),
-        fun t ↦ ((hlin t).cosh).congr_deriv (by rw [← hμ2]; field_simp),
-        fun t ↦ ((hlin t).cosh).congr_deriv (by ring),
-        fun t ↦ (((hlin t).sinh).const_mul μ).congr_deriv (by rw [← hμ2]; ring),
-        by simp, by simp, by simp, by simp, ?_⟩
-      exact div_ne_zero ((Real.sinh_eq_zero.not).2 (mul_ne_zero hμ.ne' (sub_ne_zero.2 hba))) hμ.ne'
-    · -- `c = 0`: the affine pair `t - a` and `1`.
-      refine ⟨fun r ↦ r - a, fun _ ↦ 1, fun _ ↦ 1, fun _ ↦ 0,
-        fun t ↦ (hasDerivAt_id t).sub_const a, fun t ↦ (hasDerivAt_const t 1).congr_deriv
-          (by simp [hc]), fun t ↦ hasDerivAt_const t 1, fun t ↦ (hasDerivAt_const t 0).congr_deriv
-          (by simp [hc]), by simp, rfl, rfl, rfl, sub_ne_zero.2 hba⟩
-  -- `J(b) = 0` with `φ(b) ≠ 0` forces `DJ(a) = 0`; then `|J|²` vanishes identically.
-  have hDa : alongCurveWithin (leviCivitaConnection I M) γ V s a = 0 := by
-    have hnorm := h.norm_eq_abs_mul_norm hs ha hκ hV hφ hφ' hψ hψ' hφa hφ'a hψa hψ'a hVa hb
-    rw [hVb, norm_zero, eq_comm, mul_eq_zero, abs_eq_zero, norm_eq_zero] at hnorm
-    exact hnorm.resolve_left hφb
-  have hsq := h.norm_sq_eq hs ha hκ hV hφ hφ' hψ hψ' hφa hφ'a hψa hψ'a ht
-  rw [hVa, hDa, norm_zero, inner_zero_left] at hsq
-  simpa using hsq
 
 end TauCeti.Manifold

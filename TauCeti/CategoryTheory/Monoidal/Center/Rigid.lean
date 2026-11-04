@@ -8,6 +8,7 @@ module
 public import Mathlib.CategoryTheory.Monoidal.Rigid.Braided
 public import TauCeti.CategoryTheory.Monoidal.Center.Basic
 public import TauCeti.CategoryTheory.Monoidal.Rigid.DualFunctor
+public import TauCeti.CategoryTheory.Monoidal.Rigid.Functor
 
 /-!
 # The Drinfeld centre of a rigid category is rigid
@@ -53,7 +54,9 @@ category.
 * `CategoryTheory.Center.doubleRightDualFunctor_μ_f` and
   `CategoryTheory.Center.doubleRightDualFunctor_ε_f`: the tensor and unit comparisons of the double
   right dual functor of the centre are those of `C`, as are the comparisons
-  `(X ⊗ Y)ᘁ ≅ Yᘁ ⊗ Xᘁ` and `(𝟙_ (Center C))ᘁ ≅ 𝟙_ (Center C)` they are built from.
+  `(X ⊗ Y)ᘁ ≅ Yᘁ ⊗ Xᘁ` and `(𝟙_ (Center C))ᘁ ≅ 𝟙_ (Center C)` they are built from;
+* `CategoryTheory.Center.forget_mapRightDualIso`: the comparison of the forgetful functor with
+  right duals is the identity.
 
 ## References
 
@@ -458,6 +461,19 @@ theorem doubleRightDualFunctor_ε_f :
     rightDualIso_exactPairingUnit_hom_f]
   -- The two sides differ only in how the right duals of the units are written.
   rfl
+
+/-- The comparison between the image of a right dual under the forgetful functor of the centre
+and the right dual of the image is the identity: right duals in the centre are computed in
+`C`. -/
+@[simp]
+theorem forget_mapRightDualIso (X : Center C) :
+    (forget C).mapRightDualIso X = Iso.refl X.1ᘁ := by
+  ext
+  refine ExactPairing.rightHom_ext (X := X.1) (Y := X.1ᘁ)
+    ((Functor.mapRightDualIso_hom_whiskerRight_evaluation X).trans ?_)
+  have h : 𝟙 X.1ᘁ ▷ X.1 ≫ ε_ X.1 X.1ᘁ = ε_ X.1 X.1ᘁ := by simp
+  exact (Category.id_comp _).trans ((Category.comp_id _).trans ((evaluation_f (X := X)).trans
+    h.symm))
 
 end Center
 

@@ -197,7 +197,7 @@ private def centralizerAlgHom :
   map_mul' c d := by
     ext y
     obtain ⟨x, rfl⟩ := (Bimodule.of B.val).surjective y
-    simp [Module.End.mul_apply, mul_assoc]
+    simp [mul_apply_eq_comp, mul_assoc]
   map_zero' := by
     ext y
     obtain ⟨x, rfl⟩ := (Bimodule.of B.val).surjective y

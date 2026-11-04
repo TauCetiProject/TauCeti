@@ -7,9 +7,12 @@ module
 
 public import Mathlib.Analysis.Calculus.Deriv.CompMul
 public import Mathlib.Analysis.Calculus.IteratedDeriv.Defs
+public import Mathlib.Analysis.SpecialFunctions.Log.Basic
 public import Mathlib.Analysis.SpecialFunctions.Sqrt
 import Mathlib.Analysis.Calculus.Deriv.Add
 import Mathlib.Analysis.Calculus.Deriv.Inv
+import Mathlib.Analysis.SpecialFunctions.ExpDeriv
+import Mathlib.Analysis.SpecialFunctions.Log.Deriv
 
 /-!
 # Second derivatives of functions of one variable
@@ -29,6 +32,12 @@ The second derivative of the square root of a quadratic polynomial `Q s = a + b 
 computed where `Q` is positive. Since `2 Q Q'' - Q' ^ 2` is the constant `4 a c - b ^ 2`, it is
 `(4 a c - b ^ 2) / (4 Q √Q)`; at `0` this is `(4 a c - b ^ 2) / (4 a √a)`.
 
+Under the change of variables `x = e^y` the operators `x d/dx` and `x² d²/dx²` become `d/dy` and
+`d²/dy² - d/dy`: for `v` twice differentiable at `log x`, `x (v ∘ log)'(x) = v'(log x)` and
+`x² (v ∘ log)''(x) = v''(log x) - v'(log x)`, and conversely
+`(f ∘ exp)''(y) = e^y f'(e^y) + e^{2y} f''(e^y)`. These turn equations of Euler type, whose
+coefficients `x` and `x²` degenerate at `0`, into equations with constant coefficients.
+
 ## Main results
 
 * `TauCeti.iteratedDeriv_comp_mul_left`: the iterated derivatives of `fun x ↦ f (c * x)`, and
@@ -38,11 +47,14 @@ computed where `Q` is positive. Since `2 Q Q'' - Q' ^ 2` is the constant `4 a c 
   second derivatives of the affine line `t ↦ a + t • b`.
 * `TauCeti.deriv_deriv_sqrt_quadratic`: the second derivative of `s ↦ √(a + b s + c s ^ 2)`, and
   `TauCeti.deriv_deriv_sqrt_quadratic_zero` its value at `0`.
+* `TauCeti.mul_deriv_comp_log`, `TauCeti.sq_mul_deriv_deriv_comp_log`,
+  `TauCeti.deriv_deriv_comp_exp`: the first and second derivatives under the change of variables
+  `x = e^y`.
 -/
 
 public section
 
-open Filter Topology
+open Filter Real Topology
 
 namespace TauCeti
 
@@ -141,5 +153,51 @@ theorem deriv_deriv_sqrt_quadratic {a b c t : ℝ} (ht : 0 < a + b * t + c * t ^
 theorem deriv_deriv_sqrt_quadratic_zero {a b c : ℝ} (ha : 0 < a) :
     deriv (deriv fun s ↦ √(a + b * s + c * s ^ 2)) 0 = (4 * a * c - b ^ 2) / (4 * a * √a) := by
   simpa using deriv_deriv_sqrt_quadratic (b := b) (c := c) (t := 0) (by simpa using ha)
+
+section LogExp
+
+variable {f v : ℝ → ℝ} {x y : ℝ}
+
+/-- Under the change of variables `x = e^y` the operator `x d/dx` is `d/dy`:
+`x (v ∘ log)'(x) = v'(log x)` for `x ≠ 0`. -/
+theorem mul_deriv_comp_log (hv : DifferentiableAt ℝ v (log x)) (hx : x ≠ 0) :
+    x * deriv (fun x ↦ v (log x)) x = deriv v (log x) := by
+  have h : HasDerivAt (fun x ↦ v (log x)) (deriv v (log x) * x⁻¹) x :=
+    hv.hasDerivAt.comp x (hasDerivAt_log hx)
+  rw [h.deriv]
+  field_simp
+
+/-- Under the change of variables `x = e^y` the operator `x² d²/dx²` is `d²/dy² - d/dy`:
+`x² (v ∘ log)''(x) = v''(log x) - v'(log x)` for `x ≠ 0`. -/
+theorem sq_mul_deriv_deriv_comp_log (hv : ∀ᶠ y in 𝓝 (log x), DifferentiableAt ℝ v y)
+    (hv' : DifferentiableAt ℝ (deriv v) (log x)) (hx : x ≠ 0) :
+    x ^ 2 * deriv (deriv fun x ↦ v (log x)) x = deriv (deriv v) (log x) - deriv v (log x) := by
+  have hev : deriv (fun x ↦ v (log x)) =ᶠ[𝓝 x] fun x ↦ deriv v (log x) / x := by
+    filter_upwards [(continuousAt_log hx).eventually hv, eventually_ne_nhds hx] with z hz hz0
+    rw [← mul_deriv_comp_log hz hz0]
+    field_simp
+  have h : HasDerivAt (fun x ↦ deriv v (log x) / x)
+      ((deriv (deriv v) (log x) * x⁻¹ * x - deriv v (log x) * 1) / x ^ 2) x :=
+    (hv'.hasDerivAt.comp x (hasDerivAt_log hx)).div (hasDerivAt_id x) hx
+  rw [hev.deriv_eq, h.deriv]
+  field_simp
+
+/-- The second derivative of `f ∘ exp`: `(f ∘ exp)''(y) = e^y f'(e^y) + e^{2y} f''(e^y)`. -/
+theorem deriv_deriv_comp_exp (hf : ∀ᶠ x in 𝓝 (exp y), DifferentiableAt ℝ f x)
+    (hf' : DifferentiableAt ℝ (deriv f) (exp y)) :
+    deriv (deriv fun y ↦ f (exp y)) y =
+      exp y * deriv f (exp y) + exp y ^ 2 * deriv (deriv f) (exp y) := by
+  have hev : deriv (fun y ↦ f (exp y)) =ᶠ[𝓝 y] fun y ↦ exp y * deriv f (exp y) := by
+    filter_upwards [continuous_exp.continuousAt.eventually hf] with z hz
+    have h : HasDerivAt (fun y ↦ f (exp y)) (deriv f (exp z) * exp z) z :=
+      hz.hasDerivAt.comp z (hasDerivAt_exp z)
+    rw [h.deriv, mul_comm]
+  have h : HasDerivAt (fun y ↦ exp y * deriv f (exp y))
+      (exp y * deriv f (exp y) + exp y * (deriv (deriv f) (exp y) * exp y)) y :=
+    (hasDerivAt_exp y).mul (hf'.hasDerivAt.comp y (hasDerivAt_exp y))
+  rw [hev.deriv_eq, h.deriv]
+  ring
+
+end LogExp
 
 end TauCeti

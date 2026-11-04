@@ -178,8 +178,7 @@ def gradedIdempotentHeadForgetK0EquivOfPrimitive :
   let _ : ∀ i, IsSimpleModule A (T i) := fun i ↦
     isSimpleModule_gradedPositiveMulQuotient hneg (hprim i) (he₀ i)
   gradedFiniteModulesForgetK0EquivOfSimpleFamilies S T he.idem he₀
-    (fun _ _ hij ↦ smulGradedDimension_gradedPositiveMulQuotient_eq_zero hneg (hprim _) (he₀ _)
-      (hprim _) (hnoniso hij.symm))
+    (pairwise_smulGradedDimension_gradedPositiveMulQuotient_eq_zero hneg he₀ hprim hnoniso)
     (fun i ↦ smulGradedDimension_gradedPositiveMulQuotient_self_ne_zero hneg (he.idem i) (he₀ i)
       (hprim i).ne_zero)
     (isExhaustiveGradedSimpleFamily_gradedPositiveMulQuotient_of_isPrimitiveIdempotent hneg he he₀

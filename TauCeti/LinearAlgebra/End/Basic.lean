@@ -22,6 +22,9 @@ product through `z ^ l.length` (`Module.End.list_prod_apply_eq_pow_smul`).
 
 An endomorphism of a torsion-free module over a domain some power of which is a scalar other than
 one has no nonzero fixed vectors (`TauCeti.injective_one_sub_of_pow_eq_smul_one`).
+
+Rescaling an involution by a scalar `μ` with `μ * μ = 1` gives an endomorphism squaring to `1`
+(`Module.End.smul_mul_smul_self_eq_one`).
 -/
 
 public section
@@ -46,7 +49,7 @@ theorem injective_one_sub_of_pow_eq_smul_one {A M : Type*} [CommRing A] [IsDomai
   intro v hv
   -- `1 - φ ^ n = (∑ i < n, φ ^ i) * (1 - φ)` kills `v`, and it is multiplication by `1 - m`.
   have hn : (1 - φ ^ n) v = 0 := by
-    rw [← geom_sum_mul_neg, Module.End.mul_apply, hv, map_zero]
+    rw [← geom_sum_mul_neg, _root_.mul_apply_eq_comp, hv, map_zero]
   have hmv : (1 - m) • v = 0 := by
     rw [sub_smul, one_smul]
     simpa [h] using hn
@@ -64,7 +67,14 @@ theorem list_prod_apply_eq_pow_smul {R M : Type*} [Semiring R] [AddCommMonoid M]
   induction l with
   | nil => simp
   | cons a l ih =>
-    rw [List.prod_cons, Module.End.mul_apply, ih fun a ha ↦ h a (List.mem_cons_of_mem _ ha),
+    rw [List.prod_cons, _root_.mul_apply_eq_comp, ih fun a ha ↦ h a (List.mem_cons_of_mem _ ha),
       map_smul, h a List.mem_cons_self, smul_smul, List.length_cons, pow_succ]
+
+/-- `μ • g` squares to `1` for an involution `g` and `μ * μ = 1`. -/
+theorem smul_mul_smul_self_eq_one {R M : Type*} [CommSemiring R] [AddCommMonoid M] [Module R M]
+    {g : Module.End R M} (hg : Function.Involutive g) {μ : R} (hμ : μ * μ = 1) :
+    (μ • g) * (μ • g) = 1 := by
+  rw [smul_mul_smul_comm, hμ, one_smul]
+  exact LinearMap.ext hg
 
 end Module.End

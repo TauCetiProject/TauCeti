@@ -60,7 +60,7 @@ directions before taking products.
   no fixed point.
 * `TauCeti.Grid.cIoo_finRotate_eq_empty`, `TauCeti.Grid.cIco_eq_singleton_iff`: the arcs from a
   point to its cyclic successor are empty and a single point, and these are the only one-point
-  half-open arcs.
+  half-open arcs; `TauCeti.Grid.cIoo_castSucc_succ` is the case of `r.castSucc` and `r.succ`.
 * `TauCeti.Grid.mem_cIco`: membership in the clockwise half-open arc.
 * `TauCeti.Grid.card_cIco`: the length of a half-open arc in standard representatives.
 * `TauCeti.Grid.cIco_union_swap`: opposite nondegenerate half-open arcs partition the grid.
@@ -506,6 +506,42 @@ theorem mem_cIoo_or_mem_cIoo_of_ne {a b c x y : Fin n}
   simp only [mem_cIco, mem_cIoo, ne_eq, ← Fin.val_inj] at hx hy hxy ⊢
   split_ifs at * <;> omega
 
+/-- Removing the closed arc from `s` to `t` inside the half-open arc from `B` to `T`
+leaves the arcs `cIco B s` and `cIoo t T`. -/
+theorem cIco_union_cIoo_eq_sdiff_of_mem_cIoo {B T s t : Fin n}
+    (hs : s ∈ cIco B T) (ht : t ∈ cIoo s T) :
+    cIco B s ∪ cIoo t T = cIco B T \ insert t (cIco s t) := by
+  ext r
+  simp only [Finset.mem_union, Finset.mem_sdiff, Finset.mem_insert,
+    mem_cIco, mem_cIoo, ne_eq, ← Fin.val_inj] at *
+  split_ifs at * <;> omega
+
+/-- The arcs before and after a closed subarc of a half-open cyclic interval are disjoint. -/
+theorem disjoint_cIco_cIoo_of_mem_cIoo {B T s t : Fin n}
+    (hs : s ∈ cIco B T) (ht : t ∈ cIoo s T) :
+    Disjoint (cIco B s) (cIoo t T) := by
+  rw [Finset.disjoint_left]
+  intro r hr hs'
+  simp only [mem_cIco, mem_cIoo, ne_eq, ← Fin.val_inj] at *
+  split_ifs at * <;> omega
+
+/-- Recutting the overlapping arcs `cIoo s T` and `cIco B t` at `t` preserves their union. -/
+theorem cIoo_union_cIco_eq_union_of_mem_cIoo {B T s t : Fin n}
+    (ht : t ∈ cIco B T) (hst : t ∈ cIoo s T) :
+    cIoo s T ∪ cIco B t = cIoo s t ∪ cIco B T := by
+  ext r
+  simp only [Finset.mem_union, mem_cIco, mem_cIoo, ne_eq, ← Fin.val_inj] at *
+  split_ifs at * <;> omega
+
+/-- Recutting the overlapping arcs `cIoo s T` and `cIco B t` at `t` preserves their
+intersection. -/
+theorem cIoo_inter_cIco_eq_inter_of_mem_cIoo {B T s t : Fin n}
+    (ht : t ∈ cIco B T) (hst : t ∈ cIoo s T) :
+    cIoo s T ∩ cIco B t = cIoo s t ∩ cIco B T := by
+  ext r
+  simp only [Finset.mem_inter, mem_cIco, mem_cIoo, ne_eq, ← Fin.val_inj] at *
+  split_ifs at * <;> omega
+
 /-- An interior point cuts a clockwise open arc into two open arcs and the cutting point. -/
 theorem cIoo_union_insert_cIoo_eq_cIoo_of_mem_cIoo {a b c : Fin n} (h : b ∈ cIoo a c) :
     cIoo a b ∪ insert b (cIoo b c) = cIoo a c := by
@@ -931,6 +967,11 @@ theorem cIoo_finRotate_eq_empty (a : Fin n) : cIoo a (finRotate n a) = ∅ := by
     have := a.isLt; have := x.isLt
     rw [coe_finRotate]
     split_ifs with h₁ h₂ <;> simp only [Fin.ext_iff, Fin.val_last] at h₁ <;> omega
+
+/-- The open cyclic interval between consecutive rows `r.castSucc` and `r.succ` of a grid with one
+more row is empty. -/
+theorem cIoo_castSucc_succ (r : Fin n) : cIoo r.castSucc r.succ = ∅ := by
+  rw [← Fin.finRotate_castSucc, cIoo_finRotate_eq_empty]
 
 /-- Moving from a point `x` to its cyclic successor does not cross the endpoints of an open
 cyclic interval that starts away from `x` and ends away from its successor. -/

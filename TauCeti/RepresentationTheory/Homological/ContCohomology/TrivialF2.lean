@@ -12,7 +12,7 @@ public import TauCeti.RepresentationTheory.Continuous.Restriction
 public import TauCeti.RepresentationTheory.Continuous.TopRep.EqToHom
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.Functoriality
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.InnerConjugation
-public import TauCeti.RepresentationTheory.Homological.ContCohomology.SmoothDiscrete.Basic
+public import TauCeti.RepresentationTheory.Homological.ContCohomology.SmoothDiscrete.Restriction
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.Torsion
 public import TauCeti.Topology.Algebra.Group.ContinuousAut.Basic
 
@@ -66,10 +66,15 @@ is required for the induced cohomology maps.
   `TauCeti.eqToHom_ofDiscreteModule_trivialF2_apply` and
   `TauCeti.eqToHom_ofDiscreteModule_trivialF2_symm_apply` its carrier-level reading.
 * `TauCeti.res_trivialF2_hom`: restriction preserves the coefficient object on the nose.
+* `TauCeti.smoothResFunctor_trivialF2`: smooth restriction along a continuous monoid
+  homomorphism preserves trivial `𝔽₂` coefficients, with
+  `TauCeti.eqToHom_smoothResFunctor_trivialF2_apply` its value rule.
 * `TauCeti.trivialF2Map_subgroupSubtype`: the general pullback recovers subgroup restriction.
 * `TauCeti.trivialF2Map_id`, `TauCeti.trivialF2Map_comp`: the functoriality laws.
 * `TauCeti.trivialF2Map_eq_of_conj`: over a locally compact target, pullbacks along two
   homomorphisms that differ by an inner automorphism agree.
+* `TauCeti.trivialF2ResMap_injective_of_index_eq_one`: restriction to a subgroup of index one is
+  injective.
 * `TauCeti.eqToHom_comp_trivialF2Map`: read in discrete models of the coefficients, the pullback
   is the compatible-pair map of any coefficient map that is the identity of `𝔽₂`.
 * `TauCeti.isSmoothDiscrete_trivialF2`: the coefficient object is smooth discrete.
@@ -239,6 +244,20 @@ discrete continuous representations. -/
 noncomputable abbrev DiscreteRep.trivialF2 : DiscreteRep.{0, u, u} ℤ G :=
   (ofSmoothDiscrete ℤ G).obj ⟨TauCeti.trivialF2 G, isSmoothDiscrete_trivialF2 G⟩
 
+/-- Smooth restriction along a continuous monoid homomorphism preserves the canonical trivial
+`𝔽₂` coefficient object. -/
+-- Not a simp lemma: `smoothResFunctor_obj` rewrites the left-hand side first.
+theorem smoothResFunctor_trivialF2 {H : Type u} [Monoid H] [TopologicalSpace H]
+    (φ : H →* G) (hφ : Continuous φ) :
+    (smoothResFunctor ℤ φ hφ).obj ⟨trivialF2 G, isSmoothDiscrete_trivialF2 G⟩ =
+      ⟨trivialF2 H, isSmoothDiscrete_trivialF2 H⟩ := (rfl)
+
+/-- The smooth restriction identification preserves the underlying `𝔽₂` value. -/
+theorem eqToHom_smoothResFunctor_trivialF2_apply {H : Type u} [Monoid H] [TopologicalSpace H]
+    (φ : H →* G) (hφ : Continuous φ) (x : (trivialF2 G).V) :
+    trivialF2Equiv H ((CategoryTheory.eqToHom
+      (smoothResFunctor_trivialF2 G φ hφ)).hom.hom x) = trivialF2Equiv G x := (rfl)
+
 /-- Restriction on continuous cohomology with trivial `𝔽₂` coefficients. This is the
 generic restriction map followed by the on-the-nose identification `res_trivialF2_hom`. -/
 noncomputable def trivialF2ResMap (S : Subgroup G) (n : ℕ) :
@@ -386,6 +405,19 @@ theorem trivialF2Map_eq_of_conj [LocallyCompactSpace G] (φ ψ : H →ₜ* G) (g
       (fun v => by rw [TopRep.eqToHom_hom_apply, trivialF2_ρ_apply_apply, cast_eq])
       (isSmoothDiscrete_trivialF2 G) n
   rw [hψ, trivialF2Map_comp, hc, Category.id_comp]
+
+/-- **Restriction to a subgroup of index one is injective**: corestricting the identity of `G` to
+`S` gives it a left inverse. -/
+theorem trivialF2ResMap_injective_of_index_eq_one {S : Subgroup G} (hS : S.index = 1) (n : ℕ) :
+    Function.Injective (trivialF2ResMap G S n) := by
+  let ι : G →ₜ* S :=
+    ⟨(MonoidHom.id G).codRestrict S fun g ↦ by simp [Subgroup.index_eq_one.1 hS],
+      continuous_id.subtype_mk _⟩
+  have hι : (ContinuousMonoidHom.subgroupSubtype S).comp ι = ContinuousMonoidHom.id G :=
+    ContinuousMonoidHom.ext fun _ ↦ rfl
+  refine Function.LeftInverse.injective (g := trivialF2Map ι n) fun a ↦ ?_
+  rw [← trivialF2Map_subgroupSubtype, ← ConcreteCategory.comp_apply, ← trivialF2Map_comp, hι,
+    trivialF2Map_id, ConcreteCategory.id_apply]
 
 /-- A topological group isomorphism induces an equivalence on continuous cohomology with
 trivial `𝔽₂` coefficients. The cohomology map runs along the inverse group isomorphism. -/

@@ -110,8 +110,9 @@ theorem SlashInvariantForm.vadd_apply_of_neg_upperRightHom_mem
   have hs := congrFun (SlashInvariantFormClass.slash_action_eq f _ hΓ) z
   rw [← mul_neg_one (Matrix.GeneralLinearGroup.upperRightHom h),
     SlashAction.slash_mul, ModularForm.slash_neg_one] at hs
-  simp only [Pi.smul_apply, smul_eq_mul, TauCeti.ModularForm.slash_upperRightHom_apply] at hs
-  simpa only [← inv_zpow, inv_neg_one] using
+  simp only [Pi.mul_apply,
+    TauCeti.ModularForm.slash_upperRightHom_apply] at hs
+  simpa only [← _root_.inv_zpow, inv_neg_one] using
     (eq_inv_mul_iff_mul_eq₀ (zpow_ne_zero k (by norm_num : (-1 : ℂ) ≠ 0))).mpr hs
 
 section IntegerCuspWidth

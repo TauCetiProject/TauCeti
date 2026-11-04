@@ -19,8 +19,7 @@ piece* `frontier Ω ∩ closure γ`. This file studies the other two pieces,
 
 > `P = frontier Ω ∩ closure A` and `Q = frontier Ω ∩ closure B`,
 
-and proves two facts about them that the Carathéodory boundary correspondence — layer **L5** of
-`TauCetiRoadmap/ConformalMapping/README.md` — needs of the cut:
+and proves two facts about them that the Carathéodory boundary correspondence needs of the cut:
 
 * **the two pieces already cover, with no leftover**: `frontier Ω = P ∪ Q`
   (`TauCeti.frontier_image_eq_union_inter_closure_image`). There is no third piece to account for,
@@ -69,11 +68,10 @@ the two alternatives of the dichotomy it is in.
 
 ## Generality
 
-In accordance with the generality bar of `ConformalMapping/README.md`, which fixes scalar `ℂ` for
-every theorem added in layers L0–L6, everything below is stated for maps of `ℂ` on an arbitrary open
-`U`, as in `Conformal/CutDiameter.lean`; nothing asks `U ∩ sphere ζ ρ` to be a crosscut, or `ζ` to
-lie on `frontier U`. The metric step that never mentions a map — that both sides of a cut cling to
-the cutting sphere — is stated for a seminormed real vector space in
+Everything below is stated for maps of `ℂ` on an arbitrary open `U`, as in
+`Conformal/CutDiameter.lean`; nothing asks `U ∩ sphere ζ ρ` to be a crosscut, or `ζ` to lie on
+`frontier U`. The metric step that never mentions a map — that both sides of a cut cling to the
+cutting sphere — is stated for a seminormed real vector space in
 `TauCeti/Analysis/Normed/Module/Ball/Cut.lean` and consumed here. Only the cluster-set lemmas ask
 `f` to be holomorphic and injective; the splitting and the dichotomy need no more than continuity,
 and the radius is unrestricted apart from `ρ ≠ 0`, which is what makes the cutting sphere adherent
@@ -255,7 +253,7 @@ Both hypotheses are conditions on `S` alone, so a caller supplies them for the `
 a small `S` then makes one of the two pieces small. Nothing here says which sets `S` a crosscut
 admits: that needs `P ∩ Q` to be no larger than the middle piece
 (`TauCeti.frontier_inter_closure_image_inter_sphere_subset_inter` gives only the other inclusion),
-which is the planar-separation prerequisite this development does not yet have. -/
+which is a planar-separation question not settled here. -/
 theorem subset_or_subset_of_isPreconnected_frontier_image_sdiff (hUo : IsOpen U)
     (hfc : ContinuousOn f U) (hρ : ρ ≠ 0) {S : Set ℂ}
     (hS : frontier (f '' U) ∩ closure (f '' (U ∩ ball ζ ρ)) ∩

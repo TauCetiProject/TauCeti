@@ -24,11 +24,10 @@ each of its two ends**, so its closure is the crosscut together with two points.
 
 That this can be had at all, and without circularity, is the point. The end of an image crosscut is
 a boundary cluster set, and the boundary cluster sets of the map on the *disc* degenerating to
-points is exactly the layer-**L5** milestone of `TauCetiRoadmap/ConformalMapping/README.md` still
-open. The ends here degenerate for a different and much cheaper reason: the arc `ball c r ∩ sphere
-ζ ρ` is one-dimensional, and the length of its image is a *finite* number, so the images of its
-angles satisfy a Cauchy criterion as the angle runs to an end of the arc. No boundary behaviour of
-the map on the disc is used, and none is proved.
+points is exactly the content of Carathéodory's theorem. The ends here degenerate for a different
+and much cheaper reason: the arc `ball c r ∩ sphere ζ ρ` is one-dimensional, and the length of its
+image is a *finite* number, so the images of its angles satisfy a Cauchy criterion as the angle runs
+to an end of the arc. No boundary behaviour of the map on the disc is used, and none is proved.
 
 ## The estimate
 
@@ -78,9 +77,9 @@ the hypothesis costs a consumer nothing it has not already paid for.
 
 The conclusion, `TauCeti.exists_closure_image_ball_inter_sphere_eq_insert`, is that the closure of
 the image crosscut is the image crosscut together with two points. Which two points, and whether
-they are distinct, is not addressed: an image crosscut may well close up. What the L5 argument needs
-is only that the two ends are points on `∂Ω`, so that the small arc of a locally connected `∂Ω`
-joining them can be named.
+they are distinct, is not addressed: an image crosscut may well close up. What Carathéodory's
+argument needs is only that the two ends are points on `∂Ω`, so that the small arc of a locally
+connected `∂Ω` joining them can be named.
 
 ## Main results
 
@@ -93,8 +92,8 @@ joining them can be named.
   at most one element.
 * `TauCeti.exists_tendsto_nhdsWithin_circleMap_image_Ioo` and
   `TauCeti.exists_clusterSetOn_circleMap_image_Ioo_eq_singleton` — hence such an arc carries a limit
-  at each point of its closure, its two endpoints included, and its cluster set there is a single
-  point.
+  at each point of its closure, its two endpoints included, and when the arc is nonempty its
+  cluster set there is a single point.
 * `TauCeti.subsingleton_clusterSetOn_ball_inter_sphere`,
   `TauCeti.exists_tendsto_nhdsWithin_ball_inter_sphere` and
   `TauCeti.exists_clusterSetOn_ball_inter_sphere_eq_singleton` — the three arc statements at the arc
@@ -108,14 +107,13 @@ joining them can be named.
 
 ## Generality
 
-In accordance with the generality bar of `ConformalMapping/README.md`, which fixes scalar `ℂ` for
-every theorem added in layers L0–L6, everything below is stated for maps of `ℂ`. The arc statements
-ask nothing of the ambient disc — only that `f` be holomorphic on an open set containing the arc —
-so they apply to any circle in any domain, the crosscut being one instance; neither injectivity of
-`f` nor any hypothesis on its image is used anywhere in the file. They ask nothing of the sign of
-the radius either, a negative `ρ` tracing the same circle in the other sense and `ρ = 0` collapsing
-the arc to the point `ζ`, where the estimates are trivial. The crosscut statements do ask
-`0 < ρ < 2 * r`, which is what makes `ball c r ∩ sphere ζ ρ` a genuine crosscut.
+Everything below is stated for maps of `ℂ`. The arc statements ask nothing of the ambient disc —
+only that `f` be holomorphic on an open set containing the arc — so they apply to any circle in any
+domain, the crosscut being one instance; neither injectivity of `f` nor any hypothesis on its image
+is used anywhere in the file. They ask nothing of the sign of the radius either, a negative `ρ`
+tracing the same circle in the other sense and `ρ = 0` collapsing the arc to the point `ζ`, where
+the estimates are trivial. The crosscut statements do ask `0 < ρ < 2 * r`, which is what makes
+`ball c r ∩ sphere ζ ρ` a genuine crosscut.
 
 ## References
 
@@ -279,31 +277,39 @@ private lemma circleMap_mem_closure_image_Ioo (ζ : ℂ) (ρ : ℝ) {a b θ₀ :
     (hθ₀ : θ₀ ∈ Icc a b) : circleMap ζ ρ θ₀ ∈ closure (circleMap ζ ρ '' Ioo a b) :=
   mem_closure_image (continuous_circleMap ζ ρ).continuousAt (by rwa [closure_Ioo hab.ne])
 
-/-- **An arc of finite image length has a limit at each point of its closure.** The cluster set
-along the arc is a subsingleton by `TauCeti.subsingleton_clusterSetOn_circleMap_image_Ioo`, and it
-is nonempty because the image of the arc is bounded,
-`TauCeti.isBounded_image_circleMap_image_Ioo_of_lintegral_ne_top` — so the map is confined along the
-arc to a compact set, which is the hypothesis of
-`TauCeti.exists_tendsto_of_clusterSetOn_subsingleton`.
+/-- **An arc of finite image length has a limit at each point of its closure.** For
+`θ₀ ∈ [a, b]`, `f` converges along the image of the arc `Ioo a b` at `circleMap ζ ρ θ₀`.
 
-The two endpoints `θ₀ = a` and `θ₀ = b` are the case with content: there the arc is a curve with an
-honest end. -/
+When `a < b` this is a genuine limit. The cluster set along the arc is a subsingleton by
+`TauCeti.subsingleton_clusterSetOn_circleMap_image_Ioo`, and it is nonempty because the image of
+the arc is bounded, `TauCeti.isBounded_image_circleMap_image_Ioo_of_lintegral_ne_top` — so the map
+is confined along the arc to a compact set, which is the hypothesis of
+`TauCeti.exists_tendsto_of_clusterSetOn_subsingleton`. The two endpoints `θ₀ = a` and `θ₀ = b` are
+the case with content: there the arc is a curve with an honest end.
+
+When `a = b` the arc is empty, the filter `𝓝[∅] (circleMap ζ ρ θ₀)` is `⊥`, and the convergence
+is vacuous: every `v` is a limit. -/
 theorem exists_tendsto_nhdsWithin_circleMap_image_Ioo (hUo : IsOpen U)
-    (hf : DifferentiableOn ℂ f U) (ζ : ℂ) {ρ : ℝ} {a b θ₀ : ℝ} (hab : a < b)
+    (hf : DifferentiableOn ℂ f U) (ζ : ℂ) {ρ : ℝ} {a b θ₀ : ℝ}
     (hab2π : b - a < 2 * π) (hθ₀ : θ₀ ∈ Icc a b)
     (hmemU : ∀ θ ∈ Ioo a b, circleMap ζ ρ θ ∈ U)
     (hfin : ∫⁻ θ in Ioo a b, ‖deriv f (circleMap ζ ρ θ)‖ₑ ≠ ⊤) :
-    ∃ v, Tendsto f (𝓝[circleMap ζ ρ '' Ioo a b] (circleMap ζ ρ θ₀)) (𝓝 v) :=
-  exists_tendsto_of_clusterSetOn_subsingleton
-    (isBounded_image_circleMap_image_Ioo_of_lintegral_ne_top hUo hf ζ hmemU
-      hfin).isCompact_closure
-    (fun _ hw => subset_closure (mem_image_of_mem f hw))
-    (circleMap_mem_closure_image_Ioo ζ ρ hab hθ₀)
-    (subsingleton_clusterSetOn_circleMap_image_Ioo hUo hf ζ hab hab2π hθ₀ hmemU hfin)
+    ∃ v, Tendsto f (𝓝[circleMap ζ ρ '' Ioo a b] (circleMap ζ ρ θ₀)) (𝓝 v) := by
+  by_cases hab : a < b
+  · exact
+      exists_tendsto_of_clusterSetOn_subsingleton
+        (isBounded_image_circleMap_image_Ioo_of_lintegral_ne_top hUo hf ζ hmemU
+          hfin).isCompact_closure
+        (fun _ hw => subset_closure (mem_image_of_mem f hw))
+        (circleMap_mem_closure_image_Ioo ζ ρ hab hθ₀)
+        (subsingleton_clusterSetOn_circleMap_image_Ioo hUo hf ζ hab hab2π hθ₀ hmemU hfin)
+  · simp [Ioo_eq_empty_of_le (le_of_not_gt hab)]
 
-/-- **The cluster set of an arc of finite image length is a single point.** The limit of
-`TauCeti.exists_tendsto_nhdsWithin_circleMap_image_Ioo` written as a cluster set, which is the form
-a boundary piece described as a union of cluster sets is indexed over. -/
+
+/-- **The cluster set of an arc of finite image length is a single point.** For a nonempty arc,
+`a < b`, the genuine limit of `TauCeti.exists_tendsto_nhdsWithin_circleMap_image_Ioo` written as a
+cluster set, which is the form a boundary piece described as a union of cluster sets is indexed
+over. The hypothesis `a < b` is needed: for `a = b` the cluster set is empty. -/
 theorem exists_clusterSetOn_circleMap_image_Ioo_eq_singleton (hUo : IsOpen U)
     (hf : DifferentiableOn ℂ f U) (ζ : ℂ) {ρ : ℝ} {a b θ₀ : ℝ} (hab : a < b)
     (hab2π : b - a < 2 * π) (hθ₀ : θ₀ ∈ Icc a b)
@@ -311,7 +317,7 @@ theorem exists_clusterSetOn_circleMap_image_Ioo_eq_singleton (hUo : IsOpen U)
     (hfin : ∫⁻ θ in Ioo a b, ‖deriv f (circleMap ζ ρ θ)‖ₑ ≠ ⊤) :
     ∃ v, clusterSetOn f (circleMap ζ ρ '' Ioo a b) (circleMap ζ ρ θ₀) = {v} := by
   obtain ⟨v, hv⟩ :=
-    exists_tendsto_nhdsWithin_circleMap_image_Ioo hUo hf ζ hab hab2π hθ₀ hmemU hfin
+    exists_tendsto_nhdsWithin_circleMap_image_Ioo hUo hf ζ hab2π hθ₀ hmemU hfin
   exact ⟨v, clusterSetOn_eq_singleton_of_tendsto (circleMap_mem_closure_image_Ioo ζ ρ hab hθ₀) hv⟩
 
 /-! ## The two ends of a circular crosscut -/
@@ -402,7 +408,7 @@ theorem exists_tendsto_nhdsWithin_ball_inter_sphere (hζ : dist ζ c = r) (hρ :
   have hφπ2 := arccos_div_two_mul_lt_pi_div_two hρ hr
   obtain ⟨θ₀, hθ₀, rfl⟩ := (closedBall_inter_sphere_eq_circleMap_image_Icc hζ hρ hρr).le he
   rw [ball_inter_sphere_eq_circleMap_image_Ioo hζ hρ hρr]
-  exact exists_tendsto_nhdsWithin_circleMap_image_Ioo isOpen_ball hf ζ (by linarith)
+  exact exists_tendsto_nhdsWithin_circleMap_image_Ioo isOpen_ball hf ζ
     (by linarith [Real.pi_pos]) hθ₀ (fun _ hθ => circleMap_mem_ball_of_mem_Ioo hζ hρ hρr hθ)
     (lintegral_enorm_deriv_circleMap_ne_top hζ hρ hρr hfin)
 

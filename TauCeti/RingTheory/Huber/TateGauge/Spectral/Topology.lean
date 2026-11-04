@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Topology.Algebra.Nonarchimedean.Bases
+public import TauCeti.RingTheory.Huber.OpenIdeal
 public import TauCeti.RingTheory.Huber.TateGauge.Spectral.Seminorm
 public import TauCeti.RingTheory.Huber.Pair
 public import TauCeti.RingTheory.Huber.Uniform
@@ -70,6 +71,8 @@ The separated completion of `SpectralTop A` is the ring of the uniformization of
   a uniform ring is continuous for the spectral topology of its source.
 * `TauCeti.Huber.SpectralTop.isHomeomorph_toSpectralTop_iff`: the identity `A → SpectralTop A` is
   a homeomorphism if and only if `A` is uniform.
+* `Ideal.isOpen_map_toSpectralTop_iff`: an ideal of `A` is open exactly when its image in
+  `SpectralTop A` is.
 
 ## References
 
@@ -504,3 +507,18 @@ end Pair
 end SpectralTop
 
 end TauCeti.Huber
+
+namespace Ideal
+
+open TauCeti.Huber
+
+variable {A : Type*} [CommRing A] [TopologicalSpace A] [IsTopologicalRing A] [IsTateRing A]
+
+/-- **Open ideals of `A` and `A_sp` correspond.** An ideal of `A` is open exactly when its image in
+`SpectralTop A` is; in both Tate rings this means that it is the unit ideal. -/
+theorem isOpen_map_toSpectralTop_iff (J : Ideal A) :
+    IsOpen (J.map (toSpectralTop A) : Set (SpectralTop A)) ↔ IsOpen (J : Set A) := by
+  rw [IsTateRing.isOpen_iff_eq_top, IsTateRing.isOpen_iff_eq_top]
+  exact map_eq_top_of_bijective _ (toSpectralTop A).bijective
+
+end Ideal

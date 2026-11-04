@@ -761,13 +761,9 @@ theorem apply_add_curveAction_div_le_liminf_of_forall_mem_moreauYosidaResolvent
   set P : ℕ → ℝ≥0∞ := fun k ↦
     ∑ n ∈ Finset.range (N k), edist (U k n) (U k (n + 1)) ^ 2 / (2 * τ k)
   -- The action bound: `A₂(u) / 2 ≤ liminf P`.
-  have hA : curveAction 2 u 0 T / 2 ≤ liminf P atTop := by
-    have h := curveAction_le_liminf_sum_edist_rpow (l := atTop) one_lt_two
-      (Eventually.of_forall hτ) hτ0 hT
+  have hA : curveAction 2 u 0 T / 2 ≤ liminf P atTop :=
+    curveAction_div_two_le_liminf_sum_edist_sq_div (Eventually.of_forall hτ) hτ0 hT
       (fun s hs t ht ↦ hd (hu s hs) (hu t ht))
-    simp only [edist_rpow_two_div_rpow_eq, ← Finset.mul_sum] at h
-    rw [ENNReal.liminf_const_mul_of_ne_top ENNReal.ofNat_ne_top] at h
-    exact ENNReal.div_le_of_le_mul' h
   -- The energy bound: `φ (u T) ≤ liminf φ (U k (N k))`, since the points `U k (N k)` stay within a
   -- bounded set.
   have hE : φ (u T) ≤ liminf (fun k ↦ φ (U k (N k))) atTop := by

@@ -27,12 +27,11 @@ then the open and closed arcs are the images under `circleMap ζ ρ` of `(α - �
 unimodal about any one of its points; that is what makes a crosscut *locally connected at its own
 endpoints*, the last statement below.
 
-This is the source-side endpoint interface needed by layer **L5** of
-`TauCetiRoadmap/ConformalMapping/README.md`, the Jordan-domain case of Carathéodory boundary
-correspondence. `Conformal/ShortCrosscut.lean` makes the image of the *open* arc arbitrarily short,
-and `Conformal/CutDiameter.lean` asks local connectedness of the image boundary to join the two
-ends by a small boundary set. The results here name those two ends and package the open arc together
-with its closure; they do not assert the continuous boundary extension itself.
+This is the source-side endpoint interface needed by the Jordan-domain case of the Carathéodory
+boundary correspondence. `Conformal/ShortCrosscut.lean` makes the image of the *open* arc
+arbitrarily short, and `Conformal/CutDiameter.lean` asks local connectedness of the image boundary
+to join the two ends by a small boundary set. The results here name those two ends and package the
+open arc together with its closure; they do not assert the continuous boundary extension itself.
 
 ## Main results
 

@@ -219,10 +219,11 @@ lemma ae_mem_Icc_measureT :
 This is the compact-support consumer form used by the Chebyshev completeness
 argument. -/
 lemma integrable_exp_mul_abs_smul_measureT {𝕜 β : Type*} [RCLike 𝕜] [NormedAddCommGroup β]
-    [NormedSpace 𝕜 β] {g : ℝ → β} (a : ℝ) (hg : Integrable g Polynomial.Chebyshev.measureT) :
+    [Module 𝕜 β] [IsBoundedSMul 𝕜 β] {g : ℝ → β} (a : ℝ)
+    (hg : Integrable g Polynomial.Chebyshev.measureT) :
     Integrable (fun x : ℝ => (Real.exp (a * |x|) : 𝕜) • g x)
-      Polynomial.Chebyshev.measureT := by
-  exact Integrable.exp_abs_smul_of_ae_abs_le hg a 1 (by
+      Polynomial.Chebyshev.measureT :=
+  hg.exp_abs_smul_of_ae_abs_le a 1 (by
     filter_upwards [ae_mem_Icc_measureT] with x hx
     exact abs_le.mpr hx)
 

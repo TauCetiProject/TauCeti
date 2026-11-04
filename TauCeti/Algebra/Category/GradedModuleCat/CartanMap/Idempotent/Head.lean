@@ -116,8 +116,7 @@ of `Sᵢ = A eᵢ / A₊eᵢ`. The field need not split the simple modules. -/
 def gradedIdempotentHeadBasisOfPrimitive :
     Module.Basis I (LaurentPolynomial ℤ) (LaurentK0.{uA} (gradedFiniteModulesExactStructure 𝒜)) :=
   gradedSimpleClassBasisOfNeZero (fun i => headFamily he₀ i) he.idem he₀
-    (fun _ _ hij => smulGradedDimension_gradedPositiveMulQuotient_eq_zero hneg (hprim _) (he₀ _)
-      (hprim _) (hnoniso hij.symm))
+    (pairwise_smulGradedDimension_gradedPositiveMulQuotient_eq_zero hneg he₀ hprim hnoniso)
     (fun i => smulGradedDimension_gradedPositiveMulQuotient_self_ne_zero hneg (he.idem i) (he₀ i)
       (hprim i).ne_zero)
     (isExhaustiveGradedSimpleFamily_gradedPositiveMulQuotient_of_isPrimitiveIdempotent hneg he he₀

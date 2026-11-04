@@ -35,10 +35,8 @@ density over that radius, `∫ t in (0)..r, (1 - t ^ 2)⁻¹ = hyperbolicDist 0 
 vector `u` (`TauCeti.integral_one_sub_sq_inv_eq_hyperbolicDist_zero`): the hyperbolic distance
 to a point is the length, in the density, of the radius joining it to the origin — and
 `Poincare/Geodesic.lean` shows those radii to be the geodesics through the origin. Only radii
-are treated here. Neither the density-weighted length of a general curve nor the infimum of
-such lengths between two arbitrary points is defined anywhere in the tree, so nothing below
-identifies `hyperbolicDist` as the length metric induced by the density; that identification
-would need those definitions first.
+are treated here. The density-weighted length of a general curve, and the identification of
+`hyperbolicDist` as the length metric induced by the density, are in `Hyperbolic/Length.lean`.
 
 Bounding the density between its values at the endpoints of a radius also gives the two-sided
 comparison of the hyperbolic distance with the pseudo-hyperbolic expression,

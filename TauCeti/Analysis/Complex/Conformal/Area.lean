@@ -22,15 +22,14 @@ over a set on which `f` is injective gives the **area formula**,
 and its immediate corollary that a holomorphic injection whose image has finite area has a finite
 Dirichlet integral `∫⁻ z in s, ‖deriv f z‖ₑ ^ 2`.
 
-That finiteness is the analytic input of the *length–area method*, the classical route to layer
-**L5** of the conformal-mapping roadmap (`ConformalMapping/README.md`), Carathéodory's boundary
-correspondence: for a conformal map of the disc onto a bounded domain, the finite Dirichlet
-integral is spent along the circular arcs `{z ∈ ball 0 1 | ‖z - ζ‖ = ρ}` approaching a boundary
-point `ζ`, so by Cauchy–Schwarz the images of those arcs must be short for some arbitrarily small
-`ρ`, which is what forces the boundary cluster set at `ζ` to degenerate to a point. The topological
-half of that argument is already on `main`: `TauCeti.exists_continuousOn_closure_eqOn` turns a
-subsingleton cluster set into a continuous extension. The analytic half, of which the area formula
-is the first component, is not; the degeneracy itself is not proved here.
+That finiteness is the analytic input of the *length–area method*, the classical route to
+Carathéodory's boundary correspondence: for a conformal map of the disc onto a bounded domain, the
+finite Dirichlet integral is spent along the circular arcs `{z ∈ ball 0 1 | ‖z - ζ‖ = ρ}`
+approaching a boundary point `ζ`, so by Cauchy–Schwarz the images of those arcs must be short for
+some arbitrarily small `ρ`, which is what forces the boundary cluster set at `ζ` to degenerate to a
+point. The topological half of that argument is `TauCeti.exists_continuousOn_closure_eqOn`, which
+turns a subsingleton cluster set into a continuous extension. The area formula is the first
+component of the analytic half; the degeneracy itself is not proved here.
 
 Weighting that same distortion by an arbitrary integrand generalises the area formula to the
 **change of variables formula** for a holomorphic injection,
@@ -52,17 +51,15 @@ makes the formula an equality rather than the inequality
 `TauCeti.volume_image_le_lintegral_enorm_deriv_sq`, which holds for any holomorphic map because a
 non-injective map covers parts of its image more than once.
 
-In accordance with the generality bar of `ConformalMapping/README.md`, which fixes scalar `ℂ` for
-every theorem added in layers L0–L6, the results below are stated for maps of `ℂ`. The hypotheses
-are the roadmap's: an open domain `U`, `DifferentiableOn ℂ f U`, and `Set.InjOn`. Statements are
-made for an arbitrary `s ⊆ U` rather than for `U` itself, because the length–area argument
-integrates over the sub-annuli `U ∩ {z | ρ₁ < ‖z - ζ‖ < ρ₂}`, not over `U`; take `s = U` with
-`hUo.measurableSet` and `subset_rfl` for the plain domain form. The area formula and the
-finiteness it gives ask only for `MeasureTheory.NullMeasurableSet s volume`, as Mathlib's
-null-measurable change of variables does; every other statement below asks for
-`MeasurableSet s` — the Bochner-integral forms because that is what turns the continuity of
-`deriv f` into strong measurability on `s`, and all three weighted change-of-variables forms
-because that is what Mathlib's weighted change of variables asks for.
+The results below are stated for maps of `ℂ`, with hypotheses an open domain `U`,
+`DifferentiableOn ℂ f U`, and `Set.InjOn`. Statements are made for an arbitrary `s ⊆ U` rather than
+for `U` itself, because the length–area argument integrates over the sub-annuli
+`U ∩ {z | ρ₁ < ‖z - ζ‖ < ρ₂}`, not over `U`; take `s = U` with `hUo.measurableSet` and `subset_rfl`
+for the plain domain form. The area formula and the finiteness it gives ask only for
+`MeasureTheory.NullMeasurableSet s volume`, as Mathlib's null-measurable change of variables does;
+every other statement below asks for `MeasurableSet s` — the Bochner-integral forms because that is
+what turns the continuity of `deriv f` into strong measurability on `s`, and all three weighted
+change-of-variables forms because that is what Mathlib's weighted change of variables asks for.
 
 ## Main results
 

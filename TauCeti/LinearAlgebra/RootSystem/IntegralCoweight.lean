@@ -6,10 +6,11 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.LinearAlgebra.RootSystem.BaseExists
+public import TauCeti.LinearAlgebra.RootSystem.Weyl.Bases
 import Mathlib.Algebra.Module.Submodule.Union
 
 /-!
-# A base for which an integral coweight is dominant
+# Making an integral coweight dominant
 
 Let `P` be a reduced crystallographic root system over a field of characteristic zero, and let
 `x` be a coweight on which every root takes an integer value. This file proves that some base of
@@ -20,6 +21,13 @@ The coefficient field carries no order, so the usual argument through Weyl chamb
 available directly. The base is instead built with Mathlib's `IsAddIndecomposable.baseOf`, as in
 the proof of `RootPairing.nonempty_base`.
 
+Since the Weyl group acts simply transitively on the bases
+(`RootPairing.Base.existsUnique_map_eq`), the base may instead be fixed in advance and the coweight
+moved: some element of the Weyl group carries `x` to a coweight that is dominant for the given base
+(`RootPairing.Base.exists_forall_exists_nat_root'_coweightEquiv_apply`). For integral coweights
+this is the counterpart, over a field of characteristic zero carrying no order, of the
+ordered-field statement `RootPairing.exists_mem_dominantChamber`.
+
 In the Lie-theoretic application `x` is the neutral element `h` of an `sl₂` triple lying in a
 splitting Cartan subalgebra: its roots take integer values, and a base making `h` dominant puts the
 nilpositive element of the triple into the positive nilradical.
@@ -28,6 +36,8 @@ nilpositive element of the triple into the positive nilradical.
 
 * `RootPairing.exists_base_forall_exists_nat_root'_apply`: a coweight on which every root takes an
   integer value is dominant for some base.
+* `RootPairing.Base.exists_forall_exists_nat_root'_coweightEquiv_apply`: such a coweight is
+  carried by the Weyl group to a coweight that is dominant for a given base.
 
 ## References
 
@@ -97,5 +107,25 @@ theorem exists_base_forall_exists_nat_root'_apply (x : N) (hx : ∀ i, ∃ z : �
   refine ⟨b, fun i hi ↦ ⟨(z i).toNat, ?_⟩⟩
   have hi' : i ∈ baseOf P.root f := by simpa [b, Base.mk'] using hi
   rw [hz i, ← Int.cast_natCast, Int.toNat_of_nonneg (hpos i (baseOf_subset_pos P.root f hi'))]
+
+variable {P} in
+/-- **An integral coweight is Weyl-conjugate to a dominant one.** Fix a base `b`. If every root
+takes an integer value at the coweight `x`, then some element `w` of the Weyl group carries `x`,
+through its action `RootPairing.Equiv.coweightEquiv` on coweights, to a coweight at which every
+simple root of `b` takes a natural value. -/
+theorem Base.exists_forall_exists_nat_root'_coweightEquiv_apply (b : P.Base) (x : N)
+    (hx : ∀ i, ∃ z : ℤ, P.root' i x = z) :
+    ∃ w : P.weylGroup, ∀ i ∈ b.support, ∃ n : ℕ, P.root' i ((w : P.Aut).coweightEquiv x) = n := by
+  classical
+  -- a base `b'` making `x` dominant, and the Weyl group element carrying `b'` onto `b`
+  obtain ⟨b', hb'⟩ := P.exists_base_forall_exists_nat_root'_apply x hx
+  obtain ⟨w, hw, -⟩ := b'.existsUnique_map_eq b
+  refine ⟨w⁻¹, fun i hi ↦ ?_⟩
+  rw [← hw, Base.support_map_eq, Finset.mem_image] at hi
+  obtain ⟨j, hj, rfl⟩ := hi
+  obtain ⟨n, hn⟩ := hb' j hj
+  refine ⟨n, ?_⟩
+  rw [← hn, ← (w : P.Aut).root'_coweightEquiv j x]
+  simp
 
 end RootPairing

@@ -58,7 +58,7 @@ theorem nonempty_equiv_trivial_or_ofLinearCharacter_of_forall_eq_one_or_eq
       · simp
       · ext x
         simpa only [hT, MonoidHom.one_apply, Units.val_one, one_smul,
-          Module.End.one_apply, IntertwiningMap.coe_one, id_eq] using
+          one_apply_eq_self, IntertwiningMap.coe_one, id_eq] using
           DFunLike.congr_fun hpos x
     · refine ⟨χ, Or.inr rfl, fun g ↦ ?_⟩
       rcases hG g with rfl | rfl

@@ -47,7 +47,8 @@ All in the namespace `TauCeti.PDCode`:
 
 * `resolutionCube_obj`, `range_resolutionCubeι`: the vertex `S` in quantum degree `j` is the
   degree `j - |S|` piece of the circle tensor of the resolution of `S`, included by
-  `resolutionCubeι`.
+  `resolutionCubeι`; `resolutionCubeVertexEquiv` is this identification as a linear
+  equivalence.
 * `resolutionCube_map_homOfLE_insert_comp_resolutionCubeι`: along the edge from `S` to
   `S ∪ {a}` the cube acts by the saddle map at the crossing `a`.
 
@@ -81,6 +82,13 @@ def cubeState (S : Finset (Fin n)) : Fin n → Bool :=
 theorem cubeState_apply (S : Finset (Fin n)) (i : Fin n) : cubeState S i = decide (i ∉ S) :=
   (rfl)
 
+/-- The state of the vertex `S.map e` of a cube indexed by `Fin m`, read along a bijection
+`e : Fin n ≃ Fin m`, is the state of the vertex `S`. -/
+@[simp]
+theorem cubeState_map_apply {m : ℕ} (e : Fin n ≃ Fin m) (S : Finset (Fin n)) (i : Fin n) :
+    cubeState (S.map e.toEmbedding) (e i) = cubeState S i := by
+  simp [cubeState_apply]
+
 /-- The state of the vertex `S` selects the `B`-smoothing exactly at the crossings of `S`. -/
 @[simp]
 theorem cubeState_eq_false_iff {S : Finset (Fin n)} {i : Fin n} :
@@ -93,15 +101,52 @@ theorem cubeState_eq_true_iff {S : Finset (Fin n)} {i : Fin n} :
     cubeState S i = true ↔ i ∉ S := by
   simp [cubeState]
 
+/-- The state of the complementary vertex `Sᶜ` is the complementary state: it exchanges the
+`A`- and `B`-smoothings at every crossing. -/
+@[simp]
+theorem cubeState_compl (S : Finset (Fin n)) (i : Fin n) : cubeState Sᶜ i = !cubeState S i := by
+  simp [cubeState]
+
 /-- The set of `B`-smoothings of the state of the vertex `S` is `S`. -/
 theorem filter_cubeState_eq_false (S : Finset (Fin n)) :
     ({i | cubeState S i = false} : Finset (Fin n)) = S := by
   ext
   simp
 
+end TauCeti.PDCode
+
+namespace TauCeti.OrientedPDCode
+
+variable {n : ℕ} (D : OrientedPDCode n)
+
+/-- A cube vertex `S` has normalized cochain degree `|S| - n₋`. -/
+@[simp]
+theorem stateCochainDegree_cubeState (S : Finset (Fin n)) :
+    D.stateCochainDegree (PDCode.cubeState S) = (#S : ℤ) - D.negativeCrossingCount := by
+  rw [stateCochainDegree_def, PDCode.filter_cubeState_eq_false]
+
+/-- A cube vertex `S` has quantum shift `|S| + n₊ - 2n₋`. -/
+@[simp]
+theorem stateQuantumShift_cubeState (S : Finset (Fin n)) :
+    D.stateQuantumShift (PDCode.cubeState S) =
+      (#S : ℤ) + D.positiveCrossingCount - 2 * D.negativeCrossingCount := by
+  rw [stateQuantumShift_def, PDCode.filter_cubeState_eq_false]
+
+end TauCeti.OrientedPDCode
+
+namespace TauCeti.PDCode
+
+variable {n : ℕ}
+
 /-- The vertex `S` is recovered from its state. -/
 theorem cubeState_injective : Function.Injective (cubeState (n := n)) := fun S T h ↦ by
   rw [← filter_cubeState_eq_false S, ← filter_cubeState_eq_false T, h]
+
+/-- The vertices of the cube correspond bijectively to the states: the state `s` is the state of
+the vertex formed by its `B`-smoothings. -/
+theorem cubeState_bijective : Function.Bijective (cubeState (n := n)) :=
+  ⟨cubeState_injective, fun s ↦
+    ⟨({i | s i = false} : Finset (Fin n)), by funext i; simp [cubeState_apply]⟩⟩
 
 /-- Along an edge `S ⋖ T` of the cube, the states of `S` and `T` agree away from the added
 crossing `a ∈ T \ S`. -/
@@ -269,6 +314,22 @@ theorem range_resolutionCubeι (S : Finset (Fin n)) :
 instance (S : Finset (Fin n)) : Mono (D.resolutionCubeι hD R j S) :=
   (ModuleCat.mono_iff_injective _).mpr (D.resolutionCubeι_injective hD R j S)
 
+/-- The vertex `S` of the degree-`j` cube of resolutions as a linear equivalence with the piece
+of degree `j - |S|` of the circle tensor of the resolution of `S`. This is the identification
+`resolutionCube_obj`, available where the definition of the cube is not unfolded. -/
+def resolutionCubeVertexEquiv (S : Finset (Fin n)) :
+    (D.resolutionCube hD R j).obj S ≃ₗ[R]
+      (Khovanov.circleQuantumGrading R (D.ResolvedCircle (cubeState S))).piece (j - #S) :=
+  LinearEquiv.refl R _
+
+/-- Under `resolutionCubeVertexEquiv`, an element of a vertex lies over its image under the
+inclusion `resolutionCubeι`. -/
+@[simp]
+theorem coe_resolutionCubeVertexEquiv (S : Finset (Fin n)) (x : (D.resolutionCube hD R j).obj S) :
+    (D.resolutionCubeVertexEquiv hD R j S x : Khovanov.CircleTensor R _) =
+      D.resolutionCubeι hD R j S x :=
+  (rfl)
+
 private theorem resolutionCube_map_homOfLE_insert {S : Finset (Fin n)} {a : Fin n} (ha : a ∉ S) :
     (D.resolutionCube hD R j).map (homOfLE (subset_insert a S)) =
       resolutionCubeEdge D hD R j (covBy_insert ha) :=
@@ -295,6 +356,19 @@ theorem resolutionCube_map_homOfLE_insert_comp_resolutionCubeι {S : Finset (Fin
   -- one at `a`.
   exact LinearMap.congr_fun
     (resolutionCubeEdgeMap_eq D hD R (covBy_insert ha) ha (mem_insert_self a S)) x.1
+
+/-- Along an edge `S ⋖ T` of the cube, the cube of resolutions acts by the saddle map at the
+crossing added along the edge. This restates
+`resolutionCube_map_homOfLE_insert_comp_resolutionCubeι` for a target which is only
+propositionally `insert a S`. -/
+theorem resolutionCube_map_homOfLE_comp_resolutionCubeι {S T : Finset (Fin n)} {a : Fin n}
+    (ha : a ∉ S) (hT : insert a S = T) (hST : S ⊆ T)
+    (hst : ∀ i, i ≠ a → cubeState S i = cubeState T i) (hc : cubeState S a ≠ cubeState T a)
+    (h : #(D.circlesAt (cubeState S) a) = 2 ∨ #(D.circlesAt (cubeState T) a) = 2) :
+    (D.resolutionCube hD R j).map (homOfLE hST) ≫ D.resolutionCubeι hD R j T =
+      D.resolutionCubeι hD R j S ≫ ModuleCat.ofHom (D.resolutionEdgeMap hst hc h R) := by
+  subst hT
+  exact D.resolutionCube_map_homOfLE_insert_comp_resolutionCubeι hD R j ha
 
 /-! ### The unnormalized Khovanov complex -/
 

@@ -9,6 +9,7 @@ public import Mathlib.MeasureTheory.Function.LpOrder
 public import Mathlib.MeasureTheory.Function.LpSpace.DomAct.Basic
 public import Mathlib.MeasureTheory.Integral.Bochner.Basic
 public import Mathlib.MeasureTheory.Measure.Haar.Basic
+public import TauCeti.MeasureTheory.Function.Lp.GroupConvolution
 public import TauCeti.MeasureTheory.Function.Lp.One
 public import TauCeti.MeasureTheory.Function.Lp.RightTranslation
 public import TauCeti.Topology.Algebra.Group.UCB.Translation
@@ -66,6 +67,12 @@ means on `UCB G` with invariant means on `L∞(G, μ)`.
 * `MeasureTheory.Lp.convolutionUCB_apply_leftTranslation`: `h ⋆ (L_g φ) = (R_(g⁻¹) h) ⋆ φ`, where
   `R` is right translation on `L¹(G, μ)`, so `(R_(g⁻¹) h)(z) = c(g) * h (z * g⁻¹)` for the modular
   character `c`.
+* `MeasureTheory.Lp.convolutionUCB_convolutionL`: mixed associativity, `(h ⋆ k) ⋆ φ = h ⋆ (k ⋆ φ)`
+  for `h, k ∈ L¹(G, μ)` and `φ ∈ L∞(G, μ)`, where `h ⋆ k` is the `L¹` convolution
+  `MeasureTheory.Lp.convolutionL` and `k ⋆ φ ∈ UCB G` is viewed in `L∞(G, μ)`. Since
+  `h ⋆ k = ∫ y, h y • L_y k ∂μ` is an `L¹`-valued integral and `(h ⋆ k ⋆ φ) x` depends
+  continuously and linearly on the kernel, both sides at `x` are `∫ y, h y * (k ⋆ φ) (y⁻¹ * x) ∂μ`;
+  no Fubini theorem is needed.
 
 ## References
 
@@ -303,7 +310,8 @@ theorem convolutionUCB_mono {h : Lp ℝ 1 μ} (hh : 0 ≤ h) {φ ψ : Lp ℝ ∞
   simpa using convolutionUCB_nonneg hh (sub_nonneg.2 hφψ)
 
 /-- Convolution with the constant one is the constant `∫ h dμ`. -/
-@[simp]
+-- Evaluate convolution before simplifying its measure-Lp representatives.
+@[simp↓]
 theorem convolutionUCB_linftyOne (h : Lp ℝ 1 μ) :
     convolutionUCB h linftyOne = (∫ y, h y ∂μ) • 1 := by
   refine UCB.ext fun x => ?_
@@ -332,5 +340,25 @@ theorem convolutionUCB_apply_leftTranslation (g : G) (h : Lp ℝ 1 μ) (φ : Lp 
     (fun y => h (y * g⁻¹) * φ (y⁻¹ * x)) g
   simp only [mul_inv_rev, mul_assoc, mul_inv_cancel, mul_one, smul_eq_mul] at key
   simp [key, mul_assoc, integral_const_mul]
+
+/-- **Mixed associativity of convolution**: `(h ⋆ k) ⋆ φ = h ⋆ (k ⋆ φ)` for kernels
+`h, k ∈ L¹(G, μ)` and `φ ∈ L∞(G, μ)`. Here `h ⋆ k` is the convolution in `L¹(G, μ)`, and on the
+right `h` is convolved with the class in `L∞(G, μ)` of the function `k ⋆ φ ∈ UCB G`. -/
+theorem convolutionUCB_convolutionL (h k : Lp ℝ 1 μ) (φ : Lp ℝ ∞ μ) :
+    convolutionUCB (convolutionL μ 1 ENNReal.one_ne_top h k) φ =
+      convolutionUCB h (BoundedContinuousFunction.toLpTop μ ℝ (convolutionUCB k φ : G →ᵇ ℝ)) := by
+  refine UCB.ext fun x => ?_
+  -- Push the continuous linear functional `u ↦ (u ⋆ φ) x` inside the integral defining `h ⋆ k`.
+  have hint := (((BoundedContinuousFunction.evalCLM ℝ x).comp
+      (ucb G).toSubmodule.subtypeL).comp ((convolutionUCBL (μ := μ)).flip φ)).integral_comp_comm
+    (integrable_smul_leftTranslation ENNReal.one_ne_top (L1.integrable_coeFn h) k)
+  simp only [ContinuousLinearMap.comp_apply, ContinuousLinearMap.flip_apply, map_smul,
+    convolutionUCBL_apply, convolutionUCB_leftTranslation_apply,
+    BoundedContinuousFunction.evalCLM_apply, Submodule.subtypeL_apply, smul_eq_mul] at hint
+  rw [convolutionL_apply]
+  refine hint.symm.trans ?_
+  rw [convolutionUCB_apply_of_ae_eq (ae_eq_refl _)
+      (BoundedContinuousFunction.coeFn_toLpTop μ (convolutionUCB k φ : G →ᵇ ℝ)) x]
+  simp only [UCB.leftTranslation_apply, convolutionUCB_apply]
 
 end MeasureTheory.Lp

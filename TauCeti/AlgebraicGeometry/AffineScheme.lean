@@ -7,6 +7,7 @@ module
 
 public import Mathlib.AlgebraicGeometry.AffineScheme
 public import Mathlib.AlgebraicGeometry.Properties
+public import Mathlib.CategoryTheory.Sites.Spaces
 import TauCeti.RingTheory.Localization.Tower
 
 /-!
@@ -24,6 +25,10 @@ form in which a free action of a finite group on an affine scheme enters the the
 quotients (`TauCeti.AffineInvariantQuotient.etale_projection`), once the group acts on `Γ(X, ⊤)` by
 pullback along inverses (`AlgebraicGeometry.Scheme.globalSectionsMulSemiringAction`).
 
+Morphisms into an affine scheme are determined by their effect on global sections. Hence, over an
+affine base `S`, base change along `j : T ⟶ S` is bijective on morphisms `Y ⟶ Y'` into an affine
+`Y'` whenever it does not change the global sections of `Y`.
+
 It also shows that for a compatible tower `R → B ↪ R_a`, localizing `B` at `a` gives `R_a`,
 so `Spec B ⟶ Spec R` is an isomorphism over the basic open `D(a)`. The map from `R` need not
 be injective. This is the local reason why an affine blowup changes nothing away from its center.
@@ -40,6 +45,10 @@ be injective. This is the local reason why an affine blowup changes nothing away
 * `AlgebraicGeometry.IsAffineOpen.fromSpec_comp_eq_SpecMap`: on an affine open `U` of `X`, a
   morphism `X ⟶ Spec R` restricted along `Spec Γ(X, U) ⟶ X` is the spectrum of the ring map
   `R → Γ(X, U)` it induces.
+* `AlgebraicGeometry.Scheme.Opens.ΓSpecIso_inv_comp_toSpecΓ_appLE`: on an open `U` of `X`, the
+  morphism `U ⟶ Spec Γ(X, U)` induces restriction of functions on the sections over opens of `U`.
+* `AlgebraicGeometry.Scheme.Hom.isBasis_range_affineOpens_le_preimage`: for `g : S' ⟶ S`, the
+  affine opens of `S'` lying over affine opens of `S` form a basis.
 * `AlgebraicGeometry.Scheme.Hom.span_range_appTop_sub_eq_top_iff`: for an endomorphism `f` of an
   affine scheme, the elements `f^*(a) - a` generate the unit ideal if and only if every point of
   `X` fixed by `f` has values in an empty scheme.
@@ -48,6 +57,12 @@ be injective. This is the local reason why an affine blowup changes nothing away
   isomorphism over `D(a)`.
 * `AlgebraicGeometry.IsAffineOpen.mem_basicOpen_iff_notMem_primeIdealOf`: on an affine open, a
   point lies in the basic open of a section iff the section is not in the point's prime ideal.
+* `AlgebraicGeometry.IsAffineOpen.span_setOf_basicOpen_mem_sieve_eq_top`: the basic opens of an
+  affine open `U` lying in a covering sieve of `U` are defined by functions generating the unit
+  ideal of `Γ(X, U)`.
+* `TauCeti.AlgebraicGeometry.overPullback_map_bijective_of_isIso_appTop`: over an affine base,
+  base change along `j : T ⟶ S` is a bijection on morphisms `Y ⟶ Y'` into an affine `Y'` when
+  `Γ(Y, 𝒪) → Γ(Y ×_S T, 𝒪)` is an isomorphism.
 -/
 
 public section
@@ -73,6 +88,36 @@ theorem IsAffineOpen.fromSpec_comp_eq_SpecMap {X : Scheme.{u}} {R : CommRingCat.
     hU.fromSpec ≫ f = Spec.map ((Scheme.ΓSpecIso R).inv ≫ f.appLE ⊤ U le_top) := by
   rw [← IsAffineOpen.SpecMap_appLE_fromSpec f (isAffineOpen_top _) hU le_top,
     IsAffineOpen.fromSpec_top, Scheme.isoSpec_Spec_inv, ← Spec.map_comp]
+
+/-- For an open `U` of `X`, the map `Γ(X, U) ≅ Γ(Spec Γ(X, U), ⊤) ⟶ Γ(U, T)` induced on the
+sections over an open `T` of `U` by the canonical morphism `U ⟶ Spec Γ(X, U)` is restriction of
+functions from `U` to `T`. -/
+theorem Scheme.Opens.ΓSpecIso_inv_comp_toSpecΓ_appLE {X : Scheme.{u}} (U : X.Opens)
+    (T : U.toScheme.Opens) :
+    (Scheme.ΓSpecIso Γ(X, U)).inv ≫ U.toSpecΓ.appLE ⊤ T le_top = U.ι.appLE U T (by simp) := by
+  rw [← Scheme.Hom.appLE_map U.toSpecΓ le_top (homOfLE (le_top : T ≤ ⊤)).op,
+    ← Scheme.Hom.appLE_map U.ι (by simp) (homOfLE (le_top : T ≤ ⊤)).op, ← Category.assoc]
+  congr 1
+  have h₁ : U.toSpecΓ.appLE ⊤ ⊤ le_top = U.toSpecΓ.appTop := Scheme.Hom.appLE_eq_app _
+  have h₂ : U.ι.appLE U ⊤ (by simp) = U.topIso.inv := by
+    rw [Scheme.Opens.ι_appLE, Scheme.Opens.topIso_inv]
+    -- Both sides restrict along the equality `U.ι ''ᵁ ⊤ = U`; morphisms of opens are unique.
+    rfl
+  rw [h₁, h₂, Scheme.Opens.toSpecΓ_appTop, Iso.inv_hom_id_assoc]
+
+/-- For a morphism `g : S' ⟶ S`, the affine opens of `S'` contained in the preimage of an affine
+open of `S` form a basis of the topology of `S'`. -/
+theorem Scheme.Hom.isBasis_range_affineOpens_le_preimage {S S' : Scheme.{u}} (g : S' ⟶ S) :
+    TopologicalSpace.Opens.IsBasis (Set.range fun i :
+      {p : S'.affineOpens × S.affineOpens // (p.1 : S'.Opens) ≤ g ⁻¹ᵁ p.2} ↦
+        (i.1.1 : S'.Opens)) := by
+  refine TopologicalSpace.Opens.isBasis_iff_nbhd.mpr fun {U x} hx ↦ ?_
+  obtain ⟨_, ⟨V, hV, rfl⟩, hxV, -⟩ :=
+    S.isBasis_affineOpens.exists_subset_of_mem_open (Set.mem_univ (g x)) isOpen_univ
+  obtain ⟨_, ⟨U', hU', rfl⟩, hxU', hU'U⟩ :=
+    S'.isBasis_affineOpens.exists_subset_of_mem_open (⟨hx, hxV⟩ : x ∈ U ⊓ g ⁻¹ᵁ V)
+      (U ⊓ g ⁻¹ᵁ V).isOpen
+  exact ⟨U', ⟨⟨(⟨U', hU'⟩, ⟨V, hV⟩), fun y hy ↦ (hU'U hy).2⟩, rfl⟩, hxU', fun y hy ↦ (hU'U hy).1⟩
 
 /-- **Fixed points of an endomorphism of an affine scheme.** For an endomorphism `f` of an affine
 scheme `X`, the elements `f^*(a) - a` of `Γ(X, ⊤)` generate the unit ideal if and only if `f` fixes
@@ -165,4 +210,67 @@ theorem IsAffineOpen.mem_basicOpen_iff_notMem_primeIdealOf {X : Scheme.{u}} {x :
   exact (X.mem_basicOpen r x hx).trans
     (IsLocalization.AtPrime.isUnit_to_map_iff (X.presheaf.stalk x) _ r)
 
+/-- The basic opens of an affine open `U` that lie in a covering sieve of `U` (for the Zariski
+topology) are defined by functions generating the unit ideal of `Γ(X, U)`. -/
+theorem IsAffineOpen.span_setOf_basicOpen_mem_sieve_eq_top {X : Scheme.{u}} {U : X.Opens}
+    (hU : IsAffineOpen U) {S : Sieve U}
+    (hS : S ∈ Opens.grothendieckTopology X U) :
+    Ideal.span {f : Γ(X, U) | S (homOfLE (X.basicOpen_le f))} = ⊤ := by
+  rw [← hU.iSup_basicOpen_eq_self_iff]
+  refine le_antisymm (iSup_le fun f ↦ X.basicOpen_le f.1) fun x hx ↦ ?_
+  obtain ⟨V, i, hi, hxV⟩ := hS x hx
+  obtain ⟨f, hfV, hxf⟩ := hU.exists_basicOpen_le ⟨x, hxV⟩ hx
+  exact TopologicalSpace.Opens.mem_iSup.2 ⟨⟨f, S.downward_closed hi (homOfLE hfV)⟩, hxf⟩
+
 end AlgebraicGeometry
+
+namespace TauCeti.AlgebraicGeometry
+
+open _root_.AlgebraicGeometry
+
+/-- Let `j : T ⟶ S` be a morphism to an affine scheme, `Y` a scheme over `S` and `Y'` an affine
+scheme over `S`. If restriction of global sections `Γ(Y, 𝒪) → Γ(Y ×_S T, 𝒪)` is an isomorphism,
+then base change along `j` is a bijection from morphisms `Y ⟶ Y'` over `S` to morphisms
+`Y ×_S T ⟶ Y' ×_S T` over `T`. -/
+theorem overPullback_map_bijective_of_isIso_appTop {S T : Scheme.{u}} [IsAffine S] (j : T ⟶ S)
+    {Y Y' : Over S} [IsAffine Y'.left] (h : IsIso (Limits.pullback.fst Y.hom j).appTop) :
+    Function.Bijective (fun g : Y ⟶ Y' ↦ (Over.pullback j).map g) := by
+  set e := Limits.pullback.fst Y.hom j
+  have := h
+  -- Morphisms from `Y` to an affine scheme are determined by their composites with `e`.
+  have hcancel {Z : Scheme.{u}} [IsAffine Z] {g g' : Y.left ⟶ Z} (hg : e ≫ g = e ≫ g') :
+      g = g' := by
+    refine ext_of_isAffine ((cancel_mono e.appTop).mp ?_)
+    rw [← Scheme.Hom.comp_appTop, ← Scheme.Hom.comp_appTop, hg]
+  -- The base change of `g` is determined by its composite with the first projection.
+  have hmap (g : Y ⟶ Y') : ((Over.pullback j).map g).left ≫ Limits.pullback.fst Y'.hom j =
+      e ≫ g.left :=
+    Limits.pullback.lift_fst _ _ _
+  refine ⟨fun g g' hgg' ↦ ?_, fun φ ↦ ?_⟩
+  · refine Over.OverMorphism.ext (hcancel ?_)
+    rw [← hmap, ← hmap]
+    exact congrArg (fun k ↦ k.left ≫ Limits.pullback.fst Y'.hom j) hgg'
+  -- The composite `χ : Y ×_S T ⟶ Y'` corresponds to a ring map `Γ(Y', 𝒪) ⟶ Γ(Y ×_S T, 𝒪)`,
+  -- which factors through the isomorphism `Γ(Y, 𝒪) ≅ Γ(Y ×_S T, 𝒪)`.
+  set φ' : Limits.pullback Y.hom j ⟶ Limits.pullback Y'.hom j := φ.left
+  have hw : φ' ≫ Limits.pullback.snd Y'.hom j = Limits.pullback.snd Y.hom j :=
+    Over.w φ
+  set χ := φ' ≫ Limits.pullback.fst Y'.hom j with hχ
+  let ψ : Y.left ⟶ Y'.left :=
+    Y.left.toSpecΓ ≫ Spec.map (χ.appTop ≫ inv e.appTop) ≫ Y'.left.isoSpec.inv
+  have hψ : e ≫ ψ = χ := by
+    rw [Scheme.toSpecΓ_naturality_assoc, ← Spec.map_comp_assoc, Category.assoc,
+      IsIso.inv_hom_id, Category.comp_id, ← Scheme.toSpecΓ_naturality_assoc,
+      Scheme.toSpecΓ_isoSpec_inv, Category.comp_id]
+  have hψS : ψ ≫ Y'.hom = Y.hom := hcancel <| by
+    calc e ≫ ψ ≫ Y'.hom = φ' ≫ Limits.pullback.snd Y'.hom j ≫ j := by
+          rw [reassoc_of% hψ, hχ, Category.assoc, Limits.pullback.condition]
+      _ = Limits.pullback.snd Y.hom j ≫ j := by rw [reassoc_of% hw]
+      _ = e ≫ Y.hom := Limits.pullback.condition.symm
+  refine ⟨Over.homMk ψ hψS, Over.OverMorphism.ext ?_⟩
+  dsimp only
+  apply Limits.pullback.hom_ext
+  · exact (hmap _).trans hψ
+  · exact (Limits.pullback.lift_snd _ _ _).trans hw.symm
+
+end TauCeti.AlgebraicGeometry

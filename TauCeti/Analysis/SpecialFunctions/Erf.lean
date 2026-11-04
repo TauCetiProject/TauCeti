@@ -18,8 +18,7 @@ strict monotonicity, the derivative, and the limits at both infinities.
 Since `erf` is a strictly increasing continuous bijection from `ℝ` onto `(-1, 1)`, it has an
 inverse `erfInv` on that interval, which expresses the quantile function of the Gaussian law.
 
-These are the error-function targets of `TauCetiRoadmap/StandardDistributions/README.md`,
-Layer 2.  The names and statement shapes follow those proposed for Mathlib in
+The names and statement shapes follow those proposed for Mathlib in
 [mathlib4#34053](https://github.com/leanprover-community/mathlib4/pull/34053), so that the
 declarations here can be replaced by Mathlib's once it provides them.  The identification
 `erf x = regularizedGamma (1 / 2) (x ^ 2)`, which holds for `0 ≤ x` — the right-hand side is even

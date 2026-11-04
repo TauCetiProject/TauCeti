@@ -287,7 +287,7 @@ theorem mul_measure_le_of_forall_exists_ball {S : Set E} {R : ℝ} {g : E → �
         exact (measure_mono hsub).trans (measure_biUnion_le μ hcount _)
     _ = ∑' b : u, t * μ (closedBall (b : E) (4 * r b)) := ENNReal.tsum_mul_left.symm
     _ ≤ ∑' b : u, 4 ^ finrank ℝ E * ∫⁻ y in ball (b : E) (r b), g y ∂μ := by
-        refine ENNReal.tsum_le_tsum fun b => ?_
+        refine _root_.tsum_le_tsum fun b => ?_
         rw [addHaar_closedBall_four_mul μ _ (hr b (hu b.2)).1, mul_left_comm]
         gcongr
         exact hle b (hu b.2)

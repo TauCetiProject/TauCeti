@@ -10,7 +10,7 @@ public import Mathlib.Topology.Category.TopCat.Monoidal
 public import Mathlib.Topology.Category.TopCat.Sphere
 public import TauCeti.Analysis.Normed.Module.Ball.Homeomorph
 public import TauCeti.Topology.Category.TopCat.Pullback
-public import TauCeti.Topology.Homotopy.Lifting
+public import TauCeti.Topology.Homotopy.Lifting.Basic
 
 /-!
 # Serre fibrations
@@ -26,10 +26,10 @@ theory of lifting properties apply: Serre fibrations contain the isomorphisms, a
 composition, retracts and products, and are stable under base change.
 
 The homotopy lifting property itself, `TauCeti.HasHomotopyLiftingProperty`, is in
-`TauCeti.Topology.Homotopy.Lifting`.  Since the closed unit ball of `ℝⁿ` is homeomorphic to the
-cube `Iⁿ`, a Serre fibration is equivalently a map with the homotopy lifting property with respect
-to every cube (`TauCeti.TopCat.mem_serreFibrations_iff_cube`); cubes are the convenient test spaces
-for subdivision arguments.
+`TauCeti.Topology.Homotopy.Lifting.Basic`.  Since the closed unit ball of `ℝⁿ` is homeomorphic to
+the cube `Iⁿ`, a Serre fibration is equivalently a map with the homotopy lifting property
+with respect to every cube (`TauCeti.TopCat.mem_serreFibrations_iff_cube`); cubes are the
+convenient test spaces for subdivision arguments.
 
 A map of fibrations is a commutative square, and it induces maps between the fibres
 (`CategoryTheory.CommSq.fiberMap`, in `TauCeti.Topology.Category.TopCat.Fiber`).  The base change

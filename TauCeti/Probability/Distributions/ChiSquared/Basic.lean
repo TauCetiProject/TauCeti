@@ -449,7 +449,7 @@ theorem mgf_id_chiSquaredMeasure (hk : 0 ≤ k) {t : ℝ} (ht : t < 2⁻¹) :
   · rw [chiSquaredMeasure_eq_gammaMeasure hk,
       mgf_id_gammaMeasure (by positivity) one_half_pos (by rwa [one_div])]
     congr 1
-    all_goals ring
+    ring
 
 /-- The cumulant-generating function of a chi-squared law with nonnegative degrees of freedom on
 the half-line `t < 2⁻¹`. It is the real logarithm of
@@ -463,7 +463,7 @@ theorem cgf_id_chiSquaredMeasure (hk : 0 ≤ k) {t : ℝ} (ht : t < 2⁻¹) :
   · rw [chiSquaredMeasure_eq_gammaMeasure hk,
       cgf_id_gammaMeasure (by positivity) one_half_pos (by rwa [one_div])]
     congr 2
-    all_goals ring
+    ring
 
 /-- At zero degrees of freedom the characteristic function is identically `1`. -/
 theorem charFun_chiSquaredMeasure_zero (t : ℝ) : charFun (chiSquaredMeasure 0) t = 1 := by

@@ -12,12 +12,16 @@ import Mathlib.LinearAlgebra.Matrix.FixedDetMatrices
 # The modular-group generators in special linear groups
 
 This module records the matrix of the standard modular-group generator `S` after scalar extension
-from `SL₂(ℤ)` to `SL₂(R)`, and that `S` and `U = T S` generate `SL₂(ℤ)`.
+from `SL₂(ℤ)` to `SL₂(R)`, writes it as a word in three transvections, and shows that `S` and
+`U = T S` generate `SL₂(ℤ)`.
 
 ## Main declarations
 
 * `TauCeti.Matrix.SpecialLinearGroup.coe_modularGroup_S`: the scalar extension of
   `ModularGroup.S` has matrix `!![0, -1; 1, 0]`.
+* `TauCeti.Matrix.SpecialLinearGroup.modularGroup_S_decompose`: over any commutative ring,
+  `S = x₀₁(-1) x₁₀(1) x₀₁(-1)` is a word in three transvections, the word that defines the Weyl
+  representative `n_r(-1)` of a rank-one Chevalley group.
 * `TauCeti.Matrix.SpecialLinearGroup.closure_S_T_mul_S`: `S` and `T S` generate `SL₂(ℤ)`; this
   follows from Mathlib's `Matrix.SpecialLinearGroup.SL2Z_generators` for `S` and `T`, since
   `T = (T S) S⁻¹`.
@@ -39,6 +43,20 @@ theorem coe_modularGroup_S {R : Type u} [CommRing R] :
   rw [Matrix.SpecialLinearGroup.coe_matrix_coe, ModularGroup.coe_S]
   ext i j
   fin_cases i <;> fin_cases j <;> simp
+
+/-- The scalar extension of `ModularGroup.S` is the word `x₀₁(-1) x₁₀(1) x₀₁(-1)` in the upper
+and lower transvections. -/
+theorem modularGroup_S_decompose {R : Type u} [CommRing R] :
+    ((ModularGroup.S : SL(2, ℤ)) : SL(2, R)) =
+      Matrix.SpecialLinearGroup.transvection (by decide : (0 : Fin 2) ≠ 1) (-1) *
+        Matrix.SpecialLinearGroup.transvection (by decide : (1 : Fin 2) ≠ 0) 1 *
+        Matrix.SpecialLinearGroup.transvection (by decide : (0 : Fin 2) ≠ 1) (-1) := by
+  apply Subtype.ext
+  rw [Matrix.SpecialLinearGroup.coe_mul, Matrix.SpecialLinearGroup.coe_mul,
+    Matrix.SpecialLinearGroup.transvection_coe, Matrix.SpecialLinearGroup.transvection_coe,
+    coe_modularGroup_S]
+  ext i j
+  fin_cases i <;> fin_cases j <;> simp [Matrix.mul_apply, Fin.sum_univ_two, Matrix.single_apply]
 
 open ModularGroup in
 /-- `S` and `U = T S` generate `SL₂(ℤ)`. -/

@@ -66,7 +66,7 @@ variable (X : TopCat.{u}) (A : Type u') [Category.{v'} A] [Preadditive A] [HasPr
 /-- The degree `n` Čech cohomology of presheaves on `X` with values in `A`: the colimit over the
 point-neighborhood covers `U`, ordered by refinement, of the degree `n` cohomology of the Čech
 complexes `Č(U, P)`. The transition maps are induced by refinement maps
-(`TauCeti.CategoryTheory.cechCohomologyDiagram_map_app`). -/
+(`TauCeti.CategoryTheory.cechCohomologyDiagram_map`). -/
 abbrev cechCohomology : ((Opens X)ᵒᵖ ⥤ A) ⥤ A :=
   TauCeti.CategoryTheory.cechCohomology A PointOpenCover.toFormalCoproduct (fun _ _ h ↦ h) n
 
