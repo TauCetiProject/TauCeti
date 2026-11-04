@@ -221,6 +221,17 @@ theorem aestronglyMeasurableSection_restrict_iff_of_subset_baseSet {U : Set B}
     aestronglyMeasurableSection_restrict_iUnion_iff (𝕜 := 𝕜) (μ := μ) (s := s) (ι := Unit)
       (fun _ ↦ hU) (fun _ ↦ e) fun _ ↦ hUe
 
+/-- Inverse coordinates in an atlas chart `e` of an a.e.-strongly measurable function, on a
+measurable subset `U` of the base set of `e`, form an a.e.-strongly measurable section for `μ`
+restricted to `U`. -/
+theorem aestronglyMeasurableSection_restrict_symm {U : Set B} (hU : MeasurableSet U)
+    (e : Trivialization F (π F E)) [MemTrivializationAtlas e] (hUe : U ⊆ e.baseSet) {g : B → F}
+    (hg : AEStronglyMeasurable g (μ.restrict U)) :
+    AEStronglyMeasurableSection 𝕜 F (μ.restrict U) (fun x ↦ e.symm x (g x)) := by
+  refine (aestronglyMeasurableSection_restrict_iff_of_subset_baseSet hU e hUe).2 (hg.congr ?_)
+  filter_upwards [ae_restrict_mem hU] with x hx
+  rw [e.apply_mk_symm (hUe hx)]
+
 /-- Measurability of a section can be tested on a countable family of atlas charts whose base sets
 cover the base. -/
 theorem aestronglyMeasurableSection_iff_of_iUnion_baseSet_eq_univ {ι : Type*} [Countable ι]
@@ -340,11 +351,6 @@ private theorem aestronglyMeasurable_coord_iff_orthonormalFrame (e : Trivializat
   -- continuous over `e.baseSet`; the two coordinate maps are continuous families of linear maps.
   have hΦ' (x : B) (hx : x ∈ A) : Φ x = e.orthonormalFrameAt c b x := by
     rw [hΦ x hx, e.orthonormalFrameAt_of_mem c b (hAe hx)]
-  have hframe (w : V) :
-      ContinuousOn (fun x ↦ TotalSpace.mk' F x (e.orthonormalFrameAt c b x w)) e.baseSet := by
-    rw [continuousOn_iff_continuous_domRestrict]
-    exact (OrthonormalFrameBundle.continuous_iff.1 (e.continuous_orthonormalFrame c b) w).congr
-      fun y ↦ by simp [e.orthonormalFrameAt_of_mem c b y.2]
   constructor
   · intro h
     refine (h.apply_of_forall_of_continuous
@@ -363,7 +369,8 @@ private theorem aestronglyMeasurable_coord_iff_orthonormalFrame (e : Trivializat
     · refine (ContinuousOn.congr ?_ fun x hx ↦
         e.continuousLinearMapAt_apply_of_mem (R := 𝕜) hx _).mono hAe |>.aestronglyMeasurable hA
       exact continuous_snd.comp_continuousOn
-        (e.continuousOn.comp (hframe w) fun x hx ↦ e.mem_source.2 hx)
+        (e.continuousOn.comp (e.continuousOn_totalSpaceMk_orthonormalFrameAt c b w) fun x hx ↦
+          e.mem_source.2 hx)
     · filter_upwards [ae_restrict_mem hA] with x hx
       rw [← hΦ' x hx, LinearIsometryEquiv.apply_symm_apply,
         e.continuousLinearMapAt_apply_of_mem (R := 𝕜) (hAe hx)]
@@ -390,6 +397,13 @@ theorem isMeasurableIsometricFrame_restrict_baseSet (e : Trivialization F (π F 
     IsMeasurableIsometricFrame F (μ.restrict e.baseSet) Φ := by
   simpa only [iUnion_const] using isMeasurableIsometricFrame_restrict_iUnion (κ := Unit) c b
     (fun _ ↦ e.open_baseSet.measurableSet) (fun _ ↦ e) (fun _ ↦ subset_rfl) fun _ ↦ hΦ
+
+/-- The chosen orthonormal frame `e.orthonormalFrameAt c b` of an atlas chart `e` is a measurable
+isometric frame for `μ` restricted to the base set of `e`. -/
+theorem _root_.Bundle.Trivialization.isMeasurableIsometricFrame_orthonormalFrameAt
+    (e : Trivialization F (π F E)) [MemTrivializationAtlas e] :
+    IsMeasurableIsometricFrame F (μ.restrict e.baseSet) (e.orthonormalFrameAt c b) :=
+  isMeasurableIsometricFrame_restrict_baseSet c b e fun _ ↦ e.orthonormalFrameAt_of_mem c b
 
 omit c b in
 variable (F E V) in

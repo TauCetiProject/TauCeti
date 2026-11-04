@@ -102,10 +102,6 @@ variable {F : Type*} [NormedAddCommGroup F] [NormedSpace 𝕜 F] {E : B → Type
   (e : Trivialization F (π F E)) [MemTrivializationAtlas e] (c : Basis ι 𝕜 F)
   (b : OrthonormalBasis ι 𝕜 V)
 
-private theorem isMeasurableIsometricFrame_orthonormalFrameAt :
-    IsMeasurableIsometricFrame F (μ.restrict e.baseSet) (e.orthonormalFrameAt c b) :=
-  isMeasurableIsometricFrame_restrict_baseSet c b e fun _ ↦ e.orthonormalFrameAt_of_mem c b
-
 variable (p μ) in
 /-- **Unitary charts.** Over the base set `U` of an atlas chart `e`, reading sections in the
 Gram–Schmidt orthonormal frame of `e` is a linear isometry from `Lᵖ(E, μ|_U)` onto `Lp V p μ|_U`. -/
@@ -154,23 +150,12 @@ private theorem memLp_coord_of_bound (f : LpSection 𝕜 F E p (μ.restrict U)) 
   · filter_upwards [ae_restrict_mem hU] with x hx
     simpa only [norm_norm, e.symm_apply_apply_mk (hUe hx)] using hC' x hx (e ⟨x, f x⟩).2
 
-omit [ContinuousFiberNorm F E] [Fact (1 ≤ p)] in
-include hU hUe in
-/-- Inverse coordinates in `e` of a measurable function on a measurable subset of the base set of
-`e` give a measurable section for the restricted measure. -/
-private theorem aestronglyMeasurableSection_symm {g : B → F}
-    (hg : AEStronglyMeasurable g (μ.restrict U)) :
-    AEStronglyMeasurableSection 𝕜 F (μ.restrict U) (fun x ↦ e.symm x (g x)) := by
-  refine (aestronglyMeasurableSection_restrict_iff_of_subset_baseSet hU e hUe).2 (hg.congr ?_)
-  filter_upwards [ae_restrict_mem hU] with x hx
-  rw [e.apply_mk_symm (hUe hx)]
-
 omit [Fact (1 ≤ p)] in
 include 𝕜 hU hUe hC in
 private theorem memLp_norm_symm_of_bound (g : Lp F p (μ.restrict U)) :
     MemLp (fun x ↦ ‖e.symm x (g x)‖) p (μ.restrict U) := by
   refine (Lp.memLp g).of_le_mul (c := C)
-    (aestronglyMeasurableSection_symm (𝕜 := 𝕜) e hU hUe (Lp.aestronglyMeasurable g)
+    (aestronglyMeasurableSection_restrict_symm (𝕜 := 𝕜) hU e hUe (Lp.aestronglyMeasurable g)
       |>.aestronglyMeasurable_norm) ?_
   filter_upwards [ae_restrict_mem hU] with x hx
   simpa only [norm_norm] using hC x hx (g x)
@@ -184,7 +169,7 @@ def lpSectionEquivOfBounds :
   LinearEquiv.toContinuousLinearEquivOfBounds
     { toFun f := (memLp_coord_of_bound e hU hUe C' hC' f).toLp _
       invFun g := LpSection.mk (fun x ↦ e.symm x (g x))
-        (aestronglyMeasurableSection_symm (𝕜 := 𝕜) e hU hUe (Lp.aestronglyMeasurable g))
+        (aestronglyMeasurableSection_restrict_symm (𝕜 := 𝕜) hU e hUe (Lp.aestronglyMeasurable g))
         (memLp_norm_symm_of_bound (𝕜 := 𝕜) e hU hUe C hC g)
       map_add' f g := by
         rw [← MemLp.toLp_add]
@@ -201,7 +186,7 @@ def lpSectionEquivOfBounds :
       left_inv f := by
         refine LpSection.ext _ _ ?_
         filter_upwards [LpSection.coeFn_mk
-          (aestronglyMeasurableSection_symm (𝕜 := 𝕜) e hU hUe (Lp.aestronglyMeasurable _))
+          (aestronglyMeasurableSection_restrict_symm (𝕜 := 𝕜) hU e hUe (Lp.aestronglyMeasurable _))
           (memLp_norm_symm_of_bound (𝕜 := 𝕜) e hU hUe C hC _),
           MemLp.coeFn_toLp (memLp_coord_of_bound e hU hUe C' hC' f), ae_restrict_mem hU]
           with x h1 h2 hx
@@ -210,7 +195,8 @@ def lpSectionEquivOfBounds :
         refine Lp.ext ?_
         filter_upwards [MemLp.coeFn_toLp (memLp_coord_of_bound (𝕜 := 𝕜) e hU hUe C' hC' _),
           LpSection.coeFn_mk
-            (aestronglyMeasurableSection_symm (𝕜 := 𝕜) e hU hUe (Lp.aestronglyMeasurable g))
+            (aestronglyMeasurableSection_restrict_symm (𝕜 := 𝕜) hU e hUe
+              (Lp.aestronglyMeasurable g))
             (memLp_norm_symm_of_bound (𝕜 := 𝕜) e hU hUe C hC g), ae_restrict_mem hU]
           with x h1 h2 hx
         rw [h1, h2, e.apply_mk_symm (hUe hx)] }
@@ -239,7 +225,7 @@ theorem coeFn_lpSectionEquivOfBounds_symm (g : Lp F p (μ.restrict U)) :
     ∀ᵐ x ∂μ.restrict U,
       (e.lpSectionEquivOfBounds 𝕜 p μ hU hUe C C' hC hC').symm g x = e.symm x (g x) :=
   LpSection.coeFn_mk
-    (aestronglyMeasurableSection_symm (𝕜 := 𝕜) e hU hUe (Lp.aestronglyMeasurable g))
+    (aestronglyMeasurableSection_restrict_symm (𝕜 := 𝕜) hU e hUe (Lp.aestronglyMeasurable g))
     (memLp_norm_symm_of_bound (𝕜 := 𝕜) e hU hUe C hC g)
 
 end Bounds

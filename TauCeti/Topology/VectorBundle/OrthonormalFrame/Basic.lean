@@ -64,7 +64,8 @@ space of `E` (`TauCeti.OrthonormalFrameBundle.associatedHomeomorph`).
   of a linear trivialization.
 * `Bundle.Trivialization.orthonormalFrameAt`: that frame extended to every point of the base;
   reading vectors in it is continuous over the base set
-  (`Bundle.Trivialization.continuousOn_orthonormalFrameAt_symm`).
+  (`Bundle.Trivialization.continuousOn_orthonormalFrameAt_symm`), and so is applying it to a fixed
+  vector (`Bundle.Trivialization.continuousOn_totalSpaceMk_orthonormalFrameAt`).
 * `Bundle.Trivialization.orthonormalFrameBundle`: the induced trivialization of the frame bundle.
 * `TauCeti.OrthonormalFrameBundle.associatedRel`: the relation `(p, g w) ∼ (p • g, w)` on pairs of
   a frame and a vector, whose quotient is the associated bundle with fibre `V`.
@@ -378,9 +379,26 @@ def orthonormalFrameAt (y : B) : V ≃ₗᵢ[𝕜] E y :=
 
 omit [ContinuousFiberNorm F E] in
 /-- Over the base set of `e`, the chosen frame is the Gram–Schmidt frame of `e`. -/
+@[simp]
 theorem orthonormalFrameAt_of_mem {y : B} (h : y ∈ e.baseSet) :
     orthonormalFrameAt e c b y = e.orthonormalFrame c b ⟨y, h⟩ := by
   simp [orthonormalFrameAt, h]
+
+omit [ContinuousFiberNorm F E] in
+/-- Outside the base set of `e`, the chosen frame is the Gram–Schmidt frame of the preferred
+trivialization at the point. -/
+theorem orthonormalFrameAt_of_notMem {y : B} (h : y ∉ e.baseSet) :
+    orthonormalFrameAt e c b y = (trivializationAt F E y).orthonormalFrame c b
+      ⟨y, mem_baseSet_trivializationAt F E y⟩ := by
+  simp [orthonormalFrameAt, h]
+
+/-- Over the base set of `e`, the chosen frame applied to a fixed vector is a continuous local
+section. -/
+theorem continuousOn_totalSpaceMk_orthonormalFrameAt (v : V) :
+    ContinuousOn (fun y ↦ TotalSpace.mk' F y (orthonormalFrameAt e c b y v)) e.baseSet := by
+  rw [continuousOn_iff_continuous_domRestrict]
+  exact (OrthonormalFrameBundle.continuous_iff.1 (e.continuous_orthonormalFrame c b) v).congr
+    fun y ↦ by simp
 
 /-- Over the base set of `e`, reading a vector of the total space in the chosen frame is
 continuous. -/
