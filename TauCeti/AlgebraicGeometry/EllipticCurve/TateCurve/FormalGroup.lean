@@ -100,10 +100,10 @@ private theorem invOneAddX_mul_one_add_X : invOneAddX * (1 + X) = 1 :=
   mk_neg_one_pow_mul_one_add_eq_one ℤ
 
 private theorem derivative_invOneAddX : d⁄dX invOneAddX = -invOneAddX ^ 2 := by
-  have h := congrArg (d⁄dX) invOneAddX_mul_one_add_X
-  simp only [Derivation.leibniz, derivative_X, map_add, Derivation.map_one_eq_zero, smul_eq_mul,
-    zero_add, mul_one] at h
-  linear_combination invOneAddX * h - d⁄dX invOneAddX * invOneAddX_mul_one_add_X
+  have h := derivative_inv
+    ⟨1 + X, invOneAddX, by rw [mul_comm, invOneAddX_mul_one_add_X], invOneAddX_mul_one_add_X⟩
+  rwa [Units.inv_mk, Units.val_mk, Units.val_mk, map_add, Derivation.map_one_eq_zero,
+    derivative_X, zero_add, mul_one] at h
 
 /-- Evaluation of `ℤ[u]⟦v⟧` at `u = 1 + T` and `v = q / (1 + T)`, with values in `ℤ⟦T⟧⟦q⟧`. -/
 private noncomputable def unitEval : (Polynomial ℤ)⟦X⟧ →+* ℤ⟦X⟧⟦X⟧ :=
@@ -382,23 +382,22 @@ theorem one_add_X_mul_derivative_tateFormalCoordinate :
   simp only [tateCurve_a₁, tateCurve_a₂, tateCurve_a₃, one_smul, zero_smul, sub_zero, mul_zero,
     smul_eq_C_mul]
   have hY := tateIdentityY_mul_inv
+  have hdy' : d⁄dX tateIdentityYInv = -tateIdentityYInv ^ 2 * d⁄dX tateIdentityY := by
+    rw [← val_tateIdentityYUnit]
+    exact derivative_inv tateIdentityYUnit
   have hz' := tateFormalCoordinate_toPowerSeries_mul_tateIdentityY
   have H := one_add_X_mul_X_mul_derivative_tateIdentityX_sub
   have hE := tateIdentityY_sq_sub_X_mul_tateIdentityX_mul_tateIdentityY
   have hYc := constantCoeff_tateIdentityY
   have hXc := constantCoeff_tateIdentityX
   generalize tateFormalCoordinate.toPowerSeries = z at hz hz' ⊢
-  generalize tateIdentityYInv = y' at hY ⊢
+  generalize tateIdentityYInv = y' at hY hdy' ⊢
   have hzz : z = X * tateIdentityX * y' := by linear_combination (-z) * hY + y' * hz'
   subst hzz
   generalize tateIdentityX = x at H hE hXc ⊢
-  generalize tateIdentityY = y at H hE hYc hY ⊢
+  generalize tateIdentityY = y at H hE hYc hY hdy' ⊢
   clear hz hz'
-  -- Differentiate `y y' = 1` and the curve equation `hE`.
-  have hdy' : d⁄dX y' = -y' ^ 2 * d⁄dX y := by
-    have h := congrArg (d⁄dX) hY
-    simp only [Derivation.leibniz, Derivation.map_one_eq_zero, smul_eq_mul] at h
-    linear_combination y' * h - d⁄dX y' * hY
+  -- Differentiate the curve equation `hE`.
   have hDE := congrArg (d⁄dX) hE
   simp only [map_sub, map_add, Derivation.leibniz, Derivation.leibniz_pow, derivative_X,
     derivative_C, smul_eq_mul, nsmul_eq_mul, mul_zero] at hDE
