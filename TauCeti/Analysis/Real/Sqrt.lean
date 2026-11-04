@@ -22,9 +22,9 @@ normalisation that leaves a factor `(√N)⁻¹ ^ (n - 2p)` in a central limit t
 The rational square-root map `k ↦ 2√k / (1 + k)` has complementary square
 `((1 - k) / (1 + k))²` and inverts `k ↦ (1 - √(1 - k²)) / (1 + √(1 - k²))` up to sign.
 These identities are used by both kinds of complete elliptic integral in Landen's transformation.
-For `|t| ≤ 1`, the square of `√(1 - t²)` is `1 - t²`. In particular, for positive
-ordered inputs `0 < b ≤ a`, the square of `√(1 - (b / a)²)` is `1 - (b / a)²` and is
-strictly less than `1`, as needed for AGM evaluations.
+For `|t| ≤ 1`, the square of `√(1 - t²)` is `1 - t²`; for any nonzero `t`, this square
+is strictly less than `1`. In particular, for nonnegative ordered inputs `0 ≤ b ≤ a`,
+squaring `√(1 - (b / a)²)` recovers its argument, as needed for AGM evaluations.
 
 ## Main results
 
@@ -107,19 +107,20 @@ theorem sq_sqrt_one_sub_sq {t : ℝ} (ht : |t| ≤ 1) : √(1 - t ^ 2) ^ 2 = 1 -
   have : t ^ 2 ≤ 1 := by nlinarith [abs_nonneg t, sq_abs t]
   exact sq_sqrt (by linarith)
 
-/-- For positive ordered inputs, squaring `√(1 - (b / a)²)` recovers its argument. -/
-theorem sq_sqrt_one_sub_sq_div {a b : ℝ} (hb : 0 < b) (hba : b ≤ a) :
+/-- For nonnegative ordered inputs, squaring `√(1 - (b / a)²)` recovers its argument. -/
+theorem sq_sqrt_one_sub_sq_div {a b : ℝ} (hb : 0 ≤ b) (hba : b ≤ a) :
     (√(1 - (b / a) ^ 2)) ^ 2 = 1 - (b / a) ^ 2 := by
-  have ha := hb.trans_le hba
-  have hratio : 0 < b / a := div_pos hb ha
-  have hle : b / a ≤ 1 := (div_le_one ha).2 hba
-  exact sq_sqrt_one_sub_sq (by rwa [abs_of_pos hratio])
+  by_cases ha : a = 0
+  · simp [ha]
+  have ha' : 0 < a := lt_of_le_of_ne (hb.trans hba) (Ne.symm ha)
+  have hratio : 0 ≤ b / a := div_nonneg hb ha'.le
+  have hle : b / a ≤ 1 := (div_le_one ha').2 hba
+  exact sq_sqrt_one_sub_sq (by rwa [abs_of_nonneg hratio])
 
-/-- For positive ordered inputs, the square of `√(1 - (b / a)²)` is less than `1`. -/
-theorem sq_sqrt_one_sub_sq_div_lt_one {a b : ℝ} (hb : 0 < b) (hba : b ≤ a) :
-    (√(1 - (b / a) ^ 2)) ^ 2 < 1 := by
-  rw [sq_sqrt_one_sub_sq_div hb hba]
-  have hratio : 0 < b / a := div_pos hb (hb.trans_le hba)
-  nlinarith
+/-- For any nonzero real input, the square of `√(1 - t²)` is less than `1`. -/
+theorem sq_sqrt_one_sub_sq_lt_one {t : ℝ} (ht : t ≠ 0) :
+    (√(1 - t ^ 2)) ^ 2 < 1 := by
+  rw [sq_sqrt']
+  exact max_lt (by nlinarith [sq_pos_of_ne_zero ht]) zero_lt_one
 
 end Real
