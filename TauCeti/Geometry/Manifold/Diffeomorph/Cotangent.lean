@@ -21,6 +21,8 @@ where the inverse of the differential `dh_x` is the differential of `h⁻¹` at 
 (`Diffeomorph.cotangent`). It is characterized by covering `h`
 (`Diffeomorph.proj_cotangent`) and by preserving the pairing of covectors with tangent vectors:
 the lifted covector, evaluated on `dh_x v`, is `p v` (`Diffeomorph.cotangent_snd_apply_mfderiv`).
+It is linear on fibres (`Diffeomorph.cotangent_mk_smul`), so it sends exactly the zero covectors
+to zero covectors (`Diffeomorph.cotangent_snd_eq_zero_iff`).
 Smoothness of the lift is the smoothness of pulling covectors back along a map,
 `TauCeti.CotangentBundle.contMDiff_mk_comp_mfderiv`.
 
@@ -160,6 +162,24 @@ theorem cotangent_zeroSection (h : M ≃ₘ⟮I, J⟯ N) (x : M) :
     h.cotangent (zeroSection (E →L[𝕜] 𝕜) (fun x : M ↦ TangentSpace I x →L[𝕜] 𝕜) x) =
       zeroSection (F →L[𝕜] 𝕜) (fun y : N ↦ TangentSpace J y →L[𝕜] 𝕜) (h x) :=
   CotangentBundle.ext rfl fun _ ↦ rfl
+
+/-- **Cotangent lifts are linear on fibres:** rescaling a covector before lifting it rescales the
+lifted covector by the same scalar. -/
+theorem cotangent_mk_smul (h : M ≃ₘ⟮I, J⟯ N) (z : CotangentBundle I M) (c : 𝕜) :
+    h.cotangent (TotalSpace.mk' (E →L[𝕜] 𝕜) z.proj (c • z.2)) =
+      TotalSpace.mk' (F →L[𝕜] 𝕜) (h.cotangent z).proj (c • (h.cotangent z).2) :=
+  CotangentBundle.ext rfl fun _ ↦ rfl
+
+/-- The cotangent lift of `h` sends a covector to zero exactly when the covector is zero. -/
+@[simp]
+theorem cotangent_snd_eq_zero_iff (h : M ≃ₘ⟮I, J⟯ N) {z : CotangentBundle I M} :
+    (h.cotangent z).2 = 0 ↔ z.2 = 0 := by
+  refine ⟨fun hz ↦ ContinuousLinearMap.ext fun v ↦ ?_, fun hz ↦ ?_⟩
+  · have hv := cotangent_snd_apply_mfderiv h z v
+    rw [hz] at hv
+    exact hv.symm
+  · ext w
+    exact (cotangent_snd_apply h z w).trans (by rw [hz]; rfl)
 
 /-- The inverse of a cotangent lift is the cotangent lift of the inverse diffeomorphism. -/
 @[simp]

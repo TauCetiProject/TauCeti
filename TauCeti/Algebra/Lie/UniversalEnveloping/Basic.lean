@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Lie.UniversalEnveloping
+public import Mathlib.GroupTheory.GroupAction.Ring
 public import Mathlib.RingTheory.FiniteType
 
 /-!
@@ -30,18 +31,22 @@ additional structures such as filtrations, bialgebras, or antipodes.
   detected on the canonical Lie generators alone.
 * `TauCeti.UniversalEnvelopingAlgebra.ad_ι_pow_apply_ι`: iterating the commutator with a Lie
   generator reproduces, on the Lie generators, the iterated adjoint action of `L`.
-* `TauCeti.UniversalEnvelopingAlgebra.lie_map_ι`: an algebra representation maps the bracket of
-  canonical Lie generators to the bracket of their images.
-* `TauCeti.UniversalEnvelopingAlgebra.lie_map_ι_eq_smul`: a Lie-bracket eigenvector remains one
-  under an algebra representation.
 * `TauCeti.UniversalEnvelopingAlgebra.mul_sub_mul_eq_map_ι_lie`: the image of a Lie bracket
-  under an algebra homomorphism is the ring commutator of the images.
+  under a ring homomorphism is the ring commutator of the images.
 * `TauCeti.UniversalEnvelopingAlgebra.commute_of_lie_eq_zero`: images of Lie-commuting elements
   commute.
 * `TauCeti.UniversalEnvelopingAlgebra.zsmul_mul_zsmul_eq_add_nsmul_of_zsmul_lie_eq`: a scaled
   Lie-bracket relation gives the corresponding scaled ring-commutator relation.
 * `TauCeti.UniversalEnvelopingAlgebra.mul_eq_mul_add_zsmul_of_lie_eq`: an integral Lie-bracket
   structure constant gives the corresponding ring-commutator relation.
+* `TauCeti.UniversalEnvelopingAlgebra.lie_map_ι`: a ring homomorphism maps the bracket of
+  canonical Lie generators to the bracket of their images.
+* `TauCeti.UniversalEnvelopingAlgebra.lie_map_ι_eq_smul`: a Lie-bracket eigenvector remains one
+  under an `R`-linear ring homomorphism.
+
+The statements about images of Lie generators hold for any (possibly non-unital) ring
+homomorphism out of `U(L)`, such as an algebra representation; only `lie_map_ι_eq_smul` needs
+`R`-linearity.
 -/
 
 public section
@@ -151,36 +156,21 @@ is, a homomorphism of Lie modules. Centrality is used only against the canonical
 which is what the Lie action is read off. -/
 theorem representation_lie_of_mem_center {u : U} (hu : u ∈ Subalgebra.center R U) (x : L) (m : M) :
     representation R L M u ⁅x, m⁆ = ⁅x, representation R L M u m⁆ := by
-  have h := congrArg (representation R L M)
-    (Subalgebra.mem_center_iff.mp hu (_root_.UniversalEnvelopingAlgebra.ι R x))
-  rw [map_mul, map_mul, representation_ι] at h
-  have h₁ := congrArg (fun g : Module.End R M ↦ g m) h
-  simpa only [mul_apply_eq_comp, LieModule.toEnd_apply_apply] using h₁.symm
+  have h := LinearMap.congr_fun (congrArg (representation R L M)
+    (Subalgebra.mem_center_iff.mp hu (_root_.UniversalEnvelopingAlgebra.ι R x))) m
+  simpa only [map_mul, mul_apply_eq_comp, representation_ι_apply] using h.symm
 
 variable {R L}
-variable {B : Type w} [Ring B] [Algebra R B]
 
-/-- An algebra representation of the universal enveloping algebra maps the Lie bracket to the
-commutator in its target algebra. -/
-theorem lie_map_ι (ρ : _root_.UniversalEnvelopingAlgebra R L →ₐ[R] B) (x y : L) :
-    ⁅ρ (_root_.UniversalEnvelopingAlgebra.ι R x), ρ (_root_.UniversalEnvelopingAlgebra.ι R y)⁆ =
-      ρ (_root_.UniversalEnvelopingAlgebra.ι R ⁅x, y⁆) := by
-  have hlie := LieHom.map_lie (_root_.UniversalEnvelopingAlgebra.ι R) x y
-  rw [LieRing.of_associative_ring_bracket] at hlie
-  rw [LieRing.of_associative_ring_bracket, hlie, map_sub, map_mul, map_mul]
+section NonUnitalRing
 
-/-- A Lie-bracket eigenvector remains one under an algebra representation of the universal
-enveloping algebra. -/
-theorem lie_map_ι_eq_smul (ρ : _root_.UniversalEnvelopingAlgebra R L →ₐ[R] B) {x y : L} {a : R}
-    (hxy : ⁅x, y⁆ = a • y) :
-    ⁅ρ (_root_.UniversalEnvelopingAlgebra.ι R x), ρ (_root_.UniversalEnvelopingAlgebra.ι R y)⁆ =
-      a • ρ (_root_.UniversalEnvelopingAlgebra.ι R y) := by
-  rw [lie_map_ι ρ, hxy, map_smul, map_smul]
+variable {B : Type*} [NonUnitalRing B] {F : Type*}
+  [FunLike F (_root_.UniversalEnvelopingAlgebra R L) B]
+  [NonUnitalRingHomClass F (_root_.UniversalEnvelopingAlgebra R L) B]
 
-/-- The image of a Lie bracket under an algebra homomorphism from a universal enveloping algebra
-is the ring commutator of the images. -/
-theorem mul_sub_mul_eq_map_ι_lie
-    (ρ : _root_.UniversalEnvelopingAlgebra R L →ₐ[R] B) (a b : L) :
+/-- The image of a Lie bracket under a ring homomorphism from a universal enveloping algebra is
+the ring commutator of the images. -/
+theorem mul_sub_mul_eq_map_ι_lie (ρ : F) (a b : L) :
     ρ (_root_.UniversalEnvelopingAlgebra.ι R a) *
           ρ (_root_.UniversalEnvelopingAlgebra.ι R b) -
         ρ (_root_.UniversalEnvelopingAlgebra.ι R b) *
@@ -189,50 +179,58 @@ theorem mul_sub_mul_eq_map_ι_lie
   rw [LieHom.map_lie (_root_.UniversalEnvelopingAlgebra.ι R) a b,
     LieRing.of_associative_ring_bracket, map_sub, map_mul, map_mul]
 
-/-- Images of Lie-commuting elements commute under every algebra homomorphism from the universal
+/-- Images of Lie-commuting elements commute under every ring homomorphism from the universal
 enveloping algebra. -/
-theorem commute_of_lie_eq_zero
-    (ρ : _root_.UniversalEnvelopingAlgebra R L →ₐ[R] B) {a b : L} (hab : ⁅a, b⁆ = 0) :
+theorem commute_of_lie_eq_zero (ρ : F) {a b : L} (hab : ⁅a, b⁆ = 0) :
     Commute (ρ (_root_.UniversalEnvelopingAlgebra.ι R a))
-      (ρ (_root_.UniversalEnvelopingAlgebra.ι R b)) := by
-  have h := mul_sub_mul_eq_map_ι_lie ρ a b
-  rw [hab, map_zero, map_zero] at h
-  exact sub_eq_zero.mp h
+      (ρ (_root_.UniversalEnvelopingAlgebra.ι R b)) :=
+  sub_eq_zero.mp <| by rw [mul_sub_mul_eq_map_ι_lie, hab, map_zero, map_zero]
 
 /-- A scaled Lie-bracket relation becomes the corresponding scaled ring-commutator relation under
-every algebra homomorphism from the universal enveloping algebra. -/
-theorem zsmul_mul_zsmul_eq_add_nsmul_of_zsmul_lie_eq
-    (ρ : _root_.UniversalEnvelopingAlgebra R L →ₐ[R] B) {a b b' : L} {p q r : ℤ} {n : ℕ}
+every ring homomorphism from the universal enveloping algebra. -/
+theorem zsmul_mul_zsmul_eq_add_nsmul_of_zsmul_lie_eq (ρ : F) {a b b' : L} {p q r : ℤ} {n : ℕ}
     (hab : (p * q) • ⁅a, b⁆ = ((n : ℤ) * r) • b') :
     (p • ρ (_root_.UniversalEnvelopingAlgebra.ι R a)) *
         (q • ρ (_root_.UniversalEnvelopingAlgebra.ι R b)) =
       (q • ρ (_root_.UniversalEnvelopingAlgebra.ι R b)) *
           (p • ρ (_root_.UniversalEnvelopingAlgebra.ι R a)) +
         n • (r • ρ (_root_.UniversalEnvelopingAlgebra.ι R b')) := by
-  have hbracket := congrArg ((p * q) • ·) (mul_sub_mul_eq_map_ι_lie ρ a b)
+  have hbracket := congrArg ((p * q) • ·) (mul_sub_mul_eq_map_ι_lie (R := R) ρ a b)
   rw [← map_zsmul, ← map_zsmul, hab, map_zsmul, map_zsmul] at hbracket
-  rw [← sub_eq_iff_eq_add']
-  have hcoeff : n • (r • ρ (_root_.UniversalEnvelopingAlgebra.ι R b')) =
-      ((n : ℤ) * r) • ρ (_root_.UniversalEnvelopingAlgebra.ι R b') := by
-    rw [← natCast_zsmul, ← mul_zsmul]
-  rw [hcoeff]
-  simpa only [smul_sub, mul_smul_comm, smul_mul_assoc, mul_zsmul, smul_comm p q] using
-    hbracket
+  rw [← sub_eq_iff_eq_add', ← natCast_zsmul, ← mul_zsmul, ← hbracket]
+  simp only [smul_sub, mul_smul_comm, smul_mul_assoc, mul_zsmul, smul_comm p q]
 
 /-- A bracket relation with an integral structure constant becomes the corresponding commutator
-relation under every algebra homomorphism from the universal enveloping algebra. -/
-theorem mul_eq_mul_add_zsmul_of_lie_eq
-    (ρ : _root_.UniversalEnvelopingAlgebra R L →ₐ[R] B) {a b b' : L} {c : ℤ}
-    (hab : ⁅a, b⁆ = c • b') :
+relation under every ring homomorphism from the universal enveloping algebra. -/
+theorem mul_eq_mul_add_zsmul_of_lie_eq (ρ : F) {a b b' : L} {c : ℤ} (hab : ⁅a, b⁆ = c • b') :
     ρ (_root_.UniversalEnvelopingAlgebra.ι R a) *
         ρ (_root_.UniversalEnvelopingAlgebra.ι R b) =
       ρ (_root_.UniversalEnvelopingAlgebra.ι R b) *
           ρ (_root_.UniversalEnvelopingAlgebra.ι R a) +
         c • ρ (_root_.UniversalEnvelopingAlgebra.ι R b') := by
-  simpa using
-    (zsmul_mul_zsmul_eq_add_nsmul_of_zsmul_lie_eq ρ
-      (p := 1) (q := 1) (r := c) (n := 1) (by simpa using hab))
+  rw [← sub_eq_iff_eq_add', mul_sub_mul_eq_map_ι_lie, hab, map_zsmul, map_zsmul]
 
+end NonUnitalRing
+
+variable {B : Type*} [Ring B]
+
+/-- A ring homomorphism from the universal enveloping algebra maps the bracket of canonical Lie
+generators to the commutator of their images in its target. -/
+theorem lie_map_ι {F : Type*} [FunLike F (_root_.UniversalEnvelopingAlgebra R L) B]
+    [NonUnitalRingHomClass F (_root_.UniversalEnvelopingAlgebra R L) B] (ρ : F) (x y : L) :
+    ⁅ρ (_root_.UniversalEnvelopingAlgebra.ι R x), ρ (_root_.UniversalEnvelopingAlgebra.ι R y)⁆ =
+      ρ (_root_.UniversalEnvelopingAlgebra.ι R ⁅x, y⁆) := by
+  rw [LieRing.of_associative_ring_bracket, mul_sub_mul_eq_map_ι_lie]
+
+/-- A Lie-bracket eigenvector remains one under an `R`-linear ring homomorphism from the universal
+enveloping algebra. -/
+theorem lie_map_ι_eq_smul [Module R B] {F : Type*}
+    [FunLike F (_root_.UniversalEnvelopingAlgebra R L) B]
+    [NonUnitalAlgHomClass F R (_root_.UniversalEnvelopingAlgebra R L) B] (ρ : F) {x y : L} {a : R}
+    (hxy : ⁅x, y⁆ = a • y) :
+    ⁅ρ (_root_.UniversalEnvelopingAlgebra.ι R x), ρ (_root_.UniversalEnvelopingAlgebra.ι R y)⁆ =
+      a • ρ (_root_.UniversalEnvelopingAlgebra.ι R y) := by
+  rw [lie_map_ι ρ, hxy, map_smul, map_smul]
 
 section Center
 
@@ -248,19 +246,12 @@ theorem mem_center_iff_forall_lie_ι {u : U} :
   refine ⟨fun hu x => ?_, fun h => ?_⟩
   · rw [LieRing.of_associative_ring_bracket,
       ← Subalgebra.mem_center_iff.mp hu (_root_.UniversalEnvelopingAlgebra.ι R x), sub_self]
-  · -- The centralizer of `u` is a subalgebra containing every Lie generator, hence everything.
-    have hgen : (⊤ : Subalgebra R U) ≤ Subalgebra.centralizer R {u} := by
-      rw [← adjoin_range_ι R L]
-      refine Algebra.adjoin_le ?_
-      rintro _ ⟨x, rfl⟩
-      refine (Subalgebra.mem_centralizer_iff R).mpr fun g hg => ?_
-      rw [Set.mem_singleton_iff] at hg
-      subst hg
-      have hx := h x
-      rw [LieRing.of_associative_ring_bracket] at hx
-      exact sub_eq_zero.mp hx
-    exact Subalgebra.mem_center_iff.mpr fun b =>
-      ((Subalgebra.mem_centralizer_iff R).mp (hgen (Set.mem_univ b)) u rfl).symm
+  · -- Every element lies in the algebra generated by the Lie generators, each commuting with `u`.
+    refine Subalgebra.mem_center_iff.mpr fun b => .symm <|
+      Algebra.commute_of_mem_adjoin_of_forall_mem_commute
+        (adjoin_range_ι R L ▸ Algebra.mem_top) ?_
+    rintro _ ⟨x, rfl⟩
+    exact sub_eq_zero.mp <| (LieRing.of_associative_ring_bracket _ _).symm.trans (h x)
 
 variable {R L}
 

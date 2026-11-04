@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Algebra.Homology.HomotopyCategory.Pretriangulated
 public import TauCeti.Algebra.Homology.HomotopyCategory.HomComplex.Basic
+public import TauCeti.Algebra.Homology.Homotopy
 
 /-!
 # Mapping cones and homotopy equivalences
@@ -14,6 +15,11 @@ public import TauCeti.Algebra.Homology.HomotopyCategory.HomComplex.Basic
 The standard null-homotopy of `f ≫ mappingCone.inr f` has components given by
 `mappingCone.inl f`. This file exposes that homotopy and the component formulas relating
 Mathlib's mapping-cone API to its underlying homotopy-cofiber construction.
+
+For Mathlib's `mappingCone.mapOfHomotopy`, the component formulas retain the specified square
+homotopy. These maps compose using `Homotopy.compSquare`, and a specified degree-minus-two
+cochain whose differential is the difference of two square homotopies induces a homotopy
+of the cone maps (`mapOfHomotopyHomotopy`). This uses Joël Riou's `mappingCone.descHomotopy`.
 
 A morphism of cochain complexes `f : K ⟶ L` sits in the distinguished triangle
 `K ⟶ L ⟶ cone f ⟶ K⟦1⟧` of the homotopy category. In a pretriangulated category the third
@@ -102,6 +108,91 @@ theorem nonempty_homotopy_id_zero_of_homotopyEquiv (e : HomotopyEquiv K L) :
   nonempty_homotopy_id_zero_of_isIso_quotient_map e.hom
 
 end
+
+section HomotopySquares
+
+open HomComplex
+
+variable {K₁ L₁ K₂ L₂ K₃ L₃ : CochainComplex C ℤ}
+  {φ₁ : K₁ ⟶ L₁} {φ₂ : K₂ ⟶ L₂} {φ₃ : K₃ ⟶ L₃}
+  {a : K₁ ⟶ K₂} {b : L₁ ⟶ L₂}
+  (H : Homotopy (φ₁ ≫ b) (a ≫ φ₂))
+
+/-- A cone map from a specified square homotopy acts on the shifted source by the source map
+and the chosen homotopy. -/
+@[reassoc (attr := simp)]
+lemma inl_v_mapOfHomotopy_f (p q : ℤ) (hpq : p + -1 = q) :
+    (inl φ₁).v p q hpq ≫ (mapOfHomotopy H).f q =
+      a.f p ≫ (inl φ₂).v p q hpq + H.hom p q ≫ (inr φ₂).f q := by
+  simp [mapOfHomotopy, Cochain.equivHomotopy, Cochain.ofHomotopy]
+
+/-- A cone map from a specified square homotopy acts on the target by the target map. -/
+@[reassoc (attr := simp)]
+lemma inr_f_mapOfHomotopy_f (p : ℤ) :
+    (inr φ₁).f p ≫ (mapOfHomotopy H).f p = b.f p ≫ (inr φ₂).f p :=
+  HomologicalComplex.congr_hom (triangleMapOfHomotopy_comm₂ H) p
+
+/-- The first projection of a cone map does not depend on the square homotopy. -/
+@[reassoc (attr := simp)]
+lemma mapOfHomotopy_f_fst_v (p q : ℤ) (hpq : p + 1 = q) :
+    (mapOfHomotopy H).f p ≫ (fst φ₂).1.v p q hpq =
+      (fst φ₁).1.v p q hpq ≫ a.f q := by
+  apply ext_from φ₁ q p hpq <;> simp
+
+/-- The second projection retains the specified square homotopy. -/
+@[reassoc (attr := simp)]
+lemma mapOfHomotopy_f_snd_v (p q : ℤ) (hpq : p + 1 = q) :
+    (mapOfHomotopy H).f p ≫ (snd φ₂).v p p (add_zero p) =
+      (fst φ₁).1.v p q hpq ≫ H.hom q p +
+        (snd φ₁).v p p (add_zero p) ≫ b.f p := by
+  apply ext_from φ₁ q p hpq <;> simp
+
+variable {a' : K₂ ⟶ K₃} {b' : L₂ ⟶ L₃}
+  (H' : Homotopy (φ₂ ≫ b') (a' ≫ φ₃))
+
+/-- Cone maps compose with the composed square homotopy, not with an independently chosen
+homotopy for the outer square. -/
+@[reassoc]
+lemma mapOfHomotopy_comp :
+    mapOfHomotopy (H.compSquare H') = mapOfHomotopy H ≫ mapOfHomotopy H' := by
+  ext p
+  apply ext_from φ₁ (p + 1) p rfl <;>
+    simp [Preadditive.add_comp, Preadditive.comp_add, add_assoc, add_comm]
+
+/-- A specified second homotopy between square homotopies gives a homotopy of their cone maps.
+No independence from an arbitrary choice of square homotopy is asserted. -/
+noncomputable def mapOfHomotopyHomotopy
+    (H₂ : Homotopy (φ₁ ≫ b) (a ≫ φ₂)) (s : Cochain K₁ L₂ (-2))
+    (hs : δ (-2) (-1) s = Cochain.ofHomotopy H - Cochain.ofHomotopy H₂) :
+    Homotopy (mapOfHomotopy H) (mapOfHomotopy H₂) :=
+  descHomotopy φ₁ _ _ (s.comp (Cochain.ofHom (inr φ₂)) (add_zero _)) 0
+    (by
+      rw [δ_comp_zero_cochain _ _ (-1) (by omega), δ_ofHom, Cochain.comp_zero,
+        zero_add, hs, Cochain.sub_comp]
+      simp only [mapOfHomotopy, inl_desc, Cochain.comp_zero, add_zero]
+      ext p q hpq
+      simp only [Cochain.add_v, Cochain.sub_v, Cochain.zero_cochain_comp_v,
+        Cochain.ofHom_v, Cochain.comp_zero_cochain_v]
+      simp [Cochain.equivHomotopy, Cochain.ofHomotopy]
+      abel)
+    (by simp [mapOfHomotopy])
+
+/-- The second homotopy of cone maps factors through the first projection of the source
+and the right inclusion of the target. -/
+@[simp]
+lemma mapOfHomotopyHomotopy_hom
+    (H₂ : Homotopy (φ₁ ≫ b) (a ≫ φ₂)) (s : Cochain K₁ L₂ (-2))
+    (hs : δ (-2) (-1) s = Cochain.ofHomotopy H - Cochain.ofHomotopy H₂)
+    (p q : ℤ) (hpq : p + -1 = q) :
+    (mapOfHomotopyHomotopy H H₂ s hs).hom p q =
+      (fst φ₁ : Cochain _ _ 1).v p (p + 1) rfl ≫
+        s.v (p + 1) q (by omega) ≫ (inr φ₂).f q := by
+  simp only [mapOfHomotopyHomotopy, descHomotopy, Cochain.equivHomotopy,
+    Equiv.coe_fn_symm_mk, hpq, ↓reduceDIte, descCochain, Cochain.comp_zero, add_zero]
+  rw [Cochain.comp_v _ _ _ p (p + 1) q rfl (by omega),
+    Cochain.comp_zero_cochain_v, Cochain.ofHom_v]
+
+end HomotopySquares
 
 section Shift
 

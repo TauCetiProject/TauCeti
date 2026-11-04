@@ -7,6 +7,7 @@ module
 
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.Singular
 public import TauCeti.Algebra.Polynomial.QuadraticDiscriminant
+import TauCeti.AlgebraicGeometry.EllipticCurve.VariableChange.Basic
 
 /-!
 # The node polynomial of a Weierstrass curve
@@ -18,7 +19,8 @@ distinguishes split from nonsplit multiplicative reduction.
 This file defines `WeierstrassCurve.nodePolynomial` over a commutative ring and proves:
 
 * its discriminant is `-c₄ c₆`;
-* for a model singular at the origin, it is `c₄` times the tangent quadratic `T² + a₁ T - a₂`;
+* for a model singular at the origin, it is `c₄` times the tangent quadratic `T² + a₁ T - a₂`,
+  and at a singular point `(x₀, y₀)` it is `c₄` times `T² + a₁ T - (3 x₀ + a₂)`;
 * it commutes with base change;
 * a change of variables `(u, r, s, t)` acts by the substitution `T ↦ u T + s` and the
   scalar `u⁻⁶`, preserving splitting over a field;
@@ -161,6 +163,23 @@ lemma variableChange_nodePolynomial (W : WeierstrassCurve A) (C : VariableChange
     + (-(2 * Polynomial.C W.c₄ * Polynomial.C C.s + Polynomial.C W.a₁ * Polynomial.C W.c₄)
         * Polynomial.X * Polynomial.C (↑C.u⁻¹ : A) ^ 5) * hu
     + (-3 * Polynomial.C (↑C.u⁻¹ : A) ^ 6 * Polynomial.C C.r) * hc₄
+
+/-- **The node polynomial at an arbitrary singular point.** If `(x₀, y₀)` is a singular point,
+the node polynomial is `c₄` times the tangent quadratic `T² + a₁ T - (3 x₀ + a₂)`, whose roots are
+the slopes of the tangent lines there. -/
+theorem nodePolynomial_eq_of_isSingular (W : WeierstrassCurve A) {x₀ y₀ : A}
+    (h : W.toAffine.IsSingular x₀ y₀) :
+    W.nodePolynomial = .C W.c₄ * (.C 1 * .X ^ 2 + .C W.a₁ * .X + .C (-(3 * x₀ + W.a₂))) := by
+  -- translating the singular point to the origin changes neither the node polynomial nor `c₄`
+  have hW := variableChange_nodePolynomial W ⟨1, x₀, 0, y₀⟩
+  simp only [inv_one, Units.val_one, one_pow, map_one, one_mul, map_zero, add_zero,
+    Polynomial.comp_X] at hW
+  rw [← hW,
+    nodePolynomial_eq_of_isSingular_zero _ ((Affine.isSingular_iff_variableChange _ _ _).1 h),
+    variableChange_translate_c₄]
+  simp only [variableChange_a₁, variableChange_a₂, inv_one, Units.val_one, one_pow, one_mul,
+    mul_zero, add_zero, zero_mul, sub_zero, ne_eq, OfNat.ofNat_ne_zero, not_false_eq_true,
+    zero_pow, add_comm _ (3 * x₀)]
 
 /-- **Invariance of the node polynomial's splitting under change of variables.** Since a change of
 variables transforms the node polynomial by an affine substitution and a unit scalar

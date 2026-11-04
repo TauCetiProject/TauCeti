@@ -9,6 +9,7 @@ public import Mathlib.RingTheory.Algebraic.Defs
 public import Mathlib.RingTheory.IntegralClosure.IntegrallyClosed
 public import Mathlib.RingTheory.PowerSeries.Binomial
 public import Mathlib.RingTheory.PowerSeries.Derivative
+public import Mathlib.RingTheory.PowerSeries.PiTopology
 public import Mathlib.RingTheory.PowerSeries.Substitution
 public import Mathlib.RingTheory.PowerSeries.Trunc
 -- Proof-only: lowest homogeneous components of powers.
@@ -35,7 +36,10 @@ Substitution of series of zero constant coefficient is compatible with congruenc
 powers of `X`, in both the substituted series and the series substituted into. This makes
 truncation modulo `X ^ n` compatible with composition of formal coordinates. Substituting a
 multivariate series `φ` of zero constant coefficient into `f = c Xⁿ + ⋯` gives
-`f (φ) = c φ₁ ^ n + ⋯` in lowest degree, where `φ₁` is the linear part of `φ`. For a family of
+`f (φ) = c φ₁ ^ n + ⋯` in lowest degree, where `φ₁` is the linear part of `φ`. In one variable
+this reads `[Xⁿ] f (a) = c a₁ ^ n`, and symmetrically `[Xⁿ] f (a) = f₁ c` when `a = c Xⁿ + ⋯` and
+`f = f₁ X + ⋯` have no constant terms; together these compare the lowest terms of the two sides of
+an equation `f ∘ g = h ∘ f`. For a family of
 series substituted into a multivariate series `G`, a perturbation `X ^ m * r` of the entry `a s`
 is invisible below degree `m` and acts in degree `m` through the coefficient of `Xₛ` alone;
 this drives degree-by-degree solutions of equations such as `G(f(X), X) = 0`.
@@ -62,6 +66,10 @@ of a completed group algebra attached to two topological generators.
 
 ## Main results
 
+* `PowerSeries.coeff_subst_eq_sum_range`: a finite coefficient formula when the inner series
+  has zero constant coefficient.
+* `Continuous.powerSeries_subst`: substitution is jointly continuous in coefficientwise
+  continuous families whose inner series have zero constant coefficient.
 * `PowerSeries.HasSubst.C`: a nilpotent constant can be substituted.
 * `PowerSeries.subst_one`: substitution preserves the constant series one.
 * `PowerSeries.subst_X_add_C_mul_X_pow`: substituting `a` into `X + e Xᵏ` gives `a + e aᵏ`.
@@ -104,6 +112,19 @@ of a completed group algebra attached to two topological generators.
 public section
 
 namespace PowerSeries
+
+/-- When the inner series has zero constant coefficient, the coefficient of degree `n` of a
+substitution depends only on the first `n + 1` coefficients of the outer series. -/
+theorem coeff_subst_eq_sum_range {R S : Type*} [CommRing R] [CommRing S]
+    [Algebra R S] (f : R⟦X⟧) {g : S⟦X⟧} (hg : constantCoeff g = 0) (n : ℕ) :
+    coeff n (f.subst g) = ∑ k ∈ Finset.range (n + 1), coeff k f • coeff n (g ^ k) := by
+  rw [coeff_subst' (.of_constantCoeff_zero' hg)]
+  refine finsum_eq_sum_of_support_subset _ fun k hk ↦ ?_
+  rw [Function.mem_support] at hk
+  simp only [Finset.coe_range, Set.mem_Iio]
+  by_contra h
+  exact hk (by rw [coeff_of_lt_order _ ((Nat.cast_lt.mpr (by omega : n < k)).trans_le
+    (le_order_pow_of_constantCoeff_eq_zero k hg)), smul_zero])
 
 /-- A nilpotent constant can be substituted into a power series. -/
 theorem HasSubst.C {R : Type*} [CommRing R] {x : R} (hx : IsNilpotent x) :
@@ -228,6 +249,39 @@ theorem coeff_one_subst {a : S⟦X⟧} (ha : constantCoeff a = 0) (f : R⟦X⟧)
   · simp
   · exact absurd rfl hd
   · simp [mul_pow, coeff_X_pow_mul']
+
+/-- **The lowest coefficient of a substitution into a series of large order.** If `f` has order
+at least `n` and `a` has zero constant coefficient, then the coefficient of `Xⁿ` in `f (a)` is
+`c a₁ ^ n`, where `c` is the coefficient of `Xⁿ` in `f` and `a₁` is the linear coefficient of
+`a`. -/
+theorem coeff_subst_eq_mul_pow {a : S⟦X⟧} (ha : constantCoeff a = 0) {f : R⟦X⟧} {n : ℕ}
+    (hn : n ≤ f.order) : coeff n (f.subst a) = algebraMap R S (coeff n f) * coeff 1 a ^ n := by
+  obtain ⟨b, rfl⟩ := X_dvd_iff.mpr ha
+  rw [coeff_subst' (.of_constantCoeff_zero' ha), finsum_eq_single _ n, Algebra.smul_def]
+  · simp [mul_pow, coeff_X_pow_mul']
+  -- below degree `n` the coefficients of `f` vanish, above it `(X * b) ^ d` has no `Xⁿ` term
+  intro d hd
+  rcases lt_or_gt_of_ne hd with h | h
+  · rw [coeff_of_lt_order d ((Nat.cast_lt.mpr h).trans_le hn), zero_smul]
+  · simp [mul_pow, coeff_X_pow_mul', h.not_ge]
+
+/-- **The lowest coefficient of a substitution of a series of large order.** If `f` and `a` have
+zero constant coefficient and `a` has order at least `n`, then the coefficient of `Xⁿ` in `f (a)`
+is `f₁ c`, where `f₁` is the linear coefficient of `f` and `c` is the coefficient of `Xⁿ` in
+`a`. -/
+theorem coeff_subst_eq_mul {a : S⟦X⟧} (ha : constantCoeff a = 0) {f : R⟦X⟧}
+    (hf : constantCoeff f = 0) {n : ℕ} (hn : n ≤ a.order) :
+    coeff n (f.subst a) = algebraMap R S (coeff 1 f) * coeff n a := by
+  rw [coeff_subst' (.of_constantCoeff_zero' ha), finsum_eq_single _ 1, pow_one, Algebra.smul_def]
+  rintro (_ | _ | d) hd
+  · simp [hf]
+  · exact absurd rfl hd
+  -- `a ^ (d + 2)` is divisible by `Xⁿ * X`, so it has no `Xⁿ` term
+  · have hdvd : X ^ (n + 1) ∣ a ^ (d + 2) := by
+      rw [pow_succ]
+      refine (mul_dvd_mul (X_pow_dvd_iff.mpr fun m hm ↦ coeff_of_lt_order m
+        ((Nat.cast_lt.mpr hm).trans_le hn)) (X_dvd_iff.mpr ha)).trans ⟨a ^ d, by ring⟩
+    rw [X_pow_dvd_iff.mp hdvd n (Nat.lt_succ_self n), smul_zero]
 
 /-- An `R`-algebra map `σ : R⟦X⟧ → S⟦X⟧` such that `σ X` can be substituted is the
 substitution `f ↦ f (σ X)`. No continuity hypothesis is needed. -/
@@ -445,6 +499,22 @@ theorem coeff_subst_update_add_X_pow_mul [DecidableEq σ] (G : MvPowerSeries σ 
 end Perturbation
 
 end PowerSeries
+
+open scoped PowerSeries PowerSeries.WithPiTopology in
+/-- Substitution is jointly continuous for coefficientwise continuous families, provided the
+inner series always has zero constant coefficient. No discrete coefficient topology is needed. -/
+theorem Continuous.powerSeries_subst {A R S : Type*} [TopologicalSpace A]
+    [CommRing R] [TopologicalSpace R] [CommRing S] [TopologicalSpace S]
+    [IsTopologicalRing S] [Algebra R S] [ContinuousSMul R S]
+    {f : A → R⟦X⟧} {g : A → S⟦X⟧} (hf : Continuous f) (hg : Continuous g)
+    (hg₀ : ∀ a, PowerSeries.constantCoeff (g a) = 0) :
+    Continuous fun a ↦ (f a).subst (g a) := by
+  refine continuous_iff_continuousAt.mpr fun a ↦
+    (PowerSeries.WithPiTopology.tendsto_iff_coeff_tendsto _ _ _ _).mpr fun n ↦ ?_
+  simp_rw [PowerSeries.coeff_subst_eq_sum_range _ (hg₀ _)]
+  exact (continuous_finsetSum _ fun k _ ↦
+    ((PowerSeries.WithPiTopology.continuous_coeff R k).comp hf).smul
+      ((PowerSeries.WithPiTopology.continuous_coeff S n).comp (hg.pow k))).continuousAt
 
 section Field
 

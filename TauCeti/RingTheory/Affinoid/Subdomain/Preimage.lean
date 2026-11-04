@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RingTheory.Affinoid.ContractiveRenorming
-public import TauCeti.RingTheory.Affinoid.Pushout
+public import TauCeti.RingTheory.Affinoid.Pushout.Basic
 public import TauCeti.RingTheory.Affinoid.Subdomain.Basic
 
 import TauCeti.RingTheory.Affinoid.QuotientNorm

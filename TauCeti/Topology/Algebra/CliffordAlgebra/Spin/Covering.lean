@@ -83,6 +83,13 @@ theorem coe_realCliffordSpinProjectionZero (n : ℕ) [NeZero n] :
         (realCliffordSpinDoubleCoverZero n).rightHom :=
   funext (realCliffordSpinProjectionZero_apply n)
 
+/-- The compact Spin projection sends the element `-1` of `Spin(n)` to the identity of `SO(n)`. -/
+theorem realCliffordSpinProjectionZero_negOne (n : ℕ) [NeZero n] :
+    realCliffordSpinProjectionZero n
+        (spinGroup.negOne (realCliffordForm n 0) (nondegenerate_realCliffordForm n 0).ne_zero) =
+      1 := by
+  simp
+
 /-- The compact real Spin projection is a quotient covering map by its kernel. -/
 theorem isQuotientCoveringMap_realCliffordSpinDoubleCoverZero_rightHom
     (n : ℕ) [NeZero n] [CompactSpace (realCliffordSpinGroupZero n)] :

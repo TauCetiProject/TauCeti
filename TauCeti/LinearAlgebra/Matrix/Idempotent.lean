@@ -37,6 +37,8 @@ so direct sums of modules correspond to block sums of idempotents.
   isomorphic if and only if the matrices are algebraically equivalent.
 * `Module.Finite.exists_linearEquiv_range_vecMulLinear`: a finitely generated projective module is
   isomorphic to the range of an idempotent matrix.
+* `Matrix.rangeVecMulLinearMap`: applying a ring homomorphism `f` to the coordinates maps the
+  range of a matrix `e` to the range of `e.map f`.
 * `Matrix.mem_range_vecMulLinear_fromBlocks_iff`: a row vector lies in the range of a
   block-diagonal matrix exactly when its two parts lie in the ranges of the blocks.
 * `Matrix.rangeVecMulLinearFromBlocksEquiv`: the range of a block-diagonal matrix is the product of
@@ -62,6 +64,11 @@ theorem IsIdempotentElem.vecMulLinear {e : Matrix ι ι A} (he : IsIdempotentEle
   ext v : 1
   simp [mul_apply_eq_comp, Matrix.vecMul_vecMul, he.eq]
 
+/-- The entrywise image of an idempotent matrix under a ring homomorphism is idempotent. -/
+theorem IsIdempotentElem.matrix_map {B : Type*} [Semiring B] {e : Matrix ι ι A}
+    (he : IsIdempotentElem e) (f : A →+* B) : IsIdempotentElem (e.map f) := by
+  rw [IsIdempotentElem, ← Matrix.map_mul, he.eq]
+
 /-- The range of right multiplication by an idempotent matrix `e` consists of the row vectors
 fixed by `e`. -/
 theorem IsIdempotentElem.mem_range_vecMulLinear_iff {e : Matrix ι ι A} (he : IsIdempotentElem e)
@@ -72,6 +79,16 @@ theorem IsIdempotentElem.mem_range_vecMulLinear_iff {e : Matrix ι ι A} (he : I
 theorem IsIdempotentElem.row_mem_range_vecMulLinear {e : Matrix ι ι A} (he : IsIdempotentElem e)
     (i : ι) : e i ∈ range e.vecMulLinear := by
   rw [he.mem_range_vecMulLinear_iff, ← Matrix.mul_apply_eq_vecMul, he.eq]
+
+/-- A vector `v` in the range of an idempotent matrix `e` is the combination `∑ i, vᵢ • eᵢ` of
+the rows `eᵢ` of `e`. -/
+theorem IsIdempotentElem.eq_sum_smul_row {e : Matrix ι ι A} (he : IsIdempotentElem e)
+    (v : range e.vecMulLinear) :
+    v = ∑ i, (v : ι → A) i • (⟨e i, he.row_mem_range_vecMulLinear i⟩ : range e.vecMulLinear) := by
+  ext1
+  rw [Submodule.coe_sum]
+  simp only [Submodule.coe_smul, ← vecMul_eq_sum]
+  exact (he.mem_range_vecMulLinear_iff.1 v.2).symm
 
 omit [Fintype ι] in
 /-- A linear map from the range of an idempotent matrix `f` to row vectors is right multiplication
@@ -140,6 +157,22 @@ theorem nonempty_linearEquiv_range_vecMulLinear_iff {e : Matrix ι ι A} {f : Ma
         simp [vecMul_vecMul, hyx, (hf.mem_range_vecMulLinear_iff).1 w.2] }⟩
 
 variable {ι' κ' : Type*}
+
+/-- The `f`-semilinear map between the ranges of right multiplication of row vectors by a matrix
+`e` and by its entrywise image `e.map f` under a ring homomorphism `f`, applying `f` to every
+coordinate. For an idempotent `e` this is the map `Aⁿ e → Bⁿ f(e)`. -/
+def rangeVecMulLinearMap {B : Type*} [Semiring B] (e : Matrix ι ι' A) (f : A →+* B) :
+    range e.vecMulLinear →ₛₗ[f] range (e.map f).vecMulLinear where
+  toFun v := ⟨f ∘ v, by
+    obtain ⟨u, hu⟩ := v.2
+    exact ⟨f ∘ u, funext fun i ↦ by simp [← hu, RingHom.map_vecMul]⟩⟩
+  map_add' v w := Subtype.ext <| funext fun i ↦ by simp
+  map_smul' r v := Subtype.ext <| funext fun i ↦ by simp
+
+@[simp]
+theorem coe_rangeVecMulLinearMap_apply {B : Type*} [Semiring B] (e : Matrix ι ι' A) (f : A →+* B)
+    (v : range e.vecMulLinear) : (e.rangeVecMulLinearMap f v : ι' → B) = f ∘ v :=
+  (rfl)
 
 /-- A row vector lies in the range of right multiplication by the block-diagonal matrix
 `Matrix.fromBlocks e 0 0 f` exactly when its two parts lie in the ranges of `e` and of `f`. -/

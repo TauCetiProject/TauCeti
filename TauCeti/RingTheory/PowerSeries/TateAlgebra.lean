@@ -242,6 +242,23 @@ noncomputable instance instNormedCommRingIsRestrictedSubring :
   inferInstanceAs (NormedCommRing
     (MvPowerSeries.IsRestricted.subring (R := R) (fun _ : Unit ↦ c)))
 
+variable {c} in
+/-- In the Gauss norm at a radius `c > 0`, the linear polynomial `a + d X` has weighted norm at
+most `M` once both `‖a‖` and `‖d‖ c` do. -/
+theorem norm_polynomialToRestricted_C_add_X_mul_C_mul_le {a d : R} {w M : ℝ} (hw : 0 ≤ w)
+    (ha : ‖a‖ * w ≤ M) (hd : ‖d‖ * c * w ≤ M) :
+    ‖polynomialToRestricted c (Polynomial.C a + Polynomial.X * Polynomial.C d)‖ * w ≤ M := by
+  have hM : 0 ≤ M := (mul_nonneg (norm_nonneg _) hw).trans ha
+  rcases hw.eq_or_lt with rfl | hw
+  · simpa using hM
+  rw [← le_div_iff₀ hw, norm_le_iff (div_nonneg hM hw.le)]
+  intro i
+  rw [le_div_iff₀ hw]
+  rcases i with _ | _ | i
+  · simpa using ha
+  · simpa [mul_right_comm] using hd
+  · simpa [Polynomial.coeff_C, Polynomial.coeff_X_mul] using hM
+
 end NormedCommRing
 
 section KrullDimension

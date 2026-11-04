@@ -60,6 +60,7 @@ noncomputable section
 
 open scoped LaurentSeries
 open PowerSeries TauCeti.UniversalEnvelopingAlgebra
+open LieAlgebra.ofTwoCocycle (centralElement envelopingι algHom_ext_envelopingι)
 
 namespace TauCeti.CurrentAlgebra
 
@@ -69,12 +70,13 @@ section Aut
 
 variable (Φ : LinearMap.BilinForm K L) (hΦ : Φ.lieInvariant L) (hΦs : Φ.IsSymm) (a : K)
 
-local notation "UK" => CentralQuotient K (centralElement Φ hΦ hΦs) a
+local notation "c" => twoCocycleOfBilinear K L Φ hΦ hΦs
+local notation "UK" => CentralQuotient K (centralElement c) a
 
 /-- The lift of a coordinate change to `U` carries the currents of order `n` into `I_n`. -/
 private theorem coordinateEnvelopingAut_envelopingι_mem (σ : K⟦X⟧ ≃ₐ[K] K⟦X⟧) (n : ℕ) :
     ∀ u ∈ orderSubmodule K L n,
-      coordinateEnvelopingAut Φ hΦ hΦs a σ (envelopingι Φ hΦ hΦs a u) ∈
+      coordinateEnvelopingAut Φ hΦ hΦs a σ (envelopingι c a u) ∈
         orderLeftIdeal Φ hΦ hΦs a n :=
   fun _ hu ↦ by
     simpa using envelopingι_mem_orderLeftIdeal (substLieEquiv_mem_orderSubmodule _ hu)
@@ -83,7 +85,7 @@ private theorem coordinateEnvelopingAut_envelopingι_mem (σ : K⟦X⟧ ≃ₐ[K
 `I_n`. -/
 private theorem coordinateEnvelopingAut_symm_envelopingι_mem (σ : K⟦X⟧ ≃ₐ[K] K⟦X⟧) (n : ℕ) :
     ∀ u ∈ orderSubmodule K L n,
-      (coordinateEnvelopingAut Φ hΦ hΦs a σ).symm (envelopingι Φ hΦ hΦs a u) ∈
+      (coordinateEnvelopingAut Φ hΦ hΦs a σ).symm (envelopingι c a u) ∈
         orderLeftIdeal Φ hΦ hΦs a n :=
   fun _ hu ↦ (coordinateEnvelopingAut_mem_orderLeftIdeal_iff σ).mp
     (by simpa using envelopingι_mem_orderLeftIdeal hu)
@@ -134,7 +136,7 @@ theorem limπ_coordinateCompletedEnvelopingAut (σ : K⟦X⟧ ≃ₐ[K] K⟦X⟧
       ModuleTower.quotientsπ _ (orderLeftIdeal_natCast_antitone Φ hΦ hΦs a) n
         (coordinateEnvelopingAut Φ hΦ hΦs a σ y) :=
   have hg : ∀ m : ℕ, ∃ m' : ℕ, ∀ u ∈ orderSubmodule K L m',
-      (coordinateEnvelopingAut Φ hΦ hΦs a σ : UK →ₐ[K] UK) (envelopingι Φ hΦ hΦs a u) ∈
+      (coordinateEnvelopingAut Φ hΦ hΦs a σ : UK →ₐ[K] UK) (envelopingι c a u) ∈
         orderLeftIdeal Φ hΦ hΦs a m :=
     fun m ↦ ⟨m, coordinateEnvelopingAut_envelopingι_mem Φ hΦ hΦs a σ m⟩
   -- The lift of `σ` is by definition the extension `completedEnvelopingEquiv` of its lift to `U`.
@@ -166,12 +168,12 @@ substitutes `σ X` in the image of every current is the lift of `σ`. -/
 theorem eq_coordinateCompletedEnvelopingAut {σ : K⟦X⟧ ≃ₐ[K] K⟦X⟧}
     {φ : CompletedEnveloping Φ hΦ hΦs a →ₐ[K] CompletedEnveloping Φ hΦ hΦs a} (hφ : Continuous φ)
     (h : ∀ u : currentAlgebra K L,
-      φ (toCompletedEnveloping Φ hΦ hΦs a (envelopingι Φ hΦ hΦs a u)) =
+      φ (toCompletedEnveloping Φ hΦ hΦs a (envelopingι c a u)) =
         toCompletedEnveloping Φ hΦ hΦs a
-          (envelopingι Φ hΦ hΦs a (substLieEquiv (FormalCoordinate.ofAlgEquiv σ) u))) :
+          (envelopingι c a (substLieEquiv (FormalCoordinate.ofAlgEquiv σ) u))) :
     φ = (coordinateCompletedEnvelopingAut Φ hΦ hΦs a σ : _ →ₐ[K] _) := by
   -- The two algebra maps `U → Û` obtained by composing with `U → Û` agree on the generators.
-  have hU := algHom_ext_envelopingι Φ hΦ hΦs a
+  have hU := algHom_ext_envelopingι c a
     (g₁ := φ.comp (toCompletedEnveloping Φ hΦ hΦs a))
     (g₂ := (coordinateCompletedEnvelopingAut Φ hΦ hΦs a σ : _ →ₐ[K] _).comp
       (toCompletedEnveloping Φ hΦ hΦs a)) fun u ↦ by simpa using h u
