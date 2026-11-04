@@ -229,46 +229,28 @@ theorem exists_crossingChangeHexagonComposite_of_terminalInitialPentagonPair
     obtain ⟨hPX, hHX, hw⟩ := terminalInitial_disjoint_and_weight G C t R P Q
       P.toGridRectangle.coveredSquares H.crossingCoveredSquares
       (terminalInitial_squares_initial C t P Q H hH) hpX hqX
-    refine ⟨.inr ⟨y, P.toGridRectangleBetween, .inr H⟩, ?_, ?_, ?_⟩
-    · simp only [inr_mem_crossingChangeHexagonCompositeDecompositions,
-        mem_crossingChangeRectangleHexagonDecompositions, mem_unblockedRectangles,
-        GridRectangleHexagonDecomposition.hexagon, GridRectangleHexagonDecomposition.rectangle,
-        mem_crossingChangeCommutationHexagons,
-        GridCommutationHexagonBetween.toGridRectangleBetween_inr,
-        GridCommutationHexagonBetween.crossingCoveredSquares_inr]
-      exact ⟨⟨hp, hPX⟩, by simpa only [hH] using hq, hHX⟩
-    · simp only [GridHexagonCompositeDecomposition.toRectangleDecomposition_inr,
-        GridRectangleHexagonDecomposition.toRectangleDecomposition,
-        GridCommutationHexagonBetween.toGridRectangleBetween_inr, hH]
-    · simpa only [crossingChangeHexagonCompositeWeight_inr,
-        crossingChangeRectangleHexagonWeight_def,
-        GridRectangleHexagonDecomposition.hexagon, GridRectangleHexagonDecomposition.rectangle,
-        crossingChangeCommutationHexagonWeight_eq_prod_crossingCoveredSquares,
-        GridCommutationHexagonBetween.crossingCoveredSquares_inr,
-        OMonomial_eq_prod_coveredSquares, prod_ite_OSet_eq_prod_OColumnsOfSquares] using hw.symm
+    obtain ⟨F, hF, hFD, hFw⟩ := exists_inr_mem_crossingChangeHexagonCompositeDecompositions R
+      (E := ⟨y, P.toGridRectangleBetween, Q.toGridRectangleBetween⟩) (.inr H)
+      (GridCommutationHexagonBetween.toGridRectangleBetween_inr H) hp hq hPX
+      (by rwa [GridCommutationHexagonBetween.crossingCoveredSquares_inr])
+    refine ⟨F, hF, hFD, hFw.trans ?_⟩
+    simpa only [crossingChangeCommutationHexagonWeight_eq_prod_crossingCoveredSquares,
+      GridCommutationHexagonBetween.crossingCoveredSquares_inr,
+      OMonomial_eq_prod_coveredSquares, prod_ite_OSet_eq_prod_OColumnsOfSquares] using hw.symm
   · let H : GridHexagonBetween a t C.turnRow x y :=
       ⟨P.toGridRectangleBetween, P.right_eq, hturn.1, hturn.2⟩
     have hH : H.toGridRectangleBetween = P.toGridRectangleBetween := rfl
     obtain ⟨hHX, hQX, hw⟩ := terminalInitial_disjoint_and_weight G C t R P Q
       H.crossingCoveredSquares Q.toGridRectangle.coveredSquares
       (terminalInitial_squares_terminal C t P Q H hH) hpX hqX
-    refine ⟨.inl ⟨y, .inl H, Q.toGridRectangleBetween⟩, ?_, ?_, ?_⟩
-    · simp only [inl_mem_crossingChangeHexagonCompositeDecompositions,
-        mem_crossingChangeHexagonRectangleDecompositions, mem_unblockedRectangles,
-        GridHexagonRectangleDecomposition.hexagon, GridHexagonRectangleDecomposition.rectangle,
-        mem_crossingChangeCommutationHexagons,
-        GridCommutationHexagonBetween.toGridRectangleBetween_inl,
-        GridCommutationHexagonBetween.crossingCoveredSquares_inl]
-      exact ⟨⟨by simpa only [hH] using hp, hHX⟩, hq, hQX⟩
-    · simp only [GridHexagonCompositeDecomposition.toRectangleDecomposition_inl,
-        GridHexagonRectangleDecomposition.toRectangleDecomposition,
-        GridCommutationHexagonBetween.toGridRectangleBetween_inl, hH]
-    · simpa only [crossingChangeHexagonCompositeWeight_inl,
-        crossingChangeHexagonRectangleWeight_def,
-        GridHexagonRectangleDecomposition.hexagon, GridHexagonRectangleDecomposition.rectangle,
-        crossingChangeCommutationHexagonWeight_eq_prod_crossingCoveredSquares,
-        GridCommutationHexagonBetween.crossingCoveredSquares_inl,
-        OMonomial_eq_prod_coveredSquares, prod_ite_OSet_eq_prod_OColumnsOfSquares] using hw.symm
+    obtain ⟨F, hF, hFD, hFw⟩ := exists_inl_mem_crossingChangeHexagonCompositeDecompositions R
+      (E := ⟨y, P.toGridRectangleBetween, Q.toGridRectangleBetween⟩) (.inl H)
+      (GridCommutationHexagonBetween.toGridRectangleBetween_inl H) hp hq
+      (by rwa [GridCommutationHexagonBetween.crossingCoveredSquares_inl]) hQX
+    refine ⟨F, hF, hFD, hFw.trans ?_⟩
+    simpa only [crossingChangeCommutationHexagonWeight_eq_prod_crossingCoveredSquares,
+      GridCommutationHexagonBetween.crossingCoveredSquares_inl,
+      OMonomial_eq_prod_coveredSquares, prod_ite_OSet_eq_prod_OColumnsOfSquares] using hw.symm
 
 /-! ### Comparing the squares of two pairs of domains -/
 
