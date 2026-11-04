@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Calculus.BumpFunction.Convolution
+public import Mathlib.Topology.MetricSpace.Lipschitz
 
 /-!
 # Uniform approximation by normalized bumps
@@ -15,6 +16,7 @@ any uniformly continuous Banach-valued function. For uniformly continuous functi
 upgrades the pointwise convergence of Mathlib's
 `ContDiffBump.convolution_tendsto_right_of_continuous` to uniform convergence, and allows
 simultaneous approximation of the derivatives of a compactly supported smooth function.
+Normalized-bump convolution also preserves a function's Lipschitz constant.
 
 The file also bounds the topological support of `ρ.normed μ ⋆ g` by the Minkowski sum
 `closedBall 0 ρ.rOut + tsupport g`, and provides the standard shrinking sequence of bumps
@@ -26,7 +28,7 @@ normalized forms reduce to one kernel (`ContDiffBump.integral_shrinking_normed_m
 public section
 
 open ContinuousLinearMap MeasureTheory Filter Metric
-open scoped Convolution Topology Pointwise
+open scoped Convolution Topology Pointwise NNReal
 
 namespace ContDiffBump
 
@@ -146,3 +148,30 @@ theorem tendstoUniformly_normed_convolution {ι : Type*} {l : Filter ι}
   exact half_lt_self hε
 
 end ContDiffBump
+
+/-- Convolution with a nonnegative normalized bump preserves the Lipschitz constant,
+including for Banach-valued functions. -/
+theorem LipschitzWith.normed_convolution {G F : Type*} [NormedAddCommGroup G]
+    [NormedSpace ℝ G] [FiniteDimensional ℝ G] [MeasurableSpace G] [BorelSpace G]
+    {μ : Measure G} [μ.IsAddHaarMeasure] [NormedAddCommGroup F] [NormedSpace ℝ F]
+    {g : G → F} {K : ℝ≥0} (hg : LipschitzWith K g)
+    (ρ : ContDiffBump (0 : G)) :
+    LipschitzWith K (ρ.normed μ ⋆[lsmul ℝ ℝ, μ] g) := by
+  have hi : ConvolutionExists (ρ.normed μ) g (lsmul ℝ ℝ) μ :=
+    ρ.hasCompactSupport_normed.convolutionExists_left_of_continuous_right
+      (lsmul ℝ ℝ) ρ.integrable_normed.locallyIntegrable hg.continuous
+  refine LipschitzWith.of_dist_le_mul fun x y => ?_
+  rw [dist_eq_norm, convolution_def, convolution_def, ← integral_sub (hi x).integrable
+    (hi y).integrable]
+  calc
+    ‖∫ t, lsmul ℝ ℝ (ρ.normed μ t) (g (x - t)) -
+        lsmul ℝ ℝ (ρ.normed μ t) (g (y - t)) ∂μ‖
+      ≤ ∫ t, ρ.normed μ t * (K * dist x y) ∂μ := by
+        apply norm_integral_le_of_norm_le (ρ.integrable_normed.mul_const _)
+        filter_upwards with t
+        simp only [lsmul_apply, ← smul_sub, norm_smul,
+          Real.norm_of_nonneg (ρ.nonneg_normed t)]
+        exact mul_le_mul_of_nonneg_left
+          (by simpa only [dist_eq_norm, sub_sub_sub_cancel_right] using
+            hg.dist_le_mul (x - t) (y - t)) (ρ.nonneg_normed t)
+    _ = K * dist x y := by rw [integral_mul_const, ρ.integral_normed, one_mul]
