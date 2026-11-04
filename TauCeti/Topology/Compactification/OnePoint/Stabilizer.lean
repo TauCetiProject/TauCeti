@@ -250,15 +250,6 @@ section Roots
 variable (hK : ∀ r : Kˣ, ∃ k : Kˣ, k ^ 2 = r)
 include hK
 
-omit [DecidableEq K] in
-/-- When every unit of `K` is a square, the inclusion `PSL(2, K) → PGL(2, K)` identifies the
-preimage of a subgroup of `PGL(2, K)` with that subgroup. -/
-private theorem bijective_toPGL_subgroupComap (H : Subgroup PGL(2, K)) :
-    Bijective (ProjectiveSpecialLinearGroup.toPGL.subgroupComap H) :=
-  ⟨MonoidHom.subgroupComap_injective _ _ ProjectiveSpecialLinearGroup.toPGL_injective,
-    MonoidHom.subgroupComap_surjective _ _
-      (ProjectiveSpecialLinearGroup.toPGL_surj_of_roots (by simpa using hK))⟩
-
 /-- **The stabilizer of `∞` in `PSL(2, K)` is the affine group of the line** when every unit of
 `K` is a square, as for the automorphisms `PSL(2, ℂ)` of the Riemann sphere. An element fixing `∞`
 is sent to the affine map by which it acts on the affine part `K`
@@ -266,7 +257,8 @@ is sent to the affine map by which it acts on the affine part `K`
 noncomputable def pslStabilizerInftyEquiv :
     stabilizer PSL(2, K) (∞ : OnePoint K) ≃* (K ≃ᵃ[K] K) :=
   (MulEquiv.subgroupCongr (comap_toPGL_stabilizer ∞).symm).trans
-    ((MulEquiv.ofBijective _ (bijective_toPGL_subgroupComap hK _)).trans
+    ((MulEquiv.ofBijective _ (ProjectiveSpecialLinearGroup.bijective_toPGL_subgroupComap_of_roots
+        (by simpa using hK) _)).trans
       pglStabilizerInftyEquiv)
 
 /-- The affine map attached to an element of the stabilizer of `∞` in `PSL(2, K)` is its action on
@@ -291,7 +283,8 @@ as `z ↦ a * z` for a unique unit `a` (`OnePoint.coe_pslFixingZeroInftyEquiv_mu
 noncomputable def pslFixingZeroInftyEquiv :
     fixingSubgroup PSL(2, K) {((0 : K) : OnePoint K), ∞} ≃* Kˣ :=
   (MulEquiv.subgroupCongr (comap_toPGL_fixingSubgroup _).symm).trans
-    ((MulEquiv.ofBijective _ (bijective_toPGL_subgroupComap hK _)).trans
+    ((MulEquiv.ofBijective _ (ProjectiveSpecialLinearGroup.bijective_toPGL_subgroupComap_of_roots
+        (by simpa using hK) _)).trans
       pglFixingZeroInftyEquiv)
 
 /-- An element of `PSL(2, K)` fixing `0` and `∞` acts as the dilation by the attached unit. -/
