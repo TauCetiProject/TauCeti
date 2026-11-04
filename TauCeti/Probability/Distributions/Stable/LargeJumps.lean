@@ -5,7 +5,7 @@ Authors: Codex
 -/
 module
 
-public import TauCeti.Probability.Distributions.Stable.Approximation
+public import TauCeti.Probability.Distributions.Stable.Approximation.Basic
 public import TauCeti.Probability.Distributions.CompoundPoisson.Moments
 public import TauCeti.Probability.Distributions.Pareto.Basic
 import TauCeti.Probability.Distributions.Affine
