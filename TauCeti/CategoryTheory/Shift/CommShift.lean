@@ -179,8 +179,10 @@ lemma shiftFunctorMapTriangleIso_inv_hom₁ (n : ℤ) (T : Triangle C) :
 @[simp]
 lemma shiftFunctorMapTriangleIso_inv_hom₂ (n : ℤ) (T : Triangle C) :
     (shiftFunctorMapTriangleIso C n T).inv.hom₂ = n.negOnePow • 𝟙 _ := by
-  change n.negOnePow⁻¹ • 𝟙 (T.obj₂⟦n⟧) = _
-  rw [Int.units_inv_eq_self]
+  simp only [shiftFunctorMapTriangleIso, Triangle.isoMk_inv, Triangle.homMk_hom₂,
+    Preadditive.smul_iso_inv, Int.units_inv_eq_self, Iso.refl_inv]
+  -- Both sides are now `n.negOnePow • 𝟙 (T.obj₂⟦n⟧)`; they differ only in how the object
+  -- `T.obj₂⟦n⟧` is written in the type of the scalar action, which `simp` cannot rewrite.
   rfl
 
 @[simp]
