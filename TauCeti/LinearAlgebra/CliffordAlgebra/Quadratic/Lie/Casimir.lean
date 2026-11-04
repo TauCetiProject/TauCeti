@@ -9,7 +9,6 @@ public import TauCeti.Algebra.Lie.HighestWeight.Casimir
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Quadratic.Lie.LeftRegular
 public import TauCeti.LinearAlgebra.CliffordAlgebra.ScalarTrace.Basic
 
-import TauCeti.Algebra.Lie.Killing.Perfect
 import TauCeti.LinearAlgebra.CliffordAlgebra.Basic
 import TauCeti.LinearAlgebra.CliffordAlgebra.Quadratic.Lie.Coordinates
 
@@ -34,6 +33,7 @@ The value of the scalar comes from the trace form of the lift: the scalar part o
 
 ## Main results
 
+* `CliffordAlgebra.scalarTrace_adjointCliffordHom`: the scalar part of `q x` vanishes.
 * `CliffordAlgebra.scalarTrace_adjointCliffordHom_mul_adjointCliffordHom`: the scalar part of
   `q x * q y` is `κ(x, y) / 8`.
 * `CliffordAlgebra.sum_adjointCliffordHom_mul_adjointCliffordHom_killingDualBasis`: the image of
@@ -86,31 +86,12 @@ variable (K) in
 private noncomputable abbrev adjLift : L →ₗ[K] CliffordAlgebra (killingQuadraticForm K L) :=
   (adjointCliffordHom K L : L →ₗ[K] CliffordAlgebra (killingQuadraticForm K L))
 
-omit [Invertible (2 : K)] in
-/-- The trace of `ad x`, written along a basis and its Killing dual, vanishes. -/
-private theorem sum_killingForm_lie_killingDualBasis_eq_zero (b : Module.Basis ι' K L) (x : L) :
-    ∑ i, killingForm K L ⁅x, b i⁆ (killingDualBasis b i) = 0 := by
-  have htrace := sum_killingForm_killingDualBasis_eq_trace b (LieAlgebra.ad K L x)
-  simp only [_root_.LieAlgebra.ad_apply] at htrace
-  rw [htrace]
-  refine LieModule.trace_toEnd_eq_zero_of_mem_lcs K L L le_rfl
-    (LieModule.derivedSeries_le_lowerCentralSeries K L 1 ?_)
-  rw [derivedSeries_one_eq_top_of_isKilling]
-  exact LieSubmodule.mem_top x
-
 omit [FiniteDimensional K L] [LieRing L] [LieAlgebra K L] [_root_.LieAlgebra.IsKilling K L] in
 /-- Four is nonzero in a field in which two is invertible. -/
 private theorem four_ne_zero_of_invertible : (4 : K) ≠ 0 := by
   have h4 : (4 : K) = 2 * 2 := by norm_num
   rw [h4]
   exact mul_ne_zero (Invertible.ne_zero (2 : K)) (Invertible.ne_zero (2 : K))
-
-omit [FiniteDimensional K L] [Invertible (2 : K)] [_root_.LieAlgebra.IsKilling K L] in
-/-- The polar form of the Killing quadratic form, pointwise. -/
-private theorem polar_killingQuadraticForm (a c : L) :
-    QuadraticMap.polar (killingQuadraticForm K L) a c = 2 * killingForm K L a c := by
-  have h := LinearMap.congr_fun₂ (polarBilin_killingQuadraticForm K L) a c
-  simpa only [QuadraticMap.polarBilin_apply_apply, LinearMap.smul_apply, smul_eq_mul] using h
 
 omit [FiniteDimensional K L] [Invertible (2 : K)] [_root_.LieAlgebra.IsKilling K L] in
 /-- The Clifford relation between a pair of generators and the Killing form. -/
@@ -125,21 +106,6 @@ private theorem adjLift_mul_gen (x y : L) :
   have h := kostant_lie_ι (K := K) x y
   rw [kostant_lie_def] at h
   rw [adjLift, LieHom.coe_toLinearMap, gen, gen, h, add_comm]
-
-/-- The bivector coordinate formula for the lift, without the bivector: four times the lift of `x`
-is the sum of the products of the generators of `⁅x, b i⁆` and `b' i`. -/
-private theorem four_smul_adjLift_eq_sum (b : Module.Basis ι' K L) (x : L) :
-    (4 : K) • adjLift K x = ∑ i, gen K ⁅x, b i⁆ * gen K (killingDualBasis b i) := by
-  have hprod (a c : L) : gen K a * gen K c = bivector (killingQuadraticForm K L) a c +
-      killingForm K L a c • (1 : CliffordAlgebra (killingQuadraticForm K L)) := by
-    rw [gen, gen, ι_mul_ι_eq_bivector_add, polar_killingQuadraticForm,
-      Algebra.algebraMap_eq_smul_one, smul_smul, invOf_mul_cancel_left]
-  simp_rw [hprod, Finset.sum_add_distrib, ← Finset.sum_smul,
-    sum_killingForm_lie_killingDualBasis_eq_zero, zero_smul, add_zero]
-  simp only [adjLift, LieHom.coe_toLinearMap]
-  rw [adjointCliffordHom_eq_sum_bivector b x, smul_smul,
-    mul_inv_cancel₀ four_ne_zero_of_invertible, one_smul]
-  simp only [adjointBivector_apply]
 
 /-- Kostant's cubic element, along a basis and its Killing dual. -/
 private noncomputable def cubic (b : Module.Basis ι' K L) :
@@ -171,8 +137,7 @@ private theorem gen_mul_cubic_add_cubic_mul_gen (b : Module.Basis ι' K L) (x : 
   have hmove := sum_apply_lie_killingDualBasis_add_eq_zero
     ((LinearMap.mul K _).compl₁₂ (ι (killingQuadraticForm K L)) (ι (killingQuadraticForm K L))) b x
   simp only [LinearMap.compl₁₂_apply, LinearMap.mul_apply'] at hmove
-  have hfour := four_smul_adjLift_eq_sum (K := K) b x
-  simp only [gen] at hfour
+  have hfour : (4 : K) • adjLift K x = _ := four_smul_adjointCliffordHom_eq_sum_ι_mul_ι b x
   rw [cubic, Finset.mul_sum, Finset.sum_mul, ← Finset.sum_add_distrib]
   simp_rw [hstep]
   rw [Finset.sum_sub_distrib, ← Finset.smul_sum, hlift]
@@ -258,16 +223,13 @@ omit [FiniteDimensional K L] [_root_.LieAlgebra.IsKilling K L] in
 /-- The scalar part of a product of two generators is the Killing form. -/
 private theorem scalarTrace_gen_mul_gen (a c : L) :
     scalarTrace (killingQuadraticForm K L) (gen K a * gen K c) = killingForm K L a c := by
-  have h := congrArg (scalarTrace (killingQuadraticForm K L)) (gen_mul_gen_add_swap (K := K) a c)
-  rw [map_add, scalarTrace_mul_comm (gen K c), map_smul, scalarTrace_one, smul_eq_mul, mul_one,
-    ← two_mul] at h
-  exact mul_left_cancel₀ (Invertible.ne_zero (2 : K)) h
+  rw [gen, gen, scalarTrace_ι_mul_ι, associated_killingQuadraticForm]
 
-/-- The scalar part of the lift vanishes. -/
-private theorem scalarTrace_adjLift (x : L) :
-    scalarTrace (killingQuadraticForm K L) (adjLift K x) = 0 := by
+/-- The scalar part of the quadratic lift of the adjoint representation vanishes. -/
+theorem scalarTrace_adjointCliffordHom (x : L) :
+    scalarTrace (killingQuadraticForm K L) (adjointCliffordHom K L x) = 0 := by
   have h := congrArg (scalarTrace (killingQuadraticForm K L))
-    (four_smul_adjLift_eq_sum (K := K) (Module.finBasis K L) x)
+    (four_smul_adjointCliffordHom_eq_sum_ι_mul_ι (Module.finBasis K L) x)
   simp_rw [map_sum, scalarTrace_gen_mul_gen, sum_killingForm_lie_killingDualBasis_eq_zero,
     map_smul, smul_eq_mul] at h
   exact (mul_eq_zero.mp h).resolve_left four_ne_zero_of_invertible
@@ -278,8 +240,8 @@ private theorem two_mul_scalarTrace_gen_mul_gen_mul_adjLift (a c y : L) :
       -killingForm K L a ⁅y, c⁆ := by
   have hsum : scalarTrace (killingQuadraticForm K L) (gen K a * gen K c * adjLift K y) +
       scalarTrace (killingQuadraticForm K L) (gen K c * gen K a * adjLift K y) = 0 := by
-    rw [← map_add, ← add_mul, gen_mul_gen_add_swap, smul_mul_assoc, one_mul, map_smul,
-      scalarTrace_adjLift, smul_zero]
+    rw [← map_add, ← add_mul, gen_mul_gen_add_swap, smul_mul_assoc, one_mul, map_smul]
+    simp only [adjLift, LieHom.coe_toLinearMap, scalarTrace_adjointCliffordHom, smul_zero]
   have hdiff : scalarTrace (killingQuadraticForm K L) (gen K c * gen K a * adjLift K y) =
       scalarTrace (killingQuadraticForm K L) (gen K a * gen K c * adjLift K y) +
         killingForm K L a ⁅y, c⁆ := by
@@ -298,7 +260,7 @@ theorem scalarTrace_adjointCliffordHom_mul_adjointCliffordHom (x y : L) :
   let b := Module.finBasis K L
   have hmul := congrArg
     (fun c ↦ scalarTrace (killingQuadraticForm K L) (c * adjLift K y))
-    (four_smul_adjLift_eq_sum (K := K) b x)
+    (four_smul_adjointCliffordHom_eq_sum_ι_mul_ι b x)
   simp only [smul_mul_assoc, map_smul, Finset.sum_mul, map_sum, smul_eq_mul] at hmul
   have hterm (i : Fin (Module.finrank K L)) :
       2 * scalarTrace (killingQuadraticForm K L)

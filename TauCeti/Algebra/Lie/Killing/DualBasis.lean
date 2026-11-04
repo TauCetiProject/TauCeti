@@ -8,6 +8,8 @@ module
 public import Mathlib.Algebra.Lie.Killing
 public import Mathlib.LinearAlgebra.BilinearForm.Properties
 
+import TauCeti.Algebra.Lie.Killing.Perfect
+
 /-!
 # Dual bases for the Killing form
 
@@ -23,6 +25,8 @@ against a basis and its Killing dual.
 
 * `TauCeti.sum_killingForm_killingDualBasis_eq_trace`: contraction against a Killing-dual basis
   computes the trace.
+* `TauCeti.sum_killingForm_lie_killingDualBasis_eq_zero`: the trace of `ad x`, written along a basis
+  and its Killing dual, vanishes.
 * `TauCeti.sum_apply_killingDualBasis_eq`: contraction of a bilinear map against a basis and its
   Killing dual is independent of the basis.
 * `TauCeti.sum_apply_killingDualBasis_of_isAdjointPair`: a Killing-adjoint pair may be moved between
@@ -118,6 +122,19 @@ theorem sum_killingForm_killingDualBasis_eq_trace (b : Module.Basis ι K L) (p :
     ∑ i, killingForm K L (p (b i)) (killingDualBasis b i) = LinearMap.trace K L p := by
   simp [LinearMap.trace_eq_matrix_trace K b, Matrix.trace, LinearMap.toMatrix_apply,
     repr_eq_killingForm]
+
+/-- **The trace of `ad x`, written along a basis and its Killing dual, vanishes**, because a Lie
+algebra with nondegenerate Killing form is perfect. -/
+theorem sum_killingForm_lie_killingDualBasis_eq_zero (b : Module.Basis ι K L) (x : L) :
+    ∑ i, killingForm K L ⁅x, b i⁆ (killingDualBasis b i) = 0 := by
+  have := b.finiteDimensional_of_finite
+  have htrace := sum_killingForm_killingDualBasis_eq_trace b (LieAlgebra.ad K L x)
+  simp only [LieAlgebra.ad_apply] at htrace
+  rw [htrace]
+  refine LieModule.trace_toEnd_eq_zero_of_mem_lcs K L L le_rfl
+    (LieModule.derivedSeries_le_lowerCentralSeries K L 1 ?_)
+  rw [derivedSeries_one_eq_top_of_isKilling]
+  exact LieSubmodule.mem_top x
 
 end DualBasis
 
