@@ -7,10 +7,12 @@ module
 
 public import Mathlib.Probability.ConditionalProbability
 public import TauCeti.MeasureTheory.OptimalTransport.MetricMeasure.Basic
+public import TauCeti.MeasureTheory.OptimalTransport.MetricMeasure.DistortionCoefficient
 public import TauCeti.MeasureTheory.OptimalTransport.Wasserstein.InternalEnergy.Basic
+public import TauCeti.MeasureTheory.OptimalTransport.Wasserstein.RenyiEntropy
 
 /-!
-# The curvature-dimension condition `CD(K, ∞)`
+# The curvature-dimension conditions `CD(K, ∞)` and `CD(K, N)`
 
 Let `M` be a metric-measure space (`TauCeti.MetricMeasureSpace`): a complete separable metric
 space `X` with its Borel structure and a reference measure `m` finite on bounded sets. Following
@@ -52,9 +54,35 @@ The condition constrains the geometry of `X`:
   satisfies `CD(K, ∞)`, whatever `K` is
   (`TauCeti.MetricMeasureSpace.not_curvatureDimensionInfinity_of_support_eq_pair`).
 
+## The finite-dimensional condition `CD(K, N)`
+
+For a dimension bound `N ≥ 1`, Sturm's condition `CD(K, N)`
+(`TauCeti.MetricMeasureSpace.CurvatureDimension M K N`) replaces the Boltzmann entropy by the
+Rényi entropies `S_{N'}(· | m)` (`TauCeti.renyiEntropy`) for `N' ≥ N`, and the term
+`(K / 2) t (1 - t) W₂²` by the distortion coefficients `τ_{K,N'}` (`TauCeti.distortionTau`). Write
+`P_∞(m)` for the laws absolutely continuous with respect to `m` with bounded support. Any
+`μ₀ = ρ₀ m` and `μ₁ = ρ₁ m` in `P_∞(m)` admit a quadratically optimal coupling `q` and a
+`W₂`-geodesic `(μ_t)` in `P_∞(m)` from `μ₀` to `μ₁` with
+
+`S_{N'}(μ_t | m) ≤ -∫ (τ₀ ρ₀(x₀)^{-1/N'} + τ₁ ρ₁(x₁)^{-1/N'}) dq(x₀, x₁)`,
+
+where `τ₀ = τ_{K,N'}^{(1-t)}(d(x₀, x₁))` and `τ₁ = τ_{K,N'}^{(t)}(d(x₀, x₁))`, for every
+`t ∈ [0, 1]` and every `N' ≥ N`. Here `ρ₀` and `ρ₁` are Radon–Nikodym derivatives with respect to
+`m`. As in Sturm's definition, the geodesic need not be induced by `q`, and full support of `m` is
+not part of the condition, as for the measure-contraction property
+`TauCeti.MetricMeasureSpace.MeasureContraction`.
+
+Following Sturm, the coefficient `τ_{K,N'}^{(s)}(θ)` is infinite at every time `s`, including
+`s = 1`, once `K > 0` and `θ` exceeds the Bonnet–Myers distance `π √((N' - 1) / K)`. Hence the
+condition at `t = 0` already forces the **generalised Bonnet–Myers theorem**: under `CD(K, N)`
+with `K > 0` and `N ≥ 1`, the support of `m` has diameter at most `π √((N - 1) / K)`
+(`TauCeti.MetricMeasureSpace.CurvatureDimension.dist_le`).
+
 ## Main definitions
 
 * `TauCeti.MetricMeasureSpace.CurvatureDimensionInfinity M K`: the condition `CD(K, ∞)` for the
+  metric-measure space `M`.
+* `TauCeti.MetricMeasureSpace.CurvatureDimension M K N`: the condition `CD(K, N)` for the
   metric-measure space `M`.
 
 ## Main statements
@@ -67,10 +95,18 @@ The condition constrains the geometry of `X`:
   `CD(K, ∞)`, any two points have approximate midpoints.
 * `TauCeti.MetricMeasureSpace.not_curvatureDimensionInfinity_of_support_eq_pair`: a reference
   measure supported on two points satisfies `CD(K, ∞)` for no `K`.
+* `TauCeti.MetricMeasureSpace.CurvatureDimension.mono`,
+  `TauCeti.MetricMeasureSpace.CurvatureDimension.mono_dimension`: `CD(K, N)` implies `CD(K', N')`
+  for `K' ≤ K` and `N ≤ N'`.
+* `TauCeti.MetricMeasureSpace.CurvatureDimension.dist_le`,
+  `TauCeti.MetricMeasureSpace.CurvatureDimension.diam_support_le`: the Bonnet–Myers diameter bound
+  `diam (supp m) ≤ π √((N - 1) / K)` under `CD(K, N)` with `K > 0` and `N ≥ 1`.
 
 ## References
 
 * K.-T. Sturm, *On the geometry of metric measure spaces. I*, Acta Math. 196 (2006), 65–131.
+* K.-T. Sturm, *On the geometry of metric measure spaces. II*, Acta Math. 196 (2006), 133–177,
+  Definition 1.3 and Corollary 2.6.
 * M.-K. von Renesse and K.-T. Sturm, *Transport inequalities, gradient estimates, entropy, and
   Ricci curvature*, Comm. Pure Appl. Math. 58 (2005), 923–940.
 * J. Lott and C. Villani, *Ricci curvature for metric-measure spaces via optimal transport*,
@@ -112,29 +148,24 @@ theorem exists_boltzmannEntropy_ne_top_and_ne_bot_and_wassersteinEDist_dirac_le
   have hstop : m s ≠ ∞ :=
     ((measure_mono ((ball_subset_ball (min_le_right r ρ)).trans hρU)).trans_lt hmU).ne
   -- The normalised restriction `m[|s]`, with its constant density `(m s)⁻¹` on `s`.
-  have hprob : IsProbabilityMeasure m[|s] := cond_isProbabilityMeasure_of_finite hs0 hstop
   set c : ℝ≥0 := ((m s)⁻¹).toNNReal
   have hc : (c : ℝ≥0∞) = (m s)⁻¹ := ENNReal.coe_toNNReal (ENNReal.inv_ne_top.2 hs0)
   have hdens : m[|s] = m.withDensity fun y ↦ ((s.indicator (fun _ ↦ c) y : ℝ≥0) : ℝ≥0∞) := by
     simp_rw [ENNReal.coe_indicator, withDensity_indicator hs, withDensity_const, hc]
     rw [ProbabilityTheory.cond]
-  have hW : wassersteinEDist p (Measure.dirac x) m[|s] ≤ ENNReal.ofReal r := by
-    have hbound : ∀ᵐ y ∂m[|s], ‖edist x y‖ₑ ≤ ENNReal.ofReal r :=
-      (ae_cond_mem hs).mono fun y hy ↦ by
+  obtain ⟨μ, hμ⟩ := WassersteinSpace.exists_coe_eq_cond (p := p) hs isBounded_ball hs0 hstop
+  have hW : wassersteinEDist p (Measure.dirac x) ((μ : ProbabilityMeasure X) : Measure X) ≤
+      ENNReal.ofReal r := by
+    have hbound : ∀ᵐ y ∂((μ : ProbabilityMeasure X) : Measure X),
+        ‖edist x y‖ₑ ≤ ENNReal.ofReal r :=
+      hμ ▸ (ae_cond_mem hs).mono fun y hy ↦ by
         rw [enorm_eq_self, edist_comm, edist_dist]
         exact ENNReal.ofReal_le_ofReal ((mem_ball.1 hy).le.trans (min_le_left r ρ))
-    calc wassersteinEDist p (Measure.dirac x) m[|s]
-        ≤ ENNReal.ofReal r • m[|s] univ ^ p.toReal⁻¹ := by
+    calc wassersteinEDist p (Measure.dirac x) ((μ : ProbabilityMeasure X) : Measure X)
+        ≤ ENNReal.ofReal r • ((μ : ProbabilityMeasure X) : Measure X) univ ^ p.toReal⁻¹ := by
           rw [wassersteinEDist_dirac_left measurable_edist]
           exact eLpNorm_le_of_ae_enorm_bound (by fun_prop) hbound
       _ = ENNReal.ofReal r := by simp
-  have hmom : HasFiniteMoment p m[|s] :=
-    (hasFiniteMoment_iff_exists_wassersteinEDist_dirac_ne_top measurable_edist _).2
-      ⟨x, ne_top_of_le_ne_top ENNReal.ofReal_ne_top hW⟩
-  have hcoe : ((WassersteinSpace.mk (p := p) ⟨m[|s], hprob⟩ hmom : ProbabilityMeasure X) :
-      Measure X) = m[|s] :=
-    (congrArg ProbabilityMeasure.toMeasure (WassersteinSpace.coe_mk _ _)).trans
-      (ProbabilityMeasure.coe_mk _ _)
   -- The entropy is `c log c * m s`, the integral of a constant over `s`.
   have hV : (fun y ↦ ((s.indicator (fun _ ↦ c) y : ℝ≥0) : ℝ) *
       Real.log (s.indicator (fun _ ↦ c) y : ℝ≥0)) =
@@ -145,7 +176,7 @@ theorem exists_boltzmannEntropy_ne_top_and_ne_bot_and_wassersteinEDist_dirac_le
     rw [hdens, boltzmannEntropy_withDensity (measurable_const.indicator hs).aemeasurable, hV,
       potentialEnergy_of_integrable ((integrableOn_const hstop).integrable_indicator hs)]
     exact ⟨_, rfl⟩
-  refine ⟨.mk ⟨m[|s], hprob⟩ hmom, ?_, ?_, by rwa [hcoe]⟩ <;> rw [hcoe, hE]
+  refine ⟨μ, ?_, ?_, hW⟩ <;> rw [hμ, hE]
   exacts [EReal.coe_ne_top E, EReal.coe_ne_bot E]
 
 end FiniteEntropy
@@ -272,6 +303,151 @@ theorem not_curvatureDimensionInfinity_of_support_eq_pair {x₀ x₁ : X} (hne :
   rcases hz with rfl | rfl <;>
   · simp only [dist_self] at hle
     nlinarith
+
+/-! ### The finite-dimensional condition `CD(K, N)` -/
+
+variable {N N' : ℝ}
+
+/-- The **curvature-dimension condition** `CD(K, N)` of Sturm for the metric-measure space `M`
+with reference measure `m`. Write `P_∞(m)` for the laws absolutely continuous with respect to `m`
+with bounded support. Any two laws `μ₀ = ρ₀ m` and `μ₁ = ρ₁ m` in `P_∞(m)` admit a coupling `q`
+that is optimal for the quadratic cost and a `W₂`-geodesic `(μ_t)` from `μ₀` to `μ₁` running in
+`P_∞(m)` such that, for every `t ∈ [0, 1]` and every `N' ≥ N`,
+
+`S_{N'}(μ_t | m) ≤ -∫ (τ₀ ρ₀(x₀)^{-1/N'} + τ₁ ρ₁(x₁)^{-1/N'}) dq(x₀, x₁)`,
+
+where `τ₀ = τ_{K,N'}^{(1-t)}(d(x₀, x₁))` and `τ₁ = τ_{K,N'}^{(t)}(d(x₀, x₁))`.
+
+Here `S_{N'}` is the Rényi entropy `TauCeti.renyiEntropy`, `τ_{K,N'}` is the distortion
+coefficient `TauCeti.distortionTau` and `ρᵢ` is the Radon–Nikodym derivative of `μᵢ` with respect
+to `m`. Laws of bounded support have finite second moment, so the laws involved are points of
+`TauCeti.WassersteinSpace 2 X`. As in Sturm's definition, the geodesic need not be induced by `q`,
+and `m` need not have full support. The condition is meaningful for `N ≥ 1`. -/
+def CurvatureDimension (M : MetricMeasureSpace X) (K N : ℝ) : Prop :=
+  ∀ ⦃μ₀ μ₁ : WassersteinSpace 2 X⦄,
+    ((μ₀ : ProbabilityMeasure X) : Measure X) ≪ M.reference →
+    ((μ₁ : ProbabilityMeasure X) : Measure X) ≪ M.reference →
+    Bornology.IsBounded ((μ₀ : ProbabilityMeasure X) : Measure X).support →
+    Bornology.IsBounded ((μ₁ : ProbabilityMeasure X) : Measure X).support →
+    ∃ q : Measure (X × X),
+      IsOptimalCoupling (fun z : X × X ↦ edist z.1 z.2 ^ (2 : ℝ)) q
+        ((μ₀ : ProbabilityMeasure X) : Measure X) ((μ₁ : ProbabilityMeasure X) : Measure X) ∧
+      ∃ γ : ℝ → WassersteinSpace 2 X, IsGeodesicSegment γ μ₀ μ₁ ∧
+        ∀ t ∈ Icc (0 : ℝ) 1, ((γ t : ProbabilityMeasure X) : Measure X) ≪ M.reference ∧
+          Bornology.IsBounded ((γ t : ProbabilityMeasure X) : Measure X).support ∧
+          ∀ N' ≥ N, renyiEntropy N' M.reference ((γ t : ProbabilityMeasure X) : Measure X) ≤
+            -((∫⁻ z, (distortionTau K N' (1 - t) (dist z.1 z.2) *
+                ((μ₀ : ProbabilityMeasure X) : Measure X).rnDeriv M.reference z.1 ^ (-N'⁻¹) +
+              distortionTau K N' t (dist z.1 z.2) *
+                ((μ₁ : ProbabilityMeasure X) : Measure X).rnDeriv M.reference z.2 ^ (-N'⁻¹)) ∂q :
+                  ℝ≥0∞) : EReal)
+
+/-- The curvature-dimension condition `CD(K, N)`, unfolded. -/
+theorem curvatureDimension_iff : M.CurvatureDimension K N ↔
+    ∀ ⦃μ₀ μ₁ : WassersteinSpace 2 X⦄,
+      ((μ₀ : ProbabilityMeasure X) : Measure X) ≪ M.reference →
+      ((μ₁ : ProbabilityMeasure X) : Measure X) ≪ M.reference →
+      Bornology.IsBounded ((μ₀ : ProbabilityMeasure X) : Measure X).support →
+      Bornology.IsBounded ((μ₁ : ProbabilityMeasure X) : Measure X).support →
+      ∃ q : Measure (X × X),
+        IsOptimalCoupling (fun z : X × X ↦ edist z.1 z.2 ^ (2 : ℝ)) q
+          ((μ₀ : ProbabilityMeasure X) : Measure X) ((μ₁ : ProbabilityMeasure X) : Measure X) ∧
+        ∃ γ : ℝ → WassersteinSpace 2 X, IsGeodesicSegment γ μ₀ μ₁ ∧
+          ∀ t ∈ Icc (0 : ℝ) 1, ((γ t : ProbabilityMeasure X) : Measure X) ≪ M.reference ∧
+            Bornology.IsBounded ((γ t : ProbabilityMeasure X) : Measure X).support ∧
+            ∀ N' ≥ N, renyiEntropy N' M.reference ((γ t : ProbabilityMeasure X) : Measure X) ≤
+              -((∫⁻ z, (distortionTau K N' (1 - t) (dist z.1 z.2) *
+                  ((μ₀ : ProbabilityMeasure X) : Measure X).rnDeriv M.reference z.1 ^ (-N'⁻¹) +
+                distortionTau K N' t (dist z.1 z.2) *
+                  ((μ₁ : ProbabilityMeasure X) : Measure X).rnDeriv M.reference z.2 ^ (-N'⁻¹)) ∂q :
+                    ℝ≥0∞) : EReal) :=
+  Iff.rfl
+
+/-- `CD(K, N)` implies `CD(K', N)` for every `K' ≤ K`: the distortion coefficient increases with
+the curvature bound. -/
+theorem CurvatureDimension.mono (h : M.CurvatureDimension K N) (hK : K' ≤ K) :
+    M.CurvatureDimension K' N := by
+  intro μ₀ μ₁ hac₀ hac₁ hb₀ hb₁
+  obtain ⟨q, hq, γ, hγ, hall⟩ := h hac₀ hac₁ hb₀ hb₁
+  refine ⟨q, hq, γ, hγ, fun t ht ↦ ?_⟩
+  obtain ⟨hac, hb, hS⟩ := hall t ht
+  refine ⟨hac, hb, fun N' hN' ↦ (hS N' hN').trans ?_⟩
+  rw [EReal.neg_le_neg_iff, EReal.coe_ennreal_le_coe_ennreal_iff]
+  refine lintegral_mono fun z ↦ add_le_add (mul_le_mul_left ?_ _) (mul_le_mul_left ?_ _)
+  · exact distortionTau_left_monotone (sub_nonneg.2 ht.2) (sub_le_self _ ht.1) hK
+  · exact distortionTau_left_monotone ht.1 ht.2 hK
+
+/-- `CD(K, N)` implies `CD(K, N')` for every `N' ≥ N`: the defining inequality is required for
+every dimension bound above `N`. -/
+theorem CurvatureDimension.mono_dimension (h : M.CurvatureDimension K N) (hN : N ≤ N') :
+    M.CurvatureDimension K N' := by
+  intro μ₀ μ₁ hac₀ hac₁ hb₀ hb₁
+  obtain ⟨q, hq, γ, hγ, hall⟩ := h hac₀ hac₁ hb₀ hb₁
+  exact ⟨q, hq, γ, hγ, fun t ht ↦ (hall t ht).imp_right fun h' ↦
+    h'.imp_right fun hS N'' hN'' ↦ hS N'' (hN.trans hN'')⟩
+
+open scoped Real in
+/-- **The generalised Bonnet–Myers theorem under `CD(K, N)`.** If `M` satisfies `CD(K, N)` with
+`K > 0` and `N ≥ 1`, any two points of the support of the reference measure are at distance at
+most `π √((N - 1) / K)`. -/
+theorem CurvatureDimension.dist_le (h : M.CurvatureDimension K N) (hK : 0 < K) (hN : 1 ≤ N)
+    {x y : X} (hx : x ∈ M.support) (hy : y ∈ M.support) : dist x y ≤ π * √((N - 1) / K) := by
+  by_contra! hlt
+  -- Uniform laws on small balls about `x` and `y`: all pairs of their points are beyond the
+  -- Bonnet–Myers distance.
+  set r := (dist x y - π * √((N - 1) / K)) / 2 with hr_def
+  have hr : 0 < r := by linarith
+  have hball (z : X) : ∀ᵐ w ∂M.reference[|ball z r], w ∈ ball z r := ae_cond_mem measurableSet_ball
+  have hbdd (z : X) : Bornology.IsBounded (M.reference[|ball z r]).support :=
+    isBounded_closedBall.subset (Measure.support_subset_of_isClosed isClosed_closedBall
+      ((hball z).mono fun _ hw ↦ ball_subset_closedBall hw))
+  have hpos {z : X} (hz : z ∈ M.support) : M.reference (ball z r) ≠ 0 :=
+    ((M.mem_support_iff z).1 hz _ (ball_mem_nhds z hr)).ne'
+  obtain ⟨μ₀, hμ₀⟩ := WassersteinSpace.exists_coe_eq_cond (p := 2) measurableSet_ball
+    isBounded_ball (hpos hx) (M.finite_bounded _ isBounded_ball).ne
+  obtain ⟨μ₁, hμ₁⟩ := WassersteinSpace.exists_coe_eq_cond (p := 2) measurableSet_ball
+    isBounded_ball (hpos hy) (M.finite_bounded _ isBounded_ball).ne
+  have hac₀ : ((μ₀ : ProbabilityMeasure X) : Measure X) ≪ M.reference :=
+    hμ₀ ▸ cond_absolutelyContinuous
+  obtain ⟨q, hq, γ, hγ, hall⟩ := h hac₀ (hμ₁ ▸ cond_absolutelyContinuous) (hμ₀ ▸ hbdd x)
+    (hμ₁ ▸ hbdd y)
+  have hS := (hall 0 (left_mem_Icc.2 zero_le_one)).2.2 N le_rfl
+  rw [hγ.source] at hS
+  have : IsProbabilityMeasure q := hq.toIsCoupling.isProbabilityMeasure
+  -- The entropy of `μ₀` is finite, since `μ₀` is carried by a ball of finite mass.
+  refine renyiEntropy_ne_bot_of_measure_compl_eq_zero hN (A := ball x r)
+    (by rw [hμ₀]; exact mem_ae_iff.1 (hball x)) (M.finite_bounded _ isBounded_ball).ne
+    (le_bot_iff.1 (hS.trans_eq ?_))
+  -- The right side at time `0` is `-∞`: the distortion coefficient is infinite `q`-a.e.
+  rw [EReal.neg_eq_bot_iff, EReal.coe_ennreal_eq_top_iff]
+  have h₀ : ∀ᵐ z ∂q, z.1 ∈ ball x r ∧
+      ((μ₀ : ProbabilityMeasure X) : Measure X).rnDeriv M.reference z.1 ≠ ∞ :=
+    hq.toIsCoupling.measurePreserving_fst.quasiMeasurePreserving.ae
+      (((hμ₀ ▸ hball x : ∀ᵐ w ∂((μ₀ : ProbabilityMeasure X) : Measure X), w ∈ ball x r)).and
+        (hac₀.ae_le (Measure.rnDeriv_ne_top _ _)))
+  have h₁ : ∀ᵐ z ∂q, z.2 ∈ ball y r :=
+    hq.toIsCoupling.measurePreserving_snd.quasiMeasurePreserving.ae (hμ₁ ▸ hball y)
+  rw [lintegral_congr_ae (g := fun _ ↦ ∞) ?_, lintegral_const, measure_univ, mul_one]
+  filter_upwards [h₀, h₁] with z ⟨hz₁, hρ⟩ hz₂
+  rw [mem_ball] at hz₁ hz₂
+  have hd : π * √((N - 1) / K) < dist z.1 z.2 := by
+    linarith [dist_triangle4 x z.1 z.2 y, dist_comm x z.1]
+  have hne : ((μ₀ : ProbabilityMeasure X) : Measure X).rnDeriv M.reference z.1 ^ (-N⁻¹) ≠ 0 := by
+    simp [ENNReal.rpow_eq_zero_iff, hρ, zero_le_one.trans hN]
+  rw [distortionTau_eq_top_of_lt hK hd, ENNReal.top_mul hne, top_add]
+
+open scoped Real in
+/-- **The Bonnet–Myers diameter bound under `CD(K, N)`**, for `K > 0` and `N ≥ 1`: the support of
+the reference measure has diameter at most `π √((N - 1) / K)`. -/
+theorem CurvatureDimension.diam_support_le (h : M.CurvatureDimension K N) (hK : 0 < K)
+    (hN : 1 ≤ N) : diam M.support ≤ π * √((N - 1) / K) :=
+  diam_le_of_forall_dist_le (by positivity) fun _ hx _ hy ↦ h.dist_le hK hN hx hy
+
+open scoped Real in
+/-- Under `CD(K, N)` with `K > 0` and `N ≥ 1`, the support of the reference measure is bounded. -/
+theorem CurvatureDimension.isBounded_support (h : M.CurvatureDimension K N) (hK : 0 < K)
+    (hN : 1 ≤ N) : Bornology.IsBounded M.support :=
+  isBounded_iff.2 ⟨_, fun _ hx _ hy ↦ h.dist_le hK hN hx hy⟩
 
 end MetricMeasureSpace
 
