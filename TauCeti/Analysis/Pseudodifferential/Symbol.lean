@@ -44,7 +44,7 @@ the frequency is not a symbol of order zero.
 
 Mixed derivatives `∂_x^α ∂_ξ^β` are indexed by lists of coordinates, so that they can be
 iterated one direction at a time; for smooth maps they do not depend on the order of the
-directions (`List.Perm.iteratedLineDeriv_eq`).
+directions (`List.Perm.iteratedFDerivAlong_eq`).
 -/
 
 public section
@@ -67,7 +67,11 @@ variable {n : ℕ} {A : Type*} [NormedAddCommGroup A] [NormedSpace ℝ A]
 `[j₁, …, jₖ]`, the derivative in the coordinate `jₖ` being taken first. -/
 def coordinateDeriv (indices : List (Fin n)) (f : CoordinateSpace n → A) :
     CoordinateSpace n → A :=
-  iteratedLineDeriv ℝ (indices.map fun j => EuclideanSpace.single j 1) f
+  iteratedFDerivAlong ℝ (indices.map fun j => EuclideanSpace.single j 1) f
+
+theorem coordinateDeriv_eq_iteratedFDerivAlong (l : List (Fin n)) (f : CoordinateSpace n → A) :
+    coordinateDeriv l f = iteratedFDerivAlong ℝ (l.map fun j => EuclideanSpace.single j 1) f :=
+  (rfl)
 
 @[simp]
 theorem coordinateDeriv_nil (f : CoordinateSpace n → A) : coordinateDeriv [] f = f := by
@@ -83,13 +87,18 @@ theorem coordinateDeriv_cons_apply (j : Fin n) (l : List (Fin n)) (f : Coordinat
 @[simp]
 theorem coordinateDeriv_cons_const (j : Fin n) (l : List (Fin n)) (c : A) :
     coordinateDeriv (j :: l) (fun _ : CoordinateSpace n => c) = 0 :=
-  iteratedLineDeriv_cons_const _ _ c
+  iteratedFDerivAlong_cons_const _ _ c
 
 /-- The mixed derivative `∂_x^α ∂_ξ^β a(x, ξ)` of a function of a position `x` and a frequency
 `ξ`: first differentiate in the frequency along `β`, then in the position along `α`. -/
 def mixedDeriv (α β : List (Fin n)) (a : CoordinateSpace n × CoordinateSpace n → A)
     (x ξ : CoordinateSpace n) : A :=
   coordinateDeriv α (fun y => coordinateDeriv β (fun η => a (y, η)) ξ) x
+
+theorem mixedDeriv_def (α β : List (Fin n)) (a : CoordinateSpace n × CoordinateSpace n → A)
+    (x ξ : CoordinateSpace n) :
+    mixedDeriv α β a x ξ = coordinateDeriv α (fun y => coordinateDeriv β (fun η => a (y, η)) ξ) x :=
+  (rfl)
 
 @[simp]
 theorem mixedDeriv_nil_nil (a : CoordinateSpace n × CoordinateSpace n → A)
@@ -99,71 +108,71 @@ theorem mixedDeriv_nil_nil (a : CoordinateSpace n × CoordinateSpace n → A)
 /-- For a smooth map, the mixed derivative `∂_x^α ∂_ξ^β a` is the iterated directional derivative
 of `a` on `ℝⁿ × ℝⁿ` along the position directions of `α` followed by the frequency directions
 of `β`. -/
-theorem mixedDeriv_eq_iteratedLineDeriv {a : CoordinateSpace n × CoordinateSpace n → A}
+theorem mixedDeriv_eq_iteratedFDerivAlong {a : CoordinateSpace n × CoordinateSpace n → A}
     (ha : ContDiff ℝ ∞ a) (α β : List (Fin n)) (x ξ : CoordinateSpace n) :
-    mixedDeriv α β a x ξ = iteratedLineDeriv ℝ
+    mixedDeriv α β a x ξ = iteratedFDerivAlong ℝ
       (α.map (fun j => (EuclideanSpace.single j 1, 0)) ++
         β.map (fun j => (0, EuclideanSpace.single j 1))) a (x, ξ) := by
-  have hinner : ∀ y, coordinateDeriv β (fun η => a (y, η)) ξ = iteratedLineDeriv ℝ
+  have hinner : ∀ y, coordinateDeriv β (fun η => a (y, η)) ξ = iteratedFDerivAlong ℝ
       (β.map (fun j => (0, EuclideanSpace.single j 1))) a (y, ξ) := fun y => by
-    rw [coordinateDeriv, iteratedLineDeriv_comp_of_hasFDerivAt (hasFDerivAt_prodMk_right y) ha _
+    rw [coordinateDeriv, iteratedFDerivAlong_comp_of_hasFDerivAt (hasFDerivAt_prodMk_right y) ha _
       (by exact_mod_cast le_top)]
     simp [Function.comp_def]
   rw [mixedDeriv, funext hinner, coordinateDeriv,
-    iteratedLineDeriv_comp_of_hasFDerivAt (hasFDerivAt_prodMk_left · ξ)
-      (ha.iteratedLineDeriv (m := ∞) _ (by exact_mod_cast le_top)) _ (by exact_mod_cast le_top),
-    iteratedLineDeriv_append]
+    iteratedFDerivAlong_comp_of_hasFDerivAt (hasFDerivAt_prodMk_left · ξ)
+      (ha.iteratedFDerivAlong (m := ∞) _ (by exact_mod_cast le_top)) _ (by exact_mod_cast le_top),
+    iteratedFDerivAlong_append]
   simp [Function.comp_def]
 
 @[simp]
 theorem mixedDeriv_zero (α β : List (Fin n)) (x ξ : CoordinateSpace n) :
     mixedDeriv α β (0 : CoordinateSpace n × CoordinateSpace n → A) x ξ = 0 := by
-  rw [mixedDeriv_eq_iteratedLineDeriv (a := 0) contDiff_zero_fun, iteratedLineDeriv_zero,
+  rw [mixedDeriv_eq_iteratedFDerivAlong (a := 0) contDiff_zero_fun, iteratedFDerivAlong_zero,
     Pi.zero_apply]
 
 theorem mixedDeriv_add {a b : CoordinateSpace n × CoordinateSpace n → A} (ha : ContDiff ℝ ∞ a)
     (hb : ContDiff ℝ ∞ b) (α β : List (Fin n)) (x ξ : CoordinateSpace n) :
     mixedDeriv α β (a + b) x ξ = mixedDeriv α β a x ξ + mixedDeriv α β b x ξ := by
-  rw [mixedDeriv_eq_iteratedLineDeriv (a := a + b) (ha.add hb),
-    iteratedLineDeriv_add ha hb _ (by exact_mod_cast le_top), mixedDeriv_eq_iteratedLineDeriv ha,
-    mixedDeriv_eq_iteratedLineDeriv hb, Pi.add_apply]
+  rw [mixedDeriv_eq_iteratedFDerivAlong (a := a + b) (ha.add hb),
+    iteratedFDerivAlong_add ha hb _ (by exact_mod_cast le_top),
+    mixedDeriv_eq_iteratedFDerivAlong ha, mixedDeriv_eq_iteratedFDerivAlong hb, Pi.add_apply]
 
 theorem mixedDeriv_neg {a : CoordinateSpace n × CoordinateSpace n → A} (ha : ContDiff ℝ ∞ a)
     (α β : List (Fin n)) (x ξ : CoordinateSpace n) :
     mixedDeriv α β (-a) x ξ = -mixedDeriv α β a x ξ := by
-  rw [mixedDeriv_eq_iteratedLineDeriv (a := -a) ha.neg, iteratedLineDeriv_neg,
-    mixedDeriv_eq_iteratedLineDeriv ha, Pi.neg_apply]
+  rw [mixedDeriv_eq_iteratedFDerivAlong (a := -a) ha.neg, iteratedFDerivAlong_neg,
+    mixedDeriv_eq_iteratedFDerivAlong ha, Pi.neg_apply]
 
 theorem mixedDeriv_sub {a b : CoordinateSpace n × CoordinateSpace n → A} (ha : ContDiff ℝ ∞ a)
     (hb : ContDiff ℝ ∞ b) (α β : List (Fin n)) (x ξ : CoordinateSpace n) :
     mixedDeriv α β (a - b) x ξ = mixedDeriv α β a x ξ - mixedDeriv α β b x ξ := by
-  rw [mixedDeriv_eq_iteratedLineDeriv (a := a - b) (ha.sub hb),
-    iteratedLineDeriv_sub ha hb _ (by exact_mod_cast le_top), mixedDeriv_eq_iteratedLineDeriv ha,
-    mixedDeriv_eq_iteratedLineDeriv hb, Pi.sub_apply]
+  rw [mixedDeriv_eq_iteratedFDerivAlong (a := a - b) (ha.sub hb),
+    iteratedFDerivAlong_sub ha hb _ (by exact_mod_cast le_top),
+    mixedDeriv_eq_iteratedFDerivAlong ha, mixedDeriv_eq_iteratedFDerivAlong hb, Pi.sub_apply]
 
 theorem mixedDeriv_const_smul {R : Type*} [Semiring R] [Module R A] [SMulCommClass ℝ R A]
     [ContinuousConstSMul R A] {a : CoordinateSpace n × CoordinateSpace n → A}
     (ha : ContDiff ℝ ∞ a) (c : R) (α β : List (Fin n)) (x ξ : CoordinateSpace n) :
     mixedDeriv α β (c • a) x ξ = c • mixedDeriv α β a x ξ := by
-  rw [mixedDeriv_eq_iteratedLineDeriv (a := c • a) (ha.const_smul c),
-    iteratedLineDeriv_const_smul ha _ _ (by exact_mod_cast le_top),
-    mixedDeriv_eq_iteratedLineDeriv ha, Pi.smul_apply]
+  rw [mixedDeriv_eq_iteratedFDerivAlong (a := c • a) (ha.const_smul c),
+    iteratedFDerivAlong_const_smul ha _ _ (by exact_mod_cast le_top),
+    mixedDeriv_eq_iteratedFDerivAlong ha, Pi.smul_apply]
 
 /-- Coordinate derivatives of smooth maps are smooth. -/
 theorem _root_.ContDiff.coordinateDeriv {f : CoordinateSpace n → A} (hf : ContDiff ℝ ∞ f)
     (l : List (Fin n)) : ContDiff ℝ ∞ (coordinateDeriv l f) :=
-  hf.iteratedLineDeriv _ (by exact_mod_cast le_top)
+  hf.iteratedFDerivAlong _ (by exact_mod_cast le_top)
 
 @[simp]
 theorem coordinateDeriv_zero (l : List (Fin n)) :
     coordinateDeriv l (0 : CoordinateSpace n → A) = 0 :=
-  iteratedLineDeriv_zero _
+  iteratedFDerivAlong_zero _
 
 /-- The mixed derivatives of a smooth map vanish wherever the map vanishes nearby. -/
 theorem mixedDeriv_eq_zero_of_eventuallyEq_zero {a : CoordinateSpace n × CoordinateSpace n → A}
     (ha : ContDiff ℝ ∞ a) {x ξ : CoordinateSpace n} (h : a =ᶠ[𝓝 (x, ξ)] 0)
     (α β : List (Fin n)) : mixedDeriv α β a x ξ = 0 := by
-  rw [mixedDeriv_eq_iteratedLineDeriv ha, iteratedLineDeriv_eq_zero_of_eventuallyEq_zero h]
+  rw [mixedDeriv_eq_iteratedFDerivAlong ha, iteratedFDerivAlong_eq_zero_of_eventuallyEq_zero h]
 
 /-- For a function of the position alone, the mixed derivatives without frequency directions
 are its coordinate derivatives. -/
@@ -198,14 +207,14 @@ theorem mixedDeriv_fderiv_spatial {a : CoordinateSpace n × CoordinateSpace n �
     mixedDeriv α β (fun p => fderiv ℝ a p (EuclideanSpace.single j 1, 0)) x ξ =
       mixedDeriv (α ++ [j]) β a x ξ := by
   have hfun : (fun p => fderiv ℝ a p (EuclideanSpace.single j 1, 0)) =
-      iteratedLineDeriv ℝ [(EuclideanSpace.single j 1, 0)] a := by
+      iteratedFDerivAlong ℝ [(EuclideanSpace.single j 1, 0)] a := by
     funext p
     simp
-  rw [hfun, mixedDeriv_eq_iteratedLineDeriv (ha.iteratedLineDeriv _ (by exact_mod_cast le_top)),
-    mixedDeriv_eq_iteratedLineDeriv ha, ← iteratedLineDeriv_append, List.map_append,
+  rw [hfun, mixedDeriv_eq_iteratedFDerivAlong (ha.iteratedFDerivAlong _ (by exact_mod_cast le_top)),
+    mixedDeriv_eq_iteratedFDerivAlong ha, ← iteratedFDerivAlong_append, List.map_append,
     List.append_assoc, List.append_assoc]
   exact congrFun
-    ((List.perm_append_comm.append_left _).iteratedLineDeriv_eq ha (by exact_mod_cast le_top)) _
+    ((List.perm_append_comm.append_left _).iteratedFDerivAlong_eq ha (by exact_mod_cast le_top)) _
 
 /-- Differentiating in the frequency coordinate `j` appends `j` to the frequency directions. -/
 theorem mixedDeriv_fderiv_frequency {a : CoordinateSpace n × CoordinateSpace n → A}
@@ -213,11 +222,11 @@ theorem mixedDeriv_fderiv_frequency {a : CoordinateSpace n × CoordinateSpace n 
     mixedDeriv α β (fun p => fderiv ℝ a p (0, EuclideanSpace.single j 1)) x ξ =
       mixedDeriv α (β ++ [j]) a x ξ := by
   have hfun : (fun p => fderiv ℝ a p (0, EuclideanSpace.single j 1)) =
-      iteratedLineDeriv ℝ [(0, EuclideanSpace.single j 1)] a := by
+      iteratedFDerivAlong ℝ [(0, EuclideanSpace.single j 1)] a := by
     funext p
     simp
-  rw [hfun, mixedDeriv_eq_iteratedLineDeriv (ha.iteratedLineDeriv _ (by exact_mod_cast le_top)),
-    mixedDeriv_eq_iteratedLineDeriv ha, ← iteratedLineDeriv_append, List.map_append,
+  rw [hfun, mixedDeriv_eq_iteratedFDerivAlong (ha.iteratedFDerivAlong _ (by exact_mod_cast le_top)),
+    mixedDeriv_eq_iteratedFDerivAlong ha, ← iteratedFDerivAlong_append, List.map_append,
     List.append_assoc]
   rfl
 
@@ -367,10 +376,12 @@ theorem coefficient_sub (a b : Symbol n V W m) :
 theorem coefficient_smul (c : ℂ) (a : Symbol n V W m) : (c • a).coefficient = c • a.coefficient :=
   (rfl)
 
+@[simp]
 theorem coefficient_nsmul (k : ℕ) (a : Symbol n V W m) :
     (k • a).coefficient = k • a.coefficient :=
   Nat.cast_smul_eq_nsmul ℂ k a.coefficient
 
+@[simp]
 theorem coefficient_zsmul (k : ℤ) (a : Symbol n V W m) :
     (k • a).coefficient = k • a.coefficient :=
   Int.cast_smul_eq_zsmul ℂ k a.coefficient
@@ -395,6 +406,15 @@ def inclusion (h : m ≤ m') : Symbol n V W m →ₗ[ℂ] Symbol n V W m' where
 theorem coefficient_inclusion (h : m ≤ m') (a : Symbol n V W m) :
     (inclusion h a).coefficient = a.coefficient :=
   (rfl)
+
+@[simp]
+theorem inclusion_refl (a : Symbol n V W m) : inclusion le_rfl a = a :=
+  Symbol.ext rfl
+
+@[simp]
+theorem inclusion_inclusion {m'' : ℝ} (h₁ : m ≤ m') (h₂ : m' ≤ m'') (a : Symbol n V W m) :
+    inclusion h₂ (inclusion h₁ a) = inclusion (h₁.trans h₂) a :=
+  Symbol.ext rfl
 
 theorem inclusion_injective (h : m ≤ m') :
     Function.Injective (inclusion h : Symbol n V W m → Symbol n V W m') :=
@@ -449,10 +469,22 @@ def HasCompactSpatialSupport (a : Symbol n V W m) : Prop :=
   ∃ K : Set (CoordinateSpace n), IsCompact K ∧
     ∀ x ∉ K, ∀ ξ, a.coefficient (x, ξ) = 0
 
+theorem isUniform_iff (a : Symbol n V W m) :
+    a.IsUniform ↔ ∀ (α β : List (Fin n)), ∃ C : ℝ, 0 ≤ C ∧
+      ∀ x ξ, ‖mixedDeriv α β a.coefficient x ξ‖ ≤
+        C * (1 + ‖ξ‖ ^ 2) ^ ((m - (β.length : ℝ)) / 2) :=
+  Iff.rfl
+
+theorem hasCompactSpatialSupport_iff (a : Symbol n V W m) :
+    a.HasCompactSpatialSupport ↔ ∃ K : Set (CoordinateSpace n), IsCompact K ∧
+      ∀ x ∉ K, ∀ ξ, a.coefficient (x, ξ) = 0 :=
+  Iff.rfl
+
 private theorem isUniform_iff_boundOn (a : Symbol n V W m) :
     a.IsUniform ↔ BoundOn Set.univ m a.coefficient := by
   simp [IsUniform, BoundOn]
 
+@[simp]
 theorem isUniform_zero : (0 : Symbol n V W m).IsUniform :=
   (isUniform_iff_boundOn _).2 BoundOn.zero
 
@@ -485,27 +517,29 @@ theorem IsUniform.frequencyDeriv {a : Symbol n V W m} (ha : a.IsUniform) (j : Fi
     (frequencyDeriv j a).IsUniform :=
   (isUniform_iff_boundOn _).2 <| BoundOn.frequency a.smooth ((isUniform_iff_boundOn a).1 ha) j
 
-/-- A coefficient vanishing at all positions outside a closed set vanishes near every point
-whose position lies outside it. -/
-private theorem eventuallyEq_zero_of_isClosed {K : Set (CoordinateSpace n)} (hK : IsClosed K)
-    {a : CoordinateSpace n × CoordinateSpace n → V →L[ℂ] W} (h : ∀ x ∉ K, ∀ ξ, a (x, ξ) = 0)
-    {x : CoordinateSpace n} (hx : x ∉ K) (ξ : CoordinateSpace n) : a =ᶠ[𝓝 (x, ξ)] 0 := by
-  filter_upwards [(hK.isOpen_compl.prod isOpen_univ).mem_nhds (Set.mk_mem_prod hx trivial)]
+/-- A symbol with compact spatial support vanishes near every point whose position lies outside
+some compact set. -/
+theorem HasCompactSpatialSupport.exists_eventuallyEq_zero {a : Symbol n V W m}
+    (ha : a.HasCompactSpatialSupport) : ∃ K : Set (CoordinateSpace n), IsCompact K ∧
+      ∀ x ∉ K, ∀ ξ, a.coefficient =ᶠ[𝓝 (x, ξ)] 0 := by
+  obtain ⟨K, hK, h⟩ := ha
+  refine ⟨K, hK, fun x hx ξ => ?_⟩
+  filter_upwards [(hK.isClosed.isOpen_compl.prod isOpen_univ).mem_nhds (Set.mk_mem_prod hx trivial)]
     with p hp using h p.1 hp.1 p.2
 
 /-- **A compact spatial cutoff gives uniform bounds.** A symbol with compact spatial support is
 uniform. -/
 theorem HasCompactSpatialSupport.isUniform {a : Symbol n V W m}
     (ha : a.HasCompactSpatialSupport) : a.IsUniform := fun α β => by
-  obtain ⟨K, hK, hzero⟩ := ha
+  obtain ⟨K, hK, hzero⟩ := ha.exists_eventuallyEq_zero
   obtain ⟨C, hC, hb⟩ := a.derivative_bound K hK α β
   refine ⟨C, hC, fun x ξ => ?_⟩
   by_cases hx : x ∈ K
   · exact hb x hx ξ
-  · rw [mixedDeriv_eq_zero_of_eventuallyEq_zero a.smooth
-      (eventuallyEq_zero_of_isClosed hK.isClosed hzero hx ξ), norm_zero]
+  · rw [mixedDeriv_eq_zero_of_eventuallyEq_zero a.smooth (hzero x hx ξ), norm_zero]
     exact mul_nonneg hC (weight_nonneg ξ _)
 
+@[simp]
 theorem hasCompactSpatialSupport_zero : (0 : Symbol n V W m).HasCompactSpatialSupport :=
   ⟨∅, isCompact_empty, fun _ _ _ => rfl⟩
 
@@ -539,16 +573,14 @@ theorem HasCompactSpatialSupport.inclusion {a : Symbol n V W m}
 theorem HasCompactSpatialSupport.spatialDeriv {a : Symbol n V W m}
     (ha : a.HasCompactSpatialSupport) (j : Fin n) :
     (spatialDeriv j a).HasCompactSpatialSupport := by
-  obtain ⟨K, hK, h⟩ := ha
-  refine ⟨K, hK, fun x hx ξ => ?_⟩
-  simp [coefficient_spatialDeriv, (eventuallyEq_zero_of_isClosed hK.isClosed h hx ξ).fderiv_eq]
+  obtain ⟨K, hK, h⟩ := ha.exists_eventuallyEq_zero
+  exact ⟨K, hK, fun x hx ξ => by simp [coefficient_spatialDeriv, (h x hx ξ).fderiv_eq]⟩
 
 theorem HasCompactSpatialSupport.frequencyDeriv {a : Symbol n V W m}
     (ha : a.HasCompactSpatialSupport) (j : Fin n) :
     (frequencyDeriv j a).HasCompactSpatialSupport := by
-  obtain ⟨K, hK, h⟩ := ha
-  refine ⟨K, hK, fun x hx ξ => ?_⟩
-  simp [coefficient_frequencyDeriv, (eventuallyEq_zero_of_isClosed hK.isClosed h hx ξ).fderiv_eq]
+  obtain ⟨K, hK, h⟩ := ha.exists_eventuallyEq_zero
+  exact ⟨K, hK, fun x hx ξ => by simp [coefficient_frequencyDeriv, (h x hx ξ).fderiv_eq]⟩
 
 /-! ### Examples -/
 
@@ -619,7 +651,7 @@ private theorem ofFrequencyLinear_bound (L : CoordinateSpace n →L[ℝ] V →L[
       rw [mixedDeriv_nil_left_comp_snd, coordinateDeriv_cons_apply, coordinateDeriv_nil,
         ContinuousLinearMap.fderiv]
       simpa using L.le_opNorm (EuclideanSpace.single j 1)
-    · have h0 : coordinateDeriv (j :: k :: β) L = 0 := L.iteratedLineDeriv_cons_cons _ _ _
+    · have h0 : coordinateDeriv (j :: k :: β) L = 0 := L.iteratedFDerivAlong_cons_cons _ _ _
       rw [mixedDeriv_nil_left_comp_snd, h0, Pi.zero_apply, norm_zero]
       exact mul_nonneg (norm_nonneg L) (weight_nonneg ξ _)
   · rw [mixedDeriv_cons_left_comp_snd, norm_zero]
@@ -639,6 +671,7 @@ theorem coefficient_ofFrequencyLinear (L : CoordinateSpace n →L[ℝ] V →L[�
     (ofFrequencyLinear L).coefficient = fun p => L p.2 :=
   (rfl)
 
+@[simp]
 theorem isUniform_ofFrequencyLinear (L : CoordinateSpace n →L[ℝ] V →L[ℂ] W) :
     (ofFrequencyLinear L).IsUniform :=
   ofFrequencyLinear_bound L
