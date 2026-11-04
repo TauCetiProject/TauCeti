@@ -136,7 +136,7 @@ private theorem continuous_diskRadialSphere : Continuous (diskRadialSphere.{u} (
 private theorem diskBoundaryInclusion_diskRadialSphere
     (w : {w : TopCat.disk.{u} k // 1 / 2 ≤ ‖w.down.1‖}) :
     TopCat.diskBoundaryInclusion k (diskRadialSphere w) = diskRadial w.1 :=
-  (rfl)
+  ULift.ext (Subtype.ext (TopCat.coe_diskBoundaryInclusion_apply_down k _))
 
 /-- The time part `x ↦ 2 - 2‖x‖`, clamped to `[0, 1]`, of the map from the disc to the cylinder:
 it is `1` on the disc of radius `1/2` and `0` on the boundary sphere. -/
@@ -412,6 +412,26 @@ theorem morseCellReattachment_morseCellAttachmentCell_of_le_norm (i : ι)
   subst ht' hs'
   rw [morseCellReattachment_morseCellAttachmentCell, morseCellReattachmentFun, dite_eq_left hw]
 
+/-- On the cell of `i`, the reattachment map followed by the handle-to-cell comparison `Φ₀` is
+`K i` read along the map `x ↦ (diskTime x, diskRadial x)` from the disc to the cylinder. -/
+private theorem coe_morseCellComparison_morseCellReattachment_morseCellAttachmentCell (i : ι)
+    (w : TopCat.disk.{u} (k i)) :
+    (morseCellComparison φ₀ k hk hε hball₀ hf₀
+        (morseCellReattachment φ₀ φ₁ k hk hε hball₀ hball₁ hf₀ hf₁ h hh K hK
+          (morseCellAttachmentCell φ₁ k hk hε hball₁ hf₁ i w)) : M) =
+      K i (diskTime w, diskRadial w) := by
+  rw [morseCellReattachment_morseCellAttachmentCell]
+  by_cases hw : 1 / 2 ≤ ‖w.down.1‖
+  · rw [morseCellReattachmentFun, dite_eq_left hw,
+      coe_morseCellComparison_morseCellAttachmentIncl]
+    exact congrArg (fun v ↦ (K i (diskTime w, v) : M))
+      (diskBoundaryInclusion_diskRadialSphere ⟨w, hw⟩)
+  · rw [morseCellReattachmentFun, dite_eq_right hw,
+      coe_morseCellComparison_morseCellAttachmentCell, diskTime_of_norm_le (not_le.1 hw).le,
+      ContinuousMap.Homotopy.apply_one, TopCat.hom_comp, ContinuousMap.comp_apply]
+    exact (OpenPartialHomeomorph.coe_morseCharacteristicMap_apply (hball₀ i) (hf₀ i) (hk i) hε
+      _).symm
+
 /-- **`Φ₀ ∘ E` is homotopic to `Φ₁` relative to the lower sublevel.** The reattachment map followed
 by the handle-to-cell comparison `Φ₀` is homotopic to the handle-to-cell comparison `Φ₁`, by a
 homotopy fixing the lower sublevel `M_{c-ε}`. -/
@@ -457,16 +477,8 @@ theorem homotopicRel_morseCellReattachment_comp_morseCellComparison :
         coe_morseCellComparison_morseCellAttachmentIncl]
     obtain ⟨i, w, rfl⟩ := mem_iUnion.1 ha
     refine Subtype.ext ?_
-    rw [hG₁, diskCylinderPath_zero, morseCellReattachment_morseCellAttachmentCell]
-    by_cases hw : 1 / 2 ≤ ‖w.down.1‖
-    · rw [morseCellReattachmentFun, dite_eq_left hw,
-        coe_morseCellComparison_morseCellAttachmentIncl]
-      exact congrArg (fun v ↦ (K i (diskTime w, v) : M))
-        (diskBoundaryInclusion_diskRadialSphere ⟨w, hw⟩).symm
-    · rw [morseCellReattachmentFun, dite_eq_right hw,
-        coe_morseCellComparison_morseCellAttachmentCell, diskTime_of_norm_le (not_le.1 hw).le,
-        ContinuousMap.Homotopy.apply_one, TopCat.hom_comp, ContinuousMap.comp_apply]
-      exact OpenPartialHomeomorph.coe_morseCharacteristicMap_apply (hball₀ i) (hf₀ i) (hk i) hε _
+    rw [hG₁, diskCylinderPath_zero,
+      coe_morseCellComparison_morseCellReattachment_morseCellAttachmentCell]
   -- At time `1` the cylinder path is `x ↦ (0, x)`, along which `K i` is `χ₁ i`.
   · obtain ⟨x, rfl⟩ | ha := hcover.symm ▸ mem_univ a
     · refine Subtype.ext ?_
