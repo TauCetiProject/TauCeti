@@ -525,7 +525,7 @@ theorem fderiv_coefficient_comp {p : X × E} (hp : p.2 ≠ 0) (q : X × E) :
   -- Composition of `ℂ`-linear maps, viewed as a continuous `ℝ`-bilinear map.
   have h := ((ContinuousLinearMap.compL ℂ V W U).bilinearRestrictScalars ℝ).fderiv_of_bilinear
     (b.differentiableAt_coefficient hp) (a.differentiableAt_coefficient hp)
-  rw [show (b.comp a).coefficient = _ from funext (coefficient_comp b a)]
+  rw [funext (coefficient_comp b a)]
   simpa [add_comm] using congrArg (fun L ↦ L q) h
 
 /-- The product rule for the spatial derivative of a composition. -/
@@ -584,7 +584,8 @@ theorem contDiff_smul_coefficient (χ : FrequencyCutoff E) :
     refine (contDiffAt_const (c := (0 : V →L[ℂ] W))).congr_of_eventuallyEq ?_
     filter_upwards [(continuous_snd.tendsto p).eventually
       (χ.eventuallyEq_zero_of_norm_lt_one (ξ := p.2) (by simp [h]))] with q hq
-    simp [show χ q.2 = 0 from hq]
+    rw [Pi.zero_apply] at hq
+    simp [hq]
   · exact ((χ.contDiff.comp contDiff_snd).contDiffAt).smul (a.contDiffAt_coefficient h)
 
 end Growth
