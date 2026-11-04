@@ -7,7 +7,7 @@ module
 
 public import TauCeti.MeasureTheory.Function.Lp.LeftTranslation
 public import TauCeti.MeasureTheory.Function.Lp.RightTranslation
-public import TauCeti.MeasureTheory.Group.OpenSubgroup
+public import TauCeti.MeasureTheory.Group.OpenSubgroup.Basic
 
 /-!
 # Subgroup equivariance of `Lᵖ` restriction and extension by zero
