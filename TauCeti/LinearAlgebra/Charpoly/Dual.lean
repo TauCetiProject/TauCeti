@@ -31,7 +31,7 @@ theorem charpoly_dualMap {R M : Type*} [CommRing R] [AddCommGroup M] [Module R M
     f.dualMap.charpoly = f.charpoly := by
   nontriviality R
   let b := Module.Free.chooseBasis R M
-  rw [← charpoly_toMatrix f b, ← charpoly_toMatrix f.dualMap b.dualBasis, dualMap,
+  rw [← charpoly_toMatrix f b, ← charpoly_toMatrix f.dualMap b.dualBasis, dualMap_def,
     toMatrix_transpose, Matrix.charpoly_transpose]
 
 /-- An endomorphism of a finite-dimensional vector space and its transpose have kernels of the
