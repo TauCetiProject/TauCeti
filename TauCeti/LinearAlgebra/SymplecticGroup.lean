@@ -46,7 +46,8 @@ specialisation of `SymplecticGroup.fromBlocks_mem_iff`.
 * `Matrix.eq_J_conj_iff_mul_J_eq`: cancelling a conjugation by `J`.
 * `Matrix.J_mul_mul_J_mul_J`: sandwiching twice by `J` is the identity.
 * `SymplecticGroup.transpose_eq_J_conj_inv`: the transpose of a symplectic matrix is the
-  `J`-conjugate of its inverse.
+  `J`-conjugate of its inverse; `SymplecticGroup.mem_of_J_conj_eq_transpose` is its converse, a
+  matrix whose `J`-conjugate is its inverse transpose is symplectic.
 * `SymplecticGroup.mem_iff_neg_J_mul_transpose_mul_J_mul_eq_one`: the symplectic matrices are the
   unitary elements for the symplectic adjoint `A ↦ -(J * Aᵀ * J)`.
 * `SymplecticGroup.mem_iff_mem_orthogonalGroup_of_commute` and
@@ -167,6 +168,15 @@ theorem transpose_eq_J_conj_inv {A : Matrix (l ⊕ l) (l ⊕ l) R}
   rw [eq_J_conj_iff_mul_J_eq, inv_eq_symplectic_inv A hA]
   calc Aᵀ * J l R = J l R * (-J l R) * (Aᵀ * J l R) := by rw [J_mul_neg_J, one_mul]
     _ = J l R * (-J l R * Aᵀ * J l R) := by noncomm_ring
+
+/-- **A matrix whose `J`-conjugate is its inverse transpose is symplectic.** If `Y * X = 1` and
+`J * X * J⁻¹ = Yᵀ`, that is `(X⁻¹)ᵀ = J * X * J⁻¹`, then `X` is symplectic. This is a converse of
+`SymplecticGroup.transpose_eq_J_conj_inv`, with the left inverse `Y` supplied explicitly. -/
+theorem mem_of_J_conj_eq_transpose {X Y : Matrix (l ⊕ l) (l ⊕ l) R} (hYX : Y * X = 1)
+    (h : J l R * X * (J l R)⁻¹ = Yᵀ) : X ∈ symplecticGroup l R := by
+  have hJ : Yᵀ * J l R = J l R * X := (eq_J_conj_iff_mul_J_eq _ _).1 h.symm
+  rw [mem_iff', Matrix.mul_assoc, ← hJ, ← Matrix.mul_assoc, ← transpose_mul, hYX, transpose_one,
+    Matrix.one_mul]
 
 /-- **Symplectic matrices are the unitary elements for the symplectic adjoint**
 `A ↦ J⁻¹ * Aᵀ * J = -(J * Aᵀ * J)`: a matrix is symplectic exactly when its adjoint is a left
