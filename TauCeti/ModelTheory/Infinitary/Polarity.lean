@@ -47,9 +47,8 @@ distinct relation symbols of opposite polarity.
 
 ## Main results
 
-* `FirstOrder.Language.BoundedFormulaInf.relationsInSigned_union_not` and
-  `FirstOrder.Language.BoundedFormulaInf.positiveRelationsIn_union_negativeRelationsIn`: positive
-  and negative occurrences together recover `BoundedFormulaInf.relationsIn`.
+* `FirstOrder.Language.BoundedFormulaInf.relationsInSigned_union_not`: occurrences at opposite
+  polarities together recover `BoundedFormulaInf.relationsIn`.
 * `FirstOrder.Language.BoundedFormulaInf.relationsInSigned_countable`: at a countable branching
   carrier, each signed occurrence set is countable.
 * `FirstOrder.Language.BoundedFormulaInf.realize_mono_of_agreeOn_functionsIn` and
@@ -258,24 +257,6 @@ theorem relationsInSigned_union_not (s : Bool) (φ : L.BoundedFormulaInf ι α n
   | iInf φs ih =>
     simp only [relationsInSigned_iInf, relationsIn_iInf, ← Set.iUnion_union_distrib, ih]
 
-/-- Symmetric companion to `relationsInSigned_union_not`. -/
-@[simp]
-theorem relationsInSigned_not_union (s : Bool) (φ : L.BoundedFormulaInf ι α n) :
-    φ.relationsInSigned (!s) ∪ φ.relationsInSigned s = φ.relationsIn := by
-  rw [Set.union_comm, relationsInSigned_union_not]
-
-/-- The positive and negative relation occurrences of a formula cover its occurring relations. -/
-@[simp]
-theorem positiveRelationsIn_union_negativeRelationsIn (φ : L.BoundedFormulaInf ι α n) :
-    φ.positiveRelationsIn ∪ φ.negativeRelationsIn = φ.relationsIn :=
-  relationsInSigned_union_not true φ
-
-/-- Symmetric companion to `positiveRelationsIn_union_negativeRelationsIn`. -/
-@[simp]
-theorem negativeRelationsIn_union_positiveRelationsIn (φ : L.BoundedFormulaInf ι α n) :
-    φ.negativeRelationsIn ∪ φ.positiveRelationsIn = φ.relationsIn :=
-  relationsInSigned_union_not false φ
-
 /-- A biconditional uses both arguments in both polarities, so its signed occurrences at either
 polarity are all relation symbols occurring in either side. -/
 @[simp]
@@ -285,7 +266,7 @@ theorem relationsInSigned_iff (s : Bool) (φ ψ : L.BoundedFormulaInf ι α n) :
   calc
     (φ.relationsInSigned (!s) ∪ ψ.relationsInSigned s) ∪
         (ψ.relationsInSigned (!s) ∪ φ.relationsInSigned s) =
-        (φ.relationsInSigned (!s) ∪ φ.relationsInSigned s) ∪
+        (φ.relationsInSigned s ∪ φ.relationsInSigned (!s)) ∪
           (ψ.relationsInSigned s ∪ ψ.relationsInSigned (!s)) := by ac_rfl
     _ = φ.relationsIn ∪ ψ.relationsIn := by simp
 
@@ -407,15 +388,10 @@ theorem relationsInSigned_constantsVarsEquiv {γ : Type uγ} (s : Bool)
     (constantsVarsEquiv φ).relationsInSigned s =
       (fun r : Σ k, L.Relations k => ⟨r.1, (L.lhomWithConstants γ).onRelation r.2⟩) ⁻¹'
         φ.relationsInSigned s := by
-  have hinj : Function.Injective
-      (fun r : Σ k, L.Relations k =>
-        (⟨r.1, (L.lhomWithConstants γ).onRelation r.2⟩ : Σ k, L[[γ]].Relations k)) := by
-    rintro ⟨k₁, r₁⟩ ⟨k₂, r₂⟩ h
-    simp only [Sigma.mk.injEq] at h
-    obtain ⟨rfl, hr⟩ := h
-    exact congrArg (Sigma.mk k₁) ((L.lhomWithConstants_injective γ).onRelation (eq_of_heq hr))
-  conv_rhs => rw [← constantsVarsEquiv.symm_apply_apply φ]
-  rw [relationsInSigned_constantsVarsEquiv_symm, hinj.preimage_image]
+  conv_rhs =>
+    rw [← constantsVarsEquiv.symm_apply_apply φ, relationsInSigned_constantsVarsEquiv_symm]
+  exact ((Function.injective_id.sigma_map fun _ =>
+    (L.lhomWithConstants_injective γ).onRelation).preimage_image _).symm
 
 /-! ### Polarity monotonicity of realization -/
 
@@ -561,20 +537,16 @@ theorem relationsInSigned_onBoundedFormulaInf {n : ℕ} (g : L →ᴸ L') (s : B
   | iSup φs ih => simp [ih, Set.image_iUnion]
   | iInf φs ih => simp [ih, Set.image_iUnion]
 
-/-- Along an injective language homomorphism, pulling back the signed occurrences of a translated
-formula recovers the signed occurrences of the original formula. -/
-theorem Injective.preimage_relationsInSigned_onBoundedFormulaInf {n : ℕ} {g : L →ᴸ L'}
-    (hg : g.Injective) (s : Bool) (φ : L.BoundedFormulaInf ι α n) :
+/-- Along a language homomorphism injective on relation symbols, pulling back the signed
+occurrences of a translated formula recovers the signed occurrences of the original formula. -/
+theorem preimage_relationsInSigned_onBoundedFormulaInf {n : ℕ} (g : L →ᴸ L')
+    (hg : ∀ k, Function.Injective (g.onRelation (n := k))) (s : Bool)
+    (φ : L.BoundedFormulaInf ι α n) :
     (fun r : Σ k, L.Relations k => ⟨r.1, g.onRelation r.2⟩) ⁻¹'
         (g.onBoundedFormulaInf φ).relationsInSigned s =
       φ.relationsInSigned s := by
-  have hinj : Function.Injective
-      (fun r : Σ k, L.Relations k => (⟨r.1, g.onRelation r.2⟩ : Σ k, L'.Relations k)) := by
-    rintro ⟨k₁, r₁⟩ ⟨k₂, r₂⟩ h
-    simp only [Sigma.mk.injEq] at h
-    obtain ⟨rfl, hr⟩ := h
-    exact congrArg (Sigma.mk k₁) (hg.onRelation (eq_of_heq hr))
-  rw [relationsInSigned_onBoundedFormulaInf, hinj.preimage_image]
+  rw [relationsInSigned_onBoundedFormulaInf]
+  exact (Function.injective_id.sigma_map hg).preimage_image _
 
 /-- **Signed pullback along a language homomorphism.** An infinitary formula `φ` of `L'` whose
 occurring function symbols, positive relation symbols, and negative relation symbols lie in the
@@ -677,8 +649,8 @@ theorem relationsInSigned_restrictSymbols {F : Set (Σ k, L.Functions k)}
     (φ.restrictSymbols hF hR).relationsInSigned s =
       (fun r : Σ k, (symbSublang F R).Relations k => (⟨r.1, r.2.1⟩ : Σ k, L.Relations k)) ⁻¹'
         φ.relationsInSigned s := by
-  have h := (symbSublangIncl_injective F R).preimage_relationsInSigned_onBoundedFormulaInf s
-    (φ.restrictSymbols hF hR)
+  have h := (symbSublangIncl F R).preimage_relationsInSigned_onBoundedFormulaInf
+    (fun _ => (symbSublangIncl_injective F R).onRelation) s (φ.restrictSymbols hF hR)
   rw [onBoundedFormulaInf_restrictSymbols] at h
   simpa only [symbSublangIncl_onRelation] using h.symm
 
