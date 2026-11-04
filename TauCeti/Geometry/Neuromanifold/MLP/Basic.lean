@@ -251,7 +251,10 @@ theorem layerActivation_linear (d : Fin (L + 1) → ℕ) (i : Fin L) :
   unfold layerActivation
   split <;> rfl
 
-/-- The MLP specification whose hidden layer `j + 1` evaluates the polynomial `p j`. -/
+/-- The MLP specification whose hidden layer `j + 1` evaluates the polynomial `p j`.
+Its body is exposed so scalar transport can compute the common widths in dependent
+parameter and input types, independently of the coefficient semiring. -/
+@[expose]
 def polynomial [Semiring K] (d : Fin (L + 1) → ℕ) (p : Fin (L - 1) → Polynomial K) :
     MLPSpec K L where
   width := d
