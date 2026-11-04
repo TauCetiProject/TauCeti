@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Homology.DG.Twisted.RowFinite.Basic
+public import TauCeti.Algebra.Homology.DG.Twisted.RowFinite.Coefficients
 public import Mathlib.LinearAlgebra.Finsupp.Supported
 public import Mathlib.LinearAlgebra.Isomorphisms
 
@@ -17,6 +18,8 @@ coefficient modules, this filtration is exhaustive even for an infinite generato
 unbounded indices. If the twisting rows strictly lower generator indices, the twisting part of
 the differential lowers the filtration. The successive quotient is therefore the finite-support
 module on generators of one index, with the coefficient differential alone.
+The same holds for the differential with coefficients in a DG right module
+(`TauCeti.RowFiniteTwistingCocycle.coefficientDifferential_sub_mem_indexFiltration`).
 
 The quotient equivalence and its differential comparison are explicit. If generator indices
 are bounded below (as for nonnegative-dimensional cells), the filtration starts at zero. These
@@ -34,7 +37,7 @@ public section
 
 namespace TauCeti
 
-universe uR uA uP
+universe uR uA uM uP
 
 section Filtration
 
@@ -246,5 +249,89 @@ theorem rowFiniteIndexQuotientDifferential_mk (p : ℤ)
   exact (rowFiniteIndexProjection_differential m hm p f).symm
 
 end Differential
+
+/-! ### The coefficient differential with DG right-module coefficients -/
+
+namespace RowFiniteTwistingCocycle
+
+variable {R : Type uR} {A : Type uA} {M : Type uM} {P : Type uP}
+  [CommRing R] [Ring A] [Algebra R A]
+  [AddCommGroup M] [Module R M] [Module Aᵐᵒᵖ M] [IsScalarTower R Aᵐᵒᵖ M]
+  {𝒜 : ℤ → Submodule R A} [GradedAlgebra 𝒜]
+  {ℳ : ℤ → Submodule R M} [DirectSum.Decomposition ℳ]
+  [SetLike.GradedSMul (InternalGrading.ofDecomposition 𝒜).opposite.piece ℳ]
+  {ind : P → ℤ} {dA : A →ₗ[R] A} {hA : IsDGAlgebra 𝒜 dA} {dM : M →ₗ[R] M}
+  (m : RowFiniteTwistingCocycle 𝒜 dA P ind) (hM : IsDGRightModule hA ℳ dM)
+  (hm : ∀ x y, ind x ≤ ind y → m.m x y = 0)
+
+include hm
+
+/-- **The twisting part lowers generator indices.** For a one-sided cocycle, the coefficient
+differential of a vector concentrated on `x` differs from the coefficient differential at `x` by a
+vector supported on generators of smaller index. -/
+theorem coefficientDifferential_single_sub_mem_supported (x : P) (α : M) :
+    m.coefficientDifferential hM (Finsupp.single x α) - Finsupp.single x (dM α) ∈
+      Finsupp.supported M R {y | ind y < ind x} := by
+  classical
+  induction α using DirectSum.Decomposition.inductionOn ℳ with
+  | zero => simp
+  | @homogeneous q α =>
+    rw [m.coefficientDifferential_single hM x α.2, add_sub_cancel_left, Units.smul_def,
+      Finsupp.sum]
+    refine zsmul_mem (Submodule.sum_mem _ fun y hy ↦ Finsupp.single_mem_supported R _ ?_) _
+    rw [Set.mem_ofPred_eq]
+    by_contra h
+    exact Finsupp.mem_support_iff.mp hy (hm x y (not_lt.mp h))
+  | add α β hα hβ =>
+    simpa only [Finsupp.single_add, map_add, add_sub_add_comm] using Submodule.add_mem _ hα hβ
+
+/-- **The twisting part lowers the cell filtration.** For a one-sided cocycle, on the `p`th stage
+of the cell filtration the coefficient differential agrees with the coordinatewise coefficient
+differential up to the `(p - 1)`st stage. -/
+theorem coefficientDifferential_sub_mem_indexFiltration {p : ℤ} {g : P →₀ M}
+    (hg : g ∈ rowFiniteIndexFiltration (R := R) ind p) :
+    m.coefficientDifferential hM g - Finsupp.mapRange.linearMap dM g ∈
+      rowFiniteIndexFiltration (R := R) ind (p - 1) := by
+  have hT : ∀ x ∈ g.support, m.coefficientDifferential hM (Finsupp.single x (g x)) -
+      Finsupp.mapRange.linearMap dM (Finsupp.single x (g x)) ∈
+        rowFiniteIndexFiltration (R := R) ind (p - 1) := by
+    intro x hx
+    have hxp : ind x ≤ p := by
+      by_contra h
+      exact Finsupp.mem_support_iff.mp hx
+        ((mem_rowFiniteIndexFiltration_iff ind).mp hg x (not_le.mp h))
+    rw [Finsupp.mapRange.linearMap_apply, Finsupp.mapRange_single,
+      mem_rowFiniteIndexFiltration_iff ind]
+    intro y hy
+    refine (Finsupp.mem_supported' R _).mp
+      (m.coefficientDifferential_single_sub_mem_supported hM hm x (g x)) y ?_
+    simp only [Set.mem_ofPred_eq, not_lt]
+    omega
+  rw [← Finsupp.sum_single g, Finsupp.sum, map_sum, map_sum, ← Finset.sum_sub_distrib]
+  exact Submodule.sum_mem _ hT
+
+/-- For a one-sided cocycle, the coefficient differential preserves the cell filtration. -/
+theorem coefficientDifferential_mem_indexFiltration {p : ℤ} {g : P →₀ M}
+    (hg : g ∈ rowFiniteIndexFiltration (R := R) ind p) :
+    m.coefficientDifferential hM g ∈ rowFiniteIndexFiltration (R := R) ind p := by
+  have hd : Finsupp.mapRange.linearMap dM g ∈ rowFiniteIndexFiltration (R := R) ind p := by
+    rw [mem_rowFiniteIndexFiltration_iff ind] at hg ⊢
+    intro x hx
+    simp [hg x hx]
+  simpa only [sub_add_cancel] using Submodule.add_mem _
+    (rowFiniteIndexFiltration_mono ind (by omega : p - 1 ≤ p)
+      (m.coefficientDifferential_sub_mem_indexFiltration hM hm hg)) hd
+
+/-- For a one-sided cocycle, on the generators of top index `p` of a vector in the `p`th stage of
+the cell filtration, the coefficient differential is the coefficient differential of `M`. -/
+theorem coefficientDifferential_apply_of_ind_eq {p : ℤ} {g : P →₀ M}
+    (hg : g ∈ rowFiniteIndexFiltration (R := R) ind p) {x : P} (hx : ind x = p) :
+    m.coefficientDifferential hM g x = dM (g x) := by
+  have h := (mem_rowFiniteIndexFiltration_iff ind).mp
+    (m.coefficientDifferential_sub_mem_indexFiltration hM hm hg) x (by omega)
+  simpa only [Finsupp.sub_apply, Finsupp.mapRange.linearMap_apply, Finsupp.mapRange_apply,
+    sub_eq_zero] using h
+
+end RowFiniteTwistingCocycle
 
 end TauCeti
