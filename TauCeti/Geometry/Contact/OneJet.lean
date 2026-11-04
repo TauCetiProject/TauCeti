@@ -24,15 +24,15 @@ function `g` on `Q` give the section `q ↦ (α_q, g q)` of `J¹Q → Q`. Since 
 this section is horizontal for `ker (dz - λ)` exactly when `α = dg`
 (`TauCeti.CotangentBundle.isHorizontalMap_contactization_liouvilleForm_iff`). The **one-jet**
 `j¹g : q ↦ (dg_q, g q)` of a smooth function is therefore a Legendrian embedding of `Q`
-(`TauCeti.CotangentBundle.isLegendrianEmbedding_oneJet`), the Legendrian lift of the exact
-Lagrangian graph of `dg`.
+(`TauCeti.CotangentBundle.isLegendrianEmbedding_contactization_liouvilleForm`), the Legendrian
+lift of the exact Lagrangian graph of `dg`.
 
 ## Main results
 
 * `TauCeti.CotangentBundle.isHorizontalMap_contactization_liouvilleForm_iff`: the graph criterion
   in `J¹Q`.
-* `TauCeti.CotangentBundle.isLegendrianEmbedding_oneJet`: one-jets of smooth functions are
-  Legendrian embeddings.
+* `TauCeti.CotangentBundle.isLegendrianEmbedding_contactization_liouvilleForm`: one-jets of smooth
+  functions are Legendrian embeddings.
 
 ## References
 
@@ -77,8 +77,8 @@ variable [FiniteDimensional ℝ E] [I.Boundaryless]
 /-- **One-jets of functions are Legendrian.** For a smooth function `g` on `M` with differential
 `α = dg`, the one-jet `j¹g : q ↦ (dg_q, g q)` is a Legendrian embedding of `M` into the one-jet
 space `T*M × ℝ` with its contact form `dz - λ`. -/
-theorem isLegendrianEmbedding_oneJet (α : SmoothForm I M ℝ 1) (hg : ContMDiff I 𝓘(ℝ) ∞ g)
-    (hα : α.1 = mextDeriv (RoughForm.ofFunction I g)) :
+theorem isLegendrianEmbedding_contactization_liouvilleForm (α : SmoothForm I M ℝ 1)
+    (hg : ContMDiff I 𝓘(ℝ) ∞ g) (hα : α.1 = mextDeriv (RoughForm.ofFunction I g)) :
     IsLegendrianEmbedding I (liouvilleForm I M).contactization.kerDistribution
       (fun x ↦ (TotalSpace.mk' (E →L[ℝ] ℝ) x (SmoothForm.degreeOneEquiv α x), g x)) := by
   have : CompleteSpace E := FiniteDimensional.complete ℝ E
@@ -98,7 +98,7 @@ theorem isLegendrianEmbedding_contactization_liouvilleForm_iff (α : SmoothForm 
         (fun x ↦ (TotalSpace.mk' (E →L[ℝ] ℝ) x (SmoothForm.degreeOneEquiv α x), g x)) ↔
       α.1 = mextDeriv (RoughForm.ofFunction I g) :=
   ⟨fun h ↦ (isHorizontalMap_contactization_liouvilleForm_iff α hg).1 h.isHorizontalMap,
-    isLegendrianEmbedding_oneJet α hg⟩
+    isLegendrianEmbedding_contactization_liouvilleForm α hg⟩
 
 end CotangentBundle
 

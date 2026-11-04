@@ -89,6 +89,13 @@ theorem mem_kerDistribution {α : SmoothForm I M ℝ 1} {x : M} {v : TangentSpac
     v ∈ α.kerDistribution x ↔ α.1 x ![v] = 0 := by
   exact RoughForm.mem_ker
 
+/-- The kernel distribution of a smooth one-form is the pointwise kernel of its underlying rough
+form. -/
+theorem kerDistribution_eq_ker (α : SmoothForm I M ℝ 1) (x : M) :
+    α.kerDistribution x = RoughForm.ker α.1 x := by
+  ext
+  rw [mem_kerDistribution, RoughForm.mem_ker]
+
 /-- At each point, `kerDistribution α` is the kernel of the covector `α_x`. -/
 theorem kerDistribution_def (α : SmoothForm I M ℝ 1) (x : M) :
     α.kerDistribution x = LinearMap.ker (degreeOneEquiv α x : TangentSpace I x →ₗ[ℝ] ℝ) := by

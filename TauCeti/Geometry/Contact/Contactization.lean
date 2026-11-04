@@ -156,10 +156,12 @@ theorem mpullback_prodMk_contactization {E' H' L : Type*} [NormedAddCommGroup E'
     (hι : ContMDiff J I ∞ ι) (hh : ContMDiff J 𝓘(ℝ) ∞ h) :
     (mpullback (fun x ↦ (ι x, h x)) (hι.prodMk hh) θ.contactization).1 =
       mextDeriv (RoughForm.ofFunction J h) - (mpullback ι hι θ).1 := by
+  -- The two projections of `x ↦ (ι x, h x)` are `ι` and `h`.
+  have hfst : Prod.fst ∘ (fun x ↦ (ι x, h x)) = ι := rfl
+  have hsnd : Prod.snd ∘ (fun x ↦ (ι x, h x)) = h := rfl
   rw [contactization, map_sub, ← LinearMap.comp_apply, ← LinearMap.comp_apply,
     ← mpullback_comp, ← mpullback_comp, Submodule.coe_sub, coe_mpullback]
-  congr 1
-  exact SmoothForm.mpullback_realLineCoordForm h
+  simp only [hfst, hsnd, SmoothForm.mpullback_realLineCoordForm]
 
 /-- The tangent vector `(v, θ_w(v))` at `(w, z)` lies in the kernel of the contactization form. -/
 private theorem contactization_apply_graph (θ : SmoothForm I W ℝ 1) (p : W × ℝ)

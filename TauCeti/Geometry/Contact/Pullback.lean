@@ -123,10 +123,7 @@ theorem isHorizontalMap_kerDistribution_iff_mpullback_eq_zero {f : M → N}
     IsHorizontalMap I α.kerDistribution f ↔ mpullback f hf α = 0 := by
   have h (x : M) : (mpullback f hf α).1 x = 0 ↔
       LinearMap.range (mfderiv I J f x).toLinearMap ≤ α.kerDistribution (f x) := by
-    have hker : (mpullback f hf α).kerDistribution x = RoughForm.ker (mpullback f hf α).1 x := by
-      ext
-      rw [mem_kerDistribution, RoughForm.mem_ker]
-    rw [LinearMap.range_le_iff_comap, ← kerDistribution_mpullback f hf α x, hker,
+    rw [LinearMap.range_le_iff_comap, ← kerDistribution_mpullback f hf α x, kerDistribution_eq_ker,
       RoughForm.ker_eq_top_iff]
   simp only [isHorizontalMap_iff_range_mfderiv_le, ← h, Subtype.ext_iff, funext_iff,
     ZeroMemClass.coe_zero, Pi.zero_apply]
