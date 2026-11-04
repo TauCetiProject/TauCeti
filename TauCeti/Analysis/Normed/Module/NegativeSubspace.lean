@@ -8,7 +8,6 @@ module
 public import TauCeti.Analysis.Normed.Operator.FiniteDimensional
 public import Mathlib.Analysis.Normed.Module.FiniteDimension
 public import Mathlib.LinearAlgebra.Prod
-public import Mathlib.Topology.Order.IntermediateValue
 
 /-!
 # Graph coordinates for negative subspaces
@@ -87,7 +86,8 @@ theorem injective_fst_comp_of_norm_snd_lt (L : E →L[ℝ] E × F)
   refine (injective_iff_map_eq_zero _).2 fun u hu ↦ ?_
   by_contra hne
   have h := hL u hne
-  rw [show (L u).1 = 0 from hu, norm_zero] at h
+  have h0 : (L u).1 = 0 := by simpa using hu
+  rw [h0, norm_zero] at h
   exact (norm_nonneg _).not_gt h
 
 /-- A frame whose nonzero values lie strictly inside the negative cone has invertible negative
@@ -104,15 +104,9 @@ the sign of the determinant of the negative block is constant. -/
 theorem det_fst_comp_pos_iff_of_norm_snd_lt [FiniteDimensional ℝ E] {X : Type*}
     [TopologicalSpace X] [PreconnectedSpace X] {L : X → E →L[ℝ] E × F} (hcont : Continuous L)
     (hL : ∀ x u, u ≠ 0 → ‖(L x u).2‖ < ‖(L x u).1‖) (x y : X) :
-    0 < ((fst ℝ E F).comp (L x)).det ↔ 0 < ((fst ℝ E F).comp (L y)).det := by
-  have hdet : Continuous fun z ↦ ((fst ℝ E F).comp (L z)).det :=
-    continuous_det.comp ((compL ℝ E (E × F) E (fst ℝ E F)).continuous.comp hcont)
-  have key (a b : X) (ha : 0 < ((fst ℝ E F).comp (L a)).det) :
-      0 < ((fst ℝ E F).comp (L b)).det := by
-    by_contra hb
-    obtain ⟨z, hz⟩ := intermediate_value_univ b a hdet ⟨not_lt.1 hb, ha.le⟩
-    exact (L z).det_fst_comp_ne_zero_of_norm_snd_lt (hL z) hz
-  exact ⟨key x y, key y x⟩
+    0 < ((fst ℝ E F).comp (L x)).det ↔ 0 < ((fst ℝ E F).comp (L y)).det :=
+  det_pos_iff_of_det_ne_zero ((compL ℝ E (E × F) E (fst ℝ E F)).continuous.comp hcont)
+    (fun z ↦ (L z).det_fst_comp_ne_zero_of_norm_snd_lt (hL z)) x y
 
 /-- The straight-line contraction of a frame `L` in graph coordinates: the frame
 `u ↦ ((L u).1, t • (L u).2)`. It is `L` at `t = 1` and a frame of `E × 0` at `t = 0`. -/

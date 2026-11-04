@@ -157,7 +157,7 @@ theorem det_polarFactor_fst_fderiv_transition_inl_eq_one_iff [FiniteDimensional 
   set L₀ := (fderiv ℝ (fun w ↦ ψ₀ (ψ₁.symm w)) 0).comp (ContinuousLinearMap.inl ℝ E F)
   have hneg (u : E) (hu : u ≠ 0) : ‖(L₀ u).2‖ < ‖(L₀ u).1‖ := by
     simpa [L₀] using ψ₀.norm_snd_fderiv_transition_lt ψ₁ hn hx₀ hx₁ hψ₀ hψ₁ hf₀ hf₁ hu
-  rw [ContinuousLinearMap.det_polarFactor_eq_one_iff (L₀.injective_fst_comp_of_norm_snd_lt hneg)]
+  rw [ContinuousLinearMap.det_polarFactor_eq_one_iff]
   constructor
   · intro hdet
     refine ⟨⟨fun t ↦ L₀.negativeContraction (1 - t), by fun_prop⟩,
