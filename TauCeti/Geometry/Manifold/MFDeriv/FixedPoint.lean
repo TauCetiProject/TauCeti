@@ -72,7 +72,9 @@ excludes both eigenvalues `1` and `-1` from the return maps of all covers of per
   period at most `N` on a compact manifold.
 * `TauCeti.IsNondegenerateUpToPeriod.eq_zero_of_pow_apply_eq_smul`,
   `TauCeti.IsNondegenerateUpToPeriod.det_smul_one_sub_pow_ne_zero`: nondegeneracy up to period
-  `2 * N` excludes the eigenvalues `±1` of the return maps of all covers of period at most `N`.
+  `N` excludes every `ε` with `ε ^ j = 1` as an eigenvalue of the return map of the `m`-fold cover
+  of an orbit of period `k` when `k * m * j ≤ N`. For `j = 2`, nondegeneracy up to period `2 * N`
+  excludes the eigenvalues `±1` of the return maps of all covers of period at most `N`.
 
 ## References
 
@@ -268,6 +270,20 @@ theorem isNondegenerateFixedPt (h : IsNondegenerateUpToPeriod I f N) {k : ℕ} (
     (hkN : k ≤ N) (hx : IsPeriodicPt f k x) : IsNondegenerateFixedPt I f^[k] x :=
   h hk hkN hx
 
+/-- **Covers of nondegenerate orbits and roots of unity.** Let `f` be nondegenerate up to period
+`N`, let `x` be a periodic point of period `k > 0`, and let `D` be the differential of `f^[k]` at
+`x`, the return map of its orbit. If `k * m * j ≤ N` with `m, j > 0` and `ε ^ j = 1`, then
+`(D ^ m) v = ε • v` forces `v = 0`: the return map `D ^ m` of the `m`-fold cover does not have the
+eigenvalue `ε`. For `j = 2`, nondegeneracy up to period `2 * N` excludes both eigenvalues `1` and
+`-1` of the return maps of all covers of period `k * m ≤ N`. -/
+theorem eq_zero_of_pow_apply_eq_smul (h : IsNondegenerateUpToPeriod I f N) {k m j : ℕ}
+    (hk : 0 < k) (hm : 0 < m) (hj : 0 < j) (hkmj : k * m * j ≤ N) (hx : IsPeriodicPt f k x)
+    {D : TangentSpace I x →L[𝕜] TangentSpace I x} (hD : HasMFDerivAt I I f^[k] x D) {ε : 𝕜}
+    (hε : ε ^ j = 1) {v : TangentSpace I x} (hv : (D ^ m) v = ε • v) : v = 0 := by
+  have hnd := h (by positivity) (by rwa [← mul_assoc]) (hx.mul_const (m * j))
+  rw [iterate_mul] at hnd
+  exact hnd.eq_zero_of_pow_apply_eq_smul hD hx.isFixedPt hε hv
+
 /-- **Covers of nondegenerate orbits.** Let `f` be nondegenerate up to period `N`, let `x` be a
 periodic point of period `k > 0`, and let `D` be the differential of `f^[k]` at `x`, the return map
 of its orbit. If `k * m ≤ N` with `m > 0`, then the return map `D ^ m` of the `m`-fold cover fixes
@@ -275,33 +291,20 @@ no nonzero tangent vector. -/
 theorem eq_zero_of_pow_apply_eq (h : IsNondegenerateUpToPeriod I f N) {k m : ℕ} (hk : 0 < k)
     (hm : 0 < m) (hkm : k * m ≤ N) (hx : IsPeriodicPt f k x)
     {D : TangentSpace I x →L[𝕜] TangentSpace I x} (hD : HasMFDerivAt I I f^[k] x D)
-    {v : TangentSpace I x} (hv : (D ^ m) v = v) : v = 0 := by
-  have hnd := h (Nat.mul_pos hk hm) hkm (hx.mul_const m)
-  rw [iterate_mul, ← mul_one m] at hnd
-  exact hnd.eq_zero_of_pow_apply_eq_smul hD hx.isFixedPt (one_pow 1) (by rwa [one_smul])
-
-/-- **Nondegeneracy up to period `2 * N` controls both twists of all covers up to period `N`.** Let
-`f` be nondegenerate up to period `2 * N`, let `x` be a periodic point of period `k > 0`, and let
-`D` be the differential of `f^[k]` at `x`, the return map of its orbit. If `k * m ≤ N` with
-`m > 0`, then the return map `D ^ m` of the `m`-fold cover has neither the eigenvalue `1` nor the
-eigenvalue `-1`: `(D ^ m) v = ε • v` with `ε ^ 2 = 1` forces `v = 0`. -/
-theorem eq_zero_of_pow_apply_eq_smul (h : IsNondegenerateUpToPeriod I f (2 * N)) {k m : ℕ}
-    (hk : 0 < k) (hm : 0 < m) (hkm : k * m ≤ N) (hx : IsPeriodicPt f k x)
-    {D : TangentSpace I x →L[𝕜] TangentSpace I x} (hD : HasMFDerivAt I I f^[k] x D) {ε : 𝕜}
-    (hε : ε ^ 2 = 1) {v : TangentSpace I x} (hv : (D ^ m) v = ε • v) : v = 0 := by
-  have hnd := h (by positivity) (by rw [← mul_assoc]; omega)
-    (hx.mul_const (m * 2))
-  rw [iterate_mul] at hnd
-  exact hnd.eq_zero_of_pow_apply_eq_smul hD hx.isFixedPt hε hv
+    {v : TangentSpace I x} (hv : (D ^ m) v = v) : v = 0 :=
+  h.eq_zero_of_pow_apply_eq_smul hk hm one_pos (by rwa [mul_one]) hx hD (one_pow 1)
+    (by rwa [one_smul])
 
 /-- **Determinant form of `TauCeti.IsNondegenerateUpToPeriod.eq_zero_of_pow_apply_eq_smul`.** In
-finite dimension, if `f` is nondegenerate up to period `2 * N`, `x` has period `k > 0` and `D` is
-the differential of `f^[k]` at `x`, then `det (ε - D ^ m) ≠ 0` for `ε ^ 2 = 1`, `m > 0` and
-`k * m ≤ N`. -/
+finite dimension, if `f` is nondegenerate up to period `N`, `x` has period `k > 0` and `D` is the
+differential of `f^[k]` at `x`, then `det (ε - D ^ m) ≠ 0` for `ε ^ j = 1`, `m, j > 0` and
+`k * m * j ≤ N`. For `j = 2`, nondegeneracy up to period `2 * N` gives `det (±1 - D ^ m) ≠ 0` for
+all covers of period `k * m ≤ N`. -/
 theorem det_smul_one_sub_pow_ne_zero [FiniteDimensional 𝕜 E]
-    (h : IsNondegenerateUpToPeriod I f (2 * N)) {k m : ℕ} (hk : 0 < k) (hm : 0 < m)
-    (hkm : k * m ≤ N) (hx : IsPeriodicPt f k x) {D : TangentSpace I x →L[𝕜] TangentSpace I x}
-    (hD : HasMFDerivAt I I f^[k] x D) {ε : 𝕜} (hε : ε ^ 2 = 1) :
+    (h : IsNondegenerateUpToPeriod I f N) {k m j : ℕ} (hk : 0 < k) (hm : 0 < m) (hj : 0 < j)
+    (hkmj : k * m * j ≤ N) (hx : IsPeriodicPt f k x)
+    {D : TangentSpace I x →L[𝕜] TangentSpace I x} (hD : HasMFDerivAt I I f^[k] x D) {ε : 𝕜}
+    (hε : ε ^ j = 1) :
     LinearMap.det
       ((ε • 1 - D ^ m : TangentSpace I x →L[𝕜] TangentSpace I x) :
         TangentSpace I x →ₗ[𝕜] TangentSpace I x) ≠ 0 := by
@@ -309,10 +312,8 @@ theorem det_smul_one_sub_pow_ne_zero [FiniteDimensional 𝕜 E]
   have : FiniteDimensional 𝕜 (TangentSpace I x) := ‹FiniteDimensional 𝕜 E›
   rw [Ne, LinearMap.det_eq_zero_iff_ker_ne_bot, not_not, eq_bot_iff]
   intro v hv
-  refine (Submodule.mem_bot 𝕜).2 (h.eq_zero_of_pow_apply_eq_smul hk hm hkm hx hD hε ?_)
-  rw [LinearMap.mem_ker, ContinuousLinearMap.coe_coe, sub_apply, smul_apply, one_apply_eq_self,
-    sub_eq_zero] at hv
-  exact hv.symm
+  refine (Submodule.mem_bot 𝕜).2 (h.eq_zero_of_pow_apply_eq_smul hk hm hj hkmj hx hD hε ?_)
+  simpa [sub_eq_zero, eq_comm (b := ε • v), ← ContinuousLinearMap.toLinearMap_pow] using hv
 
 variable [CompleteSpace 𝕜] [FiniteDimensional 𝕜 E] [CompactSpace M] [T2Space M]
 
