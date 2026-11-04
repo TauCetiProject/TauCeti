@@ -8,7 +8,7 @@ module
 public import Mathlib.Analysis.Calculus.ContDiff.Deriv
 public import Mathlib.Analysis.Calculus.ContDiff.RCLike
 public import Mathlib.Analysis.SpecialFunctions.Trigonometric.Bounds
-public import TauCeti.Analysis.Calculus.Deriv.DualStrictMono
+public import TauCeti.Analysis.Calculus.Deriv.ChordGraph
 public import TauCeti.Analysis.Convex.CurveChord
 public import TauCeti.Geometry.Polygon.DeltaMove
 public import TauCeti.Geometry.Polygon.Subdivision

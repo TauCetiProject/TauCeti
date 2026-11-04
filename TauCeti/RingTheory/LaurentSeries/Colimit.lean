@@ -70,18 +70,6 @@ theorem levelDiagram_map_hom {n m : RamificationIndex} (f : n ⟶ m) :
     ((levelDiagram K).map f).hom =
       LaurentSeries.expand K (RamificationIndex.transitionDegree f.le) := rfl
 
-variable {K} in
-/-- Moving a level-`n` series to level `m` along `X ↦ X ^ (m / n)` does not change its image in
-the Puiseux field. -/
-@[simp]
-theorem levelEmbedding_expand_transitionDegree {n m : RamificationIndex} (h : n ≤ m)
-    (f : LaurentSeries K) :
-    levelEmbedding K m.toPNat
-      (LaurentSeries.expand K (RamificationIndex.transitionDegree h) f) =
-        levelEmbedding K n.toPNat f := by
-  rw [← RamificationIndex.mul_transitionDegree h]
-  exact levelEmbedding_expand n.toPNat (RamificationIndex.transitionDegree h) f
-
 /-- The level embeddings into the Puiseux field, as a cocone on the ramified-level diagram. -/
 @[expose]
 noncomputable def levelCocone : Cocone (levelDiagram K) where
@@ -94,7 +82,8 @@ noncomputable def levelCocone : Cocone (levelDiagram K) where
         dsimp only [levelDiagram, Functor.const_obj_obj]
         simp only [CommAlgCat.hom_comp, CommAlgCat.hom_ofHom, Functor.const_obj_map,
           CommAlgCat.hom_id, AlgHom.id_comp]
-        exact AlgHom.ext (levelEmbedding_expand_transitionDegree f.le) }
+        rw [RamificationIndex.transitionDegree_def]
+        exact AlgHom.ext (levelEmbedding_expand_divExact f.le) }
 
 /-- The point of the level cocone is the Puiseux field. -/
 @[simp]
@@ -115,8 +104,9 @@ private theorem cocone_app_eq_of_levelEmbedding_eq (s : Cocone (levelDiagram K))
   have heq : LaurentSeries.expand K (RamificationIndex.transitionDegree hnl) f =
       LaurentSeries.expand K (RamificationIndex.transitionDegree hml) g := by
     apply (levelEmbedding K l.toPNat).injective
-    exact (levelEmbedding_expand_transitionDegree hnl f).trans
-      (hfg.trans (levelEmbedding_expand_transitionDegree hml g).symm)
+    rw [RamificationIndex.transitionDegree_def, RamificationIndex.transitionDegree_def]
+    exact (levelEmbedding_expand_divExact hnl f).trans
+      (hfg.trans (levelEmbedding_expand_divExact hml g).symm)
   rw [← s.w_apply (homOfLE hnl) f, ← s.w_apply (homOfLE hml) g]
   dsimp only [levelDiagram]
   simp only [ConcreteCategory.hom_ofHom]
