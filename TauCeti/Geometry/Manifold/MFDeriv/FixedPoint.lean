@@ -13,6 +13,7 @@ public import TauCeti.Geometry.Manifold.MFDeriv.Basic
 import Mathlib.Analysis.Calculus.FDeriv.Equiv
 import Mathlib.Analysis.Normed.Module.FiniteDimension
 import Mathlib.Dynamics.FixedPoints.Topology
+import Mathlib.LinearAlgebra.Eigenspace.Basic
 import Mathlib.Order.Interval.Finset.Nat
 import Mathlib.Topology.DiscreteSubset
 
@@ -201,12 +202,13 @@ theorem eq_zero_of_pow_apply_eq_smul {D : TangentSpace I x →L[𝕜] TangentSpa
     (h : IsNondegenerateFixedPt I f^[m * j] x) {ε : 𝕜} (hε : ε ^ j = 1) {v : TangentSpace I x}
     (hv : (D ^ m) v = ε • v) : v = 0 := by
   refine (isNondegenerateFixedPt_iterate_iff hD hx).1 h v ?_
-  have hpow : ∀ i : ℕ, ((D ^ m) ^ i) v = ε ^ i • v := by
-    intro i
-    induction i with
-    | zero => simp
-    | succ i ih => rw [pow_succ', mul_apply_eq_comp, ih, map_smul, hv, smul_smul, pow_succ]
-  rw [pow_mul, hpow, hε, one_smul]
+  rcases eq_or_ne v 0 with rfl | hv0
+  · exact map_zero _
+  have hev : Module.End.HasEigenvector (↑(D ^ m) : TangentSpace I x →ₗ[𝕜] TangentSpace I x) ε v :=
+    ⟨Module.End.mem_eigenspace_iff.2 hv, hv0⟩
+  have hj := hev.pow_apply j
+  rw [← ContinuousLinearMap.toLinearMap_pow, hε, one_smul] at hj
+  rwa [pow_mul]
 
 /-- A fixed point of `f` at which `f` is differentiable is nondegenerate as soon as it is a
 nondegenerate fixed point of some iterate `f^[n]`. -/
