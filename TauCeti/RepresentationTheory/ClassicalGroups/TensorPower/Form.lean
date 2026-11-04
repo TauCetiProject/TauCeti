@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.RCLike.Basic
+import Mathlib.LinearAlgebra.Matrix.SesquilinearForm
 public import TauCeti.RepresentationTheory.ClassicalGroups.TensorPower.Basic
 
 /-!
@@ -43,20 +44,15 @@ it is the product of the standard Hermitian forms of the tensor factors, so it d
 the basis. -/
 noncomputable def tensorPowerForm :
     (⨂[𝕜]^d (Fin n → 𝕜)) →ₗ⋆[𝕜] (⨂[𝕜]^d (Fin n → 𝕜)) →ₗ[𝕜] 𝕜 :=
-  LinearMap.mk₂'ₛₗ _ _
-    (fun x y ↦ ∑ w, star ((tensorPowerBasis 𝕜 n d).repr x w) * (tensorPowerBasis 𝕜 n d).repr y w)
-    (by simp [add_mul, Finset.sum_add_distrib])
-    (by simp [Finset.mul_sum, mul_assoc])
-    (by simp [mul_add, Finset.sum_add_distrib])
-    (by simp [Finset.mul_sum, mul_left_comm])
+  Matrix.toLinearMapₛₗ₂ (starRingEnd 𝕜) (tensorPowerBasis 𝕜 n d) (tensorPowerBasis 𝕜 n d) 1
 
 variable {n d}
 
 /-- The value of the standard Hermitian form in the coordinates of the monomial basis. -/
 theorem tensorPowerForm_apply (x y : ⨂[𝕜]^d (Fin n → 𝕜)) :
     tensorPowerForm n d x y =
-      ∑ w, star ((tensorPowerBasis 𝕜 n d).repr x w) * (tensorPowerBasis 𝕜 n d).repr y w :=
-  (rfl)
+      ∑ w, star ((tensorPowerBasis 𝕜 n d).repr x w) * (tensorPowerBasis 𝕜 n d).repr y w := by
+  simp [tensorPowerForm, Matrix.one_apply]
 
 /-- On pure tensors, the standard Hermitian form of a tensor power is the product of the standard
 Hermitian forms of the factors. -/
