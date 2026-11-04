@@ -114,6 +114,18 @@ def nextCorner (c : C.Corner) : C.Corner := ⟨c.1, finRotate (C.sides c.1) c.2�
 /-- The corner preceding `c` along its face. -/
 def prevCorner (c : C.Corner) : C.Corner := ⟨c.1, (finRotate (C.sides c.1)).symm c.2⟩
 
+theorem nextCorner_def (c : C.Corner) : C.nextCorner c = ⟨c.1, finRotate (C.sides c.1) c.2⟩ :=
+  (rfl)
+
+theorem prevCorner_def (c : C.Corner) :
+    C.prevCorner c = ⟨c.1, (finRotate (C.sides c.1)).symm c.2⟩ := (rfl)
+
+/-- The corner following `c` lies on the same face. -/
+@[simp] theorem nextCorner_fst (c : C.Corner) : (C.nextCorner c).1 = c.1 := (rfl)
+
+/-- The corner preceding `c` lies on the same face. -/
+@[simp] theorem prevCorner_fst (c : C.Corner) : (C.prevCorner c).1 = c.1 := (rfl)
+
 @[simp] theorem prevCorner_nextCorner (c : C.Corner) : C.prevCorner (C.nextCorner c) = c :=
   Sigma.ext rfl (heq_of_eq ((finRotate _).symm_apply_apply c.2))
 

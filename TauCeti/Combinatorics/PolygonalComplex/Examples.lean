@@ -47,8 +47,9 @@ For infinitely many faces the link is moreover infinite, and every germ then has
   `TauCeti.SurfaceModel.boundaryDarts_projectivePlane`, `TauCeti.SurfaceModel.boundaryDarts_sphere`:
   both darts of the disc are boundary darts, while the closed models have no boundary.
 * `TauCeti.PolygonalComplex.hasSurfaceLink_polygon`,
-  `TauCeti.PolygonalComplex.isOrientable_polygon`: criteria on the word `w` for `polygon w` to
-  have surface links and to be orientable.
+  `TauCeti.PolygonalComplex.isOrientable_polygon`: sufficient conditions for `polygon w` to have
+  surface links (link connectivity plus letter counts of `w`) and to be orientable (distinct
+  occurrences of an edge are mutually reverse letters).
 * `TauCeti.PolygonalComplex.not_hasSurfaceLink_digons`: the vertex of any family of faces `a a⁻¹` on
   the one-petal rose has no surface link (for example, the sphere with two points identified).
 
@@ -150,9 +151,8 @@ theorem linkDegree_polygon {α : Type u} [DecidableEq α] (w : List (α × Bool)
 theorem eulerChar_polygon {α : Type u} (w : List (α × Bool)) (hw : w ≠ []) :
     (polygon w hw).eulerChar = 2 - Nat.card α := by
   refine (eulerChar_singleFace (Γ := SerreGraph.rose α) (w := w) (hw := hw)).trans ?_
-  rw [Nat.card_congr (SerreGraph.roseGeomEdgeEquiv α)]
-  -- The rose has a single vertex.
-  rw [show Nat.card (SerreGraph.rose α).V = 1 from Nat.card_unique (α := PUnit)]
+  rw [Nat.card_congr (SerreGraph.roseGeomEdgeEquiv α),
+    Nat.card_unique (α := (SerreGraph.rose α).V)]
   ring
 
 /-- In the link of the vertex of `polygon w`, the corner at position `k` joins the germ `w[k]` to
@@ -257,6 +257,11 @@ open PolygonalComplex
 
 namespace SurfaceModel
 
+/-! The models below are plain definitions. The proofs about their darts apply the `polygon` and
+`singleFace` lemmas directly, unfolding each model to its underlying complex: the dart type
+`S.graph.E` depends on the complex, which blocks rewriting along `disc_toPolygonalComplex` and its
+analogues. -/
+
 /-! ### The disc -/
 
 /-- The disc: one petal `a` and a single face attached along `a`. -/
@@ -273,15 +278,16 @@ def disc : SurfaceModel.{0, 0, 0} where
 theorem disc_toPolygonalComplex :
     disc.toPolygonalComplex = polygon [((), true)] (List.cons_ne_nil _ _) := (rfl)
 
+/-- The disc has Euler characteristic `1`: one vertex, one edge and one face. -/
 theorem eulerChar_disc : disc.eulerChar = 1 := by
   rw [disc_toPolygonalComplex, eulerChar_polygon, Nat.card_unique]
-  rfl
+  norm_num
 
 /-- Both darts of the disc are boundary darts: its single edge lies on one face side. -/
 theorem boundaryDarts_disc : disc.boundaryDarts = Set.univ :=
   Set.eq_univ_of_forall fun e => linkDegree_eq_one_iff_mem_boundaryDarts.1 <|
     (linkDegree_polygon (α := Unit) [((), true)] (List.cons_ne_nil _ _) e).trans <| by
-      obtain ⟨⟨⟩, _ | _⟩ := e <;> rfl
+      obtain ⟨⟨⟩, _ | _⟩ := e <;> decide
 
 /-! ### The torus -/
 
@@ -308,9 +314,10 @@ theorem torus_toPolygonalComplex :
       polygon (α := Fin 2) [(0, true), (1, true), (0, false), (1, false)] (List.cons_ne_nil _ _) :=
   (rfl)
 
+/-- The torus has Euler characteristic `0`: one vertex, two edges and one face. -/
 theorem eulerChar_torus : torus.eulerChar = 0 := by
   rw [torus_toPolygonalComplex, eulerChar_polygon, Nat.card_eq_fintype_card, Fintype.card_fin]
-  rfl
+  norm_num
 
 /-- The torus has no boundary: each of its two edges lies on two face sides. -/
 theorem boundaryDarts_torus : torus.boundaryDarts = ∅ :=
@@ -318,7 +325,7 @@ theorem boundaryDarts_torus : torus.boundaryDarts = ∅ :=
     (linkDegree_polygon (α := Fin 2) [(0, true), (1, true), (0, false), (1, false)]
       (List.cons_ne_nil _ _) e).trans <| by
       obtain ⟨i, b⟩ := e
-      fin_cases i <;> cases b <;> rfl
+      fin_cases i <;> cases b <;> decide
 
 /-- The torus is orientable: with its face kept as given, the two sides along each edge traverse
 it in opposite directions. -/
@@ -342,15 +349,16 @@ theorem projectivePlane_toPolygonalComplex :
     projectivePlane.toPolygonalComplex = polygon [((), true), ((), true)] (List.cons_ne_nil _ _) :=
   (rfl)
 
+/-- The projective plane has Euler characteristic `1`: one vertex, one edge and one face. -/
 theorem eulerChar_projectivePlane : projectivePlane.eulerChar = 1 := by
   rw [projectivePlane_toPolygonalComplex, eulerChar_polygon, Nat.card_unique]
-  rfl
+  norm_num
 
 /-- The projective plane has no boundary: its edge lies on both face sides. -/
 theorem boundaryDarts_projectivePlane : projectivePlane.boundaryDarts = ∅ :=
   Set.eq_empty_of_forall_notMem fun e => linkDegree_eq_two_iff_notMem_boundaryDarts.1 <|
     (linkDegree_polygon (α := Unit) [((), true), ((), true)] (List.cons_ne_nil _ _) e).trans <| by
-      obtain ⟨⟨⟩, _ | _⟩ := e <;> rfl
+      obtain ⟨⟨⟩, _ | _⟩ := e <;> decide
 
 /-- The projective plane is not orientable: its two sides traverse the same dart, and orienting
 the single face reverses both of them. -/
@@ -385,24 +393,23 @@ def sphere : SurfaceModel.{0, 0, 0} where
       (SerreGraph.connected_iff _).2 ⟨⟨⟨v, rfl⟩⟩,
         SerreGraph.preconnected_of_forall_nonempty_path _ ⟨v, rfl⟩ fun ⟨e, he⟩ => ?_⟩,
       .inl fun e _ => ?_⟩
-    · obtain rfl : e = v := he
+    · obtain rfl : e = v := (SerreGraph.segment_src e).symm.trans he
       exact ⟨.nil⟩
     · let _ : DecidableEq SerreGraph.segment.E := inferInstanceAs (DecidableEq Bool)
       refine (linkDegree_singleFace e).trans ?_
-      cases e <;> rfl
+      cases e <;> decide
 
 theorem sphere_toPolygonalComplex :
     sphere.toPolygonalComplex =
       singleFace SerreGraph.segment [false, true] (List.cons_ne_nil _ _)
         (by intro i; fin_cases i <;> rfl) := (rfl)
 
+/-- The sphere has Euler characteristic `2`: two vertices, one edge and one face. -/
 theorem eulerChar_sphere : sphere.eulerChar = 2 := by
   rw [sphere_toPolygonalComplex, eulerChar_singleFace,
-    Nat.card_unique (α := SerreGraph.segment.GeomEdge)]
-  -- The vertices of the segment are the two Booleans.
-  rw [show Nat.card SerreGraph.segment.V = 2 from
-    (Nat.card_eq_fintype_card (α := Bool)).trans Fintype.card_bool]
-  rfl
+    Nat.card_unique (α := SerreGraph.segment.GeomEdge), Nat.card_congr SerreGraph.segmentVEquiv,
+    Nat.card_eq_fintype_card, Fintype.card_bool]
+  norm_num
 
 /-- The sphere has no boundary: its edge lies on both sides of the digon. -/
 theorem boundaryDarts_sphere : sphere.boundaryDarts = ∅ :=
@@ -410,7 +417,7 @@ theorem boundaryDarts_sphere : sphere.boundaryDarts = ∅ :=
     let _ : DecidableEq SerreGraph.segment.E := inferInstanceAs (DecidableEq Bool)
     refine (linkDegree_singleFace (Γ := SerreGraph.segment) (w := [false, true])
       (hw := List.cons_ne_nil _ _) e).trans ?_
-    cases e <;> rfl
+    cases e <;> decide
 
 end SurfaceModel
 

@@ -375,6 +375,9 @@ abbrev point : SerreGraph.{u, v} where
   rev_rev := by intro e; exact e.elim
   rev_ne := by intro e; exact e.elim
 
+/-- A rose has a single vertex. -/
+instance (α : Type w) : Unique (rose α).V := inferInstanceAs (Unique PUnit)
+
 /-- The geometric edges of a rose are its petals. -/
 def roseGeomEdgeEquiv (α : Type w) : (rose α).GeomEdge ≃ α where
   toFun := GeomEdge.lift (rose α) Prod.fst fun _ => rfl
@@ -423,6 +426,9 @@ vertex `b` to the vertex `!b`. -/
 @[simp] theorem segment_rev (b : Bool) : segment.rev b = !b := rfl
 
 @[simp] theorem segment_tgt (b : Bool) : segment.tgt b = !b := rfl
+
+/-- The vertices of the segment are the Booleans. -/
+def segmentVEquiv : segment.V ≃ Bool := Equiv.refl Bool
 
 /-- The segment has a single geometric edge. -/
 instance : Unique segment.GeomEdge where
