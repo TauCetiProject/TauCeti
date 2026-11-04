@@ -8,7 +8,6 @@ module
 public import Mathlib.Algebra.Polynomial.Derivation
 public import Mathlib.RingTheory.FilteredAlgebra.Basic
 import Mathlib.Data.Nat.Choose.Sum
-import Mathlib.Tactic.Module
 
 /-!
 # Differential operators of finite order
@@ -61,7 +60,7 @@ namespace TauCeti
 section
 
 variable (R : Type*) {A M N O : Type*} [CommSemiring R] [CommSemiring A] [Algebra R A]
-  [AddCommGroup M] [Module A M] [Module R M] [IsScalarTower R A M]
+  [AddCommMonoid M] [Module A M] [Module R M] [IsScalarTower R A M]
   [AddCommGroup N] [Module A N] [Module R N] [IsScalarTower R A N]
   [AddCommGroup O] [Module A O] [Module R O] [IsScalarTower R A O]
 
@@ -84,9 +83,9 @@ theorem smulCommutator_apply_apply (a : A) (D : M →ₗ[R] N) (x : M) :
   simp [smulCommutator]
 
 /-- For endomorphisms, `smulCommutator R a` is the Lie bracket with multiplication by `a` in the
-associative algebra `Module.End R M`. -/
-theorem smulCommutator_eq_lie (a : A) (D : Module.End R M) :
-    smulCommutator R a D = ⁅D, Algebra.lsmul R R M a⁆ := by
+associative algebra `Module.End R N`. -/
+theorem smulCommutator_eq_lie (a : A) (D : Module.End R N) :
+    smulCommutator R a D = ⁅D, Algebra.lsmul R R N a⁆ := by
   ext x
   simp [Ring.lie_def]
 
@@ -147,7 +146,9 @@ theorem smulCommutator_comp (a : A) (P : N →ₗ[R] O) (Q : M →ₗ[R] N) :
   simp only [smulCommutator_apply_apply, LinearMap.comp_apply, LinearMap.add_apply, map_sub]
   abel
 
-/-- The general Leibniz rule for iterated commutators of a composition. -/
+/-- The general Leibniz rule for iterated commutators of a composition.
+
+Adapted from `LieModule.toEnd_pow_lie` and `LieAlgebra.ad_pow_lie` in Mathlib. -/
 theorem smulCommutator_pow_comp (a : A) (P : N →ₗ[R] O) (Q : M →ₗ[R] N) (n : ℕ) :
     (smulCommutator R a ^ n) (P ∘ₗ Q) =
       ∑ ij ∈ antidiagonal n,
@@ -282,10 +283,10 @@ theorem comp_mem_differentialOperators {P : N →ₗ[R] O} {Q : M →ₗ[R] N} {
       · simp [smulCommutator_eq_zero_of_mem_differentialOperators_zero hP a]
       · exact ih (smulCommutator_mem_differentialOperators hP a) hQ (by omega)
 
-variable (R A M) in
-/-- The differential operators on `M` form a filtered ring under composition. -/
-instance : SetLike.GradedMonoid (differentialOperators R A M M) where
-  one_mem := LinearMap.restrictScalars_mem_differentialOperators_zero (LinearMap.id : M →ₗ[A] M)
+variable (R A N) in
+/-- The differential operators on `N` form a filtered ring under composition. -/
+instance : SetLike.GradedMonoid (differentialOperators R A N N) where
+  one_mem := LinearMap.restrictScalars_mem_differentialOperators_zero (LinearMap.id : N →ₗ[A] N)
   mul_mem _ _ _ _ hP hQ := comp_mem_differentialOperators hP hQ
 
 /-- The top iterated commutators of a composition multiply: for `P` of order at most `m` and
@@ -333,7 +334,7 @@ end
 
 section FirstOrder
 
-variable {R : Type*} {A M : Type*} [CommSemiring R] [CommRing A] [Algebra R A]
+variable {R : Type*} {A M : Type*} [CommSemiring R] [CommSemiring A] [Algebra R A]
   [AddCommGroup M] [Module A M] [Module R M] [IsScalarTower R A M]
 
 /-- A derivation is a differential operator of order at most one: its commutator with
@@ -344,8 +345,8 @@ theorem _root_.Derivation.mem_differentialOperators_one (D : Derivation R A M) :
   intro a
   rw [mem_differentialOperators_zero_iff]
   intro b x
-  simp only [smulCommutator_apply_apply, Derivation.coeFn_coe, smul_eq_mul, Derivation.leibniz]
-  module
+  simp only [smulCommutator_apply_apply, Derivation.coeFn_coe, smul_eq_mul, Derivation.leibniz,
+    add_sub_cancel_left, smul_smul]
 
 /-- For `D : A →ₗ[R] M` of order at most one, `f ↦ D f - f • D 1` is a derivation. -/
 def derivationOfMemDifferentialOperatorsOne (D : A →ₗ[R] M)
@@ -358,7 +359,8 @@ def derivationOfMemDifferentialOperatorsOne (D : A →ₗ[R] M)
       LinearMap.toSpanSingleton_apply]
     rw [sub_eq_zero, sub_eq_iff_eq_add] at h
     rw [h]
-    module
+    simp only [smul_sub, smul_smul, mul_comm g f]
+    abel
 
 @[simp]
 theorem derivationOfMemDifferentialOperatorsOne_apply (D : A →ₗ[R] M)
