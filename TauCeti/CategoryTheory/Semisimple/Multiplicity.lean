@@ -216,7 +216,7 @@ theorem simpleMultiplicities_eq_zero_iff (X : C) :
 /-- A simple object occurs with nonzero multiplicity precisely when it maps nontrivially into
 an object. The multiplicity counts copies over the endomorphism division ring, not over a
 chosen coefficient field. -/
-theorem simpleMultiplicities_classOf_ne_zero_iff (X S : C) [Simple S] :
+theorem simpleMultiplicities_apply_classOf_ne_zero_iff (X S : C) [Simple S] :
     simpleMultiplicities X (SimpleClasses.classOf S) ≠ 0 ↔ ∃ f : S ⟶ X, f ≠ 0 := by
   classical
   obtain ⟨ι, hι, A, hA, hB, ⟨e⟩⟩ := IsFiniteSemisimpleCategory.exists_biproduct_simples X

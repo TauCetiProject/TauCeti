@@ -20,13 +20,14 @@ apply its right adjoint to the simple representatives of the target. Every simpl
 the source has nonzero image, which maps nontrivially to a simple object of the target; the
 adjunction transposes this to a nonzero map into one of the right-adjoint images. Thus finiteness
 of simple classes in the target implies finiteness in the source. This applies, in particular,
-to forgetful functors from Drinfeld centres once their right adjoints and semisimplicity have
-been established. Neither linearity over a field nor split endomorphism division rings is needed.
+to the forgetful functor from a Drinfeld centre, whose right adjoint is induction, when the
+centre is finite semisimple. Neither linearity over a field nor split endomorphism division
+rings is needed.
 
 ## Main results
 
-* `TauCeti.finite_simpleClasses_of_detecting_family`: a finite family detecting every simple
-  object forces finiteness of simple classes.
+* `TauCeti.finite_simpleClasses_of_forall_simple_exists_hom_ne_zero`: a finite family receiving
+  a nonzero morphism from every simple object forces finiteness of simple classes.
 * `CategoryTheory.Functor.finite_simpleClasses_of_faithful_leftAdjoint`: finiteness transfers
   along a faithful left adjoint between finite semisimple categories.
 
@@ -49,7 +50,7 @@ variable {C : Type u} [Category.{v} C] [Abelian C] [IsFiniteSemisimpleCategory C
 
 /-- A finite family receiving a nonzero morphism from every simple object forces finiteness
 of the simple isomorphism classes. -/
-theorem finite_simpleClasses_of_detecting_family {ι : Type*} [Finite ι] (X : ι → C)
+theorem finite_simpleClasses_of_forall_simple_exists_hom_ne_zero {ι : Type*} [Finite ι] (X : ι → C)
     (h : ∀ (S : C) [Simple S], ∃ i, ∃ f : S ⟶ X i, f ≠ 0) :
     Finite (SimpleClasses C) := by
   classical
@@ -57,7 +58,7 @@ theorem finite_simpleClasses_of_detecting_family {ι : Type*} [Finite ι] (X : �
   let s := Finset.univ.biUnion fun i ↦ (simpleMultiplicities (X i)).support
   have hs (S : SimpleClasses C) : S ∈ s := by
     obtain ⟨i, f, hf⟩ := h S.repr
-    have hm := (simpleMultiplicities_classOf_ne_zero_iff (X i) S.repr).2 ⟨f, hf⟩
+    have hm := (simpleMultiplicities_apply_classOf_ne_zero_iff (X i) S.repr).2 ⟨f, hf⟩
     apply Finset.mem_biUnion.mpr
     exact ⟨i, Finset.mem_univ i, Finsupp.mem_support_iff.mpr (by simpa using hm)⟩
   exact Finite.of_injective (fun S : SimpleClasses C ↦ (⟨S, hs S⟩ : ↥s))
@@ -75,14 +76,14 @@ variable {C : Type u} [Category.{v} C] [Abelian C] [IsFiniteSemisimpleCategory C
   {D : Type u'} [Category.{v'} D] [Abelian D] [IsFiniteSemisimpleCategory D]
 
 /-- A faithful left adjoint between finite semisimple categories transfers finiteness
-of simple classes from its target to its source. The detecting objects are the right-adjoint
-images of the target's simple representatives. -/
+of simple classes from its target to its source. -/
 theorem finite_simpleClasses_of_faithful_leftAdjoint (F : C ⥤ D) [F.Faithful]
     {G : D ⥤ C} (adj : F ⊣ G) [Finite (SimpleClasses D)] : Finite (SimpleClasses C) := by
   have := adj.isLeftAdjoint
   have := preservesBinaryBiproducts_of_preservesBinaryCoproducts F
   have := F.additive_of_preservesBinaryBiproducts
-  apply finite_simpleClasses_of_detecting_family (fun T : SimpleClasses D ↦ G.obj T.repr)
+  apply finite_simpleClasses_of_forall_simple_exists_hom_ne_zero
+    (fun T : SimpleClasses D ↦ G.obj T.repr)
   intro S _
   have hS : ¬IsZero (F.obj S) := by
     intro h
