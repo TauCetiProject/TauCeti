@@ -307,36 +307,36 @@ private theorem linearIndependent_pseudoBasisVec [Finite ι] [Finite κ] :
   exact Fintype.linearIndependent_iff.mp ((J k₀).mixedLatticeBasis (hJ k₀)).linearIndependent
     (fun ν ↦ c (k₀, ν)) hsum ν₀
 
-private theorem span_range_pseudoBasisVec [Finite ι] [Finite κ] :
+open Classical in
+/-- Expand the Euclidean Minkowski embedding of `v ∈ W` in `pseudoBasisVec b hJ` by expanding
+`⟨v, hv⟩` in `b` and each `K`-coordinate in `(J k).mixedLatticeBasis (hJ k)`. -/
+private theorem toLp_eq_sum_repr_smul_pseudoBasisVec [Fintype κ] {v : ι → K} (hv : v ∈ W) :
+    (WithLp.toLp 2 fun i ↦ (euclidean.toMixed K).symm (mixedEmbedding K (v i))) =
+      ∑ p : κ × index K,
+        ((J p.1).mixedLatticeBasis (hJ p.1)).repr (mixedEmbedding K (b.repr ⟨v, hv⟩ p.1)) p.2 •
+          pseudoBasisVec b hJ p := by
+  ext1 i
+  apply (euclidean.toMixed K).injective
+  rw [WithLp.ofLp_toLp, ContinuousLinearEquiv.apply_symm_apply, ← evalMixedLinear_apply, map_sum]
+  simp only [map_smul, evalMixedLinear_pseudoBasisVec]
+  rw [congrFun (b.eq_sum_repr_smul_of_mem hv) i, Finset.sum_apply, map_sum, Fintype.sum_prod_type]
+  refine Finset.sum_congr rfl fun k _ ↦ ?_
+  rw [Pi.smul_apply, smul_eq_mul, map_mul,
+    ← ((J k).mixedLatticeBasis (hJ k)).sum_repr (mixedEmbedding K (b.repr ⟨v, hv⟩ k)),
+    Finset.sum_mul]
+  exact Finset.sum_congr rfl fun ν _ ↦ Algebra.smul_mul_assoc _ _ _
+
+private theorem span_range_pseudoBasisVec [Finite κ] :
     span ℝ (range (pseudoBasisVec b hJ)) = W.euclideanSpan := by
   classical
-  cases nonempty_fintype ι
   cases nonempty_fintype κ
   refine le_antisymm (span_le.2 ?_) (span_le.2 ?_)
   · rintro _ ⟨⟨k, ν⟩, rfl⟩
     simpa [pseudoBasisVec, Algebra.smul_def] using
       toLp_mem_euclideanSpan (W.smul_mem ((J k).mixedBasisElem (hJ k) ν) (b k).2)
   · rintro _ ⟨v, hv, rfl⟩
-    -- Expand `⟨v, hv⟩` in `b`, and each `K`-coordinate in `(J k).mixedLatticeBasis (hJ k)`.
-    have hexp :
-        (WithLp.toLp 2 fun i ↦ (euclidean.toMixed K).symm (mixedEmbedding K (v i))) =
-          ∑ p : κ × index K,
-            ((J p.1).mixedLatticeBasis (hJ p.1)).repr (mixedEmbedding K (b.repr ⟨v, hv⟩ p.1)) p.2 •
-              pseudoBasisVec b hJ p := by
-      ext1 i
-      apply (euclidean.toMixed K).injective
-      rw [WithLp.ofLp_toLp, ContinuousLinearEquiv.apply_symm_apply, ← evalMixedLinear_apply,
-        map_sum]
-      simp only [map_smul, evalMixedLinear_pseudoBasisVec]
-      rw [congrFun (b.eq_sum_repr_smul_of_mem hv) i, Finset.sum_apply, map_sum,
-        Fintype.sum_prod_type]
-      refine Finset.sum_congr rfl fun k _ ↦ ?_
-      rw [Pi.smul_apply, smul_eq_mul, map_mul,
-        ← ((J k).mixedLatticeBasis (hJ k)).sum_repr (mixedEmbedding K (b.repr ⟨v, hv⟩ k)),
-        Finset.sum_mul]
-      exact Finset.sum_congr rfl fun ν _ ↦ Algebra.smul_mul_assoc _ _ _
     dsimp only
-    rw [hexp]
+    rw [toLp_eq_sum_repr_smul_pseudoBasisVec b hJ hv]
     exact sum_mem fun p _ ↦ smul_mem _ _ (subset_span ⟨p, rfl⟩)
 
 /-- The `ℝ`-basis of `W.euclideanSpan` attached to a `K`-basis `b` of `W` and nonzero ideals `J k`
@@ -362,47 +362,35 @@ theorem span_int_euclideanSpanBasisOfPseudoBasis [Finite ι] [Finite κ]
     (hW : W.IsIntegerPseudoBasis b J) :
     span ℤ (range (euclideanSpanBasisOfPseudoBasis b hJ)) = W.integerLattice := by
   classical
-  cases nonempty_fintype ι
   cases nonempty_fintype κ
   refine le_antisymm (span_le.2 ?_) (fun w hw ↦ ?_)
-  · rintro _ ⟨⟨k, ν⟩, rfl⟩
+  · -- Each `(b, J)`-generator has integral coordinates, hence lies in `W.integerLattice`.
+    rintro _ ⟨⟨k, ν⟩, rfl⟩
     rw [SetLike.mem_coe, mem_integerLattice]
     intro i
     obtain ⟨a, ha⟩ := hW.coe_smul_basis_mem_range ((J k).mixedBasisElem_mem (hJ k) ν) i
     rw [coe_euclideanSpanBasisOfPseudoBasis_apply, euclidean.integerLattice, ZLattice.comap,
       Submodule.mem_comap]
     exact ⟨a, by simp [← ha]⟩
-  · obtain ⟨z, hzW, hwz⟩ := exists_mem_integerPoints_of_mem_integerLattice hw
-    let wK : W := ⟨fun i ↦ (z i : K), mem_integerPoints.mp hzW⟩
-    have hwK : ∀ k, b.repr wK k ∈ IsLocalization.coeSubmodule K (J k) :=
-      (hW.mem_coeSubmodule_iff wK).1 fun i ↦ ⟨z i, rfl⟩
-    have hcoord (k : κ) : ∃ m : index K → ℤ,
-        mixedEmbedding K (b.repr wK k) =
-          ∑ ν : index K, m ν • (J k).mixedLatticeBasis (hJ k) ν := by
+  · -- Expand an integral point in `pseudoBasisVec b hJ`; `(hW, J)` makes the coefficients integral.
+    obtain ⟨z, hzW, hwz⟩ := exists_mem_integerPoints_of_mem_integerLattice hw
+    have hv : (fun i ↦ (z i : K)) ∈ W := mem_integerPoints.mp hzW
+    have hint (k : κ) (ν : index K) :
+        ∃ m : ℤ, (m : ℝ) =
+          ((J k).mixedLatticeBasis (hJ k)).repr (mixedEmbedding K (b.repr ⟨_, hv⟩ k)) ν := by
+      have hwK : b.repr ⟨_, hv⟩ k ∈ IsLocalization.coeSubmodule K (J k) :=
+        (hW.mem_coeSubmodule_iff ⟨_, hv⟩).1 (fun i ↦ ⟨z i, rfl⟩) k
       have hm :=
-        ((J k).mem_coeSubmodule_iff_mem_span_mixedLatticeBasis (hJ k) (b.repr wK k)).1 (hwK k)
-      rw [((J k).mixedLatticeBasis (hJ k)).mem_span_iff_repr_mem ℤ] at hm
-      choose m hm' using hm
-      refine ⟨m, ?_⟩
-      conv_lhs => rw [← ((J k).mixedLatticeBasis (hJ k)).sum_repr (mixedEmbedding K (b.repr wK k))]
-      exact Finset.sum_congr rfl fun ν _ ↦ by
-        rw [← hm' ν, eq_intCast, Int.cast_smul_eq_zsmul]
-    choose m hm using hcoord
+        ((J k).mem_coeSubmodule_iff_mem_span_mixedLatticeBasis (hJ k) (b.repr ⟨_, hv⟩ k)).1 hwK
+      exact (((J k).mixedLatticeBasis (hJ k)).mem_span_iff_repr_mem ℤ _).1 hm ν
+    choose m hm using hint
     have hweq : w = ∑ p : κ × index K, m p.1 p.2 • euclideanSpanBasisOfPseudoBasis b hJ p := by
-      ext1; ext1 i
-      apply (euclidean.toMixed K).injective
-      rw [hwz, WithLp.ofLp_toLp, ContinuousLinearEquiv.apply_symm_apply, ← evalMixedLinear_apply,
-        ← Submodule.coe_subtype, ← LinearMap.comp_apply, map_sum]
-      simp only [LinearMap.comp_apply, Submodule.coe_subtype, evalMixedLinear_apply, map_zsmul,
-        coe_euclideanSpanBasisOfPseudoBasis_apply, ContinuousLinearEquiv.apply_symm_apply, map_mul]
-      have hzi : (z i : K) = (∑ k, b.repr wK k • (b k : ι → K)) i :=
-        congrFun (b.eq_sum_repr_smul_of_mem (mem_integerPoints.mp hzW)) i
-      rw [hzi, Finset.sum_apply, map_sum, Fintype.sum_prod_type]
-      refine Finset.sum_congr rfl fun k _ ↦ ?_
-      rw [Pi.smul_apply, smul_eq_mul, map_mul, hm k, Finset.sum_mul]
-      refine Finset.sum_congr rfl fun ν _ ↦ ?_
-      rw [Ideal.mixedLatticeBasis_apply, ← Int.cast_smul_eq_zsmul ℝ,
-        ← Int.cast_smul_eq_zsmul ℝ, Algebra.smul_mul_assoc]
+      apply Subtype.ext
+      rw [hwz, toLp_eq_sum_repr_smul_pseudoBasisVec b hJ hv, ← W.euclideanSpan.coe_subtype,
+        map_sum]
+      refine Finset.sum_congr rfl fun p _ ↦ ?_
+      rw [map_zsmul, Submodule.coe_subtype, coe_euclideanSpanBasisOfPseudoBasis_apply,
+        ← hm p.1 p.2, Int.cast_smul_eq_zsmul, pseudoBasisVec]
     rw [hweq]
     exact sum_mem fun p _ ↦ zsmul_mem (subset_span (mem_range_self p)) _
 
