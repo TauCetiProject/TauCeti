@@ -67,8 +67,8 @@ theorem lt_height_iff_eq_maximalIdeal {n : ℕ} (hdim : ringKrullDim R = n + 1) 
 
 end IsLocalRing
 
-/-- A nonzero prime `p` of a Noetherian domain contains a prime of height one: any prime minimal
-over `(a)`, for a nonzero `a ∈ p`. -/
+/-- A nonzero prime `p` of a Noetherian domain contains a prime of height one: a prime minimal
+over `(a)` chosen below `p`, for a nonzero `a ∈ p`. -/
 theorem exists_le_isPrime_height_eq_one {R : Type*} [CommRing R] [IsDomain R]
     [IsNoetherianRing R] (p : Ideal R) [p.IsPrime] (hp : p ≠ ⊥) :
     ∃ P ≤ p, P.IsPrime ∧ P.height = 1 := by

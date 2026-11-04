@@ -380,10 +380,8 @@ of height one gives Krull dimension `n`. -/
 private theorem ringKrullDim_quotient_eq_of_height_eq_one {A : Type*} [CommRing A] [IsDomain A]
     [Algebra k A] [Algebra.FiniteType k A] (P : Ideal A) [P.IsPrime] (hP : P.height = 1) {n : ℕ}
     (hn : ringKrullDim A = (n + 1 : ℕ)) : ringKrullDim (A ⧸ P) = n := by
-  -- Cancel the `+ 1` in `ℕ`: both dimensions are transcendence degrees.
-  have h := hn ▸ ringKrullDim_quotient_add_one_of_height_eq_one k P hP
-  rw [ringKrullDim_eq_toNat_trdeg k (A ⧸ P)] at h ⊢
-  exact_mod_cast Nat.succ_injective (by exact_mod_cast h)
+  have h := ringKrullDim_quotient_add_one_of_height_eq_one k P hP
+  rwa [hn, Nat.cast_succ, ENat.WithBot.add_one_cancel] at h
 
 variable (k) in
 /-- The dimension formula `ht p + dim (A ⧸ p) = dim A` for a finitely generated domain `A` over a
