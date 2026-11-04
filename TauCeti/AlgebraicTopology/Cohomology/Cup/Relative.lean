@@ -34,8 +34,8 @@ relative chains (`TauCeti/AlgebraicTopology/Singular/AlexanderWhitney/RelativeCu
   `TauCeti.singularRelativeCross : Hᵖ(X, A) × H^q(Y, B) ⟶ Hⁿ(X × Y, A × Y ∪ X × B)` is the relative
   cup product of the pullbacks along the two projections, where `A × Y` and `X × B` are the
   preimages of `A` and `B`.  It is natural in both pairs and maps to the absolute cross product
-  `TauCeti.singularCross`.  With `A` and `B` the complements of the zero sections of two vector
-  bundles, it is the product of Thom classes.
+  `TauCeti.singularCross`.  When `A` and `B` are the complements of the zero sections of two
+  vector bundles, this is the pairing on the cohomology of their Thom pairs.
 
 ## Main definitions and results
 
@@ -179,6 +179,7 @@ lemma singularCup_homologyπ (P : TopPair.{w}) (u : T ⟶ R ⊗ S) (μ : M ⊗ N
 
 /-- **Compatibility with the absolute cup product**: the image in `Hⁿ(X)` of the cup product of
 `a ∈ Hᵖ(X)` with `b ∈ H^q(X, A)` is the cup product of `a` with the image of `b` in `H^q(X)`. -/
+@[simp]
 lemma singularCohomologyπ_singularCup (P : TopPair.{w}) (u : T ⟶ R ⊗ S) (μ : M ⊗ N ⟶ L)
     (p q n : ℕ) (h : p + q = n) (a : P.fst.singularCohomology R k M p)
     (b : P.singularCohomology S k N q) :
@@ -303,6 +304,7 @@ lemma homologyMap_cochainComplexMap_singularRelativeCup (u : T ⟶ R ⊗ S) (μ 
 /-- **Compatibility with the absolute cup product**: the image in `Hⁿ(X)` of the relative cup
 product of `a ∈ Hᵖ(X, U)` and `b ∈ H^q(X, V)` is the cup product of the images of `a` in `Hᵖ(X)` and
 of `b` in `H^q(X)`. -/
+@[simp]
 lemma singularCohomologyπ_singularRelativeCup (u : T ⟶ R ⊗ S) (μ : M ⊗ N ⟶ L) (U V : Set X)
     (hU : IsOpen ((↑) ⁻¹' U : Set ↥(U ∪ V))) (hV : IsOpen ((↑) ⁻¹' V : Set ↥(U ∪ V)))
     (p q n : ℕ) (h : p + q = n) (a : (TopPair.ofSubset U).singularCohomology R k M p)
@@ -318,7 +320,11 @@ lemma singularCohomologyπ_singularRelativeCup (u : T ⟶ R ⊗ S) (μ : M ⊗ N
         ((TauCeti.ChainComplex.linearYonedaFunctor k L).map
           ((X.smallSingularSubcomplex ![U, V]).pair.chainComplexπ T ≫
             SSetPair.chainComplexMap (smallSingularSubcomplexPairToUnion U V) T).op) n := by
-    rw [chainComplexπ_smallSingularSubcomplexPairToUnion]
+    rw [chainComplexπ_smallSingularSubcomplexPairToUnion, TopPair.singularCohomologyπ,
+      TopPair.singularCochainComplexShortComplex_f_eq]
+    -- The two sides now differ only in the implicit source and target of `homologyMap`, written
+    -- as the cochain complexes of the pair on the left and as `linearYonedaObj` on the right;
+    -- `TopPair.singularCochainComplex` is by definition `linearYonedaObj` of the relative chains.
     rfl
   rw [hπ]
   refine (TauCeti.ChainComplex.homologyMap_linearYonedaFunctor_map_comp_apply _ _ n _).trans ?_
@@ -368,42 +374,6 @@ namespace TauCeti
 
 variable (k : Type*) [CommRing k] [Linear k C] [MonoidalLinear k C]
 
-section Preimage
-
-variable {X Y X' Y' : TopCat.{w}} {A : Set X} {B : Set Y}
-
-/-- The preimage of an open subset of `X` under the first projection of `X × Y` is open in its union
-with the preimage of a subset of `Y` under the second projection. -/
-lemma isOpen_preimage_fst (hA : IsOpen A) :
-    IsOpen ((↑) ⁻¹' (fst X Y ⁻¹' A) : Set ↥(fst X Y ⁻¹' A ∪ snd X Y ⁻¹' B)) :=
-  (hA.preimage (fst X Y).hom.continuous).preimage continuous_subtype_val
-
-/-- The preimage of an open subset of `Y` under the second projection of `X × Y` is open in its
-union with the preimage of a subset of `X` under the first projection. -/
-lemma isOpen_preimage_snd (hB : IsOpen B) :
-    IsOpen ((↑) ⁻¹' (snd X Y ⁻¹' B) : Set ↥(fst X Y ⁻¹' A ∪ snd X Y ⁻¹' B)) :=
-  (hB.preimage (snd X Y).hom.continuous).preimage continuous_subtype_val
-
-/-- The product of two maps carries the preimage of `A` under the first projection into the
-preimage of `A'` when the first map carries `A` into `A'`. -/
-lemma mapsTo_tensorHom_preimage_fst {A' : Set X'} (f : X ⟶ X') (g : Y ⟶ Y')
-    (hf : Set.MapsTo f A A') : Set.MapsTo (f ⊗ₘ g) (fst X Y ⁻¹' A) (fst X' Y' ⁻¹' A') :=
-  fun x hx ↦ by
-    rw [Set.mem_preimage, ← ConcreteCategory.comp_apply, tensorHom_fst,
-      ConcreteCategory.comp_apply]
-    exact hf hx
-
-/-- The product of two maps carries the preimage of `B` under the second projection into the
-preimage of `B'` when the second map carries `B` into `B'`. -/
-lemma mapsTo_tensorHom_preimage_snd {B' : Set Y'} (f : X ⟶ X') (g : Y ⟶ Y')
-    (hg : Set.MapsTo g B B') : Set.MapsTo (f ⊗ₘ g) (snd X Y ⁻¹' B) (snd X' Y' ⁻¹' B') :=
-  fun x hx ↦ by
-    rw [Set.mem_preimage, ← ConcreteCategory.comp_apply, tensorHom_snd,
-      ConcreteCategory.comp_apply]
-    exact hg hx
-
-end Preimage
-
 /-- **The relative cross product** `Hᵖ(X, A; R, M) × H^q(Y, B; S, N) ⟶
 Hⁿ(X × Y, A × Y ∪ X × B; R ⊗ S, L)` for open subsets `A ⊆ X` and `B ⊆ Y`, and `p + q = n`: the
 relative cup product (`TopCat.singularRelativeCup`) of the pullbacks of the two classes along the
@@ -417,7 +387,8 @@ def singularRelativeCross (X Y : TopCat.{w}) {A : Set X} {B : Set Y} (hA : IsOpe
       (TopPair.ofSubset B).singularCohomology S k N q →ₗ[k]
         (TopPair.ofSubset (fst X Y ⁻¹' A ∪ snd X Y ⁻¹' B)).singularCohomology (R ⊗ S) k L n :=
   (TopCat.singularRelativeCup k (𝟙 (R ⊗ S)) μ (fst X Y ⁻¹' A) (snd X Y ⁻¹' B)
-    (isOpen_preimage_fst hA) (isOpen_preimage_snd hB) p q n h).compl₁₂
+    (TopCat.isOpen_subtypeVal_preimage_preimage_fst_union hA)
+    (TopCat.isOpen_subtypeVal_preimage_preimage_snd_union hB) p q n h).compl₁₂
     (TopPair.singularCohomologyMap (TopPair.ofSubsetMap (fst X Y) (Set.mapsTo_preimage _ _)) p).hom
     (TopPair.singularCohomologyMap (TopPair.ofSubsetMap (snd X Y) (Set.mapsTo_preimage _ _)) q).hom
 
@@ -429,7 +400,8 @@ lemma singularRelativeCross_apply (X Y : TopCat.{w}) {A : Set X} {B : Set Y} (hA
     (b : (TopPair.ofSubset B).singularCohomology S k N q) :
     singularRelativeCross k X Y hA hB μ p q n h a b =
       TopCat.singularRelativeCup k (𝟙 (R ⊗ S)) μ (fst X Y ⁻¹' A) (snd X Y ⁻¹' B)
-        (isOpen_preimage_fst hA) (isOpen_preimage_snd hB) p q n h
+        (TopCat.isOpen_subtypeVal_preimage_preimage_fst_union hA)
+        (TopCat.isOpen_subtypeVal_preimage_preimage_snd_union hB) p q n h
         (TopPair.singularCohomologyMap (TopPair.ofSubsetMap (fst X Y) (Set.mapsTo_preimage _ _))
           p a)
         (TopPair.singularCohomologyMap (TopPair.ofSubsetMap (snd X Y) (Set.mapsTo_preimage _ _))
@@ -439,6 +411,7 @@ lemma singularRelativeCross_apply (X Y : TopCat.{w}) {A : Set X} {B : Set Y} (hA
 /-- **Compatibility with the absolute cross product**: the image in `Hⁿ(X × Y)` of the relative
 cross product of `a ∈ Hᵖ(X, A)` and `b ∈ H^q(Y, B)` is the cross product of the images of `a` in
 `Hᵖ(X)` and of `b` in `H^q(Y)`. -/
+@[simp]
 lemma singularCohomologyπ_singularRelativeCross (X Y : TopCat.{w}) {A : Set X} {B : Set Y}
     (hA : IsOpen A) (hB : IsOpen B) (μ : M ⊗ N ⟶ L) (p q n : ℕ) (h : p + q = n)
     (a : (TopPair.ofSubset A).singularCohomology R k M p)
@@ -469,8 +442,8 @@ lemma singularRelativeCross_naturality {X Y X' Y' : TopCat.{w}} {A : Set X} {B :
         (TopPair.singularCohomologyMap (TopPair.ofSubsetMap f hf) p a)
         (TopPair.singularCohomologyMap (TopPair.ofSubsetMap g hg) q b) =
       TopPair.singularCohomologyMap (TopPair.ofSubsetMap (f ⊗ₘ g)
-          ((mapsTo_tensorHom_preimage_fst f g hf).union_union
-            (mapsTo_tensorHom_preimage_snd f g hg))) n
+          ((TopCat.mapsTo_tensorHom_preimage_fst f g hf).union_union
+            (TopCat.mapsTo_tensorHom_preimage_snd f g hg))) n
         (singularRelativeCross k X' Y' hA' hB' μ p q n h a b) := by
   rw [singularRelativeCross_apply, singularRelativeCross_apply,
     ← TopCat.singularRelativeCup_naturality, ← TopPair.singularCohomologyMap_comp_apply,
@@ -478,6 +451,6 @@ lemma singularRelativeCross_naturality {X Y X' Y' : TopCat.{w}} {A : Set X} {B :
     ← TopPair.singularCohomologyMap_comp_apply,
     TopPair.ofSubsetMap_comp_ofSubsetMap_eq _ _ _ _ (tensorHom_fst f g),
     TopPair.ofSubsetMap_comp_ofSubsetMap_eq _ _ _ _ (tensorHom_snd f g)]
-  exacts [mapsTo_tensorHom_preimage_fst f g hf, mapsTo_tensorHom_preimage_snd f g hg]
+  exacts [TopCat.mapsTo_tensorHom_preimage_fst f g hf, TopCat.mapsTo_tensorHom_preimage_snd f g hg]
 
 end TauCeti

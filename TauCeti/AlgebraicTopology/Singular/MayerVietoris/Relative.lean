@@ -284,11 +284,29 @@ private lemma toSmallSingularSubcomplex_comp_smallSingularSubcomplexToUnion {A :
 /-- The map of singular pairs from `X` relative to its singular simplices lying in `U` or in `V`
 to `(X, U ∪ V)`, given by `TopCat.smallSingularSubcomplexToUnion` on subobjects and the identity on
 the singular simplicial set of `X`. -/
-abbrev smallSingularSubcomplexPairToUnion :
+def smallSingularSubcomplexPairToUnion :
     (X.smallSingularSubcomplex ![U, V]).pair ⟶
       TopPair.toSSetPair.obj (TopPair.ofSubset (U ∪ V)) :=
   SSetPair.homMk (smallSingularSubcomplexToUnion U V) (𝟙 _)
     ((smallSingularSubcomplexToUnion_comp U V).trans (Category.comp_id _).symm)
+
+@[simp]
+lemma smallSingularSubcomplexPairToUnion_left :
+    (smallSingularSubcomplexPairToUnion U V).left = smallSingularSubcomplexToUnion U V :=
+  (rfl)
+
+@[simp]
+lemma smallSingularSubcomplexPairToUnion_right :
+    (smallSingularSubcomplexPairToUnion U V).right = 𝟙 (toSSet.obj X) :=
+  (rfl)
+
+/-- The chain map induced by the ambient component of `TopCat.smallSingularSubcomplexPairToUnion`
+is the identity. -/
+@[simp]
+lemma chainComplexMap_smallSingularSubcomplexPairToUnion_right :
+    SSet.chainComplexMap (smallSingularSubcomplexPairToUnion U V).right R = 𝟙 _ :=
+  (congrArg (SSet.chainComplexMap · R) (smallSingularSubcomplexPairToUnion_right U V)).trans
+    (CategoryTheory.Functor.map_id _ _)
 
 /-- The quotient map from the singular chains of `X` to its chains relative to the singular
 simplices lying in `U` or in `V`, followed by `TopCat.smallSingularSubcomplexPairToUnion`, is the
@@ -298,8 +316,7 @@ lemma chainComplexπ_smallSingularSubcomplexPairToUnion :
     (X.smallSingularSubcomplex ![U, V]).pair.chainComplexπ R ≫
         SSetPair.chainComplexMap (smallSingularSubcomplexPairToUnion U V) R =
       (TopPair.ofSubset (U ∪ V)).singularChainComplexπ R := by
-  rw [← SSetPair.chainComplexπ_naturality, show SSet.chainComplexMap
-    (smallSingularSubcomplexPairToUnion U V).right R = 𝟙 _ from CategoryTheory.Functor.map_id _ _]
+  rw [← SSetPair.chainComplexπ_naturality, chainComplexMap_smallSingularSubcomplexPairToUnion_right]
   exact Category.id_comp _
 
 private lemma toSmallPair_comp_smallPairToUnion {A : Set X} {i : Fin 2} (h : A ⊆ ![U, V] i)
@@ -336,11 +353,8 @@ private lemma isIso_homologyMap_smallPairToUnion (hU : IsOpen U) (hV : IsOpen V)
   have : QuasiIso (SSet.chainComplexMap (smallSingularSubcomplexPairToUnion U V).left R) :=
     quasiIso_chainComplexMap_smallSingularSubcomplexToUnion R U V
       (hU.preimage continuous_subtype_val) (hV.preimage continuous_subtype_val)
-  -- The ambient component is the identity of the singular simplicial set of `X`, seen between
-  -- two syntactically different presentations of it, so the instance is supplied by hand.
   have : IsIso (SSet.chainComplexMap (smallSingularSubcomplexPairToUnion U V).right R) := by
-    rw [show SSet.chainComplexMap (smallSingularSubcomplexPairToUnion U V).right R = 𝟙 _ from
-      CategoryTheory.Functor.map_id _ _]
+    rw [chainComplexMap_smallSingularSubcomplexPairToUnion_right]
     exact IsIso.id _
   have : QuasiIso (SSet.chainComplexMap (smallSingularSubcomplexPairToUnion U V).right R) :=
     quasiIso_of_isIso _
@@ -528,11 +542,22 @@ private lemma toSSetPair_map_ofSubsetMap_left_restrict {A : Set X} {A' : Set Y}
 /-- The map of singular pairs from `X` relative to its singular simplices lying in `U` or in `V`
 to `Y` relative to its singular simplices lying in `U'` or in `V'`, induced by a map `f` carrying
 `U` into `U'` and `V` into `V'`. -/
-abbrev smallSingularSubcomplexPairMap :
+def smallSingularSubcomplexPairMap :
     (X.smallSingularSubcomplex ![U, V]).pair ⟶ (Y.smallSingularSubcomplex ![U', V']).pair :=
   SSetPair.homMk
     (X.smallSingularSubcomplexMap ![U, V] ![U', V'] f id (Fin.forall_fin_two.2 ⟨hfU, hfV⟩))
     (toSSet.map f) (smallSingularSubcomplexMap_ι _ _ _ _ _)
+
+@[simp]
+lemma smallSingularSubcomplexPairMap_left :
+    (smallSingularSubcomplexPairMap f hfU hfV).left =
+      X.smallSingularSubcomplexMap ![U, V] ![U', V'] f id (Fin.forall_fin_two.2 ⟨hfU, hfV⟩) :=
+  (rfl)
+
+@[simp]
+lemma smallSingularSubcomplexPairMap_right :
+    (smallSingularSubcomplexPairMap f hfU hfV).right = toSSet.map f :=
+  (rfl)
 
 private lemma toSmallPair_comp_smallPairMap {A : Set X} {A' : Set Y} {i : Fin 2}
     (h : A ⊆ ![U, V] i) (h' : A' ⊆ ![U', V'] i) (hA : Set.MapsTo f A A') :

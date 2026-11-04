@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Topology.Category.TopCat.Limits.Products
+public import Mathlib.Topology.Category.TopCat.Monoidal
 public import Mathlib.Topology.Category.TopPair
 
 /-!
@@ -33,6 +34,12 @@ with the inclusions `TopPair.sigmaι P i` of the summands, is the coproduct of t
 
 A continuous map into the ambient space of a pair with values in the subspace corestricts to a
 continuous map into the subspace, `TopPair.liftSnd`, because the subspace is embedded.
+
+For subsets `A ⊆ X` and `B ⊆ Y`, the preimages `A × Y` and `X × B` of `A` and `B` under the
+projections of `X × Y` form the pair `(X × Y, A × Y ∪ X × B)` of a product of pairs. Each is open
+in the union when `A`, respectively `B`, is open
+(`TopCat.isOpen_subtypeVal_preimage_preimage_fst_union`), and a product of maps of pairs carries
+them into each other (`TopCat.mapsTo_tensorHom_preimage_fst`).
 -/
 
 public section
@@ -310,3 +317,45 @@ lemma compl_range_ofSubset_compl_map {X : TopCat.{u}} {A : Set X} (hA : IsCompac
   exact (compl_compl A).symm ▸ hA
 
 end IsCompact
+
+namespace TopCat
+
+open MonoidalCategory CartesianMonoidalCategory
+
+section Preimage
+
+variable {X Y X' Y' : TopCat.{u}} {A : Set X} {B : Set Y}
+
+/-- The preimage of an open subset `A` of `X` under the first projection of `X × Y` is open in its
+union with the preimage of any subset `B` of `Y` under the second projection. -/
+lemma isOpen_subtypeVal_preimage_preimage_fst_union (hA : IsOpen A) :
+    IsOpen ((↑) ⁻¹' (fst X Y ⁻¹' A) : Set ↥(fst X Y ⁻¹' A ∪ snd X Y ⁻¹' B)) :=
+  (hA.preimage (fst X Y).hom.continuous).preimage continuous_subtype_val
+
+/-- The preimage of an open subset `B` of `Y` under the second projection of `X × Y` is open in its
+union with the preimage of any subset `A` of `X` under the first projection. -/
+lemma isOpen_subtypeVal_preimage_preimage_snd_union (hB : IsOpen B) :
+    IsOpen ((↑) ⁻¹' (snd X Y ⁻¹' B) : Set ↥(fst X Y ⁻¹' A ∪ snd X Y ⁻¹' B)) :=
+  (hB.preimage (snd X Y).hom.continuous).preimage continuous_subtype_val
+
+/-- The product of two maps carries the preimage of `A` under the first projection into the
+preimage of `A'` when the first map carries `A` into `A'`. -/
+lemma mapsTo_tensorHom_preimage_fst {A' : Set X'} (f : X ⟶ X') (g : Y ⟶ Y')
+    (hf : Set.MapsTo f A A') : Set.MapsTo (f ⊗ₘ g) (fst X Y ⁻¹' A) (fst X' Y' ⁻¹' A') :=
+  fun x hx ↦ by
+    rw [Set.mem_preimage, ← ConcreteCategory.comp_apply, tensorHom_fst,
+      ConcreteCategory.comp_apply]
+    exact hf hx
+
+/-- The product of two maps carries the preimage of `B` under the second projection into the
+preimage of `B'` when the second map carries `B` into `B'`. -/
+lemma mapsTo_tensorHom_preimage_snd {B' : Set Y'} (f : X ⟶ X') (g : Y ⟶ Y')
+    (hg : Set.MapsTo g B B') : Set.MapsTo (f ⊗ₘ g) (snd X Y ⁻¹' B) (snd X' Y' ⁻¹' B') :=
+  fun x hx ↦ by
+    rw [Set.mem_preimage, ← ConcreteCategory.comp_apply, tensorHom_snd,
+      ConcreteCategory.comp_apply]
+    exact hg hx
+
+end Preimage
+
+end TopCat

@@ -124,37 +124,21 @@ namespace TopCat
 
 variable {X Y : TopCat.{w}}
 
-omit [MonoidalCategory C] [MonoidalPreadditive C] in
-/-- A chain map out of the singular chains of `X` vanishes on the chains `C(U) + C(V)` of the
-singular simplices lying in `U` or in `V` as soon as it vanishes on the chains of `U` and on those
-of `V`. -/
-private lemma chainComplexMap_smallSingularSubcomplex_ι_comp_eq_zero (U V : Set X)
-    {K : ChainComplex C ℕ}
-    (F : (toSSet.obj X).chainComplex T ⟶ K)
-    (hU : SSet.chainComplexMap (toSSet.map (ofHom (ContinuousMap.subtypeVal U))) T ≫ F = 0)
-    (hV : SSet.chainComplexMap (toSSet.map (ofHom (ContinuousMap.subtypeVal V))) T ≫ F = 0) :
-    SSet.chainComplexMap (X.smallSingularSubcomplex ![U, V]).ι T ≫ F = 0 := by
-  ext n : 1
-  refine SSet.chainComplex_hom_ext fun σ ↦ ?_
-  obtain ⟨i, hi⟩ := (mem_smallSingularSubcomplex_iff X ![U, V] σ.1).1 σ.2
-  -- `σ` is the image of a singular simplex of `U` or of `V`
-  have key : ∀ (W : Set X), Set.range (X.toSSetObjEquiv _ σ.1) ⊆ W →
-      SSet.chainComplexMap (toSSet.map (ofHom (ContinuousMap.subtypeVal W))) T ≫ F = 0 →
-      (toSSet.obj X).ιChainComplex σ.1 ≫ F.f n = 0 := by
-    intro W hW hF
-    obtain ⟨τ, hτ⟩ := (mem_range_toSSet_subtypeVal_iff W _ σ.1).2 hW
-    have h : (toSSet.obj (TopCat.of W)).ιChainComplex (R := T) τ ≫
-        (SSet.chainComplexMap (toSSet.map (ofHom (ContinuousMap.subtypeVal W))) T).f n ≫
-          F.f n = 0 := by
-      rw [← HomologicalComplex.comp_f, hF, HomologicalComplex.zero_f, comp_zero]
-    rw [SSet.ι_chainComplexMap_f_assoc] at h
-    rw [← hτ]
-    exact h
-  simp only [HomologicalComplex.comp_f, HomologicalComplex.zero_f, comp_zero,
-    SSet.ι_chainComplexMap_f_assoc]
-  fin_cases i
-  · exact key U hi hU
-  · exact key V hi hV
+/-- The Alexander–Whitney diagonal of `X`, followed by the tensor product of two chain maps one of
+which vanishes on the singular chains of `W`, vanishes on the singular chains of `W`. -/
+private lemma chainComplexMap_comp_alexanderWhitneyDiagonal_comp_tensorHom_eq_zero (W : Set X)
+    (u : T ⟶ R ⊗ S) {K₁ K₂ : ChainComplex C ℕ} (g₁ : (toSSet.obj X).chainComplex R ⟶ K₁)
+    (g₂ : (toSSet.obj X).chainComplex S ⟶ K₂)
+    (h : SSet.chainComplexMap (toSSet.map (ofHom (ContinuousMap.subtypeVal W))) R ≫ g₁ = 0 ∨
+      SSet.chainComplexMap (toSSet.map (ofHom (ContinuousMap.subtypeVal W))) S ≫ g₂ = 0) :
+    SSet.chainComplexMap (toSSet.map (ofHom (ContinuousMap.subtypeVal W))) T ≫
+      X.alexanderWhitneyDiagonal u ≫ (g₁ ⊗ₘ g₂) = 0 := by
+  rw [alexanderWhitneyDiagonal_naturality_assoc, tensorHom_comp_tensorHom]
+  rcases h with h | h
+  · rw [h]
+    exact (congrArg _ (HomologicalComplex.mapBifunctorMap_zero_left _ _ _ _ _)).trans comp_zero
+  · rw [h]
+    exact (congrArg _ (HomologicalComplex.mapBifunctorMap_zero_right _ _ _ _ _)).trans comp_zero
 
 /-- The Alexander–Whitney diagonal of `X`, followed by the quotient maps to the relative chains of
 `(X, U)` and of `(X, V)` on the two factors, vanishes on the chains of the singular simplices lying
@@ -163,28 +147,12 @@ private lemma chainComplexMap_comp_alexanderWhitneyDiagonal_comp_tensorHom (U V 
     (u : T ⟶ R ⊗ S) :
     SSet.chainComplexMap (X.smallSingularSubcomplex ![U, V]).ι T ≫ X.alexanderWhitneyDiagonal u ≫
       ((TopPair.ofSubset U).singularChainComplexπ R ⊗ₘ
-        (TopPair.ofSubset V).singularChainComplexπ S) = 0 := by
-  refine chainComplexMap_smallSingularSubcomplex_ι_comp_eq_zero U V _ ?_ ?_
-  -- Term-mode steps: `rw` cannot match here, since the ambient chains appear both as
-  -- `(toSSetPair.obj P).right.chainComplex R` and as `(toSSet.obj X).chainComplex R`.
-  · refine (alexanderWhitneyDiagonal_naturality_assoc (ofHom (ContinuousMap.subtypeVal U)) u
-      _).trans ((congrArg (_ ≫ ·) ((tensorHom_comp_tensorHom
-        (SSet.chainComplexMap (toSSet.map (ofHom (ContinuousMap.subtypeVal U))) R)
-        (SSet.chainComplexMap (toSSet.map (ofHom (ContinuousMap.subtypeVal U))) S)
-        ((TopPair.ofSubset U).singularChainComplexπ R)
-        ((TopPair.ofSubset V).singularChainComplexπ S)).trans ?_)).trans comp_zero)
-    exact (congrArg (· ⊗ₘ _)
-      (TopPair.chainComplexMap_comp_singularChainComplexπ (TopPair.ofSubset U) R)).trans
-        (HomologicalComplex.mapBifunctorMap_zero_left _ _ _ _ _)
-  · refine (alexanderWhitneyDiagonal_naturality_assoc (ofHom (ContinuousMap.subtypeVal V)) u
-      _).trans ((congrArg (_ ≫ ·) ((tensorHom_comp_tensorHom
-        (SSet.chainComplexMap (toSSet.map (ofHom (ContinuousMap.subtypeVal V))) R)
-        (SSet.chainComplexMap (toSSet.map (ofHom (ContinuousMap.subtypeVal V))) S)
-        ((TopPair.ofSubset U).singularChainComplexπ R)
-        ((TopPair.ofSubset V).singularChainComplexπ S)).trans ?_)).trans comp_zero)
-    exact (congrArg (_ ⊗ₘ ·)
-      (TopPair.chainComplexMap_comp_singularChainComplexπ (TopPair.ofSubset V) S)).trans
-        (HomologicalComplex.mapBifunctorMap_zero_right _ _ _ _ _)
+        (TopPair.ofSubset V).singularChainComplexπ S) = 0 :=
+  chainComplexMap_smallSingularSubcomplex_ι_comp_eq_zero ![U, V] _ <| Fin.forall_fin_two.2
+    ⟨chainComplexMap_comp_alexanderWhitneyDiagonal_comp_tensorHom_eq_zero U u _ _
+      (.inl (TopPair.chainComplexMap_comp_singularChainComplexπ (TopPair.ofSubset U) R)),
+    chainComplexMap_comp_alexanderWhitneyDiagonal_comp_tensorHom_eq_zero V u _ _
+      (.inr (TopPair.chainComplexMap_comp_singularChainComplexπ (TopPair.ofSubset V) S))⟩
 
 /-- **The relative Alexander–Whitney diagonal** `C(X; U + V; T) ⟶ C(X, U; R) ⊗ C(X, V; S)` for
 subsets `U` and `V` of `X`, where `C(X; U + V)` is the quotient of the singular chains of `X` by the
@@ -225,7 +193,7 @@ lemma relativeAlexanderWhitneyDiagonal_naturality {U V : Set X} {U' V' : Set Y} 
           TopPair.singularChainComplexMap (TopPair.ofSubsetMap f hfV) S) := by
   rw [← cancel_epi ((X.smallSingularSubcomplex ![U, V]).pair.chainComplexπ T),
     ← SSetPair.chainComplexπ_naturality_assoc, chainComplexπ_relativeAlexanderWhitneyDiagonal,
-    chainComplexπ_relativeAlexanderWhitneyDiagonal_assoc]
+    chainComplexπ_relativeAlexanderWhitneyDiagonal_assoc, smallSingularSubcomplexPairMap_right]
   have hU := TopPair.singularChainComplexπ_pair_naturality (TopPair.ofSubsetMap f hfU) R
   have hV := TopPair.singularChainComplexπ_pair_naturality (TopPair.ofSubsetMap f hfV) S
   rw [TopPair.ofSubsetMap_fst] at hU hV

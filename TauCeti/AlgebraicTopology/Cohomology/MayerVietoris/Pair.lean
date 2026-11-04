@@ -304,15 +304,18 @@ lemma quasiIso_cochainComplexMap_smallSingularSubcomplexPairToUnion (U V : Set X
     QuasiIso (SSetPair.cochainComplexMap (R := R) (k := k) (M := M)
       (smallSingularSubcomplexPairToUnion U V)) := by
   have : QuasiIso (SSet.cochainComplexMap (R := R) (k := k) (M := M)
-      (smallSingularSubcomplexPairToUnion U V).left) :=
-    quasiIso_cochainComplexMap_smallSingularSubcomplexToUnion R k M U V hU hV
-  -- The ambient component is the identity of the singular simplicial set of `X`, seen between
-  -- two syntactically different presentations of it, so `change` restates it as an identity.
+      (smallSingularSubcomplexPairToUnion U V).left) := by
+    rw [smallSingularSubcomplexPairToUnion_left]
+    exact quasiIso_cochainComplexMap_smallSingularSubcomplexToUnion R k M U V hU hV
   have : QuasiIso (SSet.cochainComplexMap (R := R) (k := k) (M := M)
       (smallSingularSubcomplexPairToUnion U V).right) := by
-    change QuasiIso (SSet.cochainComplexMap (R := R) (k := k) (M := M) (𝟙 (toSSet.obj X)))
-    rw [SSet.cochainComplexMap_id]
-    infer_instance
+    have : IsIso (SSet.chainComplexMap (smallSingularSubcomplexPairToUnion U V).right R) := by
+      rw [chainComplexMap_smallSingularSubcomplexPairToUnion_right]
+      exact IsIso.id _
+    have : IsIso (SSet.cochainComplexMap (R := R) (k := k) (M := M)
+        (smallSingularSubcomplexPairToUnion U V).right) :=
+      Functor.map_isIso (linearYonedaFunctor k M) _
+    exact quasiIso_of_isIso _
   exact SSetPair.quasiIso_cochainComplexMap _
 
 /-- For `U` and `V` open in `U ∪ V`, restricting cochains of `(X, U ∪ V)` to the chains of `X`
