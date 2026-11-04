@@ -179,11 +179,8 @@ theorem IsContactomorphism.trans {γ : SmoothForm K P ℝ 1} {e' : N ≃ₘ⟮J,
 /-- The inverse of a contactomorphism is a contactomorphism. -/
 theorem IsContactomorphism.symm (h : e.IsContactomorphism α β) :
     e.symm.IsContactomorphism β α := by
-  have hβ : SmoothForm.mpullback e.symm e.symm.contMDiff
-      (SmoothForm.mpullback e e.contMDiff β) = β :=
-    SmoothForm.mpullback_symm_eq_of_mpullback_eq rfl
   rw [IsContactomorphism]
-  conv_rhs => rw [← hβ]
+  conv_rhs => rw [← SmoothForm.mpullback_symm_mpullback e β]
   funext y
   rw [SmoothForm.kerDistribution_mpullback, SmoothForm.kerDistribution_mpullback, h]
 
@@ -240,15 +237,12 @@ theorem PreservesCoorientation.trans {γ : SmoothForm K P ℝ 1} {e' : N ≃ₘ�
 /-- The inverse of a coorientation-preserving diffeomorphism preserves the coorientation. -/
 theorem PreservesCoorientation.symm (h : e.PreservesCoorientation α β) :
     e.symm.PreservesCoorientation β α := by
-  have hα : SmoothForm.mpullback e e.contMDiff
-      (SmoothForm.mpullback e.symm e.symm.contMDiff α) = α :=
-    SmoothForm.mpullback_symm_eq_of_mpullback_eq (φ := e.symm) rfl
   intro y
   obtain ⟨x, rfl⟩ := e.surjective y
   obtain ⟨c, hc, hx⟩ := h x
   -- Both sides pull back along `e` to `α`, and pullback at `x` is injective.
   refine ⟨c⁻¹, inv_pos.mpr hc, (SmoothForm.mpullback_apply_eq_smul_iff e _ _ _ x).mp ?_⟩
-  rw [hα, hx, smul_smul, inv_mul_cancel₀ hc.ne', one_smul]
+  rw [SmoothForm.mpullback_mpullback_symm, hx, smul_smul, inv_mul_cancel₀ hc.ne', one_smul]
 
 /-- For a nowhere vanishing form `α`: a diffeomorphism preserves the coorientation exactly when
 it pulls `β` back to `f α` for a positive smooth function `f`. -/
