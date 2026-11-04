@@ -28,6 +28,8 @@ partial-fraction expansion of a rational function with a pole of order `m` at `a
 ## Main results
 
 * `Polynomial.iteratedDeriv`: the iterated derivative of a polynomial function.
+* `Polynomial.iteratedDeriv_eval_zero`: its value at `0` is `n !` times the coefficient of
+  degree `n`.
 * `Polynomial.X_sub_C_pow_dvd_sub_sum_iteratedDeriv_mul`: `(X - a) ^ m` divides `P - T * Q`,
   where `T` is the order-`m` Taylor polynomial of `P / Q` at `a`.
 -/
@@ -57,6 +59,13 @@ theorem iteratedDeriv_eq_factorial_mul_eval_hasseDeriv (p : 𝕜[X]) (n : ℕ) (
     iteratedDeriv n (fun x ↦ p.eval x) x = n ! * (hasseDeriv n p).eval x := by
   rw [Polynomial.iteratedDeriv, ← factorial_smul_hasseDeriv]
   simp [nsmul_eq_mul]
+
+/-- The `n`-th derivative of a polynomial function at `0` is `n !` times the coefficient of
+degree `n`. -/
+theorem iteratedDeriv_eval_zero (p : 𝕜[X]) (n : ℕ) :
+    iteratedDeriv n (fun x ↦ p.eval x) 0 = n ! * p.coeff n := by
+  rw [iteratedDeriv_eq_factorial_mul_eval_hasseDeriv, ← coeff_zero_eq_eval_zero, hasseDeriv_coeff]
+  simp
 
 variable [CharZero 𝕜]
 

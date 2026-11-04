@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.Polynomial.OfFn
 public import Mathlib.LinearAlgebra.Complex.FiniteDimensional
 public import TauCeti.LinearAlgebra.Complex.Conjugation
+import Mathlib.LinearAlgebra.FiniteDimensional.Lemmas
 
 /-!
 # Conjugate-reciprocal polynomials
@@ -18,10 +19,16 @@ of dimension `k + 1` for `k ≥ -1` and `0` for `k < 0`. Their coefficient vecto
 points of the conjugation `a ↦ conj ∘ a ∘ rev` of `Fin (k + 1) → ℂ`, so the dimension count is
 `TauCeti.finrank_realPoints`.
 
+For odd `k = 2 * m + 1` the coefficients pair off without a middle term, so a conjugate-reciprocal
+polynomial is `∑_{j ≤ m} (aⱼ Xʲ + conj aⱼ X^(k-j))`, and its lower coefficients `a₀, …, aₘ`
+identify these polynomials with `ℂ^(m+1)`. For even `k` the middle coefficient is real instead.
+
 ## Main definitions
 
 * `TauCeti.conjReciprocalPolynomials k`: the real subspace of complex polynomials `p` with
   `p.coeff n = 0` for `n > k` and `p.coeff i = conj (p.coeff j)` whenever `i + j = k`.
+* `TauCeti.conjReciprocalLowerCoeffEquiv m`: for `k = 2 * m + 1`, the real-linear isomorphism
+  `p ↦ (p.coeff 0, …, p.coeff m)` onto `Fin (m + 1) → ℂ`.
 
 ## Main results
 
@@ -31,6 +38,8 @@ points of the conjugation `a ↦ conj ∘ a ∘ rev` of `Fin (k + 1) → ℂ`, s
   degree at most `k` form a finite-dimensional real vector space.
 * `TauCeti.finrank_conjReciprocalPolynomials`: the conjugate-reciprocal polynomials of degree at
   most `k` form a real vector space of dimension `(k + 1).toNat`.
+* `TauCeti.eq_sum_of_mem_conjReciprocalPolynomials`: for `k = 2 * m + 1`, the expansion
+  `p = ∑_{j ≤ m} (aⱼ Xʲ + conj aⱼ X^(k-j))`.
 -/
 
 public section
@@ -119,5 +128,74 @@ theorem finrank_conjReciprocalPolynomials (k : ℤ) :
   rw [conjReciprocalPolynomials_eq_map, ← (Submodule.equivMapOfInjective
     ((ofFn (k + 1).toNat).restrictScalars ℝ) (injective_ofFn (R := ℂ) _) _).finrank_eq,
     finrank_realPoints (revConj_involutive _), Module.finrank_fin_fun]
+
+/-! ### Odd degree: the lower half of the coefficients -/
+
+variable {m : ℕ}
+
+/-- A conjugate-reciprocal polynomial of degree at most `2 * m + 1` is determined by its
+coefficients `a₀, …, aₘ`: it is `∑_{j ≤ m} (aⱼ Xʲ + conj aⱼ X^(2m+1-j))`. -/
+theorem eq_sum_of_mem_conjReciprocalPolynomials (hp : p ∈ conjReciprocalPolynomials (2 * m + 1)) :
+    p = ∑ j ∈ Finset.range (m + 1),
+      (C (p.coeff j) * X ^ j + C (conj (p.coeff j)) * X ^ (2 * m + 1 - j)) := by
+  obtain ⟨hp, hp'⟩ := mem_conjReciprocalPolynomials_iff.mp hp
+  ext n
+  simp only [finsetSum_coeff, coeff_add, coeff_C_mul_X_pow, Finset.sum_add_distrib]
+  rcases le_or_gt n m with hn | hn
+  · -- Low degree: only the term `aₙ Xⁿ` contributes.
+    rw [Finset.sum_ite_eq, ite_eq_left (Finset.mem_range.mpr (by omega)),
+      Finset.sum_eq_zero fun j hj => ite_eq_right_iff.mpr fun h => by simp at hj; omega,
+      add_zero]
+  rw [Finset.sum_eq_zero fun j hj => ite_eq_right_iff.mpr fun h => by simp at hj; omega,
+    zero_add]
+  rcases le_or_gt n (2 * m + 1) with hn' | hn'
+  · -- High degree up to `2 * m + 1`: only the term `conj a_{2m+1-n} X^n` contributes.
+    rw [Finset.sum_eq_single (2 * m + 1 - n)
+      (fun j hj hjn => ite_eq_right_iff.mpr fun h => by simp at hj; omega)
+      (fun h => absurd (Finset.mem_range.mpr (by omega)) h), ite_eq_left (by omega),
+      hp' n (2 * m + 1 - n) (by rw [Nat.cast_sub hn']; push_cast; ring)]
+  · rw [hp n (by omega),
+      Finset.sum_eq_zero fun j hj => ite_eq_right_iff.mpr fun h => by simp at hj; omega]
+
+/-- A conjugate-reciprocal polynomial of degree at most `2 * m + 1` whose coefficients of degree
+at most `m` vanish is zero. -/
+theorem eq_zero_of_mem_conjReciprocalPolynomials_of_forall_coeff_eq_zero
+    (hp : p ∈ conjReciprocalPolynomials (2 * m + 1)) (h : ∀ j ≤ m, p.coeff j = 0) : p = 0 := by
+  rw [eq_sum_of_mem_conjReciprocalPolynomials hp]
+  exact Finset.sum_eq_zero fun j hj => by
+    simp [h j (Nat.lt_succ_iff.mp (Finset.mem_range.mp hj))]
+
+/-- The coefficients of degree at most `m`, as a real-linear map on the conjugate-reciprocal
+polynomials of degree at most `2 * m + 1`. -/
+private noncomputable def lowerCoeff (m : ℕ) :
+    conjReciprocalPolynomials (2 * m + 1) →ₗ[ℝ] (Fin (m + 1) → ℂ) :=
+  LinearMap.pi fun j => ((lcoeff ℂ (j : ℕ)).restrictScalars ℝ).comp (Submodule.subtype _)
+
+private theorem lowerCoeff_injective (m : ℕ) : Function.Injective (lowerCoeff m) := by
+  refine (injective_iff_map_eq_zero _).mpr fun p hp => Subtype.ext ?_
+  refine eq_zero_of_mem_conjReciprocalPolynomials_of_forall_coeff_eq_zero p.2 fun j hj => ?_
+  exact congrFun hp ⟨j, Nat.lt_succ_of_le hj⟩
+
+/-- **The lower coefficients of an odd-degree conjugate-reciprocal polynomial.** For
+`k = 2 * m + 1`, the coefficients `a₀, …, aₘ` identify the real vector space of
+conjugate-reciprocal polynomials of degree at most `k` with `ℂ^(m+1)`; the remaining coefficients
+are `a_{k-j} = conj aⱼ`. Both spaces have real dimension `2 * m + 2`. -/
+noncomputable def conjReciprocalLowerCoeffEquiv (m : ℕ) :
+    conjReciprocalPolynomials (2 * m + 1) ≃ₗ[ℝ] (Fin (m + 1) → ℂ) :=
+  (lowerCoeff m).linearEquivOfInjective (lowerCoeff_injective m) <| by
+    rw [finrank_conjReciprocalPolynomials, Module.finrank_pi_fintype]
+    simp only [Complex.finrank_real_complex, Finset.sum_const, Finset.card_univ, Fintype.card_fin,
+      smul_eq_mul]
+    omega
+
+@[simp]
+theorem conjReciprocalLowerCoeffEquiv_apply (p : conjReciprocalPolynomials (2 * m + 1))
+    (j : Fin (m + 1)) : conjReciprocalLowerCoeffEquiv m p j = (p : ℂ[X]).coeff j :=
+  (rfl)
+
+@[simp]
+theorem coeff_conjReciprocalLowerCoeffEquiv_symm_apply (a : Fin (m + 1) → ℂ) (j : Fin (m + 1)) :
+    ((conjReciprocalLowerCoeffEquiv m).symm a : ℂ[X]).coeff j = a j := by
+  rw [← conjReciprocalLowerCoeffEquiv_apply, LinearEquiv.apply_symm_apply]
 
 end TauCeti
