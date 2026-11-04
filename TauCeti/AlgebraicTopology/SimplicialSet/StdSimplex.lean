@@ -28,7 +28,7 @@ an initial and a final segment.
   from a subcomplex of a standard simplex to a standard simplex.
 * `SSet.stdSimplex.hom_app_obj₀Equiv_symm`: a map `g` of standard simplices sends the vertex `j`
   to the vertex `yonedaEquiv g j`.
-* `SSet.stdSimplex.edge_apply_zero_eq`, `SSet.stdSimplex.edge_apply_one_eq`: the endpoints of an
+* `SSet.stdSimplex.edge_edge_apply_zero`, `SSet.stdSimplex.edge_edge_apply_one`: the endpoints of an
   edge of `Δ[n]` are its vertices `0` and `1`.
 * `SSet.stdSimplex.nonempty_edge_iff`: `Δ[n]` has an edge from `a` to `b` exactly when `a ≤ b`,
   and it is then unique (`SSet.stdSimplex.subsingleton_edge`).
@@ -116,13 +116,13 @@ lemma hom_app_obj₀Equiv_symm {d d' : ℕ} (g : (Δ[d'] : SSet.{u}) ⟶ Δ[d]) 
 
 /-- The vertex `0` of an edge of `Δ[n]` from `y` to `x` is the vertex `y`, the face `δ 1` of the
 edge. -/
-lemma edge_apply_zero_eq {n : ℕ} {y x : (Δ[n] : SSet.{u}) _⦋0⦌} (e : Edge y x) :
+lemma edge_edge_apply_zero {n : ℕ} {y x : (Δ[n] : SSet.{u}) _⦋0⦌} (e : Edge y x) :
     e.edge 0 = y 0 :=
   (δ_apply e.edge 1 0).symm.trans (congrArg (fun s : Δ[n] _⦋0⦌ ↦ s 0) e.src_eq)
 
 /-- The vertex `1` of an edge of `Δ[n]` from `y` to `x` is the vertex `x`, the face `δ 0` of the
 edge. -/
-lemma edge_apply_one_eq {n : ℕ} {y x : (Δ[n] : SSet.{u}) _⦋0⦌} (e : Edge y x) :
+lemma edge_edge_apply_one {n : ℕ} {y x : (Δ[n] : SSet.{u}) _⦋0⦌} (e : Edge y x) :
     e.edge 1 = x 0 :=
   (δ_apply e.edge 0 0).symm.trans (congrArg (fun s : Δ[n] _⦋0⦌ ↦ s 0) e.tgt_eq)
 
@@ -130,15 +130,15 @@ lemma edge_apply_one_eq {n : ℕ} {y x : (Δ[n] : SSet.{u}) _⦋0⦌} (e : Edge 
 determined by its endpoints. -/
 instance subsingleton_edge {n : ℕ} (y x : (Δ[n] : SSet.{u}) _⦋0⦌) : Subsingleton (Edge y x) where
   allEq e e' := Edge.ext (stdSimplex.ext _ _ (Fin.forall_fin_two.2
-    ⟨(edge_apply_zero_eq e).trans (edge_apply_zero_eq e').symm,
-      (edge_apply_one_eq e).trans (edge_apply_one_eq e').symm⟩))
+    ⟨(edge_edge_apply_zero e).trans (edge_edge_apply_zero e').symm,
+      (edge_edge_apply_one e).trans (edge_edge_apply_one e').symm⟩))
 
 /-- The standard simplex `Δ[n]` has an edge from the vertex `a` to the vertex `b` exactly when
 `a ≤ b`. -/
 lemma nonempty_edge_iff {n : ℕ} (a b : Fin (n + 1)) :
     Nonempty (Edge (obj₀Equiv.{u}.symm a) (obj₀Equiv.symm b)) ↔ a ≤ b :=
-  ⟨fun ⟨e⟩ ↦ (edge_apply_zero_eq e).symm.trans_le
-      ((monotone_apply e.edge (by decide)).trans_eq (edge_apply_one_eq e)),
+  ⟨fun ⟨e⟩ ↦ (edge_edge_apply_zero e).symm.trans_le
+      ((monotone_apply e.edge (by decide)).trans_eq (edge_edge_apply_one e)),
     fun h ↦ ⟨Edge.mk (edge n a b h) (obj₀Equiv.injective (edge_apply_zero.{u} n a b h))
       (obj₀Equiv.injective (edge_apply_one.{u} n a b h))⟩⟩
 
