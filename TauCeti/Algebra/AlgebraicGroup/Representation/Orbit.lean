@@ -58,14 +58,14 @@ of the Lie algebra as the homogeneous space of its centralizer.
   open and dense.
 * `Comodule.exists_basePointsRepresentation_eq_of_finrank_le` and
   `Comodule.range_projectiveOrbitMap_mk_one_eq_of_finrank_le`: two vectors whose orbits have
-  dimension `dim M` are conjugate under the rational points of `G` and have identical orbit
-  schemes.
+  dimension `dim M` are conjugate under the rational points of `G` and have identical topological
+  orbit images in `P(M × k)`, including nonclosed points.
 * `Comodule.isOpen_range_projectiveOrbitMap_mk_one_of_range_eq_top`,
   `Comodule.closure_range_projectiveOrbitMap_mk_one_eq_univ_of_range_eq_top`,
   `Comodule.exists_basePointsRepresentation_eq_of_range_eq_top`, and
   `Comodule.range_projectiveOrbitMap_mk_one_eq_of_range_eq_top`: in characteristic zero, a vector
   `v` with `𝔤 • v = M` has an open dense orbit, and any two such vectors are conjugate and share
-  the same orbit image.
+  the same topological orbit image in `P(M × k)`, including nonclosed points.
 
 ## References
 
@@ -104,8 +104,8 @@ theorem range_projectiveOrbitMap_subset_basicOpen_snd (v : M) :
     simp
   exact (Scheme.Hom.mem_preimage _).mp hx
 
-/-- Acting on a vector by a rational point leaves its scheme-theoretic orbit in `P(M × k)`
-unchanged. -/
+/-- Acting on a vector by a rational point leaves its topological orbit image in `P(M × k)`,
+including nonclosed points, unchanged. -/
 @[simp]
 theorem range_projectiveOrbitMap_mk_one_basePointsRepresentation
     (g : WithConv (H →ₐ[k] k)) (v : M) :
@@ -284,7 +284,7 @@ theorem exists_basePointsRepresentation_eq_of_finrank_le (v w : M)
   simpa [Units.smul_def, h1] using congrArg Prod.fst hc
 
 /-- **Two orbits of full dimension coincide.** If the orbits of `v` and `w` both have dimension
-`dim M`, their scheme-theoretic orbit images in `P(M × k)` are equal. -/
+`dim M`, their topological orbit images in `P(M × k)`, including nonclosed points, are equal. -/
 theorem range_projectiveOrbitMap_mk_one_eq_of_finrank_le (v w : M)
     (hv : (Module.finrank k M : WithBot ℕ∞) ≤
       topologicalKrullDim (Set.range (projectiveOrbitMap (H := H) ((v, 1) : M × k)
@@ -335,7 +335,8 @@ theorem exists_basePointsRepresentation_eq_of_range_eq_top [CharZero k] (v w : M
 
 /-- **Vectors with surjective orbit differentials have the same orbit.** In characteristic zero, if
 the differentiated actions `X ↦ X • v` and `X ↦ X • w` of the Lie algebra `𝔤` of `G` are both onto
-`M`, the scheme-theoretic orbits of `v` and `w` in `P(M × k)` coincide. -/
+`M`, the topological orbit images of `v` and `w` in `P(M × k)`, including nonclosed points,
+coincide. -/
 theorem range_projectiveOrbitMap_mk_one_eq_of_range_eq_top [CharZero k] (v w : M)
     (hv : LinearMap.range ((differential (R := k) (H := H) (M := M)).toLinearMap.flip v) = ⊤)
     (hw : LinearMap.range ((differential (R := k) (H := H) (M := M)).toLinearMap.flip w) = ⊤) :

@@ -32,17 +32,19 @@ element:
 
 * the `K`-orbit of `e` in `P(𝔤(2) × k)` has full dimension `dim 𝔤(2)`, and is open and dense in
   `P(𝔤(2) × k)`;
-* for any second `sl₂` triple `(h, e', f')` sharing `h`, the scheme-theoretic `K`-orbits of `e` and
-  `e'` in `P(𝔤(2) × k)` coincide, and some `k`-point `g ∈ K(k)` carries `(h, e, f)` to `(h, e', f')`
-  under `Ad(g)`: first `g` carries `e` to `e'` while fixing `h`, and then `Ad(g) f = f'` follows
-  because `(h, e')` uniquely determines its lowering partner (`IsSl2Triple.f_eq_of_isSl2Triple`);
-* consequently, `e` and `e'` have the same scheme-theoretic adjoint `G`-orbit in `P(𝔤 × k)`.
+* for any second `sl₂` triple `(h, e', f')` sharing `h`, the topological `K`-orbit images of `e` and
+  `e'` in `P(𝔤(2) × k)` (including nonclosed points) coincide, and some `k`-point `g ∈ K(k)` carries
+  `(h, e, f)` to `(h, e', f')` under `Ad(g)`: first `g` carries `e` to `e'` while fixing `h`, and
+  then `Ad(g) f = f'` follows because `(h, e')` uniquely determines its lowering partner
+  (`IsSl2Triple.f_eq_of_isSl2Triple`);
+* consequently, `e` and `e'` have the same topological adjoint `G`-orbit image in `P(𝔤 × k)`,
+  including nonclosed points.
 
 For two `sl₂` triples whose neutral elements are dominant with respect to a fixed base of a Cartan
 subalgebra, equal weighted Dynkin diagrams force the neutral elements to coincide
 (`RootPairing.Base.weightedDynkinDiagram_injective`), so the shared-`h` results immediately give
-`C_G(h)°(k)`-conjugacy of the two triples and equality of the scheme-theoretic adjoint `G`-orbits of
-their nilpositive elements.
+`C_G(h)°(k)`-conjugacy of the two triples and equality of the topological adjoint `G`-orbit images
+(including nonclosed points) of their nilpositive elements.
 
 ## Main declarations
 
@@ -53,20 +55,20 @@ their nilpositive elements.
   `K ⊆ C_G(h)` whose Lie algebra contains `𝔤(0)`.
 * `IsSl2Triple.range_projectiveOrbitMap_eigenspace_two_eq_of_lieSubalgebra_le` and
   `IsSl2Triple.exists_mem_quotientPointsSubgroup_basePointsRepresentation_eq_of_lieSubalgebra_le`:
-  scheme-theoretic coincidence of the grade-two `K`-orbits and `K(k)`-conjugacy of `sl₂` triples
-  sharing `h`.
+  equality of the topological grade-two `K`-orbit images (including nonclosed points) and
+  `K(k)`-conjugacy of `sl₂` triples sharing `h`.
 * `IsSl2Triple.isOpen_range_projectiveOrbitMap_eigenspace_two`,
   `IsSl2Triple.exists_mem_quotientPointsSubgroup_centralizerHopfIdeal_basePointsRepresentation_eq`,
   `IsSl2Triple.isOpen_range_projectiveOrbitMap_eigenspace_two_identityComponent`, and
   `IsSl2Triple.exists_mem_quotientPointsSubgroup_identityComponent_basePointsRepresentation_eq`:
   specializations to `C_G(h)` and to the connected centralizer `C_G(h)°`.
 * `IsSl2Triple.range_projectiveOrbitMap_adjoint_eq`: two `sl₂` triples sharing `h` have the same
-  scheme-theoretic adjoint `G`-orbit in `P(𝔤 × k)`.
+  topological adjoint `G`-orbit image in `P(𝔤 × k)`, including nonclosed points.
 * `IsSl2Triple.exists_mem_quotientPointsSubgroup_identityComponent_of_weightedDynkinDiagram_eq`
   and `IsSl2Triple.range_projectiveOrbitMap_adjoint_eq_of_weightedDynkinDiagram_eq`: triples whose
   neutral elements are dominant in the same Weyl chamber and have equal weighted Dynkin diagrams
-  share their neutral element, hence are conjugate under `C_G(h₁)°(k)` and define the same
-  scheme-theoretic adjoint `G`-orbit.
+  share their neutral element, hence are conjugate under `C_G(h₁)°(k)` and have the same
+  topological adjoint `G`-orbit image in `P(𝔤 × k)`, including nonclosed points.
 
 ## References
 
@@ -148,7 +150,8 @@ theorem isOpen_range_projectiveOrbitMap_eigenspace_two_of_lieSubalgebra_le
 
 /-- **Coincidence of grade-two centralizer orbits.** For any closed subgroup `K = Spec (H ⧸ J)` of
 `C_G(h)` whose Lie algebra contains `𝔤(0)` and any two `sl₂` triples `(h, e, f)` and `(h, e', f')`
-sharing `h`, the scheme-theoretic `K`-orbits of `e` and `e'` in `P(𝔤(2) × k)` coincide. -/
+sharing `h`, the topological `K`-orbit images of `e` and `e'` in `P(𝔤(2) × k)`, including nonclosed
+points, coincide. -/
 theorem range_projectiveOrbitMap_eigenspace_two_eq_of_lieSubalgebra_le
     (t : IsSl2Triple h e f) (t' : IsSl2Triple h e' f') {J : HopfIdeal k H}
     (hJ : centralizerHopfIdeal H h ≤ J)
@@ -246,7 +249,8 @@ theorem isOpen_range_projectiveOrbitMap_eigenspace_two (t : IsSl2Triple h e f) :
         (Module.isUnimodular_mk_one _))) :=
   t.isOpen_range_projectiveOrbitMap_eigenspace_two_of_lieSubalgebra_le le_rfl le_rfl
 
-/-- Two `sl₂` triples sharing `h` have the same scheme-theoretic `C_G(h)`-orbit in `P(𝔤(2) × k)`. -/
+/-- Two `sl₂` triples sharing `h` have the same topological `C_G(h)`-orbit image in `P(𝔤(2) × k)`,
+including nonclosed points. -/
 theorem range_projectiveOrbitMap_eigenspace_two_eq
     (t : IsSl2Triple h e f) (t' : IsSl2Triple h e' f') :
     letI := Comodule.Corestrict (M := Module.Dual k (Bialgebra.CotangentSpace k H))
@@ -271,8 +275,9 @@ theorem exists_mem_quotientPointsSubgroup_centralizerHopfIdeal_basePointsReprese
   t.exists_mem_quotientPointsSubgroup_basePointsRepresentation_eq_of_lieSubalgebra_le t' le_rfl
     le_rfl
 
-/-- **Two `sl₂` triples sharing `h` define the same nilpotent `G`-orbit.** Their nilpositive
-elements have identical scheme-theoretic adjoint orbit images in `P(𝔤 × k)`. -/
+/-- **Two `sl₂` triples sharing `h` have the same adjoint `G`-orbit image.** Their nilpositive
+elements have identical topological adjoint orbit images in `P(𝔤 × k)`, including nonclosed
+points. -/
 theorem range_projectiveOrbitMap_adjoint_eq (t : IsSl2Triple h e f) (t' : IsSl2Triple h e' f') :
     Set.range (Comodule.projectiveOrbitMap (H := H)
         ((e, 1) : Module.Dual k (Bialgebra.CotangentSpace k H) × k)
@@ -355,8 +360,8 @@ theorem isOpen_range_projectiveOrbitMap_eigenspace_two_identityComponent
     (centralizerHopfIdeal H h).le_identityComponent
     (centralizerHopfIdeal H h).lieSubalgebra_identityComponent.ge
 
-/-- Two `sl₂` triples sharing `h` have the same scheme-theoretic `C_G(h)°`-orbit in
-`P(𝔤(2) × k)`. -/
+/-- Two `sl₂` triples sharing `h` have the same topological `C_G(h)°`-orbit image in `P(𝔤(2) × k)`,
+including nonclosed points. -/
 theorem range_projectiveOrbitMap_eigenspace_two_identityComponent_eq
     (t : IsSl2Triple h e f) (t' : IsSl2Triple h e' f') :
     letI := Comodule.Corestrict (M := Module.Dual k (Bialgebra.CotangentSpace k H))
@@ -423,10 +428,11 @@ theorem exists_mem_quotientPointsSubgroup_identityComponent_of_weightedDynkinDia
   obtain rfl := b.weightedDynkinDiagram_injective hdiag
   exact t₁.exists_mem_quotientPointsSubgroup_identityComponent_basePointsRepresentation_eq t₂
 
-/-- **Adjoint orbit equality for dominant `sl₂` triples with equal weighted Dynkin diagrams.** If
-two `sl₂` triples in `Lie(G)` have neutral elements dominant with respect to the same base `b` and
-equal weighted Dynkin diagrams, then `h₁ = h₂`, so by `range_projectiveOrbitMap_adjoint_eq` their
-nilpositive elements have the same scheme-theoretic adjoint `G`-orbit in `P(𝔤 × k)`. -/
+/-- **Adjoint orbit image equality for dominant `sl₂` triples with equal weighted Dynkin diagrams.**
+If two `sl₂` triples in `Lie(G)` have neutral elements dominant with respect to the same base `b`
+and equal weighted Dynkin diagrams, then `h₁ = h₂`, so by `range_projectiveOrbitMap_adjoint_eq`
+their nilpositive elements have the same topological adjoint `G`-orbit image in `P(𝔤 × k)`,
+including nonclosed points. -/
 theorem range_projectiveOrbitMap_adjoint_eq_of_weightedDynkinDiagram_eq
     {k : Type u} [Field k] [CharZero k] [IsAlgClosed k]
     {H : Type u} [CommRing H] [HopfAlgebra k H] [Algebra.FiniteType k H]

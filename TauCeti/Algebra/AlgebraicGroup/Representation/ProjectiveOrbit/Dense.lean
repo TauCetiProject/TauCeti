@@ -30,7 +30,7 @@ Any two orbits attaining the bound **coincide**. If `[n]` lies outside the open 
 of `[m]`; as a closed point of that orbit it is the image of a rational point `g` of `G`, which
 carries the line `k ∙ m` to `k ∙ n`.
 
-These are statements about the full scheme-theoretic orbit images, including their nonclosed
+These are statements about the full topological orbit images, including their nonclosed
 points. No connectedness, smoothness or reducedness of `G` is needed. In the classification of
 nilpotent orbits by weighted Dynkin diagrams they are the uniqueness step for the dense orbit of
 the grade-zero centralizer of an `sl₂`-triple on the grade-two space, where the orbit of the
@@ -43,8 +43,8 @@ nilpositive element has full dimension because its tangent space is the whole gr
 * `TauCeti.Comodule.isOpen_range_projectiveOrbitMap`: an orbit of dimension `dim M - 1` is open.
 * `TauCeti.Comodule.exists_span_basePointsRepresentation_eq` and
   `TauCeti.Comodule.range_projectiveOrbitMap_eq`: two lines whose orbits have dimension
-  `dim M - 1` are carried to each other by a rational point of `G`, and their scheme-theoretic
-  projective orbits coincide.
+  `dim M - 1` are carried to each other by a rational point of `G`, and their topological
+  projective orbit images, including nonclosed points, coincide.
 
 ## References
 
@@ -132,7 +132,8 @@ theorem exists_span_basePointsRepresentation_eq (m : M) (hm : Module.IsUnimodula
   simpa using h
 
 /-- **Two orbits of maximal dimension coincide.** If the orbits of the lines through `m` and `n`
-both have dimension `dim M - 1`, their full scheme-theoretic orbit images in `P(M)` are equal. -/
+both have dimension `dim M - 1`, their topological orbit images in `P(M)`, including nonclosed
+points, are equal. -/
 theorem range_projectiveOrbitMap_eq (m : M) (hm : Module.IsUnimodular k m)
     (n : M) (hn : Module.IsUnimodular k n)
     (hmdim : (Module.finrank k M : WithBot ℕ∞) ≤

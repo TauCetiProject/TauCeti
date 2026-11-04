@@ -22,9 +22,9 @@ with projective translation as an equality of scheme morphisms. Consequently eve
 projective translation preserves the entire orbit image, including its nonclosed points.
 Dually, right translation on the source replaces the chosen unimodular vector by its image
 under the base-point representation, so two unimodular vectors whose cyclic spans are linked
-by a base-valued point have identical scheme-theoretic projective orbit images.
-This is the invariance input for proving that constructible projective orbits are locally closed
-and that full-dimension projective orbits coincide.
+by a base-valued point have identical topological projective orbit images, including their
+nonclosed points. This is the invariance input for proving that constructible projective orbits
+are locally closed and that full-dimension projective orbits coincide.
 
 The projective coordinates transform by precomposition of linear functionals under left
 translation and by acting on the vector under right translation.
@@ -350,8 +350,8 @@ theorem projectiveOrbitMap_rightTranslation_apply
   congrArg (fun f : Spec (.of H) ⟶ _ ↦ f x)
     (projectiveOrbitMap_rightTranslation g m hm)
 
-/-- Acting on a unimodular vector by a base-valued point leaves its entire scheme-theoretic
-projective orbit image unchanged. -/
+/-- Acting on a unimodular vector by a base-valued point leaves its topological projective orbit
+image, including nonclosed points, unchanged. -/
 @[simp]
 theorem range_projectiveOrbitMap_basePointsRepresentation
     (g : WithConv (H →ₐ[R] R)) (m : M) (hm : Module.IsUnimodular R m) :
@@ -369,7 +369,7 @@ theorem range_projectiveOrbitMap_basePointsRepresentation
     (HopfAlgebra.rightTranslationAlgEquiv g).toRingEquiv.symm).surjective.range_comp _
 
 /-- Two unimodular vectors whose cyclic spans are linked by a base-valued point have identical
-scheme-theoretic projective orbit images. -/
+topological projective orbit images, including nonclosed points. -/
 theorem range_projectiveOrbitMap_eq_of_span_basePointsRepresentation_eq
     {g : WithConv (H →ₐ[R] R)} {m n : M}
     (hm : Module.IsUnimodular R m) (hn : Module.IsUnimodular R n)
