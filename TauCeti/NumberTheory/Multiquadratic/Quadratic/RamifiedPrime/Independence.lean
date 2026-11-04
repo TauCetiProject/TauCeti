@@ -73,7 +73,7 @@ In the namespace `TauCeti.Multiquadratic`:
 public section
 
 open Polynomial
-open scoped NumberField nonZeroDivisors
+open scoped NumberField nonZeroDivisors symmDiff
 open NumberField (ramifiedPrimes)
 
 namespace TauCeti.Multiquadratic
@@ -326,19 +326,19 @@ theorem two_pow_le_natCard_closure_image_classGroupMk0
     simp only [Finset.coe_powerset, Set.mem_preimage, Set.mem_powerset_iff,
       Finset.coe_subset] at hS hT
     simp only at hST
-    have hsymmDiff_erase : S \ T ∪ T \ S ⊆ s.erase q :=
-      Finset.union_subset (Finset.sdiff_subset.trans hS) (Finset.sdiff_subset.trans hT)
-    have hsymmDiff_s : S \ T ∪ T \ S ⊆ s := hsymmDiff_erase.trans (Finset.erase_subset q s)
-    have hqnot : q ∉ S \ T ∪ T \ S := fun hp => Finset.notMem_erase q s (hsymmDiff_erase hp)
-    have hprod_symmDiff_eq_one : ∏ p ∈ S \ T ∪ T \ S, ClassGroup.mk0 (Q p) = 1 := by
-      rw [prod_sdiff_union_sdiff _ fun p hp =>
+    have hsymmDiff_erase : S ∆ T ⊆ s.erase q :=
+      symmDiff_le_sup.trans (Finset.union_subset hS hT)
+    have hsymmDiff_s : S ∆ T ⊆ s := hsymmDiff_erase.trans (Finset.erase_subset q s)
+    have hqnot : q ∉ S ∆ T := fun hp => Finset.notMem_erase q s (hsymmDiff_erase hp)
+    have hprod_symmDiff_eq_one : ∏ p ∈ S ∆ T, ClassGroup.mk0 (Q p) = 1 := by
+      rw [prod_symmDiff _ fun p hp =>
         hsq p (Finset.mem_of_mem_erase (hS (Finset.mem_inter.mp hp).1)), hST, ← sq,
         ← Finset.prod_pow]
       exact Finset.prod_eq_one fun p hp => hsq p (Finset.mem_of_mem_erase (hT hp))
     rcases eq_empty_or_eq_primeFactors_of_prod_classGroupMk0_eq_one Q hmin hgen hsf hd
         (fun p hp => hram p (hsymmDiff_s hp)) (fun p hp => hprime p (hsymmDiff_s hp))
         (fun p hp => hover p (hsymmDiff_s hp)) hprod_symmDiff_eq_one with hempty | hpf
-    · exact Finset.symmDiff_eq_empty.mp ((Finset.symmDiff_def S T).trans hempty)
+    · exact Finset.symmDiff_eq_empty.mp hempty
     · exact absurd (by rw [hpf]; exact hq) hqnot
   have himg : (fun S : Finset ℕ => ∏ p ∈ S, ClassGroup.mk0 (Q p)) '' ↑(s.erase q).powerset ⊆
       (↑(Subgroup.closure ((fun p ↦ ClassGroup.mk0 (Q p)) '' (↑s : Set ℕ))) :

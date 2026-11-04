@@ -99,7 +99,7 @@ theorem eq_top_of_piece_le_sup_positive_smul_top (U : Submodule A M)
   have pieces : ∀ n : ℕ, ∀ x ∈ G.piece (b + n), x ∈ U := by
     intro n
     induction n using Nat.strong_induction_on with
-    | h n ih =>
+    | ind n ih =>
       intro x hx
       obtain ⟨y, hy, z, hz, rfl⟩ := Submodule.mem_sup.mp (hU _ hx)
       have lower : ∀ q < b + n, ∀ x ∈ G.piece q, x ∈ U := by
@@ -147,7 +147,7 @@ theorem piece_eq_bot_of_piece_le_positive_smul_top (b : ℤ) (hbelow : ∀ p < b
     {e : ℤ} (h : ∀ p < e, G.piece p ≤ (⨆ (i : ℤ) (_ : 0 < i), 𝒜 i) • (⊤ : Submodule k M))
     {p : ℤ} (hp : p < e) : G.piece p = ⊥ := by
   induction hn : (p - b).toNat using Nat.strong_induction_on generalizing p with
-  | h n ih =>
+  | ind n ih =>
     by_cases hpb : p < b
     · exact hbelow p hpb
     refine (Submodule.eq_bot_iff _).2 fun x hx ↦ ?_

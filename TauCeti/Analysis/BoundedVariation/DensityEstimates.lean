@@ -138,7 +138,9 @@ private theorem ofReal_abs_inner_setIntegral_polarDensity_le_mul_liminf
     simpa only [smul_eq_mul] using tendsto_integral_smul_of_cutoff (g := fun y => ⟪v, σ y⟫)
       measurable_subtype_coe (measurable_polarDensity.const_inner.aestronglyMeasurable) hδ
       ((hint (r + δ) (by rwa [add_comm])).const_inner v)
-      (fun h hh => (hψs h hh).continuous.measurable) hψ01 hψ1 hψR
+      (fun h hh => (hψs h hh).continuous.measurable)
+      (fun h hh y => abs_le.2 ⟨(neg_nonpos.2 zero_le_one).trans (hψ01 h hh (mem_range_self y)).1,
+        (hψ01 h hh (mem_range_self y)).2⟩) hψ1 hψR
   -- Each pairing is bounded by `t` times the difference quotient.
   have hbound : ∀ᶠ h in 𝓝[>] (0 : ℝ), ENNReal.ofReal |∫ y, ψ h y * ⟪v, σ y⟫ ∂ν| ≤
       t * (μ (s ∩ (ball x (r + h) \ ball x r)) / ENNReal.ofReal h) := by

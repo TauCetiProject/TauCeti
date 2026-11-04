@@ -16,7 +16,8 @@ For a positive linear functional `f` on a possibly nonunital C⋆-algebra `A`, M
 functionals on C⋆-algebras are bounded, `PositiveLinearMap.exists_norm_apply_le`, so
 `‖[a]‖ ^ 2 = f (a⋆ a) ≤ C ‖a‖ ^ 2` and the class map `f.toPreGNS : A → f.PreGNS` is continuous.
 This lets norm-continuous families in `A`, such as orbits of point-norm continuous actions, be
-transported to the GNS space.
+transported to the GNS space. Composed with the embedding into the completion, it is the
+continuous linear class map `f.toGNS : A →L[ℂ] f.GNS`, `a ↦ [a]`, which has dense range.
 
 For a unital algebra, `PositiveLinearMap.gnsVector` is the class of the unit. Its orbit under
 Mathlib's GNS representation is dense and its vector functional recovers the original positive
@@ -48,6 +49,20 @@ theorem continuous_toPreGNS (f : A →ₚ[ℂ] ℂ) : Continuous (f.toPreGNS : A
       simpa [CStarRing.norm_star_mul_self, sq] using hC (star a * a)
     _ = √C * ‖a‖ := by rw [Real.sqrt_mul C.coe_nonneg, Real.sqrt_sq (norm_nonneg a)]
 
+/-- The class map `a ↦ [a]` of a positive linear functional on a C⋆-algebra into its GNS Hilbert
+space, as a continuous linear map. -/
+noncomputable def toGNS (f : A →ₚ[ℂ] ℂ) : A →L[ℂ] f.GNS :=
+  UniformSpace.Completion.toComplL.comp ⟨f.toPreGNS.toLinearMap, f.continuous_toPreGNS⟩
+
+@[simp]
+theorem toGNS_apply (f : A →ₚ[ℂ] ℂ) (a : A) : f.toGNS a = (f.toPreGNS a : f.GNS) :=
+  (rfl)
+
+/-- The classes of elements of `A` are dense in the GNS Hilbert space. -/
+theorem denseRange_toGNS (f : A →ₚ[ℂ] ℂ) : DenseRange f.toGNS :=
+  UniformSpace.Completion.denseRange_coe.comp f.toPreGNS.surjective.denseRange
+    (UniformSpace.Completion.continuous_coe _)
+
 section Unital
 
 variable {B : Type*} [CStarAlgebra B] [PartialOrder B] [StarOrderedRing B]
@@ -65,6 +80,13 @@ theorem gnsVector_def (f : B →ₚ[ℂ] ℂ) : f.gnsVector = (f.toPreGNS 1 : f.
 theorem gnsNonUnitalStarAlgHom_apply_gnsVector (f : B →ₚ[ℂ] ℂ) (a : B) :
     f.gnsNonUnitalStarAlgHom a f.gnsVector = (f.toPreGNS a : f.GNS) := by
   simp [gnsVector_def]
+
+/-- Inner products of orbit vectors in the GNS representation recover the star pairing of
+the original functional. -/
+theorem inner_gnsStarAlgHom_gnsVector (f : B →ₚ[ℂ] ℂ) (a b : B) :
+    inner ℂ (f.gnsStarAlgHom a f.gnsVector) (f.gnsStarAlgHom b f.gnsVector) =
+      f (star a * b) := by
+  simp [preGNS_inner_def]
 
 /-- Pairing the canonical GNS vector with the class of `a` recovers the functional at `a`.
 Together with the action formula, this identifies the functional with its GNS vector state. -/

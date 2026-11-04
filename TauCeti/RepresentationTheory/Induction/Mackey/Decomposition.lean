@@ -266,7 +266,7 @@ private theorem mackeyComponent_eq (D : DoubleCoset.Quotient (K : Set G) (H : Se
     rw [← hconj]
     group
   rw [hu] at key
-  simp only [MonoidHom.coe_comp, Function.comp_apply, ← Module.End.mul_apply, ← map_mul,
+  simp only [MonoidHom.coe_comp, Function.comp_apply, ← mul_apply_eq_comp, ← map_mul,
     hH] at key
   rw [key]
   rfl
@@ -307,7 +307,7 @@ private theorem mackeyDecompAux_mul (h₀ : H) (g : G) (a : A) :
   generalize DoubleCoset.mk K H g⁻¹ = D at e
   subst e
   rw [← mul_assoc, ← mul_assoc, ← Subgroup.coe_mul, mackeyDecompAux_eq, mackeyDecompAux_eq,
-    ← Module.End.mul_apply, ← map_mul, mul_inv_rev, inv_mul_cancel_right]
+    ← mul_apply_eq_comp, ← map_mul, mul_inv_rev, inv_mul_cancel_right]
 
 /-- Evaluating the linear map out of `k[G] ⊗ A` assembled from a family `f : G → (A →ₗ[k] W)`. The
 codomain is generic, so that rewriting does not have to see through `DoubleCoset.Quotient`. -/
@@ -365,7 +365,7 @@ private theorem indToMackeySum_comp_mackeySumToInd :
   exact (congrArg (indToMackeySum A) ((mackeySumToInd_lof A D u a).trans
     (congrArg (fun x ↦ IndV.mk H.subtype A.ρ x a) e))).trans
     ((indToMackeySum_mk A _ a).trans ((mackeyDecompAux_eq A D 1 u a).trans
-      (by rw [inv_one, map_one, Module.End.one_apply]; rfl)))
+      (by rw [inv_one, map_one, one_apply_eq_self]; rfl)))
 
 private theorem mackeySumToInd_comp_indToMackeySum :
     mackeySumToInd A ∘ₗ indToMackeySum (K := K) A = LinearMap.id := by

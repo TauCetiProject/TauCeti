@@ -150,7 +150,7 @@ theorem prefixLaw_singleton_cond_initial_mem [MeasurableSingletonClass α] {μ :
   have hXcond : ∀ i, AEMeasurable (X i) μ[|s] := fun i => (hX i).mono_ac hac
   -- `ProbabilityTheory.cond_apply` asks for a measurable conditioning event; this is its
   -- null-measurable form
-  rw [prefixLaw_singleton_eq_measure hXcond, ProbabilityTheory.cond, Measure.smul_apply,
+  rw [prefixLaw_singleton_eq_measure hXcond, ProbabilityTheory.cond, _root_.smul_apply,
     Measure.restrict_apply₀' hs, smul_eq_mul, Set.inter_comm,
     prefixLaw_singleton_eq_measure hX]
   split_ifs with hw

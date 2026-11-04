@@ -13,6 +13,7 @@ public import Mathlib.MeasureTheory.Measure.CharacteristicFunction.Basic
 public import Mathlib.MeasureTheory.Measure.ProbabilityMeasure
 public import TauCeti.MeasureTheory.Integral.Bind
 public import TauCeti.MeasureTheory.Measure.Mixture.Basic
+public import TauCeti.Probability.Distributions.Categorical
 public import TauCeti.Probability.Density
 
 /-!
@@ -43,7 +44,7 @@ public section
 
 noncomputable section
 
-open MeasureTheory ProbabilityTheory Set
+open Convexity MeasureTheory ProbabilityTheory Set
 
 open scoped ENNReal
 
@@ -123,6 +124,104 @@ end MeasureTheory.Measure
 
 
 namespace TauCeti.Probability
+
+section Finite
+
+variable {I Z : Type*} [Fintype I] {B : Type*} [MeasurableSpace B]
+  {p : StdSimplex NNReal I} {K L : I → Measure B}
+
+/-- The finite mixture of a family of measures with simplex weights. -/
+def finiteMixtureMeasure (p : StdSimplex NNReal I) (K : I → Measure B) : Measure B :=
+  ∑ i, (p.weights i : ℝ≥0∞) • K i
+
+/-- A finite mixture is its defining weighted sum. -/
+theorem finiteMixtureMeasure_def (p : StdSimplex NNReal I) (K : I → Measure B) :
+    finiteMixtureMeasure p K = ∑ i, (p.weights i : ℝ≥0∞) • K i :=
+  (rfl)
+
+/-- A finite mixture of probability measures is a probability measure. -/
+theorem isProbabilityMeasure_finiteMixtureMeasure
+    (hK : ∀ i, IsProbabilityMeasure (K i)) : IsProbabilityMeasure (finiteMixtureMeasure p K) := by
+  constructor
+  simp only [finiteMixtureMeasure_def, _root_.sum_apply, _root_.smul_apply, smul_eq_mul]
+  simp_rw [@measure_univ _ _ _ (hK _), mul_one]
+  exact_mod_cast p.total_of_fintype
+
+/-- A finite mixture is the categorical mixture of its components. -/
+theorem finiteMixtureMeasure_eq_bind [MeasurableSpace I] [MeasurableSingletonClass I]
+    (p : StdSimplex NNReal I) (K : I → Measure B) :
+    finiteMixtureMeasure p K = (categoricalMeasure p).bind K := by
+  ext s hs
+  rw [finiteMixtureMeasure_def, _root_.sum_apply,
+    Measure.bind_apply hs Measurable.of_discrete.aemeasurable, lintegral_fintype]
+  simp only [categoricalMeasure_singleton, _root_.smul_apply, smul_eq_mul, mul_comm]
+
+/-- A finite mixture of identical components is that component. -/
+@[simp]
+theorem finiteMixtureMeasure_const (p : StdSimplex NNReal I) (mu : Measure B) :
+    finiteMixtureMeasure p (fun _ ↦ mu) = mu := by
+  rw [finiteMixtureMeasure_def, ← Finset.sum_smul]
+  have hw : ∑ i, (p.weights i : ℝ≥0∞) = 1 := by exact_mod_cast p.total_of_fintype
+  rw [hw, one_smul]
+
+/-- Changing zero-weight components leaves a finite mixture unchanged. -/
+theorem finiteMixtureMeasure_congr (h : ∀ i, 0 < p.weights i → K i = L i) :
+    finiteMixtureMeasure p K = finiteMixtureMeasure p L := by
+  refine Finset.sum_congr rfl fun i _ ↦ ?_
+  by_cases hi : p.weights i = 0
+  · simp [hi]
+  · rw [h i (pos_iff_ne_zero.mpr hi)]
+
+/-- Finite mixtures are measurable when their weights and components are measurable. -/
+@[fun_prop]
+theorem measurable_finiteMixtureMeasure [MeasurableSpace Z]
+    {p : Z → StdSimplex NNReal I} {K : Z → I → Measure B} (hp : Measurable p)
+    (hK : ∀ i, Measurable fun z ↦ K z i) :
+    Measurable fun z ↦ finiteMixtureMeasure (p z) (K z) := by
+  simp only [finiteMixtureMeasure_def]
+  refine Finset.measurable_sum _ fun i _ ↦ Measure.measurable_measure.mpr fun s hs ↦ ?_
+  simp only [_root_.smul_apply, smul_eq_mul]
+  exact (measurable_coe_nnreal_ennreal.comp
+    (((measurable_pi_apply i).comp StdSimplex.measurable_toFun_comp_weights).comp hp)).mul
+      ((Measure.measurable_coe hs).comp (hK i))
+
+variable {E : Type*} [NormedAddCommGroup E] {f : B → E}
+
+/-- Integrability under a finite mixture is integrability under every positive-weight
+component. -/
+theorem integrable_finiteMixtureMeasure_iff :
+    Integrable f (finiteMixtureMeasure p K) ↔
+      ∀ i, 0 < p.weights i → Integrable f (K i) := by
+  rw [finiteMixtureMeasure_def, integrable_finsetSum_measure]
+  simp only [Finset.mem_univ, forall_const]
+  refine forall_congr' fun i ↦ ?_
+  by_cases hi : p.weights i = 0
+  · simp [hi]
+  · rw [integrable_smul_measure (by simpa using hi) ENNReal.coe_ne_top]
+    exact ⟨fun h _ ↦ h, fun h ↦ h (pos_iff_ne_zero.mpr hi)⟩
+
+variable [NormedSpace ℝ E]
+
+/-- The integral under a finite mixture is the weighted sum of the component integrals. -/
+theorem integral_finiteMixtureMeasure (hf : Integrable f (finiteMixtureMeasure p K)) :
+    ∫ x, f x ∂finiteMixtureMeasure p K = ∑ i, (p.weights i : ℝ) • ∫ x, f x ∂K i := by
+  rw [finiteMixtureMeasure_def] at hf ⊢
+  rw [integral_finsetSum_measure (integrable_finsetSum_measure.mp hf)]
+  simp only [integral_smul_measure, ENNReal.coe_toReal]
+
+omit [NormedSpace ℝ E] in
+/-- A finite mixture has an `Lᵖ` observable when every positive-weight component does. -/
+theorem memLp_finiteMixtureMeasure {q : ℝ≥0∞}
+    (hf : ∀ i, 0 < p.weights i → MemLp f q (K i)) :
+    MemLp f q (finiteMixtureMeasure p K) := by
+  rw [finiteMixtureMeasure_def]
+  exact Finset.sum_induction _ (fun mu : Measure B ↦ MemLp f q mu)
+    (fun _ _ ↦ MemLp.add_measure) memLp_measure_zero fun i _ ↦ by
+      by_cases hi : p.weights i = 0
+      · simp [hi]
+      · exact (hf i (pos_iff_ne_zero.mpr hi)).smul_measure ENNReal.coe_ne_top
+
+end Finite
 
 variable {Omega A B : Type*} [MeasurableSpace Omega] [MeasurableSpace A] [MeasurableSpace B]
   {P : Measure Omega} {rho : Measure A} {nu : Measure B} {K : A → Measure B}

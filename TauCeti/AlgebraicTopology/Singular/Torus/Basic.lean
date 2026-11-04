@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Algebra.Category.ModuleCat.Monoidal.Unit
 public import TauCeti.AlgebraicTopology.Singular.Kunneth.Basic
 public import TauCeti.AlgebraicTopology.Singular.Sphere
 public import TauCeti.Topology.PiCurry
@@ -97,8 +98,6 @@ instance free_singularHomology_torus (ι : Type w) [Finite ι] (m : ℕ) :
   · intro m
     infer_instance
   · intro α _ ih m
-    -- The unit `𝟙_ (ModuleCat k)` is `k` itself.
-    have : Module.Free k (𝟙_ (ModuleCat.{w} k)) := inferInstanceAs (Module.Free k k)
     exact .of_equiv (singularHomologyTorusOptionLinearEquiv M α m).symm
 
 variable [Nontrivial k] [Module.Finite k M]
@@ -130,10 +129,6 @@ private lemma finite_singularHomology_torus_aux (ι : Type w) [Fintype ι] (m : 
     rw [finrank_singularHomology_of_contractibleSpace]
     cases m <;> simp
   · intro α _ ih m
-    -- The unit `𝟙_ (ModuleCat k)` is `k` itself, free of rank one.
-    have : Module.Free k (𝟙_ (ModuleCat.{w} k)) := inferInstanceAs (Module.Free k k)
-    have : Module.Finite k (𝟙_ (ModuleCat.{w} k)) := inferInstanceAs (Module.Finite k k)
-    have hk : Module.finrank k (𝟙_ (ModuleCat.{w} k)) = 1 := Module.finrank_self k
     have : ∀ q, Module.Finite k (((singularHomologyFunctor (ModuleCat.{w} k) q).obj M).obj
         (TopCat.of (α → TopCat.sphere.{w} 1))) :=
       fun q ↦ (ih q).1
@@ -142,7 +137,7 @@ private lemma finite_singularHomology_torus_aux (ι : Type w) [Fintype ι] (m : 
     have hS (q : ℕ) :
         Module.finrank k (((singularHomologyFunctor (ModuleCat.{w} k) q).obj (𝟙_ _)).obj
           (TopCat.sphere.{w} 1)) = (if q = 1 then 1 else 0) + if q = 0 then 1 else 0 := by
-      rw [finrank_singularHomology_sphere, hk]
+      rw [finrank_singularHomology_sphere, finrank_tensorUnit]
     have hT (q : ℕ) :
         Module.finrank k (((singularHomologyFunctor (ModuleCat.{w} k) q).obj M).obj
           (TopCat.of (α → TopCat.sphere.{w} 1))) =

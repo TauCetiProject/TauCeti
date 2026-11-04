@@ -37,9 +37,7 @@ open Polynomial
 
 namespace TauCeti
 
-universe u
-
-variable {k : Type u} [Semiring k]
+variable {k : Type*} [Semiring k]
 
 namespace Polynomial
 
@@ -53,26 +51,18 @@ theorem exists_common_X_pow_factor {ι : Type*} (s : Set ι) (p : ι → k[X])
   classical
   have hex : ∃ d, ∃ i ∈ s, (p i).coeff d ≠ 0 := by
     obtain ⟨i, hi, hpi⟩ := hne
-    obtain ⟨d, hd⟩ := Polynomial.support_nonempty.mpr hpi
-    exact ⟨d, i, hi, Polynomial.mem_support_iff.mp hd⟩
-  let m := Nat.find hex
+    exact ⟨_, i, hi, mem_support_iff.mp (natTrailingDegree_mem_support_of_ne_zero hpi)⟩
+  -- Below the least such index every member has zero coefficient, so `X ^ Nat.find hex`
+  -- divides every member; the implication form lets `choose` produce a total family.
+  have hdvd (i : ι) : ∃ c, i ∈ s → p i = X ^ Nat.find hex * c := by
+    by_cases hi : i ∈ s
+    · obtain ⟨c, hc⟩ := X_pow_dvd_iff.mpr fun d hd ↦
+        not_not.mp fun h ↦ Nat.find_min hex hd ⟨i, hi, h⟩
+      exact ⟨c, fun _ ↦ hc⟩
+    · exact ⟨0, fun h ↦ (hi h).elim⟩
+  choose q hq using hdvd
   obtain ⟨j, hjs, hjm⟩ := Nat.find_spec hex
-  have hdvd : ∀ i ∈ s, (X : k[X]) ^ m ∣ p i := by
-    intro i hi
-    rw [X_pow_dvd_iff]
-    intro d hd
-    by_contra hcoeff
-    exact Nat.find_min hex hd ⟨i, hi, hcoeff⟩
-  let q : ι → k[X] := fun i ↦ if hi : i ∈ s then Classical.choose (hdvd i hi) else 0
-  have hfactor : ∀ i ∈ s, p i = (X : k[X]) ^ m * q i := by
-    intro i hi
-    simpa [q, hi] using Classical.choose_spec (hdvd i hi)
-  refine ⟨m, q, hfactor, j, hjs, ?_⟩
-  have hjcoeff : (p j).coeff m ≠ 0 := by simpa using hjm
-  have hcoeff := congrArg (fun r : k[X] ↦ r.coeff m) (hfactor j hjs)
-  have hcoeff' : (p j).coeff m = (q j).coeff 0 := hcoeff.trans <| by
-    simpa using coeff_X_pow_mul (q j) m 0
-  exact fun hq ↦ hjcoeff (hcoeff'.trans hq)
+  exact ⟨_, q, hq, j, hjs, by simpa [hq j hjs, coeff_X_pow_mul'] using hjm⟩
 
 end Polynomial
 
