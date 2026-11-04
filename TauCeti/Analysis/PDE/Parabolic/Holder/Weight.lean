@@ -49,8 +49,6 @@ Hölder derivatives of every positive order (`Real.iteratedDeriv_succ_log_one_ad
 
 ## Main declarations
 
-* `TauCeti.HolderSpace.compSlabSpaceL`: a Hölder field on space as a time-independent parabolic
-  Hölder field on a slab.
 * `TauCeti.ParabolicC2HolderSpace.hasFDerivAt_exp_smul`,
   `TauCeti.ParabolicC2HolderSpace.fderiv_fderiv_exp_smul_apply` and
   `TauCeti.ParabolicC2HolderSpace.hasDerivWithinAt_exp_smul`: the derivatives of the weighted
@@ -80,25 +78,6 @@ open Set ParabolicSpaceTime Real
 open scoped NNReal
 
 variable {α : ℝ≥0}
-
-/-! ### Time-independent Hölder fields on a slab -/
-
-namespace HolderSpace
-
-variable {E Y : Type*} [MetricSpace E] [NormedAddCommGroup Y] [NormedSpace ℝ Y] {a b : ℝ}
-
-/-- A bounded `α`-Hölder field on space, viewed as a time-independent bounded parabolically
-`α`-Hölder field on the slab `E × [a, b]`: precomposition with the spatial position, which is
-`1`-Lipschitz for the parabolic distance. -/
-def compSlabSpaceL : HolderSpace α E Y →L[ℝ] HolderSpace α (slab (E := E) a b) Y :=
-  compLipschitzL _ lipschitzWith_slabSpace
-
-@[simp]
-theorem compSlabSpaceL_apply (f : HolderSpace α E Y) (p : slab (E := E) a b) :
-    compSlabSpaceL f p = f (p : ParabolicSpaceTime E).space :=
-  compLipschitzL_apply _ _ _
-
-end HolderSpace
 
 namespace ParabolicC2HolderSpace
 
