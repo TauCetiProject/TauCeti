@@ -98,9 +98,12 @@ theorem cylindricalEndLift_one_eq_circleMap (s t : ℝ) :
       circleMap 1 (Real.exp (-(2 * Real.pi * s)) / 2) (Real.pi - 2 * Real.pi * t) := by
   simp only [circleMap, cylindricalEndLift_one, Complex.ofReal_div, Complex.ofReal_mul,
     Complex.ofReal_exp, Complex.ofReal_neg, Complex.ofReal_sub, Complex.ofReal_ofNat]
-  rw [sub_mul, Complex.exp_sub, Complex.exp_pi_mul_I, show Complex.exp (-(2 * ↑Real.pi) *
-    (↑s + ↑t * Complex.I)) = Complex.exp (-(2 * ↑Real.pi * ↑s)) /
-      Complex.exp (2 * ↑Real.pi * ↑t * Complex.I) by rw [← Complex.exp_sub]; ring_nf]
+  -- Split the exponent into its real part `-2πs` and its imaginary part `2πt`.
+  have hexp : Complex.exp (-(2 * ↑Real.pi) * (↑s + ↑t * Complex.I)) =
+      Complex.exp (-(2 * ↑Real.pi * ↑s)) / Complex.exp (2 * ↑Real.pi * ↑t * Complex.I) := by
+    rw [← Complex.exp_sub]
+    ring_nf
+  rw [sub_mul, Complex.exp_sub, Complex.exp_pi_mul_I, hexp]
   ring
 
 /-- The end lift at infinity maps the circle `s = const` of the cylinder clockwise onto the

@@ -147,7 +147,8 @@ theorem loopArea_circleMap_sub_two_pi_mul (ω : SymplecticForm V) {v : ℂ → V
       ∫ θ in -π..π, g θ := by
     simp only [g, (hd _).deriv]
   have hper := hg.intervalIntegral_add_eq (φ - 2 * π) (-π)
-  rw [sub_add_cancel, show -π + 2 * π = π by ring] at hper
+  have hend : -π + 2 * π = π := by ring
+  rw [sub_add_cancel, hend] at hper
   rw [loopArea_def, hlhs, hrhs, intervalIntegral.integral_comp_sub_mul g
     (by positivity : (2 * π : ℝ) ≠ 0), mul_one, mul_zero, sub_zero, hper, smul_eq_mul]
   field_simp
