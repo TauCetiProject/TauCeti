@@ -8,9 +8,9 @@ module
 public import TauCeti.Analysis.Complex.Wirtinger.Potential
 public import TauCeti.Analysis.Complex.Wirtinger.Holomorphic
 public import Mathlib.Analysis.Analytic.IsolatedZeros
+import TauCeti.Analysis.Complex.ContinuousLog.ArgumentPrinciple
 import Mathlib.Analysis.Complex.CauchyIntegral
 import Mathlib.Analysis.SpecialFunctions.ExpDeriv
-import Mathlib.Topology.DiscreteSubset
 
 /-!
 # The scalar similarity principle
@@ -21,7 +21,9 @@ nowhere-zero `Cᵏ` integrating factor depending on the point. On a preconnected
 a nonzero solution has isolated zeros and factors near each point as a nonnegative
 integral power of the complex coordinate times a factor `Cᵏ` at the point and nonzero
 there. For a solution on the plane that is nonzero outside a compact set, the zero set
-is finite. No curvature equation or analyticity of the coefficient is needed.
+is finite, by the general finiteness criterion for local power factorizations
+`TauCeti.finite_setOfPred_eq_zero_of_eventually_eq_pow_mul`. No curvature equation or
+analyticity of the coefficient is needed.
 
 The integrating factor comes from the Cauchy transform; the holomorphic zero
 factorization is Mathlib's `AnalyticAt.exists_eventuallyEq_pow_smul_ne_zero_iff`.
@@ -142,19 +144,13 @@ theorem finite_setOfPred_eq_zero_of_conjWirtingerDeriv_apply_one_eq_mul {a f : �
     (hn : 1 ≤ k) (ha : ContDiff ℝ k a) (hf : Differentiable ℝ f)
     (heq : ∀ w, conjWirtingerDeriv f w 1 = a w * f w)
     (htail : ∀ᶠ w in cocompact ℂ, f w ≠ 0) : {w | f w = 0}.Finite := by
-  have hne : ∃ w, f w ≠ 0 := htail.exists
-  have hdis : IsDiscrete {w | f w = 0} := by
-    apply isDiscrete_iff_nhdsNE.mpr
-    intro z _
-    rw [← disjoint_iff, Filter.disjoint_principal_right]
-    exact eventually_ne_zero_of_conjWirtingerDeriv_apply_one_eq_mul hn isOpen_univ
+  have hne : ∃ w ∈ univ, f w ≠ 0 := by simpa using htail.exists
+  choose n v hvc hv0 hvf using fun z ↦
+    exists_contDiffAt_pow_mul_of_conjWirtingerDeriv_apply_one_eq_mul hn isOpen_univ
       ha.contDiffOn hf.differentiableOn (fun w _ ↦ heq w) (mem_univ z)
       (not_eventually_eq_zero_of_conjWirtingerDeriv_apply_one_eq_mul hn isOpen_univ
-        isPreconnected_univ ha.contDiffOn hf.differentiableOn (fun w _ ↦ heq w)
-        (by simpa using hne) (mem_univ z))
-  obtain ⟨K, hK, hsub⟩ := Filter.mem_cocompact'.mp htail
-  simp only [Set.compl_ofPred, not_not] at hsub
-  exact (hK.of_isClosed_subset (isClosed_eq hf.continuous continuous_const)
-    (by simpa using hsub)).finite hdis
+        isPreconnected_univ ha.contDiffOn hf.differentiableOn (fun w _ ↦ heq w) hne (mem_univ z))
+  exact finite_setOfPred_eq_zero_of_eventually_eq_pow_mul
+    (fun z ↦ ⟨v z, (hvc z).continuousAt, hv0 z, hvf z⟩) htail
 
 end TauCeti
