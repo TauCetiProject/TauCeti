@@ -62,15 +62,15 @@ stabilization constants, and assert nothing about positivity.
   `TauCeti.InfiniteTypeAHeckeAlgebra.hyperbolicGen_skein`: the two-eigenvalue form of `γ i` and its
   skein identity.
 * `TauCeti.InfiniteTypeAHeckeAlgebra.IsMarkovTrace.map_mul_hyperbolicGen` and
-  `TauCeti.InfiniteTypeAHeckeAlgebra.IsMarkovTrace.map_mul_inv_hyperbolicGen`: the two
+  `TauCeti.InfiniteTypeAHeckeAlgebra.IsMarkovTrace.map_mul_val_inv_hyperbolicGen`: the two
   stabilization constants.
 * `TauCeti.InfiniteTypeAHeckeAlgebra.IsMarkovTrace.map_hyperbolicGen_eq_map_inv_iff`: **the two
   stabilization constants agree exactly when `η = (1 - tanh α * tanh θ) / 2`.**
 * `TauCeti.hyperbolicStabilization_eq_neg_I_mul_sinh_div_cosh` and
   `TauCeti.hyperbolicStabilization_normalization`:
   the common value and the normalization constants.
-* `TauCeti.InfiniteTypeAHeckeAlgebra.IsMarkovTrace.map_complementEquiv_hyperbolicGen_eq_iff`: the
-  same condition for the complementary eigenprojection.
+* The same condition for the complementary eigenprojection:
+  `TauCeti.InfiniteTypeAHeckeAlgebra.IsMarkovTrace.map_complementEquiv_hyperbolicGen_eq_map_inv_iff`
 
 ## References
 
@@ -101,6 +101,11 @@ theorem val_hyperbolicHeckeParam (θ : ℂ) : (hyperbolicHeckeParam θ : ℂ) = 
 /-- The inverse of the hyperbolic Hecke parameter is `exp θ`. -/
 theorem val_inv_hyperbolicHeckeParam (θ : ℂ) : (↑(hyperbolicHeckeParam θ)⁻¹ : ℂ) = exp θ := by
   simp [hyperbolicHeckeParam, ← exp_neg]
+
+/-- The hyperbolic Hecke parameter satisfies `q + q⁻¹ = 2 * cosh θ`. -/
+theorem two_mul_cosh_eq_hyperbolicHeckeParam_add_inv (θ : ℂ) :
+    2 * cosh θ = (hyperbolicHeckeParam θ : ℂ) + ↑(hyperbolicHeckeParam θ)⁻¹ := by
+  rw [val_hyperbolicHeckeParam, val_inv_hyperbolicHeckeParam, two_cosh, add_comm]
 
 /-- The positive stabilization constant `I * (exp (-α - θ) * η - exp (-α + θ) * (1 - η))` of a
 Markov trace with projection parameter `η`, for the generators `γ = I * exp (-α) • T`. -/
@@ -220,9 +225,10 @@ theorem val_inv_hyperbolicGen (i : ℕ) :
       (-I * exp α) • (T _ i - algebraMap ℂ _ (exp (-θ) - exp θ)) := by
   apply Units.inv_eq_of_mul_eq_one_right
   have h : I * exp (-α) * (-I * exp α) = 1 := by
-    rw [mul_mul_mul_comm, ← exp_add, neg_add_cancel, exp_zero, mul_one, mul_neg, I_mul_I, neg_neg]
-  rw [val_hyperbolicGen, smul_mul_smul_comm, h, one_smul, ← val_hyperbolicHeckeParam θ,
-    ← val_inv_hyperbolicHeckeParam θ, ← val_inv_unitT, ← val_unitT, Units.mul_inv]
+    rw [mul_mul_mul_comm, ← exp_add]
+    simp
+  simp only [val_hyperbolicGen, smul_mul_smul_comm, h, one_smul]
+  simpa [exp_neg] using Units.mul_inv (unitT (hyperbolicHeckeParam θ) i)
 
 /-- **The two-eigenvalue form of `γ i`.** With `P` the eigenprojection
 `(2 * cosh θ)⁻¹ • (T i + exp θ)` of `T i`,
@@ -231,10 +237,8 @@ theorem val_hyperbolicGen_eq_eigenprojection (hθ : cosh θ ≠ 0) (i : ℕ) :
     (hyperbolicGen α θ i : InfiniteTypeAHeckeAlgebra ℂ (hyperbolicHeckeParam θ)) =
       I • (exp (-α - θ) • ((2 * cosh θ)⁻¹ • (T _ i + algebraMap ℂ _ (exp θ))) -
         exp (-α + θ) • (1 - (2 * cosh θ)⁻¹ • (T _ i + algebraMap ℂ _ (exp θ)))) := by
-  have hs : ((Units.mk0 _ (mul_ne_zero two_ne_zero hθ) : ℂˣ) : ℂ) =
-      (hyperbolicHeckeParam θ : ℂ) + ↑(hyperbolicHeckeParam θ)⁻¹ := by
-    simp [two_cosh, exp_neg, add_comm]
-  have hT := T_eq_smul_eigenprojection_sub_smul _ hs i
+  have hT := T_eq_smul_eigenprojection_sub_smul (Units.mk0 _ (mul_ne_zero two_ne_zero hθ))
+    (two_mul_cosh_eq_hyperbolicHeckeParam_add_inv θ) i
   simp only [Units.val_inv_eq_inv_val, Units.val_mk0, val_hyperbolicHeckeParam, exp_neg,
     inv_inv] at hT
   set P := (2 * cosh θ)⁻¹ • (T (hyperbolicHeckeParam θ) i + algebraMap ℂ _ (exp θ))
@@ -249,10 +253,8 @@ theorem val_inv_hyperbolicGen_eq_eigenprojection (hθ : cosh θ ≠ 0) (i : ℕ)
     (↑(hyperbolicGen α θ i)⁻¹ : InfiniteTypeAHeckeAlgebra ℂ (hyperbolicHeckeParam θ)) =
       -I • (exp (α + θ) • ((2 * cosh θ)⁻¹ • (T _ i + algebraMap ℂ _ (exp θ))) -
         exp (α - θ) • (1 - (2 * cosh θ)⁻¹ • (T _ i + algebraMap ℂ _ (exp θ)))) := by
-  have hs : ((Units.mk0 _ (mul_ne_zero two_ne_zero hθ) : ℂˣ) : ℂ) =
-      (hyperbolicHeckeParam θ : ℂ) + ↑(hyperbolicHeckeParam θ)⁻¹ := by
-    simp [two_cosh, exp_neg, add_comm]
-  have hT := val_inv_unitT_eq_smul_eigenprojection_sub_smul _ hs i
+  have hT := val_inv_unitT_eq_smul_eigenprojection_sub_smul
+    (Units.mk0 _ (mul_ne_zero two_ne_zero hθ)) (two_mul_cosh_eq_hyperbolicHeckeParam_add_inv θ) i
   rw [val_inv_unitT] at hT
   simp only [Units.val_inv_eq_inv_val, Units.val_mk0, val_hyperbolicHeckeParam, exp_neg,
     inv_inv] at hT
@@ -292,7 +294,7 @@ theorem IsMarkovTrace.map_mul_hyperbolicGen (hτ : IsMarkovTrace z τ)
 /-- **The negative stabilization constant.** For a Markov trace with projection parameter `η`,
 `τ (x * γ n⁻¹) = hyperbolicStabilizationInv α θ η * τ x` for `x` in the stage of the first `n + 1`
 strands. -/
-theorem IsMarkovTrace.map_mul_inv_hyperbolicGen (hτ : IsMarkovTrace z τ)
+theorem IsMarkovTrace.map_mul_val_inv_hyperbolicGen (hτ : IsMarkovTrace z τ)
     (hz : z = exp (-θ) * η - exp θ * (1 - η)) {n : ℕ}
     {x : InfiniteTypeAHeckeAlgebra ℂ (hyperbolicHeckeParam θ)}
     (hx : x ∈ stage ℂ (hyperbolicHeckeParam θ) (n + 1)) :
@@ -314,14 +316,14 @@ theorem IsMarkovTrace.map_hyperbolicGen_eq_map_inv_iff (hτ : IsMarkovTrace z τ
     (hz : z = exp (-θ) * η - exp θ * (1 - η)) (hα : cosh α ≠ 0) (hθ : cosh θ ≠ 0) (n : ℕ) :
     τ (hyperbolicGen α θ n) = τ ↑(hyperbolicGen α θ n)⁻¹ ↔ η = (1 - tanh α * tanh θ) / 2 := by
   have h1 := hτ.map_mul_hyperbolicGen (α := α) hz (one_mem (stage ℂ _ (n + 1)))
-  have h2 := hτ.map_mul_inv_hyperbolicGen (α := α) hz (one_mem (stage ℂ _ (n + 1)))
+  have h2 := hτ.map_mul_val_inv_hyperbolicGen (α := α) hz (one_mem (stage ℂ _ (n + 1)))
   rw [one_mul, hτ.map_one, mul_one] at h1 h2
   rw [h1, h2, hyperbolicStabilization_eq_hyperbolicStabilizationInv_iff_tanh hα hθ]
 
 /-- **The complementary eigenprojection.** Precomposing a Markov trace with projection parameter
 `η` with the complement automorphism, which exchanges the eigenprojections of the generators,
 the traces of `γ n` and of `γ n⁻¹` agree exactly when `η = (1 + tanh α * tanh θ) / 2`. -/
-theorem IsMarkovTrace.map_complementEquiv_hyperbolicGen_eq_iff (hτ : IsMarkovTrace z τ)
+theorem IsMarkovTrace.map_complementEquiv_hyperbolicGen_eq_map_inv_iff (hτ : IsMarkovTrace z τ)
     (hz : z = exp (-θ) * η - exp θ * (1 - η)) (hα : cosh α ≠ 0) (hθ : cosh θ ≠ 0) (n : ℕ) :
     τ (complementEquiv _ (hyperbolicGen α θ n)) =
         τ (complementEquiv _ ↑(hyperbolicGen α θ n)⁻¹) ↔

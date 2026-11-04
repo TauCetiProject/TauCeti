@@ -283,6 +283,30 @@ theorem mul_sub_mul_eq_smul {e f x y : A}
 
 end ChangeOfGenerators
 
+end BalancedProjectionAlgebra
+
+/-! ### Idempotence of the eigenprojection of a generator -/
+
+namespace InfiniteTypeAHeckeAlgebra
+
+variable {R} in
+/-- The eigenprojection `P = c • (T i + q⁻¹)` of the generator `T i`, for an inverse `c` of
+`q + q⁻¹`, is idempotent: the quadratic defect of `T i` is `(q + q⁻¹) ^ 2` times the idempotence
+defect of `P`. -/
+theorem isIdempotentElem_eigenprojection {q : Rˣ} {c : R} (hc : c * ((q : R) + ↑q⁻¹) = 1) (i : ℕ) :
+    IsIdempotentElem (c • (T q i + algebraMap R _ (↑q⁻¹ : R))) := by
+  have hT : T q i = ((q : R) + ↑q⁻¹) • (c • (T q i + algebraMap R _ (↑q⁻¹ : R))) -
+      algebraMap R _ (↑q⁻¹ : R) := by
+    rw [smul_smul, mul_comm, hc, one_smul, add_sub_cancel_right]
+  refine sub_eq_zero.1 (((IsUnit.of_mul_eq_one_right c hc).pow 2).smul_eq_zero.1 ?_)
+  rw [← BalancedProjectionAlgebra.mul_self_sub_eq_smul hT, T_mul_self, sub_self]
+
+end InfiniteTypeAHeckeAlgebra
+
+namespace BalancedProjectionAlgebra
+
+variable {R τ}
+
 section HeckeEquiv
 
 /-! ### The isomorphism with the infinite type-A Hecke algebra -/
@@ -298,24 +322,20 @@ private theorem T_eq_smul_sub (hτ : τ * ((q : R) + ↑q⁻¹) ^ 2 = 1) (i : �
   have h : ((q : R) + ↑q⁻¹) * (τ * ((q : R) + ↑q⁻¹)) = 1 := by linear_combination hτ
   rw [smul_smul, h, one_smul, add_sub_cancel_right]
 
-/-- The projections `(q + q⁻¹)⁻¹ • (T i + q⁻¹)` of the Hecke algebra are idempotent. -/
-private theorem isIdempotentElem_smul_T_add (hτ : τ * ((q : R) + ↑q⁻¹) ^ 2 = 1) (i : ℕ) :
-    IsIdempotentElem ((τ * ((q : R) + ↑q⁻¹)) •
-      (T q i + algebraMap R (InfiniteTypeAHeckeAlgebra R q) ↑q⁻¹)) := by
-  refine sub_eq_zero.1 ((IsUnit.of_mul_eq_one_right τ hτ).smul_eq_zero.1 ?_)
-  rw [← mul_self_sub_eq_smul (T_eq_smul_sub hτ i), InfiniteTypeAHeckeAlgebra.T_mul_self, sub_self]
-
 /-- The projections `(q + q⁻¹)⁻¹ • (T i + q⁻¹)` of the Hecke algebra satisfy the balanced
 presentation. -/
 private def toHecke (hτ : τ * ((q : R) + ↑q⁻¹) ^ 2 = 1) :
     BalancedProjectionAlgebra R τ →ₐ[R] InfiniteTypeAHeckeAlgebra R q :=
   lift (fun i ↦ (τ * ((q : R) + ↑q⁻¹)) • (T q i + algebraMap R _ ↑q⁻¹))
-    (isIdempotentElem_smul_T_add hτ)
+    (fun i ↦ InfiniteTypeAHeckeAlgebra.isIdempotentElem_eigenprojection
+      (by linear_combination hτ) i)
     (fun i ↦ by
+      have hc : τ * ((q : R) + ↑q⁻¹) * ((q : R) + ↑q⁻¹) = 1 := by linear_combination hτ
       refine sub_eq_zero.1 ((((isUnit_pow_iff two_ne_zero).1
         (IsUnit.of_mul_eq_one_right τ hτ)).pow 3).smul_eq_zero.1 ?_)
-      rw [← mul_mul_sub_mul_mul_eq_smul hτ (isIdempotentElem_smul_T_add hτ i)
-        (isIdempotentElem_smul_T_add hτ (i + 1)) (T_eq_smul_sub hτ i)
+      rw [← mul_mul_sub_mul_mul_eq_smul hτ
+        (InfiniteTypeAHeckeAlgebra.isIdempotentElem_eigenprojection hc i)
+        (InfiniteTypeAHeckeAlgebra.isIdempotentElem_eigenprojection hc (i + 1)) (T_eq_smul_sub hτ i)
         (T_eq_smul_sub hτ (i + 1)), InfiniteTypeAHeckeAlgebra.T_braid, sub_self])
     (fun h ↦ by
       refine sub_eq_zero.1 ((IsUnit.of_mul_eq_one_right τ hτ).smul_eq_zero.1 ?_)
@@ -430,16 +450,6 @@ namespace InfiniteTypeAHeckeAlgebra
 
 variable {R} {q : Rˣ} (s : Rˣ)
 
-/-- The eigenprojection `P = (q + q⁻¹)⁻¹ • (T i + q⁻¹)` is idempotent: it is the image of the
-projection `e i` under the isomorphism with the balanced projection algebra. -/
-theorem isIdempotentElem_eigenprojection (hs : (s : R) = q + ↑q⁻¹) (i : ℕ) :
-    IsIdempotentElem ((↑s⁻¹ : R) • (T q i + algebraMap R _ (↑q⁻¹ : R))) := by
-  have hτ : (↑s⁻¹ : R) ^ 2 * ((q : R) + ↑q⁻¹) ^ 2 = 1 := by
-    rw [← hs, ← mul_pow, s.inv_mul, one_pow]
-  have h := (BalancedProjectionAlgebra.isIdempotentElem_e (τ := (↑s⁻¹ : R) ^ 2) i).map
-    (BalancedProjectionAlgebra.heckeEquiv q hτ)
-  rwa [BalancedProjectionAlgebra.heckeEquiv_e, ← hs, sq, mul_assoc, s.inv_mul, mul_one] at h
-
 /-- The generator `T i` is `q` on its eigenprojection `P` and `-q⁻¹` on the complement:
 `T i = q • P - q⁻¹ • (1 - P)`. -/
 theorem T_eq_smul_eigenprojection_sub_smul (hs : (s : R) = q + ↑q⁻¹) (i : ℕ) :
@@ -476,8 +486,8 @@ theorem IsMarkovTrace.map_mul_eigenprojection (hμ : IsMarkovTrace z μ)
     μ (x * (↑s⁻¹ : R) • (T q n + algebraMap R _ (↑q⁻¹ : R))) = η * μ x := by
   have hs' : (↑s⁻¹ : R) * s = 1 := s.inv_mul
   rw [hs] at hs'
-  rw [mul_smul_comm, map_smul, mul_add, map_add, hμ.map_mul_T hx, ← Algebra.commutes,
-    ← Algebra.smul_def, map_smul, smul_eq_mul, smul_eq_mul, hz]
+  rw [mul_smul_comm, map_smul, mul_add, map_add, hμ.map_mul_T hx]
+  simp only [Algebra.algebraMap_eq_smul_one, mul_smul_comm, mul_one, map_smul, smul_eq_mul, hz]
   linear_combination η * μ x * hs'
 
 end InfiniteTypeAHeckeAlgebra
