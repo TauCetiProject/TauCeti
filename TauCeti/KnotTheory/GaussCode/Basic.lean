@@ -327,6 +327,18 @@ def writhe (D : BasedOrientedGaussCode n) : ℤ :=
 theorem writhe_def (D : BasedOrientedGaussCode n) :
     D.writhe = ∑ c : Fin n, ((D.sign c : ℤˣ) : ℤ) := by simp [writhe]
 
+/-- Summing the sign of the crossing met at each visit counts every crossing twice, so it gives
+twice the writhe. -/
+theorem sum_sign_visit (D : BasedOrientedGaussCode n) :
+    ∑ i, ((D.sign (D.visit i) : ℤˣ) : ℤ) = 2 * D.writhe := by
+  rw [← D.visitDataEquiv.symm.sum_comp, Fintype.sum_prod_type, writhe_def, Finset.mul_sum]
+  refine Finset.sum_congr rfl fun c _ => ?_
+  have hvisit (b : Bool) : D.visit (D.visitDataEquiv.symm (c, b)) = c := by
+    have h := D.visitDataEquiv.apply_symm_apply (c, b)
+    rw [visitDataEquiv_apply] at h
+    exact congrArg Prod.fst h
+  simp [hvisit, two_mul]
+
 /-- Reflecting a diagram reverses every crossing sign and leaves its traversal unchanged. -/
 def mirror (D : BasedOrientedGaussCode n) : BasedOrientedGaussCode n where
   visit := D.visit
