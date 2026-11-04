@@ -44,6 +44,8 @@ differentiation commutes with this extension.
 * `TauCeti.exists_mextDeriv_eq_of_forall_eventuallyEq_add_const`: a global function which near
   every point differs by a constant from a local primitive of a `1`-form is itself a primitive.
 * `TauCeti.mextDerivₗ`: the exterior derivative as a linear map on smooth fixed-coefficient forms.
+* `TauCeti.contMDiffAt_ofFunction_iff`, `TauCeti.isSmoothForm_ofFunction_iff`: the `0`-form of a
+  function is as regular as the function, pointwise and globally.
 * `TauCeti.mdifferentiableAt_ofFunction`: the `0`-form of a differentiable function is a
   differentiable section.
 
@@ -382,18 +384,29 @@ theorem IsSmoothForm.of_contDiffWithinAt_inChartAt_self [IsManifold I 1 M]
   rw [isSmoothForm_def]
   exact fun x ↦ contMDiffAt_form_of_contDiffWithinAt_inChartAt_self (hφ x)
 
-/-- The `0`-form of a function is a `C^n` form exactly when the function is `C^n`. -/
+/-- The `0`-form of a function is a `C^n` section at `x` exactly when the function is `C^n` at
+`x`. -/
 @[simp]
-theorem isSmoothForm_ofFunction_iff [IsManifold I 1 M] {n : WithTop ℕ∞} {f : M → F} :
-    IsSmoothForm I n (RoughForm.ofFunction I f) ↔ ContMDiff I 𝓘(ℝ, F) n f := by
-  have key : ∀ x, ContDiffWithinAt ℝ n ((RoughForm.ofFunction I f).inChartAt x) (range I)
-      (extChartAt I x x) ↔ ContMDiffAt I 𝓘(ℝ, F) n f x := fun x ↦ by
+theorem contMDiffAt_ofFunction_iff [IsManifold I 1 M] {n : WithTop ℕ∞} {f : M → F} {x : M} :
+    ContMDiffAt I (I.prod 𝓘(ℝ, E [⋀^Fin 0]→L[ℝ] F)) n
+      (fun y ↦ TotalSpace.mk' (E [⋀^Fin 0]→L[ℝ] F) y (RoughForm.ofFunction I f y)) x ↔
+      ContMDiffAt I 𝓘(ℝ, F) n f x := by
+  have key : ContDiffWithinAt ℝ n ((RoughForm.ofFunction I f).inChartAt x) (range I)
+      (extChartAt I x x) ↔ ContMDiffAt I 𝓘(ℝ, F) n f x := by
     rw [RoughForm.inChartAt_ofFunction, contMDiffAt_iff_source,
       contMDiffWithinAt_iff_contDiffWithinAt]
     exact (ContinuousAlternatingMap.constOfIsEmptyLIE ℝ E F (Fin 0)).toContinuousLinearEquiv
       |>.comp_contDiffWithinAt_iff
-  exact ⟨fun h x ↦ (key x).1 (h.contDiffWithinAt_inChartAt_self x),
-    fun h ↦ IsSmoothForm.of_contDiffWithinAt_inChartAt_self fun x ↦ (key x).2 (h x)⟩
+  refine ⟨fun h ↦ key.1 ?_, fun h ↦ contMDiffAt_form_of_contDiffWithinAt_inChartAt_self
+    (key.2 h)⟩
+  simpa only [preimage_univ, univ_inter] using
+    (RoughForm.ofFunction I f).contDiffWithinAt_inChartAt (s := univ) h.contMDiffWithinAt
+
+/-- The `0`-form of a function is a `C^n` form exactly when the function is `C^n`. -/
+@[simp]
+theorem isSmoothForm_ofFunction_iff [IsManifold I 1 M] {n : WithTop ℕ∞} {f : M → F} :
+    IsSmoothForm I n (RoughForm.ofFunction I f) ↔ ContMDiff I 𝓘(ℝ, F) n f :=
+  (isSmoothForm_def n _).trans (forall_congr' fun _ ↦ contMDiffAt_ofFunction_iff)
 
 /-- The `0`-form of a function differentiable at a point is a section differentiable there. -/
 theorem mdifferentiableAt_ofFunction [IsManifold I 1 M] {f : M → F} {x : M}
@@ -494,6 +507,18 @@ variable (I) in
 theorem mextDerivₗ_apply [IsManifold I 2 M] (k : ℕ) (φ : SmoothForm I M F k) :
     (mextDerivₗ I k φ : RoughForm I M F (k + 1)) = mextDeriv φ.1 :=
   (rfl)
+
+/-- The exterior derivative of a smooth function, regarded as a `0`-form, evaluated on a tangent
+vector, is the derivative of the function applied to that vector. -/
+theorem mextDerivₗ_zero_apply [IsManifold I 2 M] (f : SmoothForm I M F 0) (x : M)
+    (v : TangentSpace I x) :
+    (mextDerivₗ I 0 f).1 x ![v] = mvfderiv I (fun y ↦ f.1 y 0) x v := by
+  calc (mextDerivₗ I 0 f).1 x ![v]
+      = mextDeriv (RoughForm.ofFunction I fun y ↦ f.1 y 0) x ![v] := by
+        rw [mextDerivₗ_apply, ← RoughForm.eq_ofFunction]
+    _ = mvfderiv I (fun y ↦ f.1 y 0) x v := by
+        rw [mextDeriv_ofFunction, ContinuousAlternatingMap.ofSubsingleton_apply_apply,
+          Matrix.cons_val_zero]
 
 namespace SmoothForm
 

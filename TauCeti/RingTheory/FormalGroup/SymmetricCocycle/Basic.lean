@@ -253,6 +253,17 @@ theorem lazardGcd_mul_choose_div_lazardGcd {n i : ℕ} (hi : 0 < i) (hin : i < n
 theorem lazardGcd_ne_zero {n : ℕ} (hn : 2 ≤ n) : lazardGcd n ≠ 0 :=
   Finset.gcd_ne_zero_iff.2 ⟨1, mem_Icc.2 ⟨le_rfl, by omega⟩, by simp; omega⟩
 
+/-- `d_{n+1} ≠ 0` for `n ≠ 0`. -/
+theorem lazardGcd_succ_ne_zero {n : ℕ} (hn : n ≠ 0) : lazardGcd (n + 1) ≠ 0 :=
+  lazardGcd_ne_zero (by omega)
+
+/-- `d_n` divides `n` for `n ≠ 1`. -/
+theorem lazardGcd_dvd_self {n : ℕ} (hn : n ≠ 1) : lazardGcd n ∣ n := by
+  rcases Nat.lt_or_ge n 2 with h | h
+  · obtain rfl : n = 0 := by omega
+    exact dvd_zero _
+  · simpa using lazardGcd_dvd_choose one_pos h
+
 /-- For `n ≥ 2`, the numbers `n.choose i / d_n`, `0 < i < n`, have greatest common divisor `1`. -/
 theorem gcd_choose_div_lazardGcd_eq_one {n : ℕ} (hn : 2 ≤ n) :
     (Icc 1 (n - 1)).gcd (fun i => n.choose i / lazardGcd n) = 1 :=

@@ -86,6 +86,22 @@ theorem isProbabilityMeasure (hπ : IsMultiCoupling π μ) (i : ι) [IsProbabili
   have : IsProbabilityMeasure (π.map (Function.eval i)) := (hπ.marginal_eq i).symm ▸ inferInstance
   Measure.isProbabilityMeasure_of_map (measurable_pi_apply i).aemeasurable
 
+/-- A function of one coordinate is `p`-integrable under a multi-marginal coupling whenever it is
+`p`-integrable under the corresponding marginal. -/
+theorem memLp_comp_eval {E : Type*} [NormedAddCommGroup E] {p : ENNReal}
+    (hπ : IsMultiCoupling π μ) (i : ι) {f : X i → E} (hf : MemLp f p (μ i)) :
+    MemLp (fun x ↦ f (x i)) p π := by
+  rw [← hπ.marginal_eq i] at hf
+  exact (memLp_map_measure_iff hf.aestronglyMeasurable (measurable_pi_apply i).aemeasurable).1 hf
+
+/-- The integral of a function of one coordinate against a multi-marginal coupling is its
+integral against the corresponding marginal. -/
+theorem integral_comp_eval {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+    (hπ : IsMultiCoupling π μ) (i : ι) {f : X i → E} (hf : AEStronglyMeasurable f (μ i)) :
+    ∫ x, f (x i) ∂π = ∫ y, f y ∂μ i := by
+  rw [← hπ.marginal_eq i] at hf ⊢
+  exact (integral_map (measurable_pi_apply i).aemeasurable hf).symm
+
 /-- The pair projection of a multi-marginal coupling has the prescribed first marginal. -/
 theorem fst_map_pair (hπ : IsMultiCoupling π μ) (i j : ι) :
     (π.map fun x ↦ (x i, x j)).fst = μ i := by
