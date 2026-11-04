@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Symplectic.Floer.Energy
-public import Mathlib.MeasureTheory.Function.Jacobian
+public import TauCeti.MeasureTheory.Function.Jacobian.Plane
 import Mathlib.Analysis.Calculus.FDeriv.Symmetric
 
 /-!
@@ -49,9 +49,6 @@ domain.
   coordinate changes.
 * `TauCeti.Floer.fderiv_perturbationPullback_sub_fderiv_perturbationPullback`: the domain-derivative
   part `∂_s K_t - ∂_t K_s` of the curvature scales by `det dφ`, for any target.
-* `TauCeti.Floer.integral_image_eq_integral_of_eq_abs_det_smul` and
-  `TauCeti.Floer.lintegral_enorm_image_eq_lintegral_enorm_of_eq_det_smul`: the change of variables
-  formula for a density that scales by the Jacobian determinant, for any target.
 * `TauCeti.SymplecticForm.perturbedFDeriv_perturbationPullback`: the perturbed derivative of the
   reparametrized map is the original one precomposed with `dφ`.
 * `TauCeti.SymplecticForm.floerEnergyDensity_perturbationPullback`: the energy density scales by
@@ -186,42 +183,6 @@ theorem fderiv_perturbationPullback_sub_fderiv_perturbationPullback {φ : ℝ ×
   simp only [ContinuousLinearMap.det, LinearMap.det_finTwoProd, ContinuousLinearMap.coe_coe,
     stdComplexLineReal_eq, stdComplexLineImag_eq]
   ring
-
-section Integral
-
-variable {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] {φ : ℝ × ℝ → ℝ × ℝ}
-  {s : Set (ℝ × ℝ)} {f g : ℝ × ℝ → F}
-
-/-- **Change of variables for a density.** If a density `f` on a measurable set `s` is
-`|det dφ|` times `g ∘ φ`, for a change of coordinates `φ` that is injective and differentiable on
-`s`, then the integral of `g` over `φ '' s` is the integral of `f` over `s`. The energy density
-and the curvature of a pulled-back perturbation datum are densities of this kind. -/
-theorem integral_image_eq_integral_of_eq_abs_det_smul (hs : MeasurableSet s) (hinj : InjOn φ s)
-    (hφ : ∀ w ∈ s, DifferentiableAt ℝ φ w)
-    (hf : ∀ w ∈ s, f w = |(fderiv ℝ φ w).det| • g (φ w)) :
-    ∫ z in φ '' s, g z = ∫ w in s, f w := by
-  -- Lebesgue measure on `ℝ × ℝ` is the product measure, an additive Haar measure.
-  have := Measure.prod.instIsAddHaarMeasure (volume : Measure ℝ) (volume : Measure ℝ)
-  rw [integral_image_eq_integral_abs_det_fderiv_smul volume hs
-    (fun w hw ↦ (hφ w hw).hasFDerivAt.hasFDerivWithinAt) hinj]
-  exact setIntegral_congr_fun hs fun w hw ↦ (hf w hw).symm
-
-/-- **Change of variables for the size of a density.** If a density `f` on a measurable set `s`
-is `det dφ` times `g ∘ φ`, for a change of coordinates `φ` that is injective and differentiable
-on `s`, then the lower Lebesgue integral of `‖g‖ₑ` over `φ '' s` is that of `‖f‖ₑ` over `s`. No
-orientation, integrability or measurability hypothesis is needed. -/
-theorem lintegral_enorm_image_eq_lintegral_enorm_of_eq_det_smul (hs : MeasurableSet s)
-    (hinj : InjOn φ s) (hφ : ∀ w ∈ s, DifferentiableAt ℝ φ w)
-    (hf : ∀ w ∈ s, f w = (fderiv ℝ φ w).det • g (φ w)) :
-    ∫⁻ z in φ '' s, ‖g z‖ₑ = ∫⁻ w in s, ‖f w‖ₑ := by
-  -- Lebesgue measure on `ℝ × ℝ` is the product measure, an additive Haar measure.
-  have := Measure.prod.instIsAddHaarMeasure (volume : Measure ℝ) (volume : Measure ℝ)
-  rw [lintegral_image_eq_lintegral_abs_det_fderiv_mul volume hs
-    (fun w hw ↦ (hφ w hw).hasFDerivAt.hasFDerivWithinAt) hinj]
-  refine setLIntegral_congr_fun hs fun w hw ↦ ?_
-  rw [hf w hw, enorm_smul, Real.enorm_eq_ofReal_abs]
-
-end Integral
 
 end Floer
 

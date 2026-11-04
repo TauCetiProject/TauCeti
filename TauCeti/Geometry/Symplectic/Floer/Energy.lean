@@ -11,7 +11,6 @@ public import Mathlib.MeasureTheory.Integral.DivergenceTheorem
 import Mathlib.Analysis.Calculus.ContDiff.Operations
 import Mathlib.Analysis.Calculus.FDeriv.Mul
 import TauCeti.Analysis.Calculus.FDeriv.Prod
-import TauCeti.Analysis.Calculus.DifferentialForm.Plane
 import TauCeti.Analysis.Calculus.DifferentialForm.Stokes
 
 /-!
@@ -64,8 +63,6 @@ curvature. Curvature bounds therefore turn into energy bounds. For a cylindrical
 * `SymplecticForm.mul_norm_sq_add_norm_sq_perturbedFDeriv_le_mul_floerEnergyDensity` and
   `SymplecticForm.setLIntegral_norm_sq_add_norm_sq_perturbedFDeriv_le`: the energy controls the
   perturbed derivative, pointwise and in `L²`.
-* `TauCeti.Floer.integral_fderiv_sub_fderiv_Icc`: Green's theorem on a rectangle, for any
-  `C¹` one-form on the domain.
 * `SymplecticForm.integral_floerEnergyDensity`: the energy identity on a rectangle.
 * `SymplecticForm.isComplexLinearMap_perturbedFDeriv_iff`: the coordinate form of the Floer
   equation.
@@ -89,44 +86,6 @@ curvature. Curvature bounds therefore turn into energy bounds. For a cylindrical
 public section
 
 open Filter Function MeasureTheory Set Topology
-
-namespace TauCeti.Floer
-
-variable {U : Set (ℝ × ℝ)} {fs ft : ℝ × ℝ → ℝ} {a b : ℝ × ℝ}
-
-/-- The exterior derivative `∂_s f_t - ∂_t f_s` of a one-form `f_s ds + f_t dt` that is `C¹` over
-an open neighbourhood of a rectangle is integrable over the rectangle. -/
-theorem integrableOn_fderiv_sub_fderiv_Icc (hU : IsOpen U) (hfs : ContDiffOn ℝ 1 fs U)
-    (hft : ContDiffOn ℝ 1 ft U) (habU : Icc a b ⊆ U) :
-    IntegrableOn
-      (fun z ↦ fderiv ℝ ft z stdComplexLineReal - fderiv ℝ fs z stdComplexLineImag) (Icc a b) :=
-  ((((hft.continuousOn_fderiv_of_isOpen hU le_rfl).clm_apply continuousOn_const).sub
-    ((hfs.continuousOn_fderiv_of_isOpen hU le_rfl).clm_apply continuousOn_const)).mono
-      habU).integrableOn_compact isCompact_Icc
-
-/-- **Green's theorem on a rectangle.** For a one-form `f_s ds + f_t dt` that is `C¹` over an
-open neighbourhood of a rectangle `[a₁, b₁] × [a₂, b₂]`, the integral of its exterior derivative
-`∂_s f_t - ∂_t f_s` over the rectangle is its integral over the positively oriented boundary. -/
-theorem integral_fderiv_sub_fderiv_Icc (hU : IsOpen U) (hfs : ContDiffOn ℝ 1 fs U)
-    (hft : ContDiffOn ℝ 1 ft U) (hab : a ≤ b) (habU : Icc a b ⊆ U) :
-    ∫ z in Icc a b, (fderiv ℝ ft z stdComplexLineReal - fderiv ℝ fs z stdComplexLineImag) =
-      (∫ s in a.1..b.1, fs (s, a.2)) + (∫ t in a.2..b.2, ft (b.1, t)) -
-        (∫ s in a.1..b.1, fs (s, b.2)) - ∫ t in a.2..b.2, ft (a.1, t) := by
-  -- Stokes' formula for the one-form `f_s dx + f_t dy`.
-  have hω (z) (hz : z ∈ Icc a b) :
-      ContDiffAt ℝ 1 (fun z ↦ fs z • Prod.realPlaneDx z + ft z • Prod.realPlaneDy z) z :=
-    ((hfs.contDiffAt (hU.mem_nhds (habU hz))).smul Prod.contDiff_realPlaneDx.contDiffAt).add
-      ((hft.contDiffAt (hU.mem_nhds (habU hz))).smul Prod.contDiff_realPlaneDy.contDiffAt)
-  have h := integral_extDeriv_prod_Icc hab hω
-  rw [setIntegral_congr_fun measurableSet_Icc fun z hz ↦
-    extDeriv_apply_pair_of_differentiableAt ((hω z hz).differentiableAt one_ne_zero) _ _] at h
-  simp only [ContinuousAlternatingMap.add_apply, ContinuousAlternatingMap.smul_apply,
-    Prod.realPlaneDx_apply, Prod.realPlaneDy_apply, smul_eq_mul, mul_zero, mul_one, add_zero,
-    zero_add] at h
-  rw [stdComplexLineReal_eq, stdComplexLineImag_eq, h]
-  ring
-
-end TauCeti.Floer
 
 namespace TauCeti.SymplecticForm
 
@@ -495,7 +454,9 @@ theorem integral_floerEnergyDensity (ω : SymplecticForm V) {U : Set (ℝ × ℝ
       (hz : z ∈ U) : DifferentiableAt ℝ (uncurry K) (z, u z) :=
     (hK.differentiableOn one_ne_zero _ (hmem hz)).differentiableAt
       ((hU.prod isOpen_univ).mem_nhds (hmem hz))
-  have hderiv := Floer.integrableOn_fderiv_sub_fderiv_Icc hU hg hf habU
+  have hderiv : IntegrableOn (fun z ↦ fderiv ℝ (fun w ↦ Kt w (u w)) z stdComplexLineReal -
+      fderiv ℝ (fun w ↦ Ks w (u w)) z stdComplexLineImag) (Icc a b) :=
+    integrableOn_fderiv_sub_fderiv_Icc hU hg hf habU
   -- The remaining terms of the pointwise identity are integrable.
   have hdu' : ContinuousOn (fderiv ℝ u) (Icc a b) :=
     (hu.continuousOn_fderiv_of_isOpen hU le_rfl).mono habU
@@ -514,8 +475,8 @@ theorem integral_floerEnergyDensity (ω : SymplecticForm V) {U : Set (ℝ × ℝ
   rw [setIntegral_congr_fun measurableSet_Icc fun z hz ↦ ω.floerEnergyDensity_eq
       ((hu.differentiableOn one_ne_zero z (habU hz)).differentiableAt (hU.mem_nhds (habU hz)))
       (hKdiff hKs (habU hz)) (hKdiff hKt (habU hz)),
-    integral_sub hsum hcurv, integral_add harea hderiv,
-    Floer.integral_fderiv_sub_fderiv_Icc hU hg hf hab habU]
+    integral_sub hsum hcurv, integral_add harea hderiv, stdComplexLineReal_eq,
+    stdComplexLineImag_eq, integral_fderiv_sub_fderiv_Icc hU hg hf hab habU]
 
 /-- **The energy controls the perturbed derivative in `L²`.** Let `u` solve the Floer equation on
 a measurable set `U` for domain-dependent almost complex structures `J z` satisfying

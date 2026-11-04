@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Geometry.Symplectic.Hamiltonian.Manifold
 public import TauCeti.Geometry.Symplectic.Floer.Pullback
+import TauCeti.Analysis.Calculus.DifferentialForm.Stokes
 
 /-!
 # The Floer energy identity for manifold targets
@@ -46,8 +47,8 @@ chart. These are the manifold-target versions of the identities in
 Green's theorem for `K(u)` and the change of variables formula do not see the target, and are
 shared with them through
 `TauCeti.Floer.fderiv_perturbationPullback_sub_fderiv_perturbationPullback`,
-`TauCeti.Floer.integral_fderiv_sub_fderiv_Icc` and
-`TauCeti.Floer.integral_image_eq_integral_of_eq_abs_det_smul`.
+`TauCeti.integral_fderiv_sub_fderiv_Icc` and
+`TauCeti.integral_image_eq_integral_of_eq_abs_det_smul`.
 
 These are coordinate-domain energy identities for arbitrary manifold targets, not a compactness
 theorem or an identity involving caps at punctured ends. On a vector-space target with constant
@@ -405,7 +406,9 @@ theorem IsNondegenerate.integral_floerEnergyDensity [FiniteDimensional ℝ E]
     contMDiffOn_iff_contDiffOn.mp (hKt.comp hgraph hmem)
   have hg : ContDiffOn ℝ 1 (fun w ↦ Ks w (u w)) U :=
     contMDiffOn_iff_contDiffOn.mp (hKs.comp hgraph hmem)
-  have hderiv := integrableOn_fderiv_sub_fderiv_Icc hU hg hf habU
+  have hderiv : IntegrableOn (fun z ↦ fderiv ℝ (fun w ↦ Kt w (u w)) z stdComplexLineReal -
+      fderiv ℝ (fun w ↦ Ks w (u w)) z stdComplexLineImag) (Icc a b) :=
+    integrableOn_fderiv_sub_fderiv_Icc hU hg hf habU
   -- The pointwise energy identity on the rectangle.
   have hpt : ∀ z ∈ Icc a b, ω.floerEnergyDensity Ks Kt u z =
       (SmoothBundleForm.eval₂ ω (u z) (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineReal)
@@ -434,7 +437,8 @@ theorem IsNondegenerate.integral_floerEnergyDensity [FiniteDimensional ℝ E]
           fderiv ℝ (fun w ↦ Ks w (u w)) z stdComplexLineImag)) (Icc a b) :=
     harea.add hderiv
   rw [setIntegral_congr_fun measurableSet_Icc hpt, integral_sub hsum hR,
-    integral_add harea hderiv, integral_fderiv_sub_fderiv_Icc hU hg hf hab habU]
+    integral_add harea hderiv, stdComplexLineReal_eq, stdComplexLineImag_eq,
+    integral_fderiv_sub_fderiv_Icc hU hg hf hab habU]
 
 end Integral
 
