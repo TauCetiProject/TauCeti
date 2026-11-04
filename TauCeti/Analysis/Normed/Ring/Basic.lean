@@ -48,16 +48,16 @@ theorem norm_pow_lt_one {R : Type*} [SeminormedRing R] {q : R} (hq : ‖q‖ < 1
     (hn : n ≠ 0) : ‖q ^ n‖ < 1 :=
   (norm_pow_le' q (Nat.pos_of_ne_zero hn)).trans_lt (pow_lt_one₀ (norm_nonneg q) hq hn)
 
-/-- In a seminormed ring, `‖qⁿ⁺¹ w‖ ≤ ‖q‖ⁿ ‖q w‖`. -/
-theorem norm_pow_succ_mul_le_pow_mul {R : Type*} [SeminormedRing R] (q w : R) (n : ℕ) :
-    ‖q ^ (n + 1) * w‖ ≤ ‖q‖ ^ n * ‖q * w‖ := by
+/-- Multiplying by further powers of an element of norm at most one does not increase the norm:
+`‖qⁿ⁺¹ w‖ ≤ ‖q w‖` when `‖q‖ ≤ 1`. -/
+theorem norm_pow_succ_mul_le {R : Type*} [SeminormedRing R] {q : R} (hq : ‖q‖ ≤ 1) (w : R)
+    (n : ℕ) : ‖q ^ (n + 1) * w‖ ≤ ‖q * w‖ := by
   induction n with
-  | zero => simp
+  | zero => rw [zero_add, pow_one]
   | succ n ih =>
     calc ‖q ^ (n + 1 + 1) * w‖ = ‖q * (q ^ (n + 1) * w)‖ := by rw [pow_succ', mul_assoc]
       _ ≤ ‖q‖ * ‖q ^ (n + 1) * w‖ := norm_mul_le _ _
-      _ ≤ ‖q‖ * (‖q‖ ^ n * ‖q * w‖) := by gcongr
-      _ = ‖q‖ ^ (n + 1) * ‖q * w‖ := by ring
+      _ ≤ ‖q * w‖ := mul_le_of_le_one_left (norm_nonneg _) hq |>.trans ih
 
 /-- Without the normalisation `‖1‖ = 1`, powers are still bounded by `‖xⁿ‖ ≤ max ‖1‖ 1 * ‖x‖ⁿ`,
 including the power `x⁰ = 1`. -/
