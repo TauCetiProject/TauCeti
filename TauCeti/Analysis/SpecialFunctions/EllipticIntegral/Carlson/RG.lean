@@ -29,26 +29,24 @@ for complex `x, y, z`, with the principal branch of each factor `(t + x) ^ (-1/2
 Carlson's normal form of Legendre's integrals, the complete integral of the second kind is
 `E(k) = 2 R_G(0, 1 - k², 1)`, and the perimeter of an ellipse is a multiple of an `R_G` value.
 
-The integral converges absolutely when `x, y, z` lie in `Complex.slitPlane ∪ {0}` and at most
-one of them is `0`. Since the integrand is symmetric in `x, y, z`, the convergence theorem
-`Complex.integrableOn_carlsonRGIntegrand` is stated with the possibly vanishing argument
-in the first position. The integral may also converge for some arguments outside this domain
-(for example `R_G(0, 0, z) = z^(1/2) / 2` for `z ∈ slitPlane`), which this file does not treat;
-wherever the integral fails to converge, `carlsonRG` is a totalized value.
+The integral converges absolutely whenever `x, y, z` lie in `Complex.slitPlane ∪ {0}`
+(`Complex.integrableOn_carlsonRGIntegrand`), including when two or all three arguments vanish
+(at `(0, 0, 0)` the integrand vanishes identically, giving `R_G(0, 0, 0) = 0`). Wherever the
+integral fails to converge outside this domain, `carlsonRG` is a totalized value.
 
 ## Main results
 
 * `Complex.carlsonRGIntegrand` — the integrand of `R_G`.
 * `Complex.carlsonRG` — the integral `R_G`.
 * `Complex.integrableOn_carlsonRGIntegrand` — absolute convergence of the defining
-  integral.
+  integral on `(slitPlane ∪ {0})³`.
 * `Complex.carlsonRG_comm_left`, `Complex.carlsonRG_comm_right` — `R_G` is
   symmetric in its three arguments.
 * `Complex.carlsonRG_ofReal_mul` — homogeneity of degree `1/2` under positive real
   scaling.
 * `Complex.carlsonRG_self` — the diagonal value `R_G(x, x, x) = x^(1/2)`.
 * `Complex.carlsonRG_pos` — `R_G` is a positive real number at nonnegative real
-  arguments, at most one of them zero.
+  arguments, not all zero.
 
 ## References
 
@@ -91,9 +89,8 @@ theorem carlsonRGIntegrand_def (x y z : ℂ) (t : ℝ) :
 `R_G(x, y, z) = ¼ ∫₀^∞ (t + x)^(-1/2) (t + y)^(-1/2) (t + z)^(-1/2)
 (x / (t + x) + y / (t + y) + z / (t + z)) t dt`, the integral of `carlsonRGIntegrand`.
 
-The integral converges when `x, y, z ∈ slitPlane ∪ {0}` with at most one of them `0`
-(`integrableOn_carlsonRGIntegrand`); wherever the integral fails to converge, the value is a
-totalized junk value. -/
+The integral converges when `x, y, z ∈ slitPlane ∪ {0}` (`integrableOn_carlsonRGIntegrand`);
+wherever the integral fails to converge, the value is a totalized junk value. -/
 noncomputable def carlsonRG (x y z : ℂ) : ℂ :=
   (1 / 4 : ℂ) * ∫ t in Ioi (0 : ℝ), carlsonRGIntegrand x y z t
 
@@ -104,51 +101,70 @@ theorem carlsonRG_def (x y z : ℂ) :
 
 /-! ### Convergence -/
 
-/-- **Convergence of `R_G`.** The integrand of `carlsonRG x y z` is integrable on `(0, ∞)` when
-`x ∈ slitPlane ∪ {0}` and `y, z ∈ slitPlane`. By symmetry of the integrand in `x, y, z` this
-covers every argument triple in `slitPlane ∪ {0}` with at most one zero entry. -/
+/-- **Convergence of `R_G`.** The integrand of `carlsonRG x y z` is integrable on `(0, ∞)`
+whenever `x, y, z ∈ slitPlane ∪ {0}`, including when two or all three arguments vanish. -/
 theorem integrableOn_carlsonRGIntegrand {x y z : ℂ} (hx : x ∈ slitPlane ∪ {0})
-    (hy : y ∈ slitPlane) (hz : z ∈ slitPlane) :
+    (hy : y ∈ slitPlane ∪ {0}) (hz : z ∈ slitPlane ∪ {0}) :
     IntegrableOn (carlsonRGIntegrand x y z) (Ioi 0) := by
-  unfold carlsonRGIntegrand
-  -- The first factor is `O(t^(-1/2))`, the next two are `O((1 + t)^(-1/2))`, and the sum of
-  -- the three terms `w / (t + w)` multiplied by `t` is bounded.
-  have hr : (-(1 / 2) : ℝ) ≤ 0 := by norm_num
-  obtain ⟨Cx, hCx⟩ := TauCeti.exists_norm_ofReal_add_cpow_le_mul_rpow hx hr
-  obtain ⟨Cy, hCy0, hCy⟩ := TauCeti.exists_norm_ofReal_add_cpow_le_mul_one_add_rpow hy hr
-  obtain ⟨Cz, hCz0, hCz⟩ := TauCeti.exists_norm_ofReal_add_cpow_le_mul_one_add_rpow hz hr
-  have hCx0 : 0 ≤ Cx := by simpa using (norm_nonneg _).trans (hCx 1 one_pos)
-  push_cast at hCx hCy hCz
-  obtain ⟨Dx, hDx0, hDx⟩ := TauCeti.exists_norm_div_ofReal_add_mul_le hx
-  obtain ⟨Dy, hDy0, hDy⟩ := TauCeti.exists_norm_div_ofReal_add_mul_le (Or.inl hy)
-  obtain ⟨Dz, hDz0, hDz⟩ := TauCeti.exists_norm_div_ofReal_add_mul_le (Or.inl hz)
-  have hcont := ((((TauCeti.continuousOn_ofReal_add_cpow hx (-(1 / 2))).mul
-    (TauCeti.continuousOn_ofReal_add_cpow (Or.inl hy) (-(1 / 2)))).mul
-    (TauCeti.continuousOn_ofReal_add_cpow (Or.inl hz) (-(1 / 2)))).mul
-    (((TauCeti.continuousOn_div_ofReal_add hx x).add
-      (TauCeti.continuousOn_div_ofReal_add (Or.inl hy) y)).add
-      (TauCeti.continuousOn_div_ofReal_add (Or.inl hz) z))).mul
-    Complex.continuous_ofReal.continuousOn
-  -- The majorant `t^(-1/2) (1 + t)⁻¹` is the beta-integral integrand with `a = b = 1/2`.
-  refine ((TauCeti.integrableOn_rpow_mul_one_add_rpow one_half_pos one_half_pos).const_mul
-    (Cx * Cy * Cz * (Dx + Dy + Dz))).mono' (hcont.aestronglyMeasurable measurableSet_Ioi) ?_
-  refine (ae_restrict_iff' measurableSet_Ioi).mpr (Eventually.of_forall fun t ht => ?_)
-  have ht : (0 : ℝ) < t := ht
-  have hsum : ‖(x / ((t : ℂ) + x) + y / ((t : ℂ) + y) + z / ((t : ℂ) + z)) * t‖ ≤
-      Dx + Dy + Dz := by
-    rw [add_mul, add_mul]
-    exact (norm_add₃_le).trans (add_le_add_three (hDx t ht) (hDy t ht) (hDz t ht))
-  have hone : (1 + t) ^ (-(1 / 2) : ℝ) * (1 + t) ^ (-(1 / 2) : ℝ) =
-      (1 + t) ^ (-((1 / 2 : ℝ) + 1 / 2)) := by
-    rw [← Real.rpow_add (by linarith)]
-    norm_num
-  have hhalf : (1 / 2 : ℝ) - 1 = -(1 / 2) := by norm_num
-  rw [mul_assoc _ _ (t : ℂ), norm_mul, norm_mul, norm_mul]
-  calc _ ≤ Cx * t ^ (-(1 / 2) : ℝ) * (Cy * (1 + t) ^ (-(1 / 2) : ℝ)) *
-        (Cz * (1 + t) ^ (-(1 / 2) : ℝ)) * (Dx + Dy + Dz) := by
-        gcongr
-        exacts [hCx t ht, hCy t ht.le, hCz t ht.le]
-    _ = _ := by rw [hhalf, ← hone]; ring
+  -- Each of the three symmetric summands vanishes identically when its numerator argument `u` is
+  -- `0`, and equals `u (t + u)^(-3/2) (t + v)^(-1/2) (t + w)^(-1/2) t = O((1 + t)^(-3/2))` on
+  -- `(0, ∞)` when `u ∈ slitPlane` (since `(t + v)^(-1/2) (t + w)^(-1/2) t = O(1)`).
+  have hterm {u v w : ℂ} (hu : u ∈ slitPlane ∪ {0}) (hv : v ∈ slitPlane ∪ {0})
+      (hw : w ∈ slitPlane ∪ {0}) :
+      IntegrableOn (fun t : ℝ => ((t : ℂ) + u) ^ (-(1 / 2) : ℂ) *
+        ((t : ℂ) + v) ^ (-(1 / 2) : ℂ) * ((t : ℂ) + w) ^ (-(1 / 2) : ℂ) *
+          (u / ((t : ℂ) + u)) * t) (Ioi 0) := by
+    rcases hu with hu | hu
+    · have hrew (t : ℝ) : ((t : ℂ) + u) ^ (-(1 / 2) : ℂ) * ((t : ℂ) + v) ^ (-(1 / 2) : ℂ) *
+          ((t : ℂ) + w) ^ (-(1 / 2) : ℂ) * (u / ((t : ℂ) + u)) * t =
+          u * (((t : ℂ) + u) ^ (-(3 / 2) : ℂ) * ((t : ℂ) + v) ^ (-(1 / 2) : ℂ) *
+            ((t : ℂ) + w) ^ (-(1 / 2) : ℂ) * t) := by
+        have hpow : ((t : ℂ) + u) ^ (-(1 / 2) : ℂ) * ((t : ℂ) + u)⁻¹ =
+            ((t : ℂ) + u) ^ (-(3 / 2) : ℂ) := by
+          rw [TauCeti.cpow_mul_inv (by norm_num)]
+          norm_num
+        rw [div_eq_mul_inv u ((t : ℂ) + u)]
+        linear_combination
+          (u * ((t : ℂ) + v) ^ (-(1 / 2) : ℂ) * ((t : ℂ) + w) ^ (-(1 / 2) : ℂ) * t) * hpow
+      simp_rw [hrew]
+      refine Integrable.const_mul ?_ u
+      have hcont := (((TauCeti.continuousOn_ofReal_add_cpow (Or.inl hu) (-(3 / 2))).mul
+        (TauCeti.continuousOn_ofReal_add_cpow hv (-(1 / 2)))).mul
+        (TauCeti.continuousOn_ofReal_add_cpow hw (-(1 / 2)))).mul
+        Complex.continuous_ofReal.continuousOn
+      obtain ⟨Cu, hCu0, hCu⟩ := TauCeti.exists_norm_ofReal_add_cpow_le_mul_one_add_rpow hu
+        (r := -(3 / 2)) (by norm_num)
+      have hr : (-(1 / 2) : ℝ) ≤ 0 := by norm_num
+      obtain ⟨Cv, hCv⟩ := TauCeti.exists_norm_ofReal_add_cpow_le_mul_rpow hv hr
+      obtain ⟨Cw, hCw⟩ := TauCeti.exists_norm_ofReal_add_cpow_le_mul_rpow hw hr
+      have hCv0 : 0 ≤ Cv := by simpa using (norm_nonneg _).trans (hCv 1 one_pos)
+      have hCw0 : 0 ≤ Cw := by simpa using (norm_nonneg _).trans (hCw 1 one_pos)
+      push_cast at hCu hCv hCw
+      refine ((TauCeti.integrableOn_rpow_mul_one_add_rpow one_pos one_half_pos).const_mul
+        (Cu * Cv * Cw)).mono' (hcont.aestronglyMeasurable measurableSet_Ioi) ?_
+      filter_upwards [ae_restrict_mem measurableSet_Ioi] with t ht
+      have ht0 : (0 : ℝ) < t := ht
+      have ht_cancel : t ^ (-(1 / 2) : ℝ) * t ^ (-(1 / 2) : ℝ) * t = 1 := by
+        rw [← Real.rpow_add ht0]
+        norm_num [Real.rpow_neg_one, inv_mul_cancel₀ ht0.ne']
+      simp only [norm_mul, Complex.norm_real, Real.norm_of_nonneg ht0.le]
+      calc ‖((t : ℂ) + u) ^ (-(3 / 2) : ℂ)‖ * ‖((t : ℂ) + v) ^ (-(1 / 2) : ℂ)‖ *
+            ‖((t : ℂ) + w) ^ (-(1 / 2) : ℂ)‖ * t
+          ≤ (Cu * (1 + t) ^ (-(3 / 2) : ℝ)) * (Cv * t ^ (-(1 / 2) : ℝ)) *
+              (Cw * t ^ (-(1 / 2) : ℝ)) * t := by
+            gcongr
+            exacts [hCu t ht0.le, hCv t ht0, hCw t ht0]
+        _ = Cu * Cv * Cw * (t ^ (-(1 / 2) : ℝ) * t ^ (-(1 / 2) : ℝ) * t) *
+            (1 + t) ^ (-(3 / 2) : ℝ) := by ring
+        _ = Cu * Cv * Cw * (t ^ ((1 : ℝ) - 1) * (1 + t) ^ (-((1 : ℝ) + 1 / 2))) := by
+            rw [ht_cancel]
+            norm_num
+    · rw [Set.mem_singleton_iff.mp hu]
+      simp
+  refine (((hterm hx hy hz).add (hterm hy hz hx)).add (hterm hz hx hy)).congr_fun
+    (fun t _ => ?_) measurableSet_Ioi
+  simp only [Pi.add_apply, carlsonRGIntegrand]
+  ring
 
 /-! ### Symmetry -/
 
@@ -244,7 +260,7 @@ theorem carlsonRG_self {x : ℂ} (hx : x ∈ slitPlane) : carlsonRG x x x = x ^ 
       ((Complex.tendsto_ofReal_add_cpow_neg x (by norm_num : (0 : ℝ) < 3 / 2)).const_mul
         (2 * x ^ 2))
   rw [carlsonRG_def, integral_Ioi_of_hasDerivAt_of_tendsto' hderiv
-    (integrableOn_carlsonRGIntegrand (Or.inl hx) hx hx) hlim]
+    (integrableOn_carlsonRGIntegrand (Or.inl hx) (Or.inl hx) (Or.inl hx)) hlim]
   -- The value at `t = 0` is `-6 x · x^(-1/2) + 2 x² · x^(-3/2) = -4 x^(1/2)`.
   have h1 : x * x ^ (-((1 / 2 : ℝ) : ℂ)) = x ^ (1 / 2 : ℂ) := by
     conv_lhs => enter [1]; rw [← Complex.cpow_one x]
@@ -258,10 +274,10 @@ theorem carlsonRG_self {x : ℂ} (hx : x ∈ slitPlane) : carlsonRG x x x = x ^ 
 
 /-! ### Real arguments -/
 
-/-- **`R_G` is positive at real arguments**: for real `x ≥ 0` and `y, z > 0`, `R_G(x, y, z)` is a
+/-- **`R_G` is positive at real arguments**: for real `x, y ≥ 0` and `z > 0`, `R_G(x, y, z)` is a
 positive real number (in the order `ComplexOrder`, so its imaginary part is `0`). By symmetry,
-any one of the three arguments may be the one that vanishes. -/
-theorem carlsonRG_pos {x y z : ℝ} (hx : 0 ≤ x) (hy : 0 < y) (hz : 0 < z) :
+up to two of the three arguments may vanish. -/
+theorem carlsonRG_pos {x y z : ℝ} (hx : 0 ≤ x) (hy : 0 ≤ y) (hz : 0 < z) :
     0 < carlsonRG x y z := by
   set f : ℝ → ℝ := fun t => (t + x) ^ (-(1 / 2) : ℝ) * (t + y) ^ (-(1 / 2) : ℝ) *
     (t + z) ^ (-(1 / 2) : ℝ) * (x / (t + x) + y / (t + y) + z / (t + z)) * t with hf
@@ -277,7 +293,8 @@ theorem carlsonRG_pos {x y z : ℝ} (hx : 0 ≤ x) (hy : 0 < y) (hz : 0 < z) :
       ring
   have hint : IntegrableOn f (Ioi 0) := by
     have h := (integrableOn_carlsonRGIntegrand (TauCeti.ofReal_mem_slitPlane_union_zero hx)
-      (ofReal_mem_slitPlane.mpr hy) (ofReal_mem_slitPlane.mpr hz)).congr_fun heq measurableSet_Ioi
+      (TauCeti.ofReal_mem_slitPlane_union_zero hy)
+      (Or.inl (ofReal_mem_slitPlane.mpr hz))).congr_fun heq measurableSet_Ioi
     simpa using h.re
   have hpos (t : ℝ) (ht : t ∈ Ioi 0) : 0 < f t := by
     have : (0 : ℝ) < t := ht

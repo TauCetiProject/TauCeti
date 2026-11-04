@@ -15,7 +15,6 @@ import Mathlib.Analysis.SpecialFunctions.Pow.Continuity
 import Mathlib.Analysis.SpecialFunctions.Pow.Deriv
 import Mathlib.MeasureTheory.Integral.IntegralEqImproper
 import TauCeti.Analysis.Complex.SlitPlane
-import TauCeti.Analysis.SpecialFunctions.Beta
 import TauCeti.Analysis.SpecialFunctions.Pow.Complex
 import TauCeti.Analysis.SpecialFunctions.Pow.ParametricIntegral
 
@@ -34,8 +33,8 @@ derivative formulas (DLMF §19.18) for Carlson's symmetric elliptic integrals:
 * `Complex.carlsonRD` in all three arguments (`_left`, `_middle`, `_right`), including the
   closed-form symmetric derivatives `(R_D(x, z, y) - R_D(x, y, z)) / (2 (y - z))` away from `z`
   (DLMF 19.18.4);
-* `Complex.carlsonRG` in all three arguments (`_left`, `_middle`, `_right`), proving convergence,
-  differentiability, and holomorphy even when both fixed arguments vanish, together with the
+* `Complex.carlsonRG` in all three arguments (`_left`, `_middle`, `_right`), proving
+  differentiability and holomorphy even when both fixed arguments vanish, together with the
   closed-form partial derivative `R_F(x, y, z) / 4 - z R_D(x, y, z) / 12` when at most one fixed
   argument vanishes (DLMF 19.18.3).
 
@@ -44,8 +43,6 @@ holomorphy upgrades real-argument identities for Carlson's integrals to the comp
 
 ## Main results
 
-* `Complex.integrableOn_carlsonRC_integrand`, `Complex.integrableOn_carlsonRD_integrand` —
-  convergence of the integral representations of `R_C` and `R_D`.
 * `Complex.sub_mul_carlsonRD_self_left`, `Complex.two_mul_sub_mul_carlsonRD_self_right` —
   evaluation of `R_D(y, y, x)` and `R_D(x, y, y)` in terms of `R_C(x, y)` (DLMF 19.21.2).
 * `Complex.hasDerivAt_carlsonRC_left`, `Complex.hasDerivAt_carlsonRC_left_of_ne`,
@@ -64,8 +61,6 @@ holomorphy upgrades real-argument identities for Carlson's integrals to the comp
   (DLMF 19.18.4), and `Complex.differentiableOn_carlsonRD_*`,
   `Complex.analyticOnNhd_carlsonRD_*` — partial derivatives and slit-plane holomorphy of `R_D` in
   all three arguments.
-* `Complex.integrableOn_carlsonRGIntegrand_of_mem_union` — convergence of the `R_G` integral when
-  `x, y ∈ slitPlane ∪ {0}` and `z ∈ slitPlane` (allowing two zero arguments).
 * `Complex.hasDerivAt_carlsonRG_left`, `Complex.hasDerivAt_carlsonRG_middle`,
   `Complex.hasDerivAt_carlsonRG_right` (DLMF 19.18.3), their `_integral` forms allowing two zero
   fixed arguments, and `Complex.differentiableOn_carlsonRG_*`, `Complex.analyticOnNhd_carlsonRG_*`
@@ -90,27 +85,6 @@ public section
 open MeasureTheory Set Filter Topology
 
 namespace Complex
-
-/-- **Convergence of `R_C`.** The integrand `t ↦ (t + x)^(-1/2) (t + y)⁻¹` of
-`carlsonRC_eq_integral` is integrable on `(0, ∞)` when `x ∈ slitPlane ∪ {0}` and
-`y ∈ slitPlane`. -/
-theorem integrableOn_carlsonRC_integrand {x y : ℂ} (hx : x ∈ slitPlane ∪ {0})
-    (hy : y ∈ slitPlane) :
-    IntegrableOn (fun t : ℝ => ((t : ℂ) + x) ^ (-(1 / 2) : ℂ) * ((t : ℂ) + y)⁻¹) (Ioi 0) := by
-  refine (integrableOn_carlsonRF_integrand hx hy hy).congr_fun (fun t _ => ?_) measurableSet_Ioi
-  dsimp only; rw [mul_assoc, cpow_neg_half_mul_self]
-
-/-- **Convergence of `R_D`.** The integrand `t ↦ (t + x)^(-1/2) (t + y)^(-1/2) (t + z)^(-3/2)` of
-`carlsonRD_eq_integral` is integrable on `(0, ∞)` when `x ∈ slitPlane ∪ {0}` and
-`y, z ∈ slitPlane`. -/
-theorem integrableOn_carlsonRD_integrand {x y z : ℂ} (hx : x ∈ slitPlane ∪ {0})
-    (hy : y ∈ slitPlane) (hz : z ∈ slitPlane) :
-    IntegrableOn (fun t : ℝ => ((t : ℂ) + x) ^ (-(1 / 2) : ℂ) *
-      ((t : ℂ) + y) ^ (-(1 / 2) : ℂ) * ((t : ℂ) + z) ^ (-(3 / 2) : ℂ)) (Ioi 0) := by
-  refine (integrableOn_carlsonRJ_integrand hx hy hz hz).congr_fun (fun t _ => ?_)
-    measurableSet_Ioi
-  dsimp only
-  rw [mul_assoc _ (((t : ℂ) + z) ^ (-(1 / 2) : ℂ)), TauCeti.cpow_mul_inv (by norm_num)]; norm_num
 
 /-! ### Partial derivatives and holomorphy of `R_C` -/
 
@@ -609,105 +583,55 @@ private theorem carlsonRGIntegrand_eq_add (x y w : ℂ) (t : ℝ) :
   linear_combination
     (((t : ℂ) + x) ^ (-(1 / 2) : ℂ) * ((t : ℂ) + y) ^ (-(1 / 2) : ℂ) * w * t) * hpow
 
-/-- Integrability of `t ↦ carlsonRGWeight₁ x y t * (t + z)^(-1/2)` on `(0, ∞)` for all
-`x, y ∈ slitPlane ∪ {0}` and `z ∈ slitPlane`, including when both `x` and `y` vanish. -/
-private theorem integrableOn_carlsonRGWeight₁_mul_cpow {x y z : ℂ} (hx : x ∈ slitPlane ∪ {0})
-    (hy : y ∈ slitPlane ∪ {0}) (hz : z ∈ slitPlane) :
-    IntegrableOn (fun t : ℝ => carlsonRGWeight₁ x y t * ((t : ℂ) + z) ^ (-(1 / 2) : ℂ))
-      (Ioi 0) := by
-  have hterm {u v : ℂ} (hu : u ∈ slitPlane ∪ {0}) (hv : v ∈ slitPlane ∪ {0}) :
-      IntegrableOn (fun t : ℝ => (((t : ℂ) + u) ^ (-(1 / 2) : ℂ) *
-        ((t : ℂ) + v) ^ (-(1 / 2) : ℂ) * (u / ((t : ℂ) + u)) * t) *
-          ((t : ℂ) + z) ^ (-(1 / 2) : ℂ)) (Ioi 0) := by
-    rcases hu with hu | hu
-    · rw [TauCeti.integrableOn_mul_ofReal_add_cpow_iff_norm_mul_one_add_rpow hz]
-      have hcont := (((TauCeti.continuousOn_ofReal_add_cpow (Or.inl hu) (-(1 / 2))).mul
-        (TauCeti.continuousOn_ofReal_add_cpow hv (-(1 / 2)))).mul
-        (TauCeti.continuousOn_div_ofReal_add (Or.inl hu) u)).mul
-        continuous_ofReal.continuousOn
-      refine ⟨hcont.aestronglyMeasurable measurableSet_Ioi, ?_⟩
-      have hr : (-(1 / 2) : ℝ) ≤ 0 := by norm_num
-      obtain ⟨Cu, hCu0, hCu⟩ := TauCeti.exists_norm_ofReal_add_cpow_le_mul_one_add_rpow hu hr
-      obtain ⟨Cv, hCv⟩ := TauCeti.exists_norm_ofReal_add_cpow_le_mul_rpow hv hr
-      have hCv0 : 0 ≤ Cv := by simpa using (norm_nonneg _).trans (hCv 1 one_pos)
-      obtain ⟨Du, hDu0, hDu⟩ := TauCeti.exists_norm_div_ofReal_add_mul_le (Or.inl hu)
-      push_cast at hCu hCv
-      have hrpow_cont : ContinuousOn (fun t : ℝ => (1 + t) ^ ((-(1 / 2) : ℂ).re)) (Ioi 0) :=
-        (by fun_prop : Continuous fun t : ℝ => 1 + t).continuousOn.rpow_const
-          fun t ht => Or.inl (by have : (0 : ℝ) < t := ht; linarith)
-      refine ((TauCeti.integrableOn_rpow_mul_one_add_rpow one_half_pos one_half_pos).const_mul
-        (Cu * Cv * Du)).mono'
-        ((hcont.aestronglyMeasurable measurableSet_Ioi).norm.mul
-          (hrpow_cont.aestronglyMeasurable measurableSet_Ioi)) ?_
-      filter_upwards [ae_restrict_mem measurableSet_Ioi] with t ht
-      have ht0 : (0 : ℝ) < t := ht
-      have hexp : (-(1 / 2) : ℂ).re = -(1 / 2 : ℝ) := by norm_num
-      have hone : (1 + t) ^ (-(1 / 2) : ℝ) * (1 + t) ^ (-(1 / 2) : ℝ) =
-          (1 + t) ^ (-((1 / 2 : ℝ) + 1 / 2)) := by
-        rw [← Real.rpow_add (by linarith)]; norm_num
-      have hhalf : (1 / 2 : ℝ) - 1 = -(1 / 2) := by norm_num
-      rw [Real.norm_of_nonneg (mul_nonneg (norm_nonneg _) (by positivity)), hexp,
-        mul_assoc _ (u / ((t : ℂ) + u)) (t : ℂ), norm_mul, norm_mul]
-      calc ‖((t : ℂ) + u) ^ (-(1 / 2) : ℂ)‖ * ‖((t : ℂ) + v) ^ (-(1 / 2) : ℂ)‖ *
-            ‖u / ((t : ℂ) + u) * t‖ * (1 + t) ^ (-(1 / 2) : ℝ)
-          ≤ (Cu * (1 + t) ^ (-(1 / 2) : ℝ)) * (Cv * t ^ (-(1 / 2) : ℝ)) * Du *
-              (1 + t) ^ (-(1 / 2) : ℝ) := by
-            gcongr; exacts [hCu t ht0.le, hCv t ht0, hDu t ht0]
-        _ = Cu * Cv * Du * (t ^ ((1 / 2 : ℝ) - 1) * (1 + t) ^ (-((1 / 2 : ℝ) + 1 / 2))) := by
-            rw [hhalf, ← hone]; ring
-    · rw [Set.mem_singleton_iff.mp hu]; simp
-  refine ((hterm hx hy).add (hterm hy hx)).congr_fun (fun t _ => ?_) measurableSet_Ioi
-  simp only [Pi.add_apply, carlsonRGWeight₁]; ring
-
 /-- Integrability of `t ↦ carlsonRGWeight₂ x y t * (t + z)^(-3/2)` on `(0, ∞)` for all
 `x, y ∈ slitPlane ∪ {0}` and `z ∈ slitPlane`, including when both `x` and `y` vanish. -/
 private theorem integrableOn_carlsonRGWeight₂_mul_cpow {x y z : ℂ} (hx : x ∈ slitPlane ∪ {0})
     (hy : y ∈ slitPlane ∪ {0}) (hz : z ∈ slitPlane) :
     IntegrableOn (fun t : ℝ => carlsonRGWeight₂ x y t * ((t : ℂ) + z) ^ (-(3 / 2) : ℂ))
       (Ioi 0) := by
-  rw [TauCeti.integrableOn_mul_ofReal_add_cpow_iff_norm_mul_one_add_rpow hz]
-  have hcont : ContinuousOn (carlsonRGWeight₂ x y) (Ioi 0) :=
-    ((TauCeti.continuousOn_ofReal_add_cpow hx (-(1 / 2))).mul
-      (TauCeti.continuousOn_ofReal_add_cpow hy (-(1 / 2)))).mul continuous_ofReal.continuousOn
-  refine ⟨hcont.aestronglyMeasurable measurableSet_Ioi, ?_⟩
+  have hz_int : IntegrableOn (fun t : ℝ => ((t : ℂ) + z) ^ (-(3 / 2) : ℂ)) (Ioi 0) := by
+    refine (integrableOn_carlsonRF_integrand (Or.inl hz) hz hz).congr_fun
+      (fun t ht => ?_) measurableSet_Ioi
+    have hne := slitPlane_ne_zero (TauCeti.ofReal_add_mem_slitPlane hz (le_of_lt ht))
+    dsimp only
+    rw [← cpow_add _ _ hne, ← cpow_add _ _ hne]
+    norm_num
+  have hcont : ContinuousOn
+      (fun t : ℝ => carlsonRGWeight₂ x y t * ((t : ℂ) + z) ^ (-(3 / 2) : ℂ)) (Ioi 0) :=
+    (((TauCeti.continuousOn_ofReal_add_cpow hx (-(1 / 2))).mul
+      (TauCeti.continuousOn_ofReal_add_cpow hy (-(1 / 2)))).mul
+      continuous_ofReal.continuousOn).mul
+      (TauCeti.continuousOn_ofReal_add_cpow (Or.inl hz) (-(3 / 2)))
   have hr : (-(1 / 2) : ℝ) ≤ 0 := by norm_num
   obtain ⟨Cx, hCx⟩ := TauCeti.exists_norm_ofReal_add_cpow_le_mul_rpow hx hr
   obtain ⟨Cy, hCy⟩ := TauCeti.exists_norm_ofReal_add_cpow_le_mul_rpow hy hr
   have hCx0 : 0 ≤ Cx := by simpa using (norm_nonneg _).trans (hCx 1 one_pos)
   have hCy0 : 0 ≤ Cy := by simpa using (norm_nonneg _).trans (hCy 1 one_pos)
   push_cast at hCx hCy
-  have hrpow_cont : ContinuousOn (fun t : ℝ => (1 + t) ^ ((-(3 / 2) : ℂ).re)) (Ioi 0) :=
-    (by fun_prop : Continuous fun t : ℝ => 1 + t).continuousOn.rpow_const
-      fun t ht => Or.inl (by have : (0 : ℝ) < t := ht; linarith)
-  refine ((TauCeti.integrableOn_rpow_mul_one_add_rpow one_pos one_half_pos).const_mul
-    (Cx * Cy)).mono'
-    ((hcont.aestronglyMeasurable measurableSet_Ioi).norm.mul
-      (hrpow_cont.aestronglyMeasurable measurableSet_Ioi)) ?_
+  refine (hz_int.norm.const_mul (Cx * Cy)).mono'
+    (hcont.aestronglyMeasurable measurableSet_Ioi) ?_
   filter_upwards [ae_restrict_mem measurableSet_Ioi] with t ht
   have ht0 : (0 : ℝ) < t := ht
-  have hexp : (-(3 / 2) : ℂ).re = -(3 / 2 : ℝ) := by norm_num
   have ht_cancel : t ^ (-(1 / 2) : ℝ) * t ^ (-(1 / 2) : ℝ) * t = 1 := by
     rw [← Real.rpow_add ht0]; norm_num [Real.rpow_neg_one, inv_mul_cancel₀ ht0.ne']
-  rw [Real.norm_of_nonneg (mul_nonneg (norm_nonneg _) (by positivity)), hexp]
   simp only [carlsonRGWeight₂, norm_mul, norm_real, Real.norm_of_nonneg ht0.le]
   calc ‖((t : ℂ) + x) ^ (-(1 / 2) : ℂ)‖ * ‖((t : ℂ) + y) ^ (-(1 / 2) : ℂ)‖ * t *
-        (1 + t) ^ (-(3 / 2) : ℝ)
+        ‖((t : ℂ) + z) ^ (-(3 / 2) : ℂ)‖
       ≤ (Cx * t ^ (-(1 / 2) : ℝ)) * (Cy * t ^ (-(1 / 2) : ℝ)) * t *
-          (1 + t) ^ (-(3 / 2) : ℝ) := by gcongr; exacts [hCx t ht0, hCy t ht0]
+          ‖((t : ℂ) + z) ^ (-(3 / 2) : ℂ)‖ := by gcongr; exacts [hCx t ht0, hCy t ht0]
     _ = Cx * Cy * (t ^ (-(1 / 2) : ℝ) * t ^ (-(1 / 2) : ℝ) * t) *
-        (1 + t) ^ (-(3 / 2) : ℝ) := by ring
-    _ = Cx * Cy * (t ^ ((1 : ℝ) - 1) * (1 + t) ^ (-((1 : ℝ) + 1 / 2))) := by
-        rw [ht_cancel]; norm_num
+        ‖((t : ℂ) + z) ^ (-(3 / 2) : ℂ)‖ := by ring
+    _ = Cx * Cy * ‖((t : ℂ) + z) ^ (-(3 / 2) : ℂ)‖ := by rw [ht_cancel, mul_one]
 
-/-- **Convergence of `R_G` with up to two zero arguments.** The integrand of `carlsonRG x y z` is
-integrable on `(0, ∞)` whenever `x, y ∈ slitPlane ∪ {0}` and `z ∈ slitPlane`, extending
-`integrableOn_carlsonRGIntegrand` to allow both `x` and `y` to vanish. -/
-theorem integrableOn_carlsonRGIntegrand_of_mem_union {x y z : ℂ} (hx : x ∈ slitPlane ∪ {0})
+/-- Integrability of `t ↦ carlsonRGWeight₁ x y t * (t + z)^(-1/2)` on `(0, ∞)` for all
+`x, y ∈ slitPlane ∪ {0}` and `z ∈ slitPlane`, including when both `x` and `y` vanish. -/
+private theorem integrableOn_carlsonRGWeight₁_mul_cpow {x y z : ℂ} (hx : x ∈ slitPlane ∪ {0})
     (hy : y ∈ slitPlane ∪ {0}) (hz : z ∈ slitPlane) :
-    IntegrableOn (carlsonRGIntegrand x y z) (Ioi 0) :=
-  ((integrableOn_carlsonRGWeight₁_mul_cpow hx hy hz).add
+    IntegrableOn (fun t : ℝ => carlsonRGWeight₁ x y t * ((t : ℂ) + z) ^ (-(1 / 2) : ℂ))
+      (Ioi 0) :=
+  ((integrableOn_carlsonRGIntegrand hx hy (Or.inl hz)).sub
     ((integrableOn_carlsonRGWeight₂_mul_cpow hx hy hz).const_mul z)).congr_fun
-    (fun t _ => (carlsonRGIntegrand_eq_add x y z t).symm) measurableSet_Ioi
+    (fun t _ => by rw [Pi.sub_apply, carlsonRGIntegrand_eq_add]; ring) measurableSet_Ioi
 
 /-- Splitting formula for `carlsonRG x y w` on `slitPlane`. -/
 private theorem carlsonRG_eq_add_of_mem_slitPlane {x y w : ℂ} (hx : x ∈ slitPlane ∪ {0})

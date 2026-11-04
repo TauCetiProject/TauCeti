@@ -39,8 +39,8 @@ is supported; wherever the integrand fails to be integrable, the Bochner integra
 ## Main results
 
 * `Complex.carlsonRJ`, `Complex.carlsonRD` — the integrals `R_J` and `R_D`.
-* `Complex.integrableOn_carlsonRJ_integrand` — absolute convergence of the defining
-  integral.
+* `Complex.integrableOn_carlsonRJ_integrand`, `Complex.integrableOn_carlsonRD_integrand` —
+  absolute convergence of the defining integrals of `R_J` and `R_D`.
 * `Complex.carlsonRJ_comm_left`, `Complex.carlsonRJ_comm_right` — `R_J` is
   symmetric in its first three arguments; `Complex.carlsonRD_comm` — `R_D` is symmetric
   in its first two.
@@ -146,6 +146,19 @@ theorem integrableOn_carlsonRJ_integrand {x y z p : ℂ} (hx : x ∈ slitPlane �
   calc _ ≤ Cx * t ^ (-(1 / 2) : ℝ) * Cy * Cz * (Cp * (1 + t)⁻¹) :=
         mul_le_mul h123 (hCp t ht.le) (norm_nonneg _) ((by positivity : (0 : ℝ) ≤ _).trans h123)
     _ = _ := by ring
+
+/-- **Convergence of `R_D`.** The integrand `t ↦ (t + x)^(-1/2) (t + y)^(-1/2) (t + z)^(-3/2)` of
+`carlsonRD_eq_integral` is integrable on `(0, ∞)` when `x ∈ slitPlane ∪ {0}` and
+`y, z ∈ slitPlane`. -/
+theorem integrableOn_carlsonRD_integrand {x y z : ℂ} (hx : x ∈ slitPlane ∪ {0})
+    (hy : y ∈ slitPlane) (hz : z ∈ slitPlane) :
+    IntegrableOn (fun t : ℝ => ((t : ℂ) + x) ^ (-(1 / 2) : ℂ) *
+      ((t : ℂ) + y) ^ (-(1 / 2) : ℂ) * ((t : ℂ) + z) ^ (-(3 / 2) : ℂ)) (Ioi 0) := by
+  refine (integrableOn_carlsonRJ_integrand hx hy hz hz).congr_fun (fun t _ => ?_)
+    measurableSet_Ioi
+  dsimp only
+  rw [mul_assoc _ (((t : ℂ) + z) ^ (-(1 / 2) : ℂ)), TauCeti.cpow_mul_inv (by norm_num)]
+  norm_num
 
 /-! ### Symmetry -/
 

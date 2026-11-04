@@ -20,19 +20,15 @@ import TauCeti.Analysis.SpecialFunctions.Pow.Complex
 
 For a complex parameter `z` in `Complex.slitPlane` and any complex exponent `s`, the principal
 power `((t : ℂ) + z) ^ s` along the nonnegative real half-line `t ≥ 0` has norm comparable to
-`(1 + t) ^ s.re`, locally uniformly in `z`:
-
-`c * (1 + t) ^ s.re ≤ ‖((t : ℂ) + z) ^ s‖ ≤ C * (1 + t) ^ s.re`.
-
-Both directions hold without any sign restriction on `s.re`: `‖(t : ℂ) + w‖` is bounded below by a
-positive multiple of `1 + t` on a small neighborhood of `z` in `slitPlane` and bounded above by a
-multiple of `1 + t` by the triangle inequality, while `|arg ((t : ℂ) + w)| ≤ π` controls the
-exponential factor `exp (-arg ((t : ℂ) + w) * s.im)`.
+`(1 + t) ^ s.re`, locally uniformly in `z`
+(`TauCeti.exists_mem_nhds_norm_ofReal_add_cpow_le_mul_one_add_rpow`,
+`TauCeti.exists_pos_mul_one_add_rpow_le_norm_ofReal_add_cpow`).
 
 Consequently, for any measure `μ` on `ℝ` and weight `g : ℝ → ℂ`, integrability of
 `t ↦ g t * ((t : ℂ) + z) ^ s` on `(0, ∞)` is independent of `z ∈ slitPlane`, is equivalent to
-strong measurability of `g` together with integrability of `t ↦ ‖g t‖ * (1 + t) ^ s.re`, and is
-preserved when `s.re` decreases. Differentiating under the integral sign then shows that
+almost-everywhere strong measurability of `g` with respect to `μ.restrict (Ioi 0)` together with
+integrability of `t ↦ ‖g t‖ * (1 + t) ^ s.re`, and is preserved when `s.re` decreases.
+Differentiating under the integral sign then shows that
 
 `w ↦ ∫ t in Ioi (0 : ℝ), g t * ((t : ℂ) + w) ^ s ∂μ`
 
@@ -43,10 +39,6 @@ holomorphy and partial-derivative formulas for Carlson's symmetric elliptic inte
 
 ## Main results
 
-* `TauCeti.exists_mem_nhds_norm_ofReal_add_cpow_le_mul_one_add_rpow` — locally uniform upper bound
-  `‖((t : ℂ) + w) ^ s‖ ≤ C * (1 + t) ^ s.re` for `w` near `z ∈ slitPlane` and `t ≥ 0`.
-* `TauCeti.exists_pos_mul_one_add_rpow_le_norm_ofReal_add_cpow` — matching lower bound
-  `c * (1 + t) ^ s.re ≤ ‖((t : ℂ) + z) ^ s‖` for `z ∈ slitPlane` and `t ≥ 0`.
 * `TauCeti.integrableOn_norm_mul_one_add_rpow_of_le` — monotonicity of integrability of
   `t ↦ ‖g t‖ * (1 + t) ^ r` on `(0, ∞)` in the real exponent `r`.
 * `TauCeti.integrableOn_mul_ofReal_add_cpow_iff_norm_mul_one_add_rpow` — exact characterization of
@@ -66,98 +58,6 @@ public section
 open MeasureTheory Set Filter Complex Topology
 
 namespace TauCeti
-
-/-- Near any `z ∈ slitPlane`, the principal power `((t : ℂ) + w) ^ s` is bounded by a constant
-multiple of `(1 + t) ^ s.re` uniformly in `w` and in `t ≥ 0`, with no sign restriction on `s`. -/
-theorem exists_mem_nhds_norm_ofReal_add_cpow_le_mul_one_add_rpow {z : ℂ} (hz : z ∈ slitPlane)
-    (s : ℂ) :
-    ∃ U ∈ 𝓝 z, U ⊆ slitPlane ∧ ∃ C, 0 < C ∧
-      ∀ w ∈ U, ∀ t : ℝ, 0 ≤ t → ‖((t : ℂ) + w) ^ s‖ ≤ C * (1 + t) ^ s.re := by
-  obtain ⟨c, hc, hlow⟩ := exists_pos_forall_mem_ball_mul_one_add_le_norm_add hz
-  set M : ℝ := 1 + ‖z‖ + c
-  have hM : 1 ≤ M := by
-    have : 0 ≤ ‖z‖ := norm_nonneg z
-    linarith
-  have hM0 : 0 < M := zero_lt_one.trans_le hM
-  refine ⟨Metric.ball z c ∩ slitPlane,
-    Filter.inter_mem (Metric.ball_mem_nhds z hc) (isOpen_slitPlane.mem_nhds hz),
-    Set.inter_subset_right,
-    max (c ^ s.re) (M ^ s.re) * Real.exp (Real.pi * |s.im|), by positivity, ?_⟩
-  intro w hw t ht
-  have hw_ball : w ∈ Metric.ball z c := hw.1
-  have h1t : 0 < 1 + t := by linarith
-  -- Lower bound `c * (1 + t) ≤ ‖(t : ℂ) + w‖` from the uniform slit-plane distance estimate.
-  have hlower : c * (1 + t) ≤ ‖(t : ℂ) + w‖ := by
-    rw [add_comm (t : ℂ) w]
-    exact hlow w hw_ball ⟨t, ht⟩
-  -- Upper bound `‖(t : ℂ) + w‖ ≤ M * (1 + t)` from the triangle inequality on `ball z c`.
-  have hupper : ‖(t : ℂ) + w‖ ≤ M * (1 + t) := by
-    have hwz : ‖w - z‖ < c := by simpa [dist_eq_norm] using hw_ball
-    have hw_norm : ‖w‖ ≤ ‖z‖ + c := by
-      calc ‖w‖ = ‖(w - z) + z‖ := by ring_nf
-        _ ≤ ‖w - z‖ + ‖z‖ := norm_add_le _ _
-        _ ≤ c + ‖z‖ := by linarith
-        _ = ‖z‖ + c := add_comm _ _
-    calc ‖(t : ℂ) + w‖ ≤ ‖(t : ℂ)‖ + ‖w‖ := norm_add_le _ _
-      _ = t + ‖w‖ := by rw [Complex.norm_real, Real.norm_of_nonneg ht]
-      _ ≤ t + (‖z‖ + c) := by linarith
-      _ ≤ M * (1 + t) := by
-        have : 0 ≤ (‖z‖ + c) * t := mul_nonneg (by positivity) ht
-        linarith
-  -- Bound the radial factor `‖(t : ℂ) + w‖ ^ s.re` according to the sign of `s.re`.
-  have hrpow : ‖(t : ℂ) + w‖ ^ s.re ≤ max (c ^ s.re) (M ^ s.re) * (1 + t) ^ s.re := by
-    rcases le_or_gt s.re 0 with hs | hs
-    · calc ‖(t : ℂ) + w‖ ^ s.re
-          ≤ (c * (1 + t)) ^ s.re := Real.rpow_le_rpow_of_nonpos (by positivity) hlower hs
-        _ = c ^ s.re * (1 + t) ^ s.re := Real.mul_rpow hc.le h1t.le
-        _ ≤ max (c ^ s.re) (M ^ s.re) * (1 + t) ^ s.re := by
-          gcongr
-          exact le_max_left _ _
-    · calc ‖(t : ℂ) + w‖ ^ s.re
-          ≤ (M * (1 + t)) ^ s.re := Real.rpow_le_rpow (norm_nonneg _) hupper hs.le
-        _ = M ^ s.re * (1 + t) ^ s.re := Real.mul_rpow hM0.le h1t.le
-        _ ≤ max (c ^ s.re) (M ^ s.re) * (1 + t) ^ s.re := by
-          gcongr
-          exact le_max_right _ _
-  -- Bound the angular factor `1 / exp (arg * s.im) ≤ exp (π * |s.im|)`.
-  have hexp : (Real.exp (((t : ℂ) + w).arg * s.im))⁻¹ ≤ Real.exp (Real.pi * |s.im|) := by
-    rw [← Real.exp_neg]
-    apply Real.exp_le_exp.mpr
-    calc -(((t : ℂ) + w).arg * s.im)
-        ≤ |((t : ℂ) + w).arg * s.im| := neg_le_abs _
-      _ = |((t : ℂ) + w).arg| * |s.im| := abs_mul _ _
-      _ ≤ Real.pi * |s.im| := by
-        gcongr
-        exact Complex.abs_arg_le_pi _
-  calc ‖((t : ℂ) + w) ^ s‖
-      ≤ ‖(t : ℂ) + w‖ ^ s.re / Real.exp (((t : ℂ) + w).arg * s.im) :=
-        Complex.norm_cpow_le _ _
-    _ = ‖(t : ℂ) + w‖ ^ s.re * (Real.exp (((t : ℂ) + w).arg * s.im))⁻¹ := div_eq_mul_inv _ _
-    _ ≤ (max (c ^ s.re) (M ^ s.re) * (1 + t) ^ s.re) * Real.exp (Real.pi * |s.im|) :=
-        mul_le_mul hrpow hexp (by positivity) (by positivity)
-    _ = max (c ^ s.re) (M ^ s.re) * Real.exp (Real.pi * |s.im|) * (1 + t) ^ s.re := by ring
-
-/-- For `z ∈ slitPlane` and any `s : ℂ`, `‖((t : ℂ) + z) ^ s‖` is bounded below by a positive
-multiple of `(1 + t) ^ s.re` for all `t ≥ 0`. -/
-theorem exists_pos_mul_one_add_rpow_le_norm_ofReal_add_cpow {z : ℂ} (hz : z ∈ slitPlane)
-    (s : ℂ) :
-    ∃ c, 0 < c ∧ ∀ t : ℝ, 0 ≤ t → c * (1 + t) ^ s.re ≤ ‖((t : ℂ) + z) ^ s‖ := by
-  obtain ⟨U, hU, _, C, hC, hbound⟩ :=
-    exists_mem_nhds_norm_ofReal_add_cpow_le_mul_one_add_rpow hz (-s)
-  have hzU : z ∈ U := mem_of_mem_nhds hU
-  refine ⟨C⁻¹, inv_pos.mpr hC, fun t ht => ?_⟩
-  have h1t : 0 < 1 + t := by linarith
-  have hne : ((t : ℂ) + z) ^ s ≠ 0 := by
-    rw [Complex.cpow_def_of_ne_zero (slitPlane_ne_zero (ofReal_add_mem_slitPlane hz ht))]
-    exact Complex.exp_ne_zero _
-  -- Rewrite `C * ((1 + t) ^ s.re)⁻¹ = (C⁻¹ * (1 + t) ^ s.re)⁻¹` and invert.
-  have h' : ‖((t : ℂ) + z) ^ s‖⁻¹ ≤ (C⁻¹ * (1 + t) ^ s.re)⁻¹ := by
-    calc ‖((t : ℂ) + z) ^ s‖⁻¹
-        ≤ C * (1 + t) ^ (-s).re := by
-          simpa [Complex.cpow_neg, norm_inv] using hbound z hzU t ht
-      _ = (C⁻¹ * (1 + t) ^ s.re)⁻¹ := by
-          rw [Complex.neg_re, Real.rpow_neg h1t.le, mul_inv_rev, inv_inv, mul_comm]
-  exact (inv_le_inv₀ (norm_pos_iff.mpr hne) (by positivity)).mp h'
 
 /-- Decreasing the real exponent `r` preserves integrability of `t ↦ ‖g t‖ * (1 + t) ^ r` on
 `(0, ∞)`, since `1 ≤ 1 + t` there. -/
@@ -181,8 +81,9 @@ theorem integrableOn_norm_mul_one_add_rpow_of_le {E : Type*} [SeminormedAddCommG
   exact mul_le_mul_of_nonneg_left (Real.rpow_le_rpow_of_exponent_le h1t hr) (norm_nonneg _)
 
 /-- For `z ∈ slitPlane` and any `s : ℂ`, `t ↦ g t * ((t : ℂ) + z) ^ s` is integrable on `(0, ∞)`
-if and only if `g` is strongly measurable on `(0, ∞)` and `t ↦ ‖g t‖ * (1 + t) ^ s.re` is
-integrable on `(0, ∞)`. -/
+with respect to `μ` if and only if `g` is almost-everywhere strongly measurable with respect to
+`μ.restrict (Ioi 0)` and `t ↦ ‖g t‖ * (1 + t) ^ s.re` is integrable on `(0, ∞)` with respect to
+`μ`. -/
 theorem integrableOn_mul_ofReal_add_cpow_iff_norm_mul_one_add_rpow {μ : Measure ℝ}
     {g : ℝ → ℂ} {z : ℂ} (hz : z ∈ slitPlane) (s : ℂ) :
     IntegrableOn (fun t : ℝ => g t * ((t : ℂ) + z) ^ s) (Ioi 0) μ ↔

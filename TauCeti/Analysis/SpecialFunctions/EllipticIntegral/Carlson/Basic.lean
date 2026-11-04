@@ -44,8 +44,8 @@ integral and carries no meaning.
 ## Main results
 
 * `Complex.carlsonRF`, `Complex.carlsonRC` — the integrals `R_F` and `R_C`.
-* `Complex.integrableOn_carlsonRF_integrand` — absolute convergence of the defining
-  integral.
+* `Complex.integrableOn_carlsonRF_integrand`, `Complex.integrableOn_carlsonRC_integrand` —
+  absolute convergence of the defining integrals of `R_F` and `R_C`.
 * `Complex.carlsonRF_comm_left`, `Complex.carlsonRF_comm_right` — `R_F` is
   symmetric in its three arguments.
 * `Complex.carlsonRF_ofReal_mul` — homogeneity of degree `-1/2` under positive real
@@ -167,6 +167,16 @@ theorem integrableOn_carlsonRF_integrand {x y z : ℂ} (hx : x ∈ slitPlane ∪
     rw [norm_mul, norm_mul]
     exact mul_le_mul (mul_le_mul h1 h2 (norm_nonneg _) ((norm_nonneg _).trans h1)) (hCz' t ht0)
       (norm_nonneg _) (mul_nonneg ((norm_nonneg _).trans h1) ((norm_nonneg _).trans h2))
+
+/-- **Convergence of `R_C`.** The integrand `t ↦ (t + x)^(-1/2) (t + y)⁻¹` of
+`carlsonRC_eq_integral` is integrable on `(0, ∞)` when `x ∈ slitPlane ∪ {0}` and
+`y ∈ slitPlane`. -/
+theorem integrableOn_carlsonRC_integrand {x y : ℂ} (hx : x ∈ slitPlane ∪ {0})
+    (hy : y ∈ slitPlane) :
+    IntegrableOn (fun t : ℝ => ((t : ℂ) + x) ^ (-(1 / 2) : ℂ) * ((t : ℂ) + y)⁻¹) (Ioi 0) := by
+  refine (integrableOn_carlsonRF_integrand hx hy hy).congr_fun (fun t _ => ?_) measurableSet_Ioi
+  dsimp only
+  rw [mul_assoc, cpow_neg_half_mul_self]
 
 /-! ### Symmetry and homogeneity -/
 
