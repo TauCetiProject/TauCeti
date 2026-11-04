@@ -7,6 +7,9 @@ module
 
 public import TauCeti.RingTheory.Huber.NoetherianType.Basic
 
+import Mathlib.RingTheory.FiniteType
+import TauCeti.RingTheory.Huber.Adic
+
 /-!
 # Huber's standing class of f-adic rings
 
@@ -15,8 +18,12 @@ A ring belongs to this class when it is finite type over a noetherian ring of de
 strongly noetherian Tate ring, or has the discrete topology.
 
 This condition is stronger than being of noetherian type: the first alternative additionally
-requires finite generation over the ring of definition. The declarations below record the three
-ways to enter the class and show that every ring in the standing class is of noetherian type.
+requires finite generation over the ring of definition, which makes the ambient ring noetherian
+(`TauCeti.Huber.PairOfDefinition.isNoetherianRing_of_finiteType`), whereas the third alternative
+admits non-noetherian discrete rings. The declarations below record the three ways to enter the
+class, show that every ring in the standing class is of noetherian type, transport finite
+generation over a ring of definition along open quotient maps, and establish invariance of the
+class under bicontinuous ring isomorphisms.
 
 ## References
 
@@ -26,6 +33,35 @@ ways to enter the class and show that every ring in the standing class is of noe
 public section
 
 namespace TauCeti.Huber
+
+/-- A Huber ring finite type over a noetherian ring of definition is itself a noetherian ring, by
+Hilbert's basis theorem (`Algebra.FiniteType.isNoetherianRing`). -/
+theorem PairOfDefinition.isNoetherianRing_of_finiteType {A : Type*} [CommRing A]
+    [TopologicalSpace A] (P : PairOfDefinition A) [IsNoetherianRing P.ringOfDefinition]
+    [Algebra.FiniteType P.ringOfDefinition A] : IsNoetherianRing A :=
+  Algebra.FiniteType.isNoetherianRing P.ringOfDefinition A
+
+/-- **Finite generation over a ring of definition descends along an open quotient map**: if `A` is
+finite type over `P.ringOfDefinition` and `f : A →+* B` is an open quotient map, then `B` is
+finite type over the image ring of definition `(P.map f hf).ringOfDefinition`. -/
+instance PairOfDefinition.finiteType_map {A B : Type*} [CommRing A] [TopologicalSpace A]
+    [CommRing B] [TopologicalSpace B] [IsTopologicalRing B]
+    (P : PairOfDefinition A) [hfg : Algebra.FiniteType P.ringOfDefinition A]
+    (f : A →+* B) (hf : IsOpenQuotientMap f) :
+    Algebra.FiniteType (P.map f hf).ringOfDefinition B := by
+  classical
+  obtain ⟨G, hG⟩ := hfg.out
+  let S := Algebra.adjoin (P.map f hf).ringOfDefinition (G.image f : Set B)
+  have hle : (Algebra.adjoin P.ringOfDefinition (G : Set A)).toSubring ≤ S.toSubring.comap f := by
+    rw [Algebra.adjoin_eq_ring_closure, Subring.closure_le]
+    rintro x (⟨r, rfl⟩ | hx)
+    · exact S.algebraMap_mem ⟨f r, by
+        rw [P.map_ringOfDefinition]
+        exact Subring.mem_map.mpr ⟨r, r.2, rfl⟩⟩
+    · exact Algebra.subset_adjoin (Finset.mem_coe.mpr (Finset.mem_image_of_mem f hx))
+  refine ⟨⟨G.image f, eq_top_iff.mpr fun b _ ↦ ?_⟩⟩
+  obtain ⟨a, rfl⟩ := hf.surjective b
+  exact hle (by rw [hG]; trivial)
 
 variable (A : Type*) [CommRing A] [TopologicalSpace A] [IsTopologicalRing A] [IsHuberRing A]
 
@@ -68,6 +104,21 @@ theorem IsHuberStandard.isNoetherianType [hA : IsHuberStandard A] : IsNoetherian
       let _ : DiscreteTopology A := hDiscrete
       infer_instance
 
+/-- Every noetherian Huber ring whose topology is `I`-adic is in Huber's standing class: `(A, I)` is
+a pair of definition whose ring of definition is all of `A`. -/
+theorem IsHuberStandard.of_isAdic [IsNoetherianRing A] {I : Ideal A} (hI : IsAdic I) :
+    IsHuberStandard A := by
+  have hfg : I.FG := IsNoetherian.noetherian I
+  refine .of_pairOfDefinition (.adic I hI hfg) ?_ ?_
+  · rw [PairOfDefinition.adic_ringOfDefinition]
+    exact isNoetherianRing_of_ringEquiv A Subring.topEquiv.symm
+  · refine ⟨⟨(∅ : Finset A), eq_top_iff.mpr fun x _ ↦ ?_⟩⟩
+    have hx : x ∈ (PairOfDefinition.adic I hI hfg).ringOfDefinition := by
+      rw [PairOfDefinition.adic_ringOfDefinition]
+      trivial
+    exact (Algebra.adjoin (PairOfDefinition.adic I hI hfg).ringOfDefinition _).algebraMap_mem
+      ⟨x, hx⟩
+
 end HuberRing
 
 section TateRing
@@ -90,6 +141,38 @@ instance IsHuberStandard.of_discreteTopology : IsHuberStandard A :=
   ⟨Or.inr (Or.inr inferInstance)⟩
 
 end DiscreteRing
+
+section Transport
+
+variable {A B : Type*} [CommRing A] [TopologicalSpace A] [IsTopologicalRing A] [IsHuberRing A]
+  [CommRing B] [TopologicalSpace B] [IsTopologicalRing B] [IsHuberRing B]
+
+/-- **Huber's standing class transports along a bicontinuous ring isomorphism.** Continuity of both
+`e` and `e.symm` is required, since a `RingEquiv` is purely algebraic. -/
+theorem IsHuberStandard.of_ringEquiv [hA : IsHuberStandard A] (e : A ≃+* B)
+    (he : Continuous e) (he' : Continuous e.symm) : IsHuberStandard B := by
+  let hhomeo : A ≃ₜ B := Homeomorph.mk e.toEquiv he he'
+  refine hA.elim (fun P _ _ ↦ ?_) (fun _ hStrong ↦ ?_) fun _ ↦ ?_
+  · have hf : IsOpenQuotientMap (e : A →+* B) := hhomeo.isOpenQuotientMap
+    have hnoeth : IsNoetherianRing (P.map (e : A →+* B) hf).ringOfDefinition := by
+      have hr : ((e : A →+* B).comp P.ringOfDefinition.subtype).range =
+          (P.map (e : A →+* B) hf).ringOfDefinition := by
+        ext; simp
+      exact hr ▸ inferInstance
+    exact .of_pairOfDefinition (P.map (e : A →+* B) hf) hnoeth inferInstance
+  · have : IsTateRing B := IsTateRing.of_continuous he (φ := (e : A →+* B))
+    have : IsStronglyNoetherian B := (isStronglyNoetherian_congr e he he').mp hStrong
+    infer_instance
+  · have : DiscreteTopology B := hhomeo.discreteTopology
+    infer_instance
+
+/-- **Huber's standing class is invariant under bicontinuous ring isomorphisms.** -/
+theorem isHuberStandard_congr (e : A ≃+* B) (he : Continuous e) (he' : Continuous e.symm) :
+    IsHuberStandard A ↔ IsHuberStandard B :=
+  ⟨fun _ ↦ IsHuberStandard.of_ringEquiv e he he',
+    fun _ ↦ IsHuberStandard.of_ringEquiv e.symm he' he⟩
+
+end Transport
 
 end TauCeti.Huber
 

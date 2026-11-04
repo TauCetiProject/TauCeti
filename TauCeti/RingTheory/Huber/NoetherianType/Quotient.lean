@@ -7,29 +7,33 @@ module
 
 public import TauCeti.RingTheory.Huber.ClosedSubmodule
 public import TauCeti.RingTheory.Huber.ModuleTopology.Complete
-public import TauCeti.RingTheory.Huber.NoetherianType.Basic
+public import TauCeti.RingTheory.Huber.NoetherianType.HuberStandard
 public import TauCeti.Topology.Algebra.Ring.Ideal
 
 /-!
-# Ideals and quotients of Huber rings of noetherian type
+# Ideals and quotients of Huber rings of noetherian type and in Huber's standing class
 
 Let `A` be a complete Hausdorff Huber ring of noetherian type. This file proves that every ideal
 `J` of `A` is closed, so that `A ⧸ J` with the quotient topology is again Hausdorff, and that
-`A ⧸ J` is again of noetherian type. Together with the completeness of quotients of complete
-first-countable groups (`QuotientAddGroup.completeSpace_right`), this makes `A ⧸ J` a complete
-Hausdorff Huber ring of noetherian type. These are the facts used to treat closed subspaces of
-locally noetherian adic spaces by ideals of their rings of sections.
+`A ⧸ J` is again of noetherian type (and in Huber's standing class when `A` is). Together with the
+completeness of quotients of complete first-countable groups
+(`QuotientAddGroup.completeSpace_right`), this makes `A ⧸ J` a complete Hausdorff Huber ring in
+the same finiteness class. These are the facts used to treat closed subspaces of locally noetherian
+adic spaces by ideals of their rings of sections.
 
-Each statement is proved separately for the two alternatives defining noetherian type.
+Each statement is proved separately for the defining alternatives.
 
 * If `A` has a noetherian ring of definition `A₀`, closedness of ideals is the case `M = A` of
   `TauCeti.Huber.PairOfDefinition.isClosed_of_isNoetherianRing` (Huber, Lemma 2.3(ii)), and the
   image of `A₀` in an open quotient of `A` is a noetherian ring of definition, being a quotient
-  ring of `A₀`. This alternative needs neither completeness nor separation for quotients.
+  ring of `A₀` (with finite generation of `A` over `A₀` descending to the quotient). This
+  alternative needs neither completeness nor separation for quotients.
 * If `A` is a strongly noetherian Tate ring, `A` is a noetherian ring
   (`TauCeti.Huber.isNoetherianRing_of_isStronglyNoetherian`), so its ideals are closed by
   `TauCeti.Huber.isClosed_of_isNoetherian`, and strong noetherianness descends along open
   quotient maps of complete Hausdorff rings (`IsOpenQuotientMap.isStronglyNoetherian`).
+* If `A` is discrete, any open quotient map carries `{0}` to an open `{0}`, so the quotient is
+  discrete as well.
 
 The Hausdorff hypothesis cannot be dropped: `ℤ` with the indiscrete topology and pair of
 definition `(ℤ, (1))` is complete and of noetherian type, but its zero ideal is not closed.
@@ -38,20 +42,24 @@ definition `(ℤ, (1))` is complete and of noetherian type, but its zero ideal i
 
 * `TauCeti.Huber.PairOfDefinition.isNoetherianRing_map`: the image of a noetherian ring of
   definition along an open quotient map is noetherian.
-* `TauCeti.Huber.IsNoetherianType.of_isOpenQuotientMap`: an open quotient of a complete Hausdorff
-  Huber ring of noetherian type is of noetherian type, if it is complete and Hausdorff.
+* `TauCeti.Huber.IsNoetherianType.of_isOpenQuotientMap`,
+  `TauCeti.Huber.IsHuberStandard.of_isOpenQuotientMap`: an open quotient of a complete Hausdorff
+  Huber ring of noetherian type (resp. in Huber's standing class) stays in the class, if it is
+  complete and Hausdorff.
 * `TauCeti.Huber.IsNoetherianType.isClosed_ideal`: every ideal of a complete Hausdorff Huber ring
   of noetherian type is closed.
 * `TauCeti.Huber.IsNoetherianType.t2Space_quotient`: hence the quotient by any ideal is Hausdorff.
 * `TauCeti.Huber.IsNoetherianType.completeSpace_quotient`: the quotient by any ideal is complete
   and Hausdorff.
-* `TauCeti.Huber.IsNoetherianType.quotient`: the quotient of a complete Hausdorff Huber ring of
-  noetherian type by any ideal is of noetherian type.
+* `TauCeti.Huber.IsNoetherianType.quotient`, `TauCeti.Huber.IsHuberStandard.quotient`: the quotient
+  of a complete Hausdorff Huber ring of noetherian type (resp. in Huber's standing class) by any
+  ideal stays in the class.
 
 ## References
 
 * R. Huber, *A generalization of formal schemes and rigid analytic varieties*, Math. Z. 217
   (1994), §2, Lemma 2.3(ii).
+* R. Huber, *Étale Cohomology of Rigid Analytic Varieties and Adic Spaces*, (1.1.1).
 * A. Grothendieck, J. Dieudonné, *Éléments de géométrie algébrique I*, Chapitre 0, (7.3.6).
 * T. Wedhorn, *Adic Spaces*, Proposition 6.17 and Remark 6.37.
 -/
@@ -97,6 +105,22 @@ theorem IsNoetherianType.of_isOpenQuotientMap [IsNoetherianType A] {B : Type*} [
   have := hf.isStronglyNoetherian
   infer_instance
 
+/-- **An open quotient of a complete Hausdorff Huber ring in Huber's standing class stays in
+Huber's standing class**, provided it is itself complete and Hausdorff. -/
+theorem IsHuberStandard.of_isOpenQuotientMap [IsHuberStandard A] {B : Type*} [CommRing B]
+    [UniformSpace B] [IsUniformAddGroup B] [IsTopologicalRing B] [IsHuberRing B] [CompleteSpace B]
+    [T0Space B] {f : A →+* B} (hf : IsOpenQuotientMap f) : IsHuberStandard B := by
+  refine IsHuberStandard.elim ‹_›
+    (fun P _ _ ↦ .of_pairOfDefinition (P.map f hf) inferInstance inferInstance)
+    (fun _ _ ↦ ?_) fun _ ↦ ?_
+  · have := IsTateRing.of_continuous hf.continuous (φ := f)
+    have := hf.isStronglyNoetherian
+    infer_instance
+  · have h0 : IsOpen ({0} : Set B) := by
+      simpa using hf.isOpenMap ({0} : Set A) (isOpen_discrete _)
+    have : DiscreteTopology B := discreteTopology_iff_isOpen_singleton_zero.mpr h0
+    infer_instance
+
 /-- **Every ideal of a complete Hausdorff Huber ring of noetherian type is closed** (Huber,
 Lemma 2.3(ii); Wedhorn, Proposition 6.17). For a noetherian ring of definition this is the case
 of the ring itself among finite modules; a complete Hausdorff strongly noetherian Tate ring is a
@@ -136,6 +160,16 @@ instance IsNoetherianType.quotient [IsNoetherianType A] (J : Ideal A) :
   have := IsTateRing.of_continuous (QuotientRing.isOpenQuotientMap_mk J).continuous
   have := IsStronglyNoetherian.quotient J (isClosed_ideal J)
   infer_instance
+
+/-- **The quotient of a complete Hausdorff Huber ring in Huber's standing class by any ideal stays
+in Huber's standing class.** -/
+instance IsHuberStandard.quotient [IsHuberStandard A] (J : Ideal A) :
+    IsHuberStandard (A ⧸ J) := by
+  have := IsHuberStandard.isNoetherianType (A := A)
+  let _ : UniformSpace (A ⧸ J) := IsTopologicalAddGroup.rightUniformSpace (A ⧸ J)
+  have : IsUniformAddGroup (A ⧸ J) := isUniformAddGroup_of_addCommGroup
+  have : CompleteSpace (A ⧸ J) := QuotientAddGroup.completeSpace_right _ J.toAddSubgroup
+  exact .of_isOpenQuotientMap (QuotientRing.isOpenQuotientMap_mk J)
 
 end Complete
 
