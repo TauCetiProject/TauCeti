@@ -174,6 +174,16 @@ def classifyingSpaceTwistedCohomologyIsoGroupCohomology (n : ℕ) :
     (p := TopCat.ofHom ⟨classifyingSpaceProj G, continuous_classifyingSpaceProj G⟩)
     (isQuotientCoveringMap_classifyingSpaceProj G) k A N n
 
+/-- The classifying-space cohomology comparison is the comparison for the quotient cover of
+Milnor's join, with its associated local coefficient system. -/
+theorem classifyingSpaceTwistedCohomologyIsoGroupCohomology_eq (n : ℕ) :
+    classifyingSpaceTwistedCohomologyIsoGroupCohomology k A N n =
+      IsQuotientCoveringMap.twistedCohomologyIsoGroupCohomology
+        (E := TopCat.of (universalGSpace G))
+        (p := TopCat.ofHom ⟨classifyingSpaceProj G, continuous_classifyingSpaceProj G⟩)
+        (isQuotientCoveringMap_classifyingSpaceProj G) k A N n :=
+  (rfl)
+
 variable {k A} {A' : Rep.{u} k G}
 
 /-- The morphism of local coefficient systems on Milnor's classifying space induced by a morphism
