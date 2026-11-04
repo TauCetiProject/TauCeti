@@ -297,9 +297,8 @@ lemma mem_ratEquiv_of_coe_eq_map_div {k : ℤ} {W : Scheme.{u}} [IsIntegral W]
       r _ := r
       locallyFinite := locallyFinite_of_finite _ }
   refine ⟨F, Function.locallyFinsuppWithin.ext fun x ↦ ?_⟩
-  rw [RatEquivFamily.cycle_apply, finsum_unique, hα]
-  -- The only summand of `F` is `i_* div r`, by definition of `RatEquivFamily.component`.
-  rfl
+  -- The only summand of `F` is `i_* div r`.
+  rw [RatEquivFamily.cycle_apply, finsum_unique, hα, RatEquivFamily.component_def]
 
 /-- If `X` has no points of dimension `k + 1`, then no nonzero `k`-cycle is rationally equivalent
 to zero. -/

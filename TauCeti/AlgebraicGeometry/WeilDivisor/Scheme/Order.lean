@@ -98,16 +98,9 @@ lemma ord_functionFieldMap {W : Scheme.{u}} [IsIntegral W] [IsLocallyNoetherian 
     congr 2
     have := krullDimLE_of_coheight_le hw.le
     have := krullDimLE_of_coheight_le hfw.le
-    refine TauCeti.Ring.ordFrac_map_of_ringEquiv
-      (asIso (f.stalkMap w)).commRingCatIsoToRingEquiv f.functionFieldMap.hom (fun a ↦ ?_) g
-    -- Every element of the stalk at `f w` is a germ, and `f^*` sends germs to germs.
-    obtain ⟨U, hU, s, rfl⟩ := X.presheaf.exists_germ_eq a
-    have : Nonempty U := ⟨⟨_, hU⟩⟩
-    have : Nonempty (f ⁻¹ᵁ U) := ⟨⟨w, hU⟩⟩
-    rw [← RingEquiv.coe_toRingHom, Iso.commRingCatIsoToRingEquiv_toRingHom, asIso_hom,
-      Scheme.algebraMap_germ_eq_germToFunctionField, Scheme.Hom.germ_stalkMap_apply]
-    exact congr($(f.germToFunctionField_functionFieldMap U).hom s).trans
-      (W.algebraMap_germ_eq_germToFunctionField (U := f ⁻¹ᵁ U) hU _).symm
+    exact TauCeti.Ring.ordFrac_map_of_ringEquiv
+      (asIso (f.stalkMap w)).commRingCatIsoToRingEquiv f.functionFieldMap.hom
+      (f.functionFieldMap_algebraMap_stalk w) g
   · rw [AlgebraicGeometry.Scheme.ord_eq_zero_of_coheight_neq_one hw,
       AlgebraicGeometry.Scheme.ord_eq_zero_of_coheight_neq_one
         (by rwa [coheight_eq_of_isOpenImmersion f])]
