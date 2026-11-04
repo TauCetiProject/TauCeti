@@ -32,6 +32,7 @@ of an ideal on a module, complementing `Mathlib/RingTheory/Ideal/Operations.lean
 * `Ideal.smul_top_eq_top_of_isIdempotentElem`: an idempotent ideal `I` satisfies `I • I = I`.
 * `Ideal.span_range_fin_two_eq_top_iff`: a pair generates the unit ideal exactly when its entries
   are coprime.
+* `Ideal.mem_span_pair_sq`: the elements of `(u, v)²` are the binary quadratic forms in `u, v`.
 * `LinearMap.apply_mem_of_mem_smul_top`: a linear functional carries `I • M` into `I`.
 * `Module.Basis.mem_smul_top_iff`: for a module with a basis, `I • M` consists of the vectors
   whose coordinates all lie in `I`.
@@ -120,6 +121,26 @@ theorem span_range_fin_two_eq_top_iff (v : Fin 2 → R) :
     ext x
     simp [Fin.exists_fin_two, eq_comm]
   rw [hv, span_insert, sup_eq_top_iff_isCoprime]
+
+/-- The elements of `(u, v)²` are the binary quadratic forms `a u² + b u v + c v²`. -/
+theorem mem_span_pair_sq {u v f : R} :
+    f ∈ span {u, v} ^ 2 ↔ ∃ a b c, a * u ^ 2 + b * u * v + c * v ^ 2 = f := by
+  rw [sq, span_pair_mul_span_pair]
+  constructor
+  · intro hf
+    obtain ⟨p, z₁, hz₁, h₁⟩ := mem_span_insert.1 hf
+    obtain ⟨q, z₂, hz₂, h₂⟩ := mem_span_insert.1 hz₁
+    obtain ⟨r, z₃, hz₃, h₃⟩ := mem_span_insert.1 hz₂
+    obtain ⟨t, h₄⟩ := mem_span_singleton'.1 hz₃
+    exact ⟨p, q + r, t, by rw [h₁, h₂, h₃, ← h₄]; ring⟩
+  · rintro ⟨a, b, c, rfl⟩
+    refine add_mem (add_mem ?_ ?_) ?_
+    · rw [sq]
+      exact mul_mem_left _ _ (subset_span (by simp))
+    · rw [mul_assoc]
+      exact mul_mem_left _ _ (subset_span (by simp))
+    · rw [sq]
+      exact mul_mem_left _ _ (subset_span (by simp))
 
 end CommSemiring
 
