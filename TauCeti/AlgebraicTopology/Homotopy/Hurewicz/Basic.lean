@@ -68,7 +68,9 @@ as well.
 
 ## Main declarations
 
-* `GenLoop.toCubeBoundaryPairHom`: a generalized loop as a map of pairs `(Iⁿ, ∂Iⁿ) ⟶ (X, {x})`.
+* `GenLoop.toCubeBoundaryPairHom`: a generalized loop as a map of pairs `(Iⁿ, ∂Iⁿ) ⟶ (X, {x})`,
+  the map of pairs `TauCeti.cubeBoundaryPairHom` of its underlying cube
+  (`GenLoop.toCubeBoundaryPairHom_eq_cubeBoundaryPairHom`).
 * `GenLoop.hurewicz`: the Hurewicz class of a generalized loop, characterized by
   `GenLoop.hurewicz_comp_singularHomologyIsoOfSubsetSingleton_hom`.
 * `HomotopyGroup.hurewicz`: the Hurewicz map on homotopy classes.
@@ -112,6 +114,22 @@ def toCubeBoundaryPairHom (p : Ω^ (Fin n) X x) :
 lemma toCubeBoundaryPairHom_fst_apply (p : Ω^ (Fin n) X x) (z : (cubeBoundaryPair.{w} n).fst) :
     TopPair.Hom.fst (toCubeBoundaryPairHom p) z = p (ULift.down z) :=
   TopPair.ofSubsetMap_fst_apply _ _ z
+
+/-- A generalized loop at `x` sends the boundary of the cube into the subspace `{x}` of the pair
+`(X, {x})`. -/
+lemma mapsTo_boundary_range_ofSubset (p : Ω^ (Fin n) X x) :
+    Set.MapsTo (p.1 : C(I^(Fin n), (TopPair.ofSubset ({x} : Set (TopCat.of X))).fst))
+      (Cube.boundary (Fin n)) (Set.range (TopPair.ofSubset ({x} : Set (TopCat.of X))).map) :=
+  fun y hy ↦ ⟨⟨_, _root_.GenLoop.boundary p y hy⟩, rfl⟩
+
+/-- The map of pairs of a generalized loop is the map of pairs `TauCeti.cubeBoundaryPairHom` of its
+underlying cube. -/
+lemma toCubeBoundaryPairHom_eq_cubeBoundaryPairHom (p : Ω^ (Fin n) X x) :
+    toCubeBoundaryPairHom.{w} p = cubeBoundaryPairHom _ (mapsTo_boundary_range_ofSubset p) := by
+  apply TopPair.hom_ext_of_fst
+  ext z
+  exact (toCubeBoundaryPairHom_fst_apply p z).trans
+    (cubeBoundaryPairHom_fst_apply _ (mapsTo_boundary_range_ofSubset p) z).symm
 
 /-- Postcomposing a generalized loop with a based map postcomposes its map of pairs with the
 induced map `(X, {x}) ⟶ (Y, {y})`. -/
