@@ -5,9 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.Distribution.FourierMultiplier
 public import Mathlib.Analysis.Distribution.SchwartzSpace.Basic
 public import TauCeti.Analysis.Calculus.BumpFunction.LittlewoodPaley
 import Mathlib.Analysis.Calculus.ContDiff.Bounds
+import Mathlib.Analysis.Distribution.SchwartzSpace.CompactSupport
 
 /-!
 # Littlewood–Paley pieces of a Mihlin symbol
@@ -34,12 +36,21 @@ each piece is band-limited at scale `2^j` with derivative bounds independent of 
 input to the kernel estimates that establish Hörmander's condition for the kernel of the
 multiplier.
 
+The inhomogeneous partition `ψ₀ = φ`, `ψⱼ = φ (2^{-j} ·) - φ (2^{1-j} ·)` (`j ≥ 1`) of all of `E`
+(`ContDiffBump.inhomogeneousLittlewoodPaley`) instead reconstructs every Schwartz function: the
+partial sums of the Fourier multipliers `𝓕⁻ (ψⱼ • 𝓕 f)` are the low-pass truncations
+`𝓕⁻ (φ (2^{-N} ·) • 𝓕 f)`, and these converge to `f` in the Schwartz topology.
+
 ## Main declarations
 
 * `ContDiffBump.littlewoodPaleyPiece`: the Schwartz function `ψⱼ • m`.
 * `ContDiffBump.hasSum_littlewoodPaleyPiece`: the pieces sum to `m` away from the origin.
 * `ContDiffBump.exists_norm_iteratedFDeriv_littlewoodPaleyPiece_le`: the scale-invariant
   derivative bounds for the pieces of a symbol satisfying Mihlin's condition.
+* `SchwartzMap.tendsto_smulLeftCLM_contDiffBump_two_pow`: the low-pass truncations
+  `φ (2^{-N} ·) • f` converge to `f` in the Schwartz topology.
+* `SchwartzMap.tendsto_sum_fourierMultiplierCLM_inhomogeneousLittlewoodPaley`: Littlewood–Paley
+  reconstruction of a Schwartz function from the inhomogeneous partition.
 
 ## References
 
@@ -215,3 +226,50 @@ theorem exists_norm_iteratedFDeriv_littlewoodPaleyPiece_le (N : ℕ) :
 end FiniteDimensional
 
 end ContDiffBump
+
+namespace SchwartzMap
+
+open Filter Topology
+open FourierTransform
+
+variable {E F : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
+  [NormedAddCommGroup F] [NormedSpace ℂ F]
+
+/-- The low-pass truncations `φ (2^{-N} ·) • f` of a Schwartz function converge to `f` in the
+Schwartz topology. -/
+theorem tendsto_smulLeftCLM_contDiffBump_two_pow (φ : ContDiffBump (0 : E)) (f : 𝓢(E, F)) :
+    Tendsto (fun N : ℕ ↦ smulLeftCLM F (fun ξ ↦ (φ (((2 : ℝ) ^ N)⁻¹ • ξ) : ℂ)) f) atTop
+      (𝓝 f) := by
+  have hφ : (⇑φ).HasTemperateGrowth := φ.hasCompactSupport.hasTemperateGrowth φ.contDiff
+  have h := (tendsto_smulLeftCLM_comp_smul φ.contDiff φ.hasCompactSupport φ.eventuallyEq_one
+    f).comp (tendsto_inv_atTop_zero.comp
+      (tendsto_pow_atTop_atTop_of_one_lt (one_lt_two (α := ℝ))))
+  refine h.congr fun N ↦ ?_
+  exact (smulLeftCLM_ofReal ℂ (hφ.comp
+    (((2 : ℝ) ^ N)⁻¹ • ContinuousLinearMap.id ℝ E).hasTemperateGrowth) f).symm
+
+variable [MeasurableSpace E] [BorelSpace E] [CompleteSpace F]
+
+/-- **Littlewood–Paley reconstruction of a Schwartz function.** The partial sums of the
+Littlewood–Paley pieces `𝓕⁻ (ψⱼ • 𝓕 f)` of a Schwartz function `f` converge to `f` in the
+Schwartz topology. -/
+theorem tendsto_sum_fourierMultiplierCLM_inhomogeneousLittlewoodPaley
+    (φ : ContDiffBump (0 : E)) (f : 𝓢(E, F)) :
+    Tendsto (fun N ↦ ∑ j ∈ Finset.range N,
+      fourierMultiplierCLM F (fun ξ ↦ (φ.inhomogeneousLittlewoodPaley j ξ : ℂ)) f) atTop
+        (𝓝 f) := by
+  rw [← tendsto_add_atTop_iff_nat 1]
+  have hsum (N : ℕ) : ∑ j ∈ Finset.range (N + 1),
+      fourierMultiplierCLM F (fun ξ ↦ (φ.inhomogeneousLittlewoodPaley j ξ : ℂ)) f =
+        𝓕⁻ (smulLeftCLM F (fun ξ ↦ (φ (((2 : ℝ) ^ N)⁻¹ • ξ) : ℂ)) (𝓕 f)) := by
+    rw [← _root_.sum_apply, ← fourierMultiplierCLM_sum F
+      fun j _ ↦ by
+        have := φ.hasTemperateGrowth_inhomogeneousLittlewoodPaley j; fun_prop]
+    simp_rw [← Complex.ofReal_sum, φ.sum_inhomogeneousLittlewoodPaley_range]
+    rfl
+  simp_rw [hsum]
+  have h := ((fourierInvCLM ℂ 𝓢(E, F)).continuous.tendsto _).comp
+    (tendsto_smulLeftCLM_contDiffBump_two_pow φ (𝓕 f))
+  rwa [fourierInvCLM_apply, FourierTransform.fourierInv_fourier_eq] at h
+
+end SchwartzMap

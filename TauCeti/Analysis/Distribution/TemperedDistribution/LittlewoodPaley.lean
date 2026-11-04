@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Analysis.Distribution.Sobolev
 public import TauCeti.Analysis.Calculus.BumpFunction.LittlewoodPaley
-import TauCeti.Analysis.Distribution.SchwartzSpace.Cutoff
+import TauCeti.Analysis.Distribution.SchwartzSpace.LittlewoodPaley
 
 /-!
 # The inhomogeneous Littlewood–Paley decomposition of a tempered distribution
@@ -22,8 +22,9 @@ blocks** of a tempered distribution `u` are the Fourier multipliers
 so that `Δ₀ u` carries the frequencies of `u` in the ball of radius `φ.rOut` and `Δⱼ u` those in
 the annulus `2^{j-1} φ.rIn ≤ ‖ξ‖ ≤ 2^j φ.rOut`. Their partial sums are the low-pass truncations
 `∑_{j ≤ N} Δⱼ u = 𝓕⁻ (φ (2^{-N} ·) • 𝓕 u)`, and these converge to `u`: every tempered
-distribution is reconstructed from its Littlewood–Paley blocks, `u = ∑ⱼ Δⱼ u` in `𝓢'(E, F)`. On
-Schwartz functions the same reconstruction holds in the Schwartz topology.
+distribution is reconstructed from its Littlewood–Paley blocks, `u = ∑ⱼ Δⱼ u` in `𝓢'(E, F)`. This
+is deduced, by duality, from the convergence of the truncations `φ (2^{-N} ·) • f → f` of Schwartz
+functions (`SchwartzMap.tendsto_smulLeftCLM_contDiffBump_two_pow`).
 
 The blocks are almost orthogonal: there is `L`, depending only on `φ`, with `Δⱼ Δₖ = 0` whenever
 `|j - k| ≥ L`. Being Fourier multipliers, they commute with every Fourier multiplier of temperate
@@ -39,8 +40,6 @@ blocks `Δⱼ u`.
 * `TemperedDistribution.sum_littlewoodPaleyBlock_range`: the partial sums are the low-pass
   truncations by `φ (2^{-N} ·)`.
 * `TemperedDistribution.tendsto_sum_littlewoodPaleyBlock`: `u = ∑ⱼ Δⱼ u` in `𝓢'(E, F)`.
-* `SchwartzMap.tendsto_sum_fourierMultiplierCLM_inhomogeneousLittlewoodPaley`: the same
-  reconstruction for Schwartz functions, in the Schwartz topology.
 * `TemperedDistribution.exists_littlewoodPaleyBlock_comp_eq_zero`: almost orthogonality.
 * `TemperedDistribution.littlewoodPaleyBlock_besselPotential`: the blocks commute with the
   Bessel potentials.
@@ -60,51 +59,6 @@ open scoped SchwartzMap
 
 variable {E F : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
   [MeasurableSpace E] [BorelSpace E] [NormedAddCommGroup F] [NormedSpace ℂ F]
-
-namespace SchwartzMap
-
-omit [MeasurableSpace E] [BorelSpace E] in
-/-- The low-pass truncations `φ (2^{-N} ·) • f` of a Schwartz function converge to `f` in the
-Schwartz topology. -/
-private lemma tendsto_smulLeftCLM_contDiffBump_two_pow (φ : ContDiffBump (0 : E))
-    (f : 𝓢(E, F)) :
-    Tendsto (fun N : ℕ ↦ smulLeftCLM F (fun ξ ↦ (φ (((2 : ℝ) ^ N)⁻¹ • ξ) : ℂ)) f) atTop
-      (𝓝 f) := by
-  have hbdd (i : ℕ) : ∃ B, ∀ x, ‖iteratedFDeriv ℝ i φ x‖ ≤ B :=
-    (φ.contDiff.continuous_iteratedFDeriv (mod_cast le_top)).bounded_above_of_compact_support
-      (φ.hasCompactSupport.iteratedFDeriv i)
-  have hφ : (⇑φ).HasTemperateGrowth := φ.hasCompactSupport.hasTemperateGrowth φ.contDiff
-  have h := (tendsto_smulLeftCLM_comp_inv_smul_atTop φ.contDiff hbdd φ.eventuallyEq_one f).comp
-    (tendsto_pow_atTop_atTop_of_one_lt (one_lt_two (α := ℝ)))
-  refine h.congr fun N ↦ ?_
-  exact (smulLeftCLM_ofReal ℂ (hφ.comp
-    (((2 : ℝ) ^ N)⁻¹ • ContinuousLinearMap.id ℝ E).hasTemperateGrowth) f).symm
-
-variable [CompleteSpace F]
-
-/-- **Littlewood–Paley reconstruction of a Schwartz function.** The partial sums of the
-Littlewood–Paley pieces `𝓕⁻ (ψⱼ • 𝓕 f)` of a Schwartz function `f` converge to `f` in the
-Schwartz topology. -/
-theorem tendsto_sum_fourierMultiplierCLM_inhomogeneousLittlewoodPaley
-    (φ : ContDiffBump (0 : E)) (f : 𝓢(E, F)) :
-    Tendsto (fun N ↦ ∑ j ∈ Finset.range N,
-      fourierMultiplierCLM F (fun ξ ↦ (φ.inhomogeneousLittlewoodPaley j ξ : ℂ)) f) atTop
-        (𝓝 f) := by
-  rw [← tendsto_add_atTop_iff_nat 1]
-  have hsum (N : ℕ) : ∑ j ∈ Finset.range (N + 1),
-      fourierMultiplierCLM F (fun ξ ↦ (φ.inhomogeneousLittlewoodPaley j ξ : ℂ)) f =
-        𝓕⁻ (smulLeftCLM F (fun ξ ↦ (φ (((2 : ℝ) ^ N)⁻¹ • ξ) : ℂ)) (𝓕 f)) := by
-    rw [← _root_.sum_apply, ← fourierMultiplierCLM_sum F
-      fun j _ ↦ by
-        have := φ.hasTemperateGrowth_inhomogeneousLittlewoodPaley j; fun_prop]
-    simp_rw [← Complex.ofReal_sum, φ.sum_inhomogeneousLittlewoodPaley_range]
-    rfl
-  simp_rw [hsum]
-  have h := ((fourierInvCLM ℂ 𝓢(E, F)).continuous.tendsto _).comp
-    (tendsto_smulLeftCLM_contDiffBump_two_pow φ (𝓕 f))
-  rwa [fourierInvCLM_apply, FourierTransform.fourierInv_fourier_eq] at h
-
-end SchwartzMap
 
 namespace TemperedDistribution
 
