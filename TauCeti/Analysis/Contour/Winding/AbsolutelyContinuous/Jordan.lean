@@ -9,13 +9,14 @@ public import Mathlib.Analysis.SpecialFunctions.Complex.CircleMap
 public import TauCeti.Analysis.Contour.Winding.AbsolutelyContinuous.UnboundedComponent
 public import TauCeti.Analysis.Normed.Module.FilledHull
 public import TauCeti.Topology.MetricSpace.Arclength.SimpleClosed
-import Mathlib.Analysis.Calculus.MeanValue
 import Mathlib.Analysis.Normed.Affine.AddTorsor
 import TauCeti.Analysis.Complex.PlaneSeparation.Inside
 import TauCeti.Analysis.Contour.Winding.AbsolutelyContinuous.Reparam
 import TauCeti.Analysis.Contour.Winding.AbsolutelyContinuous.TangentJump
 import TauCeti.Analysis.Contour.Winding.Number.Circle
 import TauCeti.Analysis.Contour.Winding.Number.Reverse
+import TauCeti.MeasureTheory.Function.AbsolutelyContinuous.Circle
+import TauCeti.MeasureTheory.Function.AbsolutelyContinuous.Deriv
 import TauCeti.MeasureTheory.Function.MetricDerivative.ConstantSpeed
 import TauCeti.MeasureTheory.Function.MetricDerivative.Variation
 import TauCeti.Topology.JordanCurve.Path
@@ -230,61 +231,6 @@ theorem jordanSign_const (c : ℂ) (a b : ℝ) : jordanSign (fun _ ↦ c) a b = 
     norm_num at h0
   · exact h
 
-/-- A simple closed continuous curve on `[a, b]` (`a < b`) traces a Jordan curve. -/
-private theorem isJordanCurve_image_Icc {X : Type*} [TopologicalSpace X] [T2Space X]
-    {γ : ℝ → X} {a b : ℝ} (hab : a < b) (hcont : ContinuousOn γ (Icc a b))
-    (hclosed : γ a = γ b) (hinj : InjOn γ (Ico a b)) :
-    IsJordanCurve (γ '' Icc a b) := by
-  have hmap_cont : Continuous fun s : unitInterval ↦ AffineMap.lineMap a b (s : ℝ) := by
-    have heq : (fun s : unitInterval ↦ AffineMap.lineMap a b (s : ℝ)) =
-        fun s : unitInterval ↦ (b - a) * (s : ℝ) + a := by
-      ext s
-      simp only [AffineMap.lineMap_apply, smul_eq_mul, vsub_eq_sub, vadd_eq_add]
-      ring
-    rw [heq]
-    fun_prop
-  have hmaps : MapsTo (AffineMap.lineMap a b) (Icc (0 : ℝ) 1) (Icc a b) := by
-    rw [mapsTo_iff_image_subset, ← segment_eq_image_lineMap, segment_eq_Icc hab.le]
-  let p : Path (γ a) (γ a) :=
-    { toFun := fun s ↦ γ (AffineMap.lineMap a b (s : ℝ))
-      continuous_toFun := hcont.comp_continuous hmap_cont fun s ↦ hmaps s.2
-      source' := by simp
-      target' := by simp [hclosed] }
-  have hrange : range p = γ '' Icc a b := by
-    rw [← segment_eq_Icc hab.le, segment_eq_image_lineMap, ← image_comp]
-    ext x
-    simp [p, unitInterval]
-  rw [← hrange]
-  refine isJordanCurve_range_of_eq_or_eq_endpoints p fun s t hst ↦ ?_
-  have hmono : StrictMono (AffineMap.lineMap (k := ℝ) a b) := fun r u hru ↦ by
-    have hr : AffineMap.lineMap (k := ℝ) a b r = r * (b - a) + a := by
-      simp [AffineMap.lineMap_apply]
-    have hu : AffineMap.lineMap (k := ℝ) a b u = u * (b - a) + a := by
-      simp [AffineMap.lineMap_apply]
-    rw [hr, hu]
-    linarith [mul_lt_mul_of_pos_right hru (sub_pos.mpr hab)]
-  have hmem_Ico : ∀ {u : unitInterval}, u ≠ 1 → AffineMap.lineMap a b (u : ℝ) ∈ Ico a b := by
-    intro u hu1
-    have hlt1 : (u : ℝ) < 1 := u.2.2.lt_of_ne (Subtype.coe_ne_coe.mpr hu1)
-    exact ⟨by simpa using hmono.monotone u.2.1, by simpa using hmono hlt1⟩
-  by_cases hs1 : s = 1
-  · by_cases ht1 : t = 1
-    · exact Or.inl (hs1.trans ht1.symm)
-    · subst hs1
-      have heq : γ (AffineMap.lineMap a b (t : ℝ)) = γ a := by
-        simpa [p, hclosed.symm] using hst.symm
-      have ht0 : (t : ℝ) = 0 := hmono.injective <| by
-        simpa using hinj (hmem_Ico ht1) ⟨le_rfl, hab⟩ heq
-      exact Or.inr (Or.inr ⟨rfl, Subtype.ext ht0⟩)
-  · by_cases ht1 : t = 1
-    · subst ht1
-      have heq : γ (AffineMap.lineMap a b (s : ℝ)) = γ a := by
-        simpa [p, hclosed.symm] using hst
-      have hs0 : (s : ℝ) = 0 := hmono.injective <| by
-        simpa using hinj (hmem_Ico hs1) ⟨le_rfl, hab⟩ heq
-      exact Or.inr (Or.inl ⟨Subtype.ext hs0, rfl⟩)
-    · exact Or.inl (Subtype.ext (hmono.injective (hinj (hmem_Ico hs1) (hmem_Ico ht1) hst)))
-
 /-- Core dichotomy at any regular interior point of a simple closed AC curve: either the left
 normal ray enters `filledHull C \ C` with winding number `1` on all of `filledHull C \ C` and the
 right normal ray enters `(filledHull C)ᶜ`, or the reverse holds with winding number `-1`. -/
@@ -461,7 +407,7 @@ theorem jordanSign_eq_one_or_neg_one
     ⟨a, ⟨le_rfl, hab.le⟩, (a + b) / 2, ⟨by linarith, by linarith⟩,
       fun heq ↦ (by linarith : a ≠ (a + b) / 2)
         (hinj ⟨le_rfl, hab⟩ ⟨by linarith, by linarith⟩ heq)⟩
-  obtain ⟨t₀, ht₀, v, hv, hd⟩ := hγ.exists_mem_Ioo_hasDerivAt_ne_zero hab hnonconst
+  obtain ⟨t₀, ht₀, v, hv, hd⟩ := hγ.exists_mem_Ioo_hasDerivAt_ne_zero hnonconst
   have hC : IsJordanCurve (γ '' uIcc a b) := by
     rw [uIcc_of_le hab.le]
     exact isJordanCurve_image_Icc hab (uIcc_of_le hab.le ▸ hγ.continuousOn) hclosed hinj
@@ -625,21 +571,13 @@ end AbsolutelyContinuousOnInterval
 
 namespace TauCeti.Contour
 
-private theorem circleMap_ac (c : ℂ) (R a b : ℝ) :
-    AbsolutelyContinuousOnInterval (circleMap c R) a b := by
-  have hlip : LipschitzOnWith ‖R‖₊ (circleMap c R) (uIcc a b) :=
-    (convex_uIcc a b).lipschitzOnWith_of_nnnorm_deriv_le
-      (fun θ _ ↦ differentiable_circleMap c R θ)
-      (fun θ _ ↦ by simp [deriv_circleMap])
-  exact hlip.absolutelyContinuousOnInterval
-
 /-- **The standard circle `circleMap c R` (`R ≠ 0`) on `[0, 2π]` has orientation sign `1`.** -/
 @[simp]
 theorem jordanSign_circleMap (c : ℂ) {R : ℝ} (hR : R ≠ 0) :
     jordanSign (circleMap c R) 0 (2 * Real.pi) = 1 := by
   have hab : (0 : ℝ) < 2 * Real.pi := Real.two_pi_pos
   have hac : AbsolutelyContinuousOnInterval (circleMap c R) 0 (2 * Real.pi) :=
-    circleMap_ac c R 0 (2 * Real.pi)
+    absolutelyContinuousOnInterval_circleMap c R 0 (2 * Real.pi)
   have hclosed : circleMap c R 0 = circleMap c R (2 * Real.pi) := by
     simpa using ((periodic_circleMap c R) 0).symm
   have hinj : InjOn (circleMap c R) (Ico 0 (2 * Real.pi)) :=
@@ -663,7 +601,8 @@ theorem jordanSign_circleMap (c : ℂ) {R : ℝ} (hR : R ≠ 0) :
 @[simp]
 theorem jordanSign_circleMap_symm (c : ℂ) {R : ℝ} (hR : R ≠ 0) :
     jordanSign (circleMap c R) (2 * Real.pi) 0 = -1 := by
-  rw [(circleMap_ac c R 0 (2 * Real.pi)).jordanSign_symm, jordanSign_circleMap c hR]
+  rw [(absolutelyContinuousOnInterval_circleMap c R 0 (2 * Real.pi)).jordanSign_symm,
+    jordanSign_circleMap c hR]
 
 end TauCeti.Contour
 
