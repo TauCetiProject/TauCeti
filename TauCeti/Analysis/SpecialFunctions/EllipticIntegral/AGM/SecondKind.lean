@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.SpecialFunctions.EllipticIntegral.Landen
+import TauCeti.Analysis.Real.Sqrt
 import TauCeti.Analysis.SpecialFunctions.EllipticIntegral.Monotonicity
 import TauCeti.Analysis.SpecialFunctions.ArithmeticGeometricMean
 import Mathlib.Topology.Algebra.InfiniteSum.ENNReal
@@ -38,19 +39,11 @@ open scoped Topology NNReal
 private noncomputable def secondKindError (a b : ℝ) : ℝ :=
   a ^ 2 * (1 - legendreEc √(1 - (b / a) ^ 2) / legendreK √(1 - (b / a) ^ 2))
 
-private theorem modulus_sq {a b : ℝ} (hb : 0 < b) (hba : b ≤ a) :
-    (√(1 - (b / a) ^ 2)) ^ 2 = 1 - (b / a) ^ 2 ∧
-      (√(1 - (b / a) ^ 2)) ^ 2 < 1 := by
-  have ha := hb.trans_le hba
-  have hratio : 0 < b / a := div_pos hb ha
-  have hle : b / a ≤ 1 := (div_le_one ha).2 hba
-  have hnonneg : 0 ≤ 1 - (b / a) ^ 2 := by nlinarith
-  exact ⟨sq_sqrt hnonneg, by rw [sq_sqrt hnonneg]; nlinarith⟩
-
 private theorem secondKindError_bounds {a b : ℝ} (hb : 0 < b) (hba : b ≤ a) :
     0 ≤ secondKindError a b ∧ secondKindError a b ≤ a ^ 2 - b ^ 2 := by
   have ha := hb.trans_le hba
-  obtain ⟨hsq, hk⟩ := modulus_sq hb hba
+  have hsq := sq_sqrt_one_sub_sq_div hb hba
+  have hk := sq_sqrt_one_sub_sq_div_lt_one hb hba
   set k := √(1 - (b / a) ^ 2)
   have hK := legendreK_pos hk
   have hE : legendreEc k ≤ legendreK k :=
@@ -69,7 +62,8 @@ private theorem secondKindError_step {a b : ℝ} (hb : 0 < b) (hba : b ≤ a) :
     secondKindError a b =
       2 * secondKindError ((a + b) / 2) √(a * b) + (a ^ 2 - b ^ 2) / 2 := by
   have ha := hb.trans_le hba
-  obtain ⟨hsq, hk⟩ := modulus_sq hb hba
+  have hsq := sq_sqrt_one_sub_sq_div hb hba
+  have hk := sq_sqrt_one_sub_sq_div_lt_one hb hba
   have hab : 0 < a + b := by positivity
   have hc : √(1 - (√(1 - (b / a) ^ 2)) ^ 2) = b / a := by
     rw [hsq, sub_sub_cancel, sqrt_sq (div_pos hb ha).le]

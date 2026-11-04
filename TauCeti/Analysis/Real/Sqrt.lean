@@ -22,6 +22,8 @@ normalisation that leaves a factor `(√N)⁻¹ ^ (n - 2p)` in a central limit t
 The rational square-root map `k ↦ 2√k / (1 + k)` has complementary square
 `((1 - k) / (1 + k))²` and inverts `k ↦ (1 - √(1 - k²)) / (1 + √(1 - k²))` up to sign.
 These identities are used by both kinds of complete elliptic integral in Landen's transformation.
+For positive ordered inputs `0 < b ≤ a`, the square of `√(1 - (b / a)²)` is
+`1 - (b / a)²` and is strictly less than `1`, as needed for AGM evaluations.
 
 ## Main results
 
@@ -98,5 +100,20 @@ theorem two_mul_sqrt_div_one_add_eq_abs {k : ℝ} (hk : k ^ 2 ≤ 1) :
   rw [div_pow, mul_pow, sq_sqrt hq]
   field_simp
   linear_combination -4 * hcsq
+
+/-- For positive ordered inputs, squaring `√(1 - (b / a)²)` recovers its argument. -/
+theorem sq_sqrt_one_sub_sq_div {a b : ℝ} (hb : 0 < b) (hba : b ≤ a) :
+    (√(1 - (b / a) ^ 2)) ^ 2 = 1 - (b / a) ^ 2 := by
+  have ha := hb.trans_le hba
+  have hratio : 0 < b / a := div_pos hb ha
+  have hle : b / a ≤ 1 := (div_le_one ha).2 hba
+  exact sq_sqrt (by nlinarith)
+
+/-- For positive ordered inputs, the square of `√(1 - (b / a)²)` is less than `1`. -/
+theorem sq_sqrt_one_sub_sq_div_lt_one {a b : ℝ} (hb : 0 < b) (hba : b ≤ a) :
+    (√(1 - (b / a) ^ 2)) ^ 2 < 1 := by
+  rw [sq_sqrt_one_sub_sq_div hb hba]
+  have hratio : 0 < b / a := div_pos hb (hb.trans_le hba)
+  nlinarith
 
 end Real
