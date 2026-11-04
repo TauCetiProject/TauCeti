@@ -64,6 +64,8 @@ AIQ-Kitware DKPS formalization (Apache-2.0; Jon Crall and GPT-6).
 * `TauCeti.ne_neg_of_inner_eq_zero`: a vector orthogonal to a nonzero vector `b` is not `-b`.
 * `LinearIndependent.finCons_orthogonal_span_singleton`: a nonzero vector `p` followed by a
   linearly independent family in `(𝕜 ∙ p)ᗮ` is linearly independent.
+* `LinearIsometry.exists_mem_sphere_inner_eq_zero`: a linear isometry into a space of larger
+  finite dimension has a unit vector orthogonal to its range.
 * `Submodule.mul_norm_sq_le_norm_starProjection_sq_of_finrank_le`: for finite-dimensional
   subspaces with `dim V ≤ dim U`, a lower bound on `‖P_V u‖²` over `U` transfers to the same
   bound on `‖P_U v‖²` over `V`.
@@ -353,6 +355,29 @@ theorem finCons_orthogonal_span_singleton {p : E} (hp : p ≠ 0) {w : Fin m → 
   exact inner_self_eq_zero.1 (Submodule.mem_orthogonal_singleton_iff_inner_right.1 (hle h))
 
 end LinearIndependent
+
+namespace LinearIsometry
+
+open scoped InnerProductSpace
+
+variable {E F : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [NormedAddCommGroup F]
+  [InnerProductSpace ℝ F]
+
+/-- A linear isometry into a finite-dimensional space of larger dimension has a unit vector
+orthogonal to its range. -/
+theorem exists_mem_sphere_inner_eq_zero (ι : F →ₗᵢ[ℝ] E) [FiniteDimensional ℝ E]
+    (h : Module.finrank ℝ F < Module.finrank ℝ E) :
+    ∃ v : Metric.sphere (0 : E) 1, ∀ x, ⟪(v : E), ι x⟫_ℝ = 0 := by
+  have hW : LinearMap.range ι.toLinearMap ≠ ⊤ := fun hW ↦ by
+    have := LinearMap.finrank_range_of_inj ι.injective
+    rw [hW, finrank_top] at this
+    omega
+  obtain ⟨w, hw, hw0⟩ :=
+    Submodule.exists_mem_ne_zero_of_ne_bot (Submodule.orthogonal_eq_bot_iff.not.2 hW)
+  refine ⟨⟨‖w‖⁻¹ • w, by simp [norm_smul, norm_ne_zero_iff.2 hw0]⟩, fun x ↦ ?_⟩
+  rw [inner_smul_left, (Submodule.mem_orthogonal' _ w).1 hw (ι x) ⟨x, rfl⟩, mul_zero]
+
+end LinearIsometry
 
 namespace LinearMap
 
