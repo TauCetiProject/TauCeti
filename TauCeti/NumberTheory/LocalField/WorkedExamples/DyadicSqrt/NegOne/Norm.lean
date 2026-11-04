@@ -19,8 +19,6 @@ smallest ramified dyadic case.
 
 ## References
 
-* The [QuadraticFormInvariants roadmap, Layer 6B](https://github.com/TauCetiProject/TauCetiRoadmap/blob/6d197422/TauCetiRoadmap/QuadraticFormInvariants/README.md),
-  for the prescribed dyadic norm controls.
 * O. T. O'Meara, *Introduction to Quadratic Forms*, §63A, for the defect and norm computation.
 * J.-P. Serre, *A Course in Arithmetic*, Chapter III, §1, for the dyadic Hilbert symbol.
 
@@ -54,7 +52,7 @@ theorem exists_eq_sq_add_sq_five_padicTwo :
   ⟨1, 2, by norm_num⟩
 
 /-- `3` is a depth-one principal unit which is not a norm from `ℚ₂(i)`. -/
-theorem three_mem_unitFiltration_one_not_mem_quadraticNormSubgroup_neg_one_padicTwo :
+theorem three_mem_unitFiltration_one_notMem_quadraticNormSubgroup_neg_one_padicTwo :
     let b : ℚ_[2]ˣ := Units.mk0 3 (by norm_num)
     b ∈ unitFiltration ℚ_[2] 1 ∧ b ∉ quadraticNormSubgroup (-1 : ℚ_[2]) := by
   dsimp only

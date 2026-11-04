@@ -20,8 +20,6 @@ such integral norm, whereas that coefficient in `1 + π` is `1`.
 
 ## References
 
-* The [QuadraticFormInvariants roadmap, Layer 6B](https://github.com/TauCetiProject/TauCetiRoadmap/blob/6d197422/TauCetiRoadmap/QuadraticFormInvariants/README.md),
-  for the prescribed dyadic norm controls.
 * O. T. O'Meara, *Introduction to Quadratic Forms*, §63A, for the unramified quadratic norm class.
 * J.-P. Serre, *Local Fields*, Chapter V, §2, for norms in unramified extensions.
 
