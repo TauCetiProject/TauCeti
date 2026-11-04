@@ -10,6 +10,7 @@ public import TauCeti.LinearAlgebra.CliffordAlgebra.Dimension
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Functoriality
 public import TauCeti.LinearAlgebra.QuadraticForm.Real
 import TauCeti.Algebra.Quaternion.Split
+import TauCeti.LinearAlgebra.CliffordAlgebra.Even.Conjugation
 import TauCeti.LinearAlgebra.QuadraticForm.Diagonal.Basic
 
 /-!
@@ -64,6 +65,8 @@ unfolding.
   and the diagonal real quadratic form it weights.
 * `TauCeti.realCliffordFormNegIsometry`: the isometry from the negated `(p, q)` form to the
   `(q, p)` form, with coordinate equations `..._pos_of_neg` and `..._neg_of_pos`.
+* `TauCeti.CliffordAlgebra.realCliffordEvenToNeg p q`: the even-algebra comparison into
+  the Clifford algebra of the negated signature.
 * `TauCeti.realCliffordSplitIsometry`: the shared splitter into two standard signature blocks.
 * `TauCeti.realCliffordPositiveSplitIsometry`: the isometry which separates the last positive
   coordinate from a standard signature form.
@@ -252,6 +255,36 @@ theorem realCliffordFormNegIsometry_apply_natAdd (p q : ℕ)
     (x : Fin (p + q) → ℝ) (i : Fin p) :
     realCliffordFormNegIsometry p q x (Fin.natAdd q i) = x (Fin.castAdd q i) := by
   rw [realCliffordFormNegIsometry_apply, finAddFlip_apply_natAdd]
+
+namespace CliffordAlgebra
+
+open _root_.CliffordAlgebra
+
+/-- The even Clifford algebra of signature `(p, q)` mapped into the Clifford algebra of
+signature `(q, p)`, through negation and the signature-coordinate isometry. -/
+noncomputable def realCliffordEvenToNeg (p q : ℕ) :
+    even (realCliffordForm p q) →ₐ[ℝ] CliffordAlgebra (realCliffordForm q p) :=
+  (map (realCliffordFormNegIsometry p q).toIsometry).comp
+    ((even (-realCliffordForm p q)).val.comp (evenEquivEvenNeg _).toAlgHom)
+
+/-- The even comparison applies negation followed by the signature-coordinate isometry. -/
+theorem realCliffordEvenToNeg_apply (p q : ℕ) (x : even (realCliffordForm p q)) :
+    realCliffordEvenToNeg p q x =
+      map (realCliffordFormNegIsometry p q).toIsometry
+        (evenEquivEvenNeg (realCliffordForm p q) x) :=
+  (rfl)
+
+/-- An even generator maps to minus the product of the transported vectors. -/
+@[simp]
+theorem realCliffordEvenToNeg_ι (p q : ℕ) (a b : Fin (p + q) → ℝ) :
+    realCliffordEvenToNeg p q ((even.ι (realCliffordForm p q)).bilin a b) =
+      -(ι (realCliffordForm q p) (realCliffordFormNegIsometry p q a) *
+        ι (realCliffordForm q p) (realCliffordFormNegIsometry p q b)) := by
+  rw [realCliffordEvenToNeg_apply, evenEquivEvenNeg_apply, evenToNeg_ι]
+  simp only [Subalgebra.coe_neg, coe_even_ι_bilin, map_neg, map_mul,
+    map_apply_ι, QuadraticMap.IsometryEquiv.toIsometry_apply]
+
+end CliffordAlgebra
 
 /-! ### Standard signature coordinate isometries -/
 
