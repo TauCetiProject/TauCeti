@@ -47,6 +47,8 @@ boundaries of solid tori `D² × S¹`.
 
 * `TauCeti.torusClass`: the class of an integer-winding curve on `S¹ × S¹`, with its
   coordinates, decomposition into the coordinate curves, and induced-map formula.
+* `ContinuousMap.exists_singularHomologyMap_prodMap_torusClass_zero_one`: reparametrizing the second
+  circle keeps the `(0, 1)` curve a `(0, q)` curve.
 
 ## References
 
@@ -240,4 +242,40 @@ theorem torusClass_eq_zero_iff (p q : ℤ) : torusClass p q = 0 ↔ p = 0 ∧ q 
   ext i
   fin_cases i <;> rfl
 
+/-- Collapsing the second circle of the torus sends the class of the `(p, q)` curve to the class of
+the `(p, 0)` curve. -/
+theorem singularHomologyMap_prodMk_const_torusClass (p q : ℤ) :
+    singularHomologyMap ℤ 1 (ContinuousMap.fst.prodMk (ContinuousMap.const _ 1))
+      (torusClass p q) = torusClass p 0 := by
+  rw [ContinuousMap.singularHomologyMap_torusClass, torusClass_def]
+  congr 1
+  refine loopClass_eq_of_apply_eq _ _ fun t ↦ ?_
+  rw [Path.map_coe, Function.comp_apply, torusCurve_apply, torusCurve_apply]
+  simp
+
 end TauCeti
+
+namespace ContinuousMap
+
+open TauCeti
+
+/-- Reparametrizing the second circle of the torus by a self-map `g` of the circle sends the class
+of the `(0, 1)` curve to the class of a `(0, q)` curve: the first winding number stays `0`. -/
+theorem exists_singularHomologyMap_prodMap_torusClass_zero_one (g : C(Circle, Circle)) :
+    ∃ q : ℤ, singularHomologyMap ℤ 1 ((ContinuousMap.id Circle).prodMap g) (torusClass 0 1) =
+      torusClass 0 q := by
+  obtain ⟨p, q, hpq⟩ :=
+    exists_eq_torusClass (singularHomologyMap ℤ 1 ((ContinuousMap.id Circle).prodMap g)
+      (torusClass 0 1))
+  refine ⟨q, ?_⟩
+  -- Collapsing the second circle absorbs the reparametrization, so it kills the first winding:
+  -- the composite of the two maps is the collapse itself, by definition.
+  have hp : torusClass p 0 = 0 := by
+    rw [← singularHomologyMap_prodMk_const_torusClass p q, ← hpq,
+      ← ContinuousMap.singularHomologyMap_comp]
+    exact (singularHomologyMap_prodMk_const_torusClass 0 1).trans
+      ((torusClass_eq_zero_iff 0 0).2 ⟨rfl, rfl⟩)
+  rw [torusClass_eq_zero_iff] at hp
+  rw [hpq, hp.1]
+
+end ContinuousMap
