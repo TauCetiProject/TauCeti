@@ -5,10 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.RingTheory.PowerSeries.Binomial
 public import TauCeti.RingTheory.Binomial
 public import TauCeti.RingTheory.Nilpotent.Log
-import TauCeti.RingTheory.PowerSeries.Substitution
+import TauCeti.RingTheory.PowerSeries.Trunc
 
 /-!
 # Binomial powers of unipotent elements
