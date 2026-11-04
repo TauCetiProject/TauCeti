@@ -479,9 +479,9 @@ theorem sum_mk_quotient_isoSetoidOn_fin_le_aleph0_or_hasPerfectlyManyCountableMo
 
 /-- If each finite carrier `Fin n` has either at most `ℵ₀` or `𝔠` models of `φ` up to isomorphism,
 then the finite tiers together contribute either at most `ℵ₀` or `𝔠` isomorphism classes of models.
-No countability assumption on the branching index `ι` is required. -/
+No countability assumption on the language or on the branching index `ι` is required. -/
 theorem sum_mk_quotient_isoSetoidOn_fin_le_aleph0_or_eq_continuum_of_dichotomy
-    [∀ k, Countable (L.Relations k)] {φ : L.SentenceInf ι}
+    {φ : L.SentenceInf ι}
     (hfin : ∀ n, #(Quotient (isoSetoidOn (Fin n) φ)) ≤ ℵ₀ ∨
       #(Quotient (isoSetoidOn (Fin n) φ)) = 𝔠) :
     (sum fun n => #(Quotient (isoSetoidOn (Fin n) φ))) ≤ ℵ₀ ∨
@@ -491,7 +491,7 @@ theorem sum_mk_quotient_isoSetoidOn_fin_le_aleph0_or_eq_continuum_of_dichotomy
   · obtain ⟨n, hn⟩ := not_forall.1 h
     have hnc : #(Quotient (isoSetoidOn (Fin n) φ)) = 𝔠 := (hfin n).resolve_left hn
     refine .inr <| ((sum_le_sum _ (fun _ => 𝔠) fun k =>
-      mk_quotient_isoSetoidOn_le_continuum (Fin k) φ).trans_eq ?_).antisymm ?_
+      (hfin k).elim (fun hk => hk.trans aleph0_le_continuum) le_of_eq).trans_eq ?_).antisymm ?_
     · simp [aleph0_mul_continuum]
     · exact hnc.symm.trans_le (le_sum (fun k => #(Quotient (isoSetoidOn (Fin k) φ))) n)
 

@@ -7,7 +7,6 @@ module
 
 public import TauCeti.ModelTheory.Counting.Levels
 public import TauCeti.ModelTheory.Counting.Scattered.Basic
-import TauCeti.SetTheory.Descriptive.Silver
 
 /-!
 # Morley's theorem on the number of countable models
@@ -21,13 +20,8 @@ set is strictly more informative than the cardinal dichotomy "`≤ ℵ₁` or `=
 
 Isomorphism of structures on `ℕ` is analytic rather than Borel in general, so Silver's theorem
 cannot be applied to it directly. Instead, Silver's theorem enters level by level through the
-decreasing hierarchy of back-and-forth equivalence relations `bfEquivSetoid L V α`. Below `ω₁`, on
-any Borel set `K` of configurations on a countable carrier `V`, each restricted level has Borel
-graph and is refined by isomorphism. Relative Silver
-(`Setoid.countable_or_hasCantorAntichainOn_of_measurableSet`) therefore gives, at each countable
-level `α`, either countably many depth-`α` classes met by `K` or a Cantor (hence perfect) antichain
-in `K` of pairwise non-isomorphic configurations.
-
+decreasing hierarchy of back-and-forth equivalence relations `bfEquivSetoid L ℕ α`
+(`TauCeti.RelationalConfiguration.countable_quotient_comap_bfEquivSetoid_or_hasPerfectAntichainOn`).
 On `ℕ`, if a Borel set `K` contains no perfect set of pairwise non-isomorphic configurations, every
 countable back-and-forth level on `K` has countably many classes
 (`TauCeti.BFScattered.of_isThinOn`), and the isolating-rank stratification bound
@@ -40,8 +34,8 @@ Morley's theorem in its witnessed form
 form (`TauCeti.morley_countableModelCount`) follows via
 `TauCeti.HasPerfectlyManyCountableModels.countableModelCount_eq`. The purely cardinal transfer from
 levelwise and finite-tier "`≤ ℵ₀` or `= 𝔠`" dichotomies to "`≤ ℵ₁` or `= 𝔠`" is also isolated in
-`TauCeti.countableModelCount_le_aleph_one_or_eq_continuum_of_dichotomy`, without assuming countable
-branching or constructing Cantor or perfect antichains.
+`TauCeti.countableModelCount_le_aleph_one_or_eq_continuum_of_dichotomy`, without assuming a
+countable language, countable branching, or Cantor or perfect antichains.
 
 Finally, `TauCeti.IsThinOnNatModels φ` records that `modelsOf (V := ℕ) φ` carries no perfect set of
 pairwise non-isomorphic configurations. A thin sentence is back-and-forth scattered on `ℕ`, has at
@@ -56,12 +50,10 @@ precisely when any isolating rank is bounded below `ω₁` on its models on `ℕ
 
 ## Main results
 
-* `TauCeti.RelationalConfiguration.countable_quotient_comap_bfEquivSetoid_or_hasPerfectAntichainOn`
-  and `TauCeti.RelationalConfiguration.countable_quotient_bfEquivSetoidOn_or_hasPerfectAntichainOn`:
-  the one-level Silver dichotomy at a countable ordinal `α < ω₁`, for Borel sets and model classes.
-* `TauCeti.BFScattered.of_isThinOn` and
-  `TauCeti.mk_isoClasses_le_aleph_one_or_hasPerfectAntichainOn`: a thin Borel set on `ℕ` is
-  back-and-forth scattered and meets at most `ℵ₁` isomorphism classes.
+* `TauCeti.mk_isoClasses_le_aleph_one_or_hasPerfectAntichainOn` and
+  `TauCeti.mk_isoClasses_le_aleph_one_or_eq_continuum`: a Borel set of configurations on `ℕ` meets
+  at most `ℵ₁` isomorphism classes or contains a nonempty perfect set of pairwise non-isomorphic
+  configurations (hence `≤ ℵ₁` or `= 𝔠`).
 * `TauCeti.mk_quotient_isoSetoidOn_nat_le_aleph_one_or_hasPerfectAntichainOn` and
   `TauCeti.mk_quotient_isoSetoidOn_nat_le_aleph_one_or_eq_continuum`: Morley's dichotomy on the
   tier `ℕ`.
@@ -98,105 +90,17 @@ precisely when any isolating rank is bounded below `ω₁` on its models on `ℕ
 
 public section
 
-universe u v w o uι uι'
+universe u v o uι uι'
 
 open FirstOrder FirstOrder.Language Cardinal Ordinal
 
 namespace TauCeti
-
-namespace RelationalConfiguration
-
-variable {L : Language.{u, v}} [L.IsRelational] {ι : Type uι}
-
-/-- **One-level dichotomy for Borel sets (Cantor form).** Below `ω₁`, on a countable carrier and in
-a vocabulary with countably many relation symbols of each arity, any Borel set `K` of configurations
-meets countably many depth-`α` back-and-forth classes or carries a Cantor antichain of pairwise
-non-isomorphic configurations. -/
-theorem countable_quotient_comap_bfEquivSetoid_or_hasCantorAntichainOn {V : Type w} [Countable V]
-    [∀ n, Countable (L.Relations n)] {K : Set (RelationalConfiguration L V)} (hK : MeasurableSet K)
-    {α : Ordinal.{o}} (hα : α < ω₁) :
-    Countable (Quotient ((bfEquivSetoid L V α).comap (Subtype.val : K → _))) ∨
-      (isoSetoid L V).HasCantorAntichainOn K :=
-  Setoid.countable_or_hasCantorAntichainOn_of_measurableSet hK (isoSetoid L V)
-    ((bfEquivSetoid L V α).comap Subtype.val)
-    (fun _ _ h => isoSetoid_le_bfEquivSetoid α h)
-    ((measurableSet_setOf_bfEquivSetoid hα).preimage
-      (measurable_subtype_coe.prodMap measurable_subtype_coe))
-
-/-- **One-level dichotomy for Borel sets (perfect-set form).** Below `ω₁`, on a countable carrier
-and in a vocabulary with countably many relation symbols of each arity, any Borel set `K` of
-configurations meets countably many depth-`α` back-and-forth classes or contains a nonempty perfect
-set of pairwise non-isomorphic configurations. -/
-theorem countable_quotient_comap_bfEquivSetoid_or_hasPerfectAntichainOn {V : Type w} [Countable V]
-    [∀ n, Countable (L.Relations n)] {K : Set (RelationalConfiguration L V)} (hK : MeasurableSet K)
-    {α : Ordinal.{o}} (hα : α < ω₁) :
-    Countable (Quotient ((bfEquivSetoid L V α).comap (Subtype.val : K → _))) ∨
-      (isoSetoid L V).HasPerfectAntichainOn K :=
-  (countable_quotient_comap_bfEquivSetoid_or_hasCantorAntichainOn hK hα).imp_right
-    Setoid.HasCantorAntichainOn.hasPerfectAntichainOn
-
-/-- **One-level dichotomy for Borel sets (cardinal form).** Below `ω₁`, on a countable carrier and
-in a vocabulary with countably many relation symbols of each arity, the depth-`α` back-and-forth
-relation restricted to a Borel set `K` of configurations has either at most `ℵ₀` or `𝔠` classes. -/
-theorem mk_quotient_comap_bfEquivSetoid_le_aleph0_or_eq_continuum {V : Type w} [Countable V]
-    [∀ n, Countable (L.Relations n)] {K : Set (RelationalConfiguration L V)} (hK : MeasurableSet K)
-    {α : Ordinal.{o}} (hα : α < ω₁) :
-    #(Quotient ((bfEquivSetoid L V α).comap (Subtype.val : K → _))) ≤ ℵ₀ ∨
-      #(Quotient ((bfEquivSetoid L V α).comap (Subtype.val : K → _))) = 𝔠 := by
-  have := hK.standardBorel
-  exact Setoid.mk_quotient_le_aleph0_or_eq_continuum ((bfEquivSetoid L V α).comap Subtype.val)
-    ((measurableSet_setOf_bfEquivSetoid hα).preimage
-      (measurable_subtype_coe.prodMap measurable_subtype_coe))
-
-/-- **One-level dichotomy on models (Cantor form).** Below `ω₁`, on a countable carrier and in a
-vocabulary with countably many relation symbols of each arity, the models of `φ` with countable
-branching fall into countably many back-and-forth classes at depth `α`, or carry a Cantor antichain
-of pairwise non-isomorphic models. -/
-theorem countable_quotient_bfEquivSetoidOn_or_hasCantorAntichainOn (V : Type w) [Countable V]
-    [∀ n, Countable (L.Relations n)] [Countable ι] (φ : L.SentenceInf ι) {α : Ordinal.{o}}
-    (hα : α < ω₁) :
-    Countable (Quotient (bfEquivSetoidOn V φ α)) ∨
-      (isoSetoid L V).HasCantorAntichainOn (modelsOf φ) :=
-  countable_quotient_comap_bfEquivSetoid_or_hasCantorAntichainOn (measurableSet_modelsOf φ) hα
-
-/-- **One-level dichotomy on models (perfect-set form).** Below `ω₁`, on a countable carrier and in
-a vocabulary with countably many relation symbols of each arity, the models of `φ` with countable
-branching fall into countably many back-and-forth classes at depth `α`, or contain a nonempty
-perfect set of pairwise non-isomorphic models. -/
-theorem countable_quotient_bfEquivSetoidOn_or_hasPerfectAntichainOn (V : Type w) [Countable V]
-    [∀ n, Countable (L.Relations n)] [Countable ι] (φ : L.SentenceInf ι) {α : Ordinal.{o}}
-    (hα : α < ω₁) :
-    Countable (Quotient (bfEquivSetoidOn V φ α)) ∨
-      (isoSetoid L V).HasPerfectAntichainOn (modelsOf φ) :=
-  countable_quotient_comap_bfEquivSetoid_or_hasPerfectAntichainOn (measurableSet_modelsOf φ) hα
-
-/-- **One-level dichotomy on models (cardinal form).** Below `ω₁`, on a countable carrier and in a
-vocabulary with countably many relation symbols of each arity, the depth-`α` back-and-forth relation
-on the models of `φ` has either at most `ℵ₀` or `𝔠` classes. -/
-theorem mk_quotient_bfEquivSetoidOn_le_aleph0_or_eq_continuum (V : Type w) [Countable V]
-    [∀ n, Countable (L.Relations n)] [Countable ι] (φ : L.SentenceInf ι) {α : Ordinal.{o}}
-    (hα : α < ω₁) :
-    #(Quotient (bfEquivSetoidOn V φ α)) ≤ ℵ₀ ∨ #(Quotient (bfEquivSetoidOn V φ α)) = 𝔠 :=
-  mk_quotient_comap_bfEquivSetoid_le_aleph0_or_eq_continuum (measurableSet_modelsOf φ) hα
-
-end RelationalConfiguration
 
 open RelationalConfiguration
 
 variable {L : Language.{u, v}} [L.IsRelational] {ι : Type uι} {ι' : Type uι'}
 
 /-! ### Borel sets of configurations on `ℕ` -/
-
-/-- **Thin Borel sets are back-and-forth scattered.** In a relational language with countably many
-relation symbols of each arity, any Borel set `K` of configurations on `ℕ` that carries no nonempty
-perfect set of pairwise non-isomorphic configurations is back-and-forth scattered. No isomorphism
-invariance of `K` is required. -/
-theorem BFScattered.of_isThinOn [∀ n, Countable (L.Relations n)]
-    {K : Set (RelationalConfiguration L ℕ)} (hK : MeasurableSet K)
-    (h : (isoSetoid L ℕ).IsThinOn K) : BFScattered K :=
-  bfScattered_iff.2 fun _ hα =>
-    (countable_quotient_comap_bfEquivSetoid_or_hasPerfectAntichainOn hK hα).resolve_right
-      (Setoid.isThinOn_iff.1 h)
 
 /-- **Morley's dichotomy for Borel sets on `ℕ`.** In a relational language with countably many
 relation symbols of each arity, any Borel set `K` of configurations on `ℕ` meets at most `ℵ₁`
@@ -269,14 +173,28 @@ theorem morley_countableModelCount [∀ n, Countable (L.Relations n)] [Countable
 
 /-- If every countable back-and-forth level on `ℕ` and every finite carrier `Fin n` has either at
 most `ℵ₀` or `𝔠` classes of models of `φ`, then `φ` has either at most `ℵ₁` or `𝔠` countable models
-up to isomorphism. No countability assumption on the branching index `ι` is required. -/
-theorem countableModelCount_le_aleph_one_or_eq_continuum_of_dichotomy
-    [∀ n, Countable (L.Relations n)] {φ : L.SentenceInf ι}
+up to isomorphism. No countability assumption on the language or on the branching index `ι` is
+required. -/
+theorem countableModelCount_le_aleph_one_or_eq_continuum_of_dichotomy {φ : L.SentenceInf ι}
     (hlevels : ∀ α : Ordinal.{0}, α < ω₁ →
       #(Quotient (bfEquivSetoidOn ℕ φ α)) ≤ ℵ₀ ∨ #(Quotient (bfEquivSetoidOn ℕ φ α)) = 𝔠)
     (hfin : ∀ n,
       #(Quotient (isoSetoidOn (Fin n) φ)) ≤ ℵ₀ ∨ #(Quotient (isoSetoidOn (Fin n) φ)) = 𝔠) :
     countableModelCount φ ≤ ℵ₁ ∨ countableModelCount φ = 𝔠 := by
+  have hle : countableModelCount φ ≤ 𝔠 := by
+    have hρ := isIsolatingRank_scottHeight L
+    have hfib (α : Ordinal.{0}) (hα : α < ω₁) :
+        #(rankOnIsoClasses hρ.iso_invariant (modelsOf φ) ⁻¹' {α}) ≤ 𝔠 := by
+      obtain ⟨f, hf⟩ := hρ.exists_injective_rank_fiber (modelsOf φ) α
+      exact (mk_le_of_injective hf).trans <|
+        (hlevels α hα).elim (fun h => h.trans aleph0_le_continuum) le_of_eq
+    have hℕ : #(Quotient (isoSetoidOn ℕ φ)) ≤ 𝔠 :=
+      (mk_le_aleph_one_mul_of_mk_preimage_le
+        (rankOnIsoClasses_lt_omega_one hρ.iso_invariant hρ.lt_omega_one (modelsOf φ)) hfib).trans
+        ((mul_le_mul' aleph_one_le_continuum le_rfl).trans_eq (mul_eq_self aleph0_le_continuum))
+    exact (countableModelCount_le_add_aleph0_mul hℕ fun n =>
+      (hfin n).elim (fun h => h.trans aleph0_le_continuum) le_of_eq).trans_eq
+        (by rw [aleph0_mul_continuum, continuum_add_self])
   by_cases hall : ∀ α : Ordinal.{0}, α < ω₁ → #(Quotient (bfEquivSetoidOn ℕ φ α)) ≤ ℵ₀
   · have hℕ : #(Quotient (isoSetoidOn ℕ φ)) ≤ ℵ₁ :=
       mk_isoClasses_le_aleph_one_of_countable_levels (modelsOf φ) fun α hα =>
@@ -286,13 +204,13 @@ theorem countableModelCount_le_aleph_one_or_eq_continuum_of_dichotomy
     · refine .inl ?_
       rw [countableModelCount_eq_add_sum]
       exact (add_le_add hℕ hsum).trans_eq (add_eq_left (aleph0_le_aleph 1) (aleph0_le_aleph 1))
-    · refine .inr <| (countableModelCount_le_continuum φ).antisymm ?_
+    · refine .inr <| hle.antisymm ?_
       rw [countableModelCount_eq_add_sum, hsum]
       exact self_le_add_left 𝔠 _
   · obtain ⟨α, hα⟩ := not_forall.1 hall
     rw [not_imp] at hα
     have hαc : #(Quotient (bfEquivSetoidOn ℕ φ α)) = 𝔠 := (hlevels α hα.1).resolve_left hα.2
-    refine .inr <| (countableModelCount_le_continuum φ).antisymm ?_
+    refine .inr <| hle.antisymm ?_
     exact hαc.symm.trans_le <|
       (mk_quotient_bfEquivSetoidOn_le φ α).trans
         (mk_quotient_isoSetoidOn_nat_le_countableModelCount φ)
