@@ -16,8 +16,8 @@ On an ultrametric normed ring, `maxSquareRingNorm` is the norm
 so induces the same uniformity. `maxSquareNormedRing` installs it while retaining
 the original uniformity and topology, hence also completeness.
 
-On a normed division ring, every nonzero element of new norm less than one fails to scale
-this norm multiplicatively: testing against its inverse gives a strict inequality.
+On a normed ring, no unit of positive new norm less than one scales this norm
+multiplicatively: testing against its inverse gives a contradiction.
 Consequently the new norm is not Tate, even when the original topology is Tate.
 This distinguishes existence of a topologically nilpotent unit from exact norm scaling.
 
@@ -69,6 +69,10 @@ noncomputable def maxSquareRingNorm (R : Type*) [NormedRing R] [IsUltrametricDis
 theorem maxSquareRingNorm_apply (x : R) :
     maxSquareRingNorm R x = max ‖x‖ (‖x‖ ^ 2) := (rfl)
 
+/-- The maximum-square norm is normalized at one whenever the original norm is. -/
+theorem maxSquareRingNorm_one [NormOneClass R] : maxSquareRingNorm R 1 = 1 := by
+  simp
+
 /-- On the closed unit ball the maximum-square norm is unchanged. -/
 theorem maxSquareRingNorm_of_norm_le_one {x : R} (hx : ‖x‖ ≤ 1) :
     maxSquareRingNorm R x = ‖x‖ := by
@@ -117,7 +121,8 @@ theorem uniformity_maxSquareRingNorm :
 
 /-- Install the maximum-square norm with the original uniformity and topology retained.
 This is explicit data, not a global instance. -/
-noncomputable abbrev maxSquareNormedRing (R : Type*) [NormedRing R] [IsUltrametricDist R] :
+@[instance_reducible]
+noncomputable def maxSquareNormedRing (R : Type*) [NormedRing R] [IsUltrametricDist R] :
     NormedRing R :=
   { (maxSquareRingNorm R).toNormedRing with
     toMetricSpace := (maxSquareRingNorm R).toNormedRing.toMetricSpace.replaceUniformity
@@ -127,6 +132,28 @@ noncomputable abbrev maxSquareNormedRing (R : Type*) [NormedRing R] [IsUltrametr
 @[simp]
 theorem norm_maxSquareNormedRing (x : R) :
     @norm R (maxSquareNormedRing R).toNorm x = maxSquareRingNorm R x := (rfl)
+
+/-- The compatible maximum-square norm retains the original ring structure. -/
+@[simp]
+theorem ring_maxSquareNormedRing :
+    (maxSquareNormedRing R).toRing = (inferInstance : Ring R) := (rfl)
+
+/-- The compatible maximum-square norm retains the original uniform space. -/
+@[simp]
+theorem uniformSpace_maxSquareNormedRing :
+    (maxSquareNormedRing R).toUniformSpace = (inferInstance : UniformSpace R) := (rfl)
+
+/-- Distance for the compatible maximum-square norm is the norm of the difference. -/
+theorem dist_maxSquareNormedRing (x y : R) :
+    @dist R (maxSquareNormedRing R).toDist x y = maxSquareRingNorm R (x - y) := by
+  let := maxSquareNormedRing R
+  exact dist_eq_norm x y
+
+/-- Completeness is preserved by the compatible maximum-square norm. -/
+theorem completeSpace_maxSquareNormedRing [CompleteSpace R] :
+    @CompleteSpace R (maxSquareNormedRing R).toUniformSpace := by
+  rw [uniformSpace_maxSquareNormedRing]
+  infer_instance
 
 /-- The compatible maximum-square norm is ultrametric. -/
 theorem isUltrametricDist_maxSquareNormedRing :
@@ -138,11 +165,39 @@ theorem isUltrametricDist_maxSquareNormedRing :
 
 /-- The maximum-square norm is normalized at one whenever the original norm is. -/
 theorem normOneClass_maxSquareNormedRing [NormOneClass R] :
-    letI := maxSquareNormedRing R
-    NormOneClass R := by
+    @NormOneClass R (maxSquareNormedRing R).toNorm (inferInstance : One R) := by
   refine @NormOneClass.mk R (maxSquareNormedRing R).toNorm _ ?_
-  rw [norm_maxSquareNormedRing, maxSquareRingNorm_apply, norm_one]
-  norm_num
+  rw [norm_maxSquareNormedRing, maxSquareRingNorm_one]
+
+/-- The compatible maximum-square norm on a ring admits no multiplicative
+pseudo-uniformiser. This does not assert that its topology fails to be Tate. -/
+theorem not_isTate_maxSquareNormedRing :
+    letI := maxSquareNormedRing R
+    ¬ NormedRing.IsTate R := by
+  let g := ‹NormedRing R›
+  let := maxSquareNormedRing R
+  intro h
+  obtain ⟨ϖ⟩ := h.nonempty_pseudoUniformizer
+  let u : Rˣ := ϖ.unit
+  have hpos : 0 < ‖(u : R)‖ := ϖ.norm_pos
+  have hlt : ‖(u : R)‖ < 1 := ϖ.norm_lt_one
+  have hinv : ‖((u⁻¹ : Rˣ) : R)‖ = ‖(u : R)‖⁻¹ := ϖ.norm_inv
+  have : Nontrivial R := ϖ.nontrivial
+  let := g
+  simp only [norm_maxSquareNormedRing] at hpos hlt hinv
+  have hx := (maxSquareRingNorm_lt_iff le_rfl).mp hlt
+  rw [maxSquareRingNorm_of_norm_le_one hx.le] at hpos hinv
+  have hmul : 1 ≤ ‖(u : R)‖ * ‖((u⁻¹ : Rˣ) : R)‖ :=
+    (one_le_norm_one R).trans (by
+      simpa only [Units.mul_inv] using norm_mul_le (u : R) ((u⁻¹ : Rˣ) : R))
+  have hprod : ‖(u : R)‖ * maxSquareRingNorm R ((u⁻¹ : Rˣ) : R) = 1 := by
+    rw [hinv, mul_inv_cancel₀ hpos.ne']
+  have hbound : maxSquareRingNorm R ((u⁻¹ : Rˣ) : R) ≤ ‖((u⁻¹ : Rˣ) : R)‖ :=
+    (mul_le_mul_iff_right₀ hpos).mp (hprod.trans_le hmul)
+  have hinv_gt : 1 < ‖((u⁻¹ : Rˣ) : R)‖ := by
+    nlinarith
+  have hsq := (le_max_right ‖((u⁻¹ : Rˣ) : R)‖ (‖((u⁻¹ : Rˣ) : R)‖ ^ 2)).trans hbound
+  nlinarith
 
 end Ring
 
@@ -167,36 +222,19 @@ theorem one_lt_maxSquareRingNorm_mul_inv {x : K} (hx₀ : x ≠ 0) (hx : ‖x‖
   rw [maxSquareRingNorm_mul_inv_of_norm_lt_one hx₀ hx]
   exact (one_lt_inv₀ (norm_pos_iff.mpr hx₀)).mpr hx
 
-/-- The compatible maximum-square norm on a division ring admits no multiplicative
-pseudo-uniformiser. This does not assert that its topology fails to be Tate. -/
-theorem not_isTate_maxSquareNormedRing :
-    letI := maxSquareNormedRing K
-    ¬ NormedRing.IsTate K := by
-  intro h
-  rcases h with ⟨⟨⟨u, hmul, _, hlt⟩⟩⟩
-  simp only [norm_maxSquareNormedRing] at hmul hlt
-  have hx : ‖(u : K)‖ < 1 := (maxSquareRingNorm_lt_iff le_rfl).mp hlt
-  have hprod := one_lt_maxSquareRingNorm_mul_inv u.ne_zero hx
-  have heq := hmul ((u : K)⁻¹)
-  rw [mul_inv_cancel₀ u.ne_zero] at heq
-  have hone : maxSquareRingNorm K (1 : K) = 1 := by
-    rw [maxSquareRingNorm_apply, norm_one]; norm_num
-  rw [← heq, hone] at hprod
-  exact (lt_self_iff_false _).mp hprod
-
 end DivisionRing
 
-/-- A nontrivially normed ultrametric field has a compatible ultrametric, norm-one ring norm
-which is not Tate, although its topology is Tate. Equality of uniformities also preserves
-completeness whenever the field is complete. -/
-theorem exists_normedRing_isTateRing_not_isTate (K : Type*) [NontriviallyNormedField K]
-    [IsUltrametricDist K] :
-    ∃ n : NormedRing K, n.toRing = (inferInstance : Ring K) ∧
-      n.toMetricSpace.toUniformSpace = (inferInstance : UniformSpace K) ∧
-      @IsUltrametricDist K n.toDist ∧ @NormOneClass K n.toNorm (inferInstance : One K) ∧
-      Huber.IsTateRing K ∧ ¬ @NormedRing.IsTate K n.toSeminormedRing := by
-  refine ⟨maxSquareNormedRing K, rfl, rfl, isUltrametricDist_maxSquareNormedRing,
-    normOneClass_maxSquareNormedRing, ?_, not_isTate_maxSquareNormedRing⟩
-  infer_instance
+/-- An ultrametric norm-one commutative ring with Tate topology has a compatible
+ultrametric, norm-one ring norm which is not Tate. Equality of uniformities also preserves
+completeness whenever the original ring is complete. -/
+theorem exists_normedRing_isTateRing_not_isTate (R : Type*) [NormedCommRing R]
+    [IsUltrametricDist R] [NormOneClass R] [Huber.IsTateRing R] :
+    ∃ n : NormedRing R, n.toRing = (inferInstance : Ring R) ∧
+      n.toMetricSpace.toUniformSpace = (inferInstance : UniformSpace R) ∧
+      @IsUltrametricDist R n.toDist ∧ @NormOneClass R n.toNorm (inferInstance : One R) ∧
+      Huber.IsTateRing R ∧ ¬ @NormedRing.IsTate R n.toSeminormedRing := by
+  exact ⟨maxSquareNormedRing R, ring_maxSquareNormedRing,
+    uniformSpace_maxSquareNormedRing, isUltrametricDist_maxSquareNormedRing,
+    normOneClass_maxSquareNormedRing, inferInstance, not_isTate_maxSquareNormedRing⟩
 
 end TauCeti

@@ -32,7 +32,7 @@ example : @norm ℚ_[p] (maxSquareNormedRing ℚ_[p]).toNorm (p : ℚ_[p]) = (p 
     maxSquareRingNorm_of_norm_le_one Padic.norm_p_lt_one.le, Padic.norm_p]
 
 example : @CompleteSpace ℚ_[p] (maxSquareNormedRing ℚ_[p]).toMetricSpace.toUniformSpace :=
-  inferInstance
+  completeSpace_maxSquareNormedRing
 
 example : @IsUltrametricDist ℚ_[p] (maxSquareNormedRing ℚ_[p]).toDist :=
   isUltrametricDist_maxSquareNormedRing
