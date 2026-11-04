@@ -94,12 +94,9 @@ theorem MemSobolev.exists_zeroAtInftyContinuousMap_ae_eq {s : ℝ} (hs : finrank
         (by simpa only [innerₗ_apply_apply] using continuous_inner) hint
       zero_at_infty' := hneg ▸ tendsto_integral_exp_inner_smul_cocompact _ }
   -- Fourier inversion on `𝓢'` identifies `u` with `𝓕⁻ v`.
-  have hu' : (u : 𝓢'(E, F)) = 𝓕⁻ (v : 𝓢'(E, F)) := by
-    rw [← hv]
-    exact (FourierTransform.fourierInv_fourier_eq _).symm
-  refine ⟨g, Lp.ae_eq_of_toTemperedDistribution_apply_eq u
-    g.continuous.locallyIntegrable fun φ => ?_⟩
-  rw [hu', Lp.fourierInv_toTemperedDistribution_apply, ZeroAtInftyContinuousMap.coe_mk]
+  refine ⟨g, ?_⟩
+  rw [ZeroAtInftyContinuousMap.coe_mk]
+  exact Lp.ae_eq_fourierInv_of_fourier_eq hv
 
 end TemperedDistribution
 
