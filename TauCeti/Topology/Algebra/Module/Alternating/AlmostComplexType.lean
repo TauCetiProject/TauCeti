@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Polynomial.AlgebraMap
+public import TauCeti.LinearAlgebra.Alternating.Derivation
 public import TauCeti.LinearAlgebra.End.Aeval
 public import TauCeti.Topology.Algebra.Module.Alternating.Basic
 public import TauCeti.Topology.Algebra.Module.Alternating.Curry
@@ -119,33 +120,13 @@ private lemma compSlot_apply (J : V →L[ℝ] V) (ω : V [⋀^ι]→L[ℝ] F) (i
   · simp
   · simp [update_of_ne hj]
 
-omit [Module ℂ F] [IsScalarTower ℝ ℂ F] [ContinuousConstSMul ℂ F] in
-/-- The sum of the forms obtained by applying `J` to one argument at a time is alternating. -/
-private lemma sum_compSlot_eq_zero (J : V →L[ℝ] V) (ω : V [⋀^ι]→L[ℝ] F) (v : ι → V)
-    {a b : ι} (hv : v a = v b) (hab : a ≠ b) :
-    (∑ i, compSlot J ω i) v = 0 := by
-  rw [sum_apply, Fintype.sum_eq_add a b hab]
-  · rw [compSlot_apply, compSlot_apply]
-    have hswap : update v b (J (v b)) = update v a (J (v a)) ∘ Equiv.swap a b := by
-      rw [update_comp_equiv, Equiv.symm_swap, Equiv.swap_apply_left, ← hv]
-      congr 1
-      ext j
-      rcases eq_or_ne j a with rfl | hja
-      · simp [hv]
-      rcases eq_or_ne j b with rfl | hjb
-      · simp [hv]
-      · simp [Equiv.swap_apply_of_ne_of_ne hja hjb]
-    rw [hswap, add_comm]
-    simpa using ω.toAlternatingMap.map_swap_add (update v a (J (v a))) hab
-  · rintro i ⟨hia, hib⟩
-    rw [compSlot_apply]
-    exact ω.map_eq_zero_of_eq _ (by simp [update_of_ne hia.symm, update_of_ne hib.symm, hv]) hab
-
 /-- An endomorphism `J` of `V` acts on alternating maps on `V` as a derivation: the result is the
 sum, over all arguments, of the alternating map with `J` applied to that argument. -/
 def alternatingDerivation (J : V →L[ℝ] V) :
     (V [⋀^ι]→L[ℝ] F) →ₗ[ℂ] V [⋀^ι]→L[ℝ] F where
-  toFun ω := ⟨∑ i, compSlot J ω i, fun v _ _ hv hab ↦ sum_compSlot_eq_zero J ω v hv hab⟩
+  toFun ω := ⟨∑ i, compSlot J ω i, fun v _ _ hv hab ↦ by
+    simpa [sum_apply, compSlot_apply] using
+      ((J : V →ₗ[ℝ] V).alternatingDerivation ω.toAlternatingMap).map_eq_zero_of_eq v hv hab⟩
   map_add' ω ω' := by
     ext v
     simp [sum_apply, compSlot_apply, Finset.sum_add_distrib]
@@ -156,6 +137,15 @@ def alternatingDerivation (J : V →L[ℝ] V) :
 theorem alternatingDerivation_apply (J : V →L[ℝ] V) (ω : V [⋀^ι]→L[ℝ] F) (v : ι → V) :
     J.alternatingDerivation ω v = ∑ i, ω (update v i (J (v i))) := by
   simp [alternatingDerivation, sum_apply, compSlot_apply]
+
+/-- The continuous derivation is the derivation `LinearMap.alternatingDerivation` of the
+underlying linear endomorphism on the underlying alternating maps. -/
+@[simp]
+theorem toAlternatingMap_alternatingDerivation (J : V →L[ℝ] V) (ω : V [⋀^ι]→L[ℝ] F) :
+    (J.alternatingDerivation ω).toAlternatingMap =
+      (J : V →ₗ[ℝ] V).alternatingDerivation ω.toAlternatingMap := by
+  ext v
+  simp [alternatingDerivation_apply]
 
 /-- On a one-form, the derivation is precomposition with `J`. -/
 theorem alternatingDerivation_apply_vecCons_fin_one (J : V →L[ℝ] V) (α : V [⋀^Fin 1]→L[ℝ] F)
@@ -196,32 +186,8 @@ theorem alternatingDerivation_alternatingDerivation_sub (J B : V →L[ℝ] V)
         B.alternatingDerivation (J.alternatingDerivation ω) =
       (B ∘L J).alternatingDerivation ω - (J ∘L B).alternatingDerivation ω := by
   ext v
-  -- Split each double sum into its diagonal part, where both endomorphisms hit the same
-  -- argument, and its off-diagonal part, which is symmetric in the two endomorphisms.
-  have hsplit (X Y : V →L[ℝ] V) :
-      ∑ i, ∑ j, ω (update (update v i (X (v i))) j (Y (update v i (X (v i)) j))) =
-        ∑ i, ω (update v i (Y (X (v i)))) +
-          ∑ i, ∑ j, if i = j then 0 else ω (update (update v i (X (v i))) j (Y (v j))) := by
-    rw [← Finset.sum_add_distrib]
-    refine Finset.sum_congr rfl fun i _ ↦ ?_
-    have h (j : ι) : ω (update (update v i (X (v i))) j (Y (update v i (X (v i)) j))) =
-        (if i = j then ω (update v i (Y (X (v i)))) else 0) +
-          if i = j then 0 else ω (update (update v i (X (v i))) j (Y (v j))) := by
-      rcases eq_or_ne i j with rfl | h
-      · simp
-      · simp [h, Ne.symm h]
-    simp only [h, Finset.sum_add_distrib, Finset.sum_ite_eq, Finset.mem_univ, ite_true]
-  have hsymm : ∑ i, ∑ j, (if i = j then 0 else
-        ω (update (update v i (J (v i))) j (B (v j)))) =
-      ∑ i, ∑ j, if i = j then 0 else ω (update (update v i (B (v i))) j (J (v j))) := by
-    rw [Finset.sum_comm]
-    refine Finset.sum_congr rfl fun i _ ↦ Finset.sum_congr rfl fun j _ ↦ ?_
-    rcases eq_or_ne j i with rfl | h
-    · simp
-    · simp [h, Ne.symm h, update_comm h]
-  simp only [ContinuousAlternatingMap.sub_apply, alternatingDerivation_apply,
-    comp_apply, hsplit, hsymm]
-  abel
+  simpa [alternatingDerivation_apply] using DFunLike.congr_fun
+    ((J : V →ₗ[ℝ] V).alternatingDerivation_alternatingDerivation_sub B ω.toAlternatingMap) v
 
 end Derivation
 

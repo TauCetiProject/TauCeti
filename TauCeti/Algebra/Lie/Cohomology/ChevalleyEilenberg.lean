@@ -170,6 +170,7 @@ theorem d_zero_apply (ω : L [⋀^Fin 0]→ₗ[R] M) (v : Fin 1 → L) :
   simp [d_apply_eq_dAux, dAux_zero_apply, Subsingleton.elim (tail v) ![]]
 
 /-- The differential commutes with the action of `L`: it is a map of `L`-modules. -/
+@[simp]
 theorem lie_d (n : ℕ) (x : L) (ω : L [⋀^Fin n]→ₗ[R] M) :
     ⁅x, d R L M n ω⁆ = d R L M n ⁅x, ω⁆ := by
   induction n with
@@ -279,10 +280,21 @@ variable (R L M)
 
 /-- The Chevalley–Eilenberg cochain complex of `L` with coefficients in `M`, whose degree `n`
 term is the module of alternating maps `L [⋀^Fin n]→ₗ[R] M`. -/
-noncomputable abbrev cochainComplex : CochainComplex (ModuleCat R) ℕ :=
+@[expose] noncomputable def cochainComplex : CochainComplex (ModuleCat R) ℕ :=
   CochainComplex.of (fun n ↦ ModuleCat.of R (L [⋀^Fin n]→ₗ[R] M))
     (fun n ↦ ModuleCat.ofHom (d R L M n)) fun n ↦ by
       rw [← ModuleCat.ofHom_comp, d_comp_d, ModuleCat.ofHom_zero]
+
+/-- The degree `n` term of the Chevalley–Eilenberg complex is the module of `n`-cochains. -/
+@[simp]
+theorem cochainComplex_X (n : ℕ) :
+    (cochainComplex R L M).X n = ModuleCat.of R (L [⋀^Fin n]→ₗ[R] M) := (rfl)
+
+/-- The differential of the Chevalley–Eilenberg complex from degree `n` to degree `n + 1`. -/
+@[simp]
+theorem cochainComplex_d_succ (n : ℕ) :
+    (cochainComplex R L M).d n (n + 1) = ModuleCat.ofHom (d R L M n) := by
+  simp [cochainComplex]
 
 /-- The `n`-th Lie algebra cohomology of `L` with coefficients in `M`. -/
 noncomputable def cohomology (n : ℕ) : ModuleCat R :=

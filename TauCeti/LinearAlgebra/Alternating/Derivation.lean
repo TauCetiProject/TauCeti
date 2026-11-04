@@ -25,10 +25,9 @@ Chevalley–Eilenberg cochains.
 
 ## Implementation notes
 
-The definition and the proofs of alternation and of the commutator formula follow the continuous
-real version `ContinuousLinearMap.alternatingDerivation` in
-`TauCeti.Topology.Algebra.Module.Alternating.AlmostComplexType`, stated here for alternating maps
-over a commutative semiring without topology.
+The definition and the proofs of alternation and of the commutator formula were adapted from the
+continuous real version `ContinuousLinearMap.alternatingDerivation` in
+`TauCeti.Topology.Algebra.Module.Alternating.AlmostComplexType`, which is now built on this file.
 -/
 
 public section
@@ -88,6 +87,7 @@ def alternatingDerivation (f : M →ₗ[R] M) : (M [⋀^ι]→ₗ[R] N) →ₗ[R
     simp [compSlot_apply, Finset.smul_sum]
 
 /-- The value of the derivation: the sum of the values with `f` applied to one argument. -/
+@[simp]
 theorem alternatingDerivation_apply (f : M →ₗ[R] M) (ω : M [⋀^ι]→ₗ[R] N) (v : ι → M) :
     f.alternatingDerivation ω v = ∑ i, ω (update v i (f (v i))) := by
   simp [alternatingDerivation, compSlot_apply]
