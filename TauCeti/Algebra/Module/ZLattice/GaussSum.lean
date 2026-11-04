@@ -90,6 +90,8 @@ multiple `t` of the level prime to `a`.
   `G_L(a, c; m) = e(-a d² ‖m‖² / (2c)) G_L(a, c)`.
 * `ZLattice.dualGaussSum_level_mul`: for an even full lattice of level `N`,
   `∑_{y ∈ L^∨ / cL} e(N b ‖y‖² / (2c)) = |L^∨ / L| · G_{√N • L^∨}(b, c)`.
+* `ZLattice.dualGaussSum_eq_pow_mul_card_of_dvd`: for an even full lattice of rank `n` and level
+  `N`, if `a N ∣ t` then `∑_{y ∈ L^∨ / aL} e(t ‖y‖² / (2a)) = aⁿ |L^∨ / L|`.
 * `ZLattice.IsEven.gaussSum_eq_jacobiSym`: for odd `c` prime to `a` and to `det L`,
   `G_L(a, c) = (D_L / c) c^k`.
 * `ZLattice.IsEven.dualGaussSum_eq_jacobiSym`: for odd `a` and a multiple `t` of the level prime

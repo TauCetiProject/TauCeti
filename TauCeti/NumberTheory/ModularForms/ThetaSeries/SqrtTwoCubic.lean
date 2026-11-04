@@ -42,6 +42,7 @@ that fails is that `t` is prime to `a`.
 
 ## Main statements
 
+* `ZLattice.isEven_sqrt_two_smul_span_orthonormalBasis`: `√2 ℤ b` is even.
 * `ZLattice.gaussSum_sqrt_two_smul_span_orthonormalBasis_eq_zero`: `G_{√2 ℤ b}(a, c) = 0` for
   odd `a` and `c ≡ 2 (mod 4)`.
 * `ZLattice.thetaSeries_sqrt_two_smul_span_orthonormalBasis_pos`: `Θ_{√2 ℤ b}(τ) > 0` on the
@@ -70,27 +71,24 @@ namespace ZLattice
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] {ι : Type*} [Fintype ι]
   (b : OrthonormalBasis ι ℝ E)
 
-/-- The discriminant group of `√2 ℤ b` has order `det (√2 ℤ b) = 2ⁿ`. -/
-private theorem natCard_discriminantGroup_sqrt_two_smul_span_orthonormalBasis :
-    Nat.card (DiscriminantGroup (√2 • span ℤ (Set.range b))) = 2 ^ Fintype.card ι := by
-  have := b.toBasis.finiteDimensional_of_finite
-  borelize E
-  have : NeZero √(2 : ℝ) := ⟨Real.sqrt_ne_zero'.mpr two_pos⟩
-  have h :=
-    ((isUnimodular_span_orthonormalBasis b).isIntegral.sqrt_smul 2).det_eq_card_discriminantGroup
-  rw [det_sqrt_smul_span_orthonormalBasis b two_ne_zero, finrank_eq_card_basis b.toBasis,
-    Nat.cast_ofNat] at h
-  exact_mod_cast h.symm
+/-- The lattice instances of `√2 ℤ b` need the scalar `√2` to be nonzero. -/
+local instance : NeZero √(2 : ℝ) := ⟨Real.sqrt_ne_zero'.mpr two_pos⟩
+
+/-- The lattice `√2 ℤ b` is even: `ℤ b` is integral and `2` is even. -/
+theorem isEven_sqrt_two_smul_span_orthonormalBasis : IsEven (√2 • span ℤ (Set.range b)) := by
+  simpa using (isUnimodular_span_orthonormalBasis b).isIntegral.isEven_sqrt_smul even_two
 
 /-- **Vanishing Gauss sums of `√2 ℤ b`.** For an orthonormal basis `b` of a nonzero space, an odd
 `a` and `c ≡ 2 (mod 4)`, the Gauss sum `G_L(a, c) = ∑_{y ∈ L / cL} e(a ‖y‖² / (2c))` of the even
 lattice `L = √2 ℤ b` vanishes: translating `y` by `(c/2) √2 b i` multiplies every summand by
 `e(a c / 4) = -1`. -/
-theorem gaussSum_sqrt_two_smul_span_orthonormalBasis_eq_zero [Nonempty ι]
-    (hL : IsEven (√2 • span ℤ (Set.range b))) {a : ℤ} (ha : Odd a) {c : ℕ} (hc : c ≡ 2 [MOD 4])
+theorem gaussSum_sqrt_two_smul_span_orthonormalBasis_eq_zero [Nonempty ι] {a : ℤ} (ha : Odd a)
+    {c : ℕ} (hc : c ≡ 2 [MOD 4])
     [Fintype ((√2 • span ℤ (Set.range b) : Submodule ℤ E) ⧸
       ((c : ℝ) • (√2 • span ℤ (Set.range b))).submoduleOf (√2 • span ℤ (Set.range b)))] :
-    gaussSum (√2 • span ℤ (Set.range b)) hL a c = 0 := by
+    gaussSum (√2 • span ℤ (Set.range b)) (isEven_sqrt_two_smul_span_orthonormalBasis b) a c =
+      0 := by
+  set hL := isEven_sqrt_two_smul_span_orthonormalBasis b
   -- Write `c = 2 c'` with `c' = 2 q + 1` odd, and shift by `w = √2 c' b i`.
   obtain ⟨q, rfl⟩ : ∃ q : ℕ, c = 2 * (2 * q + 1) :=
     ⟨c / 4, by unfold Nat.ModEq at hc; omega⟩
@@ -167,29 +165,31 @@ theorem tendsto_pow_mul_thetaSeries_sqrt_two_smul_span_orthonormalBasis_nhdsGT [
       thetaSeries (√2 • span ℤ (Set.range b)) (ofComplex (1 / 2 + I * t))) (𝓝[>] 0) (𝓝 0) := by
   have := b.toBasis.finiteDimensional_of_finite
   borelize E
-  have : NeZero √(2 : ℝ) := ⟨Real.sqrt_ne_zero'.mpr two_pos⟩
-  have hL : IsEven (√2 • span ℤ (Set.range b)) := by
-    simpa using (isUnimodular_span_orthonormalBasis b).isIntegral.isEven_sqrt_smul even_two
-  have h := hL.tendsto_pow_mul_thetaSeries_nhdsGT ((finrank_eq_card_basis b.toBasis).trans hk) 1 2
-  rw [gaussSum_sqrt_two_smul_span_orthonormalBasis_eq_zero b hL odd_one rfl, zero_div] at h
+  have h := (isEven_sqrt_two_smul_span_orthonormalBasis b).tendsto_pow_mul_thetaSeries_nhdsGT
+    ((finrank_eq_card_basis b.toBasis).trans hk) 1 2
+  rw [gaussSum_sqrt_two_smul_span_orthonormalBasis_eq_zero b odd_one rfl, zero_div] at h
   simpa using h
 
 /-- **The trivial Gauss sums over `L^∨ / aL` for `L = √2 ℤ b`.** For an orthonormal basis `b` of
-a nonzero space of dimension `n` and `4a ∣ t`, every summand `e(t ‖y‖² / (2a))` is `1`, and
+a space of dimension `n` and `4a ∣ t`, every summand `e(t ‖y‖² / (2a))` is `1`, and
 `∑_{y ∈ L^∨ / aL} e(t ‖y‖² / (2a)) = (2a)ⁿ`. -/
-theorem dualGaussSum_sqrt_two_smul_span_orthonormalBasis [Nonempty ι]
-    (hL : IsEven (√2 • span ℤ (Set.range b))) {t : ℤ} {a : ℕ}
+theorem dualGaussSum_sqrt_two_smul_span_orthonormalBasis {t : ℤ} {a : ℕ}
     [Fintype (dual (√2 • span ℤ (Set.range b)) ⧸
       ((a : ℝ) • (√2 • span ℤ (Set.range b))).submoduleOf (dual (√2 • span ℤ (Set.range b))))]
     (h : (4 * a : ℤ) ∣ t) :
-    dualGaussSum (√2 • span ℤ (Set.range b)) hL t a = (2 * a) ^ Fintype.card ι := by
+    dualGaussSum (√2 • span ℤ (Set.range b)) (isEven_sqrt_two_smul_span_orthonormalBasis b) t a =
+      (2 * a) ^ Fintype.card ι := by
   have := b.toBasis.finiteDimensional_of_finite
-  have : NeZero √(2 : ℝ) := ⟨Real.sqrt_ne_zero'.mpr two_pos⟩
-  -- The level of `√2 ℤ b` is `4`.
-  have hlevel : level (√2 • span ℤ (Set.range b)) = 4 := by
-    simpa using level_sqrt_smul_span_orthonormalBasis b (m := 2) two_ne_zero
-  rw [dualGaussSum_eq_pow_mul_card_of_dvd hL (by rw [hlevel]; simpa [mul_comm] using h),
-    natCard_discriminantGroup_sqrt_two_smul_span_orthonormalBasis, finrank_eq_card_basis b.toBasis]
+  -- The level of `√2 ℤ b` divides `4`: it is `4` in positive rank, and `1` in rank `0`.
+  have hlevel : level (√2 • span ℤ (Set.range b)) ∣ 4 := by
+    rcases isEmpty_or_nonempty ι with hι | hι
+    · exact level_dvd_iff.mpr fun x _ ↦ ⟨0, by rw [← b.sum_repr x]; simp⟩
+    · exact dvd_of_eq (by simpa using level_sqrt_smul_span_orthonormalBasis b (m := 2) two_ne_zero)
+  have hdvd : (a * level (√2 • span ℤ (Set.range b)) : ℤ) ∣ t :=
+    (mul_dvd_mul_left (a : ℤ) (Int.natCast_dvd_natCast.mpr hlevel)).trans (by rwa [mul_comm])
+  have hcard : Nat.card (DiscriminantGroup (√2 • span ℤ (Set.range b))) = 2 ^ finrank ℝ E := by
+    simpa using natCard_discriminantGroup_sqrt_smul_span_orthonormalBasis b (m := 2) two_ne_zero
+  rw [dualGaussSum_eq_pow_mul_card_of_dvd _ hdvd, hcard, finrank_eq_card_basis b.toBasis]
   push_cast
   ring
 
@@ -199,16 +199,17 @@ closed form `det L · (D_L / 3) · 3` of `ZLattice.IsEven.dualGaussSum_eq_jacobi
 `-12`. That theorem applies to odd `a` and multiples `t` of the level `4` prime to `a`; here
 `a = 3` and `t = -12` are not coprime. -/
 theorem dualGaussSum_sqrt_two_smul_span_orthonormalBasis_ne_jacobiSym (hι : Fintype.card ι = 2)
-    (hL : IsEven (√2 • span ℤ (Set.range b)))
     [Fintype (dual (√2 • span ℤ (Set.range b)) ⧸
       (((3 : ℕ) : ℝ) • (√2 • span ℤ (Set.range b))).submoduleOf
         (dual (√2 • span ℤ (Set.range b))))] :
-    dualGaussSum (√2 • span ℤ (Set.range b)) hL (-12) 3 ≠
+    dualGaussSum (√2 • span ℤ (Set.range b)) (isEven_sqrt_two_smul_span_orthonormalBasis b)
+        (-12) 3 ≠
       Nat.card (DiscriminantGroup (√2 • span ℤ (Set.range b))) *
         jacobiSym (-Nat.card (DiscriminantGroup (√2 • span ℤ (Set.range b)))) 3 * 3 := by
-  have : Nonempty ι := Fintype.card_pos_iff.mp (by omega)
-  rw [dualGaussSum_sqrt_two_smul_span_orthonormalBasis b hL (by norm_num),
-    natCard_discriminantGroup_sqrt_two_smul_span_orthonormalBasis, hι]
+  have hcard : Nat.card (DiscriminantGroup (√2 • span ℤ (Set.range b))) = 2 ^ finrank ℝ E := by
+    simpa using natCard_discriminantGroup_sqrt_smul_span_orthonormalBasis b (m := 2) two_ne_zero
+  rw [dualGaussSum_sqrt_two_smul_span_orthonormalBasis b (by norm_num), hcard,
+    finrank_eq_card_basis b.toBasis, hι]
   norm_num
 
 end ZLattice
