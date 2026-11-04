@@ -15,8 +15,9 @@ A Kronecker product `Matrix.single i j 1 ⊗ₖ X` is the block matrix carrying 
 `single (a t) (b t) 1 ⊗ₖ X t` over a chain in which each block starts where the next one ends is
 the single block of the product of the `X t`.
 
-## Main result
+## Main results
 
+* `Matrix.single_one_kronecker_mul_single_one_kronecker`: two block matrices multiply blockwise.
 * `Matrix.list_prod_ofFn_single_kronecker`: the product of the block matrices along a chain.
 -/
 
@@ -28,11 +29,13 @@ namespace Matrix
 
 variable {R l m : Type*} [Semiring R] [Fintype l] [DecidableEq l] [Fintype m] [DecidableEq m]
 
-omit [DecidableEq m] in
+omit [Fintype l] [Fintype m] [DecidableEq m] in
 /-- Two block matrices multiply blockwise when the first block ends where the second starts.
 Unlike `Matrix.mul_kronecker_mul`, this needs no commutativity: the entries of a matrix unit are
 central. -/
-private theorem single_one_kronecker_mul_single_one_kronecker (i j k : l) (X Y : Matrix m m R) :
+theorem single_one_kronecker_mul_single_one_kronecker {l' l'' m' m'' : Type*} [DecidableEq l']
+    [DecidableEq l''] [Fintype l'] [Fintype m'] (i : l) (j : l') (k : l'') (X : Matrix m m' R)
+    (Y : Matrix m' m'' R) :
     (single i j (1 : R) ⊗ₖ X) * (single j k 1 ⊗ₖ Y) = single i k 1 ⊗ₖ (X * Y) := by
   ext ⟨i', a⟩ ⟨k', c⟩
   rw [Matrix.mul_apply, Fintype.sum_prod_type]
