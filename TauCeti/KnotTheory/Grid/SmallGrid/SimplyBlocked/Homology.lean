@@ -150,7 +150,7 @@ transposition-state coefficient. -/
 @[simp]
 theorem twoByTwoSimplyBlockedHomologyEquiv_class (c : Cyc) :
     twoByTwoSimplyBlockedHomologyEquiv R
-        (twoByTwo.isKnot_of_two.simplyBlockedHomologyClass R 0 c) =
+        (twoByTwo.oneVariableSpecializationHomologyClass R 0 c) =
       constantCoeff (eChain c.val GridState.twoByTwoSwap) := by
   let := Module.compHom R (constantCoeff : Poly →+* R)
   simp only [twoByTwoSimplyBlockedHomologyEquiv, LinearEquiv.trans_apply]
@@ -163,19 +163,19 @@ Maslov--Alexander bidegree `(0, 0)`. -/
 @[simp]
 theorem twoByTwoSimplyBlockedHomologyEquiv_symm_one :
     (twoByTwoSimplyBlockedHomologyEquiv R).symm 1 =
-      twoByTwo.isKnot_of_two.simplyBlockedHomologyClass R 0
+      twoByTwo.oneVariableSpecializationHomologyClass R 0
         ⟨(eChain).symm (twoByTwoSimplyBlockedCycle R),
-          (IsKnot.mem_simplyBlockedCycles R _ _ _).mpr (by simp)⟩ := by
+          (twoByTwo.isKnot_of_two.mem_simplyBlockedCycles R 0 _).mpr (by simp)⟩ := by
   apply (twoByTwoSimplyBlockedHomologyEquiv R).injective
   simp
 
 /-- A homogeneous cycle in a bidegree other than `(0, 0)` represents zero in the
 simply blocked homology of the standard two-by-two unknot. -/
-theorem twoByTwo_simplyBlockedHomologyClass_eq_zero_of_bidegree_ne
+theorem twoByTwo_oneVariableSpecializationHomologyClass_eq_zero_of_bidegree_ne
     (c : Cyc) {g : ℤ × ℤ} (hg : g ≠ (0, 0))
     (hc : eChain c.val ∈ OddComponentGridDiagram.twoByTwo.bigradedChainHatPiece R 0 g) :
-    twoByTwo.isKnot_of_two.simplyBlockedHomologyClass R 0 c = 0 := by
-  rw [IsKnot.simplyBlockedHomologyClass_eq_zero_iff,
+    twoByTwo.oneVariableSpecializationHomologyClass R 0 c = 0 := by
+  rw [oneVariableSpecializationHomologyClass_eq_zero_iff,
     twoByTwo_mem_simplyBlockedBoundaries_iff]
   by_contra h
   have hmem : (0 : {c : Fin 2 // c ≠ 0} →₀ ℕ) ∈
