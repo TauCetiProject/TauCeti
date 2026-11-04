@@ -8,6 +8,7 @@ module
 public import Mathlib.Geometry.Manifold.ContMDiff.Atlas
 public import Mathlib.Geometry.Manifold.MFDeriv.Atlas
 public import TauCeti.Geometry.Symplectic.Manifold.AlmostComplex.Basic
+import TauCeti.Geometry.Manifold.VectorBundle.Tangent.Basic
 
 /-!
 # Smooth almost complex structures read in a chart
@@ -58,11 +59,6 @@ theorem inChart_def (z : E) :
         (J.toEndomorphism ((extChartAt I x).symm z)) :=
   (rfl)
 
-private theorem mem_baseSet_of_mem_target {z : E} (hz : z ∈ (extChartAt I x).target) :
-    (extChartAt I x).symm z ∈ (trivializationAt E (TangentSpace I) x).baseSet := by
-  rw [TangentBundle.trivializationAt_baseSet, ← extChartAt_source I]
-  exact (extChartAt I x).map_target hz
-
 /-- At the image of a point `y` of the chart at `x`, the almost complex structure read in the chart
 is `J y` in the coordinates of the trivialization of the tangent bundle at `x`. -/
 theorem inChart_extChartAt_apply {y : M} (hy : y ∈ (extChartAt I x).source) (u : E) :
@@ -82,8 +78,10 @@ theorem inChart_inChart {z : E} (hz : z ∈ (extChartAt I x).target) (w : E) :
   have hJ (y : M) (v : TangentSpace I y) : J.toEndomorphism y (J.toEndomorphism y v) = -v :=
     J.apply_apply y v
   simp only [inChart, ContinuousLinearMap.inCoordinates, ContinuousLinearMap.comp_apply]
-  rw [Trivialization.symmL_continuousLinearMapAt _ (mem_baseSet_of_mem_target x hz), hJ, map_neg,
-    Trivialization.continuousLinearMapAt_symmL _ (mem_baseSet_of_mem_target x hz)]
+  rw [Trivialization.symmL_continuousLinearMapAt _
+      (TangentBundle.extChartAt_symm_mem_trivializationAt_baseSet hz), hJ, map_neg,
+    Trivialization.continuousLinearMapAt_symmL _
+      (TangentBundle.extChartAt_symm_mem_trivializationAt_baseSet hz)]
 
 /-- At the chart point, the almost complex structure read in the chart is `J x`. -/
 theorem inChart_extChartAt_self : J.inChart x (extChartAt I x x) = J.toEndomorphism x := by

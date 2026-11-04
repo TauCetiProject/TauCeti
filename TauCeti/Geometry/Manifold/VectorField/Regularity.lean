@@ -11,6 +11,7 @@ public import TauCeti.Geometry.Manifold.ContMDiff.Defs
 public import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
 import TauCeti.Geometry.Manifold.MFDeriv.Prod
 import Mathlib.Geometry.Manifold.VectorBundle.Tangent
+import TauCeti.Geometry.Manifold.VectorBundle.Tangent.Basic
 
 /-!
 # Regularity of tangent-bundle-valued maps and directional derivatives
@@ -292,8 +293,7 @@ theorem mpullbackWithin_extChartAt_symm_trivializationAt_symm_eventuallyEq (x : 
       =ᶠ[𝓝[range I] extChartAt I x x] fun _ ↦ u := by
   filter_upwards [extChartAt_target_mem_nhdsWithin x] with z hz
   have hy := (extChartAt I x).map_target hz
-  have hy' : (extChartAt I x).symm z ∈ (trivializationAt E (TangentSpace I) x).baseSet := by
-    rwa [TangentBundle.trivializationAt_baseSet, ← extChartAt_source I]
+  have hy' := TangentBundle.extChartAt_symm_mem_trivializationAt_baseSet hz
   have h := mpullbackWithin_extChartAt_symm_apply
     (fun y ↦ (trivializationAt E (TangentSpace I) x).symm y u) hy
   rw [(extChartAt I x).right_inv hz] at h

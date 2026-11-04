@@ -12,6 +12,7 @@ public import TauCeti.Geometry.Manifold.DifferentialForm.MapCoeff
 public import TauCeti.Geometry.Symplectic.Complex.Complexification
 public import TauCeti.Topology.Algebra.Module.Alternating.BaseChange
 public import Mathlib.Analysis.Normed.Module.Alternating.Basic
+import TauCeti.Geometry.Manifold.VectorBundle.Tangent.Basic
 
 /-!
 # The `(p,q)` type of complex-valued smooth forms on an almost complex manifold
@@ -541,8 +542,7 @@ private theorem IsOfType.fderivCompContinuousLinearMap_inChartAt (hφ : φ.IsOfT
     (RoughForm.inChartAt φ.1 x z).fderivCompContinuousLinearMap (.id ℝ E) (J.inChart x z) =
       (((p : ℂ) - q) * Complex.I) • RoughForm.inChartAt φ.1 x z := by
   have hy := (extChartAt I x).map_target hz
-  have hy' : (extChartAt I x).symm z ∈ (trivializationAt E (TangentSpace I) x).baseSet := by
-    rwa [TangentBundle.trivializationAt_baseSet, ← extChartAt_source I]
+  have hy' := TangentBundle.extChartAt_symm_mem_trivializationAt_baseSet hz
   have h₁ := inCoordinates_alternatingDerivation (fun y ↦ J.toEndomorphism y) φ.1 x _ hy'
   have h₂ := RoughForm.inCoordinates_eq_inChartAt ((((p : ℂ) - q) * Complex.I) • φ.1) hy
   have h₃ := RoughForm.inCoordinates_eq_inChartAt φ.1 hy
