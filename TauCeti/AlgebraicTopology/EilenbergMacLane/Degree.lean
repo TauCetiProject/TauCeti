@@ -6,8 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicTopology.EilenbergMacLane.Basic
-public import TauCeti.Topology.Homotopy.HomotopyGroup.HomotopyEquiv
-public import TauCeti.Topology.Homotopy.HomotopyGroup.WeakHomotopyEquivalence
+public import TauCeti.Topology.Homotopy.HomotopyGroup.Basic
 
 /-!
 # Eilenberg--Mac Lane spaces of type `K(G, n)`
@@ -20,39 +19,35 @@ abelian; for `n = 1` this is the existing notion `TauCeti.IsEilenbergMacLaneSpac
 (`TauCeti.isEilenbergMacLaneSpace_one_iff`).
 
 As for `K(G, 1)` spaces, the definition is a property rather than a structure carrying a chosen
-isomorphism. It does not depend on the base point, is invariant under homotopy equivalence and
-under isomorphism of the target group, and is closed under binary and indexed products.
-
-Since all other homotopy groups vanish, a map between two Eilenberg--Mac Lane spaces in the same
-degree `n` is a weak homotopy equivalence exactly when it induces a bijection on `πₙ` at one base
-point (`TauCeti.IsEilenbergMacLaneSpace.isWeakHomotopyEquivalence_iff`). Combined with
-Whitehead's theorem `ContinuousMap.IsWeakHomotopyEquivalence.homotopyEquiv`, such a map between
-two `K(G, n)` spaces of CW type is a homotopy equivalence.
+isomorphism. It does not depend on the base point or on the target group up to isomorphism, and
+it is closed under binary and indexed products. Homotopy invariance
+(`TauCeti.IsEilenbergMacLaneSpace.of_homotopyEquiv`) is in
+`TauCeti.AlgebraicTopology.EilenbergMacLane.HomotopyEquiv`, and the weak-equivalence criterion
+(`TauCeti.IsEilenbergMacLaneSpace.isWeakHomotopyEquivalence_iff`) is in
+`TauCeti.AlgebraicTopology.EilenbergMacLane.WeakHomotopyEquivalence`, next to their `K(G, 1)`
+and aspherical versions.
 
 ## Main declarations
 
 * `TauCeti.IsEilenbergMacLaneSpace G n X x`: `(X, x)` is a `K(G, n)` space.
 * `TauCeti.isEilenbergMacLaneSpace_one_iff`: in degree one this is
   `TauCeti.IsEilenbergMacLaneSpaceOne`.
-* `TauCeti.IsEilenbergMacLaneSpace.of_basepoint`, `TauCeti.IsEilenbergMacLaneSpace.of_mulEquiv`,
-  `TauCeti.IsEilenbergMacLaneSpace.of_homotopyEquiv`: invariance under change of base point, of
-  the group and of the space up to homotopy equivalence.
+* `TauCeti.IsEilenbergMacLaneSpace.of_basepoint`, `TauCeti.IsEilenbergMacLaneSpace.of_mulEquiv`:
+  invariance under change of base point and of the group.
 * `TauCeti.IsEilenbergMacLaneSpace.prod`, `TauCeti.IsEilenbergMacLaneSpace.pi`: closure under
   products.
-* `TauCeti.IsEilenbergMacLaneSpace.isWeakHomotopyEquivalence_iff`: a map between `K(G, n)` and
-  `K(H, n)` spaces is a weak homotopy equivalence exactly when it is bijective on `πₙ`.
 
 ## References
 
 * A. Hatcher, *Algebraic Topology*, Cambridge University Press, 2002, Section 4.2,
-  Eilenberg--MacLane spaces, and Proposition 4.30.
+  Eilenberg--MacLane spaces.
 -/
 
 public section
 
 namespace TauCeti
 
-open scoped Topology Topology.Homotopy ContinuousMap
+open scoped Topology Topology.Homotopy
 
 universe u v w w'
 
@@ -84,7 +79,7 @@ theorem isEilenbergMacLaneSpace_homotopyGroup_iff {n : ℕ} [NeZero n]
 namespace IsEilenbergMacLaneSpace
 
 variable {G : Type u} {H : Type v} [Group G] [Group H] {n : ℕ} [NeZero n]
-  {X : Type w} {Y : Type w'} [TopologicalSpace X] [TopologicalSpace Y] {x : X} {y : Y}
+  {X : Type w} [TopologicalSpace X] {x : X}
 
 /-- Construct the `K(G, n)` property from path-connectedness, the vanishing of the other
 positive-dimensional homotopy groups and an isomorphism between `πₙ` and `G`. -/
@@ -129,19 +124,6 @@ theorem of_mulEquiv (h : IsEilenbergMacLaneSpace G n X x) (e : G ≃* H) :
     IsEilenbergMacLaneSpace H n X x :=
   .mk h.pathConnectedSpace h.2.1 (h.nonempty_homotopyGroupMulEquiv.map fun f ↦ f.trans e)
 
-/-- **Being an Eilenberg--Mac Lane space of type `K(G, n)` is a homotopy invariant**, at every
-base point of the homotopy equivalent space. -/
-theorem of_homotopyEquiv (h : IsEilenbergMacLaneSpace G n X x) (e : X ≃ₕ Y) (y : Y) :
-    IsEilenbergMacLaneSpace G n Y y := by
-  have := h.pathConnectedSpace
-  refine .mk e.pathConnectedSpace (fun k hk0 hk ↦ ?_) ?_
-  · have : NeZero k := ⟨hk0⟩
-    have := h.subsingleton_homotopyGroup hk
-    obtain ⟨φ⟩ := nonempty_homotopyGroupMulEquiv_of_homotopyEquiv (N := Fin k) e x y
-    exact φ.toEquiv.subsingleton_congr.mp inferInstance
-  · obtain ⟨φ⟩ := nonempty_homotopyGroupMulEquiv_of_homotopyEquiv (N := Fin n) e x y
-    exact h.nonempty_homotopyGroupMulEquiv.map φ.symm.trans
-
 variable {G₁ : Type u} {G₂ : Type v} [Group G₁] [Group G₂]
   {X₁ : Type w} {X₂ : Type w'} [TopologicalSpace X₁] [TopologicalSpace X₂]
   {x₁ : X₁} {x₂ : X₂}
@@ -171,23 +153,6 @@ theorem pi (h : ∀ i, IsEilenbergMacLaneSpace (G' i) n (Z i) (z i)) :
     exact inferInstance
   · exact ⟨(HomotopyGroup.piMulEquiv z).trans
       (MulEquiv.piCongrRight fun i ↦ Classical.choice (h i).nonempty_homotopyGroupMulEquiv)⟩
-
-/-- **A map between Eilenberg--Mac Lane spaces in the same degree is a weak homotopy equivalence
-exactly when it induces a bijection on `πₙ`.** Bijectivity at the single base point `x`
-suffices, and the groups `G` and `H` play no role. -/
-theorem isWeakHomotopyEquivalence_iff (hX : IsEilenbergMacLaneSpace G n X x)
-    (hY : IsEilenbergMacLaneSpace H n Y y) {f : C(X, Y)} (hxy : f x = y) :
-    f.IsWeakHomotopyEquivalence ↔ Function.Bijective (HomotopyGroup.map (N := Fin n) f hxy) := by
-  subst hxy
-  have := hX.pathConnectedSpace
-  refine ⟨fun hf ↦ hf.bijective n x, fun hf ↦ ?_⟩
-  refine (ContinuousMap.isWeakHomotopyEquivalence_iff_forall_bijective x).2 fun k ↦ ?_
-  rcases eq_or_ne k n with rfl | hk
-  · exact hf
-  · -- Outside dimension `n` both homotopy groups are trivial.
-    have := hX.subsingleton_homotopyGroup hk
-    have := hY.subsingleton_homotopyGroup hk
-    exact Function.bijective_of_subsingleton' _
 
 end IsEilenbergMacLaneSpace
 

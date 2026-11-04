@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.CategoryTheory.Functor.OfSequence
-public import TauCeti.AlgebraicTopology.EilenbergMacLane.Degree
+public import TauCeti.AlgebraicTopology.EilenbergMacLane.WeakHomotopyEquivalence
 public import TauCeti.AlgebraicTopology.FundamentalGroup.Basic
 public import TauCeti.AlgebraicTopology.Homotopy.CellAttachment
 public import TauCeti.Topology.CWComplex.Abstract.Trans
