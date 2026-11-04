@@ -34,6 +34,8 @@ which quantifies over both subgroups. Neither reduces a comparison to generators
   lies in a subgroup normalized by both, as soon as the commutators of the generators do.
 * `TauCeti.commutator_closure_le_iff`: for a normal target, the commutator of a subgroup with a
   subgroup presented by generators is tested on those generators.
+* `Subgroup.le_normalizer_iSup_of_commutator_le`: a subgroup normalizes a join if its
+  commutators with each joined subgroup lie in that join.
 * `TauCeti.commutator_le_iff_map_mk'_eq_bot`: `⁅A, B⁆ ≤ N` for a normal `N` says that the images
   of `A` and `B` in `G ⧸ N` commute.
 * `TauCeti.le_centralizer_of_le_normalizer_of_inf_eq_bot`: a normal subgroup that normalizes `U`
@@ -423,6 +425,20 @@ namespace Subgroup
 open scoped commutatorElement
 
 variable {G : Type*} [Group G] {P : Type*} [One P]
+
+/-- A subgroup normalizes a join of subgroups if its commutators with each of the joined
+subgroups lie in that join. -/
+theorem le_normalizer_iSup_of_commutator_le {ι : Sort*} (H : Subgroup G)
+    (K : ι → Subgroup G) (h : ∀ i, ⁅H, K i⁆ ≤ ⨆ j, K j) :
+    H ≤ normalizer (⨆ i, K i : Subgroup G) := by
+  rw [iSup_eq_closure, le_normalizer_closure_iff]
+  intro a ha b hb
+  obtain ⟨i, hi⟩ := Set.mem_iUnion.mp hb
+  have hc := h i (commutator_mem_commutator ha hi)
+  have hb' : b ∈ ⨆ j, K j := mem_iSup_of_mem i hi
+  rw [iSup_eq_closure] at hc hb'
+  simpa only [commutatorElement_def, mul_assoc, inv_mul_cancel, mul_one] using
+    (closure (⋃ i, (K i : Set G))).mul_mem hc hb'
 
 /-- Suppose elements `xᵢⱼ(a)` indexed by distinct pairs in `Fin m` satisfy the relation
 
