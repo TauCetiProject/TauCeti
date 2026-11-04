@@ -13,6 +13,7 @@ public import Mathlib.Analysis.Calculus.TangentCone.Real
 public import Mathlib.GroupTheory.Perm.Fin
 import Mathlib.LinearAlgebra.Finsupp.Pi
 import TauCeti.Geometry.Convex.ConvexSpace.Defs
+import TauCeti.Topology.Algebra.Module.FiniteDimension
 
 /-!
 # The full-dimensional standard simplex
@@ -33,7 +34,9 @@ vertices relates the two readings of the face opposite the origin: through the c
 than the `j`-th one, and through the last coordinates as the face map does. The simplex is a
 compact convex set with nonempty interior, so derivatives within it are unique at every point
 (`TauCeti.uniqueDiffOn_fullSimplex`); this is what makes it a domain for derivatives and integrals
-of forms.
+of forms. The face maps are injective, hence closed embeddings of the ambient Euclidean spaces
+(`TauCeti.isClosedEmbedding_simplexMapAmbient_succAbove`), so pulling back along them preserves
+compact supports.
 
 This is the full-dimensional simplex convention used in Lee, *Introduction to Smooth Manifolds*,
 Chapter 18. The barycentric simplex, its topology, and its maps are those of Mathlib.
@@ -337,6 +340,26 @@ theorem contLinear_simplexMapAmbient_succAbove_zero (k : Fin p) :
   rw [h, simplexMapAmbient_succAbove_zero, simplexMapAmbient_succAbove_zero]
   ext m
   cases m using Fin.cases <;> simp [Pi.single_apply]
+
+/-- The face maps of `Δᵖ⁺¹` are injective. -/
+theorem simplexMapAmbient_succAbove_injective (i : Fin (p + 2)) :
+    Function.Injective (simplexMapAmbient (m := p) i.succAbove) := by
+  intro y z h
+  cases i using Fin.cases with
+  | zero =>
+    rw [simplexMapAmbient_succAbove_zero, simplexMapAmbient_succAbove_zero] at h
+    ext k
+    simpa using congrArg (· k.succ) h
+  | succ j =>
+    rw [simplexMapAmbient_succAbove_succ, simplexMapAmbient_succAbove_succ] at h
+    ext k
+    simpa using congrArg (· (j.succAbove k)) h
+
+/-- The face maps of `Δᵖ⁺¹` are closed embeddings, so preimages of compact sets under them are
+compact. -/
+theorem isClosedEmbedding_simplexMapAmbient_succAbove (i : Fin (p + 2)) :
+    Topology.IsClosedEmbedding (simplexMapAmbient (m := p) i.succAbove) :=
+  ContinuousAffineMap.isClosedEmbedding_of_injective (simplexMapAmbient_succAbove_injective i)
 
 end Faces
 
