@@ -59,8 +59,9 @@ at most `2 ‖f‖_{Lᵖ(H)}` because `ρ` preserves volume. The whole-space est
 `Δv`, and `D²v` restricts to `D²u` on `H`.
 
 For variable coefficients, freeze them at `μ • 1`:
-`μ tr D²u = f - tr ((A - μ • 1) ∘ D²u)`. The weak Hessian vanishes where `u` does, and on `s` the
-error term is at most `dim (ℝ × E) · δ μ ‖D²u‖` pointwise (`TauCeti.norm_traceCLM_le`). The
+`μ tr D²u = f - tr ((A - μ • 1) ∘ D²u)`. The weak Hessian vanishes where `u` does
+(`TauCeti.Wkp.iteratedGradient_ae_eq_zero_of_value_ae_eq_zero_of_isOpen`), and on `s` the error
+term is at most `dim (ℝ × E) · δ μ ‖D²u‖` pointwise (`ContinuousLinearMap.norm_traceCLM_le`). The
 estimate for the Laplacian then gives `‖D²u‖ ≤ (C₀ / μ) (‖f‖ + dim (ℝ × E) δ μ ‖D²u‖)`, and the
 choice of `δ` makes the coefficient of `‖D²u‖` on the right at most `1 / 2`, so it is absorbed
 (`TauCeti.PDE.le_two_mul_div_mul_of_le_div_mul_of_le_add`).
@@ -290,21 +291,10 @@ theorem
     fun a {A s μ ε} hμ hs hε hA u f hu hus hf => ?_⟩
   set D := Wkp.iteratedGradient 1 u
   set g := (traceCLM ℝ (WithLp 2 (ℝ × E))).compLpL p _ D
-  have hS := (normalHalfSpace (E := E) a).isOpen.measurableSet
   -- The weak Hessian vanishes on `H \ s`, where `u` does.
   have hD0 : ∀ᵐ x ∂(volume : Measure (WithLp 2 (ℝ × E))).restrict (normalHalfSpace (E := E) a),
-      x ∉ s → D x = 0 := by
-    let V : Opens (WithLp 2 (ℝ × E)) := normalHalfSpace (E := E) a ⊓ ⟨sᶜ, hs.isOpen_compl⟩
-    have hVS : V ≤ normalHalfSpace (E := E) a := inf_le_left
-    have hVm : MeasurableSet (V : Set (WithLp 2 (ℝ × E))) := V.isOpen.measurableSet
-    have hval : ∀ᵐ x ∂(volume : Measure (WithLp 2 (ℝ × E))).restrict V,
-        Wkp.value 2 u x = 0 := by
-      filter_upwards [ae_restrict_of_ae_restrict_of_subset hVS hus, ae_restrict_mem hVm]
-        with x hx hxV using hx hxV.2
-    have hDV := (ae_restrict_iff' hVm).1
-      (Wkp.iteratedGradient_ae_eq_zero_of_value_ae_eq_zero 1 u hVS hval)
-    filter_upwards [ae_restrict_mem hS, ae_restrict_of_ae hDV] with x hxS hx hxs
-    exact hx ⟨hxS, hxs⟩
+      x ∉ s → D x = 0 :=
+    Wkp.iteratedGradient_ae_eq_zero_of_value_ae_eq_zero_of_isOpen 1 u hs.isOpen_compl hus
   -- The half-space estimate for the Laplacian, applied to the trace of the weak Hessian.
   have hDg : ‖D‖ ≤ C * ‖g‖ := hC a u g hu rfl
   -- Freezing the coefficients at `μ • 1` costs at most `N ε |D²u|` pointwise.
@@ -319,11 +309,10 @@ theorem
       have hdiff : μ • traceCLM ℝ (WithLp 2 (ℝ × E)) (D x) -
           traceCLM ℝ (WithLp 2 (ℝ × E)) (A x ∘L D x) =
           -traceCLM ℝ (WithLp 2 (ℝ × E)) ((A x - μ • 1) ∘L D x) := by
-        rw [ContinuousLinearMap.sub_comp, ContinuousLinearMap.smul_comp,
-          ContinuousLinearMap.one_def, ContinuousLinearMap.id_comp, map_sub, map_smul, neg_sub]
+        simp [ContinuousLinearMap.sub_comp, ContinuousLinearMap.one_def]
       rw [hdiff, norm_neg]
       calc ‖traceCLM ℝ (WithLp 2 (ℝ × E)) ((A x - μ • 1) ∘L D x)‖
-          ≤ N * ‖(A x - μ • 1) ∘L D x‖ := norm_traceCLM_le _
+          ≤ N * ‖(A x - μ • 1) ∘L D x‖ := ContinuousLinearMap.norm_traceCLM_le _
         _ ≤ N * (‖A x - μ • 1‖ * ‖D x‖) := by gcongr; exact ContinuousLinearMap.opNorm_comp_le _ _
         _ ≤ N * (ε * ‖D x‖) := by gcongr; exact hAx hxs
         _ = N * ε * ‖D x‖ := by ring

@@ -113,13 +113,8 @@ theorem exists_norm_iteratedGradient_le_mul_norm_of_sum_mul_inner_eq_of_abs_sub_
     filter_upwards [(ae_restrict_iff' htop).1 (T.coeFn_compLpL H)] with x hx using hx (by simp)
   -- The weak Hessian vanishes outside `s`, where `u` does.
   have hH0 : ∀ᵐ x, x ∉ s → H x = 0 := by
-    let V : Opens (EuclideanSpace ℝ (Fin n)) := ⟨sᶜ, hs.isOpen_compl⟩
-    have hval : ∀ᵐ x ∂(volume : Measure (EuclideanSpace ℝ (Fin n))).restrict
-        (V : Set (EuclideanSpace ℝ (Fin n))), Wkp.value 2 u x = 0 := by
-      rw [ae_restrict_iff' V.isOpen.measurableSet]
-      filter_upwards [hu] with x hx hxV using hx hxV
-    exact (ae_restrict_iff' V.isOpen.measurableSet).1
-      (Wkp.iteratedGradient_ae_eq_zero_of_value_ae_eq_zero 1 u le_top hval)
+    simpa using Wkp.iteratedGradient_ae_eq_zero_of_value_ae_eq_zero_of_isOpen 1 u hs.isOpen_compl
+      (by simpa using hu)
   -- The constant-coefficient estimate, applied to the frozen operator.
   have hHg : ‖H‖ ≤ C / lam * ‖g‖ :=
     hC hlam hA u g (by filter_upwards [hg] with x hx; rw [hx, Matrix.contraction_apply])

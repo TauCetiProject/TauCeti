@@ -13,8 +13,8 @@ public import TauCeti.Topology.Algebra.Module.Trace
 
 On a finite-dimensional inner product space `V` over `ℝ` or `ℂ`, the trace of a continuous
 endomorphism is bounded by the dimension times its operator norm:
-`‖tr T‖ ≤ dim V * ‖T‖` (`TauCeti.norm_traceCLM_le`). Expanding the trace in an orthonormal basis
-`(bᵢ)` gives `tr T = ∑ᵢ ⟪bᵢ, T bᵢ⟫`, and each term is at most `‖T‖`.
+`‖tr T‖ ≤ dim V * ‖T‖` (`ContinuousLinearMap.norm_traceCLM_le`). Expanding the trace in an
+orthonormal basis `(bᵢ)` gives `tr T = ∑ᵢ ⟪bᵢ, T bᵢ⟫`, and each term is at most `‖T‖`.
 
 This is the bound that controls a non-divergence-form operator `tr (A ∘ D²u)` by the operator
 norms of its coefficient field `A` and of the Hessian `D²u`.
@@ -32,7 +32,8 @@ variable {𝕜 V : Type*} [RCLike 𝕜] [NormedAddCommGroup V] [InnerProductSpac
 
 /-- The trace of a continuous endomorphism of a finite-dimensional inner product space is bounded
 by the dimension times the operator norm: `‖tr T‖ ≤ dim V * ‖T‖`. -/
-theorem norm_traceCLM_le (T : V →L[𝕜] V) : ‖traceCLM 𝕜 V T‖ ≤ finrank 𝕜 V * ‖T‖ := by
+theorem _root_.ContinuousLinearMap.norm_traceCLM_le (T : V →L[𝕜] V) :
+    ‖traceCLM 𝕜 V T‖ ≤ finrank 𝕜 V * ‖T‖ := by
   set b := stdOrthonormalBasis 𝕜 V
   rw [traceCLM_apply, LinearMap.trace_eq_sum_inner _ b]
   refine (norm_sum_le _ _).trans ?_
