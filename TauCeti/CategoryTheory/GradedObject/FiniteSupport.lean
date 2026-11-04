@@ -48,6 +48,10 @@ lemma support_eq_of_iso {X Y : GradedObject I C} (e : X ≅ Y) : X.support = Y.s
 /-- A graded object is finitely supported if only finitely many components are nonzero. -/
 def HasFiniteSupport (X : GradedObject I C) : Prop := X.support.Finite
 
+/-- Finite support is equivalent to finiteness of the categorical support. -/
+lemma hasFiniteSupport_iff_finite (X : GradedObject I C) :
+    X.HasFiniteSupport ↔ X.support.Finite := Iff.rfl
+
 /-- Finite support is equivalent to being zero outside a finite set of degrees. -/
 lemma hasFiniteSupport_iff (X : GradedObject I C) :
     X.HasFiniteSupport ↔ ∃ s : Finset I, ∀ i ∉ s, IsZero (X i) := by
@@ -66,13 +70,17 @@ lemma hasFiniteSupport_iff_of_iso {X Y : GradedObject I C} (e : X ≅ Y) :
   unfold HasFiniteSupport
   rw [support_eq_of_iso e]
 
-/-- An object concentrated in one degree is finitely supported. -/
-lemma hasFiniteSupport_single [DecidableEq I] [HasInitial C] [HasZeroMorphisms C]
-    (i : I) (A : C) :
-    ((single i).obj A).HasFiniteSupport := by
-  refine (Set.finite_singleton i).subset fun j hj => ?_
+/-- An object concentrated in one degree has support contained in that singleton. -/
+lemma support_single_subset [DecidableEq I] [HasInitial C] [HasZeroMorphisms C]
+    (i : I) (A : C) : ((single i).obj A).support ⊆ {i} := by
+  intro j hj
   by_contra h
   exact hj ((isInitialSingleObjApply i A j h).isZero)
+
+/-- An object concentrated in one degree is finitely supported. -/
+lemma hasFiniteSupport_single [DecidableEq I] [HasInitial C] [HasZeroMorphisms C]
+    (i : I) (A : C) : ((single i).obj A).HasFiniteSupport :=
+  (Set.finite_singleton i).subset (support_single_subset i A)
 
 section Reindex
 
@@ -104,51 +112,62 @@ lemma HasFiniteSupport.hasMap [HasFiniteCoproducts C] {X : GradedObject I C}
     (hX : X.HasFiniteSupport) (p : I → J) : X.HasMap p := by
   intro j
   apply TauCeti.hasCoproduct_of_finite_setOf_not_isZero
-  exact Set.Finite.preimage (fun _ _ _ _ h => Subtype.ext h) hX
+  simpa [support] using hX.preimage Subtype.val_injective.injOn
+
+section Bifunctor
+
+variable {D E : Type*} [Category* D] [Category* E]
+  [HasZeroMorphisms C] [HasZeroMorphisms D] [HasZeroMorphisms E]
+  (F : C ⥤ D ⥤ E) [∀ A, (F.obj A).PreservesZeroMorphisms]
+  [∀ B, (F.flip.obj B).PreservesZeroMorphisms]
+
+/-- A bifunctor preserving zero morphisms in each variable has external-product support
+contained in the product of the supports. No nonvanishing assertion is assumed. -/
+lemma support_mapBifunctor_subset (X : GradedObject I C) (Y : GradedObject J D) :
+    (((mapBifunctor F I J).obj X).obj Y).support ⊆ X.support ×ˢ Y.support := by
+  rintro ⟨i, j⟩ h
+  constructor
+  · exact fun hi => h ((F.flip.obj (Y j)).map_isZero hi)
+  · exact fun hj => h ((F.obj (X i)).map_isZero hj)
+
+/-- Applying a bifunctor preserving zero morphisms in each variable to finitely supported
+objects gives a finitely supported external product. -/
+lemma HasFiniteSupport.mapBifunctor {X : GradedObject I C} {Y : GradedObject J D}
+    (hX : X.HasFiniteSupport) (F : C ⥤ D ⥤ E)
+    [∀ A, (F.obj A).PreservesZeroMorphisms] [∀ B, (F.flip.obj B).PreservesZeroMorphisms]
+    (hY : Y.HasFiniteSupport) :
+    (((mapBifunctor F I J).obj X).obj Y).HasFiniteSupport :=
+  (hX.prod hY).subset (support_mapBifunctor_subset F X Y)
+
+end Bifunctor
 
 section Tensor
 
 variable [MonoidalCategory C] [HasZeroMorphisms C]
   [∀ A : C, (tensorLeft A).PreservesZeroMorphisms]
   [∀ A : C, (tensorRight A).PreservesZeroMorphisms]
-
-/-- The support of the external tensor product is contained in the product of the supports.
-No nonvanishing assertion for tensor products is assumed. -/
-lemma support_mapBifunctor_tensor_subset (X : GradedObject I C) (Y : GradedObject J C) :
-    (((mapBifunctor (curriedTensor C) I J).obj X).obj Y).support ⊆
-      X.support ×ˢ Y.support := by
-  rintro ⟨i, j⟩ h
-  constructor
-  · exact fun hi => h ((tensorRight (Y j)).map_isZero hi)
-  · exact fun hj => h ((tensorLeft (X i)).map_isZero hj)
-
-/-- The external tensor product of two finitely supported objects is finitely supported. -/
-lemma HasFiniteSupport.mapBifunctor_tensor {X : GradedObject I C} {Y : GradedObject J C}
-    (hX : X.HasFiniteSupport) (hY : Y.HasFiniteSupport) :
-    (((mapBifunctor (curriedTensor C) I J).obj X).obj Y).HasFiniteSupport :=
-  (hX.prod hY).subset (support_mapBifunctor_tensor_subset X Y)
-
-variable [AddMonoid I]
+  [AddMonoid I]
 
 /-- Convolution has support contained in the pairwise sums of the original supports. -/
 lemma support_tensorObj_subset (X Y : GradedObject I C) [HasTensor X Y] :
     (Monoidal.tensorObj X Y).support ⊆
       (fun ij : I × I => ij.1 + ij.2) '' (X.support ×ˢ Y.support) := by
+  unfold Monoidal.tensorObj mapBifunctorMapObj
   exact (support_mapObj_subset _ _).trans
-    (Set.image_mono (support_mapBifunctor_tensor_subset X Y))
+    (Set.image_mono (support_mapBifunctor_subset (curriedTensor C) X Y))
 
 /-- The convolution tensor product preserves finite support, regardless of whether the grading
 monoid itself is finite. -/
 lemma HasFiniteSupport.tensorObj {X Y : GradedObject I C}
     (hX : X.HasFiniteSupport) (hY : Y.HasFiniteSupport) [HasTensor X Y] :
     (Monoidal.tensorObj X Y).HasFiniteSupport :=
-  (hX.mapBifunctor_tensor hY).mapObj _
+  ((hX.prod hY).image _).subset (support_tensorObj_subset X Y)
 
 /-- Finite coproducts suffice to construct the convolution of finitely supported graded objects;
 no finiteness of the fibres of addition is required. -/
 lemma HasFiniteSupport.hasTensor [HasFiniteCoproducts C] {X Y : GradedObject I C}
     (hX : X.HasFiniteSupport) (hY : Y.HasFiniteSupport) : HasTensor X Y :=
-  (hX.mapBifunctor_tensor hY).hasMap _
+  (hX.mapBifunctor (curriedTensor C) hY).hasMap _
 
 end Tensor
 
