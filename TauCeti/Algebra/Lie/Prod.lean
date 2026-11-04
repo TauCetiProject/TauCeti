@@ -318,7 +318,7 @@ def piRepresentation (rho : (j : I) → L →ₗ⁅R⁆ Module.End R (V j)) :
     -- composition so that the corresponding coordinate representation law applies.
     change rho j ⁅x, y⁆ (m j) =
       rho j x (rho j y (m j)) - rho j y (rho j x (m j))
-    simpa only [LieRing.of_associative_ring_bracket, Module.End.mul_apply,
+    simpa only [LieRing.of_associative_ring_bracket, mul_apply_eq_comp,
       LinearMap.sub_apply] using LinearMap.congr_fun (map_lie (rho j) x y) (m j)
 
 /-- A product representation acts coordinatewise. -/

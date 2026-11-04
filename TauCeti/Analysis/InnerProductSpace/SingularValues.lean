@@ -303,7 +303,8 @@ theorem singularValues_eq_single_of_finrank_eq_one (hE : finrank 𝕜 E = 1) {x 
   rcases Nat.eq_zero_or_pos i with rfl | hi
   · have h0 : 0 < finrank 𝕜 E := hE ▸ one_pos
     -- The right singular vector `v₀` is a unit multiple `c • x` of `x`.
-    obtain ⟨c, hc⟩ := (finrank_eq_one_iff_of_nonzero' x (norm_ne_zero_iff.mp (by simp [hx]))).mp
+    obtain ⟨c,
+      hc⟩ := (_root_.finrank_eq_one_iff_of_ne_zero' x (norm_ne_zero_iff.mp (by simp [hx]))).mp
       hE (A.rightSingularBasis ⟨0, h0⟩)
     have hc1 : ‖c‖ = 1 := by
       simpa [← hc, norm_smul, hx] using A.rightSingularBasis.norm_eq_one ⟨0, h0⟩

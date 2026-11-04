@@ -10,6 +10,7 @@ public import Mathlib.LinearAlgebra.Matrix.Basis
 public import Mathlib.LinearAlgebra.Trace
 public import TauCeti.LinearAlgebra.SymmetricAlgebra.LieModule
 import TauCeti.LinearAlgebra.SymmetricAlgebra.Homogeneous
+import TauCeti.LinearAlgebra.Trace.Nilpotent
 import TauCeti.RingTheory.Derivation.Matrix
 
 /-!
@@ -58,6 +59,9 @@ restriction theorem and of the Harish-Chandra isomorphism.
   `tr (ρ_M(x) ^ m)`.
 * `TauCeti.tracePowerPolynomial_mem_homogeneousSubmodule`: it is homogeneous of degree `m`.
 * `TauCeti.tracePowerPolynomial_mem_lieInvariants`: it is invariant under the coadjoint action.
+* `TauCeti.isNilpotent_toEnd_of_forall_lift_eval_eq_zero`: over a field of characteristic zero, if
+  every invariant polynomial function with zero constant term vanishes at `x`, then `x` acts
+  nilpotently on every finite-dimensional module, by the trace criterion.
 
 ## References
 
@@ -254,5 +258,29 @@ theorem tracePowerPolynomial_mem_lieInvariants (m : ℕ) :
     neg_add_eq_sub]
 
 end TracePowerPolynomial
+
+/-! ### Nilpotence from vanishing invariants -/
+
+section Nilpotent
+
+variable {K L : Type*} [Field K] [CharZero K] [LieRing L] [LieAlgebra K L]
+
+/-- **Vanishing invariants force nilpotence in every finite-dimensional module.** If every
+invariant polynomial function on `L` with zero constant term vanishes at `x`, then `x` acts
+nilpotently on every finite-dimensional Lie module: the invariants include the trace-power
+polynomials `x ↦ tr (ρ_M(x) ^ m)`. -/
+theorem isNilpotent_toEnd_of_forall_lift_eval_eq_zero (M : Type*) [AddCommGroup M] [Module K M]
+    [FiniteDimensional K M] [LieRingModule L M] [LieModule K L M] {x : L}
+    (h : ∀ p ∈ lieInvariants K L (Dual K L), algebraMapInv p = 0 → lift (Dual.eval K L x) p = 0) :
+    IsNilpotent (LieModule.toEnd K L M x) := by
+  refine LinearMap.isNilpotent_iff_forall_trace_pow_eq_zero.mpr fun m hm ↦ ?_
+  rw [← lift_eval_tracePowerPolynomial]
+  refine h _ (tracePowerPolynomial_mem_lieInvariants (M := M) m) ?_
+  -- a homogeneous element of positive degree lies in the irrelevant ideal
+  have hirr := HomogeneousIdeal.mem_irrelevant_of_mem _ hm
+    (tracePowerPolynomial_mem_homogeneousSubmodule (R := K) (L := L) (M := M) m)
+  rwa [← HomogeneousIdeal.mem_iff, toIdeal_irrelevant_eq_ker_algebraMapInv, RingHom.mem_ker] at hirr
+
+end Nilpotent
 
 end TauCeti

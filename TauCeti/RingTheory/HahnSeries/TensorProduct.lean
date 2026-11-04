@@ -153,4 +153,18 @@ theorem tensorProductEquiv_symm_single [Module.Free R V] [Module.Finite R V]
   apply (tensorProductEquiv Γ R V).injective
   simp
 
+/-- For finite free coefficients, linear maps on module-valued Hahn series are determined
+by scalar series times constant vectors. -/
+theorem _root_.TauCeti.HahnModule.linearMap_ext_smul_single_zero
+    [Module.Free R V] [Module.Finite R V]
+    {M : Type*} [AddCommMonoid M] [Module R M]
+    {f g : HahnModule Γ R V →ₗ[R] M}
+    (h : ∀ (a : HahnSeries Γ R) (v : V), f (a • of R (single 0 v)) =
+      g (a • of R (single 0 v))) : f = g := by
+  ext x
+  obtain ⟨z, rfl⟩ := (tensorProductEquiv Γ R V).surjective x
+  induction z using TensorProduct.inductionOn with
+  | tmul a v => simpa using h a v
+  | add z w hz hw => simp only [map_add, hz, hw]
+
 end HahnModule

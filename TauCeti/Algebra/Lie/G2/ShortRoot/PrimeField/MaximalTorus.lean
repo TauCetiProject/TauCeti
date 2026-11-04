@@ -47,6 +47,29 @@ local instance : Fact (Nat.Prime 3) := ⟨by decide⟩
 /-- Restriction of carrier coordinates to its rank-two weight torus. -/
 abbrev weightTorusCoordinateMap := CommHopfAlgCat.commonKernelLift generator (.inr ())
 
+/-- Restricting ambient matrix coordinates to the carrier and then to its weight torus
+recovers the ambient weight-torus coordinate morphism. -/
+theorem carrierQuotient_comp_weightTorusCoordinateMap :
+    carrierQuotient ≫ weightTorusCoordinateMap =
+      GeneralLinear.weightTorusCoordinateMap (R := ZMod 3) weight := by
+  rw [CommHopfAlgCat.mkQuotient_comp_commonKernelLift, generator_inr,
+    GeneralLinear.weightTorusBaseChangeCoordinateMap_eq]
+
+/-- The carrier's generic matrix restricts to the diagonal matrix of its weight characters. -/
+theorem carrierGenericMatrix_map_weightTorusCoordinateMap :
+    carrierGenericMatrix.map weightTorusCoordinateMap.hom.toAlgHom =
+      Matrix.diagonal (fun i ↦
+        MonoidAlgebra.single (SplitTorus.weightCharacter (weight i)) (1 : ZMod 3)) := by
+  rw [carrierGenericMatrix_def, Matrix.map_map, ← AlgHom.coe_comp,
+    ← BialgHom.comp_toAlgHom, ← CommHopfAlgCat.hom_comp,
+    carrierQuotient_comp_weightTorusCoordinateMap]
+  apply Matrix.ext
+  intro i j
+  simpa only [Matrix.map_apply, BialgHom.coe_toAlgHom,
+    GeneralLinear.genericMatrix_apply, Matrix.diagonal_apply,
+    ← SplitTorus.weightCharacter_coe, Finsupp.coe_equivFunOnFinite_symm] using
+      (GeneralLinear.weightTorusCoordinateMap_X (R := ZMod 3) weight i j)
+
 /-- The weight-torus coordinate morphism is surjective. -/
 theorem weightTorusCoordinateMap_surjective :
     Function.Surjective weightTorusCoordinateMap.hom :=
@@ -246,8 +269,7 @@ theorem mkQuotient_comp_splitMaximalTorusCoordinateMap :
       GeneralLinear.weightTorusCoordinateMap
         (R := ZMod 3) (fun (i : Fin 7) (j : ULift.{0} (Fin 2)) => weight i j.down) := by
   rw [splitMaximalTorusCoordinateMap, ← Category.assoc,
-    CommHopfAlgCat.mkQuotient_comp_commonKernelLift, generator_inr,
-    GeneralLinear.weightTorusBaseChangeCoordinateMap_eq]
+    carrierQuotient_comp_weightTorusCoordinateMap]
   apply _root_.CommHopfAlgCat.hom_ext
   apply GeneralLinear.coordinateHopfAlgebra_bialgHom_ext (ZMod 3) 7
   intro i j

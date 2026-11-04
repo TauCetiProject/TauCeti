@@ -54,6 +54,10 @@ subset of its orbit: each target point is reached by exactly one coset of the st
 A set is stabilized by a group element exactly when the element and its inverse both map the set
 into itself; this is how stabilizers of sets are compared with monoids of maps preserving a set.
 
+A subgroup `T` normalized by the stabilizer of a point `a` has a well-defined conjugate at each
+point of the orbit of `a`: the conjugate `g T g⁻¹` depends only on `g • a`. This is how a family of
+subgroups indexed by the points of a transitive action is built from one subgroup.
+
 Finally, a group of prime order acting on its own finite subsets by translation has trivial
 stabilisers away from the two fixed points `∅` and `univ`: a stabiliser is a subgroup, so it is
 trivial or everything, and a subset fixed by every translation is empty or everything.
@@ -69,6 +73,8 @@ normality of it is equivalent to freeness of the action of the image.
   with `MonoidHom.stabilizerMap_surjective` and `MonoidHom.ker_stabilizerMap` describing its
   surjectivity and kernel.
 
+* `TauCeti.conj_smul_eq_conj_smul_of_smul_eq`: if the stabilizer of `a` normalizes `T`, then the
+  conjugate `g T g⁻¹` depends only on `g • a`.
 * `TauCeti.mem_stabilizer_set_iff_mapsTo`: an element stabilizes a set if and only if it and its
   inverse map the set into itself.
 * `TauCeti.stabilizer_finset_eq_bot_of_prime_card`: a group of prime order acts freely by
@@ -218,6 +224,19 @@ theorem mem_stabilizer_set_iff_mapsTo {a : G} {s : Set α} :
 theorem mul_inv_mem_stabilizer_of_smul_eq (g h : G) {x y : α}
     (hg : g • x = y) (hh : h • x = y) : g * h⁻¹ ∈ MulAction.stabilizer G y := by
   rw [MulAction.mem_stabilizer_iff, mul_smul, inv_smul_eq_iff.mpr hh.symm, hg]
+
+open scoped Pointwise in
+/-- If the stabilizer of `a` normalizes a subgroup `T`, then the conjugate `g T g⁻¹` depends only
+on the point `g • a`. -/
+theorem conj_smul_eq_conj_smul_of_smul_eq {T : Subgroup G} {a : α}
+    (hT : MulAction.stabilizer G a ≤ Subgroup.normalizer (T : Set G)) {g h : G}
+    (hgh : g • a = h • a) : MulAut.conj g • T = MulAut.conj h • T := by
+  have hmem : g⁻¹ * h ∈ Subgroup.normalizer (T : Set G) :=
+    hT (by rw [MulAction.mem_stabilizer_iff, mul_smul, ← hgh, inv_smul_smul])
+  have hfix : MulAut.conj (g⁻¹ * h) • T = T := by
+    rw [Subgroup.pointwise_smul_def]
+    exact Subgroup.mem_normalizer_iff_map_conj_eq.mp hmem
+  conv_rhs => rw [← mul_inv_cancel_left g h, map_mul, mul_smul, hfix]
 
 /-- **The order of a stabiliser is constant along an orbit**: points related by the orbit
 relation have conjugate stabilisers, hence stabilisers of equal cardinality.

@@ -89,10 +89,10 @@ theorem qExpansion_coeff_heckeRingHomCharSpace_heckeTCompositeGamma0_of_coprime 
   intro hn m hmn
   by_cases h1 : n = 1
   · subst h1
-    rw [heckeTCompositeGamma0_one, map_one, Module.End.one_apply, mul_one]
+    rw [heckeTCompositeGamma0_one, map_one, one_apply_eq_self, mul_one]
   · -- peel the block at the least prime factor `p` of `n`, carrying its whole multiplicity
     have hlt : 1 < n := by omega
-    rw [heckeTCompositeGamma0_of_one_lt N hlt, map_mul, Module.End.mul_apply]
+    rw [heckeTCompositeGamma0_of_one_lt N hlt, map_mul, mul_apply_eq_comp]
     have hp : (n.minFac).Prime := Nat.minFac_prime h1
     have hpn : n.minFac ∣ n := Nat.minFac_dvd n
     have hv : n.factorization n.minFac ≠ 0 :=
@@ -165,9 +165,9 @@ theorem heckeRingHomCuspCharSpace_heckeTCompositeGamma0_mem_of_forall_prime_dvd
   let S : Subring (𝕋 (Delta0 N) ((Gamma0 N).map (mapGL ℚ)) ℤ) :=
     { carrier := {x | ∀ F ∈ V, heckeRingHomCuspCharSpace k χ x F ∈ V}
       mul_mem' := fun ha hb F hF ↦ by
-        rw [map_mul, Module.End.mul_apply]
+        rw [map_mul, mul_apply_eq_comp]
         exact ha _ (hb F hF)
-      one_mem' := fun F hF ↦ by rwa [map_one, Module.End.one_apply]
+      one_mem' := fun F hF ↦ by rwa [map_one, one_apply_eq_self]
       add_mem' := fun ha hb F hF ↦ by
         rw [map_add, LinearMap.add_apply]
         exact V.add_mem (ha F hF) (hb F hF)
@@ -184,7 +184,7 @@ theorem heckeRingHomCuspCharSpace_heckeTCompositeGamma0_mem_of_forall_prime_dvd
   by_cases hpN : Nat.Coprime p N
   · intro F hF
     rw [heckeRingHomCuspCharSpace_heckeTScalarGamma0 k χ p hp.pos hpN, LinearMap.smul_apply,
-      Module.End.one_apply]
+      one_apply_eq_self]
     exact V.smul_mem _ hF
   · rw [heckeTScalarGamma0_of_not_coprime N hpN]
     exact S.zero_mem

@@ -164,7 +164,7 @@ private theorem approxOrders_nonempty (a : Kˣ) : (approxOrders a).Nonempty :=
 
 private theorem bddAbove_approxOrders {a : Kˣ} (ha : ¬IsSquare a) :
     BddAbove (approxOrders a) := by
-  rw [← isSquare_units_val_iff] at ha
+  rw [← Units.isSquare_coe_iff] at ha
   obtain ⟨y, hy⟩ := exists_forall_valuation_le_valuation_sub_sq ha
   refine ⟨(normalizedValuation K y).toAdd, ?_⟩
   rintro _ ⟨ξ, x, hx, rfl⟩
@@ -219,7 +219,7 @@ private theorem valuation_le_valuation_sub_sq_of_eq {a : Kˣ} (ha : ¬IsSquare a
     (hx : ((normalizedValuation K x).toAdd : WithTop ℤ) = defectExponent a) (η : K) :
     valuation K (x : K) ≤ valuation K ((a : K) - η ^ 2) := by
   have hne : (a : K) - η ^ 2 ≠ 0 := fun h =>
-    ha (isSquare_units_val_iff.mp ⟨η, by rw [← sq]; exact sub_eq_zero.mp h⟩)
+    ha (Units.isSquare_coe_iff.mp ⟨η, by rw [← sq]; exact sub_eq_zero.mp h⟩)
   have h := le_defectExponent a η (Units.mk0 _ hne) rfl
   rw [← hx, WithTop.coe_le_coe, toAdd_normalizedValuation_le_iff_valuation_le] at h
   simpa using h
@@ -229,7 +229,7 @@ square root of `a`. -/
 private theorem exists_forall_valuation_sub_sq_le (a : Kˣ) :
     ∃ ξ₀ : K, ∀ ξ : K, valuation K ((a : K) - ξ₀ ^ 2) ≤ valuation K ((a : K) - ξ ^ 2) := by
   by_cases ha : IsSquare a
-  · obtain ⟨r, hr⟩ := isSquare_units_val_iff.mpr ha
+  · obtain ⟨r, hr⟩ := Units.isSquare_coe_iff.mpr ha
     exact ⟨r, fun ξ => by simp [hr, sq]⟩
   obtain ⟨ξ₀, x₀, hx₀, h₀⟩ := exists_defectExponent_eq ha
   exact ⟨ξ₀, fun ξ => hx₀ ▸ valuation_le_valuation_sub_sq_of_eq ha h₀ ξ⟩
@@ -285,7 +285,7 @@ theorem exists_quadraticDefect_eq_spanSingleton (a : Kˣ) :
 theorem quadraticDefect_eq_zero_iff {a : Kˣ} : quadraticDefect a = 0 ↔ IsSquare a := by
   obtain ⟨ξ₀, h₀⟩ := exists_forall_valuation_sub_sq_le a
   rw [quadraticDefect_eq_spanSingleton_of_forall h₀, FractionalIdeal.spanSingleton_eq_zero_iff,
-    sub_eq_zero, ← isSquare_units_val_iff]
+    sub_eq_zero, ← Units.isSquare_coe_iff]
   refine ⟨fun h => ⟨ξ₀, by rw [h, sq]⟩, fun ⟨r, hr⟩ => ?_⟩
   have h := h₀ r
   rwa [sq r, ← hr, sub_self, map_zero, le_zero_iff, map_eq_zero, sub_eq_zero] at h

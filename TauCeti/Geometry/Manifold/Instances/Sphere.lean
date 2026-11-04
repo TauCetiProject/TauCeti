@@ -65,6 +65,10 @@ at least two omits a point, allowing the entire loop to be read in one stereogra
 * `TauCeti.extChartAt_sphere_apply_self`: the preferred extended chart at `v` sends `v` to `0`.
 * `TauCeti.isSmoothEmbedding_stereographic'_symm`: the inverse of a stereographic chart is a
   smooth embedding of the model space into the sphere.
+* `TauCeti.coe_comp_stereographic'_symm`, `TauCeti.contDiff_coe_comp_stereographic'_symm`,
+  `TauCeti.injective_fderiv_coe_comp_stereographic'_symm`: read in the ambient space, the inverse
+  of a stereographic chart is `stereoInvFunAux` precomposed with a linear isometry, so it is smooth
+  with injective derivative.
 * `TauCeti.compl_singleton_sup_compl_singleton_neg_eq_top`: the complements of two antipodal
   points cover the sphere.
 * `TauCeti.stereographicDiffeomorph`, `TauCeti.stereographicPuncturedDiffeomorph`: stereographic
@@ -177,6 +181,38 @@ theorem isSmoothEmbedding_stereographic'_symm (v : sphere (0 : E) 1) {k : ℕ∞
     (IsManifold.subset_maximalAtlas ⟨v, rfl⟩)
     (fun u _ ↦ (stereographic' n v).map_target (by simp)) fun u _ ↦ ?_
   simp
+
+/-- Read in the ambient space, the inverse of the stereographic chart `stereographic' n v` is the
+inverse `stereoInvFunAux v` of stereographic projection, precomposed with the linear isometry of
+`ℝⁿ` onto the hyperplane `(ℝ ∙ v)ᗮ` that the chart uses. -/
+theorem coe_comp_stereographic'_symm (v : sphere (0 : E) 1) :
+    ((↑) : sphere (0 : E) 1 → E) ∘ (stereographic' n v).symm =
+      stereoInvFunAux (v : E) ∘ ((↑) : (ℝ ∙ (v : E))ᗮ → E) ∘
+        (OrthonormalBasis.fromOrthogonalSpanSingleton (𝕜 := ℝ) n
+          (ne_zero_of_mem_unit_sphere v)).repr.symm := by
+  funext y
+  simp [stereographic'_symm_apply, smul_add]
+
+/-- Read in the ambient space, the inverse of a stereographic chart is smooth. -/
+theorem contDiff_coe_comp_stereographic'_symm (v : sphere (0 : E) 1) {k : ℕ∞ω} :
+    ContDiff ℝ k (((↑) : sphere (0 : E) 1 → E) ∘ (stereographic' n v).symm) := by
+  rw [coe_comp_stereographic'_symm]
+  exact contDiff_stereoInvFunAux.comp ((ℝ ∙ (v : E))ᗮ.subtypeL.contDiff.comp
+    (OrthonormalBasis.fromOrthogonalSpanSingleton (𝕜 := ℝ) n
+      (ne_zero_of_mem_unit_sphere v)).repr.symm.toContinuousLinearEquiv.contDiff)
+
+/-- Read in the ambient space, the inverse of a stereographic chart has injective derivative at
+every point. -/
+theorem injective_fderiv_coe_comp_stereographic'_symm (v : sphere (0 : E) 1)
+    (y : EuclideanSpace ℝ (Fin n)) :
+    Injective (fderiv ℝ (((↑) : sphere (0 : E) 1 → E) ∘ (stereographic' n v).symm) y) := by
+  set U := (OrthonormalBasis.fromOrthogonalSpanSingleton (𝕜 := ℝ) n
+    (ne_zero_of_mem_unit_sphere v)).repr
+  rw [coe_comp_stereographic'_symm, ← Function.comp_assoc,
+    ← LinearIsometryEquiv.coe_toContinuousLinearEquiv U.symm,
+    ContinuousLinearEquiv.comp_right_fderiv]
+  exact (injective_fderiv_stereoInvFunAux_comp_coe (norm_eq_of_mem_sphere v) _).comp
+    U.symm.injective
 
 /-- Stereographic projection from `v` is a chart in the maximal atlas of the sphere, at every
 regularity. -/

@@ -401,7 +401,7 @@ theorem setLAverage_comp_preimage_of_map_eq_smul (he : μ.map e = a • ν) (ha 
     (ha' : a ≠ ∞) (g : Y → ℝ≥0∞) (s : Set Y) :
     ⨍⁻ x in e ⁻¹' s, g (e x) ∂μ = ⨍⁻ y in s, g y ∂ν := by
   rw [setLAverage_eq, setLAverage_eq, setLIntegral_comp_preimage_of_map_eq_smul he,
-    ← e.map_apply, he, Measure.smul_apply, smul_eq_mul, ENNReal.mul_div_mul_left _ _ ha ha']
+    ← e.map_apply, he, _root_.smul_apply, smul_eq_mul, ENNReal.mul_div_mul_left _ _ ha ha']
 
 /-- If a measurable equivalence `e` pushes `μ` forward to `a • ν`, then the integral of `f ∘ e`
 over `e ⁻¹' s` with respect to `μ` is `a.toReal` times the integral of `f` over `s` with respect
@@ -416,7 +416,7 @@ theorem setAverage_comp_preimage_of_map_eq_smul (he : μ.map e = a • ν) (ha :
     (ha' : a ≠ ∞) (f : Y → F) (s : Set Y) :
     ⨍ x in e ⁻¹' s, f (e x) ∂μ = ⨍ y in s, f y ∂ν := by
   have hmeas : μ.real (e ⁻¹' s) = a.toReal * ν.real s := by
-    rw [measureReal_def, ← e.map_apply, he, Measure.smul_apply, smul_eq_mul, ENNReal.toReal_mul,
+    rw [measureReal_def, ← e.map_apply, he, _root_.smul_apply, smul_eq_mul, ENNReal.toReal_mul,
       measureReal_def]
   rw [setAverage_eq, setAverage_eq, setIntegral_comp_preimage_of_map_eq_smul he, hmeas,
     smul_smul, mul_inv_rev, inv_mul_cancel_right₀ (ENNReal.toReal_ne_zero.2 ⟨ha, ha'⟩)]

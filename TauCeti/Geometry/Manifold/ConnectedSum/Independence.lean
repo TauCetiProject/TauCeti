@@ -8,6 +8,7 @@ module
 public import TauCeti.Geometry.Manifold.ConnectedSum.Congr
 public import TauCeti.Geometry.Manifold.SmoothIsotopy.Orientation
 import TauCeti.Geometry.Manifold.SmoothEmbedding.LocalDiffeomorph
+import TauCeti.Analysis.InnerProductSpace.Reflection
 
 /-!
 # The connected sum does not depend on its balls
@@ -31,13 +32,22 @@ balls only through their germs at the centres, up to diffeomorphisms of the summ
 
 For the oriented connected sum one ball preserves and the other reverses the orientations, that
 is, `e₂` preserves the orientation of `E` and the opposite of the orientation of `N`; this is the
-case of the theorem with the opposite orientation on `N`.
+case of the theorem with the opposite orientation on `N`. The orientation of `E` itself is then
+irrelevant: if the balls `e₁'` and `e₂'` preserve and reverse orientation from the opposite
+orientation of `E`, precomposing both with a reflection `ρ` of `E` brings them back to the first
+orientation, and the connected sum along `e₁' ∘ ρ` and `e₂' ∘ ρ` is the connected sum along `e₁'`
+and `e₂'` (`TauCeti.ConnectedSum.compLinearIsometryEquivDiffeomorph`). So the connected sum of
+connected oriented manifolds is well defined up to diffeomorphism
+(`TauCeti.ConnectedSum.nonempty_diffeomorph_of_isOrientationReversingAt`).
 
 ## Main results
 
 * `TauCeti.ConnectedSum.nonempty_diffeomorph_of_isOrientationPreservingAt`: connected sums of
   connected manifolds along balls with the same orientation behaviour at their centres are
   diffeomorphic.
+* `TauCeti.ConnectedSum.nonempty_diffeomorph_of_isOrientationReversingAt`: connected sums of
+  connected oriented manifolds along balls inducing opposite orientations of `E` are
+  diffeomorphic, whatever the orientation of `E`.
 
 ## References
 
@@ -56,14 +66,14 @@ open scoped Manifold ContDiff
 namespace TauCeti.ConnectedSum
 
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
-  {M : Type*} [TopologicalSpace M] [T2Space M] [SigmaCompactSpace M] [PreconnectedSpace M]
+  {M : Type*} [TopologicalSpace M] [T2Space M] [PreconnectedSpace M]
   [ChartedSpace E M] [IsManifold 𝓘(ℝ, E) ∞ M]
-  {N : Type*} [TopologicalSpace N] [T2Space N] [SigmaCompactSpace N] [PreconnectedSpace N]
+  {N : Type*} [TopologicalSpace N] [T2Space N] [PreconnectedSpace N]
   [ChartedSpace E N] [IsManifold 𝓘(ℝ, E) ∞ N]
   {ι : Type*} [Fintype ι]
 
-/-- **The connected sum does not depend on its balls.** Let `M` and `N` be connected, Hausdorff,
-σ-compact smooth manifolds without boundary modelled on a finite-dimensional real inner product
+/-- **The connected sum does not depend on its balls.** Let `M` and `N` be connected Hausdorff
+smooth manifolds without boundary modelled on a finite-dimensional real inner product
 space `E`, with orientations `oM` and `oN`. Let `e₁, e₁' : E → M` be coordinate balls which
 preserve the orientations `o₁` of `E` and `oM` at `0`, and `e₂, e₂' : E → N` coordinate balls which
 preserve the orientations `o₂` of `E` and `oN` at `0`, all of them open embeddings and smooth local
@@ -93,5 +103,47 @@ theorem nonempty_diffeomorph_of_isOrientationPreservingAt {e₁ e₁' : E → M}
     (by simpa using hf₂')
   exact nonempty_diffeomorph_of_eventuallyEq φ ψ (by simpa using hφ) (by simpa using hψ)
     h₁ h₂ h₁' h₂' d₁ d₂ d₁' d₂'
+
+open Manifold.Orientation in
+/-- **The connected sum of oriented manifolds is well defined.** Let `M` and `N` be connected,
+Hausdorff, σ-compact smooth manifolds without boundary modelled on a nontrivial finite-dimensional
+real inner product space `E`, with orientations `oM` and `oN`. Let `e₁ : E → M` and `e₂ : E → N`
+be coordinate balls inducing opposite orientations of `E` at `0`: `e₁` preserves orientation from
+an orientation `o` of `E` to `oM`, and `e₂` reverses it from `o` to `oN`. Let `e₁'` and `e₂'` be
+another such pair, for a possibly different orientation `o'` of `E`. All balls are open embeddings
+and smooth local diffeomorphisms. Then the connected sum along `e₁` and `e₂` is diffeomorphic to
+the connected sum along `e₁'` and `e₂'`. -/
+theorem nonempty_diffeomorph_of_isOrientationReversingAt [Nontrivial E] {e₁ e₁' : E → M}
+    {e₂ e₂' : E → N} (h₁ : IsOpenEmbedding e₁) (h₂ : IsOpenEmbedding e₂)
+    (h₁' : IsOpenEmbedding e₁') (h₂' : IsOpenEmbedding e₂')
+    (d₁ : IsLocalDiffeomorph 𝓘(ℝ, E) 𝓘(ℝ, E) ∞ e₁) (d₂ : IsLocalDiffeomorph 𝓘(ℝ, E) 𝓘(ℝ, E) ∞ e₂)
+    (d₁' : IsLocalDiffeomorph 𝓘(ℝ, E) 𝓘(ℝ, E) ∞ e₁')
+    (d₂' : IsLocalDiffeomorph 𝓘(ℝ, E) 𝓘(ℝ, E) ∞ e₂')
+    (o o' : Manifold.Orientation 𝓘(ℝ, E) E ι) (oM : Manifold.Orientation 𝓘(ℝ, E) M ι)
+    (oN : Manifold.Orientation 𝓘(ℝ, E) N ι) (hf₁ : o.IsOrientationPreservingAt oM e₁ 0)
+    (hf₂ : o.IsOrientationReversingAt oN e₂ 0) (hf₁' : o'.IsOrientationPreservingAt oM e₁' 0)
+    (hf₂' : o'.IsOrientationReversingAt oN e₂' 0) :
+    letI := chartedSpace (H := E) h₁ h₂
+    letI := chartedSpace (H := E) h₁' h₂'
+    Nonempty (ConnectedSum e₁ e₂ ≃ₘ^∞⟮𝓘(ℝ, E), 𝓘(ℝ, E)⟯ ConnectedSum e₁' e₂') := by
+  rw [← isOrientationPreservingAt_neg_right] at hf₂ hf₂'
+  rcases o'.eq_or_eq_neg o with rfl | rfl
+  · exact nonempty_diffeomorph_of_isOrientationPreservingAt h₁ h₂ h₁' h₂' d₁ d₂ d₁' d₂' o' o'
+      oM (-oN) hf₁ hf₁' hf₂ hf₂'
+  -- The second pair of balls induces the opposite orientation of `E`: rotate it by a reflection.
+  obtain ⟨R, hR⟩ := exists_det_neg (F := E)
+  have h₁R := h₁'.comp_linearIsometryEquiv R
+  have h₂R := h₂'.comp_linearIsometryEquiv R
+  have hg₁ : o.IsOrientationPreservingAt oM (e₁' ∘ R) 0 :=
+    isOrientationPreservingAt_comp_of_det_neg (by simpa using hf₁') hR
+  have hg₂ : o.IsOrientationPreservingAt (-oN) (e₂' ∘ R) 0 :=
+    isOrientationPreservingAt_comp_of_det_neg (by simpa using hf₂') hR
+  let := chartedSpace (H := E) h₁ h₂
+  let := chartedSpace (H := E) h₁' h₂'
+  let := chartedSpace (H := E) h₁R h₂R
+  obtain ⟨φ⟩ := nonempty_diffeomorph_of_isOrientationPreservingAt h₁ h₂ h₁R h₂R d₁ d₂
+    (d₁'.comp_linearIsometryEquiv R) (d₂'.comp_linearIsometryEquiv R)
+    o o oM (-oN) hf₁ hg₁ hf₂ hg₂
+  exact ⟨φ.trans (compLinearIsometryEquivDiffeomorph R h₁' h₂' d₁' d₂').symm⟩
 
 end TauCeti.ConnectedSum

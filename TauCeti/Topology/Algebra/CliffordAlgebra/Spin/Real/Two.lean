@@ -96,7 +96,7 @@ private def planeAction : CliffordAlgebra (realCliffordForm 2 0) →ₐ[ℝ] Mod
   lift _ ⟨((LinearMap.mul ℝ ℂ).compl₂ conjAe.toLinearMap).comp planeCoord.toLinearMap,
     fun m ↦ by
       ext w
-      simp only [Module.End.mul_apply, LinearMap.coe_comp, Function.comp_apply,
+      simp only [mul_apply_eq_comp, LinearMap.coe_comp, Function.comp_apply,
         LinearMap.compl₂_apply, LinearMap.mul_apply', AlgEquiv.toLinearMap_apply, conjAe_coe,
         LinearEquiv.coe_coe, map_mul, conj_conj, Module.algebraMap_end_apply,
         realCliffordForm_two_apply]
@@ -121,14 +121,14 @@ private theorem planeAction_apply_of_mem_even {x : CliffordAlgebra (realClifford
   | algebraMap r => simp [planeValue_apply, AlgHom.commutes, Algebra.smul_def]
   | add x y _ _ hx hy => simp [map_add, hx, hy, add_mul]
   | ι_mul_ι_mul a b x _ h =>
-    simp only [planeValue_apply, map_mul, Module.End.mul_apply, planeAction_ι_apply, h,
+    simp only [planeValue_apply, map_mul, mul_apply_eq_comp, planeAction_ι_apply, h,
       map_mul, conj_conj]
     ring
 
 private theorem planeValue_mul_of_mem_even {x : CliffordAlgebra (realCliffordForm 2 0)}
     (hx : x ∈ evenOdd (realCliffordForm 2 0) 0) (y : CliffordAlgebra (realCliffordForm 2 0)) :
     planeValue (x * y) = planeValue x * planeValue y := by
-  rw [planeValue_apply, map_mul, Module.End.mul_apply, planeAction_apply_of_mem_even hx,
+  rw [planeValue_apply, map_mul, mul_apply_eq_comp, planeAction_apply_of_mem_even hx,
     ← planeValue_apply]
 
 private theorem planeValue_ι_mul_ι (a b : Fin (2 + 0) → ℝ) :

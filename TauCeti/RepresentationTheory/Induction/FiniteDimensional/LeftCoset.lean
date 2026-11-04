@@ -126,7 +126,7 @@ theorem indLeftCosetCoinvariantEquiv_symm_single (A : Rep.{max w u} k S)
   apply (indLeftCosetCoinvariantEquiv A).injective
   rw [LinearEquiv.apply_symm_apply]
   simp only [Representation.IndV.mk, LinearMap.comp_apply, TensorProduct.mk_apply,
-    indLeftCosetCoinvariantEquiv_mk, rightCosetFactor_out, inv_one, map_one, Module.End.one_apply]
+    indLeftCosetCoinvariantEquiv_mk, rightCosetFactor_out, inv_one, map_one, one_apply_eq_self]
   rw [← QuotientGroup.quotientRightRelEquivQuotientLeftRel_apply, Equiv.apply_symm_apply]
 
 end Rep

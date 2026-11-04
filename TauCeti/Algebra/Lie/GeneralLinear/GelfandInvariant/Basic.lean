@@ -117,8 +117,8 @@ theorem gelfandInvariant_one : gelfandInvariant K n 1 = ι K (1 : Matrix n n K) 
 
 /-- The Gelfand invariant of degree two is the trace-form Casimir element. -/
 theorem gelfandInvariant_two : gelfandInvariant K n 2 = glCasimir K n := by
-  simp only [gelfandInvariant_def, glCasimir_def, sq, trace, diag_apply, mul_apply,
-    glGeneratorMatrix_apply]
+  simp only [glGeneratorMatrix_apply, gelfandInvariant_def, glCasimir_def, sq, trace,
+    diag_apply, Matrix.mul_apply]
 
 /-- The bracket of a matrix-unit generator with an entry of `𝔼 ^ r`:
 `⁅Eₐb, (𝔼 ^ r)ᵢⱼ⁆ = δ_{b i} (𝔼 ^ r)ₐⱼ - δ_{j a} (𝔼 ^ r)ᵢb`. -/
@@ -128,8 +128,8 @@ theorem lie_ι_single_glGeneratorMatrix_pow_apply (a b i j : n) (r : ℕ) :
         if j = a then (glGeneratorMatrix K n ^ r) i b else 0 := by
   induction r generalizing i j with
   | zero =>
-    simp only [pow_zero, one_apply, LieRing.of_associative_ring_bracket, mul_ite, ite_mul,
-      mul_one, one_mul, mul_zero, zero_mul]
+    simp only [Matrix.one_apply, mul_ite, ite_mul, mul_one, one_mul, zero_mul, pow_zero,
+      LieRing.of_associative_ring_bracket, mul_zero]
     split_ifs <;> subst_vars <;> simp_all
   | succ r ih =>
     have hleib (x y z : Ugl) : ⁅x, y * z⁆ = ⁅x, y⁆ * z + y * ⁅x, z⁆ := by
@@ -140,7 +140,7 @@ theorem lie_ι_single_glGeneratorMatrix_pow_apply (a b i j : n) (r : ℕ) :
           if j = a then glGeneratorMatrix K n k b else 0 := by
       rw [glGeneratorMatrix_apply, ← LieHom.map_lie, Matrix.lie_single_single]
       split_ifs <;> simp
-    simp only [pow_succ, mul_apply]
+    simp only [pow_succ, Matrix.mul_apply]
     rw [lie_sum]
     simp_rw [hleib, ih, hgen]
     simp only [sub_mul, mul_sub, ite_mul, mul_ite, zero_mul, mul_zero, sum_add_distrib,

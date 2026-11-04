@@ -9,6 +9,7 @@ public import Mathlib.AlgebraicGeometry.EllipticCurve.Projective.Point
 public import TauCeti.Analysis.Complex.ModularForms.LevelOne.JInputs
 public import TauCeti.Analysis.Complex.UpperHalfPlane.PeriodPair
 import Mathlib.Analysis.Calculus.InverseFunctionTheorem.Deriv
+import Mathlib.Analysis.Complex.Liouville
 import Mathlib.NumberTheory.LSeries.HurwitzZetaValues
 import Mathlib.NumberTheory.ModularForms.LevelOne.GradedRing
 
@@ -49,6 +50,12 @@ whose denominator is `-2` at `l₀`, and similarly for `℘ / ℘'`. So both cha
 holomorphic at `l₀`, they vanish there, and `℘ / ℘'` has derivative `-1 / 2` at `l₀`. In particular
 the point map is injective near every lattice point.
 
+The point map is surjective. By Liouville's theorem `℘` takes every value `x`: otherwise
+`1 / (℘ - x)`, which near a lattice point `l₀` is `(z - l₀)²` divided by a function with value `1`
+at `l₀`, would extend by `0` on `Λ` to a bounded entire `Λ`-periodic function, hence a constant,
+while it vanishes on `Λ` and nowhere else. A point `(x, y)` of the curve with `℘(z) = x` has
+`y = ± ℘'(z) / 2`, and `z` or `-z` maps to it.
+
 ## Main definitions
 
 * `PeriodPair.weierstrassCurve`: the Weierstrass curve `y² = x³ - (g₂ / 4) x - g₃ / 4`.
@@ -79,6 +86,9 @@ the point map is injective near every lattice point.
   a holomorphic lift to nonsingular projective coordinates.
 * `PeriodPair.exists_mem_nhds_injOn_weierstrassPoint`: the point map is injective near every
   lattice point.
+* `PeriodPair.exists_weierstrassP_eq`: `℘` takes every complex value off the lattice.
+* `PeriodPair.weierstrassPoint_surjective`: every point of the curve is in the image of the
+  point map.
 
 ## References
 
@@ -471,5 +481,73 @@ theorem exists_mem_nhds_injOn_weierstrassPoint (hl₀ : l₀ ∈ L.lattice) :
   refine ⟨U, hU, fun z hz w hw hzw ↦ ?_⟩
   rw [← hinv z hz, ← hinv w hw,
     L.weierstrassP_div_derivWeierstrassP_eq_of_weierstrassPoint_eq hzw]
+
+end PeriodPair
+
+/-! ### Surjectivity of the point map -/
+
+namespace PeriodPair
+
+variable (L : PeriodPair)
+
+/-- Near a lattice point `l₀`, `1 / (℘ - x)` is `(z - l₀)²` divided by a function that is
+holomorphic at `l₀` with value `1` there. -/
+private lemma inv_weierstrassP_sub_eq (x : ℂ) {l₀ z : ℂ} (hl₀ : l₀ ∈ L.lattice) (hz : z ≠ l₀) :
+    (℘[L] z - x)⁻¹ = (z - l₀) ^ 2 / ((z - l₀) ^ 2 * (℘[L - l₀] z - 1 / l₀ ^ 2 - x) + 1) := by
+  have h2 : (z - l₀) ^ 2 ≠ 0 := pow_ne_zero _ (sub_ne_zero.mpr hz)
+  rw [L.weierstrassPExcept_def ⟨l₀, hl₀⟩,
+    show (z - l₀) ^ 2 * (℘[L] z + (1 / l₀ ^ 2 - 1 / (z - l₀) ^ 2) - 1 / l₀ ^ 2 - x) + 1 =
+      (z - l₀) ^ 2 * (℘[L] z - x) by field_simp; ring,
+    div_mul_cancel_left₀ h2]
+
+/-- **`℘` takes every complex value.** For every `x : ℂ` there is `z ∉ Λ` with `℘(z) = x`. -/
+theorem exists_weierstrassP_eq (x : ℂ) : ∃ z ∉ L.lattice, ℘[L] z = x := by
+  classical
+  by_contra! h
+  let f : ℂ → ℂ := fun z ↦ if z ∈ L.lattice then 0 else (℘[L] z - x)⁻¹
+  have hdiff : Differentiable ℂ f := by
+    intro z₀
+    by_cases hz₀ : z₀ ∈ L.lattice
+    · -- Near `z₀`, `f` is `(z - z₀)²` divided by a function with value `1` at `z₀`.
+      have hg : AnalyticAt ℂ (fun z ↦ (z - z₀) ^ 2 * (℘[L - z₀] z - 1 / z₀ ^ 2 - x) + 1) z₀ := by
+        have := L.analyticAt_weierstrassPExcept z₀
+        fun_prop
+      refine (((by fun_prop : AnalyticAt ℂ (fun z ↦ (z - z₀) ^ 2) z₀).div hg
+        (by simp)).differentiableAt).congr_of_eventuallyEq ?_
+      filter_upwards [L.compl_lattice_sdiff_singleton_mem_nhds z₀] with z hz
+      rcases eq_or_ne z z₀ with rfl | hzz
+      · simp [f, hz₀]
+      · have hzl : z ∉ L.lattice := fun h ↦ hz ⟨h, hzz⟩
+        simp only [f, hzl, ↓reduceIte]
+        exact L.inv_weierstrassP_sub_eq x hz₀ hzz
+    · refine (((L.analyticOnNhd_weierstrassP z₀ hz₀).sub analyticAt_const).inv
+        (sub_ne_zero.mpr (h z₀ hz₀))).differentiableAt.congr_of_eventuallyEq ?_
+      filter_upwards [L.isClosed_lattice.isOpen_compl.mem_nhds hz₀] with z hz
+      simp [f, show z ∉ L.lattice from hz]
+  have hper : ∀ z w, w ∈ L.lattice → f (z + w) = f z := fun z w hw ↦ by
+    lift w to L.lattice using hw
+    simp [f, L.lattice.add_mem_iff_left w.2, weierstrassP_add_coe]
+  have h0 := hdiff.apply_eq_apply_of_bounded
+    (IsZLattice.isCompact_range_of_periodic L.lattice f hdiff.continuous hper).isBounded
+    (L.ω₁ / 2) 0
+  simp only [f, L.ω₁_div_two_notMem_lattice, zero_mem, ↓reduceIte] at h0
+  exact inv_ne_zero (sub_ne_zero.mpr (h _ L.ω₁_div_two_notMem_lattice)) h0
+
+/-- **The point map is surjective**: every point of the Weierstrass curve of `L` is the point at
+infinity or `(℘(z), ℘'(z) / 2)` for some `z ∉ Λ`. -/
+theorem weierstrassPoint_surjective : Function.Surjective L.weierstrassPoint := by
+  rintro (_ | ⟨x, y, h⟩)
+  · exact ⟨0, L.weierstrassPoint_zero⟩
+  obtain ⟨z, hz, rfl⟩ := L.exists_weierstrassP_eq x
+  have hy : y ^ 2 = (℘'[L] z / 2) ^ 2 := by
+    have h₁ := (Affine.equation_iff ..).mp h.1
+    have h₂ := (Affine.equation_iff ..).mp (L.equation_weierstrassP hz)
+    simp only [weierstrassCurve_a₁, weierstrassCurve_a₂, weierstrassCurve_a₃] at h₁ h₂
+    linear_combination h₁ - h₂
+  rcases sq_eq_sq_iff_eq_or_eq_neg.mp hy with rfl | rfl
+  · exact ⟨z, L.weierstrassPoint_of_notMem hz⟩
+  · refine ⟨-z, ?_⟩
+    rw [weierstrassPoint_neg, L.weierstrassPoint_of_notMem hz, Affine.Point.neg_some]
+    simp [Affine.negY]
 
 end PeriodPair

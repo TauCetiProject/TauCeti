@@ -469,7 +469,8 @@ theorem mul_neg_T_mul_inv_mem_Gamma1_four {γ : SL(2, ℤ)} (hγ : ((γ 1 0 : �
   have hdet := intCast_fin_two_mul_sub_mul_eq_one (R := ZMod 4) γ
   refine mem_Gamma1_iff.mpr ⟨Gamma0_mem.mpr ?_, ?_⟩ <;>
   · simp only [coe_mul, coe_inv, coe_neg, coe_T, adjugate_fin_two, Matrix.mul_apply,
-      Fin.sum_univ_two, neg_apply, of_apply, cons_val', cons_val_zero, cons_val_one, empty_val',
+      Fin.sum_univ_two, Matrix.neg_apply, of_apply, cons_val', cons_val_zero, cons_val_one,
+        empty_val',
       cons_val_fin_one]
     push_cast
     generalize ((γ 0 0 : ℤ) : ZMod 4) = a, ((γ 0 1 : ℤ) : ZMod 4) = b,

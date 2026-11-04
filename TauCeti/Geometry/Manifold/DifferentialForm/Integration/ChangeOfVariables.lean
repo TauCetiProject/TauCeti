@@ -12,13 +12,14 @@ import TauCeti.Geometry.Manifold.DifferentialForm.Pullback.Chart
 /-!
 # Change of variables for top-form integrals
 
-Let `f : M ≃ₜ N` be a homeomorphism between manifolds modelled on the same finite-dimensional
-real vector space, differentiable with invertible manifold derivative at every point. Pulling a
-top form back along `f` preserves integrability, and if `f` preserves the given orientations then
-it preserves the integral:
-$$\int_M f^*\varphi = \int_N \varphi,$$
-while an orientation-reversing `f` changes its sign. Manifolds with boundary and corners are
-allowed: derivatives in charts are taken within the model range.
+Let `f : M → N` be an open embedding between manifolds modelled on the same finite-dimensional
+real vector space, with invertible manifold derivative at every point. Pulling back a top form
+supported in the range of `f` preserves integrability, and if `f` preserves the given
+orientations then it preserves the integral:
+$$\int_M f^*\varphi = \int_N \varphi.$$
+An orientation-reversing `f` changes the sign of the integral, and homeomorphisms are the case
+`range f = univ`. Manifolds with boundary and corners are allowed: derivatives in charts are taken
+within the model range.
 
 The proof is chartwise. On a Borel piece `s` of the overlap of a chart at `β` of `M` with the
 preimage of a chart at `α` of `N`, the coefficient of `f^*φ` in the chart at `β` is the
@@ -27,17 +28,18 @@ determinant of the coordinate expression `T` of `f` times the coefficient of `φ
 orientation lifts with a common model orientation compensate the sign of that determinant
 (`TauCeti.Manifold.OrientationLift.signAt_mul_signAt_mul_det_pos`). The Jacobian change of
 variables for `T` then identifies the integrals over the two coordinate images of the piece. A
-finite chart cover of the support of `φ` and its preimage under `f` assembles these pieces into
-the integrals over `N` and `M`.
+finite cover of the support of `φ` by images of such overlaps, and its preimage under `f`,
+assemble these pieces into the integrals over `N` and `M`.
 
 ## Main results
 
-* `Homeomorph.integrableTopForm_mpullback_iff`: pullback along a homeomorphism with invertible
-  derivative preserves and reflects integrability of top forms.
-* `Homeomorph.integralTopForm_mpullback_of_isOrientationPreservingAt`: an orientation-preserving
-  such homeomorphism preserves the integral.
-* `Homeomorph.integralTopForm_mpullback_of_isOrientationReversingAt`: an orientation-reversing one
-  negates it.
+* `Topology.IsOpenEmbedding.integrableTopForm_mpullback_iff`: pullback along an open embedding
+  with invertible derivative preserves and reflects integrability of top forms supported in its
+  range.
+* `Topology.IsOpenEmbedding.integralTopForm_mpullback_of_isOrientationPreservingAt`: an
+  orientation-preserving such embedding preserves the integral of top forms supported in its
+  range, and `Topology.IsOpenEmbedding.integralTopForm_mpullback_of_isOrientationReversingAt`:
+  an orientation-reversing one negates it.
 
 ## References
 
@@ -176,63 +178,69 @@ end ChartPiece
 
 end TauCeti
 
-namespace Homeomorph
+namespace Topology.IsOpenEmbedding
 
 open TauCeti
 
-/-- Pullback along a homeomorphism that is differentiable with invertible manifold derivative
-at every point preserves and reflects integrability of top forms. -/
-theorem integrableTopForm_mpullback_iff (f : M ≃ₜ N) (hf : MDifferentiable I J f)
-    (hd : ∀ x, (mfderiv I J f x).IsInvertible) (φ : RoughForm J N ℝ k) :
+/-- Pullback along an open embedding whose manifold derivative is invertible at every point
+preserves and reflects integrability of top forms supported in its range. -/
+theorem integrableTopForm_mpullback_iff {f : M → N} (hf : IsOpenEmbedding f)
+    (hd : ∀ x, (mfderiv I J f x).IsInvertible) {φ : RoughForm J N ℝ k}
+    (hφ : _root_.tsupport (α := E [⋀^Fin k]→L[ℝ] ℝ) φ ⊆ range f) :
     IntegrableTopForm (mpullback I J f φ) ↔ IntegrableTopForm φ := by
   let : MeasurableSpace E := borel E
   have : BorelSpace E := ⟨rfl⟩
+  have hts := φ.tsupport_mpullback_eq_preimage hf.continuous hf.isOpenMap hd
   -- Over each point `p` of `M`, the overlap of the chart at `p` with the preimage of the chart
   -- at `f p` is a chart piece on which the two coefficients have the same integrability.
   let u : M → Set M := fun p ↦ (chartAt H p).source ∩ f ⁻¹' (chartAt H' (f p)).source
   have hu (p : M) : IsOpen (u p) :=
-    (chartAt H p).open_source.inter ((chartAt H' (f p)).open_source.preimage f.continuous)
+    (chartAt H p).open_source.inter ((chartAt H' (f p)).open_source.preimage hf.continuous)
   have hsub (p : M) : u p ⊆ (extChartAt I p).source ∩ f ⁻¹' (extChartAt J (f p)).source := by
     simp only [u, extChartAt_source, Subset.rfl]
   have hpiece (b : Module.Basis (Fin k) ℝ E) (p : M) :=
-    φ.integrableOn_signedInChartAt_one_mpullback_iff b f.injective.injOn (fun x _ ↦ hf x)
-      (hu p).isChartMeasurable (hsub p) b.addHaar
+    φ.integrableOn_signedInChartAt_one_mpullback_iff b hf.injective.injOn
+      (fun x _ ↦ mdifferentiableAt_of_isInvertible_mfderiv (hd x)) (hu p).isChartMeasurable
+      (hsub p) b.addHaar
   constructor
   · intro h
     obtain ⟨hc, ⟨b⟩, hi⟩ := (integrableTopForm_iff _).mp h
-    rw [φ.tsupport_mpullback_eq_preimage f hd, f.isCompact_preimage] at hc
-    refine φ.integrableTopForm_of_open_cover hc b (fun p ↦ f p) (fun p ↦ f '' u p)
-      (fun p ↦ f.isOpenMap _ (hu p))
-      (fun p ↦ image_subset_iff.mpr inter_subset_right) (fun y _ ↦ mem_iUnion.mpr
-        ⟨f.symm y, f.symm y, ⟨mem_chart_source H _, by
-          simp only [mem_preimage, f.apply_symm_apply, mem_chart_source]⟩,
-          f.apply_symm_apply y⟩) fun p ↦ (hpiece b p).mp (hi b p).integrableOn
+    rw [hts] at hc
+    refine φ.integrableTopForm_of_open_cover ?_ b (fun p ↦ f p) (fun p ↦ f '' u p)
+      (fun p ↦ hf.isOpenMap _ (hu p)) (fun p ↦ image_subset_iff.mpr inter_subset_right) ?_
+      fun p ↦ (hpiece b p).mp (hi b p).integrableOn
+    · simpa only [image_preimage_eq_of_subset hφ] using hc.image hf.continuous
+    · intro y hy
+      obtain ⟨x, rfl⟩ := hφ hy
+      exact mem_iUnion.mpr ⟨x, mem_image_of_mem f ⟨mem_chart_source H x, mem_chart_source H' (f x)⟩⟩
   · intro h
     obtain ⟨hc, ⟨b⟩, hi⟩ := (integrableTopForm_iff _).mp h
-    refine (mpullback I J f φ).integrableTopForm_of_open_cover
-      ((f.isCompact_preimage.mpr hc).of_isClosed_subset
-        (_root_.isClosed_tsupport (α := E [⋀^Fin k]→L[ℝ] ℝ) _)
-        (RoughForm.tsupport_mpullback_subset_preimage f.continuous φ))
-      b id u hu (fun p ↦ inter_subset_left) (fun x _ ↦ mem_iUnion.mpr
+    refine (mpullback I J f φ).integrableTopForm_of_open_cover ?_ b id u hu
+      (fun p ↦ inter_subset_left) (fun x _ ↦ mem_iUnion.mpr
         ⟨x, mem_chart_source H x, mem_chart_source H' (f x)⟩)
       fun p ↦ (hpiece b p).mpr (hi b (f p)).integrableOn
+    rw [hts]
+    exact hf.isInducing.isCompact_preimage' hc hφ
 
-/-- **Change of variables for top forms.** Pullback along an orientation-preserving
-homeomorphism that is differentiable at every point preserves the integral of every top form:
-`∫_M f^*φ = ∫_N φ`. Both sides vanish together when `φ` is not integrable. -/
-theorem integralTopForm_mpullback_of_isOrientationPreservingAt (f : M ≃ₜ N)
-    (hf : MDifferentiable I J f) {o : Manifold.Orientation I M (Fin k)}
+/-- **Change of variables for top forms along an open embedding.** Pullback along an
+orientation-preserving open embedding preserves the integral of every top form supported in its
+range: `∫_M f^*φ = ∫_N φ`. Both sides vanish together when `φ` is not integrable. -/
+theorem integralTopForm_mpullback_of_isOrientationPreservingAt {f : M → N}
+    (hf : IsOpenEmbedding f) {o : Manifold.Orientation I M (Fin k)}
     {o' : Manifold.Orientation J N (Fin k)}
-    (ho : ∀ x, Manifold.Orientation.IsOrientationPreservingAt o o' f x)
-    (φ : RoughForm J N ℝ k) : integralTopForm o (mpullback I J f φ) = integralTopForm o' φ := by
+    (ho : ∀ x, Manifold.Orientation.IsOrientationPreservingAt o o' f x) {φ : RoughForm J N ℝ k}
+    (hφ : _root_.tsupport (α := E [⋀^Fin k]→L[ℝ] ℝ) φ ⊆ range f) :
+    integralTopForm o (mpullback I J f φ) = integralTopForm o' φ := by
   classical
   let : MeasurableSpace E := borel E
   have : BorelSpace E := ⟨rfl⟩
-  have hint := f.integrableTopForm_mpullback_iff hf (fun x ↦ (ho x).isInvertible_mfderiv) φ
-  by_cases hφ : IntegrableTopForm φ
+  have hd (x : M) := (ho x).isInvertible_mfderiv
+  have hmd (x : M) := mdifferentiableAt_of_isInvertible_mfderiv (hd x)
+  have hint := hf.integrableTopForm_mpullback_iff hd hφ
+  by_cases hφi : IntegrableTopForm φ
   swap
-  · rw [integralTopForm_eq_zero_of_not_integrable _ _ hφ,
-      integralTopForm_eq_zero_of_not_integrable _ _ (mt hint.mp hφ)]
+  · rw [integralTopForm_eq_zero_of_not_integrable _ _ hφi,
+      integralTopForm_eq_zero_of_not_integrable _ _ (mt hint.mp hφi)]
   -- Represent both orientations by lifts with the same model orientation.
   obtain ⟨l, rfl⟩ := o.exists_lift
   obtain ⟨l', rfl, hl⟩ : ∃ l' : Manifold.OrientationLift J N (Fin k),
@@ -245,51 +253,57 @@ theorem integralTopForm_mpullback_of_isOrientationPreservingAt (f : M ≃ₜ N)
         rw [Manifold.OrientationLift.flip_modelOrientation, h]
         exact _root_.neg_neg l.modelOrientation⟩
   let b := Module.finBasisOfFinrankEq ℝ E (by simpa using l.card_eq.symm)
-  -- A finite cover of the support of `φ` by overlaps of charts of `N` with images of charts of
-  -- `M`; its preimage under `f` covers the support of the pullback.
-  let v : N → Set N := fun q ↦ (chartAt H' q).source ∩ f.symm ⁻¹' (chartAt H (f.symm q)).source
-  have hv (q : N) : IsOpen (v q) :=
-    (chartAt H' q).open_source.inter ((chartAt H (f.symm q)).open_source.preimage
-      f.symm.continuous)
-  obtain ⟨t, ht⟩ := hφ.isCompact.elim_finite_subcover v hv fun y _ ↦
-    mem_iUnion.mpr ⟨y, mem_chart_source H' y, mem_chart_source H (f.symm y)⟩
-  let α : Fin t.card → N := fun i ↦ t.equivFin.symm i
+  -- A finite cover of the support of `φ` by images of overlaps of charts of `M` with preimages
+  -- of charts of `N`; its preimage under `f` covers the support of the pullback.
+  let v : M → Set N := fun p ↦ f '' ((chartAt H p).source ∩ f ⁻¹' (chartAt H' (f p)).source)
+  have hv (p : M) : IsOpen (v p) := hf.isOpenMap _
+    ((chartAt H p).open_source.inter ((chartAt H' (f p)).open_source.preimage hf.continuous))
+  obtain ⟨t, ht⟩ := hφi.isCompact.elim_finite_subcover v hv fun y hy ↦ by
+    obtain ⟨x, rfl⟩ := hφ hy
+    exact mem_iUnion.mpr ⟨x, mem_image_of_mem f ⟨mem_chart_source H x, mem_chart_source H' (f x)⟩⟩
+  let α : Fin t.card → M := fun i ↦ t.equivFin.symm i
   let w : Fin t.card → Set N := fun i ↦ v (α i)
   have hcover : _root_.tsupport (α := E [⋀^Fin k]→L[ℝ] ℝ) φ ⊆ ⋃ i, w i := by
     intro y hy
     obtain ⟨q, hq, hyq⟩ := mem_iUnion₂.mp (ht hy)
     exact mem_iUnion.mpr ⟨t.equivFin ⟨q, hq⟩, by simpa only [w, α, Equiv.symm_apply_apply]⟩
-  have hw (i : Fin t.card) : w i ⊆ (extChartAt J (α i)).source := fun y hy ↦ by
+  have hw (i : Fin t.card) : w i ⊆ (extChartAt J (f (α i))).source := by
+    rintro _ ⟨x, hx, rfl⟩
+    simpa only [extChartAt_source, mem_preimage] using hx.2
+  have hu (i : Fin t.card) : f ⁻¹' w i ⊆ (extChartAt I (α i)).source := fun x hx ↦ by
+    obtain ⟨y, hy, hyx⟩ := hx
+    rw [← hf.injective hyx]
     simpa only [extChartAt_source] using hy.1
-  have hu (i : Fin t.card) : f ⁻¹' w i ⊆ (extChartAt I (f.symm (α i))).source := fun x hx ↦ by
-    simpa only [extChartAt_source, w, v, mem_preimage, f.symm_apply_apply] using hx.2
-  rw [integralTopForm_eq_sum_disjointed_chart_integrals l _ (hint.mpr hφ) b
-      (fun i ↦ f.symm (α i)) (fun i ↦ f ⁻¹' w i) (fun i ↦ (hv _).preimage f.continuous) hu
-      ((RoughForm.tsupport_mpullback_subset_preimage f.continuous φ).trans
+  rw [integralTopForm_eq_sum_disjointed_chart_integrals l _ (hint.mpr hφi) b α
+      (fun i ↦ f ⁻¹' w i) (fun i ↦ (hv _).preimage hf.continuous) hu
+      ((RoughForm.tsupport_mpullback_subset_preimage hf.continuous φ).trans
         (by simpa only [preimage_iUnion] using preimage_mono hcover)),
-    integralTopForm_eq_sum_disjointed_chart_integrals l' φ hφ b α w (fun i ↦ hv _) hw hcover, hl]
+    integralTopForm_eq_sum_disjointed_chart_integrals l' φ hφi b (fun i ↦ f (α i)) w
+      (fun i ↦ hv _) hw hcover, hl]
   refine congrArg _ (Finset.sum_congr rfl fun i _ ↦ ?_)
   have hdisj : disjointed (fun j ↦ f ⁻¹' w j) i = f ⁻¹' disjointed w i := by
     simp only [disjointed_eq_inter_compl, preimage_inter, preimage_iInter, preimage_compl]
   have hs : IsChartMeasurable I (f ⁻¹' disjointed w i) := by
     rw [disjointed_apply, preimage_sdiff, Finset.sup_set_eq_biUnion, preimage_iUnion₂]
-    exact ((hv _).preimage f.continuous).isChartMeasurable.diff
-      (isOpen_biUnion fun j _ ↦ (hv _).preimage f.continuous).isChartMeasurable
-  have h := φ.integral_signedInChartAt_mpullback_eq b l l' hl f.injective.injOn
-    (fun x _ ↦ hf x) (fun x _ ↦ ho x) hs
+    exact ((hv _).preimage hf.continuous).isChartMeasurable.diff
+      (isOpen_biUnion fun j _ ↦ (hv _).preimage hf.continuous).isChartMeasurable
+  have h := φ.integral_signedInChartAt_mpullback_eq b l l' hl hf.injective.injOn
+    (fun x _ ↦ hmd x) (fun x _ ↦ ho x) hs
     (fun x hx ↦ ⟨hu i (preimage_mono (disjointed_subset w i) hx),
       hw i (disjointed_subset w i hx)⟩) b.addHaar
-  rwa [f.image_preimage, ← hdisj] at h
+  rwa [image_preimage_eq_of_subset ((disjointed_subset w i).trans
+    (image_subset_range _ _)), ← hdisj] at h
 
-/-- Pullback along an orientation-reversing homeomorphism that is differentiable at every point
-negates the integral of every top form: `∫_M f^*φ = -∫_N φ`. -/
-theorem integralTopForm_mpullback_of_isOrientationReversingAt (f : M ≃ₜ N)
-    (hf : MDifferentiable I J f) {o : Manifold.Orientation I M (Fin k)}
+/-- Pullback along an orientation-reversing open embedding negates the integral of every top form
+supported in its range: `∫_M f^*φ = -∫_N φ`. -/
+theorem integralTopForm_mpullback_of_isOrientationReversingAt {f : M → N}
+    (hf : IsOpenEmbedding f) {o : Manifold.Orientation I M (Fin k)}
     {o' : Manifold.Orientation J N (Fin k)}
-    (ho : ∀ x, Manifold.Orientation.IsOrientationReversingAt o o' f x)
-    (φ : RoughForm J N ℝ k) : integralTopForm o (mpullback I J f φ) = -integralTopForm o' φ := by
+    (ho : ∀ x, Manifold.Orientation.IsOrientationReversingAt o o' f x) {φ : RoughForm J N ℝ k}
+    (hφ : _root_.tsupport (α := E [⋀^Fin k]→L[ℝ] ℝ) φ ⊆ range f) :
+    integralTopForm o (mpullback I J f φ) = -integralTopForm o' φ := by
   rw [← integralTopForm_neg]
-  refine f.integralTopForm_mpullback_of_isOrientationPreservingAt hf (fun x ↦ ?_) φ
+  refine hf.integralTopForm_mpullback_of_isOrientationPreservingAt (fun x ↦ ?_) hφ
   exact (Manifold.Orientation.isOrientationPreservingAt_neg_right o o' f x).2 (ho x)
 
-end Homeomorph
+end Topology.IsOpenEmbedding

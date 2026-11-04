@@ -5,6 +5,9 @@ Authors: Codex
 -/
 module
 
+-- Equality of the canonical versions uses that condDistrib chooses from the joint law.
+import all Mathlib.Probability.Kernel.CondDistrib
+
 public import TauCeti.Probability.Exchangeability.Arrays.Basic
 public import TauCeti.Probability.Process.Array.Context
 public import Mathlib.Probability.Kernel.CondDistrib
@@ -99,8 +102,7 @@ theorem SeparatelyExchangeable.condDistrib_cellContext_eq
     condDistrib (fun x : ℕ × ℕ → α => x (i', j')) (cellContext e f i' j') ρ =
       condDistrib (fun x : ℕ × ℕ → α => x (i, j)) (cellContext e f i j) ρ := by
   -- `condDistrib` chooses its kernel from the joint law, which the preceding theorem identifies.
-  simp only [condDistrib]
-  simp only [hρ.map_cellContext_cell_eq e f hi hi' hj hj']
+  simp only [condDistrib, hρ.map_cellContext_cell_eq e f hi hi' hj hj']
 
 /-- **A single measurable cell coding realizes every visible cell's conditional law.** Given a
 reference visible cell, the canonical conditional kernel of that cell can be randomized by a

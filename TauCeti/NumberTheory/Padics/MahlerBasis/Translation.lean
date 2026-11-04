@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.NumberTheory.Padics.TranslationDifference
+public import TauCeti.NumberTheory.Padics.TranslationDifference.Basic
 
 /-!
 # Translation in Mahler coordinates
