@@ -79,9 +79,8 @@ theorem HasCompactResolvent.northcott_norm_of_orthonormal (h : A.HasCompactResol
     have hne (i : ι) : z - lam i ≠ 0 := by
       intro hzi
       obtain ⟨hi, hAi⟩ := hA i
-      have h0 : (⟨v i, hi⟩ : A.domain) = 0 := (smul_sub_bijective hz).injective <| by
-        simp [hAi, ← sub_smul, hzi]
-      exact hv.ne_zero i (congrArg Subtype.val h0)
+      rw [← sub_eq_zero.1 hzi] at hAi
+      exact hv.ne_zero i (congrArg Subtype.val (eq_zero_of_apply_eq_smul hz _ hAi))
     set M := ‖z‖ + |R| + 1
     have hM : 0 < M := by positivity
     refine (hK.finite_setOf_le_norm_of_orthonormal (T := (A.resolvent z : E →ₗ[𝕜] E)) hv hR
