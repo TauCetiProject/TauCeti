@@ -775,20 +775,29 @@ end CompleteBase
 /-- In a factorisation `f = u * (X ^ a * ∏ᶠ m, g m)` on a closed disc of radius `r`, where `u` is a
 restricted unit and every factor `g m` has constant coefficient `1`, the exponent `a` is the order
 of vanishing `f.order` at zero. -/
-theorem order_eq_of_isUnit_X_pow_mul_finprod_eq {f : K⟦X⟧} {r : ℝ}
-    {u : IsRestricted.subring (R := K) r} (hu : IsUnit u) {a : ℕ} {g : ℝ → Polynomial K}
+theorem order_eq_of_isUnit_X_pow_mul_finprod_eq {R ι : Type*} [NormedCommRing R]
+    [IsUltrametricDist R] [Nontrivial R] {f : R⟦X⟧} {r : ℝ}
+    {u : IsRestricted.subring (R := R) r} (hu : IsUnit u) {a : ℕ} {g : ι → Polynomial R}
     (hfin : (Function.mulSupport g).Finite) (hc0 : ∀ m, (g m).coeff 0 = 1)
-    (hmul : (u : K⟦X⟧) * (((Polynomial.X ^ a * ∏ᶠ m, g m : Polynomial K) : K⟦X⟧)) = f) :
+    (hmul : (u : R⟦X⟧) * (((Polynomial.X ^ a * ∏ᶠ m, g m : Polynomial R) : R⟦X⟧)) = f) :
     f.order = a := by
-  have hu0 : (u : K⟦X⟧).order = 0 := order_zero_of_isUnit (hu.map (IsRestricted.subring r).subtype)
-  have hg0 : (((∏ᶠ m, g m : Polynomial K) : K⟦X⟧)).order = 0 := by
-    refine not_ne_iff.mp (order_ne_zero_iff_constCoeff_eq_zero.not.mpr ?_)
+  set Q : R⟦X⟧ := ((∏ᶠ m, g m : Polynomial R) : R⟦X⟧)
+  have hmul' : (X : R⟦X⟧) ^ a * ((u : R⟦X⟧) * Q) = f := by
+    rw [← hmul, Polynomial.coe_mul, Polynomial.coe_pow, Polynomial.coe_X]
+    ring
+  have hQ0 : constantCoeff Q = 1 := by
     rw [Polynomial.constantCoeff_coe, ← Polynomial.constantCoeff_apply,
       map_finprod Polynomial.constantCoeff hfin,
       finprod_eq_one_of_forall_eq_one fun m => by simpa using hc0 m]
-    exact one_ne_zero
-  rw [← hmul, Polynomial.coe_mul, Polynomial.coe_pow, Polynomial.coe_X, order_mul, order_mul, hu0,
-    order_X_pow, hg0, zero_add, add_zero]
+  have hfa : f.coeff a ≠ 0 := by
+    have ha : ((X : R⟦X⟧) ^ a * ((u : R⟦X⟧) * Q)).coeff (0 + a) = f.coeff a := by
+      rw [zero_add, hmul']
+    rw [← ha, coeff_X_pow_mul, coeff_zero_eq_constantCoeff_apply, map_mul, hQ0, mul_one]
+    exact ((hu.map (IsRestricted.subring r).subtype).map constantCoeff).ne_zero
+  refine le_antisymm (f.order_le a hfa) ?_
+  calc (a : ℕ∞) = ((X : R⟦X⟧) ^ a).order := (order_X_pow a).symm
+    _ ≤ ((X : R⟦X⟧) ^ a).order + ((u : R⟦X⟧) * Q).order := self_le_add_right _ _
+    _ ≤ f.order := hmul' ▸ le_order_mul _ _
 
 /-- Suppose `f = u * (X ^ a * ∏ᶠ m, g m)` on the closed disc of radius `r`, where `u` is a unit of
 the ring of series restricted at `r` and `g` is a finitely supported family of polynomials. Then in

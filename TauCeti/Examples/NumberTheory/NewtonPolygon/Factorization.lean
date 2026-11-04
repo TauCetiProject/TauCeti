@@ -13,7 +13,7 @@ import TauCeti.NumberTheory.NewtonPolygon.Irreducible
 # Explicit Newton slope factorisations over `ℚ_[p]`
 
 Concrete instances of the Newton slope factorisation and irreducibility theorems on `ℚ_[p]`,
-with respect to the real `p`-adic additive valuation `padicRealValuation p` normalised by
+with respect to the real `p`-adic additive valuation `TauCeti.padicRealValuation p` normalised by
 `v(p) = 1`:
 
 * The quadratic polynomial `1 + p X + p ^ 3 X ^ 2` has Newton polygon heights `0, 1, 3` at
@@ -34,55 +34,8 @@ with respect to the real `p`-adic additive valuation `padicRealValuation p` norm
 public section
 
 open Polynomial TauCeti
-open TauCeti.NormedRing (PseudoUniformizer)
 
 namespace TauCeti.NewtonPolygonFactorizationExample
-
-section Setup
-
-variable (p : ℕ) [Fact p.Prime]
-
-/-- The canonical multiplicative pseudo-uniformiser `p` of `ℚ_[p]`, of norm `p⁻¹`. -/
-noncomputable def padicPseudoUniformizer : PseudoUniformizer ℚ_[p] :=
-  PseudoUniformizer.ofAlgebraMap (K := ℚ_[p]) (A := ℚ_[p])
-    (Nat.cast_ne_zero.mpr (Fact.out : p.Prime).ne_zero) Padic.norm_p_lt_one
-
-/-- The real `p`-adic additive valuation on `ℚ_[p]` normalised by `v(p) = 1`. -/
-noncomputable def padicRealValuation : AddValuation ℚ_[p] (WithTop ℝ) :=
-  (padicPseudoUniformizer p).addValuation
-
-/-- The underlying unit of `padicPseudoUniformizer p` has `p`-adic norm `p⁻¹`. -/
-@[simp]
-theorem norm_unit_padicPseudoUniformizer :
-    ‖((padicPseudoUniformizer p).unit : ℚ_[p])‖ = (p : ℝ)⁻¹ := by
-  simp [padicPseudoUniformizer, Padic.norm_p]
-
-/-- `padicRealValuation p` agrees with `Padic.addValuation` after casting integer values to `ℝ`. -/
-theorem padicRealValuation_eq_map (x : ℚ_[p]) :
-    padicRealValuation p x = (Padic.addValuation x).map ((↑) : ℤ → ℝ) :=
-  (padicPseudoUniformizer p).addValuation_eq_map_padicAddValuation
-    (norm_unit_padicPseudoUniformizer p) x
-
-/-- The uniformiser `p` has valuation `1` under `padicRealValuation p`. -/
-@[simp]
-theorem padicRealValuation_p : padicRealValuation p (p : ℚ_[p]) = 1 := by
-  have h := (padicPseudoUniformizer p).logGauge_unit
-  simpa [padicPseudoUniformizer, padicRealValuation] using h
-
-/-- On `ℚ_[p]`, every nonzero element has norm `p ^ (-(padicRealValuation p x).untop₀)`. -/
-theorem norm_eq_rpow_neg_padicRealValuation {x : ℚ_[p]} (hx : x ≠ 0) :
-    ‖x‖ = (p : ℝ) ^ (-(padicRealValuation p x).untop₀) := by
-  have hp0 : (0 : ℝ) < p := Nat.cast_pos.mpr (Fact.out : p.Prime).pos
-  rw [padicRealValuation_eq_map, Padic.addValuation.apply hx, WithTop.map_coe, WithTop.untop₀_coe,
-    Padic.norm_eq_zpow_neg_valuation hx, Real.rpow_neg hp0.le, Real.rpow_intCast, zpow_neg]
-
-/-- On `ℚ_[p]`, `padicRealValuation p` takes integer values on nonzero elements. -/
-theorem exists_int_padicRealValuation {x : ℚ_[p]} (hx : x ≠ 0) :
-    ∃ n : ℤ, padicRealValuation p x = ((n : ℝ) : WithTop ℝ) :=
-  ⟨Padic.valuation x, by rw [padicRealValuation_eq_map, Padic.addValuation.apply hx,
-    WithTop.map_coe]⟩
-
-end Setup
 
 section DistinctSlopes
 
@@ -159,7 +112,7 @@ theorem splits_one_add_p_X_add_p_cube_X_sq :
     (1 + C (p : ℚ_[p]) * X + C ((p : ℚ_[p]) ^ 3) * X ^ 2 : ℚ_[p][X]).Splits := by
   have hp1 : (1 : ℝ) < p := Nat.one_lt_cast.mpr (Fact.out : p.Prime).one_lt
   refine splits_of_nodup_newtonSlopes (padicRealValuation p) hp1
-    (fun _ hx => norm_eq_rpow_neg_padicRealValuation p hx) ?_
+    (fun _ hx => norm_eq_rpow_neg_padicRealValuation hx) ?_
   rw [newtonSlopes_one_add_p_X_add_p_cube_X_sq]
   simp
 
@@ -179,7 +132,7 @@ theorem exists_coprime_linear_factors_one_add_p_X_add_p_cube_X_sq :
     simp only [f, coeff_add, coeff_one, coeff_C_mul, coeff_X, coeff_X_pow]
     norm_num
   obtain ⟨g, hg⟩ := exists_isPureSlopeFactorization v hp1
-    (fun _ hx => norm_eq_rpow_neg_padicRealValuation p hx) hf0
+    (fun _ hx => norm_eq_rpow_neg_padicRealValuation hx) hf0
   have hdeg1 : (g 1).natDegree = 1 := by
     rw [hg.natDegree_apply hv0 1, newtonSlopes_one_add_p_X_add_p_cube_X_sq]
     simp
@@ -201,7 +154,7 @@ theorem exists_coprime_linear_factors_one_add_p_X_add_p_cube_X_sq :
         (fun i _ hi => by simp [zero_pow hi]) (by simp)] at hx
       simp [hg.coeff_zero 1] at hx
     have hnorm := norm_eq_rpow_of_forall_mem_newtonSlopes_eq (L := ℚ_[p]) v hp1
-      (fun _ hy => norm_eq_rpow_neg_padicRealValuation p hy) (hg.apply_ne_zero 1)
+      (fun _ hy => norm_eq_rpow_neg_padicRealValuation hy) (hg.apply_ne_zero 1)
       (hg.newtonSlopes_eq 1) hx0 (by simpa using hx)
     rwa [Real.rpow_one] at hnorm
   · have hx0 : x ≠ 0 := by
@@ -210,7 +163,7 @@ theorem exists_coprime_linear_factors_one_add_p_X_add_p_cube_X_sq :
         (fun i _ hi => by simp [zero_pow hi]) (by simp)] at hx
       simp [hg.coeff_zero 2] at hx
     have hnorm := norm_eq_rpow_of_forall_mem_newtonSlopes_eq (L := ℚ_[p]) v hp1
-      (fun _ hy => norm_eq_rpow_neg_padicRealValuation p hy) (hg.apply_ne_zero 2)
+      (fun _ hy => norm_eq_rpow_neg_padicRealValuation hy) (hg.apply_ne_zero 2)
       (hg.newtonSlopes_eq 2) hx0 (by simpa using hx)
     norm_num at hnorm
     exact hnorm
@@ -251,19 +204,15 @@ theorem newtonSlopes_one_sub_inv_p_X_sq :
 private theorem natDegree_one_sub_inv_p_X_sq :
     (1 - C (p : ℚ_[p])⁻¹ * X ^ 2 : ℚ_[p][X]).natDegree = 2 := by
   have hp_ne : (p : ℚ_[p]) ≠ 0 := Nat.cast_ne_zero.mpr (Fact.out : p.Prime).ne_zero
-  refine natDegree_eq_of_le_of_coeff_ne_zero (natDegree_le_iff_coeff_eq_zero.mpr fun n hn => ?_) ?_
-  · simp only [coeff_sub, coeff_one, coeff_C_mul, coeff_X_pow]
-    have h0 : n ≠ 0 := by omega
-    have h2 : n ≠ 2 := by omega
-    simp [h0, h2]
-  · simp only [coeff_sub, coeff_one, coeff_C_mul, coeff_X_pow]
-    norm_num [hp_ne]
+  have hdeg : (C (p : ℚ_[p])⁻¹ * X ^ 2 : ℚ_[p][X]).natDegree = 2 :=
+    natDegree_C_mul_X_pow 2 (p : ℚ_[p])⁻¹ (inv_ne_zero hp_ne)
+  rw [natDegree_sub_eq_right_of_natDegree_lt (by simp [hdeg]), hdeg]
 
 /-- Over `ℚ_[p]`, `1 - p⁻¹ X ^ 2` is irreducible, by the Newton polygon irreducibility criterion. -/
 theorem irreducible_one_sub_inv_p_X_sq :
     Irreducible (1 - C (p : ℚ_[p])⁻¹ * X ^ 2 : ℚ_[p][X]) := by
   refine irreducible_of_forall_mem_newtonSlopes_eq_div (v := padicRealValuation p)
-    (fun _ hx => exists_int_padicRealValuation p hx)
+    (fun _ hx => exists_int_padicRealValuation hx)
     (by simp only [coeff_sub, coeff_one, coeff_C_mul, coeff_X_pow]; norm_num)
     (by rw [natDegree_one_sub_inv_p_X_sq]; decide) (a := -1)
     (by rw [natDegree_one_sub_inv_p_X_sq]; decide) fun m hm => ?_

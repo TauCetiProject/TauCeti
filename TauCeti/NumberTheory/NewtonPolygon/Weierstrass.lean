@@ -161,18 +161,6 @@ variable {K : Type*} [NormedDivisionRing K]
   (v : AddValuation K (WithTop ℝ)) {b : ℝ} (hb : 1 < b)
   (hv : ∀ x ≠ 0, ‖x‖ = b ^ (-(v x).untop₀))
 
-/-- If `f` is distinguished of degree `j` at a positive radius `c`, `u` is a unit of the ring of
-series restricted at `c`, and `u * P = f` for a polynomial `P` of degree at most `j`, then `P` has
-degree `j`. -/
-theorem natDegree_eq_of_isUnit_mul [IsUltrametricDist K] {f : K⟦X⟧} {c : ℝ} (hc : 0 < c) {j : ℕ}
-    (hf : TauCeti.PowerSeries.IsDistinguished c j f)
-    {u : IsRestricted.subring (R := K) c} (hu : IsUnit u) {P : Polynomial K}
-    (hPdeg : P.natDegree ≤ j) (hmul : (u : K⟦X⟧) * (P : K⟦X⟧) = f) : P.natDegree = j := by
-  have hPd : TauCeti.PowerSeries.IsDistinguished c j (P : K⟦X⟧) :=
-    TauCeti.PowerSeries.IsDistinguished.of_isUnit_mul (hmul.symm ▸ hf) hc hu
-  have hcoeff : P.coeff j ≠ 0 := by simpa using hPd.coeff_ne_zero
-  exact le_antisymm hPdeg (Polynomial.le_natDegree_of_ne_zero hcoeff)
-
 /-- A polynomial factor `P` prepared at distinguished degree `j` has no outgoing finite edge at
 `j`. -/
 theorem notMem_finiteEdges_newtonPolygon_of_isUnit_mul [IsUltrametricDist K] {f : K⟦X⟧} {c : ℝ}
@@ -181,7 +169,7 @@ theorem notMem_finiteEdges_newtonPolygon_of_isUnit_mul [IsUltrametricDist K] {f 
     (hPdeg : P.natDegree ≤ j) (hmul : (u : K⟦X⟧) * (P : K⟦X⟧) = f) :
     j ∉ finiteEdges (P.newtonPolygon v) := by
   intro hj
-  have hdeg := natDegree_eq_of_isUnit_mul hc hf hu hPdeg hmul
+  have hdeg := TauCeti.PowerSeries.natDegree_eq_of_isUnit_mul hc hf hu hPdeg hmul
   exact (mem_finiteEdges.mp hj).2 (P.newtonPolygon_eq_top_of_natDegree_lt v (by omega))
 
 section Valuation
@@ -330,7 +318,7 @@ theorem newtonPolygon_eq_add_of_isUnit_mul {f : K⟦X⟧} {σ : ℝ} {j : ℕ}
     (hPdeg : P.natDegree ≤ j) (hmul : (u : K⟦X⟧) * (P : K⟦X⟧) = f) {n : ℕ} (hn : n ≤ j) :
     f.newtonPolygon v n = P.newtonPolygon v n + v ((u : K⟦X⟧).coeff 0) := by
   have hcσ : 0 < b ^ σ := Real.rpow_pos_of_pos (zero_lt_one.trans hb) σ
-  have hdeg : P.natDegree = j := natDegree_eq_of_isUnit_mul hcσ hf hu hPdeg hmul
+  have hdeg : P.natDegree = j := TauCeti.PowerSeries.natDegree_eq_of_isUnit_mul hcσ hf hu hPdeg hmul
   have hPd : TauCeti.PowerSeries.IsDistinguished (b ^ σ) j (P : K⟦X⟧) :=
     TauCeti.PowerSeries.IsDistinguished.of_isUnit_mul (hmul.symm ▸ hf) hcσ hu
   have hP0 : P ≠ 0 := Polynomial.coe_eq_zero_iff.not.mp hPd.ne_zero
@@ -389,7 +377,7 @@ theorem mem_finiteEdges_newtonPolygon_iff_of_isUnit_mul {f : K⟦X⟧} {σ : ℝ
     (hPdeg : P.natDegree ≤ j) (hmul : (u : K⟦X⟧) * (P : K⟦X⟧) = f) (i : ℕ) :
     i ∈ finiteEdges (P.newtonPolygon v) ↔ i ∈ finiteEdges (f.newtonPolygon v) ∧ i < j := by
   have hcσ : 0 < b ^ σ := Real.rpow_pos_of_pos (zero_lt_one.trans hb) σ
-  have hdeg := natDegree_eq_of_isUnit_mul hcσ hf hu hPdeg hmul
+  have hdeg := TauCeti.PowerSeries.natDegree_eq_of_isUnit_mul hcσ hf hu hPdeg hmul
   have hu0 : v ((u : K⟦X⟧).coeff 0) ≠ ⊤ :=
     v.ne_top_iff.mpr (TauCeti.PowerSeries.isDistinguished_zero_of_isUnit hcσ hu).coeff_ne_zero
   constructor
@@ -434,7 +422,7 @@ theorem le_of_mem_newtonSlopes_of_isUnit_mul {f : K⟦X⟧} {σ : ℝ} {j : ℕ}
     (hPdeg : P.natDegree ≤ j) (hmul : (u : K⟦X⟧) * (P : K⟦X⟧) = f)
     {m : ℝ} (hm : m ∈ P.newtonSlopes v) : m ≤ σ := by
   have hcσ : 0 < b ^ σ := Real.rpow_pos_of_pos (zero_lt_one.trans hb) σ
-  have hdeg := natDegree_eq_of_isUnit_mul hcσ hf hu hPdeg hmul
+  have hdeg := TauCeti.PowerSeries.natDegree_eq_of_isUnit_mul hcσ hf hu hPdeg hmul
   have hPd : TauCeti.PowerSeries.IsDistinguished (b ^ σ) P.natDegree (P : K⟦X⟧) :=
     hdeg ▸ TauCeti.PowerSeries.IsDistinguished.of_isUnit_mul (hmul.symm ▸ hf) hcσ hu
   exact P.le_of_mem_newtonSlopes_of_isDistinguished v hb hv hPd hm

@@ -70,8 +70,9 @@ degree `s`. This is the route to noetherianity of the Tate algebra.
   `TauCeti.PowerSeries.isUnit_iff_isDistinguished_zero_and_isUnit_coeff_zero` and, over a field,
   `TauCeti.PowerSeries.isUnit_iff_isDistinguished_zero`: the units of the ring of restricted
   series, for a multiplicative coefficient norm.
-* `TauCeti.PowerSeries.IsDistinguished.of_isUnit_mul`: multiplying by such a unit leaves the
-  distinguished degree unchanged.
+* `TauCeti.PowerSeries.IsDistinguished.of_isUnit_mul` and
+  `TauCeti.PowerSeries.natDegree_eq_of_isUnit_mul`: multiplying by such a unit leaves the
+  distinguished degree unchanged, so any polynomial factor of degree at most `s` has degree `s`.
 
 ## References
 
@@ -145,6 +146,18 @@ theorem IsDistinguished.of_isUnit_mul {u : PowerSeries.IsRestricted.subring (R :
     rw [← mul_assoc, hvu, one_mul]
   have hd := (isDistinguished_zero_of_isUnit hc hv).mul h hc (norm_mul _ _)
   rwa [zero_add, hvg] at hd
+
+/-- If `f` is distinguished of degree `s` at a positive radius `c`, `u` is a unit of the ring of
+series restricted at `c`, and `u * P = f` for a polynomial `P` of degree at most `s`, then `P` has
+degree `s`. -/
+theorem natDegree_eq_of_isUnit_mul {f : PowerSeries R} (hc : 0 < c)
+    (hf : IsDistinguished c s f) {u : PowerSeries.IsRestricted.subring (R := R) c} (hu : IsUnit u)
+    {P : Polynomial R} (hPdeg : P.natDegree ≤ s)
+    (hmul : (u : PowerSeries R) * (P : PowerSeries R) = f) : P.natDegree = s := by
+  have hPd : IsDistinguished c s (P : PowerSeries R) :=
+    IsDistinguished.of_isUnit_mul (hmul.symm ▸ hf) hc hu
+  have hcoeff : P.coeff s ≠ 0 := by simpa using hPd.coeff_ne_zero
+  exact le_antisymm hPdeg (Polynomial.le_natDegree_of_ne_zero hcoeff)
 
 end NormedRing
 
