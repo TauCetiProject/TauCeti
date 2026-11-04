@@ -130,6 +130,44 @@ variable [FiniteDimensional ℝ E] [T2Space M] {X : (x : M) → TangentSpace �
 
 namespace IsAdaptedPseudoGradient
 
+/-- **Trajectories read off a decomposition of a stable set.** Suppose that, apart from `q` itself,
+the stable set of a critical point `q` is covered by the orbits of points `y i`, where `y i` flows
+from a point `a i ≠ q` to `q` and crosses the middle level between `a i` and `q` at time `τ i`.
+Then the trajectories from a point `p ≠ q` to `q` are the crossings of the orbits starting at
+`p`. -/
+theorem morseTrajectorySlice_eq_image_of_stableSet_subset (hX : IsAdaptedPseudoGradient f X)
+    (hf : MDifferentiable 𝓘(ℝ, E) 𝓘(ℝ) f) {ι : Type*} {p q : M} {a y : ι → M} {τ : ι → ℝ}
+    (hq : mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f q = 0) (hpq : p ≠ q)
+    (hW : hX.flow.stableSet q ⊆ insert q (⋃ i, hX.flow.orbit (y i)))
+    (hy : ∀ i, y i ∈ hX.flow.unstableSet (a i) ∩ hX.flow.stableSet q) (haq : ∀ i, a i ≠ q)
+    (hτ : ∀ i, f (hX.flow (τ i) (y i)) = (f (a i) + f q) / 2) :
+    hX.morseTrajectorySlice p q = (fun i ↦ hX.flow (τ i) (y i)) '' {i | a i = p} := by
+  ext w
+  simp only [mem_morseTrajectorySlice, mem_image, mem_ofPred_eq]
+  constructor
+  · rintro ⟨hwu, hws, hwc⟩
+    -- The rest point `q` lies in no unstable set but its own, so `w` lies on some orbit `y i`.
+    have hwq : w ≠ q := by
+      rintro rfl
+      exact Flow.disjoint_unstableSet hpq |>.ne_of_mem hwu
+        (Flow.self_mem_unstableSet_iff.2 (hX.flow_apply_of_mfderiv_eq_zero hq)) rfl
+    obtain ⟨i, t, rfl⟩ : ∃ i t, hX.flow t (y i) = w := by
+      simpa [hwq, Flow.mem_orbit_iff] using hW hws
+    have hai : a i = p := by
+      by_contra hne
+      exact Flow.disjoint_unstableSet hne |>.ne_of_mem
+        ((Flow.apply_mem_unstableSet_iff _ _).2 (hy i).1) hwu rfl
+    -- The orbit of `y i` crosses the middle level only once.
+    have hval := hX.mem_Ioo_of_mem_unstableSet_inter_stableSet hf (haq i) (hy i)
+    obtain ⟨s, -, hs⟩ := hX.existsUnique_flow_eq_of_mem_unstableSet_inter_stableSet hf (haq i)
+      (hy i) (c := (f (a i) + f q) / 2) (by linarith [hval.1, hval.2])
+      (by linarith [hval.1, hval.2])
+    refine ⟨i, hai, ?_⟩
+    rw [hs (τ i) (hτ i), hs t (hwc.trans (by rw [hai]))]
+  · rintro ⟨i, rfl, rfl⟩
+    exact ⟨(Flow.apply_mem_unstableSet_iff _ _).2 (hy i).1,
+      (Flow.apply_mem_stableSet_iff _ _).2 (hy i).2, hτ i⟩
+
 namespace IsMorseSmale
 
 variable {hX : IsAdaptedPseudoGradient f X} (h : hX.IsMorseSmale) (hf : IsMorse 𝓘(ℝ, E) f)
@@ -148,75 +186,43 @@ private theorem sum_ncard_morseTrajectorySlice_of_add_one_eq_finrank {q : M}
   have hfd : MDifferentiable 𝓘(ℝ, E) 𝓘(ℝ) f := hf.contMDiff.mdifferentiable (by simp)
   obtain ⟨y₁, y₂, hy₁, hy₂, hdisj, hW⟩ := hX.exists_stableSet_eq_insert_union_orbit hfd hq hind
   set y : Fin 2 → M := ![y₁, y₂] with hy
+  have hW' : hX.flow.stableSet q = insert q (⋃ i, hX.flow.orbit (y i)) := by
+    ext w
+    simp [hW, hy, Fin.exists_fin_two]
   have hyq (i : Fin 2) : y i ≠ q := by fin_cases i <;> simp [hy, hy₁, hy₂]
-  have hyW (i : Fin 2) : y i ∈ hX.flow.stableSet q := by
-    rw [hW]
-    fin_cases i <;> simp [hy, Flow.mem_orbit_self]
-  have hdisj' {i j : Fin 2} (hij : i ≠ j) :
-      Disjoint (hX.flow.orbit (y i)) (hX.flow.orbit (y j)) := by
-    fin_cases i <;> fin_cases j
-    · exact absurd rfl hij
-    · simpa [hy] using hdisj
-    · simpa [hy] using hdisj.symm
-    · exact absurd rfl hij
   -- Each orbit starts at a critical point `a i`, which has index `n` by the Morse–Smale condition.
   choose a ha hlim using fun i ↦ hX.exists_tendsto_atBot hf (y i)
   have hmem (i : Fin 2) : y i ∈ hX.flow.unstableSet (a i) ∩ hX.flow.stableSet q :=
-    ⟨Flow.mem_unstableSet.2 (hlim i), hyW i⟩
-  have haq (i : Fin 2) : a i ≠ q := by
-    intro he
-    have hyi := hmem i
-    rw [he] at hyi
-    exact hyq i (hX.eq_of_mem_unstableSet_inter_stableSet hfd hyi)
+    ⟨Flow.mem_unstableSet.2 (hlim i),
+      hW' ▸ mem_insert_of_mem _ (mem_iUnion.2 ⟨i, Flow.mem_orbit_self _ _⟩)⟩
+  have haq (i : Fin 2) : a i ≠ q := fun he ↦
+    hyq i (hX.eq_of_mem_unstableSet_inter_stableSet hfd (he ▸ hmem i))
   have hTa (i : Fin 2) : a i ∈ T := by
     refine (hT _).2 ⟨ha i, le_antisymm manifoldMorseIndex_le_finrank ?_⟩
     have := hX.manifoldMorseIndex_lt_of_mem_unstableSet_inter_stableSet hf (ha i) hq (haq i)
       (hmem i) (h.span_mtangentConeAt_sup_eq_top (ha i) hq (hmem i))
     omega
   -- The `i`-th orbit crosses the middle level between `a i` and `q` at the time `τ i`.
-  have hcross (i : Fin 2) : ∃! t, f (hX.flow t (y i)) = (f (a i) + f q) / 2 := by
+  have hcross (i : Fin 2) : ∃ t, f (hX.flow t (y i)) = (f (a i) + f q) / 2 := by
     have hval := hX.mem_Ioo_of_mem_unstableSet_inter_stableSet hfd (haq i) (hmem i)
-    exact hX.existsUnique_flow_eq_of_mem_unstableSet_inter_stableSet hfd (haq i) (hmem i)
-      (by linarith [hval.1, hval.2]) (by linarith [hval.1, hval.2])
-  choose τ hτ hτu using hcross
-  set z : Fin 2 → M := fun i ↦ hX.flow (τ i) (y i)
-  have hz : Injective z := fun i j hij ↦ by
-    by_contra hne
-    exact (hdisj' hne).ne_of_mem (hX.flow.mem_orbit _ _) (hX.flow.mem_orbit _ _) hij
-  -- The trajectories from `p` to `q` are the crossings `z i` of the orbits starting at `p`.
-  have hslice (p : M) (hp : p ∈ T) :
-      hX.morseTrajectorySlice p q = z '' ↑(Finset.univ.filter fun i ↦ a i = p) := by
-    have hpq : p ≠ q := by
-      rintro rfl
-      have := ((hT p).1 hp).2
-      omega
-    ext w
-    simp only [mem_morseTrajectorySlice, mem_image, Finset.mem_coe, Finset.mem_filter,
-      Finset.mem_univ, true_and]
-    constructor
-    · rintro ⟨hwu, hws, hwc⟩
-      have hwq : w ≠ q := by
-        rintro rfl
-        exact Flow.disjoint_unstableSet hpq |>.ne_of_mem hwu
-          (Flow.self_mem_unstableSet_iff.2 (hX.flow_apply_of_mfderiv_eq_zero hq)) rfl
-      rw [hW, mem_insert_iff, mem_union] at hws
-      obtain ⟨i, t, rfl⟩ : ∃ i t, hX.flow t (y i) = w := by
-        rcases hws.resolve_left hwq with hw | hw
-        · exact ⟨0, (hX.flow.mem_orbit_iff).1 hw⟩
-        · exact ⟨1, (hX.flow.mem_orbit_iff).1 hw⟩
-      have hai : a i = p := by
-        by_contra hne
-        exact Flow.disjoint_unstableSet hne |>.ne_of_mem
-          ((Flow.apply_mem_unstableSet_iff _ _).2 (hmem i).1) hwu rfl
-      refine ⟨i, hai, ?_⟩
-      rw [hτu i t (hwc.trans (by rw [hai]))]
-    · rintro ⟨i, rfl, rfl⟩
-      exact ⟨(Flow.apply_mem_unstableSet_iff _ _).2 (hmem i).1,
-        (Flow.apply_mem_stableSet_iff _ _).2 (hmem i).2, hτ i⟩
+    exact (hX.existsUnique_flow_eq_of_mem_unstableSet_inter_stableSet hfd (haq i) (hmem i)
+      (by linarith [hval.1, hval.2]) (by linarith [hval.1, hval.2])).exists
+  choose τ hτ using hcross
+  -- The crossings are distinct, since they lie on the disjoint orbits of `y₁` and `y₂`.
+  have hz : Injective fun i ↦ hX.flow (τ i) (y i) := by
+    have hne := hdisj.ne_of_mem (hX.flow.mem_orbit _ (τ 0)) (hX.flow.mem_orbit _ (τ 1))
+    intro i j hij
+    fin_cases i <;> fin_cases j
+    exacts [rfl, (hne hij).elim, (hne hij.symm).elim, rfl]
+  -- The trajectories from `p` to `q` are the crossings of the orbits starting at `p`.
   calc ∑ p ∈ T, (hX.morseTrajectorySlice p q).ncard
       = ∑ p ∈ T, (Finset.univ.filter fun i ↦ a i = p).card :=
         Finset.sum_congr rfl fun p hp ↦ by
-          rw [hslice p hp, ncard_image_of_injective _ hz, ncard_coe_finset]
+          have hpq : p ≠ q := ne_of_apply_ne (manifoldMorseIndex 𝓘(ℝ, E) f)
+            (by have := ((hT p).1 hp).2; omega)
+          rw [hX.morseTrajectorySlice_eq_image_of_stableSet_subset hfd hq hpq hW'.subset hmem haq
+            hτ, ncard_image_of_injective _ hz, ← ncard_coe_finset, Finset.coe_filter]
+          simp
     _ = (Finset.univ : Finset (Fin 2)).card :=
         (Finset.card_eq_sum_card_fiberwise (by intro i _; simpa using hTa i)).symm
     _ = 2 := by simp
