@@ -204,6 +204,13 @@ lemma singularHomology_exact_outer (n m : ℕ) (h : m + 1 = n := by lia) :
     (ShortComplex.mk _ _ (T.comp_singularHomologyδ R n m h)).Exact :=
   (T.shortExact_singularChainComplexShortComplex R).homology_exact₃ n m (by simpa)
 
+/-- **Vanishing along a triple.** If `Hₙ(A, B)` and `Hₙ(X, A)` vanish, so does `Hₙ(X, B)`. -/
+theorem isZero_singularHomology_totalPair (n : ℕ)
+    (hinner : IsZero ((innerPair.obj T).singularHomology R n))
+    (houter : IsZero ((outerPair.obj T).singularHomology R n)) :
+    IsZero ((totalPair.obj T).singularHomology R n) :=
+  (T.singularHomology_exact_total R n).isZero_X₂ (hinner.eq_of_src _ _) (houter.eq_of_tgt _ _)
+
 /-- **The connecting morphism of a triple is an isomorphism when `(X, B)` is acyclic in the
 adjacent degrees**: if `Hₙ(X, B)` and `Hₘ(X, B)` vanish, then `Hₙ(X, A) ⟶ Hₘ(A, B)` is an
 isomorphism. -/
