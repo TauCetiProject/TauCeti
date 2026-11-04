@@ -17,7 +17,8 @@ The simple multiplicities of an object in a finite semisimple abelian category f
 supported function on `SimpleClasses C`. They count summands up to isomorphism, independently of
 the chosen decomposition. No coefficient field, splitness, or finiteness of the endomorphism
 division rings is required. Equal multiplicities characterize isomorphic objects, and the
-multiplicities are additive on binary biproducts and vanish exactly on zero objects.
+multiplicities are additive on binary biproducts and vanish exactly on zero objects. A simple
+object has nonzero multiplicity precisely when it maps nontrivially into the given object.
 
 Uniqueness uses Mathlib's `HomOrthogonal.equiv_of_iso`: Schur's lemma makes the chosen simple
 representatives hom orthogonal and their endomorphism rings division rings.
@@ -211,5 +212,33 @@ theorem simpleMultiplicities_eq_zero_iff (X : C) :
     simpleMultiplicities X = 0 ↔ IsZero X := by
   rw [← simpleMultiplicities_zero (C := C), ← nonempty_iso_iff_simpleMultiplicities_eq]
   exact ⟨fun ⟨e⟩ ↦ (isZero_zero C).of_iso e, fun h ↦ ⟨h.isoZero⟩⟩
+
+/-- A simple object occurs with nonzero multiplicity precisely when it maps nontrivially into
+an object. The multiplicity counts copies over the endomorphism division ring, not over a
+chosen coefficient field. -/
+theorem simpleMultiplicities_classOf_ne_zero_iff (X S : C) [Simple S] :
+    simpleMultiplicities X (SimpleClasses.classOf S) ≠ 0 ↔ ∃ f : S ⟶ X, f ≠ 0 := by
+  classical
+  obtain ⟨ι, hι, A, hA, hB, ⟨e⟩⟩ := IsFiniteSemisimpleCategory.exists_biproduct_simples X
+  let := hι
+  let := hA
+  let := hB
+  rw [simpleMultiplicities_apply_classOf_eq_sum A e S]
+  have hsum : (∑ i, if Nonempty (S ≅ A i) then 1 else 0 : ℕ) ≠ 0 ↔
+      ∃ i, Nonempty (S ≅ A i) := by simp
+  rw [hsum]
+  constructor
+  · rintro ⟨i, ⟨a⟩⟩
+    refine ⟨a.hom ≫ biproduct.ι A i ≫ e.inv, ?_⟩
+    intro h
+    exact biproduct_ι_comp_inv_ne_zero e i ((cancel_epi a.hom).1 (by simpa using h))
+  · rintro ⟨f, hf⟩
+    obtain ⟨i, hi⟩ : ∃ i, f ≫ e.hom ≫ biproduct.π A i ≠ 0 := by
+      by_contra! h
+      apply hf
+      apply (cancel_mono e.hom).1
+      exact biproduct.hom_ext _ _ fun i ↦ by simpa using h i
+    have := isIso_of_hom_simple hi
+    exact ⟨i, ⟨asIso (f ≫ e.hom ≫ biproduct.π A i)⟩⟩
 
 end TauCeti
