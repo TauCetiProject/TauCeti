@@ -266,9 +266,8 @@ theorem multiplicity_differentIdeal_eq_multiplicity_under [IsDomain Rₘ] [IsDed
   have hmap : (P.under S).map (algebraMap S Sₘ) = P :=
     IsLocalization.map_under (Algebra.algebraMapSubmonoid S M) Sₘ P
   have hunder : P.under S ≠ ⊥ := fun h ↦ hP (by rw [← hmap, h, Ideal.map_bot])
-  have hD : differentIdeal R S ≠ ⊥ := by
-    rw [ne_eq, ← FractionalIdeal.coeIdeal_inj (K := L), coeIdeal_differentIdeal R K L S]
-    simp
+  have hD : differentIdeal R S ≠ ⊥ :=
+    differentIdeal_ne_bot_of_isSeparable (K := K) (L := L)
   have hone : Ideal.ramificationIdx' (P.under S) P = 1 := by
     have h : Ideal.ramificationIdx' (P.under S) ((P.under S).map (algebraMap S Sₘ)) = 1 :=
       Ideal.ramificationIdx'_map_self_eq_one (by rw [hmap]; exact Ideal.IsPrime.ne_top ‹_›)

@@ -83,7 +83,6 @@ theorem isPerfectoidTateRing_of_sharp {ϖ : uniformTilt p B}
   let := isTateRing_of_sharp hϖ
   rcases subsingleton_or_nontrivial B with hB | hB
   · let := hB
-    have : Subsingleton (uniformTilt p B) := ⟨fun _ _ ↦ ext fun _ ↦ Subsingleton.elim _ _⟩
     exact isPerfectoidTateRing_of_subsingleton p _
   · let := hB
     exact IsPerfectoidTateRing.of_perfectRing

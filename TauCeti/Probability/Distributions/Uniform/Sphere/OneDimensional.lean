@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Normed.Module.FiniteDimension
-public import TauCeti.Probability.Distributions.Rademacher
+public import TauCeti.Probability.Distributions.Rademacher.Basic
 public import TauCeti.Probability.Distributions.Uniform.Sphere.Basic
 
 /-!
@@ -15,7 +15,7 @@ public import TauCeti.Probability.Distributions.Uniform.Sphere.Basic
 In a one-dimensional real inner product space, the unit sphere consists of two antipodal
 points. Its uniform law assigns mass one half to each point. Consequently, its coordinate
 along any unit vector has the Rademacher law, whose cumulative distribution, quantiles,
-moments and transforms are available in `TauCeti.Probability.Distributions.Rademacher`.
+moments and transforms are available in `TauCeti.Probability.Distributions.Rademacher.Basic`.
 
 The measure identity is stated both on the sphere and after embedding in the ambient space.
 These identities also describe the discrete direction in the Gaussian direction/radius
