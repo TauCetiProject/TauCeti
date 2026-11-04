@@ -217,6 +217,34 @@ theorem castDegree_castDegree {m'' : ℝ} (h : m = m') (h' : m' = m'')
     (a.castDegree h).castDegree h' = a.castDegree (h.trans h') :=
   (rfl)
 
+/-! Transport along an equality of degrees commutes with the vector space operations. -/
+
+@[simp]
+theorem castDegree_zero (h : m = m') :
+    (0 : HomogeneousSymbol X E V W m).castDegree h = 0 :=
+  (rfl)
+
+@[simp]
+theorem castDegree_add (h : m = m') (a b : HomogeneousSymbol X E V W m) :
+    (a + b).castDegree h = a.castDegree h + b.castDegree h :=
+  (rfl)
+
+@[simp]
+theorem castDegree_neg (h : m = m') (a : HomogeneousSymbol X E V W m) :
+    (-a).castDegree h = -a.castDegree h :=
+  (rfl)
+
+@[simp]
+theorem castDegree_sub (h : m = m') (a b : HomogeneousSymbol X E V W m) :
+    (a - b).castDegree h = a.castDegree h - b.castDegree h :=
+  (rfl)
+
+@[simp]
+theorem castDegree_smul {R : Type*} [Semiring R] [Module R (V →L[ℂ] W)]
+    [SMulCommClass ℝ R (V →L[ℂ] W)] [ContinuousConstSMul R (V →L[ℂ] W)] (h : m = m') (c : R)
+    (a : HomogeneousSymbol X E V W m) : (c • a).castDegree h = c • a.castDegree h :=
+  (rfl)
+
 /-! ### Composition -/
 
 /-- The pointwise composition of homogeneous symbols of degrees `m'` and `m` is a homogeneous
@@ -287,6 +315,20 @@ theorem comp_smul (c : ℂ) (b : HomogeneousSymbol X E W U m') (a : HomogeneousS
 theorem smul_comp (c : ℂ) (b : HomogeneousSymbol X E W U m') (a : HomogeneousSymbol X E V W m) :
     (c • b).comp a = c • b.comp a := by
   ext1; funext p; simp [ContinuousLinearMap.smul_comp]
+
+/-- Composing with a transported symbol transports the composition. -/
+@[simp]
+theorem comp_castDegree {m'' : ℝ} (h : m = m'') (b : HomogeneousSymbol X E W U m')
+    (a : HomogeneousSymbol X E V W m) :
+    b.comp (a.castDegree h) = (b.comp a).castDegree (by rw [h]) :=
+  (rfl)
+
+/-- Composing a transported symbol transports the composition. -/
+@[simp]
+theorem castDegree_comp {m'' : ℝ} (h : m' = m'') (b : HomogeneousSymbol X E W U m')
+    (a : HomogeneousSymbol X E V W m) :
+    (b.castDegree h).comp a = (b.comp a).castDegree (by rw [h]) :=
+  (rfl)
 
 /-! ### Spatial and frequency derivatives -/
 
@@ -451,6 +493,18 @@ theorem frequencyDeriv_smul (c : ℝ) (w : E) :
 @[simp]
 theorem frequencyDeriv_zero : a.frequencyDeriv 0 = 0 :=
   ext_of_ne_zero fun x ξ hξ ↦ by simp [frequencyDeriv, hξ, Prod.mk_zero_zero]
+
+/-! The derivatives commute with transport along an equality of degrees. -/
+
+@[simp]
+theorem spatialDeriv_castDegree (h : m = m') (v : X) :
+    (a.castDegree h).spatialDeriv v = (a.spatialDeriv v).castDegree h := by
+  subst h; rfl
+
+@[simp]
+theorem frequencyDeriv_castDegree (h : m = m') (w : E) :
+    (a.castDegree h).frequencyDeriv w = (a.frequencyDeriv w).castDegree (by rw [h]) := by
+  subst h; rfl
 
 end Deriv
 
