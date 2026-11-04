@@ -41,7 +41,7 @@ namespace Units
 /-- A real unit is a square exactly when it is positive. -/
 @[simp]
 theorem isSquare_iff_pos (u : ℝˣ) : IsSquare u ↔ 0 < (u : ℝ) := by
-  rw [← isSquare_units_val_iff, Real.isSquare_iff]
+  rw [← Units.isSquare_coe_iff, Real.isSquare_iff]
   exact ⟨fun h ↦ lt_of_le_of_ne h (Units.ne_zero u).symm, le_of_lt⟩
 
 /-- The squares in the real unit group are exactly the positive units. -/
@@ -60,7 +60,7 @@ theorem squareClass_eq_zero_iff_pos (u : ℝˣ) : squareClass u = 0 ↔ 0 < (u :
 @[simp]
 theorem squareClass_eq_squareClass_neg_one_iff_neg (u : ℝˣ) :
     squareClass u = squareClass (-1 : ℝˣ) ↔ (u : ℝ) < 0 := by
-  rw [squareClass_eq_iff_isSquare_mul, ← isSquare_units_val_iff, Real.isSquare_iff]
+  rw [squareClass_eq_iff_isSquare_mul, ← Units.isSquare_coe_iff, Real.isSquare_iff]
   simp only [Units.val_neg, mul_neg, mul_one]
   constructor
   · exact fun h ↦ lt_of_le_of_ne (neg_nonneg.mp h) (Units.ne_zero u)

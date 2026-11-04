@@ -181,7 +181,8 @@ theorem norm_factorial_le_mul_amiceRadius_succ_pow (h n : ℕ) :
   set k := n / p ^ (h + 1)
   -- `v_p(⌊n / pʰ⌋!) ≥ ⌊⌊n / pʰ⌋ / p⌋ = k`
   have hk : k ≤ padicValNat p (n / p ^ h)! := by
-    rw [← padicValNat_mul_div_factorial, padicValNat_factorial_mul, Nat.div_div_eq_div_mul,
+    rw [Nat.padicValNat_def, ← multiplicity_mul_div_factorial, multiplicity_factorial_mul,
+      Nat.div_div_eq_div_mul,
       ← pow_succ]
     exact Nat.le_add_left _ _
   have hkv : (k : ℝ) ≤ padicValNat p (n / p ^ h)! := by exact_mod_cast hk

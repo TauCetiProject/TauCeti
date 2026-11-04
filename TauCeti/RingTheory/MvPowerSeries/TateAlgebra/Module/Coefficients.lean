@@ -68,8 +68,8 @@ noncomputable def coeffAddEquiv :
     simp only [ZeroAtInftyContinuousMap.coe_mkOfDiscrete]
   map_add' a b := by
     ext t
-    simp only [ZeroAtInftyContinuousMap.coe_mkOfDiscrete, ZeroAtInftyContinuousMap.add_apply,
-      add_apply]
+    simp only [ZeroAtInftyContinuousMap.coe_mkOfDiscrete, _root_.add_apply,
+      TauCeti.MvPowerSeries.IsRestrictedFamily.Gauss.add_apply]
 
 /-- The additive coefficient comparison evaluates by taking the indicated coefficient. -/
 @[simp]

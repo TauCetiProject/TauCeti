@@ -127,7 +127,7 @@ private theorem exists_le_of_pow_mem (p : ℕ) [Fact p.Prime] [CharP L p] (φ : 
   set M := φ.carrier
   -- `X ^ p - a ^ p` is the minimal polynomial of `a` over `M`
   have hirr : Irreducible (X ^ p - C (⟨a ^ p, hap⟩ : M)) :=
-    X_pow_sub_C_irreducible_of_prime Fact.out fun c hc ↦ ha <| by
+    _root_.irreducible_X_pow_sub_C_of_prime Fact.out fun c hc ↦ ha <| by
       have hc' : (c : L) ^ p = a ^ p := congrArg Subtype.val hc
       rw [← frobenius_def p, ← frobenius_def p] at hc'
       exact frobenius_inj L p hc' ▸ c.2

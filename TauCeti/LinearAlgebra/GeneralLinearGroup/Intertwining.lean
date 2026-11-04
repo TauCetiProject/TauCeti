@@ -45,9 +45,9 @@ and `b⁻¹` if and only if it intertwines `a` and `b`. -/
 theorem comp_inv_eq_inv_comp_iff {f : V →ₗ[K] W} {a : GeneralLinearGroup K V}
     {b : GeneralLinearGroup K W} : f ∘ₗ ↑a⁻¹ = ↑b⁻¹ ∘ₗ f ↔ f ∘ₗ a = b ∘ₗ f := by
   refine ⟨fun h ↦ ?_, fun h ↦ ?_⟩ <;> ext x
-  · simpa [← Module.End.mul_apply] using
+  · simpa [← _root_.mul_apply_eq_comp] using
       congr((b : Module.End K W) ($h ((a : Module.End K V) x))).symm
-  · simpa [← Module.End.mul_apply] using
+  · simpa [← _root_.mul_apply_eq_comp] using
       congr((↑b⁻¹ : Module.End K W) ($h ((↑a⁻¹ : Module.End K V) x))).symm
 
 end LinearMap.GeneralLinearGroup

@@ -9,7 +9,6 @@ public import TauCeti.Geometry.RealAlgebraic.Nash.Basic
 public import TauCeti.Geometry.RealAlgebraic.Semialgebraic.Function
 import TauCeti.Geometry.RealAlgebraic.Semialgebraic.AlgebraicDependence
 import TauCeti.Topology.Constructions.SumProd
-import Mathlib.Topology.Homeomorph.Lemmas
 import Mathlib.Algebra.MvPolynomial.Equiv
 
 /-!
@@ -47,11 +46,8 @@ theorem IsSemialgebraicOn.exists_ne_zero_polynomial_relation {σ : Type*}
       ∀ x ∈ s, (P.map (eval x)).eval (f x) = 0 := by
   have hint : interior (Equiv.sumArrowEquivProdArrow σ Unit ℝ ⁻¹'
       s.graphOn (fun x (_ : Unit) ↦ f x)) = ∅ := by
-    have he : ⇑(Homeomorph.sumArrowHomeomorphProdArrow (X := ℝ) (ι := σ) (ι' := Unit)) =
-        ⇑(Equiv.sumArrowEquivProdArrow σ Unit ℝ) := by
-      -- The homeomorphism's toEquiv is Equiv.sumArrowEquivProdArrow by definition.
-      rfl
-    rw [← he, ← Homeomorph.preimage_interior, interior_graphOn, preimage_empty]
+    rw [← coe_sumArrowHomeomorphProdArrow, ← Homeomorph.preimage_interior,
+      interior_graphOn, preimage_empty]
   obtain ⟨p, hp, hrel⟩ := hf.graph.exists_ne_zero_polynomial_of_interior_eq_empty hint
   let k : σ ⊕ Unit → Option σ := Sum.elim some (fun _ ↦ none)
   have hk : Function.Injective k := by

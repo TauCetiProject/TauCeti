@@ -39,7 +39,7 @@ theorem compl₁₂_span_singleton_bijective_of_isUnit (B : M →ₗ[R] N →ₗ
     have hval : B (v : M) y = B (w : M) y := by
       simpa only [compl₁₂_apply, Submodule.subtype_apply] using
         DFunLike.congr_fun hvw (⟨y, hyT⟩ : T)
-    rw [← hb, ← hc, map_smul, map_smul, smul_apply, smul_apply] at hval
+    rw [← hb, ← hc, map_smul, map_smul, LinearMap.smul_apply, LinearMap.smul_apply] at hval
     simp only [smul_eq_mul] at hval
     have hbc : b = c := by
       simpa only [mul_assoc, ha, mul_one] using congrArg (fun z ↦ z * a) hval
@@ -51,7 +51,7 @@ theorem compl₁₂_span_singleton_bijective_of_isUnit (B : M →ₗ[R] N →ₗ
     obtain ⟨b, hb⟩ := Submodule.mem_span_singleton.mp z.property
     have hz : z = b • (⟨y, hyT⟩ : T) := Subtype.ext hb.symm
     rw [hz]
-    simp only [compl₁₂_apply, Submodule.subtype_apply, map_smul, smul_apply, smul_eq_mul]
+    simp only [compl₁₂_apply, Submodule.subtype_apply, map_smul, smul_eq_mul]
     calc
       b * (a * f ⟨y, hyT⟩ * B x y) = b * f ⟨y, hyT⟩ * (B x y * a) := by ac_rfl
       _ = b * f ⟨y, hyT⟩ := by rw [ha, mul_one]

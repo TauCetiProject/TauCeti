@@ -7,7 +7,7 @@ module
 
 public import TauCeti.NumberTheory.NumberField.Quadratic.InfinitePlace
 public import TauCeti.NumberTheory.QuadraticOrder.Embedding
-import TauCeti.Algebra.QuadraticAlgebra.Discriminant
+import Mathlib.Algebra.QuadraticAlgebra.Rat
 
 /-!
 # The squarefree radicand of a quadratic field
@@ -22,7 +22,7 @@ quadratic fields up to isomorphism are in bijection with the negative squarefree
 statements about imaginary quadratic fields up to isomorphism may be read off their radicands.
 
 The comparison of models reuses the classification of the models themselves,
-`QuadraticAlgebra.nonempty_algEquiv_iff_of_squarefree`: for squarefree integers `d` and `e`,
+`QuadraticAlgebra.Rat.nonempty_algEquiv_iff`: for squarefree integers `d` and `e`,
 `ℚ(√d) ≃ₐ[ℚ] ℚ(√e)` exactly when `d = e`. A presented field is identified with its model by
 `TauCeti.QuadraticOrder.algEquivOfSqrt`, evaluation at the chosen square root.
 
@@ -67,7 +67,7 @@ theorem nonempty_algEquiv_iff_of_squarefree (hK : finrank ℚ K = 2) (hL : finra
     (hd : Squarefree d) (he : Squarefree e) : Nonempty (K ≃ₐ[ℚ] L) ↔ d = e := by
   obtain ⟨φ⟩ := nonempty_algEquiv_quadraticAlgebra hK hθ
   obtain ⟨ψ⟩ := nonempty_algEquiv_quadraticAlgebra hL hη
-  rw [← QuadraticAlgebra.nonempty_algEquiv_iff_of_squarefree hd he]
+  rw [← QuadraticAlgebra.Rat.nonempty_algEquiv_iff hd he]
   exact ⟨fun ⟨σ⟩ => ⟨(φ.symm.trans σ).trans ψ⟩, fun ⟨τ⟩ => ⟨(φ.trans τ).trans ψ.symm⟩⟩
 
 /-- **The radicand is the only squarefree square class in `K`.** If `K` is presented by a square
@@ -96,7 +96,7 @@ theorem existsUnique_squarefree_algEquiv (hK : finrank ℚ K = 2) :
   obtain ⟨θ, d, hmin, -, hd⟩ := exists_minpoly_eq_X_sq_sub_C_and_adjoin_eq_top hK
   refine ⟨d, ⟨hd, nonempty_algEquiv_quadraticAlgebra hK hmin⟩, fun e ⟨he, ⟨ψ⟩⟩ => ?_⟩
   obtain ⟨φ⟩ := nonempty_algEquiv_quadraticAlgebra hK hmin
-  exact ((QuadraticAlgebra.nonempty_algEquiv_iff_of_squarefree hd he).mp
+  exact ((QuadraticAlgebra.Rat.nonempty_algEquiv_iff hd he).mp
     ⟨φ.symm.trans ψ⟩).symm
 
 /-- **The radicand classification of imaginary quadratic fields.** Every totally complex number
