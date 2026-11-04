@@ -12,6 +12,7 @@ import TauCeti.Analysis.InnerProductSpace.Laplacian.Convolution
 import TauCeti.Analysis.Normed.Operator.Holder
 import TauCeti.Analysis.PDE.HeatKernel.ApproximateIdentity
 import TauCeti.Analysis.PDE.HeatKernel.Derivatives
+import TauCeti.Analysis.SpecialFunctions.Pow.Real
 
 /-!
 # The heat convolution solves the heat equation
@@ -44,6 +45,8 @@ smoothness theorem `MeasureTheory.contDiff_convolution_left_of_dominated`. In ti
 * `TauCeti.iteratedFDeriv_heatKernel_convolution`,
   `TauCeti.iteratedFDeriv_heatKernel_convolution_eq_integral_sub`: `D^m (K_t ⋆ g) = D^m K_t ⋆ g`,
   with the value at the base point subtracted for `m ≥ 1`.
+* `TauCeti.iteratedFDeriv_heatKernel_convolution_eq_smul_integral`: the parabolic scaling
+  `D^m (K_t ⋆ g)(x) = (√t)⁻¹ ^ m ∫ D^m K_1(y) ⊗ g(x - √t • y) dy`.
 * `TauCeti.norm_iteratedFDeriv_heatKernel_convolution_le`,
   `TauCeti.norm_iteratedFDeriv_heatKernel_convolution_le_of_holderWith`: bounds on these
   derivatives for bounded and for Hölder data.
@@ -174,6 +177,34 @@ theorem norm_iteratedFDeriv_heatKernel_convolution_le (ht : 0 < t) (hg : AEStron
   filter_upwards [hqmp.ae hM] with z hz
   rw [ContinuousMultilinearMap.norm_smulRight]
   exact mul_le_mul_of_nonneg_left hz (norm_nonneg _)
+
+/-- **Parabolic scaling of the derivatives of a heat convolution.** For `t > 0` and `g` measurable
+and essentially bounded,
+`D^m (K_t ⋆ g)(x) = (√t)⁻¹ ^ m ∫ D^m K_1(y) ⊗ g(x - √t • y) dy`, where `A ⊗ b` is the
+multilinear map `v ↦ A v • b`. -/
+theorem iteratedFDeriv_heatKernel_convolution_eq_smul_integral (ht : 0 < t)
+    (hg : AEStronglyMeasurable g) (hM : ∀ᵐ y, ‖g y‖ ≤ M) (m : ℕ) (x : E) :
+    iteratedFDeriv ℝ m (heatKernel t ⋆ g) x = (√t)⁻¹ ^ m •
+      ∫ y, (iteratedFDeriv ℝ m (heatKernel 1 : E → ℝ) y).smulRight (g (x - √t • y)) := by
+  have hst : 0 < √t := sqrt_pos.2 ht
+  set φ : E → ContinuousMultilinearMap ℝ (fun _ : Fin m => E) F := fun y =>
+    ((√t)⁻¹ ^ (finrank ℝ E + m)) •
+      (iteratedFDeriv ℝ m (heatKernel 1 : E → ℝ) y).smulRight (g (x - √t • y)) with hφ_def
+  -- Substitute `z = √t • y`, using the parabolic scaling of `D^m K_t`.
+  have hφ (z : E) :
+      φ ((√t)⁻¹ • z) = (iteratedFDeriv ℝ m (heatKernel t) z).smulRight (g (x - z)) := by
+    have hpow : t ^ (-(finrank ℝ E + m : ℝ) / 2) = (√t)⁻¹ ^ (finrank ℝ E + m) := by
+      rw [inv_sqrt_pow_eq_rpow ht.le]
+      push_cast
+      ring_nf
+    have hinv : t ^ (-1 / 2 : ℝ) = (√t)⁻¹ := by
+      simpa using (inv_sqrt_pow_eq_rpow ht.le 1).symm
+    rw [iteratedFDeriv_heatKernel_eq_rpow_smul ht, hpow, hinv, hφ_def]
+    ext v
+    simp [smul_inv_smul₀ hst.ne', mul_smul]
+  rw [iteratedFDeriv_heatKernel_convolution ht hg hM, ← funext hφ,
+    Measure.integral_comp_inv_smul_of_nonneg _ _ hst.le, hφ_def, integral_smul, smul_smul,
+    pow_add, ← mul_assoc, ← mul_pow, mul_inv_cancel₀ hst.ne', one_pow, one_mul]
 
 /-- **Cancellation in the derivatives of a heat convolution.** Since `∫ D^m K_t = 0` for `m ≥ 1`,
 the value of `g` at the base point can be subtracted under the integral:
