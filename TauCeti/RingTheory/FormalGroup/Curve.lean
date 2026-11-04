@@ -8,9 +8,9 @@ module
 public import TauCeti.RingTheory.FormalGroup.Logarithm.Naturality
 public import TauCeti.RingTheory.MvPowerSeries.Symmetric
 public import TauCeti.RingTheory.PowerSeries.Cartier
-import Mathlib.RingTheory.Localization.Defs
 import TauCeti.RingTheory.FormalGroup.LazardRing.Polynomial
 import TauCeti.RingTheory.FormalGroup.TopNilpotentPoint.Basic
+import TauCeti.RingTheory.Localization.Defs
 import TauCeti.RingTheory.MvPowerSeries.Equiv
 import TauCeti.RingTheory.PowerSeries.Expand
 
@@ -53,8 +53,10 @@ yields Cartier's relations over every commutative ring:
 
 * `FormalGroup.Curve`: curves `γ(T) ∈ R⟦T⟧` with `γ(0) = 0` on a formal group law `F`, carrying
   `AddGroup` (and `AddCommGroup` when `F` is commutative) instances.
-* `FormalGroup.Curve.toPointHom` and `FormalGroup.Curve.coordPointHom`: additive homomorphisms
-  embedding curves into `F.Point Unit` and into the `i`-th coordinate of `F.Point σ`.
+* `FormalGroup.Curve.toPointHom`, `FormalGroup.Curve.coordPointHom`, and
+  `FormalGroup.Curve.symmSum`: additive homomorphisms embedding curves into `F.Point Unit` and into
+  the `i`-th coordinate of `F.Point σ`, together with the symmetric formal-group coordinate sum in
+  `MvPowerSeries.symmetricSubalgebra σ R`.
 * `FormalGroup.tautologicalCurve`: the identity curve `T` on `F`.
 * `FormalGroup.Curve.map`: base change of curves along a ring homomorphism `R →+* S`.
 * `TauCeti.FormalGroupHom.mapCurve` and `TauCeti.FormalGroupIso.curveEquiv`: pushforward of curves
@@ -65,15 +67,17 @@ yields Cartier's relations over every commutative ring:
 ## Main results
 
 * `FormalGroup.toPowerSeries_frobeniusCurve`: explicit power-series formula for `(f_n γ)(T)` via
-  `MvPowerSeries.symmetricSubalgebra.evalTopEsymm` and `FormalGroup.Curve.coordPointHom`.
+  `MvPowerSeries.symmetricSubalgebra.evalTopEsymm` and `FormalGroup.Curve.symmSum`.
 * `FormalGroup.subst_verschiebungCurve_log` and `FormalGroup.subst_frobeniusCurve_log`: action of
   `V_n` and `f_n` on the formal logarithm over a `ℚ`-algebra.
 * `FormalGroup.frobeniusCurve_one`, `FormalGroup.frobeniusCurve_frobeniusCurve`,
   `FormalGroup.frobeniusCurve_verschiebungCurve_self`, and
   `FormalGroup.frobeniusCurve_verschiebungCurve_of_coprime`: Cartier's operator identities over an
   arbitrary commutative ring.
-* `FormalGroup.Curve.exists_lift_of_isUnit_natCast`: lifting of `(F, γ)` to a ring that inverts a
-  specified set of nonzero natural numbers and embeds into a `ℚ`-algebra.
+* `FormalGroup.Curve.exists_lift_of_isUnit_natCast` and
+  `FormalGroup.Curve.eq_of_forall_ratAlgebra`: lifting of `(F, γ)` to a ring that inverts a
+  specified set of nonzero natural numbers and embeds into a `ℚ`-algebra, and the resulting transfer
+  principle for natural curve operators.
 
 ## References
 
@@ -249,6 +253,39 @@ theorem isSymmetric_val_sum_coordPointHom [F.IsComm] {σ : Type*} [Fintype σ] (
       simp_rw [hcoord]
       exact Equiv.sum_comp e fun i ↦ coordPointHom F i γ
     rw [rename_eq_subst, ← val_substPointHom F (HasSubst.X_comp e), hsum]
+
+@[simp]
+theorem constantCoeff_val_sum_coordPointHom [F.IsComm] {σ : Type*} [Fintype σ] (γ : F.Curve) :
+    constantCoeff (∑ i : σ, coordPointHom F i γ).val = 0 := by
+  refine Finset.sum_induction _ (fun x : F.Point σ ↦ constantCoeff x.val = 0)
+    (fun x y hx hy ↦ ?_) (by simp) (fun i _ ↦ ?_)
+  · exact constantCoeff_subst_eq_zero
+      (hasSubst_of_constantCoeff_zero (Fin.forall_fin_two.mpr ⟨hx, hy⟩))
+      (Fin.forall_fin_two.mpr ⟨hx, hy⟩) F.zero_constantCoeff
+  · rw [val_coordPointHom, PowerSeries.toMvPowerSeries_apply, constantCoeff_rename]
+    exact γ.constantCoeff_toPowerSeries
+
+/-- The formal-group sum `∑ i : σ, γ(Tᵢ)` of copies of a curve `γ` in each variable of a finite
+index type `σ`, viewed in `MvPowerSeries.symmetricSubalgebra σ R`. -/
+noncomputable def symmSum (F : FormalGroup R) [F.IsComm] (σ : Type*) [Fintype σ] (γ : F.Curve) :
+    symmetricSubalgebra σ R :=
+  ⟨(∑ i : σ, coordPointHom F i γ).val,
+    (mem_symmetricSubalgebra _).mpr (isSymmetric_val_sum_coordPointHom γ)⟩
+
+@[simp]
+theorem coe_symmSum (F : FormalGroup R) [F.IsComm] (σ : Type*) [Fintype σ] (γ : F.Curve) :
+    (symmSum F σ γ : MvPowerSeries σ R) = (∑ i : σ, coordPointHom F i γ).val :=
+  (rfl)
+
+@[simp]
+theorem symmSum_zero (F : FormalGroup R) [F.IsComm] (σ : Type*) [Fintype σ] :
+    symmSum F σ (0 : F.Curve) = 0 :=
+  Subtype.ext (by simp [zero_apply])
+
+theorem constantCoeff_symmSum (F : FormalGroup R) [F.IsComm] (σ : Type*) [Fintype σ]
+    (γ : F.Curve) :
+    constantCoeff (symmSum F σ γ : MvPowerSeries σ R) = 0 :=
+  constantCoeff_val_sum_coordPointHom γ
 
 /-- Adding a curve `δ` whose coefficients vanish below degree `m` leaves degrees `< m` unchanged
 and adds `coeff m δ` in degree `m`. -/
@@ -561,64 +598,36 @@ theorem subst_verschiebungCurve_log [Algebra ℚ R] (F : FormalGroup R) (n : ℕ
 
 section FrobeniusSetup
 
-private theorem constantCoeff_val_sum_coordPointHom (F : FormalGroup R) [F.IsComm] {σ : Type*}
-    [Fintype σ] (γ : F.Curve) :
-    constantCoeff (∑ i : σ, Curve.coordPointHom F i γ).val = 0 := by
-  refine Finset.sum_induction _ (fun x : F.Point σ ↦ constantCoeff x.val = 0)
-    (fun x y hx hy ↦ ?_) (by simp) (fun i _ ↦ ?_)
-  · exact constantCoeff_subst_eq_zero
-      (hasSubst_of_constantCoeff_zero (Fin.forall_fin_two.mpr ⟨hx, hy⟩))
-      (Fin.forall_fin_two.mpr ⟨hx, hy⟩) F.zero_constantCoeff
-  · rw [Curve.val_coordPointHom, PowerSeries.toMvPowerSeries_apply, constantCoeff_rename]
-    exact γ.constantCoeff_toPowerSeries
-
 /-- **Cartier's Frobenius operator** `f_n` on curves of a commutative formal group law `F`: the
 formal-group sum `γ(T₁) +_F ⋯ +_F γ(Tₙ)` is symmetric in `T₁, …, Tₙ`, and evaluating its elementary
 symmetric expansion at `e₁ = ⋯ = e_{n-1} = 0` and `eₙ = (-1)^(n-1) T` produces `(f_n γ)(T)`. -/
 noncomputable def frobeniusCurve (F : FormalGroup R) [F.IsComm] (n : ℕ) (hn : n ≠ 0) :
     F.Curve →+ F.Curve where
   toFun γ :=
-    ⟨symmetricSubalgebra.evalTopEsymm (Fin n) R ⟨(∑ i : Fin n, Curve.coordPointHom F i γ).val,
-      (mem_symmetricSubalgebra _).mpr (Curve.isSymmetric_val_sum_coordPointHom γ)⟩, by
-      rw [symmetricSubalgebra.constantCoeff_evalTopEsymm]
-      exact constantCoeff_val_sum_coordPointHom F γ⟩
-  map_zero' := Curve.ext <| by
-    have h0 : (⟨(∑ i : Fin n, Curve.coordPointHom F i 0).val,
-        (mem_symmetricSubalgebra _).mpr (Curve.isSymmetric_val_sum_coordPointHom (F := F) 0)⟩ :
-        symmetricSubalgebra (Fin n) R) = 0 := Subtype.ext (by simp [zero_apply])
-    exact (congrArg (symmetricSubalgebra.evalTopEsymm (Fin n) R) h0).trans (map_zero _)
+    ⟨symmetricSubalgebra.evalTopEsymm (Fin n) R (Curve.symmSum F (Fin n) γ), by simp⟩
+  map_zero' := Curve.ext (by simp)
   map_add' γ₁ γ₂ := Curve.ext <| by
     let : NeZero n := ⟨hn⟩
-    let s₁ : symmetricSubalgebra (Fin n) R := ⟨(∑ i : Fin n, Curve.coordPointHom F i γ₁).val,
-      (mem_symmetricSubalgebra _).mpr (Curve.isSymmetric_val_sum_coordPointHom γ₁)⟩
-    let s₂ : symmetricSubalgebra (Fin n) R := ⟨(∑ i : Fin n, Curve.coordPointHom F i γ₂).val,
-      (mem_symmetricSubalgebra _).mpr (Curve.isSymmetric_val_sum_coordPointHom γ₂)⟩
-    let s : Fin 2 → symmetricSubalgebra (Fin n) R := ![s₁, s₂]
+    let s : Fin 2 → symmetricSubalgebra (Fin n) R :=
+      ![Curve.symmSum F (Fin n) γ₁, Curve.symmSum F (Fin n) γ₂]
     have hs0 : ∀ j, constantCoeff (s j).1 = 0 :=
-      Fin.forall_fin_two.mpr ⟨constantCoeff_val_sum_coordPointHom F γ₁,
-        constantCoeff_val_sum_coordPointHom F γ₂⟩
-    have hv : (∑ i : Fin n, Curve.coordPointHom F i (γ₁ + γ₂)).val =
-        F.toPowerSeries.subst (fun t ↦ (s t).1) := by
-      simp only [map_add, Finset.sum_add_distrib, add_apply]
-      congr 1
-      exact funext <| Fin.forall_fin_two.mpr ⟨rfl, rfl⟩
-    have hsum : (⟨(∑ i : Fin n, Curve.coordPointHom F i (γ₁ + γ₂)).val,
-        (mem_symmetricSubalgebra _).mpr (Curve.isSymmetric_val_sum_coordPointHom (γ₁ + γ₂))⟩ :
-        symmetricSubalgebra (Fin n) R) = ⟨F.toPowerSeries.subst (fun t ↦ (s t).1),
+      Fin.forall_fin_two.mpr ⟨Curve.constantCoeff_symmSum F (Fin n) γ₁,
+        Curve.constantCoeff_symmSum F (Fin n) γ₂⟩
+    have hsum : Curve.symmSum F (Fin n) (γ₁ + γ₂) =
+        ⟨F.toPowerSeries.subst (fun t ↦ (s t).1),
           (mem_symmetricSubalgebra _).mpr <| IsSymmetric.subst (hasSubst_of_constantCoeff_zero hs0)
-            (fun j ↦ symmetricSubalgebra.isSymmetric (s j))⟩ := Subtype.ext hv
+            (fun j ↦ symmetricSubalgebra.isSymmetric (s j))⟩ := Subtype.ext <| by
+      simp only [Curve.coe_symmSum, map_add, Finset.sum_add_distrib, add_apply]
+      exact congrArg F.toPowerSeries.subst (funext <| Fin.forall_fin_two.mpr ⟨rfl, rfl⟩)
     dsimp only [Curve.toPowerSeries_add]
-    refine (congrArg (symmetricSubalgebra.evalTopEsymm (Fin n) R) hsum).trans ?_
-    rw [symmetricSubalgebra.evalTopEsymm_subst F.toPowerSeries s hs0]
-    congr 1
-    exact funext <| Fin.forall_fin_two.mpr ⟨rfl, rfl⟩
+    rw [hsum, symmetricSubalgebra.evalTopEsymm_subst F.toPowerSeries s hs0]
+    exact congrArg F.toPowerSeries.subst (funext <| Fin.forall_fin_two.mpr ⟨rfl, rfl⟩)
 
 @[simp]
 theorem toPowerSeries_frobeniusCurve (F : FormalGroup R) [F.IsComm] (n : ℕ) (hn : n ≠ 0)
     (γ : F.Curve) :
     (F.frobeniusCurve n hn γ).toPowerSeries =
-      symmetricSubalgebra.evalTopEsymm (Fin n) R ⟨(∑ i : Fin n, Curve.coordPointHom F i γ).val,
-        (mem_symmetricSubalgebra _).mpr (Curve.isSymmetric_val_sum_coordPointHom γ)⟩ := (rfl)
+      symmetricSubalgebra.evalTopEsymm (Fin n) R (Curve.symmSum F (Fin n) γ) := (rfl)
 
 theorem frobeniusCurve_congr (F : FormalGroup R) [F.IsComm] {m n : ℕ} (h : m = n) (hm : m ≠ 0)
     (hn : n ≠ 0) (γ : F.Curve) :
@@ -639,11 +648,10 @@ theorem map_frobeniusCurve (F : FormalGroup R) [F.IsComm] (φ : R →+* S) (n : 
     refine Finset.sum_congr rfl fun i _ ↦ Subtype.ext ?_
     rw [val_mapPointHom, Curve.val_coordPointHom, Curve.val_coordPointHom, Curve.toPowerSeries_map]
     exact PowerSeries.map_toMvPowerSeries φ i γ.toPowerSeries
-  have hval : MvPowerSeries.map φ (∑ i : Fin n, Curve.coordPointHom F i γ).val =
-      (∑ i : Fin n, Curve.coordPointHom (F.map φ) i (Curve.map φ γ)).val :=
+  refine congrArg (symmetricSubalgebra.evalTopEsymm (Fin n) S) (Subtype.ext ?_)
+  simpa only [Curve.coe_symmSum] using
     (val_mapPointHom F φ (∑ i : Fin n, Curve.coordPointHom F i γ)).symm.trans
       (congrArg Subtype.val hsum_eq)
-  exact congrArg (symmetricSubalgebra.evalTopEsymm (Fin n) S) (Subtype.ext hval)
 
 theorem _root_.TauCeti.FormalGroupHom.mapCurve_frobeniusCurve {F G : FormalGroup R}
     [F.IsComm] [G.IsComm] (f : TauCeti.FormalGroupHom F G) (n : ℕ) (hn : n ≠ 0) (γ : F.Curve) :
@@ -652,8 +660,7 @@ theorem _root_.TauCeti.FormalGroupHom.mapCurve_frobeniusCurve {F G : FormalGroup
   ext : 1
   rw [TauCeti.FormalGroupHom.toPowerSeries_mapCurve, toPowerSeries_frobeniusCurve,
     toPowerSeries_frobeniusCurve, PowerSeries.subst_def]
-  let s : symmetricSubalgebra (Fin n) R := ⟨(∑ i : Fin n, Curve.coordPointHom F i γ).val,
-    (mem_symmetricSubalgebra _).mpr (Curve.isSymmetric_val_sum_coordPointHom γ)⟩
+  let s : symmetricSubalgebra (Fin n) R := Curve.symmSum F (Fin n) γ
   have hpoint : f.toAddMonoidHom (Fin n) (∑ i : Fin n, Curve.coordPointHom F i γ) =
       ∑ i : Fin n, Curve.coordPointHom G i (f.mapCurve γ) := by
     rw [map_sum]
@@ -663,19 +670,18 @@ theorem _root_.TauCeti.FormalGroupHom.mapCurve_frobeniusCurve {F G : FormalGroup
       TauCeti.FormalGroupHom.toPowerSeries_mapCurve,
       PowerSeries.toMvPowerSeries_eq_subst, PowerSeries.toMvPowerSeries_eq_subst,
       PowerSeries.subst_comp_subst_apply γ.hasSubst (PowerSeries.HasSubst.X (S := R) i)]
-  have hv : (∑ i : Fin n, Curve.coordPointHom G i (f.mapCurve γ)).val =
+  have hv : (Curve.symmSum G (Fin n) (f.mapCurve γ)).1 =
       MvPowerSeries.subst (fun _ : Unit ↦ s.1) f.toPowerSeries := by
-    rw [← hpoint, TauCeti.FormalGroupHom.toAddMonoidHom_apply,
+    dsimp only [s]
+    rw [Curve.coe_symmSum, Curve.coe_symmSum, ← hpoint, TauCeti.FormalGroupHom.toAddMonoidHom_apply,
       TauCeti.FormalGroupHom.applyPoint_val, PowerSeries.subst_def]
-  have hsub : (⟨(∑ i : Fin n, Curve.coordPointHom G i (f.mapCurve γ)).val,
-      (mem_symmetricSubalgebra _).mpr (Curve.isSymmetric_val_sum_coordPointHom (f.mapCurve γ))⟩ :
-      symmetricSubalgebra (Fin n) R) = ⟨MvPowerSeries.subst (fun _ : Unit ↦ s.1) f.toPowerSeries,
+  have hsub : Curve.symmSum G (Fin n) (f.mapCurve γ) =
+      ⟨MvPowerSeries.subst (fun _ : Unit ↦ s.1) f.toPowerSeries,
         (mem_symmetricSubalgebra _).mpr <| IsSymmetric.subst
-          (hasSubst_of_constantCoeff_zero fun _ ↦ constantCoeff_val_sum_coordPointHom F γ)
-          (fun _ ↦ Curve.isSymmetric_val_sum_coordPointHom γ)⟩ := Subtype.ext hv
-  exact (symmetricSubalgebra.evalTopEsymm_subst f.toPowerSeries (fun _ : Unit ↦ s)
-    (fun _ ↦ constantCoeff_val_sum_coordPointHom F γ)).symm.trans
-    (congrArg (symmetricSubalgebra.evalTopEsymm (Fin n) R) hsub.symm)
+          (hasSubst_of_constantCoeff_zero fun _ ↦ Curve.constantCoeff_symmSum F (Fin n) γ)
+          (fun _ ↦ symmetricSubalgebra.isSymmetric s)⟩ := Subtype.ext hv
+  rw [hsub, symmetricSubalgebra.evalTopEsymm_subst f.toPowerSeries (fun _ : Unit ↦ s)
+    (fun _ ↦ Curve.constantCoeff_symmSum F (Fin n) γ)]
 
 /-- On the additive formal group law `𝔾ₐ`, Cartier's Frobenius operator `f_n` multiplies the
 residue-zero Cartier component by `n`: `(f_n γ)(T) = ∑_{k ≥ 1} n γ_{nk} Tᵏ`. -/
@@ -698,14 +704,12 @@ theorem toPowerSeries_frobeniusCurve_𝔾ₐ (n : ℕ) (hn : n ≠ 0) (γ : (�
             (∑ i ∈ s, Curve.coordPointHom (𝔾ₐ (R := R)) i γ).prop⟩
       rw [subst_add hxy, subst_X hxy, subst_X hxy]
       simp [ih]
-  rw [toPowerSeries_frobeniusCurve]
-  have hsub : (⟨(∑ i : Fin n, Curve.coordPointHom (𝔾ₐ (R := R)) i γ).val,
-      (mem_symmetricSubalgebra _).mpr (Curve.isSymmetric_val_sum_coordPointHom γ)⟩ :
-      symmetricSubalgebra (Fin n) R) = ⟨∑ i : Fin n, γ.toPowerSeries.toMvPowerSeries i,
+  have hsub : Curve.symmSum (𝔾ₐ (R := R)) (Fin n) γ =
+      ⟨∑ i : Fin n, γ.toPowerSeries.toMvPowerSeries i,
         (mem_symmetricSubalgebra _).mpr (IsSymmetric.sum_toMvPowerSeries γ.toPowerSeries)⟩ :=
     Subtype.ext (hpt Finset.univ)
-  refine (congrArg (symmetricSubalgebra.evalTopEsymm (Fin n) R) hsub).trans ?_
-  rw [symmetricSubalgebra.evalTopEsymm_sum_toMvPowerSeries, Fintype.card_fin]
+  rw [toPowerSeries_frobeniusCurve, hsub, symmetricSubalgebra.evalTopEsymm_sum_toMvPowerSeries,
+    Fintype.card_fin]
 
 /-- Over a `ℚ`-algebra, Frobenius acts on the formal logarithm of a curve by selecting degrees
 divisible by `n` and multiplying by `n`:
@@ -721,21 +725,6 @@ theorem subst_frobeniusCurve_log [Algebra ℚ R] (F : FormalGroup R) [F.IsComm] 
 end FrobeniusSetup
 
 /-! ### Lifting of curves and Cartier's operator identities -/
-
-private theorem isUnit_map_submonoidClosure_natCast {A B : Type*} [CommRing A] [CommRing B]
-    (f : A →+* B) {M₀ : Set ℕ} (hM₀ : ∀ n ∈ M₀, IsUnit (n : B))
-    (m : Submonoid.closure ((Nat.cast : ℕ → A) '' M₀)) : IsUnit (f m) := by
-  refine Submonoid.closure_induction (fun x hx ↦ ?_) (by simp)
-    (fun x y _ _ hx hy ↦ by rw [map_mul]; exact hx.mul hy) m.2
-  rcases hx with ⟨n, hnM, rfl⟩
-  simpa only [map_natCast] using hM₀ n hnM
-
-private theorem isLocalization_lift_injective_of_injective {A B : Type*} [CommRing A] [CommRing B]
-    {M : Submonoid A} {f : A →+* B} (hf : Function.Injective f) (hM : ∀ m : M, IsUnit (f m)) :
-    Function.Injective (IsLocalization.lift (M := M) (S := Localization M) hM) :=
-  (IsLocalization.lift_injective_iff hM).mpr fun _ _ ↦
-    ⟨IsLocalization.eq_of_eq (S := Localization M) hM,
-      fun h ↦ congrArg (algebraMap A (Localization M)) (hf h)⟩
 
 /-- **Lifting of curves**: for any commutative formal group law `F` over `R`, any curve `γ` on `F`,
 and any set `S` of nonzero natural numbers whose images in `R` are units, `(F, γ)` arises by base
@@ -763,12 +752,14 @@ theorem Curve.exists_lift_of_isUnit_natCast (F : FormalGroup R) [F.IsComm] (γ :
   -- `A = Localization M`, and lift `jU` to an injective ring homomorphism `j : A →+* Q`.
   let M : Submonoid U := Submonoid.closure ((Nat.cast : ℕ → U) '' S)
   let A : Type := Localization M
-  have hjM : ∀ m : M, IsUnit (jU m) :=
-    isUnit_map_submonoidClosure_natCast jU fun n hnS ↦ by
-      have hq : IsUnit (n : ℚ) := Ne.isUnit (Nat.cast_ne_zero.mpr (hS0 n hnS))
-      simpa only [map_natCast] using hq.map (algebraMap ℚ Q)
+  have hjM : ∀ m : M, IsUnit (jU m) := fun m ↦
+    (Submonoid.closure_le (S := (IsUnit.submonoid Q).comap jU.toMonoidHom)).mpr
+      (by
+        rintro _ ⟨n, hnS, rfl⟩
+        have hq : IsUnit (n : ℚ) := Ne.isUnit (Nat.cast_ne_zero.mpr (hS0 n hnS))
+        simpa [IsUnit.mem_submonoid_iff] using hq.map (algebraMap ℚ Q)) m.2
   let j : A →+* Q := IsLocalization.lift (M := M) (S := A) hjM
-  have hj : Function.Injective j := isLocalization_lift_injective_of_injective hjU hjM
+  have hj : Function.Injective j := IsLocalization.lift_injective_of_injective (S := A) hjM hjU
   have hSA : ∀ n ∈ S, IsUnit (n : A) := fun n hnS ↦ by
     have hm : (n : U) ∈ M := Submonoid.subset_closure ⟨n, hnS, rfl⟩
     simpa only [map_natCast] using IsLocalization.map_units A ⟨(n : U), hm⟩
@@ -781,7 +772,9 @@ theorem Curve.exists_lift_of_isUnit_natCast (F : FormalGroup R) [F.IsComm] (γ :
   let πU : U →+* R :=
     MvPolynomial.eval₂Hom (TauCeti.LazardRing.lift ⟨F, inferInstance⟩)
       (fun k : ℕ ↦ PowerSeries.coeff k γ.toPowerSeries)
-  have hπM : ∀ m : M, IsUnit (πU m) := isUnit_map_submonoidClosure_natCast πU hSR
+  have hπM : ∀ m : M, IsUnit (πU m) := fun m ↦
+    (Submonoid.closure_le (S := (IsUnit.submonoid R).comap πU.toMonoidHom)).mpr
+      (by rintro _ ⟨n, hnS, rfl⟩; simpa [IsUnit.mem_submonoid_iff] using hSR n hnS) m.2
   let π : A →+* R := IsLocalization.lift (M := M) (S := A) hπM
   have hπ_comp : π.comp (algebraMap U A) = πU := IsLocalization.lift_comp hπM
   let F₀ : FormalGroup A := F_U.map (algebraMap U A)
@@ -808,25 +801,38 @@ theorem Curve.exists_lift_of_isUnit_natCast (F : FormalGroup R) [F.IsComm] (γ :
 
 section CartierIdentities
 
-/-- Transfer principle for natural curve operators: two operations on curves of commutative formal
-group laws that commute with ring base change and formal-group homomorphisms and agree over every
-`ℚ`-algebra agree over every commutative ring. -/
-private theorem eq_of_ratAlgebra.{u} {R₀ : Type u} [CommRing R₀]
-    (Φ Ψ : ∀ {B : Type u} [CommRing B] (G : FormalGroup B) [G.IsComm], G.Curve → G.Curve)
-    (hQ : ∀ {B : Type u} [CommRing B] [Algebra ℚ B] (G : FormalGroup B) [G.IsComm] (δ : G.Curve),
-      Φ G δ = Ψ G δ)
+/-- **Transfer principle for natural curve operators**: two operations on curves of commutative
+formal group laws, defined on rings in which every `n ∈ S` is a unit, that commute with ring base
+change and formal-group homomorphisms and agree over every `ℚ`-algebra in which every `n ∈ S` is a
+unit agree on `(F, γ)` whenever every `n ∈ S` is a unit in the base ring. -/
+theorem Curve.eq_of_forall_ratAlgebra.{u} {R₀ : Type u} [CommRing R₀]
+    (F : FormalGroup R₀) [F.IsComm] (γ : F.Curve)
+    (S : Set ℕ) (hSR : ∀ n ∈ S, IsUnit (n : R₀))
+    (Φ Ψ : ∀ {B : Type u} [CommRing B] (G : FormalGroup B) [G.IsComm],
+      (∀ n ∈ S, IsUnit (n : B)) → G.Curve → G.Curve)
+    (hQ : ∀ {B : Type u} [CommRing B] [Algebra ℚ B] (G : FormalGroup B) [G.IsComm]
+      (hB : ∀ n ∈ S, IsUnit (n : B)) (δ : G.Curve), Φ G hB δ = Ψ G hB δ)
     (hmap : ∀ {B C : Type u} [CommRing B] [CommRing C] (G : FormalGroup B) [G.IsComm]
-      (φ : B →+* C) (δ : G.Curve), Curve.map φ (Φ G δ) = Φ (G.map φ) (Curve.map φ δ))
+      (hB : ∀ n ∈ S, IsUnit (n : B)) (hC : ∀ n ∈ S, IsUnit (n : C))
+      (φ : B →+* C) (δ : G.Curve), Curve.map φ (Φ G hB δ) = Φ (G.map φ) hC (Curve.map φ δ))
     (hmap' : ∀ {B C : Type u} [CommRing B] [CommRing C] (G : FormalGroup B) [G.IsComm]
-      (φ : B →+* C) (δ : G.Curve), Curve.map φ (Ψ G δ) = Ψ (G.map φ) (Curve.map φ δ))
+      (hB : ∀ n ∈ S, IsUnit (n : B)) (hC : ∀ n ∈ S, IsUnit (n : C))
+      (φ : B →+* C) (δ : G.Curve), Curve.map φ (Ψ G hB δ) = Ψ (G.map φ) hC (Curve.map φ δ))
     (hhom : ∀ {B : Type u} [CommRing B] {G H : FormalGroup B} [G.IsComm] [H.IsComm]
-      (f : TauCeti.FormalGroupHom G H) (δ : G.Curve), f.mapCurve (Φ G δ) = Φ H (f.mapCurve δ))
+      (hB : ∀ n ∈ S, IsUnit (n : B)) (f : TauCeti.FormalGroupHom G H) (δ : G.Curve),
+      f.mapCurve (Φ G hB δ) = Φ H hB (f.mapCurve δ))
     (hhom' : ∀ {B : Type u} [CommRing B] {G H : FormalGroup B} [G.IsComm] [H.IsComm]
-      (f : TauCeti.FormalGroupHom G H) (δ : G.Curve), f.mapCurve (Ψ G δ) = Ψ H (f.mapCurve δ))
-    (F : FormalGroup R₀) [F.IsComm] (γ : F.Curve) :
-    Φ F γ = Ψ F γ := by
-  obtain ⟨A, Q, _, _, _, j, hj, -, F₀, _, γ₀, π, e, rfl⟩ :=
-    Curve.exists_lift_of_isUnit_natCast F γ ∅ (by simp) (by simp)
+      (hB : ∀ n ∈ S, IsUnit (n : B)) (f : TauCeti.FormalGroupHom G H) (δ : G.Curve),
+      f.mapCurve (Ψ G hB δ) = Ψ H hB (f.mapCurve δ)) :
+    Φ F hSR γ = Ψ F hSR γ := by
+  by_cases h0 : 0 ∈ S
+  · have : Subsingleton R₀ := subsingleton_of_zero_eq_one
+      (isUnit_zero_iff.mp (by simpa only [Nat.cast_zero] using hSR 0 h0))
+    ext k
+    exact Subsingleton.elim _ _
+  have hS0 : ∀ n ∈ S, n ≠ 0 := fun n hn h ↦ h0 (h ▸ hn)
+  obtain ⟨A, Q, _, _, _, j, hj, hSA, F₀, _, γ₀, π, e, rfl⟩ :=
+    Curve.exists_lift_of_isUnit_natCast F γ S hS0 hSR
   -- Place `A` and `Q` into `Type u` as rings of functions on `PUnit.{u + 1}`.
   let A' : Type u := PUnit.{u + 1} → A
   let Q' : Type u := PUnit.{u + 1} → Q
@@ -836,12 +842,16 @@ private theorem eq_of_ratAlgebra.{u} {R₀ : Type u} [CommRing R₀]
   have hj' : Function.Injective j' := fun _ _ h ↦ funext fun p ↦ hj (congrFun h p)
   let π' : A' →+* R₀ := π.comp downA
   have hcomp : π'.comp upA = π := RingHom.ext fun _ ↦ rfl
+  have hSA' : ∀ n ∈ S, IsUnit (n : A') := fun n hn ↦ by
+    simpa only [map_natCast] using (hSA n hn).map upA
+  have hSQ' : ∀ n ∈ S, IsUnit (n : Q') := fun n hn ↦ by
+    simpa only [map_natCast] using (hSA' n hn).map j'
   let F₁ : FormalGroup A' := F₀.map upA
   let γ₁ : F₁.Curve := Curve.map upA γ₀
-  have hA' : Φ F₁ γ₁ = Ψ F₁ γ₁ := by
+  have hA' : Φ F₁ hSA' γ₁ = Ψ F₁ hSA' γ₁ := by
     apply Curve.map_injective hj'
-    rw [hmap F₁ j' γ₁, hmap' F₁ j' γ₁]
-    exact hQ (F₁.map j') (Curve.map j' γ₁)
+    rw [hmap F₁ hSA' hSQ' j' γ₁, hmap' F₁ hSA' hSQ' j' γ₁]
+    exact hQ (F₁.map j') hSQ' (Curve.map j' γ₁)
   have hF₁ : F₀.map π = F₁.map π' := by
     dsimp only [F₁]
     rw [FormalGroup.map_comp, hcomp]
@@ -849,9 +859,10 @@ private theorem eq_of_ratAlgebra.{u} {R₀ : Type u} [CommRing R₀]
   have hγ₁ : f'.mapCurve (Curve.map π' γ₁) = e.toHom.mapCurve (Curve.map π γ₀) := by
     ext : 1
     simp only [TauCeti.FormalGroupHom.toPowerSeries_mapCurve, f',
-      TauCeti.FormalGroupHom.ofSourceEq_toPowerSeries, Curve.toPowerSeries_map, γ₁]
-    congr 1
-  rw [← hγ₁, ← hhom f', ← hhom' f', ← hmap F₁ π' γ₁, ← hmap' F₁ π' γ₁, hA']
+      TauCeti.FormalGroupHom.ofSourceEq_toPowerSeries, Curve.toPowerSeries_map, γ₁,
+      ← RingHom.comp_apply, ← PowerSeries.map_comp, hcomp]
+  rw [← hγ₁, ← hhom hSR f', ← hhom' hSR f', ← hmap F₁ hSA' hSR π' γ₁,
+    ← hmap' F₁ hSA' hSR π' γ₁, hA']
 
 private theorem frobeniusCurve_one_of_ratAlgebra [Algebra ℚ R] (F : FormalGroup R) [F.IsComm]
     (γ : F.Curve) : F.frobeniusCurve 1 one_ne_zero γ = γ := by
@@ -916,10 +927,11 @@ private theorem frobeniusCurve_verschiebungCurve_of_coprime_of_ratAlgebra [Algeb
 @[simp]
 theorem frobeniusCurve_one (F : FormalGroup R) [F.IsComm] (γ : F.Curve) :
     F.frobeniusCurve 1 one_ne_zero γ = γ :=
-  eq_of_ratAlgebra (fun G _ δ ↦ G.frobeniusCurve 1 one_ne_zero δ) (fun _ _ δ ↦ δ)
-    (fun G _ δ ↦ frobeniusCurve_one_of_ratAlgebra G δ)
-    (fun G _ φ δ ↦ G.map_frobeniusCurve φ 1 one_ne_zero δ) (fun _ _ _ _ ↦ rfl)
-    (fun f δ ↦ f.mapCurve_frobeniusCurve 1 one_ne_zero δ) (fun _ _ ↦ rfl) F γ
+  Curve.eq_of_forall_ratAlgebra F γ ∅ (by simp)
+    (fun G _ _ δ ↦ G.frobeniusCurve 1 one_ne_zero δ) (fun _ _ _ δ ↦ δ)
+    (fun G _ _ δ ↦ frobeniusCurve_one_of_ratAlgebra G δ)
+    (fun G _ _ _ φ δ ↦ G.map_frobeniusCurve φ 1 one_ne_zero δ) (fun _ _ _ _ _ _ ↦ rfl)
+    (fun _ f δ ↦ f.mapCurve_frobeniusCurve 1 one_ne_zero δ) (fun _ _ _ ↦ rfl)
 
 /-- **Cartier's composition law `f_m ∘ f_n = f_{m n}`** on curves of a commutative formal group
 law over any commutative ring. -/
@@ -927,25 +939,27 @@ theorem frobeniusCurve_frobeniusCurve (F : FormalGroup R) [F.IsComm] {m n : ℕ}
     (hn : n ≠ 0) (γ : F.Curve) :
     F.frobeniusCurve m hm (F.frobeniusCurve n hn γ) =
       F.frobeniusCurve (m * n) (mul_ne_zero hm hn) γ :=
-  eq_of_ratAlgebra (fun G _ δ ↦ G.frobeniusCurve m hm (G.frobeniusCurve n hn δ))
-    (fun G _ δ ↦ G.frobeniusCurve (m * n) (mul_ne_zero hm hn) δ)
-    (fun G _ δ ↦ frobeniusCurve_frobeniusCurve_of_ratAlgebra G hm hn δ)
-    (fun G _ φ δ ↦ by rw [G.map_frobeniusCurve, G.map_frobeniusCurve])
-    (fun G _ φ δ ↦ G.map_frobeniusCurve φ (m * n) (mul_ne_zero hm hn) δ)
-    (fun f δ ↦ by rw [f.mapCurve_frobeniusCurve, f.mapCurve_frobeniusCurve])
-    (fun f δ ↦ f.mapCurve_frobeniusCurve (m * n) (mul_ne_zero hm hn) δ) F γ
+  Curve.eq_of_forall_ratAlgebra F γ ∅ (by simp)
+    (fun G _ _ δ ↦ G.frobeniusCurve m hm (G.frobeniusCurve n hn δ))
+    (fun G _ _ δ ↦ G.frobeniusCurve (m * n) (mul_ne_zero hm hn) δ)
+    (fun G _ _ δ ↦ frobeniusCurve_frobeniusCurve_of_ratAlgebra G hm hn δ)
+    (fun G _ _ _ φ δ ↦ by rw [G.map_frobeniusCurve, G.map_frobeniusCurve])
+    (fun G _ _ _ φ δ ↦ G.map_frobeniusCurve φ (m * n) (mul_ne_zero hm hn) δ)
+    (fun _ f δ ↦ by rw [f.mapCurve_frobeniusCurve, f.mapCurve_frobeniusCurve])
+    (fun _ f δ ↦ f.mapCurve_frobeniusCurve (m * n) (mul_ne_zero hm hn) δ)
 
 /-- **Cartier's identity `f_n ∘ V_n = [n]_F`**: Frobenius after Verschiebung of the same index `n`
 multiplies curves by `n` in the formal group law, over any commutative ring. -/
 theorem frobeniusCurve_verschiebungCurve_self (F : FormalGroup R) [F.IsComm] (n : ℕ) (hn : n ≠ 0)
     (γ : F.Curve) :
     F.frobeniusCurve n hn (F.verschiebungCurve n hn γ) = n • γ :=
-  eq_of_ratAlgebra (fun G _ δ ↦ G.frobeniusCurve n hn (G.verschiebungCurve n hn δ))
-    (fun _ _ δ ↦ n • δ) (fun G _ δ ↦ frobeniusCurve_verschiebungCurve_self_of_ratAlgebra G n hn δ)
-    (fun G _ φ δ ↦ by rw [G.map_frobeniusCurve, G.map_verschiebungCurve])
-    (fun _ _ φ δ ↦ map_nsmul (Curve.map φ) n δ)
-    (fun f δ ↦ by rw [f.mapCurve_frobeniusCurve, f.mapCurve_verschiebungCurve])
-    (fun f δ ↦ map_nsmul f.mapCurve n δ) F γ
+  Curve.eq_of_forall_ratAlgebra F γ ∅ (by simp)
+    (fun G _ _ δ ↦ G.frobeniusCurve n hn (G.verschiebungCurve n hn δ)) (fun _ _ _ δ ↦ n • δ)
+    (fun G _ _ δ ↦ frobeniusCurve_verschiebungCurve_self_of_ratAlgebra G n hn δ)
+    (fun G _ _ _ φ δ ↦ by rw [G.map_frobeniusCurve, G.map_verschiebungCurve])
+    (fun _ _ _ _ φ δ ↦ map_nsmul (Curve.map φ) n δ)
+    (fun _ f δ ↦ by rw [f.mapCurve_frobeniusCurve, f.mapCurve_verschiebungCurve])
+    (fun _ f δ ↦ map_nsmul f.mapCurve n δ)
 
 /-- **Cartier's coprime commutation law `f_m ∘ V_n = V_n ∘ f_m`** whenever `gcd(m, n) = 1`, over
 any commutative ring. -/
@@ -953,13 +967,14 @@ theorem frobeniusCurve_verschiebungCurve_of_coprime (F : FormalGroup R) [F.IsCom
     (hm : m ≠ 0) (hn : n ≠ 0) (hcop : m.Coprime n) (γ : F.Curve) :
     F.frobeniusCurve m hm (F.verschiebungCurve n hn γ) =
       F.verschiebungCurve n hn (F.frobeniusCurve m hm γ) :=
-  eq_of_ratAlgebra (fun G _ δ ↦ G.frobeniusCurve m hm (G.verschiebungCurve n hn δ))
-    (fun G _ δ ↦ G.verschiebungCurve n hn (G.frobeniusCurve m hm δ))
-    (fun G _ δ ↦ frobeniusCurve_verschiebungCurve_of_coprime_of_ratAlgebra G hm hn hcop δ)
-    (fun G _ φ δ ↦ by rw [G.map_frobeniusCurve, G.map_verschiebungCurve])
-    (fun G _ φ δ ↦ by rw [G.map_verschiebungCurve, G.map_frobeniusCurve])
-    (fun f δ ↦ by rw [f.mapCurve_frobeniusCurve, f.mapCurve_verschiebungCurve])
-    (fun f δ ↦ by rw [f.mapCurve_verschiebungCurve, f.mapCurve_frobeniusCurve]) F γ
+  Curve.eq_of_forall_ratAlgebra F γ ∅ (by simp)
+    (fun G _ _ δ ↦ G.frobeniusCurve m hm (G.verschiebungCurve n hn δ))
+    (fun G _ _ δ ↦ G.verschiebungCurve n hn (G.frobeniusCurve m hm δ))
+    (fun G _ _ δ ↦ frobeniusCurve_verschiebungCurve_of_coprime_of_ratAlgebra G hm hn hcop δ)
+    (fun G _ _ _ φ δ ↦ by rw [G.map_frobeniusCurve, G.map_verschiebungCurve])
+    (fun G _ _ _ φ δ ↦ by rw [G.map_verschiebungCurve, G.map_frobeniusCurve])
+    (fun _ f δ ↦ by rw [f.mapCurve_frobeniusCurve, f.mapCurve_verschiebungCurve])
+    (fun _ f δ ↦ by rw [f.mapCurve_verschiebungCurve, f.mapCurve_frobeniusCurve])
 
 end CartierIdentities
 
