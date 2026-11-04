@@ -30,21 +30,18 @@ complete) and `I` is proper, also `1 ≤ ‖1‖`, because a proper ideal contai
 distance `1` of the identity. In particular a quotient of a Banach algebra with `‖1‖ = 1` by a
 proper closed ideal again has `‖1‖ = 1`.
 
-For normed `𝕜`-algebras, the quotient map is a continuous algebra homomorphism of norm at most `1`
-with kernel `I`, and a continuous algebra homomorphism vanishing on `I` descends to a continuous
-algebra homomorphism on `R ⧸ I`, with the same bound on representatives. The continuous first
-isomorphism theorem says that a continuous surjective homomorphism `f : A → B` of Banach algebras
-induces an isomorphism `A ⧸ ker f ≃ B` of topological algebras. Its inverse is bounded by the
-open mapping theorem, but it is in general not an isometry: the quotient norm of `a` is the
-distance from `a` to `ker f`, which need not be `‖f a‖`.
+The quotient map `Ideal.Quotient.mkA` does not increase norms (`Submodule.Quotient.norm_mk_le`),
+and a continuous algebra homomorphism vanishing on `I` descends to a continuous algebra
+homomorphism `Ideal.Quotient.liftA` on `R ⧸ I` with the same bound on representatives. The
+continuous first isomorphism theorem says that a continuous surjective homomorphism `f : A → B`
+of Banach algebras induces an isomorphism `A ⧸ ker f ≃ B` of topological algebras. Its inverse is
+bounded by the open mapping theorem, but it is in general not an isometry: the quotient norm of
+`a` is the distance from `a` to `ker f`, which need not be `‖f a‖`.
 
 ## Main definitions
 
 * `Ideal.Quotient.seminormedRing`, `Ideal.Quotient.normedRing`,
   `Ideal.Quotient.normedAlgebraOfIsTwoSided`: the quotient norm structures.
-* `Ideal.Quotient.mkA`: the quotient map as a continuous algebra homomorphism.
-* `Ideal.Quotient.liftA`: the universal property of the quotient for continuous algebra
-  homomorphisms.
 * `ContinuousAlgHom.quotientKerEquivOfSurjective`: the continuous first isomorphism theorem for
   Banach algebras.
 
@@ -53,8 +50,6 @@ distance from `a` to `ker f`, which need not be `‖f a‖`.
 * `Ideal.Quotient.norm_one_le` and `Ideal.Quotient.one_le_norm_one`: bounds for the norm of the
   identity of a quotient.
 * `Ideal.Quotient.norm_liftA_apply_le`: a norm bound for an induced homomorphism.
-* `Ideal.Quotient.continuousAlgHom_ext`: continuous algebra homomorphisms out of `A ⧸ I` are
-  determined by their composites with the quotient map.
 
 Kernels of continuous algebra homomorphisms into normed algebras are closed
 (`ContinuousAlgHom.isClosed_ker`), so the quotient by such a kernel is a normed algebra.
@@ -137,83 +132,23 @@ end Unit
 
 section ContinuousAlgHom
 
-variable (R : Type*) {A B : Type*} [CommSemiring R] [SeminormedRing A] [Algebra R A]
-  (I : Ideal A) [I.IsTwoSided]
-
-/-- The quotient map onto the quotient by a two-sided ideal, as a continuous algebra
-homomorphism. It does not increase norms (`Submodule.Quotient.norm_mk_le`). -/
-noncomputable def mkA : A →A[R] A ⧸ I where
-  toAlgHom := Ideal.Quotient.mkₐ R I
-  cont := I.isQuotientMap_mkQ.continuous
-
-@[simp]
-theorem mkA_apply (a : A) : mkA R I a = Ideal.Quotient.mk I a :=
-  (rfl)
-
-theorem coe_mkA : ⇑(mkA R I) = Ideal.Quotient.mk I :=
-  (rfl)
-
-@[simp]
-theorem toAlgHom_mkA : (mkA R I : A →ₐ[R] A ⧸ I) = Ideal.Quotient.mkₐ R I :=
-  (rfl)
-
-theorem mkA_surjective : Function.Surjective (mkA R I) :=
-  Ideal.Quotient.mk_surjective
-
-@[simp]
-theorem ker_mkA : RingHom.ker (mkA R I) = I :=
-  Ideal.Quotient.mkₐ_ker R I
-
-variable {R}
-
-section Lift
-
-variable [Semiring B] [TopologicalSpace B] [Algebra R B]
-
-/-- Two continuous algebra homomorphisms out of `A ⧸ I` agree when they agree after composition
-with the quotient map. -/
-@[ext 1100]
-theorem continuousAlgHom_ext {f g : A ⧸ I →A[R] B} (h : f.comp (mkA R I) = g.comp (mkA R I)) :
-    f = g :=
-  ContinuousAlgHom.coe_inj.mp (Ideal.Quotient.algHom_ext R (congr_arg ContinuousAlgHom.toAlgHom h))
-
-/-- A continuous algebra homomorphism vanishing on a two-sided ideal `I` descends to a continuous
-algebra homomorphism on `A ⧸ I`. -/
-noncomputable def liftA (f : A →A[R] B) (hI : ∀ a ∈ I, f a = 0) : A ⧸ I →A[R] B where
-  toAlgHom := Ideal.Quotient.liftₐ I f hI
-  cont := Ideal.Quotient.continuous_lift I f.continuous hI
-
-@[simp]
-theorem toAlgHom_liftA (f : A →A[R] B) (hI : ∀ a ∈ I, f a = 0) :
-    (liftA I f hI : A ⧸ I →ₐ[R] B) = Ideal.Quotient.liftₐ I f hI :=
-  (rfl)
-
-@[simp]
-theorem liftA_mk (f : A →A[R] B) (hI : ∀ a ∈ I, f a = 0) (a : A) :
-    liftA I f hI (Ideal.Quotient.mk I a) = f a :=
-  Ideal.Quotient.lift_mk I (f : A →+* B) hI
-
-@[simp]
-theorem liftA_comp_mkA (f : A →A[R] B) (hI : ∀ a ∈ I, f a = 0) :
-    (liftA I f hI).comp (mkA R I) = f :=
-  ContinuousAlgHom.ext fun a ↦ liftA_mk I f hI a
-
-end Lift
+variable {R A B : Type*} [CommSemiring R] [SeminormedRing A] [Algebra R A] (I : Ideal A)
+  [I.IsTwoSided]
 
 /-- A homomorphism bounded by `C` on `A` is bounded by `C` on the quotient. -/
 theorem norm_liftA_apply_le [SeminormedRing B] [Algebra R B] (f : A →A[R] B)
     (hI : ∀ a ∈ I, f a = 0) {C : ℝ} (hC : ∀ a, ‖f a‖ ≤ C * ‖a‖) (x : A ⧸ I) :
     ‖liftA I f hI x‖ ≤ C * ‖x‖ := by
+  obtain ⟨a, rfl⟩ := Ideal.Quotient.mk_surjective x
+  rw [liftA_mk]
   rcases le_or_gt C 0 with hC0 | hC0
   · -- For `C ≤ 0` any representative `a` works, since `‖x‖ ≤ ‖a‖`.
-    obtain ⟨a, rfl⟩ := Ideal.Quotient.mk_surjective x
-    rw [liftA_mk]
     exact (hC a).trans (mul_le_mul_of_nonpos_left (Submodule.Quotient.norm_mk_le I a) hC0)
   · -- For `C > 0`, this is the bound for lifts of bounded additive group homomorphisms.
     exact (QuotientAddGroup.norm_lift_apply_le (S := I.toAddSubgroup)
-      ((f : A →+ B).mkNormedAddGroupHom C hC) hI x).trans
+      ((f : A →+ B).mkNormedAddGroupHom C hC) hI (Ideal.Quotient.mk I a)).trans
       (mul_le_mul_of_nonneg_right (AddMonoidHom.mkNormedAddGroupHom_norm_le _ hC0.le hC)
-        (norm_nonneg x))
+        (norm_nonneg _))
 
 end ContinuousAlgHom
 
@@ -225,16 +160,19 @@ variable {𝕜 A B : Type*} [NontriviallyNormedField 𝕜] [NormedRing A] [Norme
   [CompleteSpace A] [NormedRing B] [NormedAlgebra 𝕜 B] [CompleteSpace B]
 
 omit [CompleteSpace A] [CompleteSpace B] in
-/-- The algebraic first isomorphism `A ⧸ ker f ≃ B` is the map `Ideal.Quotient.liftA` induced
-by `f`. -/
-private theorem coe_quotientKerAlgEquivOfSurjective (f : A →A[𝕜] B)
+/-- The algebraic first isomorphism `A ⧸ ker f ≃ B` is continuous, being the map
+`Ideal.Quotient.liftA` induced by `f`. -/
+private theorem continuous_quotientKerAlgEquivOfSurjective (f : A →A[𝕜] B)
     (hf : Function.Surjective f) :
-    ⇑(Ideal.quotientKerAlgEquivOfSurjective (f := (f : A →ₐ[𝕜] B)) hf) =
+    Continuous (Ideal.quotientKerAlgEquivOfSurjective (f := (f : A →ₐ[𝕜] B)) hf) := by
+  have h : ⇑(Ideal.quotientKerAlgEquivOfSurjective (f := (f : A →ₐ[𝕜] B)) hf) =
       ⇑(Ideal.Quotient.liftA (RingHom.ker f) f fun _ ↦ id) := by
-  funext x
-  obtain ⟨a, rfl⟩ := Ideal.Quotient.mk_surjective x
-  rw [Ideal.quotientKerAlgEquivOfSurjective_mk]
-  exact (Ideal.Quotient.liftA_mk _ f _ a).symm
+    funext x
+    obtain ⟨a, rfl⟩ := Ideal.Quotient.mk_surjective x
+    rw [Ideal.quotientKerAlgEquivOfSurjective_mk]
+    exact (Ideal.Quotient.liftA_mk _ f _ a).symm
+  rw [h]
+  exact (Ideal.Quotient.liftA (RingHom.ker f) f fun _ ↦ id).continuous
 
 /-- **The continuous first isomorphism theorem** for Banach algebras: a continuous surjective
 algebra homomorphism `f : A → B` induces an isomorphism of topological algebras
@@ -243,24 +181,28 @@ isometry. -/
 noncomputable def quotientKerEquivOfSurjective (f : A →A[𝕜] B) (hf : Function.Surjective f) :
     (A ⧸ RingHom.ker f) ≃A[𝕜] B where
   toAlgEquiv := Ideal.quotientKerAlgEquivOfSurjective (f := (f : A →ₐ[𝕜] B)) hf
-  continuous_toFun := by
-    have h := (Ideal.Quotient.liftA (RingHom.ker f) f fun _ ↦ id).continuous
-    rw [← coe_quotientKerAlgEquivOfSurjective f hf] at h
-    exact h
+  continuous_toFun := continuous_quotientKerAlgEquivOfSurjective f hf
   continuous_invFun := by
     let e : (A ⧸ RingHom.ker f) ≃ₗ[𝕜] B :=
       (Ideal.quotientKerAlgEquivOfSurjective (f := (f : A →ₐ[𝕜] B)) hf).toLinearEquiv
     have he : Continuous e := by
-      have h := (Ideal.Quotient.liftA (RingHom.ker f) f fun _ ↦ id).continuous
-      rw [← coe_quotientKerAlgEquivOfSurjective f hf] at h
+      have h := continuous_quotientKerAlgEquivOfSurjective f hf
+      rw [← AlgEquiv.coe_toLinearEquiv] at h
       exact h
     -- The inverse is continuous by the open mapping theorem.
     exact e.continuous_symm he
 
+/-- The underlying algebra isomorphism is the algebraic first isomorphism theorem. -/
+@[simp]
+theorem toAlgEquiv_quotientKerEquivOfSurjective (f : A →A[𝕜] B) (hf : Function.Surjective f) :
+    (quotientKerEquivOfSurjective f hf).toAlgEquiv =
+      Ideal.quotientKerAlgEquivOfSurjective (f := (f : A →ₐ[𝕜] B)) hf :=
+  (rfl)
+
 @[simp]
 theorem quotientKerEquivOfSurjective_mk (f : A →A[𝕜] B) (hf : Function.Surjective f) (a : A) :
     quotientKerEquivOfSurjective f hf (Ideal.Quotient.mk _ a) = f a :=
-  (rfl)
+  Ideal.quotientKerAlgEquivOfSurjective_mk hf a
 
 @[simp]
 theorem quotientKerEquivOfSurjective_symm_apply (f : A →A[𝕜] B) (hf : Function.Surjective f)
