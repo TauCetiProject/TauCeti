@@ -81,29 +81,6 @@ variable (hc : IsCompleteVectorField (timeDependentSuspensionField X))
     (fun p : ℝ × M ↦ (⟨p.2, X p.1 p.2⟩ : TangentBundle I M)))
 include hc hX
 
-/-- The time-dependent flow from time `t`, read in the chart at `y`, is jointly `C²` in time and
-coordinates near `(t, y)`. -/
-private theorem contDiffAt_extChartAt_timeDependentFlowOf (t : ℝ) (y : M) :
-    ContDiffAt ℝ 2 (fun p : ℝ × E ↦
-      extChartAt I y (timeDependentFlowOf X t p.1 ((extChartAt I y).symm p.2)))
-      (t, extChartAt I y y) := by
-  have hX₁ := hX.of_le (m := 1) one_le_two
-  have hsymm : ContMDiffAt 𝓘(ℝ, E) I 2 (extChartAt I y).symm (extChartAt I y y) := by
-    have h := contMDiffWithinAt_extChartAt_symm_range_self (I := I) (n := 2) y
-    rwa [I.range_eq_univ, contMDiffWithinAt_univ] at h
-  have hpair : ContMDiffAt (𝓘(ℝ, ℝ).prod 𝓘(ℝ, E)) ((𝓘(ℝ, ℝ).prod 𝓘(ℝ, ℝ)).prod I) 2
-      (fun p : ℝ × E ↦ ((t, p.1), (extChartAt I y).symm p.2)) (t, extChartAt I y y) :=
-    (contMDiffAt_const.prodMk contMDiffAt_fst).prodMk
-      (ContMDiffAt.comp (t, extChartAt I y y) hsymm contMDiffAt_snd)
-  have hflow := (contMDiff_timeDependentFlowOf hc (n := 2) (by norm_num) hX).contMDiffAt
-    (x := ((t, t), (extChartAt I y).symm (extChartAt I y y)))
-  have hcomp := (contMDiffAt_extChartAt (I := I) (n := 2) (x := y)).comp_of_eq
-    (ContMDiffAt.comp (t, extChartAt I y y) hflow hpair) (by
-      simp only [Function.comp_apply, extChartAt_to_inv]
-      exact timeDependentFlowOf_self hX₁ t y)
-  rw [← modelWithCornersSelf_prod, chartedSpaceSelf_prod, contMDiffAt_iff_contDiffAt] at hcomp
-  exact hcomp
-
 omit hc in
 /-- At the base time `t`, the velocity of the time-dependent flow from `t`, read in the chart at
 `y`, is the coordinate expression of `X t` in that chart. -/
@@ -148,11 +125,8 @@ theorem hasDerivAt_mpullback_timeDependentFlowOf_self (t : ℝ) (y : M)
   have hflow := contMDiff_timeDependentFlowOf hc (n := 2) (by norm_num) hX
   exact hasDerivAt_mpullback_of_eq_id (ψ := timeDependentFlowOf X t) (V := X t) y
     (Eventually.of_forall (timeDependentFlowOf_self hX₁ t))
-    (Eventually.of_forall fun u ↦ (hflow.comp
-      ((contMDiff_const (c := (t, u))).prodMk contMDiff_id)).mdifferentiableAt (by norm_num))
-    (hflow.comp (((contMDiff_const (c := t)).prodMk contMDiff_id).prodMk
-      contMDiff_const)).continuous.continuousAt
-    (contDiffAt_extChartAt_timeDependentFlowOf hc hX t y)
+    (hflow.comp (((contMDiff_const (c := t)).prodMk contMDiff_fst).prodMk
+      contMDiff_snd)).contMDiffAt
     (eventually_of_mem (extChartAt_target_mem_nhds y) fun _ hz ↦
       hasDerivAt_extChartAt_timeDependentFlowOf hX t y hz) hα
 
@@ -181,13 +155,17 @@ theorem hasDerivAt_mpullback_timeDependentFlowOf (s t : ℝ) (x : M)
       funext fun z ↦ (timeDependentFlowOf_trans hc hX₁ s t u z).symm
     rw [hcomp, mpullback_comp_at (hsmooth s t x) (hsmooth t u _)]
     ext v
-    -- Both sides evaluate `φ_{t,u}^* α` at `φ_{s,t} x` on the vectors `L (v i)`.
+    -- Both sides evaluate `φ_{t,u}^* α` at `φ_{s,t} x` on the vectors `L (v i)`. The operator
+    -- `compContinuousLinearMapCLM L` acts on forms on `E`, while the pulled-back form takes values
+    -- on tangent spaces, which are `E` only up to unfolding; so `compContinuousLinearMapCLM_apply`
+    -- does not rewrite here, and the right side is unfolded by `rfl`.
     rw [mpullback_apply]
     rfl
   have h := (compContinuousLinearMapCLM (ι := Fin k) (F := F) L).hasFDerivAt.comp_hasDerivAt t
     (hasDerivAt_mpullback_timeDependentFlowOf_self hc hX t _ hα)
   refine (h.congr_of_eventuallyEq (Eventually.of_forall fun u ↦ hshift u)).congr_deriv ?_
   ext v
+  -- As in `hshift`, the left side is `compContinuousLinearMapCLM L` applied up to unfolding.
   exact (mpullback_apply (timeDependentFlowOf X s t) (mlieDerivForm (X t) α) x v).symm
 
 /-- **Invariance of forms under time-dependent flows.** For a jointly `C²` time-dependent vector
@@ -225,18 +203,20 @@ theorem mpullback_timeDependentFlowOf_eq_self_iff
     exact hconst
 
 /-- **Time-dependent flows preserve closed forms with closed contractions.** For a jointly `C²`
-time-dependent vector field `X` with complete suspension and a closed smooth form `β` whose
-contraction `ι_{X_t} β` is closed for every time `t`, the time-dependent flow satisfies
+time-dependent vector field `X` with complete suspension and a differentiable closed form `β`
+whose contraction `ι_{X_t} β` is closed for every time `t`, the time-dependent flow satisfies
 `φ_{s,t}^* β = β`, because Cartan's formula gives `L_{X_t} β = d(ι_{X_t} β) = 0`. For a
 symplectic form `β`, these are the time-dependent symplectic vector fields. -/
 theorem mpullback_timeDependentFlowOf_of_mextDeriv_interior_eq_zero
-    {β : SmoothForm I M F (k + 1)} (hβ : β.IsClosed)
-    (hXβ : ∀ t, mextDeriv (RoughForm.interior (X t) β.1) = 0) (s t : ℝ) :
-    mpullback (F := F) I I (timeDependentFlowOf X s t) β.1 = β.1 := by
-  refine (mpullback_timeDependentFlowOf_eq_self_iff hc hX β.mdifferentiable).2 (fun u ↦ ?_) s t
+    {β : RoughForm I M F (k + 1)}
+    (hβ : MDifferentiable I (I.prod 𝓘(ℝ, E [⋀^Fin (k + 1)]→L[ℝ] F))
+      (fun z ↦ TotalSpace.mk' (E [⋀^Fin (k + 1)]→L[ℝ] F) z (β z)))
+    (hdβ : mextDeriv β = 0) (hXβ : ∀ t, mextDeriv (RoughForm.interior (X t) β) = 0) (s t : ℝ) :
+    mpullback (F := F) I I (timeDependentFlowOf X s t) β = β := by
+  refine (mpullback_timeDependentFlowOf_eq_self_iff hc hX hβ).2 (fun u ↦ ?_) s t
   -- The slice `X u` is a differentiable vector field.
   have hXu : MDifferentiable I I.tangent (fun y ↦ (⟨y, X u y⟩ : TangentBundle I M)) :=
     (hX.comp ((contMDiff_const (c := u)).prodMk contMDiff_id)).mdifferentiable two_ne_zero
-  rw [SmoothForm.mlieDerivForm_eq_mextDeriv_interior hXu hβ, hXβ u]
+  rw [mlieDerivForm_eq_mextDeriv_interior hβ hXu hdβ, hXβ u]
 
 end TauCeti

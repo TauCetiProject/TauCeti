@@ -37,8 +37,8 @@ Hamiltonian flows are symplectic.
 
 In the preferred chart at a point the flow is a jointly `C²` family of maps, and the statement
 reduces to its flat counterpart `TauCeti.hasDerivAt_compContinuousLinearMap_fderiv`. This
-reduction holds for every family of maps `ψᵤ` which is the identity near `y` at a time `t` and,
-in the chart at `y`, is jointly `C²` with velocity `V` at time `t`: then
+reduction holds for every jointly `C²` family of maps `ψᵤ` which is the identity near `y` at a
+time `t` and, in the chart at `y`, has velocity `V` at time `t`: then
 `d/du|_{u = t} (ψᵤ^* α)_y = (L_V α)_y` (`TauCeti.hasDerivAt_mpullback_of_eq_id`). Time-dependent
 flows are the other instance (`TauCeti.Geometry.Manifold.DifferentialForm.Flow.TimeDependent`).
 
@@ -76,43 +76,14 @@ variable {E H M F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDim
 /-! ### Pullbacks along a family of maps -/
 
 omit [FiniteDimensional ℝ E] [T2Space M] in
-/-- While `f y` stays in the chart at `y`, the pullback of a form at `y` by `f` is the flat pullback
-of its coordinate expression by `f` read in that chart. -/
-private theorem compContinuousLinearMap_fderiv_eq_mpullback (y : M) {f : M → M}
-    (hf : MDifferentiableAt I I f y) (hfy : f y ∈ (extChartAt I y).source) :
-    compContinuousLinearMap (α.inChartAt y (extChartAt I y (f y)))
-        (fderiv ℝ (fun z ↦ extChartAt I y (f ((extChartAt I y).symm z))) (extChartAt I y y)) =
-      mpullback I I f α y := by
-  have hyt : extChartAt I y y ∈ (extChartAt I y).target := mem_extChartAt_target y
-  have hf' : MDifferentiableAt I I f ((extChartAt I y).symm (extChartAt I y y)) := by
-    rwa [extChartAt_to_inv]
-  have hsymm : MDifferentiableWithinAt 𝓘(ℝ, E) I (extChartAt I y).symm univ (extChartAt I y y) := by
-    rw [← I.range_eq_univ]
-    exact mdifferentiableWithinAt_extChartAt_symm hyt
-  -- The flat pullback is the pullback by `f` composed with the inverse chart, read in the chart.
-  have h := RoughForm.mpullbackWithin_eq_compContinuousLinearMap α y
-    (by simpa only [Function.comp_apply, extChartAt_to_inv] using hfy)
-    (hf'.comp_mdifferentiableWithinAt _ hsymm) uniqueDiffWithinAt_univ
-  rw [fderivWithin_univ] at h
-  simp only [Function.comp_apply, extChartAt_to_inv] at h
-  rw [← RoughForm.inChartAt_extChartAt_self (mpullback I I f α) y,
-    RoughForm.inChartAt_mpullback α f y hyt hf', I.range_eq_univ]
-  refine h.symm.trans ?_
-  ext v
-  rw [mpullbackWithin_apply, compContinuousLinearMap_apply]
-  rfl
-
-omit [FiniteDimensional ℝ E] [T2Space M] in
 /-- **The Lie derivative is the velocity of pulled-back forms along a family of maps.** Let `ψᵤ` be
-a family of maps of `M` which is the identity near `y` at time `t` and which, read in the chart at
-`y`, is jointly `C²` near `(t, y)` and moves the points near `y` at time `t` with the coordinate
-velocity of a vector field `V`. Then for a form `α` differentiable at `y`,
+a family of maps of `M` which is the identity near `y` at time `t`, is jointly `C²` near `(t, y)`,
+and, read in the chart at `y`, moves the points near `y` at time `t` with the coordinate velocity
+of a vector field `V`. Then for a form `α` differentiable at `y`,
 `d/du|_{u = t} (ψᵤ^* α)_y = (L_V α)_y`. -/
 theorem hasDerivAt_mpullback_of_eq_id {ψ : ℝ → M → M} {V : (x : M) → TangentSpace I x} {t : ℝ}
-    (y : M) (hid : ∀ᶠ x in 𝓝 y, ψ t x = x) (hψ : ∀ᶠ u in 𝓝 t, MDifferentiableAt I I (ψ u) y)
-    (hcont : ContinuousAt (fun u ↦ ψ u y) t)
-    (hsmooth : ContDiffAt ℝ 2
-      (fun p : ℝ × E ↦ extChartAt I y (ψ p.1 ((extChartAt I y).symm p.2))) (t, extChartAt I y y))
+    (y : M) (hid : ∀ᶠ x in 𝓝 y, ψ t x = x)
+    (hsmooth : ContMDiffAt (𝓘(ℝ, ℝ).prod I) I 2 (fun p : ℝ × M ↦ ψ p.1 p.2) (t, y))
     (hvel : ∀ᶠ z in 𝓝 (extChartAt I y y),
       HasDerivAt (fun u ↦ extChartAt I y (ψ u ((extChartAt I y).symm z)))
         (VectorField.mpullbackWithin 𝓘(ℝ, E) I (extChartAt I y).symm V (range I) z) t)
@@ -123,8 +94,21 @@ theorem hasDerivAt_mpullback_of_eq_id {ψ : ℝ → M → M} {V : (x : M) → Ta
   -- The family read in the chart at `y`, and the field read in the same chart.
   set G : ℝ × E → E := fun p ↦ extChartAt I y (ψ p.1 ((extChartAt I y).symm p.2))
   set W := VectorField.mpullbackWithin 𝓘(ℝ, E) I (extChartAt I y).symm V (range I) with hW
+  have hGsmooth : ContDiffAt ℝ 2 G (t, extChartAt I y y) := by
+    have hsymm : ContMDiffAt 𝓘(ℝ, E) I 2 (extChartAt I y).symm (extChartAt I y y) := by
+      have h := contMDiffWithinAt_extChartAt_symm_range_self (I := I) (n := 2) y
+      rwa [I.range_eq_univ, contMDiffWithinAt_univ] at h
+    have hpair : ContMDiffAt (𝓘(ℝ, ℝ).prod 𝓘(ℝ, E)) (𝓘(ℝ, ℝ).prod I) 2
+        (fun p : ℝ × E ↦ (p.1, (extChartAt I y).symm p.2)) (t, extChartAt I y y) :=
+      contMDiffAt_fst.prodMk (ContMDiffAt.comp (t, extChartAt I y y) hsymm contMDiffAt_snd)
+    have hcomp := (contMDiffAt_extChartAt (I := I) (n := 2) (x := y)).comp_of_eq
+      (hsmooth.comp_of_eq hpair (Prod.ext rfl (extChartAt_to_inv y))) (by
+        simp only [Function.comp_apply, extChartAt_to_inv]
+        exact hid.self_of_nhds)
+    rw [← modelWithCornersSelf_prod, chartedSpaceSelf_prod, contMDiffAt_iff_contDiffAt] at hcomp
+    exact hcomp
   have hdiff : ∀ᶠ p in 𝓝 (t, extChartAt I y y), DifferentiableAt ℝ G p :=
-    (hsmooth.eventually (by simp)).mono fun p hp ↦ hp.differentiableAt (by simp)
+    (hGsmooth.eventually (by simp)).mono fun p hp ↦ hp.differentiableAt (by simp)
   have hGt_nhds : (fun z ↦ G (t, z)) =ᶠ[𝓝 (extChartAt I y y)] id := by
     have hid' : ∀ᶠ z in 𝓝 (extChartAt I y y), ψ t ((extChartAt I y).symm z) =
         (extChartAt I y).symm z :=
@@ -145,7 +129,7 @@ theorem hasDerivAt_mpullback_of_eq_id {ψ : ℝ → M → M} {V : (x : M) → Ta
       (fderiv ℝ W (G (t, extChartAt I y y)) ∘L
         fderiv ℝ (fun z ↦ G (t, z)) (extChartAt I y y)) t := by
     have h := hasDerivAt_spatialFDeriv (F := G) (t := t) (x := extChartAt I y y)
-      (by simpa only [minSmoothness_of_isRCLikeNormedField] using hsmooth)
+      (by simpa only [minSmoothness_of_isRCLikeNormedField] using hGsmooth)
     rw [hGt, hGt_nhds.fderiv_eq, fderiv_id, ContinuousLinearMap.comp_id, ← htime.fderiv_eq]
     refine h.congr_of_eventuallyEq ?_
     have hd : ∀ᶠ u in 𝓝 t, DifferentiableAt ℝ G (u, extChartAt I y y) :=
@@ -160,6 +144,16 @@ theorem hasDerivAt_mpullback_of_eq_id {ψ : ℝ → M → M} {V : (x : M) → Ta
         differentiableAt_snd)
     (by rw [hGt]; exact hvel.self_of_nhds)
     hspatial
+  -- Near time `t`, the maps `ψᵤ` are differentiable at `y` and keep `y` in the chart at `y`.
+  have hψ : ∀ᶠ u in 𝓝 t, MDifferentiableAt I I (ψ u) y := by
+    have h := ((continuous_id.prodMk continuous_const).tendsto t).eventually
+      ((contMDiffAt_iff_contMDiffAt_nhds (by simp)).1 hsmooth)
+    filter_upwards [h] with u hu
+    exact (hu.comp_of_eq (contMDiffAt_const.prodMk contMDiffAt_id) rfl).mdifferentiableAt
+      (by norm_num)
+  have hcont : ContinuousAt (fun u ↦ ψ u y) t :=
+    hsmooth.continuousAt.comp (f := fun u : ℝ ↦ (u, y))
+      (continuous_id.prodMk continuous_const).continuousAt
   -- Near time `t`, the pullback at `y` is the flat pullback in the chart at `y`.
   have hsrc : ∀ᶠ u in 𝓝 t, ψ u y ∈ (extChartAt I y).source :=
     hcont.preimage_mem_nhds (by
@@ -171,8 +165,10 @@ theorem hasDerivAt_mpullback_of_eq_id {ψ : ℝ → M → M} {V : (x : M) → Ta
     filter_upwards [hsrc, hψ] with u hu hψu
     have hGu : G (u, extChartAt I y y) = extChartAt I y (ψ u y) := by
       simp only [G, extChartAt_to_inv]
-    rw [hGu]
-    exact (compContinuousLinearMap_fderiv_eq_mpullback y hψu hu).symm
+    rw [hGu, RoughForm.mpullback_eq_compContinuousLinearMap α y hψu hu, I.range_eq_univ,
+      fderivWithin_univ]
+    -- The two coordinate expressions of `ψᵤ` differ only by unfolding `Function.comp`.
+    rfl
   refine (hflat.congr_of_eventuallyEq heq).congr_deriv ?_
   rw [deriv_const, zero_add, hGt, hGt_nhds.fderiv_eq, fderiv_id, mlieDerivForm_def,
     ← hW, I.range_eq_univ]
@@ -186,27 +182,6 @@ theorem hasDerivAt_mpullback_of_eq_id {ψ : ℝ → M → M} {V : (x : M) → Ta
 variable (hc : IsCompleteVectorField Z)
   (hZ : ContMDiff I I.tangent 2 (fun y ↦ (⟨y, Z y⟩ : TangentBundle I M)))
 include hc hZ
-
-/-- The flow of `Z`, read in the chart at `y`, is jointly `C²` in time and coordinates near
-`(0, y)`. -/
-private theorem contDiffAt_extChartAt_globalFlow (y : M) :
-    ContDiffAt ℝ 2 (fun p : ℝ × E ↦
-      extChartAt I y (globalFlow Z (hZ.of_le one_le_two) hc p.1 ((extChartAt I y).symm p.2)))
-      (0, extChartAt I y y) := by
-  have hsymm : ContMDiffAt 𝓘(ℝ, E) I 2 (extChartAt I y).symm (extChartAt I y y) := by
-    have h := contMDiffWithinAt_extChartAt_symm_range_self (I := I) (n := 2) y
-    rwa [I.range_eq_univ, contMDiffWithinAt_univ] at h
-  have hpair : ContMDiffAt (𝓘(ℝ, ℝ).prod 𝓘(ℝ, E)) (𝓘(ℝ, ℝ).prod I) 2
-      (fun p : ℝ × E ↦ (p.1, (extChartAt I y).symm p.2)) (0, extChartAt I y y) :=
-    contMDiffAt_fst.prodMk (ContMDiffAt.comp (0, extChartAt I y y) hsymm contMDiffAt_snd)
-  have hflow := (contMDiff_globalFlow_uncurry hc (n := 2) (by norm_num) hZ).contMDiffAt
-    (x := (0, (extChartAt I y).symm (extChartAt I y y)))
-  have hcomp := (contMDiffAt_extChartAt (I := I) (n := 2) (x := y)).comp_of_eq
-    (ContMDiffAt.comp (0, extChartAt I y y) hflow hpair) (by
-      simp only [Function.comp_apply, extChartAt_to_inv]
-      exact Flow.map_zero_apply _ y)
-  rw [← modelWithCornersSelf_prod, chartedSpaceSelf_prod, contMDiffAt_iff_contDiffAt] at hcomp
-  exact hcomp
 
 /-- At time zero, the velocity of the flow of `Z` read in the chart at `y` is the coordinate
 expression of `Z` in that chart. -/
@@ -241,12 +216,7 @@ theorem hasDerivAt_mpullback_globalFlow_zero (y : M)
       (mlieDerivForm Z α y) 0 :=
   hasDerivAt_mpullback_of_eq_id (ψ := globalFlow Z (hZ.of_le one_le_two) hc) (V := Z) y
     (Eventually.of_forall (Flow.map_zero_apply _))
-    (Eventually.of_forall fun s ↦
-      (contMDiff_globalFlow_apply hc (n := 2) (by norm_num) hZ s).mdifferentiableAt
-        (by norm_num))
-    ((globalFlow Z (hZ.of_le one_le_two) hc).continuous continuous_id
-      continuous_const).continuousAt
-    (contDiffAt_extChartAt_globalFlow hc hZ y)
+    (contMDiff_globalFlow_uncurry hc (n := 2) (by norm_num) hZ).contMDiffAt
     (eventually_of_mem (extChartAt_target_mem_nhds y) fun _ hz ↦
       hasDerivAt_extChartAt_globalFlow hc hZ y hz) hα
 
