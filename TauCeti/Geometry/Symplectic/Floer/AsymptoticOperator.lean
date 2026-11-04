@@ -169,11 +169,9 @@ theorem integral_associatedBilinForm_asymptoticOperator_comm [FiniteDimensional 
       (hc₁.intervalIntegrable _ _)
   -- The remaining integrand is the derivative of the periodic function `ω(ζ, η)`.
   have hd : ∀ t, HasDerivAt (fun t ↦ ω (ζ t) (η t))
-      (ω (deriv ζ t) (η t) + ω (ζ t) (deriv η t)) t := fun t ↦ by
-    have := ω.toBilinForm.toContinuousBilinearMap.hasDerivAt_of_bilinear
-      (fun _ ↦ (hζ.differentiable one_ne_zero t).hasDerivAt)
-      (fun _ ↦ (hη.differentiable one_ne_zero t).hasDerivAt)
-    simpa only [LinearMap.toContinuousBilinearMap_apply, add_comm] using this
+      (ω (deriv ζ t) (η t) + ω (ζ t) (deriv η t)) t := fun t ↦
+    ω.hasDerivAt_apply_comp (hζ.differentiable one_ne_zero t).hasDerivAt
+      (hη.differentiable one_ne_zero t).hasDerivAt
   have hI : (∫ t in (0 : ℝ)..1, ω (deriv ζ t) (η t)) +
       ∫ t in (0 : ℝ)..1, ω (ζ t) (deriv η t) = 0 := by
     rw [← intervalIntegral.integral_add (hc₂.intervalIntegrable _ _) (hc₃.intervalIntegrable _ _),
@@ -334,8 +332,7 @@ private theorem hasDerivAt_slicePairing_fst (hξ : ContDiff ℝ 2 ξ) (s t : ℝ
     (hasDerivAt_fderiv_apply_fst
     ((hξ.fderiv_right (m := 1) le_rfl).differentiable one_ne_zero (s, t)) (0, 1)).sub
       ((S t).hasFDerivAt.comp_hasDerivAt s hus)
-  simpa only [LinearMap.toContinuousBilinearMap_apply] using
-    ω.toBilinForm.toContinuousBilinearMap.hasDerivAt_of_bilinear (fun _ ↦ hws) (fun _ ↦ hus)
+  simpa only [add_comm] using ω.hasDerivAt_apply_comp hws hus
 
 /-- The `t`-derivative of `ω(ξ, ∂s ξ)`, using the symmetry of the second derivative. -/
 private theorem hasDerivAt_apply_fderiv_fst_snd (hξ : ContDiff ℝ 2 ξ) (s t : ℝ) :
@@ -348,10 +345,9 @@ private theorem hasDerivAt_apply_fderiv_fst_snd (hξ : ContDiff ℝ 2 ξ) (s t :
   have hsym : fderiv ℝ (fderiv ℝ ξ) (s, t) (0, 1) (1, 0) =
       fderiv ℝ (fderiv ℝ ξ) (s, t) (1, 0) (0, 1) :=
     (hξ.contDiffAt.isSymmSndFDerivAt (by simp) (1, 0) (0, 1)).symm
-  have h := ω.toBilinForm.toContinuousBilinearMap.hasDerivAt_of_bilinear (fun _ ↦ hut)
-    (fun _ ↦ hasDerivAt_fderiv_apply_snd
+  simpa only [hsym, add_comm] using ω.hasDerivAt_apply_comp hut
+    (hasDerivAt_fderiv_apply_snd
       ((hξ.fderiv_right (m := 1) le_rfl).differentiable one_ne_zero (s, t)) (1, 0))
-  simpa only [LinearMap.toContinuousBilinearMap_apply, hsym] using h
 
 /-- **The energy identity of the stationary cylinder operator.** Let each `J_t` leave `ω`
 invariant, depend continuously on `t`, and let each `S_t` be infinitesimally symplectic. For a
