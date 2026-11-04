@@ -123,6 +123,15 @@ lemma freeYonedaSheafSectionsEquiv_naturality_right {U : C}
     yonedaEquiv_comp]
   rfl
 
+/-- The inverse of `freeYonedaSheafSectionsEquiv` is natural in the coefficient sheaf. -/
+@[simp]
+lemma freeYonedaSheafSectionsEquiv_symm_naturality_right {U : C}
+    {F G : _root_.CategoryTheory.Sheaf J AddCommGrpCat.{v}} (s : F.obj.obj (op U)) (g : F ⟶ G) :
+    (freeYonedaSheafSectionsEquiv J U F).symm s ≫ g =
+      (freeYonedaSheafSectionsEquiv J U G).symm (g.hom.app (op U) s) := by
+  rw [AddEquiv.eq_symm_apply, freeYonedaSheafSectionsEquiv_naturality_right,
+    AddEquiv.apply_symm_apply]
+
 /-- The free abelian sheaf on `U` corepresents the functor of sections over `U`. -/
 def freeYonedaSheafCorepresentableBy (U : C) :
     ((sheafSections J AddCommGrpCat.{v}).obj (op U) ⋙ forget AddCommGrpCat).CorepresentableBy
