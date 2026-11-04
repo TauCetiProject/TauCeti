@@ -32,6 +32,7 @@ maximal trajectory approaching a finite right endpoint eventually leaves every c
 * `TauCeti.contMDiffAt_flowOf_comp`: flowing `C^n` families of points for `C^n` families of times.
 * `TauCeti.hasDerivAt_comp_flowOf`: the time derivative of a function along a trajectory.
 * `TauCeti.flowOf_add`: the domain-aware group law.
+* `TauCeti.flowOf_neg_flowOf`: flowing backwards undoes flowing forwards.
 * `TauCeti.eventually_flowOf_notMem`: escape from compact sets at a finite right endpoint.
 
 ## References
@@ -181,6 +182,51 @@ theorem flowOf_add [IsManifold I 1 M] {v : (x : M) → TangentSpace I x}
     (mem_maximalIntegralCurveInterval_maximalIntegralCurve_iff hv hs').mp ht'
   refine ⟨mem_flowDomain.mpr hst, ?_⟩
   simpa only [flowOf_apply] using (maximalIntegralCurve_add hv hs' hst).symm
+
+/-- The flow can be run backwards along a trajectory: if time `t` is defined at `x`, then time
+`-t` is defined at `flowOf v t x`. -/
+theorem neg_mem_flowDomain_flowOf [IsManifold I 1 M] {v : (x : M) → TangentSpace I x}
+    (hv : CMDiff 1 (fun y ↦ (⟨y, v y⟩ : TangentBundle I M))) {t : ℝ} {x : M}
+    (ht : (t, x) ∈ flowDomain v) : (-t, flowOf v t x) ∈ flowDomain v := by
+  rw [mem_flowDomain, flowOf_apply,
+    mem_maximalIntegralCurveInterval_maximalIntegralCurve_iff hv (mem_flowDomain.mp ht),
+    add_neg_cancel, ← mem_flowDomain]
+  exact mem_flowDomain_zero hv x
+
+/-- Flowing for time `-t` undoes flowing for time `t`. -/
+theorem flowOf_neg_flowOf [IsManifold I 1 M] {v : (x : M) → TangentSpace I x}
+    (hv : CMDiff 1 (fun y ↦ (⟨y, v y⟩ : TangentBundle I M))) {t : ℝ} {x : M}
+    (ht : (t, x) ∈ flowDomain v) : flowOf v (-t) (flowOf v t x) = x := by
+  rw [(flowOf_add hv ht (neg_mem_flowDomain_flowOf hv ht)).2, add_neg_cancel, flowOf_zero hv]
+
+/-- If `x` returns to itself at time `t`, it does so at every natural multiple of `t`. -/
+theorem flowOf_natCast_mul_of_flowOf_eq [IsManifold I 1 M] {v : (x : M) → TangentSpace I x}
+    (hv : CMDiff 1 (fun y ↦ (⟨y, v y⟩ : TangentBundle I M))) {t : ℝ} {x : M}
+    (ht : (t, x) ∈ flowDomain v) (hx : flowOf v t x = x) (k : ℕ) :
+    ((k : ℝ) * t, x) ∈ flowDomain v ∧ flowOf v ((k : ℝ) * t) x = x := by
+  induction k with
+  | zero => simpa only [Nat.cast_zero, zero_mul] using ⟨mem_flowDomain_zero hv x, flowOf_zero hv x⟩
+  | succ k ih =>
+    obtain ⟨hk, hkx⟩ := ih
+    obtain ⟨hmem, heq⟩ := flowOf_add hv hk (t := t) (by rwa [hkx])
+    rw [hkx, hx] at heq
+    simpa only [Nat.cast_succ, add_one_mul] using ⟨hmem, heq.symm⟩
+
+omit [CompleteSpace E] in
+/-- If `x` returns to itself at time `s`, then so does every point `flowOf v t x` of its
+trajectory. -/
+theorem flowOf_flowOf_of_flowOf_eq [IsManifold I 1 M] {v : (x : M) → TangentSpace I x}
+    (hv : CMDiff 1 (fun y ↦ (⟨y, v y⟩ : TangentBundle I M))) {s t : ℝ} {x : M}
+    (ht : (t, x) ∈ flowDomain v) (hs : (s, x) ∈ flowDomain v) (hx : flowOf v s x = x) :
+    (s, flowOf v t x) ∈ flowDomain v ∧ flowOf v s (flowOf v t x) = flowOf v t x := by
+  obtain ⟨hst, heq⟩ := flowOf_add hv hs (hx.symm ▸ ht)
+  have hs' : (s, flowOf v t x) ∈ flowDomain v := by
+    rw [mem_flowDomain, flowOf_apply,
+      mem_maximalIntegralCurveInterval_maximalIntegralCurve_iff hv (mem_flowDomain.mp ht), add_comm,
+      ← mem_flowDomain]
+    exact hst
+  refine ⟨hs', ?_⟩
+  rw [(flowOf_add hv ht hs').2, add_comm, ← heq, hx]
 
 /-- At a finite right endpoint of a maximal interval, the trajectory eventually leaves every
 compact set. -/
