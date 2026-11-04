@@ -59,15 +59,15 @@ theorem foldedH_eq_smul_fixedCartanBasis (O : Quotient (Equiv.Perm.SameCycle.set
     coe_fixedCartanBasis]
 
 open Classical in
-private theorem cartanProjection_sum_foldedH
+private theorem equivProd_sum_foldedH_fst
     (f : Quotient (Equiv.Perm.SameCycle.setoid σ) → ℤ)
     (O : Quotient (Equiv.Perm.SameCycle.setoid σ)) :
-    cartanProjection B (∑ P, f P • foldedH B σ P) O.out =
+    (equivProd B (∑ P, f P • foldedH B σ P)).1 O.out =
       f O * B.foldingScale σ O := by
   classical
   simp only [foldedH_eq_smul_fixedCartanBasis, map_sum, map_smul,
-    Finset.sum_apply, Pi.smul_apply]
-  simp only [cartanProjection_apply, ← fixedCartanBasis_repr, Basis.repr_self,
+    Prod.fst_sum, Prod.smul_fst, Finset.sum_apply, Pi.smul_apply]
+  simp only [← fixedCartanBasis_repr, Basis.repr_self,
     Finsupp.single_apply, smul_eq_mul, mul_ite, mul_one, mul_zero,
     sum_ite_eq', mem_univ, ite_true]
 
@@ -96,7 +96,7 @@ theorem mem_foldedCartanLattice_iff (x : ShellLieAlgebra B) :
     refine ⟨foldedCartanLattice_le_fixedCartanLattice σ hx, ?_⟩
     obtain ⟨f, hf⟩ := (Submodule.mem_span_range_iff_exists_fun ℤ).mp hx
     intro O
-    rw [← cartanProjection_apply, ← hf, cartanProjection_sum_foldedH]
+    rw [← hf, equivProd_sum_foldedH_fst]
     exact dvd_mul_left _ _
   · rintro ⟨hfixed, hdiv⟩
     choose f hf using hdiv
@@ -148,11 +148,11 @@ theorem foldingScale_mul_foldedCartanBasis_repr (x : foldedCartanLattice B σ)
     B.foldingScale σ O * (foldedCartanBasis σ hscale).repr x O =
       (equivProd B x).1 O.out := by
   classical
-  have h := congrArg (fun y : foldedCartanLattice B σ ↦ cartanProjection B y O.out)
+  have h := congrArg (fun y : foldedCartanLattice B σ ↦ (equivProd B y).1 O.out)
     ((foldedCartanBasis σ hscale).sum_repr x)
   simp only [Submodule.coe_sum, SetLike.val_smul, coe_foldedCartanBasis,
-    cartanProjection_sum_foldedH] at h
-  simpa only [cartanProjection_apply, mul_comm] using h
+    equivProd_sum_foldedH_fst] at h
+  simpa only [mul_comm] using h
 
 open Classical in
 /-- The index of the normalized Cartan lattice in the actual fixed Cartan lattice is the

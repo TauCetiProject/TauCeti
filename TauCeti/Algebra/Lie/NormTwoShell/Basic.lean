@@ -116,16 +116,6 @@ theorem cartan_injective : Function.Injective (cartan B) := by
   intro v w h
   simpa only [equivProd_cartan] using congrArg (fun x ↦ (equivProd B x).1) h
 
-/-- The linear projection onto the integral Cartan coordinates. -/
-noncomputable def cartanProjection : ShellLieAlgebra B →ₗ[ℤ] (I → ℤ) :=
-  (LinearMap.fst ℤ _ _).comp (equivProd B).toLinearMap
-
-/-- The Cartan projection is the first component of the product coordinates. -/
-@[simp]
-theorem cartanProjection_apply (x : ShellLieAlgebra B) :
-    cartanProjection B x = (equivProd B x).1 := by
-  simp [cartanProjection]
-
 @[simp]
 theorem equivProd_root (a : B.normTwoShell) :
     equivProd B (root B a) = (0, Finsupp.single a 1) := by
