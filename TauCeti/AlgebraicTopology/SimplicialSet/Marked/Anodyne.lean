@@ -298,12 +298,14 @@ lemma mem_marked_of_compStruct (hX : markedAnodyneExtensions.rlp (toUnit X))
 private lemma stdSimplex_edge_last_one_eq :
     SSet.stdSimplex.edge.{u} (0 + 1) (Fin.last 0).castSucc (Fin.last (0 + 1)) (Fin.le_last _) =
       SSet.yonedaEquiv (𝟙 Δ[1]) := by
-  decide
+  ext i
+  fin_cases i <;> rfl
 
 private lemma stdSimplex_edge_last_two_eq :
     SSet.stdSimplex.edge.{u} (1 + 1) (Fin.last 1).castSucc (Fin.last (1 + 1)) (Fin.le_last _) =
       SSet.yonedaEquiv (SSet.stdSimplex.δ (0 : Fin 3)) := by
-  decide
+  ext i
+  fin_cases i <;> rfl
 
 private lemma stdSimplex_δ_zero_app_edge (n : ℕ) :
     (SSet.stdSimplex.δ.{u} (0 : Fin (n + 3))).app _
