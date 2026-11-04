@@ -25,7 +25,9 @@ term need not be continuous there. The terms `a_{m - j}` of a classical expansio
 its principal symbol are homogeneous symbols.
 
 Homogeneous symbols of a fixed degree form a complex vector space, and pointwise composition of
-coefficients adds the degrees (`TauCeti.HomogeneousSymbol.comp`). On an inner product space the
+coefficients adds the degrees (`TauCeti.HomogeneousSymbol.comp`), while pulling back the position
+along a smooth map, in particular restricting it, keeps the degree
+(`TauCeti.HomogeneousSymbol.compPosition`). On an inner product space the
 powers `‖ξ‖ ^ m` of the frequency norm are homogeneous symbols of every degree
 (`TauCeti.HomogeneousSymbol.normRpow`).
 
@@ -43,7 +45,7 @@ cutoff changes it by a smoothing term, whose derivatives decay faster than every
 Near the zero frequency no decay is needed: for `x` in a compact set and `ξ` in a ball, the
 derivatives of a `C^k` function of `(x, ξ)` are bounded by every power of `⟨ξ⟩`, since they are
 bounded there and the weight is bounded below
-(`TauCeti.exists_norm_iteratedFDeriv_le_one_add_norm_sq_rpow_of_norm_le`).
+(`ContDiff.exists_norm_iteratedFDeriv_le_one_add_norm_sq_rpow_of_norm_le`).
 
 Derivatives are full Fréchet derivatives on `E × E`; a derivative in `j` position directions
 `u` and `l` frequency directions `w` is the iterated derivative evaluated on
@@ -53,6 +55,7 @@ Derivatives are full Fréchet derivatives on `E × E`; a derivative in `j` posit
 
 * `TauCeti.HomogeneousSymbol E V W m`: homogeneous symbols of degree `m`.
 * `TauCeti.HomogeneousSymbol.comp`: composition of coefficients, adding the degrees.
+* `TauCeti.HomogeneousSymbol.compPosition`: pullback in the position along a smooth map.
 * `TauCeti.HomogeneousSymbol.normRpow`: the symbol `‖ξ‖ ^ m` times the identity.
 * `TauCeti.HomogeneousSymbol.iteratedFDeriv_coefficient_smul_frequency`: homogeneity of the
   derivatives.
@@ -287,6 +290,30 @@ theorem smul_comp (c : ℂ) (b : HomogeneousSymbol E V W m) (a : HomogeneousSymb
 
 end Comp
 
+/-! ### Pullback in the position -/
+
+section CompPosition
+
+/-- Pullback in the position along a smooth map `g`: the coefficient `a(g x, ξ)` is again
+homogeneous of degree `m`. It restricts the symbol to the positions in the range of `g`, read in
+the parameter of `g`. -/
+def compPosition (a : HomogeneousSymbol E V W m) (g : E → E) (hg : ContDiff ℝ ∞ g) :
+    HomogeneousSymbol E V W m where
+  coefficient p := a.coefficient (g p.1, p.2)
+  coefficient_zero_frequency x := a.coefficient_zero_frequency (g x)
+  contDiffOn_coefficient :=
+    a.contDiffOn_coefficient.comp ((hg.comp contDiff_fst).prodMk contDiff_snd).contDiffOn
+      fun _ hp => hp
+  coefficient_smul_frequency_of_ne_zero x ξ hξ t ht :=
+    a.coefficient_smul_frequency_of_ne_zero (g x) ξ hξ t ht
+
+@[simp]
+theorem coefficient_compPosition (a : HomogeneousSymbol E V W m) (g : E → E)
+    (hg : ContDiff ℝ ∞ g) (p : E × E) :
+    (a.compPosition g hg).coefficient p = a.coefficient (g p.1, p.2) := (rfl)
+
+end CompPosition
+
 /-! ### Estimates for the derivatives -/
 
 section Derivatives
@@ -411,8 +438,8 @@ theorem exists_norm_iteratedFDeriv_frequencyCutoff_smul_le [ProperSpace E] {K : 
       ‖iteratedFDeriv ℝ (j + l) (fun p : E × E => χ p.2 • a.coefficient p) (x, ξ)
           (Fin.append (fun i => (u i, 0)) (fun i => (0, w i)))‖ ≤
         C * (1 + ‖ξ‖ ^ 2) ^ ((m - l) / 2) * (∏ i, ‖u i‖) * ∏ i, ‖w i‖ := by
-  obtain ⟨C₁, hC₁, h₁⟩ := exists_norm_iteratedFDeriv_le_one_add_norm_sq_rpow_of_norm_le
-    ((a.contDiff_frequencyCutoff_smul χ).of_le (mod_cast le_top)) hK 2 (m - l)
+  obtain ⟨C₁, hC₁, h₁⟩ := ((a.contDiff_frequencyCutoff_smul χ).of_le (mod_cast le_top) :
+    ContDiff ℝ (j + l) _).exists_norm_iteratedFDeriv_le_one_add_norm_sq_rpow_of_norm_le hK 2 (m - l)
   obtain ⟨C₂, hC₂, h₂⟩ := a.exists_norm_iteratedFDeriv_le hK j l
   refine ⟨max C₁ (C₂ * 2 ^ (|m - l| / 2)), le_max_of_le_left hC₁, fun x hx ξ u w => ?_⟩
   have hprod : 0 ≤ (∏ i, ‖u i‖) * ∏ i, ‖w i‖ := by positivity
@@ -448,9 +475,9 @@ theorem exists_norm_iteratedFDeriv_sub_frequencyCutoff_smul_le [ProperSpace E]
       ‖iteratedFDeriv ℝ k
           (fun p : E × E => χ p.2 • a.coefficient p - χ' p.2 • a.coefficient p) (x, ξ)‖ ≤
         C * (1 + ‖ξ‖ ^ 2) ^ (r / 2) := by
-  obtain ⟨C, hC, h⟩ := exists_norm_iteratedFDeriv_le_one_add_norm_sq_rpow_of_norm_le
-    (((a.contDiff_frequencyCutoff_smul χ).sub (a.contDiff_frequencyCutoff_smul χ')).of_le
-      (mod_cast le_top)) hK 2 r
+  obtain ⟨C, hC, h⟩ := (((a.contDiff_frequencyCutoff_smul χ).sub
+    (a.contDiff_frequencyCutoff_smul χ')).of_le (mod_cast le_top) :
+      ContDiff ℝ k _).exists_norm_iteratedFDeriv_le_one_add_norm_sq_rpow_of_norm_le hK 2 r
   refine ⟨C, hC, fun x hx ξ => ?_⟩
   rcases le_or_gt ‖ξ‖ 2 with hξ | hξ
   · exact h x hx ξ hξ
@@ -498,6 +525,16 @@ def normRpow (m : ℝ) : HomogeneousSymbol E V V m where
 theorem coefficient_normRpow_of_ne_zero (m : ℝ) {x ξ : E} (hξ : ξ ≠ 0) :
     (normRpow E V m).coefficient (x, ξ) = ‖ξ‖ ^ m • ContinuousLinearMap.id ℂ V := by
   simp [normRpow, hξ]
+
+/-- Composing powers of the frequency norm adds the exponents. -/
+@[simp]
+theorem normRpow_comp_normRpow (m m' : ℝ) :
+    (normRpow E V m).comp (normRpow E V m') = normRpow E V (m + m') := by
+  ext1; ext1 ⟨x, ξ⟩
+  rcases eq_or_ne ξ 0 with rfl | hξ
+  · simp
+  · ext v
+    simp [hξ, Real.rpow_add (norm_pos_iff.mpr hξ), mul_smul, smul_comm (‖ξ‖ ^ m)]
 
 end NormRpow
 
