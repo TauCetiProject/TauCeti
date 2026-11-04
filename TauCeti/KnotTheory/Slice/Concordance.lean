@@ -815,12 +815,6 @@ private theorem capMap_eq_of_norm_le
   rw [capMap_polarC, hΦ.apply_of_nonpos x ht, polar_apply, polarC_apply,
     SmoothCircleEmbedding.coe_greatCircle_apply, LinearIsometry.map_smul]
 
-/-- Exponential polar coordinates of the punctured plane, read on the standard circle, are a local
-diffeomorphism. -/
-private theorem isLocalDiffeomorph_polarC :
-    IsLocalDiffeomorph ((𝓡 1).prod 𝓘(ℝ)) 𝓘(ℝ, ℂ) ∞ polarC :=
-  isLocalDiffeomorph_polar (V := ℂ) (n := 1)
-
 /-- Read in polar coordinates, the cone on a track is the track read in polar coordinates. -/
 private theorem capMap_comp_polarC : capMap Φ ∘ polarC = polar ∘ Φ :=
   funext capMap_polarC
@@ -874,7 +868,8 @@ private theorem contMDiffAt_capMap_and_injective_mfderiv {w : ℂ} (hw : w ≠ 0
     ContMDiffAt 𝓘(ℝ, ℂ) 𝓘(ℝ, E) ∞ (capMap F) w ∧
       Function.Injective (mfderiv 𝓘(ℝ, ℂ) 𝓘(ℝ, E) (capMap F) w) := by
   obtain ⟨q, rfl⟩ := mem_range_polarC hw
-  have hp := isLocalDiffeomorph_polarC q
+  have hp : IsLocalDiffeomorphAt ((𝓡 1).prod 𝓘(ℝ)) 𝓘(ℝ, ℂ) ∞ polarC q :=
+    isLocalDiffeomorph_polar (V := ℂ) (n := 1) q
   refine ⟨(hp.contMDiffAt_comp_iff le_rfl).1 ?_, ?_⟩
   · rw [capMap_comp_polarC]
     exact (isLocalDiffeomorph_polar (F q)).contMDiffAt.comp q (F.toSmoothEmbedding.contMDiff q)
