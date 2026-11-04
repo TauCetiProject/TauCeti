@@ -49,6 +49,8 @@ partial sums of the Fourier multipliers `𝓕⁻ (ψⱼ • 𝓕 f)` are the low
   derivative bounds for the pieces of a symbol satisfying Mihlin's condition.
 * `SchwartzMap.tendsto_smulLeftCLM_contDiffBump_two_pow`: the low-pass truncations
   `φ (2^{-N} ·) • f` converge to `f` in the Schwartz topology.
+* `SchwartzMap.sum_fourierMultiplierCLM_inhomogeneousLittlewoodPaley_range`: the partial sums of
+  the inhomogeneous Littlewood–Paley multipliers are the low-pass truncations.
 * `SchwartzMap.tendsto_sum_fourierMultiplierCLM_inhomogeneousLittlewoodPaley`: Littlewood–Paley
   reconstruction of a Schwartz function from the inhomogeneous partition.
 
@@ -239,7 +241,9 @@ namespace SchwartzMap
 open Filter Topology
 open FourierTransform
 
-variable {E F : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
+section Truncation
+
+variable {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
   [NormedAddCommGroup F] [NormedSpace ℂ F]
 
 /-- The low-pass truncations `φ (2^{-N} ·) • f` of a Schwartz function converge to `f` in the
@@ -257,7 +261,23 @@ theorem tendsto_smulLeftCLM_contDiffBump_two_pow (φ : ContDiffBump (0 : E)) (f 
   exact (smulLeftCLM_ofReal ℂ (hφ.comp
     (((2 : ℝ) ^ N)⁻¹ • ContinuousLinearMap.id ℝ E).hasTemperateGrowth) f).symm
 
-variable [MeasurableSpace E] [BorelSpace E] [CompleteSpace F]
+end Truncation
+
+variable {E F : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
+  [MeasurableSpace E] [BorelSpace E] [NormedAddCommGroup F] [NormedSpace ℂ F]
+
+/-- The partial sums of the Fourier multipliers by the inhomogeneous Littlewood–Paley pieces are
+the low-pass truncations: `∑_{j ≤ N} 𝓕⁻ (ψⱼ • 𝓕 ·) = 𝓕⁻ (φ (2^{-N} ·) • 𝓕 ·)`. -/
+theorem sum_fourierMultiplierCLM_inhomogeneousLittlewoodPaley_range (φ : ContDiffBump (0 : E))
+    (N : ℕ) :
+    ∑ j ∈ Finset.range (N + 1),
+      fourierMultiplierCLM F (fun ξ ↦ (φ.inhomogeneousLittlewoodPaley j ξ : ℂ)) =
+        fourierMultiplierCLM F fun ξ ↦ (φ (((2 : ℝ) ^ N)⁻¹ • ξ) : ℂ) := by
+  rw [← fourierMultiplierCLM_sum F
+    fun j _ ↦ φ.hasTemperateGrowth_ofReal_inhomogeneousLittlewoodPaley j]
+  simp_rw [← Complex.ofReal_sum, φ.sum_inhomogeneousLittlewoodPaley_range]
+
+variable [CompleteSpace F]
 
 /-- **Littlewood–Paley reconstruction of a Schwartz function.** The partial sums of the
 Littlewood–Paley pieces `𝓕⁻ (ψⱼ • 𝓕 f)` of a Schwartz function `f` converge to `f` in the
@@ -271,10 +291,8 @@ theorem tendsto_sum_fourierMultiplierCLM_inhomogeneousLittlewoodPaley
   have hsum (N : ℕ) : ∑ j ∈ Finset.range (N + 1),
       fourierMultiplierCLM F (fun ξ ↦ (φ.inhomogeneousLittlewoodPaley j ξ : ℂ)) f =
         𝓕⁻ (smulLeftCLM F (fun ξ ↦ (φ (((2 : ℝ) ^ N)⁻¹ • ξ) : ℂ)) (𝓕 f)) := by
-    rw [← _root_.sum_apply, ← fourierMultiplierCLM_sum F
-      fun j _ ↦ φ.hasTemperateGrowth_ofReal_inhomogeneousLittlewoodPaley j]
-    simp_rw [← Complex.ofReal_sum, φ.sum_inhomogeneousLittlewoodPaley_range]
-    rfl
+    rw [← _root_.sum_apply, sum_fourierMultiplierCLM_inhomogeneousLittlewoodPaley_range,
+      fourierMultiplierCLM_apply]
   simp_rw [hsum]
   have h := ((fourierInvCLM ℂ 𝓢(E, F)).continuous.tendsto _).comp
     (tendsto_smulLeftCLM_contDiffBump_two_pow φ (𝓕 f))

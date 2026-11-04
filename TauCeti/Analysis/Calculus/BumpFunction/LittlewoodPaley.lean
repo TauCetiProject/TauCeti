@@ -211,8 +211,9 @@ theorem inhomogeneousLittlewoodPaley_succ (j : ℕ) :
 theorem inhomogeneousLittlewoodPaley_succ_apply (j : ℕ) (ξ : E) :
     φ.inhomogeneousLittlewoodPaley (j + 1) ξ =
       φ (((2 : ℝ) ^ (j + 1))⁻¹ • ξ) - φ (((2 : ℝ) ^ j)⁻¹ • ξ) := by
-  rw [inhomogeneousLittlewoodPaley_succ, littlewoodPaley_apply, ← zpow_natCast,
-    Nat.cast_add_one, add_sub_cancel_right, zpow_natCast]
+  rw [inhomogeneousLittlewoodPaley_succ, littlewoodPaley_apply]
+  push_cast
+  simp [← zpow_natCast]
 
 /-- **Scaling of the dyadic pieces.** Each `ψ_{j+1}` is the first dyadic piece rescaled to
 frequency `2^j`: `ψ_{j+1} ξ = ψ₁ (2^{-j} ξ)`. -/
@@ -243,8 +244,7 @@ theorem inhomogeneousLittlewoodPaley_eq_zero_of_le_norm {j : ℕ} {ξ : E}
 theorem inhomogeneousLittlewoodPaley_succ_eq_zero_of_norm_le {j : ℕ} {ξ : E}
     (hξ : ‖ξ‖ ≤ 2 ^ j * φ.rIn) : φ.inhomogeneousLittlewoodPaley (j + 1) ξ = 0 := by
   rw [inhomogeneousLittlewoodPaley_succ]
-  exact φ.littlewoodPaley_eq_zero_of_norm_le (by rwa [Nat.cast_add_one, add_sub_cancel_right,
-    zpow_natCast])
+  exact φ.littlewoodPaley_eq_zero_of_norm_le (by simpa using hξ)
 
 /-- The low-frequency piece `ψ₀` is supported in the closed ball of radius `φ.rOut`. -/
 theorem tsupport_inhomogeneousLittlewoodPaley_zero_subset :
@@ -258,9 +258,7 @@ theorem tsupport_inhomogeneousLittlewoodPaley_succ_subset (j : ℕ) :
       {ξ | 2 ^ j * φ.rIn ≤ ‖ξ‖ ∧ ‖ξ‖ ≤ 2 ^ (j + 1) * φ.rOut} := by
   rw [inhomogeneousLittlewoodPaley_succ]
   refine (φ.tsupport_littlewoodPaley_subset _).trans fun ξ hξ ↦ ?_
-  rw [Nat.cast_add_one, add_sub_cancel_right, zpow_natCast, ← Nat.cast_add_one,
-    zpow_natCast] at hξ
-  exact hξ
+  simpa [← zpow_natCast] using hξ
 
 /-- The partial sums of the inhomogeneous partition telescope:
 `∑_{j ≤ N} ψⱼ ξ = φ (2^{-N} ξ)`. -/

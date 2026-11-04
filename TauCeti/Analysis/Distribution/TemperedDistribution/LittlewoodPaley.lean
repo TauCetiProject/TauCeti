@@ -40,8 +40,8 @@ blocks `Δⱼ u`.
 * `TemperedDistribution.sum_littlewoodPaleyBlock_range`: the partial sums are the low-pass
   truncations by `φ (2^{-N} ·)`.
 * `TemperedDistribution.tendsto_sum_littlewoodPaleyBlock`: `u = ∑ⱼ Δⱼ u` in `𝓢'(E, F)`.
-* `TemperedDistribution.exists_littlewoodPaleyBlock_comp_eq_zero`: almost orthogonality.
-* `TemperedDistribution.littlewoodPaleyBlock_besselPotential`: the blocks commute with the
+* `TemperedDistribution.exists_littlewoodPaleyBlock_compL_eq_zero`: almost orthogonality.
+* `TemperedDistribution.littlewoodPaleyBlock_besselPotential_comm`: the blocks commute with the
   Bessel potentials.
 
 ## References
@@ -109,7 +109,7 @@ theorem tendsto_sum_littlewoodPaleyBlock (u : 𝓢'(E, F)) :
 
 /-- The composition of two Littlewood–Paley blocks is the Fourier multiplier by the product of
 the two pieces. -/
-theorem littlewoodPaleyBlock_comp_littlewoodPaleyBlock (j k : ℕ) :
+theorem littlewoodPaleyBlock_compL_littlewoodPaleyBlock (j k : ℕ) :
     littlewoodPaleyBlock F φ j ∘L littlewoodPaleyBlock F φ k =
       fourierMultiplierCLM F fun ξ ↦
         ((φ.inhomogeneousLittlewoodPaley j ξ * φ.inhomogeneousLittlewoodPaley k ξ : ℝ) : ℂ) := by
@@ -123,22 +123,22 @@ theorem littlewoodPaleyBlock_comp_littlewoodPaleyBlock (j k : ℕ) :
 
 /-- **Almost orthogonality of the Littlewood–Paley blocks.** There is `L`, depending only on `φ`,
 such that `Δⱼ Δₖ = Δₖ Δⱼ = 0` whenever `j + L ≤ k`. -/
-theorem exists_littlewoodPaleyBlock_comp_eq_zero :
+theorem exists_littlewoodPaleyBlock_compL_eq_zero :
     ∃ L : ℕ, ∀ j k : ℕ, j + L ≤ k →
       littlewoodPaleyBlock F φ j ∘L littlewoodPaleyBlock F φ k = 0 ∧
         littlewoodPaleyBlock F φ k ∘L littlewoodPaleyBlock F φ j = 0 := by
   obtain ⟨L, hL⟩ := φ.exists_inhomogeneousLittlewoodPaley_mul_eq_zero
   have hzero {j k : ℕ} (hjk : j + L ≤ k) :
       littlewoodPaleyBlock F φ j ∘L littlewoodPaleyBlock F φ k = 0 := by
-    simp_rw [littlewoodPaleyBlock_comp_littlewoodPaleyBlock, hL j k hjk, Complex.ofReal_zero,
+    simp_rw [littlewoodPaleyBlock_compL_littlewoodPaleyBlock, hL j k hjk, Complex.ofReal_zero,
       fourierMultiplierCLM_const, zero_smul]
   refine ⟨L, fun j k hjk ↦ ⟨hzero hjk, ?_⟩⟩
-  rw [littlewoodPaleyBlock_comp_littlewoodPaleyBlock]
+  rw [littlewoodPaleyBlock_compL_littlewoodPaleyBlock]
   simp_rw [mul_comm (φ.inhomogeneousLittlewoodPaley k _),
-    ← littlewoodPaleyBlock_comp_littlewoodPaleyBlock, hzero hjk]
+    ← littlewoodPaleyBlock_compL_littlewoodPaleyBlock, hzero hjk]
 
 /-- The Littlewood–Paley blocks commute with every Fourier multiplier of temperate growth. -/
-theorem littlewoodPaleyBlock_fourierMultiplierCLM {g : E → ℂ} (hg : g.HasTemperateGrowth)
+theorem littlewoodPaleyBlock_fourierMultiplierCLM_comm {g : E → ℂ} (hg : g.HasTemperateGrowth)
     (j : ℕ) (u : 𝓢'(E, F)) :
     littlewoodPaleyBlock F φ j (fourierMultiplierCLM F g u) =
       fourierMultiplierCLM F g (littlewoodPaleyBlock F φ j u) := by
@@ -149,17 +149,17 @@ theorem littlewoodPaleyBlock_fourierMultiplierCLM {g : E → ℂ} (hg : g.HasTem
       (φ.hasTemperateGrowth_ofReal_inhomogeneousLittlewoodPaley j) hg, mul_comm]
 
 /-- The Littlewood–Paley blocks commute with each other. -/
-theorem littlewoodPaleyBlock_littlewoodPaleyBlock (j k : ℕ) (u : 𝓢'(E, F)) :
+theorem littlewoodPaleyBlock_comm (j k : ℕ) (u : 𝓢'(E, F)) :
     littlewoodPaleyBlock F φ j (littlewoodPaleyBlock F φ k u) =
       littlewoodPaleyBlock F φ k (littlewoodPaleyBlock F φ j u) :=
-  littlewoodPaleyBlock_fourierMultiplierCLM φ
+  littlewoodPaleyBlock_fourierMultiplierCLM_comm φ
     (φ.hasTemperateGrowth_ofReal_inhomogeneousLittlewoodPaley k) j u
 
 /-- The Littlewood–Paley blocks commute with the Bessel potentials `J^s`. -/
-theorem littlewoodPaleyBlock_besselPotential (s : ℝ) (j : ℕ) (u : 𝓢'(E, F)) :
+theorem littlewoodPaleyBlock_besselPotential_comm (s : ℝ) (j : ℕ) (u : 𝓢'(E, F)) :
     littlewoodPaleyBlock F φ j (besselPotential E F s u) =
       besselPotential E F s (littlewoodPaleyBlock F φ j u) :=
-  littlewoodPaleyBlock_fourierMultiplierCLM φ (by fun_prop) j u
+  littlewoodPaleyBlock_fourierMultiplierCLM_comm φ (by fun_prop) j u
 
 /-- On a Schwartz function, the Littlewood–Paley block is the Schwartz Fourier multiplier
 by `ψⱼ`. -/
