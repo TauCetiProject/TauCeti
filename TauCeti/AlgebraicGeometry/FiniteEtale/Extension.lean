@@ -20,6 +20,9 @@ The section-recovery result
 an existing extension. In the other direction Mathlib's
 `AlgebraicGeometry.Scheme.isPullback_toSpecΓ_toSpecΓ` identifies an affine morphism over a
 quasi-affine scheme with the restriction of the morphism on spectra of global sections.
+`TauCeti.AlgebraicGeometry.Spec.exists_isIso_appTop_eq_comp_of_bijective` compares the
+sections of a scheme identified with an open of `Spec B` from which `B` is recovered with `B`
+itself, compatibly with the maps from the base ring.
 
 ## References
 
@@ -33,6 +36,24 @@ noncomputable section
 open CategoryTheory Limits AlgebraicGeometry IsLocalRing
 
 universe u
+
+namespace TauCeti.AlgebraicGeometry.Spec
+
+/-- Let `f : R ⟶ S` be a ring map and `W` an open of `Spec S` from which `S` is recovered: the
+restriction `Γ(Spec S, ⊤) → Γ(W, ⊤)` is bijective. If a scheme `X` over `Spec R` is identified
+with `W` over `Spec R`, then the map `R → Γ(X, ⊤)` induced by `X ⟶ Spec R` is `f` followed by
+an isomorphism. -/
+theorem exists_isIso_appTop_eq_comp_of_bijective {R S : CommRingCat.{u}} (f : R ⟶ S)
+    {X : Scheme.{u}} (p : X ⟶ Spec R) (W : (Spec S).Opens)
+    (hW : Function.Bijective W.ι.appTop) (e : X ≅ W.toScheme)
+    (he : e.hom ≫ W.ι ≫ Spec.map f = p) :
+    ∃ σ : S ⟶ Γ(X, ⊤), IsIso σ ∧ (Scheme.ΓSpecIso R).inv ≫ p.appTop = f ≫ σ := by
+  have : IsIso W.ι.appTop := (ConcreteCategory.isIso_iff_bijective _).mpr hW
+  have : IsIso e.hom.appTop := Scheme.Γ.map_isIso e.hom.op
+  refine ⟨(Scheme.ΓSpecIso S).inv ≫ W.ι.appTop ≫ e.hom.appTop, inferInstance, ?_⟩
+  simp only [← he, Scheme.Hom.comp_appTop, Category.assoc, Scheme.ΓSpecIso_inv_naturality_assoc]
+
+end TauCeti.AlgebraicGeometry.Spec
 
 namespace TauCeti.IsLocalRing
 
@@ -66,20 +87,12 @@ private theorem sectionsMap_finite_etale_of_spec_extension
   let eV := e₀.symm ≪≫ pullbackRestrictIsoRestrict g U
   let W := g ⁻¹ᵁ U
   -- Hartogs recovers the extension algebra from sections of this open.
-  have hΓ := TauCeti.AlgebraicGeometry.Spec.presheaf_map_leTop_bijective_of_flat
-    (A := A) (B := B.unop.obj) hdepth (W.ι ''ᵁ ⊤) fun p hp ↦ by
-      rw [Scheme.Opens.ι_image_top]
-      apply (mem_puncturedSpectrum_iff A (g p)).mpr
-      intro he
-      apply hp
-      exact congrArg PrimeSpectrum.asIdeal he
-  have : IsIso W.ι.appTop := by
+  have hΓ : Function.Bijective W.ι.appTop := by
     rw [Scheme.Opens.ι_appTop]
-    exact (ConcreteCategory.isIso_iff_bijective _).mpr hΓ
-  let σ := (Scheme.ΓSpecIso (.of B.unop.obj)).inv ≫ W.ι.appTop ≫ eV.hom.appTop
-  have : IsIso eV.hom.appTop := by
-    exact Scheme.Γ.map_isIso eV.hom.op
-  have : IsIso σ := by dsimp only [σ]; infer_instance
+    refine TauCeti.AlgebraicGeometry.Spec.presheaf_map_leTop_bijective_of_flat
+      (A := A) (B := B.unop.obj) hdepth (W.ι ''ᵁ ⊤) fun p hp ↦ ?_
+    rw [Scheme.Opens.ι_image_top]
+    exact (mem_preimage_puncturedSpectrum_iff A p).mpr hp
   -- This identification respects the map from the local base ring.
   have heV : eV.hom ≫ W.ι ≫ g = V.obj.hom ≫ U.ι := by
     calc
@@ -90,10 +103,9 @@ private theorem sectionsMap_finite_etale_of_spec_extension
       _ = V.obj.hom ≫ U.ι := by
         rw [← Category.assoc]
         exact congrArg (fun k ↦ k ≫ U.ι) (Over.w j₀.inv)
-  have hcomp : φ = CommRingCat.ofHom (algebraMap A B.unop.obj) ≫ σ := by
-    dsimp only [φ, σ]
-    rw [← heV, Scheme.Hom.comp_appTop, Scheme.Hom.comp_appTop]
-    simp only [g, Category.assoc, ← Scheme.ΓSpecIso_inv_naturality_assoc]
+  obtain ⟨σ, _, hcomp⟩ := TauCeti.AlgebraicGeometry.Spec.exists_isIso_appTop_eq_comp_of_bijective
+    (CommRingCat.ofHom (algebraMap A B.unop.obj)) (V.obj.hom ≫ U.ι) W hΓ eV heV
+  change φ = _ at hcomp
   have hfinite : IsFinite (Spec.map φ) := by
     rw [hcomp, Spec.map_comp]
     infer_instance

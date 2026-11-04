@@ -51,6 +51,8 @@ sections of the punctured base with the local ring.
 ## Main results
 
 * `TauCeti.AlgebraicGeometry.Spec.presheaf_map_leTop_bijective_of_flat`: the flat case.
+* `TauCeti.IsLocalRing.mem_preimage_puncturedSpectrum_iff`: the primes of `B` in the preimage of
+  the punctured spectrum are those not lying over `𝔪`.
 * `TauCeti.IsLocalRing.isPullback_puncturedSpectrum_toSpecΓ`: reconstruction of an affine
   scheme over the puncture by restricting the spectrum of its sections.
 * `TauCeti.AlgebraicGeometry.Spec.presheaf_map_leTop_bijective_of_isIntegral`: the integral case,
@@ -143,6 +145,18 @@ end TauCeti.AlgebraicGeometry.Spec
 namespace TauCeti.IsLocalRing
 
 open CategoryTheory.Limits
+
+/-- A prime of an `A`-algebra `B` lies in the preimage of the punctured spectrum of `A` exactly
+when it does not lie over the maximal ideal of `A`. -/
+theorem mem_preimage_puncturedSpectrum_iff (A : Type u) [CommRing A] [IsLocalRing A]
+    {B : Type u} [CommRing B] [Algebra A B] (q : PrimeSpectrum B) :
+    q ∈ Spec.map (CommRingCat.ofHom (algebraMap A B)) ⁻¹ᵁ puncturedSpectrum A ↔
+      q.asIdeal.under A ≠ maximalIdeal A := by
+  -- The base map of `Spec.map` is `PrimeSpectrum.comap`, by definition.
+  change PrimeSpectrum.comap (algebraMap A B) q ∈ puncturedSpectrum A ↔ _
+  rw [mem_puncturedSpectrum_iff, Ne, Ne, PrimeSpectrum.ext_iff, PrimeSpectrum.comap_asIdeal]
+  -- The ideal of `closedPoint A` is `maximalIdeal A`, by definition.
+  rfl
 
 variable (A : Type u) [CommRing A] [IsLocalRing A] [IsNoetherianRing A]
 

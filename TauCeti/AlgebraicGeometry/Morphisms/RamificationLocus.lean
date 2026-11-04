@@ -202,11 +202,14 @@ theorem etale_morphismRestrict_iff (U : Y.Opens) :
   refine IsZariskiLocalAtSource.of_iSup_eq_top (P := @Etale)
     (fun z ↦ (f ⁻¹ᵁ U).ι ⁻¹ᵁ O z) ?_ fun z ↦ ?_
   · exact top_le_iff.mp fun z _ ↦ TopologicalSpace.Opens.mem_iSup.mpr ⟨z, hzO z⟩
-  · -- On `(f ⁻¹ᵁ U).ι ⁻¹ᵁ O z` the restriction of `f` factors through `O z`, where `f` is étale.
+  · -- On `(f ⁻¹ᵁ U).ι ⁻¹ᵁ O z` the restriction of `f` factors as the open immersion
+    -- `(f ⁻¹ᵁ U).ι ∣_ O z` into `O z`, followed by `(O z).ι ≫ f`, which is étale.
     have := hO z
+    have hfac : (((f ⁻¹ᵁ U).ι ⁻¹ᵁ O z).ι ≫ f ∣_ U) ≫ U.ι =
+        (f ⁻¹ᵁ U).ι ∣_ O z ≫ (O z).ι ≫ f := by
+      simp only [Category.assoc, morphismRestrict_ι, morphismRestrict_ι_assoc]
     have : Etale ((((f ⁻¹ᵁ U).ι ⁻¹ᵁ O z).ι ≫ f ∣_ U) ≫ U.ι) := by
-      rw [Category.assoc, morphismRestrict_ι, ← Category.assoc, ← morphismRestrict_ι,
-        Category.assoc]
+      rw [hfac]
       infer_instance
     exact Etale.of_comp _ U.ι
 

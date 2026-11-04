@@ -80,8 +80,7 @@ theorem etale_of_purityHolds_of_bijective (hpurity : IsLocalRing.PurityHolds A)
   have : Etale (g ∣_ U) := (g.etale_morphismRestrict_iff U).mpr <|
     Set.disjoint_left.mpr fun (q : PrimeSpectrum B) hq hne ↦
       Scheme.Hom.mem_nonEtaleLocus_iff.mp hne <| (Scheme.Hom.etaleAt_spec_iff q).mpr <|
-        hetale q.asIdeal fun he ↦
-          (IsLocalRing.mem_puncturedSpectrum_iff A (g q)).mp hq (PrimeSpectrum.ext he)
+        hetale q.asIdeal ((IsLocalRing.mem_preimage_puncturedSpectrum_iff A q).mp hq)
   let V := FiniteEtaleScheme.ofHom (g ∣_ U)
   -- By purity `V` extends across the closed point, so its sections are finite étale over `A`.
   let φ := (Scheme.ΓSpecIso (.of A)).inv ≫ (V.obj.hom ≫ U.ι).appTop
@@ -92,15 +91,12 @@ theorem etale_of_purityHolds_of_bijective (hpurity : IsLocalRing.PurityHolds A)
   let e := (Over.forget U.toScheme).mapIso (eqToIso (FiniteEtaleScheme.ofHom_obj (g ∣_ U)))
   have he : e.hom ≫ g ∣_ U = V.obj.hom :=
     Over.w (eqToHom (FiniteEtaleScheme.ofHom_obj (g ∣_ U)))
-  have : IsIso W.ι.appTop := (ConcreteCategory.isIso_iff_bijective _).mpr hsections
-  have : IsIso e.hom.appTop := Scheme.Γ.map_isIso e.hom.op
-  have hcomp : φ = CommRingCat.ofHom (algebraMap A B) ≫
-      (Scheme.ΓSpecIso (.of B)).inv ≫ W.ι.appTop ≫ e.hom.appTop := by
-    simp only [φ, ← he, Category.assoc, morphismRestrict_ι, Scheme.Hom.comp_appTop,
-      Scheme.ΓSpecIso_inv_naturality_assoc, g, W]
+  obtain ⟨σ, _, hcomp⟩ := TauCeti.AlgebraicGeometry.Spec.exists_isIso_appTop_eq_comp_of_bijective
+    (CommRingCat.ofHom (algebraMap A B)) (V.obj.hom ≫ U.ι) W hsections e
+    (by rw [← he, Category.assoc, morphismRestrict_ι])
   rw [← RingHom.etale_algebraMap]
-  refine (RingHom.Etale.respectsIso.cancel_right_isIso (CommRingCat.ofHom (algebraMap A B))
-    ((Scheme.ΓSpecIso (.of B)).inv ≫ W.ι.appTop ≫ e.hom.appTop)).mp ?_
+  refine (RingHom.Etale.respectsIso.cancel_right_isIso
+    (CommRingCat.ofHom (algebraMap A B)) σ).mp ?_
   rw [← CommRingCat.hom_comp, ← hcomp]
   exact hφ.2
 
@@ -125,7 +121,6 @@ theorem etale_of_finiteNormal_of_purityHolds [IsDomain A] [IsIntegrallyClosed A]
   refine AlgebraicGeometry.Spec.presheaf_map_leTop_bijective_of_isIntegrallyClosed hdim hnormal
     (W.ι ''ᵁ ⊤) fun p hp ↦ ?_
   rw [Scheme.Opens.ι_image_top]
-  exact (IsLocalRing.mem_puncturedSpectrum_iff A _).mpr fun he ↦
-    hp (congrArg PrimeSpectrum.asIdeal he)
+  exact (IsLocalRing.mem_preimage_puncturedSpectrum_iff A p).mpr hp
 
 end TauCeti.Algebra
