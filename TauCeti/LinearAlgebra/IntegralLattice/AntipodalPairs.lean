@@ -68,18 +68,6 @@ theorem mem_vectorsOfNorm_of_mem_antipodalPairs {L : IntegralLattice V} {n : ℚ
   · exact hy
   · exact (neg_mem_vectorsOfNorm_iff y).mpr hy
 
-/-- Negation has no fixed point on a shell of nonzero norm. -/
-theorem neg_ne_self_of_mem_vectorsOfNorm {L : IntegralLattice V} {n : ℚ} (hn : n ≠ 0)
-    {x : L} (hx : x ∈ L.vectorsOfNorm n) : -x ≠ x := by
-  intro h
-  have hz : (2 : ℚ) • (x : V) = 0 := by
-    calc
-      (2 : ℚ) • (x : V) = (x : V) + x := two_smul ℚ (x : V)
-      _ = -(x : V) + x := congrArg (· + (x : V)) (congrArg Subtype.val h).symm
-      _ = 0 := neg_add_cancel _
-  have hx0 : x = 0 := Subtype.ext ((smul_eq_zero.mp hz).resolve_left (by norm_num))
-  exact hn (by simpa [hx0] using (mem_vectorsOfNorm.mp hx).symm)
-
 /-- Every antipodal pair on a shell of nonzero norm has distinct entries. -/
 theorem not_isDiag_of_mem_antipodalPairs {L : IntegralLattice V} {n : ℚ} (hn : n ≠ 0)
     {p : Sym2 L} (hp : p ∈ L.antipodalPairs n) : ¬ p.IsDiag := by
@@ -92,6 +80,28 @@ theorem finite_antipodalPairs {L : IntegralLattice V} {n : ℚ}
     (h : (L.vectorsOfNorm n).Finite) : (L.antipodalPairs n).Finite :=
   h.image _
 
+/-- Each antipodal pair on a nonzero norm shell has exactly two vector representatives. -/
+theorem card_antipodalPairs_fiber {L : IntegralLattice V} {n : ℚ} (hn : n ≠ 0)
+    {p : Sym2 L} (hp : p ∈ L.antipodalPairs n) :
+    Nat.card {x : L.vectorsOfNorm n // s(x.1, -x.1) = p} = 2 := by
+  obtain ⟨x, hx, hp⟩ := hp
+  let a : {y : L.vectorsOfNorm n // s(y.1, -y.1) = p} := ⟨⟨x, hx⟩, hp⟩
+  let b : {y : L.vectorsOfNorm n // s(y.1, -y.1) = p} :=
+    ⟨⟨-x, (neg_mem_vectorsOfNorm_iff x).mpr hx⟩,
+      by simpa only [neg_neg, Sym2.eq_swap] using hp⟩
+  apply Nat.card_eq_two_iff.mpr
+  refine ⟨a, b, ?_, ?_⟩
+  · intro hab
+    exact neg_ne_self_of_mem_vectorsOfNorm hn hx
+      (congrArg (fun z ↦ z.1.1) hab).symm
+  · apply Set.eq_univ_iff_forall.mpr
+    intro z
+    have hz : s(z.1.1, -z.1.1) = s(x, -x) := z.2.trans hp.symm
+    rcases Sym2.eq_iff.mp hz with ⟨h, -⟩ | ⟨h, -⟩
+    · exact Set.mem_insert_iff.mpr (Or.inl (Subtype.ext (Subtype.ext h)))
+    · exact Set.mem_insert_iff.mpr (Or.inr (Set.mem_singleton_iff.mpr
+        (Subtype.ext (Subtype.ext h))))
+
 /-- A finite shell of nonzero norm has exactly twice as many vectors as antipodal pairs. -/
 theorem ncard_vectorsOfNorm_eq_two_mul_ncard_antipodalPairs {L : IntegralLattice V} {n : ℚ}
     (hn : n ≠ 0) (hfin : (L.vectorsOfNorm n).Finite) :
@@ -102,31 +112,14 @@ theorem ncard_vectorsOfNorm_eq_two_mul_ncard_antipodalPairs {L : IntegralLattice
   let := hfin.fintype
   let := (finite_antipodalPairs hfin).fintype
   have hfiber (p : L.antipodalPairs n) : Nat.card {x // f x = p} = 2 := by
-    obtain ⟨x, hx, hp⟩ := p.2
-    let a : {x // f x = p} := ⟨⟨x, hx⟩, Subtype.ext hp⟩
-    let b : {x // f x = p} :=
-      ⟨⟨-x, (neg_mem_vectorsOfNorm_iff x).mpr hx⟩,
-        Subtype.ext (by simpa only [f, neg_neg, Sym2.eq_swap] using hp)⟩
-    apply Nat.card_eq_two_iff.mpr
-    refine ⟨a, b, ?_, ?_⟩
-    · intro hab
-      exact neg_ne_self_of_mem_vectorsOfNorm hn hx
-        (congrArg (fun z : {x // f x = p} ↦ z.1.1) hab).symm
-    · apply Set.eq_univ_iff_forall.mpr
-      intro z
-      have hz : s(z.1.1, -z.1.1) = s(x, -x) :=
-        (congrArg Subtype.val z.2).trans hp.symm
-      rcases Sym2.eq_iff.mp hz with ⟨h, -⟩ | ⟨h, -⟩
-      · exact Set.mem_insert_iff.mpr (Or.inl (Subtype.ext (Subtype.ext h)))
-      · exact Set.mem_insert_iff.mpr (Or.inr (Set.mem_singleton_iff.mpr
-          (Subtype.ext (Subtype.ext h))))
+    simpa only [f, Subtype.ext_iff] using card_antipodalPairs_fiber hn p.2
+  rw [← Nat.card_coe_set_eq, ← Nat.card_coe_set_eq]
   calc
-    (L.vectorsOfNorm n).ncard = Nat.card (Σ p, {x // f x = p}) :=
+    Nat.card (L.vectorsOfNorm n) = Nat.card (Σ p, {x // f x = p}) :=
       (Nat.card_congr (Equiv.sigmaFiberEquiv f)).symm
-    _ = 2 * (L.antipodalPairs n).ncard := by
+    _ = 2 * Nat.card (L.antipodalPairs n) := by
       rw [Nat.card_sigma]
-      simp only [hfiber, Finset.sum_const, Finset.card_univ, smul_eq_mul]
-      rw [← Nat.card_coe_set_eq, Nat.card_eq_fintype_card, mul_comm]
+      simp [hfiber, ← Nat.card_eq_fintype_card, mul_comm]
 
 /-- The number of antipodal pairs is half the number of vectors on a finite nonzero shell. -/
 theorem ncard_antipodalPairs {L : IntegralLattice V} {n : ℚ} (hn : n ≠ 0)
@@ -176,6 +169,39 @@ theorem coe_antipodalPairsEquiv_symm_apply (e : Isometry L M) (n : ℚ)
     (p : M.antipodalPairs n) :
     ((e.antipodalPairsEquiv n).symm p : Sym2 L) = Sym2.map e.carrierEquiv.symm p :=
   (rfl)
+
+/-- Transport by the identity isometry is the identity equivalence. -/
+@[simp]
+theorem antipodalPairsEquiv_refl (L : IntegralLattice V) (n : ℚ) :
+    (refl L).antipodalPairsEquiv n = Equiv.refl (L.antipodalPairs n) := by
+  apply Equiv.ext
+  intro p
+  apply Subtype.ext
+  simp only [coe_antipodalPairsEquiv_apply, carrierEquiv_refl, Equiv.refl_apply]
+  induction (p : Sym2 L) using Sym2.ind
+  simp
+
+/-- Transport by the inverse isometry is the inverse equivalence. -/
+@[simp]
+theorem antipodalPairsEquiv_symm (e : Isometry L M) (n : ℚ) :
+    e.symm.antipodalPairsEquiv n = (e.antipodalPairsEquiv n).symm := by
+  apply Equiv.ext
+  intro p
+  apply Subtype.ext
+  simp
+
+/-- Transport by a composite isometry is the composite of the transport equivalences. -/
+@[simp]
+theorem antipodalPairsEquiv_trans {U : Type*} [AddCommGroup U] [Module ℚ U]
+    {N : IntegralLattice U} (e : Isometry L M) (f : Isometry M N) (n : ℚ) :
+    (e.trans f).antipodalPairsEquiv n =
+      (e.antipodalPairsEquiv n).trans (f.antipodalPairsEquiv n) := by
+  apply Equiv.ext
+  intro p
+  apply Subtype.ext
+  simp only [Equiv.trans_apply, coe_antipodalPairsEquiv_apply, carrierEquiv_trans]
+  induction (p : Sym2 L) using Sym2.ind
+  simp
 
 end Isometry
 
