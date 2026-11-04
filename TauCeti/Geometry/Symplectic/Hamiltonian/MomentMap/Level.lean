@@ -39,9 +39,13 @@ value, and the stabilizer `G_c` acting freely and properly on the level.
   `c` is fixed by the coadjoint action, `𝔤_c = 𝔤`
   (`TauCeti.SmoothTwoForm.IsMomentMap.isCoisotropic_ker_differential_iff` and
   `TauCeti.SmoothTwoForm.IsMomentMap.isIsotropic_orbitTangent_iff`). A level over a value that
-  is not coadjoint-fixed is not coisotropic. For an abelian Lie algebra every value is fixed, so
-  the orbits are isotropic, and a locally free action of an abelian `𝔤` has
+  is not coadjoint-fixed is not coisotropic. At a coadjoint-fixed value the orbit has
+  `2 dim (𝔤 · x) ≤ dim M`
+  (`TauCeti.SmoothTwoForm.IsMomentMap.two_mul_finrank_orbitTangent_le`), and a locally free
+  action has
   `2 dim 𝔤 ≤ dim M` (`TauCeti.SmoothTwoForm.IsMomentMap.two_mul_finrank_le`).
+  For an abelian Lie algebra every value is fixed, so these bounds apply and the orbits are
+  isotropic.
 * At a point where the action is locally free, `dim ker dμ_x = dim M - dim 𝔤` and the null
   directions have dimension `dim 𝔤_c`, so the linear quotient of the level tangent space by them
   has dimension `dim M - dim 𝔤 - dim 𝔤_c`; under the hypotheses of the reduction theorem this
@@ -163,19 +167,27 @@ theorem isIsotropic_orbitTangent [IsLieAbelian 𝔤] (hc : σ.momentCocycle a μ
     (hσ.symplecticFormAt x).IsIsotropic (a.orbitTangent x) :=
   (h.isIsotropic_orbitTangent_iff hσ hc).2 (lieAnnihilator_eq_top ℝ 𝔤 _)
 
-/-- **The dimension bound for abelian actions.** If an abelian Lie algebra acts locally freely at
-`x` with a moment map whose cocycle vanishes there, and the form is nondegenerate at `x`, then
-`2 dim 𝔤 ≤ dim M`. -/
-theorem two_mul_finrank_le [FiniteDimensional ℝ E] [IsLieAbelian 𝔤]
+/-- **The orbit dimension bound at a coadjoint-fixed value.** If the form is nondegenerate at `x`,
+the moment map's cocycle vanishes there and `μ(x)` is coadjoint-fixed, then
+`2 dim (𝔤 · x) ≤ dim M`. -/
+theorem two_mul_finrank_orbitTangent_le [FiniteDimensional ℝ E]
     (hσx : (σ.bilinFormAt x).Nondegenerate) (hc : σ.momentCocycle a μ x = 0)
-    (hfree : a.isotropy x = ⊥) :
+    (htop : lieAnnihilator ℝ 𝔤 (μ x) = ⊤) :
+    2 * finrank ℝ (a.orbitTangent x) ≤ finrank ℝ E := by
+  have hle := (h.orbitTangent_le_ker_differential_iff hc).2 htop
+  rw [h.ker_differential] at hle
+  simpa only [finrank_tangentSpace] using
+    (σ.bilinFormAt x).two_mul_finrank_le_finrank_of_le_orthogonal hσx hle
+
+/-- **The dimension bound for locally free actions at a coadjoint-fixed value.** If the form is
+nondegenerate at `x`, the moment map's cocycle vanishes there, `μ(x)` is coadjoint-fixed and the
+action is locally free at `x`, then `2 dim 𝔤 ≤ dim M`. -/
+theorem two_mul_finrank_le [FiniteDimensional ℝ E]
+    (hσx : (σ.bilinFormAt x).Nondegenerate) (hc : σ.momentCocycle a μ x = 0)
+    (htop : lieAnnihilator ℝ 𝔤 (μ x) = ⊤) (hfree : a.isotropy x = ⊥) :
     2 * finrank ℝ 𝔤 ≤ finrank ℝ E := by
-  have hle := Submodule.finrank_mono
-    ((h.orbitTangent_le_ker_differential_iff hc).2 (lieAnnihilator_eq_top ℝ 𝔤 _))
-  have hsum := h.finrank_ker_differential_add_finrank_orbitTangent hσx
-  rw [a.finrank_orbitTangent_of_isotropy_eq_bot x hfree] at hle
-  rw [a.finrank_orbitTangent_of_isotropy_eq_bot x hfree, finrank_tangentSpace] at hsum
-  omega
+  simpa only [a.finrank_orbitTangent_of_isotropy_eq_bot x hfree] using
+    h.two_mul_finrank_orbitTangent_le hσx hc htop
 
 /-! ### Dimensions at a locally free point -/
 
