@@ -10,26 +10,24 @@ public import TauCeti.QuantumGroups.UqSl2.ClebschGordan.SixJ
 /-!
 # The quantum Biedenharn–Elliott pentagon identity
 
-On a quadruple tensor product `L_a^ε ⊗ L_b^δ ⊗ L_c^ζ ⊗ L_d^θ` of signed ladder modules of
-`U_q(sl₂)`, Mac Lane's pentagon identity (`BialgebraModule.assoc_pentagon`) equates the two-step
-and three-step reassociation paths from `((L_a^ε ⊗ L_b^δ) ⊗ L_c^ζ) ⊗ L_d^θ` to
-`L_a^ε ⊗ (L_b^δ ⊗ (L_c^ζ ⊗ L_d^θ))`. Expanding both paths in normalized Clebsch–Gordan channels
-via `assoc_comp_clebschGordanWeightInclusion` and `tensorMap_tensorMap_comp_assoc_eq` and
+On a quadruple tensor product `L_a^ε ⊗ L_b^δ ⊗ L_c^ζ ⊗ L_d^θ` of signed `U_q(sl₂)` ladder modules,
+Mac Lane's pentagon identity (`BialgebraModule.assoc_pentagon`) equates the two-step and three-step
+reassociation paths from `((L_a^ε ⊗ L_b^δ) ⊗ L_c^ζ) ⊗ L_d^θ` to
+`L_a^ε ⊗ (L_b^δ ⊗ (L_c^ζ ⊗ L_d^θ))`. Expanding both paths in normalized Clebsch–Gordan channels and
 extracting Schur scalars yields the quantum **Biedenharn–Elliott pentagon identity**
 (`biedenharn_elliott`) unconditionally for all weights and signs.
 
 ## Main definitions
 
-* `TauCeti.UqSl2.quadrupleLeftInclusion`: left-comb channel inclusion
-  `L_e^(((εδ)ζ)θ) →ₗ[UqSl2 q] ((L_a^ε ⊗ L_b^δ) ⊗ L_c^ζ) ⊗ L_d^θ`.
+* `TauCeti.UqSl2.quadrupleLeftInclusion`: left-comb channel inclusion into
+  `((L_a^ε ⊗ L_b^δ) ⊗ L_c^ζ) ⊗ L_d^θ`.
 * `TauCeti.UqSl2.quadrupleRightInclusion`, `TauCeti.UqSl2.quadrupleRightProjection`: right-comb
-  channel inclusion and projection between `L_e^(ε(δ(ζθ)))` and
-  `L_a^ε ⊗ (L_b^δ ⊗ (L_c^ζ ⊗ L_d^θ))`.
+  channel inclusion and projection on `L_a^ε ⊗ (L_b^δ ⊗ (L_c^ζ ⊗ L_d^θ))`.
 
 ## Main results
 
 * `TauCeti.UqSl2.quadrupleRightProjection_comp_inclusion`: orthogonality of right-comb channels.
-* `TauCeti.UqSl2.biedenharn_elliott` and `TauCeti.UqSl2.biedenharn_elliott_fin`: the quantum
+* `TauCeti.UqSl2.biedenharn_elliott`, `TauCeti.UqSl2.biedenharn_elliott_fin`: the quantum
   Biedenharn–Elliott pentagon identity in weight and lowering-step coordinates.
 * `TauCeti.UqSl2.assoc_assoc_quadrupleLeftInclusion_vec`: explicit quadruple associator expansion
   on normalized `F`-ladder vectors `v_k` (`k : ℤ`).
@@ -52,22 +50,11 @@ namespace TauCeti.UqSl2
 
 open BialgebraModule LadderModule
 
-private theorem comp_sum {ι R M₁ M₂ M₃ : Type*} [Semiring R]
-    [AddCommMonoid M₁] [AddCommMonoid M₂] [AddCommMonoid M₃]
-    [Module R M₁] [Module R M₂] [Module R M₃]
-    (g : M₂ →ₗ[R] M₃) (s : Finset ι) (f : ι → M₁ →ₗ[R] M₂) :
-    g.comp (∑ i ∈ s, f i) = ∑ i ∈ s, g.comp (f i) :=
-  LinearMap.ext fun _ => by simp [LinearMap.sum_apply]
-
 variable {q : ℂ} [Fact (q ≠ 0)]
 
-/-! ### Quadruple Clebsch–Gordan channel inclusions and projections -/
-
 /-- Left-comb quadruple Clebsch–Gordan channel inclusion
-`L_e^(((εδ)ζ)θ) →ₗ[UqSl2 q] ((L_a^ε ⊗ L_b^δ) ⊗ L_c^ζ) ⊗ L_d^θ` through intermediate weights `p`
-and `q'`. -/
-def quadrupleLeftInclusion (hq : IsGenericQuantumParameter q)
-    (ε δ ζ θ : ℤˣ) (a b c d p q' e : ℕ) :
+`L_e^(((εδ)ζ)θ) →ₗ[UqSl2 q] ((L_a^ε ⊗ L_b^δ) ⊗ L_c^ζ) ⊗ L_d^θ` via intermediate weights `p, q'`. -/
+def quadrupleLeftInclusion (hq : IsGenericQuantumParameter q) (ε δ ζ θ : ℤˣ) (a b c d p q' e : ℕ) :
     LadderModule q e (((ε * δ) * ζ) * θ) →ₗ[UqSl2 q]
       Tensor ℂ (UqSl2 q)
         (Tensor ℂ (UqSl2 q) (Tensor ℂ (UqSl2 q) (LadderModule q a ε) (LadderModule q b δ))
@@ -106,16 +93,13 @@ private def vertexFiveInclusion (hq : IsGenericQuantumParameter q)
     LadderModule q e ((ε * δ) * (ζ * θ)) →ₗ[UqSl2 q]
       Tensor ℂ (UqSl2 q) (Tensor ℂ (UqSl2 q) (LadderModule q a ε) (LadderModule q b δ))
         (Tensor ℂ (UqSl2 q) (LadderModule q c ζ) (LadderModule q d θ)) :=
-  (tensorMap ℂ (UqSl2 q)
-      (clebschGordanWeightInclusion hq a ε b δ p)
+  (tensorMap ℂ (UqSl2 q) (clebschGordanWeightInclusion hq a ε b δ p)
       (clebschGordanWeightInclusion hq c ζ d θ r)).comp
     (clebschGordanWeightInclusion hq p (ε * δ) r (ζ * θ) e)
 
 /-- Right-comb quadruple Clebsch–Gordan channel inclusion
-`L_e^(ε(δ(ζθ))) →ₗ[UqSl2 q] L_a^ε ⊗ (L_b^δ ⊗ (L_c^ζ ⊗ L_d^θ))` through intermediate weights `r`
-and `s`. -/
-def quadrupleRightInclusion (hq : IsGenericQuantumParameter q)
-    (ε δ ζ θ : ℤˣ) (a b c d r s e : ℕ) :
+`L_e^(ε(δ(ζθ))) →ₗ[UqSl2 q] L_a^ε ⊗ (L_b^δ ⊗ (L_c^ζ ⊗ L_d^θ))` via intermediate weights `r, s`. -/
+def quadrupleRightInclusion (hq : IsGenericQuantumParameter q) (ε δ ζ θ : ℤˣ) (a b c d r s e : ℕ) :
     LadderModule q e (ε * (δ * (ζ * θ))) →ₗ[UqSl2 q]
       Tensor ℂ (UqSl2 q) (LadderModule q a ε)
         (Tensor ℂ (UqSl2 q) (LadderModule q b δ)
@@ -126,10 +110,8 @@ def quadrupleRightInclusion (hq : IsGenericQuantumParameter q)
       (clebschGordanWeightInclusion hq a ε s (δ * (ζ * θ)) e)
 
 /-- Right-comb quadruple Clebsch–Gordan channel projection
-`L_a^ε ⊗ (L_b^δ ⊗ (L_c^ζ ⊗ L_d^θ)) →ₗ[UqSl2 q] L_e^(ε(δ(ζθ)))` onto intermediate weights `r`
-and `s`. -/
-def quadrupleRightProjection (hq : IsGenericQuantumParameter q)
-    (ε δ ζ θ : ℤˣ) (a b c d r s e : ℕ) :
+`L_a^ε ⊗ (L_b^δ ⊗ (L_c^ζ ⊗ L_d^θ)) →ₗ[UqSl2 q] L_e^(ε(δ(ζθ)))` onto intermediate weights `r, s`. -/
+def quadrupleRightProjection (hq : IsGenericQuantumParameter q) (ε δ ζ θ : ℤˣ) (a b c d r s e : ℕ) :
     Tensor ℂ (UqSl2 q) (LadderModule q a ε)
       (Tensor ℂ (UqSl2 q) (LadderModule q b δ)
         (Tensor ℂ (UqSl2 q) (LadderModule q c ζ) (LadderModule q d θ))) →ₗ[UqSl2 q]
@@ -176,12 +158,13 @@ theorem quadrupleRightProjection_comp_inclusion (hq : IsGenericQuantumParameter 
         by_cases hss : s = s'
         · subst hss
           by_cases hbrs : IsClebschGordanTriple b r s
-          · simp [clebschGordanWeightInclusion_of_not_triple hq ε (δ * (ζ * θ))
-              fun hase => h ⟨rfl, rfl, hcdr, hbrs, hase⟩]
-          · simp [clebschGordanWeightInclusion_of_not_triple hq δ (ζ * θ) hbrs]
+          · simp [clebschGordanWeightInclusion_eq_zero_of_not_isClebschGordanTriple hq
+              ε (δ * (ζ * θ)) fun hase => h ⟨rfl, rfl, hcdr, hbrs, hase⟩]
+          · simp [clebschGordanWeightInclusion_eq_zero_of_not_isClebschGordanTriple hq
+              δ (ζ * θ) hbrs]
         · simp [clebschGordanWeightProjection_comp_inclusion_of_ne (a := b) (b := r)
             hq δ (ζ * θ) hss]
-      · simp [clebschGordanWeightInclusion_of_not_triple hq ζ θ hcdr]
+      · simp [clebschGordanWeightInclusion_eq_zero_of_not_isClebschGordanTriple hq ζ θ hcdr]
     · simp [clebschGordanWeightProjection_comp_inclusion_of_ne (a := c) (b := d) hq ζ θ hrr]
 
 /-! ### Reassociation along the five edges of Mac Lane's pentagon -/
@@ -200,10 +183,9 @@ private theorem edge_one_two (hq : IsGenericQuantumParameter q)
     ← tensorMap_comp_left, ← tensorMap_comp_left,
     LinearMap.comp_assoc (clebschGordanWeightInclusion hq p (ε * δ) c ζ q'),
     assoc_comp_clebschGordanWeightInclusion hq ε δ ζ a b c q' p, tensorMap_sum_left,
-    ← LinearMap.lcomp_apply' (S := ℕ) (clebschGordanWeightInclusion hq q' ((ε * δ) * ζ) d θ e),
-    map_sum]
+    LinearMap.finsetSum_comp]
   refine Finset.sum_congr rfl fun t _ => ?_
-  rw [LinearMap.lcomp_apply', tensorMap_smul_left, LinearMap.smul_comp]
+  rw [tensorMap_smul_left, LinearMap.smul_comp]
   congr 1
   have hcongr := tensorMap_congr_comp_clebschGordanWeightInclusion hq
     (rfl : q' = q') (rfl : d = d) (mul_assoc ε δ ζ) (rfl : θ = θ) e
@@ -222,12 +204,10 @@ private theorem edge_two_three (hq : IsGenericQuantumParameter q)
             (LadderModule.congr rfl (mul_assoc ε (δ * ζ) θ)).toLinearMap) := by
   rw [vertexTwoInclusion, ← LinearMap.comp_assoc, ← tensorMap_tensorMap_comp_assoc_eq,
     LinearMap.comp_assoc, assoc_comp_clebschGordanWeightInclusion hq ε (δ * ζ) θ a t d e q',
-    ← LinearMap.compRight_apply (S := ℕ)
-      (tensorMap ℂ (UqSl2 q) LinearMap.id
-        (tensorMap ℂ (UqSl2 q) (clebschGordanWeightInclusion hq b δ c ζ t) LinearMap.id)),
-    map_sum]
+    LinearMap.comp_finsetSum]
   refine Finset.sum_congr rfl fun s' _ => ?_
-  rw [LinearMap.compRight_apply, LinearMap.comp_smul]; rfl
+  rw [LinearMap.comp_smul]
+  simp only [vertexThreeInclusion, LinearMap.comp_assoc]
 
 private theorem edge_three_four (hq : IsGenericQuantumParameter q)
     (ε δ ζ θ : ℤˣ) (a b c d t s' e : ℕ) :
@@ -243,10 +223,9 @@ private theorem edge_three_four (hq : IsGenericQuantumParameter q)
     ← tensorMap_comp_right, ← tensorMap_comp_right,
     LinearMap.comp_assoc (clebschGordanWeightInclusion hq t (δ * ζ) d θ s'),
     assoc_comp_clebschGordanWeightInclusion hq δ ζ θ b c d s' t, tensorMap_sum_right,
-    ← LinearMap.lcomp_apply' (S := ℕ) (clebschGordanWeightInclusion hq a ε s' ((δ * ζ) * θ) e),
-    map_sum]
+    LinearMap.finsetSum_comp]
   refine Finset.sum_congr rfl fun r' _ => ?_
-  rw [LinearMap.lcomp_apply', tensorMap_smul_right, LinearMap.smul_comp]
+  rw [tensorMap_smul_right, LinearMap.smul_comp]
   congr 1
   have hcongr := tensorMap_congr_comp_clebschGordanWeightInclusion hq
     (rfl : a = a) (rfl : s' = s') (rfl : ε = ε) (mul_assoc δ ζ θ) e
@@ -265,12 +244,9 @@ private theorem edge_one_five (hq : IsGenericQuantumParameter q)
             (LadderModule.congr rfl (mul_assoc (ε * δ) ζ θ)).toLinearMap) := by
   rw [quadrupleLeftInclusion, ← LinearMap.comp_assoc, ← tensorMap_tensorMap_comp_assoc_eq,
     LinearMap.comp_assoc, assoc_comp_clebschGordanWeightInclusion hq (ε * δ) ζ θ p c d e q',
-    ← LinearMap.compRight_apply (S := ℕ)
-      (tensorMap ℂ (UqSl2 q) (clebschGordanWeightInclusion hq a ε b δ p)
-        (tensorMap ℂ (UqSl2 q) LinearMap.id LinearMap.id)),
-    map_sum]
+    LinearMap.comp_finsetSum]
   refine Finset.sum_congr rfl fun r' _ => ?_
-  rw [LinearMap.compRight_apply, LinearMap.comp_smul]
+  rw [LinearMap.comp_smul]
   congr 1
   simp only [vertexFiveInclusion, tensorMap_id, ← LinearMap.comp_assoc, ← tensorMap_comp,
     LinearMap.comp_id, LinearMap.id_comp]
@@ -293,12 +269,10 @@ private theorem edge_five_four (hq : IsGenericQuantumParameter q)
       LinearMap.comp_id, LinearMap.id_comp]
   rw [hfactor, ← LinearMap.comp_assoc, ← tensorMap_tensorMap_comp_assoc_eq,
     LinearMap.comp_assoc, assoc_comp_clebschGordanWeightInclusion hq ε δ (ζ * θ) a b r' e p,
-    ← LinearMap.compRight_apply (S := ℕ)
-      (tensorMap ℂ (UqSl2 q) LinearMap.id
-        (tensorMap ℂ (UqSl2 q) LinearMap.id (clebschGordanWeightInclusion hq c ζ d θ r'))),
-    map_sum]
+    LinearMap.comp_finsetSum]
   refine Finset.sum_congr rfl fun s' _ => ?_
-  rw [LinearMap.compRight_apply, LinearMap.comp_smul]; rfl
+  rw [LinearMap.comp_smul]
+  simp only [quadrupleRightInclusion, LinearMap.comp_assoc]
 
 /-! ### Coordinate extraction and the Biedenharn–Elliott pentagon identity -/
 
@@ -333,11 +307,11 @@ private theorem homScalar_two_step (hq : IsGenericQuantumParameter q)
           (quadrupleLeftInclusion hq ε δ ζ θ a b c d p q' e)))) =
       sixJSymbol hq ε δ (ζ * θ) a b r e p s * sixJSymbol hq (ε * δ) ζ θ p c d e q' r := by
   rw [← LinearMap.comp_assoc, edge_one_five]
-  simp only [comp_sum, LinearMap.comp_smul, map_sum, map_smul, smul_eq_mul,
+  simp only [LinearMap.comp_finsetSum, LinearMap.comp_smul, map_sum, map_smul, smul_eq_mul,
     ← LinearMap.comp_assoc, homScalar_comp_congr hq]
   rw [Finset.sum_eq_single r]
   · rw [LinearMap.comp_assoc, edge_five_four]
-    simp only [comp_sum, LinearMap.comp_smul, map_sum, map_smul, smul_eq_mul,
+    simp only [LinearMap.comp_finsetSum, LinearMap.comp_smul, map_sum, map_smul, smul_eq_mul,
       ← LinearMap.comp_assoc, homScalar_comp_congr hq,
       homScalar_quadrupleRight_of_triples hq ε δ ζ θ htri]
     rw [Finset.sum_eq_single s]
@@ -346,8 +320,8 @@ private theorem homScalar_two_step (hq : IsGenericQuantumParameter q)
     · exact fun h => (h (Finset.mem_range.mpr (Nat.lt_succ_of_le htri.2.1.le_add))).elim
   · intro r' _ hne
     rw [LinearMap.comp_assoc, edge_five_four]
-    simp [comp_sum, LinearMap.comp_smul, ← LinearMap.comp_assoc, homScalar_comp_congr hq,
-      homScalar_quadrupleRight_of_triples hq ε δ ζ θ htri, Ne.symm hne]
+    simp [LinearMap.comp_finsetSum, LinearMap.comp_smul, ← LinearMap.comp_assoc,
+      homScalar_comp_congr hq, homScalar_quadrupleRight_of_triples hq ε δ ζ θ htri, Ne.symm hne]
   · exact fun h => (h (Finset.mem_range.mpr (Nat.lt_succ_of_le htri.1.le_add))).elim
 
 private theorem homScalar_three_step (hq : IsGenericQuantumParameter q)
@@ -370,11 +344,11 @@ private theorem homScalar_three_step (hq : IsGenericQuantumParameter q)
           sixJSymbol hq ε (δ * ζ) θ a t d e q' s *
           sixJSymbol hq ε δ ζ a b c q' p t := by
   rw [← LinearMap.comp_assoc, ← LinearMap.comp_assoc, edge_one_two]
-  simp only [comp_sum, LinearMap.comp_smul, map_sum, map_smul, smul_eq_mul,
+  simp only [LinearMap.comp_finsetSum, LinearMap.comp_smul, map_sum, map_smul, smul_eq_mul,
     ← LinearMap.comp_assoc, homScalar_comp_congr hq]
   refine Finset.sum_congr rfl fun t _ => ?_
   rw [LinearMap.comp_assoc, edge_two_three]
-  simp only [comp_sum, LinearMap.comp_smul, map_sum, map_smul, smul_eq_mul,
+  simp only [LinearMap.comp_finsetSum, LinearMap.comp_smul, map_sum, map_smul, smul_eq_mul,
     ← LinearMap.comp_assoc, homScalar_comp_congr hq]
   have hinner : ∀ s' ∈ Finset.range (t + d + 1),
       sixJSymbol hq ε (δ * ζ) θ a t d e q' s' *
@@ -387,7 +361,7 @@ private theorem homScalar_three_step (hq : IsGenericQuantumParameter q)
       else 0 := by
     intro s' _
     rw [LinearMap.comp_assoc, edge_three_four]
-    simp only [comp_sum, LinearMap.comp_smul, map_sum, map_smul, smul_eq_mul,
+    simp only [LinearMap.comp_finsetSum, LinearMap.comp_smul, map_sum, map_smul, smul_eq_mul,
       ← LinearMap.comp_assoc, homScalar_comp_congr hq,
       homScalar_quadrupleRight_of_triples hq ε δ ζ θ htri]
     rw [Finset.sum_eq_single r]
@@ -403,7 +377,8 @@ private theorem homScalar_three_step (hq : IsGenericQuantumParameter q)
     · exact fun h => (h hs_mem).elim
   · have hnot : ¬ IsClebschGordanTriple t d s := fun htr =>
       hs_mem (Finset.mem_range.mpr (Nat.lt_succ_of_le htr.le_add))
-    rw [sixJSymbol_eq_zero_of_not_triple hq δ ζ θ (fun h => hnot h.2.1), zero_mul, zero_mul,
+    rw [sixJSymbol_eq_zero_of_not_isClebschGordanTriple hq δ ζ θ (fun h => hnot h.2.1),
+      zero_mul, zero_mul,
       Finset.sum_eq_zero fun s' hs' => by simp [show s ≠ s' from fun h => hs_mem (h ▸ hs')],
       mul_zero]
 
@@ -429,16 +404,21 @@ theorem biedenharn_elliott (hq : IsGenericQuantumParameter q)
       LinearMap.comp_assoc] at heq
     rwa [homScalar_two_step hq ε δ ζ θ htri, homScalar_three_step hq ε δ ζ θ htri, eq_comm] at heq
   · rcases not_and_or.mp htri with hcdr | htri'
-    · rw [sixJSymbol_eq_zero_of_not_triple hq (ε * δ) ζ θ (fun h => hcdr h.2.2.1), mul_zero]
+    · rw [sixJSymbol_eq_zero_of_not_isClebschGordanTriple hq (ε * δ) ζ θ (fun h => hcdr h.2.2.1),
+        mul_zero]
       exact Finset.sum_eq_zero fun _ _ => by
-        rw [sixJSymbol_eq_zero_of_not_triple hq δ ζ θ (fun h => hcdr h.2.2.1), zero_mul, zero_mul]
+        rw [sixJSymbol_eq_zero_of_not_isClebschGordanTriple hq δ ζ θ (fun h => hcdr h.2.2.1),
+          zero_mul, zero_mul]
     rcases not_and_or.mp htri' with hbrs | hase
-    · rw [sixJSymbol_eq_zero_of_not_triple hq ε δ (ζ * θ) (fun h => hbrs h.2.2.1), zero_mul]
+    · rw [sixJSymbol_eq_zero_of_not_isClebschGordanTriple hq ε δ (ζ * θ) (fun h => hbrs h.2.2.1),
+        zero_mul]
       exact Finset.sum_eq_zero fun _ _ => by
-        rw [sixJSymbol_eq_zero_of_not_triple hq δ ζ θ (fun h => hbrs h.2.2.2), zero_mul, zero_mul]
-    · rw [sixJSymbol_eq_zero_of_not_triple hq ε δ (ζ * θ) (fun h => hase h.2.2.2), zero_mul]
+        rw [sixJSymbol_eq_zero_of_not_isClebschGordanTriple hq δ ζ θ (fun h => hbrs h.2.2.2),
+          zero_mul, zero_mul]
+    · rw [sixJSymbol_eq_zero_of_not_isClebschGordanTriple hq ε δ (ζ * θ) (fun h => hase h.2.2.2),
+        zero_mul]
       exact Finset.sum_eq_zero fun _ _ => by
-        rw [sixJSymbol_eq_zero_of_not_triple hq ε (δ * ζ) θ (fun h => hase h.2.2.2),
+        rw [sixJSymbol_eq_zero_of_not_isClebschGordanTriple hq ε (δ * ζ) θ (fun h => hase h.2.2.2),
           mul_zero, zero_mul]
 
 /-- Lowering-step form of the quantum Biedenharn–Elliott pentagon identity, summed over
@@ -452,8 +432,9 @@ theorem biedenharn_elliott_fin (hq : IsGenericQuantumParameter q)
       sixJSymbol hq ε δ (ζ * θ) a b r e p s *
         sixJSymbol hq (ε * δ) ζ θ p c d e q' r := by
   rw [← biedenharn_elliott hq ε δ ζ θ a b c d e p q' r s,
-    sum_range_of_not_isClebschGordanTriple b c _ fun t htr => by
-      rw [sixJSymbol_eq_zero_of_not_triple hq δ ζ θ (fun h => htr h.1), zero_mul, zero_mul]]
+    sum_range_eq_sum_fin_sub_two_mul b c _ fun t htr => by
+      rw [sixJSymbol_eq_zero_of_not_isClebschGordanTriple hq δ ζ θ (fun h => htr h.1),
+        zero_mul, zero_mul]]
 
 /-- Explicit expansion of the quadruple associator `assoc A B (C ⊗ D) ∘ assoc (A ⊗ B) C D` on any
 normalized `F`-ladder vector `v_k` (`k : ℤ`) of a left-comb quadruple Clebsch–Gordan channel. -/

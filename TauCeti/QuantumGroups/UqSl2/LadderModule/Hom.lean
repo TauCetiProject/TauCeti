@@ -51,11 +51,12 @@ variable {q : ℂ} [Fact (q ≠ 0)] {m n p : ℕ} {ε δ ζ : ℤˣ}
 /-- Equal highest weights and equal signs induce a canonical `UqSl2 q`-linear isomorphism
 `L_m^ε ≃ₗ[UqSl2 q] L_n^δ` preserving every ladder vector `v_j`. -/
 def congr (hm : m = n) (hε : ε = δ) : LadderModule q m ε ≃ₗ[UqSl2 q] LadderModule q n δ :=
-  hm ▸ hε ▸ LinearEquiv.refl (UqSl2 q) (LadderModule q m ε)
+  LinearEquiv.cast (R := UqSl2 q) (M := fun p : ℕ × ℤˣ => LadderModule q p.1 p.2)
+    (Prod.ext hm hε : (m, ε) = (n, δ))
 
 /-- `congr` preserves the integer-indexed ladder vectors `v_j`. -/
 @[simp] theorem congr_vec (hm : m = n) (hε : ε = δ) (j : ℤ) :
-    congr (q := q) hm hε (vec q m ε j) = vec q n δ j := by subst hm hε; rfl
+    congr (q := q) hm hε (vec q m ε j) = vec q n δ j := by subst hm hε; simp [congr]
 
 /-- `congr` reindexes the ladder basis along `finCongr`. -/
 @[simp] theorem congr_basis (hm : m = n) (hε : ε = δ) (i : Fin (m + 1)) :
@@ -64,17 +65,18 @@ def congr (hm : m = n) (hε : ε = δ) : LadderModule q m ε ≃ₗ[UqSl2 q] Lad
 
 /-- Inverting `congr` reverses the parameter equalities. -/
 @[simp] theorem congr_symm (hm : m = n) (hε : ε = δ) :
-    (congr (q := q) hm hε).symm = congr hm.symm hε.symm := by subst hm hε; rfl
+    (congr (q := q) hm hε).symm = congr hm.symm hε.symm :=
+  LinearEquiv.ext fun _ => by simp [congr]
 
 /-- `congr` with reflexive equalities is the identity equivalence. -/
 @[simp] theorem congr_refl :
     congr (q := q) (rfl : m = m) (rfl : ε = ε) = LinearEquiv.refl (UqSl2 q) (LadderModule q m ε) :=
-  (rfl)
+  LinearEquiv.ext fun _ => by simp [congr]
 
 /-- `congr` composes along transitivity of parameter equalities. -/
 theorem congr_trans (hm₁ : m = n) (hε₁ : ε = δ) (hm₂ : n = p) (hε₂ : δ = ζ) :
-    (congr (q := q) hm₁ hε₁).trans (congr hm₂ hε₂) = congr (hm₁.trans hm₂) (hε₁.trans hε₂) := by
-  subst hm₁ hε₁ hm₂ hε₂; rfl
+    (congr (q := q) hm₁ hε₁).trans (congr hm₂ hε₂) = congr (hm₁.trans hm₂) (hε₁.trans hε₂) :=
+  LinearEquiv.ext fun _ => by simp [congr]
 
 /-! ### Schur vanishing and the Schur scalar -/
 
@@ -139,7 +141,7 @@ theorem end_apply_eq_homScalar_smul (hq : IsGenericQuantumParameter q)
 theorem apply_eq_homScalar_smul_congr (hq : IsGenericQuantumParameter q)
     (hm : m = n) (hε : ε = δ) (φ : LadderModule q m ε →ₗ[UqSl2 q] LadderModule q n δ)
     (x : LadderModule q m ε) : φ x = homScalar φ • congr hm hε x := by
-  subst hm hε; exact end_apply_eq_homScalar_smul hq φ x
+  subst hm hε; rw [congr_refl]; exact end_apply_eq_homScalar_smul hq φ x
 
 /-- At a generic parameter, when `m = n` and `ε = δ`, every `φ : L_m^ε →ₗ[UqSl2 q] L_n^δ` equals
 `homScalar φ • (congr hm hε).toLinearMap`. -/
