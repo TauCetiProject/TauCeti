@@ -22,6 +22,14 @@ The transform is entire, normalized, and uniquely characterized by coefficient c
 The cases `B = 0`, `B = X`, and `F = 1` are included. The zero constant term of `B` is essential:
 otherwise padding finite ranks introduces extra factors from zero eigenvalues.
 
+The transform is multiplicative in the functional input, `D(B, F G) = D(B, F) D(B, G)`
+(`PowerSeries.colemanDEntire_mul`). At finite level, the product of the transforms of the
+truncations of `F` and `G` at order `N + 1` is the transform of the product of those truncations,
+which agrees with the truncation of `F G` below degree `N + 1`. A Newton majorant common to all
+these polynomials makes Coleman's perturbation bound applicable, so the two finite transforms
+differ by `O(2 ^ (-N))` in each coefficient
+(`PowerSeries.dist_coeff_colemanDBounded_trunc_mul_trunc_le`).
+
 ## References
 
 * R. Coleman, *p-adic Banach spaces and families of modular forms*, Invent. Math. **127**
@@ -188,5 +196,45 @@ theorem colemanDEntire_X_left (hF₀ : coeff 0 F = 1) :
     Polynomial.natDegree_X,
     Polynomial.colemanDBounded_X_left (Nat.lt_succ_iff.mp (natDegree_trunc_lt _ _))]
   simp [coeff_trunc, Nat.lt_succ_of_le hp.1]
+
+section Mul
+
+variable [CompleteSpace R] [NormOneClass R] [IsUltrametricDist R]
+
+/-- **Coleman's transform is multiplicative in the functional input.** For entire series `B`, `F`
+and `G` with `B(0) = 0` and `F(0) = G(0) = 1`, `D(B, F G) = D(B, F) D(B, G)`. -/
+theorem colemanDEntire_mul (hB : B.IsEntire) (hF : F.IsEntire) (hG : G.IsEntire)
+    (hB₀ : coeff 0 B = 0) (hF₀ : coeff 0 F = 1) (hG₀ : coeff 0 G = 1) :
+    colemanDEntire B (F * G) = colemanDEntire B F * colemanDEntire B G := by
+  obtain ⟨ρ, hρ₀, hρ, -, hFG⟩ := hF.exists_newtonMajorant_mul hG (by simp [hF₀]) (by simp [hG₀])
+  refine colemanDEntire_eq_of_tendsto_coeff fun k ↦ ?_
+  -- the products of the finite transforms of the truncations of `F` and `G` converge
+  have hprod : Tendsto (fun p : ℕ × ℕ ↦
+      (Polynomial.colemanDBounded (trunc (p.2 + 1) B) (trunc (p.1 + 1) F) p.1 p.2 *
+        Polynomial.colemanDBounded (trunc (p.2 + 1) B) (trunc (p.1 + 1) G) p.1 p.2).coeff k)
+      atTop (𝓝 (coeff k (colemanDEntire B F * colemanDEntire B G))) := by
+    simp only [Polynomial.coeff_mul, coeff_mul]
+    exact tendsto_finsetSum _ fun x _ ↦ (tendsto_coeff_colemanDBounded_trunc hB hF hB₀ hF₀ x.1).mul
+      (tendsto_coeff_colemanDBounded_trunc hB hG hB₀ hG₀ x.2)
+  -- the two finite transforms differ by at most `2 ^ (-(N + 1))` times a bound independent of `N`
+  set K := ∏ i ∈ range k, colemanMajorant B (2 * ρ i)
+  have hlim : Tendsto (fun p : ℕ × ℕ ↦ K * 2⁻¹ ^ (p.1 + 1)) atTop (𝓝 0) := by
+    have hfst : Tendsto (fun p : ℕ × ℕ ↦ p.1 + 1) atTop atTop :=
+      tendsto_atTop_atTop.2 fun N ↦ ⟨(N, 0), fun p hp ↦ by have := (Prod.mk_le_mk.1 hp).1; omega⟩
+    simpa using ((tendsto_pow_atTop_nhds_zero_of_lt_one (by norm_num : (0 : ℝ) ≤ 2⁻¹)
+      (by norm_num)).comp hfst).const_mul K
+  refine hprod.congr_dist (squeeze_zero (fun _ ↦ dist_nonneg) (fun p ↦ ?_) hlim)
+  -- both transforms are taken at the doubled rank, where the finite transform is multiplicative
+  have hdB : (trunc (p.2 + 1) B).natDegree ≤ p.2 := Nat.lt_succ_iff.1 (natDegree_trunc_lt B p.2)
+  have hd (H : R⟦X⟧) : (trunc (p.1 + 1) H).natDegree ≤ p.1 :=
+    Nat.lt_succ_iff.1 (natDegree_trunc_lt H p.1)
+  rw [← Polynomial.colemanDBounded_mul (hd F) (hd G) hdB,
+    ← Polynomial.colemanDBounded_add_of_coeff_zero (hd (F * G)) hdB (by simp [coeff_trunc, hB₀]),
+    dist_comm, inv_pow, ← div_eq_mul_inv,
+    le_div_iff₀ (by positivity)]
+  exact dist_coeff_colemanDBounded_trunc_mul_trunc_le (fun i ↦ (hρ₀ i).le) hρ hFG one_le_two
+    (fun i ↦ hB.isRestricted _) hB₀ _ _ _ _ k
+
+end Mul
 
 end PowerSeries
