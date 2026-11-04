@@ -42,9 +42,10 @@ uniform exactly when all derivatives of `f` are bounded (`TauCeti.Symbol.isUnifo
 so the local estimates alone do not give uniform ones: a coordinate function `x_j` is a symbol of
 order `0` that is not uniform (`TauCeti.Symbol.not_isUniform_ofSpatial_smul`).
 
-The mixed derivative `TauCeti.mixedDeriv α β a x ξ` takes the frequency derivatives first. For
-smooth `a` the two kinds of derivatives commute (`TauCeti.mixedDeriv_eq_coordinateDeriv_snd`),
-which is what makes spatial derivatives of symbols symbols of the same order.
+The mixed derivative `TauCeti.mixedDeriv α β a x ξ`, defined with the coordinate derivatives,
+takes the frequency derivatives first. For smooth `a` the two kinds of derivatives commute
+(`TauCeti.mixedDeriv_eq_coordinateDeriv_snd`), which is what makes spatial derivatives of symbols
+symbols of the same order.
 
 ## References
 
@@ -61,135 +62,7 @@ open scoped ContDiff
 
 namespace TauCeti
 
-variable {n : ℕ} {A : Type*} [NormedAddCommGroup A] [NormedSpace ℝ A]
-
-/-- The mixed derivative `∂_x^α ∂_ξ^β a(x, ξ)` of a function of a position `x` and a frequency
-`ξ`: first the frequency derivatives along `β`, then the position derivatives along `α`. -/
-def mixedDeriv (α β : List (Fin n)) (a : CoordinateSpace n × CoordinateSpace n → A)
-    (x ξ : CoordinateSpace n) : A :=
-  coordinateDeriv α (fun y => coordinateDeriv β (fun η => a (y, η)) ξ) x
-
-theorem mixedDeriv_def (α β : List (Fin n)) (a : CoordinateSpace n × CoordinateSpace n → A)
-    (x ξ : CoordinateSpace n) :
-    mixedDeriv α β a x ξ = coordinateDeriv α (fun y => coordinateDeriv β (fun η => a (y, η)) ξ) x :=
-  (rfl)
-
-@[simp]
-theorem mixedDeriv_nil_nil (a : CoordinateSpace n × CoordinateSpace n → A)
-    (x ξ : CoordinateSpace n) : mixedDeriv [] [] a x ξ = a (x, ξ) := by
-  simp [mixedDeriv_def]
-
-/-- For a smooth function the position and frequency derivatives commute: the mixed derivative
-may equally be computed by taking the position derivatives first. -/
-theorem mixedDeriv_eq_coordinateDeriv_snd {a : CoordinateSpace n × CoordinateSpace n → A}
-    (ha : ContDiff ℝ ∞ a) (α β : List (Fin n)) (x ξ : CoordinateSpace n) :
-    mixedDeriv α β a x ξ = coordinateDeriv β (fun η => coordinateDeriv α (fun y => a (y, η)) x) ξ :=
-  (coordinateDeriv_coordinateDeriv_comm ha α β x ξ).symm
-
-/-- The mixed derivatives of a smooth function are jointly smooth in the position and the
-frequency. -/
-theorem _root_.ContDiff.mixedDeriv {a : CoordinateSpace n × CoordinateSpace n → A}
-    (ha : ContDiff ℝ ∞ a) (α β : List (Fin n)) :
-    ContDiff ℝ ∞ fun p : CoordinateSpace n × CoordinateSpace n => mixedDeriv α β a p.1 p.2 :=
-  ((ha.coordinateDeriv_snd β).coordinateDeriv_fst α)
-
-/-- The mixed derivative of the frequency derivative `∂_{ξ_j} a` is a mixed derivative of `a`
-with one more frequency derivative. -/
-theorem mixedDeriv_coordinateDeriv_snd (α β : List (Fin n)) (j : Fin n)
-    (a : CoordinateSpace n × CoordinateSpace n → A) (x ξ : CoordinateSpace n) :
-    mixedDeriv α β (fun p => coordinateDeriv [j] (fun η => a (p.1, η)) p.2) x ξ =
-      mixedDeriv α (β ++ [j]) a x ξ := by
-  simp only [mixedDeriv_def, coordinateDeriv_append]
-
-/-- The mixed derivative of the position derivative `∂_{x_j} a` of a smooth function is a mixed
-derivative of `a` with one more position derivative. -/
-theorem mixedDeriv_coordinateDeriv_fst {a : CoordinateSpace n × CoordinateSpace n → A}
-    (ha : ContDiff ℝ ∞ a) (α β : List (Fin n)) (j : Fin n) (x ξ : CoordinateSpace n) :
-    mixedDeriv α β (fun p => coordinateDeriv [j] (fun y => a (y, p.2)) p.1) x ξ =
-      mixedDeriv (α ++ [j]) β a x ξ := by
-  rw [mixedDeriv_def, mixedDeriv_def, coordinateDeriv_append]
-  congr 1
-  funext y
-  exact coordinateDeriv_coordinateDeriv_comm ha [j] β y ξ
-
-section Linear
-
-variable {a b : CoordinateSpace n × CoordinateSpace n → A}
-
-/-- A smooth function of two variables is smooth in its second variable. -/
-private theorem contDiff_slice_snd (ha : ContDiff ℝ ∞ a) (y : CoordinateSpace n) :
-    ContDiff ℝ ∞ fun η => a (y, η) :=
-  ha.comp (contDiff_const.prodMk contDiff_id)
-
-/-- A smooth function of two variables is smooth in its first variable. -/
-private theorem contDiff_slice_fst (ha : ContDiff ℝ ∞ a) (ξ : CoordinateSpace n) :
-    ContDiff ℝ ∞ fun y => a (y, ξ) :=
-  ha.comp (contDiff_id.prodMk contDiff_const)
-
-/-- The partial frequency derivatives of a smooth function, at a fixed frequency, are smooth in
-the position. -/
-private theorem contDiff_coordinateDeriv_slice (ha : ContDiff ℝ ∞ a) (β : List (Fin n))
-    (ξ : CoordinateSpace n) :
-    ContDiff ℝ ∞ fun y => coordinateDeriv β (fun η => a (y, η)) ξ :=
-  (ha.coordinateDeriv_snd β).comp (contDiff_id.prodMk contDiff_const)
-
-theorem mixedDeriv_add (ha : ContDiff ℝ ∞ a) (hb : ContDiff ℝ ∞ b) (α β : List (Fin n))
-    (x ξ : CoordinateSpace n) :
-    mixedDeriv α β (a + b) x ξ = mixedDeriv α β a x ξ + mixedDeriv α β b x ξ := by
-  have h : (fun y => coordinateDeriv β (fun η => (a + b) (y, η)) ξ) =
-      (fun y => coordinateDeriv β (fun η => a (y, η)) ξ) +
-        fun y => coordinateDeriv β (fun η => b (y, η)) ξ := by
-    funext y
-    exact congrFun (coordinateDeriv_add β (contDiff_infty.1 (contDiff_slice_snd ha y) _)
-      (contDiff_infty.1 (contDiff_slice_snd hb y) _)) ξ
-  simp only [mixedDeriv_def]
-  rw [h, coordinateDeriv_add α (contDiff_infty.1 (contDiff_coordinateDeriv_slice ha β ξ) _)
-    (contDiff_infty.1 (contDiff_coordinateDeriv_slice hb β ξ) _), Pi.add_apply]
-
-theorem mixedDeriv_const_smul {R : Type*} [Semiring R] [Module R A] [SMulCommClass ℝ R A]
-    [ContinuousConstSMul R A] (ha : ContDiff ℝ ∞ a) (c : R) (α β : List (Fin n))
-    (x ξ : CoordinateSpace n) :
-    mixedDeriv α β (c • a) x ξ = c • mixedDeriv α β a x ξ := by
-  have h : (fun y => coordinateDeriv β (fun η => (c • a) (y, η)) ξ) =
-      c • fun y => coordinateDeriv β (fun η => a (y, η)) ξ := by
-    funext y
-    exact congrFun
-      (coordinateDeriv_const_smul β (contDiff_infty.1 (contDiff_slice_snd ha y) _) c) ξ
-  simp only [mixedDeriv_def]
-  rw [h, coordinateDeriv_const_smul α
-    (contDiff_infty.1 (contDiff_coordinateDeriv_slice ha β ξ) _), Pi.smul_apply]
-
-theorem mixedDeriv_neg (ha : ContDiff ℝ ∞ a) (α β : List (Fin n)) (x ξ : CoordinateSpace n) :
-    mixedDeriv α β (-a) x ξ = -mixedDeriv α β a x ξ := by
-  have h : (fun y => coordinateDeriv β (fun η => (-a) (y, η)) ξ) =
-      -fun y => coordinateDeriv β (fun η => a (y, η)) ξ := by
-    funext y
-    exact congrFun (coordinateDeriv_neg β (contDiff_infty.1 (contDiff_slice_snd ha y) _)) ξ
-  simp only [mixedDeriv_def]
-  rw [h, coordinateDeriv_neg α (contDiff_infty.1 (contDiff_coordinateDeriv_slice ha β ξ) _),
-    Pi.neg_apply]
-
-@[simp]
-theorem mixedDeriv_zero (α β : List (Fin n)) (x ξ : CoordinateSpace n) :
-    mixedDeriv α β (0 : CoordinateSpace n × CoordinateSpace n → A) x ξ = 0 := by
-  have h : (fun y => coordinateDeriv β (fun η => (0 : CoordinateSpace n × CoordinateSpace n → A)
-      (y, η)) ξ) = 0 := by
-    funext y
-    exact congrFun (coordinateDeriv_zero β) ξ
-  rw [mixedDeriv_def, h, coordinateDeriv_zero, Pi.zero_apply]
-
-/-- If `a` vanishes for all frequencies at all positions near `x`, then so do all its mixed
-derivatives at `x`. -/
-theorem mixedDeriv_eq_zero_of_eventually {x : CoordinateSpace n}
-    (h : ∀ᶠ y in nhds x, ∀ η, a (y, η) = 0) (α β : List (Fin n)) (ξ : CoordinateSpace n) :
-    mixedDeriv α β a x ξ = 0 := by
-  have h' : (fun y => coordinateDeriv β (fun η => a (y, η)) ξ) =ᶠ[nhds x] 0 := by
-    filter_upwards [h] with y hy
-    have hy' : (fun η => a (y, η)) = 0 := funext hy
-    rw [hy', coordinateDeriv_zero, Pi.zero_apply, Pi.zero_apply]
-  rw [mixedDeriv_def, (h'.coordinateDeriv α).eq_of_nhds, coordinateDeriv_zero, Pi.zero_apply]
-
-end Linear
+variable {n : ℕ}
 
 /-- The weight `⟨ξ⟩^t = (1 + ‖ξ‖²)^(t/2)` is monotone in the exponent. -/
 private theorem rpow_weight_le_rpow_weight (ξ : CoordinateSpace n) {t t' : ℝ} (h : t ≤ t') :
@@ -199,25 +72,6 @@ private theorem rpow_weight_le_rpow_weight (ξ : CoordinateSpace n) {t t' : ℝ}
 private theorem rpow_weight_pos (ξ : CoordinateSpace n) (t : ℝ) :
     0 < (1 + ‖ξ‖ ^ 2) ^ (t / 2) :=
   Real.rpow_pos_of_pos (by positivity) _
-
-section Bounds
-
-variable {a b : CoordinateSpace n × CoordinateSpace n → A} {α β : List (Fin n)}
-  {x ξ : CoordinateSpace n} {C D w : ℝ}
-
-private theorem norm_mixedDeriv_add_le (ha : ContDiff ℝ ∞ a) (hb : ContDiff ℝ ∞ b)
-    (haC : ‖mixedDeriv α β a x ξ‖ ≤ C * w) (hbD : ‖mixedDeriv α β b x ξ‖ ≤ D * w) :
-    ‖mixedDeriv α β (a + b) x ξ‖ ≤ (C + D) * w := by
-  rw [mixedDeriv_add ha hb, add_mul]
-  exact (norm_add_le _ _).trans (add_le_add haC hbD)
-
-private theorem norm_mixedDeriv_smul_le {𝕜 : Type*} [NormedField 𝕜] [NormedSpace 𝕜 A]
-    [SMulCommClass ℝ 𝕜 A] (ha : ContDiff ℝ ∞ a) (c : 𝕜) (haC : ‖mixedDeriv α β a x ξ‖ ≤ C * w) :
-    ‖mixedDeriv α β (c • a) x ξ‖ ≤ (‖c‖ * C) * w := by
-  rw [mixedDeriv_const_smul ha, norm_smul, mul_assoc]
-  exact mul_le_mul_of_nonneg_left haC (norm_nonneg c)
-
-end Bounds
 
 variable (n) in
 /-- The class `S^m_{1,0}` of symbols of order `m` on `ℝⁿ × ℝⁿ` with values in `V →L[ℂ] W`: smooth
@@ -252,6 +106,16 @@ def IsUniform (a : Symbol n V W m) : Prop :=
 outside some compact set. -/
 def HasCompactSpatialSupport (a : Symbol n V W m) : Prop :=
   ∃ K : Set (CoordinateSpace n), IsCompact K ∧ ∀ x ∉ K, ∀ ξ, a.coefficient (x, ξ) = 0
+
+theorem isUniform_iff {a : Symbol n V W m} :
+    a.IsUniform ↔ ∀ α β : List (Fin n), ∃ C : ℝ, 0 ≤ C ∧ ∀ x ξ,
+      ‖mixedDeriv α β a.coefficient x ξ‖ ≤ C * (1 + ‖ξ‖ ^ 2) ^ ((m - β.length) / 2) :=
+  Iff.rfl
+
+theorem hasCompactSpatialSupport_iff {a : Symbol n V W m} :
+    a.HasCompactSpatialSupport ↔
+      ∃ K : Set (CoordinateSpace n), IsCompact K ∧ ∀ x ∉ K, ∀ ξ, a.coefficient (x, ξ) = 0 :=
+  Iff.rfl
 
 /-- A symbol with compact spatial support satisfies its estimates uniformly in the position:
 outside the support all its mixed derivatives vanish. -/
@@ -444,13 +308,13 @@ def frequencyDeriv (j : Fin n) : Symbol n V W m →ₗ[ℂ] Symbol n V W (m - 1)
     ext1
     funext p
     exact congrFun (coordinateDeriv_add [j]
-      (contDiff_infty.1 (contDiff_slice_snd a.contDiff_coefficient p.1) _)
-      (contDiff_infty.1 (contDiff_slice_snd b.contDiff_coefficient p.1) _)) p.2
+      (contDiff_infty.1 (a.contDiff_coefficient.comp (contDiff_prodMk_right p.1)) _)
+      (contDiff_infty.1 (b.contDiff_coefficient.comp (contDiff_prodMk_right p.1)) _)) p.2
   map_smul' c a := by
     ext1
     funext p
     exact congrFun (coordinateDeriv_const_smul [j]
-      (contDiff_infty.1 (contDiff_slice_snd a.contDiff_coefficient p.1) _) c) p.2
+      (contDiff_infty.1 (a.contDiff_coefficient.comp (contDiff_prodMk_right p.1)) _) c) p.2
 
 @[simp]
 theorem coefficient_frequencyDeriv (j : Fin n) (a : Symbol n V W m) (x ξ : CoordinateSpace n) :
@@ -471,13 +335,13 @@ def spatialDeriv (j : Fin n) : Symbol n V W m →ₗ[ℂ] Symbol n V W m where
     ext1
     funext p
     exact congrFun (coordinateDeriv_add [j]
-      (contDiff_infty.1 (contDiff_slice_fst a.contDiff_coefficient p.2) _)
-      (contDiff_infty.1 (contDiff_slice_fst b.contDiff_coefficient p.2) _)) p.1
+      (contDiff_infty.1 (a.contDiff_coefficient.comp (contDiff_prodMk_left p.2)) _)
+      (contDiff_infty.1 (b.contDiff_coefficient.comp (contDiff_prodMk_left p.2)) _)) p.1
   map_smul' c a := by
     ext1
     funext p
     exact congrFun (coordinateDeriv_const_smul [j]
-      (contDiff_infty.1 (contDiff_slice_fst a.contDiff_coefficient p.2) _) c) p.1
+      (contDiff_infty.1 (a.contDiff_coefficient.comp (contDiff_prodMk_left p.2)) _) c) p.1
 
 @[simp]
 theorem coefficient_spatialDeriv (j : Fin n) (a : Symbol n V W m) (x ξ : CoordinateSpace n) :
@@ -527,20 +391,6 @@ theorem HasCompactSpatialSupport.spatialDeriv {a : Symbol n V W m}
 end Deriv
 
 section Spatial
-
-/-- A frequency-independent function has no frequency derivatives. -/
-private theorem mixedDeriv_comp_fst (f : CoordinateSpace n → V →L[ℂ] W) (α : List (Fin n))
-    {β : List (Fin n)} (hβ : β ≠ []) (x ξ : CoordinateSpace n) :
-    mixedDeriv α β (fun p => f p.1) x ξ = 0 := by
-  rw [mixedDeriv_def]
-  simp only [coordinateDeriv_const _ hβ, Pi.zero_apply]
-  rw [← Pi.zero_def, coordinateDeriv_zero, Pi.zero_apply]
-
-/-- The position derivatives of a frequency-independent function are those of its profile. -/
-private theorem mixedDeriv_nil_comp_fst (f : CoordinateSpace n → V →L[ℂ] W) (α : List (Fin n))
-    (x ξ : CoordinateSpace n) :
-    mixedDeriv α [] (fun p => f p.1) x ξ = coordinateDeriv α f x := by
-  simp only [mixedDeriv_def, coordinateDeriv_nil]
 
 /-- The order-zero weight with no frequency derivative is `1`. -/
 private theorem rpow_weight_zero (ξ : CoordinateSpace n) :
