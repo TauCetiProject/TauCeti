@@ -16,11 +16,39 @@ norm preserves its Gauss norm and every degree attaining that norm. Consequently
 both the distinguished degree and the lowest dominant degree. These statements require only
 bounded weighted coefficients, so apply in particular to restricted power series without any
 completeness assumption.
+
+At any nonnegative radius, finite coefficient error bounds together with tail bounds on both
+series at the same tolerance bound the Gauss norm of their difference.
 -/
 
 public section
 
 namespace TauCeti.PowerSeries
+
+open _root_.PowerSeries
+
+section CoefficientBounds
+
+variable {R : Type*} [SeminormedRing R] [IsUltrametricDist R]
+  {f g : PowerSeries R} {s δ : ℝ} {N : ℕ}
+
+/-- Finite coefficient error bounds and separate bounds on the two tails bound the Gauss
+norm of the difference. All bounds use the same tolerance at a nonnegative radius. -/
+theorem gaussNorm_sub_le_of_coeff_le_of_tail_le (hs : 0 ≤ s)
+    (hcoeff : ∀ n < N, ‖f.coeff n - g.coeff n‖ * s ^ n ≤ δ)
+    (hf : ∀ n, N ≤ n → ‖f.coeff n‖ * s ^ n ≤ δ)
+    (hg : ∀ n, N ≤ n → ‖g.coeff n‖ * s ^ n ≤ δ) :
+    (f - g).gaussNorm norm s ≤ δ := by
+  rw [gaussNorm_eq]
+  refine ciSup_le fun n => ?_
+  by_cases hn : n < N
+  · simpa only [map_sub] using hcoeff n hn
+  · have h := norm_coeff_add_mul_pow_le_max f (-g) hs n
+    rw [← sub_eq_add_neg] at h
+    exact h.trans (max_le (hf n (Nat.le_of_not_gt hn))
+      (by simpa using hg n (Nat.le_of_not_gt hn)))
+
+end CoefficientBounds
 
 variable {R : Type*} [SeminormedRing R] [IsUltrametricDist R]
   {c : ℝ} {f g : PowerSeries R} {s : ℕ}
