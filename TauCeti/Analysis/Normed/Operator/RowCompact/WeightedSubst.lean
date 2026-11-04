@@ -110,19 +110,15 @@ theorem isCompletelyContinuous_restrictedWeightedSubstCLM [Finite τ] (hc : ∀ 
       (fun i ↦ restrictedRadiusHom (fun _ ↦ zero_le_one) (fun j ↦ (hc j).le) (h i))
       (fun i ↦ (norm_restrictedRadiusHom_le _ _ (h i)).trans (hh i))).IsCompletelyContinuous := by
   classical
-  set u := restrictedWeightedSubstCLM
-    (restrictedRadiusHom (fun _ ↦ zero_le_one) (fun j ↦ (hc j).le) g)
-    (fun i ↦ restrictedRadiusHom (fun _ ↦ zero_le_one) (fun j ↦ (hc j).le) (h i))
-    (fun i ↦ (norm_restrictedRadiusHom_le _ _ (h i)).trans (hh i))
   -- Transport row compactness of the coefficient model back along the coefficient isometries.
-  have hu : u = (restrictedCoeffLinearIsometryEquiv.symm.toContinuousLinearEquiv : _ →L[R] _).comp
-      ((weightedSubstCLM _ _ _).comp
-        (restrictedCoeffLinearIsometryEquiv.toContinuousLinearEquiv : _ →L[R] _)) := by
-    ext1 f
-    simp [u, weightedSubstCLM_apply]
-  rw [hu]
-  exact (((isRowCompact_weightedSubstCLM g h hh hc).isCompletelyContinuous.comp_clm_of_bound _
-    one_pos fun x ↦ by simp).clm_comp_of_bound _ one_pos fun x ↦ by simp)
+  have hu := ((isRowCompact_weightedSubstCLM g h hh hc).isCompletelyContinuous.comp_clm_of_bound
+    restrictedCoeffLinearIsometryEquiv.toContinuousLinearEquiv.toContinuousLinearMap one_pos
+      fun x ↦ by simp).clm_comp_of_bound
+    restrictedCoeffLinearIsometryEquiv.symm.toContinuousLinearEquiv.toContinuousLinearMap one_pos
+      fun x ↦ by simp
+  convert hu using 1
+  ext1 f
+  simp [weightedSubstCLM_apply]
 
 end RowCompact
 
