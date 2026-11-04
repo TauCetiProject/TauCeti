@@ -10,7 +10,7 @@ import Mathlib.Analysis.CStarAlgebra.Basic
 import Mathlib.Analysis.InnerProductSpace.Projection.Submodule
 import Mathlib.Analysis.SpecificLimits.Basic
 import Mathlib.Topology.Algebra.InfiniteSum.Real
-import TauCeti.Analysis.Normed.Operator.Summable
+import TauCeti.Analysis.Normed.Operator.Dense
 
 /-!
 # The Cotlar–Stein almost-orthogonality lemma
@@ -43,9 +43,10 @@ geometric mean of these two bounds. Summing the geometric means one index at a t
 `‖(S† S) ^ n‖` by `card ι * A ^ (2 * n)`, and letting `n → ∞` removes the factor `card ι`.
 
 For an infinite family, the vectors on which the series converges form a closed subspace, by
-the uniform bound on the finite partial sums (`TauCeti.isClosed_setOf_summable_apply`). It
-contains the range of every `(T j)†`, on which the series converges absolutely, so its
-orthogonal complement is killed by every `T j`, hence is zero.
+the uniform bound on the finite partial sums
+(`ContinuousLinearMap.isClosed_setOf_summable_apply`). It contains the range of every `(T j)†`,
+on which the series converges absolutely, so its orthogonal complement is killed by every `T j`,
+hence is zero.
 
 ## References
 
