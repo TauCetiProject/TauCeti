@@ -11,6 +11,7 @@ public import TauCeti.NumberTheory.ModularForms.LevelOne.TraceFormula.ExplicitEl
 public import TauCeti.NumberTheory.ModularForms.LevelOne.TraceFormula.Parity
 
 import TauCeti.NumberTheory.ModularForms.LFunction.EulerProduct
+import TauCeti.NumberTheory.ModularForms.LevelOne.DimensionFormula
 import TauCeti.NumberTheory.ModularForms.LevelOne.PeriodPolynomial.LValue
 import TauCeti.NumberTheory.ModularForms.LevelOne.TraceFormula.TraceReduction
 import TauCeti.RingTheory.MvPolynomial.Finrank
@@ -25,13 +26,14 @@ proves that at level one:
 
 1. **Injectivity on cusp forms.** Both `evenPeriodPolynomial hk` and `oddPeriodPolynomial hk` are
    injective (`evenPeriodPolynomial_injective`, `oddPeriodPolynomial_injective`). For odd `w`,
-   `S_{w+2}(SL(2, ℤ)) = 0`. For even `w`, the kernel of each map is stable under every prime Hecke
-   operator `T_p` because `PeriodRelation ℂ p` has a solution (`exists_periodRelation`) that
-   intertwines `T_p` with `periodAction` (`PeriodRelation.periodAction_evenPeriodPolynomial`,
-   `PeriodRelation.periodAction_oddPeriodPolynomial`). Any nonzero kernel element would therefore
-   force some level-one newform `f` into the kernel (`levelOneNewformBasis_mem_of_forall_prime`),
-   hence force `S_k ≠ 0` (`k ≥ 12`, `w ≥ 10`), where `s = w` and `s = w + 1` lie strictly inside
-   the Euler-product half-plane `Re s > k/2 + 1` where `L(f, s) ≠ 0`.
+   `S_{w+2}(SL(2, ℤ)) = 0` (`CuspForm.levelOne_odd_weight_eq_zero`). For even `w`, the kernel of
+   each map is stable under every prime Hecke operator `T_p` because `PeriodRelation ℂ p` has a
+   solution (`exists_periodRelation`) that intertwines `T_p` with `periodAction`
+   (`PeriodRelation.periodAction_evenPeriodPolynomial`,
+   `PeriodRelation.periodAction_oddPeriodPolynomial`). By `injective_of_heckeTCuspLevelOne_mem_ker`,
+   injectivity reduces to nonvanishing on `levelOneNewformBasis k`: any level-one newform `f`
+   forces `k ≥ 12` (`w ≥ 10`), where `s = w` and `s = w + 1` lie strictly inside the Euler-product
+   half-plane `Re s > k/2 + 1` where `L(f, s) ≠ 0`.
 2. **The odd Eichler–Shimura isomorphism.** Since `dim W_w^- = dim S_{w+2}(SL(2, ℤ))`
    (`finrank_oddPeriodPolynomials_eq_finrank_cuspForm`), `oddPeriodPolynomial hk` upgrades to a
    Hecke-equivariant linear equivalence `oddPeriodPolynomialEquiv hk : CuspForm 𝒮ℒ k ≃ₗ[ℂ] W_w^-`.
@@ -252,57 +254,37 @@ theorem oddPeriodPolynomial_levelOneNewformBasis_ne_zero {k : ℤ} {w : ℕ} (hk
   simp only [Complex.natCast_re, hk_cast]
   linarith
 
-/-- A cusp form of odd weight `k = w + 2` (`Odd w`) on `SL(2, ℤ)` is zero. -/
-private theorem cuspForm_eq_zero_of_odd_degree {k : ℤ} {w : ℕ} (hk : k = w + 2) (hw : Odd w)
-    (g : CuspForm 𝒮ℒ k) : g = 0 := by
-  have hk_odd : Odd k := by
-    obtain ⟨m, rfl⟩ := hw
-    exact ⟨m + 1, by omega⟩
-  exact CuspForm.toModularFormₗ_injective (ModularForm.levelOne_odd_weight_eq_zero hk_odd _)
-
 /-- **The even period-polynomial map is injective on `CuspForm 𝒮ℒ k`** at every degree `w`. -/
 theorem evenPeriodPolynomial_injective {k : ℤ} {w : ℕ} (hk : k = w + 2) :
-    Function.Injective (evenPeriodPolynomial hk) := by
-  rw [injective_iff_map_eq_zero]
-  intro g hg
-  rcases Nat.even_or_odd w with hw | hw
-  · by_contra hne
-    obtain ⟨f, hf⟩ : ∃ f : Newform 1 k, (levelOneNewformBasis k).repr g f ≠ 0 := by
-      by_contra! hall
-      exact hne ((levelOneNewformBasis k).repr.injective (by ext f; simp [hall f]))
-    have hstab : ∀ p : Nat.Primes, ∀ h ∈ LinearMap.ker (evenPeriodPolynomial hk),
-        heckeTCuspLevelOne k p.1 h ∈ LinearMap.ker (evenPeriodPolynomial hk) := by
-      intro p h hh
-      obtain ⟨ξ, hξ⟩ := TraceFormulaMatrixModule.exists_periodRelation ℂ (p.1 : ℤ)
-      rw [LinearMap.mem_ker] at hh ⊢
-      apply Subtype.ext
-      rw [← hξ.periodAction_evenPeriodPolynomial hk hw p.1 h, hh, ZeroMemClass.coe_zero, map_zero]
-    exact evenPeriodPolynomial_levelOneNewformBasis_ne_zero hk f
-      (LinearMap.mem_ker.mp
-        (levelOneNewformBasis_mem_of_forall_prime hstab (LinearMap.mem_ker.mpr hg) hf))
-  · exact cuspForm_eq_zero_of_odd_degree hk hw g
+    Function.Injective (evenPeriodPolynomial hk) :=
+  injective_of_heckeTCuspLevelOne_mem_ker (R := ℂ) (M := evenPeriodPolynomials ℂ w)
+    (L := evenPeriodPolynomial hk)
+    (fun p h hh ↦ by
+      rcases Nat.even_or_odd w with hw | hw
+      · obtain ⟨ξ, hξ⟩ := TraceFormulaMatrixModule.exists_periodRelation ℂ (p.1 : ℤ)
+        rw [LinearMap.mem_ker] at hh ⊢
+        apply Subtype.ext
+        rw [← hξ.periodAction_evenPeriodPolynomial hk hw p.1 h, hh, ZeroMemClass.coe_zero, map_zero]
+      · obtain ⟨m, rfl⟩ := hw
+        rw [CuspForm.levelOne_odd_weight_eq_zero ⟨m + 1, by omega⟩ (heckeTCuspLevelOne k p.1 h)]
+        exact zero_mem _)
+    (evenPeriodPolynomial_levelOneNewformBasis_ne_zero hk)
 
 /-- **The odd period-polynomial map is injective on `CuspForm 𝒮ℒ k`** at every degree `w`. -/
 theorem oddPeriodPolynomial_injective {k : ℤ} {w : ℕ} (hk : k = w + 2) :
-    Function.Injective (oddPeriodPolynomial hk) := by
-  rw [injective_iff_map_eq_zero]
-  intro g hg
-  rcases Nat.even_or_odd w with hw | hw
-  · by_contra hne
-    obtain ⟨f, hf⟩ : ∃ f : Newform 1 k, (levelOneNewformBasis k).repr g f ≠ 0 := by
-      by_contra! hall
-      exact hne ((levelOneNewformBasis k).repr.injective (by ext f; simp [hall f]))
-    have hstab : ∀ p : Nat.Primes, ∀ h ∈ LinearMap.ker (oddPeriodPolynomial hk),
-        heckeTCuspLevelOne k p.1 h ∈ LinearMap.ker (oddPeriodPolynomial hk) := by
-      intro p h hh
-      obtain ⟨ξ, hξ⟩ := TraceFormulaMatrixModule.exists_periodRelation ℂ (p.1 : ℤ)
-      rw [LinearMap.mem_ker] at hh ⊢
-      apply Subtype.ext
-      rw [← hξ.periodAction_oddPeriodPolynomial hk hw p.1 h, hh, ZeroMemClass.coe_zero, map_zero]
-    exact oddPeriodPolynomial_levelOneNewformBasis_ne_zero hk f
-      (LinearMap.mem_ker.mp
-        (levelOneNewformBasis_mem_of_forall_prime hstab (LinearMap.mem_ker.mpr hg) hf))
-  · exact cuspForm_eq_zero_of_odd_degree hk hw g
+    Function.Injective (oddPeriodPolynomial hk) :=
+  injective_of_heckeTCuspLevelOne_mem_ker (R := ℂ) (M := oddPeriodPolynomials ℂ w)
+    (L := oddPeriodPolynomial hk)
+    (fun p h hh ↦ by
+      rcases Nat.even_or_odd w with hw | hw
+      · obtain ⟨ξ, hξ⟩ := TraceFormulaMatrixModule.exists_periodRelation ℂ (p.1 : ℤ)
+        rw [LinearMap.mem_ker] at hh ⊢
+        apply Subtype.ext
+        rw [← hξ.periodAction_oddPeriodPolynomial hk hw p.1 h, hh, ZeroMemClass.coe_zero, map_zero]
+      · obtain ⟨m, rfl⟩ := hw
+        rw [CuspForm.levelOne_odd_weight_eq_zero ⟨m + 1, by omega⟩ (heckeTCuspLevelOne k p.1 h)]
+        exact zero_mem _)
+    (oddPeriodPolynomial_levelOneNewformBasis_ne_zero hk)
 
 /-! ### The odd Eichler–Shimura isomorphism `CuspForm 𝒮ℒ k ≃ₗ[ℂ] oddPeriodPolynomials ℂ w` -/
 
@@ -402,17 +384,6 @@ theorem eisensteinPeriodPolynomial_notMem_range_evenPeriodPolynomial {k : ℤ} {
     map_smul, Finsupp.smul_apply, smul_eq_mul] at hcoord
   exact mul_right_cancel₀ hf hcoord
 
-private theorem isCompl_of_disjoint_span_singleton {K V : Type*} [Field K] [AddCommGroup V]
-    [Module K V] [FiniteDimensional K V] (s : Submodule K V) {v : V} (hv : v ≠ 0)
-    (hdisj : Disjoint s (K ∙ v)) (hdim : finrank K s + 1 = finrank K V) :
-    IsCompl s (K ∙ v) := by
-  have hv_dim : finrank K (K ∙ v) = 1 := finrank_span_singleton (K := K) (V := V) hv
-  have hbot : finrank K (⊥ : Submodule K V) = 0 := finrank_bot K V
-  have hsup := Submodule.finrank_sup_add_finrank_inf_eq (K := K) (V := V) s (K ∙ v)
-  rw [hdisj.eq_bot, hbot] at hsup
-  have htop : finrank K ↥(s ⊔ (K ∙ v)) = finrank K V := by omega
-  exact ⟨hdisj, codisjoint_iff.mpr (Submodule.eq_top_of_finrank_eq (K := K) (V := V) htop)⟩
-
 /-- **In positive even degree `w`, `W_w^+` is the internal direct sum of `r^+(S_{w+2})` and
 `ℂ · (X^w - Y^w)`** (Manin; Kohnen–Zagier, §1.1; Popa–Zagier, §2). -/
 theorem isCompl_range_evenPeriodPolynomial_span_eisensteinPeriodPolynomial {k : ℤ} {w : ℕ}
@@ -424,28 +395,17 @@ theorem isCompl_range_evenPeriodPolynomial_span_eisensteinPeriodPolynomial {k : 
   have hP₀ : (⟨eisensteinPeriodPolynomial ℂ w,
       mem_evenPeriodPolynomials_eisensteinPeriodPolynomial hw⟩ : evenPeriodPolynomials ℂ w) ≠ 0 :=
     fun h ↦ eisensteinPeriodPolynomial_ne_zero hw₀ (congrArg Subtype.val h)
-  have hdisj : Disjoint (LinearMap.range (evenPeriodPolynomial hk))
-      (ℂ ∙ (⟨eisensteinPeriodPolynomial ℂ w,
-        mem_evenPeriodPolynomials_eisensteinPeriodPolynomial hw⟩ : evenPeriodPolynomials ℂ w)) := by
-    refine Submodule.disjoint_def.mpr fun x hx hspan ↦ ?_
-    obtain ⟨c, rfl⟩ := Submodule.mem_span_singleton.mp hspan
-    rcases eq_or_ne c 0 with rfl | hc
-    · exact zero_smul ℂ _
-    · have hmem : (⟨eisensteinPeriodPolynomial ℂ w,
-          mem_evenPeriodPolynomials_eisensteinPeriodPolynomial hw⟩ : evenPeriodPolynomials ℂ w) ∈
-          LinearMap.range (evenPeriodPolynomial hk) := by
-        have hsmul := (LinearMap.range (evenPeriodPolynomial hk)).smul_mem c⁻¹ hx
-        rwa [smul_smul, inv_mul_cancel₀ hc, one_smul] at hsmul
-      exact False.elim (eisensteinPeriodPolynomial_notMem_range_evenPeriodPolynomial hk hw hw₀ hmem)
   have : FiniteDimensional ℂ (CuspForm 𝒮ℒ (w + 2 : ℕ)) :=
     .of_injective _ CuspForm.toModularFormₗ_injective
-  have hrange := LinearMap.finrank_range_of_inj (f := evenPeriodPolynomial hk)
-    (evenPeriodPolynomial_injective hk)
-  have hodd := finrank_oddPeriodPolynomials_eq_finrank_cuspForm w
-  have heven :=
-    finrank_evenPeriodPolynomials_eq_finrank_oddPeriodPolynomials_add_one (K := ℂ) hw hw₀
-  exact isCompl_of_disjoint_span_singleton (K := ℂ) (V := evenPeriodPolynomials ℂ w)
-    (LinearMap.range (evenPeriodPolynomial hk)) hP₀ hdisj (by omega)
+  refine (Submodule.isCompl_iff_disjoint (K := ℂ) (V := evenPeriodPolynomials ℂ w) _ _ ?_).mpr
+    (Submodule.disjoint_span_singleton_of_notMem (K := ℂ) (V := evenPeriodPolynomials ℂ w)
+      (eisensteinPeriodPolynomial_notMem_range_evenPeriodPolynomial hk hw hw₀))
+  exact le_of_eq (by
+    rw [finrank_evenPeriodPolynomials_eq_finrank_oddPeriodPolynomials_add_one (K := ℂ) hw hw₀,
+      finrank_oddPeriodPolynomials_eq_finrank_cuspForm w,
+      LinearMap.finrank_range_of_inj (f := evenPeriodPolynomial hk)
+        (evenPeriodPolynomial_injective hk),
+      finrank_span_singleton (K := ℂ) (V := evenPeriodPolynomials ℂ w) hP₀])
 
 /-- Auxiliary definition of `extendedEvenPeriodPolynomialEquiv` in positive even degree `w`, built
 by matching the complementary decompositions `M_k = S_k ⊕ ℂ · E_k` and
@@ -548,27 +508,6 @@ theorem extendedEvenPeriodPolynomialEquiv_E {k w : ℕ} (hk : (k : ℤ) = w + 2)
 
 /-! ### The full Eichler–Shimura isomorphism onto `periodPolynomials ℂ w` -/
 
-/-- Over any field of characteristic zero, `periodPolynomials K w` is the internal direct sum of
-`evenPeriodPolynomials K w` and `oddPeriodPolynomials K w`. -/
-theorem isCompl_evenPeriodPolynomials_oddPeriodPolynomials {K : Type*} [Field K] [CharZero K]
-    (w : ℕ) :
-    IsCompl ((evenPeriodPolynomials K w).comap (periodPolynomials K w).subtype)
-      ((oddPeriodPolynomials K w).comap (periodPolynomials K w).subtype) := by
-  let : Invertible (2 : K) := invertibleOfNonzero two_ne_zero
-  refine ⟨Submodule.disjoint_def.mpr fun P hPe hPo ↦ Subtype.ext ?_,
-    codisjoint_iff.mpr (eq_top_iff.mpr fun P _ ↦ ?_)⟩
-  · exact Submodule.disjoint_def.mp
-      (disjoint_evenPeriodPolynomials_oddPeriodPolynomials (mul_right_injective₀ two_ne_zero))
-      P.1 hPe hPo
-  · have hmem : P.1 ∈ evenPeriodPolynomials K w ⊔ oddPeriodPolynomials K w := by
-      rw [evenPeriodPolynomials_sup_oddPeriodPolynomials]
-      exact P.2
-    obtain ⟨Pe, hPe, Po, hPo, hsum⟩ := Submodule.mem_sup.mp hmem
-    have hPeW : Pe ∈ periodPolynomials K w := (mem_evenPeriodPolynomials_iff.mp hPe).1
-    have hPoW : Po ∈ periodPolynomials K w := (mem_oddPeriodPolynomials_iff.mp hPo).1
-    exact Submodule.mem_sup.mpr
-      ⟨⟨Pe, hPeW⟩, hPe, ⟨Po, hPoW⟩, hPo, Subtype.ext hsum⟩
-
 /-- **The full Eichler–Shimura period-polynomial isomorphism**
 `(M_k(SL(2, ℤ)) × S_k(SL(2, ℤ))) ≃ₗ[ℂ] W_w` (`k = w + 2`), combining
 `extendedEvenPeriodPolynomialEquiv hk` and `oddPeriodPolynomialEquiv hk`. -/
@@ -578,8 +517,9 @@ def periodPolynomialEquiv {k : ℤ} {w : ℕ} (hk : k = w + 2) :
     fun _ hP ↦ (mem_evenPeriodPolynomials_iff.mp hP).1
   have hoddLe : oddPeriodPolynomials ℂ w ≤ periodPolynomials ℂ w :=
     fun _ hP ↦ (mem_oddPeriodPolynomials_iff.mp hP).1
+  let : Invertible (2 : ℂ) := invertibleOfNonzero two_ne_zero
   let eCod := Submodule.prodEquivOfIsCompl (R := ℂ) (E := periodPolynomials ℂ w) _ _
-    (isCompl_evenPeriodPolynomials_oddPeriodPolynomials (K := ℂ) w)
+    (isCompl_evenPeriodPolynomials_oddPeriodPolynomials (R := ℂ) w)
   ((extendedEvenPeriodPolynomialEquiv hk ≪≫ₗ
       (Submodule.comapSubtypeEquivOfLe hevenLe).symm).prodCongr
     (oddPeriodPolynomialEquiv hk ≪≫ₗ
@@ -635,14 +575,26 @@ theorem PeriodRelation.periodAction_extendedEvenPeriodPolynomialEquiv {k : ℤ} 
       trivial
     obtain ⟨_, ⟨g, rfl⟩, _, hE, rfl⟩ := Submodule.mem_sup.mp hmem
     obtain ⟨c, rfl⟩ := Submodule.mem_span_singleton.mp hE
-    rw [CuspForm.toModularFormₗ_eq_coe, map_add, Submodule.coe_add, map_add, map_add, map_add,
-      Submodule.coe_add, extendedEvenPeriodPolynomialEquiv_coe_cuspForm,
-      heckeTLevelOne_coe_cuspForm, extendedEvenPeriodPolynomialEquiv_coe_cuspForm,
-      h.periodAction_evenPeriodPolynomial hk hw n g,
-      map_smul, Submodule.coe_smul, map_smul, map_smul, map_smul, Submodule.coe_smul,
-      heckeTLevelOne_E hk3 hk2 n, map_smul, Submodule.coe_smul,
-      extendedEvenPeriodPolynomialEquiv_E hk hw hw₀ hk3,
-      h.periodAction_eisensteinPeriodPolynomial hw n, hw1]
+    have hcusp :
+        periodAction hw ξ
+            (extendedEvenPeriodPolynomialEquiv hk (g : ModularForm 𝒮ℒ (w + 2 : ℕ)) :
+              homogeneousSubmodule (Fin 2) ℂ w) =
+          extendedEvenPeriodPolynomialEquiv hk
+            (heckeTLevelOne (w + 2 : ℕ) n (g : ModularForm 𝒮ℒ (w + 2 : ℕ))) := by
+      rw [heckeTLevelOne_coe_cuspForm, extendedEvenPeriodPolynomialEquiv_coe_cuspForm,
+        extendedEvenPeriodPolynomialEquiv_coe_cuspForm,
+        h.periodAction_evenPeriodPolynomial hk hw n g]
+    have heis :
+        periodAction hw ξ
+            (extendedEvenPeriodPolynomialEquiv hk (ModularForm.E hk3) :
+              homogeneousSubmodule (Fin 2) ℂ w) =
+          extendedEvenPeriodPolynomialEquiv hk
+            (heckeTLevelOne (w + 2 : ℕ) n (ModularForm.E hk3)) := by
+      rw [heckeTLevelOne_E hk3 hk2 n, map_smul, Submodule.coe_smul,
+        extendedEvenPeriodPolynomialEquiv_E hk hw hw₀ hk3,
+        h.periodAction_eisensteinPeriodPolynomial hw n, hw1]
+    simp only [CuspForm.toModularFormₗ_eq_coe, map_add, map_smul, Submodule.coe_add,
+      Submodule.coe_smul, hcusp, heis]
 
 /-- **Hecke equivariance of `periodPolynomialEquiv`.** Every solution `ξ` of Popa–Zagier's period
 relation (A) intertwines `heckeTLevelOne k n × heckeTCuspLevelOne k n` with `periodAction hw ξ` on

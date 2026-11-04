@@ -38,7 +38,8 @@ comparison we obtain:
   formula `Tr(Tₙ | S_k) = ∑_{f ∈ Newform 1 k} aₙ(f)`;
 * separation of coordinates in any subspace of `CuspForm 𝒮ℒ k` stable under `Tₚ` for every prime
   `p` (`levelOneNewformBasis_mem_of_forall_prime`), combining multiplicity one at level one with
-  `Module.Basis.self_mem_of_repr_ne_zero_of_forall`;
+  `Module.Basis.self_mem_of_repr_ne_zero_of_forall`, and the resulting prime-Hecke injectivity
+  criterion `injective_of_heckeTCuspLevelOne_mem_ker`;
 * the Hecke eigenform equation `Tₙ(E_k) = σ_{k-1}(n) E_k` for the normalized Eisenstein series
   `ModularForm.E hk` at even weight `k ≥ 4` (`heckeTLevelOne_E`), deduced from the multiplicativity
   and prime-power recurrence of `σ_{k-1}` via `forall_heckeTCompositeGamma0_eq_coeff_smul_iff`,
@@ -60,8 +61,9 @@ comparison we obtain:
 * `TauCeti.commute_heckeTCuspLevelOne`, `TauCeti.commute_heckeTLevelOne`: level-one Hecke operators
   commute.
 * `TauCeti.heckeTCuspLevelOne_levelOneNewformBasis`, `TauCeti.trace_heckeTCuspLevelOne`,
-  `TauCeti.levelOneNewformBasis_mem_of_forall_prime`: eigenbasis action, trace, and prime-Hecke
-  invariant-subspace coordinate extraction on `CuspForm 𝒮ℒ k`.
+  `TauCeti.levelOneNewformBasis_mem_of_forall_prime`,
+  `TauCeti.injective_of_heckeTCuspLevelOne_mem_ker`: eigenbasis action, trace, prime-Hecke
+  invariant-subspace coordinate extraction, and injectivity criterion on `CuspForm 𝒮ℒ k`.
 * `TauCeti.heckeTLevelOne_E`, `TauCeti.isCompl_cuspFormSubmodule_span_E`,
   `TauCeti.trace_heckeTLevelOne`: the Eisenstein Hecke eigenvalue, the cusp/Eisenstein complement,
   and the trace of `Tₙ` on `ModularForm 𝒮ℒ k`.
@@ -96,13 +98,13 @@ def modularFormGamma1OneEquiv (k : ℤ) :
 
 /-- `modularFormGamma1OneEquiv` preserves the underlying function on `ℍ`. -/
 @[simp]
-theorem coe_modularFormGamma1OneEquiv_apply {k : ℤ}
+theorem _root_.ModularForm.coe_modularFormGamma1OneEquiv_apply {k : ℤ}
     (f : ModularForm ((Gamma1 1).map (mapGL ℝ)) k) :
     ⇑(modularFormGamma1OneEquiv k f) = ⇑f := (rfl)
 
 /-- The inverse of `modularFormGamma1OneEquiv` preserves the underlying function on `ℍ`. -/
 @[simp]
-theorem coe_modularFormGamma1OneEquiv_symm_apply {k : ℤ} (f : ModularForm 𝒮ℒ k) :
+theorem _root_.ModularForm.coe_modularFormGamma1OneEquiv_symm_apply {k : ℤ} (f : ModularForm 𝒮ℒ k) :
     ⇑((modularFormGamma1OneEquiv k).symm f) = ⇑f := (rfl)
 
 /-- **Cusp forms for `Γ₁(1)` and for `SL(2, ℤ)` are canonically linearly isomorphic**, via the
@@ -118,23 +120,23 @@ def cuspFormGamma1OneEquiv (k : ℤ) :
 
 /-- `cuspFormGamma1OneEquiv` preserves the underlying function on `ℍ`. -/
 @[simp]
-theorem coe_cuspFormGamma1OneEquiv_apply {k : ℤ}
+theorem _root_.CuspForm.coe_cuspFormGamma1OneEquiv_apply {k : ℤ}
     (f : CuspForm ((Gamma1 1).map (mapGL ℝ)) k) :
     ⇑(cuspFormGamma1OneEquiv k f) = ⇑f := (rfl)
 
 /-- The inverse of `cuspFormGamma1OneEquiv` preserves the underlying function on `ℍ`. -/
 @[simp]
-theorem coe_cuspFormGamma1OneEquiv_symm_apply {k : ℤ} (f : CuspForm 𝒮ℒ k) :
+theorem _root_.CuspForm.coe_cuspFormGamma1OneEquiv_symm_apply {k : ℤ} (f : CuspForm 𝒮ℒ k) :
     ⇑((cuspFormGamma1OneEquiv k).symm f) = ⇑f := (rfl)
 
 /-- Every `Γ₁(1)` modular form lies in the trivial-character subspace `M_k(Γ₁(1), 1)`. -/
-theorem mem_modFormCharSpace_one_level_one {k : ℤ}
+theorem _root_.ModularForm.mem_modFormCharSpace_one_level_one {k : ℤ}
     (F : ModularForm ((Gamma1 1).map (mapGL ℝ)) k) :
     F ∈ modFormCharSpace k (1 : (ZMod 1)ˣ →* ℂˣ) :=
   (mem_modFormCharSpace_one_iff_diamondOp F).mpr fun d ↦ by simp [Subsingleton.elim d 1]
 
 /-- Every `Γ₁(1)` cusp form lies in the trivial-character subspace `S_k(Γ₁(1), 1)`. -/
-theorem mem_cuspFormCharSpace_one_level_one {k : ℤ}
+theorem _root_.CuspForm.mem_cuspFormCharSpace_one_level_one {k : ℤ}
     (F : CuspForm ((Gamma1 1).map (mapGL ℝ)) k) :
     F ∈ cuspFormCharSpace k (1 : (ZMod 1)ˣ →* ℂˣ) :=
   (mem_cuspFormCharSpace_one_iff_diamondOpCusp F).mpr fun d ↦ by simp [Subsingleton.elim d 1]
@@ -143,13 +145,13 @@ theorem mem_cuspFormCharSpace_one_level_one {k : ℤ}
 @[simp]
 theorem modFormCharSpace_one_level_one (k : ℤ) :
     modFormCharSpace (N := 1) k (1 : (ZMod 1)ˣ →* ℂˣ) = ⊤ :=
-  eq_top_iff.mpr fun F _ ↦ mem_modFormCharSpace_one_level_one F
+  eq_top_iff.mpr fun F _ ↦ F.mem_modFormCharSpace_one_level_one
 
 /-- At level one every cusp form has trivial nebentypus. -/
 @[simp]
 theorem cuspFormCharSpace_one_level_one (k : ℤ) :
     cuspFormCharSpace (N := 1) k (1 : (ZMod 1)ˣ →* ℂˣ) = ⊤ :=
-  eq_top_iff.mpr fun F _ ↦ mem_cuspFormCharSpace_one_level_one F
+  eq_top_iff.mpr fun F _ ↦ F.mem_cuspFormCharSpace_one_level_one
 
 /-! ### Compatibility of `heckeTLevelOne` and `heckeTCuspLevelOne` with `heckeTCompositeGamma0 1` -/
 
@@ -161,12 +163,12 @@ theorem heckeTCuspLevelOne_cuspFormGamma1OneEquiv (k : ℤ) (n : ℕ) [NeZero n]
     heckeTCuspLevelOne k n (cuspFormGamma1OneEquiv k F) =
       cuspFormGamma1OneEquiv k
         (heckeRingHomCuspCharSpace k (1 : (ZMod 1)ˣ →* ℂˣ) (heckeTCompositeGamma0 1 n)
-          ⟨F, mem_cuspFormCharSpace_one_level_one F⟩) := by
+          ⟨F, F.mem_cuspFormCharSpace_one_level_one⟩) := by
   apply CuspForm.qExpansion_injective one_pos one_mem_strictPeriods_SL
   ext m
   dsimp only
-  rw [qExpansion_coeff_heckeTCuspLevelOne, coe_cuspFormGamma1OneEquiv_apply,
-    coe_cuspFormGamma1OneEquiv_apply,
+  rw [qExpansion_coeff_heckeTCuspLevelOne, CuspForm.coe_cuspFormGamma1OneEquiv_apply,
+    CuspForm.coe_cuspFormGamma1OneEquiv_apply,
     qExpansion_coeff_heckeRingHomCuspCharSpace_heckeTCompositeGamma0 (NeZero.ne n)]
   refine Finset.sum_congr rfl fun d _ ↦ ?_
   rw [DirichletCharacter.level_one (MulChar.ofUnitHom 1),
@@ -180,11 +182,11 @@ theorem heckeTLevelOne_modularFormGamma1OneEquiv {k : ℤ} (hk : k ≠ 0) (n : �
     heckeTLevelOne k n (modularFormGamma1OneEquiv k F) =
       modularFormGamma1OneEquiv k
         (heckeRingHomCharSpace k (1 : (ZMod 1)ˣ →* ℂˣ) (heckeTCompositeGamma0 1 n)
-          ⟨F, mem_modFormCharSpace_one_level_one F⟩) := by
+          ⟨F, F.mem_modFormCharSpace_one_level_one⟩) := by
   apply TauCeti.ModularForm.eq_of_forall_pos_qExpansion_coeff_eq one_pos one_mem_strictPeriods_SL hk
   intro m hm
-  rw [qExpansion_coeff_heckeTLevelOne, coe_modularFormGamma1OneEquiv_apply,
-    coe_modularFormGamma1OneEquiv_apply,
+  rw [qExpansion_coeff_heckeTLevelOne, _root_.ModularForm.coe_modularFormGamma1OneEquiv_apply,
+    _root_.ModularForm.coe_modularFormGamma1OneEquiv_apply,
     qExpansion_coeff_heckeRingHomCharSpace_heckeTCompositeGamma0_of_ne_zero (NeZero.ne n) _ hm.ne']
   refine Finset.sum_congr rfl fun d _ ↦ ?_
   rw [DirichletCharacter.level_one (MulChar.ofUnitHom 1),
@@ -204,7 +206,7 @@ theorem commute_heckeTCuspLevelOne (k : ℤ) (m n : ℕ) [NeZero m] [NeZero n] :
   obtain ⟨F, rfl⟩ := (cuspFormGamma1OneEquiv k).surjective f
   have hcomm := congrArg
     (fun T ↦ ((heckeRingHomCuspCharSpace k (1 : (ZMod 1)ˣ →* ℂˣ) T
-      ⟨F, mem_cuspFormCharSpace_one_level_one F⟩ : cuspFormCharSpace k _) :
+      ⟨F, F.mem_cuspFormCharSpace_one_level_one⟩ : cuspFormCharSpace k _) :
         CuspForm ((Gamma1 1).map (mapGL ℝ)) k))
     (heckeTCompositeGamma0_level_one_comm m n)
   simp only [map_mul, mul_apply_eq_comp] at hcomm
@@ -235,7 +237,7 @@ theorem commute_heckeTLevelOne (k : ℤ) (m n : ℕ) [NeZero m] [NeZero n] :
     obtain ⟨F, rfl⟩ := (modularFormGamma1OneEquiv k).surjective f
     have hcomm := congrArg
        (fun T ↦ ((heckeRingHomCharSpace k (1 : (ZMod 1)ˣ →* ℂˣ) T
-        ⟨F, mem_modFormCharSpace_one_level_one F⟩ : modFormCharSpace k _) :
+        ⟨F, F.mem_modFormCharSpace_one_level_one⟩ : modFormCharSpace k _) :
           ModularForm ((Gamma1 1).map (mapGL ℝ)) k))
       (heckeTCompositeGamma0_level_one_comm m n)
     simp only [map_mul, mul_apply_eq_comp] at hcomm
@@ -318,6 +320,22 @@ theorem levelOneNewformBasis_mem_of_forall_prime {k : ℤ} {W : Submodule ℂ (C
       exact congr_fun h ⟨p, hp⟩
   exact (levelOneNewformBasis k).self_mem_of_repr_ne_zero_of_forall hdiag hinj hW hg hf
 
+/-- **Injectivity criterion on `S_k(SL(2, ℤ))` via prime Hecke operators.** A semilinear map out of
+`CuspForm 𝒮ℒ k` whose kernel is stable under `heckeTCuspLevelOne k p` for every prime `p` and that
+vanishes on no basis vector of `levelOneNewformBasis k` is injective. -/
+theorem injective_of_heckeTCuspLevelOne_mem_ker {k : ℤ} {R M : Type*} [Semiring R]
+    [AddCommMonoid M] [Module R M] {φ : ℂ →+* R} {L : CuspForm 𝒮ℒ k →ₛₗ[φ] M}
+    (hker : ∀ p : Nat.Primes, ∀ g ∈ LinearMap.ker L, heckeTCuspLevelOne k p.1 g ∈ LinearMap.ker L)
+    (hbasis : ∀ f : Newform 1 k, L (levelOneNewformBasis k f) ≠ 0) :
+    Function.Injective L := by
+  rw [injective_iff_map_eq_zero]
+  intro g hg
+  by_contra hne
+  obtain ⟨f, hf⟩ := DFunLike.ne_iff.mp
+    ((map_ne_zero_iff _ (levelOneNewformBasis k).repr.injective).mpr hne)
+  exact hbasis f (LinearMap.mem_ker.mp
+    (levelOneNewformBasis_mem_of_forall_prime hker (LinearMap.mem_ker.mpr hg) hf))
+
 /-! ### The normalized Eisenstein series as a Hecke eigenform -/
 
 /-- The first Fourier coefficient of `ModularForm.E hk` at even weight `k ≥ 4` is nonzero:
@@ -345,12 +363,12 @@ theorem heckeTLevelOne_E {k : ℕ} (hk : 3 ≤ k) (hk2 : Even k) (n : ℕ) [NeZe
   -- for `m ≥ 1` is then `σ_{k-1}(m)`.
   let G : ModularForm ((Gamma1 1).map (mapGL ℝ)) k :=
     c⁻¹ • (modularFormGamma1OneEquiv k).symm (ModularForm.E hk)
-  let F : modFormCharSpace k (1 : (ZMod 1)ˣ →* ℂˣ) := ⟨G, mem_modFormCharSpace_one_level_one G⟩
+  let F : modFormCharSpace k (1 : (ZMod 1)ˣ →* ℂˣ) := ⟨G, G.mem_modFormCharSpace_one_level_one⟩
   have hpos {m : ℕ} (hm : m ≠ 0) : (qExpansion 1 F.val).coeff m = (σ (k - 1) m : ℂ) := by
     dsimp only [F]
     rw [FunLike.coe_smul,
       _root_.ModularForm.qExpansion_smul one_pos (one_mem_strictPeriods_Gamma1_map 1),
-      PowerSeries.coeff_smul, coe_modularFormGamma1OneEquiv_symm_apply,
+      PowerSeries.coeff_smul, _root_.ModularForm.coe_modularFormGamma1OneEquiv_symm_apply,
       E_qExpansion_coeff hk hk2 m, ite_eq_right hm, ← hc_eq, smul_eq_mul, inv_mul_cancel_left₀ hc0]
   have h1 : (qExpansion 1 F.val).coeff 1 = 1 := by
     simpa [ArithmeticFunction.sigma_one] using hpos one_ne_zero
