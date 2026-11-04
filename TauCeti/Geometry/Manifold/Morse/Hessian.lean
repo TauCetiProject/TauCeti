@@ -8,9 +8,11 @@ module
 public import Mathlib.LinearAlgebra.Matrix.PosDef
 public import TauCeti.Analysis.Calculus.SecondDerivative
 public import TauCeti.Geometry.Manifold.MFDeriv.Chart
+public import TauCeti.Geometry.Manifold.Morse.CriticalPoints
 public import TauCeti.Geometry.Manifold.Morse.Index
+import Mathlib.Geometry.Manifold.VectorBundle.MDifferentiable
 import TauCeti.Geometry.Manifold.IsManifold.Basic
-import TauCeti.Geometry.Manifold.Morse.CriticalPoints
+import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
 import TauCeti.Geometry.Manifold.VectorField.Regularity
 import TauCeti.Topology.Algebra.Module.BilinearForm
 
@@ -40,6 +42,10 @@ Morse index is the negative index of inertia of the critical Hessian.
 * `TauCeti.criticalHessian_apply_swap`: the critical Hessian of a `C²` function is symmetric.
 * `TauCeti.criticalHessian_apply_eq_mvfderiv`: at a critical point, differentiating `df(Y)`
   computes the Hessian against the value of the vector field `Y`.
+* `TauCeti.criticalHessian_mfderiv_apply_eq_zero`: the critical Hessian vanishes on directions
+  tangent to a family of critical points.
+* `TauCeti.criticalHessian_comp_snd_apply`: the critical Hessian of `(x, v) ↦ q v` on `M × V` at a
+  critical point of `q` is the second derivative of `q` on the second components.
 * `TauCeti.isManifoldNondegenerateCriticalPoint_iff_criticalHessian`: an intrinsic
   characterization of nondegenerate critical points.
 * `TauCeti.isManifoldNondegenerateCriticalPoint_iff_of_mem_maximalAtlas` and
@@ -352,6 +358,32 @@ theorem IsManifoldNondegenerateCriticalPoint.manifoldMorseIndex_eq_finrank_iff
 
 end FiniteDimensional
 
+section Prod
+
+variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V]
+
+/-- The critical Hessian of `q ∘ Prod.snd` at a point `(x, y)` where `q` is critical is the
+second derivative of `q` at `y` on the second components. -/
+theorem criticalHessian_comp_snd_apply {q : V → ℝ} {y : V} (hq : ContDiffAt ℝ 2 q y)
+    (hq₀ : fderiv ℝ q y = 0) (x : M) (v w : TangentSpace (I.prod 𝓘(ℝ, V)) (x, y)) :
+    criticalHessian (I.prod 𝓘(ℝ, V)) (q ∘ Prod.snd) (x, y) v w =
+      fderiv ℝ (fderiv ℝ q) y v.2 w.2 := by
+  have hcomp : (q ∘ Prod.snd) ∘ (extChartAt (I.prod 𝓘(ℝ, V)) (x, y)).symm = q ∘ Prod.snd := by
+    ext p
+    -- The second component of the product chart of `M × V` is the identity chart of `V`.
+    simp only [extChartAt_prod, PartialEquiv.prod_symm, extChartAt_model_space_eq_id,
+      Function.comp_apply, PartialEquiv.prod_coe, PartialEquiv.refl_symm, PartialEquiv.refl_coe,
+      id_eq]
+  rw [criticalHessian_def, hcomp]
+  have hsnd : (extChartAt (I.prod 𝓘(ℝ, V)) (x, y) (x, y)).2 = y := by simp
+  have key := fderiv_fderiv_comp_apply_of_fderiv_eq_zero (φ := Prod.snd)
+    (b := extChartAt (I.prod 𝓘(ℝ, V)) (x, y) (x, y)) (hsnd ▸ hq) contDiff_snd.contDiffAt
+    (hsnd ▸ hq₀) v w
+  refine key.trans ?_
+  simp only [fderiv_snd, hsnd, ContinuousLinearMap.coe_snd']
+
+end Prod
+
 /-! ### Boundaryless manifolds: symmetry and chart independence -/
 
 section Boundaryless
@@ -362,6 +394,11 @@ variable [I.Boundaryless]
 theorem criticalHessian_apply_swap (hf : ContMDiffAt I 𝓘(ℝ) 2 f x) (v w : TangentSpace I x) :
     criticalHessian I f x v w = criticalHessian I f x w v :=
   hf.contDiffAt_comp_extChartAt_symm.isSymmSndFDerivAt (by simp) v w
+
+/-- The bilinear form of the critical Hessian of a function which is `C²` at `x` is symmetric. -/
+theorem isSymm_toBilinForm_criticalHessian (hf : ContMDiffAt I 𝓘(ℝ) 2 f x) :
+    (criticalHessian I f x).toBilinForm.IsSymm :=
+  ContinuousLinearMap.isSymm_toBilinForm_iff.mpr (criticalHessian_apply_swap hf)
 
 /-- A nondegenerate critical point on a boundaryless manifold is a point where the function is
 `C²`, its differential vanishes, and its critical Hessian is invertible. -/
@@ -476,6 +513,46 @@ theorem criticalHessian_apply_eq_mvfderiv [IsManifold I 2 M]
   have hVx : V (ψ x) = Y x := VectorField.mpullbackWithin_extChartAt_symm_self Y x
   simp only [hzero, ContinuousLinearMap.zero_comp, zero_add, hVx]
   exact (ContinuousLinearMap.flip_apply (fderiv ℝ (fderiv ℝ g) (ψ x)) v (Y x)).symm
+
+section Tangent
+
+variable {E' H' S : Type*} [NormedAddCommGroup E'] [NormedSpace ℝ E'] [TopologicalSpace H']
+  {J : ModelWithCorners ℝ E' H'} [TopologicalSpace S] [ChartedSpace H' S] [IsManifold I 2 M]
+
+/-- **The critical Hessian vanishes along the critical set.** If a map `γ`, differentiable at `s`,
+sends every point near `s` to a critical point of a function `f` which is `C²` at `γ s`, then the
+critical Hessian of `f` at `γ s` vanishes on the image of the derivative of `γ`. -/
+theorem criticalHessian_mfderiv_apply_eq_zero {γ : S → M} {s : S}
+    (hf : ContMDiffAt I 𝓘(ℝ) 2 f (γ s)) (hγ : MDifferentiableAt J I γ s)
+    (hcrit : ∀ᶠ t in 𝓝 s, γ t ∈ criticalPoints I f) (u : TangentSpace J s)
+    (w : TangentSpace I (γ s)) :
+    criticalHessian I f (γ s) (mfderiv J I γ s u) w = 0 := by
+  -- Extend `w` to a vector field `Y`; then the Hessian against `w` differentiates `df(Y)`.
+  let Y := FiberBundle.extend E w
+  have hY : MDifferentiableAt I I.tangent (fun y ↦ (Y y : TangentBundle I M)) (γ s) :=
+    FiberBundle.mdifferentiableAt_extend I E w
+  have hH := criticalHessian_apply_eq_mvfderiv hf (mem_criticalPoints.mp hcrit.self_of_nhds) hY
+    (mfderiv J I γ s u)
+  rw [show Y (γ s) = w from FiberBundle.extend_apply_self E w] at hH
+  have hφ : MDifferentiableAt I 𝓘(ℝ) (fun y ↦ mvfderiv I f y (Y y)) (γ s) :=
+    ((hf.contMDiffAt_mvfderiv_apply (m := 1) (by norm_num)).mdifferentiableAt one_ne_zero).comp
+      (γ s) hY
+  -- The function `df(Y)` vanishes along `γ`, so its derivative kills the tangent directions.
+  have hzero : (fun y ↦ mvfderiv I f y (Y y)) ∘ γ =ᶠ[𝓝 s] fun _ ↦ (0 : ℝ) :=
+    hcrit.mono fun t ht ↦ by
+      simp only [comp_apply, mem_criticalPoints.mp ht, zero_apply]
+  rw [hH, ← mvfderiv_comp_apply s hφ hγ, hzero.mvfderiv_eq, mvfderiv_const, zero_apply]
+
+/-- **The critical Hessian vanishes along the critical set**, in the second argument. -/
+theorem criticalHessian_apply_mfderiv_eq_zero {γ : S → M} {s : S}
+    (hf : ContMDiffAt I 𝓘(ℝ) 2 f (γ s)) (hγ : MDifferentiableAt J I γ s)
+    (hcrit : ∀ᶠ t in 𝓝 s, γ t ∈ criticalPoints I f) (u : TangentSpace J s)
+    (w : TangentSpace I (γ s)) :
+    criticalHessian I f (γ s) w (mfderiv J I γ s u) = 0 := by
+  rw [criticalHessian_apply_swap hf]
+  exact criticalHessian_mfderiv_apply_eq_zero hf hγ hcrit u w
+
+end Tangent
 
 section Chart
 
