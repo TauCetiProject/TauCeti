@@ -80,6 +80,11 @@ on the basis. -/
 def kahlerForm (J : AlmostComplexStructure V) : ⋀[ℝ]^2 V :=
   (2⁻¹ : ℝ) • ∑ i, ιMulti ℝ 2 ![stdOrthonormalBasis ℝ V i, J (stdOrthonormalBasis ℝ V i)]
 
+/-- The Kähler two-vector is half the sum of `bᵢ ∧ J bᵢ` in the standard orthonormal basis. -/
+theorem kahlerForm_def (J : AlmostComplexStructure V) :
+    J.kahlerForm = (2⁻¹ : ℝ) • ∑ i,
+      ιMulti ℝ 2 ![stdOrthonormalBasis ℝ V i, J (stdOrthonormalBasis ℝ V i)] := (rfl)
+
 section Orthogonal
 
 variable {J : AlmostComplexStructure V} (hJ : ∀ v w, ⟪J v, J w⟫ = ⟪v, w⟫)
