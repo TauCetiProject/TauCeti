@@ -41,6 +41,7 @@ jobs:
             scripts/test_bors_scope_approval.py \
             scripts/test_check_expired_mathlib_shims.py \
             scripts/test_duplicate_audit_workflow.py \
+            scripts/test_dependency_warm.py \
             scripts/test_lake_cache_probe.py \
             scripts/test_lake_cache_reuse.py \
             scripts/test_pick_runner.py \
