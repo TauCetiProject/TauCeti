@@ -56,18 +56,9 @@ theorem differential_mul (d : Derivation R H (Bialgebra.CounitAlgebra R H R)) (a
     Comodule.differential (R := R) (H := H) d (a * b) =
       Comodule.differential (R := R) (H := H) d a * b +
         a * Comodule.differential (R := R) (H := H) d b := by
-  have hd (x y : H) :
-      ((Bialgebra.CounitAlgebra.algEquivSelf R H R).toLinearMap ∘ₗ d.toLinearMap) (x * y) =
-        ((Bialgebra.CounitAlgebra.algEquivSelf R H R).toLinearMap ∘ₗ d.toLinearMap) x *
-            Coalgebra.counit (R := R) y +
-          Coalgebra.counit (R := R) x *
-            ((Bialgebra.CounitAlgebra.algEquivSelf R H R).toLinearMap ∘ₗ d.toLinearMap) y := by
-    simp only [LinearMap.comp_apply, Derivation.coeFn_coe, Derivation.leibniz, map_add,
-      AlgEquiv.toLinearMap_apply, Bialgebra.CounitAlgebra.algEquivSelf_smul,
-      Algebra.algebraMap_self, RingHom.id_apply]
-    ring
   rw [Comodule.differential_apply, Comodule.differential_apply, Comodule.differential_apply,
-    coact_mul, Comodule.tensorComponent_mul hd]
+    coact_mul, Comodule.tensorComponent_mul <|
+      Bialgebra.CounitAlgebra.algEquivSelf_comp_apply_mul d]
   simp only [← Comodule.coactComponent_apply, Comodule.coactComponent_counit, LinearMap.id_apply]
 
 end Ring
