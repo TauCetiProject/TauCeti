@@ -261,13 +261,13 @@ theorem natCard_isSymm (n R : Type*) [Fintype n] :
 
 section SubTranspose
 
-variable {n R : Type*} [CommRing R] [LinearOrder n] {Q : Matrix n n R}
+variable {n R : Type*} [AddCommGroup R] [LinearOrder n] {Q : Matrix n n R}
 
 /-- For an alternating matrix `Q`, with `Qᵀ = -Q` and zero diagonal, the solutions `S` of
 `S - Sᵀ = Q` are parametrized by their entries on and above the diagonal, that is by a function on
 the unordered pairs `Sym2 n`: the solution attached to `g` is the symmetric matrix of `g` plus the
-strictly lower triangular part of `Q`. No division by two is involved, so this holds over every
-commutative ring, including in characteristic two. -/
+strictly lower triangular part of `Q`. No division by two is involved, so this holds with entries
+in every additive commutative group, including rings of characteristic two. -/
 def subTransposeEqEquiv (hQ : Qᵀ = -Q) (hQd : ∀ i, Q i i = 0) :
     {S : Matrix n n R // S - Sᵀ = Q} ≃ (Sym2 n → R) where
   toFun S := Sym2.lift ⟨fun i j => S.1 (min i j) (max i j), fun i j => by

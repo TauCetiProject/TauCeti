@@ -9,6 +9,7 @@ public import Mathlib.Algebra.WithConv
 public import Mathlib.RingTheory.FiniteType
 public import Mathlib.Topology.Algebra.Polynomial
 public import Mathlib.Topology.Homeomorph.Lemmas
+public import TauCeti.Algebra.MvPolynomial.Lift
 public import TauCeti.Topology.Algebra.MvPolynomial.Aeval
 
 /-!
@@ -161,10 +162,7 @@ variable (k R) in
 homeomorphism from `MvPolynomial σ k →ₐ[k] R` onto `σ → R`, with inverse `MvPolynomial.aeval`. -/
 noncomputable def mvPolynomialHomeomorph (σ : Type*) :
     (MvPolynomial σ k →ₐ[k] R) ≃ₜ (σ → R) where
-  toFun x i := x (MvPolynomial.X i)
-  invFun := MvPolynomial.aeval
-  left_inv x := (MvPolynomial.aeval_unique x).symm
-  right_inv v := funext (MvPolynomial.aeval_X v)
+  toEquiv := (MvPolynomial.aevalEquiv σ k R).symm
   continuous_toFun := continuous_pi fun i ↦ continuous_eval (MvPolynomial.X i)
   continuous_invFun := continuous_iff.2 MvPolynomial.continuous_aeval
 

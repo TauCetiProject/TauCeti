@@ -7,7 +7,6 @@ module
 
 public import Mathlib.Data.Sym.Card
 public import Mathlib.LinearAlgebra.Matrix.BilinearForm
-public import Mathlib.RingTheory.TensorProduct.Free
 public import TauCeti.Algebra.MvPolynomial.Lift
 public import TauCeti.LinearAlgebra.Matrix.Symmetric
 public import TauCeti.LinearAlgebra.SymplecticGroup
@@ -21,10 +20,10 @@ Let `M` be a module over a commutative ring `R` with a basis `b` indexed by `ι 
 the Grassmannian chart at the last `k` basis vectors (`Module.Grassmannian.chart`) over an
 `R`-algebra `A` is the graph of a matrix: it is spanned by the vectors
 `1 ⊗ b (inl l) - ∑ⱼ Φ l j • (1 ⊗ b (inr j))` for a unique `Φ : Matrix ι (Fin k) A`
-(`Module.Grassmannian.chartBasisEquiv`, `Module.Grassmannian.toSubmodule_chartBasisEquiv_symm`).
-So for a bilinear form `ω` on `M`, the point is isotropic for the base change `ω_A` exactly when
-`ω_A` vanishes on pairs of these vectors, which is an explicit polynomial condition on `Φ` in terms
-of the Gram matrix of `ω`.
+(`Module.Grassmannian.chartBasisEquiv`, `Module.Grassmannian.toSubmodule_chartBasisEquiv_symm`, in
+`TauCeti.RingTheory.Grassmannian.Chart.Basic`). So for a bilinear form `ω` on `M`, the point is
+isotropic for the base change `ω_A` exactly when `ω_A` vanishes on pairs of these vectors, which is
+an explicit polynomial condition on `Φ` in terms of the Gram matrix of `ω`.
 
 Now let `b` be a symplectic basis, indexed by `(Fin r ⊕ κ) ⊕ (Fin r ⊕ κ)` with Gram matrix the
 standard alternating matrix `J`, of a module of rank `2m`, `m = r + |κ|`. The vectors
@@ -42,8 +41,6 @@ ring, including in characteristic two, and for `r = 0`, where the chart is a poi
 
 ## Main definitions
 
-* `Module.Grassmannian.chartBasisEquiv`: the points of the chart at the last `k` vectors of a basis
-  are the `ι × k` matrices.
 * `Module.Grassmannian.isotropicChartFunctor`: the isotropic points of a chart, as a subfunctor of
   the Grassmannian functor.
 * `Module.Grassmannian.symplecticChartBasis`: a symplectic basis reordered for the standard chart.
@@ -85,109 +82,8 @@ variable {R : Type u} [CommRing R] {M : Type v} [AddCommGroup M] [Module R M] {k
 
 section Basis
 
-variable (b : Basis (ι ⊕ Fin k) R M) (A : Type w) [CommRing A] [Algebra R A]
-
-/-- A linear map `ψ : M → A^k` with `ψ (b (inr j)) = eⱼ` is determined by the matrix of its
-values on the remaining basis vectors `b (inl l)`. -/
-private noncomputable def linearMapBasisEquiv :
-    {ψ : M →ₗ[R] Fin k → A // ∀ j, ψ (b (Sum.inr j)) = Pi.single j 1} ≃ Matrix ι (Fin k) A where
-  toFun ψ := fun l ↦ ψ.1 (b (Sum.inl l))
-  invFun Φ := ⟨b.constr ℕ (Sum.elim (fun l j ↦ Φ l j) fun j ↦ Pi.single j 1), fun j ↦ by
-    rw [Basis.constr_basis, Sum.elim_inr]⟩
-  left_inv ψ := by
-    ext m : 2
-    refine congrFun (congrArg DFunLike.coe (b.ext fun i ↦ ?_)) m
-    rcases i with l | j <;> simp [ψ.2]
-  right_inv Φ := by
-    ext l j
-    simp only [Basis.constr_basis, Sum.elim_inl]
-
-private theorem coe_linearMapBasisEquiv_symm_apply (Φ : Matrix ι (Fin k) A) :
-    ((linearMapBasisEquiv b A).symm Φ).1 =
-      b.constr ℕ (Sum.elim (fun l j ↦ Φ l j) fun j ↦ Pi.single j 1) :=
-  (rfl)
-
-/-- The chart at the last `k` vectors of a basis `b` of `M` is the affine space of `ι × k` matrices:
-a point over `A` corresponds to the matrix of the values `ψ (b (inl l)) j` of the linear map
-`ψ : M → A^k`, with `ψ (b (inr j)) = eⱼ`, whose base change it is the kernel of. -/
-noncomputable def chartBasisEquiv :
-    chart A (fun j ↦ (1 : A) ⊗ₜ[R] b (Sum.inr j)) ≃ Matrix ι (Fin k) A :=
-  (chartBaseChangeEquiv R A _).trans (linearMapBasisEquiv b A)
-
-variable {A}
-
-private theorem chartBasisEquiv_symm_apply_eq (Φ : Matrix ι (Fin k) A) :
-    (chartBasisEquiv b A).symm Φ =
-      (chartBaseChangeEquiv R A _).symm ((linearMapBasisEquiv b A).symm Φ) :=
-  (rfl)
-
-/-- The entries of the matrix of a chart point are the values on `1 ⊗ b (inl l)` of the linear map
-`A ⊗[R] M → A^k` whose kernel it is. -/
-@[simp]
-theorem chartBasisEquiv_apply (N : chart A (fun j ↦ (1 : A) ⊗ₜ[R] b (Sum.inr j))) (l : ι) :
-    chartBasisEquiv b A N l = (chartEquiv A _ N).1 (1 ⊗ₜ b (Sum.inl l)) :=
-  chartBaseChangeEquiv_apply_apply _ N _
-
-/-- The vector `1 ⊗ b (inl l) - ∑ⱼ Φ l j • (1 ⊗ b (inr j))` of `A ⊗[R] M`. These vectors span the
-point of the chart with matrix `Φ`: it is the graph of `-Φ`. -/
-noncomputable def chartGraphVector (Φ : Matrix ι (Fin k) A) (l : ι) : A ⊗[R] M :=
-  (1 : A) ⊗ₜ b (Sum.inl l) - ∑ j, Φ l j • (1 : A) ⊗ₜ[R] b (Sum.inr j)
-
-/-- **The point of the chart with matrix `Φ` is the graph of `-Φ`**: it is spanned by the graph
-vectors `1 ⊗ b (inl l) - ∑ⱼ Φ l j • (1 ⊗ b (inr j))`. -/
-theorem toSubmodule_chartBasisEquiv_symm (Φ : Matrix ι (Fin k) A) :
-    ((chartBasisEquiv b A).symm Φ).1.toSubmodule =
-      Submodule.span A (Set.range (chartGraphVector b Φ)) := by
-  rw [chartBasisEquiv_symm_apply_eq, toSubmodule_chartBaseChangeEquiv_symm_apply,
-    coe_linearMapBasisEquiv_symm_apply]
-  set ψ : M →ₗ[R] Fin k → A := b.constr ℕ (Sum.elim (fun l j ↦ Φ l j) fun j ↦ Pi.single j 1)
-  have hψl (l : ι) : ψ (b (Sum.inl l)) = Φ l := by simp [ψ]
-  have hψr (j : Fin k) : ψ (b (Sum.inr j)) = Pi.single j 1 := by simp [ψ]
-  set x : Fin k → A ⊗[R] M := fun j ↦ (1 : A) ⊗ₜ[R] b (Sum.inr j)
-  -- `T v = v - ∑ⱼ (ψ_A v)ⱼ • x j` is the identity on the kernel of `ψ_A`, and its range is spanned
-  -- by its values on the basis `1 ⊗ b i`: the graph vectors and zero
-  set T : A ⊗[R] M →ₗ[A] A ⊗[R] M :=
-    LinearMap.id - Fintype.linearCombination A x ∘ₗ ψ.liftBaseChange A
-  have hT (m : M) : T (1 ⊗ₜ m) = 1 ⊗ₜ m - ∑ j, ψ m j • x j := by
-    simp [T, Fintype.linearCombination_apply]
-  refine le_antisymm (fun v hv ↦ ?_) (Submodule.span_le.2 ?_)
-  · have hTv : T v = v := by
-      simp [T, LinearMap.mem_ker.1 hv]
-    rw [← hTv]
-    have hrange : LinearMap.range T ≤ Submodule.span A (Set.range (chartGraphVector b Φ)) := by
-      rw [LinearMap.range_eq_map, ← (Algebra.TensorProduct.basis A b).span_eq,
-        Submodule.map_span, Submodule.span_le]
-      rintro _ ⟨_, ⟨i, rfl⟩, rfl⟩
-      rcases i with l | j
-      · refine Submodule.subset_span ⟨l, ?_⟩
-        simp [hT, hψl, chartGraphVector, x]
-      · simp [hT, hψr, x, Pi.single_apply]
-    exact hrange (LinearMap.mem_range_self T v)
-  · rintro _ ⟨l, rfl⟩
-    ext j
-    simp [chartGraphVector, hψl, hψr, map_sub, map_sum, LinearMap.liftBaseChange_tmul,
-      Pi.single_apply]
-
-variable {B : Type w} [CommRing B] [Algebra R B]
-
-/-- The chart coordinates are natural: base change along `f : A → B` applies `f` to the matrix. -/
-theorem map_chartBasisEquiv_symm (f : A →ₐ[R] B) (Φ : Matrix ι (Fin k) A) :
-    map f ((chartBasisEquiv b A).symm Φ).1 = ((chartBasisEquiv b B).symm (Φ.map f)).1 := by
-  rw [chartBasisEquiv_symm_apply_eq, chartBasisEquiv_symm_apply_eq]
-  refine (map_chartBaseChangeEquiv_symm f _ _).trans
-    (congrArg (fun ψ ↦ ((chartBaseChangeEquiv R B _).symm ψ).1) ?_)
-  refine Subtype.ext (b.ext fun i ↦ ?_)
-  rcases i with l | j
-  · ext j
-    simp only [LinearMap.comp_apply, coe_linearMapBasisEquiv_symm_apply, Basis.constr_basis,
-      Sum.elim_inl, LinearMap.compLeft_apply, Function.comp_apply, Matrix.map_apply]
-    rfl
-  · ext j'
-    simp only [LinearMap.comp_apply, coe_linearMapBasisEquiv_symm_apply, Basis.constr_basis,
-      Sum.elim_inr, LinearMap.compLeft_apply, Function.comp_apply]
-    simp [Pi.single_apply, apply_ite f]
-
-variable (ω : LinearMap.BilinForm R M)
+variable (b : Basis (ι ⊕ Fin k) R M) {A : Type w} [CommRing A] [Algebra R A]
+  (ω : LinearMap.BilinForm R M)
 
 /-- **Isotropy in the chart.** The point of the chart with matrix `Φ` is isotropic for the base
 change of `ω` exactly when `ω_A` vanishes on every pair of its graph vectors. -/
@@ -206,8 +102,13 @@ theorem baseChange_chartGraphVector (Φ : Matrix ι (Fin k) A) (l l' : ι) :
         ∑ j, Φ l' j * algebraMap R A (ω (b (.inl l)) (b (.inr j))) -
         ∑ j, Φ l j * algebraMap R A (ω (b (.inr j)) (b (.inl l'))) +
         ∑ j, ∑ j', Φ l j * Φ l' j' * algebraMap R A (ω (b (.inr j)) (b (.inr j'))) := by
-  simp [chartGraphVector, LinearMap.BilinForm.baseChange_tmul, Algebra.smul_def]
+  simp only [chartGraphVector, map_sub, map_sum, map_smul, LinearMap.sub_apply,
+    LinearMap.BilinForm.baseChange_tmul, mul_one, Algebra.smul_def, LinearMap.coe_sum,
+    LinearMap.coe_smul, Finset.sum_apply, Pi.mul_apply, Pi.algebraMap_apply,
+    Algebra.algebraMap_self, RingHom.id_apply]
   simp only [mul_sub, Finset.sum_sub_distrib, Finset.mul_sum, ← mul_assoc]
+  rw [Finset.sum_comm]
+  simp only [mul_comm (Φ l' _) (Φ l _)]
   ring
 
 end Basis
@@ -506,9 +407,9 @@ noncomputable def isotropicChartCorepresentableBy :
 
 end Symplectic
 
-/-- **The dimension of the isotropic Grassmannian.** The coordinates of the standard chart of the
-Grassmannian of `r`-dimensional isotropic subspaces of a `2m`-dimensional symplectic space, with
-`m = r + |κ|`, number `r (2m - r) - r (r - 1) / 2`. -/
+/-- **The number of coordinates of the isotropic standard chart.** The coordinates of the standard
+chart of the Grassmannian of `r`-dimensional isotropic subspaces of a `2m`-dimensional symplectic
+space, with `m = r + |κ|`, number `r (2m - r) - r (r - 1) / 2`. -/
 theorem card_isotropicChart_coordinates (r : ℕ) (κ : Type*) [Fintype κ] :
     Fintype.card (Fin r × (κ ⊕ κ)) + Fintype.card (Sym2 (Fin r)) =
       r * (2 * (r + Fintype.card κ) - r) - r * (r - 1) / 2 := by

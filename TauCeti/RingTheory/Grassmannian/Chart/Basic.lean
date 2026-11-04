@@ -7,6 +7,7 @@ module
 
 public import Mathlib.CategoryTheory.Subfunctor.Basic
 public import Mathlib.LinearAlgebra.SymmetricAlgebra.Basic
+public import Mathlib.RingTheory.TensorProduct.Free
 public import TauCeti.LinearAlgebra.Finsupp.LinearCombination
 public import TauCeti.LinearAlgebra.SymmetricAlgebra.FiniteType
 public import TauCeti.RingTheory.Grassmannian.Basic
@@ -50,6 +51,8 @@ in `TauCeti.RingTheory.Grassmannian.Chart.Transition`.
   `φ : M → R^k` with `φ (x i) = eᵢ`.
 * `Module.Grassmannian.chartFunctor R x`: the chart at `x` as a subfunctor of
   `Module.Grassmannian.functor k`.
+* `Module.Grassmannian.chartBasisEquiv`: the points of the chart at the last `k` vectors of a basis
+  are the `ι × k` matrices.
 * `Module.Grassmannian.ChartAlgebra R x`: the coordinate ring of the chart at `x`.
 * `Module.Grassmannian.chartHomEquiv R x A`: `R`-algebra maps `ChartAlgebra R x → A` are the
   points of the chart over `A`.
@@ -60,6 +63,8 @@ in `TauCeti.RingTheory.Grassmannian.Chart.Transition`.
   images of the `x i` generate `M ⧸ N`.
 * `Module.Grassmannian.map_ofSurjective_liftBaseChange`: base change along `A → B` sends the
   kernel of a surjection `A ⊗[R] M → A^k` to the kernel of its base change `B ⊗[R] M → B^k`.
+* `Module.Grassmannian.toSubmodule_chartBasisEquiv_symm`: the point of a basis chart with matrix
+  `Φ` is the graph of `-Φ`, spanned by the vectors `Module.Grassmannian.chartGraphVector`.
 * `Module.Grassmannian.chartHomEquiv_comp`: `chartHomEquiv` is natural in the algebra.
 * `Module.Grassmannian.chartCorepresentableBy`: the chart subfunctor, on `R`-algebras in the
   universe of `ChartAlgebra R x`, is corepresented by `ChartAlgebra R x`.
@@ -278,6 +283,113 @@ theorem mem_chartFunctor_obj_iff (x : Fin k → M) (A : CommAlgCat.{w} R)
   (Iff.rfl)
 
 end ChartFunctor
+
+section Basis
+
+variable {ι : Type*} (b : Basis (ι ⊕ Fin k) R M) (A : Type w) [CommRing A] [Algebra R A]
+
+/-- A linear map `ψ : M → A^k` with `ψ (b (inr j)) = eⱼ` is determined by the matrix of its
+values on the remaining basis vectors `b (inl l)`. -/
+noncomputable def linearMapBasisEquiv :
+    {ψ : M →ₗ[R] Fin k → A // ∀ j, ψ (b (Sum.inr j)) = Pi.single j 1} ≃ Matrix ι (Fin k) A where
+  toFun ψ := fun l ↦ ψ.1 (b (Sum.inl l))
+  invFun Φ := ⟨b.constr ℕ (Sum.elim (fun l j ↦ Φ l j) fun j ↦ Pi.single j 1), fun j ↦ by
+    rw [Basis.constr_basis, Sum.elim_inr]⟩
+  left_inv ψ := by
+    ext m : 2
+    refine congrFun (congrArg DFunLike.coe (b.ext fun i ↦ ?_)) m
+    rcases i with l | j <;> simp [ψ.2]
+  right_inv Φ := by
+    ext l j
+    simp only [Basis.constr_basis, Sum.elim_inl]
+
+/-- The linear map with matrix `Φ` sends `b (inl l)` to the row `Φ l` and `b (inr j)` to `eⱼ`. -/
+theorem coe_linearMapBasisEquiv_symm_apply (Φ : Matrix ι (Fin k) A) :
+    ((linearMapBasisEquiv b A).symm Φ).1 =
+      b.constr ℕ (Sum.elim (fun l j ↦ Φ l j) fun j ↦ Pi.single j 1) :=
+  (rfl)
+
+/-- The chart at the last `k` vectors of a basis `b` of `M` is the affine space of `ι × k` matrices:
+a point over `A` corresponds to the matrix of the values `ψ (b (inl l)) j` of the linear map
+`ψ : M → A^k`, with `ψ (b (inr j)) = eⱼ`, whose base change it is the kernel of. -/
+noncomputable def chartBasisEquiv :
+    chart A (fun j ↦ (1 : A) ⊗ₜ[R] b (Sum.inr j)) ≃ Matrix ι (Fin k) A :=
+  (chartBaseChangeEquiv R A _).trans (linearMapBasisEquiv b A)
+
+variable {A}
+
+private theorem chartBasisEquiv_symm_apply_eq (Φ : Matrix ι (Fin k) A) :
+    (chartBasisEquiv b A).symm Φ =
+      (chartBaseChangeEquiv R A _).symm ((linearMapBasisEquiv b A).symm Φ) :=
+  (rfl)
+
+/-- The entries of the matrix of a chart point are the values on `1 ⊗ b (inl l)` of the linear map
+`A ⊗[R] M → A^k` whose kernel it is. -/
+@[simp]
+theorem chartBasisEquiv_apply (N : chart A (fun j ↦ (1 : A) ⊗ₜ[R] b (Sum.inr j))) (l : ι) :
+    chartBasisEquiv b A N l = (chartEquiv A _ N).1 (1 ⊗ₜ b (Sum.inl l)) :=
+  chartBaseChangeEquiv_apply_apply _ N _
+
+/-- The vector `1 ⊗ b (inl l) - ∑ⱼ Φ l j • (1 ⊗ b (inr j))` of `A ⊗[R] M`. These vectors span the
+point of the chart with matrix `Φ`: it is the graph of `-Φ`. -/
+@[expose] noncomputable def chartGraphVector (Φ : Matrix ι (Fin k) A) (l : ι) : A ⊗[R] M :=
+  (1 : A) ⊗ₜ b (Sum.inl l) - ∑ j, Φ l j • (1 : A) ⊗ₜ[R] b (Sum.inr j)
+
+/-- **The point of the chart with matrix `Φ` is the graph of `-Φ`**: it is spanned by the graph
+vectors `1 ⊗ b (inl l) - ∑ⱼ Φ l j • (1 ⊗ b (inr j))`. -/
+theorem toSubmodule_chartBasisEquiv_symm (Φ : Matrix ι (Fin k) A) :
+    ((chartBasisEquiv b A).symm Φ).1.toSubmodule =
+      Submodule.span A (Set.range (chartGraphVector b Φ)) := by
+  rw [chartBasisEquiv_symm_apply_eq, toSubmodule_chartBaseChangeEquiv_symm_apply,
+    coe_linearMapBasisEquiv_symm_apply]
+  set ψ : M →ₗ[R] Fin k → A := b.constr ℕ (Sum.elim (fun l j ↦ Φ l j) fun j ↦ Pi.single j 1)
+  have hψl (l : ι) : ψ (b (Sum.inl l)) = Φ l := by simp [ψ]
+  have hψr (j : Fin k) : ψ (b (Sum.inr j)) = Pi.single j 1 := by simp [ψ]
+  set x : Fin k → A ⊗[R] M := fun j ↦ (1 : A) ⊗ₜ[R] b (Sum.inr j)
+  -- `T v = v - ∑ⱼ (ψ_A v)ⱼ • x j` is the identity on the kernel of `ψ_A`, and its range is spanned
+  -- by its values on the basis `1 ⊗ b i`: the graph vectors and zero
+  set T : A ⊗[R] M →ₗ[A] A ⊗[R] M :=
+    LinearMap.id - Fintype.linearCombination A x ∘ₗ ψ.liftBaseChange A
+  have hT (m : M) : T (1 ⊗ₜ m) = 1 ⊗ₜ m - ∑ j, ψ m j • x j := by
+    simp [T, Fintype.linearCombination_apply]
+  refine le_antisymm (fun v hv ↦ ?_) (Submodule.span_le.2 ?_)
+  · have hTv : T v = v := by
+      simp [T, LinearMap.mem_ker.1 hv]
+    rw [← hTv]
+    have hrange : LinearMap.range T ≤ Submodule.span A (Set.range (chartGraphVector b Φ)) := by
+      rw [LinearMap.range_eq_map, ← (Algebra.TensorProduct.basis A b).span_eq,
+        Submodule.map_span, Submodule.span_le]
+      rintro _ ⟨_, ⟨i, rfl⟩, rfl⟩
+      rcases i with l | j
+      · refine Submodule.subset_span ⟨l, ?_⟩
+        simp [hT, hψl, chartGraphVector, x]
+      · simp [hT, hψr, x, Pi.single_apply]
+    exact hrange (LinearMap.mem_range_self T v)
+  · rintro _ ⟨l, rfl⟩
+    ext j
+    simp [chartGraphVector, hψl, hψr, map_sub, map_sum, LinearMap.liftBaseChange_tmul,
+      Pi.single_apply]
+
+variable {B : Type w} [CommRing B] [Algebra R B]
+
+/-- The chart coordinates are natural: base change along `f : A → B` applies `f` to the matrix. -/
+theorem map_chartBasisEquiv_symm (f : A →ₐ[R] B) (Φ : Matrix ι (Fin k) A) :
+    map f ((chartBasisEquiv b A).symm Φ).1 = ((chartBasisEquiv b B).symm (Φ.map f)).1 := by
+  rw [chartBasisEquiv_symm_apply_eq, chartBasisEquiv_symm_apply_eq]
+  refine (map_chartBaseChangeEquiv_symm f _ _).trans
+    (congrArg (fun ψ ↦ ((chartBaseChangeEquiv R B _).symm ψ).1) ?_)
+  refine Subtype.ext (b.ext fun i ↦ ?_)
+  rcases i with l | j
+  · ext j
+    simp only [LinearMap.comp_apply, coe_linearMapBasisEquiv_symm_apply, Basis.constr_basis,
+      Sum.elim_inl, LinearMap.compLeft_apply, Function.comp_apply, Matrix.map_apply,
+      AlgHom.toLinearMap_apply]
+  · ext j'
+    simp only [LinearMap.comp_apply, coe_linearMapBasisEquiv_symm_apply, Basis.constr_basis,
+      Sum.elim_inr, LinearMap.compLeft_apply, Function.comp_apply]
+    simp [Pi.single_apply, apply_ite f]
+
+end Basis
 
 section ChartAlgebra
 
