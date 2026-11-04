@@ -29,7 +29,9 @@ Hölder inequality passes from `s × s` to its closure because both of its sides
 This is how an almost-everywhere Hölder estimate becomes a Hölder continuous representative: a set
 of full measure for a measure that is positive on open sets is dense.
 
-Finite sums of Hölder functions are Hölder, with the sum of the constants.
+On a ball of radius at most one, a Hölder function stays within its Hölder constant of its value
+at the centre in norm. Sums, differences and finite sums of Hölder functions are Hölder, with the
+sum of the constants.
 
 Finally, on a metric space the infimum defining Mathlib's extended Hölder seminorm `eHolderNorm r f`
 is attained, so the seminorm is the best constant in the Hölder inequality. Equivalently, it is the
@@ -48,6 +50,10 @@ points, the form in which Hölder seminorms are written in analysis texts.
   Hölder with constant `K + D δ^(-r)`.
 * `HolderOnWith.dist_le_mul_rpow_of_mem_ball`: on a ball of radius `ρ`, a Hölder function with
   constant `C` and exponent `r` stays within `C ρ^r` of its value at the centre.
+* `HolderOnWith.norm_le_norm_add_of_mem_ball`: on a ball of radius at most one, a Hölder function
+  with constant `C` has norm at most `C` plus its norm at the centre.
+* `HolderOnWith.add`, `HolderOnWith.sub`: sums and differences of Hölder functions on a set are
+  Hölder, with the sum of the constants.
 * `HolderOnWith.extend_of_dense`: a Hölder function on a dense set extends to a Hölder
   function on the whole space.
 * `HolderWith.sum`: a finite sum of Hölder functions is Hölder.
@@ -162,6 +168,32 @@ theorem HolderOnWith.dist_le_mul_rpow_of_mem_ball {X Y : Type*} [PseudoMetricSpa
   calc dist (f x) (f x₀) ≤ C * dist x x₀ ^ (r : ℝ) :=
         hf.dist_le hx (Metric.mem_ball_self (dist_nonneg.trans_lt hx'))
     _ ≤ C * ρ ^ (r : ℝ) := by gcongr
+
+/-- On a ball of radius at most one, a Hölder function with constant `C` has norm at most
+`‖f x₀‖ + C`, where `x₀` is the centre. -/
+theorem HolderOnWith.norm_le_norm_add_of_mem_ball {X Y : Type*} [PseudoMetricSpace X]
+    [SeminormedAddGroup Y] {C r : ℝ≥0} {f : X → Y} {x₀ x : X} {ρ : ℝ}
+    (hf : HolderOnWith C r f (Metric.ball x₀ ρ)) (hρ : ρ ≤ 1) (hx : x ∈ Metric.ball x₀ ρ) :
+    ‖f x‖ ≤ ‖f x₀‖ + C := by
+  have hρ₁ : ρ ^ (r : ℝ) ≤ 1 :=
+    Real.rpow_le_one (dist_nonneg.trans (Metric.mem_ball.1 hx).le) hρ r.coe_nonneg
+  refine norm_le_norm_add_const_of_dist_le ?_
+  calc dist (f x) (f x₀) ≤ C * ρ ^ (r : ℝ) := hf.dist_le_mul_rpow_of_mem_ball hx
+    _ ≤ C := mul_le_of_le_one_right C.coe_nonneg hρ₁
+
+/-- The sum of two Hölder functions on a set is Hölder on it, with the sum of the constants. -/
+theorem HolderOnWith.add {X Y : Type*} [PseudoMetricSpace X] [SeminormedAddCommGroup Y]
+    {C C' r : ℝ≥0} {f g : X → Y} {s : Set X} (hf : HolderOnWith C r f s)
+    (hg : HolderOnWith C' r g s) : HolderOnWith (C + C') r (f + g) s :=
+  HolderWith.restrict_iff.1 (hf.holderWith.add hg.holderWith)
+
+/-- The difference of two Hölder functions on a set is Hölder on it, with the sum of the
+constants. -/
+theorem HolderOnWith.sub {X Y : Type*} [PseudoMetricSpace X] [SeminormedAddCommGroup Y]
+    {C C' r : ℝ≥0} {f g : X → Y} {s : Set X} (hf : HolderOnWith C r f s)
+    (hg : HolderOnWith C' r g s) : HolderOnWith (C + C') r (f - g) s := by
+  rw [sub_eq_add_neg]
+  exact hf.add fun x hx y hy => by simpa only [Pi.neg_apply, edist_neg_neg] using hg x hx y hy
 
 /-- A finite sum of Hölder functions with a common exponent is Hölder, with the sum of the
 constants. -/

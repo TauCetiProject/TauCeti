@@ -84,21 +84,9 @@ theorem exists_holderOnWith_fderiv_apply_add_mul_ball {α : ℝ≥0} (hα : α �
   refine ⟨β * κ + L + (γ * κ + L), fun {u N} hu hN₀ hN₁ hN₂ => ?_⟩
   -- On the ball, `b` and `c` stay within `L R^α ≤ L` of their values at the centre.
   have hbM : ∀ y ∈ ball x R, ‖b y‖ ≤ β := fun y hy => by
-    have h1 := hb.dist_le_mul_rpow_of_mem_ball hy
-    have h2 : R ^ (α : ℝ) ≤ 1 :=
-      Real.rpow_le_one (dist_nonneg.trans (mem_ball.1 hy).le) hR α.coe_nonneg
-    have h3 := norm_le_norm_add_norm_sub' (b y) (b x)
-    rw [← dist_eq_norm] at h3
-    simp only [β, NNReal.coe_add, coe_nnnorm]
-    nlinarith [L.coe_nonneg]
+    simpa only [β, NNReal.coe_add, coe_nnnorm] using hb.norm_le_norm_add_of_mem_ball hR hy
   have hcM : ∀ y ∈ ball x R, ‖c y‖ ≤ γ := fun y hy => by
-    have h1 := hc.dist_le_mul_rpow_of_mem_ball hy
-    have h2 : R ^ (α : ℝ) ≤ 1 :=
-      Real.rpow_le_one (dist_nonneg.trans (mem_ball.1 hy).le) hR α.coe_nonneg
-    have h3 := norm_le_norm_add_norm_sub' (c y) (c x)
-    rw [← dist_eq_norm] at h3
-    simp only [γ, NNReal.coe_add, coe_nnnorm]
-    nlinarith [L.coe_nonneg]
+    simpa only [γ, NNReal.coe_add, coe_nnnorm] using hc.norm_le_norm_add_of_mem_ball hR hy
   -- `u` and `Du` are `α`-Hölder with constant `N (2R)^{1-α} ≤ N κ`, as `2R ≤ 2`.
   have hκ : N * (2 * R).toNNReal ^ ((1 : ℝ) - α) ≤ N * κ := by
     refine mul_le_mul_right (NNReal.rpow_le_rpow ?_ (sub_nonneg.2 (by exact_mod_cast hα))) N
@@ -116,7 +104,6 @@ theorem exists_holderOnWith_fderiv_apply_add_mul_ball {α : ℝ≥0} (hα : α �
     ((ContinuousLinearMap.mul ℝ ℝ).holderOnWith_comp₂ hc hHu hcM
       (fun y hy => by simpa only [Real.norm_eq_abs] using hN₀ y hy)).mono_const
       (mul_le_of_le_one_left' (ContinuousLinearMap.opNorm_mul_le ℝ ℝ))
-  exact (HolderWith.restrict_iff.1 (h1.holderWith.add h2.holderWith)).mono_const
-    (le_of_eq (by ring))
+  exact (h1.add h2).mono_const (le_of_eq (by ring))
 
 end TauCeti
