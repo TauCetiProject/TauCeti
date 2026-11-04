@@ -8,6 +8,7 @@ module
 public import Mathlib.Order.Filter.Germ.Basic
 public import TauCeti.Geometry.Manifold.Complex.StructureSheaf.Basic
 import Mathlib.Algebra.Category.Ring.FilteredColimits
+import TauCeti.Geometry.Manifold.ContMDiff.Analytic
 
 /-!
 # Holomorphic germs as germs of functions
@@ -24,7 +25,9 @@ homomorphism `TauCeti.holomorphicStructureSheaf.toFilterGerm I X x l hl` and pro
 * `toFilterGerm_nhdsNE_injective`: when `x` is not isolated, it is even determined by its
   germ along the punctured neighbourhoods `𝓝[≠] x`, by continuity;
 * `exists_toFilterGerm_nhds_eq_iff`: the image of the comparison along `𝓝 x` consists of the
-  germs of the functions which are complex analytic (`ContMDiffAt` at order `ω`) near `x`;
+  germs of the functions which are complex analytic (`ContMDiffAt` at order `ω`) near `x` (and on a
+  complex normed space, `exists_analyticAt_toFilterGerm_eq`, `exists_toFilterGerm_eq_of_analyticAt`,
+  and `exists_toFilterGerm_nhds_eq_iff_analyticAt` express this directly via `AnalyticAt`);
 * `eval_eq_of_toFilterGerm_eq`: the value of a holomorphic germ is the value of any function
   with the same germ;
 * `toFilterGerm_stalkPrecomp`: pulling a holomorphic germ back along a complex analytic map `f`
@@ -264,6 +267,37 @@ theorem stalkPrecomp_germOfContMDiff (f : X → Y) (hf : ContMDiff I J ω f) (g 
   toFilterGerm_nhds_injective x <| by
     rw [toFilterGerm_stalkPrecomp, toFilterGerm_germOfContMDiff, toFilterGerm_germOfContMDiff,
       Germ.coe_compTendsto]
+
+section NormedSpace
+
+variable {V : Type} [NormedAddCommGroup V] [NormedSpace ℂ V]
+
+/-- On a complex normed space, every holomorphic germ at `p` is represented by a function
+analytic at `p`, simultaneously along every filter finer than `𝓝 p`. -/
+theorem exists_analyticAt_toFilterGerm_eq (p : V)
+    (s : (holomorphicStructureSheaf 𝓘(ℂ, V) V).presheaf.stalk p) :
+    ∃ φ : V → ℂ, AnalyticAt ℂ φ p ∧
+      ∀ (l : Filter V) (hl : l ≤ 𝓝 p), toFilterGerm 𝓘(ℂ, V) V p l hl s = φ := by
+  obtain ⟨φ, hφ_cm, hφ⟩ := exists_toFilterGerm_eq p s
+  exact ⟨φ, contMDiffAt_modelSpace_omega_iff_analyticAt.1 hφ_cm.self_of_nhds, hφ⟩
+
+/-- On a complex normed space, a function analytic at `p` has a holomorphic germ at `p`, with
+the same germ along every filter finer than `𝓝 p`. -/
+theorem exists_toFilterGerm_eq_of_analyticAt {p : V} {φ : V → ℂ} (hφ : AnalyticAt ℂ φ p) :
+    ∃ s : (holomorphicStructureSheaf 𝓘(ℂ, V) V).presheaf.stalk p,
+      ∀ (l : Filter V) (hl : l ≤ 𝓝 p), toFilterGerm 𝓘(ℂ, V) V p l hl s = φ :=
+  exists_toFilterGerm_eq_of_eventually_contMDiffAt
+    (hφ.eventually_analyticAt.mono fun _ ↦ contMDiffAt_modelSpace_omega_iff_analyticAt.2)
+
+/-- On a complex normed space, a function has a holomorphic germ at `p` with the same germ
+along `𝓝 p` exactly when it is analytic at `p`. -/
+theorem exists_toFilterGerm_nhds_eq_iff_analyticAt {p : V} {φ : V → ℂ} :
+    (∃ s, toFilterGerm 𝓘(ℂ, V) V p (𝓝 p) le_rfl s = φ) ↔ AnalyticAt ℂ φ p :=
+  exists_toFilterGerm_nhds_eq_iff.trans
+    ⟨fun h ↦ contMDiffAt_modelSpace_omega_iff_analyticAt.1 h.self_of_nhds,
+      fun h ↦ h.eventually_analyticAt.mono fun _ ↦ contMDiffAt_modelSpace_omega_iff_analyticAt.2⟩
+
+end NormedSpace
 
 /-! ### Germs along a holomorphic section -/
 
