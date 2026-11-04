@@ -68,6 +68,25 @@ theorem _root_.IsSigmaCompact.union {s t : Set X} (hs : IsSigmaCompact s)
   rw [union_eq_iUnion]
   exact isSigmaCompact_iUnion _ (Bool.forall_bool.2 ⟨ht, hs⟩)
 
+/-- **Slices of a map proper on `s ×ˢ I` are proper**: if `(s ×ˢ I) ∩ H ⁻¹' K` is compact for
+every compact `K ⊆ U`, then so is `s ∩ H (·, t) ⁻¹' K` for every `t ∈ I`. -/
+theorem isCompact_inter_preimage_comp_prodMk_left {Y Z : Type*} [TopologicalSpace Y]
+    [TopologicalSpace Z] [T1Space Z] {s : Set X} {I : Set Z} {H : X × Z → Y}
+    {U : Set Y} (hHp : ∀ K : Set Y, IsCompact K → K ⊆ U → IsCompact ((s ×ˢ I) ∩ H ⁻¹' K))
+    {t : Z} (ht : t ∈ I) (K : Set Y) (hK : IsCompact K) (hKU : K ⊆ U) :
+    IsCompact (s ∩ (fun x ↦ H (x, t)) ⁻¹' K) := by
+  have h : s ∩ (fun x ↦ H (x, t)) ⁻¹' K =
+      Prod.fst '' ((s ×ˢ I) ∩ H ⁻¹' K ∩ Prod.snd ⁻¹' {t}) := by
+    ext x
+    constructor
+    · rintro ⟨hx, hxK⟩
+      exact ⟨(x, t), ⟨⟨⟨hx, ht⟩, hxK⟩, rfl⟩, rfl⟩
+    · rintro ⟨⟨y, t'⟩, ⟨⟨⟨hy, -⟩, hyK⟩, rfl : t' = t⟩, rfl⟩
+      exact ⟨hy, hyK⟩
+  rw [h]
+  exact ((hHp K hK hKU).inter_right (isClosed_singleton.preimage continuous_snd)).image
+    continuous_fst
+
 end TauCeti
 
 end
