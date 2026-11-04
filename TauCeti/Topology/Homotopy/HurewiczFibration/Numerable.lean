@@ -115,8 +115,8 @@ private noncomputable def tubeWeight (ρ : PartitionOfUnity ι B) (H : C(I × A,
   ⟨fun a ↦ ⨅ k : Fin (m + 1),
       ⨅ t : Icc (segEndpt m k.castSucc) (segEndpt m k.succ), ρ (α k) (H (t.1, a)),
     TauCeti.continuous_ciInf_of_finite fun k ↦
-      (((ρ (α k)).continuous.comp <| H.continuous.comp <|
-        (continuous_subtype_val.comp continuous_fst).prodMk continuous_snd)).iInf_of_compactSpace⟩
+      (by fun_prop : Continuous fun p : Icc (segEndpt m k.castSucc) (segEndpt m k.succ) × A ↦
+        ρ (α k) (H (p.1.1, p.2))).iInf_of_compactSpace⟩
 
 private theorem tubeWeight_apply (ρ : PartitionOfUnity ι B) (H : C(I × A, B))
     (m : ℕ) (α : Fin (m + 1) → ι) (a : A) :
@@ -158,11 +158,9 @@ private theorem pos_of_tubeWeight_pos {ρ : PartitionOfUnity ι B} {H : C(I × A
 private theorem exists_tubeWeight_pos (ρ : PartitionOfUnity ι B) (H : C(I × A, B)) (a : A) :
     ∃ (m : ℕ) (α : Fin (m + 1) → ι), 0 < tubeWeight ρ H m α a := by
   let V : ι → Set I := fun i ↦ {t : I | 0 < ρ i (H (t, a))}
-  have hV_open : ∀ i, IsOpen (V i) := fun i ↦ isOpen_lt continuous_const
-    ((ρ i).continuous.comp (H.continuous.comp (continuous_id.prodMk continuous_const)))
-  have hV_cov : (univ : Set I) ⊆ ⋃ i, V i := fun t _ ↦ by
-    obtain ⟨i, hi⟩ := ρ.exists_pos (mem_univ (H (t, a)))
-    exact mem_iUnion.2 ⟨i, hi⟩
+  have hV_open : ∀ i, IsOpen (V i) := fun i ↦ isOpen_lt continuous_const (by fun_prop)
+  have hV_cov : (univ : Set I) ⊆ ⋃ i, V i := fun t _ ↦
+    mem_iUnion.2 (ρ.exists_pos (mem_univ (H (t, a))))
   obtain ⟨δ, hδ, hball⟩ := lebesgue_number_lemma_of_metric isCompact_univ hV_open hV_cov
   obtain ⟨m, hm⟩ := exists_nat_one_div_lt hδ
   have hseg : ∀ k : Fin (m + 1), ∃ i,
@@ -172,18 +170,13 @@ private theorem exists_tubeWeight_pos (ρ : PartitionOfUnity ι B) (H : C(I × A
     have ht1 : (segEndpt m k.castSucc : ℝ) ≤ t := ht.1
     have ht2 : (t : ℝ) ≤ segEndpt m k.succ := ht.2
     rw [Metric.mem_ball, Subtype.dist_eq, Real.dist_eq, abs_of_nonneg (sub_nonneg.2 ht1)]
-    have hle : (t : ℝ) - segEndpt m k.castSucc ≤
-        (segEndpt m k.succ : ℝ) - segEndpt m k.castSucc :=
-      sub_le_sub_right ht2 _
-    exact (hle.trans_eq (segEndpt_sub m k)).trans_lt hm
+    exact ((sub_le_sub_right ht2 _).trans_eq (segEndpt_sub m k)).trans_lt hm
   choose α hα using hseg
   refine ⟨m, α, ?_⟩
   obtain ⟨k₀, hk₀⟩ := exists_eq_ciInf_of_finite (f := fun k : Fin (m + 1) ↦
     ⨅ t : Icc (segEndpt m k.castSucc) (segEndpt m k.succ), ρ (α k) (H (t.1, a)))
   rw [tubeWeight_apply, ← hk₀]
-  exact (((ρ (α k₀)).continuous.comp
-    (H.continuous.comp (continuous_subtype_val.prodMk continuous_const))).lowerSemicontinuous
-      |>.lt_ciInf_iff).2 fun t ↦ hα k₀ t.2
+  exact (Continuous.lowerSemicontinuous (by fun_prop)).lt_ciInf_iff.2 fun t ↦ hα k₀ t.2
 
 private theorem exists_nhds_finset_support (ρ : PartitionOfUnity ι B) (H : C(I × A, B))
     (a₀ : A) :
@@ -228,10 +221,8 @@ private theorem levelMax_eq_of_support_subset {ρ : PartitionOfUnity ι B}
     obtain ⟨k, hk⟩ := hα
     have hzero : ρ (α k) (H (segEndpt m k.castSucc, a)) = 0 :=
       by_contra fun hne ↦ hk (hF _ hne)
-    have hle : tubeWeight ρ H m α a ≤ 0 :=
-      (tubeWeight_le_apply ρ H m α a k
-        (left_mem_Icc.2 (segEndpt_mono m k.castSucc_le_succ))).trans_eq hzero
-    exact hle.trans hnonneg
+    exact ((tubeWeight_le_apply ρ H m α a k
+      (left_mem_Icc.2 (segEndpt_mono m k.castSucc_le_succ))).trans_eq hzero).trans hnonneg
 
 private theorem continuous_levelMax (ρ : PartitionOfUnity ι B) (H : C(I × A, B))
     (m : ℕ) :
@@ -247,8 +238,8 @@ private noncomputable def truncTubeWeight (ρ : PartitionOfUnity ι B)
     (H : C(I × A, B)) (idx : Σ m : ℕ, Fin (m + 1) → ι) : C(A, ℝ) :=
   ⟨fun a ↦ max 0 (tubeWeight ρ H idx.1 idx.2 a -
       (idx.1 : ℝ) * ∑ j ∈ Finset.range idx.1, levelMax ρ H j a),
-    continuous_const.max <| (tubeWeight ρ H idx.1 idx.2).continuous.sub <|
-      continuous_const.mul <| continuous_finsetSum _ fun j _ ↦ continuous_levelMax ρ H j⟩
+    have := continuous_levelMax ρ H
+    by fun_prop⟩
 
 private theorem truncTubeWeight_apply (ρ : PartitionOfUnity ι B)
     (H : C(I × A, B)) (idx : Σ m : ℕ, Fin (m + 1) → ι) (a : A) :
@@ -258,20 +249,17 @@ private theorem truncTubeWeight_apply (ρ : PartitionOfUnity ι B)
 
 private theorem truncTubeWeight_nonneg (ρ : PartitionOfUnity ι B) (H : C(I × A, B))
     (idx : Σ m : ℕ, Fin (m + 1) → ι) (a : A) :
-    0 ≤ truncTubeWeight ρ H idx a := by
-  rw [truncTubeWeight_apply]
-  exact le_max_left _ _
+    0 ≤ truncTubeWeight ρ H idx a :=
+  le_max_left _ _
 
 private theorem tubeWeight_pos_of_truncTubeWeight_pos {ρ : PartitionOfUnity ι B}
     {H : C(I × A, B)} {idx : Σ m : ℕ, Fin (m + 1) → ι} {a : A}
     (h : 0 < truncTubeWeight ρ H idx a) :
     0 < tubeWeight ρ H idx.1 idx.2 a := by
-  rw [truncTubeWeight_apply] at h
-  rcases lt_max_iff.1 h with h0 | hpos
-  · exact absurd h0 (lt_irrefl 0)
-  · have hsum : 0 ≤ (idx.1 : ℝ) * ∑ j ∈ Finset.range idx.1, levelMax ρ H j a :=
-      mul_nonneg idx.1.cast_nonneg (Finset.sum_nonneg fun j _ ↦ levelMax_nonneg ρ H j a)
-    linarith
+  have hpos := (lt_max_iff.1 h).resolve_left (lt_irrefl 0)
+  have hsum : 0 ≤ (idx.1 : ℝ) * ∑ j ∈ Finset.range idx.1, levelMax ρ H j a :=
+    mul_nonneg idx.1.cast_nonneg (Finset.sum_nonneg fun j _ ↦ levelMax_nonneg ρ H j a)
+  linarith
 
 private theorem exists_truncTubeWeight_pos (ρ : PartitionOfUnity ι B)
     (H : C(I × A, B)) (a : A) :
@@ -321,21 +309,15 @@ private theorem locallyFinite_truncTubeWeight (ρ : PartitionOfUnity ι B)
         (Finset.mem_range.2 hm₀_lt)
     have hNc : 1 ≤ (N : ℝ) * c := by
       have hceil : 1 / c ≤ ⌈1 / c⌉₊ := Nat.le_ceil (1 / c)
-      have hN_ge : (⌈1 / c⌉₊ : ℝ) ≤ N := by
-        exact_mod_cast (Nat.le_succ _).trans (le_max_right _ _)
-      have := (div_le_iff₀ hc).1 (hceil.trans hN_ge)
-      linarith
-    have hmul : 1 ≤ (m : ℝ) * ∑ j ∈ Finset.range m, levelMax ρ H j a := by
-      have hm_cast : (N : ℝ) ≤ m := by exact_mod_cast hm_le
-      exact hNc.trans (mul_le_mul hm_cast hsum_ge hc.le m.cast_nonneg)
-    have hle1 : tubeWeight ρ H m α a ≤ 1 := tubeWeight_le_one ρ H m α a
-    rw [truncTubeWeight_apply] at hpos
-    rcases lt_max_iff.1 hpos with h0 | hsub
-    · exact lt_irrefl 0 h0
-    · linarith
+      have hN_ge : (⌈1 / c⌉₊ : ℝ) ≤ N := by exact_mod_cast (Nat.le_succ _).trans (le_max_right _ _)
+      linarith [(div_le_iff₀ hc).1 (hceil.trans hN_ge)]
+    have hm_cast : (N : ℝ) ≤ m := by exact_mod_cast hm_le
+    have hmul : 1 ≤ (m : ℝ) * ∑ j ∈ Finset.range m, levelMax ρ H j a :=
+      hNc.trans (mul_le_mul hm_cast hsum_ge hc.le m.cast_nonneg)
+    have hsub := (lt_max_iff.1 hpos).resolve_left (lt_irrefl 0)
+    linarith [tubeWeight_le_one ρ H m α a]
   refine Finset.mem_coe.2 (Finset.mem_sigma.2 ⟨Finset.mem_range.2 hmN, ?_⟩)
-  refine Fintype.mem_piFinset.2 fun k ↦ ?_
-  exact hF (segEndpt m k.castSucc)
+  exact Fintype.mem_piFinset.2 fun k ↦ hF (segEndpt m k.castSucc)
     (pos_of_tubeWeight_pos hη_pos k (left_mem_Icc.2 (segEndpt_mono m k.castSucc_le_succ))).ne'
 
 private noncomputable def tubePartition (ρ : PartitionOfUnity ι B)
@@ -370,7 +352,7 @@ private def PartialLift.congrTime {X : Type*} [TopologicalSpace X] {p : E → B}
 private def PartialLift.initial {X : Type*} [TopologicalSpace X] {p : E → B}
     (f : C(X, E)) (H : C(I × X, B)) (hH : ∀ x, H (0, x) = p (f x)) :
     PartialLift p f H (.const X 0) where
-  map := ⟨fun z ↦ f z.2, f.continuous.comp continuous_snd⟩
+  map := ⟨fun z ↦ f z.2, by fun_prop⟩
   proj_eq t x := by
     rw [ContinuousMap.coe_mk, ContinuousMap.const_apply, min_eq_right unitInterval.nonneg', hH x]
   zero_eq _ := rfl
@@ -378,8 +360,7 @@ private def PartialLift.initial {X : Type*} [TopologicalSpace X] {p : E → B}
 
 private def restrictHomotopy {X Y : Type*} [TopologicalSpace X] [TopologicalSpace Y]
     (H : C(I × X, Y)) (S : Set X) : C(I × S, Y) :=
-  ⟨fun z ↦ H (z.1, z.2.1),
-    H.continuous.comp (continuous_fst.prodMk (continuous_subtype_val.comp continuous_snd))⟩
+  ⟨fun z ↦ H (z.1, z.2.1), by fun_prop⟩
 
 @[simp]
 private theorem restrictHomotopy_apply {X Y : Type*} [TopologicalSpace X] [TopologicalSpace Y]
@@ -412,41 +393,34 @@ private theorem PartialLift.extendFromOpen {X : Type*} [TopologicalSpace X] {p :
     intro t x hx; dsimp only [raw]; split_ifs; rfl
   have hraw_neg : ∀ (t : I) {x : X} (hx : x ∉ O), raw (t, x) = L.map (t, x) := by
     intro t x hx; dsimp only [raw]; split_ifs; rfl
-  have hraw_eq_of_eq : ∀ t x, τ₁ x = τ₂ x → raw (t, x) = L.map (t, x) := by
-    intro t x heq
+  have hraw_eq_of_eq : ∀ t x, τ₁ x = τ₂ x → raw (t, x) = L.map (t, x) := fun t x heq ↦ by
     by_cases hx : x ∈ O
     · rw [hraw_pos t hx]; exact hLO t ⟨x, hx⟩ heq
     · exact hraw_neg t hx
+  have heq_of_notMem : ∀ {x : X}, x ∉ O → τ₁ x = τ₂ x := fun {x} hx ↦
+    le_antisymm (hτ x) (not_lt.1 fun hlt ↦ hx (hclos (subset_closure hlt)))
   have hraw_cont : Continuous raw := by
     refine continuous_iff_continuousAt.2 fun ⟨t₀, x₀⟩ ↦ ?_
     by_cases hx₀ : x₀ ∈ O
-    · have hOn : ContinuousOn raw (univ ×ˢ O) := by
-        rw [continuousOn_iff_continuous_domRestrict]
-        have hfun : (univ ×ˢ O).domRestrict raw = fun z : univ ×ˢ O ↦
-            LO.map (z.1.1, ⟨z.1.2, z.2.2⟩) := by
-          ext z
-          exact hraw_pos z.1.1 z.2.2
-        rw [hfun]
-        exact LO.map.continuous.comp
-          ((continuous_fst.comp continuous_subtype_val).prodMk
-            ((continuous_snd.comp continuous_subtype_val).subtype_mk fun z ↦ z.2.2))
+    · have hOn : ContinuousOn raw (univ ×ˢ O) :=
+        continuousOn_iff_continuous_domRestrict.2 <|
+          (by fun_prop : Continuous fun z : univ ×ˢ O ↦ LO.map (z.1.1, ⟨z.1.2, z.2.2⟩)).congr
+            fun z ↦ (hraw_pos z.1.1 z.2.2).symm
       exact hOn.continuousAt ((isOpen_univ.prod hO).mem_nhds ⟨mem_univ t₀, hx₀⟩)
-    · have hx₀_compl : x₀ ∈ (closure {x : X | τ₁ x < τ₂ x})ᶜ :=
-        fun hmem ↦ hx₀ (hclos hmem)
+    · have hx₀_compl : x₀ ∈ (closure {x : X | τ₁ x < τ₂ x})ᶜ := fun hmem ↦ hx₀ (hclos hmem)
       have hopen_compl : IsOpen ((univ : Set I) ×ˢ (closure {x : X | τ₁ x < τ₂ x})ᶜ) :=
         isOpen_univ.prod isClosed_closure.isOpen_compl
       refine L.map.continuous.continuousAt.congr
         (Filter.eventually_of_mem (hopen_compl.mem_nhds ⟨mem_univ t₀, hx₀_compl⟩) fun z hz ↦ ?_)
-      have hnot_lt : ¬ τ₁ z.2 < τ₂ z.2 := fun hlt ↦ hz.2 (subset_closure hlt)
-      exact (hraw_eq_of_eq z.1 z.2 (le_antisymm (hτ z.2) (not_lt.1 hnot_lt))).symm
+      exact (hraw_eq_of_eq z.1 z.2
+        (le_antisymm (hτ z.2) (not_lt.1 fun hlt ↦ hz.2 (subset_closure hlt)))).symm
   refine ⟨{
     map := ⟨raw, hraw_cont⟩
     proj_eq := fun t x ↦ by
       rw [ContinuousMap.coe_mk]
       by_cases hx : x ∈ O
       · rw [hraw_pos t hx, LO.proj_eq]; rfl
-      · have hnot_lt : ¬ τ₁ x < τ₂ x := fun hlt ↦ hx (hclos (subset_closure hlt))
-        have heq : τ₁ x = τ₂ x := le_antisymm (hτ x) (not_lt.1 hnot_lt)
+      · have heq := heq_of_notMem hx
         rw [hraw_eq_of_eq t x heq, L.proj_eq, heq]
     zero_eq := fun x ↦ by
       rw [ContinuousMap.coe_mk]
@@ -458,20 +432,16 @@ private theorem PartialLift.extendFromOpen {X : Type*} [TopologicalSpace X] {p :
       by_cases hx : x ∈ O
       · rw [hraw_pos t hx, hraw_pos (τ₂ x) hx]
         exact LO.const_of_ge t ⟨x, hx⟩ ht
-      · have hnot_lt : ¬ τ₁ x < τ₂ x := fun hlt ↦ hx (hclos (subset_closure hlt))
-        have heq : τ₁ x = τ₂ x := le_antisymm (hτ x) (not_lt.1 hnot_lt)
+      · have heq := heq_of_notMem hx
         rw [hraw_eq_of_eq t x heq, hraw_eq_of_eq (τ₂ x) x heq, ← heq]
         exact L.const_of_ge t x (heq ▸ ht)
   }, hraw_eq_of_eq⟩
 
 private def stepTime {X : Type*} [TopologicalSpace X] (τ₁ τ₂ : C(X, I)) : C(I × X, I) :=
-  have hmem : ∀ z : I × X, min (τ₂ z.2 : ℝ) ((τ₁ z.2 : ℝ) + (z.1 : ℝ)) ∈ I := fun z ↦
-    ⟨le_min (τ₂ z.2).2.1 (add_nonneg (τ₁ z.2).2.1 z.1.2.1),
-      (min_le_left _ _).trans (τ₂ z.2).2.2⟩
-  ⟨fun z ↦ ⟨min (τ₂ z.2 : ℝ) ((τ₁ z.2 : ℝ) + (z.1 : ℝ)), hmem z⟩,
-    ((continuous_subtype_val.comp (τ₂.continuous.comp continuous_snd)).min
-      ((continuous_subtype_val.comp (τ₁.continuous.comp continuous_snd)).add
-        (continuous_subtype_val.comp continuous_fst))).subtype_mk hmem⟩
+  ⟨fun z ↦ ⟨min (τ₂ z.2 : ℝ) ((τ₁ z.2 : ℝ) + (z.1 : ℝ)),
+      ⟨le_min (τ₂ z.2).2.1 (add_nonneg (τ₁ z.2).2.1 z.1.2.1),
+        (min_le_left _ _).trans (τ₂ z.2).2.2⟩⟩,
+    by fun_prop⟩
 
 @[simp]
 private theorem coe_stepTime {X : Type*} [TopologicalSpace X] (τ₁ τ₂ : C(X, I)) (s : I) (x : X) :
@@ -486,23 +456,18 @@ private theorem stepTime_mem_Icc {X : Type*} [TopologicalSpace X] {τ₁ τ₂ :
 private theorem stepTime_zero {X : Type*} [TopologicalSpace X] {τ₁ τ₂ : C(X, I)}
     (hτ : ∀ x, τ₁ x ≤ τ₂ x) (x : X) :
     stepTime τ₁ τ₂ (0, x) = τ₁ x := by
-  apply Subtype.ext
+  ext
   have hle : (τ₁ x : ℝ) ≤ τ₂ x := hτ x
   simp [hle]
 
 private def stepOffset {X : Type*} [TopologicalSpace X] {τ₁ τ₂ : C(X, I)}
     (hτ : ∀ x, τ₁ x ≤ τ₂ x) : C(I × X, I) :=
-  have hmem : ∀ z : I × X,
-      max (τ₁ z.2 : ℝ) (min (τ₂ z.2 : ℝ) (z.1 : ℝ)) - (τ₁ z.2 : ℝ) ∈ I := fun z ↦
-    ⟨sub_nonneg.2 (le_max_left _ _), by
-      have h1 : max (τ₁ z.2 : ℝ) (min (τ₂ z.2 : ℝ) (z.1 : ℝ)) ≤ τ₂ z.2 :=
-        max_le (hτ z.2) (min_le_left _ _)
-      linarith [(τ₁ z.2).2.1, (τ₂ z.2).2.2]⟩
-  ⟨fun z ↦ ⟨max (τ₁ z.2 : ℝ) (min (τ₂ z.2 : ℝ) (z.1 : ℝ)) - (τ₁ z.2 : ℝ), hmem z⟩,
-    (((continuous_subtype_val.comp (τ₁.continuous.comp continuous_snd)).max
-      ((continuous_subtype_val.comp (τ₂.continuous.comp continuous_snd)).min
-        (continuous_subtype_val.comp continuous_fst))).sub
-      (continuous_subtype_val.comp (τ₁.continuous.comp continuous_snd))).subtype_mk hmem⟩
+  ⟨fun z ↦ ⟨max (τ₁ z.2 : ℝ) (min (τ₂ z.2 : ℝ) (z.1 : ℝ)) - (τ₁ z.2 : ℝ),
+      ⟨sub_nonneg.2 (le_max_left _ _), by
+        have h1 : max (τ₁ z.2 : ℝ) (min (τ₂ z.2 : ℝ) (z.1 : ℝ)) ≤ τ₂ z.2 :=
+          max_le (hτ z.2) (min_le_left _ _)
+        linarith [(τ₁ z.2).2.1, (τ₂ z.2).2.2]⟩⟩,
+    by fun_prop⟩
 
 @[simp]
 private theorem coe_stepOffset {X : Type*} [TopologicalSpace X] {τ₁ τ₂ : C(X, I)}
@@ -513,25 +478,23 @@ private theorem coe_stepOffset {X : Type*} [TopologicalSpace X] {τ₁ τ₂ : C
 private theorem stepOffset_eq_zero_of_le {X : Type*} [TopologicalSpace X] {τ₁ τ₂ : C(X, I)}
     (hτ : ∀ x, τ₁ x ≤ τ₂ x) {t : I} {x : X} (ht : t ≤ τ₁ x) :
     stepOffset hτ (t, x) = 0 := by
-  apply Subtype.ext
-  have hmin : min (τ₂ x : ℝ) (t : ℝ) ≤ τ₁ x := (min_le_right _ _).trans ht
-  simp [max_eq_left hmin]
+  ext
+  simp [max_eq_left ((min_le_right (τ₂ x : ℝ) (t : ℝ)).trans ht)]
 
 private theorem stepOffset_eq_zero_of_eq {X : Type*} [TopologicalSpace X] {τ₁ τ₂ : C(X, I)}
     (hτ : ∀ x, τ₁ x ≤ τ₂ x) (t : I) {x : X} (heq : τ₁ x = τ₂ x) :
     stepOffset hτ (t, x) = 0 := by
-  apply Subtype.ext
+  ext
   have hmin : min (τ₂ x : ℝ) (t : ℝ) ≤ τ₁ x := heq ▸ min_le_left _ _
   simp [max_eq_left hmin]
 
 private theorem stepTime_stepOffset_of_gt {X : Type*} [TopologicalSpace X] {τ₁ τ₂ : C(X, I)}
     (hτ : ∀ x, τ₁ x ≤ τ₂ x) {t : I} {x : X} (ht : τ₁ x < t) :
     stepTime τ₁ τ₂ (stepOffset hτ (t, x), x) = min t (τ₂ x) := by
-  apply Subtype.ext
-  rw [coe_stepTime, coe_stepOffset]
+  ext
   have hmax : max (τ₁ x : ℝ) (min (τ₂ x : ℝ) (t : ℝ)) = min (τ₂ x : ℝ) (t : ℝ) :=
     max_eq_right (le_min (hτ x) ht.le)
-  rw [hmax, add_sub_cancel, ← min_assoc, min_self, min_comm]
+  rw [coe_stepTime, coe_stepOffset, hmax, add_sub_cancel, ← min_assoc, min_self, min_comm]
   rfl
 
 /-- Advance a `PartialLift` from stopping time `τ₁` to `τ₂` using a local Hurewicz lift over an
@@ -546,36 +509,21 @@ private theorem PartialLift.advanceOpen {X : Type*} [TopologicalSpace X] {p : E 
     ∃ L' : PartialLift p f H τ₂,
       ∀ t x, τ₁ x = τ₂ x → L'.map (t, x) = L.map (t, x) := by
   classical
-  let gO : C(O, E) :=
-    ⟨fun x ↦ L.map (τ₁ x.1, x.1),
-      L.map.continuous.comp ((τ₁.continuous.comp continuous_subtype_val).prodMk
-        continuous_subtype_val)⟩
-  let KO : C(I × O, B) :=
-    ⟨fun z ↦ H (stepTime τ₁ τ₂ (z.1, z.2.1), z.2.1),
-      H.continuous.comp (((stepTime τ₁ τ₂).continuous.comp
-        (continuous_fst.prodMk (continuous_subtype_val.comp continuous_snd))).prodMk
-          (continuous_subtype_val.comp continuous_snd))⟩
+  let gO : C(O, E) := ⟨fun x ↦ L.map (τ₁ x.1, x.1), by fun_prop⟩
+  let KO : C(I × O, B) := ⟨fun z ↦ H (stepTime τ₁ τ₂ (z.1, z.2.1), z.2.1), by fun_prop⟩
   obtain ⟨GO, hGO_proj, hGO_zero⟩ := hhlp.exists_lift_of_mem gO KO
     (fun z ↦ hHU z.2.1 z.2.2 _ (stepTime_mem_Icc hτ z.1 z.2.1))
     (fun x ↦ by simp only [KO, gO, ContinuousMap.coe_mk, stepTime_zero hτ, L.proj_eq, min_self])
   let onO : C(I × O, E) :=
     ⟨fun z ↦ if z.1 ≤ τ₁ z.2.1 then L.map (z.1, z.2.1)
         else GO (stepOffset hτ (z.1, z.2.1), z.2),
-      Continuous.if_le
-        (L.map.continuous.comp
-          (continuous_fst.prodMk (continuous_subtype_val.comp continuous_snd)))
-        (GO.continuous.comp (((stepOffset hτ).continuous.comp
-          (continuous_fst.prodMk (continuous_subtype_val.comp continuous_snd))).prodMk
-            continuous_snd))
-        continuous_fst (τ₁.continuous.comp (continuous_subtype_val.comp continuous_snd))
-        fun z hz ↦ by
-          have ht : z.1 = τ₁ z.2.1 := hz
-          rw [stepOffset_eq_zero_of_le hτ ht.le, hGO_zero z.2]
-          exact congrArg (fun s ↦ L.map (s, z.2.1)) ht⟩
+      Continuous.if_le (by fun_prop) (by fun_prop) continuous_fst (by fun_prop) fun z hz ↦ by
+        rw [stepOffset_eq_zero_of_le hτ hz.le, hGO_zero z.2, hz]; rfl⟩
+  have honO_apply (t : I) (x : O) :
+      onO (t, x) = if t ≤ τ₁ x.1 then L.map (t, x.1) else GO (stepOffset hτ (t, x.1), x) := rfl
   have honO_eq_of_eq : ∀ (t : I) (x : O), τ₁ x.1 = τ₂ x.1 → onO (t, x) = L.map (t, x.1) := by
     intro t x heq
-    dsimp only [onO]
-    rw [ContinuousMap.coe_mk]
+    rw [honO_apply]
     split_ifs with ht
     · rfl
     · rw [stepOffset_eq_zero_of_eq hτ t heq, hGO_zero x]
@@ -583,42 +531,28 @@ private theorem PartialLift.advanceOpen {X : Type*} [TopologicalSpace X] {p : E 
   let LO : PartialLift p (f.restrict O) (restrictHomotopy H O) (τ₂.restrict O) :=
     { map := onO
       proj_eq := fun t x ↦ by
-        dsimp only [onO]
-        rw [ContinuousMap.coe_mk, restrictHomotopy_apply, ContinuousMap.restrict_apply]
+        rw [honO_apply, restrictHomotopy_apply, ContinuousMap.restrict_apply]
         split_ifs with ht
         · rw [L.proj_eq, min_eq_left ht, min_eq_left (ht.trans (hτ x.1))]
         · rw [← Function.comp_apply (f := p), hGO_proj]
-          dsimp only [KO]
-          rw [ContinuousMap.coe_mk, stepTime_stepOffset_of_gt hτ (not_le.1 ht)]
+          exact stepTime_stepOffset_of_gt hτ (not_le.1 ht) ▸ rfl
       zero_eq := fun x ↦ by
-        dsimp only [onO]
-        rw [ContinuousMap.coe_mk, ContinuousMap.restrict_apply]
-        split_ifs with h0
-        · exact L.zero_eq x.1
-        · exact absurd unitInterval.nonneg' h0
+        rw [honO_apply, ContinuousMap.restrict_apply, ite_eq_left unitInterval.nonneg', L.zero_eq]
       const_of_ge := fun t x ht ↦ by
         rw [ContinuousMap.restrict_apply] at ht ⊢
         by_cases heq : τ₁ x.1 = τ₂ x.1
         · rw [honO_eq_of_eq t x heq, honO_eq_of_eq (τ₂ x.1) x heq, ← heq]
           exact L.const_of_ge t x.1 (heq ▸ ht)
         · have hlt : τ₁ x.1 < τ₂ x.1 := lt_of_le_of_ne (hτ x.1) heq
-          dsimp only [onO]
-          rw [ContinuousMap.coe_mk, ContinuousMap.coe_mk]
-          split_ifs with ht₁ hτ₂ hτ₂
-          · exact absurd (hlt.trans_le ht) (not_lt.2 ht₁)
-          · exact absurd (hlt.trans_le ht) (not_lt.2 ht₁)
-          · exact absurd hlt (not_lt.2 hτ₂)
-          · have h_off : stepOffset hτ (t, x.1) = stepOffset hτ (τ₂ x.1, x.1) := by
-              apply Subtype.ext
-              have htle : (τ₂ x.1 : ℝ) ≤ t := ht
-              simp [min_eq_left htle]
-            rw [h_off] }
+          rw [honO_apply, honO_apply,
+            ite_eq_right (not_le.2 (hlt.trans_le ht)), ite_eq_right (not_le.2 hlt)]
+          have htle : (τ₂ x.1 : ℝ) ≤ t := ht
+          exact congrArg (fun s ↦ GO (s, x)) (Subtype.ext (by simp [min_eq_left htle])) }
   exact L.extendFromOpen hτ hO hclos LO honO_eq_of_eq
 
 private noncomputable def clipSegTime {X : Type*} [TopologicalSpace X] (τ₁ τ₂ : C(X, I))
     (m : ℕ) (j : Fin (m + 2)) : C(X, I) :=
-  ⟨fun x ↦ max (τ₁ x) (min (τ₂ x) (segEndpt m j)),
-    τ₁.continuous.max (τ₂.continuous.min continuous_const)⟩
+  ⟨fun x ↦ max (τ₁ x) (min (τ₂ x) (segEndpt m j)), by fun_prop⟩
 
 private theorem clipSegTime_apply {X : Type*} [TopologicalSpace X] (τ₁ τ₂ : C(X, I))
     (m : ℕ) (j : Fin (m + 2)) (x : X) :
@@ -678,11 +612,8 @@ private theorem Icc_clipSegTime_subset {X : Type*} [TopologicalSpace X] {τ₁ �
       Icc (segEndpt m k.castSucc) (segEndpt m k.succ) := by
   intro t ht
   rw [mem_Icc, clipSegTime_apply, clipSegTime_apply] at ht
-  refine ⟨?_, ?_⟩
-  · have hmin : segEndpt m k.castSucc = min (τ₂ x) (segEndpt m k.castSucc) :=
-      (min_eq_right hx.1).symm
-    exact (hmin.trans_le (le_max_right _ _)).trans ht.1
-  · exact ht.2.trans (max_le hx.2 (min_le_right _ _))
+  exact ⟨((min_eq_right hx.1).symm.trans_le (le_max_right _ _)).trans ht.1,
+    ht.2.trans (max_le hx.2 (min_le_right _ _))⟩
 
 /-- Advance a `PartialLift` across `m + 1` uniform segments on an open stratum `S ⊆ A` where each
 segment `[k/(m+1), (k+1)/(m+1)]` maps into `{b | 0 < ρ (α k) b} ⊆ U (α k)`. -/
@@ -709,8 +640,7 @@ private theorem PartialLift.advanceTube {ι : Type*} {A : Type w} [TopologicalSp
           ρ (α k) (H (Icc.convexComb (σ₁ z.2) (σ₂ z.2) z.1, z.2)) :=
         (ρ (α k)).continuous.comp <| H.continuous.comp <|
           (Icc.continuous_convexComb_prod.comp
-            ((σ₁.continuous.comp continuous_snd).prodMk
-              ((σ₂.continuous.comp continuous_snd).prodMk continuous_fst))).prodMk continuous_snd
+            (by fun_prop : Continuous fun z : I × S ↦ (σ₁ z.2, σ₂ z.2, z.1))).prodMk continuous_snd
       have hφx_cont : ∀ x : S, Continuous fun u : I ↦
           ρ (α k) (H (Icc.convexComb (σ₁ x) (σ₂ x) u, x)) :=
         fun x ↦ hφ_cont.comp (continuous_id.prodMk continuous_const)
@@ -739,15 +669,12 @@ section SequentialSchedule
 
 private def cumTime {A : Type w} [TopologicalSpace A] (μ : PartitionOfUnity ℕ A) (n : ℕ) :
     C(A, I) :=
-  have hmem : ∀ a : A, ∑ j ∈ Finset.range n, μ j a ∈ I := fun a ↦
-    ⟨Finset.sum_nonneg fun j _ ↦ μ.nonneg j a, by
+  ⟨fun a ↦ ⟨∑ j ∈ Finset.range n, μ j a, Finset.sum_nonneg fun j _ ↦ μ.nonneg j a, by
       classical
-      have h1 := μ.sum_finsupport' (mem_univ a)
-        (Finset.subset_union_right (s₁ := Finset.range n))
       exact (Finset.sum_le_sum_of_subset_of_nonneg Finset.subset_union_left
-        fun j _ _ ↦ μ.nonneg j a).trans h1.le⟩
-  ⟨fun a ↦ ⟨∑ j ∈ Finset.range n, μ j a, hmem a⟩,
-    (continuous_finsetSum (Finset.range n) fun j _ ↦ (μ j).continuous).subtype_mk hmem⟩
+        fun j _ _ ↦ μ.nonneg j a).trans
+          (μ.sum_finsupport' (mem_univ a) Finset.subset_union_right).le⟩,
+    by fun_prop⟩
 
 @[simp]
 private theorem coe_cumTime {A : Type w} [TopologicalSpace A] (μ : PartitionOfUnity ℕ A)
@@ -758,8 +685,7 @@ private theorem coe_cumTime {A : Type w} [TopologicalSpace A] (μ : PartitionOfU
 private theorem cumTime_zero_apply {A : Type w} [TopologicalSpace A] (μ : PartitionOfUnity ℕ A)
     (a : A) :
     cumTime μ 0 a = 0 := by
-  apply Subtype.ext
-  simp
+  ext; simp
 
 private theorem cumTime_le_succ {A : Type w} [TopologicalSpace A] (μ : PartitionOfUnity ℕ A)
     (n : ℕ) (a : A) :
@@ -808,10 +734,9 @@ private theorem PartialLift.advanceGapStep {ι : Type*} {E : Type u} {B : Type v
       ∀ t (x : Stratum F.1), τ₁ x.1 = τ₂ x.1 → LF.map (t, x) = L.map (t, x.1) := by
     intro ⟨F, hcard, hne⟩
     let idx := hne.choose
-    have hidx : idx ∈ F := hne.choose_spec
     refine (L.restrict (Stratum F)).advanceTube ρ hρ hlift (hStratum_open F)
       (fun x ↦ hτ x.1) idx.1 idx.2 fun x k t ht ↦ ?_
-    have hν_pos : 0 < tubePartition ρ H idx x.1 := ν.pos_of_gap_pos x.2 hidx
+    have hν_pos : 0 < tubePartition ρ H idx x.1 := ν.pos_of_gap_pos x.2 hne.choose_spec
     rw [tubePartition, PartitionOfUnity.ofExistsPos_pos_iff] at hν_pos
     exact pos_of_tubeWeight_pos (tubeWeight_pos_of_truncTubeWeight_pos hν_pos) k ht
   choose LF hLF using hlocal
@@ -819,15 +744,11 @@ private theorem PartialLift.advanceGapStep {ι : Type*} {E : Type u} {B : Type v
     ∃ F : {F : Finset (Σ m : ℕ, Fin (m + 1) → ι) // F.card = n ∧ F.Nonempty}, a ∈ Stratum F.1
   let O : Set A := {a : A | hasStratum a}
   have hO : IsOpen O := by
-    have hO_eq : O = ⋃ F : {F // F.card = n ∧ F.Nonempty}, Stratum F.1 := by
-      ext a; simp [O, hasStratum]
-    rw [hO_eq]
-    exact isOpen_iUnion fun F ↦ hStratum_open F.1
-  have hclos_sub : closure {a : A | τ₁ a < τ₂ a} ⊆ O := by
-    intro a ha
-    have htsupp : a ∈ tsupport (μ n) := closure_cumTime_lt_subset μ n ha
+    convert isOpen_iUnion fun F : {F // F.card = n ∧ F.Nonempty} ↦ hStratum_open F.1
+    ext a; simp [O, hasStratum]
+  have hclos_sub : closure {a : A | τ₁ a < τ₂ a} ⊆ O := fun a ha ↦ by
     have hsupp_gap : a ∈ support (ν.gapPartition n) :=
-      ν.gapPartition.tsupport_shrink_subset_support n htsupp
+      ν.gapPartition.tsupport_shrink_subset_support n (closure_cumTime_lt_subset μ n ha)
     have hpos_gap : 0 < ν.gapPartition n a :=
       lt_of_le_of_ne (ν.gapPartition.nonneg n a) (Ne.symm hsupp_gap)
     obtain ⟨F, hcard, hgap⟩ := ν.exists_gap_pos_of_gapPartition_pos hpos_gap
@@ -838,27 +759,18 @@ private theorem PartialLift.advanceGapStep {ι : Type*} {E : Type u} {B : Type v
         (t : I) (x : O) (hx : x.1 ∈ Stratum F.1),
         onO_fun (t, x) = (LF F).map (t, ⟨x.1, hx⟩) := by
     intro F t x hx
-    dsimp only [onO_fun]
     have hsub : x.2.choose = F := Subtype.ext <|
       ν.eq_of_gap_pos_of_card_eq x.2.choose_spec hx (x.2.choose.2.1.trans F.2.1.symm)
-    subst hsub
-    rfl
+    cases hsub; rfl
   have honO_cont : Continuous onO_fun := by
     refine continuous_iff_continuousAt.2 fun ⟨t₀, x₀⟩ ↦ ?_
     obtain ⟨F, hx₀F⟩ := x₀.2
     let UF : Set O := {x : O | x.1 ∈ Stratum F.1}
     have hUF_open : IsOpen UF := (hStratum_open F.1).preimage continuous_subtype_val
-    have hOn : ContinuousOn onO_fun (univ ×ˢ UF) := by
-      rw [continuousOn_iff_continuous_domRestrict]
-      have hfun : (univ ×ˢ UF).domRestrict onO_fun = fun z : univ ×ˢ UF ↦
-          (LF F).map (z.1.1, ⟨z.1.2.1, z.2.2⟩) := by
-        ext z
-        exact honO_stratum F z.1.1 z.1.2 z.2.2
-      rw [hfun]
-      exact (LF F).map.continuous.comp
-        ((continuous_fst.comp continuous_subtype_val).prodMk
-          ((continuous_subtype_val.comp
-            (continuous_snd.comp continuous_subtype_val)).subtype_mk fun z ↦ z.2.2))
+    have hOn : ContinuousOn onO_fun (univ ×ˢ UF) :=
+      continuousOn_iff_continuous_domRestrict.2 <|
+        (by fun_prop : Continuous fun z : univ ×ˢ UF ↦ (LF F).map (z.1.1, ⟨z.1.2.1, z.2.2⟩)).congr
+          fun z ↦ (honO_stratum F z.1.1 z.1.2 z.2.2).symm
     exact hOn.continuousAt ((isOpen_univ.prod hUF_open).mem_nhds ⟨mem_univ t₀, hx₀F⟩)
   let LO : PartialLift p (f.restrict O) (restrictHomotopy H O) (τ₂.restrict O) :=
     { map := ⟨onO_fun, honO_cont⟩
@@ -875,13 +787,9 @@ private theorem PartialLift.advanceGapStep {ι : Type*} {E : Type u} {B : Type v
         rw [ContinuousMap.coe_mk, ContinuousMap.restrict_apply,
           honO_stratum F t x hxF, honO_stratum F (τ₂ x.1) x hxF]
         exact (LF F).const_of_ge t ⟨x.1, hxF⟩ ht }
-  have hLO_eq : ∀ (t : I) (x : O), τ₁ x.1 = τ₂ x.1 → LO.map (t, x) = L.map (t, x.1) := by
-    intro t x heq
-    obtain ⟨F, hxF⟩ := x.2
-    dsimp only [LO]
-    rw [ContinuousMap.coe_mk, honO_stratum F t x hxF]
-    exact hLF F t ⟨x.1, hxF⟩ heq
-  exact L.extendFromOpen hτ hO hclos_sub LO hLO_eq
+  refine L.extendFromOpen hτ hO hclos_sub LO fun t x heq ↦ ?_
+  obtain ⟨F, hxF⟩ := x.2
+  exact (honO_stratum F t x hxF).trans (hLF F t ⟨x.1, hxF⟩ heq)
 
 end SequentialSchedule
 
