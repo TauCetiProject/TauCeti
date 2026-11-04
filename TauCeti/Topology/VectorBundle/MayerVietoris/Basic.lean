@@ -52,9 +52,11 @@ in the top degree `r` is determined by its restrictions to the fibre pairs `(E_b
 (`Bundle.Trivialization.singularCohomology_thomPairOver_ext`, in
 `TauCeti.Topology.VectorBundle.ThomClass`). Since `Hʳ⁻¹` vanishes over finite
 unions of trivializing open sets, induction on the number of sets gives the same over such a union
-(`TauCeti.singularCohomology_thomPairOver_biUnion_ext`), and shows that classes over the sets
-with the same restrictions to the fibres where two sets meet glue to a class over the union
-(`TauCeti.exists_singularCohomology_thomPairOver_biUnion`).
+(`TauCeti.singularCohomology_thomPairOver_biUnion_ext`), so over a compact base a class of
+`Hʳ(E, E₀)` is determined by its restrictions to the fibres
+(`TauCeti.singularCohomology_thomPair_ext_of_compactSpace`). Induction also shows that classes
+over the sets with the same restrictions to the fibres where two sets meet glue to a class over the
+union (`TauCeti.exists_singularCohomology_thomPairOver_biUnion`).
 
 Over a trivializing set, the pull-back of a generator of `Hʳ(F, F ∖ {0})` along the trivialization
 and the projection to the fibre is a local Thom class
@@ -81,6 +83,8 @@ bundle provides (`TauCeti.VectorBundleOrientation.exists_isThomClass`).
   `U ∪ V` with given restrictions to the open sets `U` and `V`.
 * `TauCeti.singularCohomology_thomPairOver_biUnion_ext`: over a finite union of trivializing open
   sets, a class in the top degree is determined on the fibres.
+* `TauCeti.singularCohomology_thomPair_ext_of_compactSpace`: over a compact base, a class in the
+  top degree is determined on the fibres.
 * `TauCeti.exists_singularCohomology_thomPairOver_biUnion`: classes over finitely many
   trivializing open sets agreeing on the fibres glue to a class over their union.
 * `TauCeti.exists_isThomClass_of_compactSpace`: a real vector bundle over a compact base has a Thom
@@ -602,6 +606,33 @@ theorem exists_singularCohomology_thomPairOver_biUnion {ι : Type*} (s : Finset 
     · exact hza
     · rw [← hy i hi, ← hzs, singularCohomologyMap_thomPairOverMap_thomPairOverMap]
 
+/-- **Classes over a compact base in the top degree are determined on the fibres**: for a real
+vector bundle over a compact base, two classes of `Hʳ(E, E₀; R, M)`, `r = dim F` and `R`
+projective, whose restrictions to the fibre pair `(E_b, E_b ∖ {0})` over every point `b` agree,
+are equal. In particular a Thom class is determined by its restrictions to the fibres. -/
+theorem singularCohomology_thomPair_ext_of_compactSpace [CompactSpace B] [VectorBundle ℝ F E]
+    {u v : (thomPair F E).singularCohomology R' K M' (finrank ℝ F)}
+    (h : ∀ b, TopPair.singularCohomologyMap (fiberThomPairMap F E b) _ u =
+      TopPair.singularCohomologyMap (fiberThomPairMap F E b) _ v) : u = v := by
+  obtain ⟨t, ht⟩ := isCompact_univ.elim_finite_subcover
+    (fun b : B ↦ (trivializationAt F E b).baseSet) (fun b ↦ (trivializationAt F E b).open_baseSet)
+    fun b _ ↦ mem_iUnion.2 ⟨b, mem_baseSet_trivializationAt F E b⟩
+  -- Restriction to the pair over the finite union of base sets, which is the whole base, is
+  -- injective.
+  let ρ := thomPairOverMap F E (subset_univ (⋃ b ∈ t, (trivializationAt F E b).baseSet)) ≫
+    (thomPairOverUnivIso F E).hom
+  have hρ (x : (thomPair F E).singularCohomology R' K M' (finrank ℝ F)) :
+      TopPair.singularCohomologyMap ((thomPairOverUnivIso F E).inv ≫ thomPairOverMap F E ht) _
+        (TopPair.singularCohomologyMap ρ _ x) = x := by
+    rw [← TopPair.singularCohomologyMap_comp_apply]
+    simp [ρ]
+  refine (hρ u).symm.trans (Eq.trans (congrArg _ (singularCohomology_thomPairOver_biUnion_ext t
+    (fun b _ ↦ (trivializationAt F E b).open_baseSet)
+    (fun b _ ↦ ⟨trivializationAt F E b, inferInstance, subset_rfl⟩) fun b hb ↦ ?_)) (hρ v))
+  simp only [ρ, ← TopPair.singularCohomologyMap_comp_apply,
+    fiberThomPairOverMap_comp_thomPairOverMap_assoc,
+    fiberThomPairOverMap_comp_thomPairOverUnivIso_hom, h b]
+
 end TopDegree
 
 /-- **Every real vector bundle over a compact base has a Thom class** with coefficients in any
@@ -645,13 +676,10 @@ theorem exists_isThomClass_of_compactSpace [CompactSpace B] [VectorBundle ℝ F 
     _ x, isThomClass_iff.2 ⟨inferInstance, fun b ↦ ?_⟩⟩
   obtain ⟨c, hct, hbc⟩ := mem_iUnion₂.1 (ht (mem_univ b))
   -- The fibre over `b` factors through the Thom pair over the trivializing set `(e c).baseSet`.
-  have hfib : fiberThomPairMap F E b ≫ (thomPairOverUnivIso F E).inv ≫ thomPairOverMap F E ht =
-      fiberThomPairOverMap F E hbc ≫ thomPairOverMap F E
-        (Finset.subset_set_biUnion_of_mem (f := fun c ↦ (e c).baseSet) hct) := by
-    rw [← fiberThomPairOverMap_comp_thomPairOverUnivIso_hom, Category.assoc, Iso.hom_inv_id_assoc,
-      fiberThomPairOverMap_comp_thomPairOverMap, fiberThomPairOverMap_comp_thomPairOverMap]
-  rw [← TopPair.singularCohomologyMap_comp_apply, hfib, TopPair.singularCohomologyMap_comp_apply,
-    hx c hct, hu c b hbc]
+  rw [← TopPair.singularCohomologyMap_comp_apply,
+    fiberThomPairMap_comp_thomPairOverUnivIso_inv_comp_thomPairOverMap F E ht
+      (Finset.subset_set_biUnion_of_mem (f := fun c ↦ (e c).baseSet) hct) hbc,
+    TopPair.singularCohomologyMap_comp_apply, hx c hct, hu c b hbc]
   exact (mapEquiv ((e c).continuousLinearEquivAt ℝ b hbc).complZeroPairIso
     ).span_singleton_apply_eq_top_iff.2 hg
 
