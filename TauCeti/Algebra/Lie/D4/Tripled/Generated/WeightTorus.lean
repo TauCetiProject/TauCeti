@@ -9,6 +9,7 @@ public import TauCeti.Algebra.Lie.D4.Tripled.Generated.StandardComodule
 public import TauCeti.Algebra.Lie.D4.Tripled.Generated.Positive.Basic
 public import TauCeti.Algebra.Lie.D4.Tripled.Generated.BaseChange
 public import TauCeti.Algebra.AlgebraicGroup.Torus.Basic
+public import TauCeti.Algebra.AlgebraicGroup.SplitTorus.CoordinateIso
 import TauCeti.Algebra.AlgebraicGroup.Hopf.KernelPoints
 
 /-!
@@ -75,6 +76,12 @@ def weightTorusDefiningIdeal : HopfIdeal R (generatedCoordinateHopfAlgebra R) :=
   HopfIdeal.kerOfSurjective (generatedWeightTorusCoordinateMap R).hom
     (generatedWeightTorusCoordinateMap_surjective R)
 
+/-- The weight-torus ideal is the kernel of restriction to the weight torus. -/
+theorem weightTorusDefiningIdeal_def :
+    weightTorusDefiningIdeal R = HopfIdeal.kerOfSurjective
+      (generatedWeightTorusCoordinateMap R).hom (generatedWeightTorusCoordinateMap_surjective R) :=
+  (rfl)
+
 /-- A coordinate belongs to the torus ideal exactly when its restriction vanishes. -/
 @[simp↓]
 theorem mem_weightTorusDefiningIdeal {R : Type u} [CommRing R]
@@ -113,13 +120,8 @@ theorem splitTorusCommHopfAlgProperty_quotient_weightTorusDefiningIdeal :
       (FiniteTypeCommHopfAlgCat.quotient (generatedFiniteTypeCoordinateHopfAlgebra R)
         (weightTorusDefiningIdeal R)) := by
   rw [splitTorusCommHopfAlgProperty_iff]
-  let e : Multiplicative (Fin 4 →₀ ℤ) ≃* Multiplicative (ULift.{u} (Fin 4) →₀ ℤ) :=
-    AddEquiv.toMultiplicative (Finsupp.domCongr Equiv.ulift.symm)
-  let i : DiagonalizableGroup.coordinateRing R (SplitTorus.characterGroup (Fin 4)) ≅
-      DiagonalizableGroup.coordinateRing R (SplitTorus.characterGroup (ULift.{u} (Fin 4))) :=
-    ObjectProperty.isoMk _
-      (_root_.CommHopfAlgCat.isoMk (MonoidAlgebra.domCongrBialgEquiv R R e))
-  exact ⟨4, ⟨(weightTorusCoordinateIso R ≪≫ i).symm⟩⟩
+  exact ⟨4, ⟨(weightTorusCoordinateIso R ≪≫ ObjectProperty.isoMk _
+    (SplitTorus.uliftCoordinateRingIso R 4)).symm⟩⟩
 
 /-- Torus points in the generated carrier map to the named tripled weight-torus matrices. -/
 @[simp↓]

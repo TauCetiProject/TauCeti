@@ -53,26 +53,12 @@ noncomputable section
 
 variable (R : Type u) [CommRing R]
 
-private def torusCharacterEquiv :
-    Multiplicative (Fin 4 →₀ ℤ) ≃* Multiplicative (ULift.{u} (Fin 4) →₀ ℤ) :=
-  AddEquiv.toMultiplicative (Finsupp.domCongr (M := ℤ) Equiv.ulift.symm)
-
-private def torusCoordinateIso :
-    (DiagonalizableGroup.coordinateRing R (SplitTorus.characterGroup (Fin 4))).obj ≅
-      (DiagonalizableGroup.coordinateRing R (SplitTorus.characterGroup (ULift.{u} (Fin 4)))).obj :=
-  _root_.CommHopfAlgCat.isoMk (MonoidAlgebra.domCongrBialgEquiv R R torusCharacterEquiv)
-
-private theorem torusCoordinateIso_hom_single
-    (c : Multiplicative (Fin 4 →₀ ℤ)) (r : R) :
-    (torusCoordinateIso R).hom.hom (MonoidAlgebra.single c r) =
-      MonoidAlgebra.single (torusCharacterEquiv c) r := by
-  exact MonoidAlgebra.domCongr_single (R := R) torusCharacterEquiv c r
-
 /-- Restriction to the generated weight torus in the standard rank-four coordinates used by
 `SplitMaximalTorus`. The only change of coordinates is the universe lift on node indices. -/
 def splitMaximalTorusCoordinateMap : generatedCoordinateHopfAlgebra R ⟶
     (DiagonalizableGroup.coordinateRing R (SplitTorus.characterGroup (ULift.{u} (Fin 4)))).obj :=
-  generatedWeightTorusCoordinateMap R ≫ (torusCoordinateIso R).hom
+  generatedWeightTorusCoordinateMap R ≫
+    (SplitTorus.uliftCoordinateRingIso R 4).hom
 
 /-- The standard-coordinate torus is a closed subgroup of the generated carrier. -/
 theorem splitMaximalTorusCoordinateMap_surjective :
@@ -80,15 +66,6 @@ theorem splitMaximalTorusCoordinateMap_surjective :
   rw [splitMaximalTorusCoordinateMap, CommHopfAlgCat.hom_comp, BialgHom.coe_comp]
   exact (ConcreteCategory.bijective_of_isIso _).2.comp
     (generatedWeightTorusCoordinateMap_surjective R)
-
-private theorem ker_splitMaximalTorusCoordinateMap :
-    HopfIdeal.kerOfSurjective (splitMaximalTorusCoordinateMap R).hom
-      (splitMaximalTorusCoordinateMap_surjective R) = weightTorusDefiningIdeal R := by
-  ext x
-  rw [HopfIdeal.mem_kerOfSurjective, mem_weightTorusDefiningIdeal,
-    splitMaximalTorusCoordinateMap, CommHopfAlgCat.hom_comp, BialgHom.coe_comp,
-    Function.comp_apply]
-  exact map_eq_zero_iff _ (ConcreteCategory.bijective_of_isIso (torusCoordinateIso R).hom).1
 
 /-- The standard-coordinate torus map sends a torus point to the named tripled weight-torus
 matrix, with its four parameters read at the lifted node indices. This holds over every
@@ -107,21 +84,16 @@ theorem pointsMulEquiv_mapDomain_splitMaximalTorusCoordinateMap
   rw [splitMaximalTorusCoordinateMap, CommHopfAlgCat.hom_comp, BialgHom.mapDomain_comp,
     MonoidHom.comp_apply]
   have hp := pointsMulEquiv_mapPointsFunctor_generatedWeightTorusCoordinateMap R A
-    (BialgHom.mapDomain (torusCoordinateIso R).hom.hom q)
+    (BialgHom.mapDomain
+      (SplitTorus.uliftCoordinateRingIso R 4).hom.hom q)
   rw [CommHopfAlgCat.Hom.mapPointsFunctor_app_apply,
     CommHopfAlgCat.Hom.mapPointsFunctor_app_apply] at hp
   simp only [BialgHom.mapDomain_apply] at hp ⊢
   refine hp.trans ?_
   congr 2
   funext i
-  ext
-  rw [SplitTorus.pointsMulEquiv_apply_coe, SplitTorus.pointsMulEquiv_apply_coe,
-    WithConv.ofConv_toConv, AlgHom.comp_apply,
-    BialgHom.coe_toAlgHom, torusCoordinateIso_hom_single]
-  congr 1
-  rw [torusCharacterEquiv, AddEquiv.toMultiplicative_apply_apply,
-    toAdd_ofAdd, Finsupp.domCongr_apply, Finsupp.equivMapDomain_single,
-    Equiv.ulift_symm_apply]
+  simpa only [BialgHom.mapDomain_apply] using
+    SplitTorus.pointsMulEquiv_mapDomain_uliftCoordinateRingIso R 4 q i
 
 section Field
 
@@ -146,27 +118,26 @@ private theorem isMaximalTorus_baseChange_weightTorusDefiningIdeal
 
 /-- The rank-four weight torus, as a chosen split maximal torus of the generated tripled D₄
 carrier over a field. Its maximality includes every geometric fiber. -/
-def splitMaximalTorus : SplitMaximalTorus k (generatedCoordinateHopfAlgebra k) 4 where
-  coordinateMap := splitMaximalTorusCoordinateMap k
-  surjective := splitMaximalTorusCoordinateMap_surjective k
-  maximal := by
-    intro K _ _ _
-    rw [ker_splitMaximalTorusCoordinateMap]
-    exact isMaximalTorus_baseChange_weightTorusDefiningIdeal k K
+def splitMaximalTorus : SplitMaximalTorus k (generatedCoordinateHopfAlgebra k) 4 :=
+  SplitMaximalTorus.ofSurjective (generatedWeightTorusCoordinateMap k)
+    (generatedWeightTorusCoordinateMap_surjective k)
+    (fun K _ _ _ ↦ by
+      simpa only [weightTorusDefiningIdeal_def] using
+        isMaximalTorus_baseChange_weightTorusDefiningIdeal k K)
 
 /-- The chosen torus uses restriction to the weight torus in standard lifted coordinates. -/
 @[simp]
 theorem splitMaximalTorus_coordinateMap :
-    (splitMaximalTorus k).coordinateMap = splitMaximalTorusCoordinateMap k :=
-  (rfl)
+    (splitMaximalTorus k).coordinateMap = splitMaximalTorusCoordinateMap k := by
+  simp only [splitMaximalTorus, SplitMaximalTorus.ofSurjective_coordinateMap,
+    splitMaximalTorusCoordinateMap]
 
 /-- The chosen split maximal torus cuts out the existing closed weight torus. -/
 @[simp]
 theorem splitMaximalTorus_definingIdeal :
     (splitMaximalTorus k).definingIdeal = weightTorusDefiningIdeal k := by
-  ext x
-  rw [SplitMaximalTorus.mem_definingIdeal, splitMaximalTorus_coordinateMap,
-    ← ker_splitMaximalTorusCoordinateMap, HopfIdeal.mem_kerOfSurjective]
+  simp only [splitMaximalTorus, SplitMaximalTorus.definingIdeal_ofSurjective,
+    weightTorusDefiningIdeal_def]
 
 end Field
 
