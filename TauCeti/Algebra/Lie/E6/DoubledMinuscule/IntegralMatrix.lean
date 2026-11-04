@@ -16,6 +16,8 @@ that property in the carrier's `Fin 54` coordinates, obtained by `matrixIndexEqu
 block coordinates. Each root operator squares to zero, so the corresponding root subgroup is
 `1 + t X` over any commutative ring. These formulas allow block preservation to be checked on
 the universal root-subgroup coordinate maps, including over nonreduced rings.
+The lemmas `rootIntMatrix_inl` and `rootIntMatrix_inr` identify the root matrices with the
+reindexed block generators; `rootIntMatrix_mul_self` records their square-zero property.
 
 The integral matrix interface follows
 `TauCeti.Algebra.Lie.Orthogonal.TypeB.SpinCarrier.IntegralMatrix`.
@@ -130,6 +132,37 @@ theorem rootIntMatrix_apply (j : Fin 6 ⊕ Fin 6) (a b : Fin 54) :
     (TauCeti.serreH ℚ (CartanMatrix.E 6)ᵀ) rep lattice.toAddSubgroup
     rep_kostantForm_mem_lattice j matrixBasis
     (rep_rootGenerator_matrixBasis_eq_smul j b) a
+
+/-- A positive root matrix is the raising matrix transported from block coordinates to the
+carrier's matrix coordinates. -/
+theorem rootIntMatrix_inl (i : Fin 6) :
+    rootIntMatrix (.inl i) =
+      Matrix.reindex matrixIndexEquiv matrixIndexEquiv (raisingMatrix i) := by
+  ext a b
+  obtain ⟨a, rfl⟩ := matrixIndexEquiv.surjective a
+  obtain ⟨b, rfl⟩ := matrixIndexEquiv.surjective b
+  simp [Matrix.reindex_apply, Matrix.submatrix_apply, matrixWeight_apply, ← ite_and, and_comm]
+
+/-- A negative root matrix is the lowering matrix transported from block coordinates to the
+carrier's matrix coordinates. -/
+theorem rootIntMatrix_inr (i : Fin 6) :
+    rootIntMatrix (.inr i) =
+      Matrix.reindex matrixIndexEquiv matrixIndexEquiv (loweringMatrix i) := by
+  ext a b
+  obtain ⟨a, rfl⟩ := matrixIndexEquiv.surjective a
+  obtain ⟨b, rfl⟩ := matrixIndexEquiv.surjective b
+  simp [Matrix.reindex_apply, Matrix.submatrix_apply, matrixWeight_apply, ← ite_and, and_comm]
+
+/-- Every numbered integral root matrix squares to zero. -/
+@[simp]
+theorem rootIntMatrix_mul_self (k : Fin 6 ⊕ Fin 6) : rootIntMatrix k * rootIntMatrix k = 0 := by
+  cases k with
+  | inl i =>
+    rw [rootIntMatrix_inl, ← pow_two, ← Matrix.coe_reindexRingEquiv, ← map_pow,
+      raisingMatrix_pow_two, map_zero]
+  | inr i =>
+    rw [rootIntMatrix_inr, ← pow_two, ← Matrix.coe_reindexRingEquiv, ← map_pow,
+      loweringMatrix_pow_two, map_zero]
 
 /-- A numbered root operator has nonzero entries only at its signed simple-root weight
 difference. The weights are integral, before any change of coefficient ring. -/
