@@ -149,20 +149,31 @@ theorem mem_firstOrderOperators (D : Module.End R A) :
     D ∈ TauCeti.firstOrderOperators R A ↔
       ∀ a b : A, ⁅⁅D, LinearMap.mulLeft R a⁆, LinearMap.mulLeft R b⁆ = 0 := Iff.rfl
 
+/-- Multiplication is an algebraic first-order endomorphism. -/
+theorem mulLeft_mem_firstOrderOperators (c : A) :
+    mulLeft R c ∈ TauCeti.firstOrderOperators R A := by
+  rw [mem_firstOrderOperators]
+  intro a b
+  rw [(forall_lie_mulLeft_eq_zero_iff (mulLeft R c)).mpr (by simp) a, zero_lie]
+
 end LinearMap
 
 namespace Derivation
 
 variable {R A : Type*} [CommSemiring R] [CommRing A] [Algebra R A]
 
+/-- A derivation is an algebraic first-order endomorphism. -/
+theorem toLinearMap_mem_firstOrderOperators (δ : Derivation R A A) :
+    δ.toLinearMap ∈ TauCeti.firstOrderOperators R A := by
+  rw [LinearMap.mem_firstOrderOperators]
+  intro a b
+  rw [lie_mulLeft]
+  exact (LinearMap.forall_lie_mulLeft_eq_zero_iff _).mpr (by simp) b
+
 /-- A derivation plus multiplication is an algebraic first-order endomorphism. -/
 theorem add_mulLeft_mem_firstOrderOperators (δ : Derivation R A A) (c : A) :
     δ.toLinearMap + LinearMap.mulLeft R c ∈ TauCeti.firstOrderOperators R A := by
-  rw [LinearMap.mem_firstOrderOperators, LinearMap.forall_lie_lie_mulLeft_eq_zero_iff]
-  intro a b
-  simp only [LinearMap.add_apply, LinearMap.mulLeft_apply, Derivation.coeFn_coe,
-    Derivation.leibniz, Derivation.map_one_eq_zero, smul_eq_mul]
-  ring
+  exact add_mem δ.toLinearMap_mem_firstOrderOperators (LinearMap.mulLeft_mem_firstOrderOperators c)
 
 end Derivation
 
@@ -174,7 +185,8 @@ variable (R A : Type*) [CommSemiring R] [CommRing A] [Algebra R A]
 operator. The multiplication coefficient is evaluation at one. -/
 def firstOrderOperatorsEquivDerivationProd :
     firstOrderOperators R A ≃ₗ[A] Derivation R A A × A where
-  toFun D := ⟨D.val.derivationOfDoubleCommutator D.property, D.val 1⟩
+  toFun D := ⟨D.val.derivationOfDoubleCommutator
+    ((LinearMap.mem_firstOrderOperators _).mp D.property), D.val 1⟩
   invFun p := ⟨p.1.toLinearMap + LinearMap.mulLeft R p.2,
     p.1.add_mulLeft_mem_firstOrderOperators p.2⟩
   left_inv D := by
@@ -183,18 +195,18 @@ def firstOrderOperatorsEquivDerivationProd :
   right_inv p := by
     apply Prod.ext
     · ext a
-      simp [LinearMap.derivationOfDoubleCommutator]
+      simp
     · simp
   map_add' D E := by
     apply Prod.ext
     · ext a
-      simp [LinearMap.derivationOfDoubleCommutator]
+      simp
       ring
     · simp
   map_smul' c D := by
     apply Prod.ext
     · ext a
-      simp [LinearMap.derivationOfDoubleCommutator, smul_eq_mul]
+      simp [smul_eq_mul]
       ring
     · simp
 
