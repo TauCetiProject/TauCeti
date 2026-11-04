@@ -114,7 +114,7 @@ private theorem nonempty_linearEquiv_eigenspace_neg_of_eq_top (t : IsSl2Triple h
   have hanti : toEnd K L M h * (r : M →ₗ[K] M) + (r : M →ₗ[K] M) * toEnd K L M h = 0 := by
     apply B.ext
     rintro ⟨i, j⟩
-    simp only [LinearMap.add_apply, Module.End.mul_apply, LinearMap.zero_apply, LinearEquiv.coe_coe,
+    simp only [LinearMap.add_apply, mul_apply_eq_comp, LinearMap.zero_apply, LinearEquiv.coe_coe,
       toEnd_apply_apply, hr_basis, hweight, map_smul, hweight_rev, neg_smul, neg_add_cancel]
   exact ⟨Module.End.genEigenspaceEquivOfAnticommute r hanti μ 1⟩
 

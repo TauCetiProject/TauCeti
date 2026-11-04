@@ -477,6 +477,6 @@ theorem discr_formClass_baseChange_eq_zero (Q : _root_.QuadraticForm K V) (hQ : 
     RegularFormClass.discr (formClass (Q.baseChange L) (Nondegenerate.baseChange hQ)) = 0 := by
   rw [formClass_baseChange Q hQ, RegularFormClass.discr_baseChange, hd,
     RingHom.squareClassMap_apply, squareClass_eq_zero_iff]
-  exact isSquare_units_val_iff.mp ⟨s, by simpa using hs.symm⟩
+  exact Units.isSquare_coe_iff.mp ⟨s, by simpa using hs.symm⟩
 
 end QuadraticForm

@@ -49,7 +49,7 @@ theorem Module.End.pow_sub_smul_one_mem {f : Module.End K V} {P : Submodule K V}
     (hP : ∀ m ∈ P, f m ∈ P) (μ : K) (k : ℕ) :
     ∀ m ∈ P, ((f - μ • (1 : Module.End K V)) ^ k) m ∈ P := by
   intro m hm
-  rw [Module.End.coe_pow]
+  rw [FunLike.coe_pow_eq_iterate]
   have hmaps : Set.MapsTo (f - μ • (1 : Module.End K V)) P P :=
     fun x hx => P.sub_mem (hP x hx) (P.smul_mem μ hx)
   exact hmaps.iterate k hm

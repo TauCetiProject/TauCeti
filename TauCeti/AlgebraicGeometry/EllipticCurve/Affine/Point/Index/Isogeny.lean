@@ -9,6 +9,10 @@ public import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.Point.Index.NSmul
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.Point.PrimaryReduction
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.Hom.Cokernel
 
+import TauCeti.Algebra.Group.Primary.Card
+import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.FinitePoint
+import TauCeti.AlgebraicGeometry.EllipticCurve.IntegralReduction
+import TauCeti.AlgebraicGeometry.EllipticCurve.TateModule.Isogeny
 import TauCeti.GroupTheory.Index.PrimaryComponent
 
 /-!
@@ -42,6 +46,12 @@ of a minimal model), so every point of `E₂(F_u)` is divisible by `n`, hence li
 `f`, up to an element of `E₂(F_u)[n^∞]`; and the inverse image of `E₂(F_u)[n^∞]` under `f` is
 `E₁(F_u)[n^∞]`, since `f̂ ∘ f = [n]`.
 
+At good reduction the ratio is `1`. Reduction identifies `E(F_u)[n^∞]` with the `n`-primary
+component of the reduced curve over the residue field `k`, and isogenous curves with good
+reduction have reductions with the same number of points over `k`, because their Frobenius traces
+agree. Finite groups of the same order have `n`-primary components of the same order, so
+`#(E₂(F_u) ⧸ f E₁(F_u)) = #E₁(F_u)[f]`.
+
 ## Main results
 
 * `TauCeti.Isogeny.Hom.finiteIndex_range_pointMapHom_of_degree_notMem`: the image of
@@ -53,6 +63,8 @@ of a minimal model), so every point of `E₂(F_u)` is divisible by `n`, hence li
   of `f` is the ratio of the orders of the `deg f`-primary components.
 * `TauCeti.Isogeny.Hom.index_range_div_card_ker_eq_reduction`: at good reduction, compute
   this ratio using only the primary components of the finite reduced point groups.
+* `TauCeti.Isogeny.Hom.index_range_eq_card_ker_of_isElliptic`: at good reduction, the ratio is
+  `1`.
 
 ## References
 
@@ -63,7 +75,7 @@ of a minimal model), so every point of `E₂(F_u)` is divisible by `n`, hence li
 
 public section
 
-open IsDedekindDomain
+open IsDedekindDomain IsLocalRing
 
 namespace TauCeti.Isogeny.Hom
 
@@ -77,7 +89,8 @@ variable {A : Type*} [CommRing A] [IsDedekindDomain A]
 `E₁(F_u)` has finite index in `E₂(F_u)`, since it contains `deg f · E₂(F_u)`. -/
 theorem finiteIndex_range_pointMapHom_of_degree_notMem (hf : (f.degree : A) ∉ u.asIdeal) :
     f.pointMapHom.range.FiniteIndex := by
-  have := WeierstrassCurve.finiteIndex_range_nsmul u W₂ hf
+  have := WeierstrassCurve.finiteIndex_range_nsmul u W₂
+    (ne_of_mem_of_not_mem u.asIdeal.zero_mem hf).symm
   refine AddSubgroup.finiteIndex_of_le (H := (nsmulAddMonoidHom f.degree).range) ?_
   rintro P ⟨Q, rfl⟩
   exact ⟨f.dual.pointMap Q, by simp [pointMap_dual_pointMap]⟩
@@ -97,7 +110,8 @@ theorem index_range_mul_index_range_dual_eq_card_ker_mul_card_ker_dual
       rw [AddMonoidHom.mem_ker, nsmulAddMonoidHom_apply, Submodule.mem_torsionBy_iff,
         natCast_zsmul])
   have hne : (nsmulAddMonoidHom (α := W₁.toAffine.Point) f.degree).range.index ≠ 0 :=
-    (WeierstrassCurve.finiteIndex_range_nsmul u W₁ hf).index_ne_zero
+    (WeierstrassCurve.finiteIndex_range_nsmul u W₁
+      (ne_of_mem_of_not_mem u.asIdeal.zero_mem hf).symm).index_ne_zero
   -- `z(f̂) · z(f) = z([deg f])`, and the ratio for `[deg f]` is `1`
   have h := f.index_range_nsmul_mul_card_ker_mul_card_ker_dual
   rw [hker, ← hidx] at h
@@ -135,7 +149,7 @@ theorem index_range_div_card_ker_of_degree_notMem (hf : (f.degree : A) ∉ u.asI
     rintro rfl
     exact hf (by simp [degree_zero])
   have := f.finite_ker_pointMapHom hf0
-  have := W₁.finite_primaryComponent u hf
+  have := W₁.finite_primaryComponent u (ne_of_mem_of_not_mem u.asIdeal.zero_mem hf).symm
   have hT : (Nat.card (AddCommGroup.primaryComponent W₁.toAffine.Point f.degree) : ℚ) ≠ 0 :=
     Nat.cast_ne_zero.mpr Nat.card_pos.ne'
   have hK : (Nat.card f.pointMapHom.ker : ℚ) ≠ 0 := Nat.cast_ne_zero.mpr Nat.card_pos.ne'
@@ -144,12 +158,8 @@ theorem index_range_div_card_ker_of_degree_notMem (hf : (f.degree : A) ∉ u.asI
 
 section GoodReduction
 
-open IsLocalRing
-
-variable {u}
-  [DecidableEq (ResidueField
-    (Valued.v : Valuation (u.adicCompletion F) (WithZero (Multiplicative ℤ))).valuationSubring)]
-  {C₁ C₂ : WeierstrassCurve (u.adicCompletionIntegers F)} [C₁.IsElliptic] [C₂.IsElliptic]
+variable {u} {C₁ C₂ : WeierstrassCurve (u.adicCompletionIntegers F)} [C₁.IsElliptic]
+  [C₂.IsElliptic]
 
 local notation "R_u" => Valuation.valuationSubring
   (Valued.v : Valuation (u.adicCompletion F) (WithZero (Multiplicative ℤ)))
@@ -157,7 +167,7 @@ local notation "R_u" => Valuation.valuationSubring
 /-- At good reduction and away from the degree, the local isogeny ratio is computed by the
 primary components of the finite reduced point groups. The numerator belongs to the target
 curve and the denominator to the source curve. -/
-theorem index_range_div_card_ker_eq_reduction
+theorem index_range_div_card_ker_eq_reduction [DecidableEq (ResidueField R_u)]
     (f : Hom (C₁.baseChange (u.adicCompletion F)).toAffine
       (C₂.baseChange (u.adicCompletion F)).toAffine)
     (hf : (f.degree : A) ∉ u.asIdeal) :
@@ -171,6 +181,31 @@ theorem index_range_div_card_ker_eq_reduction
   rw [index_range_div_card_ker_of_degree_notMem u hf,
     Nat.card_congr (C₁.primaryReductionAddEquiv hf).toEquiv,
     Nat.card_congr (C₂.primaryReductionAddEquiv hf).toEquiv]
+
+/-- **The local cokernel/kernel ratio of a morphism is `1` at good reduction** away from its
+degree: if `E₁` and `E₂` have good reduction at `u`, given by elliptic equations over `O_u`, and
+`deg f` is prime to `u`, then `#(E₂(F_u) ⧸ f E₁(F_u)) = #E₁(F_u)[f]`. -/
+theorem index_range_eq_card_ker_of_isElliptic
+    (f : Hom (C₁.baseChange (u.adicCompletion F)).toAffine
+      (C₂.baseChange (u.adicCompletion F)).toAffine)
+    (hf : (f.degree : A) ∉ u.asIdeal) :
+    f.pointMapHom.range.index = Nat.card f.pointMapHom.ker := by
+  classical
+  have hf0 : f ≠ 0 := by
+    rintro rfl
+    exact hf (by simp [degree_zero])
+  -- the reductions have the same number of points, hence equinumerous primary components
+  have hcard := (C₁.natCard_point_reduction_baseChange_adicCompletion).symm.trans
+    (((toIsogeny hf0).natCard_point_reduction_eq inferInstance).trans
+      C₂.natCard_point_reduction_baseChange_adicCompletion)
+  -- `R_u` is `u.adicCompletionIntegers F` by definition
+  have : Finite (ResidueField R_u) :=
+    inferInstanceAs (Finite (ResidueField (u.adicCompletionIntegers F)))
+  have h := index_range_mul_card_primaryComponent_of_degree_notMem u hf
+  rw [Nat.card_congr (C₁.primaryReductionAddEquiv hf).toEquiv,
+    Nat.card_congr (C₂.primaryReductionAddEquiv hf).toEquiv,
+    TauCeti.AddCommGroup.natCard_primaryComponent_eq_of_natCard_eq hcard f.degree, mul_comm] at h
+  exact Nat.eq_of_mul_eq_mul_left Nat.card_pos h
 
 end GoodReduction
 

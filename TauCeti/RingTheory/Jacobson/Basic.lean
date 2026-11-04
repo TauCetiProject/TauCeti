@@ -17,7 +17,7 @@ import Mathlib.Tactic.NoncommRing
 elementwise description of that ideal over a ring that is not assumed commutative: `x` lies in the
 radical exactly when `1 + y * x` is a unit for every `y`, equivalently when `1 + x * y` is a unit
 for every `y`. Mathlib proves the statement only over a commutative ring
-(`Ideal.mem_jacobson_bot`); the content of the noncommutative version is that membership in the
+(`Ring.mem_jacobson_iff`); the content of the noncommutative version is that membership in the
 radical only supplies a *left* inverse for `1 + y * x`, so the argument has to promote that left
 inverse to a two-sided one.
 
@@ -63,7 +63,7 @@ private theorem mem_jacobson_iff_forall_exists_mul_one_add_mul_eq_one {x : R} :
 
 /-- The Jacobson radical of a ring is `{x | ∀ y, IsUnit (1 + y * x)}`.
 
-Mathlib's `Ideal.mem_jacobson_bot` is this statement over a commutative ring. -/
+Mathlib's `Ring.mem_jacobson_iff` is this statement over a commutative ring. -/
 theorem mem_jacobson_iff_isUnit_one_add_mul_left {x : R} :
     x ∈ Ring.jacobson R ↔ ∀ y : R, IsUnit (1 + y * x) := by
   rw [mem_jacobson_iff_forall_exists_mul_one_add_mul_eq_one]

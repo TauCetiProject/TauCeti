@@ -133,6 +133,11 @@ theorem isOpen_sheet_trivializationAt (b : B) (o : Orientation ℝ F ι) :
 theorem continuous_proj : Continuous (proj : VectorBundleOrientationCover F E ι → B) :=
   ⟨fun _ ↦ isOpen_preimage_proj⟩
 
+/-- The orientation-cover projection as a continuous map. It is an abbreviation so that
+fibres of its pullback are definitionally the original fibres. -/
+abbrev projection : C(VectorBundleOrientationCover F E ι, B) :=
+  ⟨proj, continuous_proj⟩
+
 /-- A map into the orientation double cover is continuous when its composite with the projection
 is continuous and the preimage of the sheet of every preferred trivialization is open. -/
 theorem continuous_of_isOpen_preimage_sheet {X : Type*} [TopologicalSpace X]

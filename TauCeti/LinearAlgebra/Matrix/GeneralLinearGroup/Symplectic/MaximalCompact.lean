@@ -5,8 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Matrix.Compact
 public import TauCeti.Analysis.Matrix.Polar.Symplectic
+public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.MaximalCompact
 public import TauCeti.Topology.Algebra.Matrix.Realify
 
 /-!
@@ -18,11 +18,10 @@ unitary group `Matrix.unitaryGroup n ℂ`.
 
 The proof is direct. For an element `A = P U` of a compact symplectic subgroup containing
 every orthogonal symplectic matrix, symplectic polar preservation puts `U` in that subgroup.
-Thus the positive factor `P = A U⁻¹` belongs to it as well. The trace-growth obstruction
-`Matrix.PosSemidef.eq_one_of_mem_isCompact_subgroup` forces `P = 1`.
-This adapts the polar-factor argument of
-`Matrix.GeneralLinearGroup.mem_unitarySubgroup_of_isCompact_of_le`, with symplectic polar
-preservation in place of the hypothesis that the subgroup contains the full orthogonal group.
+Thus the positive factor `P = A U⁻¹` belongs to it as well, and the trace-growth obstruction
+forces `P = 1`; this is the polar-factor argument
+`Matrix.GeneralLinearGroup.mem_unitarySubgroup_of_isCompact_of_polarUnitary_mem`, with symplectic
+polar preservation supplying its hypothesis.
 
 `TauCeti.GLSymplectic.eq_inf_unitarySubgroup_of_isCompact_of_le` states maximality inside
 the ambient real general linear group. `TauCeti.GLSymplectic.maximal_isCompact_unitarySubgroup`
@@ -62,21 +61,11 @@ theorem mem_inf_unitarySubgroup_of_isCompact_of_le {K : Subgroup (GL (n ⊕ n) �
     (hUK : GLSymplectic n ℝ ⊓ unitarySubgroup (GL (n ⊕ n) ℝ) ≤ K)
     {A : GL (n ⊕ n) ℝ} (hA : A ∈ K) :
     A ∈ GLSymplectic n ℝ ⊓ unitarySubgroup (GL (n ⊕ n) ℝ) := by
-  let U := Units.polarUnitary A
-  let P := A * (Unitary.toUnits U)⁻¹
-  have hU : Unitary.toUnits U ∈
+  have hU : Unitary.toUnits (Units.polarUnitary A) ∈
       GLSymplectic n ℝ ⊓ unitarySubgroup (GL (n ⊕ n) ℝ) :=
     ⟨mem_iff_mem_symplecticGroup.2 (SymplecticGroup.polarUnitary_mem
       (mem_iff_mem_symplecticGroup.1 (hKS hA))), by simp⟩
-  have hP : (P : Matrix (n ⊕ n) (n ⊕ n) ℝ) =
-      CFC.sqrt ((A : Matrix (n ⊕ n) (n ⊕ n) ℝ) * star (A : Matrix (n ⊕ n) (n ⊕ n) ℝ)) := by
-    apply (Unitary.mul_left_inj U).mp
-    rw [Units.sqrt_mul_star_mul_polarUnitary]
-    exact congrArg Units.val (inv_mul_cancel_right A (Unitary.toUnits U))
-  have hPone : P = 1 :=
-    (hP.symm ▸ (posDef_sqrt_mul_star A).posSemidef).eq_one_of_mem_isCompact_subgroup
-      hK (K.mul_mem hA (K.inv_mem (hUK hU)))
-  exact (mul_inv_eq_one.mp hPone) ▸ hU
+  exact ⟨hKS hA, mem_unitarySubgroup_of_isCompact_of_polarUnitary_mem hK hA (hUK hU)⟩
 
 /-- **Maximal compactness in the real symplectic group.** A compact subgroup of the ambient
 general linear group lying in the symplectic group and containing its orthogonal elements is

@@ -124,7 +124,7 @@ theorem quotientToModuleEnd_mk (hV : ∀ γ : Γ, ∀ x ∈ V, γ • x ∈ V) (
 of `V`. The kernel is a submonoid, so no inverses in `Γ` are needed. -/
 theorem mem_mker_quotientToModuleEnd (hV : ∀ γ : Γ, ∀ x ∈ V, γ • x ∈ V) {γ : Γ} :
     γ ∈ MonoidHom.mker (quotientToModuleEnd hV) ↔ ∀ x : M, γ • x - x ∈ V := by
-  simp only [MonoidHom.mem_mker, LinearMap.ext_iff, Module.End.one_apply]
+  simp only [MonoidHom.mem_mker, LinearMap.ext_iff, one_apply_eq_self]
   refine ⟨fun h x => (Quotient.eq V).1 (by simpa using h (Quotient.mk x)), fun h y => ?_⟩
   induction y using Quotient.induction_on with | _ x => ?_
   rw [quotientToModuleEnd_mk]

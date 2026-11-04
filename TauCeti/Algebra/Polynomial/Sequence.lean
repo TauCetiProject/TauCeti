@@ -28,56 +28,42 @@ namespace Polynomial.Sequence
 
 open Module Submodule
 
-variable {R : Type*} [Semiring R] (S : Polynomial.Sequence R)
+variable {R : Type*}
+
+section Semiring
+
+variable [Semiring R] (S : Polynomial.Sequence R)
 
 /-- Polynomials in a polynomial sequence whose leading coefficients are right-regular are linearly
 independent. -/
 theorem linearIndependent_of_isRightRegular_leadingCoeff
     [IsRightCancelAdd R] (hCoeff : ∀ i, IsRightRegular (S i).leadingCoeff) :
     LinearIndependent R S := by
-  classical
-  refine linearIndependent_iff'ₛ.2 fun s f g hsum i hi => ?_
-  by_contra hfg
-  have hne : (s.filter fun j => f j ≠ g j).Nonempty :=
-    ⟨i, Finset.mem_filter.2 ⟨hi, hfg⟩⟩
-  let m := (s.filter fun j => f j ≠ g j).max' hne
-  have hm : m ∈ s.filter fun j => f j ≠ g j := Finset.max'_mem _ hne
-  have hfm : f m ≠ g m := (Finset.mem_filter.1 hm).2
-  have hms : m ∈ s := (Finset.mem_filter.1 hm).1
-  have hle (j : ℕ) (hj : j ∈ s) (hfj : f j ≠ g j) : j ≤ m :=
-    Finset.le_max' _ j (Finset.mem_filter.2 ⟨hj, hfj⟩)
-  have heq (j : ℕ) (hj : j ∈ s) (hj_gt : m < j) : f j = g j := by
-    by_contra h
-    exact (not_lt_of_ge (hle j hj h)) hj_gt
-  have h_split :
-      f m • S m + ∑ j ∈ s.erase m, f j • S j =
-        g m • S m + ∑ j ∈ s.erase m, g j • S j := by
-    rw [Finset.add_sum_erase s (fun j => f j • S j) hms,
-      Finset.add_sum_erase s (fun j => g j • S j) hms]
-    exact hsum
-  have h_coeff := congrArg (Polynomial.coeff · m) h_split
-  rw [Polynomial.coeff_add, Polynomial.coeff_smul, Polynomial.coeff_add,
-    Polynomial.coeff_smul] at h_coeff
-  have h_m_coeff : (S m).coeff m = (S m).leadingCoeff := by
-    rw [Polynomial.leadingCoeff, S.natDegree_eq m]
-  have h_erase_eq :
-      (∑ j ∈ s.erase m, f j • S j).coeff m =
-        (∑ j ∈ s.erase m, g j • S j).coeff m := by
-    simp only [Polynomial.finsetSum_coeff, Polynomial.coeff_smul]
-    apply Finset.sum_congr rfl
-    intro j hj
-    have hj_s := Finset.mem_of_mem_erase hj
-    have hj_ne := Finset.ne_of_mem_erase hj
-    rcases lt_or_gt_of_ne hj_ne with hj_lt | hj_gt
-    · rw [Polynomial.coeff_eq_zero_of_natDegree_lt (by rwa [S.natDegree_eq]), smul_zero,
-        smul_zero]
-    · rw [heq j hj_s hj_gt]
-  rw [h_erase_eq, h_m_coeff] at h_coeff
-  exact hfm ((hCoeff m) (by simpa [smul_eq_mul] using add_right_cancel h_coeff))
+  refine linearIndependent_iff'ₛ.2 fun s f g => ?_
+  -- Peel off the largest index: only `S a` contributes to the coefficient of `X ^ a`.
+  induction s using Finset.induction_on_max with
+  | empty => simp
+  | insert a s hlt ih =>
+    intro hsum i hi
+    have ha : a ∉ s := fun h => (hlt a h).false
+    have hzero (c : ℕ → R) : (∑ j ∈ s, c j • S j).coeff a = 0 := by
+      rw [finsetSum_coeff]
+      exact Finset.sum_eq_zero fun j hj => by
+        rw [coeff_smul, coeff_eq_zero_of_natDegree_lt (by simpa using hlt j hj), smul_zero]
+    rw [Finset.sum_insert ha, Finset.sum_insert ha] at hsum
+    have hfg : f a = g a := hCoeff a <| by
+      simpa [hzero, leadingCoeff] using congrArg (coeff · a) hsum
+    rcases Finset.mem_insert.1 hi with rfl | hi
+    · exact hfg
+    · have := AddCommMagma.IsRightCancelAdd.toIsLeftCancelAdd R
+      refine ih (Polynomial.ext fun n => add_left_cancel (a := (g a • S a).coeff n) ?_) i hi
+      simpa only [hfg, coeff_add] using congrArg (coeff · n) hsum
+
+end Semiring
 
 section Ring
 
-variable {R : Type*} [Ring R] (S : Polynomial.Sequence R)
+variable [Ring R] (S : Polynomial.Sequence R)
 
 /-- Every polynomial sequence with unit leading coefficients is a basis of `R[X]`. -/
 noncomputable def basisOfIsUnitLeadingCoeff

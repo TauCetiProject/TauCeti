@@ -30,7 +30,9 @@ For a word given by its labels `List.ofFn d`, validity is the range condition on
 (`isValidGlueWord_ofFn_iff`), and decoding is natural under permutations of the components
 (`decodeGlueWord_ofFn_comp`): permuting the labels and the components together reindexes the
 decoded word through `Equiv.piCongrLeft`, the reindexing along which the glue-word isometry is
-natural.
+natural.  Replacing the components by an equal family, for instance the positions of a list of
+components by an explicitly given family, does not change digit lists
+(`encodeGlueWord_piGlueAlphabetCongr`).
 
 Sums and shortest norms of glue words can be computed on their digit words: `glueWordAdd` adds
 two digit words label by label (`encodeGlueWord_add`), and `glueWordMinimum` sums the shortest
@@ -129,6 +131,20 @@ theorem encodeGlueWord_injective : Function.Injective (encodeGlueWord t ht) := b
   intro w v h
   have h := congrArg (decodeGlueWord t ht) h
   simpa only [decodeGlueWord_encodeGlueWord, Option.some.injEq] using h
+
+/-- **Digits are unchanged by passing to an equal family of components**: if the components
+`s k` over `Fin m` are the components `t k` over `Fin n` read along `m = n`, then a glue word and
+its image under `TauCeti.DynkinType.piGlueAlphabetCongr` have the same digit list. -/
+theorem encodeGlueWord_piGlueAlphabetCongr {m : ℕ} {s : Fin m → DynkinType}
+    (hs : ∀ k, (s k).IsSimplyLaced) (hmn : m = n) (h : ∀ k, t (finCongr hmn k) = s k)
+    (w : ∀ i, (t i).glueAlphabet (ht i)) :
+    encodeGlueWord s hs (DynkinType.piGlueAlphabetCongr t ht (finCongr hmn) h w) =
+      encodeGlueWord t ht w := by
+  subst hmn
+  rw [encodeGlueWord_def, encodeGlueWord_def]
+  exact congrArg List.ofFn (funext fun k ↦ by
+    rw [DynkinType.piGlueAlphabetCongr_apply]
+    exact DynkinType.val_glueLabelEquiv_symm_ofEq (h k) _ _ _)
 
 /-- Successful decoding determines exactly the digit list of the resulting word. -/
 @[simp] theorem decodeGlueWord_eq_some_iff (l : List ℕ)

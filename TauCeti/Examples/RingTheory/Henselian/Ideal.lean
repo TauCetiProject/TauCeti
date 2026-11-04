@@ -82,7 +82,7 @@ example : HenselianRing (ZMod 1) ⊤ ↔
 -- Henselianity of the smaller pair alone does not imply henselianity of the larger pair.
 example : HenselianRing ℚ ⊥ ∧ ¬ HenselianRing ℚ ⊤ := by
   refine ⟨inferInstance, fun h ↦ ?_⟩
-  have hunit := mem_jacobson_bot.1 (h.jac (x := 1) trivial) (-1)
+  have hunit := Ring.mem_jacobson_iff.1 (h.jac (x := 1) trivial) (-1)
   norm_num at hunit
 
 end TauCeti.Examples.HenselianIdeal

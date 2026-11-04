@@ -82,10 +82,10 @@ theorem surjective_fderiv_eval_dehomogenize_affineChart_iff [Finite ι]
       (Projectivization.affineChart i L)) ↔
       Function.Surjective (jacobiMatrixAt p L.rep).mulVec := by
   have hi' : L.rep i ≠ 0 := by
-    exact (Projectivization.mk_mem_affineOpen_iff i L.rep L.rep_nonzero).mp
+    exact (Projectivization.mk_mem_affineOpen_iff i L.rep L.rep_ne_zero).mp
       (L.mk_rep.symm ▸ hi)
   have hb := (mem_complexProjectiveZeroLocus_iff_eval_rep hp L).mp hL
-  have hchart := Projectivization.affineChart_mk i L.rep L.rep_nonzero
+  have hchart := Projectivization.affineChart_mk i L.rep L.rep_ne_zero
   rw [L.mk_rep] at hchart
   rw [hchart]
   exact surjective_fderiv_eval_dehomogenize_div_iff i hp hi' hb

@@ -115,6 +115,12 @@ theorem sum_veroneseExponent (d : ℕ) (k : Fin (veroneseDim N d)) :
     ∑ i, veroneseExponent N d k i = d :=
   (veroneseExponentEquiv N d k).2
 
+/-- In a positive number of variables there are monomials of every degree `d`, for instance the
+pure powers. -/
+instance instNeZeroVeroneseDim [NeZero N] (d : ℕ) : NeZero (veroneseDim N d) :=
+  ⟨Fin.pos_iff_nonempty.2 ⟨(veroneseExponentEquiv N d).symm
+    ⟨Pi.single 0 d, Fintype.sum_pi_single' 0 d⟩⟩ |>.ne'⟩
+
 /-- Distinct indices enumerate distinct exponent vectors. -/
 theorem veroneseExponent_injective (d : ℕ) : Function.Injective (veroneseExponent N d) :=
   Subtype.val_injective.comp (veroneseExponentEquiv N d).injective
