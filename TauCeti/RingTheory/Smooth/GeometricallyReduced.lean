@@ -18,8 +18,9 @@ import Mathlib.RingTheory.Unramified.Field
 
 A smooth algebra over a reduced commutative ring is reduced. The proof first treats integral
 domains: a standard-smooth algebra embeds into its étale generic fibre over a polynomial ring,
-and a standard-smooth localization cover gives the smooth case. For a reduced Noetherian base,
-embed the base into the finite product of its minimal-prime domain quotients and use flatness.
+and a standard-smooth localization cover gives the smooth case. For a reduced base with finitely
+many minimal primes (for instance a Noetherian one), embed the base into the finite product of its
+minimal-prime domain quotients and use flatness.
 Finally, Noetherian descent and passage through finitely generated subalgebras give the result
 over an arbitrary reduced base.
 
@@ -50,43 +51,35 @@ universe u v
 private theorem isReduced_of_standardSmooth_of_isDomain
     (R : Type u) (A : Type v) [CommRing R] [IsDomain R] [CommRing A] [Algebra R A]
     [Algebra.IsStandardSmooth R A] : IsReduced A := by
-  have hs : (algebraMap R A).IsStandardSmooth := by
-    rw [RingHom.isStandardSmooth_algebraMap]
-    infer_instance
-  obtain ⟨n, g, _, hg⟩ := hs.exists_etale_mvPolynomial
-  let _ : Algebra (MvPolynomial (Fin n) R) A := g.toAlgebra
-  let _ : Algebra.Etale (MvPolynomial (Fin n) R) A := hg.toAlgebra
-  let F := FractionRing (MvPolynomial (Fin n) R)
-  let B := F ⊗[MvPolynomial (Fin n) R] A
-  let _ : Algebra.Etale F B :=
-    Algebra.Etale.baseChange (MvPolynomial (Fin n) R) A F
-  let _ : IsReduced B := Algebra.FormallyUnramified.isReduced_of_field F B
-  exact isReduced_of_injective
-    (Algebra.TensorProduct.includeRight (R := MvPolynomial (Fin n) R) (A := F) (B := A))
-    (Algebra.TensorProduct.includeRight_injective (IsFractionRing.injective _ F))
+  obtain ⟨n, g, _, hg⟩ :=
+    (RingHom.isStandardSmooth_algebraMap (R := R) (S := A)).mpr ‹_› |>.exists_etale_mvPolynomial
+  let S := MvPolynomial (Fin n) R
+  let _ : Algebra S A := g.toAlgebra
+  have : Algebra.Etale S A := hg.toAlgebra
+  -- The generic fibre is étale over a field, hence reduced, and `A` embeds into it.
+  let F := FractionRing S
+  have : IsReduced (F ⊗[S] A) := Algebra.FormallyUnramified.isReduced_of_field F _
+  exact isReduced_of_injective Algebra.TensorProduct.includeRight
+    (Algebra.TensorProduct.includeRight_injective (IsFractionRing.injective S F))
 
 private theorem isReduced_of_smooth_of_isDomain
     (R : Type u) (A : Type v) [CommRing R] [IsDomain R] [CommRing A] [Algebra R A]
     [Algebra.Smooth R A] : IsReduced A := by
   obtain ⟨s, hs, hsmooth⟩ := Algebra.Smooth.exists_span_eq_top_isStandardSmooth R A
-  constructor
-  intro x hx
-  apply Module.eq_zero_of_isLocalized_span s hs
+  refine ⟨fun x hx ↦ Module.eq_zero_of_isLocalized_span s hs
     (fun r : s ↦ Localization.Away r.1)
-    (fun r : s ↦ Algebra.linearMap A (Localization.Away r.1))
-  intro r
-  let _ : Algebra.IsStandardSmooth R (Localization.Away r.1) := hsmooth r.1 r.2
-  let _ : IsReduced (Localization.Away r.1) :=
-    isReduced_of_standardSmooth_of_isDomain R (Localization.Away r.1)
+    (fun r : s ↦ Algebra.linearMap A (Localization.Away r.1)) x fun r ↦ ?_⟩
+  have := hsmooth r.1 r.2
+  have := isReduced_of_standardSmooth_of_isDomain R (Localization.Away r.1)
   exact (hx.map (algebraMap A (Localization.Away r.1))).eq_zero
 
-private theorem isReduced_of_smooth_of_isNoetherianRing
-    (R : Type u) (A : Type v) [CommRing R] [IsReduced R] [IsNoetherianRing R]
+private theorem isReduced_of_smooth_of_finite_minimalPrimes
+    (R : Type u) (A : Type v) [CommRing R] [IsReduced R] (hR : (minimalPrimes R).Finite)
     [CommRing A] [Algebra R A] [Algebra.Smooth R A] : IsReduced A := by
   classical
   let P := minimalPrimes R
-  let : Fintype P := (minimalPrimes.finite_of_isNoetherianRing R).fintype
-  let (p : P) : p.1.IsPrime := p.2.1.1
+  let : Fintype P := hR.fintype
+  have (p : P) : p.1.IsPrime := p.2.1.1
   let Q (p : P) := R ⧸ p.1
   -- A reduced ring embeds into the product of its minimal-prime quotients.
   have hinj : Function.Injective (algebraMap R (∀ p : P, Q p)) := by
@@ -96,45 +89,36 @@ private theorem isReduced_of_smooth_of_isNoetherianRing
     simp only [P, minimalPrimes, iInf_subtype, ← sInf_eq_iInf, Ideal.sInf_minimalPrimes,
       Ideal.radical_bot_of_isReduced]
   -- Flatness preserves the embedding after tensoring with the smooth algebra.
-  let (p : P) : IsReduced (A ⊗[R] Q p) := by
-    let : IsReduced (Q p ⊗[R] A) := isReduced_of_smooth_of_isDomain (Q p) _
-    exact isReduced_of_injective (Algebra.TensorProduct.comm R A (Q p))
-      (Algebra.TensorProduct.comm R A (Q p)).injective
-  let : IsReduced (A ⊗[R] (∀ p : P, Q p)) :=
-    isReduced_of_injective (Algebra.TensorProduct.piRight R R A Q)
-      (Algebra.TensorProduct.piRight R R A Q).injective
-  exact isReduced_of_injective
-    (Algebra.TensorProduct.includeLeft : A →ₐ[R] A ⊗[R] (∀ p : P, Q p))
-    (Algebra.TensorProduct.includeLeft_injective hinj)
+  have (p : P) : IsReduced (A ⊗[R] Q p) :=
+    have := isReduced_of_smooth_of_isDomain (Q p) (Q p ⊗[R] A)
+    isReduced_of_injective _ (Algebra.TensorProduct.comm R A (Q p)).injective
+  have := isReduced_of_injective _ (Algebra.TensorProduct.piRight R R A Q).injective
+  exact isReduced_of_injective _ (Algebra.TensorProduct.includeLeft_injective (S := R) hinj)
 
 /-- A smooth algebra over a reduced commutative ring is reduced. -/
+@[stacks 033B]
 theorem isReduced_of_smooth
     (R : Type u) (A : Type v) [CommRing R] [IsReduced R]
     [CommRing A] [Algebra R A] [Algebra.Smooth R A] : IsReduced A := by
   obtain ⟨R₀, A₀, _, _, _, _, _, _, _, _, ⟨e⟩⟩ :=
     Algebra.Smooth.exists_finiteType ℤ R A
   have : IsNoetherianRing R₀ := Algebra.FiniteType.isNoetherianRing ℤ _
+  -- `R` is the union of its finitely generated `R₀`-subalgebras, which are Noetherian.
   have : IsReduced (A₀ ⊗[R₀] R) := by
-    apply IsReduced.tensorProduct_of_flat_of_forall_fg
-    intro B hB
+    refine IsReduced.tensorProduct_of_flat_of_forall_fg fun B hB ↦ ?_
     have : Algebra.FiniteType R₀ B := ⟨B.fg_top.mpr hB⟩
     have : IsNoetherianRing B := Algebra.FiniteType.isNoetherianRing R₀ _
     have : IsReduced B := isReduced_of_injective B.val Subtype.val_injective
-    have : IsReduced (B ⊗[R₀] A₀) := isReduced_of_smooth_of_isNoetherianRing B _
-    exact isReduced_of_injective (Algebra.TensorProduct.comm R₀ A₀ B)
-      (Algebra.TensorProduct.comm R₀ A₀ B).injective
-  have : IsReduced (R ⊗[R₀] A₀) :=
-    isReduced_of_injective (Algebra.TensorProduct.comm R₀ R A₀)
-      (Algebra.TensorProduct.comm R₀ R A₀).injective
-  exact isReduced_of_injective e e.injective
+    have := isReduced_of_smooth_of_finite_minimalPrimes B (B ⊗[R₀] A₀)
+      (minimalPrimes.finite_of_isNoetherianRing B)
+    exact isReduced_of_injective _ (Algebra.TensorProduct.comm R₀ A₀ B).injective
+  exact isReduced_of_injective _
+    (e.toRingEquiv.trans (Algebra.TensorProduct.comm R₀ R A₀).toRingEquiv).injective
 
 /-- A smooth algebra over a commutative ring is geometrically reduced. -/
 theorem isGeometricallyReduced_of_smooth
     (R : Type u) (A : Type v) [CommRing R] [CommRing A] [Algebra R A]
-    [Algebra.Smooth R A] : Algebra.IsGeometricallyReduced R A := by
-  constructor
-  intro p hp
-  exact isReduced_of_smooth (AlgebraicClosure p.ResidueField)
-    (AlgebraicClosure p.ResidueField ⊗[R] A)
+    [Algebra.Smooth R A] : Algebra.IsGeometricallyReduced R A :=
+  ⟨fun p _ ↦ isReduced_of_smooth (AlgebraicClosure p.ResidueField) _⟩
 
 end TauCeti

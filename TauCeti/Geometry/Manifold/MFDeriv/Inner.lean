@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Analysis.InnerProductSpace.Calculus
 public import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
-public import TauCeti.Geometry.Manifold.VectorBundle.Tangent
+public import TauCeti.Geometry.Manifold.VectorBundle.Tangent.Basic
 
 /-!
 # The derivative of an inner product of vector-valued functions on a manifold

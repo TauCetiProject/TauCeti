@@ -8,6 +8,7 @@ module
 public import Mathlib.NumberTheory.ModularForms.Basic
 public import Mathlib.NumberTheory.ModularForms.NormTrace
 public import TauCeti.Analysis.Complex.UpperHalfPlane.MoebiusAction
+import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.Basic
 
 /-!
 # Modular-forms basics: extensions of Mathlib's API
@@ -65,6 +66,9 @@ AINTLIB `LeanModularForms` project
 * `slash_zpow_eq_self_of_slash_eq`, `slash_zpow_mul_mul_zpow_eq_smul`: slash
   invariance passes to integer powers, and an eigenvalue law survives multiplication on both
   sides by powers of an invariance.
+* `TauCeti.ModularForm.SL_slash_neg`, `TauCeti.ModularForm.SL_slash_zpow_eq_self_of_slash_eq`:
+  for `A ∈ SL(2, ℤ)`, `f ∣[k] (-A) = (-1)^k • f ∣[k] A`, and invariance under `A` passes to
+  every integer power of `A`.
 * `Subgroup.IsArithmetic.isCusp_of_isCusp`: any two arithmetic groups have the same cusps.
 * `TauCeti.ModularForm.eq_zero_of_eq_const`: a constant slash-invariant form of nonzero weight
   vanishes when its group has finite-index intersection with the modular group.
@@ -165,6 +169,35 @@ lemma slash_zpow_mul_mul_zpow_eq_smul (k : ℤ) (f : ℍ → ℂ) {δ γ : GL (F
 analogue of Mathlib's `ModularForm.mcast_apply`, which Mathlib does not yet provide. -/
 lemma _root_.CuspForm.mcast_apply {a b : ℤ} {Γ Γ' : Subgroup (GL (Fin 2) ℝ)} (h : a = b)
     (f : CuspForm Γ a) (hΓ : Γ' = Γ := by rfl) (z : ℍ) : CuspForm.mcast h f hΓ z = f z := (rfl)
+
+namespace TauCeti.ModularForm
+
+variable {k : ℤ} {f : ℍ → ℂ}
+
+/-- Negating a matrix of `SL(2, ℤ)` multiplies its weight-`k` slash action by `(-1)^k`, the
+scalar by which the central element `-I` acts. -/
+@[simp]
+theorem SL_slash_neg (k : ℤ) (f : ℍ → ℂ) (A : SL(2, ℤ)) :
+    f ∣[k] (-A) = (-1 : ℂ) ^ k • f ∣[k] A := by
+  -- `ModularForm.SL_slash` exposes the image of `-I` in `GL (Fin 2) ℝ` through `toGL ∘ map`,
+  -- which is `mapGL` unfolded.
+  have hGL : toGL (map (Int.castRingHom ℝ) (-1 : SL(2, ℤ))) = -1 := mapGL_neg_one
+  rw [← neg_one_mul, SlashAction.slash_mul, ModularForm.SL_slash f (-1), hGL,
+    _root_.ModularForm.slash_neg_one]
+  -- Mathlib states the `-I` law with the constant function `(-1) ^ k`; as a scalar it is `•`.
+  exact ModularForm.SL_smul_slash k A f ((-1 : ℂ) ^ k)
+
+/-- Invariance under an element of `SL(2, ℤ)` passes to all its integer powers: the
+`SL(2, ℤ)` form of `slash_zpow_eq_self_of_slash_eq`. -/
+theorem SL_slash_zpow_eq_self_of_slash_eq {A : SL(2, ℤ)} (hA : f ∣[k] A = f) (j : ℤ) :
+    f ∣[k] (A ^ j) = f := by
+  have hGL : toGL (map (Int.castRingHom ℝ) (A ^ j)) = toGL (map (Int.castRingHom ℝ) A) ^ j :=
+    map_zpow (mapGL ℝ) A j
+  rw [ModularForm.SL_slash] at hA ⊢
+  rw [hGL]
+  exact slash_zpow_eq_self_of_slash_eq k f hA j
+
+end TauCeti.ModularForm
 
 /-- **The weight-`k` slash formula at a positive-determinant matrix**, free of the `σ` twist:
 

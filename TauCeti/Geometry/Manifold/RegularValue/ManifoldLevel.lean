@@ -10,7 +10,7 @@ public import TauCeti.Geometry.Manifold.RegularValue.Level
 import TauCeti.Geometry.Manifold.Immersion.LocalDiffeomorph
 import TauCeti.Geometry.Manifold.Immersion.Basic
 import TauCeti.Geometry.Manifold.LocalDiffeomorph.OpenSubset
-import TauCeti.Geometry.Manifold.LocalDiffeomorph.Basic
+public import TauCeti.Geometry.Manifold.LocalDiffeomorph.Basic
 import TauCeti.Geometry.Manifold.PullbackGroupoid
 
 /-!
@@ -23,6 +23,7 @@ the expected dimension. The carrier is the actual subtype
 fibre may be empty.
 
 `TauCeti.regularFiberChartedSpace` constructs an atlas using the preferred extended target chart.
+`TauCeti.RegularFiber.chartedSpaceOfChart` allows any target chart containing the value.
 `TauCeti.isManifold_regularFiber`, `TauCeti.isSmoothEmbedding_coe_regularFiber`, and
 `TauCeti.range_mfderiv_coe_regularFiber` give its manifold, embedding, and tangent-kernel
 properties.
@@ -113,9 +114,11 @@ private theorem regularValue_coordinate (hm : 1 ≤ m) (hf : ContMDiff I J m f)
 variable [I.Boundaryless] [IsManifold I m M]
   [FiniteDimensional ℝ E] [FiniteDimensional ℝ F]
 
-/-- Transport the coordinate-level atlas to the actual fibre. -/
+/-- The atlas of a regular fibre transported from its coordinate level in a target chart `φ`
+containing the value `c`. The fibre retains its subspace topology, and no global instance is
+installed. -/
 @[instance_reducible]
-private noncomputable def chartedSpace_of_chart (hm : 1 ≤ m) (hf : ContMDiff I J m f)
+noncomputable def chartedSpaceOfChart (hm : 1 ≤ m) (hf : ContMDiff I J m f)
     (φ : PartialDiffeomorph J 𝓘(ℝ, F) N F m) (hc : c ∈ φ.source)
     (hreg : IsRegularValue I J f c) :
     ChartedSpace (Fin (finrank ℝ E - finrank ℝ F) → ℝ) {x : M // f x = c} :=
@@ -128,12 +131,12 @@ private noncomputable def chartedSpace_of_chart (hm : 1 ≤ m) (hf : ContMDiff I
 private theorem isManifold_and_isSmoothEmbedding_of_chart (hm : 1 ≤ m)
     (hf : ContMDiff I J m f) (φ : PartialDiffeomorph J 𝓘(ℝ, F) N F m) (hc : c ∈ φ.source)
     (hreg : IsRegularValue I J f c) :
-    letI := chartedSpace_of_chart hm hf φ hc hreg
+    letI := chartedSpaceOfChart hm hf φ hc hreg
     IsManifold 𝓘(ℝ, Fin (finrank ℝ E - finrank ℝ F) → ℝ) m {x : M // f x = c} ∧
     Manifold.IsSmoothEmbedding 𝓘(ℝ, Fin (finrank ℝ E - finrank ℝ F) → ℝ) I m
       (Subtype.val : {x : M // f x = c} → M) := by
   -- The coordinate-level and pullback instances below must match the unfolding of
-  -- `chartedSpace_of_chart`; this lets the transported instances prove the stated properties.
+  -- `chartedSpaceOfChart`; this lets the transported instances prove the stated properties.
   let K := 𝓘(ℝ, Fin (finrank ℝ E - finrank ℝ F) → ℝ)
   let q : domain hf φ → F := fun x ↦ φ (f x)
   have hq : ContMDiff I 𝓘(ℝ, F) m q := contMDiff_coordinate hf φ
@@ -158,6 +161,25 @@ private theorem isManifold_and_isSmoothEmbedding_of_chart (hm : 1 ≤ m)
   rw [heq] at hpost
   exact ⟨hpost.isImmersion, Topology.IsEmbedding.subtypeVal⟩
 
+/-- A regular fibre with the atlas constructed in any target chart containing its value is a
+`C^m` manifold. -/
+theorem isManifold_of_chart (hm : 1 ≤ m) (hf : ContMDiff I J m f)
+    (φ : PartialDiffeomorph J 𝓘(ℝ, F) N F m) (hc : c ∈ φ.source)
+    (hreg : IsRegularValue I J f c) :
+    letI := chartedSpaceOfChart hm hf φ hc hreg
+    IsManifold 𝓘(ℝ, Fin (finrank ℝ E - finrank ℝ F) → ℝ) m {x : M // f x = c} :=
+  (isManifold_and_isSmoothEmbedding_of_chart hm hf φ hc hreg).1
+
+/-- The inclusion of a regular fibre is a `C^m` smooth embedding for the atlas constructed in
+any target chart containing its value. -/
+theorem isSmoothEmbedding_coe_of_chart (hm : 1 ≤ m) (hf : ContMDiff I J m f)
+    (φ : PartialDiffeomorph J 𝓘(ℝ, F) N F m) (hc : c ∈ φ.source)
+    (hreg : IsRegularValue I J f c) :
+    letI := chartedSpaceOfChart hm hf φ hc hreg
+    Manifold.IsSmoothEmbedding 𝓘(ℝ, Fin (finrank ℝ E - finrank ℝ F) → ℝ) I m
+      (Subtype.val : {x : M // f x = c} → M) :=
+  (isManifold_and_isSmoothEmbedding_of_chart hm hf φ hc hreg).2
+
 end RegularFiber
 
 variable {E H M F G N : Type*}
@@ -176,8 +198,18 @@ topology and is not a global instance. -/
 noncomputable def regularFiberChartedSpace (hm : 1 ≤ m) (hf : ContMDiff I J m f)
     (hc : J.IsInteriorPoint c) (hreg : IsRegularValue I J f c) :
     ChartedSpace (Fin (finrank ℝ E - finrank ℝ F) → ℝ) {x : M // f x = c} :=
-  RegularFiber.chartedSpace_of_chart hm hf (extChartPartialDiffeomorph J m c)
+  RegularFiber.chartedSpaceOfChart hm hf (extChartPartialDiffeomorph J m c)
     ((mem_extChartPartialDiffeomorph_source J m c).2 hc) hreg
+
+omit [IsManifold I m M] in
+/-- The preferred regular-fibre atlas uses the extended target chart at the value. This equation
+allows comparisons with atlases constructed in other target charts without unfolding the atlas. -/
+theorem regularFiberChartedSpace_eq_chartedSpaceOfChart (hm : 1 ≤ m) (hf : ContMDiff I J m f)
+    (hc : J.IsInteriorPoint c) (hreg : IsRegularValue I J f c) :
+    regularFiberChartedSpace hm hf hc hreg =
+      RegularFiber.chartedSpaceOfChart hm hf (extChartPartialDiffeomorph J m c)
+        ((mem_extChartPartialDiffeomorph_source J m c).2 hc) hreg :=
+  (rfl)
 
 /-- The regular fibre over an interior value with its preferred atlas is a `C^m` manifold. -/
 theorem isManifold_regularFiber (hm : 1 ≤ m) (hf : ContMDiff I J m f)
