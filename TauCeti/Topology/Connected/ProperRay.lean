@@ -82,22 +82,16 @@ private lemma exists_path_seq (hX : ∀ x : X, ¬IsCompact (connectedComponent x
     ∃ z : ℕ → X, z 0 = y ∧ ∀ k, ∃ γ : Path (z k) (z (k + 1)),
       range γ ⊆ (CompactExhaustion.choice X (m + k))ᶜ := by
   set K := CompactExhaustion.choice X
-  have step (n : ℕ) (y : X) (hy : Escapes n y) :
-      ∃ y' ∈ connectedComponentIn (K n)ᶜ y, Escapes (n + 1) y' :=
-    exists_mem_not_isCompact_closure_connectedComponentIn_compl hX hy (K.isCompact (n + 1))
-  choose! next hnext_mem hnext using step
-  let z : ℕ → X := fun k ↦ Nat.rec y (fun k zk ↦ next (m + k) zk) k
-  have hz : ∀ k, Escapes (m + k) (z k) := fun k ↦ by
-    induction k with
-    | zero => exact hy
-    | succ k ih => simpa [z, ← add_assoc] using hnext _ _ ih
-  refine ⟨z, rfl, fun k ↦ ?_⟩
+  obtain ⟨z, hz0, hz⟩ := exists_seq_not_isCompact_closure_connectedComponentIn_compl hX
+    (K := fun k ↦ K (m + k)) (fun k ↦ K.isCompact _) hy
+  refine ⟨z, hz0, fun k ↦ ?_⟩
+  have hzk : Escapes (m + k) (z k) := (hz k).1
   have hopen : IsOpen (connectedComponentIn (K (m + k))ᶜ (z k)) :=
     (K.isCompact _).isClosed.isOpen_compl.connectedComponentIn
   have hjoin : JoinedIn (connectedComponentIn (K (m + k))ᶜ (z k)) (z k) (z (k + 1)) :=
     ((hopen.isConnected_iff_isPathConnected).1
-      (isConnected_connectedComponentIn_iff.2 (hz k).notMem)).joinedIn _
-      (mem_connectedComponentIn (hz k).notMem) _ (hnext_mem _ _ (hz k))
+      (isConnected_connectedComponentIn_iff.2 hzk.notMem)).joinedIn _
+      (mem_connectedComponentIn hzk.notMem) _ (hz k).2
   exact ⟨hjoin.somePath, range_subset_iff.2 fun t ↦
     connectedComponentIn_subset _ _ (hjoin.somePath_mem t)⟩
 
