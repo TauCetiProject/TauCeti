@@ -30,7 +30,7 @@ depends continuously on `φ` by `TauCeti.continuous_inChartAt_mpullback`, which 
 first derivative of `φ` at `x`.
 
 A diffeomorphism `e : M → N` with `e^* β = α` conjugates the stabilizer of `α` onto that of `β`
-(`TauCeti.SmoothForm.map_diffCongr_pullbackStabilizer`).
+(`Diffeomorph.map_diffCongr_pullbackStabilizer`).
 
 ## References
 
@@ -42,34 +42,14 @@ public section
 
 open scoped Manifold ContDiff
 
-namespace TauCeti.SmoothForm
-
 variable {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSpace H]
   {I : ModelWithCorners ℝ E H} [TopologicalSpace M] [ChartedSpace H M] [IsManifold I ∞ M]
   {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] {k : ℕ}
 
-/-- The smooth self-diffeomorphisms `φ` of `M` pulling the smooth form `α` back to itself,
-`φ^* α = α`, as a subgroup of `Diff(M)`. For a symplectic form `ω` this is the symplectomorphism
-group `Symp(M, ω)`. -/
-def pullbackStabilizer (α : SmoothForm I M F k) : Subgroup (M ≃ₘ⟮I, I⟯ M) where
-  carrier := {φ | mpullback φ φ.contMDiff α = α}
-  one_mem' := by
-    apply Subtype.ext
-    simp only [coe_mpullback, Diffeomorph.coe_one, TauCeti.mpullback_id]
-  mul_mem' {φ ψ} hφ hψ := by
-    have hφ' : (mpullback φ φ.contMDiff α).1 = α.1 := congrArg Subtype.val hφ
-    have hψ' : (mpullback ψ ψ.contMDiff α).1 = α.1 := congrArg Subtype.val hψ
-    apply Subtype.ext
-    simp only [coe_mpullback] at hφ' hψ' ⊢
-    rw [Diffeomorph.coe_mul, TauCeti.mpullback_comp (ψ.mdifferentiable (by simp))
-      (φ.mdifferentiable (by simp)), hφ', hψ']
-  inv_mem' {φ} hφ := mpullback_symm_eq_of_mpullback_eq hφ
+namespace Diffeomorph
 
-/-- A diffeomorphism lies in the stabilizer of `α` exactly when it pulls `α` back to itself. -/
-@[simp]
-theorem mem_pullbackStabilizer_iff {α : SmoothForm I M F k} {φ : M ≃ₘ⟮I, I⟯ M} :
-    φ ∈ pullbackStabilizer α ↔ mpullback φ φ.contMDiff α = α :=
-  Iff.rfl
+open TauCeti (SmoothForm)
+open TauCeti.SmoothForm
 
 variable {E' H' N : Type*} [NormedAddCommGroup E'] [NormedSpace ℝ E'] [TopologicalSpace H']
   {J : ModelWithCorners ℝ E' H'} [TopologicalSpace N] [ChartedSpace H' N] [IsManifold J ∞ N]
@@ -78,13 +58,13 @@ variable {E' H' N : Type*} [NormedAddCommGroup E'] [NormedSpace ℝ E'] [Topolog
 preserves `α` exactly when its conjugate `e ∘ φ ∘ e⁻¹` preserves `β`. -/
 theorem diffCongr_mem_pullbackStabilizer_iff (e : M ≃ₘ⟮I, J⟯ N) {α : SmoothForm I M F k}
     {β : SmoothForm J N F k} (h : mpullback e e.contMDiff β = α) {φ : M ≃ₘ⟮I, I⟯ M} :
-    Diffeomorph.diffCongr e φ ∈ pullbackStabilizer β ↔ φ ∈ pullbackStabilizer α := by
+    diffCongr e φ ∈ pullbackStabilizer β ↔ φ ∈ pullbackStabilizer α := by
   subst h
-  have hconj : mpullback (Diffeomorph.diffCongr e φ) (Diffeomorph.diffCongr e φ).contMDiff β =
+  have hconj : mpullback (diffCongr e φ) (diffCongr e φ).contMDiff β =
       mpullback e.symm e.symm.contMDiff (mpullback φ φ.contMDiff (mpullback e e.contMDiff β)) := by
     apply Subtype.ext
     simp only [coe_mpullback]
-    rw [Diffeomorph.diffCongr_apply, Diffeomorph.coe_trans, Diffeomorph.coe_trans,
+    rw [diffCongr_apply, coe_trans, coe_trans,
       TauCeti.mpullback_comp ((φ.contMDiff.comp e.symm.contMDiff).mdifferentiable (by simp))
         (e.mdifferentiable (by simp)),
       TauCeti.mpullback_comp (e.symm.mdifferentiable (by simp)) (φ.mdifferentiable (by simp))]
@@ -102,10 +82,14 @@ stabilizer of `β`. For symplectic forms, conjugation by a symplectomorphism ide
 symplectomorphism groups. -/
 theorem map_diffCongr_pullbackStabilizer (e : M ≃ₘ⟮I, J⟯ N) {α : SmoothForm I M F k}
     {β : SmoothForm J N F k} (h : mpullback e e.contMDiff β = α) :
-    (pullbackStabilizer α).map (Diffeomorph.diffCongr e).toMonoidHom = pullbackStabilizer β := by
+    (pullbackStabilizer α).map (diffCongr e).toMonoidHom = pullbackStabilizer β := by
   ext ψ
   rw [Subgroup.mem_map_equiv, ← diffCongr_mem_pullbackStabilizer_iff e h,
     MulEquiv.apply_symm_apply]
+
+end Diffeomorph
+
+namespace TauCeti.SmoothForm
 
 section Topology
 
@@ -144,7 +128,7 @@ theorem coe_closedPullbackStabilizer (α : SmoothForm I M F k) :
 @[simp]
 theorem mem_closedPullbackStabilizer_iff {α : SmoothForm I M F k} {φ : M ≃ₘ⟮I, I⟯ M} :
     φ ∈ closedPullbackStabilizer α ↔ mpullback φ φ.contMDiff α = α :=
-  Iff.rfl
+  mem_pullbackStabilizer_iff
 
 end Topology
 

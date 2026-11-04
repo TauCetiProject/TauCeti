@@ -24,7 +24,8 @@ corner points. No invertibility, finite dimensionality, or completeness is requi
 
 For smooth maps, `SmoothForm.mpullback` bundles this operation as a linear map on smooth forms.
 Its underlying rough form is the existing `TauCeti.mpullback`. Pullback along a smooth map with a
-smooth right inverse, such as a vector bundle projection, is injective.
+smooth right inverse, such as a vector bundle projection, is injective. The self-diffeomorphisms
+pulling a smooth form back to itself form the subgroup `TauCeti.SmoothForm.pullbackStabilizer`.
 
 Conversely, regularity descends along a local section: if `s` is a `C^n` local section of `f`
 through `x`, a form is `C^m` near `f x` exactly when its pullback along `f` is `C^m` near `x`,
@@ -374,20 +375,29 @@ theorem mpullback_symm_mpullback (φ : M ≃ₘ⟮I, I'⟯ M') (β : SmoothForm 
     mpullback φ.symm φ.symm.contMDiff (mpullback φ φ.contMDiff β) = β :=
   mpullback_symm_eq_of_mpullback_eq rfl
 
+/-- The smooth self-diffeomorphisms `φ` of `M` pulling the smooth form `α` back to itself,
+`φ^* α = α`, as a subgroup of `Diff(M)`. For a symplectic form `ω` this is the symplectomorphism
+group `Symp(M, ω)`. -/
+def pullbackStabilizer (α : SmoothForm I M F k) : Subgroup (M ≃ₘ⟮I, I⟯ M) where
+  carrier := {φ | mpullback φ φ.contMDiff α = α}
+  one_mem' := by simp [Diffeomorph.coe_one]
+  mul_mem' {φ ψ} hφ hψ := by
+    simp only [Set.mem_ofPred_eq, Diffeomorph.coe_mul] at hφ hψ ⊢
+    rw [mpullback_comp ψ φ ψ.contMDiff φ.contMDiff, LinearMap.comp_apply, hφ, hψ]
+  inv_mem' {φ} hφ := by
+    simp only [Set.mem_ofPred_eq, Diffeomorph.coe_inv] at hφ ⊢
+    exact mpullback_symm_eq_of_mpullback_eq hφ
+
+/-- A diffeomorphism lies in the stabilizer of `α` exactly when it pulls `α` back to itself. -/
+@[simp]
+theorem mem_pullbackStabilizer_iff {α : SmoothForm I M F k} {φ : M ≃ₘ⟮I, I⟯ M} :
+    φ ∈ pullbackStabilizer α ↔ mpullback φ φ.contMDiff α = α :=
+  Iff.rfl
+
 /-- A smooth form preserved by a diffeomorphism `φ` is preserved by every integer power of `φ`. -/
 theorem mpullback_zpow_eq_self {φ : M ≃ₘ⟮I, I⟯ M} {σ : SmoothForm I M F k}
-    (hσ : mpullback φ φ.contMDiff σ = σ) (j : ℤ) : mpullback ⇑(φ ^ j) (φ ^ j).contMDiff σ = σ := by
-  -- The diffeomorphisms preserving `σ` form a subgroup.
-  let S : Subgroup (M ≃ₘ⟮I, I⟯ M) :=
-    { carrier := {ψ | mpullback ψ ψ.contMDiff σ = σ}
-      one_mem' := by simp [Diffeomorph.coe_one]
-      mul_mem' := fun {ψ χ} hψ hχ ↦ by
-        simp only [Set.mem_ofPred_eq, Diffeomorph.coe_mul] at hψ hχ ⊢
-        rw [mpullback_comp χ ψ χ.contMDiff ψ.contMDiff, LinearMap.comp_apply, hψ, hχ]
-      inv_mem' := fun {ψ} hψ ↦ by
-        simp only [Set.mem_ofPred_eq, Diffeomorph.coe_inv] at hψ ⊢
-        exact mpullback_symm_eq_of_mpullback_eq hψ }
-  exact S.zpow_mem (x := φ) hσ j
+    (hσ : mpullback φ φ.contMDiff σ = σ) (j : ℤ) : mpullback ⇑(φ ^ j) (φ ^ j).contMDiff σ = σ :=
+  (pullbackStabilizer σ).zpow_mem (x := φ) hσ j
 
 variable {F₁ F₂ F₃ : Type*}
   [NormedAddCommGroup F₁] [NormedSpace ℝ F₁]

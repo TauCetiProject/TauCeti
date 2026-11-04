@@ -12,7 +12,9 @@ public import TauCeti.Geometry.Manifold.DifferentialForm.ExtDeriv
 
 The coordinate expression of a pullback uses the within-range derivative of the map composed
 with the inverse source chart. This is the actual manifold chain rule, including boundary
-points, and supplies the coefficient transport used in interval and product comparisons.
+points, and supplies the coefficient transport used in interval and product comparisons. When the
+image point lies in a chart of the target, the pullback's coordinate expression is the target
+coordinate expression precomposed with the coordinate derivative.
 In top degree, the coefficient of a pullback in a basis is the coordinate Jacobian determinant
 times the coefficient of the form.
 Pulling a flat form back along a preferred chart and reading it in the same chart recovers the
@@ -87,6 +89,27 @@ theorem mpullbackWithin_eq_compContinuousLinearMap (φ : RoughForm I M F k) {f :
   rw [e.left_inv hfc] at h
   rw [mpullbackWithin_apply, hd, mfderivWithin_eq_fderivWithin]
   exact h.symm
+
+/-- The coordinate expression of a pullback `f^* β` in a chart at `x₀`, at a point `z` of the
+chart target whose image under `f` lies in the chart at `y`, is the coordinate expression of `β`
+in the chart at `y` precomposed with the coordinate derivative of `f`. -/
+theorem inChartAt_mpullback_eq_inChartAt_compContinuousLinearMap [IsManifold I' 1 M']
+    (β : RoughForm I' M' F k) {f : M → M'} (x₀ : M) {z : E} (hz : z ∈ (extChartAt I x₀).target)
+    (hf : MDifferentiableAt I I' f ((extChartAt I x₀).symm z)) (y : M')
+    (hfy : f ((extChartAt I x₀).symm z) ∈ (extChartAt I' y).source) :
+    (mpullback I I' f β).inChartAt x₀ z =
+      (β.inChartAt y (extChartAt I' y (f ((extChartAt I x₀).symm z)))).compContinuousLinearMap
+        (fderivWithin ℝ (extChartAt I' y ∘ f ∘ (extChartAt I x₀).symm) (range I) z) := by
+  have hw := mpullbackWithin_eq_compContinuousLinearMap β (f := f ∘ (extChartAt I x₀).symm)
+    (s := range I) y hfy (hf.comp_mdifferentiableWithinAt _
+      (mdifferentiableWithinAt_extChartAt_symm hz))
+    (I.uniqueDiffOn.uniqueDiffWithinAt (extChartAt_target_subset_range x₀ hz))
+  rw [Function.comp_apply] at hw
+  rw [← hw, inChartAt_mpullback β f x₀ hz hf]
+  ext v
+  rw [ContinuousAlternatingMap.compContinuousLinearMap_apply, mpullbackWithin_apply]
+  -- Both sides are `β` at the same point, applied to `fun i ↦ L (v i)`, written once as `⇑L ∘ v`.
+  rfl
 
 end TauCeti.RoughForm
 

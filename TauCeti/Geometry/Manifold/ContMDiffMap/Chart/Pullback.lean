@@ -46,33 +46,6 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   {N : Type*} [TopologicalSpace N] [ChartedSpace H' N]
   {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] {k : ℕ}
 
-namespace RoughForm
-
-variable [IsManifold I 1 M] [IsManifold I' 1 N]
-
-/-- The coordinate expression of a pullback `f^* β` in a chart at `x₀`, at a point `z` of the
-chart target whose image under `f` lies in the chart at `y`, is the coordinate expression of `β`
-in the chart at `y` precomposed with the coordinate derivative of `f`. -/
-theorem inChartAt_mpullback_eq_inChartAt_compContinuousLinearMap (β : RoughForm I' N F k)
-    {f : M → N} (x₀ : M) {z : E} (hz : z ∈ (extChartAt I x₀).target)
-    (hf : MDifferentiableAt I I' f ((extChartAt I x₀).symm z)) (y : N)
-    (hfy : f ((extChartAt I x₀).symm z) ∈ (extChartAt I' y).source) :
-    (mpullback I I' f β).inChartAt x₀ z =
-      (β.inChartAt y (extChartAt I' y (f ((extChartAt I x₀).symm z)))).compContinuousLinearMap
-        (fderivWithin ℝ (extChartAt I' y ∘ f ∘ (extChartAt I x₀).symm) (range I) z) := by
-  have hw := mpullbackWithin_eq_compContinuousLinearMap β (f := f ∘ (extChartAt I x₀).symm)
-    (s := range I) y hfy (hf.comp_mdifferentiableWithinAt _
-      (mdifferentiableWithinAt_extChartAt_symm hz))
-    (I.uniqueDiffOn.uniqueDiffWithinAt (extChartAt_target_subset_range x₀ hz))
-  rw [Function.comp_apply] at hw
-  rw [← hw, inChartAt_mpullback β f x₀ hz hf]
-  ext v
-  rw [ContinuousAlternatingMap.compContinuousLinearMap_apply, mpullbackWithin_apply]
-  -- Both sides are `β` at the same point, applied to `fun i ↦ L (v i)`, written once as `⇑L ∘ v`.
-  rfl
-
-end RoughForm
-
 variable [LocallyCompactSpace E] [IsManifold I 1 M] [IsManifold I' 1 N]
   {n : ℕ∞ω} [IsManifold I n M] [IsManifold I' n N]
 
