@@ -64,13 +64,10 @@ theorem weightTorusPoints_conj_tangentMatrix_rootDerivationAt
     pointsMap_weightTorusPoints _ s
   have hT := coe_coe_pointsMap (Polynomial.CAlgHom : B →ₐ[R] Polynomial B)
     (weightTorusPoints B s)
-  rw [hT'] at hT
   have hTinv := coe_coe_pointsMap (Polynomial.CAlgHom : B →ₐ[R] Polynomial B)
     ((weightTorusPoints B s)⁻¹)
-  rw [map_inv, hT'] at hTinv
-  simp only [Subgroup.coe_inv] at hTinv
-  -- The function underlying `CAlgHom` is definitionally the polynomial constant map.
-  rw [show ⇑(Polynomial.CAlgHom : B →ₐ[R] Polynomial B) = Polynomial.C from rfl] at hT hTinv
+  simp only [map_inv, hT', Subgroup.coe_inv,
+    funext (@Polynomial.CAlgHom_apply (ZMod 2) B _ _ _)] at hT hTinv
   have hχ : (torusCharacter s' (root k) : Polynomial B) =
       Polynomial.C (torusCharacter s (root k) : B) := by
     exact congrArg Units.val (map_torusCharacter Polynomial.C s (root k)).symm
@@ -110,8 +107,8 @@ theorem rootDerivationAt_mem_adjointWeightSpace (k : Fin F4.numRoots) :
     rw [← mapValue_rootDerivationAt (Algebra.ofId R K) k,
       HopfIdeal.quotientLieHom_mapValue, GeneralLinear.tangentMatrix_mapValue,
       tangentMatrix_apply, LinearEquiv.apply_symm_apply]
-    -- Coercing `Algebra.ofId R K` to a function gives the scalar map `algebraMap R K`.
-    rfl
+    ext a b
+    simp only [Matrix.map_apply, Algebra.ofId_apply]
   have h := weightTorusPoints_conj_tangentMatrix_rootDerivationAt K k s
   rw [hmap, coe_weightTorusPoints, F4ShortRoot.coe_weightTorusPoints,
     UniversalEnvelopingAlgebra.kostantTorusMatrix_apply, ← map_inv, diagGL_coe,
