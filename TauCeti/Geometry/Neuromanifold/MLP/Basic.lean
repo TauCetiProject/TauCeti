@@ -27,10 +27,11 @@ realization `A.realizeWeights` restricts it along the zero-bias embedding `A.zer
 fibres contain no bias coordinates.
 
 Changing the depth, widths, or activations changes the specification and hence the model; the
-parameter space of a fixed specification never grows. The constructors `MLPSpec.linear`,
-`MLPSpec.polynomial`, and `MLPSpec.monomial` give identity, layerwise polynomial, and layerwise
-monomial hidden activations `t ↦ t ^ rᵢ`. With a constant exponent `r` and depth `L + 1`, the
-bias-free monomial realization is the polynomial network
+parameter space of a fixed specification never grows. Dropping layer `0` of a positive-depth
+specification `A : MLPSpec K (L + 1)` gives `A.tail : MLPSpec K L`. The constructors
+`MLPSpec.linear`, `MLPSpec.polynomial`, and `MLPSpec.monomial` give identity, layerwise polynomial,
+and layerwise monomial hidden activations `t ↦ t ^ rᵢ`. With a constant exponent `r` and depth
+`L + 1`, the bias-free monomial realization is the polynomial network
 `W_{L+1} ∘ σ_r ∘ W_L ∘ ⋯ ∘ σ_r ∘ W₁` of Finkel–Rodriguez–Wu–Yahl.
 
 ## References
@@ -111,6 +112,14 @@ theorem layerActivation_castSucc (A : MLPSpec K (L + 1)) (i : Fin L) :
 @[simp]
 theorem layerActivation_last (A : MLPSpec K (L + 1)) : A.layerActivation (Fin.last L) = id :=
   A.layerActivation_of_val_add_one_eq _ (by simp)
+
+/-- When every hidden activation of `A` is the identity, every layer, hidden or output, applies
+the identity activation. -/
+theorem layerActivation_eq_id_of_activation_eq_id (A : MLPSpec K L)
+    (h : ∀ j, A.activation j = id) (i : Fin L) : A.layerActivation i = id := by
+  by_cases hi : i.val + 1 < L
+  · exact (A.layerActivation_of_lt i hi).trans (h ⟨i.val, by omega⟩)
+  · exact A.layerActivation_of_val_add_one_eq i (by omega)
 
 section Evaluation
 
@@ -247,9 +256,8 @@ theorem linear_activation (d : Fin (L + 1) → ℕ) (j : Fin (L - 1)) :
 /-- Every layer of `MLPSpec.linear`, hidden or output, applies the identity. -/
 @[simp]
 theorem layerActivation_linear (d : Fin (L + 1) → ℕ) (i : Fin L) :
-    (linear d : MLPSpec K L).layerActivation i = id := by
-  unfold layerActivation
-  split <;> rfl
+    (linear d : MLPSpec K L).layerActivation i = id :=
+  layerActivation_eq_id_of_activation_eq_id _ (linear_activation d) i
 
 /-- The MLP specification whose hidden layer `j + 1` evaluates the polynomial `p j`.
 Its body is exposed so scalar transport can compute the common widths in dependent
@@ -304,6 +312,78 @@ theorem monomial_evalPrefix_zeroBias_castSucc_succ [Semiring K] (d : Fin (L + 2)
       fun j => ((w i.castSucc *ᵥ
         (monomial d r).evalPrefix ((monomial d r).zeroBias w) x i.castSucc.castSucc) j) ^ r i := by
   simp
+
+/-! ### Dropping the first layer -/
+
+/-- The specification obtained from `A : MLPSpec K (L + 1)` by dropping layer `0`: its widths are
+`A.width 1, …, A.width (L + 1)` and its hidden activations are those of `A` above layer `1`.
+Its body is exposed so that `A.tail.Parameters` and `A.tail.Weights` are definitionally the tails
+of `A.Parameters` and `A.Weights`. -/
+@[expose] def tail (A : MLPSpec K (L + 1)) : MLPSpec K L where
+  width i := A.width i.succ
+  activation j := A.activation ⟨j.val + 1, by omega⟩
+
+/-- The widths of `A.tail` are the widths of `A` shifted up by one layer. -/
+@[simp]
+theorem tail_width (A : MLPSpec K (L + 1)) (i : Fin (L + 1)) :
+    A.tail.width i = A.width i.succ := (rfl)
+
+/-- The hidden activations of `A.tail` are those of `A` shifted up by one hidden layer. -/
+theorem tail_activation (A : MLPSpec K (L + 1)) (j : Fin (L - 1)) :
+    A.tail.activation j = A.activation ⟨j.val + 1, by omega⟩ := (rfl)
+
+/-- In depth at least two, hidden activation `j` of `A.tail` is hidden activation `j.succ` of
+`A`. -/
+@[simp]
+theorem tail_activation_succ (A : MLPSpec K (L + 2)) (j : Fin L) :
+    A.tail.activation j = A.activation j.succ :=
+  congrArg A.activation (Fin.ext rfl)
+
+/-- Each layer of `A.tail` applies the same scalar activation as the corresponding shifted layer of
+`A`. -/
+@[simp]
+theorem layerActivation_tail (A : MLPSpec K (L + 1)) (i : Fin L) :
+    A.tail.layerActivation i = A.layerActivation i.succ := by
+  by_cases h : i.val + 1 < L
+  · rw [A.tail.layerActivation_of_lt i h, A.layerActivation_of_lt i.succ (by simp; omega),
+      tail_activation]
+    exact congrArg A.activation (Fin.ext rfl)
+  · rw [A.tail.layerActivation_of_val_add_one_eq i (by omega),
+      A.layerActivation_of_val_add_one_eq i.succ (by simp; omega)]
+
+/-- Dropping the first layer of `MLPSpec.linear` drops the first width. -/
+@[simp]
+theorem tail_linear (d : Fin (L + 2) → ℕ) :
+    (linear d : MLPSpec K (L + 1)).tail = linear (Fin.tail d) := by
+  ext <;> simp [Fin.tail, tail_activation]
+
+/-- Dropping the first layer of `MLPSpec.polynomial` in depth `L + 2` drops the first width and the
+first hidden polynomial. -/
+@[simp]
+theorem tail_polynomial [Semiring K] (d : Fin (L + 3) → ℕ) (p : Fin (L + 1) → Polynomial K) :
+    (polynomial d p : MLPSpec K (L + 2)).tail = polynomial (Fin.tail d) (Fin.tail p) := by
+  ext <;> simp [Fin.tail]
+
+/-- Dropping the first layer of `MLPSpec.monomial` in depth `L + 2` drops the first width and the
+first hidden exponent. -/
+@[simp]
+theorem tail_monomial [Monoid K] (d : Fin (L + 3) → ℕ) (r : Fin (L + 1) → ℕ) :
+    (monomial d r : MLPSpec K (L + 2)).tail = monomial (Fin.tail d) (Fin.tail r) := by
+  ext <;> simp [Fin.tail]
+
+/-- Taking the tail of parameters commutes with the zero-bias embedding. -/
+@[simp]
+theorem tail_zeroBias [Zero K] (A : MLPSpec K (L + 1)) (w : A.Weights) :
+    Fin.tail (A.zeroBias w) = A.tail.zeroBias (Fin.tail w) := (rfl)
+
+/-- Consing a first weight matrix commutes with the zero-bias embedding. -/
+@[simp]
+theorem zeroBias_cons [Zero K] (A : MLPSpec K (L + 1))
+    (w₀ : Matrix (Fin (A.width 1)) (Fin (A.width 0)) K) (w : A.tail.Weights) :
+    A.zeroBias (Fin.cons w₀ w) = Fin.cons (w₀, 0) (A.tail.zeroBias w) := by
+  funext i
+  -- At `0` and `i.succ`, `Fin.cons` (`Fin.cases`) and `zeroBias` reduce definitionally.
+  cases i using Fin.cases <;> rfl
 
 end MLPSpec
 
