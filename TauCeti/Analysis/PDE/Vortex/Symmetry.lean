@@ -36,9 +36,9 @@ rotations map vortices to vortices.
 
 For the framing at infinity, where `α(z) (z / |z|)^(-m)` tends to a limit `c`, translations
 preserve the limit, while a rotation by `u` multiplies it by `u^m`. The constant line-frame gauge
-`u^(-m)` restores it, so a rotation followed by this constant gauge preserves framed degree-`m`
-vortices. This constant gauge does not tend to one at infinity, so it is a change of the frame of
-the line at infinity rather than an element of the framed gauge group.
+`u^(-m)` restores it, so a rotation followed by this constant gauge preserves the limit `c` of
+the end framing. This constant gauge does not tend to one at infinity, so it is a change of the
+frame of the line at infinity rather than an element of the framed gauge group.
 
 These are identities of smooth differential expressions; their Sobolev completions, and the
 induced action on the divisor of a vortex, are not treated here.
@@ -357,7 +357,7 @@ private theorem fderiv_re_mul_add_im_mul {u : Circle} {x : ℂ → EuclideanSpac
     hj.comp z (differentiableAt_id.const_mul _)
   rw [fderiv_fun_add (hi'.const_mul _) (hj'.const_mul _), fderiv_const_mul hi',
     fderiv_const_mul hj']
-  rfl
+  simp only [add_apply, smul_apply, smul_eq_mul]
 
 /-- The derivative of the rotated combination `Re u · x_i - Im u · x_j` of two components. -/
 private theorem fderiv_re_mul_sub_im_mul {u : Circle} {x : ℂ → EuclideanSpace ℝ (Fin 4)}
@@ -372,7 +372,7 @@ private theorem fderiv_re_mul_sub_im_mul {u : Circle} {x : ℂ → EuclideanSpac
     hj.comp z (differentiableAt_id.const_mul _)
   rw [fderiv_fun_sub (hi'.const_mul _) (hj'.const_mul _), fderiv_const_mul hi',
     fderiv_const_mul hj']
-  rfl
+  simp only [sub_apply, smul_apply, smul_eq_mul]
 
 @[simp]
 theorem sectionValue_rotateField (u : Circle) (x : ℂ → EuclideanSpace ℝ (Fin 4)) (z : ℂ) :
