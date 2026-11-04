@@ -26,7 +26,10 @@ scalar. Together these give the pointwise form of the rescaling law for contact 
 contact together whenever `f` vanishes nowhere.
 
 For an alternating `B`, the hyperplane `ker a` carries a nondegenerate alternating form, so it has
-even dimension and `V` has odd dimension (`Module.Dual.IsContact.odd_finrank`).
+even dimension and `V` has odd dimension (`Module.Dual.IsContact.odd_finrank`). A subspace of
+`ker a` on which `B` vanishes has at most half the dimension of `ker a`
+(`Module.Dual.IsContact.two_mul_finrank_add_one_le`): this bounds the dimension of isotropic and
+Legendrian submanifolds of a contact manifold.
 
 Contact covectors arise on hyperplanes transverse to a vector. If `B` is nondegenerate and
 alternating, `L : U → V` is injective and `z` is a vector outside the range of `L` which together
@@ -64,6 +67,8 @@ pointwise form of the Reeb vector field of a contact form and of its rescaling l
   under nonzero rescaling of `a` and of `B`.
 * `Module.Dual.IsContact.even_finrank_ker`, `Module.Dual.IsContact.odd_finrank`: the dimension
   count.
+* `Module.Dual.IsContact.two_mul_finrank_add_one_le`: the dimension bound for subspaces of `ker a`
+  on which `B` vanishes.
 * `Module.Dual.isContact_comp_compl₁₂`: the covector `B z` restricted to a hyperplane transverse to
   `z` is contact for the restriction of a nondegenerate alternating `B`.
 * `Module.Dual.isContact_comp_linearEquiv_compl₁₂_iff`,
@@ -162,6 +167,23 @@ theorem IsContact.odd_finrank [FiniteDimensional K V] (hB : B.IsAlt) (h : a.IsCo
     Odd (finrank K V) := by
   rw [← finrank_ker_add_one_of_ne_zero h.ne_zero]
   exact (h.even_finrank_ker hB).add_one
+
+/-- **Isotropic subspaces of a contact hyperplane.** If `a` is contact for `B`, a subspace `W` of
+`ker a` on which `B` vanishes has `2 dim W + 1 ≤ dim V`: on a space of dimension `2 n + 1`, such a
+subspace has dimension at most `n`. -/
+theorem IsContact.two_mul_finrank_add_one_le [FiniteDimensional K V] (h : a.IsContact B)
+    {W : Submodule K V} (hW : W ≤ LinearMap.ker a) (hBW : ∀ v ∈ W, ∀ w ∈ W, B v w = 0) :
+    2 * finrank K W + 1 ≤ finrank K V := by
+  -- Read `W` inside `ker a`, where `B` is nondegenerate and `W` lies in its own orthogonal.
+  set W' := W.comap (LinearMap.ker a).subtype
+  have hW' : finrank K W' = finrank K W := (Submodule.comapSubtypeEquivOfLe hW).finrank_eq
+  have hle : W' ≤ (B.restrict (LinearMap.ker a)).orthogonal W' := fun v hv ↦
+    LinearMap.BilinForm.mem_orthogonal_iff.2 fun w hw ↦ hBW w hw v hv
+  have horth := LinearMap.BilinForm.finrank_orthogonal h.nondegenerate_restrict W'
+  have hWker := Submodule.finrank_mono hle
+  have hker := finrank_ker_add_one_of_ne_zero h.ne_zero
+  have hW'le := Submodule.finrank_le W'
+  omega
 
 /-! ### Hyperplanes transverse to a vector -/
 
