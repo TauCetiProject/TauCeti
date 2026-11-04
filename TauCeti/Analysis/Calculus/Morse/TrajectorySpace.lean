@@ -115,7 +115,8 @@ private theorem level_slice (hp : IsNondegenerateCriticalPoint f p)
         Flow.stableSet (negativeGradientFlow f hf) q) y) ⊓ (fderiv ℝ f y).ker := by
   have : CompleteSpace E := FiniteDimensional.complete ℝ E
   obtain ⟨e₁, hy₁, he₁, hes₁, hS₁⟩ :=
-    hp.exists_unstableSet_inter_stableSet_chart hq hfs hf hyu hys htr
+    hp.exists_unstableSet_inter_stableSet_chart hq le_rfl (by simpa [one_add_one_eq_two] using hfs)
+      hf hyu hys htr
   rw [← hp.span_tangentConeAt_unstableSet_inter_stableSet hq hfs hf hyu hys htr] at hS₁
   -- The level `{f = c}` is the regular zero set of `f - c` near `y`.
   have hlevel : {x | f x = c} = (fun z ↦ f z - c) ⁻¹' {0} := by ext; simp [sub_eq_zero]

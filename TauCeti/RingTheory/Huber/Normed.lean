@@ -52,6 +52,8 @@ the adic spectra of the Tate algebras `K⟨X₁, …, Xₙ⟩`.
   pseudouniformisers are the nonzero elements of norm less than one.
 * `TauCeti.Huber.coe_powerBoundedSubring_eq_closedBall`: in an ultrametric normed field `K°` is the
   closed unit ball.
+* `TauCeti.Huber.powerBoundedSubring.dvd_iff_norm_le`: in an ultrametric normed field
+  divisibility in `K°` is comparison of norms.
 * `TauCeti.Huber.IsTateRing.of_isUnit_norm_lt_one`: an ultrametric seminormed commutative ring
   with `‖1‖ = 1` and a unit of norm less than one is a Tate ring.
 * `TauCeti.Huber.IsTateRing.of_nontriviallyNormedField`: a nontrivially normed field with an
@@ -192,6 +194,31 @@ theorem isPseudoUniformizer_iff_norm_lt_one {ϖ : K} :
   exact and_congr_right fun _ ↦ tendsto_pow_atTop_nhds_zero_iff_norm_lt_one
 
 end NormedDivisionRing
+
+section UltrametricDvd
+
+variable {K : Type*} [NormedField K] [IsUltrametricDist K]
+
+/-- **Divisibility in `K°` is comparison of norms**: in an ultrametric normed field, `b` divides
+`a` in the power-bounded subring exactly when `‖a‖ ≤ ‖b‖`. This is the counterpart for `K°` of
+`Valued.integer.dvd_iff_norm_le`, stated for the valuation ring `𝒪[K]`, which is a different
+subring with the same carrier. -/
+theorem powerBoundedSubring.dvd_iff_norm_le {a b : powerBoundedSubring K} :
+    b ∣ a ↔ ‖(a : K)‖ ≤ ‖(b : K)‖ := by
+  refine ⟨fun ⟨c, hc⟩ ↦ ?_, fun h ↦ ?_⟩
+  · rw [hc, Subring.coe_mul, norm_mul]
+    exact mul_le_of_le_one_right (norm_nonneg _)
+      (isPowerBounded_iff_norm_le_one.mp (mem_powerBoundedSubring.mp c.2))
+  · rcases eq_or_ne (b : K) 0 with hb | hb
+    · have ha : (a : K) = 0 := norm_le_zero_iff.mp (by simpa [hb] using h)
+      exact ⟨0, Subtype.ext (by simp [ha])⟩
+    · refine ⟨⟨a / b, mem_powerBoundedSubring.mpr (isPowerBounded_iff_norm_le_one.mpr ?_)⟩,
+        Subtype.ext ?_⟩
+      · rw [norm_div]
+        exact div_le_one_of_le₀ h (norm_nonneg _)
+      · simp [mul_div_cancel₀ _ hb]
+
+end UltrametricDvd
 
 open Pointwise in
 /-- **Scalars of norm at most one are power-bounded** in a topological algebra over a nontrivially
