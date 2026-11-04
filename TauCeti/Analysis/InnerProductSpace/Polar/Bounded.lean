@@ -222,7 +222,7 @@ theorem polarFactor_eq_comp_inverse (hT : IsUnit T.modulus) :
 /-- The polar factor of an invertible operator is invertible. -/
 @[simp]
 theorem isUnit_polarFactor (T : E →L[𝕜] E) (hT : IsUnit T) : IsUnit T.polarFactor := by
-  have hP := (T.isStrictlyPositive_modulus hT).isUnit
+  have hP := (T.isStrictlyPositive_modulus_of_isUnit hT).isUnit
   exact hP.mul_right_iff.mp (by simpa only [mul_def, polarFactor_comp_modulus] using hT)
 
 /-- The polar factor `U` of an endomorphism `T` satisfies `‖T - U‖ ≤ ‖|T| - 1‖`. -/
