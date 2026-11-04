@@ -51,6 +51,7 @@ namespace TauCeti.Contour
 /-- **Exact differentials have no residue.** If `g` is meromorphic at `z₀`, then the residue of its
 derivative `g'` at `z₀` vanishes: differentiating the Laurent expansion of `g` produces no
 `(z − z₀)⁻¹` term. -/
+@[simp]
 theorem residue_deriv_eq_zero {g : ℂ → ℂ} {z₀ : ℂ} (hg : MeromorphicAt g z₀) :
     residue (deriv g) z₀ = 0 := by
   obtain ⟨a, h, hh, hgh⟩ := exists_laurent_data_of_meromorphicAt hg
@@ -82,6 +83,7 @@ theorem residue_deriv_eq_zero {g : ℂ → ℂ} {z₀ : ℂ} (hg : MeromorphicAt
 then `φ' / (φ − φ p) ^ (k + 1)`, the pull-back along `φ` of the form `dw / (w − φ p) ^ (k + 1)`,
 has residue `1` at `p` for `k = 0` and `0` for `k ≥ 1`. For `φ = id` this is
 `TauCeti.Contour.residue_const_div_sub_pow` with coefficient `1`. -/
+@[simp]
 theorem residue_deriv_div_sub_pow {φ : ℂ → ℂ} {p : ℂ} (hφ : AnalyticAt ℂ φ p)
     (hφ' : deriv φ p ≠ 0) (k : ℕ) :
     residue (fun z ↦ deriv φ z / (φ z - φ p) ^ (k + 1)) p = if k = 0 then 1 else 0 := by
@@ -169,10 +171,14 @@ theorem residue_comp_add_const (f : ℂ → ℂ) (c p : ℂ) :
   simpa using residue_comp_mul_deriv (f := f) (φ := fun z ↦ z + c) (p := p) (by fun_prop)
     (by simp)
 
-/-- **Scaling of the residue under dilation.** For `c ≠ 0`, the residue of `z ↦ f (c * z)` at `p`
-is `c⁻¹` times the residue of `f` at `c * p`. -/
-theorem residue_comp_const_mul (f : ℂ → ℂ) {c : ℂ} (hc : c ≠ 0) (p : ℂ) :
+/-- **Scaling of the residue under dilation.** The residue of `z ↦ f (c * z)` at `p` is `c⁻¹` times
+the residue of `f` at `c * p`. For `c = 0` both sides vanish: the left side is the residue of a
+constant function, and `0⁻¹ = 0`. -/
+@[simp]
+theorem residue_comp_const_mul (f : ℂ → ℂ) (c p : ℂ) :
     residue (fun z ↦ f (c * z)) p = c⁻¹ * residue f (c * p) := by
+  rcases eq_or_ne c 0 with rfl | hc
+  · simpa using residue_eq_zero_of_analyticAt (f := fun _ : ℂ ↦ f 0) (z₀ := p) analyticAt_const
   have h : residue (fun z ↦ c * f (c * z)) p = residue f (c * p) := by
     simpa [mul_comm _ c] using residue_comp_mul_deriv (f := f) (φ := fun z ↦ c * z) (p := p)
       (by fun_prop) (by simpa using hc)
