@@ -138,6 +138,7 @@ lemma hyperboloidNormalize_mem {v : ℝ × E} (hv : v ∈ futureCone E) :
   · rw [hyperboloidNormalize, minkowskiNormSq_smul, inv_pow, Real.sq_sqrt hq.le,
       inv_mul_cancel₀ hq.ne']
 
+@[simp]
 lemma hyperboloidNormalize_of_mem {v : ℝ × E} (hv : v ∈ hyperboloid E) :
     hyperboloidNormalize v = v := by
   rw [hyperboloidNormalize, hv.2, Real.sqrt_one, inv_one, one_smul]
