@@ -47,8 +47,6 @@ partial sums of the Fourier multipliers `𝓕⁻ (ψⱼ • 𝓕 f)` are the low
 * `ContDiffBump.hasSum_littlewoodPaleyPiece`: the pieces sum to `m` away from the origin.
 * `ContDiffBump.exists_norm_iteratedFDeriv_littlewoodPaleyPiece_le`: the scale-invariant
   derivative bounds for the pieces of a symbol satisfying Mihlin's condition.
-* `SchwartzMap.tendsto_smulLeftCLM_contDiffBump_two_pow`: the low-pass truncations
-  `φ (2^{-N} ·) • f` converge to `f` in the Schwartz topology.
 * `SchwartzMap.sum_fourierMultiplierCLM_inhomogeneousLittlewoodPaley_range`: the partial sums of
   the inhomogeneous Littlewood–Paley multipliers are the low-pass truncations.
 * `SchwartzMap.tendsto_sum_fourierMultiplierCLM_inhomogeneousLittlewoodPaley`: Littlewood–Paley
@@ -225,13 +223,6 @@ theorem exists_norm_iteratedFDeriv_littlewoodPaleyPiece_le (N : ℕ) :
   gcongr
   exact Finset.single_le_sum (fun k _ ↦ hc0 k) (Finset.mem_range.2 (Nat.lt_succ_of_le hk))
 
-/-- The pieces of the inhomogeneous partition, viewed as complex-valued symbols, have temperate
-growth, so they are Fourier multipliers on Schwartz functions and on tempered distributions. -/
-theorem hasTemperateGrowth_ofReal_inhomogeneousLittlewoodPaley (j : ℕ) :
-    (fun ξ ↦ (φ.inhomogeneousLittlewoodPaley j ξ : ℂ)).HasTemperateGrowth := by
-  have := φ.hasTemperateGrowth_inhomogeneousLittlewoodPaley j
-  fun_prop
-
 end FiniteDimensional
 
 end ContDiffBump
@@ -240,28 +231,6 @@ namespace SchwartzMap
 
 open Filter Topology
 open FourierTransform
-
-section Truncation
-
-variable {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
-  [NormedAddCommGroup F] [NormedSpace ℂ F]
-
-/-- The low-pass truncations `φ (2^{-N} ·) • f` of a Schwartz function converge to `f` in the
-Schwartz topology. -/
-theorem tendsto_smulLeftCLM_contDiffBump_two_pow (φ : ContDiffBump (0 : E)) (f : 𝓢(E, F)) :
-    Tendsto (fun N : ℕ ↦ smulLeftCLM F (fun ξ ↦ (φ (((2 : ℝ) ^ N)⁻¹ • ξ) : ℂ)) f) atTop
-      (𝓝 f) := by
-  have hφ : (⇑φ).HasTemperateGrowth := φ.hasCompactSupport.hasTemperateGrowth φ.contDiff
-  have hbdd (i : ℕ) : ∃ B, ∀ x, ‖iteratedFDeriv ℝ i φ x‖ ≤ B :=
-    let ⟨C, _, hC⟩ := φ.hasCompactSupport.exists_bound_iteratedFDeriv φ.contDiff i
-    ⟨C, hC i le_rfl⟩
-  have h := (tendsto_smulLeftCLM_comp_inv_smul_atTop φ.contDiff hbdd φ.eventuallyEq_one
-    f).comp (tendsto_pow_atTop_atTop_of_one_lt (one_lt_two (α := ℝ)))
-  refine h.congr fun N ↦ ?_
-  exact (smulLeftCLM_ofReal ℂ (hφ.comp
-    (((2 : ℝ) ^ N)⁻¹ • ContinuousLinearMap.id ℝ E).hasTemperateGrowth) f).symm
-
-end Truncation
 
 variable {E F : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
   [MeasurableSpace E] [BorelSpace E] [NormedAddCommGroup F] [NormedSpace ℂ F]

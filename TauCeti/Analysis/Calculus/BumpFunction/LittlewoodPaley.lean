@@ -360,6 +360,13 @@ theorem hasTemperateGrowth_inhomogeneousLittlewoodPaley (j : ℕ) :
   (φ.hasCompactSupport_inhomogeneousLittlewoodPaley j).hasTemperateGrowth
     (φ.contDiff_inhomogeneousLittlewoodPaley j)
 
+/-- The pieces of the inhomogeneous partition, viewed as complex-valued symbols, have temperate
+growth, so they are Fourier multipliers on Schwartz functions and on tempered distributions. -/
+theorem hasTemperateGrowth_ofReal_inhomogeneousLittlewoodPaley (j : ℕ) :
+    (fun ξ ↦ (φ.inhomogeneousLittlewoodPaley j ξ : ℂ)).HasTemperateGrowth := by
+  have := φ.hasTemperateGrowth_inhomogeneousLittlewoodPaley j
+  fun_prop
+
 /-- **Derivative bounds for the inhomogeneous partition.** The `k`-th derivative of `ψⱼ` is
 bounded by `B / 2^{jk}`, with `B` independent of `j`. -/
 theorem exists_norm_iteratedFDeriv_inhomogeneousLittlewoodPaley_le (k : ℕ) :

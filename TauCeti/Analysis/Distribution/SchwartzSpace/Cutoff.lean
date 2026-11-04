@@ -5,8 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.Calculus.BumpFunction.FiniteDimension
 public import Mathlib.Analysis.Distribution.SchwartzSpace.Basic
-import Mathlib.Analysis.Calculus.BumpFunction.FiniteDimension
 import Mathlib.Analysis.Calculus.ContDiff.Bounds
 import TauCeti.Analysis.Calculus.ContDiff.Scaling
 
@@ -38,6 +38,8 @@ Altogether the `(k, n)` seminorm of the difference is `O(R⁻¹)`.
   `𝓢(E, F)`.
 * `SchwartzMap.hasCompactSupport_smulLeftCLM_comp_inv_smul`: the truncations are compactly
   supported.
+* `SchwartzMap.tendsto_smulLeftCLM_contDiffBump_two_pow`: the dyadic truncations
+  `φ (2^{-N} ·) • f` by a `ContDiffBump` converge to `f`, for complex-valued multipliers.
 * `SchwartzMap.dense_hasCompactSupport`: compactly supported functions are dense in
   `𝓢(E, F)` for finite-dimensional `E`.
 
@@ -219,5 +221,26 @@ theorem dense_hasCompactSupport [FiniteDimensional ℝ E] :
     (tendsto_smulLeftCLM_comp_inv_smul_atTop b.contDiff hbdd b.eventuallyEq_one f) ?_
   filter_upwards [eventually_gt_atTop 0] with R hR
   exact hasCompactSupport_smulLeftCLM_comp_inv_smul b.contDiff b.hasCompactSupport hR.ne' f
+
+section Truncation
+
+variable [FiniteDimensional ℝ E] {G : Type*} [NormedAddCommGroup G] [NormedSpace ℂ G]
+
+/-- The low-pass truncations `φ (2^{-N} ·) • f` of a Schwartz function converge to `f` in the
+Schwartz topology. -/
+theorem tendsto_smulLeftCLM_contDiffBump_two_pow (φ : ContDiffBump (0 : E)) (f : 𝓢(E, G)) :
+    Tendsto (fun N : ℕ ↦ smulLeftCLM G (fun ξ ↦ (φ (((2 : ℝ) ^ N)⁻¹ • ξ) : ℂ)) f) atTop
+      (𝓝 f) := by
+  have hφ : (⇑φ).HasTemperateGrowth := φ.hasCompactSupport.hasTemperateGrowth φ.contDiff
+  have hbdd (i : ℕ) : ∃ B, ∀ x, ‖iteratedFDeriv ℝ i φ x‖ ≤ B :=
+    let ⟨C, _, hC⟩ := φ.hasCompactSupport.exists_bound_iteratedFDeriv φ.contDiff i
+    ⟨C, hC i le_rfl⟩
+  have h := (tendsto_smulLeftCLM_comp_inv_smul_atTop φ.contDiff hbdd φ.eventuallyEq_one
+    f).comp (tendsto_pow_atTop_atTop_of_one_lt (one_lt_two (α := ℝ)))
+  refine h.congr fun N ↦ ?_
+  exact (smulLeftCLM_ofReal ℂ (hφ.comp
+    (((2 : ℝ) ^ N)⁻¹ • ContinuousLinearMap.id ℝ E).hasTemperateGrowth) f).symm
+
+end Truncation
 
 end SchwartzMap
