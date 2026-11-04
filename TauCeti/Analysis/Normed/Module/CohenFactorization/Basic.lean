@@ -8,7 +8,7 @@ module
 public import Mathlib.Analysis.RCLike.Basic
 public import Mathlib.Analysis.SpecificLimits.Normed
 public import TauCeti.Analysis.Normed.Module.Essential
-public import TauCeti.Analysis.Normed.Module.Unitization
+public import TauCeti.Analysis.Normed.Module.Unitization.Basic
 public import TauCeti.Analysis.Normed.Ring.Units
 
 /-!
