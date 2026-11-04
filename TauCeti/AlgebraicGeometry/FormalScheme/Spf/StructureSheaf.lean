@@ -12,6 +12,7 @@ public import TauCeti.AlgebraicGeometry.StructureSheaf
 public import TauCeti.RingTheory.AdicCompletion.Limit
 public import TauCeti.RingTheory.AdicRing.CompletedAway
 
+import Mathlib.Topology.Sheaves.SheafCondition.UniqueGluing
 import TauCeti.RingTheory.Localization.Away.Quotient
 
 /-!
@@ -93,8 +94,10 @@ canonically isomorphic sheaf (EGA I, Ch. I, 10.1.1).
 * `TauCeti.FormalScheme.Spf.structureSheaf.lift_quotientProjection`,
   `TauCeti.FormalScheme.Spf.structureSheaf.hom_ext`,
   `TauCeti.FormalScheme.Spf.structureSheaf.quotientProjection_mkSection`,
-  `TauCeti.FormalScheme.Spf.structureSheaf.sections_ext`: morphisms and sections of the structure
-  sheaf correspond to compatible families over the thickenings.
+  `TauCeti.FormalScheme.Spf.structureSheaf.sections_ext`,
+  `TauCeti.FormalScheme.Spf.subsingleton_sections_bot`: morphisms and sections of the structure
+  sheaf correspond to compatible families over the thickenings, and sections over `⊥` are a
+  subsingleton.
 * `TauCeti.FormalScheme.Spf.toQuotientSheaf_eq`: the projection to `O_K` factors through the
   projection to `O_{I ^ (n + 1)}` for every `n` with `I ^ (n + 1) ≤ K`.
 * `TauCeti.FormalScheme.Spf.toQuotientSheaf_comp_quotientTransition`: the projections to
@@ -356,6 +359,12 @@ theorem structureSheaf.quotientProjection_mkSection (hI : IsAdic I) (U : Opens (
   exact Types.isLimitEquivSections_symm_apply
     (isLimitOfPreserves G (limit.isLimit (quotientDiagram hI)))
     ⟨fun j ↦ y j.unop, fun f ↦ hy (leOfHom f.unop)⟩ (op n)
+
+/-- Sections of `O_{Spf A}` over the empty open `⊥` form a subsingleton. -/
+instance subsingleton_sections_bot (hI : IsAdic I) :
+    Subsingleton ((structureSheaf hI).obj.obj (op (⊥ : Opens (carrier A)))) :=
+  ⟨fun s t ↦ TopCat.Sheaf.eq_of_locally_eq' (structureSheaf hI) Empty.elim ⊥ (fun i ↦ i.elim)
+    (by simp) s t fun i ↦ i.elim⟩
 
 /-- For ideals of definition `I` and `K`, the projection `O_{Spf A} → O_K` from the structure
 sheaf built from `I` to the structure sheaf of the thickening `Spec (A ⧸ K)`: the projection to

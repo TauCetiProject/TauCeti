@@ -48,8 +48,9 @@ exactly when `f` is nilpotent modulo `I`.
   `V(I)`, hence quasi-compact.
 * `TauCeti.FormalScheme.Spf.carrier_eq_empty_iff_subsingleton`: the formal spectrum of a
   separated ring with an ideal of definition is empty exactly when the ring is zero.
-* `TauCeti.FormalScheme.Spf.isBasis_basicOpen`, `TauCeti.FormalScheme.Spf.isCompact_basicOpen`:
-  the basic open sets form a basis of quasi-compact opens.
+* `TauCeti.FormalScheme.Spf.isBasis_basicOpen`, `TauCeti.FormalScheme.Spf.exists_basicOpen_le`,
+  `TauCeti.FormalScheme.Spf.le_iSup_basicOpen_le`, `TauCeti.FormalScheme.Spf.isCompact_basicOpen`:
+  the basic open sets form a basis of quasi-compact opens covering every open set.
 * `TauCeti.FormalScheme.Spf.basicOpen_le_basicOpen_iff`: `D(g) ⊆ D(f)` if and only if `g` lies
   in the radical of `f A + I`.
 * `TauCeti.FormalScheme.Spf.basicOpen_eq_bot_iff`: `D(f)` is empty if and only if `f` lies in
@@ -203,6 +204,18 @@ theorem isBasis_basicOpen : Opens.IsBasis (Set.range (basicOpen (A := A))) := by
   convert IsInducing.subtypeVal.isTopologicalBasis (isTopologicalBasis_basic_opens (R := A))
   ext
   simp [basicOpen, Function.comp_def]
+
+/-- Every point of an open set `U` of `Spf A` has a basic open neighbourhood `D(f) ⊆ U`. -/
+theorem exists_basicOpen_le {U : Opens (carrier A)} {p : carrier A} (hp : p ∈ U) :
+    ∃ f : A, p ∈ basicOpen f ∧ basicOpen f ≤ U := by
+  obtain ⟨_, ⟨f, rfl⟩, hpf, hfU⟩ := Opens.isBasis_iff_nbhd.mp isBasis_basicOpen hp
+  exact ⟨f, hpf, hfU⟩
+
+/-- Every open set `U` of `Spf A` is covered by the basic open sets `D(f) ⊆ U`. -/
+theorem le_iSup_basicOpen_le (U : Opens (carrier A)) :
+    U ≤ ⨆ p : { f : A // basicOpen f ≤ U }, basicOpen p.1 := fun _ hz ↦
+  let ⟨f, hzf, hfU⟩ := exists_basicOpen_le hz
+  Opens.mem_iSup.mpr ⟨⟨f, hfU⟩, hzf⟩
 
 /-- If `I` defines the topology of `A`, every basic open set `D(f)` of `Spf A` is quasi-compact. -/
 theorem isCompact_basicOpen (hI : IsAdic I) (f : A) :

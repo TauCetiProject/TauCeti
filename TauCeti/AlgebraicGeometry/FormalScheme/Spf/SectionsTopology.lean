@@ -13,6 +13,8 @@ public import TauCeti.AlgebraicGeometry.FormalScheme.Spf.IdealIndependence
 public import TauCeti.RingTheory.AdicCompletion.InitialTopology
 
 import Mathlib.Topology.Sheaves.SheafCondition.UniqueGluing
+import TauCeti.Topology.Algebra.Ring.Basic
+import TauCeti.Topology.Discrete
 
 /-!
 # The topology on rings of sections of the formal spectrum
@@ -52,8 +54,6 @@ completed localisation `A_{f}` on `D(f)` (`isHomeomorph_globalSectionsIso`,
   by the projections to the discrete rings `Γ(U, O_{I ^ (n + 1)})`.
 * `TauCeti.FormalScheme.Spf.quotientSectionsTopology`: the sheaf topology on `Γ(U, O_{Spf A})`
   induced by the restrictions to basic opens `D(f) ⊆ U` carrying `sectionsTopology`.
-* `TauCeti.FormalScheme.Spf.quotientSectionsTopologyGlueHomeomorph`: for an open cover of `U`, the
-  homeomorphism from `Γ(U, O_{Spf A})` onto its image in `∏ i, Γ(V i, O_{Spf A})`.
 
 ## Main results
 
@@ -124,14 +124,11 @@ theorem continuous_toQuotientSheaf_app (hI : IsAdic I) (hK : IsAdic K) (U : Open
   have hcomp : ((toQuotientSheaf hI hK).hom.app (op U) : _ → _) =
       ((quotientTransition _ hK hn).hom.app (op U)) ∘
         ((quotientProjection hI n).hom.app (op U)) := by
-    rw [toQuotientSheaf_eq hI hK hn, ObjectProperty.FullSubcategory.comp_hom, NatTrans.comp_app]
-    rfl
-  let _ : TopologicalSpace ((quotientSheaf (is_ideal_adic_pow hI n.succ_pos)).obj.obj (op U)) := ⊥
-  have := discreteTopology_bot ((quotientSheaf (is_ideal_adic_pow hI n.succ_pos)).obj.obj (op U))
-  let _ : TopologicalSpace ((quotientSheaf hK).obj.obj (op U)) := ⊥
-  let _ : TopologicalSpace ((structureSheaf hI).obj.obj (op U)) := sectionsTopology hI U
+    rw [toQuotientSheaf_eq hI hK hn, ObjectProperty.FullSubcategory.comp_hom, NatTrans.comp_app,
+      ConcreteCategory.coe_comp]
   rw [hcomp]
-  exact continuous_of_discreteTopology.comp (continuous_quotientProjection_app hI U n)
+  exact @Continuous.comp _ _ _ (sectionsTopology hI U) ⊥ ⊥ _ _ continuous_bot
+    (continuous_quotientProjection_app hI U n)
 
 /-- Universal property of `sectionsTopology`: a map into `(Γ(U, O_{Spf A}), sectionsTopology hI U)`
 is continuous if and only if its composites with all thickening projections are continuous into the
@@ -165,9 +162,7 @@ theorem sectionsTopology_hasBasis_nhds_zero (hI : IsAdic I) (U : Opens (carrier 
   have hnhds (n : ℕ) :
       @nhds _ (TopologicalSpace.induced ((quotientProjection hI n).hom.app (op U)) ⊥) 0 =
         𝓟 (RingHom.ker (((quotientProjection hI n).hom.app (op U)).hom) : Set _) := by
-    let _ : TopologicalSpace ((quotientSheaf (is_ideal_adic_pow hI n.succ_pos)).obj.obj (op U)) := ⊥
-    have := discreteTopology_bot ((quotientSheaf (is_ideal_adic_pow hI n.succ_pos)).obj.obj (op U))
-    rw [nhds_induced, nhds_discrete, comap_pure]
+    rw [TauCeti.nhds_induced_bot]
     congr 1
     ext x
     simp [RingHom.mem_ker]
@@ -182,24 +177,10 @@ theorem sectionsTopology_hasBasis_nhds_zero (hI : IsAdic I) (U : Opens (carrier 
 /-- On every open `U`, `sectionsTopology hI U` makes `Γ(U, O_{Spf A})` a topological ring. -/
 theorem sectionsTopology_isTopologicalRing (hI : IsAdic I) (U : Opens (carrier A)) :
     @IsTopologicalRing ((structureSheaf hI).obj.obj (op U)) (sectionsTopology hI U) _ := by
-  have hind (n : ℕ) :
-      @IsTopologicalRing ((structureSheaf hI).obj.obj (op U))
-        (TopologicalSpace.induced (((quotientProjection hI n).hom.app (op U)).hom) ⊥) _ := by
-    let _ : TopologicalSpace ((quotientSheaf (is_ideal_adic_pow hI n.succ_pos)).obj.obj (op U)) := ⊥
-    have := discreteTopology_bot ((quotientSheaf (is_ideal_adic_pow hI n.succ_pos)).obj.obj (op U))
-    let _ := TopologicalSpace.induced (((quotientProjection hI n).hom.app (op U)).hom) ⊥
-    exact
-      { toContinuousAdd := continuousAdd_induced (((quotientProjection hI n).hom.app (op U)).hom)
-        toContinuousMul := continuousMul_induced (((quotientProjection hI n).hom.app (op U)).hom)
-        toContinuousNeg := ContinuousNeg.induced (((quotientProjection hI n).hom.app (op U)).hom) }
-  let _ := sectionsTopology hI U
-  exact
-    { toContinuousAdd := continuousAdd_sInf <| Set.forall_mem_range.mpr fun n ↦
-        (hind n).toContinuousAdd
-      toContinuousMul := continuousMul_sInf <| Set.forall_mem_range.mpr fun n ↦
-        (hind n).toContinuousMul
-      toContinuousNeg := continuousNeg_sInf <| Set.forall_mem_range.mpr fun n ↦
-        (hind n).toContinuousNeg }
+  refine TauCeti.isTopologicalRing_iInf fun n ↦ ?_
+  let _ : TopologicalSpace ((quotientSheaf (is_ideal_adic_pow hI n.succ_pos)).obj.obj (op U)) := ⊥
+  have := discreteTopology_bot ((quotientSheaf (is_ideal_adic_pow hI n.succ_pos)).obj.obj (op U))
+  exact TauCeti.isTopologicalRing_induced (((quotientProjection hI n).hom.app (op U)).hom)
 
 /-- On every open `U`, `sectionsTopology hI U` is a linear topology on `Γ(U, O_{Spf A})`. -/
 theorem sectionsTopology_isLinearTopology (hI : IsAdic I) (U : Opens (carrier A)) :
@@ -274,11 +255,9 @@ theorem sectionsTopology_restrict (hI : IsAdic I) {U V : Opens (carrier A)} (h :
         ((quotientProjection hI n).hom.app (op U)) := by
     ext s
     exact NatTrans.naturality_apply (quotientProjection hI n).hom (homOfLE h).op s
-  let _ : TopologicalSpace ((quotientSheaf (is_ideal_adic_pow hI n.succ_pos)).obj.obj (op U)) := ⊥
-  have := discreteTopology_bot ((quotientSheaf (is_ideal_adic_pow hI n.succ_pos)).obj.obj (op U))
-  let _ : TopologicalSpace ((quotientSheaf (is_ideal_adic_pow hI n.succ_pos)).obj.obj (op V)) := ⊥
   rw [hnat]
-  exact continuous_of_discreteTopology.comp (continuous_quotientProjection_app hI U n)
+  exact @Continuous.comp _ _ _ (sectionsTopology hI U) ⊥ ⊥ _ _ continuous_bot
+    (continuous_quotientProjection_app hI U n)
 
 /-- For two ideals of definition `I` and `J`, the comparison map `(structureSheafIso hI hJ).hom`
 is continuous for `sectionsTopology` over every open `U`. -/
@@ -293,10 +272,44 @@ theorem continuous_structureSheafIso_sectionsTopology (hI : IsAdic I) (hJ : IsAd
       ((structureSheafIso hI hJ).hom.hom.app (op U)) =
       ((toQuotientSheaf hI (is_ideal_adic_pow hJ n.succ_pos)).hom.app (op U)) := by
     rw [← structureSheafIso_hom_comp_quotientProjection hI hJ n,
-      ObjectProperty.FullSubcategory.comp_hom, NatTrans.comp_app]
-    rfl
+      ObjectProperty.FullSubcategory.comp_hom, NatTrans.comp_app, ConcreteCategory.coe_comp]
   rw [hcomp]
   exact continuous_toQuotientSheaf_app hI (is_ideal_adic_pow hJ n.succ_pos) U
+
+private noncomputable def structureSheafIsoApp (hI : IsAdic I) (hJ : IsAdic J)
+    (U : Opens (carrier A)) :
+    (structureSheaf hI).obj.obj (op U) ≅ (structureSheaf hJ).obj.obj (op U) where
+  hom := (structureSheafIso hI hJ).hom.hom.app (op U)
+  inv := (structureSheafIso hJ hI).hom.hom.app (op U)
+  hom_inv_id := by
+    rw [← structureSheafIso_inv hI hJ, ← NatTrans.comp_app,
+      ← ObjectProperty.FullSubcategory.comp_hom, Iso.hom_inv_id,
+      ObjectProperty.FullSubcategory.id_hom, NatTrans.id_app]
+  inv_hom_id := by
+    rw [← structureSheafIso_inv hJ hI, ← NatTrans.comp_app,
+      ← ObjectProperty.FullSubcategory.comp_hom, Iso.hom_inv_id,
+      ObjectProperty.FullSubcategory.id_hom, NatTrans.id_app]
+
+private theorem isHomeomorph_structureSheafIso_of_continuous (hI : IsAdic I) (hJ : IsAdic J)
+    (U : Opens (carrier A))
+    {tI : TopologicalSpace ((structureSheaf hI).obj.obj (op U))}
+    {tJ : TopologicalSpace ((structureSheaf hJ).obj.obj (op U))}
+    (hIJ : @Continuous _ _ tI tJ ((structureSheafIso hI hJ).hom.hom.app (op U)))
+    (hJI : @Continuous _ _ tJ tI ((structureSheafIso hJ hI).hom.hom.app (op U))) :
+    @IsHomeomorph _ _ tI tJ ((structureSheafIso hI hJ).hom.hom.app (op U)) :=
+  letI := tI; letI := tJ
+  (Homeomorph.mk (structureSheafIsoApp hI hJ U).commRingCatIsoToRingEquiv.toEquiv hIJ
+    hJI).isHomeomorph
+
+/-- For two ideals of definition `I` and `J`, `(structureSheafIso hI hJ).hom` is a homeomorphism
+on sections over every open `U` equipped with `sectionsTopology`. -/
+theorem isHomeomorph_structureSheafIso_sectionsTopology (hI : IsAdic I) (hJ : IsAdic J)
+    (U : Opens (carrier A)) :
+    @IsHomeomorph _ _ (sectionsTopology hI U) (sectionsTopology hJ U)
+      ((structureSheafIso hI hJ).hom.hom.app (op U)) :=
+  isHomeomorph_structureSheafIso_of_continuous hI hJ U
+    (continuous_structureSheafIso_sectionsTopology hI hJ U)
+    (continuous_structureSheafIso_sectionsTopology hJ hI U)
 
 /-- `sectionsTopology` is independent of the choice of ideal of definition: it pulls back across
 `structureSheafIso hI hJ` on every open `U`. -/
@@ -304,48 +317,13 @@ theorem sectionsTopology_independent (hI : IsAdic I) (hJ : IsAdic J) (U : Opens 
     sectionsTopology hI U =
       TopologicalSpace.induced ((structureSheafIso hI hJ).hom.hom.app (op U))
         (sectionsTopology hJ U) := by
-  refine le_antisymm ?_ ?_
-  · exact (continuous_iff_le_induced (t₁ := sectionsTopology hI U)
-      (t₂ := sectionsTopology hJ U)).mp (continuous_structureSheafIso_sectionsTopology hI hJ U)
-  · have hinv := (continuous_iff_le_induced (t₁ := sectionsTopology hJ U)
-      (t₂ := sectionsTopology hI U)).mp (continuous_structureSheafIso_sectionsTopology hJ hI U)
-    have hid : (((structureSheafIso hJ hI).hom.hom.app (op U)) : _ → _) ∘
-        ((structureSheafIso hI hJ).hom.hom.app (op U)) = id := by
-      ext x
-      have h := congrArg (fun φ ↦ φ.hom.app (op U) x) (structureSheafIso hI hJ).hom_inv_id
-      simpa using h
-    calc TopologicalSpace.induced ((structureSheafIso hI hJ).hom.hom.app (op U))
-          (sectionsTopology hJ U)
-        ≤ TopologicalSpace.induced ((structureSheafIso hI hJ).hom.hom.app (op U))
-            (TopologicalSpace.induced ((structureSheafIso hJ hI).hom.hom.app (op U))
-              (sectionsTopology hI U)) := induced_mono hinv
-      _ = sectionsTopology hI U := by
-        let _ := sectionsTopology hI U
-        rw [induced_compose, hid, induced_id]
-
-/-- For two ideals of definition `I` and `J`, `(structureSheafIso hI hJ).hom` is a homeomorphism
-on sections over every open `U` equipped with `sectionsTopology`. -/
-theorem isHomeomorph_structureSheafIso_sectionsTopology (hI : IsAdic I) (hJ : IsAdic J)
-    (U : Opens (carrier A)) :
-    @IsHomeomorph _ _ (sectionsTopology hI U) (sectionsTopology hJ U)
-      ((structureSheafIso hI hJ).hom.hom.app (op U)) := by
   let _ := sectionsTopology hI U
   let _ := sectionsTopology hJ U
-  let e : (structureSheaf hI).obj.obj (op U) ≃ (structureSheaf hJ).obj.obj (op U) :=
-    { toFun := (structureSheafIso hI hJ).hom.hom.app (op U)
-      invFun := (structureSheafIso hJ hI).hom.hom.app (op U)
-      left_inv := fun s ↦ by
-        have h := congrArg (fun φ ↦ φ.hom.app (op U) s) (structureSheafIso hI hJ).hom_inv_id
-        simpa using h
-      right_inv := fun s ↦ by
-        have h := congrArg (fun φ ↦ φ.hom.app (op U) s) (structureSheafIso hJ hI).hom_inv_id
-        simpa using h }
-  exact (Homeomorph.mk e (continuous_structureSheafIso_sectionsTopology hI hJ U)
-    (continuous_structureSheafIso_sectionsTopology hJ hI U)).isHomeomorph
+  exact (isHomeomorph_structureSheafIso_sectionsTopology hI hJ U).isInducing.eq_induced
 
 /-- When the zero ideal defines the topology of `A` (that is, `A` is discrete),
 `sectionsTopology` is the discrete topology on every open `U`. -/
-theorem sectionsTopology_bot_eq_bot (hI : IsAdic (⊥ : Ideal A)) (U : Opens (carrier A)) :
+theorem sectionsTopology_eq_bot_of_isAdic_bot (hI : IsAdic (⊥ : Ideal A)) (U : Opens (carrier A)) :
     sectionsTopology hI U = ⊥ := by
   refine eq_bot_iff.mpr ((iInf_le _ 0).trans ?_)
   have hinj : Function.Injective ((quotientProjection hI 0).hom.app (op U)) := by
@@ -362,24 +340,14 @@ theorem sectionsTopology_bot_eq_bot (hI : IsAdic (⊥ : Ideal A)) (U : Opens (ca
       rw [Category.assoc, htr, Category.comp_id]
     rw [hproj, ObjectProperty.FullSubcategory.comp_hom, NatTrans.comp_app]
     exact congrArg ((quotientTransition _ _ heq.ge).hom.app (op U)) hst
-  let _ : TopologicalSpace ((quotientSheaf (is_ideal_adic_pow hI Nat.one_pos)).obj.obj (op U)) := ⊥
-  have := discreteTopology_bot ((quotientSheaf (is_ideal_adic_pow hI Nat.one_pos)).obj.obj (op U))
-  let _ : TopologicalSpace ((structureSheaf hI).obj.obj (op U)) :=
-    TopologicalSpace.induced ((quotientProjection hI 0).hom.app (op U)) ⊥
-  exact (Topology.IsEmbedding.discreteTopology ⟨⟨rfl⟩, hinj⟩).eq_bot.le
+  exact (TauCeti.induced_bot_of_injective hinj).le
 
 /-- When the zero ideal defines the topology of `A`, `sectionsTopology` is discrete on every open
 `U`. -/
-theorem sectionsTopology_bot_discreteTopology (hI : IsAdic (⊥ : Ideal A))
+theorem discreteTopology_sectionsTopology_of_isAdic_bot (hI : IsAdic (⊥ : Ideal A))
     (U : Opens (carrier A)) :
     @DiscreteTopology ((structureSheaf hI).obj.obj (op U)) (sectionsTopology hI U) :=
-  @DiscreteTopology.mk _ (sectionsTopology hI U) (sectionsTopology_bot_eq_bot hI U)
-
-/-- Sections of `O_{Spf A}` over the empty open `⊥` form a subsingleton. -/
-instance subsingleton_sections_bot (hI : IsAdic I) :
-    Subsingleton ((structureSheaf hI).obj.obj (op (⊥ : Opens (carrier A)))) :=
-  ⟨fun s t ↦ TopCat.Sheaf.eq_of_locally_eq' (structureSheaf hI) Empty.elim ⊥ (fun i ↦ i.elim)
-    (by simp) s t fun i ↦ i.elim⟩
+  @DiscreteTopology.mk _ (sectionsTopology hI U) (sectionsTopology_eq_bot_of_isAdic_bot hI U)
 
 /-- Over the empty open `⊥`, `sectionsTopology` is `⊥` (discrete). -/
 @[simp]
@@ -411,14 +379,6 @@ theorem sectionsTopology_le_quotientSectionsTopology (hI : IsAdic I) (U : Opens 
     (continuous_iff_le_induced (t₁ := sectionsTopology hI U)
       (t₂ := sectionsTopology hI (basicOpen f))).mp (sectionsTopology_restrict hI hf)
 
-private theorem eventually_eq_of_continuous_bot {X Y : Type*} [TopologicalSpace X] {f : X → Y}
-    (hf : @Continuous X Y _ ⊥ f) (x : X) : ∀ᶠ y in 𝓝 x, f y = f x := by
-  let _ : TopologicalSpace Y := ⊥
-  have := discreteTopology_bot Y
-  have hc := hf.continuousAt (x := x)
-  rw [ContinuousAt, nhds_discrete Y] at hc
-  exact tendsto_pure.mp hc
-
 /-- Core compactness lemma: if a quasi-compact open `U` of `Spf A` is covered by basic opens
 `D(g) ⊆ U` with `g ∈ S`, then `sectionsTopology hI U` is the initial topology induced by the
 restrictions to those `D(g)`. -/
@@ -438,32 +398,32 @@ private theorem sectionsTopology_eq_iInf_of_isCompact_cover (hI : IsAdic I)
   have : Finite F := hFfin.to_subtype
   have hF_le (i : F) : basicOpen i.1 ≤ U := hS_le i.1 (Set.mem_of_subset_of_mem hFS i.2)
   refine le_iInf fun n ↦ ?_
-  let _ : TopologicalSpace ((quotientSheaf (is_ideal_adic_pow hI n.succ_pos)).obj.obj (op U)) := ⊥
-  have := discreteTopology_bot ((quotientSheaf (is_ideal_adic_pow hI n.succ_pos)).obj.obj (op U))
   let _ : TopologicalSpace ((structureSheaf hI).obj.obj (op U)) :=
     ⨅ (g : A) (hg : g ∈ S),
       TopologicalSpace.induced ((structureSheaf hI).obj.map (homOfLE (hS_le g hg)).op)
         (sectionsTopology hI (basicOpen g))
-  refine continuous_iff_le_induced.mp (continuous_iff_continuousAt.mpr fun x ↦ ?_)
-  rw [ContinuousAt,
-    nhds_discrete ((quotientSheaf (is_ideal_adic_pow hI n.succ_pos)).obj.obj (op U)), tendsto_pure]
+  refine continuous_iff_le_induced.mp <| @IsLocallyConstant.continuous _ _ _ ⊥ _ <|
+    (IsLocallyConstant.iff_eventually_eq _).mpr fun x ↦ ?_
   have hev : ∀ᶠ y in 𝓝 x, ∀ i : F,
       (quotientSheaf (is_ideal_adic_pow hI n.succ_pos)).obj.map (homOfLE (hF_le i)).op
         ((quotientProjection hI n).hom.app (op U) y) =
       (quotientSheaf (is_ideal_adic_pow hI n.succ_pos)).obj.map (homOfLE (hF_le i)).op
         ((quotientProjection hI n).hom.app (op U) x) := by
     refine Filter.eventually_all.mpr fun i ↦ ?_
+    let _ : TopologicalSpace
+      ((quotientSheaf (is_ideal_adic_pow hI n.succ_pos)).obj.obj (op (basicOpen i.1))) := ⊥
+    have := discreteTopology_bot
+      ((quotientSheaf (is_ideal_adic_pow hI n.succ_pos)).obj.obj (op (basicOpen i.1)))
     let _ := sectionsTopology hI (basicOpen i.1)
-    have hcont : @Continuous _ _ _ ⊥
+    have hcont : Continuous
         (((quotientProjection hI n).hom.app (op (basicOpen i.1))) ∘
           ((structureSheaf hI).obj.map (homOfLE (hF_le i)).op)) :=
-      @Continuous.comp _ _ _ _ (sectionsTopology hI (basicOpen i.1)) ⊥ _ _
-        (continuous_quotientProjection_app hI (basicOpen i.1) n)
+      (continuous_quotientProjection_app hI (basicOpen i.1) n).comp
         (continuous_iInf_dom (i := i.1) <|
           continuous_iInf_dom (i := Set.mem_of_subset_of_mem hFS i.2) <|
             continuous_induced_dom (t := sectionsTopology hI (basicOpen i.1)))
     have hnat := NatTrans.naturality_apply (quotientProjection hI n).hom (homOfLE (hF_le i)).op
-    exact (eventually_eq_of_continuous_bot hcont x).mono fun y hy ↦ by
+    exact (((IsLocallyConstant.iff_continuous _).mpr hcont).eventually_eq x).mono fun y hy ↦ by
       simpa only [Function.comp_apply, hnat] using hy
   refine hev.mono fun y hy ↦
     TopCat.Sheaf.eq_of_locally_eq' (quotientSheaf (is_ideal_adic_pow hI n.succ_pos))
@@ -480,7 +440,7 @@ theorem quotientSectionsTopology_eq_of_isCompact (hI : IsAdic I) {U : Opens (car
   symm
   refine sectionsTopology_eq_iInf_of_isCompact_cover hI hU (S := { f : A | basicOpen f ≤ U })
     (fun _ hf ↦ hf) fun p hp ↦ ?_
-  obtain ⟨_, ⟨f, rfl⟩, hpf, hfU⟩ := Opens.isBasis_iff_nbhd.mp isBasis_basicOpen hp
+  obtain ⟨f, hpf, hfU⟩ := exists_basicOpen_le hp
   exact Set.mem_iUnion₂.mpr ⟨f, hfU, hpf⟩
 
 /-- On a quasi-compact open `U` of `Spf A` (`[CompactSpace U]`), `quotientSectionsTopology` agrees
@@ -534,8 +494,8 @@ theorem quotientSectionsTopology_restrict (hI : IsAdic I) {U V : Opens (carrier 
       ((structureSheaf hI).obj.map (homOfLE h).op) =
       ((structureSheaf hI).obj.map (homOfLE (hf.trans h)).op) := by
     ext s
-    rw [Function.comp_apply, ← ConcreteCategory.comp_apply, ← Functor.map_comp]
-    rfl
+    rw [Function.comp_apply, ← ConcreteCategory.comp_apply, ← Functor.map_comp, ← op_comp,
+      homOfLE_comp]
   rw [hcomp]
   exact continuous_iInf_dom (i := f) <| continuous_iInf_dom (i := hf.trans h) <|
     continuous_induced_dom (t := sectionsTopology hI (basicOpen f))
@@ -544,35 +504,10 @@ theorem quotientSectionsTopology_restrict (hI : IsAdic I) {U V : Opens (carrier 
 ring. -/
 theorem quotientSectionsTopology_isTopologicalRing (hI : IsAdic I) (U : Opens (carrier A)) :
     @IsTopologicalRing ((structureSheaf hI).obj.obj (op U)) (quotientSectionsTopology hI U) _ := by
-  let P := { f : A // basicOpen f ≤ U }
-  have heq : quotientSectionsTopology hI U = ⨅ p : P,
-      TopologicalSpace.induced (((structureSheaf hI).obj.map (homOfLE p.2).op).hom)
-        (sectionsTopology hI (basicOpen p.1)) := by
-    simp [P, quotientSectionsTopology, iInf_subtype]
-  have hind (p : P) : @IsTopologicalRing ((structureSheaf hI).obj.obj (op U))
-      (TopologicalSpace.induced (((structureSheaf hI).obj.map (homOfLE p.2).op).hom)
-        (sectionsTopology hI (basicOpen p.1))) _ := by
-    let _ := sectionsTopology hI (basicOpen p.1)
-    have := sectionsTopology_isTopologicalRing hI (basicOpen p.1)
-    let _ := TopologicalSpace.induced (((structureSheaf hI).obj.map (homOfLE p.2).op).hom)
-      (sectionsTopology hI (basicOpen p.1))
-    exact
-      { toContinuousAdd :=
-          continuousAdd_induced (((structureSheaf hI).obj.map (homOfLE p.2).op).hom)
-        toContinuousMul :=
-          continuousMul_induced (((structureSheaf hI).obj.map (homOfLE p.2).op).hom)
-        toContinuousNeg :=
-          ContinuousNeg.induced (((structureSheaf hI).obj.map (homOfLE p.2).op).hom) }
-  rw [heq]
-  let _ := ⨅ p : P, TopologicalSpace.induced (((structureSheaf hI).obj.map (homOfLE p.2).op).hom)
-    (sectionsTopology hI (basicOpen p.1))
-  exact
-    { toContinuousAdd := continuousAdd_sInf <| Set.forall_mem_range.mpr fun p ↦
-        (hind p).toContinuousAdd
-      toContinuousMul := continuousMul_sInf <| Set.forall_mem_range.mpr fun p ↦
-        (hind p).toContinuousMul
-      toContinuousNeg := continuousNeg_sInf <| Set.forall_mem_range.mpr fun p ↦
-        (hind p).toContinuousNeg }
+  refine TauCeti.isTopologicalRing_iInf fun f ↦ TauCeti.isTopologicalRing_iInf fun hf ↦ ?_
+  let _ := sectionsTopology hI (basicOpen f)
+  have := sectionsTopology_isTopologicalRing hI (basicOpen f)
+  exact TauCeti.isTopologicalRing_induced (((structureSheaf hI).obj.map (homOfLE hf).op).hom)
 
 /-- On every open `U`, `quotientSectionsTopology hI U` is a linear topology on
 `Γ(U, O_{Spf A})`: finite intersections of preimages of thickening kernels on basic opens form a
@@ -602,11 +537,7 @@ theorem quotientSectionsTopology_isLinearTopology (hI : IsAdic I) (U : Opens (ca
         @nhds _ (TopologicalSpace.induced
           (((quotientProjection hI q.2).hom.app (op (basicOpen q.1.1))) ∘
             ((structureSheaf hI).obj.map (homOfLE q.1.2).op)) ⊥) 0 = 𝓟 (J q : Set _) := by
-      let _ : TopologicalSpace
-        ((quotientSheaf (is_ideal_adic_pow hI q.2.succ_pos)).obj.obj (op (basicOpen q.1.1))) := ⊥
-      have := discreteTopology_bot
-        ((quotientSheaf (is_ideal_adic_pow hI q.2.succ_pos)).obj.obj (op (basicOpen q.1.1)))
-      rw [nhds_induced, nhds_discrete, comap_pure]
+      rw [TauCeti.nhds_induced_bot]
       congr 1
       ext x
       simp [J, RingHom.mem_ker]
@@ -627,13 +558,9 @@ theorem quotientSectionsTopology_t2Space (hI : IsAdic I) (U : Opens (carrier A))
       (structureSheaf hI).obj.map (homOfLE hf).op x ≠
         (structureSheaf hI).obj.map (homOfLE hf).op y := by
     by_contra! hall
-    apply hxy
-    refine TopCat.Sheaf.eq_of_locally_eq' (structureSheaf hI)
-      (fun p : { f : A // basicOpen f ≤ U } ↦ basicOpen p.1) U (fun p ↦ homOfLE p.2) ?_ x y
-      fun p ↦ hall p.1 p.2
-    intro z hz
-    obtain ⟨_, ⟨f, rfl⟩, hzf, hfU⟩ := Opens.isBasis_iff_nbhd.mp isBasis_basicOpen hz
-    exact Opens.mem_iSup.mpr ⟨⟨f, hfU⟩, hzf⟩
+    exact hxy <| TopCat.Sheaf.eq_of_locally_eq' (structureSheaf hI)
+      (fun p : { f : A // basicOpen f ≤ U } ↦ basicOpen p.1) U (fun p ↦ homOfLE p.2)
+      (le_iSup_basicOpen_le U) x y fun p ↦ hall p.1 p.2
   obtain ⟨f, hf, hne⟩ := hex
   let _ := sectionsTopology hI (basicOpen f)
   have := sectionsTopology_t2Space hI (basicOpen f)
@@ -670,15 +597,14 @@ private theorem quotientSectionsTopology_isInducing_pi {ι : Type*} (hI : IsAdic
         ((structureSheaf hI).obj.map (homOfLE hgi).op) ∘
           (fun x : ∀ j : ι, (structureSheaf hI).obj.obj (op (V j)) ↦ x i) ∘ Φ := by
       ext s
-      simp only [Φ, Function.comp_apply, ← ConcreteCategory.comp_apply, ← Functor.map_comp]
-      rfl
+      simp only [Φ, Function.comp_apply, ← ConcreteCategory.comp_apply, ← Functor.map_comp,
+        ← op_comp, homOfLE_comp]
     rw [hcomp, ← induced_compose, ← induced_compose]
     refine induced_mono ?_
     rw [Pi.topologicalSpace]
     exact iInf_le_of_le i (induced_mono (iInf_le_of_le g (iInf_le _ hgi)))
   · obtain ⟨i, hpi⟩ := Opens.mem_iSup.mp (hcov (hf hpf))
-    obtain ⟨_, ⟨g, rfl⟩, hpg, hgW⟩ :=
-      Opens.isBasis_iff_nbhd.mp isBasis_basicOpen (U := basicOpen f ⊓ V i) ⟨hpf, hpi⟩
+    obtain ⟨g, hpg, hgW⟩ := exists_basicOpen_le (U := basicOpen f ⊓ V i) ⟨hpf, hpi⟩
     exact Set.mem_iUnion₂.mpr ⟨g, ⟨(le_inf_iff.mp hgW).1, i, (le_inf_iff.mp hgW).2⟩, hpg⟩
 
 private theorem quotientSectionsTopology_isClosed_range_pi {ι : Type*} (hI : IsAdic I)
@@ -699,8 +625,7 @@ private theorem quotientSectionsTopology_isClosed_range_pi {ι : Type*} (hI : Is
     ext y
     refine ⟨?_, fun hy ↦ ?_⟩
     · rintro ⟨s, rfl⟩ i j
-      simp only [Φ, ← ConcreteCategory.comp_apply, ← Functor.map_comp]
-      rfl
+      simp only [Φ, ← ConcreteCategory.comp_apply, ← Functor.map_comp, ← op_comp, homOfLE_comp]
     · obtain ⟨s, hs, -⟩ := TopCat.Sheaf.existsUnique_gluing' (structureSheaf hI) V U
         (fun i ↦ homOfLE (hV i)) hcov y hy
       exact ⟨s, funext hs⟩
@@ -738,20 +663,6 @@ theorem quotientSectionsTopology_glue {ι : Type*} (hI : IsAdic I) {U : Opens (c
       (congrFun hst)⟩,
     quotientSectionsTopology_isClosed_range_pi hI hV hcov⟩
 
-/-- For any open cover `U = ⋃ i, V i`, the homeomorphism from `Γ(U, O_{Spf A})` onto its image in
-`∏ i, Γ(V i, O_{Spf A})` for `quotientSectionsTopology`. -/
-noncomputable def quotientSectionsTopologyGlueHomeomorph {ι : Type*} (hI : IsAdic I)
-    {U : Opens (carrier A)} {V : ι → Opens (carrier A)} (hV : ∀ i, V i ≤ U)
-    (hcov : U ≤ ⨆ i, V i) :
-    letI := quotientSectionsTopology hI U
-    letI := fun i ↦ quotientSectionsTopology hI (V i)
-    (structureSheaf hI).obj.obj (op U) ≃ₜ
-      Set.range (fun (s : (structureSheaf hI).obj.obj (op U)) (i : ι) ↦
-        (structureSheaf hI).obj.map (homOfLE (hV i)).op s) :=
-  letI := quotientSectionsTopology hI U
-  letI := fun i ↦ quotientSectionsTopology hI (V i)
-  (quotientSectionsTopology_glue hI hV hcov).isEmbedding.toHomeomorph
-
 /-- On every open `U`, `Γ(U, O_{Spf A})` is complete for every additive uniformity inducing
 `quotientSectionsTopology hI U`. -/
 theorem quotientSectionsTopology_completeSpace (hI : IsAdic I) (U : Opens (carrier A))
@@ -772,11 +683,8 @@ theorem quotientSectionsTopology_completeSpace (hI : IsAdic I) (U : Opens (carri
     let _ := tD p; have := htag p; exact isUniformAddGroup_of_addCommGroup
   have _ (p : P) : CompleteSpace (D p) :=
     sectionsTopology_completeSpace hI (basicOpen p.1) (quotientSectionsTopology_basicOpen hI p.1)
-  have hcov : U ≤ ⨆ p : P, basicOpen p.1 := fun z hz ↦ by
-    obtain ⟨_, ⟨f, rfl⟩, hzf, hfU⟩ := Opens.isBasis_iff_nbhd.mp isBasis_basicOpen hz
-    exact Opens.mem_iSup.mpr ⟨⟨f, hfU⟩, hzf⟩
   obtain ⟨⟨⟨heq⟩, -⟩, hcl⟩ := quotientSectionsTopology_glue hI (V := fun p : P ↦ basicOpen p.1)
-    (fun p ↦ p.2) hcov
+    (fun p ↦ p.2) (le_iSup_basicOpen_le U)
   let Φ : ((structureSheaf hI).obj.obj (op U) : Type u) →+ ∀ p : P, D p :=
     AddMonoidHom.mk' (fun s p ↦ (structureSheaf hI).obj.map (homOfLE p.2).op s) fun s t ↦
       funext fun p ↦ map_add _ s t
@@ -808,6 +716,14 @@ theorem continuous_structureSheafIso (hI : IsAdic I) (hJ : IsAdic J) (U : Opens 
     sectionsTopology hJ (basicOpen f)
   exact (continuous_structureSheafIso_sectionsTopology hI hJ (basicOpen f)).comp hres
 
+/-- For two ideals of definition `I` and `J`, `(structureSheafIso hI hJ).hom` is a homeomorphism
+on sections over every open `U` equipped with `quotientSectionsTopology`. -/
+theorem isHomeomorph_structureSheafIso (hI : IsAdic I) (hJ : IsAdic J) (U : Opens (carrier A)) :
+    @IsHomeomorph _ _ (quotientSectionsTopology hI U) (quotientSectionsTopology hJ U)
+      ((structureSheafIso hI hJ).hom.hom.app (op U)) :=
+  isHomeomorph_structureSheafIso_of_continuous hI hJ U
+    (continuous_structureSheafIso hI hJ U) (continuous_structureSheafIso hJ hI U)
+
 /-- `quotientSectionsTopology` is independent of the choice of ideal of definition: it pulls back
 across `structureSheafIso hI hJ` on every open `U`. -/
 theorem quotientSectionsTopology_independent (hI : IsAdic I) (hJ : IsAdic J)
@@ -815,55 +731,13 @@ theorem quotientSectionsTopology_independent (hI : IsAdic I) (hJ : IsAdic J)
     quotientSectionsTopology hI U =
       TopologicalSpace.induced ((structureSheafIso hI hJ).hom.hom.app (op U))
         (quotientSectionsTopology hJ U) := by
-  refine le_antisymm ?_ ?_
-  · exact (continuous_iff_le_induced (t₁ := quotientSectionsTopology hI U)
-      (t₂ := quotientSectionsTopology hJ U)).mp (continuous_structureSheafIso hI hJ U)
-  · have hinv := (continuous_iff_le_induced (t₁ := quotientSectionsTopology hJ U)
-      (t₂ := quotientSectionsTopology hI U)).mp (continuous_structureSheafIso hJ hI U)
-    have hid : (((structureSheafIso hJ hI).hom.hom.app (op U)) : _ → _) ∘
-        ((structureSheafIso hI hJ).hom.hom.app (op U)) = id := by
-      ext x
-      have h := congrArg (fun φ ↦ φ.hom.app (op U) x) (structureSheafIso hI hJ).hom_inv_id
-      simpa using h
-    calc TopologicalSpace.induced ((structureSheafIso hI hJ).hom.hom.app (op U))
-          (quotientSectionsTopology hJ U)
-        ≤ TopologicalSpace.induced ((structureSheafIso hI hJ).hom.hom.app (op U))
-            (TopologicalSpace.induced ((structureSheafIso hJ hI).hom.hom.app (op U))
-              (quotientSectionsTopology hI U)) := induced_mono hinv
-      _ = quotientSectionsTopology hI U := by
-        let _ := quotientSectionsTopology hI U
-        rw [induced_compose, hid, induced_id]
-
-/-- For two ideals of definition `I` and `J`, `(structureSheafIso hI hJ).hom` is a homeomorphism
-on sections over every open `U` equipped with `quotientSectionsTopology`. -/
-theorem isHomeomorph_structureSheafIso (hI : IsAdic I) (hJ : IsAdic J) (U : Opens (carrier A)) :
-    @IsHomeomorph _ _ (quotientSectionsTopology hI U) (quotientSectionsTopology hJ U)
-      ((structureSheafIso hI hJ).hom.hom.app (op U)) := by
   let _ := quotientSectionsTopology hI U
   let _ := quotientSectionsTopology hJ U
-  let e : (structureSheaf hI).obj.obj (op U) ≃ (structureSheaf hJ).obj.obj (op U) :=
-    { toFun := (structureSheafIso hI hJ).hom.hom.app (op U)
-      invFun := (structureSheafIso hJ hI).hom.hom.app (op U)
-      left_inv := fun s ↦ by
-        have h := congrArg (fun φ ↦ φ.hom.app (op U) s) (structureSheafIso hI hJ).hom_inv_id
-        simpa using h
-      right_inv := fun s ↦ by
-        have h := congrArg (fun φ ↦ φ.hom.app (op U) s) (structureSheafIso hJ hI).hom_inv_id
-        simpa using h }
-  exact (Homeomorph.mk e (continuous_structureSheafIso hI hJ U)
-    (continuous_structureSheafIso hJ hI U)).isHomeomorph
+  exact (isHomeomorph_structureSheafIso hI hJ U).isInducing.eq_induced
 
 end QuotientSectionsTopology
 
 section Identifications
-
-/-- Pullback of the discrete topology along a bijection is the discrete topology. -/
-private theorem induced_bot_of_bijective {X Y : Type*} {e : X → Y} (he : Function.Bijective e) :
-    TopologicalSpace.induced e ⊥ = ⊥ := by
-  let _ : TopologicalSpace Y := ⊥
-  have := discreteTopology_bot Y
-  let _ : TopologicalSpace X := TopologicalSpace.induced e ⊥
-  exact (Topology.IsEmbedding.discreteTopology ⟨⟨rfl⟩, he.injective⟩).eq_bot
 
 /-- If `A` is `I`-adically complete, `globalSectionsIso hI` is a homeomorphism from
 `(Γ(⊤, O_{Spf A}), quotientSectionsTopology hI ⊤)` onto `A` (EGA I, Ch. I, 10.1.3). -/
@@ -889,7 +763,7 @@ theorem isHomeomorph_globalSectionsIso [IsAdicComplete I A] (hI : IsAdic I) :
     have hbij : Function.Bijective
         ((quotientSheafGlobalSectionsIso (is_ideal_adic_pow hI n.succ_pos)).hom) :=
       ConcreteCategory.bijective_of_isIso _
-    rw [induced_compose, hcomp, ← induced_compose, induced_bot_of_bijective hbij]
+    rw [induced_compose, hcomp, ← induced_compose, TauCeti.induced_bot_of_injective hbij.injective]
   let _ : TopologicalSpace ((structureSheaf hI).obj.obj (op ⊤)) := sectionsTopology hI ⊤
   exact (e.toHomeomorphOfIsInducing ⟨htop⟩).isHomeomorph
 
@@ -909,8 +783,9 @@ theorem isHomeomorph_basicOpenSectionsAdicCompletionIso (hI : IsAdic I) (hIfg : 
     (AdicCompletion J (Localization.Away f)))).adicTopology
   let e := (basicOpenSectionsAdicCompletionIso hI f).commRingCatIsoToRingEquiv.toEquiv
   have htop : sectionsTopology hI (basicOpen f) = TopologicalSpace.induced e tAdic := by
-    rw [show tAdic = _ from AdicCompletion.adicTopology_map_eq_iInf_induced (hIfg.map _),
-      sectionsTopology, induced_iInf]
+    dsimp only [tAdic]
+    rw [AdicCompletion.adicTopology_map_eq_iInf_induced (hIfg.map _), sectionsTopology,
+      induced_iInf]
     refine iInf_congr fun n ↦ ?_
     let ψ := (quotientSheafBasicOpenIso (is_ideal_adic_pow hI n.succ_pos) f) ≪≫
       (Ideal.quotEquivOfEq (Ideal.map_pow _ I (n + 1))).toCommRingCatIso
@@ -919,7 +794,7 @@ theorem isHomeomorph_basicOpenSectionsAdicCompletionIso (hI : IsAdic I) (hIfg : 
       ext s
       exact congrArg (fun φ ↦ φ s) (basicOpenSectionsAdicCompletionIso_hom_comp_evalₐ hI f n)
     have hbij : Function.Bijective ψ.hom := ConcreteCategory.bijective_of_isIso ψ.hom
-    rw [induced_compose, hcomp, ← induced_compose, induced_bot_of_bijective hbij]
+    rw [induced_compose, hcomp, ← induced_compose, TauCeti.induced_bot_of_injective hbij.injective]
   let _ : TopologicalSpace ((structureSheaf hI).obj.obj (op (basicOpen f))) :=
     sectionsTopology hI (basicOpen f)
   let _ : TopologicalSpace (AdicCompletion J (Localization.Away f)) := tAdic

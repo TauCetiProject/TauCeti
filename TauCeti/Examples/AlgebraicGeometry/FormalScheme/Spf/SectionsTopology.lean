@@ -55,7 +55,8 @@ example (A : Type u) [CommRing A] [TopologicalSpace A] [DiscreteTopology A]
     (hI : IsAdic (⊥ : Ideal A)) (U : Opens (carrier A)) (hU : IsCompact (U : Set (carrier A))) :
     quotientSectionsTopology hI U = ⊥ ∧ @DiscreteTopology _ (quotientSectionsTopology hI U) := by
   have heq : quotientSectionsTopology hI U = ⊥ :=
-    (quotientSectionsTopology_eq_of_isCompact hI hU).trans (sectionsTopology_bot_eq_bot hI U)
+    (quotientSectionsTopology_eq_of_isCompact hI hU).trans
+      (sectionsTopology_eq_bot_of_isAdic_bot hI U)
   exact ⟨heq, heq ▸ discreteTopology_bot _⟩
 
 /-- Concrete instantiation on `ℤ` with the discrete topology and `U = ⊤`. -/
@@ -70,7 +71,7 @@ example :
     ⟨fun _ ↦ isOpen_discrete _, fun s hs ↦
       ⟨1, by simpa [pow_one] using Set.singleton_subset_iff.mpr (mem_of_mem_nhds hs)⟩⟩
   have heq : quotientSectionsTopology hI ⊤ = ⊥ :=
-    (quotientSectionsTopology_top hI).trans (sectionsTopology_bot_eq_bot hI ⊤)
+    (quotientSectionsTopology_top hI).trans (sectionsTopology_eq_bot_of_isAdic_bot hI ⊤)
   exact ⟨hI, heq, heq ▸ discreteTopology_bot _⟩
 
 /-! ### 2. Empty open -/
@@ -307,7 +308,7 @@ private noncomputable def basicOpenCoordIdemHomeomorph (n : ℕ) :
   let _ := quotientSectionsTopology hI (basicOpen (coordIdem k n))
   let _ : TopologicalSpace k := ⊥
   have hbot : quotientSectionsTopology hI (basicOpen (coordIdem k n)) = ⊥ :=
-    (quotientSectionsTopology_basicOpen hI _).trans (sectionsTopology_bot_eq_bot hI _)
+    (quotientSectionsTopology_basicOpen hI _).trans (sectionsTopology_eq_bot_of_isAdic_bot hI _)
   exact Homeomorph.mk (basicOpenCoordIdemRingEquiv k n).toEquiv
     (by rw [hbot]; exact continuous_bot) continuous_bot
 
@@ -337,7 +338,9 @@ private theorem isHomeomorph_sectionsInfiniteUnionRingEquiv :
     (@Pi.topologicalSpace ℕ (fun _ ↦ k) fun _ ↦ ⊥) hhomeo₁ hhomeo₂
   have heq : (sectionsInfiniteUnionRingEquiv k : _ → _) = hhomeo.toFun := by
     ext s n
-    rfl
+    simpa [sectionsInfiniteUnionRingEquiv, hhomeo, hhomeo₁, hhomeo₂,
+      basicOpenCoordIdemHomeomorph] using
+      (congrFun (RingEquiv.ofBijective_apply _ _ s) n).trans (RingHom.pi_apply _ s n)
   have hh := @Homeomorph.isHomeomorph _ _
     (quotientSectionsTopology hI U)
     (@Pi.topologicalSpace ℕ (fun _ ↦ k) fun _ ↦ ⊥) hhomeo
@@ -347,7 +350,7 @@ private theorem isHomeomorph_sectionsInfiniteUnionRingEquiv :
 opens `D(eₙ)` are pairwise disjoint singletons whose union `U` is not quasi-compact; there is a
 ring isomorphism `Γ(U, O_{Spf A}) ≃+* (ℕ → k)` that is also a homeomorphism from
 `quotientSectionsTopology` onto `∏ n : ℕ, k` (with discrete factors); and consequently
-`quotientSectionsTopology` on `U` is not discrete and is strictly finer than `sectionsTopology`
+`quotientSectionsTopology` on `U` is not discrete and is strictly coarser than `sectionsTopology`
 (Stacks Project, Tag 0AHY). -/
 example :
     let hI := isAdic_bot_pi k
@@ -373,7 +376,7 @@ example :
         (quotientSectionsTopology hI U)
         (@Pi.topologicalSpace ℕ (fun _ ↦ k) fun _ ↦ ⊥) hhomeo |>.mp hd)
   have hlt : sectionsTopology hI U < quotientSectionsTopology hI U := by
-    rw [sectionsTopology_bot_eq_bot hI U, bot_lt_iff_ne_bot]
+    rw [sectionsTopology_eq_bot_of_isAdic_bot hI U, bot_lt_iff_ne_bot]
     rintro hbotU
     exact hndisc (hbotU ▸ discreteTopology_bot _)
   exact ⟨disjoint_basicOpen_coordIdem k, fun n ↦ ⟨uniqueBasicOpenCoordIdem k n⟩,
