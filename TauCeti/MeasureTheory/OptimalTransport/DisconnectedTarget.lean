@@ -72,7 +72,7 @@ theorem not_continuousOn_of_hasLaw_uniformBallMeasure (hR : 0 < R) (hr : 0 ≤ r
     (ae_mem_ball_uniformBallMeasure hR)
     (ball_subset_closedBall.trans (support_uniformBallMeasure c R).ge) hTc isClosed_closedBall
     isClosed_closedBall (closedBall_disjoint_closedBall hab) ?_).elim ?_ ?_
-  · simp only [Measure.smul_apply, Measure.add_apply, smul_eq_mul, compl_union]
+  · simp only [_root_.smul_apply, _root_.add_apply, smul_eq_mul, compl_union]
     rw [measure_mono_null inter_subset_left (hnull a r),
       measure_mono_null inter_subset_right (hnull b r'), add_zero, mul_zero]
   · simp [prob_compl_eq_zero_iff measurableSet_closedBall |>.1 (hnull a r)]

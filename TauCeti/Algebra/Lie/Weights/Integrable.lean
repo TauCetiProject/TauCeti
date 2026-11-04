@@ -162,7 +162,7 @@ private theorem exists_int_apply_coroot_and_genWeightSpace_zsmul_add_ne_bot (hα
     | zero => intro u; simp
     | succ k ih =>
       intro u
-      rw [pow_succ, pow_succ, Module.End.mul_apply, Module.End.mul_apply, ih, hcoeStep]
+      rw [pow_succ, pow_succ, mul_apply_eq_comp, mul_apply_eq_comp, ih, hcoeStep]
   -- generalized eigenvectors of `A` inside `W` are honest eigenvectors of `A`
   have hdiag : ⨆ c : K, B.eigenspace c = ⊤ :=
     iSup_eigenspace_toEnd_eq_top (M := 𝒲) t.isSl2Triple_restrict

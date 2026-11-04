@@ -22,7 +22,8 @@ embeddings into a group-theoretic object; those statements need fields and live 
 
 * `AlgEquiv.smul_algHom_def`: the action is postcomposition, `σ • φ = σ.toAlgHom.comp φ`.
 * `AlgEquiv.smul_algHom_apply`: it evaluates as `σ` after `φ`.
-* `AlgEquiv.apply_of_smul_eq`: an equivalence fixing an algebra map fixes its values.
+* `AlgEquiv.smul_algHom_eq_self_iff`: an equivalence fixes an algebra map exactly when it fixes
+  its values.
 -/
 
 public section
@@ -31,28 +32,25 @@ namespace AlgEquiv
 
 variable {K L M : Type*} [CommSemiring K] [Semiring L] [Semiring M] [Algebra K L] [Algebra K M]
 
-/-- `M ≃ₐ[K] M` acts on the algebra maps `L →ₐ[K] M` by postcomposition. -/
-instance smulAlgHom : SMul (M ≃ₐ[K] M) (L →ₐ[K] M) :=
-  ⟨fun σ φ => σ.toAlgHom.comp φ⟩
+/-- Postcomposition makes `L →ₐ[K] M` an `M ≃ₐ[K] M`-set: `σ • φ = σ ∘ φ`. -/
+instance mulActionAlgHom : MulAction (M ≃ₐ[K] M) (L →ₐ[K] M) where
+  smul σ φ := σ.toAlgHom.comp φ
+  one_smul _ := rfl
+  mul_smul _ _ _ := rfl
 
 /-- The action is postcomposition. -/
 theorem smul_algHom_def (σ : M ≃ₐ[K] M) (φ : L →ₐ[K] M) : σ • φ = σ.toAlgHom.comp φ :=
   rfl
-
-/-- Postcomposition makes `L →ₐ[K] M` an `M ≃ₐ[K] M`-set. -/
-instance mulActionAlgHom : MulAction (M ≃ₐ[K] M) (L →ₐ[K] M) where
-  one_smul φ := by ext x; rfl
-  mul_smul σ τ φ := by ext x; rfl
 
 /-- **The action is evaluation of `σ` after `φ`.** -/
 @[simp]
 theorem smul_algHom_apply (σ : M ≃ₐ[K] M) (φ : L →ₐ[K] M) (x : L) : (σ • φ) x = σ (φ x) :=
   rfl
 
-/-- **An algebra equivalence fixing an algebra map fixes its values.** -/
-theorem apply_of_smul_eq {σ : M ≃ₐ[K] M} {φ : L →ₐ[K] M} (h : σ • φ = φ) (x : L) :
-    σ (φ x) = φ x := by
-  simpa only [smul_algHom_apply] using congrArg (fun ψ : L →ₐ[K] M => ψ x) h
+/-- **An algebra equivalence fixes an algebra map exactly when it fixes its values.** -/
+theorem smul_algHom_eq_self_iff {σ : M ≃ₐ[K] M} {φ : L →ₐ[K] M} :
+    σ • φ = φ ↔ ∀ x, σ (φ x) = φ x := by
+  simp only [AlgHom.ext_iff, smul_algHom_apply]
 
 end AlgEquiv
 

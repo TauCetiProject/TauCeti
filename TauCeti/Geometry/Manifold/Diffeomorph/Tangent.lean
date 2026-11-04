@@ -23,6 +23,7 @@ The underlying function is Mathlib's `tangentMap`; no parallel tangent-map API i
 
 * `Diffeomorph.tangent`: the tangent lift of a smooth diffeomorphism.
 * `Diffeomorph.tangent_symm`: taking a tangent lift commutes with inversion.
+* `Diffeomorph.tangent_symm_mk`: the inverse tangent lift acts on fibres by `(dh_x)⁻¹`.
 * `Diffeomorph.tangent_refl`: the tangent lift of the identity is the identity.
 * `Diffeomorph.tangent_trans`: taking a tangent lift commutes with composition.
 * `Diffeomorph.tangent_curveVelocityLift`: tangent lifts carry the velocity lift of a
@@ -75,6 +76,16 @@ theorem coe_tangent (h : M ≃ₘ⟮I, J⟯ N) :
 theorem tangent_symm (h : M ≃ₘ⟮I, J⟯ N) :
     h.tangent.symm = h.symm.tangent :=
   Diffeomorph.ext fun _ ↦ rfl
+
+/-- The inverse tangent lift sends `(h x, w)` to `(x, (dh_x)⁻¹ w)`. -/
+theorem tangent_symm_mk (h : M ≃ₘ⟮I, J⟯ N) (x : M) (w : TangentSpace J (h x)) :
+    h.tangent.symm (TotalSpace.mk' F (h x) w) =
+      TotalSpace.mk' E x ((mfderiv I J h x).inverse w) := by
+  refine h.tangent.toEquiv.symm_apply_eq.2 ?_
+  rw [Diffeomorph.coe_toEquiv, Diffeomorph.coe_tangent]
+  -- `tangentMap` sends `(x, v)` to `(h x, dh_x v)`.
+  exact congrArg (TotalSpace.mk' F (h x))
+    ((h.isInvertible_mfderiv (by simp)).self_apply_inverse w).symm
 
 /-- The tangent lift of the identity diffeomorphism is the identity diffeomorphism of the tangent
 bundle. -/

@@ -9,7 +9,7 @@ public import TauCeti.Geometry.Manifold.Complex.Orientation
 public import TauCeti.Geometry.Symplectic.Manifold.JHolomorphic
 public import TauCeti.Geometry.Symplectic.Manifold.Nijenhuis
 import TauCeti.Geometry.Manifold.MFDeriv.RestrictScalars
-import TauCeti.Geometry.Manifold.VectorBundle.Tangent
+import TauCeti.Geometry.Manifold.VectorBundle.Tangent.Basic
 import TauCeti.Geometry.Manifold.VectorField.LieBracket
 import TauCeti.Geometry.Manifold.VectorField.Regularity
 import TauCeti.Topology.Algebra.Module.ComplexSmulI
