@@ -82,29 +82,13 @@ theorem centerEigenspace_vermaCentralCharacter_eq_isotypicComponent {lam : Dual 
     (hlam : IsDominantIntegral b lam) :
     centerEigenspace K L M (vermaCentralCharacter b lam) =
       isotypicComponent K L M (irreducibleQuotient b lam) := by
-  set I := isotypicComponent K L M (irreducibleQuotient b lam)
-  have hI : I ≤ centerEigenspace K L M (vermaCentralCharacter b lam) :=
-    isotypicComponent_irreducibleQuotient_le_centerEigenspace
-  -- the sum of the centre eigenspaces of the other eigenvalue functions
-  set X := ⨆ (χ : Subalgebra.center K (_root_.UniversalEnvelopingAlgebra K L) → K)
-    (_ : χ ≠ vermaCentralCharacter b lam), centerEigenspace K L M χ
-  -- every other isotypic component lies in `X`, since its central character differs from `χ_lam`
-  have htop : I ⊔ X = ⊤ := by
-    refine top_unique <| (iSup_isotypicComponent_irreducibleQuotient_eq_top M b).ge.trans <|
-      iSup_le fun mu ↦ ?_
-    rcases eq_or_ne mu.1 lam with h | h
-    · exact le_sup_of_le_left (h ▸ le_rfl)
-    · refine le_sup_of_le_right <| le_iSup₂_of_le (f := fun χ (_ : χ ≠ _) ↦
-        centerEigenspace K L M χ) _ (fun he ↦ h ?_)
-        isotypicComponent_irreducibleQuotient_le_centerEigenspace
-      exact vermaCentralCharacter_injOn_isDominantIntegral b mu.2 hlam (DFunLike.coe_injective he)
-  have hdisj : Disjoint X (centerEigenspace K L M (vermaCentralCharacter b lam)) :=
-    (iSupIndep_centerEigenspace (vermaCentralCharacter b lam : _ → K)).symm
-  refine le_antisymm (le_of_eq ?_) hI
-  calc centerEigenspace K L M (vermaCentralCharacter b lam)
-      = (I ⊔ X) ⊓ centerEigenspace K L M (vermaCentralCharacter b lam) := by
-        rw [htop, top_inf_eq]
-    _ = I ⊔ X ⊓ centerEigenspace K L M (vermaCentralCharacter b lam) := sup_inf_assoc_of_le X hI
-    _ = I := by rw [hdisj.eq_bot, sup_bot_eq]
+  -- the centre eigenspaces of the dominant integral central characters are independent
+  have hindep : iSupIndep fun mu : {l : Dual K H // IsDominantIntegral b l} ↦
+      centerEigenspace K L M (vermaCentralCharacter b mu.1) :=
+    (iSupIndep_centerEigenspace (M := M)).comp fun mu nu h ↦ Subtype.ext <|
+      vermaCentralCharacter_injOn_isDominantIntegral b mu.2 nu.2 (DFunLike.coe_injective h)
+  exact congr_fun ((hindep.le_iff_eq_of_iSup_eq_top
+    (iSup_isotypicComponent_irreducibleQuotient_eq_top M b)).mp
+    fun _ ↦ isotypicComponent_irreducibleQuotient_le_centerEigenspace) ⟨lam, hlam⟩ |>.symm
 
 end TauCeti
