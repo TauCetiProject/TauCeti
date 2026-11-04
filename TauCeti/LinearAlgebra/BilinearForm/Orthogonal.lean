@@ -12,6 +12,7 @@ public import Mathlib.LinearAlgebra.PerfectPairing.Restrict
 public import Mathlib.LinearAlgebra.QuadraticForm.Basic
 import Mathlib.Algebra.DirectSum.Module
 import Mathlib.LinearAlgebra.Basis.Fin
+import Mathlib.LinearAlgebra.Matrix.BilinearForm
 import Mathlib.LinearAlgebra.Projection
 import Mathlib.Tactic.LinearCombination
 
@@ -82,6 +83,8 @@ structural step used when a Cartan--Dieudonne argument enlarges a fixed subspace
   orthogonal complements of an arbitrary bilinear form.
 * `LinearMap.BilinForm.two_mul_finrank_le_finrank_of_le_orthogonal`: a totally isotropic subspace
   of a nondegenerate bilinear space has at most half the ambient dimension.
+* `LinearMap.two_mul_finrank_le_of_injective`: a subspace on which an injective bilinear map into
+  a line vanishes has at most half the dimension.
 
 ## References
 
@@ -627,6 +630,27 @@ theorem IsSymm.exists_orthogonal_basis_apply_zero_one_eq (hB : B.IsSymm) {x y : 
   exact ⟨b, hb, hbzero, (hbsucc 0).trans (congrArg Subtype.val hvzero)⟩
 
 end LinearMap.BilinForm
+
+namespace LinearMap
+
+/-- **Isotropic subspaces of an injective bilinear map into a line have at most half the
+dimension.** If `L : V → Hom(V, Q)` is injective, `Q` is one-dimensional and `L` vanishes on
+`W × W`, then `2 dim W ≤ dim V`. This is the dimension bound for isotropic subspaces of a
+line-valued nondegenerate form, such as the Levi form of a contact structure. -/
+theorem two_mul_finrank_le_of_injective {K V Q : Type*} [Field K] [AddCommGroup V] [Module K V]
+    [FiniteDimensional K V] [AddCommGroup Q] [Module K Q] {L : V →ₗ[K] V →ₗ[K] Q}
+    (hinj : Function.Injective L) (hQ : Module.finrank K Q = 1) {W : Submodule K V}
+    (hW : ∀ v ∈ W, ∀ w ∈ W, L v w = 0) : 2 * Module.finrank K W ≤ Module.finrank K V := by
+  have : FiniteDimensional K Q := Module.finite_of_finrank_eq_succ hQ
+  let e : Q ≃ₗ[K] K := LinearEquiv.ofFinrankEq Q K (by rw [hQ, Module.finrank_self])
+  refine BilinForm.two_mul_finrank_le_finrank_of_le_orthogonal (B := L.compr₂ e.toLinearMap)
+    (.ofSeparatingLeft fun v hv ↦ hinj ?_) fun w hw ↦
+      BilinForm.mem_orthogonal_iff.2 fun v hv ↦ by simp [hW v hv w hw]
+  rw [map_zero]
+  ext w
+  simpa using hv w
+
+end LinearMap
 
 namespace LinearMap.BilinForm
 

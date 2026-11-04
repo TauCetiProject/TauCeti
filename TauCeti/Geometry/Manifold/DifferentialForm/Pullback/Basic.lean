@@ -315,6 +315,18 @@ theorem mpullback_injective_of_surjective {f : M → M'} (hsurj : Function.Surje
   obtain ⟨x, rfl⟩ := hsurj y
   exact (mpullback_apply_eq_mpullback_apply_iff (hf x)).mp (congrFun h x)
 
+/-- A map whose tangent image at `x` lies in the kernel of a one-form `α` pulls `α` back to zero
+at `x`. -/
+theorem mpullback_eq_zero_of_mfderiv_mem_ker {f : M → M'} {α : RoughForm I' M' ℝ 1} {x : M}
+    (h : ∀ v, mfderiv I I' f x v ∈ α.ker (f x)) : mpullback I I' f α x = 0 := by
+  refine ContinuousAlternatingMap.ext fun v ↦ ?_
+  have hv : (fun i ↦ mfderiv I I' f x (v i)) = ![mfderiv I I' f x (v 0)] := by
+    ext i
+    fin_cases i
+    rfl
+  rw [mpullback_apply, hv]
+  exact RoughForm.mem_ker.1 (h (v 0))
+
 /-- Within-set pullback preserves zero. -/
 @[simp]
 theorem mpullbackWithin_zero (f : M → M') (s : Set M) :

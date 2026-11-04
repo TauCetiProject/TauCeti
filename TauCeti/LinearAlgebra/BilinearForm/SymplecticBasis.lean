@@ -11,7 +11,6 @@ public import Mathlib.LinearAlgebra.Matrix.BilinearForm
 public import Mathlib.LinearAlgebra.SymplecticGroup
 import Mathlib.LinearAlgebra.FiniteDimensional.Lemmas
 import TauCeti.LinearAlgebra.BilinearForm.LinearIndependent
-import TauCeti.LinearAlgebra.BilinearForm.Orthogonal
 
 /-!
 # Symplectic bases of nondegenerate alternating forms
@@ -59,8 +58,6 @@ hyperbolic pair `e, f` hold over any commutative ring and are stated at that lev
   vector at `inl 0` of some symplectic basis.
 * `LinearMap.IsAlt.even_finrank_of_injective`: a space carrying an injective alternating map into
   a line has even dimension.
-* `LinearMap.two_mul_finrank_le_of_injective`: a subspace on which an injective bilinear map into
-  a line vanishes has at most half the dimension.
 
 ## References
 
@@ -409,23 +406,6 @@ theorem IsAlt.even_finrank_of_injective {K V Q : Type*} [Field K] [AddCommGroup 
   let e : Q ≃ₗ[K] K := LinearEquiv.ofFinrankEq Q K (by rw [hQ, Module.finrank_self])
   refine BilinForm.IsAlt.even_finrank (B := L.compr₂ e.toLinearMap)
     (fun v ↦ by simp [hL.self_eq_zero v]) (.ofSeparatingLeft fun v hv ↦ hinj ?_)
-  rw [map_zero]
-  ext w
-  simpa using hv w
-
-/-- **Isotropic subspaces of an injective bilinear map into a line have at most half the
-dimension.** If `L : V → Hom(V, Q)` is injective, `Q` is one-dimensional and `L` vanishes on
-`W × W`, then `2 dim W ≤ dim V`. This is the dimension bound for isotropic subspaces of a
-line-valued nondegenerate form, such as the Levi form of a contact structure. -/
-theorem two_mul_finrank_le_of_injective {K V Q : Type*} [Field K] [AddCommGroup V] [Module K V]
-    [FiniteDimensional K V] [AddCommGroup Q] [Module K Q] {L : V →ₗ[K] V →ₗ[K] Q}
-    (hinj : Function.Injective L) (hQ : Module.finrank K Q = 1) {W : Submodule K V}
-    (hW : ∀ v ∈ W, ∀ w ∈ W, L v w = 0) : 2 * Module.finrank K W ≤ Module.finrank K V := by
-  have : FiniteDimensional K Q := Module.finite_of_finrank_eq_succ hQ
-  let e : Q ≃ₗ[K] K := LinearEquiv.ofFinrankEq Q K (by rw [hQ, Module.finrank_self])
-  refine BilinForm.two_mul_finrank_le_finrank_of_le_orthogonal (B := L.compr₂ e.toLinearMap)
-    (.ofSeparatingLeft fun v hv ↦ hinj ?_) fun w hw ↦
-      BilinForm.mem_orthogonal_iff.2 fun v hv ↦ by simp [hW v hv w hw]
   rw [map_zero]
   ext w
   simpa using hv w

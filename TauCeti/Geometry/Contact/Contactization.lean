@@ -79,6 +79,14 @@ is a contact form (`TauCeti.SmoothForm.isContactForm_contactization_iff`). -/
 def contactization (θ : SmoothForm I W ℝ 1) : SmoothForm (I.prod 𝓘(ℝ)) (W × ℝ) ℝ 1 :=
   mpullback Prod.snd contMDiff_snd realLineCoordForm - mpullback Prod.fst contMDiff_fst θ
 
+/-- The underlying rough form of the contactization form is `dz - θ`, with `dz` and `θ` pulled
+back along the two projections of `W × ℝ`. -/
+theorem coe_contactization (θ : SmoothForm I W ℝ 1) :
+    θ.contactization.1 =
+      TauCeti.mpullback (I.prod 𝓘(ℝ)) 𝓘(ℝ) Prod.snd realLineCoordForm.1 -
+        TauCeti.mpullback (I.prod 𝓘(ℝ)) I Prod.fst θ.1 := by
+  rw [contactization, Submodule.coe_sub, coe_mpullback, coe_mpullback]
+
 /-- The contactization form sends a tangent vector `(v, c)` at `(w, z)` to `c - θ_w(v)`. -/
 @[simp]
 theorem contactization_apply (θ : SmoothForm I W ℝ 1) (p : W × ℝ)

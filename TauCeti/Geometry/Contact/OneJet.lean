@@ -75,24 +75,12 @@ theorem mpullback_prodMk_contactization (θ : SmoothForm I W ℝ 1) (hf : MDiffe
     (hh : MDifferentiable J 𝓘(ℝ) h) :
     TauCeti.mpullback J (I.prod 𝓘(ℝ)) (fun y ↦ (f y, h y)) θ.contactization.1 =
       mextDeriv (RoughForm.ofFunction J h) - TauCeti.mpullback J I f θ.1 := by
-  funext y
-  refine ContinuousAlternatingMap.ext fun v ↦ ?_
-  obtain ⟨u, rfl⟩ : ∃ u, v = ![u] := ⟨v 0, by ext i; fin_cases i; rfl⟩
-  have hF : (fun i ↦ mfderiv J (I.prod 𝓘(ℝ)) (fun y ↦ (f y, h y)) y (![u] i)) =
-      ![mfderiv J (I.prod 𝓘(ℝ)) (fun y ↦ (f y, h y)) y u] := by
-    ext i
-    fin_cases i
-    rfl
-  have hf' : (fun i ↦ mfderiv J I f y (![u] i)) = ![mfderiv J I f y u] := by
-    ext i
-    fin_cases i
-    rfl
-  rw [Pi.sub_apply, ContinuousAlternatingMap.sub_apply, TauCeti.mpullback_apply,
-    TauCeti.mpullback_apply, hF, hf', mextDeriv_ofFunction_apply, contactization_apply,
-    mfderiv_prodMk (hf y) (hh y)]
-  rw [Manifold.tangentSpaceProdEquiv_apply (I := I) (J := 𝓘(ℝ))]
-  -- Both sides read off the components `(df u, dh u)` of the tangent vector of the product.
-  rfl
+  have hfh : MDifferentiable J (I.prod 𝓘(ℝ)) (fun y ↦ (f y, h y)) := hf.prodMk hh
+  -- Pull `dz` and `θ` back along the two components of `(f, h)`.
+  rw [coe_contactization, sub_eq_add_neg, ← neg_one_smul ℝ, TauCeti.mpullback_add,
+    TauCeti.mpullback_smul, ← TauCeti.mpullback_comp hfh mdifferentiable_snd,
+    ← TauCeti.mpullback_comp hfh mdifferentiable_fst, neg_one_smul, ← sub_eq_add_neg]
+  exact congrArg (· - _) (mpullback_realLineCoordForm h)
 
 /-- **The Legendrian lift criterion.** A map `y ↦ (f y, h y)` into the contactization `W × ℝ`, with
 `f` and `h` differentiable, is isotropic for the distribution `ker (dz - θ)` exactly when

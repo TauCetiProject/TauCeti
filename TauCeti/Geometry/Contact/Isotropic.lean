@@ -12,7 +12,7 @@ import TauCeti.Geometry.Manifold.DifferentialForm.DegreeOne
 import TauCeti.Geometry.Manifold.DifferentialForm.Naturality
 import TauCeti.Geometry.Manifold.Distribution.Annihilator
 import TauCeti.Geometry.Manifold.IsManifold.Basic
-import TauCeti.LinearAlgebra.BilinearForm.SymplecticBasis
+import TauCeti.LinearAlgebra.BilinearForm.Orthogonal
 
 /-!
 # Isotropic and Legendrian maps into a contact manifold
@@ -145,18 +145,6 @@ theorem isIsotropicMap_diffeomorph_comp_iff (ψ : M ≃ₘ^n⟮I, I₂⟯ M₂) 
 end Transport
 
 /-! ### Kernels of one-forms -/
-
-/-- A map whose tangent image at `y` lies in the kernel of a one-form `α` pulls `α` back to zero
-at `y`. -/
-private theorem mpullback_eq_zero_of_mfderiv_mem_ker {α : RoughForm I M ℝ 1} {y : N}
-    (h : ∀ v, mfderiv J I f y v ∈ α.ker (f y)) : mpullback J I f α y = 0 := by
-  refine ContinuousAlternatingMap.ext fun v ↦ ?_
-  have hv : (fun i ↦ mfderiv J I f y (v i)) = ![mfderiv J I f y (v 0)] := by
-    ext i
-    fin_cases i
-    rfl
-  rw [mpullback_apply, hv]
-  exact RoughForm.mem_ker.1 (h (v 0))
 
 /-- **Isotropy is the vanishing of the pullback.** A map is isotropic for the kernel of a one-form
 `α` exactly when it pulls `α` back to zero. -/
