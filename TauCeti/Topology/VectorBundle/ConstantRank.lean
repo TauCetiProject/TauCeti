@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Analysis.Normed.Operator.Splitting.ConstantRank
 public import TauCeti.Topology.VectorBundle.Subbundle
-public import Mathlib.Topology.VectorBundle.Hom
+public import TauCeti.Topology.VectorBundle.Hom
 
 /-!
 # Kernel and image bundles of bundle maps of constant rank
@@ -22,7 +22,8 @@ subspace topologies of `E₁` and `E₂`, into vector bundles: subbundles of `E�
 
 The frames are read off from the local matrices of `φ`, its expressions
 `ContinuousLinearMap.inCoordinates` in the trivializations of `E₁` and `E₂` at a point. These form
-a continuous family of operators of constant rank between the model fibres, whose kernels and
+a continuous family of operators (`TauCeti.continuousOn_inCoordinates`) of constant rank
+(`ContinuousLinearMap.finrank_range_inCoordinates`) between the model fibres, whose kernels and
 ranges move continuously by `ContinuousLinearMap.exists_continuousOn_ker_parametrization` and
 `ContinuousLinearMap.exists_continuousOn_range_parametrization`.
 
@@ -57,77 +58,6 @@ variable {𝕜 B F₁ F₂ : Type*} [NontriviallyNormedField 𝕜] [CompleteSpac
   [∀ x, IsTopologicalAddGroup (E₂ x)] [∀ x, ContinuousSMul 𝕜 (E₂ x)]
   {φ : Π x, E₁ x →L[𝕜] E₂ x} {r : ℕ}
 
-omit [CompleteSpace 𝕜] [FiniteDimensional 𝕜 F₁] [FiniteDimensional 𝕜 F₂] in
-/-- On the common base set of the trivializations at `x₀`, the local matrices of a continuous
-Hom-bundle section form a continuous family of operators. -/
-private lemma continuousOn_inCoordinates
-    (hφ : Continuous fun x ↦ TotalSpace.mk' (F₁ →L[𝕜] F₂) (E := fun x ↦ E₁ x →L[𝕜] E₂ x) x (φ x))
-    (x₀ : B) :
-    ContinuousOn (fun x ↦ ContinuousLinearMap.inCoordinates F₁ E₁ F₂ E₂ x₀ x x₀ x (φ x))
-      ((trivializationAt F₁ E₁ x₀).baseSet ∩ (trivializationAt F₂ E₂ x₀).baseSet) :=
-  ((trivializationAt (F₁ →L[𝕜] F₂) (fun x ↦ E₁ x →L[𝕜] E₂ x) x₀).continuousOn.comp
-    hφ.continuousOn fun _ hx ↦ by simpa using hx).snd
-
-omit [CompleteSpace 𝕜] [FiniteDimensional 𝕜 F₁] [FiniteDimensional 𝕜 F₂]
-  [∀ x, IsTopologicalAddGroup (E₂ x)] [∀ x, ContinuousSMul 𝕜 (E₂ x)] in
-/-- On the common base set of the trivializations at `x₀`, the local matrix of `φ x` reads a model
-vector as a fibre vector of `E₁`, applies `φ x`, and reads the result in the trivialization of
-`E₂`. -/
-private lemma inCoordinates_apply_of_mem {x₀ x : B}
-    (hx : x ∈ (trivializationAt F₁ E₁ x₀).baseSet ∩ (trivializationAt F₂ E₂ x₀).baseSet) (v : F₁) :
-    ContinuousLinearMap.inCoordinates F₁ E₁ F₂ E₂ x₀ x x₀ x (φ x) v =
-      (trivializationAt F₂ E₂ x₀ ⟨x, φ x ((trivializationAt F₁ E₁ x₀).symm x v)⟩).2 := by
-  rw [ContinuousLinearMap.inCoordinates, ContinuousLinearMap.comp_apply,
-    ContinuousLinearMap.comp_apply, Trivialization.symmL_apply _ hx.1,
-    (trivializationAt F₂ E₂ x₀).continuousLinearMapAt_apply_of_mem (R := 𝕜) hx.2]
-
-omit [CompleteSpace 𝕜] [FiniteDimensional 𝕜 F₁] [FiniteDimensional 𝕜 F₂]
-  [∀ x, IsTopologicalAddGroup (E₂ x)] [∀ x, ContinuousSMul 𝕜 (E₂ x)] in
-/-- On the common base set of the trivializations at `x₀`, a vector lies in the kernel of the
-local matrix of `φ x` exactly when the corresponding fibre vector lies in the kernel of `φ x`. -/
-private lemma mem_ker_inCoordinates_iff {x₀ x : B}
-    (hx : x ∈ (trivializationAt F₁ E₁ x₀).baseSet ∩ (trivializationAt F₂ E₂ x₀).baseSet) (v : F₁) :
-    v ∈ (ContinuousLinearMap.inCoordinates F₁ E₁ F₂ E₂ x₀ x x₀ x (φ x)).ker ↔
-      (trivializationAt F₁ E₁ x₀).symm x v ∈ (φ x).ker := by
-  rw [LinearMap.mem_ker, LinearMap.mem_ker, ContinuousLinearMap.coe_coe,
-    ContinuousLinearMap.coe_coe, inCoordinates_apply_of_mem hx,
-    ← Trivialization.linearEquivAt_apply (R := 𝕜) _ _ hx.2, LinearEquiv.map_eq_zero_iff]
-
-omit [CompleteSpace 𝕜] [FiniteDimensional 𝕜 F₁] [FiniteDimensional 𝕜 F₂]
-  [∀ x, IsTopologicalAddGroup (E₂ x)] [∀ x, ContinuousSMul 𝕜 (E₂ x)] in
-/-- On the common base set of the trivializations at `x₀`, a vector lies in the range of the
-local matrix of `φ x` exactly when the corresponding fibre vector lies in the range of `φ x`. -/
-private lemma mem_range_inCoordinates_iff {x₀ x : B}
-    (hx : x ∈ (trivializationAt F₁ E₁ x₀).baseSet ∩ (trivializationAt F₂ E₂ x₀).baseSet) (w : F₂) :
-    w ∈ (ContinuousLinearMap.inCoordinates F₁ E₁ F₂ E₂ x₀ x x₀ x (φ x)).range ↔
-      (trivializationAt F₂ E₂ x₀).symm x w ∈ (φ x).range := by
-  constructor
-  · rintro ⟨v, rfl⟩
-    refine ⟨(trivializationAt F₁ E₁ x₀).symm x v, ?_⟩
-    simp only [ContinuousLinearMap.coe_coe]
-    rw [inCoordinates_apply_of_mem hx, Trivialization.symm_apply_apply_mk _ hx.2]
-  · rintro ⟨u, hu⟩
-    refine ⟨(trivializationAt F₁ E₁ x₀ ⟨x, u⟩).2, ?_⟩
-    simp only [ContinuousLinearMap.coe_coe] at hu ⊢
-    rw [inCoordinates_apply_of_mem hx, Trivialization.symm_apply_apply_mk _ hx.1, hu,
-      Trivialization.apply_mk_symm _ hx.2]
-
-omit [CompleteSpace 𝕜] [FiniteDimensional 𝕜 F₁] [FiniteDimensional 𝕜 F₂]
-  [∀ x, IsTopologicalAddGroup (E₂ x)] [∀ x, ContinuousSMul 𝕜 (E₂ x)] in
-/-- On the common base set of the trivializations at `x₀`, the local matrix of `φ x` has the rank
-of `φ x`. -/
-private lemma finrank_range_inCoordinates {x₀ x : B}
-    (hx : x ∈ (trivializationAt F₁ E₁ x₀).baseSet ∩ (trivializationAt F₂ E₂ x₀).baseSet) :
-    finrank 𝕜 (ContinuousLinearMap.inCoordinates F₁ E₁ F₂ E₂ x₀ x x₀ x (φ x)).range =
-      finrank 𝕜 (φ x).range := by
-  let L := (trivializationAt F₂ E₂ x₀).linearEquivAt 𝕜 x hx.2
-  have : (ContinuousLinearMap.inCoordinates F₁ E₁ F₂ E₂ x₀ x x₀ x (φ x)).range =
-      (φ x).range.map L.toLinearMap := by
-    ext w
-    rw [mem_range_inCoordinates_iff hx, Submodule.mem_map_equiv,
-      Trivialization.linearEquivAt_symm_apply]
-  rw [this, LinearEquiv.finrank_map_eq]
-
 /-- **Kernels of a bundle map of constant rank have local frames.** If a continuous bundle map
 `φ` between finite-rank vector bundles has rank `r` at every point, then its kernels have
 continuous local frames with `finrank F₁ - r` members near every point. Over `ℝ` or `ℂ` they
@@ -143,20 +73,21 @@ theorem hasLocalSubbundleFrames_ker
   obtain ⟨U, hUW, hU, hx₀U, κ, hκ, hκU⟩ :=
     ContinuousLinearMap.exists_continuousOn_ker_parametrization (continuousOn_inCoordinates hφ x₀)
       ((trivializationAt F₁ E₁ x₀).open_baseSet.inter (trivializationAt F₂ E₂ x₀).open_baseSet)
-      hx₀ fun x hx ↦ by rw [finrank_range_inCoordinates hx, finrank_range_inCoordinates hx₀, hr, hr]
+      hx₀ fun x hx ↦ by rw [ContinuousLinearMap.finrank_range_inCoordinates hx.1 hx.2,
+        ContinuousLinearMap.finrank_range_inCoordinates hx₀.1 hx₀.2, hr, hr]
   -- The model kernel at `x₀` has dimension `finrank F₁ - r`, by rank–nullity.
   have hdim : finrank 𝕜
       (ContinuousLinearMap.inCoordinates F₁ E₁ F₂ E₂ x₀ x₀ x₀ x₀ (φ x₀)).ker =
       finrank 𝕜 F₁ - r := by
     have h := LinearMap.finrank_range_add_finrank_ker
       (ContinuousLinearMap.inCoordinates F₁ E₁ F₂ E₂ x₀ x₀ x₀ x₀ (φ x₀) : F₁ →ₗ[𝕜] F₂)
-    have h' := finrank_range_inCoordinates (φ := φ) hx₀
+    have h' := ContinuousLinearMap.finrank_range_inCoordinates (ϕ := φ x₀) hx₀.1 hx₀.2
     rw [hr] at h'
     omega
   exact ⟨U, hU, hx₀U, _, Trivialization.isSubbundleFrameOn_symm_comp _
     (hUW.trans inter_subset_left) hκ
     (finBasisOfFinrankEq 𝕜 _ hdim) (fun x hx ↦ (hκU x hx).1) fun x hx v ↦ by
-      rw [(hκU x hx).2, mem_ker_inCoordinates_iff (hUW hx)]⟩
+      rw [(hκU x hx).2, ContinuousLinearMap.mem_ker_inCoordinates_iff (hUW hx).1 (hUW hx).2]⟩
 
 /-- **Images of a bundle map of constant rank have local frames.** If a continuous bundle map
 `φ` between finite-rank vector bundles has rank `r` at every point, then its images have
@@ -174,14 +105,15 @@ theorem hasLocalSubbundleFrames_range
     ContinuousLinearMap.exists_continuousOn_range_parametrization
       (continuousOn_inCoordinates hφ x₀)
       ((trivializationAt F₁ E₁ x₀).open_baseSet.inter (trivializationAt F₂ E₂ x₀).open_baseSet)
-      hx₀ fun x hx ↦ by rw [finrank_range_inCoordinates hx, finrank_range_inCoordinates hx₀, hr, hr]
+      hx₀ fun x hx ↦ by rw [ContinuousLinearMap.finrank_range_inCoordinates hx.1 hx.2,
+        ContinuousLinearMap.finrank_range_inCoordinates hx₀.1 hx₀.2, hr, hr]
   have hdim : finrank 𝕜
       (ContinuousLinearMap.inCoordinates F₁ E₁ F₂ E₂ x₀ x₀ x₀ x₀ (φ x₀)).range = r := by
-    rw [finrank_range_inCoordinates hx₀, hr]
+    rw [ContinuousLinearMap.finrank_range_inCoordinates hx₀.1 hx₀.2, hr]
   exact ⟨U, hU, hx₀U, _, Trivialization.isSubbundleFrameOn_symm_comp _
     (hUW.trans inter_subset_right) hρ
     (finBasisOfFinrankEq 𝕜 _ hdim) (fun x hx ↦ (hρU x hx).1) fun x hx w ↦ by
-      rw [(hρU x hx).2, mem_range_inCoordinates_iff (hUW hx)]⟩
+      rw [(hρU x hx).2, ContinuousLinearMap.mem_range_inCoordinates_iff (hUW hx).1 (hUW hx).2]⟩
 
 /-- The kernel of a continuous fibrewise surjective bundle map is a subbundle: its kernels have
 continuous local frames with `finrank F₁ - finrank F₂` members near every point. -/

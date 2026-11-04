@@ -226,8 +226,8 @@ end IsSubbundleFrameOn
 
 variable (ι) in
 /-- Every point of the base has an open neighbourhood carrying a continuous local frame of the
-family of subspaces `V`, indexed by `ι`. Over `ℝ` or `ℂ` such a family, with the subspace
-topology, is a vector bundle with model fibre `ι → 𝕜`
+family of subspaces `V`, indexed by `ι`. Over `ℝ` or `ℂ`, when `ι` is finite, such a family,
+with the subspace topology, is a vector bundle with model fibre `ι → 𝕜`
 (`TauCeti.HasLocalSubbundleFrames.vectorBundle`): a subbundle of `E`. -/
 def HasLocalSubbundleFrames (V : Π x, Submodule 𝕜 (E x)) : Prop :=
   ∀ x, ∃ U : Set B, IsOpen U ∧ x ∈ U ∧ ∃ X : ι → Π x, E x, IsSubbundleFrameOn F V X U
@@ -500,11 +500,11 @@ namespace HasLocalSubbundleFrames
 
 variable [IsRCLikeNormedField 𝕜] {F} {V : Π x, Submodule 𝕜 (E x)}
 
-/-- A family of subspaces with continuous local frames indexed by `ι` near every point is a fibre
-bundle with fibre `ι → 𝕜`, the topology of its total space being that of a subspace of the total
-space of `E`. Its trivializations are those of all continuous local frames of `V` on open sets
-(`TauCeti.IsSubbundleFrameOn.trivialization`). Use this definition as a local instance; it
-chooses a local frame near every point. -/
+/-- A family of subspaces with continuous local frames indexed by a finite type `ι` near every
+point is a fibre bundle with fibre `ι → 𝕜`, the topology of its total space being that of a
+subspace of the total space of `E`. Its trivializations are those of all continuous local frames
+of `V` on open sets (`TauCeti.IsSubbundleFrameOn.trivialization`). Use this definition as a local
+instance; it chooses a local frame near every point. -/
 @[instance_reducible]
 def fiberBundle [Finite ι] (hV : HasLocalSubbundleFrames F ι V) :
     letI := subbundleTopology F (F' := ι → 𝕜) V
@@ -537,8 +537,8 @@ theorem mem_trivializationAtlas_fiberBundle_iff [Finite ι] (hV : HasLocalSubbun
   Iff.rfl
 
 /-- **Local frame criterion for subbundles.** A family of subspaces with continuous local frames
-indexed by `ι` near every point, with the subspace topology of the total space of `E` and the
-atlas of `hV.fiberBundle`, is a topological vector bundle with model fibre `ι → 𝕜`. -/
+indexed by a finite type `ι` near every point, with the subspace topology of the total space of
+`E` and the atlas of `hV.fiberBundle`, is a topological vector bundle with model fibre `ι → 𝕜`. -/
 theorem vectorBundle [Fintype ι] (hV : HasLocalSubbundleFrames F ι V) :
     letI := subbundleTopology F (F' := ι → 𝕜) V
     letI := hV.fiberBundle
@@ -586,13 +586,18 @@ theorem isSubbundleFrameOn_symm_comp {K ι : Type*} [NormedAddCommGroup K] [Norm
     exact (b.linearIndependent.map' (κ x : K →ₗ[𝕜] F) (LinearMap.ker_eq_bot.mpr (hinj x hx))).map'
       L.toLinearMap L.ker
   span_eq {x} hx := by
-    let L := (e.linearEquivAt 𝕜 x (hU hx)).symm
+    let L := e.linearEquivAt 𝕜 x (hU hx)
+    -- The frame at `x` is the image of the basis `b` under the linear map `L.symm ∘ κ x`.
+    have hframe : (fun i ↦ e.symm x (κ x (b i))) = (L.symm.toLinearMap ∘ₗ (κ x : K →ₗ[𝕜] F)) ∘ b :=
+      funext fun i ↦ (e.linearEquivAt_symm_apply (R := 𝕜) x (hU hx) _).symm
+    -- So it spans the image under `L.symm` of the range of `κ x`.
+    have hspan : Submodule.span 𝕜 (range fun i ↦ e.symm x (κ x (b i))) =
+        (κ x).range.map L.symm.toLinearMap := by
+      rw [hframe, range_comp, ← Submodule.map_span, b.span_eq, Submodule.map_top,
+        LinearMap.range_comp]
+    -- Membership in that image is membership in `V x`, by the hypothesis on the ranges.
     ext w
-    rw [show range (fun i ↦ e.symm x (κ x (b i))) = L.toLinearMap '' ((κ x : K →ₗ[𝕜] F) '' range b)
-      by rw [← range_comp, ← range_comp]; exact congrArg range (funext fun i ↦
-        (e.linearEquivAt_symm_apply (R := 𝕜) x (hU hx) _).symm),
-      ← Submodule.map_span, ← Submodule.map_span, b.span_eq, Submodule.map_top,
-      Submodule.mem_map_equiv, hrange x hx, LinearEquiv.symm_symm, e.linearEquivAt_apply,
-      e.symm_apply_apply_mk (hU hx)]
+    rw [hspan, Submodule.mem_map_equiv, LinearEquiv.symm_symm, hrange x hx,
+      e.linearEquivAt_apply, e.symm_apply_apply_mk (hU hx)]
 
 end Bundle.Trivialization

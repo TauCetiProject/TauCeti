@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Topology.Algebra.Module.ContinuousLinearMap.Invertible
 public import Mathlib.Topology.VectorBundle.Basic
+public import Mathlib.LinearAlgebra.Dimension.Finrank
 
 /-!
 # Changing the coordinates of a bundle homomorphism
@@ -23,6 +24,9 @@ to smoothness of inversion of continuous linear maps.
 `ContinuousLinearMap.isInvertible_inCoordinates_iff` reads invertibility of a fibre map
 off its coordinate expression, and `ContinuousLinearMap.inCoordinates_comp` reads a composite
 of fibre maps as the composite of their coordinate expressions.
+`ContinuousLinearMap.mem_ker_inCoordinates_iff`, `ContinuousLinearMap.mem_range_inCoordinates_iff`
+and `ContinuousLinearMap.finrank_range_inCoordinates` read the kernel, the range and the rank of
+a fibre map off its coordinate expression.
 
 `VectorBundleCore.localTriv_coordChangeL` and
 `VectorBundleCore.trivializationAt_coordChangeL` identify transitions between actual
@@ -228,6 +232,71 @@ theorem isInvertible_inCoordinates_iff {x₀ x : B} {y₀ y : B'} {ϕ : V x →L
   rw [inCoordinates_eq hx hy, isInvertible_equiv_comp, isInvertible_comp_equiv]
 
 end Inverse
+
+section KerRange
+
+variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
+  {B : Type*} [TopologicalSpace B] {B' : Type*} [TopologicalSpace B']
+  {F : Type*} [NormedAddCommGroup F] [NormedSpace 𝕜 F]
+  {F' : Type*} [NormedAddCommGroup F'] [NormedSpace 𝕜 F']
+  {V : B → Type*} [∀ x, AddCommGroup (V x)] [∀ x, Module 𝕜 (V x)]
+  [∀ x, TopologicalSpace (V x)] [TopologicalSpace (TotalSpace F V)]
+  [FiberBundle F V] [VectorBundle 𝕜 F V]
+  {W : B' → Type*} [∀ x, AddCommGroup (W x)] [∀ x, Module 𝕜 (W x)]
+  [∀ x, TopologicalSpace (W x)] [TopologicalSpace (TotalSpace F' W)]
+  [FiberBundle F' W] [VectorBundle 𝕜 F' W]
+  {x₀ x : B} {y₀ y : B'} {ϕ : V x →L[𝕜] W y}
+
+/-- In trivializations whose base sets contain the two fibre base points, the coordinate
+expression of a continuous linear map between fibres reads a model vector as a fibre vector of
+`V`, applies the map, and reads the result in the trivialization of `W`. -/
+theorem inCoordinates_apply_of_mem (hx : x ∈ (trivializationAt F V x₀).baseSet)
+    (hy : y ∈ (trivializationAt F' W y₀).baseSet) (v : F) :
+    inCoordinates F V F' W x₀ x y₀ y ϕ v =
+      (trivializationAt F' W y₀ ⟨y, ϕ ((trivializationAt F V x₀).symm x v)⟩).2 := by
+  rw [inCoordinates, comp_apply, comp_apply, Trivialization.symmL_apply _ hx,
+    (trivializationAt F' W y₀).continuousLinearMapAt_apply_of_mem (R := 𝕜) hy]
+
+/-- In trivializations whose base sets contain the two fibre base points, a model vector lies in
+the kernel of the coordinate expression of a fibre map exactly when the corresponding fibre
+vector lies in the kernel of the map. -/
+theorem mem_ker_inCoordinates_iff (hx : x ∈ (trivializationAt F V x₀).baseSet)
+    (hy : y ∈ (trivializationAt F' W y₀).baseSet) (v : F) :
+    v ∈ (inCoordinates F V F' W x₀ x y₀ y ϕ).ker ↔ (trivializationAt F V x₀).symm x v ∈ ϕ.ker := by
+  rw [LinearMap.mem_ker, LinearMap.mem_ker, coe_coe, coe_coe, inCoordinates_apply_of_mem hx hy,
+    ← Trivialization.linearEquivAt_apply (R := 𝕜) _ _ hy, LinearEquiv.map_eq_zero_iff]
+
+/-- In trivializations whose base sets contain the two fibre base points, a model vector lies in
+the range of the coordinate expression of a fibre map exactly when the corresponding fibre vector
+lies in the range of the map. -/
+theorem mem_range_inCoordinates_iff (hx : x ∈ (trivializationAt F V x₀).baseSet)
+    (hy : y ∈ (trivializationAt F' W y₀).baseSet) (w : F') :
+    w ∈ (inCoordinates F V F' W x₀ x y₀ y ϕ).range ↔
+      (trivializationAt F' W y₀).symm y w ∈ ϕ.range := by
+  constructor
+  · rintro ⟨v, rfl⟩
+    refine ⟨(trivializationAt F V x₀).symm x v, ?_⟩
+    simp only [coe_coe]
+    rw [inCoordinates_apply_of_mem hx hy, Trivialization.symm_apply_apply_mk _ hy]
+  · rintro ⟨u, hu⟩
+    refine ⟨(trivializationAt F V x₀ ⟨x, u⟩).2, ?_⟩
+    simp only [coe_coe] at hu ⊢
+    rw [inCoordinates_apply_of_mem hx hy, Trivialization.symm_apply_apply_mk _ hx, hu,
+      Trivialization.apply_mk_symm _ hy]
+
+/-- In trivializations whose base sets contain the two fibre base points, the coordinate
+expression of a fibre map has the rank of the map. -/
+theorem finrank_range_inCoordinates (hx : x ∈ (trivializationAt F V x₀).baseSet)
+    (hy : y ∈ (trivializationAt F' W y₀).baseSet) :
+    Module.finrank 𝕜 (inCoordinates F V F' W x₀ x y₀ y ϕ).range = Module.finrank 𝕜 ϕ.range := by
+  let L := (trivializationAt F' W y₀).linearEquivAt 𝕜 y hy
+  have : (inCoordinates F V F' W x₀ x y₀ y ϕ).range = ϕ.range.map L.toLinearMap := by
+    ext w
+    rw [mem_range_inCoordinates_iff hx hy, Submodule.mem_map_equiv,
+      Trivialization.linearEquivAt_symm_apply]
+  rw [this, LinearEquiv.finrank_map_eq]
+
+end KerRange
 
 section Comp
 

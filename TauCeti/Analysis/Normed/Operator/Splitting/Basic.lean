@@ -35,6 +35,8 @@ underlying inverse is Mathlib's total `ContinuousLinearMap.inverse`.
 * `ContinuousLinearMap.eq_kerSection`: it is the only map with that defining property.
 * `ContinuousLinearMap.range_kerSection`: its range is exactly `ker A`.
 * `ContinuousLinearMap.kerEquivOfProd`: the resulting isomorphism `G ≃L[R] ↥A.ker`.
+* `ContinuousLinearMap.injective_prod_comp`: projections fixing the range and the kernel of an
+  operator `T` give an injective pair `(p ∘ T, q)`.
 -/
 
 public section
@@ -136,6 +138,29 @@ theorem coe_kerEquivOfProd_apply (h : (A.prod q).IsInvertible) (v : G) :
 theorem kerEquivOfProd_symm_apply (h : (A.prod q).IsInvertible) (x : ↥A.ker) :
     (kerEquivOfProd A q h).symm x = q x :=
   (rfl)
+
+section Projections
+
+variable {R M F : Type*} [Ring R]
+  [AddCommGroup M] [TopologicalSpace M] [Module R M]
+  [AddCommGroup F] [TopologicalSpace F] [Module R F]
+
+/-- If `p` fixes the range of `T` and `q` fixes its kernel, then the pair `(p ∘ T, q)` is
+injective. With `p` and `q` continuous projections onto the range and the kernel, this pair is
+the standard choice of local product coordinates near `T`. -/
+theorem injective_prod_comp {T : M →L[R] F} {p : F →L[R] T.range} {q : M →L[R] T.ker}
+    (hp : ∀ y : T.range, p y = y) (hq : ∀ v : T.ker, q v = v) :
+    Function.Injective ((p ∘L T).prod q) := by
+  refine (injective_iff_map_eq_zero _).mpr fun v hv ↦ ?_
+  simp only [prod_apply, comp_apply, Prod.mk_eq_zero] at hv
+  have hT : T v = 0 := by
+    have h := hv.1
+    rwa [hp ⟨T v, LinearMap.mem_range_self _ v⟩, Submodule.mk_eq_zero] at h
+  have h := hv.2
+  rw [hq ⟨v, hT⟩] at h
+  simpa using congrArg Subtype.val h
+
+end Projections
 
 end ContinuousLinearMap
 

@@ -24,7 +24,9 @@ source. This local result does not require finite rank or invertibility away fro
 point under consideration. The inverse is Mathlib's `ContinuousLinearMap.inverse`,
 which is zero at noninvertible maps. In the same generality, invertibility of the fibre
 maps is an open condition along a continuous Hom-bundle section, and composition of
-continuous Hom-bundle sections is continuous.
+continuous Hom-bundle sections is continuous. Read in the trivializations at a fixed point, a
+continuous Hom-bundle section is a continuous family of operators on their common base set
+(`TauCeti.continuousOn_inCoordinates`).
 
 For two vector bundle cores, a section of Mathlib's Hom bundle between them is continuous
 exactly when it is continuous in every pair of a source chart and a target chart, on their
@@ -93,6 +95,23 @@ theorem continuous_hom_bundle_iff [CompleteSpace 𝕜] [FiniteDimensional 𝕜 F
     -- `TotalSpace.mk'` is the total-space constructor; the second component of
     -- `e₂` applied to this point is precisely its fibre coordinate.
     rfl
+
+/-- On the common base set of the trivializations at `x₀`, the coordinate expressions of a
+continuous Hom-bundle section in these fixed trivializations form a continuous family of
+operators. -/
+theorem continuousOn_inCoordinates {ϕ : ∀ x, E₁ x →L[𝕜] E₂ x}
+    (hϕ : Continuous fun x ↦ TotalSpace.mk' (F₁ →L[𝕜] F₂) (E := fun x ↦ E₁ x →L[𝕜] E₂ x) x (ϕ x))
+    (x₀ : B) :
+    ContinuousOn (fun x ↦ ContinuousLinearMap.inCoordinates F₁ E₁ F₂ E₂ x₀ x x₀ x (ϕ x))
+      ((trivializationAt F₁ E₁ x₀).baseSet ∩ (trivializationAt F₂ E₂ x₀).baseSet) := by
+  let e := trivializationAt (F₁ →L[𝕜] F₂) (fun x ↦ E₁ x →L[𝕜] E₂ x) x₀
+  -- The section stays in the source of `e` over its base set, the common base set.
+  have hmaps : MapsTo (fun x ↦ TotalSpace.mk' (F₁ →L[𝕜] F₂) (E := fun x ↦ E₁ x →L[𝕜] E₂ x) x (ϕ x))
+      ((trivializationAt F₁ E₁ x₀).baseSet ∩ (trivializationAt F₂ E₂ x₀).baseSet) e.source :=
+    fun x hx ↦ by rwa [e.mem_source, hom_trivializationAt_baseSet]
+  -- The fibre coordinate of `e` is the coordinate expression in the trivializations at `x₀`.
+  refine (e.continuousOn.comp hϕ.continuousOn hmaps).snd.congr fun x _ ↦ ?_
+  simp only [Function.comp_apply, e, hom_trivializationAt_apply]
 
 end TauCeti
 
