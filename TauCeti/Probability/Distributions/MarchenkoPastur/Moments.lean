@@ -96,7 +96,7 @@ private lemma tendsto_mul_I_pow_mul_aeval_trunc_momentSeries (y : ℝ≥0) (n : 
       atTop (𝓝 0) := by
   let w : ℝ → ℂ := fun t ↦ ((t : ℂ) * I)⁻¹
   let S : ℝ → ℂ := fun t ↦ Polynomial.aeval (w t) (PowerSeries.trunc (n + 1) (momentSeries y))
-  have hsharp := (TauCeti.tendsto_inv_ofReal_mul_atTop_zero I).mul <|
+  have hsharp := I.tendsto_inv_ofReal_mul_atTop_zero.mul <|
     tendsto_mul_I_pow_mul_resolventTransform_add_sum (integrable_pow_marchenkoPastur y (n + 1))
   rw [zero_mul] at hsharp
   refine hsharp.congr' ?_
@@ -201,7 +201,7 @@ private theorem momentSeries_quadratic_eq_zero (y : ℝ≥0) :
   let w : ℝ → ℂ := fun t ↦ ((t : ℂ) * I)⁻¹
   let Q : ℝ → ℂ := fun t ↦ -((t : ℂ) * I * resolventTransform (marchenkoPastur y) ((t : ℂ) * I))
   let S : ℝ → ℂ := fun t ↦ Polynomial.aeval (w t) P
-  have hw0 : Tendsto w atTop (𝓝 0) := TauCeti.tendsto_inv_ofReal_mul_atTop_zero I
+  have hw0 : Tendsto w atTop (𝓝 0) := I.tendsto_inv_ofReal_mul_atTop_zero
   have hG_lim : Tendsto (fun t : ℝ ↦ Polynomial.aeval (w t) G) atTop (𝓝 ((G.coeff 0 : ℝ) : ℂ)) := by
     simpa [Function.comp_def, Polynomial.aeval_def, Polynomial.eval₂_at_zero] using
       (G.continuous_aeval.tendsto (0 : ℂ)).comp hw0

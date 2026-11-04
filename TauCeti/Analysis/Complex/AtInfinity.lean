@@ -22,12 +22,16 @@ public section
 
 open Bornology Complex Filter Topology
 
-namespace TauCeti
+namespace Complex
 
 /-- For any `c : ℂ`, the reciprocal `((t : ℂ) * c)⁻¹` tends to `0` as `t → +∞`. -/
 theorem tendsto_inv_ofReal_mul_atTop_zero (c : ℂ) :
     Tendsto (fun t : ℝ => ((t : ℂ) * c)⁻¹) atTop (𝓝 0) := by
   simpa using tendsto_inv_atTop_zero.ofReal.const_mul c⁻¹
+
+end Complex
+
+namespace TauCeti
 
 /-- If `z * ψ z` has a finite limit at infinity, then `ψ z` tends to zero. -/
 theorem tendsto_zero_of_tendsto_mul_cobounded {l : Filter ℂ} (hl : l ≤ cobounded ℂ)

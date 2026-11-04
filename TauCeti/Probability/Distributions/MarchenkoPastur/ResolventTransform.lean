@@ -20,10 +20,10 @@ base field `ℝ` and values in `ℂ`) satisfies the Marchenko–Pastur quadratic
 `y * z * (m(z) * m(z)) + (z + y - 1) * m(z) + 1 = 0`
 
 at every `z : ℂ` outside the support of `marchenkoPastur y`. In the upper half-plane `m(z)` is the
-unique root with positive imaginary part: the other root is `(y * z * m(z))⁻¹`, while the
-size-biasing relation `1 + z * m(z) = m_{semicircleReal (1 + y) y}(z)` shows that `z * m(z)` also
-has positive imaginary part in the upper half-plane, forcing `(y * z * m(z))⁻¹` into the closed
-lower half-plane.
+unique root with positive imaginary part: at `y = 0` this reduces to the linear equation
+`(z - 1) * m + 1 = 0`, while for `y > 0` the other root is `(y * z * m(z))⁻¹` and the size-biasing
+relation `1 + z * m(z) = m_{semicircleReal (1 + y) y}(z)` shows that `z * m(z)` also has positive
+imaginary part in the upper half-plane, forcing `(y * z * m(z))⁻¹` into the lower half-plane.
 
 For `y < 1`, the origin lies outside the support `[(1 - √y)², (1 + √y)²]`, and evaluating the
 quadratic equation at `z = 0` yields `m(0) = (1 - y)⁻¹`, that is,
@@ -229,7 +229,7 @@ theorem eq_resolventTransform_marchenkoPastur_iff (hz : 0 < z.im) {w : ℂ} :
   have hmim : 0 < m.im := im_resolventTransform_pos (IsProbabilityMeasure.ne_zero _) hz
   refine ⟨fun h ↦ h ▸ ⟨hmim, hm⟩, fun ⟨hwim, hw⟩ ↦ ?_⟩
   by_contra hne
-  -- The second root satisfies `w * (y * (z * m)) = 1`, while `Im (z * m) > 0`, forcing `Im w ≤ 0`.
+  -- Any root `w ≠ m` obeys `w * (y * (z * m)) = 1`, while `Im (z * m) > 0`, forcing `Im w ≤ 0`.
   have hprod : w * ((y : ℂ) * (z * m)) = 1 := by
     have h : (w - m) * ((y : ℂ) * z * (w + m) + (z + y - 1)) = 0 := by
       linear_combination hw - hm
