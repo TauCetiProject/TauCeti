@@ -66,6 +66,9 @@ Calderón–Zygmund cubes at height `t`.
   `TauCeti.setLAverage_enorm_sub_setAverage_le_sharpMaximalFunction`,
   `TauCeti.sharpMaximalFunction_le` and `TauCeti.lt_sharpMaximalFunction_iff` as its interface,
   `TauCeti.sharpMaximalFunction_const` and `TauCeti.lowerSemicontinuous_sharpMaximalFunction`.
+* `TauCeti.sharpMaximalFunction_add_const`, `TauCeti.sharpMaximalFunction_const_smul` and
+  `TauCeti.sharpMaximalFunction_add_le`: the sharp maximal function ignores constants, is
+  homogeneous and is subadditive.
 * `TauCeti.setLAverage_enorm_sub_setAverage_dyadicCube_le`: dyadic mean oscillation is controlled
   by the sharp maximal function.
 * `TauCeti.lintegral_enorm_rpow_le_lintegral_sharpMaximalFunction_rpow` and
@@ -140,6 +143,97 @@ theorem sharpMaximalFunction_const [CompleteSpace F] (μ : Measure X) (b : F) :
   · simp [setLAverage_eq, htop]
   rw [setAverage_const h0 htop b]
   simp
+
+omit [PseudoMetricSpace X] [NormedSpace ℝ F] in
+/-- On a set of finite measure, the average of `‖f - b‖ₑ` is infinite for an a.e. strongly
+measurable `f` that is not integrable there, whatever the constant `b`. -/
+private theorem setLAverage_enorm_sub_const_eq_top {s : Set X} (hf : AEStronglyMeasurable f μ)
+    (hs : μ s ≠ ∞) (hfs : ¬IntegrableOn f s μ) (b : F) :
+    ⨍⁻ y in s, ‖f y - b‖ₑ ∂μ = ∞ := by
+  have : IsFiniteMeasure (μ.restrict s) := isFiniteMeasure_restrict.2 hs
+  have hint : ∫⁻ y in s, ‖f y - b‖ₑ ∂μ = ∞ := by
+    by_contra h
+    have hsub : IntegrableOn (fun y => f y - b) s μ :=
+      ⟨(hf.sub aestronglyMeasurable_const).restrict,
+        hasFiniteIntegral_iff_enorm.2 (lt_top_iff_ne_top.2 h)⟩
+    exact hfs (by simpa only [Pi.add_def, sub_add_cancel] using hsub.add (integrable_const b))
+  rw [setLAverage_eq, hint, ENNReal.top_div_of_ne_top hs]
+
+omit [PseudoMetricSpace X] in
+/-- The mean oscillation of `f + b` on a set is that of `f`, for a constant `b`. -/
+private theorem setLAverage_enorm_add_const_sub [CompleteSpace F] (hf : AEStronglyMeasurable f μ)
+    (s : Set X) (b : F) :
+    ⨍⁻ y in s, ‖f y + b - ⨍ z in s, (f z + b) ∂μ‖ₑ ∂μ =
+      ⨍⁻ y in s, ‖f y - ⨍ z in s, f z ∂μ‖ₑ ∂μ := by
+  rcases eq_or_ne (μ s) 0 with h0 | h0
+  · simp [Measure.restrict_eq_zero.2 h0]
+  rcases eq_or_ne (μ s) ∞ with htop | htop
+  · simp [setLAverage_eq, htop]
+  have : IsFiniteMeasure (μ.restrict s) := isFiniteMeasure_restrict.2 htop
+  by_cases hfs : IntegrableOn f s μ
+  · have havg : ⨍ z in s, (f z + b) ∂μ = ⨍ z in s, f z ∂μ + b := by
+      have h := average_add hfs (integrable_const b)
+      simp only [Pi.add_apply] at h
+      rw [h, setAverage_const h0 htop]
+    simp_rw [havg, add_sub_add_right_eq_sub]
+  · have hfbs : ¬IntegrableOn (fun y => f y + b) s μ := fun h =>
+      hfs (by simpa only [Pi.sub_def, add_sub_cancel_right] using h.sub (integrable_const b))
+    rw [setLAverage_enorm_sub_const_eq_top hf htop hfs,
+      setLAverage_enorm_sub_const_eq_top (f := fun y => f y + b)
+        (hf.add aestronglyMeasurable_const) htop hfbs]
+
+/-- The sharp maximal function does not see constants: adding a constant to an a.e. strongly
+measurable `f` leaves `f^#` unchanged. -/
+@[simp]
+theorem sharpMaximalFunction_add_const [CompleteSpace F] (hf : AEStronglyMeasurable f μ) (b : F) :
+    sharpMaximalFunction μ (fun y => f y + b) = sharpMaximalFunction μ f := by
+  funext x
+  simp only [sharpMaximalFunction, setLAverage_enorm_add_const_sub hf]
+
+/-- The sharp maximal function is homogeneous: `(k • f)^# = ‖k‖ₑ f^#`. -/
+theorem sharpMaximalFunction_const_smul {𝕜 : Type*} [NormedDivisionRing 𝕜] [Module 𝕜 F]
+    [NormSMulClass 𝕜 F] [SMulCommClass ℝ 𝕜 F] (k : 𝕜) (x : X) :
+    sharpMaximalFunction μ (k • f) x = ‖k‖ₑ * sharpMaximalFunction μ f x := by
+  have hosc (s : Set X) : ⨍⁻ y in s, ‖k • f y - ⨍ z in s, k • f z ∂μ‖ₑ ∂μ =
+      ‖k‖ₑ * ⨍⁻ y in s, ‖f y - ⨍ z in s, f z ∂μ‖ₑ ∂μ := by
+    have havg : ⨍ z in s, k • f z ∂μ = k • ⨍ z in s, f z ∂μ := integral_smul k f
+    simp_rw [havg, ← smul_sub, enorm_smul, setLAverage_eq,
+      lintegral_const_mul' _ _ enorm_ne_top, mul_div_assoc]
+  simp only [sharpMaximalFunction, Pi.smul_apply, hosc, ENNReal.mul_iSup]
+
+omit [PseudoMetricSpace X] in
+/-- The mean oscillation of `f + g` on a set is at most the sum of those of `f` and `g`. -/
+private theorem setLAverage_enorm_add_sub_le {g : X → F} (hf : AEStronglyMeasurable f μ)
+    (hg : AEStronglyMeasurable g μ) (s : Set X) :
+    ⨍⁻ y in s, ‖f y + g y - ⨍ z in s, (f z + g z) ∂μ‖ₑ ∂μ ≤
+      ⨍⁻ y in s, ‖f y - ⨍ z in s, f z ∂μ‖ₑ ∂μ + ⨍⁻ y in s, ‖g y - ⨍ z in s, g z ∂μ‖ₑ ∂μ := by
+  rcases eq_or_ne (μ s) ∞ with htop | htop
+  · simp [setLAverage_eq, htop]
+  -- Off integrability, one of the oscillations on the right is already infinite.
+  by_cases hfs : IntegrableOn f s μ
+  swap
+  · simp [setLAverage_enorm_sub_const_eq_top hf htop hfs]
+  by_cases hgs : IntegrableOn g s μ
+  swap
+  · simp [setLAverage_enorm_sub_const_eq_top hg htop hgs]
+  have havg : ⨍ z in s, (f z + g z) ∂μ = ⨍ z in s, f z ∂μ + ⨍ z in s, g z ∂μ :=
+    average_add hfs hgs
+  rw [havg, setLAverage_eq, setLAverage_eq, setLAverage_eq, ← ENNReal.add_div]
+  gcongr
+  calc ∫⁻ y in s, ‖f y + g y - (⨍ z in s, f z ∂μ + ⨍ z in s, g z ∂μ)‖ₑ ∂μ
+      ≤ ∫⁻ y in s, (‖f y - ⨍ z in s, f z ∂μ‖ₑ + ‖g y - ⨍ z in s, g z ∂μ‖ₑ) ∂μ :=
+        lintegral_mono fun y => by
+          rw [add_sub_add_comm]
+          exact enorm_add_le _ _
+    _ = _ := lintegral_add_left' (hf.sub aestronglyMeasurable_const).restrict.enorm _
+
+/-- The sharp maximal function is subadditive on a.e. strongly measurable functions. -/
+theorem sharpMaximalFunction_add_le {g : X → F} (hf : AEStronglyMeasurable f μ)
+    (hg : AEStronglyMeasurable g μ) (x : X) :
+    sharpMaximalFunction μ (f + g) x ≤ sharpMaximalFunction μ f x + sharpMaximalFunction μ g x :=
+  sharpMaximalFunction_le fun _ _ hx => (setLAverage_enorm_add_sub_le hf hg _).trans
+    (add_le_add (setLAverage_enorm_sub_setAverage_le_sharpMaximalFunction μ f hx)
+      (setLAverage_enorm_sub_setAverage_le_sharpMaximalFunction μ g hx))
 
 /-- The superlevel sets of the sharp maximal function are open: a ball witnessing
 `a < f^# x` contains a neighbourhood of `x`, at each point of which it witnesses the same

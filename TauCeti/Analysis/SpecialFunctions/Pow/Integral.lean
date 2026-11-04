@@ -14,6 +14,10 @@ import Mathlib.Analysis.SpecialFunctions.ImproperIntegrals
 -- interval integral of `t ^ s`, used only inside the proof of
 -- `TauCeti.lintegral_ofReal_rpow_Ioo`.
 import Mathlib.Analysis.SpecialFunctions.Integrals.Basic
+-- `TauCeti.MeasureTheory.Integral.Average` is imported privately: it supplies
+-- `setLIntegral_comp_preimage_of_map_eq_smul`, used only inside the proof of
+-- `TauCeti.setLIntegral_comp_mul_left_mul_rpow`.
+import TauCeti.MeasureTheory.Integral.Average
 
 /-!
 # Lower integrals of a real power, and the layer cake formula in `ℝ≥0∞`
@@ -324,9 +328,8 @@ theorem setLIntegral_comp_mul_left_mul_rpow (g : ℝ → ℝ≥0∞) {c : ℝ} (
   set e := (Homeomorph.mulLeft₀ c hc.ne').toMeasurableEquiv
   set G : ℝ → ℝ≥0∞ := fun t => g t * ENNReal.ofReal (t ^ q)
   have he : volume.map e = ENNReal.ofReal |c⁻¹| • volume := Real.map_volume_mul_left hc.ne'
-  have h : ∫⁻ s in e ⁻¹' S, G (e s) = ENNReal.ofReal |c⁻¹| * ∫⁻ t in S, G t := by
-    rw [← lintegral_map_equiv, ← e.measurableEmbedding.restrict_map, he, Measure.restrict_smul,
-      lintegral_smul_measure, smul_eq_mul]
+  have h : ∫⁻ s in e ⁻¹' S, G (e s) = ENNReal.ofReal |c⁻¹| * ∫⁻ t in S, G t :=
+    setLIntegral_comp_preimage_of_map_eq_smul he G S
   have hT' : e ⁻¹' S = T := by
     ext s
     exact (hST s).symm
