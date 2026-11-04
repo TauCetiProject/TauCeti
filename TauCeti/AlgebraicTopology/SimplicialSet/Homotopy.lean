@@ -29,8 +29,9 @@ of the initial vertex `x₀` of `x`.  These are what a construction transporting
 initial vertices of simplices, such as twisted chains, needs to lift the combinatorial homotopy.
 
 It also provides the constructor `SSet.Homotopy.mk'` of a homotopy from a morphism on the
-cylinder `X ⊗ Δ[1]` with prescribed ends, and records that these two ends are disjoint
-(`SSet.range_ι₀_inf_range_ι₁`).
+cylinder `X ⊗ Δ[1]` with prescribed ends, records that these two ends are disjoint
+(`SSet.range_ι₀_inf_range_ι₁`), and names the edge `{v} × Δ[1]` of the cylinder over a vertex `v`
+(`SSet.verticalEdge`), along which a homotopy moves the image of `v`.
 -/
 
 @[expose] public section
@@ -53,6 +54,11 @@ lemma range_ι₀_inf_range_ι₁ {X : SSet.{w}} :
   rintro ⟨x, rfl⟩ ⟨y, h⟩
   have := congrArg (fun z : (X ⊗ Δ[1] : SSet.{w}) _⦋n⦌ ↦ z.2 0) h
   simp at this
+
+/-- The edge `{v} × Δ[1]` of the cylinder `X ⊗ Δ[1]` over a vertex `v` of `X`, from `(v, 0)` to
+`(v, 1)`. -/
+noncomputable abbrev verticalEdge {X : SSet.{w}} (v : X _⦋0⦌) : (X ⊗ Δ[1] : SSet.{w}) _⦋1⦌ :=
+  (X.σ 0 v, stdSimplex.edge 1 0 1 (by decide))
 
 end SSet
 

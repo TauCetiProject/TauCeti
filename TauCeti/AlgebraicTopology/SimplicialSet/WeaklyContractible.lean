@@ -11,6 +11,7 @@ public import Mathlib.AlgebraicTopology.SimplicialSet.Nonempty
 public import Mathlib.CategoryTheory.SingleObj
 public import TauCeti.AlgebraicTopology.SimplicialSet.Discrete
 public import TauCeti.AlgebraicTopology.SimplicialSet.Nerve.Groupoid
+public import TauCeti.AlgebraicTopology.SimplicialSet.Nerve.SingleObj
 public import TauCeti.AlgebraicTopology.SimplicialSet.PiZero
 public import TauCeti.AlgebraicTopology.SimplicialSet.StdSimplex
 public import TauCeti.CategoryTheory.Monoidal.Closed.Cartesian
@@ -289,59 +290,6 @@ private noncomputable def boundaryLoop (g : G) : (∂Δ[2] : SSet.{u}) ⟶ nerve
     exact CategoryTheory.Functor.ext (fun _ ↦ rfl)
       (fun _ _ _ ↦ by simp only [eqToHom_refl, Category.id_comp, Category.comp_id]; rfl)
 
-/-- The element of `G` represented by an edge of the nerve of `G`. -/
-private abbrev edgeHom (x : (nerve (SingleObj G)) _⦋1⦌) : G := x.hom
-
-/-- In the nerve of `G`, the long edge of a `2`-simplex is the product of its two short edges. -/
-private lemma edgeHom_app_δ_one {K : SSet.{u}} (h : K ⟶ nerve (SingleObj G)) (x : K _⦋2⦌) :
-    edgeHom (h.app _ (K.δ 1 x)) = edgeHom (h.app _ (K.δ 0 x)) * edgeHom (h.app _ (K.δ 2 x)) := by
-  simp only [δ_naturality_apply]
-  obtain ⟨_, _, _, a, b, hx⟩ := ComposableArrows.mk₂_surjective (h.app _ x)
-  rw [hx, nerve.δ₁_mk₂_eq, nerve.δ₀_mk₂_eq, nerve.δ₂_mk₂_eq]
-  exact SingleObj.comp_as_mul _ a b
-
-/-- The edges of a constant map into the nerve of `G` represent `1`. -/
-private lemma edgeHom_const_app {K : SSet.{u}} (z : (nerve (SingleObj G)) _⦋0⦌) (x : K _⦋1⦌) :
-    edgeHom ((const z : K ⟶ _).app _ x) = 1 :=
-  (congrArg z.map (Subsingleton.elim _ _)).trans (z.map_id 0)
-
-/-- The edge `{v} × Δ[1]` of `K ⊗ Δ[1]` over a vertex `v` of `K`. -/
-private noncomputable abbrev verticalEdge {K : SSet.{u}} (v : K _⦋0⦌) : (K ⊗ Δ[1]) _⦋1⦌ :=
-  (K.σ 0 v, stdSimplex.edge 1 0 1 (by decide))
-
-/-- Let `h` be a homotopy from a constant map to `φ`, with values in the nerve of `G`. Over an edge
-`e` of `K` from `x₀ = K.δ 1 e` to `x₁ = K.δ 0 e`, the square `e × Δ[1]` is the union of two
-triangles with a common diagonal, which shows that the vertical edges over the endpoints of `e`
-satisfy `h ({x₁} × Δ[1]) = φ e * h ({x₀} × Δ[1])`. -/
-private lemma edgeHom_homotopy {K : SSet.{u}} {φ : K ⟶ nerve (SingleObj G)}
-    {z : (nerve (SingleObj G)) _⦋0⦌} (h : K ⊗ Δ[1] ⟶ nerve (SingleObj G))
-    (h₀ : ι₀ ≫ h = const z) (h₁ : ι₁ ≫ h = φ) (e : K _⦋1⦌) :
-    edgeHom (h.app _ (verticalEdge (K.δ 0 e))) =
-      edgeHom (φ.app _ e) * edgeHom (h.app _ (verticalEdge (K.δ 1 e))) := by
-  let y : Δ[1] _⦋1⦌ := stdSimplex.edge 1 0 1 (by decide)
-  -- The triangles with vertices `(x₀, 0), (x₁, 0), (x₁, 1)` and `(x₀, 0), (x₀, 1), (x₁, 1)`.
-  let P : (K ⊗ Δ[1]) _⦋2⦌ := (K.σ 1 e, Δ[1].σ 0 y)
-  let Q : (K ⊗ Δ[1]) _⦋2⦌ := (K.σ 0 e, Δ[1].σ 1 y)
-  have hP := edgeHom_app_δ_one h P
-  have hQ := edgeHom_app_δ_one h Q
-  -- `(ι₀ ≫ h).app _ e` is `h.app _ (ι₀.app _ e)` by definition of composition.
-  have hb : h.app _ (ι₀.app _ e) = (const z : K ⟶ _).app _ e := by rw [← h₀]; rfl
-  have ht : h.app _ (ι₁.app _ e) = φ.app _ e := by rw [← h₁]; rfl
-  have hPQ : (K ⊗ Δ[1]).δ 1 P = (K ⊗ Δ[1]).δ 1 Q :=
-    Prod.ext ((δ_comp_σ_self_apply 1 e).trans (δ_comp_σ_succ_apply 0 e).symm)
-      ((δ_comp_σ_succ_apply 0 y).trans (δ_comp_σ_self_apply 1 y).symm)
-  have hP₀ : (K ⊗ Δ[1]).δ 0 P = verticalEdge (K.δ 0 e) :=
-    Prod.ext (δ_comp_σ_of_le_apply (i := 0) (j := 0) le_rfl e) (δ_comp_σ_self_apply 0 y)
-  have hP₂ : (K ⊗ Δ[1]).δ 2 P = ι₀.app _ e :=
-    Prod.ext (δ_comp_σ_succ_apply 1 e) (stdSimplex.ext _ _ fun i ↦ by fin_cases i <;> rfl)
-  have hQ₀ : (K ⊗ Δ[1]).δ 0 Q = ι₁.app _ e :=
-    Prod.ext (δ_comp_σ_self_apply 0 e) (stdSimplex.ext _ _ fun i ↦ by fin_cases i <;> rfl)
-  have hQ₂ : (K ⊗ Δ[1]).δ 2 Q = verticalEdge (K.δ 1 e) :=
-    Prod.ext (δ_comp_σ_of_gt_apply (i := 1) (j := 0) (by decide) e) (δ_comp_σ_succ_apply 1 y)
-  rw [hPQ, hP₀, hP₂, hb, edgeHom_const_app, mul_one] at hP
-  rw [hQ₀, hQ₂, ht] at hQ
-  rw [← hP, hQ]
-
 /-- The boundary `∂Δ[2]` is connected (`SSet.boundary.isConnected`) but not weakly contractible:
 its map to the nerve of `ℤ` sending the edge from `0` to `2` to `1` and the other edges to `0` is
 not homotopic to a constant map. -/
@@ -349,13 +297,15 @@ theorem not_isWeaklyContractible_boundary_two : ¬ IsWeaklyContractible (∂Δ[2
   intro hK
   let g : Multiplicative (ULift.{u} ℤ) := Multiplicative.ofAdd (ULift.up 1)
   obtain ⟨z, ⟨H⟩⟩ := hK.exists_homotopy_const (boundaryLoop g)
-  obtain ⟨h, h₀, h₁⟩ : ∃ h, ι₀ ≫ h = const z ∧ ι₁ ≫ h = boundaryLoop g := ⟨H.h, H.h₀, H.h₁⟩
   -- The edge of `∂Δ[2]` from `a` to `b`.
   let e (a b : Fin 3) (hab : a ≤ b) : (∂Δ[2] : SSet.{u}) _⦋1⦌ :=
     ⟨stdSimplex.edge 2 a b hab, by simp [boundary_obj_eq_univ]⟩
-  have h₀₁ := edgeHom_homotopy h h₀ h₁ (e 0 1 (by decide))
-  have h₁₂ := edgeHom_homotopy h h₀ h₁ (e 1 2 (by decide))
-  have h₀₂ := edgeHom_homotopy h h₀ h₁ (e 0 2 (by decide))
+  -- Over each edge, the vertical edges of `H` differ by the value of `boundaryLoop g`, since the
+  -- edges of the constant map represent `1`.
+  have h₀₁ := nerve.edgeElem_homotopy H (e 0 1 (by decide))
+  have h₁₂ := nerve.edgeElem_homotopy H (e 1 2 (by decide))
+  have h₀₂ := nerve.edgeElem_homotopy H (e 0 2 (by decide))
+  simp only [nerve.edgeElem_const_app, mul_one] at h₀₁ h₁₂ h₀₂
   -- The three edges share their endpoints, and the values of `boundaryLoop g` on them are `1`,
   -- `1` and `g`, by evaluating `loopCocycle` on their vertices.
   have v₀ : (∂Δ[2] : SSet.{u}).δ 1 (e 0 1 (by decide)) =
@@ -364,9 +314,9 @@ theorem not_isWeaklyContractible_boundary_two : ¬ IsWeaklyContractible (∂Δ[2
       (∂Δ[2] : SSet.{u}).δ 1 (e 1 2 (by decide)) := by decide
   have v₂ : (∂Δ[2] : SSet.{u}).δ 0 (e 1 2 (by decide)) =
       (∂Δ[2] : SSet.{u}).δ 0 (e 0 2 (by decide)) := by decide
-  have c₀₁ : edgeHom ((boundaryLoop g).app _ (e 0 1 (by decide))) = 1 := rfl
-  have c₁₂ : edgeHom ((boundaryLoop g).app _ (e 1 2 (by decide))) = 1 := rfl
-  have c₀₂ : edgeHom ((boundaryLoop g).app _ (e 0 2 (by decide))) = g := rfl
+  have c₀₁ : nerve.edgeElem ((boundaryLoop g).app _ (e 0 1 (by decide))) = 1 := rfl
+  have c₁₂ : nerve.edgeElem ((boundaryLoop g).app _ (e 1 2 (by decide))) = 1 := rfl
+  have c₀₂ : nerve.edgeElem ((boundaryLoop g).app _ (e 0 2 (by decide))) = g := rfl
   rw [v₀, v₁, c₀₁, one_mul] at h₀₁
   rw [v₂, c₁₂, one_mul] at h₁₂
   rw [c₀₂, h₁₂, h₀₁] at h₀₂

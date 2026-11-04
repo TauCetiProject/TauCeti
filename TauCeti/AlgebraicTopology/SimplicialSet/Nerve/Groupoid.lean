@@ -10,6 +10,7 @@ public import Mathlib.AlgebraicTopology.SimplicialSet.Coskeletal
 public import Mathlib.CategoryTheory.Groupoid
 public import TauCeti.AlgebraicTopology.Quasicategory.Core
 public import TauCeti.AlgebraicTopology.SimplicialSet.Coskeletal
+public import TauCeti.AlgebraicTopology.SimplicialSet.Nerve.Basic
 import Mathlib.AlgebraicTopology.SimplicialSet.HornColimits
 
 /-!
@@ -35,8 +36,6 @@ face `δ 0` commutes after cancelling the isomorphism on the edge from `0` to `1
 
 ## Main results
 
-* `CategoryTheory.nerve.δ₀_mk₃_eq`, …, `CategoryTheory.nerve.δ₃_mk₃_eq`: the faces of the
-  `3`-simplex of the nerve given by three composable morphisms.
 * `CategoryTheory.nerve.kanComplex`: the nerve of a groupoid is a Kan complex.
 * `CategoryTheory.nerve.kanComplex_iff`: the nerve of a category is a Kan complex exactly when
   the category is a groupoid.
@@ -55,35 +54,6 @@ universe u v
 namespace CategoryTheory.nerve
 
 variable {C : Type u} [Category.{v} C]
-
-section
-
-variable {X₀ X₁ X₂ X₃ : C} (f : X₀ ⟶ X₁) (g : X₁ ⟶ X₂) (h : X₂ ⟶ X₃)
-
-/-! The arrows of each face of `mk₃ f g h` are, by definition of `mk₃`, composites of consecutive
-arrows among `f`, `g` and `h`, so the faces are determined by `ComposableArrows.ext₂_of_arrow`. -/
-
-/-- The face of `mk₃ f g h` opposite to the vertex `0`. -/
-theorem δ₀_mk₃_eq :
-    (nerve C).δ 0 (ComposableArrows.mk₃ f g h) = ComposableArrows.mk₂ g h :=
-  ComposableArrows.ext₂_of_arrow rfl rfl
-
-/-- The face of `mk₃ f g h` opposite to the vertex `1`. -/
-theorem δ₁_mk₃_eq :
-    (nerve C).δ 1 (ComposableArrows.mk₃ f g h) = ComposableArrows.mk₂ (f ≫ g) h :=
-  ComposableArrows.ext₂_of_arrow rfl rfl
-
-/-- The face of `mk₃ f g h` opposite to the vertex `2`. -/
-theorem δ₂_mk₃_eq :
-    (nerve C).δ 2 (ComposableArrows.mk₃ f g h) = ComposableArrows.mk₂ f (g ≫ h) :=
-  ComposableArrows.ext₂_of_arrow rfl rfl
-
-/-- The face of `mk₃ f g h` opposite to the vertex `3`. -/
-theorem δ₃_mk₃_eq :
-    (nerve C).δ 3 (ComposableArrows.mk₃ f g h) = ComposableArrows.mk₂ f g :=
-  ComposableArrows.ext₂_of_arrow rfl rfl
-
-end
 
 /-- Equal `1`-simplices `mk₁ f` and `mk₁ f'` of a nerve represent the same arrow. -/
 private lemma arrow_mk_eq_of_mk₁_eq {X₀ X₁ Y₀ Y₁ : C} {f : X₀ ⟶ X₁} {f' : Y₀ ⟶ Y₁}
