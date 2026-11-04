@@ -120,10 +120,10 @@ noncomputable def simplyBlockedHomologyTransposeEquiv :
 
 /-- Reflection sends the homology class of a cycle to the class of its reflected cycle. -/
 @[simp]
-theorem simplyBlockedHomologyTransposeEquiv_simplyBlockedHomologyClass
+theorem simplyBlockedHomologyTransposeEquiv_oneVariableSpecializationHomologyClass
     (z : hG.simplyBlockedCycles R i) :
-    hG.simplyBlockedHomologyTransposeEquiv R i (hG.simplyBlockedHomologyClass R i z) =
-      (G.isKnot_transpose.mpr hG).simplyBlockedHomologyClass R (G.O i)
+    hG.simplyBlockedHomologyTransposeEquiv R i (G.oneVariableSpecializationHomologyClass R i z) =
+      G.transpose.oneVariableSpecializationHomologyClass R (G.O i)
         (hG.simplyBlockedTransposeCyclesEquiv R i z) := by
   simp only [simplyBlockedHomologyTransposeEquiv, LinearEquiv.trans_apply,
     LinearEquiv.symm_apply_eq]
@@ -133,13 +133,14 @@ theorem simplyBlockedHomologyTransposeEquiv_simplyBlockedHomologyClass
 
 /-- The inverse reflection sends a cycle class back by the inverse cycle equivalence. -/
 @[simp]
-theorem simplyBlockedHomologyTransposeEquiv_symm_simplyBlockedHomologyClass
+theorem simplyBlockedHomologyTransposeEquiv_symm_oneVariableSpecializationHomologyClass
     (z : (G.isKnot_transpose.mpr hG).simplyBlockedCycles R (G.O i)) :
     (hG.simplyBlockedHomologyTransposeEquiv R i).symm
-        ((G.isKnot_transpose.mpr hG).simplyBlockedHomologyClass R (G.O i) z) =
-      hG.simplyBlockedHomologyClass R i
+        (G.transpose.oneVariableSpecializationHomologyClass R (G.O i) z) =
+      G.oneVariableSpecializationHomologyClass R i
         ((hG.simplyBlockedTransposeCyclesEquiv R i).symm z) := by
-  rw [LinearEquiv.symm_apply_eq, simplyBlockedHomologyTransposeEquiv_simplyBlockedHomologyClass,
+  rw [LinearEquiv.symm_apply_eq,
+    simplyBlockedHomologyTransposeEquiv_oneVariableSpecializationHomologyClass,
     LinearEquiv.apply_symm_apply]
 
 end TauCeti.GridDiagram.IsKnot
