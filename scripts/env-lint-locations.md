@@ -26,9 +26,11 @@ The final log record is one line:
 LINT-ENV-LOCATIONS {"version":1,"complete":true,"findings":[{"linter":"simpNF","declaration":"TauCeti.element_annihilator_flat_baseChange","path":"TauCeti/RingTheory/Flat/Annihilator.lean","line":77,"column":9}]}
 ```
 
-A finding whose declaration has a module but no range (a private or generated
-declaration) carries `path` without `line`/`column`. Unknown findings instead
-contain `linter`, `declaration` and `unknown`, with no location. Bounds: 128 records, 1 MiB per metadata envelope, 1,024 characters per
+A finding whose declaration has a listed module but no range entry of its own
+(for example an auto-generated auxiliary) carries `path` without `line`/`column`;
+that path-only record needs the TauCetiTools join at pin `b49bb4fd` or later,
+which accepts module-only origins. Unknown findings instead contain `linter`,
+`declaration` and `unknown`, with no location. Bounds: 128 records, 1 MiB per metadata envelope, 1,024 characters per
 declaration/report name, 512 per path, and at most 1 MiB of source characters read
 per validated location. A record-limit envelope has `complete:false`. Duplicate,
 missing, ambiguous, malformed or truncated origins become unknowns. Optional hint
