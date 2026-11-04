@@ -141,21 +141,21 @@ theorem eq_sum_of_mem_conjReciprocalPolynomials (hp : p ∈ conjReciprocalPolyno
   obtain ⟨hp, hp'⟩ := mem_conjReciprocalPolynomials_iff.mp hp
   ext n
   simp only [finsetSum_coeff, coeff_add, coeff_C_mul_X_pow, Finset.sum_add_distrib]
+  -- The terms `j` with `n ≠ j` and `n ≠ 2 * m + 1 - j` vanish.
+  have hzero (s : ℕ → ℕ) (f : ℕ → ℂ) (hs : ∀ j < m + 1, n ≠ s j) :
+      ∑ j ∈ Finset.range (m + 1), (if n = s j then f j else 0) = 0 :=
+    Finset.sum_eq_zero fun j hj => ite_eq_right (hs j (Finset.mem_range.mp hj))
   rcases le_or_gt n m with hn | hn
   · -- Low degree: only the term `aₙ Xⁿ` contributes.
-    rw [Finset.sum_ite_eq, ite_eq_left (Finset.mem_range.mpr (by omega)),
-      Finset.sum_eq_zero fun j hj => ite_eq_right_iff.mpr fun h => by simp at hj; omega,
-      add_zero]
-  rw [Finset.sum_eq_zero fun j hj => ite_eq_right_iff.mpr fun h => by simp at hj; omega,
-    zero_add]
+    rw [hzero (2 * m + 1 - ·) _ fun j hj => by omega, add_zero, Finset.sum_ite_eq,
+      ite_eq_left (Finset.mem_range.mpr (by omega))]
+  rw [hzero (fun j => j) _ fun j hj => by omega, zero_add]
   rcases le_or_gt n (2 * m + 1) with hn' | hn'
   · -- High degree up to `2 * m + 1`: only the term `conj a_{2m+1-n} X^n` contributes.
-    rw [Finset.sum_eq_single (2 * m + 1 - n)
-      (fun j hj hjn => ite_eq_right_iff.mpr fun h => by simp at hj; omega)
-      (fun h => absurd (Finset.mem_range.mpr (by omega)) h), ite_eq_left (by omega),
+    rw [Finset.sum_eq_single_of_mem (2 * m + 1 - n) (Finset.mem_range.mpr (by omega))
+      fun j _ hjn => ite_eq_right (by omega), ite_eq_left (by omega),
       hp' n (2 * m + 1 - n) (by rw [Nat.cast_sub hn']; push_cast; ring)]
-  · rw [hp n (by omega),
-      Finset.sum_eq_zero fun j hj => ite_eq_right_iff.mpr fun h => by simp at hj; omega]
+  · rw [hp n (by omega), hzero (2 * m + 1 - ·) _ fun j hj => by omega]
 
 /-- A conjugate-reciprocal polynomial of degree at most `2 * m + 1` whose coefficients of degree
 at most `m` vanish is zero. -/

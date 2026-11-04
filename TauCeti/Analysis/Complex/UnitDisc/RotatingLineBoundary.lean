@@ -286,14 +286,15 @@ theorem finrank_unitDiscCauchyRiemannKernel (k : ℤ) :
 
 variable {m : ℕ}
 
-/-- If `u` agrees on the closed unit disc with the polynomial `p`, then the `n`-th derivative of
-`u` at the centre is `n ! * p.coeff n`. -/
-private theorem iteratedDeriv_zero_eq_factorial_mul_coeff {p : ℂ[X]}
+/-- If `u` agrees on the closed unit disc with the polynomial `p`, then the `n`-th Taylor
+coefficient `u⁽ⁿ⁾(0) / n!` of `u` at the centre is `p.coeff n`. -/
+private theorem iteratedDeriv_zero_div_factorial_eq_coeff {p : ℂ[X]}
     (h : EqOn u (fun z => p.eval z) (closedBall 0 1)) (n : ℕ) :
-    iteratedDeriv n u 0 = n ! * p.coeff n := by
+    iteratedDeriv n u 0 / n ! = p.coeff n := by
   have hev : u =ᶠ[nhds 0] fun z => p.eval z :=
     Filter.eventuallyEq_of_mem (closedBall_mem_nhds 0 one_pos) h
-  rw [hev.iteratedDeriv_eq, Polynomial.iteratedDeriv_eval_zero]
+  rw [hev.iteratedDeriv_eq, Polynomial.iteratedDeriv_eval_zero,
+    mul_div_cancel_left₀ _ (Nat.cast_ne_zero.mpr (Nat.factorial_ne_zero _))]
 
 /-- **Solutions for odd Maslov index.** For the boundary condition
 `u w = w ^ (2 * m + 1) * conj (u w)`, a solution agrees on the closed disc with
@@ -305,12 +306,9 @@ theorem _root_.DiffContOnCl.eqOn_sum_iteratedDeriv_div_factorial_of_eq_zpow_mul_
     EqOn u (fun z => ∑ j ∈ Finset.range (m + 1), (iteratedDeriv j u 0 / j ! * z ^ j +
       conj (iteratedDeriv j u 0 / j !) * z ^ (2 * m + 1 - j))) (closedBall 0 1) := by
   obtain ⟨p, hp, h⟩ := hu.exists_mem_conjReciprocalPolynomials_eqOn hb
-  have hc (j : ℕ) : iteratedDeriv j u 0 / j ! = p.coeff j := by
-    rw [iteratedDeriv_zero_eq_factorial_mul_coeff h,
-      mul_div_cancel_left₀ _ (Nat.cast_ne_zero.mpr (Nat.factorial_ne_zero _))]
   intro z hz
   rw [h hz, eq_sum_of_mem_conjReciprocalPolynomials hp]
-  simp [eval_finsetSum, hc]
+  simp [eval_finsetSum, iteratedDeriv_zero_div_factorial_eq_coeff h]
 
 /-- **The centre jets kill the kernel for odd Maslov index.** A solution for the boundary
 condition `u w = w ^ (2 * m + 1) * conj (u w)` whose derivatives of order at most `m` vanish at
@@ -372,8 +370,7 @@ theorem unitDiscCauchyRiemannKernelJetEquiv_apply (hu : DiffContOnCl ℂ u (ball
     simp [evalOn_apply, ← hg, h z.2]
   simp only [unitDiscCauchyRiemannKernelJetEquiv, LinearEquiv.trans_apply, hsymm,
     conjReciprocalLowerCoeffEquiv_apply]
-  rw [iteratedDeriv_zero_eq_factorial_mul_coeff h,
-    mul_div_cancel_left₀ _ (Nat.cast_ne_zero.mpr (Nat.factorial_ne_zero _))]
+  rw [iteratedDeriv_zero_div_factorial_eq_coeff h]
 
 /-- The inverse of the jet isomorphism sends `a ∈ ℂ^(m+1)` to the solution
 `∑_{j ≤ m} (aⱼ zʲ + conj aⱼ z^(2m+1-j))`. -/
