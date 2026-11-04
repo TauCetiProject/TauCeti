@@ -199,13 +199,13 @@ theorem tsupport_smul_subset' (f : C^n⟮I, M; 𝕜⟯) (s : Cₛ^n⟮I; F, V⟯
   · simp [smul_apply', _root_.image_eq_zero_of_notMem_tsupport hf]
 
 /-- Smooth multiplication preserves each fixed-support stage. -/
-theorem smul_mem_supportedIn' (f : C^n⟮I, M; 𝕜⟯) {s : Cₛ^n⟮I; F, V⟯}
+theorem smul_mem_supportedIn (f : C^n⟮I, M; 𝕜⟯) {s : Cₛ^n⟮I; F, V⟯}
     {K : Set M} (hs : s ∈ supportedIn I F n V K) :
     f • s ∈ supportedIn I F n V K :=
   (tsupport_smul_subset' f s).trans (inter_subset_right.trans hs)
 
 /-- Smooth multiplication preserves compact support of the section. -/
-theorem smul_mem_compactlySupported' (f : C^n⟮I, M; 𝕜⟯) {s : Cₛ^n⟮I; F, V⟯}
+theorem smul_mem_compactlySupported (f : C^n⟮I, M; 𝕜⟯) {s : Cₛ^n⟮I; F, V⟯}
     (hs : s ∈ compactlySupported I F n V) :
     f • s ∈ compactlySupported I F n V :=
   hs.of_isClosed_subset (isClosed_tsupport _) ((tsupport_smul_subset' f s).trans
@@ -220,7 +220,7 @@ theorem smul_mem_compactlySupported_of_hasCompactSupport (f : C^n⟮I, M; 𝕜�
     inter_subset_left)
 
 /-- A cutoff equal to one on a section's closed support leaves that section unchanged. -/
-theorem smul_eq_self' (f : C^n⟮I, M; 𝕜⟯) (s : Cₛ^n⟮I; F, V⟯)
+theorem smul_eq_self (f : C^n⟮I, M; 𝕜⟯) (s : Cₛ^n⟮I; F, V⟯)
     (hf : EqOn f 1 s.tsupport) : f • s = s := by
   ext x
   by_cases hx : x ∈ s.tsupport
