@@ -11,7 +11,7 @@ public import TauCeti.RepresentationTheory.LSPath.StringLength
 
 import Mathlib.Tactic.Linarith
 import Mathlib.Tactic.Ring
-import TauCeti.RepresentationTheory.LSPath.Concatenation
+import TauCeti.Data.Option.Basic
 import TauCeti.RepresentationTheory.LSPath.PartialInverse
 
 /-!
@@ -405,21 +405,13 @@ theorem normalCrystalOn_f_eq_map_iff {B : Type*} {i : b.support} {π : S} {o : O
       lower (F i) (f (P.root i)) π.1 = o.map (fun x ↦ (g x).1) := by
   rw [normalCrystalOn_f_eq_iff, Option.unattach, Option.map_map, Function.comp_def]
 
-private theorem unattach_bind {α β : Type*} {p : α → Prop} {q : β → Prop}
-    (o : Option {x // p x}) (g : {x // p x} → Option {y // q y}) (g' : α → Option β)
-    (hg : ∀ x : {x // p x}, (g x).unattach = g' x.1) :
-    (o.bind g).unattach = o.unattach.bind g' := by
-  cases o <;> simp [hg]
-
 @[simp]
 theorem unattach_normalCrystalOn_eIter (i : b.support) (n : ℕ) (π : S) :
     ((normalCrystalOn hf hF hS).eIter i n π).unattach =
       raiseIter (F i) (f (P.root i)) n π.1 := by
   induction n generalizing π with
   | zero => simp
-  | succ n ih =>
-    rw [NormalCrystal.eIter_succ, raiseIter_succ, unattach_bind _ _ _ ih,
-      unattach_normalCrystalOn_e]
+  | succ n ih => simp [NormalCrystal.eIter_succ, raiseIter_succ, ih]
 
 @[simp]
 theorem unattach_normalCrystalOn_fIter (i : b.support) (n : ℕ) (π : S) :
@@ -427,9 +419,7 @@ theorem unattach_normalCrystalOn_fIter (i : b.support) (n : ℕ) (π : S) :
       lowerIter (F i) (f (P.root i)) n π.1 := by
   induction n generalizing π with
   | zero => simp
-  | succ n ih =>
-    rw [NormalCrystal.fIter_succ, lowerIter_succ, unattach_bind _ _ _ ih,
-      unattach_normalCrystalOn_f]
+  | succ n ih => simp [NormalCrystal.fIter_succ, lowerIter_succ, ih]
 
 /-- Adjacency in the crystal graph of `normalCrystalOn` is single-step root-operator adjacency. -/
 @[simp]
