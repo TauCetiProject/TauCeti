@@ -58,7 +58,8 @@ instance [T2Space (ℙ F (Fin 3 → F))] : T2Space W.Point :=
 
 /-- A map to native nonsingular points is continuous exactly when its map to projective space
 is continuous. -/
-theorem continuous_iff_toProjectivization {X : Type*} [TopologicalSpace X] {f : X → W.Point} :
+theorem continuous_iff_continuous_toProjectivization_comp {X : Type*} [TopologicalSpace X]
+    {f : X → W.Point} :
     Continuous f ↔ Continuous (toProjectivization ∘ f) :=
   isEmbedding_toProjectivization.isInducing.continuous_iff
 
@@ -67,7 +68,7 @@ native point type. No choice of normalized coordinates is needed. -/
 theorem continuous_mk {X : Type*} [TopologicalSpace X] {P : X → Fin 3 → F}
     (hP : Continuous P) (hn : ∀ x, W.Nonsingular (P x)) :
     Continuous (fun x ↦ (Point.mk ((nonsingularLift_iff (P x)).mpr (hn x)) : W.Point)) := by
-  rw [continuous_iff_toProjectivization]
+  rw [continuous_iff_continuous_toProjectivization_comp]
   simpa only [Function.comp_def, toProjectivization_mk] using
     Projectivization.continuous_mk (K := F) hP (fun x ↦ ne_zero_of_nonsingular (hn x))
 
