@@ -33,6 +33,16 @@ The proof iterates Mathlib's binary normalized-join formula
 
 public section
 
+namespace TauCeti
+
+private theorem iSup_fin_succ {α : Type*} [CompleteLattice α] {n : ℕ}
+    (f : Fin (n + 1) → α) : (⨆ i, f i) = f 0 ⊔ ⨆ i : Fin n, f i.succ := by
+  apply eq_of_forall_ge_iff
+  intro a
+  simp only [iSup_le_iff, Fin.forall_fin_succ, sup_le_iff]
+
+end TauCeti
+
 namespace Subgroup
 
 open scoped Pointwise
@@ -47,35 +57,16 @@ theorem mem_iSup_iff_exists_ofFn_prod {n : ℕ} (H : Fin n → Subgroup G)
   induction n generalizing g with
   | zero => simp [eq_comm]
   | succ n ih =>
-    have htail (i : Fin n) :
-        (⨆ j : Fin (n + 1), ⨆ (_ : i.succ < j), H j) =
-          ⨆ j : Fin n, ⨆ (_ : i < j), H j.succ := by
-      apply le_antisymm
-      · refine iSup_le fun j => iSup_le fun hij => ?_
-        obtain ⟨j, rfl⟩ := Fin.eq_succ_of_ne_zero (ne_of_gt (lt_of_le_of_lt (Fin.zero_le _) hij))
-        exact le_iSup_of_le j (le_iSup_of_le (Fin.succ_lt_succ_iff.mp hij) le_rfl)
-      · exact iSup_le fun j => iSup_le fun hij =>
-          le_iSup_of_le j.succ (le_iSup_of_le (Fin.succ_lt_succ_iff.mpr hij) le_rfl)
     have hNtail : ∀ i : Fin n,
         H i.succ ≤ normalizer (⨆ j : Fin n, ⨆ (_ : i < j), H j.succ : Subgroup G) := by
       intro i
-      simpa only [htail] using hN i.succ
-    have hzero : (⨆ j : Fin (n + 1), ⨆ (_ : (0 : Fin (n + 1)) < j), H j) =
-        ⨆ j : Fin n, H j.succ := by
-      apply le_antisymm
-      · refine iSup_le fun j => iSup_le fun hj => ?_
-        obtain ⟨j, rfl⟩ := Fin.eq_succ_of_ne_zero (ne_of_gt hj)
-        exact le_iSup (fun j : Fin n => H j.succ) j
-      · exact iSup_le fun j => le_iSup_of_le j.succ
-          (le_iSup_of_le (Fin.succ_pos j) le_rfl)
-    have hjoin : (⨆ i, H i) = H 0 ⊔ ⨆ i : Fin n, H i.succ := by
-      apply le_antisymm
-      · refine iSup_le fun i => ?_
-        exact Fin.cases le_sup_left
-          (fun j => (le_iSup (fun i : Fin n => H i.succ) j).trans le_sup_right) i
-      · exact sup_le (le_iSup _ 0) (iSup_le fun i => le_iSup _ i.succ)
-    rw [hjoin, ← SetLike.mem_coe,
-      coe_mul_of_left_le_normalizer_right _ _ (hzero ▸ hN 0), Set.mem_mul]
+      simpa only [TauCeti.iSup_fin_succ, Fin.not_lt_zero, iSup_false, bot_sup_eq,
+        Fin.succ_lt_succ_iff] using hN i.succ
+    have hNzero : H 0 ≤ normalizer (⨆ j : Fin n, H j.succ : Subgroup G) := by
+      simpa only [TauCeti.iSup_fin_succ, lt_self_iff_false, iSup_false, bot_sup_eq,
+        Fin.succ_pos, iSup_true] using hN 0
+    rw [TauCeti.iSup_fin_succ H, ← SetLike.mem_coe,
+      coe_mul_of_left_le_normalizer_right _ _ hNzero, Set.mem_mul]
     constructor
     · rintro ⟨a, ha, b, hb, hab⟩
       obtain ⟨f, hf⟩ := (ih (fun i => H i.succ) hNtail).mp hb
