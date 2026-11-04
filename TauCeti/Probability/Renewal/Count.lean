@@ -156,12 +156,29 @@ lemma measurable_renewalCountNat (hT : ∀ n, Measurable (T n)) (t : ℝ≥0) :
 
 variable {P : Measure Ω}
 
+/-- If every increment is almost-everywhere measurable, so is the natural-valued renewal count at
+every time `t`. -/
+@[fun_prop]
+theorem aemeasurable_renewalCountNat (hT : ∀ n, AEMeasurable (T n) P) (t : ℝ≥0) :
+    AEMeasurable (renewalCountNat T t) P := by
+  set T' : ℕ → Ω → ℝ≥0 := fun n ↦ (hT n).mk (T n)
+  have hT' (n : ℕ) : Measurable (T' n) := (hT n).measurable_mk
+  refine (measurable_renewalCountNat hT' t).aemeasurable.congr ?_
+  filter_upwards [ae_all_iff.2 fun n ↦ (hT n).ae_eq_mk] with ω hω
+  have harr (n : ℕ) : arrival T' n ω = arrival T n ω := by
+    rw [arrival_def, arrival_def]
+    exact Finset.sum_congr rfl fun i _ ↦ (hω i).symm
+  have hrc : renewalCount T' t ω = renewalCount T t ω := by
+    simp only [renewalCount_def, harr]
+  have hfn : (fun n ↦ arrival T' n ω) = fun n ↦ arrival T n ω := funext harr
+  rw [renewalCountNat_def, renewalCountNat_def, hfn, hrc]
+
 /-- For nondegenerate i.i.d. increments, the natural and extended counts agree almost surely
 on one event for all times. -/
-theorem ae_natCast_renewalCountNat (hT : ∀ n, Measurable (T n)) (hindep : iIndepFun T P)
+theorem ae_natCast_renewalCountNat (hindep : iIndepFun T P)
     (hid : ∀ n, IdentDistrib (T n) (T 0) P P) (hzero : P {ω | T 0 ω = 0} < 1) :
     ∀ᵐ ω ∂P, ∀ t, (renewalCountNat T t ω : ℝ≥0∞) = renewalCount T t ω := by
-  filter_upwards [ae_tendsto_arrival_atTop hT hindep hid hzero] with ω hω
+  filter_upwards [ae_tendsto_arrival_atTop hindep hid hzero] with ω hω
   exact natCast_renewalCountNat hω
 
 /-- Changing the natural-valued count on explosive paths does not change its process law

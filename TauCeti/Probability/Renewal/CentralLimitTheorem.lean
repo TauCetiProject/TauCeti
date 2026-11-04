@@ -9,7 +9,9 @@ public import Mathlib.Probability.CDF
 public import Mathlib.Probability.CentralLimitTheorem
 public import TauCeti.Probability.Renewal.Count
 import TauCeti.MeasureTheory.Function.TendstoInDistribution
+import TauCeti.MeasureTheory.Integral.Bochner.Basic
 import TauCeti.MeasureTheory.Measure.ProbabilityMeasure.Cdf
+import TauCeti.Probability.Moments.Variance
 
 /-!
 # The renewal central limit theorem
@@ -44,14 +46,15 @@ u(t) = t / μ + x * σ * √(t / μ ^ 3),     m(t) = ⌊u(t)⌋₊ + 1.
    after centering by `m(t) * μ` and scaling by `σ * √(m(t))` becomes
    `-(arrival T (m(t)) - m(t) * μ) / (σ * √(m(t))) < (m(t) * μ - t) / (σ * √(m(t)))`.
 2. **Rounding asymptotics** (`tendsto_natFloor_add_one_div_add_mul_sqrt_atTop`,
-   `tendsto_rounding_sub_div_sqrt_atTop`): as `t → ∞`, `m(t) → ∞`, `m(t) / (t / μ) → 1`, and the
-   rounding remainder `m(t) - u(t) ∈ (0, 1]` becomes negligible when divided by `√(m(t))`, so the
-   threshold `(m(t) * μ - t) / (σ * √(m(t)))` converges to `x`.
+   `tendsto_natFloor_add_one_mul_sub_div_sqrt_atTop`): as `t → ∞`, `m(t) → ∞`,
+   `m(t) / (t / μ) → 1`, and the rounding remainder `m(t) - u(t) ∈ (0, 1]` becomes negligible when
+   divided by `√(m(t))`, so the threshold `(m(t) * μ - t) / (σ * √(m(t)))` converges to `x`.
 3. **Comparison with the scalar i.i.d. central limit theorem**: applying Mathlib's
    `ProbabilityTheory.tendstoInDistribution_inv_sqrt_mul_sum` to the standardized negated
-   increments `-(T k - μ) / σ` and sandwiching the threshold between points `z < x < y` via
-   continuity of the standard Gaussian cumulative distribution function yields pointwise CDF
-   convergence (`tendsto_cdf_renewalCountNat_sub_div`), from which weak convergence follows by
+   increments `-(T k - μ) / σ` and sandwiching the threshold via
+   `MeasureTheory.tendsto_cdf_of_eventually_ae_le_iff_lt` and continuity of the standard Gaussian
+   cumulative distribution function yields pointwise CDF convergence
+   (`tendsto_cdf_renewalCountNat_sub_div`), from which weak convergence follows by
    `MeasureTheory.TendstoInDistribution.of_tendsto_cdf`.
 
 Both the `ℝ≥0` real-time limit (with both `P[T 0]` and `(∫⁻ T 0 ∂P).toReal` formulations), the
@@ -60,16 +63,12 @@ provided. Zero waiting times are permitted.
 
 ## Main statements
 
-* `TauCeti.Probability.integral_coe_pos_of_variance_ne_zero`,
-  `TauCeti.Probability.lintegral_coe_lt_top_of_variance_ne_zero`,
-  `TauCeti.Probability.lintegral_coe_pos_of_variance_ne_zero`,
-  `TauCeti.Probability.toReal_lintegral_coe_eq_integral_of_variance_ne_zero` — under nonzero
-  variance, a nonnegative random variable has finite, strictly positive extended mean equal to its
-  real expectation.
 * `TauCeti.Probability.renewalCountNat_sub_div_le_iff` — pathwise inversion of the standardized
   count sublevel event into a standardized arrival-time event.
-* `TauCeti.Probability.tendsto_rounding_sub_div_sqrt_atTop` — asymptotic limit `x` of the rounded
-  threshold `(m(s) * μ - s) / (σ * √(m(s)))`.
+* `TauCeti.Probability.tendsto_natFloor_add_one_div_add_mul_sqrt_atTop`,
+  `TauCeti.Probability.tendsto_natFloor_add_one_mul_sub_div_sqrt_atTop` — divergence of the
+  arrival index `m(s) = ⌊s / μ + x * σ * √(s / μ ^ 3)⌋₊ + 1` and convergence of the threshold
+  `(m(s) * μ - s) / (σ * √(m(s)))` to `x`.
 * `TauCeti.Probability.tendsto_cdf_renewalCountNat_sub_div` — pointwise convergence of the CDFs of
   the standardized renewal counts to `cdf (gaussianReal 0 1)`.
 * `TauCeti.Probability.tendstoInDistribution_renewalCountNat_sub_div` — **the renewal central limit
@@ -93,88 +92,6 @@ open Filter MeasureTheory ProbabilityTheory Set
 open scoped ENNReal NNReal Topology
 
 namespace TauCeti.Probability
-
-/-! ### Almost-everywhere measurability and moments under positive variance -/
-
-section Moments
-
-variable {Ω : Type*} [MeasurableSpace Ω] {P : Measure Ω}
-
-/-- If every increment is almost-everywhere measurable, so is the natural-valued renewal count at
-every time `t`. -/
-@[fun_prop]
-theorem aemeasurable_renewalCountNat {T : ℕ → Ω → ℝ≥0} (hT : ∀ n, AEMeasurable (T n) P)
-    (t : ℝ≥0) : AEMeasurable (renewalCountNat T t) P := by
-  set T' : ℕ → Ω → ℝ≥0 := fun n ↦ (hT n).mk (T n)
-  have hT' (n : ℕ) : Measurable (T' n) := (hT n).measurable_mk
-  refine (measurable_renewalCountNat hT' t).aemeasurable.congr ?_
-  filter_upwards [ae_all_iff.2 fun n ↦ (hT n).ae_eq_mk] with ω hω
-  have harr (n : ℕ) : arrival T' n ω = arrival T n ω := by
-    rw [arrival_def, arrival_def]
-    exact Finset.sum_congr rfl fun i _ ↦ (hω i).symm
-  have hrc : renewalCount T' t ω = renewalCount T t ω := by
-    simp only [renewalCount_def, harr]
-  have hfn : (fun n ↦ arrival T' n ω) = fun n ↦ arrival T n ω := funext harr
-  rw [renewalCountNat_def, renewalCountNat_def, hfn, hrc]
-
-private lemma integrable_coe_of_variance_ne_zero [IsFiniteMeasure P] {X : Ω → ℝ≥0}
-    (hX : AEMeasurable X P) (hvar : Var[fun ω ↦ (X ω : ℝ); P] ≠ 0) :
-    Integrable (fun ω ↦ (X ω : ℝ)) P :=
-  memLp_one_iff_integrable.1 <|
-    (memLp_two_of_variance_ne_zero
-      (measurable_coe_nnreal_real.comp_aemeasurable hX).aestronglyMeasurable hvar).mono_exponent
-      one_le_two
-
-/-- A nonnegative random variable on a finite measure space with nonzero variance has strictly
-positive real expectation. -/
-theorem integral_coe_pos_of_variance_ne_zero [IsFiniteMeasure P] {X : Ω → ℝ≥0}
-    (hX : AEMeasurable X P) (hvar : Var[fun ω ↦ (X ω : ℝ); P] ≠ 0) :
-    0 < ∫ ω, (X ω : ℝ) ∂P := by
-  have hint := integrable_coe_of_variance_ne_zero hX hvar
-  refine lt_of_le_of_ne (integral_nonneg fun ω ↦ (X ω).coe_nonneg) fun heq ↦ hvar ?_
-  have hz : (fun ω ↦ (X ω : ℝ)) =ᵐ[P] 0 :=
-    (integral_eq_zero_iff_of_nonneg (fun ω ↦ (X ω).coe_nonneg) hint).1 heq.symm
-  rw [variance_congr hz, variance_zero]
-
-/-- A nonnegative random variable on a finite measure space with nonzero variance has finite
-extended mean. -/
-theorem lintegral_coe_lt_top_of_variance_ne_zero [IsFiniteMeasure P] {X : Ω → ℝ≥0}
-    (hX : AEMeasurable X P) (hvar : Var[fun ω ↦ (X ω : ℝ); P] ≠ 0) :
-    ∫⁻ ω, (X ω : ℝ≥0∞) ∂P < ⊤ := by
-  rw [lintegral_coe_eq_integral X (integrable_coe_of_variance_ne_zero hX hvar)]
-  exact ENNReal.ofReal_lt_top
-
-/-- A nonnegative random variable on a finite measure space with nonzero variance has strictly
-positive extended mean. -/
-theorem lintegral_coe_pos_of_variance_ne_zero [IsFiniteMeasure P] {X : Ω → ℝ≥0}
-    (hX : AEMeasurable X P) (hvar : Var[fun ω ↦ (X ω : ℝ); P] ≠ 0) :
-    0 < ∫⁻ ω, (X ω : ℝ≥0∞) ∂P := by
-  rw [lintegral_coe_eq_integral X (integrable_coe_of_variance_ne_zero hX hvar), ENNReal.ofReal_pos]
-  exact integral_coe_pos_of_variance_ne_zero hX hvar
-
-/-- Under nonzero variance, the real part of the extended mean of a nonnegative random variable
-equals its Bochner expectation. -/
-theorem toReal_lintegral_coe_eq_integral_of_variance_ne_zero [IsFiniteMeasure P] {X : Ω → ℝ≥0}
-    (hX : AEMeasurable X P) (hvar : Var[fun ω ↦ (X ω : ℝ); P] ≠ 0) :
-    (∫⁻ ω, (X ω : ℝ≥0∞) ∂P).toReal = ∫ ω, (X ω : ℝ) ∂P := by
-  rw [lintegral_coe_eq_integral X (integrable_coe_of_variance_ne_zero hX hvar),
-    ENNReal.toReal_ofReal (integral_nonneg fun ω ↦ (X ω).coe_nonneg)]
-
-/-- On a probability space, a nonnegative random variable with nonzero variance is not almost
-surely zero. -/
-theorem measure_eq_zero_lt_one_of_variance_ne_zero [IsProbabilityMeasure P] {X : Ω → ℝ≥0}
-    (hX : AEMeasurable X P) (hvar : Var[fun ω ↦ (X ω : ℝ); P] ≠ 0) :
-    P {ω | X ω = 0} < 1 := by
-  refine lt_of_le_of_ne prob_le_one fun hfull ↦ ?_
-  have hnull : NullMeasurableSet {ω | X ω = 0} P :=
-    hX.nullMeasurable (measurableSet_singleton (0 : ℝ≥0))
-  have hae : ∀ᵐ ω ∂P, X ω = 0 := (ae_mem_iff_measure_eq hnull).2 (hfull.trans measure_univ.symm)
-  have hint0 : ∫ ω, (X ω : ℝ) ∂P = ∫ _ : Ω, (0 : ℝ) ∂P :=
-    integral_congr_ae (hae.mono fun ω hω ↦ by simp [hω])
-  rw [integral_zero] at hint0
-  exact (integral_coe_pos_of_variance_ne_zero hX hvar).ne' hint0
-
-end Moments
 
 /-! ### Pathwise inversion and rounding asymptotics -/
 
@@ -295,7 +212,8 @@ private lemma tendsto_sqrt_div_sqrt_index_one {μ σ : ℝ} (hμ : 0 < μ) (x : 
 /-- **Rounding estimate for the renewal central limit theorem.** For `μ > 0`, `σ > 0`, and `x : ℝ`,
 setting `m(s) = ⌊s / μ + x * σ * √(s / μ ^ 3)⌋₊ + 1`, the standardized threshold
 `(m(s) * μ - s) / (σ * √(m(s)))` converges to `x` as `s → ∞`. -/
-theorem tendsto_rounding_sub_div_sqrt_atTop {μ σ : ℝ} (hμ : 0 < μ) (hσ : 0 < σ) (x : ℝ) :
+theorem tendsto_natFloor_add_one_mul_sub_div_sqrt_atTop {μ σ : ℝ} (hμ : 0 < μ) (hσ : 0 < σ)
+    (x : ℝ) :
     Tendsto (fun s : ℝ ↦
       (((⌊s / μ + x * σ * √(s / μ ^ 3)⌋₊ + 1 : ℕ) : ℝ) * μ - s) /
         (σ * √((⌊s / μ + x * σ * √(s / μ ^ 3)⌋₊ + 1 : ℕ) : ℝ)))
@@ -372,7 +290,7 @@ private theorem tendstoInDistribution_neg_arrival_sub_div
   have mT0 : AEMeasurable (fun ω ↦ (T 0 ω : ℝ)) P :=
     measurable_coe_nnreal_real.comp_aemeasurable (hid 0).aemeasurable_fst
   have intT0 : Integrable (fun ω ↦ (T 0 ω : ℝ)) P :=
-    integrable_coe_of_variance_ne_zero (hid 0).aemeasurable_fst hvar
+    integrable_of_variance_ne_zero mT0.aestronglyMeasurable hvar
   let Y : ℕ → Ω → ℝ := fun k ω ↦ -((T k ω : ℝ) - μ) / σ
   have hlaw : HasLaw (id : ℝ → ℝ) (gaussianReal 0 1) (gaussianReal 0 1) :=
     ⟨measurable_id.aemeasurable, Measure.map_id⟩
@@ -398,83 +316,6 @@ private theorem tendstoInDistribution_neg_arrival_sub_div
   rw [← Finset.sum_div, Finset.sum_neg_distrib, Finset.sum_sub_distrib,
     Finset.sum_const, Finset.card_range, nsmul_eq_mul]
   ring
-
-private lemma ae_tendsto_arrival_atTop_of_variance_ne_zero
-    (hindep : iIndepFun T P) (hid : ∀ n, IdentDistrib (T n) (T 0) P P)
-    (hvar : Var[fun ω ↦ (T 0 ω : ℝ); P] ≠ 0) :
-    ∀ᵐ ω ∂P, Tendsto (fun n ↦ arrival T n ω) atTop atTop := by
-  let T' : ℕ → Ω → ℝ≥0 := fun n ↦ (hid n).aemeasurable_fst.mk (T n)
-  have hT'_ae (n : ℕ) : T n =ᵐ[P] T' n := (hid n).aemeasurable_fst.ae_eq_mk
-  have hT'_meas : ∀ n, Measurable (T' n) := fun n ↦ (hid n).aemeasurable_fst.measurable_mk
-  have hindep' : iIndepFun T' P := by
-    refine (iIndepFun_iff_measure_inter_preimage_eq_mul).2 fun S s hs ↦ ?_
-    have heq (i : ℕ) (hi : i ∈ S) : T' i ⁻¹' s i =ᵐ[P] T i ⁻¹' s i :=
-      (hT'_ae i).symm.preimage (s i)
-    rw [measure_congr (EventuallyEqSet.countable_iInter fun i ↦
-      EventuallyEqSet.countable_iInter fun hi ↦ heq i hi),
-      hindep.measure_inter_preimage_eq_mul S hs]
-    exact Finset.prod_congr rfl fun i hi ↦ measure_congr (heq i hi).symm
-  have hid' (n : ℕ) : IdentDistrib (T' n) (T' 0) P P :=
-    ((IdentDistrib.of_ae_eq (hT'_meas n).aemeasurable (hT'_ae n).symm).trans (hid n)).trans
-      (IdentDistrib.of_ae_eq (hid 0).aemeasurable_fst (hT'_ae 0))
-  have hzero' : P {ω | T' 0 ω = 0} < 1 := by
-    have hset : {ω | T' 0 ω = 0} =ᵐ[P] {ω | T 0 ω = 0} :=
-      (hT'_ae 0).symm.mono fun ω hω ↦ by simp [hω]
-    rw [measure_congr hset]
-    exact measure_eq_zero_lt_one_of_variance_ne_zero (hid 0).aemeasurable_fst hvar
-  filter_upwards [ae_tendsto_arrival_atTop hT'_meas hindep' hid' hzero',
-    ae_all_iff.2 hT'_ae] with ω hω hEq
-  simpa [arrival_def, hEq] using hω
-
-/-- Sandwiching a family of sublevel probabilities `{R t ≤ x}` via an almost-sure event equivalence
-`R t ω ≤ x ↔ W t ω < α t` with a threshold `α t → x` when the CDFs of `W t` converge pointwise to a
-continuous limiting CDF `Φ`. -/
-private lemma tendsto_cdf_of_eventually_ae_le_iff_lt {ι : Type*} {l : Filter ι}
-    {R W : ι → Ω → ℝ} {α : ι → ℝ} {Φ : ℝ → ℝ} {x : ℝ}
-    (hR : ∀ i, AEMeasurable (R i) P) (hW : ∀ i, AEMeasurable (W i) P)
-    (hΦ : ContinuousAt Φ x) (hα : Tendsto α l (𝓝 x))
-    (hW_cdf : ∀ y, Tendsto (fun i ↦ cdf (P.map (W i)) y) l (𝓝 (Φ y)))
-    (hinv : ∀ᶠ i in l, ∀ᵐ ω ∂P, R i ω ≤ x ↔ W i ω < α i) :
-    Tendsto (fun i ↦ cdf (P.map (R i)) x) l (𝓝 (Φ x)) := by
-  refine tendsto_order.2 ⟨fun a ha ↦ ?_, fun b hb ↦ ?_⟩
-  · -- Lower bound: pick `z < x` with `a < Φ z`, then `W i ≤ z` and `z < α i` force `R i ≤ x`.
-    obtain ⟨δ, hδ, hz⟩ := Metric.continuousAt_iff.1 hΦ (Φ x - a) (sub_pos.2 ha)
-    set z : ℝ := x - δ / 2
-    have hzx : z < x := sub_lt_self x (half_pos hδ)
-    have haΦz : a < Φ z := by
-      have hsub_z : z - x = -(δ / 2) := by ring
-      have hdz : dist z x < δ := by
-        rw [Real.dist_eq, hsub_z, abs_neg, abs_of_pos (half_pos hδ)]
-        exact half_lt_self hδ
-      have hdist := hz hdz
-      rw [Real.dist_eq] at hdist
-      linarith [(abs_lt.1 hdist).1]
-    filter_upwards [hinv, (tendsto_order.1 hα).1 z hzx,
-      (tendsto_order.1 (hW_cdf z)).1 a haΦz] with i hi hαz hW_gt
-    refine hW_gt.trans_le ?_
-    rw [Measure.cdf_map_of_aemeasurable P (hW i) z, Measure.cdf_map_of_aemeasurable P (hR i) x]
-    refine ENNReal.toReal_mono (measure_ne_top P _) (measure_mono_ae ?_)
-    filter_upwards [hi] with ω hω hWz
-    exact hω.2 (lt_of_le_of_lt hWz hαz)
-  · -- Upper bound: pick `y > x` with `Φ y < b`, then `R i ≤ x` and `α i < y` force `W i ≤ y`.
-    obtain ⟨δ, hδ, hy⟩ := Metric.continuousAt_iff.1 hΦ (b - Φ x) (sub_pos.2 hb)
-    set y : ℝ := x + δ / 2
-    have hxy : x < y := lt_add_of_pos_right x (half_pos hδ)
-    have hΦyb : Φ y < b := by
-      have hsub_y : y - x = δ / 2 := by ring
-      have hdy : dist y x < δ := by
-        rw [Real.dist_eq, hsub_y, abs_of_pos (half_pos hδ)]
-        exact half_lt_self hδ
-      have hdist := hy hdy
-      rw [Real.dist_eq] at hdist
-      linarith [(abs_lt.1 hdist).2]
-    filter_upwards [hinv, (tendsto_order.1 hα).2 y hxy,
-      (tendsto_order.1 (hW_cdf y)).2 b hΦyb] with i hi hαy hW_lt
-    refine lt_of_le_of_lt ?_ hW_lt
-    rw [Measure.cdf_map_of_aemeasurable P (hR i) x, Measure.cdf_map_of_aemeasurable P (hW i) y]
-    refine ENNReal.toReal_mono (measure_ne_top P _) (measure_mono_ae ?_)
-    filter_upwards [hi] with ω hω hRx
-    exact (hω.1 hRx).le.trans hαy.le
 
 /-- **Pointwise CDF convergence in the renewal central limit theorem.** For i.i.d. nonnegative
 increments with nonzero variance, the cumulative distribution function of the standardized renewal
@@ -515,12 +356,13 @@ theorem tendsto_cdf_renewalCountNat_sub_div
   have hW_clt := tendstoInDistribution_neg_arrival_sub_div hindep hid hvar
   refine tendsto_cdf_of_eventually_ae_le_iff_lt hR_meas (fun t ↦ hW_meas (m t))
     (Measure.continuous_cdf_of_noAtoms (gaussianReal 0 1)).continuousAt
-    ((tendsto_rounding_sub_div_sqrt_atTop hμ hσ x).comp hcoe_top)
+    ((tendsto_natFloor_add_one_mul_sub_div_sqrt_atTop hμ hσ x).comp hcoe_top)
     (fun y ↦ by
       have h := hW_clt.tendsto_cdf y
       rw [Measure.map_id] at h
       exact h.comp hm_top) ?_
-  have hnonexp := ae_tendsto_arrival_atTop_of_variance_ne_zero hindep hid hvar
+  have hnonexp := ae_tendsto_arrival_atTop hindep hid
+    (measure_setOf_eq_zero_lt_one_of_variance_ne_zero (hid 0).aemeasurable_fst hvar)
   filter_upwards [eventually_gt_atTop (0 : ℝ≥0), hu_top.eventually_ge_atTop 0] with t ht hu0
   filter_upwards [hnonexp] with ω hω
   exact renewalCountNat_sub_div_le_iff hω hμ hσ x ht hu0
@@ -559,7 +401,7 @@ theorem tendstoInDistribution_renewalCountNat_sub_div_toReal_lintegral
           (√Var[fun ω ↦ (T 0 ω : ℝ); P] *
             √((t : ℝ) / (∫⁻ ω, (T 0 ω : ℝ≥0∞) ∂P).toReal ^ 3)))
       atTop Z (fun _ ↦ P) P' := by
-  rw [toReal_lintegral_coe_eq_integral_of_variance_ne_zero (hid 0).aemeasurable_fst hvar]
+  rw [TauCeti.MeasureTheory.toReal_lintegral_coe_eq_integral (hid 0).aemeasurable_fst]
   exact tendstoInDistribution_renewalCountNat_sub_div hZ hindep hid hvar
 
 /-- **The renewal central limit theorem along any time family tending to infinity.** In particular,

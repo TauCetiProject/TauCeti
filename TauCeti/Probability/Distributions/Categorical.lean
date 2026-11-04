@@ -204,7 +204,7 @@ theorem cdf_map_categoricalMeasure (p : StdSimplex NNReal I) (label : I → ℝ)
     cdf ((categoricalMeasure p).map label) x =
       ∑ i with label i ≤ x, (p.weights i : ℝ) := by
   classical
-  rw [Measure.cdf_map _ label (measurable_of_finite label)]
+  rw [Measure.cdf_map _ label (measurable_of_finite label).aemeasurable]
   have hpreimage : label ⁻¹' Iic x = (Finset.univ.filter fun i ↦ label i ≤ x : Finset I) := by
     ext i
     simp
@@ -222,7 +222,8 @@ theorem quantile_map_categoricalMeasure_eq_iff (p : StdSimplex NNReal I) (label 
   rw [Measure.quantile_map_finite_eq_iff _ label hu,
     ← map_measureReal_apply (measurable_of_finite label) measurableSet_Iio,
     p.map_categoricalMeasure_real_Iio,
-    ← Measure.cdf_map _ label (measurable_of_finite label), p.cdf_map_categoricalMeasure]
+    ← Measure.cdf_map _ label (measurable_of_finite label).aemeasurable,
+    p.cdf_map_categoricalMeasure]
 
 /-- As the level tends to zero from above, categorical quantiles tend to any least label whose
 category has positive weight. Zero-weight categories do not affect the endpoint. -/

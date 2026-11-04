@@ -184,7 +184,7 @@ theorem measure_lt_renewalExcess (hT : ∀ n, Measurable (T n)) (hindep : iIndep
   have hae : {ω | x < renewalExcess T t ω} =ᵐ[P]
       ⋃ n, {ω | arrival T n ω ≤ t ∧ t + x < arrival T (n + 1) ω} := by
     refine eventuallyEqSet_iff.2 ?_
-    filter_upwards [ae_tendsto_arrival_atTop hT hindep hid hzero] with ω hω
+    filter_upwards [ae_tendsto_arrival_atTop hindep hid hzero] with ω hω
     simpa using lt_renewalExcess_iff hω
   rw [measure_congr hae, measure_iUnion (pairwise_disjoint_setOf_arrival T t x) hA,
     Measure.renewalMeasure_def, Measure.restrict_sum _ measurableSet_Iic, lintegral_sum_measure]

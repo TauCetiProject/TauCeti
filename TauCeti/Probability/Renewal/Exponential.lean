@@ -62,12 +62,11 @@ variable {Ω : Type*} [MeasurableSpace Ω] {P : Measure Ω} {T : ℕ → Ω → 
 
 /-- **Nonexplosion with exponential increments.** For independent exponential increments,
 almost surely the arrival times tend to infinity. -/
-theorem ae_tendsto_arrival_atTop_of_expMeasure (hT : ∀ n, Measurable (T n))
-    (hindep : iIndepFun T P)
+theorem ae_tendsto_arrival_atTop_of_expMeasure (hindep : iIndepFun T P)
     (hlaw : ∀ n, HasLaw (fun ω ↦ (T n ω : ℝ)) (expMeasure r) P) :
     ∀ᵐ ω ∂P, Tendsto (fun n ↦ arrival T n ω) atTop atTop := by
   have := hindep.isProbabilityMeasure
-  refine ae_tendsto_arrival_atTop hT hindep (fun n ↦ ?_) ?_
+  refine ae_tendsto_arrival_atTop hindep (fun n ↦ ?_) ?_
   · simpa [Function.comp_def] using ((hlaw n).identDistrib (hlaw 0)).comp measurable_real_toNNReal
   · refine (measure_mono_null (fun ω hω ↦ ?_)
       (ae_iff.1 (ae_pos_of_hasLaw_expMeasure (hlaw 0)))).trans_lt zero_lt_one
@@ -89,15 +88,14 @@ theorem hasLaw_arrival_gammaMeasure (hindep : iIndepFun T P)
 
 /-- For independent exponential increments of rate `r`, the count at time `t` reaches `n`
 with probability `P(n, r * t)`, the regularized lower incomplete gamma function. -/
-theorem measure_le_renewalCountNat_of_expMeasure (hT : ∀ n, Measurable (T n))
-    (hindep : iIndepFun T P)
+theorem measure_le_renewalCountNat_of_expMeasure (hindep : iIndepFun T P)
     (hlaw : ∀ n, HasLaw (fun ω ↦ (T n ω : ℝ)) (expMeasure r) P) (t : ℝ≥0) {n : ℕ}
     (hn : n ≠ 0) :
     P {ω | n ≤ renewalCountNat T t ω} = ENNReal.ofReal (regularizedGamma n (r * t)) := by
   have := hindep.isProbabilityMeasure
   have hr := pos_of_hasLaw_expMeasure (hlaw 0)
   have hae : {ω | n ≤ renewalCountNat T t ω} =ᵐ[P] {ω | (arrival T n ω : ℝ) ≤ t} := by
-    filter_upwards [ae_tendsto_arrival_atTop_of_expMeasure hT hindep hlaw] with ω hω
+    filter_upwards [ae_tendsto_arrival_atTop_of_expMeasure hindep hlaw] with ω hω
     simp [le_renewalCountNat_iff hω]
   rw [measure_congr hae, ← ofReal_measureReal,
     measureReal_le_of_hasLaw_gammaMeasure (by exact_mod_cast Nat.pos_of_ne_zero hn)
@@ -121,7 +119,7 @@ theorem hasLaw_renewalCountNat_poissonMeasure (hT : ∀ n, Measurable (T n))
       simp
     rw [← ofReal_measureReal (μ := poissonMeasure (r * t)), htail,
       poissonMeasure_tail_eq_regularizedGamma, ← htail, NNReal.coe_mul, ← Nat.cast_succ,
-      ← measure_le_renewalCountNat_of_expMeasure hT hindep hlaw t m.succ_ne_zero]
+      ← measure_le_renewalCountNat_of_expMeasure hindep hlaw t m.succ_ne_zero]
     simp [preimage]
 
 /-- For independent exponential increments of rate `r`, the count at time `t` equals `n` with
@@ -142,7 +140,7 @@ theorem lintegral_renewalCount_of_expMeasure (hT : ∀ n, Measurable (T n))
     (hlaw : ∀ n, HasLaw (fun ω ↦ (T n ω : ℝ)) (expMeasure r) P) (t : ℝ≥0) :
     ∫⁻ ω, renewalCount T t ω ∂P = r * t := by
   have hae : ∀ᵐ ω ∂P, (renewalCountNat T t ω : ℝ≥0∞) = renewalCount T t ω := by
-    filter_upwards [ae_tendsto_arrival_atTop_of_expMeasure hT hindep hlaw] with ω hω
+    filter_upwards [ae_tendsto_arrival_atTop_of_expMeasure hindep hlaw] with ω hω
     exact natCast_renewalCountNat hω t
   rw [← lintegral_congr_ae hae,
     (hasLaw_renewalCountNat_poissonMeasure hT hindep hlaw t).lintegral_comp

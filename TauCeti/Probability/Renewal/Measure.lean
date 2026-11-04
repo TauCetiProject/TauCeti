@@ -207,7 +207,7 @@ theorem integral_renewalCountNat (hT : ∀ n, Measurable (T n)) (hindep : iIndep
     (by fun_prop), ← lintegral_renewalCount hindep hid t]
   congr 1
   refine lintegral_congr_ae ?_
-  filter_upwards [ae_natCast_renewalCountNat hT hindep hid hzero] with ω hω
+  filter_upwards [ae_natCast_renewalCountNat hindep hid hzero] with ω hω
   rw [ENNReal.ofReal_natCast, hω t]
 
 end TauCeti.Probability

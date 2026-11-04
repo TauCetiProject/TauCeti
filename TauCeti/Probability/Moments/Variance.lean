@@ -7,10 +7,10 @@ module
 
 public import Mathlib.MeasureTheory.Function.L2Space
 public import Mathlib.MeasureTheory.Integral.Prod
-import Mathlib.Probability.Moments.Variance
+public import Mathlib.Probability.Moments.Variance
 
 /-!
-# The mean squared distance between two independent copies
+# The mean squared distance between two independent copies and nonzero-variance bounds
 
 Let `f` be a square-integrable function, with values in a real Hilbert space, on a finite measure
 space `(α, μ)`. Then
@@ -27,7 +27,10 @@ transport plan, an integral over pairs of transported pairs, into the variance o
 displacement.
 
 The file also records the elementary bound of the mean of a real function by the square root of
-its second moment, which is the nonnegativity of its variance.
+its second moment (the nonnegativity of its variance), together with moment and support consequences
+of nonzero variance `Var[X; μ] ≠ 0`: integrability on a finite measure space, positivity and
+finiteness of the Bochner and extended means for `ℝ≥0`-valued random variables, and nondegeneracy
+`μ {ω | X ω = 0} < 1` on a probability space.
 
 ## Main statements
 
@@ -37,12 +40,20 @@ its second moment, which is the nonnegativity of its variance.
 * `MeasureTheory.integral_le_sqrt_integral_sq`: on a probability space, the mean of a real
   square-integrable function is at most the square root of its second moment, which is the
   nonnegativity of its variance.
+* `TauCeti.integrable_of_variance_ne_zero`: on a finite measure space, nonzero variance implies
+  integrability.
+* `TauCeti.integral_coe_pos_of_variance_ne_zero`,
+  `TauCeti.lintegral_coe_lt_top_of_variance_ne_zero`,
+  `TauCeti.lintegral_coe_pos_of_variance_ne_zero`, and
+  `TauCeti.measure_setOf_eq_zero_lt_one_of_variance_ne_zero`: for an `ℝ≥0`-valued random variable
+  with nonzero variance, the Bochner and extended expectations are finite and strictly positive,
+  and on a probability space the variable is not almost surely zero.
 -/
 
 public section
 
-open MeasureTheory Set
-open scoped RealInnerProductSpace
+open MeasureTheory ProbabilityTheory Set
+open scoped ENNReal NNReal RealInnerProductSpace
 
 namespace MeasureTheory.MemLp
 
@@ -73,6 +84,8 @@ theorem integral_le_sqrt_integral_sq {Ω : Type*} [MeasurableSpace Ω] {μ : Mea
 end MeasureTheory
 
 namespace TauCeti
+
+section InnerProductSpace
 
 variable {α E : Type*} {mα : MeasurableSpace α} {μ : Measure α} [NormedAddCommGroup E]
   [InnerProductSpace ℝ E] [CompleteSpace E]
@@ -108,5 +121,62 @@ theorem integral_norm_sub_sq_prod [IsFiniteMeasure μ] {f : α → E} (hf : MemL
     integral_add (hsq.comp_fst μ) (hsq.comp_snd μ), integral_const_mul, hcross,
     integral_fun_fst (fun x ↦ ‖f x‖ ^ 2), integral_fun_snd (fun x ↦ ‖f x‖ ^ 2)]
   ring
+
+end InnerProductSpace
+
+section VarianceNeZero
+
+variable {Ω : Type*} [MeasurableSpace Ω] {μ : Measure Ω}
+
+/-- A real-valued random variable on a finite measure space with nonzero variance is integrable. -/
+theorem integrable_of_variance_ne_zero [IsFiniteMeasure μ] {X : Ω → ℝ}
+    (hX : AEStronglyMeasurable X μ) (hvar : Var[X; μ] ≠ 0) :
+    Integrable X μ :=
+  (memLp_two_of_variance_ne_zero hX hvar).integrable one_le_two
+
+/-- A nonnegative random variable on a finite measure space with nonzero variance has strictly
+positive real expectation. -/
+theorem integral_coe_pos_of_variance_ne_zero [IsFiniteMeasure μ] {X : Ω → ℝ≥0}
+    (hX : AEMeasurable X μ) (hvar : Var[fun ω ↦ (X ω : ℝ); μ] ≠ 0) :
+    0 < ∫ ω, (X ω : ℝ) ∂μ := by
+  have hint := integrable_of_variance_ne_zero
+    (measurable_coe_nnreal_real.comp_aemeasurable hX).aestronglyMeasurable hvar
+  refine lt_of_le_of_ne (integral_nonneg fun ω ↦ (X ω).coe_nonneg) fun heq ↦ hvar ?_
+  have hz : (fun ω ↦ (X ω : ℝ)) =ᵐ[μ] 0 :=
+    (integral_eq_zero_iff_of_nonneg (fun ω ↦ (X ω).coe_nonneg) hint).1 heq.symm
+  rw [variance_congr hz, variance_zero]
+
+/-- A nonnegative random variable on a finite measure space with nonzero variance has finite
+extended mean. -/
+theorem lintegral_coe_lt_top_of_variance_ne_zero [IsFiniteMeasure μ] {X : Ω → ℝ≥0}
+    (hX : AEMeasurable X μ) (hvar : Var[fun ω ↦ (X ω : ℝ); μ] ≠ 0) :
+    ∫⁻ ω, (X ω : ℝ≥0∞) ∂μ < ⊤ := by
+  rw [lintegral_coe_eq_integral X (integrable_of_variance_ne_zero
+    (measurable_coe_nnreal_real.comp_aemeasurable hX).aestronglyMeasurable hvar)]
+  exact ENNReal.ofReal_lt_top
+
+/-- A nonnegative random variable on a finite measure space with nonzero variance has strictly
+positive extended mean. -/
+theorem lintegral_coe_pos_of_variance_ne_zero [IsFiniteMeasure μ] {X : Ω → ℝ≥0}
+    (hX : AEMeasurable X μ) (hvar : Var[fun ω ↦ (X ω : ℝ); μ] ≠ 0) :
+    0 < ∫⁻ ω, (X ω : ℝ≥0∞) ∂μ := by
+  rw [lintegral_coe_eq_integral X (integrable_of_variance_ne_zero
+    (measurable_coe_nnreal_real.comp_aemeasurable hX).aestronglyMeasurable hvar),
+    ENNReal.ofReal_pos]
+  exact integral_coe_pos_of_variance_ne_zero hX hvar
+
+/-- On a probability space, a nonnegative random variable with nonzero variance is not almost
+surely zero. -/
+theorem measure_setOf_eq_zero_lt_one_of_variance_ne_zero [IsProbabilityMeasure μ] {X : Ω → ℝ≥0}
+    (hX : AEMeasurable X μ) (hvar : Var[fun ω ↦ (X ω : ℝ); μ] ≠ 0) :
+    μ {ω | X ω = 0} < 1 := by
+  refine lt_of_le_of_ne prob_le_one fun hfull ↦ hvar ?_
+  have hnull : NullMeasurableSet {ω | X ω = 0} μ :=
+    hX.nullMeasurable (measurableSet_singleton (0 : ℝ≥0))
+  have hae : ∀ᵐ ω ∂μ, X ω = 0 := (ae_mem_iff_measure_eq hnull).2 (hfull.trans measure_univ.symm)
+  have hae0 : (fun ω ↦ (X ω : ℝ)) =ᵐ[μ] 0 := hae.mono fun ω hω ↦ by simp [hω]
+  rw [variance_congr hae0, variance_zero]
+
+end VarianceNeZero
 
 end TauCeti

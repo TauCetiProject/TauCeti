@@ -28,10 +28,6 @@ to pointwise convergence of cumulative distribution functions at every real poin
 
 ## Main statements
 
-* `MeasureTheory.Measure.cdf_map_of_aemeasurable` — `cdf (μ.map X) x = μ.real (X ⁻¹' Iic x)` for an
-  almost-everywhere measurable random variable `X`.
-* `MeasureTheory.Measure.continuousAt_cdf_iff` — `ContinuousAt (cdf ν) x ↔ ν {x} = 0` for a real
-  probability measure `ν`.
 * `MeasureTheory.ProbabilityMeasure.tendsto_cdf_of_tendsto_of_continuousAt` — weak convergence
   implies convergence of `cdf` at every continuity point of the limiting `cdf`.
 * `MeasureTheory.ProbabilityMeasure.tendsto_of_tendsto_cdf_of_dense` — pointwise `cdf` convergence
@@ -41,6 +37,9 @@ to pointwise convergence of cumulative distribution functions at every real poin
   limiting `cdf`.
 * `MeasureTheory.ProbabilityMeasure.tendsto_iff_tendsto_cdf` — for an atomless limit law, weak
   convergence is equivalent to pointwise `cdf` convergence everywhere.
+* `MeasureTheory.tendsto_cdf_of_eventually_ae_le_iff_lt` — pointwise `cdf` convergence transferred
+  across an eventual almost-everywhere sublevel equivalence `X i ω ≤ x ↔ Y i ω < α i` with
+  `α i → x` at a continuity point of the limiting `cdf`.
 * `MeasureTheory.tendstoInDistribution_iff_forall_continuousAt_tendsto_cdf` and
   `MeasureTheory.tendstoInDistribution_iff_tendsto_cdf` — counterparts for
   `MeasureTheory.TendstoInDistribution`.
@@ -56,30 +55,6 @@ public section
 
 open Filter Function ProbabilityTheory Set
 open scoped NNReal Topology
-
-namespace MeasureTheory.Measure
-
-/-- The cumulative distribution function of the pushforward of a probability measure under an
-almost-everywhere measurable map is the real mass of the preimage of `Iic x`. -/
-theorem cdf_map_of_aemeasurable {Ω : Type*} [MeasurableSpace Ω] (μ : Measure Ω)
-    [IsProbabilityMeasure μ] {X : Ω → ℝ} (hX : AEMeasurable X μ) (x : ℝ) :
-    cdf (μ.map X) x = μ.real (X ⁻¹' Iic x) := by
-  rw [cdf_eq_real, map_measureReal_apply_of_aemeasurable hX measurableSet_Iic]
-
-/-- The cumulative distribution function of a real probability measure `ν` is continuous at `x`
-if and only if `ν` assigns mass zero to `{x}`. -/
-theorem continuousAt_cdf_iff (ν : Measure ℝ) [IsProbabilityMeasure ν] (x : ℝ) :
-    ContinuousAt (cdf ν) x ↔ ν {x} = 0 := by
-  have hsing : ν {x} = ENNReal.ofReal (cdf ν x - leftLim (cdf ν) x) :=
-    calc
-      ν {x} = (cdf ν).measure {x} := by rw [measure_cdf]
-      _ = ENNReal.ofReal (cdf ν x - leftLim (cdf ν) x) := StieltjesFunction.measure_singleton _ _
-  have hle : leftLim (cdf ν) x ≤ cdf ν x := (cdf ν).mono.leftLim_le le_rfl
-  rw [(cdf ν).mono.continuousAt_iff_leftLim_eq_rightLim, ((cdf ν).right_continuous x).rightLim_eq,
-    hsing, ENNReal.ofReal_eq_zero, sub_nonpos]
-  exact ⟨fun h ↦ h.symm.le, le_antisymm hle⟩
-
-end MeasureTheory.Measure
 
 namespace MeasureTheory.ProbabilityMeasure
 
@@ -121,8 +96,8 @@ theorem tendsto_of_tendsto_cdf_of_dense [l.IsCountablyGenerated] {D : Set ℝ} (
     · rw [← NNReal.tendsto_coe]
       have hcoe (ρ : ProbabilityMeasure ℝ) :
           (ρ (Ioc a b) : ℝ) = cdf (ρ : Measure ℝ) b - cdf (ρ : Measure ℝ) a := by
-        rw [← (ρ : Measure ℝ).measureReal_Ioc_eq_cdf_sub hab]
-        rfl
+        rw [← ProbabilityMeasure.measureReal_eq_coe_coeFn,
+          (ρ : Measure ℝ).measureReal_Ioc_eq_cdf_sub hab]
       simpa only [hcoe] using (h b hb).sub (h a ha)
     · simp only [Ioc_eq_empty_of_le hba.le, coeFn_empty]
       exact tendsto_const_nhds
@@ -159,6 +134,35 @@ variable {ι Ω' : Type*} {Ω : ι → Type*} {m : ∀ i, MeasurableSpace (Ω i)
   {μ : (i : ι) → Measure (Ω i)} [∀ i, IsProbabilityMeasure (μ i)]
   {m' : MeasurableSpace Ω'} {μ' : Measure Ω'} [IsProbabilityMeasure μ']
   {X : (i : ι) → Ω i → ℝ} {Z : Ω' → ℝ} {l : Filter ι}
+
+/-- If `X i ω ≤ x` is eventually almost everywhere equivalent to `Y i ω < α i` with `α i → x`,
+and the cumulative distribution functions of `Y i` converge pointwise to a function `Φ` continuous
+at `x`, then `cdf ((μ i).map (X i)) x` converges to `Φ x`. -/
+theorem tendsto_cdf_of_eventually_ae_le_iff_lt {Y : (i : ι) → Ω i → ℝ} {α : ι → ℝ}
+    {Φ : ℝ → ℝ} {x : ℝ} (hX : ∀ i, AEMeasurable (X i) (μ i))
+    (hY : ∀ i, AEMeasurable (Y i) (μ i)) (hΦ : ContinuousAt Φ x) (hα : Tendsto α l (𝓝 x))
+    (hY_cdf : ∀ y, Tendsto (fun i ↦ cdf ((μ i).map (Y i)) y) l (𝓝 (Φ y)))
+    (hinv : ∀ᶠ i in l, ∀ᵐ ω ∂μ i, X i ω ≤ x ↔ Y i ω < α i) :
+    Tendsto (fun i ↦ cdf ((μ i).map (X i)) x) l (𝓝 (Φ x)) := by
+  refine tendsto_order.2 ⟨fun a ha ↦ ?_, fun b hb ↦ ?_⟩
+  · obtain ⟨z, hzx, haΦz⟩ := (hΦ.eventually (lt_mem_nhds ha)).exists_lt
+    filter_upwards [hinv, (tendsto_order.1 hα).1 z hzx,
+      (tendsto_order.1 (hY_cdf z)).1 a haΦz] with i hi hαz hY_gt
+    refine hY_gt.trans_le ?_
+    rw [Measure.cdf_map (μ i) (Y i) (hY i) z, Measure.cdf_map (μ i) (X i) (hX i) x,
+      measureReal_def, measureReal_def]
+    refine ENNReal.toReal_mono (measure_ne_top (μ i) _) (measure_mono_ae ?_)
+    filter_upwards [hi] with ω hω hYz
+    exact hω.2 (lt_of_le_of_lt hYz hαz)
+  · obtain ⟨y, hxy, hΦyb⟩ := (hΦ.eventually (gt_mem_nhds hb)).exists_gt
+    filter_upwards [hinv, (tendsto_order.1 hα).2 y hxy,
+      (tendsto_order.1 (hY_cdf y)).2 b hΦyb] with i hi hαy hY_lt
+    refine lt_of_le_of_lt ?_ hY_lt
+    rw [Measure.cdf_map (μ i) (X i) (hX i) x, Measure.cdf_map (μ i) (Y i) (hY i) y,
+      measureReal_def, measureReal_def]
+    refine ENNReal.toReal_mono (measure_ne_top (μ i) _) (measure_mono_ae ?_)
+    filter_upwards [hi] with ω hω hXx
+    exact (hω.1 hXx).le.trans hαy.le
 
 /-- Convergence in distribution of real random variables implies convergence of cumulative
 distribution functions at every continuity point of the limiting cumulative distribution
