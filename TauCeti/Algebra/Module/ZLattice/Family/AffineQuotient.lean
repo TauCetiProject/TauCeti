@@ -305,14 +305,13 @@ theorem isSubmersionAtOfComplement_torusFamilyAffineQuotientLift
     hbc hfree
   -- Through the orbit map, a local diffeomorphism, the induced map is `f` composed with the
   -- projection of the family, a submersion with complement `E`.
-  refine (isSubmersionAtOfComplement_comp_isLocalDiffeomorphAt_iff
-    (isLocalDiffeomorph_torusFamilyAffineQuotient_mk P hinj hP R ρ hequiv b hb hone hmul hbone
-      hbmul hR hbc hfree x)).1 ?_
+  refine ((isLocalDiffeomorph_torusFamilyAffineQuotient_mk P hinj hP R ρ hequiv b hb hone hmul
+    hbone hbmul hR hbc hfree x).isSubmersionAtOfComplement_comp_iff).1 ?_
   have hcomp : torusFamilyAffineQuotientLift P R ρ hequiv b hb hone hmul hbone hbmul f hf ∘
       Quotient.mk _ = f ∘ torusFamilyProjection P :=
     funext (torusFamilyAffineQuotientLift_mk P R ρ hequiv b hb hone hmul hbone hbmul f hf)
   rw [hcomp]
-  exact isSubmersionAtOfComplement_isLocalDiffeomorphAt_comp hfx
+  exact hfx.comp_isSubmersionAtOfComplement
     ((isSubmersionOfComplement_torusFamilyProjection P hinj hP).isSubmersionAt x)
 
 end Regularity

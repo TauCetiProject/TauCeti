@@ -34,13 +34,13 @@ lift of the map to the covering manifold.
 
 ## Main results
 
-* `TauCeti.isSubmersionAtOfComplement_comp_isLocalDiffeomorphAt`,
-  `TauCeti.isSubmersionAtOfComplement_isLocalDiffeomorphAt_comp`: the pointwise normal form with a
+* `IsLocalDiffeomorphAt.isSubmersionAtOfComplement_comp`,
+  `IsLocalDiffeomorphAt.comp_isSubmersionAtOfComplement`: the pointwise normal form with a
   fixed complement survives composing with a local diffeomorphism on the source or on the target.
-* `TauCeti.isSubmersionAtOfComplement_comp_isLocalDiffeomorphAt_iff`: precomposing with a local
+* `IsLocalDiffeomorphAt.isSubmersionAtOfComplement_comp_iff`: precomposing with a local
   diffeomorphism at `x` neither creates nor destroys the normal form at `x`.
-* `TauCeti.isSubmersionAt_comp_isLocalDiffeomorphAt_iff`,
-  `TauCeti.isSubmersionAt_isLocalDiffeomorphAt_comp`: the same statements for `IsSubmersionAt`.
+* `IsLocalDiffeomorphAt.isSubmersionAt_comp_iff`,
+  `IsLocalDiffeomorphAt.comp_isSubmersionAt`: the same statements for `IsSubmersionAt`.
 
 ## References
 
@@ -52,7 +52,7 @@ public section
 
 noncomputable section
 
-namespace TauCeti
+namespace IsLocalDiffeomorphAt
 
 open Manifold Set Topology
 open scoped Manifold ContDiff
@@ -74,7 +74,7 @@ variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
 /-- Precomposing with a local diffeomorphism of the source preserves the submersion normal form at
 a point, with the same complement: the domain chart is pulled back along a partial diffeomorphism
 representing the local diffeomorphism. -/
-theorem isSubmersionAtOfComplement_comp_isLocalDiffeomorphAt [IsManifold I n M']
+theorem isSubmersionAtOfComplement_comp [IsManifold I n M']
     {g : M' → M} {x : M'} (hg : IsLocalDiffeomorphAt I I n g x)
     (h : IsSubmersionAtOfComplement F I J n f (g x)) :
     IsSubmersionAtOfComplement F I J n (f ∘ g) x := by
@@ -87,11 +87,7 @@ theorem isSubmersionAtOfComplement_comp_isLocalDiffeomorphAt [IsManifold I n M']
     h.codChart_mem_maximalAtlas fun u hu => ?_
   · refine ⟨hxΦ, ?_⟩
     simpa [← hgΦ hxΦ] using h.mem_domChart_source
-  · refine OpenPartialHomeomorph.mem_maximalAtlas_of_contMDiffOn _ ?_ ?_
-    · exact (contMDiffOn_of_mem_maximalAtlas hψ).comp (Φ.contMDiffOn.mono inter_subset_left)
-        fun y hy => hy.2
-    · exact Φ.symm.contMDiffOn.comp ((contMDiffOn_symm_of_mem_maximalAtlas hψ).mono
-        inter_subset_left) fun y hy => hy.2
+  · exact Φ.trans_mem_maximalAtlas hψ
   · -- Reading `f ∘ g` through the pulled-back chart reinstates `Φ⁻¹`, which `g = Φ` cancels.
     simp only [OpenPartialHomeomorph.extend_target, OpenPartialHomeomorph.trans_target,
       mem_inter_iff, mem_preimage] at hu
@@ -111,28 +107,28 @@ theorem isSubmersionAtOfComplement_comp_isLocalDiffeomorphAt [IsManifold I n M']
 /-- **Submersions out of a local diffeomorphism.** If `g` is a local diffeomorphism at `x`, then
 `f ∘ g` is a submersion at `x` with complement `F` exactly when `f` is a submersion at `g x` with
 complement `F`. Near `g x`, the map `f` is `f ∘ g` composed with a local inverse of `g`. -/
-theorem isSubmersionAtOfComplement_comp_isLocalDiffeomorphAt_iff [IsManifold I n M]
+theorem isSubmersionAtOfComplement_comp_iff [IsManifold I n M]
     [IsManifold I n M'] {g : M' → M} {x : M'} (hg : IsLocalDiffeomorphAt I I n g x) :
     IsSubmersionAtOfComplement F I J n (f ∘ g) x ↔ IsSubmersionAtOfComplement F I J n f (g x) := by
-  refine ⟨fun h ↦ ?_, isSubmersionAtOfComplement_comp_isLocalDiffeomorphAt hg⟩
+  refine ⟨fun h ↦ ?_, isSubmersionAtOfComplement_comp hg⟩
   -- Near `g x`, `f = (f ∘ g) ∘ g⁻¹` for the local inverse `g⁻¹`, which sends `g x` to `x`.
   have hinv := hg.localInverse_isLocalDiffeomorphAt
   have hx : hg.localInverse (g x) = x :=
     hg.localInverse_left_inv hg.localInverse_mem_target
   rw [← hx] at h
-  refine (isSubmersionAtOfComplement_comp_isLocalDiffeomorphAt hinv h).congr_of_eventuallyEq ?_
+  refine (isSubmersionAtOfComplement_comp hinv h).congr_of_eventuallyEq ?_
   filter_upwards [hg.localInverse_eventuallyEq_right] with y hy
   simp only [Function.comp_apply] at hy ⊢
   rw [hy, id]
 
 /-- Precomposing with a local diffeomorphism at `x` neither creates nor destroys being a
 submersion at `x`. -/
-theorem isSubmersionAt_comp_isLocalDiffeomorphAt_iff [IsManifold I n M] [IsManifold I n M']
+theorem isSubmersionAt_comp_iff [IsManifold I n M] [IsManifold I n M']
     {g : M' → M} {x : M'} (hg : IsLocalDiffeomorphAt I I n g x) :
     IsSubmersionAt I J n (f ∘ g) x ↔ IsSubmersionAt I J n f (g x) :=
-  ⟨fun h ↦ ((isSubmersionAtOfComplement_comp_isLocalDiffeomorphAt_iff hg).1
+  ⟨fun h ↦ ((isSubmersionAtOfComplement_comp_iff hg).1
     h.isSubmersionAtOfComplement_complement).isSubmersionAt, fun h ↦
-      (isSubmersionAtOfComplement_comp_isLocalDiffeomorphAt hg
+      (isSubmersionAtOfComplement_comp hg
         h.isSubmersionAtOfComplement_complement).isSubmersionAt⟩
 
 /-! ### Postcomposing with a local diffeomorphism -/
@@ -141,7 +137,7 @@ theorem isSubmersionAt_comp_isLocalDiffeomorphAt_iff [IsManifold I n M] [IsManif
 a point, with the same complement: the codomain chart is pulled back along a partial
 diffeomorphism representing the local diffeomorphism, after shrinking the domain chart so that the
 submersion maps it into the source of that partial diffeomorphism. -/
-theorem isSubmersionAtOfComplement_isLocalDiffeomorphAt_comp [IsManifold J n P]
+theorem comp_isSubmersionAtOfComplement [IsManifold J n P]
     {k : N → P} {x : M} (hk : IsLocalDiffeomorphAt J J n k (f x))
     (h : IsSubmersionAtOfComplement F I J n f x) :
     IsSubmersionAtOfComplement F I J n (k ∘ f) x := by
@@ -161,11 +157,7 @@ theorem isSubmersionAtOfComplement_isLocalDiffeomorphAt_comp [IsManifold J n P]
     refine ⟨by rw [hkΘ hxΘ]; exact Θ.toPartialEquiv.map_source hxΘ, ?_⟩
     rw [hkΘ hxΘ]
     simpa [hkΘ hxΘ, Θ.toPartialEquiv.left_inv hxΘ] using h.mem_codChart_source
-  · refine OpenPartialHomeomorph.mem_maximalAtlas_of_contMDiffOn _ ?_ ?_
-    · exact (contMDiffOn_of_mem_maximalAtlas hχ).comp (Θ.symm.contMDiffOn.mono inter_subset_left)
-        fun y hy => hy.2
-    · exact Θ.contMDiffOn.comp ((contMDiffOn_symm_of_mem_maximalAtlas hχ).mono
-        inter_subset_left) fun y hy => hy.2
+  · exact Θ.symm.trans_mem_maximalAtlas hχ
   · -- On the shrunken chart `f` lands in the source of `Θ`, where `Θ⁻¹` cancels `k = Θ`.
     simp only [OpenPartialHomeomorph.extend_target, OpenPartialHomeomorph.restr_target,
       mem_inter_iff, mem_preimage] at hu
@@ -185,10 +177,10 @@ theorem isSubmersionAtOfComplement_isLocalDiffeomorphAt_comp [IsManifold J n P]
 
 /-- Postcomposing with a local diffeomorphism of the target preserves being a submersion at a
 point. -/
-theorem isSubmersionAt_isLocalDiffeomorphAt_comp [IsManifold J n P] {k : N → P} {x : M}
+theorem comp_isSubmersionAt [IsManifold J n P] {k : N → P} {x : M}
     (hk : IsLocalDiffeomorphAt J J n k (f x)) (h : IsSubmersionAt I J n f x) :
     IsSubmersionAt I J n (k ∘ f) x :=
-  (isSubmersionAtOfComplement_isLocalDiffeomorphAt_comp hk
+  (comp_isSubmersionAtOfComplement hk
     h.isSubmersionAtOfComplement_complement).isSubmersionAt
 
-end TauCeti
+end IsLocalDiffeomorphAt

@@ -5,10 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Geometry.Manifold.MFDeriv.NormedSpace
 public import TauCeti.Analysis.Complex.RootsOfUnity.Quotient
 public import TauCeti.Geometry.Manifold.LocalDiffeomorph.Basic
 public import TauCeti.Geometry.Manifold.LocalDiffeomorph.OpenSubset
+public import TauCeti.Geometry.Manifold.LocalDiffeomorph.Power
 
 /-!
 # The rotated disc as a Riemann surface, and the power map
@@ -21,10 +21,10 @@ biholomorphism (`TauCeti.isLocalDiffeomorph_coe_rootsOfUnityBall`).
 The quotient of the disc by the rotations has the coordinate `u ↦ u ^ m`
 (`TauCeti.rootsOfUnityBallQuotientHomeomorph`). Away from the centre this coordinate is a local
 biholomorphism (`TauCeti.isLocalDiffeomorphAt_coe_pow_rootsOfUnityBall`): by the inverse function
-theorem, since its derivative `m u ^ (m - 1)` does not vanish. The general statement for
-`w ↦ w ^ k` on any `RCLike` field is `TauCeti.isLocalDiffeomorphAt_pow`. At the centre `u ↦ u ^ m`
-vanishes to order `m` (Mathlib's `analyticOrderAt_centeredMonomial`), so for `m ≥ 2` it is not a
-local biholomorphism there.
+theorem, since its derivative `m u ^ (m - 1)` does not vanish. It is deduced from the general
+statement `TauCeti.isLocalDiffeomorphAt_pow` for `w ↦ w ^ k` on any `RCLike` field. At the
+centre `u ↦ u ^ m` vanishes to order `m` (Mathlib's `analyticOrderAt_centeredMonomial`), so for
+`m ≥ 2` it is not a local biholomorphism there.
 
 These are the local inputs for descending maps through the quotient of a family over the disc by
 the rotations, along the coordinate `t = u ^ m` of the quotient disc.
@@ -35,8 +35,6 @@ the rotations, along the coordinate `t = u ^ m` of the quotient disc.
   is a complex manifold, with the restricted charts of `ℂ`.
 * `TauCeti.isLocalDiffeomorph_coe_rootsOfUnityBall`: the inclusion of the disc into `ℂ` is a local
   biholomorphism.
-* `TauCeti.isLocalDiffeomorphAt_pow`: `w ↦ w ^ k` is a local diffeomorphism at every `w ≠ 0`,
-  for `k ≠ 0`.
 * `TauCeti.isLocalDiffeomorphAt_coe_pow_rootsOfUnityBall`: `u ↦ u ^ m` is a local biholomorphism
   from the disc to `ℂ` away from the centre.
 
@@ -79,23 +77,6 @@ instance rootsOfUnityBall.instLocallyCompactSpace (r : ℝ) :
 theorem isLocalDiffeomorph_coe_rootsOfUnityBall {n : ℕ∞ω} :
     IsLocalDiffeomorph 𝓘(ℂ) 𝓘(ℂ) n ((↑) : rootsOfUnityBall m r → ℂ) :=
   isLocalDiffeomorph_subtype_val (U := ⟨_, isOpen_rootsOfUnityBall r⟩)
-
-/-- **The power map is a local diffeomorphism away from `0`.** For `k ≠ 0` and `1 ≤ n`, the map
-`w ↦ w ^ k` of an `RCLike` field is a `C^n` local diffeomorphism at every `z ≠ 0`, since its
-derivative there is multiplication by the unit `k z ^ (k - 1)`. -/
-theorem isLocalDiffeomorphAt_pow {𝕂 : Type*} [RCLike 𝕂] {n : ℕ∞ω} (hn : 1 ≤ n) {k : ℕ}
-    (hk : k ≠ 0) {z : 𝕂} (hz : z ≠ 0) : IsLocalDiffeomorphAt 𝓘(𝕂) 𝓘(𝕂) n (· ^ k) z := by
-  have hc : (k * z ^ (k - 1) : 𝕂) ≠ 0 := mul_ne_zero (Nat.cast_ne_zero.2 hk) (pow_ne_zero _ hz)
-  refine isLocalDiffeomorphAt_of_mfderiv_eq (s := univ)
-    (e := ContinuousLinearEquiv.unitsEquivAut 𝕂 (Units.mk0 _ hc))
-    (contDiff_id.pow k).contMDiff.contMDiffOn isOpen_univ (mem_univ z)
-    BoundarylessManifold.isInteriorPoint hn ?_
-  -- The derivative of `w ↦ w ^ k` at `z` is multiplication by the unit `k z ^ (k - 1)`.
-  have h : ((ContinuousLinearEquiv.unitsEquivAut 𝕂 (Units.mk0 _ hc) : 𝕂 ≃L[𝕂] 𝕂) : 𝕂 →L[𝕂] 𝕂) =
-      ContinuousLinearMap.toSpanSingleton 𝕂 (k * z ^ (k - 1)) := by
-    ext
-    simp
-  exact h.trans (hasDerivAt_pow k z).hasFDerivAt.hasMFDerivAt.mfderiv.symm
 
 /-- The coordinate `u ↦ u ^ m` of the quotient of the rotated disc is holomorphic. -/
 theorem contMDiff_coe_pow_rootsOfUnityBall {n : ℕ∞ω} :
