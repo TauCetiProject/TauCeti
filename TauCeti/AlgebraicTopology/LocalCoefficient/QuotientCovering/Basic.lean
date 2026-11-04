@@ -1,7 +1,7 @@
 /-
 Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
-Authors: The Tau Ceti contributors
+Authors: The Tau Ceti contributors, Codex
 -/
 module
 
@@ -29,6 +29,8 @@ identifies it with `A`. This is the system of local coefficients of the bundle `
 
 * `IsQuotientCoveringMap.fiberRepresentation`: the permutation representation on the free module
   on a fibre.
+* `IsQuotientCoveringMap.fiberRepresentationIsoLeftRegular`: a choice of sheet identifies the
+  fibre representation with the left regular representation.
 * `IsQuotientCoveringMap.permutationRepFunctor`: these representations as a functor on the
   fundamental groupoid of the base.
 * `IsQuotientCoveringMap.associatedLocalSystem`: the local coefficient system associated to a
@@ -89,6 +91,41 @@ theorem fiberRepresentation_single (b : B) (g : G) (e : p ⁻¹' {b}) (r : k) :
     letI := hG.mulActionFiber b
     hG.fiberRepresentation k b g (Finsupp.single e r) = Finsupp.single (g • e) r := by
   simp [fiberRepresentation]
+
+end Permutation
+
+section Regular
+
+variable (k : Type u) [Ring k]
+
+/-- A choice of sheet identifies the permutation representation on a fibre with the regular
+representation. -/
+def fiberRepresentationIsoLeftRegular {x : B} (e : p ⁻¹' {x}) :
+    Rep.of (hG.fiberRepresentation k x) ≅ Rep.leftRegular k G := by
+  letI := hG.mulActionFiber x
+  refine Rep.mkIso (.mk (Finsupp.domLCongr (hG.fiberEquivGroup e) ≪≫ₗ
+    (MonoidAlgebra.coeffLinearEquiv k).symm) fun g ↦ ?_)
+  ext e' r
+  have he : hG.fiberEquivGroup e (g • e') = g * hG.fiberEquivGroup e e' := by
+    apply (hG.fiberEquivGroup_eq_iff e _ _).2
+    simp only [coe_mulActionFiber_smul, mul_smul, fiberEquivGroup_smul_self]
+  simp [fiberRepresentation_single, he]
+
+/-- The chosen-sheet identification sends the basis vector at `e'` to the group element
+carrying the chosen sheet to `e'`. -/
+-- Match before simplification changes the implicit representation carriers.
+@[simp↓]
+lemma fiberRepresentationIsoLeftRegular_hom_single {x : B} (e e' : p ⁻¹' {x})
+    (r : k) :
+    (fiberRepresentationIsoLeftRegular hG k e).hom.hom (Finsupp.single e' r) =
+      MonoidAlgebra.single (hG.fiberEquivGroup e e') r := by
+  simp [fiberRepresentationIsoLeftRegular]
+
+end Regular
+
+section Permutation
+
+variable (k : Type u) [Ring k]
 
 /-- The permutation representations of `G` on the free `k`-modules on the fibres of `p`, as a
 functor on the fundamental groupoid of `B`. A path class acts by the linear extension of
