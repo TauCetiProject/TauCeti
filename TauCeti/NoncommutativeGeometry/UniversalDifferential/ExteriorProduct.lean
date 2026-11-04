@@ -115,7 +115,7 @@ theorem exteriorProductCocycle_comm (φ : cyclicCocycles k A M p)
         TensorProduct.comm k M N ((exteriorProductCocycle φ ψ).val.val x) := by
   rw [exteriorProductCocycle_apply, exteriorProductCocycle_apply,
     cycleCharacter_gradedTensorHomOfMemZero_comm
-      (UniversalForms.isDGAlgebra k A) (UniversalForms.isDGAlgebra k B)]
+      (UniversalForms.isDGAlgebra k A).map_mem (UniversalForms.isDGAlgebra k B).map_mem]
   -- Reindexing the equal arities has no mathematical effect on the character.
   let d := dgTensorDifferential (R := k) (A := ⨁ n, UniversalForms k A n)
     (B := ⨁ n, UniversalForms k B n) (UniversalForms.grading k A) (UniversalForms.grading k B)

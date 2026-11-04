@@ -95,8 +95,10 @@ theorem dgTensorDifferential_tmul_of_mem {p : ℤ} {a : A} (ha : a ∈ 𝒜 p) (
   rw [gradedTensor_smul_tmul, negOnePow_smul_eq_negOnePowCast_smul (R := R),
     negOnePowCast_eq_intCast, one_mul]
 
-/-- The Koszul symmetry of the graded tensor product commutes with its differential. -/
-theorem dgTensorDifferential_comm (hA : IsDGAlgebra 𝒜 dA) (hB : IsDGAlgebra ℬ dB)
+/-- The Koszul symmetry of the graded tensor product commutes with its differential whenever
+the two factor maps have degree one. -/
+theorem dgTensorDifferential_comm (hA : ∀ {i a}, a ∈ 𝒜 i → dA a ∈ 𝒜 (i + 1))
+    (hB : ∀ {j b}, b ∈ ℬ j → dB b ∈ ℬ (j + 1))
     (x : 𝒜 ᵍ⊗[R] ℬ) :
     dgTensorDifferential ℬ 𝒜 dB dA (GradedTensorProduct.comm 𝒜 ℬ x) =
       GradedTensorProduct.comm 𝒜 ℬ (dgTensorDifferential 𝒜 ℬ dA dB x) := by
@@ -104,8 +106,8 @@ theorem dgTensorDifferential_comm (hA : IsDGAlgebra 𝒜 dA) (hB : IsDGAlgebra �
         (GradedTensorProduct.comm 𝒜 ℬ).toLinearMap =
       (GradedTensorProduct.comm 𝒜 ℬ).toLinearMap ∘ₗ dgTensorDifferential 𝒜 ℬ dA dB := by
     refine gradedTensor_linearMap_ext 𝒜 ℬ fun i j a ha b hb ↦ ?_
-    have hda : dA a ∈ 𝒜 (i + 1) := hA.map_mem ha
-    have hdb : dB b ∈ ℬ (j + 1) := hB.map_mem hb
+    have hda : dA a ∈ 𝒜 (i + 1) := hA ha
+    have hdb : dB b ∈ ℬ (j + 1) := hB hb
     simp only [LinearMap.comp_apply, AlgEquiv.toLinearMap_apply]
     rw [GradedTensorProduct.comm_coe_tmul_coe 𝒜 ℬ ⟨a, ha⟩ ⟨b, hb⟩,
       map_zsmul_unit, dgTensorDifferential_tmul_of_mem hb,

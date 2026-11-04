@@ -278,29 +278,35 @@ variable {A B : Type*} [NonUnitalSemiring A] [Module R A] [SMulCommClass R A A]
   {d₁ : Ω₁ →ₗ[R] Ω₁} {d₂ : Ω₂ →ₗ[R] Ω₂}
 
 /-- The form of a tensor-product cycle intertwines the ordinary flip on its arguments
-with the Koszul symmetry on the graded algebra of forms. -/
-theorem cycleForm_gradedTensorHomOfMemZero_comm (hd₁ : IsDGAlgebra 𝒜₁ d₁)
-    (hd₂ : IsDGAlgebra 𝒜₂ d₂) (n : ℕ) (x : Fin (n + 1) → A ⊗[R] B) :
+with the Koszul symmetry on the graded algebra of forms. Only degree-one homogeneity of the
+factor maps is required. -/
+theorem cycleForm_gradedTensorHomOfMemZero_comm
+    (hd₁ : ∀ {i a}, a ∈ 𝒜₁ i → d₁ a ∈ 𝒜₁ (i + 1))
+    (hd₂ : ∀ {j b}, b ∈ 𝒜₂ j → d₂ b ∈ 𝒜₂ (j + 1))
+    (n : ℕ) (x : Fin (n + 1) → A ⊗[R] B) :
     cycleForm (dgTensorDifferential 𝒜₂ 𝒜₁ d₂ d₁) (gradedTensorHomOfMemZero ρ₂ ρ₁ hρ₂ hρ₁) n
         (fun i ↦ TensorProduct.comm R A B (x i)) =
       GradedTensorProduct.comm 𝒜₁ 𝒜₂
         (cycleForm (dgTensorDifferential 𝒜₁ 𝒜₂ d₁ d₂)
           (gradedTensorHomOfMemZero ρ₁ ρ₂ hρ₁ hρ₂) n x) := by
-  simp [cycleForm_apply, gradedTensorHomOfMemZero_comm, dgTensorDifferential_comm hd₁ hd₂,
+  simp [cycleForm_apply, gradedTensorHomOfMemZero_comm, dgTensorDifferential_comm @hd₁ @hd₂,
     map_list_prod, List.map_ofFn, Function.comp_def]
 
 /-- Interchanging two cycles of dimensions `p` and `q` interchanges the coefficient
 factors of their character and contributes the sign `(-1)^(pq)`. This identity holds before
-imposing closedness or the graded-trace laws on the two functionals. -/
-theorem cycleCharacter_gradedTensorHomOfMemZero_comm (hd₁ : IsDGAlgebra 𝒜₁ d₁)
-    (hd₂ : IsDGAlgebra 𝒜₂ d₂) (τ₁ : Ω₁ →ₗ[R] M) (τ₂ : Ω₂ →ₗ[R] N)
+imposing closedness or the graded-trace laws on the two functionals; the factor maps need only
+have degree one. -/
+theorem cycleCharacter_gradedTensorHomOfMemZero_comm
+    (hd₁ : ∀ {i a}, a ∈ 𝒜₁ i → d₁ a ∈ 𝒜₁ (i + 1))
+    (hd₂ : ∀ {j b}, b ∈ 𝒜₂ j → d₂ b ∈ 𝒜₂ (j + 1))
+    (τ₁ : Ω₁ →ₗ[R] M) (τ₂ : Ω₂ →ₗ[R] N)
     (p q n : ℕ) (x : Fin (n + 1) → A ⊗[R] B) :
     cycleCharacter (dgTensorDifferential 𝒜₂ 𝒜₁ d₂ d₁) (gradedTensorTrace 𝒜₂ 𝒜₁ τ₂ τ₁ q p)
         (gradedTensorHomOfMemZero ρ₂ ρ₁ hρ₂ hρ₁) n (fun i ↦ TensorProduct.comm R A B (x i)) =
       ((p : ℤ) * q).negOnePow • TensorProduct.comm R M N
         (cycleCharacter (dgTensorDifferential 𝒜₁ 𝒜₂ d₁ d₂) (gradedTensorTrace 𝒜₁ 𝒜₂ τ₁ τ₂ p q)
           (gradedTensorHomOfMemZero ρ₁ ρ₂ hρ₁ hρ₂) n x) := by
-  simp only [cycleCharacter_apply, cycleForm_gradedTensorHomOfMemZero_comm hd₁ hd₂,
+  simp only [cycleCharacter_apply, cycleForm_gradedTensorHomOfMemZero_comm @hd₁ @hd₂,
     gradedTensorTrace_comm]
 
 end Symmetry
