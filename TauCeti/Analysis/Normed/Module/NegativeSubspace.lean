@@ -42,7 +42,9 @@ through the space of negative subspaces. The straight-line contraction acts on f
 the graph of `A`, the image of its contraction at time `t` is the graph of `t • A`
 (`ContinuousLinearMap.range_negativeContraction`). It stays negative for `|t| ≤ 1`
 (`ContinuousLinearMap.norm_snd_negativeContraction_lt`) and joins `L` to the frame
-`inl ∘ fst ∘ L` of `E × 0`.
+`inl ∘ fst ∘ L` of `E × 0`. Hence `det (fst ∘ L) > 0` exactly when `L` can be moved through
+negative frames to a positively oriented frame of `E × 0`
+(`ContinuousLinearMap.det_fst_comp_pos_iff_exists_path_of_norm_snd_lt`).
 
 ## References
 
@@ -158,6 +160,26 @@ theorem norm_snd_negativeContraction_lt (L : E →L[ℝ] E × F)
     ‖(L.negativeContraction t u).2‖ < ‖(L.negativeContraction t u).1‖ := by
   rw [negativeContraction_apply, norm_smul, Real.norm_eq_abs]
   exact (mul_le_of_le_one_left (norm_nonneg _) ht).trans_lt (hL u hu)
+
+/-- **Orientation of a negative frame.** A frame `L₀` whose nonzero values lie strictly inside
+the negative cone has negative block of positive determinant exactly when it can be moved,
+through such frames, to a frame `inl ∘ B` of `E × 0` with `det B > 0`. The straight-line
+contraction gives such a path, with `B = fst ∘ L₀`. -/
+theorem det_fst_comp_pos_iff_exists_path_of_norm_snd_lt [FiniteDimensional ℝ E]
+    (L₀ : E →L[ℝ] E × F) (hL₀ : ∀ u, u ≠ 0 → ‖(L₀ u).2‖ < ‖(L₀ u).1‖) :
+    0 < ((fst ℝ E F).comp L₀).det ↔
+      ∃ (L : C(unitInterval, E →L[ℝ] E × F)) (B : E →L[ℝ] E),
+        L 0 = L₀ ∧ L 1 = (inl ℝ E F).comp B ∧
+        (∀ t u, u ≠ 0 → ‖(L t u).2‖ < ‖(L t u).1‖) ∧ 0 < B.det := by
+  constructor
+  · intro hdet
+    refine ⟨⟨fun t ↦ L₀.negativeContraction (1 - t), by fun_prop⟩, (fst ℝ E F).comp L₀,
+      by simp, by simp, fun t u hu ↦ L₀.norm_snd_negativeContraction_lt hL₀ ?_ hu, hdet⟩
+    rw [abs_le]
+    constructor <;> linarith [t.2.1, t.2.2]
+  · rintro ⟨L, B, h₀, h₁, hL, hB⟩
+    rwa [← h₀, det_fst_comp_pos_iff_of_norm_snd_lt L.continuous hL 0 1, h₁, ← comp_assoc,
+      fst_comp_inl, id_comp]
 
 end ContinuousLinearMap
 

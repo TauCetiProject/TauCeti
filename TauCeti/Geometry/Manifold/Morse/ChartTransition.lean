@@ -157,17 +157,7 @@ theorem det_polarFactor_fst_fderiv_transition_inl_eq_one_iff [FiniteDimensional 
   set L₀ := (fderiv ℝ (fun w ↦ ψ₀ (ψ₁.symm w)) 0).comp (ContinuousLinearMap.inl ℝ E F)
   have hneg (u : E) (hu : u ≠ 0) : ‖(L₀ u).2‖ < ‖(L₀ u).1‖ := by
     simpa [L₀] using ψ₀.norm_snd_fderiv_transition_lt ψ₁ hn hx₀ hx₁ hψ₀ hψ₁ hf₀ hf₁ hu
-  rw [ContinuousLinearMap.det_polarFactor_eq_one_iff]
-  constructor
-  · intro hdet
-    refine ⟨⟨fun t ↦ L₀.negativeContraction (1 - t), by fun_prop⟩,
-      (ContinuousLinearMap.fst ℝ E F).comp L₀, by simp, by simp, fun t u hu ↦ ?_, hdet⟩
-    refine L₀.norm_snd_negativeContraction_lt hneg ?_ hu
-    rw [abs_le]
-    constructor <;> linarith [t.2.1, t.2.2]
-  · rintro ⟨L, B, h₀, h₁, hL, hB⟩
-    rwa [← h₀, ContinuousLinearMap.det_fst_comp_pos_iff_of_norm_snd_lt L.continuous hL 0 1, h₁,
-      ← ContinuousLinearMap.comp_assoc, ContinuousLinearMap.fst_comp_inl,
-      ContinuousLinearMap.id_comp]
+  rw [ContinuousLinearMap.det_polarFactor_eq_one_iff,
+    L₀.det_fst_comp_pos_iff_exists_path_of_norm_snd_lt hneg]
 
 end PartialDiffeomorph
