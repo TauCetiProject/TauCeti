@@ -472,6 +472,30 @@ theorem mkQuotient_comp_geckWeightTorusIntegralCoordinateMap :
   rw [geckWeightTorusIntegralCoordinateMap_def]
   exact mkQuotient_comp_kostantWeightTorusToralCoordinateMap _ _ _ _ _ _ _ _
 
+/-- Pulling back a torus point along the integral Geck weight-torus coordinate map realizes
+that point as the corresponding matrix-valued Geck torus point. -/
+@[simp]
+theorem geckCoordinatePointMulEquiv_comp_geckWeightTorusIntegralCoordinateMap
+    (B : Type w) [CommRing B]
+    (q : WithConv (MonoidAlgebra ℤ (Multiplicative (Fin t.rank →₀ ℤ)) →ₐ[ℤ]
+      (CommAlgCat.of ℤ B))) :
+    t.geckCoordinatePointMulEquiv ht B
+        (WithConv.toConv
+          (q.ofConv.comp (t.geckWeightTorusIntegralCoordinateMap ht).hom.toAlgHom)) =
+      t.geckWeightTorusPoints ht B (SplitTorus.pointsMulEquiv q) := by
+  apply Subtype.ext
+  rw [coe_geckCoordinatePointMulEquiv, coe_geckWeightTorusPoints,
+    CommHopfAlgCat.quotientPointsHom_apply]
+  simp only [AlgHom.comp_assoc]
+  rw [← BialgHom.comp_toAlgHom, ← CommHopfAlgCat.hom_comp,
+    mkQuotient_comp_geckWeightTorusIntegralCoordinateMap]
+  rw [UniversalEnvelopingAlgebra.kostantTorusMatrix_apply]
+  have h := GeneralLinear.pointsMulEquiv_mapPointsFunctor_weightTorusCoordinateMap
+    (t.geckWeightFin ht) (CommAlgCat.of ℤ B) q
+  rw [CommHopfAlgCat.Hom.mapPointsFunctor_app_apply
+    (GeneralLinear.weightTorusCoordinateMap (t.geckWeightFin ht)) (CommAlgCat.of ℤ B) q] at h
+  exact h
+
 /-- The underlying bialgebra map of the integral Geck weight torus factors the diagonal
 weight representation through the Geck defining ideal. -/
 theorem geckWeightTorusIntegralCoordinateMap_hom_comp_mkBialgHom :
