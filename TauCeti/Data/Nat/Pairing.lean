@@ -26,12 +26,6 @@ namespace Nat
 
 open Function
 
-/-- `Nat.pair` is strictly increasing in its first argument. -/
-theorem strictMono_pair_left (b : ℕ) : StrictMono (pair · b) := fun _ _ => pair_lt_pair_left b
-
-/-- `Nat.pair` is strictly increasing in its second argument. -/
-theorem strictMono_pair_right (a : ℕ) : StrictMono (pair a) := fun _ _ => pair_lt_pair_right a
-
 /-- The `e`-th column `{n | n.unpair.2 = e}` of `Nat.pair`, consisting of all `Nat.pair x e`. -/
 def pairColumn (e : ℕ) : Set ℕ := {n | n.unpair.2 = e}
 
@@ -53,8 +47,8 @@ theorem pairColumn_eq_range_pair (e : ℕ) : e.pairColumn = Set.range (pair · e
 
 /-- Every member of `e.pairColumn` is at least `Nat.pair 0 e`. -/
 theorem pair_zero_le_of_mem_pairColumn {e n : ℕ} (h : n ∈ e.pairColumn) : pair 0 e ≤ n := by
-  obtain rfl := mem_pairColumn.mp h
-  exact ((strictMono_pair_left _).monotone (Nat.zero_le _)).trans_eq (pair_unpair n)
+  rw [← pair_unpair n, mem_pairColumn.mp h]
+  exact StrictMono.monotone (f := (pair · e)) (fun _ _ => pair_lt_pair_left e) (Nat.zero_le _)
 
 /-- Every member of `e.pairColumn` is at least `e`. -/
 theorem le_of_mem_pairColumn {e n : ℕ} (h : n ∈ e.pairColumn) : e ≤ n :=
@@ -74,7 +68,8 @@ theorem pairwise_disjoint_pairColumn : Pairwise (Disjoint on pairColumn) :=
 
 /-- Every pairing column is infinite. -/
 theorem infinite_pairColumn (e : ℕ) : e.pairColumn.Infinite :=
-  pairColumn_eq_range_pair e ▸ Set.infinite_range_of_injective (strictMono_pair_left e).injective
+  pairColumn_eq_range_pair e ▸ Set.infinite_range_of_injective
+    (StrictMono.injective fun _ _ => pair_lt_pair_left e)
 
 /-- The least member of `e.pairColumn` at or above `b`, found by searching up to `Nat.pair b e`. -/
 def leastInPairColumn (e b : ℕ) : ℕ :=
