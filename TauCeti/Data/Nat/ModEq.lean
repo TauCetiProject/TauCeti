@@ -6,9 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Data.Nat.ModEq
+import Mathlib.Tactic.Ring
 
 /-!
-# Distinct residues modulo `p`
+# Natural-number congruences
 
 Two distinct residues `a, b < p` never differ by a multiple of `p`: if `b ≤ p * m + a`, so that
 the natural subtraction does not truncate, the difference `p * m + a - b` is not divisible by `p`.
@@ -21,6 +22,8 @@ with `ν i < p`. Likewise, since `(p - 1) a ≡ -a` modulo `p`, two residues `a,
 * `Nat.not_dvd_mul_add_sub`: for distinct `a, b < p` with `b ≤ p * m + a`, `p` does not divide
   `p * m + a - b`.
 * `Nat.eq_of_dvd_sub_one_mul_add`: for residues `a, b < p`, `p ∣ (p - 1) * a + b` forces `b = a`.
+* `TauCeti.sq_sub_one_eq_four_mul_of_mod_four_eq_three`: for `q ≡ 3 (mod 4)`, factor `q² - 1`
+  with the factor `4` made explicit.
 -/
 
 public section
@@ -46,3 +49,17 @@ theorem eq_of_dvd_sub_one_mul_add {p a b : ℕ} (ha : a < p) (hb : b < p)
   simpa [Nat.mod_eq_of_lt ha, Nat.mod_eq_of_lt hb] using this
 
 end Nat
+
+namespace TauCeti
+
+/-- For `q ≡ 3 (mod 4)`, factor `q² - 1` with the factor `4` made explicit. -/
+theorem sq_sub_one_eq_four_mul_of_mod_four_eq_three {q : ℕ} (hq : q % 4 = 3) :
+    q ^ 2 - 1 = (4 * (q - 1)) * ((q + 1) / 4) := by
+  rw [← Nat.one_pow 2, Nat.sq_sub_sq, Nat.one_pow]
+  have h4 : 4 ∣ q + 1 := by omega
+  calc
+    (q + 1) * (q - 1) = (4 * ((q + 1) / 4)) * (q - 1) := by
+      rw [Nat.mul_div_cancel' h4]
+    _ = (4 * (q - 1)) * ((q + 1) / 4) := by ring
+
+end TauCeti
