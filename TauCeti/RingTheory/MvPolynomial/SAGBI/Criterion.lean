@@ -193,8 +193,7 @@ theorem exists_sub_mem_span_of_mem_toricIdeal {u v : J → ι →₀ ℕ}
     refine Submodule.sum_mem _ fun j _ ↦ ?_
     rw [← mul_sub, (h j).as_sum, Finset.sum_mul]
     refine Submodule.sum_mem _ fun x hx ↦ ?_
-    rw [show monomial x ((h j).coeff x) = (h j).coeff x • monomial x (1 : R) by
-      rw [smul_monomial, smul_eq_mul, mul_one], smul_mul_assoc]
+    rw [← mul_one ((h j).coeff x), ← smul_eq_mul _ 1, ← smul_monomial, smul_mul_assoc]
     exact Submodule.smul_mem _ _ (Submodule.subset_span ⟨x, j, hh j x hx, rfl⟩)
   -- An exponent of `h j * Q j` is a sum `x + y` with `A x + A (u j) = δ` and `A y ≺ A (u j)`.
   obtain ⟨j, -, hj⟩ := Finset.mem_biUnion.1 (support_sum hw)
@@ -236,7 +235,7 @@ theorem exists_sub_mem_span_of_coeff_aeval_eq_zero (hc : ∀ i, m.Monic (c i))
     (weightedHomogeneousComponent_mem_toricIdeal hc hPδ hδ) fun w hw ↦ by
       rw [← hA]
       exact weightedHomogeneousComponent_isWeightedHomogeneous _ _ (mem_support_iff.1 hw)
-  refine ⟨P - P₀ + P₁, by rwa [show P - (P - P₀ + P₁) = P₀ - P₁ by abel], fun w hw ↦ ?_⟩
+  refine ⟨P - P₀ + P₁, by rwa [sub_add_eq_sub_sub, sub_sub_cancel], fun w hw ↦ ?_⟩
   rcases Finset.mem_union.1 (support_add hw) with hw | hw
   · rw [mem_support_iff, coeff_sub, hP₀def, coeff_weightedHomogeneousComponent, hA] at hw
     have hwδ : A w ≠ δ := fun h ↦ hw (by simp [h])
