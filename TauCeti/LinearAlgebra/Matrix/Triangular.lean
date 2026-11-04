@@ -18,7 +18,8 @@ consumers keep needing: on the diagonal, a product of triangular matrices multip
 entrywise, because `∑ k, A i k * B k i` has a single surviving term — and consequences of
 that, such as the diagonal of an inverse. It also proves uniqueness of a lower-triangular Gram
 factor with positive diagonal, defines upper-unitriangular matrices, and proves that strictly
-upper-triangular matrices are nilpotent.
+upper-triangular matrices are nilpotent. A nonzero submodule invariant under a family of strictly
+upper-triangular matrices contains a nonzero vector annihilated by the whole family.
 
 The diagonal results are stated directly for `Matrix.IsUpperTriangular` and
 `Matrix.IsLowerTriangular` rather than through membership in the Borel subalgebra, since there is
@@ -421,6 +422,47 @@ theorem IsUpperUnitriangular.isNilpotent_sub_one {T p : Type*} [Ring T] [Fintype
     _root_.IsNilpotent (M - 1) :=
   isNilpotent_of_isUpperTriangular_of_diag_eq_zero
     hM.isUpperTriangular_sub_one hM.sub_one_apply_diag
+
+/-- A nonzero submodule invariant under strictly upper-triangular matrices contains a nonzero
+vector annihilated by all of them. Neither a field nor commutation of the matrices is required. -/
+theorem exists_ne_zero_forall_mulVec_eq_zero_of_invariant_submodule
+    {S ι κ : Type*} [Semiring S] [Fintype ι] [LinearOrder ι]
+    (A : κ → Matrix ι ι S) (htri : ∀ j, (A j).IsUpperTriangular)
+    (hdiag : ∀ j a, A j a a = 0) (N : Submodule S (ι → S)) (hN : N ≠ ⊥)
+    (hstable : ∀ j v, v ∈ N → A j *ᵥ v ∈ N) :
+    ∃ v ∈ N, v ≠ 0 ∧ ∀ j, A j *ᵥ v = 0 := by
+  classical
+  have htop (v : ι → S) (hv : v ≠ 0) :
+      ∃ a, v a ≠ 0 ∧ ∀ b, a < b → v b = 0 := by
+    have hs : {a | v a ≠ 0}.Nonempty := by
+      simpa only [Set.nonempty_def, Set.mem_ofPred_eq, ne_eq, funext_iff, Pi.zero_apply,
+        not_forall] using hv
+    obtain ⟨a, ha, hmax⟩ := (Set.toFinite {a | v a ≠ 0}).exists_maximal hs
+    exact ⟨a, ha, fun b hab ↦ by
+      by_contra hb
+      exact hab.not_ge (hmax hb hab.le)⟩
+  let P : ι → Prop := fun a ↦ ∃ v ∈ N, v a ≠ 0 ∧ ∀ b, a < b → v b = 0
+  have hP : ∃ a, P a := by
+    obtain ⟨v, hv, hv0⟩ := N.ne_bot_iff.mp hN
+    obtain ⟨a, ha, htop⟩ := htop v hv0
+    exact ⟨a, v, hv, ha, htop⟩
+  obtain ⟨a, ha, hmin⟩ := (Set.toFinite {a | P a}).exists_minimal hP
+  obtain ⟨v, hv, hva, hsupport⟩ := ha
+  refine ⟨v, hv, fun h ↦ hva (congrFun h a), fun j ↦ ?_⟩
+  by_contra hzero
+  obtain ⟨b, hb, htop'⟩ := htop (A j *ᵥ v) hzero
+  have hvanish (c : ι) (hac : a ≤ c) : (A j *ᵥ v) c = 0 := by
+    apply Finset.sum_eq_zero
+    intro d _
+    by_cases hcd : d ≤ c
+    · have hentry : A j c d = 0 := by
+        obtain hdc | rfl := hcd.lt_or_eq
+        · exact htri j hdc
+        · exact hdiag j d
+      exact mul_eq_zero_of_left hentry _
+    · exact mul_eq_zero_of_right _ (hsupport d (hac.trans_lt (lt_of_not_ge hcd)))
+  have hba : b < a := lt_of_not_ge fun hab ↦ hb (hvanish b hab)
+  exact hba.not_ge (hmin ⟨A j *ᵥ v, hstable j v hv, hb, htop'⟩ hba.le)
 
 /-- Replacing the column `a` of both factors of a product leaves every earlier column `c < a` of
 the product unchanged, when the right factor is upper triangular. -/
