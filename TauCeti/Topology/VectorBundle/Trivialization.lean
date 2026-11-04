@@ -24,7 +24,10 @@ linear equivalence `e.continuousLinearEquivAt 𝕜 b`, with inverse its symmetri
 `Bundle.Trivialization.homeomorphTrivial_symm_apply_eq_continuousLinearEquivAt`).
 
 More generally, any linear trivialization sends a vector over its base set to a nonzero vector
-exactly when the vector is nonzero (`Bundle.Trivialization.snd_apply_ne_zero_iff`).
+exactly when the vector is nonzero (`Bundle.Trivialization.snd_apply_ne_zero_iff`). For two linear
+trivializations whose base sets contain `b`, the fibre equivalence `E_b ≃ F` of the second is that
+of the first followed by the coordinate change from the first to the second
+(`Bundle.Trivialization.continuousLinearEquivAt_trans_coordChangeL`).
 -/
 
 public section
@@ -90,5 +93,17 @@ theorem homeomorphTrivial_symm_apply_eq_continuousLinearEquivAt (he : e.baseSet 
       ((e.continuousLinearEquivAt 𝕜 w.proj (he ▸ Set.mem_univ _)).symm w.2) := by
   rw [Homeomorph.symm_apply_eq, homeomorphTrivial_apply_eq_continuousLinearEquivAt 𝕜]
   exact congrArg (TotalSpace.mk' F w.proj) (ContinuousLinearEquiv.apply_symm_apply _ _).symm
+
+variable (e' : Trivialization F (π F E)) [e'.IsLinear 𝕜] {b : B}
+
+/-- **The fibre equivalences of two trivializations differ by the coordinate change**: for linear
+trivializations `e` and `e'` whose base sets contain `b`, the equivalence `E_b ≃ F` given by `e`,
+followed by the coordinate change from `e` to `e'`, is the one given by `e'`. -/
+theorem continuousLinearEquivAt_trans_coordChangeL (hb : b ∈ e.baseSet) (hb' : b ∈ e'.baseSet) :
+    (e.continuousLinearEquivAt 𝕜 b hb).trans (e.coordChangeL 𝕜 e' b) =
+      e'.continuousLinearEquivAt 𝕜 b hb' := by
+  rw [← comp_continuousLinearEquivAt_eq_coord_change e e' ⟨hb, hb'⟩]
+  ext x
+  simp only [ContinuousLinearEquiv.trans_apply, ContinuousLinearEquiv.symm_apply_apply]
 
 end Bundle.Trivialization
