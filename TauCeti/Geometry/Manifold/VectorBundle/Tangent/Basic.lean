@@ -718,6 +718,12 @@ theorem mfderiv_subtype_val {U : Opens M} (x : U) :
       (I.uniqueDiffOn.uniqueDiffWithinAt hxRange)]
   rfl
 
+/-- The differential of an open-submanifold inclusion is injective. -/
+theorem mfderiv_subtype_val_injective {U : Opens M} (x : U) :
+    Function.Injective (mfderiv I I (Subtype.val : U → M) x) := by
+  rw [mfderiv_subtype_val]
+  exact (tangentSpaceOpenEquiv (I := I) x).injective
+
 /-- The tangent map of an open submanifold's inclusion identifies its tangent vectors with
 ambient tangent vectors through `tangentSpaceOpenEquiv`. -/
 @[simp]
