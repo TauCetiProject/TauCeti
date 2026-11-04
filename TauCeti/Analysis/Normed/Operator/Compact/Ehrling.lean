@@ -31,6 +31,11 @@ base this replaces the lower-order Sobolev norm by any weaker norm of the Sobole
 No completeness is assumed, the domain and the intermediate space may be seminormed, and the
 scalar field is any nontrivially normed field.
 
+The proof adapts the shell normalization of
+`ContinuousLinearMap.exists_pos_mul_norm_le_of_compact_estimate` in
+`TauCeti.Analysis.Normed.Operator.Compact.Estimate`: a failing sequence is rescaled so that its
+images under the compact operator lie in a fixed shell.
+
 ## Main declarations
 
 * `IsCompactOperator.exists_norm_le_mul_norm_add_mul_norm`: Ehrling's inequality.
