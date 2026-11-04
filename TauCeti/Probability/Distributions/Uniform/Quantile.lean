@@ -6,21 +6,30 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Probability.Distributions.Uniform.Basic
-public import TauCeti.Probability.Quantile
+public import TauCeti.Probability.Distributions.Uniform.Finite
+public import TauCeti.Probability.Quantile.Finite
 
 /-!
-# Quantiles of interval-uniform laws
+# Quantiles of uniform laws
 
 This file computes the lower quantile of the uniform probability measure on a nondegenerate real
 interval. At an interior probability level `u`, the quantile is the affine interpolation
 `a + (b - a) * u`. Consequently the quantiles tend to the two interval endpoints as the level
 tends to zero from above or to one from below.
 
+For finite uniform sampling with arbitrary real labels, quantiles are the least distinct labels
+whose cumulative input counts reach the requested level, retaining multiplicities of repeated
+labels. Their endpoint limits are the smallest and largest attained labels.
+
 ## Main results
 
 * `TauCeti.Probability.quantile_uniformMeasure` gives the explicit quantile formula;
 * `TauCeti.Probability.tendsto_quantile_uniformMeasure_nhdsGT_zero` and
-  `TauCeti.Probability.tendsto_quantile_uniformMeasure_nhdsLT_one` give its endpoint limits.
+  `TauCeti.Probability.tendsto_quantile_uniformMeasure_nhdsLT_one` give its endpoint limits;
+* `Finset.quantile_map_uniformOn_finset_eq_iff` and `Finset.quantile_map_uniformOn_finset`
+  characterize and compute finite uniform quantiles by cumulative counts;
+* `Finset.tendsto_quantile_map_uniformOn_finset_nhdsGT_zero` and
+  `Finset.tendsto_quantile_map_uniformOn_finset_nhdsLT_one` give the finite uniform endpoint limits.
 -/
 
 public section
@@ -85,3 +94,116 @@ theorem tendsto_quantile_uniformMeasure_nhdsLT_one (hab : a < b) :
   exact (quantile_uniformMeasure hab hu).symm
 
 end TauCeti.Probability
+
+namespace TauCeti.Probability
+
+variable {α : Type*} [MeasurableSpace α] [MeasurableSingletonClass α]
+
+/-- A real number is the quantile of a uniformly sampled finite collection of supplied labels
+exactly when the level strictly exceeds the proportion of smaller labels and is at most the
+proportion of labels no larger than it. This is the cumulative-crossing description obtained by
+sorting the distinct labels and aggregating equal ones. -/
+theorem quantile_map_uniformOn_univ_eq_iff [Fintype α] [Nonempty α] (label : α → ℝ)
+    {u x : ℝ} (hu : u ∈ Set.Ioo 0 1) :
+    ((uniformOn (Set.univ : Set α)).map label).quantile u = x ↔
+      ((Finset.univ.filter fun i ↦ label i < x).card : ℝ) / Fintype.card α < u ∧
+        u ≤ ((Finset.univ.filter fun i ↦ label i ≤ x).card : ℝ) / Fintype.card α := by
+  rw [Measure.quantile_map_finite_eq_iff _ label hu]
+  have hpreimage_lt : label ⁻¹' Set.Iio x =
+      (Finset.univ.filter fun i ↦ label i < x : Finset α) := by
+    ext i
+    simp
+  have hpreimage_le : label ⁻¹' Set.Iic x =
+      (Finset.univ.filter fun i ↦ label i ≤ x : Finset α) := by
+    ext i
+    simp
+  rw [hpreimage_lt, hpreimage_le, Finset.uniformOn_univ_real_finset,
+    Finset.uniformOn_univ_real_finset]
+
+/-- As the level tends to zero from above, labelled finite-uniform quantiles tend to a least
+supplied label. -/
+theorem tendsto_quantile_map_uniformOn_univ_nhdsGT_zero [Finite α] [Nonempty α]
+    (label : α → ℝ) (i : α) (hmin : ∀ j, label i ≤ label j) :
+    Tendsto ((uniformOn (Set.univ : Set α)).map label).quantile (𝓝[>] 0)
+      (𝓝 (label i)) := by
+  let _ := Fintype.ofFinite α
+  apply Measure.tendsto_quantile_map_finite_nhdsGT_zero
+    (uniformOn (Set.univ : Set α)) label i
+  · rw [measureReal_def, uniformOn_univ_apply_singleton]
+    simp only [ENNReal.toReal_inv, ENNReal.toReal_natCast]
+    exact inv_pos.mpr (Nat.cast_pos.mpr Fintype.card_pos)
+  · exact fun j _ ↦ hmin j
+
+/-- As the level tends to one from below, labelled finite-uniform quantiles tend to a greatest
+supplied label. -/
+theorem tendsto_quantile_map_uniformOn_univ_nhdsLT_one [Finite α] [Nonempty α]
+    (label : α → ℝ) (i : α) (hmax : ∀ j, label j ≤ label i) :
+    Tendsto ((uniformOn (Set.univ : Set α)).map label).quantile (𝓝[<] 1)
+      (𝓝 (label i)) := by
+  let _ := Fintype.ofFinite α
+  apply Measure.tendsto_quantile_map_finite_nhdsLT_one
+    (uniformOn (Set.univ : Set α)) label i
+  · rw [measureReal_def, uniformOn_univ_apply_singleton]
+    simp only [ENNReal.toReal_inv, ENNReal.toReal_natCast]
+    exact inv_pos.mpr (Nat.cast_pos.mpr Fintype.card_pos)
+  · exact fun j _ ↦ hmax j
+
+end TauCeti.Probability
+
+namespace Finset
+
+variable {α : Type*} [MeasurableSpace α] [MeasurableSingletonClass α]
+
+open Classical in
+/-- The uniform quantile is the least distinct label whose cumulative input count reaches the
+requested fraction of the sample size. This retains multiplicities of repeated labels. -/
+theorem quantile_map_uniformOn_finset_eq_iff (s : Finset α) (hs : s.Nonempty) (f : α → ℝ)
+    {u x : ℝ} (hu : u ∈ Set.Ioo 0 1) :
+    ((uniformOn (s : Set α)).map f).quantile u = x ↔
+      IsLeast {y | y ∈ s.image f ∧
+        u ≤ ((s.filter fun i ↦ f i ≤ y).card : ℝ) / s.card} x := by
+  let _ := isProbabilityMeasure_uniformOn s.finite_toSet hs
+  simpa only [s.cdf_map_uniformOn_finset hs] using
+    ((uniformOn (s : Set α)).map f).quantile_eq_iff_of_ae_mem_finset
+      (s.ae_mem_image_map_uniformOn_finset f) hu
+
+open Classical in
+/-- Compute a finite uniform quantile by a minimum over distinct labels, with cumulative counts
+including every input carrying each label. -/
+theorem quantile_map_uniformOn_finset (s : Finset α) (hs : s.Nonempty) (f : α → ℝ)
+    {u : ℝ} (hu : u ∈ Set.Ioo 0 1) :
+    ((uniformOn (s : Set α)).map f).quantile u =
+      ((s.image f).filter fun y ↦
+        u ≤ ((s.filter fun i ↦ f i ≤ y).card : ℝ) / s.card).min' (by
+          let _ := isProbabilityMeasure_uniformOn s.finite_toSet hs
+          simpa only [s.cdf_map_uniformOn_finset hs] using
+            ((uniformOn (s : Set α)).map f).nonempty_filter_le_cdf
+              (s.ae_mem_image_map_uniformOn_finset f) hu) := by
+  let _ := isProbabilityMeasure_uniformOn s.finite_toSet hs
+  simpa only [s.cdf_map_uniformOn_finset hs] using
+    ((uniformOn (s : Set α)).map f).quantile_eq_min'_of_ae_mem_finset
+      (s.ae_mem_image_map_uniformOn_finset f) hu
+
+open Filter Topology in
+/-- Uniform quantiles tend to the smallest attained label as the level decreases to zero. -/
+theorem tendsto_quantile_map_uniformOn_finset_nhdsGT_zero
+    (s : Finset α) (hs : s.Nonempty) (f : α → ℝ) :
+    Tendsto (fun u ↦ (((uniformOn (s : Set α)).map f).quantile u : EReal))
+      (𝓝[>] 0) (𝓝 ((s.image f).min' (hs.image f) : EReal)) := by
+  let _ := isProbabilityMeasure_uniformOn s.finite_toSet hs
+  apply Measure.tendsto_quantile_nhdsGT_zero_of_ae_mem_finset _
+    (s.ae_mem_image_map_uniformOn_finset f)
+  exact s.map_uniformOn_finset_singleton_ne_zero f (min'_mem _ _)
+
+open Filter Topology in
+/-- Uniform quantiles tend to the largest attained label as the level increases to one. -/
+theorem tendsto_quantile_map_uniformOn_finset_nhdsLT_one
+    (s : Finset α) (hs : s.Nonempty) (f : α → ℝ) :
+    Tendsto (fun u ↦ (((uniformOn (s : Set α)).map f).quantile u : EReal))
+      (𝓝[<] 1) (𝓝 ((s.image f).max' (hs.image f) : EReal)) := by
+  let _ := isProbabilityMeasure_uniformOn s.finite_toSet hs
+  apply Measure.tendsto_quantile_nhdsLT_one_of_ae_mem_finset _
+    (s.ae_mem_image_map_uniformOn_finset f)
+  exact s.map_uniformOn_finset_singleton_ne_zero f (max'_mem _ _)
+
+end Finset
