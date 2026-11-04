@@ -24,7 +24,10 @@ affine opens `W ⊆ S` and `U ⊆ f⁻¹ W`, the quotient `Γ(X, U) ⧸ I(U)` is
 the restricted subscheme morphism (`TauCeti.flat_resLE_subschemeι_iff`).
 
 The ideal sheaf of a closed immersion pulled back along any pullback square is the inverse image
-of its ideal sheaf (`AlgebraicGeometry.Scheme.IdealSheafData.ker_eq_comap_of_isPullback`). In
+of its ideal sheaf (`AlgebraicGeometry.Scheme.IdealSheafData.ker_eq_comap_of_isPullback`), and
+the same holds for the ideal sheaf of any quasi-compact morphism pulled back along an open
+immersion
+(`AlgebraicGeometry.Scheme.IdealSheafData.ker_eq_comap_of_isPullback_of_isOpenImmersion`). In
 particular, for a section `s` of `f : X ⟶ S` which is a closed immersion, the ideal sheaf of its
 base change `T ⟶ X ×_S T` along `g : T ⟶ S` is the inverse image of the ideal sheaf of `s`
 (`CategoryTheory.SplitEpi.ker_pullback_section`), and the same holds for the product of the
@@ -102,6 +105,15 @@ the inverse image of the ideal sheaf of `i`. -/
 theorem ker_eq_comap_of_isPullback {P Y Z : Scheme.{u}} {i' : P ⟶ X} {g : P ⟶ Z} {f : X ⟶ Y}
     (i : Z ⟶ Y) [IsClosedImmersion i] (h : IsPullback i' g f i) : i'.ker = i.ker.comap f := by
   rw [← h.isoPullback_hom_fst, Scheme.Hom.ker_comp_of_isIso, ker_fst_of_isClosedImmersion]
+
+/-- **Ideal sheaves of quasi-compact morphisms restrict to opens.** If `f' : U ⟶ V` is the base
+change of a quasi-compact morphism `f : X ⟶ Y` along an open immersion `iV : V ⟶ Y`, then the
+ideal sheaf of `f'` is the inverse image of the ideal sheaf of `f`. -/
+theorem ker_eq_comap_of_isPullback_of_isOpenImmersion {U V Y : Scheme.{u}} {f : X ⟶ Y}
+    {f' : U ⟶ V} {iU : U ⟶ X} (iV : V ⟶ Y) [IsOpenImmersion iV] [QuasiCompact f]
+    (H : IsPullback f' iU iV f) : f'.ker = f.ker.comap iV := by
+  ext W : 2
+  rw [ideal_comap_of_isOpenImmersion, ker_ideal_of_isPullback_of_isOpenImmersion f f' iU iV H]
 
 /-- **Closed subschemes are stable under base change.** If `X' ⟶ X` is the base change of
 `X ⟶ S` along `S' ⟶ S`, then the closed subscheme of the inverse image `I.comap g`, as a scheme
