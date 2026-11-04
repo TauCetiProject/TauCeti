@@ -26,6 +26,8 @@ ring, the monic `X ^ n - C a` of degree `n` does not divide the geometric sum
 
 * `Polynomial.mem_rootSet_X_pow_sub_C`: root-set membership is an `n`-th power equation.
 * `Polynomial.splits_map_X_pow_two_sub_C`: a square root splits the quadratic binomial.
+* `Polynomial.map_X_pow_sub_C_eq_X_sub_C_pow`: in exponential characteristic `p`, a `p`-th root
+  `δ` of `a` makes `X ^ p - C a` the `p`-th power `(X - C δ) ^ p`.
 * `Polynomial.irreducible_X_sq_add_one`: `X ^ 2 + 1` is irreducible over an ordered field.
 * `Polynomial.not_X_pow_sub_C_dvd_geom_sum`: `X ^ n - C a` does not divide
   `1 + X + ⋯ + X ^ (n - 1)`.
@@ -67,12 +69,18 @@ theorem splits_map_X_pow_two_sub_C (hδ : δ ^ 2 = algebraMap F E a) :
   rw [hmap]
   exact (Splits.X_sub_C δ).mul (Splits.X_sub_C (-δ))
 
+/-- In exponential characteristic `p`, a `p`-th root `δ` of `a` in `E` makes `X ^ p - C a` a
+`p`-th power there: its image in `E[X]` is `(X - C δ) ^ p`. -/
+theorem map_X_pow_sub_C_eq_X_sub_C_pow (p : ℕ) [ExpChar E p] (hδ : δ ^ p = algebraMap F E a) :
+    ((X : F[X]) ^ p - C a).map (algebraMap F E) = (X - C δ) ^ p := by
+  rw [sub_pow_expChar, ← C_pow, hδ, Polynomial.map_sub, Polynomial.map_pow, map_X, map_C]
+
 end Splits
 
 /-- **`X ^ 2 + 1` is irreducible over an ordered field**: a square is never `-1`. -/
 theorem irreducible_X_sq_add_one (K : Type*) [Field K] [LinearOrder K]
     [IsStrictOrderedRing K] : Irreducible (X ^ 2 + 1 : K[X]) := by
-  have h := X_pow_sub_C_irreducible_of_prime Nat.prime_two (a := (-1 : K))
+  have h := _root_.irreducible_X_pow_sub_C_of_prime Nat.prime_two (a := (-1 : K))
     fun b hb ↦ by nlinarith [sq_nonneg b]
   simpa [sub_eq_add_neg] using h
 

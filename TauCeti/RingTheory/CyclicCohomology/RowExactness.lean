@@ -144,7 +144,7 @@ theorem one_sub_cyclicOperator_apply_cyclicRowHomotopy
     (φ : MultilinearMap R (fun _ : Fin (n + 1) ↦ A) M) :
     (1 - cyclicOperator R A M n) (cyclicRowHomotopy R A M n φ) =
       φ - cyclicAverage R A M n φ := by
-  simpa only [Module.End.mul_apply, LinearMap.sub_apply, Module.End.one_apply] using
+  simpa only [mul_apply_eq_comp, LinearMap.sub_apply, one_apply_eq_self] using
     LinearMap.congr_fun one_sub_cyclicOperator_mul_cyclicRowHomotopy φ
 
 /-- The cyclic norm surjects onto the cyclic cochains. -/
@@ -170,8 +170,8 @@ theorem range_one_sub_cyclicOperator_eq_ker_cyclicNorm :
       LinearMap.ker (cyclicNorm R A M n) := by
   apply le_antisymm
   · rintro _ ⟨φ, rfl⟩
-    simp only [LinearMap.mem_ker, LinearMap.sub_apply, Module.End.one_apply, map_sub]
-    rw [← Module.End.mul_apply, cyclicNorm_mul_cyclicOperator, sub_self]
+    simp only [LinearMap.mem_ker, LinearMap.sub_apply, one_apply_eq_self, map_sub]
+    rw [← mul_apply_eq_comp, cyclicNorm_mul_cyclicOperator, sub_self]
   · intro φ hφ
     refine ⟨cyclicRowHomotopy R A M n φ, ?_⟩
     rw [one_sub_cyclicOperator_apply_cyclicRowHomotopy, cyclicAverage_apply,

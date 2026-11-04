@@ -6,8 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Probability.Distributions.Beta
-public import TauCeti.Analysis.SpecialFunctions.EllipticIntegral.Gauss
-import Mathlib.MeasureTheory.Function.JacobianOneDim
+public import TauCeti.Analysis.SpecialFunctions.EllipticIntegral.ImaginaryModulus
+import TauCeti.Analysis.SpecialFunctions.Integrals.Trigonometric
 import TauCeti.Analysis.SpecialFunctions.Beta
 
 /-!
@@ -24,7 +24,8 @@ so `ϖ = Β(1/4, 1/2) / 2`. The reflection formula `Γ(1/4) Γ(3/4) = π / sin (
 and `Γ(1/2) = √π` then give the classical closed form `ϖ = Γ(1/4)² / (2 √(2π))`.
 
 The substitution `t = sin θ` turns the defining integral into `∫₀^{π/2} (1 + sin² θ)^(-1/2) dθ`,
-and the reflection `θ ↦ π/2 - θ` identifies this with `K(1/√2) / √2`, so `ϖ = √2 K(1/√2)`.
+and the imaginary-modulus transformation identifies this with `K(1/√2) / √2`, so
+`ϖ = √2 K(1/√2)`.
 Together with the Gamma evaluation this gives `K(1/√2) = Γ(1/4)² / (4 √π)`, and together with
 Gauss's theorem `K(k) = π / (2 M(1, √(1 - k²)))` it gives **Gauss's identity**
 `ϖ = π / M(1, √2)`, where `M = NNReal.agm`.
@@ -117,31 +118,15 @@ theorem lemniscateConstant_eq_Gamma :
 private lemma integral_one_sub_pow_four_rpow_eq_integral_sin :
     ∫ t in (0 : ℝ)..1, (1 - t ^ 4) ^ (-1 / 2 : ℝ) =
       ∫ θ in (0 : ℝ)..π / 2, (1 + sin θ ^ 2) ^ (-1 / 2 : ℝ) := by
-  have hsub : Ioo 0 (π / 2) ⊆ Icc (-(π / 2)) (π / 2) :=
-    Ioo_subset_Icc_self.trans (Icc_subset_Icc (by linarith [pi_pos]) le_rfl)
-  have himage : sin '' Ioo 0 (π / 2) = Ioo 0 1 := by
-    ext t
-    constructor
-    · rintro ⟨θ, hθ, rfl⟩
-      refine ⟨sin_pos_of_pos_of_lt_pi hθ.1 (by linarith [hθ.2, pi_pos]), ?_⟩
-      simpa using strictMonoOn_sin (hsub hθ) (right_mem_Icc.mpr (by linarith [pi_pos])) hθ.2
-    · rintro ⟨ht₀, ht₁⟩
-      exact ⟨arcsin t, ⟨arcsin_pos.mpr ht₀, arcsin_lt_pi_div_two.mpr ht₁⟩,
-        sin_arcsin (by linarith) ht₁.le⟩
-  have hderiv : ∀ θ ∈ Ioo (0 : ℝ) (π / 2), HasDerivWithinAt sin (cos θ) (Ioo 0 (π / 2)) θ :=
-    fun θ _ => (hasDerivAt_sin θ).hasDerivWithinAt
-  have hinj : InjOn sin (Ioo (0 : ℝ) (π / 2)) := injOn_sin.mono hsub
-  rw [intervalIntegral.integral_of_le zero_le_one, integral_Ioc_eq_integral_Ioo, ← himage,
-    integral_image_eq_integral_abs_deriv_smul measurableSet_Ioo hderiv hinj,
-    intervalIntegral.integral_of_le (by positivity), integral_Ioc_eq_integral_Ioo]
-  refine setIntegral_congr_fun measurableSet_Ioo fun θ hθ => ?_
-  have hc : 0 < cos θ := cos_pos_of_mem_Ioo ⟨by linarith [hθ.1, pi_pos], hθ.2⟩
-  have hfac : 1 - sin θ ^ 4 = cos θ ^ 2 * (1 + sin θ ^ 2) := by
-    rw [cos_sq']
-    ring
-  rw [abs_of_pos hc, smul_eq_mul, hfac, mul_rpow (sq_nonneg _) (by positivity), neg_div,
-    rpow_neg (sq_nonneg _), ← sqrt_eq_rpow, sqrt_sq hc.le]
-  field_simp
+  rw [integral_comp_sin_eq_integral_rpow (abs_zero.trans_le pi_div_two_pos.le)
+    (le_of_eq (abs_of_pos pi_div_two_pos)) (fun t ↦ (1 + t ^ 2) ^ (-1 / 2 : ℝ)),
+    sin_zero, sin_pi_div_two]
+  simp only [smul_eq_mul]
+  refine intervalIntegral.integral_congr_uIoo fun t ht ↦ ?_
+  rw [uIoo_of_lt zero_lt_one] at ht
+  have ht2 : t ^ 2 ≤ 1 := (sq_le_one_iff₀ ht.1.le).mpr ht.2.le
+  have hfac : 1 - t ^ 4 = (1 - t ^ 2) * (1 + t ^ 2) := by ring
+  rw [hfac, mul_rpow (sub_nonneg.mpr ht2) (by positivity)]
 
 /-- The square of the modulus `1/√2`. -/
 private lemma one_div_sqrt_two_sq : (1 / √2 : ℝ) ^ 2 = 1 / 2 := by
@@ -151,21 +136,10 @@ private lemma one_div_sqrt_two_sq : (1 / √2 : ℝ) ^ 2 = 1 / 2 := by
 modulus `1/√2`: `ϖ = √2 K(1/√2)`. -/
 theorem lemniscateConstant_eq_sqrt_two_mul_legendreK :
     lemniscateConstant = √2 * legendreK (1 / √2) := by
-  -- the reflection `θ ↦ π/2 - θ` turns `1 + sin² θ` into `1 + cos² θ = 2 (1 - sin² θ / 2)`
   have hrefl : ∫ θ in (0 : ℝ)..π / 2, (1 + sin θ ^ 2) ^ (-1 / 2 : ℝ) =
       (√2)⁻¹ * legendreK (1 / √2) := by
-    have h := intervalIntegral.integral_comp_sub_left
-      (fun θ => (1 + sin θ ^ 2) ^ (-1 / 2 : ℝ)) (a := 0) (b := π / 2) (π / 2)
-    simp only [sub_self, sub_zero, sin_pi_div_two_sub] at h
-    rw [← h, legendreK_def, legendreF_def, ← intervalIntegral.integral_const_mul]
-    congr 1 with θ
-    have hθ : 1 + cos θ ^ 2 = 2 * (1 - (1 / √2) ^ 2 * sin θ ^ 2) := by
-      rw [one_div_sqrt_two_sq, cos_sq']
-      ring
-    have hpos : 0 ≤ 1 - (1 / √2) ^ 2 * sin θ ^ 2 := by
-      rw [one_div_sqrt_two_sq]
-      nlinarith [sin_sq_le_one θ]
-    rw [hθ, mul_rpow zero_le_two hpos, neg_div, rpow_neg zero_le_two, ← sqrt_eq_rpow]
+    simpa [div_eq_inv_mul, one_add_one_eq_two] using
+      integral_one_add_mul_sin_sq_rpow_neg_half_eq_legendreK_div_sqrt 1
   rw [lemniscateConstant_def, integral_one_sub_pow_four_rpow_eq_integral_sin, hrefl, ← mul_assoc,
     ← div_eq_mul_inv, div_sqrt]
 

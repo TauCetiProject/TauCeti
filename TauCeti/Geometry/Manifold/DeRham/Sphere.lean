@@ -103,7 +103,7 @@ theorem subsingleton_deRhamCohomology_sphere_one (hn : 1 < n) :
   -- `stereographicPuncturedDiffeomorph v` is the open set with carrier `{v}ᶜ ∩ {-v}ᶜ`, which
   -- `Opens.mk_inf_mk` identifies with `U ⊓ V`.
   have : ConnectedSpace (U ⊓ V : Opens (sphere (0 : E) 1)) := by
-    simp only [U, V, Opens.mk_inf_mk, Set.inf_eq_inter]
+    simp only [U, V, Opens.mk_inf_mk]
     exact (stereographicPuncturedDiffeomorph v).toHomeomorph.connectedSpace_iff.mpr <|
       isConnected_iff_connectedSpace.mp <| isConnected_compl_singleton_of_one_lt_rank
         (by rw [← finrank_eq_rank, finrank_euclideanSpace_fin]; exact_mod_cast hn) 0
@@ -142,7 +142,7 @@ theorem nonempty_linearEquiv_deRhamCohomology_sphere_succ [Fact (finrank ℝ E =
     (subsingleton_deRhamCohomology_sphere_compl_singleton (-v) (k + 1))
   -- Identify the intersection of the cover with the domain `{v}ᶜ ∩ {-v}ᶜ` of
   -- `stereographicPuncturedDiffeomorph v`.
-  simp only [Opens.mk_inf_mk, Set.inf_eq_inter] at e
+  simp only [Opens.mk_inf_mk] at e
   exact ⟨(deRhamCohomology.puncturedSpaceEquivSphere (EuclideanSpace ℝ (Fin (n + 1))) n
       (k + 1)).symm ≪≫ₗ
     deRhamCohomology.equivOfDiffeomorph (stereographicPuncturedDiffeomorph v) (k + 1) ≪≫ₗ e ≪≫ₗ
@@ -219,12 +219,12 @@ private theorem finrank_deRhamCohomology_sphere_one_one [Fact (finrank ℝ E = 1
     ((stereographicDiffeomorph (-v)).toHomeomorph.connectedSpace_iff.mpr hℝ).toPreconnectedSpace
   -- `U ⊓ V` is diffeomorphic to `ℝ \ {0}`, whose cohomology is that of `S⁰`.
   have h₂ : finrank ℝ (deRhamCohomology (𝓡 1) (U ⊓ V : Opens (sphere (0 : E) 1)) 0) = 2 := by
-    simp only [U, V, Opens.mk_inf_mk, Set.inf_eq_inter]
+    simp only [U, V, Opens.mk_inf_mk]
     rw [← (deRhamCohomology.equivOfDiffeomorph (stereographicPuncturedDiffeomorph v) 0).finrank_eq,
       (deRhamCohomology.puncturedSpaceEquivSphere (EuclideanSpace ℝ (Fin 1)) 0 0).finrank_eq]
     exact finrank_deRhamCohomology_zero_sphere_of_finrank_eq_one
   have : Nonempty (U ⊓ V : Opens (sphere (0 : E) 1)) := by
-    simp only [U, V, Opens.mk_inf_mk, Set.inf_eq_inter]
+    simp only [U, V, Opens.mk_inf_mk]
     exact ⟨(stereographicPuncturedDiffeomorph v).symm
       ⟨EuclideanSpace.single (0 : Fin 1) 1, by simp⟩⟩
   have : FiniteDimensional ℝ (deRhamCohomology (𝓡 1) (U ⊓ V : Opens (sphere (0 : E) 1)) 0) :=

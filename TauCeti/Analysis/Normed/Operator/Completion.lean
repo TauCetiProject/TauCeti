@@ -7,6 +7,10 @@ module
 
 public import Mathlib.Analysis.Normed.Module.Completion
 public import Mathlib.Analysis.Normed.Operator.Extend
+public import Mathlib.Analysis.Normed.Group.ControlledClosure
+public import Mathlib.Analysis.Normed.Group.HomCompletion
+public import TauCeti.Analysis.Normed.Group.BallSphere
+public import TauCeti.Analysis.Normed.Operator.Basic
 
 /-!
 # Operator norms of bounded maps extended to completions
@@ -22,10 +26,20 @@ universal properties of completed normed constructions. Likewise, a linear isome
 extends to the linear isometric equivalence `e.completion` between the completions, the analogue
 for equivalences of Mathlib's `LinearIsometry.completion`.
 
+Extension to completions also preserves metric quotient maps. If `f` lifts every vector of norm
+less than `r` to a vector of norm less than `r`, so does `f.completion`; the lifts in the
+completion come from Mathlib's `controlled_closure_range_of_complete`. An operator of norm at most
+one with this lifting property maps each open ball about `0` onto the open ball of the same radius
+(`ContinuousLinearMap.image_ball_eq_ball`), so by `ContinuousLinearMap.norm_completion` its
+extension to the completions has the same property.
+
 ## Main results
 
 * `ContinuousLinearMap.norm_completion`: `‖f.completion‖ = ‖f‖`.
 * `ContinuousLinearMap.norm_fromCompletion`: `‖f.fromCompletion‖ = ‖f‖`.
+* `ContinuousLinearMap.ball_subset_image_completion_ball` and
+  `ContinuousLinearMap.image_completion_ball`: the extension of a metric quotient map to the
+  completions is a metric quotient map.
 * `LinearIsometryEquiv.completion`: the extension of a linear isometric equivalence to the
   completions.
 * `LinearIsometryEquiv.toLinearIsometry_completion`: as a linear isometry, it is
@@ -67,6 +81,40 @@ theorem norm_fromCompletion [T0Space F] [CompleteSpace F] (f : E →SL[σ₁₂]
     | hp => exact isClosed_le (by fun_prop) (by fun_prop)
     | ih x => simpa only [fromCompletion_apply_coe, Completion.norm_coe] using f.le_opNorm x
   · simpa only [fromCompletion_apply_coe, Completion.norm_coe] using f.fromCompletion.le_opNorm x
+
+/-- If `f` lifts every vector of norm less than `r` to a vector of norm less than `r`, then so
+does its extension `f.completion` to the completions. -/
+theorem ball_subset_image_completion_ball {f : E →SL[σ₁₂] F}
+    (hf : ∀ r, Metric.ball (0 : F) r ⊆ f '' Metric.ball 0 r) (r : ℝ) :
+    Metric.ball (0 : Completion F) r ⊆ f.completion '' Metric.ball 0 r := by
+  intro w hw
+  rw [mem_ball_zero_iff] at hw
+  -- Choose `δ > 0` with `(1 + δ + δ) * ‖w‖ < r`.
+  obtain ⟨δ, hδ, hδw⟩ := exists_pos_mul_lt (sub_pos.2 hw) (2 * ‖w‖)
+  have hδr : (1 + δ + δ) * ‖w‖ < r := by linarith
+  -- Points of `F` lift with constant `1 + δ`, so points of the completion lift with `1 + δ + δ`.
+  let g := f.completion.toLinearMap.toAddMonoidHom.mkNormedAddGroupHom ‖f.completion‖
+    f.completion.le_opNorm
+  have hyp (k : F) : ∃ x, g x = NormedAddCommGroup.toCompl k ∧ ‖x‖ ≤ (1 + δ) * ‖k‖ := by
+    rcases (norm_nonneg k).eq_or_lt with hk | hk
+    · refine ⟨0, ?_, by rw [norm_zero]; positivity⟩
+      rw [map_zero, eq_comm, ← norm_eq_zero, NormedAddCommGroup.norm_toCompl, hk]
+    · obtain ⟨x, hfx, hx⟩ := TauCeti.exists_apply_eq_norm_lt_add hf k (mul_pos hδ hk)
+      refine ⟨x, ?_, by rw [Completion.norm_coe]; linarith⟩
+      -- `g` is `f.completion` as a bundled normed group hom, so they agree by definition.
+      change f.completion x = k
+      rw [completion_apply_coe, hfx]
+  obtain ⟨x, hx, hxw⟩ := controlled_closure_range_of_complete NormedAddCommGroup.norm_toCompl
+    (by positivity) hδ hyp w (NormedAddCommGroup.denseRange_toCompl w)
+  exact ⟨x, mem_ball_zero_iff.2 (hxw.trans_lt hδr), hx⟩
+
+/-- The extension to the completions of a **metric quotient map** is a metric quotient map: if
+`‖f‖ ≤ 1` and `f` lifts every vector of norm less than `r` to a vector of norm less than `r`,
+then `f.completion` maps each open ball about `0` onto the open ball of the same radius. -/
+theorem image_completion_ball {f : E →SL[σ₁₂] F} (hf₁ : ‖f‖ ≤ 1)
+    (hf : ∀ r, Metric.ball (0 : F) r ⊆ f '' Metric.ball 0 r) (r : ℝ) :
+    f.completion '' Metric.ball 0 r = Metric.ball 0 r :=
+  image_ball_eq_ball (f.norm_completion.trans_le hf₁) (ball_subset_image_completion_ball hf) r
 
 end ContinuousLinearMap
 

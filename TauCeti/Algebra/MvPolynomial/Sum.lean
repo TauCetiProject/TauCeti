@@ -13,7 +13,8 @@ public import Mathlib.Algebra.MvPolynomial.Equiv
 `MvPolynomial.eval₂_sumAlgEquiv` evaluates a polynomial after one family of variables
 has been moved into the coefficient ring by Mathlib's `MvPolynomial.sumAlgEquiv`.
 This permits coefficient extraction with respect to one family while retaining polynomial
-dependence on the other.
+dependence on the other. `MvPolynomial.sumAlgEquiv_map` shows that this separation commutes with
+mapping coefficients along a ring homomorphism.
 -/
 
 public section
@@ -26,6 +27,15 @@ variable {R S σ τ : Type*} [CommSemiring R] [CommSemiring S]
 theorem eval₂_sumAlgEquiv (f : R →+* S) (x : σ → S) (y : τ → S)
     (p : MvPolynomial (σ ⊕ τ) R) :
     eval₂ (eval₂Hom f y) x (sumAlgEquiv R σ τ p) = eval₂ f (Sum.elim x y) p := by
+  induction p using MvPolynomial.induction_on with
+  | C r => simp
+  | add p q hp hq => simp [hp, hq]
+  | mul_X p i hp => cases i <;> simp [hp]
+
+/-- Separating two families of variables commutes with mapping the coefficients: the
+coefficient map acts on the polynomial coefficients in the second family. -/
+theorem sumAlgEquiv_map (f : R →+* S) (p : MvPolynomial (σ ⊕ τ) R) :
+    sumAlgEquiv S σ τ (map f p) = map (map f) (sumAlgEquiv R σ τ p) := by
   induction p using MvPolynomial.induction_on with
   | C r => simp
   | add p q hp hq => simp [hp, hq]

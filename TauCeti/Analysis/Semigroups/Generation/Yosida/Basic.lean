@@ -8,7 +8,7 @@ module
 public import TauCeti.Analysis.Semigroups.BoundedGenerator.Perturbation
 public import TauCeti.Analysis.Semigroups.Dissipative.Basic
 import TauCeti.Analysis.Normed.Operator.Dense
-import TauCeti.Analysis.Normed.Operator.Exponential
+import TauCeti.Analysis.Normed.Algebra.Exponential
 
 /-!
 # Yosida approximations
@@ -191,7 +191,7 @@ theorem norm_exp_smul_yosidaApproximation_le_one {A : X →ₗ.[ℝ] X} {lambda 
     _ ≤ Real.exp (-(t * lambda)) *
           Real.exp ‖(t * lambda ^ 2) • LinearPMap.resolvent A lambda‖ := by
       gcongr
-      · exact ContinuousLinearMap.norm_exp_smul_one_le _
+      · exact TauCeti.norm_exp_smul_one_le ContinuousLinearMap.norm_id_le _
       · exact TauCeti.norm_exp_le_exp_norm ContinuousLinearMap.norm_id_le _
     _ ≤ Real.exp (-(t * lambda)) * Real.exp (t * lambda) := by
       gcongr

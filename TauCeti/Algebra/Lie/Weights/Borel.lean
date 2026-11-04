@@ -10,6 +10,7 @@ public import Mathlib.Algebra.Lie.Weights.RootSystem
 public import Mathlib.LinearAlgebra.LinearPMap
 public import TauCeti.Algebra.Lie.Weights.Span
 public import TauCeti.LinearAlgebra.RootSystem.Positive
+import TauCeti.Algebra.Lie.Basic
 import TauCeti.Algebra.Lie.Weights.Basic
 
 /-!
@@ -492,14 +493,9 @@ theorem lie_mem_positiveNilradical_of_mem_borelSubalgebra_of_mem_borelSubalgebra
   refine add_mem (neg_mem ?_) (lie_mem_positiveNilradical_of_mem_borelSubalgebra H b hx hn)
   rw [← LieSubalgebra.mem_toSubmodule, borelSubalgebra_toSubmodule, Submodule.mem_sup] at hx
   obtain ⟨h', hh', n', hn', rfl⟩ := hx
-  have hab : ⁅(⟨h, hh⟩ : H), (⟨h', hh'⟩ : H)⁆ = 0 := trivial_lie_zero _ _ _ _
-  rw [lie_add]
-  refine add_mem ?_ (lie_mem_positiveNilradical_of_mem_borelSubalgebra H b
+  rw [lie_add, LieSubalgebra.lie_eq_zero_of_mem hh hh']
+  exact add_mem (zero_mem _) (lie_mem_positiveNilradical_of_mem_borelSubalgebra H b
     (le_borelSubalgebra H b hh) hn')
-  have hcoe := congrArg Subtype.val hab
-  simp only [LieSubalgebra.coe_bracket, ZeroMemClass.coe_zero] at hcoe
-  rw [hcoe]
-  exact zero_mem _
 
 /-! ### The triangular decomposition -/
 
@@ -635,7 +631,7 @@ private theorem rootSpace_le_span_negRootVector (i : H.root) :
   have hone : finrank K (rootSpace H (-((i : Weight K H L) : H → K))) = 1 :=
     IsKilling.finrank_rootSpace_eq_one (-(i : Weight K H L))
       (Weight.IsNonZero.neg (Finset.mem_filter.mp i.2).2)
-  obtain ⟨c, hc⟩ := (finrank_eq_one_iff_of_nonzero'
+  obtain ⟨c, hc⟩ := (finrank_eq_one_iff_of_ne_zero'
     (⟨negRootVector i, negRootVector_mem_rootSpace i⟩ :
       rootSpace H (-((i : Weight K H L) : H → K)))
     (by simpa using negRootVector_ne_zero i)).mp hone ⟨x, hx⟩

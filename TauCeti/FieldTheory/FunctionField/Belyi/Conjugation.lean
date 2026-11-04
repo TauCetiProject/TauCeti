@@ -8,6 +8,7 @@ module
 public import TauCeti.FieldTheory.FunctionField.Belyi.Basic
 public import TauCeti.FieldTheory.FunctionField.Place.Extension.Equiv
 public import TauCeti.FieldTheory.RatFunc.Map
+import TauCeti.FieldTheory.FunctionField.Place.RatFunc.Equiv
 import TauCeti.FieldTheory.FunctionField.Place.RatFunc.Order
 import TauCeti.RingTheory.IntegralClosure.IntegrallyClosed
 
@@ -74,19 +75,13 @@ theorem equivOfRingEquiv_mapRingEquiv_markedPlace (i : Fin 3) :
   have h0 {P : Place k' (RatFunc k')} (h : 0 < P.ord X) : P = markedPlace k' 0 := by
     rw [markedPlace_zero]
     exact ord_X_pos_iff.mp h
-  have h1 {P : Place k' (RatFunc k')} (h : 0 < P.ord (X - C 1)) : P = markedPlace k' 1 := by
-    rw [markedPlace_one]
-    exact ord_X_sub_C_pos_iff.mp h
   have h2 {P : Place k' (RatFunc k')} (h : P.ord X < 0) : P = markedPlace k' 2 := by
     rw [markedPlace_two]
     exact X_notMem_integers_iff_eq_infty.mp (by rwa [mem_integers_iff_ord_nonneg, not_le])
   fin_cases i <;> simp only [Fin.zero_eta, Fin.mk_one, Fin.reduceFinMk]
   · exact h0 (by simp [ord_adicOfIrreducible_X_self])
-  · -- `simp` would rewrite `C 1` to `1` inside the polynomial indexing the place, so rewrite.
-    refine h1 ?_
-    rw [ord_equivOfRingEquiv, RatFunc.mapRingEquiv_symm, map_sub, RatFunc.mapRingEquiv_X,
-      RatFunc.mapRingEquiv_C, map_one, markedPlace_one]
-    exact ord_X_sub_C_pos_iff.mpr rfl
+  · rw [markedPlace_one, markedPlace_one,
+      equivOfRingEquiv_mapRingEquiv_adicOfIrreducible_X_sub_C, map_one]
   · exact h2 (by simp [ord_infty])
 
 /-- **Conjugation preserves the three marked places as a set.** -/
