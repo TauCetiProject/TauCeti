@@ -96,76 +96,37 @@ private theorem contDiffAt_endHeight (q : Puncture) {z : ℝ × ℝ}
   exact contDiffAt_const.mul ((q.contDiffAt_re_endCoord hz).comp z
     Complex.equivRealProdCLM.symm.contDiff.contDiffAt)
 
-/-- Near the center of a finite end, the signed longitudinal coordinate of that end exceeds any
-bound. -/
-private theorem eventually_lt_endHeight {q : Puncture} (hq : q ≠ inf) (C : ℝ) :
-    ∀ᶠ z in 𝓝 (Complex.equivRealProdCLM q.endCenter),
-      Complex.equivRealProdCLM.symm z ≠ q.endCenter → C < endHeight q z := by
-  have hb : 0 < ‖q.endScale‖ := norm_pos_iff.2 q.endScale_ne_zero
-  have hball : ∀ᶠ z in 𝓝 (Complex.equivRealProdCLM q.endCenter),
-      Complex.equivRealProdCLM.symm z ∈
-        Metric.ball q.endCenter (‖q.endScale‖ * exp (-(2 * π * C))) := by
-    refine Complex.equivRealProdCLM.symm.continuous.continuousAt.preimage_mem_nhds ?_
-    rw [ContinuousLinearEquiv.symm_apply_apply]
-    exact Metric.ball_mem_nhds _ (by positivity)
-  filter_upwards [hball] with z hz hne
-  have hx : 0 < ‖(Complex.equivRealProdCLM.symm z - q.endCenter) / q.endScale‖ :=
-    norm_pos_iff.2 (div_ne_zero (sub_ne_zero.2 hne) q.endScale_ne_zero)
-  have hlt : ‖(Complex.equivRealProdCLM.symm z - q.endCenter) / q.endScale‖ <
-      exp (-(2 * π * C)) := by
-    rw [Metric.mem_ball, dist_eq_norm] at hz
-    rw [norm_div, div_lt_iff₀ hb, mul_comm]
-    exact hz
-  have hlog := (Real.log_lt_iff_lt_exp hx).2 hlt
-  rw [endHeight, endSign_eq_one hq, one_mul, re_endCoord, lt_div_iff₀ (by positivity)]
-  linarith
+/-- The cutoff at height `T` vanishes off the compact truncation `S_{T+1}`. -/
+private theorem truncation_eq_zero_of_notMem {T : ℝ} {z : ℝ × ℝ}
+    (hz : z ∉ Complex.equivRealProdCLM.symm ⁻¹' ThricePuncturedSphere.truncation (T + 1)) :
+    truncation T z = 0 := by
+  rw [truncation]
+  split_ifs with h
+  · rfl
+  · obtain ⟨q, hq⟩ : ∃ q, T + 1 < endHeight q z := by
+      by_contra! h'
+      exact hz (mem_truncation.2 ⟨(not_or.1 h).1, (not_or.1 h).2, h'⟩)
+    refine Finset.prod_eq_zero (Finset.mem_univ q) ?_
+    rw [smoothTransition.one_of_one_le (by linarith), sub_self]
 
-/-- Far out on the end at `∞`, its signed longitudinal coordinate exceeds any bound. -/
-private theorem lt_endHeight_inf {C : ℝ} {z : ℝ × ℝ}
-    (hz : 2 * exp (2 * π * C) < ‖Complex.equivRealProdCLM.symm z‖) : C < endHeight inf z := by
-  have hx : exp (2 * π * C) < ‖Complex.equivRealProdCLM.symm z / 2‖ := by
-    rw [norm_div, Complex.norm_two]
-    linarith
-  have hlog := (Real.lt_log_iff_exp_lt (by linarith [exp_pos (2 * π * C)])).2 hx
-  rw [endHeight, endSign_inf, re_endCoord, endCenter_inf, endScale_inf, sub_zero, neg_div,
-    neg_one_mul, neg_neg, lt_div_iff₀ (by positivity)]
-  linarith
+private theorem isCompact_preimage_truncation (R : ℝ) :
+    IsCompact (Complex.equivRealProdCLM.symm ⁻¹' ThricePuncturedSphere.truncation R) :=
+  Complex.equivRealProdCLM.symm.toHomeomorph.isCompact_preimage.2 (isCompact_truncation R)
 
 /-- The cutoff vanishes near the punctures `0` and `1`. -/
 private theorem truncation_eventuallyEq_zero (T : ℝ) {z : ℝ × ℝ}
     (hz : Complex.equivRealProdCLM.symm z = 0 ∨ Complex.equivRealProdCLM.symm z = 1) :
     truncation T =ᶠ[𝓝 z] 0 := by
-  obtain ⟨q, hq, rfl⟩ : ∃ q : Puncture, q ≠ inf ∧ Complex.equivRealProdCLM q.endCenter = z := by
-    rcases hz with h | h
-    · exact ⟨zero, by decide, by rw [endCenter_zero, ← h, ContinuousLinearEquiv.apply_symm_apply]⟩
-    · exact ⟨one, by decide, by rw [endCenter_one, ← h, ContinuousLinearEquiv.apply_symm_apply]⟩
-  filter_upwards [eventually_lt_endHeight hq (T + 1)] with z' hz'
-  rw [truncation, Pi.zero_apply]
-  split_ifs with h
-  · rfl
-  · refine Finset.prod_eq_zero (Finset.mem_univ q) ?_
-    have hne : Complex.equivRealProdCLM.symm z' ≠ q.endCenter := fun h' ↦ h <| by
-      rcases q.endCenter_eq_zero_or_eq_one with h'' | h'' <;> simp [h', h'']
-    rw [smoothTransition.one_of_one_le (by linarith [hz' hne]), sub_self]
+  have hz' : z ∉ Complex.equivRealProdCLM.symm ⁻¹' ThricePuncturedSphere.truncation (T + 1) :=
+    fun h ↦ by
+      obtain ⟨h₀, h₁, -⟩ := mem_truncation.1 h
+      exact hz.elim h₀ h₁
+  filter_upwards [(isCompact_preimage_truncation (T + 1)).isClosed.isOpen_compl.mem_nhds hz']
+    with z' hz' using truncation_eq_zero_of_notMem hz'
 
-/-- The cutoff vanishes far out on the end at `∞`. -/
-private theorem truncation_eq_zero_of_lt_norm (T : ℝ) {z : ℝ × ℝ}
-    (hz : max 2 (2 * exp (2 * π * (T + 1))) < ‖Complex.equivRealProdCLM.symm z‖) :
-    truncation T z = 0 := by
-  have h₂ := (le_max_left _ _).trans_lt hz
-  have hne : ¬(Complex.equivRealProdCLM.symm z = 0 ∨ Complex.equivRealProdCLM.symm z = 1) := by
-    rintro (h | h) <;> rw [h] at h₂ <;> norm_num at h₂
-  rw [truncation, ite_eq_right hne]
-  refine Finset.prod_eq_zero (Finset.mem_univ inf) ?_
-  rw [smoothTransition.one_of_one_le
-    (by linarith [lt_endHeight_inf ((le_max_right _ _).trans_lt hz)]), sub_self]
-
-private theorem hasCompactSupport_truncation (T : ℝ) : HasCompactSupport (truncation T) := by
-  refine HasCompactSupport.intro ((isCompact_closedBall (0 : ℂ)
-    (max 2 (2 * exp (2 * π * (T + 1))))).image Complex.equivRealProdCLM.continuous)
-    fun z hz ↦ truncation_eq_zero_of_lt_norm T ?_
-  by_contra h
-  exact hz ⟨_, by simpa using not_lt.1 h, ContinuousLinearEquiv.apply_symm_apply _ _⟩
+private theorem hasCompactSupport_truncation (T : ℝ) : HasCompactSupport (truncation T) :=
+  HasCompactSupport.intro (isCompact_preimage_truncation (T + 1))
+    fun _ hz ↦ truncation_eq_zero_of_notMem hz
 
 /-- On the thrice-punctured sphere the cutoff is given by its product formula nearby. -/
 private theorem truncation_eventuallyEq_prod (T : ℝ) {z : ℝ × ℝ}
@@ -233,11 +194,8 @@ private theorem truncation_endChart {T : ℝ} (hT : 0 ≤ T) {q : Puncture} {ζ 
   have hw := equivRealProdCLM_symm_endChart q ζ
   have hζ' : 0 < q.endSign * (Complex.equivRealProdCLM.symm ζ).re := by simpa using hζ
   have hS := q.cylindricalEndLift_ne_zero_and_ne_one hζ'
-  have hr (r : Puncture) (hr : r ≠ q) : endHeight r (endChart q ζ) ≤ 0 := by
-    by_contra h
-    rw [not_le, endHeight, hw] at h
-    exact cylindricalEndLift_ne_cylindricalEndLift hr.symm hζ' h
-      (r.cylindricalEndLift_endCoord (ne_endCenter hS r)).symm
+  have hr (r : Puncture) (hr : r ≠ q) : endHeight r (endChart q ζ) ≤ 0 :=
+    endSign_mul_re_endCoord_nonpos hr.symm (by rwa [re_endCoord_endChart])
   rw [truncation, ite_eq_right (by rw [hw]; exact not_or.2 hS), Finset.prod_eq_single q,
     endHeight_endChart]
   · intro r _ hrq
