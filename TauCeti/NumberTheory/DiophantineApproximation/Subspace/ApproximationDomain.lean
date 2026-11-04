@@ -10,9 +10,11 @@ public import Mathlib.Analysis.SpecialFunctions.Pow.Real
 public import Mathlib.LinearAlgebra.Dual.Defs
 public import Mathlib.NumberTheory.NumberField.CanonicalEmbedding.Basic
 public import Mathlib.NumberTheory.NumberField.Completion.FinitePlace
+import TauCeti.Analysis.SpecialFunctions.Pow.Bounds
 import TauCeti.LinearAlgebra.Dual.Lemmas
 import TauCeti.NumberTheory.NumberField.CanonicalEmbedding.MixedImage
 import TauCeti.NumberTheory.NumberField.FinitePlace.Basic
+import TauCeti.Topology.MetricSpace.DiscreteAddSubgroup
 
 /-!
 # Approximation domains
@@ -44,6 +46,12 @@ of `S₀` are linearly independent the module is finitely generated
 is then a full lattice in `ι → mixedSpace K`, so
 an approximation domain is the set of points of a lattice in a convex body.
 
+With independent forms at every relevant place, a domain of nonnegative level contains only
+finitely many points (`TauCeti.NumberField.finite_approxDomain`). More uniformly, the union over
+levels in an interval bounded away from zero is finite
+(`TauCeti.NumberField.finite_biUnion_approxDomain`): every such domain lies in one fixed domain
+with absolute-valued exponents (`TauCeti.NumberField.approxDomain_subset_abs`).
+
 ## Conventions
 
 The forms and the exponents are indexed by the underlying absolute value of a place,
@@ -63,7 +71,7 @@ unbounded there.
 ## References
 
 * E. Bombieri and W. Gubler, *Heights in Diophantine Geometry*, Cambridge University Press (2006),
-  7.5.6 and Lemma 7.5.7.
+  7.5.6 and Lemmas 7.5.7 and 7.5.12.
 * The definitions and the structure results follow Ralf Stephan's
   `DiophantineApproximation/ApproximationDomain.lean` and
   `DiophantineApproximation/FinitePlaceValues.lean` in `rwst/Subspace-Theorems`, snapshot
@@ -379,5 +387,60 @@ theorem span_approxModule_eq_top [Finite ι] [NumberField K] (S₀ : Finset (Fin
   rintro _ ⟨j, rfl⟩
   rw [SetLike.mem_coe, ← inv_smul_smul₀ hdK (Pi.basisFun K ι j)]
   exact Submodule.smul_mem _ _ (Submodule.subset_span (hmem j))
+
+open Set
+
+variable [NumberField K] [Finite ι]
+
+/-- With independent forms at every relevant place, an approximation domain of nonnegative
+level contains finitely many points. -/
+theorem finite_approxDomain {S₀ : Finset (FinitePlace K)}
+    {L : AbsoluteValue K ℝ → ι → Dual K (ι → K)}
+    (hLinf : ∀ v : InfinitePlace K, LinearIndependent K (L v.1))
+    (hLfin : ∀ v ∈ S₀, LinearIndependent K (L v.1))
+    (c : AbsoluteValue K ℝ → ι → ℝ) {Q : ℝ} (hQ : 0 ≤ Q) :
+    (approxDomain S₀ L c Q).Finite := by
+  classical
+  let : Fintype ι := Fintype.ofFinite ι
+  let Λ := approxModule S₀ L c Q
+  let : DiscreteTopology Λ.mixedImage :=
+    Submodule.discreteTopology_mixedImage_iff.mpr (fg_approxModule hLfin c Q)
+  have hfinite := Λ.mixedImage.toAddSubgroup.finite_inter (isBounded_approxBody hLinf c Q)
+  have hinj : Function.Injective (fun x : ι → K ↦ fun j ↦ mixedEmbedding K (x j)) :=
+    Function.Injective.piMap fun _ ↦ mixedEmbedding_injective K
+  refine (hfinite.preimage hinj.injOn).subset ?_
+  intro x hx
+  rw [approxDomain_eq S₀ L c hQ] at hx
+  exact ⟨hx.2, Submodule.mem_mixedImage.mpr ⟨x, hx.1, rfl⟩⟩
+
+omit [Finite ι] in
+/-- A domain at a level between two positive bounds is contained in one fixed domain with
+absolute-valued exponents. Negative exponents are controlled by the reciprocal lower bound. -/
+theorem approxDomain_subset_abs {S₀ : Finset (FinitePlace K)}
+    {L : AbsoluteValue K ℝ → ι → Dual K (ι → K)} {c : AbsoluteValue K ℝ → ι → ℝ}
+    {Q₁ Q Q₂ : ℝ} (hQ₁ : 0 < Q₁) (hQ : Q ∈ Icc Q₁ Q₂) :
+    approxDomain S₀ L c Q ⊆
+      approxDomain S₀ L (fun v i ↦ |c v i|) (max Q₂ Q₁⁻¹) := by
+  have hpow (a : ℝ) : Q ^ a ≤ max Q₂ Q₁⁻¹ ^ |a| :=
+    Real.rpow_le_rpow_abs (hQ₁.trans_le hQ.1) (hQ.2.trans (le_max_left _ _))
+      (((inv_le_inv₀ (hQ₁.trans_le hQ.1) hQ₁).mpr hQ.1).trans (le_max_right _ _)) a
+  intro x hx
+  obtain ⟨hinf, hfin, hout⟩ := mem_approxDomain.mp hx
+  exact mem_approxDomain.mpr ⟨fun v i ↦ (hinf v i).trans (hpow _),
+    fun v hv i ↦ (hfin v hv i).trans (hpow _), hout⟩
+
+/-- Only finitely many points occur in approximation domains whose levels lie in an interval
+bounded away from zero. -/
+theorem finite_biUnion_approxDomain {S₀ : Finset (FinitePlace K)}
+    {L : AbsoluteValue K ℝ → ι → Dual K (ι → K)}
+    (hLinf : ∀ v : InfinitePlace K, LinearIndependent K (L v.1))
+    (hLfin : ∀ v ∈ S₀, LinearIndependent K (L v.1))
+    (c : AbsoluteValue K ℝ → ι → ℝ) {Q₁ Q₂ : ℝ} (hQ₁ : 0 < Q₁) :
+    (⋃ Q ∈ Icc Q₁ Q₂, approxDomain S₀ L c Q).Finite := by
+  refine (finite_approxDomain hLinf hLfin (fun v i ↦ |c v i|)
+    (le_trans (inv_pos.mpr hQ₁).le (le_max_right Q₂ Q₁⁻¹))).subset ?_
+  intro x hx
+  rcases mem_iUnion₂.mp hx with ⟨Q, hQ, hx⟩
+  exact approxDomain_subset_abs hQ₁ hQ hx
 
 end TauCeti.NumberField
