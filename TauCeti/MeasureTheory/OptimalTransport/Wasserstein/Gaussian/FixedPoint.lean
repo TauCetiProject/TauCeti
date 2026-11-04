@@ -11,6 +11,7 @@ public import TauCeti.MeasureTheory.OptimalTransport.MultiMarginal.Moments
 public import TauCeti.MeasureTheory.OptimalTransport.Wasserstein.Barycenter.Uniqueness.Euclidean
 public import TauCeti.MeasureTheory.OptimalTransport.Wasserstein.FrechetMean
 public import TauCeti.Probability.Moments.Covariance
+import TauCeti.Analysis.Matrix.BuresFixedPoint
 import TauCeti.Analysis.Matrix.GeometricMean
 import TauCeti.MeasureTheory.Function.L2Space
 import TauCeti.Probability.Moments.FenchelYoung
@@ -44,6 +45,12 @@ decomposition and the multi-marginal formulation of the barycenter problem turn 
 lower bound. Singular covariances `C j` are allowed: the pseudoinverse `(A j)⁺` is used on the
 range of `A j`, which carries the centred `j`th coordinate almost surely.
 
+When an input with positive weight has a positive-definite covariance, the fixed-point equation
+does have a positive-definite solution (`Matrix.exists_posDef_eq_sum_smul_sqrt_sqrt_mul_mul_sqrt`),
+so the barycenter of the Gaussian laws `N(m j, C j)` exists, is unique, and is the Gaussian law with
+mean `mbar` and that covariance. Two positive-definite solutions give the same barycenter, hence
+the same covariance, so the solution is unique as well.
+
 ## Main statements
 
 * `TauCeti.integral_norm_sum_smul_sub_integral_sq_le`: the centred weighted mean of a
@@ -54,6 +61,11 @@ range of `A j`, which carries the centred `j`th coordinate almost surely.
   with mean `mbar` and covariance `S` is a barycenter of Gaussian laws.
 * `TauCeti.Probability.frechetBarycenters_sum_smul_dirac_multivariateGaussian`: it is the unique
   barycenter when an input with positive weight is nondegenerate.
+* `TauCeti.Probability.exists_posDef_frechetBarycenters_sum_smul_dirac_multivariateGaussian`:
+  Gaussian laws, one of them nondegenerate with a positive weight, have a unique barycenter, the
+  Gaussian law with mean `mbar` and a positive-definite covariance solving the fixed-point equation.
+* `TauCeti.existsUnique_posDef_eq_sum_smul_sqrt_sqrt_mul_mul_sqrt`: under the same hypothesis the
+  fixed-point equation has exactly one positive-definite solution.
 
 ## References
 
@@ -154,6 +166,8 @@ theorem integral_norm_sum_smul_sub_integral_sq_le [∀ j, IsProbabilityMeasure (
           rw [← integral_finsetSum _ fun j _ ↦ (hAint j).const_mul _, htrace]
           simp only [hquad]
   linarith
+
+section Gaussian
 
 variable [DecidableEq ι]
 
@@ -270,5 +284,50 @@ theorem Probability.frechetBarycenters_sum_smul_dirac_multivariateGaussian (hw :
         (isFrechetBarycenter_sum_smul_dirac_multivariateGaussian hw m hC hS hfix))
   rw [gaussianWassersteinLaw_coe, multivariateGaussian_eq_withDensity hCj₀]
   exact withDensity_absolutelyContinuous _ _
+
+/-- **The Gaussian barycenter.** Let `w j` be nonnegative weights summing to `1`, and let one of
+the Gaussian laws `N(m j, C j)` with a positive weight be nondegenerate. Then their quadratic
+Wasserstein barycenter in `P₂` is unique. It is the Gaussian law with mean `∑ j, w j • m j` and
+positive-definite covariance `S`, where `S` solves the fixed-point equation
+`S = ∑ j, w j • (S^(1/2) * C j * S^(1/2))^(1/2)`. -/
+theorem Probability.exists_posDef_frechetBarycenters_sum_smul_dirac_multivariateGaussian
+    (hw : ∑ j, w j = 1) (m : J → EuclideanSpace ℝ ι) {C : J → Matrix ι ι ℝ}
+    (hC : ∀ j, (C j).PosSemidef) {j₀ : J} (hj₀ : w j₀ ≠ 0) (hCj₀ : (C j₀).PosDef) :
+    ∃ S : Matrix ι ι ℝ, S.PosDef ∧
+      S = ∑ j, (w j : ℝ) • CFC.sqrt (CFC.sqrt S * C j * CFC.sqrt S) ∧
+      frechetBarycenters 2 (∑ j, w j • Measure.dirac (gaussianWassersteinLaw (m j) (C j))) =
+        {gaussianWassersteinLaw (∑ j, (w j : ℝ) • m j) S} := by
+  obtain ⟨S, hS, hfix⟩ := Matrix.exists_posDef_eq_sum_smul_sqrt_sqrt_mul_mul_sqrt w hC hj₀ hCj₀
+  exact ⟨S, hS, hfix,
+    frechetBarycenters_sum_smul_dirac_multivariateGaussian hw m hC hj₀ hCj₀ hS hfix⟩
+
+end Gaussian
+
+open scoped Classical in
+/-- **The fixed-point equation has exactly one positive-definite solution.** Let `C j` be
+positive-semidefinite matrices and `w j` nonnegative weights summing to `1`, and suppose that some
+`C j₀` with `w j₀ ≠ 0` is positive definite. Then exactly one positive-definite matrix `S` solves
+`S = ∑ j, w j • (S^(1/2) * C j * S^(1/2))^(1/2)`: it is the covariance of the unique quadratic
+Wasserstein barycenter of the Gaussian laws with covariances `C j`. -/
+theorem existsUnique_posDef_eq_sum_smul_sqrt_sqrt_mul_mul_sqrt (hw : ∑ j, w j = 1)
+    {C : J → Matrix ι ι ℝ} (hC : ∀ j, (C j).PosSemidef) {j₀ : J} (hj₀ : w j₀ ≠ 0)
+    (hCj₀ : (C j₀).PosDef) :
+    ∃! S : Matrix ι ι ℝ, S.PosDef ∧
+      S = ∑ j, (w j : ℝ) • CFC.sqrt (CFC.sqrt S * C j * CFC.sqrt S) := by
+  classical
+  obtain ⟨S, hS, hfix⟩ := Matrix.exists_posDef_eq_sum_smul_sqrt_sqrt_mul_mul_sqrt w hC hj₀ hCj₀
+  refine ⟨S, ⟨hS, hfix⟩, fun T ⟨hT, hfixT⟩ ↦ ?_⟩
+  -- Both Gaussian laws are the unique barycenter, so their covariances agree.
+  have h := Set.singleton_eq_singleton_iff.1
+    ((Probability.frechetBarycenters_sum_smul_dirac_multivariateGaussian hw 0 hC hj₀ hCj₀ hT
+      hfixT).symm.trans
+      (Probability.frechetBarycenters_sum_smul_dirac_multivariateGaussian hw 0 hC hj₀ hCj₀ hS hfix))
+  have hcov := congrArg
+    (fun ν : WassersteinSpace 2 (EuclideanSpace ℝ ι) ↦
+      covMatrix ((ν.toProbabilityMeasure : ProbabilityMeasure (EuclideanSpace ℝ ι)) :
+        Measure (EuclideanSpace ℝ ι))) h
+  simpa only [Probability.gaussianWassersteinLaw_coe,
+    Probability.covMatrix_multivariateGaussian _ hT.posSemidef,
+    Probability.covMatrix_multivariateGaussian _ hS.posSemidef] using hcov
 
 end TauCeti
