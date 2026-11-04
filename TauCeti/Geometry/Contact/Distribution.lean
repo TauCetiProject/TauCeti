@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Contact.Levi
+import TauCeti.Geometry.Manifold.DifferentialForm.DegreeOne
 import TauCeti.Geometry.Manifold.Distribution.Annihilator
 import TauCeti.LinearAlgebra.BilinearForm.SymplecticBasis
 
@@ -24,8 +25,10 @@ definition involves only the hyperplane field: no contact form, coorientation or
 line `TM ⧸ ξ` is chosen, so it also covers contact structures which are not the kernel of any
 global one-form.
 
-Locally, a contact structure is the kernel of a contact form. Near every point, `ξ` is the kernel
-of a nowhere vanishing `C^n` one-form, and every such local defining form is a contact form at
+Locally, a contact structure is the kernel of a contact form. Near every point, any `C^n`
+hyperplane field is the kernel of a nowhere vanishing `C^n` one-form
+(`TauCeti.IsContMDiffDistribution.exists_roughForm_ker_eq`), and for a contact structure every
+such local defining form is a contact form at
 every point where it defines `ξ` (`TauCeti.IsContactDistribution.exists_isContactFormAt`).
 Conversely, a hyperplane field which near each point is the kernel of a one-form that is contact
 at that point is a contact structure
@@ -114,12 +117,6 @@ theorem finrank_add_one (hD : IsContactDistribution I n D) (x : M) :
   have hE : finrank ℝ E ≠ 0 := fun h ↦ hD.ne_top x (Submodule.eq_top_of_finrank_eq (by omega))
   omega
 
-/-- The rank `dim E - 1` of a contact distribution is one less than the dimension of `M`. This is
-the rank hypothesis of results stated for `C^n` hyperplane fields. -/
-theorem finrank_sub_one_add_one (hD : IsContactDistribution I n D) (x : M) :
-    finrank ℝ E - 1 + 1 = finrank ℝ E :=
-  hD.isContMDiffDistribution.finrank_eq x ▸ hD.finrank_add_one x
-
 /-- The contact line `T_x M ⧸ D x` of a contact distribution is one-dimensional. -/
 theorem finrank_quotient (hD : IsContactDistribution I n D) (x : M) :
     finrank ℝ (TangentSpace I x ⧸ D x) = 1 := by
@@ -173,8 +170,8 @@ theorem IsContactDistribution.exists_isContactFormAt [IsManifold I (n + 1) M]
       ContMDiffOn I (I.prod 𝓘(ℝ, E [⋀^Fin 1]→L[ℝ] ℝ)) n
         (fun y ↦ TotalSpace.mk' (E [⋀^Fin 1]→L[ℝ] ℝ) y (α y)) U ∧
       ∀ y ∈ U, α.ker y = D y ∧ IsContactFormAt α y := by
-  obtain ⟨U, hU, hxU, α, hα, hαD⟩ :=
-    hD.isContMDiffDistribution.exists_roughForm_ker_eq (hD.finrank_sub_one_add_one x) x
+  obtain ⟨U, hU, hxU, α, hα, hαD⟩ := hD.isContMDiffDistribution.exists_roughForm_ker_eq
+    (hD.isContMDiffDistribution.finrank_eq x ▸ hD.finrank_add_one x) x
   refine ⟨U, hU, hxU, α, hα, fun y hy ↦ ⟨(hαD y hy).2, ?_⟩⟩
   obtain ⟨V, hV, hyV, X, hX⟩ := isContMDiffDistribution_iff.1 hD.isContMDiffDistribution y
   refine (RoughForm.isContactFormAt_iff_bijective_distributionLeviForm (hX.of_le hn)
@@ -213,10 +210,7 @@ theorem SmoothForm.isContactForm_iff_isContactDistribution_kerDistribution [ENat
     α.IsContactForm ↔ IsContactDistribution I n α.kerDistribution := by
   -- The kernel of `α` at `x` is all of `T_x M` exactly when `α_x = 0`.
   have htop (x : M) : α.kerDistribution x ≠ ⊤ ↔ α.1 x ≠ 0 := by
-    have hker : α.kerDistribution x = RoughForm.ker α.1 x := by
-      ext
-      simp
-    rw [hker, Ne, RoughForm.ker_eq_top_iff]
+    rw [SmoothForm.kerDistribution_eq_ker, Ne, RoughForm.ker_eq_top_iff]
   rw [isContactForm_iff_forall_bijective_distributionLeviForm]
   exact ⟨fun h ↦ ⟨isContMDiffDistribution_kerDistribution fun x ↦ (h x).1,
     fun x ↦ (htop x).2 (h x).1, fun x ↦ (h x).2⟩,

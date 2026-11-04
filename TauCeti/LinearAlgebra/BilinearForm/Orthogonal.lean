@@ -83,12 +83,10 @@ structural step used when a Cartan--Dieudonne argument enlarges a fixed subspace
   orthogonal complements of an arbitrary bilinear form.
 * `LinearMap.BilinForm.two_mul_finrank_le_finrank_of_le_orthogonal`: a totally isotropic subspace
   of a nondegenerate bilinear space has at most half the ambient dimension.
-* `LinearMap.exists_nondegenerate_compr₂_of_injective`: identifying a line with the scalars turns
-  an injective line-valued bilinear form into a nondegenerate bilinear form.
-* `LinearMap.two_mul_finrank_le_finrank_of_injective`: a subspace isotropic for a nondegenerate
-  line-valued bilinear form has at most half the dimension.
-* `LinearMap.mem_of_injective_of_two_mul_finrank_eq`: such a subspace of exactly half the
-  dimension is its own orthogonal for that form.
+* `LinearMap.two_mul_finrank_le_finrank_of_apply_eq_zero_of_injective`: the same bound for a
+  subspace on which an injective bilinear map with values in a line vanishes.
+* `LinearMap.mem_of_apply_eq_zero_of_two_mul_finrank_eq`: such a subspace of exactly half the
+  dimension is its own orthogonal.
 
 ## References
 
@@ -651,26 +649,25 @@ theorem exists_nondegenerate_compr₂_of_injective {K V Q : Type*} [Field K] [Ad
   ext w
   simpa using hv w
 
-/-- **A subspace isotropic for a nondegenerate line-valued bilinear form has at most half the
-dimension.** If the bilinear form `L : V → Hom(V, Q)` is injective, `Q` is one-dimensional and
-`L` vanishes on `W × W`, then `2 dim W ≤ dim V`. This applies, for instance, to the Levi form of a
-contact structure. -/
-theorem two_mul_finrank_le_finrank_of_injective {K V Q : Type*} [Field K] [AddCommGroup V]
-    [Module K V] [FiniteDimensional K V] [AddCommGroup Q] [Module K Q]
-    {L : V →ₗ[K] V →ₗ[K] Q} (hinj : Function.Injective L) (hQ : Module.finrank K Q = 1)
-    {W : Submodule K V} (hW : ∀ v ∈ W, ∀ w ∈ W, L v w = 0) :
-    2 * Module.finrank K W ≤ Module.finrank K V := by
+/-- **Isotropic subspaces of a line-valued nondegenerate form have at most half the dimension.**
+If `L : V → Hom(V, Q)` is injective, `Q` is one-dimensional and `L` vanishes on `W × W`, then
+`2 dim W ≤ dim V`. Identifying `Q` with the scalars turns `L` into a nondegenerate bilinear form
+for which `W` is contained in its orthogonal. This is the dimension bound for subspaces isotropic
+for the Levi form of a contact structure. -/
+theorem two_mul_finrank_le_finrank_of_apply_eq_zero_of_injective {K V Q : Type*} [Field K]
+    [AddCommGroup V] [Module K V] [FiniteDimensional K V] [AddCommGroup Q] [Module K Q]
+    {L : V →ₗ[K] V →ₗ[K] Q}
+    (hinj : Function.Injective L) (hQ : Module.finrank K Q = 1) {W : Submodule K V}
+    (hW : ∀ v ∈ W, ∀ w ∈ W, L v w = 0) : 2 * Module.finrank K W ≤ Module.finrank K V := by
   obtain ⟨e, hB⟩ := exists_nondegenerate_compr₂_of_injective hinj hQ
-  refine BilinForm.two_mul_finrank_le_finrank_of_le_orthogonal hB fun v hv ↦ ?_
-  rw [BilinForm.mem_orthogonal_iff]
-  intro w hw
-  simp [hW w hw v hv]
+  exact BilinForm.two_mul_finrank_le_finrank_of_le_orthogonal hB fun w hw ↦
+    BilinForm.mem_orthogonal_iff.2 fun v hv ↦ by simp [hW v hv w hw]
 
-/-- **An isotropic subspace of half the dimension is its own orthogonal.** If
-`L : V → Hom(V, Q)` is injective, `Q` is one-dimensional, `L` vanishes on `W × W` and
-`2 dim W = dim V`, then every vector `a` with `L a b = 0` for all `b ∈ W` lies in `W`. This is the
-maximality of Lagrangian subspaces for a line-valued nondegenerate form. -/
-theorem mem_of_injective_of_two_mul_finrank_eq {K V Q : Type*} [Field K] [AddCommGroup V]
+/-- **Isotropic subspaces of half the dimension are maximal.** If `L : V → Hom(V, Q)` is
+injective, `Q` is one-dimensional, `L` vanishes on `W × W` and `2 dim W = dim V`, then every
+vector `a` with `L a b = 0` for all `b ∈ W` lies in `W`. This is the maximality of Lagrangian
+subspaces for a line-valued nondegenerate form, such as the Levi form of a contact structure. -/
+theorem mem_of_apply_eq_zero_of_two_mul_finrank_eq {K V Q : Type*} [Field K] [AddCommGroup V]
     [Module K V] [FiniteDimensional K V] [AddCommGroup Q] [Module K Q]
     {L : V →ₗ[K] V →ₗ[K] Q} (hinj : Function.Injective L) (hQ : Module.finrank K Q = 1)
     {W : Submodule K V} (hW : ∀ v ∈ W, ∀ w ∈ W, L v w = 0)
