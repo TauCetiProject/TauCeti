@@ -22,6 +22,10 @@ In particular, it supplies the common continuity step for
 `StronglyContinuousSemigroup.tendsto_realOperator_apply` and
 `StronglyContinuousGroup.tendsto_apply`.
 
+A left inverse `S` of `T` modulo an error term gives the estimate
+`‖x‖ ≤ ‖S‖ ‖T x‖ + ‖(S ∘ T - 1) x‖`
+(`ContinuousLinearMap.norm_le_opNorm_mul_norm_add_norm_comp_sub_one`).
+
 Finally, an operator bounded below is injective
 (`ContinuousLinearMap.injective_of_forall_norm_le`) and stays nonzero under a sufficiently small
 perturbation (`ContinuousLinearMap.apply_add_ne_zero_of_forall_norm_le`), an invertible
@@ -101,6 +105,17 @@ theorem tendsto_apply_of_eventually_norm_le {ι : Type*} {l : Filter ι}
       exact (T i).le_of_opNorm_le hi _
     · simpa using (tendsto_iff_norm_sub_tendsto_zero.mp hg).const_mul C
   simpa only [map_sub, sub_add_cancel, zero_add] using hmove.add hz
+
+/-- The a priori estimate attached to a left inverse modulo an error term: since
+`x = S (T x) - (S ∘ T - 1) x`, the norm of `x` is controlled by `‖T x‖` and the error
+`(S ∘ T - 1) x`. When `S ∘ T - 1` is compact this is the compact-error estimate behind the
+semi-Fredholm property. -/
+theorem norm_le_opNorm_mul_norm_add_norm_comp_sub_one (T : X →L[𝕜] Y) (S : Y →L[𝕜] X) (x : X) :
+    ‖x‖ ≤ ‖S‖ * ‖T x‖ + ‖(S.comp T - 1 : X →L[𝕜] X) x‖ := by
+  have hx : x = S (T x) - (S.comp T - 1 : X →L[𝕜] X) x := by simp
+  calc ‖x‖ = ‖S (T x) - (S.comp T - 1 : X →L[𝕜] X) x‖ := congrArg _ hx
+    _ ≤ ‖S (T x)‖ + ‖(S.comp T - 1 : X →L[𝕜] X) x‖ := norm_sub_le _ _
+    _ ≤ ‖S‖ * ‖T x‖ + ‖(S.comp T - 1 : X →L[𝕜] X) x‖ := by gcongr; exact S.le_opNorm _
 
 section Inverse
 
