@@ -21,23 +21,19 @@ consecutive jumps have controlled `Lᵖ` seminorm.
 This file provides `Lᵖ` completeness in that setting for every exponent `1 ≤ p ≤ ∞` and every
 measure `μ`:
 
-1. `TauCeti.eLpNorm_ennreal_le_of_ae_tendsto` extends Fatou's lemma for the `Lᵖ` seminorm of
-   `ℝ≥0∞`-valued functions to all exponents `p : ℝ≥0∞` (including `0` and `∞`) and countably
-   generated filters, deducing almost-everywhere measurability of the limit automatically.
-2. `TauCeti.ae_tsum_edist_lt_top_of_eLpNorm_le` and `TauCeti.exists_eLpNorm_edist_le_tsum` prove
+1. `TauCeti.ae_tsum_edist_lt_top_of_eLpNorm_le` and `TauCeti.exists_eLpNorm_edist_le_tsum` prove
    that a sequence of almost everywhere strongly measurable functions into a complete
    pseudo-extended-metric space whose consecutive `Lᵖ` jumps are bounded by a summable sequence `b`
    converges almost everywhere to a strongly measurable limit `g`, with tail bound
-   `eLpNorm (fun x ↦ edist (f n x) (g x)) p μ ≤ ∑' k, b (n + k)` for every `n`.
-3. `TauCeti.exists_tendsto_eLpNorm_edist_of_tendsto_bound` and its normed-group specialization
+   `eLpNorm (fun x ↦ edist (f n x) (g x)) p μ ≤ ∑' k, b (n + k)` for every `n`, passing finite
+   partial-sum bounds to the limit via `TauCeti.eLpNorm_ennreal_le_of_ae_tendsto`.
+2. `TauCeti.exists_tendsto_eLpNorm_edist_of_tendsto_bound` and its normed-group specialization
    `TauCeti.exists_tendsto_eLpNorm_of_tendsto_eLpNorm_bound` deduce `Lᵖ` convergence under a
    merely vanishing Cauchy modulus `B N → 0` by extracting a geometrically summable subsequence
    and passing the eventual `Lᵖ` Cauchy bound to the almost-everywhere limit.
 
 ## Main results
 
-* `TauCeti.eLpNorm_ennreal_le_of_ae_tendsto` — Fatou's lemma for `eLpNorm` of `ℝ≥0∞`-valued
-  functions at arbitrary `p : ℝ≥0∞` along a countably generated filter.
 * `TauCeti.exists_eLpNorm_edist_le_tsum` — a chain of `Z`-valued functions with summable
   consecutive `Lᵖ` jumps converges almost everywhere and in `Lᵖ`, with the tail bound.
 * `TauCeti.exists_tendsto_eLpNorm_edist_of_tendsto_bound` — a `Z`-valued sequence with an `Lᵖ`
@@ -55,53 +51,6 @@ open scoped ENNReal Topology
 namespace TauCeti
 
 variable {α Z E : Type*} [MeasurableSpace α] {μ : Measure α} {p : ℝ≥0∞}
-
-/-- **Fatou's lemma for the `Lᵖ` seminorm of `ℝ≥0∞`-valued functions**, at every exponent
-`p : ℝ≥0∞` (including `0` and `∞`) and along any countably generated `NeBot` filter. Almost
-everywhere measurability of the limit is deduced from the pointwise convergence. -/
-theorem eLpNorm_ennreal_le_of_ae_tendsto {ι : Type*} {u : Filter ι} [NeBot u]
-    [IsCountablyGenerated u] {f : ι → α → ℝ≥0∞} {g : α → ℝ≥0∞} {C : ℝ≥0∞}
-    (hf : ∀ i, AEMeasurable (f i) μ)
-    (hlim : ∀ᵐ x ∂μ, Tendsto (fun i ↦ f i x) u (𝓝 (g x)))
-    (hle : ∀ᶠ i in u, eLpNorm (f i) p μ ≤ C) :
-    eLpNorm g p μ ≤ C := by
-  obtain ⟨v, hv⟩ := exists_seq_tendsto u
-  obtain ⟨N, hN⟩ := eventually_atTop.1 (hv.eventually hle)
-  let f' : ℕ → α → ℝ≥0∞ := fun n ↦ f (v (n + N))
-  have hf' : ∀ n, AEMeasurable (f' n) μ := fun n ↦ hf (v (n + N))
-  have hlim' : ∀ᵐ x ∂μ, Tendsto (fun n ↦ f' n x) atTop (𝓝 (g x)) :=
-    hlim.mono fun x hx ↦ (hx.comp hv).comp (tendsto_add_atTop_nat N)
-  have hle' : ∀ n, eLpNorm (f' n) p μ ≤ C := fun n ↦ hN (n + N) (Nat.le_add_left N n)
-  have hg : AEMeasurable g μ := ENNReal.aemeasurable_of_tendsto hf' hlim'
-  rcases eq_or_ne p 0 with rfl | hp0
-  · rw [eLpNorm_exponent_zero hg.aestronglyMeasurable]
-    exact zero_le
-  rcases eq_or_ne p ∞ with rfl | hp
-  · rw [eLpNorm_exponent_top hg.aestronglyMeasurable, eLpNormEssSup_eq_essSup_enorm]
-    simp only [enorm_eq_self]
-    have hcongr : essSup g μ = essSup (fun x ↦ atTop.liminf fun n ↦ f' n x) μ :=
-      essSup_congr_ae (hlim'.mono fun x hx ↦ hx.liminf_eq.symm)
-    rw [hcongr]
-    refine (ENNReal.essSup_liminf_le f').trans (liminf_le_of_frequently_le' (.of_forall fun n ↦ ?_))
-    simpa [eLpNorm_exponent_top (hf' n).aestronglyMeasurable, eLpNormEssSup_eq_essSup_enorm] using
-      hle' n
-  · exact eLpNorm_le_of_ae_tendsto_ennreal hp0 hp hf' hlim' hle'
-
-/-- At any nonzero exponent (including `∞`), an `ℝ≥0∞`-valued function with finite `Lᵖ` seminorm is
-finite almost everywhere. -/
-theorem ae_lt_top_of_eLpNorm_ne_top (hp0 : p ≠ 0) {f : α → ℝ≥0∞} (h : eLpNorm f p μ ≠ ∞) :
-    ∀ᵐ x ∂μ, f x < ∞ := by
-  have hf : AEMeasurable f μ := (aestronglyMeasurable_of_eLpNorm_ne_top h).aemeasurable
-  rcases eq_or_ne p ∞ with rfl | hp
-  · rw [eLpNorm_exponent_top hf.aestronglyMeasurable, eLpNormEssSup_eq_essSup_enorm] at h
-    simp only [enorm_eq_self] at h
-    exact ae_lt_of_essSup_lt h.lt_top
-  · have hr : 0 < p.toReal := ENNReal.toReal_pos hp0 hp
-    have hint : ∫⁻ x, f x ^ p.toReal ∂μ ≠ ∞ := by
-      rw [← eLpNorm_rpow_eq_lintegral hp0 hp hf]
-      exact (ENNReal.rpow_lt_top_of_nonneg hr.le h).ne
-    filter_upwards [ae_lt_top' (hf.pow_const p.toReal) hint] with x hx
-    rwa [← ENNReal.lt_rpow_inv_iff hr, ENNReal.top_rpow_of_pos (inv_pos.2 hr)] at hx
 
 section PseudoEMetricSpace
 

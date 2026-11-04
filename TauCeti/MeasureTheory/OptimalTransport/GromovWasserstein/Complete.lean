@@ -122,21 +122,6 @@ theorem exists_isProbabilityMeasure_eLpNorm_eq_gromovWassersteinEDist {X₀ : Ty
 
 variable {p : ℝ≥0∞}
 
-/-- Finite `p`-size about `z₀` transfers across finite Gromov–Wasserstein distance, for every
-exponent `1 ≤ p ≤ ∞` and any pseudo-extended-metric target `Z`. -/
-theorem memLp_edist_of_gromovWassersteinEDist_ne_top {X Y : Type*} [MeasurableSpace X]
-    [MeasurableSpace Y] {μ : Measure X} {ν : Measure Y} [IsProbabilityMeasure μ]
-    [IsProbabilityMeasure ν] {ωX : X × X → Z} {ωY : Y × Y → Z} {z₀ : Z} (hp : 1 ≤ p)
-    (hωX : AEStronglyMeasurable ωX (μ.prod μ)) (hωY : AEStronglyMeasurable ωY (ν.prod ν))
-    (hmem : MemLp (fun q ↦ edist (ωX q) z₀) p (μ.prod μ))
-    (hd : gromovWassersteinEDist p μ ωX ν ωY ≠ ∞) :
-    MemLp (fun q ↦ edist (ωY q) z₀) p (ν.prod ν) := by
-  rw [memLp_iff]
-  have hsz := edist_gromovWassersteinSize_le_gromovWassersteinEDist hp hωX hωY z₀
-  rw [ENNReal.edist_le_iff_le_add_right, gromovWassersteinSize_def, gromovWassersteinSize_def]
-    at hsz
-  exact hsz.2.trans_lt (ENNReal.add_lt_top.2 ⟨hmem.eLpNorm_lt_top, hd.lt_top⟩)
-
 private theorem exists_limit_of_chain_couplings [CompleteSpace Z] (hp : 1 ≤ p)
     {X : ℕ → Type u} [∀ n, MeasurableSpace (X n)] [∀ n, StandardBorelSpace (X (n + 1))]
     {μ : ∀ n, Measure (X n)} [∀ n, IsProbabilityMeasure (μ n)]
@@ -360,12 +345,12 @@ theorem tendsto_atTop_iff_exists_presentation_tendsto_eLpNorm
   refine ⟨fun h ↦ ?_, ?_⟩
   · choose Ks hKs using fun n ↦ mk_surjective (xs n)
     obtain ⟨L, rfl⟩ := mk_surjective x
-    rw [show xs = fun n ↦ mk (Ks n) from (funext hKs).symm] at h
+    rw [← funext hKs] at h
     obtain ⟨Ω, mΩ, sΩ, γ, hγ, f, g, hf, hg, hlim⟩ :=
       tendsto_mk_atTop_iff_exists_tendsto_eLpNorm.1 h
     exact ⟨Ks, L, Ω, mΩ, sΩ, γ, hγ, f, g, hKs, rfl, hf, hg, hlim⟩
   · rintro ⟨Ks, L, Ω, mΩ, sΩ, γ, hγ, f, g, hKs, rfl, hf, hg, hlim⟩
-    rw [show xs = fun n ↦ mk (Ks n) from (funext hKs).symm]
+    rw [← funext hKs]
     exact tendsto_mk_atTop_iff_exists_tendsto_eLpNorm.2
       ⟨Ω, mΩ, sΩ, γ, hγ, f, g, hf, hg, hlim⟩
 
