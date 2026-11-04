@@ -21,8 +21,8 @@ Base change comes with identity and composition isomorphisms in the map of bases
 identity it returns the original compactification, and along a composite `g' ≫ g` it is the
 iterated base change. Both sources are only canonically isomorphic to the expected ones, so
 these identifications (`baseChangeFunctorIdIso`, `baseChangeFunctorCompIso`) relabel the source
-along that isomorphism with `Compactification.precompFunctor`. Their coherence laws are not
-proved here.
+along that isomorphism with `Compactification.precompFunctor`. Their unit and associativity
+laws on ambient maps are proved in `TauCeti.AlgebraicGeometry.Compactification.Coherence`.
 
 ## References
 
