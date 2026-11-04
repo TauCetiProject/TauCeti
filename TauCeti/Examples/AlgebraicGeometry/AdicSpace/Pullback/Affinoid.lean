@@ -26,7 +26,9 @@ completed-pushout companions:
    square in `AdicSpace.{0}` whose projections are adic and locally of weakly finite type.
 2. **Split two-adic self-product separating ordered sheets**: `ℚ_[2] × ℚ_[2]` is topologically of
    finite type over `ℚ_[2]`, so its self-product over `Spa(ℚ_[2], ℤ_[2])` is an unconditional
-   pullback in `AdicSpace.{0}` with two distinct points lifting the two ordered pairs of sheets.
+   pullback in `AdicSpace.{0}`, and two distinct points `y₁ ≠ y₂` of `Spa(ℚ_[2] × ℚ_[2])` in the
+   same fibre over `Spa(ℚ_[2], ℤ_[2])` lift to distinct points `z₁ ≠ z₂` with projections
+   `(y₁, y₂)` and `(y₂, y₁)`.
 3. **Identity base change**: for any morphism `f : (A, A⁺) → (B, B⁺)` of complete Hausdorff sheafy
    Huber pairs (not necessarily adic), pulling `f` back along `𝟙` gives a pullback square in
    `AdicSpace`.
@@ -92,8 +94,9 @@ example (p : ℕ) [Fact p.Prime] (m n : ℕ) :
     locallyOfWeaklyFiniteType_comapOfPair_completedTensor_inr hU hTU hm⟩
 
 /-- **Split two-adic self-product**: `Spa(ℚ_[2] × ℚ_[2]) ×_{Spa ℚ_[2]} Spa(ℚ_[2] × ℚ_[2])` is an
-unconditional pullback in `AdicSpace.{0}` and contains two distinct points whose first projections
-distinguish the two sheets of `ℚ_[2] × ℚ_[2]`. -/
+unconditional pullback in `AdicSpace.{0}`, and two distinct points `y₁ ≠ y₂` of
+`Spa(ℚ_[2] × ℚ_[2])` in the same fibre over `Spa(ℚ_[2], ℤ_[2])` lift to distinct points `z₁ ≠ z₂`
+of the self-product with projections `(y₁, y₂)` and `(y₂, y₁)`. -/
 example :
     have hcont : Continuous (algebraMap ℚ_[2] (ℚ_[2] × ℚ_[2])) := by fun_prop
     haveI : IsAdicHom (algebraMap ℚ_[2] (ℚ_[2] × ℚ_[2])) := IsAdicHom.of_isTateRing hcont
@@ -135,13 +138,26 @@ example :
       (comapOfPair hT hTT (Pair.completedTensor.inl ℚ_[2] T T))
       (comapOfPair hT hTT (Pair.completedTensor.inr ℚ_[2] T T))
       (comapOfPair hS hT f) (comapOfPair hS hT f) ∧
-    ∃ z₁ z₂ : (ofPair (T.completedTensor ℚ_[2] T) hTT).obj, z₁ ≠ z₂ := by
+    ∃ (y₁ y₂ : (ofPair T hT).obj) (z₁ z₂ : (ofPair (T.completedTensor ℚ_[2] T) hTT).obj),
+      y₁ ≠ y₂ ∧ z₁ ≠ z₂ ∧
+      (comapOfPair hS hT f).hom.base y₁ = (comapOfPair hS hT f).hom.base y₂ ∧
+      (comapOfPair hT hTT (Pair.completedTensor.inl ℚ_[2] T T)).hom.base z₁ = y₁ ∧
+      (comapOfPair hT hTT (Pair.completedTensor.inr ℚ_[2] T T)).hom.base z₁ = y₂ ∧
+      (comapOfPair hT hTT (Pair.completedTensor.inl ℚ_[2] T T)).hom.base z₂ = y₂ ∧
+      (comapOfPair hT hTT (Pair.completedTensor.inr ℚ_[2] T T)).hom.base z₂ = y₁ := by
   intro hcont htft S T f hS _ hB hT hTT
   have : IsAdicHom (algebraMap ℚ_[2] (ℚ_[2] × ℚ_[2])) := htft.isAdicHom
   refine ⟨affinoid_isPullback_of_isStablySheafyRing_left hS hT hB htft f f rfl rfl, ?_⟩
   have hne : (spa S.plus).Nonempty := Set.nonempty_iff_ne_empty.mpr fun h ↦
     not_subsingleton ℚ_[2] ((spa_eq_empty_iff_subsingleton _ S.isRingOfIntegralElements).mp h)
   let x₀ : spa S.plus := ⟨hne.some, hne.some_mem⟩
+  have hy (p : Pair.Hom T S) (hp : p.comp f = Pair.Hom.id S) :
+      (comapOfPair hS hT f).hom.base ((ofPairHomeomorph T hT).symm (p.spaComap x₀)) =
+        (ofPairHomeomorph S hS).symm x₀ := by
+    rw [comapOfPair_base_ofPairHomeomorph_symm]
+    exact congrArg (ofPairHomeomorph S hS).symm <|
+      (congrFun (Pair.Hom.spaComap_comp p f) x₀).symm.trans <| by
+        rw [hp, Pair.Hom.spaComap_id, id_eq]
   let p₁ : Pair.Hom T S :=
     { toRingHom := RingHom.fst _ _
       continuous_toRingHom := continuous_fst
@@ -158,33 +174,26 @@ example :
         exact ha.2 }
   let y₁ : (ofPair T hT).obj := (ofPairHomeomorph T hT).symm (p₁.spaComap x₀)
   let y₂ : (ofPair T hT).obj := (ofPairHomeomorph T hT).symm (p₂.spaComap x₀)
-  have hy₁ : (comapOfPair hS hT f).hom.base y₁ = (ofPairHomeomorph S hS).symm x₀ := by
-    rw [comapOfPair_base_ofPairHomeomorph_symm]
-    have hcomp : p₁.comp f = Pair.Hom.id S := by ext; simp [p₁, f]
-    have hc := congrFun (Pair.Hom.spaComap_comp p₁ f) x₀
-    rw [Function.comp_apply, hcomp, Pair.Hom.spaComap_id] at hc
-    rw [← hc]
-    rfl
-  have hy₂ : (comapOfPair hS hT f).hom.base y₂ = (ofPairHomeomorph S hS).symm x₀ := by
-    rw [comapOfPair_base_ofPairHomeomorph_symm]
-    have hcomp : p₂.comp f = Pair.Hom.id S := by ext; simp [p₂, f]
-    have hc := congrFun (Pair.Hom.spaComap_comp p₂ f) x₀
-    rw [Function.comp_apply, hcomp, Pair.Hom.spaComap_id] at hc
-    rw [← hc]
-    rfl
-  obtain ⟨z₁, hz₁, -⟩ := exists_ofPair_completedTensor_point hS hT hT hTT f f rfl rfl
-    y₁ y₂ (hy₁.trans hy₂.symm)
-  obtain ⟨z₂, hz₂, -⟩ := exists_ofPair_completedTensor_point hS hT hT hTT f f rfl rfl
-    y₂ y₁ (hy₂.trans hy₁.symm)
-  refine ⟨z₁, z₂, fun h ↦ ?_⟩
-  have hyeq : y₁ = y₂ := by rw [← hz₁, h, hz₂]
-  have hspv : (p₁.spaComap x₀).1 = (p₂.spaComap x₀).1 :=
-    congrArg Subtype.val ((ofPairHomeomorph T hT).symm.injective hyeq)
-  have hvle : (p₁.spaComap x₀).1.toValuativeRel.vle ((0, 1) : ℚ_[2] × ℚ_[2]) 0 := by
-    rw [Pair.Hom.spaComap_val, comap_vle]
-    simp [p₁]
-  rw [hspv, Pair.Hom.spaComap_val, comap_vle] at hvle
-  simp [p₂] at hvle
+  have hy₁ : (comapOfPair hS hT f).hom.base y₁ = (ofPairHomeomorph S hS).symm x₀ :=
+    hy p₁ (by ext; simp [p₁, f])
+  have hy₂ : (comapOfPair hS hT f).hom.base y₂ = (ofPairHomeomorph S hS).symm x₀ :=
+    hy p₂ (by ext; simp [p₂, f])
+  have hy₁₂ : (comapOfPair hS hT f).hom.base y₁ = (comapOfPair hS hT f).hom.base y₂ :=
+    hy₁.trans hy₂.symm
+  have hy_ne : y₁ ≠ y₂ := fun hyeq ↦ by
+    have hspv : (p₁.spaComap x₀).1 = (p₂.spaComap x₀).1 :=
+      congrArg Subtype.val ((ofPairHomeomorph T hT).symm.injective hyeq)
+    have hvle : (p₁.spaComap x₀).1.toValuativeRel.vle ((0, 1) : ℚ_[2] × ℚ_[2]) 0 := by
+      rw [Pair.Hom.spaComap_val, comap_vle]
+      simp [p₁]
+    rw [hspv, Pair.Hom.spaComap_val, comap_vle] at hvle
+    simp [p₂] at hvle
+  obtain ⟨z₁, hz₁, hz₁'⟩ := exists_ofPair_completedTensor_point hS hT hT hTT f f rfl rfl
+    y₁ y₂ hy₁₂
+  obtain ⟨z₂, hz₂, hz₂'⟩ := exists_ofPair_completedTensor_point hS hT hT hTT f f rfl rfl
+    y₂ y₁ hy₁₂.symm
+  exact ⟨y₁, y₂, z₁, z₂, hy_ne, fun h ↦ hy_ne (by rw [← hz₁, h, hz₂]),
+    hy₁₂, hz₁, hz₁', hz₂, hz₂'⟩
 
 /-- **Identity base change**: pulling any morphism of complete Hausdorff sheafy Huber pairs back
 along the identity yields a pullback square in `AdicSpace`, with no adicness assumption on `f`. -/

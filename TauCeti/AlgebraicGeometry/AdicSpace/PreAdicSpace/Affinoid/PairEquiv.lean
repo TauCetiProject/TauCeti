@@ -93,23 +93,6 @@ theorem presentationLimitPreAdicSpacePairComap_def
         T.isRingOfIntegralElements.isPowerBounded_of_mem hS hT hsheaf :=
   (rfl)
 
-omit [IsHuberRing A] [IsHuberRing B] in
-/-- `presentationLimitPreAdicSpaceComap` depends on `(φ, hφ, hplus)` only through `φ`. -/
-private theorem presentationLimitPreAdicSpaceComap_congr
-    {P : PairOfDefinition A} {P' : PairOfDefinition B} {Aplus : Subring A} {Bplus : Subring B}
-    {φ₁ φ₂ : A →+* B} (h : φ₁ = φ₂)
-    (hφ₁ : Continuous φ₁) (hφ₂ : Continuous φ₂)
-    (hplus₁ : ∀ a ∈ Aplus, φ₁ a ∈ Bplus) (hplus₂ : ∀ a ∈ Aplus, φ₂ a ∈ Bplus)
-    (hAplus : ∀ ⦃a⦄, a ∈ Aplus → IsPowerBounded a)
-    (hBplus : ∀ ⦃b⦄, b ∈ Bplus → IsPowerBounded b)
-    (hP : P.ringOfDefinition ≤ Aplus) (hP' : P'.ringOfDefinition ≤ Bplus)
-    (hsheaf : Presheaf.IsSheaf (Opens.grothendieckTopology ↥(spa Bplus))
-      (presentationLimitPresheaf P' Bplus)) :
-    presentationLimitPreAdicSpaceComap φ₁ hφ₁ hplus₁ hAplus hBplus hP hP' hsheaf =
-      presentationLimitPreAdicSpaceComap φ₂ hφ₂ hplus₂ hAplus hBplus hP hP' hsheaf := by
-  subst h
-  rfl
-
 /-- On points, `presentationLimitPreAdicSpacePairComap` acts as `Pair.Hom.spaComap`. -/
 theorem presentationLimitPreAdicSpacePairComap_base_apply
     (P : PairOfDefinition A) (P' : PairOfDefinition B) {S : Pair A} {T : Pair B}
@@ -142,6 +125,7 @@ theorem presentationLimitPreAdicSpacePairComap_id
 
 /-- Contravariant functoriality of `presentationLimitPreAdicSpacePairComap` with respect to
 composition of morphisms of Huber pairs. -/
+@[reassoc]
 theorem presentationLimitPreAdicSpacePairComap_comp
     (P : PairOfDefinition A) (P' : PairOfDefinition B) (P'' : PairOfDefinition C)
     {S : Pair A} {T : Pair B} {U : Pair C}
@@ -281,13 +265,6 @@ theorem presentationLimitPreAdicSpace_hom_ext_pairHom
     P S.plus S.isRingOfIntegralElements.isPowerBounded_of_mem hS
     P' T.plus T.isRingOfIntegralElements.isPowerBounded_of_mem hT hsheaf ?_
   simpa only [presentationLimitHomPairHom_toRingHom] using congrArg Pair.Hom.toRingHom h
-
-include hsheaf in
-/-- Pullback on global sections `presentationLimitHomPairHom` is injective when `A` and `B` are
-complete and Hausdorff and `Spa(B, B⁺)` is sheafy. -/
-theorem presentationLimitHomPairHom_injective :
-    Function.Injective (presentationLimitHomPairHom P P' S T hS hT) :=
-  fun _ _ ↦ presentationLimitPreAdicSpace_hom_ext_pairHom P P' S T hS hT hsheaf
 
 /-- **Huber's bijection between morphisms of complete affinoid spectra and morphisms of Huber
 pairs** (Huber 1994, Proposition 2.1(i); Wedhorn, Theorem 8.12): for complete Hausdorff Huber pairs

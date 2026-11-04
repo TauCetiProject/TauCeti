@@ -7,7 +7,7 @@ module
 
 public import Mathlib.CategoryTheory.Limits.Shapes.Pullback.IsPullback.Basic
 public import TauCeti.AlgebraicGeometry.AdicSpace.Affinoid
-public import TauCeti.AlgebraicGeometry.AdicSpace.Spa.StructurePresheaf.SheafyRing
+public import TauCeti.AlgebraicGeometry.AdicSpace.Spa.TensorProduct.Sheafy
 public import TauCeti.RingTheory.Huber.TensorProduct.Pushout
 
 import TauCeti.AlgebraicGeometry.AdicSpace.PreAdicSpace.Affinoid.Complete
@@ -35,9 +35,9 @@ The universal property is tested against arbitrary adic spaces `X`, not only aff
    unique common extension.
 2. **Joint monomorphicity**: for an arbitrary adic space `X`, two morphisms `X ⟶ Spa(E, E⁺)` with
    equal compositions to `Spa(B, B⁺)` and `Spa(C, C⁺)` agree on every open affinoid subspace
-   `U ⊆ X` by choosing a complete Hausdorff model of `X|_U`
-   (`TauCeti.PreAdicSpace.isAffinoid_iff_exists_complete`), hence agree globally because `X` is
-   sheafy (`TauCeti.PreAdicSpace.hom_ext_of_ofRestrict`).
+   `U ⊆ X` by choosing a complete Hausdorff sheafy model of `X|_U`
+   (`TauCeti.PreAdicSpace.isSheafy.exists_complete_isSheaf_of_mem_affinoidOpens`), hence agree
+   globally because `X` is sheafy (`TauCeti.PreAdicSpace.hom_ext_of_ofRestrict`).
 3. **Gluing local lifts**: local lifts over the open affinoid cover of `X` agree on overlaps
    `X|_{U₁} ×_X X|_{U₂}`, because the overlap maps to `X` by an open immersion and is therefore
    again an adic space (`TauCeti.PreAdicSpace.isAdic_of_isOpenImmersion`), so joint monomorphicity
@@ -61,10 +61,10 @@ lift to a point of the fibre product (`TauCeti.AdicSpace.exists_ofPair_completed
   completed pushout gives a pullback square in `AdicSpace`.
 * `TauCeti.AdicSpace.affinoid_isPullback`: `Spa((B, B⁺) ⊗̂_A (C, C⁺))` is the pullback of
   `Spa(B, B⁺)` and `Spa(C, C⁺)` over `Spa(A, A⁺)` in `AdicSpace` whenever it is sheafy.
-* `TauCeti.Huber.isSheafyRing_completedTensor_of_isStablySheafyRing_left`,
-  `TauCeti.AdicSpace.affinoid_isPullback_of_isStablySheafyRing_left` (and symmetric `_right`
-  variants): automatic sheafiness and unconditional pullback when one factor is stably sheafy and
-  the opposite structure map is topologically of finite type.
+* `TauCeti.AdicSpace.affinoid_isPullback_of_isStablySheafyRing_left`,
+  `TauCeti.AdicSpace.affinoid_isPullback_of_isStablySheafyRing_right`: unconditional pullback in
+  `AdicSpace` when one factor is stably sheafy and the opposite structure map is topologically of
+  finite type.
 * `TauCeti.AdicSpace.isAdic_comapOfPair_completedTensor_inl`,
   `TauCeti.AdicSpace.locallyOfWeaklyFiniteType_comapOfPair_completedTensor_inl` (and `_inr`):
   preservation of adicness and local weak finite type on projections.
@@ -82,83 +82,7 @@ lift to a point of the fibre product (`TauCeti.AdicSpace.exists_ofPair_completed
 
 public section
 
-open AlgebraicGeometry CategoryTheory CategoryTheory.Limits TopologicalSpace UniformSpace
-
-namespace TauCeti.Huber
-
-universe u v w
-
-section StablySheafy
-
-/-- **Sheafiness of a completed tensor product over a stably sheafy left factor** (local ring-level
-step of Wedhorn, Theorem 8.56): if `B` is complete, Hausdorff and stably sheafy, `A → B` is adic,
-and `A → C` is topologically of finite type, then the completed tensor ring `B ⊗̂_A C` is sheafy. -/
-theorem isSheafyRing_completedTensor_of_isStablySheafyRing_left
-    {A : Type u} [CommRing A] [TopologicalSpace A] [IsTopologicalRing A] [IsHuberRing A]
-    {B : Type v} [CommRing B] [UniformSpace B] [IsUniformAddGroup B] [IsTopologicalRing B]
-    [CompleteSpace B] [T0Space B] [IsHuberRing B]
-    {C : Type w} [CommRing C] [TopologicalSpace C] [IsTopologicalRing C]
-    [Algebra A B] [Algebra A C] [IsAdicHom (algebraMap A B)] [IsAdicHom (algebraMap A C)]
-    (hB : IsStablySheafyRing.{v, max v w} B)
-    (hC : IsTopologicallyFiniteType (algebraMap A C)) :
-    IsSheafyRing (CompletedTensor A B C) :=
-  isStablySheafyRing_iff.mp hB (CompletedTensor A B C) _
-    ((CompletedTensor.isTopologicallyFiniteType_inl hC).comp_ringEquiv
-      (Completion.completeRingEquivSelf B)
-      (Completion.uniformContinuous_completeRingEquivSelf B).continuous
-      (Completion.uniformContinuous_completeRingEquivSelf_symm B).continuous)
-
-/-- **Sheafiness of a completed tensor product over a stably sheafy right factor**: symmetric form
-of `isSheafyRing_completedTensor_of_isStablySheafyRing_left` when `C` is stably sheafy and `A → B`
-is topologically of finite type. -/
-theorem isSheafyRing_completedTensor_of_isStablySheafyRing_right
-    {A : Type u} [CommRing A] [TopologicalSpace A] [IsTopologicalRing A] [IsHuberRing A]
-    {B : Type v} [CommRing B] [TopologicalSpace B] [IsTopologicalRing B]
-    {C : Type w} [CommRing C] [UniformSpace C] [IsUniformAddGroup C] [IsTopologicalRing C]
-    [CompleteSpace C] [T0Space C] [IsHuberRing C]
-    [Algebra A B] [Algebra A C] [IsAdicHom (algebraMap A B)] [IsAdicHom (algebraMap A C)]
-    (hC : IsStablySheafyRing.{w, max v w} C)
-    (hB : IsTopologicallyFiniteType (algebraMap A B)) :
-    IsSheafyRing (CompletedTensor A B C) :=
-  isStablySheafyRing_iff.mp hC (CompletedTensor A B C) _
-    ((CompletedTensor.isTopologicallyFiniteType_inr hB).comp_ringEquiv
-      (Completion.completeRingEquivSelf C)
-      (Completion.uniformContinuous_completeRingEquivSelf C).continuous
-      (Completion.uniformContinuous_completeRingEquivSelf_symm C).continuous)
-
-/-- **Pair-level sheafiness of `(B, B⁺) ⊗̂_A (C, C⁺)`** when `B` is complete, Hausdorff and stably
-sheafy and `A → C` is topologically of finite type. -/
-theorem isSheafyForEveryPresentation_completedTensor_of_isStablySheafyRing_left
-    {A : Type u} [CommRing A] [TopologicalSpace A] [IsTopologicalRing A] [IsHuberRing A]
-    {B : Type v} [CommRing B] [UniformSpace B] [IsUniformAddGroup B] [IsTopologicalRing B]
-    [CompleteSpace B] [T0Space B] [IsHuberRing B]
-    {C : Type w} [CommRing C] [TopologicalSpace C] [IsTopologicalRing C] [IsHuberRing C]
-    [Algebra A B] [Algebra A C] [IsAdicHom (algebraMap A B)] [IsAdicHom (algebraMap A C)]
-    (T : Pair B) (U : Pair C)
-    (hB : IsStablySheafyRing.{v, max v w} B)
-    (hC : IsTopologicallyFiniteType (algebraMap A C)) :
-    IsSheafyForEveryPresentation (T.completedTensor A U).plus :=
-  (isSheafyRing_completedTensor_of_isStablySheafyRing_left hB hC).isSheafyForEveryPresentation
-    (T.completedTensor A U).isRingOfIntegralElements
-
-/-- **Pair-level sheafiness of `(B, B⁺) ⊗̂_A (C, C⁺)`** when `C` is complete, Hausdorff and stably
-sheafy and `A → B` is topologically of finite type. -/
-theorem isSheafyForEveryPresentation_completedTensor_of_isStablySheafyRing_right
-    {A : Type u} [CommRing A] [TopologicalSpace A] [IsTopologicalRing A] [IsHuberRing A]
-    {B : Type v} [CommRing B] [TopologicalSpace B] [IsTopologicalRing B] [IsHuberRing B]
-    {C : Type w} [CommRing C] [UniformSpace C] [IsUniformAddGroup C] [IsTopologicalRing C]
-    [CompleteSpace C] [T0Space C] [IsHuberRing C]
-    [Algebra A B] [Algebra A C] [IsAdicHom (algebraMap A B)] [IsAdicHom (algebraMap A C)]
-    (T : Pair B) (U : Pair C)
-    (hC : IsStablySheafyRing.{w, max v w} C)
-    (hB : IsTopologicallyFiniteType (algebraMap A B)) :
-    IsSheafyForEveryPresentation (T.completedTensor A U).plus :=
-  (isSheafyRing_completedTensor_of_isStablySheafyRing_right hC hB).isSheafyForEveryPresentation
-    (T.completedTensor A U).isRingOfIntegralElements
-
-end StablySheafy
-
-end TauCeti.Huber
+open CategoryTheory CategoryTheory.Limits TopologicalSpace
 
 namespace TauCeti.ValuationSpectrum
 
@@ -187,6 +111,7 @@ variable {A B C E : Type u}
 
 /-- A completed pushout square of Huber pairs induces a commuting square of presentation-limit
 pre-adic spaces. -/
+@[reassoc]
 theorem presentationLimitPreAdicSpacePairComap_condition_of_isCompletedPushout
     {f : Pair.Hom S T} {g : Pair.Hom S U} {i : Pair.Hom T W} {j : Pair.Hom U W}
     (hpush : IsCompletedPushout f g i j) :
@@ -295,30 +220,27 @@ theorem presentationLimitPreAdicSpace_hom_ext_of_isCompletedPushout
     (hj : l₁ ≫ presentationLimitPreAdicSpacePairComap PC PE hC hE hsheafE j =
       l₂ ≫ presentationLimitPreAdicSpacePairComap PC PE hC hE hsheafE j) :
     l₁ = l₂ := by
-  have hcov : ⨆ O : X.affinoidOpens, O.1 = ⊤ :=
-    (sSup_eq_iSup' _).symm.trans ((isLocallyAffinoid_iff_sSup_eq_top X).mp hX.isLocallyAffinoid)
-  refine hom_ext_of_ofRestrict hX.isSheafy (fun O : X.affinoidOpens ↦ O.1) hcov fun O ↦ ?_
-  obtain ⟨D, _, _, _, _, _, _, _, V, PD, hD, ⟨e⟩⟩ :=
-    (isAffinoid_iff_exists_complete _).mp ((mem_propOpens_iff _).mp O.2)
-  have hsheafD : Presheaf.IsSheaf (Opens.grothendieckTopology ↥(spa V.plus))
-      (presentationLimitPresheaf PD V.plus) :=
-    ObjectProperty.prop_of_iso isSheafy e (isSheafy_restrict _ hX.isSheafy)
+  refine hom_ext_of_ofRestrict hX.isSheafy (fun O : X.affinoidOpens ↦ O.1)
+    hX.isLocallyAffinoid.iSup_affinoidOpens_eq_top fun O ↦ ?_
+  obtain ⟨D, _, _, _, _, _, _, _, V, PD, hD, hsheafD, ⟨e⟩⟩ :=
+    hX.isSheafy.exists_complete_isSheaf_of_mem_affinoidOpens O.2
   rw [← cancel_epi e.inv]
-  have hcond : (e.inv ≫ X.ofRestrict O.1.isOpenEmbedding ≫ l₂) ≫
-        presentationLimitPreAdicSpacePairComap PB PE hB hE hsheafE i ≫
+  have hcond : ((e.inv ≫ X.ofRestrict O.1.isOpenEmbedding ≫ l₂) ≫
+        presentationLimitPreAdicSpacePairComap PB PE hB hE hsheafE i) ≫
           presentationLimitPreAdicSpacePairComap PA PB hA hB hsheafB f =
-      (e.inv ≫ X.ofRestrict O.1.isOpenEmbedding ≫ l₂) ≫
-        presentationLimitPreAdicSpacePairComap PC PE hC hE hsheafE j ≫
+      ((e.inv ≫ X.ofRestrict O.1.isOpenEmbedding ≫ l₂) ≫
+        presentationLimitPreAdicSpacePairComap PC PE hC hE hsheafE j) ≫
           presentationLimitPreAdicSpacePairComap PA PC hA hC hsheafC g := by
-    rw [presentationLimitPreAdicSpacePairComap_condition_of_isCompletedPushout
-      PA PB PC PE hA hB hC hE hsheafB hsheafC hsheafE hpush]
+    simp only [Category.assoc,
+      presentationLimitPreAdicSpacePairComap_condition_of_isCompletedPushout
+        PA PB PC PE hA hB hC hE hsheafB hsheafC hsheafE hpush]
   exact (existsUnique_presentationLimitPreAdicSpacePairComap_of_isCompletedPushout
     PA PB PC PE hA hB hC hE hsheafB hsheafC hsheafE hpush PD V hD hsheafD
     ((e.inv ≫ X.ofRestrict O.1.isOpenEmbedding ≫ l₂) ≫
       presentationLimitPreAdicSpacePairComap PB PE hB hE hsheafE i)
     ((e.inv ≫ X.ofRestrict O.1.isOpenEmbedding ≫ l₂) ≫
       presentationLimitPreAdicSpacePairComap PC PE hC hE hsheafE j)
-    (by simpa only [Category.assoc] using hcond)).unique
+    hcond).unique
     ⟨by simp only [Category.assoc, hi], by simp only [Category.assoc, hj]⟩ ⟨rfl, rfl⟩
 
 include hpush in
@@ -337,8 +259,7 @@ theorem existsUnique_presentationLimitPreAdicSpace_lift_of_isCompletedPushout
         W.isRingOfIntegralElements.isPowerBounded_of_mem hE,
       l ≫ presentationLimitPreAdicSpacePairComap PB PE hB hE hsheafE i = u ∧
         l ≫ presentationLimitPreAdicSpacePairComap PC PE hC hE hsheafE j = v := by
-  have hcov : ⨆ O : X.affinoidOpens, O.1 = ⊤ :=
-    (sSup_eq_iSup' _).symm.trans ((isLocallyAffinoid_iff_sSup_eq_top X).mp hX.isLocallyAffinoid)
+  let hcov := hX.isLocallyAffinoid.iSup_affinoidOpens_eq_top
   -- Construct local lifts on each open affinoid subspace via complete Hausdorff models.
   have hloc (O : X.affinoidOpens) :
       ∃ l : X.restrict O.1.isOpenEmbedding ⟶
@@ -348,11 +269,8 @@ theorem existsUnique_presentationLimitPreAdicSpace_lift_of_isCompletedPushout
           X.ofRestrict O.1.isOpenEmbedding ≫ u ∧
         l ≫ presentationLimitPreAdicSpacePairComap PC PE hC hE hsheafE j =
           X.ofRestrict O.1.isOpenEmbedding ≫ v := by
-    obtain ⟨D, _, _, _, _, _, _, _, V, PD, hD, ⟨e⟩⟩ :=
-      (isAffinoid_iff_exists_complete _).mp ((mem_propOpens_iff _).mp O.2)
-    have hsheafD : Presheaf.IsSheaf (Opens.grothendieckTopology ↥(spa V.plus))
-        (presentationLimitPresheaf PD V.plus) :=
-      ObjectProperty.prop_of_iso isSheafy e (isSheafy_restrict _ hX.isSheafy)
+    obtain ⟨D, _, _, _, _, _, _, _, V, PD, hD, hsheafD, ⟨e⟩⟩ :=
+      hX.isSheafy.exists_complete_isSheaf_of_mem_affinoidOpens O.2
     obtain ⟨l₀, ⟨hl₀i, hl₀j⟩, -⟩ :=
       existsUnique_presentationLimitPreAdicSpacePairComap_of_isCompletedPushout
         PA PB PC PE hA hB hC hE hsheafB hsheafC hsheafE hpush PD V hD hsheafD

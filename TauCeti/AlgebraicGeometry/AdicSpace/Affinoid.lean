@@ -143,6 +143,7 @@ theorem comapOfPresentation_id (S : Pair A) (P : PairOfDefinition A)
   exact presentationLimitPreAdicSpacePairComap_id P hS hsheafS
 
 /-- Contravariant functoriality of `comapOfPresentation`. -/
+@[reassoc]
 theorem comapOfPresentation_comp (S : Pair A) (P : PairOfDefinition A)
     (hS : P.ringOfDefinition ≤ S.plus)
     (hsheafS : Presheaf.IsSheaf (Opens.grothendieckTopology ↥(spa S.plus))
@@ -168,13 +169,8 @@ noncomputable def ofPresentationPairChangeIso (S : Pair A) (P P' : PairOfDefinit
       (presentationLimitPresheaf P S.plus))
     (hsheaf' : Presheaf.IsSheaf (Opens.grothendieckTopology ↥(spa S.plus))
       (presentationLimitPresheaf P' S.plus)) :
-    ofPresentation S P hP hsheaf ≅ ofPresentation S P' hP' hsheaf' where
-  hom := comapOfPresentation S P' hP' hsheaf' S P hP hsheaf (Pair.Hom.id S)
-  inv := comapOfPresentation S P hP hsheaf S P' hP' hsheaf' (Pair.Hom.id S)
-  hom_inv_id := by
-    rw [← comapOfPresentation_comp, Pair.Hom.id_comp, comapOfPresentation_id]
-  inv_hom_id := by
-    rw [← comapOfPresentation_comp, Pair.Hom.id_comp, comapOfPresentation_id]
+    ofPresentation S P hP hsheaf ≅ ofPresentation S P' hP' hsheaf' :=
+  ObjectProperty.isoMk _ (presentationLimitPreAdicSpacePairChangeIso P P' hP hP' hsheaf hsheaf')
 
 @[simp]
 theorem ofPresentationPairChangeIso_hom (S : Pair A) (P P' : PairOfDefinition A)
@@ -184,8 +180,9 @@ theorem ofPresentationPairChangeIso_hom (S : Pair A) (P P' : PairOfDefinition A)
     (hsheaf' : Presheaf.IsSheaf (Opens.grothendieckTopology ↥(spa S.plus))
       (presentationLimitPresheaf P' S.plus)) :
     (ofPresentationPairChangeIso S P P' hP hP' hsheaf hsheaf').hom =
-      comapOfPresentation S P' hP' hsheaf' S P hP hsheaf (Pair.Hom.id S) :=
-  (rfl)
+      comapOfPresentation S P' hP' hsheaf' S P hP hsheaf (Pair.Hom.id S) := by
+  ext1
+  exact presentationLimitPreAdicSpacePairChangeIso_hom P P' hP hP' hsheaf hsheaf'
 
 @[simp]
 theorem ofPresentationPairChangeIso_inv (S : Pair A) (P P' : PairOfDefinition A)
@@ -195,8 +192,26 @@ theorem ofPresentationPairChangeIso_inv (S : Pair A) (P P' : PairOfDefinition A)
     (hsheaf' : Presheaf.IsSheaf (Opens.grothendieckTopology ↥(spa S.plus))
       (presentationLimitPresheaf P' S.plus)) :
     (ofPresentationPairChangeIso S P P' hP hP' hsheaf hsheaf').inv =
-      comapOfPresentation S P hP hsheaf S P' hP' hsheaf' (Pair.Hom.id S) :=
-  (rfl)
+      comapOfPresentation S P hP hsheaf S P' hP' hsheaf' (Pair.Hom.id S) := by
+  ext1
+  exact presentationLimitPreAdicSpacePairChangeIso_inv P P' hP hP' hsheaf hsheaf'
+
+/-- `comapOfPresentation` unfolds to `ObjectProperty.homMk` applied to
+`presentationLimitPreAdicSpaceComap`. -/
+theorem comapOfPresentation_eq_homMk_presentationLimitPreAdicSpaceComap
+    (S : Pair A) (P : PairOfDefinition A) (hS : P.ringOfDefinition ≤ S.plus)
+    (hsheafS : Presheaf.IsSheaf (Opens.grothendieckTopology ↥(spa S.plus))
+      (presentationLimitPresheaf P S.plus))
+    (T : Pair B) (P' : PairOfDefinition B) (hT : P'.ringOfDefinition ≤ T.plus)
+    (hsheafT : Presheaf.IsSheaf (Opens.grothendieckTopology ↥(spa T.plus))
+      (presentationLimitPresheaf P' T.plus))
+    (φ : Pair.Hom S T) :
+    comapOfPresentation S P hS hsheafS T P' hT hsheafT φ =
+      ObjectProperty.homMk (presentationLimitPreAdicSpaceComap φ.toRingHom φ.continuous_toRingHom
+        φ.map_mem_plus S.isRingOfIntegralElements.isPowerBounded_of_mem
+        T.isRingOfIntegralElements.isPowerBounded_of_mem hS hT hsheafT) := by
+  ext1
+  exact presentationLimitPreAdicSpacePairComap_def P P' hS hT hsheafT φ
 
 /-- For complete Hausdorff `B`, `comapOfPresentation` is adic if and only if the underlying ring
 homomorphism is adic. -/
@@ -210,13 +225,7 @@ theorem isAdic_comapOfPresentation_iff {B : Type u} [CommRing B] [UniformSpace B
       (presentationLimitPresheaf P' T.plus))
     (φ : Pair.Hom S T) :
     IsAdic (comapOfPresentation S P hS hsheafS T P' hT hsheafT φ) ↔ IsAdicHom φ.toRingHom := by
-  have heq : comapOfPresentation S P hS hsheafS T P' hT hsheafT φ =
-      ObjectProperty.homMk (presentationLimitPreAdicSpaceComap φ.toRingHom φ.continuous_toRingHom
-        φ.map_mem_plus S.isRingOfIntegralElements.isPowerBounded_of_mem
-        T.isRingOfIntegralElements.isPowerBounded_of_mem hS hT hsheafT) := by
-    ext1
-    exact presentationLimitPreAdicSpacePairComap_def P P' hS hT hsheafT φ
-  rw [heq]
+  rw [comapOfPresentation_eq_homMk_presentationLimitPreAdicSpaceComap]
   exact IsAdic.iff_isAdicHom P P' hS hT hsheafT (ofPresentation S P hS hsheafS).property φ
 
 /-- For complete Hausdorff `B`, `comapOfPresentation` is locally of weakly finite type whenever the
@@ -231,13 +240,7 @@ theorem locallyOfWeaklyFiniteType_comapOfPresentation {B : Type u} [CommRing B] 
       (presentationLimitPresheaf P' T.plus))
     (φ : Pair.Hom S T) (hφ : IsTopologicallyFiniteType φ.toRingHom) :
     LocallyOfWeaklyFiniteType (comapOfPresentation S P hS hsheafS T P' hT hsheafT φ) := by
-  have heq : comapOfPresentation S P hS hsheafS T P' hT hsheafT φ =
-      ObjectProperty.homMk (presentationLimitPreAdicSpaceComap φ.toRingHom φ.continuous_toRingHom
-        φ.map_mem_plus S.isRingOfIntegralElements.isPowerBounded_of_mem
-        T.isRingOfIntegralElements.isPowerBounded_of_mem hS hT hsheafT) := by
-    ext1
-    exact presentationLimitPreAdicSpacePairComap_def P P' hS hT hsheafT φ
-  rw [heq]
+  rw [comapOfPresentation_eq_homMk_presentationLimitPreAdicSpaceComap]
   exact locallyOfWeaklyFiniteType_presentationLimitPreAdicSpaceComap P P' hS hT hsheafT
     (ofPresentation S P hS hsheafS).property φ hφ
 
@@ -260,15 +263,9 @@ noncomputable def ofPresentationHomEquiv (S : Pair A) (P : PairOfDefinition A)
     (T : Pair B) (P' : PairOfDefinition B) (hT : P'.ringOfDefinition ≤ T.plus)
     (hsheafT : Presheaf.IsSheaf (Opens.grothendieckTopology ↥(spa T.plus))
       (presentationLimitPresheaf P' T.plus)) :
-    (ofPresentation T P' hT hsheafT ⟶ ofPresentation S P hS hsheafS) ≃ Pair.Hom S T where
-  toFun f := presentationLimitHomPairHom P P' S T hS hT f.hom
-  invFun := comapOfPresentation S P hS hsheafS T P' hT hsheafT
-  left_inv f := by
-    ext1
-    exact presentationLimitPreAdicSpacePairComap_presentationLimitHomPairHom P P' S T hS hT
-      hsheafT f.hom
-  right_inv φ :=
-    presentationLimitHomPairHom_presentationLimitPreAdicSpacePairComap P P' S T hS hT hsheafT φ
+    (ofPresentation T P' hT hsheafT ⟶ ofPresentation S P hS hsheafS) ≃ Pair.Hom S T :=
+  (ObjectProperty.fullyFaithfulι isAdic).homEquiv.trans
+    (presentationLimitPreAdicSpaceHomEquiv P P' S T hS hT hsheafT)
 
 @[simp]
 theorem ofPresentationHomEquiv_apply (S : Pair A) (P : PairOfDefinition A)
@@ -280,8 +277,9 @@ theorem ofPresentationHomEquiv_apply (S : Pair A) (P : PairOfDefinition A)
       (presentationLimitPresheaf P' T.plus))
     (f : ofPresentation T P' hT hsheafT ⟶ ofPresentation S P hS hsheafS) :
     ofPresentationHomEquiv S P hS hsheafS T P' hT hsheafT f =
-      presentationLimitHomPairHom P P' S T hS hT f.hom :=
-  (rfl)
+      presentationLimitHomPairHom P P' S T hS hT f.hom := by
+  rw [ofPresentationHomEquiv, Equiv.trans_apply, Functor.FullyFaithful.homEquiv_apply,
+    ObjectProperty.ι_map, presentationLimitPreAdicSpaceHomEquiv_apply]
 
 @[simp]
 theorem ofPresentationHomEquiv_symm_apply (S : Pair A) (P : PairOfDefinition A)
@@ -293,8 +291,10 @@ theorem ofPresentationHomEquiv_symm_apply (S : Pair A) (P : PairOfDefinition A)
       (presentationLimitPresheaf P' T.plus))
     (φ : Pair.Hom S T) :
     (ofPresentationHomEquiv S P hS hsheafS T P' hT hsheafT).symm φ =
-      comapOfPresentation S P hS hsheafS T P' hT hsheafT φ :=
-  (rfl)
+      comapOfPresentation S P hS hsheafS T P' hT hsheafT φ := by
+  apply (ofPresentationHomEquiv S P hS hsheafS T P' hT hsheafT).injective
+  rw [Equiv.apply_symm_apply, ofPresentationHomEquiv_apply, comapOfPresentation_hom,
+    presentationLimitHomPairHom_presentationLimitPreAdicSpacePairComap P P' S T hS hT hsheafT]
 
 end OfPresentationComplete
 
@@ -345,6 +345,7 @@ theorem comapOfPair_id (S : Pair A) (hS : IsSheafyForEveryPresentation S.plus) :
   comapOfPresentation_id _ _ _ _
 
 /-- Contravariant functoriality of `comapOfPair` with respect to `Pair.Hom.comp`. -/
+@[reassoc]
 theorem comapOfPair_comp {S : Pair A} {T : Pair B} {U : Pair C}
     (hS : IsSheafyForEveryPresentation S.plus)
     (hT : IsSheafyForEveryPresentation T.plus)
@@ -360,7 +361,12 @@ theorem ofPairHomeomorph_comapOfPair_apply {S : Pair A} {T : Pair B}
     (φ : Pair.Hom S T) (x : (ofPair T hT).obj) :
     ofPairHomeomorph S hS ((comapOfPair hS hT φ).hom.base x) =
       φ.spaComap (ofPairHomeomorph T hT x) := by
-  unfold ofPair ofPairHomeomorph comapOfPair
+  -- `ofPair` is sealed in the public interface because it chooses a pair of definition; once
+  -- unfolded, its carrier is definitionally `TopCat.of ↥(spa _.plus)` via the exposed
+  -- `presentationLimitPreAdicSpace`, so `eqToIso (ofPair_carrier _ _)` is `eqToIso rfl` and
+  -- `TopCat.homeoOfIso` acts as the identity on points.
+  dsimp only [ofPair, ofPairHomeomorph, comapOfPair, TopCat.homeoOfIso_apply, eqToIso.hom,
+    eqToHom_refl]
   exact comapOfPresentation_base_apply _ _ _ _ _ _ _ _ φ x
 
 /-- Under `ofPairHomeomorph.symm`, the base map of `comapOfPair` transports `Pair.Hom.spaComap`. -/
@@ -459,21 +465,21 @@ theorem ofPairHomEquiv_symm_apply {S : Pair A} {T : Pair B}
     (hS : IsSheafyForEveryPresentation S.plus) (hT : IsSheafyForEveryPresentation T.plus)
     (φ : Pair.Hom S T) :
     (ofPairHomEquiv hS hT).symm φ = comapOfPair hS hT φ :=
-  (rfl)
+  ofPresentationHomEquiv_symm_apply _ _ _ _ _ _ _ _ φ
 
 @[simp]
 theorem ofPairHomEquiv_comapOfPair {S : Pair A} {T : Pair B}
     (hS : IsSheafyForEveryPresentation S.plus) (hT : IsSheafyForEveryPresentation T.plus)
     (φ : Pair.Hom S T) :
-    ofPairHomEquiv hS hT (comapOfPair hS hT φ) = φ :=
-  (ofPairHomEquiv hS hT).apply_symm_apply φ
+    ofPairHomEquiv hS hT (comapOfPair hS hT φ) = φ := by
+  rw [← ofPairHomEquiv_symm_apply hS hT φ, Equiv.apply_symm_apply]
 
 @[simp]
 theorem comapOfPair_ofPairHomEquiv {S : Pair A} {T : Pair B}
     (hS : IsSheafyForEveryPresentation S.plus) (hT : IsSheafyForEveryPresentation T.plus)
     (f : ofPair T hT ⟶ ofPair S hS) :
-    comapOfPair hS hT (ofPairHomEquiv hS hT f) = f :=
-  (ofPairHomEquiv hS hT).symm_apply_apply f
+    comapOfPair hS hT (ofPairHomEquiv hS hT f) = f := by
+  rw [← ofPairHomEquiv_symm_apply hS hT, Equiv.symm_apply_apply]
 
 @[simp]
 theorem ofPairHomEquiv_id (S : Pair A) (hS : IsSheafyForEveryPresentation S.plus) :
