@@ -100,7 +100,7 @@ theorem toBridgeForest_liftBridgeForest (q : G.bridgeForest.Walk C D) (hq : q.Is
       q.copy (BridgeComponent.eq_bridgeComponentOf hx)
         (BridgeComponent.eq_bridgeComponentOf hy) := by
   apply G.isForest_bridgeForest.eq_of_isPath
-  · exact (q.isPath_liftBridgeForest hx hy).isTrail.toBridgeForest _ _
+  · exact (q.isPath_liftBridgeForest hx hy).isTrail.isPath_toBridgeForest _ _
   · exact (isPath_copy _ _ _).mpr hq
 
 open Classical in
@@ -152,15 +152,7 @@ theorem exists_mem_support_of_mem_support_liftBridgeForest
   have hstart : G.bridgeComponentOf x (BridgeComponent.mem_vertexSet hx) ∈ q.support := by
     rw [← BridgeComponent.eq_bridgeComponentOf hx]
     exact q.start_mem_support
-  suffices ∀ {A B} (r : G.bridgeForest.Walk A B),
-      r.edges ⊆ q.edges → A ∈ q.support → B ∈ q.support from this r hsub hstart
-  intro A B r
-  induction r with
-  | nil => exact fun _ hstart ↦ hstart
-  | cons e h r ih =>
-      intro hsub _
-      exact ih (fun f hf ↦ hsub (by simp [hf]))
-        (q.mem_support_of_isLink_of_mem_edges h.symm (hsub (by simp)))
+  exact r.end_mem_support_of_edges_subset q hsub hstart
 
 end Walk
 

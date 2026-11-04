@@ -323,6 +323,15 @@ theorem mem_support_of_isLink_of_mem_edges (p : G.Walk x y) {a b : α} {e : β}
         · simp [ha]
       · simp [ih he]
 
+/-- If a walk uses only edges of another walk and starts in its support, it ends there too. -/
+theorem end_mem_support_of_edges_subset {a b : α} (r : G.Walk a b) (q : G.Walk x y)
+    (h : r.edges ⊆ q.edges) (ha : a ∈ q.support) : b ∈ q.support := by
+  induction r with
+  | nil => exact ha
+  | cons e he r ih =>
+      exact ih (fun f hf ↦ h (by simp [hf]))
+        (q.mem_support_of_isLink_of_mem_edges he.symm (h (by simp)))
+
 /-- A walk with no repeated vertices also has no repeated edge identities. -/
 theorem edges_nodup_of_support_nodup (p : G.Walk x y) (hp : p.support.Nodup) :
     p.edges.Nodup := by

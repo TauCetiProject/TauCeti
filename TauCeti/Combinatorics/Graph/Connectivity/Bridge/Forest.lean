@@ -195,6 +195,16 @@ theorem Walk.toBridgeForest_cons_of_isBridge (h : G.IsLink e x y) (p : G.Walk y 
       Walk.cons e (he.isLink_bridgeForest h) (p.toBridgeForest h.right_mem hz) := by
   simp [Walk.toBridgeForest, he]
 
+/-- A nonbridge traversal is omitted; only the identification of its end components remains. -/
+@[simp]
+theorem Walk.toBridgeForest_cons_of_not_isBridge (h : G.IsLink e x y)
+    (p : G.Walk y z) (he : ¬ G.IsBridge e) (hx : x ∈ V(G)) (hz : z ∈ V(G)) :
+    (Walk.cons e h p).toBridgeForest hx hz =
+      (p.toBridgeForest h.right_mem hz).copy
+        ((G.bridgeComponentOf_eq_bridgeComponentOf_iff hx h.right_mem).mpr
+          (h.reachable_deleteEdges_bridgeSet he)).symm rfl := by
+  simp [Walk.toBridgeForest, he]
+
 open Classical in
 /-- Projection retains exactly the original bridge identities, in their original order. -/
 @[simp]
@@ -207,17 +217,8 @@ theorem Walk.edges_toBridgeForest (p : G.Walk x y) (hx : x ∈ V(G)) (hy : y ∈
       by_cases he : G.IsBridge e
       · rw [Walk.toBridgeForest_cons_of_isBridge h p he]
         simp [he, ih]
-      · simpa [Walk.toBridgeForest, he] using ih h.right_mem hy
-
-/-- A nonbridge traversal is omitted; only the identification of its end components remains. -/
-@[simp]
-theorem Walk.toBridgeForest_cons_of_not_isBridge (h : G.IsLink e x y)
-    (p : G.Walk y z) (he : ¬ G.IsBridge e) (hx : x ∈ V(G)) (hz : z ∈ V(G)) :
-    (Walk.cons e h p).toBridgeForest hx hz =
-      (p.toBridgeForest h.right_mem hz).copy
-        ((G.bridgeComponentOf_eq_bridgeComponentOf_iff hx h.right_mem).mpr
-          (h.reachable_deleteEdges_bridgeSet he)).symm rfl := by
-  simp [Walk.toBridgeForest, he]
+      · rw [Walk.toBridgeForest_cons_of_not_isBridge h p he, Walk.edges_copy]
+        simp [he, ih]
 
 /-- Projection retains the order and identity of the bridge traversals that remain. -/
 theorem Walk.edges_toBridgeForest_sublist (p : G.Walk x y) (hx : x ∈ V(G))
@@ -329,7 +330,7 @@ theorem isForest_bridgeForest (G : Graph α β) : G.bridgeForest.IsForest := by
   exact hbr.not_reachable_deleteEdges h
 
 /-- The projection of a trail to the bridge forest is a path. -/
-theorem Walk.IsTrail.toBridgeForest {p : G.Walk x y} (hp : p.IsTrail)
+theorem Walk.IsTrail.isPath_toBridgeForest {p : G.Walk x y} (hp : p.IsTrail)
     (hx : x ∈ V(G)) (hy : y ∈ V(G)) : (p.toBridgeForest hx hy).IsPath := by
   apply (G.isForest_bridgeForest.isPath_iff_isTrail _).mpr
   rw [Walk.isTrail_def, Walk.edges_toBridgeForest]
