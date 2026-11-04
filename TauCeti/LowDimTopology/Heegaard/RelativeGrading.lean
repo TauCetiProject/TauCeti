@@ -117,8 +117,9 @@ variable {χ : Region → ℤ} {x y : H.Generator} {D P : Region → ℤ}
 variable (H) in
 /-- The Maslov indices at the generator `x` of the periodic domains, a subgroup of `ℚ`. In a
 singly pointed diagram the relative grading is well defined modulo this subgroup
-(`TauCeti.HeegaardRegionSystem.IsDomainBetween.coe_relativeGrading_eq`). On a geometric diagram
-it is the image of the pairing of `c₁(s_z(x))` with `H₂(Y; ℤ)`. -/
+(`TauCeti.HeegaardRegionSystem.IsDomainBetween.coe_relativeGrading_eq`). On a geometric diagram,
+by Ozsváth and Szabó (not formalized here), it is the image of the pairing of `c₁(s_z(x))` with
+`H₂(Y; ℤ)`. -/
 def periodicMaslovIndices (χ : Region → ℤ) (x : H.Generator) : AddSubgroup ℚ :=
   H.periodicDomains.map (H.maslovIndex χ x x)
 
@@ -129,6 +130,7 @@ theorem periodicMaslovIndices_def :
 
 /-- A rational number is a periodic Maslov index at `x` when it is the Maslov index at `x` of a
 periodic domain. -/
+@[simp]
 theorem mem_periodicMaslovIndices_iff {q : ℚ} :
     q ∈ H.periodicMaslovIndices χ x ↔ ∃ P ∈ H.periodicDomains, H.maslovIndex χ x x P = q :=
   AddSubgroup.mem_map
@@ -235,8 +237,8 @@ theorem relativeGrading_of_forall_not_isDomainBetween
   rw [relativeGrading, dite_eq_right (not_exists.mpr h)]
 
 /-- Modulo the periodic Maslov indices at `x`, the relative grading is `μ(D) - 2 n_z(D)` for
-every domain `D` from `x` to `y`: this is the relative grading of Ozsváth and Szabó modulo the
-divisibility of `c₁`. -/
+every domain `D` from `x` to `y`. This is the combinatorial counterpart of the relative
+`ℤ / d(s)` grading of Ozsváth and Szabó; the identification with `c₁` is not formalized here. -/
 theorem IsDomainBetween.coe_relativeGrading_eq (hD : H.IsDomainBetween x y D) :
     (H.relativeGrading χ z x y : ℚ ⧸ H.periodicMaslovIndices χ x) =
       ((H.maslovIndex χ x y D - 2 * D (H.basepoint z) : ℚ) : ℚ ⧸ H.periodicMaslovIndices χ x) := by
