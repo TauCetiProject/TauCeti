@@ -399,14 +399,10 @@ private theorem mem_image_apply_det_approxModule_of_mem [DecidableEq ι]
     by_cases hki : k = i
     · subst hki; simp
     · simp [hki, Ne.symm hki]
-  have hmul := congrArg (fun M ↦ v M.det) (Matrix.of_apply_eq_mul_transpose_toMatrix'_pi (L v.1)
-    fun k ↦ (d : K) • y k)
-  rw [hdiag, Matrix.det_diagonal, Matrix.det_mul, Matrix.det_transpose, LinearMap.det_toMatrix',
-    map_mul, map_prod] at hmul
-  apply mul_left_cancel₀ hdet0
-  rw [← mul_assoc, mul_inv_cancel₀ hdet0, one_mul, mul_comm, ← hmul]
-  refine Finset.prod_congr rfl fun k _ ↦ ?_
-  rw [map_mul, hdv, one_mul, hu k]
+  refine (eq_inv_mul_iff_mul_eq₀ hdet0).mpr ?_
+  rw [mul_comm, ← map_mul, ← Matrix.det_of_apply_eq_det_mul_det_pi, hdiag, Matrix.det_diagonal,
+    map_prod]
+  exact Finset.prod_congr rfl fun k _ ↦ by rw [map_mul, hdv, one_mul, hu k]
 
 /-- At a place `v ∈ S₀` where `L v.1` is linearly independent, the largest value of `v` on the
 determinants of `card ι` vectors of `approxModule S₀ L c Q` is
@@ -424,9 +420,7 @@ private theorem isGreatest_apply_det_approxModule_of_mem [DecidableEq ι]
   dsimp only
   have hQc (i : ι) : 0 < |Q| ^ c v.1 i := Real.rpow_pos_of_pos (abs_pos.mpr hQ) _
   refine (le_inv_mul_iff₀ (FinitePlace.pos_iff.mpr hvL.det_pi_ne_zero)).mpr ?_
-  have hmul := congrArg (fun M ↦ v M.det) (Matrix.of_apply_eq_mul_transpose_toMatrix'_pi (L v.1) x)
-  rw [Matrix.det_mul, Matrix.det_transpose, LinearMap.det_toMatrix', map_mul, mul_comm] at hmul
-  rw [← hmul]
+  rw [mul_comm, ← map_mul, ← Matrix.det_of_apply_eq_det_mul_det_pi]
   exact Matrix.abv_det_le_prod_of_le' _ v.add_le fun k i ↦
     (v.apply_le_iff_le_floorValue (hQc i) _).mp
       ((mem_approxModule.mp (hx k (Set.mem_univ k))).1 v hv i)
@@ -557,25 +551,35 @@ theorem volume_approxBody {L : AbsoluteValue K ℝ → ι → Dual K (ι → K)}
         ∏ v : InfinitePlace K,
           (ENNReal.ofReal ((v (LinearMap.det (LinearMap.pi (L v.1))))⁻¹) *
             ∏ i, ENNReal.ofReal (Q ^ c v.1 i)) ^ v.mult := by
-  have hdet_pos : 0 < ∏ v : InfinitePlace K, v (LinearMap.det (LinearMap.pi (L v.1))) ^ v.mult :=
-    Finset.prod_pos fun v _ ↦ pow_pos (InfinitePlace.pos_iff.mpr (hL v).det_pi_ne_zero) _
+  have hv0 (v : InfinitePlace K) : 0 < v (LinearMap.det (LinearMap.pi (L v.1))) :=
+    InfinitePlace.pos_iff.mpr (hL v).det_pi_ne_zero
   have hdet_ne : LinearMap.det (approxBodyLin L) ≠ 0 := by
     rw [← abs_ne_zero, abs_det_approxBodyLin]
-    exact hdet_pos.ne'
-  rw [approxBody_eq_preimage, Measure.addHaar_preimage_linearMap volume hdet_ne, abs_inv,
-    abs_det_approxBodyLin, ENNReal.ofReal_inv_of_pos hdet_pos,
-    ENNReal.ofReal_prod_of_nonneg (fun _ _ ↦ by positivity), volume_pi_pi]
-  simp_rw [volume_setOf_forall_normAtPlace_le, Finset.prod_mul_distrib, Finset.prod_const,
-    Finset.card_univ]
-  rw [mul_left_comm]
-  congr 1
-  rw [Finset.prod_comm, ENNReal.prod_inv_distrib (fun _ _ _ _ _ ↦ Or.inr ENNReal.ofReal_ne_top),
-    ← Finset.prod_mul_distrib]
-  refine Finset.prod_congr rfl fun v _ ↦ ?_
-  have hv0 : 0 < v (LinearMap.det (LinearMap.pi (L v.1))) :=
-    InfinitePlace.pos_iff.mpr (hL v).det_pi_ne_zero
-  rw [ENNReal.ofReal_pow hv0.le, ENNReal.inv_pow, ← ENNReal.ofReal_inv_of_pos hv0, mul_pow,
-    Finset.prod_pow Finset.univ v.mult (fun i ↦ ENNReal.ofReal (Q ^ c v.1 i))]
+    exact (Finset.prod_pos fun v _ ↦ pow_pos (hv0 v) _).ne'
+  calc
+    volume (approxBody L c Q)
+      = ENNReal.ofReal |LinearMap.det (approxBodyLin L)|⁻¹ *
+          (convexBodyLTFactor K ^ Fintype.card ι *
+            ∏ i : ι, ∏ v : InfinitePlace K, ENNReal.ofReal (Q ^ c v.1 i) ^ v.mult) := by
+        simp [approxBody_eq_preimage, Measure.addHaar_preimage_linearMap volume hdet_ne,
+          volume_pi_pi, volume_setOf_forall_normAtPlace_le, Finset.prod_mul_distrib]
+    _ = (∏ v : InfinitePlace K,
+            ENNReal.ofReal ((v (LinearMap.det (LinearMap.pi (L v.1))))⁻¹) ^ v.mult) *
+          (convexBodyLTFactor K ^ Fintype.card ι *
+            ∏ v : InfinitePlace K, (∏ i, ENNReal.ofReal (Q ^ c v.1 i)) ^ v.mult) := by
+        congr 1
+        · rw [abs_det_approxBodyLin, ← Finset.prod_inv_distrib,
+            ENNReal.ofReal_prod_of_nonneg fun v _ ↦ inv_nonneg.mpr (pow_nonneg (hv0 v).le _)]
+          exact Finset.prod_congr rfl fun v _ ↦ by
+            rw [← inv_pow, ENNReal.ofReal_pow (inv_nonneg.mpr (hv0 v).le)]
+        · rw [Finset.prod_comm]
+          simp [Finset.prod_pow]
+    _ = convexBodyLTFactor K ^ Fintype.card ι *
+          ∏ v : InfinitePlace K,
+            (ENNReal.ofReal ((v (LinearMap.det (LinearMap.pi (L v.1))))⁻¹) *
+              ∏ i, ENNReal.ofReal (Q ^ c v.1 i)) ^ v.mult := by
+        rw [mul_left_comm, ← Finset.prod_mul_distrib]
+        simp [mul_pow]
 
 open scoped Classical in
 /-- **Real-valued volume of the body of an approximation domain** (Bombieri–Gubler, Lemma 7.5.7,
@@ -589,17 +593,10 @@ theorem volume_real_approxBody {L : AbsoluteValue K ℝ → ι → Dual K (ι �
       2 ^ (nrRealPlaces K * Fintype.card ι) * Real.pi ^ (nrComplexPlaces K * Fintype.card ι) *
         ∏ v : InfinitePlace K,
           ((v (LinearMap.det (LinearMap.pi (L v.1))))⁻¹ * ∏ i, Q ^ c v.1 i) ^ v.mult := by
-  rw [measureReal_def, volume_approxBody hL c Q, ENNReal.toReal_mul, ENNReal.toReal_pow,
-    ENNReal.coe_toReal, coe_convexBodyLTFactor, mul_pow, ← pow_mul, ← pow_mul,
-    ENNReal.toReal_prod]
-  congr 1
-  refine Finset.prod_congr rfl fun v _ ↦ ?_
-  have hv0 : 0 < v (LinearMap.det (LinearMap.pi (L v.1))) :=
-    InfinitePlace.pos_iff.mpr (hL v).det_pi_ne_zero
-  rw [ENNReal.toReal_pow, ENNReal.toReal_mul, ENNReal.toReal_ofReal (inv_nonneg.mpr hv0.le),
-    ENNReal.toReal_prod]
-  congr 2
-  exact Finset.prod_congr rfl fun i _ ↦ ENNReal.toReal_ofReal (Real.rpow_nonneg hQ _)
+  have hv0 (v : InfinitePlace K) : 0 ≤ (v (LinearMap.det (LinearMap.pi (L v.1))))⁻¹ :=
+    inv_nonneg.mpr (apply_nonneg _ _)
+  have hQc (v : InfinitePlace K) (i : ι) : 0 ≤ Q ^ c v.1 i := Real.rpow_nonneg hQ _
+  simp [measureReal_def, volume_approxBody hL c Q, hv0, hQc, mul_pow, ← pow_mul]
 
 open scoped Classical in
 /-- For `0 < Q` and linearly independent forms at every infinite place, the real volume of

@@ -48,8 +48,10 @@ and so separate points.
 * `LinearIndependent.exists_sum_smul_eq_proj`, `LinearIndependent.pi_bijective`,
   `LinearIndependent.det_pi_ne_zero`: `#ι` linearly independent forms on `Kⁱ` express every
   coordinate projection and assemble into a bijective endomorphism of nonzero determinant.
-* `Matrix.of_apply_eq_mul_transpose_toMatrix'_pi`: evaluating linear forms `l` on `ι → R` against
-  vectors `x` multiplies `Matrix.of x` on the right by `(LinearMap.toMatrix' (LinearMap.pi l))ᵀ`.
+* `Matrix.of_apply_eq_mul_transpose_toMatrix'_pi` and `Matrix.det_of_apply_eq_det_mul_det_pi`:
+  evaluating linear forms `l` on `ι → R` against vectors `x` multiplies `Matrix.of x` on the right
+  by `(LinearMap.toMatrix' (LinearMap.pi l))ᵀ`, so for `#ι` forms and `#ι` vectors its determinant
+  is `(Matrix.of x).det * LinearMap.det (LinearMap.pi l)`.
 -/
 
 public section
@@ -271,5 +273,12 @@ theorem of_apply_eq_mul_transpose_toMatrix'_pi {R κ ι μ : Type*} [CommSemirin
   ext k i
   conv_lhs => rw [of_apply, ← (Pi.basisFun R ι).sum_repr (x k), map_sum]
   simp [Matrix.mul_apply, LinearMap.toMatrix'_apply]
+
+/-- The determinant of `(l i (x k))_{k, i}` for `#ι` linear forms `l` and `#ι` vectors `x` on
+`ι → R` equals `(Matrix.of x).det * LinearMap.det (LinearMap.pi l)`. -/
+theorem det_of_apply_eq_det_mul_det_pi {R ι : Type*} [CommRing R] [Fintype ι] [DecidableEq ι]
+    (l : ι → Module.Dual R (ι → R)) (x : ι → ι → R) :
+    (Matrix.of fun k i ↦ l i (x k)).det = (Matrix.of x).det * LinearMap.det (LinearMap.pi l) := by
+  rw [of_apply_eq_mul_transpose_toMatrix'_pi, det_mul, det_transpose, LinearMap.det_toMatrix']
 
 end Matrix

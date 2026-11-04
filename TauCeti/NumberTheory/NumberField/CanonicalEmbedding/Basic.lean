@@ -71,7 +71,7 @@ theorem mixedDiag_apply_isComplex (g : InfinitePlace K → K)
 @[simp]
 theorem mixedDiag_const (x : K) :
     mixedDiag K (fun _ ↦ x) = mixedEmbedding K x := by
-  rfl
+  ext <;> simp
 
 /-- `normAtPlace w` depends only on the `w`-coordinate of an element of `mixedSpace K`. -/
 theorem normAtPlace_congr (w : InfinitePlace K) {x y : mixedSpace K}
