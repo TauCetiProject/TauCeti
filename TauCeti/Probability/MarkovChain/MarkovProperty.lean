@@ -33,7 +33,9 @@ This file proves it in the following forms.
   `(markovChainLaw ν κ).map (shift α)^[n] = markovChainLaw ((κ ^ n) ∘ₘ ν) κ`
   (`MeasureTheory.Measure.markovChainLaw_map_shift_iterate`). On an event `{(X 0, …, X n) ∈ A}` of
   the history, the future path has the law of the chain started from the law of `X n` restricted
-  to that event (`MeasureTheory.Measure.markovChainLaw_restrict_map_shift_iterate`).
+  to that event (`MeasureTheory.Measure.markovChainLaw_restrict_map_shift_iterate`). In
+  particular `ℙ(X n = y, (shift α)^[n] X ∈ B) = ((κ ^ n) ∘ₘ ν) {y} · ℙ_y(B)`
+  (`MeasureTheory.Measure.markovChainLaw_setOf_apply_eq_inter_preimage_shift_iterate`).
 
 The proof restricts the path law to an event of the history and identifies the law of the future
 path on it by the uniqueness theorem `MeasureTheory.Measure.eq_markovChainLaw`: the prefix
@@ -124,6 +126,33 @@ theorem _root_.MeasureTheory.Measure.markovChainLaw_map_shift_iterate [IsFiniteM
     (markovChainLaw ν κ).map (shift α)^[n] = markovChainLaw ((κ ^ n : Kernel α α) ∘ₘ ν) κ := by
   simpa [Measure.markovChainLaw_map_eval] using
     Measure.markovChainLaw_restrict_map_shift_iterate ν κ n MeasurableSet.univ
+
+/-- **The future path from a fixed state.** For a finite initial measure, the chain is at `y` at
+time `n` and its future path `(X (n + k))ₖ` lies in `B` with probability
+`((κ ^ n) ∘ₘ ν) {y} · ℙ_y(B)`. -/
+theorem _root_.MeasureTheory.Measure.markovChainLaw_setOf_apply_eq_inter_preimage_shift_iterate
+    [MeasurableSingletonClass α] [IsFiniteMeasure ν] (n : ℕ) (y : α) {B : Set (ℕ → α)}
+    (hB : MeasurableSet B) :
+    markovChainLaw ν κ ({x | x n = y} ∩ (shift α)^[n] ⁻¹' B) =
+      ((κ ^ n : Kernel α α) ∘ₘ ν) {y} * markovChainLaw (Measure.dirac y) κ B := by
+  have hA : MeasurableSet {w : Fin (n + 1) → α | w (Fin.last n) = y} :=
+    (measurableSet_singleton y).preimage (measurable_pi_apply _)
+  have hH : (fun (x : ℕ → α) (i : Fin (n + 1)) => x i.1) ⁻¹' {w | w (Fin.last n) = y} =
+      {x | x n = y} := by
+    ext x
+    simp
+  have hy : MeasurableSet {x : ℕ → α | x n = y} :=
+    (measurableSet_singleton y).preimage (measurable_pi_apply n)
+  -- On `{X n = y}` the future path is a chain started from a multiple of `dirac y`.
+  have hlaw := Measure.markovChainLaw_restrict_map_shift_iterate ν κ n hA
+  rw [hH, Measure.map_congr (ae_restrict_of_forall_mem hy fun x hx => hx), Measure.map_const,
+    Measure.restrict_apply_univ] at hlaw
+  rw [Set.inter_comm, ← Measure.restrict_apply (hB.preimage (measurable_shift_iterate n)),
+    ← Measure.map_apply (measurable_shift_iterate n) hB, hlaw,
+    Measure.markovChainLaw_eq_comp (_ • _),
+    Measure.bind_smul _ _ κ.markovChainKernel.measurable.aemeasurable,
+    ← Measure.markovChainLaw_eq_comp, smul_apply, smul_eq_mul,
+    Measure.markovChainLaw_setOf_apply_eq_comp]
 
 /-- **The Markov property at time `n`, as a joint law.** Under `markovChainLaw ν κ`, the prefix
 `(X 0, …, X n)` and the future path `(X (n + k))ₖ` have joint law the prefix law composed with the
