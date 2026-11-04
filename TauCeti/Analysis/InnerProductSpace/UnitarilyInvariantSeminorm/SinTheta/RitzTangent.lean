@@ -39,42 +39,16 @@ variable {𝕜 E F : Type*} [RCLike 𝕜]
   [NormedAddCommGroup E] [InnerProductSpace 𝕜 E] [FiniteDimensional 𝕜 E]
   [NormedAddCommGroup F] [InnerProductSpace 𝕜 F] [FiniteDimensional 𝕜 F]
 
-private theorem adjoint_comp_ritzResidual_eq_zero (A : E →ₗ[𝕜] E)
-    (X : F →ₗᵢ[𝕜] E) : X.toLinearMap.adjoint ∘ₗ (A ∘ₗ X.toLinearMap - X.toLinearMap ∘ₗ
-      (X.toLinearMap.adjoint ∘ₗ A ∘ₗ X.toLinearMap)) = 0 := by
-  let : CompleteSpace E := FiniteDimensional.complete 𝕜 E
-  let : CompleteSpace F := FiniteDimensional.complete 𝕜 F
-  have h := ContinuousLinearMap.adjoint_comp_sylvester_compression
-    A.toContinuousLinearMap (X := X.toContinuousLinearMap) X.isometry
-  simpa only [ContinuousLinearMap.compression_def, ContinuousLinearMap.sylvester_apply,
-    ContinuousLinearMap.toLinearMap_comp, ContinuousLinearMap.toLinearMap_sub,
-    ← ContinuousLinearMap.adjoint_toLinearMap, LinearIsometry.toLinearMap_toContinuousLinearMap,
-    LinearMap.coe_toContinuousLinearMap, ContinuousLinearMap.toLinearMap_zero] using congrArg
-      ContinuousLinearMap.toLinearMap h
-
-omit [FiniteDimensional 𝕜 E] [FiniteDimensional 𝕜 F] in
-private theorem sylvester_sinThetaEmbedding_eq_projectedResidual {A : E →ₗ[𝕜] E}
-    (hA : A.IsSymmetric) {U : Submodule 𝕜 E} [U.HasOrthogonalProjection]
-    (hU : U ∈ Module.End.invtSubmodule A) (X : F →ₗᵢ[𝕜] E) (M : F →ₗ[𝕜] F) :
-    A ∘ₗ (Uᗮ.starProjection.toLinearMap ∘ₗ X.toLinearMap) - (Uᗮ.starProjection.toLinearMap ∘ₗ
-      X.toLinearMap) ∘ₗ M =
-      Uᗮ.starProjection.toLinearMap ∘ₗ (A ∘ₗ X.toLinearMap - X.toLinearMap ∘ₗ M) := by
-  ext x
-  have hU' := hA.orthogonalComplement_mem_invtSubmodule (p := U) hU
-  have hcomm := hA.starProjection_apply_comm hU' (X x)
-  simp only [LinearMap.sub_apply, LinearMap.comp_apply, ContinuousLinearMap.coe_coe, map_sub,
-    LinearIsometry.coe_toLinearMap]
-  rw [hcomm]
-
-/-- The paper's interval hypotheses force the trial and exact subspaces to be
+/-- Separated one-sided spectral bounds force the trial and exact subspaces to be
 transverse.  Thus the tangent has no `π/2` pole; this is a conclusion, not an
 extra hypothesis. -/
-private theorem isTransverse_of_tanThetaIntervalGap
+private theorem isTransverse_of_tanThetaSpectralGap
     {A : E →ₗ[𝕜] E} (hA : A.IsSymmetric)
     {U : Submodule 𝕜 E} (hU : U ∈ Module.End.invtSubmodule A)
-    (X : F →ₗᵢ[𝕜] E) {β α δ : ℝ} (hδ : 0 < δ)
-    (hgap : (Module.End.PointSpectrumIn (X.toLinearMap.adjoint ∘ₗ A ∘ₗ X.toLinearMap) ⊤ (Set.Icc β
-      α) ∧ Module.End.PointSpectrumIn A Uᗮ (Set.Ici (α + δ)))) :
+    (X : F →ₗᵢ[𝕜] E) {α δ : ℝ} (hδ : 0 < δ)
+    (hgap : (Module.End.PointSpectrumIn
+      (X.toLinearMap.adjoint ∘ₗ A ∘ₗ X.toLinearMap) ⊤ (Set.Iic α) ∧
+      Module.End.PointSpectrumIn A Uᗮ (Set.Ici (α + δ)))) :
     Disjoint (LinearMap.range X.toLinearMap) Uᗮ := by
   rw [Submodule.disjoint_def]
   intro x hx hxperp
@@ -86,15 +60,10 @@ private theorem isTransverse_of_tanThetaIntervalGap
     by
     intro z _
     exact Submodule.mem_top
-  have hMspec : Module.End.PointSpectrumIn ((X.toLinearMap.adjoint ∘ₗ A ∘ₗ X.toLinearMap)) ⊤
-    (Set.Iic α) := by
-    apply Module.End.pointSpectrumIn_iff_restrictedPointSpectrum_subset.mpr
-    intro lam hlam
-    exact (Module.End.pointSpectrumIn_iff_restrictedPointSpectrum_subset.mp hgap.1 hlam).2
   have hMupper :
       RCLike.re ⟪(X.toLinearMap.adjoint ∘ₗ A ∘ₗ X.toLinearMap) y, y⟫_𝕜 ≤ α * ‖y‖ ^ 2 :=
     (hA.adjoint_conj X.toLinearMap).re_inner_apply_self_le_of_pointSpectrumIn
-      hTopRed hMspec Submodule.mem_top
+      hTopRed hgap.1 Submodule.mem_top
   have hAlower :
       (α + δ) * ‖X.toLinearMap y‖ ^ 2 ≤
         RCLike.re ⟪A (X.toLinearMap y), X.toLinearMap y⟫_𝕜 :=
@@ -111,56 +80,6 @@ private theorem isTransverse_of_tanThetaIntervalGap
     rw [← hinner, hnorm] at hAlower
     nlinarith [sq_pos_of_pos hynorm]
   simp [hyzero]
-
-/-- Transversality makes every singular value of the directed sine block strictly less than one. -/
-private theorem singularValues_sinThetaEmbedding_lt_one_of_isTransverse
-    (U : Submodule 𝕜 E) [U.HasOrthogonalProjection]
-    (X : F →ₗᵢ[𝕜] E)
-    (htrans : Disjoint (LinearMap.range X.toLinearMap) Uᗮ)
-    (i : Fin (finrank 𝕜 F)) :
-    (Uᗮ.starProjection.toLinearMap ∘ₗ X.toLinearMap).singularValues i < 1 := by
-  have hgap := (Submodule.directedProjectionGap_lt_one_iff _ _).2 htrans
-  have hsin := (Submodule.forall_principalSines_lt_iff _ _).2 hgap (i : ℕ)
-  have heq := U.principalSines_range_eq_singularValues
-    (X := X.toContinuousLinearMap) X.isometry
-  have heq' : (LinearMap.range X.toLinearMap).principalSines U =
-      (Uᗮ.starProjection.toLinearMap ∘ₗ X.toLinearMap).singularValues := by
-    simpa only [ContinuousLinearMap.toLinearMap_comp,
-      LinearIsometry.toLinearMap_toContinuousLinearMap] using heq
-  rw [heq'] at hsin
-  exact hsin
-
-/-- The ambient adjoint of the trial isometry acts on a sine left singular vector
-by the same singular relation. -/
-private theorem adjoint_apply_sinTheta_leftSingularVector
-    (U : Submodule 𝕜 E) [U.HasOrthogonalProjection]
-    (X : F →ₗᵢ[𝕜] E) {i : Fin (finrank 𝕜 F)} :
-    X.toLinearMap.adjoint
-        (LinearMap.leftSingularVector ((Uᗮ.starProjection.toLinearMap ∘ₗ X.toLinearMap)) i) =
-      (((((Uᗮ.starProjection.toLinearMap ∘ₗ X.toLinearMap)).singularValues i : ℝ) : 𝕜) •
-        LinearMap.rightSingularBasis ((Uᗮ.starProjection.toLinearMap ∘ₗ X.toLinearMap)) i) := by
-  let S := (Uᗮ.starProjection.toLinearMap ∘ₗ X.toLinearMap)
-  let y := LinearMap.leftSingularVector S i
-  have hSadj : S.adjoint y = ((S.singularValues i : ℝ) : 𝕜) •
-      LinearMap.rightSingularBasis S i := LinearMap.adjoint_leftSingularVector S i
-  have hyUperp : y ∈ Uᗮ := by
-    dsimp [y]
-    rw [LinearMap.leftSingularVector_def]
-    exact Uᗮ.smul_mem _
-      (Uᗮ.starProjection_apply_mem (X (LinearMap.rightSingularBasis S i)))
-  apply ext_inner_right 𝕜
-  intro z
-  calc
-    ⟪X.toLinearMap.adjoint y, z⟫_𝕜 = ⟪y, X z⟫_𝕜 :=
-      LinearMap.adjoint_inner_left X.toLinearMap z y
-    _ = ⟪y, Uᗮ.starProjection (X z)⟫_𝕜 := by
-      rw [← Uᗮ.inner_starProjection_left_eq_right,
-        Submodule.starProjection_eq_self_iff.mpr hyUperp]
-    _ = ⟪S.adjoint y, z⟫_𝕜 := by
-      rw [LinearMap.adjoint_inner_left]
-      rfl
-    _ = ⟪((S.singularValues i : ℝ) : 𝕜) •
-          LinearMap.rightSingularBasis S i, z⟫_𝕜 := by rw [hSadj]
 
 /-- The normalized residual-side witness attached to a sine singular vector.
 
@@ -206,7 +125,8 @@ private theorem orthonormal_tanThetaResidualWitness
     · let y := LinearMap.leftSingularVector S i
       have hXadj : X.toLinearMap.adjoint y = ((σ : ℝ) : 𝕜) • v := by
         simpa [S, σ, v, y] using
-          adjoint_apply_sinTheta_leftSingularVector U X (i := i)
+          Submodule.adjoint_apply_leftSingularVector_starProjection_orthogonal_comp
+            U X.toLinearMap (i := i)
       have hyy : ⟪y, y⟫_𝕜 = 1 := by
         simpa [y] using
           (orthonormal_iff_ite.mp (LinearMap.orthonormal_leftSingularVector S)
@@ -240,7 +160,7 @@ private theorem orthonormal_tanThetaResidualWitness
       have hσnonneg : 0 ≤ σ := S.singularValues_nonneg i
       have hσlt : σ < 1 := by
         simpa [S, σ] using
-          singularValues_sinThetaEmbedding_lt_one_of_isTransverse U X htrans i
+          Submodule.singularValues_starProjection_orthogonal_comp_lt_one_of_disjoint U X htrans i
       let c := Real.sqrt (1 - σ ^ 2)
       have hcpos : 0 < c := by
         dsimp [c]
@@ -286,7 +206,8 @@ private theorem orthonormal_tanThetaResidualWitness
       · let yj := LinearMap.leftSingularVector S j
         have hXadjj : X.toLinearMap.adjoint yj = ((σj : ℝ) : 𝕜) • vj := by
           simpa [S, σj, vj, yj] using
-            adjoint_apply_sinTheta_leftSingularVector U X (i := j)
+            Submodule.adjoint_apply_leftSingularVector_starProjection_orthogonal_comp
+            U X.toLinearMap (i := j)
         have hXvi_yj :
             ⟪X.toLinearMap vi, yj⟫_𝕜 = ((σj : ℝ) : 𝕜) * ⟪vi, vj⟫_𝕜 :=
           by rw [← LinearMap.adjoint_inner_right, hXadjj, inner_smul_right]
@@ -305,7 +226,8 @@ private theorem orthonormal_tanThetaResidualWitness
     · let yi := LinearMap.leftSingularVector S i
       have hXadji : X.toLinearMap.adjoint yi = ((σi : ℝ) : 𝕜) • vi := by
         simpa [S, σi, vi, yi] using
-          adjoint_apply_sinTheta_leftSingularVector U X (i := i)
+          Submodule.adjoint_apply_leftSingularVector_starProjection_orthogonal_comp
+            U X.toLinearMap (i := i)
       by_cases hj : σj = 0
       · have hyi_Xvj :
             ⟪yi, X.toLinearMap vj⟫_𝕜 = ((σi : ℝ) : 𝕜) * ⟪vi, vj⟫_𝕜 := by
@@ -334,7 +256,8 @@ private theorem orthonormal_tanThetaResidualWitness
       · let yj := LinearMap.leftSingularVector S j
         have hXadjj : X.toLinearMap.adjoint yj = ((σj : ℝ) : 𝕜) • vj := by
           simpa [S, σj, vj, yj] using
-            adjoint_apply_sinTheta_leftSingularVector U X (i := j)
+            Submodule.adjoint_apply_leftSingularVector_starProjection_orthogonal_comp
+            U X.toLinearMap (i := j)
         have hyy : ⟪yi, yj⟫_𝕜 = 0 := by
           simpa [yi, yj, hij] using
             (orthonormal_iff_ite.mp (LinearMap.orthonormal_leftSingularVector S)
@@ -376,9 +299,10 @@ cosine denominator. -/
 private theorem tanThetaResidualWitness_scalar
     {A : E →ₗ[𝕜] E} (hA : A.IsSymmetric)
     {U : Submodule 𝕜 E} [U.HasOrthogonalProjection] (hU : U ∈ Module.End.invtSubmodule A)
-    (X : F →ₗᵢ[𝕜] E) {β α δ : ℝ} (hδ : 0 < δ)
-    (hgap : (Module.End.PointSpectrumIn (X.toLinearMap.adjoint ∘ₗ A ∘ₗ X.toLinearMap) ⊤ (Set.Icc β
-      α) ∧ Module.End.PointSpectrumIn A Uᗮ (Set.Ici (α + δ))))
+    (X : F →ₗᵢ[𝕜] E) {α δ : ℝ} (hδ : 0 < δ)
+    (hgap : (Module.End.PointSpectrumIn
+      (X.toLinearMap.adjoint ∘ₗ A ∘ₗ X.toLinearMap) ⊤ (Set.Iic α) ∧
+      Module.End.PointSpectrumIn A Uᗮ (Set.Ici (α + δ))))
     (tanTheta0 : F →ₗ[𝕜] E)
     (htan : tanTheta0.singularValues =
       (LinearMap.range X.toLinearMap).principalTangents U)
@@ -395,25 +319,25 @@ private theorem tanThetaResidualWitness_scalar
   let v := LinearMap.rightSingularBasis S i
   have hvnorm : ‖v‖ = 1 := (LinearMap.rightSingularBasis S).orthonormal.norm_eq_one i
   have hσnonneg : 0 ≤ σ := S.singularValues_nonneg i
-  have htrans := isTransverse_of_tanThetaIntervalGap hA hU X hδ hgap
-  have hσlt : σ < 1 := singularValues_sinThetaEmbedding_lt_one_of_isTransverse U X htrans i
+  have htrans := isTransverse_of_tanThetaSpectralGap hA hU X hδ hgap
+  have hσlt : σ < 1 :=
+    Submodule.singularValues_starProjection_orthogonal_comp_lt_one_of_disjoint U X htrans i
   have hcpos : 0 < Real.sqrt (1 - σ ^ 2) := Real.sqrt_pos.2 (by nlinarith)
   -- Convert the accepted principal-tangent formula to the sine/cosine quotient.
   have htan_i : tanTheta0.singularValues i = σ / Real.sqrt (1 - σ ^ 2) := by
     calc
       tanTheta0.singularValues i = (LinearMap.range X.toLinearMap).principalTangents U i :=
         congrArg (fun z : ℕ →₀ ℝ => z (i : ℕ)) htan
-      _ = Real.tan (Real.arcsin σ) := by
-        rw [Submodule.principalTangents_apply, Submodule.principalAngles_apply]
+      _ = σ / Real.sqrt (1 - σ ^ 2) := by
+        rw [Submodule.principalTangents_apply_eq_div]
         have heq := U.principalSines_range_eq_singularValues
           (X := X.toContinuousLinearMap) X.isometry
         have heq' : (LinearMap.range X.toLinearMap).principalSines U = S.singularValues := by
           simpa only [ContinuousLinearMap.toLinearMap_comp,
             LinearIsometry.toLinearMap_toContinuousLinearMap] using heq
         rw [heq']
-      _ = σ / Real.sqrt (1 - σ ^ 2) := Real.tan_arcsin σ
   by_cases hσzero : σ = 0
-  · have hgal := LinearMap.congr_fun (adjoint_comp_ritzResidual_eq_zero A X) v
+  · have hgal := LinearMap.congr_fun (LinearMap.adjoint_comp_ritzResidual_eq_zero A X) v
     -- Express Galerkin orthogonality with the local residual map R.
     change X.toLinearMap.adjoint (R v) = 0 at hgal
     have horth : ⟪X.toLinearMap v, R v⟫_𝕜 = 0 := by
@@ -438,16 +362,13 @@ private theorem tanThetaResidualWitness_scalar
       exact Uᗮ.smul_mem _ (Uᗮ.starProjection_apply_mem (X v))
     have hXadj : X.toLinearMap.adjoint y = ((σ : ℝ) : 𝕜) • v := by
       simpa [S, σ, v, y] using
-        adjoint_apply_sinTheta_leftSingularVector U X (i := i)
+        Submodule.adjoint_apply_leftSingularVector_starProjection_orthogonal_comp
+            U X.toLinearMap (i := i)
     have hMupper : RCLike.re ⟪M v, v⟫_𝕜 ≤ α := by
       have hTopRed : (⊤ ∈ Module.End.invtSubmodule M) := fun z _ => Submodule.mem_top
-      have hspec : Module.End.PointSpectrumIn M ⊤ (Set.Iic α) := by
-        apply Module.End.pointSpectrumIn_iff_restrictedPointSpectrum_subset.mpr
-        intro lam hlam
-        exact (Module.End.pointSpectrumIn_iff_restrictedPointSpectrum_subset.mp hgap.1 hlam).2
       have hbound : RCLike.re ⟪M v, v⟫_𝕜 ≤ α * ‖v‖ ^ 2 :=
         (hA.adjoint_conj X.toLinearMap).re_inner_apply_self_le_of_pointSpectrumIn
-          hTopRed hspec Submodule.mem_top
+          hTopRed hgap.1 Submodule.mem_top
       simpa [hvnorm] using hbound
     have hAlower : α + δ ≤ RCLike.re ⟪A y, y⟫_𝕜 := by
       have hUperpRed : (Uᗮ ∈ Module.End.invtSubmodule A) :=
@@ -456,7 +377,7 @@ private theorem tanThetaResidualWitness_scalar
         hA.le_re_inner_apply_self_of_pointSpectrumIn hUperpRed hgap.2 hyUperp
       simpa [hynorm] using hbound
     have hSyl := LinearMap.congr_fun
-      (sylvester_sinThetaEmbedding_eq_projectedResidual hA hU X M) v
+      (hA.sylvester_starProjection_orthogonal_comp hU X.toLinearMap M) v
     -- Pair the projected Sylvester identity with the sine left singular vector;
     -- the ordered form bounds supply the gap times its singular value.
     have hpair :
@@ -494,7 +415,7 @@ private theorem tanThetaResidualWitness_scalar
       rw [hpair]
       nlinarith
     -- Galerkin orthogonality removes the Ritz component of the normalized witness.
-    have hgal := LinearMap.congr_fun (adjoint_comp_ritzResidual_eq_zero A X) v
+    have hgal := LinearMap.congr_fun (LinearMap.adjoint_comp_ritzResidual_eq_zero A X) v
     -- Express Galerkin orthogonality with the local residual map R.
     change X.toLinearMap.adjoint (R v) = 0 at hgal
     have hXorth : ⟪X.toLinearMap v, R v⟫_𝕜 = 0 := by
@@ -539,9 +460,10 @@ private theorem tanThetaResidualWitness_scalar
 private theorem kyFan_tanTheta0_ritzResidual_le_of_le_finrank
     {A : E →ₗ[𝕜] E} (hA : A.IsSymmetric)
     {U : Submodule 𝕜 E} [U.HasOrthogonalProjection] (hU : U ∈ Module.End.invtSubmodule A)
-    (X : F →ₗᵢ[𝕜] E) {β α δ : ℝ} (hδ : 0 < δ)
-    (hgap : (Module.End.PointSpectrumIn (X.toLinearMap.adjoint ∘ₗ A ∘ₗ X.toLinearMap) ⊤ (Set.Icc β
-      α) ∧ Module.End.PointSpectrumIn A Uᗮ (Set.Ici (α + δ))))
+    (X : F →ₗᵢ[𝕜] E) {α δ : ℝ} (hδ : 0 < δ)
+    (hgap : (Module.End.PointSpectrumIn
+      (X.toLinearMap.adjoint ∘ₗ A ∘ₗ X.toLinearMap) ⊤ (Set.Iic α) ∧
+      Module.End.PointSpectrumIn A Uᗮ (Set.Ici (α + δ))))
     (tanTheta0 : F →ₗ[𝕜] E)
     (htan : tanTheta0.singularValues =
       (LinearMap.range X.toLinearMap).principalTangents U)
@@ -551,21 +473,14 @@ private theorem kyFan_tanTheta0_ritzResidual_le_of_le_finrank
         X.toLinearMap))).kyFanSum k := by
   let S := (Uᗮ.starProjection.toLinearMap ∘ₗ X.toLinearMap)
   let castIndex : Fin k → Fin (finrank 𝕜 F) := fun i => Fin.castLE hk i
-  have htrans := isTransverse_of_tanThetaIntervalGap hA hU X hδ hgap
+  have htrans := isTransverse_of_tanThetaSpectralGap hA hU X hδ hgap
   have huFull := orthonormal_tanThetaResidualWitness U X htrans
   have hu : Orthonormal 𝕜
-      (fun i : Fin k => tanThetaResidualWitness U X (castIndex i)) := by
-    rw [orthonormal_iff_ite]
-    intro i j
-    simpa [castIndex] using
-      (orthonormal_iff_ite.mp huFull (castIndex i) (castIndex j))
+      (fun i : Fin k => tanThetaResidualWitness U X (castIndex i)) :=
+    huFull.comp castIndex (Fin.castLE_injective hk)
   have hv : Orthonormal 𝕜
-      (fun i : Fin k => LinearMap.rightSingularBasis S (castIndex i)) := by
-    rw [orthonormal_iff_ite]
-    intro i j
-    simpa [castIndex] using
-      (orthonormal_iff_ite.mp (LinearMap.rightSingularBasis S).orthonormal
-        (castIndex i) (castIndex j))
+      (fun i : Fin k => LinearMap.rightSingularBasis S (castIndex i)) :=
+    (LinearMap.rightSingularBasis S).orthonormal.comp castIndex (Fin.castLE_injective hk)
   have hnorm := ((A ∘ₗ X.toLinearMap - X.toLinearMap ∘ₗ (X.toLinearMap.adjoint ∘ₗ A ∘ₗ
     X.toLinearMap))).norm_sum_inner_le_kyFanSum hu hv
   simp only [Fintype.card_fin] at hnorm
@@ -579,7 +494,7 @@ private theorem kyFan_tanTheta0_ritzResidual_le_of_le_finrank
 
 /-- **The source Ky Fan root for the finite `tan Θ` theorem.**
 
-For every prefix length, the sum of the first principal tangents is bounded by
+For every prefix length, `δ` times the sum of the first principal tangents is bounded by
 the corresponding singular-value prefix of the Ritz residual.  The proof is
 the finite version of Davis--Kahan equation (6.6): choose singular vectors of
 the directed sine block, construct the complementary cosine vectors, derive
@@ -592,9 +507,10 @@ geometric/majorization seam. -/
 private theorem kyFan_tanTheta0_ritzResidual_le
     {A : E →ₗ[𝕜] E} (hA : A.IsSymmetric)
     {U : Submodule 𝕜 E} [U.HasOrthogonalProjection] (hU : U ∈ Module.End.invtSubmodule A)
-    (X : F →ₗᵢ[𝕜] E) {β α δ : ℝ} (hδ : 0 < δ)
-    (hgap : (Module.End.PointSpectrumIn (X.toLinearMap.adjoint ∘ₗ A ∘ₗ X.toLinearMap) ⊤ (Set.Icc β
-      α) ∧ Module.End.PointSpectrumIn A Uᗮ (Set.Ici (α + δ))))
+    (X : F →ₗᵢ[𝕜] E) {α δ : ℝ} (hδ : 0 < δ)
+    (hgap : (Module.End.PointSpectrumIn
+      (X.toLinearMap.adjoint ∘ₗ A ∘ₗ X.toLinearMap) ⊤ (Set.Iic α) ∧
+      Module.End.PointSpectrumIn A Uᗮ (Set.Ici (α + δ))))
     (tanTheta0 : F →ₗ[𝕜] E)
     (htan : tanTheta0.singularValues =
       (LinearMap.range X.toLinearMap).principalTangents U) (k : ℕ) :
@@ -629,9 +545,9 @@ private theorem mul_map_le_map_ritzResidual_of_singularValues_eq_principalTangen
     (N : UnitarilyInvariantSeminorm 𝕜 F E)
     {A : E →ₗ[𝕜] E} (hA : A.IsSymmetric)
     {U : Submodule 𝕜 E} [U.HasOrthogonalProjection] (hU : U ∈ Module.End.invtSubmodule A)
-    (X : F →ₗᵢ[𝕜] E) {β α δ : ℝ} (hδ : 0 < δ)
+    (X : F →ₗᵢ[𝕜] E) {α δ : ℝ} (hδ : 0 < δ)
     (hgap : Module.End.PointSpectrumIn
-      (X.toLinearMap.adjoint ∘ₗ A ∘ₗ X.toLinearMap) ⊤ (Set.Icc β α) ∧
+      (X.toLinearMap.adjoint ∘ₗ A ∘ₗ X.toLinearMap) ⊤ (Set.Iic α) ∧
       Module.End.PointSpectrumIn A Uᗮ (Set.Ici (α + δ)))
     (tanTheta0 : F →ₗ[𝕜] E)
     (htan : tanTheta0.singularValues =
@@ -655,16 +571,16 @@ operator on `Uᗮ` excludes right-angle poles, with no equality of ranks require
 theorem _root_.Submodule.directedProjectionGap_lt_one_of_pointSpectrumIn_compression
     (Z U : Submodule 𝕜 E) [U.HasOrthogonalProjection] [Z.HasOrthogonalProjection]
     {A : E →ₗ[𝕜] E} (hA : A.IsSymmetric) (hU : ∀ x ∈ U, A x ∈ U)
-    {β α δ : ℝ} (hδ : 0 < δ)
-    (hM : Module.End.PointSpectrumIn (Z.subtype.adjoint ∘ₗ A ∘ₗ Z.subtype) ⊤ (Set.Icc β α))
+    {α δ : ℝ} (hδ : 0 < δ)
+    (hM : Module.End.PointSpectrumIn (Z.subtype.adjoint ∘ₗ A ∘ₗ Z.subtype) ⊤ (Set.Iic α))
     (hperp : Module.End.PointSpectrumIn A Uᗮ (Set.Ici (α + δ))) :
     Z.directedProjectionGap U < 1 := by
   apply (Z.directedProjectionGap_lt_one_iff U).mpr
-  have h := isTransverse_of_tanThetaIntervalGap hA hU Z.subtypeₗᵢ hδ ⟨hM, hperp⟩
+  have h := isTransverse_of_tanThetaSpectralGap hA hU Z.subtypeₗᵢ hδ ⟨hM, hperp⟩
   simpa only [Submodule.subtypeₗᵢ_toLinearMap, Submodule.range_subtype] using h
 
 /-- **Ritz-residual tangent bound in every unitarily invariant seminorm.**
-If the Ritz compression of a symmetric `A` to `Z` has spectrum in `[β, α]` and
+If the Ritz compression of a symmetric `A` to `Z` has spectrum at most `α` and
 `A` on the invariant complement `Uᗮ` has spectrum above `α + δ`, then the native
 directed tangent representative satisfies `δ N(tan Θ) ≤ N(R)`, where
 `R = A ι_Z - ι_Z (ι_Z† A ι_Z)`. The gap itself forces all tangents to be finite.
@@ -673,8 +589,8 @@ theorem mul_map_tanThetaMap_le_map_ritzResidual
     {Z U : Submodule 𝕜 E} [U.HasOrthogonalProjection] [Z.HasOrthogonalProjection]
     (N : UnitarilyInvariantSeminorm 𝕜 Z E)
     {A : E →ₗ[𝕜] E} (hA : A.IsSymmetric) (hU : ∀ x ∈ U, A x ∈ U)
-    {β α δ : ℝ} (hδ : 0 < δ)
-    (hM : Module.End.PointSpectrumIn (Z.subtype.adjoint ∘ₗ A ∘ₗ Z.subtype) ⊤ (Set.Icc β α))
+    {α δ : ℝ} (hδ : 0 < δ)
+    (hM : Module.End.PointSpectrumIn (Z.subtype.adjoint ∘ₗ A ∘ₗ Z.subtype) ⊤ (Set.Iic α))
     (hperp : Module.End.PointSpectrumIn A Uᗮ (Set.Ici (α + δ))) :
     δ * N (Z.tanThetaMap U) ≤
       N (A ∘ₗ Z.subtype - Z.subtype ∘ₗ (Z.subtype.adjoint ∘ₗ A ∘ₗ Z.subtype)) := by

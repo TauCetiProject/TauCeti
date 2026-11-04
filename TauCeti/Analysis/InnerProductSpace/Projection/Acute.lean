@@ -1,7 +1,7 @@
 /-
-Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
+Copyright (c) 2026 The Tau Ceti contributors and Kitware, Inc. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
-Authors: The Tau Ceti contributors
+Authors: The Tau Ceti contributors, Jon Crall, GPT 5.6 High, OpenAI GPT-6
 -/
 module
 
@@ -239,5 +239,37 @@ theorem avoidsQuarterTurn_comm (h : finrank 𝕜 U = finrank 𝕜 V) :
     principalAngles_comm U V h]
 
 end FiniteDimensional
+
+end Submodule
+
+namespace Submodule
+
+open Module
+
+variable {𝕜 E F : Type*} [RCLike 𝕜]
+  [NormedAddCommGroup E] [InnerProductSpace 𝕜 E] [FiniteDimensional 𝕜 E]
+  [NormedAddCommGroup F] [InnerProductSpace 𝕜 F] [FiniteDimensional 𝕜 F]
+
+/-- Transversality makes every singular value of the directed sine block strictly less than one.
+
+Adapted from the Kitware DKPS formalization,
+`DavisKahan/FiniteDimensional/TanTheta/RitzResidual.lean` (Jon Crall and GPT 5.6 High;
+Apache-2.0). -/
+theorem singularValues_starProjection_orthogonal_comp_lt_one_of_disjoint
+    (U : Submodule 𝕜 E) [U.HasOrthogonalProjection]
+    (X : F →ₗᵢ[𝕜] E)
+    (htrans : Disjoint (LinearMap.range X.toLinearMap) Uᗮ)
+    (i : ℕ) :
+    (Uᗮ.starProjection.toLinearMap ∘ₗ X.toLinearMap).singularValues i < 1 := by
+  have hgap := (Submodule.directedProjectionGap_lt_one_iff _ _).2 htrans
+  have hsin := (Submodule.forall_principalSines_lt_iff _ _).2 hgap i
+  have heq := U.principalSines_range_eq_singularValues
+    (X := X.toContinuousLinearMap) X.isometry
+  have heq' : (LinearMap.range X.toLinearMap).principalSines U =
+      (Uᗮ.starProjection.toLinearMap ∘ₗ X.toLinearMap).singularValues := by
+    simpa only [ContinuousLinearMap.toLinearMap_comp,
+      LinearIsometry.toLinearMap_toContinuousLinearMap] using heq
+  rw [heq'] at hsin
+  exact hsin
 
 end Submodule
