@@ -9,6 +9,8 @@ public import TauCeti.NumberTheory.LocalField.Norm.Eisenstein
 public import TauCeti.NumberTheory.LocalField.QuadraticForm.Norm.SquareClasses
 public import TauCeti.RingTheory.LocalRing.MaximalIdeal.Basic
 
+import TauCeti.RingTheory.Valuation.Irreducible
+
 /-!
 # Eisenstein unit-norm polynomials and their square-class composition law
 
@@ -51,41 +53,6 @@ section ValuedField
 
 variable {K : Type*} [Field K] [ValuativeRel K]
 
-private theorem valuation_lt_one_mul_ne_irreducible {c : 𝒪[K]} (hc : Irreducible c) {x y : K}
-    (hx : valuation K x < 1) (hy : valuation K y < 1) : x * y ≠ (c : K) := fun h ↦
-  hc.ne_mul_of_mem_maximalIdeal (x := ⟨x, hx.le⟩) (y := ⟨y, hy.le⟩)
-    ((valuation K).mem_maximalIdeal_iff.mpr hx)
-    ((valuation K).mem_maximalIdeal_iff.mpr hy) (Subtype.ext h.symm)
-
--- Without `[IsDiscreteValuationRing 𝒪[K]]` (`Irreducible.maximalIdeal_eq_setOfPred_le_v_coe`),
--- an irreducible element of `𝒪[K]` still has maximal valuation in `𝓂[K]`.
-private theorem valuation_le_of_mem_maximalIdeal {c m : 𝒪[K]} (hc : Irreducible c)
-    (hm : m ∈ 𝓂[K]) : valuation K (m : K) ≤ valuation K (c : K) := by
-  by_contra! hlt
-  obtain ⟨-, d, hdu, hcd⟩ := (Valuation.integer.integers (valuation K)).dvdNotUnit_iff_lt.mpr hlt
-  exact (hc.isUnit_or_isUnit hcd).elim ((IsLocalRing.mem_maximalIdeal m).mp hm) hdu
-
-private theorem valuation_le_mul_of_div_lt_one {c : 𝒪[K]} (hc : Irreducible c) {x y : K}
-    (hy0 : 0 < valuation K y) (hxy1 : valuation K (x / y) < 1) :
-    valuation K x ≤ valuation K (c : K) * valuation K y := by
-  simpa only [map_div₀, div_le_iff₀ hy0] using valuation_le_of_mem_maximalIdeal
-    (m := ⟨x / y, hxy1.le⟩) hc ((valuation K).mem_maximalIdeal_iff.mpr hxy1)
-
-private theorem valuation_sq_ne_valuation_mul_sq {c : 𝒪[K]} (hc : Irreducible c) {x y : K}
-    (hx : x ≠ 0) (hy : y ≠ 0) :
-    valuation K (x ^ 2) ≠ valuation K ((c : K) * y ^ 2) := fun h ↦ by
-  have hx0 : valuation K x ≠ 0 := ((Valuation.pos_iff _).mpr hx).ne'
-  have hy0 : valuation K y ≠ 0 := ((Valuation.pos_iff _).mpr hy).ne'
-  have hdiv : valuation K (x / y) ^ 2 = valuation K (c : K) := by
-    rw [← map_pow, div_pow, map_div₀, h, map_mul, map_pow,
-      mul_div_cancel_right₀ _ (pow_ne_zero 2 hy0)]
-  have hu1 : valuation K (x / y) < 1 := not_le.mp fun hge ↦
-    (hdiv ▸ Valuation.integer.v_irreducible_lt_one hc).not_ge (one_le_pow₀ hge)
-  have hw1 : valuation K ((c : K) * y / x) < 1 := by
-    rwa [map_div₀, map_mul, ← hdiv, sq, map_div₀, mul_div_assoc, mul_assoc,
-      div_mul_div_cancel₀ hy0, div_self hx0, mul_one, ← map_div₀]
-  exact valuation_lt_one_mul_ne_irreducible hc hu1 hw1 (by field_simp)
-
 /-- Over any valued field, if `t ∈ 𝓂[K]` and `c` is irreducible in `𝒪[K]`, the cross term `-t x y`
 is strictly smaller in valuation than `max (v(x²)) (v(c y²))`, so the Eisenstein norm form
 `x² - t x y + c y²` has valuation `max (v(x²)) (v(c y²))`. -/
@@ -100,7 +67,7 @@ theorem valuation_sq_sub_mul_add_mul_sq {t c : 𝒪[K]} (ht : t ∈ 𝓂[K]) (hc
   have htc : valuation K (t : K) ≤ valuation K (c : K) := valuation_le_of_mem_maximalIdeal hc ht
   have hx0 : 0 < valuation K x := (Valuation.pos_iff _).mpr hx
   have hy0 : 0 < valuation K y := (Valuation.pos_iff _).mpr hy
-  rcases (valuation_sq_ne_valuation_mul_sq hc hx hy).lt_or_gt with hlt | hgt
+  rcases (valuation_sq_ne_valuation_mul_sq hc hy).lt_or_gt with hlt | hgt
   · have hxy1 : valuation K (x / y) < 1 := not_le.mp fun hge ↦
       (hlt.trans (by rw [map_mul, map_pow]; exact mul_lt_of_lt_one_left (pow_pos hy0 2) hc1)).not_ge
         (by rw [map_pow, ← one_le_div₀ (pow_pos hy0 2), ← div_pow, ← map_div₀]

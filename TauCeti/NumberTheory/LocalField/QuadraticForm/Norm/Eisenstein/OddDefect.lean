@@ -9,7 +9,7 @@ public import TauCeti.NumberTheory.LocalField.QuadraticForm.Defect.Basic
 public import TauCeti.NumberTheory.LocalField.QuadraticForm.Norm.Eisenstein.Count
 public import TauCeti.NumberTheory.LocalField.QuadraticForm.Norm.SquareClasses
 
-import TauCeti.NumberTheory.LocalField.QuadraticForm.Norm.Uniformizer
+import TauCeti.NumberTheory.LocalField.QuadraticForm.Norm.Valuation
 
 /-!
 # Eisenstein norm families and unit-norm square-class counts for odd-defect unit radicands

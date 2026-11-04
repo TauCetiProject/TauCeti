@@ -82,8 +82,11 @@ theorem natCard_quotient_eq_mul_natCard_eisenstein_fiber {t c : 𝒪[K]}
   have hrange : Set.range F =
       (eisensteinNormSquareSubgroup K ht hc : Set (Kˣ ⧸ Subgroup.square Kˣ)) := by
     ext q; simp only [Set.mem_range, SetLike.mem_coe, mem_eisensteinNormSquareSubgroup_iff]
-    exact ⟨fun ⟨x, hx⟩ ↦ by obtain ⟨v, rfl⟩ := Ideal.Quotient.mk_surjective x; exact ⟨v, hx⟩,
-      fun ⟨v, hv⟩ ↦ ⟨Ideal.Quotient.mk I v, hv⟩⟩
+    exact ⟨fun ⟨x, hx⟩ ↦ by
+        obtain ⟨v, rfl⟩ := Ideal.Quotient.mk_surjective x
+        exact ⟨v, by simpa only [F, eisensteinNormSquareClassQuotient_mk] using hx⟩,
+      fun ⟨v, hv⟩ ↦ ⟨Ideal.Quotient.mk I v,
+        by simpa only [F, eisensteinNormSquareClassQuotient_mk] using hv⟩⟩
   have hfiber : ∀ y : 𝒪[K] ⧸ I,
       Nonempty ({x : 𝒪[K] ⧸ I // F x = F y} ≃ {x : 𝒪[K] ⧸ I // F x = 1}) := fun y ↦ by
     obtain ⟨s, rfl⟩ := Ideal.Quotient.mk_surjective y
@@ -164,6 +167,7 @@ private theorem natCard_eisensteinNormSquareSubgroup_zero (h2 : (2 : K) ≠ 0) {
     Nat.card_eq_one_iff_exists.mpr ⟨⟨0, by rw [← map_zero (Ideal.Quotient.mk _),
       eisensteinNormSquareClassQuotient_mk, eisensteinNormSquareClass_zero]⟩, fun ⟨x, hx⟩ ↦ by
       obtain ⟨r, rfl⟩ := Ideal.Quotient.mk_surjective x
+      rw [eisensteinNormSquareClassQuotient_mk] at hx
       exact Subtype.ext (Ideal.Quotient.eq_zero_iff_mem.mpr
         ((eisensteinNormSquareClass_zero_t_eq_one_iff h2 hc r).mp hx))⟩
   rw [h1, mul_one, TauCeti.IsDiscreteValuationRing.natCard_quotient_maximalIdeal_pow] at hprod
@@ -344,13 +348,18 @@ private theorem natCard_eisenstein_fiber_of_factor (h2 : (2 : K) ≠ 0) {t c r�
           by rw [← pow_add]; congr 1; omega]
       exact ⟨fun h ↦ le_of_mul_le_mul_left h (pow_pos (Valuation.integer.v_irreducible_pos hc) _),
         fun h ↦ mul_le_mul' le_rfl h⟩
-  let ι : (𝒪[K] ⧸ 𝓂[K] ^ M) → (𝒪[K] ⧸ 𝓂[K] ^ N) :=
-    Quotient.lift (fun s ↦ Ideal.Quotient.mk (𝓂[K] ^ N) (r₀ * s)) fun s₁ s₂ h ↦
-      Ideal.Quotient.eq.mpr ((hcong_r₀ s₁ s₂).mpr ((Submodule.quotientRel_def _).mp h))
+  let ι : (𝒪[K] ⧸ 𝓂[K] ^ M) →ₗ[𝒪[K]] (𝒪[K] ⧸ 𝓂[K] ^ N) :=
+    (𝓂[K] ^ M).mapQ (𝓂[K] ^ N) (LinearMap.mulLeft 𝒪[K] r₀) fun s hs ↦ by
+      simpa only [Submodule.mem_comap, LinearMap.mulLeft_apply, sub_zero, mul_zero] using
+        (hcong_r₀ s 0).mpr (by simpa only [sub_zero] using hs)
+  have hι_mk : ∀ s : 𝒪[K],
+      ι (Ideal.Quotient.mk (𝓂[K] ^ M) s) = Ideal.Quotient.mk (𝓂[K] ^ N) (r₀ * s) := fun s ↦ by
+    rw [← Ideal.Quotient.mk_eq_mk, Submodule.mapQ_apply, Ideal.Quotient.mk_eq_mk,
+      LinearMap.mulLeft_apply]
   have hF_mk : ∀ s : 𝒪[K], F (ι (Ideal.Quotient.mk (𝓂[K] ^ M) s)) = 1 ↔
       IsSquare (1 + (β : K) * ((s : K) ^ 2 - (s : K))) := fun s ↦ by
-    change eisensteinNormSquareClass K ht hc.mem_maximalIdeal (r₀ * s) = 1 ↔ _
-    rw [eisensteinNormSquareClass_eq_one_iff,
+    dsimp only [F]
+    rw [hι_mk, eisensteinNormSquareClassQuotient_mk, eisensteinNormSquareClass_eq_one_iff,
       show 1 - (t : K) * ((r₀ * s : 𝒪[K]) : K) + (c : K) * ((r₀ * s : 𝒪[K]) : K) ^ 2 =
         1 + (β : K) * ((s : K) ^ 2 - (s : K)) by
         simp only [← hcr₀, β, Subring.coe_mul, SubmonoidClass.coe_pow]; ring]
@@ -362,11 +371,15 @@ private theorem natCard_eisenstein_fiber_of_factor (h2 : (2 : K) ≠ 0) {t c r�
     (natCard_artinSchreier_square_maximalIdeal_quotient h2 hc hk hvβ)
   · obtain ⟨s₁, rfl⟩ := Ideal.Quotient.mk_surjective y₁
     obtain ⟨s₂, rfl⟩ := Ideal.Quotient.mk_surjective y₂
-    exact Ideal.Quotient.eq.mpr
-      ((hcong_r₀ s₁ s₂).mp (Ideal.Quotient.eq.mp (congrArg Subtype.val h)))
+    have hι : Ideal.Quotient.mk (𝓂[K] ^ N) (r₀ * s₁) = Ideal.Quotient.mk (𝓂[K] ^ N) (r₀ * s₂) := by
+      simpa only [ιFiber, hι_mk] using congrArg Subtype.val h
+    exact Ideal.Quotient.eq.mpr ((hcong_r₀ s₁ s₂).mp (Ideal.Quotient.eq.mp hι))
   · obtain ⟨r, rfl⟩ := Ideal.Quotient.mk_surjective x
-    obtain ⟨s, rfl⟩ := dvd_of_eisensteinNormSquareClass_eq_one h2 ht hc hcr₀ hk hvr₀ hx
-    exact ⟨⟨Ideal.Quotient.mk _ s, s, rfl, (hF_mk s).mp hx⟩, rfl⟩
+    have hxr : eisensteinNormSquareClass K ht hc.mem_maximalIdeal r = 1 := by
+      simpa only [F, eisensteinNormSquareClassQuotient_mk] using hx
+    obtain ⟨s, rfl⟩ := dvd_of_eisensteinNormSquareClass_eq_one h2 ht hc hcr₀ hk hvr₀ hxr
+    have hxs : F (ι (Ideal.Quotient.mk (𝓂[K] ^ M) s)) = 1 := by rwa [hι_mk]
+    exact ⟨⟨Ideal.Quotient.mk _ s, s, rfl, (hF_mk s).mp hxs⟩, Subtype.ext (hι_mk s)⟩
 
 /-- When `valuation K 2 ≤ valuation K t`, factoring `t = c * r₀` and reducing the `1`-fibre to the
 Artin–Schreier square locus gives

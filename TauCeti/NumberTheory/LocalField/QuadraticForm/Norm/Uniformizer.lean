@@ -9,6 +9,7 @@ public import TauCeti.NumberTheory.HilbertSymbol.NormSubgroup
 public import TauCeti.NumberTheory.LocalField.Uniformizer
 
 import TauCeti.NumberTheory.LocalField.QuadraticForm.Norm.Eisenstein.Basic
+import TauCeti.NumberTheory.LocalField.QuadraticForm.Norm.Valuation
 
 /-!
 # Quadratic norms of a uniformizer
@@ -96,27 +97,6 @@ theorem mem_quadraticNormSubgroup_iff_of_isUniformizer {a b : Kˣ}
     refine ⟨⟨(u : K), (u : K) * (t : K)⟩, ?_⟩
     simp only [QuadraticAlgebra.norm_def, hb]
     ring
-
-/-- Given a norm `w ∈ quadraticNormSubgroup a` of normalized valuation `1`, every element of
-`quadraticNormSubgroup a` is an integer power of `w` times a norm of valuation one. -/
-theorem mem_quadraticNormSubgroup_iff_exists_zpow_mul_unit {a : K} {w : Kˣ}
-    (hw : w ∈ quadraticNormSubgroup a) (hwv : (normalizedValuation K w).toAdd = 1) (b : Kˣ) :
-    b ∈ quadraticNormSubgroup a ↔
-      ∃ (n : ℤ) (c : Kˣ), c ∈ quadraticNormSubgroup a ∧ valuation K (c : K) = 1 ∧
-        b = w ^ n * c := by
-  constructor
-  · intro hb
-    let n : ℤ := (normalizedValuation K b).toAdd
-    let c : Kˣ := b * w ^ (-n)
-    have hc : c ∈ quadraticNormSubgroup a :=
-      (quadraticNormSubgroup a).mul_mem hb ((quadraticNormSubgroup a).zpow_mem hw (-n))
-    have hcv : valuation K (c : K) = 1 := by
-      apply (normalizedValuation_eq_one_iff c).mp
-      apply Multiplicative.toAdd.injective
-      simp [c, n, map_zpow, hwv]
-    exact ⟨n, c, hc, hcv, by simp [c, zpow_neg, mul_left_comm]⟩
-  · rintro ⟨n, c, hc, -, rfl⟩
-    exact (quadraticNormSubgroup a).mul_mem ((quadraticNormSubgroup a).zpow_mem hw n) hc
 
 /-- Every nonzero norm for a uniformizer radicand is an integer power of `-a` times
 `u² (1 - a t²)`, and every such element is a norm. -/
