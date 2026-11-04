@@ -206,12 +206,7 @@ theorem nuclearENorm_add_le (S T : E →L[𝕜] F) :
 /-- The trace-class gauge of a finite sum is bounded by the sum of the gauges. -/
 theorem nuclearENorm_sum_le {ι : Type*} (s : Finset ι) (T : ι → E →L[𝕜] F) :
     (∑ i ∈ s, T i).nuclearENorm ≤ ∑ i ∈ s, (T i).nuclearENorm := by
-  classical
-  induction s using Finset.induction_on with
-  | empty => simp
-  | @insert i s hi ih =>
-    simpa only [Finset.sum_insert hi] using
-      (nuclearENorm_add_le (T i) (∑ j ∈ s, T j)).trans (add_le_add le_rfl ih)
+  exact Finset.le_sum_of_subadditive nuclearENorm nuclearENorm_zero.le nuclearENorm_add_le s T
 
 /-- **Fatou inequality for the trace-class gauge.** For a series converging in operator norm,
 the gauge of its sum is at most the sum of the gauges, even when that sum is infinite. -/
