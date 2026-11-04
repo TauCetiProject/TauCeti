@@ -52,26 +52,33 @@ attribute [local instance high] Ideal.instModuleCotangentOfAlgebra
 variable (t : DynkinType) (ht : t.Valid)
 
 /-- The Weyl action on the integral character group of the Geck weight torus. -/
-def geckWeylCharacterAut (w : (t.simplyConnectedRootDatum ht).weylGroup) :
-    MulAut (Multiplicative (Fin t.rank →₀ ℤ)) :=
-  AddEquiv.toMultiplicative
-    ((Finsupp.linearEquivFunOnFinite ℤ ℤ (Fin t.rank)).toAddEquiv.trans
-      (w.val.weightEquiv.toAddEquiv.trans
-        (Finsupp.linearEquivFunOnFinite ℤ ℤ (Fin t.rank)).symm.toAddEquiv))
+def geckWeylCharacterAut : (t.simplyConnectedRootDatum ht).weylGroup →*
+    MulAut (Multiplicative (Fin t.rank →₀ ℤ)) where
+  toFun w := AddEquiv.toMultiplicative
+    (Finsupp.addEquivFunOnFinite.trans
+      ((DistribMulAction.toAddEquiv (Fin t.rank → ℤ) w).trans
+        Finsupp.addEquivFunOnFinite.symm))
+  map_one' := by
+    ext α i
+    simp
+  map_mul' w₁ w₂ := by
+    ext α i
+    simp [mul_smul]
 
 /-- On a weight written as an exponent vector, the character action is the usual Weyl action. -/
-@[simp]
+@[simp↓]
 theorem geckWeylCharacterAut_weightCharacter
     (w : (t.simplyConnectedRootDatum ht).weylGroup) (μ : Fin t.rank → ℤ) :
     t.geckWeylCharacterAut ht w (SplitTorus.weightCharacter μ) =
       SplitTorus.weightCharacter (w • μ) := by
-  simp only [geckWeylCharacterAut, SplitTorus.weightCharacter_def,
-    AddEquiv.toMultiplicative_apply_apply, toAdd_ofAdd, AddEquiv.trans_apply, AddEquiv.coe_mk,
-    AddHom.toFun_eq_coe, LinearMap.coe_toAddHom, LinearEquiv.coe_coe, LinearEquiv.invFun_eq_symm,
-    Equiv.coe_fn_mk, RootPairing.Equiv.weightEquiv_apply, LinearEquiv.symm_symm,
-    EmbeddingLike.apply_eq_iff_eq]
-  ext i
-  rfl
+  rw [SplitTorus.weightCharacter_def, SplitTorus.weightCharacter_def]
+  dsimp only [geckWeylCharacterAut]
+  -- Project the underlying equivalences from the additive-equivalence constructors;
+  -- no unfolding of the Weyl representation is needed.
+  change Multiplicative.ofAdd (Finsupp.equivFunOnFinite.symm
+      (w • Finsupp.equivFunOnFinite (Finsupp.equivFunOnFinite.symm μ))) =
+    Multiplicative.ofAdd (Finsupp.equivFunOnFinite.symm (w • μ))
+  rw [Equiv.apply_symm_apply]
 
 private theorem coordinatePointMulEquiv_weightTorus (A : Type*) [CommRing A]
     (q : WithConv (MonoidAlgebra ℤ (Multiplicative (Fin t.rank →₀ ℤ)) →ₐ[ℤ] A)) :
@@ -112,6 +119,31 @@ private theorem pointsMulEquiv_comp_geckWeylCharacterAut
   funext i
   simpa only [← weightChar_apply, weightChar_single] using hchar (Pi.single i 1)
 
+private theorem coordinatePointMulEquiv_weightTorus_id :
+    t.geckCoordinatePointMulEquiv ht
+        (MonoidAlgebra ℤ (Multiplicative (Fin t.rank →₀ ℤ)))
+        (toConv (t.geckWeightTorusIntegralCoordinateMap ht).hom.toAlgHom) =
+      t.geckWeightTorusPoints ht _ (SplitTorus.pointsMulEquiv (toConv (AlgHom.id ℤ _))) := by
+  have h := t.coordinatePointMulEquiv_weightTorus ht _
+    (toConv (AlgHom.id ℤ (MonoidAlgebra ℤ (Multiplicative (Fin t.rank →₀ ℤ)))))
+  -- The coordinate map's target has the categorical carrier wrapper, whereas id
+  -- uses the underlying monoid algebra; elaborated rewriting identifies the carriers.
+  erw [AlgHom.id_comp] at h
+  exact h
+
+private theorem pointsMulEquiv_geckWeylCharacterAut
+    (w : (t.simplyConnectedRootDatum ht).weylGroup) :
+    SplitTorus.pointsMulEquiv (toConv
+        (MonoidAlgebra.domCongr ℤ ℤ (t.geckWeylCharacterAut ht w)).toAlgHom) =
+      t.geckWeylTorusAction ht _ w⁻¹
+        (SplitTorus.pointsMulEquiv (toConv (AlgHom.id ℤ _))) := by
+  have h := t.pointsMulEquiv_comp_geckWeylCharacterAut ht w _
+    (toConv (AlgHom.id ℤ (MonoidAlgebra ℤ (Multiplicative (Fin t.rank →₀ ℤ)))))
+  -- As in the coordinate-map specialization, the character algebra is presented
+  -- both as a categorical carrier and as its underlying monoid algebra.
+  erw [AlgHom.id_comp] at h
+  exact h
+
 /-- Inverse conjugation by an integral Weyl-word point induces the forward Weyl action on the
 coordinate characters of the weight torus. This is a coordinate-algebra equality, not merely
 an equality on integer-valued points. -/
@@ -123,7 +155,6 @@ theorem geckWeightTorus_comp_pointConjugation_weylWord (l : List (Fin t.rank)) :
         (t.geckWeylCharacterAut ht (t.geckWeylWordProd ht l))).toAlgHom.comp
           (t.geckWeightTorusIntegralCoordinateMap ht).hom.toAlgHom := by
   let K := MonoidAlgebra ℤ (Multiplicative (Fin t.rank →₀ ℤ))
-  let : Algebra ℤ K := Ring.toIntAlgebra K
   let π : t.geckCoordinateHopfAlgebra ht →ₐ[ℤ] K :=
     (t.geckWeightTorusIntegralCoordinateMap ht).hom.toAlgHom
   let g := t.geckCoordinatePoint ht (t.geckWeylWordPoint ht l ℤ)
@@ -140,6 +171,8 @@ theorem geckWeightTorus_comp_pointConjugation_weylWord (l : List (Fin t.rank)) :
         t.geckWeylWordPoint ht l K := by
       rw [hmap]
       dsimp only [g]
+      -- extendPoint uses CommAlgCat's carrier, while the matrix-point map uses K;
+      -- these are definitionally the same ring, so elaborated rewriting aligns them.
       erw [geckCoordinatePointMulEquiv_extendPoint_geckCoordinatePoint,
         map_geckWeylWordPoint]
     rw [HopfAlgebra.comp_pointConjugationAlgHom]
@@ -147,23 +180,23 @@ theorem geckWeightTorus_comp_pointConjugation_weylWord (l : List (Fin t.rank)) :
     -- structure; elaborated rewriting crosses the categorical carrier wrappers here.
     erw [map_mul, map_mul]
     simp only [map_inv, inv_inv]
+    -- The inverse point has the categorical convolution-group instance; use the
+    -- equivalence's inverse law explicitly across that presentation boundary.
+    erw [(t.geckCoordinatePointMulEquiv ht K).map_inv]
+    -- The remaining comparisons cross the same CommAlgCat.of ℤ K / K boundary:
+    -- first identify the constant Weyl point, then the universal torus point,
+    -- and finally the universal point pulled back along the character automorphism.
     erw [hconst]
-    have htorus := t.coordinatePointMulEquiv_weightTorus ht K q
-    dsimp only [q] at htorus
-    erw [AlgHom.id_comp] at htorus
-    erw [htorus, t.coordinatePointMulEquiv_weightTorus ht K]
-    have haction := t.pointsMulEquiv_comp_geckWeylCharacterAut ht
-      (t.geckWeylWordProd ht l) K q
-    dsimp only [q] at haction
-    erw [AlgHom.id_comp] at haction
-    erw [haction]
+    erw [t.coordinatePointMulEquiv_weightTorus_id ht,
+      t.coordinatePointMulEquiv_weightTorus ht K]
+    erw [t.pointsMulEquiv_geckWeylCharacterAut ht]
     have hconj := t.geckWeylWordPoint_conj_geckWeightTorusPoints ht l K
       (t.geckWeylTorusAction ht K (t.geckWeylWordProd ht l)⁻¹
         (SplitTorus.pointsMulEquiv q))
     rw [geckWeylWordTorusAction_geckWeylTorusAction_inv] at hconj
     rw [← hconj]
     group
-    rfl
+    dsimp only [K, q]
   exact congrArg WithConv.ofConv he
 
 variable [Module.Projective ℤ (Bialgebra.CotangentSpace ℤ
