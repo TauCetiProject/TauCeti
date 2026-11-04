@@ -27,13 +27,13 @@ measurable section is a.e.-strongly measurable when the fibre norm is continuous
 (`TauCeti.AEStronglyMeasurableSection.aestronglyMeasurable_norm`), and so is the fibre inner
 product of two measurable sections of a bundle with fibre inner products, by polarization.
 
-For a finite-rank bundle whose fibres carry inner products with continuous norm (a continuous
-Riemannian or Hermitian metric), a *measurable unitary frame* `Φ x : V ≃ₗᵢ[𝕜] E x`
-(`TauCeti.IsMeasurableUnitaryFrame`) is a family of linear isometries from a fixed inner product
-space `V` for which a section is a.e.-strongly measurable exactly when its coordinates
-`x ↦ (Φ x).symm (s x)` are. Gram–Schmidt frames of the atlas charts, glued along a countable Borel
-partition of the base, form a global measurable unitary frame
-(`TauCeti.exists_isMeasurableUnitaryFrame`). Such a frame identifies measurable sections of `E`
+A *measurable isometric frame* `Φ x : V ≃ₗᵢ[𝕜] E x` (`TauCeti.IsMeasurableIsometricFrame`) is a
+family of linear isometries from a fixed normed space `V` onto the fibres for which a section is
+a.e.-strongly measurable exactly when its coordinates `x ↦ (Φ x).symm (s x)` are. For a
+finite-rank bundle whose fibres carry inner products with continuous norm (a continuous Riemannian
+or Hermitian metric), Gram–Schmidt frames of the atlas charts, glued along a countable Borel
+partition of the base, form a global measurable isometric frame modelled on an inner product space
+(`TauCeti.exists_isMeasurableIsometricFrame`). Such a frame identifies measurable sections of `E`
 with measurable `V`-valued functions, isometrically in each fibre; it is how the spaces of
 `Lᵖ` sections are compared with Mathlib's `MeasureTheory.Lp`.
 
@@ -45,7 +45,7 @@ changed without any metrizability or countability assumption on the model fibre.
 
 * `TauCeti.AEStronglyMeasurableSection 𝕜 F μ s`: the coordinates of `s` in every atlas chart are
   a.e.-strongly measurable on the chart domain.
-* `TauCeti.IsMeasurableUnitaryFrame F μ Φ`: the family of fibre isometries `Φ` detects
+* `TauCeti.IsMeasurableIsometricFrame F μ Φ`: the family of fibre isometries `Φ` detects
   a.e.-strong measurability of sections.
 
 ## Main results
@@ -55,10 +55,10 @@ changed without any metrizability or countability assumption on the model fibre.
 * `TauCeti.AEStronglyMeasurableSection.aestronglyMeasurable_norm`,
   `TauCeti.AEStronglyMeasurableSection.aestronglyMeasurable_inner`: fibre norms and fibre inner
   products of measurable sections are measurable.
-* `TauCeti.isMeasurableUnitaryFrame_restrict_iUnion`: Gram–Schmidt frames of atlas charts glued
-  along a countable measurable partition form a measurable unitary frame.
-* `TauCeti.exists_isMeasurableUnitaryFrame`: a finite-rank bundle with continuous fibre metric
-  over a second-countable base has a global measurable unitary frame.
+* `TauCeti.isMeasurableIsometricFrame_restrict_iUnion`: Gram–Schmidt frames of atlas charts glued
+  along a countable measurable partition form a measurable isometric frame.
+* `TauCeti.exists_isMeasurableIsometricFrame`: a finite-rank bundle with continuous fibre metric
+  over a second-countable base has a global measurable isometric frame.
 
 ## References
 
@@ -270,6 +270,44 @@ theorem AEStronglyMeasurableSection.aestronglyMeasurable_norm [ContinuousFiberNo
 
 end Normed
 
+section IsometricFrame
+
+variable [∀ x, NormedAddCommGroup (E x)] [∀ x, NormedSpace 𝕜 (E x)] [FiberBundle F E]
+  [VectorBundle 𝕜 F E] {s : ∀ x, E x} {V : Type*} [NormedAddCommGroup V] [NormedSpace 𝕜 V]
+
+variable (F μ) in
+/-- A family of linear isometries `Φ x : V ≃ₗᵢ[𝕜] E x` from a fixed normed space onto the fibres
+is a *measurable isometric frame* for `μ` when a section is a.e.-strongly measurable for `μ`
+exactly when its coordinates `x ↦ (Φ x).symm (s x)` in the frame are. -/
+def IsMeasurableIsometricFrame (Φ : ∀ x, V ≃ₗᵢ[𝕜] E x) : Prop :=
+  ∀ s : ∀ x, E x,
+    AEStronglyMeasurableSection 𝕜 F μ s ↔ AEStronglyMeasurable (fun x ↦ (Φ x).symm (s x)) μ
+
+theorem isMeasurableIsometricFrame_iff {Φ : ∀ x, V ≃ₗᵢ[𝕜] E x} :
+    IsMeasurableIsometricFrame F μ Φ ↔ ∀ s : ∀ x, E x,
+      AEStronglyMeasurableSection 𝕜 F μ s ↔ AEStronglyMeasurable (fun x ↦ (Φ x).symm (s x)) μ :=
+  Iff.rfl
+
+namespace IsMeasurableIsometricFrame
+
+variable {Φ : ∀ x, V ≃ₗᵢ[𝕜] E x}
+
+/-- The coordinates of a measurable section in a measurable isometric frame are measurable. -/
+theorem aestronglyMeasurable_symm_apply (hΦ : IsMeasurableIsometricFrame F μ Φ)
+    (hs : AEStronglyMeasurableSection 𝕜 F μ s) :
+    AEStronglyMeasurable (fun x ↦ (Φ x).symm (s x)) μ :=
+  (hΦ s).1 hs
+
+/-- A measurable function with values in the model space `V` of a measurable isometric frame gives
+a measurable section through the frame. -/
+theorem aestronglyMeasurableSection_apply (hΦ : IsMeasurableIsometricFrame F μ Φ) {f : B → V}
+    (hf : AEStronglyMeasurable f μ) : AEStronglyMeasurableSection 𝕜 F μ (fun x ↦ Φ x (f x)) :=
+  (hΦ _).2 (by simpa only [LinearIsometryEquiv.symm_apply_apply] using hf)
+
+end IsMeasurableIsometricFrame
+
+end IsometricFrame
+
 section Inner
 
 variable [∀ x, NormedAddCommGroup (E x)] [∀ x, InnerProductSpace 𝕜 (E x)] [FiberBundle F E]
@@ -299,36 +337,6 @@ section UnitaryFrame
 variable [∀ x, NormedAddCommGroup (E x)] [∀ x, InnerProductSpace 𝕜 (E x)] [FiberBundle F E]
   [VectorBundle 𝕜 F E] {s : ∀ x, E x} {V : Type*} [NormedAddCommGroup V] [InnerProductSpace 𝕜 V]
 
-variable (F μ) in
-/-- A family of linear isometries `Φ x : V ≃ₗᵢ[𝕜] E x` from a fixed inner product space onto the
-fibres is a *measurable unitary frame* for `μ` when a section is a.e.-strongly measurable for `μ`
-exactly when its coordinates `x ↦ (Φ x).symm (s x)` in the frame are. -/
-def IsMeasurableUnitaryFrame (Φ : ∀ x, V ≃ₗᵢ[𝕜] E x) : Prop :=
-  ∀ s : ∀ x, E x,
-    AEStronglyMeasurableSection 𝕜 F μ s ↔ AEStronglyMeasurable (fun x ↦ (Φ x).symm (s x)) μ
-
-theorem isMeasurableUnitaryFrame_iff {Φ : ∀ x, V ≃ₗᵢ[𝕜] E x} :
-    IsMeasurableUnitaryFrame F μ Φ ↔ ∀ s : ∀ x, E x,
-      AEStronglyMeasurableSection 𝕜 F μ s ↔ AEStronglyMeasurable (fun x ↦ (Φ x).symm (s x)) μ :=
-  Iff.rfl
-
-namespace IsMeasurableUnitaryFrame
-
-variable {Φ : ∀ x, V ≃ₗᵢ[𝕜] E x}
-
-/-- The coordinates of a measurable section in a measurable unitary frame are measurable. -/
-theorem aestronglyMeasurable_symm_apply (hΦ : IsMeasurableUnitaryFrame F μ Φ)
-    (hs : AEStronglyMeasurableSection 𝕜 F μ s) :
-    AEStronglyMeasurable (fun x ↦ (Φ x).symm (s x)) μ :=
-  (hΦ s).1 hs
-
-/-- A measurable function with values in the model space `V` of a measurable unitary frame gives
-a measurable section through the frame. -/
-theorem aestronglyMeasurableSection_apply (hΦ : IsMeasurableUnitaryFrame F μ Φ) {f : B → V}
-    (hf : AEStronglyMeasurable f μ) : AEStronglyMeasurableSection 𝕜 F μ (fun x ↦ Φ x (f x)) :=
-  (hΦ _).2 (by simpa only [LinearIsometryEquiv.symm_apply_apply] using hf)
-
-end IsMeasurableUnitaryFrame
 
 variable [OpensMeasurableSpace B] [SecondCountableTopology B] [ContinuousFiberNorm F E] {ι : Type*}
   [Fintype ι] [LinearOrder ι] [LocallyFiniteOrderBot ι] (c : Basis ι 𝕜 F)
@@ -383,37 +391,37 @@ private theorem aestronglyMeasurable_coord_iff_orthonormalFrame (e : Trivializat
 
 /-- **Gluing Gram–Schmidt frames.** Let `A i` be countably many measurable sets, each contained in
 the base set of an atlas chart `e i`, and let `Φ` agree on each `A i` with the Gram–Schmidt
-orthonormal frame of `e i`. Then `Φ` is a measurable unitary frame for `μ` restricted to
+orthonormal frame of `e i`. Then `Φ` is a measurable isometric frame for `μ` restricted to
 `⋃ i, A i`. -/
-theorem isMeasurableUnitaryFrame_restrict_iUnion {κ : Type*} [Countable κ] {A : κ → Set B}
+theorem isMeasurableIsometricFrame_restrict_iUnion {κ : Type*} [Countable κ] {A : κ → Set B}
     (hA : ∀ i, MeasurableSet (A i)) (e : κ → Trivialization F (π F E))
     [∀ i, MemTrivializationAtlas (e i)] (hAe : ∀ i, A i ⊆ (e i).baseSet)
     {Φ : ∀ x, V ≃ₗᵢ[𝕜] E x}
     (hΦ : ∀ i x (hx : x ∈ A i), Φ x = (e i).orthonormalFrame c b ⟨x, hAe i hx⟩) :
-    IsMeasurableUnitaryFrame F (μ.restrict (⋃ i, A i)) Φ := fun s ↦ by
+    IsMeasurableIsometricFrame F (μ.restrict (⋃ i, A i)) Φ := fun s ↦ by
   rw [aestronglyMeasurableSection_restrict_iUnion_iff hA e hAe, aestronglyMeasurable_iUnion_iff]
   exact forall_congr' fun i ↦
     aestronglyMeasurable_coord_iff_orthonormalFrame c b (e i) (hA i) (hAe i) (hΦ i)
 
 /-- The Gram–Schmidt orthonormal frame of an atlas chart `e`, extended arbitrarily outside its base
-set, is a measurable unitary frame for `μ` restricted to the base set of `e`. -/
-theorem isMeasurableUnitaryFrame_restrict_baseSet (e : Trivialization F (π F E))
+set, is a measurable isometric frame for `μ` restricted to the base set of `e`. -/
+theorem isMeasurableIsometricFrame_restrict_baseSet (e : Trivialization F (π F E))
     [MemTrivializationAtlas e] {Φ : ∀ x, V ≃ₗᵢ[𝕜] E x}
     (hΦ : ∀ x (hx : x ∈ e.baseSet), Φ x = e.orthonormalFrame c b ⟨x, hx⟩) :
-    IsMeasurableUnitaryFrame F (μ.restrict e.baseSet) Φ := by
-  simpa only [iUnion_const] using isMeasurableUnitaryFrame_restrict_iUnion (κ := Unit) c b
+    IsMeasurableIsometricFrame F (μ.restrict e.baseSet) Φ := by
+  simpa only [iUnion_const] using isMeasurableIsometricFrame_restrict_iUnion (κ := Unit) c b
     (fun _ ↦ e.open_baseSet.measurableSet) (fun _ ↦ e) (fun _ ↦ subset_rfl) fun _ ↦ hΦ
 
 omit c b in
 variable (F E V) in
-/-- **Existence of measurable unitary frames.** A finite-rank vector bundle with continuous fibre
-metric over a second-countable base has a global measurable unitary frame, modelled on any
+/-- **Existence of measurable isometric frames.** A finite-rank vector bundle with continuous fibre
+metric over a second-countable base has a global measurable isometric frame, modelled on any
 finite-dimensional inner product space `V` of the same dimension as the model fibre, for every
 measure on the base. It is obtained by gluing Gram–Schmidt frames of countably many atlas charts
 along the Borel partition of the base they induce. -/
-theorem exists_isMeasurableUnitaryFrame [FiniteDimensional 𝕜 F] [FiniteDimensional 𝕜 V]
+theorem exists_isMeasurableIsometricFrame [FiniteDimensional 𝕜 F] [FiniteDimensional 𝕜 V]
     (hV : finrank 𝕜 V = finrank 𝕜 F) :
-    ∃ Φ : ∀ x, V ≃ₗᵢ[𝕜] E x, ∀ μ : Measure B, IsMeasurableUnitaryFrame F μ Φ := by
+    ∃ Φ : ∀ x, V ≃ₗᵢ[𝕜] E x, ∀ μ : Measure B, IsMeasurableIsometricFrame F μ Φ := by
   classical
   cases isEmpty_or_nonempty B
   · exact ⟨fun x ↦ isEmptyElim x, fun μ s ↦
@@ -441,7 +449,7 @@ theorem exists_isMeasurableUnitaryFrame [FiniteDimensional 𝕜 F] [FiniteDimens
   refine ⟨fun x ↦ (e (Nat.find (hcover x))).orthonormalFrame c b ⟨x, Nat.find_spec (hcover x)⟩,
     fun μ ↦ ?_⟩
   simpa only [hAU, Measure.restrict_univ] using
-    isMeasurableUnitaryFrame_restrict_iUnion (μ := μ) c b hA e hAe fun n x hx ↦ hframe x _ _ hx
+    isMeasurableIsometricFrame_restrict_iUnion (μ := μ) c b hA e hAe fun n x hx ↦ hframe x _ _ hx
 
 end UnitaryFrame
 

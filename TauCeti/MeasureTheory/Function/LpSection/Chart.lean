@@ -15,7 +15,7 @@ This file compares the spaces `Lᵖ(E, μ)` of sections of a vector bundle (`Tau
 with Mathlib's spaces `MeasureTheory.Lp` of functions with values in a fixed normed space, in three
 situations.
 
-* For the trivial bundle `Bundle.Trivial B F` over an inner product space `F`, sections are
+* For the trivial bundle `Bundle.Trivial B F` over a normed space `F`, sections are
   functions `B → F` and `Lᵖ(Bundle.Trivial B F, μ) ≃ₗᵢ[𝕜] Lp F p μ` is the identity on
   representatives (`TauCeti.LpSection.trivialEquiv`).
 * Over the base set of an atlas chart `e`, the Gram–Schmidt orthonormal frame of `e` (built from a
@@ -46,17 +46,17 @@ namespace TauCeti
 
 section Trivial
 
-variable {F : Type*} [NormedAddCommGroup F] [InnerProductSpace 𝕜 F]
+variable {F : Type*} [NormedAddCommGroup F] [NormedSpace 𝕜 F]
 
 omit [SecondCountableTopology B] in
 variable (𝕜 F μ) in
-/-- The identity frame of the trivial bundle over an inner product space is a measurable unitary
-frame: a section of `Bundle.Trivial B F` is a.e.-strongly measurable exactly when it is as a
-function `B → F`. -/
-theorem isMeasurableUnitaryFrame_trivial :
-    IsMeasurableUnitaryFrame F μ (fun x ↦ LinearIsometryEquiv.refl 𝕜 (Trivial B F x)) := by
+/-- The identity frame of the trivial bundle over a normed space is a measurable isometric frame:
+a section of `Bundle.Trivial B F` is a.e.-strongly measurable exactly when it is as a function
+`B → F`. -/
+theorem isMeasurableIsometricFrame_trivial :
+    IsMeasurableIsometricFrame F μ (fun x ↦ LinearIsometryEquiv.refl 𝕜 (Trivial B F x)) := by
   have : MemTrivializationAtlas (Trivial.trivialization B F) := ⟨mem_singleton _⟩
-  refine isMeasurableUnitaryFrame_iff.2 fun s ↦ ⟨fun hs ↦ ?_, fun hs ↦ .of_coord fun e _ ↦ ?_⟩
+  refine isMeasurableIsometricFrame_iff.2 fun s ↦ ⟨fun hs ↦ ?_, fun hs ↦ .of_coord fun e _ ↦ ?_⟩
   · have h := hs.aestronglyMeasurable_coord (Trivial.trivialization B F)
     simp only [Trivial.trivialization_baseSet, Measure.restrict_univ,
       Trivial.trivialization_apply] at h
@@ -69,18 +69,18 @@ theorem isMeasurableUnitaryFrame_trivial :
 namespace LpSection
 
 variable (𝕜 p μ) in
-/-- The space `Lᵖ` of sections of the trivial bundle `Bundle.Trivial B F` over an inner product
+/-- The space `Lᵖ` of sections of the trivial bundle `Bundle.Trivial B F` over a normed
 space is `Lp F p μ`, by the identity on representatives. -/
 def trivialEquiv : LpSection 𝕜 F (Trivial B F) p μ ≃ₗᵢ[𝕜] Lp F p μ :=
-  (isMeasurableUnitaryFrame_trivial (𝕜 := 𝕜) (F := F) (μ := μ)).lpSectionEquiv p
+  (isMeasurableIsometricFrame_trivial (𝕜 := 𝕜) (F := F) (μ := μ)).lpSectionEquiv p
 
 theorem coeFn_trivialEquiv (f : LpSection 𝕜 F (Trivial B F) p μ) :
     ∀ᵐ x ∂μ, trivialEquiv 𝕜 p μ f x = f x :=
-  (isMeasurableUnitaryFrame_trivial (𝕜 := 𝕜) (F := F) (μ := μ)).coeFn_lpSectionEquiv p f
+  (isMeasurableIsometricFrame_trivial (𝕜 := 𝕜) (F := F) (μ := μ)).coeFn_lpSectionEquiv p f
 
 theorem coeFn_trivialEquiv_symm (g : Lp F p μ) :
     ∀ᵐ x ∂μ, (trivialEquiv 𝕜 p μ).symm g x = g x :=
-  (isMeasurableUnitaryFrame_trivial (𝕜 := 𝕜) (F := F) (μ := μ)).coeFn_lpSectionEquiv_symm p g
+  (isMeasurableIsometricFrame_trivial (𝕜 := 𝕜) (F := F) (μ := μ)).coeFn_lpSectionEquiv_symm p g
 
 end LpSection
 
@@ -109,21 +109,22 @@ private def orthonormalFrameExtend (x : B) : V ≃ₗᵢ[𝕜] E x :=
   if hx : x ∈ e.baseSet then e.orthonormalFrame c b ⟨x, hx⟩
   else (trivializationAt F E x).orthonormalFrame c b ⟨x, mem_baseSet_trivializationAt F E x⟩
 
-private theorem isMeasurableUnitaryFrame_orthonormalFrameExtend :
-    IsMeasurableUnitaryFrame F (μ.restrict e.baseSet) (e.orthonormalFrameExtend c b) :=
-  isMeasurableUnitaryFrame_restrict_baseSet c b e fun x hx ↦ by simp [orthonormalFrameExtend, hx]
+private theorem isMeasurableIsometricFrame_orthonormalFrameExtend :
+    IsMeasurableIsometricFrame F (μ.restrict e.baseSet) (e.orthonormalFrameExtend c b) :=
+  isMeasurableIsometricFrame_restrict_baseSet c b e fun x hx ↦ by simp [orthonormalFrameExtend, hx]
 
 variable (p μ) in
 /-- **Unitary charts.** Over the base set `U` of an atlas chart `e`, reading sections in the
 Gram–Schmidt orthonormal frame of `e` is a linear isometry from `Lᵖ(E, μ|_U)` onto `Lp V p μ|_U`. -/
 def orthonormalLpSectionEquiv :
     LpSection 𝕜 F E p (μ.restrict e.baseSet) ≃ₗᵢ[𝕜] Lp V p (μ.restrict e.baseSet) :=
-  (e.isMeasurableUnitaryFrame_orthonormalFrameExtend c b).lpSectionEquiv p
+  (e.isMeasurableIsometricFrame_orthonormalFrameExtend c b).lpSectionEquiv p
 
 theorem coeFn_orthonormalLpSectionEquiv (f : LpSection 𝕜 F E p (μ.restrict e.baseSet)) :
     ∀ᵐ x ∂μ.restrict e.baseSet, ∀ hx : x ∈ e.baseSet,
       e.orthonormalLpSectionEquiv p μ c b f x = (e.orthonormalFrame c b ⟨x, hx⟩).symm (f x) := by
-  filter_upwards [(e.isMeasurableUnitaryFrame_orthonormalFrameExtend c b).coeFn_lpSectionEquiv p f]
+  filter_upwards
+    [(e.isMeasurableIsometricFrame_orthonormalFrameExtend c b).coeFn_lpSectionEquiv p f]
     with x h hx
   rw [orthonormalLpSectionEquiv, h]
   simp [orthonormalFrameExtend, hx]
@@ -132,7 +133,7 @@ theorem coeFn_orthonormalLpSectionEquiv_symm (g : Lp V p (μ.restrict e.baseSet)
     ∀ᵐ x ∂μ.restrict e.baseSet, ∀ hx : x ∈ e.baseSet,
       (e.orthonormalLpSectionEquiv p μ c b).symm g x = e.orthonormalFrame c b ⟨x, hx⟩ (g x) := by
   filter_upwards
-    [(e.isMeasurableUnitaryFrame_orthonormalFrameExtend c b).coeFn_lpSectionEquiv_symm p g]
+    [(e.isMeasurableIsometricFrame_orthonormalFrameExtend c b).coeFn_lpSectionEquiv_symm p g]
     with x h hx
   rw [orthonormalLpSectionEquiv, h]
   simp [orthonormalFrameExtend, hx]

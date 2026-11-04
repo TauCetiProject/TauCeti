@@ -22,12 +22,13 @@ equality almost everywhere. With the norm `‖s‖ = ‖x ↦ ‖s x‖‖_{Lᵖ
 
 When the fibres carry inner products (a continuous Riemannian metric for `𝕜 = ℝ`, a continuous
 Hermitian metric for `𝕜 = ℂ`), `L²` is an inner product space for `⟪s, t⟫ = ∫ ⟪s x, t x⟫ ∂μ`.
-A measurable unitary frame `Φ` (`TauCeti.IsMeasurableUnitaryFrame`) identifies `Lᵖ(E, μ)` with
+A measurable isometric frame `Φ` (`TauCeti.IsMeasurableIsometricFrame`) identifies `Lᵖ(E, μ)` with
 Mathlib's `MeasureTheory.Lp V p μ` by a linear isometry reading sections in the frame
-(`TauCeti.IsMeasurableUnitaryFrame.lpSectionEquiv`). For a finite-rank bundle such frames exist,
+(`TauCeti.IsMeasurableIsometricFrame.lpSectionEquiv`). For a finite-rank bundle such frames exist,
 so `Lᵖ(E, μ)` is complete for every measure `μ` (`TauCeti.LpSection.instCompleteSpace`) and `L²`
-is a Hilbert space. Finite rank is needed: for an incomplete model fibre over a one-point base the
-space is the fibre itself.
+is a Hilbert space. Finite rank is what supplies completeness here; without an additional
+hypothesis it can fail: over a one-point base with a Dirac measure the space is the model fibre
+itself, which need not be complete.
 
 The norm and inner product are defined intrinsically, through representatives; neither depends
 on a choice of charts or frames.
@@ -38,8 +39,8 @@ on a choice of charts or frames.
   fibre norm.
 * `TauCeti.LpSection 𝕜 F E p μ`: its quotient by the sections vanishing almost everywhere, with
   `TauCeti.LpSection.mk` building classes of sections and a coercion choosing representatives.
-* `TauCeti.IsMeasurableUnitaryFrame.lpSectionEquiv`: the linear isometry
-  `LpSection 𝕜 F E p μ ≃ₗᵢ[𝕜] Lp V p μ` given by a measurable unitary frame.
+* `TauCeti.IsMeasurableIsometricFrame.lpSectionEquiv`: the linear isometry
+  `LpSection 𝕜 F E p μ ≃ₗᵢ[𝕜] Lp V p μ` given by a measurable isometric frame.
 
 ## Main results
 
@@ -67,6 +68,19 @@ variable {𝕜 B F : Type*} [RCLike 𝕜] [TopologicalSpace B] [MeasurableSpace 
   [OpensMeasurableSpace B] [SecondCountableTopology B] [NormedAddCommGroup F] [NormedSpace 𝕜 F]
   {E : B → Type*} [TopologicalSpace (TotalSpace F E)] {p : ℝ≥0∞} {μ : Measure B}
 
+namespace MeasureTheory.Lp
+
+omit [TopologicalSpace B] [OpensMeasurableSpace B] [SecondCountableTopology B]
+  [NormedAddCommGroup F] [NormedSpace 𝕜 F] [TopologicalSpace (TotalSpace F E)] in
+/-- Applying a family of linear isometries `Φ x : V ≃ₗᵢ[𝕜] E x` pointwise to an `Lᵖ` function
+gives a family of vectors with `p`-integrable norm. -/
+theorem memLp_norm_linearIsometryEquiv_apply {V : Type*} [NormedAddCommGroup V] [NormedSpace 𝕜 V]
+    [∀ x, NormedAddCommGroup (E x)] [∀ x, NormedSpace 𝕜 (E x)] (g : Lp V p μ)
+    (Φ : ∀ x, V ≃ₗᵢ[𝕜] E x) : MemLp (fun x ↦ ‖Φ x (g x)‖) p μ := by
+  simpa only [LinearIsometryEquiv.norm_map] using (Lp.memLp g).norm
+
+end MeasureTheory.Lp
+
 namespace TauCeti
 
 section Normed
@@ -77,7 +91,7 @@ variable [∀ x, NormedAddCommGroup (E x)] [∀ x, NormedSpace 𝕜 (E x)] [Fibe
 variable (𝕜 F E p μ) in
 /-- The sections of `E` that are a.e.-strongly measurable for `μ` and whose fibre norm lies in
 `Lᵖ(μ)`. -/
-@[expose] def memLpSections : Submodule 𝕜 (∀ x, E x) where
+def memLpSections : Submodule 𝕜 (∀ x, E x) where
   carrier := {s | AEStronglyMeasurableSection 𝕜 F μ s ∧ MemLp (fun x ↦ ‖s x‖) p μ}
   add_mem' {s t} hs ht := ⟨hs.1.add ht.1, (hs.2.add ht.2).of_le
     (hs.1.add ht.1).aestronglyMeasurable_norm <| .of_forall fun x ↦ by
@@ -115,7 +129,7 @@ theorem memLp_norm_sub (hs : AEStronglyMeasurableSection 𝕜 F μ s)
 
 variable (𝕜 F E p μ) in
 /-- The sections in `memLpSections 𝕜 F E p μ` vanishing `μ`-almost everywhere. -/
-@[expose] def aeZeroSections : Submodule 𝕜 (memLpSections 𝕜 F E p μ) where
+def aeZeroSections : Submodule 𝕜 (memLpSections 𝕜 F E p μ) where
   carrier := {s | ∀ᵐ x ∂μ, (s : ∀ x, E x) x = 0}
   add_mem' {s t} hs ht := by
     simp only [Set.mem_ofPred_eq, Submodule.coe_add, Pi.add_apply] at hs ht ⊢
@@ -148,7 +162,7 @@ instance : Module 𝕜 (LpSection 𝕜 F E p μ) :=
 
 /-- The class in `Lᵖ(E, μ)` of an a.e.-strongly measurable section with `p`-integrable fibre
 norm. -/
-@[expose] def mk (s : ∀ x, E x) (hs : AEStronglyMeasurableSection 𝕜 F μ s)
+def mk (s : ∀ x, E x) (hs : AEStronglyMeasurableSection 𝕜 F μ s)
     (hsp : MemLp (fun x ↦ ‖s x‖) p μ) : LpSection 𝕜 F E p μ :=
   Submodule.Quotient.mk ⟨s, hs, hsp⟩
 
@@ -198,29 +212,29 @@ theorem mk_add (hs : AEStronglyMeasurableSection 𝕜 F μ s) (hsp : MemLp (fun 
     (ht : AEStronglyMeasurableSection 𝕜 F μ t) (htp : MemLp (fun x ↦ ‖t x‖) p μ) :
     mk s hs hsp + mk t ht htp =
       mk (fun x ↦ s x + t x) (hs.add ht) (memLp_norm_add hs hsp ht htp) :=
-  rfl
+  (rfl)
 
 @[simp]
 theorem mk_smul (c : 𝕜) (hs : AEStronglyMeasurableSection 𝕜 F μ s)
     (hsp : MemLp (fun x ↦ ‖s x‖) p μ) :
     c • mk s hs hsp = mk (fun x ↦ c • s x) (hs.const_smul c) (memLp_norm_smul c hs hsp) :=
-  rfl
+  (rfl)
 
 @[simp]
 theorem mk_zero : mk (0 : ∀ x, E x) (.zero 𝕜 F E μ) (by simp) = (0 : LpSection 𝕜 F E p μ) :=
-  rfl
+  (rfl)
 
 @[simp]
 theorem mk_neg (hs : AEStronglyMeasurableSection 𝕜 F μ s) (hsp : MemLp (fun x ↦ ‖s x‖) p μ) :
     -mk s hs hsp = mk (fun x ↦ -s x) hs.neg (by simpa only [norm_neg] using hsp) :=
-  rfl
+  (rfl)
 
 @[simp]
 theorem mk_sub (hs : AEStronglyMeasurableSection 𝕜 F μ s) (hsp : MemLp (fun x ↦ ‖s x‖) p μ)
     (ht : AEStronglyMeasurableSection 𝕜 F μ t) (htp : MemLp (fun x ↦ ‖t x‖) p μ) :
     mk s hs hsp - mk t ht htp =
       mk (fun x ↦ s x - t x) (hs.sub ht) (memLp_norm_sub hs hsp ht htp) :=
-  rfl
+  (rfl)
 
 theorem coeFn_add : ∀ᵐ x ∂μ, (f + g) x = f x + g x := by
   have e : f + g = mk (fun x ↦ f x + g x)
@@ -386,21 +400,15 @@ end LpSection
 
 end Inner
 
-section UnitaryFrame
+section IsometricFrame
 
-variable [∀ x, NormedAddCommGroup (E x)] [∀ x, InnerProductSpace 𝕜 (E x)] [FiberBundle F E]
+variable [∀ x, NormedAddCommGroup (E x)] [∀ x, NormedSpace 𝕜 (E x)] [FiberBundle F E]
   [VectorBundle 𝕜 F E] [ContinuousFiberNorm F E] {V : Type*} [NormedAddCommGroup V]
-  [InnerProductSpace 𝕜 V] {Φ : ∀ x, V ≃ₗᵢ[𝕜] E x}
+  [NormedSpace 𝕜 V] {Φ : ∀ x, V ≃ₗᵢ[𝕜] E x}
 
-omit [TopologicalSpace B] [OpensMeasurableSpace B] [SecondCountableTopology B] in
-/-- Applying a family of fibre isometries to a `V`-valued `Lᵖ` function gives a section with
-`p`-integrable fibre norm. -/
-theorem memLp_norm_linearIsometryEquiv_apply (g : Lp V p μ) : MemLp (fun x ↦ ‖Φ x (g x)‖) p μ := by
-  simpa only [LinearIsometryEquiv.norm_map] using (Lp.memLp g).norm
+namespace IsMeasurableIsometricFrame
 
-namespace IsMeasurableUnitaryFrame
-
-variable (hΦ : IsMeasurableUnitaryFrame F μ Φ)
+variable (hΦ : IsMeasurableIsometricFrame F μ Φ)
 include hΦ
 
 theorem memLp_symm_apply (f : LpSection 𝕜 F E p μ) :
@@ -410,13 +418,13 @@ theorem memLp_symm_apply (f : LpSection 𝕜 F E p μ) :
 
 variable (p) [Fact (1 ≤ p)]
 
-/-- A measurable unitary frame `Φ` identifies `Lᵖ(E, μ)` with `Lᵖ(μ; V)`: a section is sent to
+/-- A measurable isometric frame `Φ` identifies `Lᵖ(E, μ)` with `Lᵖ(μ; V)`: a section is sent to
 its coordinates `x ↦ (Φ x).symm (s x)` in the frame. -/
 def lpSectionEquiv : LpSection 𝕜 F E p μ ≃ₗᵢ[𝕜] Lp V p μ where
   toFun f := (hΦ.memLp_symm_apply f).toLp _
   invFun g := LpSection.mk (fun x ↦ Φ x (g x))
     (hΦ.aestronglyMeasurableSection_apply (Lp.aestronglyMeasurable g))
-    (memLp_norm_linearIsometryEquiv_apply g)
+    (Lp.memLp_norm_linearIsometryEquiv_apply g Φ)
   map_add' f g := by
     rw [← MemLp.toLp_add]
     refine MemLp.toLp_congr _ _ ?_
@@ -431,14 +439,14 @@ def lpSectionEquiv : LpSection 𝕜 F E p μ ≃ₗᵢ[𝕜] Lp V p μ where
     refine LpSection.ext _ _ ?_
     filter_upwards [LpSection.coeFn_mk
       (hΦ.aestronglyMeasurableSection_apply (Lp.aestronglyMeasurable _))
-      (memLp_norm_linearIsometryEquiv_apply _),
+      (Lp.memLp_norm_linearIsometryEquiv_apply _ Φ),
       MemLp.coeFn_toLp (hΦ.memLp_symm_apply f)] with x h1 h2
     rw [h1, h2, LinearIsometryEquiv.apply_symm_apply]
   right_inv g := by
     refine Lp.ext ?_
     filter_upwards [MemLp.coeFn_toLp (hΦ.memLp_symm_apply _), LpSection.coeFn_mk
       (hΦ.aestronglyMeasurableSection_apply (Lp.aestronglyMeasurable g))
-      (memLp_norm_linearIsometryEquiv_apply g)] with x h1 h2
+      (Lp.memLp_norm_linearIsometryEquiv_apply g Φ)] with x h1 h2
     rw [h1, h2, LinearIsometryEquiv.symm_apply_apply]
   norm_map' f := by
     rw [LinearEquiv.coe_mk, LinearMap.coe_mk, AddHom.coe_mk, Lp.norm_toLp, LpSection.norm_def,
@@ -452,9 +460,16 @@ theorem coeFn_lpSectionEquiv (f : LpSection 𝕜 F E p μ) :
 theorem coeFn_lpSectionEquiv_symm (g : Lp V p μ) :
     ∀ᵐ x ∂μ, (hΦ.lpSectionEquiv p).symm g x = Φ x (g x) :=
   LpSection.coeFn_mk (hΦ.aestronglyMeasurableSection_apply (Lp.aestronglyMeasurable g))
-    (memLp_norm_linearIsometryEquiv_apply g)
+    (Lp.memLp_norm_linearIsometryEquiv_apply g Φ)
 
-end IsMeasurableUnitaryFrame
+end IsMeasurableIsometricFrame
+
+end IsometricFrame
+
+section Complete
+
+variable [∀ x, NormedAddCommGroup (E x)] [∀ x, InnerProductSpace 𝕜 (E x)] [FiberBundle F E]
+  [VectorBundle 𝕜 F E] [ContinuousFiberNorm F E]
 
 namespace LpSection
 
@@ -462,7 +477,7 @@ namespace LpSection
 base, `Lᵖ(E, μ)` is complete for every measure `μ` on the Borel sets of the base. -/
 instance instCompleteSpace [FiniteDimensional 𝕜 F] [Fact (1 ≤ p)] :
     CompleteSpace (LpSection 𝕜 F E p μ) := by
-  obtain ⟨Φ, hΦ⟩ := exists_isMeasurableUnitaryFrame F E (EuclideanSpace 𝕜 (Fin (finrank 𝕜 F)))
+  obtain ⟨Φ, hΦ⟩ := exists_isMeasurableIsometricFrame F E (EuclideanSpace 𝕜 (Fin (finrank 𝕜 F)))
     (finrank_euclideanSpace_fin)
   let L := (hΦ μ).lpSectionEquiv p
   exact (completeSpace_congr (e := L.toLinearEquiv.toEquiv) L.isometry.isUniformEmbedding).2
@@ -470,6 +485,6 @@ instance instCompleteSpace [FiniteDimensional 𝕜 F] [Fact (1 ≤ p)] :
 
 end LpSection
 
-end UnitaryFrame
+end Complete
 
 end TauCeti
