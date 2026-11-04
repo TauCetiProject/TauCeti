@@ -227,18 +227,10 @@ variable {X : Type*} [NormedAddCommGroup X] [NormedSpace 𝕜 X]
 theorem kFunctional_refl (ht : 0 ≤ t) (u : (refl 𝕜 X).SumSpace) :
     (refl 𝕜 X).kFunctional t u = min 1 t * ‖u‖ := by
   refine le_antisymm ?_ (min_one_mul_norm_le_kFunctional ht u)
-  have h₀ : (refl 𝕜 X).fstToSum ((refl 𝕜 X).sumSpaceEmbed u) = u :=
-    (refl 𝕜 X).sumSpace_ext (by simp)
-  have h₁ : (refl 𝕜 X).sndToSum ((refl 𝕜 X).sumSpaceEmbed u) = u :=
-    (refl 𝕜 X).sumSpace_ext (by simp)
   rw [← norm_refl_sumSpaceEmbed u]
   rcases le_total 1 t with h | h
-  · rw [min_eq_left h, one_mul]
-    have := (refl 𝕜 X).kFunctional_fstToSum_le ht ((refl 𝕜 X).sumSpaceEmbed u)
-    rwa [h₀] at this
-  · rw [min_eq_right h]
-    have := (refl 𝕜 X).kFunctional_sndToSum_le ht ((refl 𝕜 X).sumSpaceEmbed u)
-    rwa [h₁] at this
+  · simpa [min_eq_left h] using (refl 𝕜 X).kFunctional_fstToSum_le ht ((refl 𝕜 X).sumSpaceEmbed u)
+  · simpa [min_eq_right h] using (refl 𝕜 X).kFunctional_sndToSum_le ht ((refl 𝕜 X).sumSpaceEmbed u)
 
 end Refl
 

@@ -65,8 +65,8 @@ structure CompatibleCouple (𝕜 : Type*) [Semiring 𝕜] (X₀ X₁ V : Type*)
   embed₀ : X₀ →L[𝕜] V
   /-- The embedding of the second space into the ambient space. -/
   embed₁ : X₁ →L[𝕜] V
-  injective_embed₀ : Function.Injective embed₀
-  injective_embed₁ : Function.Injective embed₁
+  embed₀_injective : Function.Injective embed₀
+  embed₁_injective : Function.Injective embed₁
 
 namespace CompatibleCouple
 
@@ -120,21 +120,21 @@ theorem interSnd_apply (x : C.inter) : C.interSnd x = (x : X₀ × X₁).2 :=
 theorem embed₀_interFst (x : C.inter) : C.embed₀ (C.interFst x) = C.embed₁ (C.interSnd x) :=
   C.mem_inter_iff.1 x.2
 
-theorem injective_interFst : Function.Injective C.interFst := by
+theorem interFst_injective : Function.Injective C.interFst := by
   rintro ⟨⟨a₀, a₁⟩, ha⟩ ⟨⟨b₀, b₁⟩, hb⟩ h
   simp only [interFst_apply] at h
   subst h
   simp only [mem_inter_iff] at ha hb
-  have : a₁ = b₁ := C.injective_embed₁ (ha.symm.trans hb)
+  have : a₁ = b₁ := C.embed₁_injective (ha.symm.trans hb)
   subst this
   rfl
 
-theorem injective_interSnd : Function.Injective C.interSnd := by
+theorem interSnd_injective : Function.Injective C.interSnd := by
   rintro ⟨⟨a₀, a₁⟩, ha⟩ ⟨⟨b₀, b₁⟩, hb⟩ h
   simp only [interSnd_apply] at h
   subst h
   simp only [mem_inter_iff] at ha hb
-  have : a₀ = b₀ := C.injective_embed₀ (ha.trans hb.symm)
+  have : a₀ = b₀ := C.embed₀_injective (ha.trans hb.symm)
   subst this
   rfl
 
@@ -194,7 +194,7 @@ abbrev SumSpace : Type _ :=
 def sumMk : WithLp 1 (X₀ × X₁) →L[𝕜] C.SumSpace :=
   C.sumKer.mkQL
 
-theorem surjective_sumMk : Function.Surjective C.sumMk :=
+theorem sumMk_surjective : Function.Surjective C.sumMk :=
   C.sumKer.mkQ_surjective
 
 theorem norm_sumMk_le (x : WithLp 1 (X₀ × X₁)) : ‖C.sumMk x‖ ≤ ‖x.fst‖ + ‖x.snd‖ :=
@@ -212,10 +212,7 @@ def sndToSum : X₁ →L[𝕜] C.SumSpace :=
 
 theorem fstToSum_add_sndToSum (x₀ : X₀) (x₁ : X₁) :
     C.fstToSum x₀ + C.sndToSum x₁ = C.sumMk (toLp 1 (x₀, x₁)) := by
-  simp only [fstToSum, sndToSum, ContinuousLinearMap.coe_comp, Function.comp_apply,
-    ContinuousLinearEquiv.coe_coe, prodContinuousLinearEquiv_symm_apply,
-    ContinuousLinearMap.inl_apply, ContinuousLinearMap.inr_apply, ← map_add, ← toLp_add,
-    Prod.mk_add_mk, add_zero, zero_add]
+  simp [fstToSum, sndToSum, ← map_add, ← toLp_add]
 
 theorem sumMk_apply (x : WithLp 1 (X₀ × X₁)) :
     C.sumMk x = C.fstToSum x.fst + C.sndToSum x.snd := by
@@ -225,7 +222,7 @@ theorem sumMk_apply (x : WithLp 1 (X₀ × X₁)) :
 /-- Every element of the sum space is a sum `x₀ + x₁`. -/
 theorem exists_fstToSum_add_sndToSum_eq (u : C.SumSpace) :
     ∃ x₀ x₁, C.fstToSum x₀ + C.sndToSum x₁ = u := by
-  obtain ⟨x, rfl⟩ := C.surjective_sumMk u
+  obtain ⟨x, rfl⟩ := C.sumMk_surjective u
   exact ⟨x.fst, x.snd, (C.sumMk_apply x).symm⟩
 
 theorem norm_fstToSum_add_sndToSum_le (x₀ : X₀) (x₁ : X₁) :
@@ -273,12 +270,12 @@ theorem sumSpaceEmbed_fstToSum (x : X₀) : C.sumSpaceEmbed (C.fstToSum x) = C.e
 theorem sumSpaceEmbed_sndToSum (x : X₁) : C.sumSpaceEmbed (C.sndToSum x) = C.embed₁ x := by
   simp [sndToSum]
 
-theorem injective_sumSpaceEmbed : Function.Injective C.sumSpaceEmbed :=
+theorem sumSpaceEmbed_injective : Function.Injective C.sumSpaceEmbed :=
   LinearMap.ker_eq_bot.1 (Submodule.ker_liftQ_eq_bot _ _ _ le_rfl)
 
 /-- Two elements of the sum space agree as soon as their images in the ambient space do. -/
 theorem sumSpace_ext {u v : C.SumSpace} (h : C.sumSpaceEmbed u = C.sumSpaceEmbed v) : u = v :=
-  C.injective_sumSpaceEmbed h
+  C.sumSpaceEmbed_injective h
 
 /-- The image of the sum space in the ambient space is the sum of the two ranges. -/
 theorem range_sumSpaceEmbed :
@@ -292,11 +289,11 @@ theorem range_sumSpaceEmbed :
   · rintro ⟨_, ⟨x₀, rfl⟩, _, ⟨x₁, rfl⟩, rfl⟩
     exact ⟨C.fstToSum x₀ + C.sndToSum x₁, by simp⟩
 
-theorem injective_fstToSum : Function.Injective C.fstToSum := fun x y h =>
-  C.injective_embed₀ <| by simpa using congrArg C.sumSpaceEmbed h
+theorem fstToSum_injective : Function.Injective C.fstToSum := fun x y h =>
+  C.embed₀_injective <| by simpa using congrArg C.sumSpaceEmbed h
 
-theorem injective_sndToSum : Function.Injective C.sndToSum := fun x y h =>
-  C.injective_embed₁ <| by simpa using congrArg C.sumSpaceEmbed h
+theorem sndToSum_injective : Function.Injective C.sndToSum := fun x y h =>
+  C.embed₁_injective <| by simpa using congrArg C.sumSpaceEmbed h
 
 /-- The two routes from the intersection to the sum agree. -/
 theorem fstToSum_interFst (x : C.inter) : C.fstToSum (C.interFst x) = C.sndToSum (C.interSnd x) :=
@@ -308,6 +305,7 @@ variable {W : Type*} [AddCommGroup W] [Module 𝕜 W] [TopologicalSpace W]
 
 /-- A continuous linear map out of the sum space is determined by its restrictions to `X₀` and
 `X₁`. -/
+@[ext]
 theorem sumSpace_hom_ext {f g : C.SumSpace →L[𝕜] W} (h₀ : f.comp C.fstToSum = g.comp C.fstToSum)
     (h₁ : f.comp C.sndToSum = g.comp C.sndToSum) : f = g := by
   ext u
@@ -375,8 +373,8 @@ variable (𝕜 X : Type*) [NormedField 𝕜] [NormedAddCommGroup X] [NormedSpace
 def refl : CompatibleCouple 𝕜 X X X where
   embed₀ := ContinuousLinearMap.id 𝕜 X
   embed₁ := ContinuousLinearMap.id 𝕜 X
-  injective_embed₀ := Function.injective_id
-  injective_embed₁ := Function.injective_id
+  embed₀_injective := Function.injective_id
+  embed₁_injective := Function.injective_id
 
 @[simp]
 theorem refl_embed₀ : (refl 𝕜 X).embed₀ = ContinuousLinearMap.id 𝕜 X :=
@@ -387,6 +385,20 @@ theorem refl_embed₁ : (refl 𝕜 X).embed₁ = ContinuousLinearMap.id 𝕜 X :
   (rfl)
 
 variable {𝕜 X}
+
+/-- For the couple `(X, X)`, the inclusion of the first space into the sum inverts
+`sumSpaceEmbed`. -/
+@[simp]
+theorem refl_fstToSum_sumSpaceEmbed (u : (refl 𝕜 X).SumSpace) :
+    (refl 𝕜 X).fstToSum ((refl 𝕜 X).sumSpaceEmbed u) = u :=
+  (refl 𝕜 X).sumSpace_ext (by simp)
+
+/-- For the couple `(X, X)`, the inclusion of the second space into the sum inverts
+`sumSpaceEmbed`. -/
+@[simp]
+theorem refl_sndToSum_sumSpaceEmbed (u : (refl 𝕜 X).SumSpace) :
+    (refl 𝕜 X).sndToSum ((refl 𝕜 X).sumSpaceEmbed u) = u :=
+  (refl 𝕜 X).sumSpace_ext (by simp)
 
 /-- For the couple `(X, X)` the intersection norm is the norm of `X`. -/
 theorem norm_refl_inter (x : (refl 𝕜 X).inter) : ‖x‖ = ‖(refl 𝕜 X).interFst x‖ := by
@@ -402,10 +414,7 @@ theorem norm_refl_sumSpaceEmbed (u : (refl 𝕜 X).SumSpace) :
   · refine le_of_forall_gt fun r hr => ?_
     obtain ⟨x₀, x₁, rfl, h⟩ := (refl 𝕜 X).norm_sumSpace_lt_iff.1 hr
     simpa using (norm_add_le x₀ x₁).trans_lt h
-  · have hu : (refl 𝕜 X).fstToSum ((refl 𝕜 X).sumSpaceEmbed u) = u :=
-      (refl 𝕜 X).sumSpace_ext (by simp)
-    calc ‖u‖ = ‖(refl 𝕜 X).fstToSum ((refl 𝕜 X).sumSpaceEmbed u)‖ := by rw [hu]
-      _ ≤ _ := (refl 𝕜 X).norm_fstToSum_le _
+  · simpa using (refl 𝕜 X).norm_fstToSum_le ((refl 𝕜 X).sumSpaceEmbed u)
 
 end Refl
 
