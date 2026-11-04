@@ -10,6 +10,7 @@ public import TauCeti.Geometry.Symplectic.Hamiltonian.Integrable
 
 import Mathlib.Analysis.InnerProductSpace.Dual
 import Mathlib.LinearAlgebra.Dual.Lemmas
+import TauCeti.Analysis.InnerProductSpace.Orthonormal.Sum
 import TauCeti.Geometry.Symplectic.Manifold.Opens
 
 /-!
@@ -126,12 +127,9 @@ private theorem smul_eq_smul_of_circular {m U' : ℝ} {q p : V} (hq : q ≠ 0)
         (⟪q, b 0⟫_ℝ • b 1 - ⟪q, b 1⟫_ℝ • b 0) := by
   have hb : ∀ i j, ⟪b i, b j⟫_ℝ = if i = j then 1 else 0 := orthonormal_iff_ite.1 b.orthonormal
   have hr : ‖q‖ ≠ 0 := norm_ne_zero_iff.2 hq
-  have hc (q p : V) : ⟪q, p⟫_ℝ = ⟪q, b 0⟫_ℝ * ⟪p, b 0⟫_ℝ + ⟪q, b 1⟫_ℝ * ⟪p, b 1⟫_ℝ := by
-    rw [← b.sum_inner_mul_inner q p, Fin.sum_univ_two, real_inner_comm (b 0) p,
-      real_inner_comm (b 1) p]
-  have hqq := hc q q
+  have hqq := b.real_inner_fin_two q q
   rw [real_inner_self_eq_norm_sq] at hqq
-  have hqp := (hc q p).symm.trans h0
+  have hqp := (b.real_inner_fin_two q p).symm.trans h0
   set L := angularMomentum (b 0) (b 1) (q, p) with hL
   rw [angularMomentum_apply] at hL
   -- In the plane, `p ⊥ q` forces `‖q‖² p = L (-q₁, q₀)`.
@@ -183,11 +181,8 @@ theorem isRegularPoint_centralForceEnergyMomentum_iff {m : ℝ} (hm : m ≠ 0) {
     have hb : ∀ i j, ⟪b i, b j⟫_ℝ = if i = j then 1 else 0 :=
       orthonormal_iff_ite.1 b.orthonormal
     have hr : ‖q‖ ≠ 0 := norm_ne_zero_iff.2 hq
-    have hc (q p : V) : ⟪q, p⟫_ℝ = ⟪q, b 0⟫_ℝ * ⟪p, b 0⟫_ℝ + ⟪q, b 1⟫_ℝ * ⟪p, b 1⟫_ℝ := by
-      rw [← b.sum_inner_mul_inner q p, Fin.sum_univ_two, real_inner_comm (b 0) p,
-        real_inner_comm (b 1) p]
-    have hqp := hc q p
-    have hqq := hc q q
+    have hqp := b.real_inner_fin_two q p
+    have hqq := b.real_inner_fin_two q q
     rw [real_inner_self_eq_norm_sq] at hqq
     set L := angularMomentum (b 0) (b 1) (q, p) with hL
     rw [angularMomentum_apply] at hL

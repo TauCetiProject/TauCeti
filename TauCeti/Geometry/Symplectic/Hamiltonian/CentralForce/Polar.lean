@@ -11,6 +11,8 @@ public import TauCeti.Geometry.Symplectic.Prod.Basic
 public import Mathlib.Analysis.SpecialFunctions.Complex.Arg
 public import Mathlib.Analysis.SpecialFunctions.PolarCoord
 
+import TauCeti.Analysis.InnerProductSpace.Orthonormal.Sum
+
 /-!
 # Polar canonical coordinates for planar central forces
 
@@ -39,15 +41,17 @@ So `(r, θ, p_r, L)` are canonical coordinates in which a central-force Hamilton
 `U_L(r) = L² / (2 m r²) + U(r)` (`TauCeti.centralForceHamiltonian_polarCanonical`). Its Hamiltonian
 vector field in these coordinates is `(r', p_r', θ', L') = (p_r / m, -U_L'(r), L / (m r²), 0)`: the
 derivative of the parametrization carries this field to the Hamiltonian vector field of `H`
-(`TauCeti.fderiv_polarCanonical_apply_eq_hamiltonianVectorField`). Hence the angular momentum
-is conserved, and at a fixed value `L = ℓ` the radial motion is governed by the reduced
-Hamiltonian `p_r² / (2m) + U_ℓ(r)` on the half-plane `r > 0`
-(`TauCeti.hasDerivAt_polarCanonical_comp`).
+(`TauCeti.fderiv_polarCanonical_apply_eq_hamiltonianVectorField`). So a curve whose derivative
+at `t` is given by these polar Hamilton equations is carried to a curve whose derivative at `t` is
+the Hamiltonian vector field of `H` (`TauCeti.hasDerivAt_polarCanonical_comp`). If the polar
+equations hold at every time, then `L' = 0` keeps `L = ℓ` fixed and `(r, p_r)` follows the reduced
+Hamiltonian `p_r² / (2m) + U_ℓ(r)` on the half-plane `r > 0`.
 
-The parametrization is `2π`-periodic in `θ`. For an orthonormal basis `b` of a plane `V`, the
-angle `θ ∈ ℝ / 2πℤ` of a nonzero position is `TauCeti.polarAngle b`, and the polar coordinates
-`(r, p_r, θ, L)`, with `r > 0` and `θ ∈ ℝ / 2πℤ`, put `(0, ∞) × ℝ × (ℝ / 2πℤ) × ℝ` in bijection
-with the punctured phase space `{(q, p) | q ≠ 0}` (`TauCeti.polarCanonicalEquiv`).
+The parametrization is `2π`-periodic in `θ`. The angle `θ ∈ ℝ / 2πℤ` of a nonzero position in the
+plane of `u` and `w` is `TauCeti.polarAngle u w`. For an orthonormal basis `b` of a plane `V`, the
+polar coordinates `(r, p_r, θ, L)`, with `r > 0` and `θ ∈ ℝ / 2πℤ`, put
+`(0, ∞) × ℝ × (ℝ / 2πℤ) × ℝ` in bijection with the punctured phase space `{(q, p) | q ≠ 0}`
+(`TauCeti.polarCanonicalEquiv`).
 
 ## Main definitions
 
@@ -133,12 +137,13 @@ theorem contDiff_polarAngularUnit (u w : V) {n : WithTop ℕ∞} :
   unfold polarAngularUnit
   fun_prop
 
-/-- Both polar unit vectors are `2π`-periodic, so they only depend on `θ` modulo `2π`. -/
+/-- The radial unit vector `e_r` only depends on `θ` modulo `2π`. -/
 theorem polarRadialUnit_eq_of_coe_eq (u w : V) {θ θ' : ℝ} (h : (θ : Real.Angle) = θ') :
     polarRadialUnit u w θ = polarRadialUnit u w θ' := by
   rw [polarRadialUnit, polarRadialUnit, ← Real.Angle.cos_coe, ← Real.Angle.sin_coe, h,
     Real.Angle.cos_coe, Real.Angle.sin_coe]
 
+/-- The angular unit vector `e_θ` only depends on `θ` modulo `2π`. -/
 theorem polarAngularUnit_eq_of_coe_eq (u w : V) {θ θ' : ℝ} (h : (θ : Real.Angle) = θ') :
     polarAngularUnit u w θ = polarAngularUnit u w θ' := by
   rw [polarAngularUnit, polarAngularUnit, ← Real.Angle.cos_coe, ← Real.Angle.sin_coe, h,
@@ -383,10 +388,11 @@ theorem fderiv_polarCanonical_apply_eq_hamiltonianVectorField {m : ℝ} {U : ℝ
   · simp only [smul_smul]
     match_scalars <;> field_simp <;> ring
 
-/-- **Solutions of Hamilton's equations in polar coordinates.** A curve `γ = ((r, p_r), (θ, L))`
-with `r > 0` solving `r' = p_r / m`, `p_r' = L² / (m r³) - U'(r)`, `θ' = L / (m r²)` and `L' = 0`
-parametrizes, through the polar canonical parametrization, an integral curve of the Hamiltonian
-vector field of the central-force Hamiltonian. Along such a curve `L = ℓ` is constant, and the
+/-- **Hamilton's equations in polar coordinates, along a curve.** Let `γ = ((r, p_r), (θ, L))` be a
+curve with `r > 0` at time `t`, whose derivative at `t` is given by the polar Hamilton equations
+`r' = p_r / m`, `p_r' = L² / (m r³) - U'(r)`, `θ' = L / (m r²)` and `L' = 0`. Then
+`polarCanonical ∘ γ` has derivative at `t` equal to the Hamiltonian vector field of the
+central-force Hamiltonian. If these equations hold for every `t`, then `L = ℓ` is constant and the
 radial pair `(r, p_r)` solves Hamilton's equations `r' = p_r / m`, `p_r' = -U_ℓ'(r)` of the reduced
 Hamiltonian `p_r² / (2m) + U_ℓ(r)` on the half-plane `r > 0`. -/
 theorem hasDerivAt_polarCanonical_comp {m : ℝ} {U U' : ℝ → ℝ} {γ : ℝ → (ℝ × ℝ) × (ℝ × ℝ)}
@@ -406,24 +412,79 @@ end Orthonormal
 
 section Angle
 
-variable (b : OrthonormalBasis (Fin 2) ℝ V)
+/-- The **polar angle** of a position `q` in the frame `(u, w)`, a point of
+`Real.Angle = ℝ / 2πℤ`: the argument of `⟪q, u⟫ + i ⟪q, w⟫`. It is `0` at the origin. -/
+noncomputable def polarAngle (u w : V) (q : V) : Real.Angle :=
+  Complex.arg ⟨⟪q, u⟫_ℝ, ⟪q, w⟫_ℝ⟩
 
-/-- The **polar angle** of a position `q` in the frame of an orthonormal basis `b` of the plane,
-a point of `Real.Angle = ℝ / 2πℤ`: the argument of `⟪q, b₀⟫ + i ⟪q, b₁⟫`. It is `0` at the
-origin. -/
-noncomputable def polarAngle (q : V) : Real.Angle :=
-  Complex.arg ⟨⟪q, b 0⟫_ℝ, ⟪q, b 1⟫_ℝ⟩
-
-theorem polarAngle_apply (q : V) :
-    polarAngle b q = (Complex.arg ⟨⟪q, b 0⟫_ℝ, ⟪q, b 1⟫_ℝ⟩ : Real.Angle) :=
+theorem polarAngle_apply (u w : V) (q : V) :
+    polarAngle u w q = (Complex.arg ⟨⟪q, u⟫_ℝ, ⟪q, w⟫_ℝ⟩ : Real.Angle) :=
   (rfl)
 
 /-- The polar angle of the origin is `0`. -/
 @[simp]
-theorem polarAngle_zero : polarAngle b 0 = 0 := by
-  have h : (⟨⟪(0 : V), b 0⟫_ℝ, ⟪(0 : V), b 1⟫_ℝ⟩ : ℂ) = 0 :=
+theorem polarAngle_zero (u w : V) : polarAngle u w 0 = 0 := by
+  have h : (⟨⟪(0 : V), u⟫_ℝ, ⟪(0 : V), w⟫_ℝ⟩ : ℂ) = 0 :=
     Complex.ext (by simp) (by simp)
   rw [polarAngle, h, Complex.arg_zero, Real.Angle.coe_zero]
+
+/-- The complex coordinate of `q` given by `Complex.isometryOfOrthonormal b` is
+`⟪q, b₀⟫ + i ⟪q, b₁⟫`. -/
+private theorem isometryOfOrthonormal_symm_eq_mk (b : OrthonormalBasis (Fin 2) ℝ V) (q : V) :
+    (Complex.isometryOfOrthonormal b).symm q = ⟨⟪q, b 0⟫_ℝ, ⟪q, b 1⟫_ℝ⟩ := by
+  rw [Complex.isometryOfOrthonormal_symm_apply]
+  apply Complex.ext <;> simp [b.coe_toBasis_repr_apply, b.repr_apply_apply, real_inner_comm]
+
+/-- For an orthonormal basis `b` of a plane, the polar angle in the frame `(b₀, b₁)` is the
+argument of the complex coordinate of `q` given by `Complex.isometryOfOrthonormal b`. -/
+theorem polarAngle_eq_arg_isometryOfOrthonormal_symm (b : OrthonormalBasis (Fin 2) ℝ V) (q : V) :
+    polarAngle (b 0) (b 1) q = Complex.arg ((Complex.isometryOfOrthonormal b).symm q) := by
+  rw [polarAngle, isometryOfOrthonormal_symm_eq_mk]
+
+section Orthonormal
+
+variable {u w : V} (hu : ‖u‖ = 1) (hw : ‖w‖ = 1) (huw : ⟪u, w⟫_ℝ = 0)
+include hu hw huw
+
+/-- The angle of the point with polar coordinates `(r, p_r, θ, L)`, `r > 0`, is `θ` modulo
+`2π`. -/
+@[simp]
+theorem polarAngle_polarCanonical {x : (ℝ × ℝ) × (ℝ × ℝ)} (hr : 0 < x.1.1) :
+    polarAngle u w (polarCanonical u w x).1 = x.2.1 := by
+  have hwu : ⟪w, u⟫_ℝ = 0 := by rwa [real_inner_comm]
+  have h : (⟨⟪(polarCanonical u w x).1, u⟫_ℝ, ⟪(polarCanonical u w x).1, w⟫_ℝ⟩
+      : ℂ) = (x.1.1 : ℂ) * (Real.Angle.cos x.2.1 + Real.Angle.sin x.2.1 * Complex.I) := by
+    apply Complex.ext <;>
+      simp [polarCanonical, polarRadialUnit, inner_add_left, real_inner_smul_left,
+        hu, hw, huw, hwu, Real.Angle.cos_coe, Real.Angle.sin_coe, Complex.cos_ofReal_re,
+        Complex.sin_ofReal_re]
+  rw [polarAngle, h, Complex.arg_mul_cos_add_sin_mul_I_coe_angle hr]
+
+/-- **Polar coordinates determine the point, with the angle taken modulo `2π`.** Two points with
+`r, r' > 0` have the same image under the polar canonical parametrization exactly when their
+radial pairs `(r, p_r)` and angular momenta agree and their angles agree modulo `2π`. -/
+theorem polarCanonical_eq_polarCanonical_iff {x x' : (ℝ × ℝ) × (ℝ × ℝ)} (hr : 0 < x.1.1)
+    (hr' : 0 < x'.1.1) :
+    polarCanonical u w x = polarCanonical u w x' ↔
+      x.1 = x'.1 ∧ (x.2.1 : Real.Angle) = x'.2.1 ∧ x.2.2 = x'.2.2 := by
+  refine ⟨fun h ↦ ⟨Prod.ext ?_ ?_, ?_, ?_⟩, fun ⟨h₁, h₂, h₃⟩ ↦ ?_⟩
+  · rw [← abs_of_pos hr, ← abs_of_pos hr', ← norm_fst_polarCanonical hu hw huw,
+      ← norm_fst_polarCanonical hu hw huw x', h]
+  · rw [← radialMomentum_polarCanonical hu hw huw hr,
+      ← radialMomentum_polarCanonical hu hw huw hr', h]
+  · rw [← polarAngle_polarCanonical hu hw huw hr, ← polarAngle_polarCanonical hu hw huw hr', h]
+  · rw [← angularMomentum_polarCanonical hu hw huw hr.ne',
+      ← angularMomentum_polarCanonical hu hw huw hr'.ne', h]
+  · obtain ⟨⟨r, pᵣ⟩, ⟨θ, L⟩⟩ := x
+    obtain ⟨⟨r', pᵣ'⟩, ⟨θ', L'⟩⟩ := x'
+    simp only [Prod.mk.injEq] at h₁ h₃
+    obtain ⟨rfl, rfl⟩ := h₁
+    subst h₃
+    exact polarCanonical_eq_of_coe_eq _ _ h₂ _ _ _
+
+end Orthonormal
+
+variable (b : OrthonormalBasis (Fin 2) ℝ V)
 
 private theorem norm_basis_zero : ‖b 0‖ = 1 := b.orthonormal.1 0
 
@@ -432,52 +493,32 @@ private theorem norm_basis_one : ‖b 1‖ = 1 := b.orthonormal.1 1
 private theorem inner_basis_zero_one : ⟪b 0, b 1⟫_ℝ = 0 :=
   b.orthonormal.2 (show (0 : Fin 2) ≠ 1 by decide)
 
-/-- The angle of the point with polar coordinates `(r, p_r, θ, L)`, `r > 0`, is `θ` modulo
-`2π`. -/
-@[simp]
-theorem polarAngle_polarCanonical {x : (ℝ × ℝ) × (ℝ × ℝ)} (hr : 0 < x.1.1) :
-    polarAngle b (polarCanonical (b 0) (b 1) x).1 = x.2.1 := by
-  have h0 := norm_basis_zero b
-  have h1 := norm_basis_one b
-  have h01 := inner_basis_zero_one b
-  have h10 : ⟪b 1, b 0⟫_ℝ = 0 := by rwa [real_inner_comm]
-  have h : (⟨⟪(polarCanonical (b 0) (b 1) x).1, b 0⟫_ℝ, ⟪(polarCanonical (b 0) (b 1) x).1, b 1⟫_ℝ⟩
-      : ℂ) = (x.1.1 : ℂ) * (Real.Angle.cos x.2.1 + Real.Angle.sin x.2.1 * Complex.I) := by
-    apply Complex.ext <;>
-      simp [polarCanonical, polarRadialUnit, inner_add_left, real_inner_smul_left,
-        h0, h1, h01, h10, Real.Angle.cos_coe, Real.Angle.sin_coe, Complex.cos_ofReal_re,
-        Complex.sin_ofReal_re]
-  rw [polarAngle, h, Complex.arg_mul_cos_add_sin_mul_I_coe_angle hr]
-
 /-- **Every point off the collision set is the image of its polar coordinates**: for `q ≠ 0` and
 every lift `θ` of the polar angle of `q`, the point with polar coordinates
 `(‖q‖, p_r, θ, L)`, where `p_r` is the radial momentum and `L` the angular momentum of `(q, p)`, is
 `(q, p)`. -/
 theorem polarCanonical_polarAngle {q : V} (p : V) (hq : q ≠ 0) {θ : ℝ}
-    (hθ : (θ : Real.Angle) = polarAngle b q) :
+    (hθ : (θ : Real.Angle) = polarAngle (b 0) (b 1) q) :
     polarCanonical (b 0) (b 1)
         ((‖q‖, radialMomentum (q, p)), (θ, angularMomentum (b 0) (b 1) (q, p))) = (q, p) := by
-  set z : ℂ := ⟨⟪q, b 0⟫_ℝ, ⟪q, b 1⟫_ℝ⟩ with hz
+  set e := Complex.isometryOfOrthonormal b
+  have hnz : ‖e.symm q‖ = ‖q‖ := e.symm.norm_map q
   have hn : ‖q‖ ^ 2 = ⟪q, b 0⟫_ℝ ^ 2 + ⟪q, b 1⟫_ℝ ^ 2 := by
-    rw [← b.sum_sq_inner_left q, Fin.sum_univ_two]
-  have hnz : ‖z‖ = ‖q‖ := by
-    rw [Complex.norm_def, Complex.normSq_apply, ← sqrt_sq (norm_nonneg q), hn, hz]
-    ring_nf
+    rw [← real_inner_self_eq_norm_sq, b.real_inner_fin_two, sq, sq]
   have hq0 : ‖q‖ ≠ 0 := norm_ne_zero_iff.2 hq
   have hcos : Real.cos θ = ⟪q, b 0⟫_ℝ / ‖q‖ := by
-    rw [eq_div_iff hq0, ← Real.Angle.cos_coe, hθ, polarAngle, Real.Angle.cos_coe, mul_comm,
-      ← hnz, Complex.norm_mul_cos_arg]
+    rw [eq_div_iff hq0, ← Real.Angle.cos_coe, hθ, polarAngle_eq_arg_isometryOfOrthonormal_symm,
+      Real.Angle.cos_coe, mul_comm, ← hnz, Complex.norm_mul_cos_arg,
+      isometryOfOrthonormal_symm_eq_mk]
   have hsin : Real.sin θ = ⟪q, b 1⟫_ℝ / ‖q‖ := by
-    rw [eq_div_iff hq0, ← Real.Angle.sin_coe, hθ, polarAngle, Real.Angle.sin_coe, mul_comm,
-      ← hnz, Complex.norm_mul_sin_arg]
+    rw [eq_div_iff hq0, ← Real.Angle.sin_coe, hθ, polarAngle_eq_arg_isometryOfOrthonormal_symm,
+      Real.Angle.sin_coe, mul_comm, ← hnz, Complex.norm_mul_sin_arg,
+      isometryOfOrthonormal_symm_eq_mk]
   have hrepr (v : V) : v = ⟪v, b 0⟫_ℝ • b 0 + ⟪v, b 1⟫_ℝ • b 1 := by
-    conv_lhs => rw [← b.sum_repr' v]
-    rw [Fin.sum_univ_two, real_inner_comm, real_inner_comm (b 1)]
-  have hqp : ⟪q, p⟫_ℝ = ⟪q, b 0⟫_ℝ * ⟪p, b 0⟫_ℝ + ⟪q, b 1⟫_ℝ * ⟪p, b 1⟫_ℝ := by
-    rw [← b.sum_inner_mul_inner q p, Fin.sum_univ_two, real_inner_comm (b 0) p,
-      real_inner_comm (b 1) p]
+    conv_lhs => rw [← e.apply_symm_apply v, Complex.isometryOfOrthonormal_apply,
+      isometryOfOrthonormal_symm_eq_mk]
   rw [polarCanonical_apply, polarRadialUnit, polarAngularUnit, hcos, hsin, radialMomentum_apply,
-    hqp, angularMomentum_apply]
+    b.real_inner_fin_two q p, angularMomentum_apply]
   conv_rhs => rw [hrepr q, hrepr p]
   ext
   · simp only [smul_add, smul_smul]
@@ -489,31 +530,6 @@ theorem polarCanonical_polarAngle {q : V} (p : V) (hq : q ≠ 0) {θ : ℝ}
     · field_simp
       linear_combination -⟪p, b 1⟫_ℝ * hn
 
-/-- **Polar coordinates determine the point, with the angle taken modulo `2π`.** Two points with
-`r, r' > 0` have the same image under the polar canonical parametrization exactly when their
-radial pairs `(r, p_r)` and angular momenta agree and their angles agree modulo `2π`. -/
-theorem polarCanonical_eq_polarCanonical_iff {x x' : (ℝ × ℝ) × (ℝ × ℝ)} (hr : 0 < x.1.1)
-    (hr' : 0 < x'.1.1) :
-    polarCanonical (b 0) (b 1) x = polarCanonical (b 0) (b 1) x' ↔
-      x.1 = x'.1 ∧ (x.2.1 : Real.Angle) = x'.2.1 ∧ x.2.2 = x'.2.2 := by
-  have h0 := norm_basis_zero b
-  have h1 := norm_basis_one b
-  have h01 := inner_basis_zero_one b
-  refine ⟨fun h ↦ ⟨Prod.ext ?_ ?_, ?_, ?_⟩, fun ⟨h₁, h₂, h₃⟩ ↦ ?_⟩
-  · rw [← abs_of_pos hr, ← abs_of_pos hr', ← norm_fst_polarCanonical h0 h1 h01,
-      ← norm_fst_polarCanonical h0 h1 h01 x', h]
-  · rw [← radialMomentum_polarCanonical h0 h1 h01 hr,
-      ← radialMomentum_polarCanonical h0 h1 h01 hr', h]
-  · rw [← polarAngle_polarCanonical b hr, ← polarAngle_polarCanonical b hr', h]
-  · rw [← angularMomentum_polarCanonical h0 h1 h01 hr.ne',
-      ← angularMomentum_polarCanonical h0 h1 h01 hr'.ne', h]
-  · obtain ⟨⟨r, pᵣ⟩, ⟨θ, L⟩⟩ := x
-    obtain ⟨⟨r', pᵣ'⟩, ⟨θ', L'⟩⟩ := x'
-    simp only [Prod.mk.injEq] at h₁ h₃
-    obtain ⟨rfl, rfl⟩ := h₁
-    subst h₃
-    exact polarCanonical_eq_of_coe_eq _ _ h₂ _ _ _
-
 /-- **Global polar canonical coordinates.** For an orthonormal basis `b` of a plane `V`, the polar
 canonical parametrization identifies `(0, ∞) × ℝ × (ℝ / 2πℤ) × ℝ`, with coordinates
 `((r, p_r), (θ, L))`, with the punctured phase space `{(q, p) | q ≠ 0}`. The inverse sends
@@ -524,7 +540,7 @@ noncomputable def polarCanonicalEquiv :
     rw [mem_puncturedPhaseSpace, ← norm_ne_zero_iff,
       norm_fst_polarCanonical (norm_basis_zero b) (norm_basis_one b) (inner_basis_zero_one b)]
     exact (abs_pos.2 x.2.ne').ne'⟩
-  invFun y := ⟨((‖y.1.1‖, radialMomentum y.1), (polarAngle b y.1.1,
+  invFun y := ⟨((‖y.1.1‖, radialMomentum y.1), (polarAngle (b 0) (b 1) y.1.1,
     angularMomentum (b 0) (b 1) y.1)), norm_pos_iff.2 (mem_puncturedPhaseSpace.1 y.2)⟩
   left_inv x := by
     obtain ⟨⟨⟨r, pᵣ⟩, ⟨θ, L⟩⟩, hr⟩ := x
@@ -536,7 +552,7 @@ noncomputable def polarCanonicalEquiv :
     refine ⟨⟨?_, radialMomentum_polarCanonical h0 h1 h01 hr'⟩, ?_,
       angularMomentum_polarCanonical h0 h1 h01 hr'.ne'⟩
     · rw [norm_fst_polarCanonical h0 h1 h01, abs_of_pos hr]
-    · rw [polarAngle_polarCanonical b hr', Real.Angle.coe_toReal]
+    · rw [polarAngle_polarCanonical h0 h1 h01 hr', Real.Angle.coe_toReal]
   right_inv y := by
     obtain ⟨⟨q, p⟩, hq⟩ := y
     exact Subtype.ext (polarCanonical_polarAngle b p (mem_puncturedPhaseSpace.1 hq)
@@ -554,7 +570,8 @@ polar angle and angular momentum. -/
 @[simp]
 theorem coe_polarCanonicalEquiv_symm_apply (y : puncturedPhaseSpace V) :
     ((polarCanonicalEquiv b).symm y : (ℝ × ℝ) × (Real.Angle × ℝ)) =
-      ((‖y.1.1‖, radialMomentum y.1), (polarAngle b y.1.1, angularMomentum (b 0) (b 1) y.1)) :=
+      ((‖y.1.1‖, radialMomentum y.1),
+        (polarAngle (b 0) (b 1) y.1.1, angularMomentum (b 0) (b 1) y.1)) :=
   (rfl)
 
 end Angle
