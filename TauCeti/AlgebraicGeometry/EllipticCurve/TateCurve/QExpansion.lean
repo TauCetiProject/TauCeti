@@ -284,38 +284,28 @@ the `q`-expansions of `E₄` and `-E₆`, which are algebraically independent ov
 are algebraically independent over `ℤ` inside `ℤ⟦X⟧`. -/
 theorem algebraicIndependent_tateCurve_c₄_c₆ :
     AlgebraicIndependent ℤ ![tateCurve.c₄, tateCurve.c₆] := by
-  rw [algebraicIndependent_iff_injective_aeval, injective_iff_map_eq_zero]
-  intro P hP
-  let signFlip : MvPolynomial (Fin 2) ℂ →ₐ[ℂ] MvPolynomial (Fin 2) ℂ :=
-    MvPolynomial.aeval ![MvPolynomial.X 0, -MvPolynomial.X 1]
-  let Q : MvPolynomial (Fin 2) ℂ := signFlip (MvPolynomial.map (Int.castRingHom ℂ) P)
-  have hhom : ((MvPolynomial.aeval ![qExpansion 1 E₄, qExpansion 1 E₆]).toRingHom.comp
-        signFlip.toRingHom).comp (MvPolynomial.map (Int.castRingHom ℂ)) =
-      (PowerSeries.map (Int.castRingHom ℂ)).comp
-        (MvPolynomial.aeval (R := ℤ) ![tateCurve.c₄, tateCurve.c₆]).toRingHom := by
-    refine MvPolynomial.ringHom_ext (fun r ↦ by simp [signFlip]) fun i ↦ match i with
-    | 0 => by
-      simp only [RingHom.comp_apply, AlgHom.toRingHom_eq_coe, RingHom.coe_coe, MvPolynomial.map_X,
-        MvPolynomial.aeval_X, Matrix.cons_val_zero, signFlip, map_tateCurve_c₄_eq_qExpansion_E₄]
-    | 1 => by
-      simp only [RingHom.comp_apply, AlgHom.toRingHom_eq_coe, RingHom.coe_coe, MvPolynomial.map_X,
-        MvPolynomial.aeval_X, Matrix.cons_val_one, Matrix.cons_val_zero, signFlip, map_neg,
-        map_tateCurve_c₆_eq_neg_qExpansion_E₆]
-  have hQ0 : MvPolynomial.aeval ![qExpansion 1 E₄, qExpansion 1 E₆] Q = 0 := by
-    have h := DFunLike.congr_fun hhom P
-    simpa only [RingHom.comp_apply, AlgHom.toRingHom_eq_coe, RingHom.coe_coe, hP, map_zero] using h
-  have hQ : Q = 0 :=
-    (algebraicIndependent_iff_injective_aeval.mp
-      TauCeti.ModularForm.algebraicIndependent_qExpansion_E₄_E₆)
-      (by simpa using hQ0)
-  have hmap : MvPolynomial.map (Int.castRingHom ℂ) P = 0 := by
-    have hid : signFlip.comp signFlip = AlgHom.id ℂ _ := by
+  have h : AlgebraicIndependent ℂ (PowerSeries.map (Int.castRingHom ℂ) ∘
+      ![tateCurve.c₄, tateCurve.c₆]) := by
+    rw [show PowerSeries.map (Int.castRingHom ℂ) ∘ ![tateCurve.c₄, tateCurve.c₆] =
+        ![qExpansion 1 E₄, -qExpansion 1 E₆] by
+      funext i
+      fin_cases i
+      · exact map_tateCurve_c₄_eq_qExpansion_E₄
+      · exact map_tateCurve_c₆_eq_neg_qExpansion_E₆]
+    let signFlip : MvPolynomial (Fin 2) ℂ →ₐ[ℂ] MvPolynomial (Fin 2) ℂ :=
+      MvPolynomial.aeval ![MvPolynomial.X 0, -MvPolynomial.X 1]
+    have hid : Function.LeftInverse signFlip signFlip :=
+      DFunLike.congr_fun (by ext i; fin_cases i <;> simp [signFlip] :
+        signFlip.comp signFlip = AlgHom.id ℂ _)
+    have haeval : (MvPolynomial.aeval ![qExpansion 1 E₄, qExpansion 1 E₆]).comp signFlip =
+        MvPolynomial.aeval ![qExpansion 1 E₄, -qExpansion 1 E₆] := by
       ext i
       fin_cases i <;> simp [signFlip]
-    have hinv : signFlip Q = MvPolynomial.map (Int.castRingHom ℂ) P :=
-      DFunLike.congr_fun hid _
-    simpa [hQ] using hinv.symm
-  exact MvPolynomial.map_injective _ Int.cast_injective (by simpa using hmap)
+    rw [algebraicIndependent_iff_injective_aeval, ← haeval, AlgHom.coe_comp]
+    exact (algebraicIndependent_iff_injective_aeval.mp
+      TauCeti.ModularForm.algebraicIndependent_qExpansion_E₄_E₆).comp hid.injective
+  exact h.of_ringHom_of_comp_eq (Int.castRingHom ℂ) (PowerSeries.map (Int.castRingHom ℂ))
+    Int.cast_injective (RingHom.ext_int _ _)
 
 /-- **Isomorphism of the universal invariant ring with its Tate `q`-expansion image.** Since both
 `ℤ[c₄, c₆, Δ]` on the universal curve and `ℤ[c₄(q), c₆(q), Δ(q)] ⊆ ℤ⟦q⟧` on the Tate curve are
