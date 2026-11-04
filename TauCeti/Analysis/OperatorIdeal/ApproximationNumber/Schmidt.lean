@@ -94,9 +94,11 @@ theorem le_singularValue_of_pairwise_inner_eq_zero
   refine T.le_singularValue_of_lt_rank hV fun x hx ↦ ?_
   -- The coordinates of `x ∈ span {bᵢ | i ∈ s}` vanish off `s`.
   have hx' : ∀ j ∉ (s : Set ι), ⟪b j, x⟫_𝕜 = 0 := fun j hj ↦ by
-    refine (Submodule.span_le.mpr ?_ : V ≤ LinearMap.ker (innerₛₗ 𝕜 (b j))) hx
-    rintro _ ⟨i, rfl⟩
-    exact b.orthonormal.inner_eq_zero fun h ↦ hj (h ▸ i.2)
+    have hle : V ≤ LinearMap.ker (innerₛₗ 𝕜 (b j)) := Submodule.span_le.mpr <| by
+      rintro _ ⟨i, rfl⟩
+      rw [SetLike.mem_coe, LinearMap.mem_ker, innerₛₗ_apply_apply]
+      exact b.orthonormal.inner_eq_zero fun h ↦ hj (h ▸ i.2)
+    simpa only [LinearMap.mem_ker, innerₛₗ_apply_apply] using hle hx
   exact b.mul_norm_le_norm_apply_of_forall_inner_eq_zero hT hc hx'
 
 /-- **Approximation numbers of a map with orthogonal basis images.** If `T` sends the Hilbert
@@ -154,7 +156,7 @@ theorem IsCompactOperator.exists_orthonormal_hasSum_rankOne {T : E →L[𝕜] F}
   obtain ⟨s, b, -, hT⟩ := hTc.exists_hilbertBasis_pairwise_inner_eq_zero
   -- Keep the basis vectors with nonzero image and normalize their images.
   set J : Set s := {i | T (b i) ≠ 0}
-  have hnull := b.orthonormal.tendsto_norm_apply_cofinite hTc hT
+  have hnull := b.orthonormal.tendsto_norm_apply_cofinite hTc
   have hJ : J.Countable := by
     have h := hnull.countable_compl_preimage_ker
     rw [ker_nhds] at h

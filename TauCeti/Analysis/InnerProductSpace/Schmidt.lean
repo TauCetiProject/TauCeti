@@ -25,10 +25,12 @@ on a set of indices is controlled by the values `sᵢ` on that set. In particula
 series to a finite set `s` of indices leaves an error of operator norm at most the largest `sᵢ`
 with `i ∉ s`, and each `bᵢ` with `sᵢ ≠ 0` is orthogonal to the kernel of `T`.
 
-If `T` is compact, the images `T bᵢ` lie in a relatively compact set and are pairwise at distance
-at least `√2 ε` once their norms are at least `ε`, so only finitely many `sᵢ` exceed any positive
-threshold. The values `sᵢ` therefore tend to zero along the cofinite filter, and the Schmidt
-series converges to `T` in operator norm.
+If `T` is compact, the images of any orthonormal family `(vᵢ)` lie in a totally bounded set.
+Cover it by finitely many balls of radius `ε / 2` centred at points `y`. A large image `T vᵢ` has
+a large inner product with its centre, and by Bessel's inequality for the functional `⟪y, T ·⟫`
+this happens for only finitely many `i`. So only finitely many `‖T vᵢ‖` exceed any positive
+threshold, the values `sᵢ` tend to zero along the cofinite filter, and the Schmidt series
+converges to `T` in operator norm.
 
 Such a basis exists for every compact operator from a Hilbert space: an orthonormal basis of
 eigenvectors of the compact positive operator `T† T`, provided by
@@ -50,8 +52,8 @@ are its right and left singular vectors.
   orthogonal to the kernel of `T`.
 * `HilbertBasis.norm_sub_sum_rankOne_le`: the error of a finite truncation of the Schmidt series.
 * `Orthonormal.finite_setOf_le_norm_apply` and `Orthonormal.tendsto_norm_apply_cofinite`: for
-  compact `T` and an orthonormal family `(vᵢ)` with pairwise orthogonal images, only finitely many
-  `‖T vᵢ‖` exceed any positive threshold.
+  compact `T` and an orthonormal family `(vᵢ)`, only finitely many `‖T vᵢ‖` exceed any positive
+  threshold.
 * `HilbertBasis.hasSum_rankOne`: for compact `T`, the Schmidt series
   `∑ᵢ ⟪bᵢ, ·⟫ T bᵢ` converges to `T` in operator norm.
 * `IsCompactOperator.exists_hilbertBasis_pairwise_inner_eq_zero`: a compact operator from a
@@ -81,11 +83,29 @@ namespace Orthonormal
 variable {v : ι → E} (hv : Orthonormal 𝕜 v) {T : E →L[𝕜] F}
 include hv
 
-/-- **Finitely many large images.** If `T` is compact and sends the orthonormal
-family `(vᵢ)` to pairwise orthogonal vectors, then only finitely many `‖T vᵢ‖` are at least a
-given `ε > 0`. -/
-theorem finite_setOf_le_norm_apply (hTc : IsCompactOperator T)
-    (hT : Pairwise fun i j ↦ ⟪T (v i), T (v j)⟫_𝕜 = 0) {ε : ℝ} (hε : 0 < ε) :
+/-- Bessel's inequality for a continuous linear functional: the values of `φ` on an orthonormal
+family are square summable. -/
+private theorem summable_norm_apply_sq (φ : StrongDual 𝕜 E) :
+    Summable fun i ↦ ‖φ (v i)‖ ^ 2 := by
+  refine summable_of_sum_le (c := ‖φ‖ ^ 2) (fun _ ↦ by positivity) fun s ↦ ?_
+  -- Test `φ` against `w = ∑ᵢ conj (φ vᵢ) vᵢ`, which has `φ w = ‖w‖² = ∑ᵢ ‖φ vᵢ‖²`.
+  set A := ∑ i ∈ s, ‖φ (v i)‖ ^ 2
+  set w := ∑ i ∈ s, (starRingEnd 𝕜) (φ (v i)) • v i
+  have hA0 : 0 ≤ A := Finset.sum_nonneg fun _ _ ↦ by positivity
+  have hφw : φ w = (A : 𝕜) := by
+    simp only [w, A, map_sum, map_smul, smul_eq_mul, RCLike.conj_mul, RCLike.ofReal_pow]
+  have hw : ‖w‖ ^ 2 = A := by
+    rw [@norm_sq_eq_re_inner 𝕜, sum_inner]
+    simp only [inner_smul_left, RCLike.conj_conj]
+    rw [Finset.sum_congr rfl fun i hi ↦ by rw [hv.inner_right_sum _ hi]]
+    simp only [A, RCLike.mul_conj, ← RCLike.ofReal_pow, ← RCLike.ofReal_sum, RCLike.ofReal_re]
+  have hA : A ≤ ‖φ‖ * ‖w‖ := by
+    simpa [hφw, abs_of_nonneg hA0] using φ.le_opNorm w
+  nlinarith [norm_nonneg φ, norm_nonneg w, sq_nonneg (‖φ‖ - ‖w‖)]
+
+/-- **Finitely many large images.** If `T` is compact and `(vᵢ)` is an orthonormal family, then
+only finitely many `‖T vᵢ‖` are at least a given `ε > 0`. -/
+theorem finite_setOf_le_norm_apply (hTc : IsCompactOperator T) {ε : ℝ} (hε : 0 < ε) :
     {i | ε ≤ ‖T (v i)‖}.Finite := by
   -- The images lie in the totally bounded set `T (closedBall 0 1)`, which is covered by
   -- finitely many balls of radius `ε / 2`.
@@ -96,34 +116,33 @@ theorem finite_setOf_le_norm_apply (hTc : IsCompactOperator T)
       subset_closure ⟨v i, mem_closedBall_zero_iff.mpr (hv.1 i).le, rfl⟩
     simpa only [Set.mem_iUnion, Metric.mem_ball, exists_prop] using hcover this
   choose g hgt hgd using hmem
-  refine Set.Finite.of_finite_image (ht.subset (Set.image_subset_iff.mpr fun i _ ↦ hgt i))
-    fun i hi j hj hij ↦ ?_
-  -- Two distinct large images are at distance at least `√2 ε > ε`, so they lie in different
-  -- balls of radius `ε / 2`.
-  by_contra hne
-  have hdist : dist (T (v i)) (T (v j)) < ε := by
-    calc dist (T (v i)) (T (v j)) ≤ dist (T (v i)) (g i) + dist (T (v j)) (g j) := by
-          rw [hij]
-          exact dist_triangle_right _ _ _
-      _ < ε / 2 + ε / 2 := add_lt_add (hgd i) (hgd j)
-      _ = ε := add_halves ε
-  have hsq : ‖T (v i) - T (v j)‖ ^ 2 = ‖T (v i)‖ ^ 2 + ‖T (v j)‖ ^ 2 := by
-    rw [@norm_sub_sq 𝕜, hT hne, map_zero, mul_zero, sub_zero]
-  have hi' : ε ^ 2 ≤ ‖T (v i)‖ ^ 2 := pow_le_pow_left₀ hε.le hi 2
-  have hj' : ε ^ 2 ≤ ‖T (v j)‖ ^ 2 := pow_le_pow_left₀ hε.le hj 2
-  have hlt : ε ^ 2 < ‖T (v i) - T (v j)‖ ^ 2 := by nlinarith
-  rw [dist_eq_norm] at hdist
-  exact hlt.not_ge (pow_le_pow_left₀ (norm_nonneg _) hdist.le 2)
+  -- A large image `T vᵢ` has a large inner product with its centre `g i`, and for each centre
+  -- `y` only finitely many `⟪y, T vᵢ⟫` are large, by Bessel's inequality.
+  have hfin (y : F) : {i | (ε ^ 2 / 2) ^ 2 ≤ ‖⟪y, T (v i)⟫_𝕜‖ ^ 2}.Finite := by
+    have h := (hv.summable_norm_apply_sq ((innerSL 𝕜 y).comp T)).tendsto_cofinite_zero.eventually
+      (gt_mem_nhds (by positivity : (0 : ℝ) < (ε ^ 2 / 2) ^ 2))
+    simpa only [eventually_cofinite, not_lt, ContinuousLinearMap.comp_apply, innerSL_apply_apply]
+      using h
+  refine (ht.biUnion fun y _ ↦ hfin y).subset fun i hi ↦ ?_
+  rw [Set.mem_ofPred_eq] at hi
+  refine Set.mem_biUnion (hgt i) ?_
+  rw [Set.mem_ofPred_eq]
+  have hd : ‖T (v i) - g i‖ < ε / 2 := by rw [← dist_eq_norm]; exact hgd i
+  have h1 : ‖T (v i)‖ ^ 2 ≤ ‖⟪g i, T (v i)⟫_𝕜‖ + ‖T (v i) - g i‖ * ‖T (v i)‖ := by
+    calc ‖T (v i)‖ ^ 2 = ‖⟪g i, T (v i)⟫_𝕜 + ⟪T (v i) - g i, T (v i)⟫_𝕜‖ := by
+          rw [← inner_add_left, add_sub_cancel, inner_self_eq_norm_sq_to_K, norm_pow,
+            RCLike.norm_ofReal, abs_norm]
+      _ ≤ _ := (norm_add_le _ _).trans (by gcongr; exact norm_inner_le_norm _ _)
+  have h2 : ε ^ 2 / 2 ≤ ‖⟪g i, T (v i)⟫_𝕜‖ := by nlinarith [norm_nonneg (T (v i) - g i)]
+  exact pow_le_pow_left₀ (by positivity) h2 2
 
 /-- **The images of an orthonormal family under a compact operator tend to zero.** If `T` is
-compact and sends the orthonormal family `(vᵢ)` to pairwise orthogonal vectors, then `‖T vᵢ‖ → 0`
-along the cofinite filter. -/
-theorem tendsto_norm_apply_cofinite (hTc : IsCompactOperator T)
-    (hT : Pairwise fun i j ↦ ⟪T (v i), T (v j)⟫_𝕜 = 0) :
+compact and `(vᵢ)` is an orthonormal family, then `‖T vᵢ‖ → 0` along the cofinite filter. -/
+theorem tendsto_norm_apply_cofinite (hTc : IsCompactOperator T) :
     Tendsto (fun i ↦ ‖T (v i)‖) cofinite (𝓝 0) :=
   tendsto_order.2 ⟨fun _ ha ↦ Eventually.of_forall fun _ ↦ ha.trans_le (norm_nonneg _),
     fun _ hε ↦ eventually_cofinite.2 (by
-      simpa only [not_lt] using hv.finite_setOf_le_norm_apply hTc hT hε)⟩
+      simpa only [not_lt] using hv.finite_setOf_le_norm_apply hTc hε)⟩
 
 end Orthonormal
 
@@ -243,7 +262,7 @@ theorem hasSum_rankOne (hTc : IsCompactOperator T)
   refine Metric.tendsto_atTop.2 fun ε hε ↦ ?_
   -- Once a truncation contains every index with `‖T bᵢ‖ ≥ ε / 2`, its error is at most `ε / 2`.
   obtain ⟨N, hN⟩ :=
-    (b.orthonormal.finite_setOf_le_norm_apply hTc hT (half_pos hε)).exists_finset_coe
+    (b.orthonormal.finite_setOf_le_norm_apply hTc (half_pos hε)).exists_finset_coe
   refine ⟨N, fun s hs ↦ ?_⟩
   rw [dist_eq_norm']
   refine (b.norm_sub_sum_rankOne_le hT (half_pos hε).le fun i hi ↦ ?_).trans_lt (half_lt_self hε)
