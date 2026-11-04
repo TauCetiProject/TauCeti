@@ -6,9 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Lie.NormTwoShell.Folding.Basic
-public import Mathlib.LinearAlgebra.FixedSubmodule
+public import TauCeti.Algebra.Lie.NormTwoShell.FixedCartan
 import Mathlib.LinearAlgebra.FreeModule.Finite.CardQuotient
-import TauCeti.LinearAlgebra.FixedSubmodule.Permutation
 
 /-!
 # The integral Cartan lattice of a folded frame
@@ -19,8 +18,9 @@ has the distinct vertex-orbit sums as a basis. The normalized folded coroots mul
 sums by the folding scales, which are one or two. They need not span the entire integral fixed
 Cartan lattice.
 
-This file gives both lattices inside `Matrix.ShellLieAlgebra`, their coordinate membership
-criteria, and the relative index: the product of the folding scales. Thus the index is a
+This file compares the folded lattice with the fixed Cartan lattice from
+`TauCeti.Algebra.Lie.NormTwoShell.FixedCartan`, gives its coordinate membership criterion,
+and computes the relative index: the product of the folding scales. Thus the index is a
 power of two. The normalized basis and product-index formula only require nonzero folding
 scales. No identification of the whole fixed Lie lattice with a normalized folded Chevalley
 lattice is asserted.
@@ -42,166 +42,15 @@ namespace Matrix.ShellLieAlgebra
 
 variable {I : Type*} [Fintype I] {B : Matrix I I ℤ} (σ : Equiv.Perm I)
 
-section Decidable
-
-variable [DecidableEq I]
-
-private noncomputable def orbitCartan (O : Quotient (Equiv.Perm.SameCycle.setoid σ)) :
-    ShellLieAlgebra B :=
-  ∑ i with σ.SameCycle i O.out, cartan B (Pi.single i 1)
-
--- Bundled projections let linearity do the coordinate calculations without unfolding the
+-- A bundled projection lets linearity do the coordinate calculations without unfolding the
 -- additive-group instance on the shell carrier.
 private noncomputable def cartanProjection : ShellLieAlgebra B →ₗ[ℤ] (I → ℤ) :=
   (LinearMap.fst ℤ _ _).comp (equivProd B).toLinearMap
 
-private noncomputable def rootProjection : ShellLieAlgebra B →ₗ[ℤ] (B.normTwoShell →₀ ℤ) :=
-  (LinearMap.snd ℤ _ _).comp (equivProd B).toLinearMap
-
-omit [DecidableEq I] in
 private theorem cartanProjection_apply (x : ShellLieAlgebra B) :
     cartanProjection x = (equivProd B x).1 := (rfl)
 
-omit [DecidableEq I] in
-private theorem rootProjection_apply (x : ShellLieAlgebra B) :
-    rootProjection x = (equivProd B x).2 := (rfl)
-
-private theorem cartanProjection_orbitCartan (O : Quotient (Equiv.Perm.SameCycle.setoid σ)) :
-    cartanProjection (orbitCartan (B := B) σ O) =
-      fun i ↦ if σ.SameCycle i O.out then 1 else 0 := by
-  classical
-  simp only [orbitCartan, map_sum]
-  ext i
-  simp [cartanProjection_apply, Pi.single_apply]
-
-private theorem rootProjection_orbitCartan (O : Quotient (Equiv.Perm.SameCycle.setoid σ)) :
-    rootProjection (orbitCartan (B := B) σ O) = 0 := by
-  classical
-  simp [orbitCartan, rootProjection_apply]
-
-private theorem orbitCartan_coord [DecidableEq (Quotient (Equiv.Perm.SameCycle.setoid σ))]
-    (O P : Quotient (Equiv.Perm.SameCycle.setoid σ)) :
-    cartanProjection (orbitCartan (B := B) σ P) O.out = if O = P then 1 else 0 := by
-  classical
-  simp only [cartanProjection_orbitCartan]
-  simp only [show σ.SameCycle O.out P.out ↔ O = P from
-    Quotient.out_equiv_out (s := Equiv.Perm.SameCycle.setoid σ)]
-
-private theorem cartan_permutationFixedBasis
-    (O : Quotient (Equiv.Perm.SameCycle.setoid σ)) :
-    cartan B (σ.permutationFixedBasis (R := ℤ) O).val = orbitCartan σ O := by
-  classical
-  rw [σ.permutationFixedBasis_eq_sum, map_sum]
-  apply sum_congr
-  · ext i
-    have hcycle : (Quotient.mk (Equiv.Perm.SameCycle.setoid σ) i = O) ↔
-        σ.SameCycle i O.out := by
-      constructor
-      · intro h
-        exact Quotient.exact (s := Equiv.Perm.SameCycle.setoid σ)
-          (h.trans (Quotient.out_eq O).symm)
-      · intro h
-        exact (Quotient.sound (s := Equiv.Perm.SameCycle.setoid σ) h).trans (Quotient.out_eq O)
-    simp only [mem_filter, mem_univ, true_and, hcycle]
-  · intro i _
-    rfl
-
-private theorem linearIndependent_orbitCartan :
-    LinearIndependent ℤ (orbitCartan (B := B) σ) := by
-  classical
-  have hinj : Function.Injective (cartan B) := by
-    intro v w h
-    simpa only [equivProd_cartan] using congrArg (fun x ↦ (equivProd B x).1) h
-  have h := (σ.permutationFixedBasis (R := ℤ)).linearIndependent.map'
-    ((cartan B).comp (LinearMap.fixedSubmodule _).subtype)
-    (LinearMap.ker_eq_bot.mpr (hinj.comp Subtype.val_injective))
-  simpa only [Function.comp_def, LinearMap.comp_apply, Submodule.subtype_apply,
-    cartan_permutationFixedBasis] using h
-
-variable (B) in
-/-- The Cartan lattice fixed by the vertex permutation: the span of the distinct orbit sums
-of the integral simple Cartan vectors. -/
-noncomputable def fixedCartanLattice : Submodule ℤ (ShellLieAlgebra B) :=
-  Submodule.span ℤ (Set.range (orbitCartan (B := B) σ))
-
-/-- The distinct vertex-orbit sums form a basis of the integral fixed Cartan lattice. -/
-noncomputable def fixedCartanBasis :
-    Basis (Quotient (Equiv.Perm.SameCycle.setoid σ)) ℤ (fixedCartanLattice B σ) :=
-  Basis.span (linearIndependent_orbitCartan (B := B) σ)
-
-/-- Each fixed Cartan basis vector is the sum over one vertex orbit, with no multiplicity. -/
-@[simp]
-theorem coe_fixedCartanBasis (O : Quotient (Equiv.Perm.SameCycle.setoid σ)) :
-    (fixedCartanBasis (B := B) σ O : ShellLieAlgebra B) =
-      ∑ i with σ.SameCycle i O.out, cartan B (Pi.single i 1) :=
-  Basis.coe_span_apply _ _
-
-/-- Fixed Cartan coordinates are read at the chosen orbit representatives. -/
-@[simp]
-theorem fixedCartanBasis_repr (x : fixedCartanLattice B σ)
-    (O : Quotient (Equiv.Perm.SameCycle.setoid σ)) :
-    (fixedCartanBasis (B := B) σ).repr x O = (equivProd B x).1 O.out := by
-  classical
-  have h := congrArg (fun y : fixedCartanLattice B σ ↦ cartanProjection (B := B) y O.out)
-    ((fixedCartanBasis (B := B) σ).sum_repr x)
-  rw [← cartanProjection_apply]
-  have hb (P : Quotient (Equiv.Perm.SameCycle.setoid σ)) :
-      cartanProjection (fixedCartanBasis (B := B) σ P : ShellLieAlgebra B) O.out =
-        if O = P then 1 else 0 :=
-    (congrArg (fun y ↦ cartanProjection y O.out) (coe_fixedCartanBasis σ P)).trans
-      (orbitCartan_coord σ O P)
-  simpa only [Submodule.coe_sum, SetLike.val_smul, map_sum, map_smul, Finset.sum_apply,
-    Pi.smul_apply, hb, smul_eq_mul, mul_ite, mul_one, mul_zero, sum_ite_eq,
-    mem_univ, ite_true] using h
-
-/-- A vector belongs to the fixed Cartan lattice exactly when its root part vanishes and
-its Cartan coordinates are invariant under the vertex permutation. -/
-@[simp]
-theorem mem_fixedCartanLattice_iff (x : ShellLieAlgebra B) :
-    x ∈ fixedCartanLattice B σ ↔
-      (equivProd B x).2 = 0 ∧ ∀ i, (equivProd B x).1 (σ i) = (equivProd B x).1 i := by
-  classical
-  simp only [← cartanProjection_apply, ← rootProjection_apply]
-  constructor
-  · intro hx
-    obtain ⟨f, rfl⟩ := (Submodule.mem_span_range_iff_exists_fun ℤ).mp hx
-    constructor
-    · simp only [map_sum, map_smul, rootProjection_orbitCartan, smul_zero, sum_const_zero]
-    · intro i
-      simp only [map_sum, map_smul, Finset.sum_apply, Pi.smul_apply,
-        cartanProjection_orbitCartan, Equiv.Perm.sameCycle_apply_left]
-  · rintro ⟨hroot, hinv⟩
-    let v : (LinearEquiv.funCongrLeft ℤ ℤ σ).toLinearMap.fixedSubmodule :=
-      ⟨cartanProjection x, LinearMap.mem_fixedSubmodule_iff.mpr (by
-        ext i
-        exact hinv i)⟩
-    have heq : cartan B v.val = x := by
-      apply (equivProd B).injective
-      rw [equivProd_cartan]
-      exact Prod.ext rfl hroot.symm
-    have hsum : cartan B v.val = ∑ O,
-        (σ.permutationFixedBasis (R := ℤ)).repr v O • orbitCartan (B := B) σ O := by
-      have h := congrArg (fun w : (LinearEquiv.funCongrLeft ℤ ℤ σ).toLinearMap.fixedSubmodule ↦
-        cartan B w.val) ((σ.permutationFixedBasis (R := ℤ)).sum_repr v)
-      simpa only [Submodule.coe_sum, SetLike.val_smul, map_sum, map_smul,
-        cartan_permutationFixedBasis] using h.symm
-    rw [← heq, hsum]
-    exact Submodule.sum_mem _ fun O _ ↦
-      Submodule.smul_mem _ _ (Submodule.subset_span ⟨O, rfl⟩)
-
-end Decidable
-
 variable [LinearOrder I]
-
-/-- The fixed Cartan lattice is contained in the fixed submodule of the pinned diagram action. -/
-theorem fixedCartanLattice_le_fixedSubmodule (hσ : B.reindex σ σ = B) :
-    fixedCartanLattice B σ ≤ (reindex σ hσ).toLinearMap.fixedSubmodule := by
-  apply Submodule.span_le.mpr
-  rintro _ ⟨O, rfl⟩
-  apply LinearMap.mem_fixedSubmodule_iff.mpr
-  simp only [LinearEquiv.coe_coe, orbitCartan, map_sum, reindex_cartan,
-    Pi.single_comp_equiv, Equiv.symm_symm]
-  exact σ.sum_filter_sameCycle_comp O.out fun i ↦ cartan B (Pi.single i 1)
 
 variable (B) in
 /-- The integral lattice spanned by the normalized folded Cartan generators `H'_O`. -/
@@ -213,8 +62,8 @@ theorem foldedCartanLattice_le_fixedCartanLattice :
     foldedCartanLattice B σ ≤ fixedCartanLattice B σ := by
   apply Submodule.span_le.mpr
   rintro _ ⟨O, rfl⟩
-  rw [foldedH_def]
-  exact (fixedCartanLattice B σ).smul_mem _ (Submodule.subset_span ⟨O, rfl⟩)
+  rw [foldedH_def, ← coe_fixedCartanBasis]
+  exact (fixedCartanLattice B σ).smul_mem _ (SetLike.coe_mem _)
 
 /-- The normalized lattice consists of fixed Cartan vectors whose orbit coordinates are
 divisible by the corresponding folding scales. -/
@@ -230,8 +79,11 @@ theorem mem_foldedCartanLattice_iff (x : ShellLieAlgebra B) :
     intro O
     have hcoord : cartanProjection (∑ P, f P • foldedH B σ P) O.out =
         f O * B.foldingScale σ O := by
-      simp [map_sum, map_smul, foldedH_def, ← orbitCartan.eq_def, Finset.sum_apply,
-        orbitCartan_coord, mul_ite]
+      simp only [foldedH_def, ← coe_fixedCartanBasis, map_sum, map_smul,
+        Finset.sum_apply, Pi.smul_apply]
+      simp only [cartanProjection_apply, ← fixedCartanBasis_repr, Basis.repr_self,
+        Finsupp.single_apply, smul_eq_mul, mul_ite, mul_one, mul_zero,
+        sum_ite_eq', mem_univ, ite_true]
     rw [← cartanProjection_apply, ← hf, hcoord]
     exact dvd_mul_left _ _
   · rintro ⟨hfixed, hdiv⟩
@@ -256,10 +108,14 @@ theorem linearIndependent_foldedH : LinearIndependent ℤ (foldedH B σ) := by
   have hregular (O : Quotient (Equiv.Perm.SameCycle.setoid σ)) :
       IsRightRegular (B.foldingScale σ O) :=
     (isRegular_iff_ne_zero.mpr (hscale O)).right
-  have heq : foldedH B σ = B.foldingScale σ • orbitCartan σ :=
-    funext (foldedH_def B σ)
+  have h := (fixedCartanBasis (B := B) σ).linearIndependent.map'
+    (fixedCartanLattice B σ).subtype (Submodule.ker_subtype _)
+  have heq : foldedH B σ = fun O ↦
+      B.foldingScale σ O • (fixedCartanBasis (B := B) σ O : ShellLieAlgebra B) := by
+    ext O
+    rw [coe_fixedCartanBasis, foldedH_def]
   rw [heq]
-  exact (linearIndependent_orbitCartan (B := B) σ).smul_of_isRightRegular hregular
+  exact h.smul_of_isRightRegular hregular
 
 /-- The normalized folded Cartan generators form a basis of their integral span. -/
 noncomputable def foldedCartanBasis :
@@ -284,10 +140,11 @@ theorem foldingScale_mul_foldedCartanBasis_repr (x : foldedCartanLattice B σ)
     ((foldedCartanBasis σ hscale).sum_repr x)
   rw [← cartanProjection_apply]
   simp only [Submodule.coe_sum, SetLike.val_smul, coe_foldedCartanBasis, map_sum,
-    map_smul, Finset.sum_apply, Pi.smul_apply, foldedH_def, ← orbitCartan.eq_def,
-    orbitCartan_coord, smul_eq_mul, mul_ite, mul_one, mul_zero,
-    sum_ite_eq, mem_univ, ite_true] at h
-  simpa only [mul_comm] using h
+    map_smul, Finset.sum_apply, Pi.smul_apply, foldedH_def, ← coe_fixedCartanBasis] at h
+  simp only [cartanProjection_apply, ← fixedCartanBasis_repr, Basis.repr_self,
+    Finsupp.single_apply, smul_eq_mul, mul_ite, mul_one, mul_zero,
+    sum_ite_eq', mem_univ, ite_true] at h
+  simpa only [cartanProjection_apply, mul_comm] using h
 
 open Classical in
 /-- The index of the normalized Cartan lattice in the actual fixed Cartan lattice is the

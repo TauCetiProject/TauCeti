@@ -6,9 +6,16 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Lie.NormTwoShell.Reindex
+public import TauCeti.LinearAlgebra.FixedSubmodule.Permutation
 
 /-!
-# The zero-weight part for the fixed Cartan
+# The integral fixed Cartan lattice and its centralizer
+
+The Cartan lattice fixed by a vertex permutation is the image of the fixed coordinate
+module under `Matrix.ShellLieAlgebra.cartan`. Transporting
+`Equiv.Perm.permutationFixedBasis` gives its integral orbit-sum basis, with coordinates
+read at orbit representatives. These constructions require no finiteness of the root shell
+or positivity hypothesis on the Gram matrix.
 
 For a positive definite even Gram matrix with nonpositive off-diagonal entries, the Cartan
 vectors fixed by a diagram permutation separate every root line of the signed shell Lie
@@ -33,7 +40,93 @@ public section
 
 namespace Matrix.ShellLieAlgebra
 
-variable {I : Type*} [Fintype I] [LinearOrder I] {B : Matrix I I ℤ}
+variable {I : Type*} [Fintype I] {B : Matrix I I ℤ}
+
+section Lattice
+
+variable (σ : Equiv.Perm I)
+
+private theorem cartan_injective : Function.Injective (cartan B) := by
+  intro v w h
+  simpa only [equivProd_cartan] using congrArg (fun x ↦ (equivProd B x).1) h
+
+variable (B) in
+/-- The Cartan lattice fixed by the vertex permutation: the image of its fixed coordinate
+module, equivalently the span of the distinct integral Cartan orbit sums. -/
+noncomputable def fixedCartanLattice : Submodule ℤ (ShellLieAlgebra B) :=
+  (LinearEquiv.funCongrLeft ℤ ℤ σ).toLinearMap.fixedSubmodule.map (cartan B)
+
+/-- The distinct vertex-orbit sums form a basis of the integral fixed Cartan lattice. -/
+noncomputable def fixedCartanBasis :
+    Module.Basis (Quotient (Equiv.Perm.SameCycle.setoid σ)) ℤ (fixedCartanLattice B σ) :=
+  (σ.permutationFixedBasis (R := ℤ)).map
+    (Submodule.equivMapOfInjective (cartan B) cartan_injective _)
+
+/-- Each fixed Cartan basis vector is the sum over one vertex orbit, with no multiplicity. -/
+@[simp]
+theorem coe_fixedCartanBasis [DecidableEq I]
+    (O : Quotient (Equiv.Perm.SameCycle.setoid σ)) :
+    (fixedCartanBasis (B := B) σ O : ShellLieAlgebra B) =
+      ∑ i with σ.SameCycle i O.out, cartan B (Pi.single i 1) := by
+  classical
+  -- Reduce the transported basis application through the image equivalence's coercion.
+  change cartan B (σ.permutationFixedBasis (R := ℤ) O).val = _
+  rw [σ.permutationFixedBasis_eq_sum, map_sum]
+  apply Finset.sum_congr
+  · ext i
+    simp only [Finset.mem_filter, Finset.mem_univ, true_and,
+      Quotient.mk_eq_iff_out (s := Equiv.Perm.SameCycle.setoid σ)]
+    rfl
+  · intro i _
+    rfl
+
+/-- Fixed Cartan coordinates are read at the chosen orbit representatives. -/
+@[simp]
+theorem fixedCartanBasis_repr (x : fixedCartanLattice B σ)
+    (O : Quotient (Equiv.Perm.SameCycle.setoid σ)) :
+    (fixedCartanBasis (B := B) σ).repr x O = (equivProd B x).1 O.out := by
+  let e := Submodule.equivMapOfInjective (cartan B) cartan_injective
+    (LinearEquiv.funCongrLeft ℤ ℤ σ).toLinearMap.fixedSubmodule
+  have hx := congrArg (fun y : ShellLieAlgebra B ↦ (equivProd B y).1)
+    (Submodule.map_equivMapOfInjective_symm_apply (cartan B) cartan_injective _ x)
+  simp only [equivProd_cartan] at hx
+  -- The transported representation composes the original one with the inverse image map.
+  change (σ.permutationFixedBasis (R := ℤ)).repr (e.symm x) O = _
+  conv_lhs => rw [← Quotient.out_eq O]
+  rw [Equiv.Perm.permutationFixedBasis_repr]
+  exact congrFun hx O.out
+
+/-- A vector belongs to the fixed Cartan lattice exactly when its root part vanishes and
+its Cartan coordinates are invariant under the vertex permutation. -/
+@[simp]
+theorem mem_fixedCartanLattice_iff (x : ShellLieAlgebra B) :
+    x ∈ fixedCartanLattice B σ ↔
+      (equivProd B x).2 = 0 ∧ ∀ i, (equivProd B x).1 (σ i) = (equivProd B x).1 i := by
+  constructor
+  · rintro ⟨v, hv, rfl⟩
+    have hinv := LinearMap.mem_fixedSubmodule_iff.mp hv
+    exact ⟨by simp, fun i ↦ by simpa using congrFun hinv i⟩
+  · rintro ⟨hroot, hinv⟩
+    refine Submodule.mem_map.mpr ⟨(equivProd B x).1, ?_,
+      ((equivProd_snd_eq_zero_iff B x).mp hroot).symm⟩
+    exact LinearMap.mem_fixedSubmodule_iff.mpr (funext hinv)
+
+variable [LinearOrder I]
+
+/-- The fixed Cartan lattice is contained in the fixed submodule of the pinned diagram action. -/
+theorem fixedCartanLattice_le_fixedSubmodule (hσ : B.reindex σ σ = B) :
+    fixedCartanLattice B σ ≤ (reindex σ hσ).toLinearMap.fixedSubmodule := by
+  rintro _ ⟨v, hv, rfl⟩
+  apply LinearMap.mem_fixedSubmodule_iff.mpr
+  rw [LinearEquiv.coe_coe, reindex_cartan]
+  have hinv : v ∘ σ = v := LinearMap.mem_fixedSubmodule_iff.mp hv
+  exact congrArg (cartan B) (by
+    funext i
+    simpa using (congrFun hinv (σ.symm i)).symm)
+
+end Lattice
+
+variable [LinearOrder I]
 
 /-- A vector commuting with every diagram-fixed Cartan vector has no root component. The
 converse holds without any root-system hypotheses. -/
