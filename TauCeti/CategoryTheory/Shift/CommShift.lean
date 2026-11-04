@@ -152,6 +152,44 @@ noncomputable def shiftFunctorMapTriangleIso (n : ℤ) (T : Triangle C) :
     (by simp [Preadditive.smul_iso_hom, smul_smul])
     (by simp [shiftFunctorCommShift_commShiftIso_hom_app])
 
+section MapTriangle
+
+open Pretriangulated
+
+@[simp]
+lemma shiftFunctorMapTriangleIso_hom_hom₁ (n : ℤ) (T : Triangle C) :
+    (shiftFunctorMapTriangleIso C n T).hom.hom₁ = 𝟙 _ :=
+  (rfl)
+
+@[simp]
+lemma shiftFunctorMapTriangleIso_hom_hom₂ (n : ℤ) (T : Triangle C) :
+    (shiftFunctorMapTriangleIso C n T).hom.hom₂ = n.negOnePow • 𝟙 _ :=
+  (rfl)
+
+@[simp]
+lemma shiftFunctorMapTriangleIso_hom_hom₃ (n : ℤ) (T : Triangle C) :
+    (shiftFunctorMapTriangleIso C n T).hom.hom₃ = 𝟙 _ :=
+  (rfl)
+
+@[simp]
+lemma shiftFunctorMapTriangleIso_inv_hom₁ (n : ℤ) (T : Triangle C) :
+    (shiftFunctorMapTriangleIso C n T).inv.hom₁ = 𝟙 _ :=
+  (rfl)
+
+@[simp]
+lemma shiftFunctorMapTriangleIso_inv_hom₂ (n : ℤ) (T : Triangle C) :
+    (shiftFunctorMapTriangleIso C n T).inv.hom₂ = n.negOnePow • 𝟙 _ := by
+  change n.negOnePow⁻¹ • 𝟙 (T.obj₂⟦n⟧) = _
+  rw [Int.units_inv_eq_self]
+  rfl
+
+@[simp]
+lemma shiftFunctorMapTriangleIso_inv_hom₃ (n : ℤ) (T : Triangle C) :
+    (shiftFunctorMapTriangleIso C n T).inv.hom₃ = 𝟙 _ :=
+  (rfl)
+
+end MapTriangle
+
 end ShiftFunctor
 
 end TauCeti

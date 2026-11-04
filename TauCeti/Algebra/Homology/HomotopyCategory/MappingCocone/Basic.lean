@@ -366,4 +366,73 @@ noncomputable def mappingCoconeFunctorMapTriangleIso :
       (mappingConeFunctorMapTriangleIso α φ) ≪≫
     shiftFunctorMapTriangleIso _ (-1) _ ≪≫ mappingCone.shiftTriangleIso _ (-1)
 
+/-! The components of `mappingCoconeFunctorMapTriangleIso` are composites of the components of
+its four factors, whose objects agree only after unfolding `mappingCoconeFunctor`. The proofs
+below therefore split the composite with `change`, rewrite the factors by their component lemmas,
+and identify the remaining identities and signs. -/
+
+@[simp]
+lemma mappingCoconeFunctorMapTriangleIso_hom_hom₁ :
+    (mappingCoconeFunctorMapTriangleIso α φ).hom.hom₁ = 𝟙 _ := by
+  change _ ≫ _ ≫ _ ≫ (𝟙 _ : (_ : CochainComplex C ℤ) ⟶ _) = _
+  simp only [Iso.app_hom, Functor.mapTriangleCompIso_hom_app_hom₁, Functor.mapIso_hom,
+    Functor.mapTriangle_map_hom₁, mappingConeFunctorMapTriangleIso_hom_hom₁, Functor.map_id,
+    shiftFunctorMapTriangleIso_hom_hom₁]
+  exact (Category.id_comp _).trans ((Category.id_comp _).trans (Category.id_comp _))
+
+@[simp]
+lemma mappingCoconeFunctorMapTriangleIso_hom_hom₂ :
+    (mappingCoconeFunctorMapTriangleIso α φ).hom.hom₂ = 𝟙 _ := by
+  change _ ≫ _ ≫ _ ≫
+    ((-1 : ℤ).negOnePow • 𝟙 (mappingCocone ((NatTrans.mapHomologicalComplex α _).app L))) = _
+  simp only [Iso.app_hom, Functor.mapTriangleCompIso_hom_app_hom₂, Functor.mapIso_hom,
+    Functor.mapTriangle_map_hom₂, mappingConeFunctorMapTriangleIso_hom_hom₂, Functor.map_id,
+    shiftFunctorMapTriangleIso_hom_hom₂]
+  change 𝟙 (mappingCocone ((NatTrans.mapHomologicalComplex α _).app L)) ≫ 𝟙 _ ≫
+    ((-1 : ℤ).negOnePow • 𝟙 (mappingCocone ((NatTrans.mapHomologicalComplex α _).app L))) ≫
+      ((-1 : ℤ).negOnePow • 𝟙 _) = 𝟙 _
+  simp
+
+@[simp]
+lemma mappingCoconeFunctorMapTriangleIso_hom_hom₃ :
+    (mappingCoconeFunctorMapTriangleIso α φ).hom.hom₃ =
+      (mappingConeFunctorMapTriangleIso α φ).hom.hom₃⟦(-1 : ℤ)⟧' ≫
+        (mappingCone.shiftIso _ (-1)).hom := by
+  change _ ≫ _ ≫ _ ≫ (mappingCone.shiftIso _ (-1)).hom = _
+  simp only [Iso.app_hom, Functor.mapTriangleCompIso_hom_app_hom₃, Functor.mapIso_hom,
+    Functor.mapTriangle_map_hom₃, shiftFunctorMapTriangleIso_hom_hom₃]
+  exact (Category.id_comp _).trans (whisker_eq _ (Category.id_comp _))
+
+@[simp]
+lemma mappingCoconeFunctorMapTriangleIso_inv_hom₁ :
+    (mappingCoconeFunctorMapTriangleIso α φ).inv.hom₁ = 𝟙 _ := by
+  change (((𝟙 _ : (_ : CochainComplex C ℤ) ⟶ _) ≫ _) ≫ _) ≫ _ = _
+  simp only [Iso.app_inv, Functor.mapTriangleCompIso_inv_app_hom₁, Functor.mapIso_inv,
+    Functor.mapTriangle_map_hom₁, mappingConeFunctorMapTriangleIso_inv_hom₁, Functor.map_id,
+    shiftFunctorMapTriangleIso_inv_hom₁]
+  exact (Category.comp_id _).trans ((Category.comp_id _).trans (Category.comp_id _))
+
+@[simp]
+lemma mappingCoconeFunctorMapTriangleIso_inv_hom₂ :
+    (mappingCoconeFunctorMapTriangleIso α φ).inv.hom₂ = 𝟙 _ := by
+  change ((((-1 : ℤ).negOnePow⁻¹ •
+    𝟙 (mappingCocone ((NatTrans.mapHomologicalComplex α _).app L))) ≫ _) ≫ _) ≫ _ = _
+  simp only [Iso.app_inv, Functor.mapTriangleCompIso_inv_app_hom₂, Functor.mapIso_inv,
+    Functor.mapTriangle_map_hom₂, mappingConeFunctorMapTriangleIso_inv_hom₂, Functor.map_id,
+    shiftFunctorMapTriangleIso_inv_hom₂]
+  change ((((-1 : ℤ).negOnePow⁻¹ • 𝟙 (mappingCocone ((NatTrans.mapHomologicalComplex α _).app L))) ≫
+    ((-1 : ℤ).negOnePow • 𝟙 (mappingCocone ((NatTrans.mapHomologicalComplex α _).app L)))) ≫ 𝟙 _) ≫
+      𝟙 _ = 𝟙 _
+  simp
+
+@[simp]
+lemma mappingCoconeFunctorMapTriangleIso_inv_hom₃ :
+    (mappingCoconeFunctorMapTriangleIso α φ).inv.hom₃ =
+      (mappingCone.shiftIso _ (-1)).inv ≫
+        (mappingConeFunctorMapTriangleIso α φ).inv.hom₃⟦(-1 : ℤ)⟧' := by
+  change (((mappingCone.shiftIso _ (-1)).inv ≫ _) ≫ _) ≫ _ = _
+  simp only [Iso.app_inv, Functor.mapTriangleCompIso_inv_app_hom₃, Functor.mapIso_inv,
+    Functor.mapTriangle_map_hom₃, shiftFunctorMapTriangleIso_inv_hom₃]
+  exact (Category.comp_id _).trans (eq_whisker (Category.comp_id _) _)
+
 end CategoryTheory.NatTrans

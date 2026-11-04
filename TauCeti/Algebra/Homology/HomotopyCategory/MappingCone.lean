@@ -605,4 +605,40 @@ noncomputable def mappingConeFunctorMapTriangleIso :
       exact (mappingConeFunctorMapTriangleIso_comm₂ α φ).trans (Category.id_comp _).symm)
     (by dsimp; exact (Category.comp_id _).trans (mappingConeFunctorMapTriangleIso_comm₃ α φ))
 
+@[simp]
+lemma mappingConeFunctorMapTriangleIso_hom_hom₁ :
+    (mappingConeFunctorMapTriangleIso α φ).hom.hom₁ = 𝟙 _ :=
+  (rfl)
+
+@[simp]
+lemma mappingConeFunctorMapTriangleIso_hom_hom₂ :
+    (mappingConeFunctorMapTriangleIso α φ).hom.hom₂ = 𝟙 _ :=
+  (rfl)
+
+@[simp]
+lemma mappingConeFunctorMapTriangleIso_hom_hom₃ :
+    (mappingConeFunctorMapTriangleIso α φ).hom.hom₃ =
+      map _ _ (mapHomologicalComplexIso φ F).hom (mapHomologicalComplexIso φ G).hom
+          (mapHomologicalComplexIso_hom_naturality φ α) ≫
+        transposeHom _ _ _ _ ((NatTrans.mapHomologicalComplex α _).naturality φ) :=
+  (rfl)
+
+@[simp]
+lemma mappingConeFunctorMapTriangleIso_inv_hom₁ :
+    (mappingConeFunctorMapTriangleIso α φ).inv.hom₁ = 𝟙 _ :=
+  (rfl)
+
+@[simp]
+lemma mappingConeFunctorMapTriangleIso_inv_hom₂ :
+    (mappingConeFunctorMapTriangleIso α φ).inv.hom₂ = 𝟙 _ :=
+  (rfl)
+
+@[simp]
+lemma mappingConeFunctorMapTriangleIso_inv_hom₃ :
+    (mappingConeFunctorMapTriangleIso α φ).inv.hom₃ =
+      transposeHom _ _ _ _ ((NatTrans.mapHomologicalComplex α _).naturality φ).symm ≫
+        (mapIso (mapHomologicalComplexIso φ F) (mapHomologicalComplexIso φ G)
+          (mapHomologicalComplexIso_hom_naturality φ α)).inv :=
+  (rfl)
+
 end CategoryTheory.NatTrans
