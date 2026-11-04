@@ -36,6 +36,8 @@ holomorphy argument is adapted from `Mathlib.NumberTheory.ModularForms.DedekindE
   converges.
 * `TauCeti.tprod_one_sub_pow_mul_eq`: `∏_{n ≥ 1} (1 - qⁿ w) = (1 - q w) ∏_{n ≥ 1} (1 - qⁿ (q w))`.
 * `TauCeti.tprod_one_sub_pow_mul_ne_zero`: the product is nonzero when all of its factors are.
+* `TauCeti.tendsto_tprod_one_sub_pow_mul`: `∏_{n ≥ 1} (1 - qⁿ w) → 1` when `q → 0` and
+  `q w → 0`; `w` may be unbounded, and no completeness assumption is needed.
 * `TauCeti.tprod_one_sub_pow_ne_zero`: the Euler function `∏_{n ≥ 1} (1 - qⁿ)` is nonzero.
 * `TauCeti.norm_tprod_one_sub_pow_mul_le`, `TauCeti.norm_qTheta_le`: the bounds
   `‖∏_{n ≥ 1} (1 - qⁿ w)‖ ≤ exp (‖q‖ ‖w‖ / (1 - ‖q‖))` and
@@ -146,6 +148,35 @@ variable [CompleteSpace 𝕜]
 theorem multipliable_one_sub_pow_mul {q : 𝕜} (hq : ‖q‖ < 1) (w : 𝕜) :
     Multipliable fun n : ℕ ↦ 1 - q ^ (n + 1) * w :=
   multipliable_one_sub_of_summable (summable_norm_pow_succ_mul hq w)
+
+omit [CompleteSpace 𝕜] in
+/-- The product `∏_{n ≥ 1} (1 - qⁿ w)` tends to `1` whenever `q → 0` and `q w → 0`.
+The argument `w` itself need not converge or remain bounded. -/
+theorem tendsto_tprod_one_sub_pow_mul {α : Type*} {l : Filter α} {q w : α → 𝕜}
+    (hq : Filter.Tendsto q l (nhds 0))
+    (hqw : Filter.Tendsto (fun x ↦ q x * w x) l (nhds 0)) :
+    Filter.Tendsto (fun x ↦ ∏' n : ℕ, (1 - q x ^ (n + 1) * w x)) l (nhds 1) := by
+  have hsmall : ∀ᶠ x in l, ‖q x‖ < 1 := hq.norm.eventually (gt_mem_nhds (by norm_num))
+  have hqnorm : Filter.Tendsto (fun x ↦ ‖q x‖) l (nhds 0) := by simpa using hq.norm
+  have hqwnorm : Filter.Tendsto (fun x ↦ ‖q x * w x‖) l (nhds 0) := by
+    simpa using hqw.norm
+  have hbound : Filter.Tendsto
+      (fun x ↦ Real.exp (‖q x * w x‖ / (1 - ‖q x‖)) - 1) l (nhds 0) := by
+    have hdiv := hqwnorm.div (tendsto_const_nhds.sub hqnorm)
+      (by norm_num : (1 : ℝ) - 0 ≠ 0)
+    simpa using ((Real.continuous_exp.tendsto _).comp hdiv).sub_const 1
+  refine tendsto_iff_norm_sub_tendsto_zero.mpr <|
+    squeeze_zero' (Filter.Eventually.of_forall fun _ ↦ norm_nonneg _) ?_ hbound
+  filter_upwards [hsmall] with x hx
+  have h := norm_tprod_one_add_sub_one_le (f := fun n : ℕ ↦ -(q x ^ (n + 1) * w x))
+    (by simpa only [norm_neg] using summable_norm_pow_succ_mul hx (w x))
+  simp only [← sub_eq_add_neg, norm_neg, norm_mul, norm_pow, pow_succ] at h
+  rw [tsum_mul_right, tsum_mul_right, tsum_geometric_of_lt_one (norm_nonneg _) hx] at h
+  convert h using 1
+  · simp only [pow_succ]
+  · rw [norm_mul]
+    congr 2
+    ring
 
 /-- Shifting the product: `∏_{n ≥ 1} (1 - qⁿ w) = (1 - q w) ∏_{n ≥ 1} (1 - qⁿ (q w))`. -/
 theorem tprod_one_sub_pow_mul_eq {q : 𝕜} (hq : ‖q‖ < 1) (w : 𝕜) :
