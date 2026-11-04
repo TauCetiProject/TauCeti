@@ -116,6 +116,13 @@ theorem weightedLogCanonicalDegree_pos_of_componentDegree_pos [Fintype ι] {v : 
   rw [weightedLogCanonicalDegree_def, G.logCanonicalDegree_def]
   omega
 
+/-- A vertex of nonpositive weighted log-canonical degree has map degree zero. -/
+theorem componentDegree_eq_zero_of_weightedLogCanonicalDegree_nonpos [Fintype ι] {v : G.Vertex}
+    (hv : D.weightedLogCanonicalDegree v ≤ 0) : D.componentDegree v = 0 := by
+  by_contra hd
+  exact (not_lt_of_ge hv)
+    (D.weightedLogCanonicalDegree_pos_of_componentDegree_pos (Nat.pos_of_ne_zero hd))
+
 /-- The contracted-component stability criterion is equivalent to positivity of
 `2g(v) - 2 + val(v) + n(v) + 3d(v)` at every vertex. -/
 theorem isStable_iff_weightedLogCanonicalDegree_pos [Fintype ι] :
