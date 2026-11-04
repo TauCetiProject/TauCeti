@@ -147,13 +147,14 @@ ringKrullDim_quotient_span_singleton_succ_eq_ringKrullDim_of_notMem_minimalPrime
     obtain ⟨P, hP, hPx⟩ := exists_minimalPrimes_le (bot_le : ⊥ ≤ span {x})
     have hPprime : P.IsPrime := IsMinimalPrime.isPrime hP
     have hP0 : P = ⊥ := by
-      refine Submodule.eq_bot_of_le_smul_of_le_jacobson_bot (span {x}) P
+      refine Submodule.eq_bot_of_le_smul_of_le_jacobson (span {x}) P
         P.fg_of_isNoetherianRing (fun y hy ↦ ?_) ?_
       · obtain ⟨z, rfl⟩ := mem_span_singleton'.mp (hPx hy)
         have hz : z ∈ P := (hPprime.mem_or_mem hy).resolve_right (hmin P hP)
         rw [mul_comm, ← smul_eq_mul]
         exact Submodule.smul_mem_smul (mem_span_singleton_self x) hz
-      · rw [jacobson_eq_maximalIdeal ⊥ bot_ne_top, span_singleton_le_iff_mem]
+      · rw [← Ideal.jacobson_bot, jacobson_eq_maximalIdeal ⊥ bot_ne_top,
+          span_singleton_le_iff_mem]
         exact hxm
     have : (⊥ : Ideal R).IsPrime := hP0 ▸ hPprime
     exact IsDomain.of_bot_isPrime R

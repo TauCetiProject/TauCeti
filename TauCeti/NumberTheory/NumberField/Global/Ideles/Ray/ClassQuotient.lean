@@ -48,6 +48,8 @@ description determines a well-defined homomorphism on idele classes.
 * `TauCeti.GlobalNumberFields.finiteIndex_raySubgroup`: hence the ray subgroup has finite index.
 * `TauCeti.GlobalNumberFields.classMap_comp_rayClassQuotient`: the maps are compatible with the
   transition maps between ray class groups.
+* `TauCeti.GlobalNumberFields.raySubgroup_le_raySubgroup_iff`: for `𝔪 ∣ 𝔫`, the ray subgroup of
+  `𝔪` lies in that of `𝔫` exactly when the transition map from `𝔫` to `𝔪` is injective.
 * `TauCeti.GlobalNumberFields.rayClassQuotient_ofAdicCompletion_of_isUniformizer`: the idele that
   is a uniformizer at a finite place `v` outside `𝔪` and `1` elsewhere is sent to the ray class of
   the prime `v`.
@@ -340,6 +342,16 @@ theorem classMap_comp_rayClassQuotient {𝔪 𝔫 : Modulus K} (h : 𝔪 ∣ �
     (c : IdeleClassGroup (𝓞 K) K) :
     classMap h (rayClassQuotient 𝔫 c) = rayClassQuotient 𝔪 c := by
   rw [← MonoidHom.comp_apply, classMap_comp_rayClassQuotient]
+
+/-- **Comparison of ray subgroups along a transition map**: for `𝔪 ∣ 𝔫`, the ray subgroup of `𝔪`
+lies in that of `𝔫` exactly when the transition map from `𝔫` to `𝔪` is injective. Under the
+surjective ray class map modulo `𝔫`, the ray subgroup of `𝔪` is the preimage of the kernel of the
+transition map, and that of `𝔫` is the preimage of the trivial subgroup. -/
+theorem raySubgroup_le_raySubgroup_iff {𝔪 𝔫 : Modulus K} (h : 𝔪 ∣ 𝔫) :
+    raySubgroup 𝔪 ≤ raySubgroup 𝔫 ↔ (classMap h).ker ≤ ⊥ := by
+  rw [← ker_rayClassQuotient, ← ker_rayClassQuotient, ← classMap_comp_rayClassQuotient h,
+    ← MonoidHom.comap_ker, ← MonoidHom.comap_bot (rayClassQuotient 𝔫)]
+  exact Subgroup.comap_le_comap_of_surjective (rayClassQuotient_surjective 𝔫)
 
 /-! ### Uniformizers at finite places -/
 

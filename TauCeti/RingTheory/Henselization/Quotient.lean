@@ -70,7 +70,8 @@ theorem quotient_pow_bijective (n : ℕ) :
         ext r
         simp [g]
       rw [heq]
-      exact IsAdicComplete.le_jacobson_bot K
+      rw [Ideal.jacobson_bot]
+      exact IsAdicComplete.le_jacobson K
   have hl : Function.LeftInverse g (reducedMap (I ^ n) (algebra I)) :=
     fun x ↦ DFunLike.congr_fun hleft x
   exact ⟨hl.injective,

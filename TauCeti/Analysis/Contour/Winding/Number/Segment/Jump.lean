@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Contour.Winding.Number.Segment.Formula
-public import TauCeti.Analysis.Contour.PiecewiseC1On
+public import TauCeti.Analysis.Calculus.ContDiff.PiecewiseC1On
 import Mathlib.Analysis.SpecialFunctions.Complex.Log
 import TauCeti.Analysis.Contour.Winding.Continuity
 import TauCeti.Analysis.Contour.Winding.Integer

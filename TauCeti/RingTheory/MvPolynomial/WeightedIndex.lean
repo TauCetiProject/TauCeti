@@ -8,7 +8,7 @@ module
 public import Mathlib.Data.NNRat.BigOperators
 public import Mathlib.Algebra.Polynomial.RingDivision
 public import Mathlib.LinearAlgebra.Matrix.Determinant.Basic
-public import Mathlib.RingTheory.MvPolynomial.WeightedHomogeneous
+public import TauCeti.RingTheory.MvPolynomial.WeightedHomogeneous
 public import TauCeti.Data.Finsupp.ENNReal
 public import TauCeti.Data.Finsupp.Weight
 public import TauCeti.RingTheory.MvPolynomial.HasseDeriv.Taylor
@@ -26,8 +26,9 @@ Division takes place in `ℝ≥0∞`: a positive exponent in a coordinate of wei
 infinite cost. The constant jet has cost zero, even when some weights vanish.
 
 The index behaves like an order of vanishing. Over a semiring without zero divisors it is
-additive on products, because the lowest weighted homogeneous components of the Taylor shifts
-multiply to a nonzero component of the product. A Hasse derivative `∂^d` lowers it by at most
+additive on products, because it is the least weight of a monomial of the Taylor shift
+(`MvPolynomial.weightedIndex_eq_iInf_support`), and least weights of monomials add on products
+(`MvPolynomial.iInf_support_weight_mul`). A Hasse derivative `∂^d` lowers it by at most
 the weight of `d`, scaling all weights by `c` divides it by `c`, and renaming the variables
 injectively preserves it. A univariate polynomial placed in one coordinate has its root
 multiplicity divided by that coordinate's weight as index. These rules are the calculus of
@@ -197,6 +198,12 @@ theorem exists_weightedIndex_eq_weight {r : σ → ℕ} {a : σ → R}
   refine ⟨d, hjet, (weightedIndex_le hjet).antisymm ?_⟩
   refine le_iInf fun e ↦ le_iInf fun he ↦ hmin e ?_
   simpa only [mem_support_iff, coeff_taylor] using he
+
+/-- The index is the least reciprocal weight of a monomial of the Taylor shift. -/
+theorem weightedIndex_eq_iInf_support (r : σ → ℕ) (a : σ → R) (P : MvPolynomial σ R) :
+    weightedIndex r a P =
+      ⨅ d ∈ (taylor a P).support, d.weight (fun j ↦ (r j : ℝ≥0∞)⁻¹) := by
+  simp only [weightedIndex, mem_support_iff, coeff_taylor]
 
 /-- A polynomial whose Taylor shift vanishes has infinite index. -/
 theorem weightedIndex_eq_top_of_taylor_eq_zero (r : σ → ℕ) {a : σ → R}
@@ -400,52 +407,8 @@ variable [NoZeroDivisors R]
 This holds for all weights, including zero weights and infinite indices. -/
 theorem weightedIndex_mul (r : σ → ℕ) (a : σ → R) (P Q : MvPolynomial σ R) :
     weightedIndex r a (P * Q) = weightedIndex r a P + weightedIndex r a Q := by
-  classical
-  refine le_antisymm ?_ (le_weightedIndex_mul r a P Q)
-  by_cases hP : taylor a P = 0
-  · simp [weightedIndex_eq_top_of_taylor_eq_zero r hP]
-  by_cases hQ : taylor a Q = 0
-  · simp [weightedIndex_eq_top_of_taylor_eq_zero r hQ]
-  obtain ⟨d, hd, hPd⟩ := exists_weightedIndex_eq_weight (r := r) hP
-  obtain ⟨e, he, hQe⟩ := exists_weightedIndex_eq_weight (r := r) hQ
-  set w : σ → ℝ≥0∞ := fun j ↦ (r j : ℝ≥0∞)⁻¹
-  rw [hPd, hQe]
-  by_cases hp : d.weight w = ⊤
-  · simp [hp]
-  by_cases hq : e.weight w = ⊤
-  · simp [hq]
-  -- The product of the lowest weighted homogeneous components of the Taylor shifts is
-  -- nonzero, and it is the lowest weighted homogeneous component of the shifted product.
-  set P₀ := weightedHomogeneousComponent w (d.weight w) (taylor a P)
-  set Q₀ := weightedHomogeneousComponent w (e.weight w) (taylor a Q)
-  have hP₀ : P₀.coeff d ≠ 0 := by
-    simpa [P₀, coeff_weightedHomogeneousComponent, coeff_taylor] using hd
-  have hQ₀ : Q₀.coeff e ≠ 0 := by
-    simpa [Q₀, coeff_weightedHomogeneousComponent, coeff_taylor] using he
-  obtain ⟨g, hg⟩ := ne_zero_iff.mp
-    (mul_ne_zero (ne_zero_iff.mpr ⟨d, hP₀⟩) (ne_zero_iff.mpr ⟨e, hQ₀⟩))
-  have hwg : g.weight w = d.weight w + e.weight w :=
-    ((weightedHomogeneousComponent_isWeightedHomogeneous _ _).mul
-      (weightedHomogeneousComponent_isWeightedHomogeneous _ _)) hg
-  have hcoeff : (P₀ * Q₀).coeff g = (taylor a (P * Q)).coeff g := by
-    rw [map_mul, coeff_mul, coeff_mul]
-    refine Finset.sum_congr rfl fun x hx ↦ ?_
-    simp only [P₀, Q₀, coeff_weightedHomogeneousComponent]
-    by_cases h0 : (taylor a P).coeff x.1 * (taylor a Q).coeff x.2 = 0
-    · split_ifs <;> simp [h0]
-    have h₁ : d.weight w ≤ x.1.weight w := hPd ▸
-      weightedIndex_le (by rw [← coeff_taylor]; exact left_ne_zero_of_mul h0)
-    have h₂ : e.weight w ≤ x.2.weight w := hQe ▸
-      weightedIndex_le (by rw [← coeff_taylor]; exact right_ne_zero_of_mul h0)
-    have hsum : x.1.weight w + x.2.weight w = d.weight w + e.weight w := by
-      rw [← map_add, Finset.mem_antidiagonal.mp hx, hwg]
-    have e₁ : x.1.weight w = d.weight w :=
-      (ENNReal.le_of_add_le_add_right hq (hsum ▸ add_le_add le_rfl h₂)).antisymm h₁
-    have e₂ : x.2.weight w = e.weight w :=
-      (ENNReal.le_of_add_le_add_left hp (hsum ▸ add_le_add h₁ le_rfl)).antisymm h₂
-    simp [e₁, e₂]
-  rw [← hwg]
-  exact weightedIndex_le (by rw [← coeff_taylor, ← hcoeff]; exact hg)
+  simp only [weightedIndex_eq_iInf_support, map_mul]
+  exact iInf_support_weight_mul _ _ _
 
 /-- Over a nontrivial semiring without zero divisors, the index of `P ^ n` is `n` times the
 index of `P`. -/

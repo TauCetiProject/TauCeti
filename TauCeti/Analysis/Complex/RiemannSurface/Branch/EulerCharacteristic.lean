@@ -6,11 +6,13 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicTopology.Cellular.EulerCharacteristic.Covering
+public import TauCeti.AlgebraicTopology.Cellular.EulerCharacteristic.Puncture
 public import TauCeti.Analysis.Complex.RiemannSurface.Branch.FiberCount
+import Mathlib.LinearAlgebra.Complex.FiniteDimensional
 import TauCeti.Data.Set.Restrict
 
 /-!
-# Euler characteristics of punctured branched covers
+# Euler characteristics of branched covers
 
 Let `f : X → Y` be a finite holomorphic map from a compact connected Riemann surface to a
 connected Riemann surface, and let `S ⊆ Y` contain every branch value of `f`. Deleting `S` from
@@ -27,9 +29,12 @@ formula,
 
 `(χ(X \ f⁻¹(S)) + #f⁻¹(S)) + ramificationDegree f = degree f · (χ(Y \ S) + #S)`.
 
-For compact surfaces deleting a point lowers the Euler characteristic by one, so the two
+For surfaces deleting a point lowers the Euler characteristic by one
+(`TauCeti.eulerChar_compl_of_finite`), so when `X` and `Y` have finite CW type the two
 parenthesised sums are `χ(X)` and `χ(Y)`, and the identity becomes the topological
-Riemann–Hurwitz formula `χ(X) = degree f · χ(Y) - ramificationDegree f`.
+Riemann–Hurwitz formula `χ(X) = degree f · χ(Y) - ramificationDegree f`. It uses only the
+finite-CW Euler characteristic, local multiplicities and the analytic fibre-sum degree; no
+canonical divisor and no Riemann–Roch theorem enters.
 
 ## Main results
 
@@ -38,11 +43,18 @@ Riemann–Hurwitz formula `χ(X) = degree f · χ(Y) - ramificationDegree f`.
 * `FiniteHolomorphicMap.eulerChar_compl_preimage`: `χ(X \ f⁻¹(S)) = degree f · χ(Y \ S)`.
 * `FiniteHolomorphicMap.eulerChar_compl_preimage_add_ncard_add_ramificationDegree`: the punctured
   branched-cover formula for a finite set `S` of punctures containing the branch values.
+* `FiniteHolomorphicMap.eulerChar_eq_degree_mul_eulerChar_sub_ramificationDegree_of_subset`:
+  `χ(X) = degree f · χ(Y) - ramificationDegree f`, given finite CW type of `X`, `Y` and `Y \ S`
+  for a finite `S` containing the branch values.
+* `FiniteHolomorphicMap.eulerChar_eq_degree_mul_eulerChar_sub_ramificationDegree`: the same,
+  puncturing exactly at the branch values.
 
 ## References
 
 * Otto Forster, *Lectures on Riemann Surfaces*, Graduate Texts in Mathematics 81,
   Springer, 1981, §17 (the topological proof of the Riemann–Hurwitz formula).
+* Rick Miranda, *Algebraic Curves and Riemann Surfaces*, Graduate Studies in Mathematics 5,
+  American Mathematical Society, 1995, Chapter II §4.
 * A. Hatcher, [*Algebraic Topology*](https://pi.math.cornell.edu/~hatcher/AT/AT.pdf),
   Section 2.2, the Euler characteristic of an `n`-sheeted covering space.
 -/
@@ -96,6 +108,30 @@ theorem eulerChar_compl_preimage_add_ncard_add_ramificationDegree (hfin : S.Fini
     exact_mod_cast f.ncard_preimage_add_ramificationDegree hfin hS
   rw [f.eulerChar_compl_preimage hS]
   linear_combination hcount
+
+variable [FiniteCWType X] [FiniteCWType Y]
+
+/-- **The Euler characteristic of a branched cover.** If `S` is a finite set containing every
+branch value of `f` and `X`, `Y` and `Y \ S` have finite CW type, then
+`χ(X) = deg f · χ(Y) - R(f)`, where `R(f)` is the ramification degree. -/
+theorem eulerChar_eq_degree_mul_eulerChar_sub_ramificationDegree_of_subset (hfin : S.Finite)
+    (hS : f.branchValues ⊆ S) [FiniteCWType ↥Sᶜ] :
+    eulerChar X = degree f * eulerChar Y - ramificationDegree f := by
+  have := f.finiteCWType_compl_preimage hS
+  have hX := eulerChar_compl_of_finite (E := ℂ) (hfin.preimage' fun y _ ↦ f.finite_fiber y)
+  have hY := eulerChar_compl_of_finite (E := ℂ) (X := Y) hfin
+  rw [Complex.finrank_real_complex] at hX hY
+  linear_combination f.eulerChar_compl_preimage_add_ncard_add_ramificationDegree hfin hS - hX +
+    degree f * hY
+
+/-- **The Euler characteristic of a branched cover**, puncturing at the branch values: if `X`,
+`Y` and the complement of the branch values have finite CW type, then
+`χ(X) = deg f · χ(Y) - R(f)`, where `R(f)` is the ramification degree. -/
+theorem eulerChar_eq_degree_mul_eulerChar_sub_ramificationDegree
+    [FiniteCWType ↥f.branchValuesᶜ] :
+    eulerChar X = degree f * eulerChar Y - ramificationDegree f :=
+  f.eulerChar_eq_degree_mul_eulerChar_sub_ramificationDegree_of_subset f.finite_branchValues
+    Subset.rfl
 
 end TauCeti.RiemannSurface.FiniteHolomorphicMap
 

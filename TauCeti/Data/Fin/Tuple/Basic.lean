@@ -35,6 +35,8 @@ A tuple of length three is determined by its three entries.
 * `Fin.forall_snoc_eq_iff_snoc_eq`: appending one entry to each of two tuples gives the same
   equality pattern exactly when the old patterns agree and the new entries repeat the same
   positions.
+* `Fin.update_append_castAdd`, `Fin.update_append_natAdd`: updating an entry of `Fin.append u v`
+  updates the corresponding entry of `u` or of `v`.
 * `Fin.contractNth_zero_cons`, `Fin.contractNth_succ_cons`: contracting entries of a tuple
   `Fin.cons x a`.
 * `Fin.contractNth_castSucc_castSucc_snoc`, `Fin.contractNth_castSucc_last_snoc`: contracting
@@ -117,6 +119,24 @@ theorem forall_snoc_eq_iff_snoc_eq {β : Sort*} {n : ℕ} {a : Fin n → α} {b 
     iff_self, and_true]
   exact ⟨fun h => ⟨fun i => (h.1 i).1, fun i => (h.1 i).2⟩,
     fun h => ⟨fun i => ⟨h.1 i, h.2 i⟩, h.2⟩⟩
+
+/-- Updating `Fin.append u v` at a position of `u` is appending the updated `u` to `v`. -/
+@[simp]
+theorem update_append_castAdd {n : ℕ} (u : Fin m → α) (v : Fin n → α) (i : Fin m) (a : α) :
+    Function.update (append u v) (castAdd n i) a = append (Function.update u i a) v :=
+  funext fun j ↦ addCases (fun j ↦ by simp [Function.update_apply])
+    (fun j ↦ by
+      rw [Function.update_of_ne fun h ↦ by simp [Fin.ext_iff] at h; omega]
+      simp) j
+
+/-- Updating `Fin.append u v` at a position of `v` is appending `u` to the updated `v`. -/
+@[simp]
+theorem update_append_natAdd {n : ℕ} (u : Fin m → α) (v : Fin n → α) (i : Fin n) (a : α) :
+    Function.update (append u v) (natAdd m i) a = append u (Function.update v i a) :=
+  funext fun j ↦ addCases (fun j ↦ by
+      rw [Function.update_of_ne fun h ↦ by simp [Fin.ext_iff] at h; omega]
+      simp)
+    (fun j ↦ by simp [Function.update_apply]) j
 
 section ContractNth
 

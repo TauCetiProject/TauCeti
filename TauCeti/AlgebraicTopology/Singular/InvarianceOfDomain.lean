@@ -41,11 +41,14 @@ manifold.
 * `IsOpen.image_of_continuousOn_of_injOn`: **invariance of domain** for manifolds without
   boundary modelled on finite-dimensional real normed spaces of the same dimension.
 * `Continuous.isOpenEmbedding_of_injective`: a continuous injection between such manifolds is an
-  open embedding.
+  open embedding, and `IsOpen.isOpenEmbedding_domRestrict_of_continuousOn_of_injOn` is its form for
+  a map continuous and injective on an open set.
 * `Continuous.surjective_of_injective`: a continuous injection of a compact manifold into a
   connected manifold of the same dimension is surjective.
 * `Homeomorph.coe_apply_mem_interior_iff` and `Homeomorph.coe_apply_mem_frontier_iff`: a
   homeomorphism between subsets of such manifolds matches their interiors and their frontiers.
+* `Topology.IsOpenEmbedding.finrank_le_of_isEmbedding` and `Topology.IsOpenEmbedding.finrank_eq`:
+  **invariance of dimension**, a nonempty open subset of `ℝᵐ` embeds into `ℝⁿ` only if `m ≤ n`.
 
 ## References
 
@@ -201,6 +204,22 @@ theorem Continuous.isOpenEmbedding_of_injective {f : M → N} (hf : Continuous f
   .of_continuous_injective_isOpenMap hf hinj fun _ hU ↦
     hU.image_of_continuousOn_of_injOn hf.continuousOn hinj.injOn hEF
 
+/-- **Invariance of domain, restricted to an open set.** Let `M` and `N` be topological manifolds
+without boundary, charted on finite-dimensional real normed spaces of the same dimension. If
+`f : M → N` is continuous and injective on an open set `U`, then its restriction to `U` is an open
+embedding. -/
+theorem IsOpen.isOpenEmbedding_domRestrict_of_continuousOn_of_injOn {f : M → N} {U : Set M}
+    (hU : IsOpen U) (hf : ContinuousOn f U) (hinj : InjOn f U)
+    (hEF : finrank ℝ E = finrank ℝ F) : IsOpenEmbedding (U.domRestrict f) := by
+  refine .of_continuous_injective_isOpenMap (continuousOn_iff_continuous_domRestrict.1 hf)
+    hinj.injective fun s hs ↦ ?_
+  have hsU : ((↑) '' s : Set M) ⊆ U := by
+    rintro _ ⟨y, -, rfl⟩
+    exact y.2
+  rw [domRestrict_eq, image_comp]
+  exact (hU.isOpenMap_subtype_val s hs).image_of_continuousOn_of_injOn (hf.mono hsU)
+    (hinj.mono hsU) hEF
+
 /-- **A continuous injection of a compact manifold into a connected one is onto.** Let `M` and `N`
 be topological manifolds without boundary, charted on finite-dimensional real normed spaces of the
 same dimension, with `M` compact and nonempty and `N` Hausdorff and connected. Then a continuous
@@ -258,3 +277,41 @@ theorem coe_apply_mem_frontier_iff (e : A ≃ₜ B) (hEF : finrank ℝ E = finra
     e.coe_apply_mem_interior_iff hEF]
 
 end Homeomorph
+
+namespace Topology.IsOpenEmbedding
+
+variable {X : Type*} [TopologicalSpace X]
+
+/-- **Invariance of dimension.** If a nonempty space has an open embedding into a
+finite-dimensional real normed space `F` and an embedding into a finite-dimensional real normed
+space `E`, then `finrank ℝ F ≤ finrank ℝ E`. In particular a nonempty open subset of `ℝᵐ` is
+homeomorphic to no subset of `ℝⁿ` for `n < m`. -/
+theorem finrank_le_of_isEmbedding [Nonempty X] {g : X → F} (hg : IsOpenEmbedding g) {f : X → E}
+    (hf : IsEmbedding f) : finrank ℝ F ≤ finrank ℝ E := by
+  by_contra! h
+  -- Include `E` in `F` as a proper subspace `ι(E)`.
+  obtain ⟨ι, hι⟩ := finrank_le_iff_exists_linearMap.1 h.le
+  have hιf : IsEmbedding (ι ∘ f) :=
+    (LinearMap.isClosedEmbedding_of_injective (LinearMap.ker_eq_bot.2 hι)).isEmbedding.comp hf
+  -- The open set `range g` is homeomorphic to `range (ι ∘ f) ⊆ ι(E)`, so by invariance of
+  -- domain the proper subspace `ι(E)` has an interior point.
+  let e : range g ≃ₜ range (ι ∘ f) := hg.isEmbedding.toHomeomorph.symm.trans hιf.toHomeomorph
+  obtain ⟨x⟩ := ‹Nonempty X›
+  have hx : ((⟨g x, mem_range_self x⟩ : range g) : F) ∈ interior (range g) := by
+    rw [hg.isOpen_range.interior_eq]
+    exact mem_range_self x
+  have hint := (e.coe_apply_mem_interior_iff (E := F) (F := F) rfl _).2 hx
+  have htop : LinearMap.range ι = ⊤ := Submodule.eq_top_of_nonempty_interior' _
+    ⟨_, interior_mono (range_comp_subset_range f ι) hint⟩
+  have hrank := LinearMap.finrank_range_of_inj hι
+  rw [htop, finrank_top] at hrank
+  exact h.ne hrank.symm
+
+/-- **Invariance of dimension.** A nonempty space with open embeddings into finite-dimensional
+real normed spaces `E` and `F` forces `finrank ℝ E = finrank ℝ F`. -/
+theorem finrank_eq [Nonempty X] {f : X → E} (hf : IsOpenEmbedding f) {g : X → F}
+    (hg : IsOpenEmbedding g) : finrank ℝ E = finrank ℝ F :=
+  (hf.finrank_le_of_isEmbedding hg.isEmbedding).antisymm (hg.finrank_le_of_isEmbedding
+    hf.isEmbedding)
+
+end Topology.IsOpenEmbedding

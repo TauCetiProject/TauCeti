@@ -52,6 +52,7 @@ degree is the height `#S` itself, and the terms are finite biproducts.
 
 * `Functor.isZero_cubeComplex_X_of_neg`, `Functor.isZero_cubeComplex_X_of_card_lt`: the terms
   vanish outside the degrees `0, …, #ι`.
+* `Functor.cubeComplex_total`: each term is the direct sum of its vertices.
 * `Functor.cubeComplexXZeroIso`: the degree `0` term is the initial vertex `F(∅)`.
 
 ## References
@@ -165,15 +166,43 @@ def cubeComplex : CochainComplex C ℤ where
     rintro i _ _ rfl rfl
     exact F.cubeD_comp_cubeD i
 
+/-- The degree `r` term is the biproduct of the vertices of height `r`. -/
+lemma cubeComplex_X (r : ℤ) :
+    F.cubeComplex.X r = ⨁ fun S : {S : Finset ι // (#S : ℤ) = r} ↦ F.obj S.1 := (rfl)
+
 /-- The inclusion of the vertex `F(S)` into the degree `r` term of the cube complex, for a vertex
 of height `#S = r`. -/
 def cubeComplexι {r : ℤ} (S : {S : Finset ι // (#S : ℤ) = r}) : F.obj S.1 ⟶ F.cubeComplex.X r :=
   biproduct.ι (fun S : {S : Finset ι // (#S : ℤ) = r} ↦ F.obj S.1) S
 
+/-- The vertex inclusion agrees with the biproduct inclusion under the term identification. -/
+@[reassoc (attr := simp)]
+lemma cubeComplexι_comp_eqToHom {r : ℤ} (S : {S : Finset ι // (#S : ℤ) = r}) :
+    F.cubeComplexι S ≫ eqToHom (F.cubeComplex_X r) =
+      biproduct.ι (fun T : {T : Finset ι // (#T : ℤ) = r} ↦ F.obj T.1) S :=
+  Category.comp_id _
+
 /-- The projection of the degree `r` term of the cube complex onto the vertex `F(S)`, for a vertex
 of height `#S = r`. -/
 def cubeComplexπ {r : ℤ} (S : {S : Finset ι // (#S : ℤ) = r}) : F.cubeComplex.X r ⟶ F.obj S.1 :=
   biproduct.π (fun S : {S : Finset ι // (#S : ℤ) = r} ↦ F.obj S.1) S
+
+/-- The biproduct projection agrees with the vertex projection under the term identification. -/
+@[reassoc (attr := simp)]
+lemma eqToHom_comp_cubeComplexπ {r : ℤ} (S : {S : Finset ι // (#S : ℤ) = r}) :
+    eqToHom (F.cubeComplex_X r) ≫
+      biproduct.π (fun T : {T : Finset ι // (#T : ℤ) = r} ↦ F.obj T.1) S =
+        F.cubeComplexπ S :=
+  Category.id_comp _
+
+/-- Transporting a cube term to an equal height preserves each vertex inclusion. -/
+@[reassoc (attr := simp)]
+lemma cubeComplexι_comp_XIsoOfEq_hom {r r' : ℤ} (h : r = r')
+    (S : {S : Finset ι // (#S : ℤ) = r}) :
+    F.cubeComplexι S ≫ (F.cubeComplex.XIsoOfEq h).hom =
+      F.cubeComplexι ⟨S.1, S.2.trans h⟩ := by
+  subst h
+  simp
 
 /-- The inclusion of a vertex followed by the projection onto a vertex of the same height is the
 identity when the vertices agree, and zero otherwise. -/
@@ -226,6 +255,13 @@ lemma cubeComplexLift_π {r : ℤ} {A : C}
     (f : ∀ S : {S : Finset ι // (#S : ℤ) = r}, A ⟶ F.obj S.1) (S : {S : Finset ι // (#S : ℤ) = r}) :
     F.cubeComplexLift f ≫ F.cubeComplexπ S = f S :=
   biproduct.lift_π f S
+
+/-- The projections onto the vertices of height `r`, followed by their inclusions, sum to the
+identity of the degree `r` term of the cube complex. -/
+@[simp]
+lemma cubeComplex_total (r : ℤ) :
+    ∑ S : {S : Finset ι // (#S : ℤ) = r}, F.cubeComplexπ S ≫ F.cubeComplexι S = 𝟙 _ :=
+  biproduct.total
 
 /-- Morphisms out of a term of the cube complex agree when they agree on every vertex. -/
 @[ext]

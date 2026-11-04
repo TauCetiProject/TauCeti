@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.SpecialFunctions.ExpDeriv
+public import TauCeti.Geometry.Contact.Distribution
 public import TauCeti.Geometry.Contact.Flat
 public import TauCeti.Geometry.Contact.Reeb
 public import TauCeti.Geometry.Manifold.Distribution
@@ -23,7 +24,9 @@ On `ℝ³ = ℝ × ℝ × ℝ` with coordinates `(x, y, z)`, the one-form `α = 
 Its exterior derivative is `dα = -dx ∧ dy`, and its kernel is the standard contact distribution
 `TauCeti.standardContactDistribution ℝ`, spanned at `(x, y, z)` by `(1, 0, 0)` and `(0, 1, x)`
 (`TauCeti.kerDistribution_standardContactForm`). On this frame `dα` takes the value `-1`, which is
-the nondegeneracy of `dα` on the kernel.
+the nondegeneracy of `dα` on the kernel. Hence the standard distribution is a contact structure
+in the intrinsic sense of `TauCeti.IsContactDistribution`
+(`TauCeti.isContactDistribution_standardContactDistribution`).
 
 The constant vector field `∂_z` (`TauCeti.standardReebField`) satisfies the Reeb equations
 `α(∂_z) = 1` and `ι_{∂_z} dα = 0`, so it is the Reeb vector field of `α`
@@ -166,6 +169,13 @@ theorem isContactForm_standardContactForm : standardContactForm.IsContactForm :=
   -- The last goal `0 = (0 : TangentSpace _ p).2.2` holds by `rfl`: the zero tangent vector is by
   -- definition the zero vector `(0, 0, 0)` of `ℝ × ℝ × ℝ`.
   exact Prod.ext h₂ (Prod.ext h₁ (by rw [hv, h₁, mul_zero]; rfl))
+
+/-- **The standard contact structure.** The distribution `ker (dz - x dy)` on `ℝ³`, spanned at
+`(x, y, z)` by `(1, 0, 0)` and `(0, 1, x)`, is a contact structure of every class `C^n`. -/
+theorem isContactDistribution_standardContactDistribution {n : ℕ∞ω} [ENat.LEInfty n] :
+    IsContactDistribution 𝓘(ℝ, ℝ × ℝ × ℝ) n (standardContactDistribution ℝ) :=
+  kerDistribution_standardContactForm ▸
+    isContactForm_standardContactForm.isContactDistribution_kerDistribution
 
 /-- The Reeb vector field `∂_z` of `dz - x dy`, characterized by
 `TauCeti.standardContactForm_apply_standardReebField` and

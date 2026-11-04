@@ -19,8 +19,9 @@ and homogeneous Novikov scalars act by adding their degree.
 
 A supported kernel with a fixed degree shift extends to a map with that same shift on
 homogeneous completed combinations, and likewise a supported bilinear kernel extends to a
-product with that shift. The coordinate matrix of a product kernel has the corresponding
-reference-degree shifts. These results apply to the supported kernel constructions
+product with that shift. On a homogeneous first input of degree `k` the product only depends on
+the kernel at generators of degree `k`. The coordinate matrix of a product kernel has the
+corresponding reference-degree shifts. These results apply to the supported kernel constructions
 `TauCeti.NovikovModule.kernelMap` and `TauCeti.NovikovModule.kernelProduct`; they do not require
 discrete or injective periods. A diagonal kernel whose coefficient depends only on the degree
 acts on each homogeneous piece as a scalar.
@@ -87,6 +88,12 @@ theorem gradeBy_sub [AddCommGroup D] (d : S → D) (n k : D) :
   constructor <;> intro ha s hs
   · simpa only [sub_sub_cancel] using congrArg (fun x => n - x) (ha s hs)
   · rw [ha s hs, sub_sub_cancel]
+
+/-- Homogeneous combinations of degree `k` lie in the piece of degree `f k` for the degree
+`f ∘ d`; for instance integer-homogeneous combinations lie in the piece of their residue. -/
+theorem gradeBy_le_gradeBy_comp {D' : Type*} {d : S → D} (f : D → D') (k : D) :
+    gradeBy R F d k ≤ gradeBy R F (f ∘ d) (f k) :=
+  fun _ ha => mem_gradeBy_iff.2 fun s hs => congrArg f (mem_gradeBy_iff.1 ha s hs)
 
 section Coordinates
 
@@ -220,6 +227,22 @@ theorem kernelProduct_mem_gradeBy
   rw [hd p₁ p₂ p₀ (right_ne_zero_of_mul hp),
     ha p₁ (left_ne_zero_of_mul (left_ne_zero_of_mul hp)),
     hb p₂ (right_ne_zero_of_mul (left_ne_zero_of_mul hp))]
+
+omit [Add D] in
+/-- On a homogeneous first input of degree `k`, the product only depends on the kernel at
+generators of degree `k`. The two potential bounds may have different constants. -/
+theorem kernelProduct_congr_of_mem_gradeBy {C' : ℝ} {n' : S₁ → S₂ → S₀ → R}
+    (hn' : ∀ p₁ p₂ p₀, n' p₁ p₂ p₀ ≠ 0 → F₀ p₀ ≤ F₁ p₁ + F₂ p₂ + C')
+    (hfin' : ∀ p₁ p₂, n' p₁ p₂ ∈ NovikovModule R F₀) {k : D}
+    (h : ∀ p₁, d₁ p₁ = k → n p₁ = n' p₁) {a : NovikovModule R F₁}
+    (ha : a ∈ gradeBy R F₁ d₁ k) (b : NovikovModule R F₂) :
+    kernelProduct hn hfin a b = kernelProduct hn' hfin' a b := by
+  ext p₀
+  simp only [kernelProduct_apply_val]
+  refine finsum_congr fun q => ?_
+  by_cases hq : a.val q.1 = 0
+  · simp [hq]
+  · rw [h q.1 (mem_gradeBy_iff.1 ha q.1 hq)]
 
 end Kernel
 

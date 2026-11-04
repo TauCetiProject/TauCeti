@@ -42,6 +42,8 @@ basis is the restriction of `a` to `K`, so the trace of `a` is `[H : K]` times t
 
 * `TauCeti.NovikovSeries.cosetBasis_apply` and `TauCeti.NovikovSeries.coeff_cosetBasis_repr`:
   the basis vectors and the coefficients of the coordinates.
+* `TauCeti.NovikovSeries.finite_support_iff_forall_finite_support_cosetBasis_repr`: a series has
+  finite support exactly when its coordinates do.
 * `TauCeti.NovikovSeries.finrank_eq_index`: over a nontrivial commutative ring, the rank of
   `Nov(R, H, N)` over `Nov(R, K, N|K)` is the index `[H : K]`.
 * `TauCeti.NovikovSeries.trace_eq_index_smul_comap`: the trace of `a` is `[H : K]` times the
@@ -161,6 +163,19 @@ theorem coeff_cosetBasis_repr (a : NovikovSeries R H N) (q : H ⧸ K) (k : K) :
     ((cosetBasis K s hs).repr a q).coeff k = a.coeff (s q + k) := by
   rw [cosetBasis, Module.Basis.ofEquivFun_repr_apply, cosetEquiv_apply,
     coeff_comap_subtype_single_neg_mul]
+
+/-- A series has finite support exactly when each of its coordinates in `cosetBasis` has finite
+support. -/
+theorem finite_support_iff_forall_finite_support_cosetBasis_repr (a : NovikovSeries R H N) :
+    a.support.Finite ↔ ∀ q, ((cosetBasis K s hs).repr a q).support.Finite := by
+  refine ⟨fun ha q => ?_, fun ha => ?_⟩
+  · refine (ha.preimage (f := fun k : K => s q + k)
+      fun k _ k' _ hkk' => Subtype.ext (add_left_cancel hkk')).subset fun k hk => ?_
+    rwa [Set.mem_preimage, mem_support, ← coeff_cosetBasis_repr K s hs, ← mem_support]
+  · refine (Set.finite_iUnion fun q => (ha q).image fun k : K => s q + k).subset fun h hh => ?_
+    have hK : -s h + h ∈ K := QuotientAddGroup.eq.1 (hs h)
+    refine Set.mem_iUnion.2 ⟨h, ⟨-s h + h, hK⟩, ?_, add_neg_cancel_left _ _⟩
+    rwa [mem_support, coeff_cosetBasis_repr, add_neg_cancel_left, ← mem_support]
 
 /-- In the monomial coset basis, multiplication by `a` has coefficient
 `a.coeff (s i + k - s j)` in row `i`, column `j`, at exponent `k ∈ K`. -/

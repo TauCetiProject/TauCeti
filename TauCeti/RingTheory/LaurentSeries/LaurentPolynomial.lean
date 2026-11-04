@@ -48,6 +48,7 @@ polynomials.
 * `LaurentPolynomial.toLaurentSeries_derivative`: the inclusion commutes with differentiation.
 * `LaurentSeries.finite_support_truncLT`: strict truncation of a Laurent series has finite support.
 * `LaurentSeries.trunc`: truncation of a Laurent series above a given integer exponent.
+* `LaurentSeries.trunc_eq_sum_Ico`: the finite monomial expansion of a truncation.
 * `LaurentSeries.tendsto_toLaurentSeries_trunc`: the truncations converge to the original series.
 * `LaurentPolynomial.denseRange_toLaurentSeries`: Laurent polynomials are dense in Laurent series.
 * `LaurentSeries.valuation_sub_toLaurentSeries_trunc_le`: the valuation bound on truncation errors.
@@ -251,6 +252,21 @@ theorem toLaurentSeries_trunc (N : ℤ) (f : R⸨X⸩) :
   ext n
   simp only [LaurentPolynomial.coeff_toLaurentSeries, coeff_trunc,
     HahnSeries.coeff_truncLT]
+
+/-- A Laurent truncation is the finite sum of its monomials between the order of the series
+and the cutoff. This also holds when the cutoff lies below the order, giving an empty sum. -/
+theorem trunc_eq_sum_Ico (N : ℤ) (f : R⸨X⸩) :
+    trunc N f = ∑ j ∈ Finset.Ico f.order N, AddMonoidAlgebra.single j (f.coeff j) := by
+  classical
+  ext n
+  rw [coeff_trunc, AddMonoidAlgebra.coeff_sum, Finset.sum_apply']
+  simp only [AddMonoidAlgebra.coeff_single, Finsupp.single_apply, Finset.sum_ite_eq',
+    Finset.mem_Ico]
+  by_cases hn : n < N
+  · by_cases hl : f.order ≤ n
+    · simp [hn, hl]
+    · simp [HahnSeries.coeff_eq_zero_of_lt_order (lt_of_not_ge hl)]
+  · simp [hn]
 
 section Ring
 

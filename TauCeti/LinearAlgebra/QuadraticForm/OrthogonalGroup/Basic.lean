@@ -308,7 +308,7 @@ theorem coe_orthogonalGroupCongr_apply (e : Q₁.IsometryEquiv Q₂) (f : orthog
 theorem coe_orthogonalGroupCongr_symm_apply (e : Q₁.IsometryEquiv Q₂) (g : orthogonalGroup Q₂)
     (m : M₁) : ((e.orthogonalGroupCongr).symm g : M₁ ≃ₗ[R] M₁) m
       = e.toLinearEquiv.symm ((g : M₂ ≃ₗ[R] M₂) (e.toLinearEquiv m)) := by
-  simp [orthogonalGroupCongr, TauCeti.Subgroup.coe_congrOfMapEq_symm_apply,
+  simp only [orthogonalGroupCongr, TauCeti.Subgroup.coe_congrOfMapEq_symm_apply,
     LinearEquiv.autCongr_symm_apply_apply]
 
 /-- Transporting the orthogonal group along the identity isometry is the identity equivalence. -/
@@ -1082,7 +1082,7 @@ theorem mul_reflectionOrthogonal_mul_inv (Q : QuadraticForm R M) (g : orthogonal
   let e := orthogonalGroupEquivIsometryEquiv Q g
   have hv : e v = (g : M ≃ₗ[R] M) v := congrFun (coe_orthogonalGroupEquivIsometryEquiv Q g) v
   simp only [Subgroup.coe_mul, Subgroup.coe_inv, coe_reflectionOrthogonal,
-    LinearEquiv.mul_apply, LinearEquiv.coe_inv]
+    mul_apply_eq_comp, LinearEquiv.coe_inv]
   -- Generalize over the `Invertible` instance so that `g v` can be rewritten to `e v` under it.
   revert ‹Invertible (Q ((g : M ≃ₗ[R] M) v))›
   rw [← hv]
@@ -1361,8 +1361,9 @@ theorem exists_reflectionOrthogonal_list_prod_mul_eqOn_sup_span_singleton
       (hrx : (r : V ≃ₗ[K] V) ((g : V ≃ₗ[K] V) x) = x) :
       ∀ y ∈ W ⊔ Submodule.span K {x},
         ((r * g : QuadraticMap.orthogonalGroup Q) : V ≃ₗ[K] V) y = y :=
-    ((r * g : QuadraticMap.orthogonalGroup Q).1.toLinearMap).eqOn_sup_span_singleton
-      (g := LinearMap.id) (fun w hw => by simp [hfix w hw, hr w hw]) (by simpa using hrx)
+    (LinearMap.eqOn_sup_span_singleton_iff
+      (f := (r * g : QuadraticMap.orthogonalGroup Q).1.toLinearMap) (g := LinearMap.id)).2
+      ⟨fun w hw => by simp [hfix w hw, hr w hw], by simpa using hrx⟩
   rcases QuadraticMap.isUnit_sub_or_add_of_map_eq Q _ x hmap
       (isUnit_of_invertible (Q x)).ne_zero with hsubUnit | haddUnit
   · -- One reflection, in `g x - x`.
@@ -1382,7 +1383,7 @@ theorem exists_reflectionOrthogonal_list_prod_mul_eqOn_sup_span_singleton
       rintro r (rfl | rfl) <;> exact ⟨_, inferInstance, rfl⟩
     · rw [List.prod_cons, List.prod_singleton]
       refine key _ (fun w hw => ?_) ?_ <;>
-        rw [Subgroup.coe_mul, LinearEquiv.mul_apply, QuadraticMap.coe_reflectionOrthogonal,
+        rw [Subgroup.coe_mul, mul_apply_eq_comp, QuadraticMap.coe_reflectionOrthogonal,
           QuadraticMap.coe_reflectionOrthogonal]
       · rw [QuadraticMap.reflection_apply_of_polar_eq_zero Q ((g : V ≃ₗ[K] V) x + x) (by
             rw [QuadraticMap.polar_add_left, hgx w hw, (hx w hw).polar_eq_zero, add_zero]),

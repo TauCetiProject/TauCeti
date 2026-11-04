@@ -23,6 +23,8 @@ a subset of Euclidean space with corners.
 
 * `TauCeti.ContMDiffOnSubset`: `f : s → M` is `C^n` in the sense of maps on arbitrary subsets.
 * `TauCeti.ContMDiffOnSubset.continuous`: such a map is continuous.
+* `TauCeti.ContMDiffOnSubset.contMDiffOn`: every ambient map agreeing with it on `s` is `C^n`
+  within `s`.
 * `ContMDiffOn.contMDiffOnSubset`: the restriction of a map that is `C^n` on a neighbourhood of `s`.
 * `TauCeti.ContMDiffOnSubset.comp_contDiff`: precomposition with a `C^n` map of normed spaces.
 * `ContMDiff.comp_contMDiffOnSubset`: postcomposition with a `C^n` map of manifolds.
@@ -74,6 +76,17 @@ theorem of_le (hf : ContMDiffOnSubset I n f) (hmn : m ≤ n) : ContMDiffOnSubset
   intro x
   obtain ⟨U, hU, g, hg, hgf⟩ := hf x
   exact ⟨U, hU, g, hg.of_le hmn, hgf⟩
+
+/-- Every map on the ambient space that agrees on `s` with a map that is `C^n` on `s`, in the sense
+of maps on arbitrary subsets, is `C^n` within `s` at each point of `s`. -/
+theorem contMDiffOn (hf : ContMDiffOnSubset I n f) {g : E → M} (hg : ∀ x : s, g x = f x) :
+    ContMDiffOn 𝓘(𝕜, E) I n g s := by
+  intro x hx
+  obtain ⟨U, hU, g', hg', hgf⟩ := hf ⟨x, hx⟩
+  refine ((hg'.contMDiffAt hU).contMDiffWithinAt (s := s)).congr_of_eventuallyEq ?_
+    ((hg ⟨x, hx⟩).trans (hgf ⟨x, hx⟩ (mem_of_mem_nhds hU)).symm)
+  filter_upwards [self_mem_nhdsWithin, mem_nhdsWithin_of_mem_nhds hU] with y hys hyU
+  exact (hg ⟨y, hys⟩).trans (hgf ⟨y, hys⟩ hyU).symm
 
 /-- Precomposing a map that is `C^n` on `t` with a `C^n` map of normed spaces sending `s` into
 `t` gives a map that is `C^n` on `s`. -/

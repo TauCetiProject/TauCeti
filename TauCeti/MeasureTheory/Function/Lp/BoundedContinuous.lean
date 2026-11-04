@@ -8,8 +8,9 @@ module
 public import Mathlib.MeasureTheory.Function.LpOrder
 public import Mathlib.MeasureTheory.Function.LpSeminorm.LpNorm
 public import Mathlib.MeasureTheory.Function.LpSpace.ContinuousFunctions
-public import Mathlib.MeasureTheory.Measure.OpenPos
 public import TauCeti.MeasureTheory.Function.Lp.One
+public import TauCeti.MeasureTheory.Measure.OpenPos
+import TauCeti.MeasureTheory.Function.Lp.Norm
 
 /-!
 # Bounded continuous functions in `L∞`
@@ -26,10 +27,17 @@ function one to the constant class `TauCeti.linftyOne`. This is the comparison b
 supremum and essential-supremum norms used, for instance, to compare means on bounded
 uniformly continuous functions on a locally compact group with means on Haar `L∞`.
 
+On a discrete space, if `μ` charges every point, the only null set is empty, so every
+essentially bounded function is bounded and `toLpTop` is onto: it identifies bounded functions
+with `L∞` as normed spaces and, for real values, as ordered spaces. For instance, `L∞` of a
+counting measure, or of a Haar measure on a discrete group, consists of all bounded functions.
+
 ## Main definitions
 
 * `BoundedContinuousFunction.toLpTop μ 𝕜`: the class of a bounded continuous function in
   `Lp E ∞ μ`, as a continuous linear map.
+* `BoundedContinuousFunction.toLpTopLinearIsometryEquiv μ 𝕜`: on a discrete space, for a
+  measure charging every point, `toLpTop` as a linear isometry equivalence.
 
 ## Main results
 
@@ -40,6 +48,8 @@ uniformly continuous functions on a locally compact group with means on Haar `L�
 * `BoundedContinuousFunction.norm_toLpTop`: `‖[f]‖ = ‖f‖` when `μ` is positive on open sets.
 * `BoundedContinuousFunction.toLpTop_le_toLpTop_iff`: for such `μ`, the map is an order
   embedding on real-valued functions.
+* `BoundedContinuousFunction.toLpTop_surjective`: on a discrete space, for a measure charging
+  every point, every class in `L∞` is the class of a bounded function.
 * `BoundedContinuousFunction.toLpTop_one`: the constant function one goes to the constant one.
 -/
 
@@ -63,8 +73,7 @@ theorem mem_Lp_top (f : α →ᵇ E) : f.toContinuousMap.toAEEqFun μ ∈ Lp E �
 
 private theorem norm_toAEEqFun_le (f : α →ᵇ E) :
     ‖(⟨f.toContinuousMap.toAEEqFun μ, mem_Lp_top μ f⟩ : Lp E ∞ μ)‖ ≤ ‖f‖ := by
-  rw [Lp.norm_def, eLpNorm_exponent_top (Lp.aestronglyMeasurable _)]
-  refine ENNReal.toReal_le_of_le_ofReal (norm_nonneg f) (eLpNormEssSup_le_of_ae_bound ?_)
+  refine Lp.norm_top_le_of_ae_bound (norm_nonneg f) ?_
   filter_upwards [f.toContinuousMap.coeFn_toAEEqFun μ] with x hx
   exact hx ▸ f.norm_coe_le_norm x
 
@@ -102,8 +111,7 @@ function is its supremum norm. -/
 @[simp]
 theorem norm_toLpTop (f : α →ᵇ E) : ‖toLpTop μ 𝕜 f‖ = ‖f‖ := by
   refine (norm_toLpTop_le μ f).antisymm ((norm_le (norm_nonneg _)).2 fun x => ?_)
-  have h := ae_le_lpNorm_exponent_top (Lp.memLp (toLpTop μ 𝕜 f))
-  rw [← toReal_eLpNorm, ← Lp.norm_def] at h
+  have h := Lp.ae_norm_le_norm_top (toLpTop μ 𝕜 f)
   have hae : ∀ᵐ x ∂μ, ‖f x‖ ≤ ‖toLpTop μ 𝕜 f‖ := by
     filter_upwards [coeFn_toLpTop μ (𝕜 := 𝕜) f, h] with x hx h
     exact hx ▸ h
@@ -117,6 +125,52 @@ theorem toLpTop_injective : Function.Injective (toLpTop μ 𝕜 : (α →ᵇ E) 
   fun f g h => by
     rw [← sub_eq_zero, ← norm_eq_zero, ← norm_toLpTop μ (𝕜 := 𝕜), map_sub, h, sub_self,
       norm_zero]
+
+section Discrete
+
+variable [DiscreteTopology α]
+
+/-- On a discrete space, if `μ` charges every point, every class in `L∞` is the class of a
+bounded function. -/
+theorem toLpTop_surjective :
+    Function.Surjective (toLpTop μ 𝕜 : (α →ᵇ E) →L[𝕜] Lp E ∞ μ) := by
+  intro φ
+  have h := ae_le_lpNorm_exponent_top (Lp.memLp φ)
+  rw [ae_eq_top_of_discreteTopology, eventually_top] at h
+  exact ⟨ofNormedAddCommGroupDiscrete φ _ h, Lp.ext (coeFn_toLpTop μ _)⟩
+
+variable (𝕜) in
+/-- On a discrete space, if `μ` charges every point, taking classes identifies bounded functions
+with `L∞`, isometrically. -/
+def toLpTopLinearIsometryEquiv : (α →ᵇ E) ≃ₗᵢ[𝕜] Lp E ∞ μ :=
+  LinearIsometryEquiv.ofSurjective ⟨(toLpTop μ 𝕜).toLinearMap, norm_toLpTop μ⟩
+    (toLpTop_surjective μ)
+
+@[simp]
+theorem coe_toLpTopLinearIsometryEquiv :
+    ⇑(toLpTopLinearIsometryEquiv μ 𝕜 : (α →ᵇ E) ≃ₗᵢ[𝕜] Lp E ∞ μ) = toLpTop μ 𝕜 :=
+  (rfl)
+
+@[simp]
+theorem toLpTop_toLpTopLinearIsometryEquiv_symm (φ : Lp E ∞ μ) :
+    toLpTop μ 𝕜 ((toLpTopLinearIsometryEquiv μ 𝕜).symm φ) = φ :=
+  (toLpTopLinearIsometryEquiv μ 𝕜).apply_symm_apply φ
+
+/-- The bounded function representing a class in `L∞` is its coercion to a function. -/
+@[simp]
+theorem coe_toLpTopLinearIsometryEquiv_symm (φ : Lp E ∞ μ) :
+    ⇑((toLpTopLinearIsometryEquiv μ 𝕜).symm φ) = ⇑φ := by
+  have h := coeFn_toLpTop μ (𝕜 := 𝕜) ((toLpTopLinearIsometryEquiv μ 𝕜).symm φ)
+  rw [toLpTop_toLpTopLinearIsometryEquiv_symm, Filter.EventuallyEq,
+    ae_eq_top_of_discreteTopology, eventually_top] at h
+  exact funext fun x => (h x).symm
+
+@[simp]
+theorem toLpTopLinearIsometryEquiv_symm_toLpTop (f : α →ᵇ E) :
+    (toLpTopLinearIsometryEquiv μ 𝕜).symm (toLpTop μ 𝕜 f) = f :=
+  (toLpTopLinearIsometryEquiv μ 𝕜).symm_apply_apply f
+
+end Discrete
 
 end BoundedContinuousFunction
 
@@ -146,9 +200,25 @@ theorem toLpTop_le_toLpTop_iff [μ.IsOpenPosMeasure] {f g : α →ᵇ ℝ} :
     exact hf ▸ hg ▸ hfg
   exact Set.eq_univ_iff_forall.1 (hclosed.ae_eq_univ_iff_eq.1 (ae_eq_univ.2 hae)) x
 
+/-- On a discrete space, if `μ` charges every point, the inverse identification of `L∞` with
+bounded functions preserves and reflects the order. -/
+@[simp]
+theorem toLpTopLinearIsometryEquiv_symm_le_symm_iff [DiscreteTopology α] [μ.IsOpenPosMeasure]
+    {φ ψ : Lp ℝ ∞ μ} :
+    (toLpTopLinearIsometryEquiv μ ℝ).symm φ ≤ (toLpTopLinearIsometryEquiv μ ℝ).symm ψ ↔ φ ≤ ψ := by
+  rw [← toLpTop_le_toLpTop_iff μ, toLpTop_toLpTopLinearIsometryEquiv_symm,
+    toLpTop_toLpTopLinearIsometryEquiv_symm]
+
 /-- The constant function one goes to the constant class one in `L∞`. -/
 @[simp]
 theorem toLpTop_one : toLpTop μ ℝ (1 : α →ᵇ ℝ) = TauCeti.linftyOne :=
   Lp.ext ((coeFn_toLpTop μ 1).trans TauCeti.coeFn_linftyOne.symm)
+
+/-- On a discrete space, if `μ` charges every point, the constant class one in `L∞` is
+represented by the constant function one. -/
+@[simp]
+theorem toLpTopLinearIsometryEquiv_symm_linftyOne [DiscreteTopology α] [μ.IsOpenPosMeasure] :
+    (toLpTopLinearIsometryEquiv μ ℝ).symm TauCeti.linftyOne = (1 : α →ᵇ ℝ) := by
+  rw [LinearIsometryEquiv.symm_apply_eq, coe_toLpTopLinearIsometryEquiv, toLpTop_one]
 
 end BoundedContinuousFunction

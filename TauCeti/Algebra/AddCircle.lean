@@ -222,7 +222,7 @@ theorem eq_zero_or_eq_coe_period_div_two (h2 : (2 : 𝕜) ≠ 0) {u : AddCircle 
 
 /-- The `n`-torsion of `AddCircle p` is cyclic whenever `n` is nonzero in `𝕜`. -/
 theorem isAddCyclic_torsionBy (hn : (n : 𝕜) ≠ 0) : IsAddCyclic ((AddCircle p)[(n : ℤ)]) :=
-  (AddSubgroup.isAddCyclic_iff_exists_zmultiples_eq_top _).mpr
+  (AddSubgroup.isAddCyclic_iff_exists_zmultiples_eq _).mpr
     ⟨_, (torsionBy_eq_zmultiples p hn).symm⟩
 
 /-- A subgroup of `AddCircle p` with `n` elements is the `n`-torsion, whenever `n` is nonzero in

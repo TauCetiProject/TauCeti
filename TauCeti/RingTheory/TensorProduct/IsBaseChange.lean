@@ -23,7 +23,7 @@ base changed and the tensor product stays over the base ring.
 
 If `f : M →ₗ[R] N` exhibits `N` as the base change of `M` along `R → S`, then the `S`-linear map
 `S ⊗[R] M →ₗ[S] N` it induces, Mathlib's `LinearMap.liftBaseChange`, is bijective: it is the
-equivalence `IsBaseChange.equiv`.
+equivalence `IsBaseChange.equiv`. Conversely, this bijectivity characterizes base changes.
 The original map `f` is also injective whenever the scalar-unit map `m ↦ 1 ⊗ m` is injective.
 
 Base change of linear maps is compatible with the induced maps `S ⊗[R] M →ₗ[S] N`: a commutative
@@ -39,6 +39,8 @@ the localized semiring, without requiring its image to span the target.
   product.
 * `IsBaseChange.liftBaseChange_bijective`, `IsBaseChange.liftBaseChange_injective`: the map
   `S ⊗[R] M →ₗ[S] N` induced by a base change is bijective, in particular injective.
+* `IsBaseChange.iff_liftBaseChange_bijective`: conversely, bijectivity of the induced map
+  characterizes base changes.
 * `IsBaseChange.injective_of_tensorProduct_mk_injective`: a base-change map is injective when
   the scalar-unit map `M → S ⊗[R] M` is injective.
 * `LinearMap.liftBaseChange_comp_baseChange`: naturality of the induced map `S ⊗[R] M → N`.
@@ -78,6 +80,13 @@ theorem IsBaseChange.liftBaseChange_bijective {f : M →ₗ[R] N} (hf : IsBaseCh
     simp [IsBaseChange.equiv_tmul]
   rw [this]
   exact hf.equiv.bijective
+
+/-- A linear map `f` exhibits `N` as the base change of `M` along `R → S` exactly when the induced
+`S`-linear map `f.liftBaseChange S : S ⊗[R] M →ₗ[S] N` is bijective. -/
+theorem IsBaseChange.iff_liftBaseChange_bijective {f : M →ₗ[R] N} :
+    IsBaseChange S f ↔ Function.Bijective (f.liftBaseChange S) :=
+  ⟨IsBaseChange.liftBaseChange_bijective, fun h ↦
+    IsBaseChange.of_equiv (LinearEquiv.ofBijective _ h) fun x ↦ by simp⟩
 
 /-- If `f` exhibits `N` as the base change of `M` along `R → S`, then the induced `S`-linear map
 `f.liftBaseChange S : S ⊗[R] M →ₗ[S] N` is injective, since it is the equivalence `hf.equiv`. -/

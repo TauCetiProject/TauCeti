@@ -77,6 +77,23 @@ theorem apply_tmul_tprod_eq_unsuspend (GA : InternalGrading R A) (GM : InternalG
         (fun k ↦ GB.koszulTwist ((j : ℤ) - 1 - k) (b k)) := by
   simp only [unsuspend_apply, InternalGrading.koszulTwist_koszulTwist]
 
+/-- Two-sided unsuspension determines the original linear map. -/
+theorem unsuspend_injective (GA : InternalGrading R A) (GM : InternalGrading R M)
+    (GB : InternalGrading R B) (i j : ℕ) :
+    Function.Injective (unsuspend (N := N) GA GM GB i j) := by
+  intro F H h
+  apply TensorProduct.ext_threefold
+  intro w x v
+  induction w using PiTensorProduct.induction_on with
+  | smul_tprod r a =>
+    induction v using PiTensorProduct.induction_on with
+    | smul_tprod s b =>
+      simp only [TensorProduct.smul_tmul, TensorProduct.tmul_smul, map_smul]
+      rw [apply_tmul_tprod_eq_unsuspend GA GM GB i j,
+        apply_tmul_tprod_eq_unsuspend GA GM GB i j, h]
+    | add v w hv hw => simp only [TensorProduct.tmul_add, map_add, hv, hw]
+  | add v w hv hw => simp only [TensorProduct.add_tmul, map_add, hv, hw]
+
 /-- On homogeneous inputs, a map is its unsuspension multiplied by the suspension sign. -/
 theorem apply_tmul_tprod_of_mem (GA : InternalGrading R A) (GM : InternalGrading R M)
     (GB : InternalGrading R B) (i j : ℕ)

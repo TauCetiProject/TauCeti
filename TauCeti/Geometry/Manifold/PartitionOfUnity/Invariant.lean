@@ -10,7 +10,7 @@ public import Mathlib.Geometry.Manifold.PartitionOfUnity
 public import TauCeti.Topology.Algebra.GroupAction.Cutoff
 import Mathlib.Geometry.Manifold.Algebra.Structures
 import TauCeti.Geometry.Manifold.GroupAction.Cutoff
-import TauCeti.Topology.LocallyFinite
+import TauCeti.Topology.LocallyFinite.Basic
 
 /-!
 # Invariant smooth partitions of unity

@@ -208,6 +208,22 @@ theorem IsRegularPoint.mdifferentiableAt {g : M → E'} (h : IsRegularPoint I �
   exact hg ((mdifferentiableAt_const (c := g x)).congr_of_eventuallyEq
     (Filter.Eventually.of_forall fun _ ↦ Subsingleton.elim _ _))
 
+section Composition
+
+variable {E'' : Type*} [NormedAddCommGroup E''] [NormedSpace 𝕜 E'']
+  {H'' : Type*} [TopologicalSpace H''] {K : ModelWithCorners 𝕜 E'' H''}
+  {P : Type*} [TopologicalSpace P] [ChartedSpace H'' P] {g : P → M} {p : P}
+
+/-- A composite is regular at a point if both maps are differentiable and regular at the
+corresponding points. -/
+theorem IsRegularPoint.comp (hf : IsRegularPoint I J f (g p))
+    (hg : IsRegularPoint K I g p) (hfd : MDifferentiableAt I J f (g p))
+    (hgd : MDifferentiableAt K I g p) : IsRegularPoint K J (f ∘ g) p := by
+  rw [isRegularPoint_iff, mfderiv_comp p hfd hgd]
+  exact (isRegularPoint_iff.1 hf).comp (isRegularPoint_iff.1 hg)
+
+end Composition
+
 section Level
 
 variable {E'' : Type*} [NormedAddCommGroup E''] [NormedSpace 𝕜 E'']

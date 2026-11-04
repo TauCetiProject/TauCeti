@@ -141,8 +141,15 @@ private lemma affineE8_weights_intersections (l : Fin 9 → T.Component)
     erw [AffineDynkinType.cartanMatrix_apply AffineDynkinType.isGraphical_E8 i j]
     rw [hw0]
     fin_cases i <;> fin_cases j <;>
-      simp! [hc0, hc1, hc2, hc3, hc4, hc5, hc6, hc7,
-        hentry, hbentry, T.intersection_comm (l 1), hself 1, hwb]
+      simp! only [Fin.zero_eta, Fin.isValue, hc5, Nat.reduceLT, hentry, ↓reduceIte,
+        AffineDynkinType.nodes_E8, neg_mul, neg_inj, Fin.mk_one, hbentry, zero_ne_one,
+        Int.reduceNeg, mul_ite, mul_neg, mul_one, neg_neg, mul_zero, left_eq_ite_iff,
+        Int.natCast_eq_zero, PNat.ne_zero, imp_false, Decidable.not_not, Fin.reduceFinMk, hc6,
+        Nat.reduceEqDiff, Nat.reduceAdd, or_false, Fin.reduceEq, hc7, Nat.lt_add_one, or_self,
+        right_eq_ite_iff, hc4, Nat.succ_ne_self, or_true, hc3, hc2, hc1, Nat.one_lt_ofNat,
+        OfNat.ofNat_ne_one, hc0, Nat.ofNat_pos, OfNat.ofNat_ne_zero, zero_add,
+        OfNat.one_ne_ofNat, T.intersection_comm (l 1), one_ne_zero, hself 1, hwb,
+        OfNat.zero_ne_ofNat]
     all_goals first
       | (erw [AffineDynkinType.graph_E8_adj]; norm_num)
       | ring

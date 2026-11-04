@@ -78,11 +78,9 @@ theorem leibnizPart_one_add_leibnizPart_neg_one (M : Matrix n n R) :
 @[simp]
 theorem leibnizPart_submatrix_left (M : Matrix n n R) (ρ : Perm n) (s : ℤˣ) :
     (M.submatrix ρ id).leibnizPart s = M.leibnizPart (sign ρ * s) := by
-  rw [leibnizPart_eq_sum_ite, leibnizPart_eq_sum_ite, ← Equiv.sum_comp (Equiv.mulLeft ρ⁻¹)]
-  refine sum_congr rfl fun σ _ ↦ ?_
-  have hsign : sign ρ * sign σ = s ↔ sign σ = sign ρ * s := by
-    rcases Int.units_eq_one_or (sign ρ) with h | h <;> simp [h, neg_eq_iff_eq_neg]
-  simp [hsign]
+  rw [leibnizPart_eq_sum_ite, leibnizPart_eq_sum_ite, eq_comm,
+    ← Equiv.sum_comp (Equiv.mulLeft ρ)]
+  simp
 
 /-- A Leibniz part is unchanged by transposition. -/
 @[simp]
@@ -105,7 +103,6 @@ rows. -/
 theorem leibnizPart_one_mul_leibnizPart_neg_one_submatrix_left (M : Matrix n n R) (ρ : Perm n) :
     (M.submatrix ρ id).leibnizPart 1 * (M.submatrix ρ id).leibnizPart (-1) =
       M.leibnizPart 1 * M.leibnizPart (-1) := by
-  rw [leibnizPart_submatrix_left, leibnizPart_submatrix_left]
   rcases Int.units_eq_one_or (sign ρ) with h | h <;> simp [h, mul_comm]
 
 /-- The product of the even and the odd Leibniz parts is invariant under permutations of the
@@ -113,7 +110,6 @@ columns. -/
 theorem leibnizPart_one_mul_leibnizPart_neg_one_submatrix_right (M : Matrix n n R) (ρ : Perm n) :
     (M.submatrix id ρ).leibnizPart 1 * (M.submatrix id ρ).leibnizPart (-1) =
       M.leibnizPart 1 * M.leibnizPart (-1) := by
-  rw [leibnizPart_submatrix_right, leibnizPart_submatrix_right]
   rcases Int.units_eq_one_or (sign ρ) with h | h <;> simp [h, mul_comm]
 
 /-- A ring homomorphism carries a Leibniz part of `M` to the Leibniz part of the mapped matrix. -/

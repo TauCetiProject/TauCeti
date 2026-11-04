@@ -35,12 +35,26 @@ norm at most one.
 The proof first tests against smooth cutoffs equal to one on a compact set `K` and supported in
 shrinking neighbourhoods of `K`, which gives `|∫_K h| ≤ ∫⁻_K k`. Inner regularity
 (`TauCeti.enorm_setIntegral_le_of_forall_isClosed_subset`) extends this to measurable subsets of a
-compact set, and the scalar case follows by comparing set integrals. The
-vector case tests the scalar components `⟪h, w⟫` for `w` in a countable dense subset of `F`.
+compact set, and the scalar case follows by comparing set integrals.
+
+The vector case is proved more generally for a density `h : Ω → StrongDual ℝ F` with values in the
+normed dual of a separable real normed space, paired with test vector fields by evaluation,
+`x ↦ h x (φ x)`, and bounded in the dual norm: it tests the scalar components `x ↦ h x w` for `w`
+in a countable dense subset of `F`. This is the form needed for currents, whose densities with
+respect to their mass measures take values in the dual of the space of forms with its comass norm.
+The inner product statement is its special case through `innerSL`.
+
+The same scalar argument, with `k` the positive part of `h`, shows that a scalar density whose
+pairings with nonnegative test functions are nonnegative is itself nonnegative almost everywhere
+(`TauCeti.ae_nonneg_of_forall_integral_mul_nonneg`).
 
 ## Main declarations
 
-* `TauCeti.ae_enorm_le_of_forall_enorm_integral_inner_le`: the pointwise bound `‖h‖ ≤ k`.
+* `TauCeti.ae_enorm_le_of_forall_enorm_integral_apply_le`: the pointwise bound `‖h‖ ≤ k` in the
+  dual norm.
+* `TauCeti.ae_enorm_le_of_forall_enorm_integral_inner_le`: the pointwise bound `‖h‖ ≤ k` for an
+  inner product space.
+* `TauCeti.ae_nonneg_of_forall_integral_mul_nonneg`: nonnegativity from nonnegative pairings.
 
 ## References
 
@@ -174,23 +188,72 @@ private theorem ae_enorm_le_of_forall_nonneg (hh : LocallyIntegrable h ρ) (hkm 
   · simp only [Pi.sub_apply, Pi.zero_apply] at h₁
     linarith
 
-variable {F : Type*} [NormedAddCommGroup F] [InnerProductSpace ℝ F] [SeparableSpace F]
+/-- **A density with nonnegative pairings is nonnegative.** If `h : Ω → ℝ` is locally integrable
+for a measure `ρ` on `Ω` and `0 ≤ ∫ ψ x * h x ∂ρ` for every nonnegative test function `ψ` on `Ω`,
+then `0 ≤ h x` for `ρ`-almost every `x`. -/
+theorem ae_nonneg_of_forall_integral_mul_nonneg (hh : LocallyIntegrable h ρ)
+    (H : ∀ ψ : 𝓓(Ω, ℝ), (∀ x, 0 ≤ ψ x) → 0 ≤ ∫ x, ψ x * h x ∂ρ) :
+    ∀ᵐ x ∂ρ, 0 ≤ h x := by
+  have := Ω.isOpen.locallyCompactSpace
+  -- Bound `|h|` by the positive part of a measurable representative `g` of `h`.
+  set g := hh.aestronglyMeasurable.mk h
+  have hg : h =ᵐ[ρ] g := hh.aestronglyMeasurable.ae_eq_mk
+  have hgm : Measurable g := hh.aestronglyMeasurable.stronglyMeasurable_mk.measurable
+  have hle : ∀ᵐ x ∂ρ, ‖h x‖ₑ ≤ ENNReal.ofReal (g x) := by
+    refine ae_enorm_le_of_forall_nonneg hh (ENNReal.measurable_ofReal.comp hgm)
+      (fun K hK => ne_top_of_le_ne_top ((hh.congr hg).integrableOn_isCompact hK).2.ne
+        (lintegral_mono fun x => ?_)) fun ψ hψ0 hψ1 W hW hψW => ?_
+    · rw [Real.enorm_eq_ofReal_abs]
+      exact ENNReal.ofReal_le_ofReal (le_abs_self _)
+    have hψ (x : Ω) (hx : x ∉ W) : ψ x = 0 := image_eq_zero_of_notMem_tsupport fun hx' => hx <| by
+      obtain ⟨y, hy, hyx⟩ := hψW hx'
+      rwa [← Subtype.val_injective hyx]
+    -- `ψ h ≤ (h⁺ on W)`, and the integral of a function is at most that of its positive part.
+    have hpt : ∀ᵐ x : Ω ∂ρ,
+        ENNReal.ofReal (ψ x * h x) ≤ W.indicator (fun x => ENNReal.ofReal (g x)) x := by
+      filter_upwards [hg] with x hx
+      by_cases hxW : x ∈ W
+      · rw [indicator_of_mem hxW, ← hx]
+        refine ENNReal.ofReal_le_ofReal_iff'.2 ?_
+        rcases le_or_gt (h x) 0 with h0 | h0
+        · exact Or.inr (mul_nonpos_of_nonneg_of_nonpos (hψ0 x) h0)
+        · exact Or.inl (mul_le_of_le_one_left h0.le (hψ1 x))
+      · simp [hψ x hxW]
+    rw [Real.enorm_eq_ofReal_abs, abs_of_nonneg (H ψ hψ0), ← lintegral_indicator hW.measurableSet]
+    refine le_trans ?_ (lintegral_mono_ae hpt)
+    by_cases hint : Integrable (fun x : Ω => ψ x * h x) ρ
+    · rw [integral_eq_lintegral_pos_part_sub_lintegral_neg_part hint]
+      exact (ENNReal.ofReal_le_ofReal (sub_le_self _ ENNReal.toReal_nonneg)).trans
+        ENNReal.ofReal_toReal_le
+    · simp [integral_undef hint]
+  filter_upwards [hle, hg] with x hx hxg
+  rw [← hxg, Real.enorm_eq_ofReal_abs] at hx
+  rcases ENNReal.ofReal_le_ofReal_iff'.1 hx with h' | h'
+  · exact (abs_nonneg _).trans h'
+  · exact (abs_nonpos_iff.1 h').ge
 
-/-- **A density bounded on test vector fields is pointwise bounded.** Let `h : Ω → F` be locally
-integrable for a measure `ρ` on `Ω`, and let `k` be a measurable weight with finite integral over
-every compact subset of `Ω`. If for every open `U ⊆ Ω` and every test vector field `φ` supported
-in `U` with `‖φ x‖ ≤ 1` we have `|∫ ⟪φ x, h x⟫ ∂ρ| ≤ ∫⁻ x in U, k x ∂ρ`, then `‖h x‖ ≤ k x` for
+section Dual
+
+variable {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] [SeparableSpace F]
+
+/-- **A dual-valued density bounded on test vector fields is pointwise bounded.** Let
+`h : Ω → StrongDual ℝ F` be locally integrable for a measure `ρ` on `Ω`, and let `k` be a measurable
+weight with finite integral over every compact subset of `Ω`. If for every open `U ⊆ Ω` and every
+test vector field `φ` supported in `U` with `‖φ x‖ ≤ 1` we have
+`|∫ h x (φ x) ∂ρ| ≤ ∫⁻ x in U, k x ∂ρ`, then the dual norm satisfies `‖h x‖ ≤ k x` for
 `ρ`-almost every `x`. -/
-theorem ae_enorm_le_of_forall_enorm_integral_inner_le {h : Ω → F} (hh : LocallyIntegrable h ρ)
-    (hkm : Measurable k) (hk : ∀ K, IsCompact K → ∫⁻ x in K, k x ∂ρ ≠ ∞)
+theorem ae_enorm_le_of_forall_enorm_integral_apply_le {h : Ω → StrongDual ℝ F}
+    (hh : LocallyIntegrable h ρ) (hkm : Measurable k)
+    (hk : ∀ K, IsCompact K → ∫⁻ x in K, k x ∂ρ ≠ ∞)
     (H : ∀ U : Opens E, U ≤ Ω → ∀ φ : 𝓓(Ω, F), tsupport φ ⊆ U → (∀ x, ‖φ x‖ ≤ 1) →
-      ‖∫ x, ⟪φ x, h x⟫ ∂ρ‖ₑ ≤ ∫⁻ x in (↑) ⁻¹' (U : Set E), k x ∂ρ) :
+      ‖∫ x, h x (φ x) ∂ρ‖ₑ ≤ ∫⁻ x in (↑) ⁻¹' (U : Set E), k x ∂ρ) :
     ∀ᵐ x ∂ρ, ‖h x‖ₑ ≤ k x := by
   have := Ω.isOpen.locallyCompactSpace
-  -- Each component `⟪w, h⟫` is bounded by `‖w‖ k`.
-  have hw (w : F) : ∀ᵐ x ∂ρ, ‖⟪w, h x⟫‖ₑ ≤ ‖w‖ₑ * k x := by
+  -- Each component `h · w` is bounded by `‖w‖ k`.
+  have hw (w : F) : ∀ᵐ x ∂ρ, ‖h x w‖ₑ ≤ ‖w‖ₑ * k x := by
     refine ae_enorm_le_of_forall_nonneg
-      (locallyIntegrable_iff.2 fun K hK => Integrable.const_inner w (hh.integrableOn_isCompact hK))
+      (locallyIntegrable_iff.2 fun K hK =>
+        (hh.integrableOn_isCompact hK).apply_continuousLinearMap w)
       (hkm.const_mul _) (fun K hK => by
         rw [lintegral_const_mul _ hkm]
         exact ENNReal.mul_ne_top enorm_ne_top (hk K hK))
@@ -202,10 +265,10 @@ theorem ae_enorm_le_of_forall_enorm_integral_inner_le {h : Ω → F} (hh : Local
     let φ : 𝓓(Ω, F) :=
       TestFunction.postcompCLM (ContinuousLinearMap.toSpanSingleton ℝ (‖w‖⁻¹ • w)) ψ
     have hφ (x : E) : φ x = ψ x • (‖w‖⁻¹ • w) := by simp [φ]
-    have hint : ∫ x, ⟪φ x, h x⟫ ∂ρ = ‖w‖⁻¹ * ∫ x, ψ x * ⟪w, h x⟫ ∂ρ := by
+    have hint : ∫ x, h x (φ x) ∂ρ = ‖w‖⁻¹ * ∫ x, ψ x * h x w ∂ρ := by
       rw [← integral_const_mul]
       congr 1 with x
-      simp only [hφ, inner_smul_left, RCLike.conj_to_real]
+      simp only [hφ, map_smul, smul_eq_mul]
       ring
     have hφfun : (φ : E → F) = fun x => ψ x • (‖w‖⁻¹ • w) := funext hφ
     have hφs : tsupport φ ⊆ tsupport ψ := by
@@ -218,8 +281,8 @@ theorem ae_enorm_le_of_forall_enorm_integral_inner_le {h : Ω → F} (hh : Local
         exact hψ1 x
     rw [hint, enorm_mul, enorm_inv (by simpa using hw0), enorm_norm, Opens.coe_mk,
       preimage_image_eq W Subtype.val_injective] at hU
-    calc ‖∫ x, ψ x * ⟪w, h x⟫ ∂ρ‖ₑ
-        = ‖w‖ₑ * (‖w‖ₑ⁻¹ * ‖∫ x, ψ x * ⟪w, h x⟫ ∂ρ‖ₑ) := by
+    calc ‖∫ x, ψ x * h x w ∂ρ‖ₑ
+        = ‖w‖ₑ * (‖w‖ₑ⁻¹ * ‖∫ x, ψ x * h x w ∂ρ‖ₑ) := by
           rw [← mul_assoc, ENNReal.mul_inv_cancel (by simpa using hw0) enorm_ne_top, one_mul]
       _ ≤ ‖w‖ₑ * ∫⁻ x in W, k x ∂ρ := by gcongr
   -- Combine the bounds along a dense sequence of directions.
@@ -227,20 +290,40 @@ theorem ae_enorm_le_of_forall_enorm_integral_inner_le {h : Ω → F} (hh : Local
   rcases eq_top_or_lt_top (k x) with hkx | hkx
   · simp [hkx]
   lift k x to ℝ≥0 using hkx.ne with q hq
-  have hle (w : F) : ‖⟪w, h x⟫‖ ≤ ‖w‖ * q := by
+  have hle (w : F) : ‖h x w‖ ≤ q * ‖w‖ := by
     refine (denseRange_denseSeq F).induction_on w
-      (isClosed_le (continuous_id.inner continuous_const).norm
-        (continuous_norm.mul continuous_const))
-      fun n => ?_
+      (isClosed_le (h x).continuous.norm (continuous_const.mul continuous_norm)) fun n => ?_
     have := hx n
     rw [enorm_eq_nnnorm, enorm_eq_nnnorm, ← ENNReal.coe_mul, ENNReal.coe_le_coe] at this
+    rw [mul_comm]
     exact_mod_cast this
-  have hsq := hle (h x)
-  rw [real_inner_self_eq_norm_sq, Real.norm_of_nonneg (sq_nonneg _), sq] at hsq
   rw [enorm_eq_nnnorm, ENNReal.coe_le_coe, ← NNReal.coe_le_coe, coe_nnnorm]
-  rcases (norm_nonneg (h x)).eq_or_lt with h0 | h0
-  · rw [← h0]
-    exact q.2
-  · exact le_of_mul_le_mul_left hsq h0
+  exact (h x).opNorm_le_bound q.2 hle
+
+end Dual
+
+section Inner
+
+variable {F : Type*} [NormedAddCommGroup F] [InnerProductSpace ℝ F] [SeparableSpace F]
+
+/-- **A density bounded on test vector fields is pointwise bounded.** Let `h : Ω → F` be locally
+integrable for a measure `ρ` on `Ω`, with values in a separable real inner product space `F`, and
+let `k` be a measurable weight with finite integral over every compact subset of `Ω`. If for every
+open `U ⊆ Ω` and every test vector field `φ` supported in `U` with `‖φ x‖ ≤ 1` we have
+`|∫ ⟪φ x, h x⟫ ∂ρ| ≤ ∫⁻ x in U, k x ∂ρ`, then `‖h x‖ ≤ k x` for `ρ`-almost every `x`. -/
+theorem ae_enorm_le_of_forall_enorm_integral_inner_le {h : Ω → F} (hh : LocallyIntegrable h ρ)
+    (hkm : Measurable k) (hk : ∀ K, IsCompact K → ∫⁻ x in K, k x ∂ρ ≠ ∞)
+    (H : ∀ U : Opens E, U ≤ Ω → ∀ φ : 𝓓(Ω, F), tsupport φ ⊆ U → (∀ x, ‖φ x‖ ≤ 1) →
+      ‖∫ x, ⟪φ x, h x⟫ ∂ρ‖ₑ ≤ ∫⁻ x in (↑) ⁻¹' (U : Set E), k x ∂ρ) :
+    ∀ᵐ x ∂ρ, ‖h x‖ₑ ≤ k x := by
+  have := Ω.isOpen.locallyCompactSpace
+  -- Apply the dual version to the Riesz dual `innerSL ℝ (h x)`, which has the same norm.
+  have hh' : LocallyIntegrable (fun x => innerSL ℝ (h x)) ρ :=
+    locallyIntegrable_iff.2 fun K hK => (innerSL ℝ).integrable_comp (hh.integrableOn_isCompact hK)
+  filter_upwards [ae_enorm_le_of_forall_enorm_integral_apply_le hh' hkm hk fun U hU φ hφU hφ => by
+    simpa only [innerSL_apply_apply, real_inner_comm] using H U hU φ hφU hφ] with x hx
+  rwa [← enorm_norm, innerSL_apply_norm, enorm_norm] at hx
+
+end Inner
 
 end TauCeti

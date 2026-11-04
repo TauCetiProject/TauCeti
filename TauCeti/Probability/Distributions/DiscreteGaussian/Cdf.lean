@@ -44,7 +44,7 @@ theorem hasSum_discreteGaussianMeasure_real_Iic (c : ℝ) {s : ℝ} (hs : 0 < s)
   have := isProbabilityMeasure_discreteGaussianMeasure c hs
   have hmass := (discreteGaussianMeasure c s).tsum_indicator_apply_singleton (Iic k)
     measurableSet_Iic
-  have hsum := (ENNReal.summable.hasSum_iff.mpr hmass).toReal (measure_ne_top _ _)
+  have hsum := (CompleteLattice.summable.hasSum_iff.mpr hmass).toReal (measure_ne_top _ _)
   rw [← measureReal_def] at hsum
   convert hsum using 1
   funext n

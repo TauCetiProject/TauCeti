@@ -337,8 +337,10 @@ variable {L} in
 theorem IsIndefinite.exists_carrier_pos_and_neg (hL : L.IsIndefinite) :
     ∃ x y : L, 0 < L.form x x ∧ L.form y y < 0 := by
   obtain ⟨⟨p, hp⟩, ⟨q, hq⟩⟩ := L.isIndefinite_iff_exists_pos_and_exists_neg.mp hL
-  obtain ⟨s, hs, hsp⟩ := Submodule.IsLattice.exists_ne_zero_smul_mem ℚ L.carrier p
-  obtain ⟨t, ht, htq⟩ := Submodule.IsLattice.exists_ne_zero_smul_mem ℚ L.carrier q
+  obtain ⟨s, hs, hsp⟩ := Submodule.IsLattice.exists_ne_zero_smul_mem ℚ L.carrier
+    Submodule.IsLattice.span_eq_top p
+  obtain ⟨t, ht, htq⟩ := Submodule.IsLattice.exists_ne_zero_smul_mem ℚ L.carrier
+    Submodule.IsLattice.span_eq_top q
   have hscale (r : ℤ) (z : V) : L.form (r • z) (r • z) = (r : ℚ) ^ 2 * L.form z z := by
     simp only [← Int.cast_smul_eq_zsmul ℚ, map_smul, LinearMap.smul_apply, smul_eq_mul]
     ring

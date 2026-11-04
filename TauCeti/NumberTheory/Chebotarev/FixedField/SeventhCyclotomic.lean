@@ -67,7 +67,9 @@ theorem isArithFrobAt_frobeniusThreeSeven
     IsArithFrobAt (𝓞 ℚ) (frobeniusThreeSeven (L := L)) Q := by
   have hm := seven_not_mem_of_absNorm_three 𝔭 h𝔭
   apply (TauCeti.NumberField.isArithFrobAt_iff_galEquivZMod_eq_absNorm 𝔭 hm Q _).2
-  simp [h𝔭]
+  simpa only [h𝔭, Nat.cast_ofNat, (zeta_spec 7 ℚ L).autToPow_eq_unitsMap_galEquivZMod dvd_rfl,
+    ZMod.unitsMap_self, MonoidHom.id_apply] using
+      (autToPow_frobeniusThreeSeven (L := L))
 
 /-- At a prime above three, the unpowered restriction of the absolute Frobenius is an
 arithmetic Frobenius of `ℚ(√-7)/ℚ`. Its action on the square-root generator is negation,

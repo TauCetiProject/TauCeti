@@ -96,10 +96,10 @@ theorem map_tateCurveAt (q : Kˣ) (hq : ‖(q : K)‖ < 1) :
   · rw [WeierstrassCurve.map_a₃, tateCurveAt_a₃, map_zero, tateCurveAt_a₃]
   · simp only [WeierstrassCurve.map_a₄, tateCurveAt_a₄]
     convert map_tateCurveA₄ f (q : K) hq using 1
-    all_goals simp
+    simp
   · simp only [WeierstrassCurve.map_a₆, tateCurveAt_a₆]
     convert map_tateCurveA₆ f (q : K) hq using 1
-    all_goals simp
+    simp
 
 end Coefficients
 

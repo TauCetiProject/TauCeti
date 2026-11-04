@@ -42,6 +42,7 @@ the periods is assumed.
 
 * `TauCeti.NovikovModule.kernelMap`: the linear map given by a supported kernel.
 * `TauCeti.NovikovModule.kernelComp`: the composite of two kernels.
+* `TauCeti.NovikovModule.toKernel`: the matrix coefficients of a linear map.
 * `TauCeti.NovikovModule.novikovKernelMap`: the map of an invariant kernel, as a linear map over
   the Novikov ring.
 
@@ -54,6 +55,8 @@ the periods is assumed.
 * `TauCeti.NovikovModule.kernelMap_kernelMap`: composition of maps is composition of kernels.
 * `TauCeti.NovikovModule.kernelMap_add`, `TauCeti.NovikovModule.kernelMap_zero`: the map is
   additive in the kernel.
+* `TauCeti.NovikovModule.kernelMap_sub_kernelMap`: a kernel homotopy between two kernels gives a
+  chain homotopy between their maps.
 * `TauCeti.NovikovModule.kernelMap_eq_id`: the identity kernel gives the identity map, as the
   special case of a diagonal kernel (`TauCeti.NovikovModule.kernelMap_diagonal_apply_val`).
 * `TauCeti.NovikovModule.kernelMap_inj`: a kernel map determines its kernel, through
@@ -146,6 +149,16 @@ theorem kernelMap_apply_val_eq_sum (a : NovikovModule R F₁) (p₀ : S₀) {s :
   rw [kernelMap_apply_val]
   exact finsum_eq_sum_of_support_subset _ fun p₁ hp =>
     hs p₁ (left_ne_zero_of_mul hp) (right_ne_zero_of_mul hp)
+
+/-- A kernel map sends a generator to its row of the kernel. -/
+@[simp]
+theorem kernelMap_ofFinsupp_single_val (p₁ : S₁) :
+    (kernelMap hm hmfin (ofFinsupp F₁ (Finsupp.single p₁ 1))).val = m p₁ := by
+  classical
+  ext p₀
+  rw [kernelMap_apply_val, finsum_eq_single _ p₁ fun p hp => by
+    simp [Ne.symm hp]]
+  simp
 
 /-- The map shifts potential cutoffs by the constant of the potential bound: if `a` vanishes
 above `D`, then its image vanishes above `D + C`. -/
@@ -240,6 +253,37 @@ theorem kernelMap_inj {C' : ℝ} {m' : S₁ → S₀ → R}
 
 end Map
 
+section Kernel
+
+variable {R S₁ S₀ : Type*} [Semiring R] {F₁ : S₁ → ℝ} {F₀ : S₀ → ℝ}
+
+/-- The kernel of a linear map of completed combinations: the coefficient of the output
+generator `p₀` in the image of the input generator `p₁`. -/
+def toKernel (f : NovikovModule R F₁ →ₗ[R] NovikovModule R F₀) (p₁ : S₁) (p₀ : S₀) : R :=
+  (f (ofFinsupp F₁ (Finsupp.single p₁ 1))).val p₀
+
+variable {f : NovikovModule R F₁ →ₗ[R] NovikovModule R F₀}
+
+@[simp]
+theorem toKernel_apply (p₁ : S₁) (p₀ : S₀) :
+    toKernel f p₁ p₀ = (f (ofFinsupp F₁ (Finsupp.single p₁ 1))).val p₀ :=
+  (rfl)
+
+/-- Each row of the kernel of a linear map is a completed combination. -/
+theorem toKernel_mem (f : NovikovModule R F₁ →ₗ[R] NovikovModule R F₀) (p₁ : S₁) :
+    toKernel f p₁ ∈ NovikovModule R F₀ :=
+  (f _).property
+
+/-- The kernel of a kernel map is its kernel. -/
+@[simp]
+theorem toKernel_kernelMap {C : ℝ} {m : S₁ → S₀ → R}
+    (hm : ∀ p₁ p₀, m p₁ p₀ ≠ 0 → F₀ p₀ ≤ F₁ p₁ + C)
+    (hmfin : ∀ p₁, m p₁ ∈ NovikovModule R F₀) : toKernel (kernelMap hm hmfin) = m := by
+  ext p₁ p₀
+  rw [toKernel_apply, kernelMap_ofFinsupp_single_val]
+
+end Kernel
+
 section Comp
 
 variable {R S₁ S₂ S₀ : Type*} [Semiring R] {F₁ : S₁ → ℝ} {F₂ : S₂ → ℝ} {F₀ : S₀ → ℝ}
@@ -320,6 +364,48 @@ theorem kernelMap_comp {C'' : ℝ}
   LinearMap.ext (kernelMap_kernelMap hm hmfin hm' hmfin' hmm' hmmfin')
 
 end Comp
+
+section Homotopy
+
+variable {R S₁ S₀ : Type*} [Ring R] {F₁ : S₁ → ℝ} {F₀ : S₀ → ℝ}
+  {C C' Ck C₁ C₀ : ℝ} {m m' k : S₁ → S₀ → R} {δ₁ : S₁ → S₁ → R} {δ₀ : S₀ → S₀ → R}
+
+/-- **Chain homotopies from kernel homotopies.** Let `δ₁` and `δ₀` be kernels on the input and
+the output generators. If a kernel `k` is a kernel homotopy between kernels `m` and `m'`,
+`m - m' = k δ₀ + δ₁ k` as composite kernels, then its kernel map `K` is a homotopy between their
+maps: `m a - m' a = δ₀ (K a) + K (δ₁ a)` for every completed combination `a`. Continuation maps
+compared by a one-parameter family of Floer data are related in this way. -/
+theorem kernelMap_sub_kernelMap
+    (hm : ∀ p₁ p₀, m p₁ p₀ ≠ 0 → F₀ p₀ ≤ F₁ p₁ + C) (hmfin : ∀ p₁, m p₁ ∈ NovikovModule R F₀)
+    (hm' : ∀ p₁ p₀, m' p₁ p₀ ≠ 0 → F₀ p₀ ≤ F₁ p₁ + C')
+    (hmfin' : ∀ p₁, m' p₁ ∈ NovikovModule R F₀)
+    (hk : ∀ p₁ p₀, k p₁ p₀ ≠ 0 → F₀ p₀ ≤ F₁ p₁ + Ck) (hkfin : ∀ p₁, k p₁ ∈ NovikovModule R F₀)
+    (hδ₁ : ∀ p q, δ₁ p q ≠ 0 → F₁ q ≤ F₁ p + C₁) (hδ₁fin : ∀ p, δ₁ p ∈ NovikovModule R F₁)
+    (hδ₀ : ∀ p q, δ₀ p q ≠ 0 → F₀ q ≤ F₀ p + C₀) (hδ₀fin : ∀ p, δ₀ p ∈ NovikovModule R F₀)
+    (hmk : ∀ p₁ p₀, m p₁ p₀ - m' p₁ p₀ = kernelComp k δ₀ p₁ p₀ + kernelComp δ₁ k p₁ p₀)
+    (a : NovikovModule R F₁) :
+    kernelMap hm hmfin a - kernelMap hm' hmfin' a =
+      kernelMap hδ₀ hδ₀fin (kernelMap hk hkfin a) +
+        kernelMap hk hkfin (kernelMap hδ₁ hδ₁fin a) := by
+  -- Both composites with the homotopy kernel are supported kernels.
+  have hkδ (p₁ : S₁) (p₀ : S₀) (h : kernelComp k δ₀ p₁ p₀ ≠ 0) : F₀ p₀ ≤ F₁ p₁ + (Ck + C₀) := by
+    linarith [potential_le_of_kernelComp_ne_zero (hk p₁) (hδ₀ · p₀) h]
+  have hδk (p₁ : S₁) (p₀ : S₀) (h : kernelComp δ₁ k p₁ p₀ ≠ 0) : F₀ p₀ ≤ F₁ p₁ + (C₁ + Ck) := by
+    linarith [potential_le_of_kernelComp_ne_zero (hδ₁ p₁) (hk · p₀) h]
+  rw [kernelMap_kernelMap hk hkfin hδ₀ hδ₀fin hkδ fun p₁ => kernelComp_mem hδ₀ hδ₀fin (hkfin p₁),
+    kernelMap_kernelMap hδ₁ hδ₁fin hk hkfin hδk fun p₁ => kernelComp_mem hk hkfin (hδ₁fin p₁)]
+  -- All four maps are kernel maps on the same completed module, so it suffices to compare the
+  -- kernels, which is the hypothesis.
+  ext p₀
+  simp only [Submodule.coe_sub, Submodule.coe_add, Pi.sub_apply, Pi.add_apply,
+    kernelMap_apply_val]
+  rw [← finsum_sub_distrib (finite_support_mul_kernelMap hm _ p₀)
+      (finite_support_mul_kernelMap hm' _ p₀),
+    ← finsum_add_distrib (finite_support_mul_kernelMap hkδ _ p₀)
+      (finite_support_mul_kernelMap hδk _ p₀)]
+  exact finsum_congr fun p₁ => by rw [← mul_sub, hmk, mul_add]
+
+end Homotopy
 
 section Torsor
 

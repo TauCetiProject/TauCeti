@@ -7,7 +7,7 @@ module
 
 public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.LieAlgebra.DiagramAutomorphism
 public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.LieAlgebra.Fundamental.Lattice
-public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.LieAlgebra.SimplyConnectedModule
+public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.LieAlgebra.SimplyConnectedModule.Lattice
 -- Non-public: these supply the inputs of the proofs, never the vocabulary of a statement.
 import TauCeti.Algebra.Lie.DirectSum
 import TauCeti.Algebra.Lie.HighestWeight.Irreducible
@@ -38,7 +38,8 @@ action of `x` with that of `σ(x)`, in particular the action of `e_{±αᵢ}` wi
 `TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.NumberedSymmetry`. Uniqueness
 makes `σ ↦ θ_σ` a homomorphism from the diagram symmetry group: `θ_1 = 1` and
 `θ_{στ} = θ_σ ∘ θ_τ`. The direct sum of all fundamental modules is stable under every diagram
-symmetry, so one module carries all of them.
+symmetry, so one module carries all of them, and since each `θ_{σ,i}` matches the fundamental
+lattices, `θ_σ` maps the full-weight lattice `⨁ᵢ U_ℤ v⁺ᵢ` onto itself.
 
 ## Main definitions
 
@@ -59,6 +60,8 @@ symmetry, so one module carries all of them.
   `TauCeti.DynkinType.eq_scModuleDiagramEquiv`: these characterize it.
 * `TauCeti.DynkinType.scModuleDiagramEquiv_one`, `TauCeti.DynkinType.scModuleDiagramEquiv_mul`
   and `TauCeti.DynkinType.scModuleDiagramEquiv_symm`: `σ ↦ θ_σ` is a homomorphism.
+* `TauCeti.DynkinType.scModuleDiagramEquiv_mem_scLattice_iff`: `θ_σ` maps the full-weight lattice
+  `⨁ᵢ U_ℤ v⁺ᵢ` onto itself.
 
 ## References
 
@@ -390,6 +393,26 @@ theorem scModuleDiagramEquiv_symm (hσ : σ ∈ t.diagramSymmetry) :
       t.scModuleDiagramEquiv ht (t.diagramSymmetry.inv_mem hσ) := by
   -- Both sides are built from the maps of `σ⁻¹` and of `σ⁻¹⁻¹`, which is `σ` by `rfl`.
   rw [scModuleDiagramEquiv, scModuleDiagramEquiv, LinearEquiv.symm_ofLinearMap]
+
+/-- `θ_σ` carries the full-weight lattice into itself. -/
+private theorem scModuleDiagramEquiv_mem_scLattice (hσ : σ ∈ t.diagramSymmetry)
+    {v : t.scModule ht} (hv : v ∈ t.scLattice ht) :
+    t.scModuleDiagramEquiv ht hσ v ∈ t.scLattice ht := by
+  rw [← sum_univ_of v, map_sum]
+  refine Submodule.sum_mem _ fun i _ => ?_
+  rw [← lof_eq_of ℚ, scModuleDiagramEquiv_lof, lof_mem_scLattice_iff,
+    fundamentalModuleDiagramEquiv_mem_fundamentalLattice_iff]
+  exact mem_scLattice_iff.mp hv i
+
+/-- **`θ_σ` matches the full-weight lattice**: it carries a vector of `V_sc(t)` into
+`TauCeti.DynkinType.scLattice` exactly when the vector lies in `scLattice`. -/
+@[simp]
+theorem scModuleDiagramEquiv_mem_scLattice_iff (hσ : σ ∈ t.diagramSymmetry)
+    {v : t.scModule ht} :
+    t.scModuleDiagramEquiv ht hσ v ∈ t.scLattice ht ↔ v ∈ t.scLattice ht := by
+  refine ⟨fun hv => ?_, scModuleDiagramEquiv_mem_scLattice ht hσ⟩
+  have h := scModuleDiagramEquiv_mem_scLattice ht (t.diagramSymmetry.inv_mem hσ) hv
+  rwa [← scModuleDiagramEquiv_symm, LinearEquiv.symm_apply_apply] at h
 
 end
 

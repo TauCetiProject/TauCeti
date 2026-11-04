@@ -43,6 +43,8 @@ any ordering of the circles or parenthesization of the tensor product, and it is
 * `TauCeti.Khovanov.circleQuantumGrading`: the quantum grading of the circle tensor.
 * `TauCeti.Khovanov.circlePieceBasis`: the basis of its degree-`p` piece indexed by the labellings
   of degree `p`, so that every piece is finite free.
+* `TauCeti.Khovanov.circlePieceEquivOfUnique`: a piece with a single labelling of its degree is
+  identified with `R`.
 
 ## Main results
 
@@ -55,8 +57,9 @@ any ordering of the circles or parenthesization of the tensor product, and it is
   carries two `X`s.
 * `TauCeti.Khovanov.isHomogeneous_fiberwiseMul`: the merge map along `f : σ → τ` has quantum
   degree `|τ| - |σ|`; in particular merging two circles into one has degree `-1`.
-* `TauCeti.Khovanov.isHomogeneous_reindex`: relabelling the circle factors preserves quantum
-  degree.
+* `TauCeti.Khovanov.isHomogeneous_reindex`,
+  `TauCeti.Khovanov.map_reindex_circleQuantumGrading_piece`: relabelling the circle factors
+  preserves quantum degree, and carries each quantum piece onto the piece of the same degree.
 
 ## References
 
@@ -302,6 +305,47 @@ instance (p : ℤ) : Module.Free R ((circleQuantumGrading R ι).piece p) :=
 instance (p : ℤ) : Module.Finite R ((circleQuantumGrading R ι).piece p) :=
   .of_basis (circlePieceBasis R ι p)
 
+/-- When `l₀` is the only labelling of degree `p`, the labellings of degree `p` form a singleton
+with element `l₀`. -/
+@[instance_reducible]
+private def uniqueLabelingOfDegree {p : ℤ} {l₀ : ι → Bool}
+    (h : ∀ l, labelingQuantumDegree ι l = p ↔ l = l₀) :
+    Unique {l : ι → Bool // labelingQuantumDegree ι l = p} :=
+  ⟨⟨⟨l₀, (h l₀).2 rfl⟩⟩, fun l ↦ Subtype.ext ((h l).1 l.2)⟩
+
+private theorem coe_default_uniqueLabelingOfDegree {p : ℤ} {l₀ : ι → Bool}
+    (h : ∀ l, labelingQuantumDegree ι l = p ↔ l = l₀) :
+    ((uniqueLabelingOfDegree h).default : ι → Bool) = l₀ :=
+  rfl
+
+variable (R) in
+/-- When `l₀` is the only labelling of degree `p`, the degree-`p` piece of the circle tensor is free
+of rank one: the coordinate along `l₀` identifies it with `R`. -/
+noncomputable def circlePieceEquivOfUnique {p : ℤ} (l₀ : ι → Bool)
+    (h : ∀ l, labelingQuantumDegree ι l = p ↔ l = l₀) :
+    (circleQuantumGrading R ι).piece p ≃ₗ[R] R :=
+  letI := uniqueLabelingOfDegree h
+  (circlePieceBasis R ι p).equivFun ≪≫ₗ LinearEquiv.funUnique _ R R
+
+/-- The identification of a rank-one piece with `R` reads off the coordinate along the unique
+labelling of that degree. -/
+@[simp]
+theorem circlePieceEquivOfUnique_apply {p : ℤ} {l₀ : ι → Bool}
+    (h : ∀ l, labelingQuantumDegree ι l = p ↔ l = l₀) (x : (circleQuantumGrading R ι).piece p) :
+    circlePieceEquivOfUnique R l₀ h x = (circleBasis R ι).repr x l₀ := by
+  simp [circlePieceEquivOfUnique, circlePieceBasis_repr_apply, coe_default_uniqueLabelingOfDegree]
+
+/-- The inverse identification sends a scalar to that multiple of the basis vector of the unique
+labelling of that degree. -/
+@[simp]
+theorem coe_circlePieceEquivOfUnique_symm_apply {p : ℤ} {l₀ : ι → Bool}
+    (h : ∀ l, labelingQuantumDegree ι l = p ↔ l = l₀) (r : R) :
+    ((circlePieceEquivOfUnique R l₀ h).symm r : CircleTensor R ι) = r • circleBasis R ι l₀ := by
+  have hl₀ : circleBasis R ι l₀ ∈ (circleQuantumGrading R ι).piece p :=
+    (h l₀).2 rfl ▸ circleBasis_mem_circleQuantumGrading_piece l₀
+  have hr : r = circlePieceEquivOfUnique R l₀ h (r • ⟨_, hl₀⟩) := by simp
+  rw [(LinearEquiv.symm_apply_eq _).2 hr, Submodule.coe_smul]
+
 /-- The pure tensor of the labels of a labelling is homogeneous of the degree of the labelling.
 This is the simp-normal form of `TauCeti.Khovanov.circleBasis_mem_circleQuantumGrading_piece`. -/
 @[simp]
@@ -357,6 +401,18 @@ theorem isHomogeneous_reindex (e : σ ≃ τ) :
   classical
   simpa only [toLinearMap_fiberwiseMul_equiv, Fintype.card_congr e, sub_self] using
     (isHomogeneous_fiberwiseMul (R := R) e)
+
+omit [DecidableEq τ] in
+/-- Reindexing the circle factors carries each quantum piece onto the piece of the same
+degree. -/
+theorem map_reindex_circleQuantumGrading_piece (e : σ ≃ τ) (p : ℤ) :
+    ((circleQuantumGrading R σ).piece p).map (reindex R (fun _ ↦ R[ε]) e).toLinearMap =
+      (circleQuantumGrading R τ).piece p := by
+  classical
+  refine le_antisymm (Submodule.map_le_iff_le_comap.2 fun x hx ↦ ?_) fun x hx ↦ ?_
+  · simpa using (isHomogeneous_reindex (R := R) e).map_mem hx
+  · refine ⟨reindex R (fun _ ↦ R[ε]) e.symm x, ?_, by simp [← reindex_symm]⟩
+    simpa using (isHomogeneous_reindex (R := R) e.symm).map_mem hx
 
 end Grading
 

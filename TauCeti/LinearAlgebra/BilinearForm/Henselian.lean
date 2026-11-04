@@ -79,7 +79,7 @@ theorem IsSymm.equivalent_iff_isSquare_det_mul_det
     obtain ⟨w, hw, d, hd⟩ := hB.exists_equivalent_weightedSumSquares_of_isUnit_det h2 b hBdet
     obtain ⟨v, hv, e, he⟩ := hC.exists_equivalent_weightedSumSquares_of_isUnit_det h2 c hCdet
     have hsq : IsSquare ((∏ i, w i) * ∏ i, v i) := by
-      rw [← TauCeti.isSquare_units_val_iff]
+      rw [← Units.isSquare_coe_iff]
       have h := hdet.mul (IsSquare.sq (d * e))
       convert h using 1
       simp only [Units.val_mul, Units.coe_prod, hd, he]

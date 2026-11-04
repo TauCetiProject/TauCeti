@@ -135,7 +135,7 @@ theorem exists_foldSequence_isFolded (S : StallingsGraph.{u, v, w} α)
       ∃ T : StallingsGraph.{u, v, w} α, FoldSequence R T ∧ T.IsFolded := by
     intro n
     induction n using Nat.strong_induction_on with
-    | h n ih =>
+    | ind n ih =>
       intro R _ hn
       by_cases hR : R.IsFolded
       · exact ⟨R, .refl, hR⟩

@@ -784,7 +784,7 @@ theorem exists_eq_T_zpow_mul_conjScale_mul_T_zpow (l N : ℕ) [NeZero l] (hlN : 
     ⟨γ' 1 1, -γ' 0 1, by linear_combination hdet⟩
   -- then clear the upper-right entry modulo `l`, which the previous step made possible
   have hunit : IsUnit ((γ' 0 0 - i * γ' 1 0 : ℤ) : ZMod l) :=
-    (ZMod.coe_int_isUnit_iff_isCoprime _ _).mpr (isCoprime_comm.mp hi)
+    (ZMod.isUnit_intCast_iff_isCoprime _ _).mpr (isCoprime_comm.mp hi)
   obtain ⟨j₀, k, hk⟩ :=
     ZMod.exists_dvd_sub_val_mul l (γ' 0 1 - i * γ' 1 1) (γ' 0 0 - i * γ' 1 0) hunit
   set j : ℤ := (j₀.val : ℤ) with _

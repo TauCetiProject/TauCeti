@@ -114,7 +114,7 @@ identity.** This is `twistedHeckeSlashSum_one` read through the restriction of
 @[simp] theorem twistedHeckeSlashSumCharEnd_one :
     twistedHeckeSlashSumCharEnd k χ 1 = 1 := by
   refine LinearMap.ext fun f ↦ Subtype.ext ?_
-  rw [coe_twistedHeckeSlashSumCharEnd, Module.End.one_apply]
+  rw [coe_twistedHeckeSlashSumCharEnd, one_apply_eq_self]
   exact twistedHeckeSlashSum_one k χ (f : ℍ → ℂ) f.2
 
 /-- **The `ℤ`-linear extension sends `1` to `1`** — the `map_one` half of the twisted Hecke ring

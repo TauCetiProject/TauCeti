@@ -90,8 +90,8 @@ and the whole of `𝔫⁺` annihilates (`TauCeti.isGlHighestWeightVector_iff_for
 
 ## Implementation notes
 
-Both predicates are stated as the conjunctions pinned by the roadmap rather than as structures, so
-that they are definitionally the classical conditions; because the bodies are not exposed, the
+Both predicates are stated as conjunctions rather than as structures, so that they are
+definitionally the classical conditions; because the bodies are not exposed, the
 `Iff` restatements `TauCeti.isGlDominantIntegral_iff` and
 `TauCeti.isGlHighestWeightVector_iff` are how they are introduced and eliminated downstream, with
 `TauCeti.IsGlHighestWeightVector.ne_zero`,
@@ -101,7 +101,7 @@ that they are definitionally the classical conditions; because the bodies are no
 Dominance is stated for `Fin n`, since "consecutive" refers to the successor on the indices, while
 the highest weight condition needs only a linearly ordered index type and is stated for one, as
 `TauCeti.strictUpperTriangular` is. Neither needs a field or an algebraically closed field, so both
-are over a commutative ring and the roadmap's field case is the instance `R = K`; dominance
+are over a commutative ring and the field case is the instance `R = K`; dominance
 additionally asks for `CharZero R`, because "the difference is a natural number" is a condition on
 `R` only when the cast `ℕ → R` is injective — in characteristic `p` every element of `ZMod p` is
 such a cast and the predicate would be satisfied by every tuple. That hypothesis is used in the
@@ -118,14 +118,6 @@ instance, Mathlib not registering it globally; the Lie module hypotheses on `M` 
 it, so a downstream file must install it too before mentioning `IsGlHighestWeightVector`.
 
 ## References
-
-This implements the two predicates of the "diagonal Cartan and `gl_n` weights" item of Layer 9 of
-`TauCetiRoadmap/RepresentationTheory/LieHighestWeight/README.md`: *"dominance is a condition on
-differences (`IsGlDominantIntegral`: consecutive differences in `ℕ`, entries free in `K`), and a
-highest weight vector is a simultaneous eigenvector of the diagonal killed by the strict upper
-triangle (`IsGlHighestWeightVector`)"*, together with the staircase example that item names and the
-integral points of that layer's "dictionary to the group level". The classification statements
-made against them are not proved here.
 
 * W. Fulton, J. Harris, *Representation Theory: A First Course*, Springer GTM 129 (1991), §15.
 -/

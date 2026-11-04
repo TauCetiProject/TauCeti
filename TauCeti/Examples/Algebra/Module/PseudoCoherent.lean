@@ -8,6 +8,8 @@ module
 import Mathlib.RingTheory.Regular.IsSMulRegular
 import Mathlib.Data.ZMod.Defs
 import TauCeti.Algebra.Module.PseudoCoherent.FiniteProjectiveDimension
+import TauCeti.Algebra.Module.PseudoCoherent.RegularSequence
+import TauCeti.Algebra.Module.PseudoCoherent.RestrictScalars
 
 /-!
 # Tests for pseudocoherent modules
@@ -15,7 +17,8 @@ import TauCeti.Algebra.Module.PseudoCoherent.FiniteProjectiveDimension
 The quotient of a ring by a non-zero-divisor is pseudocoherent, with the resolution
 `0 → R → R → R ⧸ fR → 0` given by multiplication by `f`. Finitely generated projective modules are
 pseudocoherent, and over a noetherian ring pseudocoherence is finite generation. Dividing a
-pseudocoherent module by a non-zero-divisor on it keeps it pseudocoherent.
+pseudocoherent module by a non-zero-divisor on it keeps it pseudocoherent. Over the quotient of a
+ring by a non-zero-divisor, pseudocoherence of a module can be tested over the ring itself.
 
 For finite projective dimension: finitely generated projective modules are `0`-fpd, the quotient by
 a non-zero-divisor is `1`-fpd, and over `ℤ ⧸ 4` the module `ℤ ⧸ 2` is pseudocoherent but `m`-fpd for
@@ -58,6 +61,15 @@ example {R M : Type*} [CommRing R] [AddCommGroup M] [Module R M] {f : R} (hf : I
   IsPseudoCoherentOver.cokernel (ker_eq_bot.mp ((isSMulRegular_iff_ker_lsmul_eq_bot M f).mp hf))
     (exact_map_mkQ_range _) (Submodule.mkQ_surjective _)
     (fun _ ↦ ENat.top_sub_one ▸ hM) hM
+
+/-- For a non-zero-divisor `f`, a module over `R ⧸ fR` is pseudocoherent over `R ⧸ fR` exactly when
+it is pseudocoherent over `R`: the quotient `R ⧸ fR` is pseudocoherent over `R`. -/
+example {R N : Type*} [CommRing R] {f : R} (hf : IsSMulRegular R f) [AddCommGroup N] [Module R N]
+    [Module (R ⧸ Ideal.span {f}) N] [IsScalarTower R (R ⧸ Ideal.span {f}) N] :
+    IsPseudoCoherentOver R N ⊤ ↔ IsPseudoCoherentOver (R ⧸ Ideal.span {f}) N ⊤ :=
+  isPseudoCoherentOver_restrictScalars_iff <|
+    (Module.isFPD_quotient_ofList ((RingTheory.Sequence.isWeaklyRegular_singleton_iff R f).mpr
+      hf)).isPseudoCoherentOver.of_equiv (Submodule.quotEquivOfEq _ _ (Ideal.ofList_singleton f))
 
 end TauCeti.Huber
 
