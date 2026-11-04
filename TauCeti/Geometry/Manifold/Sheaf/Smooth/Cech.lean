@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Algebra.Category.ModuleCat.AB
 public import Mathlib.Geometry.Manifold.PartitionOfUnity
+public import TauCeti.Geometry.Manifold.ContMDiff.Subtype
 public import TauCeti.CategoryTheory.Sites.SheafCohomology.Cech.Comparison
 public import TauCeti.Geometry.Manifold.Sheaf.Smooth.Basic
 public import TauCeti.Topology.Sheaves.Cech.Colimit
@@ -36,7 +37,8 @@ applies. In cochain terms this is the classical contracting homotopy
 
 * `TauCeti.smoothSheafModule.retractPiRestrict`: the sheaf of smooth functions is a retract of the
   product of its restrictions to the members of an open cover with a subordinate smooth partition
-  of unity.
+  of unity. Its inclusion is restriction (`retractPiRestrict_i_app_π`) and its retraction is
+  gluing with the partition of unity (`sectionsEquiv_retractPiRestrict_r_app`).
 * `TauCeti.smoothSheafModule.quasiIso_cechAugmentation`: the sheaf of smooth functions is acyclic
   for every open cover.
 * `TauCeti.smoothSheafModule.isZero_cechCohomology_obj_succ`: the Čech cohomology of the sheaf of
@@ -80,31 +82,16 @@ private lemma mem_prod_iff {W W' : Opens (TopCat.of M)} {y : M} :
   rw [CompleteLattice.prod_eq_inf]
   exact Iff.rfl
 
-open scoped Classical in
-/-- A function on an open set, extended by zero to all of `M`. -/
-private def extendByZero {W : Opens (TopCat.of M)} (g : W → V) (y : M) : V :=
-  if hy : y ∈ W then g ⟨y, hy⟩ else 0
-
 omit [NormedSpace ℝ V] in
-private lemma extendByZero_add {W : Opens (TopCat.of M)} (g g' : W → V) (y : M) :
-    extendByZero (g + g') y = extendByZero g y + extendByZero g' y := by
-  unfold extendByZero
-  split_ifs <;> simp
+private lemma extend_zero_add {W : Opens (TopCat.of M)} (g g' : W → V) :
+    Subtype.val.extend (g + g') (0 : M → V) =
+      Subtype.val.extend g 0 + Subtype.val.extend g' 0 := by
+  rw [← Function.extend_add, add_zero]
 
 omit [NormedAlgebra ℝ 𝕜] [NormedSpace ℝ V] [IsScalarTower ℝ 𝕜 V] in
-private lemma extendByZero_smul {W : Opens (TopCat.of M)} (c : 𝕜) (g : W → V) (y : M) :
-    extendByZero (c • g) y = c • extendByZero g y := by
-  unfold extendByZero
-  split_ifs <;> simp
-
-/-- A function which is smooth on an open set `W`, extended by zero, is smooth at every point of
-`W`. -/
-private lemma contMDiffAt_extendByZero {W : Opens (TopCat.of M)} {g : W → V}
-    (hg : ContMDiff I 𝓘(ℝ, V) ∞ g) {y : M} (hy : y ∈ W) :
-    ContMDiffAt I 𝓘(ℝ, V) ∞ (extendByZero g) y := by
-  rw [← contMDiffAt_subtype_iff (U := W) (x := ⟨y, hy⟩)]
-  refine (hg ⟨y, hy⟩).congr_of_eventuallyEq (Filter.Eventually.of_forall fun z ↦ ?_)
-  simp [extendByZero, z.2]
+private lemma extend_zero_smul {W : Opens (TopCat.of M)} (c : 𝕜) (g : W → V) :
+    Subtype.val.extend (c • g) (0 : M → V) = c • Subtype.val.extend g 0 := by
+  rw [← Function.extend_smul, smul_zero]
 
 variable {U} in
 /-- The components, as functions, of a section of the product of the restrictions of the sheaf of
@@ -131,27 +118,27 @@ private lemma component_smul {W : Opens (TopCat.of M)} (c : 𝕜)
 extended by zero. -/
 private def glueFun {W : Opens (TopCat.of M)} (s : ∀ i, (U i ⨯ W : Opens (TopCat.of M)) → V)
     (y : M) : V :=
-  ∑ᶠ i, ρ i y • extendByZero (s i) y
+  ∑ᶠ i, ρ i y • Subtype.val.extend (s i) 0 y
 
 include hρ in
 private lemma contMDiff_glueFun {W : Opens (TopCat.of M)}
     {s : ∀ i, (U i ⨯ W : Opens (TopCat.of M)) → V} (hs : ∀ i, ContMDiff I 𝓘(ℝ, V) ∞ (s i)) :
     ContMDiff I 𝓘(ℝ, V) ∞ fun y : W ↦ glueFun U ρ s y := fun y ↦
   contMDiffAt_subtype_iff.2 <| ρ.contMDiffAt_finsum fun i hy ↦
-    contMDiffAt_extendByZero (hs i) (mem_prod_iff.2 ⟨hρ i hy, y.2⟩)
+    ContMDiffAt.extend_subtypeVal (hs i ⟨y, mem_prod_iff.2 ⟨hρ i hy, y.2⟩⟩) 0
 
 /-- Only finitely many terms of the glued sum are nonzero at each point. -/
 private lemma finite_support_glue {W : Opens (TopCat.of M)}
     (s : ∀ i, (U i ⨯ W : Opens (TopCat.of M)) → V) (y : M) :
-    (Function.support fun i ↦ ρ i y • extendByZero (s i) y).Finite :=
+    (Function.support fun i ↦ ρ i y • Subtype.val.extend (s i) 0 y).Finite :=
   (ρ.locallyFinite.point_finite y).subset fun _ hi ↦ left_ne_zero_of_smul hi
 
 private lemma glueFun_add {W : Opens (TopCat.of M)}
     (s s' : ∀ i, (U i ⨯ W : Opens (TopCat.of M)) → V) (y : M) :
     glueFun U ρ (s + s') y = glueFun U ρ s y + glueFun U ρ s' y := by
-  have h (i : ι) : ρ i y • extendByZero ((s + s') i) y =
-      ρ i y • extendByZero (s i) y + ρ i y • extendByZero (s' i) y := by
-    rw [← smul_add, ← extendByZero_add]
+  have h (i : ι) : ρ i y • Subtype.val.extend ((s + s') i) 0 y =
+      ρ i y • Subtype.val.extend (s i) 0 y + ρ i y • Subtype.val.extend (s' i) 0 y := by
+    rw [← smul_add, Pi.add_apply, extend_zero_add]
     rfl
   exact (finsum_congr h).trans
     (finsum_add_distrib (finite_support_glue U ρ s y) (finite_support_glue U ρ s' y))
@@ -159,8 +146,9 @@ private lemma glueFun_add {W : Opens (TopCat.of M)}
 private lemma glueFun_smul {W : Opens (TopCat.of M)} (c : 𝕜)
     (s : ∀ i, (U i ⨯ W : Opens (TopCat.of M)) → V) (y : M) :
     glueFun U ρ (c • s) y = c • glueFun U ρ s y := by
-  have h (i : ι) : ρ i y • extendByZero ((c • s) i) y = c • (ρ i y • extendByZero (s i) y) := by
-    rw [smul_comm c (ρ i y), ← extendByZero_smul c]
+  have h (i : ι) : ρ i y • Subtype.val.extend ((c • s) i) 0 y =
+      c • (ρ i y • Subtype.val.extend (s i) 0 y) := by
+    rw [smul_comm c (ρ i y), Pi.smul_apply, extend_zero_smul]
     rfl
   exact (finsum_congr h).trans (smul_finsum' c (finite_support_glue U ρ s y)).symm
 
@@ -196,13 +184,15 @@ private lemma sectionsEquiv_glue (W : Opens (TopCat.of M))
 omit [NormedSpace ℝ V] in
 /-- Extending by zero is compatible with restriction to a smaller open set `Z'`, at the points
 which lie in `Z'` as soon as they lie in `Z`. -/
-private lemma extendByZero_comp_inclusion {Z Z' : Opens (TopCat.of M)} (h : Z' ≤ Z) (g : Z → V)
-    {y : M} (hy : y ∈ Z → y ∈ Z') : extendByZero (g ∘ Opens.inclusion h) y = extendByZero g y := by
+private lemma extend_comp_inclusion {Z Z' : Opens (TopCat.of M)} (h : Z' ≤ Z) (g : Z → V)
+    {y : M} (hy : y ∈ Z → y ∈ Z') :
+    Subtype.val.extend (g ∘ Opens.inclusion h) (0 : M → V) y = Subtype.val.extend g 0 y := by
   by_cases hZ : y ∈ Z
-  · simp only [extendByZero, hZ, hy hZ, ↓reduceDIte]
-    rfl
+  · exact (Subtype.val_injective.extend_apply _ (0 : M → V) ⟨y, hy hZ⟩).trans
+      (Subtype.val_injective.extend_apply g (0 : M → V) ⟨y, hZ⟩).symm
   · have hZ' : y ∉ Z' := fun h' ↦ hZ (h h')
-    simp only [extendByZero, hZ, hZ', ↓reduceDIte]
+    rw [Function.extend_apply' _ _ _ fun ⟨z, hz⟩ ↦ hZ' (hz ▸ z.2),
+      Function.extend_apply' _ _ _ fun ⟨z, hz⟩ ↦ hZ (hz ▸ z.2)]
 
 variable {U} in
 private lemma component_map {W W' : Opens (TopCat.of M)} (h : W' ⟶ W)
@@ -234,7 +224,7 @@ private def glueHom :
     -- at a point of the smaller open, the extended components agree
     refine finsum_congr fun i ↦ congrArg (ρ i y • ·) ?_
     rw [component_map]
-    exact extendByZero_comp_inclusion _ _ fun hy ↦
+    exact extend_comp_inclusion _ _ fun hy ↦
       mem_prod_iff.2 ⟨(mem_prod_iff.1 hy).1, y.2⟩
 
 private lemma sectionsEquiv_glueHom_app (W : Opens (TopCat.of M))
@@ -277,18 +267,41 @@ def retractPiRestrict : Retract (smoothSheafModule I M 𝕜 V).obj
     rw [NatTrans.comp_app, ConcreteCategory.comp_apply, NatTrans.id_app,
       ConcreteCategory.id_apply, sectionsEquiv_glueHom_app]
     -- the terms with `ρ i y ≠ 0` have `y ∈ U i`, so they are `ρ i y • s y`
-    have h (i : ι) : ρ i y • extendByZero (component ((Pi.lift (restrictHom (U := U))).app
-        (op W) s) i) y = ρ i y • (sectionsEquiv I 𝕜 V W s).1 y := by
+    have h (i : ι) : ρ i y • Subtype.val.extend (component ((Pi.lift (restrictHom (U := U))).app
+        (op W) s) i) 0 y = ρ i y • (sectionsEquiv I 𝕜 V W s).1 y := by
       by_cases hi : ρ i y = 0
       · simp [hi]
       · have hy : (y : M) ∈ (U i ⨯ W : Opens (TopCat.of M)) :=
           mem_prod_iff.2 ⟨hρ i (subset_closure hi), y.2⟩
         rw [component_restrictHom]
-        simp only [extendByZero, hy, ↓reduceDIte]
-        rfl
+        exact congrArg _ (Subtype.val_injective.extend_apply _ (0 : M → V) ⟨y, hy⟩)
     simp only [glueFun]
     rw [finsum_congr h, ← finsum_smul' (ρ.locallyFinite.point_finite y),
       ρ.sum_eq_one (Set.mem_univ _), one_smul]
+
+/-- The inclusion of `retractPiRestrict` is restriction: its component at `i` sends a section over
+`W` to its restriction to `U i ∩ W`. -/
+@[simp]
+theorem retractPiRestrict_i_app_π (W : Opens (TopCat.of M))
+    (s : (smoothSheafModule I M 𝕜 V).obj.obj (op W)) (i : ι) :
+    (Pi.π (fun i ↦ (prod.functor.obj (U i)).op ⋙ (smoothSheafModule I M 𝕜 V).obj) i).app (op W)
+        ((retractPiRestrict U ρ hρ).i.app (op W) s) =
+      (smoothSheafModule I M 𝕜 V).obj.map (prod.snd : U i ⨯ W ⟶ W).op s := by
+  rw [← ConcreteCategory.comp_apply, ← NatTrans.comp_app]
+  exact congrArg (fun f ↦ f s) (congrArg (fun α ↦ ConcreteCategory.hom (NatTrans.app α (op W)))
+    (Pi.lift_comp_π (restrictHom (U := U)) i))
+
+/-- The retraction of `retractPiRestrict` is gluing with the partition of unity: it sends a family
+of sections `sᵢ` over the opens `U i ∩ W` to the function `∑ᵢ ρ i • sᵢ` on `W`, each `sᵢ` extended
+by zero. -/
+theorem sectionsEquiv_retractPiRestrict_r_app (W : Opens (TopCat.of M))
+    (x : (∏ᶜ fun i ↦ (prod.functor.obj (U i)).op ⋙ (smoothSheafModule I M 𝕜 V).obj).obj
+      (op W)) (y : W) :
+    (sectionsEquiv I 𝕜 V W ((retractPiRestrict U ρ hρ).r.app (op W) x)).1 y =
+      ∑ᶠ i, ρ i y • Subtype.val.extend (sectionsEquiv I 𝕜 V (U i ⨯ W)
+        ((Pi.π (fun i ↦ (prod.functor.obj (U i)).op ⋙ (smoothSheafModule I M 𝕜 V).obj) i).app
+          (op W) x)).1 0 (y : M) :=
+  congrFun (sectionsEquiv_glueHom_app U ρ hρ W x) y
 
 end Retract
 

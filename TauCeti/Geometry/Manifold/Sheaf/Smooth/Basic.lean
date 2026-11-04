@@ -6,8 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Category.ModuleCat.Sheaf
-public import Mathlib.Geometry.Manifold.Sheaf.Basic
-public import Mathlib.Geometry.Manifold.ContMDiff.Basic
 public import Mathlib.Geometry.Manifold.Algebra.Monoid
 public import Mathlib.Topology.Sheaves.LocalPredicate
 
