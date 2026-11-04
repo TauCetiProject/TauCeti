@@ -189,7 +189,12 @@ theorem fderiv_hamiltonianVectorField_effectivePotential_comp_self
       -(a / m) • ContinuousLinearMap.id ℝ (ℝ × ℝ) := by
   rw [(hasFDerivAt_hamiltonianVectorField_effectivePotential
     hr₀ hU ha p_r).fderiv]
-  ext <;> simp <;> ring
+  ext <;>
+    simp only [ContinuousLinearMap.comp_apply, ContinuousLinearMap.inl_apply,
+      ContinuousLinearMap.inr_apply, ContinuousLinearMap.prod_apply, smul_apply,
+      ContinuousLinearMap.coe_fst', ContinuousLinearMap.coe_snd', ContinuousLinearMap.smul_comp,
+      ContinuousLinearMap.id_comp, neg_apply, smul_eq_mul, Prod.smul_mk] <;>
+    ring
 
 /-- **Circular orbits at a nondegenerate minimum are elliptic.** If `U_ℓ''(r₀) / m > 0`, the
 linearization of the reduced Hamiltonian vector field at `(r₀, p_r)` has no real eigenvalue. Its
@@ -234,7 +239,8 @@ theorem hasEigenvector_fderiv_hamiltonianVectorField_effectivePotential
   refine ⟨?_, by simp⟩
   ext
   · simp [hm]
-  · simp
+  · simp only [ContinuousLinearMap.prod_apply, smul_apply, ContinuousLinearMap.coe_fst',
+      ContinuousLinearMap.coe_snd', neg_apply, smul_eq_mul, mul_one, Prod.smul_mk]
     field_simp at hκ2
     linear_combination -hκ2
 
