@@ -56,6 +56,8 @@ AINTLIB `LeanModularForms` project
 
 ## Main results
 
+* `Matrix.SpecialLinearGroup.slash_mapGL_inv_apply_smul`: the slash by `s⁻¹ ∈ SL(2, ℝ)`, read
+  at `s • τ`, is `denom s τ ^ k * f τ`.
 * `ModularForm.slash_scalar`: a real scalar matrix acts by its scalar to the power `k - 2`
   under the weight-`k` slash action.
 * `SlashInvariantFormClass.SL_slash_eq`: a form invariant under the image of `Γ ≤ SL(2, ℤ)`
@@ -218,6 +220,21 @@ theorem _root_.ModularForm.slash_apply_of_det_pos (k : ℤ) {g : GL (Fin 2) ℝ}
     (hg : 0 < (g : Matrix (Fin 2) (Fin 2) ℝ).det) (f : ℍ → ℂ) (τ : ℍ) :
     (f ∣[k] g) τ = f (g • τ) * |(g.det : ℝ)| ^ (k - 1) * denom g τ ^ (-k) :=
   congrFun (ModularForm.slash_def_of_det_pos k hg f) τ
+
+/-- The slash of `f` by the inverse of `s ∈ SL(2, ℝ)`, read at `s • τ`, is
+`denom s τ ^ k * f τ`. -/
+theorem _root_.Matrix.SpecialLinearGroup.slash_mapGL_inv_apply_smul (s : SL(2, ℝ)) (k : ℤ)
+    (f : ℍ → ℂ) (τ : ℍ) :
+    (f ∣[k] Matrix.SpecialLinearGroup.mapGL ℝ s⁻¹) (s • τ) =
+      denom (Matrix.SpecialLinearGroup.mapGL ℝ s) τ ^ k * f τ := by
+  have h1 := Matrix.SpecialLinearGroup.denom_mapGL_mul s⁻¹ s τ
+  rw [inv_mul_cancel, map_one, denom_one] at h1
+  have h2 : denom (Matrix.SpecialLinearGroup.mapGL ℝ s⁻¹) ((s • τ : ℍ) : ℂ) =
+      (denom (Matrix.SpecialLinearGroup.mapGL ℝ s) τ)⁻¹ :=
+    eq_inv_of_mul_eq_one_left h1.symm
+  rw [ModularForm.slash_apply, σ_eq_refl_of_det_pos (by simp),
+    Matrix.SpecialLinearGroup.mapGL_smul, inv_smul_smul, h2]
+  simp [mul_comm]
 
 /-- **Scalars pass through the slash of a positive-determinant matrix.** Mathlib's
 `ModularForm.smul_slash` carries the twist `σ A c`, which is complex conjugation when the
