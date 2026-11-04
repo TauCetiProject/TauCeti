@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Algebra.Homology.HomologySequenceLemmas
 public import TauCeti.AlgebraicTopology.Cohomology.Basic
-public import TauCeti.AlgebraicTopology.Singular.Relative
+public import TauCeti.AlgebraicTopology.Singular.Empty
 
 /-!
 # Relative singular cohomology and the long exact sequence of a pair
@@ -43,6 +43,8 @@ A map of pairs `(X, A) ⟶ (Y, B)` induces maps from the relative cochains and c
   the three exactness statements `TopPair.singularCohomology_exact_relative`,
   `TopPair.singularCohomology_exact_space` and `TopPair.singularCohomology_exact_subspace`, and its
   naturality `TopPair.singularCohomologyδ_naturality`.
+* `TopPair.isIso_singularCohomologyπ_of_isEmpty`: for an empty subspace, `Hⁿ(X, ∅) ⟶ Hⁿ(X)` is an
+  isomorphism.
 
 ## References
 
@@ -302,6 +304,16 @@ instance : Mono (P.singularCohomologyπ R k M 0) := by
     (P.singularCochainComplexShortComplex R k M).f 0 fun i h ↦ by
       rw [ComplexShape.up_Rel] at h
       omega
+
+/-- For a pair `(X, A)` with `A` empty, the map `Hⁿ(X, A) ⟶ Hⁿ(X)` is an isomorphism: the relative
+singular chains of `(X, ∅)` are the singular chains of `X`. -/
+instance isIso_singularCohomologyπ_of_isEmpty [IsEmpty P.snd] (n : ℕ) :
+    IsIso (P.singularCohomologyπ R k M n) := by
+  have : IsIso (P.singularChainComplexπ R) := SSetPair.isIso_chainComplexπ _ R
+  have : IsIso (P.singularCochainComplexShortComplex R k M).f := by
+    rw [singularCochainComplexShortComplex_f_eq]
+    exact Functor.map_isIso _ _
+  exact (HomologicalComplex.homologyFunctor _ _ n).map_isIso _
 
 /-- Exactness at ambient cohomology: `Hⁿ(X, A) ⟶ Hⁿ(X) ⟶ Hⁿ(A)` is exact. -/
 lemma singularCohomology_exact_space (n : ℕ) :
