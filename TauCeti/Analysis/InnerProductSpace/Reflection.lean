@@ -7,6 +7,7 @@ Authors: The Tau Ceti contributors, Jon Crall, OpenAI GPT-5.6 Thinking, Claude O
 module
 
 public import Mathlib.Analysis.InnerProductSpace.Projection.Reflection
+public import Mathlib.Analysis.InnerProductSpace.Adjoint
 import Mathlib.Analysis.InnerProductSpace.Projection.FiniteDimensional
 public import Mathlib.Analysis.InnerProductSpace.Calculus
 public import Mathlib.Analysis.SpecialFunctions.Complex.Circle
@@ -564,6 +565,27 @@ end LinearIsometryEquiv
 namespace Submodule
 
 variable {𝕜 E : Type*} [RCLike 𝕜] [NormedAddCommGroup E] [InnerProductSpace 𝕜 E]
+
+/-- A subspace reflection, viewed as a bounded operator, squares to the identity. -/
+@[simp] theorem reflection_mul_self (U : Submodule 𝕜 E) [U.HasOrthogonalProjection] :
+    (U.reflection : E →L[𝕜] E) * (U.reflection : E →L[𝕜] E) = 1 := by
+  ext x
+  simpa only [mul_apply_eq_comp, one_apply_eq_self, LinearIsometryEquiv.coe_coe''] using
+    U.reflection_reflection x
+
+/-- A subspace reflection is self-adjoint as a bounded operator. -/
+theorem isSelfAdjoint_reflection [CompleteSpace E]
+    (U : Submodule 𝕜 E) [U.HasOrthogonalProjection] :
+    IsSelfAdjoint (U.reflection : E →L[𝕜] E) := by
+  rw [ContinuousLinearMap.isSelfAdjoint_iff', LinearIsometryEquiv.adjoint_eq_symm,
+    reflection_symm]
+
+/-- A subspace reflection is a unitary bounded operator. -/
+theorem reflection_mem_unitary [CompleteSpace E]
+    (U : Submodule 𝕜 E) [U.HasOrthogonalProjection] :
+    (U.reflection : E →L[𝕜] E) ∈ unitary (E →L[𝕜] E) := by
+  simpa only [Unitary.coe_symm_linearIsometryEquiv_apply] using
+    (Unitary.linearIsometryEquiv.symm U.reflection).property
 
 /-- Full off-diagonality is anticommutation with the source reflection.
 

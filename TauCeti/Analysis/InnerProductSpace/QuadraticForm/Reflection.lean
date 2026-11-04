@@ -39,8 +39,8 @@ theorem reflection_centered_form_lower
       RCLike.re ⟪A x, x⟫_𝕜 ≤ a * ‖x‖ ^ 2)
     (x : E) :
     (b - a) / 2 * ‖x‖ ^ 2 ≤
-      RCLike.re ⟪((U.reflection : E →L[𝕜] E) ∘L
-        (A - (((a + b) / 2 : ℝ) : 𝕜) • ContinuousLinearMap.id 𝕜 E)) x, x⟫_𝕜 := by
+      RCLike.re ⟪((U.reflection : E →L[𝕜] E) *
+        (A - (((a + b) / 2 : ℝ) : 𝕜) • 1)) x, x⟫_𝕜 := by
   have hUperp : ∀ y ∈ Uᗮ, A y ∈ Uᗮ := by
     intro y hy
     exact LinearMap.IsSymmetric.orthogonalComplement_mem_invtSubmodule hA (p := U) hAU hy
@@ -81,8 +81,7 @@ theorem reflection_centered_form_lower
   have hAm_p :
       ⟪A m - (((a + b) / 2 : ℝ) : 𝕜) • m, p⟫_𝕜 = 0 :=
     Submodule.inner_left_of_mem_orthogonal hp hAm
-  simp only [ContinuousLinearMap.comp_apply, sub_apply,
-    ContinuousLinearMap.id_apply, smul_apply]
+  simp only [mul_apply_eq_comp, sub_apply, one_apply_eq_self, smul_apply]
   rw [hreflect, hxpm, inner_sub_left, inner_add_right,
     inner_add_right, hAp_m, hAm_p]
   simp only [add_zero, zero_add, inner_sub_left, inner_smul_left, map_sub]

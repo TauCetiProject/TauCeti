@@ -6,6 +6,9 @@ Authors: Jon Crall, Claude Fable 5, OpenAI GPT-5.6 Thinking, Claude Opus 5, Open
 module
 
 public import Mathlib.Analysis.InnerProductSpace.Positive
+public import Mathlib.Analysis.InnerProductSpace.StarOrder
+public import Mathlib.Analysis.CStarAlgebra.ContinuousLinearMap
+public import Mathlib.Analysis.SpecialFunctions.ContinuousFunctionalCalculus.Rpow.Basic
 
 /-!
 # Coercive bounded operators
@@ -75,43 +78,19 @@ theorem coercive_conj_of_lyapunov [CompleteSpace E]
   have hRinvstar := hRinv.star_eq
   have hZstar : star Z = Rinv ∘L star W ∘L R := by
     dsimp [Z]
-    -- Read composition as multiplication in the bounded-operator algebra.
-    change star (R * W * Rinv) = Rinv * star W * R
-    rw [star_mul, star_mul, hRstar, hRinvstar]
-    simp only [mul_assoc]
+    simp only [← ContinuousLinearMap.mul_def, star_mul, hRstar, hRinvstar, mul_assoc]
   have hleft : Rinv ∘L C = R := by
-    apply ContinuousLinearMap.ext
-    intro x
-    have hRRx := DFunLike.congr_fun hRR x
-    have hInv := DFunLike.congr_fun hRinvR (R x)
-    simp only [ContinuousLinearMap.comp_apply,
-      ContinuousLinearMap.id_apply] at hRRx hInv ⊢
-    rw [← hRRx]
-    exact hInv
+    rw [← hRR, ← ContinuousLinearMap.comp_assoc, hRinvR, ContinuousLinearMap.id_comp]
   have hright : C ∘L Rinv = R := by
-    apply ContinuousLinearMap.ext
-    intro x
-    have hRRx := DFunLike.congr_fun hRR (Rinv x)
-    have hInv := DFunLike.congr_fun hRRinv x
-    simp only [ContinuousLinearMap.comp_apply,
-      ContinuousLinearMap.id_apply] at hRRx hInv ⊢
-    rw [← hRRx, hInv]
+    rw [← hRR, ContinuousLinearMap.comp_assoc, hRRinv, ContinuousLinearMap.comp_id]
   have hZherm :
-      Z + star Z =
-        (Rinv ∘L B ∘L Rinv) + (Rinv ∘L B ∘L Rinv) := by
-    apply ContinuousLinearMap.ext
-    intro x
+      Z + star Z = (Rinv ∘L B ∘L Rinv) + (Rinv ∘L B ∘L Rinv) := by
+    have hconj := congrArg (fun T : E →L[𝕜] E => Rinv ∘L T ∘L Rinv) hlyap
+    simp only [ContinuousLinearMap.comp_add, ContinuousLinearMap.add_comp] at hconj
+    simp only [← ContinuousLinearMap.comp_assoc, hleft] at hconj
+    rw [ContinuousLinearMap.comp_assoc (Rinv ∘L star W) C Rinv, hright] at hconj
     rw [hZstar]
-    dsimp [Z]
-    simp only [add_apply, ContinuousLinearMap.comp_apply]
-    have hlyapx := DFunLike.congr_fun hlyap (Rinv x)
-    have hconj := congrArg (fun y : E => Rinv y) hlyapx
-    simp only [add_apply, ContinuousLinearMap.comp_apply, map_add] at hconj
-    have hleftx := DFunLike.congr_fun hleft (W (Rinv x))
-    have hrightx := DFunLike.congr_fun hright x
-    simp only [ContinuousLinearMap.comp_apply] at hleftx hrightx
-    rw [hleftx, hrightx] at hconj
-    exact hconj
+    simpa only [Z, ContinuousLinearMap.comp_assoc] using hconj
   intro x
   let y : E := Rinv x
   have hxy : R y = x := by
@@ -177,5 +156,40 @@ theorem le_re_of_mem_spectrum_of_coercive (N : E →L[ℂ] E) {c : ℝ}
     nlinarith
   rw [spectrum.mem_iff] at hz
   exact hz (by simpa [Algebra.algebraMap_eq_smul_one] using hunit.neg)
+
+/-- A positive invertible Lyapunov weight transports a coercive form bound to a spectral
+half-plane bound, with the square-root similarity made explicit in the constant. -/
+theorem le_re_of_mem_spectrum_of_positive_lyapunov
+    (B C W : E →L[ℂ] E) (hC : IsStrictlyPositive C)
+    (hlyap : C ∘L W + star W ∘L C = B + B) {δ : ℝ} (hδ : 0 ≤ δ)
+    (hB : ∀ x, δ * ‖x‖ ^ 2 ≤ (⟪B x, x⟫_ℂ).re)
+    {z : ℂ} (hz : z ∈ spectrum ℂ W) :
+    δ / (1 + ‖C ^ (1 / 2 : ℝ)‖ ^ 2) ≤ z.re := by
+  let R := C ^ (1 / 2 : ℝ)
+  let Rinv := C ^ (-(1 / 2 : ℝ))
+  have hRinvR : Rinv ∘L R = ContinuousLinearMap.id ℂ E := by
+    simpa only [R, Rinv, ContinuousLinearMap.mul_def, ContinuousLinearMap.one_def] using
+      CFC.rpow_neg_mul_rpow (1 / 2 : ℝ) hC
+  have hRRinv : R ∘L Rinv = ContinuousLinearMap.id ℂ E := by
+    simpa only [R, Rinv, ContinuousLinearMap.mul_def, ContinuousLinearMap.one_def] using
+      CFC.rpow_mul_rpow_neg (1 / 2 : ℝ) hC
+  have hRR : R ∘L R = C := by
+    simpa only [CFC.sqrt_eq_rpow, R, ContinuousLinearMap.mul_def] using
+      CFC.sqrt_mul_sqrt_self C hC.nonneg
+  let e := ContinuousLinearEquiv.equivOfInverse' R Rinv hRRinv hRinvR
+  have he : e.conjContinuousAlgEquiv.toAlgEquiv W = R ∘L W ∘L Rinv := by
+    ext x
+    simp only [ContinuousAlgEquiv.coe_toAlgEquiv,
+      ContinuousLinearEquiv.conjContinuousAlgEquiv_apply_apply,
+      ContinuousLinearEquiv.equivOfInverse'_apply, ContinuousLinearEquiv.symm_equivOfInverse',
+      ContinuousLinearMap.comp_apply, e]
+  have hz' : z ∈ spectrum ℂ (e.conjContinuousAlgEquiv.toAlgEquiv W) := by
+    rwa [AlgEquiv.spectrum_eq]
+  rw [he] at hz'
+  exact le_re_of_mem_spectrum_of_coercive _
+    (coercive_conj_of_lyapunov B C W R Rinv
+      (CFC.rpow_nonneg (a := C) (y := (1 / 2 : ℝ))).isSelfAdjoint
+      (CFC.rpow_nonneg (a := C) (y := (-(1 / 2 : ℝ)))).isSelfAdjoint
+      hRR hRinvR hRRinv hlyap hδ hB) hz'
 
 end ContinuousLinearMap

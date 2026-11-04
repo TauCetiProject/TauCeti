@@ -11,7 +11,7 @@ public import Mathlib.Analysis.InnerProductSpace.StarOrder
 public import Mathlib.Analysis.SpecialFunctions.ContinuousFunctionalCalculus.Rpow.Basic
 public import TauCeti.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.Subalgebra
 public import TauCeti.Analysis.InnerProductSpace.Complexification
-import Mathlib.Analysis.RCLike.ContinuousMap
+import Mathlib.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.RealImaginaryPart
 
 /-!
 # The continuous functional calculus on real and `RCLike` Hilbert spaces
@@ -239,7 +239,7 @@ theorem inner_sqrt_apply_sqrt_apply_eq_inner {T : X →L[ℝ] X} (hT : 0 ≤ T) 
   rw [← (nonneg_iff_isPositive.mp (CFC.sqrt_nonneg T)).inner_left_eq_inner_right,
     ← mul_apply_eq_comp, CFC.sqrt_mul_sqrt_self T hT]
 
-open scoped ComplexOrder
+open scoped ComplexOrder ComplexStarModule
 
 /-- A spectral half-plane bound for a normal operator is an order bound
 for its Hermitian part. -/
@@ -248,34 +248,13 @@ theorem nonneg_add_star_sub_smul_of_spectrum_re
     (W : E →L[ℂ] E) [IsStarNormal W] {a : ℝ}
     (hspec : ∀ z ∈ spectrum ℂ W, a ≤ z.re) :
     0 ≤ W + star W - ((2 * a : ℝ) : ℂ) • 1 := by
-  let hWnormal : IsStarNormal W := inferInstance
-  let X : C(spectrum ℂ W, ℂ) :=
-    (ContinuousMap.id ℂ).restrict (spectrum ℂ W)
-  let g : C(spectrum ℂ W, ℝ) :=
-    ⟨fun z => 2 * (z : ℂ).re - 2 * a,
-      (continuous_const.mul
-        (Complex.continuous_re.comp continuous_subtype_val)).sub continuous_const⟩
-  have hg : ∀ z, 0 ≤ g z := by
-    intro z
-    dsimp [g]
-    have hz := hspec (z : ℂ) z.property
-    linarith
-  have hT : 0 ≤ cfcHom hWnormal
-      ((ContinuousMap.realToRCLikeStarAlgHom _ ℂ) g) := by
-    apply map_nonneg (cfcHom hWnormal)
-    intro z
-    simpa using hg z
-  have hsymbol :
-      (ContinuousMap.realToRCLikeStarAlgHom _ ℂ) g =
-        X + star X - ((2 * a : ℝ) : ℂ) • 1 := by
-    ext z
-    dsimp [g, X]
-    apply Complex.ext
-    · simp
-      ring
-    · simp
-  rw [hsymbol, map_sub, map_add, map_star, map_smul, map_one,
-    cfcHom_id] at hT
-  exact hT
+  have hreal : algebraMap ℝ (E →L[ℂ] E) a ≤ (ℜ W : E →L[ℂ] E) := by
+    apply (algebraMap_le_iff_le_spectrum (ha := (ℜ W).2)).2
+    rw [spectrum_realPart' W]
+    rintro _ ⟨z, hz, rfl⟩
+    exact hspec z hz
+  have hpos := smul_nonneg (a := (2 : ℝ)) (by norm_num) (sub_nonneg.mpr hreal)
+  simpa only [smul_sub, realPart_apply_coe, smul_smul, mul_inv_cancel₀ (by norm_num : (2 : ℝ) ≠ 0),
+    one_smul, Algebra.algebraMap_eq_smul_one, Complex.coe_smul] using hpos
 
 end ContinuousLinearMap
