@@ -32,19 +32,21 @@ noncomputable section
 
 open scoped TensorProduct
 open TauCeti.UniversalEnvelopingAlgebra
+open LieAlgebra.ofTwoCocycle (centralElement envelopingι)
 
 namespace TauCeti.CurrentAlgebra
 
 variable {R L : Type*} [CommRing R] [LieRing L] [LieAlgebra R L]
   {Φ : LinearMap.BilinForm R L} {hΦ : Φ.lieInvariant L} {hΦs : Φ.IsSymm} {a : R}
 
-local notation "UK" => CentralQuotient R (centralElement Φ hΦ hΦs) a
+local notation "c" => twoCocycleOfBilinear R L Φ hΦ hΦs
+local notation "UK" => CentralQuotient R (centralElement c) a
 
 /-- Arbitrary left coefficients may multiply a series of currents whose orders tend to infinity
 at least as fast as the index. The resulting series is unconditionally summable. -/
 theorem summable_mul_envelopingι (P : ℕ → UK) {u : ℕ → currentAlgebra R L}
     (hu : ∀ n : ℕ, u n ∈ orderSubmodule R L n) :
-    Summable fun n ↦ toCompletedEnveloping Φ hΦ hΦs a (P n * envelopingι Φ hΦ hΦs a (u n)) := by
+    Summable fun n ↦ toCompletedEnveloping Φ hΦ hΦs a (P n * envelopingι c a (u n)) := by
   simp only [coe_toCompletedEnveloping]
   apply ModuleTower.summable_toLimQuotients_of_mem
   intro n
@@ -54,9 +56,9 @@ theorem summable_mul_envelopingι (P : ℕ → UK) {u : ℕ → currentAlgebra R
 theorem limπ_tsum_mul_envelopingι (P : ℕ → UK) {u : ℕ → currentAlgebra R L}
     (hu : ∀ n : ℕ, u n ∈ orderSubmodule R L n) (N : ℕ) :
     (orderQuotientTower Φ hΦ hΦs a).limπ N
-      (∑' n, toCompletedEnveloping Φ hΦ hΦs a (P n * envelopingι Φ hΦ hΦs a (u n))) =
+      (∑' n, toCompletedEnveloping Φ hΦ hΦs a (P n * envelopingι c a (u n))) =
       ModuleTower.quotientsπ _ (orderLeftIdeal_natCast_antitone Φ hΦ hΦs a) N
-        (∑ n ∈ Finset.range N, P n * envelopingι Φ hΦ hΦs a (u n)) := by
+        (∑ n ∈ Finset.range N, P n * envelopingι c a (u n)) := by
   simp only [coe_toCompletedEnveloping]
   apply ModuleTower.limπ_tsum_toLimQuotients
   intro n
@@ -68,12 +70,12 @@ theorem limSmul_add_tsum_mul_envelopingι
     {M : ModuleCat UK} (hM : smoothModules (fun n : ℕ ↦ orderLeftIdeal Φ hΦ hΦs a n) M)
     (b : UK) (P : ℕ → UK) {u : ℕ → currentAlgebra R L}
     (hu : ∀ n : ℕ, u n ∈ orderSubmodule R L n) {m : M} {N : ℕ}
-    (hm : ∀ c ∈ orderLeftIdeal Φ hΦ hΦs a N, c • m = 0) :
+    (hm : ∀ x ∈ orderLeftIdeal Φ hΦ hΦs a N, x • m = 0) :
     ModuleTower.limSmul hM
       (toCompletedEnveloping Φ hΦ hΦs a b +
-        ∑' n, toCompletedEnveloping Φ hΦ hΦs a (P n * envelopingι Φ hΦ hΦs a (u n))) m =
-      b • m + ∑ n ∈ Finset.range N, P n • (envelopingι Φ hΦ hΦs a (u n) • m) := by
-  have hf (n : ℕ) : P n * envelopingι Φ hΦ hΦs a (u n) ∈
+        ∑' n, toCompletedEnveloping Φ hΦ hΦs a (P n * envelopingι c a (u n))) m =
+      b • m + ∑ n ∈ Finset.range N, P n • (envelopingι c a (u n) • m) := by
+  have hf (n : ℕ) : P n * envelopingι c a (u n) ∈
       orderLeftIdeal Φ hΦ hΦs a n :=
     (orderLeftIdeal Φ hΦ hΦs a n).smul_mem (P n) (envelopingι_mem_orderLeftIdeal (hu n))
   rw [ModuleTower.add_limSmul, coe_toCompletedEnveloping,
@@ -84,7 +86,7 @@ theorem limSmul_add_tsum_mul_envelopingι
 term gives the usual high-order series in the completed enveloping algebra. -/
 theorem summable_mul_envelopingι_single (P : ℕ → UK) (x : ℕ → L) :
     Summable fun n ↦ toCompletedEnveloping Φ hΦ hΦs a
-      (P n * envelopingι Φ hΦ hΦs a ((HahnSeries.single (n + 1 : ℤ) 1) ⊗ₜ[R] x n)) := by
+      (P n * envelopingι c a ((HahnSeries.single (n + 1 : ℤ) 1) ⊗ₜ[R] x n)) := by
   apply summable_mul_envelopingι P
   intro n
   exact tmul_mem_orderSubmodule R L n

@@ -199,11 +199,7 @@ private theorem negativeRoot_mulVec_single_sub (i : Fin 7) (a : Fin 56)
   rw [coe_rootSubgroupPoints_inr, Matrix.add_mulVec, Matrix.one_mulVec,
     Matrix.smul_mulVec]
   simp only [toAdd_ofAdd, one_smul]
-  have hmatrix : loweringMatrix i = weightTable.loweringMatrix i := by
-    ext b c
-    simp
-  rw [hmatrix]
-  rw [Matrix.mulVec_single_one, weightTable.loweringMatrix_map_col]
+  rw [← weightTable_loweringMatrix, Matrix.mulVec_single_one, weightTable.loweringMatrix_map_col]
   simp only [weightTable_weight, weightTable_reflection, ha, ite_true, add_sub_cancel_left]
 
 /-- Invariance under the two simple-root points makes membership of coordinate basis vectors

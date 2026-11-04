@@ -58,7 +58,7 @@ variable {K : Type u} [Field K] {V : Type v} [AddCommGroup V] [Module K V]
 /-- The bilinear Clifford bivector obtained by applying `ad x` in the first slot.
 
 Bundling the summand in the adjoint coordinate formula lets the canonical Killing-dual contraction
-lemmas, in particular `TauCeti.sum_apply_killingDualBasis_eq`, act on it directly. -/
+lemmas, in particular `LinearMap.sum_apply_dualBasis_eq`, act on it directly. -/
 noncomputable def adjointBivector {R : Type u} [CommRing R] [Invertible (2 : R)]
     {L : Type v} [LieRing L] [LieAlgebra R L]
     (Q : QuadraticForm R L) (x : L) : L →ₗ[R] L →ₗ[R] CliffordAlgebra Q :=
