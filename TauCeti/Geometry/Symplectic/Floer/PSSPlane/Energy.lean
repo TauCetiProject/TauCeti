@@ -8,8 +8,6 @@ module
 public import TauCeti.Geometry.Symplectic.Floer.Action
 public import TauCeti.Geometry.Symplectic.Floer.PSSPlane.Basic
 import TauCeti.Analysis.SpecialFunctions.SmoothTransition
-import Mathlib.MeasureTheory.Group.Integral
-import Mathlib.MeasureTheory.Measure.Haar.NormedSpace
 
 /-!
 # Curvature and energy of the PSS plane perturbations
@@ -97,20 +95,6 @@ theorem hamiltonianCurvature_pssPlaneEndComponent (ω : SymplecticForm V) (hH : 
       hβ.differentiableAt hHx, hβ.deriv]
   ring
 
-/-- The cutoff `s ↦ β(σ s - 1)` of the plane has total increase one along the cylinder. -/
-private theorem lintegral_ofReal_deriv_smoothTransition_sign_mul_sub_one (P : PSSPlane) :
-    ∫⁻ s, ENNReal.ofReal (deriv smoothTransition (P.sign * s - 1)) = 1 := by
-  cases P
-  · rw [PSSPlane.sign_pos]
-    simp only [one_mul]
-    rw [lintegral_sub_right_eq_self (fun s ↦ ENNReal.ofReal (deriv smoothTransition s)) 1,
-      ← ofReal_integral_eq_lintegral_ofReal smoothTransition.integrable_deriv
-        (ae_of_all _ fun _ ↦ smoothTransition.monotone.deriv_nonneg),
-      smoothTransition.integral_deriv, ENNReal.ofReal_one]
-  · convert smoothTransition.lintegral_ofReal_mul_deriv (-1) one_pos using 4 with s
-    simp only [PSSPlane.sign_neg, one_mul]
-    ring_nf
-
 /-- **Uniform curvature bound on the plane.** Let `h` bound the Hamiltonian `H` on `[a, b]`,
 uniformly on the target. For every map `u` from the cylinder to the target, measurable or not, the
 integrated curvature of the plane perturbation along `u` over the whole cylinder `ℝ × [a, b]` is
@@ -138,7 +122,8 @@ theorem lintegral_enorm_hamiltonianCurvature_pssPlaneEndComponent_le (ω : Sympl
         exact lintegral_prod_mul hβ'm.ennreal_ofReal.aemeasurable
           hhi.aemeasurable.ennreal_ofReal
     _ = ENNReal.ofReal (∫ t in Icc a b, h t) := by
-        rw [lintegral_ofReal_deriv_smoothTransition_sign_mul_sub_one, one_mul,
+        rw [smoothTransition.lintegral_ofReal_deriv_mul_sub P.sign_ne_zero, P.abs_sign, inv_one,
+          ENNReal.ofReal_one, one_mul,
           ofReal_integral_eq_lintegral_ofReal hhi (ae_restrict_of_forall_mem measurableSet_Icc
             fun t ht ↦ (abs_nonneg _).trans (hh t ht 0))]
 

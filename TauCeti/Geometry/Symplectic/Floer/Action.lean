@@ -102,27 +102,6 @@ section Energy
 
 variable [FiniteDimensional ℝ V] {H : ℝ → V → ℝ} {u : ℝ × ℝ → V} {U : Set (ℝ × ℝ)} {a b : ℝ}
 
-/-- **The energy identity for a cylindrical perturbation.** Let `H` be a `C¹` time-dependent
-Hamiltonian and let `u` be `C²` on an open neighbourhood `U` of `[a, b] × [0, 1]`, with
-`u(s, 1) = u(s, 0)` for `s ∈ [a, b]`. For the cylindrical perturbation `K = H_t dt`, the Floer
-energy of `u` over the rectangle is the action of the loop at `s = b` minus the action of the loop
-at `s = a`. -/
-theorem integral_floerEnergyDensity_eq_hamiltonianAction_sub (ω : SymplecticForm V)
-    (hH : ContDiff ℝ 1 (uncurry H)) (hU : IsOpen U) (hu : ContDiffOn ℝ 2 u U) (hab : a ≤ b)
-    (hRU : Icc a b ×ˢ Icc 0 1 ⊆ U) (hper : ∀ s ∈ Icc a b, u (s, 1) = u (s, 0)) :
-    ∫ z in Icc a b ×ˢ Icc 0 1, ω.floerEnergyDensity (fun _ _ ↦ 0) (fun w ↦ H w.2) u z =
-      ω.hamiltonianAction H (fun t ↦ u (b, t)) - ω.hamiltonianAction H (fun t ↦ u (a, t)) := by
-  have hR : Icc a b ×ˢ Icc (0 : ℝ) 1 = Icc (a, 0) (b, 1) := (Icc_prod_Icc _ _ _ _)
-  have h := ω.integral_floerEnergyDensity (Ks := fun _ _ ↦ 0) (Kt := fun w ↦ H w.2) hU
-    (hu.of_le one_le_two) contDiffOn_const (contDiff_uncurry_cylindrical hH).contDiffOn
-    (Prod.mk_le_mk.2 ⟨hab, zero_le_one⟩) (hR ▸ hRU)
-  simp only [hamiltonianCurvature_cylindrical, intervalIntegral.integral_zero, integral_zero,
-    ← hR] at h
-  rw [h, ω.integral_symplecticForm_fderiv_eq_loopArea_sub hab
-      (fun z hz ↦ hu.contDiffAt (hU.mem_nhds (hRU hz))) hper,
-    hamiltonianAction_def, hamiltonianAction_def]
-  ring
-
 /-- **The energy identity for a continuation perturbation.** Let `β` be a `C¹` function, `H` a
 `C¹` time-dependent Hamiltonian, and let `u` be `C²` on an open neighbourhood `U` of
 `[a, b] × [0, 1]`, with `u(s, 1) = u(s, 0)` for `s ∈ [a, b]`. For the continuation perturbation
@@ -150,6 +129,25 @@ theorem integral_floerEnergyDensity_continuation_eq_hamiltonianAction_sub (ω : 
       (fun z hz ↦ hu.contDiffAt (hU.mem_nhds (hRU hz))) hper,
     hamiltonianAction_def, hamiltonianAction_def]
   ring
+
+/-- **The energy identity for a cylindrical perturbation.** Let `H` be a `C¹` time-dependent
+Hamiltonian and let `u` be `C²` on an open neighbourhood `U` of `[a, b] × [0, 1]`, with
+`u(s, 1) = u(s, 0)` for `s ∈ [a, b]`. For the cylindrical perturbation `K = H_t dt`, the Floer
+energy of `u` over the rectangle is the action of the loop at `s = b` minus the action of the loop
+at `s = a`. This is the case `β = 1` of
+`TauCeti.SymplecticForm.integral_floerEnergyDensity_continuation_eq_hamiltonianAction_sub`. -/
+theorem integral_floerEnergyDensity_eq_hamiltonianAction_sub (ω : SymplecticForm V)
+    (hH : ContDiff ℝ 1 (uncurry H)) (hU : IsOpen U) (hu : ContDiffOn ℝ 2 u U) (hab : a ≤ b)
+    (hRU : Icc a b ×ˢ Icc 0 1 ⊆ U) (hper : ∀ s ∈ Icc a b, u (s, 1) = u (s, 0)) :
+    ∫ z in Icc a b ×ˢ Icc 0 1, ω.floerEnergyDensity (fun _ _ ↦ 0) (fun w ↦ H w.2) u z =
+      ω.hamiltonianAction H (fun t ↦ u (b, t)) - ω.hamiltonianAction H (fun t ↦ u (a, t)) := by
+  have h := ω.integral_floerEnergyDensity_continuation_eq_hamiltonianAction_sub
+    (β := fun _ ↦ 1) contDiff_const hH hU hu hab hRU hper
+  simp only [one_mul] at h
+  refine h.trans ?_
+  rw [show (fun z ↦ ω.hamiltonianCurvature (fun _ _ ↦ 0) (fun w y ↦ H w.2 y) z (u z)) =
+      fun _ ↦ 0 from funext fun z ↦ ω.hamiltonianCurvature_cylindrical H z (u z),
+    integral_zero, sub_zero]
 
 /-- The Floer energy density of a solution of the Floer equation
 `∂_s u + J (∂_t u - X_{H_t}(u)) = 0` for the cylindrical perturbation `K = H_t dt` is

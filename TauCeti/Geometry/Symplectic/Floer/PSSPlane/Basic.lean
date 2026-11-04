@@ -7,8 +7,6 @@ module
 
 public import TauCeti.Analysis.Complex.ThricePuncturedSphere.EndCoordinate
 public import Mathlib.Analysis.SpecialFunctions.SmoothTransition
-import Mathlib.Analysis.InnerProductSpace.Calculus
-import Mathlib.Analysis.SpecialFunctions.Log.Deriv
 import Mathlib.Geometry.Manifold.Algebra.SMul
 
 /-!
@@ -48,10 +46,14 @@ transition from `0` on `(-∞, 1]` to `1` on `[2, ∞)`:
 
 ## Implementation notes
 
-The angular coordinate of the plane is a multiple of the argument of `w`, which jumps across the
-negative real axis, so smoothness uses the periodicity of `H`. Up to sign it is the angular
-coordinate of the end at `∞` of the thrice-punctured sphere, whose smoothness statement
-`TauCeti.ThricePuncturedSphere.Puncture.contMDiffAt_comp_im_endCoord` is reused.
+The end lift, end coordinate and angular form of the plane are those of the end at `∞` of the
+thrice-punctured sphere, up to the sign of the plane and a translation of the cylinder
+(`PSSPlane.endLift_eq_cylindricalEndLift`, `PSSPlane.endCoord_eq_neg_sign_mul`,
+`PSSPlane.endAngularForm_eq_neg_sign_smul`), so their inversion and smoothness statements are
+derived from the `TauCeti.ThricePuncturedSphere.Puncture` API. The angular coordinate of the plane
+is a multiple of the argument of `w`, which jumps across the negative real axis, so smoothness
+uses the periodicity of `H`, through
+`TauCeti.ThricePuncturedSphere.Puncture.contMDiffAt_comp_im_endCoord`.
 
 ## References
 
@@ -158,35 +160,46 @@ theorem sign_mul_re_endCoord (P : PSSPlane) (w : ℂ) :
     P.sign * (P.endCoord w).re = Real.log ‖w‖ / (2 * π) := by
   rw [re_endCoord, mul_div_assoc', ← mul_assoc, sign_mul_sign, one_mul]
 
+/-- The end lift of the plane is the end lift of the end at `∞` of the thrice-punctured sphere,
+after reflecting the cylinder by the sign of the plane and translating it by `log 2 / (2π)`. -/
+theorem endLift_eq_cylindricalEndLift (P : PSSPlane) (z : ℂ) :
+    P.endLift z = Puncture.inf.cylindricalEndLift (-P.sign * z + Real.log 2 / (2 * π)) := by
+  have hπ : (π : ℂ) ≠ 0 := by simp [Real.pi_ne_zero]
+  have h : -(2 * π) * (-P.sign * z + Real.log 2 / (2 * π)) = 2 * π * P.sign * z - Real.log 2 := by
+    field_simp
+    ring
+  rw [Puncture.cylindricalEndLift_eq, Puncture.endCenter_inf, Puncture.endScale_inf, zero_add,
+    endLift, h, Complex.exp_sub, Complex.ofReal_log zero_le_two, Complex.ofReal_ofNat,
+    Complex.exp_log two_ne_zero, mul_div_cancel₀ _ two_ne_zero]
+
+/-- Away from the pole, the end coordinate of the plane is that of the end at `∞` of the
+thrice-punctured sphere, translated by `-log 2 / (2π)` and reflected by the sign of the plane. -/
+theorem endCoord_eq_neg_sign_mul (P : PSSPlane) {w : ℂ} (hw : w ≠ 0) :
+    P.endCoord w = -P.sign * (Puncture.inf.endCoord w - Real.log 2 / (2 * π)) := by
+  have hπ : (π : ℂ) ≠ 0 := by simp [Real.pi_ne_zero]
+  have h2 : w / 2 = ((1 / 2 : ℝ) : ℂ) * w := by push_cast; ring
+  rw [endCoord, Puncture.endCoord_def, Puncture.endCenter_inf, Puncture.endScale_inf, sub_zero, h2,
+    Complex.log_ofReal_mul (by norm_num) hw, one_div, Real.log_inv]
+  push_cast
+  field_simp
+  ring
+
 /-- The end coordinate is a right inverse of the end lift away from the pole. -/
 theorem endLift_endCoord (P : PSSPlane) {w : ℂ} (hw : w ≠ 0) : P.endLift (P.endCoord w) = w := by
-  have hπ : 2 * (π : ℂ) ≠ 0 := by simp [Real.pi_ne_zero]
   have hσ : (P.sign : ℂ) * P.sign = 1 := by exact_mod_cast P.sign_mul_sign
-  have h : 2 * π * P.sign * (P.sign * Complex.log w / (2 * π)) = Complex.log w :=
-    calc 2 * π * P.sign * (P.sign * Complex.log w / (2 * π))
-        _ = (P.sign * P.sign) * Complex.log w * ((2 * π) / (2 * π)) := by ring
-        _ = Complex.log w := by rw [hσ, div_self hπ, one_mul, mul_one]
-  rw [endLift, endCoord, h, Complex.exp_log hw]
+  rw [endLift_eq_cylindricalEndLift, P.endCoord_eq_neg_sign_mul hw, ← mul_assoc, neg_mul_neg, hσ,
+    one_mul, sub_add_cancel, Puncture.cylindricalEndLift_endCoord _ (by simpa using hw)]
 
 /-- The end coordinate recovers a cylinder point from its image under the end lift, up to an
 integer shift of the angular coordinate. -/
 theorem exists_endCoord_endLift (P : PSSPlane) (z : ℂ) :
     ∃ k : ℤ, P.endCoord (P.endLift z) = z + k * Complex.I := by
-  obtain ⟨n, hn⟩ := Complex.log_exp_exists (2 * π * P.sign * z)
-  have hπ : (π : ℂ) ≠ 0 := by simp [Real.pi_ne_zero]
+  obtain ⟨k, hk⟩ := Puncture.inf.exists_endCoord_cylindricalEndLift
+    (-P.sign * z + Real.log 2 / (2 * π))
+  rw [P.endCoord_eq_neg_sign_mul (P.endLift_ne_zero z), endLift_eq_cylindricalEndLift, hk]
   cases P
-  · refine ⟨n, ?_⟩
-    rw [endCoord, endLift, hn]
-    field_simp
-    simp only [sign_pos]
-    push_cast
-    ring
-  · refine ⟨-n, ?_⟩
-    rw [endCoord, endLift, hn]
-    field_simp
-    simp only [sign_neg]
-    push_cast
-    ring
+  · exact ⟨-k, by simp only [sign_pos]; push_cast; ring⟩
+  · exact ⟨k, by simp only [sign_neg]; push_cast; ring⟩
 
 /-- The angular one-form `dt` of the plane, as a covector at `w`: `v ↦ Im (v / (2π σ w))`, the
 imaginary part of the differential of the end coordinate. -/
@@ -198,32 +211,44 @@ theorem endAngularForm_apply (P : PSSPlane) (w v : ℂ) :
     P.endAngularForm w v = ((2 * π * P.sign * w)⁻¹ * v).im :=
   (rfl)
 
+/-- The angular form of the plane is that of the end at `∞` of the thrice-punctured sphere, up to
+the sign of the plane. -/
+theorem endAngularForm_eq_neg_sign_smul (P : PSSPlane) (w : ℂ) :
+    P.endAngularForm w = -P.sign • Puncture.inf.endAngularForm w := by
+  ext v
+  cases P <;> simp [Puncture.endAngularForm_apply]
+
 /-- The angular form pulls back to `dt` along the end lift: it sends the image `φ'(z) v` of a
 tangent vector `v` of the cylinder to `Im v`. -/
 theorem endAngularForm_endLift (P : PSSPlane) (z v : ℂ) :
     P.endAngularForm (P.endLift z) (deriv P.endLift z * v) = v.im := by
-  have hπ : (π : ℂ) ≠ 0 := by simp [Real.pi_ne_zero]
-  have hσ : (P.sign : ℂ) ≠ 0 := by exact_mod_cast P.sign_ne_zero
-  rw [endAngularForm_apply, deriv_endLift, ← mul_assoc,
-    inv_mul_cancel₀ (by simp [hπ, hσ, P.endLift_ne_zero z]), one_mul]
+  have h := Puncture.inf.endAngularForm_cylindricalEndLift
+    (-P.sign * z + Real.log 2 / (2 * π)) (-P.sign * v)
+  rw [Puncture.deriv_cylindricalEndLift, Puncture.endCenter_inf, sub_zero,
+    ← endLift_eq_cylindricalEndLift] at h
+  rw [endAngularForm_eq_neg_sign_smul, deriv_endLift, smul_apply,
+    show 2 * π * P.sign * P.endLift z * v = -(2 * π * P.endLift z) * (-P.sign * v) by ring, h,
+    ← Complex.ofReal_neg, Complex.im_ofReal_mul, smul_eq_mul, ← mul_assoc, neg_mul_neg,
+    sign_mul_sign, one_mul]
 
 /-- The angular form is smooth away from the pole. -/
 theorem contDiffAt_endAngularForm (P : PSSPlane) {w : ℂ} (hw : w ≠ 0) {n : WithTop ℕ∞} :
     ContDiffAt ℝ n P.endAngularForm w := by
-  have hπ : (π : ℂ) ≠ 0 := by simp [Real.pi_ne_zero]
-  have hσ : (P.sign : ℂ) ≠ 0 := by exact_mod_cast P.sign_ne_zero
-  have h : ContDiffAt ℂ n (fun w : ℂ => (2 * π * P.sign * w)⁻¹) w :=
-    (by fun_prop : ContDiffAt ℂ n (fun w : ℂ => 2 * π * P.sign * w) w).inv
-      (by simp [hπ, hσ, hw])
-  exact contDiffAt_const.clm_comp
-    ((ContinuousLinearMap.mul ℝ ℂ).contDiff.contDiffAt.comp w (h.restrict_scalars ℝ))
+  rw [show P.endAngularForm = fun w ↦ -P.sign • Puncture.inf.endAngularForm w from
+    funext P.endAngularForm_eq_neg_sign_smul]
+  exact (contDiffAt_const (c := -P.sign)).smul
+    (Puncture.inf.contDiffAt_endAngularForm (by simpa using hw))
 
 /-- The longitudinal coordinate is smooth away from the pole. -/
 theorem contDiffAt_re_endCoord (P : PSSPlane) {w : ℂ} (hw : w ≠ 0) {n : WithTop ℕ∞} :
     ContDiffAt ℝ n (fun w => (P.endCoord w).re) w := by
-  simp_rw [re_endCoord]
-  exact (contDiffAt_const.mul
-    ((contDiffAt_id.norm ℝ hw).log (norm_ne_zero_iff.2 hw))).div_const _
+  have h : (fun w => (P.endCoord w).re) =ᶠ[𝓝 w]
+      fun w => -P.sign * ((Puncture.inf.endCoord w).re - Real.log 2 / (2 * π)) := by
+    filter_upwards [isOpen_ne.mem_nhds hw] with w' hw'
+    rw [P.endCoord_eq_neg_sign_mul hw', ← Complex.ofReal_neg, Complex.re_ofReal_mul]
+    norm_cast
+  exact (contDiffAt_const.mul ((Puncture.inf.contDiffAt_re_endCoord (by simpa using hw)).sub
+    contDiffAt_const)).congr_of_eventuallyEq h
 
 /-- The angular coordinate of the plane is that of the end at `∞` of the thrice-punctured sphere,
 up to the sign of the plane: the two end lifts differ by the positive factor `2`. -/
