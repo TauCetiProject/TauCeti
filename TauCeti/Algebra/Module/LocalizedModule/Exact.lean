@@ -39,7 +39,9 @@ public section
 
 namespace IsLocalizedModule
 
-variable {R : Type*} [CommRing R] (S : Submonoid R)
+section CommSemiring
+
+variable {R : Type*} [CommSemiring R] (S : Submonoid R)
 
 /-- A linear map between zero modules is a localization at every submonoid. -/
 theorem of_subsingleton {M N : Type*} [AddCommMonoid M] [AddCommMonoid N] [Module R M]
@@ -47,6 +49,10 @@ theorem of_subsingleton {M N : Type*} [AddCommMonoid M] [AddCommMonoid N] [Modul
   map_units _ := isUnit_of_subsingleton _
   surj _ := ⟨⟨0, 1⟩, Subsingleton.elim _ _⟩
   exists_of_eq _ := ⟨1, Subsingleton.elim _ _⟩
+
+end CommSemiring
+
+variable {R : Type*} [CommRing R] (S : Submonoid R)
 
 variable {M₁ M₂ M₃ M₄ M₅ N₁ N₂ N₃ N₄ N₅ : Type*}
   [AddCommGroup M₁] [AddCommGroup M₂] [AddCommGroup M₃] [AddCommGroup M₄] [AddCommGroup M₅]

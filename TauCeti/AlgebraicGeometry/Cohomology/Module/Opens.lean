@@ -101,6 +101,15 @@ def _root_.AlgebraicGeometry.Scheme.Modules.cohomologyOnAction (n : ℕ) (U : X.
     simp only [globalSectionsSmul_add, CategoryTheory.Functor.map_add, Abelian.Ext.mk₀_add,
       Abelian.Ext.comp_add]
 
+/-- A global function `r` acts on `Hⁿ(U, M)` through the map induced by multiplication by `r` on
+`M`. -/
+@[simp]
+lemma _root_.AlgebraicGeometry.Scheme.Modules.cohomologyOnAction_apply (n : ℕ) (U : X.Opens)
+    (r : Γ(X, ⊤)) (x : cohomologyOn M n U) :
+    cohomologyOnAction M n U r x = ((_root_.CategoryTheory.Sheaf.cohomologyPresheafFunctor _ n).map
+      ((toSheaf X).map (M.globalSectionsSmul r))).app (op U) x :=
+  (rfl)
+
 /-- The cohomology `Hⁿ(U, M)` of an open subset is a module over the ring of global functions. -/
 instance _root_.AlgebraicGeometry.Scheme.Modules.cohomologyOnModule (n : ℕ) (U : X.Opens) :
     Module Γ(X, ⊤) (cohomologyOn M n U) :=

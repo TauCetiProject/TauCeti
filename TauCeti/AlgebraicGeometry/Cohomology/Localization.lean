@@ -103,55 +103,41 @@ private lemma toBiprod_apply_eq (U V : X.Opens) (n : ℕ) (y : cohomologyOn M n 
   rw [hp]
   exact (Opens.mayerVietorisSquare U V).toBiprod_apply _ y
 
-private lemma coe_mayerVietorisδLinear (U V : X.Opens) (n : ℕ) :
-    ⇑(mayerVietorisδLinear M U V n (n + 1) rfl) = mayerVietorisδ M U V n (n + 1) rfl :=
-  funext (mayerVietorisδLinear_apply M U V n (n + 1) rfl)
-
 private lemma exact_resDiff_mayerVietorisδLinear (U V : X.Opens) (n : ℕ) :
-    Function.Exact (resDiff M U V n) (mayerVietorisδLinear M U V n (n + 1) rfl) := by
-  have hex : Function.Exact ((Opens.mayerVietorisSquare U V).fromBiprod
-      ((_root_.SheafOfModules.toSheaf X.ringCatSheaf).obj M) n)
-      (mayerVietorisδ M U V n (n + 1) rfl) :=
-    (ShortComplex.ab_exact_iff_function_exact _).mp
-      ((mayerVietorisSequence_exact M U V n (n + 1) rfl).exact' 1 2 3)
-  intro y
-  rw [coe_mayerVietorisδLinear, hex y]
-  refine ⟨?_, ?_⟩
-  · rintro ⟨z, rfl⟩
-    exact ⟨(AddCommGrpCat.biprodIsoProd _ _).hom z, (resDiff_apply M U V n _).trans
-      (congrArg _ (Iso.hom_inv_id_apply (AddCommGrpCat.biprodIsoProd _ _) z))⟩
-  · rintro ⟨p, rfl⟩
-    exact ⟨_, (resDiff_apply M U V n p).symm⟩
+    Function.Exact (resDiff M U V n) (mayerVietorisδLinear M U V n (n + 1) rfl) :=
+  Function.Exact.of_ladder_addEquiv_of_exact
+    (AddCommGrpCat.biprodIsoProd _ _).addCommGroupIsoToAddEquiv (.refl _) (.refl _)
+    (g₁₂ := (resDiff M U V n).toAddMonoidHom)
+    (g₂₃ := (mayerVietorisδLinear M U V n (n + 1) rfl).toAddMonoidHom)
+    (AddMonoidHom.ext fun z ↦ (resDiff_apply M U V n _).trans
+      (congrArg _ (Iso.hom_inv_id_apply (AddCommGrpCat.biprodIsoProd _ _) z)))
+    (AddMonoidHom.ext fun x ↦ by exact mayerVietorisδLinear_apply M U V n (n + 1) rfl x)
+    ((ShortComplex.ab_exact_iff_function_exact _).mp
+      ((mayerVietorisSequence_exact M U V n (n + 1) rfl).exact' 1 2 3))
 
 private lemma exact_mayerVietorisδLinear_resPair (U V : X.Opens) (n : ℕ) :
-    Function.Exact (mayerVietorisδLinear M U V n (n + 1) rfl) (resPair M U V (n + 1)) := by
-  have hex : Function.Exact (mayerVietorisδ M U V n (n + 1) rfl)
-      ((Opens.mayerVietorisSquare U V).toBiprod
-        ((_root_.SheafOfModules.toSheaf X.ringCatSheaf).obj M) (n + 1)) :=
-    (ShortComplex.ab_exact_iff_function_exact _).mp
-      ((mayerVietorisSequence_exact M U V n (n + 1) rfl).exact' 2 3 4)
-  intro y
-  rw [coe_mayerVietorisδLinear, ← hex y, toBiprod_apply_eq]
-  exact ⟨fun h ↦ by rw [h]; exact map_zero _,
-    fun h ↦ (AddCommGrpCat.biprodIsoProd _ _).addCommGroupIsoToAddEquiv.symm.injective
-      (h.trans (map_zero _).symm)⟩
+    Function.Exact (mayerVietorisδLinear M U V n (n + 1) rfl) (resPair M U V (n + 1)) :=
+  Function.Exact.of_ladder_addEquiv_of_exact
+    (.refl _) (.refl _) (AddCommGrpCat.biprodIsoProd _ _).addCommGroupIsoToAddEquiv
+    (g₁₂ := (mayerVietorisδLinear M U V n (n + 1) rfl).toAddMonoidHom)
+    (g₂₃ := (resPair M U V (n + 1)).toAddMonoidHom)
+    (AddMonoidHom.ext fun x ↦ by exact mayerVietorisδLinear_apply M U V n (n + 1) rfl x)
+    (AddMonoidHom.ext fun y ↦ ((Iso.inv_hom_id_apply (AddCommGrpCat.biprodIsoProd _ _) _).symm.trans
+      (congrArg _ (toBiprod_apply_eq M U V (n + 1) y).symm)))
+    ((ShortComplex.ab_exact_iff_function_exact _).mp
+      ((mayerVietorisSequence_exact M U V n (n + 1) rfl).exact' 2 3 4))
 
 private lemma exact_resPair_resDiff (U V : X.Opens) (n : ℕ) :
-    Function.Exact (resPair M U V n) (resDiff M U V n) := by
-  have hex : Function.Exact ((Opens.mayerVietorisSquare U V).toBiprod
-      ((_root_.SheafOfModules.toSheaf X.ringCatSheaf).obj M) n)
-      ((Opens.mayerVietorisSquare U V).fromBiprod
-        ((_root_.SheafOfModules.toSheaf X.ringCatSheaf).obj M) n) :=
-    (ShortComplex.ab_exact_iff_function_exact _).mp
-      ((mayerVietorisSequence_exact M U V n (n + 1) rfl).exact' 0 1 2)
-  intro p
-  rw [resDiff_apply]
-  refine (hex _).trans ⟨?_, ?_⟩
-  · rintro ⟨y, hy⟩
-    refine ⟨y, (AddCommGrpCat.biprodIsoProd _ _).addCommGroupIsoToAddEquiv.symm.injective ?_⟩
-    exact (toBiprod_apply_eq M U V n y).symm.trans hy
-  · rintro ⟨y, rfl⟩
-    exact ⟨y, toBiprod_apply_eq M U V n y⟩
+    Function.Exact (resPair M U V n) (resDiff M U V n) :=
+  Function.Exact.of_ladder_addEquiv_of_exact
+    (.refl _) (AddCommGrpCat.biprodIsoProd _ _).addCommGroupIsoToAddEquiv (.refl _)
+    (g₁₂ := (resPair M U V n).toAddMonoidHom) (g₂₃ := (resDiff M U V n).toAddMonoidHom)
+    (AddMonoidHom.ext fun y ↦ ((Iso.inv_hom_id_apply (AddCommGrpCat.biprodIsoProd _ _) _).symm.trans
+      (congrArg _ (toBiprod_apply_eq M U V n y).symm)))
+    (AddMonoidHom.ext fun z ↦ (resDiff_apply M U V n _).trans
+      (congrArg _ (Iso.hom_inv_id_apply (AddCommGrpCat.biprodIsoProd _ _) z)))
+    ((ShortComplex.ab_exact_iff_function_exact _).mp
+      ((mayerVietorisSequence_exact M U V n (n + 1) rfl).exact' 0 1 2))
 
 private lemma resDiff_comp_prodMap (n : ℕ) {U V U' V' : X.Opens} (hU : U' ≤ U) (hV : V' ≤ V) :
     resDiff M U' V' n ∘ₗ (cohomologyOnResLinear M n hU).prodMap (cohomologyOnResLinear M n hV) =
