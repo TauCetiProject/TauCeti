@@ -6,11 +6,15 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Polynomial.AlgebraMap
+public import Mathlib.RingTheory.MvPolynomial.WeightedHomogeneous
 public import TauCeti.RingTheory.FormalGroup.BaseChange
 public import TauCeti.RingTheory.FormalGroup.CoordinateChange.Basic
+public import TauCeti.RingTheory.FormalGroup.Logarithm.Basic
 public import TauCeti.RingTheory.GradedAlgebra.Polynomial
 public import TauCeti.RingTheory.MvPowerSeries.Rescale
--- Proof-only: the coefficients after swapping the variables.
+-- Proof-only: the coefficients after swapping the variables, and weighted homogeneity from
+-- scaling the variables.
+import TauCeti.RingTheory.MvPolynomial.WeightedHomogeneous
 import TauCeti.RingTheory.MvPowerSeries.Substitution
 
 /-!
@@ -50,10 +54,18 @@ case of the polynomial variable `s` over `R[s]`.
 * `FormalGroup.map_rescale`: rescaling commutes with base change.
 * `FormalGroup.rescale_one` and `FormalGroup.rescale_rescale`: rescaling is an action of the
   multiplicative monoid of `R`.
+* `FormalGroup.rescale_𝔾ₘ_toPowerSeries`: rescaling `X + Y + XY` by `s` gives `X + Y + s X Y`.
+* `FormalGroup.invariantDifferential_rescale`: the invariant differential of `F^s` is `P(s T) dT`
+  when that of `F` is `P(T) dT`.
 * `FormalGroup.homothety_smul`: transporting `F` along the homothety `X ↦ u X` by a unit `u` is
   rescaling by `u⁻¹`.
 * `FormalGroup.rescale_smul`: rescaling by a unit commutes with changes of coordinates, up to
   conjugating the coordinate by a homothety.
+* `FormalGroup.rescale_ofStrictCoeffs_smul_𝔾ₐ`: rescaling by a unit `u` the additive law
+  transported along `X + ∑ bᵢ X^(i + 1)` multiplies each `bᵢ` by `uⁱ`.
+* `FormalGroup.isWeightedHomogeneous_coeff_ofStrictCoeffs_X_smul_𝔾ₐ`: the coefficient of
+  `X^(d 0) Y^(d 1)` in the additive law transported along `X + ∑ bᵢ X^(i + 1)`, with indeterminate
+  `bᵢ` of weight `i`, is weighted homogeneous of degree `d 0 + d 1 - 1`.
 * `FormalGroup.subst_rescale_toPowerSeries_of_smul_eq_rescale`: if `g` is additive along `F` and
   `s • gₛ = g(s X)` for a nonzerodivisor `s`, then `gₛ` is additive along `F^s`.
 * `FormalGroup.map_toPolynomial_eq_rescale_iff`: over a ring graded by `ℕ`, `F` has its
@@ -193,6 +205,32 @@ theorem rescale_𝔾ₐ : (𝔾ₐ : FormalGroup R).rescale s = 𝔾ₐ := by
   rw [coeff_rescale, 𝔾ₐ_toPowerSeries, map_add, coeff_X, coeff_X]
   split_ifs <;> simp_all
 
+/-- Rescaling the multiplicative formal group law by `s` gives `X + Y + s X Y`. -/
+@[simp]
+theorem rescale_𝔾ₘ_toPowerSeries :
+    ((𝔾ₘ : FormalGroup R).rescale s).toPowerSeries = X 0 + X 1 + s • (X 0 * X 1) := by
+  have hXY : (X 0 * X 1 : MvPowerSeries (Fin 2) R) =
+      monomial (Finsupp.single 0 1 + Finsupp.single 1 1) 1 := by
+    rw [X, X, monomial_mul_monomial, mul_one]
+  ext d
+  simp only [coeff_rescale, 𝔾ₘ_toPowerSeries, map_add, coeff_smul, hXY, coeff_X, coeff_monomial]
+  split_ifs <;> simp_all [Finsupp.degree_single]
+
+/-- **The invariant differential of a rescaling**: if `P(T) dT` is the invariant differential of
+`F`, then `P(s T) dT` is that of `F^s`. -/
+@[simp]
+theorem invariantDifferential_rescale :
+    (F.rescale s).invariantDifferential = PowerSeries.rescale s F.invariantDifferential := by
+  -- `F^s_X(0, T) = F_X(0, s T)`: the coefficient of `Tⁿ` on either side is `sⁿ` times that of
+  -- `X Yⁿ` in `F`.
+  have hD : subst ![0, PowerSeries.X] (pderiv 0 (F.rescale s).toPowerSeries) =
+      PowerSeries.rescale s (subst ![0, PowerSeries.X] (pderiv 0 F.toPowerSeries)) := by
+    ext n
+    simp [PowerSeries.coeff_rescale, coeff_subst_zero_X, coeff_pderiv, Finsupp.degree_single]
+  have h := congrArg (PowerSeries.rescale s) F.invariantDifferential_mul_subst_pderiv
+  rw [map_mul, map_one, ← hD, mul_comm] at h
+  exact left_inv_eq_right_inv (F.rescale s).invariantDifferential_mul_subst_pderiv h
+
 /-- **Changing coordinates by a homothety is rescaling**: transporting `F` along `X ↦ u X` gives
 `u F(u⁻¹ X, u⁻¹ Y)`, the rescaling of `F` by `u⁻¹`. -/
 theorem homothety_smul (u : Rˣ) : TauCeti.FormalCoordinate.homothety u • F = F.rescale ↑u⁻¹ := by
@@ -226,6 +264,14 @@ theorem rescale_smul (u : Rˣ) (φ : TauCeti.FormalCoordinate R) :
   have key (G : FormalGroup R) : G.rescale u = TauCeti.FormalCoordinate.homothety u⁻¹ • G := by
     rw [homothety_smul, inv_inv]
   simp [key, ← mul_smul, map_inv]
+
+/-- Rescaling by a unit `u` the additive formal group law transported along the strict coordinate
+`X + ∑ bᵢ X^(i + 1)` gives the additive law transported along `X + ∑ uⁱ bᵢ X^(i + 1)`. -/
+theorem rescale_ofStrictCoeffs_smul_𝔾ₐ (u : Rˣ) (b : ℕ+ → R) :
+    (TauCeti.FormalCoordinate.ofStrictCoeffs b • 𝔾ₐ).rescale (u : R) =
+      TauCeti.FormalCoordinate.ofStrictCoeffs (fun i ↦ (u : R) ^ (i : ℕ) * b i) • 𝔾ₐ := by
+  rw [rescale_smul, rescale_𝔾ₐ,
+    TauCeti.FormalCoordinate.homothety_inv_mul_ofStrictCoeffs_mul_homothety]
 
 variable {s} in
 /-- If `g` is additive along `F` and `s • gₛ = g(s X)` for a nonzerodivisor `s`, then `gₛ` is
@@ -271,5 +317,50 @@ theorem map_toPolynomial_eq_rescale_iff (F : FormalGroup A) (w : ℕ) :
     mul_comm, Polynomial.C_mul_X_pow_eq_monomial, toPolynomial_eq_monomial_iff]
 
 end Graded
+
+/-- The base change along `MvPolynomial.map f` of the additive law transported along
+`X + ∑ bᵢ X^(i + 1)` with indeterminate `bᵢ` is the same law over the new coefficients. -/
+private theorem map_ofStrictCoeffs_X_smul_𝔾ₐ (f : R →+* S) :
+    (TauCeti.FormalCoordinate.ofStrictCoeffs (MvPolynomial.X (R := R)) •
+        (𝔾ₐ : FormalGroup (MvPolynomial ℕ+ R))).map (MvPolynomial.map f) =
+      TauCeti.FormalCoordinate.ofStrictCoeffs (MvPolynomial.X (R := S)) •
+        (𝔾ₐ : FormalGroup (MvPolynomial ℕ+ S)) := by
+  simp [map_ofStrictCoeffs_smul_𝔾ₐ, Function.comp_def]
+
+/-- **The transported additive law is graded.** The coefficient of `X^(d 0) Y^(d 1)` in the additive
+formal group law transported along the strict coordinate `X + ∑ bᵢ X^(i + 1)` over `R[b₁, b₂, …]`
+is weighted homogeneous of degree `d 0 + d 1 - 1`, for `bᵢ` of weight `i`. -/
+theorem isWeightedHomogeneous_coeff_ofStrictCoeffs_X_smul_𝔾ₐ (d : Fin 2 →₀ ℕ) :
+    MvPolynomial.IsWeightedHomogeneous (fun i : ℕ+ ↦ (i : ℕ))
+      (coeff d (TauCeti.FormalCoordinate.ofStrictCoeffs (MvPolynomial.X (R := R)) •
+        (𝔾ₐ : FormalGroup (MvPolynomial ℕ+ R))).toPowerSeries) (d.degree - 1) := by
+  -- Over `ℚ`, substituting `2ⁱ bᵢ` for `bᵢ` rescales the law by `2`, which multiplies the
+  -- coefficient by `2 ^ (d 0 + d 1 - 1)`, and the powers of `2` are distinct.
+  have hℚ : MvPolynomial.IsWeightedHomogeneous (fun i : ℕ+ ↦ (i : ℕ))
+      (coeff d (TauCeti.FormalCoordinate.ofStrictCoeffs (MvPolynomial.X (R := ℚ)) •
+        (𝔾ₐ : FormalGroup (MvPolynomial ℕ+ ℚ))).toPowerSeries) (d.degree - 1) := by
+    let u : (MvPolynomial ℕ+ ℚ)ˣ :=
+      Units.map (MvPolynomial.C : ℚ →+* MvPolynomial ℕ+ ℚ).toMonoidHom (Units.mk0 2 two_ne_zero)
+    have hu : (u : MvPolynomial ℕ+ ℚ) = MvPolynomial.C 2 := by simp [u]
+    refine MvPolynomial.isWeightedHomogeneous_of_aeval_C_pow_mul_X_eq
+      (pow_right_injective₀ two_pos (by norm_num)) ?_
+    have h := congrArg (fun F : FormalGroup (MvPolynomial ℕ+ ℚ) ↦ coeff d F.toPowerSeries)
+      (rescale_ofStrictCoeffs_smul_𝔾ₐ u MvPolynomial.X)
+    simp only [coeff_rescale, hu, ← map_pow] at h
+    rw [h, ← AlgHom.coe_toRingHom, ← coeff_map, ← map_toPowerSeries, map_ofStrictCoeffs_smul_𝔾ₐ]
+    simp [Function.comp_def]
+  -- The coefficients over `R` are the images of those over `ℤ`, which embed in those over `ℚ`.
+  have hℤ : MvPolynomial.IsWeightedHomogeneous (fun i : ℕ+ ↦ (i : ℕ))
+      (coeff d (TauCeti.FormalCoordinate.ofStrictCoeffs (MvPolynomial.X (R := ℤ)) •
+        (𝔾ₐ : FormalGroup (MvPolynomial ℕ+ ℤ))).toPowerSeries) (d.degree - 1) := by
+    intro e he
+    refine hℚ ?_
+    rw [← map_ofStrictCoeffs_X_smul_𝔾ₐ (Int.castRingHom ℚ), map_toPowerSeries, coeff_map,
+      MvPolynomial.coeff_map, eq_intCast]
+    exact Int.cast_ne_zero.2 he
+  intro e he
+  refine hℤ fun h ↦ he ?_
+  rw [← map_ofStrictCoeffs_X_smul_𝔾ₐ (Int.castRingHom R), map_toPowerSeries, coeff_map,
+    MvPolynomial.coeff_map, h, map_zero]
 
 end FormalGroup

@@ -145,8 +145,8 @@ theorem isGradedCoderivationAlong_reducedTensorWords_perturb_homotopy
     have e1 := LinearMap.congr_fun h1 w
     have e2 := LinearMap.congr_fun h2 w
     simp only [LinearMap.add_apply, LinearMap.comp_apply] at e1 e2
-    simp only [LinearMap.comp_apply, LinearMap.add_apply, Module.End.one_apply,
-      Module.End.mul_apply, map_add, e1, e2]
+    simp only [LinearMap.comp_apply, LinearMap.add_apply, one_apply_eq_self,
+      mul_apply_eq_comp, map_add, e1, e2]
   rw [isGradedCoderivationAlong_iff, LinearMap.rTensor_def]
   simpa only [C, ← LinearMap.comp_assoc, ← TensorProduct.map_comp,
     LinearMap.id_comp, LinearMap.comp_id, LinearMap.add_comp] using heq

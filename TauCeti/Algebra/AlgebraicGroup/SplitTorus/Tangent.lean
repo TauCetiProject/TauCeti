@@ -209,6 +209,18 @@ theorem range_derivationCompLieHom [Finite I] (π : H →ₐc[R] A) :
   rw [← h, ← Set.range_comp']
   simp only [LieHom.coe_toLinearMap, derivationCompLieHom_tangentBasis]
 
+/-- The coordinate-cocharacter differentials are independent whenever the torus differential
+is injective. -/
+theorem linearIndependent_derivationComp_cocharacter [Finite I] (π : H →ₐc[R] A)
+    (hπ : Function.Injective (derivationCompLieHom (B := B) π)) :
+    LinearIndependent B (fun i : I ↦
+      derivationCompLieHom (π.cocharacter (Finsupp.applyAddHom i).toMultiplicative)
+        ((MultiplicativeGroup.tangentLinearEquiv (R := R) (B := B)).symm 1)) := by
+  simpa only [Function.comp_def, LieHom.coe_toLinearMap,
+    derivationCompLieHom_tangentBasis] using
+    (tangentBasis (R := R) (B := B) (I := I)).linearIndependent.map_injOn
+      (derivationCompLieHom (B := B) π).toLinearMap hπ.injOn
+
 end
 
 end TauCeti.SplitTorus

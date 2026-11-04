@@ -26,10 +26,7 @@ scalar. Together these give the pointwise form of the rescaling law for contact 
 contact together whenever `f` vanishes nowhere.
 
 For an alternating `B`, the hyperplane `ker a` carries a nondegenerate alternating form, so it has
-even dimension and `V` has odd dimension (`Module.Dual.IsContact.odd_finrank`). A subspace of
-`ker a` on which `B` vanishes has at most half the dimension of `ker a`
-(`Module.Dual.IsContact.two_mul_finrank_add_one_le`): this bounds the dimension of isotropic and
-Legendrian submanifolds of a contact manifold.
+even dimension and `V` has odd dimension (`Module.Dual.IsContact.odd_finrank`).
 
 Contact covectors arise on hyperplanes transverse to a vector. If `B` is nondegenerate and
 alternating, `L : U → V` is injective and `z` is a vector outside the range of `L` which together
@@ -67,10 +64,11 @@ pointwise form of the Reeb vector field of a contact form and of its rescaling l
   under nonzero rescaling of `a` and of `B`.
 * `Module.Dual.IsContact.even_finrank_ker`, `Module.Dual.IsContact.odd_finrank`: the dimension
   count.
-* `Module.Dual.IsContact.two_mul_finrank_add_one_le`: the dimension bound for subspaces of `ker a`
-  on which `B` vanishes.
 * `Module.Dual.isContact_comp_compl₁₂`: the covector `B z` restricted to a hyperplane transverse to
   `z` is contact for the restriction of a nondegenerate alternating `B`.
+* `Module.Dual.isContact_comp_linearEquiv_compl₁₂_iff`,
+  `Module.Dual.IsContact.reebVector_comp_linearEquiv_compl₁₂`: contactness and the Reeb vector
+  are transported by linear equivalences.
 * `Module.Dual.symplectizationForm`,
   `Module.Dual.isContact_iff_nondegenerate_symplectizationForm`: the symplectization form, which
   is nondegenerate exactly for contact covectors.
@@ -165,23 +163,6 @@ theorem IsContact.odd_finrank [FiniteDimensional K V] (hB : B.IsAlt) (h : a.IsCo
   rw [← finrank_ker_add_one_of_ne_zero h.ne_zero]
   exact (h.even_finrank_ker hB).add_one
 
-/-- **Isotropic subspaces of a contact hyperplane.** If `a` is contact for `B`, a subspace `W` of
-`ker a` on which `B` vanishes has `2 dim W + 1 ≤ dim V`: on a space of dimension `2 n + 1`, such a
-subspace has dimension at most `n`. -/
-theorem IsContact.two_mul_finrank_add_one_le [FiniteDimensional K V] (h : a.IsContact B)
-    {W : Submodule K V} (hW : W ≤ LinearMap.ker a) (hBW : ∀ v ∈ W, ∀ w ∈ W, B v w = 0) :
-    2 * finrank K W + 1 ≤ finrank K V := by
-  -- Read `W` inside `ker a`, where `B` is nondegenerate and `W` lies in its own orthogonal.
-  set W' := W.comap (LinearMap.ker a).subtype
-  have hW' : finrank K W' = finrank K W := (Submodule.comapSubtypeEquivOfLe hW).finrank_eq
-  have hle : W' ≤ (B.restrict (LinearMap.ker a)).orthogonal W' := fun v hv ↦
-    LinearMap.BilinForm.mem_orthogonal_iff.2 fun w hw ↦ hBW w hw v hv
-  have horth := LinearMap.BilinForm.finrank_orthogonal h.nondegenerate_restrict W'
-  have hWker := Submodule.finrank_mono hle
-  have hker := finrank_ker_add_one_of_ne_zero h.ne_zero
-  have hW'le := Submodule.finrank_le W'
-  omega
-
 /-! ### Hyperplanes transverse to a vector -/
 
 /-- **Transverse hyperplanes of a nondegenerate alternating form carry contact covectors.** Let
@@ -236,6 +217,30 @@ theorem isContact_comp_compl₁₂ {U : Type*} [AddCommGroup U] [Module K U] (hB
     rw [map_smul, sub_eq_zero.1 hc, smul_smul, inv_mul_cancel₀ hc0, one_smul]
   rw [hc0, zero_smul, sub_zero] at hc
   exact hL (hc.trans (map_zero L).symm)
+
+/-! ### Transport along linear equivalences -/
+
+/-- **Contactness is invariant under linear equivalences.** For a linear equivalence
+`e : V ≃ V'`, the pullback `a' ∘ e` is contact for the pullback `B' ∘ (e × e)` exactly when `a'`
+is contact for `B'`. -/
+@[simp]
+theorem isContact_comp_linearEquiv_compl₁₂_iff {V' : Type*} [AddCommGroup V'] [Module K V']
+    (e : V ≃ₗ[K] V') {a' : Module.Dual K V'} {B' : LinearMap.BilinForm K V'} :
+    IsContact (a' ∘ₗ (e : V →ₗ[K] V')) (B'.compl₁₂ (e : V →ₗ[K] V') e) ↔ a'.IsContact B' := by
+  have hker : (LinearMap.ker (a' ∘ₗ (e : V →ₗ[K] V'))).map (e : V →ₗ[K] V') =
+      LinearMap.ker a' := by
+    rw [LinearMap.ker_comp, Submodule.map_comap_eq_of_surjective e.surjective]
+  -- The kernels correspond under `e`, and so do the restricted forms.
+  set e₀ := e.ofSubmodules _ _ hker
+  have hrestrict : LinearMap.BilinForm.restrict (B'.compl₁₂ (e : V →ₗ[K] V') e)
+      (LinearMap.ker (a' ∘ₗ (e : V →ₗ[K] V'))) =
+      LinearMap.BilinForm.congr e₀.symm (B'.restrict (LinearMap.ker a')) := by
+    ext v w
+    simp [e₀, LinearMap.BilinForm.congr_apply]
+  rw [isContact_def, isContact_def, hrestrict, LinearMap.BilinForm.nondegenerate_congr_iff]
+  refine and_congr_left fun _ ↦ not_congr ⟨fun h ↦ ?_, fun h ↦ by rw [h, LinearMap.zero_comp]⟩
+  ext v
+  simpa using LinearMap.congr_fun h (e.symm v)
 
 /-! ### The symplectization form -/
 
@@ -482,6 +487,20 @@ theorem IsContact.reebVector_smul (h : a.IsContact B) {c : K} (hc : c ≠ 0) :
       mul_inv_cancel₀ hc]
   · rw [LinearMap.smul_apply, smul_eq_mul, mul_eq_zero, or_iff_right hc] at hw
     rw [map_smul, LinearMap.smul_apply, h.apply_reebVector_of_apply_eq_zero hw, smul_zero]
+
+/-- **The Reeb vector is transported by linear equivalences.** If `a'` is contact for `B'`,
+then the Reeb vector of the pullback `a' ∘ e` for `B' ∘ (e × e)` is `e⁻¹` of the Reeb vector of
+`a'` for `B'`. -/
+theorem IsContact.reebVector_comp_linearEquiv_compl₁₂ {V' : Type*} [AddCommGroup V']
+    [Module K V'] {a' : Module.Dual K V'} {B' : LinearMap.BilinForm K V'} (h : a'.IsContact B')
+    (e : V ≃ₗ[K] V') :
+    reebVector (a' ∘ₗ (e : V →ₗ[K] V')) (B'.compl₁₂ (e : V →ₗ[K] V') e) =
+      e.symm (a'.reebVector B') := by
+  have : FiniteDimensional K V' := e.finiteDimensional
+  refine (((isContact_comp_linearEquiv_compl₁₂_iff e).2 h).eq_reebVector_iff.2
+    ⟨?_, fun w hw ↦ ?_⟩).symm
+  · simp [h.apply_reebVector]
+  · simpa using h.apply_reebVector_of_apply_eq_zero (by simpa using hw)
 
 /-- **Rescaling law for the Reeb vector**, pointwise. Let `a` be contact for `B`, let `c ≠ 0`,
 and let `B'` be a bilinear form with `B' v w = c B v w - l w a v` for `w ∈ ker a`. This is the

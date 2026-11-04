@@ -20,8 +20,11 @@ This file collects facts used to compare power series to a finite order `m`:
   and products `(u ^ k) * d⁄dX u` of a unit `u : R⟦X⟧ˣ` depend only on a finite truncation of the
   input,
 * the coefficients of a finite expansion `∑_{i < m} aᵢ Xⁱ` are the `aᵢ`, read as zero from degree
-  `m` on, and
-* the coefficients of a polynomial times a power series expand along the polynomial monomials.
+  `m` on,
+* the coefficients of a polynomial times a power series expand along the polynomial monomials,
+  and
+* evaluating the `n`-truncation at an element with `x ^ n = 0` sees only the coefficients
+  below `n`.
 
 ## Main results
 
@@ -38,6 +41,8 @@ This file collects facts used to compare power series to a finite order `m`:
 * `PowerSeries.coeff_sum_C_mul_X_pow`: the coefficients of `∑ i : Fin m, C (a i) * X ^ i`.
 * `PowerSeries.coeff_coe_mul_eq_sum`: `coeff n (p * g) = ∑_{i < N} pᵢ coeff n (Xⁱ g)` for a
   polynomial `p` of degree less than `N`.
+* `PowerSeries.aeval_trunc_eq_aeval_of_pow_eq_zero`: at an element with a vanishing `n`th power,
+  the truncation below `n` evaluates like any polynomial with the same coefficients below `n`.
 -/
 
 public section
@@ -136,7 +141,7 @@ variable {R : Type*} [Ring R]
 /-- For `n < m`, the `n`-th coefficient of `PowerSeries.inv.aux a φ` depends only on `trunc m φ`. -/
 theorem coeff_inv_aux_eq_of_trunc_eq {n m : ℕ} (a : R) {φ ψ : R⟦X⟧} (h : trunc m φ = trunc m ψ)
     (hn : n < m) : coeff n (PowerSeries.inv.aux a φ) = coeff n (PowerSeries.inv.aux a ψ) := by
-  induction n using Nat.strong_induction_on with | h n ih =>
+  induction n using Nat.strong_induction_on with | ind n ih =>
   rw [coeff_inv_aux, coeff_inv_aux]
   split_ifs with hn0
   · rfl
@@ -198,6 +203,16 @@ theorem trunc_val_zpow_mul_derivative_eq_of_trunc_eq {m : ℕ} {u v : R⟦X⟧ˣ
   trunc_mul_eq_of_trunc_eq
     (trunc_val_zpow_eq_of_trunc_eq (trunc_eq_of_trunc_eq_of_le h (Nat.le_succ m)) k)
     (by rw [trunc_derivative, trunc_derivative, h])
+
+/-- Evaluation at an element `x` of a possibly noncommutative `R`-algebra with `x ^ n = 0` sees a
+power series only through its coefficients below `n`: any polynomial with the same coefficients
+below `n` has the same value as the truncation. -/
+theorem aeval_trunc_eq_aeval_of_pow_eq_zero {A : Type*} [Ring A] [Algebra R A] {x : A} {n : ℕ}
+    (hx : x ^ n = 0) {f : R⟦X⟧} {p : Polynomial R} (h : ∀ d < n, coeff d f = p.coeff d) :
+    Polynomial.aeval x (trunc n f) = Polynomial.aeval x p := by
+  obtain ⟨q, hq⟩ : (Polynomial.X : Polynomial R) ^ n ∣ trunc n f - p :=
+    Polynomial.X_pow_dvd_iff.2 fun d hd => by simp [coeff_trunc, hd, h d hd]
+  rw [← sub_eq_zero, ← map_sub, hq, map_mul, map_pow, Polynomial.aeval_X, hx, zero_mul]
 
 end CommRing
 

@@ -55,7 +55,7 @@ theorem inv_inv_sub_smul_one_apply_self {z : 𝕜} (hz : RCLike.im z ≠ 0) (i :
   have hsub : ((A - z • 1).submatrix (↑) (↑) : Matrix {a // a ≠ i} {a // a ≠ i} 𝕜) =
       A.submatrix (↑) (↑) - z • 1 := by
     ext a b
-    simp [one_apply, Subtype.ext_iff]
+    simp [Matrix.one_apply, Subtype.ext_iff]
   have h := (A - z • 1).inv_inv_apply_self_eq_sub i (by
     rw [hsub, ← isUnit_iff_isUnit_det]
     exact hB.isUnit_sub_smul_one_of_im_ne_zero hz)

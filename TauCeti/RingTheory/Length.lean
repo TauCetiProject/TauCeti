@@ -78,6 +78,11 @@ applies to the quotients appearing here without any further appeal to defeq.
   length for a finite module `M` when the radical of `I` is the maximal ideal.
 * `Ideal.length_localizedModule_quotient_eq_one`: for a prime `𝔭`, the localization of `A ⧸ 𝔭`
   at `𝔭` has length one over `A_𝔭`, being its residue field.
+* `LinearMap.length_eq_of_bijective`: a bijective semilinear map along a surjective ring
+  homomorphism preserves length.
+* `LinearEquiv.length_localizedModule_comap`: for a ring isomorphism `σ : A → B` and a
+  `σ`-semilinear equivalence `N ≃ M`, the localizations `N_{σ⁻¹ 𝔮}` and `M_𝔮` have the same length,
+  for every prime `𝔮` of `B`.
 -/
 
 public section
@@ -453,3 +458,76 @@ theorem length_self_eq_top_of_ringKrullDim_pos (hpos : 0 < ringKrullDim A) :
 end PositiveKrullDimension
 
 end TauCeti
+
+namespace LinearMap
+
+variable {R S M N : Type*} [Ring R] [Ring S] [AddCommGroup M] [Module R M] [AddCommGroup N]
+  [Module S N] {σ : R →+* S} [RingHomSurjective σ]
+
+/-- **A bijective semilinear map preserves length.** Along a surjective ring homomorphism `σ`, a
+bijective `σ`-semilinear map identifies the lattices of submodules of its source and target, so
+the two modules have the same length. -/
+theorem length_eq_of_bijective (f : M →ₛₗ[σ] N) (hf : Function.Bijective f) :
+    Module.length R M = Module.length S N := by
+  rw [Module.length, Module.length, WithBot.unbot_inj,
+    Order.krullDim_eq_of_orderIso (Submodule.orderIsoMapComapOfBijective f hf)]
+
+end LinearMap
+
+namespace LinearEquiv
+
+variable {A B N M : Type*} [CommRing A] [CommRing B] [AddCommGroup N] [Module A N]
+  [AddCommGroup M] [Module B M] {σ : A →+* B} {σ' : B →+* A} [RingHomInvPair σ σ']
+  [RingHomInvPair σ' σ]
+
+/-- The localization `n / s ↦ e n / σ s` of a `σ`-semilinear equivalence at a prime `𝔮` of `B`
+and its preimage `σ⁻¹ 𝔮`, semilinear along the induced map of local rings. It serves only to
+compare the lengths of the two localizations in `length_localizedModule_comap`. -/
+private noncomputable def localizedModuleComap (e : N ≃ₛₗ[σ] M) (𝔮 : Ideal B) [𝔮.IsPrime] :
+    LocalizedModule (𝔮.comap σ).primeCompl N →ₛₗ[Localization.localRingHom (𝔮.comap σ) 𝔮 σ rfl]
+      LocalizedModule 𝔮.primeCompl M where
+  toFun x := x.liftOn (fun p ↦ LocalizedModule.mk (e p.1) ⟨σ p.2, p.2.2⟩) fun ⟨n, s⟩ ⟨n', s'⟩
+      ⟨u, hu⟩ ↦ LocalizedModule.mk_eq.mpr ⟨⟨σ u, u.2⟩, by
+        simpa [Submonoid.smul_def, map_smulₛₗ] using congrArg e hu⟩
+  map_add' x y := by
+    induction x using LocalizedModule.induction_on with | h n s => ?_
+    induction y using LocalizedModule.induction_on with | h n' s' => ?_
+    simp [LocalizedModule.mk_add_mk, LocalizedModule.liftOn_mk, Submonoid.smul_def, map_smulₛₗ]
+    -- The denominators `⟨σ s * σ s', _⟩` and `⟨σ s, _⟩ * ⟨σ s', _⟩` agree in the submonoid.
+    rfl
+  map_smul' c x := by
+    induction c using Localization.induction_on with | H p => ?_
+    induction x using LocalizedModule.induction_on with | h n t => ?_
+    simp [LocalizedModule.mk_smul_mk, LocalizedModule.liftOn_mk, Localization.localRingHom_mk,
+      map_smulₛₗ]
+    -- As in `map_add'`, the two denominators agree in the submonoid.
+    rfl
+
+private theorem localizedModuleComap_mk (e : N ≃ₛₗ[σ] M) (𝔮 : Ideal B) [𝔮.IsPrime] (n : N)
+    (s : (𝔮.comap σ).primeCompl) :
+    localizedModuleComap e 𝔮 (LocalizedModule.mk n s) = LocalizedModule.mk (e n) ⟨σ s, s.2⟩ :=
+  rfl
+
+/-- **Transport of local lengths along a ring isomorphism.** Let `σ : A → B` be a ring isomorphism
+and `e : N ≃ M` a `σ`-semilinear equivalence from an `A`-module to a `B`-module. For every prime
+`𝔮` of `B`, the localization of `N` at `σ⁻¹ 𝔮` has the same length over `A_{σ⁻¹ 𝔮}` as the
+localization of `M` at `𝔮` over `B_𝔮`. -/
+theorem length_localizedModule_comap (e : N ≃ₛₗ[σ] M) (𝔮 : Ideal B) [𝔮.IsPrime] :
+    Module.length (Localization.AtPrime (𝔮.comap σ)) (LocalizedModule (𝔮.comap σ).primeCompl N) =
+      Module.length (Localization.AtPrime 𝔮) (LocalizedModule 𝔮.primeCompl M) := by
+  have hσ (b : B) : σ (σ' b) = b := RingHomInvPair.comp_apply_eq₂
+  have hmem (t : 𝔮.primeCompl) : σ' t ∈ (𝔮.comap σ).primeCompl := by
+    rw [Ideal.mem_primeCompl_iff, Ideal.mem_comap, hσ]
+    exact t.2
+  have : RingHomSurjective (Localization.localRingHom (𝔮.comap σ) 𝔮 σ rfl) :=
+    ⟨(Localization.localRingEquiv (𝔮.comap σ) 𝔮 (RingHomInvPair.toRingEquiv σ σ') rfl).surjective⟩
+  refine LinearMap.length_eq_of_bijective (localizedModuleComap e 𝔮) ⟨fun x y hxy ↦ ?_, fun y ↦ ?_⟩
+  · induction x using LocalizedModule.induction_on with | h n s => ?_
+    induction y using LocalizedModule.induction_on with | h n' s' => ?_
+    obtain ⟨u, hu⟩ := LocalizedModule.mk_eq.mp (by simpa [localizedModuleComap_mk] using hxy)
+    refine LocalizedModule.mk_eq.mpr ⟨⟨σ' u, hmem u⟩, e.injective ?_⟩
+    simpa [Submonoid.smul_def, map_smulₛₗ, hσ] using hu
+  · induction y using LocalizedModule.induction_on with | h m t => ?_
+    exact ⟨LocalizedModule.mk (e.symm m) ⟨σ' t, hmem t⟩, by simp [localizedModuleComap_mk, hσ]⟩
+
+end LinearEquiv

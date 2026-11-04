@@ -60,7 +60,7 @@ theorem negativeHypergeometricMeasure_real_Iic_eq_one (hr : r ≤ K) (hK : K ≤
     (hk : N - K ≤ k) :
     (negativeHypergeometricMeasure N K r).real (Iic k) = 1 := by
   rw [measureReal_def, negativeHypergeometricMeasure_eq_sum_dirac hr hK,
-    Measure.finsetSum_apply]
+    _root_.sum_apply]
   have hsum := sum_negativeHypergeometricWeight hr hK
   convert congrArg ENNReal.toReal hsum using 1
   · congr 1

@@ -13,7 +13,7 @@ public import TauCeti.FieldTheory.FunctionField.Place.RatFunc.Basic
 import TauCeti.FieldTheory.FunctionField.Consequences.GenusZero
 import TauCeti.FieldTheory.FunctionField.RiemannRoch.Conorm
 import TauCeti.FieldTheory.IntermediateField.Adjoin.Transcendental
-import TauCeti.FieldTheory.Separable.Quadratic
+import TauCeti.FieldTheory.Separable.PrimeDegree
 
 /-!
 # Places with separable residue field
@@ -181,7 +181,7 @@ theorem exists_finrank_adjoin_le_two_and_isSeparable_of_genus_eq_zero (hF : IsFu
   have := hF.finiteDimensional_adjoin hxt
   have := hF.finiteDimensional_adjoin hzt
   have hx2' := Algebra.finrank_eq_two_of_not_isSeparable hx2 hxs
-  have hxz := IntermediateField.eq_of_finrank_eq_two_of_not_isSeparable t hx2' hxs
+  have hxz := IntermediateField.eq_of_finrank_eq_of_not_isSeparable t Nat.prime_two hx2' hxs
     (Algebra.finrank_eq_two_of_not_isSeparable hz2 hzs) hzs
   have hzmem : z ∈ k⟮x⟯ := hxz ▸ IntermediateField.mem_adjoin_simple_self k z
   -- But `(x)_∞ = B`, both having degree two, so `z ∈ L((x)_∞)` would lie in `k + k x`.

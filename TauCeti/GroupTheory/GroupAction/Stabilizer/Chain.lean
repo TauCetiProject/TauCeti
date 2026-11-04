@@ -96,6 +96,10 @@ theorem stabilizerChain_succ (i : ℕ) :
 theorem stabilizerChain_le (i : ℕ) : H.stabilizerChain b i ≤ H :=
   inf_le_left
 
+/-- Each member of the stabilizer chain of a finite subgroup is finite. -/
+instance [Finite H] (i : ℕ) : Finite (H.stabilizerChain b i) :=
+  Finite.of_injective _ (inclusion_injective (H.stabilizerChain_le b i))
+
 theorem stabilizerChain_antitone : Antitone (H.stabilizerChain b) := fun _ _ hij ↦
   inf_le_inf_left H <| fixingSubgroup_antitone G α <| Set.image_mono <| Set.Iio_subset_Iio hij
 

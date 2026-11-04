@@ -204,7 +204,7 @@ private theorem cuspSymbol_smul (hn : n ≠ 0) (g : SL(2, ℤ)) (A : TraceFormul
     rw [← mul_smul, ← map_mul, mul_inv_cancel, map_one, one_smul]
   ext P
   rw [cuspSymbol, LinearMap.comp_apply, LinearMap.comp_apply, toGL_smul, mul_smul,
-    FixedDetMatrices.smul_coe, map_mul, Module.End.mul_apply, binaryFormAdjugateRep_coe]
+    FixedDetMatrices.smul_coe, map_mul, mul_apply_eq_comp, binaryFormAdjugateRep_coe]
   nth_rw 1 [hinf]
   rw [symbol_mapGL_smul ⊤ (Subgroup.mem_top g), binaryFormRep_binaryFormSLRep]
 
@@ -287,7 +287,7 @@ theorem PeriodRelation.symbolAction_eq (hn : n ≠ 0) (hw : Even w)
     symbolAction hw ξ = upperTriangularSymbol R n w := by
   obtain ⟨ζ, hζ⟩ := periodRelation_iff.1 h
   have hΞ := congrArg (cuspSymbolAction (w := w) hn hw) hζ
-  simp only [LinearMap.sub_apply, Module.End.one_apply, map_sub,
+  simp only [LinearMap.sub_apply, one_apply_eq_self, map_sub,
     cuspSymbolAction_ofMulAction_T, sub_self,
     cuspSymbolAction_ofMulAction_op_S_upperTriangularSum, sub_zero] at hΞ
   rw [← cuspSymbolAction_sub_ofMulAction_S hn hw, ← cuspSymbolAction_upperTriangularSum hn hw,

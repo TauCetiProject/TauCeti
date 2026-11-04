@@ -347,6 +347,33 @@ theorem listLower_def (l : List V) :
       some (reflectRecords f x (listMinHeight f l + 1) l) else none :=
   (rfl)
 
+/-- Capped reflection only cuts segments at fractions in `[0, 1]` and reflects some of the pieces
+by `s = preReflection x f`. So if a set `T` is stable under positive rescaling and under `s`, and
+contains every segment of `l`, then it contains every nonstationary segment of
+`reflectRecords f x c l`. -/
+theorem mem_of_mem_reflectRecords {T : Set V} (hpos : ∀ a : 𝕜, 0 < a → ∀ v ∈ T, a • v ∈ T)
+    (hs : Set.MapsTo (preReflection x f) T T) (hl : ∀ v ∈ l, v ∈ T) {w : V}
+    (hw : w ∈ reflectRecords f x c l) (hw0 : w ≠ 0) : w ∈ T := by
+  induction l generalizing c with
+  | nil => simp at hw
+  | cons v l ih =>
+    simp only [List.mem_cons, forall_eq_or_imp] at hl
+    by_cases h : 0 < min (f v + listMinHeight f l) c
+    · -- The segment `v` is cut at the fraction `r / f v ∈ (0, 1]`.
+      have hle : min (f v + listMinHeight f l) c ≤ f v :=
+        (min_le_left _ _).trans (by linarith [listMinHeight_nonpos (f := f) l])
+      have hfv : 0 < f v := h.trans_le hle
+      rw [reflectRecords_cons_of_pos h, List.mem_cons, List.mem_cons] at hw
+      rcases hw with rfl | rfl | hw
+      · exact hs (hpos _ (div_pos h hfv) v hl.1)
+      · refine hpos _ ((sub_nonneg.2 ((div_le_one hfv).2 hle)).lt_of_ne fun h0 ↦ hw0 ?_) v hl.1
+        rw [← h0, zero_smul]
+      · exact ih hl.2 hw
+    · rw [reflectRecords_cons_of_nonpos (not_lt.1 h), List.mem_cons] at hw
+      rcases hw with rfl | hw
+      · exact hl.1
+      · exact ih hl.2 hw
+
 /-- Reflecting the records up to height `c` subtracts from the endpoint `x` times the increase,
 along the path, of the minimum of `c` and the later minimal height. -/
 theorem sum_reflectRecords (c : 𝕜) (l : List V) :

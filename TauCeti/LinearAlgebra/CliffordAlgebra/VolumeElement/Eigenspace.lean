@@ -218,9 +218,7 @@ direct sum of the `1`- and `-1`-eigenspaces of `Γ`. -/
 theorem isCompl_eigenspace_complexVolume :
     IsCompl ((Algebra.lsmul ℂ ℂ E (complexVolume Q o)).eigenspace 1)
       ((Algebra.lsmul ℂ ℂ E (complexVolume Q o)).eigenspace (-1)) :=
-  isCompl_eigenspace_one_neg_one two_ne_zero.isUnit fun ψ ↦ by
-    simp only [Algebra.lsmul_coe]
-    rw [← mul_smul, complexVolume_mul_self o hQ, one_smul]
+  isCompl_eigenspace_one_neg_one two_ne_zero.isUnit (lsmul_complexVolume_involutive o hQ)
 
 /-- `½ (1 + Γ)` maps every vector into the `1`-eigenspace of `Γ`. -/
 theorem halfOneAdd_smul_mem_eigenspace_complexVolume (ψ : E) :

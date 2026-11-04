@@ -247,7 +247,7 @@ theorem smul_single_one {R : Type*} [TopologicalSpace R] [MulZeroOneClass R]
 vanishes outside it. -/
 theorem sum_single_apply [AddCommMonoid β] [ContinuousAdd β] (b : I → β) (s : Finset I) (j : I) :
     (∑ i ∈ s, single i (b i)) j = if j ∈ s then b j else 0 := by
-  simp [Finset.sum_apply, Pi.single_apply]
+  simp [Pi.single_apply]
 
 end Algebra
 
@@ -360,7 +360,7 @@ expansion over `s`. -/
 theorem indicatorCLM_finset_apply [DecidableEq I] (s : Finset I) (f : C₀(I, β)) :
     indicatorCLM R (s : Set I) f = ∑ i ∈ s, single i (f i) := by
   ext j
-  simp [sum_single_apply, Set.indicator_apply]
+  simp [Set.indicator_apply]
 
 /-- The coordinate projection of `C₀(I, β)` onto a finite set of indices has finite rank when `β`
 is a finitely generated module, for instance on `C₀(I, R)`: its range lies in the span of the
@@ -473,7 +473,10 @@ theorem dense_span_single_one :
 
 /-- The unit vectors `single i 1` of `C₀(I, R)` are linearly independent. -/
 theorem linearIndependent_single_one : LinearIndependent R fun i : I ↦ single i (1 : R) := by
-  let f : C₀(I, R) →ₗ[R] I → R := { toFun := (⇑), map_add' := coe_add, map_smul' := coe_smul }
+  let f : C₀(I, R) →ₗ[R] I → R := {
+    toFun := (⇑)
+    map_add' := FunLike.coe_add
+    map_smul' := FunLike.coe_smul }
   exact .of_comp f (by simpa [f, Function.comp_def] using Pi.linearIndependent_single_one I R)
 
 /-- Over a ring with the strong rank condition, a finitely generated submodule of `C₀(I, R)`

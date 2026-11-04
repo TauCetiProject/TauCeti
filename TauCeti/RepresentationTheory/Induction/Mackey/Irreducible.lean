@@ -159,7 +159,7 @@ theorem mackeyDisjoint_iff_isEmpty_iso_of_normal (A : FDRep k H) [Simple A] (s :
   · intro h
     have hsubsingleton : Subsingleton (A ⟶ conjNormalFDRep s A) :=
       Module.finrank_zero_iff.mp h
-    exact ⟨fun e ↦ (CategoryTheory.isIso_iff_nonzero e.symm.hom).mp inferInstance
+    exact ⟨fun e ↦ (CategoryTheory.isIso_iff_ne_zero e.symm.hom).mp inferInstance
       (hsubsingleton.elim e.symm.hom 0)⟩
   · intro h
     exact CategoryTheory.finrank_hom_simple_simple_eq_zero_of_not_iso k

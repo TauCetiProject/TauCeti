@@ -8,6 +8,7 @@ module
 public import TauCeti.Combinatorics.Network.MinimumCut.Basic
 public import TauCeti.Combinatorics.SimpleGraph.Connectivity.EdgeSide
 import Mathlib.Combinatorics.SimpleGraph.Star
+import TauCeti.Combinatorics.SimpleGraph.Finite
 
 /-!
 # Flow-equivalent trees and cut trees
@@ -28,9 +29,12 @@ This file develops what these properties give, independently of how such a tree 
   minimizes `f` among all sets separating two vertices, with value that minimum weight.
 * `IsFlowEquivalentTree.card_image_pairMinimumValue_le`: the minimum cut values between distinct
   vertices take at most `|V| - 1` distinct values, since each is a tree-edge weight.
+* `IsCutTree.of_isMinimum_edgeSide`: a tree whose edges all leave minimum cuts between their ends
+  is a cut tree for the weights given by those minimum cut values.
 
 Neither property assumes symmetry or submodularity of `f`. The results here take the tree as
-given; for symmetric submodular `f`, Gomory and Hu show that a cut tree always exists.
+given; for symmetric submodular `f`, a cut tree always exists by the Gomory–Hu theorem
+`TauCeti.TerminalCut.exists_isCutTree`.
 
 ## References
 
@@ -141,6 +145,43 @@ namespace IsCutTree
 
 variable {f : Finset V → K} {T : SimpleGraph V} {w : Sym2 V → K}
 
+/-- A tree is a cut tree as soon as deleting any of its edges leaves a minimum cut between the
+ends of that edge, with the edge weighted by their minimum cut value: flow-equivalence then
+follows from the ultrametric inequality along tree paths. -/
+theorem of_isMinimum_edgeSide (hT : T.IsTree)
+    (hmin : ∀ ⦃u v : V⦄, T.Adj u v → IsMinimum f {u} {v} (T.edgeSide u v))
+    (hw : ∀ ⦃u v : V⦄, T.Adj u v → w s(u, v) = pairMinimumValue f u v) : IsCutTree f T w := by
+  -- An edge on a tree path separates its ends, so its weight bounds their minimum cut value.
+  have hle ⦃s t : V⦄ ⦃p : T.Walk s t⦄ (hp : p.IsPath) ⦃e : Sym2 V⦄ (he : e ∈ p.edges) :
+      pairMinimumValue f s t ≤ w e := by
+    induction e using Sym2.ind with | _ a b => ?_
+    have hab := p.adj_of_mem_edges he
+    rcases (hT.connected.preconnected a s).mem_edgeSide_or_mem_edgeSide (v := b) with hs | hs
+    · rw [hw hab, (hmin hab).pairMinimumValue_eq]
+      exact pairMinimumValue_le f hs ((hp.mem_edges_iff_notMem_edgeSide hT.isAcyclic hs).mp he)
+    · rw [Sym2.eq_swap] at he ⊢
+      rw [hw hab.symm, (hmin hab.symm).pairMinimumValue_eq]
+      exact pairMinimumValue_le f hs ((hp.mem_edges_iff_notMem_edgeSide hT.isAcyclic hs).mp he)
+  -- Along any walk between distinct vertices, some edge weighs at most their minimum cut value.
+  have hex ⦃s t : V⦄ (p : T.Walk s t) (hst : s ≠ t) :
+      ∃ e ∈ p.edges, w e ≤ pairMinimumValue f s t := by
+    induction p with
+    | nil => exact absurd rfl hst
+    | @cons s v t hsv q ih =>
+      obtain rfl | hvt := eq_or_ne v t
+      · exact ⟨s(s, v), by simp, (hw hsv).le⟩
+      obtain ⟨e, he, hwe⟩ := ih hvt
+      rcases min_le_iff.mp (min_pairMinimumValue_le f hst v) with h | h
+      · exact ⟨s(s, v), by simp, (hw hsv).trans_le h⟩
+      · exact ⟨e, by simp [he], hwe.trans h⟩
+  exact
+    { isTree := hT
+      le_weight := hle
+      exists_weight_eq := fun s t hst p hp ↦
+        let ⟨e, he, hwe⟩ := hex p hst
+        ⟨e, he, le_antisymm hwe (hle hp he)⟩
+      isMinimum_edgeSide := hmin }
+
 /-- The side left by deleting a tree edge has value equal to the weight of that edge. -/
 theorem apply_edgeSide (hT : IsCutTree f T w) {u v : V} (huv : T.Adj u v) :
     f (T.edgeSide u v) = w s(u, v) := by
@@ -169,6 +210,23 @@ theorem apply_edgeSide_le (hT : IsCutTree f T w) {u v : V} (huv : T.Adj u v)
   obtain ⟨e, he, hle⟩ := hT.exists_weight_le hs ht
   rw [hT.apply_edgeSide huv]
   exact (hmin e he).trans hle
+
+/-- A minimum-weight edge of a cut tree leaves a side minimizing the set function among all
+nonempty proper vertex sets. -/
+theorem exists_edgeSide_apply_le (hT : IsCutTree f T w) [Nontrivial V] :
+    ∃ u v, T.Adj u v ∧ ∀ S : Finset V, S.Nonempty → S ≠ univ →
+      f (T.edgeSide u v) ≤ f S := by
+  have hTne : T ≠ ⊥ := by
+    intro h
+    rw [h] at hT
+    exact SimpleGraph.not_preconnected_bot hT.isTree.connected.preconnected
+  obtain ⟨u, v, huv, hmin⟩ := T.exists_minimum_weight_edge hTne w
+  refine ⟨u, v, huv, fun S hS hSuniv ↦ ?_⟩
+  obtain ⟨s, hs⟩ := hS
+  obtain ⟨t, ht⟩ : ∃ t, t ∉ S := by
+    by_contra! h
+    exact hSuniv (eq_univ_iff_forall.mpr h)
+  exact hT.apply_edgeSide_le huv hmin hs ht
 
 end IsCutTree
 

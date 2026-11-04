@@ -10,6 +10,7 @@ public import TauCeti.Algebra.Category.ModuleCat.AB
 public import Mathlib.Algebra.Homology.HomologicalComplexAbelian
 public import Mathlib.Algebra.Homology.HomologySequenceLemmas
 public import Mathlib.CategoryTheory.Abelian.FunctorCategory
+public import Mathlib.CategoryTheory.Limits.Preserves.FunctorCategory
 
 /-!
 # The coefficient long exact sequence in twisted singular homology
@@ -82,14 +83,15 @@ variable {R X}
 private def twistedChainComplexFunctorEvalIso (n : ℕ) :
     twistedChainComplexFunctor R X ⋙
         HomologicalComplex.eval (ModuleCat.{max v w} R) (.down ℕ) n ≅
-      (Functor.whiskeringLeft (Discrete ((TopCat.toSSet.obj X) _⦋n⦌))
+      (CategoryTheory.Functor.whiskeringLeft (Discrete ((TopCat.toSSet.obj X) _⦋n⦌))
         (FundamentalGroupoid X) (ModuleCat.{max v w} R)).obj
         (Discrete.functor (fun σ ↦ initialVertex σ)) ⋙ colim := by
   refine NatIso.ofComponents (fun L ↦ eqToIso (twistedChainComplex_X L n) ≪≫
     (HasColimit.isoOfNatIso (Discrete.natIsoFunctor (F :=
       Discrete.functor (fun σ : (TopCat.toSSet.obj X) _⦋n⦌ ↦ initialVertex σ) ⋙ L))).symm) ?_
   intro L K f
-  dsimp only [twistedChainComplexFunctor, Functor.comp_obj, Functor.comp_map,
+  dsimp only [twistedChainComplexFunctor, CategoryTheory.Functor.comp_obj,
+    CategoryTheory.Functor.comp_map,
     HomologicalComplex.eval]
   apply twistedChainComplex_hom_ext L
   intro σ

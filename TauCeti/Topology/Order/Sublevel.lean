@@ -20,7 +20,13 @@ If a real function has a unique global minimum and one compact sublevel strictly
 then sufficiently small sublevels lie in any prescribed open neighbourhood of the minimum
 (`TauCeti.exists_pos_sublevel_subset_of_unique_min`).
 This allows local descriptions near the minimum to describe whole sublevels. Continuity is
-needed only on the one compact sublevel, not on the entire space.
+needed only on the one compact sublevel, not on the entire space. Similarly, if a superlevel
+`{w ≥ -δ}` of a continuous `w` is compact, a closed set avoiding the zero level of `w` avoids a
+whole band `{|w| ≤ η}` around it (`TauCeti.exists_forall_abs_le_notMem`).
+
+Conversely, restricting a function to a set `S` which is not closed can destroy compactness of
+sublevels: if `S` accumulates at a point `p ∉ S` with `f p < r`, then `{x ∈ S | f x ≤ r}` is not
+compact (`TauCeti.not_isCompact_inter_preimage_Iic`).
 
 If a continuous motion of the space lowers `f` at unit speed through the band `a ≤ f ≤ b`, then
 following it until the level `a` is reached retracts the sublevel `{f ≤ b}` onto `{f ≤ a}`, by a
@@ -41,6 +47,9 @@ homeomorphism between the sublevels on either side of a band without critical po
 Under the same hypotheses the band `f⁻¹[a, b]` is homeomorphic to `f⁻¹(a) × [a, b]` by a
 homeomorphism preserving the value of `f` (`Flow.bandHomeomorph`): a point of the band is sent to
 the point where its flow line meets the level `a`, together with its value.
+
+Along an inducing map `j : M → X` whose range contains a band `F⁻¹[a, b]`, compactness of the
+band pulls back to the band of `F ∘ j` (`Topology.IsInducing.isCompact_comp_preimage_Icc`).
 -/
 
 public section
@@ -78,6 +87,34 @@ theorem exists_pos_sublevel_subset_of_unique_min {X : Type*} [TopologicalSpace X
     by_contra hyU
     exact hne ⟨y, ⟨by dsimp at hy ⊢; linarith, hyU⟩⟩
 
+/-- If the superlevel `{w ≥ -δ}` of a continuous real function `w` is compact, then a closed set
+avoiding the zero level of `w` also avoids the band `{|w| ≤ η}` for some `0 < η ≤ δ`. -/
+theorem exists_forall_abs_le_notMem {X : Type*} [TopologicalSpace X] {w : X → ℝ}
+    (hw : Continuous w) {δ : ℝ} (hδ : 0 < δ) (hK : IsCompact {x | -δ ≤ w x}) {C : Set X}
+    (hC : IsClosed C) (hCw : ∀ x ∈ C, w x ≠ 0) :
+    ∃ η, 0 < η ∧ η ≤ δ ∧ ∀ x, |w x| ≤ η → x ∉ C := by
+  rcases ({x | -δ ≤ w x} ∩ C).eq_empty_or_nonempty with hA | hA
+  · exact ⟨δ, hδ, le_rfl, fun x hx hxC => hA.subset ⟨neg_le_of_abs_le hx, hxC⟩⟩
+  obtain ⟨x₀, hx₀, hmin⟩ := (hK.inter_right hC).exists_isMinOn hA hw.abs.continuousOn
+  have hm : 0 < |w x₀| := abs_pos.2 (hCw x₀ hx₀.2)
+  refine ⟨min δ (|w x₀| / 2), lt_min hδ (half_pos hm), min_le_left _ _, fun x hx hxC => ?_⟩
+  have := isMinOn_iff.1 hmin x ⟨neg_le_of_abs_le (hx.trans (min_le_left _ _)), hxC⟩
+  linarith [min_le_right δ (|w x₀| / 2)]
+
+/-- A sublevel of a function restricted to a set `S` of a Hausdorff space is not compact if `S`
+accumulates at a point `p ∉ S` where the function is continuous and strictly below the level.
+Then the sublevel accumulates at `p` as well, so it is not closed. -/
+theorem not_isCompact_inter_preimage_Iic {X β : Type*} [TopologicalSpace X] [T2Space X]
+    [TopologicalSpace β] [LinearOrder β] [ClosedIciTopology β] {f : X → β} {S : Set X} {p : X}
+    {r : β} (hpS : p ∈ closure S) (hp : p ∉ S) (hf : ContinuousAt f p) (hr : f p < r) :
+    ¬IsCompact (S ∩ f ⁻¹' Iic r) := by
+  intro hK
+  have hmem : p ∈ closure (S ∩ f ⁻¹' Iic r) := by
+    rw [mem_closure_iff_frequently] at hpS ⊢
+    exact (hpS.and_eventually (hf.eventually (eventually_lt_nhds hr))).mono
+      fun x hx ↦ ⟨hx.1, hx.2.le⟩
+  exact hp (hK.isClosed.closure_eq ▸ hmem).1
+
 /-- The sublevels `{f ≤ a}` of `f` increase with `a`. -/
 theorem sublevel_mono {X β : Type*} [Preorder β] (f : X → β) :
     Monotone fun a : β ↦ {x | f x ≤ a} :=
@@ -91,6 +128,13 @@ def sublevelInclusion {X β : Type*} [TopologicalSpace X] [Preorder β] (f : X �
 @[simp]
 theorem coe_sublevelInclusion_apply {X β : Type*} [TopologicalSpace X] [Preorder β] (f : X → β)
     {a b : β} (hab : a ≤ b) (x : {x | f x ≤ a}) : (sublevelInclusion f a b hab x : X) = x :=
+  (rfl)
+
+/-- The inclusion `{f ≤ a} → {f ≤ b}` of sublevels is the inclusion of sets. -/
+theorem sublevelInclusion_eq_inclusion {X β : Type*} [TopologicalSpace X] [Preorder β]
+    (f : X → β) {a b : β} (hab : a ≤ b) :
+    sublevelInclusion f a b hab =
+      ContinuousMap.inclusion (ofPred_subset_ofPred.2 fun _ hx ↦ hx.trans hab) :=
   (rfl)
 
 /-- For continuous `f`, the inclusion `{f ≤ a} → {f ≤ b}` of sublevels is a closed embedding. -/
@@ -162,6 +206,21 @@ theorem exists_sublevelDeformation_of_apply_eq_sub {X : Type*} [TopologicalSpace
       prop' := fun t x hx ↦ Subtype.ext <| by simp [hr, hτ0 x.1 hx, hφ0] }
 
 end TauCeti
+
+namespace Topology.IsInducing
+
+/-- Let `j : M → X` be an inducing map and `F : X → β`. A compact band `F⁻¹[a, b]` of `F` has
+compact preimage band `(F ∘ j)⁻¹[a, b]` as soon as `F < a` off the range of `j`, so that the band
+lies in the range of `j`. -/
+theorem isCompact_comp_preimage_Icc {M X β : Type*} [TopologicalSpace M] [TopologicalSpace X]
+    [Preorder β] {j : M → X} {F : X → β} (hj : IsInducing j) {a b : β}
+    (hA : ∀ x ∉ range j, F x < a) (hcompact : IsCompact (F ⁻¹' Icc a b)) :
+    IsCompact ((F ∘ j) ⁻¹' Icc a b) :=
+  hj.isCompact_preimage' hcompact fun x hx ↦ by
+    by_contra hxj
+    exact (hA x hxj).not_ge hx.1
+
+end Topology.IsInducing
 
 namespace Flow
 
