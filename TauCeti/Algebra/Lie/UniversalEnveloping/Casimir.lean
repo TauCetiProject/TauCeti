@@ -29,9 +29,10 @@ Those extra hypotheses are needed only for that application; centrality, the sta
 needs nothing beyond a nondegenerate Killing form.
 
 Two facts make `Ω` an invariant of `L` rather than of the chosen basis. They are developed in
-`TauCeti.Algebra.Lie.Killing.DualBasis` and applied here.
+`TauCeti.LinearAlgebra.BilinearForm.Dual.Basis` and `TauCeti.Algebra.Lie.Killing.DualBasis` and
+applied here.
 
-* `Ω` does not depend on the basis.  The mechanism is `TauCeti.sum_apply_killingDualBasis_eq`:
+* `Ω` does not depend on the basis.  The mechanism is `LinearMap.sum_apply_dualBasis_eq`:
   for *every* `K`-bilinear map `f` out of `L × L`, the value `∑ᵢ f xᵢ yᵢ` is the same for all
   bases, because expanding one basis in the other exchanges the two dual bases.  The Casimir
   element is the instance `f x y = x * y` in `U(L)`, so `TauCeti.casimirElement_eq_sum` computes
@@ -44,9 +45,9 @@ Two facts make `Ω` an invariant of `L` rather than of the chosen basis. They ar
   generators generate `U(L)` (`TauCeti.UniversalEnvelopingAlgebra.adjoin_range_ι`), so `Ω`
   commutes with everything.
 
-Only nondegeneracy, symmetry and invariance of the Killing form are used, so the argument below
-would go through for any invariant nondegenerate symmetric form once the definitions and lemmas are
-parameterised by such a form; as written they are stated for the Killing form.
+Only nondegeneracy and invariance of the Killing form are used, so the argument below would go
+through for any invariant nondegenerate form once the definitions and lemmas are parameterised by
+such a form; as written they are stated for the Killing form.
 
 ## Main definitions
 
@@ -130,7 +131,7 @@ theorem casimirElement_eq_sum {ι' : Type*} [DecidableEq ι'] [Fintype ι']
     (b : Module.Basis ι' K L) :
     casimirElement K L = ∑ i, ι K (b i) * ι K (killingDualBasis b i) := by
   simp only [casimirElement, ← genMul_apply]
-  exact sum_apply_killingDualBasis_eq (genMul K L) (Module.finBasis K L) b
+  exact (genMul K L).sum_apply_dualBasis_eq _ (Module.finBasis K L) b
 
 /-- **The Casimir element acts by zero on a module with trivial action.** Every summand
 `xᵢ yᵢ` of `Ω` acts by a double bracket, and brackets vanish. -/
