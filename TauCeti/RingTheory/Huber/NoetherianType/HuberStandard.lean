@@ -19,11 +19,11 @@ strongly noetherian Tate ring, or has the discrete topology.
 
 This condition is stronger than being of noetherian type: the first alternative additionally
 requires finite generation over the ring of definition, which makes the ambient ring noetherian
-(`TauCeti.Huber.PairOfDefinition.isNoetherianRing_of_finiteType`), whereas the third alternative
-admits non-noetherian discrete rings. The declarations below record the three ways to enter the
-class, show that every ring in the standing class is of noetherian type, transport finite
-generation over a ring of definition along open quotient maps, and establish invariance of the
-class under bicontinuous ring isomorphisms.
+(`Algebra.FiniteType.isNoetherianRing`), whereas the third alternative admits non-noetherian
+discrete rings. The declarations below record the three ways to enter the class, show that every
+ring in the standing class is of noetherian type, transport finite generation over a ring of
+definition along open quotient maps, and establish invariance of the class under bicontinuous ring
+isomorphisms.
 
 ## References
 
@@ -33,13 +33,6 @@ class under bicontinuous ring isomorphisms.
 public section
 
 namespace TauCeti.Huber
-
-/-- A Huber ring finite type over a noetherian ring of definition is itself a noetherian ring, by
-Hilbert's basis theorem (`Algebra.FiniteType.isNoetherianRing`). -/
-theorem PairOfDefinition.isNoetherianRing_of_finiteType {A : Type*} [CommRing A]
-    [TopologicalSpace A] (P : PairOfDefinition A) [IsNoetherianRing P.ringOfDefinition]
-    [Algebra.FiniteType P.ringOfDefinition A] : IsNoetherianRing A :=
-  Algebra.FiniteType.isNoetherianRing P.ringOfDefinition A
 
 /-- **Finite generation over a ring of definition descends along an open quotient map**: if `A` is
 finite type over `P.ringOfDefinition` and `f : A →+* B` is an open quotient map, then `B` is
