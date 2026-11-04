@@ -93,6 +93,8 @@ completion of `U(ĝ_κ₀) / (K - k)`.
   `b ∈ U` acts as `b`.
 * `TauCeti.CurrentAlgebra.limπ_one`, `TauCeti.CurrentAlgebra.coe_one_apply`: the coordinates of
   the unit are the classes of `1`.
+* `TauCeti.CurrentAlgebra.limπ_toCompletedEnveloping`: the coordinates of the image of `b ∈ U` are
+  the classes of `b`.
 * `TauCeti.CurrentAlgebra.exists_forall_mul_mem_completedOrderLeftIdeal`: the right-shift estimate
   in `Û`.
 * `TauCeti.CurrentAlgebra.eq_completedEnvelopingMap`: uniqueness of continuous extensions.
@@ -241,6 +243,12 @@ variable {Φ hΦ hΦs a}
 theorem smul_eq_toCompletedEnveloping_mul (b : UK) (x : CompletedEnveloping Φ hΦ hΦs a) :
     b • x = toCompletedEnveloping Φ hΦ hΦs a b * x :=
   ModuleTower.smul_eq_limMul _ b x
+
+/-- The coordinate in `U / I_n` of the image of `b ∈ U` in the completion is the class of `b`. -/
+theorem limπ_toCompletedEnveloping (n : ℕ) (b : UK) :
+    (orderQuotientTower Φ hΦ hΦs a).limπ n (toCompletedEnveloping Φ hΦ hΦs a b) =
+      ModuleTower.quotientsπ _ (orderLeftIdeal_natCast_antitone Φ hΦ hΦs a) n b := by
+  rw [coe_toCompletedEnveloping, ← LinearMap.comp_apply, ModuleTower.limπ_comp_toLimQuotients]
 
 /-- On a smooth module, the image in `Û` of an element of `U` acts as that element. -/
 theorem limSmul_toCompletedEnveloping {M : ModuleCat UK}
