@@ -25,8 +25,9 @@ that the trajectory operator
 (`TauCeti.WeakDerivStep.trajectoryOperator`, for an `L∞` class of `A`) is a Fredholm operator, with
 index `dim ker D_A - dim ker D_{-A†}`. Neither symmetry of `A` nor any derivative of `A` is
 assumed. A symmetric operator bounded below has the Lyapunov form `S = A`
-(`ContinuousLinearMap.hasLyapunovForm_of_isSymmetric`), so this applies in particular to every
-continuous family of symmetric operators with invertible limits.
+(`ContinuousLinearMap.hasLyapunovForm_of_isSymmetric`), and a limit of symmetric operators is
+symmetric (`ContinuousLinearMap.hasLyapunovForm_of_tendsto_of_isSymmetric`), so this applies in
+particular to every continuous family of symmetric operators with invertible limits.
 
 The estimate behind the theorem replaces the energy identity of the symmetric case by the
 monotonicity of a quadratic form. For a `C¹` family `S(s)` of symmetric operators and a compactly
@@ -49,7 +50,6 @@ family `-A†` has limits `-A±†`, which again have Lyapunov forms
 
 ## Main declarations
 
-* `TauCeti.integral_inner_apply_deriv_add_eq`: the identity for `∫ ⟪S (u' + A u), u⟫`.
 * `exists_pos_nonneg_forall_integral_norm_deriv_sq_add_integral_norm_sq_le_of_hasLyapunovForm`, in
   the namespace `TauCeti`: the estimate with an interior error on compactly supported `C¹` paths.
 * `TauCeti.WeakDerivStep.exists_norm_sq_le_mul_norm_trajectoryOperator_sq_add_of_hasLyapunovForm`:
@@ -85,48 +85,6 @@ variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
 
 /-! ### Estimates on test paths -/
 
-/-- The integrand `⟪T w, u⟫` is integrable when `T` and `w` are continuous and `u` is a compactly
-supported continuous path. -/
-private theorem integrable_inner_apply {T : ℝ → E →L[ℝ] E} {w : ℝ → E} (hT : Continuous T)
-    (hw : Continuous w) (hu : Continuous u) (hc : HasCompactSupport u) :
-    Integrable fun s ↦ ⟪T s (w s), u s⟫_ℝ :=
-  ((hT.clm_apply hw).inner hu).integrable_of_hasCompactSupport
-    (hc.mono fun s hs hu0 ↦ hs (by simp [hu0]))
-
-omit [InnerProductSpace ℝ E] in
-/-- The squared norm of a compactly supported continuous path is integrable. -/
-private theorem integrable_norm_sq {w : ℝ → E} (hw : Continuous w) (hc : HasCompactSupport w) :
-    Integrable fun s ↦ ‖w s‖ ^ 2 := by
-  have hcs : HasCompactSupport fun s ↦ ‖w s‖ ^ 2 :=
-    hc.norm.comp_left (g := fun x : ℝ ↦ x ^ 2) (by norm_num)
-  exact (hw.norm.pow 2).integrable_of_hasCompactSupport hcs
-
-/-- **Integration by parts against a family of quadratic forms.** For a `C¹` family `S` of
-symmetric operators, a continuous family `A` and a compactly supported `C¹` path `u`,
-
-`∫ ⟪S (u' + A u), u⟫ = ∫ ⟪S A u, u⟫ - ½ ∫ ⟪S' u, u⟫`. -/
-theorem integral_inner_apply_deriv_add_eq (hS : ContDiff ℝ 1 S)
-    (hsym : ∀ s, (S s : E →ₗ[ℝ] E).IsSymmetric) (hA : Continuous A) (hu : ContDiff ℝ 1 u)
-    (hc : HasCompactSupport u) :
-    ∫ s, ⟪S s (deriv u s + A s (u s)), u s⟫_ℝ =
-      (∫ s, ⟪S s (A s (u s)), u s⟫_ℝ) - (∫ s, ⟪deriv S s (u s), u s⟫_ℝ) / 2 := by
-  have hiD := integrable_inner_apply hS.continuous hu.continuous_deriv_one hu.continuous hc
-  have hiA := integrable_inner_apply hS.continuous (hA.clm_apply hu.continuous) hu.continuous hc
-  have hiS := integrable_inner_apply hS.continuous_deriv_one hu.continuous hu.continuous hc
-  have hiq := integrable_inner_apply hS.continuous hu.continuous hu.continuous hc
-  have hder (s : ℝ) : HasDerivAt (fun s ↦ ⟪S s (u s), u s⟫_ℝ)
-      (⟪deriv S s (u s), u s⟫_ℝ + 2 * ⟪S s (deriv u s), u s⟫_ℝ) s := by
-    have hus := (hu.differentiable one_ne_zero s).hasDerivAt
-    convert ((hS.differentiable one_ne_zero s).hasDerivAt.clm_apply hus).inner ℝ hus using 1
-    rw [inner_add_left, (hsym s).apply_clm (u s) (deriv u s),
-      real_inner_comm (S s (deriv u s)) (u s)]
-    ring
-  have hzero := integral_eq_zero_of_hasDerivAt_of_integrable hder (hiS.add (hiD.const_mul 2)) hiq
-  rw [integral_add hiS (hiD.const_mul 2), integral_const_mul] at hzero
-  simp only [map_add, inner_add_left]
-  rw [integral_add hiD hiA]
-  linarith
-
 /-- The estimate given by a family of quadratic forms: if `⟪S A v, v⟫ - ½ ⟪S' v, v⟫` is at least
 `c ‖v‖²` outside a set `I` and at least `-K ‖v‖²` on `I`, and `‖S‖ ≤ M`, then
 `c/2 ∫ ‖u‖² ≤ M²/(2c) ∫ ‖u' + A u‖² + (K + c) ∫_I ‖u‖²`. -/
@@ -138,16 +96,18 @@ private theorem half_mul_integral_norm_sq_le (hS : ContDiff ℝ 1 S)
     (hin : ∀ s ∈ I, ∀ v, -K * ‖v‖ ^ 2 ≤ ⟪S s (A s v), v⟫_ℝ - ⟪deriv S s v, v⟫_ℝ / 2) :
     c / 2 * ∫ s, ‖u s‖ ^ 2 ≤
       M ^ 2 / (2 * c) * (∫ s, ‖deriv u s + A s (u s)‖ ^ 2) + (K + c) * ∫ s in I, ‖u s‖ ^ 2 := by
-  have hiu := integrable_norm_sq hu.continuous hc
+  have hiu := integrable_norm_sq_of_hasCompactSupport hu.continuous hc
   have hcD : HasCompactSupport fun s ↦ deriv u s + A s (u s) :=
     hc.deriv.add (hc.mono fun s hs hu0 ↦ hs (by simp [hu0]))
-  have hiDu := integrable_norm_sq (w := fun s ↦ deriv u s + A s (u s))
+  have hiDu := integrable_norm_sq_of_hasCompactSupport (w := fun s ↦ deriv u s + A s (u s))
     (hu.continuous_deriv_one.add (hA.clm_apply hu.continuous)) hcD
   have hiI : Integrable fun s ↦ I.indicator (fun s ↦ ‖u s‖ ^ 2) s := hiu.indicator hI
-  have hiA := integrable_inner_apply hS.continuous (hA.clm_apply hu.continuous) hu.continuous hc
-  have hiS := integrable_inner_apply hS.continuous_deriv_one hu.continuous hu.continuous hc
-  have hiSD := integrable_inner_apply (w := fun s ↦ deriv u s + A s (u s)) hS.continuous
-    (hu.continuous_deriv_one.add (hA.clm_apply hu.continuous)) hu.continuous hc
+  have hiA := integrable_inner_apply_of_hasCompactSupport hS.continuous
+    (hA.clm_apply hu.continuous) hu.continuous hc
+  have hiS := integrable_inner_apply_of_hasCompactSupport hS.continuous_deriv_one hu.continuous
+    hu.continuous hc
+  have hiSD := integrable_inner_apply_of_hasCompactSupport (w := fun s ↦ deriv u s + A s (u s))
+    hS.continuous (hu.continuous_deriv_one.add (hA.clm_apply hu.continuous)) hu.continuous hc
   -- Pointwise lower bound for the right side of the integration-by-parts identity.
   have hlow (s : ℝ) : c * ‖u s‖ ^ 2 - (K + c) * I.indicator (fun s ↦ ‖u s‖ ^ 2) s ≤
       ⟪S s (A s (u s)), u s⟫_ℝ - ⟪deriv S s (u s), u s⟫_ℝ / 2 := by
@@ -223,13 +183,13 @@ private theorem integral_norm_deriv_sq_le (hA : Continuous A) (hu : ContDiff ℝ
     (hc : HasCompactSupport u) {M : ℝ} (hM : ∀ s, ‖A s‖ ≤ M) :
     ∫ s, ‖deriv u s‖ ^ 2 ≤
       2 * (∫ s, ‖deriv u s + A s (u s)‖ ^ 2) + 2 * M ^ 2 * ∫ s, ‖u s‖ ^ 2 := by
-  have hiu := integrable_norm_sq hu.continuous hc
-  have hiDu := integrable_norm_sq (w := fun s ↦ deriv u s + A s (u s))
+  have hiu := integrable_norm_sq_of_hasCompactSupport hu.continuous hc
+  have hiDu := integrable_norm_sq_of_hasCompactSupport (w := fun s ↦ deriv u s + A s (u s))
     (hu.continuous_deriv_one.add (hA.clm_apply hu.continuous))
     (hc.deriv.add (hc.mono fun s hs hu0 ↦ hs (by simp [hu0])))
   rw [← integral_const_mul, ← integral_const_mul, ← integral_add (hiDu.const_mul 2)
     (hiu.const_mul _)]
-  refine integral_mono (integrable_norm_sq hu.continuous_deriv_one hc.deriv)
+  refine integral_mono (integrable_norm_sq_of_hasCompactSupport hu.continuous_deriv_one hc.deriv)
     ((hiDu.const_mul 2).add (hiu.const_mul _)) fun s ↦ ?_
   have h₁ : ‖deriv u s‖ ≤ ‖deriv u s + A s (u s)‖ + M * ‖u s‖ := by
     calc ‖deriv u s‖ = ‖(deriv u s + A s (u s)) - A s (u s)‖ := by rw [add_sub_cancel_right]
@@ -239,6 +199,13 @@ private theorem integral_norm_deriv_sq_le (hA : Continuous A) (hu : ContDiff ℝ
           exact (A s).le_of_opNorm_le (hM s) (u s)
   have h₂ := pow_le_pow_left₀ (norm_nonneg _) h₁ 2
   nlinarith [sq_nonneg (‖deriv u s + A s (u s)‖ - M * ‖u s‖)]
+
+/-- The quadratic form `⟪S (A v), v⟫ - ½ ⟪D v, v⟫` is at least `-(‖S‖ ‖A‖ + ‖D‖ / 2) ‖v‖²`. -/
+private theorem neg_mul_norm_sq_le_inner_sub (S A D : E →L[ℝ] E) (v : E) :
+    -((‖S‖ * ‖A‖ + ‖D‖ / 2) * ‖v‖ ^ 2) ≤ ⟪S (A v), v⟫_ℝ - ⟪D v, v⟫_ℝ / 2 := by
+  have h₁ := neg_le_of_abs_le (S.abs_inner_apply_apply_le A v)
+  have h₂ := le_of_abs_le (D.abs_inner_apply_le v)
+  linarith
 
 /-- The arithmetic combining the estimates for `Y = ∫ ‖u‖²` and `X = ∫ ‖u'‖²` in terms of
 `Z = ∫ ‖u' + A u‖²` and `W = ∫_{[-R, R]} ‖u‖²`. -/
@@ -329,18 +296,8 @@ theorem exists_pos_nonneg_forall_integral_norm_deriv_sq_add_integral_norm_sq_le_
         exact (mul_le_mul_of_nonneg_right (min_le_right _ _) (sq_nonneg _)).trans
           ((hb s (by linarith)).1 v))
     (fun s hs v ↦ by
-      have h₁ : -(‖S s‖ * ‖A s‖ * ‖v‖ ^ 2) ≤ ⟪S s (A s v), v⟫_ℝ := by
-        refine neg_le_of_abs_le ((abs_real_inner_le_norm _ _).trans ?_)
-        calc ‖S s (A s v)‖ * ‖v‖ ≤ ‖S s‖ * (‖A s‖ * ‖v‖) * ‖v‖ := by
-              gcongr
-              exact (S s).le_opNorm_of_le ((A s).le_opNorm v)
-          _ = ‖S s‖ * ‖A s‖ * ‖v‖ ^ 2 := by ring
-      have h₂ : ⟪deriv S s v, v⟫_ℝ ≤ ‖deriv S s‖ * ‖v‖ ^ 2 := by
-        calc ⟪deriv S s v, v⟫_ℝ ≤ ‖deriv S s v‖ * ‖v‖ := real_inner_le_norm _ _
-          _ ≤ ‖deriv S s‖ * ‖v‖ * ‖v‖ := by gcongr; exact (deriv S s).le_opNorm v
-          _ = ‖deriv S s‖ * ‖v‖ ^ 2 := by ring
-      have h₃ := mul_le_mul_of_nonneg_right (hK' s hs) (sq_nonneg ‖v‖)
-      linarith)
+      have := mul_le_mul_of_nonneg_right (hK' s hs) (sq_nonneg ‖v‖)
+      linarith [neg_mul_norm_sq_le_inner_sub (S s) (A s) (deriv S s) v])
   exact add_le_mul_add_mul hc (by positivity) (by positivity)
     (integral_nonneg fun _ ↦ by positivity)
     (setIntegral_nonneg measurableSet_Icc fun _ _ ↦ by positivity) hY
@@ -372,26 +329,10 @@ theorem exists_norm_sq_le_mul_norm_trajectoryOperator_sq_add_of_hasLyapunovForm
   obtain ⟨R, hR, C, hC, hest⟩ :=
     exists_pos_nonneg_forall_integral_norm_deriv_sq_add_integral_norm_sq_le_of_hasLyapunovForm hA
       hminus hplus hbot htop
-  set base := ContinuousLinearMap.id ℝ (Lp E 2 (volume.restrict ((⊤ : Opens ℝ) : Set ℝ)))
-  set V : Opens ℝ := ⟨Ioo (-(R + 1)) (R + 1), isOpen_Ioo⟩
   refine ⟨R + 1, by linarith, C, hC, fun u ↦ ?_⟩
-  -- The estimate is a closed condition, so it suffices to prove it on smooth paths, where it is
-  -- the estimate for test paths.
-  have hclosed : IsClosed {u : WeakDerivStep volume ⊤ 2 base | ‖u‖ ^ 2 ≤
-      C * ‖trajectoryOperator AL u‖ ^ 2 + C * ‖restrictBaseL base (V := V) le_top u‖ ^ 2} :=
-    isClosed_le (continuous_norm.pow 2)
-      ((continuous_const.mul ((trajectoryOperator AL).continuous.norm.pow 2)).add
-        (continuous_const.mul ((restrictBaseL base le_top).continuous.norm.pow 2)))
-  refine hclosed.closure_subset_iff.mpr ?_
-    (dense_setOf_exists_contDiff_hasCompactSupport (by norm_num) u)
-  rintro u ⟨φ, hφ, hφc, hu⟩
-  have hφ1 : ContDiff ℝ 1 φ := hφ.of_le (by exact_mod_cast le_top)
-  have hK := mul_le_mul_of_nonneg_left
-    (integral_Icc_le_norm_restrictBaseL_sq hφ1.continuous hφc hu (lt_add_one R)) hC
-  have := hest φ hφ1 hφc
-  rw [← norm_prev_sq_eq_integral hu, ← norm_weakFDeriv_sq_eq_integral hφ1 hu,
-    ← norm_trajectoryOperator_sq_eq_integral hφ1 hu AL hAL] at this
-  rw [Set.mem_ofPred_eq, norm_sq_eq_norm_prev_sq_add_norm_weakFDeriv_sq]
+  have := mul_norm_weakFDeriv_sq_add_mul_norm_prev_sq_le_of_forall_contDiff AL hAL (a := 1)
+    (b := 1) (c := C) hC (lt_add_one R) (fun φ hφ hφc ↦ by simpa using hest φ hφ hφc) u
+  rw [norm_sq_eq_norm_prev_sq_add_norm_weakFDeriv_sq]
   linarith
 
 /-- The trajectory estimate in the form of Peetre's lemma: `‖u‖ ≤ K ‖D_A u‖ + ‖K • ρ u‖`, where `ρ`
@@ -452,18 +393,6 @@ theorem isClosed_range_trajectoryOperator_of_hasLyapunovForm
   exact (trajectoryOperator (p := 2) AL).isClosed_range_of_compact_estimate
     (isCompactOperator_smul_restrictBaseL K R) hest
 
-omit [FiniteDimensional ℝ E] in
-/-- An `L∞` class of the pointwise adjoint of `A` is almost everywhere the pointwise adjoint of an
-`L∞` class of `A`. -/
-private theorem ae_eq_adjoint_of_ae_eq [CompleteSpace E]
-    {AL BL : Lp (E →L[ℝ] E) ∞ (volume.restrict ((⊤ : Opens ℝ) : Set ℝ))}
-    (hAL : AL =ᵐ[volume.restrict ((⊤ : Opens ℝ) : Set ℝ)] A)
-    (hBL : BL =ᵐ[volume.restrict ((⊤ : Opens ℝ) : Set ℝ)]
-      fun s ↦ ContinuousLinearMap.adjoint (A s)) :
-    ∀ᵐ s ∂volume.restrict ((⊤ : Opens ℝ) : Set ℝ), BL s = ContinuousLinearMap.adjoint (AL s) := by
-  filter_upwards [hAL, hBL] with s hs hBs
-  rw [hBs, hs]
-
 /-- **The cokernel of the trajectory operator is finite dimensional for hyperbolic limits.** For a
 continuous family of operators whose limits at `±∞` have Lyapunov forms, the quotient of
 `L²(ℝ, E)` by the range of `u ↦ u' + A u` is finite dimensional. -/
@@ -477,18 +406,9 @@ theorem finiteDimensional_coker_trajectoryOperator_of_hasLyapunovForm
       (trajectoryOperator (p := 2) AL).range) := by
   have := (isClosed_range_trajectoryOperator_of_hasLyapunovForm hA hminus hplus hbot htop AL
     hAL).completeSpace_coe
-  -- The pointwise adjoint of `AL` is an `L∞` class of the pointwise adjoint of `A`.
-  set adj := (ContinuousLinearMap.adjoint : (E →L[ℝ] E) ≃ₗᵢ⋆[ℝ] (E →L[ℝ] E))
-  set L : (E →L[ℝ] E) →SL[starRingEnd ℝ] (E →L[ℝ] E) :=
-    adj.toContinuousLinearEquiv.toContinuousLinearMap
-  obtain ⟨BL, hBL⟩ : ∃ BL : Lp (E →L[ℝ] E) ∞ (volume.restrict ((⊤ : Opens ℝ) : Set ℝ)),
-      BL =ᵐ[volume.restrict ((⊤ : Opens ℝ) : Set ℝ)]
-        fun s ↦ ContinuousLinearMap.adjoint (A s) := by
-    refine ⟨L.compLp AL, ?_⟩
-    filter_upwards [L.coeFn_compLp AL, hAL] with s hs hAs
-    simp [hs, hAs, L, adj]
+  obtain ⟨BL, hBL⟩ := exists_ae_eq_adjoint AL hAL
   -- The family `-A†` of the formal adjoint has limits `-A±†`, which have Lyapunov forms.
-  have hadj := adj.continuous
+  have hadj := (ContinuousLinearMap.adjoint : (E →L[ℝ] E) ≃ₗᵢ⋆[ℝ] (E →L[ℝ] E)).continuous
   have hnegBL : ⇑(-BL) =ᵐ[volume.restrict ((⊤ : Opens ℝ) : Set ℝ)]
       fun s ↦ -ContinuousLinearMap.adjoint (A s) := by
     filter_upwards [Lp.coeFn_neg BL, hBL] with s hs hBs
@@ -522,7 +442,9 @@ theorem isFredholm_trajectoryOperator_of_hasLyapunovForm
 /-- **The index of the trajectory operator with hyperbolic limits.** Under the hypotheses of
 `TauCeti.WeakDerivStep.isFredholm_trajectoryOperator_of_hasLyapunovForm`, the index of
 `D_A u = u' + A u` is `dim ker D_A - dim ker D_{-A†}`, where `BL` is an `L∞` class of the pointwise
-adjoint `A†`: the cokernel of `D_A` is the kernel of the formal adjoint `-d/ds + A†`. -/
+adjoint `A†`: the cokernel of `D_A` is the kernel of the formal adjoint `-d/ds + A†`. Such a class
+exists by `TauCeti.WeakDerivStep.exists_ae_eq_adjoint`; for a symmetric family, `AL` itself is
+one. -/
 theorem index_trajectoryOperator_of_hasLyapunovForm
     (hA : Continuous A) {Aminus Aplus : E →L[ℝ] E}
     (hminus : Aminus.HasLyapunovForm) (hplus : Aplus.HasLyapunovForm)

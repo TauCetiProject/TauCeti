@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.InnerProductSpace.Adjoint
+public import TauCeti.Analysis.InnerProductSpace.Symmetric.Basic
 
 /-!
 # Lyapunov forms of bounded operators
@@ -32,7 +33,10 @@ which needs the spectral splitting of `A`, is not proved here.
 * `ContinuousLinearMap.HasLyapunovForm`: `A` has a Lyapunov form, unfolded by
   `ContinuousLinearMap.hasLyapunovForm_iff`.
 * `ContinuousLinearMap.hasLyapunovForm_of_isSymmetric`: a symmetric operator bounded below has a
-  Lyapunov form.
+  Lyapunov form; `ContinuousLinearMap.hasLyapunovForm_of_tendsto_of_isSymmetric` applies this to a
+  limit of symmetric operators.
+* `ContinuousLinearMap.abs_inner_apply_le` and `ContinuousLinearMap.abs_inner_apply_apply_le`: the
+  quadratic forms `⟪T v, v⟫` and `⟪S (A v), v⟫` are bounded by `‖T‖ ‖v‖²` and `‖S‖ ‖A‖ ‖v‖²`.
 * `ContinuousLinearMap.HasLyapunovForm.exists_eventually_nhds`: one Lyapunov form serves every
   operator close enough to `A`; `ContinuousLinearMap.isOpen_setOf_hasLyapunovForm` is the
   corresponding openness statement.
@@ -78,6 +82,27 @@ theorem hasLyapunovForm_of_isSymmetric (hA : (A : E →ₗ[ℝ] E).IsSymmetric) 
   rw [h, ← mul_pow]
   exact pow_le_pow_left₀ (by positivity) (hgap v) 2
 
+/-- **A limit of symmetric operators bounded below has a Lyapunov form.** If symmetric operators
+`F i` tend to `A` and `α ‖v‖ ≤ ‖A v‖` with `α > 0`, then `A` is symmetric, so it has the Lyapunov
+form `S = A`. -/
+theorem hasLyapunovForm_of_tendsto_of_isSymmetric {ι : Type*} {l : Filter ι} [l.NeBot]
+    {F : ι → E →L[ℝ] E} (hF : ∀ i, (F i : E →ₗ[ℝ] E).IsSymmetric) (hlim : Tendsto F l (𝓝 A))
+    {α : ℝ} (hα : 0 < α) (hgap : ∀ v, α * ‖v‖ ≤ ‖A v‖) : A.HasLyapunovForm :=
+  hasLyapunovForm_of_isSymmetric (isClosed_setOf_isSymmetric.mem_of_tendsto hlim (.of_forall hF))
+    hα hgap
+
+/-- The quadratic form of a bounded operator `T` is bounded by `‖T‖ ‖v‖²`. -/
+theorem abs_inner_apply_le (T : E →L[ℝ] E) (v : E) : |⟪T v, v⟫_ℝ| ≤ ‖T‖ * ‖v‖ ^ 2 :=
+  calc |⟪T v, v⟫_ℝ| ≤ ‖T v‖ * ‖v‖ := abs_real_inner_le_norm _ _
+    _ ≤ ‖T‖ * ‖v‖ * ‖v‖ := by gcongr; exact T.le_opNorm v
+    _ = ‖T‖ * ‖v‖ ^ 2 := by ring
+
+/-- The quadratic form of `S` against `A` is bounded by `‖S‖ ‖A‖ ‖v‖²`. -/
+theorem abs_inner_apply_apply_le (S A : E →L[ℝ] E) (v : E) :
+    |⟪S (A v), v⟫_ℝ| ≤ ‖S‖ * ‖A‖ * ‖v‖ ^ 2 :=
+  ((S.comp A).abs_inner_apply_le v).trans
+    (mul_le_mul_of_nonneg_right (S.opNorm_comp_le A) (sq_nonneg _))
+
 /-- The quadratic form of `S` against `B` differs from that against `A` by at most
 `‖S‖ ‖B - A‖ ‖v‖²`. -/
 private theorem inner_apply_apply_sub_le (S B : E →L[ℝ] E) (v : E) :
@@ -85,15 +110,8 @@ private theorem inner_apply_apply_sub_le (S B : E →L[ℝ] E) (v : E) :
   have h : ⟪S (A v), v⟫_ℝ - ⟪S (B v), v⟫_ℝ = -⟪S ((B - A) v), v⟫_ℝ := by
     simp only [sub_apply, map_sub, inner_sub_left]
     ring
-  rw [h]
-  calc -⟪S ((B - A) v), v⟫_ℝ ≤ ‖S ((B - A) v)‖ * ‖v‖ := by
-        rw [neg_le]
-        exact neg_le_of_abs_le (abs_real_inner_le_norm _ _)
-    _ ≤ ‖S‖ * ‖B - A‖ * ‖v‖ * ‖v‖ := by
-        gcongr
-        rw [mul_assoc]
-        exact S.le_opNorm_of_le ((B - A).le_opNorm v)
-    _ = ‖S‖ * ‖B - A‖ * ‖v‖ ^ 2 := by ring
+  rw [h, neg_le]
+  exact neg_le_of_abs_le (S.abs_inner_apply_apply_le (B - A) v)
 
 /-- **A Lyapunov form survives small perturbations.** If `A` has a Lyapunov form, then a single
 symmetric `S` and a single constant `c > 0` satisfy `c ‖v‖² ≤ ⟪S (B v), v⟫` for every `B`
@@ -149,14 +167,18 @@ theorem HasLyapunovForm.neg_adjoint [FiniteDimensional ℝ E] (h : A.HasLyapunov
   -- `S` is injective, hence invertible since `E` is finite dimensional.
   have hinj : Function.Injective (S : E →ₗ[ℝ] E) := by
     refine (injective_iff_map_eq_zero (S : E →ₗ[ℝ] E)).mpr fun x hx ↦ ?_
-    have hx' : S x = 0 := hx
+    have hx' : S x = 0 := by rwa [coe_coe] at hx
     have h₁ := hcS x
     rw [hS.apply_clm, hx', inner_zero_right] at h₁
     have : ‖x‖ ^ 2 = 0 := by nlinarith [sq_nonneg ‖x‖]
     exact norm_eq_zero.mp (pow_eq_zero_iff two_ne_zero |>.mp this)
-  set e := LinearEquiv.ofInjectiveEndo (S : E →ₗ[ℝ] E) hinj
-  set T : E →L[ℝ] E := LinearMap.toContinuousLinearMap e.symm.toLinearMap
-  have hST (w : E) : S (T w) = w := e.apply_symm_apply w
+  obtain ⟨e, he⟩ : ∃ e : E ≃ₗ[ℝ] E, ∀ x, e x = S x :=
+    ⟨LinearEquiv.ofInjectiveEndo (S : E →ₗ[ℝ] E) hinj, fun x ↦ by
+      rw [LinearEquiv.coe_ofInjectiveEndo, coe_coe]⟩
+  set T : E →L[ℝ] E := LinearMap.toContinuousLinearMap e.symm.toLinearMap with hT
+  have hST (w : E) : S (T w) = w := by
+    rw [← he, hT, LinearMap.coe_toContinuousLinearMap', LinearEquiv.coe_coe,
+      LinearEquiv.apply_symm_apply]
   have hTsym : (T : E →ₗ[ℝ] E).IsSymmetric := fun a b ↦ by
     simp only [coe_coe]
     conv_lhs => rw [← hST b]

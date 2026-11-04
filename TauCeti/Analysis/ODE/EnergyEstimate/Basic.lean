@@ -22,9 +22,14 @@ space, symmetric wherever the path is nonzero, integration by parts gives
 
 We prove this identity for compactly supported `C¹` paths, without a finite-dimensionality or
 completeness assumption on the target. A spectral gap for `A` and a small upper bound on the
-quadratic form of `A'` give a coercive estimate. Global estimates with an interior error and
-coercivity outside a compact interval are developed in `EnergyEstimate.Global`. These estimates
-for bounded coefficients are inputs to the Fredholm property
+quadratic form of `A'` give a coercive estimate. A second integration by parts, against a `C¹`
+family `S(s)` of symmetric operators, gives
+
+`∫ ⟪S (u' + A u), u⟫ = ∫ ⟪S A u, u⟫ - ½ ∫ ⟪S' u, u⟫`
+
+for any continuous family `A`, with no symmetry of `A` assumed. Global estimates with an interior
+error and coercivity outside a compact interval are developed in `EnergyEstimate.Global`. These
+estimates for bounded coefficients are inputs to the Fredholm property
 of `d/ds + A(s)`; they do not assert surjectivity or the Fredholm property, nor treat unbounded
 transverse operators on a strip.
 
@@ -109,6 +114,52 @@ theorem integral_norm_deriv_add_sq_eq (hA : ContDiff ℝ 1 A)
     have hiSum : Integrable (fun s ↦ ‖deriv u s‖ ^ 2 + 2 * ⟪deriv u s, A s (u s)⟫_ℝ) :=
       hiD.add (hiCross.const_mul 2)
     rw [integral_add hiSum hiA, integral_add hiD (hiCross.const_mul 2), integral_const_mul]
+  linarith
+
+/-- The integrand `⟪T w, u⟫` is integrable when `T` and `w` are continuous and `u` is a compactly
+supported continuous path. -/
+theorem integrable_inner_apply_of_hasCompactSupport {T : ℝ → E →L[ℝ] E} {w : ℝ → E}
+    (hT : Continuous T) (hw : Continuous w) (hu : Continuous u) (hc : HasCompactSupport u) :
+    Integrable fun s ↦ ⟪T s (w s), u s⟫_ℝ :=
+  ((hT.clm_apply hw).inner hu).integrable_of_hasCompactSupport
+    (hc.mono fun s hs hu0 ↦ hs (by simp [hu0]))
+
+omit [InnerProductSpace ℝ E] in
+/-- The squared norm of a compactly supported continuous path is integrable. -/
+theorem integrable_norm_sq_of_hasCompactSupport {w : ℝ → E} (hw : Continuous w)
+    (hc : HasCompactSupport w) : Integrable fun s ↦ ‖w s‖ ^ 2 := by
+  have hcs : HasCompactSupport fun s ↦ ‖w s‖ ^ 2 :=
+    hc.norm.comp_left (g := fun x : ℝ ↦ x ^ 2) (by norm_num)
+  exact (hw.norm.pow 2).integrable_of_hasCompactSupport hcs
+
+/-- **Integration by parts against a family of quadratic forms.** For a `C¹` family `S` of
+symmetric operators, a continuous family `A` and a compactly supported `C¹` path `u`,
+
+`∫ ⟪S (u' + A u), u⟫ = ∫ ⟪S A u, u⟫ - ½ ∫ ⟪S' u, u⟫`. -/
+theorem integral_inner_apply_deriv_add_eq {S : ℝ → E →L[ℝ] E} (hS : ContDiff ℝ 1 S)
+    (hsym : ∀ s, (S s : E →ₗ[ℝ] E).IsSymmetric) (hA : Continuous A) (hu : ContDiff ℝ 1 u)
+    (hc : HasCompactSupport u) :
+    ∫ s, ⟪S s (deriv u s + A s (u s)), u s⟫_ℝ =
+      (∫ s, ⟪S s (A s (u s)), u s⟫_ℝ) - (∫ s, ⟪deriv S s (u s), u s⟫_ℝ) / 2 := by
+  have hiD := integrable_inner_apply_of_hasCompactSupport hS.continuous hu.continuous_deriv_one
+    hu.continuous hc
+  have hiA := integrable_inner_apply_of_hasCompactSupport hS.continuous
+    (hA.clm_apply hu.continuous) hu.continuous hc
+  have hiS := integrable_inner_apply_of_hasCompactSupport hS.continuous_deriv_one hu.continuous
+    hu.continuous hc
+  have hiq := integrable_inner_apply_of_hasCompactSupport hS.continuous hu.continuous
+    hu.continuous hc
+  have hder (s : ℝ) : HasDerivAt (fun s ↦ ⟪S s (u s), u s⟫_ℝ)
+      (⟪deriv S s (u s), u s⟫_ℝ + 2 * ⟪S s (deriv u s), u s⟫_ℝ) s := by
+    have hus := (hu.differentiable one_ne_zero s).hasDerivAt
+    convert ((hS.differentiable one_ne_zero s).hasDerivAt.clm_apply hus).inner ℝ hus using 1
+    rw [inner_add_left, (hsym s).apply_clm (u s) (deriv u s),
+      real_inner_comm (S s (deriv u s)) (u s)]
+    ring
+  have hzero := integral_eq_zero_of_hasDerivAt_of_integrable hder (hiS.add (hiD.const_mul 2)) hiq
+  rw [integral_add hiS (hiD.const_mul 2), integral_const_mul] at hzero
+  simp only [map_add, inner_add_left]
+  rw [integral_add hiD hiA]
   linarith
 
 /-- A spectral gap and a bound on the coefficient derivative give a coercive estimate for a

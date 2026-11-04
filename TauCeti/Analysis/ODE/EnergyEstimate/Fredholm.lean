@@ -12,38 +12,29 @@ public import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.Index
 public import Mathlib.Analysis.InnerProductSpace.Adjoint
 
 /-!
-# The trajectory operator is Fredholm
+# The cokernel of the trajectory operator
 
-Let `A : ℝ → End(E)` be a `C¹` family of symmetric operators on a finite-dimensional real inner
-product space `E`, with invertible limits `A±` at `±∞` and with `A'` tending to zero at both ends.
-This file proves that the trajectory operator
+Let `A` be an essentially bounded family of operators on a real inner product space `E`, and let
 
 `D_A u = u' + A u : W^{1,2}(ℝ, E) → L²(ℝ, E)`
 
-(`TauCeti.WeakDerivStep.trajectoryOperator`, for an `L∞` class of `A`) is a Fredholm operator.
+be its trajectory operator (`TauCeti.WeakDerivStep.trajectoryOperator`, for an `L∞` class of `A`).
+This file identifies the orthogonal complement of the range of `D_A` with the kernel of the formal
+adjoint `-d/ds + A†`, where `A†` is the pointwise adjoint of `A`.
 
-The kernel of `D_A` is finite dimensional and its range is closed
-(`TauCeti.WeakDerivStep.finiteDimensional_ker_trajectoryOperator`,
-`TauCeti.WeakDerivStep.isClosed_range_trajectoryOperator`), so what remains is the cokernel.
-Since the range is closed, the cokernel is the orthogonal complement of the range in `L²`. A path
-`v` orthogonal to the range pairs to zero with `D_A (φ • e)` for every test function `φ` and every
-vector `e`. By symmetry of `A` this says that `v` has weak derivative `A v`, so `v` lies in
-`W^{1,2}(ℝ, E)` and solves the formal adjoint equation `-v' + A v = 0`: it is in the kernel of
-`D_{-A}`. The family `-A` satisfies the same hypotheses as `A`, so this kernel is finite
-dimensional, and hence so is the cokernel of `D_A`.
+A path `v` orthogonal to the range pairs to zero with `D_A (φ • e)` for every test function `φ` and
+every vector `e`. This says that `v` has weak derivative `A† v`, so `v` lies in `W^{1,2}(ℝ, E)` and
+solves the formal adjoint equation `-v' + A† v = 0`: it is in the kernel of `D_{-A†}`. This
+inclusion needs neither finite dimensionality of `E` nor any further hypothesis on `A`, and is
+stated in that generality, for any essentially bounded `B` with `B = A†` almost everywhere
+(`TauCeti.WeakDerivStep.exists_ae_eq_adjoint` provides one). Conversely, when `E` is finite
+dimensional, density of test functions in `W^{1,2}(ℝ, E)` shows that every element of the kernel of
+`D_{-A†}` is orthogonal to the range of `D_A`.
 
-Conversely, by density of test functions in `W^{1,2}(ℝ, E)`, every element of the kernel of
-`D_{-A}` is orthogonal to the range of `D_A`. The cokernel of `D_A` is therefore identified with
-the kernel of `D_{-A}`, and the index of `D_A` is `dim ker D_A - dim ker D_{-A}`.
-
-The identification of the cokernel does not use symmetry of `A` in an essential way. For an
-arbitrary essentially bounded coefficient `A`, the same pairing shows that a path orthogonal to
-the range of `D_A` has weak derivative `A† v`, where `A†` is the pointwise adjoint of `A`, so it
-lies in the kernel of `D_{-A†}`. This inclusion needs neither finite dimensionality of `E` nor any
-further hypothesis on `A`, and is stated in that generality, for any essentially bounded `B` with
-`B = A†` almost everywhere; the reverse inclusion uses only finite dimensionality of `E` in
-addition. The index formula `dim ker D_A - dim ker D_{-A†}` holds for any such coefficient whose
-trajectory operator has closed range. For symmetric `A` it reads `dim ker D_A - dim ker D_{-A}`.
+When the range of `D_A` is closed, its cokernel is the orthogonal complement of the range, so the
+index of `D_A` is `dim ker D_A - dim ker D_{-A†}`. For symmetric `A` it reads
+`dim ker D_A - dim ker D_{-A}`. The file `TauCeti.Analysis.ODE.EnergyEstimate.Lyapunov` uses this
+to prove that `D_A` is Fredholm when the limits of `A` at `±∞` are hyperbolic.
 
 ## Main declarations
 
@@ -54,13 +45,10 @@ trajectory operator has closed range. For symmetric `A` it reads `dim ker D_A - 
 * `TauCeti.WeakDerivStep.map_ker_le_orthogonal_range_trajectoryOperator` and
   `TauCeti.WeakDerivStep.orthogonal_range_trajectoryOperator_eq_map_ker`: the values of the kernel
   of `D_{-A†}` are exactly the orthogonal complement of the range of `D_A`.
-* `TauCeti.WeakDerivStep.finiteDimensional_coker_trajectoryOperator`: the cokernel of `D_A` is
-  finite dimensional.
-* `TauCeti.WeakDerivStep.isFredholm_trajectoryOperator`: `D_A` is a Fredholm operator.
 * `TauCeti.WeakDerivStep.index_trajectoryOperator_of_isClosed_range`: whenever the range of `D_A`
   is closed, its index is `dim ker D_A - dim ker D_{-A†}`.
-* `TauCeti.WeakDerivStep.index_trajectoryOperator`: in particular, this holds under the
-  asymptotic hypotheses above.
+* `TauCeti.WeakDerivStep.exists_ae_eq_adjoint`: the pointwise adjoint of an essentially bounded
+  family has an `L∞` class.
 
 ## References
 
@@ -257,110 +245,34 @@ theorem index_trajectoryOperator_of_isClosed_range [FiniteDimensional ℝ E]
       (Submodule.equivMapOfInjective _ hinj _).symm).finrank_eq
   rw [ContinuousLinearMap.index_eq_finrank_sub, hcoker]
 
+variable {A : ℝ → E →L[ℝ] E}
+
+/-- **An `L∞` class of the pointwise adjoint.** If `AL` is an `L∞` class of `A`, then the pointwise
+adjoints `s ↦ A(s)†` also have an `L∞` class. It is the coefficient of the formal adjoint
+`-d/ds + A†` of the trajectory operator `d/ds + A`. -/
+theorem exists_ae_eq_adjoint (AL : Lp (E →L[ℝ] E) ∞ (volume.restrict ((⊤ : Opens ℝ) : Set ℝ)))
+    (hAL : AL =ᵐ[volume.restrict ((⊤ : Opens ℝ) : Set ℝ)] A) :
+    ∃ BL : Lp (E →L[ℝ] E) ∞ (volume.restrict ((⊤ : Opens ℝ) : Set ℝ)),
+      BL =ᵐ[volume.restrict ((⊤ : Opens ℝ) : Set ℝ)] fun s ↦ ContinuousLinearMap.adjoint (A s) := by
+  set adj := (ContinuousLinearMap.adjoint : (E →L[ℝ] E) ≃ₗᵢ⋆[ℝ] (E →L[ℝ] E))
+  set L : (E →L[ℝ] E) →SL[starRingEnd ℝ] (E →L[ℝ] E) :=
+    adj.toContinuousLinearEquiv.toContinuousLinearMap
+  refine ⟨L.compLp AL, ?_⟩
+  filter_upwards [L.coeFn_compLp AL, hAL] with s hs hAs
+  simp [hs, hAs, L, adj]
+
+/-- An `L∞` class of the pointwise adjoint of `A` is almost everywhere the pointwise adjoint of an
+`L∞` class of `A`. This is the hypothesis on the coefficient of the formal adjoint in
+`TauCeti.WeakDerivStep.orthogonal_range_trajectoryOperator_eq_map_ker`. -/
+theorem ae_eq_adjoint_of_ae_eq
+    {AL BL : Lp (E →L[ℝ] E) ∞ (volume.restrict ((⊤ : Opens ℝ) : Set ℝ))}
+    (hAL : AL =ᵐ[volume.restrict ((⊤ : Opens ℝ) : Set ℝ)] A)
+    (hBL : BL =ᵐ[volume.restrict ((⊤ : Opens ℝ) : Set ℝ)]
+      fun s ↦ ContinuousLinearMap.adjoint (A s)) :
+    ∀ᵐ s ∂volume.restrict ((⊤ : Opens ℝ) : Set ℝ), BL s = ContinuousLinearMap.adjoint (AL s) := by
+  filter_upwards [hAL, hBL] with s hs hBs
+  rw [hBs, hs]
+
 end Orthogonal
-
-variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
-  {A : ℝ → E →L[ℝ] E}
-
-/-- An `L∞` class of a symmetric family is almost everywhere its own pointwise adjoint. -/
-private theorem ae_eq_adjoint (hsym : ∀ s, (A s).toLinearMap.IsSymmetric)
-    {AL : Lp (E →L[ℝ] E) ∞ (volume.restrict ((⊤ : Opens ℝ) : Set ℝ))}
-    (hAL : AL =ᵐ[volume.restrict ((⊤ : Opens ℝ) : Set ℝ)] A) :
-    ∀ᵐ s ∂volume.restrict ((⊤ : Opens ℝ) : Set ℝ), AL s = ContinuousLinearMap.adjoint (AL s) := by
-  filter_upwards [hAL] with s hs
-  rw [hs]
-  exact (hsym s).clm_adjoint_eq.symm
-
-/-- The family `-A` satisfies the hypotheses of
-`TauCeti.WeakDerivStep.finiteDimensional_ker_trajectoryOperator` whenever `A` does, so the kernel
-of `D_{-A}` is finite dimensional. -/
-private theorem finiteDimensional_ker_trajectoryOperator_neg
-    (hA : ContDiff ℝ 1 A) (hsym : ∀ s, (A s).toLinearMap.IsSymmetric)
-    {Aminus Aplus : E →L[ℝ] E} {α : ℝ} (hα : 0 < α)
-    (hminus : ∀ v, α * ‖v‖ ≤ ‖Aminus v‖) (hplus : ∀ v, α * ‖v‖ ≤ ‖Aplus v‖)
-    (hbot : Tendsto A atBot (𝓝 Aminus)) (htop : Tendsto A atTop (𝓝 Aplus))
-    (hdbot : Tendsto (deriv A) atBot (𝓝 0)) (hdtop : Tendsto (deriv A) atTop (𝓝 0))
-    (AL : Lp (E →L[ℝ] E) ∞ (volume.restrict ((⊤ : Opens ℝ) : Set ℝ)))
-    (hAL : AL =ᵐ[volume.restrict ((⊤ : Opens ℝ) : Set ℝ)] A) :
-    FiniteDimensional ℝ (trajectoryOperator (p := 2) (-AL)).ker := by
-  obtain ⟨hB, hBsym, hBminus, hBplus, hdBbot, hdBtop⟩ :=
-    neg_trajectory_hypotheses hA hsym hminus hplus hdbot hdtop
-  exact finiteDimensional_ker_trajectoryOperator hB hBsym hα hBminus hBplus hbot.neg htop.neg
-    hdBbot hdBtop (-AL)
-    (by filter_upwards [Lp.coeFn_neg AL, hAL] with s hs hAs; simp only [hs, Pi.neg_apply, hAs])
-
-/-- Under the hypotheses of `TauCeti.WeakDerivStep.isClosed_range_trajectoryOperator`, the range
-of `D_A` is complete, so its orthogonal complement in `L²(ℝ, E)` is a complement of it. -/
-private theorem completeSpace_range_trajectoryOperator
-    (hA : ContDiff ℝ 1 A) (hsym : ∀ s, (A s).toLinearMap.IsSymmetric)
-    {Aminus Aplus : E →L[ℝ] E} {α : ℝ} (hα : 0 < α)
-    (hminus : ∀ v, α * ‖v‖ ≤ ‖Aminus v‖) (hplus : ∀ v, α * ‖v‖ ≤ ‖Aplus v‖)
-    (hbot : Tendsto A atBot (𝓝 Aminus)) (htop : Tendsto A atTop (𝓝 Aplus))
-    (hdbot : Tendsto (deriv A) atBot (𝓝 0)) (hdtop : Tendsto (deriv A) atTop (𝓝 0))
-    (AL : Lp (E →L[ℝ] E) ∞ (volume.restrict ((⊤ : Opens ℝ) : Set ℝ)))
-    (hAL : AL =ᵐ[volume.restrict ((⊤ : Opens ℝ) : Set ℝ)] A) :
-    CompleteSpace (trajectoryOperator (p := 2) AL).range :=
-  (isClosed_range_trajectoryOperator hA hsym hα hminus hplus hbot htop hdbot hdtop AL
-    hAL).completeSpace_coe
-
-/-- **The cokernel of the trajectory operator is finite dimensional.** For a `C¹` family of
-symmetric operators with invertible limits at both ends and derivative tending to zero, the
-quotient of `L²(ℝ, E)` by the range of `u ↦ u' + A u` is finite dimensional. -/
-theorem finiteDimensional_coker_trajectoryOperator
-    (hA : ContDiff ℝ 1 A) (hsym : ∀ s, (A s).toLinearMap.IsSymmetric)
-    {Aminus Aplus : E →L[ℝ] E} {α : ℝ} (hα : 0 < α)
-    (hminus : ∀ v, α * ‖v‖ ≤ ‖Aminus v‖) (hplus : ∀ v, α * ‖v‖ ≤ ‖Aplus v‖)
-    (hbot : Tendsto A atBot (𝓝 Aminus)) (htop : Tendsto A atTop (𝓝 Aplus))
-    (hdbot : Tendsto (deriv A) atBot (𝓝 0)) (hdtop : Tendsto (deriv A) atTop (𝓝 0))
-    (AL : Lp (E →L[ℝ] E) ∞ (volume.restrict ((⊤ : Opens ℝ) : Set ℝ)))
-    (hAL : AL =ᵐ[volume.restrict ((⊤ : Opens ℝ) : Set ℝ)] A) :
-    FiniteDimensional ℝ (Lp E 2 (volume.restrict ((⊤ : Opens ℝ) : Set ℝ)) ⧸
-      (trajectoryOperator (p := 2) AL).range) := by
-  have := completeSpace_range_trajectoryOperator hA hsym hα hminus hplus hbot htop hdbot hdtop AL
-    hAL
-  -- The orthogonal complement of the range lies in the image of the kernel of `D_{-A}`.
-  have := finiteDimensional_ker_trajectoryOperator_neg hA hsym hα hminus hplus hbot htop hdbot
-    hdtop AL hAL
-  have : FiniteDimensional ℝ (trajectoryOperator (p := 2) AL).rangeᗮ :=
-    Submodule.finiteDimensional_of_le
-      (orthogonal_range_trajectoryOperator_le_map_ker (ae_eq_adjoint hsym hAL))
-  exact (trajectoryOperator (p := 2) AL).range.quotientEquivOrthogonal.toLinearEquiv.symm
-    |>.finiteDimensional
-
-/-- **The trajectory operator is Fredholm.** For a `C¹` family `A` of symmetric operators on a
-finite-dimensional real inner product space, with invertible limits at both ends and derivative
-tending to zero, `u ↦ u' + A u` is a Fredholm operator from `W^{1,2}(ℝ, E)` to `L²(ℝ, E)`. -/
-theorem isFredholm_trajectoryOperator
-    (hA : ContDiff ℝ 1 A) (hsym : ∀ s, (A s).toLinearMap.IsSymmetric)
-    {Aminus Aplus : E →L[ℝ] E} {α : ℝ} (hα : 0 < α)
-    (hminus : ∀ v, α * ‖v‖ ≤ ‖Aminus v‖) (hplus : ∀ v, α * ‖v‖ ≤ ‖Aplus v‖)
-    (hbot : Tendsto A atBot (𝓝 Aminus)) (htop : Tendsto A atTop (𝓝 Aplus))
-    (hdbot : Tendsto (deriv A) atBot (𝓝 0)) (hdtop : Tendsto (deriv A) atTop (𝓝 0))
-    (AL : Lp (E →L[ℝ] E) ∞ (volume.restrict ((⊤ : Opens ℝ) : Set ℝ)))
-    (hAL : AL =ᵐ[volume.restrict ((⊤ : Opens ℝ) : Set ℝ)] A) :
-    (trajectoryOperator (p := 2) AL).IsFredholm :=
-  .of_finite_ker_coker _
-    (finiteDimensional_ker_trajectoryOperator hA hsym hα hminus hplus hbot htop hdbot hdtop AL hAL)
-    (finiteDimensional_coker_trajectoryOperator hA hsym hα hminus hplus hbot htop hdbot hdtop AL
-      hAL)
-
-/-- **The index of the trajectory operator.** Under the hypotheses of
-`TauCeti.WeakDerivStep.isFredholm_trajectoryOperator`, the index of `D_A u = u' + A u` is
-`dim ker D_A - dim ker D_{-A}`: its cokernel is the kernel of the formal adjoint `-d/ds + A`,
-whose solutions are those of `v' - A v = 0`. This specializes
-`TauCeti.WeakDerivStep.index_trajectoryOperator_of_isClosed_range`. -/
-theorem index_trajectoryOperator
-    (hA : ContDiff ℝ 1 A) (hsym : ∀ s, (A s).toLinearMap.IsSymmetric)
-    {Aminus Aplus : E →L[ℝ] E} {α : ℝ} (hα : 0 < α)
-    (hminus : ∀ v, α * ‖v‖ ≤ ‖Aminus v‖) (hplus : ∀ v, α * ‖v‖ ≤ ‖Aplus v‖)
-    (hbot : Tendsto A atBot (𝓝 Aminus)) (htop : Tendsto A atTop (𝓝 Aplus))
-    (hdbot : Tendsto (deriv A) atBot (𝓝 0)) (hdtop : Tendsto (deriv A) atTop (𝓝 0))
-    (AL : Lp (E →L[ℝ] E) ∞ (volume.restrict ((⊤ : Opens ℝ) : Set ℝ)))
-    (hAL : AL =ᵐ[volume.restrict ((⊤ : Opens ℝ) : Set ℝ)] A) :
-    (trajectoryOperator (p := 2) AL).index =
-      (Module.finrank ℝ (trajectoryOperator (p := 2) AL).ker : ℤ) -
-        Module.finrank ℝ (trajectoryOperator (p := 2) (-AL)).ker :=
-  index_trajectoryOperator_of_isClosed_range (ae_eq_adjoint hsym hAL)
-    (isClosed_range_trajectoryOperator hA hsym hα hminus hplus hbot htop hdbot hdtop AL hAL)
 
 end TauCeti.WeakDerivStep
