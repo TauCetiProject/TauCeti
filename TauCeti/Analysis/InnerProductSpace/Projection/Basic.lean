@@ -47,6 +47,8 @@ AIQ-Kitware DKPS formalization (Apache-2.0; Jon Crall and GPT-6).
 
 ## Main results
 
+* `Submodule.orthogonalProjectionOnto_comp_subtypeL`: restricting the orthogonal projection
+  onto `U` to `U` itself gives the identity map.
 * `Submodule.adjoint_subtype`: the adjoint of subspace inclusion is orthogonal projection
   onto that subspace.
 * `Submodule.adjoint_orthogonalProjectionOnto_toLinearMap`: the adjoint of restricted
@@ -253,6 +255,13 @@ theorem starProjection_mul_starProjection_sub_starProjection_sq :
   have hQ := V.isIdempotentElem_starProjection
   simp only [sq, sub_mul, mul_sub, mul_assoc, hP.eq, hQ.eq, hP.mul_self_mul]
   abel
+
+/-- Restricting the orthogonal projection onto `U` to `U` itself gives the identity map. -/
+@[simp]
+theorem orthogonalProjectionOnto_comp_subtypeL :
+    U.orthogonalProjectionOnto ∘L U.subtypeL = ContinuousLinearMap.id 𝕜 U := by
+  ext u
+  exact congrArg Subtype.val (U.orthogonalProjectionOnto_mem_subspace_eq_self u)
 
 /-- The adjoint of the inclusion `U → E` is the orthogonal projection `E → U`.
 Both maps are regarded as finite-dimensional algebraic linear maps. -/

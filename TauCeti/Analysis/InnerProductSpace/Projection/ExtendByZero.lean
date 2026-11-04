@@ -5,9 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.Star.StarAlgHom
-public import Mathlib.Analysis.InnerProductSpace.Adjoint
-public import Mathlib.Analysis.InnerProductSpace.Projection.Basic
+public import TauCeti.Analysis.InnerProductSpace.Projection.Basic
 
 /-!
 # Zero-extension star-algebra homomorphisms from closed subspaces
@@ -25,8 +23,6 @@ orthogonal projection `U.starProjection`. Conversely, any bounded operator `T : 
 
 ## Main definitions and results
 
-* `Submodule.orthogonalProjectionOnto_comp_subtypeL`: `U.orthogonalProjectionOnto ∘L U.subtypeL` is
-  the identity on `U` whenever `U` admits an orthogonal projection.
 * `Submodule.extendByZero`: the isometric nonunital star-algebra homomorphism
   `(U →L[𝕜] U) →⋆ₙₐ[𝕜] (E →L[𝕜] E)` extending operators on `U` by zero on `Uᗮ`.
 * `Submodule.extendByZero_one`: `U.extendByZero 1 = U.starProjection`.
@@ -43,17 +39,7 @@ noncomputable section
 namespace Submodule
 
 variable {𝕜 E : Type*} [RCLike 𝕜] [NormedAddCommGroup E] [InnerProductSpace 𝕜 E]
-
-/-- Restricting the orthogonal projection onto `U` to `U` itself gives the identity map. -/
-@[simp]
-theorem orthogonalProjectionOnto_comp_subtypeL (U : Submodule 𝕜 E) [U.HasOrthogonalProjection] :
-    U.orthogonalProjectionOnto ∘L U.subtypeL = ContinuousLinearMap.id 𝕜 U := by
-  ext u
-  exact congrArg Subtype.val (U.orthogonalProjectionOnto_mem_subspace_eq_self u)
-
-section CompleteSpace
-
-variable [CompleteSpace E] (U : Submodule 𝕜 E) [CompleteSpace U]
+  [CompleteSpace E] (U : Submodule 𝕜 E) [CompleteSpace U]
 
 /-- Extend bounded operators on a complete subspace `U` of a Hilbert space `E` by zero on `Uᗮ`,
 bundled as a nonunital star-algebra homomorphism `(U →L[𝕜] U) →⋆ₙₐ[𝕜] (E →L[𝕜] E)`. -/
@@ -69,8 +55,9 @@ def extendByZero : (U →L[𝕜] U) →⋆ₙₐ[𝕜] (E →L[𝕜] E) where
     ext x
     simp
   map_mul' S T := by
-    ext x
-    simp
+    simp only [ContinuousLinearMap.mul_def, ContinuousLinearMap.comp_assoc]
+    rw [← ContinuousLinearMap.comp_assoc U.orthogonalProjectionOnto U.subtypeL,
+      U.orthogonalProjectionOnto_comp_subtypeL, ContinuousLinearMap.id_comp]
   map_star' S := by
     simp only [ContinuousLinearMap.star_eq_adjoint, ContinuousLinearMap.adjoint_comp,
       U.adjoint_subtypeL, U.adjoint_orthogonalProjectionOnto, ContinuousLinearMap.comp_assoc]
@@ -112,8 +99,10 @@ theorem extendByZero_apply_mem (S : U →L[𝕜] U) (x : E) :
 @[simp]
 theorem orthogonalProjectionOnto_comp_extendByZero_comp_subtypeL (S : U →L[𝕜] U) :
     U.orthogonalProjectionOnto ∘L U.extendByZero S ∘L U.subtypeL = S := by
-  ext u
-  simp
+  simp only [extendByZero_def, ContinuousLinearMap.comp_assoc,
+    U.orthogonalProjectionOnto_comp_subtypeL, ContinuousLinearMap.comp_id]
+  rw [← ContinuousLinearMap.comp_assoc, U.orthogonalProjectionOnto_comp_subtypeL,
+    ContinuousLinearMap.id_comp]
 
 /-- Extending the identity operator on `U` by zero on `Uᗮ` gives `U.starProjection`. -/
 @[simp]
@@ -164,7 +153,5 @@ theorem extendByZero_comp_orthogonalProjectionOnto_comp_subtypeL {T : E →L[�
     _ = T (U.starProjection x) + T (x - U.starProjection x) := by
         rw [hproj, hker _ (U.sub_starProjection_mem_orthogonal x), add_zero]
     _ = T x := by rw [← map_add, ← hdecomp]
-
-end CompleteSpace
 
 end Submodule
