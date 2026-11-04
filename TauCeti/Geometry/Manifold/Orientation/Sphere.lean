@@ -38,7 +38,8 @@ contraction of the volume form of `E` with the position vector, through
 
 * `Orientation.sphereOrientation`: the outward-normal orientation of the unit sphere.
 * `Orientation.orientation_eq_orientationAt_sphereOrientation_iff`: a tangent basis at `u` is
-  positive exactly when `u` followed by its image in `E` has positive volume.
+  positive exactly when `u` followed by its image in `E` has positive volume, and
+  `Orientation.orientation_eq_neg_orientationAt_sphereOrientation_iff` its negative counterpart.
 * `Complex.orientation_eq_orientationAt_sphereOrientation_iff`: a tangent vector `w` of the unit
   circle of `ℂ` at `z` is positive exactly when it points counterclockwise,
   `Re z Im w - Im z Re w > 0`.
@@ -118,6 +119,20 @@ theorem _root_.Orientation.orientation_eq_orientationAt_sphereOrientation_iff
         (Fin.cons (u : E) fun i ↦ mvfderiv (𝓡 n) ((↑) : sphere (0 : E) 1 → E) u (v i)) := by
   rw [Orientation.sphereOrientation,
     Manifold.Orientation.orientation_eq_orientationAt_ofTopForm_iff, sphereTopForm_apply]
+
+/-- A tangent basis `v` of the unit sphere at `u` is negative for the outward-normal orientation
+exactly when `u, v₁, …, vₙ`, read in `E` through the derivative of the inclusion, has negative
+volume. -/
+theorem _root_.Orientation.orientation_eq_neg_orientationAt_sphereOrientation_iff
+    (o : Orientation ℝ E (Fin (n + 1))) {u : sphere (0 : E) 1}
+    (v : Basis (Fin n) ℝ (TangentSpace (𝓡 n) u)) :
+    v.orientation = -o.sphereOrientation.orientationAt u ↔
+      o.volumeForm
+        (Fin.cons (u : E) fun i ↦ mvfderiv (𝓡 n) ((↑) : sphere (0 : E) 1 → E) u (v i)) < 0 := by
+  rw [← Orientation.ne_iff_eq_neg _ _ (o.sphereOrientation.finrank_tangentSpace_eq u).symm, Ne,
+    o.orientation_eq_orientationAt_sphereOrientation_iff, not_lt]
+  exact (Orientation.volumeForm_apply_ne_zero_iff.2
+    (LinearIndependent.finCons_mvfderiv_coe_sphere u v.linearIndependent)).le_iff_lt
 
 section Circle
 
