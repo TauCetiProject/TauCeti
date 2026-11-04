@@ -240,10 +240,7 @@ theorem ae_le_of_forall_notMem_calderonZygmundCubes [Nonempty ι] (hg : AEMeasur
   obtain ⟨q, hq, -, hsub⟩ := exists_mem_calderonZygmundCubes_of_lt_setLAverage hg' ht hlt
   exact hnot q hq (hsub (mem_dyadicCube_dyadicIndex k x))
 
-/-- The Calderón–Zygmund cubes, indexed by the subtype of their levels and positions, are pairwise
-disjoint: the form of `TauCeti.pairwiseDisjoint_calderonZygmundCubes` used to sum measures and
-integrals over the union of the cubes. -/
-theorem pairwise_disjoint_calderonZygmundCubes :
+private theorem pairwise_disjoint_calderonZygmundCubes :
     Pairwise (Function.onFun Disjoint fun q : calderonZygmundCubes g t => dyadicCube q.1.1 q.1.2) :=
   fun q q' hne => pairwiseDisjoint_calderonZygmundCubes q.2 q'.2 (Subtype.val_injective.ne hne)
 

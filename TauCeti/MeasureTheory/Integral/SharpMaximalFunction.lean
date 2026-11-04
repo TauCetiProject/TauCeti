@@ -9,7 +9,6 @@ public import TauCeti.MeasureTheory.Integral.CalderonZygmund.Decomposition
 public import Mathlib.Topology.Semicontinuity.Defs
 import Mathlib.MeasureTheory.Constructions.BorelSpace.Order
 import TauCeti.Analysis.SpecialFunctions.Pow.Integral
-import TauCeti.MeasureTheory.Integral.Dilation
 
 /-!
 # The sharp maximal function and the Fefferman–Stein inequality
@@ -224,6 +223,23 @@ private theorem volume_lt_enorm_le_volume_czUnion [Nonempty ι] {f : (ι → ℝ
   refine (hx fun q hq hxq => hxU ?_).not_gt hxt
   exact mem_biUnion hq hxq
 
+/-- On a Calderón–Zygmund cube `P` of `‖f‖` at height `2t`, for `t < ∞`, the function `f`
+deviates on average by more than `t` from any `a` with `‖a‖ₑ ≤ t`: `t |P| ≤ ∫_P ‖f - a‖ₑ`. -/
+private theorem mul_volume_le_setLIntegral_enorm_sub {f : (ι → ℝ) → F} {t : ℝ≥0∞} (ht' : t ≠ ∞)
+    {p : ℤ × (ι → ℤ)} (hp : p ∈ calderonZygmundCubes (fun x => ‖f x‖ₑ) (2 * t)) {a : F}
+    (ha : ‖a‖ₑ ≤ t) :
+    t * volume (dyadicCube p.1 p.2) ≤ ∫⁻ y in dyadicCube p.1 p.2, ‖f y - a‖ₑ := by
+  set P := dyadicCube p.1 p.2
+  have hfin : t * volume P ≠ ∞ := ENNReal.mul_ne_top ht' (volume_dyadicCube_ne_top _ _)
+  refine ENNReal.le_of_add_le_add_right hfin ?_
+  calc t * volume P + t * volume P = 2 * t * volume P := by ring
+    _ ≤ ∫⁻ y in P, ‖f y‖ₑ := (mul_volume_lt_setLIntegral_of_mem_calderonZygmundCubes hp).le
+    _ ≤ ∫⁻ y in P, (‖f y - a‖ₑ + ‖a‖ₑ) :=
+        lintegral_mono fun y => by simpa using enorm_add_le (f y - a) a
+    _ = (∫⁻ y in P, ‖f y - a‖ₑ) + ‖a‖ₑ * volume P := by
+        rw [lintegral_add_right _ measurable_const, setLIntegral_const]
+    _ ≤ (∫⁻ y in P, ‖f y - a‖ₑ) + t * volume P := by gcongr
+
 section LevelSets
 
 variable [NormedSpace ℝ F] [CompleteSpace F]
@@ -254,20 +270,11 @@ private theorem mul_volume_czUnion_two_mul_inter_le {f : (ι → ℝ) → F} (hf
     · simp [hpQ]
     rw [inter_eq_left.2 (dyadicCube_subset_of_mem_calderonZygmundCubes_of_le
       (two_mul t ▸ le_self_add) hp hq hpQ)]
-    set P := dyadicCube p.1 p.2
-    have hfin : t * volume P ≠ ∞ := ENNReal.mul_ne_top ht' (volume_dyadicCube_ne_top _ _)
-    refine ENNReal.le_of_add_le_add_right hfin ?_
-    calc t * volume P + t * volume P = 2 * t * volume P := by ring
-      _ ≤ ∫⁻ y in P, ‖f y‖ₑ := (mul_volume_lt_setLIntegral_of_mem_calderonZygmundCubes hp).le
-      _ ≤ ∫⁻ y in P, (‖f y - a‖ₑ + ‖a‖ₑ) :=
-          lintegral_mono fun y => by simpa using enorm_add_le (f y - a) a
-      _ = (∫⁻ y in P, ‖f y - a‖ₑ) + ‖a‖ₑ * volume P := by
-          rw [lintegral_add_right _ measurable_const, setLIntegral_const]
-      _ ≤ (∫⁻ y in P, ‖f y - a‖ₑ) + t * volume P := by gcongr
+    exact mul_volume_le_setLIntegral_enorm_sub ht' hp ha
   have hdisj : Pairwise (Function.onFun Disjoint fun p :
       calderonZygmundCubes (fun x => ‖f x‖ₑ) (2 * t) => dyadicCube p.1.1 p.1.2 ∩ Q) :=
-    fun p p' hne => (pairwise_disjoint_calderonZygmundCubes hne).mono inter_subset_left
-      inter_subset_left
+    fun p p' hne => ((pairwise_subtype_iff_pairwise_set _ _).2
+      pairwiseDisjoint_calderonZygmundCubes hne).mono inter_subset_left inter_subset_left
   have hmeas : ∀ p : calderonZygmundCubes (fun x => ‖f x‖ₑ) (2 * t),
       MeasurableSet (dyadicCube p.1.1 p.1.2 ∩ Q) :=
     fun p => (measurableSet_dyadicCube _ _).inter (measurableSet_dyadicCube _ _)
@@ -325,7 +332,9 @@ private theorem volume_czUnion_two_mul_le [Nonempty ι] {f : (ι → ℝ) → F}
     rw [show K * (γ * t) * volume (dyadicCube q.1 q.2) =
       t * (K * γ * volume (dyadicCube q.1 q.2)) by ring] at hle
     exact (ENNReal.mul_le_mul_iff_right ht ht').1 hle
-  have hdisj := pairwise_disjoint_calderonZygmundCubes (g := fun x => ‖f x‖ₑ) (t := t)
+  have hdisj : Pairwise (Function.onFun Disjoint fun q :
+      calderonZygmundCubes (fun x => ‖f x‖ₑ) t => dyadicCube q.1.1 q.1.2) :=
+    (pairwise_subtype_iff_pairwise_set _ _).2 pairwiseDisjoint_calderonZygmundCubes
   have hmeas : ∀ q : calderonZygmundCubes (fun x => ‖f x‖ₑ) t,
       MeasurableSet (dyadicCube q.1.1 q.1.2) := fun q => measurableSet_dyadicCube _ _
   have hU : czUnion f t = ⋃ q : calderonZygmundCubes (fun x => ‖f x‖ₑ) t,
@@ -359,43 +368,6 @@ end GoodLambda
 
 section FeffermanStein
 
-/-- Substituting `t = c s`, for `c > 0`, in a lower integral against the weight `t ^ q` over a set
-of nonnegative reals: the weight is homogeneous of degree `q`, so the substitution costs the factor
-`c ^ (-(q + 1))`. -/
-private theorem setLIntegral_comp_mul_left_mul_rpow (g : ℝ → ℝ≥0∞) {c : ℝ} (hc : 0 < c)
-    {S T : Set ℝ} (hT : MeasurableSet T) (hST : ∀ s, s ∈ T ↔ c * s ∈ S) (hT0 : T ⊆ Ici 0)
-    (q : ℝ) :
-    ∫⁻ s in T, g (c * s) * ENNReal.ofReal (s ^ q) =
-      ENNReal.ofReal (c ^ (-(q + 1))) * ∫⁻ t in S, g t * ENNReal.ofReal (t ^ q) := by
-  have h := setLIntegral_comp_preimage_of_map_eq_smul
-    (e := (Homeomorph.mulLeft₀ c hc.ne').toMeasurableEquiv) (Real.map_volume_mul_left hc.ne')
-    (fun t => g t * ENNReal.ofReal (t ^ q)) S
-  have hT' : (Homeomorph.mulLeft₀ c hc.ne').toMeasurableEquiv ⁻¹' S = T := by
-    ext s
-    exact (hST s).symm
-  rw [hT'] at h
-  simp only [Homeomorph.toMeasurableEquiv_coe, Homeomorph.coe_mulLeft₀, Units.val_mk0, abs_inv,
-    abs_of_pos hc] at h
-  have hcongr : ∫⁻ s in T, g (c * s) * ENNReal.ofReal ((c * s) ^ q) =
-      ∫⁻ s in T, ENNReal.ofReal (c ^ q) * (g (c * s) * ENNReal.ofReal (s ^ q)) :=
-    setLIntegral_congr_fun hT fun s hs => by
-      rw [Real.mul_rpow hc.le (hT0 hs), ENNReal.ofReal_mul (Real.rpow_nonneg hc.le q)]
-      ring
-  rw [hcongr, lintegral_const_mul' _ _ ENNReal.ofReal_ne_top] at h
-  have hinv : ENNReal.ofReal (c ^ (-q)) * ENNReal.ofReal (c ^ q) = 1 := by
-    rw [← ENNReal.ofReal_mul (by positivity), ← Real.rpow_add hc]
-    simp
-  calc ∫⁻ s in T, g (c * s) * ENNReal.ofReal (s ^ q)
-      = ENNReal.ofReal (c ^ (-q)) *
-          (ENNReal.ofReal (c ^ q) * ∫⁻ s in T, g (c * s) * ENNReal.ofReal (s ^ q)) := by
-        rw [← mul_assoc, hinv, one_mul]
-    _ = ENNReal.ofReal (c ^ (-q)) * ENNReal.ofReal c⁻¹ *
-          ∫⁻ t in S, g t * ENNReal.ofReal (t ^ q) := by
-        rw [h, mul_assoc]
-    _ = ENNReal.ofReal (c ^ (-(q + 1))) * ∫⁻ t in S, g t * ENNReal.ofReal (t ^ q) := by
-        rw [← ENNReal.ofReal_mul (by positivity), ← Real.rpow_neg_one, ← Real.rpow_add hc,
-          neg_add]
-
 /-- For integrable `f` and `p > 1`, the truncated layer cake integral
 `∫₀ᴺ m(t) t^(p-1) dt` of the measures `m(t)` of the Calderón–Zygmund unions is finite, since
 `m(t) ≤ ‖f‖₁ / t`. -/
@@ -419,21 +391,39 @@ private theorem setLIntegral_volume_czUnion_mul_rpow_ne_top {f : (ι → ℝ) �
         exact mul_volume_czUnion_le f _
     _ = (∫⁻ x, ‖f x‖ₑ) * ENNReal.ofReal (t ^ (p - 2)) := mul_comm _ _
 
+/-- The choice `γ = 2^(-(p + 2n + 2))` of the good-`λ` parameter makes the constant
+`2^p 2²ⁿ⁺¹ γ` of the rescaled good-`λ` inequality equal to `1 / 2`. -/
+private theorem ofReal_two_rpow_mul_two_pow_mul_ofReal_two_rpow (n : ℕ) (p : ℝ) :
+    ENNReal.ofReal (2 ^ p) * (2 ^ (2 * n + 1) * ENNReal.ofReal (2 ^ (-(p + 2 * n + 2)))) = 2⁻¹ := by
+  have h2 : (2 : ℝ) ^ p * (2 ^ (2 * n + 1) * 2 ^ (-(p + 2 * n + 2))) = 2⁻¹ := by
+    rw [← Real.rpow_natCast, ← Real.rpow_add two_pos, ← Real.rpow_add two_pos,
+      ← Real.rpow_neg_one]
+    congr 1
+    push_cast
+    ring
+  have hK : (2 : ℝ≥0∞) ^ (2 * n + 1) = ENNReal.ofReal (2 ^ (2 * n + 1)) := by
+    rw [ENNReal.ofReal_pow zero_le_two, ENNReal.ofReal_ofNat]
+  rw [hK, ← ENNReal.ofReal_mul (by positivity), ← ENNReal.ofReal_mul (by positivity), h2,
+    ENNReal.ofReal_inv_of_pos two_pos, ENNReal.ofReal_ofNat]
+
 variable [NormedSpace ℝ F] [CompleteSpace F]
 
-/-- **The Fefferman–Stein inequality**, as an inequality between the integrals `∫⁻ ‖·‖ₑ ^ p`.
-For `1 < p < ∞` and integrable `f` on `ℝⁿ = ι → ℝ`, `n ≥ 1`,
+/-- **The truncated Fefferman–Stein estimate.** For integrable `f`, `p > 1`, `N ≥ 0` and
+`γ = 2^(-(p + 2n + 2))`,
 
-`∫ ‖f‖^p ≤ 2^(p + 1) 2^((p + 2n + 2) p) ∫ (f^#)^p`,
+`∫₀ᴺ m(t) t^(p-1) dt ≤ 2^(p + 1) γ^(-p) ∫₀^∞ |{f^# > t}| t^(p-1) dt`,
 
-where `f^#` is the sharp maximal function for balls in the sup distance. -/
-theorem lintegral_enorm_rpow_le_lintegral_sharpMaximalFunction_rpow [Nonempty ι]
-    {f : (ι → ℝ) → F} (hf : Integrable f) {p : ℝ} (hp : 1 < p) :
-    ∫⁻ x, ‖f x‖ₑ ^ p ≤
-      ENNReal.ofReal (2 ^ (p + 1) * 2 ^ ((p + 2 * Fintype.card ι + 2) * p)) *
-        ∫⁻ x, sharpMaximalFunction volume f x ^ p := by
+where `m(t)` is the measure of the union of the Calderón–Zygmund cubes of `‖f‖` at height `t`.
+Substituting `t = 2s` and applying the good-`λ` inequality bounds the left side by half of itself
+plus the right side, and the left side is finite, so the first term is absorbed. -/
+private theorem setLIntegral_volume_czUnion_mul_rpow_le [Nonempty ι] {f : (ι → ℝ) → F}
+    (hf : Integrable f) {p : ℝ} (hp : 1 < p) {N : ℝ} (hN : 0 ≤ N) :
+    ∫⁻ t in Ioo 0 N, volume (czUnion f (ENNReal.ofReal t)) * ENNReal.ofReal (t ^ (p - 1)) ≤
+      2 * (ENNReal.ofReal (2 ^ p) *
+        (ENNReal.ofReal (((2 : ℝ) ^ (-(p + 2 * Fintype.card ι + 2))) ^ (-p)) *
+          ∫⁻ t in Ioi (0 : ℝ), volume {x | ENNReal.ofReal t < sharpMaximalFunction volume f x} *
+            ENNReal.ofReal (t ^ (p - 1)))) := by
   set n := Fintype.card ι
-  have hp0 : 0 < p := zero_lt_one.trans hp
   set f' := sharpMaximalFunction volume f
   -- `m t` is the measure of the Calderón–Zygmund union at height `t`, `σ t` that of `{f^# > t}`,
   -- and `I N = ∫₀ᴺ m(t) t^(p-1) dt`.
@@ -459,32 +449,21 @@ theorem lintegral_enorm_rpow_le_lintegral_sharpMaximalFunction_rpow [Nonempty ι
   have hJ : ∫⁻ s in Ioi (0 : ℝ), σ (γ * s) * w s = ENNReal.ofReal (γ ^ (-p)) * J := by
     rw [setLIntegral_comp_mul_left_mul_rpow σ hγ measurableSet_Ioi (S := Ioi 0)
       (fun s => (mul_pos_iff_of_pos_left hγ).symm) Ioi_subset_Ici_self, sub_add_cancel]
-  have hconst : ENNReal.ofReal (2 ^ p) * (K * ENNReal.ofReal γ) = 2⁻¹ := by
-    have h2 : (2 : ℝ) ^ p * (2 ^ (2 * n + 1) * γ) = 2⁻¹ := by
-      rw [← Real.rpow_natCast, ← Real.rpow_add two_pos, ← Real.rpow_add two_pos,
-        ← Real.rpow_neg_one]
-      congr 1
-      push_cast
-      ring
-    have hK : K = ENNReal.ofReal (2 ^ (2 * n + 1)) := by
-      rw [ENNReal.ofReal_pow zero_le_two, ENNReal.ofReal_ofNat]
-    rw [hK, ← ENNReal.ofReal_mul (by positivity), ← ENNReal.ofReal_mul (by positivity), h2,
-      ENNReal.ofReal_inv_of_pos two_pos, ENNReal.ofReal_ofNat]
+  have hconst : ENNReal.ofReal (2 ^ p) * (K * ENNReal.ofReal γ) = 2⁻¹ :=
+    ofReal_two_rpow_mul_two_pow_mul_ofReal_two_rpow n p
   -- Substituting `t = 2 s` and applying the good-`λ` inequality bounds `I N` by `I N / 2 + …`.
-  have hstep : ∀ N : ℝ, 0 ≤ N →
-      I N ≤ 2⁻¹ * I N + ENNReal.ofReal (2 ^ p) * (ENNReal.ofReal (γ ^ (-p)) * J) := by
-    intro N hN
-    have hscale := setLIntegral_comp_mul_left_mul_rpow m two_pos measurableSet_Ioo
-      (S := Ioo 0 N) (T := Ioo 0 (N / 2)) (fun s => by
-        simp only [mem_Ioo]
-        constructor <;> rintro ⟨h1, h2⟩ <;> constructor <;> linarith)
-      (fun s hs => le_of_lt hs.1) (p - 1)
-    rw [sub_add_cancel] at hscale
-    have h2p : ENNReal.ofReal (2 ^ p) * ENNReal.ofReal (2 ^ (-p)) = 1 := by
-      rw [← ENNReal.ofReal_mul (by positivity), ← Real.rpow_add two_pos]
-      simp
-    have hσw : Measurable fun s => σ (γ * s) * w s :=
-      ((hσ.comp_monotone fun _ _ h => mul_le_mul_of_nonneg_left h hγ.le).measurable).mul hw
+  have hscale := setLIntegral_comp_mul_left_mul_rpow m two_pos measurableSet_Ioo
+    (S := Ioo 0 N) (T := Ioo 0 (N / 2)) (fun s => by
+      simp only [mem_Ioo]
+      constructor <;> rintro ⟨h1, h2⟩ <;> constructor <;> linarith)
+    (fun s hs => le_of_lt hs.1) (p - 1)
+  rw [sub_add_cancel] at hscale
+  have h2p : ENNReal.ofReal (2 ^ p) * ENNReal.ofReal (2 ^ (-p)) = 1 := by
+    rw [← ENNReal.ofReal_mul (by positivity), ← Real.rpow_add two_pos]
+    simp
+  have hσw : Measurable fun s => σ (γ * s) * w s :=
+    ((hσ.comp_monotone fun _ _ h => mul_le_mul_of_nonneg_left h hγ.le).measurable).mul hw
+  have hstep : I N ≤ 2⁻¹ * I N + ENNReal.ofReal (2 ^ p) * (ENNReal.ofReal (γ ^ (-p)) * J) :=
     calc I N = ENNReal.ofReal (2 ^ p) * ∫⁻ s in Ioo 0 (N / 2), m (2 * s) * w s := by
           rw [hscale, ← mul_assoc, h2p, one_mul]
       _ ≤ ENNReal.ofReal (2 ^ p) * ∫⁻ s in Ioo 0 (N / 2),
@@ -505,20 +484,37 @@ theorem lintegral_enorm_rpow_le_lintegral_sharpMaximalFunction_rpow [Nonempty ι
       _ = 2⁻¹ * I N + ENNReal.ofReal (2 ^ p) * (ENNReal.ofReal (γ ^ (-p)) * J) := by
           rw [hJ, mul_add, ← mul_assoc, ← mul_assoc, ← hconst]
           ring
-  -- Since `I N` is finite, the first term is absorbed: `I N ≤ 2^(p + 1) γ^(-p) J`.
-  have hIle : ∀ N : ℝ, 0 ≤ N →
-      I N ≤ 2 * (ENNReal.ofReal (2 ^ p) * (ENNReal.ofReal (γ ^ (-p)) * J)) := by
-    intro N hN
-    have hhalf : 2⁻¹ * I N ≠ ∞ :=
-      ENNReal.mul_ne_top (by simp) (setLIntegral_volume_czUnion_mul_rpow_ne_top hf hp hN)
-    have h : 2⁻¹ * I N + 2⁻¹ * I N ≤
-        2⁻¹ * I N + ENNReal.ofReal (2 ^ p) * (ENNReal.ofReal (γ ^ (-p)) * J) := by
-      rw [← add_mul, ENNReal.inv_two_add_inv_two, one_mul]
-      exact hstep N hN
-    calc I N = 2 * (2⁻¹ * I N) := by
-          rw [← mul_assoc, ENNReal.mul_inv_cancel two_ne_zero ENNReal.ofNat_ne_top, one_mul]
-      _ ≤ _ := mul_le_mul' le_rfl (ENNReal.le_of_add_le_add_left hhalf h)
-  -- The layer cake formula: `∫ ‖f‖^p` is controlled by `sup_N I N`, and `∫ (f^#)^p = p J`.
+  -- Since `I N` is finite, the first term is absorbed.
+  have hhalf : 2⁻¹ * I N ≠ ∞ :=
+    ENNReal.mul_ne_top (by simp) (setLIntegral_volume_czUnion_mul_rpow_ne_top hf hp hN)
+  have h : 2⁻¹ * I N + 2⁻¹ * I N ≤
+      2⁻¹ * I N + ENNReal.ofReal (2 ^ p) * (ENNReal.ofReal (γ ^ (-p)) * J) := by
+    rw [← add_mul, ENNReal.inv_two_add_inv_two, one_mul]
+    exact hstep
+  calc I N = 2 * (2⁻¹ * I N) := by
+        rw [← mul_assoc, ENNReal.mul_inv_cancel two_ne_zero ENNReal.ofNat_ne_top, one_mul]
+    _ ≤ _ := mul_le_mul' le_rfl (ENNReal.le_of_add_le_add_left hhalf h)
+
+/-- **The Fefferman–Stein inequality**, as an inequality between the integrals `∫⁻ ‖·‖ₑ ^ p`.
+For `1 < p < ∞` and integrable `f` on `ℝⁿ = ι → ℝ`, `n ≥ 1`,
+
+`∫ ‖f‖^p ≤ 2^(p + 1) 2^((p + 2n + 2) p) ∫ (f^#)^p`,
+
+where `f^#` is the sharp maximal function for balls in the sup distance. -/
+theorem lintegral_enorm_rpow_le_lintegral_sharpMaximalFunction_rpow [Nonempty ι]
+    {f : (ι → ℝ) → F} (hf : Integrable f) {p : ℝ} (hp : 1 < p) :
+    ∫⁻ x, ‖f x‖ₑ ^ p ≤
+      ENNReal.ofReal (2 ^ (p + 1) * 2 ^ ((p + 2 * Fintype.card ι + 2) * p)) *
+        ∫⁻ x, sharpMaximalFunction volume f x ^ p := by
+  set n := Fintype.card ι
+  have hp0 : 0 < p := zero_lt_one.trans hp
+  set f' := sharpMaximalFunction volume f
+  set m : ℝ → ℝ≥0∞ := fun t => volume (czUnion f (ENNReal.ofReal t))
+  set w : ℝ → ℝ≥0∞ := fun t => ENNReal.ofReal (t ^ (p - 1))
+  set J := ∫⁻ t in Ioi (0 : ℝ), volume {x | ENNReal.ofReal t < f' x} * w t
+  set γ : ℝ := 2 ^ (-(p + 2 * n + 2))
+  -- The layer cake formula: `∫ ‖f‖^p` is controlled by the truncated integrals of `m`, and
+  -- `∫ (f^#)^p = p J`.
   have hIoi : Ioi (0 : ℝ) = ⋃ N : ℕ, Ioo 0 (N : ℝ) := by
     ext t
     simp only [mem_Ioi, mem_iUnion, mem_Ioo]
@@ -535,7 +531,7 @@ theorem lintegral_enorm_rpow_le_lintegral_sharpMaximalFunction_rpow [Nonempty ι
     _ ≤ ENNReal.ofReal p * (2 * (ENNReal.ofReal (2 ^ p) * (ENNReal.ofReal (γ ^ (-p)) * J))) := by
         rw [hIoi, setLIntegral_iUnion_of_directed _ hdir]
         gcongr
-        exact iSup_le fun N => hIle N N.cast_nonneg
+        exact iSup_le fun N => setLIntegral_volume_czUnion_mul_rpow_le hf hp N.cast_nonneg
     _ = ENNReal.ofReal (2 ^ (p + 1) * 2 ^ ((p + 2 * n + 2) * p)) * ∫⁻ x, f' x ^ p := by
         rw [lintegral_rpow_eq_lintegral_meas_ofReal_lt_mul volume
           (measurable_sharpMaximalFunction volume f).aemeasurable hp0]
