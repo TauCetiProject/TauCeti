@@ -7,11 +7,11 @@ module
 
 public import TauCeti.Analysis.InnerProductSpace.ExteriorPower.Basic
 public import TauCeti.Analysis.InnerProductSpace.HodgeStar.Isometry
-public import TauCeti.Geometry.Symplectic.AlmostComplex
+public import TauCeti.Geometry.Symplectic.Complex.InnerProductSpace
+public import TauCeti.Geometry.Symplectic.Complex.OrthonormalBasis
 -- Private: orthonormal coordinates and the `4 × 4` determinant are used only in proofs.
 import TauCeti.Analysis.InnerProductSpace.Orthonormal.Sum
 import TauCeti.LinearAlgebra.Matrix.Determinant.FinFour
-import Mathlib.Analysis.InnerProductSpace.PiL2
 
 /-!
 # The Kähler two-vector of an orthogonal complex structure
@@ -51,7 +51,6 @@ conclusions do not depend on the choice of such a frame.
 
 In the namespace `TauCeti.AlmostComplexStructure`:
 
-* `norm_apply`: an orthogonal `J` preserves norms.
 * `inner_apply_left`: an orthogonal `J` is skew-adjoint.
 * `inner_kahlerForm_ιMulti`: `⟪ω, u ∧ w⟫ = ⟪J u, w⟫`.
 * `inner_kahlerForm_self`: `⟪ω, ω⟫ = dim V / 2`.
@@ -66,10 +65,9 @@ In the namespace `TauCeti.AlmostComplexStructure`:
   `D_J² η = 2 ⟪ω, η⟫ ω - 4 η` for self-dual `η`.
 * `ιMulti_sub_ιMulti_add_hodgeStar`: the self-dual part of `ξ ∧ J a - J ξ ∧ a` is `⟪ξ, a⟫ ω`.
 
-In the namespace `OrthonormalBasis`:
-
-* `exists_almostComplexStructure_finFour`: every orthonormal four-frame carries an almost complex
-  structure with `J e₀ = e₁` and `J e₂ = e₃`, without an orientation assumption.
+The supporting norm-preservation and four-frame construction lemmas live in
+`TauCeti.Geometry.Symplectic.Complex.InnerProductSpace` and
+`TauCeti.Geometry.Symplectic.Complex.OrthonormalBasis`, respectively.
 
 ## References
 
@@ -104,12 +102,6 @@ section Orthogonal
 
 variable {J : AlmostComplexStructure V} (hJ : ∀ v w, ⟪J v, J w⟫ = ⟪v, w⟫)
 include hJ
-
-omit [FiniteDimensional ℝ V] in
-/-- An orthogonal almost complex structure preserves norms. -/
-@[simp]
-theorem norm_apply (v : V) : ‖J v‖ = ‖v‖ :=
-  (J.toLinearMap.isometryOfInner hJ).norm_map v
 
 omit [FiniteDimensional ℝ V] in
 /-- An orthogonal almost complex structure is skew-adjoint, `⟪J v, w⟫ = -⟪v, J w⟫`. -/
@@ -317,20 +309,3 @@ theorem ιMulti_sub_ιMulti_add_hodgeStar (ξ a : V) :
 end Frame
 
 end TauCeti.AlmostComplexStructure
-
-namespace OrthonormalBasis
-
-omit [FiniteDimensional ℝ V] in
-/-- An orthonormal four-frame carries an almost complex structure rotating its two coordinate
-planes: `J e₀ = e₁` and `J e₂ = e₃`. -/
-theorem exists_almostComplexStructure_finFour (e : OrthonormalBasis (Fin 4) ℝ V) :
-    ∃ J : TauCeti.AlmostComplexStructure V, J (e 0) = e 1 ∧ J (e 2) = e 3 := by
-  let L := e.toBasis.constr ℝ ![e 1, -e 0, e 3, -e 2]
-  have hL (i : Fin 4) : L (e i) = ![e 1, -e 0, e 3, -e 2] i := e.toBasis.constr_basis ℝ _ i
-  have hsquare : L.comp L = -LinearMap.id := by
-    apply e.toBasis.ext
-    intro i
-    fin_cases i <;> simp [LinearMap.comp_apply, hL, map_neg]
-  exact ⟨⟨L, hsquare⟩, hL 0, hL 2⟩
-
-end OrthonormalBasis
