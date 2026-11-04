@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.Riemannian.Jacobi.Conjugate.Basic
-public import TauCeti.Geometry.Manifold.Riemannian.Jacobi.Exponential
+public import TauCeti.Geometry.Manifold.Riemannian.Jacobi.Exponential.Basic
 
 /-!
 # Conjugate multiplicity and the exponential differential

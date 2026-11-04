@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Geometry.Manifold.Riemannian.Jacobi.Conjugate.Basic
 public import TauCeti.Geometry.Manifold.Riemannian.Jacobi.Model
-public import TauCeti.Geometry.Manifold.Riemannian.Jacobi.Exponential
+public import TauCeti.Geometry.Manifold.Riemannian.Jacobi.Exponential.Basic
 import TauCeti.Geometry.Manifold.IsManifold.Basic
 
 /-!

@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.Riemannian.Jacobi.Convexity
-public import TauCeti.Geometry.Manifold.Riemannian.Jacobi.Exponential
+public import TauCeti.Geometry.Manifold.Riemannian.Jacobi.Exponential.Basic
 import TauCeti.Geometry.Manifold.IsManifold.Basic
 import TauCeti.Geometry.Manifold.LocalDiffeomorph.Basic
 
