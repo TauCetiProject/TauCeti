@@ -26,7 +26,8 @@ chart of the sublevel at a point `p` of the level has the tangential coordinates
 at `p` in its slots `1, …, n`, and the boundary chart at `p` is the face chart with slot `0`
 deleted. So, on the source of the boundary chart at `p`, the boundary chart and the level chart
 differ only by the identification `EuclideanSpace.equiv` of `EuclideanSpace ℝ (Fin n)` with
-`Fin n → ℝ` (`TauCeti.euclideanSpaceEquiv_chartAt_scalarRegularSublevelBoundary`). In
+`Fin n → ℝ`
+(`TauCeti.euclideanSpaceEquiv_chartAt_scalarRegularSublevelBoundary_eq_regularLevelChartAt`). In
 particular, the homeomorphism is a diffeomorphism for the two atlases
 (`TauCeti.scalarRegularSublevelBoundaryDiffeomorph`). Since it reads as a linear map in the
 preferred charts, it is `C^k` for every `k` in the sense of these atlases; both are `C^m` manifolds
@@ -42,12 +43,12 @@ No compactness and no assumption on the critical points of `f` away from the lev
 
 * `TauCeti.scalarRegularSublevelBoundaryHomeomorph`: the boundary of the sublevel `{f ≤ a}` is
   homeomorphic to the level `f⁻¹(a)`, by the identity of points.
-* `TauCeti.euclideanSpaceEquiv_chartAt_scalarRegularSublevelBoundary`: the boundary charts are
-  the level charts, read through `EuclideanSpace.equiv`.
+* `TauCeti.euclideanSpaceEquiv_chartAt_scalarRegularSublevelBoundary_eq_regularLevelChartAt`: the
+  boundary charts are the level charts, read through `EuclideanSpace.equiv`.
 * `TauCeti.scalarRegularSublevelBoundaryDiffeomorph`: the boundary of the sublevel is
   diffeomorphic to the level.
 * `TauCeti.scalarRegularBandBoundaryHomeomorph`,
-  `TauCeti.euclideanSpaceEquiv_chartAt_scalarRegularBandBoundary` and
+  `TauCeti.euclideanSpaceEquiv_chartAt_scalarRegularBandBoundary_eq_chartAt` and
   `TauCeti.scalarRegularBandBoundaryDiffeomorph`: the same for the boundary of a band and the
   disjoint union of its two levels.
 
@@ -66,6 +67,12 @@ open Function Module Set Topology
 open scoped ContDiff Manifold Topology
 
 namespace TauCeti
+
+/-- The dimension of the levels of a real function on a model space `E` of dimension `n + 1`. -/
+theorem finrank_sub_finrank_real_eq {E : Type*} [AddCommGroup E] [Module ℝ E] {n : ℕ}
+    (hn : finrank ℝ E = n + 1) : finrank ℝ E - finrank ℝ ℝ = n := by
+  rw [finrank_self]
+  omega
 
 variable {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSpace H]
   {I : ModelWithCorners ℝ E H} [TopologicalSpace M] [ChartedSpace H M] {f : M → ℝ} {a : ℝ}
@@ -116,7 +123,7 @@ theorem coe_scalarRegularSublevelBoundaryHomeomorph_symm_apply (y : {x : M // f 
 preferred boundary chart at a point `p` of the boundary of the sublevel `{f ≤ a}`, that chart, read
 in `Fin n → ℝ` through `EuclideanSpace.equiv`, is the preferred chart
 `TauCeti.regularLevelChartAt` of the level `f⁻¹(a)` at `p`. -/
-theorem euclideanSpaceEquiv_chartAt_scalarRegularSublevelBoundary
+theorem euclideanSpaceEquiv_chartAt_scalarRegularSublevelBoundary_eq_regularLevelChartAt
     (p q : letI := scalarRegularSublevelChartedSpace hf hreg hn
       ↥((𝓡∂ (n + 1)).boundary {x | f x ≤ a}))
     (hq : letI := scalarRegularSublevelChartedSpace hf hreg hn
@@ -125,8 +132,7 @@ theorem euclideanSpaceEquiv_chartAt_scalarRegularSublevelBoundary
     letI := scalarRegularSublevelChartedSpace hf hreg hn
     haveI := isManifold_scalarRegularSublevel hreg hn le_rfl hf
     EuclideanSpace.equiv (Fin n) ℝ (chartAt (EuclideanSpace ℝ (Fin n)) p q) =
-      regularLevelChartAt (fun _ _ ↦ hf.contMDiffAt) hreg
-        (by rw [finrank_self]; omega : finrank ℝ E - finrank ℝ ℝ = n)
+      regularLevelChartAt (fun _ _ ↦ hf.contMDiffAt) hreg (finrank_sub_finrank_real_eq hn)
         (scalarRegularSublevelBoundaryHomeomorph hf hreg hn p)
         (scalarRegularSublevelBoundaryHomeomorph hf hreg hn q) := by
   let := scalarRegularSublevelChartedSpace hf hreg hn
@@ -156,18 +162,18 @@ noncomputable def scalarRegularSublevelBoundaryDiffeomorph (k : ℕ∞ω) :
     letI := scalarRegularSublevelChartedSpace hf hreg hn
     haveI := isManifold_scalarRegularSublevel hreg hn le_rfl hf
     letI := regularLevelChartedSpace (fun _ _ ↦ hf.contMDiffAt) hreg
-      (by rw [finrank_self]; omega : finrank ℝ E - finrank ℝ ℝ = n)
+      (finrank_sub_finrank_real_eq hn)
     ↥((𝓡∂ (n + 1)).boundary {x | f x ≤ a}) ≃ₘ^k⟮𝓘(ℝ, EuclideanSpace ℝ (Fin n)), 𝓘(ℝ, Fin n → ℝ)⟯
       {x : M // f x = a} :=
   letI := scalarRegularSublevelChartedSpace hf hreg hn
   haveI := isManifold_scalarRegularSublevel hreg hn le_rfl hf
-  letI := regularLevelChartedSpace (fun _ _ ↦ hf.contMDiffAt) hreg
-    (by rw [finrank_self]; omega : finrank ℝ E - finrank ℝ ℝ = n)
+  letI := regularLevelChartedSpace (fun _ _ ↦ hf.contMDiffAt) hreg (finrank_sub_finrank_real_eq hn)
   (scalarRegularSublevelBoundaryHomeomorph hf hreg hn).toDiffeomorphOfChartAt
     (EuclideanSpace.equiv (Fin n) ℝ) (fun p ↦ Filter.eventually_of_mem
       ((chartAt _ p).open_source.mem_nhds (mem_chart_source _ p)) fun q hq ↦ by
         rw [regularLevelChartedSpace_chartAt,
-          euclideanSpaceEquiv_chartAt_scalarRegularSublevelBoundary hf hreg hn p q hq]) k
+          euclideanSpaceEquiv_chartAt_scalarRegularSublevelBoundary_eq_regularLevelChartAt hf hreg
+            hn p q hq]) k
 
 /-- The underlying map of `TauCeti.scalarRegularSublevelBoundaryDiffeomorph` is
 `TauCeti.scalarRegularSublevelBoundaryHomeomorph`. -/
@@ -177,9 +183,23 @@ theorem coe_scalarRegularSublevelBoundaryDiffeomorph (k : ℕ∞ω) :
       scalarRegularSublevelBoundaryHomeomorph hf hreg hn := by
   let := scalarRegularSublevelChartedSpace hf hreg hn
   have := isManifold_scalarRegularSublevel hreg hn le_rfl hf
-  let := regularLevelChartedSpace (fun _ _ ↦ hf.contMDiffAt) hreg
-    (by rw [finrank_self]; omega : finrank ℝ E - finrank ℝ ℝ = n)
+  let := regularLevelChartedSpace (fun _ _ ↦ hf.contMDiffAt) hreg (finrank_sub_finrank_real_eq hn)
   exact Homeomorph.coe_toDiffeomorphOfChartAt _ _ _ k
+
+/-- The underlying homeomorphism of `TauCeti.scalarRegularSublevelBoundaryDiffeomorph` is
+`TauCeti.scalarRegularSublevelBoundaryHomeomorph`. -/
+@[simp]
+theorem toHomeomorph_scalarRegularSublevelBoundaryDiffeomorph (k : ℕ∞ω) :
+    letI := scalarRegularSublevelChartedSpace hf hreg hn
+    haveI := isManifold_scalarRegularSublevel hreg hn le_rfl hf
+    letI := regularLevelChartedSpace (fun _ _ ↦ hf.contMDiffAt) hreg
+      (finrank_sub_finrank_real_eq hn)
+    (scalarRegularSublevelBoundaryDiffeomorph hf hreg hn k).toHomeomorph =
+      scalarRegularSublevelBoundaryHomeomorph hf hreg hn := by
+  let := scalarRegularSublevelChartedSpace hf hreg hn
+  have := isManifold_scalarRegularSublevel hreg hn le_rfl hf
+  let := regularLevelChartedSpace (fun _ _ ↦ hf.contMDiffAt) hreg (finrank_sub_finrank_real_eq hn)
+  exact Homeomorph.toHomeomorph_toDiffeomorphOfChartAt _ _ _ k
 
 end Sublevel
 
@@ -272,7 +292,7 @@ chart at a point `p` of the boundary of the band `f⁻¹([a, b])`, that chart, r
 through `EuclideanSpace.equiv`, is the preferred chart at `p` of the disjoint union of the levels
 `f⁻¹(a)` and `f⁻¹(b)`, that is, the level chart `TauCeti.regularLevelChartAt` of the level
 containing `p`. -/
-theorem euclideanSpaceEquiv_chartAt_scalarRegularBandBoundary
+theorem euclideanSpaceEquiv_chartAt_scalarRegularBandBoundary_eq_chartAt
     (p q : letI := scalarRegularBandChartedSpace hf hn ha hb hab
       ↥((𝓡∂ (n + 1)).boundary (f ⁻¹' Icc a b)))
     (hq : letI := scalarRegularBandChartedSpace hf hn ha hb hab
@@ -280,19 +300,15 @@ theorem euclideanSpaceEquiv_chartAt_scalarRegularBandBoundary
       q ∈ (chartAt (EuclideanSpace ℝ (Fin n)) p).source) :
     letI := scalarRegularBandChartedSpace hf hn ha hb hab
     haveI := isManifold_scalarRegularBand hn ha hb le_rfl hf hab
-    letI := regularLevelChartedSpace (fun _ _ ↦ hf.contMDiffAt) ha
-      (by rw [finrank_self]; omega : finrank ℝ E - finrank ℝ ℝ = n)
-    letI := regularLevelChartedSpace (fun _ _ ↦ hf.contMDiffAt) hb
-      (by rw [finrank_self]; omega : finrank ℝ E - finrank ℝ ℝ = n)
+    letI := regularLevelChartedSpace (fun _ _ ↦ hf.contMDiffAt) ha (finrank_sub_finrank_real_eq hn)
+    letI := regularLevelChartedSpace (fun _ _ ↦ hf.contMDiffAt) hb (finrank_sub_finrank_real_eq hn)
     EuclideanSpace.equiv (Fin n) ℝ (chartAt (EuclideanSpace ℝ (Fin n)) p q) =
       chartAt (Fin n → ℝ) (scalarRegularBandBoundaryHomeomorph hf hn ha hb hab p)
         (scalarRegularBandBoundaryHomeomorph hf hn ha hb hab q) := by
   let := scalarRegularBandChartedSpace hf hn ha hb hab
   have := isManifold_scalarRegularBand hn ha hb le_rfl hf hab
-  let := regularLevelChartedSpace (fun _ _ ↦ hf.contMDiffAt) ha
-    (by rw [finrank_self]; omega : finrank ℝ E - finrank ℝ ℝ = n)
-  let := regularLevelChartedSpace (fun _ _ ↦ hf.contMDiffAt) hb
-    (by rw [finrank_self]; omega : finrank ℝ E - finrank ℝ ℝ = n)
+  let := regularLevelChartedSpace (fun _ _ ↦ hf.contMDiffAt) ha (finrank_sub_finrank_real_eq hn)
+  let := regularLevelChartedSpace (fun _ _ ↦ hf.contMDiffAt) hb (finrank_sub_finrank_real_eq hn)
   have hmem (q : ↥((𝓡∂ (n + 1)).boundary (f ⁻¹' Icc a b))) : f q.1.1 = a ∨ f q.1.1 = b := by
     simpa [boundary_scalarRegularBand hn ha hb le_rfl hf hab] using q.2
   rw [boundaryChartedSpace_chartAt_source, mem_preimage,
@@ -337,22 +353,19 @@ boundary atlas modelled on `EuclideanSpace ℝ (Fin n)`, and the disjoint union 
 noncomputable def scalarRegularBandBoundaryDiffeomorph (k : ℕ∞ω) :
     letI := scalarRegularBandChartedSpace hf hn ha hb hab
     haveI := isManifold_scalarRegularBand hn ha hb le_rfl hf hab
-    letI := regularLevelChartedSpace (fun _ _ ↦ hf.contMDiffAt) ha
-      (by rw [finrank_self]; omega : finrank ℝ E - finrank ℝ ℝ = n)
-    letI := regularLevelChartedSpace (fun _ _ ↦ hf.contMDiffAt) hb
-      (by rw [finrank_self]; omega : finrank ℝ E - finrank ℝ ℝ = n)
+    letI := regularLevelChartedSpace (fun _ _ ↦ hf.contMDiffAt) ha (finrank_sub_finrank_real_eq hn)
+    letI := regularLevelChartedSpace (fun _ _ ↦ hf.contMDiffAt) hb (finrank_sub_finrank_real_eq hn)
     ↥((𝓡∂ (n + 1)).boundary (f ⁻¹' Icc a b)) ≃ₘ^k⟮𝓘(ℝ, EuclideanSpace ℝ (Fin n)), 𝓘(ℝ, Fin n → ℝ)⟯
       {x : M // f x = a} ⊕ {x : M // f x = b} :=
   letI := scalarRegularBandChartedSpace hf hn ha hb hab
   haveI := isManifold_scalarRegularBand hn ha hb le_rfl hf hab
-  letI := regularLevelChartedSpace (fun _ _ ↦ hf.contMDiffAt) ha
-    (by rw [finrank_self]; omega : finrank ℝ E - finrank ℝ ℝ = n)
-  letI := regularLevelChartedSpace (fun _ _ ↦ hf.contMDiffAt) hb
-    (by rw [finrank_self]; omega : finrank ℝ E - finrank ℝ ℝ = n)
+  letI := regularLevelChartedSpace (fun _ _ ↦ hf.contMDiffAt) ha (finrank_sub_finrank_real_eq hn)
+  letI := regularLevelChartedSpace (fun _ _ ↦ hf.contMDiffAt) hb (finrank_sub_finrank_real_eq hn)
   (scalarRegularBandBoundaryHomeomorph hf hn ha hb hab).toDiffeomorphOfChartAt
     (EuclideanSpace.equiv (Fin n) ℝ) (fun p ↦ Filter.eventually_of_mem
       ((chartAt _ p).open_source.mem_nhds (mem_chart_source _ p)) fun q hq ↦
-        (euclideanSpaceEquiv_chartAt_scalarRegularBandBoundary hf hn ha hb hab p q hq).symm) k
+        (euclideanSpaceEquiv_chartAt_scalarRegularBandBoundary_eq_chartAt hf hn ha hb hab p q
+          hq).symm) k
 
 /-- The underlying map of `TauCeti.scalarRegularBandBoundaryDiffeomorph` is
 `TauCeti.scalarRegularBandBoundaryHomeomorph`. -/
@@ -362,11 +375,25 @@ theorem coe_scalarRegularBandBoundaryDiffeomorph (k : ℕ∞ω) :
       scalarRegularBandBoundaryHomeomorph hf hn ha hb hab := by
   let := scalarRegularBandChartedSpace hf hn ha hb hab
   have := isManifold_scalarRegularBand hn ha hb le_rfl hf hab
-  let := regularLevelChartedSpace (fun _ _ ↦ hf.contMDiffAt) ha
-    (by rw [finrank_self]; omega : finrank ℝ E - finrank ℝ ℝ = n)
-  let := regularLevelChartedSpace (fun _ _ ↦ hf.contMDiffAt) hb
-    (by rw [finrank_self]; omega : finrank ℝ E - finrank ℝ ℝ = n)
+  let := regularLevelChartedSpace (fun _ _ ↦ hf.contMDiffAt) ha (finrank_sub_finrank_real_eq hn)
+  let := regularLevelChartedSpace (fun _ _ ↦ hf.contMDiffAt) hb (finrank_sub_finrank_real_eq hn)
   exact Homeomorph.coe_toDiffeomorphOfChartAt _ _ _ k
+
+/-- The underlying homeomorphism of `TauCeti.scalarRegularBandBoundaryDiffeomorph` is
+`TauCeti.scalarRegularBandBoundaryHomeomorph`. -/
+@[simp]
+theorem toHomeomorph_scalarRegularBandBoundaryDiffeomorph (k : ℕ∞ω) :
+    letI := scalarRegularBandChartedSpace hf hn ha hb hab
+    haveI := isManifold_scalarRegularBand hn ha hb le_rfl hf hab
+    letI := regularLevelChartedSpace (fun _ _ ↦ hf.contMDiffAt) ha (finrank_sub_finrank_real_eq hn)
+    letI := regularLevelChartedSpace (fun _ _ ↦ hf.contMDiffAt) hb (finrank_sub_finrank_real_eq hn)
+    (scalarRegularBandBoundaryDiffeomorph hf hn ha hb hab k).toHomeomorph =
+      scalarRegularBandBoundaryHomeomorph hf hn ha hb hab := by
+  let := scalarRegularBandChartedSpace hf hn ha hb hab
+  have := isManifold_scalarRegularBand hn ha hb le_rfl hf hab
+  let := regularLevelChartedSpace (fun _ _ ↦ hf.contMDiffAt) ha (finrank_sub_finrank_real_eq hn)
+  let := regularLevelChartedSpace (fun _ _ ↦ hf.contMDiffAt) hb (finrank_sub_finrank_real_eq hn)
+  exact Homeomorph.toHomeomorph_toDiffeomorphOfChartAt _ _ _ k
 
 end Band
 

@@ -47,9 +47,8 @@ theorem contMDiffAt_of_eventually_chartAt_apply_eq {g : M₁ → M₂} {p : M₁
     ContMDiffAt 𝓘(𝕜, E₁) 𝓘(𝕜, E₂) n g p := by
   rw [contMDiffAt_iff]
   refine ⟨hg, ?_⟩
-  simp only [extChartAt, OpenPartialHomeomorph.extend, modelWithCornersSelf_partialEquiv,
-    PartialEquiv.trans_refl, OpenPartialHomeomorph.coe_toPartialEquiv_symm,
-    OpenPartialHomeomorph.coe_toPartialEquiv]
+  simp only [extChartAt_coe, extChartAt_coe_symm, modelWithCornersSelf_coe,
+    modelWithCornersSelf_coe_symm, range_id, CompTriple.comp_eq]
   refine (hL.congr_of_eventuallyEq ?_).contDiffWithinAt
   -- Near the chart image of `p`, the inverse chart lands where `h` holds.
   filter_upwards [((chartAt E₁ p).eventually_nhds' _ (mem_chart_source E₁ p)).2 h,
