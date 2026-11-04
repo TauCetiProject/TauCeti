@@ -116,8 +116,11 @@ theorem exists_param_inter_preimage_of_span_mtangentConeAt_sup_eq_top [FiniteDim
   replace hmT : mtangentConeAt 𝓘(𝕜, E) (s ∩ g ⁻¹' {g y}) y = F := hmT
   have hyF : q' y ∈ F := (isSliceChart_iff.1 hs₀ y hyq').1 ⟨hys, rfl⟩
   -- Derivatives of the transitions from the preferred chart at `y` to `q'` and to `e`.
-  obtain ⟨A', hA'⟩ := exists_hasFDerivAt_chartAt_symm_trans hn hq' hyq'
-  obtain ⟨Ae, hAe⟩ := exists_hasFDerivAt_chartAt_symm_trans hn he hye
+  have hchart := IsManifold.chart_mem_maximalAtlas (I := 𝓘(𝕜, E)) (n := n) y
+  obtain ⟨A', hA'⟩ := exists_hasFDerivAt_symm_trans (z := chartAt E y y) hn hchart hq'
+    (by simp [hyq', mem_chart_source])
+  obtain ⟨Ae, hAe⟩ := exists_hasFDerivAt_symm_trans (z := chartAt E y y) hn hchart he
+    (by simp [hye, mem_chart_source])
   -- `A'` carries the tangent space `F` of the cut onto its image `F` in `q'`.
   have hA'F : ∀ z ∈ F, A'.symm z ∈ F := by
     intro z hz

@@ -39,6 +39,10 @@ condition.
 If `0 < d` and `2 ≤ d ^ (p - 2)`, then `d ^ (-p) ≤ 1 / (2 d ^ 2)`: an approximation of quality
 `d ^ (-p)` meets the hypothesis of Legendre's theorem `Real.exists_rat_eq_convergent`.
 
+For `0 ≤ p ≤ 1`, a nonnegative quantity `r ≤ 2 h` has `r ^ p ≤ 2 h ^ p`. This is how, in a
+temporal Hölder estimate with exponent `p`, a time at most twice the time step `h` is bounded by
+a multiple of `h ^ p`.
+
 If `2 ≤ q ≤ q'` and `q ^ p < q (q + q')`, then `q ^ (p - 1) < 2 q'`, so
 `(p - 1) log q < log 2 + log q'`. Hence `t < log q' / log q` once `log 2 < (p - 1 - t) log q`.
 This reads off the growth of consecutive continued-fraction denominators from the lower error
@@ -65,6 +69,8 @@ showing that `q`-th powers of norms on a uniformly convex space are uniformly co
   `C ^ (D / (n - D)) < B + 1`.
 * `Real.one_add_sq_rpow_neg_le`: `(1 + t ^ 2) ^ (-k / 2) ≤ 1 / t ^ k` for `0 < t`.
 * `Real.rpow_neg_le_one_div_two_mul_sq`: `d ^ (-p) ≤ 1 / (2 d ^ 2)` for `2 ≤ d ^ (p - 2)`.
+* `Real.rpow_le_two_mul_rpow_of_le_two_mul`: `r ^ p ≤ 2 h ^ p` for `0 ≤ r ≤ 2 h` and
+  `0 ≤ p ≤ 1`.
 * `Real.lt_log_div_log_of_rpow_lt`: `t < log q' / log q` for `2 ≤ q ≤ q'`,
   `q ^ p < q (q + q')` and `log 2 < (p - 1 - t) log q`.
 * `Real.min_rpow_lt_two_rpow_sub_one_mul`: `min (1 + r) (2 - δ) ^ q < 2 ^ (q - 1) * (1 + r ^ q)`
@@ -177,6 +183,16 @@ theorem rpow_neg_le_one_div_two_mul_sq {d p : ℝ} (hd : 0 < d) (h2 : 2 ≤ d ^ 
     ring
   rw [hsplit, one_div, mul_inv]
   gcongr
+
+/-- For `0 ≤ p ≤ 1`, a quantity at most `2 h` has `p`-th power at most `2 h^p`. -/
+theorem rpow_le_two_mul_rpow_of_le_two_mul {r h p : ℝ} (hr : 0 ≤ r) (hrh : r ≤ 2 * h)
+    (hp₀ : 0 ≤ p) (hp₁ : p ≤ 1) : r ^ p ≤ 2 * h ^ p := by
+  have hh : 0 ≤ h := by linarith
+  calc r ^ p ≤ (2 * h) ^ p := by gcongr
+    _ = 2 ^ p * h ^ p := mul_rpow (by norm_num) hh
+    _ ≤ 2 * h ^ p := by
+        gcongr
+        exact (rpow_le_rpow_of_exponent_le (by norm_num) hp₁).trans (rpow_one 2).le
 
 /-- The logarithmic form of `q ^ p < q (q + q')`: if moreover `2 ≤ q ≤ q'` and
 `log 2 < (p - 1 - t) log q`, then `t < log q' / log q`. -/

@@ -97,9 +97,9 @@ theorem IsMorseSmale.exists_unstableSet_level_param {hX : IsAdaptedPseudoGradien
   have hpx : p ≠ x := by rintro rfl; omega
   obtain ⟨L, q, -, hyq, hq, hs⟩ := hX.exists_isSliceChart_unstableSet hf hp hy.1
   set P := WithLp.sndL 2 ℝ ({i // φ.weight i = 1} → ℝ) ({i // ¬φ.weight i = 1} → ℝ) ∘L
-    φ.splitCoordL
+    (φ.splitCoordL : E →L[ℝ] _)
   have hPs : Function.Surjective P := fun b ↦ by
-    obtain ⟨u, hu⟩ := φ.surjective_splitCoordL (WithLp.toLp 2 (0, b))
+    obtain ⟨u, hu⟩ := φ.splitCoordL.surjective (WithLp.toLp 2 (0, b))
     exact ⟨u, by simp [P, hu]⟩
   have hX0 : X y ∈ Submodule.span ℝ (mtangentConeAt 𝓘(ℝ, E) (hX.flow.unstableSet p) y) :=
     Submodule.subset_span (hX.mem_mtangentConeAt_of_isInvariant (hX.flow.isInvariant_unstableSet p)
@@ -115,7 +115,7 @@ theorem IsMorseSmale.exists_unstableSet_level_param {hX : IsAdaptedPseudoGradien
       (hX.mvfderiv_apply_lt_zero y
         (hX.mfderiv_ne_zero_of_mem_unstableSet_inter_stableSet hpx hy)).ne
       φ.mem_maximalAtlas hyφ hPs (by simpa [P] using hloc)
-  refine ⟨F, ι, φ.splitCoordL ∘L ι', hι0, hι, hιs, ?_, ?_, hexh⟩
+  refine ⟨F, ι, (φ.splitCoordL : E →L[ℝ] _) ∘L ι', hι0, hι, hιs, ?_, ?_, hexh⟩
   · simpa using φ.splitCoordL.hasStrictFDerivAt.comp 0 hd
   · rwa [← ContinuousLinearMap.comp_assoc]
 
@@ -147,9 +147,9 @@ theorem IsMorseSmale.exists_stableSet_level_param {hX : IsAdaptedPseudoGradient 
   have hfd : MDifferentiable 𝓘(ℝ, E) 𝓘(ℝ) f := hf.contMDiff.mdifferentiable (by simp)
   obtain ⟨L, q, -, hyq, hq, hs⟩ := hX.exists_isSliceChart_stableSet hfd hr hy.2
   set P := WithLp.fstL 2 ℝ ({i // φ.weight i = 1} → ℝ) ({i // ¬φ.weight i = 1} → ℝ) ∘L
-    φ.splitCoordL
+    (φ.splitCoordL : E →L[ℝ] _)
   have hPs : Function.Surjective P := fun b ↦ by
-    obtain ⟨u, hu⟩ := φ.surjective_splitCoordL (WithLp.toLp 2 (b, 0))
+    obtain ⟨u, hu⟩ := φ.splitCoordL.surjective (WithLp.toLp 2 (b, 0))
     exact ⟨u, by simp [P, hu]⟩
   have hX0 : X y ∈ Submodule.span ℝ (mtangentConeAt 𝓘(ℝ, E) (hX.flow.stableSet r) y) :=
     Submodule.subset_span (hX.mem_mtangentConeAt_of_isInvariant (hX.flow.isInvariant_stableSet r)
@@ -166,7 +166,7 @@ theorem IsMorseSmale.exists_stableSet_level_param {hX : IsAdaptedPseudoGradient 
       (hX.mvfderiv_apply_lt_zero y
         (hX.mfderiv_ne_zero_of_mem_unstableSet_inter_stableSet hxr hy)).ne
       φ.mem_maximalAtlas hyφ hPs (by simpa [P] using hloc)
-  refine ⟨F, ι, φ.splitCoordL ∘L ι', hι0, hι, hιs, ?_, ?_, hexh⟩
+  refine ⟨F, ι, (φ.splitCoordL : E →L[ℝ] _) ∘L ι', hι0, hι, hιs, ?_, ?_, hexh⟩
   · simpa using φ.splitCoordL.hasStrictFDerivAt.comp 0 hd
   · rwa [← ContinuousLinearMap.comp_assoc]
 
