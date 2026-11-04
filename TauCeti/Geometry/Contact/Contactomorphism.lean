@@ -32,9 +32,11 @@ forms, the contactomorphisms between their kernels are exactly the diffeomorphis
 `e^* α' = f α` for a unique nowhere vanishing smooth function `f`
 (`Diffeomorph.isContactomorphism_kerDistribution_iff`). The sign of `f` records whether `e`
 preserves the coorientations. Each notion is closed under identities, composition and inverses.
-A strict contactomorphism moreover preserves and reflects contactness and intertwines the Reeb
-vector fields (`Diffeomorph.IsStrictContactomorphism.mfderiv_reebVectorField`), which a mere
-cooriented contactomorphism does not.
+A strict contactomorphism preserves and reflects contactness
+(`Diffeomorph.IsStrictContactomorphism.isContactForm_iff`), as does any cooriented one, and
+moreover intertwines the Reeb vector fields
+(`Diffeomorph.IsStrictContactomorphism.mfderiv_reebVectorField`), which a mere cooriented
+contactomorphism need not do.
 
 The three notions are distinct already for the standard contact form `α = dz - ⟪p, dq⟫` on
 `V × V × ℝ`. The dilation `(q, p, z) ↦ (q, 2 p, 2 z)` pulls `α` back to `2 α`, so it is a
