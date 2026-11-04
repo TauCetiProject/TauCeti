@@ -50,6 +50,11 @@ private lemma leftSample_mem (n : ℕ) {t : ℝ≥0} (ht : 0 < t) :
 
 private lemma leftSample_zero (n : ℕ) : leftSample n 0 = 0 := by simp [leftSample]
 
+private lemma leftSample_le (n : ℕ) (t : ℝ≥0) : leftSample n t ≤ t := by
+  by_cases ht : t = 0
+  · simp [ht, leftSample_zero]
+  · exact (leftSample_mem n (pos_iff_ne_zero.mpr ht)).1.le
+
 private lemma leftSample_eq (n k : ℕ) {t : ℝ≥0}
     (ht : t ∈ Ioc ((k : ℝ≥0) / (n + 1)) ((k + 1 : ℕ) / (n + 1))) :
     leftSample n t = k / (n + 1) := by
@@ -73,9 +78,7 @@ private lemma tendsto_leftSample (t : ℝ≥0) : Tendsto (fun n => leftSample n 
     · have h := (leftSample_mem n (pos_iff_ne_zero.mpr ht)).2
       exact sub_le_iff_le_add.mpr (by exact_mod_cast h)
   · intro n
-    by_cases ht : t = 0
-    · simp [ht, leftSample_zero]
-    · exact_mod_cast (leftSample_mem n (pos_iff_ne_zero.mpr ht)).1.le
+    exact_mod_cast leftSample_le n t
 
 variable {Ω E : Type*} {m : MeasurableSpace Ω} [TopologicalSpace E]
   [PseudoMetrizableSpace E] [MeasurableSpace E] [BorelSpace E]
@@ -128,9 +131,7 @@ theorem MeasureTheory.StronglyAdapted.isStronglyPredictable_of_isLeftContinuous
   intro p
   apply (continuousWithinAt_Iio_iff_Iic.mp (hc p.2 p.1)).tendsto.comp
   refine tendsto_nhdsWithin_iff.mpr ⟨tendsto_leftSample p.1, .of_forall fun n => ?_⟩
-  by_cases ht : p.1 = 0
-  · simp [ht, leftSample_zero]
-  · exact (leftSample_mem n (pos_iff_ne_zero.mpr ht)).1.le
+  exact leftSample_le n p.1
 
 omit [MeasurableSpace E] [BorelSpace E] in
 /-- An adapted process with continuous sample paths is predictable. -/
