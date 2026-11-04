@@ -40,6 +40,8 @@ equal endpoints repeats the value at the two distinct parameters `0` and `1`.
 
 * `TauCeti.isJordanCurve_range_of_eq_or_eq_endpoints` — the range of a closed path whose only
   possible repetition is its pair of endpoints is a Jordan curve.
+* `TauCeti.isJordanCurve_image_Icc` — the image `γ '' Icc a b` of a continuous curve on `[a, b]`
+  (`a < b`) with `γ a = γ b` and `InjOn γ (Ico a b)` is a Jordan curve.
 * `TauCeti.isJordanCurve_range_union_range_of_inter_eq_pair` — two arcs with the same two
   endpoints, meeting exactly there, glue to a Jordan curve.
 
@@ -83,6 +85,56 @@ theorem isJordanCurve_range_of_eq_or_eq_endpoints (γ : Path x x)
     · exact absurd (congrArg Subtype.val hends.1) hs.2.ne
   rw [← γ.image_extend_of_subset subset_rfl]
   exact isJordanCurve_image_Icc zero_lt_one γ.continuous_extend.continuousOn (by simp) hinj
+
+/-- **A simple closed continuous curve on `[a, b]` (`a < b`) traces a Jordan curve.** Let
+`γ : ℝ → X` be continuous on `[a, b]` with `γ a = γ b` and injective on `[a, b)`. Rescaling `[0, 1]`
+affinely onto `[a, b]` turns `γ` into a closed path whose only repetition is the endpoint pair
+`{0, 1}`, so `TauCeti.isJordanCurve_range_of_eq_or_eq_endpoints` identifies `γ '' Icc a b` as a
+Jordan curve. -/
+theorem isJordanCurve_image_Icc {γ : ℝ → X} {a b : ℝ} (hab : a < b)
+    (hcont : ContinuousOn γ (Icc a b)) (hclosed : γ a = γ b) (hinj : InjOn γ (Ico a b)) :
+    IsJordanCurve (γ '' Icc a b) := by
+  have hmaps : ∀ s : unitInterval, (b - a) * (s : ℝ) + a ∈ Icc a b := fun s ↦
+    ⟨by nlinarith [s.2.1], by nlinarith [s.2.2]⟩
+  let p : Path (γ a) (γ a) :=
+    { toFun := fun s ↦ γ ((b - a) * (s : ℝ) + a)
+      continuous_toFun := hcont.comp_continuous (by fun_prop) hmaps
+      source' := by simp
+      target' := by simp [hclosed] }
+  have hrange : range p = γ '' Icc a b := by
+    ext y
+    constructor
+    · rintro ⟨s, rfl⟩
+      exact ⟨(b - a) * (s : ℝ) + a, hmaps s, rfl⟩
+    · rintro ⟨t, ht, rfl⟩
+      have h0 : 0 ≤ (t - a) / (b - a) := div_nonneg (sub_nonneg.mpr ht.1) (sub_pos.mpr hab).le
+      have h1 : (t - a) / (b - a) ≤ 1 :=
+        (div_le_one (sub_pos.mpr hab)).mpr (sub_le_sub_right ht.2 a)
+      refine ⟨⟨(t - a) / (b - a), h0, h1⟩, ?_⟩
+      dsimp only [p]
+      rw [Path.coe_mk_mk, mul_div_cancel₀ _ (sub_pos.mpr hab).ne', sub_add_cancel]
+  rw [← hrange]
+  refine isJordanCurve_range_of_eq_or_eq_endpoints p fun s t hst ↦ ?_
+  have hmem_Ico : ∀ {u : unitInterval}, u ≠ 1 → (b - a) * (u : ℝ) + a ∈ Ico a b := by
+    intro u hu1
+    have hlt1 : (u : ℝ) < 1 := u.2.2.lt_of_ne (Subtype.coe_ne_coe.mpr hu1)
+    exact ⟨by nlinarith [u.2.1], by nlinarith⟩
+  by_cases hs1 : s = 1
+  · by_cases ht1 : t = 1
+    · exact Or.inl (hs1.trans ht1.symm)
+    · subst hs1
+      have heq : γ ((b - a) * (t : ℝ) + a) = γ a := by
+        simpa [p, hclosed.symm] using hst.symm
+      have ht_eq := hinj (hmem_Ico ht1) ⟨le_rfl, hab⟩ heq
+      exact Or.inr (Or.inr ⟨rfl, Subtype.ext (by nlinarith : (t : ℝ) = 0)⟩)
+  · by_cases ht1 : t = 1
+    · subst ht1
+      have heq : γ ((b - a) * (s : ℝ) + a) = γ a := by
+        simpa [p, hclosed.symm] using hst
+      have hs_eq := hinj (hmem_Ico hs1) ⟨le_rfl, hab⟩ heq
+      exact Or.inr (Or.inl ⟨Subtype.ext (by nlinarith : (s : ℝ) = 0), rfl⟩)
+    · have hst_eq := hinj (hmem_Ico hs1) (hmem_Ico ht1) hst
+      exact Or.inl (Subtype.ext (by nlinarith : (s : ℝ) = (t : ℝ)))
 
 /-! ### Gluing two arcs along their endpoints -/
 
