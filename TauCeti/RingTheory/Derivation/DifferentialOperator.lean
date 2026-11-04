@@ -256,10 +256,13 @@ theorem smulCommutator_pow_eq_zero {D : M →ₗ[R] N} {m j : ℕ}
     (hD : D ∈ differentialOperators R A M N m) (hj : m < j) (a : A) :
     (smulCommutator R a ^ j) D = 0 := by
   obtain ⟨t, rfl⟩ := Nat.exists_eq_add_of_lt hj
-  rw [show m + t + 1 = t + (m + 1) by omega, pow_add, mul_apply_eq_comp, pow_succ',
-    mul_apply_eq_comp,
-    smulCommutator_eq_zero_of_mem_differentialOperators_zero
-      (smulCommutator_pow_mem_differentialOperators (by simpa using hD) a), map_zero]
+  -- The `m`-fold commutator has order zero, so the `(m + 1)`-fold commutator vanishes.
+  have hm : (smulCommutator R a ^ m) D ∈ differentialOperators R A M N 0 :=
+    smulCommutator_pow_mem_differentialOperators (by simpa using hD) a
+  have hzero : (smulCommutator R a ^ (m + 1)) D = 0 := by
+    rw [pow_succ', mul_apply_eq_comp, smulCommutator_eq_zero_of_mem_differentialOperators_zero hm]
+  have ht : m + t + 1 = t + (m + 1) := by omega
+  rw [ht, pow_add, mul_apply_eq_comp, hzero, map_zero]
 
 /-- Orders add under composition. -/
 theorem comp_mem_differentialOperators {P : N →ₗ[R] O} {Q : M →ₗ[R] N} {m k : ℕ}
@@ -301,8 +304,10 @@ theorem smulCommutator_pow_comp_of_mem {P : N →ₗ[R] O} {Q : M →ₗ[R] N} {
   rw [smulCommutator_pow_comp, sum_eq_single (m, k)]
   · rintro ⟨i, j⟩ hij hne
     rw [mem_antidiagonal] at hij
-    rcases lt_or_gt_of_ne (show i ≠ m by rintro rfl; exact hne (by simp; omega)) with h | h
-    · simp [smulCommutator_pow_eq_zero hQ (show k < j by omega) a]
+    have him : i ≠ m := by rintro rfl; exact hne (by simp; omega)
+    rcases lt_or_gt_of_ne him with h | h
+    · have hkj : k < j := by omega
+      simp [smulCommutator_pow_eq_zero hQ hkj a]
     · simp [smulCommutator_pow_eq_zero hP h a]
   · simp
 
@@ -349,7 +354,7 @@ theorem _root_.Derivation.mem_differentialOperators_one (D : Derivation R A M) :
     add_sub_cancel_left, smul_smul]
 
 /-- For `D : A →ₗ[R] M` of order at most one, `f ↦ D f - f • D 1` is a derivation. -/
-def derivationOfMemDifferentialOperatorsOne (D : A →ₗ[R] M)
+def _root_.LinearMap.derivationOfMemDifferentialOperatorsOne (D : A →ₗ[R] M)
     (hD : D ∈ differentialOperators R A A M 1) : Derivation R A M :=
   Derivation.mk' (D - (LinearMap.toSpanSingleton A M (D 1)).restrictScalars R) fun f g ↦ by
     have h := congr($(smulCommutator_eq_zero_of_mem_differentialOperators_zero
@@ -363,17 +368,17 @@ def derivationOfMemDifferentialOperatorsOne (D : A →ₗ[R] M)
     abel
 
 @[simp]
-theorem derivationOfMemDifferentialOperatorsOne_apply (D : A →ₗ[R] M)
+theorem _root_.LinearMap.derivationOfMemDifferentialOperatorsOne_apply (D : A →ₗ[R] M)
     (hD : D ∈ differentialOperators R A A M 1) (f : A) :
-    derivationOfMemDifferentialOperatorsOne D hD f = D f - f • D 1 := by
-  simp [derivationOfMemDifferentialOperatorsOne]
+    D.derivationOfMemDifferentialOperatorsOne hD f = D f - f • D 1 := by
+  simp [LinearMap.derivationOfMemDifferentialOperatorsOne]
 
 variable (R A M) in
 /-- The first-order operators `A → M` are exactly the sums `δ + (· • m)` of a derivation `δ`
 and multiplication by `m : M`, with `δ` and `m = D 1` determined by `D`. -/
 def differentialOperatorsOneEquiv :
     differentialOperators R A A M 1 ≃ₗ[R] Derivation R A M × M where
-  toFun D := (derivationOfMemDifferentialOperatorsOne D.1 D.2, D.1 1)
+  toFun D := (D.1.derivationOfMemDifferentialOperatorsOne D.2, D.1 1)
   invFun p := ⟨p.1 + (LinearMap.toSpanSingleton A M p.2).restrictScalars R,
     add_mem p.1.mem_differentialOperators_one <| differentialOperators_le_succ 0 <|
       LinearMap.restrictScalars_mem_differentialOperators_zero _⟩
@@ -403,7 +408,7 @@ multiplication by `D 1`. -/
 theorem mem_differentialOperators_one_iff {D : A →ₗ[R] M} :
     D ∈ differentialOperators R A A M 1 ↔
       ∃ δ : Derivation R A M, ∀ f, D f = δ f + f • D 1 := by
-  refine ⟨fun hD ↦ ⟨derivationOfMemDifferentialOperatorsOne D hD, fun f ↦ by simp⟩, ?_⟩
+  refine ⟨fun hD ↦ ⟨D.derivationOfMemDifferentialOperatorsOne hD, fun f ↦ by simp⟩, ?_⟩
   rintro ⟨δ, hδ⟩
   have : D = ((differentialOperatorsOneEquiv R A M).symm (δ, D 1) : A →ₗ[R] M) := by
     ext f; simp [hδ f]
