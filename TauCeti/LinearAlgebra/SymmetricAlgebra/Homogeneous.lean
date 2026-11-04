@@ -28,6 +28,8 @@ degree one preserves every homogeneous submodule.
 * `TauCeti.SymmetricAlgebra.homogeneousSubmodule_eq_span`: it is spanned by the products of
   exactly `n` generators.
 * `TauCeti.SymmetricAlgebra.adjoin_range_ι`: the generators generate the symmetric algebra.
+* `TauCeti.SymmetricAlgebra.adjoin_range_ι_comp_eq_top_of_span_eq_top`: the images of a spanning
+  family generate the symmetric algebra.
 * `TauCeti.SymmetricAlgebra.iSup_homogeneousSubmodule_eq_top`: the homogeneous pieces span the
   whole symmetric algebra.
 * `TauCeti.SymmetricAlgebra.instGradedMonoid`: the homogeneous submodules form a graded monoid.
@@ -122,6 +124,23 @@ theorem adjoin_range_ι : _root_.Algebra.adjoin R (Set.range (SymmetricAlgebra.�
   | ι x => exact _root_.Algebra.subset_adjoin (Set.mem_range_self x)
   | mul a b ha hb => exact (_root_.Algebra.adjoin R _).mul_mem ha hb
   | add a b ha hb => exact (_root_.Algebra.adjoin R _).add_mem ha hb
+
+variable {R M} in
+/-- The images of a spanning family generate the symmetric algebra as an algebra. -/
+theorem adjoin_range_ι_comp_eq_top_of_span_eq_top {ι : Type*} (x : ι → M)
+    (hx : Submodule.span R (Set.range x) = ⊤) :
+    _root_.Algebra.adjoin R (Set.range (SymmetricAlgebra.ι R M ∘ x)) = ⊤ := by
+  have hle : Submodule.span R (Set.range x) ≤
+      (_root_.Algebra.adjoin R (Set.range (SymmetricAlgebra.ι R M ∘ x))).toSubmodule.comap
+        (SymmetricAlgebra.ι R M) :=
+    Submodule.span_le.mpr <| by
+      rintro m ⟨i, rfl⟩
+      exact _root_.Algebra.subset_adjoin ⟨i, rfl⟩
+  apply top_unique
+  rw [← adjoin_range_ι R M]
+  exact _root_.Algebra.adjoin_le <| by
+    rintro p ⟨m, rfl⟩
+    exact hle (by rw [hx]; exact Submodule.mem_top)
 
 /-- The homogeneous submodules span the whole symmetric algebra. This is the spanning half of an
 internal grading; directness is not asserted here. -/
