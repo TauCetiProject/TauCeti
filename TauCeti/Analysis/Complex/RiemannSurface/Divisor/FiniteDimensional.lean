@@ -52,9 +52,11 @@ private def localPrincipalPart (D : WeilDivisor X) (x : X) :
     ((meromorphicAt_def _ _).mp (isDivisorSectionAt f x).meromorphicAt))
   map_add' f g := by
     rw [← map_add, ← mk_add]
+    -- Addition of sections is inherited from the submodule of functions, hence pointwise.
     rfl
   map_smul' c f := by
     rw [← principalPart_smul, ← mk_smul]
+    -- Scalar multiplication of sections is likewise pointwise, including after chart composition.
     rfl
 
 private lemma localPrincipalPart_natDegree_le (D : WeilDivisor X) (f : divisorSections D ⊤)
@@ -83,8 +85,9 @@ private lemma localPrincipalPart_eq_zero_of_mem_ker (D : WeilDivisor X)
         intro h
         simp [h] at hn
       have h := congrFun (congrFun f.2 ⟨x, hx⟩)
-        ⟨n, by simpa only [Subtype.coe_mk] using Nat.lt_of_succ_le hn⟩
-      exact h
+        ⟨n, by dsimp only [Subtype.coe_mk]; omega⟩
+      simpa only [principalParts, LinearMap.pi_apply, LinearMap.comp_apply,
+        Polynomial.lcoeff_apply, Pi.zero_apply, Polynomial.coeff_zero] using h
     · exact coeff_eq_zero_of_natDegree_lt
         ((localPrincipalPart_natDegree_le D f.1 x).trans_lt (by omega))
 
@@ -118,11 +121,13 @@ finite-dimensional complex vector space. -/
 instance instFiniteDimensional [CompactSpace X] (D : WeilDivisor X) :
     FiniteDimensional ℂ (divisorSections D ⊤) := by
   classical
-  have : FiniteDimensional ℂ (principalParts D).ker :=
+  have hkerFinite : FiniteDimensional ℂ (principalParts D).ker :=
     FiniteDimensional.of_injective (kernelToConstants D) (kernelToConstants_injective D)
-  have : FiniteDimensional ℂ ((⊤ : Submodule ℂ (∀ x : D.support, Fin (D x).toNat → ℂ)).comap
-      (principalParts D)) := inferInstance
-  rw [Submodule.comap_top] at this
+  -- Mathlib's comap instance combines the finite-dimensional kernel and target.
+  have htopFinite : FiniteDimensional ℂ
+      ((⊤ : Submodule ℂ (∀ x : D.support, Fin (D x).toNat → ℂ)).comap (principalParts D)) :=
+    inferInstance
+  rw [Submodule.comap_top] at htopFinite
   exact Submodule.topEquiv.finiteDimensional
 
 /-- The dimension of the global section space is at most one plus the total number of
