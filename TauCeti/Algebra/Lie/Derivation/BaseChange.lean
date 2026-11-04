@@ -73,9 +73,6 @@ where `1 + ε D` is a first-order automorphism.
   of Lie algebras.
 * `TauCeti.derivationLieAlgebra.baseChange_innerDerivation`: for associative `A`, the inner
   derivation at `z` extends to the inner derivation at `1 ⊗ z`.
-* `TauCeti.derivationLieAlgebra.baseChange_rTensor` and
-  `TauCeti.derivationLieAlgebra.cancelBaseChange_baseChange_baseChange`: the extension is natural
-  in the coefficient algebra and transitive along a tower `R → S → T`.
 * `TauCeti.derivationLieAlgebra.baseChange_injective`: over a faithfully flat coefficient algebra,
   no information is lost.
 -/
@@ -267,7 +264,7 @@ namespace TauCeti
 
 namespace derivationLieAlgebra
 
-universe u v w x
+universe u v w
 
 section NonAssoc
 
@@ -362,29 +359,6 @@ def baseChangeHom : derivationLieAlgebra R A →ₗ⁅R⁆
 theorem baseChangeHom_apply (D : derivationLieAlgebra R A) :
     baseChangeHom S D = baseChange S D :=
   (rfl)
-
-/-- **Naturality in the coefficients**: for an `R`-linear map `f : S → T` of coefficient
-algebras, `f ⊗ id_A` intertwines the extensions of `D` to `S ⊗[R] A` and to `T ⊗[R] A`. -/
-theorem baseChange_rTensor (D : derivationLieAlgebra R A) {T : Type x} [CommRing T]
-    [Algebra R T] (f : S →ₗ[R] T) (z : S ⊗[R] A) :
-    (baseChange T D : Module.End T (T ⊗[R] A)) (f.rTensor A z) =
-      f.rTensor A ((baseChange S D : Module.End S (S ⊗[R] A)) z) := by
-  rw [coe_baseChange, coe_baseChange, LinearMap.baseChange_eq_lTensor,
-    LinearMap.baseChange_eq_lTensor, ← LinearMap.comp_apply, LinearMap.lTensor_comp_rTensor,
-    ← LinearMap.rTensor_comp_lTensor, LinearMap.comp_apply]
-
-/-- **Transitivity of extension of scalars**: along a tower `R → S → T`, the identification
-`T ⊗[S] (S ⊗[R] A) ≃ T ⊗[R] A` carries the extension to `T` of the extension of `D` to `S` onto the
-extension of `D` to `T`. -/
-theorem cancelBaseChange_baseChange_baseChange (D : derivationLieAlgebra R A) {T : Type x}
-    [CommRing T] [Algebra R T] [Algebra S T] [IsScalarTower R S T] (z : T ⊗[S] (S ⊗[R] A)) :
-    AlgebraTensorModule.cancelBaseChange R S T T A
-        ((baseChange T (baseChange S D) : Module.End T (T ⊗[S] (S ⊗[R] A))) z) =
-      (baseChange T D : Module.End T (T ⊗[R] A))
-        (AlgebraTensorModule.cancelBaseChange R S T T A z) := by
-  rw [coe_baseChange, coe_baseChange, coe_baseChange, LinearMap.baseChange_baseChange,
-    LinearMap.comp_apply, LinearMap.comp_apply, LinearEquiv.coe_coe, LinearEquiv.apply_symm_apply,
-    LinearEquiv.coe_coe]
 
 variable [Module.FaithfullyFlat R S]
 
