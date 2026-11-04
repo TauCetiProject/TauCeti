@@ -7,6 +7,8 @@ module
 
 public import TauCeti.Probability.Distributions.Semicircle.InverseMoment
 public import Mathlib.Probability.Moments.Variance
+import Mathlib.MeasureTheory.Measure.GiryMonad
+import TauCeti.MeasureTheory.Measure.Dirac
 
 /-!
 # The Marchenko–Pastur law
@@ -31,8 +33,14 @@ integrals of `g` against the semicircle law. In particular
 * `TauCeti.Probability.marchenkoPastur`: the Marchenko–Pastur law of ratio `y`.
 * `TauCeti.Probability.marchenkoPastur_eq_withDensity`: its atom and density for `y > 0`.
 * `TauCeti.Probability.isProbabilityMeasure_marchenkoPastur`: it is a probability measure.
-* `TauCeti.Probability.marchenkoPastur_singleton_zero`: for `y > 0` its atom at `0` has mass
-  `(1 - 1/y)₊`; at `y = 0` there is no atom.
+* `TauCeti.Probability.measurable_marchenkoPastur`: parameter measurability of `y ↦ MP_y`.
+* `TauCeti.Probability.marchenkoPastur_singleton_zero`,
+  `TauCeti.Probability.marchenkoPastur_compl_singleton_zero`: the atom mass `(1 - 1/y)₊` at `0`
+  and the complementary continuous mass `min 1 (1/y)` for `y > 0`.
+* `TauCeti.Probability.support_marchenkoPastur`,
+  `TauCeti.Probability.zero_mem_support_marchenkoPastur_iff`: its exact topological support is
+  `[(1 - √y)², (1 + √y)²]` for `y ≤ 1` and `{0} ∪ [(1 - √y)², (1 + √y)²]` for `1 ≤ y`, and `0`
+  belongs to the support iff `1 ≤ y`.
 * `TauCeti.Probability.withDensity_ofReal_marchenkoPastur`: its size-biased law is a semicircle.
 * `TauCeti.Probability.memLp_id_marchenkoPastur`,
   `TauCeti.Probability.integrable_pow_marchenkoPastur`: it has moments of all orders.
@@ -126,12 +134,41 @@ instance isProbabilityMeasure_marchenkoPastur (y : ℝ≥0) :
     field_simp
     ring
 
+/-- The Marchenko–Pastur law depends measurably on its aspect ratio. -/
+@[fun_prop]
+theorem measurable_marchenkoPastur : Measurable marchenkoPastur := by
+  refine Measure.measurable_measure.2 fun s hs ↦ ?_
+  have hf : Measurable (s.indicator fun x : ℝ ↦ ENNReal.ofReal x⁻¹) :=
+    (by fun_prop : Measurable fun x : ℝ ↦ ENNReal.ofReal x⁻¹).indicator hs
+  have hsemi : Measurable fun y : ℝ≥0 ↦ semicircleReal (1 + y) y :=
+    measurable_semicircleReal.comp (by fun_prop : Measurable fun y : ℝ≥0 ↦ (1 + (y : ℝ), y))
+  simp only [marchenkoPastur_def, FunLike.coe_add, FunLike.coe_smul, Pi.add_apply, Pi.smul_apply,
+    smul_eq_mul, withDensity_apply _ hs, ← lintegral_indicator hs]
+  exact ((by fun_prop : Measurable fun y : ℝ≥0 ↦ ENNReal.ofReal (((y : ℝ) - 1) / y)).mul_const
+    (Measure.dirac 0 s)).add ((Measure.measurable_lintegral hf).comp hsemi)
+
 /-- The atom of the Marchenko–Pastur law at `0`: its mass is `ENNReal.ofReal ((y - 1) / y)`, which
 is `(1 - 1/y)₊` for `y > 0` and `0` for `y = 0`. -/
 @[simp]
 theorem marchenkoPastur_singleton_zero (y : ℝ≥0) :
     marchenkoPastur y {0} = ENNReal.ofReal ((y - 1) / y) := by
   simp [marchenkoPastur_def]
+
+/-- For `y > 0`, the mass of the Marchenko–Pastur law outside `0` is `min 1 (1 / y)`. At `y = 0`
+the law is `δ₁`, so the mass outside `0` is `1` whereas `(0 : ℝ)⁻¹ = 0`. -/
+theorem marchenkoPastur_compl_singleton_zero {y : ℝ≥0} (hy : 0 < y) :
+    marchenkoPastur y {0}ᶜ = ENNReal.ofReal (min 1 (y : ℝ)⁻¹) := by
+  have hy' : (0 : ℝ) < y := hy
+  rw [prob_compl_eq_one_sub (measurableSet_singleton 0), marchenkoPastur_singleton_zero,
+    ← ENNReal.ofReal_one]
+  rcases le_or_gt (y : ℝ) 1 with h1 | h1
+  · rw [ENNReal.ofReal_of_nonpos (div_nonpos_of_nonpos_of_nonneg (sub_nonpos.2 h1) hy'.le),
+      tsub_zero, min_eq_left (one_le_inv₀ hy' |>.2 h1)]
+  · rw [min_eq_right ((inv_le_one₀ hy').2 h1.le),
+      ← ENNReal.ofReal_sub _ (div_nonneg (by linarith) hy'.le)]
+    congr 1
+    field_simp
+    ring
 
 /-- The Marchenko–Pastur law is carried by `{0} ∪ [(1 - √y)², (1 + √y)²]`. -/
 theorem ae_eq_zero_or_mem_Icc_marchenkoPastur (y : ℝ≥0) :
@@ -151,12 +188,95 @@ theorem ae_nonneg_marchenkoPastur (y : ℝ≥0) : ∀ᵐ x ∂marchenkoPastur y,
   · exact (sq_nonneg _).trans hx.1
 
 /-- The Marchenko–Pastur law is carried by `[0, (1 + √y)²]`. -/
-private theorem ae_mem_Icc_zero_marchenkoPastur (y : ℝ≥0) :
+theorem ae_mem_Icc_zero_marchenkoPastur (y : ℝ≥0) :
     ∀ᵐ x ∂marchenkoPastur y, x ∈ Icc 0 ((1 + √y) ^ 2) := by
   filter_upwards [ae_eq_zero_or_mem_Icc_marchenkoPastur y] with x hx
   rcases hx with rfl | hx
   · exact ⟨le_rfl, sq_nonneg _⟩
   · exact ⟨(sq_nonneg _).trans hx.1, hx.2⟩
+
+/-- The support of the continuous part `x⁻¹ · semicircleReal (1 + y) y` is
+`[(1 - √y)², (1 + √y)²]`. -/
+private theorem support_withDensity_inv_semicircleReal (y : ℝ≥0) :
+    ((semicircleReal (1 + y) y).withDensity fun x ↦ ENNReal.ofReal x⁻¹).support =
+      Icc ((1 - √y) ^ 2) ((1 + √y) ^ 2) := by
+  have h2 : 2 * √(y : ℝ) ≤ 1 + y := by
+    nlinarith [sq_nonneg (1 - √(y : ℝ)), sq_sqrt y.coe_nonneg]
+  have hne : ∀ᵐ x ∂semicircleReal (1 + y) y, ENNReal.ofReal x⁻¹ ≠ 0 := by
+    filter_upwards [ae_pos_semicircleReal h2 (by positivity)] with x hx
+    exact (ENNReal.ofReal_pos.2 (inv_pos.2 hx)).ne'
+  have hsupp : ((semicircleReal (1 + y) y).withDensity fun x ↦ ENNReal.ofReal x⁻¹).support =
+      (semicircleReal (1 + y) y).support :=
+    Subset.antisymm (withDensity_absolutelyContinuous _ _).support_mono
+      (withDensity_absolutelyContinuous' (by fun_prop) hne).support_mono
+  have hs := sq_sqrt y.coe_nonneg
+  rw [hsupp, support_semicircleReal]
+  congr 1 <;> linear_combination -hs
+
+/-- For `y ≤ 1`, the topological support of `marchenkoPastur y` is `[(1 - √y)², (1 + √y)²]`; at
+`y = 0` this is `{1}` and at `y = 1` it is `[0, 4]`. -/
+theorem support_marchenkoPastur_of_le_one {y : ℝ≥0} (hy : y ≤ 1) :
+    (marchenkoPastur y).support = Icc ((1 - √y) ^ 2) ((1 + √y) ^ 2) := by
+  have h0 : ENNReal.ofReal (((y : ℝ) - 1) / y) = 0 :=
+    ENNReal.ofReal_of_nonpos (div_nonpos_of_nonpos_of_nonneg (sub_nonpos.2 (mod_cast hy))
+      y.coe_nonneg)
+  rw [marchenkoPastur_def, h0, zero_smul, zero_add, support_withDensity_inv_semicircleReal]
+
+/-- For `1 ≤ y`, the topological support of `marchenkoPastur y` is
+`{0} ∪ [(1 - √y)², (1 + √y)²]`; for `1 < y` the atom `{0}` is strictly separated from the bulk
+interval, while at `y = 1` it coincides with the lower edge `0`. -/
+theorem support_marchenkoPastur_of_one_le {y : ℝ≥0} (hy : 1 ≤ y) :
+    (marchenkoPastur y).support = insert 0 (Icc ((1 - √y) ^ 2) ((1 + √y) ^ 2)) := by
+  rcases eq_or_lt_of_le hy with rfl | hy'
+  · rw [support_marchenkoPastur_of_le_one le_rfl]
+    norm_num
+  · have hyr : (1 : ℝ) < y := mod_cast hy'
+    have hc : ENNReal.ofReal (((y : ℝ) - 1) / y) ≠ 0 :=
+      (ENNReal.ofReal_pos.2 (div_pos (by linarith) (by linarith))).ne'
+    have hdirac : (ENNReal.ofReal (((y : ℝ) - 1) / y) • Measure.dirac (0 : ℝ)).support = {0} := by
+      rw [Subset.antisymm Measure.smul_absolutelyContinuous.support_mono
+        (Measure.absolutelyContinuous_smul hc).support_mono, Measure.support_dirac,
+        isClosed_singleton.closure_eq]
+    rw [marchenkoPastur_def, Measure.support_add, hdirac, support_withDensity_inv_semicircleReal,
+      singleton_union]
+
+/-- The exact topological support of the Marchenko–Pastur law `MP_y`: the interval
+`[(1 - √y)², (1 + √y)²]`, together with `{0}` when `1 < y`. -/
+theorem support_marchenkoPastur (y : ℝ≥0) :
+    (marchenkoPastur y).support =
+      if y ≤ 1 then Icc ((1 - √y) ^ 2) ((1 + √y) ^ 2)
+      else insert 0 (Icc ((1 - √y) ^ 2) ((1 + √y) ^ 2)) := by
+  split_ifs with hy
+  · exact support_marchenkoPastur_of_le_one hy
+  · exact support_marchenkoPastur_of_one_le (le_of_not_ge hy)
+
+/-- The topological support of `MP_1` is `[0, 4]`. -/
+@[simp]
+theorem support_marchenkoPastur_one : (marchenkoPastur 1).support = Icc 0 4 := by
+  rw [support_marchenkoPastur_of_le_one le_rfl]
+  norm_num
+
+/-- Zero belongs to the topological support of `marchenkoPastur y` if and only if `1 ≤ y`. -/
+@[simp]
+theorem zero_mem_support_marchenkoPastur_iff {y : ℝ≥0} :
+    (0 : ℝ) ∈ (marchenkoPastur y).support ↔ 1 ≤ y := by
+  rcases le_or_gt 1 y with hy | hy
+  · simp [support_marchenkoPastur_of_one_le hy, hy]
+  · rw [support_marchenkoPastur_of_le_one hy.le, mem_Icc, iff_false_right (not_le.2 hy)]
+    intro h0
+    have hsqrt : √(y : ℝ) < 1 := (sqrt_lt' zero_lt_one).2 (by norm_num; exact_mod_cast hy)
+    have hpos : 0 < (1 - √(y : ℝ)) ^ 2 := sq_pos_of_pos (sub_pos.2 hsqrt)
+    linarith [h0.1]
+
+/-- The topological support of `MP_y` is contained in `[0, (1 + √y)²]`. -/
+theorem support_marchenkoPastur_subset_Icc (y : ℝ≥0) :
+    (marchenkoPastur y).support ⊆ Icc 0 ((1 + √y) ^ 2) :=
+  Measure.support_subset_of_isClosed isClosed_Icc (ae_mem_Icc_zero_marchenkoPastur y)
+
+/-- The topological support of `MP_y` is compact. -/
+theorem isCompact_support_marchenkoPastur (y : ℝ≥0) :
+    IsCompact (marchenkoPastur y).support :=
+  isCompact_Icc.of_isClosed_subset Measure.isClosed_support (support_marchenkoPastur_subset_Icc y)
 
 /-- The identity is in every `Lᵖ` space of the Marchenko–Pastur law, which has bounded support. -/
 theorem memLp_id_marchenkoPastur (y : ℝ≥0) (p : ℝ≥0∞) : MemLp id p (marchenkoPastur y) :=
