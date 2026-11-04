@@ -62,15 +62,12 @@ theorem reflection_centered_form_lower
   have hJAp :
       (U.reflection : E →L[𝕜] E) (A p - (((a + b) / 2 : ℝ) : 𝕜) • p) =
         A p - (((a + b) / 2 : ℝ) : 𝕜) • p := by
-    rw [LinearIsometryEquiv.coe_coe'', Submodule.reflection_apply,
-      Submodule.starProjection_eq_self_iff.mpr hAp]
-    module
+    simpa only [LinearIsometryEquiv.coe_coe''] using U.reflection_mem_subspace_eq_self hAp
   have hJAm :
       (U.reflection : E →L[𝕜] E) (A m - (((a + b) / 2 : ℝ) : 𝕜) • m) =
         -(A m - (((a + b) / 2 : ℝ) : 𝕜) • m) := by
-    rw [LinearIsometryEquiv.coe_coe'', Submodule.reflection_apply,
-      (Submodule.starProjection_apply_eq_zero_iff U).mpr hAm]
-    module
+    simpa only [LinearIsometryEquiv.coe_coe''] using
+      U.reflection_mem_subspace_orthogonalComplement_eq_neg hAm
   have hreflect :
       (U.reflection : E →L[𝕜] E)
           (A x - (((a + b) / 2 : ℝ) : 𝕜) • x) =

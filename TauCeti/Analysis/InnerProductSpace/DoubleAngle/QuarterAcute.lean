@@ -9,7 +9,6 @@ public import TauCeti.Analysis.InnerProductSpace.Projection.Gap
 import TauCeti.Analysis.InnerProductSpace.Coercive
 import TauCeti.Analysis.InnerProductSpace.QuadraticForm.Reflection
 import TauCeti.Analysis.InnerProductSpace.ContinuousFunctionalCalculus
-import Mathlib.Analysis.RCLike.ContinuousMap
 
 /-!
 # The strict quarter-angle branch on complex Hilbert spaces
@@ -186,10 +185,10 @@ theorem projectionGap_lt_sqrt_two_div_two_of_orderedFormGap
         (CFC.rpow_add hCunit).symm
       _ = C ^ (1 : ℝ) := by norm_num
       _ = C := CFC.rpow_one C hCnonneg
-  have hRstar : star R = R := by
-    exact (CFC.rpow_nonneg (a := C) (y := (1 / 2 : ℝ))).isSelfAdjoint.star_eq
-  have hRinvstar : star Rinv = Rinv := by
-    exact (CFC.rpow_nonneg (a := C) (y := (-1 / 2 : ℝ))).isSelfAdjoint.star_eq
+  have hRstar : IsSelfAdjoint R :=
+    (CFC.rpow_nonneg (a := C) (y := (1 / 2 : ℝ))).isSelfAdjoint
+  have hRinvstar : IsSelfAdjoint Rinv :=
+    (CFC.rpow_nonneg (a := C) (y := (-1 / 2 : ℝ))).isSelfAdjoint
   have hJH : J ∘L H = -(H ∘L J) := by
     simpa only [J] using Submodule.reflection_comp_eq_neg_comp_of_maps_orthogonal U H hHU hHUperp
   have hWstar : star W = J ∘L K := by
@@ -233,96 +232,13 @@ theorem projectionGap_lt_sqrt_two_div_two_of_orderedFormGap
     abel
   -- Conjugation by the square root makes the reflection product coercive.
   let Z : E →L[ℂ] E := R ∘L W ∘L Rinv
-  have hZstar : star Z = Rinv ∘L star W ∘L R := by
-    dsimp [Z]
-    -- Read composition as multiplication in the bounded-operator algebra.
-    change star (R * W * Rinv) = Rinv * star W * R
-    rw [star_mul, star_mul, hRstar, hRinvstar]
-    simp only [mul_assoc]
-  have hleft : Rinv ∘L C = R := by
-    apply ContinuousLinearMap.ext
-    intro x
-    have hRRx := DFunLike.congr_fun hRR x
-    have hInv := DFunLike.congr_fun hRinvR (R x)
-    simp only [ContinuousLinearMap.comp_apply,
-      ContinuousLinearMap.id_apply] at hRRx hInv ⊢
-    rw [← hRRx]
-    exact hInv
-  have hright : C ∘L Rinv = R := by
-    apply ContinuousLinearMap.ext
-    intro x
-    have hRRx := DFunLike.congr_fun hRR (Rinv x)
-    have hInv := DFunLike.congr_fun hRRinv x
-    simp only [ContinuousLinearMap.comp_apply,
-      ContinuousLinearMap.id_apply] at hRRx hInv ⊢
-    rw [← hRRx, hInv]
-  have hZherm :
-      Z + star Z =
-        (Rinv ∘L B ∘L Rinv) + (Rinv ∘L B ∘L Rinv) := by
-    apply ContinuousLinearMap.ext
-    intro x
-    rw [hZstar]
-    dsimp [Z]
-    simp only [add_apply, ContinuousLinearMap.comp_apply]
-    have hlyapx := DFunLike.congr_fun hlyap (Rinv x)
-    have hconj := congrArg (fun y : E => Rinv y) hlyapx
-    simp only [add_apply, ContinuousLinearMap.comp_apply, map_add] at hconj
-    have hleftx := DFunLike.congr_fun hleft (W (Rinv x))
-    have hrightx := DFunLike.congr_fun hright x
-    simp only [ContinuousLinearMap.comp_apply] at hleftx hrightx
-    rw [hleftx, hrightx] at hconj
-    exact hconj
   let α : ℝ := δ / (1 + ‖R‖ ^ 2)
   have hα : 0 < α := by
     dsimp [α]
     positivity
-  have hZcoer : ∀ x, α * ‖x‖ ^ 2 ≤ RCLike.re ⟪Z x, x⟫_ℂ := by
-    intro x
-    let y : E := Rinv x
-    have hxy : R y = x := by
-      dsimp [y]
-      have := DFunLike.congr_fun hRRinv x
-      simpa only [ContinuousLinearMap.comp_apply,
-        ContinuousLinearMap.id_apply] using this
-    have hreal : RCLike.re ⟪Z x, x⟫_ℂ = RCLike.re ⟪B y, y⟫_ℂ := by
-      have hsum := congrArg
-        (fun T : E →L[ℂ] E => RCLike.re ⟪T x, x⟫_ℂ) hZherm
-      simp only [add_apply, inner_add_left, map_add,
-        ContinuousLinearMap.comp_apply] at hsum
-      have hstarReal : RCLike.re ⟪star Z x, x⟫_ℂ =
-          RCLike.re ⟪Z x, x⟫_ℂ := by
-        rw [ContinuousLinearMap.star_eq_adjoint,
-          ContinuousLinearMap.adjoint_inner_left]
-        exact inner_re_symm x (Z x)
-      have hRinvAdj : ContinuousLinearMap.adjoint Rinv = Rinv := by
-        rw [← ContinuousLinearMap.star_eq_adjoint]
-        exact hRinvstar
-      have hRinvInner : RCLike.re ⟪Rinv (B y), x⟫_ℂ =
-          RCLike.re ⟪B y, y⟫_ℂ := by
-        rw [← hRinvAdj, ContinuousLinearMap.adjoint_inner_left]
-      rw [hstarReal, hRinvInner] at hsum
-      linarith
-    have hB := hBcoer y
-    have hnorm : ‖x‖ ≤ ‖R‖ * ‖y‖ := by
-      rw [← hxy]
-      exact R.le_opNorm y
-    have hsq : ‖x‖ ^ 2 ≤ ‖R‖ ^ 2 * ‖y‖ ^ 2 := by
-      nlinarith [hnorm, norm_nonneg x, norm_nonneg R, norm_nonneg y]
-    rw [hreal]
-    dsimp [α]
-    have hden : 0 < 1 + ‖R‖ ^ 2 := by positivity
-    have hcoef : δ / (1 + ‖R‖ ^ 2) * ‖R‖ ^ 2 ≤ δ := by
-      rw [div_mul_eq_mul_div]
-      apply (div_le_iff₀ hden).2
-      nlinarith [hδ]
-    have hscaled : δ / (1 + ‖R‖ ^ 2) * ‖x‖ ^ 2 ≤ δ * ‖y‖ ^ 2 := by
-      calc
-        δ / (1 + ‖R‖ ^ 2) * ‖x‖ ^ 2 ≤
-            δ / (1 + ‖R‖ ^ 2) * (‖R‖ ^ 2 * ‖y‖ ^ 2) :=
-          mul_le_mul_of_nonneg_left hsq (div_nonneg hδ.le hden.le)
-        _ = (δ / (1 + ‖R‖ ^ 2) * ‖R‖ ^ 2) * ‖y‖ ^ 2 := by ring
-        _ ≤ δ * ‖y‖ ^ 2 := mul_le_mul_of_nonneg_right hcoef (sq_nonneg ‖y‖)
-    exact hscaled.trans hB
+  have hZcoer : ∀ x, α * ‖x‖ ^ 2 ≤ RCLike.re ⟪Z x, x⟫_ℂ :=
+    ContinuousLinearMap.coercive_conj_of_lyapunov B C W R Rinv
+      hRstar hRinvstar hRR hRinvR hRRinv hlyap hδ.le hBcoer
   -- Transport the coercive half-plane bound through similarity.
   have hspecZ : ∀ z ∈ spectrum ℂ Z, α ≤ z.re :=
     fun z hz => _root_.ContinuousLinearMap.le_re_of_mem_spectrum_of_coercive Z hZcoer hz
@@ -330,7 +246,11 @@ theorem projectionGap_lt_sqrt_two_div_two_of_orderedFormGap
     let e : E ≃L[ℂ] E := ContinuousLinearEquiv.equivOfInverse' R Rinv hRRinv hRinvR
     have he : e.conjContinuousAlgEquiv.toAlgEquiv W = Z := by
       ext x
-      rfl
+      simp only [ContinuousAlgEquiv.coe_toAlgEquiv,
+        ContinuousLinearEquiv.conjContinuousAlgEquiv_apply_apply,
+        ContinuousLinearEquiv.equivOfInverse'_apply,
+        ContinuousLinearEquiv.symm_equivOfInverse',
+        ContinuousLinearMap.comp_apply, e, Z]
     exact ((AlgEquiv.spectrum_eq e.conjContinuousAlgEquiv.toAlgEquiv W).symm).trans
       (congrArg (spectrum ℂ) he)
   have hspecW : ∀ z ∈ spectrum ℂ W, α ≤ z.re := by
@@ -349,86 +269,15 @@ theorem projectionGap_lt_sqrt_two_div_two_of_orderedFormGap
   have hshiftForm : ∀ x : E,
       0 ≤ RCLike.re
         ⟪(W + star W - ((2 * α : ℝ) : ℂ) • 1) x, x⟫_ℂ := by
-    intro x
-    let X : C(spectrum ℂ W, ℂ) :=
-      (ContinuousMap.id ℂ).restrict (spectrum ℂ W)
-    let g : C(spectrum ℂ W, ℝ) :=
-      ⟨fun z => 2 * (z : ℂ).re - 2 * α,
-        (continuous_const.mul
-          (Complex.continuous_re.comp continuous_subtype_val)).sub continuous_const⟩
-    have hg : ∀ z, 0 ≤ g z := by
-      intro z
-      dsimp [g]
-      have hz := hspecW (z : ℂ) z.property
-      linarith
-    have hpos : 0 ≤
-        (⟪x, cfcHom hWnormal
-          ((ContinuousMap.realToRCLikeStarAlgHom _ ℂ) g) x⟫_ℂ).re := by
-      have hT : 0 ≤ cfcHom hWnormal
-          ((ContinuousMap.realToRCLikeStarAlgHom _ ℂ) g) := by
-        apply map_nonneg (cfcHom hWnormal)
-        intro z
-        simpa using hg z
-      exact (ContinuousLinearMap.nonneg_iff_isPositive.mp hT).re_inner_nonneg_right x
-    have hsymbol :
-        (ContinuousMap.realToRCLikeStarAlgHom _ ℂ) g =
-          X + star X - ((2 * α : ℝ) : ℂ) • 1 := by
-      ext z
-      dsimp [g, X]
-      apply Complex.ext
-      · simp
-        ring
-      · simp
-    rw [hsymbol, map_sub, map_add, map_star, map_smul, map_one,
-      cfcHom_id] at hpos
-    -- Evaluate the CFC operator through its quadratic form.
-    change 0 ≤ RCLike.re
-      ⟪x, (W + star W - ((2 * α : ℝ) : ℂ) • 1) x⟫_ℂ at hpos
-    exact hpos.trans_eq (inner_re_symm x
-      ((W + star W - ((2 * α : ℝ) : ℂ) • 1) x))
+    have hpos := ContinuousLinearMap.nonneg_add_star_sub_smul_of_spectrum_re W hspecW
+    exact (ContinuousLinearMap.nonneg_iff_isPositive.mp hpos).re_inner_nonneg_left
   -- The real part of the reflection product equals a polynomial in the projection gap.
   let D : E →L[ℂ] E := U.starProjection - V.starProjection
   have hreflectionAlgebra :
       W + star W =
         (2 : ℂ) • (1 : E →L[ℂ] E) - (4 : ℂ) • (D * D) := by
     rw [hWstar]
-    apply ContinuousLinearMap.ext
-    intro x
-    simp only [add_apply, sub_apply, smul_apply, one_apply_eq_self,
-      mul_apply_eq_comp, ContinuousLinearMap.comp_apply]
-    dsimp [W, J, K, D]
-    have hKJ :
-        (V.reflection : E →L[ℂ] E) ((U.reflection : E →L[ℂ] E) x) =
-          (4 : ℂ) • V.starProjection (U.starProjection x) -
-            (2 : ℂ) • V.starProjection x -
-            (2 : ℂ) • U.starProjection x + x := by
-      simp only [LinearIsometryEquiv.coe_coe'']
-      rw [Submodule.reflection_apply (K := V), Submodule.reflection_apply (K := U)]
-      simp only [map_sub, map_nsmul]
-      module
-    have hJK :
-        (U.reflection : E →L[ℂ] E) ((V.reflection : E →L[ℂ] E) x) =
-          (4 : ℂ) • U.starProjection (V.starProjection x) -
-            (2 : ℂ) • U.starProjection x -
-            (2 : ℂ) • V.starProjection x + x := by
-      simp only [LinearIsometryEquiv.coe_coe'']
-      rw [Submodule.reflection_apply (K := U), Submodule.reflection_apply (K := V)]
-      simp only [map_sub, map_nsmul]
-      module
-    have hPU : U.starProjection (U.starProjection x) = U.starProjection x :=
-      Submodule.starProjection_eq_self_iff.mpr (U.starProjection_apply_mem x)
-    have hPV : V.starProjection (V.starProjection x) = V.starProjection x :=
-      Submodule.starProjection_eq_self_iff.mpr (V.starProjection_apply_mem x)
-    have hDDx :
-        (U.starProjection - V.starProjection)
-            ((U.starProjection - V.starProjection) x) =
-          U.starProjection x - U.starProjection (V.starProjection x) -
-            V.starProjection (U.starProjection x) + V.starProjection x := by
-      simp only [sub_apply, map_sub, hPU, hPV]
-      abel
-    simp only [LinearIsometryEquiv.coe_coe''] at hKJ hJK
-    rw [hKJ, hJK, hDDx]
-    module
+    exact Submodule.reflection_comp_add_comp_reflection U V
   have hpoint : ∀ x, ‖D x‖ ^ 2 ≤ (1 - α) / 2 * ‖x‖ ^ 2 := by
     intro x
     have hpositive := hshiftForm x

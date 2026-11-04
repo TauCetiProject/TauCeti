@@ -585,21 +585,15 @@ theorem reflection_comp_eq_neg_comp_of_maps_orthogonal
   have hHp : H p ∈ Uᗮ := hHU p hp
   have hHm : H m ∈ U := hHUperp m hm
   have hJp : (U.reflection : E →L[𝕜] E) p = p := by
-    rw [LinearIsometryEquiv.coe_coe'', Submodule.reflection_apply,
-      Submodule.starProjection_eq_self_iff.mpr hp]
-    module
+    simpa only [LinearIsometryEquiv.coe_coe''] using U.reflection_mem_subspace_eq_self hp
   have hJm : (U.reflection : E →L[𝕜] E) m = -m := by
-    rw [LinearIsometryEquiv.coe_coe'', Submodule.reflection_apply,
-      (Submodule.starProjection_apply_eq_zero_iff U).mpr hm]
-    module
+    simpa only [LinearIsometryEquiv.coe_coe''] using
+      U.reflection_mem_subspace_orthogonalComplement_eq_neg hm
   have hJHp : (U.reflection : E →L[𝕜] E) (H p) = -(H p) := by
-    rw [LinearIsometryEquiv.coe_coe'', Submodule.reflection_apply,
-      (Submodule.starProjection_apply_eq_zero_iff U).mpr hHp]
-    module
+    simpa only [LinearIsometryEquiv.coe_coe''] using
+      U.reflection_mem_subspace_orthogonalComplement_eq_neg hHp
   have hJHm : (U.reflection : E →L[𝕜] E) (H m) = H m := by
-    rw [LinearIsometryEquiv.coe_coe'', Submodule.reflection_apply,
-      Submodule.starProjection_eq_self_iff.mpr hHm]
-    module
+    simpa only [LinearIsometryEquiv.coe_coe''] using U.reflection_mem_subspace_eq_self hHm
   simp only [ContinuousLinearMap.comp_apply, neg_apply]
   calc
     (U.reflection : E →L[𝕜] E) (H x) = (U.reflection : E →L[𝕜] E) (H p + H m) := by
@@ -615,5 +609,50 @@ theorem reflection_comp_eq_neg_comp_of_maps_orthogonal
         rw [hxpm, map_add, hJp, hJm]
         module
       rw [hJx]
+
+/-- The symmetric product of two subspace reflections is
+`R_V R_U + R_U R_V = 2 I - 4 (P_U - P_V)²`.
+
+Extracted from the reflection-product calculation in
+`DavisKahan/InfiniteDimensional/TanTwoTheta/QuarterAcuteFormGap.lean`, Kitware DKPS
+(Jon Crall, OpenAI GPT-5.6 Thinking and Claude Opus 5; Apache-2.0). -/
+theorem reflection_comp_add_comp_reflection
+    (U V : Submodule 𝕜 E) [U.HasOrthogonalProjection] [V.HasOrthogonalProjection] :
+    (V.reflection : E →L[𝕜] E) ∘L (U.reflection : E →L[𝕜] E) +
+        (U.reflection : E →L[𝕜] E) ∘L (V.reflection : E →L[𝕜] E) =
+      (2 : 𝕜) • (1 : E →L[𝕜] E) -
+        (4 : 𝕜) • ((U.starProjection - V.starProjection) *
+          (U.starProjection - V.starProjection)) := by
+  apply ContinuousLinearMap.ext
+  intro x
+  simp only [add_apply, sub_apply, smul_apply, one_apply_eq_self,
+    mul_apply_eq_comp, ContinuousLinearMap.comp_apply]
+  have hKJ :
+      (V.reflection : E →L[𝕜] E) ((U.reflection : E →L[𝕜] E) x) =
+        (4 : 𝕜) • V.starProjection (U.starProjection x) -
+          (2 : 𝕜) • V.starProjection x -
+          (2 : 𝕜) • U.starProjection x + x := by
+    simp only [LinearIsometryEquiv.coe_coe'']
+    rw [Submodule.reflection_apply (K := V), Submodule.reflection_apply (K := U)]
+    simp only [map_sub, map_nsmul]
+    module
+  have hJK :
+      (U.reflection : E →L[𝕜] E) ((V.reflection : E →L[𝕜] E) x) =
+        (4 : 𝕜) • U.starProjection (V.starProjection x) -
+          (2 : 𝕜) • U.starProjection x -
+          (2 : 𝕜) • V.starProjection x + x := by
+    simp only [LinearIsometryEquiv.coe_coe'']
+    rw [Submodule.reflection_apply (K := U), Submodule.reflection_apply (K := V)]
+    simp only [map_sub, map_nsmul]
+    module
+  have hPU : U.starProjection (U.starProjection x) = U.starProjection x :=
+    Submodule.starProjection_eq_self_iff.mpr (U.starProjection_apply_mem x)
+  have hPV : V.starProjection (V.starProjection x) = V.starProjection x :=
+    Submodule.starProjection_eq_self_iff.mpr (V.starProjection_apply_mem x)
+  simp only [LinearIsometryEquiv.coe_coe'']
+  simp only [LinearIsometryEquiv.coe_coe''] at hKJ hJK
+  rw [hKJ, hJK]
+  simp only [map_sub, hPU, hPV]
+  module
 
 end Submodule
