@@ -13,16 +13,8 @@ public import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.Commu
 
 For roots `α` and `β` whose positive rank-two root string has length two, this file proves, under
 the displayed bracket and nilpotence hypotheses, Steinberg's element-commutator relations in both
-root orders:
-
-* for the chain `α + β, 2α + β`:
-  ```text
-  ⁅x_α(t), x_β(u)⁆ = x_{α+β}(c t u) x_{2α+β}(d t² u);
-  ```
-* for the reversed chain `α + β, α + 2β` (with `⁅eⱼ, ⁅eⱼ, eᵢ⁆⁆ = (2 * d) • eₗ`):
-  ```text
-  ⁅x_α(t), x_β(u)⁆ = x_{α+β}(c t u) x_{α+2β}(-d t u²).
-  ```
+root orders: `⁅x_α(t), x_β(u)⁆ = x_{α+β}(c t u) x_{2α+β}(d t² u)` for `{α + β, 2α + β}`, and
+`⁅x_α(t), x_β(u)⁆ = x_{α+β}(c t u) x_{α+2β}(-d t u²)` for `{α + β, α + 2β}`.
 
 `Commutator/Basic.lean` and `Commutator/DividedPower.lean` prove the underlying multiplication,
 conjugation, and divided-power commutator identities. This file derives the canonical
@@ -53,7 +45,10 @@ integral basis to the represented general linear group. The scheme-valued form i
 
 public section
 
+open TauCeti.AdditiveGroup (gaPointsMulEquiv)
+open Multiplicative (ofAdd toAdd)
 open TensorProduct WithConv
+open _root_.UniversalEnvelopingAlgebra (ι)
 open scoped commutatorElement
 
 namespace TauCeti.UniversalEnvelopingAlgebra
@@ -80,13 +75,12 @@ variable {A : Type*} [CommRing A] [Algebra ℤ A]
 base-changed divided-power one-parameter subgroup `TauCeti.baseChangeExpHom` evaluated at its
 `𝔾ₐ`-parameter. -/
 theorem generalLinearEquiv_kostantRootSubgroupPoints
-    (i : I) (hi : IsNilpotent (ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e i))))
-    (f : WithConv (SymmetricAlgebra ℤ ℤ →ₐ[ℤ] A)) :
+    (i : I) (hi : IsNilpotent (ρ (ι ℚ (e i)))) (f : WithConv (SymmetricAlgebra ℤ ℤ →ₐ[ℤ] A)) :
     LinearMap.GeneralLinearGroup.generalLinearEquiv A (A ⊗[ℤ] M)
         (kostantRootSubgroupPoints e h ρ M hM i hi f) =
-      baseChangeExpHom (ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e i))) M
+      baseChangeExpHom (ρ (ι ℚ (e i))) M
         (fun n _ hv => dividedPower_apply_mem_of_kostantForm_apply_mem e h ρ hM i n hv) hi
-        (AdditiveGroup.gaPointsMulEquiv (R := ℤ) (A := A) f) := by
+        (gaPointsMulEquiv (R := ℤ) (A := A) f) := by
   refine LinearEquiv.toLinearMap_inj.mp ?_
   change (kostantRootSubgroupPoints e h ρ M hM i hi f).toLinearEquiv.toLinearMap = _
   rw [kostantRootSubgroupPoints_toLinearEquiv, baseChangeKostantExpHom_toLinearMap,
@@ -100,34 +94,19 @@ theorem commutatorElement_kostantRootSubgroupPoints_of_lie_lie_rev_eq
     {i j k l : I} {c d : ℤ}
     (hij : ⁅e i, e j⁆ = c • e k) (hjji : ⁅e j, ⁅e j, e i⁆⁆ = (2 * d) • e l)
     (hjl : ⁅e j, e l⁆ = 0) (hik : ⁅e i, e k⁆ = 0)
-    (hi : IsNilpotent (ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e i))))
-    (hj : IsNilpotent (ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e j))))
-    (hk : IsNilpotent (ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e k))))
-    (hl : IsNilpotent (ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e l))))
+    (hi : IsNilpotent (ρ (ι ℚ (e i)))) (hj : IsNilpotent (ρ (ι ℚ (e j))))
+    (hk : IsNilpotent (ρ (ι ℚ (e k)))) (hl : IsNilpotent (ρ (ι ℚ (e l))))
     (f g p q : WithConv (SymmetricAlgebra ℤ ℤ →ₐ[ℤ] A))
-    (hp : Multiplicative.toAdd (AdditiveGroup.gaPointsMulEquiv (R := ℤ) (A := A) p) =
-      (c : A) * (Multiplicative.toAdd (AdditiveGroup.gaPointsMulEquiv (R := ℤ) (A := A) f) *
-        Multiplicative.toAdd (AdditiveGroup.gaPointsMulEquiv (R := ℤ) (A := A) g)))
-    (hq : Multiplicative.toAdd (AdditiveGroup.gaPointsMulEquiv (R := ℤ) (A := A) q) =
-      (-d : A) * (Multiplicative.toAdd (AdditiveGroup.gaPointsMulEquiv (R := ℤ) (A := A) f) *
-        Multiplicative.toAdd (AdditiveGroup.gaPointsMulEquiv (R := ℤ) (A := A) g) ^ 2)) :
-    ⁅kostantRootSubgroupPoints e h ρ M hM i hi f,
-        kostantRootSubgroupPoints e h ρ M hM j hj g⁆ =
+    (hp : toAdd (gaPointsMulEquiv p) =
+      (c : A) * (toAdd (gaPointsMulEquiv f) * toAdd (gaPointsMulEquiv g)))
+    (hq : toAdd (gaPointsMulEquiv q) =
+      (-d : A) * (toAdd (gaPointsMulEquiv f) * toAdd (gaPointsMulEquiv g) ^ 2)) :
+    ⁅kostantRootSubgroupPoints e h ρ M hM i hi f, kostantRootSubgroupPoints e h ρ M hM j hj g⁆ =
       kostantRootSubgroupPoints e h ρ M hM k hk p *
         kostantRootSubgroupPoints e h ρ M hM l hl q := by
   refine (LinearMap.GeneralLinearGroup.generalLinearEquiv A (A ⊗[ℤ] M)).injective ?_
   simp only [map_commutatorElement, map_mul, generalLinearEquiv_kostantRootSubgroupPoints]
-  have hp' : AdditiveGroup.gaPointsMulEquiv (R := ℤ) (A := A) p =
-      Multiplicative.ofAdd ((c : A) *
-        (Multiplicative.toAdd (AdditiveGroup.gaPointsMulEquiv (R := ℤ) (A := A) f) *
-          Multiplicative.toAdd (AdditiveGroup.gaPointsMulEquiv (R := ℤ) (A := A) g))) := by
-    rw [← hp, ofAdd_toAdd]
-  have hq' : AdditiveGroup.gaPointsMulEquiv (R := ℤ) (A := A) q =
-      Multiplicative.ofAdd ((-d : A) *
-        (Multiplicative.toAdd (AdditiveGroup.gaPointsMulEquiv (R := ℤ) (A := A) f) *
-          Multiplicative.toAdd (AdditiveGroup.gaPointsMulEquiv (R := ℤ) (A := A) g) ^ 2)) := by
-    rw [← hq, ofAdd_toAdd]
-  rw [hp', hq']
+  rw [← ofAdd_toAdd (gaPointsMulEquiv p), hp, ← ofAdd_toAdd (gaPointsMulEquiv q), hq]
   exact commutatorElement_baseChangeExpHom_of_lie_lie_rev_eq ρ M hij hjji hjl hik
     (fun n _ hv => dividedPower_apply_mem_of_kostantForm_apply_mem e h ρ hM i n hv)
     (fun n _ hv => dividedPower_apply_mem_of_kostantForm_apply_mem e h ρ hM j n hv)
@@ -141,29 +120,20 @@ theorem commutatorElement_kostantRootSubgroupPoints_of_lie_lie_rev_eq'
     {i j k l : I} {c d : ℤ}
     (hij : ⁅e i, e j⁆ = c • e k) (hjji : ⁅e j, ⁅e j, e i⁆⁆ = (2 * d) • e l)
     (hjl : ⁅e j, e l⁆ = 0) (hik : ⁅e i, e k⁆ = 0)
-    (hi : IsNilpotent (ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e i))))
-    (hj : IsNilpotent (ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e j))))
-    (hk : IsNilpotent (ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e k))))
-    (hl : IsNilpotent (ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e l))))
+    (hi : IsNilpotent (ρ (ι ℚ (e i)))) (hj : IsNilpotent (ρ (ι ℚ (e j))))
+    (hk : IsNilpotent (ρ (ι ℚ (e k)))) (hl : IsNilpotent (ρ (ι ℚ (e l))))
     (f g : WithConv (SymmetricAlgebra ℤ ℤ →ₐ[ℤ] A)) :
-    ⁅kostantRootSubgroupPoints e h ρ M hM i hi f,
-        kostantRootSubgroupPoints e h ρ M hM j hj g⁆ =
+    ⁅kostantRootSubgroupPoints e h ρ M hM i hi f, kostantRootSubgroupPoints e h ρ M hM j hj g⁆ =
       kostantRootSubgroupPoints e h ρ M hM k hk
-          ((AdditiveGroup.gaPointsMulEquiv (R := ℤ) (A := A)).symm
-            (Multiplicative.ofAdd ((c : A) *
-              (Multiplicative.toAdd (AdditiveGroup.gaPointsMulEquiv (R := ℤ) (A := A) f) *
-                Multiplicative.toAdd (AdditiveGroup.gaPointsMulEquiv (R := ℤ) (A := A) g))))) *
+          ((gaPointsMulEquiv (R := ℤ) (A := A)).symm
+            (ofAdd ((c : A) * (toAdd (gaPointsMulEquiv f) * toAdd (gaPointsMulEquiv g))))) *
         kostantRootSubgroupPoints e h ρ M hM l hl
-          ((AdditiveGroup.gaPointsMulEquiv (R := ℤ) (A := A)).symm
-            (Multiplicative.ofAdd ((-d : A) *
-              (Multiplicative.toAdd (AdditiveGroup.gaPointsMulEquiv (R := ℤ) (A := A) f) *
-                Multiplicative.toAdd (AdditiveGroup.gaPointsMulEquiv (R := ℤ) (A := A) g) ^ 2)))) :=
+          ((gaPointsMulEquiv (R := ℤ) (A := A)).symm
+            (ofAdd ((-d : A) * (toAdd (gaPointsMulEquiv f) * toAdd (gaPointsMulEquiv g) ^ 2)))) :=
   commutatorElement_kostantRootSubgroupPoints_of_lie_lie_rev_eq e h ρ M hM
     hij hjji hjl hik hi hj hk hl f g _ _
-      (congrArg Multiplicative.toAdd
-        ((AdditiveGroup.gaPointsMulEquiv (R := ℤ) (A := A)).apply_symm_apply _))
-      (congrArg Multiplicative.toAdd
-        ((AdditiveGroup.gaPointsMulEquiv (R := ℤ) (A := A)).apply_symm_apply _))
+    (congrArg toAdd ((gaPointsMulEquiv (R := ℤ) (A := A)).apply_symm_apply _))
+    (congrArg toAdd ((gaPointsMulEquiv (R := ℤ) (A := A)).apply_symm_apply _))
 
 end GeneralLinearEquiv
 
@@ -295,64 +265,48 @@ theorem commutatorElement_kostantRootSubgroupMatrix_of_lie_lie_eq'
       (congrArg Multiplicative.toAdd
         ((AdditiveGroup.gaPointsMulEquiv (R := ℤ) (A := A)).apply_symm_apply _))
 
-/-- **Steinberg's reversed multiply-laced Chevalley commutator relation in an integral basis.**
-For the chain `α`, `α + β`, `α + 2β`, the matrix commutator of the first two represented root
-subgroups is the product of the next two at parameters `c t u` and `-d t u²`. -/
+/-- **Steinberg's reversed multiply-laced Chevalley commutator relation in an integral basis.** -/
 theorem commutatorElement_kostantRootSubgroupMatrix_of_lie_lie_rev_eq
     {i j k l : I} {c d : ℤ}
     (hij : ⁅e i, e j⁆ = c • e k) (hjji : ⁅e j, ⁅e j, e i⁆⁆ = (2 * d) • e l)
     (hjl : ⁅e j, e l⁆ = 0) (hik : ⁅e i, e k⁆ = 0)
-    (hi : IsNilpotent (ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e i))))
-    (hj : IsNilpotent (ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e j))))
-    (hk : IsNilpotent (ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e k))))
-    (hl : IsNilpotent (ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e l))))
+    (hi : IsNilpotent (ρ (ι ℚ (e i)))) (hj : IsNilpotent (ρ (ι ℚ (e j))))
+    (hk : IsNilpotent (ρ (ι ℚ (e k)))) (hl : IsNilpotent (ρ (ι ℚ (e l))))
     (f g p q : WithConv (SymmetricAlgebra ℤ ℤ →ₐ[ℤ] A))
-    (hp : Multiplicative.toAdd (AdditiveGroup.gaPointsMulEquiv (R := ℤ) (A := A) p) =
-      (c : A) * (Multiplicative.toAdd (AdditiveGroup.gaPointsMulEquiv (R := ℤ) (A := A) f) *
-        Multiplicative.toAdd (AdditiveGroup.gaPointsMulEquiv (R := ℤ) (A := A) g)))
-    (hq : Multiplicative.toAdd (AdditiveGroup.gaPointsMulEquiv (R := ℤ) (A := A) q) =
-      (-d : A) * (Multiplicative.toAdd (AdditiveGroup.gaPointsMulEquiv (R := ℤ) (A := A) f) *
-        Multiplicative.toAdd (AdditiveGroup.gaPointsMulEquiv (R := ℤ) (A := A) g) ^ 2)) :
+    (hp : toAdd (gaPointsMulEquiv p) =
+      (c : A) * (toAdd (gaPointsMulEquiv f) * toAdd (gaPointsMulEquiv g)))
+    (hq : toAdd (gaPointsMulEquiv q) =
+      (-d : A) * (toAdd (gaPointsMulEquiv f) * toAdd (gaPointsMulEquiv g) ^ 2)) :
     ⁅kostantRootSubgroupMatrix e h ρ M hM i hi b f,
         kostantRootSubgroupMatrix e h ρ M hM j hj b g⁆ =
       kostantRootSubgroupMatrix e h ρ M hM k hk b p *
         kostantRootSubgroupMatrix e h ρ M hM l hl b q := by
-  rw [kostantRootSubgroupMatrix_def, kostantRootSubgroupMatrix_def,
-    kostantRootSubgroupMatrix_def, kostantRootSubgroupMatrix_def]
+  repeat rw [kostantRootSubgroupMatrix_def]
   simpa only [MonoidHom.comp_apply, map_commutatorElement, map_mul] using
     congrArg (Units.map (LinearMap.toMatrixAlgEquiv (b.baseChange A)).toMonoidHom)
       (commutatorElement_kostantRootSubgroupPoints_of_lie_lie_rev_eq e h ρ M hM
         hij hjji hjl hik hi hj hk hl f g p q hp hq)
 
-/-- The reversed multiply-laced matrix commutator relation with both output points written out at
-parameters `c t u` and `-d t u²`. -/
+/-- The reversed multiply-laced matrix commutator relation with both output points written out. -/
 theorem commutatorElement_kostantRootSubgroupMatrix_of_lie_lie_rev_eq'
     {i j k l : I} {c d : ℤ}
     (hij : ⁅e i, e j⁆ = c • e k) (hjji : ⁅e j, ⁅e j, e i⁆⁆ = (2 * d) • e l)
     (hjl : ⁅e j, e l⁆ = 0) (hik : ⁅e i, e k⁆ = 0)
-    (hi : IsNilpotent (ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e i))))
-    (hj : IsNilpotent (ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e j))))
-    (hk : IsNilpotent (ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e k))))
-    (hl : IsNilpotent (ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e l))))
+    (hi : IsNilpotent (ρ (ι ℚ (e i)))) (hj : IsNilpotent (ρ (ι ℚ (e j))))
+    (hk : IsNilpotent (ρ (ι ℚ (e k)))) (hl : IsNilpotent (ρ (ι ℚ (e l))))
     (f g : WithConv (SymmetricAlgebra ℤ ℤ →ₐ[ℤ] A)) :
     ⁅kostantRootSubgroupMatrix e h ρ M hM i hi b f,
         kostantRootSubgroupMatrix e h ρ M hM j hj b g⁆ =
       kostantRootSubgroupMatrix e h ρ M hM k hk b
-          ((AdditiveGroup.gaPointsMulEquiv (R := ℤ) (A := A)).symm
-            (Multiplicative.ofAdd ((c : A) *
-              (Multiplicative.toAdd (AdditiveGroup.gaPointsMulEquiv (R := ℤ) (A := A) f) *
-                Multiplicative.toAdd (AdditiveGroup.gaPointsMulEquiv (R := ℤ) (A := A) g))))) *
+          ((gaPointsMulEquiv (R := ℤ) (A := A)).symm
+            (ofAdd ((c : A) * (toAdd (gaPointsMulEquiv f) * toAdd (gaPointsMulEquiv g))))) *
         kostantRootSubgroupMatrix e h ρ M hM l hl b
-          ((AdditiveGroup.gaPointsMulEquiv (R := ℤ) (A := A)).symm
-            (Multiplicative.ofAdd ((-d : A) *
-              (Multiplicative.toAdd (AdditiveGroup.gaPointsMulEquiv (R := ℤ) (A := A) f) *
-                Multiplicative.toAdd (AdditiveGroup.gaPointsMulEquiv (R := ℤ) (A := A) g) ^ 2)))) :=
+          ((gaPointsMulEquiv (R := ℤ) (A := A)).symm
+            (ofAdd ((-d : A) * (toAdd (gaPointsMulEquiv f) * toAdd (gaPointsMulEquiv g) ^ 2)))) :=
   commutatorElement_kostantRootSubgroupMatrix_of_lie_lie_rev_eq e h ρ M hM b
     hij hjji hjl hik hi hj hk hl f g _ _
-      (congrArg Multiplicative.toAdd
-        ((AdditiveGroup.gaPointsMulEquiv (R := ℤ) (A := A)).apply_symm_apply _))
-      (congrArg Multiplicative.toAdd
-        ((AdditiveGroup.gaPointsMulEquiv (R := ℤ) (A := A)).apply_symm_apply _))
+    (congrArg toAdd ((gaPointsMulEquiv (R := ℤ) (A := A)).apply_symm_apply _))
+    (congrArg toAdd ((gaPointsMulEquiv (R := ℤ) (A := A)).apply_symm_apply _))
 
 end Matrices
 
