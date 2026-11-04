@@ -57,8 +57,15 @@ term is split by the constant-coefficient Cartan formula
   map, which moves the centre.
 * `StarConvex.compContinuousLinearMap_poincareHomotopy_eq`: centred at a fixed point of a linear
   map, it preserves invariance of forms under that map.
-* `StarConvex.contDiffOn_poincareHomotopy`: it preserves `C^r` regularity on `s`.
-* `StarConvex.extDeriv_poincareHomotopy_add_poincareHomotopy_extDeriv`: the homotopy formula.
+* `TauCeti.norm_poincareHomotopy_le`: the sharp radial bound
+  `‖poincareHomotopy x₀ ω x‖ ≤ B * ‖x - x₀‖ / (n + 1)`.
+* `StarConvex.contDiffOn_poincareHomotopy`, `TauCeti.contDiff_poincareHomotopy`: it preserves
+  `C^r` regularity.
+* `StarConvex.extDeriv_poincareHomotopy_add_poincareHomotopy_extDeriv`,
+  `TauCeti.extDeriv_poincareHomotopy_add_poincareHomotopy_extDeriv`: the homotopy formula.
+* `StarConvex.poincareHomotopy_extDerivWithin_eq_sub`,
+  `StarConvex.poincareHomotopy_extDeriv_eq_sub`, `TauCeti.poincareHomotopy_extDeriv_eq_sub`: the
+  degree-zero homotopy formula `K (d f) x = f x - f x₀`.
 * `StarConvex.extDeriv_poincareHomotopy` and `StarConvex.exists_contDiffOn_forall_extDeriv_eq`: the
   Poincaré lemma.
 * `Convex.contDiffOn_poincareHomotopy`,
@@ -146,6 +153,41 @@ theorem poincareHomotopy_add_apply {x₀ x : E} {ω₁ ω₂ : E → E [⋀^Fin 
       (intervalIntegrable_integrand h₂)]
   simp only [Pi.add_apply, ContinuousAlternatingMap.curryLeft_add, add_apply,
     smul_add]
+
+/-- The Poincaré homotopy operator at `x` is bounded in norm by `B * ‖x - x₀‖ / (n + 1)` whenever
+the form is bounded by `B` along the segment `[x₀, x]`. -/
+theorem norm_poincareHomotopy_le {x₀ x : E} {ω : E → E [⋀^Fin (n + 1)]→L[ℝ] F} {B : ℝ}
+    (h : ∀ y ∈ segment ℝ x₀ x, ‖ω y‖ ≤ B) :
+    ‖poincareHomotopy x₀ ω x‖ ≤ B * ‖x - x₀‖ / (n + 1) := by
+  rw [poincareHomotopy_apply]
+  have hle : ∀ t ∈ Ioc (0 : ℝ) 1,
+      ‖t ^ n • (ω (lineMap x₀ x t)).curryLeft (x - x₀)‖ ≤ (B * ‖x - x₀‖) * t ^ n := by
+    intro t ht
+    have ht0 : 0 ≤ t := ht.1.le
+    rw [norm_smul, Real.norm_of_nonneg (pow_nonneg ht0 _), mul_comm (t ^ n)]
+    refine mul_le_mul_of_nonneg_right ?_ (pow_nonneg ht0 _)
+    calc ‖(ω (lineMap x₀ x t)).curryLeft (x - x₀)‖
+        ≤ ‖(ω (lineMap x₀ x t)).curryLeft‖ * ‖x - x₀‖ :=
+          (ω (lineMap x₀ x t)).curryLeft.le_opNorm _
+      _ = ‖ω (lineMap x₀ x t)‖ * ‖x - x₀‖ := by simp [ContinuousAlternatingMap.norm_curryLeft]
+      _ ≤ B * ‖x - x₀‖ :=
+          mul_le_mul_of_nonneg_right (h _ (lineMap_mem_segment ℝ x₀ x (Ioc_subset_Icc_self ht)))
+            (norm_nonneg _)
+  have hint : IntervalIntegrable (fun t : ℝ ↦ (B * ‖x - x₀‖) * t ^ n) volume 0 1 :=
+    (continuousOn_const.mul (continuousOn_pow n)).intervalIntegrable
+  have hpow : ∫ t in (0 : ℝ)..1, t ^ n = 1 / (n + 1 : ℝ) := by
+    have hd : ∀ t ∈ uIcc (0 : ℝ) 1,
+        HasDerivAt (fun t : ℝ ↦ t ^ (n + 1) / (n + 1 : ℝ)) (t ^ n) t := fun t _ ↦ by
+      have hne : (n + 1 : ℝ) ≠ 0 := by positivity
+      refine ((hasDerivAt_pow (n + 1) t).div_const (n + 1 : ℝ)).congr_deriv ?_
+      simp [mul_div_cancel_left₀ _ hne]
+    rw [intervalIntegral.integral_eq_sub_of_hasDerivAt hd (continuousOn_pow n).intervalIntegrable]
+    simp
+  calc ‖∫ t in (0 : ℝ)..1, t ^ n • (ω (lineMap x₀ x t)).curryLeft (x - x₀)‖
+      ≤ ∫ t in (0 : ℝ)..1, (B * ‖x - x₀‖) * t ^ n :=
+        intervalIntegral.norm_integral_le_of_norm_le zero_le_one (ae_of_all _ hle) hint
+    _ = (B * ‖x - x₀‖) * ∫ t in (0 : ℝ)..1, t ^ n := intervalIntegral.integral_const_mul _ _
+    _ = B * ‖x - x₀‖ / (n + 1) := by rw [hpow, mul_one_div]
 
 /-- **Naturality of the Poincaré homotopy operator.** Contracting the pullback of a form along a
 continuous linear map `A` along the rays from `y₀` is the same as pulling back the contraction of
@@ -397,6 +439,44 @@ theorem exists_contDiffOn_forall_extDeriv_eq (hs : StarConvex ℝ x₀ s) (hso :
   ⟨poincareHomotopy x₀ ω, hs.contDiffOn_poincareHomotopy hso hω, poincareHomotopy_self x₀ ω,
     fun _ hx ↦ hs.extDeriv_poincareHomotopy hso (hω.of_le (by exact_mod_cast hr)) hclosed hx⟩
 
+/-- **The homotopy formula in degree zero**, `K (d f) x = f x - f x₀` for a `0`-form `f` that is
+`C¹` on a star-convex set `s` with unique derivatives, with exterior derivative within `s`. -/
+theorem poincareHomotopy_extDerivWithin_eq_sub (hs : StarConvex ℝ x₀ s) (hsu : UniqueDiffOn ℝ s)
+    {ω : E → E [⋀^Fin 0]→L[ℝ] F} (hω : ContDiffOn ℝ 1 ω s) {x : E} (hx : x ∈ s) :
+    poincareHomotopy x₀ (extDerivWithin ω s) x = ω x - ω x₀ := by
+  have hmaps : MapsTo (lineMap x₀ x) (Icc (0 : ℝ) 1) s := fun _ ht ↦
+    hs.segment_subset hx (lineMap_mem_segment ℝ x₀ x ht)
+  have hderiv (t : ℝ) (ht : t ∈ Ioo (0 : ℝ) 1) :
+      HasDerivAt (fun t : ℝ ↦ ω (lineMap x₀ x t))
+        (fderivWithin ℝ ω s (lineMap x₀ x t) (x - x₀)) t := by
+    have hω' : HasDerivWithinAt (fun t : ℝ ↦ ω (lineMap x₀ x t))
+        (fderivWithin ℝ ω s (lineMap x₀ x t) (x - x₀)) (Icc 0 1) t :=
+      (hω.differentiableOn one_ne_zero _ (hmaps (Ioo_subset_Icc_self ht))).hasFDerivWithinAt
+        |>.comp_hasDerivWithinAt t hasDerivAt_lineMap.hasDerivWithinAt hmaps
+    exact hω'.hasDerivAt (Icc_mem_nhds ht.1 ht.2)
+  have hcont : ContinuousOn (fun t : ℝ ↦ ω (lineMap x₀ x t)) (Icc 0 1) :=
+    hω.continuousOn.comp lineMap_continuous.continuousOn hmaps
+  have hint : IntervalIntegrable
+      (fun t : ℝ ↦ fderivWithin ℝ ω s (lineMap x₀ x t) (x - x₀)) volume 0 1 :=
+    ((ContinuousLinearMap.apply ℝ _ (x - x₀)).continuous.comp_continuousOn
+      ((hω.continuousOn_fderivWithin hsu le_rfl).comp lineMap_continuous.continuousOn
+        hmaps)).intervalIntegrable_of_Icc zero_le_one
+  have hftc : ∫ t in (0 : ℝ)..1, fderivWithin ℝ ω s (lineMap x₀ x t) (x - x₀) = ω x - ω x₀ := by
+    simpa using intervalIntegral.integral_eq_sub_of_hasDerivAt_of_le zero_le_one hcont hderiv hint
+  rw [← hftc, poincareHomotopy_apply]
+  refine intervalIntegral.integral_congr fun t _ ↦ ?_
+  ext v
+  simp [extDerivWithin, ContinuousAlternatingMap.alternatizeUncurryFin_apply]
+
+/-- **The homotopy formula in degree zero**, `K (d f) x = f x - f x₀` for a `0`-form `f` that is
+`C¹` on an open set star-convex with respect to `x₀`. -/
+theorem poincareHomotopy_extDeriv_eq_sub (hs : StarConvex ℝ x₀ s) (hso : IsOpen s)
+    {ω : E → E [⋀^Fin 0]→L[ℝ] F} (hω : ContDiffOn ℝ 1 ω s) {x : E} (hx : x ∈ s) :
+    poincareHomotopy x₀ (extDeriv ω) x = ω x - ω x₀ := by
+  rw [poincareHomotopy_congr (ω₂ := extDerivWithin ω s) fun y hy ↦ by
+    rw [extDerivWithin, extDeriv, fderivWithin_of_isOpen hso (hs.segment_subset hx hy)]]
+  exact hs.poincareHomotopy_extDerivWithin_eq_sub hso.uniqueDiffOn hω hx
+
 end StarConvex
 
 /-! ### Convex sets that need not be open
@@ -517,3 +597,28 @@ theorem exists_contDiffOn_forall_extDerivWithin_eq (hs : Convex ℝ s) (hsu : Un
       hclosed hx⟩
 
 end Convex
+
+namespace TauCeti
+
+/-- The Poincaré homotopy operator of a form that is `C^r` on all of `E` is `C^r`. -/
+theorem contDiff_poincareHomotopy {r : ℕ∞} (x₀ : E) {ω : E → E [⋀^Fin (n + 1)]→L[ℝ] F}
+    (hω : ContDiff ℝ r ω) : ContDiff ℝ r (poincareHomotopy x₀ ω) :=
+  contDiffOn_univ.1 ((starConvex_univ x₀).contDiffOn_poincareHomotopy isOpen_univ hω.contDiffOn)
+
+variable [CompleteSpace F]
+
+/-- **The homotopy formula** `d (K ω) + K (d ω) = ω` for a form that is `C¹` on all of `E`. -/
+theorem extDeriv_poincareHomotopy_add_poincareHomotopy_extDeriv (x₀ : E)
+    {ω : E → E [⋀^Fin (n + 1)]→L[ℝ] F} (hω : ContDiff ℝ 1 ω) (x : E) :
+    extDeriv (poincareHomotopy x₀ ω) x + poincareHomotopy x₀ (extDeriv ω) x = ω x :=
+  (starConvex_univ x₀).extDeriv_poincareHomotopy_add_poincareHomotopy_extDeriv isOpen_univ
+    hω.contDiffOn (mem_univ x)
+
+/-- **The homotopy formula in degree zero**, `K (d f) x = f x - f x₀` for a `0`-form `f` that is
+`C¹` on all of `E`. -/
+theorem poincareHomotopy_extDeriv_eq_sub (x₀ : E) {ω : E → E [⋀^Fin 0]→L[ℝ] F}
+    (hω : ContDiff ℝ 1 ω) (x : E) :
+    poincareHomotopy x₀ (extDeriv ω) x = ω x - ω x₀ :=
+  (starConvex_univ x₀).poincareHomotopy_extDeriv_eq_sub isOpen_univ hω.contDiffOn (mem_univ x)
+
+end TauCeti
