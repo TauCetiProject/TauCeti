@@ -33,7 +33,8 @@ The proof first localizes the Poincaré–Wirtinger inequality on a ball of the 
 `TauCeti.lintegral_enorm_sub_setAverage_rpow_le_of_convex`. Near each point `c`, in a coordinate
 ball around the chart image of `c`, the chart density is comparable to its value at `c` and the
 coordinate derivative of every function is bounded by a fixed multiple of the length of its
-gradient, so `u` is close in `Lᵖ` to a constant on the chart preimage of the ball
+gradient, so on the chart preimage of the ball `u` is within a fixed multiple of `‖∇u‖_{Lᵖ(M)}`
+of a constant in `Lᵖ`
 (`TauCeti.Manifold.exists_isOpen_eLpNorm_restrict_sub_le_mul_eLpNorm_mgradient`). Finitely many
 such neighbourhoods cover `M`, and since `M` is connected the local constants chain together to a
 single one (`TauCeti.exists_eLpNorm_sub_const_le_of_isOpen_cover`). Replacing that constant by the
@@ -45,7 +46,8 @@ different constants on the two components has vanishing gradient but is not equa
 ## Main results
 
 * `TauCeti.Manifold.exists_isOpen_eLpNorm_restrict_sub_le_mul_eLpNorm_mgradient`: the local
-  Poincaré inequality, near any point of a manifold without boundary.
+  local estimate, near any point of a manifold without boundary, of the `Lᵖ` oscillation of `u`
+  on a neighbourhood `V` by the `Lᵖ` norm of `∇u` over all of `M`.
 * `TauCeti.Manifold.exists_eLpNorm_sub_average_le_mul_eLpNorm_mgradient`: the Poincaré–Wirtinger
   inequality on a closed connected Riemannian manifold.
 
@@ -78,9 +80,10 @@ variable [MeasurableSpace M] [BorelSpace M]
 
 attribute [local instance] extChartAtMeasurableSpaceE extChartAtBorelSpaceE
 
-/-- **The Poincaré inequality near a point.** Let `1 ≤ p < ∞`, on a manifold without boundary with
+/-- **A local oscillation bound near a point.** Let `1 ≤ p < ∞`, on a manifold without boundary with
 a continuous Riemannian metric. Every point `c` lies in an open set `V` with a constant `C` such
-that every `C¹` function `u` is within `C ‖∇u‖_{Lᵖ}` of some constant in `Lᵖ(V)`. -/
+that every `C¹` function `u` satisfies `‖u - a‖_{Lᵖ(V)} ≤ C ‖∇u‖_{Lᵖ(M)}` for some constant `a`.
+The gradient norm on the right is taken over all of `M`, not only over `V`. -/
 theorem exists_isOpen_eLpNorm_restrict_sub_le_mul_eLpNorm_mgradient [LindelofSpace M]
     {p : ℝ≥0∞} (hp : 1 ≤ p) (hp' : p ≠ ∞) (c : M) :
     ∃ V, IsOpen V ∧ c ∈ V ∧ ∃ C : ℝ≥0, ∀ u : M → ℝ, ContMDiff I 𝓘(ℝ) 1 u →

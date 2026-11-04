@@ -128,28 +128,22 @@ theorem exists_eLpNorm_sub_const_le_of_isOpen_cover [PreconnectedSpace X] [IsFin
         _ ≤ ‖a k - a j‖ₑ + ‖a j - a i₀‖ₑ := enorm_add_le _ _
         _ ≤ D₂ * G + D₁ * G := add_le_add (hD₂ f a G hP) (hD₁ f a G hP)
         _ = ↑(D₂ + D₁) * G := by push_cast; ring
-  -- Since the space is preconnected, any two pieces are joined by such a chain.
-  have hconn : ∀ x y, ∀ i ∈ t, x ∈ V i → ∀ j ∈ t, y ∈ V j → Relation.ReflTransGen R i j := by
-    refine PreconnectedSpace.induction₂' _ (fun x ↦ ?_) ⟨fun x y z hxy hyz i hi hx j hj hz ↦ ?_⟩
-    · have hnhds : ∀ᶠ y in 𝓝 x, ∀ i ∈ t, x ∈ V i → y ∈ V i := by
-        refine (Filter.eventually_all_finset t).2 fun i hi ↦ ?_
-        by_cases hx : x ∈ V i
-        · filter_upwards [(hV i hi).mem_nhds hx] with y hy using fun _ ↦ hy
-        · exact .of_forall fun _ h ↦ absurd h hx
-      filter_upwards [hnhds] with y hy
-      exact ⟨fun i hi hx j hj hyj ↦ .single ⟨hi, hj, y, hy i hi hx, hyj⟩,
-        fun i hi hyi j hj hxj ↦ .single ⟨hi, hj, y, hyi, hy j hj hxj⟩⟩
-    · obtain ⟨k, hk, hyk⟩ := hcover y
-      exact (hxy i hi hx k hk hyk).trans (hyz k hk hyk j hj hz)
+  -- Since the space is preconnected, every nonempty piece is joined to `V i₀` by such a chain.
+  have hconn : ∀ j ∈ t, (V j).Nonempty → Relation.ReflTransGen R i₀ j := by
+    intro j hj hVj
+    have hU : IsPreconnected (⋃ k : t, V k) := by
+      rw [eq_univ_of_forall fun x ↦ mem_iUnion.2 <| (hcover x).elim fun k hk ↦ ⟨⟨k, hk.1⟩, hk.2⟩]
+      exact isPreconnected_univ
+    exact (hU.transGen_of_iUnion (fun k ↦ hV k k.2) ⟨i₀, hi₀⟩ ⟨j, hj⟩
+      ⟨x₀, hx₀⟩ hVj).to_reflTransGen.lift Subtype.val (fun k l hkl ↦ ⟨k.2, l.2, hkl⟩)
   -- On each piece, `f` is uniformly close to the constant of `V i₀`.
   have hpiece : ∀ j ∈ t, ∃ D : ℝ≥0, ∀ f a G, P f a G →
       eLpNorm (fun x ↦ f x - a i₀) p (μ.restrict (V j)) ≤ D * G := by
     intro j hj
     rcases (V j).eq_empty_or_nonempty with hVj | hVj
     · exact ⟨0, fun _ _ _ _ ↦ by simp [hVj]⟩
-    obtain ⟨y, hy⟩ := hVj
-    obtain ⟨D, hD⟩ := hchain j (hconn x₀ y i₀ hi₀ hx₀ j hj hy)
-    have h0 : μ (V j) ≠ 0 := (hV j hj).measure_ne_zero μ ⟨y, hy⟩
+    obtain ⟨D, hD⟩ := hchain j (hconn j hj hVj)
+    have h0 : μ (V j) ≠ 0 := (hV j hj).measure_ne_zero μ hVj
     refine ⟨C j + D * (μ (V j) ^ (1 / p.toReal)).toNNReal, fun f a G hP ↦ ?_⟩
     have hconst : eLpNorm (fun _ ↦ a j - a i₀) p (μ.restrict (V j)) =
         ‖a j - a i₀‖ₑ * μ (V j) ^ (1 / p.toReal) := by
