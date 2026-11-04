@@ -93,9 +93,7 @@ instance hasFiniteQuotients [Finite (ResidueField S)] : Ring.HasFiniteQuotients 
     obtain ⟨ϖ, hϖ⟩ := _root_.IsDiscreteValuationRing.exists_irreducible S
     obtain ⟨n, hn⟩ := _root_.IsDiscreteValuationRing.ideal_eq_span_pow_irreducible hI hϖ
     rw [hn, ← Ideal.span_singleton_pow, ← hϖ.maximalIdeal_eq]
-    refine Nat.finite_of_card_ne_zero ?_
-    rw [natCard_quotient_maximalIdeal_pow]
-    exact pow_ne_zero _ Nat.card_pos.ne'
+    infer_instance
 
 /-- The graded piece `𝔪 ^ n / 𝔪 ^ (n + 1)` of a discrete valuation ring, viewed as an ideal of
 `S ⧸ 𝔪 ^ (n + 1)`, has as many elements as the residue field. -/
