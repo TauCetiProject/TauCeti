@@ -48,6 +48,8 @@ range, so the value is a `dite` rather than a plain application.
   an involution.
 * `Fin.coe_finRotate_pow`: a power of the rotation `finRotate n` adds its exponent modulo `n`;
   `Fin.coe_finRotate_of_add_one_lt` is the step away from the last index, where no wrapping occurs.
+* `Fin.coe_finRotate_eq_ite`: the value of `finRotate n` on any `Fin n`, with wrap-around
+  determined by whether the index plus one equals `n`.
 * `Finset.sum_range_const_sub_succ`: the sum of a reversed initial segment of natural numbers.
 * `Finset.card_filter_castSucc_lt_succ`: counting the elements of a set of indices below `i.succ`
   rather than `i.castSucc` adds `1` exactly when `i` belongs to it.
@@ -315,6 +317,16 @@ theorem coe_finRotate_of_add_one_lt {n : ℕ} {i : Fin n} (h : (i : ℕ) + 1 < n
     (finRotate n i : ℕ) = i + 1 := by
   have := coe_finRotate_pow 1 i
   rwa [pow_one, Nat.mod_eq_of_lt h] at this
+
+/-- The cyclic rotation `finRotate n` adds one to the value of an index, except that it sends the
+last index `n - 1` to `0`. -/
+theorem coe_finRotate_eq_ite {n : ℕ} (i : Fin n) :
+    (finRotate n i : ℕ) = if (i : ℕ) + 1 = n then 0 else (i : ℕ) + 1 := by
+  cases n with
+  | zero => exact i.elim0
+  | succ m =>
+    rw [coe_finRotate]
+    simp [Fin.ext_iff]
 
 /-- Collapsing the hole opened immediately after `p` back onto `p` inverts the embedding
 `p.succ.succAbove`. -/
