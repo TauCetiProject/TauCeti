@@ -215,21 +215,25 @@ theorem kostantWeylGL_conj_chevalleyRootSubgroup (i : Fin t.rank) (γ : Fin t.nu
   rw [Units.val_mul, Units.val_mul, kostantWeylGL_val, kostantWeylGL_inv_val,
     chevalleyRootSubgroup_val, chevalleyRootSubgroup_val, toAdd_ofAdd, toAdd_ofAdd,
     kostantWeylPoints_conj_baseChangeExp_weylAut _ _ ρ M hM (hnil (.inl i)) (hnil (.inr i))
-      ((t.lieBasis ht).isSl2Triple_rootGenerator i) (isNilpotent_ad_rootGenerator_inl i)
-      (isNilpotent_ad_rootGenerator_inr i)
+      ((t.lieBasis ht).isSl2Triple_rootGenerator i)
+      (isNilpotent_ad_rootGenerator_inl i).exists_pow_apply_eq_zero
+      (isNilpotent_ad_rootGenerator_inr i).exists_pow_apply_eq_zero
       (dividedPower_chevalleySystem_smul_mem ρ M hM hnil γ)
       (isNilpotent_apply_ι_chevalleySystem ρ hnil γ)]
   have hw : ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ
-      (weylAut ((t.lieBasis ht).isSl2Triple_rootGenerator i) (isNilpotent_ad_rootGenerator_inl i)
-        (isNilpotent_ad_rootGenerator_inr i) (t.chevalleySystem ht γ))) =
+      (weylAut ((t.lieBasis ht).isSl2Triple_rootGenerator i)
+        (isNilpotent_ad_rootGenerator_inl i).exists_pow_apply_eq_zero
+        (isNilpotent_ad_rootGenerator_inr i).exists_pow_apply_eq_zero (t.chevalleySystem ht γ))) =
       (t.chevalleyWeylSign ht (t.simpleIndex ht i) γ : ℤ) • ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ
         (t.chevalleySystem ht ((t.simplyConnectedRootDatum ht).reflectionPerm
           (t.simpleIndex ht i) γ))) := by
-    rw [← weylAut_simpleIndex_eq i, weylAut_chevalleySystem, map_zsmul, map_zsmul]
+    rw [← weylAut_simpleIndex_eq i _ (isNilpotent_ad_rootGenerator_inl i)
+      (isNilpotent_ad_rootGenerator_inr i), weylAut_chevalleySystem, map_zsmul, map_zsmul]
   exact (baseChangeExp_congr hw M _
     (hw ▸ fun n => dividedPower_weylAut_smul_mem _ _ ρ M hM (hnil (.inl i)) (hnil (.inr i))
-      ((t.lieBasis ht).isSl2Triple_rootGenerator i) (isNilpotent_ad_rootGenerator_inl i)
-      (isNilpotent_ad_rootGenerator_inr i) n
+      ((t.lieBasis ht).isSl2Triple_rootGenerator i)
+      (isNilpotent_ad_rootGenerator_inl i).exists_pow_apply_eq_zero
+      (isNilpotent_ad_rootGenerator_inr i).exists_pow_apply_eq_zero n
       (dividedPower_chevalleySystem_smul_mem ρ M hM hnil γ n)) u).trans
     (baseChangeExp_zsmul _ M (dividedPower_chevalleySystem_smul_mem ρ M hM hnil _) _
       (isNilpotent_apply_ι_chevalleySystem ρ hnil _) u)
