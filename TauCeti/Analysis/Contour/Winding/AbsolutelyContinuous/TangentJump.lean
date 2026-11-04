@@ -6,9 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Contour.Winding.AbsolutelyContinuous.Basic
+import Mathlib.Analysis.Calculus.Deriv.Comp
+import TauCeti.Analysis.Contour.Winding.AbsolutelyContinuous.Concat
+import TauCeti.Analysis.Contour.Winding.AbsolutelyContinuous.Continuity
 import TauCeti.Analysis.Contour.Winding.AbsolutelyContinuous.StarConvex
-import TauCeti.Analysis.Contour.Winding.Continuity
-import TauCeti.Analysis.Contour.Winding.Number.Concat
 import TauCeti.Analysis.Contour.Winding.Number.Segment.Jump
 import TauCeti.MeasureTheory.Function.AbsolutelyContinuous.Gluing
 
@@ -66,18 +67,14 @@ private theorem starConvex_slitCompl (p v : ℂ) (σ : ℝ) :
     rw [hr', sub_smul, one_smul, Complex.real_smul, Complex.real_smul]
     ring
   rcases hs.eq_or_lt with rfl | hs_pos
-  · right
-    rw [hdiv]
-    simp
+  · right; rw [hdiv]; simp
   · rcases hy with hre | him
     · left
       rw [hdiv, mul_re, ofReal_re, ofReal_im, zero_mul, sub_zero]
       exact mul_ne_zero hs_pos.ne' hre
     · right
       rw [hdiv, mul_im, ofReal_re, ofReal_im, zero_mul, add_zero]
-      calc σ * (s * ((y - p) / v).im) = s * (σ * ((y - p) / v).im) := by ring
-        _ ≤ s * 0 := mul_le_mul_of_nonneg_left him hs_pos.le
-        _ = 0 := mul_zero s
+      nlinarith
 
 private theorem self_mem_slitCompl (p v : ℂ) (σ : ℝ) : p ∈ slitCompl p v σ :=
   Or.inr (by simp)
@@ -88,8 +85,7 @@ private theorem notMem_slitCompl_smul {p v : ℂ} {σ h : ℝ} (hv : v ≠ 0)
   have hdiv : (p + (σ * h) • (I * v) - p) / v = ((σ * h : ℝ) : ℂ) * I := by
     rw [Complex.real_smul]; field_simp; ring
   rintro (hre | him)
-  · rw [hdiv] at hre
-    exact hre (by simp)
+  · rw [hdiv] at hre; exact hre (by simp)
   · rw [hdiv] at him
     simp only [mul_im, ofReal_re, ofReal_im, I_re, I_im, mul_one, mul_zero, add_zero] at him
     nlinarith
@@ -102,29 +98,6 @@ private theorem notMem_slitCompl_sub_smul {p v : ℂ} {h : ℝ} (hv : v ≠ 0) (
     p - h • (I * v) ∉ slitCompl p v (-1) := by
   simpa [sub_eq_add_neg, neg_smul] using
     notMem_slitCompl_smul (p := p) hv (by norm_num : (0 : ℝ) < (-1 : ℝ) ^ 2) hh
-
-/-- From a Fréchet derivative bound `‖w - p - (t - t₀) • v‖ ≤ (‖v‖ / 2) * |t - t₀|`, the
-normalized tangential coordinate `((w - p) / v).re` has the strict sign of `t - t₀`. -/
-private theorem re_div_lt_or_gt_of_norm_sub_le {p v w : ℂ} {t t₀ : ℝ} (hv : v ≠ 0)
-    (hbound : ‖w - p - (t - t₀) • v‖ ≤ (‖v‖ / 2) * |t - t₀|) :
-    (t < t₀ → ((w - p) / v).re < 0) ∧ (t₀ < t → 0 < ((w - p) / v).re) := by
-  have hvpos : 0 < ‖v‖ := norm_pos_iff.mpr hv
-  have hident : (w - p) / v - (t - t₀ : ℝ) = (w - p - (t - t₀) • v) / v := by
-    rw [Complex.real_smul, ofReal_sub]
-    field_simp
-  have habs : |((w - p) / v).re - (t - t₀)| ≤ |t - t₀| / 2 := by
-    calc |((w - p) / v).re - (t - t₀)|
-        = |((w - p) / v - (t - t₀ : ℝ)).re| := by simp
-      _ ≤ ‖(w - p) / v - (t - t₀ : ℝ)‖ := abs_re_le_norm _
-      _ = ‖w - p - (t - t₀) • v‖ / ‖v‖ := by rw [hident, norm_div]
-      _ ≤ ((‖v‖ / 2) * |t - t₀|) / ‖v‖ := div_le_div_of_nonneg_right hbound hvpos.le
-      _ = |t - t₀| / 2 := by field_simp
-  rw [abs_sub_le_iff] at habs
-  refine ⟨fun hlt ↦ ?_, fun hgt ↦ ?_⟩
-  · rw [abs_of_neg (sub_neg.mpr hlt)] at habs
-    linarith
-  · rw [abs_of_pos (sub_pos.mpr hgt)] at habs
-    linarith
 
 /-- Three-segment polygonal curve on `[t₀ - δ, t₀ + δ]` matching `γ` at `t₀ ± δ` and following the
 exact tangent line `t ↦ γ t₀ + (t - t₀) • v` on `[t₀ - δ / 2, t₀ + δ / 2]`. -/
@@ -139,9 +112,8 @@ private noncomputable def localTangentCurve (γ : ℝ → ℂ) (t₀ δ : ℝ) (
 private theorem eqOn_localTangentCurve_left {γ : ℝ → ℂ} {t₀ δ : ℝ} {v : ℂ} :
     EqOn (localTangentCurve γ t₀ δ v)
       (fun t : ℝ ↦ γ (t₀ - δ) + ((t - (t₀ - δ)) / (δ / 2)) • ((γ t₀ - (δ / 2) • v) - γ (t₀ - δ)))
-      (Icc (t₀ - δ) (t₀ - δ / 2)) := by
-  intro t ht
-  simp only [localTangentCurve, ht.2, ↓reduceIte]
+      (Icc (t₀ - δ) (t₀ - δ / 2)) :=
+  fun _ ht ↦ by simp only [localTangentCurve, ht.2, ↓reduceIte]
 
 private theorem eqOn_localTangentCurve_mid {γ : ℝ → ℂ} {t₀ δ : ℝ} {v : ℂ} (hδ : 0 < δ) :
     EqOn (localTangentCurve γ t₀ δ v) (fun t : ℝ ↦ v * (t : ℂ) + (γ t₀ - v * (t₀ : ℂ)))
@@ -189,17 +161,11 @@ private theorem absolutelyContinuousOnInterval_localTangentCurve (γ : ℝ → �
     (TauCeti.absolutelyContinuousOnInterval_add_smul
       (c₃ - ((t₀ + δ / 2) / (δ / 2)) • d₃) ((δ / 2)⁻¹ • d₃) _ _).congr fun t ht ↦ ?_⟩
   · rw [eqOn_localTangentCurve_left (uIcc_of_le h₁ ▸ ht)]
-    dsimp only [d₁]
-    rw [← mul_smul, ← div_eq_mul_inv, sub_div t, sub_smul]
-    abel
+    dsimp only [d₁]; rw [← mul_smul, ← div_eq_mul_inv, sub_div t, sub_smul]; abel
   · rw [eqOn_localTangentCurve_mid hδ (uIcc_of_le h₂ ▸ ht)]
-    dsimp only
-    rw [Complex.real_smul]
-    ring
+    dsimp only; rw [Complex.real_smul]; ring
   · rw [eqOn_localTangentCurve_right hδ (uIcc_of_le h₃ ▸ ht)]
-    dsimp only [c₃, d₃]
-    rw [← mul_smul, ← div_eq_mul_inv, sub_div t, sub_smul]
-    abel
+    dsimp only [c₃, d₃]; rw [← mul_smul, ← div_eq_mul_inv, sub_div t, sub_smul]; abel
 
 /-- On `[t₀ - δ, t₀ - δ / 2]` and `[t₀ + δ / 2, t₀ + δ]`, `localTangentCurve` has nonzero
 tangential real coordinate, so it avoids `γ t₀` and stays in `slitCompl (γ t₀) v σ`. -/
@@ -243,32 +209,14 @@ private theorem localTangentCurve_mem_slitCompl {γ : ℝ → ℂ} {t₀ δ : �
   rcases le_total t (t₀ - δ / 2) with h₁ | h₁
   · exact Or.inl (re_localTangentCurve_ne_zero_left hv hδ hleft ⟨ht.1, h₁⟩).ne
   · rcases le_total t (t₀ + δ / 2) with h₂ | h₂
-    · rw [eqOn_localTangentCurve_mid hδ ⟨h₁, h₂⟩]
-      dsimp only
-      by_cases htt₀ : t = t₀
-      · subst htt₀
-        have heq : v * (t : ℂ) + (γ t - v * (t : ℂ)) = γ t := by ring
-        rw [heq]
-        exact self_mem_slitCompl _ _ _
+    · rw [eqOn_localTangentCurve_mid hδ ⟨h₁, h₂⟩]; dsimp only
+      rcases eq_or_ne t t₀ with rfl | htt₀
+      · convert self_mem_slitCompl (γ t) v σ using 1; ring
       · left
         have hdiv : (v * (t : ℂ) + (γ t₀ - v * (t₀ : ℂ)) - γ t₀) / v = (t : ℂ) - t₀ := by
-          field_simp
-          ring
-        rw [hdiv, sub_re, ofReal_re, ofReal_re]
-        exact sub_ne_zero.mpr htt₀
+          field_simp; ring
+        simpa [hdiv] using sub_ne_zero.mpr htt₀
     · exact Or.inl (re_localTangentCurve_ne_zero_right hv hδ hright ⟨h₂, ht.2⟩).ne'
-
-/-- Additivity of `windingNumber` for adjacent intervals of an absolutely continuous curve avoiding
-`w`. -/
-private theorem windingNumber_add_adjacent_of_notMem {γ : ℝ → ℂ} {a c b : ℝ} {w : ℂ}
-    (h₁ : AbsolutelyContinuousOnInterval γ a c) (h₂ : AbsolutelyContinuousOnInterval γ c b)
-    (hw₁ : w ∉ γ '' uIcc a c) (hw₂ : w ∉ γ '' uIcc c b) :
-    windingNumber γ a b w = windingNumber γ a c w + windingNumber γ c b w :=
-  windingNumber_concat
-    (cauchyPVExistsAt_of_avoidance h₁.continuousOn (fun t ht heq ↦ hw₁ ⟨t, ht, heq⟩)
-      (h₁.intervalIntegrable_inv_sub_mul_deriv hw₁))
-    (cauchyPVExistsAt_of_avoidance h₂.continuousOn (fun t ht heq ↦ hw₂ ⟨t, ht, heq⟩)
-      (h₂.intervalIntegrable_inv_sub_mul_deriv hw₂))
 
 /-- Decompose a winding-number difference across `[a, d]` (`a ≤ b ≤ c ≤ d`) into the sum of
 winding-number differences across the three adjacent subintervals `[a, b]`, `[b, c]`, `[c, d]`. -/
@@ -282,45 +230,19 @@ private theorem windingNumber_sub_eq_add_three_of_notMem {γ : ℝ → ℂ} {a b
       (windingNumber γ a b w₁ - windingNumber γ a b w₂) +
       (windingNumber γ b c w₁ - windingNumber γ b c w₂) +
       (windingNumber γ c d w₁ - windingNumber γ c d w₂) := by
-  have had : a ≤ d := (hab.trans hbc).trans hcd
-  have hbd : b ≤ d := hbc.trans hcd
-  have hsub₁ : uIcc a b ⊆ uIcc a d := by
-    rw [uIcc_of_le hab, uIcc_of_le had]; exact Icc_subset_Icc le_rfl hbd
-  have hsub₂₃ : uIcc b d ⊆ uIcc a d := by
-    rw [uIcc_of_le hbd, uIcc_of_le had]; exact Icc_subset_Icc hab le_rfl
-  have hsub₂ : uIcc b c ⊆ uIcc a d := by
-    rw [uIcc_of_le hbc, uIcc_of_le had]; exact Icc_subset_Icc hab hcd
-  have hsub₃ : uIcc c d ⊆ uIcc a d := by
-    rw [uIcc_of_le hcd, uIcc_of_le had]; exact Icc_subset_Icc (hab.trans hbc) le_rfl
-  rw [windingNumber_add_adjacent_of_notMem h₁ (h₂.trans h₃)
-      (mt (image_mono hsub₁ ·) hw₁) (mt (image_mono hsub₂₃ ·) hw₁),
-    windingNumber_add_adjacent_of_notMem h₂ h₃
-      (mt (image_mono hsub₂ ·) hw₁) (mt (image_mono hsub₃ ·) hw₁),
-    windingNumber_add_adjacent_of_notMem h₁ (h₂.trans h₃)
-      (mt (image_mono hsub₁ ·) hw₂) (mt (image_mono hsub₂₃ ·) hw₂),
-    windingNumber_add_adjacent_of_notMem h₂ h₃
-      (mt (image_mono hsub₂ ·) hw₂) (mt (image_mono hsub₃ ·) hw₂)]
+  have hsub : ∀ {x y}, a ≤ x → x ≤ y → y ≤ d → uIcc x y ⊆ uIcc a d := fun hx hxy hy ↦ by
+    rw [uIcc_of_le hxy, uIcc_of_le ((hab.trans hbc).trans hcd)]; exact Icc_subset_Icc hx hy
+  have h₁d := hsub le_rfl hab (hbc.trans hcd)
+  have hbd := hsub hab (hbc.trans hcd) le_rfl
+  have h₂d := hsub hab hbc hcd
+  have h₃d := hsub (hab.trans hbc) hcd le_rfl
+  rw [h₁.windingNumber_concat (h₂.trans h₃)
+      (mt (image_mono h₁d ·) hw₁) (mt (image_mono hbd ·) hw₁),
+    h₂.windingNumber_concat h₃ (mt (image_mono h₂d ·) hw₁) (mt (image_mono h₃d ·) hw₁),
+    h₁.windingNumber_concat (h₂.trans h₃)
+      (mt (image_mono h₁d ·) hw₂) (mt (image_mono hbd ·) hw₂),
+    h₂.windingNumber_concat h₃ (mt (image_mono h₂d ·) hw₂) (mt (image_mono h₃d ·) hw₂)]
   ring
-
-private theorem tendsto_add_smul_nhdsWithin_zero (p u : ℂ) :
-    Tendsto (fun h : ℝ ↦ p + h • u) (𝓝[>] 0) (𝓝 p) := by
-  simpa using (Continuous.tendsto (by fun_prop : Continuous fun h : ℝ ↦ p + h • u) 0).mono_left
-    nhdsWithin_le_nhds
-
-/-- When an absolutely continuous curve on `[c, d]` avoids `p`, the normal-crossing difference of
-its winding numbers at `p ± h • (I * v)` tends to `0` as `h → 0⁺`. -/
-private theorem tendsto_windingNumber_sub_zero_of_notMem {γ : ℝ → ℂ} {c d : ℝ} {p v : ℂ}
-    (hγ : AbsolutelyContinuousOnInterval γ c d) (hp : p ∉ γ '' uIcc c d) :
-    Tendsto (fun h : ℝ ↦
-        windingNumber γ c d (p + h • (I * v)) - windingNumber γ c d (p - h • (I * v)))
-      (𝓝[>] 0) (𝓝 0) := by
-  have hc : ContinuousAt (fun w ↦ windingNumber γ c d w) p :=
-    continuousAt_windingNumber_of_avoidance hγ.continuousOn
-      (fun t ht heq ↦ hp ⟨t, ht, heq⟩) (hγ.intervalIntegrable_inv_sub_mul_deriv hp)
-  have hsub : Tendsto (fun h : ℝ ↦ p - h • (I * v)) (𝓝[>] 0) (𝓝 p) := by
-    simpa [sub_eq_add_neg, smul_neg] using tendsto_add_smul_nhdsWithin_zero p (-(I * v))
-  simpa using (hc.tendsto.comp (tendsto_add_smul_nhdsWithin_zero p (I * v))).sub
-    (hc.tendsto.comp hsub)
 
 /-- Near `t₀`, `localTangentCurve` has winding-number normal jump tending to `1`. -/
 private theorem tendsto_windingNumber_localTangentCurve_sub {γ : ℝ → ℂ} {t₀ δ : ℝ} {v : ℂ}
@@ -383,9 +305,10 @@ private theorem tendsto_windingNumber_localTangentCurve_sub {γ : ℝ → ℂ} {
       hmid_seg, hmid_seg, hp_pos, hp_neg]
   refine Tendsto.congr' heq ?_
   have hs : t₀ ∈ Ioo (t₀ - δ / 2) (t₀ + δ / 2) := ⟨by linarith, by linarith⟩
-  simpa using ((tendsto_windingNumber_sub_zero_of_notMem hac₁ hp₁ (v := v)).add
+  simpa using (((hac₁.tendsto_windingNumber_add_smul_sub hp₁ (I * v)).mono_left
+      nhdsWithin_le_nhds).add
     (tendsto_windingNumber_segment_sub (z₀ := γ t₀ - v * (t₀ : ℂ)) hv hs)).add
-    (tendsto_windingNumber_sub_zero_of_notMem hac₃ hp₃ (v := v))
+    ((hac₃.tendsto_windingNumber_add_smul_sub hp₃ (I * v)).mono_left nhdsWithin_le_nhds)
 
 /-- When `γ` lies in `slitCompl (γ t₀) v σ` (`0 < σ ^ 2`) on `[t₀ - δ, t₀ + δ]` and avoids `γ t₀`
 on the outer intervals, `γ t₀ + (σ * h) • (I * v)` eventually misses `γ '' uIcc a b`. -/
@@ -402,8 +325,9 @@ private theorem eventually_notMem_trace_smul {γ : ℝ → ℂ} {a b t₀ δ σ 
   have hK : IsClosed (γ '' uIcc a (t₀ - δ) ∪ γ '' uIcc (t₀ + δ) b) :=
     ((isCompact_uIcc.image_of_continuousOn (hγ.mono hsub₁)).union
       (isCompact_uIcc.image_of_continuousOn (hγ.mono hsub₃))).isClosed
-  have htend : Tendsto (fun h : ℝ ↦ γ t₀ + (σ * h) • (I * v)) (𝓝[>] 0) (𝓝 (γ t₀)) := by
-    simpa only [mul_comm σ, mul_smul] using tendsto_add_smul_nhdsWithin_zero (γ t₀) (σ • (I * v))
+  have htend : Tendsto (fun h : ℝ ↦ γ t₀ + (σ * h) • (I * v)) (𝓝[>] 0) (𝓝 (γ t₀)) :=
+    ((by fun_prop : Continuous fun h : ℝ ↦ γ t₀ + (σ * h) • (I * v)).tendsto' 0 (γ t₀)
+      (by simp)).mono_left nhdsWithin_le_nhds
   filter_upwards [self_mem_nhdsWithin,
       htend.eventually (hK.isOpen_compl.mem_nhds fun h ↦ h.elim hp₁ hp₃)]
     with h hh hout ⟨t, ht, heq⟩
@@ -439,8 +363,10 @@ private theorem exists_window_slitCompl {γ : ℝ → ℂ} {a b t₀ : ℝ} {v :
       (∀ σ : ℝ, ∀ t ∈ uIcc (t₀ - δ) (t₀ + δ), γ t ∈ slitCompl (γ t₀) v σ) ∧
       γ t₀ ∉ γ '' uIcc a (t₀ - δ) ∧
       γ t₀ ∉ γ '' uIcc (t₀ + δ) b := by
-  obtain ⟨δ₀, hδ₀, hlittle⟩ := Metric.eventually_nhds_iff.mp
-    (hd.isLittleO.bound (half_pos (norm_pos_iff.mpr hv)))
+  have hg : HasDerivAt (fun t ↦ ((γ t - γ t₀) / v).re) 1 t₀ := by
+    simpa [Function.comp_def, div_self hv] using
+      HasFDerivAt.comp_hasDerivAt t₀ Complex.reCLM.hasFDerivAt ((hd.sub_const (γ t₀)).div_const v)
+  obtain ⟨δ₀, hδ₀, hlittle⟩ := Metric.eventually_nhds_iff.mp (hg.isLittleO.bound one_half_pos)
   set δ : ℝ := min (δ₀ / 2) (min ((t₀ - a) / 2) ((b - t₀) / 2))
   have hδ : 0 < δ := lt_min (half_pos hδ₀)
     (lt_min (half_pos (sub_pos.mpr ht₀.1)) (half_pos (sub_pos.mpr ht₀.2)))
@@ -458,8 +384,10 @@ private theorem exists_window_slitCompl {γ : ℝ → ℂ} {a b t₀ : ℝ} {v :
     have hdist : dist t t₀ < δ₀ := by
       rw [Real.dist_eq, abs_sub_lt_iff]
       exact ⟨by linarith, by linarith⟩
-    refine re_div_lt_or_gt_of_norm_sub_le hv ?_
-    simpa [Real.norm_eq_abs, div_eq_mul_inv, mul_comm, mul_left_comm] using hlittle hdist
+    have hb : |((γ t - γ t₀) / v).re - (t - t₀)| ≤ 1 / 2 * |t - t₀| := by
+      simpa [Real.norm_eq_abs] using hlittle hdist
+    exact ⟨fun hlt ↦ by linarith [(abs_le.mp hb).2, abs_of_neg (sub_neg.mpr hlt)],
+      fun hgt ↦ by linarith [(abs_le.mp hb).1, abs_of_pos (sub_pos.mpr hgt)]⟩
   refine ⟨δ, hδ, haδ, hbδ, (hre (t₀ - δ) ⟨le_rfl, hle_mid⟩).1 (by linarith),
     (hre (t₀ + δ) ⟨hle_mid, le_rfl⟩).2 (by linarith), ?_, ?_, ?_⟩
   · intro σ t ht
@@ -505,26 +433,20 @@ theorem tendsto_windingNumber_add_I_mul_sub
   have havoid := eventually_notMem_trace_add_sub_I_mul hab hγ.continuousOn hv haδ hbδ hle_mid
     hp₁ hp₃ hγ_slit
   refine ⟨havoid, ?_⟩
-  have hsub₁ : uIcc a (t₀ - δ) ⊆ uIcc a b := by
-    rw [uIcc_of_le haδ.le, uIcc_of_le hab.le]; exact Icc_subset_Icc le_rfl hle_tail
-  have hsub₂ : uIcc (t₀ - δ) (t₀ + δ) ⊆ uIcc a b := by
-    rw [uIcc_of_le hle_mid, uIcc_of_le hab.le]; exact Icc_subset_Icc haδ.le hbδ.le
-  have hsub₃ : uIcc (t₀ + δ) b ⊆ uIcc a b := by
-    rw [uIcc_of_le hbδ.le, uIcc_of_le hab.le]; exact Icc_subset_Icc (by linarith) le_rfl
-  have hγ₁ := hγ.mono hsub₁
-  have hγ₂ := hγ.mono hsub₂
-  have hγ₃ := hγ.mono hsub₃
+  have hsub : ∀ {x y}, a ≤ x → x ≤ y → y ≤ b → uIcc x y ⊆ uIcc a b := fun hx hxy hy ↦ by
+    rw [uIcc_of_le hxy, uIcc_of_le hab.le]; exact Icc_subset_Icc hx hy
+  have hγ₁ := hγ.mono (hsub le_rfl haδ.le hle_tail)
+  have hγ₂ := hγ.mono (hsub haδ.le hle_mid hbδ.le)
+  have hγ₃ := hγ.mono (hsub (by linarith) hbδ.le le_rfl)
   obtain ⟨hacL₁, hacL₂, hacL₃⟩ := absolutelyContinuousOnInterval_localTangentCurve γ t₀ v hδ
   have hacL : AbsolutelyContinuousOnInterval (localTangentCurve γ t₀ δ v) (t₀ - δ) (t₀ + δ) :=
     hacL₁.trans (hacL₂.trans hacL₃)
   have hLa : localTangentCurve γ t₀ δ v (t₀ - δ) = γ (t₀ - δ) := by
-    have h₁ : t₀ - δ ≤ t₀ - δ / 2 := by linarith
-    simp [localTangentCurve, h₁]
+    simp [localTangentCurve, (by linarith : t₀ - δ ≤ t₀ - δ / 2)]
   have hLb : localTangentCurve γ t₀ δ v (t₀ + δ) = γ (t₀ + δ) := by
-    have h₁ : ¬ t₀ + δ ≤ t₀ - δ / 2 := by linarith
-    have h₂ : ¬ t₀ + δ ≤ t₀ + δ / 2 := by linarith
     have h₃ : t₀ + δ - (t₀ + δ / 2) = δ / 2 := by ring
-    simp [localTangentCurve, h₁, h₂, h₃, (half_pos hδ).ne']
+    simp [localTangentCurve, (by linarith : ¬ t₀ + δ ≤ t₀ - δ / 2),
+      (by linarith : ¬ t₀ + δ ≤ t₀ + δ / 2), h₃, (half_pos hδ).ne']
   have heq : (fun h : ℝ ↦
       (windingNumber γ a (t₀ - δ) (γ t₀ + h • (I * v)) -
         windingNumber γ a (t₀ - δ) (γ t₀ - h • (I * v))) +
@@ -552,9 +474,10 @@ theorem tendsto_windingNumber_add_I_mul_sub
     rw [windingNumber_sub_eq_add_three_of_notMem haδ.le hle_mid hbδ.le hγ₁ hγ₂ hγ₃ hpos hneg,
       hw_pos, hw_neg]
   refine Tendsto.congr' heq ?_
-  simpa using ((tendsto_windingNumber_sub_zero_of_notMem hγ₁ hp₁ (v := v)).add
+  simpa using (((hγ₁.tendsto_windingNumber_add_smul_sub hp₁ (I * v)).mono_left
+      nhdsWithin_le_nhds).add
     (tendsto_windingNumber_localTangentCurve_sub hv hδ hleft hright)).add
-    (tendsto_windingNumber_sub_zero_of_notMem hγ₃ hp₃ (v := v))
+    ((hγ₃.tendsto_windingNumber_add_smul_sub hp₃ (I * v)).mono_left nhdsWithin_le_nhds)
 
 /-- **Exact `+1` winding-number jump across a regular interior point of a closed AC curve.** If `γ`
 is closed on `[a, b]` (`a < b`), differentiable at `t₀ ∈ (a, b)` with `v ≠ 0`, and visits `γ t₀`
