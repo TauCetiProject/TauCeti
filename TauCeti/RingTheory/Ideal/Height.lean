@@ -67,14 +67,14 @@ theorem lt_height_iff_eq_maximalIdeal {n : ℕ} (hdim : ringKrullDim R = n + 1) 
 
 end IsLocalRing
 
-/-- A nonzero prime `p` of a Noetherian domain contains a prime of height one: a prime minimal
-over `(a)` chosen below `p`, for a nonzero `a ∈ p`. -/
+/-- A nonzero prime `p` of a Noetherian domain contains a prime of height one. -/
 theorem exists_le_isPrime_height_eq_one {R : Type*} [CommRing R] [IsDomain R]
     [IsNoetherianRing R] (p : Ideal R) [p.IsPrime] (hp : p ≠ ⊥) :
     ∃ P ≤ p, P.IsPrime ∧ P.height = 1 := by
   obtain ⟨a, hap, ha⟩ := Submodule.exists_mem_ne_zero_of_ne_bot hp
   obtain ⟨P, hP, hPp⟩ := exists_minimalPrimes_le ((span_singleton_le_iff_mem p).mpr hap)
-  -- Krull's principal ideal theorem gives `ht P ≤ 1`, and `a` is a nonzerodivisor, so `ht P ≥ 1`.
+  -- Take `P ≤ p` minimal over `(a)` for a nonzero `a ∈ p`. Krull's principal ideal theorem
+  -- gives `ht P ≤ 1`, and `a` is a nonzerodivisor, so `ht P ≥ 1`.
   exact ⟨P, hPp, hP.1.1, le_antisymm (height_le_one_of_isPrincipal_of_mem_minimalPrimes _ P hP)
     ((one_le_height_span_singleton_of_mem_nonZeroDivisors
       (mem_nonZeroDivisors_of_ne_zero ha)).trans (height_mono hP.1.2))⟩
