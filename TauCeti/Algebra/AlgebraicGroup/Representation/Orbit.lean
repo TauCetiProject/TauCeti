@@ -116,8 +116,7 @@ theorem range_projectiveOrbitMap_mk_one_basePointsRepresentation
   refine range_projectiveOrbitMap_eq_of_span_basePointsRepresentation_eq (g := g⁻¹)
     (Module.isUnimodular_mk_one (basePointsRepresentation M g v))
     (Module.isUnimodular_mk_one v) ?_
-  rw [basePointsRepresentation_prodTrivial, ← mul_apply_eq_comp, ← map_mul, inv_mul_cancel,
-    map_one, one_apply_eq_self]
+  rw [basePointsRepresentation_prodTrivial, Representation.inv_self_apply]
 
 end Chart
 

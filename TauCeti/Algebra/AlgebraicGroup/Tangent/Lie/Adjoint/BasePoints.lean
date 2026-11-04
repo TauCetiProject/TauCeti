@@ -83,10 +83,8 @@ noncomputable def basePointsAdjointLieEquiv (g : WithConv (H →ₐ[R] R)) :
     map_add' := (Comodule.basePointsRepresentation _ g).map_add'
     map_smul' := (Comodule.basePointsRepresentation _ g).map_smul'
     map_lie' := fun {x y} ↦ basePointsRepresentation_adjointComodule_bracket g x y
-    left_inv := fun x ↦ by
-      rw [← mul_apply_eq_comp, ← map_mul, inv_mul_cancel, map_one, one_apply_eq_self]
-    right_inv := fun x ↦ by
-      rw [← mul_apply_eq_comp, ← map_mul, mul_inv_cancel, map_one, one_apply_eq_self] }
+    left_inv := Representation.inv_self_apply _ g
+    right_inv := Representation.self_inv_apply _ g }
 
 /-- `Derivation.basePointsAdjointLieEquiv` acts by `Comodule.basePointsRepresentation` of the
 adjoint comodule. -/

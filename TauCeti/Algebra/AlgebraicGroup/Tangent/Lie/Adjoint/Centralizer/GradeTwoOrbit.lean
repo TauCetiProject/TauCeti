@@ -12,6 +12,7 @@ public import TauCeti.Algebra.AlgebraicGroup.Tangent.Lie.Adjoint.Centralizer.Eig
 public import TauCeti.Algebra.Lie.Sl2.WeightedDiagram.Finite
 import TauCeti.Algebra.AlgebraicGroup.Representation.PointsAction.Hom
 import TauCeti.Algebra.AlgebraicGroup.Tangent.Lie.Adjoint.BasePoints
+import TauCeti.Algebra.Coalgebra.Subcomodule.Finrank
 
 /-!
 # Openness of the grade-two centralizer orbit and conjugacy of `sl₂` triples sharing `h`
@@ -34,14 +35,14 @@ element:
 * for any second `sl₂` triple `(h, e', f')` sharing `h`, the scheme-theoretic `K`-orbits of `e` and
   `e'` in `P(𝔤(2) × k)` coincide, and some `k`-point `g ∈ K(k)` carries `(h, e, f)` to `(h, e', f')`
   under `Ad(g)`: first `g` carries `e` to `e'` while fixing `h`, and then `Ad(g) f = f'` follows
-  because `(h, e')` uniquely determines its lowering partner (`IsSl2Triple.eq_of_isSl2Triple`);
+  because `(h, e')` uniquely determines its lowering partner (`IsSl2Triple.f_eq_of_isSl2Triple`);
 * consequently, `e` and `e'` have the same scheme-theoretic adjoint `G`-orbit in `P(𝔤 × k)`.
 
-Specializing `K` to `C_G(h)°` and combining with injectivity of the weighted Dynkin diagram on
-dominant neutral elements in a Cartan subalgebra
-(`RootPairing.Base.weightedDynkinDiagram_injective`) shows that two `sl₂` triples whose dominant
-neutral elements have equal weighted Dynkin diagrams are conjugate by a `k`-point of `C_G(h)°`, and
-their nilpositive elements define the same scheme-theoretic nilpotent `G`-orbit in `P(𝔤 × k)`.
+For two `sl₂` triples whose neutral elements are dominant with respect to a fixed base of a Cartan
+subalgebra, equal weighted Dynkin diagrams force the neutral elements to coincide
+(`RootPairing.Base.weightedDynkinDiagram_injective`), so the shared-`h` results immediately give
+`C_G(h)°(k)`-conjugacy of the two triples and equality of the scheme-theoretic adjoint `G`-orbits of
+their nilpositive elements.
 
 ## Main declarations
 
@@ -63,8 +64,9 @@ their nilpositive elements define the same scheme-theoretic nilpotent `G`-orbit 
   scheme-theoretic adjoint `G`-orbit in `P(𝔤 × k)`.
 * `IsSl2Triple.exists_mem_quotientPointsSubgroup_identityComponent_of_weightedDynkinDiagram_eq`
   and `IsSl2Triple.range_projectiveOrbitMap_adjoint_eq_of_weightedDynkinDiagram_eq`: triples whose
-  dominant neutral elements have equal weighted Dynkin diagrams are conjugate under `C_G(h)°(k)` and
-  have the same scheme-theoretic nilpotent `G`-orbit.
+  neutral elements are dominant in the same Weyl chamber and have equal weighted Dynkin diagrams
+  share their neutral element, hence are conjugate under `C_G(h₁)°(k)` and define the same
+  scheme-theoretic adjoint `G`-orbit.
 
 ## References
 
@@ -107,20 +109,11 @@ theorem topologicalKrullDim_range_projectiveOrbitMap_eigenspace_two_of_lieSubalg
         ((LieAlgebra.ad k (Module.Dual k (Bialgebra.CotangentSpace k H)) h).eigenspace 2) := by
   let := Comodule.Corestrict (M := Module.Dual k (Bialgebra.CotangentSpace k H))
     (Bialgebra.Quotient.mkBialgHom (R := k) J.toIdeal).toCoalgHom
-  have : Algebra.FiniteType k (H ⧸ J.toIdeal) :=
-    .of_surjective (Ideal.Quotient.mkₐ k J.toIdeal) Ideal.Quotient.mk_surjective
   rw [Comodule.topologicalKrullDim_range_projectiveOrbitMap_mk_one_eq_finrank_range,
     t.range_differential_flip_eigenspace_two_eq_top_of_lieSubalgebra_le hJ hlie, finrank_top]
   congr 1
-  rw [← centralizerAdHom_toLinearMap (J := J) h hJ,
-    ← (centralizerAdHom h hJ).eigenspace_toSubmodule 2]
-  exact LinearEquiv.finrank_eq
-    { toFun := fun x ↦ ⟨x.1, x.2⟩
-      invFun := fun x ↦ ⟨x.1, x.2⟩
-      left_inv := fun _ ↦ rfl
-      right_inv := fun _ ↦ rfl
-      map_add' := fun _ _ ↦ rfl
-      map_smul' := fun _ _ ↦ rfl }
+  rw [← Subcomodule.finrank_toSubmodule, (centralizerAdHom h hJ).eigenspace_toSubmodule 2,
+    centralizerAdHom_toLinearMap]
 
 /-- **Density of the grade-two centralizer orbit.** For any closed subgroup `K = Spec (H ⧸ J)` of
 `C_G(h)` whose Lie algebra contains `𝔤(0)`, the `K`-orbit of `e` is dense in the projective
@@ -135,8 +128,6 @@ theorem closure_range_projectiveOrbitMap_eigenspace_two_eq_univ_of_lieSubalgebra
         (Module.isUnimodular_mk_one _))) = Set.univ := by
   let := Comodule.Corestrict (M := Module.Dual k (Bialgebra.CotangentSpace k H))
     (Bialgebra.Quotient.mkBialgHom (R := k) J.toIdeal).toCoalgHom
-  have : Algebra.FiniteType k (H ⧸ J.toIdeal) :=
-    .of_surjective (Ideal.Quotient.mkₐ k J.toIdeal) Ideal.Quotient.mk_surjective
   exact Comodule.closure_range_projectiveOrbitMap_mk_one_eq_univ_of_range_eq_top _
     (t.range_differential_flip_eigenspace_two_eq_top_of_lieSubalgebra_le hJ hlie)
 
@@ -152,8 +143,6 @@ theorem isOpen_range_projectiveOrbitMap_eigenspace_two_of_lieSubalgebra_le
         (Module.isUnimodular_mk_one _))) := by
   let := Comodule.Corestrict (M := Module.Dual k (Bialgebra.CotangentSpace k H))
     (Bialgebra.Quotient.mkBialgHom (R := k) J.toIdeal).toCoalgHom
-  have : Algebra.FiniteType k (H ⧸ J.toIdeal) :=
-    .of_surjective (Ideal.Quotient.mkₐ k J.toIdeal) Ideal.Quotient.mk_surjective
   exact Comodule.isOpen_range_projectiveOrbitMap_mk_one_of_range_eq_top _
     (t.range_differential_flip_eigenspace_two_eq_top_of_lieSubalgebra_le hJ hlie)
 
@@ -174,8 +163,6 @@ theorem range_projectiveOrbitMap_eigenspace_two_eq_of_lieSubalgebra_le
         (Module.isUnimodular_mk_one _)) := by
   let := Comodule.Corestrict (M := Module.Dual k (Bialgebra.CotangentSpace k H))
     (Bialgebra.Quotient.mkBialgHom (R := k) J.toIdeal).toCoalgHom
-  have : Algebra.FiniteType k (H ⧸ J.toIdeal) :=
-    .of_surjective (Ideal.Quotient.mkₐ k J.toIdeal) Ideal.Quotient.mk_surjective
   exact Comodule.range_projectiveOrbitMap_mk_one_eq_of_range_eq_top _ _
     (t.range_differential_flip_eigenspace_two_eq_top_of_lieSubalgebra_le hJ hlie)
     (t'.range_differential_flip_eigenspace_two_eq_top_of_lieSubalgebra_le hJ hlie)
@@ -200,8 +187,6 @@ theorem exists_mem_quotientPointsSubgroup_basePointsRepresentation_eq_of_lieSuba
           e' := by
     let π : H →ₐc[k] H ⧸ J.toIdeal := Bialgebra.Quotient.mkBialgHom (R := k) J.toIdeal
     let := Comodule.Corestrict (M := Module.Dual k (Bialgebra.CotangentSpace k H)) π.toCoalgHom
-    have : Algebra.FiniteType k (H ⧸ J.toIdeal) :=
-      .of_surjective (Ideal.Quotient.mkₐ k J.toIdeal) Ideal.Quotient.mk_surjective
     obtain ⟨q, hq⟩ := Comodule.exists_basePointsRepresentation_eq_of_range_eq_top _ _
       (t.range_differential_flip_eigenspace_two_eq_top_of_lieSubalgebra_le hJ hlie)
       (t'.range_differential_flip_eigenspace_two_eq_top_of_lieSubalgebra_le hJ hlie)
@@ -226,7 +211,7 @@ theorem exists_mem_quotientPointsSubgroup_basePointsRepresentation_eq_of_lieSuba
         f' := by
     have tg := t.basePointsRepresentation_adjointComodule g
     rw [hgh, hge] at tg
-    exact tg.eq_of_isSl2Triple k t'
+    exact tg.f_eq_of_isSl2Triple k t'
   exact ⟨g, hgJ, hgh, hge, hgf⟩
 
 /-! ### Specializations to `C_G(h)` -/
@@ -410,9 +395,11 @@ end IdentityComponent
 
 section WeightedDynkinDiagram
 
-/-- **Weighted Dynkin diagram uniqueness up to `C_G(h)°`-conjugacy.** If two `sl₂` triples in
-`Lie(G)` have dominant neutral elements in a fixed Cartan subalgebra with the same weighted Dynkin
-diagram, then some rational point of `C_G(h₁)°` carries the first triple to the second. -/
+/-- **Conjugacy of dominant `sl₂` triples with equal weighted Dynkin diagrams.** If two `sl₂`
+triples in `Lie(G)` have neutral elements dominant with respect to the same base `b` and equal
+weighted Dynkin diagrams, then `RootPairing.Base.weightedDynkinDiagram_injective` gives `h₁ = h₂`,
+so `exists_mem_quotientPointsSubgroup_identityComponent_basePointsRepresentation_eq` yields a
+rational point of `C_G(h₁)°` fixing `h₁ = h₂` and carrying `(e₁, f₁)` to `(e₂, f₂)`. -/
 theorem exists_mem_quotientPointsSubgroup_identityComponent_of_weightedDynkinDiagram_eq
     {k : Type u} [Field k] [CharZero k] [IsAlgClosed k]
     {H : FiniteTypeCommHopfAlgCat.{u, u} k}
@@ -436,10 +423,10 @@ theorem exists_mem_quotientPointsSubgroup_identityComponent_of_weightedDynkinDia
   obtain rfl := b.weightedDynkinDiagram_injective hdiag
   exact t₁.exists_mem_quotientPointsSubgroup_identityComponent_basePointsRepresentation_eq t₂
 
-/-- **Weighted Dynkin diagrams determine the nilpotent `G`-orbit.** If two `sl₂` triples in
-`Lie(G)` have dominant neutral elements in a fixed Cartan subalgebra with the same weighted Dynkin
-diagram, then their nilpositive elements define the same scheme-theoretic adjoint `G`-orbit in
-`P(𝔤 × k)`. -/
+/-- **Adjoint orbit equality for dominant `sl₂` triples with equal weighted Dynkin diagrams.** If
+two `sl₂` triples in `Lie(G)` have neutral elements dominant with respect to the same base `b` and
+equal weighted Dynkin diagrams, then `h₁ = h₂`, so by `range_projectiveOrbitMap_adjoint_eq` their
+nilpositive elements have the same scheme-theoretic adjoint `G`-orbit in `P(𝔤 × k)`. -/
 theorem range_projectiveOrbitMap_adjoint_eq_of_weightedDynkinDiagram_eq
     {k : Type u} [Field k] [CharZero k] [IsAlgClosed k]
     {H : Type u} [CommRing H] [HopfAlgebra k H] [Algebra.FiniteType k H]

@@ -132,14 +132,10 @@ theorem isUnimodular_basePointsRepresentation_iff
     (g : WithConv (H →ₐ[R] R)) (m : M) :
     Module.IsUnimodular R (basePointsRepresentation (H := H) M g m) ↔
       Module.IsUnimodular R m := by
-  have forward (h : WithConv (H →ₐ[R] R)) {x : M} (hx : Module.IsUnimodular R x) :
-      Module.IsUnimodular R (basePointsRepresentation (H := H) M h x) := by
-    obtain ⟨φ, hφ⟩ := Module.isUnimodular_iff.mp hx
-    refine Module.isUnimodular_of_apply_eq_one
-      (f := φ.comp (basePointsRepresentation (H := H) M h⁻¹)) ?_
-    rw [LinearMap.comp_apply, ← mul_apply_eq_comp, ← map_mul, inv_mul_cancel,
-      map_one, one_apply_eq_self, hφ]
-  exact ⟨fun hm ↦ by simpa using forward g⁻¹ hm, forward g⟩
+  simpa [Representation.asGroupHom_apply] using
+    ((LinearMap.GeneralLinearGroup.generalLinearEquiv R M)
+      (Representation.asGroupHom
+        (basePointsRepresentation (R := R) (H := H) M) g)).isUnimodular_apply_iff (m := m)
 
 end Coordinates
 
