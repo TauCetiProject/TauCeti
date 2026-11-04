@@ -73,8 +73,6 @@ by tauceti-ai-for-science in
 ## Main definitions
 
 * `ZLattice.level L`: the least `N > 0` with `N ‖x‖² / 2 ∈ ℤ` for every `x ∈ L^∨`.
-* `ZLattice.cosetRepresentationNumberClass L`: the coset representation number `r_γ(t)` descended
-  to `γ : DiscriminantGroup L`.
 
 ## Main statements
 
@@ -209,60 +207,7 @@ theorem level_dvd_two_mul_card_discriminantGroup :
   push_cast
   linear_combination 2 * hm
 
-/-! ### Coset representation numbers on the discriminant group -/
-
-/-- The representation number `r_γ(t) = r_{x+L}(t)` of a class `γ` of the discriminant group
-`L^∨ ⧸ (L ∩ L^∨)`: the number of vectors `v ∈ L` with `‖x + v‖² = t`, for any representative
-`x ∈ L^∨` of `γ` (`cosetRepresentationNumberClass_mk`). -/
-noncomputable def cosetRepresentationNumberClass (L : Submodule ℤ E)
-    (γ : DiscriminantGroup L) (t : ℝ) : ℕ :=
-  Quotient.liftOn' γ (fun x : dual L ↦ cosetRepresentationNumber L (x : E) t) fun x y h ↦
-    cosetRepresentationNumber_eq_of_sub_mem L
-      ((discriminantGroup_mk_eq_mk_iff x y).mp (Quotient.sound' h)) t
-
-/-- On the class of `x ∈ L^∨`, `cosetRepresentationNumberClass` is `cosetRepresentationNumber`. -/
-@[simp]
-theorem cosetRepresentationNumberClass_mk (L : Submodule ℤ E) (x : dual L) (t : ℝ) :
-    cosetRepresentationNumberClass L (Submodule.Quotient.mk x) t =
-      cosetRepresentationNumber L (x : E) t :=
-  (rfl)
-
-/-- At the zero class of `DiscriminantGroup L`, the coset representation number is `r_L(t)`. -/
-@[simp]
-theorem cosetRepresentationNumberClass_zero_left (L : Submodule ℤ E) (t : ℝ) :
-    cosetRepresentationNumberClass L 0 t = representationNumber L t := by
-  rw [← Submodule.Quotient.mk_zero, cosetRepresentationNumberClass_mk, ZeroMemClass.coe_zero,
-    cosetRepresentationNumber_zero_left]
-
-/-- A nonzero class in `DiscriminantGroup L` does not represent squared norm `0`. -/
-theorem cosetRepresentationNumberClass_zero_right_of_ne_zero (L : Submodule ℤ E)
-    {γ : DiscriminantGroup L} (hγ : γ ≠ 0) :
-    cosetRepresentationNumberClass L γ 0 = 0 := by
-  induction γ using Submodule.Quotient.induction_on with
-  | H x =>
-    have hempty : cosetShell L (x : E) 0 = ∅ :=
-      Set.eq_empty_of_forall_notMem fun v hv ↦ by
-        obtain ⟨hv, hvt⟩ := mem_cosetShell.mp hv
-        have hx0 : (x : E) + v = 0 := by simpa using hvt
-        exact hγ ((discriminantGroup_mk_eq_zero_iff x).mpr
-          (eq_neg_of_add_eq_zero_left hx0 ▸ neg_mem hv))
-    rw [cosetRepresentationNumberClass_mk, cosetRepresentationNumber_def, hempty, Set.ncard_empty]
-
-/-- Opposite classes in `DiscriminantGroup L` have the same representation numbers. -/
-@[simp]
-theorem cosetRepresentationNumberClass_neg (L : Submodule ℤ E) (γ : DiscriminantGroup L)
-    (t : ℝ) :
-    cosetRepresentationNumberClass L (-γ) t = cosetRepresentationNumberClass L γ t := by
-  induction γ using Submodule.Quotient.induction_on with
-  | H x => rw [← Submodule.Quotient.mk_neg, cosetRepresentationNumberClass_mk,
-      cosetRepresentationNumberClass_mk, NegMemClass.coe_neg, cosetRepresentationNumber_neg]
-
-/-- No class of `DiscriminantGroup L` represents a negative squared norm. -/
-theorem cosetRepresentationNumberClass_eq_zero_of_neg (L : Submodule ℤ E)
-    (γ : DiscriminantGroup L) {t : ℝ} (ht : t < 0) :
-    cosetRepresentationNumberClass L γ t = 0 := by
-  induction γ using Submodule.Quotient.induction_on with
-  | H x => exact cosetRepresentationNumber_eq_zero_of_neg L (x : E) ht
+/-! ### Coset shells at multiples of the level -/
 
 /-- For an even lattice `L`, `γ ∈ L^∨`, `v ∈ L` and a multiple `N` of `level L`, `N ‖γ + v‖²` is an
 even integer. -/
@@ -549,7 +494,9 @@ theorem IsEven.cosetRepresentationNumberClass_div_eq_zero_of_toRatAddCircle_ne (
         (ratModelDiscriminantGroupEquiv hL.isIntegral γ)) :
     cosetRepresentationNumberClass L γ (2 * m / N) = 0 := by
   induction γ using Submodule.Quotient.induction_on with
-  | H x => exact hL.cosetRepresentationNumber_div_eq_zero_of_toRatAddCircle_ne x hm
+  | H x =>
+    rw [cosetRepresentationNumberClass_mk]
+    exact hL.cosetRepresentationNumber_div_eq_zero_of_toRatAddCircle_ne x hm
 
 /-- For an even full lattice `L` and `γ : DiscriminantGroup L`, `r_γ(2m / level L)` vanishes
 whenever `m mod level L` does not map to `q_L(γ)` under `ZMod.toRatAddCircle (level L)`. -/
@@ -628,7 +575,9 @@ theorem IsEven.cosetRepresentationNumberClass_eq_zero_of_level_dvd (hL : IsEven 
         (ratModelDiscriminantGroupEquiv hL.isIntegral γ)) :
     cosetRepresentationNumberClass L γ t = 0 := by
   induction γ using Submodule.Quotient.induction_on with
-  | H x => exact hL.cosetRepresentationNumber_eq_zero_of_level_dvd x hN hdvd ht
+  | H x =>
+    rw [cosetRepresentationNumberClass_mk]
+    exact hL.cosetRepresentationNumber_eq_zero_of_level_dvd x hN hdvd ht
 
 /-- For an even full lattice `L` and `γ : DiscriminantGroup L`, `r_γ(t)` vanishes unless
 `t = 2m / level L` for some `m : ℕ` with

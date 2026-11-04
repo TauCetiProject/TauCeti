@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Module.ZLattice.RationalModel
+public import TauCeti.Algebra.Module.ZLattice.Level
 public import TauCeti.Analysis.SpecialFunctions.Complex.Circle.Basic
 
 /-!
@@ -22,8 +22,9 @@ equivalence and composing with `TauCeti.expCircle` gives
 `ZLattice.IsEven.discriminantQuadraticChar`, the complex quadratic phase `γ ↦ e(q_L(γ))` on `A_L`.
 On a representative `x ∈ L^∨`, its value is `exp (πi ‖x‖²)`. It satisfies the quadratic refinement
 law `e(q_L(γ + δ)) = e(q_L(γ)) e(q_L(δ)) e(b_L(γ, δ))`, is even (`e(q_L(-γ)) = e(q_L(γ))`), scales
-by `n²` in the exponent on scalar multiples `n • γ`, and gives the eigenvalue by which the modular
-translation `T : τ ↦ τ + 1` acts on the coset theta series `θ_γ`.
+by `n²` in the exponent on scalar multiples `n • γ`, has `level L` as the least positive exponent
+killing all of its values, and gives the eigenvalue by which the modular translation `T : τ ↦ τ + 1`
+acts on the coset theta series `θ_γ`.
 
 ## Main definitions
 
@@ -43,6 +44,9 @@ translation `T : τ ↦ τ + 1` acts on the coset theta series `θ_γ`.
   `ZLattice.IsEven.discriminantQuadraticChar_zsmul`: `e(q_L(n • γ)) = e(q_L(γ))^(n²)`.
 * `ZLattice.IsEven.discriminantQuadraticChar_pow_eq_one_iff`: `e(q_L(γ))^n = 1` if and only if
   `n • q_L(γ) = 0`.
+* `ZLattice.IsEven.level_dvd_iff_discriminantQuadraticChar_pow_eq_one`,
+  `ZLattice.IsEven.discriminantQuadraticChar_pow_level`: `level L ∣ N` if and only if
+  `e(q_L(γ))^N = 1` for every `γ : DiscriminantGroup L`.
 * `ZLattice.IsEven.cexp_two_pi_mul_I_div_eq_discriminantQuadraticChar_iff`:
   `exp (2πi m / N) = e(q_L(γ))` if and only if `m mod N` maps to `q_L(γ)` under
   `ZMod.toRatAddCircle N`.
@@ -236,6 +240,18 @@ theorem discriminantQuadraticChar_pow_eq_one_iff (hL : IsEven L) (γ : Discrimin
         ((isEven_ratModel_iff hL.isIntegral).mpr hL)
         (ratModelDiscriminantGroupEquiv hL.isIntegral γ) = 0 := by
   rw [discriminantQuadraticChar_apply, ← AddChar.map_nsmul_eq_pow, TauCeti.expCircle_eq_one_iff]
+
+/-- For an even full lattice `L`, `level L ∣ N` if and only if `e(q_L(γ)) ^ N = 1` for every
+`γ : DiscriminantGroup L`. -/
+theorem level_dvd_iff_discriminantQuadraticChar_pow_eq_one (hL : IsEven L) {N : ℕ} :
+    level L ∣ N ↔ ∀ γ : DiscriminantGroup L, hL.discriminantQuadraticChar γ ^ N = 1 := by
+  simp_rw [hL.level_dvd_iff_discriminantQuadraticMap, hL.discriminantQuadraticChar_pow_eq_one_iff]
+
+/-- The `level L`-th power of every discriminant quadratic phase `e(q_L(γ))` is `1`. -/
+@[simp]
+theorem discriminantQuadraticChar_pow_level (hL : IsEven L) (γ : DiscriminantGroup L) :
+    hL.discriminantQuadraticChar γ ^ level L = 1 :=
+  hL.level_dvd_iff_discriminantQuadraticChar_pow_eq_one.mp dvd_rfl γ
 
 /-- The complex phase `exp (2πi m / N)` agrees with `e(q_L(γ))` exactly when the residue of `m`
 modulo `N` maps to `q_L(γ)` under `ZMod.toRatAddCircle N`. -/
