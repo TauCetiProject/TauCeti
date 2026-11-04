@@ -50,11 +50,10 @@ theorem norm_fderiv_exp_mul_sqrt_one_add_norm_sq_le (c : ℝ) (z : E) :
   have hb : ‖z‖ / √(1 + ‖z‖ ^ 2) ≤ 1 := by
     apply (div_le_one (Real.sqrt_pos.2 hp)).2
     exact (Real.le_sqrt (norm_nonneg z) hp.le).2 (by linarith)
-  rw [fderiv_exp_mul_sqrt_one_add_norm_sq, norm_smul, innerSL_apply_norm,
-    Real.norm_eq_abs, abs_div, abs_mul, abs_of_pos (Real.exp_pos _),
-    abs_of_nonneg (Real.sqrt_nonneg _)]
+  rw [fderiv_exp_mul_sqrt_one_add_norm_sq]
   calc
-    _ = (|c| * Real.exp (c * √(1 + ‖z‖ ^ 2))) * (‖z‖ / √(1 + ‖z‖ ^ 2)) := by ring
+    _ = (|c| * Real.exp (c * √(1 + ‖z‖ ^ 2))) * (‖z‖ / √(1 + ‖z‖ ^ 2)) := by
+      simp [norm_smul, abs_of_nonneg, div_eq_mul_inv, mul_comm, mul_left_comm, mul_assoc]
     _ ≤ _ := mul_le_of_le_one_right (by positivity) hb
 
 end TauCeti
