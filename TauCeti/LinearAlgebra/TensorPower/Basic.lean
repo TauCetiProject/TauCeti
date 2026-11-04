@@ -75,6 +75,16 @@ theorem mulEquiv_comp_map {d e : ℕ} (f : Fin d → M →ₗ[R] N) (g : Fin e �
   congr 1 with i
   refine Fin.addCases (fun _ ↦ ?_) (fun _ ↦ ?_) i <;> simp
 
+/-- Concatenation commutes with applying the same linear map to every tensor factor. -/
+theorem mulEquiv_comp_map_const (d e : ℕ) (f : M →ₗ[R] N) :
+    (TensorPower.mulEquiv (R := R) (M := N) (n := d) (m := e)).toLinearMap ∘ₗ
+        TensorProduct.map (PiTensorProduct.map (fun _ : Fin d ↦ f))
+          (PiTensorProduct.map (fun _ : Fin e ↦ f)) =
+      PiTensorProduct.map (fun _ : Fin (d + e) ↦ f) ∘ₗ
+        TensorPower.mulEquiv.toLinearMap := by
+  simpa only [Fin.append_castAdd_natAdd (f := fun _ : Fin (d + e) ↦ f)] using
+    mulEquiv_comp_map (fun _ : Fin d ↦ f) (fun _ : Fin e ↦ f)
+
 /-- Conjugating by `TensorPower.mulEquiv` turns the tensor product of two tensor-power
 endomorphisms into the tensor-power endomorphism of the appended family. -/
 theorem mulEquiv_conj_map {d e : ℕ} (f : Fin d → M →ₗ[R] M) (g : Fin e → M →ₗ[R] M) :

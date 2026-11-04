@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.LinearAlgebra.TensorCoalgebra.Filtration
-public import TauCeti.LinearAlgebra.TensorCoalgebra.Component
+public import TauCeti.LinearAlgebra.TensorCoalgebra.Coaugmented.Basic
 
 /-!
 # Iterated reduced deconcatenation and conilpotence
@@ -15,7 +15,8 @@ The `n`-fold reduced coproduct takes values in the `(n + 1)`-st tensor power of
 reduced tensor words. It vanishes on words of length at most `n`. Since every element
 has bounded tensor length, this proves conilpotence of the reduced tensor coalgebra.
 The bound is sharp: projecting every output factor onto its single-letter component
-recovers the input component of length `n + 1`.
+recovers the input component of length `n + 1`. More generally, the kernel of the `n`-fold
+coproduct is exactly the `n`-th tensor-length filtration step.
 
 The iterates are associated by repeatedly cutting the left factor and then using
 Mathlib's tensor-power multiplication equivalence. The bidegree calculation is
@@ -116,19 +117,50 @@ theorem map_letter_comp_iteratedDeconcatenation (n : ℕ) :
   induction n with
   | zero => exact hletter
   | succ n ih =>
-      have happend : Fin.append (fun _ : Fin (n + 1) ↦ letter R M)
-          (fun _ : Fin 1 ↦ letter R M) = fun _ ↦ letter R M := by
-        funext i
-        exact Fin.addCases (fun _ ↦ Fin.append_left _ _ _) (fun _ ↦ Fin.append_right _ _ _) i
-      have hmul := TauCeti.TensorPower.mulEquiv_comp_map
-        (fun _ : Fin (n + 1) ↦ letter R M) (fun _ : Fin 1 ↦ letter R M)
-      rw [happend] at hmul
-      rw [iteratedDeconcatenation_succ, ← LinearMap.comp_assoc, ← hmul]
+      rw [iteratedDeconcatenation_succ, ← LinearMap.comp_assoc,
+        ← TauCeti.TensorPower.mulEquiv_comp_map_const]
       simp only [LinearMap.comp_assoc]
       rw [← LinearMap.comp_assoc (deconcatenation R M),
         ← TensorProduct.map_comp, ih, hletter, map_component_comp_deconcatenation]
       simp only [← LinearMap.comp_assoc, LinearEquiv.comp_symm, LinearMap.id_comp,
         Positive.val_one]
+
+/-- The kernel of the `n`-fold reduced coproduct is exactly the `n`-th tensor-length
+filtration step. -/
+@[simp]
+theorem iteratedDeconcatenation_eq_zero_iff_mem_filtration (n : ℕ)
+    (z : ReducedTensorWords R M) :
+    iteratedDeconcatenation R M n z = 0 ↔ z ∈ filtration R M n := by
+  constructor
+  · intro hz
+    cases n with
+    | zero =>
+        have hz' : z = 0 := (TauCeti.TensorPower.oneEquiv R (ReducedTensorWords R M)).symm.injective
+          (by simpa only [iteratedDeconcatenation_zero, LinearEquiv.coe_coe, map_zero] using hz)
+        simp only [hz', Submodule.zero_mem]
+    | succ n =>
+        apply (mem_filtration_iff R M (n + 1) z).2
+        rintro ⟨k, hkpos⟩ hk
+        obtain ⟨q, rfl⟩ := Nat.exists_eq_add_of_le (Nat.le_of_lt hk)
+        let p : {k : ℕ // 0 < k} := ⟨q, by dsimp only at hk; omega⟩
+        -- Recover every longer component by reading `n + 1` letters on the left and
+        -- an arbitrary positive-length component on the right of the last cut.
+        have hsplit : TensorProduct.map (iteratedDeconcatenation R M n)
+            (TauCeti.TensorPower.oneEquiv R (ReducedTensorWords R M)).symm.toLinearMap
+              (deconcatenation R M z) = 0 := by
+          apply TensorPower.mulEquiv.injective
+          simpa only [iteratedDeconcatenation_succ, LinearMap.comp_apply,
+            LinearEquiv.coe_coe, map_zero] using hz
+        have hc := congrArg (TensorProduct.map
+          (PiTensorProduct.map (fun _ : Fin (n + 1) ↦ letter R M))
+          (component R M p ∘ₗ
+            (TauCeti.TensorPower.oneEquiv R (ReducedTensorWords R M)).toLinearMap)) hsplit
+        rw [map_zero, TensorProduct.map_map, map_letter_comp_iteratedDeconcatenation,
+          LinearMap.comp_assoc, LinearEquiv.comp_symm, LinearMap.comp_id,
+          ← LinearMap.comp_apply, map_component_comp_deconcatenation] at hc
+        exact (TensorPower.mulEquiv (R := R) (M := M)).symm.injective
+          (by simpa only [LinearMap.comp_apply, LinearEquiv.coe_coe, map_zero] using hc)
+  · exact iteratedDeconcatenation_eq_zero_of_mem_filtration R M n
 
 /-- A nonzero component of length `n + 1` prevents the `n`-fold reduced coproduct from
 vanishing. This gives the sharp obstruction to a smaller conilpotence bound. -/
@@ -159,19 +191,11 @@ theorem iteratedDeconcatenation_natural (f : M →ₗ[R] N) (n : ℕ) :
   induction n with
   | zero => simpa only [iteratedDeconcatenation_zero] using hone
   | succ n ih =>
-      have happend : Fin.append (fun _ : Fin (n + 1) ↦ ReducedTensorWords.map R f)
-          (fun _ : Fin 1 ↦ ReducedTensorWords.map R f) = fun _ ↦ ReducedTensorWords.map R f := by
-        funext i
-        exact Fin.addCases (fun _ ↦ Fin.append_left _ _ _) (fun _ ↦ Fin.append_right _ _ _) i
-      have hmul := TauCeti.TensorPower.mulEquiv_comp_map
-        (fun _ : Fin (n + 1) ↦ ReducedTensorWords.map R f)
-        (fun _ : Fin 1 ↦ ReducedTensorWords.map R f)
-      rw [happend] at hmul
       simp only [iteratedDeconcatenation_succ, LinearMap.comp_assoc,
         deconcatenation_natural]
       rw [← LinearMap.comp_assoc (deconcatenation R M), ← TensorProduct.map_comp, ih, hone]
       rw [TensorProduct.map_comp]
       simp only [← LinearMap.comp_assoc]
-      rw [hmul]
+      rw [TauCeti.TensorPower.mulEquiv_comp_map_const]
 
 end TauCeti.ReducedTensorWords
