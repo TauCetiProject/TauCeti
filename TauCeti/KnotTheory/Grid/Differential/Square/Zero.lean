@@ -49,7 +49,10 @@ the constant terms of `∂⁻` over `ZMod 2`.
   its weight.
 * `TauCeti.GridDiagram.sum_unblockedCoefficient_mul_unblockedCoefficient_eq_zero`: every matrix
   entry of the square of `∂⁻` vanishes.
-* `TauCeti.GridDiagram.unblockedDifferential_comp_self_eq_zero`: `∂⁻ ∘ ∂⁻ = 0`.
+* `TauCeti.GridDiagram.unblockedDifferential_comp_self_eq_zero`: `∂⁻ ∘ ∂⁻ = 0`, from which
+  `TauCeti.GridDiagram.mem_ker_unblockedDifferential_of_X_smul_eq` deduces via
+  `TauCeti.X_smul_gridChainMinus_injective` that any chain whose `V_i`-multiple is an unblocked
+  boundary is an unblocked cycle.
 * `TauCeti.GridDiagram.simplyBlockedDifferential_comp_self_eq_zero`: the same for the
   specialization at `V_i = 0`.
 * `TauCeti.GridDiagram.fullyBlockedDecompositionCount_eq_zero`,
@@ -192,6 +195,18 @@ theorem unblockedDifferential_comp_self_eq_zero :
   simp only [LinearMap.comp_apply, Finsupp.lsingle_apply, LinearMap.zero_comp,
     LinearMap.zero_apply]
   exact G.unblockedDifferential_sq_single_eq_zero R x
+
+/-- If a variable multiple `V_i • c` in `GC⁻` is an unblocked boundary `∂⁻ z` in characteristic
+two, then `c` is an unblocked cycle: `∂⁻ (V_i • c) = ∂⁻ (∂⁻ z) = 0`, and multiplication by `V_i`
+is injective (`TauCeti.X_smul_gridChainMinus_injective`). -/
+theorem mem_ker_unblockedDifferential_of_X_smul_eq {i : Fin n} {c z : GridChainMinus R n}
+    (hc : (MvPolynomial.X i : MvPolynomial (Fin n) R) • c = G.unblockedDifferential R z) :
+    c ∈ LinearMap.ker (G.unblockedDifferential R) := by
+  rw [LinearMap.mem_ker]
+  refine X_smul_gridChainMinus_injective R i ?_
+  dsimp only
+  rw [smul_zero, ← LinearMap.map_smul, hc]
+  exact LinearMap.congr_fun (G.unblockedDifferential_comp_self_eq_zero R) z
 
 /-- The simply blocked grid map squares to zero in characteristic two: it is the specialization
 of `∂⁻` at `V_i = 0`, and specialization intertwines the two maps. -/

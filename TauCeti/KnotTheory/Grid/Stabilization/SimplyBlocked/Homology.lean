@@ -73,36 +73,6 @@ local notation "G'" => GridDiagram.stabilizeX G (Fin.castSucc s)
 local notation "A" => MvPolynomial {c : Fin n // c ≠ i} R
 local notation "S" => MvPolynomial {c : Fin (n + 1) // c ≠ j} R
 
-/-- Under the explicit chain identification, a cycle of the one-variable specialization is a chain
-in the kernel of `simplyBlockedDifferential`. -/
-private theorem mem_ker_simplyBlockedComplex_d_iff {m : ℕ} (H : GridDiagram m) (k : Fin m)
-    (c : (H.simplyBlockedComplex R k).X ()) :
-    c ∈ LinearMap.ker ((H.simplyBlockedComplex R k).d () ()).hom ↔
-      H.simplyBlockedDifferential R k (H.simplyBlockedChainEquiv R k c) = 0 := by
-  rw [LinearMap.mem_ker, ← (H.simplyBlockedChainEquiv R k).injective.eq_iff, map_zero,
-    H.simplyBlockedChainEquiv_d]
-
-/-- Under the explicit chain identification, a cycle of the one-variable specialization lies in the
-boundary submodule `range moduleCatToCycles` precisely when its underlying chain lies in the range
-of `simplyBlockedDifferential`. -/
-private theorem mem_range_moduleCatToCycles_simplyBlockedComplex_iff {m : ℕ}
-    (H : GridDiagram m) (k : Fin m)
-    (c : LinearMap.ker ((H.simplyBlockedComplex R k).d () ()).hom) :
-    c ∈ LinearMap.range ((H.simplyBlockedComplex R k).sc' () () ()).moduleCatToCycles ↔
-      H.simplyBlockedChainEquiv R k c ∈ LinearMap.range (H.simplyBlockedDifferential R k) := by
-  have hd (w : (H.simplyBlockedComplex R k).X ()) :
-      H.simplyBlockedChainEquiv R k
-          (((H.simplyBlockedComplex R k).sc' () () ()).moduleCatToCycles w).1 =
-        H.simplyBlockedDifferential R k (H.simplyBlockedChainEquiv R k w) :=
-    H.simplyBlockedChainEquiv_d R k w
-  constructor
-  · rintro ⟨w, rfl⟩
-    exact ⟨H.simplyBlockedChainEquiv R k w, (hd w).symm⟩
-  · rintro ⟨w, hw⟩
-    refine ⟨(H.simplyBlockedChainEquiv R k).symm w, Subtype.ext ?_⟩
-    apply (H.simplyBlockedChainEquiv R k).injective
-    rw [hd, LinearEquiv.apply_symm_apply, hw]
-
 /-- The specialized stabilization map between the categorical chain carriers. -/
 private noncomputable def oneVariableSpecializationStabilizeXChainMap :
     ((G').simplyBlockedComplex R j).X () →ₛₗ[simplyBlockedStabilizeXRingHom s i R]
@@ -195,17 +165,6 @@ private theorem stabilizeXChainMap_X_smul (c : GridChainMinus R (n + 1)) :
   rw [(G.stabilizeXChainMap s R).map_smulₛₗ]
   simp [Fin.predAbove_succAbove]
 
-/-- If `V_k • P = ∂ Z` in `GC⁻`, regularity of `V_k` and `∂² = 0` imply that `P` is a cycle. -/
-private theorem mem_ker_unblockedDifferential_of_X_smul_eq {m : ℕ} (H : GridDiagram m) (k : Fin m)
-    {P Z : GridChainMinus R m}
-    (hP : (MvPolynomial.X k : MvPolynomial (Fin m) R) • P = H.unblockedDifferential R Z) :
-    P ∈ LinearMap.ker (H.unblockedDifferential R) := by
-  rw [LinearMap.mem_ker]
-  refine X_smul_gridChainMinus_injective R k ?_
-  dsimp only
-  rw [smul_zero, ← LinearMap.map_smul, hP]
-  exact LinearMap.congr_fun (H.unblockedDifferential_comp_self_eq_zero R) Z
-
 /-- If an unblocked chain `Z'` of `G'` becomes a cycle at `V_j = 0` and its stabilization image
 becomes a boundary at `V_i = 0`, then `Z'` is already a boundary at `V_j = 0`. -/
 private theorem simplyBlockedSpecialization_mem_range_of_stabilizeXChainMap
@@ -228,7 +187,7 @@ private theorem simplyBlockedSpecialization_mem_range_of_stabilizeXChainMap
     rw [hQ, add_sub_cancel]
   -- Since `∂' Z' = V_j • P'` and `∂'² = 0`, regularity of `V_j` shows `P'` is an unblocked cycle.
   have hdP' : P' ∈ LinearMap.ker ((G').unblockedDifferential R) :=
-    mem_ker_unblockedDifferential_of_X_smul_eq R (G') j hP'
+    (G').mem_ker_unblockedDifferential_of_X_smul_eq R hP'
   -- Applying `S` to `∂' Z' = V_j • P'` and comparing with `∂ (S Z')` shows `S P' = ∂ Q`.
   have hSP' : G.stabilizeXChainMap s R P' = G.unblockedDifferential R Q := by
     have hdW : G.unblockedDifferential R (G.unblockedDifferential R W) = 0 :=
@@ -282,7 +241,7 @@ private theorem exists_simplyBlockedSpecialization_stabilizeXChainMap_sub_mem_ra
   obtain ⟨P, hP⟩ : ∃ P, (MvPolynomial.X i : MvPolynomial (Fin n) R) • P = _ :=
     (exact_X_smul_simplyBlockedSpecialization R i _).mp hZ
   have hdP : P ∈ LinearMap.ker (G.unblockedDifferential R) :=
-    mem_ker_unblockedDifferential_of_X_smul_eq R G i hP
+    G.mem_ker_unblockedDifferential_of_X_smul_eq R hP
   obtain ⟨M', hM', U, hU⟩ :=
     G.exists_sub_stabilizeXChainMap_mem_range s R hdP
   -- The cycle `V_j • M'` maps to `V_i • S M' = ∂ (Z - V_i • U)`, so it is an unblocked boundary
@@ -322,7 +281,7 @@ theorem oneVariableSpecializationStabilizeXHomologyMap_bijective :
       oneVariableSpecializationHomologyClass_eq_zero_iff,
       mem_range_moduleCatToCycles_simplyBlockedComplex_iff,
       simplyBlockedChainEquiv_oneVariableSpecializationStabilizeXCyclesMap] at hy
-    have hz := (mem_ker_simplyBlockedComplex_d_iff R (G') j z.1).mp z.2
+    have hz := ((G').mem_ker_simplyBlockedComplex_d_iff R j z.1).mp z.2
     obtain ⟨Z', hZ'⟩ :=
       simplyBlockedSpecialization_surjective R j ((G').simplyBlockedChainEquiv R j z)
     rw [← hZ', simplyBlockedStabilizeXMap_simplyBlockedSpecialization] at hy
@@ -331,7 +290,7 @@ theorem oneVariableSpecializationStabilizeXHomologyMap_bijective :
       mem_range_moduleCatToCycles_simplyBlockedComplex_iff, ← hZ']
     exact G.simplyBlockedSpecialization_mem_range_of_stabilizeXChainMap s i R hz hy
   · obtain ⟨z, rfl⟩ := G.oneVariableSpecializationHomologyClass_surjective R i y
-    have hz := (mem_ker_simplyBlockedComplex_d_iff R G i z.1).mp z.2
+    have hz := (G.mem_ker_simplyBlockedComplex_d_iff R i z.1).mp z.2
     obtain ⟨Z, hZ⟩ :=
       simplyBlockedSpecialization_surjective R i (G.simplyBlockedChainEquiv R i z)
     rw [← hZ, ← simplyBlockedSpecialization_unblockedDifferential] at hz

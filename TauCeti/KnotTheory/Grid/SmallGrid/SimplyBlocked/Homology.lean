@@ -49,7 +49,7 @@ local notation "eChain" => twoByTwo.simplyBlockedChainEquiv R 0
 theorem twoByTwo_mem_simplyBlockedCycles_iff (c : (twoByTwo.simplyBlockedComplex R 0).X ()) :
     c ∈ twoByTwo.isKnot_of_two.simplyBlockedCycles R 0 ↔
       eChain c GridState.twoByTwoId = 0 := by
-  rw [IsKnot.mem_simplyBlockedCycles, twoByTwo_simplyBlockedDifferential_apply,
+  rw [mem_ker_simplyBlockedComplex_d_iff, twoByTwo_simplyBlockedDifferential_apply,
     Finsupp.single_eq_zero]
   simpa only [zero_mul] using (X_mul_cancel_right_iff
     (p := eChain c GridState.twoByTwoId) (q := 0) (i := twoByTwoSurvivingColumn))
@@ -165,7 +165,7 @@ theorem twoByTwoSimplyBlockedHomologyEquiv_symm_one :
     (twoByTwoSimplyBlockedHomologyEquiv R).symm 1 =
       twoByTwo.oneVariableSpecializationHomologyClass R 0
         ⟨(eChain).symm (twoByTwoSimplyBlockedCycle R),
-          (twoByTwo.isKnot_of_two.mem_simplyBlockedCycles R 0 _).mpr (by simp)⟩ := by
+          (twoByTwo.mem_ker_simplyBlockedComplex_d_iff R 0 _).mpr (by simp)⟩ := by
   apply (twoByTwoSimplyBlockedHomologyEquiv R).injective
   simp
 
