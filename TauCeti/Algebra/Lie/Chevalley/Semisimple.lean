@@ -18,7 +18,7 @@ splitting Cartan subalgebra `H`, and `hx : TauCeti.IsChevalleySystem ω x`, this
 equipped with `e : ι ≃ H.root` satisfying `(rootSystem H).pairingIn ℤ (e i) (e j) = P.pairing i j`,
 without assuming that roots or coroots span `X` or `Y`. A compatible cocharacter map `γ : Y →ₗ[ℤ] H`
 landing in `hx.chevalleyLieLattice` induces `toChevalleyLieLattice`, which upgrades to
-`chevalleyLieLatticeEquiv` when `Y` is free on simple coroots; specializing to
+`toChevalleyLieLatticeEquiv` when `Y` is free on simple coroots; specializing to
 `TauCeti.DynkinType.isChevalleySystem_chevalleySystem` treats every valid `TauCeti.DynkinType`.
 
 ## Main definitions and results
@@ -27,7 +27,7 @@ landing in `hx.chevalleyLieLattice` induces `toChevalleyLieLattice`, which upgra
   `TauCeti.IsChevalleySystem.lie_eq_chevalleyConstants_structConst_zsmul`: Chevalley constants on
   `P` extracted from `hx` along `e`.
 * `TauCeti.IsChevalleySystem.toChevalleyLieLattice`,
-  `TauCeti.IsChevalleySystem.chevalleyLieLatticeEquiv`: comparison with `hx.chevalleyLieLattice`.
+  `TauCeti.IsChevalleySystem.toChevalleyLieLatticeEquiv`: comparison with `hx.chevalleyLieLattice`.
 * `TauCeti.DynkinType.simplyConnectedChevalleyConstants`,
   `TauCeti.DynkinType.simplyConnectedChevalleyLieEquiv`, `TauCeti.DynkinType.chevalleyConstants`:
   canonical tables and simply connected isomorphism for valid Dynkin types.
@@ -421,26 +421,26 @@ include hx in
 `rootSystem H` and `Y` has a `ℤ`-basis `bY` indexed by `J ≃ b.support` consisting of the
 corresponding simple coroots of `P`, the abstract `ChevalleyLieAlgebra` is canonically isomorphic
 over `ℤ` to `hx.chevalleyLieLattice`. -/
-noncomputable def chevalleyLieLatticeEquiv :
+noncomputable def toChevalleyLieLatticeEquiv :
     RootPairing.ChevalleyLieAlgebra (hx.chevalleyConstants P e he) ≃ₗ⁅ℤ⁆ hx.chevalleyLieLattice :=
   LieEquiv.ofBijective
     (hx.toChevalleyLieLattice P e he (simpleCorootCoweightMap b bY s)
       (hx.simpleCorootCoweightMap_mem b bY s) (simpleCorootCoweightMap_pair P e he b bY s hbY))
     (hx.toChevalleyLieLattice_simpleCoroot_bijective P e he b bY s hbY)
 
-/-- `chevalleyLieLatticeEquiv` sends the `j`-th Cartan basis generator to the `s j`-th simple
+/-- `toChevalleyLieLatticeEquiv` sends the `j`-th Cartan basis generator to the `s j`-th simple
 coroot in `L`. -/
-theorem coe_chevalleyLieLatticeEquiv_cartan_basis (j : J) :
-    (hx.chevalleyLieLatticeEquiv P e he b bY s hbY
+theorem coe_toChevalleyLieLatticeEquiv_cartan_basis (j : J) :
+    (hx.toChevalleyLieLatticeEquiv P e he b bY s hbY
       (RootPairing.ChevalleyLieAlgebra.cartan _ (bY j)) : L) =
       (coroot ((s j : H.root) : Weight K H L) : L) := by
-  simp [chevalleyLieLatticeEquiv, simpleCorootCoweightMap]
+  simp [toChevalleyLieLatticeEquiv, simpleCorootCoweightMap]
 
-/-- `chevalleyLieLatticeEquiv` sends the `i`-th Chevalley root generator to `x (e i)`. -/
-@[simp] theorem coe_chevalleyLieLatticeEquiv_root (i : ι) :
-    (hx.chevalleyLieLatticeEquiv P e he b bY s hbY
+/-- `toChevalleyLieLatticeEquiv` sends the `i`-th Chevalley root generator to `x (e i)`. -/
+@[simp] theorem coe_toChevalleyLieLatticeEquiv_root (i : ι) :
+    (hx.toChevalleyLieLatticeEquiv P e he b bY s hbY
       (RootPairing.ChevalleyLieAlgebra.root _ i) : L) = x (e i) := by
-  simp [chevalleyLieLatticeEquiv]
+  simp [toChevalleyLieLatticeEquiv]
 
 end SimpleCoroot
 
@@ -493,7 +493,7 @@ private theorem killingSimpleCoroot_eq (j : Fin t.rank) :
 noncomputable def simplyConnectedChevalleyLieEquiv :
     RootPairing.ChevalleyLieAlgebra (t.simplyConnectedChevalleyConstants ht) ≃ₗ⁅ℤ⁆
       (t.isChevalleySystem_chevalleySystem ht).chevalleyLieLattice :=
-  (t.isChevalleySystem_chevalleySystem ht).chevalleyLieLatticeEquiv
+  (t.isChevalleySystem_chevalleySystem ht).toChevalleyLieLatticeEquiv
     (t.simplyConnectedRootDatum ht) (t.rootEquiv ht) (t.pairingIn_rootEquiv ht)
     ((t.rationalBase ht).map (t.rationalRootSystemEquiv ht))
     (Pi.basisFun ℤ (Fin t.rank)) (t.killingSimpleSupportEquiv ht) (t.killingSimpleCoroot_eq ht)
