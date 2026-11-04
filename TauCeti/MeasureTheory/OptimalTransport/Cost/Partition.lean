@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.MeasureTheory.Measure.RestrictPartition
+public import TauCeti.MeasureTheory.Measure.Restrict.Partition
 public import TauCeti.MeasureTheory.OptimalTransport.Cost.Mixture
 
 /-!
