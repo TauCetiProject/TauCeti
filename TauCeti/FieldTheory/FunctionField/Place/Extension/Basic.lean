@@ -9,6 +9,7 @@ public import Mathlib.FieldTheory.PurelyInseparable.Tower
 public import Mathlib.RingTheory.Valuation.Extension
 public import Mathlib.RingTheory.DedekindDomain.IntegralClosure
 public import TauCeti.FieldTheory.FunctionField.Place.Basic
+public import TauCeti.FieldTheory.FunctionField.Place.Filtration
 public import TauCeti.FieldTheory.FunctionField.Place.Map
 public import TauCeti.RingTheory.Valuation.Discrete.Normalize
 -- Proof-only: nontriviality survives restriction along an algebraic extension.
@@ -77,6 +78,10 @@ to the canonical fraction fields used by Mathlib's different API.
   `TauCeti.Place.ramificationIdx_dvd_ord_sum_of_linearIndependent_residue` — and the
   ultrametric estimate `TauCeti.Place.sum_ne_zero_of_ord_eq_mul_add_natCast` with
   `TauCeti.Place.ord_sum_le_of_ord_eq_mul_add_natCast` that combines them.
+* `TauCeti.Place.exists_sub_sum_mem_filtration`: expansion to finite order. If residues of
+  `u i ∈ 𝒪_{P'}` span `F'_{P'}` over `F_P` and `t` is a prime element for `P'`, every function
+  regular at `P'` agrees to order `n` with a combination of the `u i t ^ m`, `m < n`, whose
+  coefficients are regular at `P`.
 * `TauCeti.Place.ord_smul_of_restrict_eq`: `ord_P (c • z) = e(P ∣ P₁) · ord_{P₁} c + ord_P z`
   for `c` in the subfield `F₁` and `P` over the place `P₁` of `F₁`.
 * `TauCeti.Place.linearIndependent_of_ord_neg_of_restrict_eq`: arbitrary families of functions
@@ -955,6 +960,57 @@ theorem linearIndependent_mul_pow_of_linearIndependent_residue {ι : Type*}
     fun p ↦ (⟨p.1.1, Finset.mem_image_of_mem Prod.fst p.2⟩, p.1.2)
   exact hI.comp f fun p q h ↦ Subtype.ext <|
     congrArg (fun x : I × Fin (ramificationIdx F P') ↦ (x.1.1, x.2)) h
+
+/-- **Expansion to finite order.** If the residues of `u i ∈ 𝒪_{P'}` span the residue field of
+`P'` over that of the place below, and `t` is a uniformizer at `P'`, then every function regular
+at `P'` agrees to order `n` with a combination `∑_{m < n} ∑_i c_{m,i} u_i t ^ m` whose coefficients
+are regular at the place below. -/
+theorem exists_sub_sum_mem_filtration {ι : Type*} [Fintype ι] (u : ι → P'.integers)
+    (hu : Submodule.span (P'.restrict k F).ResidueField
+      (Set.range fun i ↦ IsLocalRing.residue P'.integers (u i)) = ⊤)
+    {t : F'} (ht : P'.ord t = 1) (n : ℕ) {y : F'} (hy : y ∈ P'.integers) :
+    ∃ c : ℕ → ι → (P'.restrict k F).integers,
+      y - ∑ m ∈ Finset.range n, ∑ i, algebraMap F F' (c m i : F) * (u i : F') * t ^ m ∈
+        P'.filtration n := by
+  classical
+  have ht0 : t ≠ 0 := by rintro rfl; simp at ht
+  induction n with
+  | zero => exact ⟨0, by simpa [P'.mem_filtration_zero_iff] using hy⟩
+  | succ n ih =>
+    obtain ⟨c, hc⟩ := ih
+    set z := y - ∑ m ∈ Finset.range n, ∑ i, algebraMap F F' (c m i : F) * (u i : F') * t ^ m
+    have hw : z / t ^ n ∈ P'.integers := by
+      rcases eq_or_ne z 0 with h | h
+      · simp [h]
+      · rw [P'.mem_integers_iff_ord_nonneg, P'.ord_div h (pow_ne_zero _ ht0), P'.ord_pow, ht]
+        have := (P'.mem_filtration_iff_le_ord h).mp hc
+        linarith
+    obtain ⟨r, hr⟩ := (Submodule.mem_span_range_iff_exists_fun _).mp
+      (hu ▸ Submodule.mem_top : IsLocalRing.residue P'.integers ⟨_, hw⟩ ∈ Submodule.span _ _)
+    choose d hd using fun i ↦ IsLocalRing.residue_surjective (r i)
+    -- The residue of `z / t ^ n` is the residue of `∑ d_i u_i`.
+    set W : P'.integers := ∑ i, algebraMap _ P'.integers (d i) * u i with hW
+    have hWres : IsLocalRing.residue P'.integers ⟨_, hw⟩ = IsLocalRing.residue P'.integers W := by
+      rw [← hr, hW, map_sum]
+      refine Finset.sum_congr rfl fun i _ ↦ ?_
+      rw [map_mul, Algebra.smul_def, ← hd, IsLocalRing.ResidueField.algebraMap_residue]
+    have hWcoe : (W : F') = ∑ i, algebraMap F F' (d i : F) * (u i : F') := by
+      rw [hW]
+      push_cast
+      simp
+    have h1 : (z / t ^ n - (W : F')) * t ^ n ∈ P'.filtration (1 + n) := by
+      have := P'.mul_mem_filtration ((P'.residue_eq_iff_sub_mem_filtration_one).mp hWres)
+        (P'.mem_filtration_ord (t ^ n))
+      rwa [P'.ord_pow, ht, mul_one] at this
+    refine ⟨Function.update c n d, ?_⟩
+    rw [Finset.sum_range_succ, Function.update_self,
+      Finset.sum_congr rfl fun m hm ↦ by rw [Function.update_of_ne (Finset.mem_range.mp hm).ne]]
+    convert h1 using 2
+    · push_cast
+      ring
+    · rw [sub_mul, div_mul_cancel₀ _ (pow_ne_zero _ ht0), hWcoe, Finset.sum_mul]
+      simp only [z]
+      ring
 
 end Independence
 
