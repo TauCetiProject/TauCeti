@@ -9,7 +9,6 @@ public import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.Weight.Differential
 public import TauCeti.Algebra.AlgebraicGroup.SplitTorus.Cocharacter
 public import TauCeti.Algebra.AlgebraicGroup.SplitTorus.Tangent
 public import TauCeti.Algebra.Lie.E6.Minuscule.Generated.Serre
-public import TauCeti.Algebra.Lie.E6.Minuscule.WeightTorus
 public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.Assembly
 import TauCeti.Algebra.Lie.E6.Minuscule.Generated.WeightTorus
 
