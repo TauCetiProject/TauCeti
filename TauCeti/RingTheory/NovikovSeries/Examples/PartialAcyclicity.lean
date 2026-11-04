@@ -6,12 +6,13 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Homology.ReidemeisterTorsion.Componentwise
+public import TauCeti.RingTheory.NovikovSeries.Reduced
 public import TauCeti.RingTheory.NovikovSeries.TotalQuotient
+public import Mathlib.RingTheory.LocalProperties.Reduced
 import Mathlib.Algebra.CharP.Two
 import TauCeti.Algebra.Homology.ModuleCat.Finrank
 import TauCeti.Algebra.Regular.NatCast
 import TauCeti.Algebra.Homology.ReidemeisterTorsion.SquareMinor
-import TauCeti.RingTheory.NovikovSeries.Reduced
 
 /-!
 # A partially acyclic complex over the Novikov ring of `ℤ/2`
@@ -103,6 +104,23 @@ theorem eq_single_zero_add_single_one (a : NovikovSeries ℤ (ZMod 2) 0) :
   obtain rfl | rfl : h = 0 ∨ h = 1 := by decide +revert
   all_goals simp [coeff_add]
 
+/-- Multiplication in `Nov(ℤ, ℤ/2, 0)`, constant coefficient:
+`(a * b)(0) = a(0) b(0) + a(1) b(1)`. -/
+private theorem coeff_mul_zero (a b : NovikovSeries ℤ (ZMod 2) 0) :
+    (a * b).coeff 0 = a.coeff 0 * b.coeff 0 + a.coeff 1 * b.coeff 1 := by
+  classical
+  conv_lhs => rw [eq_single_zero_add_single_one a, eq_single_zero_add_single_one b]
+  simp [add_mul, mul_add, single_mul_single, CharTwo.add_self_eq_zero, coeff_add]
+
+/-- Multiplication in `Nov(ℤ, ℤ/2, 0)`, coefficient of `g`:
+`(a * b)(1) = a(0) b(1) + a(1) b(0)`. -/
+private theorem coeff_mul_one (a b : NovikovSeries ℤ (ZMod 2) 0) :
+    (a * b).coeff 1 = a.coeff 0 * b.coeff 1 + a.coeff 1 * b.coeff 0 := by
+  classical
+  conv_lhs => rw [eq_single_zero_add_single_one a, eq_single_zero_add_single_one b]
+  simp [add_mul, mul_add, single_mul_single, CharTwo.add_self_eq_zero, coeff_add]
+  ring
+
 /-- For a sign `s`, the character of `Nov(ℤ, ℤ/2, 0)` sending the deck monomial `g` to `s`:
 `a ↦ a(0) + s a(1)`. -/
 def character (s : ℤˣ) : NovikovSeries ℤ (ZMod 2) 0 →+* ℤ where
@@ -111,15 +129,8 @@ def character (s : ℤˣ) : NovikovSeries ℤ (ZMod 2) 0 →+* ℤ where
     classical
     simp [← single_zero_one]
   map_mul' a b := by
-    classical
-    obtain ⟨x, y, rfl⟩ : ∃ x y, a = single 0 x + single 1 y :=
-      ⟨_, _, eq_single_zero_add_single_one a⟩
-    obtain ⟨x', y', rfl⟩ : ∃ x y, b = single 0 x + single 1 y :=
-      ⟨_, _, eq_single_zero_add_single_one b⟩
-    simp only [add_mul, mul_add, single_mul_single, zero_add, add_zero, CharTwo.add_self_eq_zero,
-      coeff_add, coeff_single]
-    simp only [Pi.single_apply, zero_ne_one, one_ne_zero, ite_true, ite_false]
-    linear_combination (-(y * y')) * Int.units_coe_mul_self s
+    simp only [coeff_mul_zero, coeff_mul_one]
+    linear_combination (-(a.coeff 1 * b.coeff 1)) * Int.units_coe_mul_self s
   map_zero' := by simp [coeff_zero]
   map_add' a b := by
     simp only [coeff_add]
@@ -137,20 +148,14 @@ theorem character_deck (s : ℤˣ) : character s deck = s := by
 private theorem mul_one_add_smul_deck (s : ℤˣ) (a : NovikovSeries ℤ (ZMod 2) 0) :
     a * (1 + (s : ℤ) • deck) = character s a • (1 + (s : ℤ) • deck) := by
   classical
-  obtain ⟨x, y, rfl⟩ : ∃ x y, a = single 0 x + single 1 y :=
-    ⟨_, _, eq_single_zero_add_single_one a⟩
   ext h
   obtain rfl | rfl : h = 0 ∨ h = 1 := by decide +revert
-  · simp only [deck, smul_single, ← single_zero_one, add_mul, mul_add, single_mul_single,
-      zero_add, add_zero, CharTwo.add_self_eq_zero, coeff_add, coeff_smul, coeff_single,
-      Pi.single_apply, character_apply]
-    simp only [zero_ne_one, one_ne_zero, ite_true, ite_false, smul_eq_mul]
-    ring
-  · simp only [deck, smul_single, ← single_zero_one, add_mul, mul_add, single_mul_single,
-      zero_add, add_zero, CharTwo.add_self_eq_zero, coeff_add, coeff_smul, coeff_single,
-      Pi.single_apply, character_apply]
-    simp only [zero_ne_one, one_ne_zero, ite_true, ite_false, smul_eq_mul]
-    linear_combination (-y) * Int.units_coe_mul_self s
+  all_goals
+    simp only [coeff_mul_zero, coeff_mul_one, coeff_add, coeff_smul, coeff_one, coeff_deck_zero,
+      coeff_deck_one, character_apply, smul_eq_mul]
+    simp
+  · ring
+  · linear_combination (-a.coeff 1) * Int.units_coe_mul_self s
 
 /-- A nonzerodivisor of `Nov(ℤ, ℤ/2, 0)` has nonzero image under each character. -/
 theorem character_ne_zero_of_mem_nonZeroDivisors (s : ℤˣ) {a : NovikovSeries ℤ (ZMod 2) 0}
@@ -255,10 +260,6 @@ theorem fractionRingEquiv_apply (x : FractionRing (NovikovSeries ℤ (ZMod 2) 0)
 over a domain on a finitely generated abelian group. -/
 instance : IsArtinianRing (FractionRing (NovikovSeries ℤ (ZMod 2) 0)) :=
   isArtinianRing_of_isFractionRing (H := ZMod 2) ℤ 0 _
-
-/-- The total ring of fractions of `Nov(ℤ, ℤ/2, 0)` is reduced, being isomorphic to `ℚ × ℚ`. -/
-instance : IsReduced (FractionRing (NovikovSeries ℤ (ZMod 2) 0)) :=
-  isReduced_of_injective fractionRingEquiv fractionRingEquiv.injective
 
 /-! ### The two-term complex with differential `1 - g` -/
 
