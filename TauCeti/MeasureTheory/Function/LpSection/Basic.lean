@@ -116,10 +116,12 @@ theorem memLp_norm_add (hs : AEStronglyMeasurableSection 𝕜 F μ s)
   (mem_memLpSections_iff.1 ((memLpSections 𝕜 F E p μ).add_mem
     (mem_memLpSections_iff.2 ⟨hs, hsp⟩) (mem_memLpSections_iff.2 ⟨ht, htp⟩))).2
 
-theorem memLp_norm_smul (c : 𝕜) (hs : AEStronglyMeasurableSection 𝕜 F μ s)
-    (hsp : MemLp (fun x ↦ ‖s x‖) p μ) : MemLp (fun x ↦ ‖c • s x‖) p μ :=
-  (mem_memLpSections_iff.1 ((memLpSections 𝕜 F E p μ).smul_mem c
-    (mem_memLpSections_iff.2 ⟨hs, hsp⟩))).2
+omit [TopologicalSpace B] [OpensMeasurableSpace B] [SecondCountableTopology B] in
+/-- Scaling a family of vectors with `p`-integrable norms keeps the norms `p`-integrable; no
+measurability of the vectors themselves is needed. -/
+theorem memLp_norm_smul (c : 𝕜) (hsp : MemLp (fun x ↦ ‖s x‖) p μ) :
+    MemLp (fun x ↦ ‖c • s x‖) p μ := by
+  simpa only [norm_smul] using hsp.const_mul ‖c‖
 
 theorem memLp_norm_sub (hs : AEStronglyMeasurableSection 𝕜 F μ s)
     (hsp : MemLp (fun x ↦ ‖s x‖) p μ) (ht : AEStronglyMeasurableSection 𝕜 F μ t)
@@ -217,7 +219,7 @@ theorem mk_add (hs : AEStronglyMeasurableSection 𝕜 F μ s) (hsp : MemLp (fun 
 @[simp]
 theorem mk_smul (c : 𝕜) (hs : AEStronglyMeasurableSection 𝕜 F μ s)
     (hsp : MemLp (fun x ↦ ‖s x‖) p μ) :
-    c • mk s hs hsp = mk (fun x ↦ c • s x) (hs.const_smul c) (memLp_norm_smul c hs hsp) :=
+    c • mk s hs hsp = mk (fun x ↦ c • s x) (hs.const_smul c) (memLp_norm_smul c hsp) :=
   (rfl)
 
 @[simp]
@@ -247,7 +249,7 @@ theorem coeFn_add : ∀ᵐ x ∂μ, (f + g) x = f x + g x := by
 
 theorem coeFn_smul (c : 𝕜) : ∀ᵐ x ∂μ, (c • f) x = c • f x := by
   have e : c • f = mk (fun x ↦ c • f x) (f.aestronglyMeasurableSection.const_smul c)
-      (memLp_norm_smul c f.aestronglyMeasurableSection f.memLp_norm) := by
+      (memLp_norm_smul c f.memLp_norm) := by
     conv_lhs => rw [← mk_coeFn f, mk_smul]
   rw [e]
   exact coeFn_mk _ _
