@@ -12,9 +12,9 @@ public import TauCeti.AlgebraicTopology.SemilocallySimplyConnected.Basic
 /-!
 # Local topology of real manifolds
 
-The convex model range gives the local path-connectedness needed by manifold charts. Extended
-charts also provide simply connected neighbourhoods, so real manifolds are
-semilocally simply connected.
+The convex model range makes charted spaces locally path-connected; nonempty preconnected
+charted spaces are therefore path-connected. Extended charts also provide simply connected
+neighbourhoods, so real manifolds are semilocally simply connected.
 -/
 
 public section
@@ -36,6 +36,20 @@ variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
 theorem locallyPathConnectedSpace (I : ModelWithCorners 𝕜 E H) : LocallyPathConnectedSpace H := by
   let _ : LocallyPathConnectedSpace (Set.range I) := I.convex_range.locallyPathConnectedSpace
   exact I.isClosedEmbedding.isEmbedding.toHomeomorph.symm.locallyPathConnectedSpace
+
+/-- A charted space modelled on a model with corners is locally path-connected. -/
+theorem locallyPathConnectedSpace_of_chartedSpace (I : ModelWithCorners 𝕜 E H) (M : Type*)
+    [TopologicalSpace M] [ChartedSpace H M] : LocallyPathConnectedSpace M := by
+  let : LocallyPathConnectedSpace H := I.locallyPathConnectedSpace
+  exact ChartedSpace.locallyPathConnectedSpace H M
+
+/-- A nonempty preconnected charted space modelled on a model with corners is path-connected. -/
+theorem pathConnectedSpace (I : ModelWithCorners 𝕜 E H) (M : Type*)
+    [TopologicalSpace M] [ChartedSpace H M] [PreconnectedSpace M] [Nonempty M] :
+    PathConnectedSpace M := by
+  let : LocallyPathConnectedSpace M := I.locallyPathConnectedSpace_of_chartedSpace M
+  let : ConnectedSpace M := ⟨inferInstance⟩
+  exact PathConnectedSpace.of_locallyPathConnectedSpace
 
 /-- A charted space modelled on `H`, where `I : ModelWithCorners 𝕜 E H`, is semilocally
 simply connected. -/
