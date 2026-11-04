@@ -23,10 +23,10 @@ is a bounded operator `TauCeti.integralOperatorLp K p hK hA hB : Lp F p ν →L[
 norm at most `A ^ (1 - 1/p) * B ^ (1/p)`, hence at most `max A B`. For `p = ∞` the exponent
 `1/p` is `0`, so the bound is `A`.
 
-This is the vector-valued form of Schur's test: for finite `p` it follows from the scalar
-estimate `TauCeti.lintegral_rpow_lintegral_mul_le` applied to the norm kernel `‖K x y‖ₑ` and the
-input `‖u y‖ₑ`, together with `‖∫ y, K x y (u y) ∂ν‖ₑ ≤ ∫⁻ y, ‖K x y‖ₑ * ‖u y‖ₑ ∂ν`; for `p = ∞`
-only the row bound is used. Typical applications are Littlewood–Paley block estimates, where the
+This is the vector-valued form of Schur's test: it follows from the scalar `Lᵖ` estimate
+`TauCeti.eLpNorm_lintegral_mul_le` applied to the norm kernel `‖K x y‖ₑ` and the input `‖u y‖ₑ`,
+together with `‖∫ y, K x y (u y) ∂ν‖ₑ ≤ ∫⁻ y, ‖K x y‖ₑ * ‖u y‖ₑ ∂ν`; for `p = ∞` only the row
+bound is used. Typical applications are Littlewood–Paley block estimates, where the
 kernels of the localized operators between dyadic blocks have uniform `L¹` bounds in each
 variable, and matrix-valued kernels acting on sections of a trivial finite-rank bundle.
 
@@ -67,92 +67,30 @@ private theorem one_sub_toReal_inv_nonneg (hp : 1 ≤ p) : 0 ≤ 1 - p.toReal⁻
   · simp
   · exact sub_nonneg.2 (inv_le_one_of_one_le₀ (by simpa using ENNReal.toReal_mono hp_top hp))
 
-omit [SFinite μ] in
-/-- The pointwise estimate behind the `p = ∞` case: if the row integrals of `‖K‖ₑ` are at most
-`A`, then `∫⁻ y, ‖K x y‖ₑ * ‖u y‖ₑ ∂ν ≤ A * ‖u‖_∞` for almost every `x`. -/
-private theorem ae_lintegral_enorm_mul_le_mul_eLpNormEssSup
-    (hK : AEStronglyMeasurable (uncurry K) (μ.prod ν)) {A : ℝ≥0∞}
-    (hA : ∀ᵐ x ∂μ, ∫⁻ y, ‖K x y‖ₑ ∂ν ≤ A) :
-    ∀ᵐ x ∂μ, ∫⁻ y, ‖K x y‖ₑ * ‖u y‖ₑ ∂ν ≤ A * eLpNormEssSup u ν := by
-  filter_upwards [hA, hK.prodMk_left] with x hx hKx
-  calc ∫⁻ y, ‖K x y‖ₑ * ‖u y‖ₑ ∂ν ≤ ∫⁻ y, ‖K x y‖ₑ * eLpNormEssSup u ν ∂ν :=
-        lintegral_mono_ae <| by
-          filter_upwards [ae_le_eLpNormEssSup (f := u) (μ := ν)] with y hy
-          gcongr
-    _ = (∫⁻ y, ‖K x y‖ₑ ∂ν) * eLpNormEssSup u ν := lintegral_mul_const'' _ hKx.enorm
-    _ ≤ A * eLpNormEssSup u ν := by gcongr
-
-/-- Schur's test for the norm kernel `‖K x y‖ₑ` of an a.e. strongly measurable operator-valued
-kernel, together with the a.e. measurability of `x ↦ ∫⁻ y, ‖K x y‖ₑ * ‖u y‖ₑ ∂ν`. The
-scalar Schur test needs a measurable kernel, so it is applied to a strongly measurable
-modification of `K`, which agrees with `K` on almost every row and on almost every column. -/
-private theorem lintegral_rpow_lintegral_enorm_mul_le
-    (hK : AEStronglyMeasurable (uncurry K) (μ.prod ν)) (hu : AEStronglyMeasurable u ν)
-    {r : ℝ} (hr : 1 ≤ r) {A B : ℝ≥0∞} (hA : ∀ᵐ x ∂μ, ∫⁻ y, ‖K x y‖ₑ ∂ν ≤ A)
-    (hB : ∀ᵐ y ∂ν, ∫⁻ x, ‖K x y‖ₑ ∂μ ≤ B) :
-    AEMeasurable (fun x ↦ ∫⁻ y, ‖K x y‖ₑ * ‖u y‖ₑ ∂ν) μ ∧
-      ∫⁻ x, (∫⁻ y, ‖K x y‖ₑ * ‖u y‖ₑ ∂ν) ^ r ∂μ ≤
-        A ^ (r - 1) * B * ∫⁻ y, ‖u y‖ₑ ^ r ∂ν := by
-  set K' := hK.mk (uncurry K)
-  have hrow : ∀ᵐ x ∂μ, ∀ᵐ y ∂ν, K x y = K' (x, y) := Measure.ae_ae_of_ae_prod hK.ae_eq_mk
-  have hcol : ∀ᵐ y ∂ν, ∀ᵐ x ∂μ, K x y = K' (x, y) := Measure.ae_ae_of_ae_prod
-    ((Measure.measurePreserving_swap (μ := ν) (ν := μ)).quasiMeasurePreserving.ae hK.ae_eq_mk)
-  have hrow' : (fun x ↦ ∫⁻ y, ‖K x y‖ₑ * ‖u y‖ₑ ∂ν) =ᵐ[μ]
-      fun x ↦ ∫⁻ y, ‖K' (x, y)‖ₑ * ‖u y‖ₑ ∂ν := by
-    filter_upwards [hrow] with x hx
-    exact lintegral_congr_ae <| hx.mono fun y hy ↦ by simp only [hy]
-  have hk : Measurable (uncurry fun x y ↦ ‖K' (x, y)‖ₑ) := hK.stronglyMeasurable_mk.enorm
-  refine ⟨(hk.aemeasurable.mul hu.enorm.comp_snd).lintegral_prod_right'.congr hrow'.symm, ?_⟩
-  rw [lintegral_congr_ae (hrow'.mono fun x hx ↦ congrArg (· ^ r) hx)]
-  refine lintegral_rpow_lintegral_mul_le hk hu.enorm hr ?_ ?_
-  · filter_upwards [hA, hrow] with x hx hx'
-    refine le_trans (le_of_eq (lintegral_congr_ae ?_)) hx
-    filter_upwards [hx'] with y hy
-    simp [hy]
-  · filter_upwards [hB, hcol] with y hy hy'
-    refine le_trans (le_of_eq (lintegral_congr_ae ?_)) hy
-    filter_upwards [hy'] with x hx
-    simp [hx]
-
 /-- The `Lᵖ` bound for the dominating function `x ↦ ∫⁻ y, ‖K x y‖ₑ * ‖u y‖ₑ ∂ν`, from which both
-the integrability and the norm bound of the integral operator follow. -/
+the integrability and the norm bound of the integral operator follow: Schur's test
+`TauCeti.eLpNorm_lintegral_mul_le` for the norm kernel `‖K x y‖ₑ`. -/
 private theorem eLpNorm_lintegral_enorm_mul_le
     (hK : AEStronglyMeasurable (uncurry K) (μ.prod ν)) (hu : AEStronglyMeasurable u ν)
     (hp : 1 ≤ p) {A B : ℝ≥0∞} (hA : ∀ᵐ x ∂μ, ∫⁻ y, ‖K x y‖ₑ ∂ν ≤ A)
     (hB : ∀ᵐ y ∂ν, ∫⁻ x, ‖K x y‖ₑ ∂μ ≤ B) :
     eLpNorm (fun x ↦ ∫⁻ y, ‖K x y‖ₑ * ‖u y‖ₑ ∂ν) p μ ≤
-      A ^ (1 - p.toReal⁻¹) * B ^ p.toReal⁻¹ * eLpNorm u p ν := by
-  have hr : 1 ≤ p.toReal ∨ p = ∞ := by
-    rcases eq_or_ne p ∞ with rfl | hp_top
-    · exact .inr rfl
-    · exact .inl (by simpa using ENNReal.toReal_mono hp_top hp)
-  obtain ⟨hmeas, -⟩ := lintegral_rpow_lintegral_enorm_mul_le hK hu le_rfl hA hB
-  rcases eq_or_ne p ∞ with rfl | hp_top
-  · simp only [eLpNorm_exponent_top hmeas.aestronglyMeasurable, eLpNorm_exponent_top hu,
-      ENNReal.toReal_top, inv_zero, sub_zero, ENNReal.rpow_one, ENNReal.rpow_zero, mul_one]
-    refine eLpNormEssSup_le_of_ae_enorm_bound ?_
-    simpa only [enorm_eq_self] using ae_lintegral_enorm_mul_le_mul_eLpNormEssSup (u := u) hK hA
-  have hp0 : p ≠ 0 := (zero_lt_one.trans_le hp).ne'
-  have hr : 1 ≤ p.toReal := hr.resolve_right hp_top
-  have hr0 : 0 < p.toReal := zero_lt_one.trans_le hr
-  obtain ⟨-, hS⟩ := lintegral_rpow_lintegral_enorm_mul_le hK hu hr hA hB
-  rw [eLpNorm_eq_lintegral_rpow_enorm_toReal hp0 hp_top hmeas.aestronglyMeasurable,
-    eLpNorm_eq_lintegral_rpow_enorm_toReal hp0 hp_top hu]
-  simp only [enorm_eq_self]
-  calc (∫⁻ x, (∫⁻ y, ‖K x y‖ₑ * ‖u y‖ₑ ∂ν) ^ p.toReal ∂μ) ^ (1 / p.toReal)
-      ≤ (A ^ (p.toReal - 1) * B * ∫⁻ y, ‖u y‖ₑ ^ p.toReal ∂ν) ^ (1 / p.toReal) := by
-        gcongr
-    _ = A ^ (1 - p.toReal⁻¹) * B ^ p.toReal⁻¹ *
-          (∫⁻ y, ‖u y‖ₑ ^ p.toReal ∂ν) ^ (1 / p.toReal) := by
-        rw [ENNReal.mul_rpow_of_nonneg _ _ (by positivity),
-          ENNReal.mul_rpow_of_nonneg _ _ (by positivity), ← ENNReal.rpow_mul, one_div,
-          show (p.toReal - 1) * p.toReal⁻¹ = 1 - p.toReal⁻¹ by field_simp]
+      A ^ (1 - p.toReal⁻¹) * B ^ p.toReal⁻¹ * eLpNorm u p ν :=
+  (eLpNorm_lintegral_mul_le (k := fun x y ↦ ‖K x y‖ₑ) hK.enorm hu.enorm hp hA hB).trans_eq
+    (by rw [eLpNorm_enorm _ hu])
+
+/-- For finite `A` and `B`, the constant `A ^ (1 - 1/p) * B ^ (1/p)` of Schur's test is the
+coercion of the same expression in `ℝ≥0`. -/
+private theorem coe_schur_const (hp : 1 ≤ p) (A B : ℝ≥0) :
+    ((A ^ (1 - p.toReal⁻¹) * B ^ p.toReal⁻¹ : ℝ≥0) : ℝ≥0∞) =
+      (A : ℝ≥0∞) ^ (1 - p.toReal⁻¹) * (B : ℝ≥0∞) ^ p.toReal⁻¹ := by
+  rw [ENNReal.coe_mul, ENNReal.coe_rpow_of_nonneg _ (one_sub_toReal_inv_nonneg hp),
+    ENNReal.coe_rpow_of_nonneg _ (by positivity)]
 
 /-- The constant `A ^ (1 - 1/p) * B ^ (1/p)` of Schur's test is finite for finite `A` and `B`. -/
 private theorem schur_const_lt_top (hp : 1 ≤ p) (A B : ℝ≥0) :
     (A : ℝ≥0∞) ^ (1 - p.toReal⁻¹) * (B : ℝ≥0∞) ^ p.toReal⁻¹ < ∞ :=
-  ENNReal.mul_lt_top (ENNReal.rpow_lt_top_of_nonneg (one_sub_toReal_inv_nonneg hp)
-    ENNReal.coe_ne_top) (ENNReal.rpow_lt_top_of_nonneg (by positivity) ENNReal.coe_ne_top)
+  coe_schur_const hp A B ▸ ENNReal.coe_lt_top
 
 /-- For `u ∈ Lᵖ(ν)` the dominating function `x ↦ ∫⁻ y, ‖K x y‖ₑ * ‖u y‖ₑ ∂ν` is finite almost
 everywhere. -/
@@ -161,8 +99,8 @@ private theorem ae_lintegral_enorm_mul_lt_top
     {A B : ℝ≥0} (hA : ∀ᵐ x ∂μ, ∫⁻ y, ‖K x y‖ₑ ∂ν ≤ A)
     (hB : ∀ᵐ y ∂ν, ∫⁻ x, ‖K x y‖ₑ ∂μ ≤ B) :
     ∀ᵐ x ∂μ, ∫⁻ y, ‖K x y‖ₑ * ‖u y‖ₑ ∂ν < ∞ := by
-  obtain ⟨hmeas, -⟩ := lintegral_rpow_lintegral_enorm_mul_le hK hu.aestronglyMeasurable le_rfl
-    hA hB
+  have hmeas : AEMeasurable (fun x ↦ ∫⁻ y, ‖K x y‖ₑ * ‖u y‖ₑ ∂ν) μ :=
+    (hK.enorm.mul hu.aestronglyMeasurable.enorm.comp_snd).lintegral_prod_right'
   have hfin : eLpNorm (fun x ↦ ∫⁻ y, ‖K x y‖ₑ * ‖u y‖ₑ ∂ν) p μ < ∞ :=
     (eLpNorm_lintegral_enorm_mul_le hK hu.aestronglyMeasurable hp hA hB).trans_lt
       (ENNReal.mul_lt_top (schur_const_lt_top hp A B) hu.eLpNorm_lt_top)
@@ -252,13 +190,11 @@ def integralOperatorLp (K : α → β → F →L[𝕜] G) (p : ℝ≥0∞) [Fact
         filter_upwards [Lp.coeFn_smul c u] with y hy
         rw [hy, Pi.smul_apply, map_smul] }
     (A ^ (1 - p.toReal⁻¹) * B ^ p.toReal⁻¹ : ℝ≥0) fun u ↦ by
-      have hle := eLpNorm_integral_apply_le hK (Lp.memLp u).aestronglyMeasurable
-        (Fact.out : 1 ≤ p) hA hB
-      rw [← ENNReal.coe_rpow_of_nonneg _ (one_sub_toReal_inv_nonneg (Fact.out : 1 ≤ p)),
-        ← ENNReal.coe_rpow_of_nonneg _ (by positivity), ← ENNReal.coe_mul] at hle
-      rw [LinearMap.coe_mk, AddHom.coe_mk, Lp.norm_toLp, Lp.norm_def, ← ENNReal.coe_toReal,
-        ← ENNReal.toReal_mul]
-      exact ENNReal.toReal_mono (ENNReal.mul_ne_top ENNReal.coe_ne_top (Lp.eLpNorm_ne_top u)) hle
+      refine (Lp.norm_toLp _ (memLp_integral_apply hK (Lp.memLp u) Fact.out hA hB)).trans_le
+        (ENNReal.toReal_le_of_le_ofReal (by positivity) ?_)
+      rw [ENNReal.ofReal_mul NNReal.zero_le_coe, ENNReal.ofReal_coe_nnreal,
+        ofReal_norm, Lp.enorm_def, coe_schur_const Fact.out]
+      exact eLpNorm_integral_apply_le hK (Lp.memLp u).aestronglyMeasurable Fact.out hA hB
 
 section integralOperatorLp
 
