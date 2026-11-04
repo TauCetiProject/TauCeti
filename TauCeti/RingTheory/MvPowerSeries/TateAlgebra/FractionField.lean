@@ -32,6 +32,50 @@ coefficient field nor finiteness of the variable type is needed for the construc
 
 public section
 
+namespace MvPowerSeries
+
+/-- If `μ₀` minimizes `μ i₀` over the support of `Q`, then for `μ₀ i₀ < N` the `μ₀`-th coefficient
+of `P * X i₀ ^ N - Q * ∑_{k < N} C (f k) * X i₀ ^ (N - 1 - k)` is `- f (N - 1) * coeff μ₀ Q`. -/
+private theorem coeff_mul_X_pow_sub_mul_sum_eq {σ R : Type*} [CommRing R]
+    (P Q : MvPowerSeries σ R) (i₀ : σ) {μ₀ : σ →₀ ℕ}
+    (hQ_min : ∀ μ, coeff μ Q ≠ 0 → μ₀ i₀ ≤ μ i₀) (f : ℕ → R) {N : ℕ} (hNd : μ₀ i₀ < N) :
+    coeff μ₀ (P * X i₀ ^ N - Q * ∑ k ∈ Finset.range N, C (f k) * X i₀ ^ (N - 1 - k)) =
+      -(f (N - 1) * coeff μ₀ Q) := by
+  have hPX : coeff μ₀ (P * X i₀ ^ N) = 0 := by
+    rw [X_pow_eq, coeff_mul_monomial]
+    split_ifs with hle
+    · exfalso
+      have h := hle i₀
+      rw [Finsupp.single_eq_same] at h
+      omega
+    · rfl
+  have hQX_pos {m : ℕ} (hm : 0 < m) : coeff μ₀ (Q * X i₀ ^ m) = 0 := by
+    rw [X_pow_eq, coeff_mul_monomial]
+    split_ifs with hle
+    · rw [mul_one]
+      by_contra hne
+      have hmin_sub := hQ_min (μ₀ - Finsupp.single i₀ m) hne
+      have hm_le : m ≤ μ₀ i₀ := by
+        have h := hle i₀
+        rwa [Finsupp.single_eq_same] at h
+      simp only [Finsupp.coe_tsub, Pi.sub_apply, Finsupp.single_eq_same] at hmin_sub
+      omega
+    · rfl
+  have hN_pos : 0 < N := (Nat.zero_le _).trans_lt hNd
+  have hQP : coeff μ₀ (Q * ∑ k ∈ Finset.range N, C (f k) * X i₀ ^ (N - 1 - k)) =
+      f (N - 1) * coeff μ₀ Q := by
+    rw [Finset.mul_sum, map_sum, Finset.sum_eq_single (N - 1)]
+    · rw [Nat.sub_self, pow_zero, mul_one, mul_comm, coeff_C_mul]
+    · intro k hk hk_ne
+      have hkN : k < N := Finset.mem_range.mp hk
+      have hm : 0 < N - 1 - k := by omega
+      rw [← mul_assoc, mul_comm Q, mul_assoc, coeff_C_mul, hQX_pos hm, mul_zero]
+    · intro hnot
+      exact absurd (Finset.mem_range.mpr (Nat.sub_lt hN_pos one_pos)) hnot
+  rw [map_sub, hPX, hQP, zero_sub]
+
+end MvPowerSeries
+
 namespace TauCeti.MvPowerSeries
 
 open _root_.MvPowerSeries Filter
@@ -194,46 +238,6 @@ private theorem exists_tendsto_sum_pow_sq_div_pow [CompleteSpace (GaussFractionF
   rw [← ht_norm]
   exact le_of_tendsto ((hz.sub tendsto_const_nhds).norm)
     (eventually_atTop.mpr ⟨N, fun M hNM ↦ hs_diff hNM⟩)
-
-/-- If `μ₀` minimizes `μ i₀` over the support of `Q`, then for `μ₀ i₀ < N` the `μ₀`-th coefficient
-of `P * X i₀ ^ N - Q * ∑_{k < N} C (f k) * X i₀ ^ (N - 1 - k)` is `- f (N - 1) * coeff μ₀ Q`. -/
-private theorem coeff_mul_X_pow_sub_mul_sum_eq {σ R : Type*} [CommRing R]
-    (P Q : _root_.MvPowerSeries σ R) (i₀ : σ) {μ₀ : σ →₀ ℕ}
-    (hQ_min : ∀ μ, coeff μ Q ≠ 0 → μ₀ i₀ ≤ μ i₀) (f : ℕ → R) {N : ℕ} (hNd : μ₀ i₀ < N) :
-    coeff μ₀ (P * X i₀ ^ N - Q * ∑ k ∈ Finset.range N, C (f k) * X i₀ ^ (N - 1 - k)) =
-      -(f (N - 1) * coeff μ₀ Q) := by
-  have hPX : coeff μ₀ (P * X i₀ ^ N) = 0 := by
-    rw [X_pow_eq, coeff_mul_monomial]
-    split_ifs with hle
-    · exfalso
-      have h := hle i₀
-      rw [Finsupp.single_eq_same] at h
-      omega
-    · rfl
-  have hQX_pos {m : ℕ} (hm : 0 < m) : coeff μ₀ (Q * X i₀ ^ m) = 0 := by
-    rw [X_pow_eq, coeff_mul_monomial]
-    split_ifs with hle
-    · rw [mul_one]
-      by_contra hne
-      have hmin_sub := hQ_min (μ₀ - Finsupp.single i₀ m) hne
-      have hm_le : m ≤ μ₀ i₀ := by
-        have h := hle i₀
-        rwa [Finsupp.single_eq_same] at h
-      simp only [Finsupp.coe_tsub, Pi.sub_apply, Finsupp.single_eq_same] at hmin_sub
-      omega
-    · rfl
-  have hN_pos : 0 < N := (Nat.zero_le _).trans_lt hNd
-  have hQP : coeff μ₀ (Q * ∑ k ∈ Finset.range N, C (f k) * X i₀ ^ (N - 1 - k)) =
-      f (N - 1) * coeff μ₀ Q := by
-    rw [Finset.mul_sum, map_sum, Finset.sum_eq_single (N - 1)]
-    · rw [Nat.sub_self, pow_zero, mul_one, mul_comm, coeff_C_mul]
-    · intro k hk hk_ne
-      have hkN : k < N := Finset.mem_range.mp hk
-      have hm : 0 < N - 1 - k := by omega
-      rw [← mul_assoc, mul_comm Q, mul_assoc, coeff_C_mul, hQX_pos hm, mul_zero]
-    · intro hnot
-      exact absurd (Finset.mem_range.mpr (Nat.sub_lt hN_pos one_pos)) hnot
-  rw [map_sub, hPX, hQP, zero_sub]
 
 end Helpers
 
