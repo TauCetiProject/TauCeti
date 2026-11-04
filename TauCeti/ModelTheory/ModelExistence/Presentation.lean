@@ -173,8 +173,8 @@ theorem model_morleyAxioms_rel_iff [L.Structure M]
       ∀ a : Fin n → M, S.RelMap (morleyRel (.rel R ts) hφ) a ↔
         Structure.RelMap R (fun i => (ts i).realize (Sum.elim Empty.elim a)) := by
   simp only [morleyAxioms_rel, Theory.model_singleton_iff, Sentence.realize_alls,
-    BoundedFormula.realize_iff, realize_morleyAtom, LHom.realize_onBoundedFormula,
-    BoundedFormula.Realize]
+    BoundedFormula.realize_iff, realize_morleyAtom, LHom.realize_onBoundedFormula]
+  exact forall_congr' fun _ => iff_congr Iff.rfl BoundedFormula.realize_rel
 
 /-- The implication axiom identifies its relation with implication between component relations. -/
 theorem model_morleyAxioms_imp_iff {n : ℕ} (φ ψ : L.BoundedFormulaω Empty n)
@@ -212,7 +212,7 @@ theorem model_morleyAxioms_iSup_iff {n : ℕ} (φs : ℕ → L.BoundedFormulaω 
 end AxiomSemantics
 
 /-- The Morley theory of a countable fragment is countable, without a language-size assumption. -/
-theorem morleyTheory_countable (hA : (A : Set (Σ n, L.BoundedFormulaω Empty n)).Countable) :
+theorem countable_morleyTheory (hA : (A : Set (Σ n, L.BoundedFormulaω Empty n)).Countable) :
     (morleyTheory A).Countable := by
   have := hA.to_subtype
   refine Set.countable_iUnion fun p => ?_
@@ -292,7 +292,7 @@ theorem morleySupType_mem_morleyTypes {n : ℕ} (φs : ℕ → L.BoundedFormula�
   (mem_morleyTypes_iff A).2 (Or.inr ⟨n, φs, hφ, rfl⟩)
 
 /-- A countable fragment has countably many obstruction types. -/
-theorem morleyTypes_countable (hA : (A : Set (Σ n, L.BoundedFormulaω Empty n)).Countable) :
+theorem countable_morleyTypes (hA : (A : Set (Σ n, L.BoundedFormulaω Empty n)).Countable) :
     (morleyTypes A).Countable := by
   have := hA.to_subtype
   exact (Set.countable_range _).preimage (Option.some_injective _)
