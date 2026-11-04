@@ -62,7 +62,7 @@ noncomputable section
 namespace TauCeti.Yamabe
 
 open Filter InnerProductSpace MeasureTheory Metric Module Real Set Topology
-open scoped Gradient
+open scoped ENNReal Gradient
 
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
 
