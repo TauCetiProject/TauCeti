@@ -29,6 +29,8 @@ All in the namespace `TauCeti.PDCode`:
 * `resolutionEdgeMap_eq_resolutionMergeMap`, `resolutionEdgeMap_eq_resolutionSplitMap`: the edge
   map is the merge or the split, according to the smoothing with two circles through `c`.
 * `isHomogeneous_resolutionEdgeMap`: every edge map has quantum degree `-1`.
+* `circleDuality_resolutionEdgeMap`: the edge maps in the two directions of an edge are adjoint
+  for the Frobenius pairing of circle tensors.
 * `SmoothingEquiv.reindex_resolutionEdgeMap`: edge maps commute with transport of the smoothed
   diagrams.
 * `resolutionEdgeMap_comp_resolutionEdgeMap_comm`: **the faces of the cube commute.** If all four
@@ -87,6 +89,24 @@ theorem resolutionEdgeMap_eq_resolutionSplitMap (ht : #(D.circlesAt t c) = 2) :
   have hs := D.card_circlesAt_eq_one_of_card_circlesAt_eq_two (fun j hj ↦ (hst j hj).symm)
     hc.symm ht
   exact dite_eq_right (by omega)
+
+/-- **Edge maps are Frobenius self-adjoint.** For the pairing of circle tensors, the edge map
+from `s` to `t` is adjoint to the edge map from `t` to `s` at the same crossing: a merge is
+adjoint to the split in the opposite direction, and a split to the merge. -/
+theorem circleDuality_resolutionEdgeMap (x : Khovanov.CircleTensor R (D.ResolvedCircle s))
+    (y : Khovanov.CircleTensor R (D.ResolvedCircle t)) :
+    Khovanov.circleDuality R _ (D.resolutionEdgeMap hst hc h R x) y =
+      Khovanov.circleDuality R _ x
+        (D.resolutionEdgeMap (fun j hj ↦ (hst j hj).symm) hc.symm h.symm R y) := by
+  by_cases hs : #(D.circlesAt s c) = 2
+  · rw [D.resolutionEdgeMap_eq_resolutionMergeMap hst hc h R hs,
+      D.resolutionEdgeMap_eq_resolutionSplitMap _ _ _ R hs, Khovanov.circleDuality_comm x,
+      D.circleDuality_resolutionSplitMap, Khovanov.circleDuality_comm]
+    rfl
+  · rw [D.resolutionEdgeMap_eq_resolutionSplitMap hst hc h R (h.resolve_left hs),
+      D.resolutionEdgeMap_eq_resolutionMergeMap _ _ _ R (h.resolve_left hs),
+      D.circleDuality_resolutionSplitMap]
+    rfl
 
 end Semiring
 

@@ -10,6 +10,7 @@ public import Mathlib.Analysis.SpecialFunctions.Complex.Circle
 public import Mathlib.Algebra.Category.ModuleCat.Colimits
 public import Mathlib.AlgebraicTopology.SingularHomology.Basic
 public import Mathlib.Data.ENat.Lattice
+public import TauCeti.AlgebraicTopology.Singular.SurfaceGenus
 public import TauCeti.Geometry.Manifold.Instances.Cylinder
 public import TauCeti.Geometry.Manifold.SmoothEmbedding.Concordance
 public import TauCeti.KnotTheory.SmoothCircle
@@ -179,19 +180,14 @@ attribute [instance] topologicalSpace chartedSpace isManifold connectedSpace ori
 
 variable {K₀ K₁ K₀' K₁' : SmoothCircleEmbedding (𝓡 n) (sphere (0 : E) 1)}
 
-/-- The first singular homology `H₁(S; ℚ)` of a knot cobordism, with rational coefficients. -/
-abbrev firstHomology (S : KnotCobordism K₀ K₁) : Type :=
-  ((singularHomologyFunctor (ModuleCat ℚ) 1).obj (ModuleCat.of ℚ ℚ)).obj (TopCat.of S.carrier)
-
-/-- The **genus** of a knot cobordism: `⌊dim H₁(S; ℚ) / 2⌋`. A compact, connected, orientable
-surface of genus `g` with two boundary circles has `H₁ ≅ ℚ²ᵍ⁺¹`, and the collared surface `S`
-deformation retracts onto such a surface, its part over the slab. -/
+/-- The **genus** of a knot cobordism: `⌊dim H₁(S; ℚ) / 2⌋` (`TauCeti.surfaceGenus`). A compact,
+connected, orientable surface of genus `g` with two boundary circles has `H₁ ≅ ℚ²ᵍ⁺¹`, and the
+collared surface `S` deformation retracts onto such a surface, its part over the slab. -/
 def genus (S : KnotCobordism K₀ K₁) : ℕ :=
-  finrank ℚ S.firstHomology / 2
+  surfaceGenus S.carrier
 
-/-- The genus of a knot cobordism is half the dimension of its first rational homology, rounded
-down. -/
-theorem genus_def (S : KnotCobordism K₀ K₁) : S.genus = finrank ℚ S.firstHomology / 2 :=
+/-- The genus of a knot cobordism is the genus `TauCeti.surfaceGenus` of its carrier. -/
+theorem genus_def (S : KnotCobordism K₀ K₁) : S.genus = surfaceGenus S.carrier :=
   (rfl)
 
 /-- A knot cobordism from `K₀` to `K₁` is one between any knots with the same images. -/
@@ -262,7 +258,7 @@ theorem genus_ofConcordance (F : SmoothEmbedding.Concordance K₀ K₁) :
   rw [finrank_singularHomology_pi_circle] at h
   simp only [Nat.card_unique, Nat.choose_self, finrank_self, mul_one] at h
   -- The first homology of the cobordism is, by definition, that of the cylinder `S¹ × ℝ`.
-  rw [genus_def]
+  rw [genus_def, surfaceGenus_def]
   exact (congrArg (· / 2) h).trans (by norm_num)
 
 /-! ### Reversal and ambient transport -/

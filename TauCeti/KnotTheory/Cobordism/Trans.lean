@@ -434,11 +434,11 @@ private theorem isSmoothEmbedding_stackMap :
   refine ⟨isImmersion_iff_forall_isImmersionAt.2 fun t ↦ ?_, isEmbedding_stackMap S₁ S₂⟩
   obtain ⟨z, rfl⟩ := proj_surjective S₁ S₂ t
   rcases z with x | y
-  · exact isImmersionAt_of_comp_isLocalDiffeomorphAt (f := stackMap S₁ S₂)
-      (g := proj S₁ S₂ ∘ Sum.inl) (isLocalDiffeomorph_proj_inl S₁ S₂ x)
+  · exact (isImmersionAt_comp_isLocalDiffeomorphAt_iff (f := stackMap S₁ S₂)
+      (g := proj S₁ S₂ ∘ Sum.inl) (isLocalDiffeomorph_proj_inl S₁ S₂ x)).1
       (isImmersionAt_lower_val S₁ S₂ x)
-  · exact isImmersionAt_of_comp_isLocalDiffeomorphAt (f := stackMap S₁ S₂)
-      (g := proj S₁ S₂ ∘ Sum.inr) (isLocalDiffeomorph_proj_inr S₁ S₂ y)
+  · exact (isImmersionAt_comp_isLocalDiffeomorphAt_iff (f := stackMap S₁ S₂)
+      (g := proj S₁ S₂ ∘ Sum.inr) (isLocalDiffeomorph_proj_inr S₁ S₂ y)).1
       (isImmersionAt_upper_val S₁ S₂ y)
 
 /-- The image of the composite: the lower half below height `(1 + botWidth S₂) / 2` and the upper
