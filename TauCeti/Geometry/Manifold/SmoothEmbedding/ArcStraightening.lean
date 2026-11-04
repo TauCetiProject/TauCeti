@@ -99,6 +99,12 @@ private def toCyl (z₀ : Circle) (u : ℝ × ℝ) : Circle × ℝ := (z₀ * Ci
 /-- The inverse coordinates `(z, t) ↦ (angle z₀ z, t)`. -/
 private def ofCyl (z₀ : Circle) (x : Circle × ℝ) : ℝ × ℝ := (angle z₀ x.1, x.2)
 
+private theorem ofCyl_fst (z₀ : Circle) (x : Circle × ℝ) :
+    (ofCyl z₀ x).1 = angle z₀ x.1 := rfl
+
+private theorem mul_exp_angle (z₀ z : Circle) : z₀ * Circle.exp (angle z₀ z) = z := by
+  simp only [angle, Circle.exp_arg, mul_inv_cancel_left]
+
 private theorem toCyl_ofCyl (z₀ : Circle) (x : Circle × ℝ) : toCyl z₀ (ofCyl z₀ x) = x := by
   simp only [toCyl, ofCyl, angle, Circle.exp_arg, mul_inv_cancel_left]
 
@@ -282,7 +288,8 @@ private theorem isSmoothEmbedding_spliceTrack {f g : Circle → M}
     exact hGa hx'
   -- Near a point off the arc, `G` is `F`.
   have hevF {x : Circle × ℝ} (hx : ρ ≤ |angle z₀ x.1|) : G =ᶠ[𝓝 x] F := by
-    filter_upwards [hB.mem_nhds (show a < |angle z₀ x.1| by linarith)] with x' hx'
+    have hax : a < |angle z₀ x.1| := haρ.trans_le hx
+    filter_upwards [hB.mem_nhds hax] with x' hx'
     exact hGF_far (le_of_lt hx')
   have hπ {x : Circle × ℝ} (hx : |angle z₀ x.1| < ρ) : |angle z₀ x.1| < Real.pi :=
     hx.trans_le hρπ
@@ -303,8 +310,11 @@ private theorem isSmoothEmbedding_spliceTrack {f g : Circle → M}
       φ.symm.injOn (hhφ _ hx) (hhφ _ hy) (congrArg Prod.fst hxy)
     have h2 : (h (ofCyl z₀ x)).2 = (h (ofCyl z₀ y)).2 := by
       simpa [] using congrArg Prod.snd hxy
-    have := hinj (show ofCyl z₀ x ∈ {u : ℝ × ℝ | |u.1| < ρ} from hx)
-      (show ofCyl z₀ y ∈ {u : ℝ × ℝ | |u.1| < ρ} from hy) (Prod.ext h1 h2)
+    have hxstrip : ofCyl z₀ x ∈ {u : ℝ × ℝ | |u.1| < ρ} := by
+      simpa only [mem_ofPred_eq, ofCyl_fst] using hx
+    have hystrip : ofCyl z₀ y ∈ {u : ℝ × ℝ | |u.1| < ρ} := by
+      simpa only [mem_ofPred_eq, ofCyl_fst] using hy
+    have := hinj hxstrip hystrip (Prod.ext h1 h2)
     rw [← toCyl_ofCyl z₀ x, ← toCyl_ofCyl z₀ y, this]
   have hmixed {x y : Circle × ℝ} (hx : |angle z₀ x.1| < ρ) (hy : ρ ≤ |angle z₀ y.1|)
       (hxy : G x = G y) : x = y := by
@@ -404,8 +414,9 @@ private theorem exists_hasFDerivAt_prodMap_comp {F : Circle × ℝ → M × ℝ}
       ((contMDiff_toCyl z₀).mdifferentiableAt (by simp))
       ((contMDiffAt_ofCyl (by rw [toCyl_zero, angle_self, abs_zero]; exact Real.pi_pos)
         ).mdifferentiableAt (by simp)) ?_).injective
+    have hzero : |((0 : ℝ), t).1| < Real.pi := by simpa using Real.pi_pos
     filter_upwards [(isOpen_lt (continuous_abs.comp continuous_fst) continuous_const).mem_nhds
-      (show |((0 : ℝ), t).1| < Real.pi by simpa using Real.pi_pos)] with u hu
+      hzero] with u hu
     exact ofCyl_toCyl hu
   exact hΦi.comp (hFi.comp hci)
 
@@ -438,11 +449,12 @@ private theorem exists_pos_strip {f g L : Circle → M} {F : Circle × ℝ → M
   have hc : Tendsto (fun θ : ℝ => z₀ * Circle.exp θ) (𝓝 0) (𝓝 z₀) := by
     have h := (continuous_const_mul (M := Circle) z₀).comp Circle.exp.continuous |>.tendsto (0 : ℝ)
     rwa [comp_apply, Circle.exp_zero, mul_one] at h
+  have hLsource : ∀ᶠ z in 𝓝 z₀, L z ∈ φ.source :=
+    hL.continuousAt.preimage_mem_nhds (φ.open_source.mem_nhds hLφ)
   have hΘ : ∀ᶠ θ in 𝓝 (0 : ℝ), f (z₀ * Circle.exp θ) = L (z₀ * Circle.exp θ) ∧
       g (z₀ * Circle.exp θ) = L (z₀ * Circle.exp θ) ∧ L (z₀ * Circle.exp θ) ∈ φ.source ∧
       z₀ * Circle.exp θ ∈ U :=
-    hc.eventually (hf.and (hg.and ((show ∀ᶠ z in 𝓝 z₀, L z ∈ φ.source from
-      hL.continuousAt.preimage_mem_nhds (φ.open_source.mem_nhds hLφ)).and hU)))
+    hc.eventually (hf.and (hg.and (hLsource.and hU)))
   obtain ⟨r₁, hr₁, hball⟩ := Metric.eventually_nhds_iff_ball.1 hΘ
   have hball' {θ : ℝ} (hθ : |θ| < r₁) := hball θ (by simpa [Real.dist_eq] using hθ)
   -- Over the segment `{0} × [0, 1]`, `F` lands in the chart on a strip.
@@ -477,8 +489,7 @@ private theorem exists_pos_strip {f g L : Circle → M} {F : Circle × ℝ → M
         · exact Or.inr (by linarith [not_le.1 h]))]
       exact (hball' (hr₁' hu)).2.2.1
   · have := (hball' (hr₁' (u := (angle z₀ z, 0)) hz)).2.2.2
-    rwa [show z₀ * Circle.exp (angle z₀ z) = z from congrArg Prod.fst (toCyl_ofCyl z₀ (z, 0))]
-      at this
+    rwa [mul_exp_angle] at this
 
 end Strip
 
@@ -558,9 +569,10 @@ theorem exists_eventuallyEq_prodMap_of_mfderiv_eq
   have hε : 0 < ε := by positivity
   have hPε : ‖P‖ * ((3 + 4 * B) * ε) ≤ 1 / 2 := by
     have h34 : 0 < 3 + 4 * B := by positivity
-    rw [show ‖P‖ * ((3 + 4 * B) * ε) = ‖P‖ / (2 * (‖P‖ + 1)) by
-      simp only [ε]; field_simp]
-    rw [div_le_iff₀ (by positivity)]
+    have hscale : ‖P‖ * ((3 + 4 * B) * ε) = ‖P‖ / (2 * (‖P‖ + 1)) := by
+      simp only [ε]
+      field_simp
+    rw [hscale, div_le_iff₀ (by positivity)]
     linarith [norm_nonneg P]
   -- Step 3: on a thinner strip both derivatives stay within `ε` of `A`.
   obtain ⟨ρ₁', hρ₁'0, hρ₁'r, hbound⟩ :=
@@ -589,11 +601,12 @@ theorem exists_eventuallyEq_prodMap_of_mfderiv_eq
     rintro ⟨⟨z, s⟩, ⟨hz, -⟩, hzs⟩
     have : (z, s) = (z₀, t) := by
       have hzs' : F (z, s) = F (z₀, t) := by
-        rw [hzs, show F (z₀, t) = (p, t) from h₀ t]
+        rw [hzs, h₀ t]
         simp [φ.left_inv hpφ]
       exact hF.isEmbedding.injective hzs'
     have hz' : ρ ≤ |angle z₀ z| := hz
-    rw [show z = z₀ from congrArg Prod.fst this, angle_self, abs_zero] at hz'
+    have hzz₀ : z = z₀ := congrArg Prod.fst this
+    rw [hzz₀, angle_self, abs_zero] at hz'
     exact absurd hz' (not_le.2 hρ)
   obtain ⟨ε', hε', hε'O⟩ := (isCompact_singleton.prod (isCompact_Icc (a := (0 : ℝ)) (b := 1)))
     |>.exists_thickening_subset_open hO' (by
@@ -645,11 +658,15 @@ theorem exists_eventuallyEq_prodMap_of_mfderiv_eq
   have hderiv (u : ℝ × ℝ) (hu : |u.1| < ρ₁') :
       ∃ h' : ℝ × ℝ →L[ℝ] E × ℝ, HasFDerivAt h h' u ∧ ‖h' - A‖ ≤ (3 + 4 * B) * ε := by
     -- `l - k` vanishes on the line `u.1 = 0`, so it is at most `2 ε |u.1|` on the strip.
+    have hzero : ((0 : ℝ), u.2) ∈ {v : ℝ × ℝ | |v.1| < ρ₁'} := by
+      simpa using hρ₁'0
+    have hdist : ‖u - ((0 : ℝ), u.2)‖ = |u.1| := by
+      simp [Prod.norm_def, Real.norm_eq_abs]
     have hlk := (convex_setOf_abs_fst_lt (W := ℝ) ρ₁').norm_sub_le_of_norm_hasFDerivWithin_sub_le
       (fun v hv => (hdk v hv).hasFDerivWithinAt) (fun v hv => (hdl v hv).hasFDerivWithinAt)
       (fun v hv => (hbound v hv).1.le) (fun v hv => (hbound v hv).2.le) hu
-      (show ((0 : ℝ), u.2) ∈ {v : ℝ × ℝ | |v.1| < ρ₁'} by simpa using hρ₁'0) (hkl0 u.2)
-    rw [show ‖u - ((0 : ℝ), u.2)‖ = |u.1| by simp [Prod.norm_def, Real.norm_eq_abs]] at hlk
+      hzero (hkl0 u.2)
+    rw [hdist] at hlk
     exact exists_hasFDerivAt_spliceAlong_sub_le hδ (ContinuousLinearMap.norm_fst_le ℝ ℝ ℝ) hB
       (hdk u hu) (hdl u hu) (hbound u hu).1.le (hbound u hu).2.le hlk
   choose! h' hh' hh'A using hderiv
@@ -677,11 +694,13 @@ theorem exists_eventuallyEq_prodMap_of_mfderiv_eq
     rfl
   refine ⟨G, ?_, fun z hz t => ?_⟩
   · -- Near `z₀`, the new track is `L × id`.
-    filter_upwards [(isOpen_setOf_abs_angle_lt z₀ (by linarith : δ ≤ Real.pi)).mem_nhds
-      (show |angle z₀ z₀| < δ by simpa [angle_self] using hδ)] with z hz t
+    have hz₀ : |angle z₀ z₀| < δ := by simpa only [angle_self, abs_zero] using hδ
+    filter_upwards [(isOpen_setOf_abs_angle_lt z₀ (by linarith : δ ≤ Real.pi)).mem_nhds hz₀]
+      with z hz t
     have hzρ : |angle z₀ (z, t).1| < ρ := (le_of_lt hz).trans_lt (by linarith)
-    rw [hG, spliceTrack_of_abs_lt hzρ, show h (ofCyl z₀ (z, t)) = l (ofCyl z₀ (z, t)) from
-      spliceAlong_of_abs_le hδ (le_of_lt hz)]
+    have hhl : h (ofCyl z₀ (z, t)) = l (ofCyl z₀ (z, t)) :=
+      spliceAlong_of_abs_le hδ (le_of_lt hz)
+    rw [hG, spliceTrack_of_abs_lt hzρ, hhl]
     have hL' := hLφ (ofCyl z₀ (z, t)) (hρ₁r (hstrip hzρ))
     simp only [hl_def, toCyl_ofCyl] at hL' ⊢
     simp [φ.left_inv hL']
@@ -689,7 +708,8 @@ theorem exists_eventuallyEq_prodMap_of_mfderiv_eq
     have hzρ : ρ ≤ |angle z₀ z| := by
       by_contra h''
       exact hz (hrU z ((not_le.1 h'').trans (hρρ₁.trans_le hρ₁'r)))
-    simp only [hG, spliceTrack, show ¬ |angle z₀ (z, t).1| < ρ from not_lt.2 hzρ, ite_false]
+    have hzfar : ¬ |angle z₀ (z, t).1| < ρ := not_lt.2 hzρ
+    simp only [hG, spliceTrack, hzfar, ite_false]
 
 end SmoothEmbedding.Concordance
 
