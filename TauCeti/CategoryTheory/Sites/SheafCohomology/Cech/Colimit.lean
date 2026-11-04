@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Category.Grp.AB
 public import Mathlib.CategoryTheory.Limits.Connected
 public import TauCeti.CategoryTheory.Sites.SheafCohomology.Cech.Basic
 
@@ -101,6 +102,19 @@ theorem cechCohomologyDiagram_map {i j : J} (f : i ⟶ j) (φ : E j ⟶ E i) :
     (cechCohomologyDiagram A E hE n).map f = cechComplexHomologyMap A n φ :=
   cechComplexHomologyMap_eq A n _ φ
 
+/-- Fixed-family Čech cohomology is additive in the coefficient presheaf. -/
+instance cechCohomologyDiagram_obj_additive (j : J) :
+    ((cechCohomologyDiagram A E hE n).obj j).Additive :=
+  inferInstanceAs (cechComplexFunctor (E j).obj ⋙
+    HomologicalComplex.homologyFunctor A _ n).Additive
+
+/-- The diagram of Čech cohomologies is additive in the coefficient presheaf. -/
+instance cechCohomologyDiagram_flip_additive :
+    (cechCohomologyDiagram A E hE n).flip.Additive where
+  map_add {P Q} {f g} := by
+    ext j
+    exact Functor.map_add ((cechCohomologyDiagram A E hE n).obj j)
+
 /-! ### The colimit -/
 
 variable [HasColimitsOfShape J A]
@@ -112,6 +126,10 @@ that its values unfold to colimits in `A`. -/
 @[expose]
 def cechCohomology : (Cᵒᵖ ⥤ A) ⥤ A :=
   (cechCohomologyDiagram A E hE n).flip ⋙ colim
+
+/-- Čech cohomology is additive in the coefficient presheaf. -/
+instance cechCohomology_additive : (cechCohomology A E hE n).Additive :=
+  inferInstanceAs ((cechCohomologyDiagram A E hE n).flip ⋙ colim).Additive
 
 /-- The Čech cohomology of `P` for the system `E` is the colimit of the Čech cohomologies of `P`
 for the families of the system. -/
