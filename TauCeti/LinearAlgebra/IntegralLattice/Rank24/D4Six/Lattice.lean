@@ -279,21 +279,16 @@ theorem d4SixHexacodeOverlatticeIsometry_apply (x : Fin 6 → Fin (D 4).rank →
 theorem d4SixHexacodeOverlatticeIsometry_symm_apply (y : Fin 6 → Fin 4 → ℚ) (j : Fin 6) :
     (d4SixHexacodeOverlatticeIsometry hF hω).symm y j =
       (rootLatticeIsometryCheckerboard 4 le_rfl (isSimplyLaced_D 4)).symm
-        (checkerboardScalarIsometry hF hω (d4SixHexacodeScaling hω j)⁻¹ (y j)) := by
-  calc
-    (d4SixHexacodeOverlatticeIsometry hF hω).symm y j =
-        (d4SixRootIsometry hF hω).symm
-          (d4SixRootIsometry hF hω ((d4SixHexacodeOverlatticeIsometry hF hω).symm y)) j :=
-      congrFun ((d4SixRootIsometry hF hω).symm_apply_apply _).symm j
-    _ = (d4SixRootIsometry hF hω).symm
-          (d4SixHexacodeOverlatticeIsometry hF hω
-            ((d4SixHexacodeOverlatticeIsometry hF hω).symm y)) j := by
-      refine congrFun (congrArg (d4SixRootIsometry hF hω).symm (funext fun k ↦ ?_)) j
-      exact (d4SixRootIsometry_apply hF hω _ k).trans
-        (d4SixHexacodeOverlatticeIsometry_apply hF hω _ k).symm
-    _ = (rootLatticeIsometryCheckerboard 4 le_rfl (isSimplyLaced_D 4)).symm
-          (checkerboardScalarIsometry hF hω (d4SixHexacodeScaling hω j)⁻¹ (y j)) := by
-      rw [Isometry.apply_symm_apply, d4SixRootIsometry_symm_apply]
+        (checkerboardScalarIsometry hF hω (d4SixHexacodeScaling hω j)⁻¹ (y j)) :=
+  -- Unfolding `d4SixHexacodeOverlatticeIsometry` exposes `codeInTypeD4CoordinatePowerDiscriminant`
+  -- as a subgroup of `discriminantQuadraticModule.carrier`, so combine the evaluations with `trans`
+  -- rather than `rw`.
+  (congrFun ((DFunLike.congr_fun (Isometry.symm_trans _ _) y).trans <|
+    (Isometry.trans_apply _ _ y).trans <|
+      (DFunLike.congr_fun (Isometry.symm_ofEq _) _).trans <|
+        (Isometry.ofEq_apply _ _).trans <|
+          Isometry.ofIsotropicSubgroups_symm_apply _ _ _ _ _ _ y) j).trans
+    (d4SixRootIsometry_symm_apply hF hω y j)
 
 end HexacodeOverlattice
 

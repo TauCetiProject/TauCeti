@@ -56,8 +56,8 @@ open DynkinType IntegralLattice
 when its image under `d4SixthGlueModuleIsometry` lies in `d4SixGlueSubgroup`. -/
 theorem d4SixthGlueModuleIsometry_mem_d4SixGlueSubgroup_iff (w : d4Sixth.glueModule) :
     d4SixthGlueModuleIsometry w ∈ d4SixGlueSubgroup ↔ w ∈ d4Sixth.glueSubgroup := by
-  rw [← map_glueSubgroup_d4Sixth, AddSubgroup.mem_map]
-  exact ⟨fun ⟨x, hx, hxw⟩ ↦ d4SixthGlueModuleIsometry.injective hxw ▸ hx, fun hw ↦ ⟨w, hw, rfl⟩⟩
+  rw [← map_glueSubgroup_d4Sixth]
+  exact AddSubgroup.mem_map_iff_mem d4SixthGlueModuleIsometry.injective
 
 /-- **The table glue subgroup of `D₄⁶` is the hexacode**: a glue word of the row lies in
 `d4Sixth.glueSubgroup` exactly when its image under `d4SixthGlueModuleIsometry` and
@@ -71,12 +71,12 @@ theorem mem_glueSubgroup_d4Sixth_iff_hexacode {F : Type*} [Field F] [Finite F]
 /-! ### Unimodularity and root sublattice of `d4Sixth.lattice` -/
 
 /-- **The table lattice `d4Sixth.lattice` is unimodular.** -/
-theorem isUnimodular_d4Sixth_lattice : d4Sixth.lattice.IsUnimodular :=
+theorem isUnimodular_lattice_d4Sixth : d4Sixth.lattice.IsUnimodular :=
   (isUnimodular_lattice_iff d4Sixth).mpr natCard_glueSubgroup_d4Sixth
 
 /-- **Gluing along the table subgroup of `D₄⁶` adds no vectors of norm less than `4`**, compared
 in the common ambient space. -/
-theorem image_vectorsOfNorm_d4Sixth_lattice_eq {n : ℚ} (hn : n < 4) :
+theorem image_vectorsOfNorm_lattice_d4Sixth_eq {n : ℚ} (hn : n < 4) :
     (fun x : d4Sixth.lattice ↦ (x : ∀ i, Fin (d4Sixth.componentType i).rank → ℚ)) ''
         d4Sixth.lattice.vectorsOfNorm n =
       (fun x : d4Sixth.rootLattice ↦ (x : ∀ i, Fin (d4Sixth.componentType i).rank → ℚ)) ''
@@ -87,7 +87,7 @@ theorem image_vectorsOfNorm_d4Sixth_lattice_eq {n : ℚ} (hn : n < 4) :
 
 /-- **The root sublattice of `d4Sixth.lattice` is `d4Sixth.rootLattice`**: the norm-`2` vectors of
 the table lattice span the orthogonal sum of its six `D₄` root lattices. -/
-theorem span_vectorsOfNorm_two_d4Sixth_lattice :
+theorem span_vectorsOfNorm_two_lattice_d4Sixth :
     Submodule.span ℤ
       ((fun x : d4Sixth.lattice ↦ (x : ∀ i, Fin (d4Sixth.componentType i).rank → ℚ)) ''
         d4Sixth.lattice.vectorsOfNorm 2) = d4Sixth.rootLattice.carrier := by
