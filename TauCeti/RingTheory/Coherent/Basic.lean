@@ -13,6 +13,7 @@ import Mathlib.Algebra.Module.LocalizedModule.Submodule
 import Mathlib.LinearAlgebra.TensorProduct.Pi
 import Mathlib.RingTheory.Finiteness.Prod
 import TauCeti.Algebra.Module.FinitePresentation
+import TauCeti.Algebra.Module.Torsion.Basic
 
 /-!
 # Coherent modules and coherent rings
@@ -512,8 +513,7 @@ instance linearMap [Module.FinitePresentation R M] [Module.IsCoherent R N] :
 /-- The `a`-torsion submodule `M[a]` of a coherent module over a commutative ring is coherent. -/
 instance torsionBy [Module.IsCoherent R M] (a : R) :
     Module.IsCoherent R (Submodule.torsionBy R M a) := by
-  have heq : Submodule.torsionBy R M a = LinearMap.ker (LinearMap.lsmul R M a) := rfl
-  rw [heq]
+  rw [Submodule.torsionBy_eq_ker_lsmul]
   infer_instance
 
 /-- For a coherent module `M` and a finitely generated ideal `I`, the submodule of elements of `M`

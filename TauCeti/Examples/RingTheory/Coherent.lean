@@ -8,6 +8,7 @@ module
 import Mathlib.Algebra.EuclideanDomain.Int
 import Mathlib.Algebra.MvPolynomial.Variables
 import Mathlib.RingTheory.PrincipalIdealDomain
+import TauCeti.Algebra.Module.Torsion.Basic
 import TauCeti.RingTheory.Coherent.MvPolynomial
 import TauCeti.RingTheory.MvPolynomial.Noetherian
 
@@ -166,6 +167,8 @@ example (R : Type*) [CommRing R] [Nontrivial R] :
       .of_equiv (LinearEquiv.ofEq _ _ hrng).symm
     have hker := Module.FinitePresentation.fg_ker mulX.rangeRestrict mulX.surjective_rangeRestrict
     rw [LinearMap.ker_rangeRestrict] at hker
+    dsimp only [mulX] at hker
+    rw [← Submodule.torsionBy_eq_ker_lsmul] at hker
     exact hnot_fg hker
   have hnot_coh : ¬ IsCoherentRing S := fun h ↦
     hnot_fp (h.finitePresentation_of_fg (Submodule.fg_span_singleton xClass))
