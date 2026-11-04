@@ -14,7 +14,7 @@ public import Mathlib.MeasureTheory.Integral.Bochner.Basic
 For a real Weierstrass curve with
 `Ψ₂Sq(x) = 4 (x - e) ((x - a)² + b²)` and `b ≠ 0`, the discriminant is negative
 and the positive locus of `Ψ₂Sq` is exactly `(e, ∞)`. Consequently its real period
-is twice the convergent integral of the inverse square root of this cubic over
+is twice the integral of the inverse square root of this cubic over
 that half-line. This reduces evaluation of the period to a single cubic integral,
 without a separate ellipticity hypothesis or a choice of roots.
 
@@ -93,7 +93,7 @@ theorem ofReal_realPeriod_eq_of_one_real_root (hb : b ≠ 0)
   let := W.isElliptic_of_one_real_root hb hW
   rw [W.ofReal_realPeriod, W.realPeriodLIntegral_eq_of_one_real_root hb hW]
 
-/-- The real period is twice the convergent real cubic integral on `(e, ∞)`. -/
+/-- The real period is twice the real cubic integral on `(e, ∞)`. -/
 theorem realPeriod_eq_integral_of_one_real_root (hb : b ≠ 0)
     (hW : ∀ x, W.Ψ₂Sq.eval x = 4 * (x - e) * ((x - a) ^ 2 + b ^ 2)) :
     W.realPeriod =
