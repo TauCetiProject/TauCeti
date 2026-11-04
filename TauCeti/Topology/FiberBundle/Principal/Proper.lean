@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Group.Action.TotalSpace
 public import TauCeti.Topology.FiberBundle.Principal.Basic
 public import TauCeti.Topology.FiberBundle.Prod
 public import Mathlib.Topology.Algebra.ProperAction.Basic
@@ -34,13 +33,6 @@ namespace TauCeti.PrincipalBundle
 variable {B G : Type*} [TopologicalSpace B] [Group G] [TopologicalSpace G]
   {P : B → Type*} [TopologicalSpace (TotalSpace G P)] [∀ b, TopologicalSpace (P b)]
   [FiberBundle G P] [∀ b, MulAction Gᵐᵒᵖ (P b)] [PrincipalBundle G P]
-
-/-- The fibrewise right action is continuous on the total space. -/
-instance continuousSMul_totalSpace [ContinuousMul G] : ContinuousSMul Gᵐᵒᵖ (TotalSpace G P) where
-  -- The total-space action is definitionally the fibrewise action in a total-space constructor;
-  -- `op (unop g) = g` definitionally identifies the scalar with the original opposite scalar.
-  continuous_smul := Continuous.totalSpaceMk_smul continuous_snd
-    (continuous_unop.comp continuous_fst)
 
 variable [IsTopologicalGroup G]
 
