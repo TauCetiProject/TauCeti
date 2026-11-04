@@ -31,6 +31,8 @@ canonical morphism `Spec κ(x) ⟶ X` on the opens containing `x`.
   field at `f x`, then it is invertible in the residue field at `x`, for any morphism `f`.
 * `AlgebraicGeometry.Spec.natCast_residueField_ne_zero`: if `N` is invertible in a field `K`, then
   it is invertible in the residue field of `Spec K`.
+* `AlgebraicGeometry.Scheme.eq_of_SpecMap_comp_fromSpecResidueField`: maps out of `κ(x)` are
+  determined by their spectra composed with `Spec κ(x) ⟶ X`, since this morphism is a monomorphism.
 * `AlgebraicGeometry.Scheme.fromSpecResidueField_closedPoint_mem`: the closed point of
   `Spec κ(x)` lies over every open containing `x`.
 * `AlgebraicGeometry.Scheme.fromSpecResidueField_preimage_eq_top`: the inverse image of an open
@@ -104,6 +106,14 @@ theorem Scheme.fromSpecAlgebraicClosure_apply (X : Scheme.{u}) (x : X)
 theorem Scheme.range_fromSpecAlgebraicClosure (X : Scheme.{u}) (x : X) :
     Set.range (X.fromSpecAlgebraicClosure x) = {x} :=
   Set.range_eq_singleton (X.fromSpecAlgebraicClosure_apply x)
+
+/-- Two ring maps out of the residue field `κ(x)` agree once their spectra agree after
+composition with the canonical morphism `Spec κ(x) ⟶ X`. -/
+theorem Scheme.eq_of_SpecMap_comp_fromSpecResidueField {X : Scheme.{u}} {x : X}
+    {R : CommRingCat.{u}} {a b : X.residueField x ⟶ R}
+    (h : Spec.map a ≫ X.fromSpecResidueField x = Spec.map b ≫ X.fromSpecResidueField x) :
+    a = b :=
+  Spec.map_injective ((cancel_mono _).mp h)
 
 /-- A morphism surjective on stalks induces isomorphisms on residue fields. -/
 instance Scheme.Hom.isIso_residueFieldMap_of_surjectiveOnStalks {X Y : Scheme.{u}}
