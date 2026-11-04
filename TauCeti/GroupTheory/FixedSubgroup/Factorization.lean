@@ -42,20 +42,6 @@ namespace Subgroup
 
 variable {G : Type*} [Group G] (U B : Subgroup G) {n : G}
 
-/-- The coordinates `u n b` are unique if `U` meets `n B n⁻¹` trivially. -/
-theorem mul_mul_injective_of_disjoint
-    (h : Disjoint U (B.map (MulAut.conj n).toMonoidHom)) :
-    Function.Injective (fun p : U × B => (p.1 : G) * n * p.2) := by
-  intro p q hpq
-  have heq : (p.1 : G) * (n * p.2 * n⁻¹) = (q.1 : G) * (n * q.2 * n⁻¹) := by
-    simpa only [mul_assoc] using congrArg (fun x : G => x * n⁻¹) hpq
-  have hpair := mul_injective_of_disjoint h
-    (a₁ := (p.1, ⟨n * p.2 * n⁻¹, ⟨p.2, p.2.property, rfl⟩⟩))
-    (a₂ := (q.1, ⟨n * q.2 * n⁻¹, ⟨q.2, q.2.property, rfl⟩⟩)) heq
-  refine Prod.ext (congrArg (fun r : U × B.map (MulAut.conj n).toMonoidHom => r.1) hpair) ?_
-  apply Subtype.ext
-  exact (MulAut.conj n).injective (congrArg (fun x => (x.2 : G)) hpair)
-
 variable (F : G →* G)
   (hU : ∀ u ∈ U, F u ∈ U) (hB : ∀ b ∈ B, F b ∈ B)
   (hn : F n = n) (h : Disjoint U (B.map (MulAut.conj n).toMonoidHom))
@@ -90,13 +76,13 @@ theorem mul_singleton_mul_inter_fixedSubgroup :
   ext g
   constructor
   · rintro ⟨⟨_, ⟨u, hu, v, hv, rfl⟩, b, hb, rfl⟩, hfix⟩
-    have hv' : v = n := hv
+    have hv' : v = n := Set.mem_singleton_iff.mp hv
     subst v
     obtain ⟨huf, hbf⟩ := (U.mul_mul_mem_fixedSubgroup_iff B F hU hB hn h
       ⟨u, hu⟩ ⟨b, hb⟩).mp hfix
     exact ⟨u * n, ⟨u, ⟨hu, huf⟩, n, rfl, rfl⟩, b, ⟨hb, hbf⟩, rfl⟩
   · rintro ⟨_, ⟨u, ⟨hu, huf⟩, v, hv, rfl⟩, b, ⟨hb, hbf⟩, rfl⟩
-    have hv' : v = n := hv
+    have hv' : v = n := Set.mem_singleton_iff.mp hv
     subst v
     exact ⟨⟨u * n, ⟨u, hu, n, rfl, rfl⟩, b, hb, rfl⟩,
       (U.mul_mul_mem_fixedSubgroup_iff B F hU hB hn h ⟨u, hu⟩ ⟨b, hb⟩).mpr ⟨huf, hbf⟩⟩
@@ -108,9 +94,10 @@ theorem existsUnique_fixed_mul_mul {g : G}
       (p.1 : G) * n * p.2 = g := by
   have hmem : g ∈ ((U ⊓ fixedSubgroup F : Subgroup G) : Set G) * {n} *
       ((B ⊓ fixedSubgroup F : Subgroup G) : Set G) :=
-    U.mul_singleton_mul_inter_fixedSubgroup B F hU hB hn h ▸ ⟨hg, hfix⟩
+    (U.mul_singleton_mul_inter_fixedSubgroup B F hU hB hn h).subset
+      ⟨hg, mem_fixedSubgroup.mpr hfix⟩
   obtain ⟨_, ⟨u, hu, v, hv, rfl⟩, b, hb, rfl⟩ := hmem
-  have hv' : v = n := hv
+  have hv' : v = n := Set.mem_singleton_iff.mp hv
   subst v
   refine ⟨(⟨u, hu⟩, ⟨b, hb⟩), rfl, ?_⟩
   intro q hq
