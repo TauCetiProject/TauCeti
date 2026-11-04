@@ -99,28 +99,24 @@ theorem star_apply_star_mul (a b : A) : star (φ (star a * b)) = φ (star b * a)
 /-- A copy of the algebra carrying the seminorm induced by the positive functional. -/
 def PreGNS (_φ : StarPositiveFunctional A) := A
 
-@[no_expose]
 instance : AddCommGroup φ.PreGNS := inferInstanceAs (AddCommGroup A)
 
-@[no_expose]
 instance : Module ℂ φ.PreGNS := inferInstanceAs (Module ℂ A)
 
 /-- Identify the algebra with the space carrying its GNS seminorm. -/
 def toPreGNS : A ≃ₗ[ℂ] φ.PreGNS := LinearEquiv.refl ℂ A
 
 /-- The positive semidefinite inner product before dividing out the null space. -/
-private abbrev preInner : PreInnerProductSpace.Core ℂ φ.PreGNS where
+abbrev preInner : PreInnerProductSpace.Core ℂ φ.PreGNS where
   inner a b := φ (star (φ.toPreGNS.symm a) * φ.toPreGNS.symm b)
   conj_inner_symm a b := φ.star_apply_star_mul _ _
   re_inner_nonneg a := (φ.square_nonneg _).1
   add_left a b c := by simp [add_mul]
   smul_left a b c := by simp [smul_mul_assoc]
 
-@[no_expose]
 instance : SeminormedAddCommGroup φ.PreGNS :=
   InnerProductSpace.Core.toSeminormedAddCommGroup (c := φ.preInner)
 
-@[no_expose]
 instance : InnerProductSpace ℂ φ.PreGNS := InnerProductSpace.ofCore φ.preInner
 
 /-- The inner product before taking the separation quotient is the original pairing. -/
