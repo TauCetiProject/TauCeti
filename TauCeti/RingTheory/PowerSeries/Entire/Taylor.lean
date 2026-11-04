@@ -144,12 +144,42 @@ section Complete
 
 variable [CompleteSpace R]
 
-/-- Taylor translation is additive on entire series. -/
-theorem IsEntire.taylor_add {g : R⟦X⟧} (hf : f.IsEntire) (hg : g.IsEntire) (a : R) :
+/-- Taylor translation is additive when all Hasse derivatives have absolutely summable terms
+at the translation point. -/
+theorem taylor_add_of_summable_norm {g : R⟦X⟧} {a : R}
+    (hf : ∀ n, Summable fun m ↦ ‖coeff m (hasseDeriv n f) • a ^ m‖)
+    (hg : ∀ n, Summable fun m ↦ ‖coeff m (hasseDeriv n g) • a ^ m‖) :
     taylor a (f + g) = taylor a f + taylor a g := by
   ext n
-  rw [coeff_taylor, map_add, (hf.hasseDeriv n).evalAt_add (hg.hasseDeriv n), map_add,
-    coeff_taylor, coeff_taylor]
+  simp only [coeff_taylor, map_add, evalAt_add_of_summable_norm (hf n) (hg n)]
+
+/-- Taylor translation is multiplicative when all Hasse derivatives have absolutely summable
+terms at the translation point. -/
+theorem taylor_mul_of_summable_norm {g : R⟦X⟧} {a : R}
+    (hf : ∀ n, Summable fun m ↦ ‖coeff m (hasseDeriv n f) • a ^ m‖)
+    (hg : ∀ n, Summable fun m ↦ ‖coeff m (hasseDeriv n g) • a ^ m‖) :
+    taylor a (f * g) = taylor a f * taylor a g := by
+  have hmul (i j : ℕ) :
+      Summable fun m ↦ ‖coeff m (hasseDeriv i f * hasseDeriv j g) • a ^ m‖ := by
+    refine (summable_norm_sum_mul_antidiagonal_of_summable_norm (hf i) (hg j)).congr
+      fun m ↦ ?_
+    apply congrArg norm
+    rw [coeff_mul, Finset.sum_smul]
+    exact sum_congr rfl fun p hp ↦ by
+      rw [← mem_antidiagonal.mp hp, pow_add, smul_mul_smul_comm]
+  ext n
+  rw [coeff_taylor, hasseDeriv_mul,
+    evalAt_sum_of_summable_norm _
+      (f := fun p : ℕ × ℕ ↦ hasseDeriv p.1 f * hasseDeriv p.2 g)
+      (b := a) (fun p _ ↦ hmul p.1 p.2), coeff_mul]
+  exact sum_congr rfl fun p _ ↦ by
+    rw [evalAt_mul_of_summable_norm (hf p.1) (hg p.2), coeff_taylor, coeff_taylor]
+
+/-- Taylor translation is additive on entire series. -/
+theorem IsEntire.taylor_add {g : R⟦X⟧} (hf : f.IsEntire) (hg : g.IsEntire) (a : R) :
+    taylor a (f + g) = taylor a f + taylor a g :=
+  taylor_add_of_summable_norm (fun n ↦ (hf.hasseDeriv n).summable_norm_smul_pow a)
+    (fun n ↦ (hg.hasseDeriv n).summable_norm_smul_pow a)
 
 /-- Taylor translation commutes with scalar multiplication of entire series. -/
 theorem IsEntire.taylor_smul (hf : f.IsEntire) (c a : R) :
@@ -161,12 +191,9 @@ theorem IsEntire.taylor_smul (hf : f.IsEntire) (c a : R) :
 /-- Taylor translation is multiplicative on entire series, by the Leibniz rule for Hasse
 derivatives. -/
 theorem IsEntire.taylor_mul {g : R⟦X⟧} (hf : f.IsEntire) (hg : g.IsEntire) (a : R) :
-    taylor a (f * g) = taylor a f * taylor a g := by
-  ext n
-  rw [coeff_taylor, hasseDeriv_mul,
-    IsEntire.evalAt_sum _ fun _ _ ↦ (hf.hasseDeriv _).mul (hg.hasseDeriv _), coeff_mul]
-  refine sum_congr rfl fun _ _ ↦ ?_
-  rw [(hf.hasseDeriv _).evalAt_mul (hg.hasseDeriv _), coeff_taylor, coeff_taylor]
+    taylor a (f * g) = taylor a f * taylor a g :=
+  taylor_mul_of_summable_norm (fun n ↦ (hf.hasseDeriv n).summable_norm_smul_pow a)
+    (fun n ↦ (hg.hasseDeriv n).summable_norm_smul_pow a)
 
 /-- **The Taylor identity.** For an entire series `f`, the Taylor translate at `a` evaluated at
 `b` is `f(b + a)`. -/
@@ -268,5 +295,32 @@ theorem IsEntire.hasSum_taylor [CompleteSpace R] (hf : f.IsEntire) (a b : R) :
   simpa [smul_eq_mul, hf.evalAt_taylor] using (hf.taylor a).hasSum_evalAt b
 
 end Normed
+
+section Ultrametric
+
+variable {R : Type*} [NormedCommRing R] [IsUltrametricDist R] [NormOneClass R]
+  {f : R⟦X⟧} {r : ℝ} {a : R}
+
+/-- A weighted coefficient of a Taylor translate is bounded by the original Gauss norm at
+any positive radius containing the translation point. -/
+theorem norm_coeff_taylor_mul_pow_le (hf : f.HasGaussNorm norm r) (hr : 0 < r)
+    (ha : ‖a‖ ≤ r) (n : ℕ) :
+    ‖coeff n (taylor a f)‖ * r ^ n ≤ f.gaussNorm norm r := by
+  rw [coeff_taylor]
+  calc
+    ‖(hasseDeriv n f).evalAt a‖ * r ^ n ≤
+        (r⁻¹ ^ n * f.gaussNorm norm r) * r ^ n :=
+      mul_le_mul_of_nonneg_right
+        ((norm_evalAt_le_gaussNorm (hf.hasseDeriv hr n) ha).trans
+          (gaussNorm_hasseDeriv_le hr hf n)) (by positivity)
+    _ = f.gaussNorm norm r := by rw [inv_pow]; field_simp
+
+/-- Taylor translation preserves bounded weighted coefficients on a closed disc containing
+its translation point. -/
+theorem HasGaussNorm.taylor (hf : f.HasGaussNorm norm r) (hr : 0 < r) (ha : ‖a‖ ≤ r) :
+    (taylor a f).HasGaussNorm norm r :=
+  ⟨f.gaussNorm norm r, Set.forall_mem_range.mpr (norm_coeff_taylor_mul_pow_le hf hr ha)⟩
+
+end Ultrametric
 
 end PowerSeries

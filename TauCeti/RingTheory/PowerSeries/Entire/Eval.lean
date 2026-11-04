@@ -145,14 +145,8 @@ theorem IsEntire.evalAt_smul (hf : f.IsEntire) (a : R) (b : A) :
 /-- Evaluation commutes with finite sums of entire series. -/
 theorem IsEntire.evalAt_sum {ι : Type*} (s : Finset ι) {f : ι → R⟦X⟧}
     (hf : ∀ i ∈ s, (f i).IsEntire) (b : A) :
-    (∑ i ∈ s, f i).evalAt b = ∑ i ∈ s, (f i).evalAt b := by
-  classical
-  induction s using Finset.induction_on with
-  | empty => simp
-  | insert i s hi ih =>
-    rw [Finset.sum_insert hi, Finset.sum_insert hi,
-      (hf i (by simp)).evalAt_add (IsEntire.sum fun j hj ↦ hf j (by simp [hj])),
-      ih fun j hj ↦ hf j (by simp [hj])]
+    (∑ i ∈ s, f i).evalAt b = ∑ i ∈ s, (f i).evalAt b :=
+  evalAt_sum_of_summable_norm s fun i hi ↦ (hf i hi).summable_norm_smul_pow b
 
 /-- Evaluation is multiplicative on entire series: this is the Cauchy product formula for the
 absolutely convergent series `∑ aₙ • bⁿ` and `∑ cₙ • bⁿ`. -/

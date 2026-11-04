@@ -38,27 +38,7 @@ open scoped Topology
 namespace PowerSeries
 
 variable {R : Type*} [NormedCommRing R] [IsUltrametricDist R] [NormOneClass R]
-  {f g : R⟦X⟧} {r R₀ : ℝ} {a : R}
-
-/-- A weighted coefficient of a Taylor translate is bounded by the original Gauss norm at
-any positive radius containing the translation point. -/
-theorem norm_coeff_taylor_mul_pow_le (hf : f.HasGaussNorm norm r) (hr : 0 < r)
-    (ha : ‖a‖ ≤ r) (n : ℕ) :
-    ‖coeff n (taylor a f)‖ * r ^ n ≤ f.gaussNorm norm r := by
-  rw [coeff_taylor]
-  calc
-    ‖(hasseDeriv n f).evalAt a‖ * r ^ n ≤
-        (r⁻¹ ^ n * f.gaussNorm norm r) * r ^ n :=
-      mul_le_mul_of_nonneg_right
-        ((norm_evalAt_le_gaussNorm (hf.hasseDeriv hr n) ha).trans
-          (gaussNorm_hasseDeriv_le hr hf n)) (by positivity)
-    _ = f.gaussNorm norm r := by rw [inv_pow]; field_simp
-
-/-- Taylor translation preserves bounded weighted coefficients on a closed disc containing
-its translation point. -/
-theorem HasGaussNorm.taylor (hf : f.HasGaussNorm norm r) (hr : 0 < r) (ha : ‖a‖ ≤ r) :
-    (taylor a f).HasGaussNorm norm r :=
-  ⟨f.gaussNorm norm r, Set.forall_mem_range.mpr (norm_coeff_taylor_mul_pow_le hf hr ha)⟩
+  {f g : R⟦X⟧} {R₀ : ℝ} {a : R}
 
 /-- Translation by an interior point preserves series on the open disc. -/
 theorem OnOpenDisc.taylor (hf : f.OnOpenDisc R₀) (ha : ‖a‖ < R₀) :
@@ -77,20 +57,17 @@ omit [IsUltrametricDist R] [NormOneClass R] in
 /-- Taylor translation is additive on open-disc series. -/
 theorem OnOpenDisc.taylor_add (hf : f.OnOpenDisc R₀) (hg : g.OnOpenDisc R₀)
     (ha : ‖a‖ < R₀) :
-    PowerSeries.taylor a (f + g) = PowerSeries.taylor a f + PowerSeries.taylor a g := by
-  ext n
-  simp only [coeff_taylor, map_add, (hf.hasseDeriv n).evalAt_add (hg.hasseDeriv n) ha]
+    PowerSeries.taylor a (f + g) = PowerSeries.taylor a f + PowerSeries.taylor a g :=
+  taylor_add_of_summable_norm (fun n ↦ (hf.hasseDeriv n).summable_norm_smul_pow ha)
+    (fun n ↦ (hg.hasseDeriv n).summable_norm_smul_pow ha)
 
 omit [IsUltrametricDist R] [NormOneClass R] in
 /-- Taylor translation is multiplicative on open-disc series. -/
 theorem OnOpenDisc.taylor_mul (hf : f.OnOpenDisc R₀) (hg : g.OnOpenDisc R₀)
     (ha : ‖a‖ < R₀) :
-    PowerSeries.taylor a (f * g) = PowerSeries.taylor a f * PowerSeries.taylor a g := by
-  ext n
-  rw [coeff_taylor, hasseDeriv_mul,
-    OnOpenDisc.evalAt_sum _ (fun _ _ ↦ (hf.hasseDeriv _).mul (hg.hasseDeriv _)) ha, coeff_mul]
-  exact Finset.sum_congr rfl fun _ _ ↦ by
-    rw [(hf.hasseDeriv _).evalAt_mul (hg.hasseDeriv _) ha, coeff_taylor, coeff_taylor]
+    PowerSeries.taylor a (f * g) = PowerSeries.taylor a f * PowerSeries.taylor a g :=
+  taylor_mul_of_summable_norm (fun n ↦ (hf.hasseDeriv n).summable_norm_smul_pow ha)
+    (fun n ↦ (hg.hasseDeriv n).summable_norm_smul_pow ha)
 
 end PowerSeries
 

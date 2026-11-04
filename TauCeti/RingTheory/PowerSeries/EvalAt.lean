@@ -391,6 +391,13 @@ theorem evalAt_add_of_summable_norm (hf : Summable fun n ↦ ‖coeff n f • b 
   exact HasSum.tsum_eq (by simpa [add_smul] using
     (hasSum_evalAt_of_summable_norm hf).add (hasSum_evalAt_of_summable_norm hg))
 
+/-- Evaluation commutes with finite sums of series whose terms at `b` are absolutely summable. -/
+theorem evalAt_sum_of_summable_norm {ι : Type*} (s : Finset ι) {f : ι → R⟦X⟧}
+    (hf : ∀ i ∈ s, Summable fun n ↦ ‖coeff n (f i) • b ^ n‖) :
+    (∑ i ∈ s, f i).evalAt b = ∑ i ∈ s, (f i).evalAt b := by
+  have h := hasSum_sum (fun i hi ↦ hasSum_evalAt_of_summable_norm (hf i hi))
+  simpa only [evalAt_def, map_sum, Finset.sum_smul] using h.tsum_eq
+
 /-- Evaluation at `b` is multiplicative on series whose terms at `b` are absolutely summable: this
 is the Cauchy product formula for absolutely convergent series. -/
 theorem evalAt_mul_of_summable_norm (hf : Summable fun n ↦ ‖coeff n f • b ^ n‖)
