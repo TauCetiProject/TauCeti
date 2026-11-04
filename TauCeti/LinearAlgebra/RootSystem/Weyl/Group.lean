@@ -37,6 +37,7 @@ with coroots.
   the coroot functional of its image.
 * `RootPairing.weylGroupToPerm_ofIdx_apply` evaluates the action of a simple reflection.
 * `RootPairing.weylGroupToPerm_neg` says the action commutes with root negation.
+* `RootPairing.reflection_indexNeg_neg` says the reflection in `-β` is the reflection in `β`.
 * `RootPairing.root_weylGroupToPerm_eq_add` says the action preserves decompositions of roots as
   sums of two roots.
 * `RootPairing.weylGroup.ofIdx_mul_self` says a simple reflection is an involution.
@@ -48,6 +49,8 @@ with coroots.
   equal.
 * `RootPairing.weylGroup.ofIdx_weylGroupToPerm_eq_conj` says that conjugating a simple
   reflection by a Weyl-group element gives the reflection in the image root index.
+* `RootPairing.reflection_weylGroupToPerm_smul` says the reflection in the image `w β` of a root
+  index sends `w x` to `w (s_β x)`.
 * `RootPairing.weylGroup.commute_ofIdx_of_isOrthogonal` says orthogonal roots have
   commuting reflections.
 * `RootPairing.mem_corootSpan_of_mem_closure_range_coreflection` and
@@ -207,6 +210,15 @@ lemma weylGroupToPerm_neg (w : P.weylGroup) (j : ι) :
     P.weylGroupToPerm w (-j) = -(P.weylGroupToPerm w j) :=
   by simp [indexNeg_neg]
 
+variable {P} in
+/-- The reflection in the negative `-β = s_β β` of a root is the reflection in `β`. -/
+theorem reflection_indexNeg_neg (β : ι) :
+    letI := P.indexNeg
+    P.reflection (-β) = P.reflection β := by
+  ext x
+  rw [indexNeg_neg, reflection_reflectionPerm, mul_apply_eq_comp, mul_apply_eq_comp,
+    reflection_same]
+
 /-- A Weyl-group element carries a decomposition of a root as a sum of two roots to the
 corresponding decomposition of the image roots. -/
 lemma root_weylGroupToPerm_eq_add (w : P.weylGroup) {i j k : ι}
@@ -285,6 +297,14 @@ theorem weylGroup.ofIdx_weylGroupToPerm_eq_conj (w : P.weylGroup) (i : ι) :
       rw [smul_sub, smul_inv_smul, smul_comm, hroot, hcoroot]
     _ = (w * weylGroup.ofIdx P i * w⁻¹) • x := by
       simp [mul_smul, reflection_apply]
+
+variable {P} in
+/-- **Transporting a reflection by the Weyl group.** The reflection in the image `w β` of a root
+index `β` sends `w x` to `w (s_β x)`. -/
+theorem reflection_weylGroupToPerm_smul (w : P.weylGroup) (β : ι) (x : M) :
+    P.reflection (P.weylGroupToPerm w β) (w • x) = w • P.reflection β x := by
+  rw [← Equiv.reflection_smul, ← weylGroup.ofIdx_smul, weylGroup.ofIdx_weylGroupToPerm_eq_conj,
+    mul_smul, mul_smul, inv_smul_smul, weylGroup.ofIdx_smul, Equiv.reflection_smul]
 
 /-- **Orthogonal roots have commuting reflections** in the Weyl group. -/
 theorem weylGroup.commute_ofIdx_of_isOrthogonal
