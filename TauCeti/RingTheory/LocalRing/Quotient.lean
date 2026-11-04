@@ -25,6 +25,8 @@ base, as in inductions on the dimension of the base, therefore stays among local
 
 * `TauCeti.IsLocalRing.apply_mem_maximalIdeal_sq_iff`: `π a ∈ 𝔪_A²` if and only if
   `a ∈ ker π + 𝔪_Q²`.
+* `TauCeti.IsLocalRing.not_isPrincipal_maximalIdeal_of_ker_le_sq`: if `ker π ≤ 𝔪_Q²` and no
+  single element spans `𝔪_Q` modulo `𝔪_Q²`, then `𝔪_A` is not principal.
 * `TauCeti.IsLocalRing.maximalIdeal_quotient_eq_span_range`: if `𝔪_Q = J + (yⱼ)`, then the images
   of the `yⱼ` generate the maximal ideal of `Q ⧸ J`.
 * `TauCeti.IsLocalRing.exists_lift_finBasis_cotangentSpace`: lifts to `Q` of a basis of the
@@ -47,6 +49,27 @@ theorem apply_mem_maximalIdeal_sq_iff {π : Q →+* A} (hπ : Function.Surjectiv
     π a ∈ maximalIdeal A ^ 2 ↔ a ∈ RingHom.ker π ⊔ maximalIdeal Q ^ 2 := by
   rw [← map_maximalIdeal_of_surjective π hπ, ← Ideal.map_pow, ← Ideal.mem_comap,
     Ideal.comap_map_of_surjective' _ hπ, sup_comm]
+
+/-- Along a surjective homomorphism of local rings `π : Q → A` with `ker π ≤ 𝔪_Q²`, the maximal
+ideal of `A` is not principal as soon as no single element of `𝔪_Q` spans `𝔪_Q` modulo `𝔪_Q²`:
+a generator `π z` of `𝔪_A` would give `𝔪_Q ≤ (z) + ker π ≤ (z) + 𝔪_Q²`. -/
+theorem not_isPrincipal_maximalIdeal_of_ker_le_sq {π : Q →+* A} (hπ : Function.Surjective π)
+    (hker : RingHom.ker π ≤ maximalIdeal Q ^ 2)
+    (h : ∀ z ∈ maximalIdeal Q, ¬ maximalIdeal Q ≤ Ideal.span {z} ⊔ maximalIdeal Q ^ 2) :
+    ¬ (maximalIdeal A).IsPrincipal := by
+  rintro ⟨z', hz'⟩
+  obtain ⟨z, rfl⟩ := hπ z'
+  rw [Ideal.submodule_span_eq] at hz'
+  have : IsLocalHom π := .of_surjective π hπ
+  have hzm : z ∈ maximalIdeal Q := by
+    rw [← maximalIdeal_comap π, Ideal.mem_comap, hz']
+    exact Ideal.mem_span_singleton_self _
+  refine h z hzm ?_
+  calc maximalIdeal Q ≤ (maximalIdeal A).comap π := (maximalIdeal_comap π).ge
+    _ = Ideal.span {z} ⊔ RingHom.ker π := by
+      rw [hz', ← Set.image_singleton, ← Ideal.map_span, Ideal.comap_map_of_surjective _ hπ,
+        RingHom.ker_eq_comap_bot]
+    _ ≤ Ideal.span {z} ⊔ maximalIdeal Q ^ 2 := sup_le_sup_left hker _
 
 omit [IsLocalRing A] in
 /-- If the maximal ideal of `Q` is `J + (yⱼ)`, then the images of the `yⱼ` generate the maximal
