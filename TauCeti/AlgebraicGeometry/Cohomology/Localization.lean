@@ -12,6 +12,7 @@ import TauCeti.Algebra.Module.LocalizedModule.Exact
 import TauCeti.Algebra.Module.LocalizedModule.Map
 import TauCeti.AlgebraicGeometry.Cohomology.Affine
 import TauCeti.AlgebraicGeometry.Modules.Localization
+import TauCeti.AlgebraicGeometry.Scheme.Opens
 import TauCeti.CategoryTheory.Sites.SheafCohomology.MayerVietoris
 
 /-!
@@ -267,17 +268,8 @@ private lemma localizesAt_finset_sup {U : X.Opens} (hU : IsAffineOpen U) {ι : T
 /-- Quasi-compact opens of an affine open. -/
 private lemma localizesAt_of_le_isAffineOpen {U W : X.Opens} (hU : IsAffineOpen U)
     (hW : IsCompact (W : Set X)) (hWU : W ≤ U) : LocalizesAt M g W := by
-  classical
   -- Cover `W` by finitely many basic opens of `U` contained in `W`.
-  let ι := {f : Γ(X, U) // X.basicOpen f ≤ W}
-  obtain ⟨s, hs⟩ := hW.elim_finite_subcover (fun i : ι ↦ (X.basicOpen i.1 : Set X))
-    (fun i ↦ (X.basicOpen i.1).isOpen) fun x hx ↦ by
-      obtain ⟨f, hf, hxf⟩ := hU.exists_basicOpen_le ⟨x, hx⟩ (hWU hx)
-      exact Set.mem_iUnion.mpr ⟨⟨f, hf⟩, hxf⟩
-  have hsW : s.sup (fun i : ι ↦ X.basicOpen i.1) = W := by
-    refine le_antisymm (Finset.sup_le fun i _ ↦ i.2) fun x hx ↦ ?_
-    obtain ⟨i, hi, hxi⟩ := Set.mem_iUnion₂.mp (hs hx)
-    exact (Finset.le_sup (f := fun i : ι ↦ X.basicOpen i.1) hi) hxi
+  obtain ⟨s, hsW⟩ := hU.exists_finset_sup_basicOpen_eq hW hWU
   rw [← hsW]
   exact (localizesAt_finset_sup M g hU s fun i ↦ i.1).2
 
