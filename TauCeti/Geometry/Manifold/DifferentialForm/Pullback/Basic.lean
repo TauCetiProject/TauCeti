@@ -262,6 +262,14 @@ theorem mpullbackWithin_eq_mpullback {f : M → M'} {s : Set M} {x : M}
     (ω : RoughForm I' M' F k) : mpullbackWithin I I' f s ω x = mpullback I I' f ω x :=
   bundleMpullbackWithin_eq_bundleMpullback hs hf ω
 
+/-- A form evaluated at `a` on tangent vectors at `b = a` moved by `tangentSpaceCast` is the form
+evaluated at `b` on the original vectors. -/
+theorem RoughForm.apply_tangentSpaceCast {ω : RoughForm I' M' F k} {a b : M'} (h : b = a)
+    (u : Fin k → TangentSpace I' b) : ω a (fun i ↦ tangentSpaceCast I' b a (u i)) = ω b u := by
+  subst h
+  -- `tangentSpaceCast` from a tangent space to itself is the identity.
+  rfl
+
 /-- Maps that agree near `x` within `s`, and at `x`, pull a form back within `s` to the same value
 at `x`. -/
 theorem _root_.Filter.EventuallyEq.mpullbackWithin_eq {f g : M → M'} {s : Set M} {x : M}
@@ -297,6 +305,15 @@ theorem mpullback_apply_eq_mpullback_apply_iff {f : M → M'} {x : M}
     exact h₁
   · refine ContinuousAlternatingMap.ext fun v ↦ ?_
     rw [mpullback_apply, mpullback_apply, h]
+
+/-- Pullback along a surjective map whose derivatives are all surjective is injective. -/
+theorem mpullback_injective_of_surjective {f : M → M'} (hsurj : Function.Surjective f)
+    (hf : ∀ x, Function.Surjective (mfderiv I I' f x)) :
+    Function.Injective (mpullback I I' f : RoughForm I' M' F k → RoughForm I M F k) := by
+  intro ω η h
+  funext y
+  obtain ⟨x, rfl⟩ := hsurj y
+  exact (mpullback_apply_eq_mpullback_apply_iff (hf x)).mp (congrFun h x)
 
 /-- Within-set pullback preserves zero. -/
 @[simp]

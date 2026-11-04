@@ -48,6 +48,10 @@ be injective. This is the local reason why an affine blowup changes nothing away
   `R → Γ(X, U)` it induces.
 * `AlgebraicGeometry.Scheme.toSpecΓ_apply_asIdeal_eq_smul`: for this action, the prime ideal of
   `Γ(X, ⊤)` at the point `σ g x` is the translate by `g` of the prime ideal at `x`.
+* `AlgebraicGeometry.Scheme.Opens.ΓSpecIso_inv_comp_toSpecΓ_appLE`: on an open `U` of `X`, the
+  morphism `U ⟶ Spec Γ(X, U)` induces restriction of functions on the sections over opens of `U`.
+* `AlgebraicGeometry.Scheme.Hom.isBasis_range_affineOpens_le_preimage`: for `g : S' ⟶ S`, the
+  affine opens of `S'` lying over affine opens of `S` form a basis.
 * `AlgebraicGeometry.Scheme.Hom.span_range_appTop_sub_eq_top_iff`: for an endomorphism `f` of an
   affine scheme, the elements `f^*(a) - a` generate the unit ideal if and only if every point of
   `X` fixed by `f` has values in an empty scheme.
@@ -87,6 +91,36 @@ theorem IsAffineOpen.fromSpec_comp_eq_SpecMap {X : Scheme.{u}} {R : CommRingCat.
     hU.fromSpec ≫ f = Spec.map ((Scheme.ΓSpecIso R).inv ≫ f.appLE ⊤ U le_top) := by
   rw [← IsAffineOpen.SpecMap_appLE_fromSpec f (isAffineOpen_top _) hU le_top,
     IsAffineOpen.fromSpec_top, Scheme.isoSpec_Spec_inv, ← Spec.map_comp]
+
+/-- For an open `U` of `X`, the map `Γ(X, U) ≅ Γ(Spec Γ(X, U), ⊤) ⟶ Γ(U, T)` induced on the
+sections over an open `T` of `U` by the canonical morphism `U ⟶ Spec Γ(X, U)` is restriction of
+functions from `U` to `T`. -/
+theorem Scheme.Opens.ΓSpecIso_inv_comp_toSpecΓ_appLE {X : Scheme.{u}} (U : X.Opens)
+    (T : U.toScheme.Opens) :
+    (Scheme.ΓSpecIso Γ(X, U)).inv ≫ U.toSpecΓ.appLE ⊤ T le_top = U.ι.appLE U T (by simp) := by
+  rw [← Scheme.Hom.appLE_map U.toSpecΓ le_top (homOfLE (le_top : T ≤ ⊤)).op,
+    ← Scheme.Hom.appLE_map U.ι (by simp) (homOfLE (le_top : T ≤ ⊤)).op, ← Category.assoc]
+  congr 1
+  have h₁ : U.toSpecΓ.appLE ⊤ ⊤ le_top = U.toSpecΓ.appTop := Scheme.Hom.appLE_eq_app _
+  have h₂ : U.ι.appLE U ⊤ (by simp) = U.topIso.inv := by
+    rw [Scheme.Opens.ι_appLE, Scheme.Opens.topIso_inv]
+    -- Both sides restrict along the equality `U.ι ''ᵁ ⊤ = U`; morphisms of opens are unique.
+    rfl
+  rw [h₁, h₂, Scheme.Opens.toSpecΓ_appTop, Iso.inv_hom_id_assoc]
+
+/-- For a morphism `g : S' ⟶ S`, the affine opens of `S'` contained in the preimage of an affine
+open of `S` form a basis of the topology of `S'`. -/
+theorem Scheme.Hom.isBasis_range_affineOpens_le_preimage {S S' : Scheme.{u}} (g : S' ⟶ S) :
+    TopologicalSpace.Opens.IsBasis (Set.range fun i :
+      {p : S'.affineOpens × S.affineOpens // (p.1 : S'.Opens) ≤ g ⁻¹ᵁ p.2} ↦
+        (i.1.1 : S'.Opens)) := by
+  refine TopologicalSpace.Opens.isBasis_iff_nbhd.mpr fun {U x} hx ↦ ?_
+  obtain ⟨_, ⟨V, hV, rfl⟩, hxV, -⟩ :=
+    S.isBasis_affineOpens.exists_subset_of_mem_open (Set.mem_univ (g x)) isOpen_univ
+  obtain ⟨_, ⟨U', hU', rfl⟩, hxU', hU'U⟩ :=
+    S'.isBasis_affineOpens.exists_subset_of_mem_open (⟨hx, hxV⟩ : x ∈ U ⊓ g ⁻¹ᵁ V)
+      (U ⊓ g ⁻¹ᵁ V).isOpen
+  exact ⟨U', ⟨⟨(⟨U', hU'⟩, ⟨V, hV⟩), fun y hy ↦ (hU'U hy).2⟩, rfl⟩, hxU', fun y hy ↦ (hU'U hy).1⟩
 
 /-- **Fixed points of an endomorphism of an affine scheme.** For an endomorphism `f` of an affine
 scheme `X`, the elements `f^*(a) - a` of `Γ(X, ⊤)` generate the unit ideal if and only if `f` fixes

@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Algebra.Group.Submonoid.Support
 public import Mathlib.LinearAlgebra.RootSystem.Base
+public import Mathlib.LinearAlgebra.RootSystem.WeylGroup
 public import TauCeti.LinearAlgebra.RootSystem.Height
 
 /-!
@@ -74,6 +75,9 @@ positive root is a nonnegative integer combination of the simple coroots.
 * `TauCeti.exists_intCast_eq_coroot'_of_mem_posRootCone` says a coroot functional takes integer
   values on `Q⁺`, and `RootPairing.exists_intCast_eq_coroot'_of_forall_mem_support` says every
   coroot functional takes an integer value on a weight on which the simple ones do.
+* `RootPairing.coroot'_eq_zero_of_forall_mem_support` says a weight killed by the simple coroots
+  is killed by every coroot, and `TauCeti.smul_eq_self_of_forall_coroot'_eq_zero` deduces that the
+  whole Weyl group fixes it.
 * `RootPairing.toLinearMap_apply_nonneg_of_mem_posRootCone` says a member of `Q⁺` is nonnegative
   at a point of the coweight space where every simple root is nonnegative.
 * `TauCeti.exists_coroot_eq_sum_nat_of_mem_posRoots` says the coroot of a positive root is a
@@ -441,6 +445,23 @@ theorem _root_.RootPairing.coroot'_eq_zero_of_forall_mem_support {x : M}
   | zero => simp
   | add n n' _ _ hn hn' => simp [hn, hn']
   | smul z n _ hn => simp [hn]
+
+omit [CharZero R] in
+variable {P} in
+/-- **A weight killed by the simple coroots is fixed by the Weyl group**: it is killed by every
+coroot (`RootPairing.coroot'_eq_zero_of_forall_mem_support`), so every reflection generating the
+Weyl group fixes it. -/
+theorem smul_eq_self_of_forall_coroot'_eq_zero {x : M} (hx : ∀ i ∈ b.support, P.coroot' i x = 0)
+    (w : P.weylGroup) : w • x = x := by
+  obtain ⟨w, hw⟩ := w
+  induction hw using RootPairing.weylGroup.induction with
+  | mem i =>
+    rw [Subgroup.mk_smul, RootPairing.Equiv.reflection_smul, P.reflection_apply,
+      P.coroot'_eq_zero_of_forall_mem_support b hx i, zero_smul, sub_zero]
+  | one => exact one_smul _ x
+  | mul w₁ w₂ _ _ h₁ h₂ =>
+    rw [Subgroup.mk_smul] at h₁ h₂ ⊢
+    rw [mul_smul, h₂, h₁]
 
 omit [CharZero R] in
 variable {P b} in

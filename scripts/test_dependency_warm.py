@@ -232,6 +232,10 @@ class Boundary(unittest.TestCase):
         self.assertNotIn("secrets.", json.dumps(warmer))
         self.assertNotIn("lake build", json.dumps(steps))
         pr = (ROOT / ".github/workflows/pr-build.yml").read_text()
+        pr_steps = yaml.safe_load(pr)["jobs"]["sandboxed-build"]["steps"]
+        toolchain = next(s for s in pr_steps if s.get("uses") == "./gate/.github/actions/restore-lean-toolchain")
+        self.assertEqual(toolchain["with"]["cold"],
+                         "${{ startsWith(runner.name, 'fleet-') && 'true' || 'false' }}")
         self.assertNotIn("actions/cache/save", pr)
         self.assertIn('--ro-bind "$HOME/.elan" "$HOME/.elan"', pr)
         self.assertNotIn('--bind "$HOME/.elan"', pr)

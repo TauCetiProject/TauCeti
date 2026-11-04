@@ -10,7 +10,7 @@ public import Mathlib.Logic.Relation
 public import TauCeti.Analysis.Convex.Between
 public import TauCeti.Analysis.Convex.Combination
 public import TauCeti.Geometry.Polygon.Simple
-public import TauCeti.LinearAlgebra.AffineSpace.TriangleChart
+public import TauCeti.LinearAlgebra.AffineSpace.Triangle.Chart
 
 /-!
 # Δ-moves and combinatorial equivalence of polygons
