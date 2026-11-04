@@ -83,6 +83,24 @@ theorem permutationFixedEquiv_symm_apply_out (σ : Perm I)
     (permutationFixedEquiv (R := R) (M := M) σ).symm v c = v.val c.out := by
   simpa only [Quotient.out_eq] using permutationFixedEquiv_symm_apply σ v c.out
 
+open Classical in
+/-- A vector supported on the chosen representatives has the prescribed sum on each cycle. -/
+theorem sum_cycle_representative [Fintype I] (σ : Perm I) [DecidableRel σ.SameCycle]
+    (w : Quotient (Perm.SameCycle.setoid σ) → M)
+    (c : Quotient (Perm.SameCycle.setoid σ)) :
+    ∑ j with σ.SameCycle c.out j,
+      (if j = (Quotient.mk (Perm.SameCycle.setoid σ) j).out then
+        w (Quotient.mk _ j) else 0) = w c := by
+  rw [Finset.sum_eq_single c.out]
+  · simp only [Quotient.out_eq, ite_true]
+  · intro j hj hne
+    have hjc : Quotient.mk (Perm.SameCycle.setoid σ) j = c :=
+      (Quotient.sound (Finset.mem_filter.mp hj).2.symm).trans (Quotient.out_eq c)
+    simp only [hjc, ite_eq_right hne]
+  · intro hnot
+    exact False.elim (hnot (Finset.mem_filter.mpr
+      ⟨Finset.mem_univ _, SameCycle.refl σ _⟩))
+
 /-- The orbit indicator vectors form a basis of the fixed submodule. -/
 def permutationFixedBasis (σ : Perm I)
     [Finite (Quotient (Perm.SameCycle.setoid σ))] :

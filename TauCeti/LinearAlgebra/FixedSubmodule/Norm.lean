@@ -112,15 +112,8 @@ theorem mem_range_permutationNorm_iff [Finite I] (k : ℕ) (hk : σ ^ k = 1)
     refine ⟨x, ?_⟩
     apply (permutationFixedEquiv (R := ℤ) (M := ℤ) σ).symm.injective
     funext c
-    have hsum : ∑ j with σ.SameCycle c.out j, x j = w c := by
-      rw [sum_eq_single c.out]
-      · simp only [x, Quotient.out_eq, ite_true]
-      · intro j hj hne
-        have hjc : Quotient.mk (SameCycle.setoid σ) j = c :=
-          (Quotient.sound (mem_filter.mp hj).2.symm).trans (Quotient.out_eq c)
-        simp only [x, hjc, ite_eq_right hne]
-      · intro hnot
-        exact False.elim (hnot (mem_filter.mpr ⟨mem_univ _, SameCycle.refl σ _⟩))
+    have hsum : ∑ j with σ.SameCycle c.out j, x j = w c :=
+      sum_cycle_representative σ w c
     rw [permutationFixedEquiv_symm_permutationNorm, hsum, nsmul_eq_mul, ← hw c]
 
 open Classical in
