@@ -174,31 +174,22 @@ private def orientedFiberClass (ω : Orientation ℝ F ι)
     TopPair.singularCohomologyMap (e.continuousLinearEquivAt ℝ b hb).complZeroPairIso.hom _ g
   else -TopPair.singularCohomologyMap (e.continuousLinearEquivAt ℝ b hb).complZeroPairIso.hom _ g
 
-/-- The oriented fibre class does not depend on the trivialization: by
-`Bundle.Trivialization.singularCohomologyMap_complZeroPairIso_hom_eq_sign_det_smul`, changing the
-trivialization multiplies the unsigned class by the sign of the determinant of the coordinate
-change, which is also the sign relating the two readings of `x`. -/
+/-- The oriented fibre class does not depend on the trivialization, by the signed transition
+lemma for equal or opposite orientation readings. -/
 private theorem orientedFiberClass_eq (hι : Fintype.card ι = finrank ℝ F) (ω : Orientation ℝ F ι)
     (g : (TopPair.ofSubset (X := TopCat.of F) ({0}ᶜ : Set F)).singularCohomology R' K M'
       (finrank ℝ F))
     (e e' : Trivialization F (π F E)) [e.IsLinear ℝ] [e'.IsLinear ℝ] {b : B} (hb : b ∈ e.baseSet)
     (hb' : b ∈ e'.baseSet) (x : Orientation ℝ (E b) ι) :
     orientedFiberClass ω g e' hb' x = orientedFiberClass ω g e hb x := by
-  have hx := e.mapOrientation_eq_map_coordChangeL e' hb hb' x
-  have hdet : LinearMap.det ((e.coordChangeL ℝ e' b).toLinearEquiv : F →ₗ[ℝ] F) ≠ 0 :=
-    (LinearEquiv.isUnit_det' _).ne_zero
-  have hω := Orientation.eq_or_eq_neg (e.mapOrientation ι hb x) ω hι
-  unfold orientedFiberClass
-  rw [e.singularCohomologyMap_complZeroPairIso_hom_eq_sign_det_smul e' hb hb', hx]
-  rcases hdet.lt_or_gt with hneg | hpos
-  · -- An orientation-reversing coordinate change negates both the class and the reading of `x`.
-    have hsign : SignType.sign (e.coordChangeL ℝ e' b : F →L[ℝ] F).det = -1 := sign_neg hneg
-    rw [(Orientation.map_eq_neg_iff_det_neg _ _ hι).2 hneg, hsign]
-    rcases hω with h | h <;> simp [h, (Module.Ray.ne_neg_self ω).symm]
-  · -- An orientation-preserving coordinate change fixes both.
-    have hsign : SignType.sign (e.coordChangeL ℝ e' b : F →L[ℝ] F).det = 1 := sign_pos hpos
-    rw [(Orientation.map_eq_iff_det_pos _ _ hι).2 hpos, hsign]
-    simp
+  classical
+  simp only [orientedFiberClass, ← map_neg, ← apply_ite]
+  apply e.singularCohomologyMap_complZeroPairIso_hom_eq_of_mapOrientation_eq_or_eq_neg
+    (g := g) e' hb hb' hι
+  all_goals
+    split_ifs with h
+    · exact Or.inl ⟨h, rfl⟩
+    · exact Or.inr ⟨(Orientation.eq_or_eq_neg _ ω hι).resolve_left h, rfl⟩
 
 variable [VectorBundle ℝ F E]
 
