@@ -11,6 +11,7 @@ public import TauCeti.Analysis.Normed.Unbundled.SpectralNorm.Basic
 
 import Mathlib.Algebra.Polynomial.Eval.Subring
 import TauCeti.Analysis.AbsoluteValue.Nonarchimedean
+import TauCeti.Analysis.Normed.Unbundled.SpectralNorm.Trace
 
 /-!
 # Spectral norms on purely inseparable extensions
@@ -26,6 +27,9 @@ characteristic-power `x ^ p ^ n` in `K`, so power-multiplicativity of `spectralN
 * In any algebraic tower `K → M → N` with `M / K` purely inseparable, the spectral norm of `N`
   over `WithAbs (spectralAbsoluteValue K M)` equals its spectral norm over `K`
   (`TauCeti.spectralNorm_withAbs_spectralAbsoluteValue`).
+* In any tower `K → M → N` with `M / K` purely inseparable and `N / M` finite separable, spectral
+  boundedness of every `K`-linear functional transfers from `M` to `N`
+  (`Module.Dual.exists_bound_spectralNorm_of_isPurelyInseparable_of_isSeparable`).
 
 ## References
 
@@ -197,3 +201,50 @@ theorem spectralNorm_withAbs_spectralAbsoluteValue {K M N : Type*} [NormedField 
       _ = spectralNorm M' N y := rfl
 
 end TauCeti
+
+namespace Module.Dual
+
+/-- In a tower `K → M → N` over an ultrametric normed field `K` with `M / K` purely inseparable
+and `N / M` finite separable, if every `K`-linear functional on `M` is bounded by
+`spectralNorm K M`, then every `K`-linear functional on `N` is bounded by `spectralNorm K N`. -/
+theorem exists_bound_spectralNorm_of_isPurelyInseparable_of_isSeparable {K M N : Type*}
+    [NormedField K] [IsUltrametricDist K]
+    [Field M] [Algebra K M] [IsPurelyInseparable K M]
+    [Field N] [Algebra K N] [Algebra M N] [IsScalarTower K M N]
+    [FiniteDimensional M N] [Algebra.IsSeparable M N]
+    (hM : ∀ ψ : Module.Dual K M, ∃ C : ℝ, ∀ x, ‖ψ x‖ ≤ C * spectralNorm K M x)
+    (φ : Module.Dual K N) :
+    ∃ C : ℝ, ∀ y, ‖φ y‖ ≤ C * spectralNorm K N y := by
+  let M' := WithAbs (TauCeti.spectralAbsoluteValue K M)
+  let b := Module.finBasis M' N
+  choose C₁ hC₁ using fun i ↦ Module.Dual.exists_bound_spectralNorm_of_isSeparable (b.coord i)
+  let ψ (i : Fin (Module.finrank M' N)) : Module.Dual K M :=
+    { toFun := fun x ↦ φ (x • b i)
+      map_add' := fun x y ↦ by rw [add_smul, map_add]
+      map_smul' := fun c x ↦ by rw [smul_assoc, map_smul, RingHom.id_apply] }
+  choose C₂ hC₂ using fun i ↦ hM (ψ i)
+  let D₂ (i : Fin (Module.finrank M' N)) : ℝ := max (C₂ i) 0
+  refine ⟨∑ i, D₂ i * C₁ i, fun y ↦ ?_⟩
+  have hy : φ y = ∑ i, ψ i (b.repr y i).ofAbs := by
+    conv_lhs => rw [← b.sum_repr y]
+    rw [map_sum]
+    refine Finset.sum_congr rfl fun i _ ↦ ?_
+    rfl
+  calc ‖φ y‖ = ‖∑ i, ψ i (b.repr y i).ofAbs‖ := by rw [hy]
+    _ ≤ ∑ i, ‖ψ i (b.repr y i).ofAbs‖ := norm_sum_le _ _
+    _ ≤ ∑ i, D₂ i * spectralNorm K M (b.repr y i).ofAbs :=
+        Finset.sum_le_sum fun i _ ↦ (hC₂ i _).trans
+          (mul_le_mul_of_nonneg_right (le_max_left _ _) (spectralNorm_nonneg _))
+    _ = ∑ i, D₂ i * ‖b.coord i y‖ := by
+        refine Finset.sum_congr rfl fun i _ ↦ ?_
+        rw [Module.Basis.coord_apply, WithAbs.norm_eq_apply_ofAbs,
+          TauCeti.spectralAbsoluteValue_apply]
+    _ ≤ ∑ i, D₂ i * (C₁ i * spectralNorm M' N y) :=
+        Finset.sum_le_sum fun i _ ↦
+          mul_le_mul_of_nonneg_left (hC₁ i y) (le_max_right _ _)
+    _ = (∑ i, D₂ i * C₁ i) * spectralNorm K N y := by
+        rw [TauCeti.spectralNorm_withAbs_spectralAbsoluteValue (K := K) (M := M) y,
+          Finset.sum_mul]
+        refine Finset.sum_congr rfl fun i _ ↦ (mul_assoc _ _ _).symm
+
+end Module.Dual

@@ -11,8 +11,8 @@ public import Mathlib.Analysis.Normed.Unbundled.SpectralNorm
 /-!
 # Basic properties of polynomial spectral values and spectral norms
 
-This file collects elementary invariance and scaling lemmas for `spectralValue` and `spectralNorm`
-that do not depend on separability or completeness assumptions.
+This file collects elementary invariance, scaling, and tower-descent lemmas for `spectralValue` and
+`spectralNorm` that do not depend on separability, trace, or completeness assumptions.
 
 ## Main results
 
@@ -22,6 +22,8 @@ that do not depend on separability or completeness assumptions.
   `spectralValue` to `1 / q`.
 * `RingEquiv.spectralNorm_eq_of_norm_eq`: compatible ring isomorphisms whose base map preserves
   norms preserve `spectralNorm`.
+* `Module.Dual.exists_bound_spectralNorm_of_tower`: in a field tower `K → L → N`, spectral
+  boundedness of every `K`-linear functional descends from `N` to `L`.
 * `TauCeti.spectralNorm_pow_eq_norm_of_pow_eq_algebraMap` and
   `TauCeti.spectralNorm_eq_norm_rpow_of_pow_eq_algebraMap`: if a positive power `x ^ n` lies in the
   base field `K`, then `spectralNorm K M x ^ n` equals the base norm of `x ^ n` without requiring
@@ -137,6 +139,28 @@ theorem spectralNorm_eq_of_norm_eq {K K' L L' : Type*}
       ← Polynomial.map_zero (e : K →+* K'), (e : K →+* K').spectralValue_map_of_norm_eq he]
 
 end RingEquiv
+
+namespace Module.Dual
+
+/-- In a tower of fields `K → L → N`, if every `K`-linear functional on `N` is bounded by
+`spectralNorm K N`, then every `K`-linear functional on `L` is bounded by `spectralNorm K L`. -/
+theorem exists_bound_spectralNorm_of_tower {K L : Type*} (N : Type*)
+    [NormedField K] [Field L] [Algebra K L] [Field N] [Algebra K N] [Algebra L N]
+    [IsScalarTower K L N]
+    (hN : ∀ ψ : Module.Dual K N, ∃ C : ℝ, ∀ z, ‖ψ z‖ ≤ C * spectralNorm K N z)
+    (φ : Module.Dual K L) :
+    ∃ C : ℝ, ∀ y, ‖φ y‖ ≤ C * spectralNorm K L y := by
+  let ι : L →ₗ[K] N := (IsScalarTower.toAlgHom K L N).toLinearMap
+  have hker : LinearMap.ker ι = ⊥ := LinearMap.ker_eq_bot.mpr (algebraMap L N).injective
+  obtain ⟨π, hπ⟩ := ι.exists_leftInverse_of_injective hker
+  obtain ⟨C, hC⟩ := hN (φ.comp π)
+  refine ⟨C, fun y ↦ ?_⟩
+  have hy : (φ.comp π) (algebraMap L N y) = φ y :=
+    congrArg φ (LinearMap.congr_fun hπ y)
+  rw [spectralNorm.eq_of_tower (L := N) y, ← hy]
+  exact hC (algebraMap L N y)
+
+end Module.Dual
 
 namespace TauCeti
 

@@ -12,7 +12,6 @@ public import Mathlib.FieldTheory.PurelyInseparable.Basic
 import Mathlib.Algebra.Algebra.Shrink
 import Mathlib.Algebra.Field.Shrink
 import Mathlib.FieldTheory.Normal.Closure
-import Mathlib.LinearAlgebra.Dimension.Free
 import Mathlib.RingTheory.Finiteness.Small
 import TauCeti.Analysis.Normed.Unbundled.SpectralNorm.PurelyInseparable
 import TauCeti.FieldTheory.Normal.FixedField
@@ -48,71 +47,6 @@ The mathematical references are Bosch–Güntzer–Remmert, *Non-Archimedean Ana
 -/
 
 public section
-
-namespace Module.Dual
-
-/-- In a tower of fields `K → L → N`, if every `K`-linear functional on `N` is bounded by
-`spectralNorm K N`, then every `K`-linear functional on `L` is bounded by `spectralNorm K L`. -/
-theorem exists_bound_spectralNorm_of_tower {K L : Type*} (N : Type*)
-    [NormedField K] [Field L] [Algebra K L] [Field N] [Algebra K N] [Algebra L N]
-    [IsScalarTower K L N]
-    (hN : ∀ ψ : Module.Dual K N, ∃ C : ℝ, ∀ z, ‖ψ z‖ ≤ C * spectralNorm K N z)
-    (φ : Module.Dual K L) :
-    ∃ C : ℝ, ∀ y, ‖φ y‖ ≤ C * spectralNorm K L y := by
-  let ι : L →ₗ[K] N := (IsScalarTower.toAlgHom K L N).toLinearMap
-  have hker : LinearMap.ker ι = ⊥ := LinearMap.ker_eq_bot.mpr (algebraMap L N).injective
-  obtain ⟨π, hπ⟩ := ι.exists_leftInverse_of_injective hker
-  obtain ⟨C, hC⟩ := hN (φ.comp π)
-  refine ⟨C, fun y ↦ ?_⟩
-  have hy : (φ.comp π) (algebraMap L N y) = φ y :=
-    congrArg φ (LinearMap.congr_fun hπ y)
-  rw [spectralNorm.eq_of_tower (L := N) y, ← hy]
-  exact hC (algebraMap L N y)
-
-/-- In a tower `K → M → N` over an ultrametric normed field `K` with `M / K` purely inseparable
-and `N / M` finite separable, if every `K`-linear functional on `M` is bounded by
-`spectralNorm K M`, then every `K`-linear functional on `N` is bounded by `spectralNorm K N`. -/
-theorem exists_bound_spectralNorm_of_isPurelyInseparable_of_isSeparable {K M N : Type*}
-    [NormedField K] [IsUltrametricDist K]
-    [Field M] [Algebra K M] [IsPurelyInseparable K M]
-    [Field N] [Algebra K N] [Algebra M N] [IsScalarTower K M N]
-    [FiniteDimensional M N] [Algebra.IsSeparable M N]
-    (hM : ∀ ψ : Module.Dual K M, ∃ C : ℝ, ∀ x, ‖ψ x‖ ≤ C * spectralNorm K M x)
-    (φ : Module.Dual K N) :
-    ∃ C : ℝ, ∀ y, ‖φ y‖ ≤ C * spectralNorm K N y := by
-  let M' := WithAbs (TauCeti.spectralAbsoluteValue K M)
-  let b := Module.finBasis M' N
-  choose C₁ hC₁ using fun i ↦ Module.Dual.exists_bound_spectralNorm_of_isSeparable (b.coord i)
-  let ψ (i : Fin (Module.finrank M' N)) : Module.Dual K M :=
-    { toFun := fun x ↦ φ (x • b i)
-      map_add' := fun x y ↦ by rw [add_smul, map_add]
-      map_smul' := fun c x ↦ by rw [smul_assoc, map_smul, RingHom.id_apply] }
-  choose C₂ hC₂ using fun i ↦ hM (ψ i)
-  let D₂ (i : Fin (Module.finrank M' N)) : ℝ := max (C₂ i) 0
-  refine ⟨∑ i, D₂ i * C₁ i, fun y ↦ ?_⟩
-  have hy : φ y = ∑ i, ψ i (b.repr y i).ofAbs := by
-    conv_lhs => rw [← b.sum_repr y]
-    rw [map_sum]
-    refine Finset.sum_congr rfl fun i _ ↦ ?_
-    rfl
-  calc ‖φ y‖ = ‖∑ i, ψ i (b.repr y i).ofAbs‖ := by rw [hy]
-    _ ≤ ∑ i, ‖ψ i (b.repr y i).ofAbs‖ := norm_sum_le _ _
-    _ ≤ ∑ i, D₂ i * spectralNorm K M (b.repr y i).ofAbs :=
-        Finset.sum_le_sum fun i _ ↦ (hC₂ i _).trans
-          (mul_le_mul_of_nonneg_right (le_max_left _ _) (spectralNorm_nonneg _))
-    _ = ∑ i, D₂ i * ‖b.coord i y‖ := by
-        refine Finset.sum_congr rfl fun i _ ↦ ?_
-        rw [Module.Basis.coord_apply, WithAbs.norm_eq_apply_ofAbs,
-          TauCeti.spectralAbsoluteValue_apply]
-    _ ≤ ∑ i, D₂ i * (C₁ i * spectralNorm M' N y) :=
-        Finset.sum_le_sum fun i _ ↦
-          mul_le_mul_of_nonneg_left (hC₁ i y) (le_max_right _ _)
-    _ = (∑ i, D₂ i * C₁ i) * spectralNorm K N y := by
-        rw [TauCeti.spectralNorm_withAbs_spectralAbsoluteValue (K := K) (M := M) y,
-          Finset.sum_mul]
-        refine Finset.sum_congr rfl fun i _ ↦ (mul_assoc _ _ _).symm
-
-end Module.Dual
 
 namespace TauCeti
 
