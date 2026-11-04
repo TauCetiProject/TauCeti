@@ -280,30 +280,33 @@ theorem covariantDerivative_symm_eq_christoffelForm
 defining the frame, on a `C^m` manifold and a `C^k` bundle with `n + 1 ≤ m` and `n + 1 ≤ k`: it
 sends a section which is `C^(n + 1)` there to a `C^n` section of `Hom(TM, V)` there. -/
 theorem contMDiffCovariantDerivativeOn_frameCovariantDerivative
-    [FiniteDimensional 𝕜 E] [IsManifold I 1 M] {m k n : ℕ∞ω} [IsManifold I m M]
+    [FiniteDimensional 𝕜 E] {m k n : ℕ∞ω} [IsManifold I m M]
     [ContMDiffVectorBundle k F V I] (hm : n + 1 ≤ m) (hk : n + 1 ≤ k) :
-    ContMDiffCovariantDerivativeOn F n (frameCovariantDerivative I b e) e.baseSet where
-  contMDiff {σ} hσ := by
-    have : IsManifold I (n + 1) M := .of_le hm
-    have : ContMDiffVectorBundle (n + 1) F V I := .of_le hk
-    have : ContMDiffVectorBundle n F V I := .of_le (le_self_add.trans hk)
-    have : ContMDiffVectorBundle n E (TangentSpace I : M → Type _) I :=
-      TangentBundle.contMDiffVectorBundle
-    -- Test the hom-bundle section on the local frame of the tangent bundle at each point.
-    refine contMDiffOn_of_locally_contMDiffOn fun x _ ↦ ?_
-    let eT := trivializationAt E (TangentSpace I : M → Type _) x
-    let bT := Module.Basis.ofVectorSpace 𝕜 E
-    have hu : IsOpen (e.baseSet ∩ eT.baseSet) := e.open_baseSet.inter eT.open_baseSet
-    refine ⟨eT.baseSet, eT.open_baseSet, FiberBundle.mem_baseSet_trivializationAt' x, ?_⟩
-    refine contMDiffOn_hom_of_localFrame (b := bT) (e := eT) (e' := e) (f := id)
-      (u := e.baseSet ∩ eT.baseSet) contMDiffOn_id
-      (fun y hy ↦ ⟨hy.2, hy.1⟩) fun j ↦ ?_
-    simp only [id, frameCovariantDerivative_apply]
-    refine ContMDiffOn.sum_section fun i _ ↦ ContMDiffOn.smul_section ?_ ?_
-    · exact ((contMDiffOn_baseSet_localFrameCoeff b hσ i).mono inter_subset_left
-        ).contMDiffOn_mvfderiv_apply hu
-        ((eT.contMDiffOn_localFrame_baseSet n bT j).mono inter_subset_right) le_rfl
-    · exact ((e.contMDiffOn_localFrame_baseSet n b i).mono inter_subset_left)
+    -- The class needs `IsManifold I 1 M` merely to be stated; it follows from `hm`.
+    haveI : IsManifold I 1 M := .of_le (le_add_self.trans hm)
+    ContMDiffCovariantDerivativeOn F n (frameCovariantDerivative I b e) e.baseSet := by
+  have : IsManifold I 1 M := .of_le (le_add_self.trans hm)
+  refine ⟨fun {σ} hσ ↦ ?_⟩
+  have : IsManifold I (n + 1) M := .of_le hm
+  have : ContMDiffVectorBundle (n + 1) F V I := .of_le hk
+  have : ContMDiffVectorBundle n F V I := .of_le (le_self_add.trans hk)
+  have : ContMDiffVectorBundle n E (TangentSpace I : M → Type _) I :=
+    TangentBundle.contMDiffVectorBundle
+  -- Test the hom-bundle section on the local frame of the tangent bundle at each point.
+  refine contMDiffOn_of_locally_contMDiffOn fun x _ ↦ ?_
+  let eT := trivializationAt E (TangentSpace I : M → Type _) x
+  let bT := Module.Basis.ofVectorSpace 𝕜 E
+  have hu : IsOpen (e.baseSet ∩ eT.baseSet) := e.open_baseSet.inter eT.open_baseSet
+  refine ⟨eT.baseSet, eT.open_baseSet, FiberBundle.mem_baseSet_trivializationAt' x, ?_⟩
+  refine contMDiffOn_hom_of_localFrame (b := bT) (e := eT) (e' := e) (f := id)
+    (u := e.baseSet ∩ eT.baseSet) contMDiffOn_id
+    (fun y hy ↦ ⟨hy.2, hy.1⟩) fun j ↦ ?_
+  simp only [id, frameCovariantDerivative_apply]
+  refine ContMDiffOn.sum_section fun i _ ↦ ContMDiffOn.smul_section ?_ ?_
+  · exact ((contMDiffOn_baseSet_localFrameCoeff b hσ i).mono inter_subset_left
+      ).contMDiffOn_mvfderiv_apply hu
+      ((eT.contMDiffOn_localFrame_baseSet n bT j).mono inter_subset_right) le_rfl
+  · exact ((e.contMDiffOn_localFrame_baseSet n b i).mono inter_subset_left)
 
 end GeneralFibre
 

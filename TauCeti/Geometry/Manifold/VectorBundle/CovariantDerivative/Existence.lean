@@ -13,11 +13,11 @@ public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.LocalFr
 
 Every `C^(n+1)` real vector bundle of finite rank over a σ-compact Hausdorff smooth manifold
 modelled on a finite-dimensional space carries a `C^n` covariant derivative
-(`CovariantDerivative.exists_contMDiffCovariantDerivative`); in particular the type
-`CovariantDerivative I F V` of covariant derivatives on a `C^1` finite-rank bundle over any
-paracompact Hausdorff manifold is nonempty (`CovariantDerivative.instNonempty`). Here `n`
-ranges over `ℕ∞`: the derivative is built with smooth partitions of unity, so the analytic case is
-not covered.
+(`CovariantDerivative.exists_contMDiffCovariantDerivative`). Here `n` ranges over `ℕ∞`: the
+derivative is built with smooth partitions of unity, so the analytic case is not covered.
+Separately, using topological partitions of unity, the type `CovariantDerivative I F V` of
+covariant derivatives on a `C^1` finite-rank bundle over any paracompact Hausdorff manifold is
+nonempty (`CovariantDerivative.instNonempty`).
 
 The proof is the classical one. Covariant derivatives on a vector bundle form an affine space, and
 the defining conditions (additivity and the Leibniz rule at a point) are pointwise and affine in the
@@ -32,10 +32,7 @@ trivializations gives existence.
 The gluing lemma is the locally finite version of Mathlib's
 `IsCovariantDerivativeOn.finite_affine_combination`, from which it is derived pointwise, and its
 regularity statement is the locally finite version of
-`ContMDiffCovariantDerivativeOn.finite_affine_combination`. Together with the existence theorem
-they carry out the TODO in Mathlib's
-`Mathlib/Geometry/Manifold/VectorBundle/CovariantDerivative/Basic.lean` asking for a locally
-finite version and the existence of `C^k` connections by a partition of unity argument.
+`ContMDiffCovariantDerivativeOn.finite_affine_combination`.
 
 A covariant derivative is the basic input of the analysis of sections of a vector bundle: it
 splits the first-jet sequence of the bundle, defines curvature, and gives the connection
