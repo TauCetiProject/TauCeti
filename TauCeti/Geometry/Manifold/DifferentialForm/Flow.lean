@@ -45,6 +45,10 @@ flows are the other instance (`TauCeti.Geometry.Manifold.DifferentialForm.Flow.T
 
 ## Main results
 
+* `TauCeti.contDiffAt_extChartAt_family`: a jointly `Cⁿ` family of maps fixing `y` is jointly
+  `Cⁿ` when read in the chart at `y`.
+* `TauCeti.hasDerivAt_extChartAt_comp_of_hasMFDerivAt`: read in a chart, a curve moving with the
+  velocity of a vector field moves with the velocity of its coordinate expression.
 * `TauCeti.hasDerivAt_mpullback_of_eq_id`: along a `C²` family of maps which is the identity
   near `y` at time `t`, the velocity of the pullbacks at `y` at time `t` is the Lie derivative.
 * `TauCeti.hasDerivAt_mpullback_globalFlow_zero`: the velocity of `ψₜ^* α` at `t = 0` is `L_Z α`.
@@ -74,6 +78,56 @@ variable {E H M F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDim
   [NormedAddCommGroup F] [NormedSpace ℝ F] {k : ℕ}
   {Z : (x : M) → TangentSpace I x} {α : RoughForm I M F k}
 
+/-! ### Families of maps read in a chart -/
+
+omit [FiniteDimensional ℝ E] [T2Space M] [IsManifold I 2 M] in
+/-- A family of maps `ψᵤ` which is jointly `Cⁿ` at `(t, y)` and fixes `y` at time `t` is, read in
+the chart at `y`, a jointly `Cⁿ` map of `ℝ × E` at `(t, extChartAt I y y)`. -/
+theorem contDiffAt_extChartAt_family {n : WithTop ℕ∞} {ψ : ℝ → M → M}
+    {t : ℝ} {y : M} (hid : ψ t y = y)
+    (hsmooth : ContMDiffAt (𝓘(ℝ, ℝ).prod I) I n (fun p : ℝ × M ↦ ψ p.1 p.2) (t, y)) :
+    ContDiffAt ℝ n (fun p : ℝ × E ↦ extChartAt I y (ψ p.1 ((extChartAt I y).symm p.2)))
+      (t, extChartAt I y y) := by
+  have hsymm : ContMDiffAt 𝓘(ℝ, E) I n (extChartAt I y).symm (extChartAt I y y) := by
+    have h := contMDiffWithinAt_extChartAt_symm_range_self (I := I) (n := n) y
+    rwa [I.range_eq_univ, contMDiffWithinAt_univ] at h
+  have hpair : ContMDiffAt (𝓘(ℝ, ℝ).prod 𝓘(ℝ, E)) (𝓘(ℝ, ℝ).prod I) n
+      (fun p : ℝ × E ↦ (p.1, (extChartAt I y).symm p.2)) (t, extChartAt I y y) :=
+    contMDiffAt_fst.prodMk (ContMDiffAt.comp (t, extChartAt I y y) hsymm contMDiffAt_snd)
+  have hcomp := (contMDiffAt_extChartAt (I := I) (n := n) (x := y)).comp_of_eq
+    (hsmooth.comp_of_eq hpair (Prod.ext rfl (extChartAt_to_inv y))) (by
+      simp only [Function.comp_apply, extChartAt_to_inv]
+      exact hid)
+  rw [← modelWithCornersSelf_prod, chartedSpaceSelf_prod, contMDiffAt_iff_contDiffAt] at hcomp
+  exact hcomp
+
+omit [FiniteDimensional ℝ E] [I.Boundaryless] [T2Space M] [IsManifold I 2 M] in
+/-- A curve through a point of the chart at `y` with the velocity of a vector field `V` is, read in
+that chart, a curve with the velocity of the coordinate expression of `V`. -/
+theorem hasDerivAt_extChartAt_comp_of_hasMFDerivAt [IsManifold I 1 M] {γ : ℝ → M}
+    {V : (x : M) → TangentSpace I x} {t : ℝ} {y : M} {z : E} (hz : z ∈ (extChartAt I y).target)
+    (hγt : γ t = (extChartAt I y).symm z)
+    (hγ : HasMFDerivAt 𝓘(ℝ, ℝ) I γ t ((1 : ℝ →L[ℝ] ℝ).smulRight (V (γ t)))) :
+    HasDerivAt (fun u ↦ extChartAt I y (γ u))
+      (VectorField.mpullbackWithin 𝓘(ℝ, E) I (extChartAt I y).symm V (range I) z) t := by
+  have hxsrc : γ t ∈ (chartAt H y).source :=
+    extChartAt_source I y ▸ hγt ▸ (extChartAt I y).map_target hz
+  have hderiv := TauCeti.Manifold.hasDerivAt_comp_curve
+    (mdifferentiableAt_extChartAt (I := I) hxsrc) hγ
+  -- In the tangent-bundle trivialization at `y`, the coordinate field is a coordinate change.
+  have hcoord : mvfderiv I (extChartAt I y) (γ t) (V (γ t)) =
+      VectorField.mpullbackWithin 𝓘(ℝ, E) I (extChartAt I y).symm V (range I) z := by
+    rw [← (extChartAt I y).right_inv hz, ← hγt,
+      VectorField.mpullbackWithin_extChartAt_symm_apply V (extChartAt_source I y ▸ hxsrc)]
+    simp only [mvfderiv]
+    rw [(hasMFDerivAt_extChartAt (I := I) hxsrc).mfderiv,
+      mfderiv_chartAt_eq_tangentCoordChange hxsrc]
+    -- `tangentCoordChange` is by definition this fibre coordinate of the trivialization
+    -- (`TangentBundle.trivializationAt_apply`, `tangentCoordChange_def`).
+    rfl
+  rw [hcoord] at hderiv
+  exact hderiv
+
 /-! ### Pullbacks along a family of maps -/
 
 omit [FiniteDimensional ℝ E] [T2Space M] in
@@ -93,19 +147,8 @@ theorem hasDerivAt_mpullback_of_eq_id {ψ : ℝ → M → M} {V : (x : M) → Ta
   -- The family read in the chart at `y`, and the field read in the same chart.
   set G : ℝ × E → E := fun p ↦ extChartAt I y (ψ p.1 ((extChartAt I y).symm p.2))
   set W := VectorField.mpullbackWithin 𝓘(ℝ, E) I (extChartAt I y).symm V (range I) with hW
-  have hGsmooth : ContDiffAt ℝ 2 G (t, extChartAt I y y) := by
-    have hsymm : ContMDiffAt 𝓘(ℝ, E) I 2 (extChartAt I y).symm (extChartAt I y y) := by
-      have h := contMDiffWithinAt_extChartAt_symm_range_self (I := I) (n := 2) y
-      rwa [I.range_eq_univ, contMDiffWithinAt_univ] at h
-    have hpair : ContMDiffAt (𝓘(ℝ, ℝ).prod 𝓘(ℝ, E)) (𝓘(ℝ, ℝ).prod I) 2
-        (fun p : ℝ × E ↦ (p.1, (extChartAt I y).symm p.2)) (t, extChartAt I y y) :=
-      contMDiffAt_fst.prodMk (ContMDiffAt.comp (t, extChartAt I y y) hsymm contMDiffAt_snd)
-    have hcomp := (contMDiffAt_extChartAt (I := I) (n := 2) (x := y)).comp_of_eq
-      (hsmooth.comp_of_eq hpair (Prod.ext rfl (extChartAt_to_inv y))) (by
-        simp only [Function.comp_apply, extChartAt_to_inv]
-        exact hid.self_of_nhds)
-    rw [← modelWithCornersSelf_prod, chartedSpaceSelf_prod, contMDiffAt_iff_contDiffAt] at hcomp
-    exact hcomp
+  have hGsmooth : ContDiffAt ℝ 2 G (t, extChartAt I y y) :=
+    contDiffAt_extChartAt_family hid.self_of_nhds hsmooth
   have hdiff : ∀ᶠ p in 𝓝 (t, extChartAt I y y), DifferentiableAt ℝ G p :=
     (hGsmooth.eventually (by simp)).mono fun p hp ↦ hp.differentiableAt (by simp)
   have hGt_nhds : (fun z ↦ G (t, z)) =ᶠ[𝓝 (extChartAt I y y)] id := by
@@ -129,23 +172,7 @@ theorem hasDerivAt_mpullback_of_eq_id {ψ : ℝ → M → M} {V : (x : M) → Ta
           ((1 : ℝ →L[ℝ] ℝ).smulRight (V (ψ t x))) ∧ ψ t x = x)
         (by rw [extChartAt_to_inv]; exact hvel.and hid)
     filter_upwards [extChartAt_target_mem_nhds y, h] with z hz ⟨hzv, hzid⟩
-    set x := (extChartAt I y).symm z
-    have hxsrc : x ∈ (chartAt H y).source := extChartAt_source I y ▸ (extChartAt I y).map_target hz
-    have hderiv := TauCeti.Manifold.hasDerivAt_comp_curve
-      (mdifferentiableAt_extChartAt (I := I) (hzid ▸ hxsrc)) hzv
-    rw [hzid] at hderiv
-    -- In the tangent-bundle trivialization at `y`, the coordinate field is a coordinate change.
-    have hcoord : mvfderiv I (extChartAt I y) x (V x) = W z := by
-      rw [hW, ← (extChartAt I y).right_inv hz,
-        VectorField.mpullbackWithin_extChartAt_symm_apply V (extChartAt_source I y ▸ hxsrc)]
-      simp only [mvfderiv]
-      rw [(hasMFDerivAt_extChartAt (I := I) hxsrc).mfderiv,
-        mfderiv_chartAt_eq_tangentCoordChange hxsrc]
-      -- `tangentCoordChange` is by definition this fibre coordinate of the trivialization
-      -- (`TangentBundle.trivializationAt_apply`, `tangentCoordChange_def`).
-      rfl
-    rw [hcoord] at hderiv
-    exact hderiv
+    exact hasDerivAt_extChartAt_comp_of_hasMFDerivAt hz hzid hzv
   -- The spatial derivative of the coordinate family solves the variational equation at time `t`:
   -- by symmetry of second derivatives, it differentiates to the derivative of the velocity `W`.
   have htime : timeFDeriv G t =ᶠ[𝓝 (extChartAt I y y)] W := by
