@@ -111,6 +111,21 @@ theorem flowOf_zero [IsManifold I 1 M] {v : (x : M) → TangentSpace I x}
   exact maximalIntegralCurve_zero (mem_flowDomain.mp (mem_flowDomain_zero hv x))
 
 omit [CompleteSpace E] in
+/-- A global integral curve of a `C¹` field is the maximal flow through its initial value.
+No completeness hypothesis is needed on the field or the model space. -/
+theorem flowOf_eq_of_isMIntegralCurve [IsManifold I 1 M]
+    {v : (x : M) → TangentSpace I x}
+    (hv : CMDiff 1 (fun y ↦ (⟨y, v y⟩ : TangentBundle I M)))
+    {γ : ℝ → M} (hγ : IsMIntegralCurve γ v) (t : ℝ) :
+    flowOf v t (γ 0) = γ t := by
+  have h := (hγ.isMIntegralCurveOn (Ioo (-(|t| + 1)) (|t| + 1))).eqOn_maximalIntegralCurve hv
+    (by constructor <;> linarith [abs_nonneg t]) rfl
+  have ht : t ∈ Ioo (-(|t| + 1)) (|t| + 1) :=
+    ⟨by linarith [neg_abs_le t], by linarith [le_abs_self t]⟩
+  rw [flowOf_apply]
+  exact h ht
+
+omit [CompleteSpace E] in
 /-- In finite dimensions, the domain of the maximal flow is jointly open in time and initial
 point. -/
 theorem isOpen_flowDomain [FiniteDimensional ℝ E] [IsManifold I 1 M]
