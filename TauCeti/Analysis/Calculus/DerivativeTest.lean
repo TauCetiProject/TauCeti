@@ -37,6 +37,8 @@ top of the space-time cylinder.
 * `IsLocalMinOn.hasDerivWithinAt_Iic_nonpos`, `IsLocalMaxOn.hasDerivWithinAt_Ici_nonpos`,
   `IsLocalMinOn.hasDerivWithinAt_Ici_nonneg`: the dual endpoint tests.
 * `TauCeti.eventually_lt_of_sign_deriv`: the strict first-derivative test.
+* `TauCeti.eventually_nhdsGT_lt_of_deriv_pos`: its right-hand half, for a function with positive
+  derivative just to the right of `x₀`.
 * `TauCeti.eventually_lt_of_deriv_deriv_pos`, `TauCeti.eventually_gt_of_deriv_deriv_neg`: the
   strict second-derivative tests.
 * `TauCeti.deriv_deriv_nonpos_of_isLocalMax`: the local-maximum version.
@@ -112,10 +114,10 @@ theorem _root_.IsLocalMinOn.hasDerivWithinAt_Ici_nonneg {f : ℝ → ℝ} {f' a 
     (h : IsLocalMinOn f (Set.Ici a) a) (hf : HasDerivWithinAt f f' (Set.Ici a) a) : 0 ≤ f' := by
   simpa using h.neg.hasDerivWithinAt_Ici_nonpos hf.neg
 
-/-- The right-hand half of the strict first-derivative test: if `f : ℝ → ℝ` is continuous at `x₀`
+/-- **Strict first-derivative test, right-hand half.** If `f : ℝ → ℝ` is continuous at `x₀`
 and has positive derivative just to the right of `x₀`, then `f x₀ < f x` just to the right of
 `x₀`. -/
-private theorem eventually_nhdsGT_lt_of_deriv_pos {f : ℝ → ℝ} {x₀ : ℝ} (hc : ContinuousAt f x₀)
+theorem eventually_nhdsGT_lt_of_deriv_pos {f : ℝ → ℝ} {x₀ : ℝ} (hc : ContinuousAt f x₀)
     (hf : ∀ᶠ x in 𝓝[>] x₀, 0 < deriv f x) : ∀ᶠ x in 𝓝[>] x₀, f x₀ < f x := by
   obtain ⟨b, hb, hsub⟩ := mem_nhdsGT_iff_exists_Ioo_subset.1 hf
   -- `f` is strictly increasing on `[x₀, b)`: continuous there, with positive derivative inside.

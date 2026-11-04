@@ -34,7 +34,7 @@ the circular orbits of radius `r₀`. This file classifies them at the extrema o
 * **The linearization.** At every point `(r₀, p_r)` with `r₀ > 0`, the derivative of the reduced
   Hamiltonian vector field `X(r, p_r) = (p_r / m, -U_ℓ'(r))` is
   `A(δr, δp) = (δp / m, -U_ℓ''(r₀) δr)`
-  (`TauCeti.hasFDerivAt_hamiltonianVectorField_effectivePotential`),
+  (`TauCeti.hasFDerivAt_hamiltonianVectorField_centralForceHamiltonian_effectivePotential`),
   and `A² = -(U_ℓ''(r₀) / m)`.
 * **Minima are elliptic.** If `U_ℓ''(r₀) / m = ν² > 0`, as at a nondegenerate minimum for
   `m > 0`, then `A² = -ν²` and `A` has no real eigenvalue: its complex eigenvalues are `± i ν`.
@@ -47,10 +47,10 @@ the circular orbits of radius `r₀`. This file classifies them at the extrema o
   circular orbit at a strict minimum of the effective potential.
 * `TauCeti.eventually_forall_mem_of_deriv_effectivePotential_eq_zero_of_pos`: the same at a
   nondegenerate minimum.
-* `TauCeti.not_hasEigenvalue_fderiv_hamiltonianVectorField_effectivePotential`: at a
-  nondegenerate minimum the linearization has no real eigenvalue.
-* `TauCeti.hasEigenvector_fderiv_hamiltonianVectorField_effectivePotential`: at a nondegenerate
-  maximum the linearization has the real eigenvalues `± √(-U_ℓ''(r₀) / m)`.
+* `not_hasEigenvalue_fderiv_hamiltonianVectorField_centralForceHamiltonian_effectivePotential`:
+  at a nondegenerate minimum the linearization has no real eigenvalue.
+* `hasEigenvector_fderiv_hamiltonianVectorField_centralForceHamiltonian_effectivePotential`:
+  at a nondegenerate maximum the linearization has the real eigenvalues `± √(-U_ℓ''(r₀) / m)`.
 
 ## References
 
@@ -154,7 +154,7 @@ theorem eventually_forall_mem_of_deriv_effectivePotential_eq_zero_of_pos (hm : 0
 `U_ℓ'` differentiable at `r₀` with derivative `a = U_ℓ''(r₀)`. At every point `(r₀, p_r)`, the
 reduced Hamiltonian vector field `X(r, p_r) = (p_r / m, -U_ℓ'(r))` has derivative
 `(δr, δp) ↦ (δp / m, -a δr)`. -/
-theorem hasFDerivAt_hamiltonianVectorField_effectivePotential
+theorem hasFDerivAt_hamiltonianVectorField_centralForceHamiltonian_effectivePotential
     {r₀ a : ℝ} (hr₀ : 0 < r₀) (hU : ∀ᶠ r in 𝓝 r₀, DifferentiableAt ℝ U r)
     (ha : HasDerivAt (deriv (effectivePotential m ℓ U)) a r₀) (p_r : ℝ) :
     HasFDerivAt ((stdSymplecticForm (V := ℝ)).hamiltonianVectorField
@@ -179,7 +179,7 @@ theorem hasFDerivAt_hamiltonianVectorField_effectivePotential
 
 /-- At a point `(r₀, p_r)` with `r₀ > 0`, the derivative `A` of the reduced Hamiltonian vector
 field satisfies `A² = -(U_ℓ''(r₀) / m)`. -/
-theorem fderiv_hamiltonianVectorField_effectivePotential_comp_self
+theorem fderiv_hamiltonianVectorField_centralForceHamiltonian_effectivePotential_comp_self
     {r₀ a : ℝ} (hr₀ : 0 < r₀) (hU : ∀ᶠ r in 𝓝 r₀, DifferentiableAt ℝ U r)
     (ha : HasDerivAt (deriv (effectivePotential m ℓ U)) a r₀) (p_r : ℝ) :
     (fderiv ℝ ((stdSymplecticForm (V := ℝ)).hamiltonianVectorField
@@ -187,7 +187,7 @@ theorem fderiv_hamiltonianVectorField_effectivePotential_comp_self
       (fderiv ℝ ((stdSymplecticForm (V := ℝ)).hamiltonianVectorField
         (centralForceHamiltonian m (effectivePotential m ℓ U))) (r₀, p_r)) =
       -(a / m) • ContinuousLinearMap.id ℝ (ℝ × ℝ) := by
-  rw [(hasFDerivAt_hamiltonianVectorField_effectivePotential
+  rw [(hasFDerivAt_hamiltonianVectorField_centralForceHamiltonian_effectivePotential
     hr₀ hU ha p_r).fderiv]
   ext <;> simp <;> ring
 
@@ -196,7 +196,7 @@ linearization of the reduced Hamiltonian vector field at `(r₀, p_r)` has no re
 square is `-(U_ℓ''(r₀) / m)`, so its complex eigenvalues are `± i √(U_ℓ''(r₀) / m)`. When `r₀` is
 a critical point of `U_ℓ`, `(r₀, 0)` is an equilibrium of the reduced system, and this says that
 it is an elliptic equilibrium. -/
-theorem not_hasEigenvalue_fderiv_hamiltonianVectorField_effectivePotential
+theorem not_hasEigenvalue_fderiv_hamiltonianVectorField_centralForceHamiltonian_effectivePotential
     {r₀ a : ℝ} (hr₀ : 0 < r₀) (hU : ∀ᶠ r in 𝓝 r₀, DifferentiableAt ℝ U r)
     (ha : HasDerivAt (deriv (effectivePotential m ℓ U)) a r₀) (ham : 0 < a / m) (p_r μ : ℝ) :
     ¬ Module.End.HasEigenvalue (fderiv ℝ ((stdSymplecticForm (V := ℝ)).hamiltonianVectorField
@@ -206,7 +206,8 @@ theorem not_hasEigenvalue_fderiv_hamiltonianVectorField_effectivePotential
   obtain ⟨v, hv⟩ := hμ.exists_hasEigenvector
   -- Applying the square identity `A² = -(a / m)` to an eigenvector gives `μ² = -(a / m)`.
   have h := DFunLike.congr_fun
-    (fderiv_hamiltonianVectorField_effectivePotential_comp_self hr₀ hU ha p_r) v
+    (fderiv_hamiltonianVectorField_centralForceHamiltonian_effectivePotential_comp_self
+      hr₀ hU ha p_r) v
   have hA := hv.apply_eq_smul
   simp only [ContinuousLinearMap.coe_coe] at hA
   simp only [ContinuousLinearMap.comp_apply, hA, map_smul] at h
@@ -218,7 +219,7 @@ linearization of the reduced Hamiltonian vector field at `(r₀, p_r)` has the r
 `κ = √(-U_ℓ''(r₀) / m)`, with eigenvector `(1, m κ)`, and the real eigenvalue `-κ`, with
 eigenvector `(1, -m κ)`. When `r₀` is a critical point of `U_ℓ`, `(r₀, 0)` is an equilibrium of the
 reduced system, and this says that it is a hyperbolic equilibrium. -/
-theorem hasEigenvector_fderiv_hamiltonianVectorField_effectivePotential
+theorem hasEigenvector_fderiv_hamiltonianVectorField_centralForceHamiltonian_effectivePotential
     {r₀ a : ℝ} (hr₀ : 0 < r₀) (hU : ∀ᶠ r in 𝓝 r₀, DifferentiableAt ℝ U r)
     (ha : HasDerivAt (deriv (effectivePotential m ℓ U)) a r₀) (ham : a / m < 0) (p_r : ℝ)
     {κ : ℝ} (hκ : κ = √(-(a / m)) ∨ κ = -√(-(a / m))) :
@@ -229,7 +230,7 @@ theorem hasEigenvector_fderiv_hamiltonianVectorField_effectivePotential
   have hκ2 : κ ^ 2 = -(a / m) := by
     rcases hκ with rfl | rfl <;> simp [Real.sq_sqrt (neg_nonneg.2 ham.le)]
   rw [Module.End.hasEigenvector_iff, Module.End.mem_eigenspace_iff, ContinuousLinearMap.coe_coe,
-    (hasFDerivAt_hamiltonianVectorField_effectivePotential
+    (hasFDerivAt_hamiltonianVectorField_centralForceHamiltonian_effectivePotential
       hr₀ hU ha p_r).fderiv]
   refine ⟨?_, by simp⟩
   ext
