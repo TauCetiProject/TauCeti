@@ -243,7 +243,10 @@ theorem separable_hilbertClassPolynomial : (hilbertClassPolynomial n).Separable 
   separable_prod_X_sub_C_iff.2 <| singularModulus_injective.comp
     posDefProperClass_mk_primitiveReducedForms_bijective.1
 
-private theorem star_singularModulus_eq_reflectedClass (q : PosDefProperClass n) :
+/-- Complex conjugation sends the singular modulus of a proper class to the singular modulus of
+its reflected class, the class of the forms `a x² - b x y + c y²`. -/
+@[simp]
+theorem star_singularModulus_eq_reflectedClass (q : PosDefProperClass n) :
     starRingEnd ℂ (singularModulus n q) = singularModulus n (reflectedClass n q) := by
   induction q using Quotient.inductionOn with | h f
   rw [reflectedClass_mk]
