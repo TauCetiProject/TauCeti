@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.Algebra.Bilinear
 public import Mathlib.Algebra.Lie.OfAssociative
 import Mathlib.RingTheory.Nilpotent.Lemmas
+import Mathlib.Tactic.NoncommRing
 
 /-!
 # The left-regular representation of a Lie map into an associative algebra
@@ -30,6 +31,11 @@ ring, the action is packaged as a homomorphism `L →ₗ⁅R⁆ Module.End R A` 
 instance: a consumer installs the associated `LieRingModule` where it wants it, with
 `LieRingModule.compLieHom`.
 
+Since `ad x = mulLeft x - mulRight x`, a composite of two adjoint operators of `A` is a
+combination of products of left and right multiplications (`LieAlgebra.ad_comp_ad`). Traces of
+such products are often computable, which is how the Killing form of the commutator Lie algebra
+of an associative algebra, such as `gl n`, is evaluated.
+
 ## Main definitions
 
 * `LieHom.leftRegularRep`: the left-regular representation `L →ₗ⁅R⁆ Module.End R A` along `q`.
@@ -45,6 +51,7 @@ instance: a consumer installs the associated `LieRingModule` where it wants it, 
 * `LieHom.leftRegularRep_mem_of_mem`: every left ideal of `A` is invariant.
 * `LieHom.ad_apply_eq_leftRegularRep_sub_mulRight`: the inner derivation action is the difference
   of the left-regular action and right multiplication.
+* `LieAlgebra.ad_comp_ad`: `ad x ∘ ad y` expanded into left and right multiplications.
 
 ## References
 
@@ -130,3 +137,22 @@ theorem ad_apply_eq_leftRegularRep_sub_mulRight (q : L →ₗ⁅R⁆ A) (x : L) 
   rw [leftRegularRep_eq_mulLeft, LieAlgebra.ad_eq_lmul_left_sub_lmul_right, Pi.sub_apply]
 
 end LieHom
+
+namespace LieAlgebra
+
+attribute [local instance 100] LieRing.ofAssociativeRing
+
+variable {R : Type u} {A : Type w} [CommRing R] [Ring A] [Algebra R A]
+
+/-- **The composite of two adjoint operators of an associative algebra**, expanded into left and
+right multiplications: `⁅x, ⁅y, z⁆⁆ = x y z - x z y - y z x + z y x`. -/
+theorem ad_comp_ad (x y : A) :
+    ad R A x ∘ₗ ad R A y =
+      LinearMap.mulLeft R (x * y) - LinearMap.mulLeft R x ∘ₗ LinearMap.mulRight R y -
+        LinearMap.mulLeft R y ∘ₗ LinearMap.mulRight R x + LinearMap.mulRight R (y * x) := by
+  ext1 z
+  simp only [LinearMap.comp_apply, ad_apply, Ring.lie_def, LinearMap.add_apply,
+    LinearMap.sub_apply, LinearMap.mulLeft_apply, LinearMap.mulRight_apply]
+  noncomm_ring
+
+end LieAlgebra

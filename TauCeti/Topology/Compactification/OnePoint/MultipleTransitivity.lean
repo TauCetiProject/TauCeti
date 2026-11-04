@@ -34,6 +34,8 @@ distinct points, which is how the automorphisms of a genus-zero domain are norma
 * `OnePoint.exists_smul_zero_one_infty_eq`: some element of `GL(2, K)` carries `0`, `1`, `∞` to
   any three pairwise distinct points.
 * `OnePoint.existsUnique_pgl_smul_zero_one_infty_eq`: exactly one element of `PGL(2, K)` does.
+* `OnePoint.exists_pgl_smul_eq_zero_one_infty`: conversely, some element of `PGL(2, K)` carries
+  three pairwise distinct points to `0`, `1`, `∞`.
 * `OnePoint.instIsMultiplyPretransitivePGL`: `PGL(2, K)` acts 3-transitively on `OnePoint K`.
 * `OnePoint.existsUnique_psl_smul_zero_one_infty_eq_of_roots` and
   `OnePoint.existsUnique_psl_smul_zero_one_infty_eq`: exactly one element of `PSL(2, K)` carries
@@ -101,6 +103,23 @@ theorem existsUnique_pgl_smul_zero_one_infty_eq {x y z : OnePoint K} (hxy : x �
     (hfix _ (h1.trans hg.2.1.symm)) (hfix _ (hinf.trans hg.2.2.symm))
   rw [← ProjGenLinGroup.mk_eq_one, map_mul, map_inv, inv_mul_eq_one] at hcentre
   exact hcentre.symm
+
+/-- Three pairwise distinct points of the projective line are carried to `0`, `1`, `∞` by some
+element of `PGL(2, K)`: the inverse of the transformation carrying `0`, `1`, `∞` to them. -/
+theorem exists_pgl_smul_eq_zero_one_infty {x y z : OnePoint K} (hxy : x ≠ y) (hxz : x ≠ z)
+    (hyz : y ≠ z) :
+    ∃ g : PGL(2, K), g • x = (0 : K) ∧ g • y = (1 : K) ∧ g • z = ∞ := by
+  obtain ⟨g, h0, h1, hinf⟩ := (existsUnique_pgl_smul_zero_one_infty_eq hxy hxz hyz).exists
+  exact ⟨g⁻¹, by rw [← h0, inv_smul_smul], by rw [← h1, inv_smul_smul],
+    by rw [← hinf, inv_smul_smul]⟩
+
+/-- Points carried to `0`, `1`, `∞` by a Möbius transformation are pairwise distinct. -/
+theorem pairwise_ne_of_smul_eq_zero_one_infty {x y z : OnePoint K} {g : PGL(2, K)}
+    (hx : g • x = (0 : K)) (hy : g • y = (1 : K)) (hz : g • z = ∞) : x ≠ y ∧ x ≠ z ∧ y ≠ z := by
+  refine ⟨?_, ?_, ?_⟩ <;> rintro rfl
+  · simp [hx] at hy
+  · simp [hx] at hz
+  · simp [hy] at hz
 
 /-- **`PGL(2, K)` acts 3-transitively on the projective line**: any ordered triple of distinct
 points is carried to any other by some Möbius transformation. -/

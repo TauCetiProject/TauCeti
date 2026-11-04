@@ -212,6 +212,18 @@ theorem star_mul_self_eq_reverse_mul_self_of_mem_even {x : CliffordAlgebra Q}
     (hx : x ∈ evenOdd Q 0) : star x * x = reverse x * x := by
   rw [star_def, involute_eq_of_mem_even hx]
 
+/-- For an even element, the conditions of being negated by `star` and of preserving the
+generating-vector subspace under commutators are the conditions of being negated by reversal and
+of sending every generator back into that subspace. -/
+theorem mem_even_and_star_eq_neg_and_commutator_mem_iff (Q : QuadraticForm R M)
+    (x : CliffordAlgebra Q) :
+    (x ∈ even Q ∧ star x = -x ∧
+        ∀ y ∈ LinearMap.range (ι Q), x * y - y * x ∈ LinearMap.range (ι Q)) ↔
+      x ∈ even Q ∧ reverse x = -x ∧ ∀ v, x * ι Q v - ι Q v * x ∈ LinearMap.range (ι Q) := by
+  refine and_congr_right fun he ↦ and_congr ?_
+    ⟨fun h v ↦ h _ ⟨v, rfl⟩, fun h ↦ by rintro _ ⟨v, rfl⟩; exact h v⟩
+  rw [reverse_eq_star_of_mem_even ⟨x, he⟩]
+
 /-- On an odd element, the `star` norm is the negative of the `reverse` norm. -/
 theorem star_mul_self_eq_neg_reverse_mul_self_of_mem_odd {x : CliffordAlgebra Q}
     (hx : x ∈ evenOdd Q 1) : star x * x = -(reverse x * x) := by

@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.RepresentationTheory.Homological.ContCohomology.Resolution.GradedContraction
+public import TauCeti.RepresentationTheory.Homological.ContCohomology.Resolution.Graded.Contraction
 public import TauCeti.RepresentationTheory.Tensor.Induction.Diagonal
 public import TauCeti.RepresentationTheory.Tensor.Induction.Smooth
 import TauCeti.RepresentationTheory.Homological.ContCohomology.Resolution.CoboundaryShift

@@ -13,7 +13,8 @@ public import Mathlib.LinearAlgebra.Matrix.Unique
 # Tensor products of matrix algebras
 
 This file records the finite-index form of the Kronecker equivalence for tensor products of
-matrix algebras.
+matrix algebras, and the unital ⋆-algebra homomorphisms that tensor a matrix by the identity on
+either side.
 
 ## Main result
 
@@ -21,6 +22,8 @@ matrix algebras.
 * `Matrix.kroneckerTMulFinAlgEquiv`: matrix absorption
   `M_m(A) ⊗[R] M_n(B) ≃ₐ[R] M_(mn)(A ⊗[R] B)`.
 * `Matrix.kroneckerFinAlgEquiv`: its scalar case `M_m(R) ⊗[R] M_n(R) ≃ₐ[R] M_(mn)(R)`.
+* `Matrix.kroneckerOneStarAlgHom`, `Matrix.oneKroneckerStarAlgHom`: the unital ⋆-algebra
+  homomorphisms `A ↦ A ⊗ₖ 1` and `B ↦ 1 ⊗ₖ B`.
 -/
 
 public section
@@ -95,5 +98,44 @@ theorem kroneckerFinAlgEquiv_tmul (m n : ℕ) (R : Type*) [CommSemiring R]
     Matrix.kroneckerFinAlgEquiv m n R (a ⊗ₜ[R] b) =
       Matrix.reindex finProdFinEquiv finProdFinEquiv (a ⊗ₖ b) := by
   simp [kroneckerFinAlgEquiv]
+
+section StarAlgHom
+
+variable (R : Type*) {m : Type*} (n : Type*) [CommSemiring R] [StarRing R] [Fintype m]
+  [DecidableEq m] [Fintype n] [DecidableEq n]
+
+/-- Tensoring by the identity on the right, `A ↦ A ⊗ₖ 1`, as a unital ⋆-algebra homomorphism. -/
+def kroneckerOneStarAlgHom : Matrix m m R →⋆ₐ[R] Matrix (m × n) (m × n) R where
+  toFun X := X ⊗ₖ (1 : Matrix n n R)
+  map_one' := one_kronecker_one
+  map_mul' X Y := by rw [← mul_kronecker_mul, mul_one]
+  map_zero' := zero_kronecker _
+  map_add' X Y := add_kronecker X Y _
+  commutes' r := by simp [Algebra.algebraMap_eq_smul_one, smul_kronecker]
+  map_star' X := by simp [star_eq_conjTranspose, conjTranspose_kronecker]
+
+/-- Tensoring by the identity on the left, `B ↦ 1 ⊗ₖ B`, as a unital ⋆-algebra homomorphism. -/
+def oneKroneckerStarAlgHom : Matrix n n R →⋆ₐ[R] Matrix (m × n) (m × n) R where
+  toFun X := (1 : Matrix m m R) ⊗ₖ X
+  map_one' := one_kronecker_one
+  map_mul' X Y := by rw [← mul_kronecker_mul, mul_one]
+  map_zero' := kronecker_zero _
+  map_add' X Y := kronecker_add _ X Y
+  commutes' r := by simp [Algebra.algebraMap_eq_smul_one, kronecker_smul]
+  map_star' X := by simp [star_eq_conjTranspose, conjTranspose_kronecker]
+
+variable {R n}
+
+@[simp]
+theorem kroneckerOneStarAlgHom_apply (A : Matrix m m R) :
+    kroneckerOneStarAlgHom R n A = A ⊗ₖ (1 : Matrix n n R) :=
+  (rfl)
+
+@[simp]
+theorem oneKroneckerStarAlgHom_apply (B : Matrix n n R) :
+    oneKroneckerStarAlgHom R (m := m) n B = (1 : Matrix m m R) ⊗ₖ B :=
+  (rfl)
+
+end StarAlgHom
 
 end Matrix

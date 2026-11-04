@@ -149,6 +149,20 @@ theorem nhdsColimitIso_naturality {Q : Bᵒᵖ ⥤ A} (f : P ⟶ Q) :
 
 end Fibers
 
+/-- Transporting the point, presheaf and admissible open transports germs compatibly. -/
+@[reassoc]
+theorem toPresheafFiber_congr {A : Type w} [Category.{t} A]
+    [HasColimitsOfSize.{v, v} A] {x y : X} (hxy : x = y)
+    {P Q : Bᵒᵖ ⥤ A} (hPQ : P = Q) {U V : B} (hUV : U = V)
+    (h : (G.point x).fiber.obj U) :
+    (G.point x).toPresheafFiber U h P ≫ eqToHom (by subst_vars; rfl) =
+      eqToHom (by subst_vars; rfl) ≫
+        (G.point y).toPresheafFiber V
+          (G.pointElement y (hxy ▸ hUV ▸ h.down.down)) Q := by
+  subst_vars
+  simp only [eqToHom_refl, Category.comp_id, Category.id_comp]
+  congr 1
+
 section Topological
 
 open TopologicalSpace TopCat.Presheaf

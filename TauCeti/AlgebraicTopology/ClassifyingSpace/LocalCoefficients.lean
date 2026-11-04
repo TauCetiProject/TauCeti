@@ -61,6 +61,15 @@ This identification is natural in both coefficient variables. A morphism of repr
 map `Homₖ(A, N) ⟶ Homₖ(A, N')`
 (`TauCeti.classifyingSpaceTwistedCohomologyIsoGroupCohomology_hom_naturality_right`).
 
+When the underlying module of `A` is projective over `k`, a short exact sequence
+`0 ⟶ N₁ ⟶ N₂ ⟶ N₃ ⟶ 0` of `k`-modules gives a long exact sequence of twisted cohomology groups
+`Hⁿ(BG; A, Nᵢ)` and one of group cohomology groups `Hⁿ(G, Homₖ(A, Nᵢ))`, and the identification
+carries the connecting map of the first, the Bockstein homomorphism
+`TauCeti.LocalCoefficientSystem.twistedCohomologyBockstein`, to Mathlib's `groupCohomology.δ`
+(`TauCeti.twistedCohomologyBockstein_comp_classifyingSpaceTwistedCohomologyIsoGroupCohomology_hom`).
+Together with the naturality in the module of values, the identification is an isomorphism of
+long exact sequences.
+
 ## Main definitions
 
 * `TauCeti.classifyingSpaceLocalSystem`: the local coefficient system on `classifyingSpace G`
@@ -87,6 +96,9 @@ map `Homₖ(A, N) ⟶ Homₖ(A, N')`
 * `TauCeti.classifyingSpaceTwistedCohomologyIsoGroupCohomology_hom_naturality_left`,
   `TauCeti.classifyingSpaceTwistedCohomologyIsoGroupCohomology_hom_naturality_right`: the
   cohomological isomorphism is natural in the representation and in the module of values.
+* `TauCeti.twistedCohomologyBockstein_comp_classifyingSpaceTwistedCohomologyIsoGroupCohomology_hom`:
+  for `k`-projective `A`, it carries the Bockstein homomorphism of twisted cohomology to the
+  connecting map of group cohomology.
 
 ## References
 
@@ -197,6 +209,24 @@ abbrev classifyingSpaceLocalSystemFunctor :
 instance : (classifyingSpaceLocalSystemFunctor k G).Additive :=
   IsQuotientCoveringMap.additive_associatedLocalSystemFunctor _ k
 
+-- With the concrete Milnor source and target, instance search does not recover the bundled
+-- covering from its underlying map. Delegate to the generic construction with that data fixed.
+open _root_.IsQuotientCoveringMap in
+instance : Limits.PreservesFiniteLimits (classifyingSpaceLocalSystemFunctor k G) := by
+  have := instPreservesLimitsOfSizeRepLocalCoefficientSystemAssociatedLocalSystemFunctor
+    (E := TopCat.of (universalGSpace G))
+    (p := TopCat.ofHom ⟨classifyingSpaceProj G, continuous_classifyingSpaceProj G⟩)
+    (isQuotientCoveringMap_classifyingSpaceProj G) k
+  infer_instance
+
+open _root_.IsQuotientCoveringMap in
+instance : Limits.PreservesFiniteColimits (classifyingSpaceLocalSystemFunctor k G) := by
+  have := instPreservesColimitsOfSizeRepLocalCoefficientSystemAssociatedLocalSystemFunctor
+    (E := TopCat.of (universalGSpace G))
+    (p := TopCat.ofHom ⟨classifyingSpaceProj G, continuous_classifyingSpaceProj G⟩)
+    (isQuotientCoveringMap_classifyingSpaceProj G) k
+  infer_instance
+
 variable {X : ShortComplex (Rep.{u} k G)}
 
 /-- A short exact sequence of representations of `G` gives a short exact sequence of the
@@ -280,5 +310,35 @@ theorem classifyingSpaceTwistedCohomologyIsoGroupCohomology_hom_naturality_right
     (E := TopCat.of (universalGSpace G))
     (p := TopCat.ofHom ⟨classifyingSpaceProj G, continuous_classifyingSpaceProj G⟩)
     (isQuotientCoveringMap_classifyingSpaceProj G) k A N g n
+
+/-- The fibres of the local system on the classifying space associated to a representation whose
+underlying module is projective over `k` are projective. -/
+-- Instance search does not find `IsQuotientCoveringMap.projective_associatedLocalSystem_obj`
+-- through the abbreviation `classifyingSpaceLocalSystem`, whose quotient covering is bundled with
+-- `TopCat.of`, so the instance is registered for the abbreviation as well.
+instance [Module.Projective k A] (x : FundamentalGroupoid (TopCat.of (classifyingSpace G))) :
+    Projective ((classifyingSpaceLocalSystem k A).obj x) :=
+  IsQuotientCoveringMap.projective_associatedLocalSystem_obj _ k A x
+
+/-- **The cohomology of the classifying space with local coefficients is group cohomology,
+compatibly with the long exact sequences in the module of values**: for a representation `A` of
+`G` whose underlying module is projective over `k` and a short exact sequence
+`0 ⟶ N₁ ⟶ N₂ ⟶ N₃ ⟶ 0` of `k`-modules, the identifications `Hⁿ(BG; A, Nᵢ) ≅ Hⁿ(G, Homₖ(A, Nᵢ))`
+carry the Bockstein homomorphism `Hⁿ(BG; A, N₃) ⟶ Hᵐ(BG; A, N₁)`, `n + 1 = m`, of twisted
+cohomology to Mathlib's connecting map `groupCohomology.δ` of the short exact sequence of
+representations `0 ⟶ Homₖ(A, N₁) ⟶ Homₖ(A, N₂) ⟶ Homₖ(A, N₃) ⟶ 0`. -/
+@[reassoc]
+theorem twistedCohomologyBockstein_comp_classifyingSpaceTwistedCohomologyIsoGroupCohomology_hom
+    [Module.Projective k A] {S : ShortComplex (ModuleCat.{u} k)} (hS : S.ShortExact) (n m : ℕ)
+    (h : n + 1 = m := by lia) :
+    twistedCohomologyBockstein.{u, u, u, u} k (classifyingSpaceLocalSystem k A) hS n m h ≫
+        (classifyingSpaceTwistedCohomologyIsoGroupCohomology k A S.X₁ m).hom =
+      (classifyingSpaceTwistedCohomologyIsoGroupCohomology k A S.X₃ n).hom ≫
+        groupCohomology.δ (Rep.shortExact_map_ihom A (Rep.shortExact_map_trivialFunctor hS))
+          n m h :=
+  IsQuotientCoveringMap.twistedCohomologyBockstein_comp_twistedCohomologyIsoGroupCohomology_hom
+    (E := TopCat.of (universalGSpace G))
+    (p := TopCat.ofHom ⟨classifyingSpaceProj G, continuous_classifyingSpaceProj G⟩)
+    (isQuotientCoveringMap_classifyingSpaceProj G) k A hS n m h
 
 end TauCeti
