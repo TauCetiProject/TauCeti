@@ -68,14 +68,9 @@ theorem fragmentType_mono (hAB : A ≤ B) (a : Fin n → M) :
 theorem fragmentType_eq_iff {a : Fin n → M} {b : Fin n → N} :
     fragmentType A M a = fragmentType A N b ↔
       ∀ φ ∈ A.slice n, φ.Realize Empty.elim a ↔ φ.Realize Empty.elim b := by
-  constructor
-  · intro h φ hφ
-    have hm := Set.ext_iff.1 h φ
-    simpa only [mem_fragmentType, Fragment.mem_slice.1 hφ, true_and] using hm
-  · intro h
-    ext φ
-    simp only [mem_fragmentType]
-    exact and_congr_right fun hφ => h φ (Fragment.mem_slice.2 hφ)
+  simpa only [fragmentType, Set.inter_def, mem_infinitaryType] using
+    (Set.sep_ext_iff (s := A.slice n) (p := fun φ => φ ∈ infinitaryType M a)
+      (q := fun φ => φ ∈ infinitaryType N b))
 
 /-- An `A`-elementary embedding preserves the type of every tuple relative to `A`. -/
 @[simp]
