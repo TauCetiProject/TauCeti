@@ -85,6 +85,17 @@ public section
 
 namespace Real
 
+/-- If both a positive base and its reciprocal are at most `R`, every real power of that
+base is bounded by `R` raised to the absolute value of the exponent. -/
+theorem rpow_le_rpow_abs {x R : ℝ} (hx : 0 < x) (hxR : x ≤ R) (hinvR : x⁻¹ ≤ R)
+    (a : ℝ) : x ^ a ≤ R ^ |a| := by
+  rcases le_or_gt 0 a with ha | ha
+  · rw [abs_of_nonneg ha]
+    exact rpow_le_rpow hx.le hxR ha
+  · calc x ^ a = x⁻¹ ^ (-a) := by rw [← rpow_neg_eq_inv_rpow, neg_neg]
+         _ ≤ R ^ (-a) := rpow_le_rpow (inv_nonneg.mpr hx.le) hinvR (neg_nonneg.mpr ha.le)
+         _ = R ^ |a| := by rw [abs_of_neg ha]
+
 /-- If `2 ≤ y` and `1 ≤ s`, then `y ^ (-s) ≤ 1 / 2`. -/
 theorem rpow_neg_le_half {y s : ℝ} (hy : 2 ≤ y) (hs : 1 ≤ s) : y ^ (-s) ≤ 1 / 2 :=
   calc y ^ (-s) ≤ (2 : ℝ) ^ (-s) := rpow_le_rpow_of_nonpos two_pos hy (by linarith)
