@@ -25,6 +25,8 @@ from `SL₂(ℤ)` to `SL₂(R)`, writes it as a word in three transvections, and
 * `TauCeti.Matrix.SpecialLinearGroup.closure_S_T_mul_S`: `S` and `T S` generate `SL₂(ℤ)`; this
   follows from Mathlib's `Matrix.SpecialLinearGroup.SL2Z_generators` for `S` and `T`, since
   `T = (T S) S⁻¹`.
+* `TauCeti.Matrix.SpecialLinearGroup.apply_smul_eq_of_S_smul_of_T_smul`: a function on an
+  `SL₂(ℤ)`-set that is invariant under `S` and `T` is invariant under all of `SL₂(ℤ)`.
 -/
 
 public section
@@ -66,5 +68,21 @@ theorem closure_S_T_mul_S : Subgroup.closure {S, T * S} = (⊤ : Subgroup SL(2, 
   have hU : T * S ∈ Subgroup.closure {S, T * S} := Subgroup.subset_closure (by simp)
   -- `T = (T S) S⁻¹`
   exact Set.pair_subset hS (by simpa using mul_mem hU (inv_mem hS))
+
+open ModularGroup in
+/-- A function on an `SL₂(ℤ)`-set that is invariant under the generators `S` and `T` is invariant
+under all of `SL₂(ℤ)`. -/
+theorem apply_smul_eq_of_S_smul_of_T_smul {X α : Type*} [MulAction SL(2, ℤ) X] {f : X → α}
+    (hS : ∀ x, f (S • x) = f x) (hT : ∀ x, f (T • x) = f x) (γ : SL(2, ℤ)) (x : X) :
+    f (γ • x) = f x := by
+  have hγ : γ ∈ Subgroup.closure {S, T} := by simp [SpecialLinearGroup.SL2Z_generators]
+  induction hγ using Subgroup.closure_induction generalizing x with
+  | one => rw [one_smul]
+  | mem g hg =>
+    rcases hg with rfl | rfl
+    · exact hS x
+    · exact hT x
+  | mul g h _ _ hg hh => rw [mul_smul, hg, hh]
+  | inv g _ hg => rw [← hg, smul_inv_smul]
 
 end TauCeti.Matrix.SpecialLinearGroup

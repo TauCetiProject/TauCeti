@@ -44,6 +44,8 @@ unfolded by hand.
   a fractional-linear bijection of the upper half-plane.
 * `ModularGroup.re_S_smul`, `ModularGroup.S_smul_S_smul`: the inversion `S` negates the real
   part up to a `normSq` factor, and is an involution of `ℍ`.
+* `ModularGroup.coe_S_smul`, `ModularGroup.coe_T_smul`: `S` and `T` act on `ℍ ⊆ ℂ` by
+  `τ ↦ -1 / τ` and `τ ↦ τ + 1`.
 * `ModularGroup.sq_smul_smul_eq_vadd_S_smul_vadd`: for `g = !![a, b; c, d] ∈ SL(2, ℤ)` with
   `c ≠ 0`, `c² (g • τ) = a c - 1 / (τ + d / c)`.
 
@@ -170,6 +172,16 @@ lemma re_S_smul (p : ℍ) : (S • p).re = -p.re / Complex.normSq (p : ℂ) := b
 /-- The inversion `S` is an involution of `ℍ`. -/
 lemma S_smul_S_smul (p : ℍ) : S • (S • p) = p := by
   rw [← SL_neg_smul, ← S_inv, inv_smul_smul]
+
+-- Not `@[simp]`, for the same reason as `re_S_smul` above.
+/-- The inversion `S` acts on `ℍ ⊆ ℂ` by `τ ↦ -1 / τ`. -/
+lemma coe_S_smul (τ : ℍ) : ((S • τ : ℍ) : ℂ) = -1 / τ := by
+  rw [modular_S_smul, coe_mk, neg_div, one_div, inv_neg]
+
+-- Not `@[simp]`, for the same reason as `re_S_smul` above.
+/-- The translation `T` acts on `ℍ ⊆ ℂ` by `τ ↦ τ + 1`. -/
+lemma coe_T_smul (τ : ℍ) : ((T • τ : ℍ) : ℂ) = τ + 1 := by
+  rw [modular_T_smul, coe_vadd, add_comm, Complex.ofReal_one]
 
 /-- For `g = !![a, b; c, d] ∈ SL(2, ℤ)` with `c ≠ 0`, scaling `g • τ` by `c²` gives
 `a c - 1 / (τ + d / c)`: in terms of the actions on `ℍ`,
