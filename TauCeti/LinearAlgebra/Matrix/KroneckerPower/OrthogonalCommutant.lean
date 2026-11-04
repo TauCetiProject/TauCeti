@@ -28,7 +28,8 @@ power by Brauer diagrams.
 
 ## Main results
 
-* `Matrix.apply_comp_mul_prod_of_commute_kroneckerPower`: invariance under a signed permutation.
+* `Matrix.apply_comp_mul_prod_of_forall_commute_kroneckerPower`: invariance under a signed
+  permutation.
 * `Matrix.apply_comp_comp_of_commute_kroneckerPower`: invariance under relabelling.
 * `Matrix.apply_eq_zero_of_commute_kroneckerPower`: the parity constraint on the entries.
 -/
@@ -42,31 +43,23 @@ variable {R : Type*} [CommRing R] {ι κ : Type*} [Fintype ι] [DecidableEq ι] 
 
 /-- A matrix commuting with the Kronecker powers of all orthogonal matrices is invariant under the
 signed permutation matrix sending `e_j` to `d j • e_(σ j)`. -/
-theorem apply_comp_mul_prod_of_commute_kroneckerPower
+theorem apply_comp_mul_prod_of_forall_commute_kroneckerPower
     (hM : ∀ A : Matrix ι ι R, Aᵀ * A = 1 → Commute M (A.kroneckerPower κ))
     (σ : Equiv.Perm ι) {d : ι → R} (hd : ∀ i, d i * d i = 1) (v u : κ → ι) :
     M (σ ∘ v) (σ ∘ u) * ∏ i, d (u i) = (∏ i, d (v i)) * M v u := by
-  set A : Matrix ι ι R := Matrix.of fun i j => if i = σ j then d j else 0 with hAdef
-  have hA : Aᵀ * A = 1 := by
-    ext j j'
-    simp only [hAdef, Matrix.mul_apply, Matrix.transpose_apply, Matrix.of_apply, ite_mul,
-      zero_mul, mul_ite, mul_zero, Finset.sum_ite_eq', Finset.mem_univ, ite_true,
-      σ.injective.eq_iff, Matrix.one_apply]
-    split_ifs with h <;> simp_all
-  have hK : ∀ w x : κ → ι, A.kroneckerPower κ w x = if w = σ ∘ x then ∏ i, d (x i) else 0 := by
-    intro w x
-    simp [hAdef, Finset.prod_ite_zero, funext_iff]
-  have h := congrFun (congrFun (hM A hA).eq (σ ∘ v)) u
-  have hinj : ∀ w : κ → ι, (σ ∘ v = σ ∘ w) ↔ v = w := fun w => σ.injective.comp_left.eq_iff
-  simp only [Matrix.mul_apply, hK, mul_ite, mul_zero, ite_mul, zero_mul, hinj] at h
-  simpa using h
+  refine apply_comp_mul_prod_of_commute_kroneckerPower σ d (hM _ ?_) v u
+  ext j j'
+  simp only [Matrix.mul_apply, Matrix.transpose_apply, Matrix.of_apply, ite_mul,
+    zero_mul, mul_ite, mul_zero, Finset.sum_ite_eq', Finset.mem_univ, ite_true,
+    σ.injective.eq_iff, Matrix.one_apply]
+  split_ifs with h <;> simp_all
 
 /-- A matrix commuting with the Kronecker powers of all orthogonal matrices is invariant under
 relabelling by a permutation. -/
 theorem apply_comp_comp_of_commute_kroneckerPower
     (hM : ∀ A : Matrix ι ι R, Aᵀ * A = 1 → Commute M (A.kroneckerPower κ))
     (σ : Equiv.Perm ι) (v u : κ → ι) : M (σ ∘ v) (σ ∘ u) = M v u := by
-  simpa using apply_comp_mul_prod_of_commute_kroneckerPower hM σ (d := fun _ => 1)
+  simpa using apply_comp_mul_prod_of_forall_commute_kroneckerPower hM σ (d := fun _ => 1)
     (fun _ => one_mul 1) v u
 
 /-- **The parity constraint.** An entry of a matrix commuting with the Kronecker powers of all
@@ -78,7 +71,7 @@ theorem apply_eq_zero_of_commute_kroneckerPower [NoZeroDivisors R]
     (h2 : (2 : R) ≠ 0) {v u : κ → ι} (a : ι)
     (h : ¬(Even (Finset.univ.filter fun i => v i = a).card ↔
       Even (Finset.univ.filter fun i => u i = a).card)) : M v u = 0 := by
-  have key := apply_comp_mul_prod_of_commute_kroneckerPower hM (Equiv.refl ι)
+  have key := apply_comp_mul_prod_of_forall_commute_kroneckerPower hM (Equiv.refl ι)
     (d := fun i => if i = a then -1 else 1) (fun i => by split_ifs <;> simp) v u
   simp only [Equiv.coe_refl, Function.id_comp, Finset.prod_ite, Finset.prod_const_one, mul_one,
     Finset.prod_const] at key
