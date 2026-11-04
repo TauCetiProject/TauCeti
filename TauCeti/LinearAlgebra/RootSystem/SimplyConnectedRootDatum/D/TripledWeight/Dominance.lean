@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.D.TripledWeight
+public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.D.TripledWeight.Basic
 public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.D.Positive
 import Mathlib.LinearAlgebra.RootSystem.Finite.Nondegenerate
 import TauCeti.LinearAlgebra.RootSystem.InvariantForm.Basic
