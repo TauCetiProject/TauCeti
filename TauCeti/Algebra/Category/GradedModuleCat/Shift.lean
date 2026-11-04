@@ -149,6 +149,7 @@ universe v v' uk uA
 
 /-- Shifting the target graded module by `n` subtracts `n` from the degree measured in
 its original grading. -/
+@[simp]
 theorem isHomogeneous_shiftObj_iff
     {k : Type uk} [CommRing k] {A : Type uA} [Ring A] [Algebra k A]
     {𝒜 : ℤ → Submodule k A} {M : TauCeti.GradedModuleCat.{v} 𝒜}
