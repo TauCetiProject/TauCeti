@@ -169,7 +169,7 @@ section RoughForm
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
   {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
   {M : Type*} [TopologicalSpace M] [ChartedSpace H M]
-  {n : ℕ∞ω} [IsManifold I 2 M] [IsManifold I (n + 1) M]
+  {n : ℕ∞ω} [IsManifold I 1 M] [IsManifold I (n + 1) M]
   {k : ℕ} {D : Π x : M, Submodule ℝ (TangentSpace I x)}
 
 /-- **A hyperplane field is locally the kernel of a one-form.** Every point of a `C^n` distribution
@@ -182,7 +182,6 @@ theorem IsContMDiffDistribution.exists_roughForm_ker_eq
       ContMDiffOn I (I.prod 𝓘(ℝ, E [⋀^Fin 1]→L[ℝ] ℝ)) n
         (fun y ↦ TotalSpace.mk' (E [⋀^Fin 1]→L[ℝ] ℝ) y (α y)) U ∧
       ∀ y ∈ U, α y ≠ 0 ∧ α.ker y = D y := by
-  have : IsManifold I 1 M := IsManifold.of_le (n := 2) one_le_two
   obtain ⟨U, a, hU, hxU, ha, haD⟩ := hD.exists_local_annihilator hk x
   -- The covector field `a` is the one-form `α`, with the same kernel and regularity.
   let α : RoughForm I M ℝ 1 :=
