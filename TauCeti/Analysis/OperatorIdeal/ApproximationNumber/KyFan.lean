@@ -75,15 +75,10 @@ namespace ContinuousLinearMap
 Ky Fan gauges. -/
 theorem kyFanGauge_orthogonalProjectionOnto_comp_comp_subtypeL_le (W : Submodule 𝕜 F)
     [W.HasOrthogonalProjection] (V : Submodule 𝕜 E) (T : E →L[𝕜] F) (k : ℕ) :
-    (W.orthogonalProjectionOnto ∘L T ∘L V.subtypeL).kyFanGauge k ≤ T.kyFanGauge k :=
-  calc (W.orthogonalProjectionOnto ∘L T ∘L V.subtypeL).kyFanGauge k
-      ≤ ‖W.orthogonalProjectionOnto‖₊ * T.kyFanGauge k * ‖V.subtypeL‖₊ :=
-        kyFanGauge_comp_comp_le _ _ _ k
-    _ ≤ 1 * T.kyFanGauge k * 1 := by
-        gcongr
-        · exact_mod_cast Submodule.orthogonalProjectionOnto_norm_le _
-        · exact_mod_cast V.norm_subtypeL_le
-    _ = T.kyFanGauge k := by rw [one_mul, mul_one]
+    (W.orthogonalProjectionOnto ∘L T ∘L V.subtypeL).kyFanGauge k ≤ T.kyFanGauge k := by
+  rw [kyFanGauge_def, kyFanGauge_def]
+  exact Finset.sum_le_sum fun n _ ↦
+    singularValue_orthogonalProjectionOnto_comp_comp_subtypeL_le W V T n
 
 /-- **Ky Fan's maximum principle.** For a bounded linear map `T` between inner product spaces and
 orthonormal families `(uᵢ)` in `F` and `(vᵢ)` in `E` with `k` members,
