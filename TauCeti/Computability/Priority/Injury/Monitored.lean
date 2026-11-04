@@ -48,10 +48,6 @@ theorem mk_mem_monitoredInjuryEvents {k : κ} {s x : ℕ} :
     (k, s, x) ∈ monitoredInjuryEvents A target r e ↔
       k = target e ∧ x ∈ injuriesAt (A (target e)) r e s := mem_monitoredInjuryEvents
 
-/-- Every event in `monitoredInjuryEvents A target r e` carries the oracle label `target e`. -/
-theorem fst_eq_of_mem_monitoredInjuryEvents {p : κ × ℕ × ℕ}
-    (hp : p ∈ monitoredInjuryEvents A target r e) : p.1 = target e := hp.1
-
 /-- **Label separation.** An event on `k ≠ target e` never belongs to `monitoredInjuryEvents`. -/
 theorem notMem_monitoredInjuryEvents_of_ne {k : κ} {s x : ℕ} (hk : k ≠ target e) :
     (k, s, x) ∉ monitoredInjuryEvents A target r e := fun h => hk h.1
@@ -97,12 +93,6 @@ theorem image_stage_monitoredInjuryEvents :
 /-- The fibre of `monitoredInjuryEvents` over any label `k ≠ target e` is empty. -/
 theorem preimage_mk_monitoredInjuryEvents_of_ne {k : κ} (hk : k ≠ target e) :
     Prod.mk k ⁻¹' monitoredInjuryEvents A target r e = ∅ := by ext ⟨s, x⟩; simp [hk]
-
-/-- Monotonicity of combined labelled injury events in the priority cutoff `N`. -/
-theorem biUnion_monitoredInjuryEvents_mono {M N : ℕ} (hMN : M ≤ N) :
-    (⋃ e < M, monitoredInjuryEvents A target r e) ⊆
-      ⋃ e < N, monitoredInjuryEvents A target r e :=
-  iUnion₂_mono' fun e he => ⟨e, lt_of_lt_of_le he hMN, Subset.rfl⟩
 
 /-- Restricting combined events of `e < N` to label `k` retains those `e < N` monitoring `k`. -/
 theorem preimage_mk_biUnion_monitoredInjuryEvents (k : κ) (N : ℕ) :

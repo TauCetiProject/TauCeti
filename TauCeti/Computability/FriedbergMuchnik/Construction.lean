@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Computability.Enumeration.Code
-public import TauCeti.Computability.Enumeration.Domain
 public import TauCeti.Computability.Primrec.Pairing
 public import TauCeti.Computability.Priority.Initialization
 public import TauCeti.Computability.SingleOracle.Stage
@@ -73,9 +72,8 @@ theorem monitoredSide_eq_not_side (k : ℕ) : monitoredSide k = !side k := (rfl)
 theorem monitoredSide_ne_side (k : ℕ) : monitoredSide k ≠ side k := by
   cases h : side k <;> simp [monitoredSide_eq_not_side, h]
 
-private theorem eq_monitoredSide_of_ne {b : Bool} {k : ℕ} (h : b ≠ side k) :
-    b = monitoredSide k := by
-  cases b <;> cases hside : side k <;> simp_all [monitoredSide_eq_not_side]
+private theorem eq_monitoredSide_of_ne {b : Bool} {k : ℕ} (h : b ≠ side k) : b = monitoredSide k :=
+  by cases b <;> cases hside : side k <;> simp_all [monitoredSide_eq_not_side]
 
 /-! ### Finite active state and uniform column defaults -/
 
@@ -109,10 +107,13 @@ def set (st : State) : Bool → Finset ℕ
 /-- `st.set true` is `st.setB`. -/
 @[simp] theorem set_true (st : State) : st.set true = st.setB := (rfl)
 
-/-- Witness of `j` in `st`: recorded witness if `j < st.records.length`, else
-`j.leastInPairColumn st.floor`. -/
+/-- Witness of `j` in `st` (`j.leastInPairColumn st.floor` when `st.records.length ≤ j`). -/
 def witness (st : State) (j : ℕ) : ℕ :=
   ((st.records[j]?).map Prod.fst).getD (j.leastInPairColumn st.floor)
+
+/-- Beyond `st.records.length`, `st.witness j` defaults to `j.leastInPairColumn st.floor`. -/
+theorem witness_of_length_le {st : State} {j : ℕ} (hj : st.records.length ≤ j) :
+    st.witness j = j.leastInPairColumn st.floor := by simp [witness, List.getElem?_eq_none hj]
 
 /-- Restraint of `j` in `st`: recorded restraint if `j < st.records.length`, else `none`. -/
 def restraint (st : State) (j : ℕ) : Option ℕ := (st.records[j]?).bind Prod.snd
@@ -135,8 +136,7 @@ def equivCode : State ≃ (ℕ × ℕ) × List (ℕ × Option ℕ) × ℕ where
   right_inv c := by rcases c with ⟨⟨_, _⟩, _, _⟩; simp
 
 /-- Finite states are primitive codable via `State.equivCode`. -/
-instance instPrimcodable : Primcodable State :=
-  Primcodable.ofEquiv ((ℕ × ℕ) × List (ℕ × Option ℕ) × ℕ) equivCode
+instance instPrimcodable : Primcodable State := Primcodable.ofEquiv _ equivCode
 
 end State
 
@@ -155,9 +155,8 @@ theorem stageRun_eq_evalStage_setAnswers (D : Finset ℕ) (s e x : ℕ) :
     stageRun D s e x = Code.evalStage (Code.setAnswers D) s (ofNat Code e) x := by
   rw [stageRun]; congr 1; ext z; simp [Set.indicator_apply]
 
-/-- Requirement `k` **requires attention** in state `st` at stage `s` with halting record `d` when
-`st.witness k ∈ k.pairColumn \ st.set (side k)` and `Φ_{k / 2, s}` halts at `st.witness k` with
-output `0`. -/
+/-- `k` **requires attention** in `st` at stage `s` with halting record `d` when `st.witness k` lies
+in `k.pairColumn \ st.set (side k)` and `Φ_{k / 2, s}` halts there with output `0`. -/
 structure RequiresAttention (st : State) (s k : ℕ) (d : Code.Halt) : Prop where
   /-- The witness has not yet entered the enumerated side of `k`. -/
   witness_notMem : st.witness k ∉ st.set (side k)
@@ -181,8 +180,7 @@ theorem RequiresAttention.lt_stage {st : State} {s k : ℕ} {d : Code.Halt}
   (Nat.le_of_mem_pairColumn h.witness_mem_pairColumn).trans_lt
     (Code.evalStage_input_lt h.stageRun_eq_some)
 
-/-- At a fixed state, stage, and priority, the halting record witnessing `RequiresAttention` is
-unique. -/
+/-- At fixed `st`, `s`, and `k`, the halting record witnessing `RequiresAttention` is unique. -/
 theorem RequiresAttention.unique {st : State} {s k : ℕ} {d d' : Code.Halt}
     (h : RequiresAttention st s k d) (h' : RequiresAttention st s k d') : d = d' :=
   Option.some.inj (h.stageRun_eq_some.symm.trans h'.stageRun_eq_some)
@@ -296,14 +294,10 @@ private def applyAction (st : State) (s k : ℕ) (d : Code.Halt) : State where
 
 /-- One step of the Friedberg–Muchnik stage machine. -/
 def step (st : State) (s : ℕ) : State :=
-  match attention st s with
-  | none => st
-  | some p => applyAction st s p.1 p.2
+  match attention st s with | none => st | some p => applyAction st s p.1 p.2
 
 /-- The finite state at the end of stage `s`. -/
-def state : ℕ → State
-  | 0 => State.init
-  | s + 1 => step (state s) s
+def state : ℕ → State | 0 => State.init | s + 1 => step (state s) s
 
 /-- The priority receiving attention at stage `s`, if any. -/
 def action (s : ℕ) : Option ℕ := (attention (state s) s).map Prod.fst
@@ -319,6 +313,18 @@ def restraint (j s : ℕ) : Option ℕ := (state s).restraint j
 
 /-- Stage `0` starts in `State.init`. -/
 @[simp] theorem state_zero : state 0 = State.init := (rfl)
+
+/-- Stage `s + 1` applies `step` to `state s`. -/
+theorem state_succ (s : ℕ) : state (s + 1) = step (state s) s := (rfl)
+
+/-- `stage b s` is `(state s).set b`. -/
+theorem stage_def (b : Bool) (s : ℕ) : stage b s = (state s).set b := (rfl)
+
+/-- `witness j s` is `(state s).witness j`. -/
+theorem witness_def (j s : ℕ) : witness j s = (state s).witness j := (rfl)
+
+/-- `restraint j s` is `(state s).restraint j`. -/
+theorem restraint_def (j s : ℕ) : restraint j s = (state s).restraint j := (rfl)
 
 /-- Both stage approximations start empty at stage `0`. -/
 @[simp] theorem stage_zero (b : Bool) : stage b 0 = ∅ := by simp [stage]
@@ -342,85 +348,124 @@ theorem action_eq_none_iff {s : ℕ} : action s = none ↔ attention (state s) s
 
 /-! ### Action, locality, initialization, and opposite-oracle protection equations -/
 
-private theorem state_succ_of_attention_eq_none {s : ℕ} (h : attention (state s) s = none) :
-    state (s + 1) = state s := by simp [state, step, h]
+/-- When no priority receives attention, `step` leaves `st` unchanged. -/
+@[simp] theorem step_of_attention_eq_none {st : State} {s : ℕ} (h : attention st s = none) :
+    step st s = st := by simp [step, h]
 
-private theorem state_succ_of_attention_eq_some {s k : ℕ} {d : Code.Halt}
-    (h : attention (state s) s = some (k, d)) :
-    state (s + 1) = applyAction (state s) s k d := by simp [state, step, h]
+/-- When `k` acts in `st`, `step` inserts `st.witness k` into `(step st s).set (side k)`. -/
+theorem step_set_side_of_attention_eq_some {st : State} {s k : ℕ} {d : Code.Halt}
+    (h : attention st s = some (k, d)) :
+    (step st s).set (side k) = insert (st.witness k) (st.set (side k)) := by
+  cases hside : side k <;> simp [step, h, applyAction, State.set, hside]
+
+/-- When `k` acts in `st`, `step` leaves `(step st s).set (monitoredSide k)` unchanged. -/
+theorem step_set_monitoredSide_of_attention_eq_some {st : State} {s k : ℕ} {d : Code.Halt}
+    (h : attention st s = some (k, d)) :
+    (step st s).set (monitoredSide k) = st.set (monitoredSide k) := by
+  cases hside : side k <;> simp [step, h, applyAction, State.set, monitoredSide_eq_not_side, hside]
+
+/-- Active records installed by `step` when `k` acts with `d`. -/
+theorem step_records_of_attention_eq_some {st : State} {s k : ℕ} {d : Code.Halt}
+    (h : attention st s = some (k, d)) : (step st s).records = (List.range k).map
+      (fun i => (st.witness i, st.restraint i)) ++ [(st.witness k, some d.use)] := by
+  simp [step, h, applyAction]
+
+/-- Freshness floor installed by `step` when `k` acts with `d`. -/
+theorem step_floor_of_attention_eq_some {st : State} {s k : ℕ} {d : Code.Halt}
+    (h : attention st s = some (k, d)) : (step st s).floor = nextFloor st s k d := by
+  simp [step, h, applyAction]
+
+/-- An action at `k` in `st` preserves `witness j` for `j ≤ k`. -/
+theorem step_witness_of_attention_eq_some_of_le {st : State} {j s k : ℕ} {d : Code.Halt}
+    (h : attention st s = some (k, d)) (hjk : j ≤ k) : (step st s).witness j = st.witness j := by
+  rw [State.witness, step_records_of_attention_eq_some h]
+  rcases lt_or_eq_of_le hjk with hlt | rfl
+  · rw [List.getElem?_append_left (by simp [hlt])]; simp [hlt]
+  · simp
+
+/-- An action at `k` in `st` resets `witness j` for `j > k` above `nextFloor st s k d`. -/
+theorem step_witness_of_attention_eq_some_of_gt {st : State} {j s k : ℕ} {d : Code.Halt}
+    (h : attention st s = some (k, d)) (hkj : k < j) :
+    (step st s).witness j = j.leastInPairColumn (nextFloor st s k d) := by
+  rw [State.witness_of_length_le (by simp [step_records_of_attention_eq_some h]; omega),
+    step_floor_of_attention_eq_some h]
+
+/-- An action at `k` in `st` preserves `restraint j` for `j < k`. -/
+theorem step_restraint_of_attention_eq_some_of_lt {st : State} {j s k : ℕ} {d : Code.Halt}
+    (h : attention st s = some (k, d)) (hjk : j < k) :
+    (step st s).restraint j = st.restraint j := by
+  rw [State.restraint, step_records_of_attention_eq_some h,
+    List.getElem?_append_left (by simp [hjk])]; simp [hjk]
+
+/-- An action at `k` with `d` in `st` activates restraint `some d.use` at `k`. -/
+theorem step_restraint_of_attention_eq_some_self {st : State} {s k : ℕ} {d : Code.Halt}
+    (h : attention st s = some (k, d)) : (step st s).restraint k = some d.use := by
+  simp [State.restraint, step_records_of_attention_eq_some h]
+
+/-- An action at `k` in `st` clears `restraint j` to `none` for `j > k`. -/
+theorem step_restraint_of_attention_eq_some_of_gt {st : State} {j s k : ℕ} {d : Code.Halt}
+    (h : attention st s = some (k, d)) (hkj : k < j) : (step st s).restraint j = none := by
+  rw [State.restraint, List.getElem?_eq_none
+    (by simp [step_records_of_attention_eq_some h]; omega)]; rfl
 
 /-- If no requirement receives attention at stage `s`, `stage b` is unchanged. -/
 theorem stage_succ_of_attention_eq_none {b : Bool} {s : ℕ} (h : attention (state s) s = none) :
-    stage b (s + 1) = stage b s := by rw [stage, state_succ_of_attention_eq_none h, stage]
+    stage b (s + 1) = stage b s := by
+  rw [stage_def, state_succ, step_of_attention_eq_none h, ← stage_def]
 
 /-- An action of `k` enumerates `witness k s` into `stage (side k)`. -/
 theorem stage_side_succ_of_attention_eq_some {s k : ℕ} {d : Code.Halt}
     (h : attention (state s) s = some (k, d)) :
     stage (side k) (s + 1) = insert (witness k s) (stage (side k) s) := by
-  rw [stage, state_succ_of_attention_eq_some h]
-  cases hside : side k <;> simp [applyAction, State.set, stage, witness, hside]
+  rw [stage_def, state_succ, step_set_side_of_attention_eq_some h, ← stage_def, ← witness_def]
 
-/-- **Protection of the opposite oracle.** An action of `k` leaves `stage (monitoredSide k)`
-unchanged. -/
+/-- When `k` acts at stage `s`, `witness k s` belongs to `stage (side k) (s + 1)`. -/
+theorem witness_mem_stage_side_succ_of_attention_eq_some {s k : ℕ} {d : Code.Halt}
+    (h : attention (state s) s = some (k, d)) : witness k s ∈ stage (side k) (s + 1) :=
+  stage_side_succ_of_attention_eq_some h ▸ Finset.mem_insert_self _ _
+
+/-- **Protection of the opposite oracle.** Action at `k` leaves `stage (monitoredSide k)` fixed. -/
 theorem stage_monitoredSide_succ_of_attention_eq_some {s k : ℕ} {d : Code.Halt}
     (h : attention (state s) s = some (k, d)) :
     stage (monitoredSide k) (s + 1) = stage (monitoredSide k) s := by
-  rw [stage, state_succ_of_attention_eq_some h]
-  cases hside : side k <;> simp [applyAction, State.set, stage, monitoredSide_eq_not_side, hside]
+  rw [stage_def, state_succ, step_set_monitoredSide_of_attention_eq_some h, ← stage_def]
 
 /-- If no requirement receives attention at stage `s`, `witness j` is unchanged. -/
 theorem witness_succ_of_attention_eq_none {j s : ℕ} (h : attention (state s) s = none) :
-    witness j (s + 1) = witness j s := by rw [witness, state_succ_of_attention_eq_none h, witness]
+    witness j (s + 1) = witness j s := by
+  rw [witness_def, state_succ, step_of_attention_eq_none h, ← witness_def]
 
 /-- If no requirement receives attention at stage `s`, `restraint j` is unchanged. -/
 theorem restraint_succ_of_attention_eq_none {j s : ℕ} (h : attention (state s) s = none) :
     restraint j (s + 1) = restraint j s := by
-  rw [restraint, state_succ_of_attention_eq_none h, restraint]
-
-private theorem applyAction_records_getElem?_of_lt {st : State} {s k j : ℕ} {d : Code.Halt}
-    (hjk : j < k) : (applyAction st s k d).records[j]? = some (st.witness j, st.restraint j) := by
-  simp only [applyAction]; rw [List.getElem?_append_left (by simp [hjk])]; simp [hjk]
-
-private theorem applyAction_records_getElem?_self {st : State} {s k : ℕ} {d : Code.Halt} :
-    (applyAction st s k d).records[k]? = some (st.witness k, some d.use) := by simp [applyAction]
-
-private theorem applyAction_records_getElem?_of_gt {st : State} {s k j : ℕ} {d : Code.Halt}
-    (hkj : k < j) : (applyAction st s k d).records[j]? = none :=
-  List.getElem?_eq_none (by simp [applyAction]; omega)
+  rw [restraint_def, state_succ, step_of_attention_eq_none h, ← restraint_def]
 
 /-- **Higher-priority witness locality.** An action at `k` preserves `witness j` for `j ≤ k`. -/
 theorem witness_succ_of_attention_eq_some_of_le {j s k : ℕ} {d : Code.Halt}
     (h : attention (state s) s = some (k, d)) (hjk : j ≤ k) : witness j (s + 1) = witness j s := by
-  rw [witness, state_succ_of_attention_eq_some h, State.witness]
-  rcases lt_or_eq_of_le hjk with hlt | rfl
-  · rw [applyAction_records_getElem?_of_lt hlt]; rfl
-  · rw [applyAction_records_getElem?_self]; rfl
+  rw [witness_def, state_succ, step_witness_of_attention_eq_some_of_le h hjk, ← witness_def]
 
 /-- **Higher-priority restraint locality.** An action at `k` preserves `restraint j` for `j < k`. -/
 theorem restraint_succ_of_attention_eq_some_of_lt {j s k : ℕ} {d : Code.Halt}
     (h : attention (state s) s = some (k, d)) (hjk : j < k) :
     restraint j (s + 1) = restraint j s := by
-  rw [restraint, state_succ_of_attention_eq_some h, State.restraint,
-    applyAction_records_getElem?_of_lt hjk]; rfl
+  rw [restraint_def, state_succ, step_restraint_of_attention_eq_some_of_lt h hjk, ← restraint_def]
 
 /-- **Self restraint activation.** When `k` acts with `d`, `restraint k (s + 1) = some d.use`. -/
 theorem restraint_succ_of_attention_eq_some_self {s k : ℕ} {d : Code.Halt}
     (h : attention (state s) s = some (k, d)) : restraint k (s + 1) = some d.use := by
-  rw [restraint, state_succ_of_attention_eq_some h, State.restraint,
-    applyAction_records_getElem?_self]; rfl
+  rw [restraint_def, state_succ, step_restraint_of_attention_eq_some_self h]
 
 /-- **Lower-priority witness initialization.** When `k` acts, `j > k` gets a fresh witness. -/
 theorem witness_succ_of_attention_eq_some_of_gt {j s k : ℕ} {d : Code.Halt}
     (h : attention (state s) s = some (k, d)) (hkj : k < j) :
     witness j (s + 1) = j.leastInPairColumn (nextFloor (state s) s k d) := by
-  rw [witness, state_succ_of_attention_eq_some h, State.witness,
-    applyAction_records_getElem?_of_gt hkj]; rfl
+  rw [witness_def, state_succ, step_witness_of_attention_eq_some_of_gt h hkj]
 
 /-- **Lower-priority restraint initialization.** When `k` acts, `j > k` has restraint `none`. -/
 theorem restraint_succ_of_attention_eq_some_of_gt {j s k : ℕ} {d : Code.Halt}
     (h : attention (state s) s = some (k, d)) (hkj : k < j) : restraint j (s + 1) = none := by
-  rw [restraint, state_succ_of_attention_eq_some h, State.restraint,
-    applyAction_records_getElem?_of_gt hkj]; rfl
+  rw [restraint_def, state_succ, step_restraint_of_attention_eq_some_of_gt h hkj]
 
 /-- **Soare's infinite marker recurrence.** -/
 def soareMarkers : ℕ → ℕ → ℕ × Option ℕ
@@ -492,11 +537,14 @@ private theorem witness_lt_floor_of_lt_length (s : ℕ) :
   | zero => simp [State.init]
   | succ s ih =>
     rcases h : attention (state s) s with _ | ⟨k, d⟩
-    · rw [state_succ_of_attention_eq_none h]
+    · rw [state_succ, step_of_attention_eq_none h]
       exact fun j hj => witness_succ_of_attention_eq_none h ▸ ih j hj
     · intro j hj
-      have hjk : j ≤ k := by simp [state_succ_of_attention_eq_some h, applyAction] at hj; omega
-      rw [witness_succ_of_attention_eq_some_of_le h hjk, state_succ_of_attention_eq_some h]
+      have hjk : j ≤ k := by
+        rw [state_succ, step_records_of_attention_eq_some h] at hj
+        simp at hj; omega
+      rw [witness_succ_of_attention_eq_some_of_le h hjk, state_succ,
+        step_floor_of_attention_eq_some h, witness_def]
       exact witness_lt_nextFloor hjk
 
 /-- For each requirement `j`, the witness sequence `s ↦ witness j s` is monotone. -/
@@ -510,8 +558,8 @@ theorem monotone_witness (j : ℕ) : Monotone (witness j) :=
         rcases lt_or_ge j (state s).records.length with hjlen | hjlen
         · exact ((witness_lt_floor_of_lt_length s j hjlen).trans
             (lt_nextFloor_floor (state s) s k d)).le.trans (Nat.le_leastInPairColumn j _)
-        · simpa [witness, State.witness, List.getElem?_eq_none hjlen] using
-            Nat.monotone_leastInPairColumn j (lt_nextFloor_floor (state s) s k d).le
+        · rw [witness_def, (state s).witness_of_length_le hjlen]
+          exact Nat.monotone_leastInPairColumn j (lt_nextFloor_floor (state s) s k d).le
 
 /-- Stages at which `j` is appointed or reappointed a witness: `0` and `initializationStages`. -/
 def appointmentStages (j : ℕ) : Set ℕ := insert 0 (initializationStages action j)
@@ -543,10 +591,6 @@ theorem witness_succ_eq_of_notMem_appointmentStages {j s : ℕ}
 theorem lt_nextFloor_of_mem_stage {b : Bool} {s k x : ℕ} {d : Code.Halt}
     (hx : x ∈ stage b s) : x < nextFloor (state s) s k d :=
   lt_nextFloor_of_mem_union (by cases b <;> simp_all [stage])
-
-/-- `nextFloor (state s) s k d` strictly exceeds any `restraint i s = some b` with `i ≤ k`. -/
-theorem lt_nextFloor_of_restraint_eq_some {s k i b : ℕ} {d : Code.Halt} (hi : i ≤ k)
-    (hb : restraint i s = some b) : b < nextFloor (state s) s k d := restraint_lt_nextFloor hi hb
 
 /-- At every reappointment stage `s + 1 ∈ initializationStages action j`, the new witness of `j`
 lies outside `stage b (s + 1)`. -/
@@ -597,8 +641,8 @@ theorem mem_fresh_stage {b : Bool} {s x : ℕ} :
         exact absurd (stage_monitoredSide_succ_of_attention_eq_some h ▸ hx1) hx0
   · rintro ⟨k, rfl, hk, rfl⟩
     obtain ⟨d, hd⟩ := action_eq_some_iff.mp hk
-    rw [stage_side_succ_of_attention_eq_some hd]
-    exact ⟨Finset.mem_insert_self _ _, (attention_eq_some_iff.mp hd).1.witness_notMem⟩
+    exact ⟨witness_mem_stage_side_succ_of_attention_eq_some hd,
+      (attention_eq_some_iff.mp hd).1.witness_notMem⟩
 
 /-! ### Limit sets, disjointness, and effectivity -/
 
@@ -668,23 +712,18 @@ private theorem primrec_monitoredSide : Primrec monitoredSide := Primrec.not.com
 private theorem primrec_equivCode : Primrec State.equivCode := of_equiv (e := State.equivCode)
 private theorem primrec_equivCode_symm : Primrec State.equivCode.symm :=
   of_equiv_symm (e := State.equivCode)
-
 private theorem primrec_setA_code : Primrec fun st : State => Finset.equivBitIndices.symm st.setA :=
   (fst.comp (fst.comp primrec_equivCode)).of_eq fun _ => rfl
-
 private theorem primrec_setB_code : Primrec fun st : State => Finset.equivBitIndices.symm st.setB :=
   (snd.comp (fst.comp primrec_equivCode)).of_eq fun _ => rfl
-
 private theorem primrec_records : Primrec State.records :=
   (fst.comp (snd.comp primrec_equivCode)).of_eq fun _ => rfl
-
 private theorem primrec_floor : Primrec State.floor :=
   (snd.comp (snd.comp primrec_equivCode)).of_eq fun _ => rfl
 
 private theorem primrec_witness_state : Primrec₂ State.witness :=
   (option_getD.comp (option_map (list_getElem?.comp (primrec_records.comp fst) snd)
-      (fst.comp snd).to₂)
-    (nat_leastInPairColumn.comp snd (primrec_floor.comp fst))).to₂
+      (fst.comp snd).to₂) (nat_leastInPairColumn.comp snd (primrec_floor.comp fst))).to₂
 
 private theorem primrec_restraint_state : Primrec₂ State.restraint :=
   (option_bind (list_getElem?.comp (primrec_records.comp fst) snd) (snd.comp snd).to₂).to₂
@@ -694,9 +733,8 @@ private theorem primrec_set_state :
   (Primrec.cond snd (primrec_setB_code.comp fst) (primrec_setA_code.comp fst)).to₂.of_eq
     fun _ b => by cases b <;> rfl
 
-private theorem primrec_stageRun_code :
-    Primrec fun q : ℕ × ℕ × ℕ × ℕ =>
-      stageRun (Finset.equivBitIndices q.1) q.2.1 q.2.2.1 q.2.2.2 :=
+private theorem primrec_stageRun_code : Primrec fun q : ℕ × ℕ × ℕ × ℕ =>
+    stageRun (Finset.equivBitIndices q.1) q.2.1 q.2.2.1 q.2.2.2 :=
   (Code.primrec_evalStage_equivBitIndices.comp <| fst.pair <| (fst.comp snd).pair <|
     ((Primrec.ofNat Code).comp (fst.comp (snd.comp snd))).pair (snd.comp (snd.comp snd))).of_eq
     fun _ => rfl
@@ -799,11 +837,9 @@ theorem primrec_step : Primrec₂ step := by
     dsimp only; cases h : attention st s <;> simp [step, h]
 
 /-- The finite state `state s` is primitive recursive in the stage `s`. -/
-theorem primrec_state : Primrec state := by
-  refine (nat_rec₁ State.init (primrec_step.comp snd fst).to₂).of_eq fun s => ?_
-  induction s with
-  | zero => rfl
-  | succ s ih => simp [state, ih]
+theorem primrec_state : Primrec state :=
+  (nat_rec₁ State.init (primrec_step.comp snd fst).to₂).of_eq fun s => by
+    induction s <;> simp_all [state]
 
 /-- The acting priority `action s` is primitive recursive in the stage `s`. -/
 theorem primrec_action : Primrec action :=
@@ -829,21 +865,8 @@ theorem primrec_stage (b : Bool) : Primrec fun s => Finset.equivBitIndices.symm 
 end Effectivity
 
 /-- Both constructed limit sets `set false` and `set true` are c.e. -/
-theorem rePred_mem_set (b : Bool) : REPred (· ∈ set b) :=
-  rePred_iff_exists_stages.mpr
-    ⟨stage b, monotone_stage b, stage_zero b, (primrec_stage b).to_comp, rfl⟩
-
-/-- Canonical partial-recursive enumeration codes for `set false` (`A`) and `set true` (`B`). -/
-noncomputable def code (b : Bool) : Nat.Partrec.Code :=
-  (rePred_iff_exists_code.mp (rePred_mem_set b)).choose
-
-/-- Membership in `set b` is the domain of `code b`. -/
-@[simp] theorem dom_eval_code (b : Bool) (x : ℕ) : ((code b).eval x).Dom ↔ x ∈ set b :=
-  ((rePred_iff_exists_code.mp (rePred_mem_set b)).choose_spec x).symm
-
-/-- `set b` is the c.e. domain `{x | ((code b).eval x).Dom}` of `code b`. -/
-theorem set_eq_dom_code (b : Bool) : set b = {x | ((code b).eval x).Dom} :=
-  Set.ext fun x => (dom_eval_code b x).symm
+theorem rePred_mem_set (b : Bool) : REPred (· ∈ set b) := rePred_iff_exists_stages.mpr
+  ⟨stage b, monotone_stage b, stage_zero b, (primrec_stage b).to_comp, rfl⟩
 
 end FriedbergMuchnik
 

@@ -10,7 +10,6 @@ public import TauCeti.Computability.Jump.Basic
 public import TauCeti.Computability.Priority.Injury.Monitored
 public import TauCeti.Computability.Priority.Preservation
 import TauCeti.Computability.Priority.Injury.Causes
-import TauCeti.Data.Set.Card
 import Mathlib.Algebra.Ring.GeomSum
 import Mathlib.Order.Filter.AtTopBot.Basic
 
@@ -70,12 +69,12 @@ theorem restraint_lt_witness_of_notMem {i j s b : ℕ} (hij : i < j)
         rw [witness_succ_of_attention_eq_some_of_le h hjk.le] at hw ⊢
         exact ih hb fun hm => hw (monotone_stage (side j) s.le_succ hm)
       · exact absurd (witness_succ_of_attention_eq_some_of_le h le_rfl ▸
-          stage_side_succ_of_attention_eq_some h ▸ Finset.mem_insert_self _ _) hw
+          witness_mem_stage_side_succ_of_attention_eq_some h) hw
       · rw [witness_succ_of_attention_eq_some_of_gt h hkj]
         have hfl := Nat.le_leastInPairColumn j (nextFloor (state s) s k d)
         rcases lt_or_eq_of_le hik with hlt | rfl
-        · rw [restraint_succ_of_attention_eq_some_of_lt h hlt] at hb
-          exact (lt_nextFloor_of_restraint_eq_some hlt.le hb).trans_le hfl
+        · rw [restraint_succ_of_attention_eq_some_of_lt h hlt, restraint_def] at hb
+          exact (restraint_lt_nextFloor hlt.le hb).trans_le hfl
         · rw [restraint_succ_of_attention_eq_some_self h] at hb
           exact Option.some.inj hb ▸ (lt_nextFloor_use (state s) s i d).trans_le hfl
 
@@ -145,7 +144,7 @@ theorem exists_lt_action_between (k : ℕ) {s₁ s₂ : ℕ} (hlt : s₁ < s₂)
       (witness_succ_of_attention_eq_some_of_le hd₁ le_rfl)
   exact (requiresAttention_state_iff.mp (attention_eq_some_iff.mp hd₂).1).1 <| hw_eq ▸
     monotone_stage (side k) (Nat.succ_le_of_lt hlt)
-      (stage_side_succ_of_attention_eq_some hd₁ ▸ Finset.mem_insert_self _ _)
+      (witness_mem_stage_side_succ_of_attention_eq_some hd₁)
 
 /-- **Quantitative attention bound `2 ^ k`.** -/
 theorem finite_attentionStages_and_ncard_le (k : ℕ) :
@@ -178,7 +177,7 @@ theorem finite_injurySet_and_ncard_le (e : ℕ) :
     ⟨k, hke, mem_enumeratedBy.mpr ⟨s, hact, hw⟩⟩
   obtain ⟨hfin, hle⟩ := finite_injurySet_and_ncard_le_sum_of_causes enumeratedBy (2 ^ ·)
     (fun k _ => finite_enumeratedBy_and_ncard_le k) hcauses
-  exact ⟨hfin, hle.trans_eq (by simpa using Nat.geomSum_eq (le_refl 2) e)⟩
+  exact ⟨hfin, hle.trans_eq ((Nat.geomSum_eq (le_refl 2) e).trans (Nat.div_one _))⟩
 
 /-- Priority `0` is never injured on its monitored oracle. -/
 theorem injurySet_zero_eq_empty : injurySet (stage (monitoredSide 0)) restraint 0 = ∅ := by
@@ -258,7 +257,7 @@ theorem zero_mem_eval_of_mem_set {k s₀ : ℕ}
       have hx_lt : x < witness k (t + 1) := by
         rw [witness_succ_of_attention_eq_some_of_gt hd' hik]
         exact (lt_nextFloor_of_mem_stage (monotone_stage (side k) ht
-          (hw₁ ▸ stage_side_succ_of_attention_eq_some hd₁ ▸ Finset.mem_insert_self _ _))).trans_le
+          (hw₁ ▸ witness_mem_stage_side_succ_of_attention_eq_some hd₁))).trans_le
           (Nat.le_leastInPairColumn k _)
       exact hx_lt.not_ge (monotone_witness k hts₀)
     · exact hno t hs₀t i hik hti
@@ -314,7 +313,7 @@ theorem zero_notMem_eval_of_notMem_set {k s₀ : ℕ}
     · rfl
     · exact absurd hreq (hmin k hkm d)
   exact hx <| hws ▸ mem_set_iff_exists_stage.mpr
-    ⟨s + 1, stage_side_succ_of_attention_eq_some hmd ▸ Finset.mem_insert_self _ _⟩
+    ⟨s + 1, witness_mem_stage_side_succ_of_attention_eq_some hmd⟩
 
 /-- **Every requirement `R_k` is satisfied.** -/
 theorem eval_ne_oracle (k : ℕ) :
@@ -370,20 +369,14 @@ theorem friedberg_muchnik :
     not_turingReducible_friedbergMuchnikSetA_friedbergMuchnikSetB,
     not_turingReducible_friedbergMuchnikSetB_friedbergMuchnikSetA⟩
 
-private theorem turingReducible_set_jump_empty (b : Bool) :
-    TuringReducible (FriedbergMuchnik.set b).oracle (∅ : Set ℕ).jump.oracle := by
-  rw [FriedbergMuchnik.set_eq_dom_code b]
-  exact Set.turingReducible_jump_of_recursiveIn ∅
-    (Nat.Partrec.Code.exists_code.mpr ⟨FriedbergMuchnik.code b, rfl⟩).recursiveIn
-
 /-- The Turing degree of `friedbergMuchnikSetA` lies strictly between `0` and `0'`. -/
 theorem degree_friedbergMuchnikSetA_mem_Ioo :
     toAntisymmetrization TuringReducible friedbergMuchnikSetA.oracle ∈
       Set.Ioo (toAntisymmetrization TuringReducible (∅ : Set ℕ).oracle)
         (toAntisymmetrization TuringReducible (∅ : Set ℕ).jump.oracle) :=
   Set.degree_mem_Ioo_of_incomparable
-    (FriedbergMuchnik.set_false_eq ▸ turingReducible_set_jump_empty false)
-    (FriedbergMuchnik.set_true_eq ▸ turingReducible_set_jump_empty true)
+    (Set.turingReducible_jump_of_rePred ∅ rePred_mem_friedbergMuchnikSetA)
+    (Set.turingReducible_jump_of_rePred ∅ rePred_mem_friedbergMuchnikSetB)
     not_turingReducible_friedbergMuchnikSetA_friedbergMuchnikSetB
     not_turingReducible_friedbergMuchnikSetB_friedbergMuchnikSetA
 
@@ -393,8 +386,8 @@ theorem degree_friedbergMuchnikSetB_mem_Ioo :
       Set.Ioo (toAntisymmetrization TuringReducible (∅ : Set ℕ).oracle)
         (toAntisymmetrization TuringReducible (∅ : Set ℕ).jump.oracle) :=
   Set.degree_mem_Ioo_of_incomparable
-    (FriedbergMuchnik.set_true_eq ▸ turingReducible_set_jump_empty true)
-    (FriedbergMuchnik.set_false_eq ▸ turingReducible_set_jump_empty false)
+    (Set.turingReducible_jump_of_rePred ∅ rePred_mem_friedbergMuchnikSetB)
+    (Set.turingReducible_jump_of_rePred ∅ rePred_mem_friedbergMuchnikSetA)
     not_turingReducible_friedbergMuchnikSetB_friedbergMuchnikSetA
     not_turingReducible_friedbergMuchnikSetA_friedbergMuchnikSetB
 

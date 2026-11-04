@@ -82,10 +82,9 @@ theorem initializationStages_eq_biUnion (action : ℕ → Option ℕ) (e : ℕ) 
 
 /-- Initialization stages and attention stages of the same requirement are disjoint. -/
 theorem disjoint_initializationStages_attentionStages (action : ℕ → Option ℕ) (e : ℕ) :
-    Disjoint (initializationStages action e) (attentionStages action e) :=
-  disjoint_left.mpr fun _ ⟨s, _, hs, hsi, hi⟩ he => by
-    obtain ⟨t, ht, hte⟩ := mem_attentionStages.mp he
-    exact hi.ne <| Option.some.inj <| hsi.symm.trans (Nat.succ.inj (hs.symm.trans ht) ▸ hte)
+    Disjoint (initializationStages action e) (attentionStages action e) := by
+  rw [initializationStages_eq_biUnion]
+  exact disjoint_iUnion₂_left.mpr fun _ hi => disjoint_attentionStages (Finset.mem_range.mp hi).ne
 
 /-- If every `i < e` receives attention finitely often, `e` is initialized finitely often. -/
 theorem finite_initializationStages_of_attention {e : ℕ}
@@ -183,6 +182,14 @@ theorem finite_attentionStages_and_ncard_le_succ_initializationStages {e : ℕ}
       exact hne ⟨s, hs⟩
     simp [hemp]
 
+private theorem finite_initializationStages_and_ncard_le_of_lt {e : ℕ}
+    (h : ∀ i < e, (attentionStages action i).Finite ∧ (attentionStages action i).ncard ≤ 2 ^ i) :
+    (initializationStages action e).Finite ∧ (initializationStages action e).ncard ≤ 2 ^ e - 1 :=
+  ⟨finite_initializationStages_of_attention fun i hi => (h i hi).1, by
+    rw [ncard_initializationStages_eq_sum fun i hi => (h i hi).1]
+    exact (Finset.sum_le_sum fun i hi => (h i (Finset.mem_range.mp hi)).2).trans_eq
+      ((Nat.geomSum_eq (le_refl 2) e).trans (Nat.div_one _))⟩
+
 /-- **Exponential attention bound.** When every requirement acts at most once per epoch, priority
 `e` receives attention at most `2 ^ e` times. -/
 theorem finite_attentionStages_and_ncard_le_two_pow
@@ -191,27 +198,19 @@ theorem finite_attentionStages_and_ncard_le_two_pow
     (attentionStages action e).Finite ∧ (attentionStages action e).ncard ≤ 2 ^ e := by
   induction e using Nat.strong_induction_on with
   | _ e ih =>
-    have hlt_fin : ∀ i < e, (attentionStages action i).Finite := fun i hi => (ih i hi).1
-    obtain ⟨hfin, hle⟩ := finite_attentionStages_and_ncard_le_succ_initializationStages
-      (finite_initializationStages_of_attention hlt_fin) (hepoch e)
-    refine ⟨hfin, hle.trans ?_⟩
-    rw [ncard_initializationStages_eq_sum hlt_fin]
-    have hsum : ∑ i ∈ Finset.range e, (attentionStages action i).ncard ≤ 2 ^ e - 1 :=
-      (Finset.sum_le_sum fun i hi => (ih i (Finset.mem_range.mp hi)).2).trans_eq
-        (by simpa using Nat.geomSum_eq (le_refl 2) e)
+    obtain ⟨hinit_fin, hinit_le⟩ := finite_initializationStages_and_ncard_le_of_lt ih
+    obtain ⟨hfin, hle⟩ :=
+      finite_attentionStages_and_ncard_le_succ_initializationStages hinit_fin (hepoch e)
     have hpos : 1 ≤ 2 ^ e := Nat.one_le_two_pow
-    omega
+    exact ⟨hfin, by omega⟩
 
 /-- **Initialization bound `2 ^ e - 1`.** When every requirement acts at most once per epoch,
 priority `e` is initialized at most `2 ^ e - 1` times. -/
 theorem finite_initializationStages_and_ncard_le
     (hepoch : ∀ e s₁ s₂, s₁ < s₂ → action s₁ = some e → action s₂ = some e →
       ∃ t, s₁ < t ∧ t < s₂ ∧ ∃ i < e, action t = some i) (e : ℕ) :
-    (initializationStages action e).Finite ∧ (initializationStages action e).ncard ≤ 2 ^ e - 1 := by
-  have hatt := fun i (_ : i < e) => finite_attentionStages_and_ncard_le_two_pow hepoch i
-  refine ⟨finite_initializationStages_of_attention fun i hi => (hatt i hi).1, ?_⟩
-  rw [ncard_initializationStages_eq_sum fun i hi => (hatt i hi).1]
-  exact (Finset.sum_le_sum fun i hi => (hatt i (Finset.mem_range.mp hi)).2).trans_eq
-    (by simpa using Nat.geomSum_eq (le_refl 2) e)
+    (initializationStages action e).Finite ∧ (initializationStages action e).ncard ≤ 2 ^ e - 1 :=
+  finite_initializationStages_and_ncard_le_of_lt fun i _ =>
+    finite_attentionStages_and_ncard_le_two_pow hepoch i
 
 end TauCeti.Priority

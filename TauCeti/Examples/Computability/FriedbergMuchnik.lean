@@ -24,12 +24,13 @@ downstream module without unfolding stage-machine definitions:
 open TauCeti TauCeti.FriedbergMuchnik TauCeti.Priority
 
 -- Stage `0` starts with empty approximations, column witnesses `(0, j)`, and inactive restraints,
--- matching Soare's marker recurrence at every priority.
+-- matching Soare's marker recurrence at every priority; stage `0` takes a no-attention `step`.
 example (j : ℕ) :
-    stage false 0 = ∅ ∧ stage true 0 = ∅ ∧
+    state 1 = State.init ∧ stage false 0 = ∅ ∧ stage true 0 = ∅ ∧
       witness j 0 = Nat.pair 0 j ∧ restraint j 0 = none ∧
       (witness j 0, restraint j 0) = soareMarkers 0 j :=
-  ⟨stage_zero false, stage_zero true, witness_zero j, restraint_zero j,
+  ⟨by rw [state_succ, step_of_attention_eq_none (attention_zero _), state_zero],
+    stage_zero false, stage_zero true, witness_zero j, restraint_zero j,
     witness_restraint_eq_soareMarkers 0 j⟩
 
 -- Appointment/reappointment stages never coincide with attention stages, and the two limit sets
