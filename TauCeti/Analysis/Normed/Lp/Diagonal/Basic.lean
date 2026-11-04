@@ -194,6 +194,21 @@ theorem nnnorm_diagonalCLM_sub_diagonalTruncation_range_le (d : ℓ^∞(ℕ, �
   exact_mod_cast norm_diagonalCLM_sub_diagonalTruncation_le (p := p) d (Finset.range n)
     (norm_nonneg _) (fun i hi ↦ hd (by simpa using hi))
 
+/-- When the coefficient norms of a sequence-space diagonal multiplier tend to zero, its finite
+coordinate truncations along `Finset.range n` converge to it in operator norm. -/
+theorem tendsto_diagonalTruncation_range (d : ℓ^∞(ℕ, 𝕜))
+    (hd : Tendsto (fun n ↦ ‖d n‖) atTop (𝓝 0)) :
+    Tendsto (fun n ↦ diagonalTruncation (p := p) d (Finset.range n)) atTop
+      (𝓝 (diagonalCLM (p := p) d)) := by
+  refine Metric.tendsto_atTop.2 fun ε hε ↦ ?_
+  obtain ⟨N, hN⟩ := Metric.tendsto_atTop.1 hd (ε / 2) (half_pos hε)
+  refine ⟨N, fun n hn ↦ ?_⟩
+  rw [dist_eq_norm']
+  refine (norm_diagonalCLM_sub_diagonalTruncation_le d (Finset.range n) (half_pos hε).le
+    fun i hi ↦ ?_).trans_lt (half_lt_self hε)
+  have hiN : N ≤ i := hn.trans (Nat.le_of_not_lt (by simpa using hi))
+  exact (by simpa using hN i hiN : ‖d i‖ < ε / 2).le
+
 omit [DecidableEq ι] in
 /-- A diagonal multiplier is compact if its coefficient norms tend to zero along cofinite. -/
 theorem isCompactOperator_diagonalCLM [LocallyCompactSpace 𝕜]
