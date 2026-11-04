@@ -51,33 +51,33 @@ abbrev CompletedUniversalOneForms : Submodule 𝕜 (CompletedProjectiveTensor �
 
 namespace CompletedUniversalOneForms
 
-/-- The bounded left outer action on completed universal one-forms. -/
-def left : B →L[𝕜] CompletedUniversalOneForms 𝕜 B →L[𝕜] CompletedUniversalOneForms 𝕜 B :=
+/-- Restrict a bounded action preserving the multiplication kernel, using the original
+operator norm as a bound for the restricted action. -/
+private def restrictAction
+    (M : B →L[𝕜] CompletedProjectiveTensor 𝕜 B B →L[𝕜] CompletedProjectiveTensor 𝕜 B B)
+    (hM : ∀ a t, t ∈ CompletedUniversalOneForms 𝕜 B →
+      M a t ∈ CompletedUniversalOneForms 𝕜 B) :
+    B →L[𝕜] CompletedUniversalOneForms 𝕜 B →L[𝕜] CompletedUniversalOneForms 𝕜 B :=
   LinearMap.mkContinuous
-    { toFun a := (mulLeft 𝕜 B a).restrict fun t ht ↦ by
-        simpa using congrArg (a * ·) ht
-      map_add' a b := by ext t; exact congrArg (fun f ↦ f t.1) (map_add (mulLeft 𝕜 B) a b)
+    { toFun a := (M a).restrict (hM a)
+      map_add' a b := by ext t; exact congrArg (fun f ↦ f t.1) (map_add M a b)
       map_smul' c a := by
         ext t
-        exact congrArg (fun f ↦ f t.1) (map_smul (mulLeft 𝕜 B) c a) }
-    ‖mulLeft 𝕜 B‖ fun a ↦ by
+        exact congrArg (fun f ↦ f t.1) (map_smul M c a) }
+    ‖M‖ fun a ↦ by
       apply ContinuousLinearMap.opNorm_le_bound _ (by positivity)
       intro t
-      exact (mulLeft 𝕜 B).le_opNorm₂ a t.1
+      exact M.le_opNorm₂ a t.1
+
+/-- The bounded left outer action on completed universal one-forms. -/
+def left : B →L[𝕜] CompletedUniversalOneForms 𝕜 B →L[𝕜] CompletedUniversalOneForms 𝕜 B :=
+  restrictAction 𝕜 B (mulLeft 𝕜 B) fun a t ht ↦ by
+    simpa using congrArg (a * ·) (LinearMap.mem_ker.mp ht)
 
 /-- The bounded right outer action on completed universal one-forms. -/
 def right : B →L[𝕜] CompletedUniversalOneForms 𝕜 B →L[𝕜] CompletedUniversalOneForms 𝕜 B :=
-  LinearMap.mkContinuous
-    { toFun a := (mulRight 𝕜 B a).restrict fun t ht ↦ by
-        simpa using congrArg (· * a) ht
-      map_add' a b := by ext t; exact congrArg (fun f ↦ f t.1) (map_add (mulRight 𝕜 B) a b)
-      map_smul' c a := by
-        ext t
-        exact congrArg (fun f ↦ f t.1) (map_smul (mulRight 𝕜 B) c a) }
-    ‖mulRight 𝕜 B‖ fun a ↦ by
-      apply ContinuousLinearMap.opNorm_le_bound _ (by positivity)
-      intro t
-      exact (mulRight 𝕜 B).le_opNorm₂ a t.1
+  restrictAction 𝕜 B (mulRight 𝕜 B) fun a t ht ↦ by
+    simpa using congrArg (· * a) (LinearMap.mem_ker.mp ht)
 
 variable {𝕜 B}
 
@@ -237,7 +237,7 @@ theorem lift_right (b : B) (t : CompletedUniversalOneForms 𝕜 B) :
     ext x y
     simp [T, hD, hLR, hL, add_comm]
   have ht := congrArg (fun f ↦ f t.1) h
-  have ht0 : mul' 𝕜 B t.1 = 0 := t.2
+  have ht0 : mul' 𝕜 B t.1 = 0 := LinearMap.mem_ker.mp t.2
   simpa [T, lift, ht0] using ht
 
 /-- A bounded left-module map on completed universal one-forms is determined by its values
@@ -287,11 +287,9 @@ theorem dNonUnital_mul (a b : A) :
     dNonUnital 𝕜 A (a * b) =
       left 𝕜 _ (WithLp.toLp 1 (a : Unitization 𝕜 A)) (dNonUnital 𝕜 A b) +
       right 𝕜 _ (WithLp.toLp 1 (b : Unitization 𝕜 A)) (dNonUnital 𝕜 A a) := by
-  have h : WithLp.toLp 1 ((a * b : A) : Unitization 𝕜 A) =
-      WithLp.toLp 1 (a : Unitization 𝕜 A) * WithLp.toLp 1 (b : Unitization 𝕜 A) := by
-    apply (WithLp.unitizationAlgEquiv 𝕜).injective
-    simp
-  simp only [dNonUnital_apply, h, d_mul]
+  simpa only [dNonUnital, ContinuousLinearMap.comp_apply,
+    ← WithLp.unitizationInrL_apply, WithLp.unitizationInrL_mul] using
+    d_mul (𝕜 := 𝕜) (WithLp.unitizationInrL 𝕜 A a) (WithLp.unitizationInrL 𝕜 A b)
 
 /-- The nonunital universal differential has norm at most two for the ℓ¹ unitization. -/
 theorem norm_dNonUnital_le : ‖dNonUnital 𝕜 A‖ ≤ 2 := by
@@ -322,29 +320,9 @@ theorem existsUnique_lift_nonUnital
   let D' := D ∘L WithLp.unitizationSndL 𝕜 A
   have hD' (u : WithLp 1 (Unitization 𝕜 A)) : D' u = D (WithLp.ofLp u).snd := by
     simp [D']
-  -- Decompose each unitized action into its scalar and original-algebra parts.
-  have hu (u : WithLp 1 (Unitization 𝕜 A)) :
-      u = (WithLp.ofLp u).fst • 1 + WithLp.toLp 1 ((WithLp.ofLp u).snd : Unitization 𝕜 A) := by
-    apply (WithLp.unitizationAlgEquiv 𝕜).injective
-    simp [← Algebra.algebraMap_eq_smul_one, Unitization.algebraMap_eq_inl,
-      Unitization.inl_fst_add_inr_snd_eq]
-  have hact (M : WithLp 1 (Unitization 𝕜 A) →L[𝕜] E →L[𝕜] E)
-      (hM : ∀ x, M 1 x = x) (u : WithLp 1 (Unitization 𝕜 A)) (x : E) :
-      M u x = (WithLp.ofLp u).fst • x +
-        M (WithLp.toLp 1 ((WithLp.ofLp u).snd : Unitization 𝕜 A)) x := by
-    conv_lhs => rw [hu u]
-    simp [hM]
-  have hd : ∀ u v, D' (u * v) = L u (D' v) + R v (D' u) := by
-    intro u v
-    rw [hact L h1L u, hact R h1R v]
-    simp only [hD', WithLp.unitization_mul, Unitization.snd_mul, map_add, map_smul, hD]
-    abel
-  have hd1 : D' 1 = 0 := by simp [hD']
-  have hn : ‖D'‖ ≤ ‖D‖ := by
-    apply ContinuousLinearMap.opNorm_le_bound _ (norm_nonneg _)
-    intro u
-    rw [hD', WithLp.unitization_norm_def]
-    exact D.le_opNorm _ |>.trans (by gcongr; exact le_add_of_nonneg_left (norm_nonneg _))
+  have hd := D.comp_unitizationSndL_mul L R h1L h1R hD
+  have hd1 : D' 1 = 0 := by simp [D']
+  have hn : ‖D'‖ ≤ ‖D‖ := D.norm_comp_unitizationSndL_le
   refine ⟨lift L D', ⟨?_, lift_left L D' hL, lift_right L R D' hL hLR hd,
     (norm_lift_le L D').trans (by gcongr)⟩, ?_⟩
   · intro a
@@ -352,7 +330,7 @@ theorem existsUnique_lift_nonUnital
   · intro f hf
     apply lift_unique L D' f hf.2.1
     intro u
-    conv_lhs => rw [hu u]
+    conv_lhs => rw [WithLp.unitization_eq_fst_smul_one_add_inr u]
     simp only [map_add, map_smul, d_one, smul_zero, zero_add,
       ← dNonUnital_apply, hf.1, hD']
 

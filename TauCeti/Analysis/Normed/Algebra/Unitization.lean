@@ -9,6 +9,7 @@ public import TauCeti.Algebra.Algebra.Subalgebra.Adjoin
 public import Mathlib.Algebra.Algebra.Subalgebra.Unitization
 public import Mathlib.Analysis.Normed.Algebra.UnitizationL1
 public import Mathlib.Analysis.Normed.Field.Basic
+public import Mathlib.Analysis.Normed.Operator.NormedSpace
 public import Mathlib.Topology.Algebra.Algebra.Equiv
 
 import Mathlib.Analysis.Normed.Operator.Banach
@@ -180,6 +181,23 @@ noncomputable def unitizationSndL : WithLp 1 (Unitization 𝕜 A) →L[𝕜] A :
 theorem unitizationSndL_apply (u : WithLp 1 (Unitization 𝕜 A)) :
     unitizationSndL 𝕜 A u = (ofLp u).snd := (rfl)
 
+variable [IsScalarTower 𝕜 A A] [SMulCommClass 𝕜 A A]
+
+/-- The bounded inclusion into the ℓ¹ unitization preserves multiplication. -/
+theorem unitizationInrL_mul (a b : A) :
+    unitizationInrL 𝕜 A (a * b) = unitizationInrL 𝕜 A a * unitizationInrL 𝕜 A b := by
+  apply (unitizationAlgEquiv 𝕜).injective
+  simp
+
+variable {𝕜 A}
+
+/-- Every element of the ℓ¹ unitization is the sum of its scalar and nonunital parts. -/
+theorem unitization_eq_fst_smul_one_add_inr (u : WithLp 1 (Unitization 𝕜 A)) :
+    u = (ofLp u).fst • 1 + toLp 1 ((ofLp u).snd : Unitization 𝕜 A) := by
+  apply (unitizationAlgEquiv 𝕜).injective
+  simp [← Algebra.algebraMap_eq_smul_one, Unitization.algebraMap_eq_inl,
+    Unitization.inl_fst_add_inr_snd_eq]
+
 variable {𝕜 A : Type*} [NormedField 𝕜] [NonUnitalNormedCommRing A] [NormedSpace 𝕜 A]
   [IsScalarTower 𝕜 A A] [SMulCommClass 𝕜 A A]
 
@@ -189,3 +207,52 @@ noncomputable instance instUnitizationNormedCommRing :
   mul_comm x y := (unitizationAlgEquiv 𝕜).injective <| by simp [mul_comm]
 
 end WithLp
+
+namespace ContinuousLinearMap
+
+section Decomposition
+
+variable {𝕜 A E : Type*} [NormedField 𝕜] [NonUnitalNormedRing A]
+  [NormedSpace 𝕜 A] [IsScalarTower 𝕜 A A] [SMulCommClass 𝕜 A A]
+  [NormedAddCommGroup E] [NormedSpace 𝕜 E]
+
+/-- A bounded linear map on the ℓ¹ unitization splits into its scalar and nonunital parts. -/
+theorem unitization_apply_eq_fst_smul_add (M : WithLp 1 (Unitization 𝕜 A) →L[𝕜] E)
+    (u : WithLp 1 (Unitization 𝕜 A)) :
+    M u = (WithLp.ofLp u).fst • M 1 +
+      M (WithLp.toLp 1 ((WithLp.ofLp u).snd : Unitization 𝕜 A)) := by
+  conv_lhs => rw [WithLp.unitization_eq_fst_smul_one_add_inr u]
+  simp
+
+end Decomposition
+
+variable {𝕜 A E : Type*} [NontriviallyNormedField 𝕜] [NonUnitalNormedRing A]
+  [NormedSpace 𝕜 A] [IsScalarTower 𝕜 A A] [SMulCommClass 𝕜 A A]
+  [NormedAddCommGroup E] [NormedSpace 𝕜 E]
+
+/-- Composing a bounded derivation with the nonunital coordinate projection extends its
+Leibniz rule to unital actions of the ℓ¹ unitization. -/
+theorem comp_unitizationSndL_mul (D : A →L[𝕜] E)
+    (L R : WithLp 1 (Unitization 𝕜 A) →L[𝕜] E →L[𝕜] E)
+    (h1L : ∀ x, L 1 x = x) (h1R : ∀ x, R 1 x = x)
+    (hD : ∀ a b, D (a * b) =
+      L (WithLp.toLp 1 (a : Unitization 𝕜 A)) (D b) +
+      R (WithLp.toLp 1 (b : Unitization 𝕜 A)) (D a))
+    (u v : WithLp 1 (Unitization 𝕜 A)) :
+    (D ∘L WithLp.unitizationSndL 𝕜 A) (u * v) =
+      L u ((D ∘L WithLp.unitizationSndL 𝕜 A) v) +
+      R v ((D ∘L WithLp.unitizationSndL 𝕜 A) u) := by
+  rw [L.unitization_apply_eq_fst_smul_add u, R.unitization_apply_eq_fst_smul_add v]
+  simp only [comp_apply, WithLp.unitizationSndL_apply, WithLp.unitization_mul,
+    Unitization.snd_mul, map_add, map_smul, hD, add_apply, smul_apply, h1L, h1R]
+  abel
+
+/-- Extension through the nonunital coordinate projection does not increase the norm. -/
+theorem norm_comp_unitizationSndL_le (D : A →L[𝕜] E) :
+    ‖D ∘L WithLp.unitizationSndL 𝕜 A‖ ≤ ‖D‖ := by
+  apply opNorm_le_bound _ (norm_nonneg _)
+  intro u
+  rw [comp_apply, WithLp.unitizationSndL_apply, WithLp.unitization_norm_def]
+  exact D.le_opNorm _ |>.trans (by gcongr; exact le_add_of_nonneg_left (norm_nonneg _))
+
+end ContinuousLinearMap
