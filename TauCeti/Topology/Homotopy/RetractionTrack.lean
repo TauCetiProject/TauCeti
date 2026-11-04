@@ -32,21 +32,22 @@ open Set unitInterval
 
 namespace ContinuousMap.Homotopy
 
-variable {X S : Type*} [TopologicalSpace X] [TopologicalSpace S] {r : C(X, X)}
+variable {X Y S : Type*} [TopologicalSpace X] [TopologicalSpace Y] [TopologicalSpace S]
+  {f₀ f₁ : C(X, Y)}
 
 /-- The track swept out by a map under a deformation, with radial time prescribed by `β`. -/
-def retractionTrack (R : (ContinuousMap.id X).Homotopy r) (β : C(I, I)) (a : C(S, X)) :
-    C(I × S, X) where
+def retractionTrack (R : f₀.Homotopy f₁) (β : C(I, I)) (a : C(S, X)) :
+    C(I × S, Y) where
   toFun p := R (β p.1, a p.2)
   continuous_toFun := R.continuous.comp (by fun_prop)
 
 @[simp]
-theorem retractionTrack_apply (R : (ContinuousMap.id X).Homotopy r) (β : C(I, I))
+theorem retractionTrack_apply (R : f₀.Homotopy f₁) (β : C(I, I))
     (a : C(S, X)) (p : I × S) : R.retractionTrack β a p = R (β p.1, a p.2) :=
   (rfl)
 
 /-- A homotopy of inner circles extends continuously to their entire retraction tracks. -/
-def retractionTrackHomotopy (R : (ContinuousMap.id X).Homotopy r) (β : C(I, I))
+def retractionTrackHomotopy (R : f₀.Homotopy f₁) (β : C(I, I))
     {a₀ a₁ : C(S, X)} (K : a₀.Homotopy a₁) :
     (R.retractionTrack β a₀).Homotopy (R.retractionTrack β a₁) where
   toFun p := R (β p.2.1, K (p.1, p.2.2))
@@ -55,14 +56,14 @@ def retractionTrackHomotopy (R : (ContinuousMap.id X).Homotopy r) (β : C(I, I))
   map_one_left s := by simp
 
 @[simp]
-theorem retractionTrackHomotopy_apply (R : (ContinuousMap.id X).Homotopy r) (β : C(I, I))
+theorem retractionTrackHomotopy_apply (R : f₀.Homotopy f₁) (β : C(I, I))
     {a₀ a₁ : C(S, X)} (K : a₀.Homotopy a₁) (p : I × (I × S)) :
     R.retractionTrackHomotopy β K p = R (β p.2.1, K (p.1, p.2.2)) :=
   (rfl)
 
-/-- The outer boundary of the track homotopy remains in the retract. -/
-theorem retractionTrackHomotopy_one_mem (R : (ContinuousMap.id X).Homotopy r)
-    {B : Set X} (hr : ∀ x, r x ∈ B) {β : C(I, I)} (hβ : β 1 = 1)
+/-- The outer boundary of the track homotopy remains in any set containing the end map. -/
+theorem retractionTrackHomotopy_one_mem (R : f₀.Homotopy f₁)
+    {B : Set Y} (hr : ∀ x, f₁ x ∈ B) {β : C(I, I)} (hβ : β 1 = 1)
     {a₀ a₁ : C(S, X)} (K : a₀.Homotopy a₁) (t : I) (s : S) :
     R.retractionTrackHomotopy β K (t, 1, s) ∈ B := by
   simpa [hβ] using hr (K (t, s))

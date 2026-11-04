@@ -42,6 +42,32 @@ namespace OpenPartialHomeomorph
 
 variable {M : Type u} [TopologicalSpace M] {n k : ℕ} {f : M → ℝ} {c ε : ℝ}
 
+private theorem norm_morseAnnulusPoint (d s : I) (θ : TopCat.diskBoundary.{u} k) :
+    ‖(unitInterval.symm (unitInterval.symm d * unitInterval.symm s) : ℝ) •
+      (θ.down : EuclideanSpace ℝ (Fin k))‖ =
+      (unitInterval.symm (unitInterval.symm d * unitInterval.symm s) : ℝ) := by
+  rw [norm_smul_of_nonneg (unitInterval.symm _).property.1,
+    mem_sphere_zero_iff_norm.mp θ.down.property, mul_one]
+
+private theorem morseAnnulusRadius_eq (d s : I) :
+    (unitInterval.symm (unitInterval.symm d * unitInterval.symm s) : ℝ) =
+      (d : ℝ) + (1 - d) * s := by
+  simp only [unitInterval.coe_symm_eq, Set.Icc.coe_mul]
+  ring
+
+private theorem apply_morseCellMap_annulusPoint
+    (ψ : OpenPartialHomeomorph M (EuclideanSpace ℝ (Fin n))) (hk : k ≤ n)
+    (hε : 0 ≤ ε) (hball : closedBall 0 √ε ⊆ ψ.target)
+    (hf : ∀ y ∈ ψ.source, f y = c + ∑ j, (if j.val < k then -1 else 1) * ψ y j ^ 2)
+    (d s : I) (θ : TopCat.diskBoundary.{u} k) :
+    f (ψ.morseCellMap hk ε
+      ((unitInterval.symm (unitInterval.symm d * unitInterval.symm s) : ℝ) •
+        (θ.down : EuclideanSpace ℝ (Fin k)))) =
+      c - ε * ((d : ℝ) + (1 - d) * s) ^ 2 := by
+  rw [ψ.apply_morseCellMap_eq_sub_mul_norm_sq hball hf hk hε
+    (by rw [norm_morseAnnulusPoint]; exact (unitInterval.symm _).property.2),
+    norm_morseAnnulusPoint, morseAnnulusRadius_eq]
+
 /-- The negative-coordinate annulus of a Morse characteristic disc, with normalized inner
 radius `d`. Its radial coordinate runs from `d` to `1`. -/
 def morseAnnulusMap (ψ : OpenPartialHomeomorph M (EuclideanSpace ℝ (Fin n))) (hk : k ≤ n)
@@ -51,31 +77,17 @@ def morseAnnulusMap (ψ : OpenPartialHomeomorph M (EuclideanSpace ℝ (Fin n))) 
   toFun p := ⟨ψ.morseCellMap hk ε
     ((unitInterval.symm (unitInterval.symm d * unitInterval.symm p.1) : ℝ) •
       (p.2.down : EuclideanSpace ℝ (Fin k))), by
-        have hn : ‖(p.2.down : EuclideanSpace ℝ (Fin k))‖ = 1 :=
-          mem_sphere_zero_iff_norm.mp p.2.down.property
-        have hnorm : ‖(unitInterval.symm (unitInterval.symm d *
-            unitInterval.symm p.1) : ℝ) • (p.2.down : EuclideanSpace ℝ (Fin k))‖ =
-            (unitInterval.symm (unitInterval.symm d * unitInterval.symm p.1) : ℝ) := by
-          rw [norm_smul, Real.norm_of_nonneg (unitInterval.symm _).property.1, hn, mul_one]
         simp only [mem_ofPred_eq]
-        rw [ψ.apply_morseCellMap_eq_sub_mul_norm_sq hball hf hk hε
-          (by rw [hnorm]; exact (unitInterval.symm _).property.2), hnorm]
-        have hds : (d : ℝ) ≤
-            (unitInterval.symm (unitInterval.symm d * unitInterval.symm p.1) : ℝ) := by
-          simpa only [unitInterval.symm_symm] using Subtype.coe_le_coe.mpr
-            (unitInterval.symm_le_symm.mpr
-              (unitInterval.mul_le_left (x := unitInterval.symm d) (y := unitInterval.symm p.1)))
-        have hd := d.property.1
-        have hr := (unitInterval.symm (unitInterval.symm d *
-          unitInterval.symm p.1)).property.1
-        exact sub_le_sub_left (mul_le_mul_of_nonneg_left (by nlinarith) hε) c⟩
+        rw [apply_morseCellMap_annulusPoint ψ hk hε hball hf]
+        have hds : (d : ℝ) ≤ (d : ℝ) + (1 - d) * p.1 := by
+          nlinarith [d.property.2, p.1.property.1]
+        exact sub_le_sub_left (mul_le_mul_of_nonneg_left
+          (pow_le_pow_left₀ d.property.1 hds 2) hε) c⟩
   continuous_toFun := by
     apply Continuous.subtype_mk
     apply (ψ.continuousOn_morseCellMap hball hk).comp_continuous (by fun_prop)
     intro p
-    rw [mem_closedBall_zero_iff, norm_smul,
-      Real.norm_of_nonneg (unitInterval.symm _).property.1,
-      mem_sphere_zero_iff_norm.mp p.2.down.property, mul_one]
+    rw [mem_closedBall_zero_iff, norm_morseAnnulusPoint]
     exact (unitInterval.symm _).property.2
 
 /-- Coordinates of the parametrized annulus, read through the existing Morse cell map. -/
@@ -122,17 +134,8 @@ theorem apply_morseAnnulusMap
     (d s : I) (θ : TopCat.diskBoundary.{u} k) :
     f (ψ.morseAnnulusMap hk hε hball hf d (s, θ)) =
       c - ε * ((d : ℝ) + (1 - d) * s) ^ 2 := by
-  have hn : ‖(θ.down : EuclideanSpace ℝ (Fin k))‖ = 1 :=
-    mem_sphere_zero_iff_norm.mp θ.down.property
-  have hnorm : ‖(unitInterval.symm (unitInterval.symm d * unitInterval.symm s) : ℝ) •
-      (θ.down : EuclideanSpace ℝ (Fin k))‖ =
-      (unitInterval.symm (unitInterval.symm d * unitInterval.symm s) : ℝ) := by
-    rw [norm_smul, Real.norm_of_nonneg (unitInterval.symm _).property.1, hn, mul_one]
-  rw [coe_morseAnnulusMap_apply,
-    ψ.apply_morseCellMap_eq_sub_mul_norm_sq hball hf hk hε
-      (by rw [hnorm]; exact (unitInterval.symm _).property.2), hnorm]
-  simp only [unitInterval.coe_symm_eq, Set.Icc.coe_mul]
-  ring
+  rw [coe_morseAnnulusMap_apply]
+  exact apply_morseCellMap_annulusPoint ψ hk hε hball hf d s θ
 
 /-- The value of the function on the inner seam is the level of the smaller circle. -/
 theorem apply_morseAnnulusMap_zero
