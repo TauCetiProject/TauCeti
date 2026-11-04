@@ -270,7 +270,7 @@ private theorem exists_schwartzMap_eventuallyEq_tendsto_toLp_laplacian_add (hn :
   have hRm : ∀ m : ℕ, (m : ℝ) ≤ R m := fun m => (le_max_left _ _).trans (le_max_left _ _)
   have hR : Tendsto R atTop atTop :=
     tendsto_atTop_mono hRm tendsto_natCast_atTop_atTop
-  choose χ hχ hχc hχ1 hχ0 hχ' hχ'' using fun m => hC (R m) (zero_lt_one.trans_le (hR1 m))
+  choose χ hχ hχc hχ1 hχ0 hχ' hχ'' _ using fun m => hC (R m) (zero_lt_one.trans_le (hR1 m))
   have hψc : ∀ m, HasCompactSupport fun y => χ m y • u y := fun m => (hχc m).smul_right
   refine ⟨fun m => (hψc m).toSchwartzMap ((hχ m).smul hu), fun m x hx => ?_, ?_⟩
   · filter_upwards [hχ1 m x (hx.trans_le (hRm m))] with y hy

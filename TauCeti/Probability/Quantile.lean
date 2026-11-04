@@ -77,6 +77,9 @@ makes the monotone rearrangement of two real laws a transport plan between them.
 * `MeasureTheory.Measure.tendsto_quantile_nhdsGT_zero_of_ae_le_of_cdf_pos` and
   `MeasureTheory.Measure.tendsto_quantile_nhdsLT_one_of_ae_le_of_cdf_lt_one` — the finite endpoint
   limits from almost-sure bounds and strict cdf inequalities toward the support interior;
+* `MeasureTheory.Measure.tendsto_upperQuantile_nhdsGT_zero` and
+  `MeasureTheory.Measure.tendsto_upperQuantile_nhdsLT_one` — the upper quantile has the infimum
+  and supremum of the topological support as its one-sided endpoint limits;
 * `MeasureTheory.Measure.quantile_map_abs` — the quantile of the image of a symmetric law under
   absolute value;
 * `MeasureTheory.Measure.le_upperQuantile_iff` and `MeasureTheory.Measure.upperQuantile_lt_iff`
@@ -618,6 +621,55 @@ theorem tendsto_quantile_nhdsLT_one_of_ae_le_of_cdf_lt_one (μ : Measure ℝ)
     exact (lt_quantile_iff μ ((cdf_nonneg μ a).trans_lt hu.1) hu.2).2 hu.1
   · filter_upwards [Ioo_mem_nhdsLT zero_lt_one] with u hu
     exact (ordConnected_Iic.quantile_mem hbound hu.1 hu.2).trans_lt hb
+
+/-- The upper quantile tends at zero to the infimum of the topological support. The infimum is
+taken in `EReal`, so this also states convergence to minus infinity for support unbounded below. -/
+theorem tendsto_upperQuantile_nhdsGT_zero (μ : Measure ℝ) [IsProbabilityMeasure μ] :
+    Tendsto (fun u ↦ (μ.upperQuantile u : EReal)) (𝓝[>] 0)
+      (𝓝 (⨅ x : μ.support, (x.1 : EReal))) := by
+  refine tendsto_order.2 ⟨fun a ha ↦ ?_, fun b hb ↦ ?_⟩
+  · obtain ⟨c, hac, hc⟩ := EReal.exists_between_coe_real ha
+    have hbound : ∀ᵐ x ∂μ, c < x := by
+      filter_upwards [μ.support_mem_ae] with x hx
+      exact EReal.coe_lt_coe_iff.mp
+        (hc.trans_le (iInf_le (fun y : μ.support ↦ (y.1 : EReal)) ⟨x, hx⟩))
+    have hcdf : cdf μ c = 0 := cdf_eq_zero_of_ae_lt μ hbound
+    filter_upwards [Ioo_mem_nhdsGT zero_lt_one] with u hu
+    have hq : c < μ.quantile u :=
+      (lt_quantile_iff μ hu.1 hu.2).2 (hcdf.symm ▸ hu.1)
+    exact hac.trans (EReal.coe_lt_coe_iff.2
+      (hq.trans_le (quantile_le_upperQuantile μ hu.1 hu.2)))
+  · obtain ⟨y, hy⟩ := iInf_lt_iff.mp hb
+    obtain ⟨c, hyc, hcb⟩ := EReal.exists_between_coe_real hy
+    have hcdf : 0 < cdf μ c :=
+      cdf_pos_of_mem_support_of_lt μ y.2 (EReal.coe_lt_coe_iff.mp hyc)
+    filter_upwards [Ioo_mem_nhdsGT hcdf] with u hu
+    exact EReal.coe_le_coe_iff.2 (upperQuantile_le_of_lt_cdf μ hu.1 hu.2) |>.trans_lt hcb
+
+/-- The upper quantile tends at one to the supremum of the topological support. The supremum is
+taken in `EReal`, so this also states convergence to plus infinity for support unbounded above. -/
+theorem tendsto_upperQuantile_nhdsLT_one (μ : Measure ℝ) [IsProbabilityMeasure μ] :
+    Tendsto (fun u ↦ (μ.upperQuantile u : EReal)) (𝓝[<] 1)
+      (𝓝 (⨆ x : μ.support, (x.1 : EReal))) := by
+  refine tendsto_order.2 ⟨fun a ha ↦ ?_, fun b hb ↦ ?_⟩
+  · obtain ⟨y, hy⟩ := lt_iSup_iff.mp ha
+    obtain ⟨c, hac, hcy⟩ := EReal.exists_between_coe_real hy
+    have hcdf : cdf μ c < 1 :=
+      cdf_lt_one_of_mem_support_of_lt μ y.2 (EReal.coe_lt_coe_iff.mp hcy)
+    filter_upwards [Ioo_mem_nhdsLT hcdf] with u hu
+    have hq : c < μ.quantile u :=
+      (lt_quantile_iff μ ((cdf_nonneg μ c).trans_lt hu.1) hu.2).2 hu.1
+    exact hac.trans (EReal.coe_lt_coe_iff.2
+      (hq.trans_le (quantile_le_upperQuantile μ ((cdf_nonneg μ c).trans_lt hu.1) hu.2)))
+  · obtain ⟨c, hc, hcb⟩ := EReal.exists_between_coe_real hb
+    have hbound : ∀ᵐ x ∂μ, x ≤ c := by
+      filter_upwards [μ.support_mem_ae] with x hx
+      exact EReal.coe_le_coe_iff.mp
+        ((le_iSup (fun y : μ.support ↦ (y.1 : EReal)) ⟨x, hx⟩).trans hc.le)
+    have hcdf : cdf μ c = 1 := cdf_eq_one_of_ae_le μ hbound
+    filter_upwards [Ioo_mem_nhdsLT zero_lt_one] with u hu
+    exact EReal.coe_le_coe_iff.2
+      (upperQuantile_le_of_lt_cdf μ hu.1 (hcdf.symm ▸ hu.2)) |>.trans_lt hcb
 
 /-- The lower quantile tends at zero to the infimum of the topological support. The infimum is
 taken in `EReal`, so this also states convergence to minus infinity for support unbounded below. -/

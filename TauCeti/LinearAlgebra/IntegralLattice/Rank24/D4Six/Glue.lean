@@ -30,8 +30,9 @@ whose nonzero elements have quadratic value `1 / 2`; it is constructed in
   before the additive closure. In particular the subgroup is closed under multiplication by every
   scalar (`TauCeti.d4SixQuaternaryIsometry_symm_smul_mem_d4SixGlueSubgroup`).
 * `TauCeti.d4SixHexacodeIsometry` composes the label identification with the coordinate scalings
-  `[ω, ω, 1, ω², ω², 1]`. It is an isometry of finite quadratic modules, since a nonzero scaling
-  preserves the quadratic value `1 / 2` of the quaternary `D₄` alphabet, and
+  `[ω, ω, 1, ω², ω², 1]`, packaged as units by `TauCeti.d4SixHexacodeScaling`. It is an
+  isometry of finite quadratic modules, since a nonzero scaling preserves the quadratic value
+  `1 / 2` of the quaternary `D₄` alphabet, and
   `TauCeti.map_d4SixGlueSubgroup_d4SixHexacodeIsometry` shows that it carries the glue subgroup
   onto `TauCeti.Hexacode.code ω`.
 
@@ -108,9 +109,23 @@ theorem d4SixQuaternaryIsometry_apply (w : d4SixGlueModule) (j : Fin 6) :
 
 omit [Finite F] in
 include hω in
-private theorem d4SixScaling_ne_zero (j : Fin 6) : ![ω, ω, 1, ω ^ 2, ω ^ 2, 1] j ≠ 0 := by
+/-- The coordinate scalings `[ω, ω, 1, ω², ω², 1]` of `d4SixHexacodeIsometry` are nonzero. -/
+theorem d4SixScaling_ne_zero (j : Fin 6) : ![ω, ω, 1, ω ^ 2, ω ^ 2, 1] j ≠ 0 := by
   have h0 : ω ≠ 0 := by rintro rfl; simp at hω
   fin_cases j <;> simp [h0]
+
+omit [Finite F] in
+/-- The hexacode coordinate scalings `[ω, ω, 1, ω², ω², 1]` of `d4SixHexacodeIsometry`, as units
+of `F`. -/
+noncomputable def d4SixHexacodeScaling (j : Fin 6) : Fˣ :=
+  Units.mk0 (![ω, ω, 1, ω ^ 2, ω ^ 2, 1] j) (d4SixScaling_ne_zero hω j)
+
+omit [Finite F] in
+/-- The hexacode coordinate scalings are `[ω, ω, 1, ω², ω², 1]`. -/
+@[simp]
+theorem coe_d4SixHexacodeScaling (j : Fin 6) :
+    (d4SixHexacodeScaling hω j : F) = ![ω, ω, 1, ω ^ 2, ω ^ 2, 1] j :=
+  (rfl)
 
 /-- **The `D₄⁶` glue words in hexacode coordinates**: the label identification followed by the
 coordinate scalings `[ω, ω, 1, ω², ω², 1]`, an isometry onto six copies of the quaternary `D₄`

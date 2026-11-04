@@ -62,6 +62,8 @@ make it computable from the geometry of `T`, in the spirit of the Courant–Fisc
 * `ContinuousLinearMap.exists_linearIndependent_or_exists_rank_le`: on a complete inner product
   space, `T` is `c`-coercive on the span of `n + 1` linearly independent vectors or
   `c`-contractive on the orthogonal complement of a subspace of rank at most `n`.
+* `ContinuousLinearMap.singularValue_orthogonalProjectionOnto_comp_comp_subtypeL_le`: compressing a
+  map to subspaces of its source and target does not increase its approximation numbers.
 * `TauCeti.HasMinMaxLowerBound`: the converse min–max localization property of a pair of spaces.
 * `TauCeti.hasMinMaxLowerBound_iff_forall_isLUB`: a pair has this property exactly when, for every
   `T` and `n`, `aₙ(T)` is the least upper bound of the coercivity constants of `T` on spans of
@@ -340,6 +342,27 @@ theorem exists_linearIndependent_or_exists_rank_le [CompleteSpace E] (T : E →L
     exact Nat.findGreatest_is_greatest (Nat.lt_succ_self _) (hle _ ⟨_, hv', hvc'⟩) ⟨_, hv', hvc'⟩
 
 end Inertia
+
+section Compression
+
+variable {𝕜 E F : Type*} [RCLike 𝕜]
+  [NormedAddCommGroup E] [NormedSpace 𝕜 E] [NormedAddCommGroup F] [InnerProductSpace 𝕜 F]
+
+/-- Compressing `T` to subspaces `V ≤ E` and `W ≤ F`, by the inclusion of `V` and the orthogonal
+projection onto `W`, does not increase its approximation numbers. -/
+theorem singularValue_orthogonalProjectionOnto_comp_comp_subtypeL_le (W : Submodule 𝕜 F)
+    [W.HasOrthogonalProjection] (V : Submodule 𝕜 E) (T : E →L[𝕜] F) (n : ℕ) :
+    (W.orthogonalProjectionOnto.comp (T.comp V.subtypeL)).singularValue n ≤ T.singularValue n :=
+  calc (W.orthogonalProjectionOnto.comp (T.comp V.subtypeL)).singularValue n
+      ≤ ‖W.orthogonalProjectionOnto‖₊ * T.singularValue n * ‖V.subtypeL‖₊ :=
+        singularValue_comp_comp_le _ _ _ n
+    _ ≤ 1 * T.singularValue n * 1 := by
+        gcongr
+        · exact_mod_cast Submodule.orthogonalProjectionOnto_norm_le _
+        · exact_mod_cast V.norm_subtypeL_le
+    _ = T.singularValue n := by rw [one_mul, mul_one]
+
+end Compression
 
 end ContinuousLinearMap
 

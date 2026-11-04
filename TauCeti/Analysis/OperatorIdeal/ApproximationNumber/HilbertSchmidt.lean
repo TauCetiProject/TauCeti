@@ -82,19 +82,6 @@ private theorem tsum_singularValue_sq_eq_hilbertSchmidtEnergy_of_finiteDimension
     tsum_eq_sum (s := σ.support) fun n hn ↦ by simp [Finsupp.notMem_support_iff.mp hn],
     Finsupp.sum, ENNReal.ofReal_sum_of_nonneg fun _ _ ↦ sq_nonneg _]
 
-/-- Compressing `T` to a finite-dimensional subspace `V` of the source, with values in `T(V)`,
-does not increase approximation numbers. -/
-private theorem singularValue_compression_le (T : E →L[𝕜] F) (V : Submodule 𝕜 E)
-    [FiniteDimensional 𝕜 V] (n : ℕ) :
-    ((V.map (T : E →ₗ[𝕜] F)).orthogonalProjectionOnto.comp (T.comp V.subtypeL)).singularValue n ≤
-      T.singularValue n := by
-  have hP : ‖(V.map (T : E →ₗ[𝕜] F)).orthogonalProjectionOnto‖₊ ≤ 1 := by
-    exact_mod_cast Submodule.orthogonalProjectionOnto_norm_le _
-  have hι : ‖V.subtypeL‖₊ ≤ 1 := by exact_mod_cast Submodule.norm_subtypeL_le V
-  calc _ ≤ _ := singularValue_comp_comp_le _ T _ n
-    _ ≤ 1 * T.singularValue n * 1 := by gcongr
-    _ = T.singularValue n := by rw [one_mul, mul_one]
-
 /-- **Lower half of the Hilbert–Schmidt reconciliation.** The Hilbert–Schmidt energy is at most the
 sum of the squared approximation numbers: `E_b(T) ≤ ∑' n, aₙ(T)²`. No completeness is needed. -/
 theorem hilbertSchmidtEnergy_le_tsum_singularValue_sq (T : E →L[𝕜] F) (b : HilbertBasis ι 𝕜 E) :
@@ -119,7 +106,7 @@ theorem hilbertSchmidtEnergy_le_tsum_singularValue_sq (T : E →L[𝕜] F) (b : 
         (tsum_singularValue_sq_eq_hilbertSchmidtEnergy_of_finiteDimensional C _).symm
     _ ≤ ∑' n, (T.singularValue n : ℝ≥0∞) ^ 2 := by
         gcongr with n
-        exact T.singularValue_compression_le V n
+        exact T.singularValue_orthogonalProjectionOnto_comp_comp_subtypeL_le _ V n
 
 variable [CompleteSpace E]
 
@@ -166,7 +153,8 @@ private theorem sum_range_singularValue_sq_le (T : E →L[𝕜] F) (b : HilbertB
   have hpt (n : ℕ) (hn : n ∈ Finset.range k) : (T.singularValue n : ℝ≥0∞) ^ 2 ≤
       (C.singularValue n : ℝ≥0∞) ^ 2 + ((δ * (2 * T.singularValue n + 1) : ℝ≥0) : ℝ≥0∞) := by
     have h₁ := hV n (Finset.mem_range.mp hn)
-    have h₂ : (C.singularValue n : ℝ) ≤ T.singularValue n := T.singularValue_compression_le V n
+    have h₂ : (C.singularValue n : ℝ) ≤ T.singularValue n :=
+      T.singularValue_orthogonalProjectionOnto_comp_comp_subtypeL_le _ V n
     rw [← ENNReal.coe_pow, ← ENNReal.coe_pow, ← ENNReal.coe_add, ENNReal.coe_le_coe,
       ← NNReal.coe_le_coe]
     push_cast

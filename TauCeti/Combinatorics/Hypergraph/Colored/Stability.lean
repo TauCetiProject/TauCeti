@@ -10,6 +10,7 @@ public import TauCeti.Combinatorics.Hypergraph.Colored.EditDiscrepancy
 public import TauCeti.Data.Fintype.EmbeddingFiber
 
 import Mathlib.Algebra.Order.BigOperators.Group.Finset
+import Mathlib.Data.Rat.Cast.Lemmas
 
 import Mathlib.Tactic.FieldSimp
 import Mathlib.Tactic.GCongr
@@ -27,6 +28,9 @@ regularity or finite palette.
 This is the elementary edit-transfer step in induced counting; see Rödl–Schacht,
 *Regular Partitions of Hypergraphs: Counting Lemmas* (2007). The normalization of edit
 discrepancy counts six orderings of every edited unordered triple.
+
+The same injection count bounds `editedOn` on any support by `editDiscrepancy3 * |V|³`,
+including empty hosts, via `card_editedOn_le_editDiscrepancy3`.
 -/
 
 public section
@@ -94,6 +98,35 @@ theorem card_comap_ne_le (H H' : Colored3Graph κ V) {W : Type*} [Fintype W] :
         simpa only [Nat.card_eq_fintype_card] using Set.powersetCard.card W 3
       simp [he, hc, mul_assoc, mul_left_comm, mul_comm]
 
+/-- The edited triples in any support are bounded by the global edit discrepancy times
+`|V|³`. This converts unordered edits to ordered injective triples, including empty hosts. -/
+theorem card_editedOn_le_editDiscrepancy3 [DecidableEq κ] (H H' : Colored3Graph κ V)
+    (supp : Finset {x : Fin 3 → V // Function.Injective x}) :
+    (#(H.editedOn H' supp) : ℝ) ≤
+      (H.editDiscrepancy3 H' : ℝ) * (Fintype.card V : ℝ) ^ 3 := by
+  classical
+  let s : Set.powersetCard (Fin 3) 3 := ⟨univ, by simp⟩
+  have hm (f : Fin 3 ↪ V) : Set.powersetCard.map 3 f s =
+      Set.powersetCard.ofFinEmb 3 V f := Subtype.ext (by simp [s])
+  let f : H.editedOn H' supp → {f : Fin 3 ↪ V // H.comap f ≠ H'.comap f} :=
+    fun x ↦ ⟨⟨x.1.1, x.1.2⟩, fun h ↦ (mem_editedOn H H' supp x.1).mp x.2 |>.2 <| by
+      simpa only [color_comap, hm] using congrArg (fun K ↦ K.color s) h⟩
+  have hf : Function.Injective f := fun x y h ↦
+    Subtype.ext (Subtype.ext (congrArg (fun z ↦ (z.1 : Fin 3 → V)) h))
+  have hcount : #(H.editedOn H' supp) ≤ 6 * {t | H.color t ≠ H'.color t}.ncard := by
+    have hle := (Nat.card_le_card_of_injective f hf).trans
+      (H.card_comap_ne_le H' (W := Fin 3))
+    simpa only [Nat.card_eq_fintype_card, Fintype.card_coe, Fintype.card_fin,
+      Nat.choose_self, Nat.sub_self, pow_zero, mul_one, one_mul] using hle
+  by_cases hn : Fintype.card V = 0
+  · have : IsEmpty V := Fintype.card_eq_zero_iff.1 hn
+    simp [editedOn_def]
+  have hn' : (Fintype.card V : ℝ) ^ 3 ≠ 0 := by exact_mod_cast pow_ne_zero 3 hn
+  rw [editDiscrepancy3_def, Nat.card_eq_fintype_card]
+  push_cast
+  rw [div_mul_cancel₀ _ hn']
+  exact_mod_cast hcount
+
 private theorem abs_inducedCopyCount_sub_le_edits (H H' : Colored3Graph κ V)
     (F : FiniteColored3Pattern κ) :
     |(H.inducedCopyCount F : ℝ) - H'.inducedCopyCount F| ≤
@@ -152,7 +185,6 @@ theorem inducedCopyCount_edit_transfer (H H' : Colored3Graph κ V)
     rw [← pow_add, Nat.sub_add_cancel (by omega : 3 ≤ F.k)]
   rw [hpow]
   field_simp
-  norm_cast
 
 /-- An edit approximation controls every induced colored pattern count, independently of the
 regularity properties of the approximating coloring. -/

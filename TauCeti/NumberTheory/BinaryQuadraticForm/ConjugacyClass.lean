@@ -109,7 +109,8 @@ end CommRing
 theorem smul_eq_iff_ofConjAct_smul_ofMatrix_eq {M N : Matrix (Fin 2) (Fin 2) ℤ}
     (h : M.trace = N.trace) (g : ConjAct SL(2, ℤ)) :
     g • M = N ↔ ofConjAct g • ofMatrix M = ofMatrix N := by
-  rw [← ofMatrix_inj_of_trace_eq ((trace_specialLinearGroup_smul g M).trans h),
+  rw [← ofMatrix_inj_of_trace_eq (IsRegular.of_ne_zero two_ne_zero).left
+      ((trace_specialLinearGroup_smul g M).trans h),
     ofMatrix_conjAct_smul]
 
 /-- **The automorphism weights agree**: the stabiliser of `Q_M` in `SL(2, ℤ)` has the order of the
@@ -119,7 +120,8 @@ theorem card_stabilizer_ofMatrix (M : Matrix (Fin 2) (Fin 2) ℤ) :
   -- conjugation preserves the trace, and a matrix is determined by its trace and its form, so
   -- `γ` centralises `M` exactly when it fixes `Q_M`
   card_stabilizer_congr (ofConjAct (G := SL(2, ℤ))) M (ofMatrix_conjAct_smul · M) fun g ↦
-    (ofMatrix_inj_of_trace_eq (trace_specialLinearGroup_smul g M)).1
+    (ofMatrix_inj_of_trace_eq (IsRegular.of_ne_zero two_ne_zero).left
+      (trace_specialLinearGroup_smul g M)).1
 
 variable {t n : ℤ} {D : ℕ} [NeZero D]
 
@@ -150,8 +152,8 @@ private theorem ofMatrix_toFiber (h : t ^ 2 - 4 * n = -D) (f : posDef D) :
 private theorem ofMatrix_coe_injective :
     Function.Injective fun M : traceDetFiber (Fin 2) t n ↦
       ofMatrix (M : Matrix (Fin 2) (Fin 2) ℤ) :=
-  fun M N hMN ↦ Subtype.ext <| (ofMatrix_inj_of_trace_eq <|
-    (mem_traceDetFiber.1 M.2).1.trans (mem_traceDetFiber.1 N.2).1.symm).1 hMN
+  fun M N hMN ↦ Subtype.ext <| (ofMatrix_inj_of_trace_eq (IsRegular.of_ne_zero two_ne_zero).left
+    ((mem_traceDetFiber.1 M.2).1.trans (mem_traceDetFiber.1 N.2).1.symm)).1 hMN
 
 private theorem toFiber_ofMatrix (h : t ^ 2 - 4 * n = -D) (M : traceDetFiber (Fin 2) t n)
     (hM : ofMatrix (M : Matrix (Fin 2) (Fin 2) ℤ) ∈ posDef D) : toFiber h ⟨_, hM⟩ = M :=

@@ -29,10 +29,12 @@ which is predictable when each `a j` is `ℱ (τ j)`-measurable
 an adapted process when `X` is adapted and each `a j` is `ℱ (τ j)`-measurable
 (`TauCeti.Finance.stronglyAdapted_simpleGains`). At a rebalancing date the gains are the discrete
 transform `∑_{i < j} a i · (X (τ (i + 1)) - X (τ i))`
-(`TauCeti.Finance.simpleGains_apply_eq_sum`), and after the last date they stay at their terminal
-value (`TauCeti.Finance.simpleGains_of_ge`). When a real-time price path is the indefinite
-integral of a rate `X'`, as a deterministic bond is, the gains are the time integral
-`∫ a_u X'_u du` (`TauCeti.Finance.simpleGains_eq_integral`).
+(`TauCeti.Finance.simpleGains_apply_eq_sum`); so they are known at that date when `X` is known at
+each trading date (`TauCeti.Finance.stronglyMeasurable_simpleGains`), and integrable when each
+trade has integrable gains (`TauCeti.Finance.integrable_simpleGains`). After the last date they
+stay at their terminal value (`TauCeti.Finance.simpleGains_of_ge`). When a real-time price path
+is the indefinite integral of a rate `X'`, as a deterministic bond is, the gains are the time
+integral `∫ a_u X'_u du` (`TauCeti.Finance.simpleGains_eq_integral`).
 
 The strategy is *self-financing* (`TauCeti.Finance.IsSelfFinancing`) when every rebalancing is
 paid for by the old position: at each date `τ (j + 1)` with `j + 1 < n`, the new portfolio costs
@@ -56,7 +58,9 @@ Self-financing does not depend on the unit of account: multiplying both prices b
 does not vanish at the rebalancing dates preserves it (`TauCeti.Finance.isSelfFinancing_mul_iff`).
 In particular, when the bond price does not vanish on `[τ 0, τ n]`, the discounted wealth of a
 self-financing strategy, measured in bond shares, is the initial discounted cost plus the gains
-from the discounted stock `S / β` alone (`TauCeti.Finance.isSelfFinancing_iff_discounted`).
+from the discounted stock `S / β` alone (`TauCeti.Finance.isSelfFinancing_iff_discounted`); in
+particular so is its discounted terminal wealth
+(`TauCeti.Finance.IsSelfFinancing.discounted_terminal_wealth_eq`).
 The bond holding is therefore determined by the stock holding and the initial capital `v`: when
 the bond price does not vanish at the trading dates, `TauCeti.Finance.selfFinancingBond` completes
 any stock holding to a self-financing strategy of initial cost `v`, uniquely
@@ -271,6 +275,27 @@ theorem stronglyAdapted_simpleGains (hτ : MonotoneOn τ (Set.Iic n))
     rw [min_eq_right (ht.trans (hτ (mem_range.1 hj).le (mem_range.1 hj) (Nat.le_succ j))),
       min_eq_right ht, sub_self, mul_zero]
 
+/-- The gains of a simple strategy up to a trading date `τ m` are known at `τ m` when the traded
+price is known at each trading date and the holdings `a j` are chosen at `τ j`. -/
+theorem stronglyMeasurable_simpleGains {m : ℕ} (hτ : MonotoneOn τ (Set.Iic n))
+    (hXm : ∀ j ≤ n, StronglyMeasurable[ℱ (τ j)] (X (τ j)))
+    (ha : ∀ j < n, StronglyMeasurable[ℱ (τ j)] (a j)) (hm : m ≤ n) :
+    StronglyMeasurable[ℱ (τ m)] (simpleGains τ n a X (τ m)) := by
+  have hle : ∀ i ≤ m, ℱ (τ i) ≤ ℱ (τ m) := fun i hi ↦ ℱ.mono (hτ (hi.trans hm) hm hi)
+  simp_rw [funext (simpleGains_apply_eq_sum hτ hm X)]
+  refine Finset.stronglyMeasurable_fun_sum _ fun i hi ↦ ?_
+  have him : i + 1 ≤ m := mem_range.1 hi
+  exact ((ha i (him.trans hm)).mono (hle i (by omega))).mul
+    (((hXm _ (him.trans hm)).mono (hle _ him)).sub ((hXm i (by omega)).mono (hle i (by omega))))
+
+/-- The gains of a simple strategy at a trading date are integrable when each of its trades has
+integrable gains. -/
+theorem integrable_simpleGains {m : ℕ} {Q : Measure Ω} (hτ : MonotoneOn τ (Set.Iic n))
+    (hint : ∀ j < n, Integrable (a j * (X (τ (j + 1)) - X (τ j))) Q) (hm : m ≤ n) :
+    Integrable (simpleGains τ n a X (τ m)) Q := by
+  simp_rw [funext (simpleGains_apply_eq_sum hτ hm X)]
+  exact integrable_finsetSum _ fun i hi ↦ hint i ((mem_range.1 hi).trans_le hm)
+
 end Measurability
 
 end Gains
@@ -347,6 +372,12 @@ theorem isSelfFinancing_iff :
       a (j + 1) ω * S (τ (j + 1)) ω + b (j + 1) ω * β (τ (j + 1)) ω =
         a j ω * S (τ (j + 1)) ω + b j ω * β (τ (j + 1)) ω :=
   Iff.rfl
+
+/-- Holdings that are constant across trading dates are self-financing. -/
+theorem isSelfFinancing_const (a b : Ω → ℝ) :
+    IsSelfFinancing τ n (fun _ ↦ a) (fun _ ↦ b) S β := by
+  intro j _ ω
+  rfl
 
 /-- Self-financing strategies are closed under addition. -/
 theorem IsSelfFinancing.add (h₁ : IsSelfFinancing τ n a₁ b₁ S β)
@@ -511,6 +542,19 @@ theorem isSelfFinancing_iff_discounted (hτ : MonotoneOn τ (Set.Iic n))
   rw [hgains, hone t ht₀, hone _ (hdate 0 (Nat.zero_le n))]
   simp only [Pi.div_apply, add_div, mul_div_assoc, div_self (hβ t ht₀ ω),
     div_self (hβ _ (hdate 0 (Nat.zero_le n)) ω), mul_one, add_zero]
+
+/-- **The discounted terminal wealth** of a self-financing strategy, when the bond price does not
+vanish on `[τ 0, τ (n + 1)]`: the final portfolio `(a n, b n)`, valued at the last date
+`τ (n + 1)` in bond shares, is worth the discounted initial cost plus the gains from trading the
+discounted stock `S / β`. -/
+theorem IsSelfFinancing.discounted_terminal_wealth_eq (h : IsSelfFinancing τ (n + 1) a b S β)
+    (hτ : MonotoneOn τ (Set.Iic (n + 1))) (hβ : ∀ t ∈ Set.Icc (τ 0) (τ (n + 1)), ∀ ω, β t ω ≠ 0)
+    (ω : Ω) :
+    (a n ω * S (τ (n + 1)) ω + b n ω * β (τ (n + 1)) ω) / β (τ (n + 1)) ω =
+      (a 0 ω * S (τ 0) ω + b 0 ω * β (τ 0) ω) / β (τ 0) ω +
+        simpleGains τ (n + 1) a (S / β) (τ (n + 1)) ω :=
+  (isSelfFinancing_iff_discounted hτ hβ).1 h n (Nat.lt_succ_self n) ω _
+    ⟨hτ (Set.mem_Iic.2 (Nat.le_succ n)) Set.self_mem_Iic (Nat.le_succ n), le_rfl⟩
 
 end Formula
 
