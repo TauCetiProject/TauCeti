@@ -117,6 +117,12 @@ theorem binomialPow_zero (hu : IsNilpotent (u - 1)) : binomialPow u (0 : R) = 1 
 theorem binomialPow_one (hu : IsNilpotent (u - 1)) : binomialPow u (1 : R) = u := by
   simpa using binomialPow_natCast (R := R) hu 1
 
+/-- At a numeral exponent the binomial power is the ordinary power. -/
+@[simp]
+theorem binomialPow_ofNat (hu : IsNilpotent (u - 1)) (m : ℕ) [m.AtLeastTwo] :
+    binomialPow u (ofNat(m) : R) = u ^ (ofNat(m) : ℕ) :=
+  binomialPow_natCast hu m
+
 /-- **The group law of binomial powers**: `u ^ (t + s) = u ^ t * u ^ s`. -/
 theorem binomialPow_add (hu : IsNilpotent (u - 1)) (t s : R) :
     binomialPow u (t + s) = binomialPow u t * binomialPow u s := by
