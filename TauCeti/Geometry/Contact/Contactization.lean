@@ -377,7 +377,10 @@ theorem isLegendrianImmersion_contactization_iff [Nonempty L] (hθ : σ = -mextD
     have hmem := hL.isHorizontalMap.mfderiv_mem y v
     rw [SmoothForm.mem_kerDistribution_contactization, hpair, Manifold.tangentSpaceProdEquiv_apply,
       NormedSpace.fromTangentSpace_apply] at hmem
-    -- The components of `(dι_y, dh_y) v` are `dι_y v` and `dh_y v`.
+    -- The components of `(dι_y, dh_y) v` are `dι_y v` and `dh_y v`. Neither `rw` nor `simp` with
+    -- `ContinuousLinearMap.prod_apply` can show this: the vector is typed in the tangent space
+    -- `TangentSpace (I.prod 𝓘(ℝ)) (ι y, h y)` rather than in the product, so the rewrite motive is
+    -- not type correct. The type ascription unfolds this wrapper by definition instead.
     replace hmem : mfderiv J 𝓘(ℝ) h y v = θ.1 (ι y) ![mfderiv J I ι y v] := hmem
     have h0 : (mfderiv J I ι y).prod (mfderiv J 𝓘(ℝ) h y) v = 0 := by
       rw [ContinuousLinearMap.prod_apply, hmem, hv, (θ.1 (ι y)).map_coord_zero 0 rfl]
