@@ -386,6 +386,7 @@ theorem isConnectedComponentOf_iff_exists_eq_connectedComponentSubgraph :
 /-! ### Connectedness and the component count -/
 
 /-- Multigraph connectedness agrees with connectedness of the underlying simple graph. -/
+@[simp ←]
 theorem connected_iff_toSimpleGraph_connected : G.Connected ↔ G.toSimpleGraph.Connected := by
   constructor
   · intro hG

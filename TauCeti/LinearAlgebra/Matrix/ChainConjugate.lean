@@ -76,7 +76,7 @@ private lemma exists_isUnit_det_apply_last_eq {n : ℕ} {a : Fin (n + 1) → R}
   · -- expand along column `k₀`, which vanishes off the last row
     have hsub : v.submatrix Fin.castSucc k₀.succAbove = 1 := by
       ext i j
-      simp [hv_castSucc, Pi.single_apply, one_apply, eq_comm]
+      simp [hv_castSucc, Pi.single_apply, Matrix.one_apply, eq_comm]
     rw [det_succ_column v k₀, Fin.sum_univ_castSucc]
     simp only [hv_castSucc, Pi.single_apply, hne, ite_false, mul_zero,
       zero_mul, Finset.sum_const_zero, zero_add, hv_last, Fin.succAbove_last, hsub, det_one,
@@ -104,7 +104,7 @@ private lemma submatrix_castSucc_hyp {n : ℕ} {a b : Fin (n + 1) → R}
       τ.submatrix Fin.castSucc Fin.castSucc * diagonal (fun k : Fin n ↦ b k.castSucc)) i j =
       (σ * diagonal a * τ * diagonal b) i.castSucc j.castSucc := by
     have hne : (Fin.last n = j.castSucc) = False := eq_false (Fin.castSucc_lt_last j).ne'
-    rw [mul_diagonal, mul_diagonal, mul_apply, mul_apply, Fin.sum_univ_castSucc]
+    rw [mul_diagonal, mul_diagonal, Matrix.mul_apply, Matrix.mul_apply, Fin.sum_univ_castSucc]
     simp [mul_diagonal, hτl, hne]
   rw [hblock]
   exact h _ _
@@ -164,8 +164,8 @@ private lemma exists_apply_last_eq_one_apply_last_right [IsLocalRing R] {n : ℕ
     have hj := h (Fin.last n) j
     have hlast : (σ * diagonal a * τ * diagonal b) (Fin.last n) j =
         a (Fin.last n) * (τ (Fin.last n) j * b j) := by
-      rw [mul_diagonal, mul_apply]
-      simp [mul_diagonal, hσl, one_apply, mul_assoc]
+      rw [mul_diagonal, Matrix.mul_apply]
+      simp [mul_diagonal, hσl, Matrix.one_apply, mul_assoc]
     rwa [hlast, mul_dvd_mul_iff_left (ha₀ _)] at hj
   obtain ⟨k₀, hk₀⟩ := TauCeti.Module.isUnimodular_iff_exists_isUnit.1
     (isUnimodular_apply_of_isUnit_det hτ (Fin.last n))
@@ -186,7 +186,7 @@ private lemma exists_apply_last_eq_one_apply_last_right [IsLocalRing R] {n : ℕ
   · have hprod : σ * diagonal a * (τ * v⁻¹) * diagonal b =
         σ * diagonal a * τ * diagonal b * W⁻¹ := by
       simp only [Matrix.mul_assoc, hinv]
-    rw [hprod, mul_apply]
+    rw [hprod, Matrix.mul_apply]
     exact Finset.dvd_sum fun k _ ↦ (h i k).mul_right _
 
 /-- The theorem over a local domain, by induction on the size of the matrices. -/
@@ -213,7 +213,7 @@ private theorem dvd_apply_mul_of_isLocalRing [IsLocalRing R] :
       (det_eq_det_submatrix_castSucc_of_apply_last hτ''l ▸ hτ'') (submatrix_castSucc_hyp hτ''l h'')
     induction i using Fin.lastCases with
     | last =>
-      rw [hσ'l, one_apply]
+      rw [hσ'l, Matrix.one_apply]
       split_ifs with hj
       · rw [← hj, one_mul]
       · rw [zero_mul]

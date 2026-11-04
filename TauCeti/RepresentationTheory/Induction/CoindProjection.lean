@@ -124,7 +124,7 @@ noncomputable def coindProjectionHom :
       (LinearMap.pi fun h => (F.1 h).comp (τ h : B →ₗ[k] B)) fun b => by
     simp only [mem_coindV, LinearMap.pi_apply, LinearMap.comp_apply]
     intro g h
-    simp [F.2 g h, ← Module.End.mul_apply, ← map_mul]
+    simp [F.2 g h, ← mul_apply_eq_comp, ← map_mul]
   map_add' _ _ := by ext; simp
   map_smul' _ _ := by ext; simp
 
@@ -179,7 +179,7 @@ noncomputable def coindProjectionEquiv :
     ext F b h
     -- Both sides are definitionally `F (h * h₀)` applied to `τ h b`, resp. `τ (h * h₀) (τ h₀⁻¹ b)`;
     -- `simp` cannot evaluate the restricted action of `Representation.coind`.
-    exact congrArg (F.1 (h * h₀)) (by rw [← Module.End.mul_apply, ← map_mul, mul_inv_cancel_right])
+    exact congrArg (F.1 (h * h₀)) (by rw [← mul_apply_eq_comp, ← map_mul, mul_inv_cancel_right])
 
 /-- `TauCeti.coindProjectionEquiv` is `TauCeti.coindProjectionHom` in the forward direction; the
 element-level rule is `TauCeti.coindProjectionHom_apply_coe`. -/

@@ -276,7 +276,7 @@ theorem commute_polarFactor_operatorAbs_of_commute {A : E →ₗ[𝕜] E}
   rw [← A.range_operatorAbs] at hv
   obtain ⟨y, rfl⟩ := hv
   have hu' : A.operatorAbs u = 0 := by rwa [← mem_ker, ker_operatorAbs]
-  simp only [Module.End.mul_apply, map_add, hu', A.polarFactor_apply_of_mem_ker hu, map_zero,
+  simp only [mul_apply_eq_comp, map_add, hu', A.polarFactor_apply_of_mem_ker hu, map_zero,
     zero_add, polarFactor_operatorAbs_apply]
   exact LinearMap.congr_fun h.eq y
 

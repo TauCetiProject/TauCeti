@@ -109,7 +109,7 @@ private theorem listProd_basisFactor_apply {n : ℕ}
   induction l with
   | nil => simp
   | cons i l ih =>
-      rw [List.map_cons, List.prod_cons, Module.End.mul_apply, ih, map_smul,
+      rw [List.map_cons, List.prod_cons, mul_apply_eq_comp, ih, map_smul,
         basisFactor_apply]
       simp
 
@@ -198,7 +198,7 @@ private theorem create_basis_empty {n : ℕ} (b : Module.Basis (Fin n) K W)
         (xs.map fun i ↦ ExteriorAlgebra.ι K (b i)).prod := by
     induction xs with
     | nil => simp
-    | cons i xs ih => simp [ih, Module.End.mul_apply]
+    | cons i xs ih => simp [ih, mul_apply_eq_comp]
   rw [hmap]
   -- Expose the `ιMulti` family underlying the exterior basis vector.
   change _ = ExteriorAlgebra.ιMulti K s.card
@@ -232,7 +232,7 @@ private theorem annihilate_listProd_self {n : ℕ}
   | nil => simp
   | cons i xs ih =>
       simp only [List.map_cons, List.reverse_cons, List.prod_append, List.prod_cons,
-        Module.End.mul_apply]
+        mul_apply_eq_comp]
       -- Expose application of the bundled endomorphism product.
       change (xs.map fun i ↦ (CliffordAlgebra.contractLeft
         (Q := (0 : QuadraticForm K W)) (b.coord i) : Module.End K _)).reverse.prod
@@ -291,7 +291,7 @@ private theorem matrixUnit_basis {n : ℕ} (b : Module.Basis (Fin n) K W)
     (s t u : Finset (Fin n)) :
     matrixUnit b s t (b.ExteriorAlgebra u) =
       if t = u then b.ExteriorAlgebra s else 0 := by
-  rw [matrixUnit, Module.End.mul_apply, Module.End.mul_apply, basisProjection_basis]
+  rw [matrixUnit, mul_apply_eq_comp, mul_apply_eq_comp, basisProjection_basis]
   split_ifs with h
   · subst u
     rw [annihilate_basis_self, create_basis_empty]

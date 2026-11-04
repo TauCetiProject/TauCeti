@@ -91,7 +91,7 @@ theorem extensionCone.neg_one_notMem_adjoinRoot (p : K[X])
     (hodd : Odd p.natDegree) :
     -1 ∉ extensionCone (algebraMap K (AdjoinRoot p)) := by
   induction hn : p.natDegree using Nat.strong_induction_on generalizing p with
-  | h n ih =>
+  | ind n ih =>
     intro hneg
     obtain ⟨r, _, hrodd, hrdeg, hrneg⟩ := extensionCone.exists_lt p hodd hneg
     exact ih r.natDegree (hrdeg.trans_le hn.le) r hrodd rfl hrneg

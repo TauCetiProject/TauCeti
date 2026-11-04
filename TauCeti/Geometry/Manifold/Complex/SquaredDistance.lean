@@ -10,6 +10,7 @@ public import TauCeti.Analysis.Complex.QuadraticLeviForm
 public import TauCeti.Geometry.Manifold.Complex.LeviForm
 public import TauCeti.Geometry.Manifold.ContMDiff.RestrictScalars
 public import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
+public import TauCeti.Geometry.Manifold.VectorBundle.Tangent.Basic
 
 /-!
 # Squared distance on complex manifolds
@@ -23,6 +24,9 @@ At a critical point the resulting intrinsic real Hessian identity bounds the rea
 Morse index by the complex dimension. These are the differential identities needed
 to apply Morse theory to squared-distance exhaustions of complex submanifolds.
 
+Along the inclusion of an open subset, squared distance is strictly plurisubharmonic at every
+point (`TauCeti.isManifoldStrictlyPlurisubharmonicAt_norm_sq_sub_subtypeVal`).
+
 ## References
 
 * J. Milnor, *Morse Theory*, Princeton University Press, 1963, Section 7.
@@ -33,7 +37,7 @@ The calculation uses `TauCeti.manifoldLeviForm_comp_apply` and
 
 public section
 
-open Complex Function Module
+open Complex Function Module TopologicalSpace
 open scoped Manifold
 
 namespace TauCeti
@@ -137,5 +141,13 @@ theorem manifoldMorseIndex_norm_sq_sub_comp_le [FiniteDimensional ℂ E]
     manifoldMorseIndex 𝓘(ℝ, E) (fun y ↦ ‖i y - a‖ ^ 2) x ≤ finrank ℂ E := by
   have hpos := (isManifoldStrictlyPlurisubharmonicAt_norm_sq_sub_comp_iff (a := a) hi).2 hinj
   exact hpos.manifoldMorseIndex_le (contMDiffAt_norm_sq_sub_comp hi) hcrit
+
+/-- Along the inclusion of an open subset of a complex inner product space, the squared distance
+from any point is strictly plurisubharmonic at every point. -/
+theorem isManifoldStrictlyPlurisubharmonicAt_norm_sq_sub_subtypeVal (U : Opens F) (a : F)
+    (x : U) : IsManifoldStrictlyPlurisubharmonicAt F (fun y : U ↦ ‖(y : F) - a‖ ^ 2) x := by
+  rw [isManifoldStrictlyPlurisubharmonicAt_norm_sq_sub_comp_iff
+    (contMDiff_subtype_val (I := 𝓘(ℂ, F)) x)]
+  exact Manifold.injective_mvfderiv_subtype_val x
 
 end TauCeti

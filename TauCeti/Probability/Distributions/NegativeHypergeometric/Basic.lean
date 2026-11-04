@@ -173,7 +173,7 @@ theorem sum_negativeHypergeometricWeight (hr : r ≤ K) (hK : K ≤ N) :
 theorem isProbabilityMeasure_negativeHypergeometricMeasure (hr : r ≤ K) (hK : K ≤ N) :
     IsProbabilityMeasure (negativeHypergeometricMeasure N K r) := by
   rw [isProbabilityMeasure_iff, negativeHypergeometricMeasure_eq_sum_dirac hr hK]
-  simpa [Measure.finsetSum_apply] using sum_negativeHypergeometricWeight hr hK
+  simpa [_root_.sum_apply] using sum_negativeHypergeometricWeight hr hK
 
 /-- Every negative hypergeometric law is finite, including the zero measure outside the valid
 parameter range. -/
@@ -191,7 +191,7 @@ instance isFiniteMeasure_negativeHypergeometricMeasure (N K r : ℕ) :
 @[simp]
 theorem negativeHypergeometricMeasure_singleton (hr : r ≤ K) (hK : K ≤ N) (k : ℕ) :
     negativeHypergeometricMeasure N K r {k} = negativeHypergeometricWeight N K r k := by
-  rw [negativeHypergeometricMeasure_eq_sum_dirac hr hK, Measure.finsetSum_apply]
+  rw [negativeHypergeometricMeasure_eq_sum_dirac hr hK, _root_.sum_apply]
   by_cases hk : k ≤ N - K
   · rw [Finset.sum_eq_single k]
     · simp

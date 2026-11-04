@@ -490,11 +490,11 @@ lemma inv_apply_zero_one (M : SpecialLinearGroup (Fin 2) R) :
 
 private lemma mul_apply_one_zero (M g : SpecialLinearGroup (Fin 2) R) :
     (M * g) 1 0 = M 1 0 * g 0 0 + M 1 1 * g 1 0 := by
-  simp [coe_mul, mul_apply, Fin.sum_univ_two]
+  simp [coe_mul, Matrix.mul_apply, Fin.sum_univ_two]
 
 private lemma mul_apply_zero_zero (M g : SpecialLinearGroup (Fin 2) R) :
     (M * g) 0 0 = M 0 0 * g 0 0 + M 0 1 * g 1 0 := by
-  simp [coe_mul, mul_apply, Fin.sum_univ_two]
+  simp [coe_mul, Matrix.mul_apply, Fin.sum_univ_two]
 
 private lemma inv_mul_one_zero_eq_zero
     (M g : SpecialLinearGroup (Fin 2) R)

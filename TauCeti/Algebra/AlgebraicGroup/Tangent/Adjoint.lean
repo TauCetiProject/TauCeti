@@ -186,24 +186,24 @@ noncomputable def adRepresentation :
   toFun g :=
     { toFun := adDerivation B g
       map_add' := fun d₁ d₂ => Derivation.ext fun a => by
-        simp only [Derivation.add_apply]
+        simp only [_root_.add_apply]
         rw [adDerivation_apply, adDerivation_apply, adDerivation_apply,
           Derivation.coe_add_linearMap, toConv_add, mul_add, add_mul,
           ofConv_add, LinearMap.add_apply]
       map_smul' := fun b d => Derivation.ext fun a => by
-        simp only [Derivation.smul_apply, RingHom.id_apply]
+        simp only [_root_.smul_apply, RingHom.id_apply]
         rw [adDerivation_apply, adDerivation_apply, Derivation.coe_smul_linearMap,
           toConv_smul, mul_smul_comm, smul_mul_assoc, ofConv_smul,
           LinearMap.smul_apply] }
   map_one' := by
     ext d a
-    simp only [LinearMap.coe_mk, AddHom.coe_mk, Module.End.one_apply]
+    simp only [LinearMap.coe_mk, AddHom.coe_mk, _root_.one_apply_eq_self]
     rw [adDerivation_apply, AlgHom.toLinearMap_convOne, inv_one,
       AlgHom.toLinearMap_convOne, one_mul, mul_one, ofConv_toConv,
       Derivation.coeFn_coe]
   map_mul' g h := by
     ext d a
-    simp only [LinearMap.coe_mk, AddHom.coe_mk, Module.End.mul_apply]
+    simp only [LinearMap.coe_mk, AddHom.coe_mk, _root_.mul_apply_eq_comp]
     rw [adDerivation_apply, adDerivation_apply, toConv_coe_adDerivation, mul_inv_rev,
       AlgHom.toLinearMap_convMul, AlgHom.toLinearMap_convMul]
     exact DFunLike.congr_fun (congrArg ofConv (by simp [mul_assoc])) a
