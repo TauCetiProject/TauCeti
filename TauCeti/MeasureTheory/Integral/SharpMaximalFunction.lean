@@ -168,7 +168,7 @@ measurable `f` leaves `f^#` unchanged. -/
 theorem sharpMaximalFunction_add_const [CompleteSpace F] (hf : AEStronglyMeasurable f μ) (b : F) :
     sharpMaximalFunction μ (fun y => f y + b) = sharpMaximalFunction μ f := by
   funext x
-  simp only [sharpMaximalFunction, setLAverage_enorm_add_const_sub hf]
+  simp only [sharpMaximalFunction, fun s => setLAverage_enorm_add_const_sub (s := s) hf.restrict]
 
 /-- The sharp maximal function is homogeneous: `(k • f)^# = ‖k‖ₑ f^#`. -/
 @[simp]
@@ -186,7 +186,7 @@ theorem sharpMaximalFunction_const_smul {𝕜 : Type*} [NormedDivisionRing 𝕜]
 theorem sharpMaximalFunction_add_le {g : X → F} (hf : AEStronglyMeasurable f μ)
     (hg : AEStronglyMeasurable g μ) (x : X) :
     sharpMaximalFunction μ (f + g) x ≤ sharpMaximalFunction μ f x + sharpMaximalFunction μ g x :=
-  sharpMaximalFunction_le fun _ _ hx => (setLAverage_enorm_add_sub_le hf hg _).trans
+  sharpMaximalFunction_le fun _ _ hx => (setLAverage_enorm_add_sub_le hf.restrict hg.restrict).trans
     (add_le_add (setLAverage_enorm_sub_setAverage_le_sharpMaximalFunction μ f hx)
       (setLAverage_enorm_sub_setAverage_le_sharpMaximalFunction μ g hx))
 

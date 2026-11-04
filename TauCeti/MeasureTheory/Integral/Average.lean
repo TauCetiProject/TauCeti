@@ -217,23 +217,24 @@ theorem setLAverage_enorm_sub_setAverage_le (hf : IntegrableOn f s μ) (c : F) :
           ENNReal.add_div, ENNReal.mul_div_cancel_right h0 htop, ← setLAverage_eq, two_mul]
 
 omit [NormedSpace ℝ F] [CompleteSpace F] in
-/-- On a set of finite measure, the average of `‖f - b‖ₑ` is infinite for an a.e. strongly
-measurable `f` that is not integrable there, whatever the constant `b`. -/
-theorem setLAverage_enorm_sub_const_eq_top (hf : AEStronglyMeasurable f μ) (hs : μ s ≠ ∞)
+/-- On a set of finite measure, the average of `‖f - b‖ₑ` is infinite for an `f` that is a.e.
+strongly measurable but not integrable there, whatever the constant `b`. -/
+theorem setLAverage_enorm_sub_const_eq_top (hf : AEStronglyMeasurable f (μ.restrict s))
+    (hs : μ s ≠ ∞)
     (hfs : ¬IntegrableOn f s μ) (b : F) :
     ⨍⁻ y in s, ‖f y - b‖ₑ ∂μ = ∞ := by
   have : IsFiniteMeasure (μ.restrict s) := isFiniteMeasure_restrict.2 hs
   have hint : ∫⁻ y in s, ‖f y - b‖ₑ ∂μ = ∞ := by
     by_contra h
     have hsub : IntegrableOn (fun y => f y - b) s μ :=
-      ⟨(hf.sub aestronglyMeasurable_const).restrict,
+      ⟨hf.sub aestronglyMeasurable_const,
         hasFiniteIntegral_iff_enorm.2 (lt_top_iff_ne_top.2 h)⟩
     simp_rw [sub_eq_add_neg] at hsub
     exact hfs (integrable_add_const_iff.1 hsub)
   rw [setLAverage_eq, hint, ENNReal.top_div_of_ne_top hs]
 
 /-- The mean oscillation of `f + b` on a set is that of `f`, for a constant `b`. -/
-theorem setLAverage_enorm_add_const_sub (hf : AEStronglyMeasurable f μ) (s : Set X) (b : F) :
+theorem setLAverage_enorm_add_const_sub (hf : AEStronglyMeasurable f (μ.restrict s)) (b : F) :
     ⨍⁻ y in s, ‖f y + b - ⨍ z in s, (f z + b) ∂μ‖ₑ ∂μ =
       ⨍⁻ y in s, ‖f y - ⨍ z in s, f z ∂μ‖ₑ ∂μ := by
   rcases eq_or_ne (μ s) 0 with h0 | h0
@@ -255,8 +256,8 @@ theorem setLAverage_enorm_add_const_sub (hf : AEStronglyMeasurable f μ) (s : Se
 
 omit [CompleteSpace F] in
 /-- The mean oscillation of `f + g` on a set is at most the sum of those of `f` and `g`. -/
-theorem setLAverage_enorm_add_sub_le {g : X → F} (hf : AEStronglyMeasurable f μ)
-    (hg : AEStronglyMeasurable g μ) (s : Set X) :
+theorem setLAverage_enorm_add_sub_le {g : X → F} (hf : AEStronglyMeasurable f (μ.restrict s))
+    (hg : AEStronglyMeasurable g (μ.restrict s)) :
     ⨍⁻ y in s, ‖f y + g y - ⨍ z in s, (f z + g z) ∂μ‖ₑ ∂μ ≤
       ⨍⁻ y in s, ‖f y - ⨍ z in s, f z ∂μ‖ₑ ∂μ + ⨍⁻ y in s, ‖g y - ⨍ z in s, g z ∂μ‖ₑ ∂μ := by
   rcases eq_or_ne (μ s) ∞ with htop | htop
@@ -277,7 +278,7 @@ theorem setLAverage_enorm_add_sub_le {g : X → F} (hf : AEStronglyMeasurable f 
         lintegral_mono fun y => by
           rw [add_sub_add_comm]
           exact enorm_add_le _ _
-    _ = _ := lintegral_add_left' (hf.sub aestronglyMeasurable_const).restrict.enorm _
+    _ = _ := lintegral_add_left' (hf.sub aestronglyMeasurable_const).enorm _
 
 end Oscillation
 
