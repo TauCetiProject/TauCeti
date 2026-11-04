@@ -5,7 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Complex.PlaneSeparation.Basic
+public import TauCeti.Analysis.Complex.ContinuousLog.Circle
+import TauCeti.Analysis.Complex.AtInfinity
 import Mathlib.Analysis.Complex.BranchLogRoot
 import Mathlib.Analysis.LocallyConvex.WithSeminorms
 
@@ -72,7 +73,7 @@ theorem finite_setOfPred_eq_zero_of_eventually_eq_pow_mul
   exact (hK.of_isClosed_subset (isClosed_eq hf continuous_const) (by simpa using hsub)).finite hdis
 
 /-- A local power factorization with a positive exponent forces a zero at its centre. -/
-private theorem support_subset_setOf_eq_zero
+theorem support_subset_setOf_eq_zero_of_eventually_eq_pow_mul
     (hn : ∀ z, ∃ v : ℂ → ℂ, ∀ᶠ w in 𝓝 z, f w = (w - z) ^ n z * v w) :
     Function.support n ⊆ {w | f w = 0} := fun z hz ↦ by
   obtain ⟨v, hfz⟩ := hn z
@@ -85,7 +86,7 @@ theorem finite_support_of_eventually_eq_pow_mul
       ∀ᶠ w in 𝓝 z, f w = (w - z) ^ n z * v w)
     (htail : ∀ᶠ w in cocompact ℂ, f w ≠ 0) : (Function.support n).Finite :=
   (finite_setOfPred_eq_zero_of_eventually_eq_pow_mul hn htail).subset
-    (support_subset_setOf_eq_zero fun z ↦ (hn z).imp fun _ hv ↦ hv.2.2)
+    (support_subset_setOf_eq_zero_of_eventually_eq_pow_mul fun z ↦ (hn z).imp fun _ hv ↦ hv.2.2)
 
 /-- **Global factorization off the zeros.** A continuous function whose zeros lie in a finite set
 `s`, and which factors as `(w - z) ^ n z * v w` near each `z ∈ s` with `v` continuous at `z` and
@@ -125,7 +126,8 @@ theorem exists_continuous_eq_exp_mul_prod_pow (hf : Continuous f) (s : Finset �
       exact ((hvc w₀ hw₀).div (hQc w₀).continuousAt (hQ0 w₀)).congr hev.symm
     · have hev : g =ᶠ[𝓝 w₀] fun w ↦ f w / P w := by
         filter_upwards [s.finite_toSet.isClosed.isOpen_compl.mem_nhds hw₀] with w hw
-        simp only [hgdef, (show w ∉ s from hw), ite_false]
+        rw [mem_compl_iff, Finset.mem_coe] at hw
+        simp only [hgdef, hw, ite_false]
       have hPc : Continuous P := by fun_prop
       exact (hf.continuousAt.div hPc.continuousAt (hP0 w₀ hw₀)).congr hev.symm
   have hfg : ∀ w, f w = g w * P w := fun w ↦ by
@@ -147,34 +149,6 @@ theorem exists_continuous_eq_exp_mul_prod_pow (hf : Continuous f) (s : Finset �
   rw [hfg w, ← hL (mem_univ w)]
   rfl
 
-/-- A function continuous off the origin and tending to one at infinity has its principal
-logarithm on every large enough circle about the origin. -/
-private theorem exists_forall_hasContinuousLogOn_sphere {F : ℂ → ℂ}
-    (hF : Tendsto F (cocompact ℂ) (𝓝 1)) (hc : ∀ w ≠ 0, ContinuousAt F w) :
-    ∃ R, ∀ ρ, R ≤ ρ → HasContinuousLogOn F (sphere 0 ρ) := by
-  have hev : ∀ᶠ w in Bornology.cobounded ℂ, F w ∈ slitPlane := by
-    rw [Metric.cobounded_eq_cocompact]
-    exact hF.eventually_mem (isOpen_slitPlane.mem_nhds one_mem_slitPlane)
-  obtain ⟨R, -, hR⟩ := Filter.hasBasis_cobounded_norm.eventually_iff.mp hev
-  refine ⟨max R 0 + 1, fun ρ hρ ↦ ?_⟩
-  have hS : ∀ w ∈ sphere (0 : ℂ) ρ, R ≤ ‖w‖ ∧ w ≠ 0 := fun w hw ↦ by
-    rw [mem_sphere_zero_iff_norm.mp hw]
-    refine ⟨by linarith [le_max_left R 0], fun h ↦ ?_⟩
-    simp only [h, mem_sphere_zero_iff_norm, norm_zero] at hw
-    linarith [le_max_right R 0]
-  exact hasContinuousLogOn_of_mapsTo_slitPlane
-    (fun w hw ↦ (hc w (hS w hw).2).continuousWithinAt) fun w hw ↦ hR (hS w hw).1
-
-/-- A product of powers of `1 - z * w⁻¹` tends to one as `w` tends to infinity. -/
-private theorem tendsto_prod_one_sub_mul_inv_pow (s : Finset ℂ) (n : ℂ → ℕ) :
-    Tendsto (fun w ↦ ∏ z ∈ s, (1 - z * w⁻¹) ^ n z) (cocompact ℂ) (𝓝 1) := by
-  have hinv : Tendsto (fun w : ℂ ↦ w⁻¹) (cocompact ℂ) (𝓝 0) := by
-    rw [← Metric.cobounded_eq_cocompact]
-    exact tendsto_inv₀_cobounded
-  have := tendsto_finsetProd s fun z _ ↦
-    ((tendsto_const_nhds (x := (1 : ℂ))).sub (tendsto_const_nhds (x := z).mul hinv)).pow (n z)
-  simpa only [mul_zero, sub_zero, one_pow, Finset.prod_const_one] using this
-
 /-- **The argument principle for functions with continuous local power factorizations.** If `f`
 factors as `(w - z) ^ n z * v w` near every `z` with `v` continuous at `z` and
 nonzero there, and `f z * ((z / |z|) ^ m)⁻¹ → 1` at infinity, then the multiplicities add up to
@@ -192,7 +166,8 @@ theorem natCast_finsum_eq_of_tendsto_mul_inv_zpow
   have hfin := finite_setOfPred_eq_zero_of_eventually_eq_pow_mul hn htail
   set s := hfin.toFinset with hsdef
   have hsupp : Function.support n ⊆ s := fun z hz ↦ by
-    simpa [hsdef] using support_subset_setOf_eq_zero (fun z ↦ (hn z).imp fun _ hv ↦ hv.2.2) hz
+    simpa [hsdef] using support_subset_setOf_eq_zero_of_eventually_eq_pow_mul
+      (fun z ↦ (hn z).imp fun _ hv ↦ hv.2.2) hz
   obtain ⟨L, hLc, hL⟩ := exists_continuous_eq_exp_mul_prod_pow hf s (fun z _ ↦ hn z)
     (fun w hw ↦ by simpa [hsdef] using hw)
   rw [finsum_eq_sum_of_support_subset n hsupp]

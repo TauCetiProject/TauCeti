@@ -14,7 +14,8 @@ import Mathlib.Topology.Bornology.BoundedOperation
 
 If `z * ψ z` has a finite limit along a filter approaching infinity, then `ψ z` tends to zero.
 If `ζ` tends to infinity, then so does the normalized coordinate `(ζ - c) / b`, for `b ≠ 0`; in
-particular so does `(q + g⁻¹ - c) / b` when `g` tends to `0` without vanishing.
+particular so does `(q + g⁻¹ - c) / b` when `g` tends to `0` without vanishing. A finite product
+of powers of `1 - z * w⁻¹` tends to one as `w` tends to infinity.
 -/
 
 public section
@@ -49,6 +50,16 @@ theorem tendsto_cobounded_div_of_tendsto_nhdsNE_zero {α : Type*} {l : Filter α
     Tendsto (fun a => (q + (g a)⁻¹ - c) / b) l (cobounded ℂ) :=
   tendsto_sub_div_of_tendsto_cobounded hb
     ((tendsto_const_add_cobounded q).comp (tendsto_inv₀_nhdsNE_zero.comp hg))
+
+/-- A product of powers of `1 - z * w⁻¹` tends to one as `w` tends to infinity. -/
+theorem tendsto_prod_one_sub_mul_inv_pow (s : Finset ℂ) (n : ℂ → ℕ) :
+    Tendsto (fun w ↦ ∏ z ∈ s, (1 - z * w⁻¹) ^ n z) (cocompact ℂ) (𝓝 1) := by
+  have hinv : Tendsto (fun w : ℂ ↦ w⁻¹) (cocompact ℂ) (𝓝 0) := by
+    rw [← Metric.cobounded_eq_cocompact]
+    exact tendsto_inv₀_cobounded
+  have := tendsto_finsetProd s fun z _ ↦
+    ((tendsto_const_nhds (x := (1 : ℂ))).sub (tendsto_const_nhds (x := z).mul hinv)).pow (n z)
+  simpa only [mul_zero, sub_zero, one_pow, Finset.prod_const_one] using this
 
 end TauCeti
 
