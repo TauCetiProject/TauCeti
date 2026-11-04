@@ -61,22 +61,12 @@ theorem frequency_one (x : ℤ × ℤ) : frequency 1 x = (2 * Real.pi * I) * x.2
 /-- Fourier frequencies grow at most linearly in the rapid-decay weight. -/
 theorem norm_frequency_le (j : Fin 2) (x : ℤ × ℤ) :
     ‖frequency j x‖ ≤ ‖(2 * Real.pi * I : ℂ)‖ * weight x := by
-  have hfst : |(x.1 : ℝ)| ≤ weight x := by
-    calc |(x.1 : ℝ)| ≤ 1 + |(x.1 : ℝ)| := le_add_of_nonneg_left zero_le_one
-      _ ≤ (1 + |(x.1 : ℝ)|) * (1 + |(x.2 : ℝ)|) :=
-        le_mul_of_one_le_right (by positivity) (le_add_of_nonneg_right (abs_nonneg _))
-      _ = weight x := (weight_def x).symm
-  have hsnd : |(x.2 : ℝ)| ≤ weight x := by
-    calc |(x.2 : ℝ)| ≤ 1 + |(x.2 : ℝ)| := le_add_of_nonneg_left zero_le_one
-      _ ≤ (1 + |(x.1 : ℝ)|) * (1 + |(x.2 : ℝ)|) :=
-        le_mul_of_one_le_left (by positivity) (le_add_of_nonneg_right (abs_nonneg _))
-      _ = weight x := (weight_def x).symm
   simp only [frequency_apply]
   split_ifs
   · rw [norm_mul, Complex.norm_intCast]
-    exact mul_le_mul_of_nonneg_left hfst (norm_nonneg _)
+    exact mul_le_mul_of_nonneg_left (abs_fst_le_weight x) (norm_nonneg _)
   · rw [norm_mul, Complex.norm_intCast]
-    exact mul_le_mul_of_nonneg_left hsnd (norm_nonneg _)
+    exact mul_le_mul_of_nonneg_left (abs_snd_le_weight x) (norm_nonneg _)
 
 /-- Multiplication by either coordinate frequency preserves rapid decay. -/
 theorem IsRapidDecay.frequency_mul {a : ℤ × ℤ → ℂ} (ha : IsRapidDecay a) (j : Fin 2) :

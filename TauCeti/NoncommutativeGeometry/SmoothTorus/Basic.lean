@@ -90,6 +90,20 @@ theorem one_le_weight (x : ℤ × ℤ) : 1 ≤ weight x :=
   one_le_mul_of_one_le_of_one_le (le_add_of_nonneg_right (abs_nonneg _))
     (le_add_of_nonneg_right (abs_nonneg _))
 
+/-- The absolute value of the first coordinate is bounded by the rapid-decay weight. -/
+theorem abs_fst_le_weight (x : ℤ × ℤ) : |(x.1 : ℝ)| ≤ weight x := by
+  calc |(x.1 : ℝ)| ≤ 1 + |(x.1 : ℝ)| := le_add_of_nonneg_left zero_le_one
+    _ ≤ (1 + |(x.1 : ℝ)|) * (1 + |(x.2 : ℝ)|) :=
+      le_mul_of_one_le_right (by positivity) (le_add_of_nonneg_right (abs_nonneg _))
+    _ = weight x := (weight_def x).symm
+
+/-- The absolute value of the second coordinate is bounded by the rapid-decay weight. -/
+theorem abs_snd_le_weight (x : ℤ × ℤ) : |(x.2 : ℝ)| ≤ weight x := by
+  calc |(x.2 : ℝ)| ≤ 1 + |(x.2 : ℝ)| := le_add_of_nonneg_left zero_le_one
+    _ ≤ (1 + |(x.1 : ℝ)|) * (1 + |(x.2 : ℝ)|) :=
+      le_mul_of_one_le_left (by positivity) (le_add_of_nonneg_right (abs_nonneg _))
+    _ = weight x := (weight_def x).symm
+
 theorem weight_pos (x : ℤ × ℤ) : 0 < weight x :=
   zero_lt_one.trans_le (one_le_weight x)
 
