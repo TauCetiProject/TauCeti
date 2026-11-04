@@ -111,14 +111,21 @@ theorem toAlmost_map_homLinearEquiv (M N : ModuleCat.{u} V)
     erw [eqToIso_refl (S.firm_obj_obj M), Iso.refl_inv, Category.id_comp]
     apply ModuleCat.hom_ext
     exact S.firmInclusionAdj_counit_app_hom M
-  -- Reduce to firm representatives, then cancel the comparison isomorphism's naturality squares.
-  apply (firmEquiv S).functor.map_injective
-  rw [Functor.map_comp, ← Functor.comp_map, ← NatIso.naturality_2 (toAlmostCompFirmIso S),
-    ← Functor.comp_map, ← NatIso.naturality_2 (toAlmostCompFirmIso S),
-    ofHom_homLinearEquiv, Functor.map_comp, firm_map_homEquiv]
+  -- Transport ordinary maps through the comparison once, independently of their composites.
+  have transport {X Y : ModuleCat.{u} V} (g : X ⟶ Y) :
+      (firmEquiv S).functor.map ((toAlmost S).map g) =
+        (toAlmostCompFirmIso S).hom.app X ≫ S.firm.map g ≫
+          (toAlmostCompFirmIso S).inv.app Y := by
+    simpa only [Functor.comp_map] using
+      (NatIso.naturality_2 (toAlmostCompFirmIso S) g).symm
+  -- On firm representatives the action equation cancels the comparison isomorphisms.
   have act_firm := congrArg S.firm.map act
   simp only [Functor.map_comp] at act_firm
-  simp [← act_firm, Category.assoc]
+  apply (firmEquiv S).functor.map_injective
+  simp only [Functor.map_comp, transport]
+  rw [ofHom_homLinearEquiv]
+  simp only [Functor.map_comp, firm_map_homEquiv, ← act_firm, Category.assoc,
+    Iso.hom_inv_id_app, Functor.comp_obj, Category.comp_id]
 
 /-- Recover an almost morphism from its linear representative by inverting the almostified
 action map. -/
