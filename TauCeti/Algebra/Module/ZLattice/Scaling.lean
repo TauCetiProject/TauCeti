@@ -47,7 +47,8 @@ first statement does not extend to `|c| < 1`.
 * `ZLattice.IsIntegral.sqrt_smul`, `ZLattice.IsEven.sqrt_smul`,
   `ZLattice.IsIntegral.isEven_sqrt_smul`: `√m • L` is integral when `L` is, and even when `L` is
   even or when `L` is integral and `m` is even.
-* `ZLattice.det_sqrt_smul`: `det (√m • L) = mⁿ det L` for `m ≠ 0`, and
+* `ZLattice.det_sqrt_smul`, `ZLattice.IsIntegral.card_discriminantGroup_sqrt_smul`:
+  `det (√m • L) = mⁿ det L` for `m ≠ 0` (and `|A_{√m • L}| = mⁿ |A_L|` for integral `L`), and
   `ZLattice.det_sqrt_smul_span_orthonormalBasis`: `det (√m • ℤⁿ) = mⁿ`.
 * `ZLattice.IsIntegral.not_isUnimodular_smul`, `ZLattice.IsIntegral.not_isUnimodular_sqrt_smul`,
   `ZLattice.IsUnimodular.not_isUnimodular_smul`: in positive dimension, scaling an integral lattice
@@ -214,6 +215,18 @@ theorem det_sqrt_smul_span_orthonormalBasis {ι : Type*} [Fintype ι] (b : Ortho
   rw [det_sqrt_smul _ hm, hu.det_eq_one, mul_one]
 
 variable {L}
+
+omit [MeasurableSpace E] [BorelSpace E] in
+/-- Scaling an integral full lattice `L` of rank `n` by `√m` (`m ≠ 0`) multiplies the order of its
+discriminant group by `mⁿ`. -/
+theorem IsIntegral.card_discriminantGroup_sqrt_smul (h : IsIntegral L) {m : ℕ} (hm : m ≠ 0) :
+    Nat.card (DiscriminantGroup (√(m : ℝ) • L)) =
+      m ^ finrank ℝ E * Nat.card (DiscriminantGroup L) := by
+  borelize E
+  have : NeZero √(m : ℝ) := ⟨Real.sqrt_ne_zero'.mpr (Nat.cast_pos.mpr (Nat.pos_of_ne_zero hm))⟩
+  refine Nat.cast_injective (R := ℝ) ?_
+  rw [← (h.sqrt_smul m).det_eq_card_discriminantGroup, det_sqrt_smul L hm,
+    h.det_eq_card_discriminantGroup, Nat.cast_mul, Nat.cast_pow]
 
 /-- In positive dimension, scaling a full integral lattice by `c` with `1 < |c|` never gives a
 unimodular lattice: the determinant becomes `c²ⁿ det L > 1`. -/
