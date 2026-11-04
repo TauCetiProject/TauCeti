@@ -5,10 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.InnerProductSpace.Basic
 public import Mathlib.Analysis.Normed.Module.FiniteDimension
 public import Mathlib.Analysis.Normed.Operator.BoundedLinearMaps
 public import Mathlib.Analysis.RCLike.Lemmas
+public import TauCeti.Analysis.InnerProductSpace.Contraction
 public import TauCeti.Topology.Algebra.Module.Determinant
 
 /-!
@@ -42,12 +42,12 @@ over any nontrivially normed field, and the existence theorem holds over any loc
   contraction from a nonzero space has norm one.
 * `ContinuousLinearEquiv.IsMaxVolumeEllipsoid.exists_norm_eq_one_and_norm_apply_eq_one`: it has a
   contact point, a unit vector `u` with `‖T u‖ = 1`.
-* `ContinuousLinearMap.re_inner_le_norm_mul_norm_apply`: if `S` is a contraction from an inner
-  product space and `‖S u‖ = ‖u‖`, then `re ⟪x, u⟫ ≤ ‖u‖ * ‖S x‖` for all `x`. At a contact point
-  of John's position, the functional `re ⟪·, u⟫` is therefore a support functional of the unit
-  ball of the norm `x ↦ ‖T x‖`.
-* `ContinuousLinearMap.norm_inner_le_norm_mul_norm_apply`: under the same hypotheses,
-  `‖⟪u, x⟫‖ ≤ ‖u‖ * ‖S x‖`.
+
+At a contact point `u` of John's position, the inequalities
+`ContinuousLinearMap.re_inner_le_norm_mul_norm_apply` and
+`ContinuousLinearMap.norm_inner_le_norm_mul_norm_apply` of
+`TauCeti.Analysis.InnerProductSpace.Contraction` show that `re ⟪·, u⟫` is a support functional of
+the unit ball of the norm `x ↦ ‖T x‖`, and that `‖⟪u, x⟫‖ ≤ ‖T x‖`.
 
 ## References
 
@@ -57,7 +57,7 @@ over any nontrivially normed field, and the existence theorem holds over any loc
 
 public section
 
-open Module Metric Filter Topology ComplexConjugate
+open Module Metric
 
 namespace ContinuousLinearEquiv
 
@@ -202,72 +202,3 @@ theorem exists_norm_eq_one_and_norm_apply_eq_one [Nontrivial E] (hT : T.IsMaxVol
     exact hmax (mem_sphere_zero_iff_norm.2 hx)
 
 end ContinuousLinearEquiv.IsMaxVolumeEllipsoid
-
-namespace ContinuousLinearMap
-
-variable {𝕜 E F : Type*} [RCLike 𝕜] [NormedAddCommGroup E] [InnerProductSpace 𝕜 E]
-  [NormedAddCommGroup F] [NormedSpace 𝕜 F]
-
-local notation "⟪" x ", " y "⟫" => inner 𝕜 x y
-
-open RCLike in
-/-- If a contraction `S` from an inner product space preserves the norm of `u`, then
-`re ⟪x, u⟫ ≤ ‖u‖ * ‖S x‖` for every `x`. For a unit vector `u` with `‖S u‖ = 1`, the functional
-`re ⟪·, u⟫` is thus a support functional at `u` of the unit ball of the seminorm `x ↦ ‖S x‖`
-(a norm when `S` is injective), which contains the Euclidean unit ball and touches its boundary
-at `u`. -/
-theorem re_inner_le_norm_mul_norm_apply {S : E →L[𝕜] F} (hS : ‖S‖ ≤ 1) {u : E}
-    (hu : ‖S u‖ = ‖u‖) (x : E) : re ⟪x, u⟫ ≤ ‖u‖ * ‖S x‖ := by
-  set v := x - u
-  -- For `0 < t ≤ 1`, the point `u + t v` lies on the segment from `u` to `x`, while `u - t v`
-  -- is controlled by the Euclidean norm; their sum is `2 u`. This gives an inequality whose
-  -- error term `t * ‖v‖ ^ 2 / 2` vanishes as `t → 0`.
-  have key : ∀ t : ℝ, 0 < t → t < 1 → re ⟪x, u⟫ - t * ‖v‖ ^ 2 / 2 ≤ ‖u‖ * ‖S x‖ := by
-    intro t ht₀ ht₁
-    have h₁ : ‖S (u - (t : 𝕜) • v)‖ ≤ ‖u - (t : 𝕜) • v‖ :=
-      (S.le_of_opNorm_le hS _).trans_eq (one_mul _)
-    have h₂ : ‖S (u + (t : 𝕜) • v)‖ ≤ (1 - t) * ‖u‖ + t * ‖S x‖ := by
-      have : u + (t : 𝕜) • v = ((1 - t : ℝ) : 𝕜) • u + (t : 𝕜) • x := by
-        simp only [v, smul_sub, ofReal_sub, ofReal_one, sub_smul, one_smul]
-        abel
-      rw [this, map_add, map_smul, map_smul]
-      refine (norm_add_le _ _).trans_eq ?_
-      rw [norm_smul, norm_smul, norm_ofReal, norm_ofReal, abs_of_pos (sub_pos.2 ht₁),
-        abs_of_pos ht₀, hu]
-    have h₃ : 2 * ‖u‖ ≤ ‖S (u + (t : 𝕜) • v)‖ + ‖S (u - (t : 𝕜) • v)‖ := by
-      calc 2 * ‖u‖ = ‖S (u + (t : 𝕜) • v) + S (u - (t : 𝕜) • v)‖ := by
-            rw [← map_add, add_add_sub_cancel, ← two_smul 𝕜, map_smul, norm_smul, hu]
-            simp
-        _ ≤ _ := norm_add_le _ _
-    have h₄ : ‖u - (t : 𝕜) • v‖ ^ 2 = ‖u‖ ^ 2 - 2 * t * re ⟪u, v⟫ + t ^ 2 * ‖v‖ ^ 2 := by
-      rw [@norm_sub_sq 𝕜, inner_smul_right, re_ofReal_mul, norm_smul, norm_ofReal,
-        abs_of_pos ht₀]
-      ring
-    have h₅ : re ⟪x, u⟫ = ‖u‖ ^ 2 + re ⟪u, v⟫ := by
-      rw [← inner_re_symm, show x = u + v by simp [v], inner_add_right, map_add,
-        inner_self_eq_norm_sq]
-    have h₆ : t * (re ⟪x, u⟫ - t * ‖v‖ ^ 2 / 2) ≤ t * (‖u‖ * ‖S x‖) := by
-      nlinarith [norm_nonneg u, norm_nonneg (u - (t : 𝕜) • v),
-        sq_nonneg (‖u‖ - ‖u - (t : 𝕜) • v‖)]
-    exact le_of_mul_le_mul_left h₆ ht₀
-  have hlim : Tendsto (fun t : ℝ ↦ re ⟪x, u⟫ - t * ‖v‖ ^ 2 / 2) (𝓝[>] 0) (𝓝 (re ⟪x, u⟫)) := by
-    have : Continuous fun t : ℝ ↦ re ⟪x, u⟫ - t * ‖v‖ ^ 2 / 2 := by fun_prop
-    simpa using (this.tendsto 0).mono_left nhdsWithin_le_nhds
-  exact le_of_tendsto hlim <| by
-    filter_upwards [Ioo_mem_nhdsGT (zero_lt_one' ℝ)] with t ht using key t ht.1 ht.2
-
-open RCLike in
-/-- If a contraction `S` from an inner product space preserves the norm of `u`, then
-`‖⟪u, x⟫‖ ≤ ‖u‖ * ‖S x‖` for every `x`. In particular, the contact points `u` of a
-maximal-volume ellipsoid `T` satisfy `‖⟪u, x⟫‖ ≤ ‖T x‖`. -/
-theorem norm_inner_le_norm_mul_norm_apply {S : E →L[𝕜] F} (hS : ‖S‖ ≤ 1) {u : E}
-    (hu : ‖S u‖ = ‖u‖) (x : E) : ‖⟪u, x⟫‖ ≤ ‖u‖ * ‖S x‖ := by
-  rw [norm_inner_symm]
-  -- Rotate `x` by a unit scalar `conj c` with `c * ⟪x, u⟫ = ‖⟪x, u⟫‖`, so that the rotated inner
-  -- product `⟪conj c • x, u⟫ = c * ⟪x, u⟫` is real.
-  obtain ⟨c, hc, hcz⟩ := exists_norm_eq_mul_self ⟪x, u⟫
-  have h := S.re_inner_le_norm_mul_norm_apply hS hu (conj c • x)
-  rwa [inner_smul_left, conj_conj, ← hcz, ofReal_re, map_smul, norm_smul, norm_conj, hc,
-    one_mul] at h
-
-end ContinuousLinearMap
