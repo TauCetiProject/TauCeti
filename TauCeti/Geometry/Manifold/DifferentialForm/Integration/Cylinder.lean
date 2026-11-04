@@ -84,7 +84,7 @@ variable [IsManifold I 1 M]
 
 /-- The inner integral of a rectangle integral of a continuous form over a `C¹` map is a
 continuous function of the first coordinate. -/
-private theorem continuous_integral_mpullback {φ : RoughForm I M F 2} (hφ : IsSmoothForm I 0 φ)
+theorem continuous_integral_mpullback {φ : RoughForm I M F 2} (hφ : IsSmoothForm I 0 φ)
     {u : ℝ × ℝ → M} (hu : ContMDiff 𝓘(ℝ, ℝ × ℝ) I 1 u) (a₂ b₂ : ℝ) :
     Continuous fun s ↦ ∫ t in a₂..b₂, mpullback 𝓘(ℝ, ℝ × ℝ) I u φ (s, t) ![(1, 0), (0, 1)] :=
   intervalIntegral.continuous_parametric_intervalIntegral_of_continuous' (μ := volume)
@@ -263,38 +263,6 @@ theorem rectangleIntegral_rectangleTrans [IsManifold I 1 M] {φ : RoughForm I M 
     norm_num [Real.smoothTransition.zero_of_nonpos]
 
 /-! ### Green's formula -/
-
-/-- The line integral of a one-form along the curve `t ↦ u (x, t)` is the integral of the pullback
-of the form along `u` on the second coordinate vector. -/
-private theorem pathIntegral_apply_snd {α : RoughForm I M F 1} {u : ℝ × ℝ → M}
-    (hu : ContMDiff 𝓘(ℝ, ℝ × ℝ) I 1 u) (x a b : ℝ) :
-    pathIntegral α (fun t ↦ u (x, t)) a b =
-      ∫ t in a..b, mpullback 𝓘(ℝ, ℝ × ℝ) I u α (x, t) fun _ ↦ (0, 1) := by
-  rw [pathIntegral_eq_integral_mpullback]
-  refine intervalIntegral.integral_congr fun t _ ↦ ?_
-  have hL : HasFDerivAt (fun t : ℝ ↦ (x, t)) ((0 : ℝ →L[ℝ] ℝ).prod (ContinuousLinearMap.id ℝ ℝ))
-      t := (hasFDerivAt_const x t).prodMk (hasFDerivAt_id t)
-  have := mpullback_comp_apply_of_hasFDerivAt hL ((hu _).mdifferentiableAt one_ne_zero) α
-  simp only [Function.comp_def] at this
-  rw [this]
-  refine (ContinuousAlternatingMap.compContinuousLinearMap_apply _ _ _).trans ?_
-  congr 1
-
-/-- The line integral of a one-form along the curve `s ↦ u (s, y)` is the integral of the pullback
-of the form along `u` on the first coordinate vector. -/
-private theorem pathIntegral_apply_fst {α : RoughForm I M F 1} {u : ℝ × ℝ → M}
-    (hu : ContMDiff 𝓘(ℝ, ℝ × ℝ) I 1 u) (y a b : ℝ) :
-    pathIntegral α (fun s ↦ u (s, y)) a b =
-      ∫ s in a..b, mpullback 𝓘(ℝ, ℝ × ℝ) I u α (s, y) fun _ ↦ (1, 0) := by
-  rw [pathIntegral_eq_integral_mpullback]
-  refine intervalIntegral.integral_congr fun s _ ↦ ?_
-  have hL : HasFDerivAt (fun s : ℝ ↦ (s, y)) ((ContinuousLinearMap.id ℝ ℝ).prod (0 : ℝ →L[ℝ] ℝ))
-      s := (hasFDerivAt_id s).prodMk (hasFDerivAt_const y s)
-  have := mpullback_comp_apply_of_hasFDerivAt hL ((hu _).mdifferentiableAt one_ne_zero) α
-  simp only [Function.comp_def] at this
-  rw [this]
-  refine (ContinuousAlternatingMap.compContinuousLinearMap_apply _ _ _).trans ?_
-  congr 1
 
 variable [IsManifold I 2 M]
 
