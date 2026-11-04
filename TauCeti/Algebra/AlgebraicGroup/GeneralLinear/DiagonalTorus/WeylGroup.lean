@@ -130,7 +130,8 @@ private theorem pointsMulEquiv_toConv_domCongr_comp_diagonalTorusCoordinateMap
     (toConv (diagonalTorusCoordinateMap (R := R) (N := N)).hom.toAlgHom)
   rw [AlgHom.mapValue_apply, ofConv_toConv] at hmap
   rw [hmap, pointsMulEquiv_toConv_diagonalTorusCoordinateMap, map_diagGL]
-  rfl
+  refine congrArg diagGL (funext fun i ↦ Units.ext ?_)
+  simp [coe_genericDiagonal, coe_mapGenericDiagonal]
 
 /-- **The normalization equation on the generic point.** If inverse conjugation by a rational
 point `g` restricts to the diagonal torus as the coordinate map of `w`, then conjugating the

@@ -65,7 +65,8 @@ theorem mapDomain_formalCharacter_of_mem_weylGroup {w : MulAut X} (hw : w ∈ we
   have hy := finrank_weightSpace_apply_of_mem_weylGroup π hπ (V := V) hw (w.symm y)
   rw [MulEquiv.apply_symm_apply, DiagonalizableGroup.weightSpace_eq_comoduleWeightSpace,
     DiagonalizableGroup.weightSpace_eq_comoduleWeightSpace] at hy
-  simpa [hy] using
-    (Finsupp.mapDomain_equiv_apply (f := w.toEquiv) (Comodule.formalCharacter k X V).coeff y)
+  rw [MonoidAlgebra.coeff_mapDomain, ← MulEquiv.coe_toEquiv, Finsupp.mapDomain_equiv_apply,
+    ← MulEquiv.toEquiv_symm, MulEquiv.coe_toEquiv, Comodule.formalCharacter_coeff,
+    Comodule.formalCharacter_coeff, hy]
 
 end BialgHom
