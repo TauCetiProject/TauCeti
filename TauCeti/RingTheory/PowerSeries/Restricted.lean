@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.RingTheory.PowerSeries.Order
 public import Mathlib.RingTheory.PowerSeries.Restricted
 public import Mathlib.RingTheory.PowerSeries.Trunc
 public import TauCeti.Analysis.Asymptotics.Lemmas
@@ -43,6 +44,8 @@ an algebra homomorphism; it gives the comparisons used in Weierstrass division a
   `TauCeti.PowerSeries.coe_smul_isRestrictedSubring`: scalar maps and scalar multiplication agree
   with those on the ambient formal series.
 * `TauCeti.PowerSeries.polynomialToRestricted`: the polynomial inclusion as an algebra map.
+* `PowerSeries.order_eq_of_isUnit_X_pow_mul_finprod_eq`: in `f = u * (X ^ a * ∏ᶠ m, g m)` with a
+  restricted unit `u` and constant-one polynomials `g m`, `f.order = a`.
 -/
 
 public section
@@ -282,5 +285,33 @@ theorem IsRestricted.mul_of_abs_lt (hf : f.IsRestricted c') (hg : g.IsRestricted
     _ = (n + 1 : ℝ) * ρ ^ n * (A * B) := by
       rw [Finset.sum_const, Finset.Nat.card_antidiagonal]
       ring
+
+/-- In a factorisation `f = u * (X ^ a * ∏ᶠ m, g m)` on a closed disc of radius `r`, where `u` is a
+restricted unit and every factor `g m` has constant coefficient `1`, the exponent `a` is the order
+of vanishing `f.order` at zero. -/
+theorem order_eq_of_isUnit_X_pow_mul_finprod_eq {R ι : Type*} [NormedCommRing R]
+    [IsUltrametricDist R] [Nontrivial R] {f : PowerSeries R} {r : ℝ}
+    {u : IsRestricted.subring (R := R) r} (hu : IsUnit u) {a : ℕ} {g : ι → Polynomial R}
+    (hfin : (Function.mulSupport g).Finite) (hc0 : ∀ m, (g m).coeff 0 = 1)
+    (hmul : (u : PowerSeries R) * (((Polynomial.X ^ a * ∏ᶠ m, g m : Polynomial R) :
+      PowerSeries R)) = f) :
+    f.order = a := by
+  set Q : PowerSeries R := ((∏ᶠ m, g m : Polynomial R) : PowerSeries R)
+  have hmul' : (X : PowerSeries R) ^ a * ((u : PowerSeries R) * Q) = f := by
+    rw [← hmul, Polynomial.coe_mul, Polynomial.coe_pow, Polynomial.coe_X]
+    ring
+  have hQ0 : constantCoeff Q = 1 := by
+    rw [Polynomial.constantCoeff_coe, ← Polynomial.constantCoeff_apply,
+      map_finprod Polynomial.constantCoeff hfin,
+      finprod_eq_one_of_forall_eq_one fun m => by simpa using hc0 m]
+  have hfa : f.coeff a ≠ 0 := by
+    have ha : ((X : PowerSeries R) ^ a * ((u : PowerSeries R) * Q)).coeff (0 + a) = f.coeff a := by
+      rw [zero_add, hmul']
+    rw [← ha, coeff_X_pow_mul, coeff_zero_eq_constantCoeff_apply, map_mul, hQ0, mul_one]
+    exact ((hu.map (IsRestricted.subring r).subtype).map constantCoeff).ne_zero
+  refine le_antisymm (f.order_le a hfa) ?_
+  calc (a : ℕ∞) = ((X : PowerSeries R) ^ a).order := (order_X_pow a).symm
+    _ ≤ ((X : PowerSeries R) ^ a).order + ((u : PowerSeries R) * Q).order := self_le_add_right _ _
+    _ ≤ f.order := hmul' ▸ le_order_mul _ _
 
 end PowerSeries

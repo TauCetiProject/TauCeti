@@ -13,6 +13,7 @@ public import Mathlib.RingTheory.PowerSeries.Restricted
 public import Mathlib.Topology.Algebra.InfiniteSum.Nonarchimedean
 public import TauCeti.RingTheory.PowerSeries.HasseDeriv.Basic
 import TauCeti.Algebra.Polynomial.Taylor
+import TauCeti.RingTheory.PowerSeries.Restricted
 
 /-!
 # Evaluation of power series as infinite sums
@@ -72,6 +73,8 @@ coefficient rings here may have nilpotents.
   `‖b‖ ≤ c` in a complete ultrametric algebra, additively and multiplicatively in the series.
 * `PowerSeries.IsRestricted.evalAtHom`: evaluation at such `b` as a ring homomorphism on the
   restricted series.
+* `PowerSeries.evalAt_eq_zero_iff_of_isUnit_X_pow_mul_finprod_eq`: zeros in the closed disc of a
+  series factored as `u * (X ^ a * ∏ᶠ m, g m)` with `u` a restricted unit.
 * `PowerSeries.evalScalar_monomial`, `PowerSeries.evalScalar_at_zero`,
   `PowerSeries.evalScalar_add`: evaluation at a scalar of monomials, at the scalar `0`, and of
   sums.
@@ -476,5 +479,29 @@ theorem IsRestricted.evalAtHom_apply (hb : ‖b‖ ≤ c) (f : IsRestricted.subr
   (rfl)
 
 end Restricted
+
+/-- Suppose `f = u * (X ^ a * ∏ᶠ m, g m)` on the closed disc of radius `r`, where `u` is a unit of
+the ring of series restricted at `r` and `g` is a finitely supported family of polynomials. Then in
+any complete ultrametric normed domain `A` over `R`, for every `x : A` with `‖x‖ ≤ r`,
+`f.evalAt x = 0` iff `(x = 0 ∧ 0 < a)` or `x` is a root of some factor `g m`
+(`m ∈ Function.mulSupport g`). -/
+theorem evalAt_eq_zero_iff_of_isUnit_X_pow_mul_finprod_eq {R A ι : Type*} [NormedCommRing R]
+    [IsUltrametricDist R] [NormedCommRing A] [IsDomain A] [Algebra R A] [IsBoundedSMul R A]
+    [IsUltrametricDist A] [CompleteSpace A] {f : R⟦X⟧} {r : ℝ}
+    {u : IsRestricted.subring (R := R) r} (hu : IsUnit u) {a : ℕ} {g : ι → Polynomial R}
+    (hfin : (Function.mulSupport g).Finite)
+    (hmul : (u : R⟦X⟧) * (((Polynomial.X ^ a * ∏ᶠ m, g m : Polynomial R) : R⟦X⟧)) = f)
+    {x : A} (hx : ‖x‖ ≤ r) :
+    f.evalAt x = 0 ↔
+      (x = 0 ∧ 0 < a) ∨ ∃ m ∈ Function.mulSupport g, Polynomial.aeval x (g m) = 0 := by
+  have hu_eval : IsUnit ((u : R⟦X⟧).evalAt x) := by
+    simpa using hu.map (IsRestricted.evalAtHom R hx)
+  rw [← hmul, finprod_eq_prod g hfin,
+    IsRestricted.evalAt_mul u.2 (TauCeti.PowerSeries.isRestricted_polynomial _) hx,
+    evalAt_coe, hu_eval.mul_right_eq_zero, map_mul, map_pow, Polynomial.aeval_X,
+    map_prod (Polynomial.aeval (R := R) x), mul_eq_zero, pow_eq_zero_iff', Finset.prod_eq_zero_iff]
+  refine or_congr ⟨fun ⟨hx0, ha0⟩ => ⟨hx0, Nat.pos_of_ne_zero ha0⟩,
+    fun ⟨hx0, ha0⟩ => ⟨hx0, ha0.ne'⟩⟩ ?_
+  simp only [Set.Finite.mem_toFinset]
 
 end PowerSeries

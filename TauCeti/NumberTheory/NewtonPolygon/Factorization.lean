@@ -32,7 +32,8 @@ finite Newton slopes have multiplicity one splits into linear factors over `K`.
 
 Combining Weierstrass preparation on any closed disc of positive radius with the pure slope
 factorisation of its preparation polynomial factors any nonzero restricted power series on that disc
-into a restricted unit, `X ^ a` for its order `a` at zero, and unique pairwise coprime constant-one
+into a restricted unit, `X ^ a` for its order `a` at zero
+(`PowerSeries.order_eq_of_isUnit_X_pow_mul_finprod_eq`), and unique pairwise coprime constant-one
 pure polynomial factors of slopes within the disc. In any complete normed field extension `L` of
 `K`, the zeros of the series on the sphere `‖x‖ = b ^ m` inside the disc are precisely the roots of
 the slope-`m` factor.
@@ -64,11 +65,9 @@ the slope-`m` factor.
 * `Polynomial.splits_of_nodup_newtonSlopes`: a polynomial over a complete ultrametric normed field
   with distinct finite Newton slopes splits over the base field.
 * `PowerSeries.existsUnique_isUnit_X_pow_mul_finprod_eq`,
-  `PowerSeries.existsUnique_isUnit_X_pow_mul_finprod_eq_of_pos`,
-  `PowerSeries.order_eq_of_isUnit_X_pow_mul_finprod_eq` and
+  `PowerSeries.existsUnique_isUnit_X_pow_mul_finprod_eq_of_pos` and
   `PowerSeries.setOf_norm_eq_and_evalAt_eq_zero`: closed-disc pure slope factorisation of a
-  restricted power series, identification of `a` with `f.order`, and sphere-by-sphere
-  identification of its zeros.
+  restricted power series and sphere-by-sphere identification of its zeros.
 
 ## References
 
@@ -694,7 +693,8 @@ include hb hv
 /-- **Closed-disc pure slope factorisation of a restricted power series.** Over a complete
 ultrametric normed field `K`, any nonzero power series `f` restricted at the radius `b ^ σ` factors
 uniquely as `f = u * (X ^ a * ∏ᶠ m, g m)`, where `u` is a unit of the ring of series restricted at
-`b ^ σ`, `a : ℕ` is the order of vanishing of `f` at zero, and `g : ℝ → K[X]` is a finitely
+`b ^ σ`, `a : ℕ` is the order of vanishing of `f` at zero
+(`PowerSeries.order_eq_of_isUnit_X_pow_mul_finprod_eq`), and `g : ℝ → K[X]` is a finitely
 supported family of constant-one pure polynomials of slopes `m ≤ σ`. -/
 theorem existsUnique_isUnit_X_pow_mul_finprod_eq {f : K⟦X⟧} {σ : ℝ}
     (hfr : f.IsRestricted (b ^ σ)) (hf0 : f ≠ 0) :
@@ -772,56 +772,6 @@ theorem existsUnique_isUnit_X_pow_mul_finprod_eq_of_pos {f : K⟦X⟧} {r : ℝ}
 
 end CompleteBase
 
-/-- In a factorisation `f = u * (X ^ a * ∏ᶠ m, g m)` on a closed disc of radius `r`, where `u` is a
-restricted unit and every factor `g m` has constant coefficient `1`, the exponent `a` is the order
-of vanishing `f.order` at zero. -/
-theorem order_eq_of_isUnit_X_pow_mul_finprod_eq {R ι : Type*} [NormedCommRing R]
-    [IsUltrametricDist R] [Nontrivial R] {f : R⟦X⟧} {r : ℝ}
-    {u : IsRestricted.subring (R := R) r} (hu : IsUnit u) {a : ℕ} {g : ι → Polynomial R}
-    (hfin : (Function.mulSupport g).Finite) (hc0 : ∀ m, (g m).coeff 0 = 1)
-    (hmul : (u : R⟦X⟧) * (((Polynomial.X ^ a * ∏ᶠ m, g m : Polynomial R) : R⟦X⟧)) = f) :
-    f.order = a := by
-  set Q : R⟦X⟧ := ((∏ᶠ m, g m : Polynomial R) : R⟦X⟧)
-  have hmul' : (X : R⟦X⟧) ^ a * ((u : R⟦X⟧) * Q) = f := by
-    rw [← hmul, Polynomial.coe_mul, Polynomial.coe_pow, Polynomial.coe_X]
-    ring
-  have hQ0 : constantCoeff Q = 1 := by
-    rw [Polynomial.constantCoeff_coe, ← Polynomial.constantCoeff_apply,
-      map_finprod Polynomial.constantCoeff hfin,
-      finprod_eq_one_of_forall_eq_one fun m => by simpa using hc0 m]
-  have hfa : f.coeff a ≠ 0 := by
-    have ha : ((X : R⟦X⟧) ^ a * ((u : R⟦X⟧) * Q)).coeff (0 + a) = f.coeff a := by
-      rw [zero_add, hmul']
-    rw [← ha, coeff_X_pow_mul, coeff_zero_eq_constantCoeff_apply, map_mul, hQ0, mul_one]
-    exact ((hu.map (IsRestricted.subring r).subtype).map constantCoeff).ne_zero
-  refine le_antisymm (f.order_le a hfa) ?_
-  calc (a : ℕ∞) = ((X : R⟦X⟧) ^ a).order := (order_X_pow a).symm
-    _ ≤ ((X : R⟦X⟧) ^ a).order + ((u : R⟦X⟧) * Q).order := self_le_add_right _ _
-    _ ≤ f.order := hmul' ▸ le_order_mul _ _
-
-/-- Suppose `f = u * (X ^ a * ∏ᶠ m, g m)` on the closed disc of radius `r`, where `u` is a unit of
-the ring of series restricted at `r` and `g` is a finitely supported family of polynomials. Then in
-any complete normed field extension `L` of `K`, for every `x : L` with `‖x‖ ≤ r`, `f.evalAt x = 0`
-iff `(x = 0 ∧ 0 < a)` or `x` is a root of some factor `g m` (`m ∈ Function.mulSupport g`). -/
-theorem evalAt_eq_zero_iff_of_isUnit_X_pow_mul_finprod_eq {L : Type*} [NormedField L]
-    [NormedAlgebra K L] [CompleteSpace L] {f : K⟦X⟧} {r : ℝ}
-    {u : IsRestricted.subring (R := K) r} (hu : IsUnit u) {a : ℕ} {g : ℝ → Polynomial K}
-    (hfin : (Function.mulSupport g).Finite)
-    (hmul : (u : K⟦X⟧) * (((Polynomial.X ^ a * ∏ᶠ m, g m : Polynomial K) : K⟦X⟧)) = f)
-    {x : L} (hx : ‖x‖ ≤ r) :
-    f.evalAt x = 0 ↔
-      (x = 0 ∧ 0 < a) ∨ ∃ m ∈ Function.mulSupport g, Polynomial.aeval x (g m) = 0 := by
-  have : IsUltrametricDist L := .of_normedAlgebra K
-  have hu_eval : IsUnit ((u : K⟦X⟧).evalAt x) := by
-    simpa using hu.map (IsRestricted.evalAtHom K hx)
-  rw [← hmul, finprod_eq_prod g hfin,
-    IsRestricted.evalAt_mul u.2 (TauCeti.PowerSeries.isRestricted_polynomial _) hx,
-    evalAt_coe, hu_eval.mul_right_eq_zero, map_mul, map_pow, Polynomial.aeval_X,
-    map_prod (Polynomial.aeval (R := K) x), mul_eq_zero, pow_eq_zero_iff', Finset.prod_eq_zero_iff]
-  refine or_congr ⟨fun ⟨hx0, ha0⟩ => ⟨hx0, Nat.pos_of_ne_zero ha0⟩,
-    fun ⟨hx0, ha0⟩ => ⟨hx0, ha0.ne'⟩⟩ ?_
-  simp only [Set.Finite.mem_toFinset]
-
 include hb hv in
 /-- **Sphere decomposition of zeros on a closed disc.** Under the hypotheses of
 `PowerSeries.evalAt_eq_zero_iff_of_isUnit_X_pow_mul_finprod_eq` with constant-one pure factors
@@ -835,6 +785,7 @@ theorem setOf_norm_eq_and_evalAt_eq_zero {L : Type*} [NormedField L]
     (hmul : (u : K⟦X⟧) * (((Polynomial.X ^ a * ∏ᶠ m, g m : Polynomial K) : K⟦X⟧)) = f)
     {m : ℝ} (hmr : b ^ m ≤ r) :
     {x : L | ‖x‖ = b ^ m ∧ f.evalAt x = 0} = {x : L | Polynomial.aeval x (g m) = 0} := by
+  have : IsUltrametricDist L := .of_normedAlgebra K
   have hg_fact : (∏ᶠ m', g m').IsPureSlopeFactorization v g := ⟨hfin, hc0, hslopes, rfl⟩
   ext x
   simp only [Set.mem_ofPred_eq]
