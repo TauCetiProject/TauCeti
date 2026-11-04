@@ -21,12 +21,9 @@ This is the Poisson entry of the closed-form cdf and tail target of
 cumulative-mass formula that the Poisson family entry of Layer 4 asks for, together with the cdf
 of the cast law `Po(ℝ, r)` that the same entry derives from it.
 
-The proof is an induction on `n` that needs no integral of its own. Stripping the atom at `n + 1`
-off the tail above `n` decreases its mass by `exp (-r) * r ^ (n + 1) / (n + 1)!`, while
-`TauCeti.regularizedGamma_add_one` decreases `P(n + 1, r)` by
-`r ^ (n + 1) * exp (-r) / Γ(n + 2)`; the two decrements agree because
-`Real.Gamma_nat_eq_factorial` identifies `Γ(n + 2)` with `(n + 1)!`. The induction starts at the
-tail above `0`, whose mass `1 - exp (-r)` is `P(1, r)` by `TauCeti.regularizedGamma_one`.
+The finite-sum identity
+`∑ k ≤ n, exp (-r) * r ^ k / k! = 1 - P(n + 1, r)` expresses the lower cumulative mass; its
+complement is the upper-tail identity above.
 
 Read the other way round, the resulting identity is the classical duality between a Poisson law of
 rate `r` and a gamma law of integer shape: a Poisson variable of rate `r` exceeds `n` exactly as
@@ -103,20 +100,19 @@ function. -/
 theorem poissonMeasure_tail_eq_regularizedGamma (r : ℝ≥0) (n : ℕ) :
     Po(r).real {k | n < k} = regularizedGamma (n + 1) (r : ℝ) := by
   have hr : (0 : ℝ) ≤ r := r.coe_nonneg
-  induction n with
-  | zero => rw [poissonMeasure_real_tail_zero, Nat.cast_zero, zero_add, regularizedGamma_one hr]
-  | succ n ih =>
-    have hs : (0 : ℝ) < (n : ℝ) + 1 := by positivity
-    -- the two decrements: `r ^ (n + 1)` as an `rpow` on the right, as a `Monoid.npow` on the left,
-    -- and `Γ(n + 2) = (n + 1)!`
-    have hpow : (r : ℝ) ^ ((n : ℝ) + 1) = (r : ℝ) ^ (n + 1) := by
-      rw [show (n : ℝ) + 1 = ((n + 1 : ℕ) : ℝ) by push_cast; ring, Real.rpow_natCast]
-    have hgamma : Real.Gamma ((n : ℝ) + 1 + 1) = ((n + 1)! : ℝ) := by
-      rw [show (n : ℝ) + 1 + 1 = ((n + 1 : ℕ) : ℝ) + 1 by push_cast; ring,
-        Real.Gamma_nat_eq_factorial]
-    rw [poissonMeasure_real_tail_succ, ih, show ((n + 1 : ℕ) : ℝ) + 1 = (n : ℝ) + 1 + 1 by
-      push_cast; ring, regularizedGamma_add_one hs hr, hpow, hgamma]
-    ring
+  have hcompl : {k : ℕ | n < k} = (Iic n : Set ℕ)ᶜ := by
+    ext k
+    simp
+  have hIic : (Iic n : Set ℕ) = ↑(Finset.range (n + 1)) := by
+    ext k
+    simp
+  rw [hcompl, probReal_compl_eq_one_sub .of_discrete, hIic, ← sum_measureReal_singleton]
+  rw [← Nat.cast_succ]
+  rw [regularizedGamma_natCast (Nat.succ_ne_zero n) hr, Finset.mul_sum]
+  congr 1
+  refine Finset.sum_congr rfl fun k _ ↦ ?_
+  rw [poissonMeasure_real_singleton]
+  ring
 
 /-- The cumulative mass of a Poisson law, complementary to
 `TauCeti.Probability.poissonMeasure_tail_eq_regularizedGamma`. -/
