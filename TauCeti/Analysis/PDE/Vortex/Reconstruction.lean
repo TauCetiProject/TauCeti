@@ -68,10 +68,14 @@ theorem amplitudeField_apply_three (u : ℂ → ℝ) (f : ℂ → ℂ) (z : ℂ)
     amplitudeField u f z 3 = Real.exp (u z) * (f z).im / 2 := (rfl)
 
 /-- The reconstructed section is exactly `exp(u) f`, with the charge-one normalization. -/
-theorem amplitudeField_section (u : ℂ → ℝ) (f : ℂ → ℂ) (z : ℂ) :
-    2 * ((amplitudeField u f z 2 : ℂ) + I * amplitudeField u f z 3) =
-      (Real.exp (u z) : ℂ) * f z := by
-  apply Complex.ext <;> simp <;> ring
+@[simp]
+theorem sectionValue_amplitudeField (u : ℂ → ℝ) (f : ℂ → ℂ) (z : ℂ) :
+    sectionValue (amplitudeField u f) z = (Real.exp (u z) : ℂ) * f z := by
+  have hscale (a b c : ℂ) :
+      2 * (a * b / 2 + (a * c / 2) * I) = a * (b + c * I) := by ring
+  simpa only [sectionValue_apply, amplitudeField_apply_two, amplitudeField_apply_three,
+    ofReal_div, ofReal_mul, ofReal_ofNat, Complex.re_add_im] using
+    hscale (Real.exp (u z)) (f z).re (f z).im
 
 /-- The squared norm of the reconstructed section. -/
 theorem amplitudeField_normSq (u : ℂ → ℝ) (f : ℂ → ℂ) (z : ℂ) :
@@ -188,13 +192,13 @@ theorem exists_amplitudeField_section_eq_pow_mul {u : ℂ → ℝ} {f : ℂ → 
     (hm : analyticOrderAt f z = m) :
     ∃ g : ℂ → ℂ, ContDiffAt ℝ n g z ∧ g z ≠ 0 ∧
       ∀ᶠ w in nhds z,
-        2 * ((amplitudeField u f w 2 : ℂ) + I * amplitudeField u f w 3) = (w - z) ^ m * g w := by
+        sectionValue (amplitudeField u f) w = (w - z) ^ m * g w := by
   obtain ⟨g, hg, hg₀, hfg⟩ := hf.analyticOrderAt_eq_natCast.mp hm
   refine ⟨fun w ↦ (Real.exp (u w) : ℂ) * g w,
     (Complex.ofRealCLM.contDiff.contDiffAt.comp z hu.exp).mul
       (hg.contDiffAt.restrict_scalars ℝ), mul_ne_zero (by simp) hg₀, ?_⟩
   filter_upwards [hfg] with w hw
-  rw [amplitudeField_section, hw, smul_eq_mul]
+  rw [sectionValue_amplitudeField, hw, smul_eq_mul]
   ring
 
 end TauCeti.Vortex

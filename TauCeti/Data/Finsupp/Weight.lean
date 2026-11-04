@@ -36,6 +36,7 @@ at `h` of the pushforward `Finsupp.mapDomain b`.
 * `Finsupp.weight_toFinsupp`: multiset multiplicities recover the sum of entry weights.
 * `Finsupp.prod_pow_eq_pow_degree`: `∏ a ^ tᵢ = a ^ degree t`.
 * `Finsupp.degree_optionElim`: extending by `y` at `none` adds `y` to the degree.
+* `Finsupp.prod_pow_sumElim`: splitting variables splits the weighted product into two factors.
 * `Finsupp.prod_pow_optionElim`, `Finsupp.sum_nsmul_optionElim`: extending by `n` at `none`
   splits off the factor `c none ^ n` from the weighted product `∏ c i ^ (f.optionElim n) i`, and
   the summand `n • c none` from the weighted sum.
@@ -50,6 +51,8 @@ at `h` of the pushforward `Finsupp.mapDomain b`.
 * `Finsupp.weight_smul_left`: scaling the weight vector scales the weight.
 * `Finsupp.weight_eq_linearCombination`: the weight is the linear combination of the weights
   with the given coefficients.
+* `Finsupp.weight_comp_eq_apply_linearCombination`: the weight of `u` for the weights `f ∘ w` is
+  `f (∑ i, u i • w i)`, for an additive map `f`.
 * `Finsupp.weight_ite_fst_eq_sum`: the indicator weight of a block sums its coefficients; for
   natural-valued exponents, this is the degree in that block.
 * `Finsupp.weight_ite_eq_mapDomain_apply`: the indicator weight of a fibre of `b : σ → τ` is the
@@ -104,6 +107,21 @@ theorem prod_pow_optionElim {α N : Type*} [CommMonoid N] (c : Option α → N) 
     (f.optionElim n).prod (c · ^ ·) = c none ^ n * f.prod (fun i k ↦ c (Option.some i) ^ k) := by
   rw [prod_option_index _ _ (fun _ ↦ pow_zero _) fun _ _ _ ↦ pow_add _ _ _,
     optionElim_apply_none, some_optionElim]
+
+/-- The weighted product on a disjoint union of variables is the product of the weights
+on each set of variables. -/
+theorem prod_pow_sumElim {α β N : Type*} [CommMonoid N] (a : α →₀ ℕ) (b : β →₀ ℕ)
+    (c : α → N) (d : β → N) :
+    (a.sumElim b).prod (Sum.elim c d · ^ ·) = a.prod (c · ^ ·) * b.prod (d · ^ ·) := by
+  simp only [prod_sumElim, Function.comp_def, Sum.elim_inl, Sum.elim_inr]
+
+/-- A weighted product on disjoint variables, multiplied by `x`, can be evaluated with the
+inner weight first and the outer weight last. -/
+theorem mul_prod_pow_sumElim {α β N : Type*} [CommMonoid N] (x : N)
+    (a : α →₀ ℕ) (b : β →₀ ℕ) (c : α → N) (d : β → N) :
+    x * (a.sumElim b).prod (Sum.elim c d · ^ ·) =
+      x * b.prod (d · ^ ·) * a.prod (c · ^ ·) := by
+  rw [prod_pow_sumElim, mul_comm (a.prod (c · ^ ·)) (b.prod (d · ^ ·)), ← mul_assoc]
 
 /-- A power `a ^ degree f` is bounded by the power `b ^ degree (f.optionElim m)` of a larger
 base `b ≥ 1`, for any value `m` at `none`. -/
@@ -165,6 +183,12 @@ theorem weight_smul_left {R S : Type*} [Semiring R] [AddCommMonoid M] [Module R 
 theorem weight_eq_linearCombination {R : Type*} [Semiring R] [AddCommMonoid M] [Module R M]
     (c : σ → M) (w : σ →₀ R) : weight c w = linearCombination R c w :=
   rfl
+
+/-- The weight of `u` for the weights `f ∘ w` is the image under `f` of `∑ i, u i • w i`. -/
+theorem weight_comp_eq_apply_linearCombination {D : Type*} [AddCommMonoid M] [AddCommMonoid D]
+    (f : M →+ D) (w : σ → M) (u : σ →₀ ℕ) :
+    weight (f ∘ w) u = f (linearCombination ℕ w u) := by
+  simp [weight_apply, linearCombination_apply, map_finsuppSum]
 
 end Finsupp
 

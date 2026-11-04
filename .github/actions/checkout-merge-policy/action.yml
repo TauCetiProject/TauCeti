@@ -1,10 +1,10 @@
 name: Checkout the pinned merge policy
 description: >-
   Check out TauCetiReview's runner (read-only) into .tauceti-review, at the same commit as the
-  reusable workflows that auto-merge.yml, merge-sweep.yml and review.yml call.
+  reusable merge-sweep/review workflows and the Auto-merge batch.
 
-# This is the only place in TauCeti that names the policy commit outside the three `uses:` lines,
-# which GitHub requires to be literal. scripts/test_workflow_pins.py fails if the four disagree.
+# This is the only place in TauCeti that names the policy commit outside the reusable workflow `uses:` lines,
+# which GitHub requires to be literal. scripts/test_workflow_pins.py fails if the pins disagree.
 # To re-pin, replace the SHA everywhere at once:
 #   git grep -l <old-sha> | xargs sed -i 's/<old-sha>/<new-sha>/g'
 #
