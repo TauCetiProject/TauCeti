@@ -65,7 +65,7 @@ namespace TauCeti
 variable {ι : Type*} [Fintype ι]
 
 /-- The continuous torus character with integer weight vector `m`. -/
-noncomputable def torusCharacter (m : ι → ℤ) : PontryaginDual (ι → Circle) where
+noncomputable def circleProductCharacter (m : ι → ℤ) : PontryaginDual (ι → Circle) where
   toFun z := ∏ i, z i ^ m i
   map_one' := by simp
   map_mul' z w := by
@@ -74,63 +74,66 @@ noncomputable def torusCharacter (m : ι → ℤ) : PontryaginDual (ι → Circl
 
 /-- The weight vector is evaluated by the product of its coordinate powers. -/
 @[simp]
-theorem torusCharacter_apply (m : ι → ℤ) (z : ι → Circle) :
-    torusCharacter m z = ∏ i, z i ^ m i := (rfl)
+theorem circleProductCharacter_apply (m : ι → ℤ) (z : ι → Circle) :
+    circleProductCharacter m z = ∏ i, z i ^ m i := (rfl)
 
 /-- Restricting an integer character to a coordinate circle recovers that coordinate power. -/
 @[simp↓]
-theorem torusCharacter_mulSingle [DecidableEq ι] (m : ι → ℤ) (i : ι) (z : Circle) :
-    torusCharacter m (Pi.mulSingle i z) = z ^ m i := by
-  simp [torusCharacter_apply, Pi.mulSingle_apply]
+theorem circleProductCharacter_mulSingle [DecidableEq ι] (m : ι → ℤ) (i : ι) (z : Circle) :
+    circleProductCharacter m (Pi.mulSingle i z) = z ^ m i := by
+  simp [circleProductCharacter_apply, Pi.mulSingle_apply]
 
 /-- A weight supported on one coordinate gives that coordinate power. -/
 @[simp↓]
-theorem torusCharacter_single [DecidableEq ι] (i : ι) (n : ℤ) (z : ι → Circle) :
-    torusCharacter (Pi.single i n) z = z i ^ n := by
-  simp [torusCharacter_apply, Pi.single_apply]
+theorem circleProductCharacter_single [DecidableEq ι] (i : ι) (n : ℤ) (z : ι → Circle) :
+    circleProductCharacter (Pi.single i n) z = z i ^ n := by
+  simp [circleProductCharacter_apply, Pi.single_apply]
 
 /-- The zero weight is the trivial character. -/
 @[simp]
-theorem torusCharacter_zero : torusCharacter (0 : ι → ℤ) = 1 := by
+theorem circleProductCharacter_zero : circleProductCharacter (0 : ι → ℤ) = 1 := by
   ext z
   simp
 
 /-- Addition of weights is pointwise multiplication of characters. -/
 @[simp]
-theorem torusCharacter_add (m n : ι → ℤ) :
-    torusCharacter (m + n) = torusCharacter m * torusCharacter n := by
+theorem circleProductCharacter_add (m n : ι → ℤ) :
+    circleProductCharacter (m + n) = circleProductCharacter m * circleProductCharacter n := by
   apply PontryaginDual.ext
   intro z
   calc
-    torusCharacter (m + n) z = (∏ i, z i ^ m i) * ∏ i, z i ^ n i := by
-      simp only [torusCharacter_apply, Pi.add_apply, zpow_add, Finset.prod_mul_distrib]
+    circleProductCharacter (m + n) z = (∏ i, z i ^ m i) * ∏ i, z i ^ n i := by
+      simp only [circleProductCharacter_apply, Pi.add_apply, zpow_add, Finset.prod_mul_distrib]
     -- The dual group multiplies characters pointwise.
-    _ = (torusCharacter m * torusCharacter n) z := rfl
+    _ = (circleProductCharacter m * circleProductCharacter n) z := rfl
 
 /-- Negating a weight inverts its character. -/
 @[simp]
-theorem torusCharacter_neg (m : ι → ℤ) : torusCharacter (-m) = (torusCharacter m)⁻¹ := by
+theorem circleProductCharacter_neg (m : ι → ℤ) :
+    circleProductCharacter (-m) = (circleProductCharacter m)⁻¹ := by
   apply PontryaginDual.ext
   intro z
   calc
-    torusCharacter (-m) z = (∏ i, z i ^ m i)⁻¹ := by
-      simp only [torusCharacter_apply, Pi.neg_apply, zpow_neg, Finset.prod_inv_distrib]
+    circleProductCharacter (-m) z = (∏ i, z i ^ m i)⁻¹ := by
+      simp only [circleProductCharacter_apply, Pi.neg_apply, zpow_neg, Finset.prod_inv_distrib]
     -- The dual group inverts characters pointwise.
-    _ = (torusCharacter m)⁻¹ z := rfl
+    _ = (circleProductCharacter m)⁻¹ z := rfl
 
 /-- Integer weight vectors are determined by their characters. -/
-theorem torusCharacter_injective : Function.Injective (torusCharacter (ι := ι)) := by
+theorem circleProductCharacter_injective :
+    Function.Injective (circleProductCharacter (ι := ι)) := by
   classical
   intro m n h
   funext i
   obtain ⟨_, -, huniq⟩ := (⟨zpowGroupHom (m i), continuous_zpow (m i)⟩ :
     Circle →ₜ* Circle).existsUnique_eq_zpow
   have hi (z : Circle) : z ^ m i = z ^ n i := by
-    simpa only [torusCharacter_mulSingle] using DFunLike.congr_fun h (Pi.mulSingle i z)
+    simpa only [circleProductCharacter_mulSingle] using DFunLike.congr_fun h (Pi.mulSingle i z)
   exact (huniq (m i) (fun _ ↦ rfl)).trans (huniq (n i) hi).symm
 
 /-- Every continuous torus character is an integer character. -/
-theorem torusCharacter_surjective : Function.Surjective (torusCharacter (ι := ι)) := by
+theorem circleProductCharacter_surjective :
+    Function.Surjective (circleProductCharacter (ι := ι)) := by
   classical
   intro χ
   have h (i : ι) : ∃ n : ℤ, ∀ z : Circle, χ (Pi.mulSingle i z) = z ^ n := by
@@ -142,7 +145,8 @@ theorem torusCharacter_surjective : Function.Surjective (torusCharacter (ι := �
   choose m hm using h
   refine ⟨m, PontryaginDual.ext fun z ↦ ?_⟩
   calc
-    torusCharacter m z = ∏ i, χ (Pi.mulSingle i (z i)) := by simp only [torusCharacter_apply, hm]
+    circleProductCharacter m z = ∏ i, χ (Pi.mulSingle i (z i)) := by
+      simp only [circleProductCharacter_apply, hm]
     _ = χ (∏ i, Pi.mulSingle i (z i)) := (map_prod χ _ _).symm
     _ = χ z := congrArg χ (Finset.univ_prod_mulSingle z)
 
@@ -151,13 +155,13 @@ Multiplicative type tags turn addition of weight vectors into the group law of t
 noncomputable def finiteProductCircleCharacters :
     Multiplicative (ι → ℤ) ≃* PontryaginDual (ι → Circle) :=
   MulEquiv.ofBijective
-    ({ toFun := fun m ↦ torusCharacter m.toAdd
-       map_one' := torusCharacter_zero
-       map_mul' := fun m n ↦ torusCharacter_add m.toAdd n.toAdd } :
+    ({ toFun := fun m ↦ circleProductCharacter m.toAdd
+       map_one' := circleProductCharacter_zero
+       map_mul' := fun m n ↦ circleProductCharacter_add m.toAdd n.toAdd } :
       Multiplicative (ι → ℤ) →* PontryaginDual (ι → Circle))
-    ⟨fun m n h ↦ Multiplicative.toAdd.injective (torusCharacter_injective h),
+    ⟨fun m n h ↦ Multiplicative.toAdd.injective (circleProductCharacter_injective h),
       fun χ ↦ by
-        obtain ⟨m, hm⟩ := torusCharacter_surjective χ
+        obtain ⟨m, hm⟩ := circleProductCharacter_surjective χ
         exact ⟨Multiplicative.ofAdd m, hm⟩⟩
 
 /-- The character associated to a weight has the specified product formula. -/
@@ -167,14 +171,15 @@ theorem finiteProductCircleCharacters_apply (m : Multiplicative (ι → ℤ)) (z
 
 /-- Reconstructing a character from its weight vector recovers the character. -/
 @[simp]
-theorem torusCharacter_finiteProductCircleCharacters_symm (χ : PontryaginDual (ι → Circle)) :
-    torusCharacter (finiteProductCircleCharacters.symm χ).toAdd = χ :=
+theorem circleProductCharacter_finiteProductCircleCharacters_symm
+    (χ : PontryaginDual (ι → Circle)) :
+    circleProductCharacter (finiteProductCircleCharacters.symm χ).toAdd = χ :=
   finiteProductCircleCharacters.apply_symm_apply χ
 
 /-- The inverse equivalence recovers the original integer vector. -/
 @[simp]
-theorem finiteProductCircleCharacters_symm_torusCharacter (m : ι → ℤ) :
-    (finiteProductCircleCharacters.symm (torusCharacter m)).toAdd = m :=
+theorem finiteProductCircleCharacters_symm_circleProductCharacter (m : ι → ℤ) :
+    (finiteProductCircleCharacters.symm (circleProductCharacter m)).toAdd = m :=
   congrArg Multiplicative.toAdd
     (finiteProductCircleCharacters.symm_apply_apply (Multiplicative.ofAdd m))
 
@@ -182,8 +187,8 @@ theorem finiteProductCircleCharacters_symm_torusCharacter (m : ι → ℤ) :
 theorem _root_.PontryaginDual.apply_mulSingle_eq_zpow [DecidableEq ι]
     (χ : PontryaginDual (ι → Circle)) (i : ι) (z : Circle) :
     χ (Pi.mulSingle i z) = z ^ (finiteProductCircleCharacters.symm χ).toAdd i := by
-  have h := DFunLike.congr_fun (torusCharacter_finiteProductCircleCharacters_symm χ)
+  have h := DFunLike.congr_fun (circleProductCharacter_finiteProductCircleCharacters_symm χ)
     (Pi.mulSingle i z)
-  exact h.symm.trans (torusCharacter_mulSingle _ i z)
+  exact h.symm.trans (circleProductCharacter_mulSingle _ i z)
 
 end TauCeti
