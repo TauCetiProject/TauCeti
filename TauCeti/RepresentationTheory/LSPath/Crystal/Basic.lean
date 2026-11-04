@@ -414,7 +414,6 @@ theorem normalCrystalOn_graph_adj_iff {π π' : S} :
 
 /-- Two paths in a crystal-admissible set lie in the same connected component of `normalCrystalOn`
 if and only if one is reachable from the other by a finite sequence of root steps. -/
-@[simp]
 theorem normalCrystalOn_graph_reachable_iff (x y : S) :
     (normalCrystalOn hf hF hS).graph.Reachable x y ↔ ReflTransGen (RootStep b f F) x.1 y.1 := by
   rw [SimpleGraph.reachable_iff_reflTransGen]
