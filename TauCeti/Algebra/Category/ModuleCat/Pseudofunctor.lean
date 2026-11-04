@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.Category.CommAlgCat.Basic
+public import TauCeti.Algebra.Category.CommAlgCat.Basic
 public import TauCeti.CategoryTheory.Bicategory.Functor.LocallyDiscrete
 public import TauCeti.RingTheory.TensorProduct.CoefficientBaseChange
 
@@ -79,14 +79,6 @@ attribute [local instance low] CoefficientBaseChange.module
 section Functor
 
 variable {R S : CommAlgCat.{u} k}
-
-/-- The scalar tower `k → R → S` of the `R`-algebra structure on `S` given by a morphism
-`f : R ⟶ S` of commutative `k`-algebras. -/
-lemma isScalarTower_toAlgebra (f : R ⟶ S) :
-    letI := f.hom.toRingHom.toAlgebra
-    IsScalarTower k R S :=
-  letI := f.hom.toRingHom.toAlgebra
-  IsScalarTower.of_algebraMap_eq' f.hom.comp_algebraMap.symm
 
 /-- Base change along a morphism `f : R ⟶ S` of commutative `k`-algebras, from modules over
 `R ⊗[k] Λ` to modules over `S ⊗[k] Λ`: `N ↦ S ⊗[R] N`, where `S` is an `R`-algebra through `f`. -/
@@ -168,7 +160,8 @@ noncomputable def moduleCatBaseChangeId : moduleCatBaseChange Λ (𝟙 R) ≅ �
   -- along `𝟙 R` is `R ⊗[R] N` with its standard module structures.
   NatIso.ofComponents (fun N ↦ (CoefficientBaseChange.lid k Λ R N).toModuleIso) fun φ ↦
     moduleCatBaseChange_hom_ext Λ (𝟙 R) fun n ↦ by
-      -- Both sides are `1 • φ n`.
+      -- Restate the naturality square as the underlying linear maps applied to `1 ⊗ n`, as in
+      -- `moduleCatBaseChangeComp`; both sides are `1 • φ n`.
       change CoefficientBaseChange.lid k Λ R _ (CoefficientBaseChange.map k Λ R φ.hom (1 ⊗ₜ n)) =
         φ.hom (CoefficientBaseChange.lid k Λ R _ (1 ⊗ₜ n))
       rw [CoefficientBaseChange.map_tmul, CoefficientBaseChange.lid_tmul,
@@ -183,21 +176,6 @@ lemma moduleCatBaseChangeId_inv_app_hom (N : ModuleCat.{u} (R ⊗[k] Λ)) (n : N
   CoefficientBaseChange.lid_symm_apply n
 
 variable {R} {S T : CommAlgCat.{u} k}
-
-/-- The scalar tower `R → S → T` of the algebra structures given by morphisms `f : R ⟶ S`,
-`g : S ⟶ T` and `fg : R ⟶ T` with `f ≫ g = fg`. -/
-lemma isScalarTower_toAlgebra_of_comp (f : R ⟶ S) (g : S ⟶ T) (fg : R ⟶ T) (h : f ≫ g = fg) :
-    letI := f.hom.toRingHom.toAlgebra
-    letI := g.hom.toRingHom.toAlgebra
-    letI := fg.hom.toRingHom.toAlgebra
-    IsScalarTower R S T :=
-  letI := f.hom.toRingHom.toAlgebra
-  letI := g.hom.toRingHom.toAlgebra
-  letI := fg.hom.toRingHom.toAlgebra
-  IsScalarTower.of_algebraMap_eq fun r ↦ by
-    subst h
-    simp only [RingHom.algebraMap_toAlgebra, AlgHom.toRingHom_eq_coe, RingHom.coe_coe,
-      CommAlgCat.hom_comp, AlgHom.comp_apply]
 
 /-- The base change along a composite `fg = f ≫ g` is isomorphic to the composite of the base
 changes, by `t ⊗ n ↦ t ⊗ (1 ⊗ n)` (`TauCeti.CoefficientBaseChange.cancelBaseChange`). The
@@ -217,6 +195,12 @@ noncomputable def moduleCatBaseChangeComp (f : R ⟶ S) (g : S ⟶ T) (fg : R �
     (fun N ↦ (CoefficientBaseChange.cancelBaseChange k Λ T
       (LinearEquiv.refl (S ⊗[k] Λ) ((moduleCatBaseChange Λ f).obj N))).toModuleIso)
     fun {N N'} φ ↦ moduleCatBaseChange_hom_ext Λ fg fun n ↦ by
+      -- Naturality is an equation of composites in `ModuleCat` whose carriers
+      -- `(moduleCatBaseChange Λ _).obj _` are `_ ⊗[_] _` only after unfolding
+      -- `moduleCatBaseChange`. The goal is not type-correct at implicit transparency, so
+      -- `ModuleCat.hom_comp` and `LinearEquiv.toModuleIso_hom` do not fire under `rw` or
+      -- `dsimp`. Restate it as the underlying linear maps (`moduleCatBaseChange_map_hom`) of
+      -- both composites applied to `1 ⊗ n`.
       change CoefficientBaseChange.cancelBaseChange k Λ T
           (LinearEquiv.refl (S ⊗[k] Λ) ((moduleCatBaseChange Λ f).obj N'))
           (CoefficientBaseChange.map k Λ T φ.hom (1 ⊗ₜ n)) =
