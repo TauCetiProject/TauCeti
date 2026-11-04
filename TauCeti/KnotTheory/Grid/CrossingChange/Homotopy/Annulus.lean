@@ -266,20 +266,6 @@ private theorem pentagonPair_squares {S₁ S₂ : Finset (Fin n × Fin n)} {B T 
   · simp only [Equiv.swap_apply_of_ne_of_ne hca hcb, hca, hcb, false_and, or_self, iff_self,
       not_false_eq_true, and_self]
 
-/-- A product over squares of the variable of the exchanged column at each `O`-marking of the
-exchanged diagram, the weight of one of its pentagons, is the product of the variables of the
-`O`-markings of `G` in those squares read in `G` by exchanging the columns `a` and `b`. -/
-private theorem prod_ite_swapColumns_OSet (S : Finset (Fin n × Fin n)) :
-    (∏ p ∈ S, if p ∈ (G.swapColumns a b).OSet then MvPolynomial.X (Equiv.swap a b p.1)
-        else (1 : MvPolynomial (Fin n) R)) =
-      ∏ c ∈ G.OColumnsOfSquares
-        (S.map ((Equiv.swap a b).prodCongr (Equiv.refl (Fin n))).toEmbedding),
-        MvPolynomial.X c := by
-  rw [← G.prod_ite_OSet_eq_prod_OColumnsOfSquares, Finset.prod_map]
-  refine Finset.prod_congr rfl fun p _ => ?_
-  simp only [mem_OSet, swapColumns_O, GridState.swapColumns_apply, Function.Embedding.coeFn_mk,
-    Equiv.prodCongr_apply, Equiv.coe_refl, Prod.map_fst, Prod.map_snd, id_eq]
-
 /-- The weight of a pentagon of the exchanged diagram, read in `G` by exchanging the columns `a`
 and `b`. -/
 theorem swapColumns_pentagonWeight_withTurnRow {u v : GridState n}
@@ -288,8 +274,7 @@ theorem swapColumns_pentagonWeight_withTurnRow {u v : GridState n}
       ∏ c ∈ G.OColumnsOfSquares
         (Q.coveredSquares.map ((Equiv.swap a b).prodCongr (Equiv.refl (Fin n))).toEmbedding),
         MvPolynomial.X c := by
-  rw [pentagonWeight_eq_prod_coveredSquares]
-  exact prod_ite_swapColumns_OSet R _
+  rw [G.pentagonWeight_swapColumns R (C.withTurnRow t), prod_ite_OSet_eq_prod_OColumnsOfSquares]
 
 /-- The weight of an initial-side pentagon of the exchanged diagram, read in `G` by exchanging the
 columns `a` and `b`. -/
@@ -299,8 +284,8 @@ theorem swapColumns_initialPentagonWeight_withTurnRow {u v : GridState n}
       ∏ c ∈ G.OColumnsOfSquares
         (Q.coveredSquares.map ((Equiv.swap a b).prodCongr (Equiv.refl (Fin n))).toEmbedding),
         MvPolynomial.X c := by
-  rw [initialPentagonWeight_eq_prod_coveredSquares]
-  exact prod_ite_swapColumns_OSet R _
+  rw [G.initialPentagonWeight_swapColumns R (C.withTurnRow t),
+    prod_ite_OSet_eq_prod_OColumnsOfSquares]
 
 /-- Two empty returning terminal-side pentagons, the first turning in the turn row of `C` and the
 second in row `t`, cover exactly the annulus squares. -/
