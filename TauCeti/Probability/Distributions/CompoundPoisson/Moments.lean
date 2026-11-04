@@ -83,7 +83,8 @@ theorem memLp_id_compoundPoissonMeasure {p : ℝ≥0∞} (hp : 0 < p) (hp_top : 
 
 /-- At positive rate, a compound Poisson law has a finite positive-order moment exactly
 when its jump law does. The one-jump component gives the reverse implication. -/
-@[simp]
+-- Use this equivalence by explicit rewriting: global simp also tries `MemLp.of_discrete`,
+-- whose instance search on an arbitrary normed group can time out in larger import environments.
 theorem memLp_id_compoundPoissonMeasure_iff {p : ℝ≥0∞} (hp : 0 < p) (hp_top : p ≠ ∞)
     {r : ℝ≥0} (hr : r ≠ 0) :
     MemLp id p (compoundPoissonMeasure r μ) ↔ MemLp id p μ := by
