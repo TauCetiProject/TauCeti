@@ -9,6 +9,7 @@ public import Mathlib.Topology.Algebra.Module.ModuleTopology
 public import Mathlib.Topology.Algebra.Nonarchimedean.AdicTopology
 
 import TauCeti.Order.Filter.Pi
+import TauCeti.RingTheory.Ideal.Operations
 import TauCeti.Topology.Algebra.Nonarchimedean.SubmodulesBasis
 
 /-!
@@ -54,24 +55,10 @@ theorem hasBasis_nhds_zero_pow_smul (hI : IsAdic I)
       (fun n ↦ Set.univ.pi fun _ ↦ ((I ^ n : Ideal R) : Set R)) := by
     rw [nhds_pi]
     exact hI.hasBasis_nhds_zero.pi_self_of_finite
-  have himage (n : ℕ) :
-      Fintype.linearCombination R v '' Set.univ.pi (fun _ ↦ ((I ^ n : Ideal R) : Set R)) =
-        ((I ^ n • ⊤ : Submodule R M) : Set M) := by
-    rw [← hv]
-    ext x
-    constructor
-    · rintro ⟨c, hc, rfl⟩
-      rw [Fintype.linearCombination_apply]
-      exact Submodule.sum_mem _ fun i _ ↦
-        Submodule.smul_mem_smul (hc i trivial) (Submodule.subset_span ⟨i, rfl⟩)
-    · intro hx
-      obtain ⟨c, hc, rfl⟩ := (Submodule.mem_ideal_smul_span_iff_exists_sum _ v x).mp hx
-      refine ⟨c, fun i _ ↦ hc i, ?_⟩
-      rw [Fintype.linearCombination_apply,
-        Finsupp.sum_fintype c (fun i a ↦ a • v i) fun _ ↦ zero_smul _ _]
   have hq := IsModuleTopology.isOpenQuotientMap_of_surjective hsurj
   rw [← map_zero (Fintype.linearCombination R v), ← hq.map_nhds_eq]
-  simpa only [himage] using hcube.map (Fintype.linearCombination R v)
+  simpa only [Ideal.image_fintypeLinearCombination_pi, hv] using
+    hcube.map (Fintype.linearCombination R v)
 
 /-- The adic topology on a finite module is its natural module topology. Thus the general
 `IsModuleTopology` continuity and quotient-map theorems apply to finite adic modules. -/
