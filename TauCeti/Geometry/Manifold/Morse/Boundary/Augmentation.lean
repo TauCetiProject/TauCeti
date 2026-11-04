@@ -45,8 +45,8 @@ These identities do not use `∂ ∘ ∂ = 0`, which needs the gluing of index-t
   `ε ∘ ∂ = 0`.
 * `TauCeti.IsAdaptedPseudoGradient.IsMorseSmale.morseBoundary_morseFundamentalChain`:
   `∂ [M] = 0`.
-* `TauCeti.IsAdaptedPseudoGradient.IsMorseSmale.morseBoundary_eq_zero_of_finrank_eq_two`: on a
-  surface, a Morse function with one minimum and one maximum has zero mod-two Morse boundary.
+* `IsAdaptedPseudoGradient.IsMorseSmale.morseBoundary_eq_zero_of_finrank_eq_two_of_subsingleton`:
+  on a surface, a Morse function with one minimum and one maximum has zero mod-two Morse boundary.
 
 ## References
 
@@ -70,6 +70,13 @@ critical points of Morse index `0`. -/
 noncomputable def morseAugmentation : (criticalPoints 𝓘(ℝ, E) f →₀ ZMod 2) →ₗ[ZMod 2] ZMod 2 :=
   Finsupp.linearCombination (ZMod 2) fun p ↦
     if manifoldMorseIndex 𝓘(ℝ, E) f p = 0 then 1 else 0
+
+/-- The augmentation of a chain `c` is the sum of its coefficients at the critical points of
+index `0`. -/
+theorem morseAugmentation_apply (c : criticalPoints 𝓘(ℝ, E) f →₀ ZMod 2) :
+    morseAugmentation f c =
+      c.sum fun p a ↦ if manifoldMorseIndex 𝓘(ℝ, E) f p = 0 then a else 0 := by
+  simp [morseAugmentation, Finsupp.linearCombination_apply]
 
 /-- The augmentation of `a • p` is `a` when `p` has index `0`, and `0` otherwise. -/
 @[simp]
@@ -239,7 +246,7 @@ private theorem sum_morseBoundaryCoeff_of_eq_finrank [Fintype (criticalPoints �
       ← Nat.cast_sum]
     simp only [Embedding.coe_subtype] at hcount
     rw [hcount]
-    rfl
+    exact ZMod.natCast_self 2
   · exact Finset.sum_eq_zero fun p hp ↦ h.morseBoundaryCoeff_eq_zero_of_morseIndex_ne_add_one hf
       (by rw [(Finset.mem_filter.1 hp).2]; omega)
 
@@ -260,7 +267,7 @@ private theorem sum_morseBoundaryCoeff_of_eq_zero [Fintype (criticalPoints 𝓘(
       ← Nat.cast_sum]
     simp only [Embedding.coe_subtype] at hcount
     rw [hcount]
-    rfl
+    exact ZMod.natCast_self 2
   · exact Finset.sum_eq_zero fun q hq ↦ h.morseBoundaryCoeff_eq_zero_of_morseIndex_ne_add_one hf
       (by rw [(Finset.mem_filter.1 hq).2]; exact hp)
 
@@ -271,13 +278,20 @@ theorem morseAugmentation_comp_morseBoundary :
   classical
   have := hf.finite_criticalPoints.fintype
   refine Finsupp.lhom_ext fun p a ↦ ?_
-  rw [LinearMap.comp_apply, LinearMap.zero_apply, morseAugmentation,
-    Finsupp.linearCombination_apply, Finsupp.sum_fintype _ _ (by simp)]
-  simp only [morseBoundary_single_apply, smul_eq_mul, mul_ite, mul_one, mul_zero,
-    ← Finset.sum_filter, ← Finset.mul_sum, sum_morseBoundaryCoeff_of_eq_zero h hf p]
+  rw [LinearMap.comp_apply, LinearMap.zero_apply, morseAugmentation_apply,
+    Finsupp.sum_fintype _ _ (by simp)]
+  simp only [morseBoundary_single_apply, ← Finset.sum_filter, ← Finset.mul_sum,
+    sum_morseBoundaryCoeff_of_eq_zero h hf p, mul_zero]
+
+/-- **The augmentation of a boundary is zero.** The applied form of `ε ∘ ∂ = 0`. -/
+@[simp]
+theorem morseAugmentation_morseBoundary (c : criticalPoints 𝓘(ℝ, E) f →₀ ZMod 2) :
+    morseAugmentation f (h.morseBoundary hf c) = 0 := by
+  rw [← LinearMap.comp_apply, h.morseAugmentation_comp_morseBoundary hf, LinearMap.zero_apply]
 
 /-- **The fundamental chain is a cycle.** For a Morse–Smale pseudo-gradient, the mod-two Morse
 boundary of the sum of the critical points of top index is zero: `∂ [M] = 0`. -/
+@[simp]
 theorem morseBoundary_morseFundamentalChain :
     h.morseBoundary hf (morseFundamentalChain hf) = 0 := by
   classical
@@ -289,7 +303,7 @@ theorem morseBoundary_morseFundamentalChain :
 
 /-- **No boundary into a unique minimum.** If `f` has a single critical point of index `0`, the
 mod-two Morse boundary has no coefficient at it. -/
-theorem morseBoundaryCoeff_eq_zero_of_manifoldMorseIndex_eq_zero
+theorem morseBoundaryCoeff_eq_zero_of_subsingleton_of_morseIndex_eq_zero
     (hmin : {q : criticalPoints 𝓘(ℝ, E) f | manifoldMorseIndex 𝓘(ℝ, E) f q = 0}.Subsingleton)
     (p : criticalPoints 𝓘(ℝ, E) f) {q : criticalPoints 𝓘(ℝ, E) f}
     (hq : manifoldMorseIndex 𝓘(ℝ, E) f q = 0) : h.morseBoundaryCoeff hf p q = 0 := by
@@ -301,7 +315,7 @@ theorem morseBoundaryCoeff_eq_zero_of_manifoldMorseIndex_eq_zero
 
 /-- **No boundary out of a unique maximum.** If `f` has a single critical point of index `n`, the
 mod-two Morse boundary of that point is zero. -/
-theorem morseBoundaryCoeff_eq_zero_of_manifoldMorseIndex_eq_finrank
+theorem morseBoundaryCoeff_eq_zero_of_subsingleton_of_morseIndex_eq_finrank
     (hmax : {p : criticalPoints 𝓘(ℝ, E) f |
       manifoldMorseIndex 𝓘(ℝ, E) f p = finrank ℝ E}.Subsingleton)
     {p : criticalPoints 𝓘(ℝ, E) f} (hp : manifoldMorseIndex 𝓘(ℝ, E) f p = finrank ℝ E)
@@ -316,7 +330,7 @@ theorem morseBoundaryCoeff_eq_zero_of_manifoldMorseIndex_eq_finrank
 compact surface, if `f` has a single critical point of index `0` and a single critical point of
 index `2`, then the mod-two Morse boundary of every Morse–Smale pseudo-gradient adapted to `f` is
 zero, so the mod-two Morse complex has zero differential. -/
-theorem morseBoundary_eq_zero_of_finrank_eq_two (hE : finrank ℝ E = 2)
+theorem morseBoundary_eq_zero_of_finrank_eq_two_of_subsingleton (hE : finrank ℝ E = 2)
     (hmin : {q : criticalPoints 𝓘(ℝ, E) f | manifoldMorseIndex 𝓘(ℝ, E) f q = 0}.Subsingleton)
     (hmax : {p : criticalPoints 𝓘(ℝ, E) f | manifoldMorseIndex 𝓘(ℝ, E) f p = 2}.Subsingleton) :
     h.morseBoundary hf = 0 := by
@@ -327,8 +341,9 @@ theorem morseBoundary_eq_zero_of_finrank_eq_two (hE : finrank ℝ E = 2)
     have hp2 : manifoldMorseIndex 𝓘(ℝ, E) f p ≤ finrank ℝ E := manifoldMorseIndex_le_finrank
     rcases (by omega : manifoldMorseIndex 𝓘(ℝ, E) f q = 0 ∨
         manifoldMorseIndex 𝓘(ℝ, E) f p = 2) with hq | hp
-    · rw [h.morseBoundaryCoeff_eq_zero_of_manifoldMorseIndex_eq_zero hf hmin p hq, mul_zero]
-    · rw [h.morseBoundaryCoeff_eq_zero_of_manifoldMorseIndex_eq_finrank hf (by rwa [hE])
+    · rw [h.morseBoundaryCoeff_eq_zero_of_subsingleton_of_morseIndex_eq_zero hf hmin p hq,
+        mul_zero]
+    · rw [h.morseBoundaryCoeff_eq_zero_of_subsingleton_of_morseIndex_eq_finrank hf (by rwa [hE])
         (hp.trans hE.symm) q, mul_zero]
   · rw [h.morseBoundaryCoeff_eq_zero_of_morseIndex_ne_add_one hf hpq, mul_zero]
 
