@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Complexification
+public import TauCeti.LinearAlgebra.CliffordAlgebra.Dual
 public import TauCeti.LinearAlgebra.CliffordAlgebra.VolumeElement.Oriented
 
 /-!
@@ -62,6 +63,8 @@ the positive orientation and `-1` for the negative one.
   with vectors (`CliffordAlgebra.complexVolume_mul_ι_of_even`). For `Q v = -‖v‖²`, conjugation by
   `Γ` is the grade involution (`CliffordAlgebra.complexVolume_mul_mul_complexVolume`).
 * `CliffordAlgebra.complexVolume_mem_center`: in odd dimension, `Γ` is central.
+* `AlgHom.cliffordReverseDual_complexVolume`: the reverse-dual action on `Γ` is
+  `(-1) ^ ⌊n / 2⌋` times the transpose of its original action.
 
 Only the statements involving `Γ²` assume `Q v = -‖v‖²`; the others hold for every `Q`.
 
@@ -185,6 +188,20 @@ theorem reverse_complexVolume :
   rw [complexVolume_def, map_smul, ← ofBaseChangeAux_reverse, reverse_volumeElement, map_smul,
     smul_comm]
   norm_cast
+
+/-- The reverse-dual action on normalized complex volume is `(-1) ^ (n / 2)` times
+its transpose. In even dimension `n = 2ℓ`, reverse-dual chirality is `(-1)^ℓ` times
+transposed chirality; the induced dual parity has no such sign. No finite dimension
+of the module or Hermitian metric is required. -/
+@[simp]
+theorem _root_.AlgHom.cliffordReverseDual_complexVolume
+    {S : Type*} [AddCommGroup S] [Module ℂ S]
+    (ρ : CliffordAlgebra (Q.baseChange ℂ) →ₐ[ℂ] Module.End ℂ S)
+    (o : Orientation ℝ V (Fin n)) :
+    ρ.cliffordReverseDual (CliffordAlgebra.complexVolume Q o) =
+      (-1 : ℂ) ^ (n / 2) • (ρ (CliffordAlgebra.complexVolume Q o)).dualMap := by
+  ext φ s
+  simp [AlgHom.cliffordReverseDual_apply_apply]
 
 /-- Complex-linear Clifford conjugation multiplies `Γ` by `(-1) ^ ⌊(n + 1) / 2⌋`; in dimension
 `2ℓ` this is `star Γ = (-1) ^ ℓ Γ`. -/
