@@ -10,6 +10,8 @@ public import TauCeti.GroupTheory.Commutator
 public import Mathlib.Algebra.BigOperators.Group.List.Basic
 public import Mathlib.Data.List.OfFn
 
+import TauCeti.Order.CompleteLattice.Basic
+
 /-!
 # Ordered products of normalizing subgroups
 
@@ -32,16 +34,6 @@ The proof iterates Mathlib's binary normalized-join formula
 -/
 
 public section
-
-namespace TauCeti
-
-private theorem iSup_fin_succ {α : Type*} [CompleteLattice α] {n : ℕ}
-    (f : Fin (n + 1) → α) : (⨆ i, f i) = f 0 ⊔ ⨆ i : Fin n, f i.succ := by
-  apply eq_of_forall_ge_iff
-  intro a
-  simp only [iSup_le_iff, Fin.forall_fin_succ, sup_le_iff]
-
-end TauCeti
 
 namespace Subgroup
 

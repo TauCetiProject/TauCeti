@@ -8,6 +8,8 @@ module
 public import Mathlib.Order.CompleteLattice.Basic
 public import Mathlib.Algebra.Order.Ring.Int
 
+import Mathlib.Data.Fin.Basic
+
 /-!
 # Suprema in complete lattices
 
@@ -15,6 +17,8 @@ This file adds supremum identities for complete lattices that are not in Mathlib
 
 ## Main declarations
 
+* `TauCeti.iSup_fin_succ`: a supremum over `Fin (n + 1)` splits into its first member and the
+  supremum of its tail.
 * `TauCeti.iSup_int_eq_sup_pos_mul_sup_zero_sup_pos_mul_neg`: for `c ≠ 0`, a supremum over
   the integers splits by the sign of `n * c` into the parts with `n * c` positive, `n = 0`, and
   `n * c` negative.
@@ -27,6 +31,13 @@ This file adds supremum identities for complete lattices that are not in Mathlib
 public section
 
 namespace TauCeti
+
+/-- Splitting the supremum of a family indexed by `Fin (n + 1)` off its first member. -/
+theorem iSup_fin_succ {α : Type*} [CompleteLattice α] {n : ℕ}
+    (f : Fin (n + 1) → α) : (⨆ i, f i) = f 0 ⊔ ⨆ i : Fin n, f i.succ := by
+  apply eq_of_forall_ge_iff
+  intro a
+  simp only [iSup_le_iff, Fin.forall_fin_succ, sup_le_iff]
 
 /-- **Splitting a supremum over `ℤ` by the sign of `n * c`.** For `c ≠ 0`, the supremum of
 `f n` over all integers `n` is the join of the suprema over `0 < n * c` and over `0 < n * -c`
