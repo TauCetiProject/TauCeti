@@ -37,7 +37,7 @@ canonical pairs `((r, p_r), (θ, L))`. For `r ≠ 0`:
 So `(r, θ, p_r, L)` are canonical coordinates in which a central-force Hamiltonian
 `H = ‖p‖² / (2m) + U(‖q‖)` becomes `p_r² / (2m) + U_L(r)`, with the effective potential
 `U_L(r) = L² / (2 m r²) + U(r)` (`TauCeti.centralForceHamiltonian_polarCanonical`). Its Hamiltonian
-vector field in these coordinates is `(ṙ, ṗ_r, θ̇, L̇) = (p_r / m, -U_L'(r), L / (m r²), 0)`: the
+vector field in these coordinates is `(r', p_r', θ', L') = (p_r / m, -U_L'(r), L / (m r²), 0)`: the
 derivative of the parametrization carries this field to the Hamiltonian vector field of `H`
 (`TauCeti.fderiv_polarCanonical_apply_eq_hamiltonianVectorField`). Hence the angular momentum
 is conserved, and at a fixed value `L = ℓ` the radial motion is governed by the reduced
@@ -358,7 +358,7 @@ variable [FiniteDimensional ℝ V]
 
 /-- **Hamilton's equations in polar coordinates.** At a point with `r > 0` where the potential
 has derivative `U'`, the derivative of the polar canonical parametrization carries
-`(ṙ, ṗ_r, θ̇, L̇) = (p_r / m, L² / (m r³) - U'(r), L / (m r²), 0)` to the Hamiltonian vector field
+`(r', p_r', θ', L') = (p_r / m, L² / (m r³) - U'(r), L / (m r²), 0)` to the Hamiltonian vector field
 of the central-force Hamiltonian. These components are `∂H/∂p_r`, `-∂H/∂r`, `∂H/∂L` and
 `-∂H/∂θ` for `H = p_r² / (2m) + U_L(r)`, using `U_L'(r) = U'(r) - L² / (m r³)`
 (`TauCeti.hasDerivAt_effectivePotential`). -/
@@ -384,10 +384,10 @@ theorem fderiv_polarCanonical_apply_eq_hamiltonianVectorField {m : ℝ} {U : ℝ
     match_scalars <;> field_simp <;> ring
 
 /-- **Solutions of Hamilton's equations in polar coordinates.** A curve `γ = ((r, p_r), (θ, L))`
-with `r > 0` solving `ṙ = p_r / m`, `ṗ_r = L² / (m r³) - U'(r)`, `θ̇ = L / (m r²)` and `L̇ = 0`
+with `r > 0` solving `r' = p_r / m`, `p_r' = L² / (m r³) - U'(r)`, `θ' = L / (m r²)` and `L' = 0`
 parametrizes, through the polar canonical parametrization, an integral curve of the Hamiltonian
 vector field of the central-force Hamiltonian. Along such a curve `L = ℓ` is constant, and the
-radial pair `(r, p_r)` solves Hamilton's equations `ṙ = p_r / m`, `ṗ_r = -U_ℓ'(r)` of the reduced
+radial pair `(r, p_r)` solves Hamilton's equations `r' = p_r / m`, `p_r' = -U_ℓ'(r)` of the reduced
 Hamiltonian `p_r² / (2m) + U_ℓ(r)` on the half-plane `r > 0`. -/
 theorem hasDerivAt_polarCanonical_comp {m : ℝ} {U U' : ℝ → ℝ} {γ : ℝ → (ℝ × ℝ) × (ℝ × ℝ)}
     {t : ℝ} (hr : 0 < (γ t).1.1) (hU : HasDerivAt U (U' (γ t).1.1) (γ t).1.1)
