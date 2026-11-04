@@ -154,15 +154,8 @@ private theorem IsTorus.lieExp_smul_mem_centralizer {T : Subgroup G} (hT : IsTor
     {X : LeftInvariantDerivation I G}
     (hX : X ∈ lieSubalgebraOfSubgroup (I := I) (Subgroup.normalizer (T : Set G))) (s : ℝ) :
     lieExp (I := I) (s • X) ∈ Subgroup.centralizer (T : Set G) := by
-  -- The adjoint action of `lieExp (s • X)` fixes `Lie(T)`, whose exponential image is `T`.
-  rw [Subgroup.mem_centralizer_iff]
-  intro t ht
-  rw [← hT.image_lieExp_lieSubalgebraOfSubgroup (I := I)] at ht
-  obtain ⟨Y, hY, rfl⟩ := ht
-  have hconj := conj_lieExp (I := I) (lieExp (I := I) (s • X)) Y
-  dsimp only at hconj
-  rw [hT.Ad_lieExp_smul_apply_eq_self hX hY s] at hconj
-  exact (mul_inv_eq_iff_eq_mul.mp hconj).symm
+  exact (mem_centralizer_iff_forall_Ad_apply_eq_self hT.isClosed
+    hT.isConnected.isPreconnected _).mpr fun _ hY => hT.Ad_lieExp_smul_apply_eq_self hX hY s
 
 /-- **The normalizer and the centralizer of a torus have the same Lie algebra.** -/
 theorem IsTorus.lieSubalgebraOfSubgroup_normalizer {T : Subgroup G} (hT : IsTorus T) :
