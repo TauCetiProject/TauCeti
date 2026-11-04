@@ -66,12 +66,9 @@ theorem exists_contMDiffMap_eventuallyEq_extChartAt
     {M : Type*} [TopologicalSpace M] [ChartedSpace H M] [IsManifold I ∞ M] [T2Space M] (x : M) :
     ∃ F : C^∞⟮I, M; modelWithCornersSelf ℝ E, E⟯,
       Filter.EventuallyEq (nhds x) (F : M → E) (extChartAt I x) := by
-  -- Multiplying the chart by a bump function at `x` leaves its germ there and makes the product
-  -- smooth everywhere.
-  let b : SmoothBumpFunction I x := Classical.choice inferInstance
-  refine ⟨⟨fun y ↦ b y • extChartAt I x y, b.contMDiff_smul contMDiffOn_extChartAt⟩, ?_⟩
-  filter_upwards [b.eventuallyEq_one] with y hy
-  simp [hy]
+  -- The chart is smooth on its open source, so it has the germ of a global smooth map.
+  exact contMDiffOn_extChartAt.exists_contMDiffMap_eventuallyEq (chartAt H x).open_source
+    (mem_chart_source H x)
 
 /-- **A smooth function factors through the chart near an interior point.** If `F` has the germ of
 the extended chart at an interior point `x`, then every `f : C^∞⟮I, M; ℝ⟯` agrees near `x` with
@@ -85,38 +82,22 @@ theorem exists_contMDiffMap_comp_eventuallyEq
     (f : C^∞⟮I, M; ℝ⟯) :
     ∃ g' : C^∞⟮modelWithCornersSelf ℝ E, E; ℝ⟯,
       Filter.EventuallyEq (nhds x) (f : M → ℝ) (g' ∘ F) := by
-  -- Cut the chart expression of `f` off inside the interior of the chart target.
+  -- The chart expression of `f` is smooth on the interior of the chart target, so it has the
+  -- germ of a global smooth function on the model space at `extChartAt I x x`.
+  have hxtarget : extChartAt I x x ∈ interior (extChartAt I x).target :=
+    (ModelWithCorners.isInteriorPoint_iff (I := I)).mp hx
+  have hg : ContMDiffOn (modelWithCornersSelf ℝ E) (modelWithCornersSelf ℝ ℝ) ∞
+      (f ∘ (extChartAt I x).symm) (interior (extChartAt I x).target) :=
+    f.contMDiff.comp_contMDiffOn ((contMDiffOn_extChartAt_symm x).mono interior_subset)
+  obtain ⟨g', hg'⟩ := hg.exists_contMDiffMap_eventuallyEq isOpen_interior hxtarget
+  refine ⟨g', ?_⟩
   have hFx : F x = extChartAt I x x := hF.eq_of_nhds
-  have htarget : interior (extChartAt I x).target ∈ nhds (F x) := by
-    rw [hFx]
-    exact isOpen_interior.mem_nhds
-      ((ModelWithCorners.isInteriorPoint_iff (I := I)).mp hx)
-  obtain ⟨β, hβ, -⟩ :=
-    (SmoothBumpFunction.nhds_basis_support
-      (I := modelWithCornersSelf ℝ E) htarget).mem_iff.mp htarget
-  let g : E → ℝ := fun y ↦ β y * f ((extChartAt I x).symm y)
-  have hg : ContDiff ℝ ∞ g := by
-    apply ContMDiff.contDiff
-    refine contMDiff_of_tsupport fun y hy ↦ ?_
-    have hytarget : y ∈ interior (extChartAt I x).target :=
-      hβ (tsupport_mul_subset_left hy)
-    have hsymmWithin :=
-      contMDiffWithinAt_extChartAt_symm_target (n := ∞) x (interior_subset hytarget)
-    have hsymm := hsymmWithin.contMDiffAt
-      (Filter.mem_of_superset (isOpen_interior.mem_nhds hytarget) interior_subset)
-    exact β.contMDiffAt.mul (f.contMDiff.contMDiffAt.comp y hsymm)
-  refine ⟨⟨g, hg.contMDiff⟩, ?_⟩
-  have hβF : Filter.EventuallyEq (nhds x) (β ∘ F) (fun _ ↦ 1) :=
-    β.eventuallyEq_one.comp_tendsto F.contMDiff.continuous.continuousAt
+  have hg'F : Filter.EventuallyEq (nhds x) (g' ∘ F) (f ∘ (extChartAt I x).symm ∘ F) :=
+    (hFx ▸ hg').comp_tendsto F.contMDiff.continuous.continuousAt
   have hsource : ∀ᶠ y in nhds x, y ∈ (extChartAt I x).source :=
     (isOpen_extChartAt_source x).mem_nhds (mem_extChartAt_source x)
-  filter_upwards [hF, hβF, hsource] with y hFy hβy hy
-  -- Unfold composition and the bundled chart-local function; no theorem rewrites through both
-  -- bundled-map coercions at once.
-  change f y = β (F y) * f ((extChartAt I x).symm (F y))
-  -- Likewise expose the constant function in the eventual equality supplied by the bump.
-  change β (F y) = 1 at hβy
-  rw [hβy, one_mul, hFy, (extChartAt I x).left_inv hy]
+  filter_upwards [hF, hg'F, hsource] with y hFy hg'y hy
+  rw [hg'y, Function.comp_apply, Function.comp_apply, hFy, (extChartAt I x).left_inv hy]
 
 end TauCeti
 
