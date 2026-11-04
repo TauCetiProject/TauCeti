@@ -154,20 +154,19 @@ private theorem aestronglyMeasurable_laplacianSlice (hf : StronglyMeasurable (Fu
     {μ ν : Measure ℝ} (hfM : ∀ᵐ s ∂μ, ∀ᵐ y, ‖f s y‖ ≤ M) (x : E) :
     AEStronglyMeasurable (Function.uncurry (laplacianSlice f x)) (μ.prod ν) := by
   obtain ⟨Φ, hΦ, hΦeq⟩ := exists_stronglyMeasurable_eq_iteratedFDeriv_heatKernel_convolution hf 2 x
-  -- The Laplacian is the sum of the values of the Hessian along an orthonormal basis.
+  -- The Laplacian is a continuous linear functional of the Hessian.
   have hΨ : StronglyMeasurable fun p : ℝ × ℝ => if p.1 < p.2 then
-      ∑ i, Φ (p.1, p.2 - p.1) ![stdOrthonormalBasis ℝ E i, stdOrthonormalBasis ℝ E i] else 0 :=
+      (∑ i, ContinuousMultilinearMap.apply ℝ (fun _ : Fin 2 => E) F
+        ![stdOrthonormalBasis ℝ E i, stdOrthonormalBasis ℝ E i]) (Φ (p.1, p.2 - p.1)) else 0 :=
     StronglyMeasurable.ite (measurableSet_lt measurable_fst measurable_snd)
-      (Finset.stronglyMeasurable_fun_sum _ fun i _ =>
-        (ContinuousMultilinearMap.apply ℝ (fun _ : Fin 2 => E) F
-          ![stdOrthonormalBasis ℝ E i, stdOrthonormalBasis ℝ E i]).continuous
-            |>.comp_stronglyMeasurable (hΦ.comp_measurable (by fun_prop)))
+      ((ContinuousLinearMap.continuous _).comp_stronglyMeasurable
+        (hΦ.comp_measurable (by fun_prop)))
       stronglyMeasurable_const
   refine hΨ.aestronglyMeasurable.congr ?_
   filter_upwards [Measure.quasiMeasurePreserving_fst.ae hfM] with p hp
   simp only [Function.uncurry_def, laplacianSlice]
   split_ifs with h
-  · rw [hΦeq p.1 (p.2 - p.1) M (sub_pos.2 h) hp, laplacian_eq_iteratedFDeriv_stdOrthonormalBasis]
+  · rw [hΦeq p.1 (p.2 - p.1) M (sub_pos.2 h) hp, laplacian_eq_traceL_iteratedFDeriv]
   · rfl
 
 /-- `laplacianSlice f x` is integrable on the square `(0, t)²`: for almost every `s` its slice is
@@ -234,15 +233,10 @@ theorem laplacian_heatDuhamelPotential_of_holderWith
     Δ (heatDuhamelPotential f t) x = ∫ s in 0..t, Δ (heatKernel (t - s) ⋆ f s) x := by
   have hint := intervalIntegrable_iteratedFDeriv_heatKernel_convolution_of_holderWith hf hfM hH
     hα ht le_rfl x
-  -- The Laplacian is a sum of values of the Hessian, each a continuous linear functional of it.
-  set L : Fin (finrank ℝ E) → ContinuousMultilinearMap ℝ (fun _ : Fin 2 => E) F →L[ℝ] F :=
-    fun i => ContinuousMultilinearMap.apply ℝ (fun _ : Fin 2 => E) F
-      ![stdOrthonormalBasis ℝ E i, stdOrthonormalBasis ℝ E i]
-  simp only [laplacian_eq_iteratedFDeriv_stdOrthonormalBasis]
+  -- The Laplacian is a continuous linear functional of the Hessian.
+  simp only [laplacian_eq_traceL_iteratedFDeriv]
   rw [congrFun (iteratedFDeriv_heatDuhamelPotential_of_holderWith hf hfM hH hα ht le_rfl) x]
-  exact (Finset.sum_congr rfl fun i _ => ((L i).intervalIntegral_comp_comm hint).symm).trans
-    (intervalIntegral.integral_finsetSum fun i _ =>
-      ⟨(L i).integrable_comp hint.1, (L i).integrable_comp hint.2⟩).symm
+  exact (ContinuousLinearMap.intervalIntegral_comp_comm _ hint).symm
 
 /-- **Duhamel's principle in integrated form**, together with the integrability of both terms. -/
 private theorem heatDuhamelPotential_eq_integral_add_integral
@@ -327,9 +321,8 @@ theorem continuousOn_laplacian_heatDuhamelPotential (hf : StronglyMeasurable (Fu
   obtain ⟨C, hC⟩ :=
     exists_holderOnWith_iteratedFDeriv_two_heatDuhamelPotential (E := E) (F := F) hα₀ hα₂
   have h := (hC hf hfM hH x).continuousOn (by positivity)
-  simp only [laplacian_eq_iteratedFDeriv_stdOrthonormalBasis]
-  exact continuousOn_finsetSum _ fun i _ =>
-    (ContinuousMultilinearMap.apply ℝ (fun _ : Fin 2 => E) F _).continuous.comp_continuousOn h
+  simp only [laplacian_eq_traceL_iteratedFDeriv]
+  exact (ContinuousLinearMap.continuous _).comp_continuousOn h
 
 /-- **The inhomogeneous heat equation on `[0, T]`.** Let `f` be jointly measurable and
 essentially bounded on `(0, T) × E`, with `f(s, ·)` `α`-Hölder for almost every `0 < s < T`,
