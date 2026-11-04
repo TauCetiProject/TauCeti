@@ -82,6 +82,30 @@ def singularHomologyModTwoIso (X : TopCat.{u}) (n : ℕ) :
       (ModuleCat.restrictScalars.{u} (Int.castRingHom (ZMod 2)))
         (ModuleCat.of (ZMod 2) (ULift.{u} (ZMod 2))) n).app X).symm
 
+/-- The identification of integral `ℤ/2` homology with mod-two homology is the inverse of the
+identification of `ℤ/2` with the restriction of `𝔽₂`, followed by the inverse of the comparison of
+restricted mod-two homology with integral homology. -/
+theorem singularHomologyModTwoIso_hom (X : TopCat.{u}) (n : ℕ) :
+    (X.singularHomologyModTwoIso n).hom =
+      ((singularHomologyFunctor (ModuleCat.{u} ℤ) n).map (ModuleCat.restrictScalarsIntCastIso
+          (ModuleCat.of (ZMod 2) (ULift.{u} (ZMod 2)))).inv).app X ≫
+        (TauCeti.singularHomologyFunctorObjCompIso
+          (ModuleCat.restrictScalars.{u} (Int.castRingHom (ZMod 2)))
+            (ModuleCat.of (ZMod 2) (ULift.{u} (ZMod 2))) n).inv.app X :=
+  (rfl)
+
+/-- The identification of integral `ℤ/2` homology with mod-two homology is natural in the space. -/
+@[reassoc]
+theorem singularHomologyModTwoIso_hom_naturality {X Y : TopCat.{u}} (f : X ⟶ Y) (n : ℕ) :
+    ((singularHomologyFunctor (ModuleCat.{u} ℤ) n).obj
+        (ModuleCat.of ℤ (ULift.{u} (ZMod 2)))).map f ≫ (Y.singularHomologyModTwoIso n).hom =
+      (X.singularHomologyModTwoIso n).hom ≫
+        (ModuleCat.restrictScalars (Int.castRingHom (ZMod 2))).map
+          (((singularHomologyFunctor (ModuleCat.{u} (ZMod 2)) n).obj
+            (ModuleCat.of (ZMod 2) (ULift.{u} (ZMod 2)))).map f) := by
+  rw [singularHomologyModTwoIso_hom, singularHomologyModTwoIso_hom, NatTrans.naturality_assoc]
+  exact congrArg _ ((TauCeti.singularHomologyFunctorObjCompIso _ _ n).inv.naturality f)
+
 /-- Singular homology with coefficients in the integer module `ℤ/2` vanishes exactly when singular
 homology with coefficients in the field `𝔽₂` does. -/
 theorem isZero_singularHomology_modTwo_iff (X : TopCat.{u}) (n : ℕ) :
@@ -103,16 +127,13 @@ theorem singularHomologyFunctor_map_modTwoCoefficientSequence_f_app (X : TopCat.
         TauCeti.modTwoCoefficientSequence.{u}.f).app X).hom =
       LinearMap.lsmul ℤ (((singularHomologyFunctor (ModuleCat.{u} ℤ) n).obj
         (ModuleCat.of ℤ (ULift.{u} ℤ))).obj X) 2 := by
-  have hf : TauCeti.modTwoCoefficientSequence.{u}.f = 𝟙 _ + 𝟙 _ := by
-    simp [two_smul]
   -- Mathlib's `singularHomologyFunctor` is by definition singular chains followed by homology
   change (HomologicalComplex.homologyMap (((singularChainComplexFunctor (ModuleCat.{u} ℤ)).map
-    TauCeti.modTwoCoefficientSequence.f).app X) n).hom = _
-  rw [hf, Functor.map_add, NatTrans.app_add, HomologicalComplex.homologyMap_add,
-    CategoryTheory.Functor.map_id, NatTrans.id_app, HomologicalComplex.homologyMap_id]
+    TauCeti.modTwoCoefficientSequence.f).app X) n).hom =
+      LinearMap.lsmul ℤ ((((singularChainComplexFunctor (ModuleCat.{u} ℤ)).obj
+        (ModuleCat.of ℤ (ULift.{u} ℤ))).obj X).homology n) 2
   ext x
-  simp only [ModuleCat.hom_add, ModuleCat.hom_id, LinearMap.add_apply, LinearMap.id_apply]
-  exact (two_smul ℤ x).symm
+  simp [HomologicalComplex.homologyMap_add, two_smul]
 
 /-- The **reduction modulo two** `Hₙ(X; ℤ) ⟶ Hₙ(X; ℤ/2)`, induced by the coefficient map
 `ℤ ⟶ ℤ/2`. -/
