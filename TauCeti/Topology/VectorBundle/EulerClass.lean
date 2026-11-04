@@ -163,6 +163,12 @@ theorem thomPairOverMap_fst_apply {W W' : Set B} (h : W ⊆ W') (v : π F E ⁻�
   (rfl)
 
 @[simp]
+theorem thomPairOverMap_snd_apply {W W' : Set B} (h : W ⊆ W')
+    (v : (thomPairOver F E W).snd) :
+    TopPair.Hom.snd (thomPairOverMap F E h) v = ⟨v.1, h v.2.1, v.2.2⟩ :=
+  (rfl)
+
+@[simp]
 theorem thomPairOverMap_self {W : Set B} : thomPairOverMap F E (subset_refl W) = 𝟙 _ :=
   TopPair.hom_ext_of_fst _ (TopCat.ext fun _ ↦ rfl)
 

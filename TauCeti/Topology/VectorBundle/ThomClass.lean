@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicTopology.Cohomology.Local.Basic
+public import TauCeti.AlgebraicTopology.Cohomology.Local.Linear
 public import TauCeti.AlgebraicTopology.Cohomology.ProdThomPair
 public import TauCeti.Topology.Category.TopPair.ContinuousLinearEquiv
 public import TauCeti.Topology.VectorBundle.EulerClass
@@ -39,7 +39,7 @@ trivialization pulls back to a global trivialization of the restriction of `E` t
 these restrictions have Thom classes (`Bundle.Trivialization.exists_isThomClass_pullback_baseSet`):
 these are the local Thom classes over trivializing open sets that the Mayer–Vietoris argument of
 Milnor and Stasheff (§10) glues to a Thom class of a general oriented bundle. The gluing over
-finite trivializing covers is in `TauCeti.Topology.VectorBundle.MayerVietoris`.
+finite trivializing covers is in `TauCeti.Topology.VectorBundle.MayerVietoris.Basic`.
 
 The gluing works with the Thom pair `(E|_W, E₀|_W)` of the restriction of `E` to a subset `W` of
 the base (`TauCeti.thomPairOver`). When `W` lies in the base set of a linear trivialization `e`,
@@ -60,6 +60,12 @@ the gluing uses: `Hⁿ(E, E₀) = 0` for `n < r`
 (`Bundle.Trivialization.isZero_singularCohomology_thomPair`), and a class of `Hʳ(E, E₀)`, for
 instance a Thom class, is determined by its restrictions to the fibres
 (`Bundle.Trivialization.singularCohomology_thomPair_ext`).
+
+Two linear trivializations whose base sets contain `b` read a class of `(F, F ∖ {0})` as classes of
+the fibre pair over `b` differing by the sign of the determinant of their coordinate change at `b`
+(`Bundle.Trivialization.singularCohomologyMap_complZeroPairIso_hom_eq_sign_det_smul`): an invertible
+linear map acts on `Hⁿ(F, F ∖ {0})` by the sign of its determinant. This is the transition rule
+for the fibre classes of an oriented bundle.
 
 ## Main definitions and results
 
@@ -90,6 +96,8 @@ instance a Thom class, is determined by its restrictions to the fibres
   trivializing set with prescribed restrictions to the fibres.
 * `Bundle.Trivialization.singularCohomology_thomPairOver_ext`: over a trivializing set, a class in
   the top degree is determined on the fibres.
+* `Bundle.Trivialization.singularCohomologyMap_complZeroPairIso_hom_eq_sign_det_smul`: fibre classes
+  read in two trivializations differ by the sign of the coordinate change.
 
 ## References
 
@@ -500,5 +508,40 @@ theorem singularCohomology_thomPair_ext (he : e.baseSet = Set.univ)
     ConcreteCategory.comp_apply, ConcreteCategory.comp_apply, h b]
 
 end ProdThomPair
+
+section CoordChange
+
+variable (e' : Trivialization F (π F E)) [e'.IsLinear ℝ] {K : Type*} [CommRing K]
+  {R' : ModuleCat.{w} K} {M' : ModuleCat.{w} K} [Module.Projective K R']
+
+/-- **Fibre classes read in two trivializations differ by the sign of the coordinate change**: for
+linear trivializations `e` and `e'` whose base sets contain `b`, pulling back a class
+`g ∈ Hⁿ(F, F ∖ {0}; R, M)` to the fibre pair `(E_b, E_b ∖ {0})` along `e'` gives the pull-back
+along `e` multiplied by the sign of the determinant of the coordinate change from `e` to `e'` at
+`b`. -/
+theorem singularCohomologyMap_complZeroPairIso_hom_eq_sign_det_smul {b : B} (hb : b ∈ e.baseSet)
+    (hb' : b ∈ e'.baseSet) {n : ℕ}
+    (g : (TopPair.ofSubset (X := TopCat.of F) ({0}ᶜ : Set F)).singularCohomology R' K M' n) :
+    TopPair.singularCohomologyMap (e'.continuousLinearEquivAt ℝ b hb').complZeroPairIso.hom n g =
+      (SignType.sign (e.coordChangeL ℝ e' b : F →L[ℝ] F).det : ℤ) •
+        TopPair.singularCohomologyMap
+          (e.continuousLinearEquivAt ℝ b hb).complZeroPairIso.hom n g := by
+  have hf : Set.MapsTo (e.coordChangeL ℝ e' b : F →L[ℝ] F) ({0}ᶜ : Set F) {0}ᶜ :=
+    (e.coordChangeL ℝ e' b).mapsTo_compl_zero
+  -- The fibre of `e'` at `b` is the fibre of `e` followed by the coordinate change.
+  have hcomp : (e'.continuousLinearEquivAt ℝ b hb').complZeroPairIso.hom =
+      (e.continuousLinearEquivAt ℝ b hb).complZeroPairIso.hom ≫
+        TopPair.ofSubsetMap (TopCat.ofHom ((e.coordChangeL ℝ e' b : F →L[ℝ] F) : C(F, F))) hf := by
+    have h : e'.continuousLinearEquivAt ℝ b hb' =
+        (e.continuousLinearEquivAt ℝ b hb).trans (e.coordChangeL ℝ e' b) := by
+      ext x
+      simp [coe_coordChangeL e e' ⟨hb, hb'⟩, linearEquivAt_apply, e.symm_apply_apply_mk hb]
+    rw [h, ContinuousLinearEquiv.complZeroPairIso_trans, Iso.trans_hom]
+    exact congrArg _ (ContinuousLinearEquiv.complZeroPairIso_hom _)
+  rw [hcomp, TopPair.singularCohomologyMap_comp,
+    singularCohomologyMap_continuousLinearMap_compl_zero, Preadditive.zsmul_comp, Category.id_comp]
+  exact congr($(ModuleCat.hom_zsmul _ _) g)
+
+end CoordChange
 
 end Bundle.Trivialization
