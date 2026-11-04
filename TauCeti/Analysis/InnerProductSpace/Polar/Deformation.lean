@@ -83,10 +83,8 @@ theorem norm_polarDeformation_apply (T : E →L[ℝ] E) (hT : Function.Injective
 theorem isUnit_polarDeformation (T : E →L[ℝ] E) (hT : IsUnit T) (t : ℝ) :
     IsUnit (T.polarDeformation t) := by
   have hP := (T.isStrictlyPositive_modulus hT).isUnit
-  have hU : IsUnit T.polarFactor := hP.mul_right_iff.mp (by
-    simpa only [mul_def, polarFactor_comp_modulus] using hT)
   rw [polarDeformation_def, ← mul_def]
-  exact hU.mul (hP.cfcRpow _ T.modulus_nonneg)
+  exact (T.isUnit_polarFactor hT).mul (hP.cfcRpow _ T.modulus_nonneg)
 
 /-- The modulus along the polar deformation of an injective operator is the corresponding
 power of its original modulus. -/
@@ -119,11 +117,9 @@ theorem norm_le_norm_polarDeformation_apply_le (T : E →L[ℝ] E)
     ‖x‖ ≤ ‖T.polarDeformation t x‖ ∧ ‖T.polarDeformation t x‖ ≤ ‖T x‖ := by
   have hP := T.one_le_modulus_of_forall_norm_le hexpand
   have hpos := T.modulus_nonneg
-  have hsp : IsStrictlyPositive T.modulus :=
-    (StarOrderedRing.isStrictlyPositive_iff_spectrum_pos (R := ℝ) T.modulus).mpr
-      fun r hr ↦ zero_lt_one.trans_le ((CFC.one_le_iff (R := ℝ) _).mp hP r hr)
-  have hinj : Function.Injective T := (injective_iff_map_eq_zero T).mpr fun x hx ↦ by
-    exact norm_eq_zero.mp (le_antisymm (by simpa [hx] using hexpand x) (norm_nonneg x))
+  have hsp := T.isStrictlyPositive_modulus_of_forall_norm_le hexpand
+  have hinj : Function.Injective T :=
+    injective_of_forall_norm_le (M := 1) fun x ↦ by simpa using hexpand x
   rw [T.norm_polarDeformation_apply hinj]
   constructor
   · have hcancel : (T.modulus ^ (t - 1)) ((T.modulus ^ (1 - t)) x) = x := by

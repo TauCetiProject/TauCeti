@@ -235,6 +235,15 @@ theorem one_le_modulus_of_forall_norm_le (T : E →L[𝕜] F)
   intro r hr
   exact Real.one_le_rpow ((CFC.one_le_iff (R := ℝ) _).mp hgram r hr) (by norm_num)
 
+/-- The modulus of a pointwise expanding Hilbert space operator is strictly positive. -/
+theorem isStrictlyPositive_modulus_of_forall_norm_le (T : E →L[𝕜] F)
+    (hT : ∀ x, ‖x‖ ≤ ‖T x‖) : IsStrictlyPositive T.modulus := by
+  have hP := T.one_le_modulus_of_forall_norm_le hT
+  refine (StarOrderedRing.isStrictlyPositive_iff_spectrum_pos (R := ℝ) T.modulus
+    T.isSelfAdjoint_modulus).mpr fun r hr ↦ ?_
+  exact zero_lt_one.trans_le
+    ((CFC.one_le_iff (R := ℝ) _ T.isSelfAdjoint_modulus).mp hP r hr)
+
 end RealAlgebra
 
 end ContinuousLinearMap
