@@ -5,7 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.RingTheory.NovikovModule.Residue
+public import TauCeti.RingTheory.NovikovModule.Grading
+public import TauCeti.Algebra.Torsor.Sigma
 public import TauCeti.Geometry.Symplectic.Floer.PeriodGroup
 
 /-!
