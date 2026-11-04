@@ -212,6 +212,19 @@ theorem freeCumulant_eq_sum_mu_mul_partitionMoment (s : Finset α) :
       ∑ π : NoncrossingPartition s, mu R π ⊤ * partitionMoment φ a π.1 := by
   rw [freeCumulant_def, partitionCumulant_def, Iic_top]
 
+/-- Elements with the same scalar moments have the same free cumulants on constant words. -/
+theorem freeCumulant_const_eq_of_apply_pow_eq {x y : A}
+    (h : ∀ k, φ (x ^ k) = φ (y ^ k)) (s : Finset α) :
+    freeCumulant φ (fun _ : α => x) s = freeCumulant φ (fun _ => y) s := by
+  classical
+  simp only [freeCumulant_eq_sum_mu_mul_partitionMoment, partitionMoment_def]
+  congr 1
+  ext π
+  congr 1
+  apply prod_congr rfl
+  intro B _
+  simpa using h #B
+
 /-- The *moment–cumulant formula* for a word: a moment of a nonempty word is the sum of its free
 cumulants over all noncrossing partitions, `φ (a_{i₁} * ⋯ * a_{iₙ}) = ∑_{π ∈ NC(s)} κ_π(a)` for
 `s = {i₁ < ⋯ < iₙ}`. -/

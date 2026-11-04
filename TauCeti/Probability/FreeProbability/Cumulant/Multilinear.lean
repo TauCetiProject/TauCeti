@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.LinearAlgebra.Multilinear.Basic
-public import TauCeti.Probability.FreeProbability.Cumulant.Basic
+public import TauCeti.Probability.FreeProbability.Cumulant.Product
 
 /-!
 # Multilinearity of free cumulants
@@ -130,6 +130,14 @@ theorem freeCumulant_update_add {i : α} (hi : i ∈ s) (x y : A) :
       freeCumulant φ (update a i x) s + freeCumulant φ (update a i y) s := by
   simp only [freeCumulant_def, partitionCumulant_update_add φ a _ hi]
 
+/-- A free cumulant for an additive map vanishes if one of its letters is zero. -/
+theorem freeCumulant_eq_zero_of_apply_eq_zero {i : α} (hai : a i = 0) (hi : i ∈ s) :
+    freeCumulant φ a s = 0 := by
+  classical
+  have he : update a i 0 = a := update_eq_self_iff.2 hai.symm
+  have h := freeCumulant_update_add φ a hi 0 0
+  exact add_eq_left.mp (by simpa only [add_zero, he] using h.symm)
+
 end Additive
 
 section Homogeneous
@@ -184,6 +192,15 @@ theorem freeCumulant_add_algebraMap (hφ : φ 1 = 1) (c : α → R) (hs : 1 < #s
     rw [hupd, freeCumulant_update_add φ _ hi, freeCumulant_update_smul φ _ hi, hunit, mul_zero,
       add_zero, hai]
     exact ih ((subset_insert i t).trans hts)
+
+/-- Scalar words have vanishing free cumulants of order at least two for a normalised
+functional. -/
+@[simp]
+theorem freeCumulant_algebraMap (hφ : φ 1 = 1) (c : α → R) (hs : 1 < #s) :
+    freeCumulant φ (fun i => algebraMap R A (c i)) s = 0 := by
+  obtain ⟨i, hi⟩ := card_pos.1 (by omega : 0 < #s)
+  have hz := freeCumulant_eq_zero_of_apply_eq_zero φ (fun _ : α => (0 : A)) rfl hi
+  simpa using (freeCumulant_add_algebraMap φ (fun _ : α => (0 : A)) hφ c hs).trans hz
 
 end Homogeneous
 
@@ -246,5 +263,27 @@ theorem freeCumulantMultilinear_apply (a : α → A) :
 end Cumulant
 
 end Multilinear
+
+section Relabel
+
+variable [CommRing R] [Semiring A] [Algebra R A] (φ : A →ₗ[R] R)
+
+/-- Scaling each letter scales the free cumulant by the product of the corresponding scalars. -/
+@[simp]
+theorem freeCumulant_smul (c : α → R) (a : α → A) (s : Finset α) :
+    freeCumulant φ (fun i => c i • a i) s = (∏ i ∈ s, c i) * freeCumulant φ a s := by
+  classical
+  simp only [freeCumulant_eq_freeCumulant_comp_orderEmbOfFin φ _ s,
+    ← freeCumulantMultilinear_apply, Function.comp_def]
+  rw [MultilinearMap.map_smul_univ, smul_eq_mul]
+  congr 1
+  symm
+  calc
+    ∏ i ∈ s, c i = ∏ i ∈ univ.image (s.orderEmbOfFin rfl), c i := by
+      rw [image_orderEmbOfFin_univ]
+    _ = ∏ i : Fin #s, c (s.orderEmbOfFin rfl i) :=
+      prod_image (s.orderEmbOfFin rfl).injective.injOn
+
+end Relabel
 
 end TauCeti
