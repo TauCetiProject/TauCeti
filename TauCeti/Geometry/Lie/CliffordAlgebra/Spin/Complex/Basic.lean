@@ -63,6 +63,16 @@ instance complexSpinLieModelFiniteDimensional : FiniteDimensional ℝ SpinLieMod
     finiteDimensional_leftInvariantDerivation BoundarylessManifold.isInteriorPoint
   exact FiniteDimensional.finiteDimensional_submodule _
 
+/-- The charted-space structure on the complex Spin range selected by Cartan's theorem. -/
+instance complexSpinUnitsRangeChartedSpace [Fact Q.Nondegenerate] :
+    ChartedSpace SpinLieModel SpinUnitsRange :=
+  (complexSpinEmbeddedLieSubgroupData (Fact.out : Q.Nondegenerate)).chartedSpace
+
+/-- The real Lie-group structure on the complex Spin range selected by Cartan's theorem. -/
+instance complexSpinUnitsRangeLieGroup [Fact Q.Nondegenerate] :
+    LieGroup 𝓘(ℝ, SpinLieModel) ∞ SpinUnitsRange :=
+  (complexSpinEmbeddedLieSubgroupData (Fact.out : Q.Nondegenerate)).lieGroup
+
 private def complexSpinAmbientCoordinateLieEquiv (hQ : Q.Nondegenerate) :
     TauCeti.Lie.lieSubalgebraOfSubgroup (I := 𝓘(ℝ, CliffordAlgebra Q)) SpinUnitsRange ≃ₗ⁅ℝ⁆
       RestrictScalars ℝ ℂ (quadraticLieSubalgebra Q) :=
@@ -89,30 +99,27 @@ private theorem coe_complexSpinAmbientCoordinateLieEquiv_apply (hQ : Q.Nondegene
 
 /-- The real Lie algebra of complex Spin in the complex quadratic Clifford coordinates.
 `RestrictScalars` keeps the complex quadratic carrier and regards it as a real Lie algebra. -/
-def complexSpinLieEquivQuadratic (hQ : Q.Nondegenerate) :
-    letI := (complexSpinEmbeddedLieSubgroupData hQ).chartedSpace
-    letI := (complexSpinEmbeddedLieSubgroupData hQ).lieGroup
+def complexSpinLieEquivQuadratic [Fact Q.Nondegenerate] :
     LeftInvariantDerivation 𝓘(ℝ, SpinLieModel) SpinUnitsRange ≃ₗ⁅ℝ⁆
       RestrictScalars ℝ ℂ (quadraticLieSubalgebra Q) :=
-  (complexSpinEmbeddedLieSubgroupData hQ).lieEquivLieSubalgebraOfSubgroup.trans
-    (complexSpinAmbientCoordinateLieEquiv hQ)
+  (complexSpinEmbeddedLieSubgroupData (Fact.out : Q.Nondegenerate))
+    |>.lieEquivLieSubalgebraOfSubgroup.trans
+      (complexSpinAmbientCoordinateLieEquiv (Fact.out : Q.Nondegenerate))
 
 /-- Quadratic coordinates are the ambient units coordinates of the differential of inclusion. -/
 @[simp↓ high]
 theorem unitsLieAlgebraLieEquiv_lieMapSubtypeVal_eq_coe_complexSpinLieEquivQuadratic
-    (hQ : Q.Nondegenerate) :
-    letI := (complexSpinEmbeddedLieSubgroupData hQ).chartedSpace
-    letI := (complexSpinEmbeddedLieSubgroupData hQ).lieGroup
-    ∀ X : LeftInvariantDerivation 𝓘(ℝ, SpinLieModel) SpinUnitsRange,
+    [Fact Q.Nondegenerate]
+    (X : LeftInvariantDerivation 𝓘(ℝ, SpinLieModel) SpinUnitsRange) :
       TauCeti.Lie.unitsLieAlgebraLieEquiv
-          ((complexSpinEmbeddedLieSubgroupData hQ).lieMapSubtypeVal X) =
+          ((complexSpinEmbeddedLieSubgroupData (Fact.out : Q.Nondegenerate)).lieMapSubtypeVal X) =
         ((RestrictScalars.addEquiv ℝ ℂ (quadraticLieSubalgebra Q)
-          (complexSpinLieEquivQuadratic hQ X)) : CliffordAlgebra Q) := by
-  intro X
+          (complexSpinLieEquivQuadratic (Q := Q) X)) : CliffordAlgebra Q) := by
   have h := congrArg
     (fun Y : LeftInvariantDerivation 𝓘(ℝ, CliffordAlgebra Q) (CliffordAlgebra Q)ˣ ↦
       TauCeti.Lie.unitsLieAlgebraLieEquiv Y)
-    ((complexSpinEmbeddedLieSubgroupData hQ).lieEquivLieSubalgebraOfSubgroup_apply X)
+    ((complexSpinEmbeddedLieSubgroupData (Fact.out : Q.Nondegenerate))
+      |>.lieEquivLieSubalgebraOfSubgroup_apply X)
   simpa only [complexSpinLieEquivQuadratic, LieEquiv.trans_apply,
     coe_complexSpinAmbientCoordinateLieEquiv_apply] using h.symm
 
