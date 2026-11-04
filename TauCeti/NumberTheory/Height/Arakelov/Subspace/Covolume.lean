@@ -163,11 +163,8 @@ private theorem iSup_apply_plucker_scaled_eq_one {W : Submodule K (ι → K)} {p
   have hx_le (k : Fin p) (j : ι) : v (x k j) ≤ 1 := by
     obtain ⟨z, hz⟩ := (hW.mem_coeSubmodule_iff ((a k : K) • b k)).2
       (b.repr_smul_self_mem_coeSubmodule J ⟨a k, haJ k, rfl⟩) j
-    have hvz : v (z : K) ≤ 1 := by
-      rw [← v.norm_embedding_eq]
-      exact FinitePlace.norm_le_one K v.maximalIdeal z
     have hzx : (z : K) = x k j := by simpa [x, Algebra.smul_def] using hz
-    rwa [← hzx]
+    exact hzx ▸ v.apply_le_one z
   obtain ⟨e, hP0, hP_sup, hPx⟩ := v.val.exists_pivot_inv_mul_le_one hx_li
   set P := x.submatrix id e
   have hP_one : v P.det = 1 :=
@@ -191,12 +188,8 @@ private theorem iSup_apply_plucker_of_pseudoBasis {W : Submodule K (ι → K)} {
         (fun k j ↦ (a k : K) * (b k : ι → K) j) =
           fun k ↦ ∑ l : Fin p, Matrix.diagonal (fun m ↦ (a m : K)) k l • (b l : ι → K) := by
       ext k j
-      rw [Finset.sum_apply, Finset.sum_eq_single k]
-      · simp
-      · intro l _ hlk
-        simp [hlk.symm]
-      · intro hk
-        exact (hk (Finset.mem_univ k)).elim
+      rw [Finset.sum_apply, Fintype.sum_eq_single k fun l hlk ↦ by simp [Matrix.diagonal, hlk.symm]]
+      simp
     rw [hdiag, plucker_sum_smul, Matrix.det_diagonal]
   have hsup := iSup_apply_plucker_scaled_eq_one b hW v haJ ha_eq
   simp_rw [hscale, map_mul, map_prod] at hsup
@@ -208,18 +201,7 @@ private theorem iSup_apply_plucker_of_pseudoBasis {W : Submodule K (ι → K)} {
         1 := by
     rw [← Finset.prod_mul_distrib]
     exact Finset.prod_eq_one fun k _ ↦ ha_eq k
-  calc (⨆ s, v (plucker (fun k ↦ (b k : ι → K)) s))
-      = 1 * (⨆ s, v (plucker (fun k ↦ (b k : ι → K)) s)) := (one_mul _).symm
-    _ = ((∏ k : Fin p, v (a k : K)) *
-          ∏ k : Fin p,
-            (v.maximalIdeal.asIdeal.absNorm : ℝ) ^ multiplicity v.maximalIdeal.asIdeal (J k)) *
-          (⨆ s, v (plucker (fun k ↦ (b k : ι → K)) s)) := by rw [hprod_eq]
-    _ = (∏ k : Fin p,
-          (v.maximalIdeal.asIdeal.absNorm : ℝ) ^ multiplicity v.maximalIdeal.asIdeal (J k)) *
-          ((∏ k : Fin p, v (a k : K)) * ⨆ s, v (plucker (fun k ↦ (b k : ι → K)) s)) := by ring
-    _ = ∏ k : Fin p,
-          (v.maximalIdeal.asIdeal.absNorm : ℝ) ^ multiplicity v.maximalIdeal.asIdeal (J k) := by
-          rw [hsup, mul_one]
+  exact mul_left_cancel₀ (left_ne_zero_of_mul_eq_one hprod_eq) (hsup.trans hprod_eq.symm)
 
 /-- Across all finite places, the product of the maximum local Plücker norms of `b` from a
 pseudo-basis `(b, J)` of `W.integerPoints` is the product `∏ k, N(J k)` of the norms of the
@@ -313,14 +295,10 @@ private theorem archimedeanGramEndo_apply_pi_single_fst {W : Submodule K (ι →
     ((archimedeanGramEndo b (Pi.single k₁ z)) k₂).1 w =
       (∑ i : ι, (mixedEmbedding K ((b k₂ : ι → K) i)).1 w *
         (mixedEmbedding K ((b k₁ : ι → K) i)).1 w) * z.1 w := by
-  rw [archimedeanGramEndo_apply_fst, Finset.sum_eq_single k₁]
-  · simp
-  · intro k _ hk
-    simp [hk]
-  · intro h
-    exact (h (Finset.mem_univ _)).elim
+  rw [archimedeanGramEndo_apply_fst, Fintype.sum_eq_single k₁ fun k hk ↦ by simp [hk]]
+  simp
 
-open scoped Classical in
+open Classical in
 omit [NumberField K] [LinearOrder ι] in
 @[simp]
 private theorem archimedeanGramEndo_apply_pi_single_snd {W : Submodule K (ι → K)} {p : ℕ}
@@ -329,12 +307,8 @@ private theorem archimedeanGramEndo_apply_pi_single_snd {W : Submodule K (ι →
     ((archimedeanGramEndo b (Pi.single k₁ z)) k₂).2 w =
       (∑ i : ι, (mixedEmbedding K ((b k₁ : ι → K) i)).2 w *
         conj ((mixedEmbedding K ((b k₂ : ι → K) i)).2 w)) * z.2 w := by
-  rw [archimedeanGramEndo_apply_snd, Finset.sum_eq_single k₁]
-  · simp
-  · intro k _ hk
-    simp [hk]
-  · intro h
-    exact (h (Finset.mem_univ _)).elim
+  rw [archimedeanGramEndo_apply_snd, Fintype.sum_eq_single k₁ fun k hk ↦ by simp [hk]]
+  simp
 
 omit [NumberField K] in
 /-- Cauchy–Binet evaluation of the real-place Gram determinant of `b`. -/
@@ -432,12 +406,8 @@ private theorem gram_integerLatticeBasisOfPseudoBasis {W : Submodule K (ι → K
         (∑ k : Fin p, mixedInner K ((T (Bideal q₁)) k) (Bideal q₂ k)) =
           mixedInner K ((T (Bideal q₁)) q₂.1)
             (mixedEmbedding K ((J q₂.1).mixedBasisElem (hJ q₂.1) q₂.2)) := by
-      rw [hBideal q₂, Finset.sum_eq_single q₂.1]
-      · simp
-      · intro k _ hk
-        simp [hk.symm, mixedInner_def]
-      · intro h
-        exact (h (Finset.mem_univ _)).elim
+      rw [hBideal q₂, Fintype.sum_eq_single q₂.1 fun k hk ↦ by simp [hk, mixedInner_def]]
+      simp
     rw [hrhs, Matrix.gram_apply, Submodule.coe_inner, PiLp.inner_apply]
     dsimp only [β]
     simp_rw [coe_integerLatticeBasisOfPseudoBasis_apply, ← mixedInner_toMixed,
@@ -519,7 +489,7 @@ section MainTheorems
 
 variable {K : Type*} [Field K] [NumberField K] {ι : Type*} [Fintype ι] [LinearOrder ι]
 
-open scoped Classical in
+open Classical in
 /-- **Schmidt's covolume identity (relative form).** For any `K`-subspace `W` of `ι → K`, the
 covolume of `W.integerLattice` in `W.euclideanSpan` equals the `(finrank K W)`-th power of the
 ring-of-integers covolume times the relative Arakelov height of `W`. -/
@@ -568,7 +538,7 @@ theorem covolume_integerLattice_eq_covolume_pow_mul_relativeSubspaceArakelovHeig
     ring
   exact (pow_left_inj₀ (ZLattice.covolume_pos _ volume).le hrhs_nonneg two_ne_zero).mp hsq
 
-open scoped Classical in
+open Classical in
 /-- **Schmidt's covolume identity.** For a `K`-subspace `W` of `ι → K`, the covolume of the
 saturated lattice `W.integerLattice` (`W ∩ 𝓞_K^ι`) in the Euclidean Minkowski span `W.euclideanSpan`
 is `((2⁻¹) ^ nrComplexPlaces K * √|discr K|) ^ finrank K W * W.subspaceHeight ^ finrank ℚ K`. -/
@@ -579,14 +549,14 @@ theorem covolume_integerLattice (W : Submodule K (ι → K)) :
   rw [covolume_integerLattice_eq_covolume_pow_mul_relativeSubspaceArakelovHeight,
     mixedEmbedding.covolume_integerLattice, subspaceHeight_pow_finrank]
 
-open scoped Classical in
+open Classical in
 /-- The zero subspace has integral lattice of covolume `1` in its `0`-dimensional real span. -/
 @[simp]
 theorem covolume_integerLattice_bot :
     ZLattice.covolume (⊥ : Submodule K (ι → K)).integerLattice = 1 := by
   simp [covolume_integerLattice]
 
-open scoped Classical in
+open Classical in
 /-- The whole space `ι → K` has integral lattice covolume equal to the `#ι`-th power of the
 ring-of-integers covolume. -/
 theorem covolume_integerLattice_top_eq_covolume_pow :
@@ -595,7 +565,7 @@ theorem covolume_integerLattice_top_eq_covolume_pow :
   simp [covolume_integerLattice_eq_covolume_pow_mul_relativeSubspaceArakelovHeight,
     Module.finrank_fintype_fun_eq_card]
 
-open scoped Classical in
+open Classical in
 /-- The whole space `ι → K` has integral lattice covolume
 `((2⁻¹) ^ nrComplexPlaces K * √|discr K|) ^ #ι`. -/
 @[simp]
@@ -605,7 +575,7 @@ theorem covolume_integerLattice_top :
   rw [covolume_integerLattice_top_eq_covolume_pow, mixedEmbedding.covolume_integerLattice]
 
 omit [LinearOrder ι] in
-open scoped Classical in
+open Classical in
 /-- Over `ℚ`, the covolume of `V.intLattice` in `V.realSpan` equals the covolume of
 `V.integerLattice` in `V.euclideanSpan`. -/
 theorem covolume_intLattice_eq_covolume_integerLattice (V : Submodule ℚ (ι → ℚ)) :

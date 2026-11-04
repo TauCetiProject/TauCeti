@@ -167,7 +167,6 @@ section EuclideanSpan
 
 variable {K : Type*} [Field K] [NumberField K] {ι : Type*}
 
-open scoped Classical in
 /-- The real span of a `K`-subspace `W` of `ι → K` inside the Euclidean Minkowski space
 `PiLp 2 fun _ : ι ↦ euclidean.mixedSpace K`. -/
 def euclideanSpan (W : Submodule K (ι → K)) :
@@ -175,34 +174,26 @@ def euclideanSpan (W : Submodule K (ι → K)) :
   span ℝ ((fun v : ι → K ↦ WithLp.toLp 2 fun i ↦
     (euclidean.toMixed K).symm (mixedEmbedding K (v i))) '' W)
 
-open scoped Classical in
 /-- Every point of `W` embeds into `W.euclideanSpan`. -/
 theorem toLp_mem_euclideanSpan {W : Submodule K (ι → K)} {v : ι → K} (hv : v ∈ W) :
     (WithLp.toLp 2 fun i ↦ (euclidean.toMixed K).symm (mixedEmbedding K (v i))) ∈
       W.euclideanSpan :=
   subset_span ⟨v, hv, rfl⟩
 
-open scoped Classical in
 /-- The real span of the zero subspace is zero. -/
 @[simp]
 theorem euclideanSpan_bot : (⊥ : Submodule K (ι → K)).euclideanSpan = ⊥ := by
-  rw [euclideanSpan]
-  suffices ((fun v : ι → K ↦ WithLp.toLp 2 fun i ↦
-      (euclidean.toMixed K).symm (mixedEmbedding K (v i))) ''
-        ((⊥ : Submodule K (ι → K)) : Set (ι → K))) = {0} by
-    rw [this, span_singleton_eq_bot]
-  simp only [bot_coe, image_singleton, singleton_eq_singleton_iff]
+  rw [euclideanSpan, bot_coe, image_singleton, span_singleton_eq_bot]
   ext1 i
   simp
 
-open scoped Classical in
 /-- `Submodule.euclideanSpan` is monotone in the subspace. -/
 @[gcongr]
 theorem euclideanSpan_mono {W₁ W₂ : Submodule K (ι → K)} (h : W₁ ≤ W₂) :
     W₁.euclideanSpan ≤ W₂.euclideanSpan :=
   span_mono (image_mono h)
 
-open scoped Classical in
+open Classical in
 /-- `mixedSpace K`-linear extension of a `K`-linear form `f : (ι → K) →ₗ[K] K` to the Euclidean
 Minkowski space `PiLp 2 fun _ : ι ↦ euclidean.mixedSpace K`. -/
 private def mixedExtend [Fintype ι] (f : (ι → K) →ₗ[K] K) :
@@ -211,24 +202,22 @@ private def mixedExtend [Fintype ι] (f : (ι → K) →ₗ[K] K) :
   map_add' x y := by simp [mul_add, Finset.sum_add_distrib]
   map_smul' r x := by simp [Algebra.mul_smul_comm, Finset.smul_sum]
 
-open scoped Classical in
 private theorem mixedExtend_toLp_mul [Fintype ι] (f : (ι → K) →ₗ[K] K) (z : mixedSpace K)
     (u : ι → K) :
     mixedExtend f
         (WithLp.toLp 2 fun i ↦ (euclidean.toMixed K).symm (z * mixedEmbedding K (u i))) =
       z * mixedEmbedding K (f u) := by
+  classical
   conv_rhs => rw [pi_eq_sum_univ' u, map_sum, map_sum, Finset.mul_sum]
   simp only [mixedExtend, LinearMap.coe_mk, AddHom.coe_mk,
     ContinuousLinearEquiv.apply_symm_apply, map_smul, smul_eq_mul, map_mul]
   exact Finset.sum_congr rfl fun _ _ ↦ by ring
 
-open scoped Classical in
 private theorem mixedExtend_toLp [Fintype ι] (f : (ι → K) →ₗ[K] K) (u : ι → K) :
     mixedExtend f (WithLp.toLp 2 fun i ↦ (euclidean.toMixed K).symm (mixedEmbedding K (u i))) =
       mixedEmbedding K (f u) := by
   simpa using mixedExtend_toLp_mul f 1 u
 
-open scoped Classical in
 /-- **The `K`-points of `W.euclideanSpan` are precisely the points of `W`.** -/
 @[simp]
 theorem toLp_mem_euclideanSpan_iff [Finite ι] {W : Submodule K (ι → K)} {v : ι → K} :
@@ -242,14 +231,11 @@ theorem toLp_mem_euclideanSpan_iff [Finite ι] {W : Submodule K (ι → K)} {v :
   have hle : W.euclideanSpan ≤ LinearMap.ker (mixedExtend f) := by
     refine span_le.2 ?_
     rintro _ ⟨u, hu, rfl⟩
-    have hfu : f u = 0 := by
-      have hm := mem_map_of_mem (f := f) hu
-      rwa [hfW, mem_bot] at hm
+    have hfu : f u = 0 := by simpa [hfW] using mem_map_of_mem (f := f) hu
     simp [mixedExtend_toLp, hfu]
   have hgv : mixedEmbedding K (f v) = 0 := (mixedExtend_toLp f v).symm.trans (hle h)
   exact hfv ((map_eq_zero_iff (mixedEmbedding K) (mixedEmbedding_injective K)).1 hgv)
 
-open scoped Classical in
 /-- The integral points of `W` as a `ℤ`-submodule of `W.euclideanSpan`: the points of
 `W.euclideanSpan` whose coordinates belong to `euclidean.integerLattice K`. -/
 def integerLattice (W : Submodule K (ι → K)) : Submodule ℤ W.euclideanSpan where
@@ -259,7 +245,6 @@ def integerLattice (W : Submodule K (ι → K)) : Submodule ℤ W.euclideanSpan 
   zero_mem' _ := zero_mem _
   smul_mem' c _ hw i := smul_mem _ c (hw i)
 
-open scoped Classical in
 /-- A point of `W.euclideanSpan` lies in `W.integerLattice` when every coordinate lies in
 `euclidean.integerLattice K`. -/
 @[simp]
@@ -272,7 +257,6 @@ section Equiv
 
 variable [Finite ι]
 
-open scoped Classical in
 /-- Every point of `W.integerLattice` comes from an integral point of `W`. -/
 private theorem exists_mem_integerPoints_of_mem_integerLattice {W : Submodule K (ι → K)}
     {w : W.euclideanSpan} (hw : w ∈ W.integerLattice) :
@@ -285,61 +269,46 @@ private theorem exists_mem_integerPoints_of_mem_integerLattice {W : Submodule K 
   choose z hz using hi
   have hwz : (w : PiLp 2 fun _ : ι ↦ euclidean.mixedSpace K) =
       WithLp.toLp 2 fun i ↦ (euclidean.toMixed K).symm (mixedEmbedding K (z i)) := by
-    ext1 i
-    simp [hz i]
+    ext1 i; simp [hz i]
   refine ⟨z, ?_, hwz⟩
   rw [mem_integerPoints, ← toLp_mem_euclideanSpan_iff, ← hwz]
   exact w.2
 
-open scoped Classical in
+open Classical in
 /-- The `ℤ`-linear map sending an integral point of `W` to the corresponding point of
 `W.integerLattice`. -/
 private def integerPointsToIntegerLattice (W : Submodule K (ι → K)) :
     W.integerPoints →ₗ[ℤ] W.integerLattice where
   toFun z := ⟨⟨WithLp.toLp 2 fun i ↦
       (euclidean.toMixed K).symm (mixedEmbedding K ((z : ι → 𝓞 K) i)),
-    toLp_mem_euclideanSpan z.2⟩,
-    fun i ↦ by
-      rw [euclidean.integerLattice, ZLattice.comap, Submodule.mem_comap]
-      exact ⟨(z : ι → 𝓞 K) i, by simp⟩⟩
-  map_add' z z' := by
-    ext1
-    ext1
-    ext1 i
-    simp
+    toLp_mem_euclideanSpan z.2⟩, fun i ↦ ⟨(z : ι → 𝓞 K) i, by simp⟩⟩
+  map_add' _ _ := by ext1; ext1; ext1 i; simp
   map_smul' c z := by
-    ext1
-    ext1
-    ext1 i
+    ext1; ext1; ext1 i
     apply (euclidean.toMixed K).injective
     simp only [RingHom.id_apply, SetLike.val_smul, coe_smul_of_tower, PiLp.smul_apply, map_zsmul,
       ContinuousLinearEquiv.apply_symm_apply]
     exact map_zsmul (mixedEmbedding K).toIntAlgHom.toLinearMap c _
 
-open scoped Classical in
 private theorem bijective_integerPointsToIntegerLattice (W : Submodule K (ι → K)) :
     Function.Bijective (integerPointsToIntegerLattice W) := by
   refine ⟨fun z z' h ↦ ?_, fun w ↦ ?_⟩
-  · have h' := congrArg
-      (fun u : W.integerLattice ↦
-        ((u : W.euclideanSpan) : PiLp 2 fun _ : ι ↦ euclidean.mixedSpace K)) h
-    ext i
-    have hi := congrArg
-      (fun x : PiLp 2 fun _ : ι ↦ euclidean.mixedSpace K ↦ euclidean.toMixed K (x i)) h'
+  · ext i
+    have hi := congrArg (fun u : W.integerLattice ↦
+      euclidean.toMixed K
+        (((u : W.euclideanSpan) : PiLp 2 fun _ : ι ↦ euclidean.mixedSpace K) i)) h
     simp only [integerPointsToIntegerLattice, LinearMap.coe_mk, AddHom.coe_mk,
       WithLp.ofLp_toLp, ContinuousLinearEquiv.apply_symm_apply] at hi
     exact mixedEmbedding_injective K hi
   · obtain ⟨z, hzW, hwz⟩ := exists_mem_integerPoints_of_mem_integerLattice w.2
     exact ⟨⟨z, hzW⟩, Subtype.ext (Subtype.ext hwz.symm)⟩
 
-open scoped Classical in
 /-- The `ℤ`-linear equivalence between `W.integerPoints` and `W.integerLattice`. -/
 def integerPointsEquivIntegerLattice (W : Submodule K (ι → K)) :
     W.integerPoints ≃ₗ[ℤ] W.integerLattice :=
   LinearEquiv.ofBijective (integerPointsToIntegerLattice W)
     (bijective_integerPointsToIntegerLattice W)
 
-open scoped Classical in
 /-- `integerPointsEquivIntegerLattice` embeds coordinates via
 `(toMixed K).symm ∘ mixedEmbedding`. -/
 @[simp]
@@ -350,7 +319,6 @@ theorem coe_integerPointsEquivIntegerLattice_apply (W : Submodule K (ι → K))
       WithLp.toLp 2 fun i ↦ (euclidean.toMixed K).symm (mixedEmbedding K ((z : ι → 𝓞 K) i)) := by
   simp [integerPointsEquivIntegerLattice, integerPointsToIntegerLattice]
 
-open scoped Classical in
 /-- The inverse of `integerPointsEquivIntegerLattice` recovers the mixed-embedded coordinates. -/
 @[simp]
 theorem mixedEmbedding_integerPointsEquivIntegerLattice_symm_apply (W : Submodule K (ι → K))
@@ -373,6 +341,7 @@ satisfying `W.IsIntegerPseudoBasis b J`. -/
 theorem exists_pseudoBasis_integerPoints [Finite ι] (W : Submodule K (ι → K)) :
     ∃ (b : Basis (Fin (finrank K W)) K W) (J : Fin (finrank K W) → Ideal (𝓞 K)),
       (∀ k, J k ≠ ⊥) ∧ W.IsIntegerPseudoBasis b J := by
+  classical
   cases nonempty_fintype ι
   -- View `W ∩ (𝓞 K)^ι` as an `𝓞 K`-submodule `M` of `W`.
   let φ : W.integerPoints →ₗ[𝓞 K] W :=
@@ -381,30 +350,20 @@ theorem exists_pseudoBasis_integerPoints [Finite ι] (W : Submodule K (ι → K)
       map_smul' _ _ := by ext i; simp [Algebra.smul_def] }
   set M : Submodule (𝓞 K) W := LinearMap.range φ
   have hmemM (w : W) : w ∈ M ↔ ∀ i, (w : ι → K) i ∈ range (algebraMap (𝓞 K) K) := by
-    refine ⟨?_, fun hw ↦ ?_⟩
-    · rintro ⟨z, rfl⟩ i
-      exact ⟨(z : ι → 𝓞 K) i, rfl⟩
-    · choose z hz using hw
-      have hzW : z ∈ W.integerPoints := by
-        rw [mem_integerPoints]
-        convert w.2 with i
-        exact hz i
-      exact ⟨⟨z, hzW⟩, Subtype.ext (funext hz)⟩
-  have hFG : (LinearMap.range φ).FG := by
-    rw [LinearMap.range_eq_map]
-    exact (IsNoetherian.noetherian ⊤).map φ
-  have hspan : span K (M : Set W) = ⊤ := by
-    rw [eq_top_iff]
-    rintro w -
-    obtain ⟨⟨d, hd⟩, hdw⟩ := IsLocalization.exist_integer_multiples (𝓞 K)⁰ Finset.univ
-      (w : ι → K)
-    have hd0 : (algebraMap (𝓞 K) K d) ≠ 0 :=
+    refine ⟨fun ⟨z, hz⟩ i ↦ hz ▸ ⟨(z : ι → 𝓞 K) i, rfl⟩, fun hw ↦ ?_⟩
+    choose z hz using hw
+    exact ⟨⟨z, by rw [mem_integerPoints]; convert w.2 with i; exact hz i⟩,
+      Subtype.ext (funext hz)⟩
+  have hFG : M.FG := by
+    rw [show M = _ from LinearMap.range_eq_map φ]; exact (IsNoetherian.noetherian ⊤).map φ
+  have hspan : span K (M : Set W) = ⊤ := eq_top_iff.2 fun w _ ↦ by
+    obtain ⟨⟨d, hd⟩, hdw⟩ := IsLocalization.exist_integer_multiples (𝓞 K)⁰ Finset.univ (w : ι → K)
+    have hd0 : algebraMap (𝓞 K) K d ≠ 0 :=
       (map_ne_zero_iff _ (IsFractionRing.injective (𝓞 K) K)).2 (nonZeroDivisors.ne_zero hd)
     have hdwM : d • w ∈ M := (hmemM (d • w)).2 fun i ↦ by
       simpa [Algebra.smul_def, IsLocalization.IsInteger] using hdw i (Finset.mem_univ i)
-    have hw' : w = (algebraMap (𝓞 K) K d)⁻¹ • (d • w) := by
-      rw [← algebraMap_smul K d w, inv_smul_smul₀ hd0]
-    rw [hw']
+    rw [show w = (algebraMap (𝓞 K) K d)⁻¹ • (d • w) by
+      rw [← algebraMap_smul K d w, inv_smul_smul₀ hd0]]
     exact smul_mem _ _ (subset_span hdwM)
   obtain ⟨b, J, hJ, hb⟩ := M.exists_pseudoBasis (K := K) (ι := Fin (finrank K W)) hFG hspan
     (Nat.card_fin _)
@@ -427,7 +386,6 @@ private theorem apply_eq_sum_repr_mul [Fintype κ] {v : ι → K} (hv : v ∈ W)
     v i = ∑ k : κ, b.repr ⟨v, hv⟩ k * (b k : ι → K) i :=
   coe_apply_eq_sum_repr_mul b ⟨v, hv⟩ i
 
-open scoped Classical in
 /-- The coordinatewise evaluation map `(PiLp 2 fun _ : ι ↦ euclidean.mixedSpace K) →ₗ[ℝ]
 mixedSpace K` at `i : ι`. -/
 private def evalMixedLinear (i : ι) :
@@ -435,12 +393,10 @@ private def evalMixedLinear (i : ι) :
   (euclidean.toMixed K).toLinearMap ∘ₗ
     (LinearMap.proj i).comp (WithLp.linearEquiv 2 ℝ (∀ _ : ι, euclidean.mixedSpace K)).toLinearMap
 
-open scoped Classical in
 private theorem evalMixedLinear_apply (x : PiLp 2 fun _ : ι ↦ euclidean.mixedSpace K) (i : ι) :
     evalMixedLinear i x = euclidean.toMixed K (x i) := by
   simp [evalMixedLinear]
 
-open scoped Classical in
 /-- The family of vectors in `PiLp 2 fun _ : ι ↦ euclidean.mixedSpace K` attached to `(b, J)`. -/
 private def pseudoBasisVec (p : κ × index K) :
     PiLp 2 fun _ : ι ↦ euclidean.mixedSpace K :=
@@ -448,25 +404,25 @@ private def pseudoBasisVec (p : κ × index K) :
     (euclidean.toMixed K).symm
       (mixedEmbedding K ((J p.1).mixedBasisElem (hJ p.1) p.2 * (b p.1 : ι → K) i))
 
-open scoped Classical in
 private theorem evalMixedLinear_pseudoBasisVec (p : κ × index K) (i : ι) :
     evalMixedLinear i (pseudoBasisVec b hJ p) =
       (J p.1).mixedLatticeBasis (hJ p.1) p.2 * mixedEmbedding K ((b p.1 : ι → K) i) := by
   simp [evalMixedLinear_apply, pseudoBasisVec]
 
 omit [NumberField K] in
+open Classical in
 /-- Extend the `k₀`-th coordinate functional of a `K`-basis `b` of `W` across a `K`-complement of
 `W` in `ι → K`. -/
-private theorem exists_linearMap_apply_basis_eq_ite [DecidableEq κ] (k₀ : κ) :
+private theorem exists_linearMap_apply_basis_eq_ite (k₀ : κ) :
     ∃ f : (ι → K) →ₗ[K] K, ∀ k, f (b k : ι → K) = if k = k₀ then 1 else 0 := by
   obtain ⟨S, hS⟩ := W.exists_isCompl
   refine ⟨(b.coord k₀).comp (Submodule.projectionOnto W S hS), fun k ↦ ?_⟩
   rw [LinearMap.comp_apply, Submodule.projectionOnto_apply_left hS (b k), Basis.coord_apply,
     b.repr_self, Finsupp.single_apply]
 
-open scoped Classical in
 private theorem linearIndependent_pseudoBasisVec [Finite ι] [Finite κ] :
     LinearIndependent ℝ (pseudoBasisVec b hJ) := by
+  classical
   cases nonempty_fintype ι
   cases nonempty_fintype κ
   rw [Fintype.linearIndependent_iff]
@@ -487,16 +443,15 @@ private theorem linearIndependent_pseudoBasisVec [Finite ι] [Finite κ] :
   exact Fintype.linearIndependent_iff.mp ((J k₀).mixedLatticeBasis (hJ k₀)).linearIndependent
     (fun ν ↦ c (k₀, ν)) hsum ν₀
 
-open scoped Classical in
 private theorem span_range_pseudoBasisVec [Finite ι] [Finite κ] :
     span ℝ (range (pseudoBasisVec b hJ)) = W.euclideanSpan := by
+  classical
   cases nonempty_fintype ι
   cases nonempty_fintype κ
   refine le_antisymm (span_le.2 ?_) (span_le.2 ?_)
   · rintro _ ⟨⟨k, ν⟩, rfl⟩
-    have hmem : (J k).mixedBasisElem (hJ k) ν • (b k : ι → K) ∈ W :=
-      W.smul_mem _ (b k).2
-    simpa [pseudoBasisVec, Algebra.smul_def] using toLp_mem_euclideanSpan hmem
+    simpa [pseudoBasisVec, Algebra.smul_def] using
+      toLp_mem_euclideanSpan (W.smul_mem ((J k).mixedBasisElem (hJ k) ν) (b k).2)
   · rintro _ ⟨v, hv, rfl⟩
     -- Expand `⟨v, hv⟩` in `b`, and each `K`-coordinate in `(J k).mixedLatticeBasis (hJ k)`.
     have hexp :
@@ -506,27 +461,19 @@ private theorem span_range_pseudoBasisVec [Finite ι] [Finite κ] :
               pseudoBasisVec b hJ p := by
       ext1 i
       apply (euclidean.toMixed K).injective
-      have heval :
-          evalMixedLinear i
-            (WithLp.toLp 2 fun j ↦ (euclidean.toMixed K).symm (mixedEmbedding K (v j))) =
-          evalMixedLinear i (∑ p : κ × index K,
-            ((J p.1).mixedLatticeBasis (hJ p.1)).repr (mixedEmbedding K (b.repr ⟨v, hv⟩ p.1)) p.2 •
-              pseudoBasisVec b hJ p) := by
-        rw [evalMixedLinear_apply, WithLp.ofLp_toLp, ContinuousLinearEquiv.apply_symm_apply,
-          map_sum]
-        simp only [map_smul, evalMixedLinear_pseudoBasisVec]
-        rw [apply_eq_sum_repr_mul b hv i, map_sum, Fintype.sum_prod_type]
-        refine Finset.sum_congr rfl fun k _ ↦ ?_
-        rw [map_mul,
-          ← ((J k).mixedLatticeBasis (hJ k)).sum_repr (mixedEmbedding K (b.repr ⟨v, hv⟩ k)),
-          Finset.sum_mul]
-        exact Finset.sum_congr rfl fun ν _ ↦ Algebra.smul_mul_assoc _ _ _
-      exact heval
+      rw [WithLp.ofLp_toLp, ContinuousLinearEquiv.apply_symm_apply, ← evalMixedLinear_apply,
+        map_sum]
+      simp only [map_smul, evalMixedLinear_pseudoBasisVec]
+      rw [apply_eq_sum_repr_mul b hv i, map_sum, Fintype.sum_prod_type]
+      refine Finset.sum_congr rfl fun k _ ↦ ?_
+      rw [map_mul,
+        ← ((J k).mixedLatticeBasis (hJ k)).sum_repr (mixedEmbedding K (b.repr ⟨v, hv⟩ k)),
+        Finset.sum_mul]
+      exact Finset.sum_congr rfl fun ν _ ↦ Algebra.smul_mul_assoc _ _ _
     dsimp only
     rw [hexp]
     exact sum_mem fun p _ ↦ smul_mem _ _ (subset_span ⟨p, rfl⟩)
 
-open scoped Classical in
 /-- The `ℝ`-basis of `W.euclideanSpan` attached to a `K`-basis `b` of `W` and nonzero ideals `J k`
 of `𝓞 K`. -/
 def euclideanSpanBasisOfPseudoBasis [Finite ι] [Finite κ] :
@@ -534,7 +481,6 @@ def euclideanSpanBasisOfPseudoBasis [Finite ι] [Finite κ] :
   (Basis.span (linearIndependent_pseudoBasisVec b hJ)).map
     (LinearEquiv.ofEq _ _ (span_range_pseudoBasisVec b hJ))
 
-open scoped Classical in
 /-- Coordinates of `euclideanSpanBasisOfPseudoBasis b hJ` in the ambient Euclidean Minkowski
 space. -/
 @[simp]
@@ -545,12 +491,12 @@ theorem coe_euclideanSpanBasisOfPseudoBasis_apply [Finite ι] [Finite κ] (p : �
         (mixedEmbedding K ((J p.1).mixedBasisElem (hJ p.1) p.2 * (b p.1 : ι → K) i)) := by
   simp [euclideanSpanBasisOfPseudoBasis, Basis.span_apply, pseudoBasisVec]
 
-open scoped Classical in
 /-- When `(b, J)` is a pseudo-basis of the integral points of `W`, the `ℤ`-span of
 `euclideanSpanBasisOfPseudoBasis b hJ` is `W.integerLattice`. -/
 theorem span_int_euclideanSpanBasisOfPseudoBasis [Finite ι] [Finite κ]
     (hW : W.IsIntegerPseudoBasis b J) :
     span ℤ (range (euclideanSpanBasisOfPseudoBasis b hJ)) = W.integerLattice := by
+  classical
   cases nonempty_fintype ι
   cases nonempty_fintype κ
   refine le_antisymm (span_le.2 ?_) (fun w hw ↦ ?_)
@@ -582,29 +528,22 @@ theorem span_int_euclideanSpanBasisOfPseudoBasis [Finite ι] [Finite κ]
       exact Finset.sum_congr rfl fun ν _ ↦ by
         rw [← hm' ν, eq_intCast, Int.cast_smul_eq_zsmul]
     choose m hm using hcoord
-    let φ (i : ι) : W.euclideanSpan →ₗ[ℝ] mixedSpace K :=
-      (evalMixedLinear i).comp W.euclideanSpan.subtype
     have hweq : w = ∑ p : κ × index K, m p.1 p.2 • euclideanSpanBasisOfPseudoBasis b hJ p := by
-      ext1
-      ext1 i
+      ext1; ext1 i
       apply (euclidean.toMixed K).injective
-      have hφ : φ i w = φ i (∑ p : κ × index K,
-          m p.1 p.2 • euclideanSpanBasisOfPseudoBasis b hJ p) := by
-        rw [map_sum]
-        simp only [φ, LinearMap.comp_apply, Submodule.coe_subtype, evalMixedLinear_apply, hwz,
-          ContinuousLinearEquiv.apply_symm_apply, map_zsmul,
-          coe_euclideanSpanBasisOfPseudoBasis_apply, map_mul]
-        rw [apply_eq_sum_repr_mul b (mem_integerPoints.mp hzW) i, map_sum, Fintype.sum_prod_type]
-        refine Finset.sum_congr rfl fun k _ ↦ ?_
-        rw [map_mul, hm k, Finset.sum_mul]
-        refine Finset.sum_congr rfl fun ν _ ↦ ?_
-        rw [Ideal.mixedLatticeBasis_apply, ← Int.cast_smul_eq_zsmul ℝ,
-          ← Int.cast_smul_eq_zsmul ℝ, Algebra.smul_mul_assoc]
-      exact hφ
+      rw [hwz, WithLp.ofLp_toLp, ContinuousLinearEquiv.apply_symm_apply, ← evalMixedLinear_apply,
+        ← Submodule.coe_subtype, ← LinearMap.comp_apply, map_sum]
+      simp only [LinearMap.comp_apply, Submodule.coe_subtype, evalMixedLinear_apply, map_zsmul,
+        coe_euclideanSpanBasisOfPseudoBasis_apply, ContinuousLinearEquiv.apply_symm_apply, map_mul]
+      rw [apply_eq_sum_repr_mul b (mem_integerPoints.mp hzW) i, map_sum, Fintype.sum_prod_type]
+      refine Finset.sum_congr rfl fun k _ ↦ ?_
+      rw [map_mul, hm k, Finset.sum_mul]
+      refine Finset.sum_congr rfl fun ν _ ↦ ?_
+      rw [Ideal.mixedLatticeBasis_apply, ← Int.cast_smul_eq_zsmul ℝ,
+        ← Int.cast_smul_eq_zsmul ℝ, Algebra.smul_mul_assoc]
     rw [hweq]
     exact sum_mem fun p _ ↦ zsmul_mem (subset_span (mem_range_self p)) _
 
-open scoped Classical in
 /-- The `ℤ`-basis of `W.integerLattice` attached to a pseudo-basis `(b, J)` of `W.integerPoints`. -/
 def integerLatticeBasisOfPseudoBasis [Finite ι] [Finite κ]
     (hW : W.IsIntegerPseudoBasis b J) :
@@ -612,7 +551,6 @@ def integerLatticeBasisOfPseudoBasis [Finite ι] [Finite κ]
   ((euclideanSpanBasisOfPseudoBasis b hJ).restrictScalars ℤ).map
     (LinearEquiv.ofEq _ _ (span_int_euclideanSpanBasisOfPseudoBasis b hJ hW))
 
-open scoped Classical in
 /-- Coordinates of `integerLatticeBasisOfPseudoBasis b hJ hW` in the ambient Euclidean Minkowski
 space. -/
 @[simp]
@@ -630,20 +568,20 @@ section Instances
 
 variable [Finite ι] (W : Submodule K (ι → K))
 
-open scoped Classical in
 /-- The real span of `W` in the Euclidean Minkowski space has real dimension
 `[K : ℚ] * finrank K W`. -/
 theorem finrank_euclideanSpan :
     finrank ℝ W.euclideanSpan = finrank ℚ K * finrank K W := by
+  classical
   cases nonempty_fintype ι
   obtain ⟨b, J, hJ, -⟩ := W.exists_pseudoBasis_integerPoints
   rw [finrank_eq_card_basis (euclideanSpanBasisOfPseudoBasis b hJ), Fintype.card_prod,
     Fintype.card_fin, ← finrank_eq_card_basis (stdBasis K), mixedEmbedding.finrank, mul_comm]
 
-open scoped Classical in
 /-- The real span of `⊤ : Submodule K (ι → K)` is the whole Euclidean Minkowski space. -/
 @[simp]
 theorem euclideanSpan_top : (⊤ : Submodule K (ι → K)).euclideanSpan = ⊤ := by
+  classical
   cases nonempty_fintype ι
   refine eq_top_of_finrank_eq ?_
   rw [finrank_euclideanSpan, finrank_top, Module.finrank_fintype_fun_eq_card,
@@ -651,7 +589,7 @@ theorem euclideanSpan_top : (⊤ : Submodule K (ι → K)).euclideanSpan = ⊤ :
     Module.finrank_pi_fintype, Finset.sum_const, Finset.card_univ, smul_eq_mul, euclidean.finrank,
     mul_comm]
 
-open scoped Classical in
+open Classical in
 /-- The integral lattice of `W` is discrete in `W.euclideanSpan`. -/
 instance instDiscreteTopologyIntegerLattice : DiscreteTopology W.integerLattice := by
   cases nonempty_fintype ι
@@ -661,7 +599,7 @@ instance instDiscreteTopologyIntegerLattice : DiscreteTopology W.integerLattice 
 
 end Instances
 
-open scoped Classical in
+open Classical in
 /-- The Borel measurable structure on `W.euclideanSpan`. Declared explicitly because instance
 search through `PiLp.borelSpace` and `euclidean.mixedSpace` times out when resolving
 `MeasureSpace W.euclideanSpan`. -/
@@ -669,7 +607,7 @@ instance instBorelSpaceEuclideanSpan [Countable ι] (W : Submodule K (ι → K))
     BorelSpace W.euclideanSpan :=
   Subtype.borelSpace _
 
-open scoped Classical in
+open Classical in
 /-- The canonical Euclidean Haar `MeasureSpace` on `W.euclideanSpan`. Declared explicitly so
 `volume` resolves without hitting the `priority := 100` search depth of
 `measureSpaceOfInnerProductSpace`. -/
@@ -677,7 +615,7 @@ instance instMeasureSpaceEuclideanSpan [Fintype ι] (W : Submodule K (ι → K))
     MeasureSpace W.euclideanSpan :=
   measureSpaceOfInnerProductSpace
 
-open scoped Classical in
+open Classical in
 /-- The integral lattice of `W` spans `W.euclideanSpan` over `ℝ`: it is a full `ℤ`-lattice.
 Note that `[Fintype ι]` is required in the statement because `IsZLattice ℝ W.integerLattice` takes
 `[NormedAddCommGroup W.euclideanSpan]` via `PiLp.normedAddCommGroup`. -/
@@ -688,10 +626,10 @@ instance instIsZLatticeIntegerLattice [Fintype ι] (W : Submodule K (ι → K)) 
     rw [← span_int_euclideanSpanBasisOfPseudoBasis b hJ hW]
     exact ZSpan.span_top _
 
-open scoped Classical in
 /-- The integral lattice of `W` is free over `ℤ` of rank `[K : ℚ] * finrank K W`. -/
 theorem finrank_integerLattice [Finite ι] (W : Submodule K (ι → K)) :
     finrank ℤ W.integerLattice = finrank ℚ K * finrank K W := by
+  classical
   cases nonempty_fintype ι
   rw [ZLattice.rank ℝ W.integerLattice, finrank_euclideanSpan]
 
@@ -705,11 +643,13 @@ namespace TauCeti.NumberField.mixedEmbedding.euclidean
 
 open scoped RealInnerProductSpace
 
+private theorem isEmpty_isComplex_rat : IsEmpty {w : InfinitePlace ℚ // w.IsComplex} :=
+  ⟨fun w ↦ InfinitePlace.not_isReal_iff_isComplex.mpr w.2
+    (Subsingleton.elim w.1 Rat.infinitePlace ▸ Rat.isReal_infinitePlace)⟩
+
 /-- The linear equivalence `mixedSpace ℚ ≃ₗ[ℝ] ℝ` given by evaluation at `Rat.infinitePlace`. -/
 private def mixedRatEquivReal : mixedSpace ℚ ≃ₗ[ℝ] ℝ :=
-  haveI : IsEmpty {w : InfinitePlace ℚ // w.IsComplex} :=
-    ⟨fun w ↦ InfinitePlace.not_isReal_iff_isComplex.mpr w.2
-      (Subsingleton.elim w.1 Rat.infinitePlace ▸ Rat.isReal_infinitePlace)⟩
+  haveI := isEmpty_isComplex_rat
   { toFun x := x.1 ⟨Rat.infinitePlace, Rat.isReal_infinitePlace⟩
     map_add' _ _ := rfl
     map_smul' _ _ := rfl
@@ -720,7 +660,7 @@ private def mixedRatEquivReal : mixedSpace ℚ ≃ₗ[ℝ] ℝ :=
       · exact isEmptyElim w
     right_inv _ := rfl }
 
-open scoped Classical in
+open Classical in
 /-- The canonical linear isometry identifying `euclidean.mixedSpace ℚ` with `ℝ` via the unique
 infinite place of `ℚ`. -/
 def mixedSpaceRatEquivReal : NumberField.mixedEmbedding.euclidean.mixedSpace ℚ ≃ₗᵢ[ℝ] ℝ :=
@@ -729,9 +669,7 @@ def mixedSpaceRatEquivReal : NumberField.mixedEmbedding.euclidean.mixedSpace ℚ
       let _ : Unique {w : InfinitePlace ℚ // w.IsReal} :=
         { default := ⟨Rat.infinitePlace, Rat.isReal_infinitePlace⟩
           uniq w := Subtype.ext (Subsingleton.elim w.1 Rat.infinitePlace) }
-      have _ : IsEmpty {w : InfinitePlace ℚ // w.IsComplex} :=
-        ⟨fun w ↦ InfinitePlace.not_isReal_iff_isComplex.mpr w.2
-          (Subsingleton.elim w.1 Rat.infinitePlace ▸ Rat.isReal_infinitePlace)⟩
+      have := isEmpty_isComplex_rat
       have hinner : ⟪x, x⟫ =
           ((NumberField.mixedEmbedding.euclidean.toMixed ℚ x).1
             ⟨Rat.infinitePlace, Rat.isReal_infinitePlace⟩) ^ 2 := by
@@ -740,9 +678,9 @@ def mixedSpaceRatEquivReal : NumberField.mixedEmbedding.euclidean.mixedSpace ℚ
           add_zero, sq]
         rfl
       rw [norm_eq_sqrt_real_inner x, hinner, Real.sqrt_sq_eq_abs, ← Real.norm_eq_abs]
-      rfl }
+      simp [mixedRatEquivReal] }
 
-open scoped Classical in
+open Classical in
 /-- `mixedSpaceRatEquivReal` sends the canonical embedding of `q : ℚ` to `(q : ℝ)`. -/
 @[simp]
 theorem mixedSpaceRatEquivReal_toMixed_symm_mixedEmbedding (q : ℚ) :
@@ -751,33 +689,25 @@ theorem mixedSpaceRatEquivReal_toMixed_symm_mixedEmbedding (q : ℚ) :
       (q : ℝ) := by
   simp [mixedSpaceRatEquivReal, mixedRatEquivReal]
 
-open scoped Classical in
+open Classical in
 /-- A point of `euclidean.mixedSpace ℚ` lies in `euclidean.integerLattice ℚ` if and only if its
 image in `ℝ` under `mixedSpaceRatEquivReal` is an integer. -/
 theorem mem_integerLattice_rat_iff (x : NumberField.mixedEmbedding.euclidean.mixedSpace ℚ) :
     x ∈ NumberField.mixedEmbedding.euclidean.integerLattice ℚ ↔
       ∃ z : ℤ, mixedSpaceRatEquivReal x = z := by
-  have hmem :
-      x ∈ NumberField.mixedEmbedding.euclidean.integerLattice ℚ ↔
-        ∃ a : 𝓞 ℚ,
-          mixedEmbedding ℚ a = NumberField.mixedEmbedding.euclidean.toMixed ℚ x := by
-    simp [NumberField.mixedEmbedding.euclidean.integerLattice, ZLattice.comap]
-  rw [hmem]
-  refine ⟨?_, ?_⟩
-  · rintro ⟨a, ha⟩
-    have hx : x = (NumberField.mixedEmbedding.euclidean.toMixed ℚ).symm (mixedEmbedding ℚ a) := by
-      apply (NumberField.mixedEmbedding.euclidean.toMixed ℚ).injective
-      simpa using ha.symm
-    refine ⟨Rat.ringOfIntegersEquiv a, ?_⟩
-    rw [hx, mixedSpaceRatEquivReal_toMixed_symm_mixedEmbedding,
+  rw [show (x ∈ NumberField.mixedEmbedding.euclidean.integerLattice ℚ) ↔
+      ∃ a : 𝓞 ℚ, mixedEmbedding ℚ a = NumberField.mixedEmbedding.euclidean.toMixed ℚ x by
+    simp [NumberField.mixedEmbedding.euclidean.integerLattice, ZLattice.comap]]
+  refine ⟨fun ⟨a, ha⟩ ↦ ⟨Rat.ringOfIntegersEquiv a, ?_⟩,
+    fun ⟨z, hz⟩ ↦ ⟨Rat.ringOfIntegersEquiv.symm z, ?_⟩⟩
+  · rw [show x = (NumberField.mixedEmbedding.euclidean.toMixed ℚ).symm (mixedEmbedding ℚ a) from
+        (NumberField.mixedEmbedding.euclidean.toMixed ℚ).injective (by simpa using ha.symm),
+      mixedSpaceRatEquivReal_toMixed_symm_mixedEmbedding,
       RingOfIntegers.coe_eq_algebraMap, ← Rat.ringOfIntegersEquiv_apply_coe, Rat.cast_intCast]
-  · rintro ⟨z, hz⟩
-    refine ⟨Rat.ringOfIntegersEquiv.symm z, ?_⟩
-    have hx : x =
-        (NumberField.mixedEmbedding.euclidean.toMixed ℚ).symm (mixedEmbedding ℚ (z : ℚ)) := by
-      apply mixedSpaceRatEquivReal.injective
-      rw [hz, mixedSpaceRatEquivReal_toMixed_symm_mixedEmbedding, Rat.cast_intCast]
-    rw [hx, ContinuousLinearEquiv.apply_symm_apply, Rat.ringOfIntegersEquiv_symm_apply_coe]
+  · rw [show x = (NumberField.mixedEmbedding.euclidean.toMixed ℚ).symm (mixedEmbedding ℚ (z : ℚ))
+        from mixedSpaceRatEquivReal.injective
+          (by rw [hz, mixedSpaceRatEquivReal_toMixed_symm_mixedEmbedding, Rat.cast_intCast]),
+      ContinuousLinearEquiv.apply_symm_apply, Rat.ringOfIntegersEquiv_symm_apply_coe]
 
 end TauCeti.NumberField.mixedEmbedding.euclidean
 
@@ -813,7 +743,7 @@ theorem coe_integerPointsEquivIntPoints_apply (V : Submodule ℚ (ι → ℚ)) (
     (V.integerPointsEquivIntPoints z : ι → ℤ) i = Rat.ringOfIntegersEquiv ((z : ι → 𝓞 ℚ) i) := by
   simp [integerPointsEquivIntPoints]
 
-open scoped Classical in
+open Classical in
 private theorem map_euclideanSpan_rat [Fintype ι] (V : Submodule ℚ (ι → ℚ)) :
     V.euclideanSpan.map
         ((LinearIsometryEquiv.piLpCongrRight 2 fun _ : ι ↦ mixedSpaceRatEquivReal) :
@@ -821,26 +751,20 @@ private theorem map_euclideanSpan_rat [Fintype ι] (V : Submodule ℚ (ι → �
       V.realSpan := by
   set E := LinearIsometryEquiv.piLpCongrRight 2 fun _ : ι ↦ mixedSpaceRatEquivReal
   set f : (PiLp 2 fun _ : ι ↦ euclidean.mixedSpace ℚ) →ₗ[ℝ] PiLp 2 fun _ : ι ↦ ℝ := ↑E
-  have hf : f = E.toLinearEquiv.toLinearMap := by
-    ext x i
-    simp [f]
   have hle : V.euclideanSpan.map f ≤ V.realSpan := by
     rw [map_le_iff_le_comap, euclideanSpan, span_le]
     rintro _ ⟨v, hv, rfl⟩
-    rw [SetLike.mem_coe, Submodule.mem_comap]
-    have hv' :
-        f (WithLp.toLp 2 fun i ↦
-            (NumberField.mixedEmbedding.euclidean.toMixed ℚ).symm (mixedEmbedding ℚ (v i))) =
-          WithLp.toLp 2 fun i ↦ (v i : ℝ) := by
-      ext1 i
-      simp [f, E]
-    simpa [hv'] using toLp_mem_realSpan hv
+    have hv' : f (WithLp.toLp 2 fun i ↦
+        (NumberField.mixedEmbedding.euclidean.toMixed ℚ).symm (mixedEmbedding ℚ (v i))) =
+        WithLp.toLp 2 fun i ↦ (v i : ℝ) := by ext1 i; simp [f, E]
+    simpa [Submodule.mem_comap, hv'] using toLp_mem_realSpan hv
   have hdim : finrank ℝ (V.euclideanSpan.map f) = finrank ℝ V.realSpan := by
-    rw [hf, LinearEquiv.finrank_map_eq E.toLinearEquiv, V.finrank_euclideanSpan,
-      Module.finrank_self, one_mul, V.finrank_realSpan]
+    rw [show f = E.toLinearEquiv.toLinearMap by ext; simp [f],
+      LinearEquiv.finrank_map_eq E.toLinearEquiv, V.finrank_euclideanSpan, Module.finrank_self,
+      one_mul, V.finrank_realSpan]
   exact eq_of_le_of_finrank_eq hle hdim
 
-open scoped Classical in
+open Classical in
 /-- Over `ℚ`, `V.euclideanSpan` is canonically linearly isometric to `V.realSpan` coordinatewise
 via `mixedSpaceRatEquivReal`. -/
 def euclideanSpanEquivRealSpan [Fintype ι] (V : Submodule ℚ (ι → ℚ)) :
@@ -849,7 +773,7 @@ def euclideanSpanEquivRealSpan [Fintype ι] (V : Submodule ℚ (ι → ℚ)) :
       (LinearIsometryEquiv.piLpCongrRight 2 fun _ : ι ↦ mixedSpaceRatEquivReal)).trans
     (LinearIsometryEquiv.ofEq _ _ (map_euclideanSpan_rat V))
 
-open scoped Classical in
+open Classical in
 /-- Ambient coordinates of `V.euclideanSpanEquivRealSpan w`. -/
 @[simp]
 theorem coe_euclideanSpanEquivRealSpan_apply [Fintype ι] (V : Submodule ℚ (ι → ℚ))
@@ -860,7 +784,7 @@ theorem coe_euclideanSpanEquivRealSpan_apply [Fintype ι] (V : Submodule ℚ (ι
     LinearIsometryEquiv.coe_ofEq_apply]
   simp
 
-open scoped Classical in
+open Classical in
 /-- Over `ℚ`, pulling `V.intLattice` back along `V.euclideanSpanEquivRealSpan` recovers
 `V.integerLattice`. -/
 @[simp]

@@ -112,7 +112,7 @@ variable {K : Type*} [Field K] [NumberField K] {I : Ideal (𝓞 K)}
 private abbrev toFractionalIdealUnit (hI : I ≠ ⊥) : (FractionalIdeal (𝓞 K)⁰ K)ˣ :=
   Units.mk0 (I : FractionalIdeal (𝓞 K)⁰ K) (FractionalIdeal.coeIdeal_ne_zero.mpr hI)
 
-open scoped Classical in
+open Classical in
 /-- Equivalence between `index K` and the `ℤ`-basis index of `I`. -/
 private def indexEquivChooseBasis (hI : I ≠ ⊥) :
     index K ≃ Free.ChooseBasisIndex ℤ (toFractionalIdealUnit hI) :=
@@ -120,77 +120,71 @@ private def indexEquivChooseBasis (hI : I ≠ ⊥) :
     rw [← finrank_eq_card_chooseBasisIndex, fractionalIdeal_rank, RingOfIntegers.rank,
       ← mixedEmbedding.finrank K, ← finrank_eq_card_basis (stdBasis K)]
 
-open scoped Classical in
+open Classical in
 /-- The `ν`-th `ℤ`-basis element of `I` in `K`, indexed by `index K`. -/
 def mixedBasisElem (hI : I ≠ ⊥) (ν : index K) : K :=
   basisOfFractionalIdeal K (toFractionalIdealUnit hI) (indexEquivChooseBasis hI ν)
 
-open scoped Classical in
+open Classical in
 /-- An `ℝ`-basis of `mixedSpace K` indexed by `index K` whose `ℤ`-span is the mixed-space lattice
 of the nonzero ideal `I`. -/
 def mixedLatticeBasis (hI : I ≠ ⊥) : Basis (index K) ℝ (mixedSpace K) :=
   (fractionalIdealLatticeBasis K (toFractionalIdealUnit hI)).reindex
     (indexEquivChooseBasis hI).symm
 
-open scoped Classical in
 /-- `Ideal.mixedLatticeBasis` embeds `Ideal.mixedBasisElem` via `mixedEmbedding K`. -/
 @[simp]
 theorem mixedLatticeBasis_apply (hI : I ≠ ⊥) (ν : index K) :
     I.mixedLatticeBasis hI ν = mixedEmbedding K (I.mixedBasisElem hI ν) := by
+  classical
   rw [mixedLatticeBasis, Basis.reindex_apply, Equiv.symm_symm,
     fractionalIdealLatticeBasis_apply, mixedBasisElem]
 
-open scoped Classical in
 /-- A scalar `x : K` lies in `I` if and only if its mixed embedding lies in the `ℤ`-span of
 `I.mixedLatticeBasis hI`. -/
 theorem mem_coeSubmodule_iff_mem_span_mixedLatticeBasis (hI : I ≠ ⊥) (x : K) :
     x ∈ IsLocalization.coeSubmodule K I ↔
       mixedEmbedding K x ∈ Submodule.span ℤ (range (I.mixedLatticeBasis hI)) := by
+  classical
   rw [mixedLatticeBasis, Basis.coe_reindex, range_comp, Equiv.range_eq_univ, image_univ,
     span_idealLatticeBasis, mem_idealLattice]
   refine ⟨fun hx ↦ ⟨x, ?_, rfl⟩, fun ⟨y, hy, hyx⟩ ↦ ?_⟩
   · simpa [toFractionalIdealUnit] using hx
-  · have : y = x := mixedEmbedding_injective K hyx
-    subst this
+  · obtain rfl := mixedEmbedding_injective K hyx
     simpa [toFractionalIdealUnit] using hy
 
-open scoped Classical in
 /-- Every element `I.mixedBasisElem hI ν` belongs to `IsLocalization.coeSubmodule K I`. -/
 theorem mixedBasisElem_mem (hI : I ≠ ⊥) (ν : index K) :
     I.mixedBasisElem hI ν ∈ IsLocalization.coeSubmodule K I := by
   rw [I.mem_coeSubmodule_iff_mem_span_mixedLatticeBasis hI, ← mixedLatticeBasis_apply]
   exact Submodule.subset_span ⟨ν, rfl⟩
 
-open scoped Classical in
 /-- The family `I.mixedBasisElem hI` is linearly independent over `ℤ`. -/
 theorem linearIndependent_mixedBasisElem (hI : I ≠ ⊥) :
     LinearIndependent ℤ (I.mixedBasisElem hI) := by
   have hli : LinearIndependent ℤ (I.mixedLatticeBasis hI) :=
     (I.mixedLatticeBasis hI).linearIndependent.restrict_scalars' ℤ
   have heq : ⇑(I.mixedLatticeBasis hI) =
-      (mixedEmbedding K).toIntAlgHom.toLinearMap ∘ I.mixedBasisElem hI := by
-    ext1 ν
-    exact I.mixedLatticeBasis_apply hI ν
+      (mixedEmbedding K).toIntAlgHom.toLinearMap ∘ I.mixedBasisElem hI :=
+    funext (I.mixedLatticeBasis_apply hI)
   rw [heq] at hli
   exact hli.of_comp
 
-open scoped Classical in
 /-- The `ℤ`-span of `I.mixedBasisElem hI` in `K` is `IsLocalization.coeSubmodule K I`. -/
 @[simp]
 theorem span_int_mixedBasisElem (hI : I ≠ ⊥) :
     Submodule.span ℤ (range (I.mixedBasisElem hI)) =
       (IsLocalization.coeSubmodule K I).restrictScalars ℤ := by
   ext x
-  rw [Submodule.restrictScalars_mem, I.mem_coeSubmodule_iff_mem_span_mixedLatticeBasis hI]
-  have hrange : range (I.mixedLatticeBasis hI) =
-      (mixedEmbedding K).toIntAlgHom.toLinearMap '' range (I.mixedBasisElem hI) := by
-    rw [← range_comp]
-    exact congrArg range (funext (I.mixedLatticeBasis_apply hI))
-  rw [hrange, ← Submodule.map_span]
-  refine ⟨fun hx ↦ Submodule.mem_map_of_mem hx, fun ⟨y, hy, hyx⟩ ↦ ?_⟩
+  rw [Submodule.restrictScalars_mem, I.mem_coeSubmodule_iff_mem_span_mixedLatticeBasis hI,
+    show range (I.mixedLatticeBasis hI) =
+      (mixedEmbedding K).toIntAlgHom.toLinearMap '' range (I.mixedBasisElem hI) by
+      rw [← range_comp]; exact congrArg range (funext (I.mixedLatticeBasis_apply hI)),
+    ← Submodule.map_span]
+  refine ⟨Submodule.mem_map_of_mem, fun ⟨y, hy, hyx⟩ ↦ ?_⟩
   rwa [← mixedEmbedding_injective K hyx]
 
-open scoped Classical in
+open Classical in
 /-- The `ℤ`-fundamental domain of `I.mixedLatticeBasis hI` is a fundamental domain for the
 mixed-space lattice of `I`. -/
 theorem isAddFundamentalDomain_mixedLatticeBasis (hI : I ≠ ⊥) :
@@ -201,26 +195,20 @@ theorem isAddFundamentalDomain_mixedLatticeBasis (hI : I ≠ ⊥) :
   rw [mixedLatticeBasis, ZSpan.fundamentalDomain_reindex]
   exact fundamentalDomain_idealLattice K (toFractionalIdealUnit hI)
 
-open scoped Classical in
+open Classical in
 /-- The change-of-basis determinant from `stdBasis K` to `I.mixedLatticeBasis hI` has absolute
 value `N(I) * covolume (mixedEmbedding.integerLattice K)`. -/
 theorem abs_det_stdBasis_mixedLatticeBasis (hI : I ≠ ⊥) :
     |(stdBasis K).det (I.mixedLatticeBasis hI)| =
       (I.absNorm : ℝ) * ZLattice.covolume (mixedEmbedding.integerLattice K) := by
-  have hvol :
-      volume (ZSpan.fundamentalDomain (I.mixedLatticeBasis hI)) =
-        ENNReal.ofReal |(stdBasis K).det (I.mixedLatticeBasis hI)| := by
-    rw [ZSpan.measure_fundamentalDomain (I.mixedLatticeBasis hI) volume (stdBasis K),
-      volume_fundamentalDomain_stdBasis, mul_one]
-  have hcov :
-      ZLattice.covolume (idealLattice K (toFractionalIdealUnit hI)) =
-        |(stdBasis K).det (I.mixedLatticeBasis hI)| := by
+  have hcov : ZLattice.covolume (idealLattice K (toFractionalIdealUnit hI)) =
+      |(stdBasis K).det (I.mixedLatticeBasis hI)| := by
     rw [ZLattice.covolume_eq_measure_fundamentalDomain _ volume
-        (I.isAddFundamentalDomain_mixedLatticeBasis hI),
-      measureReal_def, hvol, ENNReal.toReal_ofReal (abs_nonneg _)]
+        (I.isAddFundamentalDomain_mixedLatticeBasis hI), measureReal_def,
+      ZSpan.measure_fundamentalDomain (I.mixedLatticeBasis hI) volume (stdBasis K),
+      volume_fundamentalDomain_stdBasis, mul_one, ENNReal.toReal_ofReal (abs_nonneg _)]
   rw [← hcov, covolume_idealLattice, covolume_integerLattice]
-  simp only [toFractionalIdealUnit, Units.val_mk0, FractionalIdeal.coeIdeal_absNorm,
-    Rat.cast_natCast, mul_assoc]
+  simp [toFractionalIdealUnit, FractionalIdeal.coeIdeal_absNorm, mul_assoc]
 
 end Ideal
 
