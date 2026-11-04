@@ -8,6 +8,7 @@ module
 public import TauCeti.Geometry.Manifold.IntegralCurve.GlobalFlow
 public import TauCeti.Geometry.Symplectic.Liouville.Domain
 import TauCeti.Geometry.Manifold.IntegralCurve.Monotone
+import TauCeti.Geometry.Symplectic.Liouville.Scaling
 import TauCeti.Geometry.Symplectic.Manifold.Flat
 
 /-!
@@ -57,6 +58,8 @@ identification of the primitive on it with `r α|∂W` is not treated here.
   flow, satisfying the group law.
 * `TauCeti.IsLiouvilleCompletion.flowOf_eq_globalFlowDiffeomorph`: its time-`t` map is a
   diffeomorphism.
+* `TauCeti.IsLiouvilleCompletion.mpullback_globalFlowDiffeomorph_eq_exp_smul`: this
+  diffeomorphism `ψₜ` is conformally symplectic, `ψₜ^* ω = e^t ω`.
 * `TauCeti.IsLiouvilleCompletion.flowOf_neg_mem_interior`: the backward Liouville flow carries
   the Liouville domain into its interior.
 
@@ -257,6 +260,22 @@ theorem flowOf_eq_globalFlowDiffeomorph (h : IsLiouvilleCompletion ω α W)
   funext fun y ↦ by
     rw [globalFlowDiffeomorph_apply, flowOf_eq_globalFlow
       ((h.contMDiff_of_interior_eq hZ).of_le (by simp)) (h.isCompleteVectorField hZ)]
+
+/-- **The Liouville flow of a completion is conformally symplectic**: its time-`t` map `ψₜ`, a
+diffeomorphism, satisfies `ψₜ^* ω = e^t ω`. -/
+theorem mpullback_globalFlowDiffeomorph_eq_exp_smul (h : IsLiouvilleCompletion ω α W)
+    (hZ : RoughForm.interior Z ω.1 = α.1) (t : ℝ) :
+    SmoothForm.mpullback
+        (globalFlowDiffeomorph (h.isCompleteVectorField hZ) le_top
+          (h.contMDiff_of_interior_eq hZ) t)
+        (globalFlowDiffeomorph (h.isCompleteVectorField hZ) le_top
+          (h.contMDiff_of_interior_eq hZ) t).contMDiff ω =
+      Real.exp t • ω := Subtype.ext <| by
+  have hZs := h.contMDiff_of_interior_eq hZ
+  rw [SmoothForm.coe_mpullback, ← h.flowOf_eq_globalFlowDiffeomorph hZ,
+    flowOf_eq_globalFlow (hZs.of_le (by simp)) (h.isCompleteVectorField hZ)]
+  exact (h.isLiouvilleVectorField hZ).mpullback_globalFlow_eq_exp_smul
+    (h.isCompleteVectorField hZ) (hZs.of_le (by simp)) ω.mdifferentiable t
 
 /-- The Liouville flow of a completion fixes every point at time zero. -/
 theorem flowOf_zero (h : IsLiouvilleCompletion ω α W) (hZ : RoughForm.interior Z ω.1 = α.1)

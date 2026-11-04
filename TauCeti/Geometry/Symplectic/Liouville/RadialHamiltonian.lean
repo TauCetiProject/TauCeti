@@ -12,7 +12,6 @@ import Mathlib.Geometry.Manifold.LocalDiffeomorph
 import TauCeti.Geometry.Manifold.IntegralCurve.Basic
 import TauCeti.Geometry.Manifold.IntegralCurve.Monotone
 import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
-import TauCeti.Geometry.Symplectic.Liouville.Scaling
 import TauCeti.Geometry.Symplectic.Manifold.Rescale
 
 /-!
@@ -218,28 +217,16 @@ theorem exists_periodic_hamiltonianVectorField_liouvilleRadialCoordinate_iff
         Periodic δ T ∧ ∀ t, liouvilleRadialCoordinate Z W (δ t) = c₂ := by
     rintro c₁ c₂ hc₁ hc₂ ⟨δ, hδ, hδT, hδc⟩
     set s := Real.log c₂ - Real.log c₁
+    have hes : Real.exp s = c₂ / c₁ := by
+      rw [Real.exp_sub, Real.exp_log (zero_lt_one.trans hc₂), Real.exp_log (zero_lt_one.trans hc₁)]
     have hδW : ∀ t, δ t ∉ W := fun t ↦
       (h.one_lt_liouvilleRadialCoordinate_iff hZ).1 (by rw [hδc t]; exact hc₁)
     -- The radial coordinate of `ψ_s (δ t)` is `e^s c₁ = c₂`.
     have hr : ∀ t, liouvilleRadialCoordinate Z W (flowOf Z s (δ t)) = c₂ := fun t ↦ by
-      have hsW : flowOf Z s (δ t) ∉ W := by
-        intro hmem
-        rcases le_or_gt 0 s with hs | hs
-        · have := h.liouvilleRadialCoordinate_flowOf_of_notMem_interior hZ
-            (fun hi ↦ hδW t (interior_subset hi)) hs
-          rw [(h.liouvilleRadialCoordinate_eq_one_iff hZ).2 hmem, hδc t] at this
-          nlinarith [Real.one_le_exp hs]
-        · -- Flowing back for time `-s > 0` would bring `δ t` into `W` already at `r ≤ e^{-s}`,
-          -- but `e^{-s} = c₁ / c₂ < c₁ = r (δ t)`.
-          have hle := (h.liouvilleRadialCoordinate_le_exp_iff hZ (neg_nonneg.2 hs.le)).2
-            (by rwa [neg_neg])
-          rw [hδc t, Real.exp_neg, Real.exp_sub, Real.exp_log (zero_lt_one.trans hc₂),
-            Real.exp_log (zero_lt_one.trans hc₁), inv_div,
-            le_div_iff₀ (zero_lt_one.trans hc₂)] at hle
-          nlinarith
-      rw [h.liouvilleRadialCoordinate_flowOf_of_notMem hZ (hδW t) hsW, hδc t, Real.exp_sub,
-        Real.exp_log (zero_lt_one.trans hc₂), Real.exp_log (zero_lt_one.trans hc₁),
-        div_mul_cancel₀ _ (zero_lt_one.trans hc₁).ne']
+      have hc₂' : Real.exp s * liouvilleRadialCoordinate Z W (δ t) = c₂ := by
+        rw [hδc t, hes, div_mul_cancel₀ _ (zero_lt_one.trans hc₁).ne']
+      rw [h.liouvilleRadialCoordinate_flowOf_of_notMem hZ (hδW t)
+        (h.flowOf_notMem_of_one_lt_exp_mul hZ (hδW t) (hc₂' ▸ hc₂)), hc₂']
     refine ⟨flowOf Z s ∘ δ, h.isMIntegralCurve_flowOf_comp hZ hδ hδW fun t ↦
       (h.one_lt_liouvilleRadialCoordinate_iff hZ).1 (by rw [hr t]; exact hc₂),
       fun t ↦ by rw [comp_apply, comp_apply, hδT t], hr⟩

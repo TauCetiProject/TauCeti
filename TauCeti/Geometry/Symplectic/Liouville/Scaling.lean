@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.DifferentialForm.Flow
-public import TauCeti.Geometry.Symplectic.Liouville.Completion
 public import TauCeti.Geometry.Symplectic.Liouville.VectorField
 
 /-!
@@ -35,8 +34,6 @@ Cartan's formula (`TauCeti.mlieDerivForm_eq_self_of_interior_eq`).
 
 * `TauCeti.IsLiouvilleVectorField.mpullback_globalFlow_eq_exp_smul`: `ψₜ^* σ = e^t σ`.
 * `TauCeti.mpullback_globalFlow_eq_exp_smul_of_interior_eq`: `ψₜ^* α = e^t α`.
-* `TauCeti.IsLiouvilleCompletion.mpullback_globalFlowDiffeomorph_eq_exp_smul`: on a completion,
-  `ψₜ^* σ = e^t σ` for the smooth forms.
 
 ## References
 
@@ -92,34 +89,5 @@ theorem mpullback_globalFlow_eq_exp_smul_of_interior_eq {α : RoughForm I M ℝ 
     exact mlieDerivForm_eq_self_of_interior_eq hα (hZ.mdifferentiable (by norm_num))
       (by rw [hdα, hZα])
   simpa only [one_mul] using mpullback_globalFlow_eq_exp_smul hc hZ hα hL t
-
-end TauCeti
-
-namespace TauCeti
-
-namespace IsLiouvilleCompletion
-
-variable {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
-  [TopologicalSpace H] {I : ModelWithCorners ℝ E H} [I.Boundaryless] [TopologicalSpace M]
-  [ChartedSpace H M] [IsManifold I (⊤ : ℕ∞) M] [T2Space M]
-  {σ : SmoothTwoForm I M} {α : SmoothForm I M ℝ 1} {W : Set M} {Z : (x : M) → TangentSpace I x}
-
-/-- **The Liouville flow of a completion is conformally symplectic**: its time-`t` map `ψₜ`, a
-diffeomorphism, satisfies `ψₜ^* σ = e^t σ`. -/
-theorem mpullback_globalFlowDiffeomorph_eq_exp_smul (h : IsLiouvilleCompletion σ α W)
-    (hZ : RoughForm.interior Z σ.1 = α.1) (t : ℝ) :
-    SmoothForm.mpullback
-        (globalFlowDiffeomorph (h.isCompleteVectorField hZ) le_top
-          (h.contMDiff_of_interior_eq hZ) t)
-        (globalFlowDiffeomorph (h.isCompleteVectorField hZ) le_top
-          (h.contMDiff_of_interior_eq hZ) t).contMDiff σ =
-      Real.exp t • σ := Subtype.ext <| by
-  have hZs := h.contMDiff_of_interior_eq hZ
-  rw [SmoothForm.coe_mpullback, ← h.flowOf_eq_globalFlowDiffeomorph hZ,
-    flowOf_eq_globalFlow (hZs.of_le (by simp)) (h.isCompleteVectorField hZ)]
-  exact (h.isLiouvilleVectorField hZ).mpullback_globalFlow_eq_exp_smul
-    (h.isCompleteVectorField hZ) (hZs.of_le (by simp)) σ.mdifferentiable t
-
-end IsLiouvilleCompletion
 
 end TauCeti
