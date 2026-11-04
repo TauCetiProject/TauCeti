@@ -207,10 +207,6 @@ section GoodLambda
 private def czUnion (f : (ι → ℝ) → F) (t : ℝ≥0∞) : Set (ι → ℝ) :=
   ⋃ q ∈ calderonZygmundCubes (fun x => ‖f x‖ₑ) t, dyadicCube q.1 q.2
 
-private theorem measurableSet_czUnion (f : (ι → ℝ) → F) (t : ℝ≥0∞) :
-    MeasurableSet (czUnion f t) :=
-  measurableSet_biUnion_calderonZygmundCubes _ t
-
 /-- **The Calderón–Zygmund measure estimate** for the union: `t m(t) ≤ ‖f‖₁`. -/
 private theorem mul_volume_czUnion_le (f : (ι → ℝ) → F) (t : ℝ≥0∞) :
     t * volume (czUnion f t) ≤ ∫⁻ x, ‖f x‖ₑ :=
@@ -344,7 +340,7 @@ private theorem volume_czUnion_two_mul_le [Nonempty ι] {f : (ι → ℝ) → F}
     _ = ∑' q : calderonZygmundCubes (fun x => ‖f x‖ₑ) t,
           volume (czUnion f (2 * t) ∩ dyadicCube q.1.1 q.1.2) :=
         measure_iUnion (fun q q' hne => (hdisj hne).mono inter_subset_right inter_subset_right)
-          fun q => (measurableSet_czUnion f _).inter (hmeas q)
+          fun q => (measurableSet_biUnion_calderonZygmundCubes (fun x => ‖f x‖ₑ) _).inter (hmeas q)
     _ ≤ ∑' q : calderonZygmundCubes (fun x => ‖f x‖ₑ) t,
           (K * γ * volume (dyadicCube q.1.1 q.1.2) + volume (dyadicCube q.1.1 q.1.2 ∩ S)) :=
         tsum_le_tsum fun q => hcube q.1 q.2
