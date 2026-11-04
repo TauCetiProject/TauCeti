@@ -9,7 +9,6 @@ public import Mathlib.Analysis.Normed.Module.FiniteDimension
 public import Mathlib.Analysis.Normed.Operator.Banach
 public import Mathlib.LinearAlgebra.Eigenspace.Minpoly
 public import Mathlib.Topology.Algebra.Module.FiniteDimension
-public import Mathlib.Topology.Order.IntermediateValue
 
 /-!
 # Bounded operators on a finite-dimensional space
@@ -22,9 +21,7 @@ Bounded operators out of a finite-dimensional space are determined by the images
 with operator norm controlled by the norms of those images. Hence such operators into `E` are
 approximated in operator norm by operators factoring through any operator `g : F →L[𝕜] E` of
 dense range. On a finite-dimensional real domain, strict pointwise norm bounds are equivalent
-to strict operator-norm bounds. Over a preconnected parameter space, a continuous family of real
-operators with nonvanishing determinant has determinant of constant sign; this is only of
-interest in finite dimension, where the determinant is continuous and not identically one.
+to strict operator-norm bounds.
 
 ## Main results
 
@@ -34,8 +31,6 @@ interest in finite dimension, where the determinant is continuous and not identi
   postcomposition with an operator of dense range has dense range.
 * `ContinuousLinearMap.opNorm_lt_iff`: a strict norm bound can be checked on
   every nonzero vector of a finite-dimensional real domain.
-* `ContinuousLinearMap.det_pos_iff_of_det_ne_zero`: the determinant of a continuous family of
-  operators with nonvanishing determinant has constant sign over a preconnected space.
 -/
 
 public section
@@ -99,23 +94,5 @@ theorem opNorm_lt_iff (A : E →L[ℝ] F) {c : ℝ} (hc : 0 < c) :
         _ < c := by simpa only [hxnorm, mul_one] using h x hxne
 
 end StrictNorm
-
-section DetSign
-
-variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
-
-/-- The determinant of a continuous family of operators with nonvanishing determinant,
-parametrized by a preconnected space, has constant sign. -/
-theorem det_pos_iff_of_det_ne_zero {X : Type*} [TopologicalSpace X] [PreconnectedSpace X]
-    {f : X → E →L[ℝ] E} (hf : Continuous f) (h0 : ∀ x, (f x).det ≠ 0) (x y : X) :
-    0 < (f x).det ↔ 0 < (f y).det := by
-  have hdet : Continuous fun z ↦ (f z).det := continuous_det.comp hf
-  have key (a b : X) (ha : 0 < (f a).det) : 0 < (f b).det := by
-    by_contra hb
-    obtain ⟨z, hz⟩ := intermediate_value_univ b a hdet ⟨not_lt.1 hb, ha.le⟩
-    exact h0 z hz
-  exact ⟨key x y, key y x⟩
-
-end DetSign
 
 end ContinuousLinearMap

@@ -76,10 +76,7 @@ theorem det_polarFactor_eq_sign : T.polarFactor.det = SignType.sign T.det := by
 /-- The polar factor of an endomorphism has determinant one exactly when the endomorphism
 preserves orientation. -/
 theorem det_polarFactor_eq_one_iff : T.polarFactor.det = 1 ↔ 0 < T.det := by
-  rw [det_polarFactor_eq_sign]
-  rcases lt_trichotomy T.det 0 with h | h | h
-  · norm_num [sign_neg h, h.not_gt]
-  · simp [h]
-  · simp [sign_pos h, h]
+  rw [det_polarFactor_eq_sign, ← sign_eq_one_iff]
+  cases SignType.sign T.det <;> norm_num
 
 end ContinuousLinearMap

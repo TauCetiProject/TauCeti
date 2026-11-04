@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.Normed.Operator.FiniteDimensional
 public import Mathlib.LinearAlgebra.Prod
+public import Mathlib.Topology.Instances.Sign
 
 /-!
 # Graph coordinates for negative subspaces
@@ -81,9 +82,10 @@ theorem opNorm_lt_one_iff_forall_mem_graph_norm_snd_lt [FiniteDimensional ℝ E]
     simpa only [one_mul] using h (u, A u) (by simp) hne
 
 /-- A frame whose nonzero values lie strictly inside the negative cone has injective negative
-block. No finite-dimensionality is needed. -/
-theorem injective_fst_comp_of_norm_snd_lt (L : E →L[ℝ] E × F)
-    (hL : ∀ u, u ≠ 0 → ‖(L u).2‖ < ‖(L u).1‖) : Injective ((fst ℝ E F).comp L) := by
+block. No finite-dimensionality is needed, and the frame may be defined on any space. -/
+theorem injective_fst_comp_of_norm_snd_lt {V : Type*} [TopologicalSpace V] [AddCommGroup V]
+    [Module ℝ V] (L : V →L[ℝ] E × F) (hL : ∀ u, u ≠ 0 → ‖(L u).2‖ < ‖(L u).1‖) :
+    Injective ((fst ℝ E F).comp L) := by
   refine (injective_iff_map_eq_zero _).2 fun u hu ↦ ?_
   by_contra hne
   have h := hL u hne
@@ -105,9 +107,11 @@ the sign of the determinant of the negative block is constant. -/
 theorem det_fst_comp_pos_iff_of_norm_snd_lt [FiniteDimensional ℝ E] {X : Type*}
     [TopologicalSpace X] [PreconnectedSpace X] {L : X → E →L[ℝ] E × F} (hcont : Continuous L)
     (hL : ∀ x u, u ≠ 0 → ‖(L x u).2‖ < ‖(L x u).1‖) (x y : X) :
-    0 < ((fst ℝ E F).comp (L x)).det ↔ 0 < ((fst ℝ E F).comp (L y)).det :=
-  det_pos_iff_of_det_ne_zero ((compL ℝ E (E × F) E (fst ℝ E F)).continuous.comp hcont)
-    (fun z ↦ (L z).det_fst_comp_ne_zero_of_norm_snd_lt (hL z)) x y
+    0 < ((fst ℝ E F).comp (L x)).det ↔ 0 < ((fst ℝ E F).comp (L y)).det := by
+  rw [← sign_eq_one_iff, ← sign_eq_one_iff (a := ((fst ℝ E F).comp (L y)).det),
+    isPreconnected_univ.sign_eq_of_continuousOn (f := fun z ↦ ((fst ℝ E F).comp (L z)).det)
+      (continuous_det.comp ((compL ℝ E (E × F) E (fst ℝ E F)).continuous.comp hcont)).continuousOn
+      (fun z _ ↦ (L z).det_fst_comp_ne_zero_of_norm_snd_lt (hL z)) trivial trivial]
 
 /-- The straight-line contraction of a frame `L` in graph coordinates: the frame
 `u ↦ ((L u).1, t • (L u).2)`. It is `L` at `t = 1` and a frame of `E × 0` at `t = 0`. -/
@@ -188,17 +192,9 @@ namespace Submodule
 factor. No finite-dimensionality is needed for this implication. -/
 theorem injective_fst_of_norm_snd_lt (W : Submodule ℝ (E × F))
     (hW : ∀ z ∈ W, z ≠ 0 → ‖z.2‖ < ‖z.1‖) :
-    Injective ((LinearMap.fst ℝ E F).comp W.subtype) := by
-  apply LinearMap.ker_eq_bot.mp
-  rw [LinearMap.ker_eq_bot']
-  intro z hz
-  apply Subtype.ext
-  by_contra hne
-  have hlt := hW z z.property hne
-  have hfst : (z : E × F).1 = 0 := by
-    simpa only [LinearMap.comp_apply, LinearMap.fst_apply, Submodule.subtype_apply] using hz
-  rw [hfst, norm_zero] at hlt
-  exact (not_lt_of_ge (norm_nonneg _)) hlt
+    Injective ((LinearMap.fst ℝ E F).comp W.subtype) :=
+  W.subtypeL.injective_fst_comp_of_norm_snd_lt fun z hz ↦
+    hW z z.property (by simpa using hz)
 
 variable [FiniteDimensional ℝ E]
 
