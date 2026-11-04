@@ -59,6 +59,8 @@ and `β`.
 
 * `WeierstrassCurve.IsIntegralModularForm`: the predicate of being an integral modular form of
   weight `k`.
+* `TauCeti.WeierstrassCurve.integralModularFormSubmodule`: the `ℤ`-submodule of integral modular
+  forms of weight `k`, forming a graded monoid across weights.
 
 ## Main results
 
@@ -514,3 +516,26 @@ theorem isIntegralModularForm_iff : IsIntegralModularForm k f ↔
     fun h ↦ (isIntegralModularForm_iff_of_mem_adjoin h.1).mpr h.2⟩
 
 end WeierstrassCurve
+
+namespace TauCeti.WeierstrassCurve
+
+open _root_.WeierstrassCurve
+
+/-- The `ℤ`-submodule of `ℤ[a₁, a₂, a₃, a₄, a₆]` consisting of integral modular forms of weight `k`
+for the Weierstrass coordinate-change action. -/
+@[expose] def integralModularFormSubmodule (k : ℕ) : Submodule ℤ (MvPolynomial Coeff ℤ) where
+  carrier := {f | IsIntegralModularForm k f}
+  add_mem' hf hg := hf.add hg
+  zero_mem' := isIntegralModularForm_zero k
+  smul_mem' n _ hf := hf.smul n
+
+@[simp]
+theorem mem_integralModularFormSubmodule {k : ℕ} {f : MvPolynomial Coeff ℤ} :
+    f ∈ integralModularFormSubmodule k ↔ IsIntegralModularForm k f :=
+  Iff.rfl
+
+instance : SetLike.GradedMonoid integralModularFormSubmodule where
+  one_mem := isIntegralModularForm_one
+  mul_mem _ _ _ _ hf hg := hf.mul hg
+
+end TauCeti.WeierstrassCurve
