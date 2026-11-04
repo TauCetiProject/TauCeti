@@ -51,6 +51,8 @@ Two families of adjoints of linear maps between finite-dimensional inner product
 Finally, a pointwise bound `‖C x‖ ≤ c * ‖x‖` passes to the adjoint
 (`LinearMap.norm_adjoint_apply_le`). This is the operator-norm bound `‖C†‖ ≤ ‖C‖` in pointwise
 form for algebraic linear maps, deduced from Mathlib's isometry `ContinuousLinearMap.adjoint`.
+Similarly, if `‖e⁻¹ x‖ ≤ ‖x‖ / √λ`, then `‖M‖ ≤ λ⁻¹ ‖e† ∘ M ∘ e‖`
+(`ContinuousLinearEquiv.norm_le_inv_mul_norm_adjoint_comp_comp`).
 If a linear map vanishes on `Tᗮ`, its adjoint takes values in `T`
 (`LinearMap.adjoint_apply_mem_of_forall_mem_orthogonal`). The determinant of the adjoint of an
 endomorphism is the conjugate of its determinant (`LinearMap.det_adjoint`). For a surjective
@@ -242,6 +244,31 @@ theorem adjointEquiv_symm_apply [CompleteSpace E] [CompleteSpace F]
     (A : E ≃L[𝕜] F) (x : E) :
     A.adjointEquiv.symm x = ContinuousLinearMap.adjoint (A.symm : F →L[𝕜] E) x := by
   rw [adjointEquiv_symm, adjointEquiv_apply]
+
+/-- If `‖e⁻¹ x‖ ≤ ‖x‖ / √λ` for all `x`, then conjugating by `e` loses at most a factor `λ` in
+operator norm: `‖M‖ ≤ λ⁻¹ ‖e† ∘ M ∘ e‖`. -/
+theorem norm_le_inv_mul_norm_adjoint_comp_comp [CompleteSpace E] [CompleteSpace F]
+    (e : E ≃L[𝕜] F) {lam : ℝ} (hlam : 0 < lam) (he : ∀ x, ‖e.symm x‖ ≤ (√lam)⁻¹ * ‖x‖)
+    (M : F →L[𝕜] F) :
+    ‖M‖ ≤ lam⁻¹ * ‖(e : E →L[𝕜] F)† ∘L M ∘L (e : E →L[𝕜] F)‖ := by
+  have hK : ‖(e.symm : F →L[𝕜] E)‖ ≤ (√lam)⁻¹ :=
+    ContinuousLinearMap.opNorm_le_bound _ (by positivity) he
+  -- `M = (e⁻¹)† ∘ (e† ∘ M ∘ e) ∘ e⁻¹`
+  have hM : M = (e.symm : F →L[𝕜] E)† ∘L
+      ((e : E →L[𝕜] F)† ∘L M ∘L (e : E →L[𝕜] F)) ∘L (e.symm : F →L[𝕜] E) := by
+    ext x
+    refine ext_inner_right 𝕜 fun z => ?_
+    simp
+  set N := (e : E →L[𝕜] F)† ∘L M ∘L (e : E →L[𝕜] F)
+  calc ‖M‖ = ‖(e.symm : F →L[𝕜] E)† ∘L N ∘L (e.symm : F →L[𝕜] E)‖ := by rw [← hM]
+    _ ≤ ‖(e.symm : F →L[𝕜] E)†‖ * (‖N‖ * ‖(e.symm : F →L[𝕜] E)‖) :=
+        (ContinuousLinearMap.opNorm_comp_le _ _).trans
+          (mul_le_mul_of_nonneg_left (ContinuousLinearMap.opNorm_comp_le _ _) (norm_nonneg _))
+    _ ≤ (√lam)⁻¹ * (‖N‖ * (√lam)⁻¹) := by
+        rw [LinearIsometryEquiv.norm_map]
+        gcongr
+    _ = lam⁻¹ * ‖N‖ := by
+        rw [mul_comm ‖N‖, ← mul_assoc, ← mul_inv, Real.mul_self_sqrt hlam.le]
 
 end ContinuousLinearEquiv
 
