@@ -42,6 +42,10 @@ form [Lee, Thm. 17.35].
   Springer, 2013, Chapter 17, section Degree Theory, proof of Theorem 17.35.
 * J. W. Milnor, *Topology from the Differentiable Viewpoint*, University Press of Virginia, 1965,
   §1 (the stack of records) and §5.
+* The construction of the stack of records follows the proof of Mathlib's
+  `IsClosedMap.isEvenlyCovered_of_openPartialHomeomorph` (`Mathlib/Topology/Covering/Basic.lean`),
+  which separates a finite fibre by `Set.Finite.t2_separation` and uses that `f` is a closed map
+  to find a neighbourhood of the base point whose preimage lies in the separated sheets.
 -/
 
 public section
@@ -65,7 +69,8 @@ open Manifold.Orientation
 boundaryless manifold to a Hausdorff manifold, the points `x` of the fibre have pairwise disjoint
 open neighbourhoods, the sources of open partial homeomorphisms `e x` agreeing with `f`, on which
 the orientation sign of `f` is constant; and `y` has a neighbourhood whose preimage is covered by
-these sheets and which lies in each of their images. -/
+these sheets and which lies in each of their images. The construction adapts the proof of
+Mathlib's `IsClosedMap.isEvenlyCovered_of_openPartialHomeomorph`. -/
 private theorem exists_stack_of_records [CompactSpace M] [T2Space M] [T2Space N]
     [BoundarylessManifold I M] (o : Manifold.Orientation I M (Fin k))
     (o' : Manifold.Orientation J N (Fin k)) {f : M → N} (hf : ContMDiff I J 1 f) {y : N}
