@@ -34,6 +34,10 @@ of translations.
   measurability.
 - `MeasureTheory.AEStronglyMeasurable.comp_prod_sub`: a measurable family of translations
   preserves a.e. strong measurability for the product measure.
+- `MeasureTheory.AEStronglyMeasurable.apply_of_ae_continuous`: a Carathéodory function `G`
+  (a.e.-strongly measurable in `x` for each fixed second argument, continuous in the second argument
+  for a.e. `x`) composed with an a.e.-strongly measurable `f` gives the a.e.-strongly measurable
+  `fun x ↦ G x (f x)`. Neither space needs to be metrizable or second countable.
 
 The antitone σ-algebra results hold for a codomain in any second-countable conditionally complete
 linear order with the order topology and Borel σ-algebra (`ℝ` qualifies). The witness σ-algebras
@@ -206,5 +210,33 @@ theorem AEStronglyMeasurable.comp_prod_sub
   filter_upwards [Measure.quasiMeasurePreserving_fst.ae_eq_comp hc.ae_eq_mk] with p hp
   simp only [Function.comp_def] at hp ⊢
   rw [hp]
+
+/-- **Carathéodory functions.** If `G x c` is a.e.-strongly measurable in `x` for each fixed `c`
+and `G x` is continuous for almost every `x`, then `fun x ↦ G x (f x)` is a.e.-strongly measurable
+for every a.e.-strongly measurable `f`. No metrizability or countability is assumed of the source
+space or of the space of the second argument. -/
+theorem AEStronglyMeasurable.apply_of_ae_continuous {γ : Type*} [TopologicalSpace γ]
+    [TopologicalSpace.PseudoMetrizableSpace γ] {G : α → F → γ} {f : α → F}
+    (hf : AEStronglyMeasurable f μ)
+    (hG : ∀ c, AEStronglyMeasurable (fun x ↦ G x c) μ) (hcont : ∀ᵐ x ∂μ, Continuous (G x)) :
+    AEStronglyMeasurable (fun x ↦ G x (f x)) μ := by
+  -- For a simple function `φ`, `G x (φ x) = G x c` on each of the finitely many fibres of `φ`.
+  have hsimple (φ : SimpleFunc α F) : AEStronglyMeasurable (fun x ↦ G x (φ x)) μ := by
+    have hcover : (⋃ c : φ.range, φ ⁻¹' {(c : F)}) = Set.univ :=
+      Set.eq_univ_of_forall fun x ↦ Set.mem_iUnion.2 ⟨⟨φ x, φ.mem_range_self x⟩, rfl⟩
+    rw [← Measure.restrict_univ (μ := μ), ← hcover, aestronglyMeasurable_iUnion_iff]
+    intro c
+    refine ((hG c).mono_measure Measure.restrict_le_self).congr ?_
+    filter_upwards [ae_restrict_mem (φ.measurableSet_fiber c)] with x hx
+    rw [Set.mem_preimage, Set.mem_singleton_iff] at hx
+    rw [hx]
+  -- In general, approximate a strongly measurable representative of `f` by simple functions.
+  obtain ⟨f', hf', hff'⟩ := hf
+  refine (aestronglyMeasurable_of_tendsto_ae (g := fun x ↦ G x (f' x)) atTop
+    (fun n ↦ hsimple (hf'.approx n)) ?_).congr ?_
+  · filter_upwards [hcont] with x hx
+    exact (hx.tendsto _).comp (hf'.tendsto_approx x)
+  · filter_upwards [hff'] with x hx
+    rw [hx]
 
 end MeasureTheory
