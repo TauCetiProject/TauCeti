@@ -51,6 +51,7 @@ of type `F₄` in characteristic two on matrices.
 * `Matrix.isStep_iff`, `Matrix.isStep_of_apply` and `Matrix.IsStep.apply`: the entrywise table
   lookup description, over rows with decidable equality.
 * `Matrix.IsStep.mul`: a product of step matrices is a step matrix.
+* `Matrix.IsStep.mul_right_apply`: right multiplication selects and rescales a column.
 * `Matrix.isStep_one`, `Matrix.isStep_diagonal`: the identity and the diagonal matrices.
 * `Matrix.IsStep.map`: entrywise application of a zero-preserving map.
 -/
@@ -131,6 +132,16 @@ theorem IsStep.mul [Fintype m] [NonUnitalNonAssocSemiring R]
   · rw [Function.comp_apply, hM.apply_target, hN.apply_target]
   · rw [Function.comp_apply] at hab
     rw [hM.apply_of_ne hab, zero_mul]
+
+/-- Multiplication on the right by a step matrix selects and rescales a column. -/
+theorem IsStep.mul_right_apply [Fintype m] [NonUnitalNonAssocSemiring R]
+    {N : Matrix m n R} {t : n → m} {c : n → R} (hN : N.IsStep t c)
+    (M : Matrix l m R) (a : l) (b : n) :
+    (M * N) a b = M a (t b) * c b := by
+  rw [Matrix.mul_apply, Finset.sum_eq_single (t b), hN.apply_target]
+  · intro j _ hj
+    rw [hN.apply_of_ne hj, mul_zero]
+  · exact fun h ↦ (h (Finset.mem_univ _)).elim
 
 /-- Entrywise application of a zero-preserving map to a step matrix gives the step matrix of the
 same target and the transformed coefficients. Only the value at zero is used, so no additive or
