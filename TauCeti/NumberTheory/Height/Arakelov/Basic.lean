@@ -202,6 +202,25 @@ theorem arakelovMulHeight_mul_absNorm_span_range {ι : Type*} [Finite ι]
   rw [arakelovMulHeight_eq hy', mul_assoc, mul_comm (∏ᶠ _, _),
     NumberField.absNorm_mul_finprod_finitePlace_eq_one hy, mul_one]
 
+/-- `Fintype` variant of `arakelovMulHeight_eq` avoiding `Fintype.ofFinite` in the archimedean
+sum. -/
+theorem arakelovMulHeight_eq_fintype {ι : Type*} [Fintype ι] {y : ι → K} (hy : y ≠ 0) :
+    arakelovMulHeight y =
+      (∏ w : InfinitePlace K,
+        (∑ i, ‖w.embedding (y i)‖ ^ 2) ^ ((w.mult : ℝ) / 2)) *
+      ∏ᶠ v : FinitePlace K, ⨆ i, v (y i) := by
+  rw [arakelovMulHeight_eq hy]
+  congr!
+
+/-- `Fintype` variant of `arakelovMulHeight_mul_absNorm_span_range` avoiding `Fintype.ofFinite` in
+the archimedean sum. -/
+theorem arakelovMulHeight_mul_absNorm_span_range_fintype {ι : Type*} [Fintype ι]
+    {y : ι → 𝓞 K} (hy : y ≠ 0) :
+    arakelovMulHeight (fun i ↦ (y i : K)) * (Ideal.span (Set.range y)).absNorm =
+      ∏ w : InfinitePlace K, (∑ i, ‖w.embedding (y i)‖ ^ 2) ^ ((w.mult : ℝ) / 2) := by
+  rw [arakelovMulHeight_mul_absNorm_span_range hy]
+  congr!
+
 /-- Multiplication by a nonzero number-field scalar preserves the relative Euclidean projective
 height. -/
 @[simp]

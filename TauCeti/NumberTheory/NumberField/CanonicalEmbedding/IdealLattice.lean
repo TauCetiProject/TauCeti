@@ -37,6 +37,9 @@ transported to the mixed space along the injective embedding.
   `N 𝔞` in the lattice of `I`.
 * `NumberField.mixedEmbedding.covolume_idealLattice_mul_mk0`: the covolume of the lattice of
   `I * 𝔞` is `N 𝔞` times the covolume of the lattice of `I`.
+* `Ideal.mixedBasisElem_mem`, `Ideal.linearIndependent_mixedBasisElem`,
+  `Ideal.span_int_mixedBasisElem`: `Ideal.mixedBasisElem` lies in `IsLocalization.coeSubmodule K I`,
+  is `ℤ`-linearly independent, and spans `IsLocalization.coeSubmodule K I` over `ℤ`.
 * `Ideal.mem_coeSubmodule_iff_mem_span_mixedLatticeBasis`,
   `Ideal.isAddFundamentalDomain_mixedLatticeBasis`,
   `Ideal.abs_det_stdBasis_mixedLatticeBasis`: the `ℤ`-span, fundamental domain, and change-of-basis
@@ -150,6 +153,42 @@ theorem mem_coeSubmodule_iff_mem_span_mixedLatticeBasis (hI : I ≠ ⊥) (x : K)
   · have : y = x := mixedEmbedding_injective K hyx
     subst this
     simpa [toFractionalIdealUnit] using hy
+
+open scoped Classical in
+/-- Every element `I.mixedBasisElem hI ν` belongs to `IsLocalization.coeSubmodule K I`. -/
+theorem mixedBasisElem_mem (hI : I ≠ ⊥) (ν : index K) :
+    I.mixedBasisElem hI ν ∈ IsLocalization.coeSubmodule K I := by
+  rw [I.mem_coeSubmodule_iff_mem_span_mixedLatticeBasis hI, ← mixedLatticeBasis_apply]
+  exact Submodule.subset_span ⟨ν, rfl⟩
+
+open scoped Classical in
+/-- The family `I.mixedBasisElem hI` is linearly independent over `ℤ`. -/
+theorem linearIndependent_mixedBasisElem (hI : I ≠ ⊥) :
+    LinearIndependent ℤ (I.mixedBasisElem hI) := by
+  have hli : LinearIndependent ℤ (I.mixedLatticeBasis hI) :=
+    (I.mixedLatticeBasis hI).linearIndependent.restrict_scalars' ℤ
+  have heq : ⇑(I.mixedLatticeBasis hI) =
+      (mixedEmbedding K).toIntAlgHom.toLinearMap ∘ I.mixedBasisElem hI := by
+    ext1 ν
+    exact I.mixedLatticeBasis_apply hI ν
+  rw [heq] at hli
+  exact hli.of_comp
+
+open scoped Classical in
+/-- The `ℤ`-span of `I.mixedBasisElem hI` in `K` is `IsLocalization.coeSubmodule K I`. -/
+@[simp]
+theorem span_int_mixedBasisElem (hI : I ≠ ⊥) :
+    Submodule.span ℤ (range (I.mixedBasisElem hI)) =
+      (IsLocalization.coeSubmodule K I).restrictScalars ℤ := by
+  ext x
+  rw [Submodule.restrictScalars_mem, I.mem_coeSubmodule_iff_mem_span_mixedLatticeBasis hI]
+  have hrange : range (I.mixedLatticeBasis hI) =
+      (mixedEmbedding K).toIntAlgHom.toLinearMap '' range (I.mixedBasisElem hI) := by
+    rw [← range_comp]
+    exact congrArg range (funext (I.mixedLatticeBasis_apply hI))
+  rw [hrange, ← Submodule.map_span]
+  refine ⟨fun hx ↦ Submodule.mem_map_of_mem hx, fun ⟨y, hy, hyx⟩ ↦ ?_⟩
+  rwa [← mixedEmbedding_injective K hyx]
 
 open scoped Classical in
 /-- The `ℤ`-fundamental domain of `I.mixedLatticeBasis hI` is a fundamental domain for the
