@@ -82,7 +82,9 @@ theorem homologyEulerChar_khovanovComplex_eq_negOnePow_mul (j : ℤ) :
   apply finsum_eq_of_bijective (fun i : ℤ ↦ i + D.negativeCrossingCount)
     (Equiv.addRight (D.negativeCrossingCount : ℤ)).bijective
   intro i
-  rw [(D.khovanovHomologyBracketIso hD R i j).toLinearEquiv.finrank_eq]
+  have he := (D.khovanovHomologyBracketIso hD R i j).toLinearEquiv.finrank_eq
+  rw [khovanovHomology_def] at he
+  rw [he]
   have hs : (D.negativeCrossingCount : ℤ).negOnePow *
       (i + D.negativeCrossingCount).negOnePow = i.negOnePow := by
     rw [Int.negOnePow_add, mul_left_comm]
@@ -149,6 +151,7 @@ theorem coeff_khovanovEulerChar_eq_sum (j : ℤ) :
     homologyEulerChar_eq_sum_finSet_of_finrankSupport_subset _ _
       (finrankSupport_homology_subset_Icc (D.khovanovComplex hD R j)
         (-(D.negativeCrossingCount : ℤ)) D.positiveCrossingCount)]
+  simp only [khovanovHomology, ComplexShape.eulerCharSignsUpInt_χ]
   rfl
 
 /-- The empty diagram has graded Euler characteristic `1` over every nontrivial
