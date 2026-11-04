@@ -5,11 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.NumberTheory.HilbertSymbol.NormSubgroup
 public import TauCeti.NumberTheory.LocalField.Norm.Eisenstein
-public import TauCeti.NumberTheory.LocalField.UnitSquareClasses
-
-import TauCeti.RingTheory.LocalRing.Basic
+public import TauCeti.NumberTheory.LocalField.QuadraticForm.Norm.SquareClasses
+public import TauCeti.RingTheory.LocalRing.MaximalIdeal.Basic
 
 /-!
 # Eisenstein unit-norm polynomials and their square-class composition law
@@ -28,35 +26,31 @@ unit radicand `a` of odd quadratic defect. Nevertheless, multiplication of two v
 `(1 - t v + c v²)(1 - t s + c s²) = (1 - t s + c v s)² (1 - t r + c r²)`,
 `r = (v - s) / (1 - t s + c v s)`.
 
-Since `t, c ∈ 𝓂[K]`, the denominator `1 - t s + c v s` is always a unit of `𝒪[K]`, and `v ↦ r` is a
-bijection on `𝒪[K]` that descends to every quotient `𝒪[K] ⧸ I`. Consequently, over any valued field
-`K`, the image of `v ↦ [1 - t v + c v²]` in `Kˣ ⧸ (Kˣ)²` is already a subgroup
-`TauCeti.eisensteinNormSquareSubgroup`, with uniform fibres over `𝒪[K] ⧸ I` whenever `I` maps to the
-trivial square class.
+For any `t, c ∈ 𝓂[K]`, the denominator `1 - t s + c v s` is always a unit of `𝒪[K]`, and `v ↦ r` is
+a bijection on `𝒪[K]` that descends to every quotient `𝒪[K] ⧸ I`. Consequently, over any valued
+field `K` and any `t, c ∈ 𝓂[K]`, the image of `v ↦ [1 - t v + c v²]` in `Kˣ ⧸ (Kˣ)²` is already a
+subgroup `TauCeti.eisensteinNormSquareSubgroup`, with uniform fibres over `𝒪[K] ⧸ I` whenever `I`
+maps to the trivial square class.
 
 ## Main definitions
 
 * `TauCeti.eisensteinNormCompose`, `TauCeti.eisensteinNormComposeEquiv`, and
   `TauCeti.eisensteinNormComposeQuotientEquiv`: the integral composition parameter
   `(v - s) / (1 - t s + c v s)` and the induced bijections on `𝒪[K]` and `𝒪[K] ⧸ I`.
-* `TauCeti.eisensteinNormUnit` and `TauCeti.eisensteinNormSquareClass`: the unit
+* `TauCeti.eisensteinNormUnit` and `TauCeti.eisensteinNormSquareClass`: for `t, c ∈ 𝓂[K]`, the unit
   `1 - t v + c v² ∈ Kˣ` and its class in `Kˣ ⧸ (Kˣ)²`.
-* `TauCeti.eisensteinNormSquareSubgroup`: the subgroup of `Kˣ ⧸ (Kˣ)²` consisting of the square
-  classes `eisensteinNormSquareClass K ht hc v`.
-* `TauCeti.unitQuadraticNormSquareClasses`: the subgroup of `Kˣ ⧸ (Kˣ)²` consisting of the square
-  classes of elements of valuation one in `quadraticNormSubgroup a`.
+* `TauCeti.eisensteinNormSquareSubgroup`: for `t, c ∈ 𝓂[K]`, the subgroup of `Kˣ ⧸ (Kˣ)²`
+  consisting of the square classes `eisensteinNormSquareClass K ht hc v`.
 
 ## Main results
 
 * `TauCeti.valuation_sq_sub_mul_add_mul_sq` and
-  `TauCeti.valuation_sq_sub_mul_add_mul_sq_eq_one_iff`: over any valued field, `x² - t x y + c y²`
-  has valuation `max (v(x²)) (v(c y²))`, and has valuation `1` iff `v(x) = 1` and `v(y) ≤ 1`.
+  `TauCeti.valuation_sq_sub_mul_add_mul_sq_eq_one_iff`: over any valued field with `t ∈ 𝓂[K]` and
+  irreducible `c`, `x² - t x y + c y²` has valuation `max (v(x²)) (v(c y²))`, and has valuation `1`
+  iff `v(x) = 1` and `v(y) ≤ 1`.
 * `TauCeti.eisensteinNormSquareClass_mul` and `TauCeti.eisensteinNormSquareClass_eq_iff`: the
   composition law and equality criterion for `eisensteinNormSquareClass`.
-* `TauCeti.eisensteinNormSquareSubgroup_le_unitSquareClasses`,
-  `TauCeti.unitQuadraticNormSquareClasses_le_unitSquareClasses`, and
-  `TauCeti.relIndex_unitQuadraticNormSquareClasses`: inclusion in `unitSquareClasses K` and
-  comparison with the index of valuation-one norms in `U(K, 0)`.
+* `TauCeti.eisensteinNormSquareSubgroup_le_unitSquareClasses`: inclusion in `unitSquareClasses K`.
 * `TauCeti.mem_eisensteinNormSquareSubgroup_iff_exists_norm_eq`: in an Eisenstein quadratic
   extension `L/K`, `eisensteinNormSquareSubgroup` consists of the square classes of norms of
   valuation one from `L`.
@@ -81,6 +75,49 @@ section ValuedField
 
 variable {K : Type*} [Field K] [ValuativeRel K]
 
+private theorem valuation_lt_one_mul_ne_irreducible {c : 𝒪[K]} (hc : Irreducible c) {x y : K}
+    (hx : valuation K x < 1) (hy : valuation K y < 1) : x * y ≠ (c : K) := by
+  intro h
+  exact hc.ne_mul_of_mem_maximalIdeal (x := ⟨x, hx.le⟩) (y := ⟨y, hy.le⟩)
+    ((valuation K).mem_maximalIdeal_iff.mpr hx)
+    ((valuation K).mem_maximalIdeal_iff.mpr hy) (Subtype.ext h.symm)
+
+-- Over an arbitrary valued field (without `[IsDiscreteValuationRing 𝒪[K]]`, which
+-- `Irreducible.maximalIdeal_eq_setOfPred_le_v_coe` requires), an irreducible element of `𝒪[K]`
+-- still has maximal valuation in `𝓂[K]`.
+private theorem valuation_le_of_mem_maximalIdeal {c m : 𝒪[K]} (hc : Irreducible c)
+    (hm : m ∈ 𝓂[K]) : valuation K (m : K) ≤ valuation K (c : K) := by
+  by_contra! hlt
+  obtain ⟨-, d, hdu, hcd⟩ := (Valuation.integer.integers (valuation K)).dvdNotUnit_iff_lt.mpr hlt
+  exact (hc.isUnit_or_isUnit hcd).elim ((IsLocalRing.mem_maximalIdeal m).mp hm) hdu
+
+private theorem valuation_le_mul_of_div_lt_one {c : 𝒪[K]} (hc : Irreducible c) {x y : K}
+    (hy0 : 0 < valuation K y) (hxy1 : valuation K (x / y) < 1) :
+    valuation K x ≤ valuation K (c : K) * valuation K y := by
+  simpa only [map_div₀, div_le_iff₀ hy0] using valuation_le_of_mem_maximalIdeal
+    (m := ⟨x / y, hxy1.le⟩) hc ((valuation K).mem_maximalIdeal_iff.mpr hxy1)
+
+private theorem valuation_sq_ne_valuation_mul_sq {c : 𝒪[K]} (hc : Irreducible c) {x y : K}
+    (hx : x ≠ 0) (hy : y ≠ 0) :
+    valuation K (x ^ 2) ≠ valuation K ((c : K) * y ^ 2) := by
+  intro h
+  have hc1 : valuation K (c : K) < 1 :=
+    Valuation.integer.v_irreducible_lt_one (v := valuation K) hc
+  have hx0 : valuation K x ≠ 0 := ((Valuation.pos_iff _).mpr hx).ne'
+  have hy0 : valuation K y ≠ 0 := ((Valuation.pos_iff _).mpr hy).ne'
+  have hdiv : valuation K (x / y) ^ 2 = valuation K (c : K) := by
+    rw [← map_pow, div_pow, map_div₀, h, map_mul, map_pow,
+      mul_div_cancel_right₀ _ (pow_ne_zero 2 hy0)]
+  have hu1 : valuation K (x / y) < 1 := by
+    by_contra! hge
+    exact (hdiv ▸ hc1).not_ge (one_le_pow₀ hge)
+  have hw1 : valuation K ((c : K) * y / x) < 1 := by
+    have hw_eq : valuation K ((c : K) * y / x) = valuation K (x / y) := by
+      rw [map_div₀, map_mul, ← hdiv, sq, map_div₀, mul_div_assoc, mul_assoc,
+        div_mul_div_cancel₀ hy0, div_self hx0, mul_one]
+    exact hw_eq.trans_lt hu1
+  exact valuation_lt_one_mul_ne_irreducible hc hu1 hw1 (by field_simp)
+
 /-- Over any valued field, if `t ∈ 𝓂[K]` and `c` is irreducible in `𝒪[K]`, the cross term `-t x y`
 is strictly smaller in valuation than `max (v(x²)) (v(c y²))`, so the Eisenstein norm form
 `x² - t x y + c y²` has valuation `max (v(x²)) (v(c y²))`. -/
@@ -95,93 +132,38 @@ theorem valuation_sq_sub_mul_add_mul_sq {t c : 𝒪[K]} (ht : t ∈ 𝓂[K]) (hc
   have hc1 : valuation K (c : K) < 1 :=
     Valuation.integer.v_irreducible_lt_one (v := valuation K) hc
   have hc0 : 0 < valuation K (c : K) := Valuation.integer.v_irreducible_pos (v := valuation K) hc
-  -- Every element of `𝓂[K]` has valuation at most `v(c)`, since `c` is irreducible in `𝒪[K]`.
-  have hle_c : ∀ {m : 𝒪[K]}, m ∈ 𝓂[K] → valuation K (m : K) ≤ valuation K (c : K) := by
-    intro m hm
-    by_contra! hlt
-    obtain ⟨-, d, hdu, hcd⟩ :=
-      (Valuation.integer.integers (valuation K)).dvdNotUnit_iff_lt.mpr hlt
-    exact (hc.isUnit_or_isUnit hcd).elim ((IsLocalRing.mem_maximalIdeal m).mp hm) hdu
-  have htc : valuation K (t : K) ≤ valuation K (c : K) := hle_c ht
+  have htc : valuation K (t : K) ≤ valuation K (c : K) := valuation_le_of_mem_maximalIdeal hc ht
   have hx0 : 0 < valuation K x := (Valuation.pos_iff _).mpr hx
   have hy0 : 0 < valuation K y := (Valuation.pos_iff _).mpr hy
-  -- First show `v(x²) ≠ v(c y²)`: equality would factor `c = (x/y) * (c y / x)` inside `𝓂[K]`.
-  have hne : valuation K (x ^ 2) ≠ valuation K ((c : K) * y ^ 2) := by
-    intro h
-    have hdiv : valuation K (x / y) ^ 2 = valuation K (c : K) := by
-      rw [← map_pow, div_pow, map_div₀, h, map_mul, mul_div_cancel_right₀]
-      rw [map_pow]
-      exact pow_ne_zero 2 hy0.ne'
-    have hu1 : valuation K (x / y) < 1 := by
-      by_contra! hge
-      exact (hdiv ▸ hc1).not_ge (one_le_pow₀ hge)
-    have hw_eq : valuation K ((c : K) * y / x) = valuation K (x / y) := by
-      rw [map_div₀, map_mul, ← hdiv, sq, map_div₀, mul_div_assoc, mul_assoc,
-        div_mul_div_cancel₀ hy0.ne', div_self hx0.ne', mul_one]
-    have hw1 : valuation K ((c : K) * y / x) < 1 := hw_eq.trans_lt hu1
-    let uInt : 𝒪[K] := ⟨x / y, hu1.le⟩
-    let wInt : 𝒪[K] := ⟨(c : K) * y / x, hw1.le⟩
-    have hprod : c = uInt * wInt := by
-      ext
-      dsimp only [Subring.coe_mul, uInt, wInt]
-      field_simp
-    rcases hc.isUnit_or_isUnit hprod with hu | hw
-    · exact ((IsLocalRing.mem_maximalIdeal uInt).mp
-        ((valuation K).mem_maximalIdeal_iff.mpr hu1)) hu
-    · exact ((IsLocalRing.mem_maximalIdeal wInt).mp
-        ((valuation K).mem_maximalIdeal_iff.mpr hw1)) hw
-  -- Now compare the cross term `-t x y` against whichever of `v(x²)` and `v(c y²)` is larger.
-  rcases hne.lt_or_gt with hlt | hgt
+  rcases (valuation_sq_ne_valuation_mul_sq hc hx hy).lt_or_gt with hlt | hgt
   · have hxy1 : valuation K (x / y) < 1 := by
       by_contra! hge
       have hge2 : valuation K (y ^ 2) ≤ valuation K (x ^ 2) := by
-        rw [map_pow, map_pow]
-        have : 1 ≤ valuation K (x / y) ^ 2 := one_le_pow₀ hge
-        rwa [map_div₀, div_pow, one_le_div₀ (pow_pos hy0 2)] at this
+        rw [map_pow, map_pow, ← one_le_div₀ (pow_pos hy0 2), ← div_pow, ← map_div₀]
+        exact one_le_pow₀ hge
       have hcy : valuation K ((c : K) * y ^ 2) < valuation K (y ^ 2) := by
         rw [map_mul, map_pow]
         exact mul_lt_of_lt_one_left (pow_pos hy0 2) hc1
       exact (hlt.trans hcy).not_ge hge2
-    have hzc : valuation K ((⟨x / y, hxy1.le⟩ : 𝒪[K]) : K) ≤ valuation K (c : K) :=
-      hle_c ((valuation K).mem_maximalIdeal_iff.mpr hxy1)
-    have hxy : valuation K x ≤ valuation K (c : K) * valuation K y := by
-      simpa only [map_div₀, div_le_iff₀ hy0] using hzc
+    have hxy := valuation_le_mul_of_div_lt_one hc hy0 hxy1
     have hmid : valuation K ((t : K) * x * y) < valuation K ((c : K) * y ^ 2) := by
       rw [map_mul, map_mul, map_mul, map_pow, sq]
-      calc valuation K (t : K) * valuation K x * valuation K y
-          ≤ valuation K (c : K) * (valuation K (c : K) * valuation K y) * valuation K y :=
-            mul_le_mul' (mul_le_mul' htc hxy) le_rfl
-        _ = valuation K (c : K) * (valuation K (c : K) * (valuation K y * valuation K y)) := by
-            ac_rfl
-        _ < 1 * (valuation K (c : K) * (valuation K y * valuation K y)) :=
-            mul_lt_mul_of_pos_right hc1 (mul_pos hc0 (mul_pos hy0 hy0))
-        _ = valuation K (c : K) * (valuation K y * valuation K y) := one_mul _
+      exact (mul_le_mul' (mul_le_mul' htc hxy) le_rfl).trans_lt <| by
+        simpa only [one_mul, mul_assoc, mul_left_comm] using
+          mul_lt_mul_of_pos_right hc1 (mul_pos hc0 (mul_pos hy0 hy0))
     have hsub : valuation K (x ^ 2 - (t : K) * x * y) < valuation K ((c : K) * y ^ 2) :=
       ((valuation K).map_sub _ _).trans_lt (max_lt hlt hmid)
     rw [(valuation K).map_add_eq_of_lt_right hsub, max_eq_right hlt.le]
   · have hyx : valuation K y ≤ valuation K x := by
       by_contra! hlt'
-      have hxy1 : valuation K (x / y) < 1 := by rwa [map_div₀, div_lt_one₀ hy0]
-      have hzc : valuation K ((⟨x / y, hxy1.le⟩ : 𝒪[K]) : K) ≤ valuation K (c : K) :=
-        hle_c ((valuation K).mem_maximalIdeal_iff.mpr hxy1)
-      have hxy : valuation K x ≤ valuation K (c : K) * valuation K y := by
-        simpa only [map_div₀, div_le_iff₀ hy0] using hzc
-      have hx2 : valuation K (x ^ 2) ≤ valuation K ((c : K) * y ^ 2) := by
-        rw [map_pow, sq, map_mul, map_pow, sq]
-        calc valuation K x * valuation K x
-            ≤ (valuation K (c : K) * valuation K y) * (1 * valuation K y) :=
-              mul_le_mul' hxy (by rw [one_mul]; exact hlt'.le)
-          _ = valuation K (c : K) * (valuation K y * valuation K y) := by ac_rfl
-      exact hgt.not_ge hx2
+      have hxy := valuation_le_mul_of_div_lt_one hc hy0 (by rwa [map_div₀, div_lt_one₀ hy0])
+      refine hgt.not_ge ?_
+      rw [map_pow, sq, map_mul, map_pow, sq]
+      exact (mul_le_mul' hxy hlt'.le).trans_eq (by ac_rfl)
     have hmid : valuation K ((t : K) * x * y) < valuation K (x ^ 2) := by
-      rw [map_mul, map_mul, map_pow, sq]
-      calc valuation K (t : K) * valuation K x * valuation K y
-          ≤ valuation K (c : K) * valuation K x * valuation K x :=
-            mul_le_mul' (mul_le_mul' htc le_rfl) hyx
-        _ = valuation K (c : K) * (valuation K x * valuation K x) := by ac_rfl
-        _ < 1 * (valuation K x * valuation K x) :=
-            mul_lt_mul_of_pos_right hc1 (mul_pos hx0 hx0)
-        _ = valuation K x * valuation K x := one_mul _
+      rw [map_mul, map_mul, map_pow, sq, mul_assoc]
+      exact (mul_le_mul' htc (mul_le_mul' le_rfl hyx)).trans_lt
+        (by simpa only [one_mul] using mul_lt_mul_of_pos_right hc1 (mul_pos hx0 hx0))
     have hsub : valuation K (x ^ 2 - (t : K) * x * y) = valuation K (x ^ 2) :=
       (valuation K).map_sub_eq_of_lt_left hmid
     rw [(valuation K).map_add_eq_of_lt_left (hsub.symm ▸ hgt), hsub, max_eq_left hgt.le]
@@ -194,37 +176,21 @@ theorem valuation_sq_sub_mul_add_mul_sq_eq_one_iff {t c : 𝒪[K]} (ht : t ∈ �
       valuation K x = 1 ∧ valuation K y ≤ 1 := by
   have hc1 : valuation K (c : K) < 1 :=
     Valuation.integer.v_irreducible_lt_one (v := valuation K) hc
+  have hc0 : 0 < valuation K (c : K) := Valuation.integer.v_irreducible_pos (v := valuation K) hc
   rw [valuation_sq_sub_mul_add_mul_sq ht hc]
   constructor
   · intro h
     have hcy_le : valuation K ((c : K) * y ^ 2) ≤ 1 := (le_max_right _ _).trans_eq h
     have hy1 : valuation K y ≤ 1 := by
       by_contra! hygt
-      have hy0 : y ≠ 0 := by
-        rintro rfl
-        simp at hygt
+      have hy0 : y ≠ 0 := by rintro rfl; simp at hygt
       have h1y : valuation K (1 / y) < 1 := by
         rwa [map_div₀, map_one, div_lt_one₀ (zero_le.trans_lt hygt)]
       have hcy1 : valuation K ((c : K) * y) < 1 := by
-        have hlt : valuation K ((c : K) * y) < valuation K ((c : K) * y ^ 2) := by
-          rcases eq_or_ne (c : K) 0 with hc0 | hc0
-          · exact False.elim (hc.ne_zero (Subtype.ext hc0))
-          rw [map_mul, map_mul, map_pow, sq, ← mul_assoc]
-          have hpos : 0 < valuation K (c : K) * valuation K y :=
-            mul_pos ((Valuation.pos_iff _).mpr hc0) (zero_le.trans_lt hygt)
-          simpa only [mul_one] using mul_lt_mul_of_pos_left hygt hpos
-        exact hlt.trans_le hcy_le
-      let uInt : 𝒪[K] := ⟨(c : K) * y, hcy1.le⟩
-      let wInt : 𝒪[K] := ⟨1 / y, h1y.le⟩
-      have hprod : c = uInt * wInt := by
-        ext
-        dsimp only [Subring.coe_mul, uInt, wInt]
-        field_simp
-      rcases hc.isUnit_or_isUnit hprod with hu | hw
-      · exact ((IsLocalRing.mem_maximalIdeal uInt).mp
-          ((valuation K).mem_maximalIdeal_iff.mpr hcy1)) hu
-      · exact ((IsLocalRing.mem_maximalIdeal wInt).mp
-          ((valuation K).mem_maximalIdeal_iff.mpr h1y)) hw
+        refine (?_ : valuation K ((c : K) * y) < valuation K ((c : K) * y ^ 2)).trans_le hcy_le
+        rw [map_mul, map_mul, map_pow, sq, ← mul_assoc]
+        simpa only [mul_one] using mul_lt_mul_of_pos_left hygt (mul_pos hc0 (zero_le.trans_lt hygt))
+      exact valuation_lt_one_mul_ne_irreducible hc hcy1 h1y (by field_simp)
     have hcy_lt : valuation K ((c : K) * y ^ 2) < 1 := by
       rw [map_mul, map_pow]
       exact (mul_le_mul' le_rfl (pow_le_one₀ zero_le hy1)).trans_lt (by simpa using hc1)
@@ -262,11 +228,17 @@ theorem one_sub_mul_add_mul_sq_ne_zero {t c : 𝒪[K]} (ht : t ∈ 𝓂[K]) (hc 
 `𝒪[K]`. -/
 theorem isUnit_one_sub_mul_add_mul_mul {t c : 𝒪[K]} (ht : t ∈ 𝓂[K]) (hc : c ∈ 𝓂[K])
     (v s : 𝒪[K]) : IsUnit (1 - t * s + c * v * s) := by
-  have hm : -(t * s) + c * v * s ∈ 𝓂[K] :=
-    add_mem (neg_mem (Ideal.mul_mem_right s _ ht))
-      (mul_assoc c v s ▸ Ideal.mul_mem_right (v * s) _ hc)
-  simpa only [sub_eq_add_neg, add_assoc] using
-    isUnit_add_of_isUnit_of_not_isUnit isUnit_one ((IsLocalRing.mem_maximalIdeal _).mp hm)
+  have hm : t * s - c * v * s ∈ 𝓂[K] :=
+    sub_mem (Ideal.mul_mem_right s _ ht) (mul_assoc c v s ▸ Ideal.mul_mem_right (v * s) _ hc)
+  rw [show 1 - t * s + c * v * s = 1 - (t * s - c * v * s) by ring]
+  exact IsLocalRing.isUnit_one_sub_self_of_mem_nonunits _ ((IsLocalRing.mem_maximalIdeal _).mp hm)
+
+/-- For `c ∈ 𝓂[K]` and `s, r ∈ 𝒪[K]`, the inverse-composition denominator `1 - c s r` is a unit of
+`𝒪[K]`. -/
+theorem isUnit_one_sub_mul_mul {c : 𝒪[K]} (hc : c ∈ 𝓂[K]) (s r : 𝒪[K]) :
+    IsUnit (1 - c * s * r) :=
+  IsLocalRing.isUnit_one_sub_self_of_mem_nonunits _
+    ((IsLocalRing.mem_maximalIdeal _).mp (mul_assoc c s r ▸ Ideal.mul_mem_right (s * r) _ hc))
 
 /-- The integral composition parameter `(v - s) / (1 - t s + c v s)` for Eisenstein unit norms. -/
 def eisensteinNormCompose {t c : 𝒪[K]} (ht : t ∈ 𝓂[K]) (hc : c ∈ 𝓂[K]) (v s : 𝒪[K]) : 𝒪[K] :=
@@ -297,17 +269,11 @@ theorem eisensteinNormCompose_zero_right {t c : 𝒪[K]} (ht : t ∈ 𝓂[K]) (h
 def eisensteinNormComposeEquiv {t c : 𝒪[K]} (ht : t ∈ 𝓂[K]) (hc : c ∈ 𝓂[K]) (s : 𝒪[K]) :
     𝒪[K] ≃ 𝒪[K] where
   toFun v := eisensteinNormCompose ht hc v s
-  invFun r :=
-    have huy : IsUnit (1 - c * s * r) := by
-      simpa only [zero_mul, sub_zero, mul_neg, sub_neg_eq_add, sub_eq_add_neg, neg_zero,
-        add_zero] using isUnit_one_sub_mul_add_mul_mul (zero_mem 𝓂[K]) hc s (-r)
-    (s + r * (1 - t * s)) * ↑huy.unit⁻¹
+  invFun r := (s + r * (1 - t * s)) * ↑(isUnit_one_sub_mul_mul hc s r).unit⁻¹
   left_inv v := by
     set r := eisensteinNormCompose ht hc v s
     have hux := isUnit_one_sub_mul_add_mul_mul ht hc v s
-    have huy : IsUnit (1 - c * s * r) := by
-      simpa only [zero_mul, sub_zero, mul_neg, sub_neg_eq_add, sub_eq_add_neg, neg_zero,
-        add_zero] using isUnit_one_sub_mul_add_mul_mul (zero_mem 𝓂[K]) hc s (-r)
+    have huy := isUnit_one_sub_mul_mul hc s r
     have hr : r * (1 - t * s + c * v * s) = v - s := eisensteinNormCompose_mul ht hc v s
     have hprod : (s + r * (1 - t * s)) * (1 - t * s + c * v * s) =
         v * ((1 - c * s * r) * (1 - t * s + c * v * s)) := by
@@ -319,9 +285,7 @@ def eisensteinNormComposeEquiv {t c : 𝒪[K]} (ht : t ∈ 𝓂[K]) (hc : c ∈ 
     dsimp only
     rw [h1, mul_assoc, huy.mul_val_inv, mul_one]
   right_inv r := by
-    have huy : IsUnit (1 - c * s * r) := by
-      simpa only [zero_mul, sub_zero, mul_neg, sub_neg_eq_add, sub_eq_add_neg, neg_zero,
-        add_zero] using isUnit_one_sub_mul_add_mul_mul (zero_mem 𝓂[K]) hc s (-r)
+    have huy := isUnit_one_sub_mul_mul hc s r
     set v := (s + r * (1 - t * s)) * (↑huy.unit⁻¹ : 𝒪[K])
     have hux := isUnit_one_sub_mul_add_mul_mul ht hc v s
     have hv : v * (1 - c * s * r) = s + r * (1 - t * s) := by
@@ -341,8 +305,8 @@ def eisensteinNormComposeEquiv {t c : 𝒪[K]} (ht : t ∈ 𝓂[K]) (hc : c ∈ 
 @[simp]
 theorem eisensteinNormComposeEquiv_apply {t c : 𝒪[K]} (ht : t ∈ 𝓂[K]) (hc : c ∈ 𝓂[K])
     (s v : 𝒪[K]) :
-    eisensteinNormComposeEquiv ht hc s v = eisensteinNormCompose ht hc v s :=
-  (rfl)
+    eisensteinNormComposeEquiv ht hc s v = eisensteinNormCompose ht hc v s := by
+  rfl
 
 /-- Characteristic equation of `(eisensteinNormComposeEquiv ht hc s).symm`: multiplying by
 `1 - c s r` recovers `s + r (1 - t s)`. -/
@@ -367,20 +331,14 @@ theorem eisensteinNormCompose_sub_mem_iff {t c : 𝒪[K]} (ht : t ∈ 𝓂[K]) (
       (1 - t * s + c * v₁ * s) * (1 - t * s + c * v₂ * s) =
       (v₁ - v₂) * (1 - t * s + c * s * s) := by
     linear_combination (1 - t * s + c * v₂ * s) * h1 - (1 - t * s + c * v₁ * s) * h2
-  constructor
-  · intro hmem
-    have hmul : (v₁ - v₂) * (1 - t * s + c * s * s) ∈ I :=
-      hid ▸ I.mul_mem_right _ (I.mul_mem_right _ hmem)
-    have hcancel := I.mul_mem_right (↑hu₀.unit⁻¹ : 𝒪[K]) hmul
-    rwa [mul_assoc, hu₀.mul_val_inv, mul_one] at hcancel
-  · intro hmem
-    have hmul : (eisensteinNormCompose ht hc v₁ s - eisensteinNormCompose ht hc v₂ s) *
-        (1 - t * s + c * v₁ * s) * (1 - t * s + c * v₂ * s) ∈ I :=
-      hid.symm ▸ I.mul_mem_right _ hmem
-    have hc1 := I.mul_mem_right (↑hu₂.unit⁻¹ : 𝒪[K]) hmul
-    rw [mul_assoc, hu₂.mul_val_inv, mul_one] at hc1
-    have hc2 := I.mul_mem_right (↑hu₁.unit⁻¹ : 𝒪[K]) hc1
-    rwa [mul_assoc, hu₁.mul_val_inv, mul_one] at hc2
+  calc eisensteinNormCompose ht hc v₁ s - eisensteinNormCompose ht hc v₂ s ∈ I
+      ↔ (eisensteinNormCompose ht hc v₁ s - eisensteinNormCompose ht hc v₂ s) *
+          (1 - t * s + c * v₁ * s) ∈ I := (I.mul_unit_mem_iff_mem hu₁).symm
+    _ ↔ (eisensteinNormCompose ht hc v₁ s - eisensteinNormCompose ht hc v₂ s) *
+          (1 - t * s + c * v₁ * s) * (1 - t * s + c * v₂ * s) ∈ I :=
+        (I.mul_unit_mem_iff_mem hu₂).symm
+    _ ↔ (v₁ - v₂) * (1 - t * s + c * s * s) ∈ I := by rw [hid]
+    _ ↔ v₁ - v₂ ∈ I := I.mul_unit_mem_iff_mem hu₀
 
 /-- The composition equivalence descended to any quotient ring `𝒪[K] ⧸ I`. -/
 def eisensteinNormComposeQuotientEquiv {t c : 𝒪[K]} (ht : t ∈ 𝓂[K]) (hc : c ∈ 𝓂[K])
@@ -394,52 +352,65 @@ def eisensteinNormComposeQuotientEquiv {t c : 𝒪[K]} (ht : t ∈ 𝓂[K]) (hc 
 theorem eisensteinNormComposeQuotientEquiv_mk {t c : 𝒪[K]} (ht : t ∈ 𝓂[K]) (hc : c ∈ 𝓂[K])
     (I : Ideal 𝒪[K]) (v s : 𝒪[K]) :
     eisensteinNormComposeQuotientEquiv ht hc I s (Ideal.Quotient.mk I v) =
-      Ideal.Quotient.mk I (eisensteinNormCompose ht hc v s) :=
-  (rfl)
+      Ideal.Quotient.mk I (eisensteinNormCompose ht hc v s) := by
+  rfl
 
-/-- The Eisenstein unit-norm polynomial `1 - t v + c v²`, packaged as a unit of `K`. -/
+/-- For `t, c ∈ 𝓂[K]`, the unit-norm polynomial `1 - t v + c v²`, packaged as a unit of `K`. -/
 def eisensteinNormUnit (K : Type*) [Field K] [ValuativeRel K] {t c : 𝒪[K]}
-    (ht : t ∈ 𝓂[K]) (hc : Irreducible c) (v : 𝒪[K]) : Kˣ :=
+    (ht : t ∈ 𝓂[K]) (hc : c ∈ 𝓂[K]) (v : 𝒪[K]) : Kˣ :=
   Units.mk0 (1 - (t : K) * (v : K) + (c : K) * (v : K) ^ 2)
-    (one_sub_mul_add_mul_sq_ne_zero ht ((IsLocalRing.mem_maximalIdeal c).mpr hc.not_isUnit) v)
+    (one_sub_mul_add_mul_sq_ne_zero ht hc v)
 
 /-- Coercing `eisensteinNormUnit K ht hc v` to `K` gives `1 - t v + c v²`. -/
 @[simp]
-theorem coe_eisensteinNormUnit {t c : 𝒪[K]} (ht : t ∈ 𝓂[K]) (hc : Irreducible c) (v : 𝒪[K]) :
-    (eisensteinNormUnit K ht hc v : K) = 1 - (t : K) * (v : K) + (c : K) * (v : K) ^ 2 :=
-  (rfl)
+theorem coe_eisensteinNormUnit {t c : 𝒪[K]} (ht : t ∈ 𝓂[K]) (hc : c ∈ 𝓂[K]) (v : 𝒪[K]) :
+    (eisensteinNormUnit K ht hc v : K) = 1 - (t : K) * (v : K) + (c : K) * (v : K) ^ 2 := by
+  rfl
 
 /-- At `v = 0`, `eisensteinNormUnit` is `1`. -/
 @[simp]
-theorem eisensteinNormUnit_zero {t c : 𝒪[K]} (ht : t ∈ 𝓂[K]) (hc : Irreducible c) :
+theorem eisensteinNormUnit_zero {t c : 𝒪[K]} (ht : t ∈ 𝓂[K]) (hc : c ∈ 𝓂[K]) :
     eisensteinNormUnit K ht hc 0 = 1 := by
   ext
   simp
 
 /-- Every `eisensteinNormUnit` has valuation `1`. -/
-theorem valuation_eisensteinNormUnit {t c : 𝒪[K]} (ht : t ∈ 𝓂[K]) (hc : Irreducible c)
+theorem valuation_eisensteinNormUnit {t c : 𝒪[K]} (ht : t ∈ 𝓂[K]) (hc : c ∈ 𝓂[K])
     (v : 𝒪[K]) : valuation K (eisensteinNormUnit K ht hc v : K) = 1 :=
-  valuation_one_sub_mul_add_mul_sq ht ((IsLocalRing.mem_maximalIdeal c).mpr hc.not_isUnit) v
+  valuation_one_sub_mul_add_mul_sq ht hc v
 
-/-- The multiplicative square class of the Eisenstein unit norm `1 - t v + c v²` in `Kˣ ⧸ (Kˣ)²`. -/
+/-- For `t, c ∈ 𝓂[K]`, the multiplicative square class of `1 - t v + c v²` in `Kˣ ⧸ (Kˣ)²`. -/
 def eisensteinNormSquareClass (K : Type*) [Field K] [ValuativeRel K] {t c : 𝒪[K]}
-    (ht : t ∈ 𝓂[K]) (hc : Irreducible c) (v : 𝒪[K]) : Kˣ ⧸ Subgroup.square Kˣ :=
+    (ht : t ∈ 𝓂[K]) (hc : c ∈ 𝓂[K]) (v : 𝒪[K]) : Kˣ ⧸ Subgroup.square Kˣ :=
   squareClassHom (eisensteinNormUnit K ht hc v)
 
 /-- Defining equation for `eisensteinNormSquareClass` in terms of `squareClassHom`. -/
-theorem eisensteinNormSquareClass_def {t c : 𝒪[K]} (ht : t ∈ 𝓂[K]) (hc : Irreducible c)
+theorem eisensteinNormSquareClass_def {t c : 𝒪[K]} (ht : t ∈ 𝓂[K]) (hc : c ∈ 𝓂[K])
     (v : 𝒪[K]) :
-    eisensteinNormSquareClass K ht hc v = squareClassHom (eisensteinNormUnit K ht hc v) :=
-  (rfl)
+    eisensteinNormSquareClass K ht hc v = squareClassHom (eisensteinNormUnit K ht hc v) := by
+  rfl
+
+/-- If `(b : K) = u² (1 - t v + c v²)` with `u ∈ 𝒪[K]ˣ` and `v ∈ 𝒪[K]`, then `b` has square class
+`eisensteinNormSquareClass K ht hc v`. -/
+theorem squareClassHom_eq_eisensteinNormSquareClass_of_eq {t c : 𝒪[K]} (ht : t ∈ 𝓂[K])
+    (hc : c ∈ 𝓂[K]) {b : Kˣ} {u : 𝒪[K]ˣ} {v : 𝒪[K]}
+    (h : (b : K) = (u : K) ^ 2 * (1 - (t : K) * (v : K) + (c : K) * (v : K) ^ 2)) :
+    squareClassHom b = eisensteinNormSquareClass K ht hc v := by
+  let uK : Kˣ := Units.map (Subring.subtype 𝒪[K] : 𝒪[K] →* K) u
+  have hbu : b = uK ^ 2 * eisensteinNormUnit K ht hc v := by
+    ext
+    simpa only [Units.val_mul, Units.val_pow_eq_pow_val, uK, Units.coe_map,
+      MonoidHom.coe_ofClass, Subring.coe_subtype, coe_eisensteinNormUnit] using h
+  rw [hbu, squareClassHom_sq_mul, eisensteinNormSquareClass_def]
 
 /-- At `v = 0`, `eisensteinNormSquareClass` is the trivial square class `1`. -/
 @[simp]
-theorem eisensteinNormSquareClass_zero {t c : 𝒪[K]} (ht : t ∈ 𝓂[K]) (hc : Irreducible c) :
+theorem eisensteinNormSquareClass_zero {t c : 𝒪[K]} (ht : t ∈ 𝓂[K]) (hc : c ∈ 𝓂[K]) :
     eisensteinNormSquareClass K ht hc 0 = 1 := by
   simp [eisensteinNormSquareClass_def]
 
 /-- `eisensteinNormSquareClass K ht hc v = 1` if and only if `1 - t v + c v²` is a square in `K`. -/
-theorem eisensteinNormSquareClass_eq_one_iff {t c : 𝒪[K]} (ht : t ∈ 𝓂[K]) (hc : Irreducible c)
+theorem eisensteinNormSquareClass_eq_one_iff {t c : 𝒪[K]} (ht : t ∈ 𝓂[K]) (hc : c ∈ 𝓂[K])
     (v : 𝒪[K]) :
     eisensteinNormSquareClass K ht hc v = 1 ↔
       IsSquare (1 - (t : K) * (v : K) + (c : K) * (v : K) ^ 2) := by
@@ -448,17 +419,15 @@ theorem eisensteinNormSquareClass_eq_one_iff {t c : 𝒪[K]} (ht : t ∈ 𝓂[K]
 
 /-- **Composition law for Eisenstein unit-norm square classes.** Multiplying the square classes at
 `v` and `s` gives the square class at `(v - s) / (1 - t s + c v s)`. -/
-theorem eisensteinNormSquareClass_mul {t c : 𝒪[K]} (ht : t ∈ 𝓂[K]) (hc : Irreducible c)
+theorem eisensteinNormSquareClass_mul {t c : 𝒪[K]} (ht : t ∈ 𝓂[K]) (hc : c ∈ 𝓂[K])
     (v s : 𝒪[K]) :
     eisensteinNormSquareClass K ht hc v * eisensteinNormSquareClass K ht hc s =
-      eisensteinNormSquareClass K ht hc
-        (eisensteinNormCompose ht ((IsLocalRing.mem_maximalIdeal c).mpr hc.not_isUnit) v s) := by
-  have hcm : c ∈ 𝓂[K] := (IsLocalRing.mem_maximalIdeal c).mpr hc.not_isUnit
-  set r := eisensteinNormCompose ht hcm v s
-  set u₀ : 𝒪[K]ˣ := (isUnit_one_sub_mul_add_mul_mul ht hcm v s).unit
+      eisensteinNormSquareClass K ht hc (eisensteinNormCompose ht hc v s) := by
+  set r := eisensteinNormCompose ht hc v s
+  set u₀ : 𝒪[K]ˣ := (isUnit_one_sub_mul_add_mul_mul ht hc v s).unit
   have hu₀ : (u₀ : 𝒪[K]) = 1 - t * s + c * v * s := IsUnit.unit_spec _
   have hr : (r : K) * ((u₀ : 𝒪[K]) : K) = (v : K) - (s : K) := by
-    have h := congrArg ((↑) : 𝒪[K] → K) (eisensteinNormCompose_mul ht hcm v s)
+    have h := congrArg ((↑) : 𝒪[K] → K) (eisensteinNormCompose_mul ht hc v s)
     push_cast [r, ← hu₀] at h
     exact h
   have hu₀K : ((u₀ : 𝒪[K]) : K) = 1 - (t : K) * (s : K) + (c : K) * (v : K) * (s : K) := by
@@ -480,13 +449,12 @@ theorem eisensteinNormSquareClass_mul {t c : 𝒪[K]} (ht : t ∈ 𝓂[K]) (hc :
           rw [← hr]
           ring
   rw [eisensteinNormSquareClass_def, eisensteinNormSquareClass_def, eisensteinNormSquareClass_def,
-    ← map_mul, hmul, map_mul,
-    (squareClassHom_eq_one_iff _).mpr ⟨uK, sq uK⟩, one_mul]
+    ← map_mul, hmul, squareClassHom_sq_mul]
 
 /-- Two Eisenstein norm square classes are equal if and only if the quotient of their representing
 polynomial values is a square in `K`. -/
 theorem eisensteinNormSquareClass_eq_iff_isSquare_div {t c : 𝒪[K]} (ht : t ∈ 𝓂[K])
-    (hc : Irreducible c) (v s : 𝒪[K]) :
+    (hc : c ∈ 𝓂[K]) (v s : 𝒪[K]) :
     eisensteinNormSquareClass K ht hc v = eisensteinNormSquareClass K ht hc s ↔
       IsSquare ((1 - (t : K) * (v : K) + (c : K) * (v : K) ^ 2) /
         (1 - (t : K) * (s : K) + (c : K) * (s : K) ^ 2)) := by
@@ -496,34 +464,27 @@ theorem eisensteinNormSquareClass_eq_iff_isSquare_div {t c : 𝒪[K]} (ht : t �
 
 /-- **Equality criterion for `eisensteinNormSquareClass`.** Two parameters `v` and `s` determine the
 same square class if and only if `1 - t r + c r²` is a square at `r = (v - s)/(1 - t s + c v s)`. -/
-theorem eisensteinNormSquareClass_eq_iff {t c : 𝒪[K]} (ht : t ∈ 𝓂[K]) (hc : Irreducible c)
+theorem eisensteinNormSquareClass_eq_iff {t c : 𝒪[K]} (ht : t ∈ 𝓂[K]) (hc : c ∈ 𝓂[K])
     (v s : 𝒪[K]) :
     eisensteinNormSquareClass K ht hc v = eisensteinNormSquareClass K ht hc s ↔
-      IsSquare (1 - (t : K) *
-          (eisensteinNormCompose ht ((IsLocalRing.mem_maximalIdeal c).mpr hc.not_isUnit) v s : K) +
-        (c : K) *
-          (eisensteinNormCompose ht ((IsLocalRing.mem_maximalIdeal c).mpr hc.not_isUnit) v s : K) ^
-            2) := by
+      IsSquare (1 - (t : K) * (eisensteinNormCompose ht hc v s : K) +
+        (c : K) * (eisensteinNormCompose ht hc v s : K) ^ 2) := by
   have hsq : ∀ g : Kˣ ⧸ Subgroup.square Kˣ, g * g = 1 := by
     intro g
     obtain ⟨u, rfl⟩ := QuotientGroup.mk'_surjective _ g
-    rw [← map_mul, QuotientGroup.mk'_apply, QuotientGroup.eq_one_iff, Subgroup.mem_square]
-    exact ⟨u, rfl⟩
+    simpa only [← map_mul, QuotientGroup.mk'_apply, ← squareClassHom_apply, sq] using
+      squareClassHom_sq u
   have hmul_eq_one : eisensteinNormSquareClass K ht hc v = eisensteinNormSquareClass K ht hc s ↔
       eisensteinNormSquareClass K ht hc v * eisensteinNormSquareClass K ht hc s = 1 := by
-    constructor
-    · intro h
-      rw [h]
-      exact hsq _
-    · intro h
-      have := congrArg (· * eisensteinNormSquareClass K ht hc s) h
-      simpa only [mul_assoc, hsq, mul_one, one_mul] using this
+    refine ⟨fun h ↦ h ▸ hsq _, fun h ↦ ?_⟩
+    simpa only [mul_assoc, hsq, mul_one, one_mul] using
+      congrArg (· * eisensteinNormSquareClass K ht hc s) h
   rw [hmul_eq_one, eisensteinNormSquareClass_mul, eisensteinNormSquareClass_eq_one_iff]
 
-/-- The subgroup of `Kˣ ⧸ (Kˣ)²` formed by the Eisenstein unit-norm square classes
+/-- For `t, c ∈ 𝓂[K]`, the subgroup of `Kˣ ⧸ (Kˣ)²` formed by the square classes
 `[1 - t v + c v²]`. -/
 def eisensteinNormSquareSubgroup (K : Type*) [Field K] [ValuativeRel K] {t c : 𝒪[K]}
-    (ht : t ∈ 𝓂[K]) (hc : Irreducible c) : Subgroup (Kˣ ⧸ Subgroup.square Kˣ) where
+    (ht : t ∈ 𝓂[K]) (hc : c ∈ 𝓂[K]) : Subgroup (Kˣ ⧸ Subgroup.square Kˣ) where
   carrier := Set.range (eisensteinNormSquareClass K ht hc)
   one_mem' := ⟨0, eisensteinNormSquareClass_zero ht hc⟩
   mul_mem' := by
@@ -540,23 +501,23 @@ def eisensteinNormSquareSubgroup (K : Type*) [Field K] [ValuativeRel K] {t c : �
 /-- The underlying set of `eisensteinNormSquareSubgroup` is the range of
 `eisensteinNormSquareClass`. -/
 @[simp]
-theorem coe_eisensteinNormSquareSubgroup {t c : 𝒪[K]} (ht : t ∈ 𝓂[K]) (hc : Irreducible c) :
+theorem coe_eisensteinNormSquareSubgroup {t c : 𝒪[K]} (ht : t ∈ 𝓂[K]) (hc : c ∈ 𝓂[K]) :
     (eisensteinNormSquareSubgroup K ht hc : Set (Kˣ ⧸ Subgroup.square Kˣ)) =
-      Set.range (eisensteinNormSquareClass K ht hc) :=
-  (rfl)
+      Set.range (eisensteinNormSquareClass K ht hc) := by
+  rfl
 
 /-- Membership in `eisensteinNormSquareSubgroup` means belonging to the range of
 `eisensteinNormSquareClass`. -/
 @[simp]
-theorem mem_eisensteinNormSquareSubgroup_iff {t c : 𝒪[K]} (ht : t ∈ 𝓂[K]) (hc : Irreducible c)
+theorem mem_eisensteinNormSquareSubgroup_iff {t c : 𝒪[K]} (ht : t ∈ 𝓂[K]) (hc : c ∈ 𝓂[K])
     (q : Kˣ ⧸ Subgroup.square Kˣ) :
     q ∈ eisensteinNormSquareSubgroup K ht hc ↔
       ∃ v : 𝒪[K], eisensteinNormSquareClass K ht hc v = q :=
-  (Iff.rfl)
+  Iff.rfl
 
 /-- Every Eisenstein unit-norm square class is a unit square class of `K`. -/
 theorem eisensteinNormSquareSubgroup_le_unitSquareClasses {t c : 𝒪[K]} (ht : t ∈ 𝓂[K])
-    (hc : Irreducible c) :
+    (hc : c ∈ 𝓂[K]) :
     eisensteinNormSquareSubgroup K ht hc ≤ unitSquareClasses K := by
   rintro _ ⟨v, rfl⟩
   have hv := valuation_eisensteinNormUnit ht hc v
@@ -568,88 +529,7 @@ theorem eisensteinNormSquareSubgroup_le_unitSquareClasses {t c : 𝒪[K]} (ht : 
   ext
   simp
 
-/-- The subgroup of `Kˣ ⧸ (Kˣ)²` consisting of the square classes of norms of valuation one from
-`K[√a]`. -/
-def unitQuadraticNormSquareClasses (a : K) : Subgroup (Kˣ ⧸ Subgroup.square Kˣ) :=
-  (quadraticNormSubgroup a ⊓ (Units.map (Subring.subtype 𝒪[K] : 𝒪[K] →* K)).range).map
-    squareClassHom
-
-/-- A square class belongs to `unitQuadraticNormSquareClasses a` if and only if it is represented by
-an element of `quadraticNormSubgroup a` of valuation one. -/
-theorem mem_unitQuadraticNormSquareClasses_iff (a : K) (q : Kˣ ⧸ Subgroup.square Kˣ) :
-    q ∈ unitQuadraticNormSquareClasses a ↔
-      ∃ b : Kˣ, b ∈ quadraticNormSubgroup a ∧ valuation K (b : K) = 1 ∧ squareClassHom b = q := by
-  simp only [unitQuadraticNormSquareClasses, Subgroup.mem_map, Subgroup.mem_inf,
-    MonoidHom.mem_range]
-  refine ⟨fun ⟨b, ⟨hb, u, hub⟩, hbq⟩ ↦ ⟨b, hb, ?_, hbq⟩,
-    fun ⟨b, hb, hbv, hbq⟩ ↦ ⟨b, ⟨hb, ?_⟩, hbq⟩⟩
-  · rw [← hub, Units.coe_map, MonoidHom.coe_ofClass, Subring.coe_subtype]
-    exact (Valuation.integer.integers (valuation K)).valuation_unit u
-  · have hu : IsUnit (⟨(b : K), hbv.le⟩ : 𝒪[K]) :=
-      (Valuation.integer.integers (valuation K)).isUnit_of_one' hbv
-    refine ⟨hu.unit, ?_⟩
-    ext
-    simp
-
-/-- Every valuation-one norm square class from `K[√a]` is a unit square class of `K`. -/
-theorem unitQuadraticNormSquareClasses_le_unitSquareClasses (a : K) :
-    unitQuadraticNormSquareClasses a ≤ unitSquareClasses K := by
-  rintro _ ⟨_, ⟨_, u, rfl⟩, rfl⟩
-  exact (mem_unitSquareClasses_iff K _).mpr ⟨u, (squareClassHom_apply _).symm⟩
-
 end ValuedField
-
-section LocalField
-
-variable {K : Type*} [Field K] [ValuativeRel K] [TopologicalSpace K]
-  [IsNonarchimedeanLocalField K]
-
-/-- Over a nonarchimedean local field, the index of `unitQuadraticNormSquareClasses a` inside
-`unitSquareClasses K` equals the index of the valuation-one quadratic norms inside `U(K, 0)`. -/
-theorem relIndex_unitQuadraticNormSquareClasses (a : K) :
-    (unitQuadraticNormSquareClasses a).relIndex (unitSquareClasses K) =
-      ((quadraticNormSubgroup a).subgroupOf (unitFiltration K 0)).index := by
-  have hmem_sq : ∀ u : unitFiltration K 0, squareClassHom (u : Kˣ) ∈ unitSquareClasses K := by
-    intro u
-    obtain ⟨w, -, hwu⟩ := mem_unitFiltration_iff_exists.mp u.2
-    refine (mem_unitSquareClasses_iff K _).mpr ⟨w, ?_⟩
-    rw [squareClassHom_apply, QuotientGroup.mk'_apply]
-    congr 1
-    ext
-    exact hwu
-  let φ : unitFiltration K 0 →* unitSquareClasses K :=
-    { toFun := fun u ↦ ⟨squareClassHom (u : Kˣ), hmem_sq u⟩
-      map_one' := by ext; simp
-      map_mul' := fun x y ↦ by ext; simp }
-  have hφ_surj : Function.Surjective φ := by
-    rintro ⟨q, hq⟩
-    obtain ⟨w, rfl⟩ := (mem_unitSquareClasses_iff K q).mp hq
-    let uK : Kˣ := Units.map (Subring.subtype 𝒪[K] : 𝒪[K] →* K) w
-    have hu0 : uK ∈ unitFiltration K 0 := by
-      rw [mem_unitFiltration_zero]
-      exact (Valuation.integer.integers (valuation K)).valuation_unit w
-    refine ⟨⟨uK, hu0⟩, ?_⟩
-    ext
-    simp [φ, uK, squareClassHom_apply]
-  let H := (unitQuadraticNormSquareClasses a).subgroupOf (unitSquareClasses K)
-  have hcomap : H.comap φ = (quadraticNormSubgroup a).subgroupOf (unitFiltration K 0) := by
-    ext u
-    dsimp only [H, φ]
-    rw [Subgroup.mem_comap, Subgroup.mem_subgroupOf, Subgroup.mem_subgroupOf, MonoidHom.coe_mk,
-      OneHom.coe_mk, mem_unitQuadraticNormSquareClasses_iff]
-    constructor
-    · rintro ⟨b, hb_mem, -, hbu⟩
-      have hsq : b⁻¹ * (u : Kˣ) ∈ Subgroup.square Kˣ := by
-        rw [← QuotientGroup.eq, ← squareClassHom_apply, ← squareClassHom_apply]
-        exact hbu
-      have hmul := (quadraticNormSubgroup a).mul_mem hb_mem
-        (square_le_quadraticNormSubgroup a hsq)
-      simpa only [mul_inv_cancel_left] using hmul
-    · intro hu_mem
-      exact ⟨(u : Kˣ), hu_mem, (mem_unitFiltration_zero _).mp u.2, rfl⟩
-  rw [Subgroup.relIndex, ← hcomap, Subgroup.index_comap_of_surjective H hφ_surj]
-
-end LocalField
 
 /-! ### Eisenstein quadratic field extensions -/
 
@@ -661,30 +541,25 @@ variable {K L : Type*} [Field K] [ValuativeRel K] [TopologicalSpace K]
   [Algebra.IsQuadraticExtension K L]
 
 /-- In an Eisenstein quadratic extension `L/K` generated by `ω² + t ω + c = 0`,
-`eisensteinNormSquareSubgroup K ht hc` consists of the square classes of norms of valuation one from
-`L`. -/
+`eisensteinNormSquareSubgroup K ht hc.mem_maximalIdeal` consists of the square classes of norms of
+valuation one from `L`. -/
 theorem mem_eisensteinNormSquareSubgroup_iff_exists_norm_eq {t c : 𝒪[K]} {ω : 𝒪[L]}
     (ht : t ∈ 𝓂[K]) (hc : Irreducible c)
     (hω : ω ^ 2 + algebraMap 𝒪[K] 𝒪[L] t * ω + algebraMap 𝒪[K] 𝒪[L] c = 0)
     (q : Kˣ ⧸ Subgroup.square Kˣ) :
-    q ∈ eisensteinNormSquareSubgroup K ht hc ↔
+    q ∈ eisensteinNormSquareSubgroup K ht hc.mem_maximalIdeal ↔
       ∃ b : Kˣ, valuation K (b : K) = 1 ∧ (∃ z : L, Algebra.norm K z = b) ∧
         squareClassHom b = q := by
+  have hcm := hc.mem_maximalIdeal
   constructor
   · rintro ⟨v, rfl⟩
-    refine ⟨eisensteinNormUnit K ht hc v, valuation_eisensteinNormUnit ht hc v, ?_, rfl⟩
+    refine ⟨eisensteinNormUnit K ht hcm v, valuation_eisensteinNormUnit ht hcm v, ?_,
+      (eisensteinNormSquareClass_def ht hcm v).symm⟩
     exact (exists_norm_eq_iff_of_eisensteinQuadraticBasis ht hc hω
-      (valuation_eisensteinNormUnit ht hc v)).mpr ⟨1, v, by simp [coe_eisensteinNormUnit]⟩
+      (valuation_eisensteinNormUnit ht hcm v)).mpr ⟨1, v, by simp [coe_eisensteinNormUnit]⟩
   · rintro ⟨b, hbv, hbnorm, rfl⟩
     obtain ⟨u, v, hbuv⟩ := (exists_norm_eq_iff_of_eisensteinQuadraticBasis ht hc hω hbv).mp hbnorm
-    refine ⟨v, ?_⟩
-    let uK : Kˣ := Units.map (Subring.subtype 𝒪[K] : 𝒪[K] →* K) u
-    have hbu : b = uK ^ 2 * eisensteinNormUnit K ht hc v := by
-      ext
-      simpa only [Units.val_mul, Units.val_pow_eq_pow_val, uK, Units.coe_map,
-        MonoidHom.coe_ofClass, Subring.coe_subtype, coe_eisensteinNormUnit] using hbuv
-    rw [hbu, map_mul, (squareClassHom_eq_one_iff _).mpr ⟨uK, sq uK⟩, one_mul,
-      eisensteinNormSquareClass_def]
+    exact ⟨v, (squareClassHom_eq_eisensteinNormSquareClass_of_eq ht hcm hbuv).symm⟩
 
 end EisensteinExtension
 
