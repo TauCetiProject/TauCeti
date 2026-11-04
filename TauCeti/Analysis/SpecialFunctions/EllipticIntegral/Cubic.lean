@@ -9,6 +9,7 @@ public import TauCeti.Analysis.SpecialFunctions.EllipticIntegral.Legendre
 public import Mathlib.MeasureTheory.Integral.Lebesgue.Basic
 public import Mathlib.MeasureTheory.Measure.Lebesgue.Basic
 import TauCeti.Analysis.SpecialFunctions.EllipticIntegral.Algebraic
+import TauCeti.Analysis.SpecialFunctions.Sqrt
 import TauCeti.Analysis.SpecialFunctions.Trigonometric.HalfAngle
 import Mathlib.Analysis.Calculus.Deriv.Inv
 import Mathlib.Analysis.Calculus.Deriv.Pow
@@ -94,9 +95,8 @@ private lemma lintegral_eq_legendreK_of_subst {e₁ e₂ e₃ : ℝ} (h₃₂ : 
   -- The transformed integrand: `|f'| (f'² c p)^(-1/2) = (√c)⁻¹ p^(-1/2)`.
   dsimp only
   rw [← ENNReal.ofReal_mul (abs_nonneg _), ← ENNReal.ofReal_mul (inv_nonneg.2 (sqrt_nonneg _)),
-    hD t ht, sqrt_mul (mul_nonneg (sq_nonneg _) hc.le), sqrt_mul (sq_nonneg _), sqrt_sq_eq_abs,
-    neg_div, rpow_neg (hp t ht), ← sqrt_eq_rpow, mul_inv, mul_inv, mul_assoc,
-    mul_inv_cancel_left₀ (abs_ne_zero.2 (hf'0 t ht))]
+    hD t ht, abs_mul_inv_sqrt_sq_mul_mul (hf'0 t ht) hc.le, neg_div, rpow_neg (hp t ht),
+    ← sqrt_eq_rpow]
 
 /-- **The integral over `(e₁, ∞)` for a cubic with three real roots.** For `e₃ ≤ e₂ < e₁`,
 `∫_{(e₁, ∞)} (4(x - e₁)(x - e₂)(x - e₃))^(-1/2) dx = K(k) / √(e₁ - e₃)` with
@@ -255,8 +255,7 @@ theorem lintegral_Ioi_inv_sqrt_mul_sq_add_sq_eq_legendreK {e₁ a b : ℝ} (hb :
   · -- The transformed integrand: `|f'| (f'² c p)^(-1/2) = (√c)⁻¹ p^(-1/2)`.
     dsimp only
     rw [← ENNReal.ofReal_mul (abs_nonneg _), ← ENNReal.ofReal_mul (inv_nonneg.2 (sqrt_nonneg _)),
-      hD θ hθ, sqrt_mul (by positivity), sqrt_mul (sq_nonneg _), sqrt_sq_eq_abs, neg_div,
-      rpow_neg (hp θ hθ), ← sqrt_eq_rpow, mul_inv, mul_inv, mul_assoc,
-      mul_inv_cancel_left₀ (abs_ne_zero.2 (hf'0 θ hθ))]
+      hD θ hθ, abs_mul_inv_sqrt_sq_mul_mul (hf'0 θ hθ) (by positivity), neg_div,
+      rpow_neg (hp θ hθ), ← sqrt_eq_rpow]
 
 end TauCeti.Real
