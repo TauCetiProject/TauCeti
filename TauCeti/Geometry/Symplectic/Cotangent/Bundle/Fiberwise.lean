@@ -209,12 +209,11 @@ theorem mpullback_cotangent_trans_vectorBundleTranslateDiffeomorph_symplecticFor
     SmoothForm.mpullback _ (h.cotangent.trans (vectorBundleTranslateDiffeomorph
         (SmoothForm.degreeOneEquiv α) (SmoothForm.degreeOneEquiv α).contMDiff)).contMDiff
         (symplecticForm J N) = symplecticForm I M := by
-  have hlam := mpullback_cotangent_trans_vectorBundleTranslateDiffeomorph_liouvilleForm h α
-  rw [symplecticForm_eq_neg_mextDerivₗ, symplecticForm_eq_neg_mextDerivₗ, map_neg,
-    ← SmoothForm.mextDerivₗ_mpullback]
-  refine congrArg Neg.neg ((congrArg (mextDerivₗ (I.prod 𝓘(ℝ, E →L[ℝ] ℝ)) 1) hlam).trans ?_)
-  -- The added form `π^*(h^*α)` is closed, since `α` is.
-  rw [map_add, SmoothForm.mextDerivₗ_mpullback, SmoothForm.mextDerivₗ_mpullback,
-    (SmoothForm.isClosed_iff_mextDerivₗ_eq_zero α).1 hα, map_zero, map_zero, add_zero]
+  simp only [coe_trans]
+  -- The translation by the closed form `α` preserves `ω`, and so does the cotangent lift.
+  rw [← SmoothForm.mpullback_mpullback _ _ h.cotangent.contMDiff
+      (vectorBundleTranslateDiffeomorph _ (SmoothForm.degreeOneEquiv α).contMDiff).contMDiff,
+    (mpullback_vectorBundleTranslateDiffeomorph_symplecticForm_eq_self_iff α).2 hα,
+    mpullback_cotangent_symplecticForm h]
 
 end Diffeomorph

@@ -108,6 +108,12 @@ instance instDistribMulActionGeneralLinearGroup : DistribMulAction (GL ι ℤ) (
   smul_add A x y := funext fun i ↦ by
     simp only [generalLinearGroup_smul_apply, Pi.add_apply, smul_add, Finset.sum_add_distrib]
 
+/-- The coercion `ℝ → AddCircle p` commutes with finite sums, being additive
+(`AddCircle.coe_add`). -/
+private theorem coe_sum {α : Type*} (s : Finset α) (f : α → ℝ) :
+    ((∑ j ∈ s, f j : ℝ) : AddCircle p) = ∑ j ∈ s, (f j : AddCircle p) :=
+  map_sum (AddMonoidHom.mk' ((↑) : ℝ → AddCircle p) (coe_add p)) f s
+
 /-- The covering map `(ι → ℝ) → (ι → AddCircle p)` intertwines the action of an integer matrix `A`
 on the torus with the multiplication of real vectors by `A`. -/
 theorem generalLinearGroup_smul_coe_pi (A : GL ι ℤ) (t : ι → ℝ) :
@@ -115,9 +121,7 @@ theorem generalLinearGroup_smul_coe_pi (A : GL ι ℤ) (t : ι → ℝ) :
       fun i ↦ (((A : Matrix ι ι ℤ).map ((↑) : ℤ → ℝ) *ᵥ t) i : AddCircle p) :=
   funext fun i ↦ by
     simp only [generalLinearGroup_smul_apply, Matrix.mulVec, dotProduct, Matrix.map_apply,
-      ← zsmul_eq_mul]
-    exact (map_sum (QuotientAddGroup.mk' (AddSubgroup.zmultiples p)) _ _).symm.trans <| by
-      simp only [QuotientAddGroup.mk'_apply]
+      ← zsmul_eq_mul, coe_sum, coe_zsmul]
 
 /-! ### Smoothness and derivative -/
 
