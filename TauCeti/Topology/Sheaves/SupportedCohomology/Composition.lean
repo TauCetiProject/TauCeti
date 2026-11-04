@@ -115,13 +115,8 @@ supported-section inclusion. -/
 lemma supportedSubmoduleCompIso_inv_ι (hZS : Z ≤ S) :
     (F.supportedSubmoduleCompIso hZS).inv ≫
         (F.supportedSubmoduleSheaf S).supportedSubmoduleι Z ≫ F.supportedSubmoduleι S =
-      F.supportedSubmoduleι Z := by
-  calc
-    _ = (F.supportedSubmoduleCompIso hZS).inv ≫
-        (F.supportedSubmoduleCompIso hZS).hom ≫ F.supportedSubmoduleι Z :=
-      congr_arg ((F.supportedSubmoduleCompIso hZS).inv ≫ ·)
-        (F.supportedSubmoduleCompIso_hom_ι hZS).symm
-    _ = _ := (F.supportedSubmoduleCompIso hZS).inv_hom_id_assoc _
+      F.supportedSubmoduleι Z :=
+  (Iso.inv_comp_eq _).2 (F.supportedSubmoduleCompIso_hom_ι hZS).symm
 
 /-- The inverse comparison also leaves the ambient section unchanged. -/
 @[simp]
