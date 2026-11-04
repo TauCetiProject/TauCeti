@@ -5,9 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Combinatorics.SimpleGraph.Connectivity.EdgeConnectivity
 public import Mathlib.Combinatorics.SimpleGraph.Connectivity.Subgraph
 public import Mathlib.Combinatorics.SimpleGraph.Paths
+public import TauCeti.Combinatorics.SimpleGraph.Connectivity.EdgeConnectivity
 
 /-!
 # Ear decompositions of simple graphs
@@ -45,8 +45,8 @@ and Whitney's open ear characterization are proved in
 
 * `SimpleGraph.Ear.edges_notMem_edgeSet`: no edge of an open or closed ear belongs to `H.edgeSet`.
 * `SimpleGraph.Ear.lt_adjoin`: adjoining an ear strictly enlarges the subgraph.
-* `SimpleGraph.Ear.isEdgeConnected_two_adjoin`: adjoining an ear to a connected, `2`-edge-connected
-  subgraph preserves `2`-edge-connectivity.
+* `SimpleGraph.Ear.isEdgeConnected_two_adjoin`: adjoining an ear to a `2`-edge-connected subgraph
+  preserves `2`-edge-connectivity.
 * `SimpleGraph.EarDecomposition.ext`: an ear decomposition is determined by its length, initial
   subgraph and witness, and displayed ear walks.
 * `SimpleGraph.EarDecomposition.subgraphAfter_strictMono`: prefix subgraphs grow strictly.
@@ -303,63 +303,16 @@ theorem lt_adjoin (e : G.Ear H) : H < e.adjoin := by
     exact Or.inr ((Walk.mem_edges_toSubgraph _).mpr hx)
   exact e.edges_notMem_edgeSet hx (h.symm ▸ hx_mem)
 
-/-- Adjoining any open or closed ear to a connected subgraph yields a connected subgraph. -/
-theorem connected_adjoin (hH : H.Connected) (e : G.Ear H) : e.adjoin.Connected := by
+/-- Adjoining any open or closed ear to a preconnected subgraph yields a connected subgraph. -/
+theorem connected_adjoin (hH : H.Preconnected) (e : G.Ear H) : e.adjoin.Connected := by
   rw [adjoin_def, toSubgraph_eq_toWalk]
-  exact Subgraph.connected_sup hH.preconnected e.toWalk.2.2.toSubgraph_connected.preconnected
+  exact Subgraph.connected_sup hH e.toWalk.2.2.toSubgraph_connected.preconnected
     ⟨e.toWalk.1, e.fst_mem_verts, e.toWalk.2.2.start_mem_verts_toSubgraph⟩
 
-/-! ### Trail splitting for `2`-edge-connectivity -/
-
-/-- A walk `q` in `G` whose `toSubgraph` lies in `K` and whose edges avoid `f'` lifts to
-reachability in `K.coe.deleteEdges {f}` whenever `f` maps to `f'`. -/
-private theorem reachable_deleteEdges_coe_of_walk {K : G.Subgraph} {a b : V} (q : G.Walk a b)
-    (hqK : q.toSubgraph ≤ K) (f : Sym2 K.verts) (hqf : f.map Subtype.val ∉ q.edges) :
-    (K.coe.deleteEdges {f}).Reachable ⟨a, hqK.1 q.start_mem_verts_toSubgraph⟩
-      ⟨b, hqK.1 q.end_mem_verts_toSubgraph⟩ := by
-  induction q with
-  | nil => rfl
-  | @cons x y z hadj rest ih =>
-    have hqK' : G.subgraphOfAdj hadj ≤ K ∧ rest.toSubgraph ≤ K :=
-      sup_le_iff.mp (by simpa only [Walk.toSubgraph] using hqK)
-    simp only [Walk.edges_cons, List.mem_cons, not_or] at hqf
-    have hxK : x ∈ K.verts := hqK'.1.1 (by simp)
-    have hyK : y ∈ K.verts := hqK'.2.1 rest.start_mem_verts_toSubgraph
-    have hadjK : K.coe.Adj ⟨x, hxK⟩ ⟨y, hyK⟩ := (K.coe_adj _ _).mpr (hqK'.1.2 (by simp))
-    have hne : s((⟨x, hxK⟩ : K.verts), ⟨y, hyK⟩) ≠ f := fun heq ↦ hqf.1 (heq ▸ rfl)
-    exact (SimpleGraph.deleteEdges_adj.mpr
-      ⟨hadjK, Set.mem_singleton_iff.not.mpr hne⟩).reachable.trans (ih hqK'.2 hqf.2)
-
-/-- Along a trail `q : G.Walk u v` contained in `K`, deleting any single edge `f` of `K.coe` leaves
-every vertex of `q` reachable from `u` or `v`. -/
-private theorem trail_reachable_endpoint_deleteEdges {K : G.Subgraph} {u v : V} (q : G.Walk u v)
-    (htrail : q.IsTrail) (hqK : q.toSubgraph ≤ K) (f : Sym2 K.verts) {w : V}
-    (hw : w ∈ q.support) :
-    (K.coe.deleteEdges {f}).Reachable ⟨w, hqK.1 (q.mem_verts_toSubgraph.mpr hw)⟩
-      ⟨u, hqK.1 q.start_mem_verts_toSubgraph⟩ ∨
-    (K.coe.deleteEdges {f}).Reachable ⟨w, hqK.1 (q.mem_verts_toSubgraph.mpr hw)⟩
-      ⟨v, hqK.1 q.end_mem_verts_toSubgraph⟩ := by
-  classical
-  let q₁ := q.takeUntil w hw
-  let q₂ := q.dropUntil w hw
-  have hspec : q₁.append q₂ = q := q.take_spec hw
-  have hnodup : (q₁.edges ++ q₂.edges).Nodup := by
-    rw [← Walk.edges_append, hspec]
-    exact htrail.edges_nodup
-  have hq₁K : q₁.toSubgraph ≤ K :=
-    le_trans le_sup_left (by rw [← Walk.toSubgraph_append, hspec]; exact hqK)
-  have hq₂K : q₂.toSubgraph ≤ K :=
-    le_trans le_sup_right (by rw [← Walk.toSubgraph_append, hspec]; exact hqK)
-  by_cases hf₁ : f.map Subtype.val ∈ q₁.edges
-  · have hf₂ : f.map Subtype.val ∉ q₂.edges :=
-      fun h ↦ (List.nodup_append.mp hnodup).2.2 _ hf₁ _ h rfl
-    exact Or.inr (reachable_deleteEdges_coe_of_walk q₂ hq₂K f hf₂)
-  · exact Or.inl (reachable_deleteEdges_coe_of_walk q₁ hq₁K f hf₁).symm
-
-/-- Adjoining any open or closed ear to a connected, `2`-edge-connected subgraph preserves
+/-- Adjoining any open or closed ear to a `2`-edge-connected subgraph preserves
 `2`-edge-connectivity, with no finiteness assumption. -/
-theorem isEdgeConnected_two_adjoin (hH : H.Connected) (hH2 : H.coe.IsEdgeConnected 2)
-    (e : G.Ear H) : e.adjoin.coe.IsEdgeConnected 2 := by
+theorem isEdgeConnected_two_adjoin (hH : H.coe.IsEdgeConnected 2) (e : G.Ear H) :
+    e.adjoin.coe.IsEdgeConnected 2 := by
   rw [isEdgeConnected_two_iff_forall_preconnected]
   intro f
   have hadj_le : H ≤ e.adjoin := e.le_adjoin
@@ -374,7 +327,7 @@ theorem isEdgeConnected_two_adjoin (hH : H.Connected) (hH2 : H.coe.IsEdgeConnect
       by_cases hxy : H.Adj x.1 y.1
       · let fH : Sym2 H.verts := s(⟨x.1, H.edge_vert hxy⟩, ⟨y.1, H.edge_vert hxy.symm⟩)
         have hr : (H.coe.deleteEdges {fH}).Reachable ⟨a, ha⟩ ⟨b, hb⟩ :=
-          (isEdgeConnected_two_iff_forall_preconnected.mp hH2) fH ⟨a, ha⟩ ⟨b, hb⟩
+          (isEdgeConnected_two_iff_forall_preconnected.mp hH) fH ⟨a, ha⟩ ⟨b, hb⟩
         let φ : H.coe.deleteEdges {fH} →g e.adjoin.coe.deleteEdges {s(x, y)} :=
           { toFun z := ⟨z.1, hadj_le.1 z.2⟩
             map_rel' {z₁ z₂} h := by
@@ -384,9 +337,13 @@ theorem isEdgeConnected_two_adjoin (hH : H.Connected) (hH2 : H.coe.IsEdgeConnect
               have hmap := congrArg (Sym2.map Subtype.val) heq
               exact Sym2.map.injective Subtype.val_injective hmap }
         exact hr.map φ
-      · obtain ⟨p, hp⟩ := Subgraph.connected_iff_forall_exists_walk_subgraph _ |>.mp hH |>.2 ha hb
-        refine reachable_deleteEdges_coe_of_walk p (hp.trans hadj_le) s(x, y) fun hmem ↦ hxy ?_
-        exact hp.2 ((Walk.mem_edges_toSubgraph p).mpr hmem |> Subgraph.mem_edgeSet.mp)
+      · have : Nonempty H.verts := ⟨⟨a, ha⟩⟩
+        obtain ⟨p, hp⟩ :=
+          (Subgraph.connected_iff_forall_exists_walk_subgraph H).mp ⟨hH.connected (by decide)⟩
+            |>.2 ha hb
+        refine p.reachable_deleteEdges_coe (hp.trans hadj_le)
+          (Set.forall_mem_singleton.mpr fun hmem ↦ hxy ?_)
+        exact hp.2 (Subgraph.mem_edgeSet.mp ((Walk.mem_edges_toSubgraph p).mpr hmem))
   -- Every vertex of `e.adjoin` reaches a vertex of `H` inside `e.adjoin.coe - {f}`.
   have h_to_H : ∀ z : e.adjoin.verts, ∃ u : V, ∃ hu : u ∈ H.verts,
       (e.adjoin.coe.deleteEdges {f}).Reachable z ⟨u, hadj_le.1 hu⟩ := by
@@ -395,7 +352,8 @@ theorem isEdgeConnected_two_adjoin (hH : H.Connected) (hH2 : H.coe.IsEdgeConnect
     rcases hz with hzH | hze
     · exact ⟨z, hzH, .rfl⟩
     · rw [Walk.mem_verts_toSubgraph] at hze
-      rcases trail_reachable_endpoint_deleteEdges e.toWalk.2.2 e.isTrail hwalk_le f hze with h1 | h2
+      rcases e.isTrail.reachable_deleteEdges_coe_or_reachable_deleteEdges_coe hwalk_le f hze
+        with h1 | h2
       · exact ⟨e.toWalk.1, e.fst_mem_verts, h1⟩
       · exact ⟨e.toWalk.2.1, e.snd_mem_verts, h2⟩
   intro a b
@@ -404,21 +362,6 @@ theorem isEdgeConnected_two_adjoin (hH : H.Connected) (hH2 : H.coe.IsEdgeConnect
   exact hra.trans ((hH_reach hua hub).trans hrb.symm)
 
 end Ear
-
-/-- The subgraph traced by any cycle in a simple graph is `2`-edge-connected, with no finiteness
-assumption. -/
-theorem Walk.IsCycle.isEdgeConnected_two_toSubgraph {u : V} {c : G.Walk u u} (hc : c.IsCycle) :
-    c.toSubgraph.coe.IsEdgeConnected 2 := by
-  rw [isEdgeConnected_two_iff_forall_preconnected]
-  intro f a b
-  have ha : a.1 ∈ c.support := c.mem_verts_toSubgraph.mp a.2
-  have hb : b.1 ∈ c.support := c.mem_verts_toSubgraph.mp b.2
-  let u₀ : c.toSubgraph.verts := ⟨_, c.start_mem_verts_toSubgraph⟩
-  have hra : (c.toSubgraph.coe.deleteEdges {f}).Reachable a u₀ := by
-    rcases Ear.trail_reachable_endpoint_deleteEdges c hc.isTrail le_rfl f ha with h | h <;> exact h
-  have hrb : (c.toSubgraph.coe.deleteEdges {f}).Reachable b u₀ := by
-    rcases Ear.trail_reachable_endpoint_deleteEdges c hc.isTrail le_rfl f hb with h | h <;> exact h
-  exact hra.trans hrb.symm
 
 /-! ### Initial subgraphs -/
 
@@ -884,12 +827,12 @@ theorem mem_edgeSet_initial_or_existsUnique_walkAt (d : G.EarDecomposition (⊤ 
 theorem connected_subgraphAfter (d : G.EarDecomposition H) (k : Fin (d.length + 1)) :
     (d.subgraphAfter k).Connected :=
   d.subgraphAfter_induction (P := Subgraph.Connected) d.start.connected
-    (fun i ih ↦ (d.earAt i).connected_adjoin ih) k
+    (fun i ih ↦ (d.earAt i).connected_adjoin ih.preconnected) k
 
 /-- The final subgraph of an ear decomposition is connected. -/
 theorem connected_final (d : G.EarDecomposition H) : H.Connected :=
   d.final_induction (P := Subgraph.Connected) d.start.connected
-    fun i ih ↦ (d.earAt i).connected_adjoin ih
+    fun i ih ↦ (d.earAt i).connected_adjoin ih.preconnected
 
 /-- A simple graph with an ear decomposition of `⊤` is connected, with no finiteness assumption. -/
 theorem connected (d : G.EarDecomposition (⊤ : G.Subgraph)) : G.Connected :=
@@ -899,12 +842,12 @@ theorem connected (d : G.EarDecomposition (⊤ : G.Subgraph)) : G.Connected :=
 theorem isEdgeConnected_two_subgraphAfter (d : G.EarDecomposition H) (k : Fin (d.length + 1)) :
     (d.subgraphAfter k).coe.IsEdgeConnected 2 :=
   d.subgraphAfter_induction (P := fun K ↦ K.coe.IsEdgeConnected 2) d.start.isEdgeConnected_two
-    (fun i ih ↦ (d.earAt i).isEdgeConnected_two_adjoin (d.connected_subgraphAfter i.castSucc) ih) k
+    (fun i ih ↦ (d.earAt i).isEdgeConnected_two_adjoin ih) k
 
 /-- The final subgraph of an ear decomposition is `2`-edge-connected. -/
 theorem isEdgeConnected_two_final (d : G.EarDecomposition H) : H.coe.IsEdgeConnected 2 :=
   d.final_induction (P := fun K ↦ K.coe.IsEdgeConnected 2) d.start.isEdgeConnected_two
-    fun i ih ↦ (d.earAt i).isEdgeConnected_two_adjoin (d.connected_subgraphAfter i.castSucc) ih
+    fun i ih ↦ (d.earAt i).isEdgeConnected_two_adjoin ih
 
 /-- A simple graph with an ear decomposition of `⊤` is `2`-edge-connected, with no finiteness
 assumption. -/

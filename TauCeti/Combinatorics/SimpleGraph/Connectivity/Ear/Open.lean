@@ -22,19 +22,21 @@ two distinct vertices already present whose internal vertices and edges are new.
 
 This file proves both directions at their natural generality:
 
-* **Soundness (no finiteness needed).** Every cycle subgraph is `2`-vertex-connected
-  (`SimpleGraph.Walk.IsCycle.isVertexConnected_two_toSubgraph`), adjoining an open ear preserves
-  `2`-vertex-connectivity (`SimpleGraph.Ear.isVertexConnected_two_adjoin`), and therefore every open
-  ear decomposition of `H` certifies `H.coe.IsVertexConnected 2`
-  (`SimpleGraph.EarDecomposition.IsOpen.isVertexConnected_two_final`). In particular, any simple
-  graph—finite or infinite—admitting an open ear decomposition of `⊤` is `2`-vertex-connected
-  (`SimpleGraph.EarDecomposition.IsOpen.isVertexConnected_two`).
+* **Soundness (no finiteness needed).** Combining cycle `2`-vertex-connectivity
+  (`SimpleGraph.Walk.IsCycle.isVertexConnected_two_toSubgraph`) with preservation of
+  `2`-vertex-connectivity when adjoining an open ear
+  (`SimpleGraph.Ear.isVertexConnected_two_adjoin`), every open ear decomposition of `H` certifies
+  `H.coe.IsVertexConnected 2` (`SimpleGraph.EarDecomposition.IsOpen.isVertexConnected_two_final`).
+  In particular, any simple graph—finite or infinite—admitting an open ear decomposition of `⊤` is
+  `2`-vertex-connected (`SimpleGraph.EarDecomposition.IsOpen.isVertexConnected_two`).
 * **Completeness on finite vertex types.** In a `2`-vertex-connected simple graph on a finite vertex
   type, any proper subgraph `H ≠ ⊤` with at least two vertices admits an open ear
   (`SimpleGraph.IsVertexConnected.exists_open_ear`), constructed via the fan lemma
   `SimpleGraph.IsVertexConnected.exists_fan` when `H` misses a vertex and as a single missing edge
-  when `H` is spanning. Well-founded induction on `G.Subgraph` extends any partial open ear
-  decomposition to `⊤`, yielding open ear decompositions starting from any prescribed cycle
+  when `H` is spanning. Well-founded induction on `G.Subgraph` shows that for any open ear
+  decomposition of a subgraph there exists an open ear decomposition of `⊤` with the same initial
+  subgraph (`SimpleGraph.IsVertexConnected.exists_isOpen_earDecomposition_of_earDecomposition`),
+  yielding open ear decompositions starting from any prescribed cycle
   (`SimpleGraph.IsVertexConnected.exists_isOpen_earDecomposition_initial_eq`), from a cycle
   containing any prescribed edge
   (`SimpleGraph.IsVertexConnected.exists_isOpen_earDecomposition_mem_edgeSet_initial`), and the full
@@ -47,14 +49,15 @@ actual vertices (`[Finite V(G)]`), regardless of loops or parallel edges.
 
 ## Main results
 
-* `SimpleGraph.Walk.IsCycle.isVertexConnected_two_toSubgraph`: the subgraph traced by a cycle is
-  `2`-vertex-connected.
 * `SimpleGraph.Ear.isVertexConnected_two_adjoin`: adjoining an open ear to a `2`-vertex-connected
   subgraph preserves `2`-vertex-connectivity.
 * `SimpleGraph.EarDecomposition.IsOpen.isVertexConnected_two`: a simple graph with an open ear
   decomposition of `⊤` is `2`-vertex-connected.
 * `SimpleGraph.IsVertexConnected.exists_open_ear`: every proper subgraph with at least two vertices
   in a finite `2`-vertex-connected graph admits an open ear.
+* `SimpleGraph.IsVertexConnected.exists_isOpen_earDecomposition_of_earDecomposition`: if a subgraph
+  of a finite `2`-vertex-connected graph has an open ear decomposition, then `⊤` has an open ear
+  decomposition with the same initial subgraph.
 * `SimpleGraph.IsVertexConnected.exists_isOpen_earDecomposition_initial_eq`: **Whitney's theorem
   with prescribed initial cycle**.
 * `SimpleGraph.IsVertexConnected.exists_isOpen_earDecomposition_mem_edgeSet_initial`,
@@ -64,12 +67,12 @@ actual vertices (`[Finite V(G)]`), regardless of loops or parallel edges.
 
 ## Implementation notes
 
-In the soundness direction, deleting a set `s` of fewer than two vertices leaves `s` either empty
-or a singleton (`Set.encard_le_one_iff`). On a cycle, rotating to any deleted vertex `x₀` exposes a
-spanning path of the remaining vertices; on an open ear `p` from `u` to `v`, splitting `p` at any
+In the soundness direction, deleting a set `s` of fewer than two vertices leaves `s` having
+`encard ≤ 1` (`Set.encard_le_one_iff`). On an open ear `p` from `u` to `v`, splitting `p` at any
 undeleted internal vertex `w` yields two internally disjoint subwalks to `u` and `v`, at least one
-of which avoids `s`. In the completeness direction, `Finite G.Subgraph` (from `[Finite V]`) gives
-`WellFoundedGT G.Subgraph`, so extending a partial open ear decomposition along `Ear.lt_adjoin`
+of which avoids `s` and lifts via `SimpleGraph.Walk.reachable_induce_coe_of_mem_support`. In the
+completeness direction, `Finite G.Subgraph` (from `[Finite V]`) gives `WellFoundedGT G.Subgraph`, so
+producing an open ear decomposition of `⊤` with the same initial subgraph along `Ear.lt_adjoin`
 requires no auxiliary edge-count measure or `[DecidableEq V]` assumption.
 
 ## References
@@ -90,117 +93,7 @@ namespace SimpleGraph
 
 variable {V : Type u} {G : SimpleGraph V} {H : G.Subgraph}
 
-/-! ### Walk lifting in vertex-deleted subgraphs -/
-
-/-- If a walk `r` in `G` has `r.toSubgraph ≤ K` and every vertex of `r` avoids `s : Set K.verts`,
-then every vertex of `r` is reachable from `r`'s start in `K.coe.induce sᶜ`. -/
-private theorem reachable_start_induce_compl_of_walk {K : G.Subgraph} {s : Set K.verts}
-    {a b : V} (r : G.Walk a b) (hrK : r.toSubgraph ≤ K)
-    (hrs : ∀ z : K.verts, z.1 ∈ r.support → z ∉ s) {w : K.verts} (hw : w.1 ∈ r.support) :
-    (K.coe.induce sᶜ).Reachable
-      ⟨⟨a, hrK.1 r.start_mem_verts_toSubgraph⟩, hrs _ r.start_mem_support⟩
-      ⟨w, hrs w hw⟩ := by
-  induction r with
-  | @nil a =>
-    rw [Walk.support_nil, List.mem_singleton] at hw
-    have hweq : (⟨a, hrK.1 (Walk.nil (u := a)).start_mem_verts_toSubgraph⟩ : K.verts) = w :=
-      Subtype.ext hw.symm
-    subst hweq
-    rfl
-  | @cons x y z hadj rest ih =>
-    have hrK' : G.subgraphOfAdj hadj ≤ K ∧ rest.toSubgraph ≤ K :=
-      sup_le_iff.mp (by simpa only [Walk.toSubgraph] using hrK)
-    have hrs' : ∀ u : K.verts, u.1 ∈ rest.support → u ∉ s :=
-      fun u hu ↦ hrs u (by simp [hu])
-    rw [Walk.support_cons, List.mem_cons] at hw
-    rcases hw with hwx | hwrest
-    · have hweq : (⟨x, hrK.1 (Walk.cons hadj rest).start_mem_verts_toSubgraph⟩ : K.verts) = w :=
-        Subtype.ext hwx.symm
-      subst hweq
-      rfl
-    · have hxK : x ∈ K.verts := hrK'.1.1 (by simp)
-      have hyK : y ∈ K.verts := hrK'.2.1 rest.start_mem_verts_toSubgraph
-      have hadjK : (K.coe.induce sᶜ).Adj ⟨⟨x, hxK⟩, hrs _ (by simp)⟩
-          ⟨⟨y, hyK⟩, hrs' _ rest.start_mem_support⟩ :=
-        (K.coe_adj _ _).mpr (hrK'.1.2 (by simp))
-      exact hadjK.reachable.trans (ih hrK'.2 hrs' hwrest)
-
-/-- Any two vertices in `sᶜ` whose underlying vertices lie on a walk `r` inside `K` avoiding `s`
-are mutually reachable in `K.coe.induce sᶜ`. -/
-private theorem reachable_induce_compl_of_walk {K : G.Subgraph} {s : Set K.verts}
-    {a b : V} (r : G.Walk a b) (hrK : r.toSubgraph ≤ K)
-    (hrs : ∀ z : K.verts, z.1 ∈ r.support → z ∉ s)
-    {p q : ↑(sᶜ : Set K.verts)} (hp : p.1.1 ∈ r.support) (hq : q.1.1 ∈ r.support) :
-    (K.coe.induce sᶜ).Reachable p q :=
-  (reachable_start_induce_compl_of_walk r hrK hrs hp).symm.trans
-    (reachable_start_induce_compl_of_walk r hrK hrs hq)
-
-/-! ### Soundness: cycles and open ears preserve `2`-vertex-connectivity -/
-
-/-- The subgraph traced by any cycle in a simple graph is `2`-vertex-connected, with no finiteness
-assumption. -/
-theorem Walk.IsCycle.isVertexConnected_two_toSubgraph {u : V} {c : G.Walk u u} (hc : c.IsCycle) :
-    c.toSubgraph.coe.IsVertexConnected 2 := by
-  refine isVertexConnected_iff.mpr ⟨?_, fun s hs ↦ ?_⟩
-  · -- A cycle has length at least `3`, so its first three vertices `{u, y, z}` are distinct.
-    have hlen := hc.three_le_length
-    cases c with
-    | nil => simp at hlen
-    | @cons _ y _ huy rest =>
-      cases rest with
-      | nil => simp at hlen
-      | @cons _ z _ hyz rest' =>
-        have huz : u ≠ z := by
-          rintro rfl
-          exact ((Walk.cons_isCycle_iff _ huy).mp hc).2 (by simp [Sym2.eq_swap])
-        have hsub : ({u, y, z} : Set V) ⊆
-            (Walk.cons huy (Walk.cons hyz rest')).toSubgraph.verts := by
-          rintro w (rfl | rfl | rfl) <;> simp
-        have hnotMem : u ∉ ({y, z} : Set V) := by simp [huy.ne, huz]
-        rw [ENat.card_coe_set_eq, ← Set.encard_pair hyz.ne, ← Set.encard_insert_of_notMem hnotMem]
-        exact Set.encard_le_encard hsub
-  · -- Deleting at most one vertex leaves a spanning subwalk of the rotated cycle.
-    rcases s.eq_empty_or_nonempty with rfl | ⟨x₀, hx₀⟩
-    · intro p q
-      exact reachable_induce_compl_of_walk c le_rfl (fun _ _ h ↦ h)
-        (c.mem_verts_toSubgraph.mp p.1.2) (c.mem_verts_toSubgraph.mp q.1.2)
-    · classical
-      have hs1 : s.encard ≤ 1 := Order.le_of_lt_add_one hs
-      have hx₀_supp : x₀.1 ∈ c.support := c.mem_verts_toSubgraph.mp x₀.2
-      let c' := c.rotate x₀.1 hx₀_supp
-      have hc' : c'.IsCycle := hc.rotate hx₀_supp
-      have hc'sub : c'.toSubgraph = c.toSubgraph := c.toSubgraph_rotate hx₀_supp
-      cases hcons : c' with
-      | nil => exact (hc'.not_nil (hcons ▸ Walk.Nil.nil)).elim
-      | @cons _ y _ hxy q =>
-        have hq : q.IsPath := ((Walk.cons_isCycle_iff q hxy).mp (hcons ▸ hc')).1
-        cases hqr : q.reverse with
-        | nil => exact (hxy.ne rfl).elim
-        | @cons _ z _ hxz r =>
-          have hxr : x₀.1 ∉ r.support := by
-            have hp_cons : (Walk.cons hxz r).IsPath := hqr ▸ hq.reverse
-            exact ((Walk.cons_isPath_iff hxz r).mp hp_cons).2
-          have hr_sub : r.toSubgraph ≤ c.toSubgraph := by
-            have h1 : r.toSubgraph ≤ (Walk.cons hxz r).toSubgraph := le_sup_right
-            rw [← hqr, Walk.toSubgraph_reverse] at h1
-            have h2 : q.toSubgraph ≤ (Walk.cons hxy q).toSubgraph := le_sup_right
-            rw [← hcons, hc'sub] at h2
-            exact h1.trans h2
-          have hrs : ∀ w : c.toSubgraph.verts, w.1 ∈ r.support → w ∉ s := fun w hwr hws ↦
-            hxr (Set.encard_le_one_iff.mp hs1 w x₀ hws hx₀ ▸ hwr)
-          have hmem_r : ∀ p : ↑(sᶜ : Set c.toSubgraph.verts), p.1.1 ∈ r.support := by
-            intro p
-            have hpx : p.1.1 ≠ x₀.1 := fun heq ↦ p.2 (Subtype.ext heq ▸ hx₀)
-            have hpc' : p.1.1 ∈ c'.support :=
-              c'.mem_verts_toSubgraph.mp (hc'sub.symm ▸ p.1.2)
-            rw [hcons, Walk.support_cons, List.mem_cons] at hpc'
-            have hpq : p.1.1 ∈ q.reverse.support := by
-              rw [Walk.support_reverse, List.mem_reverse]
-              exact hpc'.resolve_left hpx
-            rw [hqr, Walk.support_cons, List.mem_cons] at hpq
-            exact hpq.resolve_left hpx
-          intro p q'
-          exact reachable_induce_compl_of_walk r hr_sub hrs (hmem_r p) (hmem_r q')
+/-! ### Soundness: open ears preserve `2`-vertex-connectivity -/
 
 /-- Adjoining an open ear to a `2`-vertex-connected subgraph preserves `2`-vertex-connectivity,
 with no finiteness assumption. -/
@@ -253,11 +146,11 @@ theorem Ear.isVertexConnected_two_adjoin (hH : H.coe.IsVertexConnected 2) {e : G
               exact (hqr ▸ hp).ne_of_mem_support_of_append hx₀w hx₀q (hzx₀ ▸ hzr) rfl
             have hvs : (⟨v, hHK.1 hv⟩ : K.verts) ∉ s := hrs _ r.end_mem_support
             exact ⟨⟨⟨v, hv⟩, hvs⟩,
-              reachable_induce_compl_of_walk r hrK hrs r.start_mem_support r.end_mem_support⟩
+              r.reachable_induce_coe_of_mem_support hrK hrs r.start_mem_support r.end_mem_support⟩
           · push Not at hqs
             have hus : (⟨u, hHK.1 hu⟩ : K.verts) ∉ s := hqs _ q.start_mem_support
             exact ⟨⟨⟨u, hu⟩, hus⟩,
-              reachable_induce_compl_of_walk q hqK hqs q.end_mem_support q.start_mem_support⟩
+              q.reachable_induce_coe_of_mem_support hqK hqs q.end_mem_support q.start_mem_support⟩
       intro a b
       obtain ⟨za, hra⟩ := h_to_H a
       obtain ⟨zb, hrb⟩ := h_to_H b
@@ -376,8 +269,8 @@ theorem IsVertexConnected.exists_open_ear [Finite V] (hG : G.IsVertexConnected 2
       · exact hno_edge 0 he0
       · exact hno_edge 1 he1
 
-/-- Every open ear decomposition of a subgraph `H` in a finite `2`-vertex-connected simple graph
-extends to an open ear decomposition of `⊤` with the same initial subgraph. -/
+/-- Given an open ear decomposition of a subgraph `H` in a finite `2`-vertex-connected simple
+graph, there exists an open ear decomposition of `⊤` with the same initial subgraph. -/
 theorem IsVertexConnected.exists_isOpen_earDecomposition_of_earDecomposition [Finite V]
     (hG : G.IsVertexConnected 2) {H : G.Subgraph} (d₀ : G.EarDecomposition H) (hd₀ : d₀.IsOpen) :
     ∃ d : G.EarDecomposition (⊤ : G.Subgraph), d.IsOpen ∧ d.initial = d₀.initial := by
