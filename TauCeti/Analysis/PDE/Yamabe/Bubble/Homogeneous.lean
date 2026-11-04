@@ -38,12 +38,20 @@ open scoped ContDiff Distributions ENNReal Gradient Topology
 
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
 
+private theorem finrank_sub_two_pos (hn : 2 < finrank ℝ E) :
+    0 < (finrank ℝ E : ℝ) - 2 :=
+  sub_pos.mpr (by exact_mod_cast hn)
+
+private theorem bubble_fderiv_bound_nonneg (hn : 2 < finrank ℝ E) (t : ℝ) :
+    0 ≤ (t ^ 2 + 1) / ((finrank ℝ E : ℝ) - 2) :=
+  div_nonneg (by positivity) (finrank_sub_two_pos hn).le
+
 /-- Outside the unit ball, a bubble is controlled by radius times its differential. -/
 private theorem bubble_le_norm_mul_norm_fderiv (hn : 2 < finrank ℝ E)
     {t : ℝ} (ht : 0 < t) (b : E) {x : E} (hx : 1 ≤ ‖x - b‖) :
     bubble t b x ≤ (t ^ 2 + 1) / ((finrank ℝ E : ℝ) - 2) *
       ‖x - b‖ * ‖fderiv ℝ (bubble t b) x‖ := by
-  have hd : 0 < (finrank ℝ E : ℝ) - 2 := sub_pos.mpr (by exact_mod_cast hn)
+  have hd := finrank_sub_two_pos hn
   have hr : 1 ≤ ‖x - b‖ ^ 2 := one_le_pow₀ hx
   have hden : 0 < t ^ 2 + ‖x - b‖ ^ 2 := by positivity
   rw [norm_fderiv_bubble ht, abs_of_pos hd]
@@ -86,8 +94,8 @@ private theorem cutoffBubble_eventuallyEq (t : ℝ) (b x : E) :
       (tendsto_one_div_add_atTop_nhds_zero_nat (𝕜 := ℝ)).smul_const (x - b)
   filter_upwards [hlim.eventually (Metric.ball_mem_nhds (0 : E) one_pos)] with n hn
   filter_upwards [rescaled_bubbleCutoff_eventuallyEq_one ((n : ℝ) + 1) b x hn] with y hy
-  simp only [cutoffBubble_apply, Pi.one_apply] at *
-  rw [hy, one_mul]
+  simp only [Pi.one_apply] at hy
+  rw [cutoffBubble_apply, hy, one_mul]
 
 private theorem cutoffBubble_smooth_compact {t : ℝ} (ht : 0 < t) (b : E) (n : ℕ) :
     ContDiff ℝ ∞ (cutoffBubble t b n) ∧ HasCompactSupport (cutoffBubble t b n) := by
@@ -118,10 +126,7 @@ private theorem norm_fderiv_rescaled_bubbleCutoff_mul_bubble_le
       C * ((t ^ 2 + 1) / ((finrank ℝ E : ℝ) - 2)) * ‖fderiv ℝ (bubble t b) x‖ := by
   have hr0 : 0 < r := lt_of_lt_of_le one_pos hr
   let A : ℝ := (t ^ 2 + 1) / ((finrank ℝ E : ℝ) - 2)
-  have hA : 0 ≤ A := by
-    have hd : (2 : ℝ) < finrank ℝ E := by exact_mod_cast hn
-    dsimp [A]
-    positivity
+  have hA : 0 ≤ A := bubble_fderiv_bound_nonneg hn t
   by_cases hx : 1 ≤ ‖x - b‖
   · have hs : ‖fderiv ℝ (fun y ↦ bubbleCutoff (E := E) (r⁻¹ • (y - b))) x‖ *
         ‖x - b‖ ≤ C := by
@@ -160,10 +165,7 @@ private theorem exists_bound_fderiv_cutoffBubble (hn : 2 < finrank ℝ E) {t : �
   obtain ⟨C, hC⟩ := hχd.bounded_above_of_compact_support hχc
   have hC0 : 0 ≤ C := by simpa using hC 0
   let A : ℝ := (t ^ 2 + 1) / ((finrank ℝ E : ℝ) - 2)
-  have hA : 0 ≤ A := by
-    have hd : (2 : ℝ) < finrank ℝ E := by exact_mod_cast hn
-    dsimp [A]
-    positivity
+  have hA : 0 ≤ A := bubble_fderiv_bound_nonneg hn t
   have hbound (n : ℕ) (x : E) :
       ‖fderiv ℝ (cutoffBubble t b n) x - fderiv ℝ (bubble t b) x‖ ≤
         (C * A + 2) * ‖fderiv ℝ (bubble t b) x‖ := by
@@ -309,8 +311,8 @@ theorem exists_sobolevEmbeddingL_ae_eq_bubble (hn : 2 < finrank ℝ E) {t : ℝ}
       (((φ n).contDiff.continuous_fderiv (by simp)).sub
         ((contDiff_bubble ht.ne' b : ContDiff ℝ ∞ _).continuous_fderiv (by simp))
           |>.aestronglyMeasurable)
-    exact Eventually.of_forall fun x ↦ by
-      simp only [gradient, ← map_sub, LinearIsometryEquiv.norm_map, Pi.sub_apply]
+    exact Eventually.of_forall fun x ↦
+      norm_gradient_sub_gradient_eq_norm_fderiv_sub (φ n : E → ℝ) (bubble t b) x
   have hmem := memLp_bubble μ hn ht b
   simpa only [Opens.coe_top, Measure.restrict_univ] using
     (D1p0.exists_sobolevEmbeddingL_ae_eq_of_tendsto (mu := μ) (Omega := (⊤ : Opens E))
