@@ -306,6 +306,15 @@ theorem coeff_lazardCocycle (n : ℕ) (d : Fin 2 →₀ ℕ) :
     rw [mem_Icc] at hi
     omega
 
+/-- The coefficient of `XⁱYⁿ⁻ⁱ` in `C_n`, for `0 < i < n`, is `n.choose i / d_n`. -/
+theorem coeff_single_add_single_lazardCocycle {n i : ℕ} (hi : 0 < i) (hin : i < n) :
+    (lazardCocycle n R).coeff (Finsupp.single 0 i + Finsupp.single 1 (n - i)) =
+      ((n.choose i / lazardGcd n : ℕ) : R) := by
+  rw [coeff_lazardCocycle]
+  simp only [Finsupp.add_apply, Finsupp.single_apply]
+  rw [ite_eq_left ⟨by simp; omega, by simp; omega, by simp; omega⟩]
+  simp
+
 /-- `C_n` is compatible with every change of coefficients. -/
 @[simp]
 theorem map_lazardCocycle (φ : R →+* S) (n : ℕ) :
@@ -469,9 +478,8 @@ theorem smul_lazardCocycle_eq_zero_iff {n : ℕ} (hn : 2 ≤ n) {r : R} :
   rw [← Int.cast_one, ← hc, Int.cast_sum]
   refine Finset.sum_congr rfl fun i hi => ?_
   rw [mem_Icc] at hi
-  rw [Int.cast_mul, Int.cast_natCast]
-  simp [coeff_lazardCocycle, show i ≠ 0 by omega, show n - i ≠ 0 by omega,
-    show i + (n - i) = n by omega]
+  rw [Int.cast_mul, Int.cast_natCast, coeff_single_add_single_lazardCocycle (by omega) (by omega),
+    mul_comm]
 
 /-- For `n ≥ 2`, `r ↦ r • C_n` is injective. -/
 theorem smul_lazardCocycle_injective {n : ℕ} (hn : 2 ≤ n) :
