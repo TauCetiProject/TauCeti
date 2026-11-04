@@ -114,6 +114,7 @@ noncomputable def mk' (f : X × E → V →L[ℂ] W) (hf : ContDiffOn ℝ ∞ f 
     · simp
     · simp [hξ, smul_ne_zero ht.ne' hξ, hhom x ξ hξ t ht]
 
+@[simp]
 theorem coefficient_mk'_of_ne_zero (f : X × E → V →L[ℂ] W) (hf : ContDiffOn ℝ ∞ f {p | p.2 ≠ 0})
     (hhom : ∀ x ξ, ξ ≠ 0 → ∀ t : ℝ, 0 < t → f (x, t • ξ) = t ^ m • f (x, ξ)) {x : X} {ξ : E}
     (hξ : ξ ≠ 0) : (mk' f hf hhom).coefficient (x, ξ) = f (x, ξ) := by
@@ -255,6 +256,7 @@ noncomputable def frequencyDeriv (w : E) : HomogeneousSymbol X E V W (m - 1) :=
       rw [Real.rpow_sub_one ht.ne', div_eq_inv_mul, mul_smul, ← h, inv_smul_smul₀ ht.ne']
 
 /-- At a nonzero frequency, the spatial derivative is the partial derivative in the position. -/
+@[simp]
 theorem coefficient_spatialDeriv (v : X) {x : X} {ξ : E} (hξ : ξ ≠ 0) :
     (a.spatialDeriv v).coefficient (x, ξ) = fderiv ℝ (fun y ↦ a.coefficient (y, ξ)) x v := by
   have h : HasFDerivAt (fun y ↦ a.coefficient (y, ξ))
@@ -266,6 +268,7 @@ theorem coefficient_spatialDeriv (v : X) {x : X} {ξ : E} (hξ : ξ ≠ 0) :
 
 /-- At a nonzero frequency, the frequency derivative is the partial derivative in the
 frequency. -/
+@[simp]
 theorem coefficient_frequencyDeriv (w : E) {x : X} {ξ : E} (hξ : ξ ≠ 0) :
     (a.frequencyDeriv w).coefficient (x, ξ) = fderiv ℝ (fun η ↦ a.coefficient (x, η)) ξ w := by
   have h : HasFDerivAt (fun η ↦ a.coefficient (x, η))
