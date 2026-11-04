@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.Point.NonsingularReduction
+public import TauCeti.AlgebraicGeometry.EllipticCurve.IntegralModel.ValuativeExtension
 public import TauCeti.AlgebraicGeometry.EllipticCurve.MinimalModel.Basic
 public import TauCeti.AlgebraicGeometry.EllipticCurve.PointCount
 public import TauCeti.NumberTheory.LocalField.Unramified.Inertia.Basic
