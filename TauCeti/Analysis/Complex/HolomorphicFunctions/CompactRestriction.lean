@@ -42,7 +42,7 @@ local instance (U : Opens ℂ) : AddCommMonoid (holomorphicFunctions U) :=
 /-- Restriction to any compact subset of an open complex domain is arbitrarily small on a
 subspace of finite codimension. The same subspace works for every uniform bound `M` on the
 original domain. In particular, the zero or a negative bound is not excluded. -/
-theorem exists_finiteDimensional_quotient_norm_le_on_isCompact {U : Opens ℂ} {s : Set ℂ}
+theorem exists_finiteDimensional_quotient_norm_le_of_isCompact {U : Opens ℂ} {s : Set ℂ}
     (hs : IsCompact s) (hsU : s ⊆ U) {ε : ℝ} (hε : 0 < ε) :
     ∃ K : Submodule ℂ (holomorphicFunctions U),
       FiniteDimensional ℂ (holomorphicFunctions U ⧸ K) ∧
