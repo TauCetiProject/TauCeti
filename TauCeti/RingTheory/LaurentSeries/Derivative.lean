@@ -45,6 +45,7 @@ operation is introduced.
 * `LaurentSeries.coeff_derivative_order_sub_one`: the coefficient of `X ^ (r - 1)` in `D f` is
   `r` times the leading coefficient of `f`, where `r = f.order`.
 * `LaurentSeries.orderTop_le_orderTop_derivative_add_one`: `ord f ≤ ord (D f) + 1`.
+* `LaurentSeries.zero_le_orderTop_derivative`: `D` maps power series to power series.
 * `LaurentSeries.orderTop_derivative_eq_sub_one`: the order of `D f` is one less than the first
   exponent whose coefficient survives differentiation.
 * `LaurentSeries.orderTop_derivative_eq_order_sub_one_of_cast_ne_zero`: if the order `r` of
@@ -191,6 +192,17 @@ theorem orderTop_le_orderTop_derivative_add_one (f : LaurentSeries V) :
   rw [coeff_derivative] at hc
   rw [← hk, ← WithTop.coe_one, ← WithTop.coe_add]
   exact orderTop_le_of_coeff_ne_zero (right_ne_zero_of_smul hc)
+
+/-- **Differentiation preserves power series**: if `f` has no negative powers of `X`, neither has
+`f'`. -/
+theorem zero_le_orderTop_derivative {f : LaurentSeries V} (hf : 0 ≤ f.orderTop) :
+    0 ≤ (derivative R f).orderTop := by
+  refine le_orderTop_iff_forall.2 fun n hn ↦ ?_
+  have hn : n < 0 := by exact_mod_cast hn
+  rw [coeff_derivative]
+  obtain hn' | hn' := lt_or_eq_of_le (show n + 1 ≤ 0 by lia)
+  · rw [coeff_eq_zero_of_lt_orderTop (hf.trans_lt' (by exact_mod_cast hn')), smul_zero]
+  · rw [hn', zero_smul]
 
 /-- If `n` is the first exponent with `n • f.coeff n ≠ 0`, then `f'` has order `n - 1`. -/
 theorem orderTop_derivative_eq_sub_one {f : LaurentSeries V} {n : ℤ} (hn : n • f.coeff n ≠ 0)
