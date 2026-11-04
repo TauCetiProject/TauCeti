@@ -32,7 +32,7 @@ public section
 noncomputable section
 
 open CategoryTheory Finsupp Set Topology
-open AbstractSimplicialComplex
+open AbstractSimplicialComplex PreAbstractSimplicialComplex.SimplicialMap
 
 universe u v
 
@@ -58,6 +58,28 @@ theorem map_single {n : ℕ} (c : RealizationCell K n) (r : R) :
     map R f hf n (single c r) = single (c.map f (hf n c).injOn) r := by
   simp [map]
 
+/-- The identity simplicial map acts as the identity on ordered chains. -/
+@[simp]
+theorem map_id (n : ℕ) :
+    map R (PreAbstractSimplicialComplex.SimplicialMap.id K.toPreAbstractSimplicialComplex)
+      (strictMonoOn_id_realizationCell K) n = LinearMap.id := by
+  refine lhom_ext' fun c ↦ LinearMap.ext_ring ?_
+  simp
+
+/-- Mapping ordered chains along a composite agrees with successive mapping. -/
+theorem map_comp
+    (g : PreAbstractSimplicialComplex.SimplicialMap
+      L.toPreAbstractSimplicialComplex P.toPreAbstractSimplicialComplex)
+    (hg : ∀ n (c : RealizationCell L n), StrictMonoOn g (↑c.1.1 : Set κ)) (n : ℕ) :
+    map R (g.comp f) (f.strictMonoOn_comp_realizationCell hf g hg) n =
+      map R g hg n ∘ₗ map R f hf n := by
+  refine lhom_ext' fun c ↦ LinearMap.ext_ring ?_
+  simp only [LinearMap.comp_apply, lsingle_apply, map_single]
+  congr 1
+  exact (RealizationCell.map_map c f (hf n c).injOn g (by
+    simpa only [RealizationCell.coe_map_face, Finset.coe_image] using
+      (hg n (c.map f (hf n c).injOn)).injOn)).symm
+
 /-- Increasing simplexwise maps commute with the alternating boundary. -/
 theorem boundary_comp_map (n : ℕ) :
     boundary R n ∘ₗ map R f hf (n + 1) = map R f hf n ∘ₗ boundary R n := by
@@ -80,9 +102,10 @@ def orderedSimplicialChainComplexMap :
     subst i
     simp only [orderedSimplicialChainComplex_d, Category.assoc, eqToHom_trans_assoc,
       eqToHom_refl, Category.id_comp]
-    exact congrArg (fun φ ↦ eqToHom (orderedSimplicialChainComplex_X R (j + 1)) ≫
-      φ ≫ eqToHom (orderedSimplicialChainComplex_X R j).symm)
-      (ModuleCat.hom_ext (OrderedSimplicialChain.boundary_comp_map R f hf j))
+    congr 1
+    simp only [← Category.assoc]
+    congr 1
+    exact ModuleCat.hom_ext (OrderedSimplicialChain.boundary_comp_map R f hf j)
 
 /-- The degreewise map is the linear extension of the map on simplices. -/
 @[simp]
@@ -98,17 +121,9 @@ theorem orderedSimplicialChainComplexMap_f (n : ℕ) :
 theorem orderedSimplicialChainComplexMap_id :
     orderedSimplicialChainComplexMap R
         (PreAbstractSimplicialComplex.SimplicialMap.id K.toPreAbstractSimplicialComplex)
-        (fun _ c ↦ by simpa only [PreAbstractSimplicialComplex.SimplicialMap.coe_id] using
-          (strictMonoOn_id (s := (↑c.1.1 : Set ι)))) = 𝟙 _ := by
+        (strictMonoOn_id_realizationCell K) = 𝟙 _ := by
   ext n : 1
-  simp only [orderedSimplicialChainComplexMap_f, HomologicalComplex.id_f]
-  have h : OrderedSimplicialChain.map R
-      (PreAbstractSimplicialComplex.SimplicialMap.id K.toPreAbstractSimplicialComplex)
-      (fun _ c ↦ by simpa only [PreAbstractSimplicialComplex.SimplicialMap.coe_id] using
-        (strictMonoOn_id (s := (↑c.1.1 : Set ι)))) n = LinearMap.id := by
-    refine lhom_ext' fun c ↦ LinearMap.ext_ring ?_
-    simp
-  simp [h]
+  simp [OrderedSimplicialChain.map_id]
 
 /-- Composing simplexwise increasing simplicial maps composes their chain maps. -/
 theorem orderedSimplicialChainComplexMap_comp
@@ -116,13 +131,7 @@ theorem orderedSimplicialChainComplexMap_comp
       L.toPreAbstractSimplicialComplex P.toPreAbstractSimplicialComplex)
     (hg : ∀ n (c : RealizationCell L n), StrictMonoOn g (↑c.1.1 : Set κ)) :
     orderedSimplicialChainComplexMap R (g.comp f)
-        (fun n c ↦ by
-          rw [PreAbstractSimplicialComplex.SimplicialMap.coe_comp]
-          exact (hg n (c.map f (hf n c).injOn)).comp (hf n c)
-            (fun _ hx ↦ by
-              simpa [RealizationCell.map_face,
-                PreAbstractSimplicialComplex.SimplicialMap.coe_faceOrderHom_apply] using
-                Finset.mem_image_of_mem f hx)) =
+        (f.strictMonoOn_comp_realizationCell hf g hg) =
       orderedSimplicialChainComplexMap R f hf ≫ orderedSimplicialChainComplexMap R g hg := by
   ext n : 1
   simp only [orderedSimplicialChainComplexMap_f, HomologicalComplex.comp_f,
@@ -131,13 +140,7 @@ theorem orderedSimplicialChainComplexMap_comp
   rw [← Category.assoc, cancel_mono, ← ModuleCat.ofHom_comp]
   apply ModuleCat.hom_ext
   simp only [ModuleCat.hom_ofHom]
-  refine lhom_ext' fun c ↦ LinearMap.ext_ring ?_
-  simp only [LinearMap.comp_apply, lsingle_apply, OrderedSimplicialChain.map_single]
-  congr 1
-  exact (RealizationCell.map_map c f (hf n c).injOn g (by
-    simpa [RealizationCell.map_face,
-      PreAbstractSimplicialComplex.SimplicialMap.coe_faceOrderHom_apply] using
-      (hg n (c.map f (hf n c).injOn)).injOn)).symm
+  exact OrderedSimplicialChain.map_comp R f hf g hg n
 
 end TauCeti
 
@@ -194,7 +197,8 @@ theorem cellularChainComplexRealizationIso_hom_naturality :
       (cellularChainRealizationLinearEquiv K R n).toModuleIso.hom ≫
         ModuleCat.ofHom (OrderedSimplicialChain.map R f hf n) :=
     ModuleCat.hom_ext (f.cellularChainRealizationLinearEquiv_naturality hf R n)
-  exact congrArg (fun φ ↦ eqToHom (cellularChainComplex_X _ _ n) ≫
-    φ ≫ eqToHom (orderedSimplicialChainComplex_X R n).symm) h
+  congr 1
+  simp only [← Category.assoc]
+  rw [h]
 
 end PreAbstractSimplicialComplex.SimplicialMap
