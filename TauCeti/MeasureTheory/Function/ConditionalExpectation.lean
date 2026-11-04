@@ -37,6 +37,10 @@ import Mathlib.MeasureTheory.Function.ConditionalExpectation.Real
   integrability hypothesis.
 - `lintegral_ofReal_posPart_condExp_sub_le`: the positive part of `μ[f | m] - a` integrates to at
   most `‖f‖₁ + ‖a‖ₑ · μ univ`, uniformly in the σ-algebra `m`.
+- `condExpLp`: for a finite measure and `1 ≤ p`, conditional expectation as a continuous linear
+  contraction of `Lp E p μ`, with the tower property `condExpLp_comp_condExpLp_of_le` and the
+  absorption `condExpLp_comp_condExpLp_of_ge` for nested σ-algebras. Finiteness of the measure
+  makes every element of `Lp E p μ` integrable, which additivity of `condExp` needs.
 
 All are generic conditional-expectation facts (no exchangeability/tail/directing-measure
 hypotheses), each the bridge for a downstream construction.
@@ -54,7 +58,7 @@ noncomputable section
 
 open MeasureTheory Filter
 
-open scoped Topology
+open scoped ENNReal Topology
 
 namespace TauCeti
 
@@ -290,6 +294,70 @@ theorem lintegral_ofReal_posPart_condExp_sub_le {Ω : Type*} {m m₀ : Measurabl
           eLpNorm_one_eq_lintegral_enorm integrable_condExp.aestronglyMeasurable]
     _ ≤ eLpNorm f 1 μ + ‖a‖ₑ * μ Set.univ := by
         grw [eLpNorm_condExp_le_eLpNorm f le_rfl]
+
+section condExpLp
+
+variable {α E : Type*} (𝕜 : Type*) [RCLike 𝕜] [NormedAddCommGroup E] [NormedSpace ℝ E]
+  [CompleteSpace E] [NormedSpace 𝕜 E] {m₀ : MeasurableSpace α} {μ : Measure α}
+  [IsFiniteMeasure μ] {p : ℝ≥0∞} [Fact (1 ≤ p)]
+
+/-- Conditional expectation with respect to a σ-algebra `m`, as a continuous linear operator on
+`Lp E p μ` for a finite measure `μ` and `1 ≤ p`. It sends the class of `f` to the class of
+`μ[f | m]` (`coeFn_condExpLp`) and is a contraction (`norm_condExpLp_le`). Unlike Mathlib's
+`condExpL1CLM` (exponent `1`, linear over `ℝ`) and `condExpL2` (exponent `2`, valued in the
+subspace `lpMeas`), it is defined for every exponent and is linear over `𝕜`. -/
+def condExpLp (m : MeasurableSpace α) : Lp E p μ →L[𝕜] Lp E p μ :=
+  LinearMap.mkContinuous
+    { toFun f := ((Lp.memLp f).condExp (m := m) Fact.out).toLp _
+      map_add' f g := by
+        rw [← MemLp.toLp_add]
+        exact MemLp.toLp_congr _ _ <| (condExp_congr_ae (Lp.coeFn_add f g)).trans <|
+          condExp_add ((Lp.memLp f).integrable Fact.out) ((Lp.memLp g).integrable Fact.out) m
+      map_smul' c f := by
+        rw [← MemLp.toLp_const_smul]
+        exact MemLp.toLp_congr _ _ <|
+          (condExp_congr_ae (Lp.coeFn_smul c f)).trans (condExp_smul c _ m) }
+    1 fun f => by
+      rw [one_mul, LinearMap.coe_mk, AddHom.coe_mk, Lp.norm_toLp, Lp.norm_def]
+      exact ENNReal.toReal_mono (Lp.eLpNorm_ne_top f) (eLpNorm_condExp_le_eLpNorm _ Fact.out)
+
+variable {𝕜}
+
+/-- The representative of `condExpLp 𝕜 m f` is almost everywhere the conditional expectation of
+the representative of `f`. -/
+theorem coeFn_condExpLp (m : MeasurableSpace α) (f : Lp E p μ) :
+    condExpLp 𝕜 m f =ᵐ[μ] μ[f | m] :=
+  MemLp.coeFn_toLp ((Lp.memLp f).condExp Fact.out)
+
+/-- Conditional expectation is a contraction of `Lp E p μ`. -/
+theorem norm_condExpLp_le (m : MeasurableSpace α) :
+    ‖(condExpLp 𝕜 m : Lp E p μ →L[𝕜] Lp E p μ)‖ ≤ 1 :=
+  LinearMap.mkContinuous_norm_le _ zero_le_one _
+
+/-- **Tower property.** Conditioning on `m₂` and then on a coarser σ-algebra `m₁` is conditioning
+on `m₁`. -/
+theorem condExpLp_comp_condExpLp_of_le {m₁ m₂ : MeasurableSpace α} (h₁₂ : m₁ ≤ m₂)
+    (h₂ : m₂ ≤ m₀) :
+    (condExpLp 𝕜 m₁ ∘L condExpLp 𝕜 m₂ : Lp E p μ →L[𝕜] Lp E p μ) = condExpLp 𝕜 m₁ := by
+  ext1 f
+  refine Lp.ext ?_
+  rw [ContinuousLinearMap.comp_apply]
+  exact (coeFn_condExpLp m₁ _).trans <| (condExp_congr_ae (coeFn_condExpLp m₂ f)).trans <|
+    (condExp_condExp_of_le h₁₂ h₂).trans (coeFn_condExpLp m₁ f).symm
+
+/-- Conditioning on `m₁` and then on a finer sub-σ-algebra `m₂` is conditioning on `m₁`: the
+conditional expectation given `m₁` is already `m₂`-measurable. -/
+theorem condExpLp_comp_condExpLp_of_ge {m₁ m₂ : MeasurableSpace α} (h₁₂ : m₁ ≤ m₂)
+    (h₂ : m₂ ≤ m₀) :
+    (condExpLp 𝕜 m₂ ∘L condExpLp 𝕜 m₁ : Lp E p μ →L[𝕜] Lp E p μ) = condExpLp 𝕜 m₁ := by
+  ext1 f
+  refine Lp.ext ?_
+  rw [ContinuousLinearMap.comp_apply]
+  refine (coeFn_condExpLp m₂ _).trans <| (condExp_congr_ae (coeFn_condExpLp m₁ f)).trans ?_
+  rw [condExp_of_stronglyMeasurable h₂ (stronglyMeasurable_condExp.mono h₁₂) integrable_condExp]
+  exact (coeFn_condExpLp m₁ f).symm
+
+end condExpLp
 
 end MeasureTheory
 

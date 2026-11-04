@@ -213,6 +213,21 @@ theorem le_cellIdx_add_one_div (hm : 0 < m) (x : I) :
   · rw [cellIdx, min_eq_right h, Nat.cast_sub hm, Nat.cast_one, sub_add_cancel]
     nlinarith [x.2.2]
 
+/-- Two points in the same cell of the `m`-fold equipartition are at distance at most `1 / m`. -/
+theorem dist_le_inv_of_cellIdx_eq (hm : 0 < m) {x y : I} (h : cellIdx m x = cellIdx m y) :
+    dist x y ≤ (m : ℝ)⁻¹ := by
+  have hy₁ := cellIdx_div_le m y
+  have hy₂ := le_cellIdx_add_one_div hm y
+  rw [← h] at hy₁ hy₂
+  rw [Subtype.dist_eq, Real.dist_eq, abs_sub_le_iff]
+  constructor
+  · calc (x : ℝ) - y ≤ ((cellIdx m x : ℝ) + 1) / m - cellIdx m x / m :=
+          sub_le_sub (le_cellIdx_add_one_div hm x) hy₁
+      _ = (m : ℝ)⁻¹ := by ring
+  · calc (y : ℝ) - x ≤ ((cellIdx m x : ℝ) + 1) / m - cellIdx m x / m :=
+          sub_le_sub hy₂ (cellIdx_div_le m x)
+      _ = (m : ℝ)⁻¹ := by ring
+
 /-- As the number of cells grows, the left endpoints of the cells containing `x` converge to
 `x`. -/
 theorem tendsto_cellIdx_div (x : I) :

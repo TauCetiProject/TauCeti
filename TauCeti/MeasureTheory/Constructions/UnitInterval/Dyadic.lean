@@ -5,8 +5,14 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Module.LinearMap.FiniteRange
+public import Mathlib.MeasureTheory.Integral.Average
 public import Mathlib.Probability.Process.Filtration
 public import TauCeti.MeasureTheory.Constructions.UnitInterval
+public import TauCeti.MeasureTheory.Function.ConditionalExpectation
+import Mathlib.Analysis.Convex.Integral
+import Mathlib.Analysis.Normed.Operator.NormedSpace
+import Mathlib.MeasureTheory.Function.ContinuousMapDense
 import TauCeti.Probability.Martingale.Convergence
 
 /-!
@@ -27,9 +33,21 @@ the tower property `MeasureTheory.condExp_condExp_of_le`. Since the dyadic cells
 σ-algebra of `I`, the conditional expectations of a function in `Lᵖ`, `1 ≤ p < ∞`, converge to it
 in `Lᵖ`, and those of an integrable function converge to it almost everywhere.
 
+For a finite measure `μ` on `I`, the conditional expectations with respect to the dyadic
+filtration are the dyadic averaging operators `TauCeti.unitInterval.dyadicAverage 𝕜 μ N` on the
+Bochner space `Lp E p μ`, `1 ≤ p`. On `Lᵖ([0, 1])` they are the initial projections of the Haar
+system, and at `N = 2 ^ k` the operator replaces a function on each dyadic cell of level `k` by its
+`μ`-average there. These operators are contractions, compose according to
+`P_M ∘ P_N = P_(min M N)` and have finite rank when `E` is finite-dimensional. For `p < ∞` they
+converge pointwise to the identity, for every finite measure `μ` and every Banach space `E`. This
+convergence comes from uniform continuity and density of continuous functions, rather than from
+martingale theory, and does not need the dyadic cells to generate the σ-algebra of `I`.
+
 ## Main definitions
 
 * `TauCeti.unitInterval.dyadicFiltration`: the dyadic filtration of `I` in Haar order.
+* `TauCeti.unitInterval.dyadicAverage`: conditional expectation with respect to the dyadic
+  filtration, as a contraction of `Lp E p μ`.
 
 ## Main results
 
@@ -40,6 +58,13 @@ in `Lᵖ`, and those of an integrable function converge to it almost everywhere.
   expectations of `f ∈ Lᵖ` converge to `f` in `Lᵖ` for `1 ≤ p < ∞`.
 * `TauCeti.unitInterval.tendsto_ae_condExp_dyadicFiltration`: the dyadic conditional expectations
   of an integrable function converge to it almost everywhere.
+* `TauCeti.unitInterval.dyadicAverage_comp_dyadicAverage`: `P_M ∘ P_N = P_(min M N)`.
+* `TauCeti.unitInterval.dyadicAverage_two_pow_ae_eq`: `P_(2 ^ k)` averages over the dyadic cells of
+  level `k`.
+* `TauCeti.unitInterval.hasFiniteRange_dyadicAverage`: the dyadic averaging operators have finite
+  rank on `Lp E p μ` for finite-dimensional `E`.
+* `TauCeti.unitInterval.tendsto_dyadicAverage`: the dyadic averages of `f ∈ Lp E p μ` converge to
+  `f` for `p < ∞`.
 
 ## References
 
@@ -51,7 +76,7 @@ public section
 
 noncomputable section
 
-open MeasureTheory Filter
+open MeasureTheory Filter Set TauCeti.MeasureTheory
 
 open scoped ENNReal Topology unitInterval
 
@@ -154,5 +179,184 @@ theorem tendsto_ae_condExp_dyadicFiltration {f : I → ℝ} (hf : Integrable f) 
   filter_upwards [tendsto_ae_condExp (ℱ := dyadicFiltration) f,
     condExp_iSup_dyadicFiltration_ae_eq hf] with x hx hfx
   rwa [hfx] at hx
+
+/-! ### Dyadic averaging operators on `Lᵖ` -/
+
+section Average
+
+variable {E : Type*} (𝕜 : Type*) [RCLike 𝕜] [NormedAddCommGroup E] [NormedSpace ℝ E]
+  [CompleteSpace E] [NormedSpace 𝕜 E] (μ : Measure I) [IsFiniteMeasure μ]
+  {p : ℝ≥0∞} [Fact (1 ≤ p)]
+
+/-- The `N`-th dyadic averaging operator on `Lp E p μ`: conditional expectation with respect to
+`dyadicFiltration N`. On `Lᵖ([0, 1])` these are the initial projections of the Haar system; at
+`N = 2 ^ k` the operator averages over the dyadic cells of level `k`
+(`dyadicAverage_two_pow_ae_eq`). -/
+def dyadicAverage (N : ℕ) : Lp E p μ →L[𝕜] Lp E p μ :=
+  condExpLp 𝕜 (dyadicFiltration N)
+
+variable {𝕜 μ}
+
+/-- The representative of the `N`-th dyadic average of `f` is almost everywhere the conditional
+expectation of `f` given `dyadicFiltration N`. -/
+theorem coeFn_dyadicAverage (N : ℕ) (f : Lp E p μ) :
+    dyadicAverage 𝕜 μ N f =ᵐ[μ] μ[f | dyadicFiltration N] :=
+  coeFn_condExpLp _ f
+
+/-- The dyadic averaging operators are contractions. -/
+theorem norm_dyadicAverage_le (N : ℕ) :
+    ‖(dyadicAverage 𝕜 μ N : Lp E p μ →L[𝕜] Lp E p μ)‖ ≤ 1 :=
+  norm_condExpLp_le _
+
+/-- **Composition law of the dyadic averages**: `P_M ∘ P_N = P_(min M N)`. In particular each
+dyadic averaging operator is a projection. -/
+theorem dyadicAverage_comp_dyadicAverage (M N : ℕ) :
+    (dyadicAverage 𝕜 μ M ∘L dyadicAverage 𝕜 μ N : Lp E p μ →L[𝕜] Lp E p μ) =
+      dyadicAverage 𝕜 μ (min M N) := by
+  rcases le_total M N with h | h
+  · rw [min_eq_left h]
+    exact condExpLp_comp_condExpLp_of_le (dyadicFiltration.mono h) (dyadicFiltration.le N)
+  · rw [min_eq_right h]
+    exact condExpLp_comp_condExpLp_of_ge (dyadicFiltration.mono h) (dyadicFiltration.le M)
+
+/-- Pointwise form of `dyadicAverage_comp_dyadicAverage`. -/
+@[simp]
+theorem dyadicAverage_dyadicAverage (M N : ℕ) (f : Lp E p μ) :
+    dyadicAverage 𝕜 μ M (dyadicAverage 𝕜 μ N f) = dyadicAverage 𝕜 μ (min M N) f := by
+  rw [← dyadicAverage_comp_dyadicAverage, ContinuousLinearMap.comp_apply]
+
+/-- At step `2 ^ k`, the dyadic average of `f` at almost every point `x` is the `μ`-average of `f`
+over the dyadic cell of level `k` containing `x`. -/
+theorem dyadicAverage_two_pow_ae_eq (k : ℕ) (f : Lp E p μ) :
+    dyadicAverage 𝕜 μ (2 ^ k) f =ᵐ[μ]
+      fun x => ⨍ y in cellIdx (2 ^ k) ⁻¹' {cellIdx (2 ^ k) x}, f y ∂μ := by
+  refine (coeFn_dyadicAverage _ f).trans ?_
+  rw [dyadicFiltration_two_pow_eq_comap]
+  have hX : Measurable (cellIdx (2 ^ k)) := measurable_cellIdx
+  -- The cell averages, as a function of the cell index.
+  set g : ℕ → E := fun i => ⨍ y in cellIdx (2 ^ k) ⁻¹' {i}, f y ∂μ
+  refine (ae_eq_condExp_of_forall_setIntegral_fiber_eq hX ((Lp.memLp f).integrable Fact.out)
+    ?_ ?_ fun i => ?_).symm
+  · refine Integrable.of_bound ((StronglyMeasurable.of_discrete (f := g)).comp_measurable
+      hX).aestronglyMeasurable (∑ i ∈ Finset.range (2 ^ k), ‖g i‖) (ae_of_all _ fun x => ?_)
+    exact Finset.single_le_sum (f := fun i => ‖g i‖) (fun _ _ => norm_nonneg _)
+      (Finset.mem_range.2 (cellIdx_lt (m := 2 ^ k) (by positivity) x))
+  · exact ((StronglyMeasurable.of_discrete (f := g)).comp_measurable
+      (comap_measurable _)).aestronglyMeasurable
+  · rw [setIntegral_congr_fun (hX (measurableSet_singleton i)) (g := fun _ => g i)
+      fun x hx => by rw [mem_preimage, mem_singleton_iff] at hx; rw [hx],
+      setIntegral_const, measure_smul_setAverage _ (measure_ne_top _ _)]
+
+/-- For finite-dimensional `E`, the dyadic averaging operators on `Lp E p μ` have finite rank. -/
+theorem hasFiniteRange_dyadicAverage [FiniteDimensional 𝕜 E] (N : ℕ) :
+    (dyadicAverage 𝕜 μ N : Lp E p μ →L[𝕜] Lp E p μ).toLinearMap.HasFiniteRange := by
+  have : NeZero (2 ^ N) := ⟨by positivity⟩
+  -- The functions constant on the dyadic cells of level `N`.
+  have hmem (c : Fin (2 ^ N) → E) : MemLp (fun x => c (cellFin (2 ^ N) x)) p μ :=
+    MemLp.of_bound ((StronglyMeasurable.of_discrete (f := c)).comp_measurable
+      measurable_cellFin).aestronglyMeasurable ‖c‖ (ae_of_all _ fun x => norm_le_pi_norm c _)
+  let Φ : (Fin (2 ^ N) → E) →ₗ[𝕜] Lp E p μ :=
+    { toFun c := (hmem c).toLp _
+      map_add' c d := by rw [← MemLp.toLp_add]; rfl
+      map_smul' a c := by rw [← MemLp.toLp_const_smul]; rfl }
+  -- The range of `P_N` lies in that of `P_(2 ^ N)`, which consists of these functions.
+  have hle : LinearMap.range (dyadicAverage 𝕜 μ N : Lp E p μ →L[𝕜] Lp E p μ).toLinearMap ≤
+      LinearMap.range Φ := by
+    rintro _ ⟨f, rfl⟩
+    refine ⟨fun i => ⨍ y in cellIdx (2 ^ N) ⁻¹' {(i : ℕ)}, dyadicAverage 𝕜 μ N f y ∂μ, ?_⟩
+    have hfix : dyadicAverage 𝕜 μ (2 ^ N) (dyadicAverage 𝕜 μ N f) = dyadicAverage 𝕜 μ N f := by
+      rw [dyadicAverage_dyadicAverage, min_eq_right N.lt_two_pow_self.le]
+    rw [ContinuousLinearMap.coe_coe]
+    conv_rhs => rw [← hfix]
+    refine Lp.ext ?_
+    filter_upwards [MemLp.coeFn_toLp (hmem fun i =>
+      ⨍ y in cellIdx (2 ^ N) ⁻¹' {(i : ℕ)}, dyadicAverage 𝕜 μ N f y ∂μ),
+      dyadicAverage_two_pow_ae_eq (𝕜 := 𝕜) N (dyadicAverage 𝕜 μ N f)] with x h₁ h₂
+    rw [LinearMap.coe_mk, AddHom.coe_mk, h₁, h₂, coe_cellFin]
+  exact Submodule.FG.of_le (LinearMap.HasFiniteRange.of_finite_dom (f := Φ)).fg_range hle
+
+/-- The dyadic averages at the steps `2 ^ k` of a continuous function converge to it: on each
+dyadic cell of positive measure and level `k`, the average of `g` is close to every value of `g`,
+by uniform continuity. -/
+private theorem tendsto_dyadicAverage_two_pow_toLp (g : C(I, E)) :
+    Tendsto (fun k => dyadicAverage 𝕜 μ (2 ^ k) (ContinuousMap.toLp (E := E) p μ 𝕜 g)) atTop
+      (𝓝 (ContinuousMap.toLp (E := E) p μ 𝕜 g)) := by
+  set G := ContinuousMap.toLp (E := E) p μ 𝕜 g
+  have hG := ContinuousMap.coeFn_toLp (E := E) (p := p) (μ := μ) (𝕜 := 𝕜) g
+  -- Almost every point lies in a cell of positive measure.
+  have hpos (k : ℕ) : ∀ᵐ x ∂μ, μ (cellIdx (2 ^ k) ⁻¹' {cellIdx (2 ^ k) x}) ≠ 0 := by
+    rw [ae_iff]
+    refine measure_mono_null (t := ⋃ i, ⋃ (_ : μ (cellIdx (2 ^ k) ⁻¹' {i}) = 0),
+      cellIdx (2 ^ k) ⁻¹' {i}) (fun x hx => mem_iUnion₂.2 ⟨_, not_not.1 hx, rfl⟩)
+      (measure_iUnion_null fun i => measure_iUnion_null id)
+  rw [Metric.tendsto_atTop]
+  intro ε hε
+  set K : ℝ := (measureUnivNNReal μ : ℝ) ^ p.toReal⁻¹
+  have hK : 0 ≤ K := by positivity
+  set r := ε / (K + 1)
+  have hr : 0 < r := by positivity
+  obtain ⟨δ, hδ, hg⟩ := Metric.uniformContinuous_iff.1
+    (CompactSpace.uniformContinuous_of_continuous g.continuous) r hr
+  obtain ⟨k₀, hk₀⟩ := exists_pow_lt_of_lt_one hδ (by norm_num : (2⁻¹ : ℝ) < 1)
+  refine ⟨k₀, fun k hk => ?_⟩
+  have hbound : ∀ᵐ x ∂μ, ‖(dyadicAverage 𝕜 μ (2 ^ k) G - G) x‖ ≤ r := by
+    filter_upwards [Lp.coeFn_sub (dyadicAverage 𝕜 μ (2 ^ k) G) G,
+      dyadicAverage_two_pow_ae_eq (𝕜 := 𝕜) k G, hG, hpos k] with x h₁ h₂ h₃ h₄
+    rw [h₁, Pi.sub_apply, h₂, h₃, ← dist_eq_norm, ← Metric.mem_closedBall]
+    refine (convex_closedBall _ _).set_average_mem Metric.isClosed_closedBall h₄
+      (measure_ne_top _ _) ?_ ((Lp.memLp G).integrable Fact.out).integrableOn
+    filter_upwards [ae_restrict_mem (measurableSet_preimage_cellIdx (2 ^ k) (cellIdx (2 ^ k) x)),
+      ae_restrict_of_ae hG] with y hy hy'
+    rw [hy', Metric.mem_closedBall]
+    refine (hg ((dist_le_inv_of_cellIdx_eq (by positivity) hy).trans_lt ?_)).le
+    calc ((2 ^ k : ℕ) : ℝ)⁻¹ = 2⁻¹ ^ k := by push_cast; rw [inv_pow]
+      _ ≤ 2⁻¹ ^ k₀ := pow_le_pow_of_le_one (by norm_num) (by norm_num) hk
+      _ < δ := hk₀
+  rw [dist_eq_norm]
+  calc ‖dyadicAverage 𝕜 μ (2 ^ k) G - G‖ ≤ K * r := Lp.norm_le_of_ae_bound hr.le hbound
+    _ < ε := by
+      rw [mul_div_assoc', div_lt_iff₀ (by positivity)]
+      nlinarith
+
+/-- The dyadic averages at the steps `2 ^ k` converge pointwise to the identity: they do so on the
+dense set of continuous functions, and they are uniformly bounded. -/
+private theorem tendsto_dyadicAverage_two_pow (hp : p ≠ ∞) (f : Lp E p μ) :
+    Tendsto (fun k => dyadicAverage 𝕜 μ (2 ^ k) f) atTop (𝓝 f) := by
+  have hbdd : ∃ C, ∀ k, ‖(dyadicAverage 𝕜 μ (2 ^ k) : Lp E p μ →L[𝕜] Lp E p μ)‖ ≤ C :=
+    ⟨1, fun k => norm_dyadicAverage_le _⟩
+  have heq := ((NormedSpace.equicontinuous_tfae fun k =>
+    (dyadicAverage 𝕜 μ (2 ^ k) : Lp E p μ →L[𝕜] Lp E p μ)).out 6 2).mp hbdd
+  exact (ContinuousMap.toLp_denseRange E μ 𝕜 hp).induction_on f
+    (heq.isClosed_setOfPred_tendsto continuous_id) tendsto_dyadicAverage_two_pow_toLp
+
+/-- **Convergence of the dyadic averages.** For `p < ∞`, every finite measure `μ` on `I` and every
+`f ∈ Lp E p μ`, the dyadic averages of `f` converge to `f` in `Lp E p μ`. -/
+theorem tendsto_dyadicAverage (hp : p ≠ ∞) (f : Lp E p μ) :
+    Tendsto (fun N => dyadicAverage 𝕜 μ N f) atTop (𝓝 f) := by
+  have h := tendsto_iff_norm_sub_tendsto_zero.1 (tendsto_dyadicAverage_two_pow (𝕜 := 𝕜) hp f)
+  -- Between `2 ^ k` and `2 ^ (k + 1)`, `P_N` fixes `P_(2 ^ k) f`, so
+  -- `‖P_N f - f‖ ≤ ‖P_N (f - P_(2 ^ k) f)‖ + ‖P_(2 ^ k) f - f‖ ≤ 2 ‖P_(2 ^ k) f - f‖`.
+  have hlog : Tendsto (Nat.log 2) atTop atTop :=
+    tendsto_atTop_atTop.2 fun k => ⟨2 ^ k, fun N hN => Nat.le_log_of_pow_le one_lt_two hN⟩
+  have hu : Tendsto (fun N => 2 * ‖dyadicAverage 𝕜 μ (2 ^ Nat.log 2 N) f - f‖) atTop (𝓝 0) := by
+    simpa using (h.comp hlog).const_mul 2
+  refine tendsto_iff_norm_sub_tendsto_zero.2 <| squeeze_zero' (Eventually.of_forall fun _ =>
+    norm_nonneg _) ((eventually_ne_atTop 0).mono fun N hN => ?_) hu
+  set k := Nat.log 2 N
+  have hk : 2 ^ k ≤ N := Nat.pow_log_le_self 2 hN
+  have hfix : dyadicAverage 𝕜 μ N (dyadicAverage 𝕜 μ (2 ^ k) f) =
+      dyadicAverage 𝕜 μ (2 ^ k) f := by
+    rw [dyadicAverage_dyadicAverage, min_eq_right hk]
+  calc ‖dyadicAverage 𝕜 μ N f - f‖
+      = ‖dyadicAverage 𝕜 μ N (f - dyadicAverage 𝕜 μ (2 ^ k) f) +
+          (dyadicAverage 𝕜 μ (2 ^ k) f - f)‖ := by rw [map_sub, hfix, sub_add_sub_cancel]
+    _ ≤ ‖f - dyadicAverage 𝕜 μ (2 ^ k) f‖ + ‖dyadicAverage 𝕜 μ (2 ^ k) f - f‖ := by
+        have hN : ‖(dyadicAverage 𝕜 μ N : Lp E p μ →L[𝕜] Lp E p μ)‖ ≤ 1 :=
+          norm_dyadicAverage_le N
+        exact (norm_add_le _ _).trans
+          (add_le_add ((ContinuousLinearMap.le_of_opNorm_le _ hN _).trans_eq (one_mul _)) le_rfl)
+    _ = 2 * ‖dyadicAverage 𝕜 μ (2 ^ k) f - f‖ := by rw [norm_sub_rev, two_mul]
+
+end Average
 
 end TauCeti.unitInterval
