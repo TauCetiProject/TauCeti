@@ -170,4 +170,21 @@ theorem legendreEc_eq_pi_div_two_iff {k : ℝ} :
   · rintro rfl
     exact legendreEc_zero
 
+/-- The lower comparison `(1 - k²) K(k) ≤ E(k)` controls the normalized second-kind
+error near modulus zero. -/
+theorem one_sub_sq_mul_legendreK_le_legendreEc {k : ℝ} (hk : k ^ 2 < 1) :
+    (1 - k ^ 2) * legendreK k ≤ legendreEc k := by
+  rw [legendreEc_def, legendreE_def, legendreK_def, legendreF_def,
+    ← integral_const_mul]
+  apply integral_mono_on pi_div_two_pos.le
+    ((intervalIntegrable_legendreF_integrand hk 0 (π / 2)).const_mul _)
+    (intervalIntegrable_legendreE_integrand k 0 (π / 2))
+  intro θ _
+  rw [legendreF_integrand_eq_inv_sqrt, ← sqrt_eq_rpow]
+  have hp := one_sub_mul_sin_sq_pos hk θ
+  have hs := sq_sqrt hp.le
+  have hroot := sqrt_pos.2 hp
+  rw [mul_inv_le_iff₀ hroot]
+  nlinarith [mul_le_mul_of_nonneg_left (sin_sq_le_one θ) (sq_nonneg k)]
+
 end TauCeti.Real

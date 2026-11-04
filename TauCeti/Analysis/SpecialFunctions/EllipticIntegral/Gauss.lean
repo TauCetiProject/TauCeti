@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Real.Sqrt
-public import TauCeti.Analysis.SpecialFunctions.EllipticIntegral.AGM
+public import TauCeti.Analysis.SpecialFunctions.EllipticIntegral.AGM.Basic
 public import TauCeti.Analysis.SpecialFunctions.EllipticIntegral.Legendre
 import TauCeti.Analysis.SpecialFunctions.EllipticIntegral.Trigonometric
 
