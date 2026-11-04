@@ -146,8 +146,9 @@ def integerSqrtTwo : 𝒪[DyadicSqrtTwo] :=
 @[simp]
 theorem coe_integerSqrtTwo : (integerSqrtTwo : DyadicSqrtTwo) = sqrtTwo := (rfl)
 
+/-- The integer-ring inclusion sends `2` to `2` in `ℚ₂(√2)`. -/
 @[simp]
-private theorem coe_ofNat_two : ((2 : 𝒪[DyadicSqrtTwo]) : DyadicSqrtTwo) = 2 :=
+theorem coe_ofNat_two : ((2 : 𝒪[DyadicSqrtTwo]) : DyadicSqrtTwo) = 2 :=
   map_ofNat (Subring.subtype 𝒪[DyadicSqrtTwo]) 2
 
 /-- The integer generator `√2` is a root of `X² - 2` over `𝒪[ℚ₂]`. -/
