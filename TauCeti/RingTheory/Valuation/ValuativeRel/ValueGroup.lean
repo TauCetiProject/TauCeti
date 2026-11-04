@@ -95,11 +95,11 @@ theorem algebraMap_integer_of_surjective_mapValueGroupWithZero {π : (valuation 
       rw [hπ.maximalIdeal_eq, Ideal.mem_span_singleton] at hrm
       have hle : valuation K r ≤ valuation K (π : K) :=
         (Valuation.integer.integers (valuation K)).dvd_iff_le.mp hrm
+      have hxπ : valuation L (x : L) ≤ valuation L (π' : L) := by
+        rw [TauCeti.coe_algebraMap_integerRing, ← hγ]
+        simpa only [Valuation.comap_apply] using (he r (π : K)).mpr hle
       rw [Ideal.mem_span_singleton]
-      apply (Valuation.integer.integers (valuation L)).dvd_iff_le.mpr
-      simpa only [Algebra.algebraMap_ofSubring, Subring.subtype_apply, π',
-        TauCeti.coe_algebraMap_integerRing, Valuation.comap_apply, hγ] using
-        (he r (π : K)).mpr hle
+      exact (Valuation.integer.integers (valuation L)).dvd_iff_le.mpr hxπ
     · exact (Ideal.span_singleton_le_iff_mem _).mpr
         ((valuation L).mem_maximalIdeal_iff.mpr hπ')
 

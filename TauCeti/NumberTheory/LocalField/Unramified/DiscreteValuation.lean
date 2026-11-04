@@ -57,8 +57,10 @@ theorem exists_algebraMap_veq (x : Unramified E) :
     apply (valuation L).veq_iff_eq.mpr
     have heq := congrArg Multiplicative.toAdd hr
     apply le_antisymm
-    · exact (toAdd_normalizedValuation_le_iff_valuation_le _ _).mp heq.ge
-    · exact (toAdd_normalizedValuation_le_iff_valuation_le _ _).mp heq.le
+    · simpa only [Units.coe_map, Units.val_mk0, MonoidHom.coe_ofClass] using
+        (toAdd_normalizedValuation_le_iff_valuation_le _ _).mp heq.ge
+    · simpa only [Units.coe_map, Units.val_mk0, MonoidHom.coe_ofClass] using
+        (toAdd_normalizedValuation_le_iff_valuation_le _ _).mp heq.le
   let j : L →ₐ[E] Unramified E :=
     inclusion (unramifiedExtension_le_maximalUnramifiedExtension E (AlgebraicClosure E) f)
   let := j.toAlgebra
