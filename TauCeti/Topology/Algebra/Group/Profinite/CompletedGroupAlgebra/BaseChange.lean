@@ -41,8 +41,9 @@ bijective and upgrades to the `O`-algebra equivalence `completedGroupAlgebra.bas
 
 * `TauCeti.completedGroupAlgebra.proj_mapRingHom`,
   `TauCeti.completedGroupAlgebra.mapRingHom_of`,
+  `TauCeti.completedGroupAlgebra.mapRingHom_smul`,
   `TauCeti.completedGroupAlgebra.continuous_mapRingHom`: levelwise formula, behaviour on group
-  elements, and continuity for the inverse-limit topologies.
+  elements, semilinearity, and continuity for the inverse-limit topologies.
 * `TauCeti.completedGroupAlgebra.baseChange_bijective`: bijectivity of `baseChange R O Γ` for a
   finite free `R`-algebra `O`.
 
@@ -110,6 +111,13 @@ theorem mapRingHom_of (f : R →+* S) (γ : Γ) :
     mapRingHom Γ f (of R Γ γ) = of S Γ γ :=
   ext fun U ↦ by simp
 
+/-- Coefficient change along `f : R →+* S` is `f`-semilinear for scalar multiplication. -/
+@[simp]
+theorem mapRingHom_smul (f : R →+* S) (r : R) (x : completedGroupAlgebra R Γ) :
+    mapRingHom Γ f (r • x) = f r • mapRingHom Γ f x :=
+  ext fun U ↦ MonoidAlgebra.coeff_injective <| Finsupp.ext fun g ↦ by
+    simp [smul_eq_mul]
+
 /-- Coefficient change along the identity ring homomorphism is the identity. -/
 @[simp]
 theorem mapRingHom_id :
@@ -152,11 +160,8 @@ def baseChange : O ⊗[R] completedGroupAlgebra R Γ →ₐ[O] completedGroupAlg
   letI : Algebra R (completedGroupAlgebra O Γ) := Algebra.restrictScalars R O _
   letI : IsScalarTower R O (completedGroupAlgebra O Γ) := IsScalarTower.restrictScalars R O _
   let j : completedGroupAlgebra R Γ →ₐ[R] completedGroupAlgebra O Γ :=
-    AlgHom.mk' (mapRingHom Γ (algebraMap R O)) fun r x ↦ ext fun U ↦
-      MonoidAlgebra.coeff_injective <| Finsupp.ext fun g ↦ by
-        rw [← IsScalarTower.algebraMap_smul O r (mapRingHom Γ (algebraMap R O) x),
-          coeff_proj_mapRingHom, map_smul, MonoidAlgebra.coeff_smul_apply, smul_eq_mul, map_mul,
-          map_smul, MonoidAlgebra.coeff_smul_apply, coeff_proj_mapRingHom, smul_eq_mul]
+    AlgHom.mk' (mapRingHom Γ (algebraMap R O)) fun r x ↦ by
+      rw [mapRingHom_smul, IsScalarTower.algebraMap_smul]
   Algebra.TensorProduct.lift (Algebra.ofId O (completedGroupAlgebra O Γ)) j
     fun a _ ↦ Algebra.commutes a _
 
@@ -181,10 +186,8 @@ theorem proj_baseChange_tmul (U : OpenNormalSubgroup Γ) (a : O)
 
 section FiniteFree
 
-/-- Apply an additive map `φ : O →+ R` (`R`-linear in use) coefficientwise at every level of
-`O[[Γ]]`. -/
-private def mapAddCoord {R : Type u} {O : Type w} {Γ : Type v} [CommRing R] [CommRing O]
-    [Group Γ] [TopologicalSpace Γ] (φ : O →+ R) :
+/-- Apply an `R`-linear functional `φ : O →ₗ[R] R` coefficientwise at every level of `O[[Γ]]`. -/
+private def mapCoord (φ : O →ₗ[R] R) :
     completedGroupAlgebra O Γ →+ completedGroupAlgebra R Γ where
   toFun y := mk R Γ
     (fun U ↦ MonoidAlgebra.ofCoeff ((proj O Γ U y).coeff.mapRange φ (map_zero φ)))
@@ -200,41 +203,40 @@ private def mapAddCoord {R : Type u} {O : Type w} {Γ : Type v} [CommRing R] [Co
     ext g
     simp
 
-private theorem coeff_proj_mapAddCoord {R : Type u} {O : Type w} {Γ : Type v} [CommRing R]
-    [CommRing O] [Group Γ] [TopologicalSpace Γ] (φ : O →+ R)
+@[simp]
+private theorem coeff_proj_mapCoord (φ : O →ₗ[R] R)
     (U : OpenNormalSubgroup Γ) (y : completedGroupAlgebra O Γ) (g : Γ ⧸ U.toSubgroup) :
-    (proj R Γ U (mapAddCoord φ y)).coeff g = φ ((proj O Γ U y).coeff g) := by
-  rw [mapAddCoord, AddMonoidHom.coe_mk, ZeroHom.coe_mk, proj_mk, MonoidAlgebra.coeff_ofCoeff,
-    Finsupp.mapRange_apply]
+    (proj R Γ U (mapCoord R O Γ φ y)).coeff g = φ ((proj O Γ U y).coeff g) := by
+  simp [mapCoord]
+
+@[simp]
+private theorem mapCoord_algebraMap_smul (φ : O →ₗ[R] R) (r : R)
+    (y : completedGroupAlgebra O Γ) :
+    mapCoord R O Γ φ (algebraMap R O r • y) = r • mapCoord R O Γ φ y :=
+  ext fun U ↦ MonoidAlgebra.coeff_injective <| Finsupp.ext fun g ↦ by
+    simp
+
+@[simp]
+private theorem mapCoord_smul_mapRingHom (φ : O →ₗ[R] R) (a : O)
+    (x : completedGroupAlgebra R Γ) :
+    mapCoord R O Γ φ (a • mapRingHom Γ (algebraMap R O) x) = φ a • x :=
+  ext fun U ↦ MonoidAlgebra.coeff_injective <| Finsupp.ext fun g ↦ by
+    simp only [coeff_proj_mapCoord, map_smul, MonoidAlgebra.coeff_smul_apply,
+      coeff_proj_mapRingHom, smul_eq_mul]
+    rw [← Algebra.commutes, ← Algebra.smul_def, map_smul, smul_eq_mul, mul_comm]
 
 /-- Decompose `O[[Γ]]` into coordinates along a finite `R`-basis of `O`. -/
 private def coordEquiv {ι : Type*} [Fintype ι] [DecidableEq ι] (b : Module.Basis ι R O) :
     completedGroupAlgebra O Γ ≃ (ι → completedGroupAlgebra R Γ) where
-  toFun y i := mapAddCoord (b.coord i).toAddMonoidHom y
+  toFun y i := mapCoord R O Γ (b.coord i) y
   invFun f := ∑ i, b i • mapRingHom Γ (algebraMap R O) (f i)
   left_inv y := ext fun U ↦ MonoidAlgebra.coeff_injective <| Finsupp.ext fun g ↦ by
-    dsimp only
-    rw [map_sum, MonoidAlgebra.coeff_sum, Finsupp.finsetSum_apply]
-    calc ∑ i, (proj O Γ U (b i • mapRingHom Γ (algebraMap R O)
-            (mapAddCoord (b.coord i).toAddMonoidHom y))).coeff g
-        = ∑ i, b.coord i ((proj O Γ U y).coeff g) • b i := by
-          refine Finset.sum_congr rfl fun i _ ↦ ?_
-          rw [map_smul, MonoidAlgebra.coeff_smul_apply, coeff_proj_mapRingHom,
-            coeff_proj_mapAddCoord, LinearMap.toAddMonoidHom_coe, smul_eq_mul,
-            Algebra.smul_def, Algebra.commutes]
-      _ = (proj O Γ U y).coeff g := b.sum_repr _
-  right_inv f := funext fun j ↦ ext fun U ↦ MonoidAlgebra.coeff_injective <|
-    Finsupp.ext fun g ↦ by
-      dsimp only
-      rw [coeff_proj_mapAddCoord, LinearMap.toAddMonoidHom_coe, map_sum,
-        MonoidAlgebra.coeff_sum, Finsupp.finsetSum_apply]
-      have hsum : ∑ i, (proj O Γ U (b i • mapRingHom Γ (algebraMap R O) (f i))).coeff g =
-          ∑ i, (proj R Γ U (f i)).coeff g • b i := by
-        refine Finset.sum_congr rfl fun i _ ↦ ?_
-        rw [map_smul, MonoidAlgebra.coeff_smul_apply, coeff_proj_mapRingHom, smul_eq_mul,
-          Algebra.smul_def, Algebra.commutes]
-      rw [hsum, map_sum]
-      simp [Module.Basis.coord_apply, b.repr_self, Finsupp.single_apply]
+    simp only [map_sum, MonoidAlgebra.coeff_sum, Finsupp.finsetSum_apply, map_smul,
+      MonoidAlgebra.coeff_smul_apply, coeff_proj_mapRingHom, coeff_proj_mapCoord, smul_eq_mul]
+    simp_rw [← Algebra.commutes, ← Algebra.smul_def, Module.Basis.coord_apply]
+    exact b.sum_repr _
+  right_inv f := funext fun j ↦ by
+    simp [map_sum, Module.Basis.coord_apply, b.repr_self, Finsupp.single_apply]
 
 variable [Module.Free R O] [Module.Finite R O]
 
@@ -251,32 +253,15 @@ theorem baseChange_bijective : Function.Bijective (baseChange R O Γ) := by
       (Finsupp.linearEquivFunOnFinite R (completedGroupAlgebra R Γ) ι)
   let e₂ : completedGroupAlgebra O Γ ≃ₗ[R] (ι → completedGroupAlgebra R Γ) :=
     { coordEquiv R O Γ b with
-      map_add' x y := funext fun i ↦ by
-        dsimp only [coordEquiv, Pi.add_apply]
-        exact map_add (mapAddCoord (b.coord i).toAddMonoidHom) x y
-      map_smul' r x := funext fun i ↦ ext fun U ↦ MonoidAlgebra.coeff_injective <|
-        Finsupp.ext fun g ↦ by
-          dsimp only [coordEquiv, Equiv.toFun_as_coe, Equiv.coe_fn_mk, Pi.smul_apply,
-            RingHom.id_apply]
-          rw [← IsScalarTower.algebraMap_smul O r x, coeff_proj_mapAddCoord, map_smul,
-            MonoidAlgebra.coeff_smul_apply, smul_eq_mul, LinearMap.toAddMonoidHom_coe,
-            ← Algebra.smul_def, map_smul, map_smul, MonoidAlgebra.coeff_smul_apply,
-            coeff_proj_mapAddCoord, LinearMap.toAddMonoidHom_coe, smul_eq_mul] }
-  have he₂ (y : completedGroupAlgebra O Γ) (i : ι) :
-      e₂ y i = mapAddCoord (b.coord i).toAddMonoidHom y := rfl
+      map_add' x y := funext fun i ↦ map_add (mapCoord R O Γ (b.coord i)) x y
+      map_smul' r x := funext fun i ↦ by
+        dsimp only [coordEquiv, Equiv.toFun_as_coe, Equiv.coe_fn_mk, Pi.smul_apply,
+          RingHom.id_apply]
+        rw [← IsScalarTower.algebraMap_smul O r x, mapCoord_algebraMap_smul] }
   have hcomm : e₂.toLinearMap.comp ((baseChange R O Γ).toLinearMap.restrictScalars R) =
-      e₁.toLinearMap := by
-    apply TensorProduct.ext'
-    intro a x
-    funext i
-    refine ext fun U ↦ MonoidAlgebra.coeff_injective <| Finsupp.ext fun g ↦ ?_
-    rw [LinearMap.comp_apply, LinearMap.coe_restrictScalars, AlgHom.toLinearMap_apply,
-      LinearEquiv.coe_toLinearMap, he₂, coeff_proj_mapAddCoord, LinearMap.toAddMonoidHom_coe,
-      baseChange_tmul, map_smul, MonoidAlgebra.coeff_smul_apply, coeff_proj_mapRingHom,
-      smul_eq_mul, LinearEquiv.coe_coe, LinearEquiv.trans_apply,
-      Finsupp.linearEquivFunOnFinite_apply, TensorProduct.equivFinsuppOfBasisLeft_apply_tmul_apply,
-      map_smul, MonoidAlgebra.coeff_smul_apply, smul_eq_mul, mul_comm, ← Algebra.smul_def,
-      map_smul, Module.Basis.coord_apply, smul_eq_mul, mul_comm]
+      e₁.toLinearMap :=
+    TensorProduct.ext' fun a x ↦ funext fun i ↦ by
+      simp [e₁, e₂, coordEquiv, Module.Basis.coord_apply]
   have hfun : (baseChange R O Γ : O ⊗[R] completedGroupAlgebra R Γ → _) =
       ⇑(e₁.trans e₂.symm) := funext fun z ↦
     e₂.eq_symm_apply.mpr (LinearMap.congr_fun hcomm z)
