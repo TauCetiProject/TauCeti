@@ -35,6 +35,9 @@ conclusion is convergence of moments.
 
 ## Main results
 
+* `TauCeti.tendsto_natCast_mul_sum_mu_mul_prod` — if `N * m N k → κ k` for every `k ≥ 1`, then `N`
+  times the free cumulant on a nonempty set `B`, computed from the moments `m N` by Möbius
+  inversion, tends to `κ #B`.
 * `TauCeti.tendsto_apply_sum_pow_of_tendsto_natCast_mul` — the limit theorem for the row sums of a
   triangular array of free, identically distributed elements.
 * `TauCeti.tendsto_apply_sum_pow_of_apply_pow_eq_div_mul_pow` — the free Poisson limit theorem.
@@ -58,7 +61,7 @@ variable {𝕜 : Type*} [RCLike 𝕜]
 the free cumulant of an element with moments `m N`, written by Möbius inversion as
 `∑_{σ ∈ NC(B)} μ(σ, 1̂) ∏_{D ∈ σ} m N #D`, tends to `κ #B`: the term of `σ = 1̂` is
 `N * m N #B`, and every other term has at least two parts, so it is `O(1 / N)`. -/
-private theorem tendsto_natCast_mul_sum_mu_mul_prod {α : Type*} [LinearOrder α] {m : ℕ → ℕ → 𝕜}
+theorem tendsto_natCast_mul_sum_mu_mul_prod {α : Type*} [LinearOrder α] {m : ℕ → ℕ → 𝕜}
     {κ : ℕ → 𝕜} (hm : ∀ k, k ≠ 0 → Tendsto (fun N : ℕ => (N : 𝕜) * m N k) atTop (𝓝 (κ k)))
     {B : Finset α} (hB : B.Nonempty) :
     Tendsto (fun N : ℕ => (N : 𝕜) *
