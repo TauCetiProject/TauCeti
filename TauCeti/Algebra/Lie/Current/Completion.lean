@@ -237,6 +237,11 @@ theorem coe_toCompletedEnveloping :
       ModuleTower.toLimQuotients _ (orderLeftIdeal_natCast_antitone Φ hΦ hΦs a) :=
   (rfl)
 
+/-- The canonical map from the enveloping algebra to its completion has dense range. -/
+theorem denseRange_toCompletedEnveloping : DenseRange (toCompletedEnveloping Φ hΦ hΦs a) := by
+  simpa only [coe_toCompletedEnveloping] using
+    (ModuleTower.denseRange_toLimQuotients _ (orderLeftIdeal_natCast_antitone Φ hΦ hΦs a))
+
 variable {Φ hΦ hΦs a}
 
 /-- The action of `U` on its completion is left multiplication by the canonical image. -/
@@ -281,6 +286,14 @@ theorem mem_completedOrderLeftIdeal {n : ℕ} {x : CompletedEnveloping Φ hΦ h�
     x ∈ completedOrderLeftIdeal Φ hΦ hΦs a n ↔ (orderQuotientTower Φ hΦ hΦs a).limπ n x = 0 :=
   Iff.rfl
 
+/-- The canonical image lies in a stage kernel exactly when the original element lies in
+that stage's current-order left ideal. -/
+theorem toCompletedEnveloping_mem_completedOrderLeftIdeal_iff {n : ℕ} {b : UK} :
+    toCompletedEnveloping Φ hΦ hΦs a b ∈ completedOrderLeftIdeal Φ hΦ hΦs a n ↔
+      b ∈ orderLeftIdeal Φ hΦ hΦs a n := by
+  simp only [coe_toCompletedEnveloping, mem_completedOrderLeftIdeal, ModuleTower.limπ_apply,
+    ModuleTower.coe_toLimQuotients_apply, ModuleTower.quotientsπ_eq_zero_iff]
+
 /-- **The right-shift estimate in the completed enveloping algebra.** For every `y ∈ Û` and every
 `n` there is `m` such that `x y` lies in the kernel of the projection to `U / I_n` whenever `x` lies
 in that of the projection to `U / I_m`. -/
@@ -309,6 +322,11 @@ instance : IsTopologicalRing (CompletedEnveloping Φ hΦ hΦs a) where
 theorem isClosed_completedOrderLeftIdeal (n : ℕ) :
     IsClosed (completedOrderLeftIdeal Φ hΦ hΦs a n : Set (CompletedEnveloping Φ hΦ hΦs a)) :=
   (orderQuotientTower Φ hΦ hΦs a).isClosed_ker_limπ n
+
+/-- The left ideals `ker (Û → U / I_n)` are open. -/
+theorem isOpen_completedOrderLeftIdeal (n : ℕ) :
+    IsOpen (completedOrderLeftIdeal Φ hΦ hΦs a n : Set (CompletedEnveloping Φ hΦ hΦs a)) :=
+  (orderQuotientTower Φ hΦ hΦs a).isOpen_ker_limπ n
 
 end Completion
 
