@@ -39,4 +39,11 @@ theorem Functor.homLinearEquiv_apply {X Y : C} (f : X ⟶ Y) :
   rw [Functor.homLinearEquiv]
   exact congrFun (Functor.coe_mapLinearMap R F) f
 
+/-- The inverse Hom equivalence lifts a morphism along the fully faithful functor. -/
+@[simp]
+theorem Functor.map_homLinearEquiv_symm_apply {X Y : C} (f : F.obj X ⟶ F.obj Y) :
+    F.map ((F.homLinearEquiv R X Y).symm f) = f := by
+  simpa only [Functor.homLinearEquiv_apply] using
+    (F.homLinearEquiv R X Y).apply_symm_apply f
+
 end CategoryTheory

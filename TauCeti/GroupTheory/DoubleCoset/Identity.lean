@@ -76,6 +76,11 @@ theorem doubleCosetMk_eq_mk_one_iff_mem (H : Subgroup G) (s : G) :
     DoubleCoset.mk H H s = DoubleCoset.mk H H 1 ↔ s ∈ H := by
   rw [doubleCosetMk_eq_mk_one_iff, coe_mul_coe, SetLike.mem_coe]
 
+/-- The chosen representative of the identity double coset of `H` lies in `H`. -/
+theorem _root_.Subgroup.doubleCoset_out_mk_one_mem (H : Subgroup G) :
+    (DoubleCoset.mk H H 1).out ∈ H :=
+  (doubleCosetMk_eq_mk_one_iff_mem H _).mp (DoubleCoset.out_eq' _)
+
 /-- **There is a single double coset exactly when `H * K` is the whole group**: `H \ G / K` has
 at most one element if and only if every element of `G` is a product of an element of `H` and an
 element of `K`. -/
