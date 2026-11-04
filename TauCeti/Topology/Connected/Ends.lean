@@ -7,7 +7,6 @@ module
 
 public import Mathlib.CategoryTheory.Types.Basic
 public import Mathlib.Topology.Compactness.SigmaCompact
-public import Mathlib.Topology.Connected.LocallyPathConnected
 public import Mathlib.Topology.Instances.Real.Lemmas
 public import TauCeti.Topology.ConnectedComponents
 import TauCeti.Topology.Compactness.Compact

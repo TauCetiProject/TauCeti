@@ -8,6 +8,7 @@ module
 public import Mathlib.Topology.Compactness.SigmaCompact
 public import Mathlib.Topology.Connected.LocallyPathConnected
 import Mathlib.Topology.Separation.Hausdorff
+import TauCeti.Topology.Compactness.Compact
 import TauCeti.Topology.ConnectedComponents
 import TauCeti.Topology.FilledHull
 
