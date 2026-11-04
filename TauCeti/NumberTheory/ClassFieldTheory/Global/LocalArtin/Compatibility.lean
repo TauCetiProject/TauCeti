@@ -44,6 +44,8 @@ infinite place. No hypothesis of abelianity or unramifiedness is needed.
 * `TauCeti.ClassFieldTheory.apply_globalArtinMap_eq_finsum`: the value of a character on the global
   Artin symbol of an idele class is the sum of its values on the local Artin symbols of the
   components.
+* `TauCeti.ClassFieldTheory.globalArtinMap_eq_zero_of_forall_eq_one`: an idele whose local Artin
+  symbols are all trivial has trivial global Artin symbol.
 * `TauCeti.ClassFieldTheory.globalArtinMap_local`: on `K_vˣ` at a finite place `v`, the global
   Artin map is the local Artin symbol `localArtinAt K L v`.
 * `TauCeti.ClassFieldTheory.globalArtinMap_infiniteLocal`: on `K_wˣ` at an infinite place `w`, the
@@ -150,6 +152,23 @@ theorem apply_globalArtinMap_eq_finsum (ι : L →ₐ[K] SeparableClosure K)
       toMul_ofMul]
   simp only [hfin, hinf, hground] at h
   rw [globalArtinMap_apply, globalArtinEquiv_mk]
+  exact h
+
+/-- **Trivial local Artin symbols give a trivial global Artin symbol.** For a finite Galois
+extension `L/K` of number fields, embedded in `Kˢ` by `ι`, if every local Artin symbol of the
+components of an idele `a`, at the finite and at the infinite places, is trivial, then so is the
+global Artin symbol of the class of `a`. -/
+theorem globalArtinMap_eq_zero_of_forall_eq_one (ι : L →ₐ[K] SeparableClosure K)
+    {a : IdeleGroup (𝓞 K) K}
+    (hfin : ∀ v : HeightOneSpectrum (𝓞 K), localArtinAt K L v (v.ideleFiniteCoord a) = 1)
+    (hinf : ∀ w : InfinitePlace K, infiniteLocalArtinAt K L w (w.ideleInfiniteCoord a) = 1) :
+    globalArtinMap K L ι (.ofMul (a : IdeleClassGroup (𝓞 K) K)) = 0 := by
+  refine CharacterModule.eq_zero_of_character_apply fun χ ↦ ?_
+  -- A character of `Gal(L/K)^ab` is an additive map to `ℚ/ℤ`.
+  let χ' : Additive (Abelianization Gal(L/K)) →+ AddCircle (1 : ℚ) := χ
+  have h := apply_globalArtinMap_eq_finsum K L ι χ' a
+  simp only [hfin, hinf, ofMul_one, map_zero, finsum_zero, Finset.sum_const_zero,
+    add_zero] at h
   exact h
 
 /-- **Local–global compatibility at a finite place.** For a finite Galois extension `L/K` of number

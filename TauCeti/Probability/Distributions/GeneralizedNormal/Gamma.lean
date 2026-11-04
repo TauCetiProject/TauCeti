@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Probability.Distributions.GeneralizedGamma.PDF
 public import TauCeti.Probability.Distributions.GeneralizedNormal.Affine
-public import TauCeti.Probability.Distributions.Rademacher
+public import TauCeti.Probability.Distributions.Rademacher.Basic
 
 /-!
 # The Rademacher–Gamma construction of a generalized normal law

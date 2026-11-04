@@ -118,10 +118,9 @@ private theorem gen_mul_cubic_add_cubic_mul_gen (b : Module.Basis ι' K L) (x : 
   have hstep (i : ι') :
       gen K x * (gen K (b i) * adjLift K (killingDualBasis b i)) +
           gen K (b i) * adjLift K (killingDualBasis b i) * gen K x =
-        (2 : K) • (killingForm K L (b i) x • adjLift K (killingDualBasis b i)) -
+        (2 : K) • (killingForm K L x (b i) • adjLift K (killingDualBasis b i)) -
           gen K (b i) * gen K ⁅x, killingDualBasis b i⁆ := by
     have hgen := gen_mul_gen_add_swap (K := K) x (b i)
-    rw [LieModule.traceForm_comm K L L x (b i)] at hgen
     have hneg : gen K ⁅killingDualBasis b i, x⁆ = -gen K ⁅x, killingDualBasis b i⁆ := by
       rw [← lie_skew, gen, gen, map_neg]
     have hexp : gen K x * (gen K (b i) * adjLift K (killingDualBasis b i)) +
@@ -132,8 +131,8 @@ private theorem gen_mul_cubic_add_cubic_mul_gen (b : Module.Basis ι' K L) (x : 
       noncomm_ring
     rw [hexp, hgen, adjLift_mul_gen, hneg, smul_mul_assoc, one_mul, mul_smul]
     noncomm_ring
-  have hlift : ∑ i, killingForm K L (b i) x • adjLift K (killingDualBasis b i) = adjLift K x := by
-    simp only [← map_smul, ← map_sum, sum_killingForm_smul_killingDualBasis]
+  have hlift : ∑ i, killingForm K L x (b i) • adjLift K (killingDualBasis b i) = adjLift K x := by
+    simp only [← map_smul, ← map_sum, LinearMap.BilinForm.sum_apply_smul_dualBasis]
   have hmove := sum_apply_lie_killingDualBasis_add_eq_zero
     ((LinearMap.mul K _).compl₁₂ (ι (killingQuadraticForm K L)) (ι (killingQuadraticForm K L))) b x
   simp only [LinearMap.compl₁₂_apply, LinearMap.mul_apply'] at hmove
@@ -270,10 +269,12 @@ theorem scalarTrace_adjointCliffordHom_mul_adjointCliffordHom (x y : L) :
       LieModule.traceForm_apply_lie_apply' K L L y ⁅x, b i⁆ (killingDualBasis b i)]
   have htrace : ∑ i, killingForm K L ⁅y, ⁅x, b i⁆⁆ (killingDualBasis b i) =
       killingForm K L x y := by
-    have h := sum_killingForm_killingDualBasis_eq_trace b
-      ((LieAlgebra.ad K L y).comp (LieAlgebra.ad K L x))
+    have h := LinearMap.BilinForm.sum_apply_dualBasis_eq_trace
+      (_root_.LieAlgebra.IsKilling.killingForm_nondegenerate K L) b
+      ((_root_.LieAlgebra.ad K L y).comp (_root_.LieAlgebra.ad K L x))
     simp only [LinearMap.comp_apply, _root_.LieAlgebra.ad_apply] at h
-    rw [h, LieModule.traceForm_comm K L L x y]
+    rw [Finset.sum_congr rfl fun i _ ↦ LieModule.traceForm_comm K L L ⁅y, ⁅x, b i⁆⁆ _, h,
+      LieModule.traceForm_comm K L L x y]
     exact (LieModule.traceForm_apply_apply K L L y x).symm
   have height : (8 : K) ≠ 0 := by
     have h8 : (8 : K) = 4 * 2 := by norm_num
@@ -303,9 +304,10 @@ theorem sum_adjointCliffordHom_mul_adjointCliffordHom_killingDualBasis [NeZero (
   simp only [adjLift, LieHom.coe_toLinearMap] at hr
   have hvalue := congrArg (scalarTrace (killingQuadraticForm K L)) hr
   rw [map_sum, scalarTrace_algebraMap] at hvalue
-  simp only [scalarTrace_adjointCliffordHom_mul_adjointCliffordHom,
-    killingForm_killingDualBasis, ite_true, Finset.sum_const, Finset.card_univ,
-    nsmul_eq_mul] at hvalue
+  have hone (i : ι') : killingForm K L (b i) (killingDualBasis b i) = 1 := by
+    rw [LieModule.traceForm_comm, LinearMap.BilinForm.apply_dualBasis_left, ite_eq_left rfl]
+  simp only [scalarTrace_adjointCliffordHom_mul_adjointCliffordHom, hone, Finset.sum_const,
+    Finset.card_univ, nsmul_eq_mul] at hvalue
   rw [hr, ← hvalue, Module.finrank_eq_card_basis b, mul_one_div]
 
 /-- **The Casimir element acts on Kostant's module by the scalar `dim L / 8`.** This holds on every

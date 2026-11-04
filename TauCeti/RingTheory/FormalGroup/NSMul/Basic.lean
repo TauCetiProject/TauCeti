@@ -9,6 +9,7 @@ public import TauCeti.RingTheory.FormalGroup.AddInv
 public import TauCeti.RingTheory.FormalGroup.Logarithm.Basic
 -- Proof-only: splitting a power series into its truncation and its tail.
 import Mathlib.RingTheory.PowerSeries.Trunc
+import TauCeti.RingTheory.PowerSeries.Substitution
 
 /-!
 # Multiplication by `n` on a formal group law
@@ -74,6 +75,9 @@ off the invariant differential.
   in the invariant differential.
 * `TauCeti.FormalGroupHom.subst_nsmulSeries`: a homomorphism `f` from `F` to `G` commutes with
   multiplication by `n`, `f([n]_F(T)) = [n]_G(f(T))`.
+* `TauCeti.FormalGroupHom.coeff_nsmulSeries_mul_coeff_one_pow_of_le_order`: if `f = u T + ⋯` and
+  `[n]_F`, `[n]_G` both have order at least `q`, their coefficients `a`, `b` of `T ^ q` satisfy
+  `b u ^ q = u a`.
 
 ## References
 
@@ -426,5 +430,18 @@ theorem subst_nsmulSeries (f : FormalGroupHom F G) (n : ℕ) :
     rw [← G.subst_nsmulSeries, applyPoint_val, FormalGroup.val_tautologicalPoint,
       PowerSeries.X_subst]
   rw [← hF, ← hG, ← applyPoint_val, ← toAddMonoidHom_apply, map_nsmul, toAddMonoidHom_apply]
+
+/-- **A homomorphism relates the leading coefficients of multiplication by `n`.** If `f` is a
+homomorphism of formal group laws from `F` to `G` with linear coefficient `u`, and `[n]_F` and
+`[n]_G` both have order at least `q`, then their coefficients `a` and `b` of `T ^ q` satisfy
+`b u ^ q = u a`. -/
+theorem coeff_nsmulSeries_mul_coeff_one_pow_of_le_order (f : FormalGroupHom F G) (n : ℕ) {q : ℕ}
+    (hF : q ≤ (F.nsmulSeries n).order) (hG : q ≤ (G.nsmulSeries n).order) :
+    PowerSeries.coeff q (G.nsmulSeries n) * PowerSeries.coeff 1 f.toPowerSeries ^ q =
+      PowerSeries.coeff 1 f.toPowerSeries * PowerSeries.coeff q (F.nsmulSeries n) := by
+  have h := congrArg (PowerSeries.coeff q) (f.subst_nsmulSeries n)
+  rw [PowerSeries.coeff_subst_eq_mul (F.constantCoeff_nsmulSeries n) f.zero_constantCoeff hF,
+    PowerSeries.coeff_subst_eq_mul_pow f.zero_constantCoeff hG] at h
+  simpa using h.symm
 
 end TauCeti.FormalGroupHom

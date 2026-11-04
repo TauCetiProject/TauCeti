@@ -390,16 +390,9 @@ theorem dualBasis_polarBilin_killingQuadraticForm_apply {ι : Type w} [Finite ι
           rw [← _root_.TauCeti.LieAlgebra.polarBilin_killingQuadraticForm]
           exact QuadraticMap.nondegenerate_polar_iff.mpr
             (_root_.TauCeti.LieAlgebra.killingQuadraticForm_nondegenerate K L)) b i =
-      (2 : K)⁻¹ • killingDualBasis b i := by
-  let hκ := _root_.LieAlgebra.IsKilling.killingForm_nondegenerate K L
-  have hdual (j : ι) :
-      LinearMap.BilinForm.dualBasis (killingForm K L) hκ b j = killingDualBasis b j := by
-    apply LinearMap.ker_eq_bot.mp hκ.ker_eq_bot
-    apply b.ext
-    intro k
-    rw [LinearMap.BilinForm.apply_dualBasis_left, killingForm_killingDualBasis_left]
-    simp only [eq_comm]
-  rw [b.dualBasis_smul_apply (killingForm K L) hκ (2 : K)
-    (Invertible.ne_zero (2 : K)), hdual]
+      (2 : K)⁻¹ • killingDualBasis b i :=
+  b.dualBasis_smul_apply (killingForm K L)
+    (_root_.LieAlgebra.IsKilling.killingForm_nondegenerate K L) (2 : K)
+    (Invertible.ne_zero (2 : K)) i
 
 end Module.Basis

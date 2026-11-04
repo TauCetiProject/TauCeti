@@ -9,6 +9,7 @@ public import Mathlib.Analysis.CStarAlgebra.lpSpace
 import Mathlib.Analysis.Normed.Group.Indicator
 public import Mathlib.MeasureTheory.Function.SimpleFunc
 public import Mathlib.MeasureTheory.Constructions.BorelSpace.Complex
+public import Mathlib.MeasureTheory.Integral.IntegrableOn
 public import Mathlib.Topology.ContinuousMap.Compact
 import Mathlib.MeasureTheory.Constructions.BorelSpace.Metrizable
 import TauCeti.MeasureTheory.Function.SimpleFunc.Dense
@@ -177,6 +178,11 @@ theorem tendsto_iff_tendstoUniformly {ι : Type*} {F : ι → BoundedBorelFuncti
 theorem exists_bound (f : BoundedBorelFunction X) :
     ∃ M : ℝ, 0 ≤ M ∧ ∀ x, ‖f x‖ ≤ M :=
   ⟨‖f‖, norm_nonneg f, norm_coe_le_norm f⟩
+
+/-- A symbol is integrable against every finite measure. -/
+theorem integrable (f : BoundedBorelFunction X) (μ : MeasureTheory.Measure X)
+    [MeasureTheory.IsFiniteMeasure μ] : MeasureTheory.Integrable f μ :=
+  .of_bound f.measurable.aestronglyMeasurable ‖f‖ (.of_forall (norm_coe_le_norm f))
 
 /-- Bundle a measurable function with its everywhere bound. -/
 def ofFunction (f : X → ℂ) (hf : Measurable f)
