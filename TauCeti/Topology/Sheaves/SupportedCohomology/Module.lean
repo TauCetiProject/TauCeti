@@ -160,7 +160,8 @@ lemma supportedSubmodule_mono {Z S : Closeds X} (hZS : Z ≤ S) (W : Opens X) :
   have hcomp : S.complInclusion W =
       homOfLE (inf_le_inf_left W hcompl) ≫
         Z.complInclusion W := Subsingleton.elim _ _
-  rw [hcomp, op_comp, F.obj.map_comp, ModuleCat.comp_apply, hs, map_zero]
+  rw [hcomp, op_comp, F.obj.map_comp]
+  simp [hs]
 
 end CategoryTheory.Sheaf
 
