@@ -22,11 +22,13 @@ import Mathlib.Order.Lattice.Nat
 
 An equation over a group `G` in the variables `X` is an element of `G[X] = G ∗ F(X)`. It is
 quadratic when every variable occurs in it at most twice, as `x` or as `x⁻¹`. Quadratic equations
-are the equations whose solution theory is governed by surfaces: up to automorphisms of `G[X]`
-fixing `G`, each strictly quadratic word in which some variable occurs is one of four standard
-quadratic words, the relators of orientable and non-orientable surfaces with boundary components
-labelled by coefficients. The coefficient-only words, the elements of `G` (including `1`), are
-strictly quadratic but are not standard; they form a separate exceptional case.
+are the equations whose solution theory is governed by surfaces: the four standard quadratic
+words below are the relators of orientable and non-orientable surfaces with boundary components
+labelled by coefficients, and [IFT] uses automorphisms of `G[X]` fixing `G` to bring strictly
+quadratic equations into these standard forms. This file neither states nor proves that
+reduction, whose precise form has to account for cyclic reduction and for words conjugate to
+coefficients: for instance the coefficients themselves and their conjugates `x c x⁻¹` are
+strictly quadratic but are not standard.
 
 This file defines the number of occurrences of a variable in an element of `G[X]`, quadratic and
 strictly quadratic finite systems, the four types of standard quadratic equations together with
