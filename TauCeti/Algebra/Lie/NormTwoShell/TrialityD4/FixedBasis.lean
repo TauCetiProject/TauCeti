@@ -11,6 +11,7 @@ public import TauCeti.Algebra.Lie.BaseChange.Hom
 public import TauCeti.Algebra.Lie.NormTwoShell.BaseChange
 public import TauCeti.Algebra.Lie.NormTwoShell.TrialityD4.Basic
 public import TauCeti.Algebra.Lie.Subalgebra.Fixed
+public import TauCeti.LinearAlgebra.RootSystem.FiniteType.Classical
 
 /-!
 # Integral fixed basis and scalar extension for D₄ triality
@@ -31,8 +32,8 @@ Specifically:
   `trialityLieEquiv.toLieHom.fixedSubalgebra` indexed by `Fin 2 ⊕ (Bool × Fin 6)` whose vectors are
   the two Cartan orbit sums `TauCeti.D4Triality.invariantCartan` and the twelve signed root orbit
   sums `TauCeti.D4Triality.invariantRoot`.
-* `TauCeti.D4Triality.fixedSubalgebraBaseChangeLieEquiv` upgrades
-  `Matrix.ShellLieAlgebra.fixedSubmoduleBaseChangeEquiv` to an isomorphism of `A`-Lie algebras
+* `TauCeti.D4Triality.fixedSubalgebraBaseChangeLieEquiv` specializes
+  `Matrix.ShellLieAlgebra.fixedSubalgebraBaseChangeLieEquiv` to an isomorphism of `A`-Lie algebras
   `A ⊗[ℤ] trialityLieEquiv.toLieHom.fixedSubalgebra ≃ₗ⁅A⁆
   (LieEquiv.baseChange A trialityLieEquiv).toLieHom.fixedSubalgebra` over any commutative ring `A`,
   with no flatness or `2`-torsion hypothesis because no negative-monodromy root cycles occur.
@@ -53,27 +54,18 @@ open _root_.Matrix
 
 /-! ### Positivity and scoped shell instances -/
 
-private theorem posDef_cartanMatrix : (CartanMatrix.D 4).PosDef := by
-  rw [← transpose_typeDSimpleRootMatrix_mul_self (by decide),
-    ← conjTranspose_eq_transpose_of_trivial]
-  exact PosDef.conjTranspose_mul_self _ (typeDSimpleRootMatrix_mulVec_injective (by decide))
-
-private theorem even_diag_cartanMatrix (i : Fin 4) : Even (CartanMatrix.D 4 i i) := by
-  rw [CartanMatrix.D_diag]
-  exact even_two
-
 /-- Positivity of `CartanMatrix.D 4` as a scoped typeclass fact for `Matrix.ShellLieAlgebra`. -/
 scoped instance instFactPosDefCartanMatrix : Fact (CartanMatrix.D 4).PosDef :=
-  ⟨posDef_cartanMatrix⟩
+  ⟨posDef_cartanMatrix_D 4⟩
 
 /-- Evenness of the diagonal of `CartanMatrix.D 4` as a scoped typeclass fact for
 `Matrix.ShellLieAlgebra`. -/
 scoped instance instFactEvenDiagCartanMatrix : Fact (∀ i, Even (CartanMatrix.D 4 i i)) :=
-  ⟨even_diag_cartanMatrix⟩
+  ⟨fun i ↦ by rw [CartanMatrix.D_diag]; exact even_two⟩
 
 /-- Finiteness of the `D₄` norm-two shell as a scoped instance. -/
 scoped instance instFiniteNormTwoShell : Finite (CartanMatrix.D 4).normTwoShell :=
-  posDef_cartanMatrix.finite_normTwoShell
+  (posDef_cartanMatrix_D 4).finite_normTwoShell
 
 /-! ### Vertex orbits of `trialityPermD4` -/
 
@@ -237,8 +229,7 @@ scoped instance instIsEmptyNegativeRootCycle :
 /-- The pinned `D₄` triality action as an automorphism of the integral shell Lie algebra. -/
 noncomputable def trialityLieEquiv :
     ShellLieAlgebra (CartanMatrix.D 4) ≃ₗ⁅ℤ⁆ ShellLieAlgebra (CartanMatrix.D 4) :=
-  ShellLieAlgebra.reindexLieEquiv trialityPermD4 reindex_cartanMatrix
-    posDef_cartanMatrix even_diag_cartanMatrix
+  ShellLieAlgebra.reindexLieEquiv trialityPermD4 reindex_cartanMatrix Fact.out Fact.out
 
 @[simp]
 theorem trialityLieEquiv_apply (x : ShellLieAlgebra (CartanMatrix.D 4)) :
@@ -253,9 +244,8 @@ theorem toLinearEquiv_trialityLieEquiv :
 
 private theorem toSubmodule_fixedSubalgebra :
     trialityLieEquiv.toLieHom.fixedSubalgebra.toSubmodule =
-      (ShellLieAlgebra.reindex trialityPermD4 reindex_cartanMatrix).toLinearMap.fixedSubmodule := by
-  rw [LieHom.fixedSubalgebra_toSubmodule]
-  exact congrArg LinearMap.fixedSubmodule (LinearMap.ext trialityLieEquiv_apply)
+      (ShellLieAlgebra.reindex trialityPermD4 reindex_cartanMatrix).toLinearMap.fixedSubmodule :=
+  ShellLieAlgebra.toSubmodule_fixedSubalgebra_reindexLieEquiv trialityPermD4 reindex_cartanMatrix
 
 /-- Coordinates of the two primitive `trialityPermD4`-invariant Cartan vectors:
 `![1, 0, 1, 1]` for the outer three-cycle and `![0, 1, 0, 0]` for the central vertex. -/
@@ -346,17 +336,20 @@ noncomputable def fixedBasis :
     (Equiv.subtypeUnivEquiv monodromy_fixedBasisRep)).map
     (LinearEquiv.ofEq _ _ toSubmodule_fixedSubalgebra.symm)
 
+private theorem coe_ofEq_toSubmodule_fixedSubalgebra_symm
+    (v : trialityLieEquiv.toLieHom.fixedSubalgebra) :
+    (((LinearEquiv.ofEq _ _ toSubmodule_fixedSubalgebra.symm).symm v :
+        (ShellLieAlgebra.reindex trialityPermD4 reindex_cartanMatrix).toLinearMap.fixedSubmodule) :
+        ShellLieAlgebra (CartanMatrix.D 4)) = v := by
+  rw [LinearEquiv.ofEq_symm, LinearEquiv.coe_ofEq_apply]
+
 /-- Coordinate of a fixed vector at Cartan orbit `k` is its ambient Cartan coordinate at
 `vertexRepresentative k`. -/
 @[simp]
 theorem fixedBasis_repr_inl (v : trialityLieEquiv.toLieHom.fixedSubalgebra) (k : Fin 2) :
     fixedBasis.repr v (.inl k) =
       (ShellLieAlgebra.basis (CartanMatrix.D 4)).repr v (.inl (vertexRepresentative k)) := by
-  have hv : (((LinearEquiv.ofEq _ _ toSubmodule_fixedSubalgebra.symm).symm v :
-      (ShellLieAlgebra.reindex trialityPermD4 reindex_cartanMatrix).toLinearMap.fixedSubmodule) :
-      ShellLieAlgebra (CartanMatrix.D 4)) = v := by
-    rw [LinearEquiv.ofEq_symm, LinearEquiv.coe_ofEq_apply]
-  simp [fixedBasis, fixedBasisRep, hv]
+  simp [fixedBasis, fixedBasisRep, coe_ofEq_toSubmodule_fixedSubalgebra_symm v]
 
 /-- Coordinate of a fixed vector at signed root orbit `(negative, o)` is its ambient root
 coordinate at `root negative (representative o)`. -/
@@ -366,11 +359,7 @@ theorem fixedBasis_repr_inr (v : trialityLieEquiv.toLieHom.fixedSubalgebra)
     fixedBasis.repr v (.inr (negative, o)) =
       (ShellLieAlgebra.basis (CartanMatrix.D 4)).repr v
         (.inr (root negative (representative o))) := by
-  have hv : (((LinearEquiv.ofEq _ _ toSubmodule_fixedSubalgebra.symm).symm v :
-      (ShellLieAlgebra.reindex trialityPermD4 reindex_cartanMatrix).toLinearMap.fixedSubmodule) :
-      ShellLieAlgebra (CartanMatrix.D 4)) = v := by
-    rw [LinearEquiv.ofEq_symm, LinearEquiv.coe_ofEq_apply]
-  simp [fixedBasis, fixedBasisRep, hv]
+  simp [fixedBasis, fixedBasisRep, coe_ofEq_toSubmodule_fixedSubalgebra_symm v]
 
 @[simp]
 theorem coe_fixedBasis_inl (k : Fin 2) :
@@ -409,39 +398,28 @@ theorem finrank_fixedSubalgebra :
 
 /-! ### Unconditional scalar extension of the fixed Lie subalgebra -/
 
-private theorem toSubmodule_fixedSubalgebra_baseChange (A : Type*) [CommRing A] :
-    (LieEquiv.baseChange A trialityLieEquiv).toLieHom.fixedSubalgebra.toSubmodule =
-      ((ShellLieAlgebra.reindex trialityPermD4 reindex_cartanMatrix).toLinearMap.baseChange
-        A).fixedSubmodule := by
-  rw [LieHom.fixedSubalgebra_toSubmodule, LieEquiv.toLieHom_baseChange, LieHom.coe_baseChange]
-  refine congrArg (fun f : ShellLieAlgebra (CartanMatrix.D 4) →ₗ[ℤ]
-      ShellLieAlgebra (CartanMatrix.D 4) ↦ (f.baseChange A).fixedSubmodule) ?_
-  exact LinearMap.ext trialityLieEquiv_apply
-
-private noncomputable def fixedSubalgebraBaseChangeLinearEquiv (A : Type*) [CommRing A] :
-    A ⊗[ℤ] trialityLieEquiv.toLieHom.fixedSubalgebra ≃ₗ[A]
+/-- Canonical `ℤ`-Lie homomorphism embedding the integral `D₄` triality-fixed Lie subring into the
+fixed Lie subalgebra after scalar extension to `A`, sending `v` to `1 ⊗ₜ[ℤ] v`. -/
+noncomputable def toFixedSubalgebraBaseChange (A : Type*) [CommRing A] :
+    trialityLieEquiv.toLieHom.fixedSubalgebra →ₗ⁅ℤ⁆
       (LieEquiv.baseChange A trialityLieEquiv).toLieHom.fixedSubalgebra :=
-  ((LinearEquiv.ofEq _ _ toSubmodule_fixedSubalgebra).baseChange ℤ A _ _).trans
-    ((ShellLieAlgebra.fixedSubmoduleBaseChangeEquiv
-      trialityPermD4 reindex_cartanMatrix A (Or.inl inferInstance)).trans
-      (LinearEquiv.ofEq _ _ (toSubmodule_fixedSubalgebra_baseChange A).symm))
+  ShellLieAlgebra.toFixedSubalgebraBaseChange trialityPermD4 reindex_cartanMatrix A
 
-private theorem coe_fixedSubalgebraBaseChangeLinearEquiv (A : Type*) [CommRing A]
-    (x : A ⊗[ℤ] trialityLieEquiv.toLieHom.fixedSubalgebra) :
-    (fixedSubalgebraBaseChangeLinearEquiv A x : A ⊗[ℤ] ShellLieAlgebra (CartanMatrix.D 4)) =
-      LieHom.baseChange A trialityLieEquiv.toLieHom.fixedSubalgebra.incl x := by
-  induction x with
-  | tmul a v =>
-    have hcoe (u : (LieEquiv.baseChange A trialityLieEquiv).toLieHom.fixedSubalgebra.toSubmodule) :
-        ((u : (LieEquiv.baseChange A trialityLieEquiv).toLieHom.fixedSubalgebra) :
-          A ⊗[ℤ] ShellLieAlgebra (CartanMatrix.D 4)) = u := rfl
-    rw [fixedSubalgebraBaseChangeLinearEquiv, LinearEquiv.trans_apply, LinearEquiv.trans_apply,
-      LinearEquiv.baseChange_tmul, ShellLieAlgebra.fixedSubmoduleBaseChangeEquiv_apply, hcoe,
-      LinearEquiv.coe_ofEq_apply, LinearMap.fixedSubmoduleBaseChange_tmul,
-      LinearEquiv.coe_ofEq_apply, LieHom.baseChange_tmul]
-    rfl
-  | add x y hx hy =>
-    rw [map_add, map_add, AddMemClass.coe_add, hx, hy]
+@[simp]
+theorem coe_toFixedSubalgebraBaseChange (A : Type*) [CommRing A]
+    (v : trialityLieEquiv.toLieHom.fixedSubalgebra) :
+    ((toFixedSubalgebraBaseChange A v :
+        (LieEquiv.baseChange A trialityLieEquiv).toLieHom.fixedSubalgebra) :
+        A ⊗[ℤ] ShellLieAlgebra (CartanMatrix.D 4)) =
+      1 ⊗ₜ[ℤ] (v : ShellLieAlgebra (CartanMatrix.D 4)) :=
+  ShellLieAlgebra.coe_toFixedSubalgebraBaseChange trialityPermD4 reindex_cartanMatrix A v
+
+/-- Over every commutative ring `A`, `toFixedSubalgebraBaseChange A` exhibits the triality-fixed
+Lie subalgebra after scalar extension as the base change of the integral fixed Lie subring. -/
+theorem isBaseChange_toFixedSubalgebraBaseChange (A : Type*) [CommRing A] :
+    IsBaseChange A (toFixedSubalgebraBaseChange A).toLinearMap :=
+  ShellLieAlgebra.isBaseChange_toFixedSubalgebraBaseChange
+    trialityPermD4 reindex_cartanMatrix A (Or.inl inferInstance)
 
 /-- Over every commutative ring `A`, the scalar extension of the integral triality-fixed Lie
 subring maps isomorphically as an `A`-Lie algebra onto the fixed Lie subalgebra of the
@@ -449,17 +427,15 @@ scalar-extended triality automorphism, with no flatness or `2`-torsion hypothesi
 noncomputable def fixedSubalgebraBaseChangeLieEquiv (A : Type*) [CommRing A] :
     A ⊗[ℤ] trialityLieEquiv.toLieHom.fixedSubalgebra ≃ₗ⁅A⁆
       (LieEquiv.baseChange A trialityLieEquiv).toLieHom.fixedSubalgebra :=
-  { fixedSubalgebraBaseChangeLinearEquiv A with
-    map_lie' := fun {x y} ↦ Subtype.ext <| by
-      change (fixedSubalgebraBaseChangeLinearEquiv A ⁅x, y⁆ :
-          A ⊗[ℤ] ShellLieAlgebra (CartanMatrix.D 4)) =
-        ⁅(fixedSubalgebraBaseChangeLinearEquiv A x :
-            A ⊗[ℤ] ShellLieAlgebra (CartanMatrix.D 4)),
-          (fixedSubalgebraBaseChangeLinearEquiv A y :
-            A ⊗[ℤ] ShellLieAlgebra (CartanMatrix.D 4))⁆
-      rw [coe_fixedSubalgebraBaseChangeLinearEquiv, coe_fixedSubalgebraBaseChangeLinearEquiv,
-        coe_fixedSubalgebraBaseChangeLinearEquiv]
-      exact (LieHom.baseChange A trialityLieEquiv.toLieHom.fixedSubalgebra.incl).map_lie x y }
+  ShellLieAlgebra.fixedSubalgebraBaseChangeLieEquiv
+    trialityPermD4 reindex_cartanMatrix A (Or.inl inferInstance)
+
+theorem fixedSubalgebraBaseChangeLieEquiv_tmul (A : Type*) [CommRing A] (a : A)
+    (v : trialityLieEquiv.toLieHom.fixedSubalgebra) :
+    fixedSubalgebraBaseChangeLieEquiv A (a ⊗ₜ[ℤ] v) =
+      a • toFixedSubalgebraBaseChange A v :=
+  ShellLieAlgebra.fixedSubalgebraBaseChangeLieEquiv_tmul
+    trialityPermD4 reindex_cartanMatrix A (Or.inl inferInstance) a v
 
 @[simp]
 theorem coe_fixedSubalgebraBaseChangeLieEquiv_tmul (A : Type*) [CommRing A] (a : A)
@@ -467,8 +443,9 @@ theorem coe_fixedSubalgebraBaseChangeLieEquiv_tmul (A : Type*) [CommRing A] (a :
     ((fixedSubalgebraBaseChangeLieEquiv A (a ⊗ₜ[ℤ] v) :
         (LieEquiv.baseChange A trialityLieEquiv).toLieHom.fixedSubalgebra) :
         A ⊗[ℤ] ShellLieAlgebra (CartanMatrix.D 4)) =
-      a ⊗ₜ[ℤ] (v : ShellLieAlgebra (CartanMatrix.D 4)) := by
-  exact (coe_fixedSubalgebraBaseChangeLinearEquiv A (a ⊗ₜ[ℤ] v)).trans (by simp)
+      a ⊗ₜ[ℤ] (v : ShellLieAlgebra (CartanMatrix.D 4)) :=
+  ShellLieAlgebra.coe_fixedSubalgebraBaseChangeLieEquiv_tmul
+    trialityPermD4 reindex_cartanMatrix A (Or.inl inferInstance) a v
 
 /-- Explicit fourteen-element `A`-basis of the triality-fixed Lie subalgebra after extension of
 scalars to any commutative ring `A`. -/
@@ -482,6 +459,12 @@ theorem fixedSubalgebraBaseChangeBasis_apply (A : Type*) [CommRing A]
     fixedSubalgebraBaseChangeBasis A idx =
       fixedSubalgebraBaseChangeLieEquiv A (1 ⊗ₜ[ℤ] fixedBasis idx) := by
   simp [fixedSubalgebraBaseChangeBasis]
+
+theorem toFixedSubalgebraBaseChange_fixedBasis (A : Type*) [CommRing A]
+    (idx : Fin 2 ⊕ (Bool × Fin 6)) :
+    toFixedSubalgebraBaseChange A (fixedBasis idx) =
+      fixedSubalgebraBaseChangeBasis A idx := by
+  rw [fixedSubalgebraBaseChangeBasis_apply, fixedSubalgebraBaseChangeLieEquiv_tmul, one_smul]
 
 @[simp]
 theorem fixedSubalgebraBaseChangeBasis_repr_tmul (A : Type*) [CommRing A] (a : A)
@@ -513,6 +496,28 @@ theorem coe_fixedSubalgebraBaseChangeBasis_inr (A : Type*) [CommRing A]
         A ⊗[ℤ] ShellLieAlgebra (CartanMatrix.D 4)) =
       1 ⊗ₜ[ℤ] invariantRoot negative o := by
   simp [fixedSubalgebraBaseChangeBasis]
+
+/-- Over any commutative ring `A`, the structure constants of `fixedSubalgebraBaseChangeBasis A`
+are the integer casts of the integral structure constants of `fixedBasis`. -/
+@[simp]
+theorem fixedSubalgebraBaseChangeBasis_repr_lie (A : Type*) [CommRing A]
+    (i j l : Fin 2 ⊕ (Bool × Fin 6)) :
+    (fixedSubalgebraBaseChangeBasis A).repr
+        ⁅fixedSubalgebraBaseChangeBasis A i, fixedSubalgebraBaseChangeBasis A j⁆ l =
+      (fixedBasis.repr ⁅fixedBasis i, fixedBasis j⁆ l : A) := by
+  rw [fixedSubalgebraBaseChangeBasis_apply, fixedSubalgebraBaseChangeBasis_apply,
+    ← (fixedSubalgebraBaseChangeLieEquiv A).map_lie, LieAlgebra.ExtendScalars.bracket_tmul,
+    one_mul, fixedSubalgebraBaseChangeBasis_repr_tmul, zsmul_one]
+
+/-- A scalar-multiple bracket relation between two integral fixed-basis elements transfers to
+`fixedSubalgebraBaseChangeBasis A` over any commutative ring `A`. -/
+theorem lie_fixedSubalgebraBaseChangeBasis_of_lie_fixedBasis (A : Type*) [CommRing A]
+    {i j m : Fin 2 ⊕ (Bool × Fin 6)} {c : ℤ}
+    (h : ⁅fixedBasis i, fixedBasis j⁆ = c • fixedBasis m) :
+    ⁅fixedSubalgebraBaseChangeBasis A i, fixedSubalgebraBaseChangeBasis A j⁆ =
+      (c : A) • fixedSubalgebraBaseChangeBasis A m := by
+  refine (fixedSubalgebraBaseChangeBasis A).repr.injective (Finsupp.ext fun l ↦ ?_)
+  simp [h, Finsupp.single_apply]
 
 /-- Over any commutative ring satisfying `StrongRankCondition`, the triality-fixed Lie subalgebra
 has rank `14`. -/

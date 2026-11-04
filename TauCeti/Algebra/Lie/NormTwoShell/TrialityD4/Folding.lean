@@ -26,7 +26,7 @@ In `Matrix.ShellLieAlgebra (CartanMatrix.D 4)`, the folded Chevalley frame `(fol
 foldedF)` evaluates along `vertexOrbitEquiv` to `invariantCartan` and the simple-orbit vectors
 `invariantRoot false 0`, `invariantRoot false 1`, `invariantRoot true 0`, `invariantRoot true 1`.
 Transporting `Matrix.ShellLieAlgebra.isSerreSystem_folded` across
-`fixedSubalgebraBaseChangeLieEquiv` yields the `G₂` Serre comparison homomorphism
+`toFixedSubalgebraBaseChange` yields the `G₂` Serre comparison homomorphism
 `TauCeti.D4Triality.g2SerreLift A` into the triality-fixed Lie subalgebra over every commutative
 ring `A`.
 
@@ -193,12 +193,10 @@ theorem orderOf_trialityFoldedReflection_mul :
   set c := trialityFoldedReflection 0 * trialityFoldedReflection 1
   let h₀ := (CartanMatrix.D 4).foldedCoroot trialityPermD4 (vertexOrbitEquiv 0)
   let h₁ := (CartanMatrix.D 4).foldedCoroot trialityPermD4 (vertexOrbitEquiv 1)
-  have hc6 : c ^ 6 = 1 := by
+  have hc3 : c ^ 3 * c ^ 3 = 1 := by
     ext v
-    have h6' : (c ^ 6) v = - -v := by
-      rw [show (6 : ℕ) = 3 + 3 by rfl, pow_add, mul_apply_eq_comp,
-        trialityFoldedReflection_mul_pow_three, trialityFoldedReflection_mul_pow_three]
-    simp [h6']
+    simp [c, mul_apply_eq_comp, trialityFoldedReflection_mul_pow_three]
+  have hc6 : c ^ 6 = 1 := (pow_add c 3 3).trans hc3
   refine orderOf_eq_of_pow_and_pow_div_prime hc6 fun p hp hdvd ↦ ?_
   have hp6 : p = 2 ∨ p = 3 := by
     have hle := Nat.le_of_dvd (by decide) hdvd
@@ -299,16 +297,6 @@ theorem isSerreSystem_g2Fixed :
     (by simpa only [Function.comp_def, LieSubalgebra.coe_incl, coe_fixedBasis_inl,
       coe_fixedBasis_inr] using isSerreSystem_g2)
 
-private noncomputable def toFixedBaseChangeLieHom (A : Type*) [CommRing A] :
-    trialityLieEquiv.toLieHom.fixedSubalgebra →ₗ⁅ℤ⁆
-      (LieEquiv.baseChange A trialityLieEquiv).toLieHom.fixedSubalgebra where
-  toFun v := fixedSubalgebraBaseChangeLieEquiv A (1 ⊗ₜ[ℤ] v)
-  map_add' x y := by rw [TensorProduct.tmul_add, map_add]
-  map_smul' n x := by simp only [RingHom.id_apply, TensorProduct.tmul_smul, map_zsmul]
-  map_lie' {x y} := by
-    rw [← (fixedSubalgebraBaseChangeLieEquiv A).map_lie, LieAlgebra.ExtendScalars.bracket_tmul,
-      one_mul]
-
 /-- Over any commutative ring `A`, the scalar-extended folded `G₂` generators in the triality-fixed
 Lie subalgebra form an `A`-Serre system for `CartanMatrix.G₂`. -/
 theorem isSerreSystem_g2FixedBaseChange (A : Type*) [CommRing A] :
@@ -316,9 +304,8 @@ theorem isSerreSystem_g2FixedBaseChange (A : Type*) [CommRing A] :
       (fun k : Fin 2 ↦ fixedSubalgebraBaseChangeBasis A (.inl k))
       (fun k : Fin 2 ↦ fixedSubalgebraBaseChangeBasis A (.inr (false, k.castLE (by decide))))
       (fun k : Fin 2 ↦ fixedSubalgebraBaseChangeBasis A (.inr (true, k.castLE (by decide)))) := by
-  have h := (isSerreSystem_g2Fixed.map (toFixedBaseChangeLieHom A)).changeScalars (S := A)
-  simpa only [Function.comp_def, toFixedBaseChangeLieHom, fixedSubalgebraBaseChangeBasis_apply,
-    LieHom.coe_mk, LinearMap.coe_mk, AddHom.coe_mk] using h
+  have h := (isSerreSystem_g2Fixed.map (toFixedSubalgebraBaseChange A)).changeScalars (S := A)
+  simpa only [Function.comp_def, toFixedSubalgebraBaseChange_fixedBasis] using h
 
 /-- **The folded `G₂` Serre comparison homomorphism over any commutative ring `A`**, mapping the
 Serre presentation `Matrix.ToLieAlgebra A CartanMatrix.G₂` into the triality-fixed Lie subalgebra
@@ -345,26 +332,5 @@ theorem g2SerreLift_serreF (A : Type*) [CommRing A] (k : Fin 2) :
     g2SerreLift A (serreF A CartanMatrix.G₂ k) =
       fixedSubalgebraBaseChangeBasis A (.inr (true, k.castLE (by decide))) :=
   serreLift_serreF _ k
-
-theorem coe_g2SerreLift_serreH (A : Type*) [CommRing A] (k : Fin 2) :
-    ((g2SerreLift A (serreH A CartanMatrix.G₂ k) :
-        (LieEquiv.baseChange A trialityLieEquiv).toLieHom.fixedSubalgebra) :
-        A ⊗[ℤ] ShellLieAlgebra (CartanMatrix.D 4)) =
-      1 ⊗ₜ[ℤ] invariantCartan k := by
-  simp
-
-theorem coe_g2SerreLift_serreE (A : Type*) [CommRing A] (k : Fin 2) :
-    ((g2SerreLift A (serreE A CartanMatrix.G₂ k) :
-        (LieEquiv.baseChange A trialityLieEquiv).toLieHom.fixedSubalgebra) :
-        A ⊗[ℤ] ShellLieAlgebra (CartanMatrix.D 4)) =
-      1 ⊗ₜ[ℤ] invariantRoot false (k.castLE (by decide)) := by
-  simp
-
-theorem coe_g2SerreLift_serreF (A : Type*) [CommRing A] (k : Fin 2) :
-    ((g2SerreLift A (serreF A CartanMatrix.G₂ k) :
-        (LieEquiv.baseChange A trialityLieEquiv).toLieHom.fixedSubalgebra) :
-        A ⊗[ℤ] ShellLieAlgebra (CartanMatrix.D 4)) =
-      1 ⊗ₜ[ℤ] invariantRoot true (k.castLE (by decide)) := by
-  simp
 
 end TauCeti.D4Triality
