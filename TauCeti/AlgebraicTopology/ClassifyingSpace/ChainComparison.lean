@@ -81,6 +81,7 @@ theorem universalGSpaceCellularChainLinearEquiv_symm_single {n : ℕ}
         cellularChainBasis (univ : Set (universalGSpace G)) k n
           ((realizationCellEquiv _ n).symm c) := by
   simp only [universalGSpaceCellularChainLinearEquiv, LinearEquiv.symm_trans_apply]
+  rw [LinearEquiv.symm_symm, MonoidAlgebra.coeffLinearEquiv_apply, MonoidAlgebra.coeff_single]
   exact cellularChainRealizationLinearEquiv_symm_single c r
 
 /-- The actual cellular chain complex of Milnor's join is the underlying complex of its
@@ -185,6 +186,24 @@ theorem universalGSpaceCellularTranslation_apply (g : G)
     (x : (univ : Set (universalGSpace G))) :
     (universalGSpaceCellularTranslation g x).1 = g • x.1 := (rfl)
 
+/-- Translation by the identity is the identity map of the universal subset. -/
+@[simp]
+theorem universalGSpaceCellularTranslation_one :
+    universalGSpaceCellularTranslation (1 : G) = 𝟙 _ := by
+  apply ConcreteCategory.hom_ext
+  intro x
+  apply Subtype.ext
+  exact one_smul G x.1
+
+/-- Translation by a product is successive translation on the universal subset. -/
+theorem universalGSpaceCellularTranslation_mul (g h : G) :
+    universalGSpaceCellularTranslation (g * h) =
+      universalGSpaceCellularTranslation h ≫ universalGSpaceCellularTranslation g := by
+  apply ConcreteCategory.hom_ext
+  intro x
+  apply Subtype.ext
+  exact mul_smul g h x.1
+
 /-- Translation preserves the skeletal filtration of the simplicial CW structure. -/
 theorem isCellular_universalGSpaceCellularTranslation (g : G) :
     IsCellular univ univ (universalGSpaceCellularTranslation g) := by
@@ -194,6 +213,25 @@ theorem isCellular_universalGSpaceCellularTranslation (g : G) :
   · intro n i
     exact ⟨g • i, fun x _ _ ↦ (universalGSpaceCellularTranslation_apply g _).trans
       (smul_map_universalGSpace g i x)⟩
+
+/-- Translation by the identity induces the identity on cellular chains. This is not a simp
+lemma: the topological identity and cellular functoriality already simplify its left-hand side. -/
+theorem cellularChainComplexMap_universalGSpaceCellularTranslation_one :
+    cellularChainComplexMap univ univ (isCellular_universalGSpaceCellularTranslation (1 : G))
+        (ModuleCat.of k k) = 𝟙 _ := by
+  simp only [universalGSpaceCellularTranslation_one, cellularChainComplexMap_id]
+
+/-- The cellular chain maps induced by translation respect multiplication. -/
+theorem cellularChainComplexMap_universalGSpaceCellularTranslation_mul (g h : G) :
+    cellularChainComplexMap univ univ (isCellular_universalGSpaceCellularTranslation (g * h))
+        (ModuleCat.of k k) =
+      cellularChainComplexMap univ univ (isCellular_universalGSpaceCellularTranslation h)
+          (ModuleCat.of k k) ≫
+        cellularChainComplexMap univ univ (isCellular_universalGSpaceCellularTranslation g)
+          (ModuleCat.of k k) := by
+  simpa only [universalGSpaceCellularTranslation_mul] using
+    (cellularChainComplexMap_comp univ univ (isCellular_universalGSpaceCellularTranslation h)
+      univ (isCellular_universalGSpaceCellularTranslation g) (ModuleCat.of k k))
 
 /-- Geometric translation sends a cellular basis vector to the basis vector of the translated
 cell, without an orientation sign. -/
