@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.AlgebraicTopology.Disk.RadialPush
 public import TauCeti.Geometry.Manifold.Morse.Cell.Comparison
 public import TauCeti.Topology.Homotopy.Homotopic.Rel
 
@@ -92,43 +93,35 @@ open unitInterval
 
 variable {k : ℕ}
 
-private theorem max_half_pos (r : ℝ) : 0 < max (1 / 2 : ℝ) r :=
-  lt_max_of_lt_left (by norm_num)
-
 /-- The radial part `x ↦ x / max(1/2, ‖x‖)` of the map from the disc to the cylinder: it is `2x`
-on the disc of radius `1/2` and `x / ‖x‖` outside it. -/
+on the disc of radius `1/2` and `x / ‖x‖` outside it. It is the end of the radial push
+`TauCeti.TopCat.diskRadialPush` with radius `1/2`. -/
 private def diskRadial (w : TopCat.disk.{u} k) : TopCat.disk.{u} k :=
-  ULift.up ⟨(max (1 / 2) ‖w.down.1‖)⁻¹ • w.down.1, by
-    rw [mem_closedBall_zero_iff, norm_smul, Real.norm_eq_abs,
-      abs_inv, abs_of_pos (max_half_pos _), inv_mul_le_iff₀ (max_half_pos _), mul_one]
-    exact le_max_right _ _⟩
+  TopCat.diskRadialPush k (by norm_num : (0 : ℝ) ≤ 1 / 2) (1, w)
 
-private theorem continuous_diskRadial : Continuous (diskRadial.{u} (k := k)) := by
-  have hv : Continuous fun w : TopCat.disk.{u} k ↦ w.down.1 :=
-    continuous_subtype_val.comp continuous_uliftDown
-  exact continuous_uliftUp.comp (((continuous_const.max (continuous_norm.comp hv)).inv₀
-    fun w ↦ (max_half_pos _).ne').smul hv |>.subtype_mk _)
+private theorem continuous_diskRadial : Continuous (diskRadial.{u} (k := k)) :=
+  (TopCat.diskRadialPush k _).continuous.comp (continuous_const.prodMk continuous_id)
 
 private theorem coe_diskRadial_of_norm_le {w : TopCat.disk.{u} k} (hw : ‖w.down.1‖ ≤ 1 / 2) :
     (diskRadial w).down.1 = (2 : ℝ) • w.down.1 := by
-  simp only [diskRadial, max_eq_left hw]
+  simp only [diskRadial, TopCat.coe_diskRadialPush_apply_down, radialPush_one,
+    radialRetraction_of_norm_le hw]
   norm_num
 
 private theorem coe_diskRadial_of_le_norm {w : TopCat.disk.{u} k} (hw : 1 / 2 ≤ ‖w.down.1‖) :
     (diskRadial w).down.1 = ‖w.down.1‖⁻¹ • w.down.1 := by
-  simp only [diskRadial, max_eq_right hw]
+  simp only [diskRadial, TopCat.coe_diskRadialPush_apply_down, radialPush_one,
+    radialRetraction_of_le_norm hw, smul_smul]
+  congr 1
+  field_simp
 
 private theorem norm_diskRadial_of_le_norm {w : TopCat.disk.{u} k} (hw : 1 / 2 ≤ ‖w.down.1‖) :
-    ‖(diskRadial w).down.1‖ = 1 := by
-  have hpos : 0 < ‖w.down.1‖ := by linarith
-  rw [coe_diskRadial_of_le_norm hw, norm_smul, norm_inv, norm_norm, inv_mul_cancel₀ hpos.ne']
+    ‖(diskRadial w).down.1‖ = 1 :=
+  TopCat.norm_diskRadialPush_one (by norm_num) hw
 
 private theorem diskRadial_diskBoundaryInclusion (s : TopCat.diskBoundary.{u} k) :
-    diskRadial (TopCat.diskBoundaryInclusion k s) = TopCat.diskBoundaryInclusion k s := by
-  have hs : ‖(TopCat.diskBoundaryInclusion k s).down.1‖ = 1 :=
-    (mem_range_diskBoundaryInclusion_iff _).1 (mem_range_self s)
-  refine ULift.ext (Subtype.ext ?_)
-  rw [coe_diskRadial_of_le_norm (by rw [hs]; norm_num), hs, inv_one, one_smul]
+    diskRadial (TopCat.diskBoundaryInclusion k s) = TopCat.diskBoundaryInclusion k s :=
+  TopCat.diskRadialPush_diskBoundaryInclusion (by norm_num) (by norm_num) 1 s
 
 /-- The point `x / ‖x‖` of the boundary sphere, for a point `x` of the disc with `1/2 ≤ ‖x‖`. -/
 private def diskRadialSphere (w : {w : TopCat.disk.{u} k // 1 / 2 ≤ ‖w.down.1‖}) :
@@ -169,47 +162,38 @@ private theorem diskTime_diskBoundaryInclusion (s : TopCat.diskBoundary.{u} k) :
   exact projIcc_of_le_left _ (by rw [hs]; norm_num)
 
 /-- The straight-line homotopy in the cylinder `I × D^k` from `x ↦ (diskTime x, diskRadial x)` at
-time `0` to `x ↦ (0, x)` at time `1`. -/
+time `0` to `x ↦ (0, x)` at time `1`. Its disc coordinate is the radial push
+`TauCeti.TopCat.diskRadialPush` with radius `1/2`, run backwards. -/
 private def diskCylinderPath (p : TopCat.disk.{u} k × I) : I × TopCat.disk.{u} k :=
   (⟨(1 - (p.2 : ℝ)) * diskTime p.1, mul_mem (symm p.2).2 (diskTime p.1).2⟩,
-    ULift.up ⟨(1 - (p.2 : ℝ)) • (diskRadial p.1).down.1 + (p.2 : ℝ) • p.1.down.1,
-      convex_closedBall 0 1 (diskRadial p.1).down.2 p.1.down.2 (sub_nonneg.2 p.2.2.2) p.2.2.1
-        (sub_add_cancel 1 _)⟩)
+    TopCat.diskRadialPush k (by norm_num : (0 : ℝ) ≤ 1 / 2) (σ p.2, p.1))
 
 private theorem continuous_diskCylinderPath : Continuous (diskCylinderPath.{u} (k := k)) := by
-  have hv : Continuous fun w : TopCat.disk.{u} k ↦ w.down.1 :=
-    continuous_subtype_val.comp continuous_uliftDown
   have hs : Continuous fun p : TopCat.disk.{u} k × I ↦ (p.2 : ℝ) :=
     continuous_subtype_val.comp continuous_snd
-  refine .prodMk ((((continuous_const.sub hs).mul (continuous_subtype_val.comp
-    (continuous_diskTime.comp continuous_fst))).subtype_mk _)) (continuous_uliftUp.comp ?_)
-  exact ((((continuous_const.sub hs).smul (hv.comp (continuous_diskRadial.comp continuous_fst))).add
-    (hs.smul (hv.comp continuous_fst))).subtype_mk _)
+  exact .prodMk ((((continuous_const.sub hs).mul (continuous_subtype_val.comp
+    (continuous_diskTime.comp continuous_fst))).subtype_mk _))
+    ((TopCat.diskRadialPush k _).continuous.comp
+      ((continuous_symm.comp continuous_snd).prodMk continuous_fst))
 
 private theorem diskCylinderPath_zero (w : TopCat.disk.{u} k) :
     diskCylinderPath (w, 0) = (diskTime w, diskRadial w) := by
-  refine Prod.ext (Subtype.ext ?_) (ULift.ext (Subtype.ext ?_)) <;> simp [diskCylinderPath]
+  refine Prod.ext (Subtype.ext ?_) ?_ <;> simp [diskCylinderPath, diskRadial]
 
 private theorem diskCylinderPath_one (w : TopCat.disk.{u} k) :
     diskCylinderPath (w, 1) = (0, w) := by
-  refine Prod.ext (Subtype.ext ?_) (ULift.ext (Subtype.ext ?_)) <;> simp [diskCylinderPath]
+  refine Prod.ext (Subtype.ext ?_) ?_ <;> simp [diskCylinderPath]
 
 private theorem diskCylinderPath_diskBoundaryInclusion (s : TopCat.diskBoundary.{u} k) (t : I) :
     diskCylinderPath (TopCat.diskBoundaryInclusion k s, t) =
       (0, TopCat.diskBoundaryInclusion k s) := by
-  refine Prod.ext (Subtype.ext ?_) (ULift.ext (Subtype.ext ?_))
+  refine Prod.ext (Subtype.ext ?_) ?_
   · simp [diskCylinderPath, diskTime_diskBoundaryInclusion]
-  · simp only [diskCylinderPath, diskRadial_diskBoundaryInclusion]
-    rw [← add_smul, sub_add_cancel, one_smul]
+  · exact TopCat.diskRadialPush_diskBoundaryInclusion (by norm_num) (by norm_num) _ s
 
 end Cylinder
 
 variable {M : Type u} [TopologicalSpace M] {n : ℕ} {ι : Type u} {f : M → ℝ} {c ε : ℝ}
-
-/-- Homotopies are stated with `TopCat.Hom.hom`, while the attachment API applies morphisms through
-`ConcreteCategory.hom`; the two agree. -/
-private theorem topCatHom_apply {X Y : TopCat.{u}} (g : X ⟶ Y) (x : X) : g.hom x = g x :=
-  (rfl)
 
 /-- On the boundary sphere, the characteristic map of a Morse cell is its attaching map. -/
 private theorem coe_morseCharacteristicMap_diskBoundaryInclusion {k : ℕ}
@@ -440,7 +424,7 @@ theorem homotopicRel_morseCellReattachment_comp_morseCellComparison :
             prop' t a ha := ?_ }⟩
   -- At time `0`, on the disc of `i` the cylinder path is `x ↦ (diskTime x, diskRadial x)`, along
   -- which `K i` is `Φ₀ ∘ E` on both pieces of `E`.
-  · rw [topCatHom_apply, TopCat.comp_app]
+  · rw [TopCat.Hom.hom, TopCat.comp_app]
     obtain ⟨x, rfl⟩ | ha := hcover.symm ▸ mem_univ a
     · refine Subtype.ext ?_
       rw [hG₀, hlower, morseCellReattachment_morseCellAttachmentIncl,
@@ -455,10 +439,10 @@ theorem homotopicRel_morseCellReattachment_comp_morseCellComparison :
         (diskBoundaryInclusion_diskRadialSphere ⟨w, hw⟩).symm
     · rw [morseCellReattachmentFun, dite_eq_right hw,
         coe_morseCellComparison_morseCellAttachmentCell, diskTime_of_norm_le (not_le.1 hw).le,
-        ContinuousMap.Homotopy.apply_one, topCatHom_apply, TopCat.comp_app]
+        ContinuousMap.Homotopy.apply_one, TopCat.Hom.hom, TopCat.comp_app]
       exact OpenPartialHomeomorph.coe_morseCharacteristicMap_apply (hball₀ i) (hf₀ i) (hk i) hε _
   -- At time `1` the cylinder path is `x ↦ (0, x)`, along which `K i` is `χ₁ i`.
-  · rw [topCatHom_apply]
+  · rw [TopCat.Hom.hom]
     obtain ⟨x, rfl⟩ | ha := hcover.symm ▸ mem_univ a
     · refine Subtype.ext ?_
       rw [hG₀, hlower, coe_morseCellComparison_morseCellAttachmentIncl]
@@ -468,7 +452,8 @@ theorem homotopicRel_morseCellReattachment_comp_morseCellComparison :
       ContinuousMap.Homotopy.apply_zero]
     exact OpenPartialHomeomorph.coe_morseCharacteristicMap_apply (hball₁ i) (hf₁ i) (hk i) hε _
   -- On the lower sublevel the homotopy is constant.
-  · rw [topCatHom_apply, TopCat.comp_app]
+  · unfold TopCat.Hom.hom
+    rw [TopCat.comp_app]
     obtain ⟨x, rfl⟩ := ha
     refine Subtype.ext ?_
     dsimp only [ContinuousMap.coe_mk]
@@ -563,8 +548,7 @@ private theorem homotopicRel_comp_morseCellComparison_comp
 
 /-- **Reattachment maps compose up to homotopy.** For three chart families `φ₀`, `φ₁`, `φ₂` and
 reattachment maps `E₀₁`, `E₁₂`, `E₀₂` between their attachments, `E₀₁ ∘ E₁₂` is homotopic to `E₀₂`
-relative to the lower sublevel, provided `Φ₀` has a left inverse and `Φ₁` has a left inverse `g₁`
-with `Φ₁ ∘ g₁` homotopic to the identity relative to the image of `Φ₁`. -/
+relative to the lower sublevel, provided `Φ₀` has a left inverse. -/
 theorem homotopicRel_morseCellReattachment_comp_morseCellReattachment
     (φ₂ : ι → OpenPartialHomeomorph M (EuclideanSpace ℝ (Fin n)))
     (hball₂ : ∀ i, closedBall 0 √ε ⊆ (φ₂ i).target)
@@ -591,31 +575,24 @@ theorem homotopicRel_morseCellReattachment_comp_morseCellReattachment
     (hK₀₂ : ∀ i t (s : TopCat.diskBoundary.{u} (k i)),
       f (K₀₂ i (t, TopCat.diskBoundaryInclusion (k i) s)) ≤ c - ε)
     (g₀ : C(TopCat.of {x | f x ≤ c + ε}, morseCellAttachment φ₀ k hk hε hball₀ hf₀))
-    (hg₀ : LeftInverse g₀ (morseCellComparison φ₀ k hk hε hball₀ hf₀))
-    (g₁ : C(TopCat.of {x | f x ≤ c + ε}, morseCellAttachment φ₁ k hk hε hball₁ hf₁))
-    (hg₁ : LeftInverse g₁ (morseCellComparison φ₁ k hk hε hball₁ hf₁))
-    (hΦ₁ : (ContinuousMap.id _).HomotopicRel
-      ((morseCellComparison φ₁ k hk hε hball₁ hf₁).hom.comp g₁)
-      (range (morseCellComparison φ₁ k hk hε hball₁ hf₁))) :
+    (hg₀ : LeftInverse g₀ (morseCellComparison φ₀ k hk hε hball₀ hf₀)) :
     (morseCellReattachment φ₁ φ₂ k hk hε hball₁ hball₂ hf₁ hf₂ h₁₂ hh₁₂ K₁₂ hK₁₂ ≫
         morseCellReattachment φ₀ φ₁ k hk hε hball₀ hball₁ hf₀ hf₁ h₀₁ hh₀₁ K₀₁
           hK₀₁).hom.HomotopicRel
       (morseCellReattachment φ₀ φ₂ k hk hε hball₀ hball₂ hf₀ hf₂ h₀₂ hh₀₂ K₀₂ hK₀₂).hom
       (range (morseCellAttachmentIncl φ₂ k hk hε hball₂ hf₂)) := by
-  -- `E₀₁ ∘ E₁₂ ≃ E₀₁ ∘ g₁ ∘ Φ₂ ≃ g₀ ∘ Φ₁ ∘ g₁ ∘ Φ₂ ≃ g₀ ∘ Φ₂ ≃ E₀₂`.
-  have h₁ := (homotopicRel_morseCellReattachment_of_leftInverse φ₁ φ₂ k hk hε hball₁ hball₂ hf₁ hf₂
-    h₁₂ hh₁₂ K₁₂ hK₁₂ g₁ hg₁).comp_continuousMap
-      (morseCellReattachment φ₀ φ₁ k hk hε hball₀ hball₁ hf₀ hf₁ h₀₁ hh₀₁ K₀₁ hK₀₁).hom
-  have h₂ := ((homotopicRel_morseCellReattachment_of_leftInverse φ₀ φ₁ k hk hε hball₀ hball₁ hf₀ hf₁
+  -- `E₀₁ ∘ E₁₂ ≃ g₀ ∘ Φ₁ ∘ E₁₂ ≃ g₀ ∘ Φ₂ ≃ E₀₂`.
+  have h₁ := ((homotopicRel_morseCellReattachment_of_leftInverse φ₀ φ₁ k hk hε hball₀ hball₁ hf₀ hf₁
     h₀₁ hh₀₁ K₀₁ hK₀₁ g₀ hg₀).precomp
-      (g₁.comp (morseCellComparison φ₂ k hk hε hball₂ hf₂).hom)).mono
+      (morseCellReattachment φ₁ φ₂ k hk hε hball₁ hball₂ hf₁ hf₂ h₁₂ hh₁₂ K₁₂ hK₁₂).hom).mono
       (T := range (morseCellAttachmentIncl φ₂ k hk hε hball₂ hf₂)) (by
         rintro _ ⟨x, rfl⟩
-        exact ⟨x, (leftInverse_morseCellComparison_morseCellAttachmentIncl φ₂ φ₁ k hk hε hball₂
-          hball₁ hf₂ hf₁ hg₁ x).symm⟩)
-  exact h₁.trans (h₂.trans ((homotopicRel_comp_morseCellComparison_comp φ₀ φ₁ k hk hε hball₀ hball₁
-    hf₀ hf₁ φ₂ hball₂ hf₂ g₀ g₁ hΦ₁).trans (homotopicRel_morseCellReattachment_of_leftInverse φ₀ φ₂
-      k hk hε hball₀ hball₂ hf₀ hf₂ h₀₂ hh₀₂ K₀₂ hK₀₂ g₀ hg₀).symm))
+        exact ⟨x, (morseCellReattachment_morseCellAttachmentIncl φ₁ φ₂ k hk hε hball₁ hball₂ hf₁
+          hf₂ h₁₂ hh₁₂ K₁₂ hK₁₂ x).symm⟩)
+  exact h₁.trans (((homotopicRel_morseCellReattachment_comp_morseCellComparison φ₁ φ₂ k hk hε hball₁
+    hball₂ hf₁ hf₂ h₁₂ hh₁₂ K₁₂ hK₁₂).comp_continuousMap g₀).trans
+      (homotopicRel_morseCellReattachment_of_leftInverse φ₀ φ₂ k hk hε hball₀ hball₂ hf₀ hf₂ h₀₂
+        hh₀₂ K₀₂ hK₀₂ g₀ hg₀).symm)
 
 variable (h : ∀ i, TopCat.disk.{u} (k i) ⟶ TopCat.disk.{u} (k i))
   (hh : ∀ i, MapsTo (h i) (range (TopCat.diskBoundaryInclusion (k i)))
@@ -626,16 +603,13 @@ variable (h : ∀ i, TopCat.disk.{u} (k i) ⟶ TopCat.disk.{u} (k i))
     f (K i (t, TopCat.diskBoundaryInclusion (k i) s)) ≤ c - ε)
 
 /-- **The reattachment map is a homotopy equivalence relative to the lower sublevel.** If both
-handle-to-cell comparisons `Φⱼ` have left inverses `gⱼ` with `Φⱼ ∘ gⱼ` homotopic to the identity
-relative to the image of `Φⱼ`, then the reattachment map `E` has a homotopy inverse `E'` which is
-the identity on the lower sublevel, with `E' ∘ E` and `E ∘ E'` homotopic to the identities relative
-to the lower sublevel. The inverse is `g₁ ∘ Φ₀`. -/
+handle-to-cell comparisons `Φⱼ` have left inverses `gⱼ`, and `Φ₁ ∘ g₁` is homotopic to the
+identity relative to the image of `Φ₁`, then the reattachment map `E` has a homotopy inverse `E'`
+which is the identity on the lower sublevel, with `E' ∘ E` and `E ∘ E'` homotopic to the identities
+relative to the lower sublevel. The inverse is `g₁ ∘ Φ₀`. -/
 theorem exists_homotopicRel_morseCellReattachment_comp_of_leftInverse
     (g₀ : C(TopCat.of {x | f x ≤ c + ε}, morseCellAttachment φ₀ k hk hε hball₀ hf₀))
     (hg₀ : LeftInverse g₀ (morseCellComparison φ₀ k hk hε hball₀ hf₀))
-    (hΦ₀ : (ContinuousMap.id _).HomotopicRel
-      ((morseCellComparison φ₀ k hk hε hball₀ hf₀).hom.comp g₀)
-      (range (morseCellComparison φ₀ k hk hε hball₀ hf₀)))
     (g₁ : C(TopCat.of {x | f x ≤ c + ε}, morseCellAttachment φ₁ k hk hε hball₁ hf₁))
     (hg₁ : LeftInverse g₁ (morseCellComparison φ₁ k hk hε hball₁ hf₁))
     (hΦ₁ : (ContinuousMap.id _).HomotopicRel
@@ -658,11 +632,10 @@ theorem exists_homotopicRel_morseCellReattachment_comp_of_leftInverse
   · ext x
     exact leftInverse_morseCellComparison_morseCellAttachmentIncl φ₀ φ₁ k hk hε hball₀ hball₁ hf₀
       hf₁ hg₁ x
-  · -- `g₁ ∘ Φ₀ ∘ E ≃ g₁ ∘ Φ₀ ∘ g₀ ∘ Φ₁ ≃ g₁ ∘ Φ₁ = id`.
+  · -- `g₁ ∘ Φ₀ ∘ E ≃ g₁ ∘ Φ₁ = id`.
     rw [← hg₁Φ₁]
-    exact (hE.comp_continuousMap (g₁.comp (morseCellComparison φ₀ k hk hε hball₀ hf₀).hom)).trans
-      (homotopicRel_comp_morseCellComparison_comp φ₁ φ₀ k hk hε hball₁ hball₀ hf₁ hf₀ φ₁ hball₁ hf₁
-        g₁ g₀ hΦ₀)
+    exact (homotopicRel_morseCellReattachment_comp_morseCellComparison φ₀ φ₁ k hk hε hball₀ hball₁
+      hf₀ hf₁ h hh K hK).comp_continuousMap g₁
   · -- `E ∘ g₁ ∘ Φ₀ ≃ g₀ ∘ Φ₁ ∘ g₁ ∘ Φ₀ ≃ g₀ ∘ Φ₀ = id`.
     rw [← hg₀Φ₀]
     refine ((hE.precomp (g₁.comp (morseCellComparison φ₀ k hk hε hball₀ hf₀).hom)).mono
@@ -740,12 +713,12 @@ theorem exists_homotopicRel_morseCellReattachment_comp [Finite ι] (hfs : ContMD
         (range (morseCellAttachmentIncl (fun i ↦ (ψ₀ i).toOpenPartialHomeomorph) k hk hε.le
           (fun i ↦ (hball₀ i).trans' (closedBall_subset_closedBall (Real.sqrt_le_sqrt_two_mul ε)))
           hf₀)) := by
-  obtain ⟨g₀, hg₀, hΦ₀⟩ :=
+  obtain ⟨g₀, hg₀, -⟩ :=
     exists_morseCellAttachment_deformation hfs ψ₀ hψ₀ k hk hε hball₀ hf₀ hcompact hcrit₀
   obtain ⟨g₁, hg₁, hΦ₁⟩ :=
     exists_morseCellAttachment_deformation hfs ψ₁ hψ₁ k hk hε hball₁ hf₁ hcompact hcrit₁
   exact exists_homotopicRel_morseCellReattachment_comp_of_leftInverse _ _ k hk hε.le _ _ hf₀ hf₁ h
-    hh K hK g₀ hg₀ hΦ₀ g₁ hg₁ hΦ₁
+    hh K hK g₀ hg₀ g₁ hg₁ hΦ₁
 
 end Smooth
 
