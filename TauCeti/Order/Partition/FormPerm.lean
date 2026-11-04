@@ -11,6 +11,7 @@ public import TauCeti.GroupTheory.Perm.Fin
 public import TauCeti.GroupTheory.Perm.OrbitCount.Basic
 public import TauCeti.GroupTheory.Perm.Partition
 import Mathlib.Data.Finset.Sort
+import TauCeti.GroupTheory.Perm.SwapFactors
 import TauCeti.Order.Partition.Finpartition
 
 /-!
@@ -45,6 +46,10 @@ The cycle of each part is Mathlib's `List.formPerm` of the increasing enumeratio
   the identity, and the partition into one part gives the cycle through `s` in increasing order.
 * `Finpartition.formPerm_top_eq_finRotate`: on `Fin n` the partition into one part has permutation
   `finRotate n`.
+* `Finpartition.formPerm_top_insert`: adjoining a new largest point `m` to `t` inserts it into the
+  cycle through `t` after the largest point `m'` of `t`, multiplying by `swap m' m` on the right.
+* `Finpartition.orbitCount_formPerm_top_insert_add_one`: adjoining a new largest point to `t`
+  merges its cycle into the cycle through `t`, lowering the number of cycles by one.
 * `Finpartition.formPerm_apply_eq_self_iff`: the fixed points are the singleton parts and the
   points outside `s`.
 * `Finpartition.sameCycle_formPerm_iff`: two points of `s` lie on a common cycle exactly when
@@ -290,6 +295,63 @@ theorem formPerm_top : (⊤ : Finpartition s).formPerm = s.sort.formPerm := by
 theorem formPerm_top_eq_finRotate {n : ℕ} :
     (⊤ : Finpartition (univ : Finset (Fin n))).formPerm = finRotate n := by
   rw [formPerm_top, Fin.formPerm_sort_univ]
+
+/-- Adjoining to `t` a point `m` above all of its points inserts `m` into the increasing cycle
+through `t` right after the largest point `m'` of `t`. -/
+theorem formPerm_top_insert {t : Finset α} {m m' : α} (hm : ∀ x ∈ t, x < m) (hm' : m' ∈ t)
+    (hm't : ∀ x ∈ t, x ≤ m') :
+    (⊤ : Finpartition (insert m t)).formPerm = (⊤ : Finpartition t).formPerm * swap m' m := by
+  have hmt : m ∉ t := fun h => (hm m h).false
+  have hm'm : m' ≠ m := (hm m' hm').ne
+  ext x
+  rw [Perm.mul_apply]
+  by_cases hxs : x ∈ insert m t
+  swap
+  · have hxt : x ∉ t := fun h => hxs (mem_insert_of_mem h)
+    have hxm : x ≠ m := by rintro rfl; exact hxs (mem_insert_self _ t)
+    have hxm' : x ≠ m' := by rintro rfl; exact hxt hm'
+    rw [formPerm_apply_of_notMem _ hxs, swap_apply_of_ne_of_ne hxm' hxm,
+      formPerm_apply_of_notMem _ hxt]
+  rw [formPerm_apply_eq_iff _ hxs, part_top hxs]
+  rcases mem_insert.1 hxs with rfl | hxt
+  · -- The swap sends `m` to `m'`, which the cycle through `t` sends to the first point of `t`.
+    rw [swap_apply_right]
+    obtain ⟨hy, -, hyle⟩ := (formPerm_apply_eq_iff _ hm').1 rfl
+    rw [part_top hm'] at hy hyle
+    have hyle := hyle (hm't _ hy)
+    refine ⟨mem_insert_of_mem hy, fun h => absurd (hm _ hy) (not_lt.2 h.le), fun _ w hw => ?_⟩
+    rcases mem_insert.1 hw with rfl | hw
+    exacts [⟨(hm _ hy).le, le_rfl⟩, ⟨(hyle w hw).1, (hm w hw).le⟩]
+  by_cases hxm' : x = m'
+  · -- The swap sends `m'` to `m`, which the cycle through `t` fixes.
+    subst hxm'
+    rw [swap_apply_left, formPerm_apply_of_notMem _ hmt]
+    refine ⟨mem_insert_self m t, fun _ w hw hxw => ?_, fun h => absurd (hm _ hxt) (not_lt.2 h)⟩
+    rcases mem_insert.1 hw with rfl | hw
+    exacts [le_rfl, absurd (hm't w hw) (not_le.2 hxw)]
+  · -- Below `m'`, the cycle through `t` moves `x` up to the next point of `t`.
+    rw [swap_apply_of_ne_of_ne hxm' (by rintro rfl; exact hmt hxt)]
+    obtain ⟨hy, hylt, hyle⟩ := (formPerm_apply_eq_iff _ hxt).1 rfl
+    rw [part_top hxt] at hy hylt hyle
+    have hxlt : x < m' := (hm't x hxt).lt_of_ne hxm'
+    have hxy : x < (⊤ : Finpartition t).formPerm x :=
+      not_le.1 fun h => absurd (hyle h m' hm').2 (not_le.2 hxlt)
+    refine ⟨mem_insert_of_mem hy, fun _ w hw hxw => ?_, fun h => absurd hxy (not_lt.2 h)⟩
+    rcases mem_insert.1 hw with rfl | hw
+    exacts [(hm _ hy).le, hylt hxy w hw hxw]
+
+/-- Adjoining to a nonempty `t` a point `m` above all of its points merges the fixed point `m`
+into the increasing cycle through `t`, so the number of cycles, fixed points included, drops by
+one. -/
+theorem orbitCount_formPerm_top_insert_add_one [Finite α] {t : Finset α} {m m' : α}
+    (hm : ∀ x ∈ t, x < m) (hm' : m' ∈ t) (hm't : ∀ x ∈ t, x ≤ m') :
+    TauCeti.orbitCount (⊤ : Finpartition (insert m t)).formPerm + 1 =
+      TauCeti.orbitCount (⊤ : Finpartition t).formPerm := by
+  have hγm : (⊤ : Finpartition t).formPerm m = m :=
+    formPerm_apply_of_notMem _ fun h => (hm m h).false
+  rw [formPerm_top_insert hm hm' hm't]
+  exact TauCeti.orbitCount_mul_swap_add_one_of_not_sameCycle fun hc =>
+    (hm m' hm').ne (hc.eq_of_right hγm)
 
 /-- A finite partition is determined by its permutation. -/
 theorem formPerm_injective : Function.Injective (formPerm : Finpartition s → Perm α) := by
