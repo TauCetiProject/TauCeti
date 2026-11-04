@@ -11,6 +11,7 @@ public import TauCeti.RingTheory.FormalGroup.Logarithm.Basic
 import Mathlib.Algebra.BigOperators.Intervals
 import Mathlib.Algebra.Module.Rat
 import Mathlib.Data.Nat.Log
+import TauCeti.Algebra.Module.Rat
 import TauCeti.RingTheory.FormalGroup.BaseChange
 import TauCeti.RingTheory.FormalGroup.Logarithm.Naturality
 
@@ -130,10 +131,6 @@ theorem natCast_mul_hazewinkelLogCoeff_succ (hp : p ≠ 0) (n : ℕ) :
   rw [hazewinkelLogCoeff_succ, ← nsmul_eq_mul, ← Nat.cast_smul_eq_nsmul ℚ,
     ← eq_inv_smul_iff₀ (Nat.cast_ne_zero.2 hp)]
 
-/-- Over a `ℚ`-algebra, `p⁻¹ •` undoes multiplication by a nonzero natural number `p`. -/
-private theorem inv_smul_natCast_mul (hp : p ≠ 0) (x : K) : (p : ℚ)⁻¹ • ((p : K) * x) = x := by
-  rw [← nsmul_eq_mul, ← Nat.cast_smul_eq_nsmul ℚ, inv_smul_smul₀ (Nat.cast_ne_zero.2 hp)]
-
 /-- In `p mₙ₊₁ = ∑ᵢ mᵢ v_(n + 1 - i)^(pⁱ)` the term `i = 0` is `vₙ₊₁`, and the other terms only
 involve `v₁, …, vₙ`. -/
 private theorem natCast_mul_hazewinkelLogCoeff_succ_eq_add (hp : p ≠ 0) (n : ℕ) :
@@ -175,7 +172,8 @@ theorem natCast_mul_hazewinkelLogCoeff_succ' (hp : p ≠ 0) (n : ℕ) :
         = ∑ j ∈ range (k + 1), f j (k - j) := by
       intro k hk
       -- `mₖ₊₁ = p⁻¹ (p mₖ₊₁)`, and the induction hypothesis expands `p mₖ₊₁`
-      rw [← inv_smul_natCast_mul hp (hazewinkelLogCoeff p v (k + 1)), ih k (mem_range.1 hk) v]
+      rw [← inv_natCast_smul_natCast_mul hp (hazewinkelLogCoeff p v (k + 1)),
+        ih k (mem_range.1 hk) v]
       simp only [smul_mul_assoc, sum_mul, smul_sum]
       refine sum_congr rfl fun j hj ↦ ?_
       have hjk : j + (k - j) = k := by grind
