@@ -10,6 +10,7 @@ public import Mathlib.Topology.EMetricSpace.BoundedVariation
 public import Mathlib.Topology.Order.Cadlag
 public import TauCeti.MeasureTheory.OptimalTransport.DynamicPlan
 public import TauCeti.MeasureTheory.OptimalTransport.Wasserstein.Space
+public import TauCeti.MeasureTheory.OptimalTransport.Wasserstein.Bernoulli
 import TauCeti.MeasureTheory.Measure.ContinuousMap
 import TauCeti.MeasureTheory.OptimalTransport.Wasserstein.KantorovichRubinstein
 
@@ -32,44 +33,10 @@ uses Kantorovich–Rubinstein weak duality with the identity function.
 
 public section
 
-open MeasureTheory Set
+open MeasureTheory ProbabilityTheory Set
 open scoped ENNReal unitInterval
 
 namespace TauCeti
-
-/-- The two-point mixture moving mass from zero to one, rather than moving either atom. -/
-noncomputable def jumpMarginal (t : I) : Measure ℝ :=
-  ENNReal.ofReal (1 - (t : ℝ)) • Measure.dirac 0 +
-    ENNReal.ofReal (t : ℝ) • Measure.dirac 1
-
-/-- The defining mixture formula. -/
-theorem jumpMarginal_def (t : I) : jumpMarginal t =
-    ENNReal.ofReal (1 - (t : ℝ)) • Measure.dirac 0 +
-      ENNReal.ofReal (t : ℝ) • Measure.dirac 1 :=
-  (rfl)
-
-/-- Every two-point mixture has unit mass. -/
-instance (t : I) : IsProbabilityMeasure (jumpMarginal t) where
-  measure_univ := by
-    simp only [jumpMarginal_def, add_apply, smul_apply, measure_univ, smul_eq_mul, mul_one]
-    rw [← ENNReal.ofReal_add (sub_nonneg.2 t.2.2) t.2.1]
-    simp
-
-@[simp] theorem jumpMarginal_zero : jumpMarginal 0 = Measure.dirac 0 := by
-  simp [jumpMarginal_def]
-
-@[simp] theorem jumpMarginal_one : jumpMarginal 1 = Measure.dirac 1 := by
-  simp [jumpMarginal_def]
-
-/-- The mixture is concentrated on its two atoms. -/
-theorem ae_mem_jumpMarginal (t : I) : ∀ᵐ x ∂jumpMarginal t, x ∈ ({0, 1} : Set ℝ) := by
-  rw [jumpMarginal_def, ae_add_measure_iff]
-  constructor <;> exact Measure.ae_smul_measure (by simp) _
-
-/-- The mixture has finite moments at every exponent, including the bounded-support endpoint. -/
-theorem hasFiniteMoment_jumpMarginal (p : ℝ≥0∞) (t : I) : HasFiniteMoment p (jumpMarginal t) := by
-  apply hasFiniteMoment_of_ae_mem_finset (p := p) (s := {0, 1}) (0 : ℝ)
-  simpa using ae_mem_jumpMarginal t
 
 /-- The sample path that jumps from zero to one at time `a`. -/
 noncomputable def jumpPath (a t : I) : ℝ := if a ≤ t then 1 else 0
@@ -77,6 +44,12 @@ noncomputable def jumpPath (a t : I) : ℝ := if a ≤ t then 1 else 0
 /-- The value of a jump path, including its value at the jump itself. -/
 theorem jumpPath_def (a t : I) : jumpPath a t = if a ≤ t then 1 else 0 :=
   (rfl)
+
+@[simp] theorem jumpPath_of_le {a t : I} (h : a ≤ t) : jumpPath a t = 1 := by
+  simp [jumpPath_def, h]
+
+@[simp] theorem jumpPath_of_lt {a t : I} (h : t < a) : jumpPath a t = 0 := by
+  simp [jumpPath_def, not_le.mpr h]
 
 /-- Jump paths are nondecreasing. -/
 theorem monotone_jumpPath (a : I) : Monotone (jumpPath a) := by
@@ -99,7 +72,7 @@ theorem isCadlag_jumpPath (a : I) : IsCadlag (jumpPath a) where
     · rw [ContinuousWithinAt, jumpPath_def, ite_eq_left hat]
       apply Filter.Tendsto.congr' _ tendsto_const_nhds
       filter_upwards [self_mem_nhdsWithin] with u hu
-      simp [jumpPath_def, hat.trans hu.le]
+      simp [hat.trans hu.le]
     · rw [ContinuousWithinAt, jumpPath_def, ite_eq_right hat]
       apply Filter.Tendsto.congr' _ tendsto_const_nhds
       filter_upwards [eventually_nhdsWithin_of_eventually_nhds
@@ -114,7 +87,7 @@ theorem isCadlag_jumpPath (a : I) : IsCadlag (jumpPath a) where
     · refine ⟨1, Filter.Tendsto.congr' ?_ tendsto_const_nhds⟩
       filter_upwards [eventually_nhdsWithin_of_eventually_nhds
         (lt_mem_nhds (not_le.mp hta))] with u hu
-      simp [jumpPath_def, hu.le]
+      simp [hu.le]
 
 /-- At a fixed time, the jump path is a measurable function of its jump time. -/
 @[fun_prop] theorem measurable_jumpPath (t : I) : Measurable fun a ↦ jumpPath a t := by
@@ -122,41 +95,27 @@ theorem isCadlag_jumpPath (a : I) : IsCadlag (jumpPath a) where
 
 /-- Uniform jump times realize exactly the two-point mixture at every time, including endpoints.
 The paths here are functions, not elements of continuous path space. -/
-theorem map_jumpPath (t : I) : volume.map (fun a ↦ jumpPath a t) = jumpMarginal t := by
-  ext S hS
-  rw [Measure.map_apply (measurable_jumpPath t) hS, jumpMarginal_def]
-  by_cases h0 : (0 : ℝ) ∈ S <;> by_cases h1 : (1 : ℝ) ∈ S
-  · have heq : (fun a ↦ jumpPath a t) ⁻¹' S = univ := by
-      ext a
-      by_cases hat : a ≤ t <;> simp [jumpPath, hat, h0, h1]
-    simp [heq, h0, h1, ← ENNReal.ofReal_add (sub_nonneg.2 t.2.2) t.2.1]
-  · have heq : (fun a ↦ jumpPath a t) ⁻¹' S = Ioi t := by
-      ext a
-      by_cases hat : a ≤ t <;> simp [jumpPath, hat, h0, h1, not_le.mp]
-    simp [heq, h0, h1, unitInterval.volume_Ioi]
-  · have heq : (fun a ↦ jumpPath a t) ⁻¹' S = Iic t := by
-      ext a
-      by_cases hat : a ≤ t <;> simp [jumpPath, hat, h0, h1]
-    simp [heq, h0, h1, unitInterval.volume_Iic]
-  · have heq : (fun a ↦ jumpPath a t) ⁻¹' S = ∅ := by
-      ext a
-      by_cases hat : a ≤ t <;> simp [jumpPath, hat, h0, h1]
-    simp [heq, h0, h1]
-
-/-- The mean of the two-point mixture equals its time parameter. -/
-@[simp] theorem integral_id_jumpMarginal (t : I) : ∫ x, x ∂jumpMarginal t = (t : ℝ) := by
-  have h0 : Integrable (fun x : ℝ ↦ x) (Measure.dirac 0) := integrable_dirac (by simp)
-  have h1 : Integrable (fun x : ℝ ↦ x) (Measure.dirac 1) := integrable_dirac (by simp)
-  rw [jumpMarginal_def, integral_add_measure (h0.smul_measure ENNReal.ofReal_ne_top)
-    (h1.smul_measure ENNReal.ofReal_ne_top)]
-  simp [integral_smul_measure, ENNReal.toReal_ofReal t.2.1]
+theorem map_jumpPath (t : I) : volume.map (fun a ↦ jumpPath a t) = Ber((1 : ℝ), 0, t) := by
+  have hpath : (fun a ↦ jumpPath a t) = (Iic t).indicator (1 : I → ℝ) := by
+    funext a
+    by_cases h : a ≤ t
+    · simp [h]
+    · simp [not_le.mp h, Set.indicator_of_notMem, h]
+  rw [hpath]
+  have hparam : (⟨volume.real (Iic t), by simp⟩ : I) = t := by
+    ext
+    simp [measureReal_def, unitInterval.volume_Iic, ENNReal.toReal_ofReal t.2.1]
+  simpa only [hparam] using
+    (hasLaw_indicator_one_bernoulliMeasure
+      (P := volume) (M := ℝ) (s := Iic t) measurableSet_Iic.nullMeasurableSet).map_eq
 
 /-- The exact `W₁` distance along the mixture curve: mass moves by jumps, but its law moves
 at constant unit speed. -/
-theorem wassersteinEDist_one_jumpMarginal (s t : I) :
-    wassersteinEDist 1 (jumpMarginal s) (jumpMarginal t) = edist s t := by
+theorem wassersteinEDist_one_bernoulliMeasure_one_zero (s t : I) :
+    wassersteinEDist 1 Ber((1 : ℝ), 0, s) Ber((1 : ℝ), 0, t) = edist s t := by
   suffices h : ∀ s t : I, s ≤ t →
-      wassersteinEDist 1 (jumpMarginal s) (jumpMarginal t) = ENNReal.ofReal ((t : ℝ) - s) by
+      wassersteinEDist 1 Ber((1 : ℝ), 0, s) Ber((1 : ℝ), 0, t) =
+        ENNReal.ofReal ((t : ℝ) - s) by
     rcases le_total s t with hst | hts
     · rw [h s t hst, edist_dist, Subtype.dist_eq, Real.dist_eq, abs_of_nonpos]
       · simp [neg_sub]
@@ -166,53 +125,63 @@ theorem wassersteinEDist_one_jumpMarginal (s t : I) :
       exact sub_nonneg.2 hts
   intro s t hst
   apply le_antisymm
-  · -- Couple both laws by the same uniform jump time.
-    have hm := (measurable_jumpPath s).prodMk (measurable_jumpPath t)
-    have hπ : IsCoupling (volume.map fun a ↦ (jumpPath a s, jumpPath a t))
-        (jumpMarginal s) (jumpMarginal t) := by
-      constructor
-      · rw [Measure.fst_map_prodMk (measurable_jumpPath s) (measurable_jumpPath t), map_jumpPath]
-      · rw [Measure.snd_map_prodMk (measurable_jumpPath s) (measurable_jumpPath t), map_jumpPath]
-    refine (wassersteinEDist_le hπ 1).trans_eq ?_
-    rw [eLpNorm_map_measure measurable_edist.aestronglyMeasurable hm.aemeasurable,
-      eLpNorm_one_eq_lintegral_enorm (measurable_edist.comp hm).aestronglyMeasurable]
-    have heq : (fun a ↦ ‖edist (jumpPath a s) (jumpPath a t)‖ₑ) =
-        (Ioc s t).indicator (fun _ ↦ (1 : ℝ≥0∞)) := by
-      funext a
-      by_cases has : a ≤ s <;> by_cases hat : a ≤ t
-      · simp [jumpPath, has, hat, Set.indicator_of_notMem, not_lt_of_ge has]
-      · exact False.elim (hat (has.trans hst))
-      · simp [jumpPath, has, hat, Set.indicator_of_mem, not_le.mp has]
-      · simp [jumpPath, has, hat, Set.indicator_of_notMem]
-    simp only [Function.comp_apply]
-    rw [heq, lintegral_indicator_const measurableSet_Ioc]
-    simp
+  · -- Leave the common mass fixed and move only the remaining mass from zero to one.
+    let commonMass : Measure ℝ := ENNReal.ofReal (s : ℝ) • Measure.dirac 1 +
+      ENNReal.ofReal (1 - (t : ℝ)) • Measure.dirac 0
+    let movedMass : Measure ℝ := ENNReal.ofReal ((t : ℝ) - s) • Measure.dirac 0
+    have hleft : ENNReal.ofReal (1 - (t : ℝ)) + ENNReal.ofReal ((t : ℝ) - s) =
+        ENNReal.ofReal (1 - (s : ℝ)) := by
+      rw [← ENNReal.ofReal_add (sub_nonneg.2 t.2.2) (sub_nonneg.2 hst)]
+      congr 1
+      ring
+    have hright : ENNReal.ofReal (s : ℝ) + ENNReal.ofReal ((t : ℝ) - s) =
+        ENNReal.ofReal (t : ℝ) := by
+      rw [← ENNReal.ofReal_add s.2.1 (sub_nonneg.2 hst)]
+      congr 1
+      ring
+    have hs : Ber((1 : ℝ), 0, s) = commonMass + movedMass := by
+      simp only [bernoulliMeasure_def, ← Measure.coe_nnreal_smul, ENNReal.coe_nnreal_eq,
+        unitInterval.coe_toNNReal, unitInterval.coe_symm_eq]
+      simp [commonMass, movedMass, add_assoc, ← add_smul, hleft]
+    have ht : Ber((1 : ℝ), 0, t) = commonMass + movedMass univ • Measure.dirac 1 := by
+      simp only [bernoulliMeasure_def, ← Measure.coe_nnreal_smul, ENNReal.coe_nnreal_eq,
+        unitInterval.coe_toNNReal, unitInterval.coe_symm_eq]
+      simp only [commonMass, movedMass, smul_apply, measure_univ, smul_eq_mul, mul_one]
+      rw [add_right_comm (ENNReal.ofReal (s : ℝ) • Measure.dirac 1), ← add_smul, hright]
+    rw [hs, ht]
+    refine (wassersteinEDist_add_smul_dirac_le measurable_edist 1
+      commonMass movedMass 1).trans_eq ?_
+    rw [eLpNorm_one_eq_lintegral_enorm (by fun_prop)]
+    simp [movedMass, lintegral_smul_measure]
   · -- The difference of means gives the matching lower bound.
-    have hint (r : I) := (hasFiniteMoment_jumpMarginal 1 r).integrable_of_lipschitzWith
-        LipschitzWith.id
-    simpa using ofReal_integral_sub_integral_le_wassersteinEDist_one
-      LipschitzWith.id (hint t) (hint s)
-      |>.trans_eq (wassersteinEDist_comm measurable_edist 1 (jumpMarginal t) (jumpMarginal s))
+    simpa [integral_bernoulliMeasure] using ofReal_integral_sub_integral_le_wassersteinEDist_one
+      LipschitzWith.id (integrable_bernoulliMeasure 1 0 t id)
+      (integrable_bernoulliMeasure 1 0 s id)
+      |>.trans_eq (wassersteinEDist_comm measurable_edist 1 Ber((1 : ℝ), 0, t) Ber(1, 0, s))
+
+/-- The two-point mixture curve in the finite-first-moment Wasserstein space. -/
+noncomputable def jumpCurve (t : I) : WassersteinSpace 1 ℝ :=
+  WassersteinSpace.mk ⟨Ber((1 : ℝ), 0, t), inferInstance⟩
+    (hasFiniteMoment_bernoulliMeasure 1 1 0 t)
+
+@[simp] theorem coe_jumpCurve (t : I) :
+    ((jumpCurve t : ProbabilityMeasure ℝ) : Measure ℝ) = Ber((1 : ℝ), 0, t) := by
+  exact (congrArg ProbabilityMeasure.toMeasure (WassersteinSpace.coe_mk
+    ⟨Ber((1 : ℝ), 0, t), inferInstance⟩ (hasFiniteMoment_bernoulliMeasure 1 1 0 t))).trans
+    (ProbabilityMeasure.coe_mk _ _)
 
 /-- The mixture curve is an isometric copy of the unit interval in `P₁(ℝ)`, hence a
 constant-speed Wasserstein geodesic from `δ₀` to `δ₁`. -/
-theorem exists_isometry_jumpMarginal :
-    ∃ γ : I → WassersteinSpace 1 ℝ, Isometry γ ∧
-      ∀ t, ((γ t : ProbabilityMeasure ℝ) : Measure ℝ) = jumpMarginal t := by
-  let γ (t : I) : WassersteinSpace 1 ℝ :=
-    WassersteinSpace.mk ⟨jumpMarginal t, inferInstance⟩ (hasFiniteMoment_jumpMarginal 1 t)
-  have hγ (t : I) : ((γ t : ProbabilityMeasure ℝ) : Measure ℝ) = jumpMarginal t :=
-    (congrArg ProbabilityMeasure.toMeasure (WassersteinSpace.coe_mk
-      ⟨jumpMarginal t, inferInstance⟩ (hasFiniteMoment_jumpMarginal 1 t))).trans
-      (ProbabilityMeasure.coe_mk _ _)
-  refine ⟨γ, fun s t ↦ ?_, hγ⟩
-  rw [WassersteinSpace.edist_def, hγ, hγ, wassersteinEDist_one_jumpMarginal]
+theorem isometry_jumpCurve : Isometry jumpCurve := by
+  intro s t
+  rw [WassersteinSpace.edist_def, coe_jumpCurve, coe_jumpCurve,
+    wassersteinEDist_one_bernoulliMeasure_one_zero]
 
 /-- No probability law on continuous real paths has the two-point mixture as every time marginal.
 Thus even a `W₁` geodesic need not admit continuous-path superposition. -/
-theorem not_exists_timeMarginal_eq_jumpMarginal :
+theorem not_exists_timeMarginal_eq_bernoulliMeasure_one_zero :
     ¬ ∃ η : Measure C(I, ℝ), IsProbabilityMeasure η ∧
-      ∀ t, η.timeMarginal t = jumpMarginal t := by
+      ∀ t, η.timeMarginal t = Ber((1 : ℝ), 0, t) := by
   rintro ⟨η, hη, h⟩
   let := hη
   have hstay : ∀ᵐ γ ∂η, ∀ t, γ t ∈ ({0, 1} : Set ℝ) := by
@@ -220,7 +189,8 @@ theorem not_exists_timeMarginal_eq_jumpMarginal :
     refine ae_forall_apply_mem_of_dense hDc hDd (Set.toFinite {0, 1}).isClosed fun t _ ↦ ?_
     apply (Measure.ae_timeMarginal_iff (Set.toFinite {0, 1}).measurableSet).1
     rw [h t]
-    exact ae_mem_jumpMarginal t
+    apply mem_ae_iff.mpr
+    simp [bernoulliMeasure_def]
   have hstart := Measure.ae_eq_of_timeMarginal_eq_dirac (by simpa using h 0)
   have hend := Measure.ae_eq_of_timeMarginal_eq_dirac (by simpa using h 1)
   obtain ⟨γ, hγ, hγ0, hγ1⟩ := (hstay.and (hstart.and hend)).exists
