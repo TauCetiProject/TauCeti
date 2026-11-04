@@ -48,7 +48,7 @@ recovers the law.
 
 * `ProbabilityTheory.sum_meas_smul_cond_fiber_of_countable`
 * `ProbabilityTheory.cond_congr_ae`
-* `MeasureTheory.Measure.toNNReal_mul_integral_cond_eq_setIntegral`
+* `MeasureTheory.Measure.toNNReal_smul_integral_cond_eq_setIntegral`
 * `Measurable.cond`, `Measurable.cond_const`, and `Measurable.cond_preimage_Ioc` (with the
   corresponding `Icc`, `Ioo`, and `Ico` forms)
 * `ProbabilityTheory.integrable_cond_of_norm_le`
@@ -76,16 +76,16 @@ theorem cond_congr_ae {μ : Measure Ω} {s t : Set Ω} (h : s =ᵐ[μ] t) :
     μ[|s] = μ[|t] := by
   rw [cond, cond, measure_congr h, Measure.restrict_congr_set h]
 
-/-- Multiplying an integral under a conditional measure by the finite mass of the conditioning
+/-- Scaling an integral under a conditional measure by the finite mass of the conditioning
 event recovers the corresponding set integral. -/
-theorem _root_.MeasureTheory.Measure.toNNReal_mul_integral_cond_eq_setIntegral
-    (μ : Measure Ω) (s : Set Ω) (f : Ω → ℝ)
+theorem _root_.MeasureTheory.Measure.toNNReal_smul_integral_cond_eq_setIntegral
+    {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+    (μ : Measure Ω) (s : Set Ω) (f : Ω → E)
     (h : μ s ≠ ⊤) :
-    (μ s).toNNReal * ∫ x, f x ∂cond μ s = ∫ x in s, f x ∂μ := by
+    (μ s).toNNReal • ∫ x, f x ∂cond μ s = ∫ x in s, f x ∂μ := by
   have haverage := measure_smul_setAverage f h
-  rw [setAverage_eq', ← cond, Measure.real, ← ENNReal.coe_toNNReal_eq_toReal,
-    smul_eq_mul] at haverage
-  exact haverage
+  rw [setAverage_eq', ← cond, Measure.real, ← ENNReal.coe_toNNReal_eq_toReal] at haverage
+  simpa only [NNReal.smul_def] using haverage
 
 /-! ### Measurability in a law and a conditioning event -/
 
