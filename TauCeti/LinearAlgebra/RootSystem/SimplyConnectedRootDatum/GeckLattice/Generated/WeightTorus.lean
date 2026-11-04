@@ -50,7 +50,7 @@ variable (t : DynkinType) (ht : t.Valid) (R : Type u) [CommRing R]
 
 /-- The composite of the generated-carrier inclusion and its torus map is the diagonal
 representation with the Geck weights, without any character-spanning hypothesis. -/
-theorem hom_geckGeneratedWeightTorusCoordinateMap_comp :
+theorem hom_geckGeneratedWeightTorusCoordinateMap_comp_hom_geckGeneratedCoordinateMap :
     (t.geckGeneratedWeightTorusCoordinateMap ht R).hom.comp
         (t.geckGeneratedCoordinateMap ht R).hom =
       GeneralLinear.weightTorusCoordinateBialgHom (S := R) (t.geckWeightFin ht) := by
@@ -72,7 +72,7 @@ theorem pointsMulEquiv_mapPointsFunctor_geckGeneratedWeightTorusCoordinateMap
       diagGL (fun i ↦ torusCharacter (SplitTorus.pointsMulEquiv q) (t.geckWeightFin ht i)) := by
   rw [← CommHopfAlgCat.Hom.mapPointsFunctor_comp_app_apply,
     CommHopfAlgCat.Hom.mapPointsFunctor_app_apply, _root_.CommHopfAlgCat.hom_comp,
-    hom_geckGeneratedWeightTorusCoordinateMap_comp]
+    hom_geckGeneratedWeightTorusCoordinateMap_comp_hom_geckGeneratedCoordinateMap]
   exact GeneralLinear.pointsMulEquiv_comp_weightTorusCoordinateBialgHom (t.geckWeightFin ht) A q
 
 variable (hwt : Submodule.span ℤ (Set.range (t.geckWeight ht)) = ⊤)
@@ -88,7 +88,7 @@ theorem geckGeneratedWeightTorusCoordinateMap_surjective :
     apply DiagonalizableGroup.surjective_diagonalCoordinateMap
     apply SplitTorus.closure_range_weightCharacter_eq_top
     rwa [t.range_geckWeightFin ht]
-  rw [← t.hom_geckGeneratedWeightTorusCoordinateMap_comp ht R] at h
+  rw [← t.hom_geckGeneratedWeightTorusCoordinateMap_comp_hom_geckGeneratedCoordinateMap ht R] at h
   exact Function.Surjective.of_comp h
 
 /-- The ideal of the closed weight torus inside the generated Geck subgroup, for a
