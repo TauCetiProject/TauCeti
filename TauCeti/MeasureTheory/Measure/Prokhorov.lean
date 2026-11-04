@@ -8,6 +8,7 @@ module
 public import Mathlib.MeasureTheory.Measure.Prokhorov
 public import Mathlib.MeasureTheory.Integral.BoundedContinuousFunction
 import Mathlib.Topology.MetricSpace.Polish
+import TauCeti.Topology.Compactness.Compact
 
 /-!
 # Prokhorov compactness lemmas for sequences of measures
@@ -21,6 +22,9 @@ sequence is tight.
 
 * `TauCeti.isCompact_closure_of_isTightMeasureSet_of_mass_le`: Prokhorov's theorem for finite
   measures, a tight set with uniformly bounded mass has compact closure.
+* `TauCeti.exists_tendsto_finiteMeasure_of_eventually_measure_compl_eq_zero`: finite measures
+  eventually carried by a compact set, with bounded mass, converge along an ultrafilter to a finite
+  measure carried by that set.
 * `TauCeti.finite_measure_cluster_limit`: a tight, mass-bounded sequence of finite measures has a
   weak cluster limit along an ultrafilter below `atTop`.
 * `TauCeti.finite_measure_subseq_limit`: the corresponding subsequence form when the weak topology
@@ -69,6 +73,19 @@ theorem isCompact_closure_of_isTightMeasureSet_of_mass_le {S : Set (FiniteMeasur
     fun μ hμ => ⟨hmass μ hμ, fun j => ENNReal.coe_le_coe.mp ?_⟩
   simpa using (measure_mono (compl_subset_compl.mpr
     (Set.subset_accumulate (s := K) (x := j)))).trans (hK_tail j μ hμ)
+
+/-- **Prokhorov's theorem along an ultrafilter, for measures carried by a compact set.** Finite
+measures eventually carried by a compact set `K`, with mass eventually at most `C`, converge along
+an ultrafilter to a finite measure carried by `K`. -/
+theorem exists_tendsto_finiteMeasure_of_eventually_measure_compl_eq_zero {ι : Type*}
+    {U : Ultrafilter ι} {μs : ι → FiniteMeasure α} {K : Set α} (hK : IsCompact K) {C : ℝ}
+    (h : ∀ᶠ i in U, (μs i : Measure α) Kᶜ = 0 ∧ (μs i : Measure α).real univ ≤ C) :
+    ∃ μ : FiniteMeasure α, (μ : Measure α) Kᶜ = 0 ∧ Tendsto μs U (𝓝 μ) := by
+  obtain ⟨μ, ⟨-, hμK⟩, hμ⟩ := IsCompact.exists_tendsto_of_eventually_mem
+    (isCompact_setOfPred_finiteMeasure_le_of_isCompact C.toNNReal hK) <| h.mono fun i hi =>
+      ⟨NNReal.le_toNNReal_of_coe_le (FiniteMeasure.measureReal_eq_coe_coeFn.symm.trans_le hi.2),
+        (FiniteMeasure.null_iff_toMeasure_null _ _).2 hi.1⟩
+  exact ⟨μ, (FiniteMeasure.null_iff_toMeasure_null _ _).1 hμK, hμ⟩
 
 /-- A tight, uniformly mass-bounded sequence of finite measures has a weak cluster limit.
 

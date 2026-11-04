@@ -14,14 +14,15 @@ import TauCeti.Topology.Separation.InvFunOn
 /-!
 # Compactness utilities
 
-General lemmas about compact and σ-compact subsets of topological spaces.
+General lemmas about compact and σ-compact subsets of topological spaces, and limits along
+ultrafilters of families eventually in a compact set.
 -/
 
 public section
 
 namespace TauCeti
 
-open Set
+open Filter Set Topology
 
 variable {X : Type*} [TopologicalSpace X]
 
@@ -61,6 +62,14 @@ theorem _root_.IsCompact.image_connectedComponentIn {Y : Type*} [TopologicalSpac
     simpa only [hgf (hA hwA)] using hg (mem_image_of_mem _ hv)
   · have hfx : f x ∉ f '' A := fun ⟨w, hwA, hw⟩ => hxA (hinj (hA hwA) hx hw ▸ hwA)
     rw [connectedComponentIn_eq_empty hxA, connectedComponentIn_eq_empty hfx, image_empty]
+
+/-- A family that eventually lies in a compact set `s` along an ultrafilter converges along it to
+a point of `s`. -/
+theorem _root_.IsCompact.exists_tendsto_of_eventually_mem {ι : Type*} {s : Set X}
+    (hs : IsCompact s) {U : Ultrafilter ι} {u : ι → X} (hu : ∀ᶠ i in U, u i ∈ s) :
+    ∃ x ∈ s, Tendsto u U (𝓝 x) := by
+  obtain ⟨x, hx, h⟩ := hs.ultrafilter_le_nhds' (U.map u) (Ultrafilter.mem_map.2 hu)
+  exact ⟨x, hx, by rwa [Ultrafilter.coe_map] at h⟩
 
 /-- The union of two σ-compact sets is σ-compact. -/
 theorem _root_.IsSigmaCompact.union {s t : Set X} (hs : IsSigmaCompact s)

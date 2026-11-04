@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RingTheory.MvPolynomial.Symmetric.NewtonIdentities
+public import TauCeti.RingTheory.Polynomial.Monic.OfCoeff
 public import Mathlib.FieldTheory.IsAlgClosed.Basic
 public import Mathlib.RingTheory.Polynomial.Vieta
 public import Mathlib.Topology.Algebra.Ring.Basic
@@ -19,7 +20,8 @@ Let `M : ℕ → K` be a sequence in a field of characteristic zero, thought of 
 `b₀ = 1`,  `k b_k = ∑_{j=1}^{k} (-1)^(j-1) b_{k-j} M_j`  (`TauCeti.newtonCoeff`),
 
 and hence the monic polynomial `P(X) = Xᵐ - b₁ Xᵐ⁻¹ + ⋯ + (-1)ᵐ bₘ`
-(`TauCeti.newtonPolynomial M m`). When `M j` is the `j`-th power sum of a multiset `s`, the `b_k`
+(`TauCeti.newtonPolynomial M m`), built with `TauCeti.Polynomial.monicOfCoeff` from its lower
+coefficients. When `M j` is the `j`-th power sum of a multiset `s`, the `b_k`
 are the elementary symmetric functions of `s` and, for `m = card s`, `P = ∏_{t ∈ s} (X - t)`, so
 the roots of `P` are exactly `s`. Conversely, over an algebraically closed field the roots of `P`,
 counted with multiplicity, have power sums `M j` for `1 ≤ j ≤ m`, whatever `M` is. Thus
@@ -42,7 +44,10 @@ Each `b_k` is a polynomial in `M₁, …, M_k`, so it depends continuously on `M
 * `TauCeti.newtonCoeff_sum_map_pow`: the Newton coefficients of the power sums of a multiset are
   its elementary symmetric functions.
 * `TauCeti.continuous_newtonCoeff`: `b_k` depends continuously on `M`.
-* `TauCeti.monic_newtonPolynomial`, `TauCeti.natDegree_newtonPolynomial`.
+* `TauCeti.newtonPolynomial_eq_monicOfCoeff`: `newtonPolynomial M m` is the monic polynomial with
+  lower coefficients `(-1)^(m-i) b_{m-i}`, so the `TauCeti.Polynomial.monicOfCoeff` API applies.
+* `TauCeti.monic_newtonPolynomial`, `TauCeti.natDegree_newtonPolynomial`,
+  `TauCeti.coeff_newtonPolynomial_sub`.
 * `TauCeti.roots_newtonPolynomial_sum_map_pow`: the roots of the polynomial built from the power
   sums of a multiset `s` of cardinality `m` are `s`.
 * `TauCeti.sum_map_pow_roots_newtonPolynomial`: over an algebraically closed field, the roots of
@@ -65,10 +70,12 @@ namespace TauCeti
 variable {K : Type*} [Field K]
 
 /-- The **Newton coefficients** of a sequence `M`: `b₀ = 1` and, for `k ≥ 1`,
-`k b_k = (-1)^(k+1) ∑_{(i, j) ∈ antidiagonal k, i < k} (-1)ⁱ b_i M_j`, that is
-`k b_k = ∑_{j=1}^{k} (-1)^(j-1) b_{k-j} M_j`. When `M j` is the `j`-th power sum of a multiset,
-`b_k` is its `k`-th elementary symmetric function (`TauCeti.newtonCoeff_sum_map_pow`). The value
-`M 0` is not used. -/
+`b_k = k⁻¹ * ((-1)^(k+1) ∑_{(i, j) ∈ antidiagonal k, i < k} (-1)ⁱ b_i M_j)`. Whenever `(k : K) ≠ 0`,
+in particular in characteristic zero (`TauCeti.mul_newtonCoeff_eq_sum`), this is the recursion
+`k b_k = ∑_{j=1}^{k} (-1)^(j-1) b_{k-j} M_j`; when the characteristic divides `k`, the inverse is
+`0` and so is `b_k`. When `M j` is the `j`-th power sum of a multiset in characteristic zero, `b_k`
+is its `k`-th elementary symmetric function (`TauCeti.newtonCoeff_sum_map_pow`). The value `M 0`
+is not used. -/
 def newtonCoeff (M : ℕ → K) (k : ℕ) : K :=
   if k = 0 then 1 else
     (k : K)⁻¹ * ((-1) ^ (k + 1) *
@@ -98,42 +105,36 @@ theorem continuous_newtonCoeff [TopologicalSpace K] [IsTopologicalRing K] (k : �
   refine continuous_const.mul (continuous_const.mul (continuous_finsetSum _ fun a ha => ?_))
   exact (continuous_const.mul (ih a.1 (mem_filter.1 ha).2)).mul (continuous_apply a.2)
 
-/-- The polynomial `Xᵐ - b₁ Xᵐ⁻¹ + ⋯ + (-1)ᵐ bₘ` of the Newton coefficients `b_j` of `M`. It is
-monic of degree `m` (`TauCeti.monic_newtonPolynomial`, `TauCeti.natDegree_newtonPolynomial`). -/
+/-- The polynomial `Xᵐ - b₁ Xᵐ⁻¹ + ⋯ + (-1)ᵐ bₘ` of the Newton coefficients `b_j` of `M`: the
+monic polynomial `TauCeti.Polynomial.monicOfCoeff` of degree `m` whose coefficient of `Xⁱ`, for
+`i < m`, is `(-1)^(m-i) b_{m-i}` (`TauCeti.newtonPolynomial_eq_monicOfCoeff`). -/
 def newtonPolynomial (M : ℕ → K) (m : ℕ) : K[X] :=
-  ∑ j ∈ range (m + 1), C ((-1) ^ j * newtonCoeff M j) * X ^ (m - j)
+  Polynomial.monicOfCoeff fun i : Fin m => (-1) ^ (m - i) * newtonCoeff M (m - i)
 
-theorem eval_newtonPolynomial (M : ℕ → K) (m : ℕ) (w : K) :
-    (newtonPolynomial M m).eval w =
-      ∑ j ∈ range (m + 1), (-1) ^ j * newtonCoeff M j * w ^ (m - j) := by
-  simp [newtonPolynomial, eval_finsetSum]
+/-- `newtonPolynomial M m` is the monic polynomial of degree `m` whose coefficient of `Xⁱ`, for
+`i < m`, is `(-1)^(m-i) b_{m-i}`, so the `TauCeti.Polynomial.monicOfCoeff` API applies to it. -/
+theorem newtonPolynomial_eq_monicOfCoeff (M : ℕ → K) (m : ℕ) :
+    newtonPolynomial M m =
+      Polynomial.monicOfCoeff fun i : Fin m => (-1) ^ (m - i) * newtonCoeff M (m - i) :=
+  (rfl)
+
+@[simp]
+theorem monic_newtonPolynomial (M : ℕ → K) (m : ℕ) : (newtonPolynomial M m).Monic := by
+  rw [newtonPolynomial_eq_monicOfCoeff]
+  exact Polynomial.monic_monicOfCoeff _
+
+@[simp]
+theorem natDegree_newtonPolynomial (M : ℕ → K) (m : ℕ) : (newtonPolynomial M m).natDegree = m := by
+  rw [newtonPolynomial_eq_monicOfCoeff, Polynomial.natDegree_monicOfCoeff]
 
 theorem coeff_newtonPolynomial_sub (M : ℕ → K) {m j : ℕ} (hj : j ≤ m) :
     (newtonPolynomial M m).coeff (m - j) = (-1) ^ j * newtonCoeff M j := by
-  rw [newtonPolynomial, finsetSum_coeff, sum_eq_single j]
-  · simp only [coeff_C_mul_X_pow, ↓reduceIte]
-  · intro i hi hij
-    rw [mem_range] at hi
-    rw [coeff_C_mul_X_pow, ite_eq_right_iff]
-    exact fun h => absurd h (by omega)
-  · intro hj'
-    exact absurd (mem_range.2 (Nat.lt_succ_of_le hj)) hj'
-
-theorem natDegree_newtonPolynomial_le (M : ℕ → K) (m : ℕ) :
-    (newtonPolynomial M m).natDegree ≤ m :=
-  natDegree_sum_le_of_forall_le _ _ fun _ _ =>
-    (natDegree_C_mul_X_pow_le _ _).trans (Nat.sub_le _ _)
-
-theorem monic_newtonPolynomial (M : ℕ → K) (m : ℕ) : (newtonPolynomial M m).Monic :=
-  monic_of_natDegree_le_of_coeff_eq_one m (natDegree_newtonPolynomial_le M m) <| by
-    simpa using coeff_newtonPolynomial_sub M (Nat.zero_le m)
-
-@[simp]
-theorem natDegree_newtonPolynomial (M : ℕ → K) (m : ℕ) : (newtonPolynomial M m).natDegree = m :=
-  natDegree_eq_of_le_of_coeff_ne_zero (natDegree_newtonPolynomial_le M m) <| by
-    have h := coeff_newtonPolynomial_sub M (Nat.zero_le m)
-    simp only [Nat.sub_zero, pow_zero, newtonCoeff_zero, mul_one] at h
-    simp [h]
+  rw [newtonPolynomial_eq_monicOfCoeff]
+  rcases eq_or_ne j 0 with rfl | hj₀
+  · simp
+  have h := Polynomial.coeff_monicOfCoeff
+    (fun i : Fin m => (-1) ^ (m - i) * newtonCoeff M (m - i)) ⟨m - j, by omega⟩
+  rwa [Nat.sub_sub_self hj] at h
 
 section CharZero
 
@@ -150,6 +151,7 @@ theorem mul_newtonCoeff_eq_sum (M : ℕ → K) (k : ℕ) :
 
 /-- The Newton coefficients of the power sums of a multiset are its elementary symmetric
 functions. -/
+@[simp]
 theorem newtonCoeff_sum_map_pow (s : Multiset K) (k : ℕ) :
     newtonCoeff (fun j => (s.map (· ^ j)).sum) k = s.esymm k := by
   induction k using Nat.strong_induction_on with
@@ -163,17 +165,20 @@ theorem newtonCoeff_sum_map_pow (s : Multiset K) (k : ℕ) :
 
 /-- The polynomial built from the power sums of a multiset `s`, of degree `card s`, is
 `∏_{t ∈ s} (X - t)`. -/
+@[simp]
 theorem newtonPolynomial_sum_map_pow (s : Multiset K) :
     newtonPolynomial (fun j => (s.map (· ^ j)).sum) (Multiset.card s) =
       (s.map fun t => X - C t).prod := by
-  rw [Multiset.prod_X_sub_X_eq_sum_esymm, newtonPolynomial]
-  refine sum_congr rfl fun j _ => ?_
-  rw [newtonCoeff_sum_map_pow]
-  simp [mul_assoc]
+  have hmonic : (s.map fun t => X - C t).prod.Monic :=
+    monic_multiset_prod_of_monic _ _ fun t _ => monic_X_sub_C t
+  rw [newtonPolynomial_eq_monicOfCoeff, ← Polynomial.monicOfCoeff_coeff hmonic
+    (natDegree_multiset_prod_X_sub_C_eq_card s)]
+  congr 1
+  funext i
+  rw [Multiset.prod_X_sub_C_coeff s i.2.le, newtonCoeff_sum_map_pow]
 
 /-- The roots of the polynomial built from the power sums of a multiset `s`, of degree `card s`,
 are the elements of `s`, with their multiplicities. -/
-@[simp]
 theorem roots_newtonPolynomial_sum_map_pow (s : Multiset K) :
     (newtonPolynomial (fun j => (s.map (· ^ j)).sum) (Multiset.card s)).roots = s := by
   rw [newtonPolynomial_sum_map_pow, roots_multiset_prod_X_sub_C]

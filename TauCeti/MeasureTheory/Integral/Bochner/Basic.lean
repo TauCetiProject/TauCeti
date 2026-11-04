@@ -24,6 +24,12 @@ for set and probability integrals.
 * `AddMonoidHom.integral_comp_comm` commutes integration with a continuous additive map
   between real Banach spaces.
 
+## Counting measures of multisets
+
+* `Multiset.integrable_sum_map_dirac` and `Multiset.integral_sum_map_dirac`: every function is
+  integrable against the counting measure `∑_{x ∈ s} δₓ` of a multiset `s`, with integral the sum
+  of its values over `s`. Its measure-level facts are in `TauCeti.MeasureTheory.Measure.Dirac`.
+
 ## Positive parts
 
 * `ofReal_integral_le_lintegral_ofReal` bounds the positive part of a real-valued
@@ -119,6 +125,30 @@ theorem AddMonoidHom.integral_comp_comm {X E F : Type*} [MeasurableSpace X]
     ∫ x, T (f x) ∂μ = T (∫ x, f x ∂μ) := by
   simpa only [AddMonoidHom.coe_toRealLinearMap] using
     (T.toRealLinearMap hT).integral_comp_comm hf
+
+namespace Multiset
+
+variable {X E : Type*} [MeasurableSpace X] [MeasurableSingletonClass X] [NormedAddCommGroup E]
+
+/-- Every function is integrable against the counting measure `∑_{x ∈ s} δₓ` of a multiset. -/
+theorem integrable_sum_map_dirac (s : Multiset X) (g : X → E) :
+    Integrable g (s.map Measure.dirac).sum := by
+  induction s using Multiset.induction_on with
+  | empty => simp
+  | cons a s ih =>
+    simpa only [map_cons, sum_cons] using (integrable_dirac enorm_lt_top).add_measure ih
+
+/-- The integral against the counting measure of a multiset is the sum over the multiset. -/
+theorem integral_sum_map_dirac [NormedSpace ℝ E] [CompleteSpace E] (s : Multiset X) (g : X → E) :
+    ∫ x, g x ∂(s.map Measure.dirac).sum = (s.map g).sum := by
+  induction s using Multiset.induction_on with
+  | empty => simp
+  | cons a s ih =>
+    simp only [map_cons, sum_cons]
+    rw [integral_add_measure (integrable_dirac enorm_lt_top) (integrable_sum_map_dirac s g),
+      integral_dirac, ih]
+
+end Multiset
 
 namespace TauCeti
 
