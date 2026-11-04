@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.Calculus.BumpFunction.FiniteDimension
 public import Mathlib.Analysis.Distribution.SchwartzSpace.Basic
 import Mathlib.Analysis.Calculus.ContDiff.Bounds
+import Mathlib.Analysis.Distribution.SchwartzSpace.CompactSupport
 import TauCeti.Analysis.Calculus.ContDiff.Scaling
 
 /-!
@@ -220,11 +221,8 @@ theorem tendsto_smulLeftCLM_contDiffBump_two_pow (φ : ContDiffBump (0 : E)) (f 
     Tendsto (fun N : ℕ ↦ smulLeftCLM G (fun ξ ↦ (φ (((2 : ℝ) ^ N)⁻¹ • ξ) : ℂ)) f) atTop
       (𝓝 f) := by
   have hφ : (⇑φ).HasTemperateGrowth := φ.hasCompactSupport.hasTemperateGrowth φ.contDiff
-  have hbdd (i : ℕ) : ∃ B, ∀ x, ‖iteratedFDeriv ℝ i φ x‖ ≤ B :=
-    let ⟨C, _, hC⟩ := φ.hasCompactSupport.exists_bound_iteratedFDeriv φ.contDiff i
-    ⟨C, hC i le_rfl⟩
-  have h := (tendsto_smulLeftCLM_comp_inv_smul_atTop φ.contDiff hbdd φ.eventuallyEq_one
-    f).comp (tendsto_pow_atTop_atTop_of_one_lt (one_lt_two (α := ℝ)))
+  have h := (tendsto_smulLeftCLM_comp_smul φ.contDiff φ.hasCompactSupport φ.eventuallyEq_one
+    f).comp (tendsto_inv_atTop_zero.comp (tendsto_pow_atTop_atTop_of_one_lt (one_lt_two (α := ℝ))))
   refine h.congr fun N ↦ ?_
   exact (smulLeftCLM_ofReal ℂ (hφ.comp
     (((2 : ℝ) ^ N)⁻¹ • ContinuousLinearMap.id ℝ E).hasTemperateGrowth) f).symm
