@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.Normed.Group.Basic
 public import Mathlib.Algebra.BigOperators.Group.List.Lemmas
+public import TauCeti.Data.List.Rotate
 
 /-!
 # Conjugation-invariant group norms
@@ -22,6 +23,18 @@ to recover a group norm from a left-invariant metric.
 -/
 
 public section
+
+namespace GroupSeminorm
+
+variable {G : Type*} [Group G]
+
+/-- Reversing a word and inverting each letter preserves its seminorm, even without conjugation
+invariance. Reversing the word alone need not preserve the seminorm. -/
+@[simp] theorem map_prod_inv_reverse (ℓ : GroupSeminorm G) (l : List G) :
+    ℓ (l.map (fun g => g⁻¹)).reverse.prod = ℓ l.prod := by
+  rw [← List.prod_inv_reverse, map_inv_eq_map]
+
+end GroupSeminorm
 
 namespace GroupNorm
 
@@ -60,16 +73,9 @@ theorem map_mul_comm (g h : G) : ℓ (g * h) = ℓ (h * g) :=
 
 /-- The norm of a list product is invariant under any cyclic rotation. -/
 theorem map_prod_rotate (l : List G) (n : ℕ) : ℓ (l.rotate n).prod = ℓ l.prod := by
-  rw [List.rotate_eq_drop_append_take_mod, List.prod_append]
-  rw [hℓ.map_mul_comm, ← List.prod_append, List.take_append_drop]
+  exact List.IsRotated.apply_prod_eq hℓ.map_mul_comm (List.IsRotated.forall l n)
 
 end IsConjInvariant
-
-/-- Reversing a word and inverting each letter preserves its norm, even without conjugation
-invariance. Reversing the word alone need not preserve the norm. -/
-@[simp] theorem map_prod_inv_reverse (ℓ : GroupNorm G) (l : List G) :
-    ℓ (l.map (fun g => g⁻¹)).reverse.prod = ℓ l.prod := by
-  rw [← List.prod_inv_reverse, map_inv_eq_map]
 
 /-- The distance in the normed group associated to `ℓ` is `ℓ (g⁻¹ * h)`. -/
 @[simp] theorem toNormedGroup_dist (ℓ : GroupNorm G) (g h : G) :
