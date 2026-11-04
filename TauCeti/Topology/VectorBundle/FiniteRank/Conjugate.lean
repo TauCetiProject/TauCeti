@@ -78,6 +78,12 @@ instance : (conjugate B).Additive :=
 
 variable {B}
 
+theorem conjugate_obj (A : FiniteRankBundleCore ℂ B) :
+    (conjugate B).obj A = CoordinateFunctor.conjugate.mapCore A := (rfl)
+
+theorem conjugate_map {A D : FiniteRankBundleCore ℂ B} (f : A ⟶ D) :
+    (conjugate B).map f = CoordinateFunctor.conjugate.mapHom f := (rfl)
+
 @[simp] theorem rank_conjugate_obj (A : FiniteRankBundleCore ℂ B) :
     ((conjugate B).obj A).rank = A.rank := (rfl)
 
