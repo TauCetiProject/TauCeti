@@ -27,7 +27,7 @@ they form the unit sphere `Sⁿ⁻¹` of `p^⊥`. Rotating `p` towards `v` trace
 `F : Sⁿ⁻¹ × S¹ → Sⁿ`, `F (v, z) = Re z • p + Im z • v`,
 
 with `S¹` the unit circle of `ℂ`. Each point `q ≠ ±p` lies on exactly two of these circles, as
-`F (v₀, z₀)` and `F (-v₀, z̄₀)` (`TauCeti.sphereRotationFamily_eq_iff`), while `F` collapses
+`F (v₀, z₀)` and `F (-v₀, conj z₀)` (`TauCeti.sphereRotationFamily_eq_iff`), while `F` collapses
 `Sⁿ⁻¹ × {±1}` to `±p`.
 
 We orient `Sⁿ` and `Sⁿ⁻¹ ⊆ p^⊥` by their outward normals (`TauCeti.sphereOrientation`), the
@@ -285,7 +285,7 @@ theorem mvfderiv_coe_sphereRotationFamily_apply (p : sphere (0 : E) 1)
 /-! ### Fibres -/
 
 /-- Two points of the domain, one of them off `Sᵐ × {±1}`, have the same image exactly when they
-are equal or exchanged by the involution `(v, z) ↦ (-v, z̄)`. -/
+are equal or exchanged by the involution `(v, z) ↦ (-v, conj z)`. -/
 theorem sphereRotationFamily_eq_sphereRotationFamily_iff (p : sphere (0 : E) 1)
     {x y : sphere (0 : (ℝ ∙ (p : E))ᗮ) 1 × sphere (0 : ℂ) 1} (hx : (x.2 : ℂ).im ≠ 0) :
     sphereRotationFamily p y = sphereRotationFamily p x ↔
@@ -620,7 +620,7 @@ theorem degreeAtRegularValue_sphereRotationFamily (o : Orientation ℝ E (Fin (m
       (sphereRotationFamily p) q = 1 + (-1) ^ m := by
   classical
   obtain ⟨x, hxim, rfl⟩ := exists_sphereRotationFamily_eq p hqp hqp'
-  -- The second preimage is the image of `x` under `(v, z) ↦ (-v, z̄)`.
+  -- The second preimage is the image of `x` under `(v, z) ↦ (-v, conj z)`.
   let x' : sphere (0 : (ℝ ∙ (p : E))ᗮ) 1 × sphere (0 : ℂ) 1 :=
     (-x.1, ⟨(starRingEnd ℂ) (x.2 : ℂ), by
       rw [mem_sphere_zero_iff_norm, Complex.norm_conj]
