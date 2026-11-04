@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Algebra.Lie.E6.DoubledMinuscule.CrossProduct
 public import TauCeti.Algebra.Lie.E6.DoubledMinuscule.TorusCentralizer
+public import TauCeti.Algebra.Lie.E6.Minuscule.SeedCoordinates
 
 /-!
 # The doubled type-E6 weight torus and its maximality on field-valued points
@@ -68,12 +69,8 @@ theorem mem_range_weightTorusPoints_iff_isDiag {A : Type v} [CommRing A] (g : po
   · intro hg
     obtain ⟨t, ht⟩ := mem_diagonalTorus_iff_exists_diagGL.mp (mem_diagonalTorus_iff.mpr hg)
     have htmem : diagGL t ∈ points A := ht ▸ g.property
-    -- The torus parameter is read off at the indices `0`, `1`, `2`, `4`, `5`, `11` of `V(ϖ₁)`:
-    -- the fundamental weights are `ϖ₁ = μ₀`, `ϖ₂ = μ₂ + μ₅ + μ₁₁`, `ϖ₃ = μ₀ + μ₁`,
-    -- `ϖ₄ = μ₀ + μ₁ + μ₂`, `ϖ₅ = μ₂ + μ₄ + μ₅ + μ₁₁` and `ϖ₆ = μ₄ + μ₅` in their weights `μₐ`.
     let τ : Fin 27 → Aˣ := fun a => t (matrixIndexEquiv (.inl a))
-    let s : Fin 6 → Aˣ :=
-      ![τ 0, τ 2 * τ 5 * τ 11, τ 0 * τ 1, τ 0 * τ 1 * τ 2, τ 2 * τ 4 * τ 5 * τ 11, τ 4 * τ 5]
+    let s := E6Minuscule.torusParameterOfSeedValues τ
     -- The carrier point `diagGL t` and the torus point at `s` both preserve the cross product,
     -- whose nonzero structure constants are `±1`, so their diagonal entries are multiplicative
     -- along it.
@@ -94,15 +91,9 @@ theorem mem_range_weightTorusPoints_iff_isDiag {A : Type v} [CommRing A] (g : po
         exact ConstantMultiplication.eq_mul_of_preserves_diagonal _ hps (hunit h)
       · rw [Units.val_mul]
         exact ConstantMultiplication.eq_mul_of_preserves_diagonal _ hpt (hunit h)
-      simp only [Finset.mem_insert, Finset.mem_singleton]
-      rintro a (rfl | rfl | rfl | rfl | rfl | rfl) <;>
-        simp only [s, τ, torusCharacter_def, Fin.prod_univ_six, matrixWeight_apply,
-          Equiv.symm_apply_apply, e6DoubledMinusculeWeight_inl] <;>
-        -- Each seed is a product of the six coordinates of `s` with exponents `-1`, `0`, `1`; the
-        -- resulting identity in the commutative group of units is checked additively.
-        apply Additive.ofMul.injective <;>
-        simp [e6MinusculeWeight, ofMul_mul, ofMul_inv] <;>
-        abel
+      simpa only [matrixWeight_apply, Equiv.symm_apply_apply,
+        e6DoubledMinusculeWeight_inl] using
+        E6Minuscule.torusCharacter_torusParameterOfSeedValues τ
     refine ⟨s, Subtype.ext ?_⟩
     rw [coe_weightTorusPoints, UniversalEnvelopingAlgebra.kostantTorusMatrix_apply, hchar, ht]
 
