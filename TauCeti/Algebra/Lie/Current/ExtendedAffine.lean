@@ -65,6 +65,7 @@ noncomputable section
 
 open scoped LaurentSeries TensorProduct
 open HahnSeries LieAlgebra LieAlgebra.SemiDirectSum TauCeti.UniversalEnvelopingAlgebra
+open LieAlgebra.ofTwoCocycle (centralElement centralElement_mem_center envelopingι)
 
 -- The coefficientwise algebra structure matches the module used by the tensor product.
 attribute [local instance 1100] HahnSeries.instAlgebra
@@ -143,17 +144,17 @@ theorem lie_degreeElement_toExtendedResidueExtension_ofProd_single_tmul (n : ℤ
 @[simp]
 theorem lie_degreeElement_centralElement :
     ⁅degreeElement Φ hΦ hΦs,
-      toExtendedResidueExtension Φ hΦ hΦs (centralElement Φ hΦ hΦs)⁆ = 0 := by
+      toExtendedResidueExtension Φ hΦ hΦs (centralElement c)⁆ = 0 := by
   rw [lie_degreeElement_toExtendedResidueExtension, vectorFieldExtensionDerivation_centralElement,
     map_zero]
 
 /-- **`K` is central in the extended affine algebra.** -/
 theorem toExtendedResidueExtension_centralElement_mem_center :
-    toExtendedResidueExtension Φ hΦ hΦs (centralElement Φ hΦ hΦs) ∈ center R E' := by
+    toExtendedResidueExtension Φ hΦ hΦs (centralElement c) ∈ center R E' := by
   refine (LieModule.mem_maxTrivSubmodule R E' E' _).2 fun y ↦ ?_
   obtain ⟨x, t, rfl⟩ := exists_eq_add_smul_degreeElement Φ hΦ hΦs y
   rw [add_lie, smul_lie, lie_degreeElement_centralElement, smul_zero, add_zero, ← LieHom.map_lie,
-    (LieModule.mem_maxTrivSubmodule R E E _).1 (centralElement_mem_center Φ hΦ hΦs) x, map_zero]
+    (LieModule.mem_maxTrivSubmodule R E E _).1 (centralElement_mem_center c) x, map_zero]
 
 end Extension
 
@@ -164,9 +165,9 @@ section Enveloping
 variable (Φ : LinearMap.BilinForm R L) (hΦ : Φ.lieInvariant L) (hΦs : Φ.IsSymm) (a : R)
 
 local notation "c" => twoCocycleOfBilinear R L Φ hΦ hΦs
-local notation "UK" => CentralQuotient R (centralElement Φ hΦ hΦs) a
+local notation "UK" => CentralQuotient R (centralElement c) a
 local notation "UK'" =>
-  CentralQuotient R (toExtendedResidueExtension Φ hΦ hΦs (centralElement Φ hΦ hΦs)) a
+  CentralQuotient R (toExtendedResidueExtension Φ hΦ hΦs (centralElement c)) a
 local notation "dU" => vectorFieldEnvelopingDerivation Φ hΦ hΦs a (single 1 1)
 
 /-- The algebra map `U(ĝ) / (ι K - a) → U(ĝ') / (ι K - a)` induced by the inclusion of `ĝ` in the
@@ -177,7 +178,7 @@ def toExtendedEnveloping : UK →ₐ[R] UK' :=
 /-- The map `U → U'` is the inclusion of `ĝ` on generators. -/
 @[simp]
 theorem toExtendedEnveloping_ι (x : ofTwoCocycle c) :
-    toExtendedEnveloping Φ hΦ hΦs a (CentralQuotient.ι (centralElement Φ hΦ hΦs) a x) =
+    toExtendedEnveloping Φ hΦ hΦs a (CentralQuotient.ι (centralElement c) a x) =
       CentralQuotient.ι _ a (toExtendedResidueExtension Φ hΦ hΦs x) :=
   CentralQuotient.map_ι _ _ x
 
@@ -228,10 +229,10 @@ theorem ι_degreeElement_mul_sub_mul (x : UK) :
 /-- **The degree element on the mode generators**: `[d, ι(x_n)] = n ι(x_n)` in `U'`. -/
 theorem ι_degreeElement_mul_sub_mul_envelopingι_single_tmul (n : ℤ) (r : R) (x : L) :
     CentralQuotient.ι _ a (degreeElement Φ hΦ hΦs) *
-          toExtendedEnveloping Φ hΦ hΦs a (envelopingι Φ hΦ hΦs a (single n r ⊗ₜ x)) -
-        toExtendedEnveloping Φ hΦ hΦs a (envelopingι Φ hΦ hΦs a (single n r ⊗ₜ x)) *
+          toExtendedEnveloping Φ hΦ hΦs a (envelopingι c a (single n r ⊗ₜ x)) -
+        toExtendedEnveloping Φ hΦ hΦs a (envelopingι c a (single n r ⊗ₜ x)) *
           CentralQuotient.ι _ a (degreeElement Φ hΦ hΦs) =
-      n • toExtendedEnveloping Φ hΦ hΦs a (envelopingι Φ hΦ hΦs a (single n r ⊗ₜ x)) := by
+      n • toExtendedEnveloping Φ hΦ hΦs a (envelopingι c a (single n r ⊗ₜ x)) := by
   rw [ι_degreeElement_mul_sub_mul,
     vectorFieldEnvelopingDerivation_single_one_envelopingι_single_tmul, map_zsmul]
 
@@ -244,18 +245,21 @@ section Level
 variable {Φ Ψ : LinearMap.BilinForm R L} (hΦ : Φ.lieInvariant L) (hΦs : Φ.IsSymm)
   (hΨ : Ψ.lieInvariant L) (hΨs : Ψ.IsSymm) {k : R}
 
+local notation "cΦ" => twoCocycleOfBilinear R L Φ hΦ hΦs
+local notation "cΨ" => twoCocycleOfBilinear R L Ψ hΨ hΨs
+
 /-- **The level comparison for the extended affine algebra.** If `Ψ = k • Φ`, the level comparison
 `levelEnvelopingEquiv` extends, fixing `d`, to an algebra isomorphism from
 `U(ĝ'_Ψ) / (ι K - 1)` to `U(ĝ'_Φ) / (ι K - k)`. This holds for every `k`, including `k = 0`. -/
 def extendedLevelEnvelopingEquiv (h : Ψ = k • Φ) :
-    CentralQuotient R (toExtendedResidueExtension Ψ hΨ hΨs (centralElement Ψ hΨ hΨs)) 1 ≃ₐ[R]
-      CentralQuotient R (toExtendedResidueExtension Φ hΦ hΦs (centralElement Φ hΦ hΦs)) k :=
+    CentralQuotient R (toExtendedResidueExtension Ψ hΨ hΨs (centralElement cΨ)) 1 ≃ₐ[R]
+      CentralQuotient R (toExtendedResidueExtension Φ hΦ hΦs (centralElement cΦ)) k :=
   -- The level comparison commutes with the identity twists and with the degree derivations.
-  have hσ (x : CentralQuotient R (centralElement Ψ hΨ hΨs) 1) :
+  have hσ (x : CentralQuotient R (centralElement cΨ) 1) :
       levelEnvelopingEquiv hΦ hΦs hΨ hΨs h (AlgHom.id R _ x) =
         AlgHom.id R _ (levelEnvelopingEquiv hΦ hΦs hΨ hΨs h x) := by
     rw [AlgHom.id_apply, AlgHom.id_apply]
-  have hδ (x : CentralQuotient R (centralElement Ψ hΨ hΨs) 1) :
+  have hδ (x : CentralQuotient R (centralElement cΨ) 1) :
       levelEnvelopingEquiv hΦ hΦs hΨ hΨs h (derivationLieAlgebra.toSigmaDerivation
           (vectorFieldEnvelopingDerivation Ψ hΨ hΨs 1 (single 1 1)) x) =
         derivationLieAlgebra.toSigmaDerivation
@@ -271,7 +275,7 @@ def extendedLevelEnvelopingEquiv (h : Ψ = k • Φ) :
 comparison. -/
 @[simp]
 theorem extendedLevelEnvelopingEquiv_toExtendedEnveloping (h : Ψ = k • Φ)
-    (x : CentralQuotient R (centralElement Ψ hΨ hΨs) 1) :
+    (x : CentralQuotient R (centralElement cΨ) 1) :
     extendedLevelEnvelopingEquiv hΦ hΦs hΨ hΨs h (toExtendedEnveloping Ψ hΨ hΨs 1 x) =
       toExtendedEnveloping Φ hΦ hΦs k (levelEnvelopingEquiv hΦ hΦs hΨ hΨs h x) := by
   rw [extendedLevelEnvelopingEquiv, AlgEquiv.trans_apply, AlgEquiv.trans_apply,
@@ -292,7 +296,7 @@ theorem extendedLevelEnvelopingEquiv_ι_degreeElement (h : Ψ = k • Φ) :
 level comparison. -/
 @[simp]
 theorem extendedLevelEnvelopingEquiv_symm_toExtendedEnveloping (h : Ψ = k • Φ)
-    (x : CentralQuotient R (centralElement Φ hΦ hΦs) k) :
+    (x : CentralQuotient R (centralElement cΦ) k) :
     (extendedLevelEnvelopingEquiv hΦ hΦs hΨ hΨs h).symm (toExtendedEnveloping Φ hΦ hΦs k x) =
       toExtendedEnveloping Ψ hΨ hΨs 1 ((levelEnvelopingEquiv hΦ hΦs hΨ hΨs h).symm x) := by
   rw [AlgEquiv.symm_apply_eq, extendedLevelEnvelopingEquiv_toExtendedEnveloping,
