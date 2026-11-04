@@ -542,11 +542,6 @@ private theorem spinHalfSym_vec_one (hq : IsGenericQuantumParameter q) (ε₁ ε
   rw [Finset.prod_range_one, clebschGordanVector_def, Finset.sum_range_one]
   simp [quantumInteger_one hq.sub_inv_ne_zero, f_smul_tmul, f_smul_vec, kInv_smul_vec]
 
-private theorem assoc_spinHalf_smul (ε δ ζ : ℤˣ) (c : ℂ) (x) :
-    assoc ℂ (UqSl2 q) (LadderModule q 1 ε) (LadderModule q 1 δ) (LadderModule q 1 ζ) (c • x) =
-      c • assoc ℂ (UqSl2 q) (LadderModule q 1 ε) (LadderModule q 1 δ) (LadderModule q 1 ζ) x :=
-  LinearMapClass.map_smul_of_tower _ _ _
-
 private theorem rightVecZero_coords (hq : IsGenericQuantumParameter q) (ε δ ζ : ℤˣ) :
     tripleRightCoord q ε δ ζ 0 0 1 (rightVecZero hq ε δ ζ) = 1 ∧
       tripleRightCoord q ε δ ζ 1 0 0 (rightVecZero hq ε δ ζ) = 0 := by
@@ -594,7 +589,8 @@ private theorem spinHalf_zero_eq (hq : IsGenericQuantumParameter q) (ε δ ζ : 
       ⟨0, by omega⟩).trans (by simp [clebschGordanVector_def])
   dsimp only at h01 h00
   rw [h01, h00, hin, tensorMap_tmul, LinearMap.id_apply, spinHalfAlt_vec_zero] at hexp
-  simpa only [add_tmul, ← smul_tmul', map_add, assoc_spinHalf_smul, assoc_tmul] using hexp
+  simpa only [add_tmul, ← smul_tmul', map_add, LinearMapClass.map_smul_of_tower (S := UqSl2 q),
+    assoc_tmul] using hexp
 
 private theorem spinHalf_two_eq (hq : IsGenericQuantumParameter q) (ε δ ζ : ℤˣ) :
     tmul ℂ (UqSl2 q) (vec q 1 ε 0) (tmul ℂ (UqSl2 q) (vec q 1 δ 0) (vec q 1 ζ 1)) +
@@ -622,7 +618,8 @@ private theorem spinHalf_two_eq (hq : IsGenericQuantumParameter q) (ε δ ζ : �
   simp only [h20, h21, hin, map_add, LinearMap.map_smul_of_tower, tensorMap_tmul,
     LinearMap.id_apply] at hexp
   rw [spinHalfSym_vec_zero, spinHalfSym_vec_one] at hexp
-  simpa only [add_tmul, ← smul_tmul', map_add, assoc_spinHalf_smul, assoc_tmul] using hexp
+  simpa only [add_tmul, ← smul_tmul', map_add, LinearMapClass.map_smul_of_tower (S := UqSl2 q),
+    assoc_tmul] using hexp
 
 /-- Entry `(u = 0, v = 2)` of the `2 × 2` spin-`1/2` `6j` matrix on `L_1^ε ⊗ L_1^δ ⊗ L_1^ζ` at
 total weight `d = 1`. -/
