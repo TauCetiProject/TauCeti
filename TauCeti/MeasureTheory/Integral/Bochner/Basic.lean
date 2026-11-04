@@ -146,6 +146,7 @@ theorem integrable_sum_map_dirac (s : Multiset X) (g : X → E) :
     simpa only [map_cons, sum_cons] using (integrable_dirac enorm_lt_top).add_measure ih
 
 /-- The integral against the counting measure of a multiset is the sum over the multiset. -/
+@[simp]
 theorem integral_sum_map_dirac [NormedSpace ℝ E] [CompleteSpace E] (s : Multiset X) (g : X → E) :
     ∫ x, g x ∂(s.map Measure.dirac).sum = (s.map g).sum := by
   induction s using Multiset.induction_on with

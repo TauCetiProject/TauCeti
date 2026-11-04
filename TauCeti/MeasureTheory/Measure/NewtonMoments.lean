@@ -271,8 +271,8 @@ private theorem tendsto_integral_sub_sum_roots {𝕜 : Type*} [RCLike 𝕜] {ι 
       simp [τf, τ, Multiset.integral_sum_map_dirac]
   simpa [hρρ'] using (hT₁.sub hT₂).sub hT₃
 
-/-- The sequential form of the compactness core used by both public statements: data whose
-negative masses and Newton variances are at most `1 / (n + 1)` eventually satisfy any required
+/-- The sequential form of the compactness core used by both public statements: for data whose
+negative masses and Newton variances are at most `1 / (n + 1)`, some index satisfies any required
 accuracy, against test functions converging uniformly on discs along an ultrafilter. -/
 private lemma exists_norm_integral_sub_sum_roots_lt {𝕜 : Type*} [RCLike 𝕜] {m : ℕ} {R : ℝ}
     {μ ν : ℕ → Measure ℂ} [∀ n, IsFiniteMeasure (μ n)] [∀ n, IsFiniteMeasure (ν n)]
