@@ -47,6 +47,8 @@ these lines.
 * `TauCeti.finrank_gtLine`: each Gelfand–Tsetlin line is one-dimensional.
 * `TauCeti.isInternal_gtLine`: the rational Weyl module is the internal direct sum of the
   Gelfand–Tsetlin lines of the patterns with its top weight.
+* `TauCeti.finrank_rationalWeylFDRep_eq_card_gtPattern`: the rational Weyl module `V_λ` has
+  dimension the number of Gelfand–Tsetlin patterns with top weight `λ`.
 
 ## References
 
@@ -201,5 +203,18 @@ theorem isInternal_gtLine : ∀ {n : ℕ} (l : DominantWeight n), DirectSum.IsIn
       (M := (weylModuleOfShape ℂ (n + 1) l.detShiftShape).toSubmodule)
       (hsigma.submodule_iSupIndep.comp (GTPattern.truncateTopWeightSigmaEquiv l).injective)
       ((GTPattern.truncateTopWeightSigmaEquiv l).iSup_comp.trans hsigma.submodule_iSup_eq_top)
+
+/-- **The Gelfand–Tsetlin dimension count.** The rational Weyl module `V_λ` of `GL n ℂ` has
+dimension the number of Gelfand–Tsetlin patterns with top weight `λ`: by
+`TauCeti.isInternal_gtLine` it is the internal direct sum of the lines of these patterns, each of
+dimension one (`TauCeti.finrank_gtLine`). -/
+theorem finrank_rationalWeylFDRep_eq_card_gtPattern {n : ℕ} (l : DominantWeight n) :
+    finrank ℂ (rationalWeylFDRep ℂ n l) = Nat.card {P : GTPattern n // P.topWeight = l} := by
+  classical
+  -- Fix the additive group of the submodule carrier before inferring the module structures on the
+  -- lines, as in `TauCeti.isInternal_gtLine`.
+  let _ : AddCommGroup (weylModuleOfShape ℂ n l.detShiftShape).toSubmodule := inferInstance
+  exact (finrank_eq_nat_card_basis ((isInternal_gtLine l).collectedBasis fun P ↦
+    finBasisOfFinrankEq ℂ _ (finrank_gtLine l P))).trans (Nat.card_congr (Equiv.sigmaUnique _ _))
 
 end TauCeti
