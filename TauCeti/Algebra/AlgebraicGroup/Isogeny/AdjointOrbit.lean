@@ -63,15 +63,10 @@ theorem image_range_basePointsRepresentation (hf : IsIsogeny f)
   · rintro ⟨_, ⟨g, rfl⟩, rfl⟩
     exact ⟨BialgHom.mapDomain f.hom g, (f.hom.dualCotangentMap_basePointsRepresentation g x).symm⟩
   · rintro ⟨g, rfl⟩
-    obtain ⟨q, hq⟩ := CommHopfAlgCat.mapPointsFunctor_app_surjective_of_injective k f hf.injective g
-    have hq' : BialgHom.mapDomain (A := k) f.hom q = g := by
-      -- The point-functor carrier is presented as a convolution group by these rewrites.
-      erw [CommHopfAlgCat.Hom.mapPointsFunctor_app_apply] at hq
-      erw [BialgHom.mapDomain_apply]
-      exact hq
+    obtain ⟨q, hq⟩ := CommHopfAlgCat.mapDomain_surjective_of_injective k f hf.injective g
     exact ⟨_, ⟨q, rfl⟩, (f.hom.dualCotangentMap_basePointsRepresentation q x).trans
       (congrArg (fun p => Comodule.basePointsRepresentation (H := H) _ p
-        (dualCotangentMap f.hom x)) hq')⟩
+        (dualCotangentMap f.hom x)) hq)⟩
 
 /-- If the differential of an affine isogeny is injective, two rational Lie algebra
 points are conjugate exactly when their images are conjugate. -/
@@ -103,10 +98,8 @@ theorem isNilpotent_ad_dualCotangentMap_iff_of_etaleKernel (hf : IsIsogeny f)
     (x : Module.Dual k (Bialgebra.CotangentSpace k K)) :
     IsNilpotent (LieAlgebra.ad k _ (dualCotangentMap f.hom x)) ↔
       IsNilpotent (LieAlgebra.ad k _ x) := by
-  let e := hf.cotangentDualLieEquivOfEtaleKernel hker
-  rw [← hf.cotangentDualLieEquivOfEtaleKernel_apply hker x, ← LieAlgebra.conj_ad_apply]
-  exact IsNilpotent.map_iff (f := e.toLinearEquiv.conjAlgEquiv k)
-    (e.toLinearEquiv.conjAlgEquiv k).injective
+  rw [← hf.cotangentDualLieEquivOfEtaleKernel_apply hker x]
+  exact (hf.cotangentDualLieEquivOfEtaleKernel hker).isNilpotent_ad_apply_iff x
 
 section CharZero
 
@@ -131,10 +124,8 @@ theorem isNilpotent_ad_dualCotangentMap_iff_of_charZero (hf : IsIsogeny f)
     (x : Module.Dual k (Bialgebra.CotangentSpace k K)) :
     IsNilpotent (LieAlgebra.ad k _ (dualCotangentMap f.hom x)) ↔
       IsNilpotent (LieAlgebra.ad k _ x) := by
-  let e := hf.cotangentDualLieEquivOfCharZero
-  rw [← hf.cotangentDualLieEquivOfCharZero_apply x, ← LieAlgebra.conj_ad_apply]
-  exact IsNilpotent.map_iff (f := e.toLinearEquiv.conjAlgEquiv k)
-    (e.toLinearEquiv.conjAlgEquiv k).injective
+  rw [← hf.cotangentDualLieEquivOfCharZero_apply x]
+  exact hf.cotangentDualLieEquivOfCharZero.isNilpotent_ad_apply_iff x
 
 /-- The actual scheme-theoretic adjoint orbits of corresponding elements have equal
 dimensions under a characteristic-zero affine isogeny. -/
@@ -150,15 +141,8 @@ theorem topologicalKrullDim_range_projectiveOrbitMap_eq_of_charZero (hf : IsIsog
   let _ := hf.finiteType_target
   rw [topologicalKrullDim_range_projectiveOrbitMap_mk_one_eq_finrank_range_ad,
     topologicalKrullDim_range_projectiveOrbitMap_mk_one_eq_finrank_range_ad]
-  let e := hf.cotangentDualLieEquivOfCharZero
-  have he : e x = dualCotangentMap f.hom x := hf.cotangentDualLieEquivOfCharZero_apply x
-  have hker := e.finrank_ker_ad_apply x
-  rw [he] at hker
-  have hdim := e.toLinearEquiv.finrank_eq
-  have hH := (LieAlgebra.ad k _ (dualCotangentMap f.hom x)).finrank_range_add_finrank_ker
-  have hK := (LieAlgebra.ad k _ x).finrank_range_add_finrank_ker
-  norm_cast
-  omega
+  rw [← hf.cotangentDualLieEquivOfCharZero_apply x,
+    hf.cotangentDualLieEquivOfCharZero.finrank_range_ad_apply x]
 
 end CharZero
 
