@@ -16,7 +16,8 @@ uses vertices and edge identities in their original order, so it can replace a w
 connectivity arguments without losing the distinction between parallel edges.
 
 The interface is adapted from Mathlib's `SimpleGraph.Walk.takeUntil`,
-`SimpleGraph.Walk.dropUntil`, and `SimpleGraph.Walk.bypass`.
+`SimpleGraph.Walk.dropUntil`, `SimpleGraph.Walk.exists_mem_support_forall_mem_support_imp_eq`,
+and `SimpleGraph.Walk.bypass`.
 -/
 
 public section
@@ -212,6 +213,40 @@ protected theorem IsPath.dropUntil {p : G.Walk x y} (hp : p.IsPath)
   (isPath_def _).mpr <|
     List.Nodup.sublist (p.support_dropUntil_suffix_support ha).sublist ((isPath_def p).mp hp)
 
+/-- Along any walk visiting a vertex set `S`, there is a first visited vertex of `S`: no vertex of
+`S` other than it appears in the initial segment up to it. -/
+theorem exists_mem_support_forall_mem_support_takeUntil {S : Set α} (p : G.Walk x y)
+    (hS : ∃ z ∈ p.support, z ∈ S) :
+    ∃ z ∈ S, ∃ hz : z ∈ p.support,
+      ∀ w ∈ S, w ∈ (p.takeUntil z hz).support → w = z := by
+  induction p with
+  | @nil u =>
+      obtain ⟨z, hz, hzS⟩ := hS
+      simp only [support_nil, List.mem_singleton] at hz
+      subst z
+      refine ⟨u, hzS, start_mem_support _, fun w _ hw ↦ ?_⟩
+      rw [takeUntil_first] at hw
+      simpa using hw
+  | @cons x u y e h p ih =>
+      by_cases hxS : x ∈ S
+      · refine ⟨x, hxS, start_mem_support _, fun w _ hw ↦ ?_⟩
+        rw [takeUntil_first] at hw
+        simpa using hw
+      · have hS' : ∃ z ∈ p.support, z ∈ S := by
+          obtain ⟨z, hz, hzS⟩ := hS
+          simp only [support_cons, List.mem_cons] at hz
+          rcases hz with rfl | hz
+          · exact absurd hzS hxS
+          · exact ⟨z, hz, hzS⟩
+        obtain ⟨z, hzS, hz, hmin⟩ := ih hS'
+        have hxz : x ≠ z := fun h ↦ hxS (h ▸ hzS)
+        have hz_cons : z ∈ (cons e h p).support := by simp [hz]
+        refine ⟨z, hzS, hz_cons, fun w hwS hw ↦ ?_⟩
+        rw [takeUntil_cons_of_ne e h p hxz hz_cons, support_cons, List.mem_cons] at hw
+        rcases hw with rfl | hw
+        · exact absurd hwS hxS
+        · exact hmin w hwS hw
+
 end Split
 
 /-- An edge identity occurs on a walk exactly when the walk can be split around one traversal of
@@ -232,6 +267,23 @@ theorem mem_edges_iff_exists_append {p : G.Walk x y} {e : β} :
         exact ⟨u, v, h, cons f hf q, r, (cons_append ..).symm⟩
   · rintro ⟨u, v, h, q, r, rfl⟩
     simp [edges_append]
+
+/-- Every edge traversed by a path links a visited vertex distinct from the path's endpoint to a
+visited vertex distinct from the path's starting point. -/
+theorem IsPath.exists_isLink_mem_support_ne {p : G.Walk x y} (hp : p.IsPath) {e : β}
+    (he : e ∈ p.edges) :
+    ∃ u v, G.IsLink e u v ∧ u ∈ p.support ∧ v ∈ p.support ∧ u ≠ y ∧ v ≠ x := by
+  induction p with
+  | nil => simp at he
+  | @cons x z y f hf p ih =>
+    rw [isPath_cons] at hp
+    simp only [edges_cons, List.mem_cons] at he
+    rcases he with rfl | he
+    · exact ⟨x, z, hf, start_mem_support _, by simp [p.start_mem_support],
+        fun hxy ↦ hp.2 (hxy ▸ p.end_mem_support), fun hzx ↦ hp.2 (hzx ▸ p.start_mem_support)⟩
+    · obtain ⟨u, v, huv, hu, hv, huy, _⟩ := ih hp.1 he
+      exact ⟨u, v, huv, by simp [hu], by simp [hv],
+        huy, fun hvx ↦ hp.2 (hvx ▸ hv)⟩
 
 /-- A path whose endpoints are joined by an edge that it traverses consists of that edge alone. -/
 theorem IsPath.eq_toWalk_of_isLink_mem_edges {p : G.Walk x y} (hp : p.IsPath)

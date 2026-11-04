@@ -126,6 +126,30 @@ theorem walkGraph_le_walkGraph_iff (p : G.Walk x y) (q : G.Walk z w) :
     rcases (p.walkGraph_isLink e a b).mp hab with ⟨hab, hep⟩
     exact ⟨hab, he hep⟩
 
+/-- Every visited vertex of a walk is reachable from its starting point within its traced graph. -/
+theorem reachable_walkGraph_of_mem_support {a : α} (p : G.Walk x y) (ha : a ∈ p.support) :
+    (G.walkGraph p).Reachable x a := by
+  induction p with
+  | nil =>
+      simp only [support_nil, List.mem_singleton] at ha
+      subst a
+      exact Reachable.refl (by simp)
+  | @cons x u y e h p ih =>
+      simp only [support_cons, List.mem_cons] at ha
+      rcases ha with rfl | ha
+      · exact Reachable.refl (by simp)
+      · have hxu : (G.walkGraph (.cons e h p)).Reachable x u :=
+          IsLink.reachable (((Walk.cons e h p).walkGraph_isLink e x u).mpr ⟨h, by simp⟩)
+        have hle : G.walkGraph p ≤ G.walkGraph (.cons e h p) :=
+          (walkGraph_le_walkGraph_iff p (.cons e h p)).mpr
+            ⟨fun _ hb ↦ by simp [hb], fun _ hf ↦ by simp [hf]⟩
+        exact hxu.trans ((ih ha).mono hle)
+
+/-- Any two visited vertices of a walk are reachable from each other within its traced graph. -/
+theorem reachable_walkGraph_of_mem_support_of_mem_support {a b : α} (p : G.Walk x y)
+    (ha : a ∈ p.support) (hb : b ∈ p.support) : (G.walkGraph p).Reachable a b :=
+  (p.reachable_walkGraph_of_mem_support ha).symm.trans (p.reachable_walkGraph_of_mem_support hb)
+
 /-- Mapping a walk to a supergraph does not change its traced graph. -/
 @[simp, grind =]
 theorem walkGraph_mapLe (h : G ≤ H) (p : G.Walk x y) :

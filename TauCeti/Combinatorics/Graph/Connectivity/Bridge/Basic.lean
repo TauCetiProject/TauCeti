@@ -272,17 +272,21 @@ theorem componentCount_deleteEdges_bridgeSet [Finite V(G)] :
 
 /-! ### Bridges and cycles -/
 
-/-- A bridge lies on no cycle. -/
-theorem IsBridge.notMem_edges_of_isCycle (he : G.IsBridge e) {p : G.Walk u u}
-    (hp : p.IsCycle) : e ∉ p.edges := by
+/-- A bridge lies on no closed trail. -/
+theorem IsBridge.notMem_edges_of_isTrail (he : G.IsBridge e) {p : G.Walk u u}
+    (hp : p.IsTrail) : e ∉ p.edges := by
   intro hep
   obtain ⟨x, y, h, q, r, rfl⟩ := Walk.mem_edges_iff_exists_append.mp hep
-  have htrail := hp.isTrail
-  rw [Walk.isTrail_def, Walk.edges_append, Walk.edges_cons] at htrail
-  have hq : e ∉ q.edges := fun heq ↦ List.disjoint_of_nodup_append htrail heq (by simp)
-  have hr : e ∉ r.edges := ((List.nodup_append.mp htrail).2.1).notMem
+  rw [Walk.isTrail_def, Walk.edges_append, Walk.edges_cons] at hp
+  have hq : e ∉ q.edges := fun heq ↦ List.disjoint_of_nodup_append hp heq (by simp)
+  have hr : e ∉ r.edges := ((List.nodup_append.mp hp).2.1).notMem
   rw [(h.symm).isBridge_iff_forall_walk_mem_edges] at he
   simpa [Walk.edges_append, hq, hr] using he (r.append q)
+
+/-- A bridge lies on no cycle. -/
+theorem IsBridge.notMem_edges_of_isCycle (he : G.IsBridge e) {p : G.Walk u u}
+    (hp : p.IsCycle) : e ∉ p.edges :=
+  he.notMem_edges_of_isTrail hp.isTrail
 
 /-- An actual edge is a bridge exactly when it lies on no cycle. -/
 theorem isBridge_iff_forall_cycle_notMem (he : e ∈ E(G)) :
