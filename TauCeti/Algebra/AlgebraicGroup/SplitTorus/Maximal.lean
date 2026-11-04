@@ -126,6 +126,17 @@ section OfSurjective
 variable (π : H ⟶ (DiagonalizableGroup.coordinateRing R
     (SplitTorus.characterGroup (Fin r))).obj) (hπ : Function.Surjective π.hom)
 
+omit [Algebra.FiniteType R H] in
+/-- Reindexing finite-rank coordinates by universe lifting preserves the kernel. -/
+private theorem kerOfSurjective_comp_uliftCoordinateRingIso
+    (hs : Function.Surjective (π ≫ (SplitTorus.uliftCoordinateRingIso R r).hom).hom) :
+    HopfIdeal.kerOfSurjective _ hs = HopfIdeal.kerOfSurjective π.hom hπ := by
+  ext x
+  simp only [HopfIdeal.mem_kerOfSurjective, CommHopfAlgCat.hom_comp,
+    BialgHom.coe_comp, Function.comp_apply]
+  exact map_eq_zero_iff _ (ConcreteCategory.bijective_of_isIso
+    (SplitTorus.uliftCoordinateRingIso R r).hom).1
+
 /-- Construct a chosen split maximal torus from a surjective coordinate map in unlifted
 finite-rank coordinates and maximality of its kernel on every geometric fiber. -/
 noncomputable def ofSurjective
@@ -139,15 +150,7 @@ noncomputable def ofSurjective
     exact (ConcreteCategory.bijective_of_isIso _).2.comp hπ
   maximal := by
     intro k _ _ _
-    have hker (hs : Function.Surjective
-        (π ≫ (SplitTorus.uliftCoordinateRingIso R r).hom).hom) :
-        HopfIdeal.kerOfSurjective _ hs = HopfIdeal.kerOfSurjective π.hom hπ := by
-      ext x
-      simp only [HopfIdeal.mem_kerOfSurjective, CommHopfAlgCat.hom_comp,
-        BialgHom.coe_comp, Function.comp_apply]
-      exact map_eq_zero_iff _ (ConcreteCategory.bijective_of_isIso
-        (SplitTorus.uliftCoordinateRingIso R r).hom).1
-    rw [hker]
+    rw [kerOfSurjective_comp_uliftCoordinateRingIso π hπ]
     exact hmax k
 
 variable (hmax : ∀ (k : Type u) [Field k] [Algebra R k] [IsAlgClosed k],
@@ -164,12 +167,8 @@ theorem ofSurjective_coordinateMap :
 /-- Reindexing the torus coordinates does not change the defining kernel. -/
 @[simp]
 theorem definingIdeal_ofSurjective :
-    (ofSurjective π hπ hmax).definingIdeal = HopfIdeal.kerOfSurjective π.hom hπ := by
-  ext x
-  simp only [mem_definingIdeal, ofSurjective_coordinateMap, CommHopfAlgCat.hom_comp,
-    BialgHom.coe_comp, Function.comp_apply, HopfIdeal.mem_kerOfSurjective]
-  exact map_eq_zero_iff _ (ConcreteCategory.bijective_of_isIso
-    (SplitTorus.uliftCoordinateRingIso R r).hom).1
+    (ofSurjective π hπ hmax).definingIdeal = HopfIdeal.kerOfSurjective π.hom hπ :=
+  kerOfSurjective_comp_uliftCoordinateRingIso π hπ (ofSurjective π hπ hmax).surjective
 
 end OfSurjective
 
