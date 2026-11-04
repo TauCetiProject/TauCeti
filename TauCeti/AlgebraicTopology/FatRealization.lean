@@ -211,6 +211,18 @@ theorem augment_ι (ε : X ⟶ (Functor.const _).obj Z) (n : SemiSimplexCategory
     (t : toTop.{u}.obj n) : augment ε (ι X n (x, t)) = ε.app (op n) x :=
   (rfl)
 
+/-- If an augmentation is a quotient map in one degree, its realization is a quotient map.
+No condition on the other degrees or the face maps is needed. -/
+theorem isQuotientMap_augment (ε : X ⟶ (Functor.const _).obj Z) (n : SemiSimplexCategory)
+    (hε : IsQuotientMap (ε.app (op n))) : IsQuotientMap (augment ε) := by
+  obtain ⟨t⟩ : Nonempty (SimplexCategory.toTop.{u}.obj
+    (SemiSimplexCategory.toSimplexCategory.obj n)) := inferInstance
+  let j : X.obj (op n) → fatRealization X := fun x ↦ ι X n (x, t)
+  have hj : Continuous j := (ι X n).continuous.comp (continuous_id.prodMk continuous_const)
+  have heq : (augment ε) ∘ j = fun x ↦ ε.app (op n) x :=
+    funext fun x ↦ augment_ι ε n x t
+  exact IsQuotientMap.of_comp hj (augment ε).hom.continuous (heq.symm ▸ hε)
+
 /-- The augmentation of `‖X‖` induced by `ε` restricts along `‖φ‖` to the augmentation of `‖Y‖`
 induced by `φ ≫ ε`. -/
 @[reassoc (attr := simp)]
