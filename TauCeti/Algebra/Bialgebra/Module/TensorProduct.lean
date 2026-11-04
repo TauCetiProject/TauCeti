@@ -139,16 +139,14 @@ variable {M N} in
 variable {M N} in
 /-- Pure tensors distribute over finite sums in the first factor. -/
 theorem sum_tmul {ι : Type*} (s : Finset ι) (m : ι → M) (n : N) :
-    tmul R H (∑ i ∈ s, m i) n = ∑ i ∈ s, tmul R H (m i) n := by
-  apply (tensorEquiv R H M N).injective
-  simp [TensorProduct.sum_tmul]
+    tmul R H (∑ i ∈ s, m i) n = ∑ i ∈ s, tmul R H (m i) n :=
+  (tensorEquiv R H M N).injective <| by simp [TensorProduct.sum_tmul]
 
 variable {M N} in
 /-- Pure tensors distribute over finite sums in the second factor. -/
 theorem tmul_sum (m : M) {ι : Type*} (s : Finset ι) (n : ι → N) :
-    tmul R H m (∑ i ∈ s, n i) = ∑ i ∈ s, tmul R H m (n i) := by
-  apply (tensorEquiv R H M N).injective
-  simp [TensorProduct.tmul_sum]
+    tmul R H m (∑ i ∈ s, n i) = ∑ i ∈ s, tmul R H m (n i) :=
+  (tensorEquiv R H M N).injective <| by simp [TensorProduct.tmul_sum]
 
 variable {M N} in
 /-- Base scalars may be applied to the first factor. -/
@@ -257,61 +255,45 @@ variable {M N} in
   intro m n
   simp
 
-variable {M N} in
+section TensorMapLinearity
+
+variable {M N}
+
 /-- Tensoring with zero on the left gives zero. -/
-@[simp] theorem tensorMap_zero_left (g : N →ₗ[H] N') :
-    tensorMap R H (0 : M →ₗ[H] M') g = 0 := by
-  ext m n
-  simp
+@[simp] theorem tensorMap_zero_left (g : N →ₗ[H] N') : tensorMap R H (0 : M →ₗ[H] M') g = 0 := by
+  ext m n; simp
 
-variable {M N} in
 /-- Tensoring with zero on the right gives zero. -/
-@[simp] theorem tensorMap_zero_right (f : M →ₗ[H] M') :
-    tensorMap R H f (0 : N →ₗ[H] N') = 0 := by
-  ext m n
-  simp
+@[simp] theorem tensorMap_zero_right (f : M →ₗ[H] M') : tensorMap R H f (0 : N →ₗ[H] N') = 0 := by
+  ext m n; simp
 
-variable {M N} in
 /-- `tensorMap` is additive in the first intertwiner. -/
 theorem tensorMap_add_left (f₁ f₂ : M →ₗ[H] M') (g : N →ₗ[H] N') :
-    tensorMap R H (f₁ + f₂) g = tensorMap R H f₁ g + tensorMap R H f₂ g := by
-  ext m n
-  simp
+    tensorMap R H (f₁ + f₂) g = tensorMap R H f₁ g + tensorMap R H f₂ g := by ext m n; simp
 
-variable {M N} in
 /-- `tensorMap` is additive in the second intertwiner. -/
 theorem tensorMap_add_right (f : M →ₗ[H] M') (g₁ g₂ : N →ₗ[H] N') :
-    tensorMap R H f (g₁ + g₂) = tensorMap R H f g₁ + tensorMap R H f g₂ := by
-  ext m n
-  simp
+    tensorMap R H f (g₁ + g₂) = tensorMap R H f g₁ + tensorMap R H f g₂ := by ext m n; simp
 
-variable {M N} in
 /-- `tensorMap` distributes over finite sums in the first intertwiner. -/
 theorem tensorMap_sum_left {ι : Type*} (s : Finset ι) (f : ι → M →ₗ[H] M') (g : N →ₗ[H] N') :
     tensorMap R H (∑ i ∈ s, f i) g = ∑ i ∈ s, tensorMap R H (f i) g := by
-  ext m n
-  simp [LinearMap.sum_apply, sum_tmul]
+  ext m n; simp [LinearMap.sum_apply, sum_tmul]
 
-variable {M N} in
 /-- `tensorMap` distributes over finite sums in the second intertwiner. -/
 theorem tensorMap_sum_right {ι : Type*} (s : Finset ι) (f : M →ₗ[H] M') (g : ι → N →ₗ[H] N') :
     tensorMap R H f (∑ i ∈ s, g i) = ∑ i ∈ s, tensorMap R H f (g i) := by
-  ext m n
-  simp [LinearMap.sum_apply, tmul_sum]
+  ext m n; simp [LinearMap.sum_apply, tmul_sum]
 
-variable {M N} in
 /-- `tensorMap` is `R`-linear in the first intertwiner. -/
 theorem tensorMap_smul_left (r : R) (f : M →ₗ[H] M') (g : N →ₗ[H] N') :
-    tensorMap R H (r • f) g = r • tensorMap R H f g := by
-  ext m n
-  simp [← smul_tmul']
+    tensorMap R H (r • f) g = r • tensorMap R H f g := by ext m n; simp [← smul_tmul']
 
-variable {M N} in
 /-- `tensorMap` is `R`-linear in the second intertwiner. -/
 theorem tensorMap_smul_right (r : R) (f : M →ₗ[H] M') (g : N →ₗ[H] N') :
-    tensorMap R H f (r • g) = r • tensorMap R H f g := by
-  ext m n
-  simp
+    tensorMap R H f (r • g) = r • tensorMap R H f g := by ext m n; simp
+
+end TensorMapLinearity
 
 variable {M'' N'' : Type*}
 variable [AddCommMonoid M''] [Module R M''] [Module H M''] [IsScalarTower R H M'']
@@ -498,27 +480,26 @@ variable {M N P} in
 
 section Naturality
 
-variable {M N P}
-variable {M' N' P' : Type*}
-variable [AddCommMonoid M'] [Module R M'] [Module H M'] [IsScalarTower R H M']
-variable [AddCommMonoid N'] [Module R N'] [Module H N'] [IsScalarTower R H N']
-variable [AddCommMonoid P'] [Module R P'] [Module H P'] [IsScalarTower R H P']
+variable {M N P M' N' P' : Type*}
+  [AddCommMonoid M] [Module R M] [Module H M] [IsScalarTower R H M]
+  [AddCommMonoid N] [Module R N] [Module H N] [IsScalarTower R H N]
+  [AddCommMonoid P] [Module R P] [Module H P] [IsScalarTower R H P]
+  [AddCommMonoid M'] [Module R M'] [Module H M'] [IsScalarTower R H M']
+  [AddCommMonoid N'] [Module R N'] [Module H N'] [IsScalarTower R H N']
+  [AddCommMonoid P'] [Module R P'] [Module H P'] [IsScalarTower R H P']
 
 /-- Naturality of `assoc` with respect to tensor products of intertwiners, as an equality of
 linear maps. -/
-theorem tensorMap_tensorMap_comp_assoc_eq
-    (f : M →ₗ[H] M') (g : N →ₗ[H] N') (h : P →ₗ[H] P') :
+theorem tensorMap_tensorMap_comp_assoc_eq (f : M →ₗ[H] M') (g : N →ₗ[H] N') (h : P →ₗ[H] P') :
     tensorMap R H f (tensorMap R H g h) ∘ₗ (assoc R H M N P).toLinearMap =
       (assoc R H M' N' P').toLinearMap ∘ₗ tensorMap R H (tensorMap R H f g) h := by
-  apply Tensor.ext
-  intro xy p
+  refine Tensor.ext fun xy p => ?_
   induction xy using Tensor.inductionOn with
   | htmul m n => simp
   | hadd x y hx hy => simp only [add_tmul, LinearMap.comp_apply, map_add, hx, hy]
 
 /-- Naturality of `assoc` with respect to tensor products of intertwiners. -/
-theorem tensorMap_tensorMap_assoc
-    (f : M →ₗ[H] M') (g : N →ₗ[H] N') (h : P →ₗ[H] P')
+theorem tensorMap_tensorMap_assoc (f : M →ₗ[H] M') (g : N →ₗ[H] N') (h : P →ₗ[H] P')
     (x : Tensor R H (Tensor R H M N) P) :
     tensorMap R H f (tensorMap R H g h) (assoc R H M N P x) =
       assoc R H M' N' P' (tensorMap R H (tensorMap R H f g) h x) :=
@@ -526,19 +507,16 @@ theorem tensorMap_tensorMap_assoc
 
 /-- Naturality of `assoc.symm` with respect to tensor products of intertwiners, as an equality
 of linear maps. -/
-theorem tensorMap_tensorMap_comp_assoc_symm_eq
-    (f : M →ₗ[H] M') (g : N →ₗ[H] N') (h : P →ₗ[H] P') :
+theorem tensorMap_tensorMap_comp_assoc_symm_eq (f : M →ₗ[H] M') (g : N →ₗ[H] N') (h : P →ₗ[H] P') :
     tensorMap R H (tensorMap R H f g) h ∘ₗ (assoc R H M N P).symm.toLinearMap =
       (assoc R H M' N' P').symm.toLinearMap ∘ₗ tensorMap R H f (tensorMap R H g h) := by
-  apply Tensor.ext
-  intro m np
+  refine Tensor.ext fun m np => ?_
   induction np using Tensor.inductionOn with
   | htmul n p => simp
   | hadd x y hx hy => simp only [tmul_add, LinearMap.comp_apply, map_add, hx, hy]
 
 /-- Naturality of `assoc.symm` with respect to tensor products of intertwiners. -/
-theorem tensorMap_tensorMap_assoc_symm
-    (f : M →ₗ[H] M') (g : N →ₗ[H] N') (h : P →ₗ[H] P')
+theorem tensorMap_tensorMap_assoc_symm (f : M →ₗ[H] M') (g : N →ₗ[H] N') (h : P →ₗ[H] P')
     (x : Tensor R H M (Tensor R H N P)) :
     tensorMap R H (tensorMap R H f g) h ((assoc R H M N P).symm x) =
       (assoc R H M' N' P').symm (tensorMap R H f (tensorMap R H g h) x) :=
@@ -557,9 +535,7 @@ theorem assoc_pentagon :
       (tensorCongr R H (assoc R H M N P) (LinearEquiv.refl H Q)).trans
         ((assoc R H M (Tensor R H N P) Q).trans
           (tensorCongr R H (LinearEquiv.refl H M) (assoc R H N P Q))) := by
-  apply LinearEquiv.toLinearMap_injective
-  apply Tensor.ext
-  intro xyz q
+  refine LinearEquiv.toLinearMap_injective <| Tensor.ext fun xyz q => ?_
   induction xyz using Tensor.inductionOn with
   | hadd x y hx hy => simp only [add_tmul, map_add, hx, hy]
   | htmul xy p =>
