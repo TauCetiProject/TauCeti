@@ -174,7 +174,7 @@ theorem eLpNorm_rpow_smul_fourier_smulLeftCLM_le (s : ℝ) (φ : 𝓢(E, ℂ)) (
       (.of_forall fun ζ ↦ by positivity)]
   -- Schur's test for the kernel `k (x - y)`, whose row and column integrals are `∫⁻ k`.
   have hschur := TauCeti.lintegral_rpow_lintegral_mul_le (μ := volume) (ν := volume)
-    (k := fun x y ↦ k (x - y)) (hk.comp (measurable_fst.sub measurable_snd))
+    (k := fun x y ↦ k (x - y)) (hk.comp (measurable_fst.sub measurable_snd)).aemeasurable
     (g := g) hg.aemeasurable (p := 2) one_le_two
     (A := ∫⁻ ζ, k ζ) (B := ∫⁻ ζ, k ζ)
     (.of_forall fun x ↦ (lintegral_sub_left_eq_self k x).le)
