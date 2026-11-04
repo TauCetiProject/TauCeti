@@ -133,6 +133,41 @@ private theorem lie_singleSubSingle_of_mem (x : slTwoDiagonalCartan R) (c : R) :
   congrArg Subtype.val (trivial_lie_zero (slTwoDiagonalCartan R) (slTwoDiagonalCartan R) x
     ⟨_, singleSubSingle_mem_slTwoDiagonalCartan c⟩)
 
+variable (R) in
+/-- The element `h = E₀₀ - E₁₁`, as an element of the diagonal Cartan. -/
+def slTwoCartanGenerator : slTwoDiagonalCartan R :=
+  ⟨SpecialLinear.singleSubSingle (0 : Fin 2) 1 (1 : R), singleSubSingle_mem_slTwoDiagonalCartan 1⟩
+
+/-- The element `slTwoCartanGenerator` of the Cartan is `E₀₀ - E₁₁`. -/
+@[simp]
+theorem coe_slTwoCartanGenerator :
+    (slTwoCartanGenerator R : SpecialLinear.sl (Fin 2) R) =
+      SpecialLinear.singleSubSingle (0 : Fin 2) 1 (1 : R) := (rfl)
+
+/-- An element of the diagonal Cartan is its top diagonal entry times `h`. -/
+theorem eq_smul_slTwoCartanGenerator (x : slTwoDiagonalCartan R) :
+    x = x.val.val 0 0 • slTwoCartanGenerator R :=
+  Subtype.ext (eq_smul_singleSubSingle_of_mem_slTwoDiagonalCartan x.2)
+
+/-- A linear form on the diagonal Cartan is determined by its value at `h`. -/
+theorem dual_ext_slTwoCartanGenerator {lam mu : Module.Dual R (slTwoDiagonalCartan R)}
+    (h : lam (slTwoCartanGenerator R) = mu (slTwoCartanGenerator R)) : lam = mu :=
+  LinearMap.ext fun x ↦ by
+    rw [eq_smul_slTwoCartanGenerator x, map_smul, map_smul, h]
+
+/-- The weight of the diagonal Cartan taking the value `t` at `h`: it sends a diagonal matrix to
+`t` times its top entry. -/
+def slTwoWeight (t : R) : Module.Dual R (slTwoDiagonalCartan R) where
+  toFun x := t * x.val.val 0 0
+  map_add' x y := by simp [mul_add]
+  map_smul' c x := by simp [mul_left_comm]
+
+/-- The defining property of `slTwoWeight`. -/
+@[simp]
+theorem slTwoWeight_slTwoCartanGenerator (t : R) :
+    slTwoWeight t (slTwoCartanGenerator R) = t := by
+  simp [slTwoWeight, SpecialLinear.val_singleSubSingle]
+
 end CommRing
 
 section Field
@@ -203,28 +238,6 @@ noncomputable def slTwoRoot : Weight K (slTwoDiagonalCartan K) (SpecialLinear.sl
 @[simp]
 theorem slTwoRoot_apply (x : slTwoDiagonalCartan K) : slTwoRoot K x = 2 * x.val.val 0 0 := (rfl)
 
-variable (K) in
-/-- The element `h = E₀₀ - E₁₁`, as an element of the diagonal Cartan. -/
-def slTwoCartanGenerator : slTwoDiagonalCartan K :=
-  ⟨SpecialLinear.singleSubSingle (0 : Fin 2) 1 (1 : K), singleSubSingle_mem_slTwoDiagonalCartan 1⟩
-
-/-- The element `slTwoCartanGenerator` of the Cartan is `E₀₀ - E₁₁`. -/
-@[simp]
-theorem coe_slTwoCartanGenerator :
-    (slTwoCartanGenerator K : SpecialLinear.sl (Fin 2) K) =
-      SpecialLinear.singleSubSingle (0 : Fin 2) 1 (1 : K) := (rfl)
-
-/-- An element of the diagonal Cartan is its top diagonal entry times `h`. -/
-theorem eq_smul_slTwoCartanGenerator (x : slTwoDiagonalCartan K) :
-    x = x.val.val 0 0 • slTwoCartanGenerator K :=
-  Subtype.ext (eq_smul_singleSubSingle_of_mem_slTwoDiagonalCartan x.2)
-
-/-- A linear form on the diagonal Cartan is determined by its value at `h`. -/
-theorem dual_ext_slTwoCartanGenerator {lam mu : Module.Dual K (slTwoDiagonalCartan K)}
-    (h : lam (slTwoCartanGenerator K) = mu (slTwoCartanGenerator K)) : lam = mu :=
-  LinearMap.ext fun x ↦ by
-    rw [eq_smul_slTwoCartanGenerator x, map_smul, map_smul, h]
-
 /-- `α(h) = 2`. -/
 theorem slTwoRoot_slTwoCartanGenerator : slTwoRoot K (slTwoCartanGenerator K) = 2 := by
   rw [slTwoRoot_apply, coe_slTwoCartanGenerator, val_singleSubSingle_zero_zero, mul_one]
@@ -251,18 +264,6 @@ theorem weight_ext_slTwoCartanGenerator {χ ψ : Weight K (slTwoDiagonalCartan K
     (SpecialLinear.sl (Fin 2) K)} (h : χ (slTwoCartanGenerator K) = ψ (slTwoCartanGenerator K)) :
     χ = ψ :=
   Weight.ext fun x ↦ by rw [weight_apply_eq_mul χ, weight_apply_eq_mul ψ, h]
-
-/-- The weight of the diagonal Cartan taking the value `t` at `h`. -/
-noncomputable def slTwoWeight (t : K) : Module.Dual K (slTwoDiagonalCartan K) :=
-  ((2 : K)⁻¹ * t) • (slTwoRoot K).toLinear
-
-/-- The defining property of `slTwoWeight`. -/
-@[simp]
-theorem slTwoWeight_slTwoCartanGenerator (t : K) :
-    slTwoWeight t (slTwoCartanGenerator K) = t := by
-  simp only [slTwoWeight, LinearMap.smul_apply, Weight.toLinear_apply,
-    slTwoRoot_slTwoCartanGenerator, smul_eq_mul]
-  field_simp
 
 omit [CharZero K] in
 /-- The eigenvalues of `ad h` on a nonzero eigenvector of `sl₂` are `2`, `-2` and `0`. -/
