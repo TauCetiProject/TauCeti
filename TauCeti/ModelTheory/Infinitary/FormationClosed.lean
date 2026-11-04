@@ -30,8 +30,11 @@ give a member), and it is not imposed because nothing built on formation-closed 
 uses it.
 
 Unlike a fragment, a formation-closed fragment determines the size of the language: every function
-and relation symbol occurs in an atomic member. So the formation closure of a countable set is
-countable exactly over languages with countably many function and relation symbols.
+and relation symbol occurs in an atomic member. So a formation-closed fragment has at least as many
+members as there are function symbols, and the formation closure of a countable set is countable
+exactly over languages with countably many function and relation symbols. A formation-closed
+fragment is also infinite, whatever the language: formulas are tagged with their arity, so the
+members `⊥` at different arities are distinct.
 
 ## Main definitions
 
@@ -49,6 +52,10 @@ countable exactly over languages with countably many function and relation symbo
 * `FirstOrder.Language.Fragment.formationClosure_le_iff`: leastness of the formation closure.
 * `FirstOrder.Language.Fragment.formationClosure_countable`: over a language with countably many
   function and relation symbols, a countable set has a countable formation closure.
+* `FirstOrder.Language.Fragment.FormationClosed.aleph0_le_mk`: a formation-closed fragment is
+  infinite.
+* `FirstOrder.Language.Fragment.FormationClosed.lift_mk_functions_le`: a formation-closed fragment
+  has at least as many members as there are function symbols.
 * `FirstOrder.Language.Fragment.FormationClosed.countable_functions` and
   `FirstOrder.Language.Fragment.FormationClosed.countable_relations`: conversely, a countable
   formation-closed fragment forces countably many function and relation symbols.
@@ -231,17 +238,37 @@ theorem castLE_mem {m : ℕ} {φ : L.BoundedFormulaω Empty m} (hmn : m ≤ n)
   rw [castLE_def]
   exact hA.mapBound_mem _ h
 
+open Cardinal in
+/-- **A formation-closed fragment is infinite.** It contains `⊥` at every arity, and these
+members are distinct because each formula is tagged with its arity. -/
+theorem aleph0_le_mk : ℵ₀ ≤ #A := by
+  have h : Function.Injective fun n : ℕ => (⟨⟨n, ⊥⟩, hA.bot_mem n⟩ : A) := fun m n h => by
+    simpa using congrArg (fun p : A => p.1.1) h
+  simpa using lift_mk_le_lift_mk_of_injective h
+
+open Cardinal in
+/-- **The function symbols are absorbed by a formation-closed fragment.** There are at most as many
+function symbols as members: a symbol `f` of arity `l` is recovered from the atomic member
+`f(x₀, …, xₗ₋₁) = f(x₀, …, xₗ₋₁)`. -/
+theorem lift_mk_functions_le : lift.{v} #(Σ l, L.Functions l) ≤ #A := by
+  -- the term applying a function symbol to its bound positions
+  let t : (Σ l, L.Functions l) → Σ l, L.Term (Empty ⊕ Fin l) :=
+    fun f => ⟨f.1, .func f.2 fun i => .var (.inr i)⟩
+  have h : Function.Injective fun f : Σ l, L.Functions l =>
+      (⟨⟨f.1, equal (t f).2 (t f).2⟩, hA.atomic_mem (.equal _ _)⟩ : A) := by
+    rintro ⟨l, f⟩ ⟨l', f'⟩ h
+    simp only [t, Subtype.mk.injEq, Sigma.mk.inj_iff] at h
+    obtain ⟨rfl, h⟩ := h
+    simp_all
+  have h' := lift_mk_le_lift_mk_of_injective h
+  rwa [lift_umax.{u, v}, lift_id'.{u, v}] at h'
+
+open Cardinal in
 /-- A countable formation-closed fragment forces countably many function symbols: each occurs in
 an atomic member. -/
 theorem countable_functions (hc : (A : Set (Σ n, L.BoundedFormulaω Empty n)).Countable) :
-    Countable (Σ l, L.Functions l) := by
-  have h : (Set.univ : Set (Σ l, L.Functions l)) ⊆
-      ⋃ p ∈ (A : Set (Σ n, L.BoundedFormulaω Empty n)), p.2.functionsIn := by
-    rintro ⟨l, f⟩ -
-    let t : L.Term (Empty ⊕ Fin l) := .func f fun i => .var (.inr i)
-    refine Set.mem_iUnion₂.2 ⟨⟨l, equal t t⟩, hA.atomic_mem (.equal t t), ?_⟩
-    simp [t, Term.functionsIn_func]
-  exact Set.countable_univ_iff.1 ((hc.biUnion fun p _ => p.2.functionsIn_countable).mono h)
+    Countable (Σ l, L.Functions l) :=
+  mk_le_aleph0_iff.1 (lift_le_aleph0.1 (hA.lift_mk_functions_le.trans hc.le_aleph0))
 
 /-- A countable formation-closed fragment forces countably many relation symbols: each occurs in
 an atomic member. -/
