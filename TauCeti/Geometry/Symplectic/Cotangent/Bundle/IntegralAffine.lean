@@ -52,8 +52,9 @@ changes compose as integral affine maps of the actions:
 (`TauCeti.CotangentBundle.integralAffineDiffeomorph_trans`), and `Φ_(1, 0)` is the identity.
 
 These pullback identities are instances of the general ones for a cotangent lift followed by a
-fibre translation (`mpullback_cotangent_trans_vectorBundleTranslateDiffeomorph_liouvilleForm`,
-`mpullback_cotangent_trans_vectorBundleTranslateDiffeomorph_symplecticForm`).
+fibre translation
+(`Diffeomorph.mpullback_cotangent_trans_vectorBundleTranslateDiffeomorph_liouvilleForm`,
+`Diffeomorph.mpullback_cotangent_trans_vectorBundleTranslateDiffeomorph_symplecticForm`).
 
 ## Main definitions
 
@@ -215,7 +216,7 @@ theorem mpullback_integralAffineDiffeomorph_liouvilleForm (A : GL ι ℤ) (b : �
     rw [← Finset.sum_smul]
     congr 1
     simp [Matrix.mulVec, dotProduct, mul_comm]
-  have h := mpullback_cotangent_trans_vectorBundleTranslateDiffeomorph_liouvilleForm
+  have h := Diffeomorph.mpullback_cotangent_trans_vectorBundleTranslateDiffeomorph_liouvilleForm
     (Diffeomorph.constSmul (ModelWithCorners.pi fun _ : ι ↦ 𝓘(ℝ)) ∞ A)
     (∑ j, b j • torusTimeForm (fun _ ↦ p) j)
   simp only [Diffeomorph.coe_constSmul] at h
@@ -235,7 +236,7 @@ theorem mpullback_integralAffineDiffeomorph_symplecticForm (A : GL ι ℤ) (b : 
     refine Finset.sum_eq_zero fun j _ ↦ ?_
     rw [map_smul, (SmoothForm.isClosed_iff_mextDerivₗ_eq_zero _).1 (isClosed_torusTimeForm _ j),
       smul_zero]
-  exact mpullback_cotangent_trans_vectorBundleTranslateDiffeomorph_symplecticForm
+  exact Diffeomorph.mpullback_cotangent_trans_vectorBundleTranslateDiffeomorph_symplecticForm
     (Diffeomorph.constSmul (ModelWithCorners.pi fun _ : ι ↦ 𝓘(ℝ)) ∞ A) hclosed
 
 /-- The integral affine change with `A = 1` and `b = 0` is the identity. -/
