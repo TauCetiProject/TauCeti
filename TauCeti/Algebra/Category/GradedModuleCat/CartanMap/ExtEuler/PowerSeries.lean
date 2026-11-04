@@ -224,8 +224,7 @@ private lemma shiftSliceExtEulerHom_smul_eq_coeff_mul
   refine Finset.sum_congr rfl fun m hm ↦ ?_
   have hma : m ≤ a := Nat.lt_succ_iff.mp (Finset.mem_range.mp hm)
   have hsub : (a : ℤ) - (m : ℤ) = ((a - m : ℕ) : ℤ) := by omega
-  rw [Function.Embedding.coeFn_mk, Polynomial.coeff_coe, hsub, ← hQ (a - m)]
-  rfl
+  rw [Function.Embedding.coeFn_mk, Polynomial.coeff_coe, coeff_trunc, hsub, ← hQ (a - m)]
 
 end SliceDescent
 

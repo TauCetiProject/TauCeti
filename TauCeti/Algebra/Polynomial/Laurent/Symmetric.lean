@@ -5,8 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.Polynomial.Laurent
 public import Mathlib.RingTheory.Polynomial.Chebyshev
+public import TauCeti.Algebra.Polynomial.Laurent.Coeff
 
 /-!
 # Symmetric Laurent polynomials
@@ -89,10 +89,6 @@ Laurent powers, once multiplied by `T - T⁻¹`. -/
 end Polynomial.Chebyshev
 
 namespace LaurentPolynomial
-
-/-- Truncation retains every coefficient of nonnegative exponent. -/
-@[simp] theorem coeff_trunc [Semiring R] (p : R[T;T⁻¹]) (n : ℕ) :
-    (trunc p).coeff n = p.coeff (n : ℤ) := (rfl)
 
 variable {R : Type*} [CommRing R]
 

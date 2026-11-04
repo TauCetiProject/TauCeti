@@ -8,11 +8,12 @@ module
 public import Mathlib.Algebra.Polynomial.Laurent
 
 /-!
-# Coefficients of products in Laurent polynomials
+# Coefficients of Laurent polynomials
 
 Multiplying a Laurent polynomial on the left by `T n` shifts its coefficients by `n`, and
 multiplying it by a constant, in particular by a natural number, scales every coefficient. The
-constant `1` has a single coefficient, at exponent `0`. These hold over an arbitrary semiring.
+constant `1` has a single coefficient, at exponent `0`, and `LaurentPolynomial.trunc` retains
+every coefficient of nonnegative exponent. These hold over an arbitrary semiring.
 
 ## Main results
 
@@ -20,6 +21,7 @@ constant `1` has a single coefficient, at exponent `0`. These hold over an arbit
 * `LaurentPolynomial.coeff_C_mul` and `LaurentPolynomial.coeff_natCast_mul`: constants scale
   coefficients.
 * `LaurentPolynomial.coeff_one`: the coefficients of `1`.
+* `LaurentPolynomial.coeff_trunc`: `(trunc f).coeff n = f.coeff (n : ℤ)`.
 -/
 
 public section
@@ -50,5 +52,18 @@ theorem coeff_natCast_mul (m : ℕ) (f : R[T;T⁻¹]) (d : ℤ) :
 @[simp]
 theorem coeff_one (d : ℤ) : (1 : R[T;T⁻¹]).coeff d = if d = 0 then 1 else 0 := by
   rw [← map_one (C : R →+* R[T;T⁻¹]), C_apply]
+
+/-- Truncation retains every coefficient of nonnegative exponent. -/
+@[simp]
+theorem coeff_trunc (f : R[T;T⁻¹]) (n : ℕ) : (trunc f).coeff n = f.coeff (n : ℤ) := by
+  induction f using LaurentPolynomial.induction_on' with
+  | add p q hp hq => simp [hp, hq]
+  | C_mul_T d r =>
+    rw [trunc_C_mul_T, ← single_eq_C_mul_T]
+    split_ifs with hd
+    · lift d to ℕ using hd
+      simp [Polynomial.coeff_monomial]
+    · have hdn : d ≠ (n : ℤ) := by omega
+      simp [hdn]
 
 end LaurentPolynomial
