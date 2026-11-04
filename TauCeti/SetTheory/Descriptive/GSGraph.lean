@@ -11,6 +11,7 @@ public import Mathlib.MeasureTheory.Constructions.BorelSpace.Basic
 public import Mathlib.Topology.Baire.BaireMeasurable
 public import TauCeti.SetTheory.Descriptive.BorelColoring
 public import TauCeti.Topology.Instances.CantorSpace
+import Mathlib.Algebra.Ring.BooleanRing
 import Mathlib.Topology.Baire.LocallyCompactRegular
 
 /-!
@@ -36,13 +37,23 @@ Consequently, for dense `S`:
 * `exists_not_baireMeasurableSet_colorClass`: a coloring of `gSGraph S` by countably many colors
   has a color class without the Baire property, so `orientedGS S` has no countable Borel
   coloring (`not_hasCountableBorelColoring_orientedGS`) and `gSGraph S` has no measurable
-  coloring by `ℕ`;
+  coloring by `ℕ`; and no relation `G` receiving a measurable map that sends the oriented edges
+  of `orientedGS S` to pairs of `G` has a countable Borel coloring
+  (`not_hasCountableBorelColoring_of_orientedGS_hom`);
 * `isMeagre_setOf_comp_of_forall_gSGraph_adj`: if a measurable map `φ` sends the edges of
   `gSGraph S` to inequivalent pairs of an equivalence relation `E` with measurable classes, then
   every section `{b | E (φ a) (φ b)}` of the pulled-back relation is meagre.
 
 The last statement is what makes pulled-back relations meagre, through the Kuratowski–Ulam
-theorem, in the category proof of Silver's theorem.
+theorem, in the category proof of Silver's theorem. For the canonical words, G₀ itself has no
+measurable coloring by `ℕ` (`not_exists_measurable_coloring_gZero`).
+
+Density cannot be dropped. A dense word set has words of infinitely many lengths
+(`DenseWords.infinite_image_length`), and when the words of `S` have only finitely many lengths,
+the parity of the coordinates at those lengths changes along every edge. So `gSGraph S` then has
+a continuous coloring by `Bool` (`exists_continuous_coloring_gSGraph`), and `orientedGS S` has a
+countable Borel coloring (`hasCountableBorelColoring_orientedGS`). For `S = {[]}`, which is
+sparse, this coloring is the first coordinate.
 
 ## References
 
@@ -210,6 +221,14 @@ theorem DenseWords.mono (h : DenseWords S) (hST : S ⊆ T) : DenseWords T := by
 theorem SparseWords.mono (h : SparseWords T) (hST : S ⊆ T) : SparseWords S :=
   Set.InjOn.mono hST h
 
+/-- A dense word set has words of infinitely many lengths. -/
+theorem DenseWords.infinite_image_length (h : DenseWords S) : (List.length '' S).Infinite := by
+  intro hfin
+  obtain ⟨N, hN⟩ := hfin.bddAbove
+  obtain ⟨s, hs, hrs⟩ := denseWords_iff.1 h (List.replicate (N + 1) false)
+  have := hrs.length_le.trans (hN (mem_image_of_mem _ hs))
+  simp at this
+
 /-- Decode the first component of `Nat.unpair n`, then pad the decoded word with `false`
 to length `n`. If decoding fails or the word is too long, use the all-`false` word. -/
 def canonicalWord (n : ℕ) : List Bool :=
@@ -363,6 +382,15 @@ theorem not_hasCountableBorelColoring_orientedGS (hS : DenseWords S) :
   -- The color class `c'.colorClass n` is `{x | c x = n}`, which is the preimage `c ⁻¹' {n}`.
   exact hn (hc (measurableSet_singleton n)).baireMeasurableSet
 
+/-- If every word extends to a word of `S` and a measurable map of Cantor space sends every
+oriented edge of `orientedGS S` to a pair of `G`, then `G` has no countable Borel coloring. This
+is the exclusivity half of the G₀ dichotomy. -/
+theorem not_hasCountableBorelColoring_of_orientedGS_hom {X : Type*} [MeasurableSpace X]
+    {G : SetRel X X} (hS : DenseWords S) {φ : (ℕ → Bool) → X} (hφ : Measurable φ)
+    (hφG : ∀ ⦃y z⦄, (y, z) ∈ orientedGS S → (φ y, φ z) ∈ G) :
+    ¬ G.HasCountableBorelColoring := fun h ↦
+  not_hasCountableBorelColoring_orientedGS hS ((h.preimage hφ).mono fun _ hp ↦ hφG hp)
+
 /-- If `S` is dense, then `gSGraph S` has no measurable coloring by `ℕ`. -/
 theorem not_exists_measurable_coloring_gSGraph (hS : DenseWords S) :
     ¬ ∃ c : (gSGraph S).Coloring ℕ, Measurable c := fun h ↦
@@ -388,6 +416,40 @@ theorem isMeagre_setOf_comp_of_forall_gSGraph_adj (hS : DenseWords S) {X : Type*
   isMeagre_of_isIndepSet_gSGraph hS (hφ (hE (φ a))).baireMeasurableSet
     fun _ hb _ hc _ hbc ↦ hφE hbc (E.trans (E.symm hb) hc)
 
+/-- The Kechris–Solecki–Todorcevic graph G₀ has no measurable coloring by `ℕ`. -/
+theorem not_exists_measurable_coloring_gZero : ¬ ∃ c : gZero.Coloring ℕ, Measurable c :=
+  not_exists_measurable_coloring_gSGraph denseWords_canonicalWords
+
 end Independence
+
+/-! ## Word sets with finitely many lengths -/
+
+/-- If the words of `S` have only finitely many lengths, then `gSGraph S` has a continuous
+coloring by `Bool`: the parity of the coordinates at those lengths. In particular, `gSGraph S` is
+two-colorable, although `S` may be sparse. -/
+theorem exists_continuous_coloring_gSGraph (hS : (List.length '' S).Finite) :
+    ∃ c : (gSGraph S).Coloring Bool, Continuous c := by
+  set L := hS.toFinset
+  -- An edge flips one coordinate in `L`, so it changes the sum in `Bool`, where `+` is `xor`.
+  have hedge {a b : ℕ → Bool} (h : (a, b) ∈ orientedGS S) : ∑ n ∈ L, a n ≠ ∑ n ∈ L, b n := by
+    obtain ⟨s, hs, -, rfl⟩ := mem_orientedGS_iff_exists_flipAt.1 h
+    have hm : s.length ∈ L := hS.mem_toFinset.2 (mem_image_of_mem _ hs)
+    rw [← Finset.add_sum_erase _ _ hm, ← Finset.add_sum_erase _ _ hm,
+      Finset.sum_congr rfl fun n hn ↦ flipAt_apply_of_ne (Finset.ne_of_mem_erase hn) a]
+    simp [flipAt_apply_self]
+  refine ⟨SimpleGraph.Coloring.mk (fun x ↦ ∑ n ∈ L, x n) fun hab ↦ ?_,
+    continuous_finsetSum _ fun n _ ↦ continuous_apply n⟩
+  exact (gSGraph_adj_iff.1 hab).elim hedge fun h ↦ (hedge h).symm
+
+/-- If the words of `S` have only finitely many lengths, then the oriented graph `orientedGS S`
+has a countable Borel coloring. Since `{[]}` is such a word set and is sparse, the density
+hypothesis of `not_hasCountableBorelColoring_orientedGS` cannot be dropped, even for sparse word
+sets. -/
+theorem hasCountableBorelColoring_orientedGS (hS : (List.length '' S).Finite) :
+    SetRel.HasCountableBorelColoring (orientedGS S) := by
+  obtain ⟨c, hc⟩ := exists_continuous_coloring_gSGraph hS
+  refine SetRel.hasCountableBorelColoring_iff.2
+    ⟨fun x ↦ Encodable.encode (c x), (measurable_of_countable _).comp hc.measurable,
+      fun _ _ hab heq ↦ c.valid (gSGraph_adj_iff.2 (.inl hab)) (Encodable.encode_injective heq)⟩
 
 end TauCeti

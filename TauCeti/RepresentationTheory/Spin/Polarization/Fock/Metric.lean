@@ -103,7 +103,7 @@ theorem toLinearMapₛₗ₂_apply_eq_polar (x y : (J.spinPolarizationData hQJ h
     ((((Q.baseChange ℂ).polarBilin.comp (tmulConj V)).comp W.subtype).compl₂ W.subtype)
   have hB : toLinearMapₛₗ₂ (starRingEnd ℂ) b b (1 : Matrix ι ι ℂ) = (-(2 : ℂ)⁻¹) • B := by
     refine LinearMap.ext_basis b b fun i j ↦ ?_
-    simp only [toLinearMapₛₗ₂_apply_basis, one_apply, LinearMap.smul_apply, B,
+    simp only [toLinearMapₛₗ₂_apply_basis, Matrix.one_apply, LinearMap.smul_apply, B,
       LinearMap.compl₂_apply, LinearMap.comp_apply, Submodule.subtype_apply, polarBilin_apply_apply,
       hb, smul_eq_mul]
     split_ifs <;> norm_num
@@ -229,7 +229,7 @@ theorem toLinearMapₛₗ₂_fockAction_left (a : CliffordAlgebra (Q.baseChange 
       J.toLinearMapₛₗ₂_fockAction_ι_coe_W'_left hQJ hQ b hb]
   | add a a' ha ha' => simp only [map_add, LinearMap.add_apply, ha, ha']
   | mul a a' ha ha' =>
-    simp only [conjStar_mul, map_mul, Module.End.mul_apply]
+    simp only [conjStar_mul, map_mul, _root_.mul_apply_eq_comp]
     rw [ha, ha']
 
 /-- **Clifford multiplication by a real vector is skew-Hermitian**: for an orthonormal basis `b`

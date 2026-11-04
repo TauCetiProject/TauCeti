@@ -44,7 +44,7 @@ theorem frobeniusSubIdCoeffs_apply (e : E) (i : ZMod (p ^ 0) × ℕ) :
       (if i.2 = p then e else 0) - if i.2 = 1 then e else 0 := by
   have : Subsingleton (ZMod (p ^ 0)) := ZMod.subsingleton_iff.mpr (pow_zero p)
   rcases i with ⟨a, n⟩
-  simp only [frobeniusSubIdCoeffs, ZeroAtInftyContinuousMap.sub_apply,
+  simp only [frobeniusSubIdCoeffs, _root_.sub_apply,
     ZeroAtInftyContinuousMap.single_apply, Prod.mk.injEq, Subsingleton.elim a 0, true_and]
 
 /-- For `p ≠ 1`, the coefficient vector `(X^p - X) • e` vanishes exactly when `e` vanishes. -/
@@ -55,7 +55,7 @@ theorem frobeniusSubIdCoeffs_eq_zero (hp : p ≠ 1) (e : E) :
   · intro h
     have := congrArg (fun c : AnalyticStage p 0 E ↦ c (0, p)) h
     simpa only [frobeniusSubIdCoeffs_apply, hp, ite_true, ite_false, sub_zero,
-      ZeroAtInftyContinuousMap.zero_apply] using this
+      _root_.zero_apply] using this
   · rintro rfl
     simp only [frobeniusSubIdCoeffs, ZeroAtInftyContinuousMap.single_zero, sub_self]
 
@@ -97,8 +97,8 @@ theorem transition_frobeniusSubIdCoeffs (e : E) (he : (p : ℤ_[p]) • e = 0) :
     · intro k hk
       simp only [ZeroAtInftyContinuousMap.single_apply, Prod.mk.injEq, hk, and_false,
         ite_false, smul_zero]
-  simp only [frobeniusSubIdCoeffs, map_sub, ZeroAtInftyContinuousMap.sub_apply,
-    hsingle, ZeroAtInftyContinuousMap.zero_apply]
+  simp only [frobeniusSubIdCoeffs, map_sub, _root_.sub_apply,
+    hsingle, _root_.zero_apply]
   by_cases hj : j = 0
   · subst j
     simp only [Nat.choose_zero_right, Nat.cast_one, Nat.sub_zero, one_mul, pow_zero, mul_one,

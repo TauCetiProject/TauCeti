@@ -422,6 +422,14 @@ theorem rootGeneratorWeight_inr (i j : Fin n) :
     rootGeneratorWeight n (.inr i) j = -CartanMatrix.D n i j := by
   simp [rootGeneratorWeight]
 
+/-- Each numbered signed simple-root weight is nonzero as an integral character. -/
+theorem rootGeneratorWeight_ne_zero (k : Fin n ⊕ Fin n) :
+    rootGeneratorWeight n k ≠ 0 := by
+  intro h
+  have hdiag := congrFun h (Sum.elim id id k)
+  cases k <;> simp [rootGeneratorWeight_inl, rootGeneratorWeight_inr,
+    CartanMatrix.D_diag] at hdiag
+
 /-! ### The numbered generators sit at the named simple roots
 
 Neither identification below is a `simp` lemma. Their left-hand sides are already `simp`-normal:

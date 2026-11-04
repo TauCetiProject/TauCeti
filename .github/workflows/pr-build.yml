@@ -38,6 +38,7 @@ on:
   workflow_dispatch:
     inputs:
       pr: { description: "PR number to build", required: true, type: string }
+      maintenance: { description: "Prioritized maintenance recovery build", type: boolean, default: false }
 
 permissions:
   contents: read
@@ -92,7 +93,10 @@ jobs:
     # Exact fleet labels bind placement to one machine and guest. A failed picker
     # or failed-jobs-only rerun queues on GitHub: stale picker output must never
     # send another attempt to an ephemeral guest that has already retired.
-    runs-on: ${{ fromJSON(needs.pick-runner.outputs.attempt == format('{0}', github.run_attempt) && needs.pick-runner.outputs.runner || '"ubuntu-24.04"') }}
+    # Maintenance repairs must not wait behind the ordinary PR backlog. These
+    # use the same vetted Namespace sandbox shape as ordinary overflow, with
+    # the existing staging priority. This changes scheduling, never merge gates.
+    runs-on: ${{ (inputs.maintenance || (github.event.pull_request.user.type == 'Bot' && github.event.pull_request.head.repo.full_name == github.repository && (startsWith(github.event.pull_request.head.ref, 'bump-mathlib/') || startsWith(github.event.pull_request.head.ref, 'lint-repair/')))) && fromJSON(format('["nscloud-ubuntu-24.04-amd64-8x16-with-features;job.priority=1","namespace-features:container.privileged=true;github.run-id={0}"]', github.run_id)) || fromJSON(needs.pick-runner.outputs.attempt == format('{0}', github.run_attempt) && needs.pick-runner.outputs.runner || '"ubuntu-24.04"') }}
     outputs:
       status-sha: ${{ steps.pr.outputs.status_sha }}
       build-state: ${{ steps.report.outputs.build-state }}
@@ -139,14 +143,14 @@ jobs:
           fetch-depth: 1
 
       - name: Prepare pinned shared tools
-        uses: TauCetiProject/TauCetiTools/.github/actions/setup@a8b16c3dd0c0730a1963052cb520808e161222ef
+        uses: TauCetiProject/TauCetiTools/.github/actions/setup@8269cb437ca29c0ae67e373d89d026850eb7dd4d
         with:
           tools-repository: TauCetiProject/TauCetiTools
-          tools-ref: a8b16c3dd0c0730a1963052cb520808e161222ef
+          tools-ref: 8269cb437ca29c0ae67e373d89d026850eb7dd4d
           project-directory: gate
       - name: Select CI API credentials
         id: ci-api
-        uses: TauCetiProject/TauCetiTools/.github/actions/ci-credentials@a8b16c3dd0c0730a1963052cb520808e161222ef
+        uses: TauCetiProject/TauCetiTools/.github/actions/ci-credentials@ac879910a87ec1605cbb52191cee551fafeddb0c
         with:
           owner: ${{ github.repository_owner }}
           repository: ${{ github.event.repository.name }}
@@ -1202,16 +1206,31 @@ jobs:
           echo "SHIM_EXPIRY_RC=$rc" >> "$GITHUB_ENV"
           exit "$rc"
 
+      # Installation tokens issued before compilation can expire during a full build.
+      # Mint fresh read and status credentials only after candidate execution has ended.
+      - name: Refresh CI reporting credentials after the build
+        id: report-ci-api
+        if: always()
+        uses: TauCetiProject/TauCetiTools/.github/actions/ci-credentials@ac879910a87ec1605cbb52191cee551fafeddb0c
+        with:
+          owner: ${{ github.repository_owner }}
+          repository: ${{ github.event.repository.name }}
+          workflow-token: ${{ github.token }}
+          read-app-id: ${{ secrets.CI_READ_APP_ID }}
+          read-app-private-key: ${{ secrets.CI_READ_APP_PRIVATE_KEY }}
+          status-app-id: ${{ secrets.CI_STATUS_APP_ID }}
+          status-app-private-key: ${{ secrets.CI_STATUS_APP_PRIVATE_KEY }}
+
       - name: Report build and bump-guard statuses to the PR head commit
         id: report
         if: always()
         env:
           CI_STATUS_APP_ID: ${{ secrets.CI_STATUS_APP_ID }}
           CI_STATUS_APP_PRIVATE_KEY: ${{ secrets.CI_STATUS_APP_PRIVATE_KEY }}
-          GH_TOKEN: ${{ steps.ci-api.outputs.status-token }}
-          GH_READ_TOKEN: ${{ steps.ci-api.outputs.read-token }}
-          TAUCETI_GITHUB_READ_ROLE: ${{ steps.ci-api.outputs.read-role }}
-          TAUCETI_GITHUB_WRITE_ROLE: ${{ steps.ci-api.outputs.status-role }}
+          GH_TOKEN: ${{ steps.report-ci-api.outputs.status-token || steps.ci-api.outputs.status-token }}
+          GH_READ_TOKEN: ${{ steps.report-ci-api.outputs.read-token || steps.ci-api.outputs.read-token }}
+          TAUCETI_GITHUB_READ_ROLE: ${{ steps.report-ci-api.outputs.read-role || steps.ci-api.outputs.read-role }}
+          TAUCETI_GITHUB_WRITE_ROLE: ${{ steps.report-ci-api.outputs.status-role || steps.ci-api.outputs.status-role }}
           RAW_HEAD: ${{ steps.pr.outputs.sha }}
           CAPTURED_BASE: ${{ steps.pr.outputs.base_sha }}
           CANDIDATE_MODE: ${{ env.IS_BATCH == 'true' && 'frozen-candidate' || 'pr-integration' }}
@@ -1453,6 +1472,26 @@ jobs:
           if-no-files-found: ignore
           retention-days: 30
 
+      - name: Prepare raw failure logs
+        timeout-minutes: 1
+        if: ${{ always() && steps.build.outcome == 'failure' }}
+        continue-on-error: true
+        run: |
+          python3 gate/scripts/ci_failure_logs.py --candidate pr --runner-temp "$RUNNER_TEMP" \
+            --out "$RUNNER_TEMP/ci-failure-logs"
+
+      - name: Upload raw failure logs
+        if: ${{ always() && steps.build.outcome == 'failure' }}
+        continue-on-error: true
+        timeout-minutes: 3
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: ci-failure-logs-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/ci-failure-logs
+          if-no-files-found: warn
+          retention-days: 7
+          compression-level: 0
+
       - name: Retain unpublished CI statuses
         if: always()
         uses: actions/upload-artifact@v4
@@ -1527,14 +1566,14 @@ jobs:
           persist-credentials: false
 
       - name: Prepare pinned shared tools
-        uses: TauCetiProject/TauCetiTools/.github/actions/setup@a8b16c3dd0c0730a1963052cb520808e161222ef
+        uses: TauCetiProject/TauCetiTools/.github/actions/setup@8269cb437ca29c0ae67e373d89d026850eb7dd4d
         with:
           tools-repository: TauCetiProject/TauCetiTools
-          tools-ref: a8b16c3dd0c0730a1963052cb520808e161222ef
+          tools-ref: 8269cb437ca29c0ae67e373d89d026850eb7dd4d
           project-directory: .
       - name: Select CI API credentials
         id: ci-api
-        uses: TauCetiProject/TauCetiTools/.github/actions/ci-credentials@a8b16c3dd0c0730a1963052cb520808e161222ef
+        uses: TauCetiProject/TauCetiTools/.github/actions/ci-credentials@ac879910a87ec1605cbb52191cee551fafeddb0c
         with:
           owner: ${{ github.repository_owner }}
           repository: ${{ github.event.repository.name }}

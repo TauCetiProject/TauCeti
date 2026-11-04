@@ -8,6 +8,7 @@ module
 public import TauCeti.LinearAlgebra.CliffordAlgebra.RealForm.Basic
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.DoubleCover
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.SpinorNorm.Basic
+import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.LowRank.One
 import Mathlib.Analysis.Real.Sqrt
 
 /-!
@@ -26,11 +27,16 @@ separate.
   trivial for a positive-definite real form.
 * `CliffordAlgebra.spinToSpecialOrthogonal_surjective_of_posDef` proves surjectivity for any
   finite-dimensional positive-definite real form.
+* `QuadraticMap.IsometryEquiv.exists_spinVectorAction_eq_iff_det_eq_one`: two isometry
+  equivalences into such a form differ by the vector action of a Spin element exactly when the
+  transition between them has determinant one.
 * `CliffordAlgebra.realCliffordSpinGroup` names the real Spin groups by signature.
 * `CliffordAlgebra.realCliffordSpinGroupZero` names the compact real Spin group.
 * `CliffordAlgebra.realCliffordSpinDoubleCoverZero` packages its double cover in positive dimension.
 * `CliffordAlgebra.card_fiber_realCliffordSpinDoubleCoverZero_rightHom` proves that every fiber
   of the double cover contains exactly two points.
+* `CliffordAlgebra.finite_realCliffordSpinGroupZero_one` shows that `Spin(1) = {1, -1}` is
+  finite.
 
 ## References
 
@@ -66,6 +72,28 @@ theorem spinToSpecialOrthogonal_surjective_of_posDef
     Function.Surjective (spinToSpecialOrthogonal Q) := by
   exact spinToSpecialOrthogonal_surjective_of_isSquare_apply Q hQ.anisotropic.nondegenerate
     fun v => Real.isSquare_iff.2 (hQ.nonneg v)
+
+/-- Two isometry equivalences `e` and `e'` into a finite-dimensional positive-definite real form `Q`
+differ by the vector action of a Spin element exactly when the transition `e.symm.trans e'` has
+determinant one. -/
+theorem _root_.QuadraticMap.IsometryEquiv.exists_spinVectorAction_eq_iff_det_eq_one
+    {M : Type*} [AddCommGroup M] [Module ℝ M] {P : QuadraticForm ℝ M} {Q : QuadraticForm ℝ V}
+    (hQ : Q.PosDef) (e e' : P.IsometryEquiv Q) :
+    (∃ s : spinGroup Q, ∀ m, spinVectorAction Q s (e m) = e' m) ↔
+      LinearEquiv.det (e.symm.trans e').toLinearEquiv = 1 := by
+  constructor
+  · rintro ⟨s, hs⟩
+    have h : (e.symm.trans e').toLinearEquiv = (spinToSpecialOrthogonal Q s : V ≃ₗ[ℝ] V) := by
+      ext v : 1
+      simpa using (hs (e.symm v)).symm
+    rw [h, QuadraticMap.det_coe_specialOrthogonalGroup]
+  · intro h
+    obtain ⟨s, hs⟩ := spinToSpecialOrthogonal_surjective_of_posDef Q hQ
+      ⟨(e.symm.trans e').toLinearEquiv, QuadraticMap.mem_specialOrthogonalGroup_iff.mpr
+        ⟨QuadraticMap.mem_orthogonalGroup_iff.mpr (e.symm.trans e').map_app, h⟩⟩
+    refine ⟨s, fun m ↦ ?_⟩
+    rw [← coe_spinToSpecialOrthogonal_apply, hs]
+    simp
 
 /-- The real Spin group of signature `(p, q)`. -/
 abbrev realCliffordSpinGroup (p q : ℕ) := spinGroup (realCliffordForm p q)
@@ -103,5 +131,10 @@ theorem card_fiber_realCliffordSpinDoubleCoverZero_rightHom
     (g : QuadraticMap.specialOrthogonalGroup (realCliffordForm n 0)) :
     Nat.card ((realCliffordSpinDoubleCoverZero n).rightHom ⁻¹' {g}) = 2 := by
   simpa using (realCliffordSpinDoubleCoverZero n).card_fiber_rightHom g
+
+/-- The compact Spin group `Spin(1) = {1, -1}` is finite. -/
+instance finite_realCliffordSpinGroupZero_one : Finite (realCliffordSpinGroupZero 1) :=
+  Finite.of_equiv _ (zmodTwoMulEquivSpinGroupOfFinrankEqOne (realCliffordForm 1 0)
+    (nondegenerate_realCliffordForm 1 0) (Module.finrank_fin_fun ℝ)).toEquiv
 
 end CliffordAlgebra
