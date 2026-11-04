@@ -26,7 +26,7 @@ ray-class reciprocity.
   (`isAdmissibleModulus_ringClassField`), that is, the conductor of the ring class field divides
   `𝔣` (`abelianConductor_ringClassField_dvd`). Hence the ring class field is unramified at every
   prime of `K` not dividing `𝔣` (`isUnramifiedAt_ringClassField`) and, `𝔣` having no infinite
-  part, at every infinite place (`isUnramified_ringClassField`).
+  part, at every infinite place (`isUnramifiedAtInfinitePlaces_ringClassField`).
 * The ray-class Artin map of the ring class field at `𝔣` therefore exists; it is surjective, and
   its kernel is the image of the norm group in `Cl_𝔣`, which is the kernel of the congruence
   description `Cl_𝔣 → Pic O` (`ker_rayClassArtinMap_ringClassField`). Both maps out of `Cl_𝔣`
@@ -71,8 +71,8 @@ one, cut out by ideals with a generator congruent to a rational integer modulo `
 * `TauCeti.ClassFieldTheory.abelianConductor_ringClassField_dvd`: the conductor of the ring class
   field divides the conductor of the order.
 * `TauCeti.ClassFieldTheory.isUnramifiedAt_ringClassField`,
-  `TauCeti.ClassFieldTheory.isUnramified_ringClassField`: the ring class field is unramified
-  outside the conductor, including at every infinite place.
+  `TauCeti.ClassFieldTheory.isUnramifiedAtInfinitePlaces_ringClassField`: the ring class field is
+  unramified outside the conductor, including at every infinite place.
 * `TauCeti.ClassFieldTheory.isArithFrobAt_ringClassArtinEquiv_picClass`: the splitting law.
 * `TauCeti.ClassFieldTheory.gal_ringClassField_equiv_pic`: the Galois group of the ring class
   field is the Picard group of the order.
@@ -169,9 +169,10 @@ theorem isUnramifiedAt_ringClassField {v : IsDedekindDomain.HeightOneSpectrum (�
 
 /-- **The ring class field is unramified at the infinite places**: the conductor modulus of an
 order has no infinite part, so no real place of `K` becomes complex in the ring class field. -/
-theorem isUnramified_ringClassField (w : InfinitePlace (ringClassField O)) : w.IsUnramified K :=
-  (isAdmissibleModulus_ringClassField O).isUnramified_of_forall_ne
-    (v := w.comap (algebraMap K (ringClassField O))) (by simp [conductorModulus_infinitePart]) w
+instance isUnramifiedAtInfinitePlaces_ringClassField :
+    IsUnramifiedAtInfinitePlaces K (ringClassField O) :=
+  ⟨fun w ↦ (isAdmissibleModulus_ringClassField O).isUnramified_of_forall_ne
+    (v := w.comap (algebraMap K (ringClassField O))) (by simp [conductorModulus_infinitePart]) w⟩
 
 /-- **The conductor of the ring class field divides the conductor of the order**, viewed as a
 modulus with no infinite part. -/
