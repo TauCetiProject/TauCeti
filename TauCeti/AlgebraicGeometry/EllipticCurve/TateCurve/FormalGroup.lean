@@ -283,8 +283,8 @@ theorem tateIdentityY_sq_sub_X_mul_tateIdentityX_mul_tateIdentityY :
 
 /-- **`u dX/du = 2Y + X` near the identity.** With `u = 1 + T`, `x = X(1 + T)` and
 `y = Y(1 + T)`, the derivative in `T` satisfies `u dx/dT = 2y + x`; for `T² x = tateIdentityX` and
-`-T³ y = tateIdentityY` this reads `(1 + T)(T X̂' - 2X̂) = T X̂ - 2Ŷ`, with `X̂ = tateIdentityX` and
-`Ŷ = tateIdentityY`. It says that the invariant differential `dx / (2y + x)` of the Tate curve is
+`-T³ y = tateIdentityY` this reads `(1 + T)(T F' - 2F) = T F - 2G`, with `F = tateIdentityX` and
+`G = tateIdentityY`. It says that the invariant differential `dx / (2y + x)` of the Tate curve is
 `du / u`. -/
 theorem one_add_X_mul_X_mul_derivative_tateIdentityX_sub :
     (1 + X) * (X * d⁄dX tateIdentityX - 2 * tateIdentityX) =
