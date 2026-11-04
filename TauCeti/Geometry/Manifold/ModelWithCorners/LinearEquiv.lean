@@ -21,8 +21,11 @@ by its inverse returns the original model.
 
 The groupoid comparison uses the same conjugation argument as Mathlib's
 `ContinuousLinearEquiv.instIsManifoldtransContinuousLinearEquiv`, before choosing an atlas.
-Mathlib's `ContinuousLinearEquiv.toTransContinuousLinearEquiv` already supplies the identity
-comparison diffeomorphism on any charted manifold.
+Similarly, within-range derivatives of coordinate expressions and chart transitions conjugate by the
+linear equivalence (`ModelWithCorners.fderivWithin_transContinuousLinearEquiv`,
+`ModelWithCorners.fderivWithin_extChartAt_transContinuousLinearEquiv`).
+Mathlib's `ContinuousLinearEquiv.toTransContinuousLinearEquiv` supplies the identity comparison
+diffeomorphism on any charted manifold, with underlying map `id` in both directions.
 
 ## References
 
@@ -32,7 +35,7 @@ comparison diffeomorphism on any charted manifold.
 public section
 
 open Set
-open scoped ContDiff
+open scoped ContDiff Manifold
 
 namespace ModelWithCorners
 
@@ -54,6 +57,56 @@ theorem transContinuousLinearEquiv_trans (e : E ≃L[𝕜] F) (f : F ≃L[𝕜] 
     (I.transContinuousLinearEquiv e).transContinuousLinearEquiv f =
       I.transContinuousLinearEquiv (e.trans f) := by
   ext1 <;> simp [ModelWithCorners.target_eq, Function.comp_def]
+
+/-- Differentiability within the model range of a coordinate expression `I ∘ f ∘ I.symm` is
+unchanged by a continuous linear change of model coordinates. -/
+theorem differentiableWithinAt_transContinuousLinearEquiv_iff (e : E ≃L[𝕜] F) (f : H → H)
+    (x : H) :
+    DifferentiableWithinAt 𝕜
+        ((I.transContinuousLinearEquiv e) ∘ f ∘ (I.transContinuousLinearEquiv e).symm)
+        (range (I.transContinuousLinearEquiv e)) ((I.transContinuousLinearEquiv e) x) ↔
+      DifferentiableWithinAt 𝕜 (I ∘ f ∘ I.symm) (range I) (I x) := by
+  have hcomp : (I.transContinuousLinearEquiv e) ∘ f ∘ (I.transContinuousLinearEquiv e).symm =
+      e ∘ ((I ∘ f ∘ I.symm) ∘ e.symm) := by
+    ext y
+    simp
+  rw [hcomp, I.transContinuousLinearEquiv_range e, e.image_eq_preimage_symm,
+    I.coe_transContinuousLinearEquiv e, Function.comp_apply, e.comp_differentiableWithinAt_iff,
+    e.symm.comp_right_differentiableWithinAt_iff, e.symm_apply_apply]
+
+/-- A continuous linear change of model coordinates conjugates the within-range derivative of a
+coordinate expression `I ∘ f ∘ I.symm` by `e`. -/
+theorem fderivWithin_transContinuousLinearEquiv (e : E ≃L[𝕜] F) (f : H → H) (x : H) :
+    fderivWithin 𝕜 ((I.transContinuousLinearEquiv e) ∘ f ∘ (I.transContinuousLinearEquiv e).symm)
+        (range (I.transContinuousLinearEquiv e)) ((I.transContinuousLinearEquiv e) x) =
+      (e : E →L[𝕜] F) ∘L fderivWithin 𝕜 (I ∘ f ∘ I.symm) (range I) (I x) ∘L
+        (e.symm : F →L[𝕜] E) := by
+  have hcomp : (I.transContinuousLinearEquiv e) ∘ f ∘ (I.transContinuousLinearEquiv e).symm =
+      e ∘ ((I ∘ f ∘ I.symm) ∘ e.symm) := by
+    ext y
+    simp
+  have hu : UniqueDiffWithinAt 𝕜 (e.symm ⁻¹' range I) (e (I x)) := by
+    have h := (I.transContinuousLinearEquiv e).uniqueDiffWithinAt_image (x := x)
+    rwa [I.transContinuousLinearEquiv_range e, e.image_eq_preimage_symm,
+      I.coe_transContinuousLinearEquiv e, Function.comp_apply] at h
+  rw [hcomp, I.transContinuousLinearEquiv_range e, e.image_eq_preimage_symm,
+    I.coe_transContinuousLinearEquiv e, Function.comp_apply, e.comp_fderivWithin hu,
+    e.symm.comp_right_fderivWithin hu, e.symm_apply_apply]
+
+/-- A continuous linear change of model coordinates conjugates the within-range derivative of an
+extended-chart transition by `e`. -/
+theorem fderivWithin_extChartAt_transContinuousLinearEquiv {M : Type*} [TopologicalSpace M]
+    [ChartedSpace H M] (e : E ≃L[𝕜] F) (α β x : M) :
+    fderivWithin 𝕜
+        (extChartAt (I.transContinuousLinearEquiv e) β ∘
+          (extChartAt (I.transContinuousLinearEquiv e) α).symm)
+        (range (I.transContinuousLinearEquiv e))
+        (extChartAt (I.transContinuousLinearEquiv e) α x) =
+      (e : E →L[𝕜] F) ∘L
+        fderivWithin 𝕜 (extChartAt I β ∘ (extChartAt I α).symm) (range I)
+          (extChartAt I α x) ∘L (e.symm : F →L[𝕜] E) := by
+  simpa only [Function.comp_def, extChartAt_coe, extChartAt_coe_symm] using
+    I.fderivWithin_transContinuousLinearEquiv e (chartAt H β ∘ (chartAt H α).symm) (chartAt H α x)
 
 private theorem contDiffGroupoid_le_transContinuousLinearEquiv (e : E ≃L[𝕜] F)
     (n : ℕ∞ω) : contDiffGroupoid n I ≤ contDiffGroupoid n (I.transContinuousLinearEquiv e) := by
@@ -85,3 +138,28 @@ theorem maximalAtlas_transContinuousLinearEquiv {M : Type*} [TopologicalSpace M]
   simp only [IsManifold.maximalAtlas, contDiffGroupoid_transContinuousLinearEquiv]
 
 end ModelWithCorners
+
+namespace ContinuousLinearEquiv
+
+variable {𝕜 E F H M : Type*} [NontriviallyNormedField 𝕜]
+  [NormedAddCommGroup E] [NormedSpace 𝕜 E]
+  [NormedAddCommGroup F] [NormedSpace 𝕜 F]
+  [TopologicalSpace H] (I : ModelWithCorners 𝕜 E H)
+  (M) [TopologicalSpace M] [ChartedSpace H M] {n : ℕ∞ω}
+
+/-- The underlying equivalence of `toTransContinuousLinearEquiv` is the identity equivalence. -/
+@[simp]
+theorem toTransContinuousLinearEquiv_toEquiv (e : E ≃L[𝕜] F) :
+    (toTransContinuousLinearEquiv (n := n) I M e).toEquiv = Equiv.refl M := (rfl)
+
+/-- The comparison diffeomorphism `toTransContinuousLinearEquiv` has underlying map `id`. -/
+@[simp]
+theorem coe_toTransContinuousLinearEquiv (e : E ≃L[𝕜] F) :
+    ⇑(toTransContinuousLinearEquiv (n := n) I M e) = id := (rfl)
+
+/-- The inverse of `toTransContinuousLinearEquiv` has underlying map `id`. -/
+@[simp]
+theorem coe_toTransContinuousLinearEquiv_symm (e : E ≃L[𝕜] F) :
+    ⇑(toTransContinuousLinearEquiv (n := n) I M e).symm = id := (rfl)
+
+end ContinuousLinearEquiv
