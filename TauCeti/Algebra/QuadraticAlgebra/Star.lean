@@ -11,9 +11,9 @@ public import Mathlib.Algebra.QuadraticAlgebra.Basic
 # The quadratic involution as an algebra automorphism
 
 The quadratic involution `star` of `QuadraticAlgebra R a b`, sending `x + yω` to
-`(x + by) - yω`, fixes `R`. This file bundles it as an `R`-algebra automorphism
-`QuadraticAlgebra.starAe`, the form in which it enters Galois-theoretic statements such as
-`NumberField.ComplexEmbedding.IsConj`.
+`(x + by) - yω`, fixes `R`. Mathlib bundles it as the `R`-algebra automorphism
+`QuadraticAlgebra.starAlgEquiv`. This file records that the bundled automorphism is its own
+inverse.
 -/
 
 public section
@@ -22,13 +22,11 @@ namespace QuadraticAlgebra
 
 variable {R : Type*} [CommRing R] {a b : R}
 
-/-- The quadratic involution `star` of `QuadraticAlgebra R a b` as an `R`-algebra
-automorphism. -/
-def starAe : QuadraticAlgebra R a b ≃ₐ[R] QuadraticAlgebra R a b :=
-  AlgEquiv.ofRingEquiv (f := starRingAut) fun r => by ext <;> simp
-
-@[simp] theorem starAe_apply (z : QuadraticAlgebra R a b) : starAe z = star z := (rfl)
-
-@[simp] theorem starAe_symm : (starAe : QuadraticAlgebra R a b ≃ₐ[R] _).symm = starAe := (rfl)
+/-- The quadratic involution as an algebra automorphism is its own inverse. -/
+@[simp] theorem starAlgEquiv_symm :
+    (starAlgEquiv : QuadraticAlgebra R a b ≃ₐ[R] _).symm = starAlgEquiv := by
+  apply AlgEquiv.ext
+  intro z
+  rw [starAlgEquiv_symm_apply, starAlgEquiv_apply]
 
 end QuadraticAlgebra
