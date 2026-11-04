@@ -62,7 +62,8 @@ local notation "N" => (fun i => weylUnit (hnil (Sum.inl i)) (hnil (Sum.inr i)))
 
 /-- Across a directed Cartan entry minus one, the pinned Weyl unit carries the other raising
 operator to the ordered raising commutator. -/
-theorem geckWeylUnit_conj_raising_of_cartanMatrix_eq_neg_one (i j : Fin t.rank)
+theorem weylUnit_conj_geckRepresentation_rootGenerator_of_cartanMatrix_eq_neg_one
+    (i j : Fin t.rank)
     (hij : t.cartanMatrix j i = -1) :
     (N i : Module.End ℚ (t.GeckIndex ht → ℚ)) * X j *
         (((N i)⁻¹ : (Module.End ℚ (t.GeckIndex ht → ℚ))ˣ) :
@@ -116,8 +117,9 @@ private theorem kostantWeyl_conj_raising_singleBond (i j : Fin t.rank)
       (M : Set (t.GeckIndex ht → ℚ)) (N i) (hN i) (hNinv i) n (hX j n)
   have hsign : C i j = -C j i := by
     dsimp only [C]
-    rw [t.geckWeylUnit_conj_raising_of_cartanMatrix_eq_neg_one ht i j hji,
-      t.geckWeylUnit_conj_raising_of_cartanMatrix_eq_neg_one ht j i hij, lie_skew]
+    rw [t.weylUnit_conj_geckRepresentation_rootGenerator_of_cartanMatrix_eq_neg_one ht i j hji,
+      t.weylUnit_conj_geckRepresentation_rootGenerator_of_cartanMatrix_eq_neg_one ht j i hij,
+      lie_skew]
   have hCnil : IsNilpotent (C j i) := by
     obtain ⟨k, hk⟩ := hnil (.inl i)
     exact ⟨k, by dsimp [C]; rw [Units.conj_pow, hk, mul_zero, zero_mul]⟩
