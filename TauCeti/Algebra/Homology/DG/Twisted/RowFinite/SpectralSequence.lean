@@ -242,13 +242,22 @@ theorem indexCochainComplexMap_apply {p q : ℤ} (hpq : p ≤ q) (n : ℤ)
       m.indexCochainComplexXEquiv hM hm p n f :=
   gradedCochainComplexInclusion_apply _ n f
 
+/-- The transition map from a filtration stage to itself is the identity. -/
+@[simp]
+theorem indexCochainComplexMap_id (p : ℤ) :
+    m.indexCochainComplexMap hM hm (le_refl p) = 𝟙 (m.indexCochainComplex hM hm p) :=
+  gradedCochainComplexInclusion_refl
+
+/-- The transition maps of the index filtration compose. -/
+@[reassoc (attr := simp)]
+theorem indexCochainComplexMap_comp {p q r : ℤ} (hpq : p ≤ q) (hqr : q ≤ r) :
+    m.indexCochainComplexMap hM hm hpq ≫ m.indexCochainComplexMap hM hm hqr =
+      m.indexCochainComplexMap hM hm (hpq.trans hqr) :=
+  gradedCochainComplexInclusion_comp _ _
+
 theorem injective_indexCochainComplexMap_f {p q : ℤ} (hpq : p ≤ q) (n : ℤ) :
-    Function.Injective ((m.indexCochainComplexMap hM hm hpq).f n) := by
-  intro f g hfg
-  apply (m.indexCochainComplexXEquiv hM hm p n).injective
-  apply Subtype.ext
-  simpa only [m.indexCochainComplexMap_apply] using
-    congrArg (fun z ↦ (m.indexCochainComplexXEquiv hM hm q n z : P →₀ M)) hfg
+    Function.Injective ((m.indexCochainComplexMap hM hm hpq).f n) :=
+  injective_gradedCochainComplexInclusion_f _ n
 
 /-- The inclusion of the filtration stage `F_p` into the coefficient complex. -/
 noncomputable def indexCochainComplexι (p : ℤ) :
@@ -262,22 +271,14 @@ theorem indexCochainComplexι_apply (p n : ℤ) (f : (m.indexCochainComplex hM h
       m.indexCochainComplexXEquiv hM hm p n f :=
   gradedCochainComplexInclusion_apply _ n f
 
-instance mono_indexCochainComplexι (p : ℤ) : Mono (m.indexCochainComplexι hM hm p) := by
-  refine HomologicalComplex.mono_of_mono_f _ fun n ↦ (ModuleCat.mono_iff_injective _).mpr ?_
-  intro f g hfg
-  apply (m.indexCochainComplexXEquiv hM hm p n).injective
-  apply Subtype.ext
-  simpa only [m.indexCochainComplexι_apply] using
-    congrArg (fun t ↦ (m.coefficientCochainComplexXEquiv hM n t : P →₀ M)) hfg
+instance mono_indexCochainComplexι (p : ℤ) : Mono (m.indexCochainComplexι hM hm p) :=
+  mono_gradedCochainComplexInclusion _
 
 @[reassoc (attr := simp)]
 theorem indexCochainComplexMap_ι {p q : ℤ} (hpq : p ≤ q) :
     m.indexCochainComplexMap hM hm hpq ≫ m.indexCochainComplexι hM hm q =
-      m.indexCochainComplexι hM hm p := by
-  ext n f : 3
-  apply (m.coefficientCochainComplexXEquiv hM n).injective
-  apply Subtype.ext
-  simp
+      m.indexCochainComplexι hM hm p :=
+  gradedCochainComplexInclusion_comp _ _
 
 /-- The index filtration as subobjects of the row-finite coefficient complex. -/
 noncomputable def indexSubobject (p : ℤ) : Subobject (m.coefficientCochainComplex hM) :=
@@ -301,18 +302,9 @@ theorem mem_range_indexSubobject_arrow_f_iff (p n : ℤ)
   rw [indexSubobject_eq_mk, ← Subobject.underlyingIso_hom_comp_eq_mk, HomologicalComplex.comp_f,
     ModuleCat.hom_comp, LinearMap.range_comp_of_range_eq_top _
       (LinearMap.range_eq_top.2 ((ModuleCat.epi_iff_surjective _).1 inferInstance))]
-  constructor
-  · rintro ⟨g, rfl⟩
-    rw [m.indexCochainComplexι_apply]
-    exact (mem_rowFiniteIndexGrading_iff.mp (m.indexCochainComplexXEquiv hM hm p n g).2).1
-  · intro hf
-    have hg : (m.coefficientCochainComplexXEquiv hM n f : P →₀ M) ∈
-        rowFiniteIndexGrading ℳ ind p n :=
-      mem_rowFiniteIndexGrading_iff.mpr ⟨hf,
-        (mem_rowFiniteTotalGrading_iff ℳ ind).mp (m.coefficientCochainComplexXEquiv hM n f).2⟩
-    refine ⟨(m.indexCochainComplexXEquiv hM hm p n).symm ⟨_, hg⟩,
-      (m.coefficientCochainComplexXEquiv hM n).injective (Subtype.ext ?_)⟩
-    simp
+  exact (mem_range_gradedCochainComplexInclusion_f_iff _ n f).trans <|
+    mem_rowFiniteIndexGrading_iff.trans <| and_iff_left <|
+      (mem_rowFiniteTotalGrading_iff ℳ ind).mp (m.coefficientCochainComplexXEquiv hM n f).2
 
 /-- **The index filtration is exhaustive**, with no finiteness hypothesis on the generators:
 every vector lies in some stage. -/
@@ -348,9 +340,11 @@ noncomputable def indexCochainComplexProj (p : ℤ) :
     m.indexCochainComplex hM hm p ⟶ rowFiniteIndexGradedPieceComplex ind hM p where
   f n := ModuleCat.ofHom
     ((rowFiniteIndexGradedPieceComplexXEquiv hM p n).symm.toLinearMap ∘ₗ
-      ((Finsupp.lsubtypeDomain {x | ind x = p}).restrict fun f hf ↦ by
-        rw [mem_rowFiniteTotalGrading_iff]
-        exact fun x ↦ (mem_rowFiniteIndexGrading_iff.mp hf).2 x) ∘ₗ
+      ((rowFiniteIndexProjection ind p ∘ₗ
+          Submodule.inclusion (rowFiniteIndexGrading_le_rowFiniteIndexFiltration p n)).codRestrict
+        _ fun f ↦ (mem_rowFiniteTotalGrading_iff ℳ _).mpr fun x ↦ by
+          simpa only [LinearMap.comp_apply, rowFiniteIndexProjection_apply,
+            Submodule.coe_inclusion] using (mem_rowFiniteIndexGrading_iff.mp f.2).2 x) ∘ₗ
         (m.indexCochainComplexXEquiv hM hm p n).toLinearMap)
   comm' i j hij := by
     obtain rfl : i + 1 = j := hij
@@ -359,8 +353,8 @@ noncomputable def indexCochainComplexProj (p : ℤ) :
     ext x
     simp only [ModuleCat.hom_comp, LinearMap.comp_apply, ModuleCat.hom_ofHom,
       rowFiniteIndexGradedPieceComplexXEquiv_d, indexCochainComplexXEquiv_d, LinearEquiv.coe_coe,
-      LinearEquiv.apply_symm_apply, LinearMap.restrict_apply, Finsupp.lsubtypeDomain_apply,
-      Finsupp.subtypeDomain_apply, Finsupp.mapRange.linearMap_apply, Finsupp.mapRange_apply]
+      LinearEquiv.apply_symm_apply, LinearMap.codRestrict_apply, rowFiniteIndexProjection_apply,
+      Submodule.coe_inclusion, Finsupp.mapRange.linearMap_apply, Finsupp.mapRange_apply]
     exact (m.coefficientDifferential_apply_of_eq hM hm
       (rowFiniteIndexGrading_le_rowFiniteIndexFiltration p i
         (m.indexCochainComplexXEquiv hM hm p i f).2) x.2).symm
@@ -369,10 +363,11 @@ noncomputable def indexCochainComplexProj (p : ℤ) :
 theorem indexCochainComplexProj_f_apply (p n : ℤ) (f : (m.indexCochainComplex hM hm p).X n) :
     (rowFiniteIndexGradedPieceComplexXEquiv hM p n
         (((m.indexCochainComplexProj hM hm p).f n).hom f) : {x // ind x = p} →₀ M) =
-      Finsupp.subtypeDomain (fun x ↦ ind x = p) (m.indexCochainComplexXEquiv hM hm p n f) := by
+      rowFiniteIndexProjection ind p ⟨_, rowFiniteIndexGrading_le_rowFiniteIndexFiltration p n
+        (m.indexCochainComplexXEquiv hM hm p n f).2⟩ := by
   simp only [indexCochainComplexProj, ModuleCat.hom_ofHom, LinearMap.comp_apply,
-    LinearEquiv.coe_coe, LinearEquiv.apply_symm_apply, LinearMap.restrict_apply]
-  exact Finsupp.lsubtypeDomain_apply (R := R) (M := M) (s := {x | ind x = p}) _
+    LinearEquiv.coe_coe, LinearEquiv.apply_symm_apply, LinearMap.codRestrict_apply]
+  rfl
 
 @[reassoc (attr := simp)]
 theorem indexCochainComplexMap_comp_proj (p : ℤ) :
@@ -408,31 +403,22 @@ theorem surjective_indexCochainComplexProj_f (p n : ℤ) :
       · simp [Finsupp.extendDomain_apply, hx]
   refine ⟨(m.indexCochainComplexXEquiv hM hm p n).symm ⟨_, hf⟩,
     (rowFiniteIndexGradedPieceComplexXEquiv hM p n).injective (Subtype.ext ?_)⟩
-  simp [g', Finsupp.subtypeDomain_extendDomain]
+  ext x
+  simp [g', Finsupp.extendDomain_apply, x.2]
 
 /-- A vector of `F_{p+1}` vanishing on the generators of index `p + 1` comes from `F_p`. -/
 theorem exists_indexCochainComplexMap_f_eq (p n : ℤ)
     (g : (m.indexCochainComplex hM hm (p + 1)).X n)
     (hg : ((m.indexCochainComplexProj hM hm (p + 1)).f n) g = 0) :
     ∃ f, ((m.indexCochainComplexMap hM hm (Int.le_add_one le_rfl)).f n) f = g := by
-  have hg' := congrArg (fun z ↦ (rowFiniteIndexGradedPieceComplexXEquiv hM (p + 1) n z :
+  have h0 := congrArg (fun z ↦ (rowFiniteIndexGradedPieceComplexXEquiv hM (p + 1) n z :
     {x // ind x = p + 1} →₀ M)) hg
-  simp only [indexCochainComplexProj_f_apply, map_zero, ZeroMemClass.coe_zero] at hg'
-  have hmem := (m.indexCochainComplexXEquiv hM hm (p + 1) n g).2
-  have hker : (⟨_, rowFiniteIndexGrading_le_rowFiniteIndexFiltration (p + 1) n hmem⟩ :
-      rowFiniteIndexFiltration (R := R) ind (p + 1)) ∈
-      LinearMap.ker (rowFiniteIndexProjection ind (p + 1)) := by
-    rw [LinearMap.mem_ker]
-    ext x
-    simpa using DFunLike.congr_fun hg' x
+  simp only [indexCochainComplexProj_f_apply, map_zero, ZeroMemClass.coe_zero] at h0
+  have hker := LinearMap.mem_ker.mpr h0
   rw [ker_rowFiniteIndexProjection, add_sub_cancel_right] at hker
-  have hp : (m.indexCochainComplexXEquiv hM hm (p + 1) n g : P →₀ M) ∈
-      rowFiniteIndexGrading ℳ ind p n :=
-    mem_rowFiniteIndexGrading_iff.mpr ⟨(mem_rowFiniteIndexFiltration_iff ind).mp hker,
-      (mem_rowFiniteIndexGrading_iff.mp hmem).2⟩
-  refine ⟨(m.indexCochainComplexXEquiv hM hm p n).symm ⟨_, hp⟩,
-    (m.indexCochainComplexXEquiv hM hm (p + 1) n).injective (Subtype.ext ?_)⟩
-  simp
+  exact LinearMap.mem_range.mp <| (mem_range_gradedCochainComplexInclusion_f_iff _ n g).mpr
+    (mem_rowFiniteIndexGrading_iff.mpr ⟨(mem_rowFiniteIndexFiltration_iff ind).mp hker,
+      (mem_rowFiniteIndexGrading_iff.mp (m.indexCochainComplexXEquiv hM hm (p + 1) n g).2).2⟩)
 
 /-- **The graded pieces of the index filtration.** The sequence
 `F_p ⟶ F_{p+1} ⟶ ⊕_{ind x = p + 1} ℳ` is short exact: the quotient `F_{p+1} / F_p` is the complex
@@ -470,11 +456,8 @@ noncomputable abbrev indexSpectralSequence :=
 /-- The step `p` of `indexFiltrationFunctor` is the subcomplex `F_p`. -/
 noncomputable def indexFiltrationFunctorObjIso (p : ℤ) :
     (m.indexFiltrationFunctor hM hm).obj p ≅ m.indexCochainComplex hM hm p :=
-  CochainComplex.filtrationFunctorObjIso _ _ p ≪≫
-    eqToIso (congrArg (fun S : Subobject (m.coefficientCochainComplex hM) ↦
-      (S : CochainComplex (ModuleCat.{max uP uM} R) ℤ))
-      ((CochainComplex.filtrationEInt_coe _ p).trans (m.indexSubobject_eq_mk hM hm p))) ≪≫
-    Subobject.underlyingIso (m.indexCochainComplexι hM hm p)
+  CochainComplex.filtrationFunctorObjIsoOfEqMk _ _ (m.indexCochainComplexι hM hm)
+    (m.indexSubobject_eq_mk hM hm) p
 
 /-- The identification of a step of `indexFiltrationFunctor` with `F_p` is compatible with the
 inclusions into the coefficient complex. -/
@@ -482,11 +465,9 @@ inclusions into the coefficient complex. -/
 theorem indexFiltrationFunctorObjIso_hom_comp_ι (p : ℤ) :
     (m.indexFiltrationFunctorObjIso hM hm p).hom ≫ m.indexCochainComplexι hM hm p =
       (CochainComplex.filtrationFunctorObjIso _ _ p).hom ≫
-        (CochainComplex.filtrationEInt (m.indexSubobject hM hm) p).arrow := by
-  simp only [indexFiltrationFunctorObjIso, Iso.trans_hom, eqToIso.hom, Category.assoc,
-    Subobject.underlyingIso_hom_comp_eq_mk]
-  exact congrArg _ (Subobject.arrow_congr _ _
-    ((CochainComplex.filtrationEInt_coe _ p).trans (m.indexSubobject_eq_mk hM hm p)))
+        (CochainComplex.filtrationEInt (m.indexSubobject hM hm) p).arrow :=
+  CochainComplex.filtrationFunctorObjIsoOfEqMk_hom_comp _ _ (m.indexCochainComplexι hM hm)
+    (m.indexSubobject_eq_mk hM hm) p
 
 /-- The transition map `F_p ⟶ F_{p+1}` of `indexFiltrationFunctor` is the inclusion of
 subcomplexes `indexCochainComplexMap`. -/
@@ -496,11 +477,9 @@ theorem indexFiltrationFunctor_map_objIso_hom (p : ℤ) :
         (homOfLE (CochainComplex.coe_le_coe_of_eq_add_one (rfl : p = p) rfl)) ≫
       (m.indexFiltrationFunctorObjIso hM hm (p + 1)).hom =
     (m.indexFiltrationFunctorObjIso hM hm p).hom ≫
-      m.indexCochainComplexMap hM hm (Int.le_add_one le_rfl) := by
-  rw [← cancel_mono (m.indexCochainComplexι hM hm (p + 1))]
-  simp only [Category.assoc, indexFiltrationFunctorObjIso_hom_comp_ι, indexCochainComplexMap_ι]
-  rw [← Category.assoc, CochainComplex.filtrationFunctor_map_comp_objIso_hom]
-  simp
+      m.indexCochainComplexMap hM hm (Int.le_add_one le_rfl) :=
+  CochainComplex.filtrationFunctor_map_comp_objIsoOfEqMk_hom _ _ (m.indexCochainComplexι hM hm)
+    (m.indexSubobject_eq_mk hM hm) p _ (m.indexCochainComplexMap_ι hM hm (Int.le_add_one le_rfl))
 
 /-- The graded piece `F_{p+1} / F_p` of the index filtration, the cokernel of the transition map
 of `indexFiltrationFunctor`, is the complex of families of coefficients on the generators of
@@ -509,10 +488,9 @@ noncomputable def indexCokernelIso (p : ℤ) :
     cokernel ((m.indexFiltrationFunctor hM hm).map
         (homOfLE (CochainComplex.coe_le_coe_of_eq_add_one (rfl : p = p) rfl))) ≅
       rowFiniteIndexGradedPieceComplex ind hM (p + 1) :=
-  cokernel.mapIso _ (m.indexCochainComplexMap hM hm (Int.le_add_one le_rfl))
-      (m.indexFiltrationFunctorObjIso hM hm p) (m.indexFiltrationFunctorObjIso hM hm (p + 1))
-      (m.indexFiltrationFunctor_map_objIso_hom hM hm p) ≪≫
-    (colimit.isColimit _).coconePointUniqueUpToIso (m.indexCochainComplexProjIsCokernel hM hm p)
+  CochainComplex.cokernelFiltrationFunctorMapIsoOfIsColimit _ _ (m.indexCochainComplexι hM hm)
+    (m.indexSubobject_eq_mk hM hm) p _ (m.indexCochainComplexMap_ι hM hm (Int.le_add_one le_rfl))
+    _ _ (m.indexCochainComplexProjIsCokernel hM hm p)
 
 /-- The graded-piece isomorphism identifies the cokernel projection with restriction to the
 generators of index `p + 1`. -/
@@ -522,12 +500,10 @@ theorem cokernel_π_comp_indexCokernelIso_hom (p : ℤ) :
         (homOfLE (CochainComplex.coe_le_coe_of_eq_add_one (rfl : p = p) rfl))) ≫
       (m.indexCokernelIso hM hm p).hom =
     (m.indexFiltrationFunctorObjIso hM hm (p + 1)).hom ≫
-      m.indexCochainComplexProj hM hm (p + 1) := by
-  rw [indexCokernelIso, Iso.trans_hom, ← Category.assoc, cokernel.mapIso_hom, cokernel.π_desc,
-    Category.assoc]
-  congr 1
-  exact IsColimit.comp_coconePointUniqueUpToIso_hom (colimit.isColimit _)
-    (m.indexCochainComplexProjIsCokernel hM hm p) WalkingParallelPair.one
+      m.indexCochainComplexProj hM hm (p + 1) :=
+  CochainComplex.π_cokernelFiltrationFunctorMapIsoOfIsColimit_hom _ _ (m.indexCochainComplexι hM hm)
+    (m.indexSubobject_eq_mk hM hm) p _ (m.indexCochainComplexMap_ι hM hm (Int.le_add_one le_rfl))
+    _ _ (m.indexCochainComplexProjIsCokernel hM hm p)
 
 /-- **The first page of the index spectral sequence.** Its object at `(p, q)`, on page `2` in
 Mathlib's numbering, is the cohomology in degree `p + q` of the complex of families of
