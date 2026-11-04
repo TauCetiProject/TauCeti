@@ -38,8 +38,10 @@ import Mathlib.MeasureTheory.Function.ConditionalExpectation.Real
 - `lintegral_ofReal_posPart_condExp_sub_le`: the positive part of `μ[f | m] - a` integrates to at
   most `‖f‖₁ + ‖a‖ₑ · μ univ`, uniformly in the σ-algebra `m`.
 - `condExpLp`: for a finite measure and `1 ≤ p`, conditional expectation as a continuous linear
-  contraction of `Lp E p μ`, with the tower property `condExpLp_comp_condExpLp_of_le` and the
-  absorption `condExpLp_comp_condExpLp_of_ge` for nested σ-algebras. Finiteness of the measure
+  contraction of `Lp E p μ`. Its fixed points are the `m`-measurable elements
+  (`condExpLp_eq_self_iff`), it is the identity for the ambient σ-algebra (`condExpLp_self`), and
+  it satisfies the tower property `condExpLp_comp_condExpLp_of_le` and the absorption
+  `condExpLp_comp_condExpLp_of_ge` for nested σ-algebras. Finiteness of the measure
   makes every element of `Lp E p μ` integrable, which additivity of `condExp` needs.
 
 All are generic conditional-expectation facts (no exchangeability/tail/directing-measure
@@ -333,6 +335,26 @@ theorem coeFn_condExpLp (m : MeasurableSpace α) (f : Lp E p μ) :
 theorem norm_condExpLp_le (m : MeasurableSpace α) :
     ‖(condExpLp 𝕜 m : Lp E p μ →L[𝕜] Lp E p μ)‖ ≤ 1 :=
   LinearMap.mkContinuous_norm_le _ zero_le_one _
+
+/-- The output of `condExpLp 𝕜 m` is almost everywhere strongly measurable with respect to `m`. -/
+theorem aestronglyMeasurable_condExpLp (m : MeasurableSpace α) (f : Lp E p μ) :
+    AEStronglyMeasurable[m] (condExpLp 𝕜 m f) μ :=
+  ⟨μ[f | m], stronglyMeasurable_condExp, coeFn_condExpLp m f⟩
+
+/-- For a sub-σ-algebra `m`, an element of `Lp E p μ` is fixed by `condExpLp 𝕜 m` exactly when it
+is almost everywhere strongly measurable with respect to `m`. In particular, the range of
+`condExpLp 𝕜 m` is the set of such elements. -/
+theorem condExpLp_eq_self_iff {m : MeasurableSpace α} (hm : m ≤ m₀) {f : Lp E p μ} :
+    condExpLp 𝕜 m f = f ↔ AEStronglyMeasurable[m] f μ := by
+  refine ⟨fun h => h ▸ aestronglyMeasurable_condExpLp m f, fun hf => Lp.ext ?_⟩
+  exact (coeFn_condExpLp m f).trans <|
+    condExp_of_aestronglyMeasurable' hm hf ((Lp.memLp f).integrable Fact.out)
+
+/-- Conditioning on the ambient σ-algebra is the identity. -/
+@[simp]
+theorem condExpLp_self : (condExpLp 𝕜 m₀ : Lp E p μ →L[𝕜] Lp E p μ) = .id 𝕜 _ := by
+  ext1 f
+  exact (condExpLp_eq_self_iff le_rfl).2 (Lp.aestronglyMeasurable f)
 
 /-- **Tower property.** Conditioning on `m₂` and then on a coarser σ-algebra `m₁` is conditioning
 on `m₁`. -/
