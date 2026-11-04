@@ -65,7 +65,8 @@ Calderón–Zygmund cubes at height `t`.
 * `TauCeti.sharpMaximalFunction`: the sharp maximal function, with
   `TauCeti.setLAverage_enorm_sub_setAverage_le_sharpMaximalFunction`,
   `TauCeti.sharpMaximalFunction_le` and `TauCeti.lt_sharpMaximalFunction_iff` as its interface,
-  `TauCeti.sharpMaximalFunction_const` and `TauCeti.lowerSemicontinuous_sharpMaximalFunction`.
+  `TauCeti.sharpMaximalFunction_const`, `TauCeti.sharpMaximalFunction_zero`,
+  `TauCeti.sharpMaximalFunction_congr_ae` and `TauCeti.lowerSemicontinuous_sharpMaximalFunction`.
 * `TauCeti.sharpMaximalFunction_add_const`, `TauCeti.sharpMaximalFunction_const_smul` and
   `TauCeti.sharpMaximalFunction_add_le`: the sharp maximal function ignores constants, is
   homogeneous and is subadditive.
@@ -144,6 +145,23 @@ theorem sharpMaximalFunction_const [CompleteSpace F] (μ : Measure X) (b : F) :
   rw [setAverage_const h0 htop b]
   simp
 
+/-- The sharp maximal function of the zero function vanishes. -/
+@[simp]
+theorem sharpMaximalFunction_zero (μ : Measure X) : sharpMaximalFunction μ (0 : X → F) = 0 := by
+  funext x
+  simp [sharpMaximalFunction]
+
+/-- The sharp maximal function depends only on the a.e. class of `f`. -/
+theorem sharpMaximalFunction_congr_ae {g : X → F} (h : f =ᵐ[μ] g) :
+    sharpMaximalFunction μ f = sharpMaximalFunction μ g := by
+  have hosc (s : Set X) : ⨍⁻ y in s, ‖f y - ⨍ z in s, f z ∂μ‖ₑ ∂μ =
+      ⨍⁻ y in s, ‖g y - ⨍ z in s, g z ∂μ‖ₑ ∂μ := by
+    have hs : f =ᵐ[μ.restrict s] g := ae_restrict_of_ae h
+    rw [average_congr hs]
+    exact laverage_congr (hs.mono fun y hy => by simp only [hy])
+  funext x
+  simp only [sharpMaximalFunction, hosc]
+
 /-- The sharp maximal function does not see constants: adding a constant to an a.e. strongly
 measurable `f` leaves `f^#` unchanged. -/
 @[simp]
@@ -153,6 +171,7 @@ theorem sharpMaximalFunction_add_const [CompleteSpace F] (hf : AEStronglyMeasura
   simp only [sharpMaximalFunction, setLAverage_enorm_add_const_sub hf]
 
 /-- The sharp maximal function is homogeneous: `(k • f)^# = ‖k‖ₑ f^#`. -/
+@[simp]
 theorem sharpMaximalFunction_const_smul {𝕜 : Type*} [NormedDivisionRing 𝕜] [Module 𝕜 F]
     [NormSMulClass 𝕜 F] [SMulCommClass ℝ 𝕜 F] (k : 𝕜) (x : X) :
     sharpMaximalFunction μ (k • f) x = ‖k‖ₑ * sharpMaximalFunction μ f x := by
