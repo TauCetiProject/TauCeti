@@ -110,8 +110,13 @@ theorem mem_integralClosure_iff_exists_add_zsmul_average [Fintype G] (hG : Nat.c
   have : NeZero p := ⟨hp.out.ne_zero⟩
   have : IsCyclotomicExtension {p} ℚ (CyclotomicField p ℚ) :=
     CyclotomicField.isCyclotomicExtension p ℚ
-  obtain ⟨χ, hχ⟩ := exists_monoidHom_ne_one_of_isPrimitiveRoot hG
-    (IsCyclotomicExtension.zeta_spec p ℚ (CyclotomicField p ℚ))
+  have := isCyclic_of_prime_card hG
+  have : Nontrivial G := Finite.one_lt_card_iff_nontrivial.1 (hG ▸ hp.out.one_lt)
+  obtain ⟨a, ha⟩ := exists_ne (1 : G)
+  obtain ⟨φ, hφ⟩ := IsCyclic.exists_apply_ne_one (G' := (CyclotomicField p ℚ)ˣ)
+    ⟨_, by rw [hG]; exact (IsCyclotomicExtension.zeta_spec p ℚ _).isUnit_unit hp.out.ne_zero⟩ ha
+  set χ := (Units.coeHom (CyclotomicField p ℚ)).comp φ
+  have hχ : χ ≠ 1 := fun h => hφ (Units.ext (DFunLike.congr_fun h a))
   refine ⟨exists_add_zsmul_average_eq hG hχ, ?_⟩
   rintro ⟨y, hy, k, rfl⟩
   have he : GroupAlgebra.average ℚ G ∈ integralClosure ℤ (MonoidAlgebra ℚ G) := by
@@ -205,11 +210,11 @@ private theorem exists_dvd_sub_of_mem_groupRingSubalgebra [Finite G] {y : Monoid
   induction hy using Submodule.span_induction with
   | mem y hy =>
     obtain ⟨h, rfl⟩ := hy
-    have hpow : χ h ^ p = 1 := by
-      rw [← map_pow, ← hG, pow_card_eq_one', map_one]
-    obtain ⟨i, -, hi⟩ := hζ.eq_pow_of_pow_eq_one hpow
-    -- `hζ.toInteger` is `ζ` viewed in `𝓞 K`, so its coercion to `K` is `ζ` by definition
-    refine ⟨1, hζ.toInteger ^ i, by simp [← hi, ← RingOfIntegers.coe_eq_algebraMap]; rfl, ?_⟩
+    obtain ⟨i, -, hi⟩ := hζ.eq_pow_of_pow_eq_one (χ.apply_pow_eq_one_of_card_eq hG h)
+    refine ⟨1, hζ.toInteger ^ i, by
+      simp only [← hi, groupAlgebraEquivProd_single, Int.cast_one, Prod.mk.injEq, true_and,
+        map_pow, ← RingOfIntegers.coe_eq_algebraMap]
+      exact congrArg (· ^ i) hζ.coe_toInteger.symm, ?_⟩
     rw [Int.cast_one, ← dvd_neg, neg_sub]
     simpa using sub_dvd_pow_sub_pow hζ.toInteger 1 i
   | zero => exact ⟨0, 0, by ext <;> simp, by simp⟩
