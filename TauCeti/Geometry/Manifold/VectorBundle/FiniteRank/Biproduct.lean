@@ -431,6 +431,7 @@ theorem contMDiff_totalSpaceMap_whitneyInr (A D : FiniteRankBundleCore 𝕜 B) :
 
 /-- The pairing `whitneyLift f g` glues to a `C^n` total-space map if and only if both `f` and `g`
 do. -/
+@[simp]
 theorem contMDiff_totalSpaceMap_whitneyLift_iff (f : E ⟶ A) (g : E ⟶ D) :
     ContMDiff (IB.prod 𝓘(𝕜, Fin E.rank → 𝕜)) (IB.prod 𝓘(𝕜, Fin (whitneySum A D).rank → 𝕜)) n
         (whitneyLift f g).totalSpaceMap ↔
@@ -462,6 +463,7 @@ theorem contMDiff_totalSpaceMap_into_whitneySum_iff (h : E ⟶ whitneySum A D) :
 
 /-- The copairing `whitneyDesc f g` glues to a `C^n` total-space map if and only if both `f` and
 `g` do. -/
+@[simp]
 theorem contMDiff_totalSpaceMap_whitneyDesc_iff (f : A ⟶ E) (g : D ⟶ E) :
     ContMDiff (IB.prod 𝓘(𝕜, Fin (whitneySum A D).rank → 𝕜)) (IB.prod 𝓘(𝕜, Fin E.rank → 𝕜)) n
         (whitneyDesc f g).totalSpaceMap ↔
@@ -493,6 +495,7 @@ theorem contMDiff_totalSpaceMap_from_whitneySum_iff (h : whitneySum A D ⟶ E) :
 
 /-- The direct sum `whitneyMap f g` glues to a `C^n` total-space map if and only if both `f` and
 `g` do. -/
+@[simp]
 theorem contMDiff_totalSpaceMap_whitneyMap_iff (f : A ⟶ A') (g : D ⟶ D') :
     ContMDiff (IB.prod 𝓘(𝕜, Fin (whitneySum A D).rank → 𝕜))
         (IB.prod 𝓘(𝕜, Fin (whitneySum A' D').rank → 𝕜)) n (whitneyMap f g).totalSpaceMap ↔
