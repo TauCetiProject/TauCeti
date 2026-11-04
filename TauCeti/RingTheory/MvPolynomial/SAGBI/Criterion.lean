@@ -136,28 +136,26 @@ section CommRing
 
 variable {R J : Type*} [CommRing R] [Nontrivial R] {c : ι → MvPolynomial σ R}
 
-/-- Let `c` be a family of polynomials and write `A w = ∑ i, w i • m.degree (c i)`. Suppose that
-binomials `Y^(u j) - Y^(v j)` generate the toric ideal of the leading exponents of `c` and that
-every exponent `w` of `Q j` satisfies `A w ≺ A (u j)`. Then every element `p` of the toric ideal
-all of whose exponents `w` satisfy `A w = δ` is congruent to a polynomial all of whose exponents
-`w` satisfy `A w ≺ δ`, modulo the `R`-span of the monomial multiples
-`Y^x * (Y^(u j) - Y^(v j) - Q j)` with `A x + A (u j) = δ`. -/
-theorem exists_sub_mem_span_of_mem_toricIdeal {u v : J → ι →₀ ℕ}
-    (hJ : TauCeti.toricIdeal R (fun i ↦ m.degree (c i)) =
+/-- Let `a : ι → σ →₀ ℕ` be a family of weights and write `A w = ∑ i, w i • a i`. Suppose that
+binomials `Y^(u j) - Y^(v j)` generate the toric ideal of `a` and that every exponent `w` of `Q j`
+satisfies `A w ≺ A (u j)`. Then every element `p` of the toric ideal all of whose exponents `w`
+satisfy `A w = δ` is congruent to a polynomial all of whose exponents `w` satisfy `A w ≺ δ`,
+modulo the `R`-span of the monomial multiples `Y^x * (Y^(u j) - Y^(v j) - Q j)` with
+`A x + A (u j) = δ`. -/
+theorem exists_sub_mem_span_of_mem_toricIdeal {a : ι → σ →₀ ℕ} {u v : J → ι →₀ ℕ}
+    (hJ : TauCeti.toricIdeal R a =
       Ideal.span (Set.range fun j ↦ monomial (u j) (1 : R) - monomial (v j) 1))
     {Q : J → MvPolynomial ι R}
-    (hQ : ∀ j, ∀ w ∈ (Q j).support, Finsupp.linearCombination ℕ (fun i ↦ m.degree (c i)) w ≺[m]
-      Finsupp.linearCombination ℕ (fun i ↦ m.degree (c i)) (u j))
-    {p : MvPolynomial ι R} (hp : p ∈ TauCeti.toricIdeal R (fun i ↦ m.degree (c i))) {δ : σ →₀ ℕ}
-    (hpδ : ∀ w ∈ p.support, Finsupp.linearCombination ℕ (fun i ↦ m.degree (c i)) w = δ) :
+    (hQ : ∀ j, ∀ w ∈ (Q j).support,
+      Finsupp.linearCombination ℕ a w ≺[m] Finsupp.linearCombination ℕ a (u j))
+    {p : MvPolynomial ι R} (hp : p ∈ TauCeti.toricIdeal R a) {δ : σ →₀ ℕ}
+    (hpδ : ∀ w ∈ p.support, Finsupp.linearCombination ℕ a w = δ) :
     ∃ p' : MvPolynomial ι R,
       p - p' ∈ Submodule.span R {f | ∃ x j,
-        Finsupp.linearCombination ℕ (fun i ↦ m.degree (c i)) x +
-          Finsupp.linearCombination ℕ (fun i ↦ m.degree (c i)) (u j) = δ ∧
+        Finsupp.linearCombination ℕ a x + Finsupp.linearCombination ℕ a (u j) = δ ∧
         monomial x 1 * (monomial (u j) 1 - monomial (v j) 1 - Q j) = f} ∧
-      ∀ w ∈ p'.support, Finsupp.linearCombination ℕ (fun i ↦ m.degree (c i)) w ≺[m] δ := by
+      ∀ w ∈ p'.support, Finsupp.linearCombination ℕ a w ≺[m] δ := by
   classical
-  set a := fun i ↦ m.degree (c i)
   set A := Finsupp.linearCombination ℕ a
   have hA (w : ι →₀ ℕ) : Finsupp.weight a w = A w := Finsupp.weight_apply_eq_linearCombination a w
   -- The generating binomial `Y^(u j) - Y^(v j)` is weighted homogeneous of weight `A (u j)`.
