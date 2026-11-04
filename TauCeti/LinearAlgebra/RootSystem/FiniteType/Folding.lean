@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.LinearAlgebra.Matrix.Cartan.Folding
+public import TauCeti.LinearAlgebra.Matrix.Cartan.Folding.Basic
 public import TauCeti.LinearAlgebra.RootSystem.FiniteType.Basic
 
 /-!
@@ -22,7 +22,7 @@ This file shows that `C` is of finite type in the sense of `TauCeti.IsFiniteType
 matrices applies to it. The symmetrization is explicit: multiplying row `O` of `C` by the positive
 folding symmetrizer `δ_O` (`Matrix.foldingSymmetrizer`) gives the positive definite Gram matrix
 of the folded simple roots (`Matrix.foldedGramMatrix`), both from
-`TauCeti.LinearAlgebra.Matrix.Cartan.Folding`.
+`TauCeti.LinearAlgebra.Matrix.Cartan.Folding.Basic`.
 
 ## Main results
 
