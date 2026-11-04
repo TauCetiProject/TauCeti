@@ -44,8 +44,11 @@ In the top degree `H^n_c(E)` is a line
 (`TauCeti.finrank_compactlySupportedDeRhamCohomology_normedSpace`), and for every orientation of
 `E` integration `H^n_c(E) → ℝ` is an isomorphism
 (`TauCeti.compactlySupportedDeRhamCohomology.bijective_integral_normedSpace`,
-`TauCeti.compactlySupportedDeRhamCohomologyNormedSpaceEquiv`). A normalized bump function times
-a determinant form has integral one, so integration is onto and it remains to bound the dimension.
+`TauCeti.compactlySupportedDeRhamCohomologyNormedSpaceEquiv`). Equivalently, a compactly supported
+top form is the exterior derivative of a compactly supported form exactly when its integral
+vanishes (`TauCeti.mem_exactCompactlySupportedForms_iff_integralTopForm_eq_zero_normedSpace`).
+A normalized bump function times a determinant form has integral one, so integration is onto and it
+remains to bound the dimension.
 For `n ≥ 2` the same argument applies in degree `n`: if `ω₁ = dη₁` and `ω₂ = dη₂` are compactly
 supported closed `n`-forms, then `η₁` and `η₂` are closed on the complement of a large closed ball,
 whose `(n - 1)`-st cohomology is that of `Sⁿ⁻¹`, a line. A nontrivial combination
@@ -69,6 +72,8 @@ duality on oriented manifolds, which proceed by Mayer–Vietoris arguments over 
   orientation of `E`, integration `H^n_c(E) → ℝ` is bijective.
 * `TauCeti.compactlySupportedDeRhamCohomologyNormedSpaceEquiv`: the resulting isomorphism
   `H^n_c(E) ≃ₗ[ℝ] ℝ`.
+* `TauCeti.mem_exactCompactlySupportedForms_iff_integralTopForm_eq_zero_normedSpace`: a compactly
+  supported top form is compactly supported exact if and only if its integral vanishes.
 
 ## References
 
@@ -361,6 +366,32 @@ theorem compactlySupportedDeRhamCohomology.bijective_integral_normedSpace {n : �
       (finrank_compactlySupportedDeRhamCohomology_normedSpace E (by simpa using o.card_eq.symm))
   obtain ⟨v, hv⟩ := compactlySupportedDeRhamCohomology.exists_integral_ne_zero_normedSpace o
   exact LinearMap.bijective_of_ne_zero fun h ↦ hv (by rw [h, LinearMap.zero_apply])
+
+/-- **The compactly supported Poincaré lemma in top degree** [Lee, Lemma 17.27]. On an oriented
+finite-dimensional real normed space `E` of dimension `n`, a compactly supported smooth `n`-form
+whose integral vanishes is the exterior derivative of a compactly supported form. -/
+theorem mem_exactCompactlySupportedForms_of_integralTopForm_eq_zero_normedSpace {n : ℕ}
+    (o : Manifold.Orientation 𝓘(ℝ, E) E (Fin n)) {φ : SmoothForm 𝓘(ℝ, E) E ℝ n}
+    (hφ : φ ∈ compactlySupportedForms 𝓘(ℝ, E) E n) (h : integralTopForm o φ.1 = 0) :
+    φ ∈ exactCompactlySupportedForms 𝓘(ℝ, E) E n := by
+  let ψ : compactlySupportedClosedForms 𝓘(ℝ, E) E n :=
+    ⟨φ, (mem_compactlySupportedClosedForms _).mpr
+      ⟨hφ, mem_closedForms_of_finrank_le 𝓘(ℝ, E) (by simpa using o.card_eq.symm.le) φ⟩⟩
+  refine (compactlySupportedDeRhamCohomology.mk_eq_zero_iff _ n ψ).mp
+    ((injective_iff_map_eq_zero _).mp
+      (compactlySupportedDeRhamCohomology.bijective_integral_normedSpace o).1 _ ?_)
+  rw [compactlySupportedDeRhamCohomology.integral_mk]
+  exact h
+
+/-- **The compactly supported Poincaré lemma in top degree**, as a characterization. On an oriented
+finite-dimensional real normed space `E` of dimension `n`, a compactly supported smooth `n`-form is
+the exterior derivative of a compactly supported form if and only if its integral vanishes. -/
+theorem mem_exactCompactlySupportedForms_iff_integralTopForm_eq_zero_normedSpace {n : ℕ}
+    (o : Manifold.Orientation 𝓘(ℝ, E) E (Fin n)) {φ : SmoothForm 𝓘(ℝ, E) E ℝ n}
+    (hφ : φ ∈ compactlySupportedForms 𝓘(ℝ, E) E n) :
+    φ ∈ exactCompactlySupportedForms 𝓘(ℝ, E) E n ↔ integralTopForm o φ.1 = 0 :=
+  ⟨integralTopForm_eq_zero_of_mem_exactCompactlySupportedForms o,
+    mem_exactCompactlySupportedForms_of_integralTopForm_eq_zero_normedSpace o hφ⟩
 
 /-- **The top compactly supported de Rham cohomology of `ℝⁿ`.** For an orientation `o` of a
 finite-dimensional real normed space `E` of dimension `n`, integration is a linear isomorphism
