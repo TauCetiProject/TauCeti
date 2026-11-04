@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.GroupTheory.Presentation.Coxeter
-public import TauCeti.GroupTheory.Presentation.SchreierIndexTwo
+public import TauCeti.GroupTheory.Presentation.Schreier.IndexTwo
 
 /-!
 # A transcribed presentation of the third Fischer group
