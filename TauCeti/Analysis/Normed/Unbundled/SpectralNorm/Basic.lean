@@ -20,6 +20,9 @@ This file collects elementary invariance, scaling, and tower-descent lemmas for 
   homomorphism out of a normed ring preserves `spectralValue`.
 * `Polynomial.spectralValue_expand`: expanding a polynomial by a positive factor `q` raises its
   `spectralValue` to `1 / q`.
+* `Polynomial.spectralValue_map_iterateFrobenius_le`: mapping a polynomial over a reduced
+  seminormed commutative ring by `iterateFrobenius R p n` bounds its `spectralValue` by
+  `spectralValue P ^ p ^ n`.
 * `RingEquiv.spectralNorm_eq_of_norm_eq`: compatible ring isomorphisms whose base map preserves
   norms preserve `spectralNorm`.
 * `Module.Dual.exists_bound_spectralNorm_of_tower`: in a field tower `K → L → N`, spectral
@@ -105,6 +108,38 @@ theorem spectralValue_expand {R : Type*} [SeminormedCommRing R] (P : R[X]) {q : 
     rw [← hk_pow, ← hterm]
     exact pow_le_pow_left₀ (spectralValueTerms_nonneg _ _)
       (le_ciSup (spectralValueTerms_bddAbove _) (k * q)) q
+
+/-- Mapping a polynomial over a reduced seminormed commutative ring by the `n`-fold Frobenius raises
+its `spectralValue` to at most the `p ^ n`-th power. Reducedness keeps nilpotent leading
+coefficients from lowering `natDegree`. -/
+theorem spectralValue_map_iterateFrobenius_le {R : Type*} [SeminormedCommRing R] [IsReduced R]
+    (P : R[X]) (p : ℕ) [ExpChar R p] (n : ℕ) :
+    spectralValue (P.map (iterateFrobenius R p n)) ≤ spectralValue P ^ p ^ n := by
+  set q := p ^ n
+  have hq : 0 < q := expChar_pow_pos R p n
+  have hdeg : (P.map (iterateFrobenius R p n)).natDegree = P.natDegree := by
+    rw [natDegree_map_eq_iff, iterateFrobenius_def]
+    refine Classical.or_iff_not_imp_left.mpr fun h0 ↦ ?_
+    rw [leadingCoeff_eq_zero.mp (IsReduced.eq_zero _ ⟨q, not_not.mp h0⟩), natDegree_zero]
+  refine ciSup_le fun k ↦ ?_
+  rw [spectralValueTerms, hdeg]
+  split_ifs with hk
+  · have hpow : ‖(P.map (iterateFrobenius R p n)).coeff k‖ ≤ ‖P.coeff k‖ ^ q := by
+      rw [coeff_map, iterateFrobenius_def]
+      exact norm_pow_le' (P.coeff k) hq
+    have hexp : 0 ≤ 1 / ((P.natDegree : ℝ) - (k : ℝ)) :=
+      one_div_nonneg.mpr (sub_nonneg.mpr (Nat.cast_le.mpr hk.le))
+    calc ‖(P.map (iterateFrobenius R p n)).coeff k‖ ^ (1 / ((P.natDegree : ℝ) - (k : ℝ)))
+        ≤ (‖P.coeff k‖ ^ q) ^ (1 / ((P.natDegree : ℝ) - (k : ℝ))) :=
+          Real.rpow_le_rpow (norm_nonneg _) hpow hexp
+      _ = spectralValueTerms P k ^ q := by
+          rw [← Real.rpow_natCast, ← Real.rpow_mul (norm_nonneg _), mul_comm (q : ℝ),
+            Real.rpow_mul (norm_nonneg _), Real.rpow_natCast,
+            spectralValueTerms_of_lt_natDegree P hk]
+      _ ≤ spectralValue P ^ q :=
+          pow_le_pow_left₀ (spectralValueTerms_nonneg P k)
+            (le_ciSup (spectralValueTerms_bddAbove P) k) q
+  · exact pow_nonneg (spectralValue_nonneg P) q
 
 end Polynomial
 

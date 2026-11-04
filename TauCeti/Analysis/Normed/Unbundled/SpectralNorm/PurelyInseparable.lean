@@ -116,7 +116,12 @@ theorem spectralNorm_withAbs_spectralAbsoluteValue {K M N : Type*} [NormedField 
   have : Algebra.IsAlgebraic M' N :=
     Algebra.IsAlgebraic.ringHom_of_comp_eq (R := M) (A := N)
       (WithAbs.equiv (spectralAbsoluteValue K M)).symm.toRingHom (RingHom.id N)
-      (WithAbs.equiv _).symm.injective Function.surjective_id (by ext; rfl)
+      (WithAbs.equiv _).symm.injective Function.surjective_id
+      (by
+        ext
+        simp only [RingEquiv.toRingHom_eq_coe, RingHom.coe_comp, RingHom.coe_coe,
+          Function.comp_apply, WithAbs.equiv_symm_apply, RingHom.coe_id, id_eq]
+        rw [WithAbs.algebraMap_left_apply, WithAbs.ofAbs_toAbs])
   refine le_antisymm ?_ ?_
   · -- `minpoly K y`, mapped to `M'[X]`, is monic, annihilates `y`, and keeps its `spectralValue`.
     set P := minpoly K y
@@ -173,18 +178,6 @@ theorem spectralNorm_withAbs_spectralAbsoluteValue {K M N : Type*} [NormedField 
       exact hQ.pow q
     have hR_root : aeval y R = 0 := by
       rw [← aeval_map_algebraMap M' y R, hR_map, map_pow, minpoly.aeval, zero_pow hq.ne']
-    have hQ_frob : spectralValue (Q.map (iterateFrobenius M' p n)) ≤ spectralValue Q ^ q := by
-      have hdeg_frob : (Q.map (iterateFrobenius M' p n)).natDegree = Q.natDegree :=
-        Q.natDegree_map_eq_of_injective (iterateFrobenius M' p n).injective
-      refine ciSup_le fun k ↦ ?_
-      rw [spectralValueTerms, hdeg_frob]
-      split_ifs with hk
-      · rw [coeff_map, iterateFrobenius_def, norm_pow, ← Real.rpow_natCast,
-          ← Real.rpow_mul (norm_nonneg _), mul_comm (q : ℝ), Real.rpow_mul (norm_nonneg _),
-          Real.rpow_natCast, ← spectralValueTerms_of_lt_natDegree Q hk]
-        exact pow_le_pow_left₀ (spectralValueTerms_nonneg Q k)
-          (le_ciSup (spectralValueTerms_bddAbove Q) k) q
-      · exact pow_nonneg (spectralValue_nonneg Q) q
     calc spectralNorm K N y = spectralAlgNorm K N y := rfl
       _ ≤ spectralValue R :=
           norm_root_le_spectralValue spectralAlgNorm_isPowMul isNonarchimedean_spectralNorm
@@ -194,7 +187,8 @@ theorem spectralNorm_withAbs_spectralAbsoluteValue {K M N : Type*} [NormedField 
             (algebraMap K M').spectralValue_map_of_norm_eq
               norm_algebraMap_withAbs_spectralAbsoluteValue]
       _ ≤ (spectralValue Q ^ q) ^ (1 / (q : ℝ)) :=
-          Real.rpow_le_rpow (spectralValue_nonneg _) hQ_frob (by positivity)
+          Real.rpow_le_rpow (spectralValue_nonneg _)
+            (Q.spectralValue_map_iterateFrobenius_le p n) (by positivity)
       _ = spectralValue Q := by
           rw [← Real.rpow_natCast, ← Real.rpow_mul (spectralValue_nonneg Q),
             mul_one_div_cancel (Nat.cast_ne_zero.mpr hq.ne'), Real.rpow_one]
@@ -229,7 +223,8 @@ theorem exists_bound_spectralNorm_of_isPurelyInseparable_of_isSeparable {K M N :
     conv_lhs => rw [← b.sum_repr y]
     rw [map_sum]
     refine Finset.sum_congr rfl fun i _ ↦ ?_
-    rfl
+    dsimp only [ψ, LinearMap.coe_mk, AddHom.coe_mk]
+    rw [WithAbs.smul_left_def]
   calc ‖φ y‖ = ‖∑ i, ψ i (b.repr y i).ofAbs‖ := by rw [hy]
     _ ≤ ∑ i, ‖ψ i (b.repr y i).ofAbs‖ := norm_sum_le _ _
     _ ≤ ∑ i, D₂ i * spectralNorm K M (b.repr y i).ofAbs :=

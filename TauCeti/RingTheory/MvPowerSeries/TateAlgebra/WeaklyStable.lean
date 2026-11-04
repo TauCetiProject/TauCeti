@@ -265,6 +265,158 @@ private theorem exists_isometric_ringHom_of_isPurelyInseparable
       AlgHom.commutes, ← map_pow, hrootG_pow, ← hg]
     exact hΨ_F_alg (g j)
 
+private theorem algebraMap_sum_mul_eq_mul
+    {K' : Type*} [NormedField K'] [IsUltrametricDist K']
+    {c r : σ → ℝ} [∀ i, Fact (0 < c i)] [∀ i, Fact (0 < r i)]
+    {M : Type*} [Field M] [Algebra (GaussFractionField σ K c) M]
+    {m : ℕ} (b : Module.Basis (Fin m) (GaussFractionField σ K c) M)
+    (Ψ : IsRestricted.subring (R := K) c →+* IsRestricted.subring (R := K') r)
+    (rootG : Fin m → IsRestricted.subring (R := K') r)
+    (ι : M →+* GaussFractionField σ K' r)
+    (hι_alg : ∀ f, ι (algebraMap (GaussFractionField σ K c) M
+      (algebraMap (IsRestricted.subring (R := K) c) (GaussFractionField σ K c) f)) =
+      algebraMap (IsRestricted.subring (R := K') r) (GaussFractionField σ K' r) (Ψ f))
+    (hι_b : ∀ j, ι (b j) =
+      algebraMap (IsRestricted.subring (R := K') r) (GaussFractionField σ K' r) (rootG j))
+    (y : M) (s : nonZeroDivisors (IsRestricted.subring (R := K) c))
+    (a : Fin m → IsRestricted.subring (R := K) c)
+    (ha : ∀ j, algebraMap (IsRestricted.subring (R := K) c) (GaussFractionField σ K c) (a j) =
+      (s : IsRestricted.subring (R := K) c) • b.repr y j) :
+    algebraMap (IsRestricted.subring (R := K') r) (GaussFractionField σ K' r)
+      (∑ j, Ψ (a j) * rootG j) =
+      algebraMap (IsRestricted.subring (R := K') r) (GaussFractionField σ K' r) (Ψ s) * ι y := by
+  let T := IsRestricted.subring (R := K) c
+  let F := GaussFractionField σ K c
+  rw [map_sum, ← b.sum_repr y, map_sum, Finset.mul_sum]
+  refine Finset.sum_congr rfl fun j _ ↦ ?_
+  have haj : algebraMap T F (a j) = algebraMap T F s * b.repr y j := by
+    simpa only [Algebra.smul_def] using ha j
+  rw [map_mul, ← hι_alg (a j), haj, map_mul, map_mul, hι_alg s, ← hι_b j, mul_assoc,
+    ← map_mul ι, ← Algebra.smul_def (b.repr y j) (b j)]
+
+private theorem exists_restrictedFamily_coeff_sum_ne_zero
+    {K' : Type*} [NormedField K'] [IsUltrametricDist K'] [NormedAlgebra K K']
+    {c r : σ → ℝ} [∀ i, Fact (0 < c i)] [∀ i, Fact (0 < r i)]
+    {q : ℕ} (hq : q ≠ 0) (hr : ∀ i, r i ^ q = c i)
+    (h_iso : ∀ a : K, ‖algebraMap K K' a‖ ≤ 1 * ‖a‖)
+    {Ψ : IsRestricted.subring (R := K) c →+* IsRestricted.subring (R := K') r}
+    (hΨ_def : ∀ f, Ψ f = restrictedExpand q hq hr (restrictedMap (algebraMap K K') h_iso f))
+    {m : ℕ} {rootG : Fin m → IsRestricted.subring (R := K') r}
+    {E : Submodule K K'}
+    (hrootG_mem : ∀ (j : Fin m) (α : σ →₀ ℕ),
+      coeff α (rootG j : _root_.MvPowerSeries σ K') ∈ E)
+    {a₀ : Fin m → IsRestricted.subring (R := K) c}
+    (ha₀ : ∑ j, Ψ (a₀ j) * rootG j ≠ 0) :
+    ∃ (ν : σ →₀ ℕ) (μ : σ →₀ ℕ) (wE : Fin m → IsRestrictedFamily.addSubgroup E c),
+      (∀ i, ν i < q) ∧
+      (∀ (a : Fin m → IsRestricted.subring (R := K) c) (α : σ →₀ ℕ),
+        ((IsRestrictedFamily.coeff K α (∑ j, a j • wE j) : E) : K') =
+          coeff α (restrictedExpandComponent hq hr ν (∑ j, Ψ (a j) * rootG j) :
+            _root_.MvPowerSeries σ K')) ∧
+      IsRestrictedFamily.coeff K μ (∑ j, a₀ j • wE j) ≠ 0 := by
+  classical
+  obtain ⟨ν, hν, hν_norm⟩ :=
+    exists_norm_restrictedExpandComponent_mul_prod_eq hq hr (∑ j, Ψ (a₀ j) * rootG j)
+  have hcomp_ne : restrictedExpandComponent hq hr ν (∑ j, Ψ (a₀ j) * rootG j) ≠ 0 := by
+    intro h0
+    rw [h0, norm_zero, zero_mul] at hν_norm
+    exact ha₀ (norm_eq_zero.mp hν_norm.symm)
+  obtain ⟨μ, hμ_ne⟩ : ∃ μ, coeff μ
+      (restrictedExpandComponent hq hr ν (∑ j, Ψ (a₀ j) * rootG j) :
+        _root_.MvPowerSeries σ K') ≠ 0 := by
+    by_contra! hall
+    exact hcomp_ne (Subtype.ext (MvPowerSeries.ext fun μ ↦ by
+      rw [ZeroMemClass.coe_zero, map_zero]
+      exact hall μ))
+  have hwG_mem (j : Fin m) (α : σ →₀ ℕ) :
+      coeff α (restrictedExpandComponent hq hr ν (rootG j) : _root_.MvPowerSeries σ K') ∈ E := by
+    rw [coeff_restrictedExpandComponent]
+    exact hrootG_mem j (q • α + ν)
+  let wE : Fin m → IsRestrictedFamily.addSubgroup E c := fun j ↦
+    ⟨fun α ↦ ⟨coeff α (restrictedExpandComponent hq hr ν (rootG j) :
+        _root_.MvPowerSeries σ K'), hwG_mem j α⟩,
+      IsRestrictedFamily.mem_addSubgroup.mpr <|
+        ((isRestrictedFamily_coeff_iff _).mpr
+          (restrictedExpandComponent hq hr ν (rootG j)).2).of_norm_le (C := 1) fun _ ↦
+            (one_mul _).symm.le⟩
+  have hcoe_wE (j : Fin m) (α : σ →₀ ℕ) :
+      ((IsRestrictedFamily.coeff K α (wE j) : E) : K') =
+        coeff α (restrictedExpandComponent hq hr ν (rootG j) :
+          _root_.MvPowerSeries σ K') := by
+    rw [IsRestrictedFamily.coeff_apply]
+  have hcoe_sum (a : Fin m → IsRestricted.subring (R := K) c) (α : σ →₀ ℕ) :
+      ((IsRestrictedFamily.coeff K α (∑ j, a j • wE j) : E) : K') =
+        coeff α (restrictedExpandComponent hq hr ν (∑ j, Ψ (a j) * rootG j) :
+          _root_.MvPowerSeries σ K') := by
+    rw [restrictedExpandComponent_sum, AddSubmonoidClass.coe_finsetSum, map_sum, map_sum,
+      Submodule.coe_sum]
+    refine Finset.sum_congr rfl fun j _ ↦ ?_
+    rw [hΨ_def, restrictedExpandComponent_restrictedExpand_mul hq hr hν _ (rootG j),
+      IsRestrictedFamily.coeff_apply, IsRestrictedFamily.coe_isRestrictedSubring_smul,
+      convSMul_apply, Submodule.coe_sum, Subring.coe_mul, coeff_mul]
+    refine Finset.sum_congr rfl fun pq _ ↦ ?_
+    rw [SetLike.val_smul, Algebra.smul_def, coeff_restrictedMap,
+      ← IsRestrictedFamily.coeff_apply (R := K), hcoe_wE]
+  refine ⟨ν, μ, wE, hν, hcoe_sum, Subtype.coe_ne_coe.mp ?_⟩
+  rw [ZeroMemClass.coe_zero, hcoe_sum]
+  exact hμ_ne
+
+private theorem exists_sum_mul_ne_zero_of_sum_ne_zero
+    {K' : Type*} [NormedField K'] [IsUltrametricDist K'] [NormedAlgebra K K']
+    {c r : σ → ℝ} [∀ i, Fact (0 < c i)] [∀ i, Fact (0 < r i)]
+    {q : ℕ} (hq : q ≠ 0) (hr : ∀ i, r i ^ q = c i)
+    (h_iso : ∀ a : K, ‖algebraMap K K' a‖ ≤ 1 * ‖a‖)
+    {Ψ : IsRestricted.subring (R := K) c →+* IsRestricted.subring (R := K') r}
+    (hΨ_def : ∀ f, Ψ f = restrictedExpand q hq hr (restrictedMap (algebraMap K K') h_iso f))
+    {m : ℕ} {rootG : Fin m → IsRestricted.subring (R := K') r}
+    {E : Submodule K K'} [SeparatingDual K E]
+    (hrootG_mem : ∀ (j : Fin m) (α : σ →₀ ℕ),
+      coeff α (rootG j : _root_.MvPowerSeries σ K') ∈ E)
+    {a₀ : Fin m → IsRestricted.subring (R := K) c}
+    (ha₀ : ∑ j, Ψ (a₀ j) * rootG j ≠ 0) :
+    ∃ (g : Fin m → IsRestricted.subring (R := K) c) (C_π : ℝ),
+      (∀ a : Fin m → IsRestricted.subring (R := K) c,
+        ‖∑ j, a j * g j‖ ≤ C_π * ‖∑ j, Ψ (a j) * rootG j‖) ∧
+      ∑ j, a₀ j * g j ≠ 0 := by
+  classical
+  let T := IsRestricted.subring (R := K) c
+  obtain ⟨ν, μ, wE, _, hcoe_sum, hμ_ne⟩ :=
+    exists_restrictedFamily_coeff_sum_ne_zero hq hr h_iso hΨ_def hrootG_mem ha₀
+  obtain ⟨f_dual, hf_ne⟩ := SeparatingDual.exists_ne_zero (R := K) hμ_ne
+  let π : IsRestrictedFamily.addSubgroup E c →ₗ[K] T :=
+    (IsRestrictedFamily.subringLinearEquiv.symm.toLinearMap.restrictScalars K).comp
+      (IsRestrictedFamily.mapLinearMap f_dual.toLinearMap f_dual.le_opNorm)
+  have hπ_coeff (v : IsRestrictedFamily.addSubgroup E c) (α : σ →₀ ℕ) :
+      coeff α (π v : _root_.MvPowerSeries σ K) = f_dual (IsRestrictedFamily.coeff K α v) := by
+    simp only [π, LinearMap.comp_apply, LinearMap.restrictScalars_apply,
+      LinearEquiv.coe_toLinearMap, IsRestrictedFamily.coeff_coe_subringLinearEquiv_symm_apply,
+      IsRestrictedFamily.coe_mapLinearMap, Function.comp_apply, IsRestrictedFamily.coeff_apply,
+      ContinuousLinearMap.coe_coe]
+  have hπ_sum (a : Fin m → T) : ∑ j, a j * π (wE j) = π (∑ j, a j • wE j) := by
+    rw [map_sum]
+    refine Finset.sum_congr rfl fun j _ ↦ ?_
+    dsimp only [π, LinearMap.comp_apply, LinearMap.restrictScalars_apply,
+      LinearEquiv.coe_toLinearMap]
+    rw [IsRestrictedFamily.mapLinearMap_isRestrictedSubring_smul,
+      IsRestrictedFamily.subringLinearEquiv.symm.map_smul, smul_eq_mul]
+  refine ⟨fun j ↦ π (wE j), ‖f_dual‖ / ν.prod (r · ^ ·), fun a ↦ ?_, fun h0 ↦ ?_⟩
+  · rw [hπ_sum]
+    calc ‖π (∑ j, a j • wE j)‖
+        ≤ ‖f_dual‖ * ‖restrictedExpandComponent hq hr ν (∑ j, Ψ (a j) * rootG j)‖ := by
+          refine norm_le_mul_of_norm_coeff_le (norm_nonneg f_dual) fun α ↦ ?_
+          rw [hπ_coeff, ← hcoe_sum a α, ← AddSubgroupClass.coe_norm]
+          exact f_dual.le_opNorm _
+      _ ≤ ‖f_dual‖ * (‖∑ j, Ψ (a j) * rootG j‖ / ν.prod (r · ^ ·)) := by
+          refine mul_le_mul_of_nonneg_left ?_ (norm_nonneg _)
+          rw [le_div_iff₀ (prod_pow_pos ν)]
+          exact norm_restrictedExpandComponent_mul_prod_le hq hr ν _
+      _ = (‖f_dual‖ / ν.prod (r · ^ ·)) * ‖∑ j, Ψ (a j) * rootG j‖ := by ring
+  · rw [hπ_sum] at h0
+    have hcoeff0 : coeff μ (π (∑ j, a₀ j • wE j) : _root_.MvPowerSeries σ K) = 0 := by
+      rw [h0, ZeroMemClass.coe_zero, map_zero]
+    rw [hπ_coeff] at hcoeff0
+    exact hf_ne hcoeff0
+
 end Helpers
 
 /-- **Characteristic-free weak stability of Gauss-normed Tate fraction fields.**
@@ -276,7 +428,6 @@ theorem isWeaklyStable_gaussFractionField (σ K : Type*) [Finite σ]
     (c : σ → ℝ) [∀ i, Fact (0 < c i)] :
     IsWeaklyStable (GaussFractionField σ K c) := by
   classical
-  have := Fintype.ofFinite σ
   let T := IsRestricted.subring (R := K) c
   let F := GaussFractionField σ K c
   refine IsWeaklyStable.of_isPurelyInseparable fun M _ _ _ _ ψ ↦ ?_
@@ -308,166 +459,52 @@ theorem isWeaklyStable_gaussFractionField (σ K : Type*) [Finite σ]
         coeff idx.2 (rootG idx.1 : _root_.MvPowerSeries σ K')),
       Submodule.separatingDual_span_of_countable (Set.countable_range _),
       fun j α ↦ Submodule.subset_span ⟨(j, α), rfl⟩⟩
-  let mkElem (a : Fin m → T) : T' := ∑ j : Fin m, Ψ (a j) * rootG j
-  have hmkElem_map (y : M) (s : nonZeroDivisors T) (a : Fin m → T)
-      (ha : ∀ j, algebraMap T F (a j) = (s : T) • b.repr y j) :
-      algebraMap T' F' (mkElem a) = algebraMap T' F' (Ψ s) * ι y := by
-    dsimp only [mkElem]
-    rw [map_sum, ← b.sum_repr y, map_sum, Finset.mul_sum]
-    refine Finset.sum_congr rfl fun j _ ↦ ?_
-    have haj : algebraMap T F (a j) = algebraMap T F s * b.repr y j := by
-      simpa only [Algebra.smul_def] using ha j
-    rw [map_mul, ← hι_alg (a j), haj, map_mul, map_mul, hι_alg s, ← hι_b j, mul_assoc,
-      ← map_mul ι, ← Algebra.smul_def (b.repr y j) (b j)]
   -- Step 4: Construct separating spectrally bounded `F`-linear functionals on `M`.
   refine Module.Dual.exists_bound_of_forall_exists_ne_zero ψ (spectralNorm F M) fun x₀ hx₀ ↦ ?_
   obtain ⟨s₀, hs₀⟩ := IsLocalization.exist_integer_multiples_of_finite (nonZeroDivisors T)
     (b.repr x₀)
   choose a₀ ha₀ using hs₀
-  set u₀ : T' := mkElem a₀ with hu₀_def
   have hs₀_F_ne : algebraMap T' F' (Ψ s₀) ≠ 0 := by
     rw [← norm_ne_zero_iff, norm_algebraMap_gaussFractionField, hΨ_norm, norm_ne_zero_iff]
     exact nonZeroDivisors.ne_zero s₀.2
-  have hu₀_ne : u₀ ≠ 0 := by
+  have hu₀_ne : ∑ j, Ψ (a₀ j) * rootG j ≠ 0 := by
     intro h0
     have hmul : algebraMap T' F' (Ψ s₀) * ι x₀ = 0 := by
-      rw [← hmkElem_map x₀ s₀ a₀ ha₀, ← hu₀_def, h0, map_zero]
+      rw [← algebraMap_sum_mul_eq_mul b Ψ rootG ι hι_alg hι_b x₀ s₀ a₀ ha₀, h0, map_zero]
     exact mul_ne_zero hs₀_F_ne ((map_ne_zero_iff ι ι.injective).mpr hx₀) hmul
-  have hex_comp : ∃ (ν : σ → Fin q) (μ : σ →₀ ℕ),
-      coeff μ (restrictedExpandComponent hq hr
-        (Finsupp.equivFunOnFinite.symm (Fin.val ∘ ν)) u₀ : _root_.MvPowerSeries σ K') ≠ 0 := by
-    by_contra! hall
-    apply hu₀_ne
-    rw [← sum_monomial_mul_restrictedExpand_restrictedExpandComponent hq hr u₀]
-    refine Finset.sum_eq_zero fun ν _ ↦ ?_
-    have hcomp0 : restrictedExpandComponent hq hr
-        (Finsupp.equivFunOnFinite.symm (Fin.val ∘ ν)) u₀ = 0 := by
-      apply Subtype.ext
-      ext μ
-      rw [ZeroMemClass.coe_zero, map_zero]
-      exact hall ν μ
-    rw [hcomp0, map_zero, mul_zero]
-  obtain ⟨ν, μ, hμ_ne⟩ := hex_comp
-  set ν_fs : σ →₀ ℕ := Finsupp.equivFunOnFinite.symm (Fin.val ∘ ν)
-  have hν_fs : ∀ i, ν_fs i < q := fun i ↦ by
-    dsimp only [ν_fs]
-    rw [Finsupp.coe_equivFunOnFinite_symm, Function.comp_apply]
-    exact (ν i).isLt
-  have hwG_mem (j : Fin m) (α : σ →₀ ℕ) :
-      coeff α (restrictedExpandComponent hq hr ν_fs (rootG j) : _root_.MvPowerSeries σ K') ∈ E := by
-    rw [coeff_restrictedExpandComponent]
-    exact hrootG_mem j (q • α + ν_fs)
-  obtain ⟨wE, hcoe_wE⟩ : ∃ wE : Fin m → IsRestrictedFamily.addSubgroup E c,
-      ∀ (j : Fin m) (α : σ →₀ ℕ),
-        ((IsRestrictedFamily.coeff K α (wE j) : E) : K') =
-          coeff α (restrictedExpandComponent hq hr ν_fs (rootG j) :
-            _root_.MvPowerSeries σ K') :=
-    ⟨fun j ↦
-      ⟨fun α ↦ ⟨coeff α (restrictedExpandComponent hq hr ν_fs (rootG j) :
-          _root_.MvPowerSeries σ K'), hwG_mem j α⟩,
-        IsRestrictedFamily.mem_addSubgroup.mpr <|
-          ((isRestrictedFamily_coeff_iff _).mpr
-            (restrictedExpandComponent hq hr ν_fs (rootG j)).2).of_norm_le (C := 1) fun _ ↦
-              (one_mul _).symm.le⟩,
-      fun j α ↦ by rw [IsRestrictedFamily.coeff_apply]⟩
-  let mkVec (a : Fin m → T) : IsRestrictedFamily.addSubgroup E c := ∑ j : Fin m, a j • wE j
-  have hcoe_sum_wE (a : Fin m → T) (α : σ →₀ ℕ) :
-      ((IsRestrictedFamily.coeff K α (mkVec a) : E) : K') =
-        coeff α (restrictedExpandComponent hq hr ν_fs (mkElem a) : _root_.MvPowerSeries σ K') := by
-    dsimp only [mkElem, mkVec]
-    rw [restrictedExpandComponent_sum, AddSubmonoidClass.coe_finsetSum, map_sum, map_sum,
-      Submodule.coe_sum]
-    refine Finset.sum_congr rfl fun j _ ↦ ?_
-    rw [hΨ_def, restrictedExpandComponent_restrictedExpand_mul hq hr hν_fs _ (rootG j),
-      IsRestrictedFamily.coeff_apply, IsRestrictedFamily.coe_isRestrictedSubring_smul,
-      convSMul_apply, Submodule.coe_sum, Subring.coe_mul, coeff_mul]
-    refine Finset.sum_congr rfl fun pq _ ↦ ?_
-    rw [SetLike.val_smul, Algebra.smul_def, coeff_restrictedMap,
-      ← IsRestrictedFamily.coeff_apply (R := K), hcoe_wE]
-  let e₀ : E := IsRestrictedFamily.coeff K μ (mkVec a₀)
-  have he₀_ne : e₀ ≠ 0 := Subtype.coe_ne_coe.mp <| by
-    dsimp only [e₀]
-    rw [hcoe_sum_wE]
-    exact hμ_ne
-  obtain ⟨f_dual, hf_ne⟩ := SeparatingDual.exists_ne_zero (R := K) he₀_ne
-  obtain ⟨π, hπ_coeff, hπ_smul⟩ :
-      ∃ π : IsRestrictedFamily.addSubgroup E c →ₗ[K] T,
-        (∀ (v : IsRestrictedFamily.addSubgroup E c) (α : σ →₀ ℕ),
-          coeff α (π v : _root_.MvPowerSeries σ K) = f_dual (IsRestrictedFamily.coeff K α v)) ∧
-        (∀ (f : T) (v : IsRestrictedFamily.addSubgroup E c), π (f • v) = f * π v) := by
-    refine ⟨(IsRestrictedFamily.subringLinearEquiv.symm.toLinearMap.restrictScalars K).comp
-      (IsRestrictedFamily.mapLinearMap f_dual.toLinearMap f_dual.le_opNorm),
-      fun v α ↦ ?_, fun f v ↦ ?_⟩
-    · simp only [LinearMap.comp_apply, LinearMap.restrictScalars_apply,
-        LinearEquiv.coe_toLinearMap, IsRestrictedFamily.coeff_coe_subringLinearEquiv_symm_apply,
-        IsRestrictedFamily.coe_mapLinearMap, Function.comp_apply, IsRestrictedFamily.coeff_apply,
-        ContinuousLinearMap.coe_coe]
-    · dsimp only [LinearMap.comp_apply, LinearMap.restrictScalars_apply,
-        LinearEquiv.coe_toLinearMap]
-      rw [IsRestrictedFamily.mapLinearMap_isRestrictedSubring_smul,
-        IsRestrictedFamily.subringLinearEquiv.symm.map_smul, smul_eq_mul]
-  let C_π : ℝ := ‖f_dual‖ / ν_fs.prod (r · ^ ·)
-  have hπ_norm (a : Fin m → T) :
-      ‖π (mkVec a)‖ ≤ C_π * ‖mkElem a‖ := by
-    dsimp only [C_π]
-    calc ‖π (mkVec a)‖
-        ≤ ‖f_dual‖ * ‖restrictedExpandComponent hq hr ν_fs (mkElem a)‖ := by
-          refine norm_le_mul_of_norm_coeff_le (norm_nonneg f_dual) fun α ↦ ?_
-          rw [hπ_coeff, ← hcoe_sum_wE a α, ← AddSubgroupClass.coe_norm]
-          exact f_dual.le_opNorm _
-      _ ≤ ‖f_dual‖ * (‖mkElem a‖ / ν_fs.prod (r · ^ ·)) := by
-          refine mul_le_mul_of_nonneg_left ?_ (norm_nonneg _)
-          rw [le_div_iff₀ (prod_pow_pos ν_fs)]
-          exact norm_restrictedExpandComponent_mul_prod_le hq hr ν_fs (mkElem a)
-      _ = (‖f_dual‖ / ν_fs.prod (r · ^ ·)) * ‖mkElem a‖ := by ring
-  obtain ⟨φ, hφ_b⟩ : ∃ φ : Module.Dual F M, ∀ j, φ (b j) = algebraMap T F (π (wE j)) :=
-    ⟨b.constr F fun j ↦ algebraMap T F (π (wE j)),
-      b.constr_basis F (fun j ↦ algebraMap T F (π (wE j)))⟩
+  obtain ⟨g, C_π, hg_norm, hg_ne⟩ :=
+    exists_sum_mul_ne_zero_of_sum_ne_zero hq hr h_iso hΨ_def hrootG_mem hu₀_ne
+  let φ : Module.Dual F M := b.constr F fun j ↦ algebraMap T F (g j)
   have hφ_clear (y : M) (s : nonZeroDivisors T) (a : Fin m → T)
       (ha : ∀ j, algebraMap T F (a j) = (s : T) • b.repr y j) :
-      algebraMap T F s * φ y = algebraMap T F (π (mkVec a)) := by
-    dsimp only [mkVec]
+      algebraMap T F s * φ y = algebraMap T F (∑ j, a j * g j) := by
     conv_lhs => rw [← b.sum_repr y]
-    rw [map_sum, Finset.mul_sum, map_sum, map_sum]
+    rw [map_sum, Finset.mul_sum, map_sum]
     refine Finset.sum_congr rfl fun j _ ↦ ?_
-    have haj : algebraMap T F s * b.repr y j = algebraMap T F (a j) := by
-      simpa only [Algebra.smul_def] using (ha j).symm
-    calc algebraMap T F s * φ (b.repr y j • b j)
-        = algebraMap T F s * (b.repr y j * φ (b j)) := by rw [map_smul, smul_eq_mul]
-      _ = algebraMap T F s * (b.repr y j * algebraMap T F (π (wE j))) :=
-          congrArg (fun z ↦ algebraMap T F s * (b.repr y j * z)) (hφ_b j)
-      _ = (algebraMap T F s * b.repr y j) * algebraMap T F (π (wE j)) :=
-          (mul_assoc _ _ _).symm
-      _ = algebraMap T F (a j) * algebraMap T F (π (wE j)) :=
-          congrArg (· * algebraMap T F (π (wE j))) haj
-      _ = algebraMap T F (π (a j • wE j)) := by rw [← map_mul, ← hπ_smul]
-  refine ⟨φ, ⟨C_π, fun y ↦ ?_⟩, ?_⟩
+    dsimp only [φ]
+    rw [map_smul, b.constr_basis, smul_eq_mul, ← mul_assoc,
+      ← Algebra.smul_def (s : T) (b.repr y j), ← ha j, ← map_mul]
+  refine ⟨φ, ⟨C_π, fun y ↦ ?_⟩, fun hφ0 ↦ ?_⟩
   · obtain ⟨s, hs⟩ := IsLocalization.exist_integer_multiples_of_finite (nonZeroDivisors T)
       (b.repr y)
     choose a ha using hs
-    have hu_norm : ‖mkElem a‖ = ‖(s : T)‖ * spectralNorm F M y := by
-      rw [← norm_algebraMap_gaussFractionField σ K' r (mkElem a), hmkElem_map y s a ha, norm_mul,
+    have hu_norm : ‖∑ j, Ψ (a j) * rootG j‖ = ‖(s : T)‖ * spectralNorm F M y := by
+      rw [← norm_algebraMap_gaussFractionField σ K' r _,
+        algebraMap_sum_mul_eq_mul b Ψ rootG ι hι_alg hι_b y s a ha, norm_mul,
         norm_algebraMap_gaussFractionField σ K' r _, hΨ_norm, hι_norm]
     have hs_pos : 0 < ‖(s : T)‖ := by
       rw [← norm_algebraMap_gaussFractionField σ K c (s : T), norm_pos_iff]
       exact IsFractionRing.to_map_ne_zero_of_mem_nonZeroDivisors s.2
-    have hmul_le : ‖(s : T)‖ * ‖φ y‖ ≤ ‖(s : T)‖ * (C_π * spectralNorm F M y) := by
-      calc ‖(s : T)‖ * ‖φ y‖
-          = ‖algebraMap T F s * φ y‖ := by
-              rw [norm_mul, norm_algebraMap_gaussFractionField σ K c _]
-        _ = ‖π (mkVec a)‖ := by
-              rw [hφ_clear y s a ha, norm_algebraMap_gaussFractionField σ K c _]
-        _ ≤ C_π * ‖mkElem a‖ := hπ_norm a
-        _ = ‖(s : T)‖ * (C_π * spectralNorm F M y) := by rw [hu_norm]; ring
-    exact le_of_mul_le_mul_left hmul_le hs_pos
-  · intro hφ0
-    have hπ0 : π (mkVec a₀) = 0 := by
-      apply IsFractionRing.injective T F
-      rw [map_zero, ← hφ_clear x₀ s₀ a₀ ha₀, hφ0, mul_zero]
-    have hcoeff0 : coeff μ (π (mkVec a₀) : _root_.MvPowerSeries σ K) = 0 := by
-      rw [hπ0, ZeroMemClass.coe_zero, map_zero]
-    rw [hπ_coeff] at hcoeff0
-    exact hf_ne hcoeff0
+    refine le_of_mul_le_mul_left ?_ hs_pos
+    calc ‖(s : T)‖ * ‖φ y‖
+        = ‖algebraMap T F s * φ y‖ := by
+            rw [norm_mul, norm_algebraMap_gaussFractionField σ K c _]
+      _ = ‖∑ j, a j * g j‖ := by
+            rw [hφ_clear y s a ha, norm_algebraMap_gaussFractionField σ K c _]
+      _ ≤ C_π * ‖∑ j, Ψ (a j) * rootG j‖ := hg_norm a
+      _ = ‖(s : T)‖ * (C_π * spectralNorm F M y) := by rw [hu_norm]; ring
+  · refine hg_ne (IsFractionRing.injective T F ?_)
+    rw [map_zero, ← hφ_clear x₀ s₀ a₀ ha₀, hφ0, mul_zero]
 
 end WeaklyStable
 
@@ -488,6 +525,44 @@ power-basis coordinate norm.
 -/
 
 universe u₁ u₂
+
+private theorem sq_add_X_sq_mul_add_X_mul_sq_ne_zero {σ R : Type*}
+    [CommSemiring R] [NoZeroDivisors R] [Nontrivial R] (i : σ)
+    {A B : _root_.MvPowerSeries σ R} (hB : B ≠ 0) :
+    A ^ 2 + (_root_.MvPowerSeries.X i) ^ 2 * A * B +
+      (_root_.MvPowerSeries.X i) * B ^ 2 ≠ 0 := by
+  rcases eq_or_ne A 0 with rfl | hA
+  · rw [sq, zero_mul, mul_zero, zero_mul, zero_add, zero_add]
+    exact mul_ne_zero (MvPowerSeries.X_ne_zero i) (pow_ne_zero 2 hB)
+  obtain ⟨a, ha⟩ := ENat.ne_top_iff_exists.mp (MvPowerSeries.order_eq_top_iff.not.mpr hA)
+  obtain ⟨b, hb⟩ := ENat.ne_top_iff_exists.mp (MvPowerSeries.order_eq_top_iff.not.mpr hB)
+  have ho1 : (A ^ 2).order = ((2 * a : ℕ) : ℕ∞) := by
+    rw [MvPowerSeries.order_pow, ← ha, nsmul_eq_mul]
+    norm_cast
+  have ho2 : ((_root_.MvPowerSeries.X i) * B ^ 2).order = ((1 + 2 * b : ℕ) : ℕ∞) := by
+    rw [MvPowerSeries.order_mul, MvPowerSeries.order_X, MvPowerSeries.order_pow, ← hb,
+      nsmul_eq_mul]
+    norm_cast
+  have ho3 : ((_root_.MvPowerSeries.X i) ^ 2 * A * B).order = ((2 + a + b : ℕ) : ℕ∞) := by
+    rw [MvPowerSeries.order_mul, MvPowerSeries.order_mul, MvPowerSeries.order_pow,
+      MvPowerSeries.order_X, ← ha, ← hb, nsmul_eq_mul]
+    norm_cast
+  have hne12 : (A ^ 2).order ≠ ((_root_.MvPowerSeries.X i) * B ^ 2).order := by
+    rw [ho1, ho2, ne_eq, Nat.cast_inj]
+    omega
+  have hmin_cast (x y : ℕ) : (min (x : ℕ∞) (y : ℕ∞)) = ((min x y : ℕ) : ℕ∞) :=
+    (Monotone.map_min (fun _ _ ↦ Nat.cast_le.mpr)).symm
+  have ho12 : (A ^ 2 + (_root_.MvPowerSeries.X i) * B ^ 2).order =
+      ((min (2 * a) (1 + 2 * b) : ℕ) : ℕ∞) := by
+    rw [MvPowerSeries.order_add_of_order_ne hne12, ho1, ho2, hmin_cast]
+  have hlt : min (2 * a) (1 + 2 * b) < 2 + a + b := by omega
+  have hne_sum : (A ^ 2 + (_root_.MvPowerSeries.X i) * B ^ 2).order ≠
+      ((_root_.MvPowerSeries.X i) ^ 2 * A * B).order := by
+    rw [ho12, ho3, ne_eq, Nat.cast_inj]
+    exact hlt.ne
+  rw [add_right_comm, ne_eq, ← MvPowerSeries.order_eq_top_iff,
+    MvPowerSeries.order_add_of_order_ne hne_sum, ho12, ho3, hmin_cast]
+  exact ENat.natCast_ne_top _
 
 /-- In any characteristic (including `2`), `Y ^ 2 + Xᵢ ^ 2 * Y + Xᵢ` defines a degree-`2` separable
 extension of `GaussFractionField σ K c` on which `spectralNorm` is equivalent to the power-basis
@@ -517,7 +592,6 @@ example (σ : Type u₁) (K : Type u₂) [Finite σ] [Nonempty σ]
   have hP_monic : P.Monic := by
     dsimp only [P]
     monicity!
-  have hX_ord := MvPowerSeries.order_X (R := K) i₀
   have hP_noroot (z : F) : ¬ P.IsRoot z := by
     intro hz
     rw [Polynomial.IsRoot.def, Polynomial.eval_add, Polynomial.eval_add, Polynomial.eval_pow,
@@ -533,66 +607,10 @@ example (σ : Type u₁) (K : Type u₂) [Finite σ] [Nonempty σ]
       linear_combination hmul
     have hT0 : A ^ 2 + X₀ ^ 2 * A * B + X₀ * B ^ 2 = 0 :=
       (map_eq_zero_iff _ (IsFractionRing.injective T F)).mp hclear
-    have hser : (A : _root_.MvPowerSeries σ K) ^ 2 +
-        (_root_.MvPowerSeries.X i₀ : _root_.MvPowerSeries σ K) ^ 2 *
-          (A : _root_.MvPowerSeries σ K) * (B : _root_.MvPowerSeries σ K) +
-        (_root_.MvPowerSeries.X i₀ : _root_.MvPowerSeries σ K) *
-          (B : _root_.MvPowerSeries σ K) ^ 2 = 0 := by
-      simpa only [Subring.coe_add, Subring.coe_mul, SubmonoidClass.coe_pow, ZeroMemClass.coe_zero]
-        using congrArg Subtype.val hT0
-    have hB_ne : (B : _root_.MvPowerSeries σ K) ≠ 0 :=
-      Subtype.coe_ne_coe.mpr (nonZeroDivisors.ne_zero hB_mem)
-    have hA_ne : (A : _root_.MvPowerSeries σ K) ≠ 0 := by
-      intro hA0
-      rw [hA0, sq, zero_mul, mul_zero, zero_mul, zero_add, zero_add] at hser
-      exact mul_ne_zero (MvPowerSeries.X_ne_zero i₀) (pow_ne_zero 2 hB_ne) hser
-    obtain ⟨a, ha⟩ := ENat.ne_top_iff_exists.mp (MvPowerSeries.order_eq_top_iff.not.mpr hA_ne)
-    obtain ⟨b, hb⟩ := ENat.ne_top_iff_exists.mp (MvPowerSeries.order_eq_top_iff.not.mpr hB_ne)
-    have ho1 : ((A : _root_.MvPowerSeries σ K) ^ 2).order = ((2 * a : ℕ) : ℕ∞) := by
-      rw [sq, MvPowerSeries.order_mul, ← ha, two_mul, Nat.cast_add]
-    have ho2 : ((_root_.MvPowerSeries.X i₀) * (B : _root_.MvPowerSeries σ K) ^ 2).order =
-        ((2 * b + 1 : ℕ) : ℕ∞) := by
-      rw [sq, MvPowerSeries.order_mul, MvPowerSeries.order_mul, hX_ord, ← hb]
-      push_cast
-      ring
-    have ho3 : ((_root_.MvPowerSeries.X i₀) ^ 2 * (A : _root_.MvPowerSeries σ K) *
-        (B : _root_.MvPowerSeries σ K)).order = ((2 + a + b : ℕ) : ℕ∞) := by
-      rw [sq, MvPowerSeries.order_mul, MvPowerSeries.order_mul, MvPowerSeries.order_mul,
-        hX_ord, ← ha, ← hb]
-      push_cast
-      ring
-    have hne12 : ((A : _root_.MvPowerSeries σ K) ^ 2).order ≠
-        ((_root_.MvPowerSeries.X i₀) * (B : _root_.MvPowerSeries σ K) ^ 2).order := by
-      rw [ho1, ho2, ne_eq, Nat.cast_inj]
-      omega
-    have ho12 : ((A : _root_.MvPowerSeries σ K) ^ 2 +
-        (_root_.MvPowerSeries.X i₀) * (B : _root_.MvPowerSeries σ K) ^ 2).order =
-        ((min (2 * a) (2 * b + 1) : ℕ) : ℕ∞) := by
-      rw [MvPowerSeries.order_add_of_order_ne hne12, ho1, ho2]
-      rcases le_total (2 * a) (2 * b + 1) with h | h
-      · rw [min_eq_left (Nat.cast_le.mpr h), min_eq_left h]
-      · rw [min_eq_right (Nat.cast_le.mpr h), min_eq_right h]
-    have hlt : min (2 * a) (2 * b + 1) < 2 + a + b := by omega
-    have hne_sum : ((A : _root_.MvPowerSeries σ K) ^ 2 +
-        (_root_.MvPowerSeries.X i₀) * (B : _root_.MvPowerSeries σ K) ^ 2).order ≠
-        ((_root_.MvPowerSeries.X i₀) ^ 2 * (A : _root_.MvPowerSeries σ K) *
-          (B : _root_.MvPowerSeries σ K)).order := by
-      rw [ho12, ho3, ne_eq, Nat.cast_inj]
-      exact hlt.ne
-    have htot : ((A : _root_.MvPowerSeries σ K) ^ 2 +
-        (_root_.MvPowerSeries.X i₀) * (B : _root_.MvPowerSeries σ K) ^ 2 +
-        (_root_.MvPowerSeries.X i₀) ^ 2 * (A : _root_.MvPowerSeries σ K) *
-          (B : _root_.MvPowerSeries σ K)).order =
-        ((min (2 * a) (2 * b + 1) : ℕ) : ℕ∞) := by
-      rw [MvPowerSeries.order_add_of_order_ne hne_sum, ho12, ho3,
-        min_eq_left (Nat.cast_le.mpr hlt.le)]
-    have hswap : (A : _root_.MvPowerSeries σ K) ^ 2 +
-        (_root_.MvPowerSeries.X i₀) * (B : _root_.MvPowerSeries σ K) ^ 2 +
-        (_root_.MvPowerSeries.X i₀) ^ 2 * (A : _root_.MvPowerSeries σ K) *
-          (B : _root_.MvPowerSeries σ K) = 0 := by
-      linear_combination hser
-    rw [hswap, MvPowerSeries.order_zero] at htot
-    exact ENat.natCast_ne_top _ htot.symm
+    exact sq_add_X_sq_mul_add_X_mul_sq_ne_zero i₀
+      (Subtype.coe_ne_coe.mpr (nonZeroDivisors.ne_zero hB_mem))
+      (by simpa only [Subring.coe_add, Subring.coe_mul, SubmonoidClass.coe_pow,
+        ZeroMemClass.coe_zero] using congrArg Subtype.val hT0)
   have hP_irr : Irreducible P :=
     Polynomial.irreducible_of_degree_le_three_of_not_isRoot (by rw [hP_deg]; decide) hP_noroot
   have hP_sep : P.Separable := by
@@ -653,7 +671,6 @@ example (σ : Type u₁) (K : Type u₂) [Finite σ] [Nonempty σ]
       SetLike.mem_coe, mem_perfectClosure_iff_pow_mem p]
     exact ⟨1, x₀, by rw [pow_one, hα]⟩
   have : FiniteDimensional F M := IntermediateField.adjoin.finiteDimensional hα_int
-  have hX_ord := MvPowerSeries.order_X (R := K) i₀
   have hfin_gt : 1 < Module.finrank F M := by
     by_contra! hle
     have heq1 : Module.finrank F M = 1 := le_antisymm hle Module.finrank_pos
@@ -682,14 +699,9 @@ example (σ : Type u₁) (K : Type u₂) [Finite σ] [Nonempty σ]
       exact mul_ne_zero (MvPowerSeries.X_ne_zero i₀) (pow_ne_zero p hB_ne) hser.symm
     obtain ⟨a, ha⟩ := ENat.ne_top_iff_exists.mp (MvPowerSeries.order_eq_top_iff.not.mpr hA_ne)
     obtain ⟨b, hb⟩ := ENat.ne_top_iff_exists.mp (MvPowerSeries.order_eq_top_iff.not.mpr hB_ne)
-    have hpow_ord (S : _root_.MvPowerSeries σ K) (s : ℕ) (hS : (s : ℕ∞) = S.order) :
-        (S ^ p).order = ((p * s : ℕ) : ℕ∞) := by
-      have hprod : S ^ p = ∏ _i ∈ Finset.range p, S := by
-        rw [Finset.prod_const, Finset.card_range]
-      rw [hprod, MvPowerSeries.order_prod, Finset.sum_const, Finset.card_range, ← hS, nsmul_eq_mul,
-        Nat.cast_mul]
     have hord_eq := congrArg MvPowerSeries.order hser
-    rw [hpow_ord A a ha, MvPowerSeries.order_mul, hX_ord, hpow_ord B b hb] at hord_eq
+    rw [MvPowerSeries.order_pow, ← ha, MvPowerSeries.order_mul, MvPowerSeries.order_X,
+      MvPowerSeries.order_pow, ← hb, nsmul_eq_mul, nsmul_eq_mul] at hord_eq
     have hnat : p * a = 1 + p * b := by exact_mod_cast hord_eq
     have hmod := congrArg (· % p) hnat
     rw [Nat.mul_mod_right, Nat.add_mul_mod_self_left, Nat.mod_eq_of_lt hp.one_lt] at hmod

@@ -134,6 +134,109 @@ end NormedField
 
 section Incomplete
 
+section Helpers
+
+variable {σ K : Type*} [NormedField K] [IsUltrametricDist K]
+  {c : σ → ℝ} [∀ i, Fact (0 < c i)]
+
+local notation "Tate" => IsRestricted.subring (R := K) c
+
+/-- In a complete `GaussFractionField σ K c`, for `0 < ‖a‖ < min 1 (c i₀)`, the Laurent series
+`∑_{k ≥ 1} a ^ (k ^ 2) / Xᵢ₀ ^ k` converges to a limit `z` whose `N`-th remainder has norm at most
+`‖a‖ ^ ((N + 1) ^ 2) / c i₀ ^ (N + 1)`. -/
+private theorem exists_tendsto_sum_pow_sq_div_pow [CompleteSpace (GaussFractionField σ K c)]
+    (i₀ : σ) {a : K} (ha_pos : 0 < ‖a‖) (ha1 : ‖a‖ < 1) (hac : ‖a‖ < c i₀) :
+    let F := GaussFractionField σ K c
+    let X₀ : Tate := ⟨X i₀, isRestricted_monomial c (Finsupp.single i₀ 1) (1 : K)⟩
+    ∃ z : F, ∀ N : ℕ,
+      ‖z - ∑ k ∈ Finset.range N,
+          algebraMap K F (a ^ ((k + 1) ^ 2)) / (algebraMap Tate F X₀) ^ (k + 1)‖ ≤
+        ‖a‖ ^ ((N + 1) ^ 2) / c i₀ ^ (N + 1) := by
+  let F := GaussFractionField σ K c
+  have hc₀ : 0 < c i₀ := Fact.out
+  have hrat1 : ‖a‖ / c i₀ < 1 := (div_lt_one hc₀).mpr hac
+  let X₀ : Tate := ⟨X i₀, isRestricted_monomial c (Finsupp.single i₀ 1) (1 : K)⟩
+  have hX₀_F_norm : ‖algebraMap Tate F X₀‖ = c i₀ := by
+    rw [norm_algebraMap_gaussFractionField, norm_X]
+  let t (k : ℕ) : F :=
+    algebraMap K F (a ^ ((k + 1) ^ 2)) / (algebraMap Tate F X₀) ^ (k + 1)
+  have ht_norm (k : ℕ) : ‖t k‖ = ‖a‖ ^ ((k + 1) ^ 2) / c i₀ ^ (k + 1) := by
+    simp only [t, norm_div, norm_algebraMap', norm_pow, hX₀_F_norm]
+  have ht_anti : Antitone fun k ↦ ‖t k‖ := by
+    refine antitone_nat_of_succ_le fun k ↦ ?_
+    rw [ht_norm, ht_norm]
+    have hexp : (k + 1 + 1) ^ 2 = (k + 1) ^ 2 + 1 + (2 * k + 2) := by ring
+    rw [hexp, pow_add ‖a‖, pow_add ‖a‖ ((k + 1) ^ 2) 1, pow_one, pow_succ (c i₀) (k + 1)]
+    calc ‖a‖ ^ ((k + 1) ^ 2) * ‖a‖ * ‖a‖ ^ (2 * k + 2) / (c i₀ ^ (k + 1) * c i₀)
+        = (‖a‖ ^ ((k + 1) ^ 2) / c i₀ ^ (k + 1)) * ((‖a‖ / c i₀) * ‖a‖ ^ (2 * k + 2)) := by ring
+      _ ≤ (‖a‖ ^ ((k + 1) ^ 2) / c i₀ ^ (k + 1)) * 1 :=
+          mul_le_mul_of_nonneg_left
+            ((mul_le_of_le_one_left (pow_nonneg ha_pos.le _) hrat1.le).trans
+              (pow_le_one₀ ha_pos.le ha1.le))
+            (by positivity)
+      _ = ‖a‖ ^ ((k + 1) ^ 2) / c i₀ ^ (k + 1) := mul_one _
+  have ht_le_geom (k : ℕ) : ‖t k‖ ≤ (‖a‖ / c i₀) ^ (k + 1) := by
+    rw [ht_norm, div_pow]
+    exact div_le_div_of_nonneg_right
+      (pow_le_pow_of_le_one ha_pos.le ha1.le (Nat.le_self_pow two_ne_zero (k + 1)))
+      (pow_pos hc₀ _).le
+  let s (N : ℕ) : F := ∑ k ∈ Finset.range N, t k
+  have hs_diff {N M : ℕ} (hNM : N ≤ M) : ‖s M - s N‖ ≤ ‖t N‖ := by
+    rw [← Finset.sum_Ico_eq_sub _ hNM]
+    exact IsUltrametricDist.norm_sum_le_of_forall_le_of_nonneg (norm_nonneg _) fun k hk ↦
+      ht_anti (Finset.mem_Ico.mp hk).1
+  have hs_cauchy : CauchySeq s :=
+    cauchySeq_of_le_geometric (‖a‖ / c i₀) (‖a‖ / c i₀) hrat1 fun k ↦ by
+      rw [dist_comm, dist_eq_norm, Finset.sum_range_succ_sub_sum, ← pow_succ']
+      exact ht_le_geom k
+  obtain ⟨z, hz⟩ := cauchySeq_tendsto_of_complete hs_cauchy
+  refine ⟨z, fun N ↦ ?_⟩
+  rw [← ht_norm]
+  exact le_of_tendsto ((hz.sub tendsto_const_nhds).norm)
+    (eventually_atTop.mpr ⟨N, fun M hNM ↦ hs_diff hNM⟩)
+
+/-- If `μ₀` minimizes `μ i₀` over the support of `Q`, then for `μ₀ i₀ < N` the `μ₀`-th coefficient
+of `P * X i₀ ^ N - Q * ∑_{k < N} C (f k) * X i₀ ^ (N - 1 - k)` is `- f (N - 1) * coeff μ₀ Q`. -/
+private theorem coeff_mul_X_pow_sub_mul_sum_eq {σ R : Type*} [CommRing R]
+    (P Q : _root_.MvPowerSeries σ R) (i₀ : σ) {μ₀ : σ →₀ ℕ}
+    (hQ_min : ∀ μ, coeff μ Q ≠ 0 → μ₀ i₀ ≤ μ i₀) (f : ℕ → R) {N : ℕ} (hNd : μ₀ i₀ < N) :
+    coeff μ₀ (P * X i₀ ^ N - Q * ∑ k ∈ Finset.range N, C (f k) * X i₀ ^ (N - 1 - k)) =
+      -(f (N - 1) * coeff μ₀ Q) := by
+  have hPX : coeff μ₀ (P * X i₀ ^ N) = 0 := by
+    rw [X_pow_eq, coeff_mul_monomial]
+    split_ifs with hle
+    · exfalso
+      have h := hle i₀
+      rw [Finsupp.single_eq_same] at h
+      omega
+    · rfl
+  have hQX_pos {m : ℕ} (hm : 0 < m) : coeff μ₀ (Q * X i₀ ^ m) = 0 := by
+    rw [X_pow_eq, coeff_mul_monomial]
+    split_ifs with hle
+    · rw [mul_one]
+      by_contra hne
+      have hmin_sub := hQ_min (μ₀ - Finsupp.single i₀ m) hne
+      have hm_le : m ≤ μ₀ i₀ := by
+        have h := hle i₀
+        rwa [Finsupp.single_eq_same] at h
+      simp only [Finsupp.coe_tsub, Pi.sub_apply, Finsupp.single_eq_same] at hmin_sub
+      omega
+    · rfl
+  have hN_pos : 0 < N := (Nat.zero_le _).trans_lt hNd
+  have hQP : coeff μ₀ (Q * ∑ k ∈ Finset.range N, C (f k) * X i₀ ^ (N - 1 - k)) =
+      f (N - 1) * coeff μ₀ Q := by
+    rw [Finset.mul_sum, map_sum, Finset.sum_eq_single (N - 1)]
+    · rw [Nat.sub_self, pow_zero, mul_one, mul_comm, coeff_C_mul]
+    · intro k hk hk_ne
+      have hkN : k < N := Finset.mem_range.mp hk
+      have hm : 0 < N - 1 - k := by omega
+      rw [← mul_assoc, mul_comm Q, mul_assoc, coeff_C_mul, hQX_pos hm, mul_zero]
+    · intro hnot
+      exact absurd (Finset.mem_range.mpr (Nat.sub_lt hN_pos one_pos)) hnot
+  rw [map_sub, hPX, hQP, zero_sub]
+
+end Helpers
+
 variable (σ K : Type*) [NontriviallyNormedField K] [IsUltrametricDist K]
   [Nonempty σ] (c : σ → ℝ) [∀ i, Fact (0 < c i)]
 
@@ -153,138 +256,41 @@ theorem not_completeSpace_gaussFractionField :
   obtain ⟨a, ha_pos, ha_lt⟩ := NormedField.exists_norm_lt K (lt_min one_pos hc₀)
   have ha1 : ‖a‖ < 1 := ha_lt.trans_le (min_le_left _ _)
   have hac : ‖a‖ < c i₀ := ha_lt.trans_le (min_le_right _ _)
-  have hrat0 : 0 ≤ ‖a‖ / c i₀ := div_nonneg ha_pos.le hc₀.le
-  have hrat1 : ‖a‖ / c i₀ < 1 := (div_lt_one hc₀).mpr hac
   let X₀ : Tate := ⟨X i₀, isRestricted_monomial c (Finsupp.single i₀ 1) (1 : K)⟩
-  have hX₀_norm : ‖X₀‖ = c i₀ := norm_X i₀
   have hX₀_F_norm : ‖algebraMap Tate F X₀‖ = c i₀ := by
-    rw [norm_algebraMap_gaussFractionField, hX₀_norm]
-  have hX₀_F_ne : algebraMap Tate F X₀ ≠ 0 := by
-    rw [← norm_pos_iff, hX₀_F_norm]
-    exact hc₀
-  let t (k : ℕ) : F :=
+    rw [norm_algebraMap_gaussFractionField, norm_X]
+  have hX₀_F_ne : algebraMap Tate F X₀ ≠ 0 :=
+    norm_ne_zero_iff.mp (hX₀_F_norm.trans_ne hc₀.ne')
+  obtain ⟨z, hz_bound⟩ := exists_tendsto_sum_pow_sq_div_pow (c := c) i₀ ha_pos ha1 hac
+  let s (N : ℕ) : F := ∑ k ∈ Finset.range N,
     algebraMap K F (a ^ ((k + 1) ^ 2)) / (algebraMap Tate F X₀) ^ (k + 1)
-  have ht_norm (k : ℕ) : ‖t k‖ = ‖a‖ ^ ((k + 1) ^ 2) / c i₀ ^ (k + 1) := by
-    simp only [t, norm_div, norm_algebraMap', norm_pow, hX₀_F_norm]
-  have ht_anti : Antitone fun k ↦ ‖t k‖ := by
-    refine antitone_nat_of_succ_le fun k ↦ ?_
-    rw [ht_norm, ht_norm]
-    have hexp : (k + 1 + 1) ^ 2 = (k + 1) ^ 2 + 1 + (2 * k + 2) := by ring
-    rw [hexp, pow_add ‖a‖, pow_add ‖a‖ ((k + 1) ^ 2) 1, pow_one,
-      pow_succ (c i₀) (k + 1)]
-    calc ‖a‖ ^ ((k + 1) ^ 2) * ‖a‖ * ‖a‖ ^ (2 * k + 2) / (c i₀ ^ (k + 1) * c i₀)
-        = (‖a‖ ^ ((k + 1) ^ 2) / c i₀ ^ (k + 1)) * ((‖a‖ / c i₀) * ‖a‖ ^ (2 * k + 2)) := by
-          ring
-      _ ≤ (‖a‖ ^ ((k + 1) ^ 2) / c i₀ ^ (k + 1)) * 1 := by
-          refine mul_le_mul_of_nonneg_left ?_ (by positivity)
-          have hpow1 : ‖a‖ ^ (2 * k + 2) ≤ 1 := pow_le_one₀ ha_pos.le ha1.le
-          nlinarith
-      _ = ‖a‖ ^ ((k + 1) ^ 2) / c i₀ ^ (k + 1) := mul_one _
-  have ht_le_geom (k : ℕ) : ‖t k‖ ≤ (‖a‖ / c i₀) ^ (k + 1) := by
-    rw [ht_norm, div_pow]
-    refine div_le_div_of_nonneg_right ?_ (pow_pos hc₀ _).le
-    exact pow_le_pow_of_le_one ha_pos.le ha1.le (Nat.le_self_pow two_ne_zero (k + 1))
-  let s (N : ℕ) : F := ∑ k ∈ Finset.range N, t k
-  have hs_diff {N M : ℕ} (hNM : N ≤ M) : ‖s M - s N‖ ≤ ‖t N‖ := by
-    induction M, hNM using Nat.le_induction with
-    | base =>
-      rw [sub_self, norm_zero]
-      exact norm_nonneg _
-    | succ M hNM ih =>
-      have hstep : s (M + 1) - s N = (s M - s N) + t M := by
-        simp only [s, Finset.sum_range_succ]
-        abel
-      rw [hstep]
-      exact (IsUltrametricDist.norm_add_le_max _ _).trans (max_le ih (ht_anti hNM))
-  have hs_cauchy : CauchySeq s := by
-    rw [Metric.cauchySeq_iff]
-    intro ε hε
-    have hlim : Tendsto (fun N ↦ (‖a‖ / c i₀) ^ (N + 1)) atTop (𝓝 0) :=
-      (tendsto_pow_atTop_nhds_zero_of_lt_one hrat0 hrat1).comp (tendsto_add_atTop_nat 1)
-    obtain ⟨N₀, hN₀⟩ := (hlim.eventually (gt_mem_nhds hε)).exists_forall_of_atTop
-    refine ⟨N₀, fun m hm n hn ↦ ?_⟩
-    rcases le_total n m with hnm | hmn
-    · rw [dist_eq_norm]
-      exact (hs_diff hnm).trans_lt ((ht_le_geom n).trans_lt (hN₀ n hn))
-    · rw [dist_comm, dist_eq_norm]
-      exact (hs_diff hmn).trans_lt ((ht_le_geom m).trans_lt (hN₀ m hm))
-  obtain ⟨z, hz⟩ := cauchySeq_tendsto_of_complete hs_cauchy
-  have hz_bound (N : ℕ) : ‖z - s N‖ ≤ ‖t N‖ :=
-    le_of_tendsto ((hz.sub tendsto_const_nhds).norm)
-      (eventually_atTop.mpr ⟨N, fun M hNM ↦ hs_diff hNM⟩)
   obtain ⟨P, Q, hQ_mem, rfl⟩ := IsFractionRing.div_surjective Tate z
   have hQ_ne : Q ≠ 0 := nonZeroDivisors.ne_zero hQ_mem
   have hQ_F_ne : algebraMap Tate F Q ≠ 0 :=
     IsFractionRing.to_map_ne_zero_of_mem_nonZeroDivisors hQ_mem
   -- Choose a multi-index `μ₀` in the support of `Q` of minimal `i₀`-degree `d`.
   have hQ_supp : ∃ d : ℕ, ∃ μ : σ →₀ ℕ, μ i₀ = d ∧ coeff μ (Q : _root_.MvPowerSeries σ K) ≠ 0 := by
-    have hQ_coe : (Q : _root_.MvPowerSeries σ K) ≠ 0 := fun h ↦ hQ_ne (Subtype.ext h)
+    have hQ_coe : (Q : _root_.MvPowerSeries σ K) ≠ 0 := Subtype.coe_ne_coe.mpr hQ_ne
     obtain ⟨μ, hμ⟩ := not_forall.mp (mt _root_.MvPowerSeries.ext hQ_coe)
     exact ⟨μ i₀, μ, rfl, by simpa using hμ⟩
   set d : ℕ := Nat.find hQ_supp
   obtain ⟨μ₀, hμ₀_deg, hμ₀_ne⟩ := Nat.find_spec hQ_supp
-  have hQ_min (μ : σ →₀ ℕ) (hμ : coeff μ (Q : _root_.MvPowerSeries σ K) ≠ 0) : d ≤ μ i₀ :=
-    Nat.find_min' hQ_supp ⟨μ, rfl, hμ⟩
-  -- Numerator `P_N` of the partial sum `s N = P_N / X₀ ^ N`.
+  have hQ_min (μ : σ →₀ ℕ) (hμ : coeff μ (Q : _root_.MvPowerSeries σ K) ≠ 0) : μ₀ i₀ ≤ μ i₀ :=
+    hμ₀_deg.trans_le (Nat.find_min' hQ_supp ⟨μ, rfl, hμ⟩)
+  -- Numerator `P_num N` of the partial sum `s N = P_num N / X₀ ^ N`.
   let P_num (N : ℕ) : Tate :=
     ∑ k ∈ Finset.range N, algebraMap K Tate (a ^ ((k + 1) ^ 2)) * X₀ ^ (N - 1 - k)
-  have hs_mul (N : ℕ) :
-      s N * (algebraMap Tate F X₀) ^ N = algebraMap Tate F (P_num N) := by
+  have hs_mul (N : ℕ) : s N * (algebraMap Tate F X₀) ^ N = algebraMap Tate F (P_num N) := by
     simp only [s, P_num, Finset.sum_mul, map_sum, map_mul, map_pow,
       ← IsScalarTower.algebraMap_apply K Tate F]
     refine Finset.sum_congr rfl fun k hk ↦ ?_
-    have hkN : k + 1 ≤ N := Finset.mem_range.mp hk
-    have hsplit : N = (k + 1) + (N - 1 - k) := by omega
-    dsimp only [t]
-    rw [map_pow, div_eq_mul_inv, mul_assoc]
+    have hsplit : N = (k + 1) + (N - 1 - k) := by
+      have := Finset.mem_range.mp hk
+      omega
+    rw [div_eq_mul_inv, mul_assoc]
     refine congrArg (algebraMap K F a ^ ((k + 1) ^ 2) * ·) ?_
     nth_rw 1 [hsplit]
     rw [pow_add _ (k + 1) (N - 1 - k), inv_mul_cancel_left₀ (pow_ne_zero _ hX₀_F_ne)]
-  -- For `N > d`, the `μ₀`-th coefficient of `P * X₀ ^ N - Q * P_num N` is `- a ^ (N ^ 2) * Q_μ₀`.
-  have hcoeff_rem {N : ℕ} (hNd : d < N) :
-      coeff μ₀ ((P * X₀ ^ N - Q * P_num N : Tate) : _root_.MvPowerSeries σ K) =
-        -(a ^ (N ^ 2) * coeff μ₀ (Q : _root_.MvPowerSeries σ K)) := by
-    have hd_eq : μ₀ i₀ = d := hμ₀_deg
-    have hPX : coeff μ₀ ((P * X₀ ^ N : Tate) : _root_.MvPowerSeries σ K) = 0 := by
-      dsimp only [X₀]
-      rw [Subring.coe_mul, SubmonoidClass.coe_pow, X_pow_eq, coeff_mul_monomial]
-      split_ifs with hle
-      · exfalso
-        have h := hle i₀
-        rw [Finsupp.single_eq_same, hd_eq] at h
-        omega
-      · rfl
-    have hQX_pos {m : ℕ} (hm : 0 < m) :
-        coeff μ₀ ((Q : _root_.MvPowerSeries σ K) * (X i₀) ^ m) = 0 := by
-      rw [X_pow_eq, coeff_mul_monomial]
-      split_ifs with hle
-      · rw [mul_one]
-        by_contra hne
-        have hmin_sub := hQ_min (μ₀ - Finsupp.single i₀ m) hne
-        have hm_le : m ≤ d := by
-          have h := hle i₀
-          rwa [Finsupp.single_eq_same, hd_eq] at h
-        simp only [Finsupp.coe_tsub, Pi.sub_apply, Finsupp.single_eq_same, hd_eq] at hmin_sub
-        omega
-      · rfl
-    have hN_pos : 0 < N := (Nat.zero_le d).trans_lt hNd
-    have hQP : coeff μ₀ ((Q * P_num N : Tate) : _root_.MvPowerSeries σ K) =
-        a ^ (N ^ 2) * coeff μ₀ (Q : _root_.MvPowerSeries σ K) := by
-      dsimp only [P_num, X₀]
-      rw [Finset.mul_sum, AddSubmonoidClass.coe_finsetSum, map_sum, Finset.sum_eq_single (N - 1)]
-      · have hzero : N - 1 - (N - 1) = 0 := Nat.sub_self _
-        have hN1 : N - 1 + 1 = N := Nat.sub_add_cancel hN_pos
-        rw [hzero, pow_zero, mul_one, hN1, Subring.coe_mul, coe_algebraMap_isRestrictedSubring,
-          mul_comm, coeff_C_mul]
-      · intro k hk hk_ne
-        have hkN : k < N := Finset.mem_range.mp hk
-        have hm : 0 < N - 1 - k := by omega
-        rw [Subring.coe_mul, Subring.coe_mul, coe_algebraMap_isRestrictedSubring,
-          SubmonoidClass.coe_pow, ← mul_assoc, mul_comm (Q : _root_.MvPowerSeries σ K), mul_assoc,
-          coeff_C_mul, hQX_pos hm, mul_zero]
-      · intro hnot
-        exact absurd (Finset.mem_range.mpr (Nat.sub_lt hN_pos one_pos)) hnot
-    rw [AddSubgroupClass.coe_sub, map_sub, hPX, hQP, zero_sub]
   -- Compare weighted coefficient lower bound with the approximation upper bound as `N → ∞`.
   let δ : ℝ := ‖coeff μ₀ (Q : _root_.MvPowerSeries σ K)‖ * μ₀.prod (c · ^ ·)
   have hδ_pos : 0 < δ := mul_pos (norm_pos_iff.mpr hμ₀_ne) (prod_pow_pos μ₀)
@@ -299,20 +305,28 @@ theorem not_completeSpace_gaussFractionField :
       rw [← norm_algebraMap_gaussFractionField σ K c rem, hrem_F, norm_mul, norm_mul,
         norm_pow, norm_algebraMap_gaussFractionField, hX₀_F_norm]
       calc ‖algebraMap Tate F P / algebraMap Tate F Q - s N‖ * ‖Q‖ * c i₀ ^ N
-          ≤ ‖t N‖ * ‖Q‖ * c i₀ ^ N := by
+          ≤ (‖a‖ ^ ((N + 1) ^ 2) / c i₀ ^ (N + 1)) * ‖Q‖ * c i₀ ^ N := by
             gcongr
             exact hz_bound N
-        _ = (‖a‖ ^ ((N + 1) ^ 2) / (c i₀ ^ N * c i₀)) * ‖Q‖ * c i₀ ^ N := by
-            rw [ht_norm, pow_succ (c i₀) N]
         _ = ‖a‖ ^ ((N + 1) ^ 2) * (‖Q‖ / c i₀) := by
+            rw [pow_succ (c i₀) N]
             field_simp [hc₀.ne']
         _ = ‖a‖ ^ (N ^ 2) * ((‖Q‖ / c i₀) * ‖a‖ ^ (2 * N + 1)) := by
             have hexp : (N + 1) ^ 2 = N ^ 2 + (2 * N + 1) := by ring
             rw [hexp, pow_add]
             ring
+    have hN_pos : 0 < N := (Nat.zero_le d).trans_lt hNd
+    have hcoeff_rem : coeff μ₀ (rem : _root_.MvPowerSeries σ K) =
+        -(a ^ (N ^ 2) * coeff μ₀ (Q : _root_.MvPowerSeries σ K)) := by
+      dsimp only [rem, P_num, X₀]
+      simp only [AddSubgroupClass.coe_sub, Subring.coe_mul, SubmonoidClass.coe_pow,
+        AddSubmonoidClass.coe_finsetSum, coe_algebraMap_isRestrictedSubring]
+      rw [coeff_mul_X_pow_sub_mul_sum_eq (P : _root_.MvPowerSeries σ K)
+        (Q : _root_.MvPowerSeries σ K) i₀ hQ_min (fun k ↦ a ^ ((k + 1) ^ 2)) (hμ₀_deg ▸ hNd),
+        Nat.sub_add_cancel hN_pos]
     have hrem_lower : ‖a‖ ^ (N ^ 2) * δ ≤ ‖rem‖ := by
-      have h := norm_coeff_mul_prod_le rem μ₀
-      simpa only [rem, hcoeff_rem hNd, norm_neg, norm_mul, norm_pow, mul_assoc, δ] using h
+      simpa only [hcoeff_rem, norm_neg, norm_mul, norm_pow, mul_assoc, δ] using
+        norm_coeff_mul_prod_le rem μ₀
     exact le_of_mul_le_mul_left (hrem_lower.trans hrem_upper) (pow_pos ha_pos (N ^ 2))
   have hlim0 : Tendsto (fun k : ℕ ↦ (‖Q‖ / c i₀) * ‖a‖ ^ k) atTop (𝓝 0) := by
     simpa only [mul_zero] using
@@ -321,8 +335,7 @@ theorem not_completeSpace_gaussFractionField :
   set N := max (d + 1) K₀
   have hNd : d < N := Nat.lt_of_succ_le (le_max_left _ _)
   have hK_le : K₀ ≤ N := le_max_right _ _
-  have hNK : K₀ ≤ 2 * N + 1 := by omega
-  exact (hbound_N hNd).not_gt (hK₀ (2 * N + 1) hNK)
+  exact (hbound_N hNd).not_gt (hK₀ (2 * N + 1) (by omega))
 
 end Incomplete
 

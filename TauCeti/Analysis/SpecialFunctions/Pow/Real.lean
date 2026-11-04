@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.SpecialFunctions.Pow.Real
-public import Mathlib.Data.Finsupp.Defs
 import Mathlib.Analysis.SpecialFunctions.Pow.Asymptotics
 
 /-!

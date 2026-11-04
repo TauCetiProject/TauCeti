@@ -54,8 +54,7 @@ noncomputable def frobeniusRootAbs (K : Type*) [NormedField K] [IsUltrametricDis
 theorem frobeniusRootAbs_apply {K : Type*} [NormedField K] [IsUltrametricDist K]
     (p : ℕ) [ExpChar K p] (e : ℕ) (x : K) :
     frobeniusRootAbs K p e x = ‖x‖ ^ ((p ^ e : ℕ) : ℝ)⁻¹ := by
-  rw [frobeniusRootAbs, AbsoluteValue.nonarchRpow_apply]
-  rfl
+  rw [frobeniusRootAbs, AbsoluteValue.nonarchRpow_apply, IsAbsoluteValue.toAbsoluteValue_apply]
 
 theorem isNonarchimedean_frobeniusRootAbs (K : Type*) [NormedField K] [IsUltrametricDist K]
     (p : ℕ) [ExpChar K p] (e : ℕ) :
