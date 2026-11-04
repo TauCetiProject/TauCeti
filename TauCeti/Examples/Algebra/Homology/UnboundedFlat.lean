@@ -83,12 +83,11 @@ theorem residueTensor_d (i j : ℤ) : residueTensor.d i j = 0 := by
     simp only [ite_self, LinearMap.compr₂ₛₗ_apply, TensorProduct.mk_apply,
       curriedTensor_obj_map, ModuleCat.hom_whiskerLeft, ModuleCat.hom_ofHom,
       ModuleCat.hom_zero, LinearMap.zero_apply]
-    rw [LinearMap.lTensor_tmul, LinearMap.toSpanSingleton_apply,
-      smul_eq_mul, mul_comm, ← smul_eq_mul, TensorProduct.tmul_smul,
-      TensorProduct.smul_tmul']
     have hx : (2 : ZMod 4) • x = 0 := by
       exact (by decide : ∀ x : ZMod 2, (2 : ZMod 4) • x = 0) x
-    rw [hx, TensorProduct.zero_tmul]
+    rw [LinearMap.lTensor_tmul, LinearMap.toSpanSingleton_apply]
+    simpa [smul_eq_mul, mul_comm, hx] using
+      (TensorProduct.smul_tmul (2 : ZMod 4) x y).symm
   · rw [residueTensor.shape i j hij]
 
 /-- The ordinary tensor has residue-field cohomology in every integer degree. -/
