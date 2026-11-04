@@ -44,7 +44,7 @@ algebraically closed field of characteristic zero.
 ## Main declarations
 
 * `TauCeti.adjointPolynomialComoduleAlgebra`: the action of `G` on the polynomial functions on `𝔤`,
-  with coaction `TauCeti.adjointPolynomialComoduleAlgebra_coact`.
+  with coaction on linear functions `TauCeti.adjointPolynomialComoduleAlgebra_coact_ι`.
 * `TauCeti.adjointInvariantPolynomials`: the invariant polynomial functions `O(𝔤)^G`.
 * `TauCeti.adjointInvariantPolynomials_le_lieInvariants` and
   `TauCeti.adjointInvariantPolynomials_eq_lieInvariants`: they are Lie invariants, and for
@@ -95,15 +95,6 @@ noncomputable def adjointPolynomialComoduleAlgebra :
   ComoduleAlgebra.symmetricAlgebra k H (Module.Dual k 𝔤)
 
 attribute [local instance] adjointPolynomialComoduleAlgebra
-
-/-- The coaction on the polynomial functions on the Lie algebra is the multiplicative extension
-`TauCeti.Comodule.symmetricAlgebraCoact` of the contragredient adjoint coaction on `𝔤*`. -/
-theorem adjointPolynomialComoduleAlgebra_coact :
-    letI := Comodule.dual k H 𝔤
-    Comodule.coact (R := k) (C := H) (M := SymmetricAlgebra k (Module.Dual k 𝔤)) =
-      (Comodule.symmetricAlgebraCoact k H (Module.Dual k 𝔤)).toLinearMap :=
-  letI := Comodule.dual k H 𝔤
-  ComoduleAlgebra.symmetricAlgebra_coact
 
 /-- The coaction on a linear function on the Lie algebra, viewed as a polynomial function, is its
 coaction `TauCeti.Comodule.dualCoact` under the contragredient of the adjoint representation. -/
