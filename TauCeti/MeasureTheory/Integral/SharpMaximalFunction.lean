@@ -46,10 +46,10 @@ Calderón–Zygmund cubes at height `t`.
 * The mean oscillation of `f` on a dyadic cube `Q` is at most `2ⁿ⁺¹ f^# x` at every `x ∈ Q`
   (`TauCeti.setLAverage_enorm_sub_setAverage_dyadicCube_le`): `Q` lies in an open ball of `2ⁿ`
   times its volume.
-* Let `Q` be a Calderón–Zygmund cube at height `t`, with parent `Q̃`. The average of `‖f‖` over
-  `Q̃` is at most `t`, so `‖f_Q̃‖ ≤ t`, while every cube `P` at height `2t` meeting `Q` lies in `Q`
-  and has `⨍_P ‖f‖ > 2t`, hence `⨍_P ‖f - f_Q̃‖ > t`. Summing over these disjoint `P`, the part
-  of the height-`2t` cubes inside `Q` has measure at most `t⁻¹ ∫_Q̃ ‖f - f_Q̃‖`, which is at most
+* Let `Q` be a Calderón–Zygmund cube at height `t`, with parent `R`. The average of `‖f‖` over
+  `R` is at most `t`, so `‖f_R‖ ≤ t`, while every cube `P` at height `2t` meeting `Q` lies in `Q`
+  and has `⨍_P ‖f‖ > 2t`, hence `⨍_P ‖f - f_R‖ > t`. Summing over these disjoint `P`, the part
+  of the height-`2t` cubes inside `Q` has measure at most `t⁻¹ ∫_R ‖f - f_R‖`, which is at most
   `2²ⁿ⁺¹ γ |Q|` if `f^# ≤ γ t` somewhere in `Q`. Otherwise `Q ⊆ {f^# > γ t}`. Summing over `Q`,
 
   `m(2t) ≤ 2²ⁿ⁺¹ γ m(t) + |{f^# > γ t}|`.
