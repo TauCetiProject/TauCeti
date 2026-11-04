@@ -26,11 +26,6 @@ public section
 
 namespace TauCeti
 
-/-- Negation has no fixed point among the Leech minimal vectors. -/
-theorem neg_ne_self_of_mem_vectorsOfNorm_four_leechLattice {x : leechLattice}
-    (hx : x ∈ leechLattice.vectorsOfNorm 4) : -x ≠ x :=
-  IntegralLattice.neg_ne_self_of_mem_vectorsOfNorm (by norm_num) hx
-
 /-- The antipodal pairs of Leech minimal vectors form a finite set. -/
 instance instFiniteAntipodalPairsFourLeechLattice :
     Finite (leechLattice.antipodalPairs 4) :=
