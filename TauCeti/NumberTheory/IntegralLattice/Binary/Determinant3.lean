@@ -30,6 +30,13 @@ namespace TauCeti.IntegralLattice
 
 variable {V : Type*} [AddCommGroup V] [Module ℚ V] {L : IntegralLattice V}
 
+/-- The norm form of `A₂` in its simple-root basis is `2x² - 2xy + 2y²`. -/
+@[simp]
+theorem binaryNormForm_typeASimpleRootBasis_two :
+    (typeARootLattice 2).binaryNormForm (typeASimpleRootBasis 2) = ⟨2, -2, 2⟩ := by
+  ext <;> simp only [binaryNormForm_a, binaryNormForm_b, binaryNormForm_c,
+    gramMatrix_typeASimpleRootBasis] <;> norm_num [CartanMatrix.A]
+
 /-- A positive definite even binary lattice of determinant three has a basis whose norm form
 is `2x² + 2xy + 2y²`. -/
 private theorem IsPosDef.exists_binaryNormForm_eq_two_two_two (hL : L.IsPosDef) (he : L.IsEven)
@@ -75,10 +82,9 @@ theorem IsPosDef.nonempty_isometry_typeARootLattice_two (hL : L.IsPosDef) (he : 
   let b' := b.unitsSMul (Function.update 1 (1 : Fin 2) (-1))
   have hnorm : L.binaryNormForm b' =
       (typeARootLattice 2).binaryNormForm (typeASimpleRootBasis 2) := by
-    rw [binaryNormForm_unitsSMul_neg, hb]
-    ext <;> simp only [BinaryQuadraticForm.reflected_a, BinaryQuadraticForm.reflected_b,
-      BinaryQuadraticForm.reflected_c, binaryNormForm_a, binaryNormForm_b, binaryNormForm_c,
-      gramMatrix_typeASimpleRootBasis] <;> norm_num [CartanMatrix.A]
+    rw [binaryNormForm_unitsSMul_neg, hb, binaryNormForm_typeASimpleRootBasis_two]
+    ext <;> simp [BinaryQuadraticForm.reflected_a, BinaryQuadraticForm.reflected_b,
+      BinaryQuadraticForm.reflected_c]
   obtain ⟨e, -⟩ := (exists_isometry_map_basis_iff b' (typeASimpleRootBasis 2)).mpr hnorm.symm
   exact ⟨e⟩
 

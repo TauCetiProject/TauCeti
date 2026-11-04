@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.LinearAlgebra.IntegralLattice.PosDef.Binary
+public import TauCeti.NumberTheory.IntegralLattice.Binary.Determinant3
 public import TauCeti.NumberTheory.IntegralLattice.Mass
 import TauCeti.NumberTheory.IntegralLattice.Binary.NormOne
 
@@ -50,21 +50,20 @@ theorem genusClasses_typeARootLattice_two :
 theorem classNumber_typeARootLattice_two : (typeARootLattice 2).classNumber = 1 := by
   rw [classNumber_def, genusClasses_typeARootLattice_two, Nat.card_unique]
 
-private theorem binaryNormForm_typeA_two :
-    (typeARootLattice 2).binaryNormForm (typeASimpleRootBasis 2) = ⟨2, -2, 2⟩ := by
-  ext <;> simp only [binaryNormForm_a, binaryNormForm_b, binaryNormForm_c,
-    gramMatrix_typeASimpleRootBasis] <;> norm_num [CartanMatrix.A]
+private theorem primPart_two_neg_two_two :
+    (⟨2, -2, 2⟩ : BinaryQuadraticForm ℤ).primPart = ⟨1, -1, 1⟩ := by
+  ext <;> norm_num [BinaryQuadraticForm.primPart_a, BinaryQuadraticForm.primPart_b,
+    BinaryQuadraticForm.primPart_c, BinaryQuadraticForm.content_def]
 
 /-- **`A₂` has an orientation-reversing automorphism**, so its proper isometry subgroup has
 index two. -/
 theorem index_specialOrthogonalGroup_typeARootLattice_two :
     (specialOrthogonalGroup (typeARootLattice 2)).index = 2 := by
   rw [index_specialOrthogonalGroup_eq_two_iff_reflected (typeASimpleRootBasis 2),
-    binaryNormForm_typeA_two]
+    binaryNormForm_typeASimpleRootBasis_two, primPart_two_neg_two_two]
   refine ⟨ModularGroup.S, ?_⟩
   rw [BinaryQuadraticForm.S_smul]
-  ext <;> norm_num [BinaryQuadraticForm.primPart_a, BinaryQuadraticForm.primPart_b,
-    BinaryQuadraticForm.primPart_c, BinaryQuadraticForm.content_def]
+  ext <;> norm_num
 
 /-- The genus of `A₂` also consists of a single proper class. -/
 theorem genusProperClasses_typeARootLattice_two :
@@ -79,22 +78,23 @@ theorem genusProperClasses_typeARootLattice_two :
 theorem properClassNumber_typeARootLattice_two : (typeARootLattice 2).properClassNumber = 1 := by
   rw [properClassNumber_def, genusProperClasses_typeARootLattice_two, Nat.card_unique]
 
-private theorem binaryDiscriminant_typeA_two
-    (hV : Module.finrank ℚ (Fin 2 → ℚ) = 2) :
-    (typeARootLattice 2).binaryDiscriminant hV = -3 := by
+/-- The primitive binary discriminant of `A₂` is minus three. -/
+@[simp]
+theorem binaryDiscriminant_typeARootLattice_two :
+    (typeARootLattice 2).binaryDiscriminant (Module.finrank_fin_fun ℚ) = -3 := by
   rw [binaryDiscriminant_eq_discrim_primPart _ (typeASimpleRootBasis 2),
-    binaryNormForm_typeA_two, BinaryQuadraticForm.discrim_def, discrim]
-  norm_num [BinaryQuadraticForm.primPart_a, BinaryQuadraticForm.primPart_b,
-    BinaryQuadraticForm.primPart_c, BinaryQuadraticForm.content_def]
+    binaryNormForm_typeASimpleRootBasis_two, primPart_two_neg_two_two]
+  norm_num [BinaryQuadraticForm.discrim_def, discrim]
 
 /-- The proper isometry group of `A₂` has order six. -/
 theorem card_specialOrthogonalGroup_typeARootLattice_two :
     Nat.card (specialOrthogonalGroup (typeARootLattice 2)) = 6 := by
   have hV : Module.finrank ℚ (Fin 2 → ℚ) = 2 := Module.finrank_fin_fun ℚ
   rw [card_specialOrthogonalGroup_of_binaryDiscriminant_neg hV
-    (by rw [binaryDiscriminant_typeA_two]; norm_num), binaryOrder_def,
+    (by rw [binaryDiscriminant_typeARootLattice_two]; norm_num), binaryOrder_def,
     QuadraticOrder.card_units_of_neg _ _
-      (by rw [binaryDiscriminant_typeA_two]; norm_num), binaryDiscriminant_typeA_two]
+      (by rw [binaryDiscriminant_typeARootLattice_two]; norm_num),
+    binaryDiscriminant_typeARootLattice_two]
   norm_num
 
 /-- The full isometry group of `A₂` has order twelve. -/
