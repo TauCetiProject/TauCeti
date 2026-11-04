@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Lie.F4.ShortRoot.RankOne.Short
+public import TauCeti.Algebra.Lie.F4.ShortRoot.RankOne.Points
 public import TauCeti.Algebra.Lie.F4.ShortRoot.PrimeField.PointsFunctor
 
 /-!
@@ -19,9 +19,9 @@ including the quadratic terms that survive in characteristic two.
 This identifies a rank-one subgroup, not the full carrier with an independently pinned
 simply connected group. No finiteness or simplicity assertion is made.
 
-The subgroup-containment and range arguments follow
-`TauCeti.Algebra.Lie.E7.Minuscule.RankOne` and use Mathlib's
-`Matrix.SL2.transvection_induction`.
+Containment is deduced from the every-field integral rank-one image theorem in
+`TauCeti.Algebra.Lie.F4.ShortRoot.RankOne.Points`, without repeating SL₂ induction.
+The range argument follows `TauCeti.Algebra.Lie.E7.Minuscule.RankOne`.
 
 ## References
 
@@ -46,14 +46,18 @@ private theorem shortRankOneGL_mem_of_root_mem {H : Subgroup (GL (Fin 26) K)}
     (hneg : ∀ t : K,
       (rootSubgroupPoints (.inr (i.natAdd 2)) K (Multiplicative.ofAdd t) : GL (Fin 26) K) ∈ H)
     (g : SL(2, K)) : shortRankOneGL K i g ∈ H := by
-  induction g using Matrix.SL2.transvection_induction with
-  | htransvec a b hab t =>
-    fin_cases a <;> fin_cases b
-    · exact (hab rfl).elim
-    · simpa only [coe_rootSubgroupPoints, shortRankOneGL_upper_transvection] using hpos t
-    · simpa only [coe_rootSubgroupPoints, shortRankOneGL_lower_transvection] using hneg t
-    · exact (hab rfl).elim
-  | hmul g h hg hh => simpa only [map_mul] using H.mul_mem hg hh
+  have hle : (F4ShortRoot.shortRankOnePoints K i).range ≤
+      H.comap (F4ShortRoot.points K).subtype := by
+    rw [F4ShortRoot.range_shortRankOnePoints, Subgroup.closure_le]
+    rintro _ (⟨t, rfl⟩ | ⟨t, rfl⟩)
+    · simpa only [SetLike.mem_coe, Subgroup.mem_comap, Subgroup.subtype_apply,
+        ← coe_rootSubgroupPoints, ofAdd_toAdd] using hpos t.toAdd
+    · simpa only [SetLike.mem_coe, Subgroup.mem_comap, Subgroup.subtype_apply,
+        ← coe_rootSubgroupPoints, ofAdd_toAdd] using hneg t.toAdd
+  have hg : F4ShortRoot.shortRankOnePoints K i g ∈
+      (F4ShortRoot.shortRankOnePoints K i).range := ⟨g, rfl⟩
+  simpa only [Subgroup.mem_comap, Subgroup.subtype_apply,
+    F4ShortRoot.coe_shortRankOnePoints] using hle hg
 
 /-- The faithful short-node SL₂ map into the points of the carrier generated over `𝔽₂`. -/
 def shortRankOnePoints : SL(2, K) →* points K :=

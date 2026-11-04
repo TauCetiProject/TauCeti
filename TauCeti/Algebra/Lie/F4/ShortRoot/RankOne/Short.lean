@@ -88,13 +88,14 @@ private def blockGL : SL(2, A) →* GL BlockIndex A :=
 noncomputable def shortRankOneGL (i : Fin 2) : SL(2, A) →* GL (Fin 26) A :=
   (Matrix.GeneralLinearGroup.reindex A (blockEquiv i)).toMonoidHom.comp (blockGL A)
 
-private theorem shortRankOneGL_block (i : Fin 2) (g : SL(2, A)) (a b : BlockIndex) :
-    (shortRankOneGL A i g : Matrix (Fin 26) (Fin 26) A)
-        (blockIndex i a) (blockIndex i b) =
-      (Matrix.fromBlocks (conjugationBlock A g) 0 0
+private theorem shortRankOneGL_block (i : Fin 2) (g : SL(2, A)) :
+    (shortRankOneGL A i g : Matrix (Fin 26) (Fin 26) A).submatrix
+        (blockIndex i) (blockIndex i) =
+      Matrix.fromBlocks (conjugationBlock A g) 0 0
         (Matrix.fromBlocks (Matrix.blockDiagonal fun _ : Fin 8 => (g : Matrix (Fin 2) (Fin 2) A))
-          0 0 1)) a b := by
-  simp [shortRankOneGL, blockGL, Matrix.GeneralLinearGroup.reindex_apply,
+          0 0 1) := by
+  ext a b
+  simp [Matrix.submatrix_apply, shortRankOneGL, blockGL, Matrix.GeneralLinearGroup.reindex_apply,
     Matrix.coe_reindexRingEquiv, Matrix.reindex_apply,
     blockEquiv, conjugationBlockHom, standardBlocksHom, MonoidHom.pi]
 
@@ -104,10 +105,12 @@ theorem shortRankOneGL_injective (i : Fin 2) : Function.Injective (shortRankOneG
   apply SpecialLinearGroup.ext g h
   intro a b
   have hh := congrArg
-    (fun m : GL (Fin 26) A => (m : Matrix (Fin 26) (Fin 26) A)
-      (blockIndex i (.inr (.inl (a, 0)))) (blockIndex i (.inr (.inl (b, 0))))) heq
-  simpa only [shortRankOneGL_block, Matrix.fromBlocks_apply₂₂,
-    Matrix.fromBlocks_apply₁₁, Matrix.blockDiagonal_apply, ↓reduceIte] using hh
+    (fun m : GL (Fin 26) A => (m : Matrix (Fin 26) (Fin 26) A).submatrix
+      (blockIndex i) (blockIndex i)) heq
+  rw [shortRankOneGL_block, shortRankOneGL_block] at hh
+  simpa only [Matrix.fromBlocks_apply₂₂, Matrix.fromBlocks_apply₁₁,
+    Matrix.blockDiagonal_apply, ↓reduceIte] using
+    congrFun (congrFun hh (.inr (.inl (a, 0)))) (.inr (.inl (b, 0)))
 
 private def rootBlock (positive : Bool) : Matrix BlockIndex BlockIndex ℤ :=
   Matrix.fromBlocks
@@ -119,35 +122,27 @@ private def rootBlock (positive : Bool) : Matrix BlockIndex BlockIndex ℤ :=
 private def dividedSquareBlock (positive : Bool) : Matrix BlockIndex BlockIndex ℤ :=
   Matrix.fromBlocks (if positive then Matrix.single 0 3 1 else Matrix.single 3 0 1) 0 0 0
 
-private theorem raisingMatrix_block (i : Fin 2) :
-    (raisingMatrix (i.natAdd 2)).submatrix (blockIndex i) (blockIndex i) = rootBlock true := by
-  rw [← Matrix.ext_iff]
-  simp only [Matrix.submatrix_apply, raisingMatrix_apply]
-  dsimp [rootBlock, Matrix.fromBlocks, Matrix.blockDiagonal]
-  fin_cases i <;> decide
+-- Reduce the block constructors to computable entry functions before kernel-checked
+-- finite comparison. This avoids elaborating a separate goal for each of the 26² entries.
+private theorem rootMatrix_block (i : Fin 2) (positive : Bool) :
+    (rootMatrix (if positive then .inl (i.natAdd 2) else .inr (i.natAdd 2))).submatrix
+      (blockIndex i) (blockIndex i) = rootBlock positive := by
+  cases positive <;> rw [← Matrix.ext_iff]
+  all_goals simp only [Bool.false_eq_true, ↓reduceIte, Matrix.submatrix_apply,
+    rootMatrix_inl, rootMatrix_inr, raisingMatrix_apply, loweringMatrix_apply]
+  all_goals dsimp [rootBlock, Matrix.fromBlocks, Matrix.blockDiagonal]
+  all_goals fin_cases i <;> decide
 
-private theorem loweringMatrix_block (i : Fin 2) :
-    (loweringMatrix (i.natAdd 2)).submatrix (blockIndex i) (blockIndex i) = rootBlock false := by
-  rw [← Matrix.ext_iff]
-  simp only [Matrix.submatrix_apply, loweringMatrix_apply]
-  dsimp [rootBlock, Matrix.fromBlocks, Matrix.blockDiagonal]
-  fin_cases i <;> decide
-
-private theorem raisingDividedSquareMatrix_block (i : Fin 2) :
-    (raisingDividedSquareMatrix (i.natAdd 2)).submatrix (blockIndex i) (blockIndex i) =
-      dividedSquareBlock true := by
-  rw [← Matrix.ext_iff]
-  simp only [Matrix.submatrix_apply, raisingDividedSquareMatrix_apply]
-  dsimp [dividedSquareBlock, Matrix.fromBlocks, Matrix.single]
-  fin_cases i <;> decide
-
-private theorem loweringDividedSquareMatrix_block (i : Fin 2) :
-    (loweringDividedSquareMatrix (i.natAdd 2)).submatrix (blockIndex i) (blockIndex i) =
-      dividedSquareBlock false := by
-  rw [← Matrix.ext_iff]
-  simp only [Matrix.submatrix_apply, loweringDividedSquareMatrix_apply]
-  dsimp [dividedSquareBlock, Matrix.fromBlocks, Matrix.single]
-  fin_cases i <;> decide
+private theorem rootDividedSquareMatrix_block (i : Fin 2) (positive : Bool) :
+    (rootDividedSquareMatrix
+      (if positive then .inl (i.natAdd 2) else .inr (i.natAdd 2))).submatrix
+        (blockIndex i) (blockIndex i) = dividedSquareBlock positive := by
+  cases positive <;> rw [← Matrix.ext_iff]
+  all_goals simp only [Bool.false_eq_true, ↓reduceIte, Matrix.submatrix_apply,
+    rootDividedSquareMatrix_inl, rootDividedSquareMatrix_inr,
+    raisingDividedSquareMatrix_apply, loweringDividedSquareMatrix_apply]
+  all_goals dsimp [dividedSquareBlock, Matrix.fromBlocks, Matrix.single]
+  all_goals fin_cases i <;> decide
 
 private theorem block_transvection (positive : Bool) (t : A) :
     let g : SL(2, A) := if positive then
@@ -155,8 +150,8 @@ private theorem block_transvection (positive : Bool) (t : A) :
       SpecialLinearGroup.transvection (by decide : (1 : Fin 2) ≠ 0) t
     Matrix.fromBlocks (conjugationBlock A g) 0 0
       (Matrix.fromBlocks (Matrix.blockDiagonal fun _ : Fin 8 => (g : Matrix (Fin 2) (Fin 2) A))
-        0 0 1) = 1 + t • (rootBlock positive).map (Int.castRingHom A) +
-          t ^ 2 • (dividedSquareBlock positive).map (Int.castRingHom A) := by
+        0 0 1) = 1 + t • (rootBlock positive).map (Int.cast : ℤ → A) +
+          t ^ 2 • (dividedSquareBlock positive).map (Int.cast : ℤ → A) := by
   dsimp only
   ext a b
   cases positive <;> rcases a with a | (⟨a, c⟩ | a) <;>
@@ -169,22 +164,30 @@ private theorem block_transvection (positive : Bool) (t : A) :
     simp [conjugationBlock, SpecialLinearGroup.transvection_coe,
       Matrix.blockDiagonal_apply, Matrix.one_apply, mul_comm]
 
+private theorem shortRankOneGL_transvection (i : Fin 2) (positive : Bool) (t : A) :
+    shortRankOneGL A i (if positive then
+      SpecialLinearGroup.transvection (by decide : (0 : Fin 2) ≠ 1) t else
+      SpecialLinearGroup.transvection (by decide : (1 : Fin 2) ≠ 0) t) =
+      (rootSubgroupPoints (if positive then .inl (i.natAdd 2) else .inr (i.natAdd 2))
+        A (Multiplicative.ofAdd t) : GL (Fin 26) A) := by
+  apply Units.ext
+  apply Matrix.submatrix_injective (r := blockIndex i) (c := blockIndex i)
+    (blockEquiv i).surjective (blockEquiv i).surjective
+  dsimp only
+  rw [shortRankOneGL_block, coe_rootSubgroupPoints_eq]
+  have hinj : Function.Injective (blockIndex i) := (blockEquiv i).injective
+  simp only [Matrix.submatrix_add, Pi.add_apply, Matrix.submatrix_smul, Pi.smul_apply,
+    Matrix.submatrix_one _ hinj, Matrix.submatrix_map,
+    rootMatrix_block, rootDividedSquareMatrix_block, toAdd_ofAdd]
+  exact block_transvection A positive t
+
 /-- The upper transvection has the numbered positive short-root parameter. -/
 @[simp]
 theorem shortRankOneGL_upper_transvection (i : Fin 2) (t : A) :
     shortRankOneGL A i (SpecialLinearGroup.transvection
       (by decide : (0 : Fin 2) ≠ 1) t) =
       (rootSubgroupPoints (.inl (i.natAdd 2)) A (Multiplicative.ofAdd t) : GL (Fin 26) A) := by
-  apply Units.ext
-  ext a b
-  obtain ⟨a, rfl⟩ := (blockEquiv i).surjective a
-  obtain ⟨b, rfl⟩ := (blockEquiv i).surjective b
-  rw [coe_rootSubgroupPoints_inl]
-  simp only [Equiv.ofBijective_apply, blockEquiv, shortRankOneGL_block]
-  have h := congrFun (congrFun (block_transvection A true t) a) b
-  have hinj : Function.Injective (blockIndex i) := (blockEquiv i).injective
-  simpa [← raisingMatrix_block i, ← raisingDividedSquareMatrix_block i,
-    Matrix.submatrix, Matrix.one_apply, hinj.eq_iff] using h
+  exact shortRankOneGL_transvection A i true t
 
 /-- The lower transvection has the numbered negative short-root parameter. -/
 @[simp]
@@ -192,16 +195,7 @@ theorem shortRankOneGL_lower_transvection (i : Fin 2) (t : A) :
     shortRankOneGL A i (SpecialLinearGroup.transvection
       (by decide : (1 : Fin 2) ≠ 0) t) =
       (rootSubgroupPoints (.inr (i.natAdd 2)) A (Multiplicative.ofAdd t) : GL (Fin 26) A) := by
-  apply Units.ext
-  ext a b
-  obtain ⟨a, rfl⟩ := (blockEquiv i).surjective a
-  obtain ⟨b, rfl⟩ := (blockEquiv i).surjective b
-  rw [coe_rootSubgroupPoints_inr]
-  simp only [Equiv.ofBijective_apply, blockEquiv, shortRankOneGL_block]
-  have h := congrFun (congrFun (block_transvection A false t) a) b
-  have hinj : Function.Injective (blockIndex i) := (blockEquiv i).injective
-  simpa [← loweringMatrix_block i, ← loweringDividedSquareMatrix_block i,
-    Matrix.submatrix, Matrix.one_apply, hinj.eq_iff] using h
+  exact shortRankOneGL_transvection A i false t
 
 private def blockWeight : BlockIndex → ℤ :=
   Sum.elim ![2, 0, 0, -2] (Sum.elim (fun p => if p.1 = 0 then 1 else -1) (fun _ => 0))
@@ -217,11 +211,13 @@ theorem shortRankOneGL_diag2nUnit (i : Fin 2) (u : Aˣ) :
       (by decide : (0 : Fin 2) ≠ 1) u) =
       (weightTorusPoints A (Pi.mulSingle (i.natAdd 2) u) : GL (Fin 26) A) := by
   apply Units.ext
+  apply Matrix.submatrix_injective (r := blockIndex i) (c := blockIndex i)
+    (blockEquiv i).surjective (blockEquiv i).surjective
+  dsimp only
+  rw [shortRankOneGL_block]
   ext a b
-  obtain ⟨a, rfl⟩ := (blockEquiv i).surjective a
-  obtain ⟨b, rfl⟩ := (blockEquiv i).surjective b
-  rw [coe_weightTorusPoints, UniversalEnvelopingAlgebra.kostantTorusMatrix_apply, diagGL_coe]
-  simp only [Equiv.ofBijective_apply, blockEquiv, shortRankOneGL_block,
+  simp only [Matrix.submatrix_apply, coe_weightTorusPoints,
+    UniversalEnvelopingAlgebra.kostantTorusMatrix_apply, diagGL_coe,
     Matrix.diagonal_apply, torusCharacter_mulSingle, weight_block]
   have hinj : Function.Injective (blockIndex i) := (blockEquiv i).injective
   simp only [hinj.eq_iff]
