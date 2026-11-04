@@ -82,23 +82,20 @@ theorem inclusion_comp_filterSupported {s t t' : Set α} (p : α → Prop) [Deci
 
 /-- **A finitely generated module maps into finitely many coordinates**: the values of a linear
 map from a finitely generated module into `α →₀ M` are all supported on one finite set, the union
-of the supports of the images of finitely many generators. -/
+of the supports of the images of finitely many generators
+(Mathlib's `Finsupp.span_le_supported_biUnion_support`). -/
 theorem exists_finset_support_subset {N : Type*} [AddCommMonoid N] [Module R N] [Module.Finite R N]
     (f : N →ₗ[R] α →₀ M) : ∃ T : Finset α, ∀ y, (f y).support ⊆ T := by
   classical
   obtain ⟨m, x, hx⟩ := Module.Finite.exists_fin (R := R) (M := N)
-  refine ⟨Finset.univ.biUnion fun a ↦ (f (x a)).support, fun y ↦ ?_⟩
-  have hy : y ∈ Submodule.span R (Set.range x) := hx ▸ Submodule.mem_top
-  induction hy using Submodule.span_induction with
-  | mem _ h =>
-    obtain ⟨a, rfl⟩ := h
-    exact Finset.subset_biUnion_of_mem (fun a ↦ (f (x a)).support) (Finset.mem_univ a)
-  | zero => simp
-  | add y z _ _ hy hz =>
-    rw [map_add]
-    exact Finsupp.support_add.trans (Finset.union_subset hy hz)
-  | smul a y _ hy =>
-    rw [map_smul]
-    exact Finsupp.support_smul.trans hy
+  refine ⟨Finset.univ.biUnion fun a ↦ (f (x a)).support, fun y t ht ↦ ?_⟩
+  -- `f y` lies in the span of the images of the generators.
+  have hy : f y ∈ Submodule.span R (Set.range (f ∘ x)) := by
+    rw [Set.range_comp, ← Submodule.map_span, hx, Submodule.map_top]
+    exact LinearMap.mem_range_self f y
+  have hsupp := (mem_supported R _).1 (span_le_supported_biUnion_support R _ hy) ht
+  simp only [Set.mem_iUnion, Set.mem_range, Function.comp_apply, exists_prop] at hsupp
+  obtain ⟨_, ⟨a, rfl⟩, hta⟩ := hsupp
+  exact Finset.mem_biUnion.2 ⟨a, Finset.mem_univ _, hta⟩
 
 end TauCeti.Finsupp
