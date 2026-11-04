@@ -268,27 +268,10 @@ theorem baseChangeMap_geckGeneratedCoordinateLift
     CommHopfAlgCat.baseChangeMap (K := K) (t.geckGeneratedCoordinateLift ht k j) ≫
         (t.geckGeneratorCoordinateAlgebraBaseChangeIso k K j).hom =
       (t.geckGeneratedCoordinateHopfAlgebraBaseChangeIso ht k K).hom ≫
-        t.geckGeneratedCoordinateLift ht K j := by
-  let F := CommHopfAlgCat.baseChangeFunctor (k := k) (K := K)
-  have := ConcreteCategory.epi_of_surjective _
-    (CommHopfAlgCat.baseChangeMap_surjective (K := K) _
-      (t.geckGeneratedCoordinateMap_surjective ht k))
-  rw [← CommHopfAlgCat.baseChangeFunctor_map] at this ⊢
-  apply (cancel_epi (F.map (t.geckGeneratedCoordinateMap ht k))).mp
-  calc
-    _ = F.map (t.geckGeneratorCoordinateMap ht k j) ≫
-        (t.geckGeneratorCoordinateAlgebraBaseChangeIso k K j).hom := by
-      rw [← Category.assoc, ← Functor.map_comp,
-        geckGeneratedCoordinateMap_comp_geckGeneratedCoordinateLift]
-    _ = (GeneralLinear.coordinateHopfAlgebraBaseChangeIso k K (t.geckDim ht)).hom ≫
-        t.geckGeneratorCoordinateMap ht K j := by
-      rw [CommHopfAlgCat.baseChangeFunctor_map]
-      exact (Iso.inv_comp_eq
-        (GeneralLinear.coordinateHopfAlgebraBaseChangeIso k K (t.geckDim ht))).mp
-        (t.geckGeneratorCoordinateMap_baseChange ht k K j)
-    _ = _ := by
-      simp only [F, ← Category.assoc]
-      simp
+        t.geckGeneratedCoordinateLift ht K j :=
+  CommHopfAlgCat.baseChangeMap_liftQuotient_comp_quotientBaseChangeIsoOfMapEq_hom
+    _ _ _ (t.map_baseChangeHopfIdeal_geckGeneratedDefiningIdeal ht k K) _ _ _ _ _
+    (t.geckGeneratorCoordinateMap_baseChange ht k K j)
 
 end BaseChange
 
