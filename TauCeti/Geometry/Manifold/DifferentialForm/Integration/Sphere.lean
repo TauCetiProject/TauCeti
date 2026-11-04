@@ -392,6 +392,7 @@ theorem IsWeaklyExact.capArea_eq (hφ : φ.IsWeaklyExact) (hc : φ.IsClosed)
   · exact absurd ⟨u, hu⟩ h
 
 /-- For a closed weakly exact form, a constant loop has zero cap area. -/
+@[simp]
 theorem IsWeaklyExact.capArea_const (hφ : φ.IsWeaklyExact) (hc : φ.IsClosed) (x : M) :
     φ.capArea (fun _ ↦ x) = 0 := by
   rw [hφ.capArea_eq hc (isSmoothCap_const x)]

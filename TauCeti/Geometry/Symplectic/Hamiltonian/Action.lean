@@ -87,6 +87,7 @@ theorem actionFunctional_eq (hσ : σ.IsWeaklyExact) (hc : σ.IsClosed) (K : ℝ
 
 /-- The action of a constant loop at `x`, for a closed weakly exact form, is
 `-∫₀¹ K(t, x) dt`. -/
+@[simp]
 theorem actionFunctional_const (hσ : σ.IsWeaklyExact) (hc : σ.IsClosed) (K : ℝ → M → ℝ)
     (x : M) : σ.actionFunctional K (fun _ ↦ x) = -∫ t in (0 : ℝ)..1, K t x := by
   rw [actionFunctional_def, hσ.capArea_const hc, zero_sub]
