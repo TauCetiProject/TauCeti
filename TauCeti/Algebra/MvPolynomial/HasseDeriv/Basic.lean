@@ -52,6 +52,11 @@ Roth's theorem.
 * `MvPolynomial.hasseDeriv_eq_zero_of_degreeOf_lt`, `MvPolynomial.degreeOf_hasseDeriv_le`: the
   derivative lowers the degree in `Xᵢ` by `dᵢ`; in particular
   `MvPolynomial.degreeOf_hasseDeriv_le_of_le` keeps any bound `degreeOf i P ≤ L i`.
+* `MvPolynomial.mapDomain_add_le_of_mem_support_hasseDeriv`,
+  `MvPolynomial.mapDomain_le_of_mem_support_hasseDeriv`,
+  `MvPolynomial.mapDomain_le_of_hasseDeriv_ne_zero`,
+  `MvPolynomial.hasseDeriv_eq_zero_of_lt_mapDomain`: block-degree bounds along a variable grouping
+  `b : σ → B` for supports and vanishing of Hasse derivatives.
 * `MvPolynomial.factorial_smul_hasseDeriv_single`: `k! • ∂^(k eᵢ) P = (∂/∂Xᵢ)^k P`.
 * `MvPolynomial.hasseDeriv_single_toMvPolynomial`,
   `MvPolynomial.hasseDeriv_toMvPolynomial_eq_zero`: on a polynomial in the single variable `Xᵢ`,
@@ -226,6 +231,47 @@ theorem degreeOf_hasseDeriv_le (d : σ →₀ ℕ) (P : MvPolynomial σ R) (i : 
 theorem degreeOf_hasseDeriv_le_of_le {P : MvPolynomial σ R} {L : σ → ℕ}
     (hL : ∀ i, P.degreeOf i ≤ L i) (d : σ →₀ ℕ) (i : σ) : (hasseDeriv d P).degreeOf i ≤ L i :=
   (degreeOf_hasseDeriv_le d P i).trans ((Nat.sub_le _ _).trans (hL i))
+
+section BlockDegree
+
+variable {B : Type*} (b : σ → B) (d : B → ℕ)
+
+/-- If every monomial `e` of `f` satisfies `e.mapDomain b h ≤ d h`, then every monomial `m` of
+`∂^γ f` satisfies `m.mapDomain b h + γ.mapDomain b h ≤ d h`. -/
+theorem mapDomain_add_le_of_mem_support_hasseDeriv {f : MvPolynomial σ R}
+    (hf : ∀ e ∈ f.support, ∀ h, e.mapDomain b h ≤ d h) {γ m : σ →₀ ℕ}
+    (hm : m ∈ (hasseDeriv γ f).support) (h : B) :
+    m.mapDomain b h + γ.mapDomain b h ≤ d h := by
+  rw [mem_support_iff, hasseDeriv_coeff] at hm
+  have hmem : m + γ ∈ f.support := mem_support_iff.2 (right_ne_zero_of_mul hm)
+  simpa only [mapDomain_add, Finsupp.add_apply] using hf (m + γ) hmem h
+
+/-- A Hasse derivative of a polynomial with block degree bounds `e.mapDomain b h ≤ d h` retains the
+same bounds. -/
+theorem mapDomain_le_of_mem_support_hasseDeriv {f : MvPolynomial σ R}
+    (hf : ∀ e ∈ f.support, ∀ h, e.mapDomain b h ≤ d h) (γ : σ →₀ ℕ)
+    {m : σ →₀ ℕ} (hm : m ∈ (hasseDeriv γ f).support) (h : B) :
+    m.mapDomain b h ≤ d h :=
+  le_self_add.trans (mapDomain_add_le_of_mem_support_hasseDeriv b d hf hm h)
+
+/-- A nonzero Hasse derivative `∂^γ f` of a polynomial with block degree bounds
+`e.mapDomain b h ≤ d h` satisfies `γ.mapDomain b h ≤ d h`. -/
+theorem mapDomain_le_of_hasseDeriv_ne_zero {f : MvPolynomial σ R}
+    (hf : ∀ e ∈ f.support, ∀ h, e.mapDomain b h ≤ d h) {γ : σ →₀ ℕ}
+    (hγ : hasseDeriv γ f ≠ 0) (h : B) :
+    γ.mapDomain b h ≤ d h := by
+  obtain ⟨m, hm⟩ := support_nonempty.2 hγ
+  exact le_add_self.trans (mapDomain_add_le_of_mem_support_hasseDeriv b d hf hm h)
+
+/-- If `d h < γ.mapDomain b h` for some block `h`, then `∂^γ f = 0` whenever every monomial `e` of
+`f` satisfies `e.mapDomain b h ≤ d h`. -/
+theorem hasseDeriv_eq_zero_of_lt_mapDomain {f : MvPolynomial σ R}
+    (hf : ∀ e ∈ f.support, ∀ h, e.mapDomain b h ≤ d h) {γ : σ →₀ ℕ} {h : B}
+    (hγ : d h < γ.mapDomain b h) :
+    hasseDeriv γ f = 0 :=
+  by_contra fun hne ↦ (mapDomain_le_of_hasseDeriv_ne_zero b d hf hne h).not_gt hγ
+
+end BlockDegree
 
 /-- Differentiating `∂^(k eᵢ)` with respect to `Xᵢ` gives `(k + 1) ∂^((k + 1) eᵢ)`. -/
 @[simp]

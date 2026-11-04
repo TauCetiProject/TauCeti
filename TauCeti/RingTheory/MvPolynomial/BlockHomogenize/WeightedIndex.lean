@@ -8,6 +8,8 @@ module
 public import TauCeti.RingTheory.MvPolynomial.BlockHomogenize.Taylor
 public import TauCeti.RingTheory.MvPolynomial.WeightedIndex
 
+import TauCeti.RingTheory.MvPolynomial.HasseDeriv.WeightedHomogeneous
+
 /-!
 # Weighted indices of block homogenizations
 
@@ -76,11 +78,9 @@ theorem hasseDeriv_sumElim_blockHomogenize_eq_zero_of_lt (f : MvPolynomial S R)
     hasseDeriv (κ.sumElim β) (blockHomogenize b d f) = 0 := by
   classical
   by_contra hne
-  obtain ⟨m, hm⟩ := support_nonempty.2 hne
-  rw [mem_support_iff, hasseDeriv_coeff] at hm
-  have hdeg := isWeightedHomogeneous_blockHomogenize b d f h (right_ne_zero_of_mul hm)
-  rw [map_add, Finsupp.weight_ite_sumElim_eq_add_mapDomain_apply] at hdeg
-  exact (le_add_self.trans_eq hdeg).not_gt hlt
+  have hle := (isWeightedHomogeneous_blockHomogenize b d f h).weight_le_of_hasseDeriv_ne_zero hne
+  rw [Finsupp.weight_ite_sumElim_eq_add_mapDomain_apply] at hle
+  exact hle.not_gt hlt
 
 /-- Over any commutative semiring, the homogeneous `weightedIndex` of `blockHomogenize b d f` at
 `(1, a)` is at most the affine `weightedIndex` of `f` at `a` whenever `f` is `d`-bounded. -/

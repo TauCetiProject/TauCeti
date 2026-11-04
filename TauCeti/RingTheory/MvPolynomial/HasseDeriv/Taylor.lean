@@ -26,6 +26,8 @@ rule for Hasse derivatives.
   `P(a + y) = ∑_d (∂^d P)(a) y^d`.
 * `MvPolynomial.eq_sum_support_taylor_hasseDeriv`: the polynomial Taylor expansion
   `P = ∑_{d ∈ supp(taylor a P)} C((∂^d P)(a)) ∏ⱼ (Xⱼ - C(aⱼ))^(dⱼ)`.
+* `MvPolynomial.mapDomain_le_of_mem_support_taylor`: block-degree bounds `e.mapDomain b h ≤ d h`
+  on `f` carry over to `(taylor a f).support`.
 * `MvPolynomial.coeff_prod_X_add_one_pow`: `[X^μ] ∏ᵢ (Xᵢ + 1)^(mᵢ) = ∏ᵢ (mᵢ choose μᵢ)`.
 * `MvPolynomial.hasseDeriv_mul`: the Leibniz rule `∂^d (P Q) = ∑_{a + b = d} ∂^a P · ∂^b Q`.
 * `MvPolynomial.hasseDeriv_add_single_mul_toMvPolynomial`: the Leibniz rule for a product
@@ -125,6 +127,15 @@ theorem coeff_prod_X_add_one_pow [Fintype σ] (m : σ → ℕ) (μ : σ →₀ �
     simp
   rw [heq, coeff_taylor, eval_const_hasseDeriv_monomial]
   simp
+
+/-- Every exponent occurring in the Taylor shift of a polynomial with block degree bounds
+`e.mapDomain b h ≤ d h` satisfies the same bounds `γ.mapDomain b h ≤ d h`. -/
+theorem mapDomain_le_of_mem_support_taylor {B : Type*} (b : σ → B) (d : B → ℕ) (a : σ → R)
+    {f : MvPolynomial σ R} (hf : ∀ e ∈ f.support, ∀ h, e.mapDomain b h ≤ d h) {γ : σ →₀ ℕ}
+    (hγ : γ ∈ (taylor a f).support) (h : B) :
+    γ.mapDomain b h ≤ d h := by
+  rw [mem_support_iff, coeff_taylor] at hγ
+  exact mapDomain_le_of_hasseDeriv_ne_zero b d hf (fun hz ↦ hγ (by simp [hz])) h
 
 /-- Every polynomial `P` over a commutative ring equals its finite Hasse Taylor expansion around
 `a`: `P = ∑_{d ∈ supp(taylor a P)} C((∂^d P)(a)) ∏ⱼ (Xⱼ - C(aⱼ))^(dⱼ)`. -/

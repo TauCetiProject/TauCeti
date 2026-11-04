@@ -82,9 +82,13 @@ block map `b : S → B` sums the block degrees `γ.mapDomain b h / d h` in `ℝ�
 theorem weight_inv_natCast_comp_eq_sum_mapDomain_div {B S : Type*} [Fintype B] (b : S → B)
     (d : B → ℕ) (γ : S →₀ ℕ) :
     γ.weight (fun j ↦ (d (b j) : ℝ≥0∞)⁻¹) = ∑ h, (γ.mapDomain b h : ℝ≥0∞) / d h := by
-  rw [show (fun j ↦ (d (b j) : ℝ≥0∞)⁻¹) = fun j ↦ ((d ∘ b) j : ℝ≥0∞)⁻¹ from rfl,
-    weight_inv_natCast_comp b d γ, weight_eq_sum]
-  simp [div_eq_mul_inv]
+  calc
+    γ.weight (fun j ↦ (d (b j) : ℝ≥0∞)⁻¹)
+      = (γ.mapDomain b).weight (fun h ↦ (d h : ℝ≥0∞)⁻¹) := by
+        simpa only [Function.comp_apply] using weight_inv_natCast_comp b d γ
+    _ = ∑ h, (γ.mapDomain b h : ℝ≥0∞) / d h := by
+        rw [weight_eq_sum]
+        simp [div_eq_mul_inv]
 
 /-- On `B ⊕ S`, giving `.inl h` and every `.inr j` with `b j = h` the reciprocal natural weight
 `(d h)⁻¹` evaluates on `κ.sumElim β` to `∑ h, (κ h + β.mapDomain b h) / d h` in `ℝ≥0∞`. -/

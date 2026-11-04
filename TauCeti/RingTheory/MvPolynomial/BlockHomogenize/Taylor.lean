@@ -32,11 +32,6 @@ affine jets `(∂^γ f)(a)` with `β ≤ γ` and `t_h(γ - β) ≤ κ h` (in par
 `κ = 0`, only `γ = β` survives, recovering `(∂^(0 ⊕ β) H_d(f))(1, a) = (∂^β f)(a)`; in fact,
 dehomogenizing `∂^(0 ⊕ β) H_d(f)` at `X_h = 1` recovers `∂^β f` over any commutative semiring.
 
-## Main definitions
-
-* `MvPolynomial.blockExponents b d`: for finite `S`, the finite set of multi-indices `γ : S →₀ ℕ`
-  satisfying `γ.mapDomain b h ≤ d h` in every block `h`.
-
 ## Main results
 
 * `MvPolynomial.eval_one_blockHomogenize`,
@@ -70,93 +65,7 @@ open Finsupp
 
 section CommSemiring
 
-variable {R B S : Type*} [CommSemiring R] (b : S → B) (d : B → ℕ)
-
-/-- If every monomial of `f` has degree at most `d h` in block `h`, then every monomial `m` of
-`∂^γ f` satisfies `t_h(m) + t_h(γ) ≤ d h`. -/
-theorem mapDomain_add_le_of_mem_support_hasseDeriv {f : MvPolynomial S R}
-    (hf : ∀ e ∈ f.support, ∀ h, e.mapDomain b h ≤ d h) {γ m : S →₀ ℕ}
-    (hm : m ∈ (hasseDeriv γ f).support) (h : B) :
-    m.mapDomain b h + γ.mapDomain b h ≤ d h := by
-  rw [mem_support_iff, hasseDeriv_coeff] at hm
-  have hmem : m + γ ∈ f.support := mem_support_iff.2 (right_ne_zero_of_mul hm)
-  simpa only [mapDomain_add, Finsupp.add_apply] using hf (m + γ) hmem h
-
-/-- A Hasse derivative of a `d`-bounded polynomial remains `d`-bounded. -/
-theorem mapDomain_le_of_mem_support_hasseDeriv {f : MvPolynomial S R}
-    (hf : ∀ e ∈ f.support, ∀ h, e.mapDomain b h ≤ d h) (γ : S →₀ ℕ)
-    {m : S →₀ ℕ} (hm : m ∈ (hasseDeriv γ f).support) (h : B) :
-    m.mapDomain b h ≤ d h :=
-  le_self_add.trans (mapDomain_add_le_of_mem_support_hasseDeriv b d hf hm h)
-
-/-- A nonzero Hasse derivative `∂^γ f` of a `d`-bounded polynomial has block degrees
-`t_h(γ) ≤ d h`. -/
-theorem mapDomain_le_of_hasseDeriv_ne_zero {f : MvPolynomial S R}
-    (hf : ∀ e ∈ f.support, ∀ h, e.mapDomain b h ≤ d h) {γ : S →₀ ℕ}
-    (hγ : hasseDeriv γ f ≠ 0) (h : B) :
-    γ.mapDomain b h ≤ d h := by
-  obtain ⟨m, hm⟩ := support_nonempty.2 hγ
-  exact le_add_self.trans (mapDomain_add_le_of_mem_support_hasseDeriv b d hf hm h)
-
-/-- If `γ` exceeds the block degree bound `d h` in some block `h`, then `∂^γ f = 0` for every
-`d`-bounded polynomial `f`. -/
-theorem hasseDeriv_eq_zero_of_lt_mapDomain {f : MvPolynomial S R}
-    (hf : ∀ e ∈ f.support, ∀ h, e.mapDomain b h ≤ d h) {γ : S →₀ ℕ} {h : B}
-    (hγ : d h < γ.mapDomain b h) :
-    hasseDeriv γ f = 0 :=
-  by_contra fun hne ↦ (mapDomain_le_of_hasseDeriv_ne_zero b d hf hne h).not_gt hγ
-
-/-- Every exponent occurring in the Taylor shift of a `d`-bounded polynomial satisfies the same
-block degree bounds `t_h(γ) ≤ d h`. -/
-theorem mapDomain_le_of_mem_support_taylor (a : S → R) {f : MvPolynomial S R}
-    (hf : ∀ e ∈ f.support, ∀ h, e.mapDomain b h ≤ d h) {γ : S →₀ ℕ}
-    (hγ : γ ∈ (taylor a f).support) (h : B) :
-    γ.mapDomain b h ≤ d h := by
-  rw [mem_support_iff, coeff_taylor] at hγ
-  exact mapDomain_le_of_hasseDeriv_ne_zero b d hf (fun hz ↦ hγ (by simp [hz])) h
-
-section BlockExponents
-
-variable [Finite S]
-
-open Classical in
-/-- For a finite variable type `S`, the finite set of multi-indices `γ : S →₀ ℕ` whose degree
-`t_h(γ) = γ.mapDomain b h` in every block `h` is at most `d h`. -/
-noncomputable def blockExponents : Finset (S →₀ ℕ) :=
-  {γ ∈ Finset.Iic (equivFunOnFinite.symm (d ∘ b)) | ∀ h, γ.mapDomain b h ≤ d h}
-
-@[simp]
-theorem mem_blockExponents {γ : S →₀ ℕ} :
-    γ ∈ blockExponents b d ↔ ∀ h, γ.mapDomain b h ≤ d h := by
-  classical
-  simp only [blockExponents, Finset.mem_filter, Finset.mem_Iic, and_iff_right_iff_imp]
-  intro h j
-  have hj : γ j ≤ γ.mapDomain b (b j) := by
-    have hle : single j (γ j) ≤ γ := Finsupp.single_le_iff.2 le_rfl
-    simpa using Finsupp.mapDomain_mono (f := b) hle (b j)
-  simpa using hj.trans (h (b j))
-
-theorem zero_mem_blockExponents : (0 : S →₀ ℕ) ∈ blockExponents b d := by
-  simp
-
-theorem blockExponents_nonempty : (blockExponents b d).Nonempty :=
-  ⟨0, zero_mem_blockExponents b d⟩
-
-theorem blockExponents_mono {d₁ d₂ : B → ℕ} (hd : d₁ ≤ d₂) :
-    blockExponents b d₁ ⊆ blockExponents b d₂ := fun _ hγ ↦
-  (mem_blockExponents b d₂).2 fun h ↦ ((mem_blockExponents b d₁).1 hγ h).trans (hd h)
-
-/-- A polynomial in finitely many variables is `d`-bounded if and only if its support lies in
-`blockExponents b d`. -/
-theorem support_subset_blockExponents_iff {f : MvPolynomial S R} :
-    f.support ⊆ blockExponents b d ↔ ∀ e ∈ f.support, ∀ h, e.mapDomain b h ≤ d h := by
-  simp [Finset.subset_iff]
-
-end BlockExponents
-
-section ZeroSumElim
-
-variable [Fintype B]
+variable {R B S : Type*} [CommSemiring R] [Fintype B] (b : S → B) (d : B → ℕ)
 
 /-- At the chart point `(1, a)`, `blockHomogenize b d f` evaluates to `f(a)` for any `d`-bounded
 polynomial `f`. -/
@@ -211,8 +120,6 @@ theorem eval_one_hasseDeriv_zero_sumElim_blockHomogenize (a : S → R) (β : S �
   simpa only [eval, coe_eval₂Hom, Sum.elim_comp_inr] using
     eval₂_hasseDeriv_zero_sumElim_blockHomogenize_of_eq_one b d (RingHom.id R)
       (Sum.elim (fun _ ↦ 1) a) (fun _ ↦ rfl) β hf
-
-end ZeroSumElim
 
 end CommSemiring
 
