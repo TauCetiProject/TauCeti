@@ -70,11 +70,15 @@ variable (t : DynkinType) (ht : t.Valid)
 `β`, the Weyl automorphism of the triple `(α^∨, e_α, e_{-α})` sends `e_β` to `e_{s_α β}` or to
 `-e_{s_α β}`, where `s_α β` is the reflection of `β` in `α` in the pinned root datum. -/
 theorem weylAut_chevalleySystem_eq_or_eq_neg (α β : Fin t.numRoots) :
-    weylAut (t.isSl2Triple_chevalleySystem ht α) (t.isNilpotent_ad_chevalleySystem ht α)
-          (t.isNilpotent_ad_chevalleySystem ht _) (t.chevalleySystem ht β) =
+    weylAut (t.isSl2Triple_chevalleySystem ht α)
+          (t.isNilpotent_ad_chevalleySystem ht α).exists_pow_apply_eq_zero
+          (t.isNilpotent_ad_chevalleySystem ht _).exists_pow_apply_eq_zero
+          (t.chevalleySystem ht β) =
         t.chevalleySystem ht ((t.simplyConnectedRootDatum ht).reflectionPerm α β) ∨
-      weylAut (t.isSl2Triple_chevalleySystem ht α) (t.isNilpotent_ad_chevalleySystem ht α)
-          (t.isNilpotent_ad_chevalleySystem ht _) (t.chevalleySystem ht β) =
+      weylAut (t.isSl2Triple_chevalleySystem ht α)
+          (t.isNilpotent_ad_chevalleySystem ht α).exists_pow_apply_eq_zero
+          (t.isNilpotent_ad_chevalleySystem ht _).exists_pow_apply_eq_zero
+          (t.chevalleySystem ht β) =
         -t.chevalleySystem ht ((t.simplyConnectedRootDatum ht).reflectionPerm α β) := by
   simpa only [← rootEquiv_reflectionPerm, extendRootFamily_rootEquiv,
     extendRootFamily_neg_rootEquiv] using
@@ -89,7 +93,8 @@ simple root, holds at the root vector `e_γ` of every root `γ`. -/
 theorem chevalleySystem_induction {p : t.lieAlgebra ht → Prop} (hneg : ∀ z, p z → p (-z))
     (hsimple : ∀ i, p ((t.lieBasis ht).e i))
     (hweyl : ∀ i z, p z → p (weylAut (t.isSl2Triple_chevalleySystem ht (t.simpleIndex ht i))
-      (t.isNilpotent_ad_chevalleySystem ht _) (t.isNilpotent_ad_chevalleySystem ht _) z))
+      (t.isNilpotent_ad_chevalleySystem ht _).exists_pow_apply_eq_zero
+      (t.isNilpotent_ad_chevalleySystem ht _).exists_pow_apply_eq_zero z))
     (γ : Fin t.numRoots) : p (t.chevalleySystem ht γ) := by
   -- a simple Weyl automorphism moves the root vector of `k` to that of `s_j k`, up to sign
   have step (i : Fin t.rank) (k : Fin t.numRoots) (hk : p (t.chevalleySystem ht k)) :
@@ -116,8 +121,9 @@ noncomputable section
 (Carter's `η_{α,β}`). That it is such a sign is `TauCeti.DynkinType.weylAut_chevalleySystem`. -/
 def chevalleyWeylSign (α β : Fin t.numRoots) : ℤˣ :=
   open Classical in
-  if weylAut (t.isSl2Triple_chevalleySystem ht α) (t.isNilpotent_ad_chevalleySystem ht α)
-      (t.isNilpotent_ad_chevalleySystem ht _) (t.chevalleySystem ht β) =
+  if weylAut (t.isSl2Triple_chevalleySystem ht α)
+      (t.isNilpotent_ad_chevalleySystem ht α).exists_pow_apply_eq_zero
+      (t.isNilpotent_ad_chevalleySystem ht _).exists_pow_apply_eq_zero (t.chevalleySystem ht β) =
       t.chevalleySystem ht ((t.simplyConnectedRootDatum ht).reflectionPerm α β) then 1 else -1
 
 end
@@ -125,8 +131,9 @@ end
 /-- **The Weyl automorphisms permute the named root vectors with a sign.** The Weyl automorphism
 of the triple `(α^∨, e_α, e_{-α})` sends `e_β` to `ε e_{s_α β}` for `ε = chevalleyWeylSign α β`. -/
 theorem weylAut_chevalleySystem (α β : Fin t.numRoots) :
-    weylAut (t.isSl2Triple_chevalleySystem ht α) (t.isNilpotent_ad_chevalleySystem ht α)
-        (t.isNilpotent_ad_chevalleySystem ht _) (t.chevalleySystem ht β) =
+    weylAut (t.isSl2Triple_chevalleySystem ht α)
+        (t.isNilpotent_ad_chevalleySystem ht α).exists_pow_apply_eq_zero
+        (t.isNilpotent_ad_chevalleySystem ht _).exists_pow_apply_eq_zero (t.chevalleySystem ht β) =
       (t.chevalleyWeylSign ht α β : ℤ) •
         t.chevalleySystem ht ((t.simplyConnectedRootDatum ht).reflectionPerm α β) := by
   rw [chevalleyWeylSign]
@@ -140,8 +147,10 @@ variable {t ht} in
 root vector `e_{s_α β}` is nonzero. -/
 theorem eq_chevalleyWeylSign_iff {α β : Fin t.numRoots} {ε : ℤˣ} :
     ε = t.chevalleyWeylSign ht α β ↔
-      weylAut (t.isSl2Triple_chevalleySystem ht α) (t.isNilpotent_ad_chevalleySystem ht α)
-          (t.isNilpotent_ad_chevalleySystem ht _) (t.chevalleySystem ht β) =
+      weylAut (t.isSl2Triple_chevalleySystem ht α)
+          (t.isNilpotent_ad_chevalleySystem ht α).exists_pow_apply_eq_zero
+          (t.isNilpotent_ad_chevalleySystem ht _).exists_pow_apply_eq_zero
+          (t.chevalleySystem ht β) =
         (ε : ℤ) • t.chevalleySystem ht ((t.simplyConnectedRootDatum ht).reflectionPerm α β) := by
   refine ⟨fun h => h ▸ t.weylAut_chevalleySystem ht α β, fun h => ?_⟩
   rw [t.weylAut_chevalleySystem ht α β, ← sub_eq_zero, ← sub_smul, ← Int.cast_smul_eq_zsmul ℚ,
@@ -163,19 +172,22 @@ theorem weylAut_simpleIndex_eq (i : Fin t.rank) {h₀ : t.lieAlgebra ht}
     (he : IsNilpotent (ad ℚ (t.lieAlgebra ht) ((t.lieBasis ht).rootGenerator (.inl i))))
     (hf : IsNilpotent (ad ℚ (t.lieAlgebra ht) ((t.lieBasis ht).rootGenerator (.inr i)))) :
     weylAut (t.isSl2Triple_chevalleySystem ht (t.simpleIndex ht i))
-        (t.isNilpotent_ad_chevalleySystem ht _) (t.isNilpotent_ad_chevalleySystem ht _) =
-      weylAut T he hf := by
+        (t.isNilpotent_ad_chevalleySystem ht _).exists_pow_apply_eq_zero
+        (t.isNilpotent_ad_chevalleySystem ht _).exists_pow_apply_eq_zero =
+      weylAut T he.exists_pow_apply_eq_zero hf.exists_pow_apply_eq_zero := by
   have key : ∀ (a b : t.lieAlgebra ht) (_ : a = (t.lieBasis ht).rootGenerator (.inl i))
       (_ : b = (t.lieBasis ht).rootGenerator (.inr i)) {h₁ : t.lieAlgebra ht}
       (T' : IsSl2Triple h₁ a b)
       (ha : IsNilpotent (ad ℚ (t.lieAlgebra ht) a)) (hb : IsNilpotent (ad ℚ (t.lieAlgebra ht) b)),
-      weylAut T' ha hb = weylAut T he hf := by
+      weylAut T' ha.exists_pow_apply_eq_zero hb.exists_pow_apply_eq_zero =
+        weylAut T he.exists_pow_apply_eq_zero hf.exists_pow_apply_eq_zero := by
     rintro a b rfl rfl h₁ T' ha hb
     ext y
-    rw [weylAut_apply ha hb, weylAut_apply he hf]
+    rw [weylAut_apply ha.exists_pow_apply_eq_zero hb.exists_pow_apply_eq_zero,
+      weylAut_apply he.exists_pow_apply_eq_zero hf.exists_pow_apply_eq_zero]
   exact key _ _ ((t.chevalleySystem_simpleIndex ht i).trans (Basis.rootGenerator_inl _ i).symm)
     ((t.chevalleySystem_reflectionPerm_simpleIndex ht i).trans (Basis.rootGenerator_inr _ i).symm)
-    _ _ _
+    _ (t.isNilpotent_ad_chevalleySystem ht _) (t.isNilpotent_ad_chevalleySystem ht _)
 
 /-- The simple raising generator `eᵢ` is ad-nilpotent. -/
 theorem isNilpotent_ad_rootGenerator_inl (i : Fin t.rank) :

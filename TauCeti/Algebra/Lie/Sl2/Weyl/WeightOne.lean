@@ -34,15 +34,16 @@ length-two raising string to its raising bracket. -/
 theorem _root_.IsSl2Triple.weylAut_apply_of_lie_h_eq_neg (t : IsSl2Triple h e f)
     (he : IsNilpotent (ad K L e)) (hf : IsNilpotent (ad K L f)) {y : L}
     (hhy : ⁅h, y⁆ = -y) (hfy : ⁅f, y⁆ = 0) (heey : ⁅e, ⁅e, y⁆⁆ = 0) :
-    weylAut t he hf y = ⁅e, y⁆ := by
-  have hf' : IsNilpotent (ad K L (-f)) := by simpa using hf.neg
+    weylAut t he.exists_pow_apply_eq_zero hf.exists_pow_apply_eq_zero y = ⁅e, y⁆ := by
+  have hf' := (show IsNilpotent (ad K L (-f)) by simpa using hf.neg).exists_pow_apply_eq_zero
+  have he' := he.exists_pow_apply_eq_zero
   have hfey : ⁅f, ⁅e, y⁆⁆ = y := by
     rw [leibniz_lie, ← lie_skew f e, t.lie_e_f, neg_lie, hhy, hfy, lie_zero, neg_neg,
       add_zero]
   have hnegfy : ⁅-f, y⁆ = 0 := by simp only [neg_lie, hfy, neg_zero]
   have hnegfey : ⁅-f, ⁅e, y⁆⁆ = -y := by rw [neg_lie, hfey]
-  have hE : expAd e he y = y + ⁅e, y⁆ :=
-    expAd_apply_of_lie_lie_eq_zero he heey
+  have hE : expAd e he' y = y + ⁅e, y⁆ :=
+    expAd_apply_of_lie_lie_eq_zero he' heey
   have hFy : expAd (-f) hf' y = y := expAd_apply_of_lie_eq_zero hf' hnegfy
   have hFEy : expAd (-f) hf' ⁅e, y⁆ = ⁅e, y⁆ - y := by
     rw [expAd_apply_of_lie_lie_eq_zero hf'
@@ -50,7 +51,7 @@ theorem _root_.IsSl2Triple.weylAut_apply_of_lie_h_eq_neg (t : IsSl2Triple h e f)
   have hF : expAd (-f) hf' (y + ⁅e, y⁆) = ⁅e, y⁆ := by
     rw [map_add, hFy, hFEy]
     abel
-  rw [weylAut_apply he hf t, hE, hF, expAd_apply_of_lie_eq_zero he heey]
+  rw [weylAut_apply he' hf.exists_pow_apply_eq_zero t, hE, hF, expAd_apply_of_lie_eq_zero he' heey]
 
 section Associative
 
@@ -66,7 +67,8 @@ theorem _root_.IsSl2Triple.weylUnit_conj_of_lie_h_eq_neg (t : IsSl2Triple H E F)
     (hHY : ⁅H, Y⁆ = -Y) (hFY : ⁅F, Y⁆ = 0) (hEEY : ⁅E, ⁅E, Y⁆⁆ = 0) :
     (weylUnit hE hF : A) * Y * (((weylUnit hE hF)⁻¹ : Aˣ) : A) = ⁅E, Y⁆ := by
   rw [← weylAut_apply_eq_weylUnit_conj (K := ℚ) t hE hF]
-  exact t.weylAut_apply_of_lie_h_eq_neg _ _ hHY hFY hEEY
+  exact t.weylAut_apply_of_lie_h_eq_neg (LieAlgebra.ad_nilpotent_of_nilpotent (R := ℚ) hE)
+    (LieAlgebra.ad_nilpotent_of_nilpotent (R := ℚ) hF) hHY hFY hEEY
 
 end Associative
 
