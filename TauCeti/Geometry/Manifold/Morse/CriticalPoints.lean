@@ -10,11 +10,13 @@ public import Mathlib.Geometry.Manifold.MFDeriv.NormedSpace
 public import Mathlib.Topology.Maps.Proper.Basic
 public import TauCeti.Geometry.Manifold.Morse.Index
 public import TauCeti.Geometry.Manifold.RegularValue
+public import TauCeti.Topology.ConnectedComponents
 import Mathlib.Algebra.BigOperators.Fin
 import Mathlib.Analysis.Calculus.LocalExtr.Basic
 import Mathlib.Data.Set.Card.Arithmetic
 import Mathlib.Geometry.Manifold.ContMDiff.Atlas
 import TauCeti.Geometry.Manifold.MFDeriv.Chart
+import TauCeti.Geometry.Manifold.MFDeriv.Opens
 
 /-!
 # The critical set of a real function on a manifold
@@ -33,6 +35,10 @@ The critical set of a `C¹` function is closed, and a nondegenerate critical poi
 it, so a Morse function has finitely many critical points in every compact set; for a proper
 function bounded below, this applies to every sublevel set.
 
+Restricting `f` to an open subset `U` keeps exactly the critical points lying in `U`, so the total
+critical count is additive over a finite partition of `M` into open sets, such as its connected
+components. In dimension zero every point is critical.
+
 Critical points are counted, in total and by Morse index, with values in `ℕ∞`: an infinite
 critical set has count `⊤`, never a junk natural number. The counts of a Morse function on a
 compact manifold are finite, the counts by index add up to the total count, and replacing `f` by
@@ -45,6 +51,7 @@ polynomial in the Morse inequalities.
   and, on boundaryless manifolds,
   `TauCeti.mem_criticalPoints_iff_fderiv_comp_extChartAt_symm_eq_zero`.
 * `TauCeti.isMorseOn_iff_criticalPoints`: Morse functions in terms of the critical set.
+* `TauCeti.criticalPoints_comp_subtypeVal`: the critical set of a restriction to an open subset.
 * `IsLocalExtr.mem_criticalPoints`, `TauCeti.criticalPoints_nonempty` and
   `TauCeti.exists_mem_criticalPoints_of_isCompact_sublevel`: Fermat's theorem on a manifold and the
   existence of critical points on compact manifolds and in compact sublevels.
@@ -62,6 +69,8 @@ polynomial in the Morse inequalities.
   points, with `TauCeti.sum_criticalCount_eq_totalCriticalCount`,
   `TauCeti.IsMorse.totalCriticalCount_ne_top`, `TauCeti.two_le_totalCriticalCount` and
   `TauCeti.IsMorse.criticalCount_neg`.
+* `TauCeti.totalCriticalCount_eq_sum` and `TauCeti.totalCriticalCount_eq_sum_connectedComponents`:
+  additivity of the total count over finite open partitions and over connected components.
 
 ## References
 
@@ -71,7 +80,7 @@ polynomial in the Morse inequalities.
 
 public section
 
-open Function Set Filter Topology
+open Function Set Filter Topology TopologicalSpace
 open scoped ContDiff Manifold
 
 namespace TauCeti
@@ -120,11 +129,26 @@ theorem isRegularValue_iff_notMem_image_criticalPoints {c : ℝ} :
     not_exists, not_and]
   tauto
 
+/-- On a manifold modelled on a zero-dimensional space every point is critical. -/
+@[simp]
+theorem criticalPoints_eq_univ_of_subsingleton [Subsingleton E] : criticalPoints I f = univ :=
+  -- The derivative at `x` is a linear form on the tangent space, which is the zero space `E`.
+  eq_univ_of_forall fun _ ↦ Subsingleton.elim (α := E →L[ℝ] ℝ) _ _
+
 /-- A function and its negation have the same critical points. -/
 @[simp]
 theorem criticalPoints_neg : criticalPoints I (-f) = criticalPoints I f := by
   ext x
   rw [mem_criticalPoints, mem_criticalPoints, mvfderiv_neg, neg_eq_zero]
+
+/-- On an open subset `U`, the critical points of the restriction of `f` are the critical points
+of `f` lying in `U`. No regularity of `f` is needed. -/
+@[simp]
+theorem criticalPoints_comp_subtypeVal (U : Opens M) :
+    criticalPoints I (f ∘ (Subtype.val : U → M)) = Subtype.val ⁻¹' criticalPoints I f :=
+  Set.ext fun _ ↦ by
+    simp only [mem_preimage, mem_criticalPoints_iff_mfderiv_eq_zero]
+    exact Manifold.mfderiv_comp_subtype_val_eq_zero_iff
 
 /-! ### Critical points read in the preferred chart -/
 
@@ -367,6 +391,37 @@ theorem criticalCount_le_totalCriticalCount (j : ℕ) :
 @[simp]
 theorem totalCriticalCount_neg : totalCriticalCount I (-f) = totalCriticalCount I f := by
   rw [totalCriticalCount_def, totalCriticalCount_def, criticalPoints_neg]
+
+/-- The number of critical points of the restriction of `f` to an open subset `U` is the number of
+critical points of `f` in `U`. -/
+theorem totalCriticalCount_comp_subtypeVal (U : Opens M) :
+    totalCriticalCount I (f ∘ (Subtype.val : U → M)) = (criticalPoints I f ∩ U).encard := by
+  rw [totalCriticalCount_def, criticalPoints_comp_subtypeVal,
+    ← Subtype.val_injective.encard_image, image_preimage_eq_inter_range, Subtype.range_coe]
+
+/-- **Additivity of the critical count.** If finitely many pairwise disjoint open subsets `U i`
+cover `M`, for instance the connected components of a compact manifold, then the number of
+critical points of `f` is the sum of the numbers of critical points of its restrictions to the
+`U i`. -/
+theorem totalCriticalCount_eq_sum {ι : Type*} [Fintype ι] (U : ι → Opens M)
+    (hd : Pairwise (Disjoint on U)) (hU : ⨆ i, U i = ⊤) :
+    totalCriticalCount I f = ∑ i, totalCriticalCount I (f ∘ (Subtype.val : U i → M)) := by
+  have hd' : Pairwise (Disjoint on fun i ↦ criticalPoints I f ∩ U i) := fun i j hij ↦
+    (Opens.coe_disjoint.mpr (hd hij)).inter_left' _ |>.inter_right' _
+  simp_rw [totalCriticalCount_comp_subtypeVal, ← finsum_eq_sum_of_fintype,
+    ← encard_iUnion_of_finite hd', ← inter_iUnion, ← Opens.coe_iSup, hU, Opens.coe_top,
+    inter_univ, totalCriticalCount_def]
+
+/-- **The component sum formula for critical points.** If `M` is locally connected with finitely
+many connected components, for instance compact and boundaryless, then the number of critical
+points of `f` is the sum over the components `C` of the numbers of critical points of the
+restrictions of `f` to `C`, each component carrying its structure as an open submanifold. -/
+theorem totalCriticalCount_eq_sum_connectedComponents [LocallyConnectedSpace M]
+    [Fintype (ConnectedComponents M)] :
+    totalCriticalCount I f =
+      ∑ C : ConnectedComponents M, totalCriticalCount I (f ∘ (Subtype.val : C.opens → M)) :=
+  totalCriticalCount_eq_sum _ ConnectedComponents.pairwise_disjoint_opens
+    ConnectedComponents.iSup_opens
 
 /-- A continuous function on a compact boundaryless manifold with at least two points has at least
 two critical points: a point of maximum and a point of minimum, which can coincide only for a

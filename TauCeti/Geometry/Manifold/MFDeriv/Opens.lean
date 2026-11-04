@@ -15,7 +15,9 @@ target maps the tangent image by the canonical tangent-space equivalence. These 
 pointwise conditions on tangent images be checked in open submanifolds. Since the differential of
 the inclusion of an open subset is the identity of the model space, restricting a map to an open
 source, or following a map into an open target by the inclusion, does not change its differential
-applied to a tangent vector.
+applied to a tangent vector. Differentiability itself is local, so a map and its restriction to
+an open source have vanishing differentials at the same points, with no differentiability
+assumption.
 -/
 
 public section
@@ -71,5 +73,25 @@ theorem mfderiv_subtype_val_comp_apply {U : Opens M} {f : N → U} {x : N}
   rw [mfderiv_comp x (contMDiff_subtype_val.mdifferentiableAt one_ne_zero) hf,
     ContinuousLinearMap.comp_apply, mfderiv_subtype_val]
   exact tangentSpaceOpenEquiv_apply _ _
+
+/-- A map is differentiable at a point of an open subset exactly when its restriction to that
+subset is. -/
+theorem mdifferentiableAt_comp_subtype_val_iff {U : Opens N} {f : N → M} {x : U} :
+    MDifferentiableAt J I (f ∘ (Subtype.val : U → N)) x ↔ MDifferentiableAt J I f (x : N) :=
+  (differentiableWithinAt_localInvariantProp.liftPropAt_iff_comp_subtype_val f x).symm
+
+/-- The differential of a map vanishes at a point of an open subset exactly when the differential
+of its restriction to that subset does. No differentiability is assumed: where the map is not
+differentiable, neither is its restriction, and both differentials are zero by convention. -/
+theorem mfderiv_comp_subtype_val_eq_zero_iff {U : Opens N} {f : N → M} {x : U} :
+    mfderiv J I (f ∘ (Subtype.val : U → N)) x = 0 ↔ mfderiv J I f (x : N) = 0 := by
+  by_cases hf : MDifferentiableAt J I f (x : N)
+  · simp only [ContinuousLinearMap.ext_iff, zero_apply,
+      mfderiv_comp_subtype_val_apply hf]
+    -- The tangent spaces at `x` in `U` and at `(x : N)` in `N` are both the model space `E'`.
+    exact Iff.rfl
+  · rw [mfderiv_zero_of_not_mdifferentiableAt hf,
+      mfderiv_zero_of_not_mdifferentiableAt (mdifferentiableAt_comp_subtype_val_iff.not.mpr hf)]
+    simp
 
 end TauCeti.Manifold
