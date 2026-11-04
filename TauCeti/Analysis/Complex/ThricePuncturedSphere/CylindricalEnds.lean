@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.Complex.UnitDisc.Cylinder
 public import TauCeti.AlgebraicTopology.ThricePuncturedSphere.CompactCore
+public import Mathlib.Analysis.SpecialFunctions.Complex.CircleMap
 public import Mathlib.Analysis.SpecialFunctions.ExpDeriv
 import Mathlib.Analysis.Calculus.Deriv.Mul
 
@@ -79,6 +80,38 @@ def cylindricalEndLift : Puncture → ℂ → ℂ
 /-- The negative end at infinity has exponential affine lift. -/
 @[simp] theorem cylindricalEndLift_inf : cylindricalEndLift inf =
     fun z ↦ 2 * Complex.exp (-(2 * (Real.pi : ℂ)) * z) := (rfl)
+
+/-- The end lift at zero maps the circle `s = const` of the cylinder clockwise onto the circle
+of radius `exp (-2πs) / 2` about `0`. -/
+theorem cylindricalEndLift_zero_eq_circleMap (s t : ℝ) :
+    zero.cylindricalEndLift (s + t * Complex.I) =
+      circleMap 0 (Real.exp (-(2 * Real.pi * s)) / 2) (-(2 * Real.pi * t)) := by
+  simp only [circleMap, cylindricalEndLift_zero, Complex.ofReal_div, Complex.ofReal_mul,
+    Complex.ofReal_exp, Complex.ofReal_neg, Complex.ofReal_ofNat, zero_add]
+  rw [div_mul_eq_mul_div, ← Complex.exp_add]
+  ring_nf
+
+/-- The end lift at one maps the circle `s = const` of the cylinder clockwise onto the circle
+of radius `exp (-2πs) / 2` about `1`, starting at the angle `π`. -/
+theorem cylindricalEndLift_one_eq_circleMap (s t : ℝ) :
+    one.cylindricalEndLift (s + t * Complex.I) =
+      circleMap 1 (Real.exp (-(2 * Real.pi * s)) / 2) (Real.pi - 2 * Real.pi * t) := by
+  simp only [circleMap, cylindricalEndLift_one, Complex.ofReal_div, Complex.ofReal_mul,
+    Complex.ofReal_exp, Complex.ofReal_neg, Complex.ofReal_sub, Complex.ofReal_ofNat]
+  rw [sub_mul, Complex.exp_sub, Complex.exp_pi_mul_I, show Complex.exp (-(2 * ↑Real.pi) *
+    (↑s + ↑t * Complex.I)) = Complex.exp (-(2 * ↑Real.pi * ↑s)) /
+      Complex.exp (2 * ↑Real.pi * ↑t * Complex.I) by rw [← Complex.exp_sub]; ring_nf]
+  ring
+
+/-- The end lift at infinity maps the circle `s = const` of the cylinder clockwise onto the
+circle of radius `2 exp (-2πs)` about `0`. -/
+theorem cylindricalEndLift_inf_eq_circleMap (s t : ℝ) :
+    inf.cylindricalEndLift (s + t * Complex.I) =
+      circleMap 0 (2 * Real.exp (-(2 * Real.pi * s))) (-(2 * Real.pi * t)) := by
+  simp only [circleMap, cylindricalEndLift_inf, Complex.ofReal_mul, Complex.ofReal_exp,
+    Complex.ofReal_neg, Complex.ofReal_ofNat, zero_add]
+  rw [mul_assoc, ← Complex.exp_add]
+  ring_nf
 
 /-- The negative lift is the inverse infinity chart applied to the positive exponential. -/
 theorem cylindricalEndLift_inf_eq (z : ℂ) :

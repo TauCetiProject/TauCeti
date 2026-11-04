@@ -38,10 +38,10 @@ Hence, for `R ≥ 2`, where the perturbation is `H_q(t) dt` along the boundary c
 
 `∫_{S_R} E(u) = A_{H₀}(x₀) + A_{H₁}(x₁) - A_{H_∞}(x_∞) - ∫_{S_R} R_K(u)`
 
-(`SymplecticForm.integral_floerEnergyDensity_pairOfPantsPerturbation_truncation_eq`). The
-actions are those of the end loops capped by the cones `r x(t)`, the canonical caps in a vector
-space, so no class `A` of spheres appears. If the energy density of `u` is nonnegative, as it is
-for solutions of the Floer equation `(du - X_K)^{0,1} = 0` with respect to almost complex
+(`integral_floerEnergyDensity_pairOfPantsPerturbation_truncation_eq_sum_hamiltonianAction`).
+The actions are those of the end loops capped by the cones `r x(t)`, the canonical caps in a
+vector space, so no class `A` of spheres appears. If the energy density of `u` is nonnegative, as
+it is for solutions of the Floer equation `(du - X_K)^{0,1} = 0` with respect to almost complex
 structures tamed by `ω` (`TauCeti.SymplecticForm.floerEnergyDensity_nonneg`), and the actions of
 the end loops converge to `A_q`, then the energy of `u` over all of `S` is
 
@@ -66,8 +66,8 @@ energy density from inputs of actions `A₀, A₁` to an output of action `A_∞
 
 * `SymplecticForm.integral_symplecticForm_fderiv_truncation`: the symplectic area over the
   truncation is the signed sum of the loop areas of the end loops.
-* `SymplecticForm.integral_floerEnergyDensity_pairOfPantsPerturbation_truncation_eq`: the energy
-  identity on the truncation in terms of the actions of the end loops.
+* `integral_floerEnergyDensity_pairOfPantsPerturbation_truncation_eq_sum_hamiltonianAction`:
+  the energy identity on the truncation in terms of the actions of the end loops.
 * `SymplecticForm.lintegral_floerEnergyDensity_pairOfPantsPerturbation_eq`: the energy of a map
   with nonnegative energy density is `A₀ + A₁ - A_∞ - ∫_S R_K`.
 * `SymplecticForm.hamiltonianAction_pairOfPantsEndLoop_inf_le`,
@@ -117,35 +117,6 @@ variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V] {H : Puncture �
 
 section Area
 
-/-- The end loops of the ends at `0`, `1` and `∞` at signed longitudinal coordinate `R` run
-clockwise around the circles of radius `r = exp (-2πR) / 2` about `0` and `1` and of radius
-`ρ = 2 exp (2πR)` about `0`. -/
-private theorem cylindricalEndLift_eq_circleMap (R t : ℝ) :
-    zero.cylindricalEndLift (↑(zero.endSign * R) + ↑t * Complex.I) =
-        circleMap 0 (Real.exp (-(2 * π * R)) / 2) (0 - 2 * π * t) ∧
-      one.cylindricalEndLift (↑(one.endSign * R) + ↑t * Complex.I) =
-        circleMap 1 (Real.exp (-(2 * π * R)) / 2) (π - 2 * π * t) ∧
-      inf.cylindricalEndLift (↑(inf.endSign * R) + ↑t * Complex.I) =
-        circleMap 0 (2 * Real.exp (2 * π * R)) (0 - 2 * π * t) := by
-  refine ⟨?_, ?_, ?_⟩
-  · simp only [circleMap, endSign_zero, cylindricalEndLift_zero, Complex.ofReal_div,
-      Complex.ofReal_mul, Complex.ofReal_exp, Complex.ofReal_neg, Complex.ofReal_ofNat, zero_add,
-      zero_sub, one_mul]
-    rw [div_mul_eq_mul_div, ← Complex.exp_add]
-    ring_nf
-  · simp only [circleMap, endSign_one, cylindricalEndLift_one, Complex.ofReal_div,
-      Complex.ofReal_mul, Complex.ofReal_exp, Complex.ofReal_neg, Complex.ofReal_sub,
-      Complex.ofReal_ofNat, one_mul]
-    rw [sub_mul, Complex.exp_sub, Complex.exp_pi_mul_I, show Complex.exp (-(2 * ↑π) * (↑R + ↑t *
-      Complex.I)) = Complex.exp (-(2 * ↑π * ↑R)) / Complex.exp (2 * ↑π * ↑t * Complex.I) by
-      rw [← Complex.exp_sub]; ring_nf]
-    ring
-  · simp only [circleMap, endSign_inf, cylindricalEndLift_inf, Complex.ofReal_mul,
-      Complex.ofReal_exp, Complex.ofReal_neg, Complex.ofReal_ofNat, zero_add, zero_sub,
-      neg_one_mul]
-    rw [mul_assoc, ← Complex.exp_add]
-    ring_nf
-
 /-- A map that is `C²` on `S` may be cut off near `1`: there is a map that is `C²` away from `0`,
 vanishes near every point of the open disc of radius `r / 2` about `1`, and agrees with the
 given map near every point at distance more than `3r / 4` from `1`. -/
@@ -190,21 +161,11 @@ private theorem circleTerm_congr (ω : SymplecticForm V) {v v' : ℂ → V} {c :
     circleTerm ω v c s = circleTerm ω v' c s := by
   simp only [circleTerm, h]
 
-/-- The distance from a point of a circle to its center is the radius. -/
-private theorem norm_circleMap_sub_center (c : ℂ) {s : ℝ} (hs : 0 ≤ s) (θ : ℝ) :
-    ‖circleMap c s θ - c‖ = s := by
-  rw [circleMap_sub_center, norm_circleMap_zero, abs_of_nonneg hs]
-
 /-- A lower bound for the norm in terms of the distance to `1`. -/
 private theorem one_sub_norm_sub_one_le (w : ℂ) : 1 - ‖w - 1‖ ≤ ‖w‖ := by
   have h := norm_sub_norm_le (1 : ℂ) w
   rw [norm_sub_rev, norm_one] at h
   linarith
-
-/-- A lower bound for the distance to `1` in terms of the norm. -/
-private theorem norm_sub_one_le_norm_sub_one (w : ℂ) : ‖w‖ - 1 ≤ ‖w - 1‖ := by
-  have h := norm_sub_norm_le w 1
-  rwa [norm_one] at h
 
 /-- The radii `r = exp (-2πR) / 2` and `ρ = 2 exp (2πR)` of the boundary circles of the
 truncation satisfy `0 < r ≤ 1/2` and `2 ≤ ρ` for `R ≥ 0`. -/
@@ -241,9 +202,9 @@ private theorem setIntegral_annulus_eq {r ρ : ℝ} (hr : 0 < r) (hr₂ : r ≤ 
     · rintro (⟨⟨h₁, -⟩, h₃⟩ | ⟨-, h₂⟩ | h)
       · exact ⟨h₁, h₃⟩
       · exact ⟨by linarith [one_sub_norm_sub_one_le w],
-          by linarith [norm_sub_one_le_norm_sub_one w]⟩
+          by linarith [norm_sub_norm_le w 1, norm_one (α := ℂ)]⟩
       · exact ⟨by linarith [one_sub_norm_sub_one_le w],
-          by linarith [norm_sub_one_le_norm_sub_one w]⟩
+          by linarith [norm_sub_norm_le w 1, norm_one (α := ℂ)]⟩
   have hDm : MeasurableSet D :=
     ((isClosed_le continuous_const hcont).inter (isClosed_le hcont continuous_const)).measurableSet
   -- The truncation meets the closed annulus about `1` only in the circle of radius `r` about `1`,
@@ -276,6 +237,16 @@ private theorem loopArea_cylindricalEndLift_eq (ω : SymplecticForm V) {v : ℂ 
         -(1 / 2) * circleTerm ω v 1 (Real.exp (-(2 * π * R)) / 2) ∧
       ω.loopArea (fun t ↦ v (inf.cylindricalEndLift (↑(inf.endSign * R) + ↑t * Complex.I))) =
         -(1 / 2) * circleTerm ω v 0 (2 * Real.exp (2 * π * R)) := by
+  have h₀ (t : ℝ) : zero.cylindricalEndLift (↑(zero.endSign * R) + ↑t * Complex.I) =
+      circleMap 0 (Real.exp (-(2 * π * R)) / 2) (0 - 2 * π * t) := by
+    rw [endSign_zero, one_mul, cylindricalEndLift_zero_eq_circleMap, zero_sub]
+  have h₁ (t : ℝ) : one.cylindricalEndLift (↑(one.endSign * R) + ↑t * Complex.I) =
+      circleMap 1 (Real.exp (-(2 * π * R)) / 2) (π - 2 * π * t) := by
+    rw [endSign_one, one_mul, cylindricalEndLift_one_eq_circleMap]
+  have hinf (t : ℝ) : inf.cylindricalEndLift (↑(inf.endSign * R) + ↑t * Complex.I) =
+      circleMap 0 (2 * Real.exp (2 * π * R)) (0 - 2 * π * t) := by
+    rw [endSign_inf, cylindricalEndLift_inf_eq_circleMap, zero_sub, neg_one_mul, mul_neg,
+      neg_neg]
   obtain ⟨hr, hr₂, hρ⟩ := radii_bounds hR
   set r : ℝ := Real.exp (-(2 * π * R)) / 2
   set ρ : ℝ := 2 * Real.exp (2 * π * R)
@@ -284,20 +255,20 @@ private theorem loopArea_cylindricalEndLift_eq (ω : SymplecticForm V) {v : ℂ 
     (hv _ (norm_pos_iff.1 (hc θ).1) (sub_ne_zero.1 (norm_pos_iff.1 (hc θ).2))).differentiableAt
       (by norm_num)
   refine ⟨?_, ?_, ?_⟩
-  · simp only [fun t ↦ (cylindricalEndLift_eq_circleMap R t).1]
+  · simp only [h₀]
     refine ω.loopArea_circleMap_sub_two_pi_mul 0 r 0 (hdiff fun θ ↦ ?_)
-    have h := norm_circleMap_sub_center 0 hr.le θ
+    have h := mem_sphere_iff_norm.1 (circleMap_mem_sphere 0 hr.le θ)
     rw [sub_zero] at h
     exact ⟨by linarith, by linarith [one_sub_norm_sub_one_le (circleMap 0 r θ)]⟩
-  · simp only [fun t ↦ (cylindricalEndLift_eq_circleMap R t).2.1]
+  · simp only [h₁]
     refine ω.loopArea_circleMap_sub_two_pi_mul 1 r π (hdiff fun θ ↦ ?_)
-    have h := norm_circleMap_sub_center 1 hr.le θ
+    have h := mem_sphere_iff_norm.1 (circleMap_mem_sphere 1 hr.le θ)
     exact ⟨by linarith [one_sub_norm_sub_one_le (circleMap 1 r θ)], by linarith⟩
-  · simp only [fun t ↦ (cylindricalEndLift_eq_circleMap R t).2.2]
+  · simp only [hinf]
     refine ω.loopArea_circleMap_sub_two_pi_mul 0 ρ 0 (hdiff fun θ ↦ ?_)
-    have h := norm_circleMap_sub_center 0 (by linarith : 0 ≤ ρ) θ
+    have h := mem_sphere_iff_norm.1 (circleMap_mem_sphere 0 (by linarith : 0 ≤ ρ) θ)
     rw [sub_zero] at h
-    exact ⟨by linarith, by linarith [norm_sub_one_le_norm_sub_one (circleMap 0 ρ θ)]⟩
+    exact ⟨by linarith, by linarith [norm_sub_norm_le (circleMap 0 ρ θ) 1, norm_one (α := ℂ)]⟩
 
 variable [FiniteDimensional ℝ V]
 
@@ -321,19 +292,20 @@ private theorem integral_truncation_complex (ω : SymplecticForm V) {v : ℂ →
       circleTerm ω vc c s = circleTerm ω v c s :=
     circleTerm_congr ω fun θ ↦ (hvcv _ (hc θ)).eq_of_nhds
   have hC₀ : circleTerm ω vc 0 r = circleTerm ω v 0 r := hvceq fun θ ↦ by
-    have h := norm_circleMap_sub_center 0 hr.le θ
+    have h := mem_sphere_iff_norm.1 (circleMap_mem_sphere 0 hr.le θ)
     rw [sub_zero] at h
     linarith [one_sub_norm_sub_one_le (circleMap 0 r θ)]
   have hCρ : circleTerm ω vc 0 ρ = circleTerm ω v 0 ρ := hvceq fun θ ↦ by
-    have h := norm_circleMap_sub_center 0 (by linarith : 0 ≤ ρ) θ
+    have h := mem_sphere_iff_norm.1 (circleMap_mem_sphere 0 (by linarith : 0 ≤ ρ) θ)
     rw [sub_zero] at h
-    linarith [norm_sub_one_le_norm_sub_one (circleMap 0 ρ θ)]
+    linarith [norm_sub_norm_le (circleMap 0 ρ θ) 1, norm_one (α := ℂ)]
   have hC₁ : circleTerm ω vc 1 r = circleTerm ω v 1 r := hvceq fun θ ↦ by
-    rw [norm_circleMap_sub_center 1 hr.le θ]
+    rw [mem_sphere_iff_norm.1 (circleMap_mem_sphere 1 hr.le θ)]
     linarith
   have hCin : circleTerm ω vc 1 (r / 4) = 0 := by
     have hz (θ : ℝ) : vc (circleMap 1 (r / 4) θ) = 0 :=
-      (hvc₀ _ (by rw [norm_circleMap_sub_center 1 (by positivity) θ]; linarith)).eq_of_nhds
+      (hvc₀ _ (by
+        rw [mem_sphere_iff_norm.1 (circleMap_mem_sphere 1 (by positivity) θ)]; linarith)).eq_of_nhds
     simp [circleTerm, hz]
   -- Stokes' formula on the annulus `r ≤ ‖w‖ ≤ ρ` and on the annulus `r / 4 ≤ ‖w - 1‖ ≤ r`.
   set f : ℂ → ℝ := fun w ↦ ω (fderiv ℝ vc w 1) (fderiv ℝ vc w Complex.I)
@@ -391,7 +363,7 @@ theorem integral_symplecticForm_fderiv_truncation (ω : SymplecticForm V) {u : �
     simp only [mem_ofPred_eq, ContinuousLinearEquiv.symm_apply_apply]
     exact ⟨h₀, h₁⟩
   have hdu {w : ℂ} (h₀ : w ≠ 0) (h₁ : w ≠ 1) : ContDiffAt ℝ 2 u (Complex.equivRealProdCLM w) :=
-    hu.contDiffAt (isOpen_puncturedSphere.mem_nhds (hmem h₀ h₁))
+    hu.contDiffAt (isOpen_equivRealProdCLM_symm_ne_zero_and_ne_one.mem_nhds (hmem h₀ h₁))
   have hv (w : ℂ) (h₀ : w ≠ 0) (h₁ : w ≠ 1) : ContDiffAt ℝ 2 (u ∘ Complex.equivRealProdCLM) w :=
     (hdu h₀ h₁).comp w Complex.equivRealProdCLM.contDiff.contDiffAt
   -- Change variables along the measure-preserving identification `ℂ ≃ ℝ × ℝ`.
@@ -424,8 +396,9 @@ truncation `S_R` is the signed sum of the Hamiltonian actions of its end loops a
 the integrated curvature:
 
 `∫_{S_R} E(u) = A_{H₀}(x₀) + A_{H₁}(x₁) - A_{H_∞}(x_∞) - ∫_{S_R} R_K(u)`. -/
-theorem integral_floerEnergyDensity_pairOfPantsPerturbation_truncation_eq (ω : SymplecticForm V)
-    (hH : ∀ q, Periodic (H q) 1) (hHs : ∀ q, ContDiff ℝ 1 (uncurry (H q))) {u : ℝ × ℝ → V}
+theorem integral_floerEnergyDensity_pairOfPantsPerturbation_truncation_eq_sum_hamiltonianAction
+    (ω : SymplecticForm V) (hH : ∀ q, Periodic (H q) 1)
+    (hHs : ∀ q, ContDiff ℝ 1 (uncurry (H q))) {u : ℝ × ℝ → V}
     (hu : ContDiffOn ℝ 2 u {z : ℝ × ℝ | Complex.equivRealProdCLM.symm z ≠ 0 ∧
       Complex.equivRealProdCLM.symm z ≠ 1})
     {R : ℝ} (hR : 2 ≤ R) :
@@ -445,7 +418,7 @@ theorem integral_floerEnergyDensity_pairOfPantsPerturbation_truncation_eq (ω : 
   simp only [hamiltonianAction_def, pairOfPantsEndLoop_apply, mul_add, Finset.sum_add_distrib]
 
 /-- **The action bound for the output end at a finite truncation.** Under the hypotheses of
-`TauCeti.SymplecticForm.integral_floerEnergyDensity_pairOfPantsPerturbation_truncation_eq`, if
+`integral_floerEnergyDensity_pairOfPantsPerturbation_truncation_eq_sum_hamiltonianAction`, if
 the Floer energy density of `u` is nonnegative on `S`, as it is for solutions of the Floer
 equation with respect to almost complex structures tamed by `ω`, and the end Hamiltonians are
 bounded, `|H_q| ≤ B_q`, then for every `R ≥ 2` the action of the output end loop is at most the
@@ -476,25 +449,12 @@ theorem hamiltonianAction_pairOfPantsEndLoop_inf_le (ω : SymplecticForm V)
     endSign_inf] at h ⊢
   linarith [(abs_le.1 h).2]
 
-/-- The truncations exhaust the thrice-punctured sphere. -/
-private theorem iUnion_preimage_truncation :
-    ⋃ R : ℝ, Complex.equivRealProdCLM.symm ⁻¹' truncation R =
-      {z : ℝ × ℝ | Complex.equivRealProdCLM.symm z ≠ 0 ∧ Complex.equivRealProdCLM.symm z ≠ 1} := by
-  ext z
-  simp only [mem_iUnion, mem_preimage, mem_truncation, mem_ofPred_eq]
-  refine ⟨fun ⟨_, h₀, h₁, _⟩ ↦ ⟨h₀, h₁⟩, fun ⟨h₀, h₁⟩ ↦ ⟨∑ q : Puncture,
-    |q.endSign * (q.endCoord (Complex.equivRealProdCLM.symm z)).re|, h₀, h₁, fun q ↦ ?_⟩⟩
-  exact (le_abs_self _).trans (Finset.single_le_sum (f := fun q : Puncture ↦
-    |q.endSign * (q.endCoord (Complex.equivRealProdCLM.symm z)).re|)
-    (fun q _ ↦ abs_nonneg _) (Finset.mem_univ q))
-
 /-- **The energy of a pair of pants.** Under the hypotheses of
-`TauCeti.SymplecticForm.integral_floerEnergyDensity_pairOfPantsPerturbation_truncation_eq`,
+`integral_floerEnergyDensity_pairOfPantsPerturbation_truncation_eq_sum_hamiltonianAction`,
 suppose that the Floer energy density of `u` is nonnegative on `S`, as it is for solutions of the
 Floer equation with respect to almost complex structures tamed by `ω`, and that the end
 Hamiltonians are bounded. If the actions of the end loops of `u` converge to `A_q` as `R → ∞`,
-then the curvature of the perturbation along `u` is integrable on `S` and the Floer energy of `u`
-over `S` is
+then the Floer energy of `u` over `S` is
 
 `E(u) = A₀ + A₁ - A_∞ - ∫_S R_K(u)`. -/
 theorem lintegral_floerEnergyDensity_pairOfPantsPerturbation_eq (ω : SymplecticForm V)
@@ -533,17 +493,18 @@ theorem lintegral_floerEnergyDensity_pairOfPantsPerturbation_eq (ω : Symplectic
   have hTm (R : ℝ) : MeasurableSet (T R) :=
     ((isCompact_truncation R).isClosed.preimage
       Complex.equivRealProdCLM.symm.continuous).measurableSet
-  have hmono : Monotone T := fun R R' h z hz ↦ mem_truncation.2
-    ⟨(mem_truncation.1 hz).1, (mem_truncation.1 hz).2.1,
-      fun q ↦ ((mem_truncation.1 hz).2.2 q).trans h⟩
-  have hunion : ⋃ R, T R = S := iUnion_preimage_truncation
+  have hmono : Monotone T := fun _ _ h ↦ preimage_mono (truncation_mono h)
+  have hunion : ⋃ R, T R = S := by
+    simp only [T, ← preimage_iUnion, iUnion_truncation]
+    rfl
   have hTS (R : ℝ) : T R ⊆ S := hunion ▸ subset_iUnion T R
+  have hSo : IsOpen S := isOpen_equivRealProdCLM_symm_ne_zero_and_ne_one
   -- The curvature is integrable on `S`, so its integrals over the truncations converge.
   have hκ : IntegrableOn κ S := by
-    refine ⟨(ω.continuousOn_hamiltonianCurvature_comp isOpen_puncturedSphere
-      hu.continuousOn (contDiffOn_pairOfPantsPerturbation hH hHs 1)
+    refine ⟨(ω.continuousOn_hamiltonianCurvature_comp hSo hu.continuousOn
+      (contDiffOn_pairOfPantsPerturbation hH hHs 1)
       (contDiffOn_pairOfPantsPerturbation hH hHs Complex.I)).aestronglyMeasurable
-      isOpen_puncturedSphere.measurableSet, ?_⟩
+      hSo.measurableSet, ?_⟩
     refine ((setLIntegral_le_lintegral _ _).trans
       (lintegral_enorm_hamiltonianCurvature_pairOfPantsPerturbation_le ω hH hHs hB u)).trans_lt ?_
     exact ENNReal.sum_lt_top.2 fun q _ ↦ ENNReal.ofReal_lt_top
@@ -555,13 +516,14 @@ theorem lintegral_floerEnergyDensity_pairOfPantsPerturbation_eq (ω : Symplectic
       (𝓝 (∑ q, q.endSign * A q - ∫ z in S, κ z)) := by
     refine ((tendsto_finsetSum _ fun q _ ↦ (hA q).const_mul q.endSign).sub hκlim).congr' ?_
     filter_upwards [eventually_ge_atTop 2] with R hR
-    exact (integral_floerEnergyDensity_pairOfPantsPerturbation_truncation_eq ω hH hHs hu hR).symm
+    exact (integral_floerEnergyDensity_pairOfPantsPerturbation_truncation_eq_sum_hamiltonianAction
+      ω hH hHs hu hR).symm
   -- They also converge to the energy over `S`, by monotone convergence.
   have hlim : Tendsto (fun R ↦ ∫⁻ z in T R, ENNReal.ofReal (E z)) atTop
       (𝓝 (∫⁻ z in S, ENNReal.ofReal (E z))) := by
     have h := tendsto_measure_iUnion_atTop
       (μ := volume.withDensity fun z ↦ ENNReal.ofReal (E z)) hmono
-    rw [hunion, withDensity_apply _ isOpen_puncturedSphere.measurableSet] at h
+    rw [hunion, withDensity_apply _ hSo.measurableSet] at h
     simpa only [comp_def, withDensity_apply _ (hTm _)] using h
   refine tendsto_nhds_unique hlim (((ENNReal.continuous_ofReal.tendsto _).comp hElim).congr' ?_)
   filter_upwards with R
@@ -572,9 +534,9 @@ theorem lintegral_floerEnergyDensity_pairOfPantsPerturbation_eq (ω : Symplectic
 
 /-- **The action bound for the output end.** Under the hypotheses of
 `TauCeti.SymplecticForm.hamiltonianAction_pairOfPantsEndLoop_inf_le`, if the actions of the end
-loops of `u` converge to `A_q` as `R → ∞`, then `A_∞ ≤ A₀ + A₁ + B₀ + B₁ + B_∞`. This is the
-support condition on the coefficients of the pair-of-pants product required by
-`TauCeti.NovikovModule.kernelProduct`, with constant `B₀ + B₁ + B_∞`. -/
+loops of `u` converge to `A_q` as `R → ∞`, then `A_∞ ≤ A₀ + A₁ + B₀ + B₁ + B_∞`. This has the
+shape of the support hypothesis `F₀ ≤ F₁ + F₂ + C` of `TauCeti.NovikovModule.kernelProduct`, with
+the actions as filtrations and `C = B₀ + B₁ + B_∞`. -/
 theorem hamiltonianAction_inf_le_of_tendsto (ω : SymplecticForm V)
     (hH : ∀ q, Periodic (H q) 1) (hHs : ∀ q, ContDiff ℝ 1 (uncurry (H q)))
     {B : Puncture → ℝ} (hB : ∀ q t x, |H q t x| ≤ B q) {u : ℝ × ℝ → V}

@@ -115,6 +115,34 @@ private theorem contDiffAt_pairOfPantsPerturbation_prod (hH : ∀ q, Periodic (H
     exact h
   exact h'.contDiffAt
 
+end SymplecticForm
+
+namespace Floer
+
+variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V] {H : Puncture → ℝ → V → ℝ}
+
+/-- The components of the perturbation in real coordinates are `C¹` jointly in the domain point
+of `S` and the target point. -/
+theorem contDiffOn_pairOfPantsPerturbation (hH : ∀ q, Periodic (H q) 1)
+    (hHs : ∀ q, ContDiff ℝ 1 (uncurry (H q))) (v : ℂ) :
+    ContDiffOn ℝ 1
+      (uncurry fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x v)
+      ({z : ℝ × ℝ | Complex.equivRealProdCLM.symm z ≠ 0 ∧
+        Complex.equivRealProdCLM.symm z ≠ 1} ×ˢ univ) := by
+  rintro ⟨z, x⟩ ⟨hz, -⟩
+  have hK := SymplecticForm.contDiffAt_pairOfPantsPerturbation_prod hH hHs hz x
+  exact ((hK.comp (z, x)
+    ((Complex.equivRealProdCLM.symm.contDiff.contDiffAt.comp (z, x) contDiffAt_fst).prodMk
+      contDiffAt_snd)).clm_apply contDiffAt_const).contDiffWithinAt
+
+end Floer
+
+namespace SymplecticForm
+
+open Floer
+
+variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V] {H : Puncture → ℝ → V → ℝ}
+
 /-- The components of the perturbation in real coordinates are differentiable in the domain
 point, at points of `S`. -/
 private theorem differentiableAt_pairOfPantsPerturbation_domain (hH : ∀ q, Periodic (H q) 1)
@@ -377,13 +405,6 @@ collar and the cylindrical part of the end inside the truncation `S_R`, over one
 private noncomputable def endPiece (q : Puncture) (R : ℝ) : Set (ℝ × ℝ) :=
   {s | 1 ≤ q.endSign * s ∧ q.endSign * s ≤ R} ×ˢ Ico (-1 / 2) (1 / 2)
 
-/-- The points of `S`, in real coordinates, form an open set. -/
-theorem isOpen_puncturedSphere :
-    IsOpen {z : ℝ × ℝ | Complex.equivRealProdCLM.symm z ≠ 0 ∧
-      Complex.equivRealProdCLM.symm z ≠ 1} :=
-  (isOpen_ne_fun Complex.equivRealProdCLM.symm.continuous continuous_const).inter
-    (isOpen_ne_fun Complex.equivRealProdCLM.symm.continuous continuous_const)
-
 /-- In complex coordinates the end chart is the end lift. -/
 private theorem equivRealProdCLM_symm_endChart (q : Puncture) (z : ℝ × ℝ) :
     Complex.equivRealProdCLM.symm (endChart q z) =
@@ -453,21 +474,6 @@ private theorem disjoint_image_endPiece {R : ℝ} {q r : Puncture} (hqr : q ≠ 
   exact cylindricalEndLift_ne_cylindricalEndLift hqr (z := Complex.equivRealProdCLM.symm a)
     (z' := Complex.equivRealProdCLM.symm b) (by simp; linarith) (by simp; linarith) h.symm
 
-omit [FiniteDimensional ℝ V] in
-/-- The components of the perturbation in real coordinates are `C¹` jointly in the domain point
-of `S` and the target point. -/
-theorem contDiffOn_pairOfPantsPerturbation (hH : ∀ q, Periodic (H q) 1)
-    (hHs : ∀ q, ContDiff ℝ 1 (uncurry (H q))) (v : ℂ) :
-    ContDiffOn ℝ 1
-      (uncurry fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x v)
-      ({z : ℝ × ℝ | Complex.equivRealProdCLM.symm z ≠ 0 ∧
-        Complex.equivRealProdCLM.symm z ≠ 1} ×ˢ univ) := by
-  rintro ⟨z, x⟩ ⟨hz, -⟩
-  have hK := contDiffAt_pairOfPantsPerturbation_prod hH hHs hz x
-  exact ((hK.comp (z, x)
-    ((Complex.equivRealProdCLM.symm.contDiff.contDiffAt.comp (z, x) contDiffAt_fst).prodMk
-      contDiffAt_snd)).clm_apply contDiffAt_const).contDiffWithinAt
-
 /-- **The energy identity over a rectangle of an end.** Over the image in `S` of a rectangle
 `[a₁, b₁] × [-1/2, 1/2)` of the part `±s > 1/2` of the end `q`, the Floer energy is the
 symplectic area, plus the integrals of the Hamiltonian term `β(±s - 1) H_q(t)` over the outgoing
@@ -516,7 +522,7 @@ private theorem integral_floerEnergyDensity_image_endChart (ω : SymplecticForm 
     (hasFDerivAt_endChart q w).differentiableAt
   have hud {w : ℝ × ℝ} (hw : w ∈ U) : DifferentiableAt ℝ u (endChart q w) :=
     (hu.differentiableOn one_ne_zero _ (hS hw)).differentiableAt
-      (isOpen_puncturedSphere.mem_nhds (hS hw))
+      (isOpen_equivRealProdCLM_symm_ne_zero_and_ne_one.mem_nhds (hS hw))
   -- Change variables to the cylinder coordinates of the end, in each of the three integrals.
   have harea := ω.integral_floerEnergyDensity_image (Ks := fun _ _ ↦ 0) (Kt := fun _ _ ↦ 0)
     hmeas hinj (fun w _ => hφ w) (fun w _ => det_fderiv_endChart_nonneg q w)
@@ -640,13 +646,14 @@ theorem integrableOn_truncation_pairOfPantsPerturbation (ω : SymplecticForm V)
     fun z hz => ⟨(mem_truncation.1 hz).1, (mem_truncation.1 hz).2.1⟩
   have hKs := contDiffOn_pairOfPantsPerturbation hH hHs 1
   have hKt := contDiffOn_pairOfPantsPerturbation hH hHs Complex.I
-  have hdu := hu.continuousOn_fderiv_of_isOpen isOpen_puncturedSphere le_rfl
+  have hSo := isOpen_equivRealProdCLM_symm_ne_zero_and_ne_one
+  have hdu := hu.continuousOn_fderiv_of_isOpen hSo le_rfl
   refine ⟨?_, ?_, ?_⟩
-  · exact ((ω.continuousOn_floerEnergyDensity isOpen_puncturedSphere hu hKs hKt).mono
+  · exact ((ω.continuousOn_floerEnergyDensity hSo hu hKs hKt).mono
       hTS).integrableOn_compact hT
   · exact ((ω.continuousOn_apply_comp (hdu.clm_apply continuousOn_const)
       (hdu.clm_apply continuousOn_const)).mono hTS).integrableOn_compact hT
-  · exact ((ω.continuousOn_hamiltonianCurvature_comp isOpen_puncturedSphere hu.continuousOn hKs
+  · exact ((ω.continuousOn_hamiltonianCurvature_comp hSo hu.continuousOn hKs
       hKt).mono hTS).integrableOn_compact hT
 
 /-- **The energy identity on the truncated pair of pants.** Let `K` be the pair-of-pants

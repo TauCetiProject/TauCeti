@@ -40,7 +40,8 @@ coordinate on at most one end (`Puncture.endSign_mul_re_endCoord_nonpos`). Bound
 longitudinal coordinates by `R` cuts out the truncation `S_R` of the thrice-punctured sphere
 (`TauCeti.ThricePuncturedSphere.truncation`), a compact set
 (`TauCeti.ThricePuncturedSphere.isCompact_truncation`) over which integrals of data on `S` are
-taken.
+taken. The truncations increase with `R` (`TauCeti.ThricePuncturedSphere.truncation_mono`) and
+exhaust `S` (`TauCeti.ThricePuncturedSphere.iUnion_truncation`).
 
 These coordinates are what is needed to install data prescribed on the ends, such as the
 Hamiltonian terms `H(t) dt` of Floer perturbation data, as smooth data on the punctured sphere.
@@ -384,6 +385,27 @@ def truncation (R : ℝ) : Set ℂ :=
 theorem mem_truncation {R : ℝ} {w : ℂ} :
     w ∈ truncation R ↔ w ≠ 0 ∧ w ≠ 1 ∧ ∀ q : Puncture, q.endSign * (q.endCoord w).re ≤ R :=
   Iff.rfl
+
+/-- The truncations increase with `R`. -/
+theorem truncation_mono : Monotone truncation := fun _ _ h _ hw =>
+  ⟨hw.1, hw.2.1, fun q => (hw.2.2 q).trans h⟩
+
+/-- The truncations exhaust the thrice-punctured sphere `S = ℂ ∖ {0, 1}`. -/
+theorem iUnion_truncation : ⋃ R, truncation R = {w | w ≠ 0 ∧ w ≠ 1} := by
+  ext w
+  simp only [Set.mem_iUnion, mem_truncation, Set.mem_ofPred_eq]
+  refine ⟨fun ⟨_, h₀, h₁, _⟩ => ⟨h₀, h₁⟩, fun ⟨h₀, h₁⟩ =>
+    ⟨∑ q : Puncture, |q.endSign * (q.endCoord w).re|, h₀, h₁, fun q => ?_⟩⟩
+  exact (le_abs_self _).trans (Finset.single_le_sum (f := fun q : Puncture =>
+    |q.endSign * (q.endCoord w).re|) (fun q _ => abs_nonneg _) (Finset.mem_univ q))
+
+/-- The points of the thrice-punctured sphere `S = ℂ ∖ {0, 1}`, in the real coordinates
+`ℝ × ℝ ≃ ℂ`, form an open set. -/
+theorem isOpen_equivRealProdCLM_symm_ne_zero_and_ne_one :
+    IsOpen {z : ℝ × ℝ | Complex.equivRealProdCLM.symm z ≠ 0 ∧
+      Complex.equivRealProdCLM.symm z ≠ 1} :=
+  (isOpen_ne_fun Complex.equivRealProdCLM.symm.continuous continuous_const).inter
+    (isOpen_ne_fun Complex.equivRealProdCLM.symm.continuous continuous_const)
 
 /-- The truncation is cut out by norm inequalities: it is the closed annulus
 `exp (-2πR) / 2 ≤ ‖w‖ ≤ 2 exp (2πR)` with the open disc of radius `exp (-2πR) / 2` about `1`
