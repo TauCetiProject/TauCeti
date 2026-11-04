@@ -26,7 +26,9 @@ boundaryless manifold is complete (`isCompleteVectorField_of_compactSpace`).
   `TauCeti.flowOf_eq_globalFlow`: it agrees with the maximal flow `flowOf`.
 * `TauCeti.isMIntegralCurve_globalFlow`: its orbits are integral curves of the field.
 * `TauCeti.apply_globalFlow_eq_sub`: a function `f` with `df(v) = -1` on a band decreases at unit
-  speed along the flow while the flow stays in the band.
+  speed along the flow while the flow stays in the band;
+  `TauCeti.mvfderiv_apply_eq_one_of_eventually_apply_globalFlow_eq_add`: conversely, a function
+  translated at unit speed by the flow has `df(v) = 1`.
 * `TauCeti.globalFlow_eq_of_isMIntegralCurve`: every integral curve is an orbit.
 * `TauCeti.contMDiff_globalFlow_uncurry`: for a complete `C^n` field, the flow is jointly `C^n` in
   time and space.
@@ -131,6 +133,23 @@ theorem apply_globalFlow_eq_sub {f : M → ℝ} {a b : ℝ} (hf : Continuous f) 
   filter_upwards [nhdsWithin_le_nhds (Metric.ball_mem_nhds u hε)] with s hs
   simp only [S, mem_ofPred_eq]
   linarith [hconst s hs]
+
+/-- **A function translated by a flow has unit derivative along the field.** If `f` is
+differentiable at `x` and `f (ψ_t x) = f x + t` for all times `t` near `0`, where `ψ` is the flow
+of `v`, then `df_x(v x) = 1`. -/
+theorem mvfderiv_apply_eq_one_of_eventually_apply_globalFlow_eq_add {f : M → ℝ} {x : M}
+    (hf : MDifferentiableAt I 𝓘(ℝ) f x)
+    (hfx : ∀ᶠ t in 𝓝 0, f (globalFlow v hv hcomplete t x) = f x + t) :
+    mvfderiv I f x (v x) = 1 := by
+  have hf0 : MDifferentiableAt I 𝓘(ℝ) f (globalFlow v hv hcomplete 0 x) := by
+    rwa [Flow.map_zero_apply]
+  -- The derivative is written as a function of the base point, so that the base point `ψ_0 x`
+  -- can be rewritten to `x` without rewriting the type of the tangent vector `v (ψ_0 x)`.
+  have hd : HasDerivAt (fun t ↦ f (globalFlow v hv hcomplete t x))
+      ((fun y ↦ mvfderiv I f y (v y)) (globalFlow v hv hcomplete 0 x)) 0 :=
+    Manifold.hasDerivAt_comp_curve hf0 (isMIntegralCurve_globalFlow hv hcomplete x 0)
+  rw [Flow.map_zero_apply] at hd
+  exact (((hasDerivAt_id' (0 : ℝ)).const_add (f x)).congr_of_eventuallyEq hfx).unique hd |>.symm
 
 /-- Every integral curve of the field is an orbit of the flow. -/
 theorem globalFlow_eq_of_isMIntegralCurve {γ : ℝ → M} (hγ : IsMIntegralCurve γ v) (t : ℝ) :

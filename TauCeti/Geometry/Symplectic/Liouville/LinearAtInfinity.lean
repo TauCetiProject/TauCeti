@@ -25,7 +25,9 @@ to `e^τ`, where `τ ≥ 0` is the least time for which the backward Liouville f
 
 * `r(ψ_t y) = e^t` for `y ∈ ∂W` and `t ≥ 0`
   (`TauCeti.IsLiouvilleCompletion.liouvilleRadialCoordinate_flowOf`), and more generally
-  `r(ψ_t x) = e^t r(x)` for `x` outside the interior of `W` and `t ≥ 0`;
+  `r(ψ_t x) = e^t r(x)` for `x` outside the interior of `W` and `t ≥ 0`, and even for `t < 0`
+  as long as `log r(x) + t ≥ 0`
+  (`TauCeti.IsLiouvilleCompletion.log_liouvilleRadialCoordinate_flowOf`);
 * conversely `ψ_{-log r(x)}(x)` is the boundary point on the trajectory through such an `x`
   (`TauCeti.IsLiouvilleCompletion.flowOf_neg_log_liouvilleRadialCoordinate_mem_frontier`).
 
@@ -56,6 +58,8 @@ determined by `F` as soon as `W ≠ M` (`TauCeti.IsLinearAtInfinity.unique`).
   interior, under the backward Liouville flow `ψ_{-T}`.
 * `TauCeti.IsLiouvilleCompletion.liouvilleRadialCoordinate_flowOf_of_notMem_interior`:
   `r(ψ_t x) = e^t r(x)` on the cylindrical end, for `t ≥ 0`.
+* `TauCeti.IsLiouvilleCompletion.log_liouvilleRadialCoordinate_flowOf`:
+  `log r(ψ_t x) = log r(x) + t` on the cylindrical end, also for times `t < 0` that stay on it.
 * `TauCeti.IsLiouvilleCompletion.continuous_liouvilleRadialCoordinate`,
   `TauCeti.IsLiouvilleCompletion.isCompact_setOf_liouvilleRadialCoordinate_le`: `r` is continuous
   with compact sublevel sets.
@@ -258,6 +262,20 @@ theorem liouvilleRadialCoordinate_flowOf_of_notMem_interior (h : IsLiouvilleComp
   obtain ⟨y, hy, s, hs, rfl⟩ := h.exists_mem_frontier_flowOf_eq hZ hx
   rw [h.liouvilleRadialCoordinate_flowOf hZ hy hs, h.flowOf_flowOf hZ,
     h.liouvilleRadialCoordinate_flowOf hZ hy (add_nonneg ht hs), Real.exp_add]
+
+/-- **The Liouville flow translates the logarithm of the radial coordinate.** If `x` lies outside
+the interior of the Liouville domain and `0 ≤ log r(x) + t`, then `log r(ψ_t x) = log r(x) + t`.
+Here `t` may be negative, as long as the trajectory through `x` does not enter the interior of the
+domain before time `t`: `log r` is the time coordinate of the cylindrical end. -/
+theorem log_liouvilleRadialCoordinate_flowOf (h : IsLiouvilleCompletion ω α W)
+    (hZ : RoughForm.interior Z ω.1 = α.1) (hx : x ∉ interior W)
+    (ht : 0 ≤ Real.log (liouvilleRadialCoordinate Z W x) + t) :
+    Real.log (liouvilleRadialCoordinate Z W (flowOf Z t x)) =
+      Real.log (liouvilleRadialCoordinate Z W x) + t := by
+  obtain ⟨y, hy, s, hs, rfl⟩ := h.exists_mem_frontier_flowOf_eq hZ hx
+  rw [h.liouvilleRadialCoordinate_flowOf hZ hy hs, Real.log_exp] at ht ⊢
+  rw [h.flowOf_flowOf hZ, h.liouvilleRadialCoordinate_flowOf hZ hy (by linarith), Real.log_exp,
+    add_comm]
 
 /-- **The boundary point of a Liouville trajectory.** If `x` lies outside the interior of the
 Liouville domain, then flowing `x` backwards for time `log r(x)` lands on the boundary. -/
