@@ -72,6 +72,24 @@ noncomputable section
 open Filter Metric Set
 open scoped ContDiff Topology
 
+namespace ContinuousMultilinearMap
+
+variable {𝕜 : Type*} [NontriviallyNormedField 𝕜] {E F G : Type*} [NormedAddCommGroup E]
+  [NormedSpace 𝕜 E] [NormedAddCommGroup F] [NormedSpace 𝕜 F] [NormedAddCommGroup G]
+  [NormedSpace 𝕜 G]
+
+/-- The operator-norm bound for a multilinear map on `E × F` evaluated on `j` directions in `E`
+followed by `l` directions in `F`. -/
+theorem norm_apply_append_prod_le {j l : ℕ} (D : (E × F) [×(j + l)]→L[𝕜] G) (u : Fin j → E)
+    (w : Fin l → F) :
+    ‖D (Fin.append (fun i => (u i, 0)) (fun i => (0, w i)))‖ ≤
+      ‖D‖ * ((∏ i, ‖u i‖) * ∏ i, ‖w i‖) := by
+  refine (D.le_opNorm _).trans_eq ?_
+  simp only [Fin.prod_univ_add, Fin.append_left, Fin.append_right, Prod.norm_mk, norm_zero,
+    norm_nonneg, max_eq_left, max_eq_right]
+
+end ContinuousMultilinearMap
+
 namespace TauCeti
 
 variable {E : Type*} [NormedAddCommGroup E]
@@ -102,6 +120,11 @@ namespace HomogeneousSymbol
 
 variable {m m' : ℝ}
 
+omit [NormedSpace ℝ E] in
+/-- The set of nonzero frequencies, on which a homogeneous symbol is smooth, is open. -/
+theorem isOpen_setOf_snd_ne_zero : IsOpen {p : E × E | p.2 ≠ 0} :=
+  isOpen_ne_fun continuous_snd continuous_const
+
 theorem coefficient_injective :
     Function.Injective (coefficient : HomogeneousSymbol E V W m → E × E → V →L[ℂ] W) :=
   fun _ _ h => HomogeneousSymbol.ext h
@@ -117,13 +140,13 @@ theorem coefficient_smul_frequency (a : HomogeneousSymbol E V W m) (x ξ : E) {t
 
 theorem contDiffAt_coefficient (a : HomogeneousSymbol E V W m) {p : E × E} (hp : p.2 ≠ 0) :
     ContDiffAt ℝ ∞ a.coefficient p :=
-  a.contDiffOn_coefficient.contDiffAt ((isOpen_ne_fun continuous_snd continuous_const).mem_nhds hp)
+  a.contDiffOn_coefficient.contDiffAt (isOpen_setOf_snd_ne_zero.mem_nhds hp)
 
 theorem continuousOn_iteratedFDeriv_coefficient (a : HomogeneousSymbol E V W m) (k : ℕ) :
     ContinuousOn (iteratedFDeriv ℝ k a.coefficient) {p | p.2 ≠ 0} :=
-  have hU : IsOpen {p : E × E | p.2 ≠ 0} := isOpen_ne_fun continuous_snd continuous_const
   (a.contDiffOn_coefficient.continuousOn_iteratedFDerivWithin (mod_cast le_top)
-    hU.uniqueDiffOn).congr fun _ hp => (iteratedFDerivWithin_of_isOpen k hU hp).symm
+    isOpen_setOf_snd_ne_zero.uniqueDiffOn).congr fun _ hp =>
+      (iteratedFDerivWithin_of_isOpen k isOpen_setOf_snd_ne_zero hp).symm
 
 /-! ### The vector space of homogeneous symbols of a fixed degree -/
 
@@ -261,22 +284,26 @@ theorem iteratedFDeriv_coefficient_smul_frequency {x ξ : E} (hξ : ξ ≠ 0) {t
     iteratedFDeriv ℝ k a.coefficient (x, t • ξ) (fun i => ((v i).1, t • (v i).2)) =
       t ^ m • iteratedFDeriv ℝ k a.coefficient (x, ξ) v := by
   let S : E × E →L[ℝ] E × E := (ContinuousLinearMap.id ℝ E).prodMap (t • ContinuousLinearMap.id ℝ E)
-  have hU : IsOpen {p : E × E | p.2 ≠ 0} := isOpen_ne_fun continuous_snd continuous_const
+  have hU : IsOpen {p : E × E | p.2 ≠ 0} := isOpen_setOf_snd_ne_zero
+  have hSapply : ∀ p, S p = (p.1, t • p.2) := fun _ => rfl
   have hS : S ⁻¹' {p : E × E | p.2 ≠ 0} = {p | p.2 ≠ 0} := by
     ext p
-    simp [S, ht.ne']
+    simp [hSapply, ht.ne']
+  have hSξ : S (x, ξ) ∈ {p : E × E | p.2 ≠ 0} := by
+    rw [hSapply]
+    exact smul_ne_zero ht.ne' hξ
   have hcomp : a.coefficient ∘ S = t ^ m • a.coefficient := by
     ext1 p
     exact a.coefficient_smul_frequency p.1 p.2 ht
   have hξ' : (x, ξ) ∈ {p : E × E | p.2 ≠ 0} := hξ
   have key := S.iteratedFDerivWithin_comp_right a.contDiffOn_coefficient
     hU.uniqueDiffOn (by rw [hS]; exact hU.uniqueDiffOn)
-    (x := (x, ξ)) (by simpa [S, ht.ne'] using hξ) (i := k) (mod_cast le_top)
-  rw [hS, hcomp, iteratedFDerivWithin_of_isOpen k hU hξ',
-    iteratedFDerivWithin_of_isOpen k hU (by simpa [S, ht.ne'] using hξ),
+    (x := (x, ξ)) hSξ (i := k) (mod_cast le_top)
+  rw [hS, hcomp, iteratedFDerivWithin_of_isOpen k hU hξ', iteratedFDerivWithin_of_isOpen k hU hSξ,
     iteratedFDeriv_const_smul_apply ((a.contDiffAt_coefficient hξ).of_le (mod_cast le_top))] at key
   have := congr($key v)
-  simpa [S, Prod.map, Pi.smul_apply] using this.symm
+  simp only [ContinuousMultilinearMap.compContinuousLinearMap_apply, hSapply] at this
+  exact this.symm
 
 /-- The derivative of a homogeneous symbol of degree `m` in `j` position directions and `l`
 frequency directions is homogeneous of degree `m - l` in the frequency. -/
@@ -298,8 +325,9 @@ theorem iteratedFDeriv_coefficient_smul_frequency_append {x ξ : E} (hξ : ξ �
   simp only [Fin.append_left, Fin.append_right, Finset.prod_const_one, Finset.prod_const,
     Finset.card_univ, Fintype.card_fin, one_mul] at h
   have htl : (t ^ l : ℝ) ≠ 0 := pow_ne_zero _ ht.ne'
-  rw [Real.rpow_sub ht, Real.rpow_natCast, div_eq_mul_inv, mul_comm, mul_smul, ← h, smul_smul,
-    inv_mul_cancel₀ htl, one_smul]
+  calc D v = (t ^ l)⁻¹ • (t ^ l • D v) := (inv_smul_smul₀ htl _).symm
+    _ = t ^ (m - l) • iteratedFDeriv ℝ (j + l) a.coefficient (x, ξ) v := by
+      rw [h, smul_smul, inv_mul_eq_div, Real.rpow_sub ht, Real.rpow_natCast]
 
 /-- On a proper space, the derivatives of a homogeneous symbol of degree `m` in `j` position
 directions and `l` frequency directions are bounded by `C ‖ξ‖ ^ (m - l)` for positions in a
@@ -323,10 +351,7 @@ theorem exists_norm_iteratedFDeriv_le [ProperSpace E] {K : Set E} (hK : IsCompac
   have hξθ : ξ = ‖ξ‖ • θ := by simp [θ, smul_smul, hnξ.ne']
   have hbound : ‖iteratedFDeriv ℝ (j + l) a.coefficient (x, θ)‖ ≤ max C 0 :=
     (hC (x, θ) ⟨hx, by simp [θ, norm_smul, hnξ.ne']⟩).trans (le_max_left _ _)
-  have hop := (iteratedFDeriv ℝ (j + l) a.coefficient (x, θ)).le_opNorm
-    (Fin.append (fun i => (u i, 0)) (fun i => (0, w i)))
-  simp only [Fin.prod_univ_add, Fin.append_left, Fin.append_right, Prod.norm_mk, norm_zero,
-    norm_nonneg, max_eq_left, max_eq_right] at hop
+  have hop := (iteratedFDeriv ℝ (j + l) a.coefficient (x, θ)).norm_apply_append_prod_le u w
   rw [hξθ, a.iteratedFDeriv_coefficient_smul_frequency_append hθ hnξ, norm_smul,
     Real.norm_of_nonneg (Real.rpow_nonneg hnξ.le _), ← hξθ]
   calc ‖ξ‖ ^ (m - l) * ‖iteratedFDeriv ℝ (j + l) a.coefficient (x, θ)
@@ -378,9 +403,7 @@ theorem exists_norm_iteratedFDeriv_frequencyCutoff_smul_le [ProperSpace E] {K : 
   rcases le_or_gt ‖ξ‖ 2 with hξ | hξ
   · -- Near the zero frequency the cut-off term is smooth, so compactness bounds it.
     refine ((iteratedFDeriv ℝ (j + l) (fun p : E × E => χ p.2 • a.coefficient p)
-      (x, ξ)).le_opNorm _).trans ?_
-    simp only [Fin.prod_univ_add, Fin.append_left, Fin.append_right, Prod.norm_mk, norm_zero,
-      norm_nonneg, max_eq_left, max_eq_right]
+      (x, ξ)).norm_apply_append_prod_le u w).trans ?_
     refine mul_le_mul_of_nonneg_right ((h₁ x hx ξ hξ).trans ?_) hprod
     exact mul_le_mul_of_nonneg_right (le_max_left _ _) (by positivity)
   · -- At large frequencies the cut-off term agrees with the homogeneous symbol.
