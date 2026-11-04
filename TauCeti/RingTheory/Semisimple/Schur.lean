@@ -53,6 +53,8 @@ computation to an arbitrary equivalent target.
   `LinearEquiv.finrank_linearMap_eq_one`: the two forms of Schur's lemma in
   dimensions. More generally, `TauCeti.finiteDimensional_linearMap_of_isSimpleModule` shows that
   maps from any finite-dimensional module into a simple module form a finite-dimensional space.
+  In particular `TauCeti.finrank_end_pos`: the endomorphism ring of a finite-dimensional simple
+  module has positive dimension.
 
 ## References
 
@@ -245,6 +247,13 @@ theorem finiteDimensional_linearMap_of_isSimpleModule : FiniteDimensional k (S �
     infer_instance
   · have : Subsingleton (S →ₗ[A] N) := ⟨fun f g ↦ by simp_all⟩
     infer_instance
+
+/-- The division algebra `End_A(S)` of a simple module that is finite-dimensional over `k` has
+positive dimension over `k`. -/
+theorem finrank_end_pos [IsSimpleModule A S] : 0 < Module.finrank k (Module.End A S) := by
+  have : FiniteDimensional k (Module.End A S) := finiteDimensional_linearMap_of_isSimpleModule
+  have : Nontrivial S := IsSimpleModule.nontrivial A S
+  exact Module.finrank_pos
 
 end SimpleTarget
 
