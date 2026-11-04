@@ -28,6 +28,11 @@ finite twisted differential with the same right action and Koszul sign.
 These are ordinary tensor products; no semi-free filtration, resolution or derived
 comparison is asserted.
 
+The coefficient complex is assembled by `gradedCochainComplex`. Its terms are identified with
+the total-degree pieces by `RowFiniteTwistingCocycle.coefficientCochainComplexXEquiv`, and
+degree-preserving maps and degree `-1` homotopies of coefficient vectors which are compatible
+with the coefficient differentials induce morphisms and homotopies of coefficient complexes.
+
 ## References
 
 * J.-F. Barraud, M. Damian, V. Humilière, A. Oancea, *Floer homology with DG coefficients.
@@ -206,6 +211,86 @@ theorem linearEquivFunOnFinite_coefficientDifferential [Fintype P] (f : P →₀
       ext y
       simp [Finsupp.single_apply, Pi.single_apply, Finsupp.sum_fintype, eq_comm]
     | add α β hα hβ => simp only [Finsupp.single_add, map_add, hα, hβ]
+
+/-! ### Morphisms and homotopies of coefficient complexes -/
+
+/-- The degree-`n` term of the coefficient complex is the finite-support total-degree piece. -/
+def coefficientCochainComplexXEquiv (n : ℤ) :
+    (m.coefficientCochainComplex hM).X n ≃ₗ[R] rowFiniteTotalGrading ℳ ind n :=
+  gradedCochainComplexXEquiv n
+
+/-- Under `coefficientCochainComplexXEquiv`, the complex differential is the coefficient
+differential. -/
+theorem coefficientCochainComplexXEquiv_d (n : ℤ) (x : (m.coefficientCochainComplex hM).X n) :
+    (m.coefficientCochainComplexXEquiv hM (n + 1)
+        (((m.coefficientCochainComplex hM).d n (n + 1)).hom x) : P →₀ M) =
+      m.coefficientDifferential hM (m.coefficientCochainComplexXEquiv hM n x) :=
+  gradedCochainComplexXEquiv_d n x
+
+variable {Q : Type uP} {indQ : Q → ℤ} {m} {mQ : RowFiniteTwistingCocycle 𝒜 dA Q indQ}
+
+/-- A degree-preserving map of coefficient vectors which commutes with the coefficient
+differentials, as a morphism of coefficient complexes. -/
+def coefficientCochainComplexHom (Φ : (P →₀ M) →ₗ[R] (Q →₀ M))
+    (hΦ : LinearMap.IsHomogeneous Φ (rowFiniteTotalGrading ℳ ind) (rowFiniteTotalGrading ℳ indQ) 0)
+    (hcomm : mQ.coefficientDifferential hM ∘ₗ Φ = Φ ∘ₗ m.coefficientDifferential hM) :
+    m.coefficientCochainComplex hM ⟶ mQ.coefficientCochainComplex hM :=
+  gradedCochainComplexHom Φ hΦ hcomm
+
+/-- The components of the morphism of a linear map are that linear map. -/
+@[simp]
+theorem coefficientCochainComplexXEquiv_coefficientCochainComplexHom_f_apply
+    (Φ : (P →₀ M) →ₗ[R] (Q →₀ M))
+    (hΦ : LinearMap.IsHomogeneous Φ (rowFiniteTotalGrading ℳ ind) (rowFiniteTotalGrading ℳ indQ) 0)
+    (hcomm : mQ.coefficientDifferential hM ∘ₗ Φ = Φ ∘ₗ m.coefficientDifferential hM) (n : ℤ)
+    (x : (m.coefficientCochainComplex hM).X n) :
+    (mQ.coefficientCochainComplexXEquiv hM n
+        (((coefficientCochainComplexHom hM Φ hΦ hcomm).f n).hom x) : Q →₀ M) =
+      Φ (m.coefficientCochainComplexXEquiv hM n x) :=
+  gradedCochainComplexXEquiv_gradedCochainComplexHom_f_apply Φ hΦ hcomm n x
+
+/-- Two morphisms of coefficient complexes agree when their components agree on coefficient
+vectors. -/
+theorem coefficientCochainComplex_hom_ext
+    {φ ψ : m.coefficientCochainComplex hM ⟶ mQ.coefficientCochainComplex hM}
+    (h : ∀ n (x : (m.coefficientCochainComplex hM).X n),
+      (mQ.coefficientCochainComplexXEquiv hM n ((φ.f n).hom x) : Q →₀ M) =
+        mQ.coefficientCochainComplexXEquiv hM n ((ψ.f n).hom x)) : φ = ψ :=
+  gradedCochainComplex_hom_ext h
+
+/-- A linear map `H` of degree `-1` with `Φ = D ∘ H + H ∘ D + Ψ` is a homotopy between the
+morphisms of coefficient complexes of `Φ` and `Ψ`. -/
+def coefficientCochainComplexHomotopy {Φ Ψ : (P →₀ M) →ₗ[R] (Q →₀ M)}
+    (hΦ : LinearMap.IsHomogeneous Φ (rowFiniteTotalGrading ℳ ind) (rowFiniteTotalGrading ℳ indQ) 0)
+    (hΨ : LinearMap.IsHomogeneous Ψ (rowFiniteTotalGrading ℳ ind) (rowFiniteTotalGrading ℳ indQ) 0)
+    (hcommΦ : mQ.coefficientDifferential hM ∘ₗ Φ = Φ ∘ₗ m.coefficientDifferential hM)
+    (hcommΨ : mQ.coefficientDifferential hM ∘ₗ Ψ = Ψ ∘ₗ m.coefficientDifferential hM)
+    (H : (P →₀ M) →ₗ[R] (Q →₀ M))
+    (hH : LinearMap.IsHomogeneous H (rowFiniteTotalGrading ℳ ind) (rowFiniteTotalGrading ℳ indQ)
+      (-1))
+    (hΦΨ : Φ = mQ.coefficientDifferential hM ∘ₗ H + H ∘ₗ m.coefficientDifferential hM + Ψ) :
+    Homotopy (coefficientCochainComplexHom hM Φ hΦ hcommΦ)
+      (coefficientCochainComplexHom hM Ψ hΨ hcommΨ) :=
+  gradedCochainComplexHomotopy hΦ hΨ hcommΦ hcommΨ H hH hΦΨ
+
+/-- The components of the homotopy of a linear map `H` are `H`. -/
+theorem coefficientCochainComplexXEquiv_coefficientCochainComplexHomotopy_hom_apply
+    {Φ Ψ : (P →₀ M) →ₗ[R] (Q →₀ M)}
+    (hΦ : LinearMap.IsHomogeneous Φ (rowFiniteTotalGrading ℳ ind) (rowFiniteTotalGrading ℳ indQ) 0)
+    (hΨ : LinearMap.IsHomogeneous Ψ (rowFiniteTotalGrading ℳ ind) (rowFiniteTotalGrading ℳ indQ) 0)
+    (hcommΦ : mQ.coefficientDifferential hM ∘ₗ Φ = Φ ∘ₗ m.coefficientDifferential hM)
+    (hcommΨ : mQ.coefficientDifferential hM ∘ₗ Ψ = Ψ ∘ₗ m.coefficientDifferential hM)
+    (H : (P →₀ M) →ₗ[R] (Q →₀ M))
+    (hH : LinearMap.IsHomogeneous H (rowFiniteTotalGrading ℳ ind) (rowFiniteTotalGrading ℳ indQ)
+      (-1))
+    (hΦΨ : Φ = mQ.coefficientDifferential hM ∘ₗ H + H ∘ₗ m.coefficientDifferential hM + Ψ)
+    (p q : ℤ) (hpq : p + -1 = q) (x : (m.coefficientCochainComplex hM).X p) :
+    (mQ.coefficientCochainComplexXEquiv hM q
+        (((coefficientCochainComplexHomotopy hM hΦ hΨ hcommΦ hcommΨ H hH hΦΨ).hom p q).hom x) :
+        Q →₀ M) =
+      H (m.coefficientCochainComplexXEquiv hM p x) :=
+  gradedCochainComplexXEquiv_gradedCochainComplexHomotopy_hom_apply hΦ hΨ hcommΦ hcommΨ H hH
+    hΦΨ p q hpq x
 
 end RowFiniteTwistingCocycle
 
