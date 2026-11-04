@@ -126,7 +126,7 @@ theorem mem_newtonSlopes {m : ℝ} :
 variable {f v}
 
 /-- Transport of finite slopes along a matching of finite unit edges. -/
-private theorem newtonSlopes_eq_map {g : S[X]} {w : AddValuation S (WithTop ℝ)}
+theorem newtonSlopes_eq_map {g : S[X]} {w : AddValuation S (WithTop ℝ)}
     {φ : ℕ → ℕ} (hφ : Set.InjOn φ (finiteEdges (f.newtonPolygon v))) {t : ℝ → ℝ}
     (hedges : finiteEdges (g.newtonPolygon w) = φ '' finiteEdges (f.newtonPolygon v))
     (hslope : ∀ n ∈ finiteEdges (f.newtonPolygon v),
@@ -201,7 +201,7 @@ theorem count_newtonSlopes_of_isFiniteFace {σ : ℝ} {l u : ℕ}
 variable (f v) in
 /-- The number of finite slopes satisfying a predicate is the number of finite unit edges whose
 slope satisfies it. -/
-private theorem card_filter_newtonSlopes (p : ℝ → Prop) [DecidablePred p] :
+theorem card_filter_newtonSlopes (p : ℝ → Prop) [DecidablePred p] :
     ((f.newtonSlopes v).filter p).card =
       {i | i ∈ finiteEdges (f.newtonPolygon v) ∧ p (unitSlope (f.newtonPolygon v) i)}.ncard := by
   rw [newtonSlopes_def, Multiset.filter_map, Multiset.card_map, ← Finset.filter_val,

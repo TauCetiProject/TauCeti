@@ -7,7 +7,7 @@ module
 
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.Cup.Cohomology
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.Resolution.Cohomology
-public import TauCeti.RepresentationTheory.Homological.ContCohomology.Resolution.GradedContraction
+public import TauCeti.RepresentationTheory.Homological.ContCohomology.Resolution.Graded.Contraction
 
 /-!
 # Cup products of classes of contracted complexes
