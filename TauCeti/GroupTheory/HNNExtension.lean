@@ -22,8 +22,8 @@ This controls commutation transitivity in an HNN extension along the identity of
 is nontrivial then `t` commutes with `c`, so if commutation is transitive through `c` then every
 element of `G` commuting with `c` commutes with `t` and therefore lies in `A`. Extensions of
 centralizers `⟨G, t | [c, t] = 1, c ∈ C_G(u)⟩` therefore have to use the full centralizer
-`C_G(u)`: replacing it by a smaller subgroup `A ∋ u` with `C_G(u) ⊄ A` produces a group that is
-not commutative transitive, hence not CSA.
+`C_G(u)`: for `u ≠ 1`, replacing it by a smaller subgroup `A ∋ u` with `C_G(u) ⊄ A` produces a
+group that is not commutative transitive, hence not CSA.
 
 ## Main results
 
@@ -53,6 +53,7 @@ namespace HNNExtension
 variable {G : Type*} [Group G] {A B : Subgroup G} {φ : A ≃* B}
 
 /-- The stable letter conjugates `g` into the base group exactly when `g ∈ A`. -/
+@[simp]
 theorem t_mul_of_mul_inv_t_mem_range_iff {g : G} :
     t * of g * t⁻¹ ∈ (of : G →* HNNExtension G A B φ).range ↔ g ∈ A := by
   refine ⟨fun h => ?_, fun hg => ⟨φ ⟨g, hg⟩, ?_⟩⟩
@@ -69,6 +70,7 @@ theorem t_mul_of_mul_inv_t_mem_range_iff {g : G} :
   · exact equiv_eq_conj (φ := φ) ⟨g, hg⟩
 
 /-- The inverse of the stable letter conjugates `g` into the base group exactly when `g ∈ B`. -/
+@[simp]
 theorem inv_t_mul_of_mul_t_mem_range_iff {g : G} :
     t⁻¹ * of g * t ∈ (of : G →* HNNExtension G A B φ).range ↔ g ∈ B := by
   refine ⟨fun h => ?_, fun hg => ⟨φ.symm ⟨g, hg⟩, ?_⟩⟩

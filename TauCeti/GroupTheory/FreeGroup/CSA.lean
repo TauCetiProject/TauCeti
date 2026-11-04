@@ -182,13 +182,10 @@ theorem not_commute_hnnExtension_of_t_zpowers_sq {α : Type*} (a : α) :
     ¬ Commute (HNNExtension.of (FreeGroup.of a) :
       HNNExtension (FreeGroup α) (zpowers (FreeGroup.of a ^ 2)) (zpowers (FreeGroup.of a ^ 2))
         (MulEquiv.refl _)) HNNExtension.t := by
-  rw [HNNExtension.commute_of_t_iff_mem, mem_zpowers_iff]
-  rintro ⟨k, hk⟩
-  -- `a = a ^ (2 * k)` would make `a` a torsion element.
-  have : FreeGroup.of a ^ (2 * k - 1) = 1 := by
-    rw [zpow_sub_one, zpow_mul, zpow_ofNat, hk, mul_inv_cancel]
-  rw [IsMulTorsionFree.zpow_eq_one_iff_right (FreeGroup.of_ne_one a)] at this
-  omega
+  -- `a ∈ zpowers (a ^ 2)` would force `gcd 2 (orderOf a) = 1`, but `a` has infinite order.
+  rw [HNNExtension.commute_of_t_iff_mem, mem_zpowers_pow_iff,
+    orderOf_eq_zero_iff'.2 fun n hn => (pow_eq_one_iff_left hn.ne').not.2 (FreeGroup.of_ne_one a)]
+  decide
 
 /-- The HNN extension of a free group along the identity of `zpowers (a ^ 2)` is not commutative
 transitive: `a` commutes with `a ^ 2`, which commutes with the stable letter, but `a` does not. -/
