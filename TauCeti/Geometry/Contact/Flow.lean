@@ -85,8 +85,7 @@ theorem isCoorientedContactomorphism_globalFlowDiffeomorph (hα : α.IsContactFo
   refine Diffeomorph.isCoorientedContactomorphism_iff.2
     ⟨fun x ↦ Real.exp (∫ s in 0..t, mvfderiv I f (ψ s x) (α.reebVectorField (ψ s x))),
       fun _ ↦ Real.exp_pos _, fun x ↦ ?_⟩
-  rw [show ⇑(globalFlowDiffeomorph hc le_top (hX.contMDiff hα le_rfl (by simpa using hf)) t) = ψ t
-    from funext (globalFlowDiffeomorph_apply _ _ _ t)]
+  rw [coe_globalFlowDiffeomorph]
   exact hX.mpullback_globalFlow_apply hα hf3 hc t x
 
 /-- **Strict contact Hamiltonian flows.** For a contact form `α` and a complete contact
@@ -101,23 +100,23 @@ theorem isStrictContactomorphism_globalFlowDiffeomorph_iff (hα : α.IsContactFo
   have hX2 : ContMDiff I I.tangent 2 (fun y ↦ (⟨y, X y⟩ : TangentBundle I M)) :=
     hX.contMDiff hα (by simp) (by norm_num [hf3])
   set ψ := globalFlow X (hX2.of_le one_le_two) hc
-  have hcoe (t : ℝ) :
-      ⇑(globalFlowDiffeomorph hc le_top (hX.contMDiff hα le_rfl (by simpa using hf)) t) = ψ t :=
-    funext (globalFlowDiffeomorph_apply _ _ _ t)
   constructor
   · intro h x
     -- The pullbacks `ψₜ^* α` at `x` are constant in `t`, and their velocity at `0` is
     -- `L_X α = (R_α f) α`.
     have hd := hasDerivAt_mpullback_globalFlow_zero hc hX2 x (α.mdifferentiable x)
     have hconst : (fun s ↦ TauCeti.mpullback I I (ψ s) α.1 x) = fun _ ↦ α.1 x :=
-      funext fun s ↦ by rw [← hcoe s, Diffeomorph.isStrictContactomorphism_iff.1 (h s)]
+      funext fun s ↦ by
+        have hs := Diffeomorph.isStrictContactomorphism_iff.1 (h s)
+        rw [coe_globalFlowDiffeomorph] at hs
+        exact congrFun hs x
     rw [hconst, hX.mlieDerivForm_eq (hX2.mdifferentiable two_ne_zero)] at hd
     have h0 := hd.unique (hasDerivAt_const (F := E [⋀^Fin 1]→L[ℝ] ℝ) (0 : ℝ) (α.1 x))
     have hα₀ : (α.1 x : E [⋀^Fin 1]→L[ℝ] ℝ) ≠ 0 :=
       (isContactForm_iff_forall_isContactFormAt.mp hα x).ne_zero
     exact (smul_eq_zero.mp h0).resolve_right hα₀
   · intro h t
-    rw [Diffeomorph.isStrictContactomorphism_iff, hcoe]
+    rw [Diffeomorph.isStrictContactomorphism_iff, coe_globalFlowDiffeomorph]
     funext x
     rw [hX.mpullback_globalFlow_apply hα hf3 hc t x]
     simp [h]

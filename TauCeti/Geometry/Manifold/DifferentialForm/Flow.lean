@@ -278,9 +278,7 @@ theorem mpullback_globalFlow_apply_eq_exp_integral_smul {g : M → ℝ} (hg : Co
   -- `s ↦ e^{-G s} P s` has zero derivative, so it is constant.
   have hderiv (s : ℝ) : HasDerivAt (fun s ↦ Real.exp (-G s) • P s) 0 s := by
     refine ((hG s).neg.exp.smul (hderivP s)).congr_deriv ?_
-    rw [smul_smul, ← add_smul]
-    ring_nf
-    exact zero_smul ℝ _
+    module
   have hconst := is_const_of_deriv_eq_zero (fun s ↦ (hderiv s).differentiableAt)
     (fun s ↦ (hderiv s).deriv) t 0
   have hG0 : G 0 = 0 := intervalIntegral.integral_same

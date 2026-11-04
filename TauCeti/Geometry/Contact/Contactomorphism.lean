@@ -168,6 +168,12 @@ theorem isStrictContactomorphism_iff :
     e.IsStrictContactomorphism α α' ↔ mpullback I J e α'.1 = α.1 :=
   Iff.rfl
 
+/-- A diffeomorphism is a strict contactomorphism exactly when it pulls `α'` back to `α` as
+smooth forms. -/
+theorem isStrictContactomorphism_iff_smoothForm_mpullback_eq :
+    e.IsStrictContactomorphism α α' ↔ SmoothForm.mpullback e e.contMDiff α' = α := by
+  rw [isStrictContactomorphism_iff, ← SmoothForm.coe_mpullback, Subtype.ext_iff]
+
 /-- A diffeomorphism pulling `α'` back to a nowhere vanishing multiple of `α` is a
 contactomorphism from `ker α` to `ker α'`, whatever the signs of the multiplier. -/
 theorem isContactomorphism_kerDistribution_of_mpullback_eq_smul {f : M → ℝ}
@@ -250,17 +256,10 @@ theorem IsCoorientedContactomorphism.trans {e₁ : M ≃ₘ⟮I, J⟯ N} {e₂ :
     show mpullback J K e₂ α''.1 = fun y ↦ g y • α'.1 y from funext hge, mpullback_fun_smul]
   simp only [hfe, smul_smul]
 
-omit [IsManifold I ∞ M] [IsManifold J ∞ N] in
-/-- Pulling back along `e` and then along its inverse is the identity on forms. -/
-private theorem mpullback_symm_mpullback (e : M ≃ₘ⟮I, J⟯ N) (β : RoughForm J N ℝ 1) :
-    mpullback J I e.symm (mpullback I J e β) = β := by
-  rw [← mpullback_comp (e.symm.mdifferentiable (by simp)) (e.mdifferentiable (by simp)),
-    show (e : M → N) ∘ e.symm = id from funext e.apply_symm_apply, mpullback_id]
-
 /-- The inverse of a strict contactomorphism is a strict contactomorphism. -/
 theorem IsStrictContactomorphism.symm (h : e.IsStrictContactomorphism α α') :
     e.symm.IsStrictContactomorphism α' α := by
-  rw [isStrictContactomorphism_iff, ← h, mpullback_symm_mpullback]
+  rw [isStrictContactomorphism_iff, ← h, mpullback_symm_mpullback (by simp)]
 
 /-- The inverse of a cooriented contactomorphism is a cooriented contactomorphism; its multiplier
 is the reciprocal of the original multiplier, read through the inverse. -/
@@ -270,23 +269,19 @@ theorem IsCoorientedContactomorphism.symm (h : e.IsCoorientedContactomorphism α
   refine ⟨fun y ↦ (f (e.symm y))⁻¹, fun y ↦ inv_pos.2 (hf _), fun y ↦ ?_⟩
   have hα : α.1 = fun x ↦ (f x)⁻¹ • mpullback I J e α'.1 x := funext fun x ↦ by
     rw [hfe, smul_smul, inv_mul_cancel₀ (hf x).ne', one_smul]
-  rw [hα, mpullback_fun_smul, mpullback_symm_mpullback]
-
-/-- A strict contactomorphism pulls `α'` back to `α` as smooth forms. -/
-private theorem IsStrictContactomorphism.smoothForm_mpullback_eq
-    (h : e.IsStrictContactomorphism α α') : SmoothForm.mpullback e e.contMDiff α' = α :=
-  Subtype.ext (by rw [SmoothForm.coe_mpullback]; exact h)
+  rw [hα, mpullback_fun_smul, mpullback_symm_mpullback (by simp)]
 
 /-- Strict contactomorphisms preserve and reflect contactness. -/
 theorem IsStrictContactomorphism.isContactForm_iff (h : e.IsStrictContactomorphism α α') :
     α.IsContactForm ↔ α'.IsContactForm := by
-  rw [← e.isContactForm_mpullback_iff α', h.smoothForm_mpullback_eq]
+  rw [← e.isContactForm_mpullback_iff α',
+    isStrictContactomorphism_iff_smoothForm_mpullback_eq.1 h]
 
 /-- **Strict contactomorphisms intertwine the Reeb vector fields.** -/
 theorem IsStrictContactomorphism.mfderiv_reebVectorField [FiniteDimensional ℝ E]
     [FiniteDimensional ℝ E'] (h : e.IsStrictContactomorphism α α') (hα' : α'.IsContactForm)
     (x : M) : mfderiv I J e x (α.reebVectorField x) = α'.reebVectorField (e x) := by
-  rw [← h.smoothForm_mpullback_eq]
+  rw [← isStrictContactomorphism_iff_smoothForm_mpullback_eq.1 h]
   exact hα'.mfderiv_reebVectorField_mpullback e e.contMDiff
     (fun _ ↦ (e.isInvertible_mfderiv (by simp)).bijective) x
 

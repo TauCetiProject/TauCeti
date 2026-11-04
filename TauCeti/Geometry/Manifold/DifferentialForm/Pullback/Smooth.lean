@@ -172,6 +172,14 @@ theorem IsSmoothForm.mpullback (hω : IsSmoothForm I' m ω)
   exact (isSmoothBundleForm_def _ _).mp
     (IsSmoothBundleForm.mpullback ((isSmoothBundleForm_def _ _).mpr hω.contMDiff) hf le_rfl)
 
+omit [IsManifold I 1 M] [IsManifold I' 1 M'] in
+/-- Pulling a form back along a diffeomorphism and then along its inverse returns the form. -/
+@[simp]
+theorem mpullback_symm_mpullback (hn : n ≠ 0) (φ : M ≃ₘ^n⟮I, I'⟯ M')
+    (ω : RoughForm I' M' F k) : mpullback I' I φ.symm (mpullback I I' φ ω) = ω := by
+  rw [← mpullback_comp (φ.symm.mdifferentiable hn) (φ.mdifferentiable hn),
+    show (φ : M → M') ∘ φ.symm = id from funext φ.apply_symm_apply, mpullback_id]
+
 namespace SmoothForm
 
 open scoped ContDiff
@@ -309,10 +317,9 @@ theorem mpullback_proj_injective {F' : Type*} [NormedAddCommGroup F'] [NormedSpa
 /-- If a diffeomorphism `φ` pulls `β` back to `α`, then its inverse pulls `α` back to `β`. -/
 theorem mpullback_symm_eq_of_mpullback_eq {φ : M ≃ₘ⟮I, I'⟯ M'} {α : SmoothForm I M F k}
     {β : SmoothForm I' M' F k} (h : mpullback φ φ.contMDiff β = α) :
-    mpullback φ.symm φ.symm.contMDiff α = β := by
-  rw [← h, ← LinearMap.comp_apply, ← mpullback_comp]
-  have hid : ⇑φ ∘ ⇑φ.symm = id := funext φ.apply_symm_apply
-  simp only [hid, mpullback_id, LinearMap.id_apply]
+    mpullback φ.symm φ.symm.contMDiff α = β :=
+  Subtype.ext <| by
+    rw [coe_mpullback, ← h, coe_mpullback, TauCeti.mpullback_symm_mpullback (by simp)]
 
 /-- A smooth form preserved by a diffeomorphism `φ` is preserved by every integer power of `φ`. -/
 theorem mpullback_zpow_eq_self {φ : M ≃ₘ⟮I, I⟯ M} {σ : SmoothForm I M F k}
