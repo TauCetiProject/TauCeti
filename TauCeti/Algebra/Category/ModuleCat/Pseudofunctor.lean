@@ -271,24 +271,29 @@ lemma moduleCatBaseChangeComp_associativity {U : CommAlgCat.{u} k} (f : R ⟶ S)
     moduleCatBaseChangeComp_hom_app_hom_tmul, moduleCatBaseChangeComp_hom_app_hom_tmul,
     moduleCatBaseChangeComp_hom_app_hom_tmul]
 
-/-- The left unit law of the comparisons, checked against the inverse of the unit comparison:
-both sides send `1 ⊗ n` to `1 ⊗ (1 ⊗ n)`. -/
+/-- The left unit law of the comparisons: the composition comparison for `𝟙 R ≫ f = f`,
+followed by the base change along `f` of the unit comparison for `R`, is the identity of
+`S ⊗[R] N`. -/
 lemma moduleCatBaseChangeComp_left_unitality (f : R ⟶ S) (hf : 𝟙 R ≫ f = f)
     (N : ModuleCat.{u} (R ⊗[k] Λ)) :
     (moduleCatBaseChangeComp Λ (𝟙 R) f f hf).hom.app N ≫
       (moduleCatBaseChange Λ f).map ((moduleCatBaseChangeId Λ R).hom.app N) = 𝟙 _ := by
+  -- Compare the composition comparison with the inverse of the base-changed unit comparison:
+  -- both send `1 ⊗ n` to `1 ⊗ (1 ⊗ n)`.
   refine ((moduleCatBaseChange Λ f).mapIso ((moduleCatBaseChangeId Λ R).app N)).comp_hom_eq_id.2
     (moduleCatBaseChange_hom_ext Λ f fun n ↦ ?_)
   rw [Functor.mapIso_inv, Iso.app_inv, moduleCatBaseChangeComp_hom_app_hom_tmul,
     moduleCatBaseChange_map_hom_tmul, moduleCatBaseChangeId_inv_app_hom]
   rfl
 
-/-- The right unit law of the comparisons, checked against the inverse of the unit comparison:
-both sides send `1 ⊗ n` to `1 ⊗ (1 ⊗ n)`. -/
+/-- The right unit law of the comparisons: the composition comparison for `f ≫ 𝟙 S = f`,
+followed by the unit comparison for `S` at `S ⊗[R] N`, is the identity of `S ⊗[R] N`. -/
 lemma moduleCatBaseChangeComp_right_unitality (f : R ⟶ S) (hf : f ≫ 𝟙 S = f)
     (N : ModuleCat.{u} (R ⊗[k] Λ)) :
     (moduleCatBaseChangeComp Λ f (𝟙 S) f hf).hom.app N ≫
       (moduleCatBaseChangeId Λ S).hom.app ((moduleCatBaseChange Λ f).obj N) = 𝟙 _ := by
+  -- Compare the composition comparison with the inverse of the unit comparison: both send
+  -- `1 ⊗ n` to `1 ⊗ (1 ⊗ n)`.
   refine ((moduleCatBaseChangeId Λ S).app ((moduleCatBaseChange Λ f).obj N)).comp_hom_eq_id.2
     (moduleCatBaseChange_hom_ext Λ f fun n ↦ ?_)
   rw [Iso.app_inv, moduleCatBaseChangeComp_hom_app_hom_tmul]
