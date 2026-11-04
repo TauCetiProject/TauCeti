@@ -21,9 +21,9 @@ subset of `ℝ ^ d` has dimension exactly `d` (`TauCeti.semialgebraicDim_eq_of_i
 The definition is intrinsic, and the point is that for semialgebraic sets it is computed by any
 cylindrical algebraic decomposition. Every cell of a CAD is locally closed
 (`TauCeti.IsCAD.isLocallyClosed`) and homeomorphic to an open subset of some `ℝ ^ d`
-(`TauCeti.IsCAD.exists_isOpenEmbedding`): a section over a base cell is homeomorphic to the base,
-and a sector over it is an open subset of the cylinder over the base. The dimension of a finite
-union of locally closed sets is the largest of their dimensions
+(`TauCeti.IsCAD.exists_injective_isOpenEmbedding_comp`): a section over a base cell is
+homeomorphic to the base, and a sector over it is an open subset of the cylinder over the base.
+The dimension of a finite union of locally closed sets is the largest of their dimensions
 (`TauCeti.semialgebraicDim_iUnion_of_isLocallyClosed`), because a nonempty space covered by
 finitely many locally closed sets has one of them with nonempty interior. Hence the dimension of
 a union of cells of a CAD is the largest dimension of those cells
@@ -38,6 +38,8 @@ dimension of a union of two semialgebraic sets is the larger of their dimensions
 * `TauCeti.semialgebraicDim_le`, `TauCeti.semialgebraicDim_eq_bot_iff`,
   `TauCeti.semialgebraicDim_mono`: the dimension of a nonempty set lies between `0` and `n`, and
   is monotone.
+* `TauCeti.semialgebraicDim_le_of_isEmbedding`, `TauCeti.semialgebraicDim_image_of_isEmbedding`:
+  dimension is monotone along embeddings, and invariant under embeddings of the ambient space.
 * `TauCeti.semialgebraicDim_eq_of_isOpenEmbedding`, `IsOpen.semialgebraicDim_eq`: a nonempty open
   subset of `ℝ ^ d` has dimension `d`.
 * `TauCeti.semialgebraicDim_iUnion_of_isLocallyClosed`: dimension of finite unions of locally
@@ -99,6 +101,31 @@ theorem semialgebraicDim_mono (h : s ⊆ t) : semialgebraicDim s ≤ semialgebra
   semialgebraicDim_le_iff.2 fun u hu hne d f hf ↦
     have := hne.to_subtype
     le_semialgebraicDim .subtypeVal (by simpa using hu.trans h) hf
+
+/-- Dimension is monotone along embeddings: a set which embeds into `s` has dimension at most that
+of `s`. -/
+theorem semialgebraicDim_le_of_isEmbedding {m : ℕ} {t : Set (Fin m → ℝ)} {g : t → Fin n → ℝ}
+    (hg : IsEmbedding g) (hgs : range g ⊆ s) : semialgebraicDim t ≤ semialgebraicDim s :=
+  semialgebraicDim_le_iff.2 fun _ hu hne _ _ hf ↦
+    have := hne.to_subtype
+    le_semialgebraicDim (hg.comp (IsEmbedding.inclusion hu))
+      ((range_comp_subset_range _ _).trans hgs) hf
+
+/-- Dimension is invariant under embeddings of the ambient space. -/
+@[simp]
+theorem semialgebraicDim_image_of_isEmbedding {m : ℕ} {f : (Fin n → ℝ) → Fin m → ℝ}
+    (hf : IsEmbedding f) (s : Set (Fin n → ℝ)) :
+    semialgebraicDim (f '' s) = semialgebraicDim s := by
+  refine le_antisymm ?_ <| semialgebraicDim_le_of_isEmbedding (hf.comp .subtypeVal) <| by
+    rintro _ ⟨x, rfl⟩
+    exact mem_image_of_mem f x.2
+  -- `f '' s` embeds back into `s` through the inverse of `f` on its range.
+  let e := hf.toHomeomorph
+  refine semialgebraicDim_le_of_isEmbedding
+    (g := fun y : f '' s ↦ e.symm ⟨y, image_subset_range f s y.2⟩)
+    (e.symm.isEmbedding.comp (IsEmbedding.inclusion (image_subset_range f s))) ?_
+  rintro _ ⟨⟨_, x, hx, rfl⟩, rfl⟩
+  simpa [e] using hx
 
 /-- **Invariance of dimension.** A subset of `ℝ ^ n` has dimension at most `n`. -/
 theorem semialgebraicDim_le (s : Set (Fin n → ℝ)) : semialgebraicDim s ≤ n :=
@@ -190,8 +217,8 @@ variable {𝒞 : Set (Set (Fin n → ℝ))} {E : Set (Fin n → ℝ)}
 and is homeomorphic to an open subset of `ℝ ^ d`. -/
 theorem exists_semialgebraicDim_eq (h : IsCAD n 𝒞) (hE : E ∈ 𝒞) :
     ∃ d : ℕ, semialgebraicDim E = d ∧ ∃ f : E → Fin d → ℝ, IsOpenEmbedding f := by
-  obtain ⟨d, f, hf⟩ := h.exists_isOpenEmbedding hE
-  exact ⟨d, semialgebraicDim_eq_of_isOpenEmbedding (h.isConnected hE).nonempty hf, f, hf⟩
+  obtain ⟨d, _, _, hf⟩ := h.exists_injective_isOpenEmbedding_comp hE
+  exact ⟨d, semialgebraicDim_eq_of_isOpenEmbedding (h.isConnected hE).nonempty hf, _, hf⟩
 
 /-- **Dimension from cells.** If a set `s` contains or misses each cell of a cylindrical algebraic
 decomposition, its dimension is the largest dimension of the cells it contains. In particular this
@@ -213,7 +240,8 @@ theorem IsSemialgebraic.exists_finite_sUnion_eq (hs : IsSemialgebraic s) :
       ∃ d, ∃ f : u → Fin d → ℝ, IsOpenEmbedding f := by
   obtain ⟨𝒞, h𝒞, hsub⟩ := hs.exists_isCAD_subset_or_disjoint
   exact ⟨{E ∈ 𝒞 | E ⊆ s}, h𝒞.finite.subset (sep_subset _ _), h𝒞.sUnion_sep_subset hsub,
-    fun E hE ↦ ⟨h𝒞.isLocallyClosed hE.1, h𝒞.exists_isOpenEmbedding hE.1⟩⟩
+    fun E hE ↦ ⟨h𝒞.isLocallyClosed hE.1,
+      let ⟨d, _, _, hf⟩ := h𝒞.exists_injective_isOpenEmbedding_comp hE.1; ⟨d, _, hf⟩⟩⟩
 
 /-- **Dimension of unions.** The dimension of the union of two semialgebraic sets is the larger of
 their dimensions. -/

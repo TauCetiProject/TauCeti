@@ -18,7 +18,7 @@ public import TauCeti.Algebra.Coalgebra.Comodule.Transport
 public import TauCeti.LinearAlgebra.SymmetricAlgebra.BasisComparison
 public import TauCeti.RingTheory.TensorProduct.Maps
 import TauCeti.Data.Nat.Choose.Basic
-import TauCeti.RingTheory.MvPolynomial.BinomialSupport
+import TauCeti.RingTheory.MvPolynomial.Binomial.Support
 
 /-!
 # Polynomial functions on a comodule

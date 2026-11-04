@@ -39,6 +39,16 @@ set consists of its points outside its intrinsic interior (`IsClosed.sdiff_intri
 These are the tools for computing intrinsic interiors and frontiers of concrete cells, such as the
 bands of `TauCeti/Analysis/Convex/RegionBetween.lean`.
 
+Read in the ambient space, `x` is an intrinsic interior point of `s` when it lies in the affine
+span of `s` and the points of that span near `x` lie in `s`
+(`TauCeti.mem_intrinsicInterior_iff_eventually`). A subset `u` of a convex set `s` which meets the
+intrinsic interior of `s` has its intrinsic interior inside that of `s`
+(`TauCeti.intrinsicInterior_mono_of_inter_intrinsicInterior_nonempty`). Consequently, if the
+intrinsic interiors of two convex sets meet, the intrinsic interior of their intersection is the
+intersection of their intrinsic interiors (`TauCeti.intrinsicInterior_inter`; Rockafellar,
+*Convex Analysis*, Theorem 6.5). This computes the intrinsic interiors of the cells `σ ∩ τ` cut
+out by two triangulations.
+
 A closed bounded convex set `C` of a real normed space, with a point `c` of its intrinsic
 interior, is homeomorphic to the closed unit ball of the direction `V` of its affine span
 (`TauCeti.convexClosedBallHomeomorph`). Translating by `-c` turns `C` into a closed bounded convex
@@ -137,6 +147,29 @@ theorem _root_.IsClosed.sdiff_intrinsicInterior (hs : IsClosed s) :
   rw [← intrinsicClosure_sdiff_intrinsicInterior,
     (hs.preimage continuous_subtype_val).intrinsicClosure]
 
+/-- Membership in the intrinsic interior, read in the ambient space: `x` is an intrinsic interior
+point of `s` when it lies in the affine span of `s` and every point of that span close to `x` lies
+in `s`. -/
+theorem mem_intrinsicInterior_iff_eventually {x : P} :
+    x ∈ intrinsicInterior 𝕜 s ↔
+      x ∈ affineSpan 𝕜 s ∧ ∀ᶠ y in nhds x, y ∈ affineSpan 𝕜 s → y ∈ s := by
+  refine ⟨fun ⟨z, hz, hzx⟩ ↦ ?_, fun ⟨hx, h⟩ ↦ ⟨⟨x, hx⟩, ?_, rfl⟩⟩
+  · obtain ⟨u, hu, hus⟩ := (mem_nhds_subtype _ _ _).1 (mem_interior_iff_mem_nhds.1 hz)
+    exact hzx ▸ ⟨z.2, Filter.mem_of_superset hu fun y hy hyA ↦ hus (a := ⟨y, hyA⟩) hy⟩
+  · exact mem_interior_iff_mem_nhds.2 ((mem_nhds_subtype _ _ _).2 ⟨_, h, fun y hy ↦ hy y.2⟩)
+
+/-- A point in the intrinsic interiors of two sets is in the intrinsic interior of their
+intersection. -/
+theorem intrinsicInterior_inter_intrinsicInterior_subset :
+    intrinsicInterior 𝕜 s ∩ intrinsicInterior 𝕜 t ⊆ intrinsicInterior 𝕜 (s ∩ t) := by
+  rintro x ⟨hxs, hxt⟩
+  have hx : x ∈ s ∩ t := ⟨intrinsicInterior_subset hxs, intrinsicInterior_subset hxt⟩
+  rw [mem_intrinsicInterior_iff_eventually] at hxs hxt ⊢
+  refine ⟨subset_affineSpan 𝕜 _ hx, ?_⟩
+  filter_upwards [hxs.2, hxt.2] with y hys hyt hy
+  exact ⟨hys (affineSpan_mono 𝕜 inter_subset_left hy),
+    hyt (affineSpan_mono 𝕜 inter_subset_right hy)⟩
+
 end AffineSpan
 
 section FiniteDimensional
@@ -228,22 +261,34 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] {C : Set E} {c :
 variable (C c) in
 /-- The displacements from `c` inside `C`, read in the direction of the affine span of `C`, are
 the preimage of the translate `-c +ᵥ C`. -/
-private lemma setOf_add_mem_eq_preimage :
+lemma setOf_add_mem_eq_preimage :
     {v : (affineSpan ℝ C).direction | c + (v : E) ∈ C} =
       (affineSpan ℝ C).direction.subtype ⁻¹' ((-c) +ᵥ C) := by
   ext v
   simp [mem_vadd_set_iff_neg_vadd_mem]
 
-private lemma convex_setOf_add_mem (hconv : Convex ℝ C) :
+/-- The gauge of the displacement set agrees with the gauge of the translated set in the
+ambient space. -/
+lemma gauge_setOf_add_mem (v : (affineSpan ℝ C).direction) :
+    gauge {w : (affineSpan ℝ C).direction | c + (w : E) ∈ C} v =
+      gauge ((-c) +ᵥ C) (v : E) := by
+  rw [setOf_add_mem_eq_preimage]
+  exact LinearMap.gauge_preimage _ _ _
+
+/-- For convex `C` and any `c`, the displacements `v` in the direction of `affineSpan ℝ C`
+with `c + v ∈ C` form a convex set. -/
+lemma convex_setOf_add_mem (hconv : Convex ℝ C) :
     Convex ℝ {v : (affineSpan ℝ C).direction | c + (v : E) ∈ C} := by
   rw [setOf_add_mem_eq_preimage]
   exact (hconv.vadd (-c)).linear_preimage _
 
-private lemma isClosed_setOf_add_mem (hcl : IsClosed C) :
+/-- Displacements from a point into a closed set form a closed set in its affine direction. -/
+lemma isClosed_setOf_add_mem (hcl : IsClosed C) :
     IsClosed {v : (affineSpan ℝ C).direction | c + (v : E) ∈ C} :=
   hcl.preimage (f := fun v : (affineSpan ℝ C).direction ↦ c + (v : E)) (by fun_prop)
 
-private lemma isVonNBounded_setOf_add_mem (hb : IsBounded C) :
+/-- Displacements into a bounded set are von Neumann bounded in its affine direction. -/
+lemma isVonNBounded_setOf_add_mem (hb : IsBounded C) :
     IsVonNBounded ℝ {v : (affineSpan ℝ C).direction | c + (v : E) ∈ C} := by
   refine NormedSpace.isVonNBounded_of_isBounded ℝ ?_
   obtain ⟨r, hr⟩ := hb.subset_closedBall c
@@ -252,6 +297,25 @@ private lemma isVonNBounded_setOf_add_mem (hb : IsBounded C) :
   have hv' := hr hv
   rw [mem_closedBall, dist_self_add_left] at hv'
   rwa [mem_closedBall_zero_iff, ← Submodule.norm_coe]
+
+/-- For `c` in the affine span of `C`, `c + v` lies in the intrinsic frontier of `C` iff `v`
+lies in the frontier, within the direction, of the displacement set `{w | c + w ∈ C}`. -/
+lemma add_mem_intrinsicFrontier_iff (hc : c ∈ affineSpan ℝ C)
+    (v : (affineSpan ℝ C).direction) :
+    c + (v : E) ∈ intrinsicFrontier ℝ C ↔
+      v ∈ frontier {w : (affineSpan ℝ C).direction | c + (w : E) ∈ C} := by
+  let cA : affineSpan ℝ C := ⟨c, hc⟩
+  let : Nonempty (affineSpan ℝ C) := ⟨cA⟩
+  let e := Homeomorph.vaddConst cA
+  have he (w : (affineSpan ℝ C).direction) : (e w : E) = c + (w : E) := by
+    simp [e, Homeomorph.vaddConst, cA, add_comm]
+  rw [intrinsicFrontier, ← image_frontier_preimage_comp e e.isHomeomorph]
+  simp only [Function.comp_def, he]
+  constructor
+  · rintro ⟨w, hw, hwv⟩
+    have : w = v := Subtype.ext (add_left_cancel hwv)
+    exact this ▸ hw
+  · exact fun hv ↦ ⟨v, hv, rfl⟩
 
 /-- For a point `c` of the intrinsic interior of `C`, the displacements `v` in the direction of
 the affine span of `C` with `c + v ∈ C` form a neighbourhood of `0`. -/
@@ -268,6 +332,14 @@ theorem setOf_add_mem_mem_nhds_of_mem_intrinsicInterior (hc : c ∈ intrinsicInt
     (hφ.continuousAt.preimage_mem_nhds (hφ0 ▸ isOpen_interior.mem_nhds hy)) fun v hv ↦ ?_
   simpa [φ, add_comm] using interior_subset hv
 
+/-- The gauge of the translated set in its affine direction is positive exactly away from
+zero, for a bounded set with an intrinsic interior center. -/
+lemma gauge_setOf_add_mem_pos_iff (hb : IsBounded C) (hc : c ∈ intrinsicInterior ℝ C)
+    (v : (affineSpan ℝ C).direction) :
+    0 < gauge {w : (affineSpan ℝ C).direction | c + (w : E) ∈ C} v ↔ v ≠ 0 :=
+  gauge_pos (absorbent_nhds_zero (setOf_add_mem_mem_nhds_of_mem_intrinsicInterior hc))
+    (isVonNBounded_setOf_add_mem hb)
+
 /-- From a point `c` of the intrinsic interior of `C`, every sufficiently small move `ε • v` along
 a direction `v` of the affine span of `C` stays in `C`. -/
 theorem eventually_add_smul_mem_of_mem_intrinsicInterior (hc : c ∈ intrinsicInterior ℝ C)
@@ -275,6 +347,41 @@ theorem eventually_add_smul_mem_of_mem_intrinsicInterior (hc : c ∈ intrinsicIn
   have hcont : Continuous fun ε : ℝ ↦ (ε • ⟨v, hv⟩ : (affineSpan ℝ C).direction) := by fun_prop
   simpa using (hcont.tendsto' 0 0 (zero_smul ℝ _)).eventually
     (setOf_add_mem_mem_nhds_of_mem_intrinsicInterior hc)
+
+/-- A subset `u` of a convex set `s` meeting the intrinsic interior of `s` has its intrinsic
+interior inside that of `s`. -/
+theorem intrinsicInterior_mono_of_inter_intrinsicInterior_nonempty {s u : Set E}
+    (hs : Convex ℝ s) (hus : u ⊆ s) (h : (u ∩ intrinsicInterior ℝ s).Nonempty) :
+    intrinsicInterior ℝ u ⊆ intrinsicInterior ℝ s := by
+  intro y hy
+  obtain ⟨z, hzu, hzs⟩ := h
+  -- Push `y` slightly away from `z` inside `u`; then `y` lies strictly between `z` and that point.
+  have hv : y - z ∈ (affineSpan ℝ u).direction := by
+    rw [direction_affineSpan]
+    exact vsub_mem_vectorSpan ℝ (intrinsicInterior_subset hy) hzu
+  obtain ⟨ε, hε, hεpos⟩ := (((eventually_add_smul_mem_of_mem_intrinsicInterior hy hv).filter_mono
+    nhdsWithin_le_nhds).and (self_mem_nhdsWithin (s := Ioi 0))).exists
+  replace hεpos : 0 < ε := mem_Ioi.1 hεpos
+  refine hs.openSegment_intrinsicInterior_intrinsicClosure_subset_intrinsicInterior hzs
+    (subset_intrinsicClosure (hus hε)) ⟨ε / (1 + ε), 1 / (1 + ε), by positivity, by positivity,
+      by field_simp; ring, ?_⟩
+  match_scalars
+  · field_simp
+    ring
+  · field_simp
+
+/-- **The intrinsic interior of an intersection** (Rockafellar, Theorem 6.5). If the intrinsic
+interiors of two convex sets meet, the intrinsic interior of their intersection is the
+intersection of their intrinsic interiors. -/
+theorem intrinsicInterior_inter {s t : Set E} (hs : Convex ℝ s) (ht : Convex ℝ t)
+    (h : (intrinsicInterior ℝ s ∩ intrinsicInterior ℝ t).Nonempty) :
+    intrinsicInterior ℝ (s ∩ t) = intrinsicInterior ℝ s ∩ intrinsicInterior ℝ t := by
+  obtain ⟨z, hzs, hzt⟩ := h
+  have hz : z ∈ s ∩ t := ⟨intrinsicInterior_subset hzs, intrinsicInterior_subset hzt⟩
+  exact (subset_inter
+    (intrinsicInterior_mono_of_inter_intrinsicInterior_nonempty hs inter_subset_left ⟨z, hz, hzs⟩)
+    (intrinsicInterior_mono_of_inter_intrinsicInterior_nonempty ht inter_subset_right
+      ⟨z, hz, hzt⟩)).antisymm intrinsicInterior_inter_intrinsicInterior_subset
 
 /-- **A closed bounded convex set is a ball around each intrinsic interior point.** For a closed
 bounded convex set `C` of a real normed space and a point `c` of its intrinsic interior, the closed
@@ -305,6 +412,15 @@ noncomputable def convexClosedBallHomeomorph (hconv : Convex ℝ C) (hcl : IsClo
       continuous_toFun := by fun_prop
       continuous_invFun := by fun_prop }
 
+/-- The convex-ball homeomorphism is gauge rescaling followed by translation by `c`. -/
+theorem coe_convexClosedBallHomeomorph_apply_eq_gaugeRescale (hconv : Convex ℝ C)
+    (hcl : IsClosed C) (hb : IsBounded C) (hc : c ∈ intrinsicInterior ℝ C)
+    (v : closedBall (0 : (affineSpan ℝ C).direction) 1) :
+    (convexClosedBallHomeomorph hconv hcl hb hc v : E) =
+      c + ((gaugeRescale (closedBall 0 1)
+        {w : (affineSpan ℝ C).direction | c + (w : E) ∈ C} v :
+          (affineSpan ℝ C).direction) : E) := (rfl)
+
 /-- `TauCeti.convexClosedBallHomeomorph` in explicit coordinates: `v` is sent to
 `c + (‖v‖ / gauge (-c +ᵥ C) v) • v`. -/
 theorem coe_convexClosedBallHomeomorph_apply (hconv : Convex ℝ C) (hcl : IsClosed C)
@@ -312,15 +428,9 @@ theorem coe_convexClosedBallHomeomorph_apply (hconv : Convex ℝ C) (hcl : IsClo
     (v : closedBall (0 : (affineSpan ℝ C).direction) 1) :
     (convexClosedBallHomeomorph hconv hcl hb hc v : E) =
       c + (‖(v : E)‖ / gauge ((-c) +ᵥ C) (v : E)) • (v : E) := by
-  have hS : gauge {w : (affineSpan ℝ C).direction | c + (w : E) ∈ C} v =
-      gauge ((-c) +ᵥ C) (v : E) := by
-    rw [setOf_add_mem_eq_preimage]
-    exact LinearMap.gauge_preimage _ _ _
-  -- By definition the homeomorphism is the gauge rescaling followed by translation by `c`.
-  change c + ((gaugeRescale (closedBall 0 1) {w : (affineSpan ℝ C).direction | c + (w : E) ∈ C}
-    v : (affineSpan ℝ C).direction) : E) = _
-  rw [gaugeRescale_def, gauge_closedBall zero_le_one, hS, div_one, Submodule.coe_smul,
-    ← Submodule.norm_coe]
+  rw [coe_convexClosedBallHomeomorph_apply_eq_gaugeRescale,
+    gaugeRescale_def, gauge_closedBall zero_le_one, gauge_setOf_add_mem, div_one,
+    Submodule.coe_smul, ← Submodule.norm_coe]
 
 /-- `TauCeti.convexClosedBallHomeomorph` sends the centre of the ball to `c`. -/
 @[simp]
@@ -329,23 +439,40 @@ theorem coe_convexClosedBallHomeomorph_zero (hconv : Convex ℝ C) (hcl : IsClos
     (convexClosedBallHomeomorph hconv hcl hb hc ⟨0, mem_closedBall_self zero_le_one⟩ : E) = c := by
   simp [coe_convexClosedBallHomeomorph_apply]
 
+/-- The inverse convex-ball homeomorphism translates by `-c`, then rescales by the gauge. -/
+theorem coe_convexClosedBallHomeomorph_symm_apply_eq_gaugeRescale (hconv : Convex ℝ C)
+    (hcl : IsClosed C) (hb : IsBounded C) (hc : c ∈ intrinsicInterior ℝ C) (x : C) :
+    (((convexClosedBallHomeomorph hconv hcl hb hc).symm x : (affineSpan ℝ C).direction) : E) =
+      ((gaugeRescale {w : (affineSpan ℝ C).direction | c + (w : E) ∈ C} (closedBall 0 1)
+        ⟨(x : E) - c, by
+          simpa using AffineSubspace.vsub_mem_direction (subset_affineSpan ℝ C x.2)
+            (subset_affineSpan ℝ C (intrinsicInterior_subset hc))⟩ :
+              (affineSpan ℝ C).direction) : E) := (rfl)
+
 /-- The inverse of `TauCeti.convexClosedBallHomeomorph` in explicit coordinates: `x` is sent to
 `(gauge (-c +ᵥ C) (x - c) / ‖x - c‖) • (x - c)`. -/
 theorem coe_convexClosedBallHomeomorph_symm_apply (hconv : Convex ℝ C) (hcl : IsClosed C)
     (hb : IsBounded C) (hc : c ∈ intrinsicInterior ℝ C) (x : C) :
     (((convexClosedBallHomeomorph hconv hcl hb hc).symm x : (affineSpan ℝ C).direction) : E) =
       (gauge ((-c) +ᵥ C) ((x : E) - c) / ‖(x : E) - c‖) • ((x : E) - c) := by
-  set w : (affineSpan ℝ C).direction := ⟨(x : E) - c, by
-    simpa using AffineSubspace.vsub_mem_direction (subset_affineSpan ℝ C x.2)
-      (subset_affineSpan ℝ C (intrinsicInterior_subset hc))⟩
-  have hS : gauge {w : (affineSpan ℝ C).direction | c + (w : E) ∈ C} w =
-      gauge ((-c) +ᵥ C) ((x : E) - c) := by
-    rw [setOf_add_mem_eq_preimage]
-    exact LinearMap.gauge_preimage _ _ _
-  -- By definition the inverse is translation by `-c` followed by the inverse gauge rescaling.
-  change ((gaugeRescale {w : (affineSpan ℝ C).direction | c + (w : E) ∈ C} (closedBall 0 1)
-    w : (affineSpan ℝ C).direction) : E) = _
-  rw [gaugeRescale_def, gauge_closedBall zero_le_one, hS, div_one, Submodule.coe_smul,
-    ← Submodule.norm_coe]
+  rw [coe_convexClosedBallHomeomorph_symm_apply_eq_gaugeRescale,
+    gaugeRescale_def, gauge_closedBall zero_le_one, gauge_setOf_add_mem, div_one,
+    Submodule.coe_smul, ← Submodule.norm_coe]
+
+/-- The unit sphere corresponds exactly to the intrinsic frontier under the convex-ball
+homeomorphism. No full-dimensionality assumption is needed. Use this as an explicit rewrite;
+the native simp normal form expands membership in the intrinsic frontier. -/
+theorem coe_convexClosedBallHomeomorph_mem_intrinsicFrontier_iff (hconv : Convex ℝ C)
+    (hcl : IsClosed C) (hb : IsBounded C) (hc : c ∈ intrinsicInterior ℝ C)
+    (v : closedBall (0 : (affineSpan ℝ C).direction) 1) :
+    (convexClosedBallHomeomorph hconv hcl hb hc v : E) ∈ intrinsicFrontier ℝ C ↔
+      ‖v.1‖ = 1 := by
+  rw [coe_convexClosedBallHomeomorph_apply_eq_gaugeRescale,
+    add_mem_intrinsicFrontier_iff (subset_affineSpan ℝ C (intrinsicInterior_subset hc)),
+    ← gauge_eq_one_iff_mem_frontier (convex_setOf_add_mem hconv)
+      (setOf_add_mem_mem_nhds_of_mem_intrinsicInterior hc),
+    gauge_gaugeRescale _
+      (absorbent_nhds_zero (setOf_add_mem_mem_nhds_of_mem_intrinsicInterior hc))
+      (isVonNBounded_setOf_add_mem hb), gauge_closedBall zero_le_one, div_one]
 
 end TauCeti

@@ -64,7 +64,7 @@ single generator (`LinearEquiv.eq_of_span_singleton_eq_top`), so any two local T
 the same restriction to every fibre and they glue: every real vector bundle over a compact base has
 a Thom class with coefficients in `K` (`TauCeti.exists_isThomClass_of_compactSpace`). With integral
 coefficients the fibre generators have to be chosen compatibly, which is what an orientation of the
-bundle provides.
+bundle provides (`TauCeti.VectorBundleOrientation.exists_isThomClass`).
 
 ## Main results
 

@@ -5,9 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.RepresentationTheory.Homological.ContCohomology.Resolution.GradedContraction
+public import TauCeti.RepresentationTheory.Homological.ContCohomology.Resolution.Graded.Contraction
 public import TauCeti.RepresentationTheory.Tensor.Induction.Diagonal
 public import TauCeti.RepresentationTheory.Tensor.Induction.Smooth
+public import TauCeti.LinearAlgebra.PiTensorProduct.Decomposition
 import TauCeti.RepresentationTheory.Homological.ContCohomology.Resolution.CoboundaryShift
 
 /-!
@@ -224,6 +225,13 @@ homogeneous factors has the sum of their degrees. -/
 noncomputable abbrev smoothTensorInducedGradedResolutionPiece :
     ℤ → Submodule R ((smoothTensorInducedGradedResolutionFunctor U hU s).obj A).obj.V :=
   PiTensorProduct.totalDegreePiece (G ⧸ U) (fun _ ↦ A.obj.gradedResolutionPiece)
+
+/-- The total-degree pieces decompose the tensor-induced resolution. Thus a degreewise
+comparison out of this resolution assembles into a map on its whole underlying module. -/
+noncomputable instance smoothTensorInducedGradedResolutionPieceDecomposition :
+    DirectSum.Decomposition (smoothTensorInducedGradedResolutionPiece U hU s A) := by
+  exact PiTensorProduct.totalDegreePieceDecomposition _
+    (hℳ := fun _ ↦ A.obj.isInternal_gradedResolutionPiece.chooseDecomposition)
 
 /-- The action of `G` on the tensor-induced total resolution preserves the total degree. -/
 theorem smoothTensorInducedGradedResolutionPiece_ρ_mem (n : ℤ) (g : G)
