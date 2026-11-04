@@ -49,6 +49,8 @@ whose simplices are uniformly fat, this is Munkres' secant approximation theorem
 * `AbstractSimplicialComplex.isSimplexImmersion_secantMap_comp_faceInclusion`: the secant map of
   a map that is close to an injective linear map on a closed simplex is an immersion of that
   simplex.
+* `AbstractSimplicialComplex.isSimplexImmersion_secantMap_comp_faceInclusion_of_injOn`: a secant
+  map which is injective on a closed simplex is an immersion of that simplex.
 * `TauCeti.IsSimplexImmersion.exists_continuousOn_hasFDerivWithinAt`: a `C¹` immersion of a
   simplex into a normed space has a continuous derivative within the simplex, injective on its
   directions.
@@ -191,6 +193,61 @@ theorem isSimplexImmersion_secantMap_comp_faceInclusion [DecidableEq ι] {f : Re
   funext a
   exact abs_eq_zero.mp ((Finset.sum_eq_zero_iff_of_nonneg fun b _ => abs_nonneg _).mp hsum a
     (Finset.mem_univ a))
+
+/-- A secant map which is injective on a closed simplex is a `Cⁿ` immersion of that simplex, for
+every `n`: moving the barycenter along a direction on which its linear part vanishes would not
+change its value. -/
+theorem isSimplexImmersion_secantMap_comp_faceInclusion_of_injOn {f : Realization K → E}
+    {σ : Face K} (hinj : InjOn (K.secantMap f) (range (faceInclusion K σ))) :
+    TauCeti.IsSimplexImmersion 𝓘(ℝ, E) n (K.secantMap f ∘ faceInclusion K σ) := by
+  set L := Fintype.linearCombination ℝ fun a : σ.1 => f (vertex K a)
+  have hL : K.secantMap f ∘ faceInclusion K σ = fun x : StandardSimplex σ.1 => L fun a => x.1 a :=
+    funext fun x => by rw [comp_apply, secantMap_faceInclusion, Fintype.linearCombination_apply]
+  rw [hL]
+  refine LinearMap.isSimplexImmersion _ fun v hv hLv => ?_
+  -- Weight vectors on `σ` are the coordinates of points of the closed simplex.
+  have hpt {w : σ.1 → ℝ} (h0 : ∀ a, 0 ≤ w a) (h1 : ∑ a, w a = 1) :
+      ∃ x : StandardSimplex σ.1, (fun a : σ.1 => x.1 a) = w := by
+    have hw : w ∈ range fun t : Convexity.StdSimplex ℝ σ.1 => ⇑t.weights :=
+      ⟨⟨Finsupp.equivFunOnFinite (α := σ.1).symm w, fun a => h0 a, by
+        rw [Finsupp.sum_fintype _ _ fun _ => rfl]
+        simpa using h1⟩, by simp⟩
+    rwa [← Finset.range_standardSimplex_coordinates] at hw
+  have hcard : (0 : ℝ) < σ.1.card := by
+    exact_mod_cast (K.isRelLowerSet_faces.prop_of_mem σ.2).card_pos
+  set c : ℝ := (σ.1.card : ℝ)⁻¹
+  have hc : 0 < c := inv_pos.2 hcard
+  have hsum : ∑ _a : σ.1, c = 1 := by
+    rw [Finset.sum_const, Finset.card_univ, Fintype.card_coe, nsmul_eq_mul,
+      mul_inv_cancel₀ hcard.ne']
+  -- The barycenter `x₀` and its translate `x₁` by `t • v`, for small `t > 0`.
+  set t : ℝ := c / (∑ a, |v a| + 1)
+  have ht : 0 < t := by positivity
+  have hle (a : σ.1) : t * |v a| ≤ c := by
+    rw [div_mul_eq_mul_div, div_le_iff₀ (by positivity)]
+    have : |v a| ≤ ∑ b, |v b| :=
+      Finset.single_le_sum (fun b _ => abs_nonneg (v b)) (Finset.mem_univ a)
+    nlinarith
+  obtain ⟨x₀, hx₀⟩ := hpt (w := fun _ => c) (fun _ => hc.le) hsum
+  obtain ⟨x₁, hx₁⟩ := hpt (w := fun a => c + t * v a)
+    (fun a => by nlinarith [neg_abs_le (v a), hle a])
+    (by rw [Finset.sum_add_distrib, ← Finset.mul_sum, hv, mul_zero, add_zero, hsum])
+  have hval : K.secantMap f (faceInclusion K σ x₁) = K.secantMap f (faceInclusion K σ x₀) := by
+    have h₀ := congrFun hL x₀
+    have h₁ := congrFun hL x₁
+    simp only [comp_apply] at h₀ h₁
+    rw [h₀, h₁, hx₀, hx₁]
+    have : (fun a => c + t * v a) = (fun _ : σ.1 => c) + t • v := by
+      funext a
+      simp
+    rw [this, map_add, map_smul, hLv, smul_zero, add_zero]
+  have heq := congrArg Subtype.val (hinj ⟨x₁, rfl⟩ ⟨x₀, rfl⟩ hval)
+  rw [faceInclusion_val, faceInclusion_val] at heq
+  funext a
+  have hca := congrFun (hx₁.symm.trans ((congrArg (fun w : ι →₀ ℝ => fun a : σ.1 => w a)
+    heq).trans hx₀)) a
+  have : t * v a = 0 := by linarith
+  simpa [ht.ne'] using this
 
 end AbstractSimplicialComplex
 
