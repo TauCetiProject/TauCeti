@@ -46,7 +46,9 @@ perturbation `G - (a * r) • E` with `2 ∣ r` has determinant `(1 + 2 r t) det
 the trace makes divisible by `2 r`.
 
 A symmetric `n × n` matrix is determined by its entries on and above the diagonal, that is by a
-function on the unordered pairs `Sym2 n`, so there are `#R ^ (n (n + 1) / 2)` of them.
+function on the unordered pairs `Sym2 n`, so there are `#R ^ (n (n + 1) / 2)` of them. More
+generally, for an alternating matrix `Q` the solutions `S` of `S - Sᵀ = Q` are determined in the
+same way by their entries on and above the diagonal, in every characteristic.
 
 ## Main results
 
@@ -69,6 +71,8 @@ function on the unordered pairs `Sym2 n`, so there are `#R ^ (n (n + 1) / 2)` of
   to the scalar `a` by `(a * r) • E` multiplies its determinant by an element of `1 + 2 r R`.
 * `Matrix.natCard_isSymm`: the number of symmetric `n × n` matrices over `R` is
   `Nat.card R ^ (n + 1).choose 2`.
+* `Matrix.subTransposeEqEquiv`: for an alternating `Q`, the solutions of `S - Sᵀ = Q` are
+  parametrized by the functions on `Sym2 n`.
 -/
 
 public section
@@ -254,5 +258,54 @@ theorem natCard_isSymm (n R : Type*) [Fintype n] :
     fun M => ?_).trans (Sym2.lift (α := n) (β := R))
   rw [IsSymm.ext_iff]
   exact ⟨fun h a b => h b a, fun h a b => h b a⟩
+
+section SubTranspose
+
+variable {n R : Type*} [CommRing R] [LinearOrder n] {Q : Matrix n n R}
+
+/-- For an alternating matrix `Q`, with `Qᵀ = -Q` and zero diagonal, the solutions `S` of
+`S - Sᵀ = Q` are parametrized by their entries on and above the diagonal, that is by a function on
+the unordered pairs `Sym2 n`: the solution attached to `g` is the symmetric matrix of `g` plus the
+strictly lower triangular part of `Q`. No division by two is involved, so this holds over every
+commutative ring, including in characteristic two. -/
+def subTransposeEqEquiv (hQ : Qᵀ = -Q) (hQd : ∀ i, Q i i = 0) :
+    {S : Matrix n n R // S - Sᵀ = Q} ≃ (Sym2 n → R) where
+  toFun S := Sym2.lift ⟨fun i j => S.1 (min i j) (max i j), fun i j => by
+    simp only [min_comm i j, max_comm i j]⟩
+  invFun g := ⟨of fun i j => g s(i, j) + if j < i then Q i j else 0, by
+    ext i j
+    have hji : Q j i = -Q i j := by simpa using congrFun (congrFun hQ i) j
+    rcases lt_trichotomy i j with h | rfl | h
+    · simp [h, h.not_gt, hji, Sym2.eq_swap]
+    · simp [hQd]
+    · simp [h, h.not_gt, Sym2.eq_swap]⟩
+  left_inv S := by
+    ext i j
+    have hS : S.1 i j - S.1 j i = Q i j := by simpa using congrFun (congrFun S.2 i) j
+    rcases le_or_gt i j with h | h
+    · simp [h, h.not_gt]
+    · simp [h, h.le, ← hS]
+  right_inv g := by
+    funext z
+    induction z using Sym2.ind with
+    | h i j =>
+      rcases le_total i j with h | h
+      · simp [h]
+      · simp [h, Sym2.eq_swap]
+
+/-- The parameter of a solution of `S - Sᵀ = Q` records its entries on and above the diagonal. -/
+theorem subTransposeEqEquiv_apply_mk_of_le (hQ : Qᵀ = -Q) (hQd : ∀ i, Q i i = 0)
+    (S : {S : Matrix n n R // S - Sᵀ = Q}) {i j : n} (h : i ≤ j) :
+    subTransposeEqEquiv hQ hQd S s(i, j) = S.1 i j := by
+  simp [subTransposeEqEquiv, h]
+
+/-- The solution of `S - Sᵀ = Q` with parameter `g` has entries `g s(i, j)` on and above the
+diagonal, and `g s(i, j) + Q i j` below it. -/
+theorem coe_subTransposeEqEquiv_symm_apply (hQ : Qᵀ = -Q) (hQd : ∀ i, Q i i = 0)
+    (g : Sym2 n → R) (i j : n) :
+    ((subTransposeEqEquiv hQ hQd).symm g).1 i j = g s(i, j) + if j < i then Q i j else 0 :=
+  (rfl)
+
+end SubTranspose
 
 end Matrix
