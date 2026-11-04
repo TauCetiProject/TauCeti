@@ -397,6 +397,16 @@ def equivHNNExtension :
     equivHNNExtension (t i : CentralizerExt u 1) = HNNExtension.t :=
   toHNNExtension_t i
 
+@[simp] theorem equivHNNExtension_symm_of (g : G) :
+    equivHNNExtension.symm
+      (HNNExtension.of g : HNNExtension G (centralizer {u}) (centralizer {u}) (.refl _)) = of g :=
+  ofHNNExtension_of g
+
+@[simp] theorem equivHNNExtension_symm_t :
+    equivHNNExtension.symm
+      (HNNExtension.t : HNNExtension G (centralizer {u}) (centralizer {u}) (.refl _)) = t 0 :=
+  ofHNNExtension_t
+
 end CentralizerExt
 
 /-- A step `G ↦ G(u, ℤⁿ)` of an iterated extension of centralizers is *admissible* when `u` is not
