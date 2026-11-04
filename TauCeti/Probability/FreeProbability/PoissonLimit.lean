@@ -88,11 +88,9 @@ theorem tendsto_natCast_mul_sum_mu_mul_prod {α : Type*} [LinearOrder α] {m : �
     · subst htop
       simpa [Finpartition.parts_top hB.ne_empty] using h1
     · -- A partition other than `1̂` has at least two parts.
-      have hp2 : #σ.1.parts - 1 ≠ 0 := by
-        refine Nat.sub_ne_zero_of_lt (lt_of_not_ge fun hle => htop ?_)
-        obtain ⟨C, hC⟩ := Finset.card_eq_one.1 (le_antisymm hle (Nat.pos_of_ne_zero hp))
-        have hCB : C = B := by simpa [hC] using σ.1.sup_parts
-        exact Subtype.ext (Finpartition.eq_top_of_mem_parts (hCB ▸ hC ▸ mem_singleton_self C))
+      have hp2 : #σ.1.parts - 1 ≠ 0 := Nat.sub_ne_zero_of_lt (lt_of_le_of_ne
+        (Nat.pos_of_ne_zero hp) fun h1 => htop (Subtype.ext
+          ((Finpartition.card_parts_eq_one_iff (bot_eq_empty ▸ hB.ne_empty)).1 h1.symm)))
       simpa [zero_pow hp2] using h1.const_mul (mu 𝕜 σ ⊤)
   have := tendsto_finsetSum univ fun σ _ => hσ σ
   rw [Fintype.sum_ite_eq'] at this

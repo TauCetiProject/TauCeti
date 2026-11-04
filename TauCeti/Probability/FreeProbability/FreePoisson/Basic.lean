@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Combinatorics.NoncrossingPartition.Narayana
+public import TauCeti.Probability.FreeProbability.Cumulant.Series
 public import TauCeti.Probability.FreeProbability.Semicircular.Basic
 
 /-!
@@ -127,21 +128,13 @@ theorem isFreePoisson_iff_freeCumulant_const (hφ : φ 1 = 1) :
   refine ⟨fun h n hn => ?_, fun h => ⟨fun n => ?_⟩⟩
   · have : Nonempty (Fin n) := ⟨⟨0, Nat.pos_of_ne_zero hn⟩⟩
     simpa using h.freeCumulant_const (univ_nonempty (α := Fin n))
-  rcases eq_or_ne n 0 with rfl | hn
-  · rw [pow_zero, hφ, NoncrossingPartition.sum_comp_card_parts_of_card_eq_zero (by simp)
-      fun k => r ^ k, pow_zero, pow_zero, one_mul]
   -- By the moment–cumulant formula, each part `B` contributes the cumulant `r * c ^ #B`.
-  have : Nonempty (Fin n) := ⟨⟨0, Nat.pos_of_ne_zero hn⟩⟩
-  have hκ (B : Finset (Fin n)) (hB : B.Nonempty) :
-      freeCumulant φ (fun _ => a) B = r * c ^ #B := by
-    rw [freeCumulant_eq_freeCumulant_comp_orderEmbOfFin, Function.comp_def,
-      h _ hB.card_pos.ne']
-  have hm := apply_pow_card_eq_sum_prod_freeCumulant φ a (univ_nonempty (α := Fin n))
+  have hm := apply_pow_eq_sum_prod_coeff_freeCumulantSeries a hφ (univ : Finset (Fin n))
   have hc := NoncrossingPartition.sum_prod_mul_pow_card (univ : Finset (Fin n)) r c
   rw [card_univ, Fintype.card_fin] at hm hc
   rw [hm, ← hc]
-  exact sum_congr rfl fun π _ =>
-    prod_congr rfl fun B hB => hκ B (π.1.nonempty_of_mem_parts hB)
+  exact sum_congr rfl fun π _ => prod_congr rfl fun B hB => by
+    rw [coeff_freeCumulantSeries, h _ (π.1.nonempty_of_mem_parts hB).card_pos.ne']
 
 /-- For a normalised `φ`, the zero element is free Poisson of rate `r` and jump size `c` exactly
 when `r * c = 0`: its moments are those of the Dirac mass at `0`, which is the free Poisson law

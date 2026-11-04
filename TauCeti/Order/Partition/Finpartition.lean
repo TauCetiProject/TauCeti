@@ -21,7 +21,8 @@ import Mathlib.Data.Set.Finite.Range
 This file contains general-purpose constructions and facts about finite partitions: the partition
 of the top element into an element and its complement, the decidability of the refinement order,
 the single part of the coarsest partition of a non-bottom element, the fact that a partition having
-the whole element as a part is the coarsest, the partition of a type into the
+the whole element as a part is the coarsest, the characterization of the coarsest partition as the
+one with exactly one part, the partition of a type into the
 fibres of a map to a finite type, the associated indexed partition, the sizes of the traces of a
 subset on the parts, cardinality bounds for common refinements, a bound on the sum of the squared
 part sizes, the refinement relations of `Finpartition.bind` and of a refining partition's parts,
@@ -105,6 +106,15 @@ theorem parts_top {α : Type*} [Lattice α] [OrderBot α] {a : α} [Decidable (a
 theorem eq_top_of_mem_parts {α : Type*} [Lattice α] [OrderBot α] {a : α} [Decidable (a = ⊥)]
     {P : Finpartition a} (h : a ∈ P.parts) : P = ⊤ :=
   top_le_iff.1 fun _ hb => ⟨a, h, (Finset.mem_singleton.1 (parts_top_subset a hb)).le⟩
+
+/-- A finite partition of a non-bottom element `a` has exactly one part if and only if it is the
+coarsest partition. -/
+theorem card_parts_eq_one_iff {α : Type*} [Lattice α] [OrderBot α] {a : α} [Decidable (a = ⊥)]
+    {P : Finpartition a} (ha : a ≠ ⊥) : P.parts.card = 1 ↔ P = ⊤ := by
+  refine ⟨fun h => ?_, fun h => by rw [h, parts_top ha, Finset.card_singleton]⟩
+  obtain ⟨b, hb⟩ := Finset.card_eq_one.1 h
+  obtain rfl : b = a := by simpa [hb] using P.sup_parts
+  exact eq_top_of_mem_parts (by simp [hb])
 
 /-- The number of parts in a common refinement is at most the product of the two part counts. -/
 theorem card_parts_inf_le_mul {α : Type*} [DistribLattice α] [OrderBot α] [DecidableEq α]
