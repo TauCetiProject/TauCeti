@@ -189,12 +189,6 @@ theorem a2TwelfthLatticeIsometry_apply
     Isometry.ofEq_apply, Isometry.ofEq_apply]
   exact gluedLatticeIsometryOfEq_apply (s := fun _ ↦ A 2) _ _ _ _ _ _ _ _ _ _ x k j
 
-private theorem apply_fin_eq {ι α : Type*} {n : ι → ℕ} (f : ∀ i, Fin (n i) → α)
-    {i₁ i₂ : ι} (hi : i₁ = i₂) {j₁ : Fin (n i₁)} {j₂ : Fin (n i₂)}
-    (hj : (j₁ : ℕ) = (j₂ : ℕ)) : f i₁ j₁ = f i₂ j₂ := by
-  subst hi
-  exact congrArg (f i₁) (Fin.ext hj)
-
 /-- The inverse of `a2TwelfthLatticeIsometry` reads component `i` of the table lattice from
 component `i` of `TauCeti.a2TwelfthLattice`. -/
 -- Not `@[simp]`: `simp` rewrites `(A 2).rank` inside the left-hand side by `rank_A`.
@@ -204,12 +198,13 @@ theorem a2TwelfthLatticeIsometry_symm_apply
     a2TwelfthLatticeIsometry.symm y i j =
       y (Fin.cast length_components_a2Twelfth i)
         (Fin.cast (congrArg rank (componentType_a2Twelfth i)) j) := by
-  have h := a2TwelfthLatticeIsometry_apply (a2TwelfthLatticeIsometry.symm y)
-    (Fin.cast length_components_a2Twelfth i)
-    (Fin.cast (congrArg rank (componentType_a2Twelfth i)) j)
-  rw [a2TwelfthLatticeIsometry.apply_symm_apply] at h
-  exact (h.trans (apply_fin_eq (a2TwelfthLatticeIsometry.symm y) (by simp)
-    (by simp only [Fin.val_cast]))).symm
+  have hy : a2TwelfthLatticeIsometry (fun i j ↦
+      y (Fin.cast length_components_a2Twelfth i)
+        (Fin.cast (congrArg rank (componentType_a2Twelfth i)) j)) = y := by
+    ext k j'
+    rw [a2TwelfthLatticeIsometry_apply]
+    simp only [Fin.cast_cast, Fin.cast_eq_self]
+  conv_lhs => rw [← hy, a2TwelfthLatticeIsometry.symm_apply_apply]
 
 /-- `a2TwelfthLatticeIsometry` carries the root sublattice of the table row onto
 `TauCeti.a2TwelfthRootLattice`. -/
@@ -222,10 +217,12 @@ theorem map_rootLattice_carrier_a2TwelfthLatticeIsometry :
       (finCongr length_components_a2Twelfth.symm)).symm.trans
       (Isometry.pi fun k ↦ (a2Twelfth.componentType _).rootLatticeIsometryOfEq _
         (componentType_a2Twelfth _) (isSimplyLaced_A 2)))
-  refine a2TwelfthLatticeIsometry.map_carrier_ambientEquiv_of_eq eRoot fun x ↦ ?_
-  ext k j
-  rw [a2TwelfthLatticeIsometry_apply, Isometry.trans_apply, Isometry.pi_apply,
-    rootLatticeIsometryOfEq_apply, Isometry.piCongrLeft_symm_apply, finCongr_apply]
+  have heq : a2TwelfthLatticeIsometry.ambientEquiv = eRoot.ambientEquiv := by
+    refine Isometry.ambientEquiv_eq_of_forall_apply_eq fun x ↦ ?_
+    ext k j
+    rw [a2TwelfthLatticeIsometry_apply, Isometry.trans_apply, Isometry.pi_apply,
+      rootLatticeIsometryOfEq_apply, Isometry.piCongrLeft_symm_apply, finCongr_apply]
+  rw [heq, eRoot.map_carrier_ambientEquiv]
 
 /-- **The table lattice of `A₂¹²` is the ternary Golay gluing of `(A₂)¹²`**: an explicit isometry
 from `a2Twelfth.lattice` onto the overlattice of the simple-root coordinate power `(A₂)¹²` glued
@@ -276,18 +273,14 @@ theorem a2TwelfthLatticeTernaryGolayIsometry_symm_apply
           (Fin.cast length_components_a2Twelfth i)) : ℤ) •
         y (a2TwelfthDestinationToSource.symm (Fin.cast length_components_a2Twelfth i))
           (Fin.cast ((congrArg rank (componentType_a2Twelfth i)).trans (rank_A 2)) k) := by
-  set j := a2TwelfthDestinationToSource.symm (Fin.cast length_components_a2Twelfth i)
-  set k' := Fin.cast ((congrArg rank (componentType_a2Twelfth i)).trans (rank_A 2)) k
-  have h := a2TwelfthLatticeTernaryGolayIsometry_apply
-    (a2TwelfthLatticeTernaryGolayIsometry.symm y) j k'
-  rw [a2TwelfthLatticeTernaryGolayIsometry.apply_symm_apply] at h
-  have hcast : a2TwelfthLatticeTernaryGolayIsometry.symm y
-      (Fin.cast length_components_a2Twelfth.symm (a2TwelfthDestinationToSource j))
-      (Fin.cast ((congrArg rank (componentType_a2Twelfth _)).trans (rank_A 2)).symm k') =
-      a2TwelfthLatticeTernaryGolayIsometry.symm y i k :=
-    apply_fin_eq (a2TwelfthLatticeTernaryGolayIsometry.symm y) (by simp [j]) (by simp [k'])
-  symm
-  rw [h, hcast, smul_smul, Int.units_coe_mul_self, one_smul]
+  have hy : a2TwelfthLatticeTernaryGolayIsometry (fun i k ↦
+      (a2TwelfthSign (a2TwelfthDestinationToSource.symm
+          (Fin.cast length_components_a2Twelfth i)) : ℤ) •
+        y (a2TwelfthDestinationToSource.symm (Fin.cast length_components_a2Twelfth i))
+          (Fin.cast ((congrArg rank (componentType_a2Twelfth i)).trans (rank_A 2)) k)) = y := by
+    ext j k'
+    simp [← mul_assoc, ← Int.cast_mul]
+  conv_lhs => rw [← hy, a2TwelfthLatticeTernaryGolayIsometry.symm_apply_apply]
 
 /-- `a2TwelfthLatticeTernaryGolayIsometry` carries the root sublattice of the table row onto the
 coordinate power `(A₂)¹²`. -/
@@ -297,9 +290,10 @@ theorem map_rootLattice_carrier_a2TwelfthLatticeTernaryGolayIsometry :
       ((typeARootLattice 2).coordinatePower (Fin 12)).carrier := by
   rw [a2TwelfthLatticeTernaryGolayIsometry_def, Isometry.ambientEquiv_trans,
     LinearEquiv.coe_trans, Submodule.map_comp,
-    map_rootLattice_carrier_a2TwelfthLatticeIsometry]
-  exact a2TwelfthTernaryGolayIsometry.map_carrier_ambientEquiv_of_eq
-    a2TwelfthRootIsometry a2TwelfthTernaryGolayIsometry_eq_a2TwelfthRootIsometry
+    map_rootLattice_carrier_a2TwelfthLatticeIsometry,
+    Isometry.ambientEquiv_eq_of_forall_apply_eq
+      a2TwelfthTernaryGolayIsometry_eq_a2TwelfthRootIsometry,
+    a2TwelfthRootIsometry.map_carrier_ambientEquiv]
 
 end RootfulNiemeierType
 
