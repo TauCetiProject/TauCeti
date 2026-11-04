@@ -36,6 +36,8 @@ later tubular-neighbourhood and surgery interfaces.
 
 ## Main results
 
+* `Manifold.IsSmoothEmbedding.contMDiff_iff_comp`: smoothness can be tested after composition
+  with a smooth embedding, without a separate continuity hypothesis.
 * `TauCeti.isSmoothEmbedding_prodMkLeft_of_extChartAt_eq_zero`: the slice `x ↦ (x, c)` of a product
   `M × M'` is a smooth embedding when the preferred chart of `M'` at `c` sends `c` to `0`.
 * `Manifold.IsImmersion.isSmoothEmbedding_of_isProperMap`: an injective proper immersion is a
@@ -47,8 +49,6 @@ The construction is a thin wrapper around Mathlib's
 -/
 
 public section
-
-namespace TauCeti
 
 open scoped Manifold ContDiff
 open Topology
@@ -67,6 +67,20 @@ variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
   {M' : Type*} [TopologicalSpace M'] [ChartedSpace G M']
   {N' : Type*} [TopologicalSpace N'] [ChartedSpace G' N']
   {n : ℕ∞ω}
+
+namespace Manifold.IsSmoothEmbedding
+
+/-- A map into a smoothly embedded manifold is smooth if and only if its composite with
+the embedding is smooth. No separate continuity assumption is needed. -/
+theorem contMDiff_iff_comp {f : M → N} {φ : N → N'}
+    (hφ : Manifold.IsSmoothEmbedding J J' n φ) :
+    ContMDiff I J n f ↔ ContMDiff I J' n (φ ∘ f) := by
+  rw [ContMDiff.iff_comp_isImmersion hφ.isImmersion]
+  exact ⟨And.right, fun h ↦ ⟨hφ.isEmbedding.continuous_iff.2 h.continuous, h⟩⟩
+
+end Manifold.IsSmoothEmbedding
+
+namespace TauCeti
 
 /-- A bundled `C^n` smooth embedding between manifolds.
 
