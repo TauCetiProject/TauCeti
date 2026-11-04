@@ -11,7 +11,8 @@ public import Mathlib.Topology.VectorBundle.Constructions
 /-!
 # Fibres and linear charts of pullback bundles
 
-The fibres of `f *ᵖ E` inherit their normed and inner product structures from `E (f x)`.
+The fibres of `f *ᵖ E` inherit their additive group, normed and inner product structures from
+`E (f x)`.
 These instances allow the orthonormal frame bundle of a pullback to use exactly the original
 fibre metrics, with no transport or renorming. A pulled-back linear trivialization also
 induces the original fibre equivalence at the image point
@@ -25,6 +26,10 @@ open Bundle
 namespace Bundle.Pullback
 
 variable {B B' : Type*} {E : B → Type*} (f : B' → B)
+
+/-- A pullback fibre carries the additive group structure of the original fibre. -/
+instance instAddCommGroup [∀ b, AddCommGroup (E b)] (x : B') : AddCommGroup ((f *ᵖ E) x) :=
+  inferInstanceAs (AddCommGroup (E (f x)))
 
 /-- A pullback fibre carries the normed additive group structure of the original fibre. -/
 instance instNormedAddCommGroup [∀ b, NormedAddCommGroup (E b)] (x : B') :
