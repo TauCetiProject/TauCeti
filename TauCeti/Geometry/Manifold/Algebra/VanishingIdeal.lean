@@ -163,7 +163,7 @@ theorem mem_smoothVanishingIdeal_sq_of_mvfderiv_eq_zero {x : M} (hx : I.IsInteri
     exact hcomp.symm
   -- Hadamard's lemma for `g` at `F x` in the coordinates of a basis `b`, pulled back along `F`.
   let b := Module.finBasis ℝ E
-  obtain ⟨a, hax, ha⟩ := exists_contMDiffMap_hadamard_coords g (F x) b
+  obtain ⟨a, hax, ha⟩ := g.exists_hadamard_coords (F x) b
   let c (i : Fin (Module.finrank ℝ E)) : C^∞⟮I, M; ℝ⟯ :=
     ⟨fun y ↦ b.coord i (F y), (b.coord i).toContinuousLinearMap.contDiff.contMDiff.comp F.contMDiff⟩
   -- The pulled-back identity holds pointwise by `ha`, as the bundled compositions evaluate as
@@ -183,6 +183,7 @@ theorem mem_smoothVanishingIdeal_sq_of_mvfderiv_eq_zero {x : M} (hx : I.IsInteri
 /-- At an interior point `x` of a finite-dimensional Hausdorff manifold, a smooth function lies in
 the square of the vanishing ideal of `x` exactly when it vanishes at `x` together with its
 differential. -/
+@[simp]
 theorem mem_smoothVanishingIdeal_sq_iff {x : M} (hx : I.IsInteriorPoint x)
     {f : C^∞⟮I, M; ℝ⟯} :
     f ∈ smoothVanishingIdeal x ^ 2 ↔ f x = 0 ∧ mvfderiv I f x = 0 := by

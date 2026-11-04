@@ -146,13 +146,13 @@ theorem tangentToPointDerivation_injective
   rw [hd] at hfv
   exact hfv
 
-namespace TauCeti
+namespace ContMDiffMap
 
 /-- **Hadamard's lemma in coordinates.** Subtracting its value at `x` writes a smooth real
 function as a combination of the coordinate functions of any finitely-indexed basis, each taken
 relative to its own value at `x`, with smooth coefficients. At the base point those coefficients
 are the directional derivatives along the basis. -/
-theorem exists_contMDiffMap_hadamard_coords {E : Type*} [NormedAddCommGroup E]
+theorem exists_hadamard_coords {E : Type*} [NormedAddCommGroup E]
     [NormedSpace ℝ E] {ι : Type*} [Fintype ι]
     (f : C^∞⟮modelWithCornersSelf ℝ E, E; ℝ⟯) (x : E) (b : Module.Basis ι ℝ E) :
     ∃ a : ι → C^∞⟮modelWithCornersSelf ℝ E, E; ℝ⟯,
@@ -175,6 +175,10 @@ theorem exists_contMDiffMap_hadamard_coords {E : Type*} [NormedAddCommGroup E]
         intro i _
         rw [map_smul]
         simp [mul_comm]
+
+end ContMDiffMap
+
+namespace TauCeti
 
 /-- **Hadamard's identity in the algebra of smooth functions.** A pointwise factorization of
 `g - g x` through the functions `c i`, with coefficients `a i`, is an identity between the bundled
@@ -270,7 +274,7 @@ private theorem tangentToPointDerivation_surjective_model
   rw [mvfderiv, mfderiv_eq_fderiv]
   -- Hadamard's lemma factors `f - f(x)` through the coordinate functions, with smooth factors,
   -- so this identity lives in the algebra on which the derivation acts.
-  obtain ⟨a, hax, ha⟩ := TauCeti.exists_contMDiffMap_hadamard_coords f' x b
+  obtain ⟨a, hax, ha⟩ := f'.exists_hadamard_coords x b
   have hfactor := TauCeti.sub_algebraMap_eq_sum_mul_sub_algebraMap x f' a c ha
   -- `D`'s domain is a type synonym for `C^∞⟮…⟯`, so the sum below lives *syntactically* in the
   -- unpointed type and `rw` cannot use `map_sum` as stated; this restatement supplies the
