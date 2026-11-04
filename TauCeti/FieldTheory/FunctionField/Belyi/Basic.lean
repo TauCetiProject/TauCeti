@@ -53,12 +53,19 @@ automorphism of `k(t)` permutes the three marked places
 
 ## Main results
 
-* `TauCeti.isAlgebraicBelyiPair_iff`: the characterization by unramified places.
+* `TauCeti.Place.notMem_zeroOneInfty_iff`: the unmarked places are those at which `t` and
+  `t - 1` both have order zero.
+* `TauCeti.isAlgebraicBelyiPair_iff`: the characterization by unramified places, and
+  `TauCeti.isAlgebraicBelyiPair_iff_branchPlaces_subset`: the same statement as containment of the
+  branch places of `F / k(t)` in the three marked places.
 * `TauCeti.isAlgebraicBelyiPair_ratFunc`: `k(t)` over itself is an algebraic Belyi pair.
 * `TauCeti.IsAlgebraicBelyiPair.of_equiv_equiv` and `TauCeti.IsAlgebraicBelyiPair.of_algEquiv`:
   transport along isomorphisms.
 * `TauCeti.IsAlgebraicBelyiPair.of_isScalarTower`: a finite extension of an algebraic Belyi pair
   that is unramified over the places outside the three marked fibres is an algebraic Belyi pair.
+* `TauCeti.isAlgebraicBelyiPair_iff_of_isScalarTower`: for a tower `k(t) ⊆ E ⊆ F`, the branch
+  places of `E / k(t)` and the places below the branch places of `F / E` are all marked exactly
+  when `F` is an algebraic Belyi pair with constant field `k`.
 
 ## References
 
@@ -142,15 +149,27 @@ theorem range_markedPlace : Set.range (markedPlace k) = zeroOneInfty k := by
   ext P
   simp [mem_zeroOneInfty_iff, Fin.exists_fin_succ, eq_comm]
 
+/-- **The marked places are the zeros and poles of `t` and `t - 1`**: a place of `k(t)` is none of
+`t = 0`, `t = 1` and `t = ∞` exactly when both `t` and `t - 1` have order zero there. -/
+theorem notMem_zeroOneInfty_iff {P : Place k (RatFunc k)} :
+    P ∉ zeroOneInfty k ↔ P.ord RatFunc.X = 0 ∧ P.ord (RatFunc.X - 1) = 0 := by
+  have hC : (RatFunc.X - 1 : RatFunc k) = RatFunc.X - RatFunc.C 1 := by rw [map_one]
+  refine ⟨fun hP ↦ ?_, fun ⟨h0, h1⟩ hP ↦ ?_⟩
+  · simp only [mem_zeroOneInfty_iff, not_or] at hP
+    exact ⟨ord_X_eq_zero_of_ne hP.1 hP.2.2, hC ▸ ord_X_sub_C_eq_zero_of_ne 1 hP.2.1 hP.2.2⟩
+  rcases hP with rfl | rfl | rfl
+  · simp at h0
+  · rw [hC, ord_adicOfIrreducible_X_sub_C_self] at h1
+    exact one_ne_zero h1
+  · simp at h0
+
 /-- Away from `0`, `1` and `∞`, the function `t (t - 1)` is a unit. -/
 theorem valuation_X_mul_X_sub_one_of_notMem_zeroOneInfty {P : Place k (RatFunc k)}
     (hP : P ∉ zeroOneInfty k) : P.valuation (RatFunc.X * (RatFunc.X - 1)) = 1 := by
-  simp only [mem_zeroOneInfty_iff, not_or] at hP
-  have h1 := ord_X_sub_C_eq_zero_of_ne (1 : k) hP.2.1 hP.2.2
-  rw [map_one RatFunc.C] at h1
+  obtain ⟨h0, h1⟩ := notMem_zeroOneInfty_iff.mp hP
   have hX1 : (RatFunc.X - 1 : RatFunc k) ≠ 0 := by simpa using RatFunc.X_sub_C_ne_zero (1 : k)
-  rw [map_mul, valuation_eq_exp_neg_ord _ RatFunc.X_ne_zero, valuation_eq_exp_neg_ord _ hX1,
-    ord_X_eq_zero_of_ne hP.1 hP.2.2, h1, neg_zero, WithZero.exp_zero, one_mul]
+  rw [map_mul, valuation_eq_exp_neg_ord _ RatFunc.X_ne_zero, valuation_eq_exp_neg_ord _ hX1, h0,
+    h1, neg_zero, WithZero.exp_zero, one_mul]
 
 end Place
 
@@ -193,6 +212,17 @@ theorem isAlgebraicBelyiPair_iff :
     fun ⟨hex, h⟩ ↦ ⟨hex, fun hP ↦ (h _ hP).ramificationIdx_eq_one rfl⟩⟩
   exact Place.restrict_surjective_of_finiteDimensional (IsFunctionField.ratFunc k)
     (isFunctionField_iff_functionField.mpr inferInstance) P
+
+/-- **An algebraic Belyi pair is branched only over `0`, `1` and `∞`**: `F` is an algebraic Belyi
+pair exactly when its constant field is `k` and every branch place of `F / k(t)` is one of the
+three marked places. -/
+theorem isAlgebraicBelyiPair_iff_branchPlaces_subset :
+    IsAlgebraicBelyiPair k F ↔ IsIntegrallyClosedIn k F ∧
+      Place.branchPlaces (k := k) (F := RatFunc k) k F ⊆ Place.zeroOneInfty k := by
+  rw [isAlgebraicBelyiPair_iff]
+  exact and_congr_right fun _ ↦
+    ⟨fun h P hP ↦ not_not.mp fun h' ↦ Place.mem_branchPlaces_iff.mp hP (h P h'),
+      fun h P hP ↦ not_not.mp fun h' ↦ hP (h (Place.mem_branchPlaces_iff.mpr h'))⟩
 
 variable {F' : Type*} [Field F'] [Algebra k F'] [Algebra (RatFunc k) F']
   [IsScalarTower k (RatFunc k) F'] [FiniteDimensional (RatFunc k) F']
@@ -247,5 +277,21 @@ theorem IsAlgebraicBelyiPair.of_isScalarTower (hE : IsAlgebraicBelyiPair k E)
     have : Algebra.IsIntegral E F := .tower_top (RatFunc k)
     rw [Place.ramificationIdx_restrict_mul (k₁ := k) (F₁ := E) P, h P hP, one_mul]
     exact hE.ramificationIdx_eq_one (by rwa [Place.restrict_restrict])
+
+/-- **Belyi maps through an intermediate cover**: for a tower `k(t) ⊆ E ⊆ F`, the field `F` is an
+algebraic Belyi pair exactly when its constant field is `k`, the branch places of `E / k(t)` are
+among `0`, `1` and `∞`, and so are the places of `k(t)` below the branch places of `F / E`. This
+follows from the branch-value formula `Place.branchPlaces_eq_image_union` for a composite of finite
+maps of curves `f : X → Y` and `g : Y → ℙ¹`. -/
+theorem isAlgebraicBelyiPair_iff_of_isScalarTower :
+    letI : Algebra.IsIntegral E F := .tower_top (RatFunc k)
+    IsAlgebraicBelyiPair k F ↔ IsIntegrallyClosedIn k F ∧
+      Place.branchPlaces (k := k) (F := RatFunc k) k E ⊆ Place.zeroOneInfty k ∧
+      (fun P : Place k E ↦ P.restrict k (RatFunc k)) '' Place.branchPlaces k F ⊆
+        Place.zeroOneInfty k := by
+  let _ : Algebra.IsIntegral E F := .tower_top (RatFunc k)
+  rw [isAlgebraicBelyiPair_iff_branchPlaces_subset, Place.branchPlaces_eq_image_union
+    (k₁ := k) (F₁ := E) (isFunctionField_iff_functionField.mpr inferInstance), Set.union_subset_iff,
+    and_comm (a := _ '' _ ⊆ _)]
 
 end TauCeti

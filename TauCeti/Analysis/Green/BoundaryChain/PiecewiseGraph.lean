@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 import TauCeti.Topology.Path.Extend.Basic
+import TauCeti.Topology.Order.ProjIcc
 public import TauCeti.Analysis.Green.BoundaryChain.Graph
 import TauCeti.Analysis.Calculus.Deriv.Path
 import Mathlib.Analysis.Calculus.Deriv.Shift
@@ -168,13 +169,11 @@ private theorem CoordinatePrimitive.reparam {d : Coordinate} {P : ℂ → ℝ}
     apply hb.mono
     intro t ht
     exact mem_iUnion₂.mpr ⟨θ t, ht, by simp⟩
-  let Φ := IccExtend zero_le_one ((Icc 0 1).domRestrict θ)
-  have hΦ : Continuous Φ := hθ.domRestrict.Icc_extend'
-  have heΦ (t : ℝ) (ht : t ∈ Icc 0 1) : Φ t = θ t := IccExtend_of_mem _ _ ht
+  obtain ⟨Φ, hΦ, heΦ⟩ := hθ.exists_continuous_eqOn_Icc zero_le_one
   refine ⟨F ∘ Φ, ?_, ?_⟩
   · refine ⟨?_, ?_, u ∪ θ ⁻¹' T, hu.union hpre, ?_⟩
     · exact hcF.comp hΦ
-    · rw [Function.comp_apply, heΦ 0 ⟨le_rfl, zero_le_one⟩, h0, hF0]
+    · rw [Function.comp_apply, heΦ (left_mem_Icc.2 zero_le_one), h0, hF0]
     · intro t ht
       have hdt := hdu t ⟨ht.1, fun h ↦ ht.2 (Or.inl h)⟩
       have hav : θ t ∉ T := fun h ↦ ht.2 (Or.inr h)
@@ -190,13 +189,13 @@ private theorem CoordinatePrimitive.reparam {d : Coordinate} {P : ℂ → ℝ}
         exact he ⟨x, hx⟩
       have heF : F ∘ Φ =ᶠ[𝓝 t] F ∘ θ := by
         filter_upwards [Icc_mem_nhds ht.1.1 ht.1.2] with x hx
-        exact congrArg F (heΦ x hx)
+        exact congrArg F (heΦ hx)
       have hdγ := (hdcur.hasDerivAt.scomp t hdt.hasDerivAt).congr_of_eventuallyEq heγ
       have hp := (hdp.comp t hdt.hasDerivAt).congr_of_eventuallyEq heF
       rw [hdγ.deriv]
       simp only [map_smul, smul_eq_mul, Function.comp_apply, heγ.self_of_nhds]
       convert hp using 1; ring
-  · rw [Function.comp_apply, heΦ 1 ⟨zero_le_one, le_rfl⟩, h1]
+  · rw [Function.comp_apply, heΦ (right_mem_Icc.2 zero_le_one), h1]
 
 private theorem CoordinatePrimitive.hasIntegral {d : Coordinate} {P : ℂ → ℝ}
     {γ : Arc} {F : ℝ → ℝ} (h : CoordinatePrimitive d P γ F) :

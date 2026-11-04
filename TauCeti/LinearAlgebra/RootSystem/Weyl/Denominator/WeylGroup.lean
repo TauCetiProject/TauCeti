@@ -39,6 +39,9 @@ its normalized form `∑_{w ∈ W} sgn(w) e^{w(λ + ρ) - ρ} / ∏_{α > 0} (1 
 
 * `RootPairing.mapDomain_smul_weylDenominator_eq_prod`: `w Δ = ∏_{α > 0} (1 - e^{-w α})`.
 * `TauCeti.mapDomain_smul_weylDenominator`: `w Δ = (-1)^{ℓ} e^{∑_{β > 0, w⁻¹ β < 0} β} Δ`.
+* `TauCeti.coeff_weylDenominator_of_mem_dominantChamber`: over a linearly ordered coefficient ring,
+  the constant term `1` is the only coefficient of `Δ` on the dominant chamber, since a dominant
+  weight in the negative cone is `0`.
 * `TauCeti.mapDomain_smul_weylDenominator_eq_zsmul`: `w Δ = sgn(w) e^{ρ - w ρ} Δ`.
 * `TauCeti.coeff_weylDenominator_dotAction`: the coefficient function of `Δ` transforms by the
   sign character under the dot action of the whole Weyl group.
@@ -123,6 +126,21 @@ theorem mapDomain_smul_weylDenominator :
         (1 - AddMonoidAlgebra.single (P.root j) 1 : AddMonoidAlgebra ℤ M))
   rw [hflip, hinv, mul_left_comm,
     Finset.prod_sdiff (inversionsFinset_subset_posRootsFinset P b w⁻¹)]
+
+/-- **On the dominant chamber the Weyl denominator has only its constant term `1`.** A weight
+carrying a nonzero coefficient of `Δ` is minus a member of the positive root cone, and a dominant
+such weight is `0` (`TauCeti.eq_zero_of_mem_dominantChamber_of_neg_mem_posRootCone`). -/
+theorem coeff_weylDenominator_of_mem_dominantChamber [LinearOrder R] [IsStrictOrderedRing R]
+    [P.IsCrystallographic] [P.IsReduced] [P.flip.IsReduced] {y : M}
+    (hy : y ∈ RootPairing.dominantChamber P b) :
+    (weylDenominator P b).coeff y = (1 : AddMonoidAlgebra ℤ M).coeff y := by
+  by_cases h : (weylDenominator P b).coeff y = 0
+  · rw [h, AddMonoidAlgebra.one_def, AddMonoidAlgebra.coeff_single, Finsupp.single_eq_of_ne]
+    rintro rfl
+    simp at h
+  · obtain rfl := eq_zero_of_mem_dominantChamber_of_neg_mem_posRootCone P b hy
+      (neg_mem_posRootCone_of_coeff_weylDenominator_ne_zero P b h)
+    simp [AddMonoidAlgebra.one_def]
 
 variable [IsDomain R] [P.IsCrystallographic] [P.IsReduced] [Invertible (2 : R)]
 

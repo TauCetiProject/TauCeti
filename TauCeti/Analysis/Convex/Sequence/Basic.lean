@@ -6,9 +6,11 @@ Authors: William Coram, The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.BigOperators.Intervals
+public import Mathlib.Algebra.Order.Hom.Monoid
 public import Mathlib.Algebra.Order.WithTop.Untop0
 public import Mathlib.Basic.Real.Basic
 public import Mathlib.Order.Interval.Set.OrdConnected
+public import TauCeti.Algebra.Order.WithTop.Untop0
 import Mathlib.Algebra.Order.BigOperators.Group.Finset
 import Mathlib.Tactic.Linarith
 import Mathlib.Tactic.Ring
@@ -28,7 +30,8 @@ differences. A sequence is admissible when it has a real affine lower bound,
 which is equivalent to having a convex minorant; a pointwise minimum is admissible exactly when
 both sequences are. Convexity and admissibility are
 invariant under adding a real affine function, that is, under height translation
-and shear, and under translating the indices. Reflecting the indices in `N` preserves
+and shear, under scaling the heights by a nonnegative real factor, and under translating the
+indices. Reflecting the indices in `N` preserves
 convexity; it discards the heights beyond `N`. These results provide the discrete
 geometry used to construct lower convex envelopes without any coefficient data.
 
@@ -567,6 +570,51 @@ theorem exists_convexSeq_le_iff {a : ℕ → WithTop ℝ} :
   · rintro ⟨c, m, hcm⟩
     exact ⟨_, isConvexSeq_affine c m, hcm⟩
 
+/-! ### Changes of height scale -/
+
+section HeightScale
+
+variable {h : ℕ → WithTop ℝ} (e : ℝ ≃+o ℝ)
+
+/-- Changing the height scale leaves the finite unit edges unchanged. -/
+@[simp]
+theorem finiteEdges_map (f : ℝ → ℝ) :
+    finiteEdges (fun n => WithTop.map f (h n)) = finiteEdges h := by
+  ext n
+  simp
+
+/-- Unit increments transform additively with the height scale. This also respects
+the zero default at infinite heights; only finite edges represent geometric slopes. -/
+@[simp]
+theorem unitSlope_map {F : Type*} [FunLike F ℝ ℝ] [AddMonoidHomClass F ℝ ℝ]
+    (f : F) (n : ℕ) :
+    unitSlope (fun n => WithTop.map f (h n)) n = f (unitSlope h n) := by
+  simp only [unitSlope_def, map_sub]
+  generalize h n = x, h (n + 1) = y
+  induction x using WithTop.recTopCoe <;>
+    induction y using WithTop.recTopCoe <;> simp
+
+/-- An ordered additive change of height scale preserves convexity. -/
+theorem IsConvexSeq.map (hh : IsConvexSeq h) {F : Type*} [FunLike F ℝ ℝ]
+    [AddMonoidHomClass F ℝ ℝ] [OrderHomClass F ℝ ℝ] (f : F) :
+    IsConvexSeq (fun n => WithTop.map f (h n)) := by
+  refine ⟨?_, ?_⟩
+  · simpa only [ne_eq, WithTop.map_eq_top_iff] using hh.ordConnected
+  · intro i hi j hj hij
+    rw [finiteEdges_map] at hi hj
+    simp only [unitSlope_map]
+    exact OrderHomClass.mono f (hh.monotoneOn hi hj hij)
+
+/-- An ordered additive change of height scale preserves and reflects convexity. -/
+@[simp]
+theorem isConvexSeq_map_iff :
+    IsConvexSeq (fun n => WithTop.map e (h n)) ↔ IsConvexSeq h := by
+  refine ⟨fun hh => ?_, fun hh => hh.map e⟩
+  have hinv : e.symm ∘ e = id := funext e.symm_apply_apply
+  simpa only [WithTop.map_map, hinv, WithTop.map_id, id_eq] using hh.map e.symm
+
+end HeightScale
+
 /-! ### Affine covariance -/
 
 /-- Adding the affine function with parameters `-c` and `-m` undoes adding the one with
@@ -638,6 +686,45 @@ theorem unitSlope_add_affine {h : ℕ → WithTop ℝ} {n : ℕ} (hn : n ∈ fin
   push_cast
   ring
 
+
+/-! ### Scaling of heights -/
+
+/-- Scaling the heights by a nonnegative real factor preserves convexity. -/
+theorem IsConvexSeq.map_mul {h : ℕ → WithTop ℝ} (hh : IsConvexSeq h) {c : ℝ} (hc : 0 ≤ c) :
+    IsConvexSeq fun n => (h n).map (c * ·) := by
+  obtain ⟨hD, hmid⟩ := isConvexSeq_iff_two_mul_le.mp hh
+  refine isConvexSeq_iff_two_mul_le.mpr ⟨by simpa only [ne_eq, WithTop.map_eq_top_iff] using hD,
+    fun n hn hn₂ => ?_⟩
+  simp only [ne_eq, WithTop.map_eq_top_iff] at hn hn₂
+  simp only [WithTop.untop₀_map_mul]
+  nlinarith [hmid n hn hn₂]
+
+/-- Scaling the heights by a nonnegative real factor preserves admissibility. -/
+theorem IsAdmissible.map_mul {a : ℕ → WithTop ℝ} (ha : IsAdmissible a) {c : ℝ} (hc : 0 ≤ c) :
+    IsAdmissible fun n => (a n).map (c * ·) := by
+  obtain ⟨c₀, m₀, hcm⟩ := ha
+  refine ⟨c * c₀, c * m₀, fun n => ?_⟩
+  have hn := hcm n
+  dsimp only
+  cases h : a n with
+  | top => simp
+  | coe x =>
+    rw [h, WithTop.coe_le_coe] at hn
+    simp only [WithTop.map_coe, WithTop.coe_le_coe]
+    nlinarith
+
+/-- Scaling the heights by a real factor does not change the finite unit edges. -/
+theorem finiteEdges_map_mul (h : ℕ → WithTop ℝ) (c : ℝ) :
+    finiteEdges (fun n => (h n).map (c * ·)) = finiteEdges h := by
+  ext n
+  simp only [mem_finiteEdges, ne_eq, WithTop.map_eq_top_iff]
+
+/-- Scaling the heights by a real factor scales every unit slope by that factor. -/
+@[simp]
+theorem unitSlope_map_mul (h : ℕ → WithTop ℝ) (c : ℝ) (n : ℕ) :
+    unitSlope (fun n => (h n).map (c * ·)) n = c * unitSlope h n := by
+  simp only [unitSlope_def, WithTop.untop₀_map_mul]
+  ring
 
 /-! ### Translation of indices -/
 

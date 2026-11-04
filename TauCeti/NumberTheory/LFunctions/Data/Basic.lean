@@ -237,6 +237,32 @@ theorem HasFunctionalEquation.dual (h : d.HasFunctionalEquation) :
     have h' := h.completed_eq (conj s) hs (by simpa using hs')
     simp [dual_completed_apply, h', map_sub]
 
+/-- A functional equation determines the root number from any regular nonzero value of the
+completed function. The reflected value is then automatically nonzero too. -/
+theorem HasFunctionalEquation.rootNumber_eq_div (h : d.HasFunctionalEquation) {s : ℂ}
+    (hs : d.polarOrder s = 0) (hne : d.completed s ≠ 0) :
+    d.rootNumber = d.completed s / conj (d.completed (1 - conj s)) := by
+  have heq := h.completed_eq s hs (by rw [h.polarOrder_one_sub_conj, hs])
+  rw [dual_completed_apply, map_sub, map_one] at heq
+  have hden : conj (d.completed (1 - conj s)) ≠ 0 := by
+    intro hz
+    rw [hz, mul_zero] at heq
+    exact hne heq
+  exact (eq_div_iff hden).mpr heq.symm
+
+/-- The polar orders at the two points used to extract the root number agree. -/
+theorem HasFunctionalEquation.polarOrder_neg_one (h : d.HasFunctionalEquation) :
+    d.polarOrder (-1) = d.polarOrder 2 := by
+  simpa only [map_ofNat, (by norm_num : (1 : ℂ) - 2 = -1)] using
+    h.polarOrder_one_sub_conj 2
+
+/-- Extract the root number at the regular nonzero value at `2`. -/
+theorem HasFunctionalEquation.rootNumber_eq_div_two (h : d.HasFunctionalEquation)
+    (h2 : d.polarOrder 2 = 0) (hne : d.completed 2 ≠ 0) :
+    d.rootNumber = d.completed 2 / conj (d.completed (-1)) := by
+  simpa only [map_ofNat, (by norm_num : (1 : ℂ) - 2 = -1)] using
+    h.rootNumber_eq_div h2 hne
+
 /-- **The functional equation as germs.** If a card satisfies its functional equation off the
 polar loci, then `Λ(z) = ε Λ^∨(1 - z)` on a punctured neighbourhood of every point, poles
 included: the polar divisor is finitely supported, so both polar loci are finite. -/

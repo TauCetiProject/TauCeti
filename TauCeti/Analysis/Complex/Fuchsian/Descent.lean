@@ -43,7 +43,7 @@ variable (Γ : Subgroup PSL(2, ℝ)) {E : Type*}
 section Local
 
 variable {z : ℍ} {ε : ℝ} [Finite (stabilizer Γ z)] (hε : 0 < ε)
-  (hopen : IsOpenEmbedding (stabilizerBallQuotientToQuotient Γ z ε))
+  (hopen : IsOpenEmbedding (stabilizerBall Γ z ε).orbitRelQuotientMap)
   {F : orbitRel.Quotient Γ ℍ → E}
 
 /-- In a stabilizer-ball chart, a function on the coarse quotient is holomorphic whenever its
@@ -86,7 +86,8 @@ half-plane, including at elliptic orbits. -/
   rw [mdifferentiableAt_iff_source_of_mem_source (mem_chart_source ℂ q)]
   simp only [mfld_simps, mdifferentiableWithinAt_univ, mdifferentiableAt_iff_differentiableAt]
   have hd := Γ.differentiableOn_comp_stabilizerBallQuotientChart_symm
-    (chartRadius_pos Γ q.out) (isOpenEmbedding_stabilizerBallQuotientToQuotient_chartRadius Γ q.out)
+    (chartRadius_pos Γ q.out)
+    (isOpenEmbedding_orbitRelQuotientMap_stabilizerBall_chartRadius Γ q.out)
     hF.mdifferentiableOn
   rw [← chartAt_eq] at hd
   exact hd.differentiableAt ((chartAt ℂ q).open_target.mem_nhds
@@ -116,7 +117,7 @@ theorem mdifferentiableAt_of_eventually_mdifferentiableAt_comp_quotientMk {E' : 
   -- A stabilizer-ball chart at the orbit of `z` whose ball lies in that neighbourhood.
   obtain ⟨ε₀, hε₀, hball⟩ := Metric.eventually_nhds_iff_ball.mp hφ
   obtain ⟨ε, hε, hopen, hεε₀⟩ := (eventually_mem_nhdsWithin.and
-    ((eventually_isOpenEmbedding_stabilizerBallQuotientToQuotient Γ z).and
+    ((eventually_isOpenEmbedding_orbitRelQuotientMap_stabilizerBall Γ z).and
       (Ioo_mem_nhdsGT hε₀))).exists
   let e := stabilizerBallQuotientChart hε hopen
   have hd := Γ.differentiableOn_comp_stabilizerBallQuotientChart_symm hε hopen

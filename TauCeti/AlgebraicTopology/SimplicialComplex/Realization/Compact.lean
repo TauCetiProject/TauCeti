@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicTopology.SimplicialComplex.Realization.Basic
+public import TauCeti.AlgebraicTopology.SimplicialComplex.Realization.Finite
 import Mathlib.Data.Finset.Powerset
 import Mathlib.Topology.DiscreteSubset
 
@@ -19,7 +19,9 @@ complex is neither finite nor locally finite.
 
 The compact-support finiteness results provide a finite vertex set containing the support
 of every point in a compact subset. They apply to arbitrary vertex types and require no
-local finiteness assumption on the complex.
+local finiteness assumption on the complex. In particular, the whole realization is compact
+exactly when its vertex type is finite (`compactSpace_realization_iff_finite`): abstract
+simplicial complexes contain every singleton face, so no unused vertices are counted.
 
 ## References
 
@@ -89,5 +91,20 @@ theorem exists_finset_support_subset_of_isCompact {s : Set (Realization K)} (hs 
   refine ⟨hS.toFinset.biUnion id, ?_⟩
   intro x hx v hv
   exact Finset.mem_biUnion.mpr ⟨x.1.support, hS.mem_toFinset.mpr ⟨x, hx, rfl⟩, hv⟩
+
+/-- A weak simplicial realization is compact exactly when its vertex type is finite.
+No local finiteness or dimension bound is required. -/
+theorem compactSpace_realization_iff_finite (K : AbstractSimplicialComplex ι) :
+    CompactSpace (Realization K) ↔ Finite ι := by
+  constructor
+  · intro h
+    obtain ⟨V, hV⟩ := exists_finset_support_subset_of_isCompact
+      (K := K) (s := univ) isCompact_univ
+    have hvertices (v : ι) : v ∈ V := by
+      have := hV (vertex K v) (mem_univ _)
+      simpa only [support_vertex, Finset.singleton_subset_iff] using this
+    exact Set.finite_univ_iff.mp (V.finite_toSet.subset fun v _ ↦ hvertices v)
+  · intro h
+    infer_instance
 
 end AbstractSimplicialComplex

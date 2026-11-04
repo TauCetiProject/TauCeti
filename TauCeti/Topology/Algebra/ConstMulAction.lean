@@ -38,11 +38,6 @@ open embedding.
 
 * `Submonoid.continuousConstSMul` and `TauCeti.Subgroup.continuousConstSMul`: continuity
   in the point is inherited by a submonoid, hence by a subgroup.
-* `SubMulAction.continuousConstSMul`: continuity of the action of each element is inherited by an
-  invariant subset; in particular (`Units.continuousConstSMul_nonZero`) the units of a ring act
-  continuously on the nonzero vectors of a module on which they act continuously. These two
-  instances are from Zayn Blore's Mathlib pull request
-  [mathlib4#44117](https://github.com/leanprover-community/mathlib4/pull/44117).
 * `Continuous.properlyDiscontinuousSMul`: proper discontinuity pulls back along a continuous
   equivariant map; in particular (`SubMulAction.properlyDiscontinuousSMul`) it is inherited by
   every invariant subspace.
@@ -283,21 +278,7 @@ theorem properlyDiscontinuousSMul {G X : Type*} [TopologicalSpace X] [SMul G X]
     [ProperlyDiscontinuousSMul G X] (S : SubMulAction G X) : ProperlyDiscontinuousSMul G S :=
   continuous_subtype_val.properlyDiscontinuousSMul fun _ _ ↦ rfl
 
-/-- A `SubMulAction` inherits the continuity of the action of each element. -/
-@[to_additive /-- A `SubAddAction` inherits the continuity of the action of each element. -/]
-instance continuousConstSMul {M X : Type*} [TopologicalSpace X] [SMul M X]
-    [ContinuousConstSMul M X] (p : SubMulAction M X) :
-    ContinuousConstSMul M p :=
-  ⟨fun c ↦ ((continuous_const_smul c).comp continuous_subtype_val).subtype_mk _⟩
-
 end SubMulAction
-
-/-- The units of `R` act continuously on the nonzero elements of `M` when they act continuously
-on `M`. -/
-instance Units.continuousConstSMul_nonZero {R M : Type*} [TopologicalSpace M] [Monoid R]
-    [AddCommMonoid M] [DistribMulAction R M] [ContinuousConstSMul Rˣ M] :
-    ContinuousConstSMul Rˣ {x : M // x ≠ 0} :=
-  inferInstanceAs (ContinuousConstSMul Rˣ (Units.nonZeroSubMul R M))
 
 namespace TauCeti
 

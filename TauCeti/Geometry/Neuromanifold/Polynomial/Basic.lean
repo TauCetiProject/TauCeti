@@ -26,15 +26,17 @@ Zero outputs and constant polynomials are included; the degree bound need not be
 A tuple of bounded-degree polynomials has finite coordinates:
 `MvPolynomial.boundedCoefficientEquiv` identifies it with functions on the pairs of an output and
 an exponent of degree at most `d`, by taking monomial coefficients. Its evaluation
-`MvPolynomial.boundedEvaluation` is a linear map to vector-valued functions on inputs, injective
-over an infinite integral domain, and
-`boundedEvaluation_comp_polynomialCoefficientMap` recovers the realization map from the
+`MvPolynomial.tupleEvaluation J (restrictTotalDegree X K d)` is a linear map to vector-valued
+functions on inputs, injective over an infinite integral domain, and
+`tupleEvaluation_comp_polynomialCoefficientMap` recovers the realization map from the
 coefficient presentation. Composing with the coordinates gives
 `polynomialCoefficientCoordinates P`, whose coordinates are polynomial in the parameters.
 Raising the degree bound zero-pads these coordinates, and the padded coordinates are given by the
 same coefficient formula, so the coordinates for different bounds correspond under zero-padding.
-`boundedEvaluation_padding_polynomialCoefficientCoordinates` shows that evaluating the padded
+`tupleEvaluation_padding_polynomialCoefficientCoordinates` shows that evaluating the padded
 coordinates still recovers exactly the same realization.
+Over an infinite integral domain, two parameters realize the same function exactly when they
+give the same specialized coefficients (`polynomialRealization_eq_iff`).
 
 The jointly polynomial setting and the coefficient/function viewpoint follow
 Marchetti–Shahverdi–Mereta–Trager–Kohn,
@@ -135,6 +137,12 @@ theorem totalDegree_inputPolynomial_le (P : J → MvPolynomial (W ⊕ X) K) (j :
     (inputPolynomial P j).totalDegree ≤ polynomialInputDegree P :=
   Finset.le_sup (f := fun j => (inputPolynomial P j).totalDegree) (Finset.mem_univ j)
 
+/-- The uniform input-degree bound is the least bound on the total degrees of all collected
+input polynomials. -/
+theorem polynomialInputDegree_le_iff (P : J → MvPolynomial (W ⊕ X) K) {d : ℕ} :
+    polynomialInputDegree P ≤ d ↔ ∀ j, (inputPolynomial P j).totalDegree ≤ d := by
+  simp [polynomialInputDegree]
+
 /-- Every input monomial in the reconstruction has degree at most the uniform bound. -/
 theorem inputPolynomial_support_degree_le (P : J → MvPolynomial (W ⊕ X) K)
     (j : J) {a : X →₀ ℕ} (ha : a ∈ (inputPolynomial P j).support) :
@@ -182,9 +190,10 @@ end InputDegree
 section Coordinates
 
 /-- Evaluating the coefficient presentation recovers the jointly polynomial realization map. -/
-theorem boundedEvaluation_comp_polynomialCoefficientMap [Fintype J]
+theorem tupleEvaluation_comp_polynomialCoefficientMap [Fintype J]
     (P : J → MvPolynomial (W ⊕ X) K) :
-    boundedEvaluation X K J (polynomialInputDegree P) ∘ polynomialCoefficientMap P =
+    tupleEvaluation J (restrictTotalDegree X K (polynomialInputDegree P)) ∘
+        polynomialCoefficientMap P =
       polynomialRealization P := by
   funext w x j
   simp [eval_map]
@@ -206,14 +215,14 @@ polynomial in the parameters. -/
 
 /-- Enlarging the uniform input-degree bound by zero-padding the coefficient coordinates
 preserves the realization at every parameter and every input. -/
-theorem boundedEvaluation_padding_polynomialCoefficientCoordinates
+theorem tupleEvaluation_padding_polynomialCoefficientCoordinates
     (P : J → MvPolynomial (W ⊕ X) K) {d : ℕ} (h : polynomialInputDegree P ≤ d) (w : W → K) :
-    boundedEvaluation X K J d
+    tupleEvaluation J (restrictTotalDegree X K d)
         ((boundedCoefficientEquiv X K J d).symm
           (boundedCoefficientPadding h (polynomialCoefficientCoordinates P w))) =
       polynomialRealization P w := by
-  rw [boundedEvaluation_padding, polynomialCoefficientCoordinates, LinearEquiv.symm_apply_apply]
-  exact congrFun (boundedEvaluation_comp_polynomialCoefficientMap P) w
+  rw [tupleEvaluation_padding, polynomialCoefficientCoordinates, LinearEquiv.symm_apply_apply]
+  exact congrFun (tupleEvaluation_comp_polynomialCoefficientMap P) w
 
 /-- Raising the degree bound to any `d ≥ polynomialInputDegree P` zero-pads the finite coefficient
 coordinates, and the padded coordinates are given by the same formula: each is the evaluation at
@@ -232,5 +241,20 @@ theorem extendByZero_polynomialCoefficientCoordinates_apply (P : J → MvPolynom
   simp [coeff_map]
 
 end Coordinates
+
+section Fibres
+
+variable {R : Type*} [CommRing R] [IsDomain R] [Infinite R]
+
+/-- Over an infinite integral domain, a polynomial model realizes the same function at two
+parameters exactly when it has the same specialized coefficients at both. -/
+theorem polynomialRealization_eq_iff (P : J → MvPolynomial (W ⊕ X) R) (w v : W → R) :
+    polynomialRealization P w = polynomialRealization P v ↔
+      ∀ j, map (eval w) (inputPolynomial P j) = map (eval v) (inputPolynomial P j) := by
+  refine ⟨fun h j => MvPolynomial.funext fun x => ?_, fun h => funext fun x => funext fun j => ?_⟩
+  · simpa [eval_map] using congrFun (congrFun h x) j
+  · simpa [eval_map] using congrArg (eval x) (h j)
+
+end Fibres
 
 end TauCeti.Neuromanifold

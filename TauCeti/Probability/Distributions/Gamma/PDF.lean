@@ -25,6 +25,18 @@ theorem measurable_gammaPDF (a r : ℝ) : Measurable (gammaPDF a r) := by
   unfold gammaPDF
   exact (measurable_gammaPDFReal a r).ennreal_ofReal
 
+/-- The real Gamma density is continuous on the positive half-line for all shape and rate
+parameters. -/
+@[fun_prop]
+theorem continuousOn_gammaPDFReal (a r : ℝ) :
+    ContinuousOn (gammaPDFReal a r) (Set.Ioi 0) := by
+  apply ContinuousOn.congr (f := fun x ↦ r ^ a / Real.Gamma a * x ^ (a - 1) *
+    Real.exp (-(r * x)))
+  · exact (continuousOn_const.mul (continuousOn_id.rpow_const fun x hx ↦
+      Or.inl (ne_of_gt hx))).mul (by fun_prop)
+  · intro x hx
+    rw [gammaPDFReal, ite_eq_left (le_of_lt hx)]
+
 /-- The Gamma density at a natural shape is the corresponding Erlang density formula. -/
 theorem gammaPDFReal_nat_eq {k : ℕ} (hk : 1 ≤ k) {r x : ℝ} (hx : 0 ≤ x) :
     gammaPDFReal k r x = r ^ k / (k - 1).factorial * x ^ (k - 1) * Real.exp (-(r * x)) := by
@@ -41,6 +53,14 @@ theorem gammaPDFReal_nat_div_pow {k : ℕ} (hk : 1 ≤ k) {r x : ℝ} (hr : r �
   rw [gammaPDFReal_nat_eq hk hx]
   have := Nat.factorial_pos (k - 1)
   field_simp
+
+/-- The gamma density is integrable: it is a nonnegative function whose Lebesgue integral is `1`. -/
+theorem integrable_gammaPDFReal {a r : ℝ} (ha : 0 < a) (hr : 0 < r) :
+    Integrable (gammaPDFReal a r) := by
+  refine ⟨(measurable_gammaPDFReal a r).aestronglyMeasurable, ?_⟩
+  have h : ∫⁻ y, ENNReal.ofReal (gammaPDFReal a r y) = 1 := lintegral_gammaPDF_eq_one ha hr
+  rw [hasFiniteIntegral_iff_ofReal (ae_of_all _ (gammaPDFReal_nonneg ha hr)), h]
+  exact ENNReal.one_lt_top
 
 variable {Ω : Type*} [MeasurableSpace Ω] {P : Measure Ω} {X : Ω → ℝ}
 

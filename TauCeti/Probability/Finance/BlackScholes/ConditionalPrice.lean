@@ -167,17 +167,6 @@ theorem putValue_eq_condExp_geometricBrownianMotion (hW : IsFilteredPreBrownianR
 
 /-! ### Conditional prices under the risk-neutral measure -/
 
-/-- Up to the horizon `T`, the stock with drift `μ` driven by `W` is the stock with drift `r`
-driven by the Brownian motion `W_t + κ t` of the risk-neutral measure, `κ = (μ - r) / σ`. -/
-private theorem geometricBrownianMotion_eq_riskNeutral (s μ r : ℝ) (hσ : σ ≠ 0) {t : ℝ≥0}
-    (htT : t ≤ T) (ω : Ω) :
-    geometricBrownianMotion s μ σ W t ω = geometricBrownianMotion s r σ
-      (fun t ω ↦ W t ω - -((μ - r) / σ) * (min t T : ℝ≥0)) t ω := by
-  have hr : μ + σ * -((μ - r) / σ) = r := by
-    field_simp
-    ring
-  rw [← geometricBrownianMotion_sub_mul_min s μ σ (-((μ - r) / σ)) W htT ω, hr]
-
 /-- **Conditional risk-neutral price in the Black–Scholes market.** Let the stock `S` have drift
 `μ` and volatility `σ ≠ 0` under `P`, let `κ = (μ - r) / σ` be the market price of risk and
 `Q = P.tilted (-κ W_T ·)` the risk-neutral measure for the horizon `T`. For `u ≤ T` the discounted

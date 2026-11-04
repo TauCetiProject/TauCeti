@@ -5,9 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.Order.Nonneg.Basic
+public import Mathlib.Basic.NNReal.Defs
 public import TauCeti.Combinatorics.Network.ShortestAugmentation
-import Mathlib.Algebra.Order.Archimedean.Real.Basic
 
 /-!
 # Nonnegative coefficients for finite flows
@@ -20,11 +19,15 @@ additive-subgroup integrality apply directly, including for `Nonneg ℚ` and `No
 
 For natural capacities, `NatFlow` uses integer excess. Its arrow values are recovered by
 `Flow.natAssignment`, with exact round trips, capacity bounds, and natural cut sums.
+The named rational and real interfaces specialize this API, and reverse recovery lemmas
+characterize assignments by their nonnegative or natural arrow values.
 -/
 
 public section
 
 namespace TauCeti
+
+open scoped _root_.NNRat _root_.NNReal
 
 universe u v w
 
@@ -65,6 +68,18 @@ theorem coe_nonnegAssignment (f : Flow cap s t) {x y : V} (e : Q x y) :
 theorem nonnegAssignment_map_coe (f : Flow cap s t) :
     f.nonnegAssignment.map Subtype.val = f.toFun :=
   (rfl)
+
+/-- Nonnegative arrow values determine the original assignment and conversely. -/
+@[simp]
+theorem nonnegAssignment_eq_iff {c : Assignment Q (Nonneg K)} (f : Flow cap s t) :
+    f.nonnegAssignment = c ↔ f.toFun = c.map Subtype.val := by
+  constructor
+  · rintro rfl
+    exact f.nonnegAssignment_map_coe.symm
+  · intro hf
+    funext x y e
+    apply Subtype.ext
+    simp [hf]
 
 /-- Nonnegative arrow values satisfy the capacity bound in the nonnegative subtype. -/
 theorem nonnegAssignment_le {c : Assignment Q (Nonneg K)} (f : NonnegFlow c s t)
@@ -155,6 +170,22 @@ theorem natAssignment_eq {a : Assignment Q ℕ}
   funext x y e
   simp [natAssignment_apply, ha]
 
+/-- Natural arrow values determine the original integer assignment and conversely. -/
+@[simp]
+theorem natAssignment_eq_iff {a : Assignment Q ℕ} (f : Flow cap s t) :
+    f.natAssignment = a ↔ f.toFun = a.map (Nat.cast : ℕ → ℤ) := by
+  constructor
+  · rintro rfl
+    exact f.natAssignment_map_cast.symm
+  · exact f.natAssignment_eq
+
+/-- Natural and nonnegative-integer arrow values represent the same coefficient. -/
+theorem nonnegAssignment_apply_eq_natCast (f : Flow cap s t) {x y : V} (e : Q x y) :
+    f.nonnegAssignment e = (f.natAssignment e : Nonneg ℤ) :=
+  Subtype.ext (by
+    simpa only [coe_nonnegAssignment, Nonneg.coe_natCast] using
+      (f.coe_natAssignment e).symm)
+
 end Flow
 
 omit [Fintype V] in
@@ -217,5 +248,99 @@ example : ∃ f : NonnegFlow (K := ℝ) (Q := fun _ _ : Bool ↦ Fin 2)
   refine ⟨f, ?_⟩
   norm_num [hS, arrowSum_def, Finset.card_compl] at h ⊢
   exact h
+
+/-! ### Named nonnegative rational and real types -/
+
+section RationalReal
+
+-- The named types unfold to Nonneg ℚ and Nonneg ℝ, and their derived additive and order
+-- instances agree with those of Nonneg. Their coercion homomorphisms act as Subtype.val,
+-- so the accessors and theorems below specialize the generic interface directly.
+
+variable [Fintype V] [∀ x y, Fintype (Q x y)]
+
+/-- Ordinary rational flows with capacities in `ℚ≥0`, using its canonical rational coercion. -/
+abbrev NNRatFlow (cap : Assignment Q ℚ≥0) (s t : V) :=
+  Flow (cap.map NNRat.coeHom) s t
+
+/-- Ordinary real flows with capacities in `ℝ≥0`, using its canonical real coercion. -/
+abbrev NNRealFlow (cap : Assignment Q ℝ≥0) (s t : V) :=
+  Flow (cap.map NNReal.toRealHom) s t
+
+/-- The arrow values of a rational flow, bundled in the named nonnegative rational type. -/
+def Flow.toNNRat {cap : Assignment Q ℚ} {s t : V} (f : Flow cap s t) : Assignment Q ℚ≥0 :=
+  f.nonnegAssignment
+
+@[simp]
+theorem Flow.coe_toNNRat_apply {cap : Assignment Q ℚ} {s t : V} (f : Flow cap s t)
+    {x y : V} (e : Q x y) : (f.toNNRat e : ℚ) = f.toFun e :=
+  f.coe_nonnegAssignment e
+
+/-- Coercing nonnegative rational arrow values recovers the original assignment. -/
+@[simp]
+theorem Flow.toNNRat_map_coe {cap : Assignment Q ℚ} {s t : V} (f : Flow cap s t) :
+    f.toNNRat.map ((↑) : ℚ≥0 → ℚ) = f.toFun :=
+  f.nonnegAssignment_map_coe
+
+/-- The arrow values of a real flow, bundled in the named nonnegative real type. -/
+def Flow.toNNReal {cap : Assignment Q ℝ} {s t : V} (f : Flow cap s t) : Assignment Q ℝ≥0 :=
+  f.nonnegAssignment
+
+@[simp]
+theorem Flow.coe_toNNReal_apply {cap : Assignment Q ℝ} {s t : V} (f : Flow cap s t)
+    {x y : V} (e : Q x y) : (f.toNNReal e : ℝ) = f.toFun e :=
+  f.coe_nonnegAssignment e
+
+/-- Coercing nonnegative real arrow values recovers the original assignment. -/
+@[simp]
+theorem Flow.toNNReal_map_coe {cap : Assignment Q ℝ} {s t : V} (f : Flow cap s t) :
+    f.toNNReal.map ((↑) : ℝ≥0 → ℝ) = f.toFun :=
+  f.nonnegAssignment_map_coe
+
+/-- Nonnegative rational values recover the original rational assignment. -/
+@[simp]
+theorem Flow.toNNRat_eq_iff {cap : Assignment Q ℚ} {s t : V} (f : Flow cap s t)
+    {c : Assignment Q ℚ≥0} : f.toNNRat = c ↔ f.toFun = c.map NNRat.coeHom :=
+  f.nonnegAssignment_eq_iff
+
+/-- Nonnegative real values recover the original real assignment. -/
+@[simp]
+theorem Flow.toNNReal_eq_iff {cap : Assignment Q ℝ} {s t : V} (f : Flow cap s t)
+    {c : Assignment Q ℝ≥0} : f.toNNReal = c ↔ f.toFun = c.map NNReal.toRealHom :=
+  f.nonnegAssignment_eq_iff
+
+/-- Nonnegative rational arrow values respect the original capacities. -/
+theorem NNRatFlow.toNNRat_le {cap : Assignment Q ℚ≥0} {s t : V} (f : NNRatFlow cap s t) :
+    f.toNNRat ≤ cap :=
+  fun _ _ e ↦ f.nonnegAssignment_le e
+
+/-- Nonnegative real arrow values respect the original capacities. -/
+theorem NNRealFlow.toNNReal_le {cap : Assignment Q ℝ≥0} {s t : V} (f : NNRealFlow cap s t) :
+    f.toNNReal ≤ cap :=
+  fun _ _ e ↦ f.nonnegAssignment_le e
+
+/-- Max-flow/min-cut and subgroup integrality for capacities in `ℚ≥0`. -/
+theorem NNRatFlow.exists_val_eq_arrowSum_mem [DecidableEq V]
+    {cap : Assignment Q ℚ≥0} {s t : V} (hst : s ≠ t) (H : AddSubgroup ℚ)
+    (hcapH : ∀ ⦃x y⦄ (e : Q x y), (cap e : ℚ) ∈ H) :
+    ∃ f : NNRatFlow cap s t, ∃ S : Finset V,
+      s ∈ S ∧ t ∉ S ∧ f.val = ((arrowSum cap S Sᶜ : ℚ≥0) : ℚ) ∧
+        ∀ ⦃x y⦄ (e : Q x y), (f.toNNRat e : ℚ) ∈ H := by
+  obtain ⟨f, hfH, S, hs, ht, hval⟩ :=
+    NonnegFlow.exists_val_eq_coe_arrowSum_mem cap hst H hcapH
+  exact ⟨f, S, hs, ht, hval, hfH⟩
+
+/-- Max-flow/min-cut and subgroup integrality for capacities in `ℝ≥0`. -/
+theorem NNRealFlow.exists_val_eq_arrowSum_mem [DecidableEq V]
+    {cap : Assignment Q ℝ≥0} {s t : V} (hst : s ≠ t) (H : AddSubgroup ℝ)
+    (hcapH : ∀ ⦃x y⦄ (e : Q x y), (cap e : ℝ) ∈ H) :
+    ∃ f : NNRealFlow cap s t, ∃ S : Finset V,
+      s ∈ S ∧ t ∉ S ∧ f.val = ((arrowSum cap S Sᶜ : ℝ≥0) : ℝ) ∧
+        ∀ ⦃x y⦄ (e : Q x y), (f.toNNReal e : ℝ) ∈ H := by
+  obtain ⟨f, hfH, S, hs, ht, hval⟩ :=
+    NonnegFlow.exists_val_eq_coe_arrowSum_mem cap hst H hcapH
+  exact ⟨f, S, hs, ht, hval, hfH⟩
+
+end RationalReal
 
 end TauCeti

@@ -192,17 +192,17 @@ theorem vertices_eq_cons_map_target_arrows {s t : V} (p : ArrowWalk Q s t) :
   rw [map_target_arrows]
   exact List.eq_cons_of_mem_head? (@Quiver.Path.vertices_head? V ⟨Q⟩ s t p)
 
-/-- Both endpoints of an arrow traversed by a walk are vertices of the walk. -/
-theorem mem_vertices_of_mem_arrows {s t : V} {p : ArrowWalk Q s t} {a : Σ x y, Q x y}
-    (ha : a ∈ p.arrows) : a.1 ∈ p.vertices ∧ a.2.1 ∈ p.vertices := by
+/-- The source of every arrow traversed by a walk is one of its vertices. -/
+theorem source_mem_vertices_of_mem_arrows {s t x y : V} (p : ArrowWalk Q s t) {e : Q x y}
+    (he : ⟨x, y, e⟩ ∈ p.arrows) : x ∈ p.vertices := by
   induction p with
-  | nil => simp at ha
-  | cons p e ih =>
-    rw [arrows_cons, List.mem_append, List.mem_singleton] at ha
-    simp only [vertices_cons, List.concat_eq_append, List.mem_append, List.mem_singleton]
-    rcases ha with ha | rfl
-    · exact ⟨.inl (ih ha).1, .inl (ih ha).2⟩
-    · exact ⟨.inl (@Quiver.Path.end_mem_vertices V ⟨Q⟩ _ _ p), .inr rfl⟩
+  | nil => simp at he
+  | @cons z _ p e' ih =>
+    rw [arrows_cons, List.mem_append, List.mem_singleton] at he
+    rw [vertices_cons, List.concat_eq_append, List.mem_append, List.mem_singleton]
+    exact he.elim (fun h ↦ Or.inl (ih h)) fun h ↦ by
+      obtain rfl : x = z := (Sigma.mk.inj_iff.1 h).1
+      exact Or.inl (@Quiver.Path.end_mem_vertices V ⟨Q⟩ _ _ p)
 
 /-- A walk whose vertices after the first are distinct traverses no arrow twice. -/
 theorem nodup_arrows_of_nodup_tail {s t : V} {p : ArrowWalk Q s t}

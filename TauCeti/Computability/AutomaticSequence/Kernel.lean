@@ -29,6 +29,8 @@ it does so on every base-`k` representation of `n`, including those padded with 
 * `TauCeti.kernel k a`: the `k`-kernel of `a`.
 * `TauCeti.self_mem_kernel`, `TauCeti.kernel_subset`: a sequence lies in its kernel, and the
   kernel of a kernel element is contained in the kernel.
+* `TauCeti.kernel_subset_of_mem_of_forall`: the kernel of `a` is contained in every set that
+  contains `a` and is closed under the transitions `b ↦ (n ↦ b (k * n + d))` with `d < k`.
 * `TauCeti.kernelDFAO k a`: the kernel automaton, and
   `TauCeti.output_eval_kernelDFAO`: on any word of digits it outputs `a` at the value of the word.
 * `TauCeti.isAutomatic_iff_finite_kernel`: **Eilenberg's theorem**, for `2 ≤ k` a sequence is
@@ -78,6 +80,27 @@ theorem kernel_subset (hb : b ∈ kernel k a) : kernel k b ⊆ kernel k a := by
   calc k ^ e * s + r < k ^ e * (s + 1) := by rw [mul_add_one]; omega
     _ ≤ k ^ e * k ^ f := Nat.mul_le_mul_left _ hs
     _ = k ^ (e + f) := (pow_add k e f).symm
+
+/-- The `k`-kernel of `a` is contained in every set of sequences that contains `a` and is closed
+under the transitions `b ↦ (n ↦ b (k * n + d))` with `d < k`. -/
+theorem kernel_subset_of_mem_of_forall {S : Set (ℕ → Δ)} (ha : a ∈ S)
+    (hS : ∀ b ∈ S, ∀ d < k, (fun n ↦ b (k * n + d)) ∈ S) : kernel k a ⊆ S := by
+  rintro _ ⟨e, r, hr, rfl⟩
+  induction e generalizing a r with
+  | zero =>
+    obtain rfl : r = 0 := by simpa using hr
+    simpa using ha
+  | succ e ih =>
+    -- Split off the least significant digit `r % k` of `r`: the subsequence is the one of
+    -- exponent `e` and residue `r / k` of `n ↦ a (k * n + r % k)`.
+    have hk : 0 < k := Nat.pos_of_ne_zero fun hk ↦ by simp [hk] at hr
+    have hr' : r / k < k ^ e := by
+      rw [Nat.div_lt_iff_lt_mul hk, ← pow_succ]
+      exact hr
+    convert ih (hS a ha (r % k) (Nat.mod_lt r hk)) (r / k) hr' using 2 with n
+    congr 1
+    conv_lhs => rw [← Nat.div_add_mod r k]
+    ring
 
 /-- The kernel of a constant sequence is the singleton of that sequence. -/
 @[simp]

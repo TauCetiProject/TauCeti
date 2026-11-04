@@ -20,13 +20,13 @@ injective on the closed upper part and sends the open upper part into the open u
 then the reflected extension `schwarzReflection f` is injective on all of `Ω` — hence conformal at
 every point of `Ω`, with a holomorphic inverse on its image.
 
-This is the form layer **L5** of `ConformalMapping/README.md` consumes: the boundary
-correspondence extends a Riemann map across an *analytic boundary arc* by reflecting it, and what
-that step needs is not merely a holomorphic continuation but a conformal one — a continuation that
-is again injective, and whose derivative therefore does not vanish *on the boundary arc itself*.
-That last point is the payoff: `f` is not assumed differentiable at the real points of `Ω` at all,
-only continuous there from above, yet `conformalAt_schwarzReflection_of_symmetric` produces a
-nonvanishing derivative there for the extension.
+This is the form the boundary correspondence consumes: it extends a Riemann map across an *analytic
+boundary arc* by reflecting it, and what that step needs is not merely a holomorphic continuation
+but a conformal one — a continuation that is again injective, and whose derivative therefore does
+not vanish *on the boundary arc itself*. That last point is the payoff: `f` is not assumed
+differentiable at the real points of `Ω` at all, only continuous there from above, yet
+`conformalAt_schwarzReflection_of_symmetric` produces a nonvanishing derivative there for the
+extension.
 
 ## The proof
 

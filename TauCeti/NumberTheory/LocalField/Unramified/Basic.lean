@@ -79,6 +79,8 @@ computational input to the norm and trace of an unramified extension.
   `𝒪[K]` is the degree of the residue extension.
 * `TauCeti.IsUnramified.residueBasis_repr`: the coordinates of a residue in the residue basis
   are the residues of the integral coordinates.
+* `TauCeti.IsUnramified.isUnit_iff_exists_isUnit_repr`: an integer of `L` is a unit exactly when
+  one of its coordinates in an integral basis is a unit.
 * `TauCeti.IsUnramified.residueBasis_basisOfResidueBasis` and
   `TauCeti.IsUnramified.basisOfResidueBasis_residueBasis`: the two constructions are mutually
   inverse.
@@ -365,6 +367,16 @@ theorem IsUnramified.basisOfResidueBasis_residueBasis [IsUnramified K L]
   DFunLike.coe_injective (IsUnramified.coe_basisOfResidueBasis ..)
 
 end ResidueBasis
+
+/-- **The units of `𝒪[L]` are its primitive vectors.** In an unramified extension, an integer of
+`L` is a unit exactly when one of its coordinates in a basis of `𝒪[L]` over `𝒪[K]` is a unit. -/
+theorem IsUnramified.isUnit_iff_exists_isUnit_repr [IsUnramified K L] {ι : Type*} [Finite ι]
+    (B : Module.Basis ι 𝒪[K] 𝒪[L]) (x : 𝒪[L]) :
+    IsUnit x ↔ ∃ i, IsUnit (B.repr x i) := by
+  let _ := Fintype.ofFinite ι
+  rw [← residue_ne_zero_iff_isUnit, ← (IsUnramified.residueBasis B).repr.map_ne_zero_iff,
+    Finsupp.ne_iff]
+  simp
 
 /-- Every basis of the residue extension of an unramified extension is the reduction of a basis
 of `𝒪[L]` over `𝒪[K]`. -/

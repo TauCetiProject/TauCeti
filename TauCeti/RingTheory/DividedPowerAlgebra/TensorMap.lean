@@ -151,7 +151,7 @@ theorem homogeneousTensorMap_dp_tmul_dp (d : ℕ) (m : M) (n : N) :
     congr 1
     ext j
     cases j
-    all_goals simp
+    simp
   simp only [Finset.univ_unique, Finset.prod_singleton, Finsupp.single_eq_same,
     Finset.sum_singleton, gamma_toFun_tmul, hmon, LinearMap.rTensor_tmul,
     MvPolynomial.lcoeff_apply, MvPolynomial.coeff_monomial, ite_true,

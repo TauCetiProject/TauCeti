@@ -18,7 +18,8 @@ import Mathlib.Probability.Distributions.Gaussian.HasGaussianLaw.Basic
 This file identifies the generic covariance matrix from
 `TauCeti.Probability.Moments.Covariance` with the covariance parameter of Mathlib's multivariate
 Gaussian, and records the centred multivariate Gaussian as the image of the standard Gaussian
-under the square root of its matrix parameter. It also records covariance under matrix-valued
+under the square root of its matrix parameter. It also records measurability of Gaussian laws
+with covariance scaled by a precision parameter, covariance under matrix-valued
 linear maps and characterizes independence of complementary coordinate blocks.
 
 ## Main results
@@ -33,6 +34,8 @@ linear maps and characterizes independence of complementary coordinate blocks.
   of the standard Gaussian.
 * `TauCeti.Probability.multivariateGaussian_zero_right` identifies the zero-covariance law with
   the point mass at its mean.
+* `TauCeti.Probability.measurable_multivariateGaussian_inv_smul` shows that the family
+  `τ ↦ N(m, τ⁻¹ • S)` is measurable in the precision `τ`.
 * `TauCeti.Probability.covariance_inner_matrix_multivariateGaussian` computes covariance after two
   matrix
   maps.
@@ -67,6 +70,14 @@ theorem covMatrix_multivariateGaussian [Fintype ι] [DecidableEq ι] (m : Euclid
   ext i j
   simpa only [covMatrix_apply] using covariance_eval_multivariateGaussian hS i j
 
+/-- Each coordinate of a multivariate Gaussian has as mean the corresponding coordinate of the
+mean parameter. No hypothesis on the covariance parameter is needed. -/
+@[simp]
+theorem integral_eval_multivariateGaussian [Fintype ι] [DecidableEq ι] (m : EuclideanSpace ℝ ι)
+    (S : Matrix ι ι ℝ) (i : ι) : ∫ x, x i ∂multivariateGaussian m S = m i := by
+  simpa using (EuclideanSpace.proj (𝕜 := ℝ) i).integral_comp_comm
+    (IsGaussian.integrable_id (μ := multivariateGaussian m S))
+
 /-- The Bochner mean of a random variable with a multivariate Gaussian law is its Gaussian mean. -/
 theorem integral_of_hasLaw_multivariateGaussian [Fintype ι] [DecidableEq ι]
     {Ω : Type*} [MeasurableSpace Ω] {P : Measure Ω}
@@ -89,6 +100,12 @@ theorem multivariateGaussian_zero_eq_map_stdGaussian_sqrt [Fintype ι] [Decidabl
 theorem multivariateGaussian_zero_right [Fintype ι] [DecidableEq ι] (m : EuclideanSpace ℝ ι) :
     multivariateGaussian m (0 : Matrix ι ι ℝ) = Measure.dirac m := by
   simp [multivariateGaussian]
+
+/-- The Gaussian family `τ ↦ N(m, τ⁻¹ • S)` is measurable in the precision `τ`. -/
+theorem measurable_multivariateGaussian_inv_smul [Fintype ι] [DecidableEq ι]
+    (m : EuclideanSpace ℝ ι) (S : Matrix ι ι ℝ) :
+    Measurable fun τ : ℝ => multivariateGaussian m (τ⁻¹ • S) :=
+  measurable_multivariateGaussian.comp (measurable_const.prodMk (by fun_prop))
 
 /-- The covariance of scalar inner-product projections after two matrix-valued linear maps of a
 multivariate Gaussian. -/

@@ -47,6 +47,8 @@ be added or removed.
   (`TauCeti.CategoryTheory.cechAugmentation_f_zero_comp_π`).
 * `TauCeti.CategoryTheory.cechComplexMap P φ`: the map of Čech complexes `Č(V, P) ⟶ Č(U, P)`
   induced by a morphism of families `φ : U ⟶ V`.
+* `TauCeti.CategoryTheory.cechComplexHomologyMap A n φ`: the map on degree `n` Čech cohomology
+  induced by a morphism of families, as a natural transformation of functors of the presheaf.
 
 ## Main results
 
@@ -64,6 +66,8 @@ be added or removed.
   (`SimplicialObject.Augmented.ExtraDegeneracy.homotopyEquiv`).
 * `TauCeti.CategoryTheory.cechComplexMapHomotopy`: any two morphisms of families `U ⟶ V`
   induce homotopic maps of Čech complexes.
+* `TauCeti.CategoryTheory.cechComplexHomologyMap_eq`: hence any two morphisms of families induce
+  the same map on Čech cohomology.
 * `TauCeti.CategoryTheory.cechComplexHomotopyEquiv`: families with morphisms `U ⟶ V` and
   `V ⟶ U` have homotopy equivalent Čech complexes.
 * `TauCeti.CategoryTheory.quasiIso_cechAugmentation_congr`: for such families, the augmented Čech
@@ -71,8 +75,12 @@ be added or removed.
 * `TauCeti.CategoryTheory.isIso_cechComplexMap`: a morphism of families that is the identity on
   indices induces an isomorphism of Čech complexes when `P` inverts the induced maps of products.
 * `TauCeti.CategoryTheory.cechAugmentation_naturality`: the augmentation is natural in `P`.
+* `TauCeti.CategoryTheory.cechComplexMap_naturality`: the map induced by a morphism of families is
+  natural in `P`.
 * `TauCeti.CategoryTheory.quasiIso_cechAugmentation_iff_of_iso`: acyclicity of a family is
   invariant under isomorphisms of presheaves.
+* `TauCeti.CategoryTheory.cechComplexFunctor_map_f`: a morphism of presheaves acts on the Čech
+  complexes factorwise; in particular `CategoryTheory.cechComplexFunctor U` is additive.
 
 ## References
 
@@ -231,6 +239,25 @@ theorem cechComplexFunctor_map_f_π {Q : Cᵒᵖ ⥤ A} (α : P ⟶ Q) (n : ℕ)
       Pi.π _ a ≫ α.app (op (∏ᶜ fun j ↦ U (a j))) :=
   Pi.map_π (fun _ ↦ α.app _) a
 
+/-- The degree `n` component of `(cechComplexFunctor U).map α` is the product of the components of
+`α` at the products `U (a 0) × ⋯ × U (a n)`. -/
+theorem cechComplexFunctor_map_f {Q : Cᵒᵖ ⥤ A} (α : P ⟶ Q) (n : ℕ) :
+    ((cechComplexFunctor U).map α).f n =
+      Limits.Pi.map fun a : Fin (n + 1) → ι ↦ α.app (op (∏ᶜ fun j ↦ U (a j))) :=
+  Pi.hom_ext _ _ fun a ↦ (cechComplexFunctor_map_f_π U P α n a).trans
+    (Pi.map_π (fun a : Fin (n + 1) → ι ↦ α.app (op (∏ᶜ fun j ↦ U (a j)))) a).symm
+
+/-- The Čech complex is additive in the presheaf, since a morphism of presheaves acts on it
+factorwise. -/
+instance : (cechComplexFunctor U : (Cᵒᵖ ⥤ A) ⥤ CochainComplex A ℕ).Additive where
+  map_add {P Q α β} := by
+    ext n : 1
+    refine Pi.hom_ext _ _ fun a ↦ ?_
+    exact (cechComplexFunctor_map_f_π U P (α + β) n a).trans <|
+      (congrArg _ (NatTrans.app_add _ α β)).trans <| (Preadditive.comp_add _ _ _ _ _ _).trans <|
+        (congrArg₂ (· + ·) (cechComplexFunctor_map_f_π U P α n a).symm
+          (cechComplexFunctor_map_f_π U P β n a).symm).trans (Preadditive.add_comp _ _ _ _ _ _).symm
+
 /-! ### Maps of families
 
 A morphism `φ` from the family `U` to a family `V : κ → C`, as a morphism of formal coproducts,
@@ -277,6 +304,20 @@ theorem cechComplexMap_comp {ι' : Type w} {W : ι' → C}
   simp only [cechComplexMap, CategoryTheory.Functor.map_comp, NatTrans.rightOp_comp,
     Functor.whiskerRight_comp]
   exact (alternatingCofaceMapComplex A).map_comp _ _
+
+/-- `cechComplexMap` is natural in the presheaf: for `α : P ⟶ Q`, applying `α` and then
+restricting along a morphism of families is restricting and then applying `α`. -/
+@[reassoc]
+theorem cechComplexMap_naturality {Q : Cᵒᵖ ⥤ A} (α : P ⟶ Q)
+    (φ : FormalCoproduct.mk _ U ⟶ FormalCoproduct.mk _ V) :
+    (cechComplexFunctor V).map α ≫ cechComplexMap Q φ =
+      cechComplexMap P φ ≫ (cechComplexFunctor U).map α := by
+  -- both are induced by the same map of cosimplicial objects, by naturality of `α`
+  refine ((alternatingCofaceMapComplex A).map_comp _ _).symm.trans <|
+    (congrArg (alternatingCofaceMapComplex A).map ?_).trans
+      ((alternatingCofaceMapComplex A).map_comp _ _)
+  ext : 2
+  exact (((FormalCoproduct.evalOp C A).map α).naturality _).symm
 
 /-- A morphism of families which is the identity on indices, given by morphisms
 `φ i : U i ⟶ W i`, induces an isomorphism of Čech complexes `Č(W, P) ⟶ Č(U, P)` as soon as `P`
@@ -349,6 +390,57 @@ noncomputable def cechComplexMapHomotopy (φ ψ : FormalCoproduct.mk _ U ⟶ For
           Homotopy.ofEq (by
             rw [cechComplexMap_eq, cechFunctor_map_eq]
             exact Category.assoc _ _ _)
+
+section Homology
+
+variable (A) [CategoryWithHomology A] (n : ℕ)
+
+/-- The map on degree `n` Čech cohomology induced by a morphism of families `φ : U ⟶ V`, for open
+covers a refinement map, as a natural transformation of functors of the presheaf: its component
+at `P` is the map `Hⁿ(Č(V, P)) ⟶ Hⁿ(Č(U, P))` induced by `cechComplexMap P φ`. -/
+def cechComplexHomologyMap (φ : FormalCoproduct.mk _ U ⟶ FormalCoproduct.mk _ V) :
+    cechComplexFunctor V ⋙ HomologicalComplex.homologyFunctor A _ n ⟶
+      cechComplexFunctor U ⋙ HomologicalComplex.homologyFunctor A _ n where
+  app P := (HomologicalComplex.homologyFunctor A _ n).map (cechComplexMap P φ)
+  naturality P _ α := by
+    rw [Functor.comp_map, Functor.comp_map, ← Functor.map_comp, ← Functor.map_comp,
+      cechComplexMap_naturality]
+
+/-- The component of `cechComplexHomologyMap A n φ` at `P` is the map on homology induced by
+`cechComplexMap P φ`. -/
+@[simp]
+theorem cechComplexHomologyMap_app (φ : FormalCoproduct.mk _ U ⟶ FormalCoproduct.mk _ V)
+    (P : Cᵒᵖ ⥤ A) :
+    (cechComplexHomologyMap A n φ).app P = HomologicalComplex.homologyMap (cechComplexMap P φ) n :=
+  (rfl)
+
+/-- **Any two morphisms of families induce the same map on Čech cohomology.** For open covers:
+the map on Čech cohomology induced by a refinement does not depend on the refinement map. -/
+theorem cechComplexHomologyMap_eq (φ ψ : FormalCoproduct.mk _ U ⟶ FormalCoproduct.mk _ V) :
+    cechComplexHomologyMap A n φ = cechComplexHomologyMap A n ψ := by
+  ext P
+  exact (cechComplexMapHomotopy P φ ψ).homologyMap_eq n
+
+/-- The identity morphism of a family induces the identity on Čech cohomology. -/
+@[simp]
+theorem cechComplexHomologyMap_id :
+    cechComplexHomologyMap A n (𝟙 (FormalCoproduct.mk _ U)) = 𝟙 _ := by
+  ext P
+  rw [cechComplexHomologyMap_app, cechComplexMap_id]
+  exact HomologicalComplex.homologyMap_id _ n
+
+/-- `cechComplexHomologyMap` is contravariantly functorial in the morphism of families. -/
+@[simp]
+theorem cechComplexHomologyMap_comp {ι' : Type w} {W : ι' → C}
+    (φ : FormalCoproduct.mk _ U ⟶ FormalCoproduct.mk _ V)
+    (ψ : FormalCoproduct.mk _ V ⟶ FormalCoproduct.mk _ W) :
+    cechComplexHomologyMap A n (φ ≫ ψ) =
+      cechComplexHomologyMap A n ψ ≫ cechComplexHomologyMap A n φ := by
+  ext P
+  rw [cechComplexHomologyMap_app, cechComplexMap_comp]
+  exact HomologicalComplex.homologyMap_comp _ _ n
+
+end Homology
 
 /-- **Families that map to each other have homotopy equivalent Čech complexes.** Given morphisms
 of families `φ : U ⟶ V` and `ψ : V ⟶ U`, for instance two open covers each refining the other, the

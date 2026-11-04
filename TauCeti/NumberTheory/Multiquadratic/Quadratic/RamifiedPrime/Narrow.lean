@@ -258,7 +258,7 @@ theorem natCard_closure_image_narrowMk0_le (hmin : minpoly ℤ θ = X ^ 2 - C d)
   classical
   obtain ⟨S, hSne, hSsub, hSrel⟩ :=
     exists_nonempty_prod_narrowMk0_eq_one hmin hgen hsf hd hprime hover
-  refine natCard_closure_image_le_two_pow_card_sub_one s _ (fun p hp => ?_) (fun p hp => ?_)
+  refine s.natCard_closure_image_le_two_pow_card_sub_one _ (fun p hp => ?_) (fun p hp => ?_)
     hSne hSrel
   · have hpram : p ∈ ramifiedPrimes K := by
       rw [← hs]

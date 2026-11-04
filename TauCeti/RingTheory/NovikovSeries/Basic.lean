@@ -381,6 +381,10 @@ theorem coeffAddMonoidHom_apply [AddMonoid R] (a : NovikovSeries R H N) :
     coeffAddMonoidHom a = a.coeff := by
   rfl
 
+/-- Novikov series inherit the absence of additive torsion from their coefficients. -/
+instance [AddMonoid R] [IsAddTorsionFree R] : IsAddTorsionFree (NovikovSeries R H N) :=
+  Function.Injective.isAddTorsionFree coeffAddMonoidHom coeff_injective
+
 /-- A coefficient of a finite sum of Novikov series is the sum of the coefficients. -/
 @[simp]
 theorem coeff_sum [AddCommMonoid R] {ι : Type*} (s : Finset ι) (f : ι → NovikovSeries R H N)

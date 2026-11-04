@@ -5,6 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Homology.ShortComplex.Abelian
+public import Mathlib.CategoryTheory.Abelian.FunctorCategory
+
 public import Mathlib.Algebra.Homology.HomologicalComplexLimits
 public import Mathlib.Algebra.Homology.QuasiIso
 public import Mathlib.CategoryTheory.Abelian.GrothendieckAxioms.Basic
@@ -211,9 +214,9 @@ theorem quasiIso_limMap {F G : J ⥤ HomologicalComplex C c} (φ : F ⟶ G)
   intro q
   rw [quasiIsoAt_iff_isIso_homologyMap]
   let H := HomologicalComplex.homologyFunctor C c q
-  have (j : J) : IsIso ((Functor.whiskerRight φ H).app j) :=
+  have (j : J) : IsIso ((CategoryTheory.Functor.whiskerRight φ H).app j) :=
     (quasiIsoAt_iff_isIso_homologyMap (φ.app j) q).mp ((hφ j).quasiIsoAt q)
-  have : IsIso (Functor.whiskerRight φ H) := NatIso.isIso_of_isIso_app _
+  have : IsIso (CategoryTheory.Functor.whiskerRight φ H) := NatIso.isIso_of_isIso_app _
   have : IsIso (H.map (limMap φ) ≫ limit.post G H) := by
     rw [limit.map_post]
     infer_instance

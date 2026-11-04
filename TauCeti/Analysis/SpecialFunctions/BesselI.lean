@@ -49,6 +49,7 @@ von Mises–Fisher laws.
   joint continuity away from `x = 0` (and at `x = 0` for `ν > 0`), continuity in `x` for natural
   orders, and joint measurability.
 * `Real.hasDerivAt_besselI` — `I_ν'(x) = I_{ν+1}(x) + (ν / x) I_ν(x)`.
+* `Real.hasDerivAt_rpow_neg_mul_besselI` — the derivative of `(x / 2) ^ (-ν) I_ν(x)`.
 * `Real.besselI_sub_besselI` — the recurrence `I_{ν-1}(x) - I_{ν+1}(x) = (2 ν / x) I_ν(x)`.
 * `Real.integral_exp_mul_cos_mul_cos` — the circle integral
   `∫_{-π}^{π} e^{κ cos θ} cos (n θ) dθ = 2π I_n(κ)` for natural `n` and real `κ`.
@@ -217,6 +218,18 @@ theorem hasDerivAt_besselI (ν : ℝ) {x : ℝ} (hx : x ≠ 0) :
   rw [besselI_eq_rpow_mul, besselI_eq_rpow_mul, rpow_sub_one hx2, rpow_add_one hx2]
   simp only [Function.comp_apply, Pi.pow_apply]
   push_cast
+  field_simp
+  ring
+
+/-- The derivative of the normalized Bessel function `(x / 2) ^ (-ν) I_ν(x)` at a
+nonzero argument is `(x / 2) ^ (-ν) I_{ν+1}(x)`. -/
+theorem hasDerivAt_rpow_neg_mul_besselI (ν : ℝ) {x : ℝ} (hx : x ≠ 0) :
+    HasDerivAt (fun x : ℝ ↦ (x / 2) ^ (-ν) * besselI ν x)
+      ((x / 2) ^ (-ν) * besselI (ν + 1) x) x := by
+  have hx2 : x / 2 ≠ 0 := div_ne_zero hx two_ne_zero
+  convert (((hasDerivAt_id' x).div_const 2).rpow_const
+    (p := -ν) (Or.inl hx2)).mul (hasDerivAt_besselI ν hx) using 1
+  rw [rpow_sub_one hx2]
   field_simp
   ring
 

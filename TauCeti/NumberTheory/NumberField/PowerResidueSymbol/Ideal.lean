@@ -43,6 +43,7 @@ zero ideal, which has no prime factors, is the trivial character.
 * `Ideal.powerResidueSymbolIdeal_mk_eq_zero_iff`: `(α / 𝔞)_n = 0` exactly when `α` and `𝔞` are
   not coprime.
 * `Ideal.powerResidueSymbolIdeal_pow_eq_one`: on units the symbol is an `n`-th root of unity.
+* `Ideal.powerResidueSymbolIdeal_neg`: `(-x / 𝔞)_n = (x / 𝔞)_n` for odd `n`.
 * `Ideal.powerResidueSymbolIdeal_mk_of_pow_eq_one`: `(ζ / 𝔞)_n = ζ ^ ((N 𝔞 - 1) / n)` for an
   `n`-th root of unity `ζ` of `𝓞 K`, when `N 𝔞` is prime to `n`.
 * `Ideal.map_powerResidueSymbolIdeal`: Galois equivariance, `σ ((α / 𝔞)_n) = (σ α / σ 𝔞)_n` for a
@@ -195,6 +196,15 @@ theorem powerResidueSymbolIdeal_pow_eq_one {x : 𝓞 K ⧸ 𝔞} (hx : IsUnit x)
   by_cases hn : (absNorm P).Coprime n
   · exact powerResidueSymbol_pow_eq_one hn hαP.ne_zero
   · rw [powerResidueSymbol_of_not_coprime hn, MulChar.one_apply hαP, one_pow]
+
+/-- For odd `n`, `(-x / 𝔞)_n = (x / 𝔞)_n` at every ideal `𝔞`: the symbol is a character of odd
+order dividing `n`, so its value at `-1` is `1`. -/
+@[simp]
+theorem powerResidueSymbolIdeal_neg (hn : Odd n) (x : 𝓞 K ⧸ 𝔞) :
+    powerResidueSymbolIdeal 𝔞 n (-x) = powerResidueSymbolIdeal 𝔞 n x := by
+  have h : powerResidueSymbolIdeal 𝔞 n ^ n = 1 := MulChar.ext fun u ↦ by
+    rw [MulChar.pow_apply_coe, MulChar.one_apply_coe, powerResidueSymbolIdeal_pow_eq_one u.isUnit]
+  rw [neg_eq_neg_one_mul, map_mul, MulChar.val_neg_one_eq_one_of_odd_order hn h, one_mul]
 
 /-- **The power residue symbol of a root of unity at an ideal.** If `N 𝔞` is prime to `n` and `ζ`
 is an `n`-th root of unity of `𝓞 K`, then `(ζ / 𝔞)_n = ζ ^ ((N 𝔞 - 1) / n)`. At a prime this is

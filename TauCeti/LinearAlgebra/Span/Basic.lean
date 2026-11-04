@@ -22,7 +22,9 @@ used to recover the generator's membership in any submodule. Acting on a line gi
 through the image of its generator, so a group element stabilizes the line through a vector
 exactly when it sends that vector to a multiple of itself. Finally, a submodule over a
 subring that is a direct sum `⊕ i, J i • y i` with nonzero ideal coefficients spans the same
-subspace over the larger field as the family `y`.
+subspace over the larger field as the family `y`. A unitriangular change of a family indexed by a
+well-founded order, where each `z j` is `x j` plus a combination of the earlier `x l`, preserves
+the spans of initial segments.
 -/
 
 public section
@@ -129,5 +131,29 @@ theorem span_range_eq_span_of_forall_mem_iff [FaithfulSMul R K] {ι : Type*} [Fi
       exact smul_mem _ _ (subset_span ⟨i, rfl⟩)
 
 end IdealCoefficients
+
+section Unitriangular
+
+variable {R M ι : Type*} [Ring R] [AddCommGroup M] [Module R M] [Preorder ι] [WellFoundedLT ι]
+
+/-- Initial segments of `x` and `z` span the same submodule when every `z j` is `x j` plus a
+combination of the earlier `x l`. -/
+theorem span_image_Iio_eq_span_image_Iio {x z : ι → M}
+    (h : ∀ j, z j - x j ∈ span R (x '' Set.Iio j)) (j : ι) :
+    span R (z '' Set.Iio j) = span R (x '' Set.Iio j) := by
+  refine le_antisymm (span_le.2 ?_) ?_
+  · rintro _ ⟨l, hl, rfl⟩
+    have hmem := add_mem (span_mono (Set.image_mono (Set.Iio_subset_Iio hl.le)) (h l))
+      (subset_span (R := R) ⟨l, hl, rfl⟩)
+    rwa [sub_add_cancel] at hmem
+  induction j using WellFoundedLT.induction with
+  | _ j ih =>
+    rw [span_le]
+    rintro _ ⟨l, hl, rfl⟩
+    have hmem := sub_mem (subset_span (R := R) (Set.mem_image_of_mem z hl)) <|
+      span_mono (Set.image_mono (Set.Iio_subset_Iio hl.le)) (ih l hl (h l))
+    rwa [sub_sub_cancel] at hmem
+
+end Unitriangular
 
 end Submodule

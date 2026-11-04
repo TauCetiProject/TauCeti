@@ -20,6 +20,8 @@ are identified with `0, ω, 1, ω²`, as an isometry onto the quaternary `D₄` 
 ## Main declarations
 
 * `TauCeti.typeD4GlueAlphabetQuaternaryIsometry`: the label identification above.
+* `TauCeti.glueAlphabetIsometry_D_four_apply`: the glue isometry of `D₄` factors through these
+  quaternary coordinates.
 * `TauCeti.typeD4GlueAlphabetQuaternaryIsometry_glueLabelEquiv`: the labels `0, 1, 2, 3`
   correspond to `0, ω, 1, ω²`.
 * `TauCeti.sum_glueMinimum_eq_hammingNorm`: the shortest norm of a word in copies of the `D₄`
@@ -63,6 +65,22 @@ theorem typeD4GlueAlphabetQuaternaryIsometry_apply
   -- cancellation of `zmodTwoProdAddEquiv` is applied in term mode.
   exact (checkerboardDiscriminantQuadraticIsometry_apply 4 _ _).trans
     (congrArg _ (AddEquiv.symm_apply_apply _ _).symm)
+
+/-- **The `D₄` glue identification factors through the quaternary coordinates**: the glue isometry
+of `D₄` is the label identification `typeD4GlueAlphabetQuaternaryIsometry`, followed by the
+quaternary coordinates `typeD4QuaternaryDiscriminantQuadraticIsometry` of the checkerboard
+discriminant group and the transport along `rootLatticeIsometryCheckerboard`. -/
+theorem glueAlphabetIsometry_D_four_apply (hv : (D 4).Valid) (ht : (D 4).IsSimplyLaced)
+    (x : (D 4).glueAlphabet ht) :
+    (D 4).glueAlphabetIsometry hv ht x =
+      (rootLatticeIsometryCheckerboard 4 le_rfl ht).symm.discriminantGroupEquiv
+        (typeD4QuaternaryDiscriminantQuadraticIsometry hF hω
+          (typeD4GlueAlphabetQuaternaryIsometry hF hω x)) := by
+  rw [glueAlphabetIsometry_D_apply_of_even 4 hv ht (by decide),
+    typeD4QuaternaryDiscriminantQuadraticIsometry_apply, typeD4GlueAlphabetQuaternaryIsometry_apply]
+  -- As in `typeD4GlueAlphabetQuaternaryIsometry_apply`, the carrier of the Klein four model is
+  -- `ZMod 2 × ZMod 2` only up to unfolding, so the cancellation is applied in term mode.
+  exact congrArg _ (congrArg _ (AddEquiv.symm_apply_apply _ _).symm)
 
 /-- **The Conway--Sloane labels `0, 1, 2, 3` of `D₄` correspond to `0, ω, 1, ω²`.** -/
 @[simp]

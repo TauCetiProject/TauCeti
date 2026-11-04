@@ -32,12 +32,12 @@ values.
 
 * `TauCeti.LSeries.tendsto_tsum_term_mul_fourier` and
   `TauCeti.LSeries.tendsto_integral_vertical` are two of the three one-sided limits; the third,
-  for the pole term, is the general `TauCeti.tendsto_integral_exp_mul`.
+  for the pole term, comes from the general `TauCeti.tendsto_setIntegral_exp_smul`.
 * `TauCeti.LSeries.tsum_term_mul_fourier_sub_pole_eq_integral_boundary` is the identity they
   combine into, and
   `TauCeti.LSeries.tsum_term_mul_fourier_sub_pole_eq_integral_boundary_of_contDiff` is its form
   for a smooth test function, where the half-line integrability hypothesis is automatic by
-  `TauCeti.integrable_fourier_of_contDiff_of_hasCompactSupport`.
+  `ContDiff.integrable_fourier_of_hasCompactSupport`.
 
 ## Provenance
 
@@ -82,12 +82,12 @@ theorem tendsto_tsum_term_mul_fourier (hFsum : LSeriesSummable
     · simp [_root_.LSeries.term, hn]
     · simp only [_root_.LSeries.term, hn, ite_false]
       ring
-  have h := tendsto_LSeries_nhdsGT
+  have h := LSeriesSummable.tendsto_LSeries_nhdsGE
     (a := fun n : ℕ ↦ a n * 𝓕 psi (1 / (2 * π) * Real.log (n / x))) (σ := 1)
     (by simpa using hFsum)
   rw [Complex.ofReal_one] at h
   simp only [hterm]
-  exact h
+  exact h.mono_left (nhdsWithin_mono _ Ioi_subset_Ici_self)
 
 /-! ### The integral along the vertical line -/
 
@@ -169,8 +169,15 @@ theorem tsum_term_mul_fourier_sub_pole_eq_integral_boundary (hx : 0 < x)
     (∑' n : ℕ, _root_.LSeries.term a sigma n * 𝓕 psi (1 / (2 * π) * Real.log (n / x))) -
       A * (((x ^ (1 - sigma) : ℝ) : ℂ) * ∫ u in Ici (-Real.log x),
         (Real.exp (-u * (sigma - 1)) : ℂ) * 𝓕 psi (u / (2 * π)))) ?_ ?_
-  · exact (tendsto_tsum_term_mul_fourier hFsum).sub
-      ((tendsto_integral_exp_mul hx hFint).const_mul A)
+  · have hrpow : Tendsto (fun sigma : ℝ ↦ ((x ^ (1 - sigma) : ℝ) : ℂ)) (𝓝[>] 1) (𝓝 1) := by
+      have hcont : Continuous fun sigma : ℝ ↦ ((x ^ (1 - sigma) : ℝ) : ℂ) := by
+        simp only [Real.rpow_def_of_pos hx]
+        fun_prop
+      simpa using (hcont.tendsto 1).mono_left nhdsWithin_le_nhds
+    have hint := (tendsto_setIntegral_exp_smul hFint).mono_left
+      (nhdsWithin_mono _ Ioi_subset_Ici_self)
+    simpa only [Complex.real_smul, one_mul] using
+      (tendsto_tsum_term_mul_fourier hFsum).sub ((hrpow.mul hint).const_mul A)
   · refine (tendsto_integral_vertical hx hG hpsi hsupp).congr' ?_
     filter_upwards [self_mem_nhdsWithin] with sigma hsigma
     exact (key sigma hsigma).symm
@@ -192,7 +199,7 @@ theorem tsum_term_mul_fourier_sub_pole_eq_integral_boundary_of_contDiff (hx : 0 
       ∫ t : ℝ, G (1 + t * I) * psi t * (x : ℂ) ^ (t * I) :=
   tsum_term_mul_fourier_sub_pole_eq_integral_boundary hx hG hG' hsum
     (hpsi.continuous.integrable_of_hasCompactSupport hsupp) hsupp
-    (((integrable_fourier_of_contDiff_of_hasCompactSupport hpsi hsupp).comp_div
+    (((hpsi.integrable_fourier_of_hasCompactSupport hsupp).comp_div
       (by positivity)).integrableOn) hFsum
 
 end TauCeti.LSeries

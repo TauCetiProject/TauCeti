@@ -36,7 +36,9 @@ translation action `l +ᵥ (y, v) = (y, v + P y l)` of `Λ` on `Y × E`
 (`TauCeti.periodAddAction`) properly discontinuous, whose orbit space is the total space of the
 family of tori. The action is free and acts by homeomorphisms. The first projection descends to
 the projection of the family of tori to its parameter space
-(`TauCeti.torusFamilyProjection`), a continuous open surjection.
+(`TauCeti.torusFamilyProjection`), a continuous open surjection. The orbit map
+`Y × E → (Y × E)/Λ` is a covering map, so by uniqueness of lifts a continuous family of periods
+over a preconnected space is a single period (`TauCeti.exists_eq_period_of_mem_range`).
 
 The `ℤ`-basis of the full lattice `LinearMap.range (P y)` given by the periods of a `ℤ`-basis `b`
 of `Λ` is packaged as the real basis `TauCeti.periodBasis P b hinj y` of `E`. The global
@@ -64,8 +66,12 @@ trivialization of the family built from it is in
   covering map, the quotient map of the period translation action.
 * `TauCeti.mem_orbit_periodAddAction_iff`: two points lie in one orbit exactly when they have the
   same parameter `y` and differ by a period at `y`.
+* `TauCeti.exists_eq_period_of_mem_range`: a continuous family of periods over a preconnected
+  space is a single period, by uniqueness of lifts through the orbit map.
 * `TauCeti.continuous_torusFamilyProjection`, `TauCeti.isOpenMap_torusFamilyProjection`: the
   projection of the family of tori is continuous and open.
+* `TauCeti.secondCountableTopology_torusFamily`: the total space is second countable over a
+  second-countable base.
 
 ## References
 
@@ -121,6 +127,14 @@ omit [TopologicalSpace Y] in
   have h := Basis.ofZLatticeBasis_repr_apply ℝ (LinearMap.range (P y))
     (b.map (LinearEquiv.ofInjective (P y) (hinj y))) (LinearEquiv.ofInjective (P y) (hinj y) l) i
   rwa [Basis.map_repr, LinearEquiv.trans_apply, LinearEquiv.symm_apply_apply] at h
+
+omit [TopologicalSpace Y] in
+/-- The coordinate vector of a period `P y l` in the period basis at `y` is the integer coordinate
+vector of `l` in `b`. -/
+theorem periodBasis_equivFun_period {ι : Type*} [Finite ι] (b : Basis ι ℤ Λ)
+    (hinj : ∀ y, Injective (P y)) (y : Y) (l : Λ) :
+    (periodBasis P b hinj y).equivFun (P y l) = fun i ↦ (b.repr l i : ℝ) :=
+  funext fun i ↦ by simp
 
 /-- **Uniform bound for inverse period maps.** For a basis `b` of `Λ`, the real linear maps
 `x ↦ ∑ i, x i • P y (b i)` are bounded below by one constant `c > 0` as `y` ranges over a
@@ -295,6 +309,19 @@ theorem isOpenMap_torusFamilyProjection [TopologicalSpace Y] [TopologicalSpace E
   let _ := periodAddAction P
   IsOpenMap.of_comp continuous_quot_mk Quotient.mk_surjective isOpenMap_fst
 
+/-- **A family of tori over a second-countable base is second countable.** If the periods depend
+continuously on the parameter, the orbit space `(Y × E)/Λ` of the period translation action is
+second countable whenever `Y` and `E` are, since its orbit map is open. No lattice hypothesis on
+the periods is needed. -/
+theorem secondCountableTopology_torusFamily [TopologicalSpace Y] [SecondCountableTopology Y]
+    [TopologicalSpace E] [ContinuousAdd E] [SecondCountableTopology E]
+    (hcont : ∀ l, Continuous fun y ↦ P y l) :
+    letI := periodAddAction P
+    SecondCountableTopology (AddAction.orbitRel.Quotient Λ (Y × E)) :=
+  letI := periodAddAction P
+  haveI := continuousConstVAdd_periodAddAction P hcont
+  ContinuousConstVAdd.secondCountableTopology
+
 end Action
 
 /-- **Orbit-local finiteness.** The period translation action of a continuous family of full
@@ -334,5 +361,26 @@ theorem isAddQuotientCoveringMap_torusFamily_mk [FiniteDimensional ℝ E]
   have := properlyDiscontinuousVAdd_periodAddAction P hcont hinj
   have := isCancelVAdd_periodAddAction P hinj
   exact isAddQuotientCoveringMap_quotientMk_of_properlyDiscontinuousVAdd
+
+/-- **A continuous family of periods is a single period.** Over a preconnected space `Z`, let
+`f : Z → Y` and `S : Z → E` be continuous with `S z` a period at `f z` for every `z`. Then there
+is one `l : Λ` with `S z = P (f z) l` for every `z`. -/
+theorem exists_eq_period_of_mem_range [FiniteDimensional ℝ E]
+    [∀ y, DiscreteTopology (LinearMap.range (P y))] [∀ y, IsZLattice ℝ (LinearMap.range (P y))]
+    [Free ℤ Λ] [Module.Finite ℤ Λ] [T2Space Y] [LocallyCompactSpace Y]
+    (hcont : ∀ l, Continuous fun y ↦ P y l) (hinj : ∀ y, Injective (P y)) {Z : Type*}
+    [TopologicalSpace Z] [PreconnectedSpace Z] {f : Z → Y} (hf : Continuous f) {S : Z → E}
+    (hS : Continuous S) (hmem : ∀ z, S z ∈ LinearMap.range (P (f z))) :
+    ∃ l : Λ, ∀ z, S z = P (f z) l := by
+  let _ := periodAddAction P
+  rcases isEmpty_or_nonempty Z with hZ | ⟨⟨z₀⟩⟩
+  · exact ⟨0, fun z ↦ isEmptyElim z⟩
+  obtain ⟨l, hl⟩ := hmem z₀
+  refine ⟨l, fun z ↦ congrArg Prod.snd <| congrFun ((isAddQuotientCoveringMap_torusFamily_mk P
+    hcont hinj).isCoveringMap.eq_of_comp_eq (hf.prodMk hS) (hf.prodMk ((hcont l).comp hf))
+    (funext fun z ↦ ?_) z₀ (by simp [hl])) z⟩
+  -- Both maps lift `z ↦ [f z, 0]`, since `S z` and `P (f z) l` are periods at `f z`.
+  refine Quotient.sound ((mem_orbit_periodAddAction_iff P).2 ⟨rfl, ?_⟩)
+  exact sub_mem (hmem z) (LinearMap.mem_range_self _ l)
 
 end TauCeti

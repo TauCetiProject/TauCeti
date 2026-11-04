@@ -182,7 +182,7 @@ theorem under_maximalIdeal_integralClosure :
 
 /-- The local ring of the chosen place dominates `R`. -/
 instance isLocalHom_algebraMap : IsLocalHom (algebraMap R E.localRing) := by
-  refine ((local_hom_TFAE (algebraMap R E.localRing)).out 4 1).1 fun x hx ↦ ?_
+  refine ((IsLocalRing.local_hom_tfae (algebraMap R E.localRing)).out 4 1).1 fun x hx ↦ ?_
   rw [Ideal.mem_comap, IsScalarTower.algebraMap_apply R E.integralClosure E.localRing]
   exact (IsLocalization.AtPrime.to_map_mem_maximal_iff _ E.prime _).2
     ((Ideal.mem_of_liesOver E.prime (maximalIdeal R) x).1 hx)

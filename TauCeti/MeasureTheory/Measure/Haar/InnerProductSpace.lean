@@ -9,6 +9,7 @@ public import Mathlib.Analysis.InnerProductSpace.GramMatrix
 public import Mathlib.MeasureTheory.Measure.Haar.InnerProductSpace
 import Mathlib.Analysis.InnerProductSpace.NormDet
 import TauCeti.MeasureTheory.Constructions.Pi
+import TauCeti.MeasureTheory.Measure.Haar.Unique
 
 /-!
 # The volume of a parallelepiped and the Gram determinant
@@ -35,8 +36,13 @@ conditions on single coordinates, such as polydiscs, are measured.
 * `Module.Basis.volume_eq_smul_addHaar`: the volume measure is `√(det G) • b.addHaar`.
 * `AffineIsometryEquiv.measurePreserving`: affine isometries preserve the volume measure, extending
   Mathlib's `LinearIsometryEquiv.measurePreserving` by a translation.
+* `Submodule.ae_of_ae_orthogonalProjectionOnto_prod`: a property of almost every point of a
+  space linearly isomorphic to `K × Kᗮ` holds, for almost every `a`, at the image of the
+  components of `a` along `K` and `Kᗮ`.
 * `MeasureTheory.Measure.addHaar_setOf_fst_eq`: a hyperplane `{a} × E` of the Euclidean product
   `ℝ × E` is null for every additive Haar measure.
+* `MeasureTheory.Measure.addHaar_setOf_inner_eq`: so is a hyperplane `{y | ⟪y, ν⟫ = c}` with
+  `ν ≠ 0`.
 * `PiLp.volume_preserving_symm_measurableEquiv_toLp`: the volume of `PiLp 2 F` is the product of
   the volumes of the factors.
 
@@ -100,6 +106,30 @@ theorem measurePreserving (f : E ≃ᵃⁱ[ℝ] F) : MeasurePreserving f := by
 
 end AffineIsometryEquiv
 
+namespace Submodule
+
+/-- Null sets pass through the orthogonal splitting `E ≃ K × Kᗮ`, for any additive Haar measures.
+If a property holds for almost every point of a finite-dimensional space `W`, and `T` is a linear
+isomorphism from `K × Kᗮ` to `W`, then for almost every `a ∈ E` the property holds at the image
+under `T` of the components of `a` along `K` and `Kᗮ`. -/
+theorem ae_of_ae_orthogonalProjectionOnto_prod {W : Type*} [NormedAddCommGroup W]
+    [NormedSpace ℝ W] [FiniteDimensional ℝ W] [MeasurableSpace W] [BorelSpace W]
+    (μ : Measure E) [μ.IsAddHaarMeasure] (K : Submodule ℝ E) (T : (K × Kᗮ) ≃L[ℝ] W)
+    (ν : Measure W) [ν.IsAddHaarMeasure] {p : W → Prop} (hp : ∀ᵐ w ∂ν, p w) :
+    ∀ᵐ a ∂μ, p (T (K.orthogonalProjectionOnto a, Kᗮ.orthogonalProjectionOnto a)) := by
+  let S : E ≃L[ℝ] W :=
+    (K.prodEquivOfIsCompl Kᗮ K.isCompl_orthogonal).symm.toContinuousLinearEquiv.trans T
+  have hS : ∀ a, S a = T (K.orthogonalProjectionOnto a, Kᗮ.orthogonalProjectionOnto a) :=
+    fun a ↦ by
+      simp only [S, ContinuousLinearEquiv.trans_apply, LinearEquiv.coe_toContinuousLinearEquiv']
+      congr 1
+      rw [LinearEquiv.symm_apply_eq, coe_prodEquivOfIsCompl']
+      exact (K.starProjection_add_starProjection_orthogonal a).symm
+  filter_upwards [(S.toContinuousAddEquiv.quasiMeasurePreserving_addHaar μ ν).ae hp] with a ha
+  simpa [hS] using ha
+
+end Submodule
+
 namespace MeasureTheory.Measure
 
 /-- The hyperplane `{a} × E` of the Euclidean product `ℝ × E` is a null set for every additive
@@ -118,6 +148,22 @@ theorem addHaar_setOf_fst_eq (μ : Measure (WithLp 2 (ℝ × E))) [μ.IsAddHaarM
     simp at hmem
   rw [← hs]
   exact addHaar_affineSubspace μ s hne
+
+open scoped RealInnerProductSpace in
+/-- A hyperplane `{y | ⟪y, ν⟫ = c}` with `ν ≠ 0` is a null set for every additive Haar measure. -/
+theorem addHaar_setOf_inner_eq (μ : Measure E) [μ.IsAddHaarMeasure] {ν : E} (hν : ν ≠ 0)
+    (c : ℝ) : μ {y | ⟪y, ν⟫ = c} = 0 := by
+  have hν2 : ⟪ν, ν⟫ ≠ 0 := inner_self_ne_zero.2 hν
+  -- The hyperplane is a translate of the proper subspace `K = {y | ⟪ν, y⟫ = 0}`.
+  set K : Submodule ℝ E := LinearMap.ker (innerₛₗ ℝ ν)
+  have hK : K ≠ ⊤ := fun h => hν2 (by simpa [K] using (h ▸ Submodule.mem_top : ν ∈ K))
+  have hs : {y | ⟪y, ν⟫ = c} = (· + -((c / ⟪ν, ν⟫) • ν)) ⁻¹' (K : Set E) := by
+    ext y
+    simp only [K, Set.mem_ofPred_eq, Set.mem_preimage, SetLike.mem_coe, LinearMap.mem_ker,
+      innerₛₗ_apply_apply, inner_add_right, inner_neg_right, real_inner_smul_right,
+      div_mul_cancel₀ _ hν2, real_inner_comm y ν, add_neg_eq_zero]
+  rw [hs, measure_preimage_add_right]
+  exact addHaar_submodule μ K hK
 
 end MeasureTheory.Measure
 

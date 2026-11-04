@@ -5,7 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.RingTheory.LaurentSeries.Substitution
+public import TauCeti.RingTheory.LaurentSeries.LaurentPolynomial
+public import TauCeti.RingTheory.LaurentSeries.Substitution.Basic
 
 /-!
 # The residue pairing on Laurent series
@@ -16,8 +17,9 @@ For Laurent series over a commutative ring, this file packages the bilinear form
 
 The pairing is alternating, hence skew-symmetric, over every commutative ring: in the residue of
 `f df` the terms indexed by `Xⁱ` and `X⁻ⁱ` cancel in pairs, so no characteristic assumption is
-needed.  It satisfies the cyclic identity obtained
-by taking the residue of `d(fgh)`.  Its value on monomials fixes the sign convention; more
+needed.  It satisfies the cyclic identity obtained by taking the residue of `d(fgh)`, and every
+vector field `h d/dX` is skew for it, since `Res(h f' dg) + Res(f d(h g'))` is the residue of
+`d(f h g')`.  Its value on monomials fixes the sign convention; more
 generally it is the finite sum `∑ n f₋ₙ gₙ` over the exponents allowed by the orders of `f` and
 `g`, and it vanishes on two power series.  Over a field it is continuous for the Laurent
 valuation topology.
@@ -31,9 +33,13 @@ The convention agrees with `LieAlgebra.LoopAlgebra.residuePairing`: on monomials
 * `LaurentSeries.residuePairing_eq_neg_swap`: integration by parts for residues.
 * `LaurentSeries.residuePairing_self`: alternation over every commutative ring.
 * `LaurentSeries.residuePairing_mul_add_cyclic`: the cyclic identity.
+* `LaurentSeries.residuePairing_mul_derivative_add`: vector fields `h d/dX` are skew for the
+  pairing.
 * `LaurentSeries.residuePairing_single`: its value on Laurent monomials.
 * `LaurentSeries.residuePairing_eq_sum`: its finite coefficient formula.
 * `LaurentSeries.residuePairing_coe_powerSeries`: vanishing on formal power series.
+* `LaurentSeries.residuePairing_toLaurentSeries`: on Laurent polynomials it is the coefficient of
+  `T⁻¹` in `f * g'`, for the derivative `LaurentPolynomial.derivative`.
 * `LaurentSeries.continuous_residuePairing`: joint continuity over a field.
 * `LaurentSeries.residuePairing_substAlgHom`: substitution multiplies the pairing by the
   order of the substituted parameter, so formal coordinate changes preserve it.
@@ -42,7 +48,7 @@ The convention agrees with `LieAlgebra.LoopAlgebra.residuePairing`: on monomials
 public section
 
 open HahnSeries
-open scoped LaurentSeries PowerSeries
+open scoped LaurentPolynomial LaurentSeries PowerSeries
 
 namespace LaurentSeries
 
@@ -116,6 +122,16 @@ theorem residuePairing_mul_add_cyclic (f g h : R⸨X⸩) :
   rw [mul_comm g h]
   abel
 
+/-- **Vector fields are skew for the residue pairing.** For every Laurent series `h`, the
+derivation `f ↦ h f'` satisfies `Res(h f' dg) + Res(f d(h g')) = 0`: the sum is the residue of the
+exact differential `d(f h g')`. -/
+theorem residuePairing_mul_derivative_add (h f g : R⸨X⸩) :
+    residuePairing R (h * derivative R f) g + residuePairing R f (h * derivative R g) = 0 := by
+  have hd : (derivative R f * (h * derivative R g) + f * derivative R (h * derivative R g)).coeff
+      (-1) = 0 := by
+    rw [← derivative_mul, coeff_neg_one_derivative]
+  rw [residuePairing_apply, residuePairing_apply, ← hd, coeff_add, mul_assoc, mul_left_comm]
+
 /-- The residue pairing on Laurent monomials.  This formula fixes the convention relative to
 the polynomial-loop pairing. -/
 @[simp]
@@ -182,6 +198,15 @@ theorem residuePairing_coe_powerSeries (f g : R⟦X⟧) :
   rw [residuePairing_apply, ← PowerSeries.coe_derivative, ← PowerSeries.coe_mul,
     PowerSeries.coeff_coe]
   simp
+
+/-- On Laurent polynomials, the residue pairing `Res(f dg)` is the coefficient of `T⁻¹` in
+`f * g'`, for the derivative of Laurent polynomials. -/
+@[simp]
+theorem residuePairing_toLaurentSeries (f g : R[T;T⁻¹]) :
+    residuePairing R f.toLaurentSeries g.toLaurentSeries =
+      (f * LaurentPolynomial.derivative g).coeff (-1) := by
+  rw [residuePairing_apply, ← LaurentPolynomial.toLaurentSeries_derivative, ← map_mul,
+    LaurentPolynomial.coeff_toLaurentSeries]
 
 section Substitution
 

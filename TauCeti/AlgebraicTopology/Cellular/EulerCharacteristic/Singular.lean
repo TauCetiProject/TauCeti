@@ -116,6 +116,15 @@ section Absolute
 
 variable {X : Type w} [TopologicalSpace X] [T2Space X] (C : Set X) [CWComplex C]
 
+/-- Ordinary singular homology of a finite-dimensional CW complex vanishes in any degree in which
+it has no cells. -/
+theorem isZero_singularHomology_of_isEmpty_cell [FiniteDimensional C] {A : Type u}
+    [Category.{v} A] [HasCoproducts.{w} A] [Abelian A]
+    [∀ m, HasExactColimitsOfShape (Discrete (cell C m)) A] (R : A) (n : ℕ) [IsEmpty (cell C n)] :
+    IsZero (((AlgebraicTopology.singularHomologyFunctor.{w} A n).obj R).obj (TopCat.of C)) :=
+  (asIso ((complexBasePair C).singularHomologyπ R n)).isZero_iff.mpr
+    (isZero_singularHomology_complexBasePair_of_isEmpty_cell C R n)
+
 section Ring
 
 variable {k : Type w} [Ring k] (M : ModuleCat.{w} k)

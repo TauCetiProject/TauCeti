@@ -32,6 +32,9 @@ the paired wedge `ContinuousAlternatingMap.pairedWedge` of the one-form `α` wit
 
 * `TestFunction.smulLeftCLM`: multiplication `φ ↦ f φ` of test functions by a smooth function.
 * `TestFunction.oneFormWedgeCLM`: the wedge `ω ↦ α ∧ ω` of test forms with a smooth one-form.
+* `TestFunction.norm_oneFormWedgeCLM_apply_le`: the pointwise bound
+  `‖(α ∧ ω) x‖ ≤ (k + 1) ‖α x‖ ‖ω x‖`, with its extended-norm form
+  `TestFunction.enorm_oneFormWedgeCLM_apply_le`.
 * `TestFunction.extDerivCLM_smulLeftCLM`: the Leibniz rule `d (f ω) = df ∧ ω + f dω`.
 * `ContinuousLinearMap.comp_smulLeftCLM_comp_extDerivCLM`: the boundary of a smooth multiple of
   a current, `∂(fT) = f ∂T - T ⌞ df`.
@@ -112,6 +115,19 @@ noncomputable def oneFormWedgeCLM (hα : ContDiff ℝ n α) :
 theorem oneFormWedgeCLM_apply (hα : ContDiff ℝ n α) (ω : 𝓓^{n}(Ω, E [⋀^Fin k]→L[ℝ] F)) (x : E) :
     oneFormWedgeCLM hα ω x = alternatizeUncurryFin ((α x).smulRight (ω x)) := by
   simp [oneFormWedgeCLM]
+
+/-- Pointwise, the wedge `α ∧ ω` is bounded in operator norm by `(k + 1) ‖α x‖ ‖ω x‖`. -/
+theorem norm_oneFormWedgeCLM_apply_le (hα : ContDiff ℝ n α) (ω : 𝓓^{n}(Ω, E [⋀^Fin k]→L[ℝ] F))
+    (x : E) : ‖oneFormWedgeCLM hα ω x‖ ≤ (k + 1) * ‖α x‖ * ‖ω x‖ := by
+  rw [oneFormWedgeCLM_apply, mul_assoc, ← ContinuousLinearMap.norm_smulRight_apply]
+  exact norm_alternatizeUncurryFin_le _
+
+/-- The pointwise bound `‖(α ∧ ω) x‖ₑ ≤ (k + 1) ‖α x‖ₑ ‖ω x‖ₑ` in extended norms. -/
+theorem enorm_oneFormWedgeCLM_apply_le (hα : ContDiff ℝ n α)
+    (ω : 𝓓^{n}(Ω, E [⋀^Fin k]→L[ℝ] F)) (x : E) :
+    ‖oneFormWedgeCLM hα ω x‖ₑ ≤ (k + 1) * ‖α x‖ₑ * ‖ω x‖ₑ := by
+  simp only [enorm_eq_nnnorm]
+  exact_mod_cast norm_oneFormWedgeCLM_apply_le hα ω x
 
 /-- The wedge with a smooth one-form does not enlarge the support of a test form. -/
 theorem tsupport_oneFormWedgeCLM_subset (hα : ContDiff ℝ n α)

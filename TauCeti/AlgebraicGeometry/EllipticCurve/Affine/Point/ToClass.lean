@@ -359,7 +359,7 @@ private theorem exists_codimLEOne_inv_integral
     simp [h]
   obtain ⟨a, ha_mem, ha, hbound⟩ := exists_mem_norm_natDegree_le (F := F) I hIne
   obtain ⟨J, hJunit, hJne, hJ⟩ :=
-    Ideal.exists_isUnit_span_singleton_eq_mul I hIunit ha ha_mem
+    Ideal.exists_isUnit_span_singleton_eq_mul I hIunit (mem_nonZeroDivisors_of_ne_zero ha) ha_mem
   have haK : algebraMap W.CoordinateRing W.FunctionField a ≠ 0 := by
     simpa using (FaithfulSMul.algebraMap_injective W.CoordinateRing W.FunctionField).ne ha
   refine ⟨J, hJunit, ?_, ?_⟩

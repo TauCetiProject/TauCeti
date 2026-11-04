@@ -210,7 +210,7 @@ theorem exists_isFiniteMeasure_integral_zpow_eq (φ : ℤ → ℂ) (hφ : IsPosi
   have hmass (N : ℕ) : ν N univ ≤ C := by
     have h := hmoment N 0
     rw [hφ.map_zero_eq_ofReal_re] at h
-    simp only [zpow_zero, integral_const, Complex.real_smul, mul_one, ← ofReal_mul,
+    simp only [_root_.zpow_zero, integral_const, Complex.real_smul, mul_one, ← ofReal_mul,
       ofReal_inj] at h
     rw [← ofReal_measureReal (measure_ne_top _ _), h, ENNReal.ofReal_le_iff_le_toReal
       ENNReal.coe_ne_top, ENNReal.coe_toReal]
@@ -238,17 +238,18 @@ theorem exists_isFiniteMeasure_integral_zpow_eq (φ : ℤ → ℂ) (hφ : IsPosi
 
 section Pontryagin
 
-variable [MeasurableSpace (PontryaginDual (Multiplicative ℤ))]
-  [BorelSpace (PontryaginDual (Multiplicative ℤ))]
-
 /-- The Fourier–Stieltjes transform of the image of a finite measure on the circle under
 `TauCeti.circleEquivPontryaginDualInt` is its moment sequence. -/
 @[simp]
 theorem
     _root_.MeasureTheory.FiniteMeasure.pontryaginMeasureTransform_map_circleEquivPontryaginDualInt
+    {measurableDual : MeasurableSpace (PontryaginDual (Multiplicative ℤ))}
+    [borelDual : @BorelSpace (PontryaginDual (Multiplicative ℤ)) _ measurableDual]
     (μ : FiniteMeasure Circle) (n : ℤ) :
+    letI := measurableDual
     (μ.map circleEquivPontryaginDualInt).pontryaginMeasureTransform n =
       ∫ z : Circle, (z : ℂ) ^ n ∂μ.toMeasure := by
+  let := measurableDual
   rw [FiniteMeasure.pontryaginMeasureTransform_apply, FiniteMeasure.toMeasure_map,
     integral_map (map_continuous circleEquivPontryaginDualInt).aemeasurable
       (PontryaginDual.continuous_coe_eval_const _).aestronglyMeasurable]
@@ -268,7 +269,8 @@ theorem isPositiveDefiniteSub_iff_exists_isFiniteMeasure_integral_zpow_eq (φ : 
   let μf : FiniteMeasure Circle := ⟨μ, hμ⟩
   have hφ : φ = (μf.map circleEquivPontryaginDualInt).pontryaginMeasureTransform := funext fun n ↦
     (hrep n).trans
-      (FiniteMeasure.pontryaginMeasureTransform_map_circleEquivPontryaginDualInt μf n).symm
+      (FiniteMeasure.pontryaginMeasureTransform_map_circleEquivPontryaginDualInt
+        μf n).symm
   exact hφ ▸ (μf.map circleEquivPontryaginDualInt).isPositiveDefiniteSub_pontryaginMeasureTransform
 
 end TauCeti

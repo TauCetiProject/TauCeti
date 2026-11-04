@@ -89,6 +89,12 @@ def coinvariantsTensorChainMap {P : ChainComplex (Rep.{u} k G) ℕ}
 variable {P P' : ChainComplex (Rep.{u} k G) ℕ} {Q Q' : ChainComplex (Rep.{u} k H) ℕ}
   (α : P ⟶ ((resFunctor f).mapHomologicalComplex _).obj Q)
 
+/-- The component in degree `n` is the change-of-group map on tensor coinvariants. -/
+@[simp]
+theorem coinvariantsTensorChainMap_f (n : ℕ) :
+    (f.coinvariantsTensorChainMap φ α).f n = f.coinvariantsTensorMap φ (α.f n) :=
+  (rfl)
+
 /-- The chain map sends the class of `a ⊗ c` to the class of `φ a ⊗ α c`. -/
 -- Match before simplification changes the presentation of the dependent tensor carrier.
 @[simp↓]

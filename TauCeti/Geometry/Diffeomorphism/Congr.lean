@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Geometry.Diffeomorphism.Group
 public import TauCeti.Geometry.Diffeomorphism.Topology
-public import TauCeti.Topology.Algebra.Homeomorph.Congr
+public import TauCeti.Topology.Homeomorph.Congr
 import TauCeti.Geometry.Diffeomorphism.Composition
 
 /-!
@@ -43,7 +43,7 @@ for the naturality statement.
   locally compact.
 
 The analogous self-homeomorphism-group isomorphism `Homeomorph.homeoCongr`, the target of
-the forgetful naturality below, lives in `TauCeti.Topology.Algebra.Homeomorph.Congr`.
+the forgetful naturality below, lives in `TauCeti.Topology.Homeomorph.Congr`.
 
 ## Main results
 

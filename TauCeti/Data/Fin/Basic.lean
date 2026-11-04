@@ -5,6 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Data.Fintype.Perm
+
 public import Mathlib.Algebra.BigOperators.Fin
 public import Mathlib.Algebra.Group.End
 public import Mathlib.Algebra.Ring.Parity
@@ -50,6 +52,9 @@ range, so the value is a `dite` rather than a plain application.
 * `Finset.card_filter_castSucc_lt_succ`: counting the elements of a set of indices below `i.succ`
   rather than `i.castSucc` adds `1` exactly when `i` belongs to it.
 * `Fin.sum_rev_castLE`: the sum of the values of a reversed embedded finite ordinal.
+* `Fin.castLE_last`: the last index of an initial segment embeds as the specified endpoint.
+* `Fin.partialProd_last_eq_mul_tail`, `Fin.partialProd_last_eq_init_mul`: the final partial
+  product of a tuple in a monoid, split at its first or its last entry.
 * `Fin.castSucc_add_one_of_ne_last`, `Fin.castSucc_sub_one_of_ne_zero`: how `Fin.castSucc`
   interacts with the cyclic successor and predecessor.
 * `Fin.castSucc_last_add_one`: adding one to the penultimate index gives the last index.
@@ -166,6 +171,11 @@ end Finset
 
 namespace Fin
 
+/-- The last index of the initial segment ending at `i` embeds as `i`. -/
+theorem castLE_last {n : ℕ} (i : Fin (n + 1)) :
+    Fin.castLE (Nat.succ_le_iff.mpr i.isLt) (Fin.last i.val) = i := by
+  rfl
+
 /-- The sum of the values in the first `k` positions of the reversed finite ordinal `Fin N`. -/
 theorem sum_rev_castLE (N k : ℕ) (hk : k ≤ N) :
     (∑ i : Fin k, (Fin.rev (Fin.castLE hk i) : ℕ)) =
@@ -203,6 +213,34 @@ theorem prod_contractNth_castSucc {M : Type*} [CommMonoid M] {n : ℕ} (j : Fin 
     Fin.succAbove_of_le_castSucc _ _ (by simp [Fin.le_def]; omega)
   rw [← partialProd_last, ← partialProd_last, Fin.partialProd_contractNth, Function.comp_apply,
     hlast]
+
+/-- The final partial product of a tuple is its first entry times the final partial product of
+its tail. -/
+theorem partialProd_last_eq_mul_tail {M : Type*} [Monoid M] {n : ℕ} (y : Fin (n + 1) → M) :
+    partialProd y (last (n + 1)) = y 0 * partialProd (fun i ↦ y i.succ) (last n) := by
+  rw [← succ_last, partialProd_succ']
+  rfl
+
+/-- The final partial product of a tuple is the final partial product of its initial segment
+times its last entry. -/
+theorem partialProd_last_eq_init_mul {M : Type*} [Monoid M] {n : ℕ} (y : Fin (n + 1) → M) :
+    partialProd y (last (n + 1)) = partialProd (init y) (last n) * y (last n) := by
+  rw [← succ_last, partialProd_succ, partialProd_init]
+
+/-- The last entry of a tuple cancels against the inverse of `g` times the final partial
+product. -/
+theorem apply_last_mul_inv_mul_partialProd_last {G : Type*} [Group G] {n : ℕ}
+    (y : Fin (n + 1) → G) (g : G) :
+    y (last n) * (g * partialProd y (last (n + 1)))⁻¹ =
+      (g * partialProd (init y) (last n))⁻¹ := by
+  rw [partialProd_last_eq_init_mul, ← mul_assoc, mul_inv_rev, mul_inv_cancel_left]
+
+/-- Multiplying two adjacent entries of a tuple does not change its final partial product. -/
+theorem partialProd_contractNth_castSucc {M : Type*} [Monoid M] {n : ℕ} (j : Fin n)
+    (y : Fin (n + 1) → M) :
+    partialProd (contractNth j.castSucc (· * ·) y) (last n) = partialProd y (last (n + 1)) := by
+  rw [partialProd_contractNth, Function.comp_apply, succAbove_of_le_castSucc, succ_last]
+  simp [le_def]
 
 /-- A product over `Fin n` of a family equal to `1` beyond `i` is its product over the first
 `i` indices times its value at `i`. -/
@@ -672,7 +710,7 @@ theorem exists_foldl_eq_of_parent {n : ℕ} {J : Type*}
       ∃ l : List J, l.foldl step 0 = (⟨m, hm⟩ : Fin (n + 1)) := by
     intro m hm
     induction m using Nat.strong_induction_on with
-    | h m ih =>
+    | ind m ih =>
         by_cases hzero : m = 0
         · subst m
           exact ⟨[], rfl⟩
@@ -799,7 +837,7 @@ theorem eq_one_or_swap_fin_two (e : Equiv.Perm (Fin 2)) :
       simpa using h1
 
 /-- The permutations of `Fin 2`, as a finite set, are the identity and the transposition. -/
-theorem univ_fin_two [Fintype (Equiv.Perm (Fin 2))] :
+theorem univ_fin_two :
     (Finset.univ : Finset (Equiv.Perm (Fin 2))) =
     {1, Equiv.swap 0 1} := by
   classical

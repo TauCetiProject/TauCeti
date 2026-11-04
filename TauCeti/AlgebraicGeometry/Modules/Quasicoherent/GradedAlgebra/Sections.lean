@@ -64,9 +64,7 @@ variable {X : Scheme.{u}} (A : GradedQuasicoherentAlgebra X) (U : X.Opens)
 of the sections of the direct-sum algebra. -/
 private lemma ιTotal_app_gOne :
     (ιTotal A 0).app U (GradedMonoid.GOne.one (A := fun n ↦ Γ(A.obj.X n, U))) = 1 := by
-  have h : A.obj.toMon.one ≫ ιTotal A 0 = η[(toQuasicoherentAlgebra.obj A).obj.X] :=
-    (congrArg (· ≫ ιTotal A 0) (Mon.one_eq A.obj.toMon)).trans
-      ((Category.assoc _ _ _).trans (one_toQuasicoherentAlgebra A).symm)
+  have h := one_ιTotal A
   rw [← map_one (algebraMap Γ(X, U) Γ((toQuasicoherentAlgebra.obj A).obj.X, U)),
     CommMon.sections_algebraMap_def, CommMon.sections_gOne_def]
   exact ConcreteCategory.congr_hom (congrArg (Scheme.Modules.Hom.app · U) h) _
@@ -76,10 +74,7 @@ their images in the sections of the direct-sum algebra. -/
 private lemma ιTotal_app_gMul {i j : ℕ} (x : Γ(A.obj.X i, U)) (y : Γ(A.obj.X j, U)) :
     (ιTotal A (i + j)).app U (GradedMonoid.GMul.mul (A := fun n ↦ Γ(A.obj.X n, U)) x y) =
       (ιTotal A i).app U x * (ιTotal A j).app U y := by
-  have h : A.obj.toMon.mul i j ≫ ιTotal A (i + j) =
-      (ιTotal A i ⊗ₘ ιTotal A j) ≫ μ[(toQuasicoherentAlgebra.obj A).obj.X] :=
-    (congrArg (· ≫ ιTotal A (i + j)) (Mon.mul_eq A.obj.toMon i j)).trans
-      ((Category.assoc _ _ _).trans (ιTotal_tensorHom_ιTotal_mul A i j).symm)
+  have h := mul_ιTotal A i j
   -- Both products are computed through the tensor map of the sections functor, which is
   -- natural in the two factors.
   have hμ := ConcreteCategory.congr_hom (Functor.LaxMonoidal.μ_natural

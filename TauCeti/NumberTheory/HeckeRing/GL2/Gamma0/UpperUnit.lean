@@ -69,7 +69,7 @@ dropping the inverse would negate every twist downstream.
   project's
   [`HeckeRIngs/GL2/Unified/NebentypusHeckeRingHom.lean`](https://github.com/CBirkbeck/AINTLIB)
   at the same commit. The source works with an explicit integral adjugate; here
-  `adjugateGL_eq_inv` reduces it to the already-proved `Delta0UpperUnit_mapGL` at `γ⁻¹`.
+  `adjugateGL_eq_inv_iff` reduces it to the already-proved `Delta0UpperUnit_mapGL` at `γ⁻¹`.
 -/
 
 public section

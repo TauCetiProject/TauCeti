@@ -7,6 +7,7 @@ module
 
 public import TauCeti.LinearAlgebra.TensorAlgebra.Projection
 public import TauCeti.RingTheory.PolynomialLaw.Power
+public import TauCeti.RingTheory.TensorProduct.Basic
 
 /-!
 # The diagonal tensor polynomial law
@@ -73,6 +74,25 @@ theorem diagonalLaw_toFun_tmul (d : ℕ) (S : Type*) [CommSemiring S] [Algebra R
     (diagonalLaw R M d).toFun S (s ⊗ₜ[R] m) =
       (s ^ d) ⊗ₜ[R] PiTensorProduct.tprod R (fun _ : Fin d ↦ m) := by
   simp [diagonalLaw_toFun, Algebra.TensorProduct.tmul_pow]
+
+/-- The diagonal law on a finite sum of pure tensors: `(∑ⱼ sⱼ ⊗ mⱼ)^{⊗ d}` is the sum over
+all words `w : Fin d → ι` with letters in `F` of `(∏ₜ s_{w t}) ⊗ (m_{w 0} ⊗ ⋯ ⊗ m_{w (d - 1)})`. -/
+theorem diagonalLaw_toFun_sum_tmul (d : ℕ) (S : Type*) [CommSemiring S] [Algebra R S]
+    {ι : Type*} (F : Finset ι) (s : ι → S) (m : ι → M) :
+    (diagonalLaw R M d).toFun S (∑ j ∈ F, s j ⊗ₜ[R] m j) =
+      ∑ w ∈ Fintype.piFinset fun _ : Fin d ↦ F,
+        (∏ t, s (w t)) ⊗ₜ[R] PiTensorProduct.tprod R fun t ↦ m (w t) := by
+  classical
+  -- expand the `d`th power in `S ⊗[R] TensorAlgebra R M` as a multilinear map in `d` slots
+  have hpow : (∑ j ∈ F, s j ⊗ₜ[R] TensorAlgebra.ι R (m j)) ^ d =
+      ∑ w ∈ Fintype.piFinset fun _ : Fin d ↦ F,
+        (∏ t, s (w t)) ⊗ₜ[R] TensorAlgebra.tprod R M d fun t ↦ m (w t) := by
+    rw [← MultilinearMap.mkPiAlgebraFin_apply_const (R := S), MultilinearMap.map_sum_finset]
+    refine Finset.sum_congr rfl fun w _ ↦ ?_
+    rw [MultilinearMap.mkPiAlgebraFin_apply, Algebra.TensorProduct.list_prod_ofFn_tmul,
+      TensorAlgebra.tprod_apply]
+  simp only [diagonalLaw_toFun, map_sum, LinearMap.baseChange_tmul, hpow,
+    TensorAlgebra.tensorPowerProjection_tprod_self]
 
 /-- The diagonal law is natural under linear maps, as a law on all scalar extensions. -/
 theorem diagonalLaw_comp_toPolynomialLaw (d : ℕ) (f : M →ₗ[R] N) :

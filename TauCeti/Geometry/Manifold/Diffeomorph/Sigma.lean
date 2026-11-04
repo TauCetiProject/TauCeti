@@ -22,6 +22,8 @@ diffeomorphisms of a disjoint union supported on a single component.
 
 * `Diffeomorph.sigmaCongrRight`: the diffeomorphism of disjoint unions acting componentwise.
 * `Diffeomorph.sigmaCongrRightHom`: the same construction as a group homomorphism.
+* `Diffeomorph.sigmaFiber`: restriction of an index-preserving diffeomorphism to a fibre.
+  Reassembling the restrictions by `sigmaCongrRight` recovers the original diffeomorphism.
 -/
 
 public section
@@ -91,5 +93,38 @@ def sigmaCongrRightHom : (∀ i, M i ≃ₘ^n⟮I, I⟯ M i) →* (Σ i, M i) �
 theorem sigmaCongrRightHom_apply (e : ∀ i, M i ≃ₘ^n⟮I, I⟯ M i) :
     sigmaCongrRightHom e = sigmaCongrRight e :=
   (rfl)
+
+/-- Restriction to a fibre of a diffeomorphism of a disjoint union which fixes the index.
+No connectedness assumption on the fibres is required. -/
+def sigmaFiber (e : (Σ i, M i) ≃ₘ^n⟮I, J⟯ Σ i, M' i)
+    (h : ∀ x, (e x).1 = x.1) (i : ι) : M i ≃ₘ^n⟮I, J⟯ M' i where
+  toEquiv := (Equiv.sigmaSubtype i).symm.trans
+    ((e.toEquiv.subtypeEquiv fun x ↦ (congrArg (· = i) (h x)).symm.to_iff).trans
+      (Equiv.sigmaSubtype i))
+  contMDiff_toFun := by
+    apply TauCeti.contMDiff_sigmaMk_iff.mp
+    convert e.contMDiff.comp (TauCeti.contMDiff_sigmaMk i) using 1
+    funext x
+    exact (Equiv.sigmaSubtype i).symm_apply_apply ⟨e ⟨i, x⟩, h ⟨i, x⟩⟩ |> congrArg Subtype.val
+  contMDiff_invFun := by
+    apply TauCeti.contMDiff_sigmaMk_iff.mp
+    convert e.symm.contMDiff.comp (TauCeti.contMDiff_sigmaMk i) using 1
+    funext x
+    exact (Equiv.sigmaSubtype i).symm_apply_apply
+      ⟨e.symm ⟨i, x⟩, (h (e.symm ⟨i, x⟩)).symm.trans (congrArg Sigma.fst
+        (e.apply_symm_apply ⟨i, x⟩))⟩ |> congrArg Subtype.val
+
+/-- Including a restricted diffeomorphism into the disjoint union recovers the original map. -/
+@[simp]
+theorem mk_sigmaFiber_apply (e : (Σ i, M i) ≃ₘ^n⟮I, J⟯ Σ i, M' i)
+    (h : ∀ x, (e x).1 = x.1) (i : ι) (x : M i) :
+    (⟨i, e.sigmaFiber h i x⟩ : Σ i, M' i) = e ⟨i, x⟩ :=
+  congrArg Subtype.val ((Equiv.sigmaSubtype i).symm_apply_apply ⟨e ⟨i, x⟩, h ⟨i, x⟩⟩)
+
+/-- Reassembling all the fibre restrictions recovers the diffeomorphism of disjoint unions. -/
+@[simp]
+theorem sigmaCongrRight_sigmaFiber (e : (Σ i, M i) ≃ₘ^n⟮I, J⟯ Σ i, M' i)
+    (h : ∀ x, (e x).1 = x.1) : sigmaCongrRight (e.sigmaFiber h) = e :=
+  Diffeomorph.ext fun ⟨i, x⟩ ↦ mk_sigmaFiber_apply e h i x
 
 end Diffeomorph

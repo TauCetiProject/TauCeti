@@ -8,10 +8,12 @@ module
 public import TauCeti.LinearAlgebra.RootSystem.Alcove
 public import TauCeti.LinearAlgebra.RootSystem.Weyl.Affine.Basic
 import Mathlib.Data.Int.Interval
+import TauCeti.LinearAlgebra.RootSystem.CoweightLattice
+import TauCeti.LinearAlgebra.RootSystem.Inversions.DominantChamber
 import TauCeti.LinearAlgebra.RootSystem.Lowering
 
 /-!
-# The affine Weyl group is transitive on the alcoves
+# The affine Weyl group acts simply transitively on the alcoves
 
 Let `b` be a base of a finite, reduced, irreducible, crystallographic root pairing `P` over an
 archimedean linearly ordered ring, with simple roots `αᵢ` and highest root `θ`. The affine root
@@ -19,7 +21,7 @@ hyperplanes `H_{α,k} = {x | α(x) = k}` of the coweight space `N` cut it into a
 fundamental alcove `A` is the one cut out by the walls `αᵢ = 0` and `θ = 1`. This file proves that
 the affine Weyl group `W_aff` (`RootPairing.affineWeylGroup`) moves every point into the closed
 fundamental alcove, and so permutes the alcoves transitively: every alcove is `f⁻¹(A)` for some
-`f ∈ W_aff`.
+`f ∈ W_aff`. It then proves that `W_aff` acts freely on the alcoves, so that this `f` is unique.
 
 The proof is the classical descent of Bourbaki and Humphreys, made purely combinatorial. An affine
 root is a pair `(j, k)` of a root index and an integer, standing for the affine function
@@ -39,6 +41,16 @@ For the wall `θ = 1` it is a computation with heights: reflecting in `θ` chang
 root by a multiple of the height of `θ`, and every root other than `±θ` has height strictly between
 `-ht(θ)` and `ht(θ)`.
 
+Freeness needs no archimedean hypothesis. Write an element of `W_aff` as `f = t_v ∘ w`, with `w`
+in the coweight image of the Weyl group and `v` in the coroot lattice `Q∨`
+(`RootPairing.mem_affineWeylGroup_iff`). Every root takes its values in `(-1, 1)` on `A`, so if `f`
+carries a point of `A` into `A`, every root takes a value in `(-2, 2)` at `v`. A minuscule element
+of the coroot lattice is zero (`RootPairing.eq_zero_of_mem_corootSpan_of_forall_abs_root'_lt_two`),
+so `v = 0`, and `w` then carries a point of the open dominant chamber into the dominant chamber,
+which forces `w = 1` (`TauCeti.eq_one_of_smul_mem_dominantChamber`). This replaces the usual
+gallery argument with the Coxeter generators by the free action of the finite Weyl group on the
+chambers.
+
 ## Main results
 
 * `RootPairing.exists_mem_affineWeylGroup_apply_mem_closedFundamentalAlcove`: **every point of the
@@ -51,6 +63,14 @@ root by a multiple of the height of `θ`, and every root other than `±θ` has h
   is transitive on the alcoves**: the alcove of a point lying on no affine root hyperplane, the set
   of points lying on no such hyperplane and on the same side of each of them, is the preimage of
   the fundamental alcove under an element of the affine Weyl group.
+* `RootPairing.eq_one_of_mem_affineWeylGroup_of_apply_mem_fundamentalAlcove`: **the affine Weyl
+  group acts freely on the alcoves**: an element carrying a point of the fundamental alcove into
+  the fundamental alcove is the identity.
+* `RootPairing.eq_of_mem_affineWeylGroup_of_apply_mem_fundamentalAlcove` and
+  `RootPairing.eq_one_of_mem_affineWeylGroup_of_mapsTo`: two elements carrying the same point into
+  the fundamental alcove are equal, and the stabilizer of a nonempty fundamental alcove is trivial.
+* `RootPairing.existsUnique_mem_affineWeylGroup_preimage_fundamentalAlcove_eq`: **the affine Weyl
+  group acts simply transitively on the alcoves.**
 
 ## References
 
@@ -225,11 +245,14 @@ private lemma isAffinePos_wallPerm_highestRoot {p : ι × ℤ} (hp₁ : p ≠ (b
 
 end Separation
 
-/-! ### Transitivity -/
-
 variable [LinearOrder R] [IsStrictOrderedRing R] {P : RootPairing ι R M N} (b : P.Base)
   [Finite ι] [Nonempty ι] [P.IsCrystallographic] [P.IsReduced] [P.IsIrreducible]
-  [Archimedean R]
+
+/-! ### Transitivity -/
+
+section Transitivity
+
+variable [Archimedean R]
 
 /-- **The affine Weyl group carries every point into the closed fundamental alcove.** -/
 theorem exists_mem_affineWeylGroup_apply_mem_closedFundamentalAlcove (x : N) :
@@ -292,5 +315,85 @@ theorem exists_mem_affineWeylGroup_preimage_fundamentalAlcove_eq {x : N}
   · exact (mem_fundamentalAlcove_iff_of_mem hfx).mpr fun j k ↦
       ⟨P.intCast_lt_root'_apply_iff_of_mem_affineWeylGroup hf (fun j k ↦ (hy j k).1) j k,
         P.root'_apply_ne_intCast_of_mem_affineWeylGroup hf (fun j k ↦ (hy j k).2) j k⟩
+
+end Transitivity
+
+/-! ### Freeness and simple transitivity -/
+
+/-- **The affine Weyl group acts freely on the alcoves**: an element of the affine Weyl group
+carrying a point of the fundamental alcove into the fundamental alcove is the identity. -/
+theorem eq_one_of_mem_affineWeylGroup_of_apply_mem_fundamentalAlcove {f : N ≃ᵃ[R] N}
+    (hf : f ∈ P.affineWeylGroup) {x : N} (hx : x ∈ fundamentalAlcove P b)
+    (hfx : f x ∈ fundamentalAlcove P b) : f = 1 := by
+  obtain ⟨hl, h0⟩ := P.mem_affineWeylGroup_iff.mp hf
+  -- The translation part `f 0` is a minuscule element of the coroot lattice.
+  have hf0 : f 0 = 0 := by
+    refine P.eq_zero_of_mem_corootSpan_of_forall_abs_root'_lt_two h0 fun j ↦ ?_
+    obtain ⟨j', hj'⟩ := P.exists_root'_apply_eq_of_mem_closure_range_coreflection hl j
+    have hfx' : P.root' j (f x) = P.root' j' x + P.root' j (f 0) := by
+      rw [AffineEquiv.apply_eq_linear_add f x, map_add, hj']
+    have := root'_lt_one_of_mem_fundamentalAlcove hfx j
+    have := neg_one_lt_root'_of_mem_fundamentalAlcove hfx j
+    have := root'_lt_one_of_mem_fundamentalAlcove hx j'
+    have := neg_one_lt_root'_of_mem_fundamentalAlcove hx j'
+    rw [abs_lt]
+    constructor <;> linarith
+  -- The linear part is an element of the Weyl group of `P.flip` keeping `x` dominant.
+  obtain ⟨w, hw⟩ : f.linear ∈
+      MonoidHom.range ((Equiv.weightHom P.flip).domRestrict P.flip.weylGroup) := by
+    rw [range_weylGroup_weightHom]
+    -- `P.flip.reflection` is `P.coreflection` by definition.
+    exact hl
+  have : Module.IsReflexive R M := .of_isPerfPair P.toLinearMap
+  have : Module.IsReflexive R N := .of_isPerfPair P.flip.toLinearMap
+  have : P.flip.IsReduced := P.instFlipIsReduced
+  -- `P.flip.flip` is `P` by definition.
+  have : P.flip.flip.IsReduced := ‹P.IsReduced›
+  have hw1 : w = 1 := by
+    refine TauCeti.eq_one_of_smul_mem_dominantChamber P.flip b.flip w
+      (fundamentalAlcove_subset_openDominantChamber P b hx) ?_
+    have : w • x = f x := by
+      rw [AffineEquiv.apply_eq_linear_add f x, hf0, add_zero, ← hw]
+      -- The Weyl group of `P.flip` acts on `N` through `Equiv.weightHom` by definition.
+      rfl
+    rw [this]
+    exact openDominantChamber_subset_dominantChamber _ _
+      (fundamentalAlcove_subset_openDominantChamber P b hfx)
+  have hlin : f.linear = 1 := by
+    rw [← hw, hw1, map_one]
+  ext y
+  simp [AffineEquiv.apply_eq_linear_add f y, hf0, hlin]
+
+/-- Two elements of the affine Weyl group carrying the same point into the fundamental alcove are
+equal. -/
+theorem eq_of_mem_affineWeylGroup_of_apply_mem_fundamentalAlcove {f g : N ≃ᵃ[R] N}
+    (hf : f ∈ P.affineWeylGroup) (hg : g ∈ P.affineWeylGroup) {x : N}
+    (hfx : f x ∈ fundamentalAlcove P b) (hgx : g x ∈ fundamentalAlcove P b) : f = g := by
+  refine mul_inv_eq_one.mp (eq_one_of_mem_affineWeylGroup_of_apply_mem_fundamentalAlcove b
+    (mul_mem hf (inv_mem hg)) hgx ?_)
+  simpa [AffineEquiv.inv_def] using hfx
+
+/-- **The stabilizer of the fundamental alcove in the affine Weyl group is trivial**: an element
+of the affine Weyl group mapping the nonempty fundamental alcove into itself is the identity. Over
+a linearly ordered field the alcove is nonempty by `RootPairing.fundamentalAlcove_nonempty`. -/
+theorem eq_one_of_mem_affineWeylGroup_of_mapsTo (hA : (fundamentalAlcove P b).Nonempty)
+    {f : N ≃ᵃ[R] N} (hf : f ∈ P.affineWeylGroup)
+    (h : MapsTo f (fundamentalAlcove P b) (fundamentalAlcove P b)) : f = 1 :=
+  have ⟨_, hx⟩ := hA
+  eq_one_of_mem_affineWeylGroup_of_apply_mem_fundamentalAlcove b hf hx (h hx)
+
+/-- **The affine Weyl group acts simply transitively on the alcoves.** For a point `x` lying on no
+affine root hyperplane, exactly one element of the affine Weyl group pulls the fundamental alcove
+back to the alcove of `x`: the set of points lying on no affine root hyperplane and on the same
+side as `x` of each of them. -/
+theorem existsUnique_mem_affineWeylGroup_preimage_fundamentalAlcove_eq [Archimedean R] {x : N}
+    (hx : ∀ j (k : ℤ), P.root' j x ≠ k) :
+    ∃! f, f ∈ P.affineWeylGroup ∧ f ⁻¹' fundamentalAlcove P b =
+      {y | ∀ j (k : ℤ), ((k : R) < P.root' j y ↔ (k : R) < P.root' j x) ∧ P.root' j y ≠ k} := by
+  obtain ⟨f, hf, hfA⟩ := exists_mem_affineWeylGroup_preimage_fundamentalAlcove_eq b hx
+  have hxA : x ∈ f ⁻¹' fundamentalAlcove P b := hfA ▸ fun j k ↦ ⟨Iff.rfl, hx j k⟩
+  refine ⟨f, ⟨hf, hfA⟩, fun g ⟨hg, hgA⟩ ↦ ?_⟩
+  have hxg : x ∈ g ⁻¹' fundamentalAlcove P b := hgA ▸ hfA ▸ hxA
+  exact eq_of_mem_affineWeylGroup_of_apply_mem_fundamentalAlcove b hg hf hxg hxA
 
 end RootPairing

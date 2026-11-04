@@ -144,9 +144,10 @@ theorem IsBipartition.exists_isCapacitatedMatching_isVertexCover_sum_eq {L R : F
     refine (card_le_card fun i hi ↦ ?_).trans (hP v)
     simp only [mem_filter, mem_univ, true_and, mem_incidentEdges, mem_singleton,
       exists_eq_left] at hi ⊢
-    have hv := ArrowWalk.mem_vertices_of_mem_arrows (hf i)
     rcases hi.eq_or_eq_of_isLink (f i).2.2.2.1 with h | h
-    exacts [Subtype.ext h ▸ hv.1, Subtype.ext h ▸ hv.2]
+    · exact Subtype.ext h ▸ (P i).source_mem_vertices_of_mem_arrows (hf i)
+    · rw [Subtype.ext h, ArrowWalk.vertices_eq_cons_map_target_arrows]
+      exact List.mem_cons_of_mem _ (List.mem_map_of_mem (f := fun a ↦ a.2.1) (hf i))
   · -- The one-arrow walk along `e` meets the separator.
     wlog hy : y ∈ L generalizing y z
     · exact (this z y he.symm (hLR.notMem_left_iff.1 hy |> hLR.mem_left_of_isLink he)).symm

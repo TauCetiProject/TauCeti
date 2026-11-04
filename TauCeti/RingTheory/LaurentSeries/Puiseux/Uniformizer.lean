@@ -7,7 +7,7 @@ module
 
 public import Mathlib.RingTheory.RootsOfUnity.AlgebraicallyClosed
 public import TauCeti.RingTheory.LaurentSeries.Basic
-public import TauCeti.RingTheory.LaurentSeries.Puiseux.Galois
+public import TauCeti.RingTheory.LaurentSeries.Puiseux.Galois.Basic
 public import TauCeti.RingTheory.PowerSeries.Hensel
 
 /-!

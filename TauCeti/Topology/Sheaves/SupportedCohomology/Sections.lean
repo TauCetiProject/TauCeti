@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Topology.Sheaves.SupportedCohomology.Module
-public import TauCeti.Topology.Sheaves.LocalCohomology
+public import TauCeti.Topology.Sheaves.LocalCohomology.Basic
 import TauCeti.CategoryTheory.Sites.Limits
 import TauCeti.Topology.Sheaves.Flasque.Locality
 

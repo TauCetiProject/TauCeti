@@ -72,48 +72,13 @@ The Gauss lemma is proved by differentiating the radial variation
 
 `F (u, t) = exp_p (t • (v + u • w))`
 
-of the geodesic `t ↦ exp_p (t • v)`.  The facts below are what the variational argument consumes:
-each radial curve of the variation is a maximal geodesic, the variation is smooth wherever the
-exponential map is, and the transverse covariant derivative of the radial velocity field is
-determined by the constant speed of those geodesics.
-
-Each statement takes the variation as a function `F` together with its defining equation, rather
-than as the explicit two-parameter formula.  The fibre in which a velocity vector lives is indexed
-by the point of the curve, so rewriting a radial curve into the maximal geodesic it equals has to
-reach the index as well; that is possible for `F u` and not for the formula, whose index appears
-already evaluated. -/
-
-/-- Each radial curve of the variation is the maximal geodesic with the corresponding initial
-velocity. -/
-private theorem radialVariation_eq_maximalGeodesic
-    (hF : ∀ u t : ℝ, F u t = riemannianExp I M p (t • (v + u • w))) (u : ℝ) :
-    F u = maximalGeodesic I M p (v + u • w) :=
-  funext fun t ↦ (hF u t).trans (riemannianExp_smul p (v + u • w) t)
-
-/-- The radial variation is smooth at every parameter pair whose radial vector lies in the natural
-domain of the exponential map. -/
-private theorem contMDiffAt_radialVariation
-    (hF : ∀ u t : ℝ, F u t = riemannianExp I M p (t • (v + u • w))) {u t : ℝ}
-    (hut : t • (v + u • w) ∈ expDomain I M p) :
-    ContMDiffAt 𝓘(ℝ, ℝ × ℝ) I ∞ (fun z : ℝ × ℝ ↦ F z.1 z.2) (u, t) := by
-  have hFfun : (fun z : ℝ × ℝ ↦ F z.1 z.2) =
-      fun z : ℝ × ℝ ↦ riemannianExp I M p (z.2 • (v + z.1 • w)) :=
-    funext fun z ↦ hF z.1 z.2
-  have hinput : ContMDiffAt 𝓘(ℝ, ℝ × ℝ) 𝓘(ℝ, TangentSpace I p) ∞
-      (fun z : ℝ × ℝ ↦ z.2 • (v + z.1 • w)) (u, t) :=
-    (contMDiff_iff_contDiff.mpr
-      (by fun_prop : ContDiff ℝ ∞ (fun z : ℝ × ℝ ↦ z.2 • (v + z.1 • w)))).contMDiffAt
-  rw [hFfun]
-  exact (contMDiffAt_riemannianExp (I := I) (M := M) hut).comp (u, t) hinput
-
-/-- The covariant acceleration of a radial curve of the variation vanishes on its maximal
-interval. -/
-private theorem acceleration_radialVariation_eq_zero
-    (hF : ∀ u t : ℝ, F u t = riemannianExp I M p (t • (v + u • w))) {u t : ℝ}
-    (ht : t ∈ geodesicInterval I M p (v + u • w)) :
-    acceleration (leviCivitaConnection I M) (F u) t = 0 := by
-  rw [radialVariation_eq_maximalGeodesic hF u]
-  exact acceleration_maximalGeodesic_eq_zero ht
+of the geodesic `t ↦ exp_p (t • v)`.  Each radial curve of the variation is a maximal geodesic
+and the variation is smooth wherever the exponential map is
+(`TauCeti.Manifold.radialVariation_eq_maximalGeodesic`,
+`TauCeti.Manifold.contMDiffAt_radialVariation`).  The facts below add what the variational
+argument consumes beyond these: the transverse covariant derivative of the radial velocity field is
+determined by the constant speed of those geodesics.  As in the shared API, the variation is a
+function `F` together with its defining equation. -/
 
 /-- A radial curve of the variation has the squared speed of its initial velocity. -/
 private theorem inner_curveVelocity_radialVariation_self
@@ -143,13 +108,8 @@ private theorem inner_alongCurve_variationField_radialVariation
   have hleft := hasDerivAt_norm_sq_curveVelocity (hsurface.of_le (by simp))
   -- Near `u = 0` the radial curve of the variation still reaches `t`, so its squared speed there
   -- is the squared norm `⟪v + u • w, v + u • w⟫` of its initial velocity.
-  have hnear : ∀ᶠ u in nhds (0 : ℝ), t ∈ geodesicInterval I M p (v + u • w) := by
-    have hopen := (isOpen_expDomain (I := I) (M := M) p).mem_nhds htExp
-    have hcont : ContinuousAt (fun u : ℝ ↦ t • (v + u • w)) 0 := by fun_prop
-    have hpre : (fun u : ℝ ↦ t • (v + u • w)) ⁻¹' expDomain I M p ∈ nhds 0 :=
-      hcont.preimage_mem_nhds (by simpa using hopen)
-    filter_upwards [hpre] with u hu
-    exact mem_geodesicInterval_iff_smul_mem_expDomain.mpr hu
+  have hnear : ∀ᶠ u in nhds (0 : ℝ), t ∈ geodesicInterval I M p (v + u • w) :=
+    eventually_mem_geodesicInterval_add_smul ht
   have heq : (fun u ↦ ‖curveVelocity I (F u) t‖ ^ 2) =ᶠ[nhds (0 : ℝ)]
       fun u ↦ inner ℝ (v + u • w) (v + u • w) :=
     hnear.mono fun u hu ↦
@@ -202,11 +162,8 @@ theorem inner_mfderiv_riemannianExp_radial [I.Boundaryless]
     simpa only [P, Q] using hprod
   have hzero : inner ℝ (Q 0 0) (P 0 0) = 0 := by
     have hQzero : Q 0 0 = 0 := by
-      have hfun : (fun q : ℝ ↦ F q 0) = fun _ ↦ p := by
-        funext q
-        simp only [F, zero_smul, riemannianExp_zero]
-      have hbase : F 0 0 = p := by
-        simp only [F, zero_smul, riemannianExp_zero]
+      have hfun : (fun q : ℝ ↦ F q 0) = fun _ ↦ p := funext (radialVariation_apply_zero hF)
+      have hbase : F 0 0 = p := radialVariation_apply_zero hF 0
       dsimp only [Q]
       rw [hbase]
       rw [hfun, curveVelocity_const]
@@ -243,9 +200,7 @@ theorem inner_mfderiv_riemannianExp_radial [I.Boundaryless]
   have hone := hconst 1 (by simp)
   have hPone : P 0 1 =
       mfderiv 𝓘(ℝ, TangentSpace I p) I (riemannianExp I M p) v v := by
-    have hfun : F 0 = fun t : ℝ ↦ riemannianExp I M p (t • v) := by
-      funext t
-      simp only [F, zero_smul, add_zero]
+    have hfun : F 0 = fun t : ℝ ↦ riemannianExp I M p (t • v) := radialVariation_zero hF
     have h := curveVelocity_riemannianExp_smul (I := I) (M := M) (v := v) (t := 1)
       (by simpa using hv)
     rw [one_smul] at h

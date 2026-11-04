@@ -257,6 +257,35 @@ theorem stateLoopCount_le_stateLoopCount_add_one :
 
 end Unchanged
 
+/-- Changing the smoothings at a set of crossings increases the number of circles by at most
+the number of changed crossings. No planarity assumption is needed. -/
+theorem stateLoopCount_le_add_card_filter_ne (D : PDCode n) (s t : Fin n → Bool) :
+    D.stateLoopCount t ≤ D.stateLoopCount s + #{i | s i ≠ t i} := by
+  have bound (S : Finset (Fin n)) : ∀ s t : Fin n → Bool,
+      (∀ i, i ∉ S → s i = t i) → D.stateLoopCount t ≤ D.stateLoopCount s + #S := by
+    induction S using Finset.induction_on with
+    | empty =>
+      intro s t h
+      have : s = t := funext fun i ↦ h i (by simp)
+      simp [this]
+    | @insert i S hi ih =>
+      intro s t h
+      let u := Function.update t i (s i)
+      have hsu : ∀ j, j ∉ S → s j = u j := by
+        intro j hj
+        by_cases hji : j = i
+        · subst j
+          simp [u]
+        · simpa [u, hji] using h j (by simp [hji, hj])
+      have hut : ∀ j, j ≠ i → u j = t j := by
+        intro j hj
+        simp [u, hj]
+      have hone := D.stateLoopCount_le_stateLoopCount_add_one hut
+      have hrest := ih s u hsu
+      rw [card_insert_of_notMem hi]
+      omega
+  exact bound _ s t (by simp)
+
 /-! ### The circles through the crossing -/
 
 section Changed

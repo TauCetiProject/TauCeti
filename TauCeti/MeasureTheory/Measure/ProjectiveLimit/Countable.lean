@@ -21,8 +21,6 @@ enumerated and reduced to the sequence theorem.
   probability laws on finite subsets of a countable family of standard Borel spaces.
 
 The proof transports finite-dimensional laws along measurable equivalences of dependent products.
-This is the arbitrary-countable-index existence bridge required by
-`TauCetiRoadmap/OptimalTransport/README.md`, Layer 0, item 4.
 -/
 
 public section

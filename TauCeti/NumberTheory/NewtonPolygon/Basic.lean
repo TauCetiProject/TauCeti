@@ -73,6 +73,9 @@ not have admissible heights; its `newtonPolygon` is then the all-infinite fallba
   coefficients compatible with the valuations preserves it. The corresponding polynomial
   statements are proved as well, with `Polynomial.newtonPolygon_comp_C_mul_X` for the
   substitution `X ↦ c X`.
+* `PowerSeries.newtonPolygon_map_eq_map_mul` and `Polynomial.newtonPolygon_map_eq_map_mul`: an
+  extension of coefficients multiplying the valuations by a positive real factor multiplies the
+  Newton polygon by that factor.
 * `Polynomial.newtonPolygon_reflect` and `Polynomial.newtonPolygon_reverse`: reversing a
   polynomial of degree `d`, or more generally reflecting its coefficients in any `N ≥ d`,
   reflects the Newton polygon by `n ↦ N - n`.
@@ -195,6 +198,14 @@ preserves the Newton polygon. -/
 theorem newtonPolygon_map (φ : R →+* S) {w : AddValuation S (WithTop ℝ)}
     (hφ : ∀ x, w (φ x) = v x) : (map φ f).newtonPolygon w = f.newtonPolygon v := by
   simp only [newtonPolygon_def, coeff_map, hφ]
+
+/-- Mapping the coefficients along a ring homomorphism that multiplies the valuations by a
+positive real factor multiplies the Newton polygon by that factor. -/
+theorem newtonPolygon_map_eq_map_mul (φ : R →+* S) {w : AddValuation S (WithTop ℝ)} {c : ℝ}
+    (hc : 0 < c) (hφ : ∀ x, w (φ x) = (v x).map (c * ·)) :
+    (map φ f).newtonPolygon w = fun n => (f.newtonPolygon v n).map (c * ·) := by
+  simp only [newtonPolygon_def, coeff_map, hφ]
+  exact lowerConvexEnvelope_map_mul _ hc
 
 end PowerSeries
 
@@ -331,6 +342,15 @@ theorem newtonPolygon_map (φ : R →+* S) {w : AddValuation S (WithTop ℝ)}
     (hφ : ∀ x, w (φ x) = v x) : (f.map φ).newtonPolygon w = f.newtonPolygon v := by
   simp only [newtonPolygon_def, coeff_map, hφ]
 
+/-- Mapping the coefficients along a ring homomorphism that multiplies the valuations by a
+positive real factor multiplies the Newton polygon by that factor. For instance, the
+ramification `X ↦ X ^ q` of Laurent series coefficients multiplies their orders by `q`. -/
+theorem newtonPolygon_map_eq_map_mul (φ : R →+* S) {w : AddValuation S (WithTop ℝ)} {c : ℝ}
+    (hc : 0 < c) (hφ : ∀ x, w (φ x) = (v x).map (c * ·)) :
+    (f.map φ).newtonPolygon w = fun n => (f.newtonPolygon v n).map (c * ·) := by
+  simp only [newtonPolygon_def, coeff_map, hφ]
+  exact lowerConvexEnvelope_map_mul _ hc
+
 /-! ### Endpoints and finite domain -/
 
 /-- Every point of the Newton polygon before the order of vanishing at zero is infinite. -/
@@ -387,7 +407,7 @@ polynomial runs from its order of vanishing at zero to its degree. Over a divisi
 hypothesis on `v` is `AddValuation.top_iff`. -/
 theorem newtonPolygon_ne_top_iff (hv : ∀ x, v x = ⊤ → x = 0) {f : R[X]} (hf : f ≠ 0) {n : ℕ} :
     f.newtonPolygon v n ≠ ⊤ ↔ f.natTrailingDegree ≤ n ∧ n ≤ f.natDegree :=
-  newtonPolygon_ne_top_iff_of_ne_top v (mt (hv _) (trailingCoeff_nonzero_iff_nonzero.mpr hf))
+  newtonPolygon_ne_top_iff_of_ne_top v (mt (hv _) (Polynomial.trailingCoeff_ne_zero.mpr hf))
     (mt (hv _) (leadingCoeff_ne_zero.mpr hf))
 
 variable {f v} in
@@ -420,7 +440,7 @@ theorem finiteEdges_newtonPolygon (hv : ∀ x, v x = ⊤ → x = 0) :
   · ext n
     simp
   exact finiteEdges_newtonPolygon_of_ne_top f v
-    (mt (hv _) (trailingCoeff_nonzero_iff_nonzero.mpr hf)) (mt (hv _) (leadingCoeff_ne_zero.mpr hf))
+    (mt (hv _) (Polynomial.trailingCoeff_ne_zero.mpr hf)) (mt (hv _) (leadingCoeff_ne_zero.mpr hf))
 
 /-- If only zero has infinite valuation, a polynomial of degree `d` and order of vanishing `a`
 at zero has exactly `d - a` finite unit edges. -/

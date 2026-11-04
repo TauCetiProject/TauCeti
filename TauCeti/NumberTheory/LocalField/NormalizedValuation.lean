@@ -461,8 +461,7 @@ theorem normalizedAbsoluteValue_apply_ne_zero (x : K) (hx : x ≠ 0) :
         (-(normalizedValuation K (Units.mk0 x hx)).toAdd) := by
   rw [normalizedAbsoluteValue, Valuation.toAbsoluteValue_apply,
     WithZeroMulInt.toNNRat_apply_of_ne_zero]
-  · rw [toAdd_normalizedValuation_eq_ord, Valuation.ord_def, neg_neg,
-      WithZero.toAdd_unzero_eq_log]
+  · rw [toAdd_normalizedValuation_eq_ord, Valuation.ord_def, neg_neg]
     simp only [Units.val_mk0]
   · simp [intValuation, hx]
 

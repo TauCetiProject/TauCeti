@@ -166,8 +166,8 @@ exponent is the index of the two stabilizers. -/
 theorem stabilizerBallQuotientChart_map_of_le (h : Δ ≤ Γ) (z τ : ℍ)
     [Finite (stabilizer Γ z)] :
     letI : Finite (stabilizer Δ z) := finite_stabilizer_of_le h z
-    ∀ {ε : ℝ} (hε : 0 < ε) (hΔ : IsOpenEmbedding (stabilizerBallQuotientToQuotient Δ z ε))
-    (hΓ : IsOpenEmbedding (stabilizerBallQuotientToQuotient Γ z ε))
+    ∀ {ε : ℝ} (hε : 0 < ε) (hΔ : IsOpenEmbedding (stabilizerBall Δ z ε).orbitRelQuotientMap)
+    (hΓ : IsOpenEmbedding (stabilizerBall Γ z ε).orbitRelQuotientMap)
     (_hτ : dist τ z < ε),
     stabilizerBallQuotientChart hε hΓ
         (Setoid.map_of_le (TauCeti.MulAction.orbitRel_le_of_subgroup_le (X := ℍ) h)
@@ -186,8 +186,8 @@ quotient map is `u ↦ u ^ ellipticRamificationIndex h z`. -/
 theorem stabilizerBallQuotientChart_map_of_le_symm (h : Δ ≤ Γ) (z : ℍ)
     [Finite (stabilizer Γ z)] :
     letI : Finite (stabilizer Δ z) := finite_stabilizer_of_le h z
-    ∀ {ε : ℝ} (hε : 0 < ε) (hΔ : IsOpenEmbedding (stabilizerBallQuotientToQuotient Δ z ε))
-    (hΓ : IsOpenEmbedding (stabilizerBallQuotientToQuotient Γ z ε))
+    ∀ {ε : ℝ} (hε : 0 < ε) (hΔ : IsOpenEmbedding (stabilizerBall Δ z ε).orbitRelQuotientMap)
+    (hΓ : IsOpenEmbedding (stabilizerBall Γ z ε).orbitRelQuotientMap)
     {u : ℂ} (_hu : u ∈ (stabilizerBallQuotientChart hε hΔ).target),
     stabilizerBallQuotientChart hε hΓ
         (Setoid.map_of_le (TauCeti.MulAction.orbitRel_le_of_subgroup_le (X := ℍ) h)
@@ -215,19 +215,19 @@ variable {Δ Γ : Subgroup PSL(2, ℝ)} (h : Δ ≤ Γ) (z : ℍ)
 theorem exists_common_elliptic_chart_radius
     [ProperlyDiscontinuousSMul Δ ℍ] [ProperlyDiscontinuousSMul Γ ℍ] :
     ∃ ε : ℝ, 0 < ε ∧
-      IsOpenEmbedding (stabilizerBallQuotientToQuotient Δ z ε) ∧
-      IsOpenEmbedding (stabilizerBallQuotientToQuotient Γ z ε) :=
+      IsOpenEmbedding (stabilizerBall Δ z ε).orbitRelQuotientMap ∧
+      IsOpenEmbedding (stabilizerBall Γ z ε).orbitRelQuotientMap :=
   (eventually_mem_nhdsWithin.and
-    ((eventually_isOpenEmbedding_stabilizerBallQuotientToQuotient Δ z).and
-      (eventually_isOpenEmbedding_stabilizerBallQuotientToQuotient Γ z))).exists
+    ((eventually_isOpenEmbedding_orbitRelQuotientMap_stabilizerBall Δ z).and
+      (eventually_isOpenEmbedding_orbitRelQuotientMap_stabilizerBall Γ z))).exists
 
 /-- For a representative lying in both chart balls centered at the same point, the map induced
 by `Δ ≤ Γ` has chart expression `u ↦ u ^ e`. The two chart radii may differ. -/
 theorem stabilizerBallQuotientChart_map_mk_eq_pow_ellipticRamificationIndex
     [Finite (stabilizer Γ z)]
     {εΔ εΓ : ℝ} (hεΔ : 0 < εΔ) (hεΓ : 0 < εΓ)
-    (hopenΔ : IsOpenEmbedding (stabilizerBallQuotientToQuotient Δ z εΔ))
-    (hopenΓ : IsOpenEmbedding (stabilizerBallQuotientToQuotient Γ z εΓ))
+    (hopenΔ : IsOpenEmbedding (stabilizerBall Δ z εΔ).orbitRelQuotientMap)
+    (hopenΓ : IsOpenEmbedding (stabilizerBall Γ z εΓ).orbitRelQuotientMap)
     {τ : ℍ} (hτΔ : dist τ z < εΔ) (hτΓ : dist τ z < εΓ) :
     let : Finite (stabilizer Δ z) :=
       Finite.of_injective (stabilizerInclusion h z) (stabilizerInclusion_injective h z)
@@ -249,8 +249,8 @@ corresponding chart source for the larger group, when both use the same radius. 
 theorem map_mem_stabilizerBallQuotientChart_source
     [Finite (stabilizer Γ z)]
     {ε : ℝ} (hε : 0 < ε)
-    (hopenΔ : IsOpenEmbedding (stabilizerBallQuotientToQuotient Δ z ε))
-    (hopenΓ : IsOpenEmbedding (stabilizerBallQuotientToQuotient Γ z ε))
+    (hopenΔ : IsOpenEmbedding (stabilizerBall Δ z ε).orbitRelQuotientMap)
+    (hopenΓ : IsOpenEmbedding (stabilizerBall Γ z ε).orbitRelQuotientMap)
     {q : orbitRel.Quotient Δ ℍ} :
     let : Finite (stabilizer Δ z) :=
       Finite.of_injective (stabilizerInclusion h z) (stabilizerInclusion_injective h z)
@@ -273,8 +273,8 @@ of degree equal to the elliptic ramification index. -/
 theorem stabilizerBallQuotientChart_map_eq_pow_ellipticRamificationIndex
     [Finite (stabilizer Γ z)]
     {ε : ℝ} (hε : 0 < ε)
-    (hopenΔ : IsOpenEmbedding (stabilizerBallQuotientToQuotient Δ z ε))
-    (hopenΓ : IsOpenEmbedding (stabilizerBallQuotientToQuotient Γ z ε))
+    (hopenΔ : IsOpenEmbedding (stabilizerBall Δ z ε).orbitRelQuotientMap)
+    (hopenΓ : IsOpenEmbedding (stabilizerBall Γ z ε).orbitRelQuotientMap)
     {q : orbitRel.Quotient Δ ℍ} :
     let : Finite (stabilizer Δ z) :=
       Finite.of_injective (stabilizerInclusion h z) (stabilizerInclusion_injective h z)

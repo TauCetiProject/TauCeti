@@ -65,54 +65,54 @@ variable (Γ : Subgroup PSL(2, ℝ)) [ProperlyDiscontinuousSMul Γ ℍ]
 
 /-- For a properly discontinuous action there is a positive radius whose local orbit space embeds
 openly into `Γ \ ℍ`, so the chart at the orbit of `z` exists. -/
-theorem exists_pos_isOpenEmbedding_stabilizerBallQuotientToQuotient (z : ℍ) :
-    ∃ ε : ℝ, 0 < ε ∧ IsOpenEmbedding (stabilizerBallQuotientToQuotient Γ z ε) :=
+theorem exists_pos_isOpenEmbedding_orbitRelQuotientMap_stabilizerBall (z : ℍ) :
+    ∃ ε : ℝ, 0 < ε ∧ IsOpenEmbedding (stabilizerBall Γ z ε).orbitRelQuotientMap :=
   (eventually_mem_nhdsWithin.and
-    (eventually_isOpenEmbedding_stabilizerBallQuotientToQuotient Γ z)).exists
+    (eventually_isOpenEmbedding_orbitRelQuotientMap_stabilizerBall Γ z)).exists
 
 /-- A positive radius at which the chart `Subgroup.stabilizerBallQuotientChart` at the orbit of `z`
 exists. -/
 def chartRadius (z : ℍ) : ℝ :=
-  (exists_pos_isOpenEmbedding_stabilizerBallQuotientToQuotient Γ z).choose
+  (exists_pos_isOpenEmbedding_orbitRelQuotientMap_stabilizerBall Γ z).choose
 
 theorem chartRadius_pos (z : ℍ) : 0 < chartRadius Γ z :=
-  (exists_pos_isOpenEmbedding_stabilizerBallQuotientToQuotient Γ z).choose_spec.1
+  (exists_pos_isOpenEmbedding_orbitRelQuotientMap_stabilizerBall Γ z).choose_spec.1
 
-theorem isOpenEmbedding_stabilizerBallQuotientToQuotient_chartRadius (z : ℍ) :
-    IsOpenEmbedding (stabilizerBallQuotientToQuotient Γ z (chartRadius Γ z)) :=
-  (exists_pos_isOpenEmbedding_stabilizerBallQuotientToQuotient Γ z).choose_spec.2
+theorem isOpenEmbedding_orbitRelQuotientMap_stabilizerBall_chartRadius (z : ℍ) :
+    IsOpenEmbedding (stabilizerBall Γ z (chartRadius Γ z)).orbitRelQuotientMap :=
+  (exists_pos_isOpenEmbedding_orbitRelQuotientMap_stabilizerBall Γ z).choose_spec.2
 
 /-- **The atlas of `Γ \ ℍ`.** It consists of the charts `Subgroup.stabilizerBallQuotientChart` at
 every point and every admissible radius; the chart at an orbit is the chart at a chosen
 representative with the radius `Subgroup.chartRadius`. -/
 instance instChartedSpaceOrbitRelQuotient : ChartedSpace ℂ (orbitRel.Quotient Γ ℍ) where
   atlas := {e | ∃ (z : ℍ) (ε : ℝ) (hε : 0 < ε)
-    (hopen : IsOpenEmbedding (stabilizerBallQuotientToQuotient Γ z ε)),
+    (hopen : IsOpenEmbedding (stabilizerBall Γ z ε).orbitRelQuotientMap),
     stabilizerBallQuotientChart hε hopen = e}
   chartAt q := stabilizerBallQuotientChart (chartRadius_pos Γ q.out)
-    (isOpenEmbedding_stabilizerBallQuotientToQuotient_chartRadius Γ q.out)
+    (isOpenEmbedding_orbitRelQuotientMap_stabilizerBall_chartRadius Γ q.out)
   mem_chart_source q := by
     have := (mem_stabilizerBallQuotientChart_source_iff (τ := q.out) (chartRadius_pos Γ q.out)
-      (isOpenEmbedding_stabilizerBallQuotientToQuotient_chartRadius Γ q.out)).2
+      (isOpenEmbedding_orbitRelQuotientMap_stabilizerBall_chartRadius Γ q.out)).2
       ⟨(1 : Γ), by simpa using chartRadius_pos Γ q.out⟩
     rwa [Quotient.out_eq] at this
   chart_mem_atlas _ := ⟨_, _, _, _, rfl⟩
 
 theorem chartAt_eq (q : orbitRel.Quotient Γ ℍ) :
     chartAt ℂ q = stabilizerBallQuotientChart (chartRadius_pos Γ q.out)
-      (isOpenEmbedding_stabilizerBallQuotientToQuotient_chartRadius Γ q.out) :=
+      (isOpenEmbedding_orbitRelQuotientMap_stabilizerBall_chartRadius Γ q.out) :=
   (rfl)
 
 /-- A chart of `Γ \ ℍ` belongs to the atlas exactly when it is the chart
 `Subgroup.stabilizerBallQuotientChart` at some point and some admissible radius. -/
 theorem mem_atlas_orbitRelQuotient_iff (e : OpenPartialHomeomorph (orbitRel.Quotient Γ ℍ) ℂ) :
     e ∈ atlas ℂ (orbitRel.Quotient Γ ℍ) ↔ ∃ (z : ℍ) (ε : ℝ) (hε : 0 < ε)
-      (hopen : IsOpenEmbedding (stabilizerBallQuotientToQuotient Γ z ε)),
+      (hopen : IsOpenEmbedding (stabilizerBall Γ z ε).orbitRelQuotientMap),
       stabilizerBallQuotientChart hε hopen = e :=
   Iff.rfl
 
 theorem stabilizerBallQuotientChart_mem_atlas {z : ℍ} {ε : ℝ} (hε : 0 < ε)
-    (hopen : IsOpenEmbedding (stabilizerBallQuotientToQuotient Γ z ε)) :
+    (hopen : IsOpenEmbedding (stabilizerBall Γ z ε).orbitRelQuotientMap) :
     stabilizerBallQuotientChart hε hopen ∈ atlas ℂ (orbitRel.Quotient Γ ℍ) :=
   (mem_atlas_orbitRelQuotient_iff Γ _).2 ⟨_, _, _, _, rfl⟩
 
@@ -180,7 +180,7 @@ theorem mdifferentiableAt_of_comp_quotientMk {E' : Type*} [NormedAddCommGroup E'
       coe_discCoordinateHomeomorph_symm_apply, Complex.UnitDisc.coe_mk]
   have hψ0 : ψ 0 = z₀ := by simp [hψ]
   have hε := chartRadius_pos Γ q.out
-  set hopen := isOpenEmbedding_stabilizerBallQuotientToQuotient_chartRadius Γ q.out
+  set hopen := isOpenEmbedding_orbitRelQuotientMap_stabilizerBall_chartRadius Γ q.out
   set e := stabilizerBallQuotientChart hε hopen with he
   -- In the chart at `q`, which has `m = 1`, the map `F` is its pullback composed with `ψ`.
   have heq : (F ∘ e.symm) =ᶠ[𝓝 0] fun w ↦ (F ∘ Quotient.mk _) (ofComplex (ψ w)) := by

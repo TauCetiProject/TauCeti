@@ -150,7 +150,6 @@ private theorem tendsto_multiplication_quotient (hm : AEMeasurable m μ) (hp : p
 /-- The domain of the multiplication generator is exactly the weighted Lᵖ domain:
 `f ∈ D(A)` if and only if `m • f` belongs to Lᵖ. This applies to arbitrary measures and
 unbounded almost everywhere measurable multipliers. -/
-@[simp]
 theorem ContractionSemigroup.ofMeasureLpMultiplication_mem_domain_iff
     (hm : AEMeasurable m μ) (hp : p ≠ ∞) (f : Lp E p μ) :
     f ∈ (ofMeasureLpMultiplication hm hp).toStronglyContinuousSemigroup.domain ↔

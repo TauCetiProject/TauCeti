@@ -6,9 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.Riemannian.Prod
-public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.LeviCivita.Basic
-public import TauCeti.Geometry.Manifold.VectorField.Prod
-import TauCeti.Geometry.Manifold.MFDeriv.Prod
+public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.LeviCivita.WarpedProd
 
 /-!
 # The Levi-Civita connection of a product metric
@@ -23,11 +21,12 @@ factors (`TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvature.P
 
 On product fields the Koszul expression of the product metric splits as a sum over the factors,
 
-`K((X₁, X₂), (Y₁, Y₂), (Z₁, Z₂))(x, y) = K(X₁, Y₁, Z₁)(x) + K(X₂, Y₂, Z₂)(y)`,
+`K((X₁, X₂), (Y₁, Y₂), (Z₁, Z₂))(x, y) = K(X₁, Y₁, Z₁)(x) + K(X₂, Y₂, Z₂)(y)`.
 
-since the inner product of product fields is a sum of functions of one factor each and the Lie
-bracket of product fields is computed factor by factor
-(`TauCeti.Manifold.mlieBracket_prodVectorField`).
+The product metric is the warped product with constant warping function `1`
+(`TauCeti.Manifold.isWarpedProduct_one`), so these formulas are the case `f = 1` of the Koszul
+expression and the Levi-Civita connection of a warped product, in which every term involving the
+derivative of `f` vanishes.
 
 ## Main results
 
@@ -68,35 +67,6 @@ variable
   [IsContMDiffRiemannianBundle J 1 F (fun y : N ↦ TangentSpace J y)]
   {X₁ Y₁ Z₁ : Π x : M, TangentSpace I x} {X₂ Y₂ Z₂ : Π y : N, TangentSpace J y} {p : M × N}
 
-omit [FiniteDimensional ℝ E] [IsManifold I 2 M]
-  [IsContMDiffRiemannianBundle I 1 E (fun x : M ↦ TangentSpace I x)] [FiniteDimensional ℝ F]
-  [IsManifold J 2 N] [IsContMDiffRiemannianBundle J 1 F (fun y : N ↦ TangentSpace J y)] in
-/-- The inner product of two product fields is the sum of a function of the first factor and a
-function of the second. -/
-private theorem inner_prodVectorField_eq (Y₁ Z₁ : Π x : M, TangentSpace I x)
-    (Y₂ Z₂ : Π y : N, TangentSpace J y) :
-    (fun q : M × N ↦ inner ℝ (prodVectorField Y₁ Y₂ q) (prodVectorField Z₁ Z₂ q)) =
-      (fun x ↦ inner ℝ (Y₁ x) (Z₁ x)) ∘ Prod.fst + (fun y ↦ inner ℝ (Y₂ y) (Z₂ y)) ∘ Prod.snd :=
-  funext fun q ↦ by
-    rw [inner_tangentSpace_prod, tangentSpaceProdEquiv_prodVectorField,
-      tangentSpaceProdEquiv_prodVectorField, Pi.add_apply, Function.comp_apply,
-      Function.comp_apply]
-
-omit [FiniteDimensional ℝ E] [FiniteDimensional ℝ F] in
-/-- The derivative of the inner product of two product fields along a third. -/
-private theorem mvfderiv_inner_prodVectorField (hY₁ : MDiffAt (T% Y₁) p.1)
-    (hZ₁ : MDiffAt (T% Z₁) p.1) (hY₂ : MDiffAt (T% Y₂) p.2) (hZ₂ : MDiffAt (T% Z₂) p.2) :
-    mvfderiv (I.prod J) (fun q ↦ inner ℝ (prodVectorField Y₁ Y₂ q) (prodVectorField Z₁ Z₂ q)) p
-        (prodVectorField X₁ X₂ p) =
-      mvfderiv I (fun x ↦ inner ℝ (Y₁ x) (Z₁ x)) p.1 (X₁ p.1) +
-        mvfderiv J (fun y ↦ inner ℝ (Y₂ y) (Z₂ y)) p.2 (X₂ p.2) := by
-  have h₁ : MDifferentiableAt (I.prod J) 𝓘(ℝ) ((fun x ↦ inner ℝ (Y₁ x) (Z₁ x)) ∘ Prod.fst) p :=
-    (mdifferentiableAt_inner hY₁ hZ₁).comp p mdifferentiableAt_fst
-  have h₂ : MDifferentiableAt (I.prod J) 𝓘(ℝ) ((fun y ↦ inner ℝ (Y₂ y) (Z₂ y)) ∘ Prod.snd) p :=
-    (mdifferentiableAt_inner hY₂ hZ₂).comp p mdifferentiableAt_snd
-  rw [inner_prodVectorField_eq, mvfderiv_add h₁ h₂, add_apply, mvfderiv_comp_fst_apply,
-    mvfderiv_comp_snd_apply, prodVectorField_fst, prodVectorField_snd]
-
 /-- On product fields, the Koszul expression of the product metric is the sum of the Koszul
 expressions of the factors. -/
 theorem koszul_prodVectorField (hX₁ : MDiffAt (T% X₁) p.1) (hY₁ : MDiffAt (T% Y₁) p.1)
@@ -104,16 +74,8 @@ theorem koszul_prodVectorField (hX₁ : MDiffAt (T% X₁) p.1) (hY₁ : MDiffAt 
     (hZ₂ : MDiffAt (T% Z₂) p.2) :
     koszul (I.prod J) (prodVectorField X₁ X₂) (prodVectorField Y₁ Y₂) (prodVectorField Z₁ Z₂) p =
       koszul I X₁ Y₁ Z₁ p.1 + koszul J X₂ Y₂ Z₂ p.2 := by
-  have : IsManifold I (minSmoothness ℝ 2) M := by
-    rw [minSmoothness_of_isRCLikeNormedField]; infer_instance
-  have : IsManifold J (minSmoothness ℝ 2) N := by
-    rw [minSmoothness_of_isRCLikeNormedField]; infer_instance
-  rw [koszul_apply, koszul_apply, koszul_apply, mvfderiv_inner_prodVectorField hY₁ hZ₁ hY₂ hZ₂,
-    mvfderiv_inner_prodVectorField hZ₁ hX₁ hZ₂ hX₂, mvfderiv_inner_prodVectorField hX₁ hY₁ hX₂ hY₂,
-    mlieBracket_prodVectorField hX₁ hY₁ hX₂ hY₂, mlieBracket_prodVectorField hX₁ hZ₁ hX₂ hZ₂,
-    mlieBracket_prodVectorField hY₁ hZ₁ hY₂ hZ₂]
-  simp only [inner_tangentSpace_prod, tangentSpaceProdEquiv_prodVectorField]
-  ring
+  simpa [mvfderiv_const] using
+    isWarpedProduct_one.koszul_prodVectorField mdifferentiableAt_const hX₁ hY₁ hZ₁ hX₂ hY₂ hZ₂
 
 /-- **The Levi-Civita connection of a product metric** differentiates a product field factor by
 factor: `∇_(u, v) (Y₁, Y₂) = (∇_u Y₁, ∇_v Y₂)`. -/
@@ -122,34 +84,9 @@ theorem tangentSpaceProdEquiv_leviCivitaConnection_prodVectorField (hY₁ : MDif
     tangentSpaceProdEquiv p (leviCivitaConnection (I.prod J) (M × N) (prodVectorField Y₁ Y₂) p v) =
       (leviCivitaConnection I M Y₁ p.1 (tangentSpaceProdEquiv p v).1,
         leviCivitaConnection J N Y₂ p.2 (tangentSpaceProdEquiv p v).2) := by
-  set e := tangentSpaceProdEquiv (I := I) (J := J) p
-  -- Realise `v` and a test vector `w` as values at `p` of differentiable product fields.
-  have hX₁ := mdifferentiableAt_extend I E (V := TangentSpace I) (e v).1
-  have hX₂ := mdifferentiableAt_extend J F (V := TangentSpace J) (e v).2
-  have hXp : prodVectorField (extend E (e v).1 : Π x : M, TangentSpace I x)
-      (extend F (e v).2 : Π y : N, TangentSpace J y) p = v := by
-    apply e.injective
-    rw [tangentSpaceProdEquiv_prodVectorField, extend_apply_self, extend_apply_self]
-  apply e.symm.injective
-  apply ext_inner_right ℝ
-  intro w
-  have hZ₁ := mdifferentiableAt_extend I E (V := TangentSpace I) (e w).1
-  have hZ₂ := mdifferentiableAt_extend J F (V := TangentSpace J) (e w).2
-  have hZp : prodVectorField (extend E (e w).1 : Π x : M, TangentSpace I x)
-      (extend F (e w).2 : Π y : N, TangentSpace J y) p = w := by
-    apply e.injective
-    rw [tangentSpaceProdEquiv_prodVectorField, extend_apply_self, extend_apply_self]
-  -- The Koszul formula determines the connection, and on these product fields the Koszul
-  -- expression of the product metric is the sum of those of the factors.
-  have hkoszul := two_inner_leviCivitaConnection_eq_koszul (I := I.prod J) (M := M × N)
-    (mdifferentiableAt_prodVectorField hX₁ hX₂) (mdifferentiableAt_prodVectorField hY₁ hY₂)
-    (mdifferentiableAt_prodVectorField hZ₁ hZ₂)
-  rw [koszul_prodVectorField hX₁ hY₁ hZ₁ hX₂ hY₂ hZ₂,
-    ← two_inner_leviCivitaConnection_eq_koszul hX₁ hY₁ hZ₁,
-    ← two_inner_leviCivitaConnection_eq_koszul hX₂ hY₂ hZ₂, hXp, hZp, extend_apply_self,
-    extend_apply_self, extend_apply_self, extend_apply_self] at hkoszul
-  rw [e.symm_apply_apply, inner_tangentSpace_prod (v := e.symm _), e.apply_symm_apply]
-  linarith
+  simpa [mvfderiv_const] using
+    isWarpedProduct_one.tangentSpaceProdEquiv_leviCivitaConnection_prodVectorField
+      mdifferentiableAt_const hY₁ hY₂ v
 
 /-- The Levi-Civita connection of a product metric, differentiating a product field along another:
 `∇_(X₁, X₂) (Y₁, Y₂) = (∇_X₁ Y₁, ∇_X₂ Y₂)`. -/

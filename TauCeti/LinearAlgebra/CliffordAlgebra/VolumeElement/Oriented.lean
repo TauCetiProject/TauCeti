@@ -50,6 +50,8 @@ minus the chirality element `CliffordAlgebra.chirality` of
 * `CliffordAlgebra.volumeElement_eq`: the volume element is `c(e₁) ⋯ c(eₙ)` for every positively
   oriented orthonormal basis `e` that is orthogonal for `Q`.
 * `CliffordAlgebra.volumeElement_neg_orientation`: reversing the orientation negates it.
+* `CliffordAlgebra.map_volumeElement`: an isometry of quadratic forms that also preserves the norms
+  carries the volume element to that of the transported orientation.
 * `CliffordAlgebra.involute_volumeElement`, `CliffordAlgebra.reverse_volumeElement` and
   `CliffordAlgebra.star_volumeElement`: the grade involution, reversal and Clifford conjugation
   multiply it by `(-1) ^ n`, `(-1) ^ ⌊n / 2⌋` and `(-1) ^ ⌊(n + 1) / 2⌋`.
@@ -122,6 +124,34 @@ private theorem volumeElement_eq_basis_or_eq_neg (b : OrthonormalBasis (Fin n) �
 private abbrev frame (V : Type*) [NormedAddCommGroup V] [InnerProductSpace ℝ V]
     [FiniteDimensional ℝ V] (n : ℕ) [Fact (finrank ℝ V = n)] : OrthonormalBasis (Fin n) ℝ V :=
   (stdOrthonormalBasis ℝ V).reindex (finCongr Fact.out)
+
+section Naturality
+
+variable {V' : Type*} [NormedAddCommGroup V'] [InnerProductSpace ℝ V'] [FiniteDimensional ℝ V']
+  [Fact (finrank ℝ V' = n)] {Q' : QuadraticForm ℝ V'}
+
+/-- **Naturality of the volume element**: an isometric equivalence `e` of the quadratic forms that
+also preserves the norms carries the volume element of `o` to that of the transported orientation.
+In particular an orientation-preserving isometry of `V` fixing `Q` fixes the volume element, while
+an orientation-reversing one negates it (`CliffordAlgebra.volumeElement_neg_orientation`). -/
+theorem map_volumeElement (e : Q.IsometryEquiv Q') (he : ∀ v, ‖e v‖ = ‖v‖) :
+    map e.toIsometry (volumeElement Q o) = volumeElement Q' (o.map (Fin n) e.toLinearEquiv) := by
+  let f : V ≃ₗᵢ[ℝ] V' := { e.toLinearEquiv with norm_map' := he }
+  -- Both sides are signed by the orientation, so it suffices to treat the orientation of a frame.
+  suffices h : ∀ b : OrthonormalBasis (Fin n) ℝ V, map e.toIsometry
+      (volumeElement Q b.toBasis.orientation) =
+        volumeElement Q' (b.toBasis.orientation.map (Fin n) e.toLinearEquiv) by
+    rcases (frame V n).toBasis.orientation_eq_or_eq_neg o with ho | ho
+    · rw [ho, h]
+    · rw [ho, volumeElement_neg_orientation, map_neg, h, Orientation.map_neg,
+        volumeElement_neg_orientation]
+  intro b
+  have hb : (b.map f).toBasis.orientation = b.toBasis.orientation.map (Fin n) e.toLinearEquiv := by
+    rw [OrthonormalBasis.toBasis_map, Basis.orientation_map]
+  rw [volumeElement_eq_basis _ b rfl, volumeElement_eq_basis _ (b.map f) hb, map_basis,
+    OrthonormalBasis.toBasis_map]
+
+end Naturality
 
 /-- The volume element is homogeneous of degree `n`: the grade involution multiplies it by
 `(-1) ^ n`. -/

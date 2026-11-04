@@ -46,6 +46,8 @@ Chapter V, §3, Exercise 1).
   over a noetherian ring and for finitely generated modules.
 * `TauCeti.Iwasawa.IsPseudoIsomorphism.comp`: over a noetherian ring, composites of
   pseudo-isomorphisms are pseudo-isomorphisms.
+* `TauCeti.Iwasawa.IsPseudoIsomorphism.prodMap`: a product of pseudo-isomorphisms is a
+  pseudo-isomorphism.
 * `TauCeti.Iwasawa.IsPseudoIsomorphism.finite_iff`: over a noetherian ring, the source of a
   pseudo-isomorphism is finitely generated iff its target is.
 * `TauCeti.Iwasawa.isPseudoIsomorphism_lsmul`: multiplication by `a` on a finitely generated
@@ -160,6 +162,33 @@ theorem IsPseudoIsomorphism.comp [IsNoetherianRing A] {f : M →ₗ[A] N} {g : N
   · exact (LinearMap.localizedMap_injective_iff_subsingleton_localized_ker _ _).mp (hloc 𝔭 h𝔭).1
   · exact (LinearMap.localizedMap_surjective_iff_subsingleton_localized_coker _ _).mp
       (hloc 𝔭 h𝔭).2
+
+/-- A product of two pseudo-isomorphisms is a pseudo-isomorphism. -/
+theorem IsPseudoIsomorphism.prodMap {M' N' : Type*} [AddCommGroup M'] [Module A M']
+    [AddCommGroup N'] [Module A N'] {f : M →ₗ[A] N} {g : M' →ₗ[A] N'}
+    (hf : IsPseudoIsomorphism f) (hg : IsPseudoIsomorphism g) :
+    IsPseudoIsomorphism (f.prodMap g) where
+  isPseudoNull_ker := by
+    -- The kernel of `f × g` is the product of the kernels.
+    refine (hf.isPseudoNull_ker.prod hg.isPseudoNull_ker).of_surjective
+      (LinearMap.codRestrict _ ((LinearMap.ker f).subtype.prodMap (LinearMap.ker g).subtype)
+        fun x ↦ by simp) ?_
+    rintro ⟨⟨x, y⟩, h⟩
+    rw [LinearMap.ker_prodMap, Submodule.mem_prod] at h
+    exact ⟨(⟨x, h.1⟩, ⟨y, h.2⟩), rfl⟩
+  isPseudoNull_coker := by
+    -- The cokernel of `f × g` is the product of the cokernels.
+    refine (hf.isPseudoNull_coker.prod hg.isPseudoNull_coker).of_surjective
+      (((LinearMap.range f).mapQ _ (LinearMap.inl A N N') fun n hn ↦ ?_).coprod
+        ((LinearMap.range g).mapQ _ (LinearMap.inr A N N') fun n hn ↦ ?_)) ?_
+    · obtain ⟨m, rfl⟩ := hn
+      exact ⟨(m, 0), by simp⟩
+    · obtain ⟨m, rfl⟩ := hn
+      exact ⟨(0, m), by simp⟩
+    · intro x
+      obtain ⟨⟨n, n'⟩, rfl⟩ := Submodule.mkQ_surjective _ x
+      refine ⟨(Submodule.Quotient.mk n, Submodule.Quotient.mk n'), ?_⟩
+      simp [← Submodule.Quotient.mk_add]
 
 /-- The multiplication criterion: over a noetherian ring, multiplication by `a` on a finitely
 generated module `M` is a pseudo-isomorphism if `a` lies in no prime of height at most one in the

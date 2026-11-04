@@ -46,8 +46,10 @@ framing.
 * `TauCeti.framingNumber_unknotSolidTorus`: the standard solid torus neighbourhood of the unknot
   has framing number `0`.
 * `TauCeti.preferredFramedBoundaryTorus_unknotSolidTorus`: its framing is the preferred framing.
+* `TauCeti.preferredFramedBoundaryTorus_unknotSolidTorus_longitude`: the longitude of the
+  preferred framing is the longitude of `TauCeti.unknotSolidTorus`.
 * `TauCeti.DehnFilling.nonempty_homeomorph_circle_prod_sphere_of_unknot_longitude`: every filling
-  along the longitude with a matrix gluing is homeomorphic to `S¹ × S²`.
+  along the longitude whose gluing is isotopic to a matrix gluing is homeomorphic to `S¹ × S²`.
 
 ## References
 
@@ -133,6 +135,16 @@ theorem preferredFramedBoundaryTorus_unknotSolidTorus :
       isSolidTorusNeighborhood_unknotSolidTorus.framedBoundaryTorus := by
   rw [IsSolidTorusNeighborhood.preferredFramedBoundaryTorus, framingNumber_unknotSolidTorus,
     neg_zero, FramedBoundaryTorus.shiftLongitude_zero]
+
+/-- The longitude of the preferred framing of the standard solid torus neighbourhood of the unknot
+is its longitude: the framing number is `0`. -/
+theorem preferredFramedBoundaryTorus_unknotSolidTorus_longitude :
+    (isSolidTorusNeighborhood_unknotSolidTorus.preferredFramedBoundaryTorus h₁ h₂).longitude =
+      isSolidTorusNeighborhood_unknotSolidTorus.framedBoundaryTorus.longitude :=
+  -- The two framings are equal, and `preferredFramedBoundaryTorus` is reducible to a framing of
+  -- the same torus, so their slope types agree and the heterogeneous equality is an equality.
+  eq_of_heq <| congr_arg_heq FramedBoundaryTorus.longitude <|
+    preferredFramedBoundaryTorus_unknotSolidTorus h₁ h₂
 
 end Framing
 
@@ -225,14 +237,20 @@ variable {Y : Type*} [TopologicalSpace Y]
 
 /-- **`0`-surgery on the unknot.** A Dehn filling of the exterior of the unknot along the longitude
 of its standard solid torus neighbourhood, the slope `0` in the preferred framing, whose gluing is
-induced by an invertible integral matrix, is homeomorphic to `S¹ × S²`. -/
+isotopic to a homeomorphism induced by an invertible integral matrix, is homeomorphic to
+`S¹ × S²`. -/
 theorem nonempty_homeomorph_circle_prod_sphere_of_unknot_longitude
     (F : DehnFilling isSolidTorusNeighborhood_unknotSolidTorus
       isSolidTorusNeighborhood_unknotSolidTorus.framedBoundaryTorus.longitude Y)
-    {A : GL (Fin 2) ℤ} (hA : F.gluing = A.torusHomeomorph) :
-    Nonempty (Y ≃ₜ Circle × sphere (0 : EuclideanSpace ℝ (Fin 3)) 1) :=
-  F.nonempty_homeomorph_of_gluing_eq_torusHomeomorph unknotZeroDehnFilling hA
-    (by rw [unknotZeroDehnFilling_gluing, Matrix.GeneralLinearGroup.torusHomeomorph_swap])
+    {A : GL (Fin 2) ℤ}
+    (hA : Isotopic (F.gluing : C(Circle × Circle, Circle × Circle)) A.torusHomeomorph) :
+    Nonempty (Y ≃ₜ Circle × sphere (0 : EuclideanSpace ℝ (Fin 3)) 1) := by
+  have hswap : Isotopic (unknotZeroDehnFilling.gluing : C(Circle × Circle, Circle × Circle))
+      (Matrix.GeneralLinearGroup.swap ℤ (0 : Fin 2) 1).torusHomeomorph := by
+    rw [unknotZeroDehnFilling_gluing, Matrix.GeneralLinearGroup.torusHomeomorph_swap]
+    exact Isotopic.refl _ (Homeomorph.prodComm Circle Circle).isEmbedding
+  obtain ⟨e, -⟩ := F.exists_homeomorph_of_isotopic_torusHomeomorph unknotZeroDehnFilling hA hswap
+  exact ⟨e⟩
 
 end DehnFilling
 

@@ -34,6 +34,9 @@ The localization of `M` at a prime of height at most one is a finitely generated
 noetherian local ring of dimension at most one, killed by a non-zero-divisor, so it has finite
 length (`Module.IsTorsion.isFiniteLength_localizedModule`). These local lengths are the
 multiplicities of the characteristic divisor.
+
+Every prime in the support of a finite product `∏ᵢ A ⧸ 𝔭 ^ nᵢ` contains `𝔭`
+(`Module.le_of_mem_support_pi_quotient_pow`).
 -/
 
 public section
@@ -106,3 +109,20 @@ theorem isFiniteLength_localizedModule [IsNoetherianRing A] [Module.Finite A M]
     (Submonoid.mem_map_of_mem _ hs)
 
 end Module.IsTorsion
+
+namespace Module
+
+variable {A : Type*} [CommRing A]
+
+/-- A prime in the support of `∏ᵢ A ⧸ 𝔭 ^ nᵢ` contains `𝔭`. -/
+theorem le_of_mem_support_pi_quotient_pow {ι : Type*} [Finite ι] {𝔭 : Ideal A}
+    {n : ι → ℕ} {𝔮 : PrimeSpectrum A} (h : 𝔮 ∈ Module.support A (∀ i, A ⧸ 𝔭 ^ n i)) :
+    𝔭 ≤ 𝔮.asIdeal := by
+  have := Fintype.ofFinite ι
+  rw [Module.mem_support_iff_of_finite, Module.annihilator_pi, ← Finset.inf_univ_eq_iInf,
+    𝔮.isPrime.inf_le'] at h
+  obtain ⟨i, -, hi⟩ := h
+  rw [Ideal.annihilator_quotient] at hi
+  exact Ideal.IsPrime.le_of_pow_le hi
+
+end Module

@@ -5,9 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.LinearAlgebra.Matrix.Adjugate
 public import Mathlib.RingTheory.Norm.Defs
 public import Mathlib.RingTheory.Trace.Defs
+public import TauCeti.LinearAlgebra.Matrix.Adjugate.Basic
 public import TauCeti.RingTheory.Derivation.Basic
 public import TauCeti.RingTheory.Derivation.Matrix
 
@@ -59,7 +59,7 @@ theorem leibniz_det {n : Type*} [Fintype n] [DecidableEq n] (M : Matrix n n A) :
   have htrace : (M.adjugate * M.map D).trace =
       ∑ j, (M.updateCol j fun k => D (M k j)).det := by
     refine sum_congr rfl fun j _ => ?_
-    rw [diag_apply, mul_apply, ← cramer_apply, cramer_eq_adjugate_mulVec]
+    rw [diag_apply, Matrix.mul_apply, ← cramer_apply, cramer_eq_adjugate_mulVec]
     simp only [mulVec, dotProduct, map_apply]
   simp only [htrace, det_apply, map_sum, map_zsmul_unit, leibniz_prod, smul_eq_mul, hcol,
     smul_sum]
@@ -80,10 +80,8 @@ theorem leibniz_norm [Module.Free A S] [Module.Finite A S] (u : Sˣ) :
   let b := Module.Free.chooseBasis A S
   set L := Algebra.leftMulMatrix b
   set Γ : Matrix _ _ A := of fun p q => b.repr (D' (b q)) p
-  have hadj : (L u).adjugate = (L u).det • L ↑u⁻¹ := by
-    calc (L u).adjugate = (L u).adjugate * (L u * L ↑u⁻¹) := by
-          rw [← map_mul, Units.mul_inv, map_one, Matrix.mul_one]
-      _ = (L u).det • L ↑u⁻¹ := by rw [← Matrix.mul_assoc, adjugate_mul, smul_mul, Matrix.one_mul]
+  have hadj : (L u).adjugate = (L u).det • L ↑u⁻¹ :=
+    adjugate_eq_det_smul_of_mul_eq_one (by rw [← map_mul, Units.mul_inv, map_one])
   have hcomm : ((L u).adjugate * (L u * Γ - Γ * L u)).trace = 0 := by
     rw [mul_sub, trace_sub, ← Matrix.mul_assoc, ← Matrix.mul_assoc, adjugate_mul,
       trace_mul_cycle (L u).adjugate Γ (L u), mul_adjugate, sub_self]

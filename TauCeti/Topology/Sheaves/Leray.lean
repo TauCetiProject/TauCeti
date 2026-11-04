@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Topology.Sheaves.Cech
+public import TauCeti.Topology.Sheaves.Cech.Basic
 public import TauCeti.Topology.Sheaves.Flasque.Basic
 
 import Mathlib.Algebra.Category.Grp.AB
@@ -78,14 +78,10 @@ variable {U}
 /-- The Leray condition on nonempty finite intersections implies it on finite products. -/
 private lemma isLerayProd_of_finset {F : Sheaf (Opens.grothendieckTopology X) AddCommGrpCat.{u}}
     (hF : ∀ s : Finset ι, s.Nonempty → ∀ k, Subsingleton (F.H' (k + 1) (s.inf U))) :
-    IsLerayProd U F := by
-  classical
-  intro m a k
+    IsLerayProd U F := fun _ a k ↦
   -- the product of the members `U (a j)` is their intersection
-  have h : (∏ᶜ fun j ↦ U (a j)) = (Finset.univ.image a).inf U :=
-    CompleteLattice.finite_product_eq_finset_image_inf U a
-  rw [h]
-  exact hF _ (Finset.univ_nonempty.image a) k
+  CompleteLattice.finite_product_of_forall_finset_inf (p := fun W ↦ Subsingleton (F.H' (k + 1) W))
+    U (fun s hs ↦ hF s hs k) a
 
 variable (U) in
 /-- The sequence of Čech complexes of `0 ⟶ F ⟶ I ⟶ Q ⟶ 0` for the cover `U`. -/

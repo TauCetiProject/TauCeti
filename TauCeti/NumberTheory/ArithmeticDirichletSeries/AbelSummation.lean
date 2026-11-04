@@ -7,21 +7,27 @@ module
 
 import Mathlib.Analysis.SpecialFunctions.Integrals.Basic
 import Mathlib.NumberTheory.AbelSummation
+import TauCeti.Analysis.SpecialFunctions.LogIntegral
 public import TauCeti.NumberTheory.ArithmeticDirichletSeries.Counting
 
 /-!
 # Abel summation for norm-indexed summatory functions
 
 Mathlib's `sum_mul_eq_sub_sub_integral_mul` is Abel summation for a sequence indexed by the natural
-numbers.  Every counting argument of the arithmetic-Dirichlet-series roadmap instead sums a weight
-over a carrier indexed by ideals or by height-one primes, cut off inclusively by the absolute norm.
+numbers.  The counting arguments for ideal-indexed Dirichlet series instead sum a weight over a
+carrier indexed by ideals or by height-one primes, cut off inclusively by the absolute norm.
 This file supplies the bridge: the weight is regrouped into its norm fibres, Mathlib's identity is
 applied to the resulting sequence, and the answer is read back as an equation between
 `TauCeti.summatory` functions.
 
-The bridge is stated for a general Northcott index `N : ι → ℕ`, because Layer 6 uses it for both
-the ideal carrier and the prime carrier.  The integral runs over the half-open interval `Set.Ioc`,
-so each boundary term is counted exactly once, as the roadmap's conventions table demands.
+The bridge is stated for a general Northcott index `N : ι → ℕ`, so that it applies to both the
+ideal carrier and the prime carrier.  The integral runs over the half-open interval `Set.Ioc`,
+so each boundary term is counted exactly once.
+
+Mathlib's exact finite identity is consumed, not restated; only the norm-indexed bridges are added.
+The two prime identities below are the finite input to the transfer `ϑ(x) ∼ δx ⟹ π(x) ∼ δ Li(x)`
+of `TauCeti/NumberTheory/ArithmeticDirichletSeries/Transfer.lean`, which estimates the integrals
+appearing here.
 
 ## Main results
 
@@ -31,6 +37,8 @@ so each boundary term is counted exactly once, as the roadmap's conventions tabl
 * `TauCeti.idealSummatory_mul_eq_sub_integral_mul`: the cutoff-`1` form for nonzero ideals.
 * `TauCeti.primeSummatory_mul_eq_sub_integral_mul`: the cutoff-`2` form for the height-one primes
   of a number field.
+* `TauCeti.primeSummatory_div_log_eq_div_log_add_integral`: its instance against `1 / log`,
+  `∑_{N𝔭 ≤ x} w(𝔭) / log N𝔭 = A(x) / log x + ∫_2^x A(t) / (t log² t) dt`.
 * `TauCeti.norm_summatory_mul_cpow_le_of_summatory_le`: an imaginary-power twist preserves a
   positive power bound for partial sums, with an explicit constant.
 * `TauCeti.summatory_mul_rpow_neg_le`: a partial-sum bound `C t ^ β` gives an explicit bound for
@@ -44,16 +52,9 @@ so each boundary term is counted exactly once, as the roadmap's conventions tabl
   counting functions becomes a comparison of Dirichlet series uniform in `s`.
 * `TauCeti.primeTheta_eq_log_mul_primeCount_sub_integral` and
   `TauCeti.primeCount_eq_primeTheta_div_log_add_integral`: the two exact Abel identities relating
-  the roadmap's weighted prime counts,
+  the weighted and unweighted prime counts,
   `ϑ(x) = π(x) log x - ∫_2^x π(t)/t dt` and `π(x) = ϑ(x)/log x + ∫_2^x ϑ(t)/(t log²t) dt`.
   Both hold for every real cutoff; below `2` all three terms vanish.
-
-## Roadmap role
-
-This is Layer **6.1** of `TauCetiRoadmap/ArithmeticDirichletSeries/README.md`: Mathlib's exact
-finite identity is consumed, not restated, and only the norm-indexed bridges are added.  The two
-prime identities are the finite input to Layer 6.2, which turns `ϑ(x) ∼ δx` into `π(x) ∼ δ Li(x)`
-by estimating the integrals appearing here.
 
 ## References
 
@@ -417,6 +418,35 @@ theorem primeSummatory_mul_eq_sub_integral_mul (w : HeightOneSpectrum (𝓞 K) �
   summatory_mul_eq_sub_integral_mul_of_le _ (by norm_num) two_le_absNorm_asIdeal_real w x
     hg_diff hg_int
 
+/-- **Abel summation against `1 / log`.**  For a weight `w` on the height-one primes with
+summatory function `A = primeSummatory K w`,
+`∑_{N𝔭 ≤ x} w(𝔭) / log N𝔭 = A(x) / log x + ∫_2^x A(t) / (t log² t) dt`.
+The identity holds for every real cutoff; below `2` all three terms vanish. -/
+theorem primeSummatory_div_log_eq_div_log_add_integral (w : HeightOneSpectrum (𝓞 K) → ℝ)
+    (x : ℝ) :
+    primeSummatory K (fun v ↦ w v / Real.log (Ideal.absNorm v.asIdeal : ℝ)) x =
+      primeSummatory K w x / Real.log x +
+        ∫ t in Set.Ioc 2 x, primeSummatory K w t / (t * Real.log t ^ 2) := by
+  have hdiff : ∀ t ∈ Set.Icc (2 : ℝ) x, DifferentiableAt ℝ (fun u : ℝ ↦ (Real.log u)⁻¹) t :=
+    fun t ht ↦ Real.differentiableAt_inv_log (by linarith [ht.1] : (0 : ℝ) < t).ne'
+      (by linarith [ht.1] : (1 : ℝ) < t).ne' (by linarith [ht.1] : (-1 : ℝ) < t).ne'
+  have hint : IntegrableOn (deriv fun u : ℝ ↦ (Real.log u)⁻¹) (Set.Icc (2 : ℝ) x) := by
+    simp only [Real.deriv_inv_log, neg_div]
+    exact ((Real.continuousOn_inv_div_log_pow 2).neg.mono fun t (ht : t ∈ Set.Icc 2 x) ↦
+      one_lt_two.trans_le ht.1).integrableOn_Icc
+  have key := primeSummatory_mul_eq_sub_integral_mul K w x hdiff hint
+  have hI : ∫ t in Set.Ioc (2 : ℝ) x, deriv (fun u : ℝ ↦ (Real.log u)⁻¹) t * primeSummatory K w t =
+      -∫ t in Set.Ioc (2 : ℝ) x, primeSummatory K w t / (t * Real.log t ^ 2) := by
+    rw [← integral_neg]
+    refine setIntegral_congr_fun measurableSet_Ioc fun t ht ↦ ?_
+    have ht0 : t ≠ 0 := (by linarith [ht.1] : (0 : ℝ) < t).ne'
+    have hlog : Real.log t ≠ 0 := (Real.log_pos (by linarith [ht.1])).ne'
+    rw [Real.deriv_inv_log_apply]
+    field_simp
+  simp only [div_eq_mul_inv] at key hI ⊢
+  rw [key, hI]
+  ring
+
 variable {K}
 
 private theorem primeTheta_eq_primeSummatory (S : Set (HeightOneSpectrum (𝓞 K))) (x : ℝ) :
@@ -466,37 +496,16 @@ theorem primeCount_eq_primeTheta_div_log_add_integral (S : Set (HeightOneSpectru
     primeCount K S x = primeTheta K S x / Real.log x +
       ∫ t in Set.Ioc 2 x, primeTheta K S t / (t * Real.log t ^ 2) := by
   have hw : (fun v : HeightOneSpectrum (𝓞 K) ↦
-      S.indicator (fun v ↦ Real.log (Ideal.absNorm v.asIdeal : ℝ)) v *
-        (Real.log (Ideal.absNorm v.asIdeal : ℝ))⁻¹) =
+      S.indicator (fun v ↦ Real.log (Ideal.absNorm v.asIdeal : ℝ)) v /
+        Real.log (Ideal.absNorm v.asIdeal : ℝ)) =
       S.indicator (1 : HeightOneSpectrum (𝓞 K) → ℝ) := by
     funext v
     by_cases hv : v ∈ S
     · rw [Set.indicator_of_mem hv, Set.indicator_of_mem hv, Pi.one_apply,
-        mul_inv_cancel₀ (log_absNorm_asIdeal_pos v).ne']
-    · rw [Set.indicator_of_notMem hv, Set.indicator_of_notMem hv, zero_mul]
-  have hdiff : ∀ t ∈ Set.Icc (2 : ℝ) x, DifferentiableAt ℝ (fun u : ℝ ↦ (Real.log u)⁻¹) t :=
-    fun t ht ↦ Real.differentiableAt_inv_log (by linarith [ht.1] : (0 : ℝ) < t).ne'
-      (by linarith [ht.1] : (1 : ℝ) < t).ne' (by linarith [ht.1] : (-1 : ℝ) < t).ne'
-  have hint : IntegrableOn (deriv fun u : ℝ ↦ (Real.log u)⁻¹) (Set.Icc (2 : ℝ) x) := by
-    rw [Real.deriv_inv_log]
-    refine ContinuousOn.integrableOn_Icc fun t ht ↦ ?_
-    have ht0 : t ≠ 0 := (by linarith [ht.1] : (0 : ℝ) < t).ne'
-    exact (((continuousAt_id.inv₀ ht0).neg).div ((Real.continuousAt_log ht0).pow 2)
-      (pow_ne_zero 2 (Real.log_pos (by linarith [ht.1])).ne')).continuousWithinAt
-  have key : primeCount K S x = (Real.log x)⁻¹ * primeTheta K S x -
-      ∫ t in Set.Ioc (2 : ℝ) x, deriv (fun u : ℝ ↦ (Real.log u)⁻¹) t * primeTheta K S t := by
-    simp only [primeCount_eq_primeSummatory, primeTheta_eq_primeSummatory]
-    rw [← hw]
-    exact primeSummatory_mul_eq_sub_integral_mul K _ x hdiff hint
-  have hI : ∫ t in Set.Ioc (2 : ℝ) x, deriv (fun u : ℝ ↦ (Real.log u)⁻¹) t * primeTheta K S t =
-      -∫ t in Set.Ioc (2 : ℝ) x, primeTheta K S t / (t * Real.log t ^ 2) := by
-    rw [← integral_neg]
-    refine setIntegral_congr_fun measurableSet_Ioc fun t ht ↦ ?_
-    have ht0 : t ≠ 0 := (by linarith [ht.1] : (0 : ℝ) < t).ne'
-    have hlog : Real.log t ≠ 0 := (Real.log_pos (by linarith [ht.1])).ne'
-    rw [Real.deriv_inv_log_apply]
-    field_simp
-  rw [key, hI]
-  ring
+        div_self (log_absNorm_asIdeal_pos v).ne']
+    · rw [Set.indicator_of_notMem hv, Set.indicator_of_notMem hv, zero_div]
+  simp only [primeCount_eq_primeSummatory, primeTheta_eq_primeSummatory]
+  rw [← hw]
+  exact primeSummatory_div_log_eq_div_log_add_integral K _ x
 
 end TauCeti

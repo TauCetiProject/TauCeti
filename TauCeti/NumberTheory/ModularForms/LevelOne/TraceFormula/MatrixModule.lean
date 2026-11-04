@@ -635,6 +635,38 @@ theorem coeff_ofWeight_mk (w : Matrix (Fin 2) (Fin 2) ℤ → k) (B : ℤ)
     (ofWeight n w B hw).coeff (mk A) = w A.1 + w (-A.1) := by
   simp [ofWeight, Finsupp.ofSupportFinite_coe]
 
+/-- An element given by a weight is the sum of the weighted projective classes over any finite
+set containing every determinant-`n` matrix of nonzero weight. The weights of the two
+representatives of a projective class add, with no factor of two. -/
+theorem ofWeight_eq_sum (hn : n ≠ 0)
+    (w : Matrix (Fin 2) (Fin 2) ℤ → k) (B : ℤ)
+    (hw : ∀ A : TraceFormulaMatrix n, w A.1 ≠ 0 → ∀ i j, |A.1 i j| ≤ B)
+    (s : Finset (TraceFormulaMatrix n)) (hs : ∀ A, w A.1 ≠ 0 → A ∈ s) :
+    ofWeight n w B hw = ∑ A ∈ s, single (mk A) (w A.1) := by
+  classical
+  apply MonoidAlgebra.coeff_injective
+  ext y
+  induction y using TraceFormulaMatrixModule.induction with | h C => ?_
+  have hC : C ≠ -C := fun h ↦ hn <| by
+    have h₀ : C.1 = 0 := by
+      have h₁ : C.1 = -C.1 := congrArg Subtype.val h
+      rw [eq_neg_iff_add_eq_zero, ← two_smul ℤ] at h₁
+      exact (smul_eq_zero.mp h₁).resolve_left two_ne_zero
+    rw [← C.2, h₀]
+    simp
+  rw [coeff_ofWeight_mk, MonoidAlgebra.coeff_sum, Finsupp.finsetSum_apply,
+    Finset.sum_eq_add C (-C) hC]
+  · simp
+  · intro A _ hA
+    have : ¬(A = C ∨ A = -C) := by tauto
+    simpa [Finsupp.single_apply, mk_eq_iff] using fun h ↦ (this h).elim
+  · intro hCs
+    by_contra h
+    exact hCs (hs C (by simpa using h))
+  · intro hCs
+    by_contra h
+    exact hCs (hs (-C) (by simpa using h))
+
 /-- **The right coset sums of an element given by a weight**: for `n ≠ 0`, the sum of the
 coefficients of `ofWeight n w B hw` over the right coset `x Γ` is the sum of `w` over the
 determinant-`n` matrices whose class lies in `x Γ`. Each class `±A` contributes `w A + w (-A)`, so
@@ -650,28 +682,9 @@ theorem mapDomain_orbitRel_mk_coeff_ofWeight (hn : n ≠ 0)
   set F := (FixedDetMatrices.finite_setOf_abs_le (m := Fin 2) n B).toFinset
   have hF (A : TraceFormulaMatrix n) (h : w A.1 ≠ 0) : A ∈ F := by
     simpa [F] using hw A h
-  -- the element is the sum of the matrices of `F`, each with its weight
   have hcoeff : (ofWeight n w B hw).coeff = ∑ A ∈ F, Finsupp.single (mk A) (w A.1) := by
-    ext y
-    induction y using TraceFormulaMatrixModule.induction with | h C => ?_
-    have hC : C ≠ -C := fun h ↦ hn <| by
-      have h₀ : C.1 = 0 := by
-        have h₁ : C.1 = -C.1 := congrArg Subtype.val h
-        rw [eq_neg_iff_add_eq_zero, ← two_smul ℤ] at h₁
-        exact (smul_eq_zero.mp h₁).resolve_left two_ne_zero
-      rw [← C.2, h₀]
-      simp
-    rw [coeff_ofWeight_mk, Finsupp.finsetSum_apply, Finset.sum_eq_add C (-C) hC]
-    · simp
-    · intro A _ hA
-      have : ¬(A = C ∨ A = -C) := by tauto
-      simpa [Finsupp.single_apply, mk_eq_iff] using fun h ↦ (this h).elim
-    · intro hCF
-      by_contra h
-      exact hCF (hF C (by simpa using h))
-    · intro hCF
-      by_contra h
-      exact hCF (hF (-C) (by simpa using h))
+    rw [ofWeight_eq_sum hn w B hw F hF, MonoidAlgebra.coeff_sum]
+    rfl
   have hq (y : TraceFormulaMatrixModule n) :
       (Quotient.mk (orbitRel PSL(2, ℤ)ᵐᵒᵖ (TraceFormulaMatrixModule n)) y = ⟦x⟧) ↔
         y ∈ orbit PSL(2, ℤ)ᵐᵒᵖ x :=

@@ -446,23 +446,12 @@ theorem logHeight_det_hasseDeriv_le {P : MvPolynomial σ K} (hP : P ≠ 0) {d : 
     (Matrix.of fun k l ↦ hasseDeriv (E k l) P).det.logHeight ≤
       Fintype.card n * P.logHeight + totalWeight K *
         (Real.log (Fintype.card n)! + 2 * Fintype.card n * ∑ j, d j * Real.log 2) := by
-  -- Each coefficient `[X^a] ∂^e P` is a binomial multiple of `[X^(a + e)] P`.
-  have hcoeff (v : AbsoluteValue K ℝ) (e a : σ →₀ ℕ) :
-      v ((hasseDeriv e P).coeff a) ≤ 2 ^ (∑ j, d j) * v (P.coeff (a + e)) := by
-    by_cases ha : P.coeff (a + e) = 0
-    · simp [hasseDeriv_coeff, ha]
-    refine (abv_coeff_hasseDeriv_le v e a P).trans (mul_le_mul_of_nonneg_right ?_ (v.nonneg _))
-    rw [Finsupp.degree_eq_sum]
-    exact pow_le_pow_right₀ one_le_two (sum_le_sum fun j _ ↦
-      (monomial_le_degreeOf j (mem_support_iff.2 ha)).trans (hd j))
   have h := Matrix.logHeight_det_le (Matrix.of fun k l ↦ hasseDeriv (E k l) P) hP (d := d)
-    (fun k l j ↦ (degreeOf_hasseDeriv_le _ _ _).trans ((Nat.sub_le _ _).trans (hd j)))
+    (fun k l ↦ degreeOf_hasseDeriv_le_of_le hd (E k l))
     (C := 2 ^ (∑ j, d j)) (one_le_pow₀ one_le_two)
-    (fun v _ k l a ↦ ⟨a + E k l, hcoeff v _ _⟩)
-    (fun v hv k l a ↦ ⟨a + E k l, by
-      rw [Matrix.of_apply, hasseDeriv_coeff, v.map_mul]
-      exact mul_le_of_le_one_left (v.nonneg _)
-        ((isNonarchimedean v hv).apply_natCast_le_one (by simp) v.map_one)⟩)
+    (fun v _ k l a ↦ ⟨a + E k l, abv_coeff_hasseDeriv_le_of_degreeOf_le v hd _ _⟩)
+    (fun v hv k l a ↦ ⟨a + E k l,
+      abv_coeff_hasseDeriv_le_of_isNonarchimedean (isNonarchimedean v hv) (E k l) a P⟩)
   rw [Real.log_pow, Nat.cast_sum, sum_mul] at h
   linarith
 
