@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Module.ZLattice.Level
 public import TauCeti.NumberTheory.ModularForms.ThetaSeries.Cusp
 public import TauCeti.NumberTheory.ModularForms.ThetaSeries.DiscriminantGroup
 import TauCeti.NumberTheory.ModularForms.QExpansion.Basic

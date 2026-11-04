@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Module.ZLattice.DiscriminantCharacter
-public import TauCeti.Algebra.Module.ZLattice.Level
 public import TauCeti.NumberTheory.ModularForms.ThetaSeries.Translation
 
 /-!
