@@ -53,8 +53,6 @@ function, and such functions determine an integrable function for a regular meas
 
 * `MeasureTheory.Lp.convolutionL_eq_integral_smul_rightTranslation`: the convolution `h ⋆ k` of
   `L¹` functions is the `L¹`-valued integral `∫ z, k z • R_(z⁻¹) h ∂μ`.
-* `MeasureTheory.Lp.exists_nonneg_integral_eq_one`: every neighbourhood of `1` supports a
-  nonnegative kernel of integral one.
 * `MeasureTheory.Lp.exists_mem_nhds_one_forall_norm_convolutionL_sub_le`,
   `MeasureTheory.Lp.tendsto_convolutionL_left`: **right approximate identity**, `h ⋆ k → h` in
   `L¹` as the nonnegative kernels `k` of integral one concentrate at `1`.
@@ -87,15 +85,6 @@ variable {G : Type*} [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
 namespace MeasureTheory.Lp
 
 open TauCeti
-
-/-- The integrand `z ↦ k z • R_(z⁻¹) h` of
-`MeasureTheory.Lp.convolutionL_eq_integral_smul_rightTranslation` is integrable. -/
-theorem integrable_smul_rightTranslation_inv {k : G → ℝ} (hk : Integrable k μ) (h : Lp ℝ 1 μ) :
-    Integrable (fun z => k z • rightTranslation μ 1 ℝ z⁻¹ h) μ := by
-  refine (hk.norm.mul_const ‖h‖).mono' (hk.aefinStronglyMeasurable.aestronglyMeasurable_smul
-    ((continuous_rightTranslation_apply ENNReal.one_ne_top h).comp continuous_inv))
-    (.of_forall fun z => ?_)
-  rw [norm_smul, LinearIsometryEquiv.norm_map]
 
 /-- Smoothing the class of `ψ ∈ UCB G` by the average `∫ z, k z • R_(z⁻¹) h ∂μ` of right
 translates of `h` is smoothing it by `k` and then by `h`. -/
@@ -140,22 +129,6 @@ theorem convolutionL_eq_integral_smul_rightTranslation (h k : Lp ℝ 1 μ) :
   have h₁ := congrArg (fun F : UCB G => (F : G →ᵇ ℝ) 1) (hD ψ)
   simp only [convolutionUCB_apply_of_ae_eq (ae_eq_refl _) (coeFn_toLpTop μ (ψ : G →ᵇ ℝ))] at h₁
   simpa [hψ, mul_comm] using h₁
-
-omit [μ.Regular] in
-/-- Every neighbourhood `U` of `1` supports a **kernel**: a nonnegative `k ∈ L¹(G, μ)` of
-integral one vanishing almost everywhere outside `U`, for instance the class of a normalized
-compactly supported continuous bump (`TauCeti.exists_nonneg_tsupport_subset_integral_eq_one`). -/
-theorem exists_nonneg_integral_eq_one {U : Set G} (hU : U ∈ 𝓝 (1 : G)) :
-    ∃ k : Lp ℝ 1 μ, 0 ≤ k ∧ ∫ z, k z ∂μ = 1 ∧ ∀ᵐ z ∂μ, z ∉ U → k z = 0 := by
-  obtain ⟨φ, hφ, hφU, hφ₁⟩ := exists_nonneg_tsupport_subset_integral_eq_one μ hU
-  have hi : Integrable φ μ := φ.continuous.integrable_of_hasCompactSupport φ.hasCompactSupport
-  refine ⟨hi.toL1 _, (coeFn_nonneg _).1 ?_, by rw [integral_congr_ae hi.coeFn_toL1, hφ₁], ?_⟩
-  · filter_upwards [hi.coeFn_toL1] with z hz
-    rw [hz]
-    exact CompactlySupportedContinuousMap.le_def.1 hφ z
-  · filter_upwards [hi.coeFn_toL1] with z hz hzU
-    rw [hz]
-    exact image_eq_zero_of_notMem_tsupport fun h => hzU (hφU h)
 
 /-- **Right approximate identity estimate.** If `k ∈ L¹(G, μ)` is nonnegative of integral one and
 vanishes almost everywhere outside `U`, then `‖h ⋆ k - h‖₁` is at most any bound `C` for
@@ -228,7 +201,7 @@ theorem IsLeftInvariant.integral_mul_apply_convolutionUCB {m : Mean G} (hm : m.I
       ≤ (|a| + |b|) * ‖φ‖ * δ := by
     obtain ⟨U₁, hU₁, hh⟩ := Lp.exists_mem_nhds_one_forall_norm_convolutionL_sub_le (μ := μ) h hδ
     obtain ⟨U₂, hU₂, hk⟩ := Lp.exists_mem_nhds_one_forall_norm_convolutionL_sub_le (μ := μ) k hδ
-    obtain ⟨e, he, he₁, heU⟩ := Lp.exists_nonneg_integral_eq_one (μ := μ) (inter_mem hU₁ hU₂)
+    obtain ⟨e, he, he₁, heU⟩ := exists_nonneg_integral_eq_one μ (x₀ := 1) (inter_mem hU₁ hU₂)
     have hU (U : Set G) (hU : U₁ ∩ U₂ ⊆ U) : ∀ᵐ z ∂μ, z ∉ U → e z = 0 := by
       filter_upwards [heU] with z hz hzU using hz fun hz' => hzU (hU hz')
     have close (u : Lp ℝ 1 μ)
@@ -261,7 +234,7 @@ theorem IsLeftInvariant.integral_mul_apply_convolutionUCB {m : Mean G} (hm : m.I
 theorem IsLeftInvariant.apply_convolutionUCB_eq_of_integral_eq {m : Mean G}
     (hm : m.IsLeftInvariant) {h k : Lp ℝ 1 μ} (hhk : ∫ x, h x ∂μ = ∫ x, k x ∂μ)
     (φ : Lp ℝ ∞ μ) : m (Lp.convolutionUCB h φ) = m (Lp.convolutionUCB k φ) := by
-  obtain ⟨e, -, he₁, -⟩ := Lp.exists_nonneg_integral_eq_one (μ := μ) univ_mem
+  obtain ⟨e, -, he₁, -⟩ := exists_nonneg_integral_eq_one μ (x₀ := 1) univ_mem
   have hh := hm.integral_mul_apply_convolutionUCB h e φ
   have hk := hm.integral_mul_apply_convolutionUCB k e φ
   rw [he₁, one_mul] at hh hk
@@ -319,7 +292,7 @@ theorem Amenable.exists_lpTop_invariant [Amenable G] :
     ∃ M : Lp ℝ ∞ μ →ₚ[ℝ] ℝ, M linftyOne = 1 ∧
       ∀ g φ, M (Lp.leftTranslation μ ∞ ℝ g φ) = M φ := by
   obtain ⟨m, hm⟩ := (amenable_iff G).1 ‹_›
-  obtain ⟨k, hk, hk₁, -⟩ := Lp.exists_nonneg_integral_eq_one (μ := μ) univ_mem
+  obtain ⟨k, hk, hk₁, -⟩ := exists_nonneg_integral_eq_one μ (x₀ := 1) univ_mem
   exact ⟨m.convolutionLpTop hk, (m.convolutionLpTop_linftyOne hk).trans hk₁,
     hm.convolutionLpTop_leftTranslation hk⟩
 

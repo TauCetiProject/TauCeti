@@ -53,6 +53,8 @@ its limit at `x₀` provides.
   `L¹` norm exist inside every neighbourhood of a point.
 * `TauCeti.exists_nonneg_tsupport_subset_integral_eq_one`: on a locally compact space, they can
   be taken continuous, compactly supported and nonnegative.
+* `TauCeti.exists_nonneg_integral_eq_one`: hence nonnegative `L¹` peak functions of unit integral
+  exist inside every neighbourhood of a point.
 
 ## References
 
@@ -171,5 +173,24 @@ theorem exists_nonneg_tsupport_subset_integral_eq_one [TopologicalSpace α] [R1S
     exact (tsupport_smul_subset_right (fun _ ↦ (∫ x, f x ∂μ)⁻¹) f).trans
       (hfU.trans interior_subset)
   · simp [hg, integral_const_mul, inv_mul_cancel₀ hpos.ne']
+
+variable (μ) in
+/-- **Nonnegative `L¹` peak functions exist.** Under the hypotheses of
+`TauCeti.exists_nonneg_tsupport_subset_integral_eq_one`, every neighbourhood `U` of a point
+carries a nonnegative `L¹` class of unit integral vanishing almost everywhere outside `U`, for
+instance the class of a normalized compactly supported continuous bump. -/
+theorem exists_nonneg_integral_eq_one [TopologicalSpace α] [R1Space α]
+    [LocallyCompactSpace α] [OpensMeasurableSpace α] [μ.IsOpenPosMeasure]
+    [IsFiniteMeasureOnCompacts μ] {x₀ : α} {U : Set α} (hU : U ∈ 𝓝 x₀) :
+    ∃ k : α →₁[μ] ℝ, 0 ≤ k ∧ ∫ x, k x ∂μ = 1 ∧ ∀ᵐ x ∂μ, x ∉ U → k x = 0 := by
+  obtain ⟨φ, hφ, hφU, hφ₁⟩ := exists_nonneg_tsupport_subset_integral_eq_one μ hU
+  have hi : Integrable φ μ := φ.continuous.integrable_of_hasCompactSupport φ.hasCompactSupport
+  refine ⟨hi.toL1 _, (Lp.coeFn_nonneg _).1 ?_, by rw [integral_congr_ae hi.coeFn_toL1, hφ₁], ?_⟩
+  · filter_upwards [hi.coeFn_toL1] with x hx
+    rw [hx]
+    exact CompactlySupportedContinuousMap.le_def.1 hφ x
+  · filter_upwards [hi.coeFn_toL1] with x hx hxU
+    rw [hx]
+    exact image_eq_zero_of_notMem_tsupport fun h ↦ hxU (hφU h)
 
 end TauCeti

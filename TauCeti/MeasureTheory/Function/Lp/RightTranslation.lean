@@ -6,7 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.MeasureTheory.Function.LpSpace.DomAct.Continuous
+public import Mathlib.MeasureTheory.Function.StronglyMeasurable.Lp
 public import TauCeti.MeasureTheory.Function.Lp.LeftTranslation
+public import TauCeti.MeasureTheory.Function.StronglyMeasurable.InnerRegular
 public import TauCeti.MeasureTheory.Group.ModularCharacter
 
 /-!
@@ -60,6 +62,8 @@ No σ-finiteness of `μ` and no countability of `G` is assumed.
 * `MeasureTheory.Lp.integral_rightTranslation`: right translation on `L¹` preserves the integral.
 * `MeasureTheory.Lp.continuous_rightTranslation_apply`: right translation is strongly continuous
   for `p < ∞`.
+* `MeasureTheory.Lp.integrable_smul_rightTranslation_inv`: the weighted orbit
+  `z ↦ k z • R_(z⁻¹) h` of `h ∈ L¹` is integrable for an integrable weight `k`.
 * `MeasureTheory.eLpNorm_comp_mul_right_of_regular`: the unweighted right translate satisfies
   `‖f (· * g)‖_p = c(g)^(1/p) ‖f‖_p`.
 * `MeasureTheory.MemLp.tendsto_eLpNorm_comp_mul_right_sub_of_regular`: `‖f (· * g) - f‖_p → 0`
@@ -307,6 +311,15 @@ theorem continuous_rightTranslation_apply (hp : p ≠ ∞) (f : Lp E p μ) :
   simp only [rightTranslation_apply, leftTranslation_apply]
   exact (modularInversion μ p 𝕜).continuous.comp
     ((DomMulAct.continuous_mk.comp continuous_inv).smul continuous_const)
+
+/-- For an integrable weight `k` and `h ∈ L¹(G, μ)`, the weighted orbit `z ↦ k z • R_(z⁻¹) h` is
+integrable; its integral is the convolution `h ⋆ k` when `E = ℝ`. -/
+theorem integrable_smul_rightTranslation_inv {k : G → ℝ} (hk : Integrable k μ) (h : Lp E 1 μ) :
+    Integrable (fun z => k z • rightTranslation μ 1 ℝ z⁻¹ h) μ := by
+  refine (hk.norm.mul_const ‖h‖).mono' (hk.aefinStronglyMeasurable.aestronglyMeasurable_smul
+    ((continuous_rightTranslation_apply ENNReal.one_ne_top h).comp continuous_inv))
+    (.of_forall fun z => ?_)
+  rw [norm_smul, LinearIsometryEquiv.norm_map]
 
 end Lp
 
