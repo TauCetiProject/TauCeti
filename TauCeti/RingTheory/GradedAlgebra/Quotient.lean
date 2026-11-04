@@ -58,6 +58,17 @@ theorem mk_mem_quotientPiece {i : ι} {y : A} (hy : y ∈ 𝒜 i) :
     Ideal.Quotient.mk I y ∈ quotientPiece 𝒜 I i :=
   Submodule.mem_map.2 ⟨y, hy, rfl⟩
 
+/-- Compatible linear maps on an algebra and its quotient preserve the quotient pieces
+whenever the original map preserves the original pieces. The family need not be a grading. -/
+theorem apply_mem_quotientPiece (T : A →ₗ[R] A) (Q : (A ⧸ I) →ₗ[R] (A ⧸ I))
+    (hT : ∀ i x, x ∈ 𝒜 i → T x ∈ 𝒜 i)
+    (hQ : ∀ x, Q (Ideal.Quotient.mk I x) = Ideal.Quotient.mk I (T x))
+    (i : ι) (x : A ⧸ I) (hx : x ∈ quotientPiece 𝒜 I i) :
+    Q x ∈ quotientPiece 𝒜 I i := by
+  obtain ⟨y, hy, rfl⟩ := (mem_quotientPiece_iff 𝒜 I).mp hx
+  rw [hQ]
+  exact mk_mem_quotientPiece 𝒜 I (hT i y hy)
+
 /-- The descended piece is the span of the images of any spanning family of the
 original piece: descending commutes with spanning. -/
 theorem quotientPiece_eq_span_image {i : ι} {s : Set A} (hs : 𝒜 i = Submodule.span R s) :
