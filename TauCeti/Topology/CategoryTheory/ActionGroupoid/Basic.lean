@@ -214,6 +214,17 @@ theorem isLocalHomeomorph_source :
       ActionCategory G X) :=
   IsLocalHomeomorph.mk _ fun f => ⟨sourceChart G X f.hom.hom, rfl, fun _ _ => rfl⟩
 
+variable {G X} in
+/-- Near an arrow `f`, every arrow has the label of `f`, so there its target is the translate of
+its source by that fixed label. -/
+theorem eventually_back_right_eq_smul (f : Quiver.Total (ActionCategory G X)) :
+    ∀ᶠ a in 𝓝 f, a.right.back = f.hom.hom • a.left.back := by
+  filter_upwards [((isOpen_discrete {f.hom.hom}).preimage (continuous_label G X)).mem_nhds rfl]
+    with a ha
+  rw [Set.mem_preimage, Set.mem_singleton_iff] at ha
+  rw [← ha]
+  exact a.hom.map_val.symm
+
 end Discrete
 
 end Monoid
