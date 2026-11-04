@@ -40,6 +40,9 @@ composition) follows Mathlib's `LinearMap.BilinForm.IsometryEquiv` API in
 
 ## Main results
 
+* `TauCeti.IntegralLattice.Isometry.map_carrier_ambientEquiv` and
+  `TauCeti.IntegralLattice.Isometry.map_carrier_ambientEquiv_of_eq`: `ambientEquiv` maps the source
+  carrier onto the target carrier, and any lattice isometry with the same ambient map does the same.
 * `TauCeti.IntegralLattice.Isometry.carrierEquiv_ofCarrierEquiv` and
   `TauCeti.IntegralLattice.Isometry.ofCarrierEquiv_carrierEquiv`: the two round trips between
   ambient isometries and form-preserving carrier equivalences.
@@ -53,7 +56,6 @@ composition) follows Mathlib's `LinearMap.BilinForm.IsometryEquiv` API in
 
 ## References
 
-* `TauCetiRoadmap/IntegralLattices/README.md`, Layer 1
 * W. Ebeling, *Lattices and Codes*, Chapter 1
 -/
 
@@ -123,6 +125,21 @@ def ambientEquiv (e : Isometry L M) : V ≃ₗ[ℤ] W :=
 
 @[simp]
 theorem ambientEquiv_apply (e : Isometry L M) (x : V) : e.ambientEquiv x = e x := (rfl)
+
+/-- The ambient integral equivalence of an isometry maps the source carrier onto the target
+carrier. -/
+@[simp]
+theorem map_carrier_ambientEquiv (e : Isometry L M) :
+    L.carrier.map e.ambientEquiv.toLinearMap = M.carrier :=
+  e.map_carrier
+
+/-- An integral-lattice isometry whose ambient map agrees pointwise with another isometry `e` maps
+the source carrier of `e` onto its target carrier. -/
+theorem map_carrier_ambientEquiv_of_eq {L' : IntegralLattice V} {M' : IntegralLattice W}
+    (f : Isometry L' M') (e : Isometry L M) (h : ∀ x, f x = e x) :
+    L.carrier.map f.ambientEquiv.toLinearMap = M.carrier := by
+  have heq : f.ambientEquiv = e.ambientEquiv := LinearEquiv.ext h
+  rw [heq, e.map_carrier_ambientEquiv]
 
 /-- An ambient vector's image belongs to the target carrier if and only if the vector belongs
 to the source carrier. -/
