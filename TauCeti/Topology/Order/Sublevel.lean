@@ -47,6 +47,9 @@ homeomorphism between the sublevels on either side of a band without critical po
 Under the same hypotheses the band `f⁻¹[a, b]` is homeomorphic to `f⁻¹(a) × [a, b]` by a
 homeomorphism preserving the value of `f` (`Flow.bandHomeomorph`): a point of the band is sent to
 the point where its flow line meets the level `a`, together with its value.
+
+Along an inducing map `j : M → X` whose range contains a band `F⁻¹[a, b]`, compactness of the
+band pulls back to the band of `F ∘ j` (`Topology.IsInducing.isCompact_comp_preimage_Icc`).
 -/
 
 public section
@@ -127,6 +130,13 @@ theorem coe_sublevelInclusion_apply {X β : Type*} [TopologicalSpace X] [Preorde
     {a b : β} (hab : a ≤ b) (x : {x | f x ≤ a}) : (sublevelInclusion f a b hab x : X) = x :=
   (rfl)
 
+/-- The inclusion `{f ≤ a} → {f ≤ b}` of sublevels is the inclusion of sets. -/
+theorem sublevelInclusion_eq_inclusion {X β : Type*} [TopologicalSpace X] [Preorder β]
+    (f : X → β) {a b : β} (hab : a ≤ b) :
+    sublevelInclusion f a b hab =
+      ContinuousMap.inclusion (ofPred_subset_ofPred.2 fun _ hx ↦ hx.trans hab) :=
+  (rfl)
+
 /-- For continuous `f`, the inclusion `{f ≤ a} → {f ≤ b}` of sublevels is a closed embedding. -/
 theorem isClosedEmbedding_sublevelInclusion {X β : Type*} [TopologicalSpace X] [Preorder β]
     [TopologicalSpace β] [ClosedIicTopology β] {f : X → β} (hf : Continuous f) {a b : β}
@@ -196,6 +206,21 @@ theorem exists_sublevelDeformation_of_apply_eq_sub {X : Type*} [TopologicalSpace
       prop' := fun t x hx ↦ Subtype.ext <| by simp [hr, hτ0 x.1 hx, hφ0] }
 
 end TauCeti
+
+namespace Topology.IsInducing
+
+/-- Let `j : M → X` be an inducing map and `F : X → β`. A compact band `F⁻¹[a, b]` of `F` has
+compact preimage band `(F ∘ j)⁻¹[a, b]` as soon as `F < a` off the range of `j`, so that the band
+lies in the range of `j`. -/
+theorem isCompact_comp_preimage_Icc {M X β : Type*} [TopologicalSpace M] [TopologicalSpace X]
+    [Preorder β] {j : M → X} {F : X → β} (hj : IsInducing j) {a b : β}
+    (hA : ∀ x ∉ range j, F x < a) (hcompact : IsCompact (F ⁻¹' Icc a b)) :
+    IsCompact ((F ∘ j) ⁻¹' Icc a b) :=
+  hj.isCompact_preimage' hcompact fun x hx ↦ by
+    by_contra hxj
+    exact (hA x hxj).not_ge hx.1
+
+end Topology.IsInducing
 
 namespace Flow
 
