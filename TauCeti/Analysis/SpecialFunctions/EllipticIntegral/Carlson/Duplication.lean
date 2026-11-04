@@ -79,7 +79,7 @@ private theorem integral_inv_sqrt_mul_duplication {x y z : ℝ} (hx : 0 ≤ x) (
   set lam : ℝ → ℝ := fun t => a t * b t + b t * c t + c t * a t
   set σ : ℝ → ℝ := fun t => (t + lam t - l) / 4
   have hσ0 : σ 0 = 0 := by simp [σ, lam, a, b, c, hl]
-  -- `σ` is a strictly increasing continuous bijection of `ℝ`, mapping `(0, ∞)` onto itself.
+  -- `σ` is strictly increasing and continuous, and maps `(0, ∞)` onto itself.
   have hmono (w : ℝ) : Monotone fun t : ℝ => √(t + w) := fun s t hst =>
     Real.sqrt_le_sqrt (by linarith)
   have hlam : Monotone lam :=
@@ -98,21 +98,9 @@ private theorem integral_inv_sqrt_mul_duplication {x y z : ℝ} (hx : 0 ≤ x) (
     filter_upwards [eventually_ge_atTop 0] with t ht
     simp only [σ, id]
     linarith [hlam ht, hlam0]
-  have hσbot : Tendsto σ atBot atBot := by
-    refine tendsto_atBot_mono' _ ?_ (tendsto_id.atBot_div_const (by norm_num : (0 : ℝ) < 4))
-    filter_upwards [eventually_le_atBot 0] with t ht
-    simp only [σ, id]
-    linarith [hlam ht, hlam0]
   have himage : σ '' Ioi 0 = Ioi 0 := by
-    ext u
-    constructor
-    · rintro ⟨t, ht, rfl⟩
-      rw [mem_Ioi, ← hσ0]
-      exact hσmono ht
-    · intro hu
-      obtain ⟨t, rfl⟩ := hσcont.surjective hσtop hσbot u
-      rw [mem_Ioi, ← hσ0] at hu
-      exact ⟨t, hσmono.lt_iff_lt.mp hu, rfl⟩
+    simpa only [hσ0] using
+      hσcont.continuousOn.image_Ioi_of_strictMonoOn (hσmono.strictMonoOn (Ici 0)) hσtop
   -- The derivative of `σ` on `(0, ∞)`, where the square roots are differentiable.
   set σ' : ℝ → ℝ := fun t =>
     (1 + (1 / (2 * a t) * b t + a t * (1 / (2 * b t)) +
