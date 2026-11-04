@@ -27,9 +27,11 @@ compactly supported smooth functions, together with cutoffs equal to one on thei
 are locally finite in the open set (`IsOpen.exists_contDiff_decomposition_cutoff`); this is the
 gluing device for global approximation on a domain. Multiplying by a cutoff turns a function which
 is `C^k` on an open set containing its support into a `C^k` function on the whole space
-(`ContDiffOn.contDiff_smul_of_tsupport_subset`). Locally finite sums of smooth functions are
-smooth (`contDiffAt_tsum_of_eventually_eq_zero`). A compactly supported `C¹` function is bounded
-and Hölder continuous with every exponent at most one
+(`ContDiffOn.contDiff_smul_of_tsupport_subset`), and on a set where the cutoff is one nearby the
+`Lᵖ` norm of the derivative of a function is at most that of its cut-off version
+(`TauCeti.eLpNorm_fderiv_restrict_le_of_subset_interior`). Locally finite sums of smooth
+functions are smooth (`contDiffAt_tsum_of_eventually_eq_zero`). A compactly supported `C¹`
+function is bounded and Hölder continuous with every exponent at most one
 (`ContDiff.exists_holderWith_and_norm_le_of_hasCompactSupport`).
 
 It also provides radial cutoffs between two concentric closed balls of radii `r < R` whose
@@ -142,6 +144,23 @@ theorem _root_.ContDiffOn.contDiff_smul_of_tsupport_subset {𝕜 F : Type*}
       filter_upwards [notMem_tsupport_iff_eventuallyEq.1 fun h => hx (hψs h)] with y hy
       simp [hy]
     exact contDiffAt_const.congr_of_eventuallyEq h0
+
+/-- On a measurable set `K` where the cutoff `χ` is one nearby, `D u = D (χ u)`, so the `Lᵖ` norm
+of `D u` on `K` is at most that of `D (χ u)` on the whole space. -/
+theorem eLpNorm_fderiv_restrict_le_of_subset_interior [NormedSpace ℝ E] [MeasurableSpace E]
+    {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] {μ : MeasureTheory.Measure E}
+    {χ : E → ℝ} {u : E → F} {K : Set E} (hK : MeasurableSet K)
+    (hKχ : K ⊆ interior (χ ⁻¹' {1})) (p : ENNReal) :
+    MeasureTheory.eLpNorm (fderiv ℝ u) p (μ.restrict K) ≤
+      MeasureTheory.eLpNorm (fderiv ℝ fun y ↦ χ y • u y) p μ := by
+  have heq : fderiv ℝ u =ᵐ[μ.restrict K] fderiv ℝ fun y ↦ χ y • u y := by
+    refine MeasureTheory.ae_restrict_of_forall_mem hK fun z hz ↦ ?_
+    refine (Filter.EventuallyEq.fderiv_eq ?_).symm
+    filter_upwards [isOpen_interior.mem_nhds (hKχ hz)] with y hy
+    have hy1 : χ y = 1 := interior_subset hy
+    simp [hy1]
+  rw [MeasureTheory.eLpNorm_congr_ae heq]
+  exact MeasureTheory.eLpNorm_mono_measure _ MeasureTheory.Measure.restrict_le_self
 
 /-- A compactly supported `C¹` function is bounded, and Hölder continuous with every exponent
 `α ≤ 1`, with one constant `C` for both: it is Lipschitz and of bounded oscillation. -/
