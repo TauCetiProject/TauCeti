@@ -19,7 +19,7 @@ public import TauCeti.Geometry.Symplectic.Manifold.Surface
 # The Fubini–Study form of the Riemann sphere
 
 The Riemann sphere `OnePoint ℂ`, regarded as a real surface through its holomorphic charts, carries
-the **Fubini–Study form** `ω_FS = (i / 2π) ∂∂̄ log (1 + |z|²)`. In the affine coordinate
+the **Fubini–Study form** `ω_FS = (i / 2π) ∂ ∂bar log (1 + |z|²)`. In the affine coordinate
 `z = x + iy` it reads
 
 `ω_FS = ρ(z) dx ∧ dy`, with density `ρ(z) = 1 / (π (1 + |z|²)²)`
@@ -31,7 +31,7 @@ inverted coordinate `w = 1 / z` the form reads `ρ(w) du ∧ dv` again, and the 
 expressions glue to a smooth two-form `OnePoint.fubiniStudyForm` on the whole sphere, including
 the point `∞`. On a tangent space, identified with `ℂ` through the preferred chart, it is
 
-`ω_FS(v, w) = ρ(c) Im (v̄ w)`,
+`ω_FS(v, w) = ρ(c) Im (conj v * w)`,
 
 where `c` is the coordinate of the base point (`OnePoint.eval₂_fubiniStudyForm`); in an arbitrary
 chart of the atlas it has the same expression in that chart's coordinate
@@ -41,8 +41,9 @@ Since `ρ > 0` the form vanishes nowhere, so it is a symplectic form on the sphe
 (`OnePoint.isSymplectic_fubiniStudyForm`). It is compatible with the complex structure of the
 sphere, multiplication by `i` on each tangent space
 (`OnePoint.compatible_fubiniStudyForm`); the associated Riemannian metric
-`g_FS(v, w) = ω_FS(v, i w)` is `ρ(c) Re (v̄ w)` (`OnePoint.eval₂_fubiniStudyForm_I_mul`). The form
-is normalized to total area one: the density integrates to `1` over the affine chart
+`g_FS(v, w) = ω_FS(v, i w)` is `ρ(c) Re (conj v * w)`
+(`OnePoint.eval₂_fubiniStudyForm_I_mul`). The form is normalized to total area one: the density
+integrates to `1` over the affine chart
 (`OnePoint.integral_fubiniStudyDensity`), which is the whole sphere except the point `∞`. The area
 `π` of the unit disc and the polar integral `∫₀^∞ 2r / (1 + r²)² dr = 1` give this value. The
 comparison with the integral of the form over the oriented sphere is not carried out here.
@@ -64,7 +65,7 @@ normalized; other areas are obtained by scaling it.
 ## References
 
 * P. Griffiths and J. Harris, *Principles of Algebraic Geometry*, Wiley, 1978, Chapter 0,
-  Section 2 (the Fubini–Study metric `(i / 2π) ∂∂̄ log ‖Z‖²` on projective space).
+  Section 2 (the Fubini–Study metric `(i / 2π) ∂ ∂bar log ‖Z‖²` on projective space).
 * D. Huybrechts, *Complex Geometry: An Introduction*, Universitext, Springer, 2005, Section 3.1
   (the Fubini–Study form).
 * D. McDuff and D. Salamon, *J-holomorphic Curves and Symplectic Topology*, 2nd ed., AMS Colloquium
@@ -196,7 +197,7 @@ private theorem fubiniStudyRough_tangentCoordChange {x y : OnePoint ℂ}
       rw [tangentCoordChange_self (by simp), tangentCoordChange_self (by simp)]
     | coe z =>
       have hz : z ≠ 0 := by rintro rfl; simp at hy
-      -- Multiplying both vectors by `c` scales their area `Im (v̄ w)` by `|c|²`.
+      -- Multiplying both vectors by `c` scales their area `Im (conj v * w)` by `|c|²`.
       have hscale (v w c : ℂ) : (conj (c * v) * (c * w)).im = ‖c‖ ^ 2 * (conj v * w).im := by
         rw [map_mul, show conj c * conj v * (c * w) = (conj c * c) * (conj v * w) by ring,
           Complex.conj_mul', ← Complex.ofReal_pow, Complex.im_ofReal_mul]
@@ -220,7 +221,7 @@ private theorem isSmoothForm_fubiniStudyRough {n : WithTop ℕ∞} :
   exact (fubiniStudyRough_tangentCoordChange hy u).trans (by simp)
 
 /-- **The Fubini–Study form** of the Riemann sphere, the smooth real two-form
-`ω_FS = (i / 2π) ∂∂̄ log (1 + |z|²)`, which reads `ρ(z) dx ∧ dy` with
+`ω_FS = (i / 2π) ∂ ∂bar log (1 + |z|²)`, which reads `ρ(z) dx ∧ dy` with
 `ρ(z) = 1 / (π (1 + |z|²)²)` in the affine coordinate `z = x + iy`, and in the same way in the
 inverted coordinate. -/
 def fubiniStudyForm : SmoothTwoForm 𝓘(ℝ, ℂ) (OnePoint ℂ) :=
@@ -228,21 +229,21 @@ def fubiniStudyForm : SmoothTwoForm 𝓘(ℝ, ℂ) (OnePoint ℂ) :=
 
 /-- **The Fubini–Study form on a tangent space.** Identifying the tangent space at `x` with `ℂ`
 through the preferred chart, in which `x` has coordinate `c`, the Fubini–Study form is
-`ω_FS(v, w) = ρ(c) Im (v̄ w)`. -/
+`ω_FS(v, w) = ρ(c) Im (conj v * w)`. -/
 theorem eval₂_fubiniStudyForm (x : OnePoint ℂ) (v w : ℂ) :
     SmoothBundleForm.eval₂ fubiniStudyForm x v w =
       fubiniStudyDensity (chartAt ℂ x x) * (conj v * w).im :=
   (SmoothBundleForm.eval₂_apply _ _ _ _).trans (fubiniStudyRough_apply x ![v, w])
 
 /-- The Fubini–Study form at a finite point `z`, in the affine coordinate:
-`ω_FS(v, w) = Im (v̄ w) / (π (1 + |z|²)²)`. -/
+`ω_FS(v, w) = Im (conj v * w) / (π (1 + |z|²)²)`. -/
 @[simp]
 theorem eval₂_fubiniStudyForm_coe (z v w : ℂ) :
     SmoothBundleForm.eval₂ fubiniStudyForm (z : OnePoint ℂ) v w =
       fubiniStudyDensity z * (conj v * w).im := by
   simp [eval₂_fubiniStudyForm]
 
-/-- The Fubini–Study form at `∞`, in the inverted coordinate: `ω_FS(v, w) = Im (v̄ w) / π`. -/
+/-- The Fubini–Study form at `∞`, in the inverted coordinate: `ω_FS(v, w) = Im (conj v * w) / π`. -/
 @[simp]
 theorem eval₂_fubiniStudyForm_infty (v w : ℂ) :
     SmoothBundleForm.eval₂ fubiniStudyForm (∞ : OnePoint ℂ) v w =
@@ -251,7 +252,7 @@ theorem eval₂_fubiniStudyForm_infty (v w : ℂ) :
 
 /-- **The Fubini–Study form in every chart.** For `y` in the source of the preferred chart at
 `x`, the Fubini–Study form at `y`, evaluated on the tangent vectors with coordinates `v` and `w` in
-the chart at `x`, is `ρ(c) Im (v̄ w)`, where `c` is the coordinate of `y` in that chart. -/
+the chart at `x`, is `ρ(c) Im (conj v * w)`, where `c` is the coordinate of `y` in that chart. -/
 theorem eval₂_fubiniStudyForm_tangentCoordChange {x y : OnePoint ℂ}
     (hy : y ∈ (chartAt ℂ x).source) (v w : ℂ) :
     SmoothBundleForm.eval₂ fubiniStudyForm y (tangentCoordChange 𝓘(ℝ, ℂ) x y y v)
@@ -262,8 +263,8 @@ theorem eval₂_fubiniStudyForm_tangentCoordChange {x y : OnePoint ℂ}
       (fubiniStudyRough_tangentCoordChange hy ![v, w])
 
 /-- **The Fubini–Study metric.** The Riemannian metric `g_FS(v, w) = ω_FS(v, i w)` associated with
-the Fubini–Study form and the complex structure is `ρ(c) Re (v̄ w)`, where `c` is the coordinate of
-the base point. -/
+the Fubini–Study form and the complex structure is `ρ(c) Re (conj v * w)`, where `c` is the
+coordinate of the base point. -/
 theorem eval₂_fubiniStudyForm_I_mul (x : OnePoint ℂ) (v w : ℂ) :
     SmoothBundleForm.eval₂ fubiniStudyForm x v (Complex.I * w) =
       fubiniStudyDensity (chartAt ℂ x x) * (conj v * w).re := by
@@ -300,7 +301,7 @@ theorem compatible_fubiniStudyForm :
     exact (congrArg₂ (SmoothBundleForm.eval₂ fubiniStudyForm x)
       (SmoothAlmostComplexStructure.ofComplexManifold_apply x v)
       (SmoothAlmostComplexStructure.ofComplexManifold_apply x w)).trans (h v w)
-  · -- On the tangent space `ℂ`, `ω_FS(v, I v) = ρ Re (v̄ v) = ρ |v|²`.
+  · -- On the tangent space `ℂ`, `ω_FS(v, I v) = ρ Re (conj v * v) = ρ |v|²`.
     have h (v : ℂ) (hv : v ≠ 0) :
         0 < SmoothBundleForm.eval₂ fubiniStudyForm x v (Complex.I • v) := by
       rw [smul_eq_mul, eval₂_fubiniStudyForm_I_mul, Complex.conj_mul', ← Complex.ofReal_pow,
