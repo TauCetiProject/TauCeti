@@ -74,7 +74,7 @@ theorem hasSum_cdf_noncentralFMeasure (hm : 0 < m) (hn : 0 < n) (l : ℝ≥0)
         regularizedIncompleteBeta ((m + 2 * j) / 2) (n / 2) (m * x / (n + m * x)))
       (cdf (noncentralFMeasure m n l) x) := by
   let _ := isProbabilityMeasure_noncentralFMeasure hm hn l
-  have hsum := (ENNReal.summable.hasSum_iff.mpr
+  have hsum := (CompleteLattice.summable.hasSum_iff.mpr
     (noncentralFMeasure_apply (n := n) hm l (Iic x)).symm).toReal (measure_ne_top _ _)
   rw [← measureReal_def, ← cdf_eq_real] at hsum
   convert hsum using 1

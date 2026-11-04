@@ -132,8 +132,10 @@ private theorem isAdic_of_mapsTo_analyticPoints {f : X ⟶ Y}
   obtain ⟨U, hU, hxU, hUV⟩ := Opens.isBasis_iff_nbhd.mp
     (isBasis_affinoidOpens X.property.isLocallyAffinoid) (U := (Opens.map f.hom.base).obj V)
     (x := x) hxV
-  obtain ⟨B, _, _, _, _, _, _, _, T, P', hP', ⟨eU⟩⟩ := (isAffinoid_iff_exists_complete _).mp hU
-  obtain ⟨A, _, _, _, _, _, _, _, S, P, hP, ⟨eV⟩⟩ := (isAffinoid_iff_exists_complete _).mp hV
+  obtain ⟨B, _, _, _, _, _, _, _, T, P', hP', ⟨eU⟩⟩ := (isAffinoid_iff_exists_complete _).mp
+    ((mem_propOpens_iff _).mp hU)
+  obtain ⟨A, _, _, _, _, _, _, _, S, P, hP, ⟨eV⟩⟩ := (isAffinoid_iff_exists_complete _).mp
+    ((mem_propOpens_iff _).mp hV)
   have hsheaf : Presheaf.IsSheaf (Opens.grothendieckTopology ↥(spa T.plus))
       (presentationLimitPresheaf P' T.plus) :=
     (isSheafy_presentationLimitPreAdicSpace_iff P' T.plus _ hP').mp

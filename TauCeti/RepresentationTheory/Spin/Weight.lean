@@ -320,7 +320,7 @@ theorem spinAction_diagonalBivector_basis (i : ι) (s : Finset ι) :
       spinWeight K s i • b.ExteriorAlgebra s := by
   rw [diagonalBivector_def, bivector_def, map_smul, map_sub, map_mul, map_mul, spinAction_ι,
     spinAction_ι, P.cliffordOperator_coe_W, P.cliffordOperator_coe_W']
-  simp only [LinearMap.smul_apply, LinearMap.sub_apply, Module.End.mul_apply]
+  simp only [LinearMap.smul_apply, LinearMap.sub_apply, mul_apply_eq_comp]
   rw [wedge_contract_dualVector_basis, contract_dualVector_wedge_basis]
   by_cases h : i ∈ s
   · rw [spinWeight_of_mem h]

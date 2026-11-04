@@ -106,8 +106,8 @@ theorem baseChangeFunctor_map_mem_nullHomotopic (f : S →+* T)
   let h₁' : ((baseChangeFunctor f).obj X).obj.X₁ ⟶ ((baseChangeFunctor f).obj Y).obj.X₀ :=
     ObjectProperty.homMk (G.map h₁)
   -- Forgetting finite generation undoes `ObjectProperty.homMk`.
-  have hF₀ : F.map h₀' = G.map h₀ := rfl
-  have hF₁ : F.map h₁' = G.map h₁ := rfl
+  have hF₀ : h₀'.hom = G.map h₀ := rfl
+  have hF₁ : h₁'.hom = G.map h₁ := rfl
   rw [mem_nullHomotopic_iff]
   refine ⟨h₀', h₁', ?_⟩
   obtain ⟨hh₀, hh₁⟩ := CurvedDuplex.Hom.ext_iff.1 hh
@@ -117,7 +117,8 @@ theorem baseChangeFunctor_map_mem_nullHomotopic (f : S →+* T)
     simp only [CurvedDuplex.nullHomotopicMap_f₀, CurvedDuplex.nullHomotopicMap_f₁,
       Functor.map_add, Functor.map_comp, hF₀, hF₁, baseChangeFunctor_obj_d₀,
       baseChangeFunctor_obj_d₁, baseChangeFunctor_map_f₀, baseChangeFunctor_map_f₁,
-      Functor.comp_map, F, G] at hh₀ hh₁ ⊢
+      Functor.comp_map, F, G, FGModuleCat.forget₂_map, ObjectProperty.add_hom,
+      ObjectProperty.FullSubcategory.comp_hom] at hh₀ hh₁ ⊢
   -- Both sides now agree as morphisms; only the endpoint objects of the base change are
   -- unfolded to their scalar extensions.
   exacts [hh₀, hh₁]

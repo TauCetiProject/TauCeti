@@ -38,7 +38,8 @@ same stage.
 
 * `Nat.Partrec.Code.domStage_zero`, `Nat.Partrec.Code.monotone_domStage`: the stages start empty
   and increase.
-* `Nat.Partrec.Code.stageLimit_domStage`: their limit is the domain of the code.
+* `Nat.Partrec.Code.stageLimit_domStage`, `Nat.Partrec.Code.exists_mem_domStage_iff`: their
+  limit is the domain of the code.
 * `Nat.Partrec.Code.primrec₂_evaln_isSome`: halting of step-bounded evaluation is primitive
   recursive in the code, the step bound and the input.
 * `Nat.Partrec.Code.primrecRel_mem_domStage`, `Nat.Partrec.Code.primrec_domStage`: membership in
@@ -97,6 +98,11 @@ theorem stageLimit_domStage (c : Code) : stageLimit c.domStage = {x | (eval c x)
   simp only [mem_stageLimit, mem_domStage, Option.isSome_iff_exists, Set.mem_ofPred_eq,
     Part.dom_iff_mem, evaln_complete]
   exact exists_comm
+
+/-- A number is in the domain `W_c` of a code exactly when it is in some stage of the domain. -/
+theorem exists_mem_domStage_iff {c : Code} {x : ℕ} :
+    (∃ s, x ∈ c.domStage s) ↔ (eval c x).Dom := by
+  rw [← mem_stageLimit, stageLimit_domStage, Set.mem_ofPred_eq]
 
 /-- Halting of step-bounded evaluation is primitive recursive in the code, the step bound and the
 input. -/

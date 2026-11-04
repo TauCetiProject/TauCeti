@@ -37,6 +37,8 @@ noncomputable section
 namespace TauCeti.LazardRing
 
 open MvPolynomial TauCeti.GradedAlgebra
+open FormalCoordinate (universalStrictCoordinate coeff_succ_universalStrictCoordinate
+  map_universalStrictCoordinate)
 
 private abbrev Γ := MvPolynomial ℕ+ LazardRing
 
