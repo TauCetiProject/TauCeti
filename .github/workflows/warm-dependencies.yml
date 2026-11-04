@@ -152,7 +152,7 @@ jobs:
         continue-on-error: true
         uses: actions/cache/save@v4
         with:
-          path: ${{ steps.mathlib.outputs.cache-dir }}/*.ltar
+          path: ${{ steps.mathlib.outputs.cache-path }}
           key: ${{ steps.mathlib.outputs.cache-primary-key }}
 
       - name: Check eligible parent cache availability (read only)
