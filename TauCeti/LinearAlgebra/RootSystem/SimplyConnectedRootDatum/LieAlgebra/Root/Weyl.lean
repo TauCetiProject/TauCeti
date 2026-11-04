@@ -70,11 +70,15 @@ variable (t : DynkinType) (ht : t.Valid)
 `β`, the Weyl automorphism of the triple `(α^∨, e_α, e_{-α})` sends `e_β` to `e_{s_α β}` or to
 `-e_{s_α β}`, where `s_α β` is the reflection of `β` in `α` in the pinned root datum. -/
 theorem weylAut_chevalleySystem_eq_or_eq_neg (α β : Fin t.numRoots) :
-    weylAut (t.isSl2Triple_chevalleySystem ht α) (t.isNilpotent_ad_chevalleySystem ht α)
-          (t.isNilpotent_ad_chevalleySystem ht _) (t.chevalleySystem ht β) =
+    weylAut (t.isSl2Triple_chevalleySystem ht α)
+          (t.isNilpotent_ad_chevalleySystem ht α).exists_pow_apply_eq_zero
+          (t.isNilpotent_ad_chevalleySystem ht _).exists_pow_apply_eq_zero
+          (t.chevalleySystem ht β) =
         t.chevalleySystem ht ((t.simplyConnectedRootDatum ht).reflectionPerm α β) ∨
-      weylAut (t.isSl2Triple_chevalleySystem ht α) (t.isNilpotent_ad_chevalleySystem ht α)
-          (t.isNilpotent_ad_chevalleySystem ht _) (t.chevalleySystem ht β) =
+      weylAut (t.isSl2Triple_chevalleySystem ht α)
+          (t.isNilpotent_ad_chevalleySystem ht α).exists_pow_apply_eq_zero
+          (t.isNilpotent_ad_chevalleySystem ht _).exists_pow_apply_eq_zero
+          (t.chevalleySystem ht β) =
         -t.chevalleySystem ht ((t.simplyConnectedRootDatum ht).reflectionPerm α β) := by
   simpa only [← rootEquiv_reflectionPerm, extendRootFamily_rootEquiv,
     extendRootFamily_neg_rootEquiv] using
@@ -89,7 +93,8 @@ simple root, holds at the root vector `e_γ` of every root `γ`. -/
 theorem chevalleySystem_induction {p : t.lieAlgebra ht → Prop} (hneg : ∀ z, p z → p (-z))
     (hsimple : ∀ i, p ((t.lieBasis ht).e i))
     (hweyl : ∀ i z, p z → p (weylAut (t.isSl2Triple_chevalleySystem ht (t.simpleIndex ht i))
-      (t.isNilpotent_ad_chevalleySystem ht _) (t.isNilpotent_ad_chevalleySystem ht _) z))
+      (t.isNilpotent_ad_chevalleySystem ht _).exists_pow_apply_eq_zero
+      (t.isNilpotent_ad_chevalleySystem ht _).exists_pow_apply_eq_zero z))
     (γ : Fin t.numRoots) : p (t.chevalleySystem ht γ) := by
   -- a simple Weyl automorphism moves the root vector of `k` to that of `s_j k`, up to sign
   have step (i : Fin t.rank) (k : Fin t.numRoots) (hk : p (t.chevalleySystem ht k)) :
