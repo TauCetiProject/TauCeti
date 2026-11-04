@@ -454,21 +454,16 @@ private theorem exists_norm_counterexampleEval_le {ι : Type*} (p : StarPolynomi
             (mul_le_mul_of_nonneg_left (pow_le_pow_right₀ hn (le_max_right dp dq)) hCq)
       _ = (Cp + Cq) * ((n + 1 : ℕ) : ℝ) ^ max dp dq := by ring
 
-private theorem summable_pow_mul_half_pow (d : ℕ) :
-    Summable (fun n : ℕ => ((n + 1 : ℕ) : ℝ) ^ d * (1 / 2 : ℝ) ^ (n + 1)) := by
-  have hr : ‖(1 / 2 : ℝ)‖ < 1 := by
-    rw [Real.norm_eq_abs, abs_of_pos (by positivity)]
-    norm_num
-  have h : Summable (fun n : ℕ => ((n + 1 : ℕ) : ℝ) ^ d * (1 / 2 : ℝ) ^ (n + 1)) :=
-    (summable_nat_add_iff 1 (f := fun k : ℕ => (k : ℝ) ^ d * (1 / 2 : ℝ) ^ k)).mpr
-      (summable_pow_mul_geometric_of_norm_lt_one d hr)
-  exact h
-
 private theorem summable_counterexampleTerm_real {ι : Type*} (p : StarPolynomial ℂ ι) :
     Summable (fun n : ℕ => (1 / 2 : ℝ) ^ (n + 1) * ‖counterexampleEval n p‖) := by
   obtain ⟨C, d, _, hbound⟩ := exists_norm_counterexampleEval_le p
-  refine Summable.of_nonneg_of_le (fun _ => by positivity) (fun n => ?_)
-    ((summable_pow_mul_half_pow d).mul_left C)
+  have hr : ‖(1 / 2 : ℝ)‖ < 1 := by
+    rw [Real.norm_eq_abs, abs_of_pos (by positivity)]
+    norm_num
+  have hsum : Summable (fun n : ℕ => ((n + 1 : ℕ) : ℝ) ^ d * (1 / 2 : ℝ) ^ (n + 1)) :=
+    (summable_nat_add_iff 1 (f := fun k : ℕ => (k : ℝ) ^ d * (1 / 2 : ℝ) ^ k)).mpr
+      (summable_pow_mul_geometric_of_norm_lt_one d hr)
+  refine Summable.of_nonneg_of_le (fun _ => by positivity) (fun n => ?_) (hsum.mul_left C)
   calc (1 / 2 : ℝ) ^ (n + 1) * ‖counterexampleEval n p‖
       ≤ (1 / 2 : ℝ) ^ (n + 1) * (C * ((n + 1 : ℕ) : ℝ) ^ d) := by gcongr; exact hbound n
     _ = C * (((n + 1 : ℕ) : ℝ) ^ d * (1 / 2 : ℝ) ^ (n + 1)) := by ring
