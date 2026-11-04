@@ -5,16 +5,17 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicGeometry.AdicSpace.Morphisms.WeaklyFiniteType
+public import TauCeti.AlgebraicGeometry.AdicSpace.PreAdicSpace.Adic
+public import TauCeti.AlgebraicGeometry.AdicSpace.PreAdicSpace.Comap
+public import TauCeti.AlgebraicGeometry.AdicSpace.PreAdicSpace.OpenImmersion
 public import TauCeti.AlgebraicGeometry.AdicSpace.Spa.MorphismSpectral
 
 /-!
 # Quasi-compact morphisms of adic spaces
 
 A morphism `f : X ⟶ Y` of adic spaces is *quasi-compact* if the preimage of every quasi-compact
-open subset of `Y` is quasi-compact (Huber 1996, Definition 1.2.1(iv)), and it is *of weakly finite
-type* if it is moreover locally of weakly finite type (Wedhorn, Definition 8.48(1)). Quasi-compact
-morphisms are the morphisms whose underlying continuous map is spectral in Mathlib's sense
+open subset of `Y` is quasi-compact (Huber 1996, Definition 1.2.1(iv)). Quasi-compact morphisms
+are the morphisms whose underlying continuous map is spectral in Mathlib's sense
 (`IsSpectralMap`), as for morphisms of schemes (`AlgebraicGeometry.quasiCompact_iff_isSpectralMap`).
 
 Since the open affinoid subspaces of an adic space are quasi-compact and form a basis of its
@@ -22,19 +23,19 @@ topology, quasi-compactness may be tested on them: `f` is quasi-compact exactly 
 of every open affinoid subspace of `Y` is quasi-compact. In particular, the morphism
 `Spa(B, B⁺) ⟶ Spa(A, A⁺)` induced by a morphism of Huber pairs is quasi-compact as soon as the
 image of every open ideal of `A` generates an open ideal of `B`, for instance when `A → B` is adic,
-since rational subsets then pull back to rational subsets. A morphism of affinoid adic spaces
-induced by a homomorphism topologically of finite type is therefore of weakly finite type.
+since rational subsets then pull back to rational subsets.
 
 Quasi-compactness is a property of the map and not of the spaces: the identity of every adic
-space, quasi-compact or not, is quasi-compact and of weakly finite type, and so is every morphism
-out of the empty adic space, whereas no morphism from an adic space that is not quasi-compact to a
+space, quasi-compact or not, is quasi-compact, and so is every morphism out of the empty adic
+space, whereas no morphism from an adic space that is not quasi-compact to a
 quasi-compact one is quasi-compact. Quasi-compactness is one of the conditions defining proper
-morphisms of adic spaces (Huber 1996, Definition 1.3.2).
+morphisms of adic spaces (Huber 1996, Definition 1.3.2), and together with being locally of weakly
+finite type it defines morphisms of weakly finite type
+(`TauCeti.AdicSpace.IsWeaklyFiniteType`).
 
 ## Main definitions
 
 * `TauCeti.AdicSpace.QuasiCompact`: quasi-compact morphisms of adic spaces.
-* `TauCeti.AdicSpace.IsWeaklyFiniteType`: morphisms of adic spaces of weakly finite type.
 
 ## Main results
 
@@ -47,23 +48,17 @@ morphisms of adic spaces (Huber 1996, Definition 1.3.2).
   quasi-compact.
 * `TauCeti.AdicSpace.QuasiCompact.compactSpace`: the source of a quasi-compact morphism into a
   quasi-compact adic space is quasi-compact.
-* `TauCeti.AdicSpace.QuasiCompact.of_isOpenImmersion`,
-  `TauCeti.AdicSpace.IsWeaklyFiniteType.of_isOpenImmersion`: an open immersion with quasi-compact
-  source into a quasi-separated adic space is quasi-compact, and of weakly finite type.
+* `TauCeti.AdicSpace.QuasiCompact.of_isOpenImmersion`: an open immersion with quasi-compact
+  source into a quasi-separated adic space is quasi-compact.
 * `TauCeti.AdicSpace.quasiCompact_presentationLimitPreAdicSpaceComap`: the morphism of affinoid
   adic spaces induced by a morphism of Huber pairs carrying open ideals to ideals generating open
   ideals is quasi-compact.
-* `TauCeti.AdicSpace.isWeaklyFiniteType_presentationLimitPreAdicSpaceComap`: the morphism of
-  affinoid adic spaces induced by a morphism of Huber pairs whose ring homomorphism is
-  topologically of finite type is of weakly finite type.
-* `TauCeti.AdicSpace.IsWeaklyFiniteType.isAdic`: a morphism of weakly finite type is adic.
 
 ## References
 
 * R. Huber, *Étale cohomology of rigid analytic varieties and adic spaces*, Aspects of
   Mathematics E30 (1996), §1.2, Definition 1.2.1.
-* [T. Wedhorn, *Adic Spaces*][wedhorn_adic] (arXiv:1910.05934v1), Definition 8.48 and
-  Theorem 7.35.
+* [T. Wedhorn, *Adic Spaces*][wedhorn_adic] (arXiv:1910.05934v1), Theorem 7.35.
 -/
 
 public section
@@ -185,78 +180,6 @@ theorem quasiCompact_presentationLimitPreAdicSpaceComap {A : Type u} [CommRing A
   rw [quasiCompact_iff_isSpectralMap, ObjectProperty.homMk_hom,
     presentationLimitPreAdicSpaceComap_toHom, presentationLimitPresheafedSpaceComap_base]
   exact h
-
-/-! ### Morphisms of weakly finite type -/
-
-/-- **Morphisms of weakly finite type** (Wedhorn, Definition 8.48(1)): a morphism of adic spaces
-is *of weakly finite type* when it is locally of weakly finite type and quasi-compact. -/
-def IsWeaklyFiniteType : MorphismProperty AdicSpace.{u} := fun _ _ f ↦
-  LocallyOfWeaklyFiniteType f ∧ QuasiCompact f
-
-/-- Unfolding lemma for `TauCeti.AdicSpace.IsWeaklyFiniteType`. -/
-theorem isWeaklyFiniteType_iff (f : X ⟶ Y) :
-    IsWeaklyFiniteType f ↔ LocallyOfWeaklyFiniteType f ∧ QuasiCompact f :=
-  Iff.rfl
-
-/-- A morphism of weakly finite type is locally of weakly finite type. -/
-theorem IsWeaklyFiniteType.locallyOfWeaklyFiniteType {f : X ⟶ Y} (hf : IsWeaklyFiniteType f) :
-    LocallyOfWeaklyFiniteType f :=
-  hf.1
-
-/-- A morphism of weakly finite type is quasi-compact. -/
-theorem IsWeaklyFiniteType.quasiCompact {f : X ⟶ Y} (hf : IsWeaklyFiniteType f) :
-    QuasiCompact f :=
-  hf.2
-
-/-- **A morphism of weakly finite type is adic.** -/
-theorem IsWeaklyFiniteType.isAdic {f : X ⟶ Y} (hf : IsWeaklyFiniteType f) : IsAdic f :=
-  hf.locallyOfWeaklyFiniteType.isAdic
-
-/-- **Identities are of weakly finite type**, including the identity of an adic space that is
-not quasi-compact. -/
-instance IsWeaklyFiniteType.containsIdentities :
-    IsWeaklyFiniteType.{u}.ContainsIdentities where
-  id_mem X := ⟨LocallyOfWeaklyFiniteType.id_mem X, QuasiCompact.id_mem X⟩
-
-/-- **Being of weakly finite type is invariant under isomorphisms** of the source and of the
-target. -/
-instance IsWeaklyFiniteType.respectsIso : IsWeaklyFiniteType.{u}.RespectsIso :=
-  MorphismProperty.RespectsIso.inf LocallyOfWeaklyFiniteType QuasiCompact
-
-/-- **An open immersion with quasi-compact source into a quasi-separated adic space is of weakly
-finite type.** -/
-theorem IsWeaklyFiniteType.of_isOpenImmersion (f : X ⟶ Y) [PreAdicSpace.IsOpenImmersion f.hom]
-    [CompactSpace X.obj] [QuasiSeparatedSpace Y.obj] : IsWeaklyFiniteType f :=
-  ⟨LocallyOfWeaklyFiniteType.of_isOpenImmersion f, QuasiCompact.of_isOpenImmersion f⟩
-
-/-- Every morphism out of an empty adic space is of weakly finite type. -/
-theorem IsWeaklyFiniteType.of_isEmpty (f : X ⟶ Y) [IsEmpty X.obj] : IsWeaklyFiniteType f :=
-  ⟨(locallyOfWeaklyFiniteType_iff_chartLocally f).mpr <| (chartLocally_iff _).mpr fun x ↦
-    isEmptyElim x, QuasiCompact.of_isEmpty f⟩
-
-/-- **Affinoid morphisms**: for a morphism of Huber pairs `φ : (A, A⁺) → (B, B⁺)` with `B`
-complete and Hausdorff, between pairs whose adic spectra are adic spaces, the morphism
-`Spa(B, B⁺) ⟶ Spa(A, A⁺)` induced by `φ` is of weakly finite type as soon as the ring
-homomorphism of `φ` is topologically of finite type. Such a homomorphism is adic, so rational
-subsets pull back to rational subsets. -/
-theorem isWeaklyFiniteType_presentationLimitPreAdicSpaceComap {A : Type u} [CommRing A]
-    [TopologicalSpace A] [IsTopologicalRing A] [IsHuberRing A] {B : Type u} [CommRing B]
-    [UniformSpace B] [IsUniformAddGroup B] [IsTopologicalRing B] [CompleteSpace B] [T2Space B]
-    [IsHuberRing B] {S : Pair A} {T : Pair B} (P : PairOfDefinition A) (P' : PairOfDefinition B)
-    (hP : P.ringOfDefinition ≤ S.plus) (hP' : P'.ringOfDefinition ≤ T.plus)
-    (hsheaf : Presheaf.IsSheaf (Opens.grothendieckTopology ↥(spa T.plus))
-      (presentationLimitPresheaf P' T.plus))
-    (hA : PreAdicSpace.isAdic (presentationLimitPreAdicSpace P S.plus
-      S.isRingOfIntegralElements.isPowerBounded_of_mem hP)) (φ : Pair.Hom S T)
-    (hφ : IsTopologicallyFiniteType φ.toRingHom) :
-    IsWeaklyFiniteType (X := ⟨_, isAdic_presentationLimitPreAdicSpace P' T.plus
-        T.isRingOfIntegralElements.isPowerBounded_of_mem hP' hsheaf⟩) (Y := ⟨_, hA⟩)
-      (ObjectProperty.homMk (presentationLimitPreAdicSpaceComap φ.toRingHom
-        φ.continuous_toRingHom φ.map_mem_plus S.isRingOfIntegralElements.isPowerBounded_of_mem
-        T.isRingOfIntegralElements.isPowerBounded_of_mem hP hP' hsheaf)) :=
-  ⟨locallyOfWeaklyFiniteType_presentationLimitPreAdicSpaceComap P P' hP hP' hsheaf hA φ hφ,
-    quasiCompact_presentationLimitPreAdicSpaceComap P P' hP hP' hsheaf hA φ
-      fun _ hJ ↦ hφ.isAdicHom.isOpen_map hJ⟩
 
 end AdicSpace
 
