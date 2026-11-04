@@ -93,7 +93,7 @@ lemma supportedSubmoduleFunctorCompIso_inv_app (hZS : Z ≤ S) :
 
 /-- The comparison forgets the intermediate support condition, leaving the same section. -/
 @[simp]
-lemma coe_supportedSubmoduleCompIso_hom_app_apply (hZS : Z ≤ S)
+lemma coe_supportedSubmoduleCompIso_hom_hom_app_apply (hZS : Z ≤ S)
     (W : (Opens X)ᵒᵖ)
     (s : (F.supportedSubmoduleSheaf S).supportedSubmodule Z W.unop) :
     Subtype.val (α := F.obj.obj W) (p := (· ∈ F.supportedSubmodule Z W.unop))
@@ -125,7 +125,7 @@ lemma supportedSubmoduleCompIso_inv_ι (hZS : Z ≤ S) :
 
 /-- The inverse comparison also leaves the ambient section unchanged. -/
 @[simp]
-lemma coe_coe_supportedSubmoduleCompIso_inv_app_apply (hZS : Z ≤ S)
+lemma coe_coe_supportedSubmoduleCompIso_inv_hom_app_apply (hZS : Z ≤ S)
     (W : (Opens X)ᵒᵖ) (s : F.supportedSubmodule Z W.unop) :
     Subtype.val (α := F.obj.obj W) (p := (· ∈ F.supportedSubmodule S W.unop))
       (((F.supportedSubmoduleCompIso hZS).inv.hom.app W s).1) =
@@ -134,13 +134,13 @@ lemma coe_coe_supportedSubmoduleCompIso_inv_app_apply (hZS : Z ≤ S)
   simp only [ObjectProperty.FullSubcategory.comp_hom, NatTrans.comp_app,
     ObjectProperty.FullSubcategory.id_hom, NatTrans.id_app,
     ModuleCat.hom_comp, ModuleCat.hom_id] at h
-  exact (F.coe_supportedSubmoduleCompIso_hom_app_apply hZS W _).symm.trans
+  exact (F.coe_supportedSubmoduleCompIso_hom_hom_app_apply hZS W _).symm.trans
     (congr_arg (fun t : F.supportedSubmodule Z W.unop ↦ t.1) (LinearMap.congr_fun h s))
 
 /-- Forgetting scalars commutes with flattening iterated supported sections. This formulation
 uses the canonical abelian inclusions, without choosing a second composition isomorphism. -/
 @[reassoc]
-lemma supportedSubmoduleFunctorCompIso_hom_app_forget_ι (hZS : Z ≤ S) :
+lemma supportedSubmoduleCompIso_hom_forget_ι (hZS : Z ≤ S) :
     (sheafCompose _ (forget₂ (ModuleCat.{u} R) AddCommGrpCat.{u})).map
         (F.supportedSubmoduleCompIso hZS).hom ≫
         (F.supportedSubmoduleSheafForgetIso Z).hom ≫
