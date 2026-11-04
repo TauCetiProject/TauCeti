@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Algebra.Homology.EulerCharacteristic.Shift
 public import TauCeti.KnotTheory.Khovanov.Homology
+public import TauCeti.KnotTheory.Khovanov.Unlink
 public import Mathlib.LinearAlgebra.Dimension.Localization
 
 /-!
@@ -151,7 +152,9 @@ theorem coeff_khovanovEulerChar_eq_sum (j : ℤ) :
     homologyEulerChar_eq_sum_finSet_of_finrankSupport_subset _ _
       (finrankSupport_homology_subset_Icc (D.khovanovComplex hD R j)
         (-(D.negativeCrossingCount : ℤ)) D.positiveCrossingCount)]
-  simp only [khovanovHomology, ComplexShape.eulerCharSignsUpInt_χ]
+  apply Finset.sum_congr rfl
+  intro i hi
+  rw [khovanovHomology_def]
   rfl
 
 /-- The empty diagram has graded Euler characteristic `1` over every nontrivial
@@ -170,22 +173,7 @@ theorem khovanovEulerChar_empty (h : (empty : OrientedPDCode 0).toPDCode.IsPlana
   rw [coeff_khovanovEulerChar_eq_sum]
   simp only [hn, hp, Nat.cast_zero, neg_zero, Finset.Icc_self, Finset.sum_singleton,
     Int.negOnePow_zero, Units.val_one, one_mul]
-  let K := empty.khovanovComplex h R j
-  have e : K.homology 0 ≅ K.X 0 :=
-    K.homologyIsoSc' (-1) 0 1 (by simp) (by simp) ≪≫
-    (ShortComplex.LeftHomologyData.ofZeros (K.sc' (-1) 0 1)
-      ((K.isZero_of_isStrictlyGE (-(empty.negativeCrossingCount : ℤ)) (-1)
-        (by simp [hn])).eq_of_src _ _)
-      ((K.isZero_of_isStrictlyLE empty.positiveCrossingCount 1
-        (by simp [hp])).eq_of_tgt _ _)).homologyIso
-  rw [khovanovHomology_def, e.toLinearEquiv.finrank_eq, khovanovComplex_X,
-    Functor.finrank_cubeComplex_X]
-  rw [hn, hp]
-  simp only [Nat.cast_zero, zero_add]
-  rw [Finset.sum_filter, Fintype.sum_subsingleton _ (∅ : Finset (Fin 0))]
-  simp only [Finset.card_empty, Nat.cast_zero, ↓reduceIte]
-  rw [PDCode.resolutionCube_obj, ← Khovanov.coeff_pow_eq_finrank_circleQuantumGrading_piece R,
-    PDCode.card_resolvedCircle]
+  rw [khovanovHomology_def, ← coeff_pow_eq_finrank_homology_khovanovComplex empty h R j]
   simp [← card_crossinglessComponents, crossinglessComponents_empty]
 
 end Nontrivial

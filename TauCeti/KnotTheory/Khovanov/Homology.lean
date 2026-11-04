@@ -45,7 +45,6 @@ variable {n : ℕ} (D : OrientedPDCode n) (hD : D.toPDCode.IsPlanar)
 
 /-- **Khovanov homology** `Khⁱʲ(D; R)` of a planar oriented code `D`: the cohomology in cochain
 degree `i` of the quantum component `j` of the normalized Khovanov complex. -/
-@[expose]
 def khovanovHomology (i j : ℤ) : ModuleCat.{u} R :=
   (D.khovanovComplex hD R j).homology i
 
