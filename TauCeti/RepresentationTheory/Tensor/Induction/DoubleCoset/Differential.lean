@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RepresentationTheory.Tensor.Induction.DoubleCoset.Basic
-public import TauCeti.RepresentationTheory.Tensor.Induction.ChangeTransversal.Basic
 public import TauCeti.LinearAlgebra.PiTensorProduct.Regrouping
 
 /-!
