@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Geometry.Manifold.Diffeomorph
+public import TauCeti.Geometry.Manifold.Diffeomorph.Basic
 
 /-!
 # Elementary diffeomorphisms of a normed space
@@ -42,13 +42,11 @@ protected theorem differentiable (h : E ≃ₘ^n⟮𝓘(𝕜, E), 𝓘(𝕜, F)�
 @[simp]
 theorem fderiv_apply_fderiv_symm_apply (h : E ≃ₘ^n⟮𝓘(𝕜, E), 𝓘(𝕜, F)⟯ F) (hn : n ≠ 0)
     (x v : F) : fderiv 𝕜 h (h.symm x) (fderiv 𝕜 h.symm x v) = v := by
-  have hid : (h : E → F) ∘ h.symm = id := funext h.apply_symm_apply
-  have hcomp := ((h.differentiable hn) (h.symm x)).hasFDerivAt.comp x
-    ((h.symm.differentiable hn) x).hasFDerivAt
-  rw [hid] at hcomp
-  have heq := hcomp.fderiv
-  rw [fderiv_id] at heq
-  exact (DFunLike.congr_fun heq v).symm
+  have hid := h.mfderiv_apply_mfderiv_symm_apply hn (h.symm x) v
+  rw [mfderiv_eq_fderiv, mfderiv_eq_fderiv] at hid
+  -- Reduce the canonical tangent-space identifications, which act as the identity.
+  change fderiv 𝕜 h (h.symm x) (fderiv 𝕜 h.symm (h (h.symm x)) v) = v at hid
+  simpa only [h.apply_symm_apply] using hid
 
 variable (𝕜 n) in
 /-- The map `x ↦ a - x` of a normed space, as a diffeomorphism. It is its own inverse
