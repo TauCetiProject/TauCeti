@@ -35,7 +35,9 @@ formal and the polynomial residue extensions alike. For the formal residue cocyc
 commutator relations characterise the algebra; this is the universal property
 `TauCeti.CurrentAlgebra.liftOfCurrents`. Over a field, the Poincaré--Birkhoff--Witt theorem shows
 that the currents embed (`TauCeti.CurrentAlgebra.envelopingι_injective`), for every value of `a`,
-including `a = 0`.
+including `a = 0`. The inclusion of the negative currents `t⁻¹ L[t⁻¹]`
+(`TauCeti.CurrentAlgebra.negativeLieSubalgebra`) induces an algebra map
+`U(t⁻¹ L[t⁻¹]) → U(ĝ) / (ι K - a)` (`TauCeti.CurrentAlgebra.negativeEnvelopingHom`).
 
 Changing the level is the same as changing the value of `K`: if `Ψ = k • Φ`, the identity on
 currents gives an algebra isomorphism from `U(ĝ_Ψ) / (ι K - 1)` to `U(ĝ_Φ) / (ι K - k)`
@@ -50,6 +52,8 @@ than to `K`.
 * `TauCeti.CurrentAlgebra.liftOfCurrents`: the universal property in terms of currents.
 * `TauCeti.CurrentAlgebra.envelopingAction`: the action of the currents on a module over
   `U(ĝ) / (ι K - a)`.
+* `TauCeti.CurrentAlgebra.negativeEnvelopingHom`: the map `U(t⁻¹ L[t⁻¹]) → U(ĝ) / (ι K - a)`
+  induced by the negative currents.
 * `TauCeti.CurrentAlgebra.levelEnvelopingEquiv`: the level comparison isomorphism.
 
 ## Main results
@@ -182,6 +186,42 @@ theorem envelopingAction_mul_sub_mul (u v : C) :
     AlgHom.toLinearMap_apply, map_mul] using h
 
 end Action
+
+section Negative
+
+variable (Φ : LinearMap.BilinForm R L) (hΦ : Φ.lieInvariant L) (hΦs : Φ.IsSymm) (a : R)
+
+local notation "c" => twoCocycleOfBilinear R L Φ hΦ hΦs
+local notation "UK" => CentralQuotient R (centralElement c) a
+
+/-- The algebra map `U(t⁻¹ L[t⁻¹]) → U(ĝ) / (ι K - a)` induced by the inclusion of the negative
+currents. -/
+def negativeEnvelopingHom :
+    UniversalEnvelopingAlgebra R (negativeLieSubalgebra Φ hΦ hΦs) →ₐ[R] UK :=
+  (CentralQuotient.mk (centralElement c) a).comp (map R (negativeLieSubalgebra Φ hΦ hΦs).incl)
+
+variable {Φ hΦ hΦs} in
+/-- `negativeEnvelopingHom` is the quotient map applied to the image in `U(ĝ)`. -/
+theorem negativeEnvelopingHom_apply
+    (y : UniversalEnvelopingAlgebra R (negativeLieSubalgebra Φ hΦ hΦs)) :
+    negativeEnvelopingHom Φ hΦ hΦs a y =
+      CentralQuotient.mk (centralElement c) a (map R (negativeLieSubalgebra Φ hΦ hΦs).incl y) :=
+  (rfl)
+
+variable {Φ hΦ hΦs} in
+-- This is not a `simp` lemma: `simp` unfolds `ι` through Mathlib's
+-- `UniversalEnvelopingAlgebra.ι_apply`.
+/-- `negativeEnvelopingHom` sends a negative current to its current generator. -/
+theorem negativeEnvelopingHom_ι (x : negativeLieSubalgebra Φ hΦ hΦs) :
+    negativeEnvelopingHom Φ hΦ hΦs a (UniversalEnvelopingAlgebra.ι R x) =
+      envelopingι c a (ofTwoCocycle.proj c x) := by
+  obtain ⟨x, hx⟩ := x
+  obtain ⟨⟨u, z⟩, rfl⟩ := (ofProd c).surjective x
+  obtain ⟨-, rfl⟩ := ofProd_mem_negativeLieSubalgebra.mp hx
+  rw [negativeEnvelopingHom, AlgHom.comp_apply, map_ι, LieSubalgebra.coe_incl,
+    ← CentralQuotient.ι_apply, ofTwoCocycle.proj_apply, Equiv.symm_apply_apply, envelopingι_apply]
+
+end Negative
 
 section Field
 
