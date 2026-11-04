@@ -10,7 +10,6 @@ public import TauCeti.Algebra.AlgebraicGroup.SplitTorus.Cocharacter
 public import TauCeti.Algebra.AlgebraicGroup.SplitTorus.Tangent
 public import TauCeti.Algebra.Lie.Orthogonal.TypeB.SpinCarrier.Generated.StandardComodule
 public import TauCeti.Algebra.Lie.Orthogonal.TypeB.SpinCarrier.Root.Coordinates
-public import TauCeti.Algebra.Lie.Orthogonal.TypeB.SpinCarrier.WeightTorus
 
 /-!
 # Simple-coroot differentials in the generated type-B spin group
@@ -142,16 +141,8 @@ theorem range_derivationCompLieHom_generatedWeightTorusCoordinateMap_eq_span :
 /-- The generated weight-torus differential is injective over every coefficient algebra. -/
 theorem derivationCompLieHom_generatedWeightTorusCoordinateMap_injective :
     Function.Injective
-      (derivationCompLieHom (B := B) (generatedWeightTorusCoordinateMap n R).hom) := by
-  apply derivationCompLieHom_injective_of_surjective
-  have h : Function.Surjective
-      (coordinateMap n R ≫ weightTorusToBaseChangeCoordinateMap n R).hom := by
-    simpa only [CommHopfAlgCat.hom_comp, BialgHom.coe_comp] using
-      (weightTorusToBaseChangeCoordinateMap_surjective n R).comp (coordinateMap_surjective n R)
-  rw [coordinateMap_comp_weightTorusToBaseChangeCoordinateMap,
-    ← generatedCoordinateMap_comp_generatedWeightTorusCoordinateMap] at h
-  exact Function.Surjective.of_comp
-    (by simpa only [CommHopfAlgCat.hom_comp, BialgHom.coe_comp] using h)
+      (derivationCompLieHom (B := B) (generatedWeightTorusCoordinateMap n R).hom) :=
+  derivationCompLieHom_injective_of_surjective _ (generatedWeightTorusCoordinateMap_surjective n R)
 
 /-- The numbered simple-coroot vectors are independent over every coefficient algebra,
 including in characteristic two. -/
