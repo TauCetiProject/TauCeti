@@ -27,7 +27,9 @@ of `X`, nor openness of the sets `U i`, is used.
 * `PartitionOfUnity.ofExistsPos`: normalize a locally finite nonnegative family positive at every
   point into a partition of unity.
 * `PartitionOfUnity.shrink`: shrink the closed supports of a partition of unity on `X` inside its
-  open supports.
+  open supports, with weights given by `PartitionOfUnity.shrink_apply`.
+* `PartitionOfUnity.shrink_pos_iff` and `PartitionOfUnity.support_shrink`: `ρ.shrink i` is positive
+  (equivalently, supported) at `x` precisely when `(⨆ j, ρ j x) / 2 < ρ i x`.
 * `PartitionOfUnity.tsupport_shrink_subset_support`: `tsupport (ρ.shrink i) ⊆ support (ρ i)`.
 * `PartitionOfUnity.isSubordinate_shrink`: open-support subordination `∀ i, support (ρ i) ⊆ U i`
   upgrades to `ρ.shrink.IsSubordinate U`.
@@ -189,6 +191,27 @@ support of `ρ`. -/
 noncomputable def shrink (ρ : PartitionOfUnity ι X) : PartitionOfUnity ι X :=
   ofExistsPos (truncWeight ρ) (ρ.locallyFinite.subset (support_truncWeight_subset ρ))
     (truncWeight_nonneg ρ) (exists_truncWeight_pos ρ)
+
+/-- Each weight of `ρ.shrink` is the truncated excess `max 0 (ρ i x - (⨆ j, ρ j x) / 2)` divided
+by the finite sum of those truncated excesses. -/
+theorem shrink_apply (ρ : PartitionOfUnity ι X) (i : ι) (x : X) :
+    ρ.shrink i x =
+      max 0 (ρ i x - (⨆ j, ρ j x) / 2) / ∑ᶠ k, max 0 (ρ k x - (⨆ j, ρ j x) / 2) :=
+  (rfl)
+
+/-- A shrunken weight `ρ.shrink i x` is positive if and only if `ρ i x` strictly exceeds half of
+the pointwise supremum `⨆ j, ρ j x`. -/
+theorem shrink_pos_iff {ρ : PartitionOfUnity ι X} {i : ι} {x : X} :
+    0 < ρ.shrink i x ↔ (⨆ j, ρ j x) / 2 < ρ i x := by
+  rw [shrink, ofExistsPos_pos_iff, truncWeight, ContinuousMap.coe_mk, lt_max_iff,
+    or_iff_right (lt_irrefl 0), sub_pos, maxWeight]
+
+/-- The open support of `ρ.shrink i` is the set of points where `ρ i` strictly exceeds half of the
+pointwise supremum `⨆ j, ρ j x`. -/
+theorem support_shrink (ρ : PartitionOfUnity ι X) (i : ι) :
+    support (ρ.shrink i) = {x | (⨆ j, ρ j x) / 2 < ρ i x} := by
+  ext x
+  exact (ρ.shrink.nonneg i x).lt_iff_ne'.symm.trans ρ.shrink_pos_iff
 
 /-- Every open support of `ρ.shrink` is contained in the open support of `ρ`. -/
 theorem support_shrink_subset (ρ : PartitionOfUnity ι X) (i : ι) :
