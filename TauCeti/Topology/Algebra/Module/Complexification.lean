@@ -6,25 +6,24 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Normed.Module.FiniteDimension
-public import Mathlib.Topology.Algebra.Module.Star
 public import TauCeti.Analysis.Normed.Module.Complexification
 public import TauCeti.LinearAlgebra.Complex.Conjugation
-public import TauCeti.Topology.Algebra.Module.ComplexSmulI
 
 /-!
 # The complexification topology on `ℂ ⊗[ℝ] W`
 
 For a real vector space `W`, `ℂ ⊗[ℝ] W` splits via `TauCeti.realPart` and `TauCeti.imaginaryPart`,
 while on a real seminormed space `X`, `TauCeti.Complexification X` carries the Taylor seminorm
-(`TauCeti.Complexification.equivProd`). This file connects the two carriers and equips `ℂ ⊗[ℝ] W`
-with the product topology along `(realPart W, imaginaryPart W)` (`TauCeti.complexificationTopology`,
-scoped in `TauCeti.Complexification`, with mixin `TauCeti.IsComplexificationTopology`). Over
+(`TauCeti.Complexification.instSeminormedAddCommGroup`) and is real-linearly homeomorphic to
+`X × X` via `TauCeti.Complexification.equivProd`. This file equips `ℂ ⊗[ℝ] W` with the product
+topology induced along `(realPart W, imaginaryPart W)` (`TauCeti.complexificationTopology`, scoped
+in `TauCeti.Complexification`, with mixin `TauCeti.IsComplexificationTopology`). Over
 finite-dimensional Hausdorff real topological vector spaces, every Hausdorff topological `ℝ`-module
 topology on `ℂ ⊗[ℝ] W` satisfies `IsComplexificationTopology W`
 (`TauCeti.IsComplexificationTopology.of_finiteDimensional`). We also provide
 `TauCeti.complexificationEquivProd`, `TauCeti.tensorContinuousLinearEquivComplexification`,
-`TauCeti.tmulConjCLE`, `TauCeti.tmulConjCLM`, `ContinuousLinearMap.baseChangeComplex`,
-`ContinuousLinearEquiv.baseChangeComplex`, and `ContinuousLinearEquiv.complexify`.
+`TauCeti.tmulConjCLE`, `TauCeti.tmulConjCLM`, `ContinuousLinearMap.baseChangeComplex`, and
+`ContinuousLinearEquiv.baseChangeComplex`.
 
 ## References
 
@@ -40,133 +39,6 @@ noncomputable section
 open scoped TensorProduct
 
 namespace TauCeti
-
-namespace Complexification
-
-section Conj
-
-variable (W : Type*) [AddCommGroup W] [Module ℝ W]
-
-/-- Complex conjugation `x + i y ↦ x - i y` on `TauCeti.Complexification W`, as a
-`starRingEnd ℂ`-semilinear involution. -/
-def conj : Complexification W →ₛₗ[starRingEnd ℂ] Complexification W where
-  toFun z := ⟨z.re, -z.im⟩
-  map_add' z w := by ext <;> simp; abel
-  map_smul' c z := by
-    ext <;> simp only [smul_re, smul_im, Complex.conj_re, Complex.conj_im] <;> module
-
-variable {W}
-
-@[simp] theorem conj_re (z : Complexification W) : (conj W z).re = z.re := (rfl)
-@[simp] theorem conj_im (z : Complexification W) : (conj W z).im = -z.im := (rfl)
-@[simp] theorem conj_conj (z : Complexification W) : conj W (conj W z) = z := by ext <;> simp
-@[simp] theorem conj_ofReal (w : W) : conj W (ofReal w) = ofReal w := by ext <;> simp
-
-end Conj
-
-section NormedConj
-
-variable (X : Type*) [SeminormedAddCommGroup X] [NormedSpace ℝ X]
-
-/-- Complex conjugation on `TauCeti.Complexification X` as a continuous conjugate-linear
-equivalence. -/
-def conjCLE : Complexification X ≃L⋆[ℂ] Complexification X :=
-  have hcont : Continuous (conj X) :=
-    ((equivProd X).symm.continuous.comp <|
-      (reCLM X).continuous.prodMk (continuous_neg.comp (imCLM X).continuous)).congr
-      fun z ↦ by ext <;> simp
-  { toLinearEquiv := LinearEquiv.ofInvolutive (conj X) conj_conj
-    continuous_toFun := hcont
-    continuous_invFun := hcont }
-
-variable {X}
-
-@[simp] theorem coe_conjCLE : ⇑(conjCLE X) = conj X := (rfl)
-@[simp] theorem symm_conjCLE : (conjCLE X).symm = conjCLE X := by ext z <;> rfl
-
-theorem conj_complexify {Y : Type*} [SeminormedAddCommGroup Y] [NormedSpace ℝ Y]
-    (T : X →L[ℝ] Y) (z : Complexification X) :
-    conj Y (T.complexify z) = T.complexify (conj X z) := by ext <;> simp
-
-end NormedConj
-
-end Complexification
-
-/-! ### Algebraic equivalences for `ℂ ⊗[ℝ] W` -/
-
-section TensorEquiv
-
-variable (W : Type*) [AddCommGroup W] [Module ℝ W]
-
-/-- The canonical `ℂ`-linear isomorphism `ℂ ⊗[ℝ] W ≃ₗ[ℂ] TauCeti.Complexification W` sending
-`u` to `⟨realPart W u, imaginaryPart W u⟩` and `⟨x, y⟩` to `1 ⊗ₜ x + I ⊗ₜ y`. -/
-def tensorEquivComplexification : ℂ ⊗[ℝ] W ≃ₗ[ℂ] Complexification W where
-  toFun u := ⟨realPart W u, imaginaryPart W u⟩
-  map_add' u v := by ext <;> simp
-  map_smul' c u := by ext <;> simp [realPart_smul, imaginaryPart_smul, add_comm]
-  invFun z := 1 ⊗ₜ[ℝ] z.re + Complex.I ⊗ₜ[ℝ] z.im
-  left_inv := one_tmul_realPart_add_I_tmul_imaginaryPart W
-  right_inv z := by ext <;> simp
-
-/-- Real-linear isomorphism `ℂ ⊗[ℝ] W ≃ₗ[ℝ] W × W` given by `(realPart, imaginaryPart)`. -/
-def complexificationLinearEquivProd : ℂ ⊗[ℝ] W ≃ₗ[ℝ] W × W where
-  toFun u := (realPart W u, imaginaryPart W u)
-  map_add' u v := by ext <;> simp
-  map_smul' r u := by ext <;> simp
-  invFun p := 1 ⊗ₜ[ℝ] p.1 + Complex.I ⊗ₜ[ℝ] p.2
-  left_inv := one_tmul_realPart_add_I_tmul_imaginaryPart W
-  right_inv p := by ext <;> simp
-
-variable {W}
-
-@[simp] theorem tensorEquivComplexification_re (u : ℂ ⊗[ℝ] W) :
-    (tensorEquivComplexification W u).re = realPart W u := (rfl)
-@[simp] theorem tensorEquivComplexification_im (u : ℂ ⊗[ℝ] W) :
-    (tensorEquivComplexification W u).im = imaginaryPart W u := (rfl)
-@[simp] theorem tensorEquivComplexification_tmul (c : ℂ) (w : W) :
-    tensorEquivComplexification W (c ⊗ₜ[ℝ] w) = c • Complexification.ofReal w := by ext <;> simp
-@[simp] theorem tensorEquivComplexification_symm_apply (z : Complexification W) :
-    (tensorEquivComplexification W).symm z = 1 ⊗ₜ[ℝ] z.re + Complex.I ⊗ₜ[ℝ] z.im := (rfl)
-@[simp] theorem complexificationLinearEquivProd_apply (u : ℂ ⊗[ℝ] W) :
-    complexificationLinearEquivProd W u = (realPart W u, imaginaryPart W u) := (rfl)
-@[simp] theorem complexificationLinearEquivProd_symm_apply (p : W × W) :
-    (complexificationLinearEquivProd W).symm p = 1 ⊗ₜ[ℝ] p.1 + Complex.I ⊗ₜ[ℝ] p.2 := (rfl)
-
-theorem tensorEquivComplexification_tmulConj (u : ℂ ⊗[ℝ] W) :
-    tensorEquivComplexification W (tmulConj W u) =
-      Complexification.conj W (tensorEquivComplexification W u) := by
-  obtain ⟨v, w, rfl⟩ := exists_one_tmul_add_I_tmul u
-  ext <;> simp [TensorProduct.neg_tmul]
-
-@[simp] theorem realPart_tmulConj (u : ℂ ⊗[ℝ] W) :
-    realPart W (tmulConj W u) = realPart W u :=
-  congrArg Complexification.re (tensorEquivComplexification_tmulConj u)
-
-@[simp] theorem imaginaryPart_tmulConj (u : ℂ ⊗[ℝ] W) :
-    imaginaryPart W (tmulConj W u) = -imaginaryPart W u :=
-  congrArg Complexification.im (tensorEquivComplexification_tmulConj u)
-
-theorem tmulConj_eq_one_tmul_sub_I_tmul (u : ℂ ⊗[ℝ] W) :
-    tmulConj W u = 1 ⊗ₜ[ℝ] realPart W u - Complex.I ⊗ₜ[ℝ] imaginaryPart W u := by
-  simpa [sub_eq_add_neg, TensorProduct.tmul_neg] using
-    (one_tmul_realPart_add_I_tmul_imaginaryPart W (tmulConj W u)).symm
-
-@[simp] theorem realPart_baseChange {W' : Type*} [AddCommGroup W'] [Module ℝ W']
-    (f : W →ₗ[ℝ] W') (u : ℂ ⊗[ℝ] W) : realPart W' (f.baseChange ℂ u) = f (realPart W u) := by
-  obtain ⟨v, w, rfl⟩ := exists_one_tmul_add_I_tmul u; simp
-
-@[simp] theorem imaginaryPart_baseChange {W' : Type*} [AddCommGroup W'] [Module ℝ W']
-    (f : W →ₗ[ℝ] W') (u : ℂ ⊗[ℝ] W) :
-    imaginaryPart W' (f.baseChange ℂ u) = f (imaginaryPart W u) := by
-  obtain ⟨v, w, rfl⟩ := exists_one_tmul_add_I_tmul u; simp
-
-theorem tensorEquivComplexification_baseChange {X Y : Type*}
-    [SeminormedAddCommGroup X] [NormedSpace ℝ X] [SeminormedAddCommGroup Y] [NormedSpace ℝ Y]
-    (T : X →L[ℝ] Y) (u : ℂ ⊗[ℝ] X) :
-    tensorEquivComplexification Y (T.toLinearMap.baseChange ℂ u) =
-      T.complexify (tensorEquivComplexification X u) := by ext <;> simp
-
-end TensorEquiv
 
 /-! ### The complexification topology on `ℂ ⊗[ℝ] W` -/
 
@@ -189,6 +61,8 @@ class IsComplexificationTopology (W : Type*) [AddCommGroup W] [Module ℝ W]
   /-- Prefer `TauCeti.eq_complexificationTopology` over this field. -/
   eq_complexificationTopology' : τ = complexificationTopology W
 
+/-- Under `IsComplexificationTopology W`, the topology on `ℂ ⊗[ℝ] W` equals
+`complexificationTopology W`. -/
 theorem eq_complexificationTopology (W : Type*) [AddCommGroup W] [Module ℝ W]
     [TopologicalSpace W] [τ : TopologicalSpace (ℂ ⊗[ℝ] W)] [IsComplexificationTopology W] :
     τ = complexificationTopology W :=
@@ -199,12 +73,6 @@ theorem eq_complexificationTopology (W : Type*) [AddCommGroup W] [Module ℝ W]
 instance (priority := low) instIsComplexificationTopology {W : Type*} [AddCommGroup W] [Module ℝ W]
     [TopologicalSpace W] : letI := complexificationTopology W; IsComplexificationTopology W :=
   letI := complexificationTopology W; ⟨rfl⟩
-
-theorem isComplexificationTopology_scoped (W : Type*) [AddCommGroup W] [Module ℝ W]
-    [TopologicalSpace W] : letI := complexificationTopology W; IsComplexificationTopology W :=
-  letI := complexificationTopology W; ⟨rfl⟩
-
-scoped[TauCeti.Complexification] attribute [instance] TauCeti.isComplexificationTopology_scoped
 
 section InducedAPI
 
@@ -234,9 +102,11 @@ theorem continuous_complexification_iff {X : Type*} [TopologicalSpace X] {f : X 
 `(realPart, imaginaryPart)` and its inverse `(v, w) ↦ 1 ⊗ₜ v + I ⊗ₜ w`. -/
 def complexificationEquivProd : ℂ ⊗[ℝ] W ≃L[ℝ] W × W where
   toLinearEquiv := complexificationLinearEquivProd W
-  continuous_toFun := (isInducing_realPart_prod_imaginaryPart W).continuous
+  continuous_toFun := (isInducing_realPart_prod_imaginaryPart W).continuous.congr
+    fun _ ↦ (complexificationLinearEquivProd_apply _).symm
   continuous_invFun := continuous_complexification_iff.mpr
-    ⟨by simpa using continuous_fst, by simpa using continuous_snd⟩
+    ⟨by simpa [complexificationLinearEquivProd_symm_apply] using continuous_fst,
+      by simpa [complexificationLinearEquivProd_symm_apply] using continuous_snd⟩
 
 /-- `realPart W` as a continuous `ℝ`-linear map `ℂ ⊗[ℝ] W →L[ℝ] W`. -/
 def realPartCLM : ℂ ⊗[ℝ] W →L[ℝ] W :=
@@ -254,16 +124,34 @@ def oneTmulCLM : W →L[ℝ] ℂ ⊗[ℝ] W :=
 def ITmulCLM : W →L[ℝ] ℂ ⊗[ℝ] W :=
   (complexificationEquivProd W).symm.toContinuousLinearMap.comp (ContinuousLinearMap.inr ℝ W W)
 
+variable {W}
+
+@[simp] theorem complexificationEquivProd_apply (u : ℂ ⊗[ℝ] W) :
+    complexificationEquivProd W u = (realPart W u, imaginaryPart W u) :=
+  complexificationLinearEquivProd_apply u
+@[simp] theorem complexificationEquivProd_symm_apply (p : W × W) :
+    (complexificationEquivProd W).symm p = 1 ⊗ₜ[ℝ] p.1 + Complex.I ⊗ₜ[ℝ] p.2 :=
+  complexificationLinearEquivProd_symm_apply p
+@[simp] theorem realPartCLM_apply (u : ℂ ⊗[ℝ] W) : realPartCLM W u = realPart W u := by
+  simp [realPartCLM]
+@[simp] theorem coe_realPartCLM : (realPartCLM W : ℂ ⊗[ℝ] W →ₗ[ℝ] W) = realPart W := by ext; simp
+@[simp] theorem imaginaryPartCLM_apply (u : ℂ ⊗[ℝ] W) :
+    imaginaryPartCLM W u = imaginaryPart W u := by simp [imaginaryPartCLM]
+@[simp] theorem coe_imaginaryPartCLM :
+    (imaginaryPartCLM W : ℂ ⊗[ℝ] W →ₗ[ℝ] W) = imaginaryPart W := by ext; simp
+@[simp] theorem oneTmulCLM_apply (w : W) : oneTmulCLM W w = 1 ⊗ₜ[ℝ] w := by simp [oneTmulCLM]
+@[simp] theorem ITmulCLM_apply (w : W) : ITmulCLM W w = Complex.I ⊗ₜ[ℝ] w := by simp [ITmulCLM]
+
+variable (W) in
 /-- Complex conjugation `tmulConj W` on `ℂ ⊗[ℝ] W` as a continuous conjugate-linear equivalence. -/
 def tmulConjCLE [ContinuousNeg W] : ℂ ⊗[ℝ] W ≃L⋆[ℂ] ℂ ⊗[ℝ] W :=
   have hcont : Continuous (tmulConj W) := continuous_complexification_iff.mpr
-    ⟨(realPartCLM W).continuous.congr fun u ↦ (realPart_tmulConj u).symm,
-      (continuous_neg.comp (imaginaryPartCLM W).continuous).congr
-        fun u ↦ (imaginaryPart_tmulConj u).symm⟩
+    ⟨(realPartCLM W).continuous.congr fun _ ↦ by simp,
+      (continuous_neg.comp (imaginaryPartCLM W).continuous).congr fun _ ↦ by simp⟩
   { toLinearEquiv := LinearEquiv.ofInvolutive (tmulConj W) (tmulConj_involutive W)
-    continuous_toFun := hcont
-    continuous_invFun := hcont }
+    continuous_toFun := hcont, continuous_invFun := hcont }
 
+variable (W) in
 /-- Complex conjugation `tmulConj W` on `ℂ ⊗[ℝ] W` viewed as a continuous `ℝ`-linear map. -/
 def tmulConjCLM [ContinuousNeg W] : ℂ ⊗[ℝ] W →L[ℝ] ℂ ⊗[ℝ] W where
   toFun := tmulConj W
@@ -271,22 +159,8 @@ def tmulConjCLM [ContinuousNeg W] : ℂ ⊗[ℝ] W →L[ℝ] ℂ ⊗[ℝ] W wher
   map_smul' _ _ := complexification_ext (by simp) (by simp)
   cont := (tmulConjCLE W).continuous
 
-variable {W}
-
-@[simp] theorem complexificationEquivProd_apply (u : ℂ ⊗[ℝ] W) :
-    complexificationEquivProd W u = (realPart W u, imaginaryPart W u) := (rfl)
-@[simp] theorem complexificationEquivProd_symm_apply (p : W × W) :
-    (complexificationEquivProd W).symm p = 1 ⊗ₜ[ℝ] p.1 + Complex.I ⊗ₜ[ℝ] p.2 := (rfl)
-@[simp] theorem coe_realPartCLM : (realPartCLM W : ℂ ⊗[ℝ] W →ₗ[ℝ] W) = realPart W := by ext; rfl
-@[simp] theorem realPartCLM_apply (u : ℂ ⊗[ℝ] W) : realPartCLM W u = realPart W u := (rfl)
-@[simp] theorem coe_imaginaryPartCLM :
-    (imaginaryPartCLM W : ℂ ⊗[ℝ] W →ₗ[ℝ] W) = imaginaryPart W := by ext; rfl
-@[simp] theorem imaginaryPartCLM_apply (u : ℂ ⊗[ℝ] W) :
-    imaginaryPartCLM W u = imaginaryPart W u := (rfl)
-@[simp] theorem oneTmulCLM_apply (w : W) : oneTmulCLM W w = 1 ⊗ₜ[ℝ] w := by simp [oneTmulCLM]
-@[simp] theorem ITmulCLM_apply (w : W) : ITmulCLM W w = Complex.I ⊗ₜ[ℝ] w := by simp [ITmulCLM]
 @[simp] theorem coe_tmulConjCLE [ContinuousNeg W] : ⇑(tmulConjCLE W) = tmulConj W := (rfl)
-@[simp] theorem symm_tmulConjCLE [ContinuousNeg W] : (tmulConjCLE W).symm = tmulConjCLE W := by
+@[simp] theorem tmulConjCLE_symm [ContinuousNeg W] : (tmulConjCLE W).symm = tmulConjCLE W := by
   ext; rfl
 @[simp] theorem tmulConjCLM_apply [ContinuousNeg W] (u : ℂ ⊗[ℝ] W) :
     tmulConjCLM W u = tmulConj W u := (rfl)
@@ -295,23 +169,25 @@ instance instT2SpaceComplexification [T2Space W] : T2Space (ℂ ⊗[ℝ] W) :=
   (isEmbedding_realPart_prod_imaginaryPart W).t2Space
 
 instance instIsTopologicalAddGroupComplexification [IsTopologicalAddGroup W] :
-    IsTopologicalAddGroup (ℂ ⊗[ℝ] W) :=
-  (isInducing_realPart_prod_imaginaryPart W).isTopologicalAddGroup
-    (complexificationEquivProd W).toAddEquiv.toAddMonoidHom
+    IsTopologicalAddGroup (ℂ ⊗[ℝ] W) := by
+  have hind : Topology.IsInducing (complexificationEquivProd W) := by
+    simpa [funext (complexificationEquivProd_apply (W := W))] using
+      isInducing_realPart_prod_imaginaryPart W
+  exact hind.isTopologicalAddGroup (complexificationEquivProd W).toAddEquiv.toAddMonoidHom
 
 instance instContinuousSMulComplexComplexification
     [IsTopologicalAddGroup W] [ContinuousSMul ℝ W] : ContinuousSMul ℂ (ℂ ⊗[ℝ] W) where
-  continuous_smul := by
-    rw [continuous_complexification_iff]
-    refine ⟨?_, ?_⟩ <;> simp only [realPart_smul, imaginaryPart_smul]
-    · exact ((Complex.continuous_re.comp continuous_fst).smul
+  continuous_smul := continuous_complexification_iff.mpr
+    ⟨(((Complex.continuous_re.comp continuous_fst).smul
         ((realPartCLM W).continuous.comp continuous_snd)).sub
           ((Complex.continuous_im.comp continuous_fst).smul
-            ((imaginaryPartCLM W).continuous.comp continuous_snd))
-    · exact ((Complex.continuous_re.comp continuous_fst).smul
+            ((imaginaryPartCLM W).continuous.comp continuous_snd))).congr
+        fun _ ↦ by simp [realPart_smul],
+      (((Complex.continuous_re.comp continuous_fst).smul
         ((imaginaryPartCLM W).continuous.comp continuous_snd)).add
           ((Complex.continuous_im.comp continuous_fst).smul
-            ((realPartCLM W).continuous.comp continuous_snd))
+            ((realPartCLM W).continuous.comp continuous_snd))).congr
+        fun _ ↦ by simp [imaginaryPart_smul]⟩
 
 instance instContinuousSMulRealComplexification
     [IsTopologicalAddGroup W] [ContinuousSMul ℝ W] : ContinuousSMul ℝ (ℂ ⊗[ℝ] W) where
@@ -330,26 +206,25 @@ theorem IsComplexificationTopology.of_finiteDimensional (W : Type*) [AddCommGrou
     IsComplexificationTopology W := by
   let e := complexificationLinearEquivProd W
   have : FiniteDimensional ℝ (ℂ ⊗[ℝ] W) := e.symm.finiteDimensional
-  exact ⟨e.toContinuousLinearEquiv.toHomeomorph.isInducing.eq_induced⟩
-
-section SeminormedEquiv
-
-variable (X : Type*) [SeminormedAddCommGroup X] [NormedSpace ℝ X]
-  [TopologicalSpace (ℂ ⊗[ℝ] X)] [IsComplexificationTopology X]
+  exact ⟨by simpa [complexificationTopology, e, funext complexificationLinearEquivProd_apply]
+    using e.toContinuousLinearEquiv.toHomeomorph.isInducing.eq_induced⟩
 
 /-- On a real seminormed space `X`, `TauCeti.tensorEquivComplexification X` is a continuous
 `ℂ`-linear equivalence between `ℂ ⊗[ℝ] X` (with an `IsComplexificationTopology`) and
 `TauCeti.Complexification X` (with the Taylor seminorm). -/
-def tensorContinuousLinearEquivComplexification : ℂ ⊗[ℝ] X ≃L[ℂ] Complexification X where
+def tensorContinuousLinearEquivComplexification (X : Type*) [SeminormedAddCommGroup X]
+    [NormedSpace ℝ X] [TopologicalSpace (ℂ ⊗[ℝ] X)] [IsComplexificationTopology X] :
+    ℂ ⊗[ℝ] X ≃L[ℂ] Complexification X where
   toLinearEquiv := tensorEquivComplexification X
   continuous_toFun := ((Complexification.equivProd X).symm.continuous.comp
     (complexificationEquivProd X).continuous).congr fun _ ↦ by ext <;> simp
   continuous_invFun := ((complexificationEquivProd X).symm.continuous.comp
     (Complexification.equivProd X).continuous).congr fun _ ↦ by simp
 
-variable {X}
-
-@[simp] theorem coe_tensorContinuousLinearEquivComplexification :
+section
+variable {X : Type*} [SeminormedAddCommGroup X] [NormedSpace ℝ X]
+  [TopologicalSpace (ℂ ⊗[ℝ] X)] [IsComplexificationTopology X]
+@[simp] theorem toLinearEquiv_tensorContinuousLinearEquivComplexification :
     (tensorContinuousLinearEquivComplexification X).toLinearEquiv =
       tensorEquivComplexification X := (rfl)
 @[simp] theorem tensorContinuousLinearEquivComplexification_apply (u : ℂ ⊗[ℝ] X) :
@@ -357,8 +232,7 @@ variable {X}
 @[simp] theorem tensorContinuousLinearEquivComplexification_symm_apply (z : Complexification X) :
     (tensorContinuousLinearEquivComplexification X).symm z =
       (tensorEquivComplexification X).symm z := (rfl)
-
-end SeminormedEquiv
+end
 
 end Topology
 
@@ -395,6 +269,7 @@ def baseChangeComplex (f : W →L[ℝ] W') : ℂ ⊗[ℝ] W →L[ℂ] ℂ ⊗[�
 @[simp] theorem imaginaryPart_baseChangeComplex (f : W →L[ℝ] W') (u : ℂ ⊗[ℝ] W) :
     imaginaryPart W' (f.baseChangeComplex u) = f (imaginaryPart W u) :=
   imaginaryPart_baseChange f.toLinearMap u
+/-- Continuous complex base change commutes with `tmulConj`. -/
 theorem tmulConj_baseChangeComplex (f : W →L[ℝ] W') (u : ℂ ⊗[ℝ] W) :
     tmulConj W' (f.baseChangeComplex u) = f.baseChangeComplex (tmulConj W u) :=
   tmulConj_baseChange f.toLinearMap u
@@ -423,7 +298,7 @@ def baseChangeComplex (e : W ≃L[ℝ] W') : ℂ ⊗[ℝ] W ≃L[ℂ] ℂ ⊗[�
 
 @[simp] theorem toContinuousLinearMap_baseChangeComplex (e : W ≃L[ℝ] W') :
     e.baseChangeComplex.toContinuousLinearMap = e.toContinuousLinearMap.baseChangeComplex := (rfl)
-@[simp] theorem symm_baseChangeComplex (e : W ≃L[ℝ] W') :
+@[simp] theorem baseChangeComplex_symm (e : W ≃L[ℝ] W') :
     e.baseChangeComplex.symm = e.symm.baseChangeComplex := (rfl)
 @[simp] theorem baseChangeComplex_tmul (e : W ≃L[ℝ] W') (c : ℂ) (w : W) :
     e.baseChangeComplex (c ⊗ₜ[ℝ] w) = c ⊗ₜ[ℝ] e w := (rfl)
@@ -439,40 +314,11 @@ def baseChangeComplex (e : W ≃L[ℝ] W') : ℂ ⊗[ℝ] W ≃L[ℂ] ℂ ⊗[�
   ext u; exact DFunLike.congr_fun ContinuousLinearMap.baseChangeComplex_id u
 @[simp] theorem baseChangeComplex_trans (e : W ≃L[ℝ] W') (e' : W' ≃L[ℝ] W'') :
     (e.trans e').baseChangeComplex = e.baseChangeComplex.trans e'.baseChangeComplex := by
-  ext u
-  exact DFunLike.congr_fun
+  ext u; exact DFunLike.congr_fun
     (e'.toContinuousLinearMap.baseChangeComplex_comp e.toContinuousLinearMap) u
 
 end ContinuousLinearEquiv
 
 end BaseChangeComplex
-
-namespace ContinuousLinearEquiv
-
-open TauCeti
-
-variable {X Y Z : Type*} [SeminormedAddCommGroup X] [NormedSpace ℝ X]
-  [SeminormedAddCommGroup Y] [NormedSpace ℝ Y] [SeminormedAddCommGroup Z] [NormedSpace ℝ Z]
-
-/-- Complexification of a continuous `ℝ`-linear equivalence between real seminormed spaces, as a
-continuous `ℂ`-linear equivalence between their Taylor-seminormed complexifications. -/
-def complexify (e : X ≃L[ℝ] Y) : Complexification X ≃L[ℂ] Complexification Y :=
-  equivOfInverse e.toContinuousLinearMap.complexify e.symm.toContinuousLinearMap.complexify
-    (fun _ ↦ by ext <;> simp) (fun _ ↦ by ext <;> simp)
-
-@[simp] theorem toContinuousLinearMap_complexify (e : X ≃L[ℝ] Y) :
-    e.complexify.toContinuousLinearMap = e.toContinuousLinearMap.complexify := (rfl)
-@[simp] theorem symm_complexify (e : X ≃L[ℝ] Y) : e.complexify.symm = e.symm.complexify := (rfl)
-@[simp] theorem complexify_apply_re (e : X ≃L[ℝ] Y) (z : Complexification X) :
-    (e.complexify z).re = e z.re := e.toContinuousLinearMap.complexify_apply_re z
-@[simp] theorem complexify_apply_im (e : X ≃L[ℝ] Y) (z : Complexification X) :
-    (e.complexify z).im = e z.im := e.toContinuousLinearMap.complexify_apply_im z
-@[simp] theorem complexify_refl :
-    (ContinuousLinearEquiv.refl ℝ X).complexify =
-      ContinuousLinearEquiv.refl ℂ (Complexification X) := by ext <;> simp
-@[simp] theorem complexify_trans (e : X ≃L[ℝ] Y) (e' : Y ≃L[ℝ] Z) :
-    (e.trans e').complexify = e.complexify.trans e'.complexify := by ext <;> simp
-
-end ContinuousLinearEquiv
 
 end

@@ -6,18 +6,11 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Topology.VectorBundle.Constructions
-public import TauCeti.Topology.VectorBundle.Hom
-public import TauCeti.Topology.VectorBundle.Smul
+public import TauCeti.Topology.VectorBundle.ComplexSmulI
 public import TauCeti.Topology.Algebra.Module.Complexification
 
 /-!
-# Complex vector bundles over real bases and complexification of real vector bundles
-
-Because scalar restriction `(G →L[ℂ] G) → (G →L[ℝ] G)` is an isometry, any real vector bundle
-`[VectorBundle ℝ G W]` over `B` whose atlas trivializations are `ℂ`-linear — or commute with
-`Complex.I • ·` — carries a compatible `VectorBundle ℂ G W` structure (`VectorBundle.ofLinear`,
-`VectorBundle.ofMapISmul`), with `Complex.I • ·` acting as `TauCeti.smulIHomeomorph` and a
-continuous Hom-bundle section (`TauCeti.continuous_smulIEquiv_bundle`).
+# Complexification of topological real vector bundles
 
 For any real vector bundle `E : B → Type*` with model fibre `F` whose complexified fibres
 `ℂ ⊗[ℝ] E x` carry `TauCeti.IsComplexificationTopology (E x)` (supplied in scope
@@ -28,6 +21,11 @@ bundle `fun x ↦ ℂ ⊗[ℝ] E x` with Taylor-normed model fibre `TauCeti.Comp
 Hom-bundle continuity for `realPartCLM`, `imaginaryPartCLM`, `oneTmulCLM`, `ITmulCLM`,
 `tmulConjCLE`, `tmulConjCLM`, and `complexificationEquivProd`, and construct
 `TauCeti.tmulConjHomeomorph` and `TauCeti.complexificationTotalSpaceHomeomorphProd`.
+
+General scalar restriction (`VectorBundle.restrictScalars`, `VectorBundle.ofLinear`) and
+multiplication by `Complex.I` on complex vector bundles (`VectorBundle.ofMapISmul`,
+`TauCeti.smulIHomeomorph`, `TauCeti.continuous_smulIEquiv_bundle`) live in
+`TauCeti.Topology.VectorBundle.RestrictScalars` and `TauCeti.Topology.VectorBundle.ComplexSmulI`.
 
 ## References
 
@@ -43,196 +41,6 @@ noncomputable section
 open Bundle FiberBundle Filter Set Topology
 open scoped TensorProduct
 
-/-! ### Upgrading real vector bundles to complex ones -/
-
-namespace Bundle.Trivialization
-
-section RestrictScalars
-
-variable {B : Type*} [TopologicalSpace B] {F : Type*} {E : B → Type*}
-
-/-- A `𝕜`-linear trivialization is also `𝕜'`-linear for any compatible scalar action `𝕜'`. -/
-theorem isLinear_restrictScalars (𝕜' 𝕜 : Type*) [Semiring 𝕜'] [Semiring 𝕜] [SMul 𝕜' 𝕜]
-    [TopologicalSpace F] [TopologicalSpace (TotalSpace F E)] [AddCommMonoid F] [Module 𝕜' F]
-    [Module 𝕜 F] [IsScalarTower 𝕜' 𝕜 F] [∀ x, AddCommMonoid (E x)] [∀ x, Module 𝕜' (E x)]
-    [∀ x, Module 𝕜 (E x)] [∀ x, IsScalarTower 𝕜' 𝕜 (E x)]
-    (e : Trivialization F (π F E)) [e.IsLinear 𝕜] : e.IsLinear 𝕜' where
-  linear b hb :=
-    { map_add := (e.linear 𝕜 hb).map_add
-      map_smul r v := by rw [← smul_one_smul 𝕜 r v, (e.linear 𝕜 hb).map_smul, smul_one_smul] }
-
-/-- A real-linear trivialization of a bundle of complex vector spaces that commutes with
-`Complex.I • ·` on every fibre over its base set is `ℂ`-linear. -/
-theorem isLinear_complex_of_map_I_smul [TopologicalSpace F] [TopologicalSpace (TotalSpace F E)]
-    [AddCommGroup F] [Module ℝ F] [Module ℂ F] [IsScalarTower ℝ ℂ F]
-    [∀ x, AddCommGroup (E x)] [∀ x, Module ℝ (E x)] [∀ x, Module ℂ (E x)]
-    [∀ x, IsScalarTower ℝ ℂ (E x)] (e : Trivialization F (π F E)) [e.IsLinear ℝ]
-    (hI : ∀ b ∈ e.baseSet, ∀ v : E b, (e ⟨b, Complex.I • v⟩).2 = Complex.I • (e ⟨b, v⟩).2) :
-    e.IsLinear ℂ where
-  linear b hb :=
-    { map_add := (e.linear ℝ hb).map_add
-      map_smul c v := by
-        rw [← Complex.re_smul_add_im_smul c v, (e.linear ℝ hb).map_add, (e.linear ℝ hb).map_smul,
-          (e.linear ℝ hb).map_smul, hI b hb, Complex.re_smul_add_im_smul] }
-
-/-- Restricting scalars of a `𝕜`-linear coordinate change recovers the `𝕜'`-linear coordinate
-change. -/
-theorem restrictScalars_coordChangeL (𝕜' 𝕜 : Type*)
-    [NontriviallyNormedField 𝕜'] [NontriviallyNormedField 𝕜] [NormedAlgebra 𝕜' 𝕜]
-    [NormedAddCommGroup F] [NormedSpace 𝕜' F] [NormedSpace 𝕜 F] [IsScalarTower 𝕜' 𝕜 F]
-    [TopologicalSpace (TotalSpace F E)]
-    [∀ x, AddCommMonoid (E x)] [∀ x, Module 𝕜' (E x)] [∀ x, Module 𝕜 (E x)]
-    (e e' : Trivialization F (π F E)) [e.IsLinear 𝕜'] [e'.IsLinear 𝕜'] [e.IsLinear 𝕜]
-    [e'.IsLinear 𝕜] {b : B} (hb : b ∈ e.baseSet ∩ e'.baseSet) :
-    (e.coordChangeL 𝕜 e' b : F →L[𝕜] F).restrictScalars 𝕜' = e.coordChangeL 𝕜' e' b := by
-  ext v; simp [Trivialization.coordChangeL_apply' e e' hb]
-
-end RestrictScalars
-
-end Bundle.Trivialization
-
-namespace VectorBundle
-
-variable {B : Type*} [TopologicalSpace B]
-
-section Algebra
-
-variable (𝕜' 𝕜 : Type*) [NontriviallyNormedField 𝕜'] [NontriviallyNormedField 𝕜]
-  [NormedAlgebra 𝕜' 𝕜] (G : Type*) [NormedAddCommGroup G] [NormedSpace 𝕜' G] [NormedSpace 𝕜 G]
-  [IsScalarTower 𝕜' 𝕜 G] (W : B → Type*) [∀ x, AddCommMonoid (W x)] [∀ x, Module 𝕜' (W x)]
-  [∀ x, Module 𝕜 (W x)] [TopologicalSpace (TotalSpace G W)] [∀ x, TopologicalSpace (W x)]
-  [FiberBundle G W]
-
-/-- Restrict a `VectorBundle 𝕜 G W` to a `VectorBundle 𝕜' G W` along a normed field extension
-`𝕜' ⊆ 𝕜`, keeping the exact same total-space topology and trivialization atlas. -/
-theorem restrictScalars [∀ x, IsScalarTower 𝕜' 𝕜 (W x)] [VectorBundle 𝕜 G W] :
-    VectorBundle 𝕜' G W where
-  trivialization_linear' e _ := Trivialization.isLinear_restrictScalars 𝕜' 𝕜 e
-  continuousOn_coordChange' e e' _ _ := by
-    let : e.IsLinear 𝕜' := Trivialization.isLinear_restrictScalars 𝕜' 𝕜 e
-    let : e'.IsLinear 𝕜' := Trivialization.isLinear_restrictScalars 𝕜' 𝕜 e'
-    refine ((ContinuousLinearMap.restrictScalarsIsometry 𝕜 G G 𝕜' ℤ).isometry.continuous
-      |>.comp_continuousOn (continuousOn_coordChange 𝕜 e e')).congr fun b hb ↦
-      (Trivialization.restrictScalars_coordChangeL 𝕜' 𝕜 e e' hb).symm
-
-/-- Upgrade a `VectorBundle 𝕜' G W` to `VectorBundle 𝕜 G W` along a normed field extension
-`𝕜' ⊆ 𝕜` once every trivialization in the atlas is `𝕜`-linear. -/
-theorem ofLinear [VectorBundle 𝕜' G W]
-    (hlin : ∀ e : Trivialization G (π G W), MemTrivializationAtlas e → e.IsLinear 𝕜) :
-    VectorBundle 𝕜 G W where
-  trivialization_linear' e he := hlin e he
-  continuousOn_coordChange' e e' he he' := by
-    let : e.IsLinear 𝕜 := hlin e he
-    let : e'.IsLinear 𝕜 := hlin e' he'
-    rw [(ContinuousLinearMap.restrictScalarsIsometry 𝕜 G G 𝕜' ℤ
-      ).isometry.isUniformEmbedding.isInducing.continuousOn_iff]
-    exact (continuousOn_coordChange 𝕜' e e').congr fun b hb ↦
-      Trivialization.restrictScalars_coordChangeL 𝕜' 𝕜 e e' hb
-
-end Algebra
-
-/-- A real vector bundle `[VectorBundle ℝ G W]` whose atlas trivializations commute with
-multiplication by `Complex.I` carries a compatible `VectorBundle ℂ G W` structure, with no complex
-structure assumed on the base `B`. -/
-theorem ofMapISmul (G : Type*) [NormedAddCommGroup G] [NormedSpace ℝ G] [NormedSpace ℂ G]
-    [IsScalarTower ℝ ℂ G] (W : B → Type*) [∀ x, AddCommGroup (W x)] [∀ x, Module ℝ (W x)]
-    [∀ x, Module ℂ (W x)] [∀ x, IsScalarTower ℝ ℂ (W x)] [TopologicalSpace (TotalSpace G W)]
-    [∀ x, TopologicalSpace (W x)] [FiberBundle G W] [VectorBundle ℝ G W]
-    (hI : ∀ e : Trivialization G (π G W), MemTrivializationAtlas e →
-      ∀ b ∈ e.baseSet, ∀ v : W b, (e ⟨b, Complex.I • v⟩).2 = Complex.I • (e ⟨b, v⟩).2) :
-    VectorBundle ℂ G W :=
-  ofLinear ℝ ℂ G W fun e he ↦ Trivialization.isLinear_complex_of_map_I_smul e (hI e he)
-
-end VectorBundle
-
-namespace TauCeti
-
-/-! ### Fibrewise multiplication by `i` on a complex vector bundle -/
-
-section SmulIBundle
-
-variable {B : Type*} [TopologicalSpace B]
-
-section Homeomorph
-
-variable (G : Type*) [NormedAddCommGroup G] [NormedSpace ℂ G] (W : B → Type*)
-  [∀ x, AddCommGroup (W x)] [∀ x, Module ℂ (W x)] [∀ x, TopologicalSpace (W x)]
-  [TopologicalSpace (TotalSpace G W)] [FiberBundle G W] [VectorBundle ℂ G W]
-
-/-- Multiplication by `Complex.I` on the fibres of a complex vector bundle as a homeomorphism of
-its total space, with no finite-rank assumption. -/
-def smulIHomeomorph : TotalSpace G W ≃ₜ TotalSpace G W where
-  toFun p := ⟨p.proj, Complex.I • p.2⟩
-  invFun p := ⟨p.proj, -Complex.I • p.2⟩
-  left_inv := fun ⟨x, v⟩ ↦ congrArg (TotalSpace.mk x) (Complex.neg_I_smul_I_smul v)
-  right_inv := fun ⟨x, v⟩ ↦ congrArg (TotalSpace.mk x) (Complex.I_smul_neg_I_smul v)
-  continuous_toFun := (continuous_const (y := Complex.I)).smul_totalSpace continuous_id
-  continuous_invFun := (continuous_const (y := -Complex.I)).smul_totalSpace continuous_id
-
-variable {G W}
-
-@[simp] theorem smulIHomeomorph_apply (p : TotalSpace G W) :
-    smulIHomeomorph G W p = ⟨p.proj, Complex.I • p.2⟩ := (rfl)
-@[simp] theorem smulIHomeomorph_symm_apply (p : TotalSpace G W) :
-    (smulIHomeomorph G W).symm p = ⟨p.proj, -Complex.I • p.2⟩ := (rfl)
-
-end Homeomorph
-
-section HomBundle
-
-variable {G : Type*} [NormedAddCommGroup G] [NormedSpace ℝ G] [NormedSpace ℂ G]
-  {W : B → Type*} [∀ x, AddCommGroup (W x)] [∀ x, Module ℝ (W x)] [∀ x, Module ℂ (W x)]
-  [∀ x, TopologicalSpace (W x)] [TopologicalSpace (TotalSpace G W)] [FiberBundle G W]
-  [VectorBundle ℂ G W] [VectorBundle ℝ G W]
-
-private theorem inCoordinates_constSMul (c : ℂ) (a : B) {x : B}
-    (hx : x ∈ (trivializationAt G W a).baseSet) (f : W x →L[ℝ] W x) (hf : ∀ w, f w = c • w)
-    (v : G) : ContinuousLinearMap.inCoordinates G W G W a x a x f v = c • v := by
-  simp only [ContinuousLinearMap.inCoordinates, ContinuousLinearMap.comp_apply, hf]
-  rw [(trivializationAt G W a).symmL_apply hx, ← (trivializationAt G W a).symmL_apply (R := ℂ) hx,
-    ← map_smul ((trivializationAt G W a).symmL ℂ x) c v, (trivializationAt G W a).symmL_apply hx,
-    Trivialization.continuousLinearMapAt_apply_of_mem ℝ _ hx,
-    (trivializationAt G W a).apply_mk_symm hx]
-
-variable [IsScalarTower ℝ ℂ G] [∀ x, IsScalarTower ℝ ℂ (W x)] [∀ x, ContinuousConstSMul ℂ (W x)]
-
-/-- Read in any preferred trivialization, fibrewise multiplication by `Complex.I`
-(`Complex.smulIEquiv (W x)`) is the constant model operator `Complex.smulIEquiv G`. -/
-@[simp] theorem inCoordinates_smulIEquiv (a : B) {x : B}
-    (hx : x ∈ (trivializationAt G W a).baseSet) :
-    ContinuousLinearMap.inCoordinates G W G W a x a x
-      (Complex.smulIEquiv (W x) : W x →L[ℝ] W x) = (Complex.smulIEquiv G : G →L[ℝ] G) := by
-  ext v; simpa using inCoordinates_constSMul Complex.I a hx _ (fun _ ↦ by simp) v
-
-/-- Read in any preferred trivialization, `(Complex.smulIEquiv (W x)).symm` is
-`(Complex.smulIEquiv G).symm`. -/
-@[simp] theorem inCoordinates_smulIEquiv_symm (a : B) {x : B}
-    (hx : x ∈ (trivializationAt G W a).baseSet) :
-    ContinuousLinearMap.inCoordinates G W G W a x a x
-      ((Complex.smulIEquiv (W x)).symm : W x →L[ℝ] W x) =
-      ((Complex.smulIEquiv G).symm : G →L[ℝ] G) := by
-  ext v; simpa using inCoordinates_constSMul (-Complex.I) a hx _ (fun _ ↦ by simp) v
-
-variable [∀ x, IsTopologicalAddGroup (W x)] [∀ x, ContinuousSMul ℝ (W x)]
-
-/-- Fibrewise multiplication by `Complex.I` is a continuous section of `fun x ↦ W x →L[ℝ] W x`. -/
-theorem continuous_smulIEquiv_bundle :
-    Continuous (fun x ↦ TotalSpace.mk' (G →L[ℝ] G)
-      (E := fun y ↦ W y →L[ℝ] W y) x (Complex.smulIEquiv (W x) : W x →L[ℝ] W x)) :=
-  continuous_hom_bundle_of_inCoordinates_eq_const fun a _ hx _ ↦ inCoordinates_smulIEquiv a hx
-
-/-- Fibrewise multiplication by `-Complex.I` is a continuous section of `fun x ↦ W x →L[ℝ] W x`. -/
-theorem continuous_smulIEquiv_symm_bundle :
-    Continuous (fun x ↦ TotalSpace.mk' (G →L[ℝ] G)
-      (E := fun y ↦ W y →L[ℝ] W y) x ((Complex.smulIEquiv (W x)).symm : W x →L[ℝ] W x)) :=
-  continuous_hom_bundle_of_inCoordinates_eq_const fun a _ hx _ ↦ inCoordinates_smulIEquiv_symm a hx
-
-end HomBundle
-
-end SmulIBundle
-
-end TauCeti
-
 /-! ### Pretrivializations of the complexified vector bundle `fun x ↦ ℂ ⊗[ℝ] E x` -/
 
 namespace Bundle.Pretrivialization
@@ -242,25 +50,6 @@ open TauCeti
 variable {B : Type*} [TopologicalSpace B] {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
   {E : B → Type*} [∀ x, AddCommGroup (E x)] [∀ x, Module ℝ (E x)]
   [TopologicalSpace (TotalSpace F E)]
-
-/-- Coordinate change between the induced pretrivializations of `fun x ↦ ℂ ⊗[ℝ] E x`, given by
-complexifying the real coordinate change of `E`. -/
-def complexificationCoordChange (e e' : Trivialization F (π F E)) [e.IsLinear ℝ] [e'.IsLinear ℝ]
-    (b : B) : Complexification F →L[ℂ] Complexification F :=
-  (e.coordChangeL ℝ e' b : F →L[ℝ] F).complexify
-
-theorem complexificationCoordChange_def (e e' : Trivialization F (π F E))
-    [e.IsLinear ℝ] [e'.IsLinear ℝ] :
-    complexificationCoordChange e e' =
-      fun b ↦ (e.coordChangeL ℝ e' b : F →L[ℝ] F).complexify := (rfl)
-
-theorem continuousOn_complexificationCoordChange
-    [∀ x, TopologicalSpace (E x)] [FiberBundle F E] [VectorBundle ℝ F E]
-    (e e' : Trivialization F (π F E)) [MemTrivializationAtlas e] [MemTrivializationAtlas e'] :
-    ContinuousOn (complexificationCoordChange e e') (e.baseSet ∩ e'.baseSet) :=
-  ((ContinuousLinearMap.complexifyₗᵢ F F).continuous.comp_continuousOn
-    (continuousOn_coordChange ℝ e e')).congr fun _ _ ↦ by
-      ext z <;> simp [complexificationCoordChange]
 
 /-- A real-linear trivialization `e` of `E` induces a pretrivialization of the complexified bundle
 `fun x ↦ ℂ ⊗[ℝ] E x` with model fibre `TauCeti.Complexification F`. -/
@@ -304,14 +93,6 @@ theorem complexification_symm_apply {b : B} (hb : b ∈ e.baseSet) (z : Complexi
     (complexification e).symm b z = 1 ⊗ₜ[ℝ] e.symm b z.re + Complex.I ⊗ₜ[ℝ] e.symm b z.im := by
   rw [Pretrivialization.symm_apply _ hb]; rfl
 
-theorem complexificationCoordChange_apply {e' : Trivialization F (π F E)} [e'.IsLinear ℝ]
-    {b : B} (hb : b ∈ e.baseSet ∩ e'.baseSet) (z : Complexification F) :
-    complexificationCoordChange e e' b z =
-      (complexification e' ⟨b, (complexification e).symm b z⟩).2 := by
-  ext <;> simp [complexificationCoordChange, complexification_apply,
-    complexification_symm_apply hb.1, e'.coe_linearMapAt_of_mem hb.2,
-    Trivialization.coordChangeL_apply e e' hb]
-
 end Bundle.Pretrivialization
 
 /-! ### The complexified vector bundle -/
@@ -340,8 +121,12 @@ def complexificationVectorPrebundle :
   pretrivialization_mem_atlas x := ⟨trivializationAt F E x, inferInstance, rfl⟩
   exists_coordChange := by
     rintro _ ⟨e, he, rfl⟩ _ ⟨e', he', rfl⟩
-    exact ⟨complexificationCoordChange e e', continuousOn_complexificationCoordChange e e',
-      fun _ hb ↦ complexificationCoordChange_apply hb⟩
+    refine ⟨fun b ↦ (e.coordChangeL ℝ e' b : F →L[ℝ] F).complexify,
+      ((ContinuousLinearMap.complexifyₗᵢ F F).continuous.comp_continuousOn
+        (continuousOn_coordChange ℝ e e')).congr fun _ _ ↦ by ext z <;> simp,
+      fun b hb z ↦ ?_⟩
+    ext <;> simp [complexification_apply, complexification_symm_apply hb.1,
+      e'.coe_linearMapAt_of_mem hb.2, Trivialization.coordChangeL_apply e e' hb]
   totalSpaceMk_isInducing b := by
     simp only [Function.comp_def, complexification_apply, isInducing_const_prod]
     let hb := mem_baseSet_trivializationAt F E b
@@ -465,6 +250,8 @@ theorem mem_trivializationAtlas_complexification_iff
   · rintro ⟨⟨_, ⟨e, he, rfl⟩, rfl⟩⟩; exact ⟨e, he, rfl⟩
   · rintro ⟨e, he, rfl⟩; exact Trivialization.memTrivializationAtlas_complexification e (he := he)
 
+/-- The preferred trivialization of `fun x ↦ ℂ ⊗[ℝ] E x` at `x₀` is
+`(trivializationAt F E x₀).complexification`. -/
 theorem trivializationAt_complexification (x₀ : B) :
     trivializationAt (Complexification F) (fun x ↦ ℂ ⊗[ℝ] E x) x₀ =
       (trivializationAt F E x₀).complexification := (rfl)
@@ -478,6 +265,7 @@ theorem trivializationAt_complexification (x₀ : B) :
     (trivializationAt (Complexification F) (fun x ↦ ℂ ⊗[ℝ] E x) x₀).target =
       (trivializationAt F E x₀).baseSet ×ˢ univ := (rfl)
 
+/-- Fibrewise inverse `symmL` of the preferred trivialization of `fun y ↦ ℂ ⊗[ℝ] E y` at `a`. -/
 theorem trivializationAt_complexification_symmL (𝕜 : Type*) [NontriviallyNormedField 𝕜]
     [NormedSpace 𝕜 (Complexification F)] [∀ y, Module 𝕜 (ℂ ⊗[ℝ] E y)]
     [VectorBundle 𝕜 (Complexification F) fun y ↦ ℂ ⊗[ℝ] E y] {a x : B}
@@ -488,6 +276,19 @@ theorem trivializationAt_complexification_symmL (𝕜 : Type*) [NontriviallyNorm
   have hx' : x ∈ (trivializationAt (Complexification F) (fun y ↦ ℂ ⊗[ℝ] E y) a).baseSet := hx
   rw [(trivializationAt (Complexification F) (fun y ↦ ℂ ⊗[ℝ] E y) a).symmL_apply hx',
     trivializationAt_complexification, (trivializationAt F E a).complexification_symm_apply hx]
+
+/-- Fibrewise `continuousLinearMapAt` of the preferred trivialization of `fun y ↦ ℂ ⊗[ℝ] E y` at
+`a`. -/
+theorem trivializationAt_complexification_continuousLinearMapAt (𝕜 : Type*)
+    [NontriviallyNormedField 𝕜] [NormedSpace 𝕜 (Complexification F)]
+    [∀ y, Module 𝕜 (ℂ ⊗[ℝ] E y)] [VectorBundle 𝕜 (Complexification F) fun y ↦ ℂ ⊗[ℝ] E y]
+    {a x : B} (hx : x ∈ (trivializationAt F E a).baseSet) (u : ℂ ⊗[ℝ] E x) :
+    (trivializationAt (Complexification F) (fun y ↦ ℂ ⊗[ℝ] E y) a).continuousLinearMapAt 𝕜 x u =
+      ⟨(trivializationAt F E a ⟨x, realPart (E x) u⟩).2,
+       (trivializationAt F E a ⟨x, imaginaryPart (E x) u⟩).2⟩ := by
+  have hx' : x ∈ (trivializationAt (Complexification F) (fun y ↦ ℂ ⊗[ℝ] E y) a).baseSet := hx
+  rw [Trivialization.continuousLinearMapAt_apply_of_mem 𝕜 _ hx', trivializationAt_complexification]
+  ext <;> simp [(trivializationAt F E a).coe_linearMapAt_of_mem hx]
 
 /-! #### Continuity characterization and total-space homeomorphisms -/
 
@@ -523,6 +324,7 @@ theorem continuousWithinAt_complexification_totalSpace_iff {X : Type*} [Topologi
       (congrFun (e₀.coe_linearMapAt_of_mem hx₀) (w x₀))⟩
   exact and_congr (hcongr _) (hcongr _)
 
+/-- Global version of `continuousWithinAt_complexification_totalSpace_iff`. -/
 theorem continuous_complexification_totalSpace_iff {X : Type*} [TopologicalSpace X]
     {f : X → TotalSpace (Complexification F) fun x ↦ ℂ ⊗[ℝ] E x} :
     Continuous f ↔
@@ -540,10 +342,7 @@ theorem continuous_complexification_section_iff {s : ∀ x, ℂ ⊗[ℝ] E x} :
       Continuous (fun x ↦ TotalSpace.mk' F x (imaginaryPart (E x) (s x))) :=
   continuous_complexification_totalSpace_iff
 
-section TotalSpaceHomeomorphs
-
-variable (F E)
-
+variable (F E) in
 /-- Fibrewise conjugation `z ⊗ₜ v ↦ conj z ⊗ₜ v` as an involutive homeomorphism of the total space
 of `fun x ↦ ℂ ⊗[ℝ] E x`, with no finite-rank assumption. -/
 def tmulConjHomeomorph :
@@ -561,9 +360,9 @@ def tmulConjHomeomorph :
     invFun p := ⟨p.proj, tmulConj (E p.proj) p.2⟩
     left_inv := fun ⟨x, u⟩ ↦ congrArg (TotalSpace.mk x) (tmulConj_tmulConj (E x) u)
     right_inv := fun ⟨x, u⟩ ↦ congrArg (TotalSpace.mk x) (tmulConj_tmulConj (E x) u)
-    continuous_toFun := hcont
-    continuous_invFun := hcont }
+    continuous_toFun := hcont, continuous_invFun := hcont }
 
+variable (F E) in
 /-- The real/imaginary-part homeomorphism between the total space of `fun x ↦ ℂ ⊗[ℝ] E x` and the
 total space of the direct-sum bundle `E ×ᵇ E`, valid without any finite-rank assumption on `F`. -/
 def complexificationTotalSpaceHomeomorphProd :
@@ -584,8 +383,6 @@ def complexificationTotalSpaceHomeomorphProd :
       ⟨(continuous_fst.comp h).congr fun _ ↦ by simp,
         (continuous_snd.comp h).congr fun _ ↦ by simp⟩
 
-variable {F E}
-
 @[simp] theorem tmulConjHomeomorph_apply
     (p : TotalSpace (Complexification F) fun x ↦ ℂ ⊗[ℝ] E x) :
     tmulConjHomeomorph F E p = ⟨p.proj, tmulConj (E p.proj) p.2⟩ := (rfl)
@@ -605,20 +402,7 @@ theorem proj_complexificationTotalSpaceHomeomorphProd
     (p : TotalSpace (Complexification F) fun x ↦ ℂ ⊗[ℝ] E x) :
     (complexificationTotalSpaceHomeomorphProd F E p).proj = p.proj := (rfl)
 
-end TotalSpaceHomeomorphs
-
 /-! #### Preferred-frame coordinate expressions and continuous Hom-bundle sections -/
-
-private theorem continuousLinearMapAt_complexification_apply (𝕜 : Type*)
-    [NontriviallyNormedField 𝕜] [NormedSpace 𝕜 (Complexification F)]
-    [∀ y, Module 𝕜 (ℂ ⊗[ℝ] E y)] [VectorBundle 𝕜 (Complexification F) fun y ↦ ℂ ⊗[ℝ] E y]
-    {a x : B} (hx : x ∈ (trivializationAt F E a).baseSet) (u : ℂ ⊗[ℝ] E x) :
-    (trivializationAt (Complexification F) (fun y ↦ ℂ ⊗[ℝ] E y) a).continuousLinearMapAt 𝕜 x u =
-      ⟨(trivializationAt F E a ⟨x, realPart (E x) u⟩).2,
-       (trivializationAt F E a ⟨x, imaginaryPart (E x) u⟩).2⟩ := by
-  have hx' : x ∈ (trivializationAt (Complexification F) (fun y ↦ ℂ ⊗[ℝ] E y) a).baseSet := hx
-  rw [Trivialization.continuousLinearMapAt_apply_of_mem 𝕜 _ hx', trivializationAt_complexification]
-  ext <;> simp [(trivializationAt F E a).coe_linearMapAt_of_mem hx]
 
 /-- Read in preferred frames, `realPartCLM (E x)` is `Complexification.reCLM F`. -/
 @[simp] theorem inCoordinates_realPartCLM (a : B) {x : B}
@@ -644,7 +428,7 @@ private theorem continuousLinearMapAt_complexification_apply (𝕜 : Type*)
     ContinuousLinearMap.inCoordinates F E (Complexification F) (fun y ↦ ℂ ⊗[ℝ] E y) a x a x
       (oneTmulCLM (E x)) = (Complexification.ofRealLI F).toContinuousLinearMap := by
   ext v <;> simp [ContinuousLinearMap.inCoordinates, (trivializationAt F E a).symmL_apply hx,
-    continuousLinearMapAt_complexification_apply ℝ hx,
+    trivializationAt_complexification_continuousLinearMapAt ℝ hx,
     ((trivializationAt F E a).linear ℝ hx).map_zero, (trivializationAt F E a).apply_mk_symm hx]
 
 /-- Read in preferred frames, `ITmulCLM (E x)` is `v ↦ Complex.I • Complexification.ofReal v`. -/
@@ -655,7 +439,7 @@ private theorem continuousLinearMapAt_complexification_apply (𝕜 : Type*)
       (Complex.smulIEquiv (Complexification F)).toContinuousLinearMap.comp
         (Complexification.ofRealLI F).toContinuousLinearMap := by
   ext v <;> simp [ContinuousLinearMap.inCoordinates, (trivializationAt F E a).symmL_apply hx,
-    continuousLinearMapAt_complexification_apply ℝ hx,
+    trivializationAt_complexification_continuousLinearMapAt ℝ hx,
     ((trivializationAt F E a).linear ℝ hx).map_zero, (trivializationAt F E a).apply_mk_symm hx]
 
 /-- Read in preferred frames, `tmulConjCLE (E x)` is `Complexification.conjCLE F`. -/
@@ -667,7 +451,7 @@ private theorem continuousLinearMapAt_complexification_apply (𝕜 : Type*)
       (Complexification.conjCLE F :
         Complexification F →SL[starRingEnd ℂ] Complexification F) := by
   ext z <;> simp [ContinuousLinearMap.inCoordinates, trivializationAt_complexification_symmL ℂ hx,
-    continuousLinearMapAt_complexification_apply ℂ hx,
+    trivializationAt_complexification_continuousLinearMapAt ℂ hx,
     ((trivializationAt F E a).linear ℝ hx).map_neg, (trivializationAt F E a).apply_mk_symm hx]
 
 /-- Read in preferred frames, `tmulConjCLM (E x)` (viewed over `ℝ`) is constant. -/
@@ -681,7 +465,7 @@ private theorem continuousLinearMapAt_complexification_apply (𝕜 : Type*)
           (Complexification.ofRealLI F).toContinuousLinearMap).comp
             (Complexification.imCLM F) := by
   ext z <;> simp [ContinuousLinearMap.inCoordinates, trivializationAt_complexification_symmL ℝ hx,
-    continuousLinearMapAt_complexification_apply ℝ hx,
+    trivializationAt_complexification_continuousLinearMapAt ℝ hx,
     ((trivializationAt F E a).linear ℝ hx).map_neg, (trivializationAt F E a).apply_mk_symm hx]
 
 /-- In preferred frames, `complexificationEquivProd (E x)` is `Complexification.equivProd F`. -/
@@ -692,13 +476,12 @@ private theorem continuousLinearMapAt_complexification_apply (𝕜 : Type*)
       (complexificationEquivProd (E x) : ℂ ⊗[ℝ] E x →L[ℝ] E x × E x) =
       (Complexification.equivProd F : Complexification F →L[ℝ] F × F) := by
   have hxp : x ∈ (trivializationAt (F × F) (E ×ᵇ E) a).baseSet := ⟨hx, hx⟩
-  have hprod : trivializationAt (F × F) (E ×ᵇ E) a =
-      (trivializationAt F E a).prod (trivializationAt F E a) := rfl
   refine ContinuousLinearMap.ext fun z ↦ ?_
   simp only [ContinuousLinearMap.inCoordinates, ContinuousLinearMap.comp_apply,
     trivializationAt_complexification_symmL ℝ hx, ContinuousLinearEquiv.coe_coe,
     Complexification.equivProd_apply]
-  rw [Trivialization.continuousLinearMapAt_apply_of_mem ℝ _ hxp, hprod,
+  rw [Trivialization.continuousLinearMapAt_apply_of_mem ℝ _ hxp,
+    FiberBundle.trivializationAt_prod F E F E a,
     complexificationEquivProd_apply, Trivialization.prod_apply' ℝ hx hx]
   ext <;> simp [(trivializationAt F E a).apply_mk_symm hx]
 
@@ -712,47 +495,44 @@ private theorem continuousLinearMapAt_complexification_apply (𝕜 : Type*)
       ((Complexification.equivProd F).symm : F × F →L[ℝ] Complexification F) := by
   have hx' : x ∈ (trivializationAt (Complexification F) (fun y ↦ ℂ ⊗[ℝ] E y) a).baseSet := hx
   have hxp : x ∈ (trivializationAt (F × F) (E ×ᵇ E) a).baseSet := ⟨hx, hx⟩
-  have hprod : trivializationAt (F × F) (E ×ᵇ E) a =
-      (trivializationAt F E a).prod (trivializationAt F E a) := rfl
   refine ContinuousLinearMap.ext fun ⟨v, w⟩ ↦ ?_
   simp only [ContinuousLinearMap.inCoordinates, ContinuousLinearMap.comp_apply,
     (trivializationAt (F × F) (E ×ᵇ E) a).symmL_apply hxp, ContinuousLinearEquiv.coe_coe]
-  have hsymm : (trivializationAt (F × F) (E ×ᵇ E) a).symm x (v, w) =
-      ((trivializationAt F E a).symm x v, (trivializationAt F E a).symm x w) := by
-    rw [hprod]
-    exact (TotalSpace.mk_inj (F := F × F) (E := E ×ᵇ E)).mp
-      ((((trivializationAt F E a).prod (trivializationAt F E a)).mk_symm hxp (v, w)).trans
-        ((trivializationAt F E a).prod_symm_apply (trivializationAt F E a) x v w))
-  rw [hsymm, complexificationEquivProd_symm_apply,
+  rw [FiberBundle.trivializationAt_prod F E F E a,
+    (trivializationAt F E a).prod_symm_apply' (trivializationAt F E a) ⟨hx, hx⟩ (v, w),
+    complexificationEquivProd_symm_apply,
     Trivialization.continuousLinearMapAt_apply_of_mem ℝ _ hx',
     trivializationAt_complexification, Complexification.equivProd_symm_apply]
   ext <;> simp [(trivializationAt F E a).coe_linearMapAt_of_mem hx,
     (trivializationAt F E a).apply_mk_symm hx]
 
-section ContinuousSections
-
 variable [∀ x, IsTopologicalAddGroup (E x)] [∀ x, ContinuousSMul ℝ (E x)]
 
+/-- Fibrewise real part is a continuous section of `fun y ↦ ℂ ⊗[ℝ] E y →L[ℝ] E y`. -/
 theorem continuous_realPartCLM_bundle :
     Continuous (fun x ↦ TotalSpace.mk' (Complexification F →L[ℝ] F)
       (E := fun y ↦ ℂ ⊗[ℝ] E y →L[ℝ] E y) x (realPartCLM (E x))) :=
   continuous_hom_bundle_of_inCoordinates_eq_const fun a _ _ hx ↦ inCoordinates_realPartCLM a hx
 
+/-- Fibrewise imaginary part is a continuous section of `fun y ↦ ℂ ⊗[ℝ] E y →L[ℝ] E y`. -/
 theorem continuous_imaginaryPartCLM_bundle :
     Continuous (fun x ↦ TotalSpace.mk' (Complexification F →L[ℝ] F)
       (E := fun y ↦ ℂ ⊗[ℝ] E y →L[ℝ] E y) x (imaginaryPartCLM (E x))) :=
   continuous_hom_bundle_of_inCoordinates_eq_const fun a _ _ hx ↦ inCoordinates_imaginaryPartCLM a hx
 
+/-- Real inclusion `v ↦ 1 ⊗ₜ v` is a continuous section of `fun y ↦ E y →L[ℝ] ℂ ⊗[ℝ] E y`. -/
 theorem continuous_oneTmulCLM_bundle :
     Continuous (fun x ↦ TotalSpace.mk' (F →L[ℝ] Complexification F)
       (E := fun y ↦ E y →L[ℝ] ℂ ⊗[ℝ] E y) x (oneTmulCLM (E x))) :=
   continuous_hom_bundle_of_inCoordinates_eq_const fun a _ hx _ ↦ inCoordinates_oneTmulCLM a hx
 
+/-- Imaginary inclusion `v ↦ I ⊗ₜ v` is a continuous section of `fun y ↦ E y →L[ℝ] ℂ ⊗[ℝ] E y`. -/
 theorem continuous_ITmulCLM_bundle :
     Continuous (fun x ↦ TotalSpace.mk' (F →L[ℝ] Complexification F)
       (E := fun y ↦ E y →L[ℝ] ℂ ⊗[ℝ] E y) x (ITmulCLM (E x))) :=
   continuous_hom_bundle_of_inCoordinates_eq_const fun a _ hx _ ↦ inCoordinates_ITmulCLM a hx
 
+/-- Fibrewise conjugation is a continuous section of the conjugate-linear endomorphism bundle. -/
 theorem continuous_tmulConjCLE_bundle :
     Continuous (fun x ↦ TotalSpace.mk'
       (Complexification F →SL[starRingEnd ℂ] Complexification F)
@@ -760,11 +540,13 @@ theorem continuous_tmulConjCLE_bundle :
       (tmulConjCLE (E x) : ℂ ⊗[ℝ] E x →SL[starRingEnd ℂ] ℂ ⊗[ℝ] E x)) :=
   continuous_hom_bundle_of_inCoordinates_eq_const fun a _ hx _ ↦ inCoordinates_tmulConjCLE a hx
 
+/-- Fibrewise conjugation is a continuous section of the real endomorphism bundle. -/
 theorem continuous_tmulConjCLM_bundle :
     Continuous (fun x ↦ TotalSpace.mk' (Complexification F →L[ℝ] Complexification F)
       (E := fun y ↦ ℂ ⊗[ℝ] E y →L[ℝ] ℂ ⊗[ℝ] E y) x (tmulConjCLM (E x))) :=
   continuous_hom_bundle_of_inCoordinates_eq_const fun a _ hx _ ↦ inCoordinates_tmulConjCLM a hx
 
+/-- `(realPart, imaginaryPart)` is a continuous section of `fun y ↦ ℂ ⊗[ℝ] E y →L[ℝ] (E ×ᵇ E) y`. -/
 theorem continuous_complexificationEquivProd_bundle :
     Continuous (fun x ↦ TotalSpace.mk' (Complexification F →L[ℝ] F × F)
       (E := fun y ↦ ℂ ⊗[ℝ] E y →L[ℝ] (E ×ᵇ E) y) x
@@ -772,14 +554,13 @@ theorem continuous_complexificationEquivProd_bundle :
   continuous_hom_bundle_of_inCoordinates_eq_const
     fun a _ hx _ ↦ inCoordinates_complexificationEquivProd a hx
 
+/-- `(v, w) ↦ 1 ⊗ₜ v + I ⊗ₜ w` is a continuous section of `fun y ↦ (E ×ᵇ E) y →L[ℝ] ℂ ⊗[ℝ] E y`. -/
 theorem continuous_complexificationEquivProd_symm_bundle :
     Continuous (fun x ↦ TotalSpace.mk' ((F × F) →L[ℝ] Complexification F)
       (E := fun y ↦ (E ×ᵇ E) y →L[ℝ] ℂ ⊗[ℝ] E y) x
       ((complexificationEquivProd (E x)).symm : (E ×ᵇ E) x →L[ℝ] ℂ ⊗[ℝ] E x)) :=
   continuous_hom_bundle_of_inCoordinates_eq_const
     fun a _ _ hx ↦ inCoordinates_complexificationEquivProd_symm a hx
-
-end ContinuousSections
 
 end TrivializationAtAndMorphisms
 

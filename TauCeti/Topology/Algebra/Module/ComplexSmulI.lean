@@ -12,10 +12,11 @@ public import Mathlib.Topology.Algebra.Module.Equiv.Basic
 /-!
 # Multiplication by `i` on complex modules
 
-Multiplication by `i` is a real continuous linear automorphism of any complex module with continuous
-multiplication by constant scalars, with inverse multiplication by `-i`. It is the conjugating
-operator by which complex linearity of a real-linear map is tested: a continuous real-linear map
-between complex modules that commutes with it is continuous complex-linear.
+Multiplication by `i` is a real continuous linear automorphism of any complex module with a
+compatible real scalar action (`IsScalarTower ℝ ℂ X`) and continuous multiplication by constant
+scalars, with inverse multiplication by `-i`. It is the conjugating operator by which complex
+linearity of a real-linear map is tested: a continuous real-linear map between complex modules that
+commutes with it is continuous complex-linear.
 
 ## Main definitions and results
 

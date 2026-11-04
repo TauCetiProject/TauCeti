@@ -13,13 +13,9 @@ public import TauCeti.Topology.VectorBundle.Complexification
 /-!
 # `C^n` complex vector bundles over real manifolds and complexification of `C^n` sections
 
-Over a charted space `(B, IB)` modelled on a `𝕜`-normed space (such as `𝕜 = ℝ`), a vector bundle
-`W : B → Type*` carrying `VectorBundle 𝕜' G W` along a normed field extension `𝕜 ⊆ 𝕜'` (such as
-`ℝ ⊆ ℂ`) has `C^n` scalar multiplication by `𝕜'`-valued maps
-(`ContMDiffWithinAt.algebra_smul_totalSpace`), giving `Cₛ^n⟮IB; G, W⟯` compatible `Module 𝕜'` and
-`IsScalarTower 𝕜 𝕜'` instances (`ContMDiffSection.instModuleOfNormedAlgebra`,
-`ContMDiffSection.instIsScalarTower`). When `𝕜 = ℝ` and `𝕜' = ℂ`, `Complex.I • ·` defines
-`TauCeti.smulIDiffeomorph` and `TauCeti.contMDiff_smulIEquiv_bundle`.
+Over a real charted space `(B, IB)`, fibrewise multiplication by `Complex.I` on a complex vector
+bundle `W : B → Type*` defines `TauCeti.smulIDiffeomorph` (specializing
+`TauCeti.vectorBundleScalarDiffeomorph`) and `TauCeti.contMDiff_smulIEquiv_bundle`.
 
 For any real `C^n` vector bundle `E : B → Type*` with model fibre `F` whose complexified fibres
 `ℂ ⊗[ℝ] E x` carry `TauCeti.IsComplexificationTopology (E x)`, we establish
@@ -43,102 +39,6 @@ noncomputable section
 open Bundle FiberBundle Filter Function Set Topology
 open scoped Bundle ContDiff Manifold TensorProduct
 
-/-! ### Scalar multiplication along a normed field extension on bundles and `C^n` sections -/
-
-section AlgebraSMul
-
-variable {𝕜 𝕜' : Type*} [NontriviallyNormedField 𝕜] [NontriviallyNormedField 𝕜']
-  [NormedAlgebra 𝕜 𝕜'] {EB : Type*} [NormedAddCommGroup EB] [NormedSpace 𝕜 EB]
-  {HB : Type*} [TopologicalSpace HB] {IB : ModelWithCorners 𝕜 EB HB}
-  {B : Type*} [TopologicalSpace B] [ChartedSpace HB B] {G : Type*} [NormedAddCommGroup G]
-  [NormedSpace 𝕜 G] [NormedSpace 𝕜' G] [IsScalarTower 𝕜 𝕜' G] {n : ℕ∞ω}
-  {W : B → Type*} [∀ b, TopologicalSpace (W b)] [TopologicalSpace (TotalSpace G W)]
-  [FiberBundle G W]
-
-section TotalSpace
-
-variable [∀ b, AddCommMonoid (W b)] [∀ b, Module 𝕜' (W b)] [VectorBundle 𝕜' G W]
-  {EM : Type*} [NormedAddCommGroup EM] [NormedSpace 𝕜 EM] {HM : Type*} [TopologicalSpace HM]
-  {IM : ModelWithCorners 𝕜 EM HM} {M : Type*} [TopologicalSpace M] [ChartedSpace HM M]
-
-/-- Multiplying a bundle-valued map by a `𝕜'`-valued map preserves `C^n` regularity within a set at
-a point over a `𝕜`-charted base, provided the bundle trivializations are `𝕜'`-linear. -/
-theorem ContMDiffWithinAt.algebra_smul_totalSpace {a : M → 𝕜'} {g : M → TotalSpace G W}
-    {s : Set M} {x : M} (ha : ContMDiffWithinAt IM 𝓘(𝕜, 𝕜') n a s x)
-    (hg : ContMDiffWithinAt IM (IB.prod 𝓘(𝕜, G)) n g s x) :
-    ContMDiffWithinAt IM (IB.prod 𝓘(𝕜, G)) n
-      (fun y ↦ (⟨(g y).proj, a y • (g y).2⟩ : TotalSpace G W)) s x := by
-  obtain ⟨hb, hv⟩ := Bundle.contMDiffWithinAt_totalSpace.mp hg
-  refine Bundle.contMDiffWithinAt_totalSpace.mpr ⟨hb, ?_⟩
-  let e := trivializationAt G W (g x).proj
-  have he : ∀ᶠ y in 𝓝[s] x, (g y).proj ∈ e.baseSet :=
-    hb.continuousWithinAt.preimage_mem_nhdsWithin
-      (e.open_baseSet.mem_nhds (mem_baseSet_trivializationAt G W (g x).proj))
-  refine ((contDiff_smul (𝕜 := 𝕜) (𝕜' := 𝕜') (F := G) (n := n)).comp_contMDiffWithinAt
-    (ha.prodMk_space hv)).congr_of_eventuallyEq
-      (he.mono fun y hy ↦ (e.linear 𝕜' hy).map_smul (a y) (g y).2)
-      ((e.linear 𝕜' (mem_baseSet_trivializationAt G W (g x).proj)).map_smul (a x) (g x).2)
-
-/-- Multiplying a bundle-valued map by a `𝕜'`-valued map preserves `C^n` regularity at a point. -/
-theorem ContMDiffAt.algebra_smul_totalSpace {a : M → 𝕜'} {g : M → TotalSpace G W} {x : M}
-    (ha : ContMDiffAt IM 𝓘(𝕜, 𝕜') n a x) (hg : ContMDiffAt IM (IB.prod 𝓘(𝕜, G)) n g x) :
-    ContMDiffAt IM (IB.prod 𝓘(𝕜, G)) n
-      (fun y ↦ (⟨(g y).proj, a y • (g y).2⟩ : TotalSpace G W)) x := by
-  rw [← contMDiffWithinAt_univ]
-  exact ha.contMDiffWithinAt.algebra_smul_totalSpace hg.contMDiffWithinAt
-
-/-- Multiplying a bundle-valued map by a `𝕜'`-valued map preserves `C^n` regularity on a set. -/
-theorem ContMDiffOn.algebra_smul_totalSpace {a : M → 𝕜'} {g : M → TotalSpace G W} {s : Set M}
-    (ha : ContMDiffOn IM 𝓘(𝕜, 𝕜') n a s) (hg : ContMDiffOn IM (IB.prod 𝓘(𝕜, G)) n g s) :
-    ContMDiffOn IM (IB.prod 𝓘(𝕜, G)) n
-      (fun y ↦ (⟨(g y).proj, a y • (g y).2⟩ : TotalSpace G W)) s :=
-  fun x hx ↦ (ha x hx).algebra_smul_totalSpace (hg x hx)
-
-/-- Multiplying a bundle-valued map by a `𝕜'`-valued map preserves `C^n` regularity. -/
-theorem ContMDiff.algebra_smul_totalSpace {a : M → 𝕜'} {g : M → TotalSpace G W}
-    (ha : ContMDiff IM 𝓘(𝕜, 𝕜') n a) (hg : ContMDiff IM (IB.prod 𝓘(𝕜, G)) n g) :
-    ContMDiff IM (IB.prod 𝓘(𝕜, G)) n (fun y ↦ (⟨(g y).proj, a y • (g y).2⟩ : TotalSpace G W)) :=
-  fun x ↦ (ha x).algebra_smul_totalSpace (hg x)
-
-end TotalSpace
-
-namespace ContMDiffSection
-
-section SMul
-
-variable [∀ x, AddCommMonoid (W x)] [∀ x, Module 𝕜' (W x)] [VectorBundle 𝕜' G W]
-
-/-- Low-priority `SMul 𝕜'` instance on `C^n` sections of a `𝕜'`-linear vector bundle over a
-`𝕜`-charted base; when `𝕜' = 𝕜`, `ContMDiffSection.instSMul` takes precedence and is definitionally
-equal to this action. -/
-instance (priority := low) instSMulOfNormedAlgebra : SMul 𝕜' Cₛ^n⟮IB; G, W⟯ :=
-  ⟨fun c s ↦ ⟨c • ⇑s, (contMDiff_const (c := c)).algebra_smul_totalSpace s.contMDiff⟩⟩
-
-@[simp] theorem coe_smul_of_normedAlgebra (c : 𝕜') (s : Cₛ^n⟮IB; G, W⟯) :
-    ⇑(c • s : Cₛ^n⟮IB; G, W⟯) = c • ⇑s := (rfl)
-
-end SMul
-
-section Module
-
-variable [∀ x, AddCommGroup (W x)] [∀ x, Module 𝕜 (W x)] [∀ x, Module 𝕜' (W x)]
-  [VectorBundle 𝕜 G W] [VectorBundle 𝕜' G W]
-
-/-- Low-priority `Module 𝕜'` instance on `C^n` sections of a vector bundle carrying compatible `𝕜`-
-and `𝕜'`-vector-bundle structures (in particular `𝕜 = ℝ`, `𝕜' = ℂ`). -/
-instance (priority := low) instModuleOfNormedAlgebra : Module 𝕜' Cₛ^n⟮IB; G, W⟯ :=
-  coe_injective.module 𝕜' (coeAddHom IB G n W) coe_smul_of_normedAlgebra
-
-instance instIsScalarTower [∀ x, IsScalarTower 𝕜 𝕜' (W x)] :
-    IsScalarTower 𝕜 𝕜' Cₛ^n⟮IB; G, W⟯ where
-  smul_assoc r c s := ext fun x ↦ smul_assoc r c (s x)
-
-end Module
-
-end ContMDiffSection
-
-end AlgebraSMul
-
 /-! ### Multiplication by `i` on complex vector bundles over real manifolds -/
 
 namespace TauCeti
@@ -152,56 +52,40 @@ variable {EB : Type*} [NormedAddCommGroup EB] [NormedSpace ℝ EB] {HB : Type*} 
   [∀ x, TopologicalSpace (W x)] [TopologicalSpace (TotalSpace G W)]
   [FiberBundle G W] [VectorBundle ℂ G W]
 
-section Diffeomorph
-
-variable (IB G n W)
-
+variable (IB G n W) in
 /-- Fibrewise multiplication by `Complex.I` on a complex vector bundle over a real charted space as
 a `C^n` diffeomorphism of its total space, requiring neither finite rank nor `ContMDiffVectorBundle`
 nor fibrewise topological-group hypotheses. -/
-def smulIDiffeomorph : TotalSpace G W ≃ₘ^n⟮IB.prod 𝓘(ℝ, G), IB.prod 𝓘(ℝ, G)⟯ TotalSpace G W where
-  toFun p := ⟨p.proj, Complex.I • p.2⟩
-  invFun p := ⟨p.proj, -Complex.I • p.2⟩
-  left_inv := fun ⟨x, v⟩ ↦ congrArg (TotalSpace.mk x) (Complex.neg_I_smul_I_smul v)
-  right_inv := fun ⟨x, v⟩ ↦ congrArg (TotalSpace.mk x) (Complex.I_smul_neg_I_smul v)
-  contMDiff_toFun := (contMDiff_const (c := Complex.I)).algebra_smul_totalSpace contMDiff_id
-  contMDiff_invFun := (contMDiff_const (c := -Complex.I)).algebra_smul_totalSpace contMDiff_id
-
-variable {IB G n W}
+def smulIDiffeomorph : TotalSpace G W ≃ₘ^n⟮IB.prod 𝓘(ℝ, G), IB.prod 𝓘(ℝ, G)⟯ TotalSpace G W :=
+  vectorBundleScalarDiffeomorph (fun _ ↦ Complex.I) contMDiff_const (fun _ ↦ Complex.I_ne_zero)
 
 @[simp] theorem smulIDiffeomorph_apply (p : TotalSpace G W) :
-    smulIDiffeomorph IB G n W p = ⟨p.proj, Complex.I • p.2⟩ := (rfl)
+    smulIDiffeomorph IB G n W p = ⟨p.proj, Complex.I • p.2⟩ :=
+  vectorBundleScalarDiffeomorph_apply _ _ _ p
 @[simp] theorem smulIDiffeomorph_symm_apply (p : TotalSpace G W) :
-    (smulIDiffeomorph IB G n W).symm p = ⟨p.proj, -Complex.I • p.2⟩ := (rfl)
-theorem smulIDiffeomorph_apply_self (p : TotalSpace G W) :
+    (smulIDiffeomorph IB G n W).symm p = ⟨p.proj, -Complex.I • p.2⟩ := by simp [smulIDiffeomorph]
+/-- Applying `smulIDiffeomorph` twice negates each fibre vector. -/
+theorem smulIDiffeomorph_smulIDiffeomorph_apply (p : TotalSpace G W) :
     smulIDiffeomorph IB G n W (smulIDiffeomorph IB G n W p) = ⟨p.proj, -p.2⟩ := by
   rcases p with ⟨x, v⟩; simp [smul_smul]
 @[simp] theorem toHomeomorph_smulIDiffeomorph :
     (smulIDiffeomorph IB G n W).toHomeomorph = smulIHomeomorph G W :=
   Homeomorph.ext fun _ ↦ by simp
 
-end Diffeomorph
-
-section HomBundle
-
 variable [∀ x, Module ℝ (W x)] [∀ x, IsScalarTower ℝ ℂ (W x)] [∀ x, ContinuousConstSMul ℂ (W x)]
   [∀ x, IsTopologicalAddGroup (W x)] [∀ x, ContinuousSMul ℝ (W x)] [VectorBundle ℝ G W]
 
 /-- Fibrewise multiplication by `Complex.I` is a `C^n` section of `fun x ↦ W x →L[ℝ] W x`. -/
 theorem contMDiff_smulIEquiv_bundle :
-    ContMDiff IB (IB.prod 𝓘(ℝ, G →L[ℝ] G)) n
-      (fun x ↦ TotalSpace.mk' (G →L[ℝ] G)
-        (E := fun y ↦ W y →L[ℝ] W y) x (Complex.smulIEquiv (W x) : W x →L[ℝ] W x)) :=
+    ContMDiff IB (IB.prod 𝓘(ℝ, G →L[ℝ] G)) n (fun x ↦ TotalSpace.mk' (G →L[ℝ] G)
+      (E := fun y ↦ W y →L[ℝ] W y) x (Complex.smulIEquiv (W x) : W x →L[ℝ] W x)) :=
   contMDiff_hom_bundle_of_inCoordinates_eq_const fun a _ hx _ ↦ inCoordinates_smulIEquiv a hx
 
 /-- Fibrewise multiplication by `-Complex.I` is a `C^n` section of `fun x ↦ W x →L[ℝ] W x`. -/
 theorem contMDiff_smulIEquiv_symm_bundle :
-    ContMDiff IB (IB.prod 𝓘(ℝ, G →L[ℝ] G)) n
-      (fun x ↦ TotalSpace.mk' (G →L[ℝ] G)
-        (E := fun y ↦ W y →L[ℝ] W y) x ((Complex.smulIEquiv (W x)).symm : W x →L[ℝ] W x)) :=
+    ContMDiff IB (IB.prod 𝓘(ℝ, G →L[ℝ] G)) n (fun x ↦ TotalSpace.mk' (G →L[ℝ] G)
+      (E := fun y ↦ W y →L[ℝ] W y) x ((Complex.smulIEquiv (W x)).symm : W x →L[ℝ] W x)) :=
   contMDiff_hom_bundle_of_inCoordinates_eq_const fun a _ hx _ ↦ inCoordinates_smulIEquiv_symm a hx
-
-end HomBundle
 
 end SmulIBundle
 
@@ -315,10 +199,7 @@ theorem contMDiff_complexification_section_iff {s : ∀ x, ℂ ⊗[ℝ] E x} :
 
 end RegularityCharacterization
 
-section TotalSpaceDiffeomorphs
-
-variable (IB F n E)
-
+variable (IB F n E) in
 /-- Fibrewise complex conjugation `z ⊗ₜ v ↦ conj z ⊗ₜ v` as an involutive `C^n` diffeomorphism of
 the total space of `fun x ↦ ℂ ⊗[ℝ] E x`, requiring neither `ContMDiffVectorBundle` nor finite rank
 nor fibrewise topological-group hypotheses. -/
@@ -339,9 +220,9 @@ def tmulConjDiffeomorph :
     invFun p := ⟨p.proj, tmulConj (E p.proj) p.2⟩
     left_inv := fun ⟨x, u⟩ ↦ congrArg (TotalSpace.mk x) (tmulConj_tmulConj (E x) u)
     right_inv := fun ⟨x, u⟩ ↦ congrArg (TotalSpace.mk x) (tmulConj_tmulConj (E x) u)
-    contMDiff_toFun := hcont
-    contMDiff_invFun := hcont }
+    contMDiff_toFun := hcont, contMDiff_invFun := hcont }
 
+variable (IB F n E) in
 /-- The real/imaginary-part `C^n` diffeomorphism between the total space of `fun x ↦ ℂ ⊗[ℝ] E x`
 and the total space of `E ×ᵇ E`. -/
 def complexificationTotalSpaceDiffeomorphProd :
@@ -365,9 +246,9 @@ def complexificationTotalSpaceDiffeomorphProd :
     filter_upwards [hb.continuousAt.preimage_mem_nhds
       (e₀.open_baseSet.mem_nhds (mem_baseSet_trivializationAt F E p₀.proj))] with p hp
     have hp' : p.proj ∈ e₀.baseSet := hp
-    have hprod : trivializationAt (F × F) (E ×ᵇ E) p₀.proj = e₀.prod e₀ := rfl
     dsimp only [Function.comp_def, id_eq]
-    rw [hprod, complexificationEquivProd_apply, Trivialization.prod_apply' ℝ hp' hp']
+    rw [FiberBundle.trivializationAt_prod F E F E p₀.proj,
+      complexificationEquivProd_apply, Trivialization.prod_apply' ℝ hp' hp']
     simp [e₀, trivializationAt_complexification,
       (trivializationAt F E p₀.proj).coe_linearMapAt_of_mem hp']
   contMDiff_invFun := by
@@ -381,13 +262,10 @@ def complexificationTotalSpaceDiffeomorphProd :
     filter_upwards [hb.continuousAt.preimage_mem_nhds
       (e₀.open_baseSet.mem_nhds (mem_baseSet_trivializationAt F E p₀.proj))] with ⟨x, v₁, v₂⟩ hp
     have hx : x ∈ e₀.baseSet := hp
-    have hprod : trivializationAt (F × F) (E ×ᵇ E) p₀.proj = e₀.prod e₀ := rfl
     dsimp only [Function.comp_def, id_eq]
-    rw [hprod, Trivialization.prod_apply' ℝ hx hx]
+    rw [FiberBundle.trivializationAt_prod F E F E p₀.proj, Trivialization.prod_apply' ℝ hx hx]
     ext <;> simp [e₀, trivializationAt_complexification,
       (trivializationAt F E p₀.proj).coe_linearMapAt_of_mem hx]
-
-variable {IB F n E}
 
 @[simp] theorem tmulConjDiffeomorph_apply
     (p : TotalSpace (Complexification F) fun x ↦ ℂ ⊗[ℝ] E x) :
@@ -415,36 +293,37 @@ theorem proj_complexificationTotalSpaceDiffeomorphProd
       complexificationTotalSpaceHomeomorphProd F E :=
   Homeomorph.ext fun _ ↦ by simp
 
-end TotalSpaceDiffeomorphs
-
-section HomBundleSections
-
 variable [∀ x, IsTopologicalAddGroup (E x)] [∀ x, ContinuousSMul ℝ (E x)]
 
+/-- Fibrewise real part is a `C^n` section of `fun y ↦ ℂ ⊗[ℝ] E y →L[ℝ] E y`. -/
 theorem contMDiff_realPartCLM_bundle :
     ContMDiff IB (IB.prod 𝓘(ℝ, Complexification F →L[ℝ] F)) n
       (fun x ↦ TotalSpace.mk' (Complexification F →L[ℝ] F)
         (E := fun y ↦ ℂ ⊗[ℝ] E y →L[ℝ] E y) x (realPartCLM (E x))) :=
   contMDiff_hom_bundle_of_inCoordinates_eq_const fun a _ _ hx ↦ inCoordinates_realPartCLM a hx
 
+/-- Fibrewise imaginary part is a `C^n` section of `fun y ↦ ℂ ⊗[ℝ] E y →L[ℝ] E y`. -/
 theorem contMDiff_imaginaryPartCLM_bundle :
     ContMDiff IB (IB.prod 𝓘(ℝ, Complexification F →L[ℝ] F)) n
       (fun x ↦ TotalSpace.mk' (Complexification F →L[ℝ] F)
         (E := fun y ↦ ℂ ⊗[ℝ] E y →L[ℝ] E y) x (imaginaryPartCLM (E x))) :=
   contMDiff_hom_bundle_of_inCoordinates_eq_const fun a _ _ hx ↦ inCoordinates_imaginaryPartCLM a hx
 
+/-- Real inclusion `v ↦ 1 ⊗ₜ v` is a `C^n` section of `fun y ↦ E y →L[ℝ] ℂ ⊗[ℝ] E y`. -/
 theorem contMDiff_oneTmulCLM_bundle :
     ContMDiff IB (IB.prod 𝓘(ℝ, F →L[ℝ] Complexification F)) n
       (fun x ↦ TotalSpace.mk' (F →L[ℝ] Complexification F)
         (E := fun y ↦ E y →L[ℝ] ℂ ⊗[ℝ] E y) x (oneTmulCLM (E x))) :=
   contMDiff_hom_bundle_of_inCoordinates_eq_const fun a _ hx _ ↦ inCoordinates_oneTmulCLM a hx
 
+/-- Imaginary inclusion `v ↦ I ⊗ₜ v` is a `C^n` section of `fun y ↦ E y →L[ℝ] ℂ ⊗[ℝ] E y`. -/
 theorem contMDiff_ITmulCLM_bundle :
     ContMDiff IB (IB.prod 𝓘(ℝ, F →L[ℝ] Complexification F)) n
       (fun x ↦ TotalSpace.mk' (F →L[ℝ] Complexification F)
         (E := fun y ↦ E y →L[ℝ] ℂ ⊗[ℝ] E y) x (ITmulCLM (E x))) :=
   contMDiff_hom_bundle_of_inCoordinates_eq_const fun a _ hx _ ↦ inCoordinates_ITmulCLM a hx
 
+/-- Fibrewise conjugation is a `C^n` section of the real endomorphism bundle. -/
 theorem contMDiff_tmulConjCLM_bundle :
     ContMDiff IB (IB.prod 𝓘(ℝ, Complexification F →L[ℝ] Complexification F)) n
       (fun x ↦ TotalSpace.mk' (Complexification F →L[ℝ] Complexification F)
@@ -452,6 +331,7 @@ theorem contMDiff_tmulConjCLM_bundle :
   contMDiff_hom_bundle_of_inCoordinates_eq_const fun a _ hx _ ↦
     inCoordinates_tmulConjCLM a (by rwa [baseSet_trivializationAt_complexification] at hx)
 
+/-- `(realPart, imaginaryPart)` is a `C^n` section of `fun y ↦ ℂ ⊗[ℝ] E y →L[ℝ] (E ×ᵇ E) y`. -/
 theorem contMDiff_complexificationEquivProd_bundle :
     ContMDiff IB (IB.prod 𝓘(ℝ, Complexification F →L[ℝ] F × F)) n
       (fun x ↦ TotalSpace.mk' (Complexification F →L[ℝ] F × F)
@@ -461,6 +341,7 @@ theorem contMDiff_complexificationEquivProd_bundle :
     inCoordinates_complexificationEquivProd a
       (by rwa [baseSet_trivializationAt_complexification] at hx)
 
+/-- `(v, w) ↦ 1 ⊗ₜ v + I ⊗ₜ w` is a `C^n` section of `fun y ↦ (E ×ᵇ E) y →L[ℝ] ℂ ⊗[ℝ] E y`. -/
 theorem contMDiff_complexificationEquivProd_symm_bundle :
     ContMDiff IB (IB.prod 𝓘(ℝ, (F × F) →L[ℝ] Complexification F)) n
       (fun x ↦ TotalSpace.mk' ((F × F) →L[ℝ] Complexification F)
@@ -469,8 +350,6 @@ theorem contMDiff_complexificationEquivProd_symm_bundle :
   contMDiff_hom_bundle_of_inCoordinates_eq_const fun a _ _ hx ↦
     inCoordinates_complexificationEquivProd_symm a
       (by rwa [baseSet_trivializationAt_complexification] at hx)
-
-end HomBundleSections
 
 end ComplexificationBundle
 
