@@ -9,13 +9,15 @@ public import Mathlib.Analysis.Calculus.DifferentialForm.Basic
 public import Mathlib.Analysis.SpecialFunctions.Complex.CircleMap
 public import Mathlib.MeasureTheory.Integral.IntervalIntegral.Basic
 public import TauCeti.Geometry.Symplectic.AlmostComplex
-import Mathlib.Analysis.Calculus.FDeriv.Mul
+public import TauCeti.Analysis.Calculus.DifferentialForm.PhaseForm
+public import TauCeti.Analysis.Calculus.DifferentialForm.TwistedDifferential
 import Mathlib.Analysis.InnerProductSpace.Calculus
 import Mathlib.MeasureTheory.Integral.CircleIntegral
 import Mathlib.MeasureTheory.Integral.IntervalIntegral.FundThmCalculus
 import TauCeti.Analysis.Calculus.DifferentialForm.Basic
 import TauCeti.Analysis.Calculus.DifferentialForm.Regularity
 import TauCeti.Analysis.Calculus.DifferentialForm.Stokes
+import TauCeti.Topology.Algebra.GroupWithZero.DivId
 
 /-!
 # The cutoff current of an abelian Higgs pair
@@ -56,7 +58,8 @@ Given an almost complex structure `J`, the cutoff phase form also has a modulus 
 `χ(s) τ = d^c_J H(s) + E`,  `E = 2 χ(s) Re (α⁻¹ ∂bar_a α) ∘ J`
 
 (`cutoffPhaseForm_eq_twistedDifferential_add`). The primitive with `H(1) = 0` is
-`TauCeti.SeibergWitten.modulusPotential χ`. If `χ` vanishes on `[0, c)` and `|χ| ≤ 1`, then
+`TauCeti.SeibergWitten.modulusPotential χ` when `χ` is continuous and vanishes near `0`
+(`hasDerivAt_modulusPotential`). If `χ` vanishes on `[0, c)` and `|χ| ≤ 1`, then
 `|H(s)| ≤ |s - 1| / c` and `‖E‖ ≤ (2 / √c) ‖∂bar_a α‖` pointwise
 (`abs_modulusPotential_le`, `norm_cutoffDBarForm_le`). Since `Θ - i F_a = d(χ(s) τ)`, its pairing
 with a test form `ζ` is the pairing of `χ(s) τ = d^c_J H(s) + E` with `dζ`; after an integration
@@ -64,20 +67,27 @@ by parts in the first term, these pointwise bounds reduce that pairing to integr
 `1 - |α|²` and on `∂bar_a α`. Those integral bounds and the integration by parts are not part of
 this file.
 
-Everything is stated on an arbitrary real normed space, which plays the role of a coordinate
-chart; the gauge invariance makes the constructions independent of the trivialization.
+The cutoff phase form, the cutoff current, their regularity, support and gauge invariance are
+stated on an arbitrary real normed space, which plays the role of a coordinate chart; the gauge
+invariance makes the constructions independent of the trivialization. The flux identity is
+stated on the plane `ℂ`, and the modulus-potential decomposition and the bound on the correction
+form on a finite-dimensional real normed space carrying an almost complex structure.
+
+The phase form `Im (α⁻¹ dα)` (`TauCeti.phaseForm`) and the twisted differential `d^c_J`
+(`TauCeti.twistedDifferential`) are general constructions defined in
+`TauCeti.Analysis.Calculus.DifferentialForm.PhaseForm` and
+`TauCeti.Analysis.Calculus.DifferentialForm.TwistedDifferential`.
 
 ## Main definitions
 
-* `TauCeti.SeibergWitten.phaseForm α`: the one-form `Im (α⁻¹ dα)`.
 * `TauCeti.SeibergWitten.covariantDeriv b α`: the covariant derivative `dα + i b α`.
 * `TauCeti.SeibergWitten.covariantPhaseForm b α`: the phase form `τ = Im (α⁻¹ dα) + b`.
 * `TauCeti.SeibergWitten.cutoffPhaseForm χ b α`: the one-form `χ(|α|²) τ`.
 * `TauCeti.SeibergWitten.cutoffCurrent χ b α`: the two-form `Θ = -db + d(χ(|α|²) τ)`.
 * `TauCeti.SeibergWitten.covariantDBar J b α`: the `J`-antilinear part `∂bar_a α`.
-* `TauCeti.SeibergWitten.twistedDifferential J f`: the one-form `d^c_J f = -(1/2) df ∘ J`.
 * `TauCeti.SeibergWitten.cutoffDBarForm J χ b α`: the one-form `2 χ(|α|²) Re (α⁻¹ ∂bar_a α) ∘ J`.
-* `TauCeti.SeibergWitten.modulusPotential χ`: the primitive `H(s) = ∫₁ˢ χ(t) / t dt`.
+* `TauCeti.SeibergWitten.modulusPotential χ`: the integral `H(s) = ∫₁ˢ χ(t) / t dt`, a primitive of
+  `χ(s) / s` when `χ` is continuous and vanishes near `0`.
 
 ## References
 
@@ -98,79 +108,6 @@ namespace TauCeti.SeibergWitten
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   {α u : E → ℂ} {b : E → E [⋀^Fin 1]→L[ℝ] ℝ} {χ : ℝ → ℝ} {x : E}
-
-/-! ### The phase form -/
-
-/-- The phase form `Im (α⁻¹ dα)` of a complex function `α`. Away from the zeros of `α` it is the
-differential of a local branch of `arg α`; at a zero of `α` it is `0`. -/
-def phaseForm (α : E → ℂ) (x : E) : E [⋀^Fin 1]→L[ℝ] ℝ :=
-  ofSubsingletonLIE (0 : Fin 1) (imCLM.comp ((α x)⁻¹ • fderiv ℝ α x))
-
-/-- The phase form evaluated on a vector. -/
-@[simp]
-theorem phaseForm_apply (α : E → ℂ) (x : E) (v : Fin 1 → E) :
-    phaseForm α x v = ((α x)⁻¹ * fderiv ℝ α x (v 0)).im := by
-  simp [phaseForm]
-
-/-- The continuous linear map `L ↦ Im ∘ L`, with values in one-forms. -/
-private def imOneForm : (E →L[ℝ] ℂ) →L[ℝ] E [⋀^Fin 1]→L[ℝ] ℝ :=
-  (ofSubsingletonLIE (0 : Fin 1)).toContinuousLinearEquiv.toContinuousLinearMap ∘L
-    ContinuousLinearMap.compL ℝ E ℂ ℝ imCLM
-
-/-- The phase form is `imOneForm` applied to `α⁻¹ dα`. -/
-private theorem phaseForm_eq_imOneForm (α : E → ℂ) :
-    phaseForm α = fun y ↦ imOneForm ((α y)⁻¹ • fderiv ℝ α y) := by
-  funext y
-  ext v
-  simp [imOneForm]
-
-/-- The phase form of a `C^m` function is `C^n` away from its zeros, for `n + 1 ≤ m`. -/
-theorem contDiffAt_phaseForm {m n : WithTop ℕ∞} (hα : ContDiffAt ℝ m α x) (h : α x ≠ 0)
-    (hnm : n + 1 ≤ m) : ContDiffAt ℝ n (phaseForm α) x := by
-  rw [phaseForm_eq_imOneForm]
-  exact imOneForm.contDiff.contDiffAt.comp x
-    (((hα.of_le (le_self_add.trans hnm)).fun_inv h).fun_smul (hα.fderiv_right hnm))
-
-/-- The phase form is closed away from the zeros of a `C²` function: `d Im (α⁻¹ dα) = 0`. -/
-theorem extDeriv_phaseForm (hα : ContDiffAt ℝ 2 α x) (h : α x ≠ 0) :
-    extDeriv (phaseForm α) x = 0 := by
-  have hd : DifferentiableAt ℝ (fderiv ℝ α) x :=
-    (hα.fderiv_right le_rfl).differentiableAt one_ne_zero
-  have hsymm := hα.isSymmSndFDerivAt (by simp)
-  have hinv : HasFDerivAt (fun y ↦ (α y)⁻¹)
-      ((-ContinuousLinearMap.mulLeftRight ℝ ℂ (α x)⁻¹ (α x)⁻¹).comp (fderiv ℝ α x)) x :=
-    (hasFDerivAt_inv' h).comp x (hα.differentiableAt (by simp)).hasFDerivAt
-  have hφ : HasFDerivAt (phaseForm α) (imOneForm.comp ((α x)⁻¹ • fderiv ℝ (fderiv ℝ α) x +
-      ((-ContinuousLinearMap.mulLeftRight ℝ ℂ (α x)⁻¹ (α x)⁻¹).comp
-        (fderiv ℝ α x)).smulRight (fderiv ℝ α x))) x := by
-    rw [phaseForm_eq_imOneForm]
-    exact imOneForm.hasFDerivAt.comp x (hinv.smul hd.hasFDerivAt)
-  ext v
-  have hv : v = ![v 0, v 1] := by
-    funext i
-    fin_cases i <;> rfl
-  rw [hv, extDeriv_apply_pair, hφ.fderiv]
-  simp only [imOneForm, ContinuousLinearMap.comp_apply, _root_.add_apply,
-    _root_.smul_apply, ContinuousLinearMap.smulRight_apply,
-    _root_.neg_apply, ContinuousLinearMap.mulLeftRight_apply,
-    ContinuousLinearEquiv.coe_coe, LinearIsometryEquiv.coe_toContinuousLinearEquiv,
-    ofSubsingletonLIE_apply, ofSubsingleton_apply_apply, ContinuousLinearMap.compL_apply,
-    imCLM_apply, smul_eq_mul, hsymm.eq (v 0) (v 1)]
-  rw [← sub_im]
-  ring_nf
-  simp
-
-/-- The phase form of a product of functions that do not vanish at `x` is the sum of their
-phase forms. -/
-theorem phaseForm_mul (hu : DifferentiableAt ℝ u x) (hα : DifferentiableAt ℝ α x)
-    (hu₀ : u x ≠ 0) (hα₀ : α x ≠ 0) :
-    phaseForm (u * α) x = phaseForm u x + phaseForm α x := by
-  ext v
-  simp only [phaseForm_apply, Pi.mul_apply, ContinuousAlternatingMap.add_apply,
-    fderiv_mul hu hα, _root_.add_apply, _root_.smul_apply, smul_eq_mul, ← add_im]
-  congr 1
-  field_simp
-  ring
 
 /-! ### The covariant derivative and the covariant phase form -/
 
@@ -226,6 +163,10 @@ def cutoffPhaseForm (χ : ℝ → ℝ) (b : E → E [⋀^Fin 1]→L[ℝ] ℝ) (�
     E [⋀^Fin 1]→L[ℝ] ℝ :=
   χ (normSq (α x)) • covariantPhaseForm b α x
 
+/-- The cutoff phase form at a point is `χ(|α|²) τ`. -/
+theorem cutoffPhaseForm_apply (χ : ℝ → ℝ) (b : E → E [⋀^Fin 1]→L[ℝ] ℝ) (α : E → ℂ) (x : E) :
+    cutoffPhaseForm χ b α x = χ (normSq (α x)) • covariantPhaseForm b α x := (rfl)
+
 /-- The cutoff current `Θ = i F_a + d(χ(|α|²) τ)`, where `i F_a = -db` is `i` times the curvature
 of `a = i b`. -/
 def cutoffCurrent (χ : ℝ → ℝ) (b : E → E [⋀^Fin 1]→L[ℝ] ℝ) (α : E → ℂ) :
@@ -240,14 +181,16 @@ theorem cutoffCurrent_apply (χ : ℝ → ℝ) (b : E → E [⋀^Fin 1]→L[ℝ]
 theorem cutoffPhaseForm_eventuallyEq_zero (hα : ContinuousAt α x)
     (hχ : χ =ᶠ[𝓝 (normSq (α x))] 0) : cutoffPhaseForm χ b α =ᶠ[𝓝 x] 0 := by
   filter_upwards [(continuous_normSq.continuousAt.comp hα).tendsto.eventually hχ] with y hy
-  simp [cutoffPhaseForm, show χ (normSq (α y)) = 0 from hy]
+  rw [Pi.zero_apply, Function.comp_apply] at hy
+  simp [cutoffPhaseForm_apply, hy]
 
 /-- Near a point where `χ` is `1` near `|α|²`, the cutoff phase form is the covariant phase
 form. -/
 theorem cutoffPhaseForm_eventuallyEq_covariantPhaseForm (hα : ContinuousAt α x)
     (hχ : χ =ᶠ[𝓝 (normSq (α x))] 1) : cutoffPhaseForm χ b α =ᶠ[𝓝 x] covariantPhaseForm b α := by
   filter_upwards [(continuous_normSq.continuousAt.comp hα).tendsto.eventually hχ] with y hy
-  simp [cutoffPhaseForm, show χ (normSq (α y)) = 1 from hy]
+  rw [Pi.one_apply, Function.comp_apply] at hy
+  simp [cutoffPhaseForm_apply, hy]
 
 /-- The cutoff phase form of a `C^(n+1)` section and a `C^n` connection form is `C^n`, for a
 `C^n` cutoff vanishing near `0`. -/
@@ -325,7 +268,7 @@ theorem cutoffPhaseForm_sub_phaseForm_mul (hu : ∀ y, ‖u y‖ = 1) (hud : Dif
   funext y
   have hs : normSq ((u * α) y) = normSq (α y) := by
     rw [Pi.mul_apply, map_mul, normSq_eq_norm_sq (u y), hu y, one_pow, one_mul]
-  rw [cutoffPhaseForm, cutoffPhaseForm, hs]
+  rw [cutoffPhaseForm_apply, cutoffPhaseForm_apply, hs]
   by_cases h : α y = 0
   · simp [h, hχ]
   · rw [covariantPhaseForm_sub_phaseForm_mul (hud y) (hα y) (norm_ne_zero_iff.1 (by simp [hu y])) h]
@@ -373,12 +316,13 @@ theorem integral_cutoffCurrent_closedBall {α : ℂ → ℂ} {b : ℂ → ℂ [�
     integral_extDeriv_closedBall hr fun z _ ↦ hb.contDiffAt,
     ← intervalIntegral.integral_sub (hcirc hτ.continuous) (hcirc hb.continuous)]
   refine intervalIntegral.integral_congr fun θ _ ↦ ?_
-  simp [cutoffPhaseForm, hbd θ, covariantPhaseForm_apply]
+  simp [cutoffPhaseForm_apply, hbd θ, covariantPhaseForm_apply]
 
 /-! ### The modulus potential -/
 
-/-- The modulus potential `H(s) = ∫₁ˢ χ(t) / t dt`, the primitive of `χ(s) / s` normalized by
-`H(1) = 0`. -/
+/-- The modulus potential `H(s) = ∫₁ˢ χ(t) / t dt`, normalized by `H(1) = 0`. When `χ` is
+continuous and vanishes near `0` it is a primitive of `χ(s) / s`
+(`hasDerivAt_modulusPotential`). -/
 def modulusPotential (χ : ℝ → ℝ) (s : ℝ) : ℝ :=
   ∫ t in (1 : ℝ)..s, χ t / t
 
@@ -387,55 +331,29 @@ def modulusPotential (χ : ℝ → ℝ) (s : ℝ) : ℝ :=
 theorem modulusPotential_one (χ : ℝ → ℝ) : modulusPotential χ 1 = 0 :=
   intervalIntegral.integral_same
 
-/-- For a cutoff vanishing on `(-ε, ε)`, the integrand `χ(t) / t` of the modulus potential is
-continuous on `(-ε, ∞)`. -/
-private theorem continuousOn_div_self {ε : ℝ} (hχ : Continuous χ)
-    (hε : ∀ t ∈ Ioo (-ε) ε, χ t = 0) : ContinuousOn (fun t ↦ χ t / t) (Ioi (-ε)) := by
-  intro t ht
-  refine ContinuousAt.continuousWithinAt ?_
-  rcases lt_or_ge 0 t with h | h
-  · exact (hχ.continuousAt).div continuousAt_id h.ne'
-  · have hmem : Ioo (-ε) ε ∈ 𝓝 t := Ioo_mem_nhds ht (h.trans_lt (by linarith [mem_Ioi.1 ht]))
-    refine (continuousAt_const (y := (0 : ℝ))).congr (eventuallyEq_of_mem hmem fun y hy ↦ ?_)
-    simp [hε y hy]
-
-/-- A cutoff vanishing near `0` vanishes on a symmetric open interval around `0`. -/
-private theorem exists_Ioo_eq_zero (hχ₀ : χ =ᶠ[𝓝 0] 0) :
-    ∃ ε > 0, ∀ t ∈ Ioo (-ε) ε, χ t = 0 := by
-  obtain ⟨ε, hε, h⟩ := Metric.eventually_nhds_iff_ball.1 hχ₀
-  refine ⟨ε, hε, fun t ht ↦ h t ?_⟩
-  rw [Metric.mem_ball, Real.dist_eq, sub_zero, abs_lt]
-  exact ht
-
-/-- The modulus potential is a primitive of `χ(s) / s` on `[0, ∞)`, for a continuous cutoff
+/-- The modulus potential is a primitive of `χ(s) / s` on all of `ℝ`, for a continuous cutoff
 vanishing near `0`. At `s = 0` the derivative is `0`, which is `χ(0) / 0` in Lean. -/
-theorem hasDerivAt_modulusPotential (hχ : Continuous χ) (hχ₀ : χ =ᶠ[𝓝 0] 0) {s : ℝ}
-    (hs : 0 ≤ s) : HasDerivAt (modulusPotential χ) (χ s / s) s := by
-  obtain ⟨ε, hε, hzero⟩ := exists_Ioo_eq_zero hχ₀
-  have hcont := continuousOn_div_self hχ hzero
-  have hsub : uIcc 1 s ⊆ Ioi (-ε) := fun t ht ↦ by
-    have := (le_inf zero_le_one hs).trans ht.1
-    exact mem_Ioi.2 (by linarith)
-  exact intervalIntegral.integral_hasDerivAt_right ((hcont.mono hsub).intervalIntegrable)
-    (hcont.stronglyMeasurableAtFilter isOpen_Ioi s (mem_Ioi.2 (by linarith)))
-    (hcont.continuousAt (Ioi_mem_nhds (by linarith)))
+theorem hasDerivAt_modulusPotential (hχ : Continuous χ) (hχ₀ : χ =ᶠ[𝓝 0] 0) (s : ℝ) :
+    HasDerivAt (modulusPotential χ) (χ s / s) s :=
+  let hcont := hχ.div_id_of_eventuallyEq_zero hχ₀
+  intervalIntegral.integral_hasDerivAt_right (hcont.intervalIntegrable _ _)
+    hcont.aestronglyMeasurable.stronglyMeasurableAtFilter hcont.continuousAt
 
 /-- The modulus potential is constant near `0`, for a continuous cutoff vanishing near `0`. -/
 theorem modulusPotential_eventuallyEq (hχ : Continuous χ) (hχ₀ : χ =ᶠ[𝓝 0] 0) :
     modulusPotential χ =ᶠ[𝓝 0] fun _ ↦ modulusPotential χ 0 := by
-  obtain ⟨ε, hε, hzero⟩ := exists_Ioo_eq_zero hχ₀
-  have hcont := continuousOn_div_self hχ hzero
+  obtain ⟨ε, hε, hzero⟩ := (nhds_basis_Ioo_pos (0 : ℝ)).eventually_iff.1 hχ₀
+  rw [zero_sub, zero_add] at hzero
+  have hcont := hχ.div_id_of_eventuallyEq_zero hχ₀
   filter_upwards [Ioo_mem_nhds (neg_lt_zero.2 hε) hε] with s hs
   have hsub : uIcc 0 s ⊆ Ioo (-ε) ε := ordConnected_Ioo.uIcc_subset ⟨by linarith, hε⟩ hs
-  have h₁ : uIcc 1 0 ⊆ Ioi (-ε) := fun t ht ↦ by
-    rcases mem_uIcc.1 ht with h | h <;> exact mem_Ioi.2 (by linarith [h.1, h.2])
   have h0s : (∫ t in (0 : ℝ)..s, χ t / t) = 0 := by
     rw [intervalIntegral.integral_congr (g := fun _ ↦ (0 : ℝ)) fun t ht ↦ by
-      simp [hzero t (hsub ht)]]
+      simp [hzero (hsub ht)]]
     exact intervalIntegral.integral_zero
   rw [modulusPotential, modulusPotential,
-    ← intervalIntegral.integral_add_adjacent_intervals ((hcont.mono h₁).intervalIntegrable)
-      ((hcont.mono (hsub.trans Ioo_subset_Ioi_self)).intervalIntegrable), h0s, add_zero]
+    ← intervalIntegral.integral_add_adjacent_intervals (hcont.intervalIntegrable _ _)
+      (hcont.intervalIntegrable _ _), h0s, add_zero]
 
 /-- **Pointwise bound on the modulus potential.** If `χ` vanishes on `(0, c)` and `|χ| ≤ 1`, then
 `|H(s)| ≤ |s - 1| / c` for `s ≥ 0`. -/
@@ -477,17 +395,6 @@ theorem covariantDBar_apply_apply (b : E → E [⋀^Fin 1]→L[ℝ] ℝ) (α : E
   rw [I_sq]
   ring
 
-/-- The twisted differential `d^c_J f = -(1/2) df ∘ J` of a real function `f`. -/
-def twistedDifferential (f : E → ℝ) (x : E) : E [⋀^Fin 1]→L[ℝ] ℝ :=
-  ofSubsingletonLIE (0 : Fin 1)
-    ((-2⁻¹ : ℝ) • (fderiv ℝ f x).comp (LinearMap.toContinuousLinearMap J.toLinearMap))
-
-/-- The twisted differential evaluated on a vector. -/
-@[simp]
-theorem twistedDifferential_apply (f : E → ℝ) (x : E) (v : Fin 1 → E) :
-    twistedDifferential J f x v = -2⁻¹ * fderiv ℝ f x (J (v 0)) := by
-  simp [twistedDifferential]
-
 /-- The correction one-form `E = 2 χ(|α|²) Re (α⁻¹ ∂bar_a α) ∘ J`. -/
 def cutoffDBarForm (χ : ℝ → ℝ) (b : E → E [⋀^Fin 1]→L[ℝ] ℝ) (α : E → ℂ) (x : E) :
     E [⋀^Fin 1]→L[ℝ] ℝ :=
@@ -515,8 +422,8 @@ theorem cutoffDBarForm_apply_eq_im (χ : ℝ → ℝ) (b : E → E [⋀^Fin 1]�
 
 /-- **The modulus-potential decomposition.** If `χ(0) = 0` and `H` has derivative `χ(s) / s` at
 `s = |α x|²`, then `χ(|α|²) τ = d^c_J H(|α|²) + 2 χ(|α|²) Re (α⁻¹ ∂bar_a α) ∘ J` at `x`. The modulus
-potential `TauCeti.SeibergWitten.modulusPotential χ` has this derivative at every `s ≥ 0`
-(`TauCeti.SeibergWitten.hasDerivAt_modulusPotential`). -/
+potential `TauCeti.SeibergWitten.modulusPotential χ` has this derivative at every `s` when `χ` is
+continuous and vanishes near `0` (`TauCeti.SeibergWitten.hasDerivAt_modulusPotential`). -/
 theorem cutoffPhaseForm_eq_twistedDifferential_add {H : ℝ → ℝ}
     (hH : HasDerivAt H (χ (normSq (α x)) / normSq (α x)) (normSq (α x))) (hχ : χ 0 = 0)
     (hα : DifferentiableAt ℝ α x) :
@@ -532,7 +439,7 @@ theorem cutoffPhaseForm_eq_twistedDifferential_add {H : ℝ → ℝ}
   ext v
   obtain ⟨w, rfl⟩ : ∃ w, v = fun _ ↦ w := ⟨v 0, funext fun i ↦ by fin_cases i; rfl⟩
   rw [ContinuousAlternatingMap.add_apply, twistedDifferential_apply, cutoffDBarForm_apply,
-    hd.fderiv, covariantDBar_apply, J.apply_apply, map_neg, cutoffPhaseForm,
+    hd.fderiv, covariantDBar_apply, J.apply_apply, map_neg, cutoffPhaseForm_apply,
     ContinuousAlternatingMap.smul_apply, covariantPhaseForm_apply,
     ContinuousAlternatingMap.add_apply, phaseForm_apply]
   simp only [_root_.smul_apply, ContinuousLinearMap.comp_apply, innerSL_apply_apply,
