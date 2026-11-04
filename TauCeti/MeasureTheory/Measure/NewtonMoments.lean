@@ -7,7 +7,6 @@ module
 
 public import TauCeti.RingTheory.Polynomial.PrescribedPowerSums
 public import Mathlib.Analysis.Complex.Polynomial.Basic
-public import Mathlib.LinearAlgebra.Vandermonde
 public import Mathlib.MeasureTheory.Constructions.BorelSpace.Complex
 public import Mathlib.MeasureTheory.Integral.Bochner.SumMeasure
 import Mathlib.Topology.MetricSpace.UniformConvergence
@@ -16,6 +15,7 @@ import TauCeti.MeasureTheory.Integral.Bochner.Basic
 import TauCeti.MeasureTheory.Measure.Dirac
 import TauCeti.MeasureTheory.Measure.FiniteMeasure
 import TauCeti.MeasureTheory.Measure.Prokhorov
+import TauCeti.Probability.Moments.CompactDeterminacy
 import TauCeti.Topology.Compactness.Compact
 import TauCeti.Topology.UniformSpace.Ascoli
 import TauCeti.Topology.UniformSpace.HeineCantor
@@ -47,12 +47,11 @@ measures converge narrowly (Prokhorov's theorem on a disc), the moments and the 
 `P_σ` converge, and both limits are carried by the finitely many roots of the limiting
 polynomial: for `μ` because the limiting Newton variance vanishes, for the roots by continuity.
 Both limits have the same first `m` moments, so they agree by the invertibility of the Vandermonde
-matrix (`TauCeti.Measure.ext_of_forall_lt_card_integral_pow_eq_of_support`).
+matrix (`TauCeti.Measure.ext_of_forall_lt_card_integral_pow_eq_of_support`, in
+`TauCeti.Probability.Moments.CompactDeterminacy`).
 
 ## Main results
 
-* `TauCeti.Measure.ext_of_forall_lt_card_integral_pow_eq_of_support`: finite measures carried by
-  a finite set `Z` are determined by their moments of order less than `card Z`.
 * `TauCeti.exists_forall_abs_integral_sub_sum_roots_le`: the compact moment lemma, in the
   bounded-Lipschitz distance.
 * `TauCeti.exists_forall_norm_integral_sub_sum_roots_le`: the same against a fixed continuous
@@ -72,47 +71,6 @@ open MeasureTheory Filter Topology Metric Set Polynomial
 open scoped NNReal BoundedContinuousFunction
 
 namespace TauCeti
-
-/-! ### Finitely supported measures are determined by their moments -/
-
-/-- Two finite measures on `𝕜` carried by a finite set `Z` agree as soon as their moments
-`∫ wᵏ` agree for `k < card Z`. -/
-theorem Measure.ext_of_forall_lt_card_integral_pow_eq_of_support {𝕜 : Type*} [RCLike 𝕜]
-    {μ ν : Measure 𝕜} [IsFiniteMeasure μ] [IsFiniteMeasure ν] (Z : Finset 𝕜) (hμ : μ (↑Z)ᶜ = 0)
-    (hν : ν (↑Z)ᶜ = 0) (h : ∀ k < Z.card, ∫ w, w ^ k ∂μ = ∫ w, w ^ k ∂ν) : μ = ν := by
-  classical
-  -- Integrals against a measure carried by `Z` are finite sums over `Z`.
-  have hsum (ρ : Measure 𝕜) [IsFiniteMeasure ρ] (hρ : ρ (↑Z)ᶜ = 0) (k : ℕ) :
-      ∫ w, w ^ k ∂ρ = ∑ z ∈ Z, (ρ.real {z} : 𝕜) * z ^ k := by
-    calc ∫ w, w ^ k ∂ρ = ∫ w in (Z : Set 𝕜), w ^ k ∂ρ := by
-          rw [Measure.restrict_eq_self_of_ae_mem (mem_ae_iff.2 hρ)]
-      _ = ∑ z ∈ Z, ρ.real {z} • z ^ k := setIntegral_finset Z
-          ((continuous_pow k).continuousOn.integrableOn_compact Z.finite_toSet.isCompact)
-      _ = _ := by simp [RCLike.real_smul_eq_coe_mul]
-  -- The point masses agree, by the invertibility of the Vandermonde matrix of the points of `Z`,
-  -- enumerated by `e`.
-  have hpt : ∀ z ∈ Z, μ.real {z} = ν.real {z} := by
-    let e : Fin Z.card ≃ Z := Z.equivFin.symm
-    have hv := Matrix.eq_zero_of_forall_pow_sum_mul_pow_eq_zero (f := fun j => (e j : 𝕜))
-      (v := fun j => (μ.real {(e j : 𝕜)} : 𝕜) - ν.real {(e j : 𝕜)})
-      (fun a b hab => e.injective (Subtype.ext hab)) fun i => by
-        have hi := h i i.2
-        rw [hsum μ hμ, hsum ν hν, ← sub_eq_zero, ← Finset.sum_sub_distrib,
-          ← Finset.sum_coe_sort Z, ← e.sum_comp] at hi
-        simpa [sub_mul] using hi
-    intro z hz
-    simpa [sub_eq_zero] using congrFun hv (e.symm ⟨z, hz⟩)
-  ext s hs
-  have hfin (ρ : Measure 𝕜) (hρ : ρ (↑Z)ᶜ = 0) :
-      ρ s = ρ ↑({z ∈ Z | z ∈ s} : Finset 𝕜) := by
-    have hres := Measure.restrict_eq_self_of_ae_mem (μ := ρ) (s := (Z : Set 𝕜)) (mem_ae_iff.2 hρ)
-    calc ρ s = ρ.restrict Z s := by rw [hres]
-      _ = ρ (s ∩ Z) := Measure.restrict_apply hs
-      _ = _ := congrArg ρ (by ext w; simp [and_comm])
-  rw [hfin μ hμ, hfin ν hν, ← sum_measure_singleton, ← sum_measure_singleton]
-  refine Finset.sum_congr rfl fun z hz => ?_
-  rw [← ENNReal.toReal_eq_toReal_iff' (measure_ne_top _ _) (measure_ne_top _ _)]
-  exact hpt z (Finset.mem_filter.1 hz).1
 
 /-! ### The compactness argument -/
 
@@ -152,17 +110,22 @@ private lemma tendstoUniformlyOn_norm_eval_newtonPolynomial_sq {ι : Type*} {L :
     (Φ := fun M w => ‖(newtonPolynomial M m).eval w‖ ^ 2) ((continuous_norm.comp hΦ).pow 2)
     (isCompact_closedBall 0 B) hM
 
-/-- A finite measure whose integral of `|p|²` vanishes is carried by the roots of `p`. -/
-private lemma measure_compl_roots_eq_zero {ρ : Measure ℂ} [IsFiniteMeasure ρ] {K : Set ℂ}
-    (hK : IsCompact K) (hρ : ρ Kᶜ = 0) {p : ℂ[X]} (hp : p ≠ 0)
-    (h : ∫ w, ‖p.eval w‖ ^ 2 ∂ρ = 0) : ρ (↑p.roots.toFinset)ᶜ = 0 := by
-  have hint : Integrable (fun w => ‖p.eval w‖ ^ 2) ρ := by
-    rw [← Measure.restrict_eq_self_of_ae_mem (mem_ae_iff.2 hρ)]
-    exact ((continuous_norm.comp p.continuous).pow 2).continuousOn.integrableOn_compact hK
-  have hae := (integral_eq_zero_iff_of_nonneg (fun w => by positivity) hint).1 h
-  refine measure_mono_null (fun w hw => ?_) (ae_iff.1 hae)
-  have hw' : p.eval w ≠ 0 := fun h0 => hw (by simp [mem_roots hp, h0])
-  simpa using hw'
+/-- On the disc of radius `R`, the powers `wᵏ` are bounded by `Rᵏ`. -/
+private lemma norm_pow_le_of_mem_closedBall {R : ℝ} {w : ℂ} (hw : w ∈ closedBall (0 : ℂ) R)
+    (k : ℕ) : ‖w ^ k‖ ≤ R ^ k := by
+  rw [norm_pow]; exact pow_le_pow_left₀ (norm_nonneg _) (mem_closedBall_zero_iff.1 hw) k
+
+/-- Integrals against measures `ν i` carried by the disc of radius `R`, whose masses tend to zero,
+of functions eventually bounded on that disc by a common constant tend to zero. -/
+private lemma tendsto_integral_of_tendsto_measureReal_univ {𝕜 ι : Type*} [RCLike 𝕜]
+    {L : Filter ι} {R : ℝ} {ν : ι → Measure ℂ} [∀ i, IsFiniteMeasure (ν i)]
+    (hνR : ∀ i, ν i (closedBall 0 R)ᶜ = 0) (hν : Tendsto (fun i => (ν i).real univ) L (𝓝 0))
+    {f : ι → ℂ → 𝕜} {C : ℝ} (hf : ∀ᶠ i in L, ∀ w ∈ closedBall (0 : ℂ) R, ‖f i w‖ ≤ C) :
+    Tendsto (fun i => ∫ w, f i w ∂ν i) L (𝓝 0) := by
+  refine squeeze_zero_norm' ?_ (by simpa using hν.const_mul C)
+  filter_upwards [hf] with i hi
+  have hνae : ∀ᵐ w ∂ν i, w ∈ closedBall (0 : ℂ) R := mem_ae_iff.2 (hνR i)
+  exact norm_integral_le_of_norm_le_const (hνae.mono hi)
 
 /-- The moments of the signed measures `μ i - ν i`, carried by a disc and of eventually bounded
 masses, converge along an ultrafilter. -/
@@ -171,8 +134,6 @@ private lemma exists_tendsto_moments {ι : Type*} {U : Ultrafilter ι} {R : ℝ}
     (hμR : ∀ i, μ i (closedBall 0 R)ᶜ = 0) (hνR : ∀ i, ν i (closedBall 0 R)ᶜ = 0) {C : ℝ}
     (hC : ∀ᶠ i in U, (μ i).real univ ≤ C ∧ (ν i).real univ ≤ C) :
     ∃ M₀ : ℕ → ℂ, Tendsto (fun i k => ∫ w, w ^ k ∂μ i - ∫ w, w ^ k ∂ν i) U (𝓝 M₀) := by
-  have hpow (k : ℕ) : ∀ w ∈ closedBall (0 : ℂ) R, ‖w ^ k‖ ≤ R ^ k := fun w hw => by
-    rw [norm_pow]; exact pow_le_pow_left₀ (norm_nonneg _) (mem_closedBall_zero_iff.1 hw) k
   have hμae (i : ι) : ∀ᵐ w ∂μ i, w ∈ closedBall (0 : ℂ) R := mem_ae_iff.2 (hμR i)
   have hνae (i : ι) : ∀ᵐ w ∂ν i, w ∈ closedBall (0 : ℂ) R := mem_ae_iff.2 (hνR i)
   have hlim (k : ℕ) : ∃ c, Tendsto (fun i => ∫ w, w ^ k ∂μ i - ∫ w, w ^ k ∂ν i) U (𝓝 c) := by
@@ -182,8 +143,10 @@ private lemma exists_tendsto_moments {ι : Type*} {U : Ultrafilter ι} {R : ℝ}
         calc ‖∫ w, w ^ k ∂μ i - ∫ w, w ^ k ∂ν i‖
             ≤ ‖∫ w, w ^ k ∂μ i‖ + ‖∫ w, w ^ k ∂ν i‖ := norm_sub_le _ _
           _ ≤ R ^ k * (μ i).real univ + R ^ k * (ν i).real univ :=
-            add_le_add (norm_integral_le_of_norm_le_const ((hμae i).mono (hpow k)))
-              (norm_integral_le_of_norm_le_const ((hνae i).mono (hpow k)))
+            add_le_add (norm_integral_le_of_norm_le_const
+                ((hμae i).mono fun _ hw => norm_pow_le_of_mem_closedBall hw k))
+              (norm_integral_le_of_norm_le_const
+                ((hνae i).mono fun _ hw => norm_pow_le_of_mem_closedBall hw k))
           _ ≤ 2 * C * R ^ k := by nlinarith [pow_nonneg hR k]
     exact ⟨c, hc⟩
   choose M₀ hM₀ using hlim
@@ -208,7 +171,6 @@ private theorem tendsto_integral_sub_sum_roots {𝕜 : Type*} [RCLike 𝕜] {ι 
   set P : ι → ℂ[X] := fun i => newtonPolynomial (M i) m
   have hν1 : ∀ᶠ i in U, (ν i).real univ ≤ 1 := hν.eventually (eventually_le_nhds one_pos)
   have hμmass : ∀ i, (μ i).real univ = m + (ν i).real univ := fun i => by linarith [hmass i]
-  have hνae (i : ι) : ∀ᵐ w ∂ν i, w ∈ closedBall (0 : ℂ) R := mem_ae_iff.2 (hνR i)
   -- Step 1: the moments converge along `U`, to `M₀` say.
   obtain ⟨M₀, hM⟩ := exists_tendsto_moments hR hμR hνR (C := m + 1) <|
     hν1.mono fun i hi => ⟨by rw [hμmass]; linarith, by linarith⟩
@@ -245,10 +207,8 @@ private theorem tendsto_integral_sub_sum_roots {𝕜 : Type*} [RCLike 𝕜] {ι 
   -- Step 4: `ρ` and `ρ'` have the same moments of order at most `m`, namely `M₀`.
   have hρmom (k : ℕ) : ∫ w, w ^ k ∂(ρ : Measure ℂ) = M₀ k := by
     have hνk : Tendsto (fun i => ∫ w, w ^ k ∂ν i) U (𝓝 0) :=
-      squeeze_zero_norm (fun i => norm_integral_le_of_norm_le_const
-        ((hνae i).mono fun w hw => by
-          rw [norm_pow]; exact pow_le_pow_left₀ (norm_nonneg _) (mem_closedBall_zero_iff.1 hw) k))
-        (by simpa using hν.const_mul (R ^ k))
+      tendsto_integral_of_tendsto_measureReal_univ hνR hν
+        (.of_forall fun _ _ hw => norm_pow_le_of_mem_closedBall hw k)
     refine tendsto_nhds_unique (FiniteMeasure.tendsto_integral_of_tendstoUniformlyOn_closedBall hρ
       (.of_forall hμB) hρB (fun _ => (continuous_pow k).continuousOn)
       (continuous_pow k).continuousOn hconst) ?_
@@ -283,9 +243,13 @@ private theorem tendsto_integral_sub_sum_roots {𝕜 : Type*} [RCLike 𝕜] {ι 
   have hP₀ : P₀ ≠ 0 := (monic_newtonPolynomial M₀ m).ne_zero
   have hcard : P₀.roots.toFinset.card ≤ m :=
     (Multiset.toFinset_card_le _).trans (card_roots_newtonPolynomial M₀ m).le
+  have hroots₀ {ρ₀ : Measure ℂ} [IsFiniteMeasure ρ₀] (hρ₀B : ρ₀ (closedBall 0 B)ᶜ = 0)
+      (hρ₀var : ∫ w, ‖P₀.eval w‖ ^ 2 ∂ρ₀ = 0) : ρ₀ (↑P₀.roots.toFinset)ᶜ = 0 := by
+    refine MeasureTheory.measure_compl_roots_eq_zero_of_integral_norm_eval_sq_eq_zero hP₀ ?_ hρ₀var
+    rw [← Measure.restrict_eq_self_of_ae_mem (s := closedBall 0 B) (mem_ae_iff.2 hρ₀B)]
+    exact hP₀cont.continuousOn.integrableOn_compact hBK
   have hρρ' : (ρ : Measure ℂ) = ρ' := Measure.ext_of_forall_lt_card_integral_pow_eq_of_support
-    P₀.roots.toFinset (measure_compl_roots_eq_zero hBK hρB hP₀ hρvar)
-    (measure_compl_roots_eq_zero hBK hρ'B hP₀ hρ'var) fun k hk => by
+    P₀.roots.toFinset (hroots₀ hρB hρvar) (hroots₀ hρ'B hρ'var) fun k hk => by
       rw [hρmom k, hρ'mom k (by omega)]
   -- Step 7: compare the three terms with their limits; the integrals against `ν i` vanish in the
   -- limit, as the `f i` are eventually bounded on the disc of radius `R`.
@@ -295,9 +259,8 @@ private theorem tendsto_integral_sub_sum_roots {𝕜 : Type*} [RCLike 𝕜] {ι 
   have hT₂ : Tendsto (fun i => ∫ w, f i w ∂ν i) U (𝓝 0) := by
     obtain ⟨Cg, hCg⟩ := (isCompact_closedBall (0 : ℂ) R).exists_bound_of_continuousOn
       hg.continuousOn
-    refine squeeze_zero_norm' ?_ (by simpa using hν.const_mul (Cg + 1))
-    filter_upwards [Metric.tendstoUniformlyOn_iff.1 (hfg R) 1 one_pos] with i hi
-    refine norm_integral_le_of_norm_le_const ((hνae i).mono fun w hw => ?_)
+    refine tendsto_integral_of_tendsto_measureReal_univ hνR hν (C := Cg + 1) ?_
+    filter_upwards [Metric.tendstoUniformlyOn_iff.1 (hfg R) 1 one_pos] with i hi w hw
     have h1 := hi w hw
     rw [dist_comm, dist_eq_norm] at h1
     linarith [norm_le_norm_add_norm_sub' (f i w) (g w), hCg w hw]

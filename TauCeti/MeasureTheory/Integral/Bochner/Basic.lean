@@ -7,6 +7,7 @@ module
 
 public import Mathlib.MeasureTheory.Integral.Bochner.Set
 public import Mathlib.MeasureTheory.Measure.Lebesgue.Basic
+public import Mathlib.Algebra.Polynomial.Roots
 import Mathlib.Analysis.Convex.Integral
 import Mathlib.Analysis.Convex.Mul
 import Mathlib.MeasureTheory.Measure.Haar.Unique
@@ -29,6 +30,12 @@ for set and probability integrals.
 * `Multiset.integrable_sum_map_dirac` and `Multiset.integral_sum_map_dirac`: every function is
   integrable against the counting measure `∑_{x ∈ s} δₓ` of a multiset `s`, with integral the sum
   of its values over `s`. Its measure-level facts are in `TauCeti.MeasureTheory.Measure.Dirac`.
+
+## Measures carried by the roots of a polynomial
+
+* `measure_compl_roots_eq_zero_of_integral_norm_eval_sq_eq_zero`: a measure against which the
+  integrable function `|p|²` has integral zero is carried by the roots of the nonzero
+  polynomial `p`.
 
 ## Positive parts
 
@@ -424,6 +431,18 @@ theorem integral_biUnion_finset₀ {X E ι : Type*} [MeasurableSpace X] [NormedA
   rw [integral_iUnion_ae (s := fun i : (↑s : Set ι) ↦ t (i : ι))
     (fun i ↦ hm (i : ι) i.2) (hd.subtype _ _) hf]
   exact Finset.tsum_subtype' s fun i ↦ ∫ x in t i, f x ∂μ
+
+open Polynomial in
+/-- A measure against which the integrable function `|p|²` has integral zero is carried by the
+roots of the nonzero polynomial `p`. -/
+theorem measure_compl_roots_eq_zero_of_integral_norm_eval_sq_eq_zero {𝕜 : Type*} [NormedField 𝕜]
+    [DecidableEq 𝕜] [MeasurableSpace 𝕜] {ρ : Measure 𝕜} {p : 𝕜[X]} (hp : p ≠ 0)
+    (hint : Integrable (fun w ↦ ‖p.eval w‖ ^ 2) ρ) (h : ∫ w, ‖p.eval w‖ ^ 2 ∂ρ = 0) :
+    ρ (↑p.roots.toFinset)ᶜ = 0 := by
+  have hae := (integral_eq_zero_iff_of_nonneg (fun w ↦ by positivity) hint).1 h
+  refine measure_mono_null (fun w hw ↦ ?_) (ae_iff.1 hae)
+  have hw' : p.eval w ≠ 0 := fun h0 ↦ hw (by simp [mem_roots hp, h0])
+  simpa using hw'
 
 end MeasureTheory
 
