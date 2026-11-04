@@ -79,12 +79,8 @@ theorem _root_.CategoryTheory.CommMon.isPushout_restrictGradedSections
   let _ (n : ℕ) : Module Γ(X, U) Γ(A.X n, V) := Module.compHom _ (algebraMap Γ(X, U) Γ(X, V))
   -- By definition of `Module.compHom`, `r` acts through its restriction to `V`.
   have _ (n : ℕ) : IsScalarTower Γ(X, U) Γ(X, V) Γ(A.X n, V) := .of_algebraMap_smul fun _ _ ↦ rfl
-  let ρ (n : ℕ) : Γ(A.X n, U) →ₗ[Γ(X, U)] Γ(A.X n, V) :=
-    { toFun := (A.X n).presheaf.map (homOfLE hVU).op
-      map_add' := map_add _
-      map_smul' := fun r x ↦ (A.X n).map_smul _ r x }
   have hρ := IsBaseChange.directSum fun n ↦
-    (A.X n).isBaseChange_sectionsRestriction hU hV hVU (fun _ ↦ rfl) (ρ n) fun _ ↦ rfl
+    (A.X n).isBaseChange_sectionsRestrictionLinearMap hU hV hVU fun _ ↦ rfl
   -- The `Γ(X, U)`-algebra structure on `⨁ n, Γ(Aₙ, V)` whose module structure is the direct sum of
   -- the restrictions of scalars.
   let : Algebra Γ(X, U) (⨁ n, Γ(A.X n, V)) := Algebra.ofModule
@@ -100,6 +96,7 @@ theorem _root_.CategoryTheory.CommMon.isPushout_restrictGradedSections
     refine ⟨?_⟩
     convert hρ using 1
     refine LinearMap.ext fun x ↦ DFinsupp.ext fun n ↦ ?_
+    rw [DirectSum.lmap_apply, Scheme.Modules.sectionsRestrictionLinearMap_apply]
     exact A.restrictGradedSections_apply (homOfLE hVU) x n
   exact CommRingCat.isPushout_iff_isPushout.mpr this
 
