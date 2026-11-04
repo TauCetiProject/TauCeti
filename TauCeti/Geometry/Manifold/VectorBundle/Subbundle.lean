@@ -314,19 +314,10 @@ private theorem symm_fiberwiseLinearPartialDiffeomorph_subbundle_eventuallyEq [C
   have hΦq : Φ (f (eV q).1, inl₀ (eV q).2) = (f q.proj, A q.proj (eV q).2) := by
     rw [eV.coe_fst' hq_base, fiberwiseLinearPartialDiffeomorph_apply, hL_inl _ hfqW,
       hrW q.proj hfqW]
-  rw [hΦq, ← hAeq q.proj ⟨hq_base, hfq_base⟩ (eV q).2]
-  have hsymmV : (⟨q.proj, eV.symm q.proj (eV q).2⟩ : TotalSpace F' (fun x ↦ V x)) = q := by
-    have hmk : (q.proj, (eV q).2) = eV q := Prod.ext (eV.coe_fst' hq_base).symm rfl
-    rw [eV.mk_symm hq_base, hmk]
-    exact eV.toOpenPartialHomeomorph.left_inv hqV
-  have hsymmV' : eV.symm q.proj (eV q).2 = q.2 := by
-    simpa using (TotalSpace.ext_iff.mp hsymmV).2
-  rw [hsymmV']
+  rw [hΦq, ← hAeq q.proj ⟨hq_base, hfq_base⟩ (eV q).2, eV.symm_apply_apply_mk hq_base q.2]
   let zE : TotalSpace F E := ⟨f q.proj, q.2⟩
-  have hzE : zE.proj ∈ eE.baseSet := hfq_base
-  have hmkE : (f q.proj, (eE zE).2) = eE zE := Prod.ext (eE.coe_fst' hzE).symm rfl
-  rw [hmkE]
-  exact eE.toOpenPartialHomeomorph.left_inv (eE.mem_source.mpr hzE)
+  rw [show (f q.proj, (eE zE).2) = eE zE from Prod.ext (eE.coe_fst' (x := zE) hfq_base).symm rfl]
+  exact eE.toOpenPartialHomeomorph.left_inv (eE.mem_source.mpr hfq_base)
 
 /-- Core normal-form construction for a `C^n` subbundle inclusion along a map `f : B' → B` admitting
 a local `C^n` retraction near `f p.proj`. -/
@@ -337,8 +328,7 @@ private theorem exists_isImmersionAtOfComplement_subbundle_of_retraction
     [TopologicalSpace (TotalSpace F' (fun x ↦ V x))] [FiberBundle F' (fun x ↦ V x)]
     [VectorBundle 𝕜 F' (fun x ↦ V x)] [ContMDiffVectorBundle n F' (fun x ↦ V x) IB']
     {p : TotalSpace F' (fun x ↦ V x)}
-    (hf : IsImmersionAtOfComplement P IB' IB n f p.proj)
-    (hf_cont : Continuous f)
+    (hf : IsImmersionAtOfComplement P IB' IB n f p.proj) (hf_cont : Continuous f)
     {Vr : Set B} (hVr : IsOpen Vr) (hfp : f p.proj ∈ Vr)
     {r : B → B'} (hr : ContMDiffOn IB IB' n r Vr) (hr_inv : ∀ x, f x ∈ Vr → r (f x) = x)
     (hinc : ContMDiff (IB'.prod 𝓘(𝕜, F')) (IB.prod 𝓘(𝕜, F)) n
@@ -397,6 +387,26 @@ private theorem exists_isImmersionAtOfComplement_subbundle_of_retraction
       (fun _ hy ↦ hy.2.2) (fun q hfq ↦ hr_inv q hfq.2.1.1) hAeq hL hL_inv fun _ _ _ ↦ by
         simp [L, inl₀])
 
+omit [VectorBundle 𝕜 F E] [ContMDiffVectorBundle n F E IB] in
+private theorem isImmersion_of_forall_exists_complement [FiniteDimensional 𝕜 F]
+    {P : Type*} [NormedAddCommGroup P] [NormedSpace 𝕜 P]
+    {f : B' → B} {V : Π x : B', Submodule 𝕜 (E (f x))}
+    [TopologicalSpace (TotalSpace F' (fun x ↦ V x))] [∀ x, TopologicalSpace (V x)]
+    [FiberBundle F' (fun x ↦ V x)]
+    (h : ∀ p : TotalSpace F' (fun x ↦ V x),
+      ∃ (Q : Submodule 𝕜 F) (_ : Nonempty ((F' × Q) ≃L[𝕜] F)),
+        IsImmersionAtOfComplement (P × Q) (IB'.prod 𝓘(𝕜, F')) (IB.prod 𝓘(𝕜, F)) n
+          (fun q : TotalSpace F' (fun x ↦ V x) ↦ (⟨f q.proj, q.2⟩ : TotalSpace F E)) p) :
+    IsImmersion (IB'.prod 𝓘(𝕜, F')) (IB.prod 𝓘(𝕜, F)) n
+      (fun q : TotalSpace F' (fun x ↦ V x) ↦ (⟨f q.proj, q.2⟩ : TotalSpace F E)) := by
+  rcases isEmpty_or_nonempty (TotalSpace F' (fun x ↦ V x)) with _ | ⟨⟨p₀⟩⟩
+  · exact IsImmersionOfComplement.isImmersion (F := PUnit.{1}) fun p ↦ isEmptyElim p
+  obtain ⟨Q₀, ⟨e₀⟩, _⟩ := h p₀
+  refine IsImmersionOfComplement.isImmersion (F := P × Q₀) fun p ↦ ?_
+  obtain ⟨Q, ⟨e⟩, hp⟩ := h p
+  obtain ⟨eQ⟩ := nonempty_continuousLinearEquiv_of_prod_continuousLinearEquiv e e₀
+  exact hp.trans_F (ContinuousLinearEquiv.prodCongr (.refl 𝕜 P) eQ)
+
 section SameBase
 
 variable [FiniteDimensional 𝕜 F] [FiniteDimensional 𝕜 F'] [IsManifold IB n B]
@@ -425,20 +435,10 @@ theorem isImmersion_totalSpace_subbundle
     (hinc : ContMDiff (IB.prod 𝓘(𝕜, F')) (IB.prod 𝓘(𝕜, F)) n
       (fun p : TotalSpace F' (fun x ↦ V x) ↦ (⟨p.proj, p.2⟩ : TotalSpace F E))) :
     IsImmersion (IB.prod 𝓘(𝕜, F')) (IB.prod 𝓘(𝕜, F)) n
-      (fun q : TotalSpace F' (fun x ↦ V x) ↦ (⟨q.proj, q.2⟩ : TotalSpace F E)) := by
-  by_cases hne : Nonempty (TotalSpace F' (fun x ↦ V x))
-  · obtain ⟨p₀⟩ := hne
-    obtain ⟨Q₀, ⟨e₀⟩, _⟩ := exists_isImmersionAtOfComplement_subbundle_of_retraction
-      (P := PUnit.{1}) (f := fun x ↦ x) (V := V) (IsImmersionOfComplement.id p₀.proj) continuous_id
-      isOpen_univ (mem_univ _) contMDiffOn_id (fun _ _ ↦ rfl) hinc
-    refine IsImmersionOfComplement.isImmersion (F := PUnit.{1} × Q₀) fun p ↦ ?_
-    obtain ⟨Q, ⟨e⟩, hp⟩ := exists_isImmersionAtOfComplement_subbundle_of_retraction
-      (P := PUnit.{1}) (f := fun x ↦ x) (V := V) (IsImmersionOfComplement.id p.proj) continuous_id
-      isOpen_univ (mem_univ _) contMDiffOn_id (fun _ _ ↦ rfl) hinc
-    obtain ⟨eQ⟩ := nonempty_continuousLinearEquiv_of_prod_continuousLinearEquiv e e₀
-    exact hp.trans_F (ContinuousLinearEquiv.prodCongr (.refl 𝕜 PUnit.{1}) eQ)
-  · rw [not_nonempty_iff] at hne
-    exact IsImmersionOfComplement.isImmersion (F := PUnit.{1}) fun p ↦ hne.elim p
+      (fun q : TotalSpace F' (fun x ↦ V x) ↦ (⟨q.proj, q.2⟩ : TotalSpace F E)) :=
+  isImmersion_of_forall_exists_complement (P := PUnit.{1}) (f := fun x ↦ x) (V := V) fun p ↦
+    exists_isImmersionAtOfComplement_subbundle_of_retraction (IsImmersionOfComplement.id p.proj)
+      continuous_id isOpen_univ (mem_univ _) contMDiffOn_id (fun _ _ ↦ rfl) hinc
 
 end SameBase
 
@@ -495,23 +495,14 @@ theorem isImmersion_lift_totalSpace_subbundle {f : B' → B}
     (hinc : ContMDiff (IB'.prod 𝓘(𝕜, F')) (IB.prod 𝓘(𝕜, F)) n
       (fun q : TotalSpace F' (fun x ↦ V x) ↦ (⟨f q.proj, q.2⟩ : TotalSpace F E))) :
     IsImmersion (IB'.prod 𝓘(𝕜, F')) (IB.prod 𝓘(𝕜, F)) n
-      (fun q : TotalSpace F' (fun x ↦ V x) ↦ (⟨f q.proj, q.2⟩ : TotalSpace F E)) := by
-  let hfc := hf.isImmersion.isImmersionOfComplement_complement
-  by_cases hne : Nonempty (TotalSpace F' (fun x ↦ V x))
-  · obtain ⟨p₀⟩ := hne
-    obtain ⟨Vr₀, hVr₀, hfp₀, r₀, hr₀, hr_inv₀⟩ :=
-      (hfc p₀.proj).isImmersionAt.exists_contMDiffOn_retraction hf.isEmbedding
-    obtain ⟨Q₀, ⟨e₀⟩, _⟩ := exists_isImmersionAtOfComplement_subbundle_of_retraction
-      (hfc p₀.proj) hf.isEmbedding.continuous hVr₀ hfp₀ hr₀ hr_inv₀ hinc
-    refine IsImmersionOfComplement.isImmersion (F := hf.isImmersion.complement × Q₀) fun p ↦ ?_
-    obtain ⟨Vr, hVr, hfp, r, hr, hr_inv⟩ :=
-      (hfc p.proj).isImmersionAt.exists_contMDiffOn_retraction hf.isEmbedding
-    obtain ⟨Q, ⟨e⟩, hp⟩ := exists_isImmersionAtOfComplement_subbundle_of_retraction
-      (hfc p.proj) hf.isEmbedding.continuous hVr hfp hr hr_inv hinc
-    obtain ⟨eQ⟩ := nonempty_continuousLinearEquiv_of_prod_continuousLinearEquiv e e₀
-    exact hp.trans_F (ContinuousLinearEquiv.prodCongr (.refl 𝕜 _) eQ)
-  · rw [not_nonempty_iff] at hne
-    exact IsImmersionOfComplement.isImmersion (F := PUnit.{1}) fun p ↦ hne.elim p
+      (fun q : TotalSpace F' (fun x ↦ V x) ↦ (⟨f q.proj, q.2⟩ : TotalSpace F E)) :=
+  isImmersion_of_forall_exists_complement (P := hf.isImmersion.complement) (f := f) (V := V)
+    fun p ↦ by
+      let hfc := hf.isImmersion.isImmersionOfComplement_complement p.proj
+      obtain ⟨Vr, hVr, hfp, r, hr, hr_inv⟩ :=
+        hfc.isImmersionAt.exists_contMDiffOn_retraction hf.isEmbedding
+      exact exists_isImmersionAtOfComplement_subbundle_of_retraction hfc
+        hf.isEmbedding.continuous hVr hfp hr hr_inv hinc
 
 /-- Along a `C^n` smooth embedding `f : B' → B` of a boundaryless manifold `B'`, a `C^n` vector
 subbundle `V` over `B'` whose canonical inclusion `(x, v) ↦ (f x, v)` into `TotalSpace F E` is

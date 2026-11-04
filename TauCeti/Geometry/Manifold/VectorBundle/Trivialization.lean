@@ -105,29 +105,21 @@ def toPartialDiffeomorph :
 /-- The underlying `PartialEquiv` of `e.toPartialDiffeomorph` is `e.toPartialEquiv`. -/
 @[simp]
 theorem toPartialDiffeomorph_toPartialEquiv :
-    (e.toPartialDiffeomorph IB n).toPartialEquiv = e.toPartialEquiv :=
-  (rfl)
+    (e.toPartialDiffeomorph IB n).toPartialEquiv = e.toPartialEquiv := (rfl)
 
 /-- The source of `e.toPartialDiffeomorph` is `e.source`. -/
-theorem toPartialDiffeomorph_source :
-    (e.toPartialDiffeomorph IB n).source = e.source :=
-  (rfl)
+theorem toPartialDiffeomorph_source : (e.toPartialDiffeomorph IB n).source = e.source := (rfl)
 
 /-- The target of `e.toPartialDiffeomorph` is `e.target`. -/
-theorem toPartialDiffeomorph_target :
-    (e.toPartialDiffeomorph IB n).target = e.target :=
-  (rfl)
+theorem toPartialDiffeomorph_target : (e.toPartialDiffeomorph IB n).target = e.target := (rfl)
 
 /-- Coercing `e.toPartialDiffeomorph` to a function recovers `e`. -/
-theorem coe_toPartialDiffeomorph :
-    ⇑(e.toPartialDiffeomorph IB n) = e :=
-  e.coe_coe.symm
+theorem coe_toPartialDiffeomorph : ⇑(e.toPartialDiffeomorph IB n) = e := e.coe_coe.symm
 
 /-- Applying the partial inverse of `e.toPartialDiffeomorph` agrees with
 `e.toOpenPartialHomeomorph.symm`. -/
 theorem toPartialDiffeomorph_symm_apply (q : B × F) :
-    (e.toPartialDiffeomorph IB n).toPartialEquiv.symm q = e.toOpenPartialHomeomorph.symm q :=
-  (rfl)
+    (e.toPartialDiffeomorph IB n).toPartialEquiv.symm q = e.toOpenPartialHomeomorph.symm q := (rfl)
 
 variable {IB n e}
 

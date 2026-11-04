@@ -58,12 +58,13 @@ variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
   {F₂ : Type*} [NormedAddCommGroup F₂] [NormedSpace 𝕜 F₂]
   {n : ℕ∞ω}
 
+variable [CompleteSpace F₁] (L : M → F₁ →L[𝕜] F₂) {s : Set M} (hs : IsOpen s)
+  (hL : ContMDiffOn I 𝓘(𝕜, F₁ →L[𝕜] F₂) n L s) (hInv : ∀ x ∈ s, (L x).IsInvertible)
+
 /-- A `C^n` family of invertible continuous linear maps `L : M → F₁ →L[𝕜] F₂` on an open set
 `s ⊆ M`, with `F₁` complete, defines a `C^n` partial diffeomorphism `(x, v) ↦ (x, L x v)` from
 `s ×ˢ univ ⊆ M × F₁` onto `s ×ˢ univ ⊆ M × F₂` with inverse `(x, w) ↦ (x, (L x).inverse w)`. -/
-def fiberwiseLinearPartialDiffeomorph [CompleteSpace F₁] (L : M → F₁ →L[𝕜] F₂) {s : Set M}
-    (hs : IsOpen s) (hL : ContMDiffOn I 𝓘(𝕜, F₁ →L[𝕜] F₂) n L s)
-    (hInv : ∀ x ∈ s, (L x).IsInvertible) :
+def fiberwiseLinearPartialDiffeomorph :
     PartialDiffeomorph (I.prod 𝓘(𝕜, F₁)) (I.prod 𝓘(𝕜, F₂)) (M × F₁) (M × F₂) n where
   toFun p := (p.1, L p.1 p.2)
   invFun q := (q.1, (L q.1).inverse q.2)
@@ -87,46 +88,30 @@ def fiberwiseLinearPartialDiffeomorph [CompleteSpace F₁] (L : M → F₁ →L[
 
 /-- The source of `fiberwiseLinearPartialDiffeomorph L hs hL hInv` is `s ×ˢ univ`. -/
 @[simp]
-theorem fiberwiseLinearPartialDiffeomorph_source [CompleteSpace F₁] (L : M → F₁ →L[𝕜] F₂)
-    {s : Set M} (hs : IsOpen s) (hL : ContMDiffOn I 𝓘(𝕜, F₁ →L[𝕜] F₂) n L s)
-    (hInv : ∀ x ∈ s, (L x).IsInvertible) :
-    (fiberwiseLinearPartialDiffeomorph L hs hL hInv).source = s ×ˢ univ :=
-  (rfl)
+theorem fiberwiseLinearPartialDiffeomorph_source :
+    (fiberwiseLinearPartialDiffeomorph L hs hL hInv).source = s ×ˢ univ := (rfl)
 
 /-- The target of `fiberwiseLinearPartialDiffeomorph L hs hL hInv` is `s ×ˢ univ`. -/
 @[simp]
-theorem fiberwiseLinearPartialDiffeomorph_target [CompleteSpace F₁] (L : M → F₁ →L[𝕜] F₂)
-    {s : Set M} (hs : IsOpen s) (hL : ContMDiffOn I 𝓘(𝕜, F₁ →L[𝕜] F₂) n L s)
-    (hInv : ∀ x ∈ s, (L x).IsInvertible) :
-    (fiberwiseLinearPartialDiffeomorph L hs hL hInv).target = s ×ˢ univ :=
-  (rfl)
+theorem fiberwiseLinearPartialDiffeomorph_target :
+    (fiberwiseLinearPartialDiffeomorph L hs hL hInv).target = s ×ˢ univ := (rfl)
 
 /-- `fiberwiseLinearPartialDiffeomorph` preserves the first coordinate and applies `L` to the
 second coordinate. -/
 @[simp]
-theorem fiberwiseLinearPartialDiffeomorph_apply [CompleteSpace F₁] (L : M → F₁ →L[𝕜] F₂)
-    {s : Set M} (hs : IsOpen s) (hL : ContMDiffOn I 𝓘(𝕜, F₁ →L[𝕜] F₂) n L s)
-    (hInv : ∀ x ∈ s, (L x).IsInvertible) (p : M × F₁) :
-    fiberwiseLinearPartialDiffeomorph L hs hL hInv p = (p.1, L p.1 p.2) :=
-  (rfl)
+theorem fiberwiseLinearPartialDiffeomorph_apply (p : M × F₁) :
+    fiberwiseLinearPartialDiffeomorph L hs hL hInv p = (p.1, L p.1 p.2) := (rfl)
 
 /-- The inverse partial diffeomorphism of `fiberwiseLinearPartialDiffeomorph` preserves the first
 coordinate and applies `(L ·).inverse` to the second coordinate. -/
-theorem fiberwiseLinearPartialDiffeomorph_symm_apply [CompleteSpace F₁] (L : M → F₁ →L[𝕜] F₂)
-    {s : Set M} (hs : IsOpen s) (hL : ContMDiffOn I 𝓘(𝕜, F₁ →L[𝕜] F₂) n L s)
-    (hInv : ∀ x ∈ s, (L x).IsInvertible) (q : M × F₂) :
-    (fiberwiseLinearPartialDiffeomorph L hs hL hInv).symm q = (q.1, (L q.1).inverse q.2) :=
-  (rfl)
+theorem fiberwiseLinearPartialDiffeomorph_symm_apply (q : M × F₂) :
+    (fiberwiseLinearPartialDiffeomorph L hs hL hInv).symm q = (q.1, (L q.1).inverse q.2) := (rfl)
 
 /-- The inverse of the underlying `PartialEquiv` of `fiberwiseLinearPartialDiffeomorph` preserves
 the first coordinate and applies `(L ·).inverse` to the second coordinate. -/
 @[simp]
-theorem fiberwiseLinearPartialDiffeomorph_toPartialEquiv_symm_apply [CompleteSpace F₁]
-    (L : M → F₁ →L[𝕜] F₂) {s : Set M} (hs : IsOpen s)
-    (hL : ContMDiffOn I 𝓘(𝕜, F₁ →L[𝕜] F₂) n L s) (hInv : ∀ x ∈ s, (L x).IsInvertible)
-    (q : M × F₂) :
+theorem fiberwiseLinearPartialDiffeomorph_toPartialEquiv_symm_apply (q : M × F₂) :
     (fiberwiseLinearPartialDiffeomorph L hs hL hInv).toPartialEquiv.symm q =
-      (q.1, (L q.1).inverse q.2) :=
-  (rfl)
+      (q.1, (L q.1).inverse q.2) := (rfl)
 
 end TauCeti

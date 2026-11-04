@@ -70,33 +70,25 @@ theorem prodDiffeomorph_mem_prod_conormal_iff {i₁ : Q₁ → M₁} {i₂ : Q�
     (w : CotangentBundle (I₁.prod I₂) (M₁ × M₂)) :
     prodDiffeomorph I₁ I₂ M₁ M₂ w ∈ conormal J₁ I₁ i₁ ×ˢ conormal J₂ I₂ i₂ ↔
       w ∈ conormal (J₁.prod J₂) (I₁.prod I₂) (Prod.map i₁ i₂) := by
-  simp only [mem_prod, mem_conormal_iff_exists_cotangentRel]
-  constructor
-  · rintro ⟨⟨q₁, hq₁⟩, ⟨q₂, hq₂⟩⟩
-    refine ⟨(q₁, q₂), ?_⟩
-    rw [cotangentRel_prodMap_iff _ w (hi₁ q₁) (hi₂ q₂), prodDiffeomorph_zeroSection]
+  simp only [mem_prod, mem_conormal_iff_exists_cotangentRel, Prod.exists]
+  refine ⟨fun ⟨⟨q₁, hq₁⟩, ⟨q₂, hq₂⟩⟩ ↦ ⟨q₁, q₂, ?_⟩, fun ⟨q₁, q₂, hq⟩ ↦ ?_⟩
+  · rw [cotangentRel_prodMap_iff _ w (hi₁ q₁) (hi₂ q₂), prodDiffeomorph_zeroSection]
     exact ⟨hq₁, hq₂⟩
-  · rintro ⟨⟨q₁, q₂⟩, hq⟩
-    rw [cotangentRel_prodMap_iff _ w (hi₁ q₁) (hi₂ q₂), prodDiffeomorph_zeroSection] at hq
+  · rw [cotangentRel_prodMap_iff _ w (hi₁ q₁) (hi₂ q₂), prodDiffeomorph_zeroSection] at hq
     exact ⟨⟨q₁, hq.1⟩, ⟨q₂, hq.2⟩⟩
 
 /-- **The conormal set of a product map is the product of the conormal sets.** -/
 @[simp]
 theorem image_prodDiffeomorph_conormal_prodMap {i₁ : Q₁ → M₁} {i₂ : Q₂ → M₂}
     (hi₁ : MDifferentiable J₁ I₁ i₁) (hi₂ : MDifferentiable J₂ I₂ i₂) :
-    prodDiffeomorph I₁ I₂ M₁ M₂ ''
-        conormal (J₁.prod J₂) (I₁.prod I₂) (Prod.map i₁ i₂) =
+    prodDiffeomorph I₁ I₂ M₁ M₂ '' conormal (J₁.prod J₂) (I₁.prod I₂) (Prod.map i₁ i₂) =
       conormal J₁ I₁ i₁ ×ˢ conormal J₂ I₂ i₂ := by
-  ext ⟨a, b⟩
-  constructor
-  · rintro ⟨w, hw, hwab⟩
-    rw [← hwab]
-    exact (prodDiffeomorph_mem_prod_conormal_iff hi₁ hi₂ w).mpr hw
-  · intro hab
-    refine ⟨(prodDiffeomorph I₁ I₂ M₁ M₂).symm (a, b), ?_,
-      (prodDiffeomorph I₁ I₂ M₁ M₂).apply_symm_apply (a, b)⟩
-    apply (prodDiffeomorph_mem_prod_conormal_iff hi₁ hi₂ _).mp
-    rwa [(prodDiffeomorph I₁ I₂ M₁ M₂).apply_symm_apply]
+  ext p
+  refine ⟨fun ⟨w, hw, hwp⟩ ↦ hwp ▸ (prodDiffeomorph_mem_prod_conormal_iff hi₁ hi₂ w).mpr hw,
+    fun hp ↦ ⟨(prodDiffeomorph I₁ I₂ M₁ M₂).symm p,
+      (prodDiffeomorph_mem_prod_conormal_iff hi₁ hi₂ _).mp
+        (by rwa [(prodDiffeomorph I₁ I₂ M₁ M₂).apply_symm_apply]),
+      (prodDiffeomorph I₁ I₂ M₁ M₂).apply_symm_apply p⟩⟩
 
 /-- The inverse of `prodDiffeomorph` carries the product of two conormal sets onto the conormal set
 of the product map. -/
@@ -105,8 +97,7 @@ theorem symm_image_prodDiffeomorph_conormal {i₁ : Q₁ → M₁} {i₂ : Q₂ 
     (hi₁ : MDifferentiable J₁ I₁ i₁) (hi₂ : MDifferentiable J₂ I₂ i₂) :
     (prodDiffeomorph I₁ I₂ M₁ M₂).symm '' (conormal J₁ I₁ i₁ ×ˢ conormal J₂ I₂ i₂) =
       conormal (J₁.prod J₂) (I₁.prod I₂) (Prod.map i₁ i₂) := by
-  rw [← image_prodDiffeomorph_conormal_prodMap hi₁ hi₂, Set.image_image]
-  simp
+  rw [← image_prodDiffeomorph_conormal_prodMap hi₁ hi₂, Set.image_image]; simp
 
 end ProductMap
 
