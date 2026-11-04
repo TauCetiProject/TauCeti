@@ -52,6 +52,15 @@ Unlike a Poisson bracket, `{1, g}_α = R_α(g)` need not vanish
 the derivative of `g` along `X_f`, corrected by the Reeb derivative of `f`:
 `{f, g}_α = X_f(g) - g R_α(f)` (`TauCeti.SmoothForm.IsContactForm.jacobiBracket_eq_mvfderiv`).
 
+The development follows the Poisson bracket of a closed nondegenerate two-form in
+`TauCeti.Geometry.Symplectic.Hamiltonian.Bracket`: the derivative of `dα(X, Y)` along contact
+Hamiltonian vector fields and the bracket of contact Hamiltonian vector fields mirror
+`TauCeti.SmoothTwoForm.IsHamiltonianVectorField.mvfderiv_eval₂` and
+`TauCeti.SmoothTwoForm.IsHamiltonianVectorField.mlieBracket`, and the two forms of the Jacobi
+identity mirror
+`TauCeti.SmoothTwoForm.IsNondegenerate.poissonBracket_poissonBracket` and
+`TauCeti.SmoothTwoForm.IsNondegenerate.poissonBracket_jacobi`.
+
 ## References
 
 * Hansjörg Geiges, *An Introduction to Contact Topology*, Cambridge Studies in Advanced
