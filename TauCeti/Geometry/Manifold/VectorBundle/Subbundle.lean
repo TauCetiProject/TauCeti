@@ -12,7 +12,9 @@ import Mathlib.Geometry.Manifold.Algebra.LieGroup
 import Mathlib.Geometry.Manifold.Notation
 import TauCeti.Analysis.Normed.Module.FiniteDimension
 import TauCeti.Analysis.Normed.Operator.QuotientRange
+import TauCeti.Geometry.Manifold.ContMDiff.FiniteDimension
 import TauCeti.Geometry.Manifold.ContMDiff.LeftInverse
+import TauCeti.Geometry.Manifold.ContMDiff.NormedSpace
 import TauCeti.Geometry.Manifold.Immersion.LocalDiffeomorph
 import TauCeti.Geometry.Manifold.SmoothEmbedding.Extension
 import TauCeti.Geometry.Manifold.VectorBundle.Trivialization
@@ -199,17 +201,6 @@ variable {𝕜 : Type*} [NontriviallyNormedField 𝕜] [CompleteSpace 𝕜]
   [FiberBundle F E] [VectorBundle 𝕜 F E]
   {n : ℕ∞ω} [ContMDiffVectorBundle n F E IB]
 
-omit [CompleteSpace 𝕜] in
-private theorem contMDiffOn_coprod_subtypeL {W : Set B} {A : B → F' →L[𝕜] F}
-    (hA : ContMDiffOn IB 𝓘(𝕜, F' →L[𝕜] F) n A W) (Q : Submodule 𝕜 F) :
-    ContMDiffOn (IB.prod 𝓘(𝕜, F)) 𝓘(𝕜, (F' × Q) →L[𝕜] F) n
-      (fun p : B × F ↦ (A p.1).coprod Q.subtypeL) (W ×ˢ univ) := by
-  have hAp : ContMDiffOn (IB.prod 𝓘(𝕜, F)) 𝓘(𝕜, F' →L[𝕜] F) n (fun p : B × F ↦ A p.1)
-      (W ×ˢ univ) :=
-    hA.comp contMDiffOn_fst fun _ hq ↦ hq.1
-  exact (ContinuousLinearMap.coprodEquivL (𝕜 := 𝕜) (E := F') (F := Q) (G := F)
-    𝕜).contDiff.contMDiff.comp_contMDiffOn (hAp.prodMk_space contMDiffOn_const)
-
 /-- A `C^n` family of operators `A y : F' →L[𝕜] F` on an open set `W ⊆ B` whose coproduct with a
 subspace `Q ⊆ F` is invertible at every point of `W` defines, after precomposing with a fixed
 equivalence `e₀⁻¹ : F ≃L[𝕜] F' × Q`, a `C^n` partial diffeomorphism of `W ×ˢ univ ⊆ B × F`. -/
@@ -233,10 +224,14 @@ private def partialDiffeomorphOfCoprod
   open_source := hW.prod isOpen_univ
   open_target := hW.prod isOpen_univ
   contMDiffOn_toFun :=
-    contMDiffOn_fst.prodMk ((contMDiffOn_coprod_subtypeL hA Q).clm_apply
-      (e₀.symm.contDiff.contMDiff.comp_contMDiffOn contMDiffOn_snd))
+    contMDiffOn_fst.prodMk
+      (((hA.comp (s := W ×ˢ univ) contMDiffOn_fst fun _ hq ↦ hq.1).clm_coprod
+        contMDiffOn_const).clm_apply
+        (e₀.symm.contDiff.contMDiff.comp_contMDiffOn contMDiffOn_snd))
   contMDiffOn_invFun := by
-    have hcop := contMDiffOn_coprod_subtypeL hA Q
+    have hcop : ContMDiffOn (IB.prod 𝓘(𝕜, F)) 𝓘(𝕜, (F' × Q) →L[𝕜] F) n
+        (fun p : B × F ↦ (A p.1).coprod Q.subtypeL) (W ×ˢ univ) :=
+      (hA.comp (s := W ×ˢ univ) contMDiffOn_fst fun _ hq ↦ hq.1).clm_coprod contMDiffOn_const
     have hinv : ContMDiffOn (IB.prod 𝓘(𝕜, F)) 𝓘(𝕜, F →L[𝕜] F' × Q) n
         (fun p : B × F ↦ ((A p.1).coprod Q.subtypeL).inverse) (W ×ˢ univ) :=
       fun p hp ↦ (hInv p.1 hp.1).contDiffAt_map_inverse.contMDiffAt.comp_contMDiffWithinAt p
@@ -305,32 +300,15 @@ private theorem exists_contMDiffOn_subbundleCoord [FiniteDimensional 𝕜 F']
       Trivialization.continuousLinearMapAt_apply_of_mem (R := 𝕜) _ hx.2,
       (trivializationAt F' (fun x ↦ V x) x₀).symmL_apply hx.1, eE, eV]
     rfl
-  let b := Module.finBasis 𝕜 F'
-  refine ⟨A, ?_, hAeq, ?_⟩
-  · -- Expand `A x` on the basis `b` of `F'`: each column is `C^n` on `U`.
-    have hsum : ContMDiffOn IB' 𝓘(𝕜, F' →L[𝕜] F) n
-        (fun x ↦ ∑ i, ContinuousLinearMap.smulRightL 𝕜 F' F
-          (b.coord i).toContinuousLinearMap (eE ⟨f x, ((eV.symm x (b i) : V x) : E (f x))⟩).2) U :=
-      fun x hx ↦ contMDiffWithinAt_finsetSum fun i _ ↦
-        ((ContinuousLinearMap.smulRightL 𝕜 F' F
-          (b.coord i).toContinuousLinearMap).contDiff.contMDiff.comp_contMDiffOn
-          (contMDiffOn_subbundleCoord_apply hinc x₀ (b i))) x hx
-    refine hsum.congr fun x hx ↦ ?_
-    ext w
-    rw [FunLike.coe_sum, Finset.sum_apply]
-    have hterm : ∀ i, (ContinuousLinearMap.smulRightL 𝕜 F' F (b.coord i).toContinuousLinearMap
-        (eE ⟨f x, ((eV.symm x (b i) : V x) : E (f x))⟩).2) w = A x (b.repr w i • b i) := by
-      intro i
-      rw [hAeq x hx (b i), map_smul]
-      rfl
-    simp_rw [hterm, ← map_sum (A x)]
-    exact congrArg (A x) (b.sum_repr w).symm
-  · have hx₀V : x₀ ∈ eV.baseSet := FiberBundle.mem_baseSet_trivializationAt F' (fun x ↦ V x) x₀
-    have hx₀E : f x₀ ∈ eE.baseSet := FiberBundle.mem_baseSet_trivializationAt F E (f x₀)
-    dsimp only [A]
-    rw [ContinuousLinearMap.inCoordinates_eq hx₀V hx₀E]
-    exact (eE.continuousLinearEquivAt 𝕜 (f x₀) hx₀E).injective.comp
-      (Subtype.val_injective.comp (eV.continuousLinearEquivAt 𝕜 x₀ hx₀V).symm.injective)
+  refine ⟨A, fun x hx ↦ contMDiffWithinAt_clm_apply.mpr fun w ↦
+    ((contMDiffOn_subbundleCoord_apply hinc x₀ w).congr fun y hy ↦ (hAeq y hy w).symm) x hx,
+    hAeq, ?_⟩
+  have hx₀V : x₀ ∈ eV.baseSet := FiberBundle.mem_baseSet_trivializationAt F' (fun x ↦ V x) x₀
+  have hx₀E : f x₀ ∈ eE.baseSet := FiberBundle.mem_baseSet_trivializationAt F E (f x₀)
+  dsimp only [A]
+  rw [ContinuousLinearMap.inCoordinates_eq hx₀V hx₀E]
+  exact (eE.continuousLinearEquivAt 𝕜 (f x₀) hx₀E).injective.comp
+    (Subtype.val_injective.comp (eV.continuousLinearEquivAt 𝕜 x₀ hx₀V).symm.injective)
 
 omit [CompleteSpace 𝕜] [VectorBundle 𝕜 F E] [ContMDiffVectorBundle n F E IB] in
 /-- Over `eV.source ∩ proj ⁻¹' (f ⁻¹' W)`, composing `eV`, `Prod.map f (fun w ↦ e₀ (w, 0))`,
