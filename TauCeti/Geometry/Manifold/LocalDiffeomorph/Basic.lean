@@ -305,9 +305,10 @@ theorem _root_.IsLocalDiffeomorphAt.exists_mem_maximalAtlas_eqOn_extend_symm {N'
   · rw [OpenPartialHomeomorph.extend_target]
     exact ⟨hu.1.1, hu.2⟩
   · -- The inverse of the extended pulled-back chart is `Φ⁻¹ ∘ e⁻¹ ∘ I⁻¹`, which `f = Φ` cancels.
-    change f (Φ.symm.toPartialEquiv (e.symm (I.symm u))) = e.symm (I.symm u)
-    rw [hfΦ (Φ.symm.toPartialEquiv.map_source hu.1.2)]
-    exact Φ.toPartialEquiv.right_inv hu.1.2
+    simp only [OpenPartialHomeomorph.extend_coe_symm, OpenPartialHomeomorph.coe_trans_symm,
+      Function.comp_apply]
+    rw [hfΦ (Φ.toOpenPartialHomeomorph.map_target hu.1.2)]
+    exact Φ.toOpenPartialHomeomorph.right_inv hu.1.2
 
 /-- Charts in which `k ∘ f` reads as `f` does, for a `C^n` local diffeomorphism `k` at `f x`: given
 charts `φ` at `x` and `ψ` at `f x` of the maximal `C^n` atlases, `φ` restricts to a chart `φ'` at
