@@ -34,6 +34,9 @@ subsolution into an `Lᵖ` bound with `p < 2`.
   balls, where `k` is bounded by `h` and `h` by an arbitrarily small multiple of `k`. It absorbs
   the weighted suprema `sup (R - σ) h(σ)` and `sup (R - σ)² k(σ)`, as in the interior `W^{2,p}`
   estimate.
+* `TauCeti.le_add_mul_of_le_add_of_le_add_mul_add_mul`: absorbs bounded lower-order terms of a
+  step estimate between concentric balls into the `(t - s)⁻¹` and `(t - s)⁻²` terms, so that
+  `TauCeti.sq_mul_le_of_forall_le` applies.
 
 ## References
 
@@ -263,5 +266,58 @@ theorem sq_mul_le_of_forall_le {R z a₀ K cA cB N : ℝ} {k h y : ℝ → ℝ} 
     exact one_div_mul_cancel (by positivity)
   exact (hle₂ r ⟨hr, hrR⟩).trans
     (le_two_mul_add_mul_sq_mul_of_le_of_le hΦ₁0 hz0 (by positivity) hK1 hcA hcB hN hθ0 hθeq hΦ₂ hΦ₁)
+
+/-- **Absorbing bounded lower-order terms in the step between concentric balls.** Let
+`0 < s < t ≤ R`. If the step between `B_s` and `B_t` bounds `k` by `a G` plus terms in
+`(t - s)⁻¹ h` and `(t - s)⁻² z`, and `G ≤ F + β h + γ z`, then since `t - s ≤ R` the terms `β h`
+and `γ z` only enlarge the coefficient `K` of the last two terms by `a (β R + γ R²)`. This puts a
+step estimate with lower-order terms into the form required by `TauCeti.sq_mul_le_of_forall_le`,
+as in the interior `W^{2,p}` estimate with lower-order terms. -/
+theorem le_add_mul_of_le_add_of_le_add_mul_add_mul {k G F h z a K cA β γ R s t : ℝ}
+    (ha : 0 ≤ a) (hK : 0 ≤ K) (hcA : 0 ≤ cA) (hβ : 0 ≤ β) (hγ : 0 ≤ γ) (hh : 0 ≤ h)
+    (hz : 0 ≤ z) (hs : 0 < s) (hst : s < t) (htR : t ≤ R)
+    (hk : k ≤ a * G + K * (cA / (t - s) * h + cA / (t - s) ^ 2 * z))
+    (hG : G ≤ F + β * h + γ * z) :
+    k ≤ a * F + (K + a * (β * R + γ * R ^ 2)) *
+      ((cA + 1) / (t - s) * h + (cA + 1) / (t - s) ^ 2 * z) := by
+  have hts : 0 < t - s := sub_pos.2 hst
+  have hR0 : 0 < R := by linarith
+  set P := h / (t - s) with hP
+  set W := z / (t - s) ^ 2 with hW
+  have hP0 : 0 ≤ P := div_nonneg hh hts.le
+  have hW0 : 0 ≤ W := div_nonneg hz (by positivity)
+  have e1 : ∀ e : ℝ, e / (t - s) * h = e * P := fun e => by rw [hP]; ring
+  have e2 : ∀ e : ℝ, e / (t - s) ^ 2 * z = e * W := fun e => by rw [hW]; ring
+  -- `h ≤ R P` and `z ≤ R² W`, because `t - s ≤ R`.
+  have hhP : h ≤ R * P := by
+    rw [hP, mul_div_assoc', le_div_iff₀ hts, mul_comm R]
+    exact mul_le_mul_of_nonneg_left (by linarith) hh
+  have hzW : z ≤ R ^ 2 * W := by
+    rw [hW, mul_div_assoc', le_div_iff₀ (by positivity), mul_comm (R ^ 2)]
+    exact mul_le_mul_of_nonneg_left (pow_le_pow_left₀ hts.le (by linarith) 2) hz
+  rw [e1, e2] at hk ⊢
+  have hβR : 0 ≤ β * R := mul_nonneg hβ hR0.le
+  have hγR : 0 ≤ γ * R ^ 2 := mul_nonneg hγ (sq_nonneg R)
+  have hQ0 : 0 ≤ a * (β * R + γ * R ^ 2) := by positivity
+  have hlow : a * (β * h + γ * z) ≤ a * (β * R + γ * R ^ 2) * (P + W) := by
+    have h1 : β * h + γ * z ≤ β * R * P + γ * R ^ 2 * W := by
+      have := mul_le_mul_of_nonneg_left hhP hβ
+      have := mul_le_mul_of_nonneg_left hzW hγ
+      linarith
+    have h2 : β * R * P + γ * R ^ 2 * W ≤ (β * R + γ * R ^ 2) * (P + W) := by
+      have hexp : (β * R + γ * R ^ 2) * (P + W) =
+          β * R * P + γ * R ^ 2 * W + (β * R * W + γ * R ^ 2 * P) := by ring
+      linarith [mul_nonneg hβR hW0, mul_nonneg hγR hP0]
+    rw [mul_assoc]
+    exact mul_le_mul_of_nonneg_left (h1.trans h2) ha
+  have haG := mul_le_mul_of_nonneg_left hG ha
+  have hPW : 0 ≤ P + W := add_nonneg hP0 hW0
+  have hexp : (K + a * (β * R + γ * R ^ 2)) * ((cA + 1) * P + (cA + 1) * W) =
+      K * (cA * P + cA * W) + a * (β * R + γ * R ^ 2) * (P + W) +
+        (K * (P + W) + a * (β * R + γ * R ^ 2) * cA * (P + W)) := by ring
+  have hrest : 0 ≤ K * (P + W) + a * (β * R + γ * R ^ 2) * cA * (P + W) :=
+    add_nonneg (mul_nonneg hK hPW) (mul_nonneg (mul_nonneg hQ0 hcA) hPW)
+  have hdist : a * (F + β * h + γ * z) = a * F + a * (β * h + γ * z) := by ring
+  linarith
 
 end TauCeti
