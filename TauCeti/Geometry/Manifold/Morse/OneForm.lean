@@ -221,10 +221,10 @@ theorem _root_.IsLocalDiffeomorph.isMorseOneForm_mpullback_iff
   have hsmooth : IsSmoothForm I ∞ α :=
     (hπ.isSmoothForm_mpullback_iff hsurj (by simp)).mp h.isSmoothForm
   have hclosed : mextDeriv α = 0 := by
-    refine hπ.mpullback_injective (by simp) hsurj ?_
-    rw [mpullback_mextDeriv (hπ.contMDiff.of_le (by simp))
-      ((isSmoothBundleForm_def 1 α).mpr (hsmooth.contMDiff.of_le (by simp))),
-      h.mextDeriv_eq_zero, mpullback_zero]
+    refine (SmoothForm.isClosed_def ⟨α, hsmooth.mem_smoothBundleForms⟩).mp
+      ((hπ.isClosed_mpullback_iff hsurj).mp ?_)
+    rw [SmoothForm.isClosed_def, SmoothForm.coe_mpullback]
+    exact h.mextDeriv_eq_zero
   refine ⟨hsmooth, hclosed, fun y hy ↦ ?_⟩
   -- For a local primitive `g` of the pullback near `x` and a local inverse `s` of `π`, `g ∘ s` is
   -- a local primitive of `α` near `y = π x`. It lifts back to a local primitive of the pullback,
