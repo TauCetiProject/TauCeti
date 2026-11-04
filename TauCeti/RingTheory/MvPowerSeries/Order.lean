@@ -70,8 +70,7 @@ variable {σ R : Type*} [Semiring R] {f : MvPowerSeries σ R}
 /-- Over a nontrivial semiring, every coordinate indeterminate `X i` has order `1`. -/
 @[simp]
 theorem order_X [Nontrivial R] (i : σ) : (X i : MvPowerSeries σ R).order = 1 := by
-  rw [X_def, order_monomial_of_ne_zero one_ne_zero, Finsupp.degree_single]
-  rfl
+  rw [X_def, order_monomial_of_ne_zero one_ne_zero, Finsupp.degree_single, Nat.cast_one]
 
 /-- Over a nontrivial semiring without zero divisors, `weightedOrder` multiplies by `n` on `n`-th
 powers. -/

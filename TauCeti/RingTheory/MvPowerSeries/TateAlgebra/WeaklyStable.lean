@@ -505,6 +505,36 @@ private theorem sq_add_X_sq_mul_add_X_mul_sq_ne_zero {σ R : Type*}
     hmin_cast]
   exact ENat.natCast_ne_top _
 
+/-- For any coordinate variable `x₀ = X i` in `GaussFractionField σ K c`, the quadratic polynomial
+`Y ^ 2 + x₀ ^ 2 * Y + x₀` has no root in `GaussFractionField σ K c`. -/
+private theorem not_isRoot_X_sq_add_C_sq_mul_X_add_C {σ K : Type*}
+    [NormedField K] [IsUltrametricDist K] {c : σ → ℝ} [∀ i, Fact (0 < c i)]
+    (i : σ) (z : GaussFractionField σ K c) :
+    let x₀ := algebraMap (IsRestricted.subring (R := K) c) (GaussFractionField σ K c)
+      ⟨X i, isRestricted_X c i⟩
+    ¬ (Polynomial.X ^ 2 + Polynomial.C (x₀ ^ 2) * Polynomial.X + Polynomial.C x₀).IsRoot z := by
+  let T := IsRestricted.subring (R := K) c
+  let F := GaussFractionField σ K c
+  let X₀ : T := ⟨X i, isRestricted_X c i⟩
+  intro x₀ hz
+  rw [Polynomial.IsRoot.def, Polynomial.eval_add, Polynomial.eval_add, Polynomial.eval_pow,
+    Polynomial.eval_mul, Polynomial.eval_X, Polynomial.eval_C, Polynomial.eval_C] at hz
+  obtain ⟨A, B, hB_mem, rfl⟩ := IsFractionRing.div_surjective T z
+  have hB_F_ne : algebraMap T F B ≠ 0 :=
+    IsFractionRing.to_map_ne_zero_of_mem_nonZeroDivisors hB_mem
+  have hclear : algebraMap T F (A ^ 2 + X₀ ^ 2 * A * B + X₀ * B ^ 2) = 0 := by
+    have hmul := congrArg (· * (algebraMap T F B) ^ 2) hz
+    simp only [zero_mul, map_add, map_mul, map_pow] at hmul ⊢
+    dsimp only [x₀, X₀, T, F] at hmul hB_F_ne ⊢
+    field_simp [hB_F_ne] at hmul
+    linear_combination hmul
+  have hT0 : A ^ 2 + X₀ ^ 2 * A * B + X₀ * B ^ 2 = 0 :=
+    (map_eq_zero_iff _ (IsFractionRing.injective T F)).mp hclear
+  exact sq_add_X_sq_mul_add_X_mul_sq_ne_zero i
+    (Subtype.coe_ne_coe.mpr (nonZeroDivisors.ne_zero hB_mem))
+    (by simpa only [Subring.coe_add, Subring.coe_mul, SubmonoidClass.coe_pow,
+      ZeroMemClass.coe_zero] using congrArg Subtype.val hT0)
+
 /-- In any characteristic (including `2`), `Y ^ 2 + Xᵢ ^ 2 * Y + Xᵢ` defines a degree-`2` separable
 extension of `GaussFractionField σ K c` on which `spectralNorm` is equivalent to the power-basis
 coordinate norm. -/
@@ -524,30 +554,13 @@ example (σ : Type u₁) (K : Type u₂) [Finite σ] [Nonempty σ]
   let X₀ : T := ⟨X i₀, isRestricted_X c i₀⟩
   let x₀ : F := algebraMap T F X₀
   have hx₀_ne : x₀ ≠ 0 := by
-    rw [← norm_pos_iff, norm_algebraMap_gaussFractionField, norm_X]; exact Fact.out
+    rw [← norm_pos_iff, norm_algebraMap_gaussFractionField_X]; exact Fact.out
   let P : Polynomial F := Polynomial.X ^ 2 + Polynomial.C (x₀ ^ 2) * Polynomial.X + Polynomial.C x₀
   have hP_deg : P.natDegree = 2 := by dsimp only [P]; compute_degree!
   have hP_monic : P.Monic := by dsimp only [P]; monicity!
-  have hP_noroot (z : F) : ¬ P.IsRoot z := fun hz ↦ by
-    rw [Polynomial.IsRoot.def, Polynomial.eval_add, Polynomial.eval_add, Polynomial.eval_pow,
-      Polynomial.eval_mul, Polynomial.eval_X, Polynomial.eval_C, Polynomial.eval_C] at hz
-    obtain ⟨A, B, hB_mem, rfl⟩ := IsFractionRing.div_surjective T z
-    have hB_F_ne : algebraMap T F B ≠ 0 :=
-      IsFractionRing.to_map_ne_zero_of_mem_nonZeroDivisors hB_mem
-    have hclear : algebraMap T F (A ^ 2 + X₀ ^ 2 * A * B + X₀ * B ^ 2) = 0 := by
-      have hmul := congrArg (· * (algebraMap T F B) ^ 2) hz
-      simp only [zero_mul, map_add, map_mul, map_pow] at hmul ⊢
-      dsimp only [x₀] at hmul
-      field_simp [hB_F_ne] at hmul
-      linear_combination hmul
-    have hT0 : A ^ 2 + X₀ ^ 2 * A * B + X₀ * B ^ 2 = 0 :=
-      (map_eq_zero_iff _ (IsFractionRing.injective T F)).mp hclear
-    exact sq_add_X_sq_mul_add_X_mul_sq_ne_zero i₀
-      (Subtype.coe_ne_coe.mpr (nonZeroDivisors.ne_zero hB_mem))
-      (by simpa only [Subring.coe_add, Subring.coe_mul, SubmonoidClass.coe_pow,
-        ZeroMemClass.coe_zero] using congrArg Subtype.val hT0)
   have hP_irr : Irreducible P :=
-    Polynomial.irreducible_of_degree_le_three_of_not_isRoot (by rw [hP_deg]; decide) hP_noroot
+    Polynomial.irreducible_of_degree_le_three_of_not_isRoot (by rw [hP_deg]; decide)
+      (not_isRoot_X_sq_add_C_sq_mul_X_add_C i₀)
   have hP_sep : P.Separable := by
     rw [Polynomial.separable_iff_derivative_ne_zero hP_irr]
     exact fun hderiv ↦ hx₀_ne (by simpa [P] using congrArg (Polynomial.eval 0) hderiv)
@@ -605,29 +618,8 @@ example (σ : Type u₁) (K : Type u₂) [Finite σ] [Nonempty σ]
     by_contra! hle
     obtain ⟨z, hz⟩ := IntermediateField.mem_bot.mp
       (IntermediateField.finrank_adjoin_simple_eq_one_iff.mp (le_antisymm hle Module.finrank_pos))
-    have hzp : z ^ p = x₀ := (algebraMap F (AlgebraicClosure F)).injective (by rw [map_pow, hz, hα])
-    obtain ⟨A, B, hB_mem, rfl⟩ := IsFractionRing.div_surjective T z
-    have hB_F_ne : algebraMap T F B ≠ 0 :=
-      IsFractionRing.to_map_ne_zero_of_mem_nonZeroDivisors hB_mem
-    have hclear : algebraMap T F (A ^ p) = algebraMap T F (X₀ * B ^ p) := by
-      have hmul := congrArg (· * (algebraMap T F B) ^ p) hzp
-      rw [div_pow, div_mul_cancel₀ _ (pow_ne_zero p hB_F_ne)] at hmul
-      simpa only [x₀, map_mul, map_pow] using hmul
-    have hser : (A : _root_.MvPowerSeries σ K) ^ p = X i₀ * (B : _root_.MvPowerSeries σ K) ^ p := by
-      simpa only [Subring.coe_mul, SubmonoidClass.coe_pow]
-        using congrArg Subtype.val (IsFractionRing.injective T F hclear)
-    have hB_ne : (B : _root_.MvPowerSeries σ K) ≠ 0 :=
-      Subtype.coe_ne_coe.mpr (nonZeroDivisors.ne_zero hB_mem)
-    have hA_ne : (A : _root_.MvPowerSeries σ K) ≠ 0 := fun hA0 ↦ by
-      rw [hA0, zero_pow hp.ne_zero] at hser
-      exact mul_ne_zero (X_ne_zero i₀) (pow_ne_zero p hB_ne) hser.symm
-    obtain ⟨a, ha⟩ := ENat.ne_top_iff_exists.mp (order_eq_top_iff.not.mpr hA_ne)
-    obtain ⟨b, hb⟩ := ENat.ne_top_iff_exists.mp (order_eq_top_iff.not.mpr hB_ne)
-    have hord_eq := congrArg MvPowerSeries.order hser
-    rw [order_pow, ← ha, order_mul, order_X, order_pow, ← hb, nsmul_eq_mul, nsmul_eq_mul] at hord_eq
-    have hmod := congrArg (· % p) (by exact_mod_cast hord_eq : p * a = 1 + p * b)
-    rw [Nat.mul_mod_right, Nat.add_mul_mod_self_left, Nat.mod_eq_of_lt hp.one_lt] at hmod
-    exact zero_ne_one hmod
+    exact pow_ne_algebraMap_gaussFractionField_X σ K c i₀ hp.ne_one z
+      ((algebraMap F (AlgebraicClosure F)).injective (by rw [map_pow, hz, hα]))
   let pb := IntermediateField.adjoin.powerBasis hα_int
   have : NeZero pb.dim := ⟨by
     rw [IntermediateField.adjoin.powerBasis_dim, ← IntermediateField.adjoin.finrank hα_int]

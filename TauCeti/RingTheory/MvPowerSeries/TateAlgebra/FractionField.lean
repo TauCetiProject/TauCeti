@@ -10,13 +10,17 @@ public import TauCeti.RingTheory.MvPowerSeries.TateAlgebra.Basic
 public import Mathlib.Analysis.Normed.Field.WithAbs
 
 import Mathlib.Analysis.SpecificLimits.Basic
+import TauCeti.RingTheory.MvPowerSeries.Basic
+import TauCeti.RingTheory.MvPowerSeries.Order
 
 /-!
 # The Gauss-normed fraction field of a Tate algebra
 
 `GaussFractionField σ K c` is Mathlib's fraction field of the native Tate algebra at
 positive polyradius `c`, equipped with the extended Gauss norm through `WithAbs`. Its norm is
-multiplicative and ultrametric, and both the Tate algebra and coefficient field embed isometrically.
+multiplicative and ultrametric, both the Tate algebra and coefficient field embed isometrically,
+and no coordinate indeterminate has an `n`-th root for `n ≠ 1`
+(`TauCeti.MvPowerSeries.pow_ne_algebraMap_gaussFractionField_X`).
 Injective ring homomorphisms between Tate algebras extend across fractions to ring homomorphisms
 between their Gauss-normed fraction fields (`RingHom.gaussFractionFieldMap`), preserving the
 extended Gauss norm when the Tate-algebra map is norm-preserving
@@ -116,10 +120,50 @@ theorem norm_algebraMap_gaussFractionField (f : Tate) :
     ‖algebraMap Tate (GaussFractionField σ K c) f‖ = ‖f‖ := by
   rw [WithAbs.algebraMap_right_apply, WithAbs.norm_toAbs_eq, gaussFractionNorm_algebraMap]
 
+/-- Every coordinate indeterminate `X i` has norm `c i` in `GaussFractionField σ K c`. -/
+theorem norm_algebraMap_gaussFractionField_X (i : σ) :
+    ‖algebraMap Tate (GaussFractionField σ K c) ⟨X i, isRestricted_X c i⟩‖ = c i := by
+  rw [norm_algebraMap_gaussFractionField, norm_X]
+
 /-- The Tate algebra embeds isometrically into its Gauss-normed fraction field. -/
 theorem isometry_algebraMap_gaussFractionField :
     Isometry (algebraMap Tate (GaussFractionField σ K c)) :=
   (AddMonoidHomClass.isometry_iff_norm _).mpr (norm_algebraMap_gaussFractionField σ K c)
+
+/-- For `n ≠ 1`, no coordinate indeterminate `X i` is an `n`-th power in
+`GaussFractionField σ K c`. -/
+theorem pow_ne_algebraMap_gaussFractionField_X (i : σ) {n : ℕ} (hn : n ≠ 1)
+    (z : GaussFractionField σ K c) :
+    z ^ n ≠ algebraMap Tate (GaussFractionField σ K c) ⟨X i, isRestricted_X c i⟩ := by
+  intro hz
+  rcases eq_or_ne n 0 with rfl | hn0
+  · rw [pow_zero, ← map_one (algebraMap Tate (GaussFractionField σ K c))] at hz
+    have h1 := congrArg (constantCoeff ∘ Subtype.val) (IsFractionRing.injective Tate _ hz)
+    simp only [Function.comp_apply, OneMemClass.coe_one, map_one, constantCoeff_X] at h1
+    exact one_ne_zero h1
+  obtain ⟨A, B, hB_mem, rfl⟩ := IsFractionRing.div_surjective Tate z
+  have hB_F_ne : algebraMap Tate (GaussFractionField σ K c) B ≠ 0 :=
+    IsFractionRing.to_map_ne_zero_of_mem_nonZeroDivisors hB_mem
+  have hclear : algebraMap Tate (GaussFractionField σ K c) (A ^ n) =
+      algebraMap Tate (GaussFractionField σ K c) (⟨X i, isRestricted_X c i⟩ * B ^ n) := by
+    have hmul := congrArg (· * (algebraMap Tate (GaussFractionField σ K c) B) ^ n) hz
+    rw [div_pow, div_mul_cancel₀ _ (pow_ne_zero n hB_F_ne)] at hmul
+    simpa only [map_mul, map_pow] using hmul
+  have hser : (A : _root_.MvPowerSeries σ K) ^ n = X i * (B : _root_.MvPowerSeries σ K) ^ n := by
+    simpa only [Subring.coe_mul, SubmonoidClass.coe_pow]
+      using congrArg Subtype.val (IsFractionRing.injective Tate _ hclear)
+  have hB_ne : (B : _root_.MvPowerSeries σ K) ≠ 0 :=
+    Subtype.coe_ne_coe.mpr (nonZeroDivisors.ne_zero hB_mem)
+  have hA_ne : (A : _root_.MvPowerSeries σ K) ≠ 0 := fun hA0 ↦ by
+    rw [hA0, zero_pow hn0] at hser
+    exact mul_ne_zero (X_ne_zero i) (pow_ne_zero n hB_ne) hser.symm
+  obtain ⟨a, ha⟩ := ENat.ne_top_iff_exists.mp (order_eq_top_iff.not.mpr hA_ne)
+  obtain ⟨b, hb⟩ := ENat.ne_top_iff_exists.mp (order_eq_top_iff.not.mpr hB_ne)
+  have hord_eq := congrArg _root_.MvPowerSeries.order hser
+  rw [order_pow, ← ha, order_mul, order_X, order_pow, ← hb, nsmul_eq_mul, nsmul_eq_mul] at hord_eq
+  have hmod := congrArg (· % n) (by exact_mod_cast hord_eq : n * a = 1 + n * b)
+  rw [Nat.mul_mod_right, Nat.add_mul_mod_self_left, Nat.mod_eq_of_lt (by omega)] at hmod
+  exact zero_ne_one hmod
 
 instance : IsUltrametricDist (GaussFractionField σ K c) :=
   IsUltrametricDist.isUltrametricDist_of_forall_norm_add_le_max_norm fun x y ↦ by
@@ -232,6 +276,9 @@ open scoped Topology
 
 section Incomplete
 
+local notation "tateX" c:max i:max =>
+  (Subtype.mk (X i) (isRestricted_X c i) : IsRestricted.subring c)
+
 section Helpers
 
 variable {σ K : Type*} [NormedField K] [IsUltrametricDist K]
@@ -245,21 +292,18 @@ local notation "Tate" => IsRestricted.subring (R := K) c
 private theorem exists_tendsto_sum_pow_sq_div_pow [CompleteSpace (GaussFractionField σ K c)]
     (i₀ : σ) {a : K} (ha_pos : 0 < ‖a‖) (ha1 : ‖a‖ < 1) (hac : ‖a‖ < c i₀) :
     let F := GaussFractionField σ K c
-    let X₀ : Tate := ⟨X i₀, isRestricted_monomial c (Finsupp.single i₀ 1) (1 : K)⟩
     ∃ z : F, ∀ N : ℕ,
       ‖z - ∑ k ∈ Finset.range N,
-          algebraMap K F (a ^ ((k + 1) ^ 2)) / (algebraMap Tate F X₀) ^ (k + 1)‖ ≤
+          algebraMap K F (a ^ ((k + 1) ^ 2)) / (algebraMap Tate F (tateX c i₀)) ^ (k + 1)‖ ≤
         ‖a‖ ^ ((N + 1) ^ 2) / c i₀ ^ (N + 1) := by
-  let F := GaussFractionField σ K c
+  intro F
   have hc₀ : 0 < c i₀ := Fact.out
   have hrat1 : ‖a‖ / c i₀ < 1 := (div_lt_one hc₀).mpr hac
-  let X₀ : Tate := ⟨X i₀, isRestricted_monomial c (Finsupp.single i₀ 1) (1 : K)⟩
-  have hX₀_F_norm : ‖algebraMap Tate F X₀‖ = c i₀ := by
-    rw [norm_algebraMap_gaussFractionField, norm_X]
   let t (k : ℕ) : F :=
-    algebraMap K F (a ^ ((k + 1) ^ 2)) / (algebraMap Tate F X₀) ^ (k + 1)
+    algebraMap K F (a ^ ((k + 1) ^ 2)) / (algebraMap Tate F (tateX c i₀)) ^ (k + 1)
   have ht_norm (k : ℕ) : ‖t k‖ = ‖a‖ ^ ((k + 1) ^ 2) / c i₀ ^ (k + 1) := by
-    simp only [t, norm_div, norm_algebraMap', norm_pow, hX₀_F_norm]
+    simp only [t, F, norm_div, norm_algebraMap', norm_pow,
+      norm_algebraMap_gaussFractionField_X σ K c i₀]
   have ht_anti : Antitone fun k ↦ ‖t k‖ := by
     refine antitone_nat_of_succ_le fun k ↦ ?_
     rw [ht_norm, ht_norm]
@@ -300,10 +344,9 @@ private theorem norm_coeff_mul_prod_le_of_norm_rem_le
     (i₀ : σ) {a : K} (ha_pos : 0 < ‖a‖) (P Q : Tate)
     {μ₀ : σ →₀ ℕ} (hQ_min : ∀ μ, coeff μ (Q : _root_.MvPowerSeries σ K) ≠ 0 → μ₀ i₀ ≤ μ i₀)
     {N : ℕ} (hNd : μ₀ i₀ < N) (rem : Tate)
-    (hrem_def :
-      let X₀ : Tate := ⟨X i₀, isRestricted_monomial c (Finsupp.single i₀ 1) (1 : K)⟩
-      rem = P * X₀ ^ N -
-        Q * ∑ k ∈ Finset.range N, algebraMap K Tate (a ^ ((k + 1) ^ 2)) * X₀ ^ (N - 1 - k))
+    (hrem_def : rem = P * (tateX c i₀) ^ N -
+      Q * ∑ k ∈ Finset.range N,
+        algebraMap K Tate (a ^ ((k + 1) ^ 2)) * (tateX c i₀) ^ (N - 1 - k))
     (hrem_norm : ‖rem‖ ≤ (‖a‖ ^ ((N + 1) ^ 2) / c i₀ ^ (N + 1)) * ‖Q‖ * c i₀ ^ N) :
     ‖coeff μ₀ (Q : _root_.MvPowerSeries σ K)‖ * μ₀.prod (c · ^ ·) ≤
       (‖Q‖ / c i₀) * ‖a‖ ^ (2 * N + 1) := by
@@ -349,13 +392,11 @@ theorem not_completeSpace_gaussFractionField :
   obtain ⟨a, ha_pos, ha_lt⟩ := NormedField.exists_norm_lt K (lt_min one_pos hc₀)
   have ha1 : ‖a‖ < 1 := ha_lt.trans_le (min_le_left _ _)
   have hac : ‖a‖ < c i₀ := ha_lt.trans_le (min_le_right _ _)
-  let X₀ : Tate := ⟨X i₀, isRestricted_monomial c (Finsupp.single i₀ 1) (1 : K)⟩
-  have hX₀_F_norm : ‖algebraMap Tate F X₀‖ = c i₀ := by
-    rw [norm_algebraMap_gaussFractionField, norm_X]
-  have hX₀_F_ne : algebraMap Tate F X₀ ≠ 0 := norm_ne_zero_iff.mp (hX₀_F_norm.trans_ne hc₀.ne')
+  have hX₀_F_ne : algebraMap Tate F (tateX c i₀) ≠ 0 :=
+    norm_ne_zero_iff.mp ((norm_algebraMap_gaussFractionField_X σ K c i₀).trans_ne hc₀.ne')
   obtain ⟨z, hz_bound⟩ := exists_tendsto_sum_pow_sq_div_pow (c := c) i₀ ha_pos ha1 hac
   let s (N : ℕ) : F := ∑ k ∈ Finset.range N,
-    algebraMap K F (a ^ ((k + 1) ^ 2)) / (algebraMap Tate F X₀) ^ (k + 1)
+    algebraMap K F (a ^ ((k + 1) ^ 2)) / (algebraMap Tate F (tateX c i₀)) ^ (k + 1)
   obtain ⟨P, Q, hQ_mem, rfl⟩ := IsFractionRing.div_surjective Tate z
   have hQ_F_ne : algebraMap Tate F Q ≠ 0 :=
     IsFractionRing.to_map_ne_zero_of_mem_nonZeroDivisors hQ_mem
@@ -369,8 +410,9 @@ theorem not_completeSpace_gaussFractionField :
     hμ₀_deg.trans_le (Nat.find_min' hQ_supp ⟨μ, rfl, hμ⟩)
   -- Numerator `P_num N` of the partial sum `s N = P_num N / X₀ ^ N`.
   let P_num (N : ℕ) : Tate :=
-    ∑ k ∈ Finset.range N, algebraMap K Tate (a ^ ((k + 1) ^ 2)) * X₀ ^ (N - 1 - k)
-  have hs_mul (N : ℕ) : s N * (algebraMap Tate F X₀) ^ N = algebraMap Tate F (P_num N) := by
+    ∑ k ∈ Finset.range N, algebraMap K Tate (a ^ ((k + 1) ^ 2)) * (tateX c i₀) ^ (N - 1 - k)
+  have hs_mul (N : ℕ) :
+      s N * (algebraMap Tate F (tateX c i₀)) ^ N = algebraMap Tate F (P_num N) := by
     simp only [s, P_num, Finset.sum_mul, map_sum, map_mul, map_pow,
       ← IsScalarTower.algebraMap_apply K Tate F]
     refine Finset.sum_congr rfl fun k hk ↦ ?_
@@ -383,15 +425,15 @@ theorem not_completeSpace_gaussFractionField :
   let δ : ℝ := ‖coeff μ₀ (Q : _root_.MvPowerSeries σ K)‖ * μ₀.prod (c · ^ ·)
   have hδ_pos : 0 < δ := mul_pos (norm_pos_iff.mpr hμ₀_ne) (prod_pow_pos μ₀)
   have hbound_N {N : ℕ} (hNd : μ₀ i₀ < N) : δ ≤ (‖Q‖ / c i₀) * ‖a‖ ^ (2 * N + 1) := by
-    let rem : Tate := P * X₀ ^ N - Q * P_num N
+    let rem : Tate := P * (tateX c i₀) ^ N - Q * P_num N
     have hrem_F : algebraMap Tate F rem =
         (algebraMap Tate F P / algebraMap Tate F Q - s N) *
-          algebraMap Tate F Q * (algebraMap Tate F X₀) ^ N := by
+          algebraMap Tate F Q * (algebraMap Tate F (tateX c i₀)) ^ N := by
       simp only [rem, map_sub, map_mul, map_pow, sub_mul, div_mul_cancel₀ _ hQ_F_ne]
       rw [mul_right_comm (s N), hs_mul, mul_comm (algebraMap Tate F (P_num N))]
     refine norm_coeff_mul_prod_le_of_norm_rem_le i₀ ha_pos P Q hQ_min hNd rem rfl ?_
     rw [← norm_algebraMap_gaussFractionField σ K c rem, hrem_F, norm_mul, norm_mul, norm_pow,
-      norm_algebraMap_gaussFractionField, hX₀_F_norm]
+      norm_algebraMap_gaussFractionField, norm_algebraMap_gaussFractionField_X]
     gcongr
     exact hz_bound N
   have hlim0 : Tendsto (fun k : ℕ ↦ (‖Q‖ / c i₀) * ‖a‖ ^ k) atTop (𝓝 0) := by

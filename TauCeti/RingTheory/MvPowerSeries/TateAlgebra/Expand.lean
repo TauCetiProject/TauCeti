@@ -216,6 +216,30 @@ theorem exists_norm_restrictedExpandComponent_mul_prod_eq
 
 end Component
 
+/-- If `p • μ₁ = pq.1` and `pq.1 + pq.2 = p • μ + ν` with `ν i < p` for all `i`, then `μ₁ ≤ μ`
+and `p • (μ - μ₁) + ν = pq.2`. -/
+private theorem le_and_nsmul_tsub_add_eq_snd {p : ℕ} {μ ν μ₁ : σ →₀ ℕ}
+    {pq : (σ →₀ ℕ) × (σ →₀ ℕ)} (hν : ∀ i, ν i < p) (hμ₁ : p • μ₁ = pq.1)
+    (hpq : pq.1 + pq.2 = p • μ + ν) :
+    μ₁ ≤ μ ∧ p • (μ - μ₁) + ν = pq.2 := by
+  have hcoord (i : σ) : p * μ₁ i + pq.2 i = p * μ i + ν i := by
+    have hi := congrArg (· i) hpq
+    have hμ₁_i := congrArg (· i) hμ₁
+    simp only [Finsupp.coe_add, Finsupp.coe_smul, Pi.add_apply, Pi.smul_apply,
+      smul_eq_mul] at hi hμ₁_i
+    omega
+  have hle : μ₁ ≤ μ := fun i ↦ by
+    have := hcoord i
+    have := hν i
+    have hlt : p * μ₁ i < p * (μ i + 1) := by rw [mul_add, mul_one]; omega
+    exact Nat.lt_succ_iff.mp (Nat.lt_of_mul_lt_mul_left hlt)
+  refine ⟨hle, Finsupp.ext fun i ↦ ?_⟩
+  have := hcoord i
+  have := Nat.mul_le_mul_left p (hle i)
+  simp only [Finsupp.coe_add, Finsupp.coe_smul, Finsupp.coe_tsub, Pi.add_apply, Pi.smul_apply,
+    Pi.sub_apply, smul_eq_mul, Nat.mul_sub_left_distrib]
+  omega
+
 /-- Multiplying on the left by an expanded series `g(X^p)` commutes with extracting the `ν`-th
 component whenever `ν i < p` for all `i`. -/
 theorem restrictedExpandComponent_restrictedExpand_mul [NormedCommRing R] [IsUltrametricDist R]
@@ -229,6 +253,7 @@ theorem restrictedExpandComponent_restrictedExpand_mul [NormedCommRing R] [IsUlt
   ext μ
   rw [coeff_restrictedExpandComponent, Subring.coe_mul, coe_restrictedExpand, coeff_mul,
     Subring.coe_mul, coeff_mul]
+  -- Reindex `Finset.antidiagonal μ` into `Finset.antidiagonal (p • μ + ν)` along `emb`.
   let emb : (σ →₀ ℕ) × (σ →₀ ℕ) → (σ →₀ ℕ) × (σ →₀ ℕ) := fun ab ↦ (p • ab.1, p • ab.2 + ν)
   have hemb_inj : Function.Injective emb := by
     rintro ⟨a₁, b₁⟩ ⟨a₂, b₂⟩ h
@@ -245,35 +270,17 @@ theorem restrictedExpandComponent_restrictedExpand_mul [NormedCommRing R] [IsUlt
     refine Finset.sum_congr rfl fun ab _ ↦ ?_
     dsimp only [emb]
     rw [coeff_expand_smul, coeff_restrictedExpandComponent]
+  -- Extra antidiagonal terms vanish since `expand p` is supported on multiples of `p`.
   · intro pq hpq hnot
     by_cases h0 : coeff pq.1 (expand p hp (g : MvPowerSeries σ R)) = 0
     · rw [h0, zero_mul]
     · exfalso
       obtain ⟨μ₁, -, hμ₁⟩ := support_expand_subset p hp _ (a := pq.1) h0
-      rw [Finset.mem_antidiagonal] at hpq
-      have hle : μ₁ ≤ μ := fun i ↦ by
-        have hi := congrArg (· i) hpq
-        have hμ₁_i := congrArg (· i) hμ₁
-        simp only [Finsupp.coe_add, Finsupp.coe_smul, Pi.add_apply, Pi.smul_apply,
-          smul_eq_mul] at hi hμ₁_i
-        have hlt : p * μ₁ i < p * (μ i + 1) := by
-          have := hν i
-          rw [mul_add, mul_one]
-          omega
-        exact Nat.lt_succ_iff.mp (Nat.lt_of_mul_lt_mul_left hlt)
-      refine hnot (Finset.mem_image.mpr ⟨(μ₁, μ - μ₁), ?_, ?_⟩)
-      · rw [Finset.mem_antidiagonal]
-        exact add_tsub_cancel_of_le hle
-      · refine Prod.ext hμ₁ ?_
-        ext i
-        dsimp only [emb]
-        have hi := congrArg (· i) hpq
-        have hμ₁_i := congrArg (· i) hμ₁
-        have hmul_le : p * μ₁ i ≤ p * μ i := Nat.mul_le_mul_left p (hle i)
-        simp only [Finsupp.coe_add, Finsupp.coe_smul, Finsupp.coe_tsub, Pi.add_apply,
-          Pi.smul_apply, Pi.sub_apply, smul_eq_mul] at hi hμ₁_i ⊢
-        rw [Nat.mul_sub_left_distrib]
-        omega
+      obtain ⟨hle, hpq2⟩ :=
+        le_and_nsmul_tsub_add_eq_snd hν hμ₁ (Finset.mem_antidiagonal.mp hpq)
+      exact hnot (Finset.mem_image.mpr
+        ⟨(μ₁, μ - μ₁), Finset.mem_antidiagonal.mpr (add_tsub_cancel_of_le hle),
+          Prod.ext hμ₁ hpq2⟩)
 
 section Decomposition
 
