@@ -38,8 +38,6 @@ variable {E : Type*} [Field E] [ValuativeRel E] [TopologicalSpace E]
 /-- The maximal unramified extension has no values beyond those of the base field. -/
 theorem exists_algebraMap_veq (x : Unramified E) :
     ∃ r : E, algebraMap E (Unramified E) r =ᵥ x := by
-  by_cases hx : x = 0
-  · exact ⟨0, by simp [hx]⟩
   obtain ⟨f, hf, hxf⟩ := mem_maximalUnramifiedExtension_iff.mp x.property
   let L := unramifiedExtension E (AlgebraicClosure E) f
   let := finiteIntermediateFieldValuativeRel E (AlgebraicClosure E) L
@@ -48,25 +46,13 @@ theorem exists_algebraMap_veq (x : Unramified E) :
   have := finiteIntermediateField_valuativeExtension E (AlgebraicClosure E) L
   have : IsUnramified E L := isUnramified_unramifiedExtension hf
   let y : L := ⟨x, hxf⟩
-  have hy : y ≠ 0 := fun h ↦ hx (Subtype.ext <| by
-    simpa [y] using congrArg (fun a : L ↦ (a : AlgebraicClosure E)) h)
-  obtain ⟨r, hr⟩ :=
-    (isUnramified_iff_normalizedValuation_comp_unitsMap_surjective E L).mp
-      inferInstance (normalizedValuation L (Units.mk0 y hy))
-  have hv : algebraMap E L (r : E) =ᵥ y := by
-    apply (valuation L).veq_iff_eq.mpr
-    have heq := congrArg Multiplicative.toAdd hr
-    apply le_antisymm
-    · simpa only [Units.coe_map, Units.val_mk0, MonoidHom.coe_ofClass] using
-        (toAdd_normalizedValuation_le_iff_valuation_le _ _).mp heq.ge
-    · simpa only [Units.coe_map, Units.val_mk0, MonoidHom.coe_ofClass] using
-        (toAdd_normalizedValuation_le_iff_valuation_le _ _).mp heq.le
+  obtain ⟨r, hv⟩ := exists_algebraMap_veq_of_isUnramified (K := E) y
   let j : L →ₐ[E] Unramified E :=
     inclusion (unramifiedExtension_le_maximalUnramifiedExtension E (AlgebraicClosure E) f)
   let := j.toAlgebra
   have := j.valuativeExtension
   -- The structure map for `j.toAlgebra` is `j` itself.
-  have h : j (algebraMap E L (r : E)) =ᵥ j y :=
+  have h : j (algebraMap E L r) =ᵥ j y :=
     (ValuativeExtension.veq_iff_veq (A := L) (B := Unramified E)).mpr hv
   have hjy : j y = x := Subtype.ext (IntermediateField.coe_inclusion _ _)
   rw [j.commutes, hjy] at h
