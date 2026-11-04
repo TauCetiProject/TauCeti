@@ -5,10 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.LinearAlgebra.FixedSubmodule.Permutation
+public import TauCeti.LinearAlgebra.FixedSubmodule.Norm
 public import TauCeti.GroupTheory.Perm.Partition
-public import TauCeti.GroupTheory.Perm.Cycle.Enumeration
-public import Mathlib.Data.ZMod.QuotientGroup
 public import Mathlib.GroupTheory.Index
 
 /-!
@@ -28,6 +26,7 @@ folding. It does not identify either lattice with a character or cocharacter lat
 
 * V. G. Kac, *Infinite dimensional Lie algebras*, third edition, §7.9.
 
+The averaging map is the normalized full cyclic sum `Equiv.Perm.permutationNorm`.
 The fixed-coordinate parametrization is `Equiv.Perm.permutationFixedEquiv`.
 -/
 
@@ -64,10 +63,7 @@ not the section-dependent integral retraction `permutationFixedProjection`. -/
 def permutationAverage : (I → K) →ₗ[K]
     (LinearEquiv.funCongrLeft K K σ).toLinearMap.fixedSubmodule :=
   letI := Fintype.ofFinite I
-  (permutationFixedEquiv (R := K) σ).toLinearMap.comp
-    ((averageCoordinates σ).toLinearMap.comp
-      (LinearMap.pi fun c ↦ ∑ i : {i : I // Quotient.mk (SameCycle.setoid σ) i = c},
-        LinearMap.proj i.val))
+  (orderOf σ : K)⁻¹ • σ.permutationNorm (R := K) (orderOf σ) (pow_orderOf_eq_one σ)
 
 /-- Every output coordinate is the mean over its cycle. The finite sum is expressed without
 choosing decidability or enumeration instances on that cycle. -/
@@ -78,7 +74,33 @@ theorem permutationAverage_apply (v : I → K) (i : I) :
         minimalPeriod σ (Quotient.mk (SameCycle.setoid σ) i).out := by
   classical
   let := Fintype.ofFinite I
-  simp [permutationAverage, averageCoordinates_apply, finsum_eq_sum_of_fintype]
+  let c : Cycles σ := Quotient.mk _ i
+  have hsum : (∑ᶠ j : {j : I // Quotient.mk (SameCycle.setoid σ) j = c}, v j.val) =
+      ∑ j with σ.SameCycle c.out j, v j := by
+    rw [finsum_eq_sum_of_fintype,
+      ← Finset.sum_subtype (univ.filter (σ.SameCycle c.out)) (fun j ↦ ?_) v]
+    simp only [mem_filter, mem_univ, true_and]
+    exact σ.sameCycle_out_iff
+  have hp : IsPeriodicPt σ (orderOf σ) c.out := by
+    simp only [IsPeriodicPt, IsFixedPt, ← coe_pow, pow_orderOf_eq_one, one_apply]
+  have hd : minimalPeriod σ c.out ∣ orderOf σ := hp.minimalPeriod_dvd
+  have hmul : ((orderOf σ / minimalPeriod σ c.out : ℕ) : K) *
+      (minimalPeriod σ c.out : K) = (orderOf σ : K) := by
+    exact_mod_cast Nat.div_mul_cancel hd
+  have hquot : (orderOf σ : K)⁻¹ * ((orderOf σ / minimalPeriod σ c.out : ℕ) : K) =
+      (minimalPeriod σ c.out : K)⁻¹ := by
+    apply mul_right_cancel₀ (minimalPeriod_cast_ne_zero (K := K) σ c)
+    rw [mul_assoc, hmul, inv_mul_cancel₀ (Nat.cast_ne_zero.mpr (orderOf_pos σ).ne'),
+      inv_mul_cancel₀ (minimalPeriod_cast_ne_zero σ c)]
+  calc
+    (permutationAverage σ v).val i = (permutationAverage σ v).val c.out :=
+      permutationFixed_apply_eq_of_quotient_eq σ _ (Quotient.out_eq c).symm
+    _ = _ := by
+      rw [permutationAverage, LinearMap.smul_apply, Submodule.coe_smul, Pi.smul_apply,
+        smul_eq_mul, permutationNorm_apply_eq_nsmul_sum_cycle, nsmul_eq_mul,
+        ← mul_assoc, hquot]
+      simpa only [c, div_eq_mul_inv, mul_comm] using
+        congrArg ((minimalPeriod σ c.out : K)⁻¹ * ·) hsum.symm
 
 /-- Averaging fixes every fixed vector over `K`. -/
 @[simp]
@@ -212,7 +234,7 @@ theorem mem_permutationProjectedLattice_iff_exists_average
     have hsum : (∑ j : {j : I // Quotient.mk (SameCycle.setoid σ) j = c},
         b j.val) = a c := by
       rw [← Finset.sum_subtype (univ.filter (σ.SameCycle c.out)) (fun j ↦ ?_) b]
-      · simpa only [b] using sum_cycle_representative σ a c
+      · simpa only [b] using sum_sameCycle_ite_out_eq σ a c
       · simp only [mem_filter, mem_univ, true_and]
         exact σ.sameCycle_out_iff
     exact_mod_cast hsum

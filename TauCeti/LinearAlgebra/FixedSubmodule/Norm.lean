@@ -113,7 +113,7 @@ theorem mem_range_permutationNorm_iff [Finite I] (k : ℕ) (hk : σ ^ k = 1)
     apply (permutationFixedEquiv (R := ℤ) (M := ℤ) σ).symm.injective
     funext c
     have hsum : ∑ j with σ.SameCycle c.out j, x j = w c :=
-      sum_cycle_representative σ w c
+      sum_sameCycle_ite_out_eq σ w c
     rw [permutationFixedEquiv_symm_permutationNorm, hsum, nsmul_eq_mul, ← hw c]
 
 open Classical in

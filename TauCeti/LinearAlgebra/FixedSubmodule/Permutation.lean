@@ -85,7 +85,7 @@ theorem permutationFixedEquiv_symm_apply_out (σ : Perm I)
 
 open Classical in
 /-- A vector supported on the chosen representatives has the prescribed sum on each cycle. -/
-theorem sum_cycle_representative [Fintype I] (σ : Perm I) [DecidableRel σ.SameCycle]
+theorem sum_sameCycle_ite_out_eq [Fintype I] (σ : Perm I) [DecidableRel σ.SameCycle]
     (w : Quotient (Perm.SameCycle.setoid σ) → M)
     (c : Quotient (Perm.SameCycle.setoid σ)) :
     ∑ j with σ.SameCycle c.out j,
