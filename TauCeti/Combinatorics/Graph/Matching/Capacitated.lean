@@ -112,7 +112,7 @@ theorem sum_le_sum_of_isVertexCover (hx : G.IsCapacitatedMatching b x) {C : Fins
         exact single_le_sum (f := fun _ ↦ x e) (fun _ _ ↦ Nat.zero_le _)
           (mem_filter.2 ⟨hv, he⟩)
     _ = ∑ v ∈ C, ∑ e ∈ G.incidentEdges {v}, x e :=
-        sum_comm' (s' := fun v ↦ G.incidentEdges {v}) (t' := C) fun e v ↦ by simp [and_comm]
+        (G.sum_sum_incidentEdges_eq_sum_sum_filter_inc C x).symm
     _ ≤ ∑ v ∈ C, b v := sum_le_sum fun v _ ↦ hx v
 
 end IsCapacitatedMatching
@@ -134,17 +134,22 @@ theorem IsBipartition.exists_isCapacitatedMatching_isVertexCover_sum_eq {L R : F
   let Q (y z : V(G)) : Type v := {e : E(G) // G.IsLink e y z ∧ y ∈ L}
   obtain ⟨k, s, t, P, X, hs, ht, -, -, hP, hX, hk⟩ :=
     exists_paths_setSeparator_sum_eq (Q := Q) b L R
-  -- Every member of the packing joins `L` to `R`, so it traverses an arrow.
+  -- Every member of the packing joins `L` to `R`, so it traverses an arrow. Choose one, from
+  -- `src i` to `tgt i`, along the edge `edge i`.
   have hst (i : Fin k) : s i ≠ t i := fun h ↦ disjoint_left.1 hLR.disjoint (hs i) (h ▸ ht i)
-  choose f hf using fun i ↦ List.exists_mem_of_ne_nil _ ((P i).arrows_ne_nil (hst i))
-  refine ⟨fun e ↦ #{i | (f i).2.2.1 = e}, X, fun v ↦ ?_, isVertexCover_def.2 fun e y z he ↦ ?_, ?_⟩
+  have harrow (i : Fin k) : ∃ (y z : V(G)) (e : E(G)) (he : G.IsLink e y z ∧ y ∈ L),
+      (⟨y, z, e, he⟩ : Σ y z, Q y z) ∈ (P i).arrows := by
+    obtain ⟨⟨y, z, e, he⟩, h⟩ := List.exists_mem_of_ne_nil _ ((P i).arrows_ne_nil (hst i))
+    exact ⟨y, z, e, he, h⟩
+  choose src tgt edge hedge hf using harrow
+  refine ⟨fun e ↦ #{i | edge i = e}, X, fun v ↦ ?_, isVertexCover_def.2 fun e y z he ↦ ?_, ?_⟩
   · -- The members counted at `v` are members through `v`: both ends of the edge of the arrow
     -- are vertices of the member.
     rw [sum_card_fiberwise_eq_card_filter]
     refine (card_le_card fun i hi ↦ ?_).trans (hP v)
     simp only [mem_filter, mem_univ, true_and, mem_incidentEdges, mem_singleton,
       exists_eq_left] at hi ⊢
-    rcases hi.eq_or_eq_of_isLink (f i).2.2.2.1 with h | h
+    rcases hi.eq_or_eq_of_isLink (hedge i).1 with h | h
     · exact Subtype.ext h ▸ (P i).source_mem_vertices_of_mem_arrows (hf i)
     · rw [Subtype.ext h, ArrowWalk.vertices_eq_cons_map_target_arrows]
       exact List.mem_cons_of_mem _ (List.mem_map_of_mem (f := fun a ↦ a.2.1) (hf i))

@@ -135,8 +135,7 @@ incident with each vertex sums every actual edge once. -/
 theorem sum_sum_incidentEdges_left (h : G.IsBipartition L R) (f : E(G) → M) :
     ∑ x ∈ L, ∑ e ∈ G.incidentEdges {x}, f e = ∑ e, f e := by
   classical
-  rw [sum_comm' (t' := univ) (s' := fun e ↦ {y ∈ L | G.Inc e.1 y.1})
-    (fun x e ↦ by simp [and_comm])]
+  rw [sum_sum_incidentEdges_eq_sum_sum_filter_inc]
   refine sum_congr rfl fun e _ ↦ ?_
   obtain ⟨x, hx, hxu⟩ := h.existsUnique_mem_left_inc e
   rw [eq_singleton_iff_unique_mem.2 ⟨mem_filter.2 hx, fun y hy ↦ hxu y (mem_filter.1 hy)⟩,

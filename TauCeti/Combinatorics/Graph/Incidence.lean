@@ -321,6 +321,13 @@ theorem card_internalEdges_singleton (x : G.vertexSet) :
       rw [inter_eq_left.mpr <|
         (G.loopSet_subset_incidenceSet x.1).trans (G.incidenceSet_subset_edgeSet x.1)]
 
+/-- Summing over `S` the values of the edges incident with each vertex counts every actual edge
+once for each vertex of `S` incident with it. -/
+theorem sum_sum_incidentEdges_eq_sum_sum_filter_inc {M : Type*} [AddCommMonoid M]
+    [∀ e x, Decidable (G.Inc e x)] (S : Finset G.vertexSet) (f : G.edgeSet → M) :
+    ∑ x ∈ S, ∑ e ∈ G.incidentEdges {x}, f e = ∑ e, ∑ x ∈ S with G.Inc e.1 x.1, f e :=
+  Finset.sum_comm' fun x e ↦ by simp [and_comm]
+
 end
 
 end FiniteEdges
