@@ -30,11 +30,11 @@ of two loops joined by a cylinder `w` differ by `∫ w^* φ`
 `-∫_γ α` (`TauCeti.capArea_mextDeriv`).
 
 For a weakly exact two-form `ω` and a time-dependent Hamiltonian `H : ℝ → M → ℝ`, the **action**
-of a loop `γ` admitting a cap `γ̄` is
+of a loop `γ` admitting a cap `u` is
 
-`A_H(γ) = ∫ γ̄^* ω - ∫₀¹ H(t, γ(t)) dt`
+`A_H(γ) = ∫ u^* ω - ∫₀¹ H(t, γ(t)) dt`
 
-(`TauCeti.contractibleLoopAction`), with `γ̄` running from `γ` to the constant loop. It does not
+(`TauCeti.contractibleLoopAction`), with `u` running from `γ` to the constant loop. It does not
 depend on the cap (`TauCeti.IsWeaklyExact.contractibleLoopAction_eq`), and along a cylinder `w`
 from `γ₀` to `γ₁` it changes by the area of `w` and the Hamiltonian terms
 (`TauCeti.IsWeaklyExact.contractibleLoopAction_sub`); this is how the energy of a Floer cylinder
@@ -253,9 +253,9 @@ end Exact
 
 /-! ### The action functional -/
 
-/-- The **Hamiltonian action** of a loop `γ` with a cap `γ̄`, for a two-form `ω` and a
+/-- The **Hamiltonian action** of a loop `γ` with a cap `u`, for a two-form `ω` and a
 time-dependent Hamiltonian `H`:
-`A_H(γ) = ∫ γ̄^* ω - ∫₀¹ H(t, γ(t)) dt`, the cap running from `γ` to its centre. Its area term is
+`A_H(γ) = ∫ u^* ω - ∫₀¹ H(t, γ(t)) dt`, the cap running from `γ` to its centre. Its area term is
 the cap area `TauCeti.capArea ω γ`, which does not depend on the cap when `ω` is continuous and
 weakly exact, and is `0` for a loop without a cap. -/
 def contractibleLoopAction (ω : RoughForm I M ℝ 2) (H : ℝ → M → ℝ) (γ : ℝ → M) : ℝ :=
