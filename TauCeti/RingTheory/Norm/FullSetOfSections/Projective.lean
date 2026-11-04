@@ -40,6 +40,7 @@ vanishing of the coefficients of a single polynomial, as in the proof of Katz–
 * `TauCeti.fullSetLocusIdeal_le_ker_iff`: **the full-set locus** (Katz–Mazur 1.9.1). The base
   change of `s` along `A → T` is a full set of sections exactly when `A → T` kills
   `fullSetLocusIdeal s`.
+* `TauCeti.fullSetLocusIdeal_fg`: the full-set locus ideal is finitely generated.
 * `TauCeti.map_fullSetLocusIdeal_of_isPushout`: the full-set locus commutes with arbitrary base
   change.
 * `TauCeti.fullSetLocusIdeal_eq_fullSetIdeal`: when `B` is free, it is the full-set ideal
@@ -127,8 +128,8 @@ private theorem span_coeff_normIdentityPolynomial_le_ker_iff {κ : Type*} [Finty
       Algebra.projectiveNorm (MvPolynomial κ T) xT -
         ∏ i, (s i).sectionBaseChange (MvPolynomial κ T) xT := by
     rw [← hφ, Algebra.projectiveNorm_rTensor, normIdentityPolynomial, map_sub, map_prod]
-    simp only [AlgHom.sectionBaseChange_rTensor]
-    rfl
+    simp only [AlgHom.sectionBaseChange_rTensor, φ, MvPolynomial.mapAlgHom_apply,
+      Algebra.toRingHom_ofId]
   have hle : Ideal.span (Set.range (normIdentityPolynomial b s).coeff) ≤
       RingHom.ker (algebraMap A T) ↔
       MvPolynomial.map (algebraMap A T) (normIdentityPolynomial b s) = 0 := by
@@ -176,6 +177,18 @@ theorem fullSetLocusIdeal_le_ker_iff (s : ι → B →ₐ[A] A) (T : Type w) [Co
       IsFullSetOfSections fun i ↦ (s i).sectionBaseChange T :=
   span_coeff_normIdentityPolynomial_le_ker_iff (by
     simpa using (Module.Finite.fg_top (R := A) (M := B)).choose_spec) s T
+
+/-- The full-set locus ideal is finitely generated, so the full-set locus is a closed subscheme of
+finite presentation. -/
+theorem fullSetLocusIdeal_fg (s : ι → B →ₐ[A] A) : (fullSetLocusIdeal s).FG :=
+  -- the coefficient function of a polynomial is finitely supported
+  Submodule.fg_span (Finsupp.finite_range _)
+
+/-- The family `s` becomes a full set of sections on the full-set locus
+`A ⧸ fullSetLocusIdeal s`. -/
+theorem isFullSetOfSections_quotient_fullSetLocusIdeal (s : ι → B →ₐ[A] A) :
+    IsFullSetOfSections fun i ↦ (s i).sectionBaseChange (A ⧸ fullSetLocusIdeal s) :=
+  (fullSetLocusIdeal_le_ker_iff s _).1 Ideal.mk_ker.ge
 
 /-- A family of sections of a finite projective algebra is a full set of sections exactly when its
 full-set locus is all of `Spec A`. -/

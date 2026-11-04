@@ -118,7 +118,7 @@ end Algebra
 
 section BaseChange
 
-variable {R S : Type*} [CommRing R] [CommRing S] [Algebra R S] [Module.Finite R S]
+variable {R S : Type*} [CommRing R] [Ring S] [Algebra R S] [Module.Finite R S]
   [Module.Projective R S]
 
 /-- The norm of a finite projective algebra commutes with base change along an `R`-algebra map
@@ -129,14 +129,25 @@ theorem Algebra.projectiveNorm_rTensor {A A' : Type*} [CommRing A] [Algebra R A]
     projectiveNorm A' (Algebra.TensorProduct.rTensor S φ x) = φ (projectiveNorm A x) := by
   let := φ.toRingHom.toAlgebra
   have : IsScalarTower R A A' := .of_algebraMap_eq fun a ↦ (φ.commutes a).symm
-  -- `A' ⊗[R] S` is the base change of `A ⊗[R] S` along `φ`
-  have hx : Algebra.TensorProduct.rTensor S φ x =
-      Algebra.TensorProduct.cancelBaseChange R A A' A' S ((1 : A') ⊗ₜ[A] x) := by
+  -- `A' ⊗[R] S` is the base change of `A ⊗[R] S` along `φ`; Mathlib's
+  -- `Algebra.TensorProduct.cancelBaseChange` needs `S` commutative, so we build the algebra
+  -- equivalence from the linear one
+  let e : A' ⊗[R] S ≃ₐ[A'] A' ⊗[A] (A ⊗[R] S) := AlgEquiv.ofLinearEquiv
+    (AlgebraTensorModule.cancelBaseChange R A A' A' S).symm
+    (by simp [Algebra.TensorProduct.one_def]) <|
+      LinearMap.map_mul_of_map_mul_tmul fun _ _ _ _ ↦ by simp
+  have he (y : A' ⊗[R] S) : e y = (AlgebraTensorModule.cancelBaseChange R A A' A' S).symm y :=
+    AlgEquiv.ofLinearEquiv_apply _ _ _ y
+  have hx : e (Algebra.TensorProduct.rTensor S φ x) = (1 : A') ⊗ₜ[A] x := by
     induction x using TensorProduct.inductionOn with
-    | tmul a b => simp [Algebra.smul_def, RingHom.algebraMap_toAlgebra]
+    | tmul a b =>
+      have : φ a = a • (1 : A') := by simp [Algebra.smul_def, RingHom.algebraMap_toAlgebra]
+      simp only [TensorProduct.map_tmul, this, AlgHom.coe_id, id_eq, he,
+        AlgebraTensorModule.cancelBaseChange_symm_tmul]
+      rw [TensorProduct.smul_tmul, TensorProduct.smul_tmul', smul_eq_mul, mul_one]
     | add x y hx hy => simp only [map_add, tmul_add, hx, hy]
-  rw [hx, projectiveNorm_eq_of_algEquiv, projectiveNorm_baseChange_tmul]
-  rfl
+  rw [← projectiveNorm_eq_of_algEquiv e, hx, projectiveNorm_baseChange_tmul,
+    RingHom.algebraMap_toAlgebra, AlgHom.toRingHom_eq_coe, RingHom.coe_coe]
 
 end BaseChange
 
