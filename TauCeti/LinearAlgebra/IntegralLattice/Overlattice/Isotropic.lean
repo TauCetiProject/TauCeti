@@ -53,7 +53,7 @@ carriers of an even lattice correspond to quadratic-isotropic subgroups.
   the intermediate-carrier order isomorphism to even carriers of an even lattice.
 * `TauCeti.IntegralLattice.ofIsotropicSubgroup`: the even overlattice glued along a
   quadratic-isotropic subgroup of the discriminant group, as an integral lattice, with
-  `TauCeti.IntegralLattice.ofIsotropicSubgroup_eq_iff` and
+  `TauCeti.IntegralLattice.ofIsotropicSubgroup_inj` and
   `TauCeti.IntegralLattice.ofIsotropicSubgroup_eq_self_iff`. It keeps the ambient form, so it
   inherits nondegeneracy and positive definiteness, and the isotropy hypothesis makes it even.
 
@@ -469,7 +469,7 @@ theorem ofIsotropicSubgroup_bot (hL : L.IsEven) :
 /-- Two quadratic-isotropic subgroups glue to the same overlattice if and only if they are
 equal. -/
 @[simp]
-theorem ofIsotropicSubgroup_eq_iff (hL : L.IsEven)
+theorem ofIsotropicSubgroup_inj (hL : L.IsEven)
     (H K : AddSubgroup L.DiscriminantGroup)
     (hH : (L.discriminantQuadraticModule hL).IsIsotropic H)
     (hK : (L.discriminantQuadraticModule hL).IsIsotropic K) :
@@ -493,7 +493,7 @@ theorem ofIsotropicSubgroup_eq_self_iff (hL : L.IsEven)
     (H : AddSubgroup L.DiscriminantGroup)
     (hH : (L.discriminantQuadraticModule hL).IsIsotropic H) :
     L.ofIsotropicSubgroup hL H hH = L ↔ H = ⊥ := by
-  refine ⟨fun h ↦ (L.ofIsotropicSubgroup_eq_iff hL H ⊥ hH _).mp
+  refine ⟨fun h ↦ (L.ofIsotropicSubgroup_inj hL H ⊥ hH _).mp
     (h.trans (L.ofIsotropicSubgroup_bot hL).symm), ?_⟩
   rintro rfl
   exact L.ofIsotropicSubgroup_bot hL

@@ -142,20 +142,6 @@ theorem glueSubgroup_eq_bot_iff (r : RootfulNiemeierType) :
   · rintro rfl
     exact glueSubgroup_e8Cubed
 
-/-- The uniform table lattice of a row coincides with its component root lattice if and only if
-its glue subgroup is trivial. -/
-theorem lattice_eq_rootLattice_iff_glueSubgroup_eq_bot (r : RootfulNiemeierType) :
-    r.lattice = r.rootLattice ↔ r.glueSubgroup = ⊥ := by
-  let φ := (glueWordIsometry r.componentType r.isSimplyLaced_componentType
-    r.valid_componentType).toAddEquiv
-  have heq : (r.lattice = r.rootLattice) =
-      (r.rootLattice.ofIsotropicSubgroup _ (r.glueSubgroup.map φ.toAddMonoidHom)
-        (((glueWordIsometry _ _ r.valid_componentType).isIsotropic_map_iff _
-          r.glueSubgroup).mpr r.isIsotropic_glueSubgroup) = r.rootLattice) :=
-    congrArg (· = r.rootLattice) ((r.lattice_def).trans (gluedLattice_def _ _ _ _ _))
-  exact heq.to_iff.trans <| (r.rootLattice.ofIsotropicSubgroup_eq_self_iff _ _ _).trans
-    (AddSubgroup.map_eq_bot_iff_of_injective r.glueSubgroup φ.injective)
-
 /-- **`E₈³` is the unique row of the rootful rank-24 table whose glued lattice equals its
 component root lattice.** -/
 @[simp]
@@ -218,37 +204,14 @@ theorem e8CubedSimpleRootIsometry_apply
       x (Fin.cast RootfulNiemeierType.length_components_e8Cubed.symm k)
         (Fin.cast (congrArg DynkinType.rank
           (RootfulNiemeierType.componentType_e8Cubed _)).symm j) := by
-  let e1 := IntegralLattice.Isometry.ofEq e8CubedLattice_eq_rootLattice
-  let e2 := (IntegralLattice.Isometry.piCongrLeft
-    (fun i ↦ (RootfulNiemeierType.e8Cubed.componentType i).rootLattice
-      (RootfulNiemeierType.e8Cubed.isSimplyLaced_componentType i))
-    (finCongr RootfulNiemeierType.length_components_e8Cubed.symm)).symm
-  let g : ∀ m : Fin 3, IntegralLattice.Isometry
-      ((RootfulNiemeierType.e8Cubed.componentType
-        (Fin.cast RootfulNiemeierType.length_components_e8Cubed.symm m)).rootLattice
-        (RootfulNiemeierType.e8Cubed.isSimplyLaced_componentType _))
-      IntegralLattice.typeE₈RootLattice :=
-    fun _ ↦ ((RootfulNiemeierType.e8Cubed.componentType _).rootLatticeIsometryOfEq _
-        (RootfulNiemeierType.componentType_e8Cubed _) DynkinType.isSimplyLaced_E8).trans
-      (IntegralLattice.Isometry.ofEq (DynkinType.rootLattice_E8 DynkinType.isSimplyLaced_E8))
-  have h1 : e8CubedSimpleRootIsometry x k = g k (x
-      (Fin.cast RootfulNiemeierType.length_components_e8Cubed.symm k)) := by
-    refine (congrFun ((e1.trans_apply (e2.trans (IntegralLattice.Isometry.pi g)) x).trans
-      (e2.trans_apply (IntegralLattice.Isometry.pi g) (e1 x))) k).trans ?_
-    refine (IntegralLattice.Isometry.pi_apply g (e2 (e1 x)) k).trans (congrArg (g k) ?_)
-    exact (IntegralLattice.Isometry.piCongrLeft_symm_apply _ _ (e1 x) k).trans
-      (congrFun (IntegralLattice.Isometry.ofEq_apply e8CubedLattice_eq_rootLattice x) _)
-  have h2 : g k (x (Fin.cast RootfulNiemeierType.length_components_e8Cubed.symm k)) j =
-      x (Fin.cast RootfulNiemeierType.length_components_e8Cubed.symm k)
-        (Fin.cast (congrArg DynkinType.rank
-          (RootfulNiemeierType.componentType_e8Cubed _)).symm j) := by
-    refine (congrFun (IntegralLattice.Isometry.trans_apply _ _ _) j).trans ?_
-    refine (congrFun (IntegralLattice.Isometry.ofEq_apply
-      (DynkinType.rootLattice_E8 DynkinType.isSimplyLaced_E8) _) j).trans ?_
-    exact DynkinType.rootLatticeIsometryOfEq_apply
-      (RootfulNiemeierType.e8Cubed.componentType _) _
-      (RootfulNiemeierType.componentType_e8Cubed _) DynkinType.isSimplyLaced_E8 _ j
-  exact (congrFun h1 j).trans h2
+  rw [e8CubedSimpleRootIsometry]
+  simp only [IntegralLattice.Isometry.trans_apply, IntegralLattice.Isometry.pi_apply,
+    IntegralLattice.Isometry.piCongrLeft_symm_apply, IntegralLattice.Isometry.ofEq_apply]
+  -- `rootLattice_E8` equates lattices on `Fin E8.rank → ℚ` and `Fin 8 → ℚ`, whose `Module`
+  -- instances and index types agree at semireducible rather than `simp`'s instance transparency.
+  exact (congrFun (IntegralLattice.Isometry.trans_apply _ _ _) j).trans <|
+    (congrFun (IntegralLattice.Isometry.ofEq_apply (DynkinType.rootLattice_E8 _) _) j).trans <|
+      DynkinType.rootLatticeIsometryOfEq_apply (s := .E8) _ _ _ _ _ j
 
 /-- The inverse of `e8CubedSimpleRootIsometry` writes a triple of `E₈` vectors into the table
 coordinates. -/
@@ -296,7 +259,8 @@ theorem e8CubedD8PlusIsometry_apply
 /-- On the `j`-th simple root of block `k`, `e8CubedD8PlusIsometry` produces the `j`-th Bourbaki
 glue root `e8GlueRoot j` of `D₈⁺` supported in block `k`. -/
 @[simp]
-theorem e8CubedD8PlusIsometry_symm_single_typeE₈SimpleRoot (k : Fin 3) (j : Fin 8) :
+theorem e8CubedD8PlusIsometry_e8CubedSimpleRootIsometry_symm_single_typeE₈SimpleRoot
+    (k : Fin 3) (j : Fin 8) :
     e8CubedD8PlusIsometry
         (e8CubedSimpleRootIsometry.symm (Pi.single k (IntegralLattice.typeE₈SimpleRoot j))) =
       Pi.single k (IntegralLattice.e8GlueRoot j) := by

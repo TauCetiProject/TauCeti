@@ -195,31 +195,20 @@ theorem representationNumber_pi_eq_sum {m : ℚ} (hm : 0 < m)
 
 /-! ## Norm-two shells of even positive definite orthogonal sums -/
 
-omit [Fintype ι] in
-private theorem two_le_norm_of_isEven_isPosDef {L : ∀ i, IntegralLattice (V i)}
-    (he : ∀ i, (L i).IsEven) (hp : ∀ i, (L i).IsPosDef) (i : ι) (v : L i) (hv : v ≠ 0) :
-    (2 : ℚ) ≤ (L i).norm v := by
-  have : Nontrivial (L i) := nontrivial_of_ne v 0 hv
-  have h2 : (2 : ℤ) ≤ (L i).integralNorm v :=
-    (Int.ofNat_le.mpr ((hp i).two_le_minimum (he i))).trans
-      ((hp i).isPosSemidef.minimum_le_integralNorm hv)
-  rw [← (L i).integralNorm_cast v]
-  exact_mod_cast h2
-
 /-- In a finite orthogonal sum of even positive definite lattices, a vector has norm `2` if and
 only if it is supported in a single coordinate by a root of that summand. -/
 theorem mem_vectorsOfNorm_two_pi_iff [DecidableEq ι] (he : ∀ i, (L i).IsEven)
     (hp : ∀ i, (L i).IsPosDef) (x : pi L) :
     x ∈ (pi L).vectorsOfNorm 2 ↔
       ∃ (i : ι) (v : (L i).vectorsOfNorm 2), (x : ∀ j, V j) = Pi.single i (v.1 : V i) :=
-  mem_vectorsOfNorm_pi_iff L two_pos (two_le_norm_of_isEven_isPosDef he hp) x
+  mem_vectorsOfNorm_pi_iff L two_pos (fun i _ ↦ (hp i).two_le_norm (he i)) x
 
 /-- **The roots of a finite orthogonal sum of even positive definite lattices** are the disjoint
 union of the roots of the summands, embedded coordinate by coordinate. -/
 noncomputable def piVectorsOfNormTwoEquiv [DecidableEq ι] (he : ∀ i, (L i).IsEven)
     (hp : ∀ i, (L i).IsPosDef) :
     (Σ i, (L i).vectorsOfNorm 2) ≃ (pi L).vectorsOfNorm 2 :=
-  piVectorsOfNormEquiv L two_pos (two_le_norm_of_isEven_isPosDef he hp)
+  piVectorsOfNormEquiv L two_pos (fun i _ ↦ (hp i).two_le_norm (he i))
 
 /-- Evaluating `piVectorsOfNormTwoEquiv` embeds a summand root in its coordinate. -/
 @[simp]
@@ -237,12 +226,12 @@ theorem piVectorsOfNormTwoEquiv_symm_single [DecidableEq ι] (he : ∀ i, (L i).
       ⟨⟨Pi.single i (v.1 : V i), single_mem_pi_carrier L i v.1.2⟩,
         mem_vectorsOfNorm.mpr ((norm_pi_single L i v.1).trans (mem_vectorsOfNorm.mp v.2))⟩ =
       ⟨i, v⟩ :=
-  piVectorsOfNormEquiv_symm_single L two_pos (two_le_norm_of_isEven_isPosDef he hp) i v
+  piVectorsOfNormEquiv_symm_single L two_pos (fun i _ ↦ (hp i).two_le_norm (he i)) i v
 
 /-- **The root count of a finite orthogonal sum of even positive definite lattices** is the sum of
 the root counts of the summands. -/
 theorem representationNumber_pi_two (he : ∀ i, (L i).IsEven) (hp : ∀ i, (L i).IsPosDef) :
     (pi L).representationNumber 2 = ∑ i, (L i).representationNumber 2 :=
-  representationNumber_pi_eq_sum L two_pos (two_le_norm_of_isEven_isPosDef he hp)
+  representationNumber_pi_eq_sum L two_pos (fun i _ ↦ (hp i).two_le_norm (he i))
 
 end TauCeti.IntegralLattice
