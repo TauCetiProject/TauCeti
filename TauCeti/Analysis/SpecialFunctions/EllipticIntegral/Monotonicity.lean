@@ -146,6 +146,20 @@ theorem legendreEc_le_pi_div_two (k : ℝ) : legendreEc k ≤ π / 2 := by
     legendreE_le_of_sq_le (k := 0) (l := k) pi_div_two_pos.le
       (by simpa using sq_nonneg k)
 
+/-- The second kind lies above `(1 - k²) K(k)` in the nonsingular range. -/
+theorem one_sub_sq_mul_legendreK_le_legendreEc {k : ℝ} (hk : k ^ 2 < 1) :
+    (1 - k ^ 2) * legendreK k ≤ legendreEc k := by
+  rw [legendreK_def, legendreEc_def, legendreF_def, legendreE_def,
+    ← intervalIntegral.integral_const_mul]
+  apply intervalIntegral.integral_mono_on pi_div_two_pos.le
+    ((intervalIntegrable_legendreF_integrand hk _ _).const_mul _)
+    (intervalIntegrable_legendreE_integrand k _ _)
+  intro θ _
+  rw [legendreF_integrand_eq_inv_sqrt, ← sqrt_eq_rpow,
+    mul_inv_le_iff₀ (sqrt_pos.2 (one_sub_mul_sin_sq_pos hk θ))]
+  nlinarith [sq_sqrt (one_sub_mul_sin_sq_pos hk θ).le,
+    mul_nonneg (sq_nonneg k) (sub_nonneg.2 (sin_sq_le_one θ))]
+
 /-- The lower bound for `K` is attained exactly at modulus zero. -/
 @[simp]
 theorem legendreK_eq_pi_div_two_iff {k : ℝ} (hk : k ^ 2 < 1) :

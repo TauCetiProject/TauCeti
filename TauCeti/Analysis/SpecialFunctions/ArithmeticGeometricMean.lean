@@ -50,6 +50,13 @@ end Real
 
 namespace NNReal
 
+/-- Both positive inputs give a positive geometric mean at every AGM step. -/
+theorem agmSequences_fst_pos {x y : ℝ≥0} (hx : 0 < x) (hy : 0 < y) (n : ℕ) :
+    0 < (agmSequences x y n).1 := by
+  have h₀ : 0 < (agmSequences x y 0).1 := by
+    simpa only [agmSequences_zero] using (sqrt_pos.2 (mul_pos hx hy))
+  exact h₀.trans_le (agmSequences_fst_monotone (Nat.zero_le n))
+
 /-- The gap after one arithmetic-geometric mean step is bounded quadratically in
 the input gap, with the smaller positive input controlling the denominator. -/
 theorem half_add_sub_sqrt_mul_le {a b : ℝ≥0} (hb : 0 < b) (hba : b ≤ a) :
