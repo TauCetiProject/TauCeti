@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.ModelTheory.ModelExistence.Morleyization
+public import TauCeti.ModelTheory.Semantics
 
 /-!
 # First-order presentations of infinitary fragments
@@ -101,7 +102,8 @@ theorem morleyAxioms_imp {n : ℕ} (φ ψ : L.BoundedFormulaω Empty n) (hφ : �
         ((morleyAtom A φ (A.imp_left_mem hφ)).imp
           (morleyAtom A ψ (A.imp_right_mem hφ)))).alls} := (rfl)
 
-/-- The name of a universal formula is equivalent to the universal closure of its body's name. -/
+/-- The name of a universal formula is equivalent to quantifying the last variable of its
+body's name, with the other parameters fixed. -/
 @[simp]
 theorem morleyAxioms_all {n : ℕ} (φ : L.BoundedFormulaω Empty (n + 1)) (hφ : ⟨n, φ.all⟩ ∈ A) :
     morleyAxioms A φ.all hφ =
@@ -185,7 +187,8 @@ theorem model_morleyAxioms_imp_iff {n : ℕ} (φ ψ : L.BoundedFormulaω Empty n
           S.RelMap (morleyRel ψ (A.imp_right_mem hφ)) a) := by
   simp [morleyAxioms, Sentence.realize_alls]
 
-/-- The universal axiom identifies its relation with the universal closure of the body relation. -/
+/-- The universal axiom identifies its relation with quantification over the last variable of
+the body relation, with the other parameters fixed. -/
 theorem model_morleyAxioms_all_iff {n : ℕ} (φ : L.BoundedFormulaω Empty (n + 1))
     (hφ : ⟨n, φ.all⟩ ∈ A) :
     M ⊨ morleyAxioms A φ.all hφ ↔
