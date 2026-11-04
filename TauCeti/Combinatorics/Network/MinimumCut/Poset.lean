@@ -88,7 +88,7 @@ namespace BoundedFlow
 
 section Component
 
-variable [AddCommGroup K] [LinearOrder K] [IsOrderedAddMonoid K]
+variable [AddCommGroup K] [Preorder K]
 variable {lo hi : Assignment Q K} {s t : V} (f : BoundedFlow lo hi s t)
 
 /-- The *residual components* of a bounded `s`–`t` assignment `f`: the strongly connected
@@ -108,7 +108,7 @@ abbrev FreeComponent : Type u :=
 
 variable {f}
 
-omit [DecidableEq V] [IsOrderedAddMonoid K] in
+omit [DecidableEq V] in
 /-- The residual component of `v` is below that of `w` exactly when `w` is positively reachable
 from `v` for the residual capacities. -/
 @[simp]
@@ -119,7 +119,7 @@ theorem residualComponent_le_residualComponent {v w : V} :
   exact @Quiver.StronglyConnectedComponent.mk_le_mk V
     ⟨PositiveHom (residualCapacity lo hi f.toFun)⟩ v w
 
-omit [DecidableEq V] [IsOrderedAddMonoid K] in
+omit [DecidableEq V] in
 /-- Two vertices have the same residual component exactly when each is positively reachable from
 the other for the residual capacities. -/
 @[simp]
@@ -130,7 +130,7 @@ theorem residualComponent_eq_residualComponent {v w : V} :
   rw [le_antisymm_iff, residualComponent_le_residualComponent,
     residualComponent_le_residualComponent]
 
-omit [DecidableEq V] [IsOrderedAddMonoid K] in
+omit [DecidableEq V] in
 /-- Every residual component contains a vertex. -/
 theorem residualComponent_surjective : Function.Surjective f.residualComponent :=
   @Quiver.StronglyConnectedComponent.mk_surjective V ⟨PositiveHom (residualCapacity lo hi f.toFun)⟩
@@ -152,16 +152,20 @@ theorem disjoint_Ici_Iic (hst : s ≠ t) (hf : f.IsMaximum) :
 
 /-- Every minimum cut contains the vertices whose residual component is reachable from the
 component of the source. -/
-theorem mem_of_residualComponent_le (hst : s ≠ t) (hf : f.IsMaximum) {S : Finset V}
+theorem mem_of_residualComponent_le (hf : f.IsMaximum) {S : Finset V}
     (hS : TerminalCut.IsMinimum (cutBound lo hi) {s} {t} S) {v : V}
     (hv : f.residualComponent s ≤ f.residualComponent v) : v ∈ S :=
-  (hf.forall_isMinimum_mem_iff hst).2 (residualComponent_le_residualComponent.1 hv) S hS
+  have ⟨hs, ht⟩ := isAdmissible_singleton.1 hS.admissible
+  (hf.forall_isMinimum_mem_iff (ne_of_mem_of_not_mem hs ht)).2
+    (residualComponent_le_residualComponent.1 hv) S hS
 
 /-- No minimum cut contains a vertex whose residual component reaches the component of the sink. -/
-theorem notMem_of_residualComponent_le (hst : s ≠ t) (hf : f.IsMaximum) {S : Finset V}
+theorem notMem_of_residualComponent_le (hf : f.IsMaximum) {S : Finset V}
     (hS : TerminalCut.IsMinimum (cutBound lo hi) {s} {t} S) {v : V}
     (hv : f.residualComponent v ≤ f.residualComponent t) : v ∉ S :=
-  (hf.forall_isMinimum_notMem_iff hst).2 (residualComponent_le_residualComponent.1 hv) S hS
+  have ⟨hs, ht⟩ := isAdmissible_singleton.1 hS.admissible
+  (hf.forall_isMinimum_notMem_iff (ne_of_mem_of_not_mem hs ht)).2
+    (residualComponent_le_residualComponent.1 hv) S hS
 
 /-- A minimum cut contains every vertex of a residual component above that of one of its members.
 -/
@@ -227,11 +231,11 @@ noncomputable def minimizersOrderIso (hst : s ≠ t) (hf : f.IsMaximum) :
         have hS := (mem_minimizers _ _ _).1 S.2
         refine Subtype.ext (Finset.ext fun v ↦ ?_)
         simp only [mem_sourceSide, ofDual_toDual]
-        refine ⟨fun h ↦ h.elim (hf.mem_of_residualComponent_le hst hS) fun ⟨_, h⟩ ↦ h v rfl,
+        refine ⟨fun h ↦ h.elim (hf.mem_of_residualComponent_le hS) fun ⟨_, h⟩ ↦ h v rfl,
           fun hv ↦ ?_⟩
         by_cases hsv : f.residualComponent s ≤ f.residualComponent v
         · exact .inl hsv
-        exact .inr ⟨⟨hsv, fun hvt ↦ hf.notMem_of_residualComponent_le hst hS hvt hv⟩,
+        exact .inr ⟨⟨hsv, fun hvt ↦ hf.notMem_of_residualComponent_le hS hvt hv⟩,
           fun w hw ↦ mem_of_le hst hf hS hw.ge hv⟩
       right_inv U := by
         refine ofDual.injective (UpperSet.ext (Set.ext fun ⟨C, hC⟩ ↦ ?_))
