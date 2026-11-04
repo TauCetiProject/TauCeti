@@ -464,19 +464,6 @@ private theorem PartialLift.extendFromOpen {X : Type*} [TopologicalSpace X] {p :
         exact L.const_of_ge t x (heq ▸ ht)
   }, hraw_eq_of_eq⟩
 
-private theorem lift_over_subset {Y : Type*} [TopologicalSpace Y] {p : E → B}
-    {U : Set B} (hhlp : HasHomotopyLiftingProperty
-      (Set.MapsTo.restrict p (p ⁻¹' U) U (mapsTo_preimage p U)) Y)
-    (g : C(Y, E)) (K : C(I × Y, B)) (hKU : ∀ z, K z ∈ U) (hK₀ : ∀ y, K (0, y) = p (g y)) :
-    ∃ L : C(I × Y, E), (∀ z, p (L z) = K z) ∧ ∀ y, L (0, y) = g y := by
-  have hgU : ∀ y, g y ∈ p ⁻¹' U := fun y ↦ by rw [mem_preimage, ← hK₀ y]; exact hKU (0, y)
-  let g' : C(Y, p ⁻¹' U) := ⟨fun y ↦ ⟨g y, hgU y⟩, g.continuous.subtype_mk hgU⟩
-  let K' : C(I × Y, U) := ⟨fun z ↦ ⟨K z, hKU z⟩, K.continuous.subtype_mk hKU⟩
-  obtain ⟨L', hL', hL'₀⟩ := hhlp g' K' fun y ↦ Subtype.ext (hK₀ y)
-  refine ⟨⟨fun z ↦ (L' z).1, continuous_subtype_val.comp L'.continuous⟩, fun z ↦ ?_, fun y ↦ ?_⟩
-  · exact congrArg Subtype.val (congrFun hL' z)
-  · exact congrArg Subtype.val (hL'₀ y)
-
 private def stepTime {X : Type*} [TopologicalSpace X] (τ₁ τ₂ : C(X, I)) : C(I × X, I) :=
   have hmem : ∀ z : I × X, min (τ₂ z.2 : ℝ) ((τ₁ z.2 : ℝ) + (z.1 : ℝ)) ∈ I := fun z ↦
     ⟨le_min (τ₂ z.2).2.1 (add_nonneg (τ₁ z.2).2.1 z.1.2.1),
@@ -568,7 +555,7 @@ private theorem PartialLift.advanceOpen {X : Type*} [TopologicalSpace X] {p : E 
       H.continuous.comp (((stepTime τ₁ τ₂).continuous.comp
         (continuous_fst.prodMk (continuous_subtype_val.comp continuous_snd))).prodMk
           (continuous_subtype_val.comp continuous_snd))⟩
-  obtain ⟨GO, hGO_proj, hGO_zero⟩ := lift_over_subset hhlp gO KO
+  obtain ⟨GO, hGO_proj, hGO_zero⟩ := hhlp.exists_lift_of_mem gO KO
     (fun z ↦ hHU z.2.1 z.2.2 _ (stepTime_mem_Icc hτ z.1 z.2.1))
     (fun x ↦ by simp only [KO, gO, ContinuousMap.coe_mk, stepTime_zero hτ, L.proj_eq, min_self])
   let onO : C(I × O, E) :=
@@ -600,7 +587,7 @@ private theorem PartialLift.advanceOpen {X : Type*} [TopologicalSpace X] {p : E 
         rw [ContinuousMap.coe_mk, restrictHomotopy_apply, ContinuousMap.restrict_apply]
         split_ifs with ht
         · rw [L.proj_eq, min_eq_left ht, min_eq_left (ht.trans (hτ x.1))]
-        · rw [hGO_proj]
+        · rw [← Function.comp_apply (f := p), hGO_proj]
           dsimp only [KO]
           rw [ContinuousMap.coe_mk, stepTime_stepOffset_of_gt hτ (not_le.1 ht)]
       zero_eq := fun x ↦ by
@@ -697,16 +684,6 @@ private theorem Icc_clipSegTime_subset {X : Type*} [TopologicalSpace X] {τ₁ �
     exact (hmin.trans_le (le_max_right _ _)).trans ht.1
   · exact ht.2.trans (max_le hx.2 (min_le_right _ _))
 
-/-- Transfer local homotopy lifting from open subsets of `A` to open subsets of an open set
-`S ⊆ A`. -/
-private theorem hlp_nested_open {A : Type w} [TopologicalSpace A] {p : E → B} {U : Set B}
-    (hlift : ∀ W : Set A, IsOpen W →
-      HasHomotopyLiftingProperty (Set.MapsTo.restrict p (p ⁻¹' U) U (mapsTo_preimage p U)) W)
-    {S : Set A} (hS : IsOpen S) {O : Set S} (hO : IsOpen O) :
-    HasHomotopyLiftingProperty (Set.MapsTo.restrict p (p ⁻¹' U) U (mapsTo_preimage p U)) O :=
-  (hlift (Subtype.val '' O) (hS.isOpenMap_subtype_val O hO)).of_homeomorph
-    (Topology.IsEmbedding.subtypeVal.homeomorphImage O)
-
 /-- Advance a `PartialLift` across `m + 1` uniform segments on an open stratum `S ⊆ A` where each
 segment `[k/(m+1), (k+1)/(m+1)]` maps into `{b | 0 < ρ (α k) b} ⊆ U (α k)`. -/
 private theorem PartialLift.advanceTube {ι : Type*} {A : Type w} [TopologicalSpace A]
@@ -750,7 +727,8 @@ private theorem PartialLift.advanceTube {ι : Type*} {A : Type w} [TopologicalSp
         rw [Icc.eq_convexComb ht.1 ht.2]
         exact hρ (α k) (((hφx_cont x).lowerSemicontinuous.lt_ciInf_iff.1 hx) _).ne'
       obtain ⟨Lk', hLk'⟩ := Lk.advanceOpen hσ hO hclos
-        (hlp_nested_open (hlift (α k)) hS hO) hHU
+        (.of_isOpenEmbedding (hlift (α k))
+          (hS.isOpenEmbedding_subtypeVal.comp hO.isOpenEmbedding_subtypeVal)) hHU
       exact ⟨Lk', fun t x heq ↦ (hLk' t x (clipSegTime_eq_of_eq m k heq)).trans (hLk t x heq)⟩
   obtain ⟨Llast, hLlast⟩ := step (Fin.last (m + 1))
   exact ⟨Llast.congrTime (clipSegTime_last hτ m), hLlast⟩
