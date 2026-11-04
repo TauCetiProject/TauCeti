@@ -188,6 +188,32 @@ theorem coe_fromBlocksOne (B : specialOrthogonalGroup (Fin m) R) :
       reindex finSumFinEquiv finSumFinEquiv (fromBlocks 1 0 0 (B : Matrix _ _ R)) :=
   (rfl)
 
+@[simp]
+theorem fromBlocksOne_apply_castAdd_castAdd (B : specialOrthogonalGroup (Fin m) R) (i j : Fin r) :
+    (fromBlocksOne R r m B : Matrix (Fin (r + m)) (Fin (r + m)) R) (castAdd m i) (castAdd m j) =
+      if i = j then 1 else 0 := by
+  simp [coe_fromBlocksOne, Matrix.one_apply]
+
+@[simp]
+theorem fromBlocksOne_apply_castAdd_natAdd (B : specialOrthogonalGroup (Fin m) R) (i : Fin r)
+    (k : Fin m) :
+    (fromBlocksOne R r m B : Matrix (Fin (r + m)) (Fin (r + m)) R) (castAdd m i) (natAdd r k) =
+      0 := by
+  simp [coe_fromBlocksOne]
+
+@[simp]
+theorem fromBlocksOne_apply_natAdd_castAdd (B : specialOrthogonalGroup (Fin m) R) (k : Fin m)
+    (i : Fin r) :
+    (fromBlocksOne R r m B : Matrix (Fin (r + m)) (Fin (r + m)) R) (natAdd r k) (castAdd m i) =
+      0 := by
+  simp [coe_fromBlocksOne]
+
+@[simp]
+theorem fromBlocksOne_apply_natAdd_natAdd (B : specialOrthogonalGroup (Fin m) R) (k l : Fin m) :
+    (fromBlocksOne R r m B : Matrix (Fin (r + m)) (Fin (r + m)) R) (natAdd r k) (natAdd r l) =
+      (B : Matrix (Fin m) (Fin m) R) k l := by
+  simp [coe_fromBlocksOne]
+
 /-- The block-diagonal embedding of special orthogonal groups is injective. -/
 theorem fromBlocksOne_injective : Function.Injective (fromBlocksOne R r m) := fun A B h ↦
   Subtype.ext <| funext fun k ↦ funext fun l ↦ by

@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Matrix.EuclideanLin
 public import TauCeti.LinearAlgebra.Matrix.UnitaryGroup.Block
 public import TauCeti.Topology.Algebra.UnitaryGroup
 public import TauCeti.Topology.Grassmannian.Orthonormal
@@ -37,16 +36,14 @@ This gives `SO(N) ⧸ Stab(e) ≃ₜ V_r(ℝ^N)`
 `diag(1_r, SO(m))` when `N = r + m`. In particular the ordered orthonormal two-frames of `ℝⁿ`,
 `n ≥ 3`, are `SO(n) / SO(n - 2)`, and those of `ℂⁿ`, `n ≥ 2`, are `U(n) / U(n - 2)`.
 
-The action is the definition `TauCeti.finiteOrthonormalFrame.unitaryMulAction` rather than an
-instance: `U(r)` already acts on the frames by change of frame, and for `r = N` the two actions
-would be actions of the same group. The homeomorphisms are the topological orbit-stabilizer
-theorem `TauCeti.quotientStabilizerHomeomorph` for these actions, and are equivariant.
+The action `TauCeti.finiteOrthonormalFrame.unitaryMulAction` and the standard frame
+`TauCeti.finiteOrthonormalFrame.standard` are defined with the orthonormal frames in
+`TauCeti.Topology.Grassmannian.Orthonormal`; the action is a definition rather than an instance.
+The homeomorphisms are the topological orbit-stabilizer theorem
+`TauCeti.quotientStabilizerHomeomorph` for these actions, and are equivariant.
 
 ## Main definitions
 
-* `TauCeti.finiteOrthonormalFrame.unitaryMap`: a unitary matrix applied to a frame, and
-  `TauCeti.finiteOrthonormalFrame.unitaryMulAction`, the resulting action.
-* `TauCeti.finiteOrthonormalFrame.standard`: the standard orthonormal frame `(e₀, …, e_{r-1})`.
 * `TauCeti.finiteOrthonormalFrame.unitaryStabilizer`,
   `TauCeti.finiteOrthonormalFrame.specialOrthogonalStabilizer`: the stabilizers of the standard
   frame.
@@ -80,60 +77,6 @@ namespace finiteOrthonormalFrame
 
 variable {𝕜 : Type*} [RCLike 𝕜] {r N : ℕ}
 
-/-- A unitary matrix `A` carries an orthonormal frame to the orthonormal frame obtained by
-applying `A` to each of its vectors. -/
-def unitaryMap (A : unitaryGroup (Fin N) 𝕜) (f : finiteOrthonormalFrame 𝕜 r N) :
-    finiteOrthonormalFrame 𝕜 r N :=
-  ⟨fun i ↦ A.1 *ᵥ f.1 i, by
-    refine orthonormal_iff_ite.2 fun i j ↦ ?_
-    have h := mem_unitaryGroup_iff_inner_toEuclideanCLM.1 A.2 (WithLp.toLp 2 (f.1 i))
-      (WithLp.toLp 2 (f.1 j))
-    simp only [toEuclideanCLM_apply, toLpLin_toLp, toLin'_apply] at h
-    rw [h, orthonormal_iff_ite.1 f.2 i j]⟩
-
-@[simp]
-theorem coe_unitaryMap (A : unitaryGroup (Fin N) 𝕜) (f : finiteOrthonormalFrame 𝕜 r N) :
-    ((unitaryMap A f : finiteOrthonormalFrame 𝕜 r N) : Fin r → Fin N → 𝕜) =
-      fun i ↦ A.1 *ᵥ f.1 i :=
-  (rfl)
-
-@[simp]
-theorem unitaryMap_one (f : finiteOrthonormalFrame 𝕜 r N) : unitaryMap 1 f = f :=
-  Subtype.ext <| funext fun i ↦ by simp
-
-theorem unitaryMap_mul (A B : unitaryGroup (Fin N) 𝕜) (f : finiteOrthonormalFrame 𝕜 r N) :
-    unitaryMap (A * B) f = unitaryMap A (unitaryMap B f) :=
-  Subtype.ext <| funext fun i ↦ by simp [mulVec_mulVec]
-
-/-- Applying a unitary matrix to the vectors of a frame commutes with the change of frame by a
-unitary matrix of size `r`. -/
-theorem unitaryMap_smul (A : unitaryGroup (Fin N) 𝕜) (B : unitaryGroup (Fin r) 𝕜)
-    (f : finiteOrthonormalFrame 𝕜 r N) : unitaryMap A (B • f) = B • unitaryMap A f :=
-  Subtype.ext <| funext fun j ↦ by simp [mulVec_sum, mulVec_smul]
-
-/-- The action of the unitary group on orthonormal frames is jointly continuous. -/
-@[fun_prop]
-theorem continuous_unitaryMap :
-    Continuous fun p : unitaryGroup (Fin N) 𝕜 × finiteOrthonormalFrame 𝕜 r N ↦
-      unitaryMap p.1 p.2 :=
-  continuous_induced_rng.2 <| continuous_pi fun i ↦ by
-    simp only [Function.comp_def, coe_unitaryMap]
-    exact Continuous.matrix_mulVec (continuous_subtype_val.comp continuous_fst)
-      ((continuous_apply i).comp (continuous_subtype_val.comp continuous_snd))
-
-variable (𝕜) in
-/-- The **standard orthonormal frame** `(e₀, …, e_{r-1})` of `𝕜^N`, for `r ≤ N`. -/
-def standard (h : r ≤ N) : finiteOrthonormalFrame 𝕜 r N :=
-  ⟨fun i ↦ Pi.single (Fin.castLE h i) 1, by
-    simpa only [Function.comp_def, PiLp.toLp_single] using
-      (EuclideanSpace.orthonormal_single (𝕜 := 𝕜) (ι := Fin N)).comp _ (Fin.castLE_injective h)⟩
-
-@[simp]
-theorem coe_standard (h : r ≤ N) :
-    ((standard 𝕜 h : finiteOrthonormalFrame 𝕜 r N) : Fin r → Fin N → 𝕜) =
-      fun i ↦ Pi.single (Fin.castLE h i) 1 :=
-  (rfl)
-
 /-- **The unitary group acts transitively on orthonormal frames**: for `r ≤ N`, every orthonormal
 `r`-frame of `𝕜^N` is the image of the standard frame under a unitary matrix. -/
 theorem unitaryMap_standard_surjective (h : r ≤ N) :
@@ -159,15 +102,6 @@ theorem unitaryMap_standard_surjective (h : r ≤ N) :
     (EuclideanSpace.basisFun (Fin N) 𝕜).toMatrix_orthonormalBasis_mem_unitary b⟩, ?_⟩
   refine Subtype.ext <| funext fun i ↦ funext fun k ↦ ?_
   simp [Module.Basis.toMatrix_apply, hb _ ⟨i, rfl⟩, hv_castLE]
-
-variable (𝕜 r N) in
-/-- The action of the unitary group `U(N)` on orthonormal `r`-frames by `unitaryMap`. It is a
-definition rather than an instance: `U(r)` already acts on the frames by change of frame, and the
-two groups coincide when `r = N`. -/
-abbrev unitaryMulAction : MulAction (unitaryGroup (Fin N) 𝕜) (finiteOrthonormalFrame 𝕜 r N) where
-  smul := unitaryMap
-  one_smul := unitaryMap_one
-  mul_smul := unitaryMap_mul
 
 variable (𝕜) in
 /-- The **stabilizer of the standard frame** in the unitary group: the unitary matrices whose
@@ -223,19 +157,10 @@ theorem range_fromBlocksOne_eq_unitaryStabilizer (m : ℕ) :
     (UnitaryGroup.fromBlocksOne 𝕜 r m).range = unitaryStabilizer 𝕜 (Nat.le_add_right r m) := by
   ext A
   rw [UnitaryGroup.mem_range_fromBlocksOne_iff, mem_unitaryStabilizer_iff, Subtype.ext_iff,
-    funext_iff]
+    funext_iff, coe_unitaryMap, coe_standard]
   rfl
 
 /-! ### Real frames and the special orthogonal group -/
-
-variable (r N) in
-/-- The action of `SO(N)` on orthonormal real `r`-frames, through the orthogonal group. Like
-`unitaryMulAction`, it is a definition rather than an instance. -/
-abbrev specialOrthogonalMulAction :
-    MulAction (specialOrthogonalGroup (Fin N) ℝ) (finiteOrthonormalFrame ℝ r N) :=
-  letI := unitaryMulAction ℝ r N
-  MulAction.compHom _ (Submonoid.inclusion (S := specialOrthogonalGroup (Fin N) ℝ)
-    (T := unitaryGroup (Fin N) ℝ) fun _ hA ↦ hA.1)
 
 /-- The **stabilizer of the standard real frame** in the special orthogonal group `SO(N)`. -/
 def specialOrthogonalStabilizer (h : r ≤ N) : Subgroup (specialOrthogonalGroup (Fin N) ℝ) :=
@@ -328,7 +253,7 @@ theorem range_fromBlocksOne_eq_specialOrthogonalStabilizer (m : ℕ) :
       specialOrthogonalStabilizer (Nat.le_add_right r m) := by
   ext A
   rw [SpecialOrthogonalGroup.mem_range_fromBlocksOne_iff, mem_specialOrthogonalStabilizer_iff,
-    Subtype.ext_iff, funext_iff]
+    Subtype.ext_iff, funext_iff, coe_unitaryMap, coe_standard]
   rfl
 
 end finiteOrthonormalFrame
