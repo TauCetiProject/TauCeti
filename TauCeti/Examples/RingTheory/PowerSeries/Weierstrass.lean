@@ -79,20 +79,20 @@ example : IsUnit (polynomialToRestricted 1 (1 + C eps * X : (MaxDualNumber K)[X]
 
 end Units
 
+/-- `X ^ 2 - a` is monic of degree two over a nontrivial ring. -/
+theorem isMonicOfDegree_X_sq_sub_C {R : Type*} [Ring R] [Nontrivial R] (a : R) :
+    (X ^ 2 - C a : R[X]).IsMonicOfDegree 2 :=
+  (isMonicOfDegree_X_pow R 2).sub (by rw [natDegree_C]; norm_num)
+
 section Weierstrass
 
 variable {R : Type*} [NormedCommRing R] [IsUltrametricDist R] [NormOneClass R] {c : ℝ}
-
-omit [IsUltrametricDist R] in
-/-- `X ^ 2 - a` is monic of degree two over a nontrivial ring. -/
-theorem isMonicOfDegree_X_sq_sub_C (a : R) : (X ^ 2 - C a : R[X]).IsMonicOfDegree 2 :=
-  have := NormOneClass.nontrivial (G := R)
-  (isMonicOfDegree_X_pow (R := R) 2).sub (by rw [natDegree_C]; norm_num)
 
 /-- `X ^ 2 - a` is multiplicatively distinguished of degree two at every radius `c > 0` with
 `‖a‖ ≤ c ^ 2`, including when the constant coefficient attains the Gauss norm. -/
 theorem isMulDistinguished_X_sq_sub_C (hc : 0 < c) {a : R} (ha : ‖a‖ ≤ c ^ 2) :
     IsMulDistinguished c 2 (polynomialToRestricted c (X ^ 2 - C a) : PowerSeries R) := by
+  have := NormOneClass.nontrivial (G := R)
   rw [coe_polynomialToRestricted]
   refine ⟨isDistinguished_of_isMonicOfDegree hc (isMonicOfDegree_X_sq_sub_C a) fun k hk ↦ ?_, ?_⟩
   · interval_cases k
@@ -144,6 +144,7 @@ theorem weierstrassDiv_X_pow_four [CompleteSpace R] (hc : 0 < c) {a : R}
 example (hc : 0 < c) {a : R} (ha : ‖a‖ ≤ c ^ 2) {e : PowerSeries.IsRestricted.subring (R := R) c}
     {ω : R[X]} (he : IsUnit e) (hω : ω.IsMonicOfDegree 2)
     (h : (e : PowerSeries R) * ω = (X ^ 2 - C a : R[X])) : e = 1 ∧ ω = X ^ 2 - C a :=
+  have := NormOneClass.nontrivial (G := R)
   (isMulDistinguished_X_sq_sub_C hc ha).eq_and_eq_of_mul_eq_of_mul_eq hc he isUnit_one hω
     (isMonicOfDegree_X_sq_sub_C a) (by simpa using h) (by simp)
 

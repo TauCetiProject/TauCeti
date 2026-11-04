@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.DualNumber
 public import Mathlib.Analysis.Normed.Ring.Ultra
 public import Mathlib.Analysis.Normed.Group.Constructions
+public import TauCeti.Topology.MetricSpace.Ultra.Prod
 
 /-!
 # The dual numbers with the maximum norm
@@ -70,13 +71,8 @@ def eps : MaxDualNumber K := ofDualNumber DualNumber.eps
 theorem eps_mul_eps : (eps * eps : MaxDualNumber K) = 0 := by
   rw [eps, ← map_mul, DualNumber.eps_mul_eps, map_zero]
 
-instance : IsUltrametricDist (MaxDualNumber K) := by
-  refine IsUltrametricDist.isUltrametricDist_of_forall_norm_add_le_max_norm fun x y ↦ ?_
-  obtain ⟨a, rfl⟩ := ofDualNumber.surjective x
-  obtain ⟨b, rfl⟩ := ofDualNumber.surjective y
-  rw [← map_add, norm_ofDualNumber, norm_ofDualNumber, norm_ofDualNumber, TrivSqZeroExt.fst_add,
-    TrivSqZeroExt.snd_add, max_max_max_comm]
-  exact max_le_max (IsUltrametricDist.norm_add_le_max _ _) (IsUltrametricDist.norm_add_le_max _ _)
+instance : IsUltrametricDist (MaxDualNumber K) :=
+  inferInstanceAs (IsUltrametricDist (K × K))
 
 instance [CompleteSpace K] : CompleteSpace (MaxDualNumber K) :=
   inferInstanceAs (CompleteSpace (K × K))
