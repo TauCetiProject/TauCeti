@@ -8,10 +8,8 @@ module
 public import TauCeti.Geometry.Symplectic.Capacity.Relative
 public import TauCeti.Geometry.Symplectic.Hamiltonian.AlmostExistence
 import Mathlib.Analysis.Calculus.Monotone
-import Mathlib.Geometry.Manifold.IntegralCurve.Transform
 import TauCeti.Analysis.SpecialFunctions.SmoothTransition
 import TauCeti.Geometry.Manifold.IntegralCurve.Monotone
-import TauCeti.Topology.Homotopy.AddCircle
 
 /-!
 # The Hofer–Zehnder monotonicity argument
