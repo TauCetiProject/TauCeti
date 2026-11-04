@@ -33,10 +33,10 @@ a closed characteristic, contractible in `M`, of period at most `sup |f'|`
 
 **Almost every level.** A monotone function is differentiable almost everywhere. At a point `s`
 where `c` is differentiable with derivative `L`, `c(s + η) < c(s) + (|L| + 1) η` for small `η > 0`,
-so the monotonicity step applies with `A = (|L| + 2) η` and a cutoff `f` of slope at most a
-constant times `A / η`. Hence for almost every `s ∈ (a, b)` there is a bound `K` such that every
-interval `[s, s + δ]`, `δ > 0`, contains a level carrying a closed characteristic contractible in
-`M` of period at most `K`
+so the monotonicity step applies with `A = (|L| + 2) η` and a cutoff `f` across `[s, s + η / 2]`
+of slope at most `4 (|L| + 2)`. Hence for almost every `s ∈ (a, b)` there is a bound `K` such
+that every interval `[s, s + δ]`, `δ > 0`, contains a level carrying a closed characteristic
+contractible in `M` of period at most `K`
 (`IsNondegenerate.ae_forall_exists_hasContractibleClosedCharacteristicOfPeriodLE`).
 The bound `K` does not depend on `δ`, which is what allows passing to the limit `δ → 0` to obtain a
 closed characteristic on the level `F⁻¹(s)` itself; that limit is not treated here.
@@ -218,9 +218,6 @@ theorem ae_forall_exists_hasContractibleClosedCharacteristicOfPeriodLE (hσ : σ
     rw [hφ]
     simp only [min_eq_left hu]
     exact h.symm
-  obtain ⟨Mρ, hMρ⟩ := Continuous.bounded_above_of_compact_support
-    ((Real.smoothTransition.contDiff (n := 1)).continuous_deriv le_rfl)
-    Real.smoothTransition.hasCompactSupport_deriv
   filter_upwards [hmono.ae_differentiableAt] with s hs hsI
   -- The right difference quotients of `φ` at `s` are eventually below `|φ'(s)| + 1`.
   set L := deriv φ s
@@ -229,7 +226,7 @@ theorem ae_forall_exists_hasContractibleClosedCharacteristicOfPeriodLE (hσ : σ
       (nhdsWithin_mono _ fun t ht ↦ mem_compl_singleton_iff.2 (ne_of_gt ht))).eventually
       (gt_mem_nhds (by linarith [le_abs_self L]))
   obtain ⟨δ₀, hδ₀, hδ₀'⟩ := (nhdsGT_basis (0 : ℝ)).eventually_iff.1 hslope
-  refine ⟨2 * Mρ * (|L| + 2), fun δ hδ ↦ ?_⟩
+  refine ⟨4 * (|L| + 2), fun δ hδ ↦ ?_⟩
   -- Work at a scale `η ≤ δ` below `δ₀` and with `s + η < b`.
   set η := min δ (min (δ₀ / 2) ((b - s) / 2)) with hη
   have hη0 : 0 < η := lt_min hδ (lt_min (by linarith) (by linarith [hsI.2]))
@@ -251,18 +248,18 @@ theorem ae_forall_exists_hasContractibleClosedCharacteristicOfPeriodLE (hσ : σ
   -- The cutoff `f`, stepping down from `A = (|L| + 2) η` to `0` across `[s, s + η / 2]`.
   set A := (|L| + 2) * η with hA
   have hA0 : 0 ≤ A := by positivity
-  obtain ⟨f, hf, hfanti, hf_nonneg, hf0, hfA, hfK⟩ :=
-    exists_contDiff_antitone_cutoff (by linarith : s < s + η / 2) hA0
+  obtain ⟨f, hf, hfanti, hf_nonneg, hf0, hfA, hfK, -⟩ :=
+    exists_contDiff_antitone_cutoff_abs_deriv_le (τ := 4 * (|L| + 2))
+      (by linarith : s < s + η / 2) hA0 (by rw [hA]; nlinarith [abs_nonneg L])
   obtain ⟨c, hc, hcc⟩ := hσ.exists_hasContractibleClosedCharacteristicOfPeriodLE hF
-    (s₁ := s) (s₂ := s + η / 2) (s₃ := s + η) (A := A) (K := 2 * Mρ * (|L| + 2)) (f := f)
+    (s₁ := s) (s₂ := s + η / 2) (s₃ := s + η) (A := A) (K := 4 * (|L| + 2)) (f := f)
     (by linarith) (by linarith) (hcpt _ (by linarith)) (fun x (hx : F x ≤ s + η / 2) ↦
       hint (hx.trans_lt (by linarith)))
     (by
       obtain ⟨x, hx⟩ := hval (r := s + 3 * η / 4) ⟨by linarith [hsI.1], by linarith⟩
       exact ⟨x, by rw [hx]; linarith, by rw [hx]; linarith⟩)
     (fun z hz ↦ le_trans (hZ hz) hsI.1.le) hG hf hf_nonneg
-    (fun r ↦ (hfanti (min_le_left r s)).trans_eq (hfA _ (min_le_right r s))) hfA hf0
-    (fun r ↦ (hfK Mρ hMρ r).trans_eq (by rw [hA, add_sub_cancel_left]; field_simp))
+    (fun r ↦ (hfanti (min_le_left r s)).trans_eq (hfA _ (min_le_right r s))) hfA hf0 hfK
     (by
       -- `c(s + η) < c(s) + (|L| + 1) η < max G + A`.
       have h := hδ₀' ⟨hη0, hηδ₀⟩
