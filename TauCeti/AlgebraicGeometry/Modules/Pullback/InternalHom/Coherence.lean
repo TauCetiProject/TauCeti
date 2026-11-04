@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.AlgebraicGeometry.Modules.Dual
 public import TauCeti.AlgebraicGeometry.Modules.Pullback.InternalHom.Basic
 public import TauCeti.AlgebraicGeometry.Modules.Pullback.Identity
 
@@ -23,9 +24,11 @@ allows invertibility to be checked on open covers.
 Composed with the identification `f^* 𝒪_Y ≅ 𝒪_X`, the comparison at the structure sheaf is the
 base-change map `f^* 𝓗om(M, 𝒪_Y) ⟶ 𝓗om(f^* M, 𝒪_X)` of linear functionals. It is compatible with
 composites and with replacing `f` by an equal morphism, and it carries the pullback of evaluation
-at a global section `s` of `M` to evaluation at the pulled-back section of `f^* M`. These are the
-inputs for the naturality, in the test scheme, of descriptions of points by sections or by linear
-functionals.
+at a global section `s` of `M` to evaluation at the pulled-back section of `f^* M`. For finite
+locally free `M`, the compatibility with composites matches the identifications of functionals on
+duals with sections (`Scheme.Hom.dualHomUnitEquiv_inv_pullbackIhomComparison_app_unit_comp`).
+These are the inputs for the naturality, in the test scheme, of descriptions of points by sections
+or by linear functionals.
 
 The equations use Mathlib's `Scheme.Modules.pullbackId` and `pullbackComp`, and the canonical
 tensor comparison of module pullback. For finite locally free sources they also describe the
@@ -167,6 +170,44 @@ theorem _root_.AlgebraicGeometry.Scheme.Hom.pullbackIhomComparison_app_unit_comp
   simp only [Functor.map_comp]
   rw [pullbackIhomComparison_comp_assoc, Iso.inv_hom_id_app_assoc]
   exact congrArg (_ ≫ ·) ((pre _).naturality _).symm
+
+/-- For finite locally free `M`, base change of linear functionals along `f ≫ g` is compatible
+with the identifications `Scheme.Modules.dualHomUnitEquiv` of functionals on duals with sections:
+the functional on `(f ≫ g)^* M^∨` obtained from a functional `ψ` on `f^* (g^* M)^∨` corresponds to
+the section of `f^* g^* M` of `ψ`, through `f^* g^* M ≅ (f ≫ g)^* M`. -/
+theorem
+    _root_.AlgebraicGeometry.Scheme.Hom.dualHomUnitEquiv_inv_pullbackIhomComparison_app_unit_comp
+    (f : X ⟶ Y) (g : Y ⟶ Z) (M : Z.Modules) [M.IsQuasicoherent] [M.IsLocallyFree]
+    [M.IsFiniteType]
+    [IsIso ((pullbackIhomComparison M (f ≫ g)).app (𝟙_ Z.Modules) ≫
+      (ihom ((Scheme.Modules.pullback (f ≫ g)).obj M)).map
+        (Scheme.Modules.pullbackObjUnitIso (f ≫ g)).hom)]
+    [IsIso ((pullbackIhomComparison ((Scheme.Modules.pullback g).obj M) f).app (𝟙_ Y.Modules) ≫
+      (ihom ((Scheme.Modules.pullback f).obj ((Scheme.Modules.pullback g).obj M))).map
+        (Scheme.Modules.pullbackObjUnitIso f).hom)]
+    (ψ : (Scheme.Modules.pullback f).obj
+      ((ihom ((Scheme.Modules.pullback g).obj M)).obj (𝟙_ Y.Modules)) ⟶ 𝟙_ X.Modules) :
+    Scheme.Modules.dualHomUnitEquiv ((Scheme.Modules.pullback (f ≫ g)).obj M)
+        (inv ((pullbackIhomComparison M (f ≫ g)).app (𝟙_ Z.Modules) ≫
+            (ihom ((Scheme.Modules.pullback (f ≫ g)).obj M)).map
+              (Scheme.Modules.pullbackObjUnitIso (f ≫ g)).hom) ≫
+          (Scheme.Modules.pullbackComp f g).inv.app ((ihom M).obj (𝟙_ Z.Modules)) ≫
+          (Scheme.Modules.pullback f).map ((pullbackIhomComparison M g).app (𝟙_ Z.Modules) ≫
+            (ihom ((Scheme.Modules.pullback g).obj M)).map
+              (Scheme.Modules.pullbackObjUnitIso g).hom) ≫ ψ) =
+      Scheme.Modules.dualHomUnitEquiv ((Scheme.Modules.pullback f).obj
+          ((Scheme.Modules.pullback g).obj M))
+          (inv ((pullbackIhomComparison ((Scheme.Modules.pullback g).obj M) f).app
+              (𝟙_ Y.Modules) ≫
+            (ihom ((Scheme.Modules.pullback f).obj ((Scheme.Modules.pullback g).obj M))).map
+              (Scheme.Modules.pullbackObjUnitIso f).hom) ≫ ψ) ≫
+        (Scheme.Modules.pullbackComp f g).hom.app M := by
+  refine Eq.trans ?_ (Scheme.Modules.dualHomUnitEquiv_pre_comp _ _)
+  refine congrArg _ ((IsIso.inv_comp_eq _).2 ?_)
+  exact (congrArg (_ ≫ _ ≫ ·) ((IsIso.hom_inv_id_assoc _ _).symm.trans
+    (Category.assoc _ _ _))).trans
+      ((Scheme.Hom.pullbackIhomComparison_app_unit_comp_assoc f g M _).trans
+        (Category.assoc _ _ _).symm)
 
 /-- The base-change map of linear functionals is unchanged, up to the canonical identifications,
 when the scheme morphism is replaced by an equal one. -/

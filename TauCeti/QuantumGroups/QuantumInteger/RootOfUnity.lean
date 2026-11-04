@@ -73,6 +73,13 @@ theorem qInt_add_inv_eq_zero_iff [NoZeroDivisors R] {u : Rˣ} (hu₁ : u ≠ 1) 
   rw [sub_inv_mul_qInt_add_inv, sub_eq_zero]
   exact_mod_cast congrArg Units.val h
 
+/-- Away from `±1`, the vanishing indices are the multiples of the multiplicative order of
+`u²`. This includes index zero and units of infinite order (`orderOf (u ^ 2) = 0`). -/
+theorem qInt_add_inv_eq_zero_iff_orderOf_sq_dvd [NoZeroDivisors R] {u : Rˣ}
+    (hu₁ : u ≠ 1) (hu₂ : u ≠ -1) (n : ℕ) :
+    qInt R (u + ↑u⁻¹) n = 0 ↔ orderOf (u ^ 2) ∣ n := by
+  rw [qInt_add_inv_eq_zero_iff hu₁ hu₂, orderOf_dvd_iff_pow_eq_one, ← pow_mul]
+
 end Units
 
 /-- **The root-of-unity dictionary.** Over an algebraically closed field of characteristic zero,
