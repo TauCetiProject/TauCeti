@@ -41,7 +41,8 @@ manifold.
 * `IsOpen.image_of_continuousOn_of_injOn`: **invariance of domain** for manifolds without
   boundary modelled on finite-dimensional real normed spaces of the same dimension.
 * `Continuous.isOpenEmbedding_of_injective`: a continuous injection between such manifolds is an
-  open embedding.
+  open embedding, and `IsOpen.isOpenEmbedding_domRestrict_of_continuousOn_of_injOn` is its form for
+  a map continuous and injective on an open set.
 * `Continuous.surjective_of_injective`: a continuous injection of a compact manifold into a
   connected manifold of the same dimension is surjective.
 * `Homeomorph.coe_apply_mem_interior_iff` and `Homeomorph.coe_apply_mem_frontier_iff`: a
@@ -202,6 +203,22 @@ theorem Continuous.isOpenEmbedding_of_injective {f : M → N} (hf : Continuous f
     (hinj : Injective f) (hEF : finrank ℝ E = finrank ℝ F) : IsOpenEmbedding f :=
   .of_continuous_injective_isOpenMap hf hinj fun _ hU ↦
     hU.image_of_continuousOn_of_injOn hf.continuousOn hinj.injOn hEF
+
+/-- **Invariance of domain, restricted to an open set.** Let `M` and `N` be topological manifolds
+without boundary, charted on finite-dimensional real normed spaces of the same dimension. If
+`f : M → N` is continuous and injective on an open set `U`, then its restriction to `U` is an open
+embedding. -/
+theorem IsOpen.isOpenEmbedding_domRestrict_of_continuousOn_of_injOn {f : M → N} {U : Set M}
+    (hU : IsOpen U) (hf : ContinuousOn f U) (hinj : InjOn f U)
+    (hEF : finrank ℝ E = finrank ℝ F) : IsOpenEmbedding (U.domRestrict f) := by
+  refine .of_continuous_injective_isOpenMap (continuousOn_iff_continuous_domRestrict.1 hf)
+    hinj.injective fun s hs ↦ ?_
+  have hsU : ((↑) '' s : Set M) ⊆ U := by
+    rintro _ ⟨y, -, rfl⟩
+    exact y.2
+  rw [domRestrict_eq, image_comp]
+  exact (hU.isOpenMap_subtype_val s hs).image_of_continuousOn_of_injOn (hf.mono hsU)
+    (hinj.mono hsU) hEF
 
 /-- **A continuous injection of a compact manifold into a connected one is onto.** Let `M` and `N`
 be topological manifolds without boundary, charted on finite-dimensional real normed spaces of the

@@ -11,7 +11,7 @@ public import Mathlib.AlgebraicTopology.DoldKan.Equivalence
 public import Mathlib.AlgebraicTopology.SimplicialSet.Homology.Basic
 public import TauCeti.Algebra.Homology.Embedding.TruncLE
 public import TauCeti.AlgebraicTopology.DoldKan.Normalized
-public import TauCeti.AlgebraicTopology.DoldKan.SimplexChainMap
+public import TauCeti.AlgebraicTopology.DoldKan.SimplexChainMap.Basic
 import Mathlib.CategoryTheory.Adjunction.Whiskering
 import TauCeti.AlgebraicTopology.SimplicialSet.Cochains.Basic
 import TauCeti.AlgebraicTopology.SimplicialSet.Homology.Basic
