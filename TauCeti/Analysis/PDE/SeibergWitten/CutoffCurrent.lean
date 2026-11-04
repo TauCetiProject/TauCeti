@@ -24,7 +24,7 @@ Let `(a, α)` be a pair consisting of an imaginary connection form `a = i b` on 
 Hermitian line and a section `α`, so that the covariant derivative is `∇_a α = dα + i b α`.
 Write `s = |α|²`. Away from the zeros of `α` the pair has the gauge-invariant phase form
 
-`τ = Im (ᾱ ∇_a α) / s = Im (α⁻¹ dα) + b`,
+`τ = Im (conj α ∇_a α) / s = Im (α⁻¹ dα) + b`,
 
 whose first summand is the differential of a local branch of `arg α`. In Taubes's passage from
 Seiberg–Witten solutions to pseudoholomorphic curves, `α` is the component of the rescaled
@@ -50,18 +50,18 @@ where `χ` is a cutoff function vanishing near `0` and equal to `1` above a thre
   `∮ b`.
 
 Given an almost complex structure `J`, the cutoff phase form also has a modulus potential: with
-`d^c_J f = -(1/2) df ∘ J`, `∂̄_a α = (∇_a α + i ∇_a α ∘ J) / 2` and `H` a primitive of
+`d^c_J f = -(1/2) df ∘ J`, `∂bar_a α = (∇_a α + i ∇_a α ∘ J) / 2` and `H` a primitive of
 `χ(s) / s`,
 
-`χ(s) τ = d^c_J H(s) + E`,  `E = 2 χ(s) Re (α⁻¹ ∂̄_a α) ∘ J`
+`χ(s) τ = d^c_J H(s) + E`,  `E = 2 χ(s) Re (α⁻¹ ∂bar_a α) ∘ J`
 
 (`cutoffPhaseForm_eq_twistedDifferential_add`). The primitive with `H(1) = 0` is
 `TauCeti.SeibergWitten.modulusPotential χ`. If `χ` vanishes on `[0, c)` and `|χ| ≤ 1`, then
-`|H(s)| ≤ |s - 1| / c` and `‖E‖ ≤ (2 / √c) ‖∂̄_a α‖` pointwise
+`|H(s)| ≤ |s - 1| / c` and `‖E‖ ≤ (2 / √c) ‖∂bar_a α‖` pointwise
 (`abs_modulusPotential_le`, `norm_cutoffDBarForm_le`). Since `Θ - i F_a = d(χ(s) τ)`, its pairing
 with a test form `ζ` is the pairing of `χ(s) τ = d^c_J H(s) + E` with `dζ`; after an integration
 by parts in the first term, these pointwise bounds reduce that pairing to integral bounds on
-`1 - |α|²` and on `∂̄_a α`. Those integral bounds and the integration by parts are not part of
+`1 - |α|²` and on `∂bar_a α`. Those integral bounds and the integration by parts are not part of
 this file.
 
 Everything is stated on an arbitrary real normed space, which plays the role of a coordinate
@@ -74,9 +74,9 @@ chart; the gauge invariance makes the constructions independent of the trivializ
 * `TauCeti.SeibergWitten.covariantPhaseForm b α`: the phase form `τ = Im (α⁻¹ dα) + b`.
 * `TauCeti.SeibergWitten.cutoffPhaseForm χ b α`: the one-form `χ(|α|²) τ`.
 * `TauCeti.SeibergWitten.cutoffCurrent χ b α`: the two-form `Θ = -db + d(χ(|α|²) τ)`.
-* `TauCeti.SeibergWitten.covariantDBar J b α`: the `J`-antilinear part `∂̄_a α`.
+* `TauCeti.SeibergWitten.covariantDBar J b α`: the `J`-antilinear part `∂bar_a α`.
 * `TauCeti.SeibergWitten.twistedDifferential J f`: the one-form `d^c_J f = -(1/2) df ∘ J`.
-* `TauCeti.SeibergWitten.cutoffDBarForm J χ b α`: the one-form `2 χ(|α|²) Re (α⁻¹ ∂̄_a α) ∘ J`.
+* `TauCeti.SeibergWitten.cutoffDBarForm J χ b α`: the one-form `2 χ(|α|²) Re (α⁻¹ ∂bar_a α) ∘ J`.
 * `TauCeti.SeibergWitten.modulusPotential χ`: the primitive `H(s) = ∫₁ˢ χ(t) / t dt`.
 
 ## References
@@ -187,7 +187,7 @@ theorem covariantDeriv_apply (b : E → E [⋀^Fin 1]→L[ℝ] ℝ) (α : E → 
   ring
 
 /-- The phase form `τ = Im (α⁻¹ dα) + b` of a pair `(a, α)` with `a = i b`. Away from the zeros
-of `α` it is `Im (ᾱ ∇_a α) / |α|²` (`covariantPhaseForm_apply_eq_div`). -/
+of `α` it is `Im (conj α ∇_a α) / |α|²` (`covariantPhaseForm_apply_eq_div`). -/
 def covariantPhaseForm (b : E → E [⋀^Fin 1]→L[ℝ] ℝ) (α : E → ℂ) : E → E [⋀^Fin 1]→L[ℝ] ℝ :=
   phaseForm α + b
 
@@ -195,7 +195,7 @@ def covariantPhaseForm (b : E → E [⋀^Fin 1]→L[ℝ] ℝ) (α : E → ℂ) :
 theorem covariantPhaseForm_apply (b : E → E [⋀^Fin 1]→L[ℝ] ℝ) (α : E → ℂ) (x : E) :
     covariantPhaseForm b α x = phaseForm α x + b x := (rfl)
 
-/-- Away from the zeros of `α`, the covariant phase form is `Im (ᾱ ∇_a α) / |α|²`. -/
+/-- Away from the zeros of `α`, the covariant phase form is `Im (conj α ∇_a α) / |α|²`. -/
 theorem covariantPhaseForm_apply_eq_div (h : α x ≠ 0) (v : E) :
     covariantPhaseForm b α x (fun _ ↦ v) =
       (conj (α x) * covariantDeriv b α x v).im / normSq (α x) := by
@@ -459,17 +459,17 @@ section AlmostComplex
 
 variable [FiniteDimensional ℝ E] (J : AlmostComplexStructure E)
 
-/-- The `J`-antilinear part `∂̄_a α = (∇_a α + i ∇_a α ∘ J) / 2` of the covariant derivative. -/
+/-- The `J`-antilinear part `∂bar_a α = (∇_a α + i ∇_a α ∘ J) / 2` of the covariant derivative. -/
 def covariantDBar (b : E → E [⋀^Fin 1]→L[ℝ] ℝ) (α : E → ℂ) (x : E) : E →L[ℝ] ℂ :=
   (2⁻¹ : ℂ) • (covariantDeriv b α x +
     I • (covariantDeriv b α x).comp (LinearMap.toContinuousLinearMap J.toLinearMap))
 
-/-- `∂̄_a α` evaluated on a vector. -/
+/-- `∂bar_a α` evaluated on a vector. -/
 theorem covariantDBar_apply (b : E → E [⋀^Fin 1]→L[ℝ] ℝ) (α : E → ℂ) (x v : E) :
     covariantDBar J b α x v = (covariantDeriv b α x v + I * covariantDeriv b α x (J v)) / 2 := by
   simp [covariantDBar, div_eq_inv_mul, mul_add]
 
-/-- `∂̄_a α` is `J`-antilinear: `∂̄_a α (J v) = -i ∂̄_a α v`. -/
+/-- `∂bar_a α` is `J`-antilinear: `∂bar_a α (J v) = -i ∂bar_a α v`. -/
 theorem covariantDBar_apply_apply (b : E → E [⋀^Fin 1]→L[ℝ] ℝ) (α : E → ℂ) (x v : E) :
     covariantDBar J b α x (J v) = -I * covariantDBar J b α x v := by
   rw [covariantDBar_apply, covariantDBar_apply, J.apply_apply, map_neg]
@@ -488,7 +488,7 @@ theorem twistedDifferential_apply (f : E → ℝ) (x : E) (v : Fin 1 → E) :
     twistedDifferential J f x v = -2⁻¹ * fderiv ℝ f x (J (v 0)) := by
   simp [twistedDifferential]
 
-/-- The correction one-form `E = 2 χ(|α|²) Re (α⁻¹ ∂̄_a α) ∘ J`. -/
+/-- The correction one-form `E = 2 χ(|α|²) Re (α⁻¹ ∂bar_a α) ∘ J`. -/
 def cutoffDBarForm (χ : ℝ → ℝ) (b : E → E [⋀^Fin 1]→L[ℝ] ℝ) (α : E → ℂ) (x : E) :
     E [⋀^Fin 1]→L[ℝ] ℝ :=
   ofSubsingletonLIE (0 : Fin 1) ((2 * χ (normSq (α x))) •
@@ -503,7 +503,7 @@ theorem cutoffDBarForm_apply (χ : ℝ → ℝ) (b : E → E [⋀^Fin 1]→L[ℝ
       2 * χ (normSq (α x)) * ((α x)⁻¹ * covariantDBar J b α x (J (v 0))).re := by
   simp [cutoffDBarForm]
 
-/-- Since `∂̄_a α` is `J`-antilinear, `E = 2 χ(|α|²) Im (α⁻¹ ∂̄_a α)`. -/
+/-- Since `∂bar_a α` is `J`-antilinear, `E = 2 χ(|α|²) Im (α⁻¹ ∂bar_a α)`. -/
 theorem cutoffDBarForm_apply_eq_im (χ : ℝ → ℝ) (b : E → E [⋀^Fin 1]→L[ℝ] ℝ) (α : E → ℂ)
     (x : E) (v : Fin 1 → E) :
     cutoffDBarForm J χ b α x v =
@@ -514,7 +514,7 @@ theorem cutoffDBarForm_apply_eq_im (χ : ℝ → ℝ) (b : E → E [⋀^Fin 1]�
   ring
 
 /-- **The modulus-potential decomposition.** If `χ(0) = 0` and `H` has derivative `χ(s) / s` at
-`s = |α x|²`, then `χ(|α|²) τ = d^c_J H(|α|²) + 2 χ(|α|²) Re (α⁻¹ ∂̄_a α) ∘ J` at `x`. The modulus
+`s = |α x|²`, then `χ(|α|²) τ = d^c_J H(|α|²) + 2 χ(|α|²) Re (α⁻¹ ∂bar_a α) ∘ J` at `x`. The modulus
 potential `TauCeti.SeibergWitten.modulusPotential χ` has this derivative at every `s ≥ 0`
 (`TauCeti.SeibergWitten.hasDerivAt_modulusPotential`). -/
 theorem cutoffPhaseForm_eq_twistedDifferential_add {H : ℝ → ℝ}
@@ -522,7 +522,7 @@ theorem cutoffPhaseForm_eq_twistedDifferential_add {H : ℝ → ℝ}
     (hα : DifferentiableAt ℝ α x) :
     cutoffPhaseForm χ b α x =
       twistedDifferential J (fun y ↦ H (normSq (α y))) x + cutoffDBarForm J χ b α x := by
-  -- The derivative of `H(|α|²)` is `H'(s) · 2 Re (ᾱ dα)`.
+  -- The derivative of `H(|α|²)` is `H'(s) · 2 Re (conj α dα)`.
   have hd : HasFDerivAt (fun y ↦ H (normSq (α y)))
       ((χ (normSq (α x)) / normSq (α x)) •
         (2 • (innerSL ℝ (α x)).comp (fderiv ℝ α x))) x := by
@@ -548,7 +548,7 @@ theorem cutoffPhaseForm_eq_twistedDifferential_add {H : ℝ → ℝ}
     ring
 
 /-- **Pointwise bound on the correction form.** If `χ` vanishes on `[0, c)` and `|χ| ≤ 1`, then
-`‖2 χ(|α|²) Re (α⁻¹ ∂̄_a α) ∘ J‖ ≤ (2 / √c) ‖∂̄_a α‖`. -/
+`‖2 χ(|α|²) Re (α⁻¹ ∂bar_a α) ∘ J‖ ≤ (2 / √c) ‖∂bar_a α‖`. -/
 theorem norm_cutoffDBarForm_le {c : ℝ} (hc : 0 < c) (hχc : ∀ t, 0 ≤ t → t < c → χ t = 0)
     (hχ₁ : ∀ t, |χ t| ≤ 1) (b : E → E [⋀^Fin 1]→L[ℝ] ℝ) (α : E → ℂ) (x : E) :
     ‖cutoffDBarForm J χ b α x‖ ≤ 2 / √c * ‖covariantDBar J b α x‖ := by
