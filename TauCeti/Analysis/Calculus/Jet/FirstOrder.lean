@@ -97,32 +97,21 @@ theorem _root_.HasFDerivAt.firstJetPullback {g : E' → F →L[𝕜] G} {g' : E'
   simpa only [firstJetPullback_apply, Function.comp_apply, add_comm] using
     hg.clm_apply (hs.comp x hh)
 
-/-- Smooth families of the three coefficients give smooth first-jet transformations,
-including their dependence on the jet itself. -/
+/-- Smooth families of coefficients and jets give smooth transformed first jets. -/
 theorem _root_.ContDiffOn.firstJetPullback {n : ℕ∞ω} {u : Set X}
     {a : X → F →L[𝕜] G} {b : X → E' →L[𝕜] F →L[𝕜] G} {c : X → E' →L[𝕜] E}
-    (ha : ContDiffOn 𝕜 n a u) (hb : ContDiffOn 𝕜 n b u) (hc : ContDiffOn 𝕜 n c u) :
-    ContDiffOn 𝕜 n
-      (fun p : X × (F × (E →L[𝕜] F)) ↦ (a p.1).firstJetPullback (b p.1) (c p.1) p.2)
-      (u ×ˢ Set.univ) := by
-  have hfst : ContDiffOn 𝕜 n (fun p : X × (F × (E →L[𝕜] F)) ↦ p.1) (u ×ˢ Set.univ) :=
-    contDiff_fst.contDiffOn
-  have hmem : Set.MapsTo (fun p : X × (F × (E →L[𝕜] F)) ↦ p.1) (u ×ˢ Set.univ) u :=
-    fun _ hp ↦ hp.1
-  have hv : ContDiffOn 𝕜 n (fun p : X × (F × (E →L[𝕜] F)) ↦ p.2.1) (u ×ˢ Set.univ) :=
-    (contDiff_fst.comp contDiff_snd).contDiffOn
-  have hA : ContDiffOn 𝕜 n (fun p : X × (F × (E →L[𝕜] F)) ↦ p.2.2) (u ×ˢ Set.univ) :=
-    (contDiff_snd.comp contDiff_snd).contDiffOn
-  have hterm : ContDiffOn 𝕜 n
-      (fun p : X × (F × (E →L[𝕜] F)) ↦ (b p.1).flip p.2.1) (u ×ˢ Set.univ) := by
-    refine (((ContinuousLinearMap.apply 𝕜 G).contDiff.comp_contDiffOn hv).clm_comp
-      (hb.comp hfst hmem)).congr ?_
-    intro p _
+    {j : X → F × (E →L[𝕜] F)}
+    (ha : ContDiffOn 𝕜 n a u) (hb : ContDiffOn 𝕜 n b u) (hc : ContDiffOn 𝕜 n c u)
+    (hj : ContDiffOn 𝕜 n j u) :
+    ContDiffOn 𝕜 n (fun x ↦ (a x).firstJetPullback (b x) (c x) (j x)) u := by
+  have hterm : ContDiffOn 𝕜 n (fun x ↦ (b x).flip (j x).1) u := by
+    refine (((ContinuousLinearMap.apply 𝕜 G).contDiff.comp_contDiffOn hj.fst).clm_comp
+      hb).congr ?_
+    intro x _
     ext v
     rfl
   simpa only [firstJetPullback_apply, Function.comp_apply] using
-    ((ha.comp hfst hmem).clm_apply hv).prodMk
-      (hterm.add ((ha.comp hfst hmem).clm_comp (hA.clm_comp (hc.comp hfst hmem))))
+    (ha.clm_apply hj.fst).prodMk (hterm.add (ha.clm_comp (hj.snd.clm_comp hc)))
 
 end ContinuousLinearMap
 
@@ -131,37 +120,30 @@ namespace ContinuousLinearEquiv
 /-- The first-jet coordinate equivalence for invertible fibre and base maps.
 The off-diagonal coefficient `b` is arbitrary. -/
 def firstJetEquiv (a : F ≃L[𝕜] G) (b : E' →L[𝕜] F →L[𝕜] G) (c : E' ≃L[𝕜] E) :
-    (F × (E →L[𝕜] F)) ≃L[𝕜] G × (E' →L[𝕜] G) where
-  toLinearEquiv :=
-    { (a.toContinuousLinearMap.firstJetPullback b c.toContinuousLinearMap).toLinearMap with
-      invFun := fun j ↦ (a.symm j.1,
-        a.symm.toContinuousLinearMap.comp ((j.2 - b.flip (a.symm j.1)).comp
-          c.symm.toContinuousLinearMap))
-      left_inv := by
-        intro j
-        ext v <;> simp
-      right_inv := by
-        intro j
-        ext v <;> simp }
-  continuous_toFun :=
-    (a.toContinuousLinearMap.firstJetPullback b c.toContinuousLinearMap).continuous
-  continuous_invFun := by
-    dsimp only
-    fun_prop
+    (F × (E →L[𝕜] F)) ≃L[𝕜] G × (E' →L[𝕜] G) :=
+  a.skewProd (c.symm.arrowCongr a) b.flip
 
 @[simp]
 theorem firstJetEquiv_toContinuousLinearMap (a : F ≃L[𝕜] G)
     (b : E' →L[𝕜] F →L[𝕜] G) (c : E' ≃L[𝕜] E) :
     (a.firstJetEquiv b c).toContinuousLinearMap =
-      a.toContinuousLinearMap.firstJetPullback b c.toContinuousLinearMap :=
-  (rfl)
+      a.toContinuousLinearMap.firstJetPullback b c.toContinuousLinearMap := by
+  apply ContinuousLinearMap.ext
+  intro j
+  apply Prod.ext
+  · rfl
+  · ext v
+    simp [firstJetEquiv, skewProd_apply, add_comm]
 
 @[simp]
 theorem firstJetEquiv_apply (a : F ≃L[𝕜] G) (b : E' →L[𝕜] F →L[𝕜] G)
     (c : E' ≃L[𝕜] E) (j : F × (E →L[𝕜] F)) :
     a.firstJetEquiv b c j =
-      (a j.1, b.flip j.1 + a.toContinuousLinearMap.comp (j.2.comp c.toContinuousLinearMap)) :=
-  (rfl)
+      (a j.1, b.flip j.1 + a.toContinuousLinearMap.comp (j.2.comp c.toContinuousLinearMap)) := by
+  apply Prod.ext
+  · rfl
+  · ext v
+    simp [firstJetEquiv, skewProd_apply, add_comm]
 
 @[simp]
 theorem firstJetEquiv_symm_apply (a : F ≃L[𝕜] G) (b : E' →L[𝕜] F →L[𝕜] G)
@@ -177,14 +159,19 @@ namespace TauCeti
 
 /-- On open chart domains, smooth fibre and base maps induce smooth transformations of
 first jets. At finite regularity the transformation uses one derivative. -/
-theorem contDiffOn_firstJet_coordinateChange {n m : ℕ∞ω} {u : Set E'}
+theorem contDiffOn_firstJetPullback_fderiv {n m : ℕ∞ω} {u : Set E'}
     {g : E' → F →L[𝕜] G} {h : E' → E} (hu : IsOpen u)
     (hg : ContDiffOn 𝕜 n g u) (hh : ContDiffOn 𝕜 n h u) (hmn : m + 1 ≤ n) :
     ContDiffOn 𝕜 m
       (fun p : E' × (F × (E →L[𝕜] F)) ↦
         (g p.1).firstJetPullback (fderiv 𝕜 g p.1) (fderiv 𝕜 h p.1) p.2)
-      (u ×ˢ Set.univ) :=
-  ContDiffOn.firstJetPullback (hg.of_le (le_trans le_self_add hmn))
-    (hg.fderiv_of_isOpen hu hmn) (hh.fderiv_of_isOpen hu hmn)
+      (u ×ˢ Set.univ) := by
+  have hfst : ContDiffOn 𝕜 m (fun p : E' × (F × (E →L[𝕜] F)) ↦ p.1) (u ×ˢ Set.univ) :=
+    contDiff_fst.contDiffOn
+  have hmem : Set.MapsTo (fun p : E' × (F × (E →L[𝕜] F)) ↦ p.1) (u ×ˢ Set.univ) u :=
+    fun _ hp ↦ hp.1
+  exact ((hg.of_le (le_trans le_self_add hmn)).comp hfst hmem).firstJetPullback
+    ((hg.fderiv_of_isOpen hu hmn).comp hfst hmem)
+    ((hh.fderiv_of_isOpen hu hmn).comp hfst hmem) contDiff_snd.contDiffOn
 
 end TauCeti
