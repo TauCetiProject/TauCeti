@@ -304,16 +304,13 @@ theorem exists_eq_unit_mul_quadratic_of_isUnit_discrim {u v a b c : P}
   -- new coefficient of the square of the second coordinate.
   have ha' : a ∈ maximalIdeal P := (mem_maximalIdeal a).mpr ha
   have hc' : c ∈ maximalIdeal P := (mem_maximalIdeal c).mpr hc
+  unfold discrim at hd
   have hb : b ∉ maximalIdeal P := fun hb ↦ (mem_maximalIdeal _).mp
     (sub_mem (pow_two b ▸ Ideal.mul_mem_left _ b hb)
       (Ideal.mul_mem_right c _ (Ideal.mul_mem_left _ 4 ha'))) hd
   refine ⟨u + v, v, a, b - 2 * a, a - b + c, ?_, ?_, by ring, by unfold discrim; ring⟩
   · by_contra h
     exact hb (by simpa using sub_mem (add_mem ha' hc') ((mem_maximalIdeal _).mpr h))
-  · refine le_antisymm (Ideal.span_le.2 ?_) (Ideal.span_le.2 ?_) <;>
-      simp only [Set.insert_subset_iff, Set.singleton_subset_iff, SetLike.mem_coe,
-        Ideal.mem_span_pair]
-    · exact ⟨⟨1, 1, by ring⟩, ⟨0, 1, by ring⟩⟩
-    · exact ⟨⟨1, -1, by ring⟩, ⟨0, 1, by ring⟩⟩
+  · exact Ideal.span_pair_add_right (x := u) (y := v)
 
 end TauCeti
