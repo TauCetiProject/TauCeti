@@ -619,6 +619,11 @@ namespace IsLowerConvexEnvelope
 
 variable {a h : ℕ → WithTop ℝ} {σ c : ℝ}
 
+/-- A height sequence and its lower convex envelope have the same supporting lines. -/
+theorem isSupportingLine_iff (hh : IsLowerConvexEnvelope a h) :
+    IsSupportingLine h σ c ↔ IsSupportingLine a σ c := by
+  rw [TauCeti.isSupportingLine_iff, TauCeti.isSupportingLine_iff, hh.supportingValue_eq]
+
 /-- Every contact point of a supporting line with the point heights is a contact point with
 their lower convex envelope. -/
 theorem supportingFace_subset (hh : IsLowerConvexEnvelope a h) (hc : IsSupportingLine a σ c) :
