@@ -56,6 +56,16 @@ theorem toGradedModuleCat_piece (M : CurvedDGRightModuleCat.{uR, uA, uM} h) (p :
     (toGradedModuleCat M).grading.piece p = M.grading p :=
   congrFun (InternalGrading.ofDecomposition_piece M.grading) p
 
+/-- A right-linear map is homogeneous of degree `p` for the underlying graded modules exactly when
+it is a cochain of degree `p` between the curved modules. -/
+theorem isHomogeneous_toGradedModuleCat_iff {M N : CurvedDGRightModuleCat.{uR, uA, uM} h} {p : ℤ}
+    (f : M →ₗ[Aᵐᵒᵖ] N) :
+    LinearMap.IsHomogeneous f (toGradedModuleCat M).grading.piece
+        (toGradedModuleCat N).grading.piece p ↔
+      f ∈ dgRightModuleCochains (R := R) (A := A) (ℳ := M.grading) (ℳN := N.grading) p := by
+  simp only [dgRightModuleCochains.mem_iff, LinearMap.isHomogeneous_def, toGradedModuleCat_piece,
+    LinearMap.restrictScalars_apply]
+
 end Objects
 
 -- The closed category keeps the original module objects.
