@@ -86,14 +86,6 @@ theorem IsPlusWeaklyFiniteType.isTopologicallyFiniteType_toRingHom {f : Hom S U}
     _root_.TauCeti.Huber.IsTopologicallyFiniteType f.toRingHom :=
   (isPlusWeaklyFiniteType_iff.mp hf).1
 
-/-- `plusClosure (f(A⁺) ∪ E) ⊆ B⁺` for every `E ⊆ B⁺`: `B⁺` is a ring of integral elements
-containing `f(A⁺)`. -/
-theorem plusClosure_image_union_le (f : Hom S U) {E : Set B} (hE : E ⊆ U.plus) :
-    plusClosure (f.toRingHom '' S.plus ∪ E) ≤ U.plus := by
-  have := U.isRingOfIntegralElements.isIntegrallyClosedIn
-  exact plusClosure_le U.isRingOfIntegralElements.isOpen <|
-    Set.union_subset (Set.image_subset_iff.mpr f.map_mem_plus) hE
-
 /-- **Introduction rule for `TauCeti.Huber.Pair.Hom.IsPlusWeaklyFiniteType`**: for a finite set
 `E ⊆ B⁺`, the inclusion `plusClosure (f(A⁺) ∪ E) ⊆ B⁺` is automatic
 (`TauCeti.Huber.Pair.Hom.plusClosure_image_union_le`), so only the reverse inclusion is to be

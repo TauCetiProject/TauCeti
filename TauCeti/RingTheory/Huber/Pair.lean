@@ -52,6 +52,8 @@ explicit.
   power-bounded elements, the integral closure of the subring it generates together with `A°°`.
 * `TauCeti.Huber.map_plusClosure_le`: a continuous ring homomorphism `f` carries `plusClosure X`
   into `plusClosure (f '' X)`.
+* `TauCeti.Huber.Pair.Hom.plusClosure_image_union_le`: for a morphism `f : (A, A⁺) → (B, B⁺)`
+  and `E ⊆ B⁺`, `plusClosure (f(A⁺) ∪ E) ⊆ B⁺`.
 * `TauCeti.Huber.Pair.quotient`: the quotient Huber pair, whose plus ring is the integral closure
   of the image of the original plus ring.
 * `TauCeti.Huber.Pair.Hom.quotientLift`: the universal factorisation of a morphism annihilating
@@ -488,6 +490,16 @@ theorem map_plusClosure_le {B : Type*} [CommRing B] [TopologicalSpace B] {f : A 
   obtain ⟨a, ha, rfl⟩ := Subring.mem_map.mp hb
   rw [plusClosure_def, Subalgebra.mem_toSubring, mem_integralClosure_iff] at ha ⊢
   exact ha.map_of_comp_eq (f.restrict R R' hR) f (RingHom.ext fun _ ↦ rfl)
+
+/-- `plusClosure (f(A⁺) ∪ E) ⊆ B⁺` for every `E ⊆ B⁺`: `B⁺` is a ring of integral elements
+containing `f(A⁺)`. -/
+theorem Pair.Hom.plusClosure_image_union_le [IsTopologicalRing A] [IsHuberRing A] {B : Type*}
+    [CommRing B] [TopologicalSpace B] [IsTopologicalRing B] [IsHuberRing B] {S : Pair A}
+    {U : Pair B} (f : Hom S U) {E : Set B} (hE : E ⊆ U.plus) :
+    plusClosure (f.toRingHom '' S.plus ∪ E) ≤ U.plus := by
+  have := U.isRingOfIntegralElements.isIntegrallyClosedIn
+  exact plusClosure_le U.isRingOfIntegralElements.isOpen <|
+    Set.union_subset (Set.image_subset_iff.mpr f.map_mem_plus) hE
 
 end PlusClosure
 
