@@ -425,15 +425,7 @@ theorem minimalCosetRepCovBy_simple_mul_simple_mul_of_coroot'_neg
   have hdy : (weylCoxeterSystem P b).IsLeftDescent y i := by
     by_contra hd
     exact (coroot'_smul_nonneg_of_not_isLeftDescent hlam hd).not_gt hy
-  have := (weylCoxeterSystem P b).isLeftDescent_iff.mp hdx
-  have := (weylCoxeterSystem P b).isLeftDescent_iff.mp hdy
-  have := h.length_add_one_eq
-  -- Both lengths go down by one, and the lifting property gives `sᵢ y ≤ sᵢ x`.
-  exact CoxeterSystem.minimalCosetRepCovBy_iff.mpr
-    ⟨isMinimalCosetRep_simple_mul_of_coroot'_ne_zero h.isMinimalCosetRep_left hy.ne,
-      isMinimalCosetRep_simple_mul_of_coroot'_ne_zero h.isMinimalCosetRep_right hx.ne,
-      (h.bruhatLE.simple_mul_of_isLeftDescent i hdx).bruhatLE_simple_mul
-        ((weylCoxeterSystem P b).isLeftDescent_iff_not_isLeftDescent_mul.mp hdy), by omega⟩
+  exact h.simple_mul_of_isLeftDescent hdy hdx
 
 /-- **A cover leaving the nonpositive side of a simple wall is given by the simple reflection.** If
 `y ⋖ x` in `W / W_λ` with `⟨x λ, αᵢ^∨⟩ ≤ 0 < ⟨y λ, αᵢ^∨⟩`, then `x = sᵢ y`. -/

@@ -71,7 +71,7 @@ private theorem existsUnique_restrict_eq_chartRiemannianVolume :
     fun x ↦ chart_source_mem_nhds H x
   simpa only [chartRiemannianVolume_restrict_source] using
     existsUnique_restrict_eq (μ := chartRiemannianVolume (I := I))
-      (fun α : M ↦ (chartAt H α).open_source.measurableSet) ht hcover fun α β ↦ by
+      (fun α : M ↦ (chartAt H α).open_source.measurableSet) ht hcover fun α _ β ↦ by
         simpa only [extChartAt_source] using chartRiemannianVolume_restrict_overlap (I := I) α β
 
 variable (I M) in

@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Algebra.Category.GradedModuleCat.LinearResolution.Basic
 public import TauCeti.Algebra.Category.GradedModuleCat.Shift
-public import TauCeti.Algebra.Homology.EulerCharacteristic.ExtEuler.Graded.Poincare
+public import TauCeti.Algebra.Homology.EulerCharacteristic.ExtEuler.Graded.Poincare.Basic
 
 /-!
 # The signed Poincaré polynomial of a linear resolution

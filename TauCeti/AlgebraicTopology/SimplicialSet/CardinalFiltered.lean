@@ -9,7 +9,7 @@ public import Mathlib.AlgebraicTopology.SimplicialSet.Monoidal
 public import Mathlib.Order.Bounds.Defs
 public import Mathlib.SetTheory.Cardinal.HasCardinalLT
 public import TauCeti.AlgebraicTopology.SimplicialSet.Discrete
-public import TauCeti.AlgebraicTopology.SimplicialSet.Join
+public import TauCeti.AlgebraicTopology.SimplicialSet.Join.Basic
 public import TauCeti.AlgebraicTopology.SimplicialSet.Nerve.Preorder
 
 /-!

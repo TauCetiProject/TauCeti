@@ -42,6 +42,8 @@ twisted by the system pulled back along `f`.
 * `TauCeti.LocalCoefficientSystem.twistedChains`: the simplicial module of twisted chains, and
   `twistedChainComplex`, `twistedHomology` for its alternating face map complex and homology.
   Maps out of twisted chains are built summand by summand with `twistedChainsDesc`.
+  Each degree is projective when the fibres of the system are
+  (`projective_twistedChainComplex_X`).
   The coefficient of a twisted chain on a singular simplex is `twistedChainComplexCoeff`, and by
   `twistedChainComplex_ext_coeff` a twisted chain is determined by its coefficients. Only finitely
   many of them are nonzero, and the chain is their sum
@@ -424,6 +426,26 @@ lemma twistedChainComplex_X (k : ℕ) :
     (twistedChainComplex L).X k =
       ∐ fun σ : (TopCat.toSSet.obj X) _⦋k⦌ ↦ L.obj (initialVertex σ) := (rfl)
 
+/-- A term of the twisted chain complex is the corresponding simplicial module of chains. -/
+lemma twistedChainComplex_X_eq_twistedChains_obj (k : ℕ) :
+    (twistedChainComplex L).X k = (twistedChains L).obj (Opposite.op ⦋k⦌) := (rfl)
+
+/-- The differential, transported to the simplicial modules, is the native alternating
+face-map differential. -/
+lemma twistedChainComplex_d_eq_objD (k : ℕ) :
+    (twistedChainComplex L).d (k + 1) k =
+      eqToHom (twistedChainComplex_X_eq_twistedChains_obj L (k + 1)) ≫
+        AlgebraicTopology.AlternatingFaceMapComplex.objD (twistedChains L) k ≫
+          eqToHom (twistedChainComplex_X_eq_twistedChains_obj L k).symm := by
+  exact AlgebraicTopology.alternatingFaceMapComplex_obj_d (twistedChains L) k
+
+/-- The simplex inclusions agree under the identification with the simplicial module. -/
+@[reassoc (attr := simp)]
+lemma ιTwistedChainComplex_eqToHom_twistedChains (k : ℕ)
+    (σ : (TopCat.toSSet.obj X) _⦋k⦌) :
+    ιTwistedChainComplex L k σ ≫ eqToHom (twistedChainComplex_X_eq_twistedChains_obj L k) =
+      ιTwistedChains L σ := Category.comp_id _
+
 /-- Under the coproduct identification, a simplex inclusion is the coproduct inclusion. -/
 @[reassoc (attr := simp)]
 lemma ιTwistedChainComplex_eqToHom (k : ℕ)
@@ -462,6 +484,15 @@ lemma ιTwistedChainComplex_twistedChainComplexDesc {k : ℕ} {A : ModuleCat.{ma
     (σ : (TopCat.toSSet.obj X) _⦋k⦌) :
     ιTwistedChainComplex L k σ ≫ twistedChainComplexDesc L φ = φ σ :=
   ιTwistedChains_twistedChainsDesc L φ σ
+
+/-- If every fibre of `L` is projective, then so is every degree of the twisted chain complex, a
+coproduct of fibres. -/
+instance projective_twistedChainComplex_X [∀ x, Projective (L.obj x)] (k : ℕ) :
+    Projective ((twistedChainComplex L).X k) where
+  factors f e _ :=
+    ⟨twistedChainComplexDesc L fun σ ↦ Projective.factorThru (ιTwistedChainComplex L k σ ≫ f) e,
+      twistedChainComplex_hom_ext L fun σ ↦ by
+        rw [ιTwistedChainComplex_twistedChainComplexDesc_assoc, Projective.factorThru_comp]⟩
 
 /-- The boundary of the twisted chain complex sends the summand of a singular `(k + 1)`-simplex
 `σ` to the alternating sum of the summands of the faces of `σ`, the coefficients being transported

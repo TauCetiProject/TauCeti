@@ -262,6 +262,14 @@ theorem mpullbackWithin_eq_mpullback {f : M → M'} {s : Set M} {x : M}
     (ω : RoughForm I' M' F k) : mpullbackWithin I I' f s ω x = mpullback I I' f ω x :=
   bundleMpullbackWithin_eq_bundleMpullback hs hf ω
 
+/-- A form evaluated at `a` on tangent vectors at `b = a` moved by `tangentSpaceCast` is the form
+evaluated at `b` on the original vectors. -/
+theorem RoughForm.apply_tangentSpaceCast {ω : RoughForm I' M' F k} {a b : M'} (h : b = a)
+    (u : Fin k → TangentSpace I' b) : ω a (fun i ↦ tangentSpaceCast I' b a (u i)) = ω b u := by
+  subst h
+  -- `tangentSpaceCast` from a tangent space to itself is the identity.
+  rfl
+
 /-- Maps that agree near `x` within `s`, and at `x`, pull a form back within `s` to the same value
 at `x`. -/
 theorem _root_.Filter.EventuallyEq.mpullbackWithin_eq {f g : M → M'} {s : Set M} {x : M}
@@ -303,6 +311,15 @@ theorem mpullback_apply_eq_zero {f : M → M'} {ω : RoughForm I' M' F k} {x : M
     (h : ω (f x) = 0) : mpullback I I' f ω x = 0 := by
   ext v
   simp [mpullback_apply, h]
+
+/-- Pullback along a surjective map whose derivatives are all surjective is injective. -/
+theorem mpullback_injective_of_surjective {f : M → M'} (hsurj : Function.Surjective f)
+    (hf : ∀ x, Function.Surjective (mfderiv I I' f x)) :
+    Function.Injective (mpullback I I' f : RoughForm I' M' F k → RoughForm I M F k) := by
+  intro ω η h
+  funext y
+  obtain ⟨x, rfl⟩ := hsurj y
+  exact (mpullback_apply_eq_mpullback_apply_iff (hf x)).mp (congrFun h x)
 
 /-- Within-set pullback preserves zero. -/
 @[simp]
@@ -432,6 +449,43 @@ theorem mpullback_eq_flat (f : E → E') (ω : RoughForm 𝓘(ℝ, E') E' F k) :
   simp only [mpullback_apply, mfderiv_eq_fderiv]
   -- Mathlib identifies model-space tangent spaces definitionally with the model spaces.
   rfl
+
+/-- The chain rule for precomposition by a map of normed spaces: the pullback along `u ∘ L`, for a
+map `L` with derivative `A` at `y`, is the pullback along `u` at `L y` precomposed with `A`. -/
+theorem mpullback_comp_apply_of_hasFDerivAt {u : E' → M} {L : E'' → E'} {A : E'' →L[ℝ] E'}
+    {y : E''} (hL : HasFDerivAt L A y) (hu : MDifferentiableAt 𝓘(ℝ, E') I u (L y))
+    (ω : RoughForm I M F k) :
+    mpullback 𝓘(ℝ, E'') I (u ∘ L) ω y =
+      (mpullback 𝓘(ℝ, E') I u ω (L y)).compContinuousLinearMap A := by
+  rw [mpullback_comp_at hL.differentiableAt.mdifferentiableAt hu, mpullback_eq_flat]
+  exact congrArg _ hL.fderiv
+
+/-- The pullback of a form along `γ ∘ P`, for a continuous linear map `P` of normed spaces with a
+section `j` that is differentiable at `P z` and passes through `z`, vanishes at `z` on every family
+of vectors one of which lies in the kernel of `P`. Where `γ` is differentiable this is the chain
+rule; where it is not, neither is `γ ∘ P`, since `γ = (γ ∘ P) ∘ j`, and the pullback is zero. -/
+theorem mpullback_comp_clm_apply_eq_zero (ω : RoughForm I M F k) (γ : E' → M)
+    (P : E'' →L[ℝ] E') {j : E' → E''} {z : E''} (hj : DifferentiableAt ℝ j (P z))
+    (hjP : ∀ t, P (j t) = t) (hjz : j (P z) = z) {v : Fin k → E''} {i : Fin k}
+    (hv : P (v i) = 0) :
+    mpullback 𝓘(ℝ, E'') I (γ ∘ P) ω z v = 0 := by
+  by_cases hγ : MDifferentiableAt 𝓘(ℝ, E') I γ (P z)
+  · rw [mpullback_comp_apply_of_hasFDerivAt P.hasFDerivAt hγ]
+    exact (mpullback 𝓘(ℝ, E') I γ ω (P z)).map_coord_zero i hv
+  · have hnd : ¬ MDifferentiableAt 𝓘(ℝ, E'') I (γ ∘ P) z := by
+      intro h
+      refine hγ ?_
+      have hγ' : γ = (γ ∘ P) ∘ j := funext fun t ↦ by simp [hjP]
+      rw [hγ']
+      exact (hjz ▸ h).comp (P z) hj.mdifferentiableAt
+    have h0 : mpullback 𝓘(ℝ, E'') I (γ ∘ P) ω z = 0 := by
+      ext w
+      rw [mpullback_apply, mfderiv_zero_of_not_mdifferentiableAt hnd,
+        ContinuousAlternatingMap.coe_zero, Pi.zero_apply]
+      exact (ω _).map_coord_zero i (zero_apply _)
+    -- The zero alternating map evaluates to zero.
+    rw [h0]
+    rfl
 
 end FixedCoefficients
 end TauCeti
