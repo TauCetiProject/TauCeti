@@ -8,6 +8,7 @@ module
 public import TauCeti.GroupTheory.DoubleCoset.Identity
 public import TauCeti.RepresentationTheory.Induction.FrobeniusReciprocity
 public import TauCeti.RepresentationTheory.Induction.Mackey.Hom
+import TauCeti.RepresentationTheory.Induction.Mackey.IdentityComponent
 
 /-!
 # The intertwining-number formula
@@ -194,8 +195,7 @@ theorem characterPairing_ind_ind_mackey_erase [Fintype G] (hG : IsUnit (Nat.card
   let := Fintype.ofFinite (DoubleCoset.Quotient (H : Set G) (H : Set G))
   rw [characterPairing_ind_ind_mackey hG f f,
     ← Finset.add_sum_erase _ _ (Finset.mem_univ (DoubleCoset.mk H H 1)),
-    characterPairing_mackeyClassFunction_of_mem
-      ((doubleCosetMk_eq_mk_one_iff_mem H _).mp (DoubleCoset.out_eq' _)) f]
+    characterPairing_mackeyClassFunction_of_mem H.doubleCoset_out_mk_one_mem f]
 
 end IdentityCoset
 
@@ -262,28 +262,7 @@ theorem finrank_hom_res_mackeyToH_one (A B : FDRep k H) :
         (Subgroup.resFDRep ((mackeySubgroup 1 H H).subgroupOf H) A ⟶
           (Action.res (FGModuleCat k) (mackeyToH 1 H H)).obj B) =
       Module.finrank k (A ⟶ B) := by
-  have hsubtype : ((mackeySubgroup 1 H H).subgroupOf H).subtype =
-      (mackeySubgroupSelfEquiv (H := H) (s := (1 : G)) (one_mem H)).toMonoidHom := by
-    ext y
-    exact congrArg Subtype.val (coe_mackeySubgroupSelfEquiv_apply (H := H) (s := (1 : G))
-      (one_mem H) y).symm
-  have hmackey : mackeyToH 1 H H =
-      (mackeySubgroupSelfEquiv (H := H) (s := (1 : G)) (one_mem H)).toMonoidHom := by
-    ext y
-    rw [coe_mackeyToH_apply]
-    simp only [MulEquiv.coe_toMonoidHom]
-    simpa only [inv_one, one_mul, mul_one] using
-      congrArg Subtype.val (coe_mackeySubgroupSelfEquiv_apply
-        (H := H) (s := (1 : G)) (one_mem H) y).symm
-  let e := mackeySubgroupSelfEquiv (H := H) (s := (1 : G)) (one_mem H)
-  have hsource : Subgroup.resFDRep ((mackeySubgroup 1 H H).subgroupOf H) A =
-      (Action.res (FGModuleCat k) e.toMonoidHom).obj A :=
-    congrArg (fun phi => (Action.res (FGModuleCat k) phi).obj A) (by simpa [e] using hsubtype)
-  have htarget : (Action.res (FGModuleCat k) (mackeyToH 1 H H)).obj B =
-      (Action.res (FGModuleCat k) e.toMonoidHom).obj B :=
-    congrArg (fun phi => (Action.res (FGModuleCat k) phi).obj B) (by simpa [e] using hmackey)
-  rw [hsource, htarget]
-  exact e.toMonoidHom.finrank_hom_actionRes_of_surjective e.surjective A B
+  exact (FDRep.mackeyHomSelfLinearEquiv (s := (1 : G)) (one_mem H) A B).finrank_eq
 
 /-- For a normal subgroup, the dimension of a Mackey intertwining space equals the dimension of
 the ordinary intertwining space from `A` to its conjugate `{}^s A`. -/
@@ -395,11 +374,7 @@ theorem finrank_hom_indFDRep_mackey_erase [Finite G] (A : FDRep k H) :
   rw [finrank_hom_indFDRep_mackey A A,
     ← Finset.add_sum_erase _ _ (Finset.mem_univ (DoubleCoset.mk H H 1))]
   congr 1
-  have hs : (DoubleCoset.mk H H 1).out ∈ H :=
-    (doubleCosetMk_eq_mk_one_iff_mem H _).mp (DoubleCoset.out_eq' _)
-  have he := finrank_hom_res_mackeyToH_mul_left_mul_right A A hs (one_mem H) 1
-  rw [mul_one, mul_one] at he
-  exact he.trans (finrank_hom_res_mackeyToH_one A A)
+  exact (FDRep.mackeyHomSelfLinearEquiv H.doubleCoset_out_mk_one_mem A A).finrank_eq
 
 end Representations
 
