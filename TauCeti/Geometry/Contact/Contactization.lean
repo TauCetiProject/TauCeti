@@ -46,6 +46,7 @@ are identified by a strict contactomorphism.
 ## Main results
 
 * `TauCeti.SmoothForm.mextDerivₗ_contactization`: `d(dz - θ) = -dθ`.
+* `TauCeti.SmoothForm.mpullback_prodMk_contactization`: `(ι, h)^* (dz - θ) = dh - ι^* θ`.
 * `TauCeti.SmoothForm.isContactForm_contactization_iff`: `dz - θ` is a contact form exactly when
   `-dθ` is nondegenerate.
 * `TauCeti.mpullback_contactizationShift_contactization`: change of primitive.
@@ -130,6 +131,19 @@ theorem mem_kerDistribution_contactization {θ : SmoothForm I W ℝ 1} {p : W ×
       NormedSpace.fromTangentSpace p.2 (Manifold.tangentSpaceProdEquiv p v).2 =
         θ.1 p.1 ![(Manifold.tangentSpaceProdEquiv p v).1] := by
   rw [mem_kerDistribution, contactization_apply, sub_eq_zero]
+
+/-- For smooth maps `ι : L → W` and `h : L → ℝ`, the map `x ↦ (ι x, h x)` pulls the contactization
+form `dz - θ` back to `dh - ι^* θ`. -/
+theorem mpullback_prodMk_contactization {E' H' L : Type*} [NormedAddCommGroup E']
+    [NormedSpace ℝ E'] [TopologicalSpace H'] {J : ModelWithCorners ℝ E' H'} [TopologicalSpace L]
+    [ChartedSpace H' L] [IsManifold J ∞ L] (θ : SmoothForm I W ℝ 1) {ι : L → W} {h : L → ℝ}
+    (hι : ContMDiff J I ∞ ι) (hh : ContMDiff J 𝓘(ℝ) ∞ h) :
+    (mpullback (fun x ↦ (ι x, h x)) (hι.prodMk hh) θ.contactization).1 =
+      mextDeriv (RoughForm.ofFunction J h) - (mpullback ι hι θ).1 := by
+  rw [contactization, map_sub, ← LinearMap.comp_apply, ← LinearMap.comp_apply,
+    ← mpullback_comp, ← mpullback_comp, Submodule.coe_sub, coe_mpullback]
+  congr 1
+  exact SmoothForm.mpullback_realLineCoordForm h
 
 /-- The tangent vector `(v, θ_w(v))` at `(w, z)` lies in the kernel of the contactization form. -/
 private theorem contactization_apply_graph (θ : SmoothForm I W ℝ 1) (p : W × ℝ)

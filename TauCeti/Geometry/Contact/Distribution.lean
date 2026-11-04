@@ -25,8 +25,10 @@ definition involves only the hyperplane field: no contact form, coorientation or
 line `TM ⧸ ξ` is chosen, so it also covers contact structures which are not the kernel of any
 global one-form.
 
-Locally, a contact structure is the kernel of a contact form. Near every point, `ξ` is the kernel
-of a nowhere vanishing `C^n` one-form, and every such local defining form is a contact form at
+Locally, a contact structure is the kernel of a contact form. Near every point, any `C^n`
+hyperplane field is the kernel of a nowhere vanishing `C^n` one-form
+(`TauCeti.IsContMDiffDistribution.exists_roughForm_ker_eq`), and for a contact structure every
+such local defining form is a contact form at
 every point where it defines `ξ` (`TauCeti.IsContactDistribution.exists_isContactFormAt`).
 Conversely, a hyperplane field which near each point is the kernel of a one-form that is contact
 at that point is a contact structure
@@ -52,6 +54,8 @@ has no integral hypersurfaces.
 
 ## Main results
 
+* `TauCeti.IsContMDiffDistribution.exists_roughForm_ker_eq`: a `C^n` hyperplane field is locally
+  the kernel of a nowhere vanishing `C^n` one-form.
 * `TauCeti.IsContactDistribution.exists_isContactFormAt`: a contact structure is locally the kernel
   of a nowhere vanishing `C^n` one-form, which is a contact form at each point of its domain.
 * `TauCeti.isContactDistribution_iff_forall_exists_isContactFormAt`: a `C^n` hyperplane field is a
@@ -159,6 +163,30 @@ end IsContactDistribution
 
 variable [FiniteDimensional ℝ E]
 
+omit [CompleteSpace E] in
+/-- **A hyperplane field is locally the kernel of a one-form.** Every point of a `C^n` distribution
+`D` of rank `k` with `k + 1 = dim E` has an open neighbourhood `U` on which `D` is the kernel of a
+one-form `α` of class `C^n` on `U` which vanishes nowhere on `U`. No coorientation is assumed: the
+form is only defined near the chosen point. -/
+theorem IsContMDiffDistribution.exists_roughForm_ker_eq [IsManifold I (n + 1) M] {k : ℕ}
+    (hD : IsContMDiffDistribution I n k D) (hk : k + 1 = finrank ℝ E) (x : M) :
+    ∃ U : Set M, IsOpen U ∧ x ∈ U ∧ ∃ α : RoughForm I M ℝ 1,
+      ContMDiffOn I (I.prod 𝓘(ℝ, E [⋀^Fin 1]→L[ℝ] ℝ)) n
+        (fun y ↦ TotalSpace.mk' (E [⋀^Fin 1]→L[ℝ] ℝ) y (α y)) U ∧
+      ∀ y ∈ U, α y ≠ 0 ∧ α.ker y = D y := by
+  have : IsManifold I 1 M := IsManifold.of_le (n := 2) one_le_two
+  obtain ⟨U, a, hU, hxU, ha, haD⟩ := hD.exists_local_annihilator hk x
+  -- The covector field `a` is the one-form `α`, with the same kernel and regularity.
+  let α : RoughForm I M ℝ 1 :=
+    fun y ↦ ContinuousAlternatingMap.ofSubsingleton ℝ (TangentSpace I y) ℝ (0 : Fin 1) (a y)
+  refine ⟨U, hU, hxU, α, fun y hy ↦ ?_, fun y hy ↦ ⟨fun h ↦ (haD y hy).1 <|
+    ContinuousLinearMap.ext fun v ↦ by simpa [α] using congr($h ![v]), ?_⟩⟩
+  · exact ((contMDiffAt_ofSubsingleton_iff (V := Bundle.Trivial M ℝ)).2
+      ((ha y hy).contMDiffAt (hU.mem_nhds hy))).contMDiffWithinAt
+  · ext v
+    rw [← (haD y hy).2, RoughForm.mem_ker]
+    simp [α]
+
 /-- **A contact structure is locally defined by contact forms.** Every point of a `C^n` contact
 structure `D`, with `1 ≤ n`, has an open neighbourhood `U` on which `D` is the kernel of a one-form
 `α` of class `C^n` on `U`; any such local defining form is a contact form at every point of `U`. -/
@@ -168,29 +196,14 @@ theorem IsContactDistribution.exists_isContactFormAt [IsManifold I (n + 1) M]
       ContMDiffOn I (I.prod 𝓘(ℝ, E [⋀^Fin 1]→L[ℝ] ℝ)) n
         (fun y ↦ TotalSpace.mk' (E [⋀^Fin 1]→L[ℝ] ℝ) y (α y)) U ∧
       ∀ y ∈ U, α.ker y = D y ∧ IsContactFormAt α y := by
-  have : IsManifold I 1 M := IsManifold.of_le (n := 2) one_le_two
-  obtain ⟨U, a, hU, hxU, ha, haD⟩ :=
-    hD.isContMDiffDistribution.exists_local_annihilator
-      (hD.isContMDiffDistribution.finrank_eq x ▸ hD.finrank_add_one x) x
-  -- The covector field `a` is the one-form `α`, with the same kernel and regularity.
-  let α : RoughForm I M ℝ 1 :=
-    fun y ↦ ContinuousAlternatingMap.ofSubsingleton ℝ (TangentSpace I y) ℝ (0 : Fin 1) (a y)
-  have hker (y : M) (hy : y ∈ U) : α.ker y = D y := by
-    ext v
-    rw [← (haD y hy).2, RoughForm.mem_ker]
-    simp [α]
-  have hα : ContMDiffOn I (I.prod 𝓘(ℝ, E [⋀^Fin 1]→L[ℝ] ℝ)) n
-      (fun y ↦ TotalSpace.mk' (E [⋀^Fin 1]→L[ℝ] ℝ) y (α y)) U := fun y hy ↦
-    ((contMDiffAt_ofSubsingleton_iff (V := Bundle.Trivial M ℝ)).2
-      ((ha y hy).contMDiffAt (hU.mem_nhds hy))).contMDiffWithinAt
-  refine ⟨U, hU, hxU, α, hα, fun y hy ↦ ⟨hker y hy, ?_⟩⟩
+  obtain ⟨U, hU, hxU, α, hα, hαD⟩ := hD.isContMDiffDistribution.exists_roughForm_ker_eq
+    (hD.isContMDiffDistribution.finrank_eq x ▸ hD.finrank_add_one x) x
+  refine ⟨U, hU, hxU, α, hα, fun y hy ↦ ⟨(hαD y hy).2, ?_⟩⟩
   obtain ⟨V, hV, hyV, X, hX⟩ := isContMDiffDistribution_iff.1 hD.isContMDiffDistribution y
-  have hαy : α y ≠ 0 := fun h ↦ (haD y hy).1 <| ContinuousLinearMap.ext fun v ↦ by
-    simpa [α] using congr($h ![v])
   refine (RoughForm.isContactFormAt_iff_bijective_distributionLeviForm (hX.of_le hn)
     (hV.mem_nhds hyV) (((hα y hy).contMDiffAt (hU.mem_nhds hy)).mdifferentiableAt
-      (zero_lt_one.trans_le hn).ne') ?_).2 ⟨hαy, hD.bijective_distributionLeviForm y⟩
-  exact eventually_of_mem (hU.mem_nhds hy) hker
+      (zero_lt_one.trans_le hn).ne') ?_).2 ⟨(hαD y hy).1, hD.bijective_distributionLeviForm y⟩
+  exact eventually_of_mem (hU.mem_nhds hy) fun z hz ↦ (hαD z hz).2
 
 /-- **Contact structures are the hyperplane fields locally defined by contact forms.** A `C^n`
 distribution `D` of rank `dim E - 1`, with `1 ≤ n`, is a contact structure exactly when near every
