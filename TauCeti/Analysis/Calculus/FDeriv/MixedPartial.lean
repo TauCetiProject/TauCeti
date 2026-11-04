@@ -42,12 +42,12 @@ Index the candidate mixed derivatives by a family `Q r y t`, where `Q r y t n` s
 `I ⊆ ℕ × ℕ`; for parabolic problems of order `k` this is `{(r, n) | 2 r + n ≤ k}`. Spatial
 derivatives are related as in `HasFTaylorSeriesUpTo`, through `curryLeft`.
 
-* `TauCeti.hasFDerivAt_of_isLowerSet`: if `Q 0` is related to itself by spatial derivatives, each
-  `Q (r + 1)` is the time derivative of `Q r`, and the mixed derivatives are jointly continuous,
-  then every `Q r` is related to itself by spatial derivatives.
-* `TauCeti.hasDerivWithinAt_of_isLowerSet`: conversely, if every `Q r` is related to itself by
-  spatial derivatives, `Q (r + 1) y t 0` is the time derivative of `Q r y t 0`, and the mixed
-  derivatives are jointly continuous, then `Q (r + 1) y t n` is the time derivative of
+* `TauCeti.hasFDerivAt_mixedDeriv_of_isLowerSet`: if `Q 0` is related to itself by spatial
+  derivatives, each `Q (r + 1)` is the time derivative of `Q r`, and the mixed derivatives are
+  jointly continuous, then every `Q r` is related to itself by spatial derivatives.
+* `TauCeti.hasDerivWithinAt_mixedDeriv_of_isLowerSet`: conversely, if every `Q r` is related to
+  itself by spatial derivatives, `Q (r + 1) y t 0` is the time derivative of `Q r y t 0`, and the
+  mixed derivatives are jointly continuous, then `Q (r + 1) y t n` is the time derivative of
   `Q r y t n` for every admissible `n`.
 
 In either case the family `Q` satisfies both the spatial and the temporal derivative relations at
@@ -183,7 +183,7 @@ nondegenerate closed interval. Suppose that
 
 Then `Q r y t (n + 1)` is the spatial derivative of `Q r · t n` whenever `(r, n + 1) ∈ I`. Thus if
 `Q r y t n` is `∂ₜ^r D_y^n u`, it is also `D_y^n ∂ₜ^r u`. -/
-theorem hasFDerivAt_of_isLowerSet (hI : IsLowerSet I) (hs : Convex ℝ s)
+theorem hasFDerivAt_mixedDeriv_of_isLowerSet (hI : IsLowerSet I) (hs : Convex ℝ s)
     (hs' : UniqueDiffOn ℝ s)
     (hx : ∀ n, (0, n + 1) ∈ I → ∀ t ∈ s, ∀ y,
       HasFDerivAt (Q 0 · t n) (Q 0 y t (n + 1)).curryLeft y)
@@ -224,7 +224,7 @@ orders, and let `s ⊆ ℝ` be convex. Suppose that
 
 Then `Q (r + 1) y t n` is the time derivative within `s` of `Q r y · n` whenever `(r + 1, n) ∈ I`.
 Thus if `Q r y t n` is `D_y^n ∂ₜ^r u`, it is also `∂ₜ^r D_y^n u`. -/
-theorem hasDerivWithinAt_of_isLowerSet (hI : IsLowerSet I) (hs : Convex ℝ s)
+theorem hasDerivWithinAt_mixedDeriv_of_isLowerSet (hI : IsLowerSet I) (hs : Convex ℝ s)
     (hx : ∀ r n, (r, n + 1) ∈ I → ∀ t ∈ s, ∀ y,
       HasFDerivAt (Q r · t n) (Q r y t (n + 1)).curryLeft y)
     (ht : ∀ r, (r + 1, 0) ∈ I → ∀ y, ∀ t ∈ s,
