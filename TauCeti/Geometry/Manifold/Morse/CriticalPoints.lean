@@ -53,6 +53,8 @@ polynomial in the Morse inequalities.
   set of a `C¹` function is closed, and nondegenerate critical points are isolated in it.
 * `TauCeti.IsMorse.eventually_eq_of_mem_criticalPoints`: the critical points of a Morse function
   are isolated.
+* `TauCeti.finite_criticalPoints_inter_of_forall_isManifoldNondegenerateCriticalPoint`: a `C¹`
+  function has finitely many critical points in a compact set where they are all nondegenerate.
 * `TauCeti.IsMorse.finite_criticalPoints_inter` and
   `TauCeti.IsMorse.finite_criticalPoints_inter_preimage_Iic`: finiteness on compact sets and on
   sublevel sets of proper functions bounded below.
@@ -270,15 +272,25 @@ theorem isClosed_criticalPoints (hf : ContMDiff I 𝓘(ℝ) 1 f) : IsClosed (cri
   · exact ⟨mem_extChartAt_source x, mem_extChartAt_target x,
       fun h0 ↦ hx ((hcrit x (mem_extChartAt_source x)).2 h0)⟩
 
+/-- **Nondegenerate critical points in a compact set are finite in number.** If every critical
+point of a `C¹` function `f` in a compact set `K` is nondegenerate, then `K` contains only finitely
+many critical points of `f`. Nothing is assumed about the critical points outside `K`. -/
+theorem finite_criticalPoints_inter_of_forall_isManifoldNondegenerateCriticalPoint
+    (hf : ContMDiff I 𝓘(ℝ) 1 f) {K : Set M} (hK : IsCompact K)
+    (hnd : ∀ x ∈ criticalPoints I f ∩ K, IsManifoldNondegenerateCriticalPoint I f x) :
+    (criticalPoints I f ∩ K).Finite := by
+  refine (hK.inter_left (isClosed_criticalPoints hf)).finite ?_
+  rw [isDiscrete_iff_nhdsNE]
+  intro x hx
+  rw [inf_principal_eq_bot]
+  filter_upwards [(hnd x hx).eventually_notMem_criticalPoints] with y hy using fun h ↦ hy h.1
+
 /-- **A Morse function has finitely many critical points in each compact set.** -/
 theorem IsMorse.finite_criticalPoints_inter (hf : IsMorse I f) {K : Set M} (hK : IsCompact K) :
-    (criticalPoints I f ∩ K).Finite := by
-  refine (hK.inter_left (isClosed_criticalPoints (hf.contMDiff.of_le (by simp)))).finite ?_
-  rw [isDiscrete_iff_nhdsNE]
-  rintro x ⟨hx, -⟩
-  rw [inf_principal_eq_bot]
-  filter_upwards [(hf.isManifoldNondegenerateCriticalPoint_of_mem_criticalPoints
-    hx).eventually_notMem_criticalPoints] with y hy using fun h ↦ hy h.1
+    (criticalPoints I f ∩ K).Finite :=
+  finite_criticalPoints_inter_of_forall_isManifoldNondegenerateCriticalPoint
+    (hf.contMDiff.of_le (by simp)) hK
+    fun _ hx ↦ hf.isManifoldNondegenerateCriticalPoint_of_mem_criticalPoints hx.1
 
 /-- **The critical points of a Morse function are isolated.** Near any point `x` there is no
 critical point of a Morse function other than `x` itself. -/
