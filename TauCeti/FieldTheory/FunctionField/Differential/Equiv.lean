@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.FieldTheory.FunctionField.Differential.CanonicalDivisor
+public import TauCeti.FieldTheory.FunctionField.Divisor.Equiv
 public import TauCeti.FieldTheory.FunctionField.Repartition.Equiv
 
 /-!
@@ -126,16 +127,13 @@ theorem repartitionDualEquivOfRingEquiv_mem_weilDifferentialFiltration_iff (D : 
 /-- **Semilinear transport of the Weil-differential filtration**: `Ω_F(D) ≃ₛₗ[σ] Ω_{F'}(τ_* D)`. -/
 noncomputable def weilDifferentialFiltrationEquivOfRingEquiv (D : Divisor k F) :
     ↥(weilDifferentialFiltration D) ≃ₛₗ[(σ : k →+* k')]
-      ↥(weilDifferentialFiltration (Finsupp.domCongr (Place.equivOfRingEquiv σ τ h) D)) where
-  toFun ω := ⟨repartitionDualEquivOfRingEquiv σ τ h ω,
-    (repartitionDualEquivOfRingEquiv_mem_weilDifferentialFiltration_iff σ τ h D ω).mpr ω.2⟩
-  invFun η := ⟨(repartitionDualEquivOfRingEquiv σ τ h).symm η,
-    (repartitionDualEquivOfRingEquiv_mem_weilDifferentialFiltration_iff σ τ h D _).mp
-      (by rw [LinearEquiv.apply_symm_apply]; exact η.2)⟩
-  left_inv ω := Subtype.ext ((repartitionDualEquivOfRingEquiv σ τ h).left_inv ω)
-  right_inv η := Subtype.ext ((repartitionDualEquivOfRingEquiv σ τ h).right_inv η)
-  map_add' ω₁ ω₂ := Subtype.ext ((repartitionDualEquivOfRingEquiv σ τ h).map_add ω₁ ω₂)
-  map_smul' c ω := Subtype.ext ((repartitionDualEquivOfRingEquiv σ τ h).map_smulₛₗ c ω)
+      ↥(weilDifferentialFiltration (Finsupp.domCongr (Place.equivOfRingEquiv σ τ h) D)) :=
+  (repartitionDualEquivOfRingEquiv σ τ h).ofSubmodules (weilDifferentialFiltration D)
+    (weilDifferentialFiltration (Finsupp.domCongr (Place.equivOfRingEquiv σ τ h) D)) <| by
+      ext η
+      obtain ⟨ω, rfl⟩ := (repartitionDualEquivOfRingEquiv σ τ h).surjective η
+      rw [Submodule.mem_map_equiv, LinearEquiv.symm_apply_apply,
+        repartitionDualEquivOfRingEquiv_mem_weilDifferentialFiltration_iff]
 
 /-- `weilDifferentialFiltrationEquivOfRingEquiv` is the restriction of
 `repartitionDualEquivOfRingEquiv`. -/
@@ -174,15 +172,13 @@ theorem repartitionDualEquivOfRingEquiv_mem_weilDifferentialSpace_iff
 
 /-- **Semilinear transport of the space of Weil differentials**: `Ω_F ≃ₛₗ[σ] Ω_{F'}`. -/
 noncomputable def weilDifferentialSpaceEquivOfRingEquiv :
-    ↥(weilDifferentialSpace k F) ≃ₛₗ[(σ : k →+* k')] ↥(weilDifferentialSpace k' F') where
-  toFun ω := ⟨repartitionDualEquivOfRingEquiv σ τ h ω,
-    (repartitionDualEquivOfRingEquiv_mem_weilDifferentialSpace_iff σ τ h ω).mpr ω.2⟩
-  invFun η := ⟨(repartitionDualEquivOfRingEquiv σ τ h).symm η,
-    (repartitionDualEquivOfRingEquiv_mem_weilDifferentialSpace_iff σ τ h _).mp (by simp [η.2])⟩
-  left_inv ω := Subtype.ext ((repartitionDualEquivOfRingEquiv σ τ h).left_inv ω)
-  right_inv η := Subtype.ext ((repartitionDualEquivOfRingEquiv σ τ h).right_inv η)
-  map_add' ω₁ ω₂ := Subtype.ext ((repartitionDualEquivOfRingEquiv σ τ h).map_add ω₁ ω₂)
-  map_smul' c ω := Subtype.ext ((repartitionDualEquivOfRingEquiv σ τ h).map_smulₛₗ c ω)
+    ↥(weilDifferentialSpace k F) ≃ₛₗ[(σ : k →+* k')] ↥(weilDifferentialSpace k' F') :=
+  (repartitionDualEquivOfRingEquiv σ τ h).ofSubmodules (weilDifferentialSpace k F)
+    (weilDifferentialSpace k' F') <| by
+      ext η
+      obtain ⟨ω, rfl⟩ := (repartitionDualEquivOfRingEquiv σ τ h).surjective η
+      rw [Submodule.mem_map_equiv, LinearEquiv.symm_apply_apply,
+        repartitionDualEquivOfRingEquiv_mem_weilDifferentialSpace_iff]
 
 /-- `weilDifferentialSpaceEquivOfRingEquiv` is the restriction of
 `repartitionDualEquivOfRingEquiv`. -/
@@ -202,6 +198,31 @@ theorem coe_weilDifferentialSpaceEquivOfRingEquiv_symm_apply
       (repartitionDualEquivOfRingEquiv σ τ h).symm η :=
   (rfl)
 
+/-- `repartitionDualEquivOfRingEquiv` transports greatest bounding divisors of linear forms on
+repartitions along `Place.equivOfRingEquiv`. -/
+theorem isGreatest_weilDifferentialFiltration_repartitionDualEquivOfRingEquiv_iff
+    (ω : Module.Dual k ↥(repartitionSpace k F)) (W : Divisor k F) :
+    IsGreatest {E' : Divisor k' F' |
+        repartitionDualEquivOfRingEquiv σ τ h ω ∈ weilDifferentialFiltration E'}
+      (Finsupp.domCongr (Place.equivOfRingEquiv σ τ h) W) ↔
+      IsGreatest {E : Divisor k F | ω ∈ weilDifferentialFiltration E} W := by
+  constructor
+  · rintro ⟨hmem, hmax⟩
+    refine ⟨(repartitionDualEquivOfRingEquiv_mem_weilDifferentialFiltration_iff σ τ h W ω).mp hmem,
+      fun D hD ↦ ?_⟩
+    have hD' := hmax ((repartitionDualEquivOfRingEquiv_mem_weilDifferentialFiltration_iff
+      σ τ h D ω).mpr hD)
+    simpa only [Finsupp.domCongr_apply, Finsupp.equivMapDomain_eq_mapDomain,
+      Finsupp.mapDomain_le_mapDomain_iff_le (Place.equivOfRingEquiv σ τ h).injective] using hD'
+  · rintro ⟨hmem, hmax⟩
+    refine ⟨(repartitionDualEquivOfRingEquiv_mem_weilDifferentialFiltration_iff σ τ h W ω).mpr hmem,
+      fun D' hD' ↦ ?_⟩
+    obtain ⟨D, rfl⟩ := (Finsupp.domCongr (Place.equivOfRingEquiv σ τ h)).surjective D'
+    have hD :=
+      (repartitionDualEquivOfRingEquiv_mem_weilDifferentialFiltration_iff σ τ h D ω).mp hD'
+    simpa only [Finsupp.domCongr_apply, Finsupp.equivMapDomain_eq_mapDomain] using
+      Finsupp.mapDomain_mono (hmax hD)
+
 /-- **Transport of the divisor of a Weil differential**: transporting a nonzero Weil differential
 along `(σ, τ)` reindexes its divisor along `Place.equivOfRingEquiv σ τ h`. -/
 @[simp]
@@ -215,18 +236,13 @@ theorem weilDifferentialDivisor_repartitionDualEquivOfRingEquiv
         ((map_ne_zero_iff (repartitionDualEquivOfRingEquiv σ τ h)
           (repartitionDualEquivOfRingEquiv σ τ h).injective).mpr hω) =
       Finsupp.domCongr (Place.equivOfRingEquiv σ τ h)
-        (weilDifferentialDivisor hF hex hmem hω) := by
-  have hW := isGreatest_weilDifferentialDivisor hF hex hmem hω
-  refine (isGreatest_weilDifferentialDivisor hF' hex'
+        (weilDifferentialDivisor hF hex hmem hω) :=
+  (isGreatest_weilDifferentialDivisor hF' hex'
     ((repartitionDualEquivOfRingEquiv_mem_weilDifferentialSpace_iff σ τ h ω).mpr hmem)
     ((map_ne_zero_iff (repartitionDualEquivOfRingEquiv σ τ h)
-      (repartitionDualEquivOfRingEquiv σ τ h).injective).mpr hω)).unique ⟨?_, fun D' hD' ↦ ?_⟩
-  · exact (repartitionDualEquivOfRingEquiv_mem_weilDifferentialFiltration_iff σ τ h _ ω).mpr hW.1
-  · obtain ⟨D, rfl⟩ := (Finsupp.domCongr (Place.equivOfRingEquiv σ τ h)).surjective D'
-    have hD :=
-      (repartitionDualEquivOfRingEquiv_mem_weilDifferentialFiltration_iff σ τ h D ω).mp hD'
-    simpa only [Finsupp.domCongr_apply, Finsupp.equivMapDomain_eq_mapDomain] using
-      Finsupp.mapDomain_mono (hW.2 hD)
+      (repartitionDualEquivOfRingEquiv σ τ h).injective).mpr hω)).unique
+    ((isGreatest_weilDifferentialFiltration_repartitionDualEquivOfRingEquiv_iff σ τ h ω _).mpr
+      (isGreatest_weilDifferentialDivisor hF hex hmem hω))
 
 /-- **The divisor-class isomorphism `Cl(F) ≃+ Cl(F')` carries the canonical class to the canonical
 class.** -/
@@ -237,9 +253,15 @@ theorem Divisor.classGroupEquivOfRingEquiv_canonicalClass
     Divisor.classGroupEquivOfRingEquiv σ τ h hF hF' (canonicalClass hF hex) =
       canonicalClass hF' hex' := by
   obtain ⟨ω, hmem, hω⟩ := (Submodule.ne_bot_iff _).mp (weilDifferentialSpace_ne_bot hF hex)
+  have hmem' : repartitionDualEquivOfRingEquiv σ τ h ω ∈ weilDifferentialSpace k' F' := by
+    simpa only [coe_weilDifferentialSpaceEquivOfRingEquiv_apply] using
+      (weilDifferentialSpaceEquivOfRingEquiv σ τ h ⟨ω, hmem⟩).2
+  have hω' : repartitionDualEquivOfRingEquiv σ τ h ω ≠ 0 :=
+    (map_ne_zero_iff (repartitionDualEquivOfRingEquiv σ τ h)
+      (repartitionDualEquivOfRingEquiv σ τ h).injective).mpr hω
   rw [← divisorClass_weilDifferentialDivisor hF hex hmem hω,
     Divisor.classGroupEquivOfRingEquiv_divisorClass,
     ← weilDifferentialDivisor_repartitionDualEquivOfRingEquiv σ τ h hF hF' hex hex' hmem hω,
-    divisorClass_weilDifferentialDivisor]
+    divisorClass_weilDifferentialDivisor hF' hex' hmem' hω']
 
 end TauCeti

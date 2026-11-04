@@ -5,16 +5,15 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.FieldTheory.FunctionField.Repartition.IndexOfSpecialty
-public import TauCeti.FieldTheory.FunctionField.RiemannRoch.Equiv
+public import TauCeti.FieldTheory.FunctionField.Place.Equiv
+public import TauCeti.FieldTheory.FunctionField.Repartition.Basic
 
 /-!
-# Repartitions, repartition cokernels, and specialty under semilinear field isomorphisms
+# Repartitions and repartition cokernels under semilinear field isomorphisms
 
 Let `τ : F ≃+* F'` be a field isomorphism carrying a constant subfield `k` onto `k'` along
 `σ : k ≃+* k'`. Composing valuations with `τ⁻¹` identifies the places (`Place.equivOfRingEquiv`)
-and hence the divisors (`Finsupp.domCongr`), preserving degrees, Riemann–Roch dimensions, the genus,
-and therefore the index of specialty (`TauCeti.Divisor.indexOfSpecialty_domCongr_equivOfRingEquiv`).
+and hence the divisors (`Finsupp.domCongr`).
 
 Entrywise application of `τ` along that bijection of places gives a `σ`-semilinear isomorphism of
 repartition spaces `A_F ≃ₛₗ[σ] A_{F'}` (`TauCeti.repartitionSpaceEquivOfRingEquiv`). It moves single
@@ -34,8 +33,6 @@ equivalences.
 
 ## Main results
 
-* `TauCeti.Divisor.indexOfSpecialty_domCongr_equivOfRingEquiv`: semilinear transport preserves the
-  index of specialty `i(D)`.
 * `TauCeti.repartitionSpaceEquivOfRingEquiv_singleRepartition`: transport moves `ι_P x` to
   `ι_{τ_* P} (τ x)`.
 * `TauCeti.repartitionSpaceEquivOfRingEquiv_repartitionMul`: transport is `τ`-semilinear for
@@ -61,16 +58,6 @@ variable {k k' F F' : Type*} [Field k] [Field k'] [Field F] [Field F']
   [Algebra k F] [Algebra k' F']
 variable (σ : k ≃+* k') (τ : F ≃+* F')
   (h : ∀ c, τ (algebraMap k F c) = algebraMap k' F' (σ c))
-
--- Transport rules run before `Finsupp.domCongr_apply` expands the divisor reindexing.
-/-- Semilinear transport preserves the index of specialty of a divisor. -/
-@[simp↓]
-theorem Divisor.indexOfSpecialty_domCongr_equivOfRingEquiv (D : Divisor k F) :
-    Divisor.indexOfSpecialty (Finsupp.domCongr (Place.equivOfRingEquiv σ τ h) D) =
-      Divisor.indexOfSpecialty D := by
-  rw [Divisor.indexOfSpecialty_def, Divisor.indexOfSpecialty_def,
-    Divisor.dim_domCongr_equivOfRingEquiv, Divisor.degree_domCongr_equivOfRingEquiv,
-    genus_eq_of_ringEquiv σ τ h]
 
 /-! ### Semilinear transport of repartitions -/
 
@@ -129,15 +116,13 @@ private theorem placeFamilyEquivOfRingEquiv_mem_diagonalRepartitions_iff (a : Pl
 /-- **Semilinear transport of the repartition space**: an isomorphism `τ : F ≃+* F'` carrying `k`
 onto `k'` along `σ` induces `A_F ≃ₛₗ[σ] A_{F'}` by `(τ_* a)_Q = τ (a_{τ^* Q})`. -/
 noncomputable def repartitionSpaceEquivOfRingEquiv :
-    ↥(repartitionSpace k F) ≃ₛₗ[(σ : k →+* k')] ↥(repartitionSpace k' F') where
-  toFun a := ⟨placeFamilyEquivOfRingEquiv σ τ h a,
-    (placeFamilyEquivOfRingEquiv_mem_repartitionSpace_iff σ τ h a).mpr a.2⟩
-  invFun b := ⟨(placeFamilyEquivOfRingEquiv σ τ h).symm b,
-    (placeFamilyEquivOfRingEquiv_mem_repartitionSpace_iff σ τ h _).mp (by simp [b.2])⟩
-  left_inv a := Subtype.ext ((placeFamilyEquivOfRingEquiv σ τ h).left_inv a)
-  right_inv b := Subtype.ext ((placeFamilyEquivOfRingEquiv σ τ h).right_inv b)
-  map_add' a b := Subtype.ext ((placeFamilyEquivOfRingEquiv σ τ h).map_add a b)
-  map_smul' c a := Subtype.ext ((placeFamilyEquivOfRingEquiv σ τ h).map_smulₛₗ c a)
+    ↥(repartitionSpace k F) ≃ₛₗ[(σ : k →+* k')] ↥(repartitionSpace k' F') :=
+  (placeFamilyEquivOfRingEquiv σ τ h).ofSubmodules (repartitionSpace k F)
+    (repartitionSpace k' F') <| by
+      ext b
+      obtain ⟨a, rfl⟩ := (placeFamilyEquivOfRingEquiv σ τ h).surjective b
+      rw [Submodule.mem_map_equiv, LinearEquiv.symm_apply_apply,
+        placeFamilyEquivOfRingEquiv_mem_repartitionSpace_iff]
 
 /-- Entrywise formula for `repartitionSpaceEquivOfRingEquiv`. -/
 @[simp]

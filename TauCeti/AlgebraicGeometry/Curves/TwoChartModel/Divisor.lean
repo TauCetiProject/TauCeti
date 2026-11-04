@@ -56,24 +56,6 @@ universe u
 variable {k F : Type u} [Field k] [Field F] [Algebra k F] {hF : IsFunctionField k F} {x : F}
   {hx : x ≠ 0}
 
-/-- `(functionFieldEquiv hxt).toRingEquiv` commutes with `RingEquiv.refl k` on `k`-scalars, stated
-in the syntactic form expected by `Place.equivOfRingEquiv` and its divisor/differential transport
-lemmas. -/
-theorem functionFieldEquiv_toRingEquiv_commutes (hxt : Transcendental k x) (c : k) :
-    (functionFieldEquiv (hF := hF) (hx := hx) hxt).toRingEquiv
-        (algebraMap k (twoChartModel hF hx).functionField c) =
-      algebraMap k F (RingEquiv.refl k c) :=
-  (functionFieldEquiv hxt).commutes c
-
-/-- `Place.mapEquiv (functionFieldEquiv hxt)` written as `Place.equivOfRingEquiv` over the identity
-of `k`, for transporting function-field divisor and differential invariants. -/
-theorem mapEquiv_functionFieldEquiv_eq_equivOfRingEquiv (hxt : Transcendental k x) :
-    Place.mapEquiv (functionFieldEquiv (hF := hF) (hx := hx) hxt) =
-      Place.equivOfRingEquiv (RingEquiv.refl k) (functionFieldEquiv hxt).toRingEquiv
-        (functionFieldEquiv_toRingEquiv_commutes hxt) :=
-  Equiv.ext fun P ↦
-    (Place.mapEquiv_apply _ P).trans (Place.map_eq_equivOfRingEquiv (functionFieldEquiv hxt) P)
-
 /-! ### Reindexing Weil divisors along `equivPlace` -/
 
 /-- **Weil divisors on the two-chart model are divisors of `F / k`**: reindexing along
@@ -105,6 +87,20 @@ theorem equivDivisor_eq_trans (hxt : Transcendental k x) :
         Place.mapEquiv_apply]
   rw [equivDivisor_eq_domCongr, heq, ← Finsupp.domCongr_trans,
     ← SchemeWeilDivisor.equivFunctionFieldDivisor_eq_domCongr]
+
+/-- Transporting `SchemeWeilDivisor.equivFunctionFieldDivisor` along `functionFieldEquiv` gives
+`equivDivisor`. -/
+theorem domCongr_equivOfRingEquiv_equivFunctionFieldDivisor (hxt : Transcendental k x)
+    (D : SchemeWeilDivisor (twoChartModel hF hx)) :
+    haveI := isDiscreteValuationRing_stalk (hF := hF) (hx := hx) hxt
+    Finsupp.domCongr
+        (Place.equivOfRingEquiv (RingEquiv.refl k) (functionFieldEquiv hxt).toRingEquiv
+          (id (functionFieldEquiv hxt).commutes))
+        (SchemeWeilDivisor.equivFunctionFieldDivisor (valuativeCriterion_existence hF hx)
+          (coheight_le_one hxt) D) =
+      equivDivisor hxt D := by
+  let _ := isDiscreteValuationRing_stalk (hF := hF) (hx := hx) hxt
+  rw [equivDivisor_eq_trans hxt, AddEquiv.trans_apply, Place.mapEquiv_eq_equivOfRingEquiv]
 
 /-- The coefficient of `equivDivisor hxt D` at a place `P` is the coefficient of `D` at the
 corresponding codimension-one point of `X_F`. -/
@@ -196,10 +192,9 @@ theorem degree_equivDivisor (hxt : Transcendental k x)
     (D : SchemeWeilDivisor (twoChartModel hF hx)) :
     Divisor.degree (equivDivisor hxt D) =
       SchemeWeilDivisor.relativeDegree (twoChartModel hF hx ↘ Spec (.of k)) D := by
-  have := isDiscreteValuationRing_stalk (hF := hF) (hx := hx) hxt
-  rw [equivDivisor_eq_trans hxt, AddEquiv.trans_apply,
-    mapEquiv_functionFieldEquiv_eq_equivOfRingEquiv hxt, Divisor.degree_domCongr_equivOfRingEquiv,
-    SchemeWeilDivisor.degree_equivFunctionFieldDivisor]
+  let _ := isDiscreteValuationRing_stalk (hF := hF) (hx := hx) hxt
+  rw [← domCongr_equivOfRingEquiv_equivFunctionFieldDivisor hxt D,
+    Divisor.degree_domCongr_equivOfRingEquiv, SchemeWeilDivisor.degree_equivFunctionFieldDivisor]
 
 /-- The scheme-theoretic degree of `(equivDivisor hxt).symm D` equals the function-field degree of
 `D`. -/
@@ -209,29 +204,6 @@ theorem relativeDegree_equivDivisor_symm (hxt : Transcendental k x) (D : Divisor
         ((equivDivisor hxt).symm D) =
       Divisor.degree D := by
   rw [← degree_equivDivisor hxt, AddEquiv.apply_symm_apply]
-
-/-- `equivDivisor` intertwines the scheme-theoretic principal-divisor map with the place-order
-principal-divisor map of `F` along `functionFieldEquiv`. -/
-theorem equivDivisor_principalDivisor (hxt : Transcendental k x)
-    (g : Additive (twoChartModel hF hx).functionFieldˣ) :
-    haveI := isDiscreteValuationRing_stalk (hF := hF) (hx := hx) hxt
-    haveI := isNoetherian (hF := hF) (hx := hx) hxt
-    equivDivisor hxt ((WeilDivisor.OrderSystem.ofScheme (twoChartModel hF hx)).principalDivisor g) =
-      (Place.orderSystem hF).principalDivisor
-        ((Units.mapEquiv (functionFieldEquiv hxt).toRingEquiv.toMulEquiv).toAdditive g) := by
-  let _ := isDiscreteValuationRing_stalk (hF := hF) (hx := hx) hxt
-  let _ := isNoetherian (hF := hF) (hx := hx) hxt
-  let _ := locallyOfFiniteType (hF := hF) (hx := hx) hxt
-  have hF' : IsFunctionField k (twoChartModel hF hx).functionField :=
-    (isFunctionField_functionField_iff k).mpr (topologicalKrullDim_eq_one hxt)
-  rw [equivDivisor_eq_trans hxt, AddEquiv.trans_apply,
-    SchemeWeilDivisor.equivFunctionFieldDivisor_principalDivisor
-      (valuativeCriterion_existence hF hx) (coheight_le_one hxt) hF',
-    Divisor.principalDivisor_eq, Divisor.principalDivisor_eq,
-    mapEquiv_functionFieldEquiv_eq_equivOfRingEquiv hxt,
-    Divisor.domCongr_equivOfRingEquiv_principal (RingEquiv.refl k)
-      (functionFieldEquiv hxt).toRingEquiv (functionFieldEquiv_toRingEquiv_commutes hxt) hF' hF]
-  exact congrArg _ (Units.ext (by simp))
 
 /-- **Principal divisors on `X_F` become principal divisors of `F`** under `equivDivisor` and
 `functionFieldEquiv`. -/
@@ -246,7 +218,12 @@ theorem equivDivisor_principal (hxt : Transcendental k x)
         (Units.map (functionFieldEquiv hxt).toRingEquiv.toMulEquiv.toMonoidHom z) := by
   let _ := isDiscreteValuationRing_stalk (hF := hF) (hx := hx) hxt
   let _ := isNoetherian (hF := hF) (hx := hx) hxt
-  rw [equivDivisor_principalDivisor hxt, Divisor.principalDivisor_eq]
+  rw [← domCongr_equivOfRingEquiv_equivFunctionFieldDivisor hxt,
+    SchemeWeilDivisor.equivFunctionFieldDivisor_principal (valuativeCriterion_existence hF hx)
+      (coheight_le_one hxt) (isFunctionField_functionField hxt),
+    Divisor.domCongr_equivOfRingEquiv_principal (RingEquiv.refl k)
+      (functionFieldEquiv hxt).toRingEquiv (id (functionFieldEquiv hxt).commutes)
+      (isFunctionField_functionField hxt) hF]
   exact congrArg _ (Units.ext (by simp))
 
 /-- Pulling back the principal divisor of `z ∈ Fˣ` gives the scheme-theoretic principal divisor of
@@ -275,19 +252,17 @@ theorem linearlyEquivalent_equivDivisor_iff (hxt : Transcendental k x)
       (WeilDivisor.OrderSystem.ofScheme (twoChartModel hF hx)).LinearlyEquivalent D E := by
   let _ := isDiscreteValuationRing_stalk (hF := hF) (hx := hx) hxt
   let _ := isNoetherian (hF := hF) (hx := hx) hxt
-  let e : Additive (twoChartModel hF hx).functionFieldˣ ≃+ Additive Fˣ :=
-    (Units.mapEquiv (functionFieldEquiv hxt).toRingEquiv.toMulEquiv).toAdditive
-  rw [WeilDivisor.OrderSystem.linearlyEquivalent_iff_exists_principalDivisor,
-    WeilDivisor.OrderSystem.linearlyEquivalent_iff_exists_principalDivisor]
-  constructor
-  · rintro ⟨g', hg'⟩
-    obtain ⟨g, rfl⟩ := e.surjective g'
-    refine ⟨g, (equivDivisor hxt).injective ?_⟩
-    rw [map_sub, equivDivisor_principalDivisor hxt]
-    exact hg'
-  · rintro ⟨g, hg⟩
-    refine ⟨e g, ?_⟩
-    rw [← equivDivisor_principalDivisor hxt, ← map_sub, hg]
+  rw [← SchemeWeilDivisor.linearlyEquivalent_equivFunctionFieldDivisor_iff
+      (valuativeCriterion_existence hF hx) (coheight_le_one hxt)
+      (isFunctionField_functionField hxt),
+    ← WeilDivisor.OrderSystem.divisorClass_eq_iff, ← WeilDivisor.OrderSystem.divisorClass_eq_iff,
+    ← (Divisor.classGroupEquivOfRingEquiv (RingEquiv.refl k) (functionFieldEquiv hxt).toRingEquiv
+      (id (functionFieldEquiv hxt).commutes)
+      (isFunctionField_functionField hxt) hF).injective.eq_iff,
+    Divisor.classGroupEquivOfRingEquiv_divisorClass,
+    Divisor.classGroupEquivOfRingEquiv_divisorClass,
+    domCongr_equivOfRingEquiv_equivFunctionFieldDivisor,
+    domCongr_equivOfRingEquiv_equivFunctionFieldDivisor]
 
 /-- Pulling back divisors along `equivDivisor` preserves and reflects linear equivalence. -/
 @[simp]
@@ -313,9 +288,10 @@ noncomputable def classGroupEquiv (hxt : Transcendental k x) :
       (Place.orderSystem hF).ClassGroup :=
   haveI := isDiscreteValuationRing_stalk (hF := hF) (hx := hx) hxt
   haveI := isNoetherian (hF := hF) (hx := hx) hxt
-  WeilDivisor.OrderSystem.classGroupCongr (equivPlace hxt)
-    (Units.mapEquiv (functionFieldEquiv hxt).toRingEquiv.toMulEquiv).toAdditive
-    (equivDivisor_principalDivisor hxt)
+  (SchemeWeilDivisor.classGroupEquivFunctionField (valuativeCriterion_existence hF hx)
+      (coheight_le_one hxt) (isFunctionField_functionField hxt)).trans
+    (Divisor.classGroupEquivOfRingEquiv (RingEquiv.refl k) (functionFieldEquiv hxt).toRingEquiv
+      (id (functionFieldEquiv hxt).commutes) (isFunctionField_functionField hxt) hF)
 
 /-- `classGroupEquiv` sends `[D]` on `X_F` to `[equivDivisor hxt D]` on `F`. -/
 @[simp]
@@ -324,8 +300,13 @@ theorem classGroupEquiv_divisorClass (hxt : Transcendental k x)
     haveI := isDiscreteValuationRing_stalk (hF := hF) (hx := hx) hxt
     haveI := isNoetherian (hF := hF) (hx := hx) hxt
     classGroupEquiv hxt ((WeilDivisor.OrderSystem.ofScheme (twoChartModel hF hx)).divisorClass D) =
-      (Place.orderSystem hF).divisorClass (equivDivisor hxt D) :=
-  WeilDivisor.OrderSystem.classGroupCongr_divisorClass _ _ _ D
+      (Place.orderSystem hF).divisorClass (equivDivisor hxt D) := by
+  let _ := isDiscreteValuationRing_stalk (hF := hF) (hx := hx) hxt
+  let _ := isNoetherian (hF := hF) (hx := hx) hxt
+  rw [classGroupEquiv, AddEquiv.trans_apply,
+    SchemeWeilDivisor.classGroupEquivFunctionField_divisorClass,
+    Divisor.classGroupEquivOfRingEquiv_divisorClass,
+    domCongr_equivOfRingEquiv_equivFunctionFieldDivisor]
 
 /-- `(classGroupEquiv hxt).symm` sends `[E]` on `F` to `[(equivDivisor hxt).symm E]` on `X_F`. -/
 @[simp]
@@ -334,8 +315,11 @@ theorem classGroupEquiv_symm_divisorClass (hxt : Transcendental k x) (E : Diviso
     haveI := isNoetherian (hF := hF) (hx := hx) hxt
     (classGroupEquiv (hF := hF) (hx := hx) hxt).symm ((Place.orderSystem hF).divisorClass E) =
       (WeilDivisor.OrderSystem.ofScheme (twoChartModel hF hx)).divisorClass
-        ((equivDivisor (hF := hF) (hx := hx) hxt).symm E) :=
-  WeilDivisor.OrderSystem.classGroupCongr_symm_divisorClass _ _ _ E
+        ((equivDivisor (hF := hF) (hx := hx) hxt).symm E) := by
+  let _ := isDiscreteValuationRing_stalk (hF := hF) (hx := hx) hxt
+  let _ := isNoetherian (hF := hF) (hx := hx) hxt
+  apply (classGroupEquiv (hF := hF) (hx := hx) hxt).injective
+  rw [AddEquiv.apply_symm_apply, classGroupEquiv_divisorClass, AddEquiv.apply_symm_apply]
 
 /-- **The Picard group of `X_F` is the divisor class group of `F`**:
 `Pic(X_F) ≃+ Cl(F)`, sending `[𝒪_{X_F}(D)]` to `[equivDivisor hxt D]`. -/
@@ -387,17 +371,13 @@ theorem degreeClass_picardEquivClassGroup (hxt : Transcendental k x)
   let _ := isDiscreteValuationRing_stalk (hF := hF) (hx := hx) hxt
   let _ := isNoetherian (hF := hF) (hx := hx) hxt
   let _ := isProper (hF := hF) (hx := hx) hxt
-  have : Fact (∀ y : twoChartModel hF hx, coheight y ≤ 1) := ⟨coheight_le_one hxt⟩
   have := finiteDimensional_cohomology_one_trivial_of_isProper k (X := twoChartModel hF hx)
     (topologicalKrullDim_eq_one hxt)
   obtain ⟨D, hD⟩ := SchemeWeilDivisor.toLineBundleClass_surjective (coheight_le_one hxt) a.toMul
   have ha : a = Additive.ofMul (SchemeWeilDivisor.toLineBundleClass (coheight_le_one hxt) D) := by
     rw [hD, ofMul_toMul]
   rw [ha, picardEquivClassGroup_toLineBundleClass, Divisor.degreeClass_divisorClass,
-    degree_equivDivisor, toMul_ofMul, ← SchemeWeilDivisor.classGroupToLineBundleClass_divisorClass,
-    SchemeWeilDivisor.eulerDegree_classGroupToLineBundleClass,
-    WeilDivisor.OrderSystem.weightedDegreeClass_divisorClass, WeilDivisor.weightedDegree_apply,
-    SchemeWeilDivisor.relativeDegree_apply]
+    degree_equivDivisor, toMul_ofMul, LineBundleClass.eulerDegree_toLineBundleClass]
 
 /-- `(picardEquivClassGroup hxt).symm` sends a divisor class of degree `d` to a line-bundle class of
 Euler-characteristic degree `d`. -/
@@ -407,33 +387,6 @@ theorem eulerDegree_picardEquivClassGroup_symm (hxt : Transcendental k x)
     LineBundleClass.eulerDegree k ((picardEquivClassGroup (hF := hF) (hx := hx) hxt).symm c).toMul =
       Divisor.degreeClass hF c := by
   rw [← degreeClass_picardEquivClassGroup hxt, AddEquiv.apply_symm_apply]
-
-/-- `picardEquivClassGroup` maps `Pic⁰(X_F)` onto the kernel `Cl⁰(F)` of `Divisor.degreeClass`. -/
-private theorem map_picZero_picardEquivClassGroup (hxt : Transcendental k x) :
-    haveI := isDiscreteValuationRing_stalk (hF := hF) (hx := hx) hxt
-    haveI := isNoetherian (hF := hF) (hx := hx) hxt
-    haveI := isProper (hF := hF) (hx := hx) hxt
-    haveI : Fact (∀ y : twoChartModel hF hx, coheight y ≤ 1) := ⟨coheight_le_one hxt⟩
-    haveI := finiteDimensional_cohomology_one_trivial_of_isProper k (X := twoChartModel hF hx)
-      (topologicalKrullDim_eq_one hxt)
-    (LineBundleClass.picZero k (twoChartModel hF hx)).map
-        (picardEquivClassGroup hxt).toAddMonoidHom =
-      (Divisor.degreeClass hF).ker := by
-  let _ := isDiscreteValuationRing_stalk (hF := hF) (hx := hx) hxt
-  let _ := isNoetherian (hF := hF) (hx := hx) hxt
-  let _ := isProper (hF := hF) (hx := hx) hxt
-  have : Fact (∀ y : twoChartModel hF hx, coheight y ≤ 1) := ⟨coheight_le_one hxt⟩
-  have := finiteDimensional_cohomology_one_trivial_of_isProper k (X := twoChartModel hF hx)
-    (topologicalKrullDim_eq_one hxt)
-  ext c
-  rw [AddSubgroup.mem_map, AddMonoidHom.mem_ker]
-  refine ⟨?_, fun hc ↦ ⟨(picardEquivClassGroup hxt).symm c, ?_, by simp⟩⟩
-  · rintro ⟨a, ha, rfl⟩
-    rw [AddEquiv.coe_toAddMonoidHom, degreeClass_picardEquivClassGroup]
-    exact (LineBundleClass.mem_picZero_iff (k := k)).mp ha
-  · rw [LineBundleClass.mem_picZero_iff, ← degreeClass_picardEquivClassGroup hxt,
-      AddEquiv.apply_symm_apply]
-    exact hc
 
 /-- **`Pic⁰` of the two-chart model is the degree-zero divisor class group of `F`**:
 `Pic⁰(X_F) ≃+ Cl⁰(F)`, obtained by restricting `picardEquivClassGroup`. -/
@@ -451,8 +404,11 @@ noncomputable def picZeroEquivDegreeZeroClassGroup (hxt : Transcendental k x) :
   haveI : Fact (∀ y : twoChartModel hF hx, coheight y ≤ 1) := ⟨coheight_le_one hxt⟩
   haveI := finiteDimensional_cohomology_one_trivial_of_isProper k (X := twoChartModel hF hx)
     (topologicalKrullDim_eq_one hxt)
-  ((picardEquivClassGroup hxt).addSubgroupMap _).trans
-    (AddEquiv.addSubgroupCongr (map_picZero_picardEquivClassGroup hxt))
+  (SchemeWeilDivisor.picZeroAddEquivDegreeZeroClassGroup k
+      (isFunctionField_functionField hxt)).trans
+    (Divisor.degreeZeroClassGroupEquivOfRingEquiv (RingEquiv.refl k)
+      (functionFieldEquiv hxt).toRingEquiv (id (functionFieldEquiv hxt).commutes)
+      (isFunctionField_functionField hxt) hF)
 
 /-- `picZeroEquivDegreeZeroClassGroup` is the restriction of `picardEquivClassGroup`. -/
 @[simp]
@@ -465,8 +421,19 @@ theorem coe_picZeroEquivDegreeZeroClassGroup_apply (hxt : Transcendental k x) :
       (topologicalKrullDim_eq_one hxt)
     ∀ a : LineBundleClass.picZero k (twoChartModel hF hx),
       (picZeroEquivDegreeZeroClassGroup hxt a : (Place.orderSystem hF).ClassGroup) =
-        picardEquivClassGroup hxt (a : Additive (LineBundleClass (twoChartModel hF hx))) :=
-  fun _ ↦ (rfl)
+        picardEquivClassGroup hxt (a : Additive (LineBundleClass (twoChartModel hF hx))) := by
+  let _ := isDiscreteValuationRing_stalk (hF := hF) (hx := hx) hxt
+  let _ := isNoetherian (hF := hF) (hx := hx) hxt
+  let _ := isProper (hF := hF) (hx := hx) hxt
+  have : Fact (∀ y : twoChartModel hF hx, coheight y ≤ 1) := ⟨coheight_le_one hxt⟩
+  have := finiteDimensional_cohomology_one_trivial_of_isProper k (X := twoChartModel hF hx)
+    (topologicalKrullDim_eq_one hxt)
+  intro a
+  rw [picZeroEquivDegreeZeroClassGroup, AddEquiv.trans_apply,
+    Divisor.coe_degreeZeroClassGroupEquivOfRingEquiv_apply,
+    SchemeWeilDivisor.coe_picZeroAddEquivDegreeZeroClassGroup_apply k _
+      (valuativeCriterion_existence hF hx),
+    picardEquivClassGroup, AddEquiv.trans_apply, classGroupEquiv, AddEquiv.trans_apply]
 
 /-- `(picZeroEquivDegreeZeroClassGroup hxt).symm` is the restriction of
 `(picardEquivClassGroup hxt).symm`. -/
@@ -481,7 +448,15 @@ theorem coe_picZeroEquivDegreeZeroClassGroup_symm_apply (hxt : Transcendental k 
       (topologicalKrullDim_eq_one hxt)
     ((picZeroEquivDegreeZeroClassGroup hxt).symm c :
         Additive (LineBundleClass (twoChartModel hF hx))) =
-      (picardEquivClassGroup hxt).symm (c : (Place.orderSystem hF).ClassGroup) :=
-  (rfl)
+      (picardEquivClassGroup hxt).symm (c : (Place.orderSystem hF).ClassGroup) := by
+  let _ := isDiscreteValuationRing_stalk (hF := hF) (hx := hx) hxt
+  let _ := isNoetherian (hF := hF) (hx := hx) hxt
+  let _ := isProper (hF := hF) (hx := hx) hxt
+  have : Fact (∀ y : twoChartModel hF hx, coheight y ≤ 1) := ⟨coheight_le_one hxt⟩
+  have := finiteDimensional_cohomology_one_trivial_of_isProper k (X := twoChartModel hF hx)
+    (topologicalKrullDim_eq_one hxt)
+  apply (picardEquivClassGroup hxt).injective
+  rw [← coe_picZeroEquivDegreeZeroClassGroup_apply hxt, AddEquiv.apply_symm_apply,
+    AddEquiv.apply_symm_apply]
 
 end TauCeti.AlgebraicGeometry.twoChartModel
