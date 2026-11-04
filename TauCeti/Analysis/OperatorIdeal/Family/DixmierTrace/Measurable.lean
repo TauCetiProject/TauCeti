@@ -15,11 +15,13 @@ import Mathlib.NumberTheory.Harmonic.Bounds
 # Dixmier measurability, singularity, and diagonal models
 
 An operator `T : E →L[ℂ] E` on a complex Hilbert space is **Dixmier measurable**
-(`TauCeti.IsDixmierMeasurable`) when all complex Dixmier traces `Tr_ω(T)`
-(`TauCeti.complexDixmierTrace`) associated to dilation-invariant generalized limits `ω` agree.
+(`TauCeti.IsDixmierMeasurable`) when it belongs to the logarithmic ideal `L^(1,∞)` and all complex
+Dixmier traces `Tr_ω(T)` (`TauCeti.complexDixmierTrace`) associated to dilation-invariant
+generalized limits `ω` agree.
 
 We establish the algebraic closure properties of Dixmier-measurable operators, bundle the
-Dixmier-measurable subspace of `L^(1,∞)` (`TauCeti.dixmierMeasurableSubmodule`), and prove that
+Dixmier-measurable subspace of `E →L[ℂ] E` (`TauCeti.dixmierMeasurableSubmodule`, lying between the
+trace class and `L^(1,∞)`), and prove that
 ordinary convergence of the logarithmic means `T.kyFanLogMean` is a sufficient condition for
 Dixmier measurability (on the positive cone for any limit, and for arbitrary operators when the
 logarithmic means tend to `0`, covering trace-class and finite-rank operators).
@@ -42,9 +44,10 @@ their singularity and non-normality:
 
 ## Main declarations
 
-* `TauCeti.IsDixmierMeasurable`: invariance of `Tr_ω(T)` across dilation-invariant `ω`.
+* `TauCeti.IsDixmierMeasurable`: membership in `L^(1,∞)` together with invariance of `Tr_ω(T)`
+  across dilation-invariant `ω`.
 * `TauCeti.dixmierMeasurableSubmodule`: the `ℂ`-submodule of Dixmier-measurable operators in
-  `L^(1,∞)`.
+  `E →L[ℂ] E`, satisfying `L¹ ≤ M ≤ L^(1,∞)`.
 * `TauCeti.isDixmierMeasurable_of_isPositive_of_tendsto_kyFanLogMean`,
   `TauCeti.isDixmierMeasurable_of_tendsto_kyFanLogMean_zero`: ordinary convergence of logarithmic
   means implies Dixmier measurability.
@@ -83,34 +86,52 @@ variable {E F : Type*}
   [NormedAddCommGroup E] [InnerProductSpace ℂ E] [CompleteSpace E]
   [NormedAddCommGroup F] [InnerProductSpace ℂ F] [CompleteSpace F]
 
-/-- An operator `T : E →L[ℂ] E` is **Dixmier measurable** when all complex Dixmier traces `Tr_ω(T)`
-associated to dilation-invariant generalized limits `ω` coincide. -/
+/-- An operator `T : E →L[ℂ] E` is **Dixmier measurable** when it belongs to the logarithmic ideal
+`L^(1,∞)` and all complex Dixmier traces `Tr_ω(T)` associated to dilation-invariant generalized
+limits `ω` coincide. -/
 def IsDixmierMeasurable (T : E →L[ℂ] E) : Prop :=
-  ∀ ⦃ω₁ ω₂ : GeneralizedLimit⦄, ω₁.IsDilationInvariant → ω₂.IsDilationInvariant →
-    complexDixmierTrace ω₁ T = complexDixmierTrace ω₂ T
+  T ∈ ((logarithmic ℂ).operatorGauge E E).finiteSubmodule ∧
+    ∀ ⦃ω₁ ω₂ : GeneralizedLimit⦄, ω₁.IsDilationInvariant → ω₂.IsDilationInvariant →
+      complexDixmierTrace ω₁ T = complexDixmierTrace ω₂ T
 
 /-- Definitional characterization of `TauCeti.IsDixmierMeasurable`. -/
 theorem isDixmierMeasurable_iff {T : E →L[ℂ] E} :
     IsDixmierMeasurable T ↔
-      ∀ ⦃ω₁ ω₂ : GeneralizedLimit⦄, ω₁.IsDilationInvariant → ω₂.IsDilationInvariant →
-        complexDixmierTrace ω₁ T = complexDixmierTrace ω₂ T :=
+      T ∈ ((logarithmic ℂ).operatorGauge E E).finiteSubmodule ∧
+        ∀ ⦃ω₁ ω₂ : GeneralizedLimit⦄, ω₁.IsDilationInvariant → ω₂.IsDilationInvariant →
+          complexDixmierTrace ω₁ T = complexDixmierTrace ω₂ T :=
   Iff.rfl
 
-/-- `T` is Dixmier measurable if and only if there is a single complex number assigned to `T` by
-every dilation-invariant generalized limit. -/
+/-- Every Dixmier-measurable operator belongs to the logarithmic ideal `L^(1,∞)`. -/
+theorem IsDixmierMeasurable.mem_finiteSubmodule {T : E →L[ℂ] E} (h : IsDixmierMeasurable T) :
+    T ∈ ((logarithmic ℂ).operatorGauge E E).finiteSubmodule :=
+  h.1
+
+/-- Any two dilation-invariant generalized limits assign the same complex Dixmier trace to a
+Dixmier-measurable operator. -/
+theorem IsDixmierMeasurable.complexDixmierTrace_eq {T : E →L[ℂ] E} (h : IsDixmierMeasurable T)
+    {ω₁ ω₂ : GeneralizedLimit} (h₁ : ω₁.IsDilationInvariant) (h₂ : ω₂.IsDilationInvariant) :
+    complexDixmierTrace ω₁ T = complexDixmierTrace ω₂ T :=
+  h.2 h₁ h₂
+
+/-- `T` is Dixmier measurable if and only if `T` belongs to `L^(1,∞)` and there is a single complex
+number assigned to `T` by every dilation-invariant generalized limit. -/
 theorem isDixmierMeasurable_iff_exists_eq {T : E →L[ℂ] E} :
     IsDixmierMeasurable T ↔
-      ∃ z : ℂ, ∀ ⦃ω : GeneralizedLimit⦄, ω.IsDilationInvariant → complexDixmierTrace ω T = z := by
-  refine ⟨fun h ↦ ?_, fun ⟨z, hz⟩ ω₁ ω₂ h₁ h₂ ↦ (hz h₁).trans (hz h₂).symm⟩
+      T ∈ ((logarithmic ℂ).operatorGauge E E).finiteSubmodule ∧
+        ∃ z : ℂ, ∀ ⦃ω : GeneralizedLimit⦄, ω.IsDilationInvariant → complexDixmierTrace ω T = z := by
+  refine and_congr_right fun _ ↦
+    ⟨fun h ↦ ?_, fun ⟨z, hz⟩ ω₁ ω₂ h₁ h₂ ↦ (hz h₁).trans (hz h₂).symm⟩
   obtain ⟨ω₀, hω₀⟩ := GeneralizedLimit.exists_isDilationInvariant
   exact ⟨complexDixmierTrace ω₀ T, fun ω hω ↦ h hω hω₀⟩
 
-/-- On positive operators, Dixmier measurability is agreement of the real-valued `dixmierTrace`
-across all dilation-invariant generalized limits. -/
+/-- On positive operators, Dixmier measurability is membership in `L^(1,∞)` together with agreement
+of the real-valued `dixmierTrace` across all dilation-invariant generalized limits. -/
 theorem isDixmierMeasurable_iff_of_isPositive {T : E →L[ℂ] E} (hT : T.IsPositive) :
     IsDixmierMeasurable T ↔
-      ∀ ⦃ω₁ ω₂ : GeneralizedLimit⦄, ω₁.IsDilationInvariant → ω₂.IsDilationInvariant →
-        dixmierTrace ω₁ T = dixmierTrace ω₂ T := by
+      T ∈ ((logarithmic ℂ).operatorGauge E E).finiteSubmodule ∧
+        ∀ ⦃ω₁ ω₂ : GeneralizedLimit⦄, ω₁.IsDilationInvariant → ω₂.IsDilationInvariant →
+          dixmierTrace ω₁ T = dixmierTrace ω₂ T := by
   simp [IsDixmierMeasurable, complexDixmierTrace_of_isPositive _ hT]
 
 /-- For a positive operator whose logarithmic means converge in the ordinary sense to `L`, every
@@ -124,9 +145,10 @@ theorem complexDixmierTrace_eq_of_isPositive_of_tendsto_kyFanLogMean (ω : Gener
 operators. -/
 theorem isDixmierMeasurable_of_isPositive_of_tendsto_kyFanLogMean {T : E →L[ℂ] E}
     (hT : T.IsPositive) {L : ℝ} (hlim : Tendsto T.kyFanLogMean atTop (𝓝 L)) :
-    IsDixmierMeasurable T := fun ω₁ ω₂ _ _ ↦ by
-  rw [complexDixmierTrace_eq_of_isPositive_of_tendsto_kyFanLogMean ω₁ hT hlim,
-    complexDixmierTrace_eq_of_isPositive_of_tendsto_kyFanLogMean ω₂ hT hlim]
+    IsDixmierMeasurable T :=
+  ⟨(mem_finiteSubmodule_logarithmic_iff_bddAbove T).2 hlim.bddAbove_range, fun ω₁ ω₂ _ _ ↦ by
+    rw [complexDixmierTrace_eq_of_isPositive_of_tendsto_kyFanLogMean ω₁ hT hlim,
+      complexDixmierTrace_eq_of_isPositive_of_tendsto_kyFanLogMean ω₂ hT hlim]⟩
 
 /-- For any operator whose logarithmic means converge to `0`, every dilation-invariant Dixmier
 trace vanishes. -/
@@ -140,15 +162,9 @@ theorem complexDixmierTrace_eq_zero_of_tendsto_kyFanLogMean_zero {ω : Generaliz
 arbitrary bounded operator. -/
 theorem isDixmierMeasurable_of_tendsto_kyFanLogMean_zero {T : E →L[ℂ] E}
     (hlim : Tendsto T.kyFanLogMean atTop (𝓝 0)) : IsDixmierMeasurable T :=
-  fun _ _ h₁ h₂ ↦ (complexDixmierTrace_eq_zero_of_tendsto_kyFanLogMean_zero h₁ hlim).trans
-    (complexDixmierTrace_eq_zero_of_tendsto_kyFanLogMean_zero h₂ hlim).symm
-
-/-- Operators outside `L^(1,∞)` are trivially Dixmier measurable because `complexDixmierTrace`
-takes the junk value `0` on them. -/
-theorem isDixmierMeasurable_of_notMem {T : E →L[ℂ] E}
-    (hT : T ∉ ((logarithmic ℂ).operatorGauge E E).finiteSubmodule) :
-    IsDixmierMeasurable T :=
-  fun ω₁ ω₂ _ _ ↦ by rw [complexDixmierTrace_of_notMem ω₁ hT, complexDixmierTrace_of_notMem ω₂ hT]
+  ⟨(mem_finiteSubmodule_logarithmic_iff_bddAbove T).2 hlim.bddAbove_range, fun _ _ h₁ h₂ ↦
+    (complexDixmierTrace_eq_zero_of_tendsto_kyFanLogMean_zero h₁ hlim).trans
+      (complexDixmierTrace_eq_zero_of_tendsto_kyFanLogMean_zero h₂ hlim).symm⟩
 
 /-- Trace-class operators are Dixmier measurable (with Dixmier trace `0`). -/
 theorem isDixmierMeasurable_of_mem_traceClass {T : E →L[ℂ] E}
@@ -160,27 +176,29 @@ theorem isDixmierMeasurable_of_mem_traceClass {T : E →L[ℂ] E}
 /-- Finite-rank operators are Dixmier measurable (with Dixmier trace `0`). -/
 theorem isDixmierMeasurable_of_rank_le {T : E →L[ℂ] E} {n : ℕ} (hT : T.rank ≤ n) :
     IsDixmierMeasurable T :=
-  fun ω₁ ω₂ _ _ ↦ by
-    rw [complexDixmierTrace_eq_zero_of_rank_le ω₁ hT, complexDixmierTrace_eq_zero_of_rank_le ω₂ hT]
+  ⟨mem_finiteSubmodule_logarithmic_of_rank_le hT, fun ω₁ ω₂ _ _ ↦ by
+    rw [complexDixmierTrace_eq_zero_of_rank_le ω₁ hT, complexDixmierTrace_eq_zero_of_rank_le ω₂ hT]⟩
 
 /-- Every commutator `A T - T A` with `T ∈ L^(1,∞)` is Dixmier measurable (with Dixmier trace
 `0`). -/
 theorem isDixmierMeasurable_sub_comp_comm (A : E →L[ℂ] E) {T : E →L[ℂ] E}
     (hT : T ∈ ((logarithmic ℂ).operatorGauge E E).finiteSubmodule) :
     IsDixmierMeasurable (A ∘L T - T ∘L A) :=
-  fun _ _ h₁ h₂ ↦ by
-    rw [complexDixmierTrace_sub_comp_comm_eq_zero h₁ A hT,
-      complexDixmierTrace_sub_comp_comm_eq_zero h₂ A hT]
+  ⟨Submodule.sub_mem _ ((logarithmic ℂ).comp_left_mem_finiteSubmodule A hT)
+      ((logarithmic ℂ).comp_right_mem_finiteSubmodule hT A),
+    fun _ _ h₁ h₂ ↦ by
+      rw [complexDixmierTrace_sub_comp_comm_eq_zero h₁ A hT,
+        complexDixmierTrace_sub_comp_comm_eq_zero h₂ A hT]⟩
 
 /-- The zero operator is Dixmier measurable. -/
 @[simp]
 theorem isDixmierMeasurable_zero : IsDixmierMeasurable (0 : E →L[ℂ] E) :=
-  fun _ _ _ _ ↦ by simp
+  ⟨Submodule.zero_mem _, fun _ _ _ _ ↦ by simp⟩
 
 /-- Dixmier measurability is preserved under negation. -/
 theorem IsDixmierMeasurable.neg {T : E →L[ℂ] E} (h : IsDixmierMeasurable T) :
     IsDixmierMeasurable (-T) :=
-  fun _ _ h₁ h₂ ↦ by simp [h h₁ h₂]
+  ⟨Submodule.neg_mem _ h.1, fun _ _ h₁ h₂ ↦ by simp [h.2 h₁ h₂]⟩
 
 /-- Negating an operator preserves Dixmier measurability. -/
 @[simp]
@@ -191,7 +209,7 @@ theorem isDixmierMeasurable_neg_iff {T : E →L[ℂ] E} :
 /-- Dixmier measurability is preserved under `star`. -/
 theorem IsDixmierMeasurable.star {T : E →L[ℂ] E} (h : IsDixmierMeasurable T) :
     IsDixmierMeasurable (star T) :=
-  fun _ _ h₁ h₂ ↦ by simp [h h₁ h₂]
+  ⟨(star_mem_finiteSubmodule_iff T).2 h.1, fun _ _ h₁ h₂ ↦ by simp [h.2 h₁ h₂]⟩
 
 /-- Taking `star` preserves Dixmier measurability. -/
 @[simp]
@@ -207,72 +225,82 @@ theorem IsDixmierMeasurable.adjoint {T : E →L[ℂ] E} (h : IsDixmierMeasurable
 /-- Dixmier measurability is preserved under complex scalar multiplication. -/
 theorem IsDixmierMeasurable.smul {T : E →L[ℂ] E} (h : IsDixmierMeasurable T) (c : ℂ) :
     IsDixmierMeasurable (c • T) :=
-  fun _ _ h₁ h₂ ↦ by
-    rw [complexDixmierTrace_smul h₁, complexDixmierTrace_smul h₂, h h₁ h₂]
+  ⟨Submodule.smul_mem _ c h.1, fun _ _ h₁ h₂ ↦ by
+    rw [complexDixmierTrace_smul h₁, complexDixmierTrace_smul h₂, h.2 h₁ h₂]⟩
 
-/-- Inside `L^(1,∞)`, Dixmier measurability is closed under addition. -/
+/-- Dixmier measurability is closed under addition. -/
 theorem IsDixmierMeasurable.add {S T : E →L[ℂ] E}
-    (hSm : S ∈ ((logarithmic ℂ).operatorGauge E E).finiteSubmodule)
-    (hTm : T ∈ ((logarithmic ℂ).operatorGauge E E).finiteSubmodule)
     (hS : IsDixmierMeasurable S) (hT : IsDixmierMeasurable T) :
     IsDixmierMeasurable (S + T) :=
-  fun _ _ h₁ h₂ ↦ by
-    rw [complexDixmierTrace_add h₁ hSm hTm, complexDixmierTrace_add h₂ hSm hTm, hS h₁ h₂, hT h₁ h₂]
+  ⟨Submodule.add_mem _ hS.1 hT.1, fun _ _ h₁ h₂ ↦ by
+    rw [complexDixmierTrace_add h₁ hS.1 hT.1, complexDixmierTrace_add h₂ hS.1 hT.1,
+      hS.2 h₁ h₂, hT.2 h₁ h₂]⟩
 
-/-- Inside `L^(1,∞)`, Dixmier measurability is closed under subtraction. -/
+/-- Dixmier measurability is closed under subtraction. -/
 theorem IsDixmierMeasurable.sub {S T : E →L[ℂ] E}
-    (hSm : S ∈ ((logarithmic ℂ).operatorGauge E E).finiteSubmodule)
-    (hTm : T ∈ ((logarithmic ℂ).operatorGauge E E).finiteSubmodule)
     (hS : IsDixmierMeasurable S) (hT : IsDixmierMeasurable T) :
     IsDixmierMeasurable (S - T) := by
   rw [sub_eq_add_neg]
-  exact hS.add hSm (Submodule.neg_mem _ hTm) hT.neg
+  exact hS.add hT.neg
 
-/-- A self-adjoint operator in `L^(1,∞)` whose positive and negative parts are Dixmier measurable
-is itself Dixmier measurable; conversely, a bounded operator in `L^(1,∞)` is Dixmier measurable
-whenever the four positive parts `(ℜ T)⁺`, `(ℜ T)⁻`, `(ℑ T)⁺`, `(ℑ T)⁻` are. -/
+/-- A bounded operator is Dixmier measurable whenever the four positive parts `(ℜ T)⁺`, `(ℜ T)⁻`,
+`(ℑ T)⁺`, `(ℑ T)⁻` of its real and imaginary parts are Dixmier measurable. -/
 theorem isDixmierMeasurable_of_parts {T : E →L[ℂ] E}
-    (hTm : T ∈ ((logarithmic ℂ).operatorGauge E E).finiteSubmodule)
     (hre_pos : IsDixmierMeasurable (ℜ T : E →L[ℂ] E)⁺)
     (hre_neg : IsDixmierMeasurable (ℜ T : E →L[ℂ] E)⁻)
     (him_pos : IsDixmierMeasurable (ℑ T : E →L[ℂ] E)⁺)
     (him_neg : IsDixmierMeasurable (ℑ T : E →L[ℂ] E)⁻) :
-    IsDixmierMeasurable T := fun ω₁ ω₂ h₁ h₂ ↦ by
-  have hp {X : E →L[ℂ] E} (hX : 0 ≤ X) (hm : IsDixmierMeasurable X) :=
-    (isDixmierMeasurable_iff_of_isPositive (nonneg_iff_isPositive.1 hX)).1 hm h₁ h₂
-  rw [complexDixmierTrace_of_mem ω₁ hTm, complexDixmierTrace_of_mem ω₂ hTm,
-    hp (CFC.posPart_nonneg _) hre_pos, hp (CFC.negPart_nonneg _) hre_neg,
-    hp (CFC.posPart_nonneg _) him_pos, hp (CFC.negPart_nonneg _) him_neg]
+    IsDixmierMeasurable T := by
+  rw [← realPart_add_I_smul_imaginaryPart T,
+    ← CFC.posPart_sub_negPart (ℜ T : E →L[ℂ] E) (ℜ T).2,
+    ← CFC.posPart_sub_negPart (ℑ T : E →L[ℂ] E) (ℑ T).2]
+  exact (hre_pos.sub hre_neg).add ((him_pos.sub him_neg).smul Complex.I)
 
 /-- Conjugation by a linear isometric equivalence preserves Dixmier measurability. -/
 @[simp]
 theorem isDixmierMeasurable_conj_linearIsometryEquiv_iff (e : E ≃ₗᵢ[ℂ] F) (T : E →L[ℂ] E) :
     IsDixmierMeasurable (e.conjStarAlgEquiv T) ↔ IsDixmierMeasurable T := by
-  simp [IsDixmierMeasurable]
+  have hsame : SameSingularValues (e.conjStarAlgEquiv T) T :=
+    sameSingularValues_comp_linearIsometryEquiv T e.symm e
+  have hmem : e.conjStarAlgEquiv T ∈ ((logarithmic ℂ).operatorGauge F F).finiteSubmodule ↔
+      T ∈ ((logarithmic ℂ).operatorGauge E E).finiteSubmodule := by
+    rw [mem_finiteSubmodule_logarithmic_iff_bddAbove, mem_finiteSubmodule_logarithmic_iff_bddAbove,
+      hsame.kyFanLogMean_eq]
+  simp [IsDixmierMeasurable, hmem]
 
 /-- Unitary conjugation preserves Dixmier measurability. -/
 @[simp]
 theorem isDixmierMeasurable_unitary_conj_iff (u : unitary (E →L[ℂ] E)) (T : E →L[ℂ] E) :
     IsDixmierMeasurable ((u : E →L[ℂ] E) ∘L T ∘L star (u : E →L[ℂ] E)) ↔
-      IsDixmierMeasurable T := by
-  simp [IsDixmierMeasurable]
+      IsDixmierMeasurable T :=
+  isDixmierMeasurable_conj_linearIsometryEquiv_iff (Unitary.linearIsometryEquiv u) T
 
-/-- The `ℂ`-submodule of Dixmier-measurable operators inside the logarithmic ideal `L^(1,∞)`. -/
+/-- The `ℂ`-submodule of Dixmier-measurable operators in `E →L[ℂ] E`. -/
 def dixmierMeasurableSubmodule (E : Type*)
     [NormedAddCommGroup E] [InnerProductSpace ℂ E] [CompleteSpace E] :
-    Submodule ℂ ((logarithmic ℂ).operatorGauge E E).finiteSubmodule where
-  carrier := {T | IsDixmierMeasurable T.1}
+    Submodule ℂ (E →L[ℂ] E) where
+  carrier := {T | IsDixmierMeasurable T}
   zero_mem' := isDixmierMeasurable_zero
-  add_mem' {S T} hS hT := hS.add S.2 T.2 hT
+  add_mem' hS hT := hS.add hT
   smul_mem' c _ hT := hT.smul c
 
-/-- Membership in `TauCeti.dixmierMeasurableSubmodule` is `TauCeti.IsDixmierMeasurable` on the
-underlying operator. -/
+/-- Membership in `TauCeti.dixmierMeasurableSubmodule` is `TauCeti.IsDixmierMeasurable`. -/
 @[simp]
-theorem mem_dixmierMeasurableSubmodule_iff
-    {T : ((logarithmic ℂ).operatorGauge E E).finiteSubmodule} :
-    T ∈ dixmierMeasurableSubmodule E ↔ IsDixmierMeasurable T.1 :=
+theorem mem_dixmierMeasurableSubmodule_iff {T : E →L[ℂ] E} :
+    T ∈ dixmierMeasurableSubmodule E ↔ IsDixmierMeasurable T :=
   Iff.rfl
+
+variable (E) in
+/-- The Dixmier-measurable operators form a submodule of the logarithmic ideal `L^(1,∞)`. -/
+theorem dixmierMeasurableSubmodule_le_logarithmic :
+    dixmierMeasurableSubmodule E ≤ ((logarithmic ℂ).operatorGauge E E).finiteSubmodule :=
+  fun _ hT ↦ hT.mem_finiteSubmodule
+
+variable (E) in
+/-- Every trace-class operator lies in `TauCeti.dixmierMeasurableSubmodule`. -/
+theorem finiteSubmodule_traceClass_le_dixmierMeasurableSubmodule :
+    ((traceClass ℂ).operatorGauge E E).finiteSubmodule ≤ dixmierMeasurableSubmodule E :=
+  fun _ hT ↦ isDixmierMeasurable_of_mem_traceClass hT
 
 end Measurable
 
@@ -375,7 +403,7 @@ theorem complexDixmierTrace_harmonicDiagonalCLM (ω : GeneralizedLimit) :
 
 /-- The harmonic diagonal operator is Dixmier measurable. -/
 theorem isDixmierMeasurable_harmonicDiagonalCLM : IsDixmierMeasurable harmonicDiagonalCLM :=
-  fun _ _ _ _ ↦ by simp
+  ⟨harmonicDiagonalCLM_mem_logarithmic, fun _ _ _ _ ↦ by simp⟩
 
 /-- **Singularity and non-normality of the Dixmier trace.** The positive finite-rank coordinate
 truncations `Sₙ` of `TauCeti.harmonicDiagonalCLM` form a monotone sequence of positive operators in
@@ -755,7 +783,7 @@ theorem exists_isPositive_mem_logarithmic_not_isDixmierMeasurable :
         fun k hk hkS ↦ (one_half_le_oscDiag_kyFanLogMean hk hkS hS hY).trans_eq
           (congrFun hg _).symm⟩
   refine ⟨T, hpos, hmem, fun hmeas ↦ ?_⟩
-  have heq := (isDixmierMeasurable_iff_of_isPositive hpos).1 hmeas hω₁ hω₂
+  have heq := ((isDixmierMeasurable_iff_of_isPositive hpos).1 hmeas).2 hω₁ hω₂
   rw [dixmierTrace_eq_apply ω₁ g hg, dixmierTrace_eq_apply ω₂ g hg] at heq
   linarith
 
