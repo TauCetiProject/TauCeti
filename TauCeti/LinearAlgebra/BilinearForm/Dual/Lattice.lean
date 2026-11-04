@@ -26,6 +26,8 @@ nondegenerate bilinear form over a fraction field.
   full lattices using `B.flip`.
 * `LinearMap.BilinForm.dualSubmodule_flip_dualSubmodule`: double duality for free
   full lattices with `B.flip` on the outside.
+* `LinearMap.BilinForm.fg_of_le_dualSubmodule`: over a Noetherian ring, a submodule which spans
+  the ambient finite-dimensional space and lies in its own dual is finitely generated.
 -/
 
 public section
@@ -112,5 +114,30 @@ theorem _root_.LinearMap.BilinForm.dualSubmodule_flip_dualSubmodule
   have h := LinearMap.BilinForm.dualSubmodule_dualSubmodule_flip B.flip hB.flip N
   have hflip : B.flip.flip = B := by ext; rfl
   rwa [hflip] at h
+
+section FG
+
+variable {A K M : Type*} [CommRing A] [Field K] [AddCommGroup M] [Algebra A K] [Module A M]
+  [Module K M] [IsScalarTower A K M] [FiniteDimensional K M]
+
+/-- Over a Noetherian ring `A`, a submodule `N` which spans a finite-dimensional `K`-vector space
+`M` and lies in its own dual for a nondegenerate bilinear form `B` is finitely generated: it lies
+in the `A`-span of the dual basis of a basis of `M` chosen inside `N`. -/
+theorem _root_.LinearMap.BilinForm.fg_of_le_dualSubmodule [IsNoetherianRing A]
+    {B : LinearMap.BilinForm K M}
+    (hB : B.Nondegenerate) {N : Submodule A M} (hspan : Submodule.span K (N : Set M) = ⊤)
+    (hN : N ≤ B.dualSubmodule N) : N.FG := by
+  classical
+  obtain ⟨s, hsN, hs, hli⟩ := exists_linearIndependent K (N : Set M)
+  have : Finite s := hli.finite_of_isNoetherian
+  let b : Module.Basis s K M := .mk hli (by rw [Subtype.range_coe_subtype, Set.ofPred_mem_eq,
+    hs, hspan])
+  -- `N` lies in the dual of the `A`-span of `b`, which is the `A`-span of the dual basis.
+  have hle : N ≤ B.dualSubmodule (Submodule.span A (Set.range b)) := fun m hm z hz ↦
+    hN hm z (Submodule.span_le.2 (by simpa [b] using hsN) hz)
+  rw [LinearMap.BilinForm.dualSubmodule_span_of_basis B hB b] at hle
+  exact (Submodule.fg_span (Set.finite_range _)).of_le hle
+
+end FG
 
 end TauCeti
