@@ -105,7 +105,10 @@ noncomputable def doubleConjugateIso (A : FiniteRankBundleCore ℂ B) :
     (conjugate B).obj ((conjugate B).obj A) ≅ A :=
   constIso (fun _ => rfl) (ContinuousLinearEquiv.refl ℂ _) fun i j x _ _ => by
     -- Work on standard coordinate spaces, rather than the inherited core-fibre instances.
-    have h := congrArg ofConv (star_star (toConv (A.core.coordChange i j x)))
+    have h : (ContinuousLinearMap.id ℂ (Fin A.rank → ℂ)).comp
+        (star (toConv (star (toConv (A.core.coordChange i j x))).ofConv)).ofConv =
+        (A.core.coordChange i j x).comp (ContinuousLinearMap.id ℂ (Fin A.rank → ℂ)) := by
+      simp
     exact h
 
 @[simp] theorem fiberMap_doubleConjugateIso_hom (A : FiniteRankBundleCore ℂ B) (x : B) :

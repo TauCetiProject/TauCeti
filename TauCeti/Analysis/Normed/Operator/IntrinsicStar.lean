@@ -37,6 +37,7 @@ variable {𝕜 E F : Type*} [NontriviallyNormedField 𝕜] [CompleteSpace 𝕜] 
 theorem continuous_intrinsicStar :
     Continuous (fun f : E →L[𝕜] F => (star (toConv f)).ofConv) := by
   refine continuous_clm_apply.2 fun x => ?_
+  -- Intrinsic star evaluates as `star (f (star x))`; `ofConv` only removes the wrapper.
   exact (ContinuousLinearMap.apply 𝕜 F (star x)).continuous.star
 
 end ContinuousLinearMap
